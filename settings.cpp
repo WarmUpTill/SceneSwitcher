@@ -15,11 +15,6 @@
 
 using namespace std;
 
-//possible settings:
-//
-//file path
-//transition delay / type 
-//...
 
 class Settings {
 	map<string, string> settings;
@@ -34,7 +29,7 @@ private :
 void Settings::load(string filepath) {
 
 
-	//read the settings file (csv like, each line is assignment of window -> scene)
+	//read the settings file
 	std::vector<std::string> settingsElements;
 	int numValues = 0;
 	ifstream infile(filepath); 
@@ -48,10 +43,9 @@ void Settings::load(string filepath) {
 		while (lineStream.good()) {
 			getline(lineStream, value, ',');
 			settingsElements.push_back(value);
+			numValues++;
 		}
 		
-		
-		numValues++;
 	}
 
 	//create settings map containgin windowname and desired scene

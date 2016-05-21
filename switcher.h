@@ -11,13 +11,16 @@ using namespace std;
 
 class Switcher {
 public:
-	map<string, string> load();
+	bool getIsRunning();
+	void load();
+	void start();
 	void stop();
+	thread switcherThread;
 private:
+	bool isRunning = true;
 	Settings settings;
 	map<string, string> settingsMap;
+	void switcherThreadFunc();
+	bool isWindowFullscreen();
+	string GetActiveWindowTitle();
 };
-
-
-string GetActiveWindowTitle();
-void switcherThreadFunc(map<string, string> settingsMap);
