@@ -1,19 +1,14 @@
 #pragma once
 #include <map>
 
-
-#ifndef SETTINGS_H
-#define SETTINGS_H
-
 using namespace std;
 class Settings {
 	map<string, string> settings;
 public:
-	void load(string);
+	void load();
 	map<string, string> getMap();
+	string getSettingsFilePath();
 private:
+	string settingsFilePath = "..\\..\\data\\obs-plugins\\SceneSwitcher\\settings.txt";
 	void addToMap(string, string);
-
 };
-
-#endif

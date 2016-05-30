@@ -15,6 +15,7 @@ public:
 	void load();
 	void start();
 	void stop();
+	string getSettingsFilePath();
 	thread switcherThread;
 private:
 	bool isRunning = true;

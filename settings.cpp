@@ -11,28 +11,23 @@
 #include <shlwapi.h>
 #pragma comment(lib,"shlwapi.lib")
 #include "shlobj.h"
+#include "settings.h"
 
 
 using namespace std;
 
+string Settings::getSettingsFilePath()
+{
+	return settingsFilePath;
+}
 
-class Settings {
-	map<string, string> settings;
-public:
-	void load(string);
-	map<string, string> getMap();
-private :
-	void addToMap(string, string);
 
-};
-
-void Settings::load(string filepath) {
-
+void Settings::load() {
 
 	//read the settings file
 	std::vector<std::string> settingsElements;
 	int numValues = 0;
-	ifstream infile(filepath); 
+	ifstream infile(settingsFilePath);
 	string value;
 	string line;
 
