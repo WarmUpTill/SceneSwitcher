@@ -50,15 +50,12 @@ void Switcher::switcherThreadFunc() {
 		}
 
 		//do we know the window title or is a fullscreen/backup Scene set?
-		if (!(settingsMap.find("Backup Scene Name") == settingsMap.end())||match){
+		if (!(settingsMap.find("Fullscreen Scene Name") == settingsMap.end()) || !(settingsMap.find("Backup Scene Name") == settingsMap.end())||match){
 
-			if (!(settingsMap.find(windowname) == settingsMap.end())) {
-				name = settingsMap.find(windowname)->second;
-			}
-			else if (!(settingsMap.find("Fullscreen Scene Name") == settingsMap.end()) && isWindowFullscreen()) {
+			if (!match && !(settingsMap.find("Fullscreen Scene Name") == settingsMap.end()) && isWindowFullscreen()) {
 				name = settingsMap.find("Fullscreen Scene Name")->second;
 			}
-			else if (!(settingsMap.find("Backup Scene Name") == settingsMap.end())) {
+			else if (!match && !(settingsMap.find("Backup Scene Name") == settingsMap.end())) {
 				name = settingsMap.find("Backup Scene Name")->second;
 			}
 
