@@ -21,8 +21,6 @@ using namespace std;
 //scene switching is done in here
 void Switcher::switcherThreadFunc() {
 
-	
-
 	while (isRunning) {
 
 		//get active window title
@@ -46,9 +44,7 @@ void Switcher::switcherThreadFunc() {
 			{
 
 			}
-
 		}
-
 		//do we know the window title or is a fullscreen/backup Scene set?
 		if (!(settingsMap.find("Fullscreen Scene Name") == settingsMap.end()) || !(settingsMap.find("Backup Scene Name") == settingsMap.end())||match){
 
@@ -58,7 +54,6 @@ void Switcher::switcherThreadFunc() {
 			else if (!match && !(settingsMap.find("Backup Scene Name") == settingsMap.end())) {
 				name = settingsMap.find("Backup Scene Name")->second;
 			}
-
 				obs_source_t * transitionUsed = obs_get_output_source(0);
 				obs_source_t * sceneUsed = obs_transition_get_active_source(transitionUsed);
 				const char *sceneUsedName = obs_source_get_name(sceneUsed);
@@ -85,46 +80,29 @@ void Switcher::switcherThreadFunc() {
 				}
 				obs_source_release(sceneUsed);
 				obs_source_release(transitionUsed);
-			
 		}
 		//sleep for a bit
 		this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 }
 
-
-// function that checks if two given strings match. The first string may contain wildcard characters
-bool wildcardMatch(char *first, char * second)
-{
-	if (*first == '\0' && *second == '\0')
-		return true;
-
-	if (*first == '*' && *(first + 1) != '\0' && *second == '\0')
-		return false;
-
-	if (*first == '?' || *first == *second)
-		return wildcardMatch(first + 1, second + 1);
-
-	if (*first == '*')
-		return wildcardMatch(first + 1, second) || wildcardMatch(first, second + 1);
-	return false;
-}
-
 //load the settings needed to start the thread
 void Switcher::load() {
 	settings.load();
 	settingsMap = settings.getMap();
-	string message = "The following settings were found for Scene Switcher:\n";
-	for (auto it = settingsMap.cbegin(); it != settingsMap.cend(); ++it)
-	{
-		message += (it->first) + " -> " + it->second + "\n";
+	if (settingsMap.find("Disable Start Message") == settingsMap.end() || settingsMap.find("Disable Start Message")->second != "Yes") {
+		string message = "The following settings were found for Scene Switcher:\n";
+		for (auto it = settingsMap.cbegin(); it != settingsMap.cend(); ++it)
+		{
+			message += (it->first) + " -> " + it->second + "\n";
+		}
+		MessageBoxA(0, message.c_str(), "Scene Switcher", 0);
 	}
-	MessageBoxA(0, message.c_str(), "Scene Switcher", 0);
 }
 
+//start thread
 void Switcher::start()
 {
-	//start thread
 	isRunning = true;
 	switcherThread = thread(&Switcher::switcherThreadFunc, this);
 }
@@ -152,14 +130,15 @@ bool Switcher::isWindowFullscreen() {
 string Switcher::GetActiveWindowTitle()
 {
 	char wnd_title[256];
-	HWND hwnd = GetForegroundWindow(); // get handle of currently active window
+	//get handle of currently active window
+	HWND hwnd = GetForegroundWindow(); 
 	GetWindowTextA(hwnd, wnd_title, sizeof(wnd_title));
 	return wnd_title;
 }
 
 //tell the thread to stop
 void Switcher::stop() {
-	isRunning = false; //isRunning seems to be called randomly and disables the plugin (?)
+	isRunning = false;
 	switcherThread.join();
 	return;
 }
