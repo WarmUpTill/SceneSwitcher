@@ -1,10 +1,7 @@
 #pragma once
 #include "settings.h"
-#include <iostream>
 #include <map>
 #include <windows.h>
-#include <string>
-#include <chrono>
 #include <thread>
 
 using namespace std;
@@ -12,6 +9,7 @@ using namespace std;
 class Switcher {
 public:
 	bool getIsRunning();
+	void firstLoad();
 	void load();
 	void start();
 	void stop();

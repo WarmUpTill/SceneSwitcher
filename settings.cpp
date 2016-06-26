@@ -34,16 +34,17 @@ void Settings::load() {
 	while (infile.good())
 	{
 		getline(infile, line);
-		stringstream lineStream = stringstream(line);
-		while (lineStream.good()) {
-			getline(lineStream, value, ',');
-			settingsElements.push_back(value);
-			numValues++;
+		if (!line.empty()) {
+			stringstream lineStream = stringstream(line);
+			while (lineStream.good()) {
+				getline(lineStream, value, ',');
+				settingsElements.push_back(value);
+				numValues++;
+			}
 		}
-		
 	}
 
-	//create settings map containgin windowname and desired scene
+	//create settings map containing windowname and desired scene
 	for (int i = 0; i < numValues; ) {
 		string s2 = settingsElements.back();
 		settingsElements.pop_back();
@@ -51,7 +52,7 @@ void Settings::load() {
 		string s1 = settingsElements.back();
 		settingsElements.pop_back();
 		i++;
-		//window name , scene
+		//window name,scene
 		Settings::addToMap(s1, s2);
 	}
 

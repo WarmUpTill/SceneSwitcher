@@ -1,9 +1,6 @@
 #pragma once
-
-
 #include "stdafx.h"
 #include "settings.h"
-#include <iostream>
 #include <map>
 #include <windows.h>
 #include <string>
@@ -13,22 +10,15 @@
 #include <regex>
 #include "switcher.h"
 
-
-
 using namespace std;
-
 
 //scene switching is done in here
 void Switcher::switcherThreadFunc() {
-
 	while (isRunning) {
-
 		//get active window title
 		string windowname = GetActiveWindowTitle();
-
 		bool match = false;
 		string name = "";
-
 		for (std::map<string, string>::iterator iter = settingsMap.begin(); iter != settingsMap.end(); ++iter)
 		{
 			try
@@ -86,8 +76,7 @@ void Switcher::switcherThreadFunc() {
 	}
 }
 
-//load the settings needed to start the thread
-void Switcher::load() {
+void Switcher::firstLoad() {
 	settings.load();
 	settingsMap = settings.getMap();
 	if (settingsMap.find("Disable Start Message") == settingsMap.end() || settingsMap.find("Disable Start Message")->second != "Yes") {
@@ -98,6 +87,12 @@ void Switcher::load() {
 		}
 		MessageBoxA(0, message.c_str(), "Scene Switcher", 0);
 	}
+}
+
+//load the settings needed to start the thread
+void Switcher::load() {
+	settings.load();
+	settingsMap = settings.getMap();
 }
 
 //start thread
