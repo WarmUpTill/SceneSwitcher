@@ -1,12 +1,9 @@
-#pragma once
-
-#include "stdafx.h"
 #include "switcher.h"
 #include <obs-module.h>
-#include <obs-ui.h>
 #include <obs-data.h>
 #include <fstream>
 #include <string>
+#include <boost/filesystem.hpp>
 
 using namespace std;
 
@@ -22,22 +19,18 @@ obs_data_array_t *optionsHotkeyData;
 //path to config folder where to save the hotkeybinding (probably later the settings file)
 string configPath;
 
-
+//save settings (the only hotkey for now)
 void saveKeybinding(string name, obs_data_array_t *hotkeyData) {
 	name.append(".txt");
-	//save settings (the only hotkey for now)
-	wstring stemp = wstring(configPath.begin(), configPath.end());
-	LPCWSTR sw = stemp.c_str();
+
 	//check if config dir exists
-	if (CreateDirectory(sw, NULL) ||
-		ERROR_ALREADY_EXISTS == GetLastError())
-	{
+    if (boost::filesystem::create_directories(configPath)){
 		//save hotkey data
 		fstream file;
 		file.open(obs_module_config_path(name.c_str()), fstream::out);
 		//doesnt seem to work in obs_module_unload (hotkey data freed already (<- Jim))
 		//hotkeyData = obs_hotkey_save(pauseHotkeyId);
-		int num = obs_data_array_count(hotkeyData);
+		size_t num = obs_data_array_count(hotkeyData);
 		for (int i = 0; i < num; i++) {
 			string temp = obs_data_get_json(obs_data_array_item(hotkeyData, i));
 			file << temp;

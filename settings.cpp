@@ -1,16 +1,9 @@
-#pragma once
-
-#include "stdafx.h"
 #include <map>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <sstream>
 #include <vector>
-#include <tchar.h>
-#include <shlwapi.h>
-#pragma comment(lib,"shlwapi.lib")
-#include "shlobj.h"
 #include "settings.h"
 
 

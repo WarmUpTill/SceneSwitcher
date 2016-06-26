@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <string>
 
 using namespace std;
 class Settings {
@@ -9,6 +10,6 @@ public:
 	map<string, string> getMap();
 	string getSettingsFilePath();
 private:
-	string settingsFilePath = "..\\..\\data\\obs-plugins\\SceneSwitcher\\settings.txt";
+	string settingsFilePath = "/Users/Till/Desktop/SceneSwitcher/settings.txt";
 	void addToMap(string, string);
 };

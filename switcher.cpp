@@ -1,15 +1,17 @@
-#pragma once
-#include "stdafx.h"
 #include "settings.h"
 #include <map>
-#include <windows.h>
 #include <string>
 #include <chrono>
 #include <obs.h>
 #include <thread>
 #include <regex>
 #include "switcher.h"
-
+#ifdef __WINDOWS__
+    #include <windows.h>
+#endif
+#ifdef __APPLE__
+    #include <CoreFoundation/CoreFoundation.h>
+#endif
 using namespace std;
 
 //scene switching is done in here
@@ -76,6 +78,7 @@ void Switcher::switcherThreadFunc() {
 	}
 }
 
+#ifdef __WINDOWS__
 void Switcher::firstLoad() {
 	settings.load();
 	settingsMap = settings.getMap();
@@ -88,6 +91,39 @@ void Switcher::firstLoad() {
 		MessageBoxA(0, message.c_str(), "Scene Switcher", 0);
 	}
 }
+#endif
+
+#ifdef 	__APPLE__ 
+void Switcher::firstLoad() {
+    settings.load();
+    settingsMap = settings.getMap();
+    if (settingsMap.find("Disable Start Message") == settingsMap.end() || settingsMap.find("Disable Start Message")->second != "Yes") {
+        string message = "The following settings were found for Scene Switcher:\n";
+        for (auto it = settingsMap.cbegin(); it != settingsMap.cend(); ++it)
+        {
+            message += (it->first) + " -> " + it->second + "\n";
+        }
+        SInt32 nRes = 0;
+        CFUserNotificationRef pDlg = NULL;
+        const void* keys[] = { kCFUserNotificationAlertHeaderKey,
+            kCFUserNotificationAlertMessageKey };
+        const void* vals[] = {
+            CFSTR("Test Foundation Message Box"),
+            CFStringCreateWithCString(kCFAllocatorDefault,message.c_str(),kCFStringEncodingMacRoman)
+        };
+        
+        CFDictionaryRef dict = CFDictionaryCreate(0, keys, vals,
+                                                  sizeof(keys)/sizeof(*keys),
+                                                  &kCFTypeDictionaryKeyCallBacks,
+                                                  &kCFTypeDictionaryValueCallBacks);
+        
+        pDlg = CFUserNotificationCreate(kCFAllocatorDefault, 0, 
+                                        kCFUserNotificationPlainAlertLevel, 
+                                        &nRes, dict);
+    }
+}
+#endif
+
 
 //load the settings needed to start the thread
 void Switcher::load() {
@@ -103,6 +139,7 @@ void Switcher::start()
 }
 
 //checks if active window is in fullscreen
+#ifdef __WINDOWS__
 bool Switcher::isWindowFullscreen() {
 	RECT appBounds;
 	RECT rc;
@@ -120,8 +157,17 @@ bool Switcher::isWindowFullscreen() {
 	}
 	return false;
 }
+#endif
+
+#ifdef __APPLE__
+bool Switcher::isWindowFullscreen() {
+    //TODO: implement the MAC OS version
+    return false;
+}
+#endif
 
 //reads the title of the currently active window
+#ifdef __WINDOWS__
 string Switcher::GetActiveWindowTitle()
 {
 	char wnd_title[256];
@@ -130,6 +176,20 @@ string Switcher::GetActiveWindowTitle()
 	GetWindowTextA(hwnd, wnd_title, sizeof(wnd_title));
 	return wnd_title;
 }
+#endif
+
+#ifdef 	__APPLE__
+string Switcher::GetActiveWindowTitle()
+{
+    string cmd = "osascript -e 'tell application \"System Events\"' -e 'set frontApp to name of first application process whose frontmost is true' -e 'end tell'";
+    char buffer[256];
+    FILE * f = popen(cmd.c_str(), "r");
+    fgets(buffer, 255, f);
+    pclose(f);
+    return buffer;
+}
+#endif
+
 
 //tell the thread to stop
 void Switcher::stop() {
@@ -141,7 +201,7 @@ void Switcher::stop() {
 
 string Switcher::getSettingsFilePath()
 {
-	return settings.getSettingsFilePath();
+	return settings.getSettingsFilePath();;
 }
 
 bool Switcher::getIsRunning()

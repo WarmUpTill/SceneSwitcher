@@ -1,7 +1,6 @@
 #pragma once
 #include "settings.h"
 #include <map>
-#include <windows.h>
 #include <thread>
 
 using namespace std;
