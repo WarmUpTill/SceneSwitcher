@@ -12,7 +12,9 @@ public:
 	void load();
 	void start();
 	void stop();
+	void openUI();
 	string getSettingsFilePath();
+	void setSettingsFilePath(string path);
 	thread switcherThread;
 private:
 	bool isRunning = true;

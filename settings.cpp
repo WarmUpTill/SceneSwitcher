@@ -14,6 +14,11 @@ string Settings::getSettingsFilePath()
 	return settingsFilePath;
 }
 
+void Settings::setSettingsFilePath(string path)
+{
+	settingsFilePath = path.append("settings.txt");
+}
+
 
 void Settings::load() {
 

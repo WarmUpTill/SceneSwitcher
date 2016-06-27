@@ -81,6 +81,7 @@ void SceneSwitcherPauseHotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey
 	pauseHotkeyData = obs_hotkey_save(pauseHotkeyId);
 }
 
+
 bool obs_module_load(void)
 {	
 	//set config path
@@ -92,6 +93,7 @@ bool obs_module_load(void)
 	loadKeybinding(PAUSE_HOTKEY_NAME, pauseHotkeyData, pauseHotkeyId);
 	//loadKeybinding(OPTIONS_HOTKEY_NAME, optionsHotkeyData, optionsHotkeyId);
 	//load settings file
+	switcher->setSettingsFilePath(configPath);
 	switcher->firstLoad();
 	//start the switching thread
 	switcher->start();

@@ -6,7 +6,8 @@
 #include <thread>
 #include <regex>
 #include "switcher.h"
-#ifdef __WINDOWS__
+#ifdef _WIN32
+	#define NOMINMAX
     #include <windows.h>
 #endif
 #ifdef __APPLE__
@@ -78,7 +79,7 @@ void Switcher::switcherThreadFunc() {
 	}
 }
 
-#ifdef __WINDOWS__
+#ifdef _WIN32
 void Switcher::firstLoad() {
 	settings.load();
 	settingsMap = settings.getMap();
@@ -88,6 +89,7 @@ void Switcher::firstLoad() {
 		{
 			message += (it->first) + " -> " + it->second + "\n";
 		}
+		message += "\n(settings file located at: " + settings.getSettingsFilePath() + ")";
 		MessageBoxA(0, message.c_str(), "Scene Switcher", 0);
 	}
 }
@@ -103,6 +105,7 @@ void Switcher::firstLoad() {
         {
             message += (it->first) + " -> " + it->second + "\n";
         }
+		message += "\n(settings file located at: " + settings.getSettingsFilePath() + ")";
         SInt32 nRes = 0;
         CFUserNotificationRef pDlg = NULL;
         const void* keys[] = { kCFUserNotificationAlertHeaderKey,
@@ -139,7 +142,7 @@ void Switcher::start()
 }
 
 //checks if active window is in fullscreen
-#ifdef __WINDOWS__
+#ifdef _WIN32
 bool Switcher::isWindowFullscreen() {
 	RECT appBounds;
 	RECT rc;
@@ -167,7 +170,7 @@ bool Switcher::isWindowFullscreen() {
 #endif
 
 //reads the title of the currently active window
-#ifdef __WINDOWS__
+#ifdef _WIN32
 string Switcher::GetActiveWindowTitle()
 {
 	char wnd_title[256];
@@ -198,10 +201,14 @@ void Switcher::stop() {
 	return;
 }
 
-
 string Switcher::getSettingsFilePath()
 {
 	return settings.getSettingsFilePath();;
+}
+
+void Switcher::setSettingsFilePath(string path)
+{
+	settings.setSettingsFilePath(path);
 }
 
 bool Switcher::getIsRunning()

@@ -1,6 +1,7 @@
 #pragma once
 #include <map>
 #include <string>
+#include <obs-module.h>
 
 using namespace std;
 class Settings {
@@ -9,7 +10,8 @@ public:
 	void load();
 	map<string, string> getMap();
 	string getSettingsFilePath();
+	void setSettingsFilePath(string path);
 private:
-	string settingsFilePath = "/Users/Till/Desktop/SceneSwitcher/settings.txt";
+	string settingsFilePath = "";
 	void addToMap(string, string);
 };
