@@ -95,7 +95,7 @@ const char *sceneSwitcherOptionsGetName(void *type_data)
 void *sceneSwitcherOptionsCreate(obs_data_t *settings, obs_source_t *source) {
 	UNUSED_PARAMETER(settings);
 	UNUSED_PARAMETER(source);
-	return "";
+	return (void*)"";
 }
 void sceneSwitcherOptionsDestroy(void *data) {
 	UNUSED_PARAMETER(data);
@@ -161,7 +161,7 @@ obs_properties_t *sceneSwitcherOptionsSourceGetProperties(void *data)
 	obs_properties_t *props = obs_properties_create();
 	obs_properties_add_editable_list(props,
 		"WindowList", "Window Name",
-		false, "",
+		(enum obs_editable_list_type)0, "",
 		NULL);
 	obs_properties_add_button(props, "LoadOldSettings", "Load settings from old version", &loadOldSettings);
 	return props;

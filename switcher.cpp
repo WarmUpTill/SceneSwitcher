@@ -164,24 +164,38 @@ bool Switcher::isWindowFullscreen() {
 
 #ifdef __APPLE__
 bool Switcher::isWindowFullscreen() {
-    //TODO: implement the MAC OS version
-    string cmd = "osascript -e
-	'global frontApp, frontAppName, windowTitle
-	set windowTitle to ""
-	tell application \"System Events\"
-		set frontApp to first application process whose frontmost is true
-		set frontAppName to name of frontApp
-		tell process frontAppName
-			tell (1st window whose value of attribute \"AXMain\" is true)
-				set windowTitle to value of attribute \"AXTitle\"
-			end tell
-		end tell
-	end tell
+	//get screen resolution
+	string cmd = "osascript -e 'tell application \"Finder\" to get the bounds of the window of the desktop'";
+	char resolution[256];
+    FILE * f1 = popen(cmd.c_str(), "r");
+    fgets(resolution, 255, f1);
+    pclose(f1);
 
-	tell application frontAppName
-		get bounds of front window
-	end tell'";
-    return false;
+    //get window resolution
+    cmd = "osascript "
+	"-e 'global frontApp, frontAppName, windowTitle, boundsValue' "
+	"-e 'set windowTitle to \"\"' "
+	"-e 'tell application \"System Events\"' "
+		"-e 'set frontApp to first application process whose frontmost is true' "
+		"-e 'set frontAppName to name of frontApp' "
+		"-e 'tell process frontAppName' "
+			"-e 'tell (1st window whose value of attribute \"AXMain\" is true)' "
+				"-e 'set windowTitle to value of attribute \"AXTitle\"' "
+			"-e 'end tell' "
+		"-e 'end tell' "
+	"-e 'end tell' "
+	"-e 'tell application frontAppName' "
+		"-e 'set boundsValue to bounds of front window' "
+	"-e 'end tell' "
+	"-e 'return boundsValue' ";
+
+
+	char bounds[256];
+    FILE * f2 = popen(cmd.c_str(), "r");
+    fgets(bounds, 255, f2);
+    pclose(f2);
+
+    return string(resolution).compare(string(bounds)) == 0;
 }
 #endif
 
@@ -200,12 +214,28 @@ string Switcher::GetActiveWindowTitle()
 #ifdef 	__APPLE__
 string Switcher::GetActiveWindowTitle()
 {
-    string cmd = "osascript -e 'tell application \"System Events\"' -e 'set frontApp to name of first application process whose frontmost is true' -e 'end tell'";
+    string cmd = "osascript "
+	"-e 'global frontApp, frontAppName, windowTitle' "
+	"-e 'set windowTitle to \"\"' "
+	"-e 'tell application \"System Events\"' "
+		"-e 'set frontApp to first application process whose frontmost is true' "
+		"-e 'set frontAppName to name of frontApp' "
+		"-e 'tell process frontAppName' "
+			"-e 'tell (1st window whose value of attribute \"AXMain\" is true)' "
+				"-e 'set windowTitle to value of attribute \"AXTitle\"' "
+			"-e 'end tell' "
+		"-e 'end tell' "
+	"-e 'end tell' "
+	"-e 'return windowTitle' ";
+
     char buffer[256];
     FILE * f = popen(cmd.c_str(), "r");
     fgets(buffer, 255, f);
     pclose(f);
-    return buffer;
+    //osascript adds carriage return that we need to remove
+    string windowname = string(buffer);
+    windowname.pop_back();
+    return windowname;
 }
 #endif
 
