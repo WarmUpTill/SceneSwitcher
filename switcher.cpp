@@ -170,6 +170,7 @@ bool Switcher::isWindowFullscreen() {
     FILE * f1 = popen(cmd.c_str(), "r");
     fgets(resolution, 255, f1);
     pclose(f1);
+    string resolutionString = string(resolution);
 
     //get window resolution
     cmd = "osascript "
@@ -194,8 +195,9 @@ bool Switcher::isWindowFullscreen() {
     FILE * f2 = popen(cmd.c_str(), "r");
     fgets(bounds, 255, f2);
     pclose(f2);
+    string boundsString = string(bounds);
 
-    return string(resolution).compare(string(bounds)) == 0;
+    return resolutionString.compare(boundsString) == 0;
 }
 #endif
 
