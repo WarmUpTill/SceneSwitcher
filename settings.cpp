@@ -6,7 +6,6 @@
 #include <vector>
 #include "settings.h"
 
-
 using namespace std;
 
 string Settings::getSettingsFilePath()
@@ -21,19 +20,21 @@ void Settings::setSettingsFilePath(string path)
 
 
 void Settings::load() {
-
 	//read the settings file
 	std::vector<std::string> settingsElements;
 	int numValues = 0;
 	ifstream infile(settingsFilePath);
 	string value;
 	string line;
-
 	while (infile.good())
 	{
+		//read json file
 		getline(infile, line);
-		if (!line.empty()) {
-			stringstream lineStream = stringstream(line);
+		size_t pos = line.find("\"value\":");
+		if (!line.empty() && pos != -1) {
+			string temp = line.substr(pos + 10, string::npos - 1);
+			temp.pop_back();
+			stringstream lineStream = stringstream(temp);
 			while (lineStream.good()) {
 				getline(lineStream, value, ',');
 				settingsElements.push_back(value);
@@ -41,7 +42,6 @@ void Settings::load() {
 			}
 		}
 	}
-
 	//create settings map containing windowname and desired scene
 	for (int i = 0; i < numValues; ) {
 		string s2 = settingsElements.back();
@@ -53,7 +53,6 @@ void Settings::load() {
 		//window name,scene
 		Settings::addToMap(s1, s2);
 	}
-
 }
 
 void Settings::addToMap(string s1, string s2) {
