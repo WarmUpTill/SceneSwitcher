@@ -20,18 +20,22 @@ void Settings::setSettingsFilePath(string path)
 
 
 void Settings::load() {
+	//clear settings map
+	settings = map<string, string> ();
 	//read the settings file
 	std::vector<std::string> settingsElements;
 	int numValues = 0;
 	ifstream infile(settingsFilePath);
 	string value;
 	string line;
+	size_t pos = string::npos;
+	infile.seekg(0);
 	while (infile.good())
 	{
 		//read json file
 		getline(infile, line);
-		size_t pos = line.find("\"value\":");
-		if (!line.empty() && pos != -1) {
+		pos = line.find("\"value\":");
+		if (!line.empty() && pos != string::npos) {
 			string temp = line.substr(pos + 10, string::npos - 1);
 			temp.pop_back();
 			stringstream lineStream = stringstream(temp);
@@ -42,6 +46,7 @@ void Settings::load() {
 			}
 		}
 	}
+	infile.close();
 	//create settings map containing windowname and desired scene
 	for (int i = 0; i < numValues; ) {
 		string s2 = settingsElements.back();

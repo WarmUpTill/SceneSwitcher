@@ -8,6 +8,8 @@
 
 using namespace std;
 
+//temporary 
+bool oldSettingsLoaded = false;
 //Swicthing done in here
 Switcher *switcher = new Switcher();
 //settings source
@@ -35,6 +37,7 @@ void saveKeybinding(string name, obs_data_array_t *hotkeyData) {
 			string temp = obs_data_get_json(obs_data_array_item(hotkeyData, i));
 			file << temp;
 		}
+		file.close();
 	}
 }
 
@@ -50,6 +53,7 @@ string loadConfigFile(string filename)
 		settingsFile.seekg(0, ios::beg);
 		value.assign((istreambuf_iterator<char>(settingsFile)), istreambuf_iterator<char>());
 	}
+	settingsFile.close();
 	return value;
 }
 
@@ -95,7 +99,7 @@ const char *sceneSwitcherOptionsGetName(void *type_data)
 void *sceneSwitcherOptionsCreate(obs_data_t *settings, obs_source_t *source) {
 	UNUSED_PARAMETER(settings);
 	UNUSED_PARAMETER(source);
-	return (void*)"";
+	return (void*)switcher;
 }
 void sceneSwitcherOptionsDestroy(void *data) {
 	UNUSED_PARAMETER(data);
@@ -120,7 +124,7 @@ void sceneSwitcherOptionsSourceGetDefaults(obs_data_t *settings)
 bool loadOldSettings(obs_properties_t *props, obs_property_t *property, void *data)
 {
 	//read old settings
-	string oldPath = "F:/OBS/obs-studio/BUILD/rundir/Debug/data/obs-plugins/SceneSwitcher/settings.txt";
+	string oldPath = "../../data/obs-plugins/SceneSwitcher/settings.txt";
 	ifstream oldSettingsFile;
 	oldSettingsFile.open(oldPath);
 	string line;
@@ -136,6 +140,7 @@ bool loadOldSettings(obs_properties_t *props, obs_property_t *property, void *da
 				newFormat += valueBeginning + line + "\"\n" + valueEnd;
 			}
 	}
+	oldSettingsFile.close();
 	//remove trailing ',' and newline
 	newFormat.pop_back();
 	newFormat.pop_back();
@@ -146,12 +151,14 @@ bool loadOldSettings(obs_properties_t *props, obs_property_t *property, void *da
 		ofstream file;
 		file.open(string(configPath).append("settings.txt"));
 		file << newFormat;
-		//obs_property_list_clear(obs_properties_get(props, "WindowList"));
-		//obs_data_t *settings = obs_data_create_from_json(newFormat.c_str());
-		//obs_property_modified(obs_properties_get(props, "WindowList"), obs_data_create_from_json(newFormat.c_str()));
-		//obs_properties_apply_settings(props, settings);
-		//obs_property_list_item_remove(obs_properties_first(props),1);
-		//obs_properties_apply_settings(props, obs_data_create_from_json(newFormat.c_str()));
+		file.close();
+		//make sure not to overwrite the settings
+		oldSettingsLoaded = true;
+		if (switcher->getIsRunning()) {
+			switcher->stop();
+		}
+		switcher->load();
+		switcher->start();
 	}
 	return true;
 }
@@ -163,15 +170,26 @@ obs_properties_t *sceneSwitcherOptionsSourceGetProperties(void *data)
 		"WindowList", "Window Name",
 		(enum obs_editable_list_type)0, "",
 		NULL);
-	obs_properties_add_button(props, "LoadOldSettings", "Load settings from old version", &loadOldSettings);
+	obs_properties_add_button(props, "LoadOldSettings", "Load settings from old version (restart OBS after clicking this button)", &loadOldSettings);
 	return props;
 }
 void sceneSwitcherOptionsSourceSave(void *data, obs_data_t *settings)
 {
-	UNUSED_PARAMETER(data);
-	fstream settingsFile;
-	settingsFile.open(string(configPath).append("settings.txt"), fstream::in | fstream::out | ofstream::trunc);
-	settingsFile << obs_data_get_json(settings);
+	//check if user chose to load old settings
+	if (oldSettingsLoaded) {
+		//oldSettingsLoaded = false;
+	}
+	else {
+		//hang here if multiple instances of Scene Switcher Options are active (why?)
+		ofstream settingsFile;
+		settingsFile.open(string(configPath).append("settings.txt"), ofstream::trunc);
+		settingsFile << obs_data_get_json(settings);
+		settingsFile.close();
+		if (switcher->getIsRunning())
+			switcher->stop();
+		switcher->load();
+		switcher->start();
+	}
 }
 void sceneSwitcherOptionsSourceLoad(void *data, obs_data_t *settings)
 {
