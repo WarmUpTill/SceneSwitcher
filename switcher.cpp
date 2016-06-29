@@ -22,14 +22,16 @@ void Switcher::switcherThreadFunc() {
 		string windowname = GetActiveWindowTitle();
 		bool match = false;
 		string name = "";
-		for (std::map<string, string>::iterator iter = settingsMap.begin(); iter != settingsMap.end(); ++iter)
+		bool checkFullscreen = false;
+		for (std::map<string, Data>::iterator iter = settingsMap.begin(); iter != settingsMap.end(); ++iter)
 		{
 			try
 			{
 				regex e = regex(iter->first);
 				match = regex_match(windowname, e);
 				if (match) {
-					name = iter->second;
+					name = iter->second.sceneName;
+					checkFullscreen = iter->second.isFullscreen;
 					break;
 				}
 			}
@@ -38,15 +40,13 @@ void Switcher::switcherThreadFunc() {
 
 			}
 		}
-		//do we know the window title or is a fullscreen/backup Scene set?
-		if (!(settingsMap.find("Fullscreen Scene Name") == settingsMap.end()) || !(settingsMap.find("Backup Scene Name") == settingsMap.end())||match){
-
-			if (!match && !(settingsMap.find("Fullscreen Scene Name") == settingsMap.end()) && isWindowFullscreen()) {
-				name = settingsMap.find("Fullscreen Scene Name")->second;
-			}
-			else if (!match && !(settingsMap.find("Backup Scene Name") == settingsMap.end())) {
-				name = settingsMap.find("Backup Scene Name")->second;
-			}
+		//do we only switch if window is also fullscreen?
+		if (!checkFullscreen || (checkFullscreen && isWindowFullscreen())) {
+			//do we know the window title or is a fullscreen/backup Scene set?
+			if (!(settingsMap.find("Backup Scene Name") == settingsMap.end()) || match) {
+				if (!match && !(settingsMap.find("Backup Scene Name") == settingsMap.end())) {
+					name = settingsMap.find("Backup Scene Name")->second.sceneName;
+				}
 				obs_source_t * transitionUsed = obs_get_output_source(0);
 				obs_source_t * sceneUsed = obs_transition_get_active_source(transitionUsed);
 				const char *sceneUsedName = obs_source_get_name(sceneUsed);
@@ -73,6 +73,7 @@ void Switcher::switcherThreadFunc() {
 				}
 				obs_source_release(sceneUsed);
 				obs_source_release(transitionUsed);
+			}
 		}
 		//sleep for a bit
 		this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -87,7 +88,7 @@ void Switcher::firstLoad() {
 		string message = "The following settings were found for Scene Switcher:\n";
 		for (auto it = settingsMap.cbegin(); it != settingsMap.cend(); ++it)
 		{
-			message += (it->first) + " -> " + it->second + "\n";
+			message += (it->first) + " -> " + it->second.sceneName + "\n";
 		}
 		message += "\n(settings file located at: " + settings.getSettingsFilePath() + ")";
 		MessageBoxA(0, message.c_str(), "Scene Switcher", 0);
@@ -103,7 +104,7 @@ void Switcher::firstLoad() {
         string message = "The following settings were found for Scene Switcher:\n";
         for (auto it = settingsMap.cbegin(); it != settingsMap.cend(); ++it)
         {
-            message += (it->first) + " -> " + it->second + "\n";
+            message += (it->first) + " -> " + it->second.sceneName + "\n";
         }
 		message += "\n(settings file located at: " + settings.getSettingsFilePath() + ")";
         SInt32 nRes = 0;

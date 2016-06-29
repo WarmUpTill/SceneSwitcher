@@ -18,23 +18,21 @@ void Settings::setSettingsFilePath(string path)
 	settingsFilePath = path.append("settings.txt");
 }
 
-
 void Settings::load() {
 	//clear settings map
-	settings = map<string, string> ();
+	settings = map<string, Data> ();
 	//read the settings file
-	std::vector<std::string> settingsElements;
-	int numValues = 0;
+	vector<string> settingsElements;
 	ifstream infile(settingsFilePath);
 	string value;
 	string line;
 	size_t pos = string::npos;
-	int valueCheck;
+	int numValues;
 	bool startMessageDisableFound = false;
 	infile.seekg(0);
 	while (infile.good())
 	{
-		valueCheck = 0;
+		numValues = 0;
 		//read json file
 		getline(infile, line);
 		//disable the start message?
@@ -51,36 +49,36 @@ void Settings::load() {
 			string temp = line.substr(pos + 10, string::npos - 1);
 			temp.pop_back();
 			stringstream lineStream = stringstream(temp);
+			numValues = 0;
 			while (lineStream.good()) {
 				getline(lineStream, value, ',');
 				settingsElements.push_back(value);
-				valueCheck++;
 				numValues++;
 			}
 			//two values per line are expected
 			//add missing value
-			if(valueCheck < 2) { 
+			if(numValues < 3) { 
 				settingsElements.push_back("");
 			}
 			//discard additional values
-			for (valueCheck; valueCheck > 2; valueCheck--) { 
+			for (numValues; numValues > 3; numValues--) { 
 				settingsElements.pop_back();
-				numValues--;
 			}
+
+			//assing to data
+			Data d = Data();
+			string isFullscreen = settingsElements.back();
+			d.isFullscreen = (isFullscreen.find("isFullscreen") == string::npos) ? false : true;
+			settingsElements.pop_back();
+			string sceneName = settingsElements.back();
+			d.sceneName = sceneName;
+			settingsElements.pop_back();
+			string windowName = settingsElements.back();
+			Settings::addToMap(windowName,d);
+			settingsElements.pop_back();
 		}
 	}
 	infile.close();
-	//create settings map containing windowname and desired scene
-	for (int i = 0; i < numValues; ) {
-		string s2 = settingsElements.back();
-		settingsElements.pop_back();
-		i++;
-		string s1 = settingsElements.back();
-		settingsElements.pop_back();
-		i++;
-		//window name,scene
-		Settings::addToMap(s1, s2);
-	}
 }
 
 bool Settings::getStartMessageDisable()
@@ -88,11 +86,11 @@ bool Settings::getStartMessageDisable()
 	return startMessageDisable;
 }
 
-void Settings::addToMap(string s1, string s2) {
-	settings.insert(pair<string, string>(s1, s2));
+void Settings::addToMap(string s1, Data s2) {
+	settings.insert(pair<string, Data>(s1, s2));
 }
 
-map<string, string> Settings::getMap() {
+map<string, Data> Settings::getMap() {
 	return settings;
 }
 

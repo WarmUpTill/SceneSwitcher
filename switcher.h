@@ -19,7 +19,7 @@ public:
 private:
 	bool isRunning = true;
 	Settings settings;
-	map<string, string> settingsMap;
+	map<string, Data> settingsMap;
 	void switcherThreadFunc();
 	bool isWindowFullscreen();
 	string GetActiveWindowTitle();
