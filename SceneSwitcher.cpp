@@ -33,7 +33,7 @@ void saveKeybinding(string name, obs_data_array_t *hotkeyData) {
 		file.open(string(configPath).append(name), ofstream::trunc);
 		//hotkeyData = obs_hotkey_save(pauseHotkeyId); 	//doesnt seem to work in obs_module_unload (hotkey data freed already (<- Jim))
 		size_t num = obs_data_array_count(hotkeyData);
-		for (int i = 0; i < num; i++) {
+		for (size_t i = 0; i < num; i++) {
 			string temp = obs_data_get_json(obs_data_array_item(hotkeyData, i));
 			file << temp;
 		}
@@ -166,11 +166,12 @@ obs_properties_t *sceneSwitcherOptionsSourceGetProperties(void *data)
 {
 	UNUSED_PARAMETER(data);
 	obs_properties_t *props = obs_properties_create();
+	obs_properties_add_bool(props,"StartMessageDisable","Disable Start Message");
 	obs_properties_add_editable_list(props,
 		"WindowList", "Window Name",
 		(enum obs_editable_list_type)0, "",
 		NULL);
-	obs_properties_add_button(props, "LoadOldSettings", "Load settings from old version (restart OBS after clicking this button)", &loadOldSettings);
+	obs_properties_add_button(props, "LoadOldSettings", "Load settings from old version of this plugin (restart OBS after clicking this button)", &loadOldSettings);
 	return props;
 }
 void sceneSwitcherOptionsSourceSave(void *data, obs_data_t *settings)

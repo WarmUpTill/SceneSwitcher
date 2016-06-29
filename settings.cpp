@@ -30,12 +30,22 @@ void Settings::load() {
 	string line;
 	size_t pos = string::npos;
 	int valueCheck;
+	bool startMessageDisableFound = false;
 	infile.seekg(0);
 	while (infile.good())
 	{
 		valueCheck = 0;
 		//read json file
 		getline(infile, line);
+		//disable the start message?
+		if (!startMessageDisableFound) {
+			pos = line.find("\"StartMessageDisable\": ");
+				if (pos != string::npos) {
+					startMessageDisableFound = true;
+					startMessageDisable = line.find("true") == string::npos ? false : true;
+				}
+		}
+		//get switcher info
 		pos = line.find("\"value\":");
 		if (!line.empty() && pos != string::npos) {
 			string temp = line.substr(pos + 10, string::npos - 1);
@@ -71,6 +81,11 @@ void Settings::load() {
 		//window name,scene
 		Settings::addToMap(s1, s2);
 	}
+}
+
+bool Settings::getStartMessageDisable()
+{
+	return startMessageDisable;
 }
 
 void Settings::addToMap(string s1, string s2) {

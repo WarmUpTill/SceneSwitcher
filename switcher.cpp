@@ -83,7 +83,7 @@ void Switcher::switcherThreadFunc() {
 void Switcher::firstLoad() {
 	settings.load();
 	settingsMap = settings.getMap();
-	if (settingsMap.find("Disable Start Message") == settingsMap.end() || settingsMap.find("Disable Start Message")->second != "Yes") {
+	if (!settings.getStartMessageDisable()) {
 		string message = "The following settings were found for Scene Switcher:\n";
 		for (auto it = settingsMap.cbegin(); it != settingsMap.cend(); ++it)
 		{
@@ -99,7 +99,7 @@ void Switcher::firstLoad() {
 void Switcher::firstLoad() {
     settings.load();
     settingsMap = settings.getMap();
-    if (settingsMap.find("Disable Start Message") == settingsMap.end() || settingsMap.find("Disable Start Message")->second != "Yes") {
+    if (!settings.getStartMessageDisable()) {
         string message = "The following settings were found for Scene Switcher:\n";
         for (auto it = settingsMap.cbegin(); it != settingsMap.cend(); ++it)
         {
