@@ -29,9 +29,11 @@ void Settings::load() {
 	string value;
 	string line;
 	size_t pos = string::npos;
+	int valueCheck;
 	infile.seekg(0);
 	while (infile.good())
 	{
+		valueCheck = 0;
 		//read json file
 		getline(infile, line);
 		pos = line.find("\"value\":");
@@ -42,7 +44,18 @@ void Settings::load() {
 			while (lineStream.good()) {
 				getline(lineStream, value, ',');
 				settingsElements.push_back(value);
+				valueCheck++;
 				numValues++;
+			}
+			//two values per line are expected
+			//add missing value
+			if(valueCheck < 2) { 
+				settingsElements.push_back("");
+			}
+			//discard additional values
+			for (valueCheck; valueCheck > 2; valueCheck--) { 
+				settingsElements.pop_back();
+				numValues--;
 			}
 		}
 	}
