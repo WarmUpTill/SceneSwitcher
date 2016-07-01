@@ -168,7 +168,7 @@ obs_properties_t *sceneSwitcherOptionsSourceGetProperties(void *data)
 	obs_properties_t *props = obs_properties_create();
 	obs_properties_add_bool(props,"StartMessageDisable","Disable Start Message");
 	obs_properties_add_editable_list(props,
-		"WindowList", "Window Name",
+		"WindowList", "",
 		(enum obs_editable_list_type)0, "",
 		NULL);
 	obs_properties_add_button(props, "LoadOldSettings", "Load settings from old version of this plugin (restart OBS after clicking this button)", &loadOldSettings);
