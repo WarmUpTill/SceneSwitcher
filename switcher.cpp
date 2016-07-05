@@ -175,21 +175,15 @@ bool Switcher::isWindowFullscreen() {
 
     //get window resolution
     cmd = "osascript "
-	"-e 'global frontApp, frontAppName, windowTitle, boundsValue' "
-	"-e 'set windowTitle to \"\"' "
 	"-e 'tell application \"System Events\"' "
-		"-e 'set frontApp to first application process whose frontmost is true' "
-		"-e 'set frontAppName to name of frontApp' "
-		"-e 'tell process frontAppName' "
-			"-e 'tell (1st window whose value of attribute \"AXMain\" is true)' "
-				"-e 'set windowTitle to value of attribute \"AXTitle\"' "
-			"-e 'end tell' "
-		"-e 'end tell' "
+		"-e 'set frontApp to name of first application process whose frontmost is true' "
 	"-e 'end tell' "
-	"-e 'tell application frontAppName' "
-		"-e 'set boundsValue to bounds of front window' "
-	"-e 'end tell' "
-	"-e 'return boundsValue' ";
+	"-e 'tell application frontApp' "
+		"-e 'if the (count of windows) is not 0 then' "
+			"-e 'set window_name to name of front window' "
+			"-e 'set boundvalue to bounds of front window' "
+		"-e 'end if' "
+	"-e 'end tell' ";
 
 
 	char bounds[256];
@@ -218,18 +212,14 @@ string Switcher::GetActiveWindowTitle()
 string Switcher::GetActiveWindowTitle()
 {
     string cmd = "osascript "
-	"-e 'global frontApp, frontAppName, windowTitle' "
-	"-e 'set windowTitle to \"\"' "
 	"-e 'tell application \"System Events\"' "
-		"-e 'set frontApp to first application process whose frontmost is true' "
-		"-e 'set frontAppName to name of frontApp' "
-		"-e 'tell process frontAppName' "
-			"-e 'tell (1st window whose value of attribute \"AXMain\" is true)' "
-				"-e 'set windowTitle to value of attribute \"AXTitle\"' "
-			"-e 'end tell' "
-		"-e 'end tell' "
+		"-e 'set frontApp to name of first application process whose frontmost is true' "
 	"-e 'end tell' "
-	"-e 'return windowTitle' ";
+	"-e 'tell application frontApp' "
+		"-e 'if the (count of windows) is not 0 then' "
+			"-e 'set window_name to name of front window' "
+		"-e 'end if' "
+	"-e 'end tell' ";
 
     char buffer[256];
     FILE * f = popen(cmd.c_str(), "r");
