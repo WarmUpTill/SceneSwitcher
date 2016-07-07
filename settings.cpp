@@ -26,21 +26,22 @@ void Settings::load() {
 	ifstream infile(settingsFilePath);
 	string value;
 	string line;
-	size_t pos = string::npos;
+	size_t pos;
 	int numValues;
 	bool startMessageDisableFound = false;
 	infile.seekg(0);
 	while (infile.good())
 	{
+		pos = line.npos;
 		numValues = 0;
 		//read json file
 		getline(infile, line);
 		//disable the start message?
 		if (!startMessageDisableFound) {
 			pos = line.find("\"StartMessageDisable\": ");
-				if (pos != string::npos) {
+				if (pos != line.npos) {
 					startMessageDisableFound = true;
-					startMessageDisable = line.find("true") == string::npos ? false : true;
+					startMessageDisable = line.find("true") == line.npos ? false : true;
 				}
 		}
 		//get switcher info
