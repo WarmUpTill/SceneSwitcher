@@ -23,21 +23,30 @@ void Switcher::switcherThreadFunc() {
 		bool match = false;
 		string name = "";
 		bool checkFullscreen = false;
-		for (std::map<string, Data>::iterator iter = settingsMap.begin(); iter != settingsMap.end(); ++iter)
-		{
-			try
+		//first check if there is a direct match
+		map<string, Data>::iterator it = settingsMap.find(windowname);
+		if (it != settingsMap.end()) {
+			name = it->second.sceneName;
+			checkFullscreen = it->second.isFullscreen;
+			match = true;
+		}
+		else {
+			for (map<string, Data>::iterator iter = settingsMap.begin(); iter != settingsMap.end(); ++iter)
 			{
-				regex e = regex(iter->first);
-				match = regex_match(windowname, e);
-				if (match) {
-					name = iter->second.sceneName;
-					checkFullscreen = iter->second.isFullscreen;
-					break;
+				try
+				{
+					regex e = regex(iter->first);
+					match = regex_match(windowname, e);
+					if (match) {
+						name = iter->second.sceneName;
+						checkFullscreen = iter->second.isFullscreen;
+						break;
+					}
 				}
-			}
-			catch(...)
-			{
+				catch (...)
+				{
 
+				}
 			}
 		}
 		//do we only switch if window is also fullscreen?
@@ -76,7 +85,7 @@ void Switcher::switcherThreadFunc() {
 			}
 		}
 		//sleep for a bit
-		this_thread::sleep_for(std::chrono::milliseconds(1000));
+		this_thread::sleep_for(chrono::milliseconds(1000));
 	}
 }
 
@@ -208,7 +217,7 @@ string Switcher::GetActiveWindowTitle()
 {
 	char wnd_title[256];
 	//get handle of currently active window
-	HWND hwnd = GetForegroundWindow(); 
+	HWND hwnd = GetForegroundWindow();
 	GetWindowTextA(hwnd, wnd_title, sizeof(wnd_title));
 	return wnd_title;
 }
