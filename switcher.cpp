@@ -7,85 +7,114 @@
 #include <regex>
 #include "switcher.h"
 #ifdef _WIN32
-	#define NOMINMAX
-    #include <windows.h>
+#define NOMINMAX
+#include <windows.h>
 #endif
 #ifdef __APPLE__
-    #include <CoreFoundation/CoreFoundation.h>
+#include <CoreFoundation/CoreFoundation.h>
 #endif
 using namespace std;
 
 //scene switching is done in here
 void Switcher::switcherThreadFunc() {
+	bool sceneRoundTripActive = false;
+	size_t roundTripPos = 0;
+	bool match = false;
+	string windowname = "";
+	string sceneName = "";
+	bool checkFullscreen = false;
 	while (isRunning) {
-		//get active window title
-		string windowname = GetActiveWindowTitle();
-		bool match = false;
-		string name = "";
-		bool checkFullscreen = false;
-		//first check if there is a direct match
-		map<string, Data>::iterator it = settingsMap.find(windowname);
-		if (it != settingsMap.end()) {
-			name = it->second.sceneName;
-			checkFullscreen = it->second.isFullscreen;
-			match = true;
+		//get Scene Name
+		obs_source_t * transitionUsed = obs_get_output_source(0);
+		obs_source_t * sceneUsed = obs_transition_get_active_source(transitionUsed);
+		const char *sceneUsedName = obs_source_get_name(sceneUsed);
+		//check if a Scene Round Trip should be started
+		if ((sceneUsedName) && strcmp(sceneUsedName, sceneRoundTrip.front().c_str()) == 0) {
+			sceneRoundTripActive = true;
+			roundTripPos = 1;
 		}
-		else {
-			for (map<string, Data>::iterator iter = settingsMap.begin(); iter != settingsMap.end(); ++iter)
-			{
-				try
-				{
-					regex e = regex(iter->first);
-					match = regex_match(windowname, e);
-					if (match) {
-						name = iter->second.sceneName;
-						checkFullscreen = iter->second.isFullscreen;
-						break;
-					}
-				}
-				catch (...)
-				{
-
-				}
+		if (sceneRoundTripActive) {
+			//get delay and wait
+			try {
+				this_thread::sleep_for(chrono::milliseconds(1000 * stoi(sceneRoundTrip.at(roundTripPos), nullptr, 10)));
 			}
-		}
-		//do we only switch if window is also fullscreen?
-		if (!checkFullscreen || (checkFullscreen && isWindowFullscreen())) {
-			//do we know the window title or is a fullscreen/backup Scene set?
-			if (!(settingsMap.find("Backup Scene Name") == settingsMap.end()) || match) {
-				if (!match && !(settingsMap.find("Backup Scene Name") == settingsMap.end())) {
-					name = settingsMap.find("Backup Scene Name")->second.sceneName;
-				}
+			catch (...) {
+				//just wait for 3 seconds if value was not set properly
+				this_thread::sleep_for(chrono::milliseconds(3000));
+			}
+			//are we done with the Scene Round trip?
+			if (roundTripPos + 1 >= sceneRoundTrip.size()) {
+				sceneRoundTripActive = false;
+				roundTripPos = 0;
+			}
+			else {
+				//switch scene
+				sceneName = sceneRoundTrip.at(roundTripPos + 1);
 				obs_source_t * transitionUsed = obs_get_output_source(0);
-				obs_source_t * sceneUsed = obs_transition_get_active_source(transitionUsed);
-				const char *sceneUsedName = obs_source_get_name(sceneUsed);
-				//check if current scene is already the desired scene
-				if ((sceneUsedName) && strcmp(sceneUsedName, name.c_str()) != 0) {
-					//switch scene
-					obs_source_t *source = obs_get_source_by_name(name.c_str());
-					if (source == NULL)
-					{
-						//warn("Source not found: \"%s\"", name);
-						;
-					}
-					else if (obs_scene_from_source(source) == NULL)
-					{
-						//warn("\"%s\" is not a scene", name);
-						;
-					}
-					else {
-						//create transition to new scene (otherwise UI wont work anymore)
-						//OBS_TRANSITION_MODE_AUTO uses the obs user settings for transitions
-						obs_transition_start(transitionUsed, OBS_TRANSITION_MODE_AUTO, 300, source);
-					}
-					obs_source_release(source);
+				obs_source_t *source = obs_get_source_by_name(sceneName.c_str());
+				if (source != NULL) {
+					//create transition to new scene
+					obs_transition_start(transitionUsed, OBS_TRANSITION_MODE_AUTO, 300, source); //OBS_TRANSITION_MODE_AUTO uses the obs user settings for transitions
 				}
-				obs_source_release(sceneUsed);
-				obs_source_release(transitionUsed);
+				obs_source_release(source);
+				//prepare for next sceneName,Delay pair
+				roundTripPos += 2;
 			}
 		}
-		//sleep for a bit
-		this_thread::sleep_for(chrono::milliseconds(1000));
+		//normal scene switching here
+		else {
+			//get active window title and reset values
+			windowname = GetActiveWindowTitle();
+			match = false;
+			sceneName = "";
+			checkFullscreen = false;
+			//first check if there is a direct match
+			map<string, Data>::iterator it = settingsMap.find(windowname);
+			if (it != settingsMap.end()) {
+				sceneName = it->second.sceneName;
+				checkFullscreen = it->second.isFullscreen;
+				match = true;
+			}
+			else {
+				//maybe there is a regular expression match
+				for (map<string, Data>::iterator iter = settingsMap.begin(); iter != settingsMap.end(); ++iter)
+				{
+					try {
+						regex e = regex(iter->first);
+						match = regex_match(windowname, e);
+						if (match) {
+							sceneName = iter->second.sceneName;
+							checkFullscreen = iter->second.isFullscreen;
+							break;
+						}
+					}
+					catch (...) {}
+				}
+			}
+			//do we only switch if window is also fullscreen?
+			if (!checkFullscreen || (checkFullscreen && isWindowFullscreen())) {
+				//do we know the window title or is a fullscreen/backup Scene set?
+				if (!(settingsMap.find("Backup Scene Name") == settingsMap.end()) || match) {
+					if (!match && !(settingsMap.find("Backup Scene Name") == settingsMap.end())) {
+						sceneName = settingsMap.find("Backup Scene Name")->second.sceneName;
+					}
+					//check if current scene is already the desired scene
+					if ((sceneUsedName) && strcmp(sceneUsedName, sceneName.c_str()) != 0) {
+						//switch scene
+						obs_source_t *source = obs_get_source_by_name(sceneName.c_str());
+						if (source != NULL) {
+							//create transition to new scene (otherwise UI wont work anymore)
+							obs_transition_start(transitionUsed, OBS_TRANSITION_MODE_AUTO, 300, source); //OBS_TRANSITION_MODE_AUTO uses the obs user settings for transitions
+						}
+						obs_source_release(source);
+					}
+					obs_source_release(sceneUsed);
+					obs_source_release(transitionUsed);
+				}
+			}
+			//sleep for a bit
+			this_thread::sleep_for(chrono::milliseconds(1000));
+		}
 	}
 }
 
@@ -93,6 +122,7 @@ void Switcher::switcherThreadFunc() {
 void Switcher::firstLoad() {
 	settings.load();
 	settingsMap = settings.getMap();
+	sceneRoundTrip = settings.getSceneRoundTrip();
 	if (!settings.getStartMessageDisable()) {
 		string message = "The following settings were found for Scene Switcher:\n";
 		for (auto it = settingsMap.cbegin(); it != settingsMap.cend(); ++it)
@@ -107,33 +137,34 @@ void Switcher::firstLoad() {
 
 #ifdef 	__APPLE__ 
 void Switcher::firstLoad() {
-    settings.load();
-    settingsMap = settings.getMap();
-    if (!settings.getStartMessageDisable()) {
-        string message = "The following settings were found for Scene Switcher:\n";
-        for (auto it = settingsMap.cbegin(); it != settingsMap.cend(); ++it)
-        {
-            message += (it->first) + " -> " + it->second.sceneName + "\n";
-        }
+	settings.load();
+	settingsMap = settings.getMap();
+	sceneRoundTrip = settings.getSceneRoundTrip();
+	if (!settings.getStartMessageDisable()) {
+		string message = "The following settings were found for Scene Switcher:\n";
+		for (auto it = settingsMap.cbegin(); it != settingsMap.cend(); ++it)
+		{
+			message += (it->first) + " -> " + it->second.sceneName + "\n";
+		}
 		message += "\n(settings file located at: " + settings.getSettingsFilePath() + ")";
-        SInt32 nRes = 0;
-        CFUserNotificationRef pDlg = NULL;
-        const void* keys[] = { kCFUserNotificationAlertHeaderKey,
-            kCFUserNotificationAlertMessageKey };
-        const void* vals[] = {
-            CFSTR("Test Foundation Message Box"),
-            CFStringCreateWithCString(kCFAllocatorDefault,message.c_str(),kCFStringEncodingMacRoman)
-        };
-        
-        CFDictionaryRef dict = CFDictionaryCreate(0, keys, vals,
-                                                  sizeof(keys)/sizeof(*keys),
-                                                  &kCFTypeDictionaryKeyCallBacks,
-                                                  &kCFTypeDictionaryValueCallBacks);
-        
-        pDlg = CFUserNotificationCreate(kCFAllocatorDefault, 0, 
-                                        kCFUserNotificationPlainAlertLevel, 
-                                        &nRes, dict);
-    }
+		SInt32 nRes = 0;
+		CFUserNotificationRef pDlg = NULL;
+		const void* keys[] = { kCFUserNotificationAlertHeaderKey,
+			kCFUserNotificationAlertMessageKey };
+		const void* vals[] = {
+			CFSTR("Test Foundation Message Box"),
+			CFStringCreateWithCString(kCFAllocatorDefault,message.c_str(),kCFStringEncodingMacRoman)
+		};
+
+		CFDictionaryRef dict = CFDictionaryCreate(0, keys, vals,
+			sizeof(keys) / sizeof(*keys),
+			&kCFTypeDictionaryKeyCallBacks,
+			&kCFTypeDictionaryValueCallBacks);
+
+		pDlg = CFUserNotificationCreate(kCFAllocatorDefault, 0,
+			kCFUserNotificationPlainAlertLevel,
+			&nRes, dict);
+	}
 }
 #endif
 
@@ -141,6 +172,7 @@ void Switcher::firstLoad() {
 //load the settings needed to start the thread
 void Switcher::load() {
 	settings.load();
+	sceneRoundTrip = settings.getSceneRoundTrip();
 	settingsMap = settings.getMap();
 }
 
@@ -177,37 +209,37 @@ bool Switcher::isWindowFullscreen() {
 	//get screen resolution
 	string cmd = "osascript -e 'tell application \"Finder\" to get the bounds of the window of the desktop'";
 	char resolution[256];
-    FILE * f1 = popen(cmd.c_str(), "r");
-    fgets(resolution, 255, f1);
-    pclose(f1);
-    string resolutionString = string(resolution);
+	FILE * f1 = popen(cmd.c_str(), "r");
+	fgets(resolution, 255, f1);
+	pclose(f1);
+	string resolutionString = string(resolution);
 
-    //get window resolution
-    cmd = "osascript "
-	"-e 'global frontApp, frontAppName, windowTitle, boundsValue' "
-	"-e 'set windowTitle to \"\"' "
-	"-e 'tell application \"System Events\"' "
+	//get window resolution
+	cmd = "osascript "
+		"-e 'global frontApp, frontAppName, windowTitle, boundsValue' "
+		"-e 'set windowTitle to \"\"' "
+		"-e 'tell application \"System Events\"' "
 		"-e 'set frontApp to first application process whose frontmost is true' "
 		"-e 'set frontAppName to name of frontApp' "
 		"-e 'tell process frontAppName' "
-			"-e 'tell (1st window whose value of attribute \"AXMain\" is true)' "
-				"-e 'set windowTitle to value of attribute \"AXTitle\"' "
-			"-e 'end tell' "
+		"-e 'tell (1st window whose value of attribute \"AXMain\" is true)' "
+		"-e 'set windowTitle to value of attribute \"AXTitle\"' "
 		"-e 'end tell' "
-	"-e 'end tell' "
-	"-e 'tell application frontAppName' "
+		"-e 'end tell' "
+		"-e 'end tell' "
+		"-e 'tell application frontAppName' "
 		"-e 'set boundsValue to bounds of front window' "
-	"-e 'end tell' "
-	"-e 'return boundsValue' ";
+		"-e 'end tell' "
+		"-e 'return boundsValue' ";
 
 
 	char bounds[256];
-    FILE * f2 = popen(cmd.c_str(), "r");
-    fgets(bounds, 255, f2);
-    pclose(f2);
-    string boundsString = string(bounds);
+	FILE * f2 = popen(cmd.c_str(), "r");
+	fgets(bounds, 255, f2);
+	pclose(f2);
+	string boundsString = string(bounds);
 
-    return resolutionString.compare(boundsString) == 0;
+	return resolutionString.compare(boundsString) == 0;
 }
 #endif
 
@@ -226,28 +258,28 @@ string Switcher::GetActiveWindowTitle()
 #ifdef 	__APPLE__
 string Switcher::GetActiveWindowTitle()
 {
-    string cmd = "osascript "
-	"-e 'global frontApp, frontAppName, windowTitle' "
-	"-e 'set windowTitle to \"\"' "
-	"-e 'tell application \"System Events\"' "
+	string cmd = "osascript "
+		"-e 'global frontApp, frontAppName, windowTitle' "
+		"-e 'set windowTitle to \"\"' "
+		"-e 'tell application \"System Events\"' "
 		"-e 'set frontApp to first application process whose frontmost is true' "
 		"-e 'set frontAppName to name of frontApp' "
 		"-e 'tell process frontAppName' "
-			"-e 'tell (1st window whose value of attribute \"AXMain\" is true)' "
-				"-e 'set windowTitle to value of attribute \"AXTitle\"' "
-			"-e 'end tell' "
+		"-e 'tell (1st window whose value of attribute \"AXMain\" is true)' "
+		"-e 'set windowTitle to value of attribute \"AXTitle\"' "
 		"-e 'end tell' "
-	"-e 'end tell' "
-	"-e 'return windowTitle' ";
+		"-e 'end tell' "
+		"-e 'end tell' "
+		"-e 'return windowTitle' ";
 
-    char buffer[256];
-    FILE * f = popen(cmd.c_str(), "r");
-    fgets(buffer, 255, f);
-    pclose(f);
-    //osascript adds carriage return that we need to remove
-    string windowname = string(buffer);
-    windowname.pop_back();
-    return windowname;
+	char buffer[256];
+	FILE * f = popen(cmd.c_str(), "r");
+	fgets(buffer, 255, f);
+	pclose(f);
+	//osascript adds carriage return that we need to remove
+	string windowname = string(buffer);
+	windowname.pop_back();
+	return windowname;
 }
 #endif
 

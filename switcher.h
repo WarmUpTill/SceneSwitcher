@@ -1,6 +1,7 @@
 #pragma once
 #include "settings.h"
 #include <map>
+#include <vector>
 #include <thread>
 
 using namespace std;
@@ -20,6 +21,7 @@ private:
 	bool isRunning = true;
 	Settings settings;
 	map<string, Data> settingsMap;
+	vector<string> sceneRoundTrip;
 	void switcherThreadFunc();
 	bool isWindowFullscreen();
 	string GetActiveWindowTitle();

@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <vector>
 #include <string>
 #include <obs-module.h>
 
@@ -11,15 +12,16 @@ struct Data {
 };
 
 class Settings {
+	vector<string> sceneRoundTrip;
 	map<string, Data> settings;
 	bool startMessageDisable = false;
 public:
 	void load();
 	bool getStartMessageDisable();
 	map<string, Data> getMap();
+	vector<string> getSceneRoundTrip();
 	string getSettingsFilePath();
 	void setSettingsFilePath(string path);
 private:
 	string settingsFilePath = "";
-	void addToMap(string, Data);
 };
