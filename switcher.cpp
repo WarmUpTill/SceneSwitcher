@@ -38,91 +38,91 @@ void Switcher::switcherThreadFunc() {
 		}
 		//are we in pause mode?
 		if (!pauseSwitching) {
-		//check if a Scene Round Trip should be started
-		if ((sceneUsedName) && strcmp(sceneUsedName, sceneRoundTrip.front().c_str()) == 0) {
-			sceneRoundTripActive = true;
-			roundTripPos = 1;
-		}
-		if (sceneRoundTripActive) {
-			//get delay and wait
-			try {
-				this_thread::sleep_for(chrono::milliseconds(1000 * stoi(sceneRoundTrip.at(roundTripPos), nullptr, 10)));
+			//check if a Scene Round Trip should be started
+			if ((sceneUsedName) && sceneRoundTrip.size() > 0 && strcmp(sceneUsedName, sceneRoundTrip.front().c_str()) == 0) {
+				sceneRoundTripActive = true;
+				roundTripPos = 1;
 			}
-			catch (...) {
-				//just wait for 3 seconds if value was not set properly
-				this_thread::sleep_for(chrono::milliseconds(3000));
+			if (sceneRoundTripActive) {
+				//get delay and wait
+				try {
+					this_thread::sleep_for(chrono::milliseconds(1000 * stoi(sceneRoundTrip.at(roundTripPos), nullptr, 10)));
+				}
+				catch (...) {
+					//just wait for 3 seconds if value was not set properly
+					this_thread::sleep_for(chrono::milliseconds(3000));
+				}
+				//are we done with the Scene Round trip?
+				if (roundTripPos + 1 >= sceneRoundTrip.size()) {
+					sceneRoundTripActive = false;
+					roundTripPos = 0;
+				}
+				else {
+					//switch scene
+					sceneName = sceneRoundTrip.at(roundTripPos + 1);
+					obs_source_t * transitionUsed = obs_get_output_source(0);
+					obs_source_t *source = obs_get_source_by_name(sceneName.c_str());
+					if (source != NULL) {
+						//create transition to new scene
+						obs_transition_start(transitionUsed, OBS_TRANSITION_MODE_AUTO, 300, source); //OBS_TRANSITION_MODE_AUTO uses the obs user settings for transitions
+					}
+					obs_source_release(source);
+					//prepare for next sceneName,Delay pair
+					roundTripPos += 2;
+				}
 			}
-			//are we done with the Scene Round trip?
-			if (roundTripPos + 1 >= sceneRoundTrip.size()) {
-				sceneRoundTripActive = false;
-				roundTripPos = 0;
-			}
+			//normal scene switching here
 			else {
-				//switch scene
-				sceneName = sceneRoundTrip.at(roundTripPos + 1);
-				obs_source_t * transitionUsed = obs_get_output_source(0);
-				obs_source_t *source = obs_get_source_by_name(sceneName.c_str());
-				if (source != NULL) {
-					//create transition to new scene
-					obs_transition_start(transitionUsed, OBS_TRANSITION_MODE_AUTO, 300, source); //OBS_TRANSITION_MODE_AUTO uses the obs user settings for transitions
+				//get active window title and reset values
+				windowname = GetActiveWindowTitle();
+				match = false;
+				sceneName = "";
+				checkFullscreen = false;
+				//first check if there is a direct match
+				map<string, Data>::iterator it = settingsMap.find(windowname);
+				if (it != settingsMap.end()) {
+					sceneName = it->second.sceneName;
+					checkFullscreen = it->second.isFullscreen;
+					match = true;
 				}
-				obs_source_release(source);
-				//prepare for next sceneName,Delay pair
-				roundTripPos += 2;
-			}
-		}
-		//normal scene switching here
-		else {
-			//get active window title and reset values
-			windowname = GetActiveWindowTitle();
-			match = false;
-			sceneName = "";
-			checkFullscreen = false;
-			//first check if there is a direct match
-			map<string, Data>::iterator it = settingsMap.find(windowname);
-			if (it != settingsMap.end()) {
-				sceneName = it->second.sceneName;
-				checkFullscreen = it->second.isFullscreen;
-				match = true;
-			}
-			else {
-				//maybe there is a regular expression match
-				for (map<string, Data>::iterator iter = settingsMap.begin(); iter != settingsMap.end(); ++iter)
-				{
-					try {
-						regex e = regex(iter->first);
-						match = regex_match(windowname, e);
-						if (match) {
-							sceneName = iter->second.sceneName;
-							checkFullscreen = iter->second.isFullscreen;
-							break;
+				else {
+					//maybe there is a regular expression match
+					for (map<string, Data>::iterator iter = settingsMap.begin(); iter != settingsMap.end(); ++iter)
+					{
+						try {
+							regex e = regex(iter->first);
+							match = regex_match(windowname, e);
+							if (match) {
+								sceneName = iter->second.sceneName;
+								checkFullscreen = iter->second.isFullscreen;
+								break;
+							}
 						}
+						catch (...) {}
 					}
-					catch (...) {}
 				}
-			}
-			//do we only switch if window is also fullscreen?
-			if (!checkFullscreen || (checkFullscreen && isWindowFullscreen())) {
-				//do we know the window title or is a fullscreen/backup Scene set?
-				if (!(settingsMap.find("Backup Scene Name") == settingsMap.end()) || match) {
-					if (!match && !(settingsMap.find("Backup Scene Name") == settingsMap.end())) {
-						sceneName = settingsMap.find("Backup Scene Name")->second.sceneName;
-					}
-					//check if current scene is already the desired scene
-					if ((sceneUsedName) && strcmp(sceneUsedName, sceneName.c_str()) != 0) {
-						//switch scene
-						obs_source_t *source = obs_get_source_by_name(sceneName.c_str());
-						if (source != NULL) {
-							//create transition to new scene (otherwise UI wont work anymore)
-							obs_transition_start(transitionUsed, OBS_TRANSITION_MODE_AUTO, 300, source); //OBS_TRANSITION_MODE_AUTO uses the obs user settings for transitions
+				//do we only switch if window is also fullscreen?
+				if (!checkFullscreen || (checkFullscreen && isWindowFullscreen())) {
+					//do we know the window title or is a fullscreen/backup Scene set?
+					if (!(settingsMap.find("Backup Scene Name") == settingsMap.end()) || match) {
+						if (!match && !(settingsMap.find("Backup Scene Name") == settingsMap.end())) {
+							sceneName = settingsMap.find("Backup Scene Name")->second.sceneName;
 						}
-						obs_source_release(source);
+						//check if current scene is already the desired scene
+						if ((sceneUsedName) && strcmp(sceneUsedName, sceneName.c_str()) != 0) {
+							//switch scene
+							obs_source_t *source = obs_get_source_by_name(sceneName.c_str());
+							if (source != NULL) {
+								//create transition to new scene (otherwise UI wont work anymore)
+								obs_transition_start(transitionUsed, OBS_TRANSITION_MODE_AUTO, 300, source); //OBS_TRANSITION_MODE_AUTO uses the obs user settings for transitions
+							}
+							obs_source_release(source);
+						}
+						obs_source_release(sceneUsed);
+						obs_source_release(transitionUsed);
 					}
-					obs_source_release(sceneUsed);
-					obs_source_release(transitionUsed);
 				}
 			}
-		}
 			//sleep for a bit
 			this_thread::sleep_for(chrono::milliseconds(1000));
 		}

@@ -69,7 +69,7 @@ void Settings::load() {
 					sceneRoundTrip.push_back("");
 				}
 			}
-			else if (temp.find("Pause Scene Names") != temp.npos) {
+			if (temp.find("Pause Scene Names") != temp.npos) {
 				//discard the first value ("Pause Scene Names")
 				getline(lineStream, value, ',');
 				while (lineStream.good()) {
@@ -83,7 +83,7 @@ void Settings::load() {
 				}
 			}
 			//find values for Scene switching
-			else
+			if (temp.find("Pause Scene Names") == temp.npos && temp.find("Scene Round Trip") == temp.npos)
 			{
 				//windowTitle,sceneName,isFullscreenValue
 				while (lineStream.good()) {
@@ -121,7 +121,7 @@ void Settings::load() {
 	infile.close();
 }
 
-bool Settings::getStartMessageDisable(){
+bool Settings::getStartMessageDisable() {
 	return startMessageDisable;
 }
 
@@ -129,11 +129,11 @@ map<string, Data> Settings::getMap() {
 	return settings;
 }
 
-vector<string> Settings::getSceneRoundTrip(){
+vector<string> Settings::getSceneRoundTrip() {
 	return sceneRoundTrip;
 }
 
-vector<string> Settings::getPauseScenes(){
+vector<string> Settings::getPauseScenes() {
 	return pauseScenes;
 }
 
