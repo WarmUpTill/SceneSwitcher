@@ -91,13 +91,17 @@ void Settings::load() {
 					settingsElements.push_back(value);
 					numValues++;
 				}
+				//remove trailing /" of last value
+				if (settingsElements.size() > 0) {
+					settingsElements.back().pop_back();
+				}
 				//two values per line are expected
 				//add missing value
-				if (numValues < 3) {
+				for (; numValues < 3; numValues++) {
 					settingsElements.push_back("");
 				}
 				//discard additional values
-				for (numValues; numValues > 3; numValues--) {
+				for (; numValues > 3; numValues--) {
 					settingsElements.pop_back();
 				}
 
@@ -105,10 +109,7 @@ void Settings::load() {
 				Data d = Data();
 				string isFullscreen = settingsElements.back();
 				d.isFullscreen = (isFullscreen.find("isFullscreen") != isFullscreen.npos) ? true : false;
-				//dont remove an element if isFullscreen was not found
-				if (d.isFullscreen) {
-					settingsElements.pop_back();
-				}
+				settingsElements.pop_back();
 				string sceneName = settingsElements.back();
 				d.sceneName = sceneName;
 				settingsElements.pop_back();
