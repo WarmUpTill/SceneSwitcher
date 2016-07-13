@@ -23,11 +23,21 @@ void Switcher::switcherThreadFunc() {
 	string windowname = "";
 	string sceneName = "";
 	bool checkFullscreen = false;
+	bool pauseSwitching = false;
 	while (isRunning) {
 		//get Scene Name
 		obs_source_t * transitionUsed = obs_get_output_source(0);
 		obs_source_t * sceneUsed = obs_transition_get_active_source(transitionUsed);
 		const char *sceneUsedName = obs_source_get_name(sceneUsed);
+		//check if scene switching should be paused
+		if ((sceneUsedName) && find(pauseScenes.begin(), pauseScenes.end(), string(sceneUsedName)) != pauseScenes.end()) {
+			pauseSwitching = true;
+		}
+		else {
+			pauseSwitching = false;
+		}
+		//are we in pause mode?
+		if (!pauseSwitching) {
 		//check if a Scene Round Trip should be started
 		if ((sceneUsedName) && strcmp(sceneUsedName, sceneRoundTrip.front().c_str()) == 0) {
 			sceneRoundTripActive = true;
@@ -112,6 +122,7 @@ void Switcher::switcherThreadFunc() {
 					obs_source_release(transitionUsed);
 				}
 			}
+		}
 			//sleep for a bit
 			this_thread::sleep_for(chrono::milliseconds(1000));
 		}
@@ -123,6 +134,7 @@ void Switcher::firstLoad() {
 	settings.load();
 	settingsMap = settings.getMap();
 	sceneRoundTrip = settings.getSceneRoundTrip();
+	pauseScenes = settings.getPauseScenes();
 	if (!settings.getStartMessageDisable()) {
 		string message = "The following settings were found for Scene Switcher:\n";
 		for (auto it = settingsMap.cbegin(); it != settingsMap.cend(); ++it)
@@ -140,6 +152,7 @@ void Switcher::firstLoad() {
 	settings.load();
 	settingsMap = settings.getMap();
 	sceneRoundTrip = settings.getSceneRoundTrip();
+	pauseScenes = settings.getPauseScenes();
 	if (!settings.getStartMessageDisable()) {
 		string message = "The following settings were found for Scene Switcher:\n";
 		for (auto it = settingsMap.cbegin(); it != settingsMap.cend(); ++it)
@@ -172,8 +185,9 @@ void Switcher::firstLoad() {
 //load the settings needed to start the thread
 void Switcher::load() {
 	settings.load();
-	sceneRoundTrip = settings.getSceneRoundTrip();
 	settingsMap = settings.getMap();
+	sceneRoundTrip = settings.getSceneRoundTrip();
+	pauseScenes = settings.getPauseScenes();
 }
 
 //start thread

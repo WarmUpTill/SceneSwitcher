@@ -2,7 +2,6 @@
 #include <map>
 #include <vector>
 #include <string>
-#include <obs-module.h>
 
 using namespace std;
 
@@ -12,16 +11,18 @@ struct Data {
 };
 
 class Settings {
-	vector<string> sceneRoundTrip;
-	map<string, Data> settings;
-	bool startMessageDisable = false;
 public:
 	void load();
 	bool getStartMessageDisable();
 	map<string, Data> getMap();
 	vector<string> getSceneRoundTrip();
+	vector<string> getPauseScenes();
 	string getSettingsFilePath();
 	void setSettingsFilePath(string path);
 private:
 	string settingsFilePath = "";
+	map<string, Data> settings;
+	vector<string> sceneRoundTrip;
+	vector<string>pauseScenes;
+	bool startMessageDisable = false;
 };

@@ -22,6 +22,7 @@ void Settings::load() {
 	//reset the settings
 	settings = map<string, Data>();
 	sceneRoundTrip = vector<string>();
+	pauseScenes = vector<string>();
 	//read the settings file
 	vector<string> settingsElements;
 	ifstream infile(settingsFilePath);
@@ -53,7 +54,6 @@ void Settings::load() {
 			numValues = 0;
 			//find Scene Round Trip
 			if (temp.find("Scene Round Trip") != temp.npos) {
-
 				//discard the first value ("Scene Round Trip")
 				getline(lineStream, value, ',');
 				while (lineStream.good()) {
@@ -67,6 +67,19 @@ void Settings::load() {
 				}
 				if (sceneRoundTrip.size() == 0 || sceneRoundTrip.size() % 2 != 0) {
 					sceneRoundTrip.push_back("");
+				}
+			}
+			else if (temp.find("Pause Scene Names") != temp.npos) {
+				//discard the first value ("Pause Scene Names")
+				getline(lineStream, value, ',');
+				while (lineStream.good()) {
+					//Scene Round Trip,TriggerSceneHere,DelayHere,NextSceneHere,DelayHere,AnotherSceneHere,DelayHere,...
+					getline(lineStream, value, ',');
+					pauseScenes.push_back(value);
+				}
+				//remove trailing /" of last value
+				if (pauseScenes.size() > 0) {
+					pauseScenes.back().pop_back();
 				}
 			}
 			//find values for Scene switching
@@ -118,5 +131,9 @@ map<string, Data> Settings::getMap() {
 
 vector<string> Settings::getSceneRoundTrip(){
 	return sceneRoundTrip;
+}
+
+vector<string> Settings::getPauseScenes(){
+	return pauseScenes;
 }
 
