@@ -32,6 +32,9 @@ void Switcher::switcherThreadFunc() {
 		//check if scene switching should be paused
 		if ((sceneUsedName) && find(pauseScenes.begin(), pauseScenes.end(), string(sceneUsedName)) != pauseScenes.end()) {
 			pauseSwitching = true;
+			//cancel Scene Round trip
+			sceneRoundTripActive = false;
+			roundTripPos = 0;
 		}
 		else {
 			pauseSwitching = false;
