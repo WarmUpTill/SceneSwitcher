@@ -17,12 +17,14 @@ public:
 	map<string, Data> getMap();
 	vector<string> getSceneRoundTrip();
 	vector<string> getPauseScenes();
+	vector<string> getIgnoreNames();
 	string getSettingsFilePath();
 	void setSettingsFilePath(string path);
 private:
 	string settingsFilePath = "";
 	map<string, Data> settings;
 	vector<string> sceneRoundTrip;
-	vector<string>pauseScenes;
+	vector<string> pauseScenes;
+	vector<string> ignoreNames;
 	bool startMessageDisable = false;
 };

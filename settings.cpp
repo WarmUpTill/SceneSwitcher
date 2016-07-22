@@ -23,6 +23,7 @@ void Settings::load() {
 	settings = map<string, Data>();
 	sceneRoundTrip = vector<string>();
 	pauseScenes = vector<string>();
+	ignoreNames = vector<string>();
 	//read the settings file
 	vector<string> settingsElements;
 	ifstream infile(settingsFilePath);
@@ -65,10 +66,12 @@ void Settings::load() {
 				if (sceneRoundTrip.size() > 0) {
 					sceneRoundTrip.back().pop_back();
 				}
+				//add missing values
 				if (sceneRoundTrip.size() == 0 || sceneRoundTrip.size() % 2 != 0) {
 					sceneRoundTrip.push_back("");
 				}
 			}
+			//find Pause Scene Names
 			if (temp.find("Pause Scene Names") != temp.npos) {
 				//discard the first value ("Pause Scene Names")
 				getline(lineStream, value, ',');
@@ -82,8 +85,22 @@ void Settings::load() {
 					pauseScenes.back().pop_back();
 				}
 			}
+			//find window names to ignroe
+			if (temp.find("Ignore Window Names") != temp.npos) {
+				//discard the first value "Ignore Window Names"
+				getline(lineStream, value, ',');
+				while (lineStream.good()) {
+					//Ignore Window Names,windowName1,windowName2,...
+					getline(lineStream, value, ',');
+					ignoreNames.push_back(value);
+				}
+				//remove trailing /" of last value
+				if (ignoreNames.size() > 0) {
+					ignoreNames.back().pop_back();
+				}
+			}
 			//find values for Scene switching
-			if (temp.find("Pause Scene Names") == temp.npos && temp.find("Scene Round Trip") == temp.npos)
+			if (temp.find("Pause Scene Names") == temp.npos && temp.find("Scene Round Trip") == temp.npos && temp.find("Ignore Window Names") == temp.npos)
 			{
 				//windowTitle,sceneName,isFullscreenValue
 				while (lineStream.good()) {
@@ -136,5 +153,10 @@ vector<string> Settings::getSceneRoundTrip() {
 
 vector<string> Settings::getPauseScenes() {
 	return pauseScenes;
+}
+
+vector<string> Settings::getIgnoreNames()
+{
+	return ignoreNames;
 }
 

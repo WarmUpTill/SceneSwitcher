@@ -23,6 +23,7 @@ private:
 	map<string, Data> settingsMap;
 	vector<string> sceneRoundTrip;
 	vector<string> pauseScenes;
+	vector<string> ignoreNames;
 	void switcherThreadFunc();
 	bool isWindowFullscreen();
 	string GetActiveWindowTitle();

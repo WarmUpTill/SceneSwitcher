@@ -78,51 +78,55 @@ void Switcher::switcherThreadFunc() {
 			else {
 				//get active window title and reset values
 				windowname = GetActiveWindowTitle();
-				match = false;
-				sceneName = "";
-				checkFullscreen = false;
-				//first check if there is a direct match
-				map<string, Data>::iterator it = settingsMap.find(windowname);
-				if (it != settingsMap.end()) {
-					sceneName = it->second.sceneName;
-					checkFullscreen = it->second.isFullscreen;
-					match = true;
-				}
-				else {
-					//maybe there is a regular expression match
-					for (map<string, Data>::iterator iter = settingsMap.begin(); iter != settingsMap.end(); ++iter)
-					{
-						try {
-							regex e = regex(iter->first);
-							match = regex_match(windowname, e);
-							if (match) {
-								sceneName = iter->second.sceneName;
-								checkFullscreen = iter->second.isFullscreen;
-								break;
-							}
-						}
-						catch (...) {}
+				//should we ignore this window name?
+				if (find(ignoreNames.begin(), ignoreNames.end(), windowname) == ignoreNames.end()) {
+					//reset values
+					match = false;
+					sceneName = "";
+					checkFullscreen = false;
+					//first check if there is a direct match
+					map<string, Data>::iterator it = settingsMap.find(windowname);
+					if (it != settingsMap.end()) {
+						sceneName = it->second.sceneName;
+						checkFullscreen = it->second.isFullscreen;
+						match = true;
 					}
-				}
-				//do we only switch if window is also fullscreen?
-				if (!checkFullscreen || (checkFullscreen && isWindowFullscreen())) {
-					//do we know the window title or is a fullscreen/backup Scene set?
-					if (!(settingsMap.find("Backup Scene Name") == settingsMap.end()) || match) {
-						if (!match && !(settingsMap.find("Backup Scene Name") == settingsMap.end())) {
-							sceneName = settingsMap.find("Backup Scene Name")->second.sceneName;
-						}
-						//check if current scene is already the desired scene
-						if ((sceneUsedName) && strcmp(sceneUsedName, sceneName.c_str()) != 0) {
-							//switch scene
-							obs_source_t *source = obs_get_source_by_name(sceneName.c_str());
-							if (source != NULL) {
-								//create transition to new scene (otherwise UI wont work anymore)
-								obs_transition_start(transitionUsed, OBS_TRANSITION_MODE_AUTO, 300, source); //OBS_TRANSITION_MODE_AUTO uses the obs user settings for transitions
+					else {
+						//maybe there is a regular expression match
+						for (map<string, Data>::iterator iter = settingsMap.begin(); iter != settingsMap.end(); ++iter)
+						{
+							try {
+								regex e = regex(iter->first);
+								match = regex_match(windowname, e);
+								if (match) {
+									sceneName = iter->second.sceneName;
+									checkFullscreen = iter->second.isFullscreen;
+									break;
+								}
 							}
-							obs_source_release(source);
+							catch (...) {}
 						}
-						obs_source_release(sceneUsed);
-						obs_source_release(transitionUsed);
+					}
+					//do we only switch if window is also fullscreen?
+					if (!checkFullscreen || (checkFullscreen && isWindowFullscreen())) {
+						//do we know the window title or is a fullscreen/backup Scene set?
+						if (!(settingsMap.find("Backup Scene Name") == settingsMap.end()) || match) {
+							if (!match && !(settingsMap.find("Backup Scene Name") == settingsMap.end())) {
+								sceneName = settingsMap.find("Backup Scene Name")->second.sceneName;
+							}
+							//check if current scene is already the desired scene
+							if ((sceneUsedName) && strcmp(sceneUsedName, sceneName.c_str()) != 0) {
+								//switch scene
+								obs_source_t *source = obs_get_source_by_name(sceneName.c_str());
+								if (source != NULL) {
+									//create transition to new scene (otherwise UI wont work anymore)
+									obs_transition_start(transitionUsed, OBS_TRANSITION_MODE_AUTO, 300, source); //OBS_TRANSITION_MODE_AUTO uses the obs user settings for transitions
+								}
+								obs_source_release(source);
+							}
+							obs_source_release(sceneUsed);
+							obs_source_release(transitionUsed);
+						}
 					}
 				}
 			}
@@ -138,6 +142,7 @@ void Switcher::firstLoad() {
 	settingsMap = settings.getMap();
 	sceneRoundTrip = settings.getSceneRoundTrip();
 	pauseScenes = settings.getPauseScenes();
+	ignoreNames = settings.getIgnoreNames();
 	if (!settings.getStartMessageDisable()) {
 		string message = "The following settings were found for Scene Switcher:\n";
 		for (auto it = settingsMap.cbegin(); it != settingsMap.cend(); ++it)
@@ -156,6 +161,7 @@ void Switcher::firstLoad() {
 	settingsMap = settings.getMap();
 	sceneRoundTrip = settings.getSceneRoundTrip();
 	pauseScenes = settings.getPauseScenes();
+	ignoreNames = settings.getIgnoreNames();
 	if (!settings.getStartMessageDisable()) {
 		string message = "The following settings were found for Scene Switcher:\n";
 		for (auto it = settingsMap.cbegin(); it != settingsMap.cend(); ++it)
@@ -191,6 +197,7 @@ void Switcher::load() {
 	settingsMap = settings.getMap();
 	sceneRoundTrip = settings.getSceneRoundTrip();
 	pauseScenes = settings.getPauseScenes();
+	ignoreNames = settings.getIgnoreNames();
 }
 
 //start thread
