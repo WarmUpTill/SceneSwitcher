@@ -12,6 +12,7 @@
 #endif
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
+#include <CGEvent.h>
 #endif
 using namespace std;
 
@@ -76,7 +77,7 @@ void Switcher::switcherThreadFunc() {
 			}
 			//normal scene switching here
 			else {
-				//get active window title and reset values
+				//get active window title
 				windowname = GetActiveWindowTitle();
 				//should we ignore this window name?
 				if (find(ignoreNames.begin(), ignoreNames.end(), windowname) == ignoreNames.end()) {
@@ -96,45 +97,105 @@ void Switcher::switcherThreadFunc() {
 						for (map<string, Data>::iterator iter = settingsMap.begin(); iter != settingsMap.end(); ++iter)
 						{
 							try {
-								regex e = regex(iter->first);
-								match = regex_match(windowname, e);
-								if (match) {
+								if (regex_match(windowname, regex(iter->first))) {
 									sceneName = iter->second.sceneName;
 									checkFullscreen = iter->second.isFullscreen;
+									match = true;
 									break;
 								}
 							}
 							catch (...) {}
 						}
 					}
-					//do we only switch if window is also fullscreen?
-					if (!checkFullscreen || (checkFullscreen && isWindowFullscreen())) {
-						//do we know the window title or is a fullscreen/backup Scene set?
-						if (!(settingsMap.find("Backup Scene Name") == settingsMap.end()) || match) {
-							if (!match && !(settingsMap.find("Backup Scene Name") == settingsMap.end())) {
-								sceneName = settingsMap.find("Backup Scene Name")->second.sceneName;
-							}
-							//check if current scene is already the desired scene
-							if ((sceneUsedName) && strcmp(sceneUsedName, sceneName.c_str()) != 0) {
-								//switch scene
-								obs_source_t *source = obs_get_source_by_name(sceneName.c_str());
-								if (source != NULL) {
-									//create transition to new scene (otherwise UI wont work anymore)
-									obs_transition_start(transitionUsed, OBS_TRANSITION_MODE_AUTO, 300, source); //OBS_TRANSITION_MODE_AUTO uses the obs user settings for transitions
+					//check cursor regions
+					if (!match)
+					{
+						pair<int, int> cursorPos = getCursorXY();
+						// compare against rectangular region format
+						regex rules = regex("<-?[0-9]+x-?[0-9]+.-?[0-9]+x-?[0-9]+>");
+						int minRegionSize = 99999;
+						for (map<string, Data>::iterator iter = settingsMap.begin(); iter != settingsMap.end(); ++iter)
+						{
+							try
+							{
+								if (regex_match(iter->first, rules))
+								{
+									int minX, minY, maxX, maxY;
+									int parsedValues = sscanf(iter->first.c_str(), "<%dx%d.%dx%d>", &minX, &minY, &maxX, &maxY);
+
+									if (parsedValues == 4)
+									{
+										if (cursorPos.first >= minX && cursorPos.second >= minY && cursorPos.first <= maxX && cursorPos.second <= maxY)
+										{
+											// prioritize smaller regions over larger regions
+											int regionSize = (maxX - minX) + (maxY - minY);
+											if (regionSize < minRegionSize)
+											{
+												match = true;
+												sceneName = iter->second.sceneName;
+												checkFullscreen = iter->second.isFullscreen;
+												minRegionSize = regionSize;
+												// break;
+											}
+										}
+									}
 								}
-								obs_source_release(source);
 							}
-							obs_source_release(sceneUsed);
-							obs_source_release(transitionUsed);
+							catch (...) {}
+						}
+					}
+					//do we only switch if window is also fullscreen?
+					match = match && (!checkFullscreen || (checkFullscreen && isWindowFullscreen()));
+					//match or backup scene set
+					if (settingsMap.find("Backup Scene Name") != settingsMap.end() || match) {
+						//no match -> backup scene
+						if (!match) {
+							sceneName = settingsMap.find("Backup Scene Name")->second.sceneName;
+						}
+						//check if current scene is already the desired scene
+						if ((sceneUsedName) && strcmp(sceneUsedName, sceneName.c_str()) != 0) {
+							//switch scene
+							obs_source_t *source = obs_get_source_by_name(sceneName.c_str());
+							if (source != NULL) {
+								//create transition to new scene (otherwise UI wont work anymore)
+								obs_transition_start(transitionUsed, OBS_TRANSITION_MODE_AUTO, 300, source); //OBS_TRANSITION_MODE_AUTO uses the obs user settings for transitions
+							}
+							obs_source_release(source);
 						}
 					}
 				}
 			}
-			//sleep for a bit
-			this_thread::sleep_for(chrono::milliseconds(1000));
 		}
+		obs_source_release(sceneUsed);
+		obs_source_release(transitionUsed);
+		//sleep for a bit
+		this_thread::sleep_for(chrono::milliseconds(1000));
 	}
 }
+
+#ifdef _WIN32
+pair<int, int> Switcher::getCursorXY() {
+	pair<int, int> pos(0, 0);
+	POINT cursorPos;
+	if (GetPhysicalCursorPos(&cursorPos)) {
+		pos.first = cursorPos.x;
+		pos.second = cursorPos.y;
+	}
+	return pos;
+}
+#endif
+
+#ifdef __APPLE__ 
+pair<int, int> Switcher::getCursorXY() {
+	pair<int, int> pos(0, 0);
+	CGEventRef event = CGEventCreate(NULL);
+	CGPoint cursorPos = CGEventGetLocation(event);
+	CFRelease(event);
+	pos.first = cursorPos.x;
+	pos.second = cursorPos.y;
+	return pos;
+}
+#endif
 
 #ifdef _WIN32
 void Switcher::firstLoad() {

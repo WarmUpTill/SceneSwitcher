@@ -27,4 +27,5 @@ private:
 	void switcherThreadFunc();
 	bool isWindowFullscreen();
 	string GetActiveWindowTitle();
+	pair<int, int> getCursorXY();
 };

@@ -117,47 +117,6 @@ void sceneSwitcherOptionsSourceGetDefaults(obs_data_t *settings) {
 	//set values from file
 	obs_data_apply(settings, obs_data_create_from_json(temp.c_str()));
 }
-bool loadOldSettings(obs_properties_t *props, obs_property_t *property, void *data) {
-	//read old settings
-	string oldPath = "../../data/obs-plugins/SceneSwitcher/settings.txt";
-	ifstream oldSettingsFile;
-	oldSettingsFile.open(oldPath);
-	string line;
-	string value;
-	//construct new settings format
-	string newFormat = "{\n\t\"WindowList\": [\n";
-	string valueBeginning = "\t\t{\n\t\t\t\"value\": \"";
-	string valueEnd = "\t\t},\n";
-	while (oldSettingsFile.good())
-	{
-		getline(oldSettingsFile, line);
-		if (!line.empty()) {
-			newFormat += valueBeginning + line + "\"\n" + valueEnd;
-		}
-	}
-	oldSettingsFile.close();
-	//remove trailing ',' and newline
-	newFormat.pop_back();
-	newFormat.pop_back();
-	newFormat += "\n\t]\n}";
-	//check if there are useful new settings
-	if (newFormat != "{\n\t\"WindowList\": \n\t]\n}") {
-		//write to new settings file
-		ofstream file(string(configPath).append("settings.txt"));
-		if (file.is_open()) {
-			file << newFormat;
-			file.close();
-		}
-		//make sure not to overwrite the settings
-		oldSettingsLoaded = true;
-		if (switcher->getIsRunning()) {
-			switcher->stop();
-		}
-		switcher->load();
-		switcher->start();
-	}
-	return true;
-}
 obs_properties_t *sceneSwitcherOptionsSourceGetProperties(void *data) {
 	UNUSED_PARAMETER(data);
 	obs_properties_t *props = obs_properties_create();
@@ -166,7 +125,6 @@ obs_properties_t *sceneSwitcherOptionsSourceGetProperties(void *data) {
 		"WindowList", "",
 		(enum obs_editable_list_type)0, "",
 		NULL);
-	obs_properties_add_button(props, "LoadOldSettings", "Load settings from old version of this plugin (restart OBS after clicking this button)", &loadOldSettings);
 	return props;
 }
 void sceneSwitcherOptionsSourceSave(void *data, obs_data_t *settings) {
