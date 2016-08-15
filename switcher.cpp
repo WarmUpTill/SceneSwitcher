@@ -12,7 +12,7 @@
 #endif
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
-#include <CGEvent.h>
+#include <CoreGraphics/CGEvent.h>
 #endif
 using namespace std;
 
