@@ -17,6 +17,7 @@ public:
 	string getSettingsFilePath();
 	void setSettingsFilePath(string path);
 	thread switcherThread;
+	~Switcher();
 private:
 	bool isRunning = true;
 	Settings settings;

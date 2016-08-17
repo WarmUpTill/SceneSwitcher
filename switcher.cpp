@@ -64,7 +64,6 @@ void Switcher::switcherThreadFunc() {
 				else {
 					//switch scene
 					sceneName = sceneRoundTrip.at(roundTripPos + 1);
-					obs_source_t * transitionUsed = obs_get_output_source(0);
 					obs_source_t *source = obs_get_source_by_name(sceneName.c_str());
 					if (source != NULL) {
 						//create transition to new scene
@@ -372,8 +371,7 @@ string Switcher::GetActiveWindowTitle()
 //tell the thread to stop
 void Switcher::stop() {
 	isRunning = false;
-	switcherThread.join();
-	return;
+	if (switcherThread.joinable()) switcherThread.join();
 }
 
 string Switcher::getSettingsFilePath()
@@ -384,6 +382,11 @@ string Switcher::getSettingsFilePath()
 void Switcher::setSettingsFilePath(string path)
 {
 	settings.setSettingsFilePath(path);
+}
+
+Switcher::~Switcher()
+{
+	stop();
 }
 
 bool Switcher::getIsRunning()
