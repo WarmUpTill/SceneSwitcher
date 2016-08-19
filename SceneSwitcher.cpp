@@ -8,19 +8,17 @@
 
 using namespace std;
 
-//temporary 
-bool oldSettingsLoaded = false;
 //Swicthing done in here
 Switcher *switcher = new Switcher();
 //settings source
 struct obs_source_info sceneSwitcherOptionsSource;
 //Hotkeys
 const char *PAUSE_HOTKEY_NAME = "pauseHotkey";
-const char *OPTIONS_HOTKEY_NAME = "optionsHotkey";
+//const char *OPTIONS_HOTKEY_NAME = "optionsHotkey";
 obs_hotkey_id pauseHotkeyId;
-obs_hotkey_id optionsHotkeyId;
+//obs_hotkey_id optionsHotkeyId;
 obs_data_array_t *pauseHotkeyData;
-obs_data_array_t *optionsHotkeyData;
+//obs_data_array_t *optionsHotkeyData;
 //path to config folder where to save the hotkeybinding (probably later the settings file)
 string configPath;
 
@@ -69,15 +67,13 @@ void loadKeybinding(string name, obs_data_array_t *hotkeyData, obs_hotkey_id hot
 }
 
 OBS_DECLARE_MODULE()
-OBS_MODULE_USE_DEFAULT_LOCALE("SceneSwitcher", "en-US")
 
 void SceneSwitcherPauseHotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed) {
+	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
-
 	if (pressed)
 	{
-		Switcher *switcher = static_cast<Switcher *>(data);
 		if (switcher->getIsRunning())
 		{
 			switcher->stop();
@@ -98,7 +94,7 @@ const char *sceneSwitcherOptionsGetName(void *type_data) {
 void *sceneSwitcherOptionsCreate(obs_data_t *settings, obs_source_t *source) {
 	UNUSED_PARAMETER(settings);
 	UNUSED_PARAMETER(source);
-	return (void*)switcher;
+	return switcher;
 }
 void sceneSwitcherOptionsDestroy(void *data) {
 	UNUSED_PARAMETER(data);
@@ -128,23 +124,18 @@ obs_properties_t *sceneSwitcherOptionsSourceGetProperties(void *data) {
 	return props;
 }
 void sceneSwitcherOptionsSourceSave(void *data, obs_data_t *settings) {
-	//check if user chose to load old settings
-	if (oldSettingsLoaded) {
-		//oldSettingsLoaded = false;
+	UNUSED_PARAMETER(data);
+	//hang here if multiple instances of Scene Switcher Options are active (why?)
+	ofstream settingsFile;
+	settingsFile.open(string(configPath).append("settings.txt"), ofstream::trunc);
+	if (settingsFile.is_open()) {
+		settingsFile << obs_data_get_json(settings);
+		settingsFile.close();
 	}
-	else {
-		//hang here if multiple instances of Scene Switcher Options are active (why?)
-		ofstream settingsFile;
-		settingsFile.open(string(configPath).append("settings.txt"), ofstream::trunc);
-		if (settingsFile.is_open()) {
-			settingsFile << obs_data_get_json(settings);
-			settingsFile.close();
-		}
-		if (switcher->getIsRunning())
-			switcher->stop();
-		switcher->load();
-		switcher->start();
-	}
+	if (switcher->getIsRunning())
+		switcher->stop();
+	switcher->load();
+	switcher->start();
 }
 void sceneSwitcherOptionsSourceLoad(void *data, obs_data_t *settings) {
 	UNUSED_PARAMETER(data);
@@ -194,6 +185,10 @@ void obs_module_unload(void) {
 	//save settings (only hotkey for now)
 	saveKeybinding(PAUSE_HOTKEY_NAME, pauseHotkeyData);
 	//saveKeybinding(OPTIONS_HOTKEY_NAME, optionsHotkeyData);
+	//obs_hotkey_unregister(pauseHotkeyId);
+	obs_data_array_release(pauseHotkeyData);
+	delete switcher;
+	switcher = NULL;
 }
 
 const char *obs_module_author(void) {

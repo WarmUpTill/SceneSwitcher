@@ -20,11 +20,11 @@ void Settings::setSettingsFilePath(string path)
 
 void Settings::load() {
 	//reset the settings
-	settings = map<string, Data>();
+	settings.clear();
 	sceneRoundTrip = pair<vector<string>, vector<string>>();
 	vector<string> sceneRoundTripTemp;
-	pauseScenes = vector<string>();
-	ignoreNames = vector<string>();
+	pauseScenes.clear();
+	ignoreNames.clear();
 	//read the settings file
 	vector<string> settingsElements;
 	ifstream infile(settingsFilePath);
@@ -164,4 +164,3 @@ vector<string> Settings::getIgnoreNames()
 {
 	return ignoreNames;
 }
-
