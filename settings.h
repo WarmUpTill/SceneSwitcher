@@ -15,7 +15,7 @@ public:
 	void load();
 	bool getStartMessageDisable();
 	map<string, Data> getMap();
-	vector<string> getSceneRoundTrip();
+	pair<vector<string>, vector<string>> getSceneRoundTrip();
 	vector<string> getPauseScenes();
 	vector<string> getIgnoreNames();
 	string getSettingsFilePath();
@@ -23,7 +23,7 @@ public:
 private:
 	string settingsFilePath = "";
 	map<string, Data> settings;
-	vector<string> sceneRoundTrip;
+	pair<vector<string>, vector<string>> sceneRoundTrip;
 	vector<string> pauseScenes;
 	vector<string> ignoreNames;
 	bool startMessageDisable = false;

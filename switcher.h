@@ -22,7 +22,7 @@ private:
 	bool isRunning = true;
 	Settings settings;
 	map<string, Data> settingsMap;
-	vector<string> sceneRoundTrip;
+	pair<vector<string>, vector<string>> sceneRoundTrip;
 	vector<string> pauseScenes;
 	vector<string> ignoreNames;
 	void switcherThreadFunc();

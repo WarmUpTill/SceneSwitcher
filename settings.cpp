@@ -21,7 +21,8 @@ void Settings::setSettingsFilePath(string path)
 void Settings::load() {
 	//reset the settings
 	settings = map<string, Data>();
-	sceneRoundTrip = vector<string>();
+	sceneRoundTrip = pair<vector<string>, vector<string>>();
+	vector<string> sceneRoundTripTemp;
 	pauseScenes = vector<string>();
 	ignoreNames = vector<string>();
 	//read the settings file
@@ -60,15 +61,15 @@ void Settings::load() {
 				while (lineStream.good()) {
 					//Scene Round Trip,TriggerSceneHere,DelayHere,NextSceneHere,DelayHere,AnotherSceneHere,DelayHere,...
 					getline(lineStream, value, ',');
-					sceneRoundTrip.push_back(value);
+					sceneRoundTripTemp.push_back(value);
 				}
 				//remove trailing /" of last value
-				if (sceneRoundTrip.size() > 0) {
-					sceneRoundTrip.back().pop_back();
+				if (sceneRoundTripTemp.size() > 0) {
+					sceneRoundTripTemp.back().pop_back();
 				}
 				//add missing values
-				if (sceneRoundTrip.size() == 0 || sceneRoundTrip.size() % 2 != 0) {
-					sceneRoundTrip.push_back("");
+				if (sceneRoundTripTemp.size() == 0 || sceneRoundTripTemp.size() % 2 != 0) {
+					sceneRoundTripTemp.push_back("");
 				}
 			}
 			//find Pause Scene Names
@@ -76,7 +77,7 @@ void Settings::load() {
 				//discard the first value ("Pause Scene Names")
 				getline(lineStream, value, ',');
 				while (lineStream.good()) {
-					//Scene Round Trip,TriggerSceneHere,DelayHere,NextSceneHere,DelayHere,AnotherSceneHere,DelayHere,...
+					//Pause Scene Names,Scene Name,Scene Name,Scene Name,...
 					getline(lineStream, value, ',');
 					pauseScenes.push_back(value);
 				}
@@ -121,7 +122,6 @@ void Settings::load() {
 				for (; numValues > 3; numValues--) {
 					settingsElements.pop_back();
 				}
-
 				//assing to data
 				Data d = Data();
 				string isFullscreen = settingsElements.back();
@@ -137,6 +137,11 @@ void Settings::load() {
 		}
 	}
 	infile.close();
+	//create sceneRoundTrip from sceneRoundTripTemp
+	for (int i = 0; i < sceneRoundTripTemp.size(); i += 2) {
+		sceneRoundTrip.first.push_back(sceneRoundTripTemp[i]);
+		sceneRoundTrip.second.push_back(sceneRoundTripTemp[i + 1]);
+	}
 }
 
 bool Settings::getStartMessageDisable() {
@@ -147,7 +152,7 @@ map<string, Data> Settings::getMap() {
 	return settings;
 }
 
-vector<string> Settings::getSceneRoundTrip() {
+pair<vector<string>, vector<string>> Settings::getSceneRoundTrip() {
 	return sceneRoundTrip;
 }
 
