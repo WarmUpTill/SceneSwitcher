@@ -31,6 +31,8 @@ void Switcher::switcherThreadFunc() {
 		obs_source_t * transitionUsed = obs_get_output_source(0);
 		obs_source_t * sceneUsed = obs_transition_get_active_source(transitionUsed);
 		const char *sceneUsedName = obs_source_get_name(sceneUsed);
+        obs_source_release(sceneUsed);
+        obs_source_release(transitionUsed);
 		//check if scene switching should be paused
 		if ((sceneUsedName) && find(pauseScenes.begin(), pauseScenes.end(), string(sceneUsedName)) != pauseScenes.end()) {
 			pauseSwitching = true;
@@ -142,15 +144,20 @@ void Switcher::switcherThreadFunc() {
 					sceneName = sceneRoundTrip.first[roundTripPos];
 				}
 				//check if current scene is already the desired scene
+                transitionUsed = obs_get_output_source(0);
+                sceneUsed = obs_transition_get_active_source(transitionUsed);
+                const char *sceneUsedName = obs_source_get_name(sceneUsed);
+                obs_source_release(sceneUsed);
 				if ((sceneUsedName) && strcmp(sceneUsedName, sceneName.c_str()) != 0) {
 					//switch scene
-					obs_source_t *source = obs_get_source_by_name(sceneName.c_str());
+					obs_source_t *source = obs_get_source_by_name(sceneName.c_str()); //<--- do some more testing here regarding scene duplication
 					if (source != NULL) {
 						//create transition to new scene (otherwise UI wont work anymore)
 						obs_transition_start(transitionUsed, OBS_TRANSITION_MODE_AUTO, 300, source); //OBS_TRANSITION_MODE_AUTO uses the obs user settings for transitions
 					}
 					obs_source_release(source);
 				}
+                obs_source_release(transitionUsed);
 			}
 			///////////////////////////////////////////////
 			//Scene Round Trip
@@ -175,8 +182,6 @@ void Switcher::switcherThreadFunc() {
 				}
 			}
 		}
-		obs_source_release(sceneUsed);
-		obs_source_release(transitionUsed);
 		//sleep for a bit
 		this_thread::sleep_for(chrono::milliseconds(sleepTime));
 		sleepTime = 1000;
