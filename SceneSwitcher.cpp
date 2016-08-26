@@ -14,13 +14,10 @@ Switcher *switcher = new Switcher();
 struct obs_source_info sceneSwitcherOptionsSource;
 //Hotkeys
 const char *PAUSE_HOTKEY_NAME = "pauseHotkey";
-//const char *OPTIONS_HOTKEY_NAME = "optionsHotkey";
 obs_hotkey_id pauseHotkeyId;
-//obs_hotkey_id optionsHotkeyId;
 obs_data_array_t *pauseHotkeyData;
-//obs_data_array_t *optionsHotkeyData;
 //path to config folder where to save the hotkeybinding (probably later the settings file)
-string configPath;
+char* configPath;
 
 //save settings (the only hotkey for now)
 void saveKeybinding(string name, obs_data_array_t *hotkeyData) {
@@ -33,11 +30,14 @@ void saveKeybinding(string name, obs_data_array_t *hotkeyData) {
 		if (file.is_open()) {
 			size_t num = obs_data_array_count(hotkeyData);
 			for (size_t i = 0; i < num; i++) {
-				string temp = obs_data_get_json(obs_data_array_item(hotkeyData, i));
+				obs_data_t *data = obs_data_array_item(hotkeyData, i);
+				string temp = obs_data_get_json(data);
+				obs_data_release(data);
 				file << temp;
 			}
 			file.close();
 		}
+		obs_data_array_release(hotkeyData);
 	}
 }
 
@@ -56,13 +56,16 @@ string loadConfigFile(string filename) {
 	return value;
 }
 
-void loadKeybinding(string name, obs_data_array_t *hotkeyData, obs_hotkey_id hotkeyId) {
+void loadKeybinding(string name, obs_hotkey_id hotkeyId) {
 	string temp = loadConfigFile(name.append(".txt"));
-	hotkeyData = obs_data_array_create();
 	if (!temp.empty())
 	{
-		obs_data_array_insert(hotkeyData, 0, obs_data_create_from_json(temp.c_str()));
+		obs_data_array_t *hotkeyData = obs_data_array_create();
+		obs_data_t *data = obs_data_create_from_json(temp.c_str());
+		obs_data_array_insert(hotkeyData, 0, data);
 		obs_hotkey_load(hotkeyId, hotkeyData);
+		obs_data_release(data);
+		obs_data_array_release(hotkeyData);
 	}
 }
 
@@ -70,7 +73,6 @@ OBS_DECLARE_MODULE()
 
 void SceneSwitcherPauseHotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed) {
 	UNUSED_PARAMETER(data);
-	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
 	if (pressed)
 	{
@@ -83,8 +85,9 @@ void SceneSwitcherPauseHotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey
 			switcher->start();
 		}
 	}
-	//save the keybinding here since it is currently not possible in obs_module_unload
-	pauseHotkeyData = obs_hotkey_save(pauseHotkeyId);
+	//save the keybinding here since it is not possible in obs_module_unload
+	obs_data_array_release(pauseHotkeyData);
+	pauseHotkeyData = obs_hotkey_save(id);
 }
 
 const char *sceneSwitcherOptionsGetName(void *type_data) {
@@ -111,7 +114,9 @@ void sceneSwitcherOptionsSourceGetDefaults(obs_data_t *settings) {
 	//load settings file
 	string temp = loadConfigFile("settings.txt");
 	//set values from file
-	obs_data_apply(settings, obs_data_create_from_json(temp.c_str()));
+	obs_data_t *data = obs_data_create_from_json(temp.c_str());
+	obs_data_apply(settings, data);
+	obs_data_release(data);
 }
 obs_properties_t *sceneSwitcherOptionsSourceGetProperties(void *data) {
 	UNUSED_PARAMETER(data);
@@ -142,7 +147,9 @@ void sceneSwitcherOptionsSourceLoad(void *data, obs_data_t *settings) {
 	//load settings file
 	string temp = loadConfigFile("settings.txt");
 	//set values from file
-	obs_data_apply(settings, obs_data_create_from_json(temp.c_str()));
+	obs_data_t *loadedSettings = obs_data_create_from_json(temp.c_str());
+	obs_data_apply(settings, loadedSettings);
+	obs_data_release(loadedSettings);
 }
 
 void sceneSwitcherOptionsSourceSetup() {
@@ -163,13 +170,11 @@ void sceneSwitcherOptionsSourceSetup() {
 bool obs_module_load(void) {
 	//set config path and check if config dir was set up
 	configPath = obs_module_config_path("");
-	boost::filesystem::create_directories(configPath);
+	boost::filesystem::create_directories(configPath);//<- memory leak here somehow
 	//register hotkey
-	pauseHotkeyId = obs_hotkey_register_frontend(PAUSE_HOTKEY_NAME, "Toggle automatic scene switching", SceneSwitcherPauseHotkey, switcher);
-	//optionsHotkeyId = obs_hotkey_register_frontend(OPTIONS_HOTKEY_NAME, "Open the Scene Switcher options menu", SceneSwitcherOptionsHotkey, switcher);
+	pauseHotkeyId = obs_hotkey_register_frontend(PAUSE_HOTKEY_NAME, "Toggle automatic scene switching", SceneSwitcherPauseHotkey, NULL);
 	//load hotkey binding if set already
-	loadKeybinding(PAUSE_HOTKEY_NAME, pauseHotkeyData, pauseHotkeyId);
-	//loadKeybinding(OPTIONS_HOTKEY_NAME, optionsHotkeyData, optionsHotkeyId);
+	loadKeybinding(PAUSE_HOTKEY_NAME, pauseHotkeyId);
 	//load settings file
 	switcher->setSettingsFilePath(configPath);
 	switcher->firstLoad();
@@ -181,11 +186,10 @@ bool obs_module_load(void) {
 }
 
 void obs_module_unload(void) {
+	bfree(configPath);
 	switcher->stop();
 	//save settings (only hotkey for now)
 	saveKeybinding(PAUSE_HOTKEY_NAME, pauseHotkeyData);
-	//saveKeybinding(OPTIONS_HOTKEY_NAME, optionsHotkeyData);
-	//obs_hotkey_unregister(pauseHotkeyId);
 	obs_data_array_release(pauseHotkeyData);
 	delete switcher;
 	switcher = NULL;
