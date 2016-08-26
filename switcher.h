@@ -29,4 +29,7 @@ private:
 	bool isWindowFullscreen();
 	string GetActiveWindowTitle();
 	pair<int, int> getCursorXY();
+	bool quit;
+	mutex mtx;
+    condition_variable terminate;
 };
