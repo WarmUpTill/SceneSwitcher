@@ -26,7 +26,6 @@ void Switcher::switcherThreadFunc() {
 	bool checkFullscreen = false;
 	bool pauseSwitching = false;
 	size_t sleepTime = 1000;
-	auto locked = unique_lock<mutex>(mtx);
 	while (isRunning) {
 		//get Scene Name
 		obs_source_t * transitionUsed = obs_get_output_source(0);
@@ -184,6 +183,7 @@ void Switcher::switcherThreadFunc() {
 			}
 		}
 		//sleep for a bit
+		auto locked = unique_lock<mutex>(mtx);
 		terminate.wait_for(locked, chrono::milliseconds(sleepTime));
 		//this_thread::sleep_for(chrono::milliseconds(sleepTime));
 		sleepTime = 1000;
@@ -280,8 +280,7 @@ void Switcher::load() {
 
 //start thread
 void Switcher::start()
-{
-	auto locked = unique_lock<mutex>(mtx);    
+{  
 	isRunning = true;
 	switcherThread = thread(&Switcher::switcherThreadFunc, this);
 }
@@ -389,8 +388,8 @@ string Switcher::GetActiveWindowTitle()
 
 //tell the thread to stop
 void Switcher::stop() {
-	auto locked = unique_lock<mutex>(mtx);
 	isRunning = false;
+	terminate.notify_one();
 	if (switcherThread.joinable()) switcherThread.join();
 }
 

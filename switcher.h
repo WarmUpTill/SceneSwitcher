@@ -1,6 +1,7 @@
 #pragma once
 #include "settings.h"
 #include <map>
+#include <mutex>
 #include <vector>
 #include <thread>
 
