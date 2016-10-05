@@ -1044,26 +1044,37 @@ void SwitcherData::Thread()
 			obs_frontend_get_current_scene();
 
 		for (OBSWeakSource &s : pauseScenesSwitches) {
-			if (s == obs_source_get_weak_source(currentSource)) {
+			OBSWeakSource ws = obs_source_get_weak_source(currentSource);
+			if (s == ws) {
 				pause = true;
+				obs_weak_source_release(ws);
 				break;
 			}
+			obs_weak_source_release(ws);
 		}
 
 		if (!pause){
 			for (SceneRoundTripSwitch &s : sceneRoundTripSwitches) {
-				if (s.scene1 == obs_source_get_weak_source(currentSource)) {
+				OBSWeakSource ws = obs_source_get_weak_source(currentSource);
+				if (s.scene1 == ws) {
 					sceneRoundTripActive = true;
 
-					cv.wait_for(lock, chrono::seconds(s.delay));
+					cv.wait_for(lock, chrono::milliseconds(s.delay * 1000 - interval));
 
 					obs_source_t *source =
 						obs_weak_source_get_source(s.scene2);
-					obs_frontend_set_current_scene(source);
-					obs_source_release(source);
+					obs_source_t *currentSource2 =
+						obs_frontend_get_current_scene();
 
-					break;
+					if (currentSource == currentSource2){
+						obs_frontend_set_current_scene(source);
+						obs_source_release(source);
+						obs_weak_source_release(ws);
+						break;
+					}
+					obs_source_release(currentSource2);
 				}
+				obs_weak_source_release(ws);
 			}
 
 			obs_source_release(currentSource);
@@ -1111,47 +1122,46 @@ void SwitcherData::Thread()
 						}
 					}
 				}
-			}
 
-			if (!match){
-				pair<int, int> cursorPos = getCursorPos();
-				int minRegionSize = 99999;
+				if (!match){
+					pair<int, int> cursorPos = getCursorPos();
+					int minRegionSize = 99999;
 
-				for (auto &s : screenRegionSwitches){
-					if (cursorPos.first >= s.minX && cursorPos.second >= s.minY && cursorPos.first <= s.maxX && cursorPos.second <= s.maxY)
-					{
-						// prioritize smaller regions over larger regions
-						int regionSize = (s.maxX - s.minX) + (s.maxY - s.minY);
-						if (regionSize < minRegionSize)
+					for (auto &s : screenRegionSwitches){
+						if (cursorPos.first >= s.minX && cursorPos.second >= s.minY && cursorPos.first <= s.maxX && cursorPos.second <= s.maxY)
 						{
-							match = true;
-							scene = s.scene;
-							minRegionSize = regionSize;
-							// break;
+							// prioritize smaller regions over larger regions
+							int regionSize = (s.maxX - s.minX) + (s.maxY - s.minY);
+							if (regionSize < minRegionSize)
+							{
+								match = true;
+								scene = s.scene;
+								minRegionSize = regionSize;
+							}
 						}
 					}
 				}
-			}
 
-			if (!match && switchIfNotMatching &&
-				nonMatchingScene && !ignoreWindow) {
-				match = true;
-				scene = nonMatchingScene;
-			}
+				if (!match && switchIfNotMatching &&
+					nonMatchingScene && !ignoreWindow) {
+					match = true;
+					scene = nonMatchingScene;
+				}
 
-			match = match && (!fullscreen || (fullscreen && isFullscreen()));
+				match = match && (!fullscreen || (fullscreen && isFullscreen()));
 
-			if (match) {
-				obs_source_t *source =
-					obs_weak_source_get_source(scene);
-				obs_source_t *currentSource =
-					obs_frontend_get_current_scene();
+				if (match) {
+					obs_source_t *source =
+						obs_weak_source_get_source(scene);
+					obs_source_t *currentSource =
+						obs_frontend_get_current_scene();
 
-				if (source && source != currentSource)
-					obs_frontend_set_current_scene(source);
+					if (source && source != currentSource)
+						obs_frontend_set_current_scene(source);
 
-				obs_source_release(currentSource);
-				obs_source_release(source);
+					obs_source_release(currentSource);
+					obs_source_release(source);
+				}
 			}
 		}
 	}
@@ -1212,4 +1222,9 @@ extern "C" void InitSceneSwitcher()
 	obs_frontend_add_event_callback(OBSEvent, nullptr);
 
 	action->connect(action, &QAction::triggered, cb);
+}
+
+extern "C" void StopSwitcher()
+{
+	switcher->Stop();
 }
