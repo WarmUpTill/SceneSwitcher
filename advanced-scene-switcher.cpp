@@ -1069,6 +1069,7 @@ void SwitcherData::Thread()
 					if (currentSource == currentSource2){
 						obs_frontend_set_current_scene(source);
 						obs_source_release(source);
+						obs_source_release(currentSource2);
 						obs_weak_source_release(ws);
 						break;
 					}
@@ -1142,13 +1143,13 @@ void SwitcherData::Thread()
 					}
 				}
 
+				match = match && (!fullscreen || (fullscreen && isFullscreen()));
+
 				if (!match && switchIfNotMatching &&
 					nonMatchingScene && !ignoreWindow) {
 					match = true;
 					scene = nonMatchingScene;
 				}
-
-				match = match && (!fullscreen || (fullscreen && isFullscreen()));
 
 				if (match) {
 					obs_source_t *source =
