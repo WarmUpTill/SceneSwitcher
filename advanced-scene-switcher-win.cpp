@@ -59,12 +59,6 @@ void GetCurrentWindowTitle(string &title)
 {
 	HWND window = GetForegroundWindow();
 	DWORD id;
-
-	GetWindowThreadProcessId(window, &id);
-	if (id == GetCurrentProcessId()) {
-		title = "";
-		return;
-	}
 	GetWindowTitle(window, title);
 }
 
@@ -83,7 +77,6 @@ bool isFullscreen() {
 	RECT rc;
 	GetWindowRect(GetDesktopWindow(), &rc);
 	HWND hwnd = GetForegroundWindow();
-	//Check we haven't picked up the desktop or the shell
 	if (hwnd != GetDesktopWindow() || hwnd != GetShellWindow())
 	{
 		GetWindowRect(hwnd, &appBounds);

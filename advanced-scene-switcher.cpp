@@ -14,6 +14,8 @@
 #include <thread>
 #include <regex>
 #include <mutex>
+#include <fstream>
+#include <boost/filesystem.hpp>
 
 using namespace std;
 
@@ -66,7 +68,10 @@ struct SwitcherData {
 	thread th;
 	condition_variable cv;
 	mutex m;
-	bool stop = false;
+	mutex threadEndMutex;
+	mutex waitMutex;
+	bool stop = true;
+	//ThreadStopValue test;
 
 	vector<SceneSwitch> switches;
 	OBSWeakSource nonMatchingScene;
@@ -76,6 +81,7 @@ struct SwitcherData {
 
 	vector<ScreenRegionSwitch> screenRegionSwitches;
 	vector<OBSWeakSource> pauseScenesSwitches;
+	vector<string> pauseWindowsSwitches;
 	vector<string> ignoreWindowsSwitches;
 	vector<SceneRoundTripSwitch> sceneRoundTripSwitches;
 
@@ -212,6 +218,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	for (string &window : windows){
 		ui->windows->addItem(window.c_str());
 		ui->ignoreWindowsWindows->addItem(window.c_str());
+		ui->pauseWindowsWindows->addItem(window.c_str());
 	}
 
 	for (auto &s : switcher->switches) {
@@ -243,6 +250,14 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		item->setData(Qt::UserRole, text);
 	}
 
+	for (auto &window : switcher->pauseWindowsSwitches) {
+		QString text = QString::fromStdString(window);
+
+		QListWidgetItem *item = new QListWidgetItem(text,
+			ui->pauseWindows);
+		item->setData(Qt::UserRole, text);
+	}
+
 	for (auto &window : switcher->ignoreWindowsSwitches) {
 		QString text = QString::fromStdString(window);
 
@@ -269,6 +284,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		SetStopped();
 
 	loading = false;
+	//QObject::connect(&switcher->test, SIGNAL(switcher->test.valueChanged(bool)), this, SLOT(on_toggleStartButton_clicked()));
 }
 
 void SceneSwitcher::closeEvent(QCloseEvent*)
@@ -296,6 +312,63 @@ int SceneSwitcher::FindByData(const QString &window)
 }
 
 int SceneSwitcher::ScreenRegionFindByData(const QString &region)
+{
+	int count = ui->screenRegions->count();
+	int idx = -1;
+
+	for (int i = 0; i < count; i++) {
+		QListWidgetItem *item = ui->screenRegions->item(i);
+		QString itemRegion =
+			item->data(Qt::UserRole).toString();
+
+		if (itemRegion == region) {
+			idx = i;
+			break;
+		}
+	}
+
+	return idx;
+}
+
+int SceneSwitcher::PauseScenesFindByData(const QString &region)
+{
+	int count = ui->screenRegions->count();
+	int idx = -1;
+
+	for (int i = 0; i < count; i++) {
+		QListWidgetItem *item = ui->screenRegions->item(i);
+		QString itemRegion =
+			item->data(Qt::UserRole).toString();
+
+		if (itemRegion == region) {
+			idx = i;
+			break;
+		}
+	}
+
+	return idx;
+}
+
+int SceneSwitcher::PauseWindowsFindByData(const QString &region)
+{
+	int count = ui->screenRegions->count();
+	int idx = -1;
+
+	for (int i = 0; i < count; i++) {
+		QListWidgetItem *item = ui->screenRegions->item(i);
+		QString itemRegion =
+			item->data(Qt::UserRole).toString();
+
+		if (itemRegion == region) {
+			idx = i;
+			break;
+		}
+	}
+
+	return idx;
+}
+
+int SceneSwitcher::IgnoreWindowsFindByData(const QString &region)
 {
 	int count = ui->screenRegions->count();
 	int idx = -1;
@@ -351,6 +424,117 @@ void SceneSwitcher::on_switches_currentRowChanged(int idx)
 			string name = GetWeakSourceName(s.scene);
 			ui->scenes->setCurrentText(name.c_str());
 			ui->windows->setCurrentText(window);
+			break;
+		}
+	}
+}
+
+void SceneSwitcher::on_screenRegions_currentRowChanged(int idx)
+{
+	if (loading)
+		return;
+	if (idx == -1)
+		return;
+
+	QListWidgetItem *item = ui->screenRegions->item(idx);
+
+	QString region = item->data(Qt::UserRole).toString();
+
+	lock_guard<mutex> lock(switcher->m);
+	for (auto &s : switcher->screenRegionSwitches) {
+		if (region.compare(s.regionStr.c_str()) == 0) {
+			string name = GetWeakSourceName(s.scene);
+			ui->screenRegionScenes->setCurrentText(name.c_str());
+			ui->screenRegionMinX->setValue(s.minX);
+			ui->screenRegionMinY->setValue(s.minY);
+			ui->screenRegionMaxX->setValue(s.maxX);
+			ui->screenRegionMaxY->setValue(s.maxY);
+			break;
+		}
+	}
+}
+
+void SceneSwitcher::on_pauseScenes_currentRowChanged(int idx)
+{
+	if (loading)
+		return;
+	if (idx == -1)
+		return;
+
+	QListWidgetItem *item = ui->pauseScenes->item(idx);
+
+	QString scene = item->data(Qt::UserRole).toString();
+
+	lock_guard<mutex> lock(switcher->m);
+	for (auto &s : switcher->pauseScenesSwitches) {
+		string name = GetWeakSourceName(s);
+		if (scene.compare(name.c_str()) == 0) {
+			ui->pauseScenesScenes->setCurrentText(name.c_str());
+			break;
+		}
+	}
+}
+
+void SceneSwitcher::on_pauseWindows_currentRowChanged(int idx)
+{
+	if (loading)
+		return;
+	if (idx == -1)
+		return;
+
+	QListWidgetItem *item = ui->pauseWindows->item(idx);
+
+	QString window = item->data(Qt::UserRole).toString();
+
+	lock_guard<mutex> lock(switcher->m);
+	for (auto &s : switcher->pauseWindowsSwitches) {
+		if (window.compare(s.c_str()) == 0) {
+			ui->pauseWindowsWindows->setCurrentText(s.c_str());
+			break;
+		}
+	}
+}
+
+void SceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
+{
+	if (loading)
+		return;
+	if (idx == -1)
+		return;
+
+	QListWidgetItem *item = ui->ignoreWindows->item(idx);
+
+	QString window = item->data(Qt::UserRole).toString();
+
+	lock_guard<mutex> lock(switcher->m);
+	for (auto &s : switcher->ignoreWindowsSwitches) {
+		if (window.compare(s.c_str()) == 0) {
+			ui->ignoreWindowsWindows->setCurrentText(s.c_str());
+			break;
+		}
+	}
+}
+
+void SceneSwitcher::on_sceneRoundTrips_currentRowChanged(int idx)
+{
+	if (loading)
+		return;
+	if (idx == -1)
+		return;
+
+	QListWidgetItem *item = ui->sceneRoundTrips->item(idx);
+
+	QString sceneRoundTrip = item->data(Qt::UserRole).toString();
+
+	lock_guard<mutex> lock(switcher->m);
+	for (auto &s : switcher->sceneRoundTripSwitches) {
+		if (sceneRoundTrip.compare(s.sceneRoundTripStr.c_str()) == 0) {
+			string scene1 = GetWeakSourceName(s.scene1);
+			string scene2 = GetWeakSourceName(s.scene2);
+			int delay = s.delay;
+			ui->sceneRoundTripScenes1->setCurrentText(scene1.c_str());
+			ui->sceneRoundTripScenes2->setCurrentText(scene2.c_str());
+			ui->sceneRoundTripSpinBox->setValue(delay);
 			break;
 		}
 	}
@@ -437,6 +621,8 @@ void SceneSwitcher::on_remove_clicked()
 void SceneSwitcher::on_screenRegionAdd_clicked()
 {
 	QString sceneName = ui->screenRegionScenes->currentText();
+	if (sceneName.isEmpty())
+		return;
 	int minX = ui->screenRegionMinX->value();
 	int minY = ui->screenRegionMinY->value();
 	int maxX = ui->screenRegionMaxX->value();
@@ -510,6 +696,8 @@ void SceneSwitcher::on_screenRegionRemove_clicked()
 void SceneSwitcher::on_pauseScenesAdd_clicked()
 {
 	QString sceneName = ui->pauseScenesScenes->currentText();
+	if (sceneName.isEmpty())
+		return;
 
 	OBSWeakSource source = GetWeakSourceByQString(sceneName);
 	QVariant v = QVariant::fromValue(sceneName);
@@ -553,9 +741,58 @@ void SceneSwitcher::on_pauseScenesRemove_clicked()
 	delete item;
 }
 
+void SceneSwitcher::on_pauseWindowsAdd_clicked()
+{
+	QString windowName = ui->pauseWindowsWindows->currentText();
+	if (windowName.isEmpty())
+		return;
+
+	QVariant v = QVariant::fromValue(windowName);
+
+	QList<QListWidgetItem *> items = ui->pauseWindows->findItems(windowName, Qt::MatchExactly);
+
+	if (items.size() == 0) {
+		QListWidgetItem *item = new QListWidgetItem(windowName,
+			ui->pauseWindows);
+		item->setData(Qt::UserRole, v);
+
+		lock_guard<mutex> lock(switcher->m);
+		switcher->pauseWindowsSwitches.emplace_back(windowName.toUtf8().constData());
+		ui->pauseWindows->sortItems();
+	}
+}
+
+void SceneSwitcher::on_pauseWindowsRemove_clicked()
+{
+	QListWidgetItem *item = ui->pauseWindows->currentItem();
+	if (!item)
+		return;
+
+	QString windowName =
+		item->data(Qt::UserRole).toString();
+
+	{
+		lock_guard<mutex> lock(switcher->m);
+		auto &switches = switcher->pauseWindowsSwitches;
+
+		for (auto it = switches.begin(); it != switches.end(); ++it) {
+			auto &s = *it;
+
+			if (s == windowName.toUtf8().constData()) {
+				switches.erase(it);
+				break;
+			}
+		}
+	}
+
+	delete item;
+}
+
 void SceneSwitcher::on_ignoreWindowsAdd_clicked()
 {
 	QString windowName = ui->ignoreWindowsWindows->currentText();
+	if (windowName.isEmpty())
+		return;
 
 	QVariant v = QVariant::fromValue(windowName);
 
@@ -602,6 +839,8 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 {
 	QString scene1Name = ui->sceneRoundTripScenes1->currentText();
 	QString scene2Name = ui->sceneRoundTripScenes2->currentText();
+	if (scene1Name.isEmpty() || scene2Name.isEmpty())
+		return;
 	int delay = ui->sceneRoundTripSpinBox->value();
 
 	if (scene1Name == scene2Name)
@@ -746,8 +985,10 @@ void SceneSwitcher::on_toggleStartButton_clicked()
 		SetStopped();
 	}
 	else {
-		switcher->Start();
-		SetStarted();
+		if (switcher->stop){
+			switcher->Start();
+			SetStarted();
+		}
 	}
 }
 
@@ -759,6 +1000,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_array_t *array = obs_data_array_create();
 		obs_data_array_t *screenRegionArray = obs_data_array_create();
 		obs_data_array_t *pauseScenesArray = obs_data_array_create();
+		obs_data_array_t *pauseWindowsArray = obs_data_array_create();
 		obs_data_array_t *ignoreWindowsArray = obs_data_array_create();
 		obs_data_array_t *sceneRoundTripArray = obs_data_array_create();
 
@@ -823,6 +1065,13 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_release(array_obj);
 		}
 
+		for (string &window : switcher->pauseWindowsSwitches) {
+			obs_data_t *array_obj = obs_data_create();
+			obs_data_set_string(array_obj, "pauseWindow", window.c_str());
+			obs_data_array_push_back(pauseWindowsArray, array_obj);
+			obs_data_release(array_obj);
+		}
+
 		for (string &window : switcher->ignoreWindowsSwitches) {
 			obs_data_t *array_obj = obs_data_create();
 			obs_data_set_string(array_obj, "ignoreWindow", window.c_str());
@@ -866,12 +1115,18 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_set_array(obj, "switches", array);
 		obs_data_set_array(obj, "screenRegion", screenRegionArray);
 		obs_data_set_array(obj, "pauseScenes", pauseScenesArray);
+		obs_data_set_array(obj, "pauseWindows", pauseWindowsArray);
 		obs_data_set_array(obj, "ignoreWindows", ignoreWindowsArray);
 		obs_data_set_array(obj, "sceneRoundTrip", sceneRoundTripArray);
 
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
 
 		obs_data_array_release(array);
+		obs_data_array_release(screenRegionArray);
+		obs_data_array_release(pauseScenesArray);
+		obs_data_array_release(pauseWindowsArray);
+		obs_data_array_release(ignoreWindowsArray);
+		obs_data_array_release(sceneRoundTripArray);
 		obs_data_release(obj);
 	}
 	else {
@@ -962,6 +1217,24 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 		obs_data_array_release(pauseScenesArray);
 
+		obs_data_array_t *pauseWindowsArray = obs_data_get_array(obj, "pauseWindows");
+		count = obs_data_array_count(pauseWindowsArray);
+
+		switcher->pauseWindowsSwitches.clear();
+
+		for (size_t i = 0; i < count; i++) {
+			obs_data_t *array_obj = obs_data_array_item(pauseWindowsArray, i);
+
+			const char *window =
+				obs_data_get_string(array_obj, "pauseWindow");
+
+			switcher->pauseWindowsSwitches.emplace_back(window);
+
+			obs_data_release(array_obj);
+		}
+
+		obs_data_array_release(pauseWindowsArray);
+
 		obs_data_array_t *ignoreWindowsArray = obs_data_get_array(obj, "ignoreWindows");
 		count = obs_data_array_count(ignoreWindowsArray);
 
@@ -1011,7 +1284,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 		switcher->m.unlock();
 
-		if (active)
+		if (active && !switcher->stop)
 			switcher->Start();
 		else
 			switcher->Stop();
@@ -1025,20 +1298,22 @@ void SwitcherData::Thread()
 	string lastTitle;
 	string title;
 
-	for (;;) {
-		unique_lock<mutex> lock(m);
+	while (true) {
+		unique_lock<mutex> lock(waitMutex);
 		OBSWeakSource scene;
 		bool match = false;
 		bool fullscreen = false;
 		bool pause = false;
 		bool sceneRoundTripActive = false;
-		bool ignoreWindow = false;
 
 		cv.wait_for(lock, duration);
-		if (switcher->stop) {
-			switcher->stop = false;
+		threadEndMutex.lock();
+		if (stop) {
+		//if (test.value()){
+			threadEndMutex.unlock();
 			break;
 		}
+		else threadEndMutex.unlock();
 
 		obs_source_t *currentSource =
 			obs_frontend_get_current_scene();
@@ -1054,135 +1329,213 @@ void SwitcherData::Thread()
 		}
 
 		if (!pause){
-			for (SceneRoundTripSwitch &s : sceneRoundTripSwitches) {
-				OBSWeakSource ws = obs_source_get_weak_source(currentSource);
-				if (s.scene1 == ws) {
-					sceneRoundTripActive = true;
+			GetCurrentWindowTitle(title);
+			for (string &window : pauseWindowsSwitches) {
+				if (window == title) {
+					pause = true;
+					break;
+				}
+			}
+		}
 
-					cv.wait_for(lock, chrono::milliseconds(s.delay * 1000 - interval));
+		if (pause)
+			continue;
 
-					obs_source_t *source =
-						obs_weak_source_get_source(s.scene2);
-					obs_source_t *currentSource2 =
-						obs_frontend_get_current_scene();
+		for (SceneRoundTripSwitch &s : sceneRoundTripSwitches) {
+			OBSWeakSource ws = obs_source_get_weak_source(currentSource);
+			if (s.scene1 == ws) {
+				sceneRoundTripActive = true;
+				int dur = s.delay * 1000 - interval;
+				if (dur > 30)
+					cv.wait_for(lock, chrono::milliseconds(dur));
+				else
+					cv.wait_for(lock, chrono::milliseconds(30));
+				obs_source_t *source =
+					obs_weak_source_get_source(s.scene2);
+				obs_source_t *currentSource2 =
+					obs_frontend_get_current_scene();
 
-					if (currentSource == currentSource2){
-						obs_frontend_set_current_scene(source);
-						obs_source_release(source);
-						obs_source_release(currentSource2);
-						obs_weak_source_release(ws);
+				if (currentSource == currentSource2){
+					obs_frontend_set_current_scene(source);
+					obs_source_release(source);
+					obs_source_release(currentSource2);
+					obs_weak_source_release(ws);
+					break;
+				}
+				obs_source_release(currentSource2);
+			}
+			obs_weak_source_release(ws);
+		}
+		obs_source_release(currentSource);
+
+		if (sceneRoundTripActive)
+			continue;
+
+		duration = chrono::milliseconds(interval);
+
+		GetCurrentWindowTitle(title);
+
+		for (auto &window : ignoreWindowsSwitches){
+			if (window == title){
+				title = lastTitle;
+				break;
+			}
+		}
+		lastTitle = title;
+
+		switcher->Prune();
+
+		for (SceneSwitch &s : switches) {
+			if (s.window == title) {
+				match = true;
+				scene = s.scene;
+				fullscreen = s.fullscreen;
+				break;
+			}
+		}
+
+		/* try regex */
+		if (!match) {
+			for (SceneSwitch &s : switches) {
+				try {
+
+					bool matches = regex_match(
+						title, regex(s.window));
+					if (matches) {
+						match = true;
+						scene = s.scene;
+						fullscreen = s.fullscreen;
 						break;
 					}
-					obs_source_release(currentSource2);
 				}
-				obs_weak_source_release(ws);
+				catch (const regex_error &) {}
 			}
+		}
+
+		if (!match){
+			pair<int, int> cursorPos = getCursorPos();
+			int minRegionSize = 99999;
+
+			for (auto &s : screenRegionSwitches){
+				if (cursorPos.first >= s.minX && cursorPos.second >= s.minY && cursorPos.first <= s.maxX && cursorPos.second <= s.maxY)
+				{
+					int regionSize = (s.maxX - s.minX) + (s.maxY - s.minY);
+					if (regionSize < minRegionSize)
+					{
+						match = true;
+						scene = s.scene;
+						minRegionSize = regionSize;
+					}
+				}
+			}
+		}
+
+		match = match && (!fullscreen || (fullscreen && isFullscreen()));
+
+		if (!match && switchIfNotMatching &&
+			nonMatchingScene) {
+			match = true;
+			scene = nonMatchingScene;
+		}
+
+		if (match) {
+			obs_source_t *source =
+				obs_weak_source_get_source(scene);
+			obs_source_t *currentSource =
+				obs_frontend_get_current_scene();
+
+			if (source && source != currentSource)
+				obs_frontend_set_current_scene(source);
 
 			obs_source_release(currentSource);
-
-			if (!sceneRoundTripActive){
-
-				duration = chrono::milliseconds(interval);
-
-				GetCurrentWindowTitle(title);
-
-				for (auto &window : ignoreWindowsSwitches){
-					if (window == title){
-						ignoreWindow = true;
-						break;
-					}
-				}
-
-				if (!ignoreWindow){
-					switcher->Prune();
-
-					for (SceneSwitch &s : switches) {
-						if (s.window == title) {
-							match = true;
-							scene = s.scene;
-							fullscreen = s.fullscreen;
-							break;
-						}
-					}
-
-					/* try regex */
-					if (!match) {
-						for (SceneSwitch &s : switches) {
-							try {
-
-								bool matches = regex_match(
-									title, regex(s.window));
-								if (matches) {
-									match = true;
-									scene = s.scene;
-									fullscreen = s.fullscreen;
-									break;
-								}
-							}
-							catch (const regex_error &) {}
-						}
-					}
-				}
-
-				if (!match){
-					pair<int, int> cursorPos = getCursorPos();
-					int minRegionSize = 99999;
-
-					for (auto &s : screenRegionSwitches){
-						if (cursorPos.first >= s.minX && cursorPos.second >= s.minY && cursorPos.first <= s.maxX && cursorPos.second <= s.maxY)
-						{
-							// prioritize smaller regions over larger regions
-							int regionSize = (s.maxX - s.minX) + (s.maxY - s.minY);
-							if (regionSize < minRegionSize)
-							{
-								match = true;
-								scene = s.scene;
-								minRegionSize = regionSize;
-							}
-						}
-					}
-				}
-
-				match = match && (!fullscreen || (fullscreen && isFullscreen()));
-
-				if (!match && switchIfNotMatching &&
-					nonMatchingScene && !ignoreWindow) {
-					match = true;
-					scene = nonMatchingScene;
-				}
-
-				if (match) {
-					obs_source_t *source =
-						obs_weak_source_get_source(scene);
-					obs_source_t *currentSource =
-						obs_frontend_get_current_scene();
-
-					if (source && source != currentSource)
-						obs_frontend_set_current_scene(source);
-
-					obs_source_release(currentSource);
-					obs_source_release(source);
-				}
-			}
+			obs_source_release(source);
 		}
 	}
 }
 
 void SwitcherData::Start()
 {
-	if (!switcher->th.joinable())
+	if (!th.joinable()){
+		threadEndMutex.lock();
+		//test.setValue(false);
+		stop = false;
+		threadEndMutex.unlock();
 		switcher->th = thread([]() {switcher->Thread(); });
+	}
 }
 
 void SwitcherData::Stop()
 {
-	if (th.joinable()) {
-		{
-			lock_guard<mutex> lock(m);
-			stop = true;
-		}
-		cv.notify_one();
+	threadEndMutex.lock();
+	stop = true;
+	//test.setValue(true);
+	cv.notify_one();
+	threadEndMutex.unlock();
+	if (th.joinable())
 		th.join();
+}
+
+//HOTKEY
+
+void startStopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed) {
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(hotkey);
+	if (pressed)
+	{
+		if (switcher->th.joinable())
+			switcher->Stop();
+		else
+			switcher->Start();
+	}
+
+	obs_data_array *hotkeyData = obs_hotkey_save(id);
+	if (hotkeyData != NULL) {
+		char *path = obs_module_config_path("");
+		boost::filesystem::create_directories(path);
+		ofstream file;
+		file.open(string(path).append("hotkey.txt"), ofstream::trunc);
+		if (file.is_open()) {
+			size_t num = obs_data_array_count(hotkeyData);
+			for (size_t i = 0; i < num; i++) {
+				obs_data_t *data = obs_data_array_item(hotkeyData, i);
+				string temp = obs_data_get_json(data);
+				obs_data_release(data);
+				file << temp;
+			}
+			file.close();
+		}
+		bfree(path);
+	}
+	obs_data_array_release(hotkeyData);
+}
+
+string loadConfigFile(string filename) {
+	ifstream settingsFile;
+	char *path = obs_module_config_path("");
+	settingsFile.open(string(path).append(filename));
+	string value;
+	if (settingsFile.is_open())
+	{
+		settingsFile.seekg(0, ios::end);
+		value.reserve(settingsFile.tellg());
+		settingsFile.seekg(0, ios::beg);
+		value.assign((istreambuf_iterator<char>(settingsFile)), istreambuf_iterator<char>());
+		settingsFile.close();
+	}
+	bfree(path);
+	return value;
+}
+
+void loadKeybinding(obs_hotkey_id hotkeyId) {
+	string temp = loadConfigFile("hotkey.txt");
+	if (!temp.empty())
+	{
+		obs_data_array_t *hotkeyData = obs_data_array_create();
+		obs_data_t *data = obs_data_create_from_json(temp.c_str());
+		obs_data_array_insert(hotkeyData, 0, data);
+		obs_data_release(data);
+		obs_hotkey_load(hotkeyId, hotkeyData);
+		obs_data_array_release(hotkeyData);
 	}
 }
 
@@ -1194,8 +1547,9 @@ extern "C" void FreeSceneSwitcher()
 
 static void OBSEvent(enum obs_frontend_event event, void *)
 {
-	if (event == OBS_FRONTEND_EVENT_EXIT)
+	if (event == OBS_FRONTEND_EVENT_EXIT){
 		FreeSceneSwitcher();
+	}
 }
 
 extern "C" void InitSceneSwitcher()
@@ -1223,9 +1577,7 @@ extern "C" void InitSceneSwitcher()
 	obs_frontend_add_event_callback(OBSEvent, nullptr);
 
 	action->connect(action, &QAction::triggered, cb);
-}
 
-extern "C" void StopSwitcher()
-{
-	switcher->Stop();
+	obs_hotkey_id pauseHotkeyId = obs_hotkey_register_frontend("startStopSwitcherHotkey", "Toggle Start/Stop for the Advanced Scene Switcher", startStopHotkeyFunc, NULL);
+	loadKeybinding(pauseHotkeyId);
 }
