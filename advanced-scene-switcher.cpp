@@ -332,11 +332,11 @@ int SceneSwitcher::ScreenRegionFindByData(const QString &region)
 
 int SceneSwitcher::PauseScenesFindByData(const QString &region)
 {
-	int count = ui->screenRegions->count();
+	int count = ui->pauseScenes->count();
 	int idx = -1;
 
 	for (int i = 0; i < count; i++) {
-		QListWidgetItem *item = ui->screenRegions->item(i);
+		QListWidgetItem *item = ui->pauseScenes->item(i);
 		QString itemRegion =
 			item->data(Qt::UserRole).toString();
 
@@ -351,11 +351,11 @@ int SceneSwitcher::PauseScenesFindByData(const QString &region)
 
 int SceneSwitcher::PauseWindowsFindByData(const QString &region)
 {
-	int count = ui->screenRegions->count();
+	int count = ui->pauseWindows->count();
 	int idx = -1;
 
 	for (int i = 0; i < count; i++) {
-		QListWidgetItem *item = ui->screenRegions->item(i);
+		QListWidgetItem *item = ui->pauseWindows->item(i);
 		QString itemRegion =
 			item->data(Qt::UserRole).toString();
 
@@ -370,11 +370,11 @@ int SceneSwitcher::PauseWindowsFindByData(const QString &region)
 
 int SceneSwitcher::IgnoreWindowsFindByData(const QString &region)
 {
-	int count = ui->screenRegions->count();
+	int count = ui->ignoreWindows->count();
 	int idx = -1;
 
 	for (int i = 0; i < count; i++) {
-		QListWidgetItem *item = ui->screenRegions->item(i);
+		QListWidgetItem *item = ui->ignoreWindows->item(i);
 		QString itemRegion =
 			item->data(Qt::UserRole).toString();
 
@@ -1538,6 +1538,8 @@ void loadKeybinding(obs_hotkey_id hotkeyId) {
 		obs_data_array_release(hotkeyData);
 	}
 }
+
+//END HOTKEY
 
 extern "C" void FreeSceneSwitcher()
 {
