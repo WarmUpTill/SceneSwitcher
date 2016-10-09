@@ -248,6 +248,13 @@
            </property>
           </widget>
          </item>
+         <item row="2" column="1">
+          <widget class="QLabel" name="pluginRunningText">
+           <property name="text">
+            <string notr="true">Not Active</string>
+           </property>
+          </widget>
+         </item>
          <item row="3" column="0">
           <spacer name="horizontalSpacer">
            <property name="orientation">
@@ -283,13 +290,6 @@
             </size>
            </property>
           </spacer>
-         </item>
-         <item row="2" column="1">
-          <widget class="QLabel" name="pluginRunningText">
-           <property name="text">
-            <string notr="true">Not Active</string>
-           </property>
-          </widget>
          </item>
         </layout>
        </item>
@@ -574,7 +574,7 @@
          <item>
           <widget class="QLabel" name="label_14">
            <property name="text">
-            <string>Stay on the currently selected scene when </string>
+            <string>Pause the Scene Switcher when </string>
            </property>
           </widget>
          </item>
