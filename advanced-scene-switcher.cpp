@@ -5,6 +5,7 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QAction>
+#include <QDir>
 #include "advanced-scene-switcher.hpp"
 
 #include <condition_variable>
@@ -15,7 +16,6 @@
 #include <regex>
 #include <mutex>
 #include <fstream>
-#include <boost/filesystem.hpp>
 
 using namespace std;
 
@@ -1491,7 +1491,6 @@ void startStopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, boo
 	obs_data_array *hotkeyData = obs_hotkey_save(id);
 	if (hotkeyData != NULL) {
 		char *path = obs_module_config_path("");
-		boost::filesystem::create_directories(path);
 		ofstream file;
 		file.open(string(path).append("hotkey.txt"), ofstream::trunc);
 		if (file.is_open()) {
@@ -1579,6 +1578,13 @@ extern "C" void InitSceneSwitcher()
 	obs_frontend_add_event_callback(OBSEvent, nullptr);
 
 	action->connect(action, &QAction::triggered, cb);
+
+	char *path = obs_module_config_path("");
+	QDir dir(path);
+	if (!dir.exists()){
+		dir.mkpath(".");
+	}
+	bfree(path);
 
 	obs_hotkey_id pauseHotkeyId = obs_hotkey_register_frontend("startStopSwitcherHotkey", "Toggle Start/Stop for the Advanced Scene Switcher", startStopHotkeyFunc, NULL);
 	loadKeybinding(pauseHotkeyId);
