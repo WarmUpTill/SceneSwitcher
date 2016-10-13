@@ -54,6 +54,11 @@ public slots:
 	void on_ignoreWindowsRemove_clicked();
 	void on_sceneRoundTripAdd_clicked();
 	void on_sceneRoundTripRemove_clicked();
+	void on_browseButton_clicked();
+	void on_readFileCheckBox_stateChanged(int state);
+	void on_readPathLineEdit_textChanged(const QString & text);
+	void on_writePathLineEdit_textChanged(const QString & text);
+	void on_browseButton_2_clicked();
 	void on_noMatchDontSwitch_clicked();
 	void on_noMatchSwitch_clicked();
 	void on_startAtLaunch_toggled(bool value);

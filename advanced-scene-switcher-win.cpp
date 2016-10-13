@@ -77,7 +77,7 @@ bool isFullscreen() {
 	RECT rc;
 	GetWindowRect(GetDesktopWindow(), &rc);
 	HWND hwnd = GetForegroundWindow();
-	if (hwnd != GetDesktopWindow() || hwnd != GetShellWindow())
+	if (hwnd != GetDesktopWindow() && hwnd != GetShellWindow())
 	{
 		GetWindowRect(hwnd, &appBounds);
 		if (rc.bottom == appBounds.bottom && rc.top == appBounds.top && rc.left == appBounds.left && rc.right == appBounds.right)
