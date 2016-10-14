@@ -1964,6 +1964,7 @@ void SwitcherData::Thread()
 			if (source && source != currentSource){
 				obs_source_t *nextTransition;
 				OBSWeakSource currentScene = obs_source_get_weak_source(currentSource);
+				obs_weak_source_release(currentScene);
 				OBSWeakSource nextTransitionWs = getNextTransition(currentScene, scene);
 
 				if (nextTransitionWs){
