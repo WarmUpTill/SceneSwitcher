@@ -31,6 +31,7 @@ public:
 	int PauseWindowsFindByData(const QString &region);
 	int IgnoreWindowsFindByData(const QString &region);
 	int SceneRoundTripFindByData(const QString &scene1);
+	int SceneTransitionsFindByData(const QString &scene1, const QString &scene2);
 
 	void UpdateNonMatchingScene(const QString &name);
 
@@ -41,6 +42,7 @@ public slots:
 	void on_pauseWindows_currentRowChanged(int idx);
 	void on_ignoreWindows_currentRowChanged(int idx);
 	void on_sceneRoundTrips_currentRowChanged(int idx);
+	void on_sceneTransitions_currentRowChanged(int idx);
 	void on_close_clicked();
 	void on_add_clicked();
 	void on_remove_clicked();
@@ -54,6 +56,8 @@ public slots:
 	void on_ignoreWindowsRemove_clicked();
 	void on_sceneRoundTripAdd_clicked();
 	void on_sceneRoundTripRemove_clicked();
+	void on_transitionsAdd_clicked();
+	void on_transitionsRemove_clicked();
 	void on_browseButton_clicked();
 	void on_readFileCheckBox_stateChanged(int state);
 	void on_readPathLineEdit_textChanged(const QString & text);
