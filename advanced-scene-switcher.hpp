@@ -75,25 +75,3 @@ void GetWindowList(std::vector<std::string> &windows);
 void GetCurrentWindowTitle(std::string &title);
 std::pair<int, int> getCursorPos();
 bool isFullscreen();
-
-//Test for hotkey signal
-
-//class ThreadStopValue : public QObject
-//{
-//	Q_OBJECT
-//public:
-//	ThreadStopValue() { stop = false; }
-//	bool value() const { return stop; }
-//	public slots :
-//		void setValue(bool value)
-//	{
-//		if (value != stop) {
-//			stop = value;
-//			emit valueChanged(value);
-//		}
-//	};
-//signals:
-//	void valueChanged(bool newValue);
-//private:
-//	bool stop;
-//};

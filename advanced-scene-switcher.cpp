@@ -88,14 +88,6 @@ static inline bool WeakSourceValid(obs_weak_source_t *ws)
 	return !!source;
 }
 
-static inline bool WeakTransitionValid(obs_weak_source_t *ws)
-{
-	obs_source_t *source = obs_weak_source_get_source(ws);
-	if (source)
-		obs_source_release(source);;
-	return !!source;
-}
-
 struct SwitcherData {
 	thread th;
 	condition_variable cv;
@@ -126,7 +118,7 @@ struct SwitcherData {
 	{
 		for (size_t i = 0; i < switches.size(); i++) {
 			SceneSwitch &s = switches[i];
-			if (!WeakSourceValid(s.scene) || !WeakTransitionValid(s.transition))
+			if (!WeakSourceValid(s.scene) || !WeakSourceValid(s.transition))
 				switches.erase(switches.begin() + i--);
 		}
 
@@ -137,7 +129,7 @@ struct SwitcherData {
 
 		for (size_t i = 0; i < screenRegionSwitches.size(); i++) {
 			ScreenRegionSwitch &s = screenRegionSwitches[i];
-			if (!WeakSourceValid(s.scene) || !WeakTransitionValid(s.transition))
+			if (!WeakSourceValid(s.scene) || !WeakSourceValid(s.transition))
 				screenRegionSwitches.erase(screenRegionSwitches.begin() + i--);
 		}
 
@@ -149,13 +141,13 @@ struct SwitcherData {
 
 		for (size_t i = 0; i < sceneRoundTripSwitches.size(); i++) {
 			SceneRoundTripSwitch &s = sceneRoundTripSwitches[i];
-			if (!WeakSourceValid(s.scene1) || !WeakSourceValid(s.scene2) || !WeakTransitionValid(s.transition))
+			if (!WeakSourceValid(s.scene1) || !WeakSourceValid(s.scene2) || !WeakSourceValid(s.transition))
 				sceneRoundTripSwitches.erase(sceneRoundTripSwitches.begin() + i--);
 		}
 
 		for (size_t i = 0; i < sceneTransitions.size(); i++) {
 			SceneTransition &s = sceneTransitions[i];
-			if (!WeakSourceValid(s.scene1) || !WeakSourceValid(s.scene2) || !WeakTransitionValid(s.transition))
+			if (!WeakSourceValid(s.scene1) || !WeakSourceValid(s.scene2) || !WeakSourceValid(s.transition))
 				sceneTransitions.erase(sceneTransitions.begin() + i--);
 		}
 	}
@@ -172,17 +164,16 @@ static inline QString MakeSwitchName(const QString &scene,
 	const QString &value, const QString &transition, bool fullscreen)
 {
 	if (!fullscreen)
-		return QStringLiteral("[") + scene + QStringLiteral(", ") +
-		transition + QStringLiteral("]: ") + value;
-	return QStringLiteral("[") + scene + QStringLiteral(", ") +
-		transition + QStringLiteral("]: ") + value + QStringLiteral(" (only if window is fullscreen)");
+		return QStringLiteral("[") + scene + QStringLiteral(", ") + transition + QStringLiteral("]: ") +
+		value;
+	return QStringLiteral("[") + scene + QStringLiteral(", ") + transition + QStringLiteral("]: ") +
+		value + QStringLiteral(" (only if window is fullscreen)");
 }
 
 static inline QString MakeScreenRegionSwitchName(const QString &scene, const QString &transition,
 	int minX, int minY, int maxX, int maxY)
 {
-	return QStringLiteral("[") + scene + QStringLiteral(", ") +
-		transition + QStringLiteral("]: ") +
+	return QStringLiteral("[") + scene + QStringLiteral(", ") + transition + QStringLiteral("]: ") +
 		QString::number(minX) + QStringLiteral(", ") + QString::number(minY) + QStringLiteral(" x ") + QString::number(maxX) + QStringLiteral(", ") + QString::number(maxY);
 }
 
@@ -241,6 +232,7 @@ static inline OBSWeakSource GetWeakTransitionByName(const char *transitionName)
 		obs_weak_source_release(weak);
 		return weak;
 	}
+
 	obs_frontend_source_list *transitions = new obs_frontend_source_list();
 	obs_frontend_get_transitions(transitions);
 
@@ -251,9 +243,10 @@ static inline OBSWeakSource GetWeakTransitionByName(const char *transitionName)
 			break;
 		}
 	}
-	obs_frontend_source_list_free(transitions);
 
 	weak = obs_source_get_weak_source(source);
+
+	obs_frontend_source_list_free(transitions);
 	obs_weak_source_release(weak);
 
 	return weak;
@@ -736,7 +729,7 @@ void SceneSwitcher::on_add_clicked()
 	QString transitionName = ui->transitions->currentText();
 	bool fullscreen = ui->fullscreenCheckBox->isChecked();
 
-	if (windowName.isEmpty())
+	if (windowName.isEmpty() || sceneName.isEmpty())
 		return;
 
 	OBSWeakSource source = GetWeakSourceByQString(sceneName);
@@ -809,8 +802,10 @@ void SceneSwitcher::on_screenRegionAdd_clicked()
 {
 	QString sceneName = ui->screenRegionScenes->currentText();
 	QString transitionName = ui->screenRegionsTransitions->currentText();
+
 	if (sceneName.isEmpty())
 		return;
+
 	int minX = ui->screenRegionMinX->value();
 	int minY = ui->screenRegionMinY->value();
 	int maxX = ui->screenRegionMaxX->value();
@@ -886,6 +881,7 @@ void SceneSwitcher::on_screenRegionRemove_clicked()
 void SceneSwitcher::on_pauseScenesAdd_clicked()
 {
 	QString sceneName = ui->pauseScenesScenes->currentText();
+
 	if (sceneName.isEmpty())
 		return;
 
@@ -934,6 +930,7 @@ void SceneSwitcher::on_pauseScenesRemove_clicked()
 void SceneSwitcher::on_pauseWindowsAdd_clicked()
 {
 	QString windowName = ui->pauseWindowsWindows->currentText();
+
 	if (windowName.isEmpty())
 		return;
 
@@ -981,6 +978,7 @@ void SceneSwitcher::on_pauseWindowsRemove_clicked()
 void SceneSwitcher::on_ignoreWindowsAdd_clicked()
 {
 	QString windowName = ui->ignoreWindowsWindows->currentText();
+
 	if (windowName.isEmpty())
 		return;
 
@@ -1030,8 +1028,10 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 	QString scene1Name = ui->sceneRoundTripScenes1->currentText();
 	QString scene2Name = ui->sceneRoundTripScenes2->currentText();
 	QString transitionName = ui->sceneRoundTripTransitions->currentText();
+
 	if (scene1Name.isEmpty() || scene2Name.isEmpty())
 		return;
+
 	int delay = ui->sceneRoundTripSpinBox->value();
 
 	if (scene1Name == scene2Name)
@@ -1105,6 +1105,7 @@ void SceneSwitcher::on_transitionsAdd_clicked()
 	QString scene1Name = ui->transitionsScene1->currentText();
 	QString scene2Name = ui->transitionsScene2->currentText();
 	QString transitionName = ui->transitionsTransitions->currentText();
+
 	if (scene1Name.isEmpty() || scene2Name.isEmpty())
 		return;
 
@@ -1185,6 +1186,7 @@ void SceneSwitcher::on_readFileCheckBox_stateChanged(int state)
 {
 	if (loading)
 		return;
+
 	lock_guard<mutex> lock(switcher->m);
 	if (!state){
 		ui->browseButton_2->setDisabled(true);
@@ -1202,6 +1204,7 @@ void SceneSwitcher::on_readPathLineEdit_textChanged(const QString & text)
 {
 	if (loading)
 		return;
+
 	lock_guard<mutex> lock(switcher->m);
 	if (text.isEmpty()){
 		switcher->fileIO.readEnabled = false;
@@ -1215,6 +1218,7 @@ void SceneSwitcher::on_writePathLineEdit_textChanged(const QString & text)
 {
 	if (loading)
 		return;
+
 	lock_guard<mutex> lock(switcher->m);
 	if (text.isEmpty()){
 		switcher->fileIO.writeEnabled = false;
@@ -1309,14 +1313,13 @@ void SceneSwitcher::on_toggleStartButton_clicked()
 		switcher->Stop();
 		SetStopped();
 	}
-	else {
-		if (switcher->stop){
-			switcher->Start();
-			SetStarted();
-		}
+	else if (switcher->stop){
+		switcher->Start();
+		SetStarted();
 	}
 }
 
+//TODO rename the save values (clears settings!)
 static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 {
 	if (saving) {
@@ -1514,7 +1517,12 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_t *obj = obs_data_get_obj(save_data,
 			"advanced-scene-switcher");
 		obs_data_array_t *array = obs_data_get_array(obj, "switches");
-		size_t count = obs_data_array_count(array);
+		obs_data_array_t *screenRegionArray = obs_data_get_array(obj, "screenRegion");
+		obs_data_array_t *pauseScenesArray = obs_data_get_array(obj, "pauseScenes");
+		obs_data_array_t *pauseWindowsArray = obs_data_get_array(obj, "pauseWindows");
+		obs_data_array_t *ignoreWindowsArray = obs_data_get_array(obj, "ignoreWindows");
+		obs_data_array_t *sceneRoundTripArray = obs_data_get_array(obj, "sceneRoundTrip");
+		obs_data_array_t *sceneTransitionsArray = obs_data_get_array(obj, "sceneTransitions");
 
 		if (!obj)
 			obj = obs_data_create();
@@ -1532,6 +1540,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			GetWeakSourceByName(nonMatchingScene.c_str());
 
 		switcher->switches.clear();
+		size_t count = obs_data_array_count(array);
 
 		for (size_t i = 0; i < count; i++) {
 			obs_data_t *array_obj = obs_data_array_item(array, i);
@@ -1552,12 +1561,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_release(array_obj);
 		}
 
-		obs_data_array_release(array);
-
-		obs_data_array_t *screenRegionArray = obs_data_get_array(obj, "screenRegion");
-		count = obs_data_array_count(screenRegionArray);
-
 		switcher->screenRegionSwitches.clear();
+		count = obs_data_array_count(screenRegionArray);
 
 		for (size_t i = 0; i < count; i++) {
 			obs_data_t *array_obj = obs_data_array_item(screenRegionArray, i);
@@ -1581,12 +1586,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_release(array_obj);
 		}
 
-		obs_data_array_release(screenRegionArray);
-
-		obs_data_array_t *pauseScenesArray = obs_data_get_array(obj, "pauseScenes");
-		count = obs_data_array_count(pauseScenesArray);
-
 		switcher->pauseScenesSwitches.clear();
+		count = obs_data_array_count(pauseScenesArray);
 
 		for (size_t i = 0; i < count; i++) {
 			obs_data_t *array_obj = obs_data_array_item(pauseScenesArray, i);
@@ -1599,12 +1600,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_release(array_obj);
 		}
 
-		obs_data_array_release(pauseScenesArray);
-
-		obs_data_array_t *pauseWindowsArray = obs_data_get_array(obj, "pauseWindows");
-		count = obs_data_array_count(pauseWindowsArray);
-
 		switcher->pauseWindowsSwitches.clear();
+		count = obs_data_array_count(pauseWindowsArray);
 
 		for (size_t i = 0; i < count; i++) {
 			obs_data_t *array_obj = obs_data_array_item(pauseWindowsArray, i);
@@ -1619,10 +1616,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 		obs_data_array_release(pauseWindowsArray);
 
-		obs_data_array_t *ignoreWindowsArray = obs_data_get_array(obj, "ignoreWindows");
-		count = obs_data_array_count(ignoreWindowsArray);
-
 		switcher->ignoreWindowsSwitches.clear();
+		count = obs_data_array_count(ignoreWindowsArray);
 
 		for (size_t i = 0; i < count; i++) {
 			obs_data_t *array_obj = obs_data_array_item(ignoreWindowsArray, i);
@@ -1635,12 +1630,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_release(array_obj);
 		}
 
-		obs_data_array_release(ignoreWindowsArray);
-
-		obs_data_array_t *sceneRoundTripArray = obs_data_get_array(obj, "sceneRoundTrip");
-		count = obs_data_array_count(sceneRoundTripArray);
-
 		switcher->sceneRoundTripSwitches.clear();
+		count = obs_data_array_count(sceneRoundTripArray);
 
 		for (size_t i = 0; i < count; i++) {
 			obs_data_t *array_obj = obs_data_array_item(sceneRoundTripArray, i);
@@ -1665,12 +1656,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_release(array_obj);
 		}
 
-		obs_data_array_release(sceneRoundTripArray);
-
-		obs_data_array_t *sceneTransitionsArray = obs_data_get_array(obj, "sceneTransitions");
-		count = obs_data_array_count(sceneTransitionsArray);
-
 		switcher->sceneTransitions.clear();
+		count = obs_data_array_count(sceneTransitionsArray);
 
 		for (size_t i = 0; i < count; i++) {
 			obs_data_t *array_obj = obs_data_array_item(sceneTransitionsArray, i);
@@ -1693,12 +1680,17 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_release(array_obj);
 		}
 
-		obs_data_array_release(sceneTransitionsArray);
-
 		switcher->fileIO.readEnabled = obs_data_get_bool(obj, "readEnabled");
 		switcher->fileIO.readPath = obs_data_get_string(obj, "readPath");
 		switcher->fileIO.writeEnabled = obs_data_get_bool(obj, "writeEnabled");
 		switcher->fileIO.writePath = obs_data_get_string(obj, "writePath");
+
+		obs_data_array_release(array);
+		obs_data_array_release(screenRegionArray);
+		obs_data_array_release(pauseScenesArray);
+		obs_data_array_release(ignoreWindowsArray);
+		obs_data_array_release(sceneRoundTripArray);
+		obs_data_array_release(sceneTransitionsArray);
 
 		obs_data_release(obj);
 
@@ -1715,9 +1707,7 @@ static inline OBSWeakSource getNextTransition(OBSWeakSource scene1, OBSWeakSourc
 {
 	OBSWeakSource ws;
 	for (SceneTransition &t : switcher->sceneTransitions){
-		if (t.scene1 == scene1 && t.scene2 == scene2){
-			 ws = t.transition;
-		}
+		if (t.scene1 == scene1 && t.scene2 == scene2) ws = t.transition;	
 	}
 	return ws;
 }
@@ -1829,8 +1819,10 @@ void SwitcherData::Thread()
 
 		//Scene Round Trip
 
-		for (SceneRoundTripSwitch &s : sceneRoundTripSwitches) {
+		for (SceneRoundTripSwitch &s : sceneRoundTripSwitches) 
+		{
 			OBSWeakSource ws = obs_source_get_weak_source(currentSource);
+
 			if (s.scene1 == ws) {
 				sceneRoundTripActive = true;
 				int dur = s.delay * 1000 - interval;
@@ -1838,6 +1830,7 @@ void SwitcherData::Thread()
 					cv.wait_for(lock, chrono::milliseconds(dur));
 				else
 					cv.wait_for(lock, chrono::milliseconds(30));
+
 				obs_source_t *source =
 					obs_weak_source_get_source(s.scene2);
 				obs_source_t *currentSource2 =
@@ -1846,17 +1839,22 @@ void SwitcherData::Thread()
 				if (currentSource == currentSource2){
 					obs_source_t *transition;
 					OBSWeakSource transitionWs = getNextTransition(s.scene1, s.scene2);
+
 					if (transitionWs)
 						transition = obs_weak_source_get_source(transitionWs);
 					else
 						transition = obs_weak_source_get_source(s.transition);
+
 					obs_frontend_set_current_transition(transition);
 					obs_frontend_set_current_scene(source);
+
 					obs_source_release(transition);
 				}
+
 				obs_source_release(source);
 				obs_weak_source_release(ws);
 				obs_source_release(currentSource2);
+
 				break;
 			}
 			obs_weak_source_release(ws);
@@ -1880,6 +1878,7 @@ void SwitcherData::Thread()
 				break;
 			}
 		}
+
 		lastTitle = title;
 
 		//End Ignore Windows
@@ -1966,6 +1965,7 @@ void SwitcherData::Thread()
 				obs_source_t *nextTransition;
 				OBSWeakSource currentScene = obs_source_get_weak_source(currentSource);
 				OBSWeakSource nextTransitionWs = getNextTransition(currentScene, scene);
+
 				if (nextTransitionWs){
 					obs_source_t *nextTransition = obs_weak_source_get_source(nextTransitionWs);
 					obs_frontend_set_current_transition(nextTransition);
@@ -1976,6 +1976,7 @@ void SwitcherData::Thread()
 					obs_frontend_set_current_transition(nextTransition);
 					obs_source_release(nextTransition);
 				}
+
 				obs_frontend_set_current_scene(source);
 			}
 			obs_source_release(currentSource);
@@ -2009,9 +2010,11 @@ void SwitcherData::Stop()
 
 //HOTKEY
 
-void startStopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed) {
+void startStopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed) 
+{
 	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(hotkey);
+
 	if (pressed)
 	{
 		if (switcher->th.joinable())
@@ -2021,6 +2024,7 @@ void startStopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, boo
 	}
 
 	obs_data_array *hotkeyData = obs_hotkey_save(id);
+
 	if (hotkeyData != NULL) {
 		char *path = obs_module_config_path("");
 		ofstream file;
@@ -2040,11 +2044,13 @@ void startStopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, boo
 	obs_data_array_release(hotkeyData);
 }
 
-string loadConfigFile(string filename) {
+string loadConfigFile(string filename) 
+{
 	ifstream settingsFile;
 	char *path = obs_module_config_path("");
-	settingsFile.open(string(path).append(filename));
 	string value;
+
+	settingsFile.open(string(path).append(filename));
 	if (settingsFile.is_open())
 	{
 		settingsFile.seekg(0, ios::end);
@@ -2057,12 +2063,13 @@ string loadConfigFile(string filename) {
 	return value;
 }
 
-void loadKeybinding(obs_hotkey_id hotkeyId) {
-	string temp = loadConfigFile("hotkey.txt");
-	if (!temp.empty())
+void loadKeybinding(obs_hotkey_id hotkeyId) 
+{
+	string bindings = loadConfigFile("hotkey.txt");
+	if (!bindings.empty())
 	{
 		obs_data_array_t *hotkeyData = obs_data_array_create();
-		obs_data_t *data = obs_data_create_from_json(temp.c_str());
+		obs_data_t *data = obs_data_create_from_json(bindings.c_str());
 		obs_data_array_insert(hotkeyData, 0, data);
 		obs_data_release(data);
 		obs_hotkey_load(hotkeyId, hotkeyData);
