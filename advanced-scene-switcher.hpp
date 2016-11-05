@@ -34,6 +34,7 @@ public:
 	int SceneTransitionsFindByData(const QString &scene1, const QString &scene2);
 
 	void UpdateNonMatchingScene(const QString &name);
+	void UpdateAutoStopScene(const QString &name);
 
 public slots:
 	void on_switches_currentRowChanged(int idx);
@@ -56,6 +57,8 @@ public slots:
 	void on_ignoreWindowsRemove_clicked();
 	void on_sceneRoundTripAdd_clicked();
 	void on_sceneRoundTripRemove_clicked();
+	void on_autoStopSceneCheckBox_stateChanged(int state);
+	void on_autoStopScenes_currentTextChanged(const QString &text);
 	void on_transitionsAdd_clicked();
 	void on_transitionsRemove_clicked();
 	void on_browseButton_clicked();
@@ -69,6 +72,7 @@ public slots:
 	void on_noMatchSwitchScene_currentTextChanged(const QString &text);
 	void on_checkInterval_valueChanged(int value);
 	void on_toggleStartButton_clicked();
+	void updateScreenRegionCursorPos();
 };
 
 void GetWindowList(std::vector<std::string> &windows);

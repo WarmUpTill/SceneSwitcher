@@ -8,6 +8,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QTextStream>
+#include <QTimer>
 #include "advanced-scene-switcher.hpp"
 
 #include <condition_variable>
@@ -94,6 +95,9 @@ struct SwitcherData {
 	mutex m;
 	mutex threadEndMutex;
 	mutex waitMutex;
+	//mutex transitionWaitMutex;
+	//mutex transitionWaitMutex2;
+	condition_variable transitionCv;
 	bool stop = true;
 
 	vector<SceneSwitch> switches;
@@ -103,11 +107,19 @@ struct SwitcherData {
 	bool startAtLaunch = false;
 
 	vector<ScreenRegionSwitch> screenRegionSwitches;
+
 	vector<OBSWeakSource> pauseScenesSwitches;
+
 	vector<string> pauseWindowsSwitches;
+
 	vector<string> ignoreWindowsSwitches;
+
 	vector<SceneRoundTripSwitch> sceneRoundTripSwitches;
+	bool autoStopEnable = false;
+	OBSWeakSource autoStopScene;
+
 	vector<SceneTransition> sceneTransitions;
+
 	FileIOData fileIO;
 
 	void Thread();
@@ -276,6 +288,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		ui->pauseScenesScenes->addItem(name);
 		ui->sceneRoundTripScenes1->addItem(name);
 		ui->sceneRoundTripScenes2->addItem(name);
+		ui->autoStopScenes->addItem(name);
 		ui->transitionsScene1->addItem(name);
 		ui->transitionsScene2->addItem(name);
 		temp++;
@@ -342,6 +355,17 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		item->setData(Qt::UserRole, s.regionStr.c_str());
 	}
 
+	ui->autoStopSceneCheckBox->setChecked(switcher->autoStopEnable);
+	ui->autoStopScenes->setCurrentText(
+		GetWeakSourceName(switcher->autoStopScene).c_str());
+
+	if (ui->autoStopSceneCheckBox->checkState()){
+		ui->autoStopScenes->setDisabled(false);
+	}
+	else{
+		ui->autoStopScenes->setDisabled(true);
+	}
+
 	for (auto &scene : switcher->pauseScenesSwitches) {
 		string sceneName = GetWeakSourceName(scene);
 		QString text = QString::fromStdString(sceneName);
@@ -396,13 +420,13 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	ui->readFileCheckBox->setChecked(switcher->fileIO.readEnabled);
 	ui->writePathLineEdit->setText(QString::fromStdString(switcher->fileIO.writePath.c_str()));
 
-	if (!ui->readFileCheckBox->checkState()){
-		ui->browseButton_2->setDisabled(true);
-		ui->readPathLineEdit->setDisabled(true);
-	}
-	else{
+	if (ui->readFileCheckBox->checkState()){
 		ui->browseButton_2->setDisabled(false);
 		ui->readPathLineEdit->setDisabled(false);
+	}
+	else{
+		ui->browseButton_2->setDisabled(true);
+		ui->readPathLineEdit->setDisabled(true);
 	}
 
 	if (switcher->th.joinable())
@@ -411,6 +435,11 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		SetStopped();
 
 	loading = false;
+
+	//screen region cursor position
+	QTimer *screenRegionTimer = new QTimer(this);
+	connect(screenRegionTimer, SIGNAL(timeout()), this, SLOT(updateScreenRegionCursorPos()));
+	screenRegionTimer->start(1000);
 }
 
 void SceneSwitcher::closeEvent(QCloseEvent*)
@@ -1100,6 +1129,44 @@ void SceneSwitcher::on_sceneRoundTripRemove_clicked()
 	delete item;
 }
 
+void SceneSwitcher::on_autoStopSceneCheckBox_stateChanged(int state)
+{
+	if (loading)
+		return;
+
+	lock_guard<mutex> lock(switcher->m);
+	if (!state){
+		ui->autoStopScenes->setDisabled(true);
+		switcher->autoStopEnable = false;
+	}
+	else{
+		ui->autoStopScenes->setDisabled(false);
+		switcher->autoStopEnable = true;
+	}
+}
+
+void SceneSwitcher::UpdateAutoStopScene(const QString &name)
+{
+	obs_source_t *scene = obs_get_source_by_name(
+		name.toUtf8().constData());
+	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
+
+	switcher->autoStopScene = ws;
+
+	obs_weak_source_release(ws);
+	obs_source_release(scene);
+}
+
+void SceneSwitcher::on_autoStopScenes_currentTextChanged(
+	const QString &text)
+{
+	if (loading)
+		return;
+
+	lock_guard<mutex> lock(switcher->m);
+	UpdateAutoStopScene(text);
+}
+
 void SceneSwitcher::on_transitionsAdd_clicked()
 {
 	QString scene1Name = ui->transitionsScene1->currentText();
@@ -1319,6 +1386,12 @@ void SceneSwitcher::on_toggleStartButton_clicked()
 	}
 }
 
+void SceneSwitcher::updateScreenRegionCursorPos(){
+	pair<int,int>position = getCursorPos();
+	ui->cursorXPosition->setText(QString::number(position.first));
+	ui->cursorYPosition->setText(QString::number(position.second));
+}
+
 //TODO rename the save values (clears settings!)
 static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 {
@@ -1493,6 +1566,11 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_set_array(obj, "ignoreWindows", ignoreWindowsArray);
 		obs_data_set_array(obj, "sceneRoundTrip", sceneRoundTripArray);
 		obs_data_set_array(obj, "sceneTransitions", sceneTransitionsArray);
+
+		string autoStopSceneName =
+			GetWeakSourceName(switcher->autoStopScene);
+		obs_data_set_bool(obj, "autoStopEnable", switcher->autoStopEnable);
+		obs_data_set_string(obj, "autoStopSceneName", autoStopSceneName.c_str());
 
 		obs_data_set_bool(obj, "readEnabled", switcher->fileIO.readEnabled);
 		obs_data_set_string(obj, "readPath", switcher->fileIO.readPath.c_str());
@@ -1679,6 +1757,10 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 			obs_data_release(array_obj);
 		}
+		string autoStopScene = obs_data_get_string(obj, "autoStopSceneName");
+		switcher->autoStopEnable = obs_data_get_bool(obj,"autoStopEnable");
+		switcher->autoStopScene = GetWeakSourceByName(
+			autoStopScene.c_str());
 
 		switcher->fileIO.readEnabled = obs_data_get_bool(obj, "readEnabled");
 		switcher->fileIO.readPath = obs_data_get_string(obj, "readPath");
@@ -1721,24 +1803,26 @@ void SwitcherData::Thread()
 
 	while (true) {
 		unique_lock<mutex> lock(waitMutex);
+		//unique_lock<mutex> transitionLock(transitionWaitMutex);
 		OBSWeakSource scene;
 		OBSWeakSource transition;
+		//obs_source_t *oldTransition = obs_frontend_get_current_transition();
 		bool match = false;
 		bool fullscreen = false;
 		bool pause = false;
 		bool sceneRoundTripActive = false;
+
+		obs_source_t *currentSource =
+			obs_frontend_get_current_scene();
 
 		//Files
 		//TODO add transitions to output file / read them in the input file
 		if (fileIO.writeEnabled){
 			QFile file(QString::fromStdString(fileIO.writePath));
 			if (file.open(QIODevice::WriteOnly)){
-				obs_source_t *currentSource =
-					obs_frontend_get_current_scene();
 				const char *msg = obs_source_get_name(currentSource);
 				file.write(msg, qstrlen(msg));
 				file.close();
-				obs_source_release(currentSource);
 			}
 		}
 
@@ -1757,23 +1841,33 @@ void SwitcherData::Thread()
 				QString sceneStr = in.readLine();
 				obs_source_t *scene =
 					obs_get_source_by_name(sceneStr.toUtf8().constData());
-				obs_source_t *currentSource =
-					obs_frontend_get_current_scene();
 				if (scene && scene != currentSource)
-					//add transitions check
+					//add transitions check here too
 					obs_frontend_set_current_scene(scene);
 				file.close();
 				obs_source_release(scene);
-				obs_source_release(currentSource);
 			}
+			obs_source_release(currentSource);
 			continue;
 		}
 
 		//End Files
 
+		//Auto stop streaming/recording
+
+		OBSWeakSource ws = obs_source_get_weak_source(currentSource);
+		if (autoStopScene == ws) {
+			//stop
+			if (obs_frontend_streaming_active())
+				obs_frontend_streaming_stop();
+			if (obs_frontend_recording_active())
+				obs_frontend_recording_stop();
+		}
+		obs_weak_source_release(ws);
+
+		//End auto stop streaming/recording
+
 		//Pause 
-		obs_source_t *currentSource =
-			obs_frontend_get_current_scene();
 
 		for (OBSWeakSource &s : pauseScenesSwitches) {
 			OBSWeakSource ws = obs_source_get_weak_source(currentSource);
@@ -1846,7 +1940,12 @@ void SwitcherData::Thread()
 						transition = obs_weak_source_get_source(s.transition);
 
 					obs_frontend_set_current_transition(transition);
+					//transitionWaitMutex2.lock();
 					obs_frontend_set_current_scene(source);
+					//transitionWaitMutex2.unlock();
+					//longest transition duration 10s
+					//transitionCv.wait_for(transitionLock,chrono::seconds(10));
+					//obs_frontend_set_current_transition(oldTransition);
 
 					obs_source_release(transition);
 				}
@@ -1859,10 +1958,13 @@ void SwitcherData::Thread()
 			}
 			obs_weak_source_release(ws);
 		}
+
 		obs_source_release(currentSource);
 
-		if (sceneRoundTripActive)
+		if (sceneRoundTripActive){
+			//obs_source_release(oldTransition);
 			continue;
+		}
 
 		//End Scene Round Trip
 
@@ -1945,13 +2047,17 @@ void SwitcherData::Thread()
 
 		match = match && (!fullscreen || (fullscreen && isFullscreen()));
 
+		//End fullscreen
+
+		//Backup Scene
+
 		if (!match && switchIfNotMatching &&
 			nonMatchingScene) {
 			match = true;
 			scene = nonMatchingScene;
 		}
 
-		//End fullscreen
+		//End Backup Scene
 
 		//Switch scene
 
@@ -1978,13 +2084,21 @@ void SwitcherData::Thread()
 					obs_source_release(nextTransition);
 				}
 
+				//transitionWaitMutex2.lock();
 				obs_frontend_set_current_scene(source);
+				//transitionWaitMutex2.unlock();
+				//longest transition duration 10s
+				//transitionCv.wait_for(transitionLock, chrono::seconds(10));
+				//obs_frontend_set_current_transition(oldTransition);
+
 			}
 			obs_source_release(currentSource);
 			obs_source_release(source);
 		}
 
 		//End switch scene
+
+		//obs_source_release(oldTransition);
 
 	}
 }
@@ -2086,11 +2200,21 @@ extern "C" void FreeSceneSwitcher()
 	switcher = nullptr;
 }
 
-static void OBSEvent(enum obs_frontend_event event, void *)
+static void OBSEvent(enum obs_frontend_event event, void * switcher)
 {
 	if (event == OBS_FRONTEND_EVENT_EXIT){
 		FreeSceneSwitcher();
 	}
+
+	//needed to reset the transition, but buggy now
+	//if (event == OBS_FRONTEND_EVENT_TRANSITION_STOPPED){
+	//	SwitcherData *test = (SwitcherData*)switcher;
+	//	test->transitionWaitMutex2.lock();
+	//	this_thread::sleep_for(chrono::milliseconds(100)); //seems necesssary since the transition is not always done
+	//	test->transitionCv.notify_one();
+	//	test->transitionWaitMutex2.unlock();
+	//	
+	//}
 }
 
 extern "C" void InitSceneSwitcher()
@@ -2115,7 +2239,7 @@ extern "C" void InitSceneSwitcher()
 	};
 
 	obs_frontend_add_save_callback(SaveSceneSwitcher, nullptr);
-	obs_frontend_add_event_callback(OBSEvent, nullptr);
+	obs_frontend_add_event_callback(OBSEvent, switcher);
 
 	action->connect(action, &QAction::triggered, cb);
 
