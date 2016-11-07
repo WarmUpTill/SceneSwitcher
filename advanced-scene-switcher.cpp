@@ -601,6 +601,7 @@ void SceneSwitcher::on_switches_currentRowChanged(int idx)
 			ui->scenes->setCurrentText(name.c_str());
 			ui->windows->setCurrentText(window);
 			ui->transitions->setCurrentText(transitionName.c_str());
+			ui->fullscreenCheckBox->setChecked(s.fullscreen);
 			break;
 		}
 	}
@@ -1388,7 +1389,7 @@ void SceneSwitcher::on_toggleStartButton_clicked()
 
 void SceneSwitcher::updateScreenRegionCursorPos(){
 	pair<int,int>position = getCursorPos();
-	ui->cursorXPosition->setText(QString::number(position.first));
+	ui->cursorXPosition->setText(QString::number(position.first));;
 	ui->cursorYPosition->setText(QString::number(position.second));
 }
 
@@ -1827,12 +1828,20 @@ void SwitcherData::Thread()
 		}
 
 		cv.wait_for(lock, duration);
-		threadEndMutex.lock();
-		if (stop) {
-			threadEndMutex.unlock();
-			break;
+
+		{
+			lock_guard<mutex> lock(threadEndMutex);
+			if (stop) {
+				obs_source_release(currentSource);
+				break;
+			}
 		}
-		else threadEndMutex.unlock();
+		//threadEndMutex.lock();
+		//if (stop) {
+		//	threadEndMutex.unlock();
+		//	break;
+		//}
+		//else threadEndMutex.unlock();
 
 		if (fileIO.readEnabled){
 			QFile file(QString::fromStdString(fileIO.readPath));
@@ -1857,7 +1866,6 @@ void SwitcherData::Thread()
 
 		OBSWeakSource ws = obs_source_get_weak_source(currentSource);
 		if (autoStopScene == ws) {
-			//stop
 			if (obs_frontend_streaming_active())
 				obs_frontend_streaming_stop();
 			if (obs_frontend_recording_active())
@@ -1930,6 +1938,7 @@ void SwitcherData::Thread()
 				obs_source_t *currentSource2 =
 					obs_frontend_get_current_scene();
 
+				//don't switch if user changed scene manually
 				if (currentSource == currentSource2){
 					obs_source_t *transition;
 					OBSWeakSource transitionWs = getNextTransition(s.scene1, s.scene2);
