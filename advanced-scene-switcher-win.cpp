@@ -4,7 +4,7 @@
 
 using namespace std;
 
-static bool GetWindowTitle(HWND window, string &title)
+static bool GetWindowTitle(HWND window, string& title)
 {
 	size_t len = (size_t)GetWindowTextLengthW(window);
 	wstring wtitle;
@@ -32,7 +32,7 @@ static bool WindowValid(HWND window)
 		return false;
 
 	GetClientRect(window, &rect);
-	styles    = GetWindowLongPtr(window, GWL_STYLE);
+	styles = GetWindowLongPtr(window, GWL_STYLE);
 	ex_styles = GetWindowLongPtr(window, GWL_EXSTYLE);
 
 	if (ex_styles & WS_EX_TOOLWINDOW)
@@ -43,11 +43,12 @@ static bool WindowValid(HWND window)
 	return true;
 }
 
-void GetWindowList(vector<string> &windows)
+void GetWindowList(vector<string>& windows)
 {
 	HWND window = GetWindow(GetDesktopWindow(), GW_CHILD);
 
-	while (window) {
+	while (window)
+	{
 		string title;
 		if (WindowValid(window) && GetWindowTitle(window, title))
 			windows.emplace_back(title);
@@ -55,24 +56,27 @@ void GetWindowList(vector<string> &windows)
 	}
 }
 
-void GetCurrentWindowTitle(string &title)
+void GetCurrentWindowTitle(string& title)
 {
 	HWND window = GetForegroundWindow();
 	DWORD id;
 	GetWindowTitle(window, title);
 }
 
-pair<int, int> getCursorPos() {
+pair<int, int> getCursorPos()
+{
 	pair<int, int> pos(0, 0);
 	POINT cursorPos;
-	if (GetPhysicalCursorPos(&cursorPos)) {
+	if (GetPhysicalCursorPos(&cursorPos))
+	{
 		pos.first = cursorPos.x;
 		pos.second = cursorPos.y;
 	}
 	return pos;
 }
 
-bool isFullscreen() {
+bool isFullscreen()
+{
 	RECT appBounds;
 	RECT rc;
 	GetWindowRect(GetDesktopWindow(), &rc);
@@ -80,7 +84,8 @@ bool isFullscreen() {
 	if (hwnd != GetDesktopWindow() && hwnd != GetShellWindow())
 	{
 		GetWindowRect(hwnd, &appBounds);
-		if (rc.bottom == appBounds.bottom && rc.top == appBounds.top && rc.left == appBounds.left && rc.right == appBounds.right)
+		if (rc.bottom == appBounds.bottom && rc.top == appBounds.top && rc.left == appBounds.left
+			&& rc.right == appBounds.right)
 		{
 			return true;
 		}
