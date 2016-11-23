@@ -33,6 +33,8 @@ public:
 	int SceneRoundTripFindByData(const QString &scene1);
 	int SceneTransitionsFindByData(const QString &scene1, const QString &scene2);
 
+	int executableFindByData(const QString &exe);//dasoven
+
 	void UpdateNonMatchingScene(const QString &name);
 	void UpdateAutoStopScene(const QString &name);
 
@@ -73,9 +75,21 @@ public slots:
 	void on_checkInterval_valueChanged(int value);
 	void on_toggleStartButton_clicked();
 	void updateScreenRegionCursorPos();
+
+	//dasoven region_start
+	void on_executableAdd_clicked();
+	void on_executableRemove_clicked();
+	void on_executables_currentRowChanged(int idx);
+	//dasoven region_end
 };
 
 void GetWindowList(std::vector<std::string> &windows);
 void GetCurrentWindowTitle(std::string &title);
 std::pair<int, int> getCursorPos();
 bool isFullscreen();
+
+
+//dasoven region_start
+bool isInFocus(const QString &exeToCheck);
+void GetProcessList(QStringList &processes);
+//dasoven region_end

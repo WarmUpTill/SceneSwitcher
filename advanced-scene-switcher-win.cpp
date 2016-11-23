@@ -1,6 +1,10 @@
 #include <windows.h>
 #include <util/platform.h>
 #include "advanced-scene-switcher.hpp"
+//dasoven region_start
+#include <TlHelp32.h>
+#include <Psapi.h>
+//dasoven region_end
 
 using namespace std;
 
@@ -59,7 +63,7 @@ void GetWindowList(vector<string>& windows)
 void GetCurrentWindowTitle(string& title)
 {
 	HWND window = GetForegroundWindow();
-	DWORD id;
+	//DWORD id;
 	GetWindowTitle(window, title);
 }
 
@@ -92,3 +96,49 @@ bool isFullscreen()
 	}
 	return false;
 }
+
+//dasoven region_start
+void GetProcessList(QStringList &processes) {
+
+	HANDLE procSnapshot;
+	PROCESSENTRY32 procEntry;
+
+	procSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (procSnapshot == INVALID_HANDLE_VALUE) return;
+
+	procEntry.dwSize = sizeof(PROCESSENTRY32);
+
+	if (!Process32First(procSnapshot, &procEntry)) {
+		CloseHandle(procSnapshot);
+		return;
+	}
+
+	do {
+		QString tempexe = QString::fromWCharArray(procEntry.szExeFile);
+		if (tempexe == "System") continue;
+		if (tempexe == "[System Process]") continue;
+		if (processes.contains(tempexe)) continue;
+		processes.append(tempexe);
+	} while (Process32Next(procSnapshot, &procEntry));
+
+	CloseHandle(procSnapshot);
+}
+
+bool isInFocus(const QString &exeToCheck) {
+	// only checks if the current foreground window is from the same executable,
+	// may return true for incorrent not meant windows from a program
+	HWND foregroundWindow = GetForegroundWindow();
+	DWORD processId = 0;
+	GetWindowThreadProcessId(foregroundWindow, &processId);
+
+	HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+	if (process == NULL) return false;
+
+	WCHAR executablePath[600];
+	GetModuleFileNameEx(process, 0, executablePath, 600);
+	CloseHandle(process);
+
+	return exeToCheck == QString::fromWCharArray(executablePath).split(QRegExp("(/|\\\\)")).back();
+}
+//dasoven region_end
+
