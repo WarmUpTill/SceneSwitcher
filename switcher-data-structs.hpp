@@ -97,3 +97,11 @@ struct FileIOData
 	bool writeEnabled;
 	string writePath;
 };
+
+struct IdleData
+{
+	bool idleEnable;
+	int time;
+	OBSWeakSource scene;
+	OBSWeakSource transition;
+};

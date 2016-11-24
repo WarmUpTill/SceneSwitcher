@@ -142,3 +142,25 @@ bool isInFocus(const QString &exeToCheck) {
 }
 //dasoven region_end
 
+int getLastInputTime()
+{
+	LASTINPUTINFO lastInputInfo;
+	lastInputInfo.cbSize = sizeof(LASTINPUTINFO); //<------------- crash here
+	if (GetLastInputInfo(&lastInputInfo))
+		return lastInputInfo.dwTime;
+	return 0;
+}
+
+int getTime()
+{
+	return GetTickCount();
+}
+
+bool noInput(DWORD startTime, int time)
+{
+	PLASTINPUTINFO lastInputInfo;
+	if (GetLastInputInfo(lastInputInfo))
+		if (lastInputInfo->dwTime - startTime > time * 1000)
+			return true;
+	return false;
+}

@@ -54,6 +54,7 @@ struct SwitcherData
 	vector<string> ignoreWindowsSwitches;
 
 	vector<SceneRoundTripSwitch> sceneRoundTripSwitches;
+
 	bool autoStopEnable = false;
 	OBSWeakSource autoStopScene;
 
@@ -62,6 +63,8 @@ struct SwitcherData
 	vector<ExecutableSceneSwitch> executableSwitches; // dasoven
 
 	FileIOData fileIO;
+	
+	IdleData idleData;
 
 	void Thread();
 	void Start();
@@ -104,6 +107,12 @@ struct SwitcherData
 				sceneRoundTripSwitches.erase(sceneRoundTripSwitches.begin() + i--);
 		}
 
+		if (!WeakSourceValid(autoStopScene))
+		{
+			autoStopScene = NULL;
+			autoStopEnable = false;
+		}
+
 		for (size_t i = 0; i < sceneTransitions.size(); i++)
 		{
 			SceneTransition& s = sceneTransitions[i];
@@ -119,6 +128,13 @@ struct SwitcherData
 			if (!WeakSourceValid(s.mScene) || !WeakSourceValid(s.mTransition))
 				switches.erase(switches.begin() + i--);
 		} // dasoven region_end
+
+		if (!WeakSourceValid(idleData.scene) || !WeakSourceValid(idleData.transition))
+		{
+			idleData.scene = NULL;
+			idleData.transition = NULL;
+			idleData.idleEnable = false;
+		}
 	}
 
 	inline ~SwitcherData()
@@ -154,15 +170,12 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		ui->transitionsScene1->addItem(name);
 		ui->transitionsScene2->addItem(name);
 		ui->executableScenes->addItem(name); // dasoven
+		ui->idleScenes->addItem(name);
 		temp++;
 	}
 
 	obs_frontend_source_list* transitions = new obs_frontend_source_list();
 	obs_frontend_get_transitions(transitions);
-
-	// ui->transitions->addItem("Default");
-	// ui->screenRegionsTransitions->addItem("Default");
-	// ui->sceneRoundTripTransitions->addItem("Default");
 
 	for (size_t i = 0; i < transitions->sources.num; i++)
 	{
@@ -172,11 +185,8 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		ui->sceneRoundTripTransitions->addItem(name);
 		ui->transitionsTransitions->addItem(name);
 		ui->executableTransitions->addItem(name); // dasoven
+		ui->idleTransitions->addItem(name);
 	}
-
-	// ui->transitions->addItem("Random");
-	// ui->screenRegionsTransitions->addItem("Random");
-	// ui->sceneRoundTripTransitions->addItem("Random");
 
 	obs_frontend_source_list_free(transitions);
 
@@ -297,6 +307,24 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 
 		QListWidgetItem* item = new QListWidgetItem(text, ui->sceneTransitions);
 		item->setData(Qt::UserRole, text);
+	}
+
+	ui->idleCheckBox->setChecked(switcher->idleData.idleEnable);
+	ui->idleScenes->setCurrentText(GetWeakSourceName(switcher->idleData.scene).c_str());
+	ui->idleTransitions->setCurrentText(GetWeakSourceName(switcher->idleData.transition).c_str());
+	ui->idleSpinBox->setValue(switcher->idleData.time);
+
+	if (ui->idleCheckBox->checkState())
+	{
+		ui->idleScenes->setDisabled(false);
+		ui->idleSpinBox->setDisabled(false);
+		ui->idleTransitions->setDisabled(false);
+	}
+	else
+	{
+		ui->idleScenes->setDisabled(true);
+		ui->idleSpinBox->setDisabled(true);
+		ui->idleTransitions->setDisabled(true);
 	}
 
 	ui->readPathLineEdit->setText(QString::fromStdString(switcher->fileIO.readPath.c_str()));
@@ -1296,6 +1324,74 @@ void SceneSwitcher::on_executableRemove_clicked()
 
 // DASOVEN REGION_END
 
+void SceneSwitcher::on_idleCheckBox_stateChanged(int state)
+{
+	if (loading)
+		return;
+
+	lock_guard<mutex> lock(switcher->m);
+	if (!state)
+	{
+		ui->idleScenes->setDisabled(true);
+		ui->idleSpinBox->setDisabled(true);
+		ui->idleTransitions->setDisabled(true);
+
+		switcher->idleData.idleEnable = false;
+	}
+	else
+	{
+		ui->idleScenes->setDisabled(false);
+		ui->idleSpinBox->setDisabled(false);
+		ui->idleTransitions->setDisabled(false);
+
+		switcher->idleData.idleEnable = true;
+	}
+}
+
+
+void SceneSwitcher::UpdateIdleDataTransition(const QString& name)
+{
+	obs_weak_source_t* transition = GetWeakTransitionByQString(name);
+	switcher->idleData.transition = transition;
+}
+
+void SceneSwitcher::UpdateIdleDataScene(const QString& name)
+{
+	obs_source_t* scene = obs_get_source_by_name(name.toUtf8().constData());
+	obs_weak_source_t* ws = obs_source_get_weak_source(scene);
+
+	switcher->idleData.scene = ws;
+
+	obs_weak_source_release(ws);
+	obs_source_release(scene);
+}
+
+void SceneSwitcher::on_idleTransitions_currentTextChanged(const QString& text)
+{
+	if (loading)
+		return;
+
+	lock_guard<mutex> lock(switcher->m);
+	UpdateIdleDataTransition(text);
+}
+
+void SceneSwitcher::on_idleScenes_currentTextChanged(const QString& text)
+{
+	if (loading)
+		return;
+
+	lock_guard<mutex> lock(switcher->m);
+	UpdateIdleDataScene(text);
+}
+
+void SceneSwitcher::on_idleSpinBox_valueChanged(int i)
+{
+	if (loading)
+		return;
+	lock_guard<mutex> lock(switcher->m);
+	switcher->idleData.time = i;
+}
+
 void SceneSwitcher::on_browseButton_clicked()
 {
 	QString directory = QFileDialog::getOpenFileName(
@@ -1649,6 +1745,13 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_set_bool(obj, "autoStopEnable", switcher->autoStopEnable);
 		obs_data_set_string(obj, "autoStopSceneName", autoStopSceneName.c_str());
 
+		string idleSceneName = GetWeakSourceName(switcher->idleData.scene);
+		string idleTransitionName = GetWeakSourceName(switcher->idleData.transition);
+		obs_data_set_bool(obj, "idleEnable", switcher->idleData.idleEnable);
+		obs_data_set_string(obj, "idleSceneName", idleSceneName.c_str());
+		obs_data_set_string(obj, "idleTransitionName", idleTransitionName.c_str());
+		obs_data_set_int(obj, "idleTime", switcher->idleData.time);
+
 		obs_data_set_bool(obj, "readEnabled", switcher->fileIO.readEnabled);
 		obs_data_set_string(obj, "readPath", switcher->fileIO.readPath.c_str());
 		obs_data_set_bool(obj, "writeEnabled", switcher->fileIO.writeEnabled);
@@ -1838,6 +1941,13 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		string autoStopScene = obs_data_get_string(obj, "autoStopSceneName");
 		switcher->autoStopEnable = obs_data_get_bool(obj, "autoStopEnable");
 		switcher->autoStopScene = GetWeakSourceByName(autoStopScene.c_str());
+
+		string idleSceneName = obs_data_get_string(obj, "idleSceneName");
+		string idleTransitionName = obs_data_get_string(obj, "idleTransitionName");
+		switcher->idleData.scene = GetWeakSourceByName(idleSceneName.c_str());
+		switcher->idleData.transition = GetWeakTransitionByName(idleTransitionName.c_str());
+		switcher->idleData.idleEnable = obs_data_get_bool(obj, "idleEnable");
+		switcher->idleData.time = obs_data_get_int(obj, "idleTime");
 
 		switcher->fileIO.readEnabled = obs_data_get_bool(obj, "readEnabled");
 		switcher->fileIO.readPath = obs_data_get_string(obj, "readPath");
@@ -2088,19 +2198,36 @@ void SwitcherData::Thread()
 
 		// End Ignore Windows
 
-		// Regular switch
-
 		switcher->Prune();
 
-		for (SceneSwitch& s : switches)
+		// Idle switch
+
+		if (!match && idleData.idleEnable)
 		{
-			if (s.window == title)
+			if (getTime() - getLastInputTime() > idleData.time * 1000)
 			{
+				scene = idleData.scene;
+				transition = idleData.transition;
+				fullscreen = false;
 				match = true;
-				scene = s.scene;
-				transition = s.transition;
-				fullscreen = s.fullscreen;
-				break;
+			}
+		}
+
+		// End Idle switch
+
+		// Regular switch
+
+		if (!match){
+			for (SceneSwitch& s : switches)
+			{
+				if (s.window == title)
+				{
+					match = true;
+					scene = s.scene;
+					transition = s.transition;
+					fullscreen = s.fullscreen;
+					break;
+				}
 			}
 		}
 
