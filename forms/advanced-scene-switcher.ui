@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>880</width>
-    <height>358</height>
+    <width>981</width>
+    <height>403</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -467,6 +467,12 @@
          </item>
          <item>
           <widget class="QLineEdit" name="cursorXPosition">
+           <property name="minimumSize">
+            <size>
+             <width>60</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="readOnly">
             <bool>true</bool>
            </property>
@@ -481,6 +487,12 @@
          </item>
          <item>
           <widget class="QLineEdit" name="cursorYPosition">
+           <property name="minimumSize">
+            <size>
+             <width>60</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="readOnly">
             <bool>true</bool>
            </property>
@@ -1409,6 +1421,107 @@
             <string>Implemented by dasOven</string>
            </property>
           </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="IdleTab">
+      <attribute name="title">
+       <string>Idle Detection</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_13">
+       <item>
+        <widget class="QCheckBox" name="idleCheckBox">
+         <property name="text">
+          <string>Enable Idle Detection</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_25">
+         <item>
+          <widget class="QLabel" name="label_26">
+           <property name="text">
+            <string>After </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="idleSpinBox">
+           <property name="suffix">
+            <string>s</string>
+           </property>
+           <property name="prefix">
+            <string/>
+           </property>
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>1000000</number>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_27">
+           <property name="text">
+            <string>of no inputs </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_30">
+           <property name="text">
+            <string>switch to scene</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="idleScenes">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>0</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_28">
+           <property name="text">
+            <string>using the</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="idleTransitions"/>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_29">
+           <property name="text">
+            <string>transition</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_25">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </item>
