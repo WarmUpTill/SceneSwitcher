@@ -145,7 +145,7 @@ bool isInFocus(const QString &exeToCheck) {
 int getLastInputTime()
 {
 	LASTINPUTINFO lastInputInfo;
-	lastInputInfo.cbSize = sizeof(LASTINPUTINFO); //<------------- crash here
+	lastInputInfo.cbSize = sizeof(LASTINPUTINFO);
 	if (GetLastInputInfo(&lastInputInfo))
 		return lastInputInfo.dwTime;
 	return 0;
@@ -156,11 +156,15 @@ int getTime()
 	return GetTickCount();
 }
 
-bool noInput(DWORD startTime, int time)
+bool SS()
 {
-	PLASTINPUTINFO lastInputInfo;
-	if (GetLastInputInfo(lastInputInfo))
-		if (lastInputInfo->dwTime - startTime > time * 1000)
-			return true;
-	return false;
+	bool time = false;
+	if(SystemParametersInfo(
+		SPI_GETSCREENSAVEACTIVE,
+		NULL,
+		&time,
+		NULL
+		));
+	
+	return time;
 }

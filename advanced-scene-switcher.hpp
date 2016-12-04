@@ -27,12 +27,13 @@ public:
 
 	int FindByData(const QString &window);
 	int ScreenRegionFindByData(const QString &region);
-	int PauseScenesFindByData(const QString &region);
-	int PauseWindowsFindByData(const QString &region);
-	int IgnoreWindowsFindByData(const QString &region);
+	int PauseScenesFindByData(const QString &scene);
+	int PauseWindowsFindByData(const QString &window);
+	int IgnoreWindowsFindByData(const QString &window);
 	int SceneRoundTripFindByData(const QString &scene1);
 	int SceneTransitionsFindByData(const QString &scene1, const QString &scene2);
 	int executableFindByData(const QString &exe);//dasoven
+	int IgnoreIdleWindowsFindByData(const QString& window);
 
 	void UpdateNonMatchingScene(const QString &name);
 	void UpdateAutoStopScene(const QString &name);
@@ -69,6 +70,8 @@ public slots:
 	void on_sceneRoundTrips_currentRowChanged(int idx);
 	void on_sceneRoundTripAdd_clicked();
 	void on_sceneRoundTripRemove_clicked();
+	void on_sceneRoundTripSave_clicked();
+	void on_sceneRoundTripLoad_clicked();
 
 	void on_autoStopSceneCheckBox_stateChanged(int state);
 	void on_autoStopScenes_currentTextChanged(const QString &text);
@@ -93,6 +96,9 @@ public slots:
 	void on_idleTransitions_currentTextChanged(const QString& text);
 	void on_idleScenes_currentTextChanged(const QString& text);
 	void on_idleSpinBox_valueChanged(int i);
+	void on_ignoreIdleWindows_currentRowChanged(int idx);
+	void on_ignoreIdleAdd_clicked();
+	void on_ignoreIdleRemove_clicked();
 
 	void updateScreenRegionCursorPos();
 

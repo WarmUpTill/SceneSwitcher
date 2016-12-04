@@ -32,8 +32,8 @@ struct SwitcherData
 	thread th;
 	condition_variable cv;
 	mutex m;
-	mutex threadEndMutex;
 	mutex waitMutex;
+	mutex threadEndMutex;
 	// mutex transitionWaitMutex;
 	// mutex transitionWaitMutex2;
 	condition_variable transitionCv;
@@ -65,6 +65,7 @@ struct SwitcherData
 	FileIOData fileIO;
 	
 	IdleData idleData;
+	vector<string> ignoreIdleWindows;
 
 	void Thread();
 	void Start();
@@ -206,6 +207,7 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		ui->windows->addItem(window.c_str());
 		ui->ignoreWindowsWindows->addItem(window.c_str());
 		ui->pauseWindowsWindows->addItem(window.c_str());
+		ui->ignoreIdleWindowsWindows->addItem(window.c_str());
 	}
 
 	// dasoven region_start
@@ -309,6 +311,14 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		item->setData(Qt::UserRole, text);
 	}
 
+	for (auto& window : switcher->ignoreIdleWindows)
+	{
+		QString text = QString::fromStdString(window);
+
+		QListWidgetItem* item = new QListWidgetItem(text, ui->ignoreIdleWindows);
+		item->setData(Qt::UserRole, text);
+	}
+
 	ui->idleCheckBox->setChecked(switcher->idleData.idleEnable);
 	ui->idleScenes->setCurrentText(GetWeakSourceName(switcher->idleData.scene).c_str());
 	ui->idleTransitions->setCurrentText(GetWeakSourceName(switcher->idleData.transition).c_str());
@@ -400,7 +410,7 @@ int SceneSwitcher::ScreenRegionFindByData(const QString& region)
 	return idx;
 }
 
-int SceneSwitcher::PauseScenesFindByData(const QString& region)
+int SceneSwitcher::PauseScenesFindByData(const QString& scene)
 {
 	int count = ui->pauseScenes->count();
 	int idx = -1;
@@ -410,7 +420,7 @@ int SceneSwitcher::PauseScenesFindByData(const QString& region)
 		QListWidgetItem* item = ui->pauseScenes->item(i);
 		QString itemRegion = item->data(Qt::UserRole).toString();
 
-		if (itemRegion == region)
+		if (itemRegion == scene)
 		{
 			idx = i;
 			break;
@@ -420,7 +430,7 @@ int SceneSwitcher::PauseScenesFindByData(const QString& region)
 	return idx;
 }
 
-int SceneSwitcher::PauseWindowsFindByData(const QString& region)
+int SceneSwitcher::PauseWindowsFindByData(const QString& window)
 {
 	int count = ui->pauseWindows->count();
 	int idx = -1;
@@ -430,7 +440,7 @@ int SceneSwitcher::PauseWindowsFindByData(const QString& region)
 		QListWidgetItem* item = ui->pauseWindows->item(i);
 		QString itemRegion = item->data(Qt::UserRole).toString();
 
-		if (itemRegion == region)
+		if (itemRegion == window)
 		{
 			idx = i;
 			break;
@@ -440,7 +450,7 @@ int SceneSwitcher::PauseWindowsFindByData(const QString& region)
 	return idx;
 }
 
-int SceneSwitcher::IgnoreWindowsFindByData(const QString& region)
+int SceneSwitcher::IgnoreWindowsFindByData(const QString& window)
 {
 	int count = ui->ignoreWindows->count();
 	int idx = -1;
@@ -450,7 +460,7 @@ int SceneSwitcher::IgnoreWindowsFindByData(const QString& region)
 		QListWidgetItem* item = ui->ignoreWindows->item(i);
 		QString itemRegion = item->data(Qt::UserRole).toString();
 
-		if (itemRegion == region)
+		if (itemRegion == window)
 		{
 			idx = i;
 			break;
@@ -679,6 +689,26 @@ void SceneSwitcher::on_sceneTransitions_currentRowChanged(int idx)
 			break;
 		}
 	}
+}
+
+int SceneSwitcher::IgnoreIdleWindowsFindByData(const QString& window)
+{
+	int count = ui->ignoreIdleWindows->count();
+	int idx = -1;
+
+	for (int i = 0; i < count; i++)
+	{
+		QListWidgetItem* item = ui->ignoreIdleWindows->item(i);
+		QString itemRegion = item->data(Qt::UserRole).toString();
+
+		if (itemRegion == window)
+		{
+			idx = i;
+			break;
+		}
+	}
+
+	return idx;
 }
 
 void SceneSwitcher::on_close_clicked()
@@ -1118,6 +1148,82 @@ void SceneSwitcher::on_autoStopScenes_currentTextChanged(const QString& text)
 	UpdateAutoStopScene(text);
 }
 
+void SceneSwitcher::on_sceneRoundTripSave_clicked()
+{
+	QString directory = QFileDialog::getSaveFileName(
+		this, tr("Save Scene Round Trip to file ..."), QDir::currentPath(), tr("Text files (*.txt)"));
+	if (!directory.isEmpty())
+	{
+		QFile file(directory);
+		if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+			return;
+		QTextStream out(&file);
+		for (SceneRoundTripSwitch s : switcher->sceneRoundTripSwitches)
+		{
+			out << QString::fromStdString(GetWeakSourceName(s.scene1)) << "\n";
+			out << QString::fromStdString(GetWeakSourceName(s.scene2)) << "\n";
+			out << s.delay << "\n";
+			out << QString::fromStdString(s.sceneRoundTripStr) << "\n";
+			out << QString::fromStdString(GetWeakSourceName(s.transition)) << "\n";
+		}
+	}
+}
+
+void SceneSwitcher::on_sceneRoundTripLoad_clicked()
+{
+	lock_guard<mutex> lock(switcher->m);
+
+	QString directory = QFileDialog::getOpenFileName(
+		this, tr("Select a file to read Scene Round Trip from ..."), QDir::currentPath(), tr("Text files (*.txt)"));
+	if (!directory.isEmpty())
+	{
+		QFile file(directory);
+		if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+			return;
+
+		QTextStream in(&file);
+		vector<QString> lines;
+
+		vector<SceneRoundTripSwitch> newSceneRoundTripSwitch;
+
+		while (!in.atEnd())
+		{
+			QString line = in.readLine();
+			lines.push_back(line);
+			if (lines.size() == 5)
+			{
+				OBSWeakSource scene1 = GetWeakSourceByQString(lines[0]);
+				OBSWeakSource scene2 = GetWeakSourceByQString(lines[1]);
+				OBSWeakSource transition = GetWeakTransitionByQString(lines[4]);
+
+				if (WeakSourceValid(scene1) && WeakSourceValid(scene2)
+					&& WeakSourceValid(transition))
+				{
+					newSceneRoundTripSwitch.emplace_back(SceneRoundTripSwitch(
+						GetWeakSourceByQString(lines[0]),
+						GetWeakSourceByQString(lines[1]),
+						GetWeakTransitionByQString(lines[4]),
+						lines[2].toInt(),
+						lines[3].toStdString()));
+				}
+				lines.clear();
+			}
+		}
+		//unvalid amount of lines in file or nothing valid read
+		if (lines.size() != 0 || newSceneRoundTripSwitch.size() == 0)
+			return;
+
+		switcher->sceneRoundTripSwitches.clear();
+		ui->sceneRoundTrips->clear();
+		switcher->sceneRoundTripSwitches = newSceneRoundTripSwitch;
+		for (SceneRoundTripSwitch s : switcher->sceneRoundTripSwitches)
+		{
+			QListWidgetItem* item = new QListWidgetItem(QString::fromStdString(s.sceneRoundTripStr), ui->sceneRoundTrips);
+			item->setData(Qt::UserRole, QString::fromStdString(s.sceneRoundTripStr));
+		}
+	}
+}
+
 void SceneSwitcher::on_transitionsAdd_clicked()
 {
 	QString scene1Name = ui->transitionsScene1->currentText();
@@ -1392,6 +1498,77 @@ void SceneSwitcher::on_idleSpinBox_valueChanged(int i)
 	switcher->idleData.time = i;
 }
 
+void SceneSwitcher::on_ignoreIdleWindows_currentRowChanged(int idx)
+{
+	if (loading)
+		return;
+	if (idx == -1)
+		return;
+
+	QListWidgetItem* item = ui->ignoreIdleWindows->item(idx);
+
+	QString window = item->data(Qt::UserRole).toString();
+
+	lock_guard<mutex> lock(switcher->m);
+	for (auto& w : switcher->ignoreIdleWindows)
+	{
+		if (window.compare(w.c_str()) == 0)
+		{
+			ui->ignoreIdleWindowsWindows->setCurrentText(w.c_str());
+			break;
+		}
+	}
+}
+
+void SceneSwitcher::on_ignoreIdleAdd_clicked()
+{
+	QString windowName = ui->ignoreIdleWindowsWindows->currentText();
+
+	if (windowName.isEmpty())
+		return;
+
+	QVariant v = QVariant::fromValue(windowName);
+
+	QList<QListWidgetItem*> items = ui->ignoreIdleWindows->findItems(windowName, Qt::MatchExactly);
+
+	if (items.size() == 0)
+	{
+		QListWidgetItem* item = new QListWidgetItem(windowName, ui->ignoreIdleWindows);
+		item->setData(Qt::UserRole, v);
+
+		lock_guard<mutex> lock(switcher->m);
+		switcher->ignoreIdleWindows.emplace_back(windowName.toUtf8().constData());
+		ui->ignoreIdleWindows->sortItems();
+	}
+}
+
+void SceneSwitcher::on_ignoreIdleRemove_clicked()
+{
+	QListWidgetItem* item = ui->ignoreIdleWindows->currentItem();
+	if (!item)
+		return;
+
+	QString windowName = item->data(Qt::UserRole).toString();
+
+	{
+		lock_guard<mutex> lock(switcher->m);
+		auto& windows = switcher->ignoreIdleWindows;
+
+		for (auto it = windows.begin(); it != windows.end(); ++it)
+		{
+			auto& s = *it;
+
+			if (s == windowName.toUtf8().constData())
+			{
+				windows.erase(it);
+				break;
+			}
+		}
+	}
+
+	delete item;
+}
+
 void SceneSwitcher::on_browseButton_clicked()
 {
 	QString directory = QFileDialog::getOpenFileName(
@@ -1563,6 +1740,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_t* ignoreWindowsArray = obs_data_array_create();
 		obs_data_array_t* sceneRoundTripArray = obs_data_array_create();
 		obs_data_array_t* sceneTransitionsArray = obs_data_array_create();
+		obs_data_array_t* ignoreIdleWindowsArray = obs_data_array_create();
 
 		switcher->Prune();
 
@@ -1723,6 +1901,14 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 			obs_data_release(array_obj);
 		} // dasoven region_end
 
+		for (string& window : switcher->ignoreIdleWindows)
+		{
+			obs_data_t* array_obj = obs_data_create();
+			obs_data_set_string(array_obj, "window", window.c_str());
+			obs_data_array_push_back(ignoreIdleWindowsArray, array_obj);
+			obs_data_release(array_obj);
+		}
+
 		string nonMatchingSceneName = GetWeakSourceName(switcher->nonMatchingScene);
 
 		obs_data_set_int(obj, "interval", switcher->interval);
@@ -1737,8 +1923,8 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_set_array(obj, "ignoreWindows", ignoreWindowsArray);
 		obs_data_set_array(obj, "sceneRoundTrip", sceneRoundTripArray);
 		obs_data_set_array(obj, "sceneTransitions", sceneTransitionsArray);
-
 		obs_data_set_array(obj, "executableSwitches", executableArray); // dasoven
+		obs_data_set_array(obj, "ignoreIdleWindows", ignoreIdleWindowsArray);
 
 
 		string autoStopSceneName = GetWeakSourceName(switcher->autoStopScene);
@@ -1767,6 +1953,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_release(sceneRoundTripArray);
 		obs_data_array_release(sceneTransitionsArray);
 		obs_data_array_release(executableArray); // dasoven
+		obs_data_array_release(ignoreIdleWindowsArray);
 
 		obs_data_release(obj);
 	}
@@ -1783,7 +1970,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_t* sceneRoundTripArray = obs_data_get_array(obj, "sceneRoundTrip");
 		obs_data_array_t* sceneTransitionsArray = obs_data_get_array(obj, "sceneTransitions");
 		obs_data_array_t* executableArray = obs_data_get_array(obj, "executableSwitches"); // dasoven
-
+		obs_data_array_t* ignoreIdleWindowsArray = obs_data_get_array(obj, "ignoreIdleWindows");
 
 		if (!obj)
 			obj = obs_data_create();
@@ -1938,6 +2125,20 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 			obs_data_release(array_obj);
 		} // dasoven region_end
 
+		switcher->ignoreIdleWindows.clear();
+		count = obs_data_array_count(ignoreIdleWindowsArray);
+
+		for (size_t i = 0; i < count; i++)
+		{
+			obs_data_t* array_obj = obs_data_array_item(ignoreIdleWindowsArray, i);
+
+			const char* window = obs_data_get_string(array_obj, "window");
+
+			switcher->ignoreIdleWindows.emplace_back(window);
+
+			obs_data_release(array_obj);
+		}
+
 		string autoStopScene = obs_data_get_string(obj, "autoStopSceneName");
 		switcher->autoStopEnable = obs_data_get_bool(obj, "autoStopEnable");
 		switcher->autoStopScene = GetWeakSourceByName(autoStopScene.c_str());
@@ -1961,6 +2162,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_release(sceneRoundTripArray);
 		obs_data_array_release(sceneTransitionsArray);
 		obs_data_array_release(executableArray); // dasoven
+		obs_data_array_release(ignoreIdleWindowsArray);
 
 		obs_data_release(obj);
 
@@ -2204,7 +2406,38 @@ void SwitcherData::Thread()
 
 		if (!match && idleData.idleEnable)
 		{
-			if (getTime() - getLastInputTime() > idleData.time * 1000)
+			bool ignoreIdle = false;
+			GetCurrentWindowTitle(title);
+
+			for (string& window : ignoreIdleWindows)
+			{
+				if (window == title)
+				{
+					ignoreIdle = true;
+					break;
+				}
+			}
+
+			if (!ignoreIdle)
+			{
+				for (string& window : ignoreIdleWindows)
+				{
+					try
+					{
+						bool matches = regex_match(title, regex(window));
+						if (matches)
+						{
+							ignoreIdle = true;
+							break;
+						}
+					}
+					catch (const regex_error&)
+					{
+					}
+				}
+			}
+
+			if (!ignoreIdle && getTime() - getLastInputTime() > idleData.time * 1000)
 			{
 				scene = idleData.scene;
 				transition = idleData.transition;
