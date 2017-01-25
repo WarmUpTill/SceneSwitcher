@@ -23,9 +23,6 @@
 #include "switcher-data-structs.hpp"
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
-#include <atomic>
-
-
 
 
 
@@ -61,6 +58,7 @@ struct SwitcherData
 	OBSWeakSource autoStopScene;
 
 	vector<SceneTransition> sceneTransitions;
+	vector<DefaultSceneTransition> defaultSceneTransitions;
 
 	vector<ExecutableSceneSwitch> executableSwitches;
 
@@ -68,11 +66,6 @@ struct SwitcherData
 
 	IdleData idleData;
 	vector<string> ignoreIdleWindows;
-
-	bool sceneTransitionSwitcherOnly = false;
-	OBSWeakSource lastScene;
-	OBSWeakSource nextScene;
-	atomic<bool> autoTransitionChange = false;
 
 	void Thread();
 	void Start();
@@ -129,6 +122,13 @@ struct SwitcherData
 				sceneTransitions.erase(sceneTransitions.begin() + i--);
 		}
 
+		for (size_t i = 0; i < defaultSceneTransitions.size(); i++)
+		{
+			DefaultSceneTransition& s = defaultSceneTransitions[i];
+			if (!WeakSourceValid(s.scene) || !WeakSourceValid(s.transition))
+				defaultSceneTransitions.erase(defaultSceneTransitions.begin() + i--);
+		}
+
 		for (size_t i = 0; i < executableSwitches.size(); i++)
 		{
 			ExecutableSceneSwitch& s = executableSwitches[i];
@@ -176,6 +176,7 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		ui->autoStopScenes->addItem(name);
 		ui->transitionsScene1->addItem(name);
 		ui->transitionsScene2->addItem(name);
+		ui->defaultTransitionsScene->addItem(name);
 		ui->executableScenes->addItem(name);
 		ui->idleScenes->addItem(name);
 		temp++;
@@ -191,6 +192,7 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		ui->screenRegionsTransitions->addItem(name);
 		ui->sceneRoundTripTransitions->addItem(name);
 		ui->transitionsTransitions->addItem(name);
+		ui->defaultTransitionsTransitions->addItem(name);
 		ui->executableTransitions->addItem(name);
 		ui->idleTransitions->addItem(name);
 	}
@@ -314,7 +316,17 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		QListWidgetItem* item = new QListWidgetItem(text, ui->sceneTransitions);
 		item->setData(Qt::UserRole, text);
 	}
-	ui->sceneTransitionSwitcherOnly->setChecked(switcher->sceneTransitionSwitcherOnly);
+
+	for (auto& s : switcher->defaultSceneTransitions)
+	{
+		string sceneName = GetWeakSourceName(s.scene);
+		string transitionName = GetWeakSourceName(s.transition);
+		QString text = MakeDefaultSceneTransitionName(
+			sceneName.c_str(), transitionName.c_str());
+
+		QListWidgetItem* item = new QListWidgetItem(text, ui->defaultTransitions);
+		item->setData(Qt::UserRole, text);
+	}
 
 	for (auto& window : switcher->ignoreIdleWindows)
 	{
@@ -517,6 +529,27 @@ int SceneSwitcher::SceneTransitionsFindByData(const QString& scene1, const QStri
 	return idx;
 }
 
+int SceneSwitcher::DefaultTransitionsFindByData(const QString& scene)
+{
+	QRegExp rx(scene + " --> .*");
+	int count = ui->defaultTransitions->count();
+	int idx = -1;
+
+	for (int i = 0; i < count; i++)
+	{
+		QListWidgetItem* item = ui->defaultTransitions->item(i);
+		QString itemString = item->data(Qt::UserRole).toString();
+
+		if (rx.exactMatch(itemString))
+		{
+			idx = i;
+			break;
+		}
+	}
+
+	return idx;
+}
+
 void SceneSwitcher::on_switches_currentRowChanged(int idx)
 {
 	if (loading)
@@ -695,6 +728,32 @@ void SceneSwitcher::on_sceneTransitions_currentRowChanged(int idx)
 		}
 	}
 }
+
+void SceneSwitcher::on_defaultTransitions_currentRowChanged(int idx)
+{
+	if (loading)
+		return;
+	if (idx == -1)
+		return;
+
+	QListWidgetItem* item = ui->defaultTransitions->item(idx);
+
+	QString sceneTransition = item->data(Qt::UserRole).toString();
+
+	lock_guard<mutex> lock(switcher->m);
+	for (auto& s : switcher->defaultSceneTransitions)
+	{
+		if (sceneTransition.compare(s.sceneTransitionStr.c_str()) == 0)
+		{
+			string scene = GetWeakSourceName(s.scene);
+			string transitionName = GetWeakSourceName(s.transition);
+			ui->defaultTransitionsScene->setCurrentText(scene.c_str());
+			ui->defaultTransitionsTransitions->setCurrentText(transitionName.c_str());
+			break;
+		}
+	}
+}
+
 
 int SceneSwitcher::IgnoreIdleWindowsFindByData(const QString& window)
 {
@@ -1308,20 +1367,78 @@ void SceneSwitcher::on_transitionsRemove_clicked()
 	delete item;
 }
 
-void SceneSwitcher::on_sceneTransitionSwitcherOnly_stateChanged(int state)
+void SceneSwitcher::on_defaultTransitionsAdd_clicked()
 {
-	if (loading)
+	QString sceneName = ui->defaultTransitionsScene->currentText();
+	QString transitionName = ui->defaultTransitionsTransitions->currentText();
+
+	if (sceneName.isEmpty() || transitionName.isEmpty())
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
-	if (!state)
+	OBSWeakSource source = GetWeakSourceByQString(sceneName);
+	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
+
+	QString text = MakeDefaultSceneTransitionName(sceneName, transitionName);
+	QVariant v = QVariant::fromValue(text);
+
+	int idx = DefaultTransitionsFindByData(sceneName);
+
+	if (idx == -1)
 	{
-		switcher->sceneTransitionSwitcherOnly = false;
+		QListWidgetItem* item = new QListWidgetItem(text, ui->defaultTransitions);
+		item->setData(Qt::UserRole, v);
+
+		lock_guard<mutex> lock(switcher->m);
+		switcher->defaultSceneTransitions.emplace_back(
+			source, transition, text.toUtf8().constData());
 	}
 	else
 	{
-		switcher->sceneTransitionSwitcherOnly = true;
+		QListWidgetItem* item = ui->defaultTransitions->item(idx);
+		item->setText(text);
+
+		{
+			lock_guard<mutex> lock(switcher->m);
+			for (auto& s : switcher->defaultSceneTransitions)
+			{
+				if (s.scene == source)
+				{
+					s.transition = transition;
+					s.sceneTransitionStr = text.toUtf8().constData();
+					break;
+				}
+			}
+		}
+
+		ui->defaultTransitions->sortItems();
 	}
+}
+
+void SceneSwitcher::on_defaultTransitionsRemove_clicked()
+{
+	QListWidgetItem* item = ui->defaultTransitions->currentItem();
+	if (!item)
+		return;
+
+	string text = item->data(Qt::UserRole).toString().toUtf8().constData();
+
+	{
+		lock_guard<mutex> lock(switcher->m);
+		auto& switches = switcher->defaultSceneTransitions;
+
+		for (auto it = switches.begin(); it != switches.end(); ++it)
+		{
+			auto& s = *it;
+
+			if (s.sceneTransitionStr == text)
+			{
+				switches.erase(it);
+				break;
+			}
+		}
+	}
+
+	delete item;
 }
 
 int SceneSwitcher::executableFindByData(const QString& exe)
@@ -1757,6 +1874,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_t* ignoreWindowsArray = obs_data_array_create();
 		obs_data_array_t* sceneRoundTripArray = obs_data_array_create();
 		obs_data_array_t* sceneTransitionsArray = obs_data_array_create();
+		obs_data_array_t* defaultTransitionsArray = obs_data_array_create();
 		obs_data_array_t* ignoreIdleWindowsArray = obs_data_array_create();
 
 		switcher->Prune();
@@ -1890,7 +2008,27 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 
 			obs_data_release(array_obj);
 		}
-		obs_data_set_bool(obj, "sceneTransitionSwitcherOnly", switcher->sceneTransitionSwitcherOnly);
+
+		for (DefaultSceneTransition& s : switcher->defaultSceneTransitions)
+		{
+			obs_data_t* array_obj = obs_data_create();
+
+			obs_source_t* source = obs_weak_source_get_source(s.scene);
+			obs_source_t* transition = obs_weak_source_get_source(s.transition);
+			if (source)
+			{
+				const char* sceneName = obs_source_get_name(source);
+				const char* transitionName = obs_source_get_name(transition);
+				obs_data_set_string(array_obj, "Scene", sceneName);
+				obs_data_set_string(array_obj, "transition", transitionName);
+				obs_data_set_string(array_obj, "Str", s.sceneTransitionStr.c_str());
+				obs_data_array_push_back(defaultTransitionsArray, array_obj);
+				obs_source_release(source);
+				obs_source_release(transition);
+			}
+
+			obs_data_release(array_obj);
+		}
 
 		obs_data_array_t* executableArray = obs_data_array_create();
 
@@ -1939,6 +2077,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_set_array(obj, "ignoreWindows", ignoreWindowsArray);
 		obs_data_set_array(obj, "sceneRoundTrip", sceneRoundTripArray);
 		obs_data_set_array(obj, "sceneTransitions", sceneTransitionsArray);
+		obs_data_set_array(obj, "defaultTransitions", defaultTransitionsArray);
 		obs_data_set_array(obj, "executableSwitches", executableArray);
 		obs_data_set_array(obj, "ignoreIdleWindows", ignoreIdleWindowsArray);
 
@@ -1968,6 +2107,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_release(ignoreWindowsArray);
 		obs_data_array_release(sceneRoundTripArray);
 		obs_data_array_release(sceneTransitionsArray);
+		obs_data_array_release(defaultTransitionsArray);
 		obs_data_array_release(executableArray);
 		obs_data_array_release(ignoreIdleWindowsArray);
 
@@ -1985,6 +2125,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_t* ignoreWindowsArray = obs_data_get_array(obj, "ignoreWindows");
 		obs_data_array_t* sceneRoundTripArray = obs_data_get_array(obj, "sceneRoundTrip");
 		obs_data_array_t* sceneTransitionsArray = obs_data_get_array(obj, "sceneTransitions");
+		obs_data_array_t* defaultTransitionsArray = obs_data_get_array(obj, "defaultTransitions");
 		obs_data_array_t* executableArray = obs_data_get_array(obj, "executableSwitches");
 		obs_data_array_t* ignoreIdleWindowsArray = obs_data_get_array(obj, "ignoreIdleWindows");
 
@@ -2121,7 +2262,24 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 
 			obs_data_release(array_obj);
 		}
-		switcher->sceneTransitionSwitcherOnly = obs_data_get_bool(obj, "sceneTransitionSwitcherOnly");
+
+		switcher->defaultSceneTransitions.clear();
+		count = obs_data_array_count(defaultTransitionsArray);
+
+		for (size_t i = 0; i < count; i++)
+		{
+			obs_data_t* array_obj = obs_data_array_item(defaultTransitionsArray, i);
+
+			const char* scene = obs_data_get_string(array_obj, "Scene");
+			const char* transition = obs_data_get_string(array_obj, "transition");
+			const char* sceneTransitionsStr = obs_data_get_string(array_obj, "Str");
+
+			switcher->defaultSceneTransitions.emplace_back(GetWeakSourceByName(scene),
+				GetWeakTransitionByName(transition),
+				sceneTransitionsStr);
+
+			obs_data_release(array_obj);
+		}
 
 		switcher->executableSwitches.clear();
 		count = obs_data_array_count(executableArray);
@@ -2177,17 +2335,11 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_release(ignoreWindowsArray);
 		obs_data_array_release(sceneRoundTripArray);
 		obs_data_array_release(sceneTransitionsArray);
+		obs_data_array_release(defaultTransitionsArray);
 		obs_data_array_release(executableArray);
 		obs_data_array_release(ignoreIdleWindowsArray);
 
 		obs_data_release(obj);
-
-		//preparation for auto transition changes
-		obs_source_t* currentScene = obs_frontend_get_current_scene();
-		OBSWeakSource lastScene = obs_source_get_weak_source(currentScene);
-		switcher->lastScene = lastScene;
-		obs_source_release(currentScene);
-		obs_weak_source_release(lastScene);
 
 		switcher->m.unlock();
 
@@ -2221,10 +2373,8 @@ void SwitcherData::Thread()
 	while (true)
 	{
 		unique_lock<mutex> lock(waitMutex);
-		// unique_lock<mutex> transitionLock(transitionWaitMutex);
 		OBSWeakSource scene;
 		OBSWeakSource transition;
-		// obs_source_t *oldTransition = obs_frontend_get_current_transition();
 		bool match = false;
 		bool fullscreen = false;
 		bool pause = false;
@@ -2257,22 +2407,25 @@ void SwitcherData::Thread()
 			}
 		}
 
-		////auto transition stuff
-		//if (autoTransitionChange)
-		//{
-		//	obs_source_t* source = obs_weak_source_get_source(nextScene);
-		//	obs_source_t* source2 = obs_weak_source_get_source(lastScene);
-		//	//lastScene = nextScene;
-		//	obs_frontend_set_current_scene(source2);
-		//	obs_frontend_set_current_scene(source);
-		//	obs_source_release(source);
-		//	obs_source_release(source2);
-		//	autoTransitionChange = false;
-		//	continue;
-		//}
-
-
 		currentSource = obs_frontend_get_current_scene();
+		{
+			OBSWeakSource ws = obs_source_get_weak_source(currentSource);
+
+			//Default transition change
+
+			for (DefaultSceneTransition s : defaultSceneTransitions)
+			{
+				if (s.scene == ws)
+				{
+					obs_source_t* transition = obs_weak_source_get_source(s.transition);
+					obs_frontend_set_current_transition(transition);
+					obs_source_release(transition);
+					break;
+				}
+			}
+			obs_weak_source_release(ws);
+		}
+		//End default transition change
 
 		if (fileIO.readEnabled)
 		{
@@ -2393,12 +2546,7 @@ void SwitcherData::Thread()
 						transition = obs_weak_source_get_source(s.transition);
 
 					obs_frontend_set_current_transition(transition);
-					// transitionWaitMutex2.lock();
 					obs_frontend_set_current_scene(source);
-					// transitionWaitMutex2.unlock();
-					// longest transition duration 10s
-					// transitionCv.wait_for(transitionLock,chrono::seconds(10));
-					// obs_frontend_set_current_transition(oldTransition);
 
 					obs_source_release(transition);
 				}
@@ -2416,7 +2564,6 @@ void SwitcherData::Thread()
 
 		if (sceneRoundTripActive)
 		{
-			// obs_source_release(oldTransition);
 			continue;
 		}
 
@@ -2614,27 +2761,19 @@ void SwitcherData::Thread()
 					obs_source_release(nextTransition);
 				}
 
-				// transitionWaitMutex2.lock();
 				obs_frontend_set_current_scene(source);
-				// transitionWaitMutex2.unlock();
-				// longest transition duration 10s
-				// transitionCv.wait_for(transitionLock, chrono::seconds(10));
-				// obs_frontend_set_current_transition(oldTransition);
 			}
 			obs_source_release(currentSource);
 			obs_source_release(source);
 		}
 
 		// End switch scene
-
-		// obs_source_release(oldTransition);
 	}
 }
 
 void SwitcherData::Start()
 {
-	//lock_guard<mutex> lock2(waitMutex);
-	//lock_guard<mutex> lock(m);
+
 	if (!th.joinable())
 	{
 		threadEndMutex.lock();
@@ -2651,16 +2790,11 @@ void SwitcherData::Stop()
 {
 	if (th.joinable())
 	{
-		//lock_guard<mutex> lock2(waitMutex);
-		//lock_guard<mutex> lock(m);
 		{
 			lock_guard<mutex> lock(threadEndMutex);
-			//lock_guard<mutex> lock2(waitMutex);
-			//threadEndMutex.lock();
 			switcher->stop = true;
 		}
 		cv.notify_one();
-		//threadEndMutex.unlock();
 		th.join();
 	}
 }
@@ -2752,72 +2886,15 @@ static void OBSEvent(enum obs_frontend_event event, void* switcher)
 		FreeSceneSwitcher();
 	}
 
-	if (event == OBS_FRONTEND_EVENT_SCENE_CHANGED && !((struct SwitcherData*)switcher)->sceneTransitionSwitcherOnly)
+	if (event == OBS_FRONTEND_EVENT_SCENE_CHANGED)
 	{
-		//change transitions according to transitions tab
-		if (!((struct SwitcherData*)switcher)->autoTransitionChange){
-			obs_source_t* currentScene = obs_frontend_get_current_scene();
-			OBSWeakSource ws = obs_source_get_weak_source(currentScene);
-			obs_source_release(currentScene);
-			OBSWeakSource transitionWs = getNextTransition(((struct SwitcherData*)switcher)->lastScene, ws);
-			obs_source_t* transition = obs_weak_source_get_source(transitionWs);
-			if (transition)
-			{
-				((struct SwitcherData*)switcher)->autoTransitionChange = true;
-				((struct SwitcherData*)switcher)->nextScene = ws;
-				obs_frontend_set_current_transition(transition);
-
-				obs_source_t* lastSceneSource = obs_weak_source_get_source(((struct SwitcherData*)switcher)->lastScene);
-				obs_source_release(lastSceneSource);
-				obs_frontend_set_current_scene(lastSceneSource);
-				//obs_frontend_set_current_scene(currentScene);
-
-				((struct SwitcherData*)switcher)->autoTransitionChange = false;
-			}
-			obs_source_release(transition);
-			obs_weak_source_release(ws);
-			//if (transition)
-			//{
-			//	obs_source_t* lastSceneSource = obs_weak_source_get_source(((struct SwitcherData*)switcher)->lastScene);
-			//	obs_source_release(lastSceneSource);
-			//	obs_frontend_set_current_scene(lastSceneSource);
-			//}
-			if (!((struct SwitcherData*)switcher)->autoTransitionChange)
-				((struct SwitcherData*)switcher)->lastScene = ws;
-		}
+		
 	}
-	//if (event == OBS_FRONTEND_EVENT_TRANSITION_STOPPED && ((struct SwitcherData*)switcher)->autoTransitionChange){
-	//	obs_source_t* nextSceneSource = obs_weak_source_get_source(((struct SwitcherData*)switcher)->nextScene);
-	//	obs_source_release(nextSceneSource);
-	//	obs_frontend_set_current_scene(nextSceneSource);
-	//}
-	//if (event == OBS_FRONTEND_EVENT_TRANSITION_CHANGED && !((struct SwitcherData*)switcher)->sceneTransitionSwitcherOnly)
-	//{
-	//	if (((struct SwitcherData*)switcher)->autoTransitionChange)
-	//	{
-	//		obs_source_t* transition = obs_frontend_get_current_transition();
-	//		OBSWeakSource transitionWs = obs_source_get_weak_source(transition);
-	//		obs_source_release(transition);
-	//		if (transitionWs == ((struct SwitcherData*)switcher)->transition){
-	//			((struct SwitcherData*)switcher)->autoTransitionChange = false;
-	//			obs_source_t* source = obs_weak_source_get_source(((struct SwitcherData*)switcher)->nextScene);
-	//			obs_source_release(source);
-	//			((struct SwitcherData*)switcher)->lastScene = ((struct SwitcherData*)switcher)->nextScene;
-	//			//this_thread::sleep_for(chrono::milliseconds(1000)); //debug
-	//			obs_frontend_set_current_scene(source);
-	//		}
-	//	}
-	//}
-	// needed to reset the transition, but not working properly now (only some transitions work)
-	// if (event == OBS_FRONTEND_EVENT_TRANSITION_STOPPED){
-	//	SwitcherData *test = (SwitcherData*)switcher;
-	//	test->transitionWaitMutex2.lock();
-	//	this_thread::sleep_for(chrono::milliseconds(100)); //seems necesssary
-	// since the transition is not always done
-	//	test->transitionCv.notify_one();
-	//	test->transitionWaitMutex2.unlock();
-	//
-	//}
+
+	if (event == OBS_FRONTEND_EVENT_TRANSITION_STOPPED)
+	{
+
+	}
 }
 
 extern "C" void InitSceneSwitcher()

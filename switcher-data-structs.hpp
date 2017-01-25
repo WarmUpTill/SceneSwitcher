@@ -90,6 +90,21 @@ struct SceneTransition
 	}
 };
 
+struct DefaultSceneTransition
+{
+	OBSWeakSource scene;
+	OBSWeakSource transition;
+	string sceneTransitionStr;
+
+	inline DefaultSceneTransition(OBSWeakSource scene_, OBSWeakSource transition_,
+		string sceneTransitionStr_)
+		: scene(scene_)
+		, transition(transition_)
+		, sceneTransitionStr(sceneTransitionStr_)
+	{
+	}
+};
+
 struct FileIOData
 {
 	bool readEnabled;

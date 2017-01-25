@@ -57,6 +57,12 @@ static inline QString MakeSceneTransitionName(
 	return scene1 + QStringLiteral(" --- ") + transition + QStringLiteral(" --> ") + scene2;
 }
 
+static inline QString MakeDefaultSceneTransitionName(
+	const QString& scene, const QString& transition)
+{
+	return scene + QStringLiteral(" --> ") + transition;
+}
+
 static inline string GetWeakSourceName(obs_weak_source_t* weak_source)
 {
 	string name;

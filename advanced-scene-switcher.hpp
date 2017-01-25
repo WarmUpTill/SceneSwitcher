@@ -32,7 +32,8 @@ public:
 	int IgnoreWindowsFindByData(const QString &window);
 	int SceneRoundTripFindByData(const QString &scene1);
 	int SceneTransitionsFindByData(const QString &scene1, const QString &scene2);
-	int executableFindByData(const QString &exe);//dasoven
+	int DefaultTransitionsFindByData(const QString &scene);
+	int executableFindByData(const QString &exe);
 	int IgnoreIdleWindowsFindByData(const QString& window);
 
 	void UpdateNonMatchingScene(const QString &name);
@@ -79,7 +80,9 @@ public slots:
 	void on_sceneTransitions_currentRowChanged(int idx);
 	void on_transitionsAdd_clicked();
 	void on_transitionsRemove_clicked();
-	void on_sceneTransitionSwitcherOnly_stateChanged(int state);
+	void on_defaultTransitions_currentRowChanged(int idx);
+	void on_defaultTransitionsAdd_clicked();
+	void on_defaultTransitionsRemove_clicked();
 
 	void on_browseButton_clicked();
 	void on_readFileCheckBox_stateChanged(int state);
@@ -87,11 +90,9 @@ public slots:
 	void on_writePathLineEdit_textChanged(const QString & text);
 	void on_browseButton_2_clicked();
 
-	//dasoven region_start
 	void on_executableAdd_clicked();
 	void on_executableRemove_clicked();
 	void on_executables_currentRowChanged(int idx);
-	//dasoven region_end
 
 	void on_idleCheckBox_stateChanged(int state);
 	void on_idleTransitions_currentTextChanged(const QString& text);
@@ -113,7 +114,5 @@ bool isFullscreen();
 int getLastInputTime();
 int getTime();
 
-//dasoven region_start
 bool isInFocus(const QString &exeToCheck);
 void GetProcessList(QStringList &processes);
-//dasoven region_end
