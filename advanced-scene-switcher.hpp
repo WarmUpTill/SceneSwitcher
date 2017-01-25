@@ -79,6 +79,7 @@ public slots:
 	void on_sceneTransitions_currentRowChanged(int idx);
 	void on_transitionsAdd_clicked();
 	void on_transitionsRemove_clicked();
+	void on_sceneTransitionSwitcherOnly_stateChanged(int state);
 
 	void on_browseButton_clicked();
 	void on_readFileCheckBox_stateChanged(int state);

@@ -23,6 +23,10 @@
 #include "switcher-data-structs.hpp"
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
+#include <atomic>
+
+
+
 
 
 using namespace std;
@@ -34,10 +38,8 @@ struct SwitcherData
 	mutex m;
 	mutex waitMutex;
 	mutex threadEndMutex;
-	// mutex transitionWaitMutex;
-	// mutex transitionWaitMutex2;
 	condition_variable transitionCv;
-	bool stop = true;
+	bool stop = false;
 
 	vector<SceneSwitch> switches;
 	OBSWeakSource nonMatchingScene;
@@ -60,12 +62,17 @@ struct SwitcherData
 
 	vector<SceneTransition> sceneTransitions;
 
-	vector<ExecutableSceneSwitch> executableSwitches; // dasoven
+	vector<ExecutableSceneSwitch> executableSwitches;
 
 	FileIOData fileIO;
-	
+
 	IdleData idleData;
 	vector<string> ignoreIdleWindows;
+
+	bool sceneTransitionSwitcherOnly = false;
+	OBSWeakSource lastScene;
+	OBSWeakSource nextScene;
+	atomic<bool> autoTransitionChange = false;
 
 	void Thread();
 	void Start();
@@ -122,13 +129,12 @@ struct SwitcherData
 				sceneTransitions.erase(sceneTransitions.begin() + i--);
 		}
 
-		// dasoven region_start
 		for (size_t i = 0; i < executableSwitches.size(); i++)
 		{
 			ExecutableSceneSwitch& s = executableSwitches[i];
 			if (!WeakSourceValid(s.mScene) || !WeakSourceValid(s.mTransition))
 				switches.erase(switches.begin() + i--);
-		} // dasoven region_end
+		}
 
 		if (!WeakSourceValid(idleData.scene) || !WeakSourceValid(idleData.transition))
 		{
@@ -170,7 +176,7 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		ui->autoStopScenes->addItem(name);
 		ui->transitionsScene1->addItem(name);
 		ui->transitionsScene2->addItem(name);
-		ui->executableScenes->addItem(name); // dasoven
+		ui->executableScenes->addItem(name);
 		ui->idleScenes->addItem(name);
 		temp++;
 	}
@@ -185,7 +191,7 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		ui->screenRegionsTransitions->addItem(name);
 		ui->sceneRoundTripTransitions->addItem(name);
 		ui->transitionsTransitions->addItem(name);
-		ui->executableTransitions->addItem(name); // dasoven
+		ui->executableTransitions->addItem(name);
 		ui->idleTransitions->addItem(name);
 	}
 
@@ -210,7 +216,6 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		ui->ignoreIdleWindowsWindows->addItem(window.c_str());
 	}
 
-	// dasoven region_start
 	QStringList processes;
 	GetProcessList(processes);
 	for (QString& process : processes)
@@ -226,7 +231,6 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		QListWidgetItem* item = new QListWidgetItem(text, ui->executables);
 		item->setData(Qt::UserRole, s.mExe);
 	}
-	// dasoven region_end
 
 	for (auto& s : switcher->switches)
 	{
@@ -310,6 +314,7 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		QListWidgetItem* item = new QListWidgetItem(text, ui->sceneTransitions);
 		item->setData(Qt::UserRole, text);
 	}
+	ui->sceneTransitionSwitcherOnly->setChecked(switcher->sceneTransitionSwitcherOnly);
 
 	for (auto& window : switcher->ignoreIdleWindows)
 	{
@@ -1303,7 +1308,21 @@ void SceneSwitcher::on_transitionsRemove_clicked()
 	delete item;
 }
 
-// DASOVEN REGION_START
+void SceneSwitcher::on_sceneTransitionSwitcherOnly_stateChanged(int state)
+{
+	if (loading)
+		return;
+
+	lock_guard<mutex> lock(switcher->m);
+	if (!state)
+	{
+		switcher->sceneTransitionSwitcherOnly = false;
+	}
+	else
+	{
+		switcher->sceneTransitionSwitcherOnly = true;
+	}
+}
 
 int SceneSwitcher::executableFindByData(const QString& exe)
 {
@@ -1427,8 +1446,6 @@ void SceneSwitcher::on_executableRemove_clicked()
 
 	delete item;
 }
-
-// DASOVEN REGION_END
 
 void SceneSwitcher::on_idleCheckBox_stateChanged(int state)
 {
@@ -1711,7 +1728,7 @@ void SceneSwitcher::on_toggleStartButton_clicked()
 		switcher->Stop();
 		SetStopped();
 	}
-	else if (switcher->stop)
+	else
 	{
 		switcher->Start();
 		SetStarted();
@@ -1873,9 +1890,8 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 
 			obs_data_release(array_obj);
 		}
+		obs_data_set_bool(obj, "sceneTransitionSwitcherOnly", switcher->sceneTransitionSwitcherOnly);
 
-
-		// dasoven region_start
 		obs_data_array_t* executableArray = obs_data_array_create();
 
 		for (ExecutableSceneSwitch& s : switcher->executableSwitches)
@@ -1899,7 +1915,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 			}
 
 			obs_data_release(array_obj);
-		} // dasoven region_end
+		}
 
 		for (string& window : switcher->ignoreIdleWindows)
 		{
@@ -1923,7 +1939,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_set_array(obj, "ignoreWindows", ignoreWindowsArray);
 		obs_data_set_array(obj, "sceneRoundTrip", sceneRoundTripArray);
 		obs_data_set_array(obj, "sceneTransitions", sceneTransitionsArray);
-		obs_data_set_array(obj, "executableSwitches", executableArray); // dasoven
+		obs_data_set_array(obj, "executableSwitches", executableArray);
 		obs_data_set_array(obj, "ignoreIdleWindows", ignoreIdleWindowsArray);
 
 
@@ -1952,7 +1968,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_release(ignoreWindowsArray);
 		obs_data_array_release(sceneRoundTripArray);
 		obs_data_array_release(sceneTransitionsArray);
-		obs_data_array_release(executableArray); // dasoven
+		obs_data_array_release(executableArray);
 		obs_data_array_release(ignoreIdleWindowsArray);
 
 		obs_data_release(obj);
@@ -1969,7 +1985,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_t* ignoreWindowsArray = obs_data_get_array(obj, "ignoreWindows");
 		obs_data_array_t* sceneRoundTripArray = obs_data_get_array(obj, "sceneRoundTrip");
 		obs_data_array_t* sceneTransitionsArray = obs_data_get_array(obj, "sceneTransitions");
-		obs_data_array_t* executableArray = obs_data_get_array(obj, "executableSwitches"); // dasoven
+		obs_data_array_t* executableArray = obs_data_get_array(obj, "executableSwitches");
 		obs_data_array_t* ignoreIdleWindowsArray = obs_data_get_array(obj, "ignoreIdleWindows");
 
 		if (!obj)
@@ -2105,8 +2121,8 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 
 			obs_data_release(array_obj);
 		}
+		switcher->sceneTransitionSwitcherOnly = obs_data_get_bool(obj, "sceneTransitionSwitcherOnly");
 
-		// dasoven region_start
 		switcher->executableSwitches.clear();
 		count = obs_data_array_count(executableArray);
 
@@ -2123,7 +2139,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 				GetWeakSourceByName(scene), GetWeakTransitionByName(transition), exe, infocus);
 
 			obs_data_release(array_obj);
-		} // dasoven region_end
+		}
 
 		switcher->ignoreIdleWindows.clear();
 		count = obs_data_array_count(ignoreIdleWindowsArray);
@@ -2161,10 +2177,17 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_release(ignoreWindowsArray);
 		obs_data_array_release(sceneRoundTripArray);
 		obs_data_array_release(sceneTransitionsArray);
-		obs_data_array_release(executableArray); // dasoven
+		obs_data_array_release(executableArray);
 		obs_data_array_release(ignoreIdleWindowsArray);
 
 		obs_data_release(obj);
+
+		//preparation for auto transition changes
+		obs_source_t* currentScene = obs_frontend_get_current_scene();
+		OBSWeakSource lastScene = obs_source_get_weak_source(currentScene);
+		switcher->lastScene = lastScene;
+		obs_source_release(currentScene);
+		obs_weak_source_release(lastScene);
 
 		switcher->m.unlock();
 
@@ -2178,10 +2201,13 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 static inline OBSWeakSource getNextTransition(OBSWeakSource scene1, OBSWeakSource scene2)
 {
 	OBSWeakSource ws;
-	for (SceneTransition& t : switcher->sceneTransitions)
+	if (scene1 && scene2)
 	{
-		if (t.scene1 == scene1 && t.scene2 == scene2)
-			ws = t.transition;
+		for (SceneTransition& t : switcher->sceneTransitions)
+		{
+			if (t.scene1 == scene1 && t.scene2 == scene2)
+				ws = t.transition;
+		}
 	}
 	return ws;
 }
@@ -2225,11 +2251,26 @@ void SwitcherData::Thread()
 
 		{
 			lock_guard<mutex> lock(threadEndMutex);
-			if (stop)
+			if (switcher->stop)
 			{
 				break;
 			}
 		}
+
+		////auto transition stuff
+		//if (autoTransitionChange)
+		//{
+		//	obs_source_t* source = obs_weak_source_get_source(nextScene);
+		//	obs_source_t* source2 = obs_weak_source_get_source(lastScene);
+		//	//lastScene = nextScene;
+		//	obs_frontend_set_current_scene(source2);
+		//	obs_frontend_set_current_scene(source);
+		//	obs_source_release(source);
+		//	obs_source_release(source2);
+		//	autoTransitionChange = false;
+		//	continue;
+		//}
+
 
 		currentSource = obs_frontend_get_current_scene();
 
@@ -2256,7 +2297,7 @@ void SwitcherData::Thread()
 		// Auto stop streaming/recording
 
 		OBSWeakSource ws = obs_source_get_weak_source(currentSource);
-		if (autoStopScene == ws)
+		if (ws && autoStopScene == ws)
 		{
 			if (obs_frontend_streaming_active())
 				obs_frontend_streaming_stop();
@@ -2489,7 +2530,6 @@ void SwitcherData::Thread()
 
 		// End regular switch
 
-		// dasoven region_start
 		// Executable switch
 		QStringList runningProcesses;
 		GetProcessList(runningProcesses);
@@ -2504,7 +2544,6 @@ void SwitcherData::Thread()
 			}
 		}
 		// End executable switch
-		// dasoven region_end
 
 		// Screen Region
 
@@ -2594,6 +2633,8 @@ void SwitcherData::Thread()
 
 void SwitcherData::Start()
 {
+	//lock_guard<mutex> lock2(waitMutex);
+	//lock_guard<mutex> lock(m);
 	if (!th.joinable())
 	{
 		threadEndMutex.lock();
@@ -2608,12 +2649,20 @@ void SwitcherData::Start()
 
 void SwitcherData::Stop()
 {
-	threadEndMutex.lock();
-	stop = true;
-	cv.notify_one();
-	threadEndMutex.unlock();
 	if (th.joinable())
+	{
+		//lock_guard<mutex> lock2(waitMutex);
+		//lock_guard<mutex> lock(m);
+		{
+			lock_guard<mutex> lock(threadEndMutex);
+			//lock_guard<mutex> lock2(waitMutex);
+			//threadEndMutex.lock();
+			switcher->stop = true;
+		}
+		cv.notify_one();
+		//threadEndMutex.unlock();
 		th.join();
+	}
 }
 
 // HOTKEY
@@ -2703,6 +2752,62 @@ static void OBSEvent(enum obs_frontend_event event, void* switcher)
 		FreeSceneSwitcher();
 	}
 
+	if (event == OBS_FRONTEND_EVENT_SCENE_CHANGED && !((struct SwitcherData*)switcher)->sceneTransitionSwitcherOnly)
+	{
+		//change transitions according to transitions tab
+		if (!((struct SwitcherData*)switcher)->autoTransitionChange){
+			obs_source_t* currentScene = obs_frontend_get_current_scene();
+			OBSWeakSource ws = obs_source_get_weak_source(currentScene);
+			obs_source_release(currentScene);
+			OBSWeakSource transitionWs = getNextTransition(((struct SwitcherData*)switcher)->lastScene, ws);
+			obs_source_t* transition = obs_weak_source_get_source(transitionWs);
+			if (transition)
+			{
+				((struct SwitcherData*)switcher)->autoTransitionChange = true;
+				((struct SwitcherData*)switcher)->nextScene = ws;
+				obs_frontend_set_current_transition(transition);
+
+				obs_source_t* lastSceneSource = obs_weak_source_get_source(((struct SwitcherData*)switcher)->lastScene);
+				obs_source_release(lastSceneSource);
+				obs_frontend_set_current_scene(lastSceneSource);
+				//obs_frontend_set_current_scene(currentScene);
+
+				((struct SwitcherData*)switcher)->autoTransitionChange = false;
+			}
+			obs_source_release(transition);
+			obs_weak_source_release(ws);
+			//if (transition)
+			//{
+			//	obs_source_t* lastSceneSource = obs_weak_source_get_source(((struct SwitcherData*)switcher)->lastScene);
+			//	obs_source_release(lastSceneSource);
+			//	obs_frontend_set_current_scene(lastSceneSource);
+			//}
+			if (!((struct SwitcherData*)switcher)->autoTransitionChange)
+				((struct SwitcherData*)switcher)->lastScene = ws;
+		}
+	}
+	//if (event == OBS_FRONTEND_EVENT_TRANSITION_STOPPED && ((struct SwitcherData*)switcher)->autoTransitionChange){
+	//	obs_source_t* nextSceneSource = obs_weak_source_get_source(((struct SwitcherData*)switcher)->nextScene);
+	//	obs_source_release(nextSceneSource);
+	//	obs_frontend_set_current_scene(nextSceneSource);
+	//}
+	//if (event == OBS_FRONTEND_EVENT_TRANSITION_CHANGED && !((struct SwitcherData*)switcher)->sceneTransitionSwitcherOnly)
+	//{
+	//	if (((struct SwitcherData*)switcher)->autoTransitionChange)
+	//	{
+	//		obs_source_t* transition = obs_frontend_get_current_transition();
+	//		OBSWeakSource transitionWs = obs_source_get_weak_source(transition);
+	//		obs_source_release(transition);
+	//		if (transitionWs == ((struct SwitcherData*)switcher)->transition){
+	//			((struct SwitcherData*)switcher)->autoTransitionChange = false;
+	//			obs_source_t* source = obs_weak_source_get_source(((struct SwitcherData*)switcher)->nextScene);
+	//			obs_source_release(source);
+	//			((struct SwitcherData*)switcher)->lastScene = ((struct SwitcherData*)switcher)->nextScene;
+	//			//this_thread::sleep_for(chrono::milliseconds(1000)); //debug
+	//			obs_frontend_set_current_scene(source);
+	//		}
+	//	}
+	//}
 	// needed to reset the transition, but not working properly now (only some transitions work)
 	// if (event == OBS_FRONTEND_EVENT_TRANSITION_STOPPED){
 	//	SwitcherData *test = (SwitcherData*)switcher;
