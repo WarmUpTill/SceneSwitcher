@@ -1000,7 +1000,7 @@
            <item>
             <widget class="QLabel" name="label_34">
              <property name="text">
-              <string>is active change default transition to </string>
+              <string>is active change default scene transition to </string>
              </property>
             </widget>
            </item>
