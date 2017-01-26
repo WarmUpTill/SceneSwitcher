@@ -34,6 +34,8 @@ struct SwitcherData
 	condition_variable cv;
 	mutex m;
 	mutex waitMutex;
+	mutex transitionEndMutex;
+	bool transitionActive = false;
 	mutex threadEndMutex;
 	condition_variable transitionCv;
 	bool stop = false;
@@ -2373,6 +2375,7 @@ void SwitcherData::Thread()
 	while (true)
 	{
 		unique_lock<mutex> lock(waitMutex);
+		unique_lock<mutex> transitionLock(transitionEndMutex);
 		OBSWeakSource scene;
 		OBSWeakSource transition;
 		bool match = false;
@@ -2408,23 +2411,24 @@ void SwitcherData::Thread()
 		}
 
 		currentSource = obs_frontend_get_current_scene();
+		OBSWeakSource ws = obs_source_get_weak_source(currentSource);
+
+		//Default transition change
+
+		for (DefaultSceneTransition s : defaultSceneTransitions)
 		{
-			OBSWeakSource ws = obs_source_get_weak_source(currentSource);
-
-			//Default transition change
-
-			for (DefaultSceneTransition s : defaultSceneTransitions)
+			if (s.scene == ws)
 			{
-				if (s.scene == ws)
-				{
-					obs_source_t* transition = obs_weak_source_get_source(s.transition);
-					obs_frontend_set_current_transition(transition);
-					obs_source_release(transition);
-					break;
-				}
+				obs_source_t* transition = obs_weak_source_get_source(s.transition);
+				if (transitionActive)
+					transitionCv.wait(transitionLock);
+				obs_frontend_set_current_transition(transition);
+				obs_source_release(transition);
+				break;
 			}
-			obs_weak_source_release(ws);
 		}
+		
+
 		//End default transition change
 
 		if (fileIO.readEnabled)
@@ -2435,13 +2439,28 @@ void SwitcherData::Thread()
 				QTextStream in(&file);
 				QString sceneStr = in.readLine();
 				obs_source_t* scene = obs_get_source_by_name(sceneStr.toUtf8().constData());
-				if (scene && scene != currentSource)
-					// add transitions check here too
+				if (scene && scene != currentSource){
+					obs_source_t* transition;
+					OBSWeakSource sceneWs = obs_source_get_weak_source(scene);
+					OBSWeakSource transitionWs = getNextTransition(ws, sceneWs);
+
+					if (transitionWs){
+						transition = obs_weak_source_get_source(transitionWs);
+						if (transitionActive)
+							transitionCv.wait(transitionLock);
+						obs_frontend_set_current_transition(transition);
+					}
+
 					obs_frontend_set_current_scene(scene);
+
+					obs_weak_source_release(transitionWs);
+					obs_weak_source_release(sceneWs);
+				}
 				file.close();
 				obs_source_release(scene);
 			}
 			obs_source_release(currentSource);
+			obs_weak_source_release(ws);
 			continue;
 		}
 
@@ -2449,7 +2468,6 @@ void SwitcherData::Thread()
 
 		// Auto stop streaming/recording
 
-		OBSWeakSource ws = obs_source_get_weak_source(currentSource);
 		if (ws && autoStopScene == ws)
 		{
 			if (obs_frontend_streaming_active())
@@ -2544,7 +2562,8 @@ void SwitcherData::Thread()
 						transition = obs_weak_source_get_source(transitionWs);
 					else
 						transition = obs_weak_source_get_source(s.transition);
-
+					if (transitionActive)
+						transitionCv.wait(transitionLock);
 					obs_frontend_set_current_transition(transition);
 					obs_frontend_set_current_scene(source);
 
@@ -2751,12 +2770,16 @@ void SwitcherData::Thread()
 				if (nextTransitionWs)
 				{
 					obs_source_t* nextTransition = obs_weak_source_get_source(nextTransitionWs);
+					if (transitionActive)
+						transitionCv.wait(transitionLock);
 					obs_frontend_set_current_transition(nextTransition);
 					obs_source_release(nextTransition);
 				}
 				else if (transition)
 				{
 					obs_source_t* nextTransition = obs_weak_source_get_source(transition);
+					if (transitionActive)
+						transitionCv.wait(transitionLock);
 					obs_frontend_set_current_transition(nextTransition);
 					obs_source_release(nextTransition);
 				}
@@ -2888,11 +2911,19 @@ static void OBSEvent(enum obs_frontend_event event, void* switcher)
 
 	if (event == OBS_FRONTEND_EVENT_SCENE_CHANGED)
 	{
-		
+		SwitcherData* s = (SwitcherData*)switcher;
+		s->transitionActive = true; 
 	}
 
 	if (event == OBS_FRONTEND_EVENT_TRANSITION_STOPPED)
 	{
+		SwitcherData* s = (SwitcherData*)switcher;
+		if (s->transitionActive)
+		{
+			this_thread::sleep_for(chrono::milliseconds(100));
+			s->transitionCv.notify_all();
+			s->transitionActive = false;
+		}
 
 	}
 }
