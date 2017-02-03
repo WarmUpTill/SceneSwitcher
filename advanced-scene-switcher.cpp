@@ -140,8 +140,6 @@ struct SwitcherData
 
 		if (!WeakSourceValid(idleData.scene) || !WeakSourceValid(idleData.transition))
 		{
-			idleData.scene = NULL;
-			idleData.transition = NULL;
 			idleData.idleEnable = false;
 		}
 	}
@@ -2383,8 +2381,9 @@ void SwitcherData::Thread()
 		bool pause = false;
 		bool sceneRoundTripActive = false;
 
+		switcher->Prune();
+
 		// Files
-		// TODO add transitions to output file / read them in the input file
 		obs_source_t* currentSource = obs_frontend_get_current_scene();
 
 		if (fileIO.writeEnabled)
@@ -2605,8 +2604,6 @@ void SwitcherData::Thread()
 		lastTitle = title;
 
 		// End Ignore Windows
-
-		switcher->Prune();
 
 		// Idle switch
 
