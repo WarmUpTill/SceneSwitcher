@@ -2643,7 +2643,7 @@ void SwitcherData::Thread()
 				}
 			}
 
-			if (!ignoreIdle && getTime() - getLastInputTime() > idleData.time * 1000)
+			if (!ignoreIdle && secondsSinceLastInput() > idleData.time)
 			{
 				scene = idleData.scene;
 				transition = idleData.transition;

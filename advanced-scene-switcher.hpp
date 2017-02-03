@@ -111,8 +111,7 @@ void GetWindowList(std::vector<std::string> &windows);
 void GetCurrentWindowTitle(std::string &title);
 std::pair<int, int> getCursorPos();
 bool isFullscreen();
-int getLastInputTime();
-int getTime();
+int secondsSinceLastInput();
 
 bool isInFocus(const QString &exeToCheck);
 void GetProcessList(QStringList &processes);

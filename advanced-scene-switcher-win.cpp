@@ -1,10 +1,8 @@
 #include <windows.h>
 #include <util/platform.h>
 #include "advanced-scene-switcher.hpp"
-//dasoven region_start
 #include <TlHelp32.h>
 #include <Psapi.h>
-//dasoven region_end
 
 using namespace std;
 
@@ -97,7 +95,6 @@ bool isFullscreen()
 	return false;
 }
 
-//dasoven region_start
 void GetProcessList(QStringList &processes) {
 
 	HANDLE procSnapshot;
@@ -140,7 +137,6 @@ bool isInFocus(const QString &exeToCheck) {
 
 	return exeToCheck == QString::fromWCharArray(executablePath).split(QRegExp("(/|\\\\)")).back();
 }
-//dasoven region_end
 
 int getLastInputTime()
 {
@@ -156,15 +152,7 @@ int getTime()
 	return GetTickCount();
 }
 
-bool SS()
+int secondsSinceLastInput()
 {
-	bool time = false;
-	if(SystemParametersInfo(
-		SPI_GETSCREENSAVEACTIVE,
-		NULL,
-		&time,
-		NULL
-		));
-	
-	return time;
+	return (getTime() - getLastInputTime()) / 1000;
 }
