@@ -2415,7 +2415,7 @@ void SwitcherData::Thread()
 
 		//Default transition change
 
-		for (DefaultSceneTransition s : defaultSceneTransitions)
+		for (DefaultSceneTransition& s : defaultSceneTransitions)
 		{
 			if (s.scene == ws)
 			{
@@ -2427,7 +2427,6 @@ void SwitcherData::Thread()
 				break;
 			}
 		}
-		
 
 		//End default transition change
 
@@ -2817,6 +2816,18 @@ void SwitcherData::Stop()
 			lock_guard<mutex> lock(threadEndMutex);
 			switcher->stop = true;
 		}
+
+		//LSKDJFKLSDFJSLDKJFLSDKJFLSDKJFSLDKFJSLDKJFSLDFKJSLDFJLKJAÄFKLJÖVOIJÖEOIJFÖLKAJOCIJWEOÖIHF
+		//maybe it is somehting to with not properly freeing something??
+		//deadlock???
+		for (int i = 0; i < 100; i++){
+			this_thread::sleep_for(chrono::milliseconds(100));
+			transitionActive = false;
+			transitionCv.notify_one();
+			cv.notify_one();
+		}
+		cv.notify_one();
+		transitionCv.notify_one();
 		cv.notify_one();
 		th.join();
 	}
@@ -2912,7 +2923,7 @@ static void OBSEvent(enum obs_frontend_event event, void* switcher)
 	if (event == OBS_FRONTEND_EVENT_SCENE_CHANGED)
 	{
 		SwitcherData* s = (SwitcherData*)switcher;
-		s->transitionActive = true; 
+		s->stop ? s->transitionActive = false : s->transitionActive = true;
 	}
 
 	if (event == OBS_FRONTEND_EVENT_TRANSITION_STOPPED)
@@ -2920,9 +2931,23 @@ static void OBSEvent(enum obs_frontend_event event, void* switcher)
 		SwitcherData* s = (SwitcherData*)switcher;
 		if (s->transitionActive)
 		{
+			/*this sleep seems to be necessary 
+			since transitions can still not be completely stopped 
+			even though we are in this event*/
 			this_thread::sleep_for(chrono::milliseconds(100));
-			s->transitionCv.notify_all();
 			s->transitionActive = false;
+			s->transitionCv.notify_one();
+		}
+
+	}
+
+	if (event == OBS_FRONTEND_EVENT_TRANSITION_CHANGED)
+	{
+		SwitcherData* s = (SwitcherData*)switcher;
+		if (s->transitionActive)
+		{
+			s->transitionActive = false;
+			s->transitionCv.notify_one();
 		}
 
 	}
