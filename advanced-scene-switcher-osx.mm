@@ -105,3 +105,21 @@ bool isFullscreen() {
     }
     return false;
 }
+
+int secondsSinceLastInput()
+{
+    double time = CGEventSourceSecondsSinceLastEventType(kCGEventSourceStateCombinedSessionState, kCGAnyInputEventType) + 0.5;
+    return (int) time;
+}
+
+void GetProcessList(QStringList&)
+{
+    //todo
+    return;
+}
+
+bool isInFocus(QString const&)
+{
+    //todo
+    return 0;
+}
