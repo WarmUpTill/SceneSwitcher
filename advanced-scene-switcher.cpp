@@ -135,7 +135,7 @@ struct SwitcherData
 		{
 			ExecutableSceneSwitch& s = executableSwitches[i];
 			if (!WeakSourceValid(s.mScene) || !WeakSourceValid(s.mTransition))
-				switches.erase(switches.begin() + i--);
+				executableSwitches.erase(executableSwitches.begin() + i--);
 		}
 
 		if (!WeakSourceValid(idleData.scene) || !WeakSourceValid(idleData.transition))
