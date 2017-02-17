@@ -105,6 +105,7 @@ static inline OBSWeakSource GetWeakTransitionByName(const char* transitionName)
 	{
 		source = obs_frontend_get_current_transition();
 		weak = obs_source_get_weak_source(source);
+		obs_source_release(source);
 		obs_weak_source_release(weak);
 		return weak;
 	}
@@ -124,11 +125,11 @@ static inline OBSWeakSource GetWeakTransitionByName(const char* transitionName)
 		}
 	}
 
-	if (match)
+	if (match){
 		weak = obs_source_get_weak_source(source);
-
+		obs_weak_source_release(weak);
+	}
 	obs_frontend_source_list_free(transitions);
-	obs_weak_source_release(weak);
 
 	return weak;
 }

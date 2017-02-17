@@ -33,10 +33,8 @@ struct SwitcherData
 	thread th;
 	condition_variable cv;
 	mutex m;
-	mutex waitMutex;
-	mutex transitionEndMutex;
+	mutex transitionMutex;
 	bool transitionActive = false;
-	mutex threadEndMutex;
 	condition_variable transitionCv;
 	bool stop = false;
 
@@ -112,7 +110,7 @@ struct SwitcherData
 
 		if (!WeakSourceValid(autoStopScene))
 		{
-			autoStopScene = NULL;
+			autoStopScene = nullptr;
 			autoStopEnable = false;
 		}
 
@@ -1585,6 +1583,9 @@ void SceneSwitcher::on_idleCheckBox_stateChanged(int state)
 		ui->idleTransitions->setDisabled(false);
 
 		switcher->idleData.idleEnable = true;
+
+		UpdateIdleDataTransition(ui->idleTransitions->currentText());
+		UpdateIdleDataScene(ui->idleScenes->currentText());
 	}
 }
 
@@ -1885,7 +1886,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 
 			obs_source_t* source = obs_weak_source_get_source(s.scene);
 			obs_source_t* transition = obs_weak_source_get_source(s.transition);
-			if (source)
+			if (source && transition)
 			{
 				const char* sceneName = obs_source_get_name(source);
 				const char* transitionName = obs_source_get_name(transition);
@@ -1907,7 +1908,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 
 			obs_source_t* source = obs_weak_source_get_source(s.scene);
 			obs_source_t* transition = obs_weak_source_get_source(s.transition);
-			if (source)
+			if (source && transition)
 			{
 				const char* sceneName = obs_source_get_name(source);
 				const char* transitionName = obs_source_get_name(transition);
@@ -1965,7 +1966,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 			obs_source_t* source1 = obs_weak_source_get_source(s.scene1);
 			obs_source_t* source2 = obs_weak_source_get_source(s.scene2);
 			obs_source_t* transition = obs_weak_source_get_source(s.transition);
-			if (source1 && source2)
+			if (source1 && source2 && transition)
 			{
 				const char* sceneName1 = obs_source_get_name(source1);
 				const char* sceneName2 = obs_source_get_name(source2);
@@ -1991,7 +1992,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 			obs_source_t* source1 = obs_weak_source_get_source(s.scene1);
 			obs_source_t* source2 = obs_weak_source_get_source(s.scene2);
 			obs_source_t* transition = obs_weak_source_get_source(s.transition);
-			if (source1 && source2)
+			if (source1 && source2 && transition)
 			{
 				const char* sceneName1 = obs_source_get_name(source1);
 				const char* sceneName2 = obs_source_get_name(source2);
@@ -2015,7 +2016,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 
 			obs_source_t* source = obs_weak_source_get_source(s.scene);
 			obs_source_t* transition = obs_weak_source_get_source(s.transition);
-			if (source)
+			if (source && transition)
 			{
 				const char* sceneName = obs_source_get_name(source);
 				const char* transitionName = obs_source_get_name(transition);
@@ -2039,7 +2040,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 			obs_source_t* source = obs_weak_source_get_source(s.mScene);
 			obs_source_t* transition = obs_weak_source_get_source(s.mTransition);
 
-			if (source)
+			if (source && transition)
 			{
 				const char* sceneName = obs_source_get_name(source);
 				const char* transitionName = obs_source_get_name(transition);
@@ -2364,6 +2365,11 @@ static inline OBSWeakSource getNextTransition(OBSWeakSource scene1, OBSWeakSourc
 	return ws;
 }
 
+bool transitionActiveCheck()
+{
+	return !switcher->transitionActive || switcher->stop;
+}
+
 void SwitcherData::Thread()
 {
 	chrono::duration<long long, milli> duration = chrono::milliseconds(interval);
@@ -2372,10 +2378,12 @@ void SwitcherData::Thread()
 
 	while (true)
 	{
-		unique_lock<mutex> lock(waitMutex);
-		unique_lock<mutex> transitionLock(transitionEndMutex);
+		unique_lock<mutex> lock(m);
+		unique_lock<mutex> transitionLock(transitionMutex);
 		OBSWeakSource scene;
 		OBSWeakSource transition;
+		OBSWeakSource ws;
+		obs_source_t* currentSource;
 		bool match = false;
 		bool fullscreen = false;
 		bool pause = false;
@@ -2384,7 +2392,7 @@ void SwitcherData::Thread()
 		switcher->Prune();
 
 		// Files
-		obs_source_t* currentSource = obs_frontend_get_current_scene();
+		currentSource = obs_frontend_get_current_scene();
 
 		if (fileIO.writeEnabled)
 		{
@@ -2401,16 +2409,11 @@ void SwitcherData::Thread()
 
 		cv.wait_for(lock, duration);
 
-		{
-			lock_guard<mutex> lock(threadEndMutex);
-			if (switcher->stop)
-			{
-				break;
-			}
-		}
+		if (switcher->stop)
+			break;
 
 		currentSource = obs_frontend_get_current_scene();
-		OBSWeakSource ws = obs_source_get_weak_source(currentSource);
+		ws = obs_source_get_weak_source(currentSource);
 
 		//Default transition change
 
@@ -2419,15 +2422,23 @@ void SwitcherData::Thread()
 			if (s.scene == ws)
 			{
 				obs_source_t* transition = obs_weak_source_get_source(s.transition);
-				if (transitionActive)
-					transitionCv.wait(transitionLock);
+				
+				lock.unlock();
+				transitionCv.wait(transitionLock, transitionActiveCheck);
+				lock.lock();
+
 				obs_frontend_set_current_transition(transition);
 				obs_source_release(transition);
 				break;
 			}
 		}
+		obs_source_release(currentSource);
+		obs_weak_source_release(ws);
 
 		//End default transition change
+
+		currentSource = obs_frontend_get_current_scene();
+		ws = obs_source_get_weak_source(currentSource);
 
 		if (fileIO.readEnabled)
 		{
@@ -2444,14 +2455,16 @@ void SwitcherData::Thread()
 
 					if (transitionWs){
 						transition = obs_weak_source_get_source(transitionWs);
-						if (transitionActive)
-							transitionCv.wait(transitionLock);
+						
+						lock.unlock();
+						transitionCv.wait(transitionLock, transitionActiveCheck);
+						lock.lock();
+						
 						obs_frontend_set_current_transition(transition);
 					}
 
 					obs_frontend_set_current_scene(scene);
 
-					obs_weak_source_release(transitionWs);
 					obs_weak_source_release(sceneWs);
 				}
 				file.close();
@@ -2459,12 +2472,20 @@ void SwitcherData::Thread()
 			}
 			obs_source_release(currentSource);
 			obs_weak_source_release(ws);
+			if (switcher->stop)
+				break;
 			continue;
 		}
+
+		obs_source_release(currentSource);
+		obs_weak_source_release(ws);
 
 		// End Files
 
 		// Auto stop streaming/recording
+
+		currentSource = obs_frontend_get_current_scene();
+		ws = obs_source_get_weak_source(currentSource);
 
 		if (ws && autoStopScene == ws)
 		{
@@ -2473,27 +2494,34 @@ void SwitcherData::Thread()
 			if (obs_frontend_recording_active())
 				obs_frontend_recording_stop();
 		}
+
+		obs_source_release(currentSource);
 		obs_weak_source_release(ws);
 
 		// End auto stop streaming/recording
 
 		// Pause
 
+		currentSource = obs_frontend_get_current_scene();
+		ws = obs_source_get_weak_source(currentSource);
+
 		for (OBSWeakSource& s : pauseScenesSwitches)
 		{
-			OBSWeakSource ws = obs_source_get_weak_source(currentSource);
 			if (s == ws)
 			{
 				pause = true;
-				obs_weak_source_release(ws);
 				break;
 			}
-			obs_weak_source_release(ws);
 		}
+
+		obs_source_release(currentSource);
+		obs_weak_source_release(ws);
 
 		if (!pause)
 		{
+			lock.unlock();
 			GetCurrentWindowTitle(title);
+			lock.lock();
 			for (string& window : pauseWindowsSwitches)
 			{
 				if (window == title)
@@ -2506,7 +2534,9 @@ void SwitcherData::Thread()
 
 		if (!pause)
 		{
+			lock.unlock();
 			GetCurrentWindowTitle(title);
+			lock.lock();
 			for (string& window : pauseWindowsSwitches)
 			{
 				try
@@ -2526,7 +2556,8 @@ void SwitcherData::Thread()
 
 		if (pause)
 		{
-			obs_source_release(currentSource);
+			if (switcher->stop)
+				break;
 			continue;
 		}
 
@@ -2534,18 +2565,17 @@ void SwitcherData::Thread()
 
 		// Scene Round Trip
 
+		currentSource = obs_frontend_get_current_scene();
+		ws = obs_source_get_weak_source(currentSource);
+
 		for (SceneRoundTripSwitch& s : sceneRoundTripSwitches)
 		{
-			OBSWeakSource ws = obs_source_get_weak_source(currentSource);
-
 			if (s.scene1 == ws)
 			{
 				sceneRoundTripActive = true;
 				int dur = s.delay * 1000 - interval;
-				if (dur > 30)
+				if (dur > 0)
 					cv.wait_for(lock, chrono::milliseconds(dur));
-				else
-					cv.wait_for(lock, chrono::milliseconds(30));
 
 				obs_source_t* source = obs_weak_source_get_source(s.scene2);
 				obs_source_t* currentSource2 = obs_frontend_get_current_scene();
@@ -2560,8 +2590,11 @@ void SwitcherData::Thread()
 						transition = obs_weak_source_get_source(transitionWs);
 					else
 						transition = obs_weak_source_get_source(s.transition);
-					if (transitionActive)
-						transitionCv.wait(transitionLock);
+
+					lock.unlock();
+					transitionCv.wait(transitionLock, transitionActiveCheck);
+					lock.lock();
+
 					obs_frontend_set_current_transition(transition);
 					obs_frontend_set_current_scene(source);
 
@@ -2569,18 +2602,19 @@ void SwitcherData::Thread()
 				}
 
 				obs_source_release(source);
-				obs_weak_source_release(ws);
 				obs_source_release(currentSource2);
 
 				break;
 			}
-			obs_weak_source_release(ws);
 		}
 
 		obs_source_release(currentSource);
+		obs_weak_source_release(ws);
 
 		if (sceneRoundTripActive)
 		{
+			if (switcher->stop)
+				break;
 			continue;
 		}
 
@@ -2588,7 +2622,9 @@ void SwitcherData::Thread()
 
 		duration = chrono::milliseconds(interval);
 
+		lock.unlock();
 		GetCurrentWindowTitle(title);
+		lock.lock();
 
 		// Ignore Windows
 
@@ -2610,7 +2646,9 @@ void SwitcherData::Thread()
 		if (!match && idleData.idleEnable)
 		{
 			bool ignoreIdle = false;
+			lock.unlock();
 			GetCurrentWindowTitle(title);
+			lock.lock();
 
 			for (string& window : ignoreIdleWindows)
 			{
@@ -2735,7 +2773,9 @@ void SwitcherData::Thread()
 
 		// Fullscreen
 
+		lock.unlock();
 		match = match && (!fullscreen || (fullscreen && isFullscreen()));
+		lock.lock();
 
 		// End fullscreen
 
@@ -2745,6 +2785,10 @@ void SwitcherData::Thread()
 		{
 			match = true;
 			scene = nonMatchingScene;
+			obs_source_t* transitionSource = obs_frontend_get_current_transition();
+			transition = obs_source_get_weak_source(transitionSource);
+			obs_source_release(transitionSource);
+			obs_weak_source_release(transition);
 		}
 
 		// End Backup Scene
@@ -2759,44 +2803,41 @@ void SwitcherData::Thread()
 			if (source && source != currentSource)
 			{
 				OBSWeakSource currentScene = obs_source_get_weak_source(currentSource);
-				obs_weak_source_release(currentScene);
 				OBSWeakSource nextTransitionWs = getNextTransition(currentScene, scene);
+				obs_weak_source_release(currentScene);
 
 				if (nextTransitionWs)
 				{
 					obs_source_t* nextTransition = obs_weak_source_get_source(nextTransitionWs);
-					if (transitionActive)
-						transitionCv.wait(transitionLock);
+					lock.unlock();
+					transitionCv.wait(transitionLock, transitionActiveCheck);
+					lock.lock();
 					obs_frontend_set_current_transition(nextTransition);
 					obs_source_release(nextTransition);
 				}
-				else if (transition)
+				else
 				{
 					obs_source_t* nextTransition = obs_weak_source_get_source(transition);
-					if (transitionActive)
-						transitionCv.wait(transitionLock);
+					lock.unlock();
+					transitionCv.wait(transitionLock, transitionActiveCheck);
+					lock.lock();
 					obs_frontend_set_current_transition(nextTransition);
 					obs_source_release(nextTransition);
 				}
-
 				obs_frontend_set_current_scene(source);
 			}
 			obs_source_release(currentSource);
 			obs_source_release(source);
 		}
-
 		// End switch scene
 	}
 }
 
 void SwitcherData::Start()
 {
-
 	if (!th.joinable())
 	{
-		threadEndMutex.lock();
 		stop = false;
-		threadEndMutex.unlock();
 		switcher->th = thread([]()
 		{
 			switcher->Thread();
@@ -2809,23 +2850,19 @@ void SwitcherData::Stop()
 	if (th.joinable())
 	{
 		{
-			lock_guard<mutex> lock(threadEndMutex);
+			lock_guard<mutex> lock(m);
+			switcher->stop = true;
+		}
+		{
+			lock_guard<mutex> lock(transitionMutex);
 			switcher->stop = true;
 		}
 
-		//LSKDJFKLSDFJSLDKJFLSDKJFLSDKJFSLDKFJSLDKJFSLDFKJSLDFJLKJAÄFKLJÖVOIJÖEOIJFÖLKAJOCIJWEOÖIHF
-		//maybe it is somehting to with not properly freeing something??
-		//deadlock???
-		for (int i = 0; i < 100; i++){
-			this_thread::sleep_for(chrono::milliseconds(100));
-			transitionActive = false;
-			transitionCv.notify_one();
-			cv.notify_one();
-		}
 		cv.notify_one();
 		transitionCv.notify_one();
-		cv.notify_one();
+
 		th.join();
+		cv.notify_one();
 	}
 }
 
@@ -2934,7 +2971,6 @@ static void OBSEvent(enum obs_frontend_event event, void* switcher)
 			s->transitionActive = false;
 			s->transitionCv.notify_one();
 		}
-
 	}
 
 	if (event == OBS_FRONTEND_EVENT_TRANSITION_CHANGED)
@@ -2945,7 +2981,6 @@ static void OBSEvent(enum obs_frontend_event event, void* switcher)
 			s->transitionActive = false;
 			s->transitionCv.notify_one();
 		}
-
 	}
 }
 
