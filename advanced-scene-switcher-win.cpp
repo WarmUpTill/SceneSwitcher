@@ -61,7 +61,16 @@ void GetWindowList(vector<string>& windows)
 void GetCurrentWindowTitle(string& title)
 {
 	HWND window = GetForegroundWindow();
-	//DWORD id;
+	DWORD id;
+	GetWindowThreadProcessId(window, &id);
+	/*GetWindowText will freeze if the control it is reading was created in another thread. 
+	It does not directly read the control.Instead, 
+	it waits for the thread that created the control to process a WM_GETTEXT message.
+	So if that thread is frozen in a WaitFor... call you have a deadlock.*/
+	if (id == GetCurrentProcessId()) {
+		title = "";
+		return;
+	}
 	GetWindowTitle(window, title);
 }
 
