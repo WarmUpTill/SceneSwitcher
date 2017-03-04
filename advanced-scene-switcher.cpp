@@ -2456,9 +2456,9 @@ void SwitcherData::Thread()
 					if (transitionWs){
 						transition = obs_weak_source_get_source(transitionWs);
 						
-						lock.unlock();
-						transitionCv.wait(transitionLock, transitionActiveCheck);
-						lock.lock();
+						//lock.unlock();
+						//transitionCv.wait(transitionLock, transitionActiveCheck);
+						//lock.lock();
 						
 						obs_frontend_set_current_transition(transition);
 					}
@@ -2591,9 +2591,9 @@ void SwitcherData::Thread()
 					else
 						transition = obs_weak_source_get_source(s.transition);
 
-					lock.unlock();
-					transitionCv.wait(transitionLock, transitionActiveCheck);
-					lock.lock();
+					//lock.unlock();
+					//transitionCv.wait(transitionLock, transitionActiveCheck);
+					//lock.lock();
 
 					obs_frontend_set_current_transition(transition);
 					obs_frontend_set_current_scene(source);
@@ -2809,18 +2809,18 @@ void SwitcherData::Thread()
 				if (nextTransitionWs)
 				{
 					obs_source_t* nextTransition = obs_weak_source_get_source(nextTransitionWs);
-					lock.unlock();
-					transitionCv.wait(transitionLock, transitionActiveCheck);
-					lock.lock();
+					//lock.unlock();
+					//transitionCv.wait(transitionLock, transitionActiveCheck);
+					//lock.lock();
 					obs_frontend_set_current_transition(nextTransition);
 					obs_source_release(nextTransition);
 				}
 				else
 				{
 					obs_source_t* nextTransition = obs_weak_source_get_source(transition);
-					lock.unlock();
-					transitionCv.wait(transitionLock, transitionActiveCheck);
-					lock.lock();
+					//lock.unlock();
+					//transitionCv.wait(transitionLock, transitionActiveCheck);
+					//lock.lock();
 					obs_frontend_set_current_transition(nextTransition);
 					obs_source_release(nextTransition);
 				}
@@ -2956,12 +2956,14 @@ static void OBSEvent(enum obs_frontend_event event, void* switcher)
 	if (event == OBS_FRONTEND_EVENT_SCENE_CHANGED)
 	{
 		SwitcherData* s = (SwitcherData*)switcher;
+		//lock_guard<mutex> lock(s->transitionMutex);
 		s->stop ? s->transitionActive = false : s->transitionActive = true;
 	}
 
 	if (event == OBS_FRONTEND_EVENT_TRANSITION_STOPPED)
 	{
 		SwitcherData* s = (SwitcherData*)switcher;
+		//lock_guard<mutex> lock(s->transitionMutex);
 		if (s->transitionActive)
 		{
 			/*this sleep seems to be necessary 
@@ -2976,6 +2978,7 @@ static void OBSEvent(enum obs_frontend_event event, void* switcher)
 	if (event == OBS_FRONTEND_EVENT_TRANSITION_CHANGED)
 	{
 		SwitcherData* s = (SwitcherData*)switcher;
+		//lock_guard<mutex> lock(s->transitionMutex);
 		if (s->transitionActive)
 		{
 			s->transitionActive = false;
