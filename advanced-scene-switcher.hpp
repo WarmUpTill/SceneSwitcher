@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include "ui_advanced-scene-switcher.h"
+#include "switcher-data-structs.hpp"
 
 struct obs_weak_source;
 typedef struct obs_weak_source obs_weak_source_t;
@@ -102,6 +103,9 @@ public slots:
 	void on_ignoreIdleAdd_clicked();
 	void on_ignoreIdleRemove_clicked();
 
+	void on_priorityUp_clicked();
+	void on_priorityDown_clicked();
+
 	void updateScreenRegionCursorPos();
 
 	void on_close_clicked();
@@ -109,9 +113,11 @@ public slots:
 
 void GetWindowList(std::vector<std::string> &windows);
 void GetCurrentWindowTitle(std::string &title);
-std::pair<int, int> getCursorPos();
+pair<int, int> getCursorPos();
 bool isFullscreen();
 int secondsSinceLastInput();
-
 bool isInFocus(const QString &exeToCheck);
 void GetProcessList(QStringList &processes);
+
+struct SwitcherData;
+extern SwitcherData* switcher;

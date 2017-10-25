@@ -24,131 +24,22 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
-
-
-using namespace std;
-
-struct SwitcherData
+#if 1
+#include <Windows.h>
+static std::wstring s2ws(const std::string& s)
 {
-	thread th;
-	condition_variable cv;
-	mutex m;
-	mutex transitionMutex;
-	bool transitionActive = false;
-	condition_variable transitionCv;
-	bool stop = false;
+	int len;
+	int slength = (int)s.length() + 1;
+	len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+	wchar_t* buf = new wchar_t[len];
+	MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+	std::wstring r(buf);
+	delete[] buf;
+	return r;
+}
+#endif
 
-	vector<SceneSwitch> switches;
-	OBSWeakSource nonMatchingScene;
-	int interval = DEFAULT_INTERVAL;
-	bool switchIfNotMatching = false;
-	bool startAtLaunch = false;
-
-	vector<ScreenRegionSwitch> screenRegionSwitches;
-
-	vector<OBSWeakSource> pauseScenesSwitches;
-
-	vector<string> pauseWindowsSwitches;
-
-	vector<string> ignoreWindowsSwitches;
-
-	vector<SceneRoundTripSwitch> sceneRoundTripSwitches;
-
-	bool autoStopEnable = false;
-	OBSWeakSource autoStopScene;
-
-	vector<SceneTransition> sceneTransitions;
-	vector<DefaultSceneTransition> defaultSceneTransitions;
-
-	vector<ExecutableSceneSwitch> executableSwitches;
-
-	FileIOData fileIO;
-
-	IdleData idleData;
-	vector<string> ignoreIdleWindows;
-
-	void Thread();
-	void Start();
-	void Stop();
-
-	void Prune()
-	{
-		for (size_t i = 0; i < switches.size(); i++)
-		{
-			SceneSwitch& s = switches[i];
-			if (!WeakSourceValid(s.scene) || !WeakSourceValid(s.transition))
-				switches.erase(switches.begin() + i--);
-		}
-
-		if (nonMatchingScene && !WeakSourceValid(nonMatchingScene))
-		{
-			switchIfNotMatching = false;
-			nonMatchingScene = nullptr;
-		}
-
-		for (size_t i = 0; i < screenRegionSwitches.size(); i++)
-		{
-			ScreenRegionSwitch& s = screenRegionSwitches[i];
-			if (!WeakSourceValid(s.scene) || !WeakSourceValid(s.transition))
-				screenRegionSwitches.erase(screenRegionSwitches.begin() + i--);
-		}
-
-		for (size_t i = 0; i < pauseScenesSwitches.size(); i++)
-		{
-			OBSWeakSource& scene = pauseScenesSwitches[i];
-			if (!WeakSourceValid(scene))
-				pauseScenesSwitches.erase(pauseScenesSwitches.begin() + i--);
-		}
-
-		for (size_t i = 0; i < sceneRoundTripSwitches.size(); i++)
-		{
-			SceneRoundTripSwitch& s = sceneRoundTripSwitches[i];
-			if (!WeakSourceValid(s.scene1) || !WeakSourceValid(s.scene2)
-				|| !WeakSourceValid(s.transition))
-				sceneRoundTripSwitches.erase(sceneRoundTripSwitches.begin() + i--);
-		}
-
-		if (!WeakSourceValid(autoStopScene))
-		{
-			autoStopScene = nullptr;
-			autoStopEnable = false;
-		}
-
-		for (size_t i = 0; i < sceneTransitions.size(); i++)
-		{
-			SceneTransition& s = sceneTransitions[i];
-			if (!WeakSourceValid(s.scene1) || !WeakSourceValid(s.scene2)
-				|| !WeakSourceValid(s.transition))
-				sceneTransitions.erase(sceneTransitions.begin() + i--);
-		}
-
-		for (size_t i = 0; i < defaultSceneTransitions.size(); i++)
-		{
-			DefaultSceneTransition& s = defaultSceneTransitions[i];
-			if (!WeakSourceValid(s.scene) || !WeakSourceValid(s.transition))
-				defaultSceneTransitions.erase(defaultSceneTransitions.begin() + i--);
-		}
-
-		for (size_t i = 0; i < executableSwitches.size(); i++)
-		{
-			ExecutableSceneSwitch& s = executableSwitches[i];
-			if (!WeakSourceValid(s.mScene) || !WeakSourceValid(s.mTransition))
-				executableSwitches.erase(executableSwitches.begin() + i--);
-		}
-
-		if (!WeakSourceValid(idleData.scene) || !WeakSourceValid(idleData.transition))
-		{
-			idleData.idleEnable = false;
-		}
-	}
-
-	inline ~SwitcherData()
-	{
-		Stop();
-	}
-};
-
-static SwitcherData* switcher = nullptr;
+SwitcherData* switcher = nullptr;
 
 SceneSwitcher::SceneSwitcher(QWidget* parent)
 	: QDialog(parent)
@@ -291,6 +182,7 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		item->setData(Qt::UserRole, text);
 	}
 
+	int smallestDelay = switcher->interval;
 	for (auto& s : switcher->sceneRoundTripSwitches)
 	{
 		string sceneName1 = GetWeakSourceName(s.scene1);
@@ -301,7 +193,10 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 
 		QListWidgetItem* item = new QListWidgetItem(text, ui->sceneRoundTrips);
 		item->setData(Qt::UserRole, text);
+		if (s.delay * 1000 < smallestDelay)
+			smallestDelay = s.delay * 1000;
 	}
+	(smallestDelay < switcher->interval) ? ui->intervalWarning->setVisible(true) : ui->intervalWarning->setVisible(false);
 
 	for (auto& s : switcher->sceneTransitions)
 	{
@@ -378,1490 +273,18 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 	QTimer* screenRegionTimer = new QTimer(this);
 	connect(screenRegionTimer, SIGNAL(timeout()), this, SLOT(updateScreenRegionCursorPos()));
 	screenRegionTimer->start(1000);
-}
 
-void SceneSwitcher::closeEvent(QCloseEvent*)
-{
-	obs_frontend_save();
-}
-
-int SceneSwitcher::FindByData(const QString& window)
-{
-	int count = ui->switches->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++)
+	for (string s : switcher->functionNamesByPriority)
 	{
-		QListWidgetItem* item = ui->switches->item(i);
-		QString itemWindow = item->data(Qt::UserRole).toString();
-
-		if (itemWindow == window)
-		{
-			idx = i;
-			break;
-		}
+		QString text(s.c_str());
+		QListWidgetItem* item = new QListWidgetItem(text, ui->priorityList);
+		item->setData(Qt::UserRole, text);
 	}
 
-	return idx;
 }
 
-int SceneSwitcher::ScreenRegionFindByData(const QString& region)
-{
-	int count = ui->screenRegions->count();
-	int idx = -1;
 
-	for (int i = 0; i < count; i++)
-	{
-		QListWidgetItem* item = ui->screenRegions->item(i);
-		QString itemRegion = item->data(Qt::UserRole).toString();
 
-		if (itemRegion == region)
-		{
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-int SceneSwitcher::PauseScenesFindByData(const QString& scene)
-{
-	int count = ui->pauseScenes->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++)
-	{
-		QListWidgetItem* item = ui->pauseScenes->item(i);
-		QString itemRegion = item->data(Qt::UserRole).toString();
-
-		if (itemRegion == scene)
-		{
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-int SceneSwitcher::PauseWindowsFindByData(const QString& window)
-{
-	int count = ui->pauseWindows->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++)
-	{
-		QListWidgetItem* item = ui->pauseWindows->item(i);
-		QString itemRegion = item->data(Qt::UserRole).toString();
-
-		if (itemRegion == window)
-		{
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-int SceneSwitcher::IgnoreWindowsFindByData(const QString& window)
-{
-	int count = ui->ignoreWindows->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++)
-	{
-		QListWidgetItem* item = ui->ignoreWindows->item(i);
-		QString itemRegion = item->data(Qt::UserRole).toString();
-
-		if (itemRegion == window)
-		{
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-int SceneSwitcher::SceneRoundTripFindByData(const QString& scene1)
-{
-	QRegExp rx(scene1 + " -> wait for [0-9]* seconds -> .*");
-	int count = ui->sceneRoundTrips->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++)
-	{
-		QListWidgetItem* item = ui->sceneRoundTrips->item(i);
-		QString itemString = item->data(Qt::UserRole).toString();
-
-		if (rx.exactMatch(itemString))
-		{
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-int SceneSwitcher::SceneTransitionsFindByData(const QString& scene1, const QString& scene2)
-{
-	QRegExp rx(scene1 + " --- .* --> " + scene2);
-	int count = ui->sceneTransitions->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++)
-	{
-		QListWidgetItem* item = ui->sceneTransitions->item(i);
-		QString itemString = item->data(Qt::UserRole).toString();
-
-		if (rx.exactMatch(itemString))
-		{
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-int SceneSwitcher::DefaultTransitionsFindByData(const QString& scene)
-{
-	QRegExp rx(scene + " --> .*");
-	int count = ui->defaultTransitions->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++)
-	{
-		QListWidgetItem* item = ui->defaultTransitions->item(i);
-		QString itemString = item->data(Qt::UserRole).toString();
-
-		if (rx.exactMatch(itemString))
-		{
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-void SceneSwitcher::on_switches_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem* item = ui->switches->item(idx);
-
-	QString window = item->data(Qt::UserRole).toString();
-
-	lock_guard<mutex> lock(switcher->m);
-	for (auto& s : switcher->switches)
-	{
-		if (window.compare(s.window.c_str()) == 0)
-		{
-			string name = GetWeakSourceName(s.scene);
-			string transitionName = GetWeakSourceName(s.transition);
-			ui->scenes->setCurrentText(name.c_str());
-			ui->windows->setCurrentText(window);
-			ui->transitions->setCurrentText(transitionName.c_str());
-			ui->fullscreenCheckBox->setChecked(s.fullscreen);
-			break;
-		}
-	}
-}
-
-void SceneSwitcher::on_screenRegions_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem* item = ui->screenRegions->item(idx);
-
-	QString region = item->data(Qt::UserRole).toString();
-
-	lock_guard<mutex> lock(switcher->m);
-	for (auto& s : switcher->screenRegionSwitches)
-	{
-		if (region.compare(s.regionStr.c_str()) == 0)
-		{
-			string name = GetWeakSourceName(s.scene);
-			string transitionName = GetWeakSourceName(s.transition);
-			ui->screenRegionScenes->setCurrentText(name.c_str());
-			ui->screenRegionsTransitions->setCurrentText(transitionName.c_str());
-			ui->screenRegionMinX->setValue(s.minX);
-			ui->screenRegionMinY->setValue(s.minY);
-			ui->screenRegionMaxX->setValue(s.maxX);
-			ui->screenRegionMaxY->setValue(s.maxY);
-			break;
-		}
-	}
-}
-
-void SceneSwitcher::on_pauseScenes_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem* item = ui->pauseScenes->item(idx);
-
-	QString scene = item->data(Qt::UserRole).toString();
-
-	lock_guard<mutex> lock(switcher->m);
-	for (auto& s : switcher->pauseScenesSwitches)
-	{
-		string name = GetWeakSourceName(s);
-		if (scene.compare(name.c_str()) == 0)
-		{
-			ui->pauseScenesScenes->setCurrentText(name.c_str());
-			break;
-		}
-	}
-}
-
-void SceneSwitcher::on_pauseWindows_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem* item = ui->pauseWindows->item(idx);
-
-	QString window = item->data(Qt::UserRole).toString();
-
-	lock_guard<mutex> lock(switcher->m);
-	for (auto& s : switcher->pauseWindowsSwitches)
-	{
-		if (window.compare(s.c_str()) == 0)
-		{
-			ui->pauseWindowsWindows->setCurrentText(s.c_str());
-			break;
-		}
-	}
-}
-
-void SceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem* item = ui->ignoreWindows->item(idx);
-
-	QString window = item->data(Qt::UserRole).toString();
-
-	lock_guard<mutex> lock(switcher->m);
-	for (auto& s : switcher->ignoreWindowsSwitches)
-	{
-		if (window.compare(s.c_str()) == 0)
-		{
-			ui->ignoreWindowsWindows->setCurrentText(s.c_str());
-			break;
-		}
-	}
-}
-
-void SceneSwitcher::on_sceneRoundTrips_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem* item = ui->sceneRoundTrips->item(idx);
-
-	QString sceneRoundTrip = item->data(Qt::UserRole).toString();
-
-	lock_guard<mutex> lock(switcher->m);
-	for (auto& s : switcher->sceneRoundTripSwitches)
-	{
-		if (sceneRoundTrip.compare(s.sceneRoundTripStr.c_str()) == 0)
-		{
-			string scene1 = GetWeakSourceName(s.scene1);
-			string scene2 = GetWeakSourceName(s.scene2);
-			string transitionName = GetWeakSourceName(s.transition);
-			int delay = s.delay;
-			ui->sceneRoundTripScenes1->setCurrentText(scene1.c_str());
-			ui->sceneRoundTripScenes2->setCurrentText(scene2.c_str());
-			ui->sceneRoundTripTransitions->setCurrentText(transitionName.c_str());
-			ui->sceneRoundTripSpinBox->setValue(delay);
-			break;
-		}
-	}
-}
-
-void SceneSwitcher::on_sceneTransitions_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem* item = ui->sceneTransitions->item(idx);
-
-	QString sceneTransition = item->data(Qt::UserRole).toString();
-
-	lock_guard<mutex> lock(switcher->m);
-	for (auto& s : switcher->sceneTransitions)
-	{
-		if (sceneTransition.compare(s.sceneTransitionStr.c_str()) == 0)
-		{
-			string scene1 = GetWeakSourceName(s.scene1);
-			string scene2 = GetWeakSourceName(s.scene2);
-			string transitionName = GetWeakSourceName(s.transition);
-			ui->transitionsScene1->setCurrentText(scene1.c_str());
-			ui->transitionsScene2->setCurrentText(scene2.c_str());
-			ui->transitionsTransitions->setCurrentText(transitionName.c_str());
-			break;
-		}
-	}
-}
-
-void SceneSwitcher::on_defaultTransitions_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem* item = ui->defaultTransitions->item(idx);
-
-	QString sceneTransition = item->data(Qt::UserRole).toString();
-
-	lock_guard<mutex> lock(switcher->m);
-	for (auto& s : switcher->defaultSceneTransitions)
-	{
-		if (sceneTransition.compare(s.sceneTransitionStr.c_str()) == 0)
-		{
-			string scene = GetWeakSourceName(s.scene);
-			string transitionName = GetWeakSourceName(s.transition);
-			ui->defaultTransitionsScene->setCurrentText(scene.c_str());
-			ui->defaultTransitionsTransitions->setCurrentText(transitionName.c_str());
-			break;
-		}
-	}
-}
-
-
-int SceneSwitcher::IgnoreIdleWindowsFindByData(const QString& window)
-{
-	int count = ui->ignoreIdleWindows->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++)
-	{
-		QListWidgetItem* item = ui->ignoreIdleWindows->item(i);
-		QString itemRegion = item->data(Qt::UserRole).toString();
-
-		if (itemRegion == window)
-		{
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-void SceneSwitcher::on_close_clicked()
-{
-	done(0);
-}
-
-void SceneSwitcher::on_add_clicked()
-{
-	QString sceneName = ui->scenes->currentText();
-	QString windowName = ui->windows->currentText();
-	QString transitionName = ui->transitions->currentText();
-	bool fullscreen = ui->fullscreenCheckBox->isChecked();
-
-	if (windowName.isEmpty() || sceneName.isEmpty())
-		return;
-
-	OBSWeakSource source = GetWeakSourceByQString(sceneName);
-	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
-	QVariant v = QVariant::fromValue(windowName);
-
-	QString text = MakeSwitchName(sceneName, windowName, transitionName, fullscreen);
-
-	int idx = FindByData(windowName);
-
-	if (idx == -1)
-	{
-		lock_guard<mutex> lock(switcher->m);
-		switcher->switches.emplace_back(
-			source, windowName.toUtf8().constData(), transition, fullscreen);
-
-		QListWidgetItem* item = new QListWidgetItem(text, ui->switches);
-		item->setData(Qt::UserRole, v);
-	}
-	else
-	{
-		QListWidgetItem* item = ui->switches->item(idx);
-		item->setText(text);
-
-		string window = windowName.toUtf8().constData();
-
-		{
-			lock_guard<mutex> lock(switcher->m);
-			for (auto& s : switcher->switches)
-			{
-				if (s.window == window)
-				{
-					s.scene = source;
-					s.transition = transition;
-					s.fullscreen = fullscreen;
-					break;
-				}
-			}
-		}
-
-		ui->switches->sortItems();
-	}
-}
-
-void SceneSwitcher::on_remove_clicked()
-{
-	QListWidgetItem* item = ui->switches->currentItem();
-	if (!item)
-		return;
-
-	string window = item->data(Qt::UserRole).toString().toUtf8().constData();
-
-	{
-		lock_guard<mutex> lock(switcher->m);
-		auto& switches = switcher->switches;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it)
-		{
-			auto& s = *it;
-
-			if (s.window == window)
-			{
-				switches.erase(it);
-				break;
-			}
-		}
-	}
-
-	delete item;
-}
-
-void SceneSwitcher::on_screenRegionAdd_clicked()
-{
-	QString sceneName = ui->screenRegionScenes->currentText();
-	QString transitionName = ui->screenRegionsTransitions->currentText();
-
-	if (sceneName.isEmpty())
-		return;
-
-	int minX = ui->screenRegionMinX->value();
-	int minY = ui->screenRegionMinY->value();
-	int maxX = ui->screenRegionMaxX->value();
-	int maxY = ui->screenRegionMaxY->value();
-
-	string regionStr = to_string(minX) + ", " + to_string(minY) + " x " + to_string(maxX) + ", "
-		+ to_string(maxY);
-	QString region = QString::fromStdString(regionStr);
-
-	OBSWeakSource source = GetWeakSourceByQString(sceneName);
-	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
-	QVariant v = QVariant::fromValue(region);
-
-	QString text = MakeScreenRegionSwitchName(sceneName, transitionName, minX, minY, maxX, maxY);
-
-	int idx = ScreenRegionFindByData(region);
-
-	if (idx == -1)
-	{
-		QListWidgetItem* item = new QListWidgetItem(text, ui->screenRegions);
-		item->setData(Qt::UserRole, v);
-
-		lock_guard<mutex> lock(switcher->m);
-		switcher->screenRegionSwitches.emplace_back(
-			source, transition, minX, minY, maxX, maxY, regionStr);
-	}
-	else
-	{
-		QListWidgetItem* item = ui->screenRegions->item(idx);
-		item->setText(text);
-
-		string curRegion = region.toUtf8().constData();
-
-		{
-			lock_guard<mutex> lock(switcher->m);
-			for (auto& s : switcher->screenRegionSwitches)
-			{
-				if (s.regionStr == curRegion)
-				{
-					s.scene = source;
-					s.transition = transition;
-					break;
-				}
-			}
-		}
-
-		ui->screenRegions->sortItems();
-	}
-}
-
-void SceneSwitcher::on_screenRegionRemove_clicked()
-{
-	QListWidgetItem* item = ui->screenRegions->currentItem();
-	if (!item)
-		return;
-
-	string region = item->data(Qt::UserRole).toString().toUtf8().constData();
-
-	{
-		lock_guard<mutex> lock(switcher->m);
-		auto& switches = switcher->screenRegionSwitches;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it)
-		{
-			auto& s = *it;
-
-			if (s.regionStr == region)
-			{
-				switches.erase(it);
-				break;
-			}
-		}
-	}
-
-	delete item;
-}
-
-void SceneSwitcher::on_pauseScenesAdd_clicked()
-{
-	QString sceneName = ui->pauseScenesScenes->currentText();
-
-	if (sceneName.isEmpty())
-		return;
-
-	OBSWeakSource source = GetWeakSourceByQString(sceneName);
-	QVariant v = QVariant::fromValue(sceneName);
-
-	QList<QListWidgetItem*> items = ui->pauseScenes->findItems(sceneName, Qt::MatchExactly);
-
-	if (items.size() == 0)
-	{
-		QListWidgetItem* item = new QListWidgetItem(sceneName, ui->pauseScenes);
-		item->setData(Qt::UserRole, v);
-
-		lock_guard<mutex> lock(switcher->m);
-		switcher->pauseScenesSwitches.emplace_back(source);
-		ui->pauseScenes->sortItems();
-	}
-}
-
-void SceneSwitcher::on_pauseScenesRemove_clicked()
-{
-	QListWidgetItem* item = ui->pauseScenes->currentItem();
-	if (!item)
-		return;
-
-	QString pauseScene = item->data(Qt::UserRole).toString();
-
-	{
-		lock_guard<mutex> lock(switcher->m);
-		auto& switches = switcher->pauseScenesSwitches;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it)
-		{
-			auto& s = *it;
-
-			if (s == GetWeakSourceByQString(pauseScene))
-			{
-				switches.erase(it);
-				break;
-			}
-		}
-	}
-
-	delete item;
-}
-
-void SceneSwitcher::on_pauseWindowsAdd_clicked()
-{
-	QString windowName = ui->pauseWindowsWindows->currentText();
-
-	if (windowName.isEmpty())
-		return;
-
-	QVariant v = QVariant::fromValue(windowName);
-
-	QList<QListWidgetItem*> items = ui->pauseWindows->findItems(windowName, Qt::MatchExactly);
-
-	if (items.size() == 0)
-	{
-		QListWidgetItem* item = new QListWidgetItem(windowName, ui->pauseWindows);
-		item->setData(Qt::UserRole, v);
-
-		lock_guard<mutex> lock(switcher->m);
-		switcher->pauseWindowsSwitches.emplace_back(windowName.toUtf8().constData());
-		ui->pauseWindows->sortItems();
-	}
-}
-
-void SceneSwitcher::on_pauseWindowsRemove_clicked()
-{
-	QListWidgetItem* item = ui->pauseWindows->currentItem();
-	if (!item)
-		return;
-
-	QString windowName = item->data(Qt::UserRole).toString();
-
-	{
-		lock_guard<mutex> lock(switcher->m);
-		auto& switches = switcher->pauseWindowsSwitches;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it)
-		{
-			auto& s = *it;
-
-			if (s == windowName.toUtf8().constData())
-			{
-				switches.erase(it);
-				break;
-			}
-		}
-	}
-
-	delete item;
-}
-
-void SceneSwitcher::on_ignoreWindowsAdd_clicked()
-{
-	QString windowName = ui->ignoreWindowsWindows->currentText();
-
-	if (windowName.isEmpty())
-		return;
-
-	QVariant v = QVariant::fromValue(windowName);
-
-	QList<QListWidgetItem*> items = ui->ignoreWindows->findItems(windowName, Qt::MatchExactly);
-
-	if (items.size() == 0)
-	{
-		QListWidgetItem* item = new QListWidgetItem(windowName, ui->ignoreWindows);
-		item->setData(Qt::UserRole, v);
-
-		lock_guard<mutex> lock(switcher->m);
-		switcher->ignoreWindowsSwitches.emplace_back(windowName.toUtf8().constData());
-		ui->ignoreWindows->sortItems();
-	}
-}
-
-void SceneSwitcher::on_ignoreWindowsRemove_clicked()
-{
-	QListWidgetItem* item = ui->ignoreWindows->currentItem();
-	if (!item)
-		return;
-
-	QString windowName = item->data(Qt::UserRole).toString();
-
-	{
-		lock_guard<mutex> lock(switcher->m);
-		auto& switches = switcher->ignoreWindowsSwitches;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it)
-		{
-			auto& s = *it;
-
-			if (s == windowName.toUtf8().constData())
-			{
-				switches.erase(it);
-				break;
-			}
-		}
-	}
-
-	delete item;
-}
-
-void SceneSwitcher::on_sceneRoundTripAdd_clicked()
-{
-	QString scene1Name = ui->sceneRoundTripScenes1->currentText();
-	QString scene2Name = ui->sceneRoundTripScenes2->currentText();
-	QString transitionName = ui->sceneRoundTripTransitions->currentText();
-
-	if (scene1Name.isEmpty() || scene2Name.isEmpty())
-		return;
-
-	int delay = ui->sceneRoundTripSpinBox->value();
-
-	if (scene1Name == scene2Name)
-		return;
-
-	OBSWeakSource source1 = GetWeakSourceByQString(scene1Name);
-	OBSWeakSource source2 = GetWeakSourceByQString(scene2Name);
-	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
-
-	QString text = MakeSceneRoundTripSwitchName(scene1Name, scene2Name, transitionName, delay);
-	QVariant v = QVariant::fromValue(text);
-
-	int idx = SceneRoundTripFindByData(scene1Name);
-
-	if (idx == -1)
-	{
-		QListWidgetItem* item = new QListWidgetItem(text, ui->sceneRoundTrips);
-		item->setData(Qt::UserRole, v);
-
-		lock_guard<mutex> lock(switcher->m);
-		switcher->sceneRoundTripSwitches.emplace_back(
-			source1, source2, transition, delay, text.toUtf8().constData());
-	}
-	else
-	{
-		QListWidgetItem* item = ui->sceneRoundTrips->item(idx);
-		item->setText(text);
-
-		{
-			lock_guard<mutex> lock(switcher->m);
-			for (auto& s : switcher->sceneRoundTripSwitches)
-			{
-				if (s.scene1 == source1 && s.scene2 == source2)
-				{
-					s.delay = delay;
-					s.transition = transition;
-					s.sceneRoundTripStr = text.toUtf8().constData();
-					break;
-				}
-			}
-		}
-
-		ui->sceneRoundTrips->sortItems();
-	}
-}
-
-void SceneSwitcher::on_sceneRoundTripRemove_clicked()
-{
-	QListWidgetItem* item = ui->sceneRoundTrips->currentItem();
-	if (!item)
-		return;
-
-	string text = item->data(Qt::UserRole).toString().toUtf8().constData();
-
-	{
-		lock_guard<mutex> lock(switcher->m);
-		auto& switches = switcher->sceneRoundTripSwitches;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it)
-		{
-			auto& s = *it;
-
-			if (s.sceneRoundTripStr == text)
-			{
-				switches.erase(it);
-				break;
-			}
-		}
-	}
-
-	delete item;
-}
-
-void SceneSwitcher::on_autoStopSceneCheckBox_stateChanged(int state)
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	if (!state)
-	{
-		ui->autoStopScenes->setDisabled(true);
-		switcher->autoStopEnable = false;
-	}
-	else
-	{
-		ui->autoStopScenes->setDisabled(false);
-		switcher->autoStopEnable = true;
-	}
-}
-
-void SceneSwitcher::UpdateAutoStopScene(const QString& name)
-{
-	obs_source_t* scene = obs_get_source_by_name(name.toUtf8().constData());
-	obs_weak_source_t* ws = obs_source_get_weak_source(scene);
-
-	switcher->autoStopScene = ws;
-
-	obs_weak_source_release(ws);
-	obs_source_release(scene);
-}
-
-void SceneSwitcher::on_autoStopScenes_currentTextChanged(const QString& text)
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	UpdateAutoStopScene(text);
-}
-
-void SceneSwitcher::on_sceneRoundTripSave_clicked()
-{
-	QString directory = QFileDialog::getSaveFileName(
-		this, tr("Save Scene Round Trip to file ..."), QDir::currentPath(), tr("Text files (*.txt)"));
-	if (!directory.isEmpty())
-	{
-		QFile file(directory);
-		if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-			return;
-		QTextStream out(&file);
-		for (SceneRoundTripSwitch s : switcher->sceneRoundTripSwitches)
-		{
-			out << QString::fromStdString(GetWeakSourceName(s.scene1)) << "\n";
-			out << QString::fromStdString(GetWeakSourceName(s.scene2)) << "\n";
-			out << s.delay << "\n";
-			out << QString::fromStdString(s.sceneRoundTripStr) << "\n";
-			out << QString::fromStdString(GetWeakSourceName(s.transition)) << "\n";
-		}
-	}
-}
-
-void SceneSwitcher::on_sceneRoundTripLoad_clicked()
-{
-	lock_guard<mutex> lock(switcher->m);
-
-	QString directory = QFileDialog::getOpenFileName(
-		this, tr("Select a file to read Scene Round Trip from ..."), QDir::currentPath(), tr("Text files (*.txt)"));
-	if (!directory.isEmpty())
-	{
-		QFile file(directory);
-		if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-			return;
-
-		QTextStream in(&file);
-		vector<QString> lines;
-
-		vector<SceneRoundTripSwitch> newSceneRoundTripSwitch;
-
-		while (!in.atEnd())
-		{
-			QString line = in.readLine();
-			lines.push_back(line);
-			if (lines.size() == 5)
-			{
-				OBSWeakSource scene1 = GetWeakSourceByQString(lines[0]);
-				OBSWeakSource scene2 = GetWeakSourceByQString(lines[1]);
-				OBSWeakSource transition = GetWeakTransitionByQString(lines[4]);
-
-				if (WeakSourceValid(scene1) && WeakSourceValid(scene2)
-					&& WeakSourceValid(transition))
-				{
-					newSceneRoundTripSwitch.emplace_back(SceneRoundTripSwitch(
-						GetWeakSourceByQString(lines[0]),
-						GetWeakSourceByQString(lines[1]),
-						GetWeakTransitionByQString(lines[4]),
-						lines[2].toInt(),
-						lines[3].toStdString()));
-				}
-				lines.clear();
-			}
-		}
-		//unvalid amount of lines in file or nothing valid read
-		if (lines.size() != 0 || newSceneRoundTripSwitch.size() == 0)
-			return;
-
-		switcher->sceneRoundTripSwitches.clear();
-		ui->sceneRoundTrips->clear();
-		switcher->sceneRoundTripSwitches = newSceneRoundTripSwitch;
-		for (SceneRoundTripSwitch s : switcher->sceneRoundTripSwitches)
-		{
-			QListWidgetItem* item = new QListWidgetItem(QString::fromStdString(s.sceneRoundTripStr), ui->sceneRoundTrips);
-			item->setData(Qt::UserRole, QString::fromStdString(s.sceneRoundTripStr));
-		}
-	}
-}
-
-void SceneSwitcher::on_transitionsAdd_clicked()
-{
-	QString scene1Name = ui->transitionsScene1->currentText();
-	QString scene2Name = ui->transitionsScene2->currentText();
-	QString transitionName = ui->transitionsTransitions->currentText();
-
-	if (scene1Name.isEmpty() || scene2Name.isEmpty())
-		return;
-
-	if (scene1Name == scene2Name)
-		return;
-
-	OBSWeakSource source1 = GetWeakSourceByQString(scene1Name);
-	OBSWeakSource source2 = GetWeakSourceByQString(scene2Name);
-	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
-
-	QString text = MakeSceneTransitionName(scene1Name, scene2Name, transitionName);
-	QVariant v = QVariant::fromValue(text);
-
-	int idx = SceneTransitionsFindByData(scene1Name, scene2Name);
-
-	if (idx == -1)
-	{
-		QListWidgetItem* item = new QListWidgetItem(text, ui->sceneTransitions);
-		item->setData(Qt::UserRole, v);
-
-		lock_guard<mutex> lock(switcher->m);
-		switcher->sceneTransitions.emplace_back(
-			source1, source2, transition, text.toUtf8().constData());
-	}
-	else
-	{
-		QListWidgetItem* item = ui->sceneTransitions->item(idx);
-		item->setText(text);
-
-		{
-			lock_guard<mutex> lock(switcher->m);
-			for (auto& s : switcher->sceneTransitions)
-			{
-				if (s.scene1 == source1 && s.scene2 == source2)
-				{
-					s.transition = transition;
-					s.sceneTransitionStr = text.toUtf8().constData();
-					break;
-				}
-			}
-		}
-
-		ui->sceneTransitions->sortItems();
-	}
-}
-
-void SceneSwitcher::on_transitionsRemove_clicked()
-{
-	QListWidgetItem* item = ui->sceneTransitions->currentItem();
-	if (!item)
-		return;
-
-	string text = item->data(Qt::UserRole).toString().toUtf8().constData();
-
-	{
-		lock_guard<mutex> lock(switcher->m);
-		auto& switches = switcher->sceneTransitions;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it)
-		{
-			auto& s = *it;
-
-			if (s.sceneTransitionStr == text)
-			{
-				switches.erase(it);
-				break;
-			}
-		}
-	}
-
-	delete item;
-}
-
-void SceneSwitcher::on_defaultTransitionsAdd_clicked()
-{
-	QString sceneName = ui->defaultTransitionsScene->currentText();
-	QString transitionName = ui->defaultTransitionsTransitions->currentText();
-
-	if (sceneName.isEmpty() || transitionName.isEmpty())
-		return;
-
-	OBSWeakSource source = GetWeakSourceByQString(sceneName);
-	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
-
-	QString text = MakeDefaultSceneTransitionName(sceneName, transitionName);
-	QVariant v = QVariant::fromValue(text);
-
-	int idx = DefaultTransitionsFindByData(sceneName);
-
-	if (idx == -1)
-	{
-		QListWidgetItem* item = new QListWidgetItem(text, ui->defaultTransitions);
-		item->setData(Qt::UserRole, v);
-
-		lock_guard<mutex> lock(switcher->m);
-		switcher->defaultSceneTransitions.emplace_back(
-			source, transition, text.toUtf8().constData());
-	}
-	else
-	{
-		QListWidgetItem* item = ui->defaultTransitions->item(idx);
-		item->setText(text);
-
-		{
-			lock_guard<mutex> lock(switcher->m);
-			for (auto& s : switcher->defaultSceneTransitions)
-			{
-				if (s.scene == source)
-				{
-					s.transition = transition;
-					s.sceneTransitionStr = text.toUtf8().constData();
-					break;
-				}
-			}
-		}
-
-		ui->defaultTransitions->sortItems();
-	}
-}
-
-void SceneSwitcher::on_defaultTransitionsRemove_clicked()
-{
-	QListWidgetItem* item = ui->defaultTransitions->currentItem();
-	if (!item)
-		return;
-
-	string text = item->data(Qt::UserRole).toString().toUtf8().constData();
-
-	{
-		lock_guard<mutex> lock(switcher->m);
-		auto& switches = switcher->defaultSceneTransitions;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it)
-		{
-			auto& s = *it;
-
-			if (s.sceneTransitionStr == text)
-			{
-				switches.erase(it);
-				break;
-			}
-		}
-	}
-
-	delete item;
-}
-
-int SceneSwitcher::executableFindByData(const QString& exe)
-{
-	int count = ui->executables->count();
-
-	for (int i = 0; i < count; i++)
-	{
-		QListWidgetItem* item = ui->executables->item(i);
-		QString itemExe = item->data(Qt::UserRole).toString();
-
-		if (itemExe == exe)
-			return i;
-	}
-
-	return -1;
-}
-
-
-void SceneSwitcher::on_executables_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem* item = ui->executables->item(idx);
-
-	QString exec = item->data(Qt::UserRole).toString();
-
-	lock_guard<mutex> lock(switcher->m);
-	for (auto& s : switcher->executableSwitches)
-	{
-		if (exec.compare(s.mExe) == 0)
-		{
-			QString sceneName = GetWeakSourceName(s.mScene).c_str();
-			QString transitionName = GetWeakSourceName(s.mTransition).c_str();
-			ui->executableScenes->setCurrentText(sceneName);
-			ui->executable->setCurrentText(exec);
-			ui->executableTransitions->setCurrentText(transitionName);
-			ui->requiresFocusCheckBox->setChecked(s.mInFocus);
-			break;
-		}
-	}
-}
-
-
-void SceneSwitcher::on_executableAdd_clicked()
-{
-	QString sceneName = ui->executableScenes->currentText();
-	QString exeName = ui->executable->currentText();
-	QString transitionName = ui->executableTransitions->currentText();
-	bool inFocus = ui->requiresFocusCheckBox->isChecked();
-
-	if (exeName.isEmpty() || sceneName.isEmpty())
-		return;
-
-	OBSWeakSource source = GetWeakSourceByQString(sceneName);
-	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
-	QVariant v = QVariant::fromValue(exeName);
-
-	QString text = MakeSwitchNameExecutable(sceneName, exeName, transitionName, inFocus);
-
-	int idx = executableFindByData(exeName);
-
-	if (idx == -1)
-	{
-		lock_guard<mutex> lock(switcher->m);
-		switcher->executableSwitches.emplace_back(
-			source, transition, exeName.toUtf8().constData(), inFocus);
-
-		QListWidgetItem* item = new QListWidgetItem(text, ui->executables);
-		item->setData(Qt::UserRole, v);
-	}
-	else
-	{
-		QListWidgetItem* item = ui->executables->item(idx);
-		item->setText(text);
-
-		{
-			lock_guard<mutex> lock(switcher->m);
-			for (auto& s : switcher->executableSwitches)
-			{
-				if (s.mExe == exeName)
-				{
-					s.mScene = source;
-					s.mTransition = transition;
-					s.mInFocus = inFocus;
-					break;
-				}
-			}
-		}
-
-		ui->executables->sortItems();
-	}
-}
-
-
-void SceneSwitcher::on_executableRemove_clicked()
-{
-	QListWidgetItem* item = ui->executables->currentItem();
-	if (!item)
-		return;
-
-	QString exe = item->data(Qt::UserRole).toString();
-
-	{
-		lock_guard<mutex> lock(switcher->m);
-		auto& switches = switcher->executableSwitches;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it)
-		{
-			auto& s = *it;
-
-			if (s.mExe == exe)
-			{
-				switches.erase(it);
-				break;
-			}
-		}
-	}
-
-	delete item;
-}
-
-void SceneSwitcher::on_idleCheckBox_stateChanged(int state)
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	if (!state)
-	{
-		ui->idleScenes->setDisabled(true);
-		ui->idleSpinBox->setDisabled(true);
-		ui->idleTransitions->setDisabled(true);
-
-		switcher->idleData.idleEnable = false;
-	}
-	else
-	{
-		ui->idleScenes->setDisabled(false);
-		ui->idleSpinBox->setDisabled(false);
-		ui->idleTransitions->setDisabled(false);
-
-		switcher->idleData.idleEnable = true;
-
-		UpdateIdleDataTransition(ui->idleTransitions->currentText());
-		UpdateIdleDataScene(ui->idleScenes->currentText());
-	}
-}
-
-
-void SceneSwitcher::UpdateIdleDataTransition(const QString& name)
-{
-	obs_weak_source_t* transition = GetWeakTransitionByQString(name);
-	switcher->idleData.transition = transition;
-}
-
-void SceneSwitcher::UpdateIdleDataScene(const QString& name)
-{
-	obs_source_t* scene = obs_get_source_by_name(name.toUtf8().constData());
-	obs_weak_source_t* ws = obs_source_get_weak_source(scene);
-
-	switcher->idleData.scene = ws;
-
-	obs_weak_source_release(ws);
-	obs_source_release(scene);
-}
-
-void SceneSwitcher::on_idleTransitions_currentTextChanged(const QString& text)
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	UpdateIdleDataTransition(text);
-}
-
-void SceneSwitcher::on_idleScenes_currentTextChanged(const QString& text)
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	UpdateIdleDataScene(text);
-}
-
-void SceneSwitcher::on_idleSpinBox_valueChanged(int i)
-{
-	if (loading)
-		return;
-	lock_guard<mutex> lock(switcher->m);
-	switcher->idleData.time = i;
-}
-
-void SceneSwitcher::on_ignoreIdleWindows_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem* item = ui->ignoreIdleWindows->item(idx);
-
-	QString window = item->data(Qt::UserRole).toString();
-
-	lock_guard<mutex> lock(switcher->m);
-	for (auto& w : switcher->ignoreIdleWindows)
-	{
-		if (window.compare(w.c_str()) == 0)
-		{
-			ui->ignoreIdleWindowsWindows->setCurrentText(w.c_str());
-			break;
-		}
-	}
-}
-
-void SceneSwitcher::on_ignoreIdleAdd_clicked()
-{
-	QString windowName = ui->ignoreIdleWindowsWindows->currentText();
-
-	if (windowName.isEmpty())
-		return;
-
-	QVariant v = QVariant::fromValue(windowName);
-
-	QList<QListWidgetItem*> items = ui->ignoreIdleWindows->findItems(windowName, Qt::MatchExactly);
-
-	if (items.size() == 0)
-	{
-		QListWidgetItem* item = new QListWidgetItem(windowName, ui->ignoreIdleWindows);
-		item->setData(Qt::UserRole, v);
-
-		lock_guard<mutex> lock(switcher->m);
-		switcher->ignoreIdleWindows.emplace_back(windowName.toUtf8().constData());
-		ui->ignoreIdleWindows->sortItems();
-	}
-}
-
-void SceneSwitcher::on_ignoreIdleRemove_clicked()
-{
-	QListWidgetItem* item = ui->ignoreIdleWindows->currentItem();
-	if (!item)
-		return;
-
-	QString windowName = item->data(Qt::UserRole).toString();
-
-	{
-		lock_guard<mutex> lock(switcher->m);
-		auto& windows = switcher->ignoreIdleWindows;
-
-		for (auto it = windows.begin(); it != windows.end(); ++it)
-		{
-			auto& s = *it;
-
-			if (s == windowName.toUtf8().constData())
-			{
-				windows.erase(it);
-				break;
-			}
-		}
-	}
-
-	delete item;
-}
-
-void SceneSwitcher::on_browseButton_clicked()
-{
-	QString directory = QFileDialog::getOpenFileName(
-		this, tr("Select a file to write to ..."), QDir::currentPath(), tr("Text files (*.txt)"));
-	if (!directory.isEmpty())
-		ui->writePathLineEdit->setText(directory);
-}
-
-void SceneSwitcher::on_readFileCheckBox_stateChanged(int state)
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	if (!state)
-	{
-		ui->browseButton_2->setDisabled(true);
-		ui->readPathLineEdit->setDisabled(true);
-		switcher->fileIO.readEnabled = false;
-	}
-	else
-	{
-		ui->browseButton_2->setDisabled(false);
-		ui->readPathLineEdit->setDisabled(false);
-		switcher->fileIO.readEnabled = true;
-	}
-}
-
-void SceneSwitcher::on_readPathLineEdit_textChanged(const QString& text)
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	if (text.isEmpty())
-	{
-		switcher->fileIO.readEnabled = false;
-		return;
-	}
-	switcher->fileIO.readEnabled = true;
-	switcher->fileIO.readPath = text.toUtf8().constData();
-}
-
-void SceneSwitcher::on_writePathLineEdit_textChanged(const QString& text)
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	if (text.isEmpty())
-	{
-		switcher->fileIO.writeEnabled = false;
-		return;
-	}
-	switcher->fileIO.writeEnabled = true;
-	switcher->fileIO.writePath = text.toUtf8().constData();
-}
-
-void SceneSwitcher::on_browseButton_2_clicked()
-{
-	QString directory = QFileDialog::getOpenFileName(
-		this, tr("Select a file to read from ..."), QDir::currentPath(), tr("Text files (*.txt)"));
-	if (!directory.isEmpty())
-		ui->readPathLineEdit->setText(directory);
-}
-
-void SceneSwitcher::on_startAtLaunch_toggled(bool value)
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	switcher->startAtLaunch = value;
-}
-
-void SceneSwitcher::UpdateNonMatchingScene(const QString& name)
-{
-	obs_source_t* scene = obs_get_source_by_name(name.toUtf8().constData());
-	obs_weak_source_t* ws = obs_source_get_weak_source(scene);
-
-	switcher->nonMatchingScene = ws;
-
-	obs_weak_source_release(ws);
-	obs_source_release(scene);
-}
-
-void SceneSwitcher::on_noMatchDontSwitch_clicked()
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	switcher->switchIfNotMatching = false;
-}
-
-void SceneSwitcher::on_noMatchSwitch_clicked()
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	switcher->switchIfNotMatching = true;
-	UpdateNonMatchingScene(ui->noMatchSwitchScene->currentText());
-}
-
-void SceneSwitcher::on_noMatchSwitchScene_currentTextChanged(const QString& text)
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	UpdateNonMatchingScene(text);
-}
-
-void SceneSwitcher::on_checkInterval_valueChanged(int value)
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	switcher->interval = value;
-}
-
-void SceneSwitcher::SetStarted()
-{
-	ui->toggleStartButton->setText(obs_module_text("Stop"));
-	ui->pluginRunningText->setText(obs_module_text("Active"));
-}
-
-void SceneSwitcher::SetStopped()
-{
-	ui->toggleStartButton->setText(obs_module_text("Start"));
-	ui->pluginRunningText->setText(obs_module_text("Inactive"));
-}
-
-void SceneSwitcher::on_toggleStartButton_clicked()
-{
-	if (switcher->th.joinable())
-	{
-		switcher->Stop();
-		SetStopped();
-	}
-	else
-	{
-		switcher->Start();
-		SetStarted();
-	}
-}
-
-void SceneSwitcher::updateScreenRegionCursorPos()
-{
-	pair<int, int> position = getCursorPos();
-	ui->cursorXPosition->setText(QString::number(position.first));
-	;
-	ui->cursorYPosition->setText(QString::number(position.second));
-}
-
-// TODO rename the save values (clears settings!)
 static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 {
 	if (saving)
@@ -2099,6 +522,13 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_set_bool(obj, "writeEnabled", switcher->fileIO.writeEnabled);
 		obs_data_set_string(obj, "writePath", switcher->fileIO.writePath.c_str());
 
+		obs_data_set_string(obj, "priority0", switcher->functionNamesByPriority[0].c_str());
+		obs_data_set_string(obj, "priority1", switcher->functionNamesByPriority[1].c_str());
+		obs_data_set_string(obj, "priority2", switcher->functionNamesByPriority[2].c_str());
+		obs_data_set_string(obj, "priority3", switcher->functionNamesByPriority[3].c_str());
+		obs_data_set_string(obj, "priority4", switcher->functionNamesByPriority[4].c_str());
+		obs_data_set_string(obj, "priority5", switcher->functionNamesByPriority[5].c_str());
+
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
 
 		obs_data_array_release(array);
@@ -2330,6 +760,31 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		switcher->fileIO.writeEnabled = obs_data_get_bool(obj, "writeEnabled");
 		switcher->fileIO.writePath = obs_data_get_string(obj, "writePath");
 
+		obs_data_set_default_string(obj, "priority0", DEFAULT_PRIORITY_0);
+		obs_data_set_default_string(obj, "priority1", DEFAULT_PRIORITY_1);
+		obs_data_set_default_string(obj, "priority2", DEFAULT_PRIORITY_2);
+		obs_data_set_default_string(obj, "priority3", DEFAULT_PRIORITY_3);
+		obs_data_set_default_string(obj, "priority4", DEFAULT_PRIORITY_4);
+		obs_data_set_default_string(obj, "priority5", DEFAULT_PRIORITY_5);
+
+		switcher->functionNamesByPriority.clear();
+		switcher->functionNamesByPriority.push_back(obs_data_get_string(obj, "priority0"));
+		switcher->functionNamesByPriority.push_back(obs_data_get_string(obj, "priority1"));
+		switcher->functionNamesByPriority.push_back(obs_data_get_string(obj, "priority2"));
+		switcher->functionNamesByPriority.push_back(obs_data_get_string(obj, "priority3"));
+		switcher->functionNamesByPriority.push_back(obs_data_get_string(obj, "priority4"));
+		switcher->functionNamesByPriority.push_back(obs_data_get_string(obj, "priority5"));
+		if (!switcher->prioFuncsValid())
+		{
+			switcher->functionNamesByPriority.clear();
+			switcher->functionNamesByPriority.push_back(DEFAULT_PRIORITY_0);
+			switcher->functionNamesByPriority.push_back(DEFAULT_PRIORITY_1);
+			switcher->functionNamesByPriority.push_back(DEFAULT_PRIORITY_2);
+			switcher->functionNamesByPriority.push_back(DEFAULT_PRIORITY_3);
+			switcher->functionNamesByPriority.push_back(DEFAULT_PRIORITY_4);
+			switcher->functionNamesByPriority.push_back(DEFAULT_PRIORITY_5);
+		}
+
 		obs_data_array_release(array);
 		obs_data_array_release(screenRegionArray);
 		obs_data_array_release(pauseScenesArray);
@@ -2351,486 +806,138 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 	}
 }
 
-static inline OBSWeakSource getNextTransition(OBSWeakSource scene1, OBSWeakSource scene2)
-{
-	OBSWeakSource ws;
-	if (scene1 && scene2)
-	{
-		for (SceneTransition& t : switcher->sceneTransitions)
-		{
-			if (t.scene1 == scene1 && t.scene2 == scene2)
-				ws = t.transition;
-		}
-	}
-	return ws;
+bool SwitcherData::sceneChangedDuringWait(){
+	bool r = false;
+	obs_source_t* currentSource = obs_frontend_get_current_scene();
+	string curName = (obs_source_get_name(currentSource));
+	obs_source_release(currentSource);
+	if (!waitSceneName.empty() && curName != waitSceneName)
+		r = true;
+	waitSceneName = "";
+	return r;
 }
 
-bool transitionActiveCheck()
+obs_weak_source_t* getNextTransition(obs_weak_source_t* scene1, obs_weak_source_t* scene2);
+
+void switchScene(OBSWeakSource scene, OBSWeakSource transition)
 {
-	return !switcher->transitionActive || switcher->stop;
+	obs_source_t* source = obs_weak_source_get_source(scene);
+	obs_source_t* currentSource = obs_frontend_get_current_scene();
+
+	if (source && source != currentSource)
+	{
+		obs_weak_source_t*  currentScene = obs_source_get_weak_source(currentSource);
+		obs_weak_source_t*  nextTransitionWs = getNextTransition(currentScene, scene);
+		obs_weak_source_release(currentScene);
+
+		if (nextTransitionWs)
+		{
+			obs_source_t* nextTransition = obs_weak_source_get_source(nextTransitionWs);
+			//lock.unlock();
+			//transitionCv.wait(transitionLock, transitionActiveCheck);
+			//lock.lock();
+			obs_frontend_set_current_transition(nextTransition);
+			obs_source_release(nextTransition);
+		}
+		else if (transition)
+		{
+			obs_source_t* nextTransition = obs_weak_source_get_source(transition);
+			//lock.unlock();
+			//transitionCv.wait(transitionLock, transitionActiveCheck);
+			//lock.lock();
+			obs_frontend_set_current_transition(nextTransition);
+			obs_source_release(nextTransition);
+		}
+		obs_frontend_set_current_scene(source);
+		obs_weak_source_release(nextTransitionWs);
+	}
+	obs_source_release(currentSource);
+	obs_source_release(source);
 }
 
 void SwitcherData::Thread()
 {
-	chrono::duration<long long, milli> duration = chrono::milliseconds(interval);
-	string lastTitle;
-	string title;
-
 	while (true)
 	{
+	startLoop:
 		unique_lock<mutex> lock(m);
 		unique_lock<mutex> transitionLock(transitionMutex);
+		bool match = false;
 		OBSWeakSource scene;
 		OBSWeakSource transition;
-		OBSWeakSource ws;
-		obs_source_t* currentSource;
-		bool match = false;
-		bool fullscreen = false;
-		bool pause = false;
-		bool sceneRoundTripActive = false;
+		chrono::milliseconds duration(interval);
 
 		switcher->Prune();
 
-		// Files
-		currentSource = obs_frontend_get_current_scene();
-
-		if (fileIO.writeEnabled)
-		{
-			QFile file(QString::fromStdString(fileIO.writePath));
-			if (file.open(QIODevice::WriteOnly))
-			{
-				const char* msg = obs_source_get_name(currentSource);
-				file.write(msg, qstrlen(msg));
-				file.close();
-			}
-		}
-
-		obs_source_release(currentSource);
-
+		//sleep for a bit
 		cv.wait_for(lock, duration);
-
 		if (switcher->stop)
+		{
 			break;
-
-		currentSource = obs_frontend_get_current_scene();
-		ws = obs_source_get_weak_source(currentSource);
-
-		//Default transition change
-
-		for (DefaultSceneTransition& s : defaultSceneTransitions)
-		{
-			if (s.scene == ws)
-			{
-				obs_source_t* transition = obs_weak_source_get_source(s.transition);
-				
-				lock.unlock();
-				transitionCv.wait(transitionLock, transitionActiveCheck);
-				lock.lock();
-
-				obs_frontend_set_current_transition(transition);
-				obs_source_release(transition);
-				break;
-			}
 		}
-		obs_source_release(currentSource);
-		obs_weak_source_release(ws);
-
-		//End default transition change
-
-		currentSource = obs_frontend_get_current_scene();
-		ws = obs_source_get_weak_source(currentSource);
-
-		if (fileIO.readEnabled)
+		setDefaultSceneTransitions(lock);
+		if (autoStopEnable)
 		{
-			QFile file(QString::fromStdString(fileIO.readPath));
-			if (file.open(QIODevice::ReadOnly))
-			{
-				QTextStream in(&file);
-				QString sceneStr = in.readLine();
-				obs_source_t* scene = obs_get_source_by_name(sceneStr.toUtf8().constData());
-				if (scene && scene != currentSource){
-					obs_source_t* transition;
-					OBSWeakSource sceneWs = obs_source_get_weak_source(scene);
-					OBSWeakSource transitionWs = getNextTransition(ws, sceneWs);
-
-					if (transitionWs){
-						transition = obs_weak_source_get_source(transitionWs);
-						
-						//lock.unlock();
-						//transitionCv.wait(transitionLock, transitionActiveCheck);
-						//lock.lock();
-						
-						obs_frontend_set_current_transition(transition);
-					}
-
-					obs_frontend_set_current_scene(scene);
-
-					obs_weak_source_release(sceneWs);
-				}
-				file.close();
-				obs_source_release(scene);
-			}
-			obs_source_release(currentSource);
-			obs_weak_source_release(ws);
-			if (switcher->stop)
-				break;
+			autoStopStreamAndRecording();
+		}
+		if (checkPause())
+		{
 			continue;
 		}
 
-		obs_source_release(currentSource);
-		obs_weak_source_release(ws);
-
-		// End Files
-
-		// Auto stop streaming/recording
-
-		currentSource = obs_frontend_get_current_scene();
-		ws = obs_source_get_weak_source(currentSource);
-
-		if (ws && autoStopScene == ws)
+		//do callbacks 'n stuff in future ...
+		for (string switchFuncName : functionNamesByPriority)
 		{
-			if (obs_frontend_streaming_active())
-				obs_frontend_streaming_stop();
-			if (obs_frontend_recording_active())
-				obs_frontend_recording_stop();
-		}
-
-		obs_source_release(currentSource);
-		obs_weak_source_release(ws);
-
-		// End auto stop streaming/recording
-
-		// Pause
-
-		currentSource = obs_frontend_get_current_scene();
-		ws = obs_source_get_weak_source(currentSource);
-
-		for (OBSWeakSource& s : pauseScenesSwitches)
-		{
-			if (s == ws)
+			if (switchFuncName == READ_FILE_FUNC)
 			{
-				pause = true;
-				break;
+				checkSwitchInfoFromFile(match, scene, transition);
 			}
-		}
-
-		obs_source_release(currentSource);
-		obs_weak_source_release(ws);
-
-		if (!pause)
-		{
-			lock.unlock();
-			GetCurrentWindowTitle(title);
-			lock.lock();
-			for (string& window : pauseWindowsSwitches)
+			if (switchFuncName == IDLE_FUNC)
 			{
-				if (window == title)
-				{
-					pause = true;
-					break;
-				}
+				checkIdleSwitch(match, scene, transition);
 			}
-		}
-
-		if (!pause)
-		{
-			lock.unlock();
-			GetCurrentWindowTitle(title);
-			lock.lock();
-			for (string& window : pauseWindowsSwitches)
+			if (switchFuncName == EXE_FUNC)
 			{
-				try
-				{
-					bool matches = regex_match(title, regex(window));
-					if (matches)
-					{
-						pause = true;
-						break;
-					}
-				}
-				catch (const regex_error&)
-				{
-				}
+				checkExeSwitch(match, scene, transition);
 			}
-		}
-
-		if (pause)
-		{
+			if (switchFuncName == SCREEN_REGION_FUNC)
+			{
+				checkScreenRegionSwitch(match, scene, transition);
+			}
+			if (switchFuncName == WINDOW_TITLE_FUNC)
+			{
+				checkWindowTitleSwitch(match, scene, transition);
+			}
+			if (switchFuncName == ROUND_TRIP_FUNC)
+			{
+				checkSceneRoundTrip(match, scene, transition, lock);
+				if (sceneChangedDuringWait()) //scene might have changed during the sleep
+					goto startLoop;
+			}
 			if (switcher->stop)
-				break;
-			continue;
-		}
-
-		// End Pause
-
-		// Scene Round Trip
-
-		currentSource = obs_frontend_get_current_scene();
-		ws = obs_source_get_weak_source(currentSource);
-
-		for (SceneRoundTripSwitch& s : sceneRoundTripSwitches)
-		{
-			if (s.scene1 == ws)
 			{
-				sceneRoundTripActive = true;
-				int dur = s.delay * 1000 - interval;
-				if (dur > 0)
-					cv.wait_for(lock, chrono::milliseconds(dur));
-
-				obs_source_t* source = obs_weak_source_get_source(s.scene2);
-				obs_source_t* currentSource2 = obs_frontend_get_current_scene();
-
-				// don't switch if user changed scene manually
-				if (currentSource == currentSource2)
-				{
-					obs_source_t* transition;
-					OBSWeakSource transitionWs = getNextTransition(s.scene1, s.scene2);
-
-					if (transitionWs)
-						transition = obs_weak_source_get_source(transitionWs);
-					else
-						transition = obs_weak_source_get_source(s.transition);
-
-					//lock.unlock();
-					//transitionCv.wait(transitionLock, transitionActiveCheck);
-					//lock.lock();
-
-					obs_frontend_set_current_transition(transition);
-					obs_frontend_set_current_scene(source);
-
-					obs_source_release(transition);
-				}
-
-				obs_source_release(source);
-				obs_source_release(currentSource2);
-
+				goto endLoop;
+			}
+			if (match)
+			{
 				break;
 			}
 		}
 
-		obs_source_release(currentSource);
-		obs_weak_source_release(ws);
-
-		if (sceneRoundTripActive)
-		{
-			if (switcher->stop)
-				break;
-			continue;
-		}
-
-		// End Scene Round Trip
-
-		duration = chrono::milliseconds(interval);
-
-		lock.unlock();
-		GetCurrentWindowTitle(title);
-		lock.lock();
-
-		// Ignore Windows
-
-		for (auto& window : ignoreWindowsSwitches)
-		{
-			if (window == title)
-			{
-				title = lastTitle;
-				break;
-			}
-		}
-
-		lastTitle = title;
-
-		// End Ignore Windows
-
-		// Idle switch
-
-		if (!match && idleData.idleEnable)
-		{
-			bool ignoreIdle = false;
-			lock.unlock();
-			GetCurrentWindowTitle(title);
-			lock.lock();
-
-			for (string& window : ignoreIdleWindows)
-			{
-				if (window == title)
-				{
-					ignoreIdle = true;
-					break;
-				}
-			}
-
-			if (!ignoreIdle)
-			{
-				for (string& window : ignoreIdleWindows)
-				{
-					try
-					{
-						bool matches = regex_match(title, regex(window));
-						if (matches)
-						{
-							ignoreIdle = true;
-							break;
-						}
-					}
-					catch (const regex_error&)
-					{
-					}
-				}
-			}
-
-			if (!ignoreIdle && secondsSinceLastInput() > idleData.time)
-			{
-				scene = idleData.scene;
-				transition = idleData.transition;
-				fullscreen = false;
-				match = true;
-			}
-		}
-
-		// End Idle switch
-
-		// Regular switch
-
-		if (!match){
-			for (SceneSwitch& s : switches)
-			{
-				if (s.window == title)
-				{
-					match = true;
-					scene = s.scene;
-					transition = s.transition;
-					fullscreen = s.fullscreen;
-					break;
-				}
-			}
-		}
-
-		/* try regex */
-		if (!match)
-		{
-			for (SceneSwitch& s : switches)
-			{
-				try
-				{
-					bool matches = regex_match(title, regex(s.window));
-					if (matches)
-					{
-						match = true;
-						scene = s.scene;
-						transition = s.transition;
-						fullscreen = s.fullscreen;
-						break;
-					}
-				}
-				catch (const regex_error&)
-				{
-				}
-			}
-		}
-
-		// End regular switch
-
-		// Executable switch
-		QStringList runningProcesses;
-		GetProcessList(runningProcesses);
-		for (ExecutableSceneSwitch& s : executableSwitches)
-		{
-			if (runningProcesses.contains(s.mExe))
-			{
-				scene = s.mScene;
-				transition = s.mTransition;
-				match = !s.mInFocus || (s.mInFocus && isInFocus(s.mExe));
-				break;
-			}
-		}
-		// End executable switch
-
-		// Screen Region
-
-		if (!match)
-		{
-			pair<int, int> cursorPos = getCursorPos();
-			int minRegionSize = 99999;
-
-			for (auto& s : screenRegionSwitches)
-			{
-				if (cursorPos.first >= s.minX && cursorPos.second >= s.minY
-					&& cursorPos.first <= s.maxX && cursorPos.second <= s.maxY)
-				{
-					int regionSize = (s.maxX - s.minX) + (s.maxY - s.minY);
-					if (regionSize < minRegionSize)
-					{
-						match = true;
-						scene = s.scene;
-						transition = s.transition;
-						minRegionSize = regionSize;
-					}
-				}
-			}
-		}
-
-		// End Screen Region
-
-		// Fullscreen
-
-		lock.unlock();
-		match = match && (!fullscreen || (fullscreen && isFullscreen()));
-		lock.lock();
-
-		// End fullscreen
-
-		// Backup Scene
-
+		//switch if no match?
 		if (!match && switchIfNotMatching && nonMatchingScene)
 		{
 			match = true;
 			scene = nonMatchingScene;
-			obs_source_t* transitionSource = obs_frontend_get_current_transition();
-			transition = obs_source_get_weak_source(transitionSource);
-			obs_source_release(transitionSource);
-			obs_weak_source_release(transition);
+			transition = nullptr;
 		}
-
-		// End Backup Scene
-
-		// Switch scene
-
 		if (match)
 		{
-			obs_source_t* source = obs_weak_source_get_source(scene);
-			obs_source_t* currentSource = obs_frontend_get_current_scene();
-
-			if (source && source != currentSource)
-			{
-				OBSWeakSource currentScene = obs_source_get_weak_source(currentSource);
-				OBSWeakSource nextTransitionWs = getNextTransition(currentScene, scene);
-				obs_weak_source_release(currentScene);
-
-				if (nextTransitionWs)
-				{
-					obs_source_t* nextTransition = obs_weak_source_get_source(nextTransitionWs);
-					//lock.unlock();
-					//transitionCv.wait(transitionLock, transitionActiveCheck);
-					//lock.lock();
-					obs_frontend_set_current_transition(nextTransition);
-					obs_source_release(nextTransition);
-				}
-				else
-				{
-					obs_source_t* nextTransition = obs_weak_source_get_source(transition);
-					//lock.unlock();
-					//transitionCv.wait(transitionLock, transitionActiveCheck);
-					//lock.lock();
-					obs_frontend_set_current_transition(nextTransition);
-					obs_source_release(nextTransition);
-				}
-				obs_frontend_set_current_scene(source);
-			}
-			obs_source_release(currentSource);
-			obs_source_release(source);
+			switchScene(scene, transition);
 		}
-		// End switch scene
 	}
+endLoop:
+	;
 }
 
 void SwitcherData::Start()
@@ -2849,96 +956,14 @@ void SwitcherData::Stop()
 {
 	if (th.joinable())
 	{
-		{
-			lock_guard<mutex> lock(m);
-			switcher->stop = true;
-		}
-		{
-			lock_guard<mutex> lock(transitionMutex);
-			switcher->stop = true;
-		}
-
+		switcher->stop = true;
+		switcher->stop = true;
 		cv.notify_one();
 		transitionCv.notify_one();
-
 		th.join();
 		cv.notify_one();
 	}
 }
-
-// HOTKEY
-
-void startStopHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pressed)
-{
-	UNUSED_PARAMETER(data);
-	UNUSED_PARAMETER(hotkey);
-
-	if (pressed)
-	{
-		if (switcher->th.joinable())
-			switcher->Stop();
-		else
-			switcher->Start();
-	}
-
-	obs_data_array* hotkeyData = obs_hotkey_save(id);
-
-	if (hotkeyData != NULL)
-	{
-		char* path = obs_module_config_path("");
-		ofstream file;
-		file.open(string(path).append("hotkey.txt"), ofstream::trunc);
-		if (file.is_open())
-		{
-			size_t num = obs_data_array_count(hotkeyData);
-			for (size_t i = 0; i < num; i++)
-			{
-				obs_data_t* data = obs_data_array_item(hotkeyData, i);
-				string temp = obs_data_get_json(data);
-				obs_data_release(data);
-				file << temp;
-			}
-			file.close();
-		}
-		bfree(path);
-	}
-	obs_data_array_release(hotkeyData);
-}
-
-string loadConfigFile(string filename)
-{
-	ifstream settingsFile;
-	char* path = obs_module_config_path("");
-	string value;
-
-	settingsFile.open(string(path).append(filename));
-	if (settingsFile.is_open())
-	{
-		settingsFile.seekg(0, ios::end);
-		value.reserve(settingsFile.tellg());
-		settingsFile.seekg(0, ios::beg);
-		value.assign((istreambuf_iterator<char>(settingsFile)), istreambuf_iterator<char>());
-		settingsFile.close();
-	}
-	bfree(path);
-	return value;
-}
-
-void loadKeybinding(obs_hotkey_id hotkeyId)
-{
-	string bindings = loadConfigFile("hotkey.txt");
-	if (!bindings.empty())
-	{
-		obs_data_array_t* hotkeyData = obs_data_array_create();
-		obs_data_t* data = obs_data_create_from_json(bindings.c_str());
-		obs_data_array_insert(hotkeyData, 0, data);
-		obs_data_release(data);
-		obs_hotkey_load(hotkeyId, hotkeyData);
-		obs_data_array_release(hotkeyData);
-	}
-}
-
-// END HOTKEY
 
 extern "C" void FreeSceneSwitcher()
 {
@@ -2946,46 +971,36 @@ extern "C" void FreeSceneSwitcher()
 	switcher = nullptr;
 }
 
+//why is OBS_FRONTEND_EVENT_SCENE_CHANGED fired after OBS_FRONTEND_EVENT_TRANSITION_STOPPED?
 static void OBSEvent(enum obs_frontend_event event, void* switcher)
 {
-	if (event == OBS_FRONTEND_EVENT_EXIT)
-	{
+	switch (event){
+	case OBS_FRONTEND_EVENT_EXIT:
 		FreeSceneSwitcher();
-	}
+		break;
 
-	if (event == OBS_FRONTEND_EVENT_SCENE_CHANGED)
+	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
 	{
 		SwitcherData* s = (SwitcherData*)switcher;
-		//lock_guard<mutex> lock(s->transitionMutex);
-		s->stop ? s->transitionActive = false : s->transitionActive = true;
+		//wakeup if waiting on timer if scene already changed
+		lock_guard<mutex> lock(s->m);
+		if (s->sceneChangedDuringWait())
+			s->cv.notify_one();
+		break;
 	}
-
-	if (event == OBS_FRONTEND_EVENT_TRANSITION_STOPPED)
+	case OBS_FRONTEND_EVENT_TRANSITION_STOPPED:
 	{
-		SwitcherData* s = (SwitcherData*)switcher;
-		//lock_guard<mutex> lock(s->transitionMutex);
-		if (s->transitionActive)
-		{
-			/*this sleep seems to be necessary 
-			since transitions can still not be completely stopped 
-			even though we are in this event*/
-			this_thread::sleep_for(chrono::milliseconds(100));
-			s->transitionActive = false;
-			s->transitionCv.notify_one();
-		}
+		break;
 	}
-
-	if (event == OBS_FRONTEND_EVENT_TRANSITION_CHANGED)
+	case OBS_FRONTEND_EVENT_TRANSITION_CHANGED:
 	{
-		SwitcherData* s = (SwitcherData*)switcher;
-		//lock_guard<mutex> lock(s->transitionMutex);
-		if (s->transitionActive)
-		{
-			s->transitionActive = false;
-			s->transitionCv.notify_one();
-		}
+		break;
+	}
 	}
 }
+
+void startStopHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pressed);
+void loadKeybinding(obs_hotkey_id hotkeyId);
 
 extern "C" void InitSceneSwitcher()
 {

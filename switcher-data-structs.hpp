@@ -1,3 +1,30 @@
+#pragma once
+#include <condition_variable>
+#include <chrono>
+#include <string>
+#include <vector>
+#include <thread>
+#include <regex>
+#include <mutex>
+#include <fstream>
+#include "utility.hpp"
+
+#define DEFAULT_INTERVAL 300
+
+#define READ_FILE_FUNC "File based"
+#define ROUND_TRIP_FUNC "Scene Sequence"
+#define IDLE_FUNC "Idle detection"
+#define EXE_FUNC "Executable"
+#define SCREEN_REGION_FUNC "Screen region"
+#define WINDOW_TITLE_FUNC "Window title"
+
+#define DEFAULT_PRIORITY_0 READ_FILE_FUNC
+#define DEFAULT_PRIORITY_1 ROUND_TRIP_FUNC
+#define DEFAULT_PRIORITY_2 IDLE_FUNC
+#define DEFAULT_PRIORITY_3 EXE_FUNC
+#define DEFAULT_PRIORITY_4 SCREEN_REGION_FUNC
+#define DEFAULT_PRIORITY_5 WINDOW_TITLE_FUNC
+
 using namespace std;
 
 struct SceneSwitch
@@ -120,3 +147,136 @@ struct IdleData
 	OBSWeakSource scene;
 	OBSWeakSource transition;
 };
+
+
+
+
+
+struct SwitcherData
+{
+	thread th;
+	condition_variable cv;
+	mutex m;
+	mutex transitionMutex;
+	bool transitionActive = false;
+	bool waitForTransition = false;
+	condition_variable transitionCv;
+	bool stop = false;
+
+	vector<SceneSwitch> switches;
+	string lastTitle;
+	OBSWeakSource nonMatchingScene;
+	int interval = DEFAULT_INTERVAL;
+	bool switchIfNotMatching = false;
+	bool startAtLaunch = false;
+	vector<ScreenRegionSwitch> screenRegionSwitches;
+	vector<OBSWeakSource> pauseScenesSwitches;
+	vector<string> pauseWindowsSwitches;
+	vector<string> ignoreWindowsSwitches;
+	vector<SceneRoundTripSwitch> sceneRoundTripSwitches;
+	bool autoStopEnable = false;
+	OBSWeakSource autoStopScene;
+	string waitSceneName; //indicates which scene was active when we startet waiting on something
+	vector<SceneTransition> sceneTransitions;
+	vector<DefaultSceneTransition> defaultSceneTransitions;
+	vector<ExecutableSceneSwitch> executableSwitches;
+	FileIOData fileIO;
+	IdleData idleData;
+	vector<string> ignoreIdleWindows;
+	vector<string> functionNamesByPriority;
+
+	void Thread();
+	void Start();
+	void Stop();
+
+	bool sceneChangedDuringWait();
+	bool prioFuncsValid();
+	void writeSceneInfoToFile();
+	void setDefaultSceneTransitions(unique_lock<mutex>& lock);
+	void autoStopStreamAndRecording();
+	bool checkPause();
+	void checkSceneRoundTrip(bool& match, OBSWeakSource& scene, OBSWeakSource& transition, unique_lock<mutex>& lock);
+	void checkIdleSwitch(bool& match, OBSWeakSource& scene, OBSWeakSource& transition);
+	void checkWindowTitleSwitch(bool& match, OBSWeakSource& scene, OBSWeakSource& transition);
+	void checkExeSwitch(bool& match, OBSWeakSource& scene, OBSWeakSource& transition);
+	void checkScreenRegionSwitch(bool& match, OBSWeakSource& scene, OBSWeakSource& transition);
+	void checkSwitchInfoFromFile(bool& match, OBSWeakSource& scene, OBSWeakSource& transition);
+
+
+
+	void Prune()
+	{
+		for (size_t i = 0; i < switches.size(); i++)
+		{
+			SceneSwitch& s = switches[i];
+			if (!WeakSourceValid(s.scene) || !WeakSourceValid(s.transition))
+				switches.erase(switches.begin() + i--);
+		}
+
+		if (nonMatchingScene && !WeakSourceValid(nonMatchingScene))
+		{
+			switchIfNotMatching = false;
+			nonMatchingScene = nullptr;
+		}
+
+		for (size_t i = 0; i < screenRegionSwitches.size(); i++)
+		{
+			ScreenRegionSwitch& s = screenRegionSwitches[i];
+			if (!WeakSourceValid(s.scene) || !WeakSourceValid(s.transition))
+				screenRegionSwitches.erase(screenRegionSwitches.begin() + i--);
+		}
+
+		for (size_t i = 0; i < pauseScenesSwitches.size(); i++)
+		{
+			OBSWeakSource& scene = pauseScenesSwitches[i];
+			if (!WeakSourceValid(scene))
+				pauseScenesSwitches.erase(pauseScenesSwitches.begin() + i--);
+		}
+
+		for (size_t i = 0; i < sceneRoundTripSwitches.size(); i++)
+		{
+			SceneRoundTripSwitch& s = sceneRoundTripSwitches[i];
+			if (!WeakSourceValid(s.scene1) || !WeakSourceValid(s.scene2)
+				|| !WeakSourceValid(s.transition))
+				sceneRoundTripSwitches.erase(sceneRoundTripSwitches.begin() + i--);
+		}
+
+		if (!WeakSourceValid(autoStopScene))
+		{
+			autoStopScene = nullptr;
+			autoStopEnable = false;
+		}
+
+		for (size_t i = 0; i < sceneTransitions.size(); i++)
+		{
+			SceneTransition& s = sceneTransitions[i];
+			if (!WeakSourceValid(s.scene1) || !WeakSourceValid(s.scene2)
+				|| !WeakSourceValid(s.transition))
+				sceneTransitions.erase(sceneTransitions.begin() + i--);
+		}
+
+		for (size_t i = 0; i < defaultSceneTransitions.size(); i++)
+		{
+			DefaultSceneTransition& s = defaultSceneTransitions[i];
+			if (!WeakSourceValid(s.scene) || !WeakSourceValid(s.transition))
+				defaultSceneTransitions.erase(defaultSceneTransitions.begin() + i--);
+		}
+
+		for (size_t i = 0; i < executableSwitches.size(); i++)
+		{
+			ExecutableSceneSwitch& s = executableSwitches[i];
+			if (!WeakSourceValid(s.mScene) || !WeakSourceValid(s.mTransition))
+				executableSwitches.erase(executableSwitches.begin() + i--);
+		}
+
+		if (!WeakSourceValid(idleData.scene) || !WeakSourceValid(idleData.transition))
+		{
+			idleData.idleEnable = false;
+		}
+	}
+	inline ~SwitcherData()
+	{
+		Stop();
+	}
+};
+

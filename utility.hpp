@@ -1,9 +1,9 @@
+#pragma once
 #include <obs.hpp>
 #include <qstring>
 #include <obs-frontend-api.h>
+#include "switcher-data-structs.hpp"
 using namespace std;
-
-#define DEFAULT_INTERVAL 300
 
 static inline bool WeakSourceValid(obs_weak_source_t* ws)
 {
@@ -23,7 +23,6 @@ static inline QString MakeSwitchName(
 		+ value + QStringLiteral(" (only if window is fullscreen)");
 }
 
-// dasoven region_start
 static inline QString MakeSwitchNameExecutable(
 	const QString& scene, const QString& value, const QString& transition, bool inFocus)
 {
@@ -32,7 +31,7 @@ static inline QString MakeSwitchNameExecutable(
 		+ QStringLiteral("]: ") + value;
 	return QStringLiteral("[") + scene + QStringLiteral(", ") + transition + QStringLiteral("]: ")
 		+ value + QStringLiteral(" (only if window is focused)");
-} // dasoven region_end
+}
 
 static inline QString MakeScreenRegionSwitchName(
 	const QString& scene, const QString& transition, int minX, int minY, int maxX, int maxY)
@@ -99,7 +98,7 @@ static inline OBSWeakSource GetWeakSourceByQString(const QString& name)
 static inline OBSWeakSource GetWeakTransitionByName(const char* transitionName)
 {
 	OBSWeakSource weak;
-	obs_source_t* source;
+	obs_source_t* source = nullptr;
 
 	if (strcmp(transitionName, "Default") == 0)
 	{
@@ -138,3 +137,4 @@ static inline OBSWeakSource GetWeakTransitionByQString(const QString& name)
 {
 	return GetWeakTransitionByName(name.toUtf8().constData());
 }
+
