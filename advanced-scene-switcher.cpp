@@ -24,7 +24,6 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
-using namespace std;
 
 SwitcherData* switcher = nullptr;
 
@@ -185,7 +184,7 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		if (s.delay * 1000 < smallestDelay)
 			smallestDelay = s.delay * 1000;
 	}
-	(smallestDelay < switcher->interval) ? ui->intervalWarning : ui->intervalWarning->setVisible(false);
+	(smallestDelay < switcher->interval) ? ui->intervalWarning->setVisible(true) : ui->intervalWarning->setVisible(false);
 
 	for (auto& s : switcher->sceneTransitions)
 	{
