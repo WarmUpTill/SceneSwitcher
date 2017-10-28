@@ -24,20 +24,7 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
-#if 1
-#include <Windows.h>
-static std::wstring s2ws(const std::string& s)
-{
-	int len;
-	int slength = (int)s.length() + 1;
-	len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
-	wchar_t* buf = new wchar_t[len];
-	MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
-	std::wstring r(buf);
-	delete[] buf;
-	return r;
-}
-#endif
+using namespace std;
 
 SwitcherData* switcher = nullptr;
 
@@ -87,6 +74,8 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 	}
 
 	obs_frontend_source_list_free(transitions);
+
+
 
 	if (switcher->switchIfNotMatching)
 		ui->noMatchSwitch->setChecked(true);
@@ -196,7 +185,7 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		if (s.delay * 1000 < smallestDelay)
 			smallestDelay = s.delay * 1000;
 	}
-	(smallestDelay < switcher->interval) ? ui->intervalWarning->setVisible(true) : ui->intervalWarning->setVisible(false);
+	(smallestDelay < switcher->interval) ? ui->intervalWarning : ui->intervalWarning->setVisible(false);
 
 	for (auto& s : switcher->sceneTransitions)
 	{
@@ -209,6 +198,7 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		QListWidgetItem* item = new QListWidgetItem(text, ui->sceneTransitions);
 		item->setData(Qt::UserRole, text);
 	}
+	//(transitionDurationLongerThanInterval(switcher->interval)) ? ui->transitionWarning->setVisible(true) : ui->transitionWarning->setVisible(false);
 
 	for (auto& s : switcher->defaultSceneTransitions)
 	{
