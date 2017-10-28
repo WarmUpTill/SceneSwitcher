@@ -162,7 +162,7 @@
            <item>
             <widget class="QRadioButton" name="noMatchDontSwitch">
              <property name="text">
-              <string>SceneSwitcher.OnNoMatch.DontSwitch</string>
+              <string>Don't switch</string>
              </property>
              <property name="checked">
               <bool>true</bool>
@@ -186,7 +186,7 @@
              <item>
               <widget class="QRadioButton" name="noMatchSwitch">
                <property name="text">
-                <string>SceneSwitcher.OnNoMatch.SwitchTo</string>
+                <string>Switch to:</string>
                </property>
               </widget>
              </item>
@@ -239,7 +239,7 @@
          <item row="2" column="0">
           <widget class="QLabel" name="label_5">
            <property name="text">
-            <string>SceneSwitcher.ActiveOrNotActive</string>
+            <string>Advanced Scene Switcher is:</string>
            </property>
           </widget>
          </item>
@@ -1782,6 +1782,16 @@
           </layout>
          </item>
         </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="transitionWarning">
+         <property name="text">
+          <string>Warning: If the Scene Swicher interval is shorter than the duration of your transitions, the options below might lead to scene changes not being completed! (In this case avoid using the options below or increase the scene switcher interval on the general tab)</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_12">
