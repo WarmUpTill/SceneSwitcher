@@ -6,7 +6,6 @@
 #include <util/platform.h>
 #include "advanced-scene-switcher.hpp"
 
-using namespace std;
 
 void GetWindowList(vector<string> &windows)
 {
@@ -56,7 +55,6 @@ pair<int, int> getCursorPos() {
     return pos;     
  }
 
-//causing crash (see below)
 bool isFullscreen() {
     @autoreleasepool {
         AXValueRef temp;
@@ -72,20 +70,18 @@ bool isFullscreen() {
             GetProcessPID(&psn, &pid);
             frontMostApp = AXUIElementCreateApplication(pid);
 
-            //frontMostApp = AXUIElementCreateApplication(app);
-
             AXUIElementCopyAttributeValue(
             frontMostApp, kAXFocusedWindowAttribute, (CFTypeRef *)&frontMostWindow);
 
             // Get the window size and position
             AXUIElementCopyAttributeValue(
                frontMostWindow, kAXSizeAttribute, (CFTypeRef *)&temp);
-            AXValueGetValue(temp, kAXValueTypeCGSize, &windowSize);             //<-------- crash here
+            AXValueGetValue(temp, kAXValueTypeCGSize, &windowSize);             
             CFRelease(temp);
 
             AXUIElementCopyAttributeValue(
                frontMostWindow, kAXPositionAttribute, (CFTypeRef *)&temp);
-            AXValueGetValue(temp, kAXValueTypeCGPoint, &windowPosition);        //<-------- crash here
+            AXValueGetValue(temp, kAXValueTypeCGPoint, &windowPosition);        
                CFRelease(temp);
 
             CGRect screenBound = CGDisplayBounds(CGMainDisplayID());
@@ -112,14 +108,39 @@ int secondsSinceLastInput()
     return (int) time;
 }
 
-void GetProcessList(QStringList&)
+void GetProcessList(QStringList& list)
 {
-    //todo
-    return;
+    list.clear();
+    @autoreleasepool {
+        NSWorkspace *ws = [NSWorkspace sharedWorkspace];
+        NSArray *array = [ws runningApplications];
+        for (NSRunningApplication *app in array) {
+            NSString *name = app.localizedName;
+            if (!name)
+                continue;
+            
+            const char *str = name.UTF8String;
+            if (str && *str)
+                list << (str);
+        }
+    }
 }
 
-bool isInFocus(QString const&)
+bool isInFocus(QString const& appQName)
 {
-    //todo
-    return 0;
+    QByteArray ba = appQName.toLocal8Bit();
+    const char * appName = ba.data();
+    @autoreleasepool {
+        NSWorkspace *ws = [NSWorkspace sharedWorkspace];
+        NSRunningApplication *app = [ws frontmostApplication];
+        if (app) {
+            NSString *name = app.localizedName;
+            if (!name)
+                return false;
+            
+            const char *str = name.UTF8String;
+            return (str && *str && strcmp(appName,str) == 0 )? true : false;
+        }
+    }
+    return false;
 }
