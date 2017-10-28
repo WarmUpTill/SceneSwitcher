@@ -151,7 +151,6 @@ struct IdleData
 
 
 
-
 struct SwitcherData
 {
 	thread th;
@@ -183,7 +182,14 @@ struct SwitcherData
 	FileIOData fileIO;
 	IdleData idleData;
 	vector<string> ignoreIdleWindows;
-	vector<string> functionNamesByPriority;
+	vector<string> functionNamesByPriority = vector<string>{
+		string(DEFAULT_PRIORITY_0),
+		string(DEFAULT_PRIORITY_1),
+		string(DEFAULT_PRIORITY_2),
+		string(DEFAULT_PRIORITY_3),
+		string(DEFAULT_PRIORITY_4),
+		string(DEFAULT_PRIORITY_5),
+	};
 
 	void Thread();
 	void Start();
