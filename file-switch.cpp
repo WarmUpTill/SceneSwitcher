@@ -89,7 +89,7 @@ obs_weak_source_t* getNextTransition(obs_weak_source_t* scene1, obs_weak_source_
 
 void SwitcherData::checkSwitchInfoFromFile(bool& match, OBSWeakSource& scene, OBSWeakSource& transition)
 {
-	if (!fileIO.readEnabled)
+	if (!fileIO.readEnabled || fileIO.readPath.empty())
 		return;
 
 	QFile file(QString::fromStdString(fileIO.readPath));
