@@ -1,6 +1,6 @@
 #pragma once
 #include <obs.hpp>
-#include <qstring>
+#include <QString>
 #include <obs-frontend-api.h>
 #include "switcher-data-structs.hpp"
 using namespace std;

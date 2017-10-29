@@ -5,11 +5,11 @@ if(APPLE)
 	include_directories(${COCOA})
 endif()
 
-#if(UNIX)
-#	find_package(X11 REQUIRED)
-#	link_libraries(${X11_LIBRARIES})
-#	include_directories(${X11_INCLUDE_DIR})
-#endif()
+if(UNIX)
+	find_package(X11 REQUIRED)
+	link_libraries(${X11_LIBRARIES})
+	include_directories(${X11_INCLUDE_DIR})
+endif()
 
 set(advanced-scene-switcher_HEADERS
 	${advanced-scene-switcher_HEADERS}
@@ -50,9 +50,11 @@ elseif(APPLE)
 
 	set(advanced-scene-switcher_PLATFORM_LIBS
 		${COCOA})
-#else()
-#	set(advanced-scene-switcher_PLATFORM_SOURCES
-#		advanced-scene-switcher-nix.cpp)
+else()
+	set(advanced-scene-switcher_PLATFORM_SOURCES
+		advanced-scene-switcher-nix.cpp)
+	set(advanced-scene-switcher_PLATFORM_LIBS
+		Xss)
 endif()
 
 qt5_wrap_ui(advanced-scene-switcher_UI_HEADERS
