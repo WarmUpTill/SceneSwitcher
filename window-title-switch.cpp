@@ -235,10 +235,17 @@ void SwitcherData::checkWindowTitleSwitch(bool& match, OBSWeakSource& scene, OBS
 	GetCurrentWindowTitle(title);
 	for (auto& window : ignoreWindowsSwitches)
 	{
-		if (window == title)
+		try
 		{
-			title = lastTitle;
-			break;
+			bool matches = regex_match(title, regex(window));
+			if (matches)
+			{
+				title = lastTitle;
+				break;
+			}
+		}
+		catch (const regex_error&)
+		{
 		}
 	}
 	lastTitle = title;
