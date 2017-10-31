@@ -74,4 +74,4 @@ target_link_libraries(advanced-scene-switcher
 	Qt5::Widgets
 	libobs)
 
-install_obs_plugin_with_data(advanced-scene-switcher data)
+install_obs_plugin(advanced-scene-switcher data)
