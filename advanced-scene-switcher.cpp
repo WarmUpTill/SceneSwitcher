@@ -177,12 +177,13 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		string sceneName2 = GetWeakSourceName(s.scene2);
 		string transitionName = GetWeakSourceName(s.transition);
 		QString text = MakeSceneRoundTripSwitchName(
-			sceneName1.c_str(), sceneName2.c_str(), transitionName.c_str(), s.delay);
+			sceneName1.c_str(), sceneName2.c_str(), transitionName.c_str(), (double)s.delay / 1000);
 
 		QListWidgetItem* item = new QListWidgetItem(text, ui->sceneRoundTrips);
 		item->setData(Qt::UserRole, text);
-		if (s.delay * 1000 < smallestDelay)
-			smallestDelay = s.delay * 1000;
+
+		if (s.delay < smallestDelay)
+			smallestDelay = s.delay;
 	}
 	(smallestDelay < switcher->interval) ? ui->intervalWarning->setVisible(true) : ui->intervalWarning->setVisible(false);
 
@@ -386,7 +387,8 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 				obs_data_set_string(array_obj, "sceneRoundTripScene1", sceneName1);
 				obs_data_set_string(array_obj, "sceneRoundTripScene2", sceneName2);
 				obs_data_set_string(array_obj, "transition", transitionName);
-				obs_data_set_int(array_obj, "sceneRoundTripDelay", s.delay);
+				obs_data_set_int(array_obj, "sceneRoundTripDelay", s.delay / 1000);
+				obs_data_set_int(array_obj, "sceneRoundTripDelayMs", s.delay % 1000); //extra value for ms to not destroy settings of old versions
 				obs_data_set_string(array_obj, "sceneRoundTripStr", s.sceneRoundTripStr.c_str());
 				obs_data_array_push_back(sceneRoundTripArray, array_obj);
 				obs_source_release(source1);
@@ -655,6 +657,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 			const char* scene2 = obs_data_get_string(array_obj, "sceneRoundTripScene2");
 			const char* transition = obs_data_get_string(array_obj, "transition");
 			int delay = obs_data_get_int(array_obj, "sceneRoundTripDelay");
+			delay = delay * 1000 + obs_data_get_int(array_obj, "sceneRoundTripDelayMs"); //extra value for ms to not destroy settings of old versions
 			const char* sceneRoundTripStr = obs_data_get_string(array_obj, "sceneRoundTripStr");
 
 			switcher->sceneRoundTripSwitches.emplace_back(GetWeakSourceByName(scene1),

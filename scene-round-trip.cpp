@@ -15,7 +15,7 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 	if (scene1Name.isEmpty() || scene2Name.isEmpty())
 		return;
 
-	int delay = ui->sceneRoundTripSpinBox->value();
+	double delay = ui->sceneRoundTripSpinBox->value();
 
 	if (scene1Name == scene2Name)
 		return;
@@ -36,7 +36,7 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 
 		lock_guard<mutex> lock(switcher->m);
 		switcher->sceneRoundTripSwitches.emplace_back(
-			source1, source2, transition, delay, text.toUtf8().constData());
+			source1, source2, transition, int(delay * 1000), text.toUtf8().constData());
 	}
 	else
 	{
@@ -49,7 +49,7 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 			{
 				if (s.scene1 == source1 && s.scene2 == source2)
 				{
-					s.delay = delay;
+					s.delay = int(delay * 1000);
 					s.transition = transition;
 					s.sceneRoundTripStr = text.toUtf8().constData();
 					break;
@@ -214,7 +214,7 @@ void SwitcherData::checkSceneRoundTrip(bool& match, OBSWeakSource& scene, OBSWea
 		if (s.scene1 == ws)
 		{
 			sceneRoundTripActive = true;
-			int dur = s.delay * 1000 - interval;
+			int dur = s.delay - interval;
 			if (dur > 0)
 			{
 				string s = obs_source_get_name(currentSource);
@@ -261,7 +261,7 @@ void SceneSwitcher::on_sceneRoundTrips_currentRowChanged(int idx)
 			ui->sceneRoundTripScenes1->setCurrentText(scene1.c_str());
 			ui->sceneRoundTripScenes2->setCurrentText(scene2.c_str());
 			ui->sceneRoundTripTransitions->setCurrentText(transitionName.c_str());
-			ui->sceneRoundTripSpinBox->setValue(delay);
+			ui->sceneRoundTripSpinBox->setValue((double)delay/1000);
 			break;
 		}
 	}
