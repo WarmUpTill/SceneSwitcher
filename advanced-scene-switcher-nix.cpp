@@ -232,6 +232,7 @@ pair<int, int> getCursorPos()
 	{   
 		pos = pair<int, int> (root_x,root_y);
 	}
+	XCloseDisplay(dpy);
 	return pos;
 }
 
