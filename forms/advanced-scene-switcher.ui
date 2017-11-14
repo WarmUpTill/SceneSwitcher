@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>981</width>
-    <height>403</height>
+    <height>405</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>SceneSwitcher</string>
+   <string>Advanced Scene Switcher</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -287,6 +287,13 @@
           </spacer>
          </item>
         </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_13">
+         <property name="text">
+          <string>(You can set a Hotkey to start and stop the scene switcher under Settings / Hotkeys / Toggle Start Stop for the Advanced Scene Switcher)</string>
+         </property>
+        </widget>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_33">
@@ -897,18 +904,12 @@
           </widget>
          </item>
          <item>
-          <widget class="QSpinBox" name="sceneRoundTripSpinBox">
+          <widget class="QDoubleSpinBox" name="sceneRoundTripSpinBox">
            <property name="suffix">
             <string>s</string>
            </property>
-           <property name="prefix">
-            <string/>
-           </property>
-           <property name="minimum">
-            <number>1</number>
-           </property>
            <property name="maximum">
-            <number>1000000</number>
+            <double>10000.000000000000000</double>
            </property>
           </widget>
          </item>
