@@ -658,7 +658,8 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 			const char* transition = obs_data_get_string(array_obj, "transition");
 			int delay = obs_data_get_int(array_obj, "sceneRoundTripDelay");
 			delay = delay * 1000 + obs_data_get_int(array_obj, "sceneRoundTripDelayMs"); //extra value for ms to not destroy settings of old versions
-			const char* sceneRoundTripStr = obs_data_get_string(array_obj, "sceneRoundTripStr");
+			string str = MakeSceneRoundTripSwitchName(scene1, scene2, transition, ((double)delay)/1000.0).toUtf8().constData(); //aaaand i broke it
+			const char* sceneRoundTripStr = str.c_str();
 
 			switcher->sceneRoundTripSwitches.emplace_back(GetWeakSourceByName(scene1),
 				GetWeakSourceByName(scene2), GetWeakTransitionByName(transition), delay,
