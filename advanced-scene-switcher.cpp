@@ -1008,8 +1008,6 @@ extern "C" void InitSceneSwitcher()
 
 		SceneSwitcher ss(window);
 		ss.exec();
-
-		obs_frontend_pop_ui_translation();
 	};
 
 	obs_frontend_add_save_callback(SaveSceneSwitcher, nullptr);
