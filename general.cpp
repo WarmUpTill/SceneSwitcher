@@ -65,14 +65,14 @@ void SceneSwitcher::on_checkInterval_valueChanged(int value)
 
 void SceneSwitcher::SetStarted()
 {
-	ui->toggleStartButton->setText(obs_module_text("Stop"));
-	ui->pluginRunningText->setText(obs_module_text("Active"));
+	ui->toggleStartButton->setText("Stop");
+	ui->pluginRunningText->setText("Active");
 }
 
 void SceneSwitcher::SetStopped()
 {
-	ui->toggleStartButton->setText(obs_module_text("Start"));
-	ui->pluginRunningText->setText(obs_module_text("Inactive"));
+	ui->toggleStartButton->setText("Start");
+	ui->pluginRunningText->setText("Inactive");
 }
 
 void SceneSwitcher::on_toggleStartButton_clicked()

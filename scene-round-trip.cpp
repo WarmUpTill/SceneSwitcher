@@ -47,8 +47,9 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 			lock_guard<mutex> lock(switcher->m);
 			for (auto& s : switcher->sceneRoundTripSwitches)
 			{
-				if (s.scene1 == source1 && s.scene2 == source2)
+				if (s.scene1 == source1)
 				{
+					s.scene2 = source2;
 					s.delay = int(delay * 1000);
 					s.transition = transition;
 					s.sceneRoundTripStr = text.toUtf8().constData();
@@ -247,7 +248,7 @@ void SceneSwitcher::on_sceneRoundTrips_currentRowChanged(int idx)
 
 	QListWidgetItem* item = ui->sceneRoundTrips->item(idx);
 
-	QString sceneRoundTrip = item->data(Qt::UserRole).toString();
+	QString sceneRoundTrip = item->text();
 
 	lock_guard<mutex> lock(switcher->m);
 	for (auto& s : switcher->sceneRoundTripSwitches)
@@ -270,7 +271,7 @@ void SceneSwitcher::on_sceneRoundTrips_currentRowChanged(int idx)
 
 int SceneSwitcher::SceneRoundTripFindByData(const QString& scene1)
 {
-	QRegExp rx(scene1 + " -> wait for [0-9]* seconds -> .*");
+	QRegExp rx(scene1 + " ->.*");
 	int count = ui->sceneRoundTrips->count();
 	int idx = -1;
 

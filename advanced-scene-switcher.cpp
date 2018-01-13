@@ -998,14 +998,12 @@ void loadKeybinding(obs_hotkey_id hotkeyId);
 extern "C" void InitSceneSwitcher()
 {
 	QAction* action
-		= (QAction*)obs_frontend_add_tools_menu_qaction(obs_module_text("Advanced Scene Switcher"));
+		= (QAction*)obs_frontend_add_tools_menu_qaction("Advanced Scene Switcher");
 
 	switcher = new SwitcherData;
 
 	auto cb = []()
 	{
-		obs_frontend_push_ui_translation(obs_module_get_string);
-
 		QMainWindow* window = (QMainWindow*)obs_frontend_get_main_window();
 
 		SceneSwitcher ss(window);
