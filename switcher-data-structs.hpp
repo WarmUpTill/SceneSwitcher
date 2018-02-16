@@ -156,7 +156,6 @@ struct SwitcherData
 	thread th;
 	condition_variable cv;
 	mutex m;
-	mutex transitionMutex;
 	bool transitionActive = false;
 	bool waitForTransition = false;
 	condition_variable transitionCv;

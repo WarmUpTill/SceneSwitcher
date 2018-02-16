@@ -483,7 +483,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_set_int(obj, "interval", switcher->interval);
 		obs_data_set_string(obj, "non_matching_scene", nonMatchingSceneName.c_str());
 		obs_data_set_bool(obj, "switch_if_not_matching", switcher->switchIfNotMatching);
-		obs_data_set_bool(obj, "active", switcher->th.joinable());
+		obs_data_set_bool(obj, "active", !switcher->stop);
 
 		obs_data_set_array(obj, "switches", array);
 		obs_data_set_array(obj, "screenRegion", screenRegionArray);
@@ -760,22 +760,20 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_set_default_string(obj, "priority4", DEFAULT_PRIORITY_4);
 		obs_data_set_default_string(obj, "priority5", DEFAULT_PRIORITY_5);
 
-		switcher->functionNamesByPriority.clear();
-		switcher->functionNamesByPriority.push_back(obs_data_get_string(obj, "priority0"));
-		switcher->functionNamesByPriority.push_back(obs_data_get_string(obj, "priority1"));
-		switcher->functionNamesByPriority.push_back(obs_data_get_string(obj, "priority2"));
-		switcher->functionNamesByPriority.push_back(obs_data_get_string(obj, "priority3"));
-		switcher->functionNamesByPriority.push_back(obs_data_get_string(obj, "priority4"));
-		switcher->functionNamesByPriority.push_back(obs_data_get_string(obj, "priority5"));
+		switcher->functionNamesByPriority[0] = (obs_data_get_string(obj, "priority0"));
+		switcher->functionNamesByPriority[1] = (obs_data_get_string(obj, "priority1"));
+		switcher->functionNamesByPriority[2] = (obs_data_get_string(obj, "priority2"));
+		switcher->functionNamesByPriority[3] = (obs_data_get_string(obj, "priority3"));
+		switcher->functionNamesByPriority[4] = (obs_data_get_string(obj, "priority4"));
+		switcher->functionNamesByPriority[5] = (obs_data_get_string(obj, "priority5"));
 		if (!switcher->prioFuncsValid())
 		{
-			switcher->functionNamesByPriority.clear();
-			switcher->functionNamesByPriority.push_back(DEFAULT_PRIORITY_0);
-			switcher->functionNamesByPriority.push_back(DEFAULT_PRIORITY_1);
-			switcher->functionNamesByPriority.push_back(DEFAULT_PRIORITY_2);
-			switcher->functionNamesByPriority.push_back(DEFAULT_PRIORITY_3);
-			switcher->functionNamesByPriority.push_back(DEFAULT_PRIORITY_4);
-			switcher->functionNamesByPriority.push_back(DEFAULT_PRIORITY_5);
+			switcher->functionNamesByPriority[0] = (DEFAULT_PRIORITY_0);
+			switcher->functionNamesByPriority[1] = (DEFAULT_PRIORITY_1);
+			switcher->functionNamesByPriority[2] = (DEFAULT_PRIORITY_2);
+			switcher->functionNamesByPriority[3] = (DEFAULT_PRIORITY_3);
+			switcher->functionNamesByPriority[4] = (DEFAULT_PRIORITY_4);
+			switcher->functionNamesByPriority[5] = (DEFAULT_PRIORITY_5);
 		}
 
 		obs_data_array_release(array);
@@ -802,6 +800,8 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 bool SwitcherData::sceneChangedDuringWait(){
 	bool r = false;
 	obs_source_t* currentSource = obs_frontend_get_current_scene();
+	if (!currentSource)
+		return true;
 	string curName = (obs_source_get_name(currentSource));
 	obs_source_release(currentSource);
 	if (!waitSceneName.empty() && curName != waitSceneName)
@@ -850,18 +850,19 @@ void switchScene(OBSWeakSource scene, OBSWeakSource transition)
 
 void SwitcherData::Thread()
 {
+
+	//to avoid scene duplication when rapidly switching scene collection
+	this_thread::sleep_for(chrono::seconds(2));
+
 	while (true)
 	{
 	startLoop:
 		unique_lock<mutex> lock(m);
-		unique_lock<mutex> transitionLock(transitionMutex);
 		bool match = false;
 		OBSWeakSource scene;
 		OBSWeakSource transition;
 		chrono::milliseconds duration(interval);
-
 		switcher->Prune();
-
 		//sleep for a bit
 		cv.wait_for(lock, duration);
 		if (switcher->stop)
@@ -878,7 +879,6 @@ void SwitcherData::Thread()
 			continue;
 		}
 
-		//do callbacks 'n stuff in future ...
 		for (string switchFuncName : functionNamesByPriority)
 		{
 			if (switchFuncName == READ_FILE_FUNC)
@@ -905,7 +905,9 @@ void SwitcherData::Thread()
 			{
 				checkSceneRoundTrip(match, scene, transition, lock);
 				if (sceneChangedDuringWait()) //scene might have changed during the sleep
+				{
 					goto startLoop;
+				}
 			}
 			if (switcher->stop)
 			{
@@ -917,7 +919,6 @@ void SwitcherData::Thread()
 			}
 		}
 
-		//switch if no match?
 		if (!match && switchIfNotMatching && nonMatchingScene)
 		{
 			match = true;
@@ -950,11 +951,9 @@ void SwitcherData::Stop()
 	if (th.joinable())
 	{
 		switcher->stop = true;
-		switcher->stop = true;
-		cv.notify_one();
 		transitionCv.notify_one();
-		th.join();
 		cv.notify_one();
+		th.join();
 	}
 }
 
@@ -964,7 +963,6 @@ extern "C" void FreeSceneSwitcher()
 	switcher = nullptr;
 }
 
-//why is OBS_FRONTEND_EVENT_SCENE_CHANGED fired after OBS_FRONTEND_EVENT_TRANSITION_STOPPED?
 static void OBSEvent(enum obs_frontend_event event, void* switcher)
 {
 	switch (event){
@@ -981,14 +979,8 @@ static void OBSEvent(enum obs_frontend_event event, void* switcher)
 			s->cv.notify_one();
 		break;
 	}
-	case OBS_FRONTEND_EVENT_TRANSITION_STOPPED:
-	{
+	default:
 		break;
-	}
-	case OBS_FRONTEND_EVENT_TRANSITION_CHANGED:
-	{
-		break;
-	}
 	}
 }
 
