@@ -100,6 +100,23 @@ struct SceneRoundTripSwitch
 	}
 };
 
+struct RandomSwitch
+{
+	OBSWeakSource scene;
+	OBSWeakSource transition;
+	double delay;
+	string randomSwitchStr;
+
+	inline RandomSwitch(OBSWeakSource scene_, OBSWeakSource transition_
+		, double delay_, string str)
+		: scene(scene_)
+		, transition(transition_)
+		, delay(delay_)
+		, randomSwitchStr(str)
+	{
+	}
+};
+
 struct SceneTransition
 {
 	OBSWeakSource scene1;
@@ -148,6 +165,11 @@ struct IdleData
 	OBSWeakSource transition;
 };
 
+typedef enum {
+	NO_SWITCH = 0,
+	SWITCH = 1,
+	RANDOM_SWITCH = 2
+} NoMatch;
 
 
 
@@ -164,14 +186,16 @@ struct SwitcherData
 	vector<SceneSwitch> switches;
 	string lastTitle;
 	OBSWeakSource nonMatchingScene;
+	OBSWeakSource lastRandomScene;
 	int interval = DEFAULT_INTERVAL;
-	bool switchIfNotMatching = false;
+	NoMatch switchIfNotMatching;
 	bool startAtLaunch = false;
 	vector<ScreenRegionSwitch> screenRegionSwitches;
 	vector<OBSWeakSource> pauseScenesSwitches;
 	vector<string> pauseWindowsSwitches;
 	vector<string> ignoreWindowsSwitches;
 	vector<SceneRoundTripSwitch> sceneRoundTripSwitches;
+	vector<RandomSwitch> randomSwitches;
 	bool autoStopEnable = false;
 	OBSWeakSource autoStopScene;
 	string waitSceneName; //indicates which scene was active when we startet waiting on something
@@ -206,6 +230,7 @@ struct SwitcherData
 	void checkExeSwitch(bool& match, OBSWeakSource& scene, OBSWeakSource& transition);
 	void checkScreenRegionSwitch(bool& match, OBSWeakSource& scene, OBSWeakSource& transition);
 	void checkSwitchInfoFromFile(bool& match, OBSWeakSource& scene, OBSWeakSource& transition);
+	void checkRandom(bool& match, OBSWeakSource& scene, OBSWeakSource& transition, int& delay);
 
 
 
@@ -220,8 +245,15 @@ struct SwitcherData
 
 		if (nonMatchingScene && !WeakSourceValid(nonMatchingScene))
 		{
-			switchIfNotMatching = false;
+			switchIfNotMatching = NO_SWITCH;
 			nonMatchingScene = nullptr;
+		}
+
+		for (size_t i = 0; i < randomSwitches.size(); i++)
+		{
+			RandomSwitch& s = randomSwitches[i];
+			if (!WeakSourceValid(s.scene) || !WeakSourceValid(s.transition))
+				randomSwitches.erase(randomSwitches.begin() + i--);
 		}
 
 		for (size_t i = 0; i < screenRegionSwitches.size(); i++)

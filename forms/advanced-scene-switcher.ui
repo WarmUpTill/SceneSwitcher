@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>981</width>
-    <height>405</height>
+    <height>428</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -204,6 +204,13 @@
               </widget>
              </item>
             </layout>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="noMatchRandomSwitch">
+             <property name="text">
+              <string>Switch to any Scene on Random Tab</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -1907,6 +1914,149 @@
             </spacer>
            </item>
           </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="randomTab">
+      <attribute name="title">
+       <string>Random</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_8">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLabel" name="label_42">
+           <property name="text">
+            <string>If no switch condition is met switch to </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="randomScenes">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>0</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_43">
+           <property name="text">
+            <string>using the</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="randomTransitions"/>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_41">
+           <property name="text">
+            <string>transition for a duration of</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="randomSpinBox">
+           <property name="suffix">
+            <string>s</string>
+           </property>
+           <property name="maximum">
+            <double>999999999.990000009536743</double>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_14">
+           <property name="text">
+            <string>or any of the options below:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_36">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QListWidget" name="randomScenesList">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="sortingEnabled">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QPushButton" name="randomAdd">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string notr="true">addIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="randomRemove">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string notr="true">removeIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_37">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </item>

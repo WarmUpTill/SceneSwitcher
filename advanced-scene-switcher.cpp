@@ -54,6 +54,7 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		ui->defaultTransitionsScene->addItem(name);
 		ui->executableScenes->addItem(name);
 		ui->idleScenes->addItem(name);
+		ui->randomScenes->addItem(name);
 		temp++;
 	}
 
@@ -70,17 +71,28 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		ui->defaultTransitionsTransitions->addItem(name);
 		ui->executableTransitions->addItem(name);
 		ui->idleTransitions->addItem(name);
+		ui->randomTransitions->addItem(name);
 	}
 
 	obs_frontend_source_list_free(transitions);
 
 
 
-	if (switcher->switchIfNotMatching)
+	if (switcher->switchIfNotMatching == SWITCH)
+	{
 		ui->noMatchSwitch->setChecked(true);
-	else
+		ui->noMatchSwitchScene->setEnabled(true);
+	}
+	else if (switcher->switchIfNotMatching == NO_SWITCH)
+	{
 		ui->noMatchDontSwitch->setChecked(true);
-
+		ui->noMatchSwitchScene->setEnabled(false);
+	}
+	else
+	{
+		ui->noMatchRandomSwitch->setChecked(true);
+		ui->noMatchSwitchScene->setEnabled(false);
+	}
 	ui->noMatchSwitchScene->setCurrentText(GetWeakSourceName(switcher->nonMatchingScene).c_str());
 	ui->checkInterval->setValue(switcher->interval);
 
@@ -219,6 +231,17 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		item->setData(Qt::UserRole, text);
 	}
 
+	for (auto& s : switcher->randomSwitches)
+	{
+		string sceneName = GetWeakSourceName(s.scene);
+		string transitionName = GetWeakSourceName(s.transition);
+		QString text = MakeRandomSwitchName(
+			sceneName.c_str(), transitionName.c_str(), s.delay);
+
+		QListWidgetItem* item = new QListWidgetItem(text, ui->randomScenesList);
+		item->setData(Qt::UserRole, text);
+	}
+
 	ui->idleCheckBox->setChecked(switcher->idleData.idleEnable);
 	ui->idleScenes->setCurrentText(GetWeakSourceName(switcher->idleData.scene).c_str());
 	ui->idleTransitions->setCurrentText(GetWeakSourceName(switcher->idleData.transition).c_str());
@@ -290,6 +313,8 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_t* sceneTransitionsArray = obs_data_array_create();
 		obs_data_array_t* defaultTransitionsArray = obs_data_array_create();
 		obs_data_array_t* ignoreIdleWindowsArray = obs_data_array_create();
+		obs_data_array_t* executableArray = obs_data_array_create();
+		obs_data_array_t* randomArray = obs_data_array_create();
 
 		switcher->Prune();
 
@@ -445,8 +470,6 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 			obs_data_release(array_obj);
 		}
 
-		obs_data_array_t* executableArray = obs_data_array_create();
-
 		for (ExecutableSceneSwitch& s : switcher->executableSwitches)
 		{
 			obs_data_t* array_obj = obs_data_create();
@@ -470,6 +493,29 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 			obs_data_release(array_obj);
 		}
 
+		for (RandomSwitch& s : switcher->randomSwitches)
+		{
+			obs_data_t* array_obj = obs_data_create();
+
+			obs_source_t* source = obs_weak_source_get_source(s.scene);
+			obs_source_t* transition = obs_weak_source_get_source(s.transition);
+
+			if (source && transition)
+			{
+				const char* sceneName = obs_source_get_name(source);
+				const char* transitionName = obs_source_get_name(transition);
+				obs_data_set_string(array_obj, "scene", sceneName);
+				obs_data_set_string(array_obj, "transition", transitionName);
+				obs_data_set_double(array_obj, "delay", s.delay);
+				obs_data_set_string(array_obj, "str", s.randomSwitchStr.c_str());
+				obs_data_array_push_back(randomArray, array_obj);
+				obs_source_release(source);
+				obs_source_release(transition);
+			}
+
+			obs_data_release(array_obj);
+		}
+
 		for (string& window : switcher->ignoreIdleWindows)
 		{
 			obs_data_t* array_obj = obs_data_create();
@@ -482,7 +528,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 
 		obs_data_set_int(obj, "interval", switcher->interval);
 		obs_data_set_string(obj, "non_matching_scene", nonMatchingSceneName.c_str());
-		obs_data_set_bool(obj, "switch_if_not_matching", switcher->switchIfNotMatching);
+		obs_data_set_int(obj, "switch_if_not_matching", switcher->switchIfNotMatching);
 		obs_data_set_bool(obj, "active", !switcher->stop);
 
 		obs_data_set_array(obj, "switches", array);
@@ -495,6 +541,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_set_array(obj, "defaultTransitions", defaultTransitionsArray);
 		obs_data_set_array(obj, "executableSwitches", executableArray);
 		obs_data_set_array(obj, "ignoreIdleWindows", ignoreIdleWindowsArray);
+		obs_data_set_array(obj, "randomSwitches", randomArray);
 
 
 		string autoStopSceneName = GetWeakSourceName(switcher->autoStopScene);
@@ -532,6 +579,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_release(defaultTransitionsArray);
 		obs_data_array_release(executableArray);
 		obs_data_array_release(ignoreIdleWindowsArray);
+		obs_data_array_release(randomArray);
 
 		obs_data_release(obj);
 	}
@@ -550,6 +598,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_t* defaultTransitionsArray = obs_data_get_array(obj, "defaultTransitions");
 		obs_data_array_t* executableArray = obs_data_get_array(obj, "executableSwitches");
 		obs_data_array_t* ignoreIdleWindowsArray = obs_data_get_array(obj, "ignoreIdleWindows");
+		obs_data_array_t* randomArray = obs_data_get_array(obj, "randomSwitches");
 
 		if (!obj)
 			obj = obs_data_create();
@@ -557,7 +606,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_set_default_int(obj, "interval", DEFAULT_INTERVAL);
 
 		switcher->interval = obs_data_get_int(obj, "interval");
-		switcher->switchIfNotMatching = obs_data_get_bool(obj, "switch_if_not_matching");
+		switcher->switchIfNotMatching = (NoMatch)obs_data_get_int(obj, "switch_if_not_matching");
 		string nonMatchingScene = obs_data_get_string(obj, "non_matching_scene");
 		bool active = obs_data_get_bool(obj, "active");
 
@@ -737,6 +786,23 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 			obs_data_release(array_obj);
 		}
 
+		count = obs_data_array_count(randomArray);
+
+		for (size_t i = 0; i < count; i++)
+		{
+			obs_data_t* array_obj = obs_data_array_item(randomArray, i);
+
+			const char* scene = obs_data_get_string(array_obj, "scene");
+			const char* transition = obs_data_get_string(array_obj, "transition");
+			double delay = obs_data_get_double(array_obj, "delay");
+			string str = obs_data_get_string(array_obj, "str");
+
+			switcher->randomSwitches.emplace_back(
+				GetWeakSourceByName(scene), GetWeakTransitionByName(transition), delay, str);
+
+			obs_data_release(array_obj);
+		}
+
 		string autoStopScene = obs_data_get_string(obj, "autoStopSceneName");
 		switcher->autoStopEnable = obs_data_get_bool(obj, "autoStopEnable");
 		switcher->autoStopScene = GetWeakSourceByName(autoStopScene.c_str());
@@ -785,6 +851,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		obs_data_array_release(defaultTransitionsArray);
 		obs_data_array_release(executableArray);
 		obs_data_array_release(ignoreIdleWindowsArray);
+		obs_data_array_release(randomArray);
 
 		obs_data_release(obj);
 
@@ -854,6 +921,8 @@ void SwitcherData::Thread()
 	//to avoid scene duplication when rapidly switching scene collection
 	this_thread::sleep_for(chrono::seconds(2));
 
+	int extraSleep = 0;
+
 	while (true)
 	{
 	startLoop:
@@ -861,7 +930,12 @@ void SwitcherData::Thread()
 		bool match = false;
 		OBSWeakSource scene;
 		OBSWeakSource transition;
-		chrono::milliseconds duration(interval);
+		chrono::milliseconds duration;
+		if (extraSleep > interval)
+			duration = chrono::milliseconds(extraSleep);
+		else
+			duration = chrono::milliseconds(interval);
+		extraSleep = 0;
 		switcher->Prune();
 		//sleep for a bit
 		cv.wait_for(lock, duration);
@@ -919,11 +993,15 @@ void SwitcherData::Thread()
 			}
 		}
 
-		if (!match && switchIfNotMatching && nonMatchingScene)
+		if (!match && switchIfNotMatching == SWITCH && nonMatchingScene)
 		{
 			match = true;
 			scene = nonMatchingScene;
 			transition = nullptr;
+		}
+		if (!match && switchIfNotMatching == RANDOM_SWITCH)
+		{
+			checkRandom(match, scene, transition, extraSleep);
 		}
 		if (match)
 		{

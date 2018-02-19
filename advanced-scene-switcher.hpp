@@ -36,6 +36,7 @@ public:
 	int DefaultTransitionsFindByData(const QString &scene);
 	int executableFindByData(const QString &exe);
 	int IgnoreIdleWindowsFindByData(const QString& window);
+	int randomFindByData(const QString& scene);
 
 	void UpdateNonMatchingScene(const QString &name);
 	void UpdateAutoStopScene(const QString &name);
@@ -48,6 +49,7 @@ public slots:
 	void on_remove_clicked();
 	void on_noMatchDontSwitch_clicked();
 	void on_noMatchSwitch_clicked();
+	void on_noMatchRandomSwitch_clicked();
 	void on_startAtLaunch_toggled(bool value);
 	void on_noMatchSwitchScene_currentTextChanged(const QString &text);
 	void on_checkInterval_valueChanged(int value);
@@ -102,6 +104,10 @@ public slots:
 	void on_ignoreIdleWindows_currentRowChanged(int idx);
 	void on_ignoreIdleAdd_clicked();
 	void on_ignoreIdleRemove_clicked();
+
+	void on_randomAdd_clicked();
+	void on_randomRemove_clicked();
+	void on_randomScenesList_currentRowChanged(int idx);
 
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();

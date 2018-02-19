@@ -62,6 +62,13 @@ static inline QString MakeDefaultSceneTransitionName(
 	return scene + QStringLiteral(" --> ") + transition;
 }
 
+static inline QString MakeRandomSwitchName(
+	const QString& scene, const QString& transition, double& delay)
+{
+	return QStringLiteral("[") + scene + QStringLiteral(", ") + transition + QStringLiteral("]: ")
+		+ QString::number(delay) + QStringLiteral(" seconds");
+}
+
 static inline string GetWeakSourceName(obs_weak_source_t* weak_source)
 {
 	string name;

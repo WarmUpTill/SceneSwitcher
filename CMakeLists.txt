@@ -32,6 +32,7 @@ set(advanced-scene-switcher_SOURCES
 	hotkey.cpp
 	general.cpp
 	pause-switch.cpp
+	random.cpp
 	)
 set(advanced-scene-switcher_UI
 	${advanced-scene-switcher_UI}
