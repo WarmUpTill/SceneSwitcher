@@ -150,7 +150,9 @@ static std::string GetWindowTitle(size_t i)
 	std::string windowTitle;
 	char* name;
 
-	int status = XFetchName(disp(), w, &name);
+	XTextProperty text;
+	int status = XGetWMName(disp(), w, &text);
+	name = reinterpret_cast<char*>(text.value);
 	if (status >= Success && name != nullptr)
 	{
 		std::string str(name);
@@ -201,7 +203,9 @@ void GetCurrentWindowTitle(string &title)
 			&bytes,
 			(uint8_t**)&data);
 
-	int status = XFetchName(disp(), data[0], &name);
+	XTextProperty text;
+	int status = XGetWMName(disp(), data[0], &text);
+	name = reinterpret_cast<char*>(text.value);
 
 	if (status >= Success && name != nullptr) {
 		std::string str(name);
@@ -223,13 +227,13 @@ pair<int, int> getCursorPos()
 	int win_x;
 	int win_y;
 	unsigned int mask;
- 
+
 	dpy = XOpenDisplay(NULL);
 	root = XDefaultRootWindow(dpy);
- 
+
 	if(XQueryPointer(dpy, root, &ret_root, &ret_child, &root_x, &root_y,
 					 &win_x, &win_y, &mask))
-	{   
+	{
 		pos = pair<int, int> (root_x,root_y);
 	}
 	XCloseDisplay(dpy);
@@ -269,14 +273,14 @@ bool isFullscreen()
 
 	XGetWindowAttributes(disp(), rootWin, &screen_attributes_return);
 	XGetWindowAttributes(disp(), data[0], &window_attributes_return);
-	
+
 	//menu bar is always 24 pixels in height
 	return (window_attributes_return.width >= screen_attributes_return.width &&
-	window_attributes_return.height + 24 >= screen_attributes_return.height) ? true : false; 
+	window_attributes_return.height + 24 >= screen_attributes_return.height) ? true : false;
 }
 
 //exe switch is not quite what is expected but it works for now
-void GetProcessList(QStringList &processes) 
+void GetProcessList(QStringList &processes)
 {
 	processes.clear();
 	for (size_t i = 0; i < getTopLevelWindows().size(); ++i){
@@ -286,14 +290,14 @@ void GetProcessList(QStringList &processes)
 	}
 }
 
-bool isInFocus(const QString &exeToCheck) 
+bool isInFocus(const QString &exeToCheck)
 {
 	string curWindow;
 	GetCurrentWindowTitle(curWindow);
 
         return (QString::compare(
-		QString::fromStdString(curWindow), 
-		exeToCheck, 
+		QString::fromStdString(curWindow),
+		exeToCheck,
 		Qt::CaseInsensitive) == 0) ? true : false;
 }
 
@@ -307,17 +311,15 @@ int secondsSinceLastInput()
 
         mit_info = XScreenSaverAllocInfo();
 
-        if((display=XOpenDisplay(NULL)) == NULL) 
-	{ 
-		return(-1); 
+        if((display=XOpenDisplay(NULL)) == NULL)
+	{
+		return(-1);
 	}
         screen = DefaultScreen(display);
         XScreenSaverQueryInfo(display, RootWindow(display,screen), mit_info);
         idle_time = (mit_info->idle) / 1000;
         XFree(mit_info);
         XCloseDisplay(display);
- 
+
         return idle_time;
 }
-
-
