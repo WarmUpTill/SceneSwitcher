@@ -937,6 +937,7 @@ void SwitcherData::Thread()
 			duration = chrono::milliseconds(interval);
 		extraSleep = 0;
 		switcher->Prune();
+		writeSceneInfoToFile();
 		//sleep for a bit
 		cv.wait_for(lock, duration);
 		if (switcher->stop)

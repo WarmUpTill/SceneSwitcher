@@ -73,6 +73,9 @@ void SceneSwitcher::on_browseButton_2_clicked()
 
 void SwitcherData::writeSceneInfoToFile()
 {
+	if (!fileIO.writeEnabled)
+		return;
+
 	obs_source_t* currentSource = obs_frontend_get_current_scene();
 
 	QFile file(QString::fromStdString(fileIO.writePath));
