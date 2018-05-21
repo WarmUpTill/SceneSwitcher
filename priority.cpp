@@ -27,29 +27,17 @@ void SceneSwitcher::on_priorityDown_clicked()
 	}
 }
 
-bool prioStrValid(string s)
-{
-	if (s == WINDOW_TITLE_FUNC)
-		return true;
-	if (s == SCREEN_REGION_FUNC)
-		return true;
-	if (s == ROUND_TRIP_FUNC)
-		return true;
-	if (s == (IDLE_FUNC))
-		return true;
-	if (s == EXE_FUNC)
-		return true;
-	if (s == READ_FILE_FUNC)
-		return true;
-	return false;
-}
-
 
 bool SwitcherData::prioFuncsValid()
 {
-	for (string f : functionNamesByPriority)
+	auto it = std::unique(functionNamesByPriority.begin(), functionNamesByPriority.end());
+	bool wasUnique = (it == functionNamesByPriority.end());
+	if (!wasUnique)
+		return false;
+
+	for (int p : functionNamesByPriority)
 	{
-		if (!prioStrValid(f))
+		if (p < 0 || p > 5)
 			return false;
 	}
 	return true;

@@ -11,12 +11,14 @@
 
 #define DEFAULT_INTERVAL 300
 
-#define READ_FILE_FUNC "File based"
-#define ROUND_TRIP_FUNC "Scene Sequence"
-#define IDLE_FUNC "Idle detection"
-#define EXE_FUNC "Executable"
-#define SCREEN_REGION_FUNC "Screen region"
-#define WINDOW_TITLE_FUNC "Window title"
+#define DEFAULT_IDLE_TIME 60
+
+#define READ_FILE_FUNC 0
+#define ROUND_TRIP_FUNC 1
+#define IDLE_FUNC 2
+#define EXE_FUNC 3
+#define SCREEN_REGION_FUNC 4
+#define WINDOW_TITLE_FUNC 5
 
 #define DEFAULT_PRIORITY_0 READ_FILE_FUNC
 #define DEFAULT_PRIORITY_1 ROUND_TRIP_FUNC
@@ -149,18 +151,35 @@ struct DefaultSceneTransition
 	}
 };
 
+struct FileSwitch
+{
+	OBSWeakSource scene;
+	OBSWeakSource transition;
+	string file;
+	string text;
+
+	inline FileSwitch(
+		OBSWeakSource scene_, OBSWeakSource transition_, const char* file_, const char* text_)
+		: scene(scene_)
+		, transition(transition_)
+		, file(file_)
+		, text(text_)
+	{
+	}
+};
+
 struct FileIOData
 {
-	bool readEnabled;
+	bool readEnabled = false;
 	string readPath;
-	bool writeEnabled;
+	bool writeEnabled = false;
 	string writePath;
 };
 
 struct IdleData
 {
-	bool idleEnable;
-	int time;
+	bool idleEnable = false;
+	int time = DEFAULT_IDLE_TIME;
 	OBSWeakSource scene;
 	OBSWeakSource transition;
 };
@@ -188,7 +207,7 @@ struct SwitcherData
 	OBSWeakSource nonMatchingScene;
 	OBSWeakSource lastRandomScene;
 	int interval = DEFAULT_INTERVAL;
-	NoMatch switchIfNotMatching;
+	NoMatch switchIfNotMatching = NO_SWITCH;
 	bool startAtLaunch = false;
 	vector<ScreenRegionSwitch> screenRegionSwitches;
 	vector<OBSWeakSource> pauseScenesSwitches;
@@ -196,6 +215,7 @@ struct SwitcherData
 	vector<string> ignoreWindowsSwitches;
 	vector<SceneRoundTripSwitch> sceneRoundTripSwitches;
 	vector<RandomSwitch> randomSwitches;
+	vector<FileSwitch> fileSwitches;
 	bool autoStopEnable = false;
 	OBSWeakSource autoStopScene;
 	string waitSceneName; //indicates which scene was active when we startet waiting on something
@@ -205,13 +225,13 @@ struct SwitcherData
 	FileIOData fileIO;
 	IdleData idleData;
 	vector<string> ignoreIdleWindows;
-	vector<string> functionNamesByPriority = vector<string>{
-		string(DEFAULT_PRIORITY_0),
-		string(DEFAULT_PRIORITY_1),
-		string(DEFAULT_PRIORITY_2),
-		string(DEFAULT_PRIORITY_3),
-		string(DEFAULT_PRIORITY_4),
-		string(DEFAULT_PRIORITY_5),
+	vector<int> functionNamesByPriority = vector<int>{
+		DEFAULT_PRIORITY_0,
+		DEFAULT_PRIORITY_1,
+		DEFAULT_PRIORITY_2,
+		DEFAULT_PRIORITY_3,
+		DEFAULT_PRIORITY_4,
+		DEFAULT_PRIORITY_5,
 	};
 
 	void Thread();
@@ -230,6 +250,7 @@ struct SwitcherData
 	void checkExeSwitch(bool& match, OBSWeakSource& scene, OBSWeakSource& transition);
 	void checkScreenRegionSwitch(bool& match, OBSWeakSource& scene, OBSWeakSource& transition);
 	void checkSwitchInfoFromFile(bool& match, OBSWeakSource& scene, OBSWeakSource& transition);
+	void checkFileContent(bool& match, OBSWeakSource& scene, OBSWeakSource& transition);
 	void checkRandom(bool& match, OBSWeakSource& scene, OBSWeakSource& transition, int& delay);
 
 
@@ -304,6 +325,13 @@ struct SwitcherData
 			ExecutableSceneSwitch& s = executableSwitches[i];
 			if (!WeakSourceValid(s.mScene) || !WeakSourceValid(s.mTransition))
 				executableSwitches.erase(executableSwitches.begin() + i--);
+		}
+
+		for (size_t i = 0; i < fileSwitches.size(); i++)
+		{
+			FileSwitch& s = fileSwitches[i];
+			if (!WeakSourceValid(s.scene) || !WeakSourceValid(s.transition))
+				fileSwitches.erase(fileSwitches.begin() + i--);
 		}
 
 		if (!WeakSourceValid(idleData.scene) || !WeakSourceValid(idleData.transition))

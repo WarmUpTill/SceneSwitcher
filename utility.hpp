@@ -69,6 +69,18 @@ static inline QString MakeRandomSwitchName(
 		+ QString::number(delay) + QStringLiteral(" seconds");
 }
 
+static inline QString MakeFileSwitchName(
+	const QString& scene, const QString& transition, const QString& fileName, const QString& text)
+{
+
+	if (text.length() > 30)
+		return QStringLiteral("Switch to ") + scene + QStringLiteral(" using ") + transition + QStringLiteral(" if ")
+		+ fileName + QStringLiteral(" contains: \n\"") + text.left(27) + QStringLiteral("...\"");
+	else
+		return QStringLiteral("Switch to ") + scene + QStringLiteral(" using ") + transition + QStringLiteral(" if ")
+		+ fileName + QStringLiteral(" contains: \n\"") + text + QStringLiteral("\"");
+}
+
 static inline string GetWeakSourceName(obs_weak_source_t* weak_source)
 {
 	string name;

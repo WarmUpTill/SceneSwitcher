@@ -7,10 +7,10 @@
 
 void SceneSwitcher::on_browseButton_clicked()
 {
-	QString directory = QFileDialog::getOpenFileName(
+	QString path = QFileDialog::getOpenFileName(
 		this, tr("Select a file to write to ..."), QDir::currentPath(), tr("Text files (*.txt)"));
-	if (!directory.isEmpty())
-		ui->writePathLineEdit->setText(directory);
+	if (!path.isEmpty())
+		ui->writePathLineEdit->setText(path);
 }
 
 void SceneSwitcher::on_readFileCheckBox_stateChanged(int state)
@@ -65,15 +65,15 @@ void SceneSwitcher::on_writePathLineEdit_textChanged(const QString& text)
 
 void SceneSwitcher::on_browseButton_2_clicked()
 {
-	QString directory = QFileDialog::getOpenFileName(
+	QString path = QFileDialog::getOpenFileName(
 		this, tr("Select a file to read from ..."), QDir::currentPath(), tr("Text files (*.txt)"));
-	if (!directory.isEmpty())
-		ui->readPathLineEdit->setText(directory);
+	if (!path.isEmpty())
+		ui->readPathLineEdit->setText(path);
 }
 
 void SwitcherData::writeSceneInfoToFile()
 {
-	if (!fileIO.writeEnabled)
+	if (!fileIO.writeEnabled || fileIO.writePath.empty())
 		return;
 
 	obs_source_t* currentSource = obs_frontend_get_current_scene();
@@ -113,4 +113,127 @@ void SwitcherData::checkSwitchInfoFromFile(bool& match, OBSWeakSource& scene, OB
 		}
 		file.close();
 	}
+}
+
+void SwitcherData::checkFileContent(bool& match, OBSWeakSource& scene, OBSWeakSource& transition)
+{
+	for (FileSwitch& s : fileSwitches)
+	{
+		bool equal = false;
+		QString t = QString::fromStdString(s.text);
+		QFile file(QString::fromStdString(s.file));
+		if (!file.open(QIODevice::ReadOnly))
+			continue;
+
+		/*Im using QTextStream here so the conversion between different lineendings is done by QT.
+		 *QT itself uses only the linefeed internally so the input by the user is always using that,
+		 *but the files selected by the user might use different line endings.
+		 *If you are reading this and know of a cleaner way to do this, please let me know :)
+		 */
+		QTextStream in(&file);
+		QTextStream text(&t);
+		while (!in.atEnd() && !text.atEnd()) 
+		{
+			QString fileLine = in.readLine();
+			QString textLine = text.readLine();
+			if (QString::compare(fileLine, textLine, Qt::CaseSensitive) != 0)
+			{
+				equal = false;
+				break;
+			}
+			else {
+				equal = true;
+			}
+		}
+
+		file.close();
+
+		if (equal) {
+			scene = s.scene;
+			transition = s.transition;
+			match = true;
+
+			break;
+		}
+	}
+}
+
+
+void SceneSwitcher::on_browseButton_3_clicked()
+{
+	QString path = QFileDialog::getOpenFileName(
+		this, tr("Select a file to read from ..."), QDir::currentPath(), tr("Text files (*.txt)"));
+	if (!path.isEmpty())
+		ui->filePathLineEdit->setText(path);
+}
+
+void SceneSwitcher::on_fileAdd_clicked()
+{
+	QString sceneName = ui->fileScenes->currentText();
+	QString transitionName = ui->fileTransitions->currentText();
+	QString fileName = ui->filePathLineEdit->text();
+	QString text = ui->fileTextEdit->toPlainText();
+	//QFile file(QString::fromStdString(fileName)); //don't check if file exists because it might not yet exist
+
+	if (sceneName.isEmpty() || transitionName.isEmpty() || fileName.isEmpty() || text.isEmpty())
+		return;
+
+	OBSWeakSource source = GetWeakSourceByQString(sceneName);
+	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
+
+	QString switchText = MakeFileSwitchName(sceneName, transitionName, fileName, text);
+	QVariant v = QVariant::fromValue(switchText);
+
+
+	QListWidgetItem* item = new QListWidgetItem(switchText, ui->fileScenesList);
+	item->setData(Qt::UserRole, v);
+
+	lock_guard<mutex> lock(switcher->m);
+	switcher->fileSwitches.emplace_back(
+		source, transition, fileName.toUtf8().constData(), text.toUtf8().constData());
+	
+}
+
+void SceneSwitcher::on_fileRemove_clicked()
+{
+	QListWidgetItem* item = ui->fileScenesList->currentItem();
+	if (!item)
+		return;
+
+	int idx = ui->fileScenesList->currentRow();
+	if (idx == -1)
+		return;
+
+	{
+		lock_guard<mutex> lock(switcher->m);
+
+		auto& switches = switcher->fileSwitches;
+		switches.erase(switches.begin() + idx);
+	}
+	qDeleteAll(ui->fileScenesList->selectedItems());
+	//delete item;
+}
+
+
+void SceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
+{
+	if (loading)
+		return;
+	if (idx == -1)
+		return;
+
+	lock_guard<mutex> lock(switcher->m);
+
+	if (switcher->fileSwitches.size() <= idx)
+		return;
+	FileSwitch s = switcher->fileSwitches[idx];
+
+	string sceneName = GetWeakSourceName(s.scene);
+	string transitionName = GetWeakSourceName(s.transition);
+
+	ui->fileScenes->setCurrentText(sceneName.c_str());
+	ui->fileTransitions->setCurrentText(transitionName.c_str());
+	ui->fileTextEdit->setPlainText(s.text.c_str());
+	ui->filePathLineEdit->setText(s.file.c_str());
+
 }

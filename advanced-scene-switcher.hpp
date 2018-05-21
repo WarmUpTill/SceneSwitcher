@@ -109,6 +109,11 @@ public slots:
 	void on_randomRemove_clicked();
 	void on_randomScenesList_currentRowChanged(int idx);
 
+	void on_fileAdd_clicked();
+	void on_fileRemove_clicked();
+	void on_fileScenesList_currentRowChanged(int idx);
+	void on_browseButton_3_clicked();
+
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();
 

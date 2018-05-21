@@ -124,11 +124,10 @@ void SceneSwitcher::on_randomRemove_clicked()
 
 void SwitcherData::checkRandom(bool& match, OBSWeakSource& scene, OBSWeakSource& transition, int& delay)
 {
-	int size = randomSwitches.size();
 	if (randomSwitches.size() == 0)
 		return;
 
-	vector<RandomSwitch> rs = randomSwitches;
+	vector<RandomSwitch> rs (randomSwitches);
 	std::random_shuffle(rs.begin(), rs.end());
 	for (RandomSwitch& r : rs)
 	{
