@@ -67,7 +67,7 @@ void SceneSwitcher::on_writePathLineEdit_textChanged(const QString& text)
 void SceneSwitcher::on_browseButton_2_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
-		this, tr("Select a file to read from ..."), QDir::currentPath(), tr("Text files (*.txt)"));
+		this, tr("Select a file to read from ..."), QDir::currentPath(), tr("Any files (*.*)"));
 	if (!path.isEmpty())
 		ui->readPathLineEdit->setText(path);
 }
@@ -182,7 +182,7 @@ void SwitcherData::checkFileContent(bool& match, OBSWeakSource& scene, OBSWeakSo
 void SceneSwitcher::on_browseButton_3_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
-		this, tr("Select a file to read from ..."), QDir::currentPath(), tr("Text files (*.txt)"));
+		this, tr("Select a file to read from ..."), QDir::currentPath(), tr("Any files (*.*)"));
 	if (!path.isEmpty())
 		ui->filePathLineEdit->setText(path);
 }

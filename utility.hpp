@@ -75,8 +75,8 @@ static inline QString MakeFileSwitchName(
 	QString switchName = QStringLiteral("Switch to ") + scene + QStringLiteral(" using ") + transition + QStringLiteral(" if ")
 		+ fileName;
 	if (useTime)
-		switchName += QStringLiteral(" was modified and ");
-	switchName += QStringLiteral("contains");
+		switchName += QStringLiteral(" was modified and");
+	switchName += QStringLiteral(" contains");
 	if (useRegex)
 		switchName += QStringLiteral(" (RegEx): \n\"");
 	else
