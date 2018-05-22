@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>981</width>
-    <height>428</height>
+    <height>457</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -2109,7 +2109,7 @@
       <attribute name="title">
        <string> Write To File / Read From File </string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_10">
+      <layout class="QVBoxLayout" name="verticalLayout_9">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_14">
          <item>
@@ -2198,37 +2198,64 @@
         </widget>
        </item>
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_9">
+        <layout class="QHBoxLayout" name="horizontalLayout_36">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_36">
-           <item>
-            <widget class="QLabel" name="label_44">
-             <property name="text">
-              <string>If the file</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="filePathLineEdit"/>
-           </item>
-           <item>
-            <widget class="QPushButton" name="browseButton_3">
-             <property name="text">
-              <string>Browse</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_40">
-             <property name="text">
-              <string>contains:</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <widget class="QLabel" name="label_44">
+           <property name="text">
+            <string>If the file</string>
+           </property>
+          </widget>
          </item>
          <item>
-          <widget class="QPlainTextEdit" name="fileTextEdit"/>
+          <widget class="QLineEdit" name="filePathLineEdit"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="browseButton_3">
+           <property name="text">
+            <string>Browse</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_40">
+           <property name="text">
+            <string>contains:</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QPlainTextEdit" name="fileTextEdit"/>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_37">
+         <item>
+          <widget class="QCheckBox" name="fileContentRegExCheckBox">
+           <property name="text">
+            <string>Use regular expression (pattern matching)</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="fileContentTimeCheckBox">
+           <property name="text">
+            <string>Only check contents if modification date changed</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_11">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </item>

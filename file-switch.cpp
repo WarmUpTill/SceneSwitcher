@@ -1,5 +1,6 @@
 #include <QFileDialog>
 #include <QTextStream>
+#include <QDateTime>
 #include <obs.hpp>
 #include "advanced-scene-switcher.hpp"
 
@@ -125,30 +126,49 @@ void SwitcherData::checkFileContent(bool& match, OBSWeakSource& scene, OBSWeakSo
 		if (!file.open(QIODevice::ReadOnly))
 			continue;
 
-		/*Im using QTextStream here so the conversion between different lineendings is done by QT.
-		 *QT itself uses only the linefeed internally so the input by the user is always using that,
-		 *but the files selected by the user might use different line endings.
-		 *If you are reading this and know of a cleaner way to do this, please let me know :)
-		 */
-		QTextStream in(&file);
-		QTextStream text(&t);
-		while (!in.atEnd() && !text.atEnd()) 
+		//check file mod date
+		if (s.useTime)
 		{
-			QString fileLine = in.readLine();
-			QString textLine = text.readLine();
-			if (QString::compare(fileLine, textLine, Qt::CaseSensitive) != 0)
+			QDateTime newLastMod = QFileInfo(file).lastModified();
+			if (s.lastMod == newLastMod)
+				continue;
+			s.lastMod = newLastMod;
+		}
+		
+
+		if (s.useRegex)
+		{
+			QTextStream in(&file);
+			QRegExp rx(t);
+			equal = rx.exactMatch(in.readAll());
+		}	
+		else
+		{
+			/*Im using QTextStream here so the conversion between different lineendings is done by QT.
+			 *QT itself uses only the linefeed internally so the input by the user is always using that,
+			 *but the files selected by the user might use different line endings.
+			 *If you are reading this and know of a cleaner way to do this, please let me know :)
+			 */
+			QTextStream in(&file);
+			QTextStream text(&t);
+			while (!in.atEnd() && !text.atEnd())
 			{
-				equal = false;
-				break;
-			}
-			else {
-				equal = true;
+				QString fileLine = in.readLine();
+				QString textLine = text.readLine();
+				if (QString::compare(fileLine, textLine, Qt::CaseSensitive) != 0)
+				{
+					equal = false;
+					break;
+				}
+				else {
+					equal = true;
+				}
 			}
 		}
-
 		file.close();
 
-		if (equal) {
+		if (equal)
+		{
 			scene = s.scene;
 			transition = s.transition;
 			match = true;
@@ -173,7 +193,8 @@ void SceneSwitcher::on_fileAdd_clicked()
 	QString transitionName = ui->fileTransitions->currentText();
 	QString fileName = ui->filePathLineEdit->text();
 	QString text = ui->fileTextEdit->toPlainText();
-	//QFile file(QString::fromStdString(fileName)); //don't check if file exists because it might not yet exist
+	bool useRegex = ui->fileContentRegExCheckBox->isChecked();
+	bool useTime = ui->fileContentTimeCheckBox->isChecked();
 
 	if (sceneName.isEmpty() || transitionName.isEmpty() || fileName.isEmpty() || text.isEmpty())
 		return;
@@ -181,7 +202,7 @@ void SceneSwitcher::on_fileAdd_clicked()
 	OBSWeakSource source = GetWeakSourceByQString(sceneName);
 	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
 
-	QString switchText = MakeFileSwitchName(sceneName, transitionName, fileName, text);
+	QString switchText = MakeFileSwitchName(sceneName, transitionName, fileName, text, useRegex, useTime);
 	QVariant v = QVariant::fromValue(switchText);
 
 
@@ -190,7 +211,7 @@ void SceneSwitcher::on_fileAdd_clicked()
 
 	lock_guard<mutex> lock(switcher->m);
 	switcher->fileSwitches.emplace_back(
-		source, transition, fileName.toUtf8().constData(), text.toUtf8().constData());
+		source, transition, fileName.toUtf8().constData(), text.toUtf8().constData(), useRegex, useTime);
 	
 }
 
@@ -235,5 +256,6 @@ void SceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
 	ui->fileTransitions->setCurrentText(transitionName.c_str());
 	ui->fileTextEdit->setPlainText(s.text.c_str());
 	ui->filePathLineEdit->setText(s.file.c_str());
-
+	ui->fileContentRegExCheckBox->setChecked(s.useRegex);
+	ui->fileContentTimeCheckBox->setChecked(s.useTime);
 }

@@ -70,15 +70,23 @@ static inline QString MakeRandomSwitchName(
 }
 
 static inline QString MakeFileSwitchName(
-	const QString& scene, const QString& transition, const QString& fileName, const QString& text)
+	const QString& scene, const QString& transition, const QString& fileName, const QString& text, bool useRegex, bool useTime)
 {
-
-	if (text.length() > 30)
-		return QStringLiteral("Switch to ") + scene + QStringLiteral(" using ") + transition + QStringLiteral(" if ")
-		+ fileName + QStringLiteral(" contains: \n\"") + text.left(27) + QStringLiteral("...\"");
+	QString switchName = QStringLiteral("Switch to ") + scene + QStringLiteral(" using ") + transition + QStringLiteral(" if ")
+		+ fileName;
+	if (useTime)
+		switchName += QStringLiteral(" was modified and ");
+	switchName += QStringLiteral("contains");
+	if (useRegex)
+		switchName += QStringLiteral(" (RegEx): \n\"");
 	else
-		return QStringLiteral("Switch to ") + scene + QStringLiteral(" using ") + transition + QStringLiteral(" if ")
-		+ fileName + QStringLiteral(" contains: \n\"") + text + QStringLiteral("\"");
+		switchName += QStringLiteral(": \n\"");
+	if (text.length() > 30)
+		switchName += text.left(27) + QStringLiteral("...\"");
+	else
+		switchName += text + QStringLiteral("\"");
+
+	return switchName;
 }
 
 static inline string GetWeakSourceName(obs_weak_source_t* weak_source)

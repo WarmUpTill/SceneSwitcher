@@ -249,7 +249,7 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		string sceneName = GetWeakSourceName(s.scene);
 		string transitionName = GetWeakSourceName(s.transition);
 		QString listText = MakeFileSwitchName(
-			sceneName.c_str(), transitionName.c_str(), s.file.c_str(), s.text.c_str());
+			sceneName.c_str(), transitionName.c_str(), s.file.c_str(), s.text.c_str(), s.useRegex, s.useTime);
 
 		QListWidgetItem* item = new QListWidgetItem(listText, ui->fileScenesList);
 		item->setData(Qt::UserRole, listText);
@@ -573,6 +573,8 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 				obs_data_set_string(array_obj, "transition", transitionName);
 				obs_data_set_string(array_obj, "file", s.file.c_str());
 				obs_data_set_string(array_obj, "text", s.text.c_str());
+				obs_data_set_bool(array_obj, "useRegex", s.useRegex);
+				obs_data_set_bool(array_obj, "useTime", s.useTime);
 				obs_data_array_push_back(fileArray, array_obj);
 				obs_source_release(source);
 				obs_source_release(transition);
@@ -876,9 +878,11 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 			const char* transition = obs_data_get_string(array_obj, "transition");
 			const char* file = obs_data_get_string(array_obj, "file");
 			const char* text = obs_data_get_string(array_obj, "text");
+			bool useRegex = obs_data_get_bool(array_obj, "useRegex");
+			bool useTime = obs_data_get_bool(array_obj, "useTime");
 
 			switcher->fileSwitches.emplace_back(
-				GetWeakSourceByName(scene), GetWeakTransitionByName(transition), file, text);
+				GetWeakSourceByName(scene), GetWeakTransitionByName(transition), file, text, useRegex, useTime);
 
 			obs_data_release(array_obj);
 		}
