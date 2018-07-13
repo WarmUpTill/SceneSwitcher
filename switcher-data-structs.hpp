@@ -14,6 +14,8 @@
 
 #define DEFAULT_IDLE_TIME 60
 
+#define PREVIOUS_SCENE_NAME "Previous Scene"
+
 #define READ_FILE_FUNC 0
 #define ROUND_TRIP_FUNC 1
 #define IDLE_FUNC 2
@@ -94,14 +96,16 @@ struct SceneRoundTripSwitch
 	OBSWeakSource scene2;
 	OBSWeakSource transition;
 	int delay;
+	bool usePreviousScene;
 	string sceneRoundTripStr;
 
 	inline SceneRoundTripSwitch(OBSWeakSource scene1_, OBSWeakSource scene2_,
-		OBSWeakSource transition_, int delay_, string str)
+		OBSWeakSource transition_, int delay_, bool usePreviousScene_, string str)
 		: scene1(scene1_)
 		, scene2(scene2_)
 		, transition(transition_)
 		, delay(delay_)
+		, usePreviousScene(usePreviousScene_)
 		, sceneRoundTripStr(str)
 	{
 	}
@@ -215,14 +219,13 @@ struct SwitcherData
 	condition_variable transitionCv;
 	bool startAtLaunch = false;
 	bool stop = false;
-	obs_source_t* waitScene = NULL; //scene during which wait started
 
 	int interval = DEFAULT_INTERVAL;
 
-	OBSWeakSource nonMatchingScene;
-
+	obs_source_t* waitScene = NULL; //scene during which wait started
+	OBSWeakSource previousScene = NULL;
 	OBSWeakSource lastRandomScene;
-
+	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
 
 	vector<WindowSceneSwitch> windowSwitches;
@@ -266,6 +269,7 @@ struct SwitcherData
 	void Start();
 	void Stop();
 
+	void setPreviousScene();
 	bool sceneChangedDuringWait();
 	bool prioFuncsValid();
 	void writeSceneInfoToFile();
@@ -320,7 +324,7 @@ struct SwitcherData
 		for (size_t i = 0; i < sceneRoundTripSwitches.size(); i++)
 		{
 			SceneRoundTripSwitch& s = sceneRoundTripSwitches[i];
-			if (!WeakSourceValid(s.scene1) || !WeakSourceValid(s.scene2)
+			if (!WeakSourceValid(s.scene1) || (!s.usePreviousScene && !WeakSourceValid(s.scene2))
 				|| !WeakSourceValid(s.transition))
 				sceneRoundTripSwitches.erase(sceneRoundTripSwitches.begin() + i--);
 		}

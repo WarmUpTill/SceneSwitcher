@@ -34,7 +34,9 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 
 		lock_guard<mutex> lock(switcher->m);
 		switcher->sceneRoundTripSwitches.emplace_back(
-			source1, source2, transition, int(delay * 1000), text.toUtf8().constData());
+			source1, source2, transition, int(delay * 1000),
+			(scene2Name == QString(PREVIOUS_SCENE_NAME)),
+			text.toUtf8().constData());
 	}
 	else
 	{
@@ -50,6 +52,7 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 					s.scene2 = source2;
 					s.delay = int(delay * 1000);
 					s.transition = transition;
+					s.usePreviousScene = (scene2Name == QString(PREVIOUS_SCENE_NAME));
 					s.sceneRoundTripStr = text.toUtf8().constData();
 					break;
 				}
@@ -181,6 +184,7 @@ void SceneSwitcher::on_sceneRoundTripLoad_clicked()
 						GetWeakSourceByQString(lines[1]),
 						GetWeakTransitionByQString(lines[4]),
 						lines[2].toInt(),
+						(lines[1].toUtf8().constData() == QString(PREVIOUS_SCENE_NAME)),
 						lines[3].toStdString()));
 				}
 				lines.clear();
@@ -225,7 +229,7 @@ void SwitcherData::checkSceneRoundTrip(bool& match, OBSWeakSource& scene, OBSWea
 			if (currentSource == currentSource2)
 			{
 				match = true;
-				scene = s.scene2;
+				scene = (s.usePreviousScene) ? previousScene : s.scene2;
 				transition = s.transition;
 			}
 			obs_source_release(currentSource2);
