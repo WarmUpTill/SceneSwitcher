@@ -93,7 +93,6 @@ void SceneSwitcher::on_randomAdd_clicked()
 	}
 }
 
-
 void SceneSwitcher::on_randomRemove_clicked()
 {
 	QListWidgetItem* item = ui->randomScenesList->currentItem();
@@ -120,7 +119,6 @@ void SceneSwitcher::on_randomRemove_clicked()
 
 	delete item;
 }
-
 
 void SwitcherData::checkRandom(bool& match, OBSWeakSource& scene, OBSWeakSource& transition, int& delay)
 {

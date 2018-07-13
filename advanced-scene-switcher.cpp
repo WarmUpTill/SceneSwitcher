@@ -27,6 +27,10 @@
 
 SwitcherData* switcher = nullptr;
 
+
+/********************************************************************************
+ * Create the Advanced Scene Switcher settings window
+ ********************************************************************************/
 SceneSwitcher::SceneSwitcher(QWidget* parent)
 	: QDialog(parent)
 	, ui(new Ui_SceneSwitcher)
@@ -125,7 +129,7 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 		item->setData(Qt::UserRole, s.mExe);
 	}
 
-	for (auto& s : switcher->switches)
+	for (auto& s : switcher->windowSwitches)
 	{
 		string sceneName = GetWeakSourceName(s.scene);
 		string transitionName = GetWeakSourceName(s.transition);
@@ -330,7 +334,9 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 }
 
 
-
+/********************************************************************************
+ * Saving and loading
+ ********************************************************************************/
 static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 {
 	if (saving)
@@ -352,7 +358,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 
 		switcher->Prune();
 
-		for (SceneSwitch& s : switcher->switches)
+		for (WindowSceneSwitch& s : switcher->windowSwitches)
 		{
 			obs_data_t* array_obj = obs_data_create();
 
@@ -446,8 +452,8 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 				obs_data_set_string(array_obj, "sceneRoundTripScene1", sceneName1);
 				obs_data_set_string(array_obj, "sceneRoundTripScene2", sceneName2);
 				obs_data_set_string(array_obj, "transition", transitionName);
-				obs_data_set_int(array_obj, "sceneRoundTripDelay", s.delay / 1000);
-				obs_data_set_int(array_obj, "sceneRoundTripDelayMs", s.delay % 1000); //extra value for ms to not destroy settings of old versions
+				obs_data_set_int(array_obj, "sceneRoundTripDelay", s.delay / 1000);	//delay stored in two separate values
+				obs_data_set_int(array_obj, "sceneRoundTripDelayMs", s.delay % 1000);	//to be compatible with older versions
 				obs_data_set_string(array_obj, "sceneRoundTripStr", s.sceneRoundTripStr.c_str());
 				obs_data_array_push_back(sceneRoundTripArray, array_obj);
 				obs_source_release(source1);
@@ -675,7 +681,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 
 		switcher->nonMatchingScene = GetWeakSourceByName(nonMatchingScene.c_str());
 
-		switcher->switches.clear();
+		switcher->windowSwitches.clear();
 		size_t count = obs_data_array_count(array);
 
 		for (size_t i = 0; i < count; i++)
@@ -687,7 +693,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 			const char* window = obs_data_get_string(array_obj, "window_title");
 			bool fullscreen = obs_data_get_bool(array_obj, "fullscreen");
 
-			switcher->switches.emplace_back(GetWeakSourceByName(scene), window,
+			switcher->windowSwitches.emplace_back(GetWeakSourceByName(scene), window,
 				GetWeakTransitionByName(transition), fullscreen);
 
 			obs_data_release(array_obj);
@@ -768,9 +774,9 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 			const char* scene1 = obs_data_get_string(array_obj, "sceneRoundTripScene1");
 			const char* scene2 = obs_data_get_string(array_obj, "sceneRoundTripScene2");
 			const char* transition = obs_data_get_string(array_obj, "transition");
-			int delay = obs_data_get_int(array_obj, "sceneRoundTripDelay");
-			delay = delay * 1000 + obs_data_get_int(array_obj, "sceneRoundTripDelayMs"); //extra value for ms to not destroy settings of old versions
-			string str = MakeSceneRoundTripSwitchName(scene1, scene2, transition, ((double)delay)/1000.0).toUtf8().constData(); //aaaand i broke it
+			int delay = obs_data_get_int(array_obj, "sceneRoundTripDelay");			//delay stored in two separate values
+			delay = delay * 1000 + obs_data_get_int(array_obj, "sceneRoundTripDelayMs"); 	//to be compatible with older versions
+			string str = MakeSceneRoundTripSwitchName(scene1, scene2, transition, ((double)delay)/1000.0).toUtf8().constData(); 
 			const char* sceneRoundTripStr = str.c_str();
 
 			switcher->sceneRoundTripSwitches.emplace_back(GetWeakSourceByName(scene1),
@@ -953,57 +959,10 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 	}
 }
 
-bool SwitcherData::sceneChangedDuringWait(){
-	bool r = false;
-	obs_source_t* currentSource = obs_frontend_get_current_scene();
-	if (!currentSource)
-		return true;
-	string curName = (obs_source_get_name(currentSource));
-	obs_source_release(currentSource);
-	if (!waitSceneName.empty() && curName != waitSceneName)
-		r = true;
-	waitSceneName = "";
-	return r;
-}
 
-obs_weak_source_t* getNextTransition(obs_weak_source_t* scene1, obs_weak_source_t* scene2);
-
-void switchScene(OBSWeakSource scene, OBSWeakSource transition)
-{
-	obs_source_t* source = obs_weak_source_get_source(scene);
-	obs_source_t* currentSource = obs_frontend_get_current_scene();
-
-	if (source && source != currentSource)
-	{
-		obs_weak_source_t*  currentScene = obs_source_get_weak_source(currentSource);
-		obs_weak_source_t*  nextTransitionWs = getNextTransition(currentScene, scene);
-		obs_weak_source_release(currentScene);
-
-		if (nextTransitionWs)
-		{
-			obs_source_t* nextTransition = obs_weak_source_get_source(nextTransitionWs);
-			//lock.unlock();
-			//transitionCv.wait(transitionLock, transitionActiveCheck);
-			//lock.lock();
-			obs_frontend_set_current_transition(nextTransition);
-			obs_source_release(nextTransition);
-		}
-		else if (transition)
-		{
-			obs_source_t* nextTransition = obs_weak_source_get_source(transition);
-			//lock.unlock();
-			//transitionCv.wait(transitionLock, transitionActiveCheck);
-			//lock.lock();
-			obs_frontend_set_current_transition(nextTransition);
-			obs_source_release(nextTransition);
-		}
-		obs_frontend_set_current_scene(source);
-		obs_weak_source_release(nextTransitionWs);
-	}
-	obs_source_release(currentSource);
-	obs_source_release(source);
-}
-
+/********************************************************************************
+ * Main switcher thread
+ ********************************************************************************/
 void SwitcherData::Thread()
 {
 
@@ -1099,6 +1058,54 @@ endLoop:
 	;
 }
 
+void switchScene(OBSWeakSource scene, OBSWeakSource transition)
+{
+	obs_source_t* source = obs_weak_source_get_source(scene);
+	obs_source_t* currentSource = obs_frontend_get_current_scene();
+
+	if (source && source != currentSource)
+	{
+		obs_weak_source_t*  currentScene = obs_source_get_weak_source(currentSource);
+		obs_weak_source_t*  nextTransitionWs = getNextTransition(currentScene, scene);
+		obs_weak_source_release(currentScene);
+
+		if (nextTransitionWs)
+		{
+			obs_source_t* nextTransition = obs_weak_source_get_source(nextTransitionWs);
+			//lock.unlock();
+			//transitionCv.wait(transitionLock, transitionActiveCheck);
+			//lock.lock();
+			obs_frontend_set_current_transition(nextTransition);
+			obs_source_release(nextTransition);
+		}
+		else if (transition)
+		{
+			obs_source_t* nextTransition = obs_weak_source_get_source(transition);
+			//lock.unlock();
+			//transitionCv.wait(transitionLock, transitionActiveCheck);
+			//lock.lock();
+			obs_frontend_set_current_transition(nextTransition);
+			obs_source_release(nextTransition);
+		}
+		obs_frontend_set_current_scene(source);
+		obs_weak_source_release(nextTransitionWs);
+	}
+	obs_source_release(currentSource);
+	obs_source_release(source);
+}
+
+bool SwitcherData::sceneChangedDuringWait() {
+	bool r = false;
+	obs_source_t* currentSource = obs_frontend_get_current_scene();
+	if (!currentSource)
+		return true;
+	obs_source_release(currentSource);
+	if (waitScene && currentSource != waitScene)
+		r = true;
+	waitScene = NULL;
+	return r;
+}
+
 void SwitcherData::Start()
 {
 	if (!th.joinable())
@@ -1122,6 +1129,10 @@ void SwitcherData::Stop()
 	}
 }
 
+
+/********************************************************************************
+ * OBS module setup
+ ********************************************************************************/
 extern "C" void FreeSceneSwitcher()
 {
 	delete switcher;
@@ -1138,7 +1149,7 @@ static void OBSEvent(enum obs_frontend_event event, void* switcher)
 	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
 	{
 		SwitcherData* s = (SwitcherData*)switcher;
-		//wakeup if waiting on timer if scene already changed
+		//stop waiting if scene was manually changed
 		lock_guard<mutex> lock(s->m);
 		if (s->sceneChangedDuringWait())
 			s->cv.notify_one();
@@ -1148,9 +1159,6 @@ static void OBSEvent(enum obs_frontend_event event, void* switcher)
 		break;
 	}
 }
-
-void startStopHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pressed);
-void loadKeybinding(obs_hotkey_id hotkeyId);
 
 extern "C" void InitSceneSwitcher()
 {

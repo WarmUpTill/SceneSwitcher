@@ -30,14 +30,18 @@
 
 using namespace std;
 
-struct SceneSwitch
+
+/********************************************************************************
+ * Data structs for each scene switching method
+ ********************************************************************************/
+struct WindowSceneSwitch
 {
 	OBSWeakSource scene;
 	string window;
 	OBSWeakSource transition;
 	bool fullscreen;
 
-	inline SceneSwitch(
+	inline WindowSceneSwitch(
 		OBSWeakSource scene_, const char* window_, OBSWeakSource transition_, bool fullscreen_)
 		: scene(scene_)
 		, window(window_)
@@ -198,7 +202,9 @@ typedef enum {
 } NoMatch;
 
 
-
+/********************************************************************************
+ * SwitcherData  
+ ********************************************************************************/
 struct SwitcherData
 {
 	thread th;
@@ -207,31 +213,46 @@ struct SwitcherData
 	bool transitionActive = false;
 	bool waitForTransition = false;
 	condition_variable transitionCv;
-	bool stop = false;
-
-	vector<SceneSwitch> switches;
-	string lastTitle;
-	OBSWeakSource nonMatchingScene;
-	OBSWeakSource lastRandomScene;
-	int interval = DEFAULT_INTERVAL;
-	NoMatch switchIfNotMatching = NO_SWITCH;
 	bool startAtLaunch = false;
+	bool stop = false;
+	obs_source_t* waitScene = NULL; //scene during which wait started
+
+	int interval = DEFAULT_INTERVAL;
+
+	OBSWeakSource nonMatchingScene;
+
+	OBSWeakSource lastRandomScene;
+
+	NoMatch switchIfNotMatching = NO_SWITCH;
+
+	vector<WindowSceneSwitch> windowSwitches;
+	vector<string> ignoreIdleWindows;
+	string lastTitle;
+
 	vector<ScreenRegionSwitch> screenRegionSwitches;
+
 	vector<OBSWeakSource> pauseScenesSwitches;
+
 	vector<string> pauseWindowsSwitches;
+
 	vector<string> ignoreWindowsSwitches;
+
 	vector<SceneRoundTripSwitch> sceneRoundTripSwitches;
+
 	vector<RandomSwitch> randomSwitches;
-	vector<FileSwitch> fileSwitches;
-	bool autoStopEnable = false;
-	OBSWeakSource autoStopScene;
-	string waitSceneName; //indicates which scene was active when we startet waiting on something
-	vector<SceneTransition> sceneTransitions;
-	vector<DefaultSceneTransition> defaultSceneTransitions;
-	vector<ExecutableSceneSwitch> executableSwitches;
+
 	FileIOData fileIO;
 	IdleData idleData;
-	vector<string> ignoreIdleWindows;
+	vector<FileSwitch> fileSwitches;
+
+	vector<ExecutableSceneSwitch> executableSwitches;
+
+	bool autoStopEnable = false;
+	OBSWeakSource autoStopScene;
+
+	vector<SceneTransition> sceneTransitions;
+	vector<DefaultSceneTransition> defaultSceneTransitions;
+
 	vector<int> functionNamesByPriority = vector<int>{
 		DEFAULT_PRIORITY_0,
 		DEFAULT_PRIORITY_1,
@@ -260,15 +281,13 @@ struct SwitcherData
 	void checkFileContent(bool& match, OBSWeakSource& scene, OBSWeakSource& transition);
 	void checkRandom(bool& match, OBSWeakSource& scene, OBSWeakSource& transition, int& delay);
 
-
-
 	void Prune()
 	{
-		for (size_t i = 0; i < switches.size(); i++)
+		for (size_t i = 0; i < windowSwitches.size(); i++)
 		{
-			SceneSwitch& s = switches[i];
+			WindowSceneSwitch& s = windowSwitches[i];
 			if (!WeakSourceValid(s.scene) || !WeakSourceValid(s.transition))
-				switches.erase(switches.begin() + i--);
+				windowSwitches.erase(windowSwitches.begin() + i--);
 		}
 
 		if (nonMatchingScene && !WeakSourceValid(nonMatchingScene))
@@ -351,4 +370,3 @@ struct SwitcherData
 		Stop();
 	}
 };
-

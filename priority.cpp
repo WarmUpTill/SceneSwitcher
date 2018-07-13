@@ -27,7 +27,6 @@ void SceneSwitcher::on_priorityDown_clicked()
 	}
 }
 
-
 bool SwitcherData::prioFuncsValid()
 {
 	auto it = std::unique(functionNamesByPriority.begin(), functionNamesByPriority.end());

@@ -68,10 +68,6 @@ void GetCurrentWindowTitle(string& title)
 	It does not directly read the control.Instead,
 	it waits for the thread that created the control to process a WM_GETTEXT message.
 	So if that thread is frozen in a WaitFor... call you have a deadlock.*/
-	DWORD this_thid = GetCurrentThreadId();
-	//wstring message = L"\nUI id " + to_wstring(thid) + L", this_th_id " + to_wstring(this_thid) + L"\n";
-	//OutputDebugString(message.c_str());
-	//if (this_thid == thid) {
 	if (GetCurrentProcessId() == pid) {
 		title = "OBS";
 		return;

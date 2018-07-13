@@ -89,8 +89,6 @@ void SwitcherData::writeSceneInfoToFile()
 	obs_source_release(currentSource);
 }
 
-obs_weak_source_t* getNextTransition(obs_weak_source_t* scene1, obs_weak_source_t* scene2);
-
 void SwitcherData::checkSwitchInfoFromFile(bool& match, OBSWeakSource& scene, OBSWeakSource& transition)
 {
 	if (!fileIO.readEnabled || fileIO.readPath.empty())
@@ -126,7 +124,6 @@ void SwitcherData::checkFileContent(bool& match, OBSWeakSource& scene, OBSWeakSo
 		if (!file.open(QIODevice::ReadOnly))
 			continue;
 
-		//check file mod date
 		if (s.useTime)
 		{
 			QDateTime newLastMod = QFileInfo(file).lastModified();
@@ -135,7 +132,6 @@ void SwitcherData::checkFileContent(bool& match, OBSWeakSource& scene, OBSWeakSo
 			s.lastMod = newLastMod;
 		}
 		
-
 		if (s.useRegex)
 		{
 			QTextStream in(&file);
@@ -177,7 +173,6 @@ void SwitcherData::checkFileContent(bool& match, OBSWeakSource& scene, OBSWeakSo
 		}
 	}
 }
-
 
 void SceneSwitcher::on_browseButton_3_clicked()
 {
@@ -232,9 +227,7 @@ void SceneSwitcher::on_fileRemove_clicked()
 		switches.erase(switches.begin() + idx);
 	}
 	qDeleteAll(ui->fileScenesList->selectedItems());
-	//delete item;
 }
-
 
 void SceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
 {

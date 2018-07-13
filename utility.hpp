@@ -164,4 +164,3 @@ static inline OBSWeakSource GetWeakTransitionByQString(const QString& name)
 {
 	return GetWeakTransitionByName(name.toUtf8().constData());
 }
-

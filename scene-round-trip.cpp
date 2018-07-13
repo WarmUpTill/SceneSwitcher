@@ -4,8 +4,6 @@
 
 #include "advanced-scene-switcher.hpp"
 
-obs_weak_source_t* getNextTransition(obs_weak_source_t* scene1, obs_weak_source_t* scene2);
-
 void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 {
 	QString scene1Name = ui->sceneRoundTripScenes1->currentText();
@@ -188,7 +186,7 @@ void SceneSwitcher::on_sceneRoundTripLoad_clicked()
 				lines.clear();
 			}
 		}
-		//unvalid amount of lines in file or nothing valid read
+
 		if (lines.size() != 0 || newSceneRoundTripSwitch.size() == 0)
 			return;
 
@@ -218,8 +216,7 @@ void SwitcherData::checkSceneRoundTrip(bool& match, OBSWeakSource& scene, OBSWea
 			int dur = s.delay - interval;
 			if (dur > 0)
 			{
-				string s = obs_source_get_name(currentSource);
-				waitSceneName = s;
+				waitScene = currentSource;
 				cv.wait_for(lock, chrono::milliseconds(dur));
 			}
 			obs_source_t* currentSource2 = obs_frontend_get_current_scene();
@@ -306,4 +303,3 @@ void SwitcherData::autoStopStreamAndRecording()
 	obs_source_release(currentSource);
 	obs_weak_source_release(ws);
 }
-

@@ -7,11 +7,12 @@
 #include "ui_advanced-scene-switcher.h"
 #include "switcher-data-structs.hpp"
 
-struct obs_weak_source;
-typedef struct obs_weak_source obs_weak_source_t;
-
 class QCloseEvent;
 
+
+/*******************************************************************************
+ * Advanced Scene Switcher window
+ *******************************************************************************/
 class SceneSwitcher : public QDialog {
 	Q_OBJECT
 
@@ -122,13 +123,53 @@ public slots:
 	void on_close_clicked();
 };
 
+
+/********************************************************************************
+ * Windowtitle helper
+ ********************************************************************************/
 void GetWindowList(std::vector<std::string> &windows);
 void GetCurrentWindowTitle(std::string &title);
-pair<int, int> getCursorPos();
 bool isFullscreen();
-int secondsSinceLastInput();
-bool isInFocus(const QString &exeToCheck);
-void GetProcessList(QStringList &processes);
 
+
+/********************************************************************************
+ * Screenregion helper
+ ********************************************************************************/
+pair<int, int> getCursorPos();
+
+
+/********************************************************************************
+ * Idle detection helper
+ ********************************************************************************/
+int secondsSinceLastInput();
+
+
+/********************************************************************************
+ * Executable helper
+ ********************************************************************************/
+void GetProcessList(QStringList &processes);
+bool isInFocus(const QString &exeToCheck);
+
+
+/********************************************************************************
+ * Sceneswitch helper
+ ********************************************************************************/
+struct obs_weak_source;
+typedef struct obs_weak_source obs_weak_source_t;
+
+obs_weak_source_t* getNextTransition(obs_weak_source_t* scene1, obs_weak_source_t* scene2);
+void switchScene(OBSWeakSource scene, OBSWeakSource transition);
+
+
+/********************************************************************************
+ * Hotkey helper
+ ********************************************************************************/
+void startStopHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pressed);
+void loadKeybinding(obs_hotkey_id hotkeyId);
+
+
+/********************************************************************************
+ * Main SwitcherData
+ ********************************************************************************/
 struct SwitcherData;
 extern SwitcherData* switcher;

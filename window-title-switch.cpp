@@ -22,7 +22,7 @@ void SceneSwitcher::on_add_clicked()
 	if (idx == -1)
 	{
 		lock_guard<mutex> lock(switcher->m);
-		switcher->switches.emplace_back(
+		switcher->windowSwitches.emplace_back(
 			source, windowName.toUtf8().constData(), transition, fullscreen);
 
 		QListWidgetItem* item = new QListWidgetItem(text, ui->switches);
@@ -37,7 +37,7 @@ void SceneSwitcher::on_add_clicked()
 
 		{
 			lock_guard<mutex> lock(switcher->m);
-			for (auto& s : switcher->switches)
+			for (auto& s : switcher->windowSwitches)
 			{
 				if (s.window == window)
 				{
@@ -63,7 +63,7 @@ void SceneSwitcher::on_remove_clicked()
 
 	{
 		lock_guard<mutex> lock(switcher->m);
-		auto& switches = switcher->switches;
+		auto& switches = switcher->windowSwitches;
 
 		for (auto it = switches.begin(); it != switches.end(); ++it)
 		{
@@ -188,7 +188,7 @@ void SceneSwitcher::on_switches_currentRowChanged(int idx)
 	QString window = item->data(Qt::UserRole).toString();
 
 	lock_guard<mutex> lock(switcher->m);
-	for (auto& s : switcher->switches)
+	for (auto& s : switcher->windowSwitches)
 	{
 		if (window.compare(s.window.c_str()) == 0)
 		{
@@ -202,8 +202,6 @@ void SceneSwitcher::on_switches_currentRowChanged(int idx)
 		}
 	}
 }
-
-
 
 
 void SceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
@@ -251,7 +249,7 @@ void SwitcherData::checkWindowTitleSwitch(bool& match, OBSWeakSource& scene, OBS
 	lastTitle = title;
 
 	//direct match
-	for (SceneSwitch& s : switches)
+	for (WindowSceneSwitch& s : windowSwitches)
 	{
 		if (s.window == title)
 		{
@@ -262,7 +260,7 @@ void SwitcherData::checkWindowTitleSwitch(bool& match, OBSWeakSource& scene, OBS
 		}
 	}
 	//regex match
-	for (SceneSwitch& s : switches)
+	for (WindowSceneSwitch& s : windowSwitches)
 	{
 		try
 		{
@@ -280,4 +278,3 @@ void SwitcherData::checkWindowTitleSwitch(bool& match, OBSWeakSource& scene, OBS
 	}
 
 }
-

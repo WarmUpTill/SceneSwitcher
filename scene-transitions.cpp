@@ -163,7 +163,8 @@ void SwitcherData::setDefaultSceneTransitions(unique_lock<mutex>& lock)
 		if (s.scene == ws)
 		{
 			obs_source_t* transition = obs_weak_source_get_source(s.transition);
-			//sleep planned but no fitting OBS event to measure transition time
+			//This might cancel the current transition
+			//There is no way to be sure when the previous transition finished
 			obs_frontend_set_current_transition(transition);
 			obs_source_release(transition);
 			break;
