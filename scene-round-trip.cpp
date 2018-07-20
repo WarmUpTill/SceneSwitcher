@@ -141,7 +141,10 @@ void SceneSwitcher::on_sceneRoundTripSave_clicked()
 		for (SceneRoundTripSwitch s : switcher->sceneRoundTripSwitches)
 		{
 			out << QString::fromStdString(GetWeakSourceName(s.scene1)) << "\n";
-			out << QString::fromStdString(GetWeakSourceName(s.scene2)) << "\n";
+			if (s.usePreviousScene)
+				out << (PREVIOUS_SCENE_NAME) << "\n";
+			else
+				out << QString::fromStdString(GetWeakSourceName(s.scene2)) << "\n";
 			out << s.delay << "\n";
 			out << QString::fromStdString(s.sceneRoundTripStr) << "\n";
 			out << QString::fromStdString(GetWeakSourceName(s.transition)) << "\n";
@@ -176,7 +179,7 @@ void SceneSwitcher::on_sceneRoundTripLoad_clicked()
 				OBSWeakSource scene2 = GetWeakSourceByQString(lines[1]);
 				OBSWeakSource transition = GetWeakTransitionByQString(lines[4]);
 
-				if (WeakSourceValid(scene1) && WeakSourceValid(scene2)
+				if (WeakSourceValid(scene1) && ((lines[1] == QString(PREVIOUS_SCENE_NAME)) || (WeakSourceValid(scene2)))
 					&& WeakSourceValid(transition))
 				{
 					newSceneRoundTripSwitch.emplace_back(SceneRoundTripSwitch(
@@ -184,7 +187,7 @@ void SceneSwitcher::on_sceneRoundTripLoad_clicked()
 						GetWeakSourceByQString(lines[1]),
 						GetWeakTransitionByQString(lines[4]),
 						lines[2].toInt(),
-						(lines[1].toUtf8().constData() == QString(PREVIOUS_SCENE_NAME)),
+						(lines[1] == QString(PREVIOUS_SCENE_NAME)),
 						lines[3].toStdString()));
 				}
 				lines.clear();
