@@ -197,6 +197,7 @@ struct IdleData
 	int time = DEFAULT_IDLE_TIME;
 	OBSWeakSource scene;
 	OBSWeakSource transition;
+	bool usePreviousScene;
 };
 
 typedef enum {
@@ -224,6 +225,7 @@ struct SwitcherData
 
 	obs_source_t* waitScene = NULL; //scene during which wait started
 	OBSWeakSource previousScene = NULL;
+	OBSWeakSource PreviousScene2 = NULL;
 	OBSWeakSource lastRandomScene;
 	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
@@ -269,7 +271,6 @@ struct SwitcherData
 	void Start();
 	void Stop();
 
-	void setPreviousScene();
 	bool sceneChangedDuringWait();
 	bool prioFuncsValid();
 	void writeSceneInfoToFile();
@@ -364,7 +365,7 @@ struct SwitcherData
 				fileSwitches.erase(fileSwitches.begin() + i--);
 		}
 
-		if (!WeakSourceValid(idleData.scene) || !WeakSourceValid(idleData.transition))
+		if (!idleData.usePreviousScene && !WeakSourceValid(idleData.scene) || !WeakSourceValid(idleData.transition))
 		{
 			idleData.idleEnable = false;
 		}

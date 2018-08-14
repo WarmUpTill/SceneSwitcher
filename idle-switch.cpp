@@ -41,7 +41,7 @@ void SwitcherData::checkIdleSwitch(bool& match, OBSWeakSource& scene, OBSWeakSou
 
 	if (!ignoreIdle && secondsSinceLastInput() > idleData.time)
 	{
-		scene = idleData.scene;
+		scene = (idleData.usePreviousScene) ? previousScene : idleData.scene;
 		transition = idleData.transition;
 		match = true;
 	}
@@ -83,6 +83,7 @@ void SceneSwitcher::UpdateIdleDataTransition(const QString& name)
 
 void SceneSwitcher::UpdateIdleDataScene(const QString& name)
 {
+	switcher->idleData.usePreviousScene = (name == PREVIOUS_SCENE_NAME);
 	obs_source_t* scene = obs_get_source_by_name(name.toUtf8().constData());
 	obs_weak_source_t* ws = obs_source_get_weak_source(scene);
 

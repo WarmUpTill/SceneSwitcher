@@ -64,6 +64,7 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 	}
 
 	ui->sceneRoundTripScenes2->addItem(PREVIOUS_SCENE_NAME);
+	ui->idleScenes->addItem(PREVIOUS_SCENE_NAME);
 
 	obs_frontend_source_list* transitions = new obs_frontend_source_list();
 	obs_frontend_get_transitions(transitions);
@@ -260,7 +261,8 @@ SceneSwitcher::SceneSwitcher(QWidget* parent)
 	}
 
 	ui->idleCheckBox->setChecked(switcher->idleData.idleEnable);
-	ui->idleScenes->setCurrentText(GetWeakSourceName(switcher->idleData.scene).c_str());
+	ui->idleScenes->setCurrentText(
+		switcher->idleData.usePreviousScene ? PREVIOUS_SCENE_NAME : GetWeakSourceName(switcher->idleData.scene).c_str());
 	ui->idleTransitions->setCurrentText(GetWeakSourceName(switcher->idleData.transition).c_str());
 	ui->idleSpinBox->setValue(switcher->idleData.time);
 
@@ -450,7 +452,8 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 				const char* sceneName2 = obs_source_get_name(source2);
 				const char* transitionName = obs_source_get_name(transition);
 				obs_data_set_string(array_obj, "sceneRoundTripScene1", sceneName1);
-				obs_data_set_string(array_obj, "sceneRoundTripScene2", s.usePreviousScene ? PREVIOUS_SCENE_NAME : sceneName2);
+				obs_data_set_string(array_obj, "sceneRoundTripScene2",
+					s.usePreviousScene ? PREVIOUS_SCENE_NAME : sceneName2);
 				obs_data_set_string(array_obj, "transition", transitionName);
 				obs_data_set_int(array_obj, "sceneRoundTripDelay", s.delay / 1000);	//delay stored in two separate values
 				obs_data_set_int(array_obj, "sceneRoundTripDelayMs", s.delay % 1000);	//to be compatible with older versions
@@ -617,7 +620,8 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		string idleSceneName = GetWeakSourceName(switcher->idleData.scene);
 		string idleTransitionName = GetWeakSourceName(switcher->idleData.transition);
 		obs_data_set_bool(obj, "idleEnable", switcher->idleData.idleEnable);
-		obs_data_set_string(obj, "idleSceneName", idleSceneName.c_str());
+		obs_data_set_string(obj, "idleSceneName",
+			switcher->idleData.usePreviousScene ? PREVIOUS_SCENE_NAME : idleSceneName.c_str());
 		obs_data_set_string(obj, "idleTransitionName", idleTransitionName.c_str());
 		obs_data_set_int(obj, "idleTime", switcher->idleData.time);
 
@@ -905,6 +909,7 @@ static void SaveSceneSwitcher(obs_data_t* save_data, bool saving, void*)
 		switcher->idleData.idleEnable = obs_data_get_bool(obj, "idleEnable");
 		obs_data_set_default_int(obj, "idleTime", DEFAULT_IDLE_TIME);
 		switcher->idleData.time = obs_data_get_int(obj, "idleTime");
+		switcher->idleData.usePreviousScene = (idleSceneName == PREVIOUS_SCENE_NAME);
 
 		obs_data_set_default_bool(obj, "readEnabled", false);
 		switcher->fileIO.readEnabled = obs_data_get_bool(obj, "readEnabled");
@@ -1053,13 +1058,12 @@ void SwitcherData::Thread()
 		{
 			switchScene(scene, transition);
 		}
-		setPreviousScene();
 	}
 endLoop:
 	;
 }
 
-void switchScene(OBSWeakSource scene, OBSWeakSource transition)
+void switchScene(OBSWeakSource& scene, OBSWeakSource& transition)
 {
 	obs_source_t* source = obs_weak_source_get_source(scene);
 	obs_source_t* currentSource = obs_frontend_get_current_scene();
@@ -1093,19 +1097,6 @@ void switchScene(OBSWeakSource scene, OBSWeakSource transition)
 	}
 	obs_source_release(currentSource);
 	obs_source_release(source);
-}
-
-void SwitcherData::setPreviousScene()
-{
-	obs_source_t* source = obs_frontend_get_current_scene();
-	obs_weak_source_t* ws = obs_source_get_weak_source(source);
-	obs_source_release(source);
-	obs_weak_source_release(ws);
-	if (!source)
-		return;
-	if (previousScene == ws)
-		return;
-	previousScene = ws;
 }
 
 bool SwitcherData::sceneChangedDuringWait() {
@@ -1163,10 +1154,24 @@ static void OBSEvent(enum obs_frontend_event event, void* switcher)
 	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
 	{
 		SwitcherData* s = (SwitcherData*)switcher;
-		//stop waiting if scene was manually changed
 		lock_guard<mutex> lock(s->m);
+
+		//stop waiting if scene was manually changed
 		if (s->sceneChangedDuringWait())
 			s->cv.notify_one();
+
+		//set previous scene
+		obs_source_t* source = obs_frontend_get_current_scene();
+		obs_weak_source_t* ws = obs_source_get_weak_source(source);
+		obs_source_release(source);
+		obs_weak_source_release(ws);
+		if (source && s->PreviousScene2 != ws)
+		{
+			s->previousScene = s->PreviousScene2;
+			s->PreviousScene2 = ws;
+		}
+
+
 		break;
 	}
 	default:
