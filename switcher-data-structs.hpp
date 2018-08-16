@@ -198,6 +198,7 @@ struct IdleData
 	OBSWeakSource scene;
 	OBSWeakSource transition;
 	bool usePreviousScene;
+	bool alreadySwitched = false;
 };
 
 typedef enum {

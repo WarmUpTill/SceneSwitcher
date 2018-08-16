@@ -41,10 +41,15 @@ void SwitcherData::checkIdleSwitch(bool& match, OBSWeakSource& scene, OBSWeakSou
 
 	if (!ignoreIdle && secondsSinceLastInput() > idleData.time)
 	{
+		if (idleData.alreadySwitched)
+			return;
 		scene = (idleData.usePreviousScene) ? previousScene : idleData.scene;
 		transition = idleData.transition;
 		match = true;
+		idleData.alreadySwitched = true;
 	}
+	else
+		idleData.alreadySwitched = false;
 }
 
 void SceneSwitcher::on_idleCheckBox_stateChanged(int state)
