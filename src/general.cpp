@@ -1,4 +1,4 @@
-#include "advanced-scene-switcher.hpp"
+#include "headers/advanced-scene-switcher.hpp"
 #include <obs-module.h>
 
 void SceneSwitcher::on_close_clicked()

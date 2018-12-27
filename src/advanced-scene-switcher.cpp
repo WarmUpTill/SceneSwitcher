@@ -20,9 +20,9 @@
 #include <mutex>
 #include <fstream>
 
-#include "switcher-data-structs.hpp"
-#include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "headers/switcher-data-structs.hpp"
+#include "headers/utility.hpp"
+#include "headers/advanced-scene-switcher.hpp"
 
 
 SwitcherData* switcher = nullptr;

@@ -1,5 +1,5 @@
 #include <obs-module.h>
-#include "advanced-scene-switcher.hpp"
+#include "headers/advanced-scene-switcher.hpp"
 
 void startStopHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pressed)
 {

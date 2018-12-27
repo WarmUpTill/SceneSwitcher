@@ -1,4 +1,4 @@
-#include "advanced-scene-switcher.hpp"
+#include "headers/advanced-scene-switcher.hpp"
 
 void SwitcherData::checkScreenRegionSwitch(bool& match, OBSWeakSource& scene, OBSWeakSource& transition)
 {
