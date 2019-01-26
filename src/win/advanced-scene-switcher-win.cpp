@@ -1,6 +1,6 @@
 #include <windows.h>
 #include <util/platform.h>
-#include "advanced-scene-switcher.hpp"
+#include "../headers/advanced-scene-switcher.hpp"
 #include <TlHelp32.h>
 #include <Psapi.h>
 

@@ -14,7 +14,7 @@
 #undef Status
 #undef Unsorted
 #include <util/platform.h>
-#include "advanced-scene-switcher.hpp"
+#include "../headers/advanced-scene-switcher.hpp"
 
 using namespace std;
 
