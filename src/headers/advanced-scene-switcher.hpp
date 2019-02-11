@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "ui_advanced-scene-switcher.h"
+#include "../../forms/ui_advanced-scene-switcher.h"
 #include "switcher-data-structs.hpp"
 
 class QCloseEvent;

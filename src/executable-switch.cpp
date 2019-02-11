@@ -1,4 +1,4 @@
-#include "advanced-scene-switcher.hpp"
+#include "headers/advanced-scene-switcher.hpp"
 
 int SceneSwitcher::executableFindByData(const QString& exe)
 {

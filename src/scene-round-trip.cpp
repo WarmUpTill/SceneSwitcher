@@ -2,7 +2,7 @@
 #include <QTextStream>
 #include <obs.hpp>
 
-#include "advanced-scene-switcher.hpp"
+#include "headers/advanced-scene-switcher.hpp"
 
 void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 {

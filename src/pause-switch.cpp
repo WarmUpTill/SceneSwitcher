@@ -1,4 +1,4 @@
-#include "advanced-scene-switcher.hpp"
+#include "headers/advanced-scene-switcher.hpp"
 
 void SceneSwitcher::on_pauseScenesAdd_clicked()
 {

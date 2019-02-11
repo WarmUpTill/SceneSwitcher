@@ -2,7 +2,7 @@
 #include <QTextStream>
 #include <QDateTime>
 #include <obs.hpp>
-#include "advanced-scene-switcher.hpp"
+#include "headers/advanced-scene-switcher.hpp"
 
 
 

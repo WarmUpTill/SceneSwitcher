@@ -4,7 +4,7 @@
 #import <Carbon/Carbon.h>
 #include <Carbon/Carbon.h>
 #include <util/platform.h>
-#include "advanced-scene-switcher.hpp"
+#include "../headers/advanced-scene-switcher.hpp"
 
 
 void GetWindowList(vector<string> &windows)

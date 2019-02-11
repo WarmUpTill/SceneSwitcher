@@ -1,5 +1,5 @@
 #include <obs-module.h>
-#include "advanced-scene-switcher.hpp"
+#include "headers/advanced-scene-switcher.hpp"
 
 void SceneSwitcher::on_add_clicked()
 {
