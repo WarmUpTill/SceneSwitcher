@@ -164,8 +164,15 @@ void switchScene(OBSWeakSource& scene, OBSWeakSource& transition);
 /********************************************************************************
  * Hotkey helper
  ********************************************************************************/
-void startStopHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pressed);
-void loadKeybinding(obs_hotkey_id hotkeyId);
+
+#define TOGGLE_HOTKEY_PATH "hotkey_toggle.txt"
+#define STOP_HOTKEY_PATH "hotkey_stop.txt"
+#define START_HOTKEY_PATH "hotkey_start.txt"
+
+void stopHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pressed);
+void startHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pressed);
+void startStopToggleHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pressed);
+void loadKeybinding(obs_hotkey_id hotkeyId, string path);
 
 
 /********************************************************************************
