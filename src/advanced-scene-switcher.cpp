@@ -20,9 +20,9 @@
 #include <mutex>
 #include <fstream>
 
-#include "headers/switcher-data-structs.hpp"
-#include "headers/utility.hpp"
-#include "headers/advanced-scene-switcher.hpp"
+#include "switcher-data-structs.hpp"
+#include "utility.hpp"
+#include "advanced-scene-switcher.hpp"
 
 
 SwitcherData* switcher = nullptr;
@@ -1207,7 +1207,13 @@ extern "C" void InitSceneSwitcher()
 	}
 	bfree(path);
 
-	obs_hotkey_id pauseHotkeyId = obs_hotkey_register_frontend("startStopSwitcherHotkey",
-		"Toggle Start/Stop for the Advanced Scene Switcher", startStopHotkeyFunc, NULL);
-	loadKeybinding(pauseHotkeyId);
+	obs_hotkey_id toggleHotkeyId = obs_hotkey_register_frontend("startStopToggleSwitcherHotkey",
+		"Toggle Start/Stop for the Advanced Scene Switcher", startStopToggleHotkeyFunc, NULL);
+	loadKeybinding(toggleHotkeyId, TOGGLE_HOTKEY_PATH);
+	obs_hotkey_id startHotkeyId = obs_hotkey_register_frontend("startSwitcherHotkey",
+		"Start the Advanced Scene Switcher", startHotkeyFunc, NULL);
+	loadKeybinding(startHotkeyId, START_HOTKEY_PATH);
+	obs_hotkey_id stopHotkeyId = obs_hotkey_register_frontend("stopSwitcherHotkey",
+		"Stop the Advanced Scene Switcher", stopHotkeyFunc, NULL);
+	loadKeybinding(stopHotkeyId, STOP_HOTKEY_PATH);
 }
