@@ -1,4 +1,5 @@
 #include "headers/advanced-scene-switcher.hpp"
+#include <random>
 
 void SceneSwitcher::on_randomScenesList_currentRowChanged(int idx)
 {
@@ -126,7 +127,9 @@ void SwitcherData::checkRandom(bool& match, OBSWeakSource& scene, OBSWeakSource&
 		return;
 
 	vector<RandomSwitch> rs (randomSwitches);
-	std::random_shuffle(rs.begin(), rs.end());
+	std::random_device rng;
+	std::mt19937 urng(rng());
+	std::shuffle(rs.begin(), rs.end(), urng);
 	for (RandomSwitch& r : rs)
 	{
 		if (r.scene == lastRandomScene)
