@@ -4,7 +4,11 @@
 #include <memory>
 #include <vector>
 #include <string>
+#ifdef  BUILD_OUT_OF_TREE
 #include "../../forms/ui_advanced-scene-switcher.h"
+#else
+#include "ui_advanced-scene-switcher.h"
+#endif
 #include "switcher-data-structs.hpp"
 
 class QCloseEvent;
@@ -158,7 +162,7 @@ struct obs_weak_source;
 typedef struct obs_weak_source obs_weak_source_t;
 
 obs_weak_source_t* getNextTransition(obs_weak_source_t* scene1, obs_weak_source_t* scene2);
-void switchScene(OBSWeakSource& scene, OBSWeakSource& transition);
+void switchScene(OBSWeakSource& scene, OBSWeakSource& transition, unique_lock<mutex>& lock);
 
 
 /********************************************************************************
