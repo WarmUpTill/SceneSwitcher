@@ -4,8 +4,11 @@ An automated scene switcher for OBS Studio
 More information can be found on https://obsproject.com/forum/resources/automatic-scene-switching.395/
 
 ## Compiling in tree
-Add the "SceneSwitcher" source directory to your obs-studio source directory under:
-obs-studio/UI/frontend-plugins/
+Add the "SceneSwitcher" source directory to your obs-studio source directory under obs-studio/UI/frontend-plugins/:
+```
+cd obs-studio/UI/frontend-plugins/
+git clone https://github.com/WarmUpTill/SceneSwitcher.git
+```
 
 Then modify the obs-studio/UI/frontend-plugins/CMakeLists.txt file and add an entry for the scene switcher:
 add_subdirectory(SceneSwitcher)
@@ -22,6 +25,7 @@ mkdir build && cd build
 
 ### Windows
 In cmake-gui, you'll have to set these CMake variables :
+- **BUILD_OUT_OF_TREE** (bool) : true
 - **LIBOBS_INCLUDE_DIR** (path) : location of the libobs subfolder in the source
 code of OBS Studio, located at [source_directory]/libobs/.
 - **LIBOBS_LIB** (filepath) : location of the obs.dll file (usually set to
@@ -45,7 +49,7 @@ Most versions of Linux you can use cmake-gui or the command line.
 
 **For the command line:**  
 ```
-cmake -DLIBOBS_INCLUDE_DIR="<path to the libobs/ sub-folder in obs-studio's source code>"
+cmake -DBUILD_OUT_OF_TREE=1 -DLIBOBS_INCLUDE_DIR="<path to the libobs/ sub-folder in obs-studio's source code>"
 -DLIBOBS_FRONTEND_INCLUDE_DIR="<path to the UI/obs-frontend-api/ sub-folder in obs-studio's source code>"
 -DLIBOBS_FRONTEND_API_LIB="< path to the libobs-frontend-api.so file (usually in the same place as LIBOBS_LIB)>"
 -DCMAKE_INSTALL_PREFIX=/usr ..
@@ -54,6 +58,7 @@ sudo make install
 ```
 
 For cmake-gui you'll have to set the following variables:
+- **BUILD_OUT_OF_TREE** (bool) : true
 - **LIBOBS_INCLUDE_DIR** (path) : location of the libobs subfolder in the source
 code of OBS Studio, located at [source_directory]/libobs/.
 - **LIBOBS_LIB** (filepath) : location of the libobs.so file (usually CMake finds
@@ -82,6 +87,7 @@ NOTE: The Linux version of this plugin is dependent on libXScrnSaver.
 
 ### OS X
 In cmake-gui, you'll have to set these CMake variables :
+- **BUILD_OUT_OF_TREE** (bool) : true
 - **LIBOBS_INCLUDE_DIR** (path) : location of the libobs subfolder in the source
 code of OBS Studio, located at [source_directory]/libobs/.
 - **LIBOBS_LIB** (filepath) : location of the libobs.0.dylib file (usually
