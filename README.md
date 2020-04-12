@@ -3,8 +3,14 @@ An automated scene switcher for OBS Studio
 
 More information can be found on https://obsproject.com/forum/resources/automatic-scene-switching.395/
 
+## Compiling in tree
+Add the "SceneSwitcher" source directory to your obs-studio source directory under:
+obs-studio/UI/frontend-plugins/
 
-## Compiling
+Then modify the obs-studio/UI/frontend-plugins/CMakeLists.txt file and add an entry for the scene switcher:
+add_subdirectory(SceneSwitcher)
+
+## Compiling out of tree
 ### Prerequisites
 You'll need CMake and a working development environment for OBS Studio installed
 on your computer. Once you've done that, do the following:
