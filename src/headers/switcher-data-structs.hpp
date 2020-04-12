@@ -275,7 +275,7 @@ struct SwitcherData
 	bool sceneChangedDuringWait();
 	bool prioFuncsValid();
 	void writeSceneInfoToFile();
-	void setDefaultSceneTransitions(unique_lock<mutex>& lock);
+	void setDefaultSceneTransitions();
 	void autoStopStreamAndRecording();
 	bool checkPause();
 	void checkSceneRoundTrip(bool& match, OBSWeakSource& scene, OBSWeakSource& transition, unique_lock<mutex>& lock);

@@ -153,7 +153,7 @@ void SceneSwitcher::on_defaultTransitionsRemove_clicked()
 	delete item;
 }
 
-void SwitcherData::setDefaultSceneTransitions(unique_lock<mutex>& lock)
+void SwitcherData::setDefaultSceneTransitions()
 {
 	obs_source_t* currentSource = obs_frontend_get_current_scene();
 	obs_weak_source_t* ws = obs_source_get_weak_source(currentSource);

@@ -997,7 +997,7 @@ void SwitcherData::Thread()
 		{
 			break;
 		}
-		setDefaultSceneTransitions(lock);
+		setDefaultSceneTransitions();
 		if (autoStopEnable)
 		{
 			autoStopStreamAndRecording();
@@ -1056,14 +1056,14 @@ void SwitcherData::Thread()
 		}
 		if (match)
 		{
-			switchScene(scene, transition);
+			switchScene(scene, transition, lock);
 		}
 	}
 endLoop:
 	;
 }
 
-void switchScene(OBSWeakSource& scene, OBSWeakSource& transition)
+void switchScene(OBSWeakSource& scene, OBSWeakSource& transition, unique_lock<mutex>& lock)
 {
 	obs_source_t* source = obs_weak_source_get_source(scene);
 	obs_source_t* currentSource = obs_frontend_get_current_scene();
@@ -1077,22 +1077,26 @@ void switchScene(OBSWeakSource& scene, OBSWeakSource& transition)
 		if (nextTransitionWs)
 		{
 			obs_source_t* nextTransition = obs_weak_source_get_source(nextTransitionWs);
-			//lock.unlock();
-			//transitionCv.wait(transitionLock, transitionActiveCheck);
-			//lock.lock();
+			lock.unlock();
 			obs_frontend_set_current_transition(nextTransition);
+			lock.lock();
 			obs_source_release(nextTransition);
 		}
 		else if (transition)
 		{
 			obs_source_t* nextTransition = obs_weak_source_get_source(transition);
-			//lock.unlock();
-			//transitionCv.wait(transitionLock, transitionActiveCheck);
-			//lock.lock();
+			lock.unlock();
 			obs_frontend_set_current_transition(nextTransition);
+			lock.lock();
 			obs_source_release(nextTransition);
 		}
+
+		// this call might block when OBS_FRONTEND_EVENT_SCENE_CHANGED is active and mutex is held
+		// thus unlock mutex to avoid deadlock
+		lock.unlock();
 		obs_frontend_set_current_scene(source);
+		lock.lock();
+
 		obs_weak_source_release(nextTransitionWs);
 	}
 	obs_source_release(currentSource);
@@ -1155,7 +1159,6 @@ static void OBSEvent(enum obs_frontend_event event, void* switcher)
 	{
 		SwitcherData* s = (SwitcherData*)switcher;
 		lock_guard<mutex> lock(s->m);
-
 		//stop waiting if scene was manually changed
 		if (s->sceneChangedDuringWait())
 			s->cv.notify_one();
