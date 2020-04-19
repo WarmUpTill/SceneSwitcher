@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-#ifdef  BUILD_OUT_OF_TREE
+#ifdef BUILD_OUT_OF_TREE
 #include "../../forms/ui_advanced-scene-switcher.h"
 #else
 #include "ui_advanced-scene-switcher.h"
@@ -12,7 +12,6 @@
 #include "switcher-data-structs.hpp"
 
 class QCloseEvent;
-
 
 /*******************************************************************************
  * Advanced Scene Switcher window
@@ -37,16 +36,17 @@ public:
 	int PauseWindowsFindByData(const QString &window);
 	int IgnoreWindowsFindByData(const QString &window);
 	int SceneRoundTripFindByData(const QString &scene1);
-	int SceneTransitionsFindByData(const QString &scene1, const QString &scene2);
+	int SceneTransitionsFindByData(const QString &scene1,
+				       const QString &scene2);
 	int DefaultTransitionsFindByData(const QString &scene);
 	int executableFindByData(const QString &exe);
-	int IgnoreIdleWindowsFindByData(const QString& window);
-	int randomFindByData(const QString& scene);
+	int IgnoreIdleWindowsFindByData(const QString &window);
+	int randomFindByData(const QString &scene);
 
 	void UpdateNonMatchingScene(const QString &name);
 	void UpdateAutoStopScene(const QString &name);
-	void UpdateIdleDataTransition(const QString& name);
-	void UpdateIdleDataScene(const QString& name);
+	void UpdateIdleDataTransition(const QString &name);
+	void UpdateIdleDataScene(const QString &name);
 
 public slots:
 	void on_switches_currentRowChanged(int idx);
@@ -94,8 +94,8 @@ public slots:
 
 	void on_browseButton_clicked();
 	void on_readFileCheckBox_stateChanged(int state);
-	void on_readPathLineEdit_textChanged(const QString & text);
-	void on_writePathLineEdit_textChanged(const QString & text);
+	void on_readPathLineEdit_textChanged(const QString &text);
+	void on_writePathLineEdit_textChanged(const QString &text);
 	void on_browseButton_2_clicked();
 
 	void on_executableAdd_clicked();
@@ -103,8 +103,8 @@ public slots:
 	void on_executables_currentRowChanged(int idx);
 
 	void on_idleCheckBox_stateChanged(int state);
-	void on_idleTransitions_currentTextChanged(const QString& text);
-	void on_idleScenes_currentTextChanged(const QString& text);
+	void on_idleTransitions_currentTextChanged(const QString &text);
+	void on_idleScenes_currentTextChanged(const QString &text);
 	void on_idleSpinBox_valueChanged(int i);
 	void on_ignoreIdleWindows_currentRowChanged(int idx);
 	void on_ignoreIdleAdd_clicked();
@@ -119,6 +119,9 @@ public slots:
 	void on_fileScenesList_currentRowChanged(int idx);
 	void on_browseButton_3_clicked();
 
+	void on_mediaAdd_clicked();
+	void on_mediaRemove_clicked();
+
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();
 
@@ -127,7 +130,6 @@ public slots:
 	void on_close_clicked();
 };
 
-
 /********************************************************************************
  * Windowtitle helper
  ********************************************************************************/
@@ -135,18 +137,15 @@ void GetWindowList(std::vector<std::string> &windows);
 void GetCurrentWindowTitle(std::string &title);
 bool isFullscreen();
 
-
 /********************************************************************************
  * Screenregion helper
  ********************************************************************************/
 pair<int, int> getCursorPos();
 
-
 /********************************************************************************
  * Idle detection helper
  ********************************************************************************/
 int secondsSinceLastInput();
-
 
 /********************************************************************************
  * Executable helper
@@ -154,16 +153,16 @@ int secondsSinceLastInput();
 void GetProcessList(QStringList &processes);
 bool isInFocus(const QString &exeToCheck);
 
-
 /********************************************************************************
  * Sceneswitch helper
  ********************************************************************************/
 struct obs_weak_source;
 typedef struct obs_weak_source obs_weak_source_t;
 
-obs_weak_source_t* getNextTransition(obs_weak_source_t* scene1, obs_weak_source_t* scene2);
-void switchScene(OBSWeakSource& scene, OBSWeakSource& transition, unique_lock<mutex>& lock);
-
+obs_weak_source_t *getNextTransition(obs_weak_source_t *scene1,
+				     obs_weak_source_t *scene2);
+void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
+		 unique_lock<mutex> &lock);
 
 /********************************************************************************
  * Hotkey helper
@@ -173,14 +172,16 @@ void switchScene(OBSWeakSource& scene, OBSWeakSource& transition, unique_lock<mu
 #define STOP_HOTKEY_PATH "hotkey_stop.txt"
 #define START_HOTKEY_PATH "hotkey_start.txt"
 
-void stopHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pressed);
-void startHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pressed);
-void startStopToggleHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pressed);
+void stopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
+		    bool pressed);
+void startHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
+		     bool pressed);
+void startStopToggleHotkeyFunc(void *data, obs_hotkey_id id,
+			       obs_hotkey_t *hotkey, bool pressed);
 void loadKeybinding(obs_hotkey_id hotkeyId, string path);
-
 
 /********************************************************************************
  * Main SwitcherData
  ********************************************************************************/
 struct SwitcherData;
-extern SwitcherData* switcher;
+extern SwitcherData *switcher;
