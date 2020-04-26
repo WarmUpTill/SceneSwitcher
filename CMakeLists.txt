@@ -51,6 +51,7 @@ if(BUILD_OUT_OF_TREE)
 		src/scene-round-trip.cpp
 		src/file-switch.cpp
 		src/window-title-switch.cpp
+		src/media-switch.cpp
 		src/hotkey.cpp
 		src/general.cpp
 		src/pause-switch.cpp
@@ -175,6 +176,7 @@ else ()
 		src/scene-round-trip.cpp
 		src/file-switch.cpp
 		src/window-title-switch.cpp
+		src/media-switch.cpp
 		src/hotkey.cpp
 		src/general.cpp
 		src/pause-switch.cpp
