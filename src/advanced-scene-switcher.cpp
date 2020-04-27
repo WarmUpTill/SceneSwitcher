@@ -726,7 +726,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 				obs_weak_source_get_source(s.scene);
 			obs_source_t *transition =
 				obs_weak_source_get_source(s.transition);
-			if ((s.usePreviousScene || source) && sceneSource &&
+			if ((s.usePreviousScene || sceneSource) && source &&
 			    transition) {
 				const char *sourceName =
 					obs_source_get_name(source);
