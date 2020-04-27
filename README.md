@@ -106,4 +106,13 @@ in the source code of OBS Studio, located at [source_directory]/UI/obs-frontend-
 Just keep hitting configure until all the vars are filled out. Then hit generate.
 
 Open xcode (or a terminal, depending on the build type you chose), build and copy
-the advanced-scene-switcher.so file to /Applications/OBS.app/Contents/Resources/obs-plugins/
+the advanced-scene-switcher.so file to /Applications/OBS.app/Contents/PlugIns
+
+Note that you might have to adjust the library search paths using the install_name_tool if you want the plugin to run on machines other than your build machine:
+```
+install_name_tool -change @rpath/libobs-frontend-api.dylib @executable_path/../Frameworks/libobs-frontend-api.dylib UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
+install_name_tool -change @rpath/libobs.0.dylib @executable_path/../Frameworks/libobs.0.dylib UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
+install_name_tool -change /usr/local/opt/qt5/lib/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
+install_name_tool -change /usr/local/opt/qt5/lib/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
+install_name_tool -change /usr/local/opt/qt5/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
+```
