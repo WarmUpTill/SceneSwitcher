@@ -90,6 +90,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 
 	ui->sceneRoundTripScenes2->addItem(PREVIOUS_SCENE_NAME);
 	ui->idleScenes->addItem(PREVIOUS_SCENE_NAME);
+	ui->mediaScenes->addItem(PREVIOUS_SCENE_NAME);
 
 	obs_frontend_source_list *transitions = new obs_frontend_source_list();
 	obs_frontend_get_transitions(transitions);
@@ -291,7 +292,9 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 
 	for (auto &s : switcher->mediaSwitches) {
 		string sourceName = GetWeakSourceName(s.source);
-		string sceneName = GetWeakSourceName(s.scene);
+		string sceneName = (s.usePreviousScene)
+					   ? PREVIOUS_SCENE_NAME
+					   : GetWeakSourceName(s.scene);
 		string transitionName = GetWeakSourceName(s.transition);
 		QString listText = MakeMediaSwitchName(
 			sourceName.c_str(), sceneName.c_str(),
@@ -723,7 +726,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 				obs_weak_source_get_source(s.scene);
 			obs_source_t *transition =
 				obs_weak_source_get_source(s.transition);
-			if (source && sceneSource && transition) {
+			if ((s.usePreviousScene || source) && sceneSource &&
+			    transition) {
 				const char *sourceName =
 					obs_source_get_name(source);
 				const char *sceneName =
@@ -732,8 +736,10 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 					obs_source_get_name(transition);
 				obs_data_set_string(array_obj, "source",
 						    sourceName);
-				obs_data_set_string(array_obj, "scene",
-						    sceneName);
+				obs_data_set_string(
+					array_obj, "scene",
+					s.usePreviousScene ? PREVIOUS_SCENE_NAME
+							   : sceneName);
 				obs_data_set_string(array_obj, "transition",
 						    transitionName);
 				obs_data_set_int(array_obj, "state", s.state);
@@ -1179,7 +1185,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 				GetWeakSourceByName(scene),
 				GetWeakSourceByName(source),
 				GetWeakTransitionByName(transition), state,
-				restriction, time);
+				restriction, time,
+				(strcmp(scene, PREVIOUS_SCENE_NAME) == 0));
 		}
 
 		string autoStopScene =

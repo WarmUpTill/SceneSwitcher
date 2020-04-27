@@ -30,8 +30,9 @@ void SceneSwitcher::on_mediaAdd_clicked()
 	item->setData(Qt::UserRole, v);
 
 	lock_guard<mutex> lock(switcher->m);
-	switcher->mediaSwitches.emplace_back(scene, source, transition, state,
-					     restriction, time);
+	switcher->mediaSwitches.emplace_back(
+		scene, source, transition, state, restriction, time,
+		(sceneName == QString(PREVIOUS_SCENE_NAME)));
 }
 
 void SceneSwitcher::on_mediaRemove_clicked()
@@ -79,7 +80,9 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 			  duration - time > mediaSwitch.time));
 		if (matched && !mediaSwitch.matched) {
 			match = true;
-			scene = mediaSwitch.scene;
+			scene = (mediaSwitch.usePreviousScene)
+					? previousScene
+					: mediaSwitch.scene;
 			transition = mediaSwitch.transition;
 		}
 		mediaSwitch.matched = matched;
