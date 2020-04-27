@@ -151,7 +151,7 @@ else ()
 		include_directories(${COCOA})
 	endif()
 
-	if(UNIX)
+	if(UNIX AND NOT APPLE)
 		find_package(X11 REQUIRED)
 		link_libraries(${X11_LIBRARIES})
 		include_directories(${X11_INCLUDE_DIR})
