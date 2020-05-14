@@ -295,10 +295,7 @@ bool isInFocus(const QString &exeToCheck)
 	string curWindow;
 	GetCurrentWindowTitle(curWindow);
 
-        return (QString::compare(
-		QString::fromStdString(curWindow),
-		exeToCheck,
-		Qt::CaseInsensitive) == 0) ? true : false;
+	return QString::fromStdString(curWindow).contains(QRegularExpression(exeToCheck));
 }
 
 

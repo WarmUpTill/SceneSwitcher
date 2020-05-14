@@ -129,7 +129,7 @@ void SwitcherData::checkExeSwitch(bool& match, OBSWeakSource& scene, OBSWeakSour
 	GetProcessList(runningProcesses);
 	for (ExecutableSceneSwitch& s : executableSwitches)
 	{
-		if (runningProcesses.contains(s.mExe))
+		if (runningProcesses.indexOf(QRegularExpression(s.mExe)) != -1)
 		{
 			scene = s.mScene;
 			transition = s.mTransition;
