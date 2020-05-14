@@ -134,7 +134,9 @@ void SwitcherData::checkExeSwitch(bool& match, OBSWeakSource& scene, OBSWeakSour
 			scene = s.mScene;
 			transition = s.mTransition;
 			match = !s.mInFocus || (s.mInFocus && isInFocus(s.mExe));
-			break;
+
+			if (match)
+				break;
 		}
 	}
 }
