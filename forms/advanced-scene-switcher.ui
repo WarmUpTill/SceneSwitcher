@@ -1127,7 +1127,14 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_23">
          <item>
-          <widget class="QComboBox" name="executable"/>
+          <widget class="QComboBox" name="executable">
+           <property name="editable">
+            <bool>true</bool>
+           </property>
+           <property name="maxVisibleItems">
+            <number>20</number>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QComboBox" name="executableScenes">
