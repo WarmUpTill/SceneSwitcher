@@ -1137,8 +1137,17 @@
         <layout class="QHBoxLayout" name="horizontalLayout_24">
          <item>
           <widget class="QLabel" name="label_24">
+           <property name="toolTip">
+            <string>https://regexr.com</string>
+           </property>
            <property name="text">
-            <string>WARNING! Only add game exes to this list and never run more than one game that is listed here at the same time, otherwise you riskbad behaviour. You have been warned.</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;WARNING! Entries require valid RegEx to function, otherwise they will silently fail. You can check syntax and matches using &lt;a href=&quot;https://regexr.com&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#268bd2;&quot;&gt;RegExr&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::AutoText</enum>
+           </property>
+           <property name="openExternalLinks">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -1185,7 +1194,7 @@
          <item>
           <widget class="QCheckBox" name="requiresFocusCheckBox">
            <property name="text">
-            <string>needs to be in focus</string>
+            <string>only if window is in focus</string>
            </property>
            <property name="autoRepeatInterval">
             <number>100</number>
@@ -2456,7 +2465,7 @@
             <string notr="true">ms</string>
            </property>
            <property name="minimum">
-            <number>00</number>
+            <number>0</number>
            </property>
            <property name="maximum">
             <number>1000000</number>
