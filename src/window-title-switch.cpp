@@ -228,53 +228,35 @@ void SceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
 
 void SwitcherData::checkWindowTitleSwitch(bool& match, OBSWeakSource& scene, OBSWeakSource& transition)
 {
-	//check if title should be ignored
 	string title;
+
+	// Check if current window is ignored
 	GetCurrentWindowTitle(title);
 	for (auto& window : ignoreWindowsSwitches)
 	{
-		try
+		// True if ignored switch matches title
+		bool matches = QString::fromStdString(title).contains(QRegularExpression(window.c_str()));
+		if (matches)
 		{
-			bool matches = regex_match(title, regex(window));
-			if (matches)
-			{
-				title = lastTitle;
-				break;
-			}
-		}
-		catch (const regex_error&)
-		{
+			title = lastTitle;
+			break;
 		}
 	}
 	lastTitle = title;
 
-	//direct match
+	// Check for regex match
 	for (WindowSceneSwitch& s : windowSwitches)
 	{
-		if (s.window == title)
+		// True if window switch matches title
+		bool matches = QString::fromStdString(title).contains(QRegularExpression(s.window.c_str()));
+		// True if fullscreen is disabled OR window is fullscreen
+		bool fullscreen = (!s.fullscreen || isFullscreen());
+		if (matches && fullscreen)
 		{
-			match = !s.fullscreen || (s.fullscreen && isFullscreen());
+			match = true;
 			scene = s.scene;
 			transition = s.transition;
-			return;
+			break;
 		}
 	}
-	//regex match
-	for (WindowSceneSwitch& s : windowSwitches)
-	{
-		try
-		{
-			bool matches = regex_match(title, regex(s.window));
-			if (matches)
-			{
-				match = !s.fullscreen || (s.fullscreen && isFullscreen());
-				scene = s.scene;
-				transition = s.transition;
-			}
-		}
-		catch (const regex_error&)
-		{
-		}
-	}
-
 }
