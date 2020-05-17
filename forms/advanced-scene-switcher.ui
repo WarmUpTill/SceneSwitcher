@@ -372,7 +372,7 @@
             <string>https://regexr.com</string>
            </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;WARNING! Entries require valid RegEx to function, otherwise they will silently fail. You can check syntax and matches using &lt;a href=&quot;https://regexr.com&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#268bd2;&quot;&gt;RegExr&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Entries can contain either direct window titles or valid regex. You can check syntax and matches for regular expressions using &lt;a href=&quot;https://regexr.com&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#268bd2;&quot;&gt;RegExr&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="textFormat">
             <enum>Qt::AutoText</enum>
@@ -459,7 +459,7 @@
           </sizepolicy>
          </property>
          <property name="sortingEnabled">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -581,7 +581,7 @@
           </sizepolicy>
          </property>
          <property name="sortingEnabled">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -1141,7 +1141,7 @@
             <string>https://regexr.com</string>
            </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;WARNING! Entries require valid RegEx to function, otherwise they will silently fail. You can check syntax and matches using &lt;a href=&quot;https://regexr.com&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#268bd2;&quot;&gt;RegExr&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Entries can contain either direct window titles or valid regex. You can check syntax and matches for regular expressions using &lt;a href=&quot;https://regexr.com&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#268bd2;&quot;&gt;RegExr&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="textFormat">
             <enum>Qt::AutoText</enum>
