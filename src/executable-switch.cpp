@@ -133,32 +133,40 @@ void SwitcherData::checkExeSwitch(bool& match, OBSWeakSource& scene, OBSWeakSour
 	GetCurrentWindowTitle(title);
 	for (auto& window : ignoreWindowsSwitches)
 	{
+		// True if ignored switch equals title
+		bool equals = (title == window);
 		// True if ignored switch matches title
 		bool matches = QString::fromStdString(title).contains(QRegularExpression(window.c_str()));
-		if (matches)
+
+		if (equals || matches)
 		{
 			ignored = true;
 			title = lastTitle;
+
 			break;
 		}
 	}
 	lastTitle = title;
 
-	// Check for regex match
+	// Check for match
 	GetProcessList(runningProcesses);
 	for (ExecutableSceneSwitch& s : executableSwitches)
 	{
-		// True if executable switch is running
-		bool running = (runningProcesses.indexOf(QRegularExpression(s.mExe)) != -1);
+		// True if executable switch is running (direct)
+		bool equals = runningProcesses.contains(s.mExe);
+		// True if executable switch is running (regex)
+		bool matches = (runningProcesses.indexOf(QRegularExpression(s.mExe)) != -1);
 		// True if focus is disabled OR window in focus
 		bool focus = (!s.mInFocus || isInFocus(s.mExe));
 		// True if current window is ignored AND executable switch matches last window
 		bool ignore = (ignored && QString::fromStdString(title).contains(QRegularExpression(s.mExe)));
-		if (running && (focus || ignore))
+
+		if ((equals || matches) && (focus || ignore))
 		{
 			match = true;
 			scene = s.mScene;
 			transition = s.mTransition;
+
 			break;
 		}
 	}

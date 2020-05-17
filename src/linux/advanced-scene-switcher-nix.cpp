@@ -295,7 +295,12 @@ bool isInFocus(const QString &exeToCheck)
 	string curWindow;
 	GetCurrentWindowTitle(curWindow);
 
-	return QString::fromStdString(curWindow).contains(QRegularExpression(exeToCheck));
+	// True if executable switch equals current window
+	bool equals = (exeToCheck.toStdString() == curWindow);
+	// True if executable switch matches current window
+	bool matches = QString::fromStdString(curWindow).contains(QRegularExpression(exeToCheck));
+
+	return (equals || matches);
 }
 
 

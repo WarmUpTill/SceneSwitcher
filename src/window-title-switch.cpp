@@ -234,28 +234,36 @@ void SwitcherData::checkWindowTitleSwitch(bool& match, OBSWeakSource& scene, OBS
 	GetCurrentWindowTitle(title);
 	for (auto& window : ignoreWindowsSwitches)
 	{
+		// True if ignored switch equals title
+		bool equals = (title == window);
 		// True if ignored switch matches title
 		bool matches = QString::fromStdString(title).contains(QRegularExpression(window.c_str()));
-		if (matches)
+
+		if (equals || matches)
 		{
 			title = lastTitle;
+
 			break;
 		}
 	}
 	lastTitle = title;
 
-	// Check for regex match
+	// Check for match
 	for (WindowSceneSwitch& s : windowSwitches)
 	{
+		// True if window switch equals title
+		bool equals = (title == s.window);
 		// True if window switch matches title
 		bool matches = QString::fromStdString(title).contains(QRegularExpression(s.window.c_str()));
 		// True if fullscreen is disabled OR window is fullscreen
 		bool fullscreen = (!s.fullscreen || isFullscreen());
-		if (matches && fullscreen)
+
+		if ((equals || matches) && fullscreen)
 		{
 			match = true;
 			scene = s.scene;
 			transition = s.transition;
+
 			break;
 		}
 	}
