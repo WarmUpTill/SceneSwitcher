@@ -126,21 +126,15 @@ void GetProcessList(QStringList& list)
     }
 }
 
-bool isInFocus(QString const& appQName)
+bool isInFocus(const QString &exeToCheck)
 {
-    QByteArray ba = appQName.toLocal8Bit();
-    const char * appName = ba.data();
-    @autoreleasepool {
-        NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-        NSRunningApplication *app = [ws frontmostApplication];
-        if (app) {
-            NSString *name = app.localizedName;
-            if (!name)
-                return false;
-            
-            const char *str = name.UTF8String;
-            return (str && *str && strcmp(appName,str) == 0 )? true : false;
-        }
-    }
-    return false;
+	string curWindow;
+	GetCurrentWindowTitle(curWindow);
+
+	// True if executable switch equals current window
+	bool equals = (exeToCheck.toStdString() == curWindow);
+	// True if executable switch matches current window
+	bool matches = QString::fromStdString(curWindow).contains(QRegularExpression(exeToCheck));
+
+	return (equals || matches);
 }
