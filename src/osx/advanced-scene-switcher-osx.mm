@@ -45,14 +45,14 @@ void GetCurrentWindowTitle(string &title)
     }
 }
 
-pair<int, int> getCursorPos() {     
-    pair<int, int> pos(0, 0);       
-    CGEventRef event = CGEventCreate(NULL);     
-    CGPoint cursorPos = CGEventGetLocation(event);      
-    CFRelease(event);       
-    pos.first = cursorPos.x;        
-    pos.second = cursorPos.y;       
-    return pos;     
+pair<int, int> getCursorPos() {
+    pair<int, int> pos(0, 0);
+    CGEventRef event = CGEventCreate(NULL);
+    CGPoint cursorPos = CGEventGetLocation(event);
+    CFRelease(event);
+    pos.first = cursorPos.x;
+    pos.second = cursorPos.y;
+    return pos;
  }
 
 bool isFullscreen() {
@@ -76,12 +76,12 @@ bool isFullscreen() {
             // Get the window size and position
             AXUIElementCopyAttributeValue(
                frontMostWindow, kAXSizeAttribute, (CFTypeRef *)&temp);
-            AXValueGetValue(temp, kAXValueTypeCGSize, &windowSize);             
+            AXValueGetValue(temp, kAXValueTypeCGSize, &windowSize);
             CFRelease(temp);
 
             AXUIElementCopyAttributeValue(
                frontMostWindow, kAXPositionAttribute, (CFTypeRef *)&temp);
-            AXValueGetValue(temp, kAXValueTypeCGPoint, &windowPosition);        
+            AXValueGetValue(temp, kAXValueTypeCGPoint, &windowPosition);
                CFRelease(temp);
 
             CGRect screenBound = CGDisplayBounds(CGMainDisplayID());
@@ -118,7 +118,7 @@ void GetProcessList(QStringList& list)
             NSString *name = app.localizedName;
             if (!name)
                 continue;
-            
+
             const char *str = name.UTF8String;
             if (str && *str)
                 list << (str);

@@ -303,7 +303,6 @@ bool isInFocus(const QString &exeToCheck)
 	return (equals || matches);
 }
 
-
 int secondsSinceLastInput()
 {
         time_t idle_time;
