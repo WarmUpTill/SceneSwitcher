@@ -230,7 +230,7 @@ struct MediaSwitch {
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 
 /********************************************************************************
- * SwitcherData  
+ * SwitcherData
  ********************************************************************************/
 struct SwitcherData {
 	thread th;

@@ -45,7 +45,8 @@ void GetCurrentWindowTitle(string &title)
     }
 }
 
-pair<int, int> getCursorPos() {
+pair<int, int> getCursorPos()
+{
     pair<int, int> pos(0, 0);
     CGEventRef event = CGEventCreate(NULL);
     CGPoint cursorPos = CGEventGetLocation(event);
@@ -53,9 +54,10 @@ pair<int, int> getCursorPos() {
     pos.first = cursorPos.x;
     pos.second = cursorPos.y;
     return pos;
- }
+}
 
-bool isFullscreen() {
+bool isFullscreen()
+{
     @autoreleasepool {
         AXValueRef temp;
         CGSize windowSize;

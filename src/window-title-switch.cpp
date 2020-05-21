@@ -106,9 +106,6 @@ void SceneSwitcher::on_remove_clicked()
 	delete item;
 }
 
-
-
-
 void SceneSwitcher::on_ignoreWindowsAdd_clicked()
 {
 	QString windowName = ui->ignoreWindowsWindows->currentText();
@@ -177,9 +174,6 @@ int SceneSwitcher::FindByData(const QString& window)
 	return idx;
 }
 
-
-
-
 int SceneSwitcher::IgnoreWindowsFindByData(const QString& window)
 {
 	int count = ui->ignoreWindows->count();
@@ -199,7 +193,6 @@ int SceneSwitcher::IgnoreWindowsFindByData(const QString& window)
 
 	return idx;
 }
-
 
 void SceneSwitcher::on_switches_currentRowChanged(int idx)
 {
@@ -228,7 +221,6 @@ void SceneSwitcher::on_switches_currentRowChanged(int idx)
 		}
 	}
 }
-
 
 void SceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
 {

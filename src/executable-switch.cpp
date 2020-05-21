@@ -16,7 +16,6 @@ int SceneSwitcher::executableFindByData(const QString& exe)
 	return -1;
 }
 
-
 void SceneSwitcher::on_executables_currentRowChanged(int idx)
 {
 	if (loading)
@@ -43,7 +42,6 @@ void SceneSwitcher::on_executables_currentRowChanged(int idx)
 		}
 	}
 }
-
 
 void SceneSwitcher::on_executableAdd_clicked()
 {
@@ -92,7 +90,6 @@ void SceneSwitcher::on_executableAdd_clicked()
 		}
 	}
 }
-
 
 void SceneSwitcher::on_executableRemove_clicked()
 {
