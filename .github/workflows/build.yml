@@ -8,6 +8,7 @@ on:
 
 env:
   PLUGIN_NAME: SceneSwitcher
+  LIB_NAME: advanced-scene-switcher
 
 jobs:
   macos64:
@@ -73,7 +74,7 @@ jobs:
           packagesbuild ./CI/macos/${{ env.PLUGIN_NAME }}.pkgproj
           cd -
           mkdir ./nightly
-          mv UI/frontend-plugins/${{ env.PLUGIN_NAME }}/advanced-scene-switcher.pkg ./nightly/${FILE_NAME}
+          mv UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ LIB_NAME }}.pkg ./nightly/${FILE_NAME}
       - name: Publish
         if: success()
         uses: actions/upload-artifact@v2-preview
@@ -161,7 +162,7 @@ jobs:
           FILE_NAME=${{ env.PLUGIN_NAME }}-$FILE_DATE-${{ github.sha }}-linux64.tar.gz
           echo "::set-env name=FILE_NAME::${FILE_NAME}"
           mkdir -p ./${{ env.PLUGIN_NAME }}/bin/64bit/
-          mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.so ./${{ env.PLUGIN_NAME }}/bin/64bit/${{ env.PLUGIN_NAME }}.so
+          mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.LIB_NAME }}.so ./${{ env.PLUGIN_NAME }}/bin/64bit/${{ env.LIB_NAME }}.so
           mv ./UI/frontend-plugins/${{ env.PLUGIN_NAME }}/data ./${{ env.PLUGIN_NAME }}/data
           tar -cvzf "${FILE_NAME}" ${{ env.PLUGIN_NAME }}
       - name: 'Publish'
@@ -215,7 +216,7 @@ jobs:
           $env:FILE_DATE=(Get-Date -UFormat "%F")
           $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-win64.zip"
           echo "::set-env name=FILE_NAME::${env:FILE_NAME}"
-          robocopy .\build64\rundir\RelWithDebInfo\obs-plugins\64bit\ .\build\obs-plugins\64bit ${{ env.PLUGIN_NAME }}.* /E /XF .gitignore
+          robocopy .\build64\rundir\RelWithDebInfo\obs-plugins\64bit\ .\build\obs-plugins\64bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
           robocopy .\build64\rundir\RelWithDebInfo\data\obs-plugins\${{ env.PLUGIN_NAME }}\ .\build\data\obs-plugins\${{ env.PLUGIN_NAME }}\ /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
       - name: Publish
@@ -270,7 +271,7 @@ jobs:
           $env:FILE_DATE=(Get-Date -UFormat "%F")
           $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-win32.zip"
           echo "::set-env name=FILE_NAME::${env:FILE_NAME}"
-          robocopy .\build32\rundir\RelWithDebInfo\obs-plugins\32bit\ .\build\obs-plugins\32bit ${{ env.PLUGIN_NAME }}.* /E /XF .gitignore
+          robocopy .\build32\rundir\RelWithDebInfo\obs-plugins\32bit\ .\build\obs-plugins\32bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
           robocopy .\build32\rundir\RelWithDebInfo\data\obs-plugins\${{ env.PLUGIN_NAME }}\ .\build\data\obs-plugins\${{ env.PLUGIN_NAME }}\ /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
       - name: Publish

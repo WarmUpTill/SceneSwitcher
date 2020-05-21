@@ -1,0 +1,6 @@
+brew "jack"
+brew "speexdsp"
+brew "cmake"
+brew "freetype"
+brew "fdk-aac"
+brew "https://gist.githubusercontent.com/DDRBoxman/9c7a2b08933166f4b61ed9a44b242609/raw/ef4de6c587c6bd7f50210eccd5bd51ff08e6de13/qt.rb"
