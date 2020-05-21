@@ -134,6 +134,7 @@ public slots:
  * Windowtitle helper
  ********************************************************************************/
 void GetWindowList(std::vector<std::string> &windows);
+void GetWindowList(QStringList &windows); // Overloaded
 void GetCurrentWindowTitle(std::string &title);
 bool isFullscreen();
 

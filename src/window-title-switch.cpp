@@ -1,12 +1,39 @@
 #include <obs-module.h>
 #include "headers/advanced-scene-switcher.hpp"
 
+bool isRunning(std::string &title)
+{
+	QStringList windows;
+
+	GetWindowList(windows);
+	// True if switch is running (direct)
+	bool equals = windows.contains(title.c_str());
+	// True if switch is running (regex)
+	bool matches = (windows.indexOf(QRegularExpression(title.c_str())) != -1);
+
+	return (equals || matches);
+}
+
+bool isFocused(std::string &title)
+{
+	string current;
+
+	GetCurrentWindowTitle(current);
+	// True if switch equals current window
+	bool equals = (title == current);
+	// True if switch matches current window
+	bool matches = QString::fromStdString(current).contains(QRegularExpression(title.c_str()));
+
+	return (equals || matches);
+}
+
 void SceneSwitcher::on_add_clicked()
 {
 	QString sceneName = ui->scenes->currentText();
 	QString windowName = ui->windows->currentText();
 	QString transitionName = ui->transitions->currentText();
 	bool fullscreen = ui->fullscreenCheckBox->isChecked();
+	bool focus = ui->focusCheckBox->isChecked();
 
 	if (windowName.isEmpty() || sceneName.isEmpty())
 		return;
@@ -15,7 +42,7 @@ void SceneSwitcher::on_add_clicked()
 	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
 	QVariant v = QVariant::fromValue(windowName);
 
-	QString text = MakeSwitchName(sceneName, windowName, transitionName, fullscreen);
+	QString text = MakeSwitchName(sceneName, windowName, transitionName, fullscreen, focus);
 
 	int idx = FindByData(windowName);
 
@@ -23,7 +50,7 @@ void SceneSwitcher::on_add_clicked()
 	{
 		lock_guard<mutex> lock(switcher->m);
 		switcher->windowSwitches.emplace_back(
-			source, windowName.toUtf8().constData(), transition, fullscreen);
+			source, windowName.toUtf8().constData(), transition, fullscreen, focus);
 
 		QListWidgetItem* item = new QListWidgetItem(text, ui->switches);
 		item->setData(Qt::UserRole, v);
@@ -44,6 +71,7 @@ void SceneSwitcher::on_add_clicked()
 					s.scene = source;
 					s.transition = transition;
 					s.fullscreen = fullscreen;
+					s.focus = focus;
 					break;
 				}
 			}
@@ -198,6 +226,7 @@ void SceneSwitcher::on_switches_currentRowChanged(int idx)
 			ui->windows->setCurrentText(window);
 			ui->transitions->setCurrentText(transitionName.c_str());
 			ui->fullscreenCheckBox->setChecked(s.fullscreen);
+			ui->focusCheckBox->setChecked(s.focus);
 			break;
 		}
 	}
@@ -229,18 +258,20 @@ void SceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
 void SwitcherData::checkWindowTitleSwitch(bool& match, OBSWeakSource& scene, OBSWeakSource& transition)
 {
 	string title;
+	bool ignored = false;
 
 	// Check if current window is ignored
 	GetCurrentWindowTitle(title);
 	for (auto& window : ignoreWindowsSwitches)
 	{
-		// True if ignored switch equals title
+		// True if ignored switch equals current window
 		bool equals = (title == window);
-		// True if ignored switch matches title
+		// True if ignored switch matches current window
 		bool matches = QString::fromStdString(title).contains(QRegularExpression(window.c_str()));
 
 		if (equals || matches)
 		{
+			ignored = true;
 			title = lastTitle;
 
 			break;
@@ -251,14 +282,14 @@ void SwitcherData::checkWindowTitleSwitch(bool& match, OBSWeakSource& scene, OBS
 	// Check for match
 	for (WindowSceneSwitch& s : windowSwitches)
 	{
-		// True if window switch equals title
-		bool equals = (title == s.window);
-		// True if window switch matches title
-		bool matches = QString::fromStdString(title).contains(QRegularExpression(s.window.c_str()));
-		// True if fullscreen is disabled OR window is fullscreen
-		bool fullscreen = (!s.fullscreen || isFullscreen());
+		// True if fullscreen is disabled OR current window is fullscreen
+		bool fullscreen = (!s.fullscreen || isFullscreen(s.window));
+		// True if focus is disabled OR switch is focused
+		bool focus = (!s.focus || isFocused(s.window));
+		// True if current window is ignored AND switch matches last window
+		bool ignore = (ignored && QString::fromStdString(title).contains(QRegularExpression(s.window.c_str())));
 
-		if ((equals || matches) && fullscreen)
+		if (isRunning(s.window) && (fullscreen && (focus || ignore)))
 		{
 			match = true;
 			scene = s.scene;

@@ -174,6 +174,17 @@ void GetWindowList(vector<string> &windows)
 	}
 }
 
+// Overloaded
+void GetWindowList(QStringList &windows)
+{
+	windows.clear();
+
+	for (size_t i = 0; i < getTopLevelWindows().size(); ++i){
+		if (GetWindowTitle(i) != "")
+			windows << QString::fromStdString(GetWindowTitle(i));
+	}
+}
+
 void GetCurrentWindowTitle(string &title)
 {
 	if (!ewmhIsSupported()) {

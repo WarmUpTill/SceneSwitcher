@@ -159,7 +159,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		string transitionName = GetWeakSourceName(s.transition);
 		QString text =
 			MakeSwitchName(sceneName.c_str(), s.window.c_str(),
-				       transitionName.c_str(), s.fullscreen);
+				       transitionName.c_str(), s.fullscreen, s.focus);
 
 		QListWidgetItem *item = new QListWidgetItem(text, ui->switches);
 		item->setData(Qt::UserRole, s.window.c_str());
@@ -429,7 +429,9 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 				obs_data_set_string(array_obj, "window_title",
 						    s.window.c_str());
 				obs_data_set_bool(array_obj, "fullscreen",
-						  s.fullscreen);
+							s.fullscreen);
+				obs_data_set_bool(array_obj, "focus",
+							s.focus);
 				obs_data_array_push_back(array, array_obj);
 				obs_source_release(source);
 				obs_source_release(transition);
@@ -906,11 +908,14 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 				obs_data_get_string(array_obj, "window_title");
 			bool fullscreen =
 				obs_data_get_bool(array_obj, "fullscreen");
+			bool focus =
+				obs_data_get_bool(array_obj, "focus");
 
 			switcher->windowSwitches.emplace_back(
 				GetWeakSourceByName(scene), window,
 				GetWeakTransitionByName(transition),
-				fullscreen);
+				fullscreen,
+				focus);
 
 			obs_data_release(array_obj);
 		}
