@@ -74,7 +74,7 @@ jobs:
           packagesbuild ./CI/macos/${{ env.PLUGIN_NAME }}.pkgproj
           cd -
           mkdir ./nightly
-          mv UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ LIB_NAME }}.pkg ./nightly/${FILE_NAME}
+          mv UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.LIB_NAME }}.pkg ./nightly/${FILE_NAME}
       - name: Publish
         if: success()
         uses: actions/upload-artifact@v2-preview
