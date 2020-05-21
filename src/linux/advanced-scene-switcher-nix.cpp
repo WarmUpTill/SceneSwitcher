@@ -341,15 +341,15 @@ void GetProcessList(QStringList &processes)
 	}
 }
 
-bool isInFocus(const QString &exeToCheck)
+bool isInFocus(const QString &executable)
 {
-	string curWindow;
-	GetCurrentWindowTitle(curWindow);
+	string current;
+	GetCurrentWindowTitle(current);
 
 	// True if executable switch equals current window
-	bool equals = (exeToCheck.toStdString() == curWindow);
+	bool equals = (executable.toStdString() == current);
 	// True if executable switch matches current window
-	bool matches = QString::fromStdString(curWindow).contains(QRegularExpression(exeToCheck));
+	bool matches = QString::fromStdString(current).contains(QRegularExpression(executable));
 
 	return (equals || matches);
 }

@@ -152,7 +152,7 @@ int secondsSinceLastInput();
  * Executable helper
  ********************************************************************************/
 void GetProcessList(QStringList &processes);
-bool isInFocus(const QString &exeToCheck);
+bool isInFocus(const QString &executable);
 
 /********************************************************************************
  * Sceneswitch helper

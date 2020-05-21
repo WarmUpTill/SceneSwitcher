@@ -46,7 +46,7 @@ static inline QString MakeSwitchNameExecutable(const QString &scene,
 		       transition + QStringLiteral("]: ") + value;
 	return QStringLiteral("[") + scene + QStringLiteral(", ") + transition +
 	       QStringLiteral("]: ") + value +
-	       QStringLiteral(" (only if window is focused)");
+	       QStringLiteral(" (only if focused)");
 }
 
 static inline QString MakeScreenRegionSwitchName(const QString &scene,

@@ -154,9 +154,9 @@ void SwitcherData::checkExeSwitch(bool& match, OBSWeakSource& scene, OBSWeakSour
 		bool equals = runningProcesses.contains(s.mExe);
 		// True if executable switch is running (regex)
 		bool matches = (runningProcesses.indexOf(QRegularExpression(s.mExe)) != -1);
-		// True if focus is disabled OR window in focus
+		// True if focus is disabled OR switch is focused
 		bool focus = (!s.mInFocus || isInFocus(s.mExe));
-		// True if current window is ignored AND executable switch matches last window
+		// True if current window is ignored AND switch matches last window
 		bool ignore = (ignored && QString::fromStdString(title).contains(QRegularExpression(s.mExe)));
 
 		if ((equals || matches) && (focus || ignore))
