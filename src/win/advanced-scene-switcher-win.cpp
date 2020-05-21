@@ -131,15 +131,27 @@ void GetProcessList(QStringList &processes) {
 	CloseHandle(procSnapshot);
 }
 
-bool isInFocus(const QString &exeToCheck)
+bool isInFocus(const QString &executable)
 {
-	string curWindow;
-	GetCurrentWindowTitle(curWindow);
+	// only checks if the current foreground window is from the same executable,
+	// may return true for any window from a program
+	HWND foregroundWindow = GetForegroundWindow();
+	DWORD processId = 0;
+	GetWindowThreadProcessId(foregroundWindow, &processId);
+
+	HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+	if (process == NULL) return false;
+
+	WCHAR executablePath[600];
+	GetModuleFileNameEx(process, 0, executablePath, 600);
+	CloseHandle(process);
+
+	QString file = QString::fromWCharArray(executablePath).split(QRegularExpression("(/|\\\\)")).back();
 
 	// True if executable switch equals current window
-	bool equals = (exeToCheck.toStdString() == curWindow);
+	bool equals = (executable == file);
 	// True if executable switch matches current window
-	bool matches = QString::fromStdString(curWindow).contains(QRegularExpression(exeToCheck));
+	bool matches = file.contains(QRegularExpression(executable));
 
 	return (equals || matches);
 }
