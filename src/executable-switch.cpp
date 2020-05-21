@@ -90,8 +90,6 @@ void SceneSwitcher::on_executableAdd_clicked()
 				}
 			}
 		}
-
-		ui->executables->sortItems();
 	}
 }
 

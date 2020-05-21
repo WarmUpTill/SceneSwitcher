@@ -76,8 +76,6 @@ void SceneSwitcher::on_add_clicked()
 				}
 			}
 		}
-
-		ui->switches->sortItems();
 	}
 }
 
@@ -129,7 +127,6 @@ void SceneSwitcher::on_ignoreWindowsAdd_clicked()
 
 		lock_guard<mutex> lock(switcher->m);
 		switcher->ignoreWindowsSwitches.emplace_back(windowName.toUtf8().constData());
-		ui->ignoreWindows->sortItems();
 	}
 }
 
