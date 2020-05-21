@@ -98,6 +98,39 @@ static bool ewmhIsSupported()
 	return ewmh_window != 0;
 }
 
+static QStringList getStates(Window window) {
+	QStringList states;
+
+	if (!ewmhIsSupported())
+		return states;
+
+	Atom wmState = XInternAtom(disp(), "_NET_WM_STATE", true), type;
+    int format;
+    unsigned long num, bytes;
+    unsigned char *data;
+
+	int status = XGetWindowProperty(
+		disp(),
+		window,
+		wmState,
+		0,
+		~0L,
+		false,
+		AnyPropertyType,
+		&type,
+		&format,
+		&num,
+		&bytes,
+		&data
+	);
+
+	if (status == Success)
+		for (unsigned long i = 0; i < num; i++)
+			states.append(QString(XGetAtomName(disp(), ((Atom*)data)[i])));
+
+	return states;
+}
+
 static std::vector<Window> getTopLevelWindows()
 {
 	std::vector<Window> res;
@@ -251,43 +284,50 @@ pair<int, int> getCursorPos()
 	return pos;
 }
 
-bool isFullscreen()
+bool isFullscreen(std::string &title)
 {
-	if (!ewmhIsSupported()) {
+	if (!ewmhIsSupported())
 		return false;
+
+	// Find switch in top level windows
+	Atom titleProperty = XInternAtom(disp(), "_NET_WM_NAME", true);
+	vector<Window> windows = getTopLevelWindows();
+	for (auto &window : windows)
+	{
+		XTextProperty text;
+		int status = XGetTextProperty(disp(), window, &text, titleProperty);
+		string name(reinterpret_cast<char*>(text.value));
+
+		if (status == 0 || name == "")
+			continue;
+
+		// True if switch equals window
+		bool equals = (title == name);
+		// True if switch matches window
+		bool matches = QString::fromStdString(name).contains(QRegularExpression(title.c_str()));
+
+		// If found, check if switch is fullscreen
+		if (equals || matches)
+		{
+			QStringList states = getStates(window);
+
+			if (!states.isEmpty())
+			{
+				// True if window is fullscreen
+				bool fullscreen = states.contains("_NET_WM_STATE_FULLSCREEN");
+				// True if window is maximized vertically
+				bool vertical = states.contains("_NET_WM_STATE_MAXIMIZED_VERT");
+				// True if window is maximized horizontally
+				bool horizontal = states.contains("_NET_WM_STATE_MAXIMIZED_HORZ");
+
+				return (fullscreen || (vertical && horizontal));
+			}
+
+			break;
+		}
 	}
 
-	Atom active = XInternAtom(disp(), "_NET_ACTIVE_WINDOW", true);
-	Atom actualType;
-	int format;
-	unsigned long num, bytes;
-	Window* data = 0;
-
-	Window rootWin = RootWindow(disp(), 0);
-	XGetWindowProperty(
-			disp(),
-			rootWin,
-			active,
-			0L,
-			~0L,
-			false,
-			AnyPropertyType,
-			&actualType,
-			&format,
-			&num,
-			&bytes,
-			(uint8_t**)&data);
-
-
-	XWindowAttributes window_attributes_return;
-	XWindowAttributes screen_attributes_return;
-
-	XGetWindowAttributes(disp(), rootWin, &screen_attributes_return);
-	XGetWindowAttributes(disp(), data[0], &window_attributes_return);
-
-	//menu bar is always 24 pixels in height
-	return (window_attributes_return.width >= screen_attributes_return.width &&
-	window_attributes_return.height + 24 >= screen_attributes_return.height) ? true : false;
+	return false;
 }
 
 //exe switch is not quite what is expected but it works for now

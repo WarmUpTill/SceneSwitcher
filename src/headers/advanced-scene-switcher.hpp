@@ -136,7 +136,7 @@ public slots:
 void GetWindowList(std::vector<std::string> &windows);
 void GetWindowList(QStringList &windows); // Overloaded
 void GetCurrentWindowTitle(std::string &title);
-bool isFullscreen();
+bool isFullscreen(std::string &title);
 
 /********************************************************************************
  * Screenregion helper
