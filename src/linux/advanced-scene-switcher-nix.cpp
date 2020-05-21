@@ -184,9 +184,11 @@ static std::string GetWindowTitle(size_t i)
 	char* name;
 
 	XTextProperty text;
-	int status = XGetWMName(disp(), w, &text);
+	Atom titleProperty = XInternAtom(disp(), "_NET_WM_NAME", true);
+	int status = XGetTextProperty(disp(), w, &text, titleProperty);
 	name = reinterpret_cast<char*>(text.value);
-	if (status >= Success && name != nullptr)
+
+	if (status != 0 && name != nullptr)
 	{
 		std::string str(name);
 		windowTitle = str;
@@ -248,10 +250,11 @@ void GetCurrentWindowTitle(string &title)
 			(uint8_t**)&data);
 
 	XTextProperty text;
-	int status = XGetWMName(disp(), data[0], &text);
+	Atom titleProperty = XInternAtom(disp(), "_NET_WM_NAME", true);
+	int status = XGetTextProperty(disp(), data[0], &text, titleProperty);
 	name = reinterpret_cast<char*>(text.value);
 
-	if (status >= Success && name != nullptr) {
+	if (status != 0 && name != nullptr) {
 		std::string str(name);
 		title = str;
 	}
