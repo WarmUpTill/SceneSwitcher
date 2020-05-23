@@ -577,7 +577,7 @@
          <item>
           <widget class="QLabel" name="label_9">
            <property name="text">
-            <string>is in focus</string>
+            <string>is focused</string>
            </property>
           </widget>
          </item>
