@@ -909,7 +909,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			bool fullscreen =
 				obs_data_get_bool(array_obj, "fullscreen");
 			bool focus =
-				obs_data_get_bool(array_obj, "focus");
+				obs_data_get_bool(array_obj, "focus")
+				|| !obs_data_has_user_value(array_obj, "focus");
 
 			switcher->windowSwitches.emplace_back(
 				GetWeakSourceByName(scene), window,
