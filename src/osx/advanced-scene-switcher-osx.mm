@@ -26,6 +26,27 @@ void GetWindowList(vector<string> &windows)
     }
 }
 
+// Overloaded
+void GetWindowList(QStringList &windows)
+{
+    windows.clear();
+
+    @autoreleasepool {
+        NSWorkspace *ws = [NSWorkspace sharedWorkspace];
+        NSArray *array = [ws runningApplications];
+        for (NSRunningApplication *app in array) {
+            NSString *name = app.localizedName;
+            if (!name)
+                continue;
+
+            const char *str = name.UTF8String;
+            if (str && *str)
+                windows.emplace_back(str);
+                windows << QString(str);
+        }
+    }
+}
+
 void GetCurrentWindowTitle(string &title)
 {
     title.resize(0);
@@ -56,7 +77,8 @@ pair<int, int> getCursorPos()
     return pos;
 }
 
-bool isFullscreen()
+// Argument added in lieu of fullscreen bug fix
+bool isFullscreen(std::string &title)
 {
     @autoreleasepool {
         AXValueRef temp;

@@ -58,6 +58,22 @@ void GetWindowList(vector<string>& windows)
 	}
 }
 
+// Overloaded
+void GetWindowList(QStringList &windows)
+{
+	windows.clear();
+
+	HWND window = GetWindow(GetDesktopWindow(), GW_CHILD);
+
+	while (window)
+	{
+		string title;
+		if (WindowValid(window) && GetWindowTitle(window, title))
+			windows << QString::fromStdString(title);
+		window = GetNextWindow(window, GW_HWNDNEXT);
+	}
+}
+
 void GetCurrentWindowTitle(string& title)
 {
 	HWND window = GetForegroundWindow();
@@ -87,7 +103,8 @@ pair<int, int> getCursorPos()
 	return pos;
 }
 
-bool isFullscreen()
+// Argument added in lieu of fullscreen bug fix
+bool isFullscreen(std::string &title)
 {
 	RECT appBounds;
 	RECT rc;
