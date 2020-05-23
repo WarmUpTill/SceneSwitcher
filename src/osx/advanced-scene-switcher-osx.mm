@@ -41,7 +41,6 @@ void GetWindowList(QStringList &windows)
 
             const char *str = name.UTF8String;
             if (str && *str)
-                windows.emplace_back(str);
                 windows << QString(str);
         }
     }
