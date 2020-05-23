@@ -47,6 +47,8 @@ static bool WindowValid(HWND window)
 
 void GetWindowList(vector<string>& windows)
 {
+	windows.resize(0);
+
 	HWND window = GetWindow(GetDesktopWindow(), GW_CHILD);
 
 	while (window)
