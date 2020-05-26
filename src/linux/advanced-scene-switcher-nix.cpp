@@ -299,9 +299,9 @@ bool isFullscreen(std::string &title)
 	{
 		XTextProperty text;
 		int status = XGetTextProperty(disp(), window, &text, titleProperty);
-		string name(reinterpret_cast<char*>(text.value));
+		char *name = reinterpret_cast<char*>(text.value);
 
-		if (status == 0 || name == "")
+		if (status == 0 || strcmp(name, "") == 0)
 			continue;
 
 		// True if switch equals window
