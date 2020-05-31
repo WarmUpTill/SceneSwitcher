@@ -42,6 +42,7 @@ public:
 	int executableFindByData(const QString &exe);
 	int IgnoreIdleWindowsFindByData(const QString &window);
 	int randomFindByData(const QString &scene);
+	int timeFindByData(const QString &timeStr);
 
 	void UpdateNonMatchingScene(const QString &name);
 	void UpdateAutoStopScene(const QString &name);
@@ -121,6 +122,10 @@ public slots:
 
 	void on_mediaAdd_clicked();
 	void on_mediaRemove_clicked();
+
+	void on_timeSwitches_currentRowChanged(int idx);
+	void on_timeAdd_clicked();
+	void on_timeRemove_clicked();
 
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();

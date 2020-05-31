@@ -53,6 +53,7 @@ if(BUILD_OUT_OF_TREE)
 		src/general.cpp
 		src/pause-switch.cpp
 		src/random.cpp
+		src/time-switch.cpp
 		)
 
 	set(advanced-scene-switcher_UI
@@ -182,6 +183,7 @@ else ()
 		src/general.cpp
 		src/pause-switch.cpp
 		src/random.cpp
+		src/time-switch.cpp
 		)
 
 	set(advanced-scene-switcher_UI

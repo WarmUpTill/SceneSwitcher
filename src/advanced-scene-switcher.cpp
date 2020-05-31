@@ -57,6 +57,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		ui->randomScenes->addItem(name);
 		ui->fileScenes->addItem(name);
 		ui->mediaScenes->addItem(name);
+		ui->timeScenes->addItem(name);
 		temp++;
 	}
 
@@ -91,6 +92,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	ui->sceneRoundTripScenes2->addItem(PREVIOUS_SCENE_NAME);
 	ui->idleScenes->addItem(PREVIOUS_SCENE_NAME);
 	ui->mediaScenes->addItem(PREVIOUS_SCENE_NAME);
+	ui->timeScenes->addItem(PREVIOUS_SCENE_NAME);
 
 	obs_frontend_source_list *transitions = new obs_frontend_source_list();
 	obs_frontend_get_transitions(transitions);
@@ -108,6 +110,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		ui->randomTransitions->addItem(name);
 		ui->fileTransitions->addItem(name);
 		ui->mediaTransitions->addItem(name);
+		ui->timeTransitions->addItem(name);
 	}
 
 	obs_frontend_source_list_free(transitions);
@@ -305,6 +308,19 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		item->setData(Qt::UserRole, listText);
 	}
 
+	for (auto &s : switcher->timeSwitches) {
+		string sceneName = (s.usePreviousScene)
+					   ? PREVIOUS_SCENE_NAME
+					   : GetWeakSourceName(s.scene);
+		string transitionName = GetWeakSourceName(s.transition);
+		QString listText = MakeTimeSwitchName(
+			sceneName.c_str(), transitionName.c_str(), s.time);
+
+		QListWidgetItem *item =
+			new QListWidgetItem(listText, ui->timeSwitches);
+		item->setData(Qt::UserRole, listText);
+	}
+
 	ui->idleCheckBox->setChecked(switcher->idleData.idleEnable);
 	ui->idleScenes->setCurrentText(
 		switcher->idleData.usePreviousScene
@@ -375,6 +391,9 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		case MEDIA_FUNC:
 			s = "Media";
 			break;
+		case TIME_FUNC:
+			s = "Time";
+			break;
 		}
 		QString text(s.c_str());
 		QListWidgetItem *item =
@@ -407,6 +426,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_array_t *randomArray = obs_data_array_create();
 		obs_data_array_t *fileArray = obs_data_array_create();
 		obs_data_array_t *mediaArray = obs_data_array_create();
+		obs_data_array_t *timeArray = obs_data_array_create();
 
 		switcher->Prune();
 
@@ -755,6 +775,35 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_release(array_obj);
 		}
 
+		for (TimeSwitch &s : switcher->timeSwitches) {
+			obs_data_t *array_obj = obs_data_create();
+
+			obs_source_t *sceneSource =
+				obs_weak_source_get_source(s.scene);
+			obs_source_t *transition =
+				obs_weak_source_get_source(s.transition);
+			if ((s.usePreviousScene || sceneSource) && transition) {
+				const char *sceneName =
+					obs_source_get_name(sceneSource);
+				const char *transitionName =
+					obs_source_get_name(transition);
+				obs_data_set_string(
+					array_obj, "scene",
+					s.usePreviousScene ? PREVIOUS_SCENE_NAME
+							   : sceneName);
+				obs_data_set_string(array_obj, "transition",
+						    transitionName);
+				obs_data_set_string(
+					array_obj, "time",
+					s.time.toString().toStdString().c_str());
+				obs_data_array_push_back(timeArray, array_obj);
+			}
+			obs_source_release(sceneSource);
+			obs_source_release(transition);
+
+			obs_data_release(array_obj);
+		}
+
 		string nonMatchingSceneName =
 			GetWeakSourceName(switcher->nonMatchingScene);
 
@@ -781,6 +830,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_set_array(obj, "randomSwitches", randomArray);
 		obs_data_set_array(obj, "fileSwitches", fileArray);
 		obs_data_set_array(obj, "mediaSwitches", mediaArray);
+		obs_data_set_array(obj, "timeSwitches", timeArray);
 
 		string autoStopSceneName =
 			GetWeakSourceName(switcher->autoStopScene);
@@ -826,6 +876,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 				 switcher->functionNamesByPriority[5]);
 		obs_data_set_int(obj, "priority6",
 				 switcher->functionNamesByPriority[6]);
+		obs_data_set_int(obj, "priority7",
+				 switcher->functionNamesByPriority[7]);
 
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
 
@@ -842,6 +894,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_array_release(randomArray);
 		obs_data_array_release(fileArray);
 		obs_data_array_release(mediaArray);
+		obs_data_array_release(timeArray);
 
 		obs_data_release(obj);
 	} else {
@@ -874,6 +927,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_get_array(obj, "fileSwitches");
 		obs_data_array_t *mediaArray =
 			obs_data_get_array(obj, "mediaSwitches");
+		obs_data_array_t *timeArray =
+			obs_data_get_array(obj, "timeSwitches");
 
 		if (!obj)
 			obj = obs_data_create();
@@ -1187,6 +1242,36 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 				GetWeakTransitionByName(transition), state,
 				restriction, time,
 				(strcmp(scene, PREVIOUS_SCENE_NAME) == 0));
+
+			obs_data_release(array_obj);
+		}
+
+		switcher->timeSwitches.clear();
+		count = obs_data_array_count(timeArray);
+
+		for (size_t i = 0; i < count; i++) {
+			obs_data_t *array_obj =
+				obs_data_array_item(timeArray, i);
+
+			const char *scene =
+				obs_data_get_string(array_obj, "scene");
+			const char *transition =
+				obs_data_get_string(array_obj, "transition");
+			QTime time = QTime::fromString(
+				obs_data_get_string(array_obj, "time"));
+
+			string timeSwitchStr =
+				MakeTimeSwitchName(scene, transition, time)
+					.toUtf8()
+					.constData();
+
+			switcher->timeSwitches.emplace_back(
+				GetWeakSourceByName(scene),
+				GetWeakTransitionByName(transition), time,
+				(strcmp(scene, PREVIOUS_SCENE_NAME) == 0),
+				timeSwitchStr);
+
+			obs_data_release(array_obj);
 		}
 
 		string autoStopScene =
@@ -1230,6 +1315,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_set_default_int(obj, "priority4", DEFAULT_PRIORITY_4);
 		obs_data_set_default_int(obj, "priority5", DEFAULT_PRIORITY_5);
 		obs_data_set_default_int(obj, "priority6", DEFAULT_PRIORITY_6);
+		obs_data_set_default_int(obj, "priority7", DEFAULT_PRIORITY_7);
 
 		switcher->functionNamesByPriority[0] =
 			(obs_data_get_int(obj, "priority0"));
@@ -1245,6 +1331,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			(obs_data_get_int(obj, "priority5"));
 		switcher->functionNamesByPriority[6] =
 			(obs_data_get_int(obj, "priority6"));
+		switcher->functionNamesByPriority[6] =
+			(obs_data_get_int(obj, "priority7"));
 		if (!switcher->prioFuncsValid()) {
 			switcher->functionNamesByPriority[0] =
 				(DEFAULT_PRIORITY_0);
@@ -1260,6 +1348,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 				(DEFAULT_PRIORITY_5);
 			switcher->functionNamesByPriority[6] =
 				(DEFAULT_PRIORITY_6);
+			switcher->functionNamesByPriority[7] =
+				(DEFAULT_PRIORITY_7);
 		}
 
 		obs_data_array_release(array);
@@ -1273,6 +1363,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_array_release(ignoreIdleWindowsArray);
 		obs_data_array_release(randomArray);
 		obs_data_array_release(fileArray);
+		obs_data_array_release(mediaArray);
+		obs_data_array_release(timeArray);
 
 		obs_data_release(obj);
 
@@ -1356,7 +1448,11 @@ void SwitcherData::Thread()
 			case MEDIA_FUNC:
 				checkMediaSwitch(match, scene, transition);
 				break;
+			case TIME_FUNC:
+				checkTimeSwitch(match, scene, transition);
+				break;
 			}
+
 			if (switcher->stop) {
 				goto endLoop;
 			}

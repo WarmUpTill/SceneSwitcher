@@ -23,6 +23,7 @@
 #define SCREEN_REGION_FUNC 4
 #define WINDOW_TITLE_FUNC 5
 #define MEDIA_FUNC 6
+#define TIME_FUNC 7
 
 #define DEFAULT_PRIORITY_0 READ_FILE_FUNC
 #define DEFAULT_PRIORITY_1 ROUND_TRIP_FUNC
@@ -31,6 +32,7 @@
 #define DEFAULT_PRIORITY_4 SCREEN_REGION_FUNC
 #define DEFAULT_PRIORITY_5 WINDOW_TITLE_FUNC
 #define DEFAULT_PRIORITY_6 MEDIA_FUNC
+#define DEFAULT_PRIORITY_7 TIME_FUNC
 
 using namespace std;
 
@@ -225,6 +227,26 @@ struct MediaSwitch {
 	}
 };
 
+struct TimeSwitch {
+	OBSWeakSource scene;
+	OBSWeakSource transition;
+	QTime time;
+	bool matched;
+	bool usePreviousScene;
+	string timeSwitchStr;
+
+	inline TimeSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
+			  QTime time_, bool usePreviousScene_,
+			  string timeSwitchStr_)
+		: scene(scene_),
+		  transition(transition_),
+		  time(time_),
+		  usePreviousScene(usePreviousScene_),
+		  timeSwitchStr(timeSwitchStr_)
+	{
+	}
+};
+
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 
 /********************************************************************************
@@ -279,10 +301,12 @@ struct SwitcherData {
 
 	vector<MediaSwitch> mediaSwitches;
 
+	vector<TimeSwitch> timeSwitches;
+
 	vector<int> functionNamesByPriority = vector<int>{
 		DEFAULT_PRIORITY_0, DEFAULT_PRIORITY_1, DEFAULT_PRIORITY_2,
 		DEFAULT_PRIORITY_3, DEFAULT_PRIORITY_4, DEFAULT_PRIORITY_5,
-		DEFAULT_PRIORITY_6};
+		DEFAULT_PRIORITY_6, DEFAULT_PRIORITY_7};
 
 	void Thread();
 	void Start();
@@ -313,6 +337,8 @@ struct SwitcherData {
 			 OBSWeakSource &transition, int &delay);
 	void checkMediaSwitch(bool &match, OBSWeakSource &scene,
 			      OBSWeakSource &transition);
+	void checkTimeSwitch(bool &match, OBSWeakSource &scene,
+			     OBSWeakSource &transition);
 
 	void Prune()
 	{
@@ -397,6 +423,13 @@ struct SwitcherData {
 			if (!WeakSourceValid(s.scene) ||
 			    !WeakSourceValid(s.transition))
 				fileSwitches.erase(fileSwitches.begin() + i--);
+		}
+
+		for (size_t i = 0; i < timeSwitches.size(); i++) {
+			TimeSwitch &s = timeSwitches[i];
+			if (!WeakSourceValid(s.scene) ||
+			    !WeakSourceValid(s.transition))
+				timeSwitches.erase(timeSwitches.begin() + i--);
 		}
 
 		if (!idleData.usePreviousScene &&
