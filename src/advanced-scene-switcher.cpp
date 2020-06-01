@@ -400,6 +400,10 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 			new QListWidgetItem(text, ui->priorityList);
 		item->setData(Qt::UserRole, text);
 	}
+
+	for (std::string p : switcher->threadPrioritiesNamesOrderdByPrio) {
+		ui->threadPriority->addItem(p.c_str());
+	}
 }
 
 /********************************************************************************
@@ -1382,7 +1386,6 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
  ********************************************************************************/
 void SwitcherData::Thread()
 {
-
 	//to avoid scene duplication when rapidly switching scene collection
 	this_thread::sleep_for(chrono::seconds(2));
 

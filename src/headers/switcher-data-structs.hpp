@@ -8,6 +8,7 @@
 #include <mutex>
 #include <fstream>
 #include <QDateTime>
+#include <QThread>
 #include "utility.hpp"
 
 #define DEFAULT_INTERVAL 300
@@ -307,6 +308,18 @@ struct SwitcherData {
 		DEFAULT_PRIORITY_0, DEFAULT_PRIORITY_1, DEFAULT_PRIORITY_2,
 		DEFAULT_PRIORITY_3, DEFAULT_PRIORITY_4, DEFAULT_PRIORITY_5,
 		DEFAULT_PRIORITY_6, DEFAULT_PRIORITY_7};
+
+	std::vector<std::string> threadPrioritiesNamesOrderdByPrio{
+		"Lowest", "Low", "Normal", "High", "Highest", "Time critical",
+	};
+	std::map<std::string, int> threadPriorities = {
+		{"Lowest", QThread::LowestPriority},
+		{"Low", QThread::LowPriority},
+		{"Normal", QThread::NormalPriority},
+		{"High", QThread::HighPriority},
+		{"Highest", QThread::HighestPriority},
+		{"Time critical", QThread::TimeCriticalPriority},
+	};
 
 	void Thread();
 	void Start();
