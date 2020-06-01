@@ -69,7 +69,7 @@ jobs:
         run: |
           cd UI/frontend-plugins/${{ env.PLUGIN_NAME }}
           install_name_tool -change @rpath/libobs-frontend-api.dylib @executable_path/../Frameworks/libobs-frontend-api.dylib ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
-          install_name_tool -change @rpath/libobs.0.dylib @executable_path/../Frameworks/libobs.0.dylib UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
+          install_name_tool -change @rpath/libobs.0.dylib @executable_path/../Frameworks/libobs.0.dylib ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
           install_name_tool -change /usr/local/opt/qt5/lib/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
           install_name_tool -change /usr/local/opt/qt5/lib/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
           install_name_tool -change /usr/local/opt/qt5/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
