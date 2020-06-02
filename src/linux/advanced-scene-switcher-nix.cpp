@@ -193,9 +193,8 @@ static std::string GetWindowTitle(size_t i)
 	{
 		std::string str(name);
 		windowTitle = str;
+		XFree(name);
 	}
-
-	XFree(name);
 
 	return windowTitle;
 }
@@ -262,9 +261,8 @@ void GetCurrentWindowTitle(string &title)
 	if (status != 0 && name != nullptr) {
 		std::string str(name);
 		title = str;
+		XFree(name);
 	}
-
-	XFree(name);
 }
 
 pair<int, int> getCursorPos()
