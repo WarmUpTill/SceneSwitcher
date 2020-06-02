@@ -35,7 +35,7 @@
          <item>
           <widget class="QLabel" name="label_55">
            <property name="text">
-            <string>WARNING! Condition checking interval must be at least as long as the duration of transitions to avoid scene locking</string>
+            <string>WARNING! Condition checking interval must be greater than the duration of transitions to avoid scene locking</string>
            </property>
           </widget>
          </item>
