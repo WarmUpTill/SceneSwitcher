@@ -8,9 +8,6 @@ if(BUILD_OUT_OF_TREE)
 	set(CMAKE_PREFIX_PATH "${QTDIR}")
 	set(CMAKE_INCLUDE_CURRENT_DIR ON)
 	list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/external")
-	set(CMAKE_AUTOMOC ON)
-	set(CMAKE_AUTOUIC ON)
-
 
 	include(external/FindLibObs.cmake)
 	find_package(LibObs REQUIRED)
@@ -56,6 +53,7 @@ if(BUILD_OUT_OF_TREE)
 		src/general.cpp
 		src/pause-switch.cpp
 		src/random.cpp
+		src/time-switch.cpp
 		)
 
 	set(advanced-scene-switcher_UI
@@ -81,6 +79,10 @@ if(BUILD_OUT_OF_TREE)
 		set(advanced-scene-switcher_PLATFORM_LIBS
 			Xss)
 	endif()
+
+	qt5_wrap_ui(advanced-scene-switcher_UI_HEADERS
+		${advanced-scene-switcher_UI}
+		${advanced-scene-switcher_PLATFORM_UI})
 
 	add_library(advanced-scene-switcher MODULE
 		${advanced-scene-switcher_HEADERS}
@@ -181,7 +183,9 @@ else ()
 		src/general.cpp
 		src/pause-switch.cpp
 		src/random.cpp
+		src/time-switch.cpp
 		)
+
 	set(advanced-scene-switcher_UI
 		${advanced-scene-switcher_UI}
 		forms/advanced-scene-switcher.ui
@@ -190,13 +194,11 @@ else ()
 	if(WIN32)
 		set(advanced-scene-switcher_PLATFORM_SOURCES
 			src/win/advanced-scene-switcher-win.cpp)
-
 	elseif(APPLE)
 		set(advanced-scene-switcher_PLATFORM_SOURCES
 			src/osx/advanced-scene-switcher-osx.mm)
 		set_source_files_properties(advanced-scene-switcher-osx.mm
 			PROPERTIES COMPILE_FLAGS "-fobjc-arc")
-
 		set(advanced-scene-switcher_PLATFORM_LIBS
 			${COCOA})
 	else()
@@ -217,6 +219,7 @@ else ()
 		${advanced-scene-switcher_PLATFORM_SOURCES}
 		${advanced-scene-switcher_PLATFORM_HEADERS}
 		)
+
 	target_link_libraries(advanced-scene-switcher
 		${advanced-scene-switcher_PLATFORM_LIBS}
 		obs-frontend-api

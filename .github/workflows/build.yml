@@ -1,0 +1,284 @@
+name: build obs plugin
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  PLUGIN_NAME: SceneSwitcher
+  LIB_NAME: advanced-scene-switcher
+
+jobs:
+  macos64:
+    name: "macOS 64-bit"
+    runs-on: [macos-latest]
+    env:
+      QT_VERSION: 5.14.1
+      OSX_DEPS_VERSION: '2020-04-07'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: obsproject/obs-studio
+          submodules: 'recursive'
+      - name: "Checkout plugin"
+        uses: actions/checkout@v2
+        with:
+          path: UI/frontend-plugins/${{ env.PLUGIN_NAME }}
+      - name: Fetch Git Tags
+        run: |
+          cd UI/frontend-plugins/${{ env.PLUGIN_NAME }}
+          git fetch --prune --tags --unshallow
+      - name: 'Install prerequisites (Homebrew)'
+        shell: bash
+        run: |
+          cd UI/frontend-plugins/${{ env.PLUGIN_NAME }}/CI/macos
+          brew bundle
+          cd -
+      - name: 'Install prerequisite: Pre-built dependencies'
+        shell: bash
+        run: |
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.OSX_DEPS_VERSION }}/osx-deps-${{ env.OSX_DEPS_VERSION }}.tar.gz
+          tar -xf ./osx-deps-${{ env.OSX_DEPS_VERSION }}.tar.gz -C "/tmp"
+      - name: Configure
+        shell: bash
+        run: |
+          echo "add_subdirectory(${{ env.PLUGIN_NAME }})" >> UI/frontend-plugins/CMakeLists.txt
+          mkdir ./build
+          cd ./build
+          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DDepsPath="/tmp/obsdeps" -DQTDIR="/usr/local/Cellar/qt/${{ env.QT_VERSION }}" ..
+          cd -
+      - name: Build
+        shell: bash
+        run: |
+          set -e
+          cd ./build
+          make -j4
+          cd -
+      - name: 'Install prerequisite: Packages app'
+        if: success()
+        shell: bash
+        run: |
+          curl -L -O https://s3-us-west-2.amazonaws.com/obs-nightly/Packages.pkg
+          sudo installer -pkg ./Packages.pkg -target /
+      - name: Package
+        if: success()
+        shell: bash
+        run: |
+          cd UI/frontend-plugins/${{ env.PLUGIN_NAME }}
+          install_name_tool -change @rpath/libobs-frontend-api.dylib @executable_path/../Frameworks/libobs-frontend-api.dylib ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
+          install_name_tool -change @rpath/libobs.0.dylib @executable_path/../Frameworks/libobs.0.dylib ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
+          install_name_tool -change /usr/local/opt/qt5/lib/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
+          install_name_tool -change /usr/local/opt/qt5/lib/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
+          install_name_tool -change /usr/local/opt/qt5/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
+          FILE_DATE=$(date +%Y-%m-%d)
+          FILE_NAME=${{ env.PLUGIN_NAME }}-$FILE_DATE-${{ github.sha }}-macos.pkg
+          echo "::set-env name=FILE_NAME::${FILE_NAME}"
+          packagesbuild ./CI/macos/${{ env.PLUGIN_NAME }}.pkgproj
+          cd -
+          mkdir ./nightly
+          mv UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.pkg ./nightly/${FILE_NAME}
+      - name: Publish
+        if: success()
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: '${{ env.FILE_NAME }}'
+          path: ./nightly/*.pkg
+  ubuntu64:
+    name: 'Linux/Ubuntu 64-bit'
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: obsproject/obs-studio
+          submodules: 'recursive'
+      - name: "Checkout plugin"
+        uses: actions/checkout@v2
+        with:
+          path: UI/frontend-plugins/${{ env.PLUGIN_NAME }}
+      - name: Add plugin to obs cmake
+        shell: bash
+        run: echo "add_subdirectory(${{ env.PLUGIN_NAME }})" >> UI/frontend-plugins/CMakeLists.txt
+      - name: Fetch Git Tags
+        run: git fetch --prune --tags --unshallow
+      - name: Install prerequisites (Apt)
+        shell: bash
+        run: |
+          sudo dpkg --add-architecture amd64
+          sudo apt-get -qq update
+          sudo apt-get install -y \
+           build-essential \
+           checkinstall \
+           cmake \
+           libasound2-dev \
+           libavcodec-dev \
+           libavdevice-dev \
+           libavfilter-dev \
+           libavformat-dev \
+           libavutil-dev \
+           libcurl4-openssl-dev \
+           libfdk-aac-dev \
+           libfontconfig-dev \
+           libfreetype6-dev \
+           libgl1-mesa-dev \
+           libjack-jackd2-dev \
+           libjansson-dev \
+           libluajit-5.1-dev \
+           libpulse-dev \
+           libqt5x11extras5-dev \
+           libspeexdsp-dev \
+           libswresample-dev \
+           libswscale-dev \
+           libudev-dev \
+           libv4l-dev \
+           libva-dev \
+           libvlc-dev \
+           libx11-dev \
+           libx264-dev \
+           libxcb-randr0-dev \
+           libxcb-shm0-dev \
+           libxcb-xinerama0-dev \
+           libxcomposite-dev \
+           libxinerama-dev \
+           libmbedtls-dev \
+           pkg-config \
+           python3-dev \
+           qtbase5-dev \
+           libqt5svg5-dev \
+           swig \
+           libxss-dev
+      - name: 'Configure'
+        shell: bash
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/obs-studio-portable" -DBUILD_CAPTIONS=OFF -DWITH_RTMPS=OFF -DBUILD_BROWSER=OFF ..
+      - name: 'Build'
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: make -j4
+      - name: 'Package'
+        shell: bash
+        run: |
+          FILE_DATE=$(date +%Y-%m-%d)
+          FILE_NAME=${{ env.PLUGIN_NAME }}-$FILE_DATE-${{ github.sha }}-linux64.tar.gz
+          echo "::set-env name=FILE_NAME::${FILE_NAME}"
+          mkdir -p ./${{ env.PLUGIN_NAME }}/bin/64bit/
+          mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.LIB_NAME }}.so ./${{ env.PLUGIN_NAME }}/bin/64bit/${{ env.LIB_NAME }}.so
+          tar -cvzf "${FILE_NAME}" ${{ env.PLUGIN_NAME }}
+      - name: 'Publish'
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: '${{ env.FILE_NAME }}'
+          path: '*.tar.gz'
+  win64:
+    name: Windows 64-bit
+    runs-on: [windows-latest]
+    env:
+      QT_VERSION: 5.10.1
+      CMAKE_GENERATOR: "Visual Studio 16 2019"
+      CMAKE_SYSTEM_VERSION: "10.0.18363.657"
+    steps:
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.0
+      - name: Checkout obs
+        uses: actions/checkout@v2
+        with:
+          repository: obsproject/obs-studio
+          submodules: 'recursive'
+      - name: Checkout plugin
+        uses: actions/checkout@v2
+        with:
+          path: UI/frontend-plugins/${{ env.PLUGIN_NAME}}
+      - name: Add plugin to obs cmake
+        shell: cmd
+        run: echo add_subdirectory(${{ env.PLUGIN_NAME }}) >> UI/frontend-plugins/CMakeLists.txt
+      - name: Fetch Git Tags
+        run: git fetch --prune --tags --unshallow
+      - name: 'Install prerequisite: QT'
+        run: |
+          curl -kLO https://cdn-fastly.obsproject.com/downloads/Qt_${{ env.QT_VERSION }}.7z -f --retry 5 -C -
+          7z x Qt_${{ env.QT_VERSION }}.7z -o"${{ github.workspace }}/cmbuild/QT"
+      - name: 'Install prerequisite: Pre-built dependencies'
+        run: |
+          curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies2017.zip -f --retry 5 -C -
+          7z x dependencies2017.zip -o"${{ github.workspace }}/cmbuild/deps"
+      - name: Configure
+        run: |
+          mkdir ./build
+          mkdir ./build64
+          cd ./build64
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=false -DBUILD_CAPTIONS=false -DCOMPILE_D3D12_HOOK=false -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017_64" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
+      - name: Build
+        run: msbuild /m /p:Configuration=RelWithDebInfo .\build64\obs-studio.sln
+      - name: Package
+        if: success()
+        run: |
+          $env:FILE_DATE=(Get-Date -UFormat "%F")
+          $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-win64.zip"
+          echo "::set-env name=FILE_NAME::${env:FILE_NAME}"
+          robocopy .\build64\rundir\RelWithDebInfo\obs-plugins\64bit\ .\build\obs-plugins\64bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
+          7z a ${env:FILE_NAME} .\build\*
+      - name: Publish
+        if: success()
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: '${{ env.FILE_NAME }}'
+          path: '*-win64.zip'
+  win32:
+    name: Windows 32-bit
+    runs-on: [windows-latest]
+    env:
+      QT_VERSION: 5.10.1
+      CMAKE_GENERATOR: "Visual Studio 16 2019"
+      CMAKE_SYSTEM_VERSION: "10.0.18363.657"
+    steps:
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.0
+      - name: Checkout obs
+        uses: actions/checkout@v2
+        with:
+          repository: obsproject/obs-studio
+          submodules: 'recursive'
+      - name: Checkout plugin
+        uses: actions/checkout@v2
+        with:
+          path: UI/frontend-plugins/${{ env.PLUGIN_NAME }}
+      - name: Add plugin to obs cmake
+        shell: cmd
+        run: echo add_subdirectory(${{ env.PLUGIN_NAME }}) >> UI/frontend-plugins/CMakeLists.txt
+      - name: Fetch Git Tags
+        run: git fetch --prune --tags --unshallow
+      - name: 'Install prerequisite: QT'
+        run: |
+          curl -kLO https://cdn-fastly.obsproject.com/downloads/Qt_${{ env.QT_VERSION }}.7z -f --retry 5 -C -
+          7z x Qt_${{ env.QT_VERSION }}.7z -o"${{ github.workspace }}/cmbuild/QT"
+      - name: 'Install prerequisite: Pre-built dependencies'
+        run: |
+          curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies2017.zip -f --retry 5 -C -
+          7z x dependencies2017.zip -o"${{ github.workspace }}/cmbuild/deps"
+      - name: Configure
+        run: |
+          mkdir ./build
+          mkdir ./build32
+          cd ./build32
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=false -DBUILD_CAPTIONS=false -DCOMPILE_D3D12_HOOK=false -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
+      - name: Build
+        run: msbuild /m /p:Configuration=RelWithDebInfo .\build32\obs-studio.sln
+      - name: Package
+        if: success()
+        run: |
+          $env:FILE_DATE=(Get-Date -UFormat "%F")
+          $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-win32.zip"
+          echo "::set-env name=FILE_NAME::${env:FILE_NAME}"
+          robocopy .\build32\rundir\RelWithDebInfo\obs-plugins\32bit\ .\build\obs-plugins\32bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
+          7z a ${env:FILE_NAME} .\build\*
+      - name: Publish
+        if: success()
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: '${{ env.FILE_NAME }}'
+          path: '*-win32.zip'

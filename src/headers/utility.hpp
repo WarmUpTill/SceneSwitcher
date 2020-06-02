@@ -5,9 +5,9 @@
 #include "switcher-data-structs.hpp"
 using namespace std;
 
-static inline bool WeakSourceValid(obs_weak_source_t* ws)
+static inline bool WeakSourceValid(obs_weak_source_t *ws)
 {
-	obs_source_t* source = obs_weak_source_get_source(ws);
+	obs_source_t *source = obs_weak_source_get_source(ws);
 	if (source)
 		obs_source_release(source);
 	return !!source;
@@ -119,7 +119,7 @@ static inline QString MakeFileSwitchName(const QString &scene,
 	return switchName;
 }
 
-typedef enum  {
+typedef enum {
 	TIME_RESTRICTION_NONE,
 	TIME_RESTRICTION_SHORTER,
 	TIME_RESTRICTION_LONGER,
@@ -168,6 +168,15 @@ MakeMediaSwitchName(const QString &source, const QString &scene,
 		switchName += std::to_string(time).c_str();
 		switchName += QStringLiteral(" ms");
 	}
+	return switchName;
+}
+
+static inline QString MakeTimeSwitchName(const QString &scene,
+					 const QString &transition, QTime &time)
+{
+	QString switchName = QStringLiteral("At ") + time.toString() +
+			     QStringLiteral(" switch to ") + scene +
+			     QStringLiteral(" using ") + transition;
 	return switchName;
 }
 
