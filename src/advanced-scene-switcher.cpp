@@ -64,8 +64,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
 		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
-		if (obs_source_media_get_state(source) !=
-		    OBS_MEDIA_STATE_NONE) {
+		if (strcmp(obs_source_get_id(source), "ffmpeg_source") == 0) {
 			const char *name = obs_source_get_name(source);
 			combo->addItem(name);
 		}
