@@ -1392,6 +1392,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
  ********************************************************************************/
 void SwitcherData::Thread()
 {
+	blog(LOG_INFO, "Advanced Scene Switcher started");
 	//to avoid scene duplication when rapidly switching scene collection
 	this_thread::sleep_for(chrono::seconds(2));
 
@@ -1483,7 +1484,8 @@ void SwitcherData::Thread()
 			switchScene(scene, transition, lock);
 		}
 	}
-endLoop:;
+endLoop:
+	blog(LOG_INFO, "Advanced Scene Switcher stopped");
 }
 
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
