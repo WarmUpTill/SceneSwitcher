@@ -184,8 +184,9 @@ static std::string GetWindowTitle(size_t i)
 	char* name;
 
 	XTextProperty text;
-	Atom titleProperty = XInternAtom(disp(), "_NET_WM_NAME", true);
-	int status = XGetTextProperty(disp(), w, &text, titleProperty);
+	int status = XGetTextProperty(disp(), w, &text, XInternAtom(disp(), "_NET_WM_NAME", true));
+	if (status == 0)
+		status = XGetTextProperty(disp(), w, &text, XInternAtom(disp(), "WM_NAME", true));
 	name = reinterpret_cast<char*>(text.value);
 
 	if (status != 0 && name != nullptr)
@@ -235,7 +236,7 @@ void GetCurrentWindowTitle(string &title)
 
 	Window rootWin = RootWindow(disp(), 0);
 
-	XGetWindowProperty(
+	int xstatus = XGetWindowProperty(
 			disp(),
 			rootWin,
 			active,
@@ -249,9 +250,13 @@ void GetCurrentWindowTitle(string &title)
 			&bytes,
 			(uint8_t**)&data);
 
+	int status = 0;
 	XTextProperty text;
-	Atom titleProperty = XInternAtom(disp(), "_NET_WM_NAME", true);
-	int status = XGetTextProperty(disp(), data[0], &text, titleProperty);
+	if (xstatus == Success) {
+		status = XGetTextProperty(disp(), data[0], &text, XInternAtom(disp(), "_NET_WM_NAME", true));
+		if (status == 0)
+			status = XGetTextProperty(disp(), data[0], &text, XInternAtom(disp(), "WM_NAME", true));
+	}
 	name = reinterpret_cast<char*>(text.value);
 
 	if (status != 0 && name != nullptr) {
@@ -293,15 +298,16 @@ bool isFullscreen(std::string &title)
 		return false;
 
 	// Find switch in top level windows
-	Atom titleProperty = XInternAtom(disp(), "_NET_WM_NAME", true);
 	vector<Window> windows = getTopLevelWindows();
 	for (auto &window : windows)
 	{
 		XTextProperty text;
-		int status = XGetTextProperty(disp(), window, &text, titleProperty);
+		int status = XGetTextProperty(disp(), window, &text, XInternAtom(disp(), "_NET_WM_NAME", true));
+		if (status == 0)
+			status = XGetTextProperty(disp(), window, &text, XInternAtom(disp(), "WM_NAME", true));
 		char *name = reinterpret_cast<char*>(text.value);
 
-		if (status == 0 || strcmp(name, "") == 0)
+		if (status == 0 || name == nullptr)
 			continue;
 
 		// True if switch equals window
