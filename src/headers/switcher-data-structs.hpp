@@ -212,18 +212,20 @@ struct MediaSwitch {
 	time_restriction restriction;
 	bool matched;
 	bool usePreviousScene;
+	std::string mediaSwitchStr;
 
 	inline MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
 			   OBSWeakSource transition_, obs_media_state state_,
 			   time_restriction restriction_, uint64_t time_,
-			   bool usePreviousScene_)
+			   bool usePreviousScene_, std::string mediaSwitchStr_)
 		: scene(scene_),
 		  source(source_),
 		  transition(transition_),
 		  state(state_),
 		  restriction(restriction_),
 		  time(time_),
-		  usePreviousScene(usePreviousScene_)
+		  usePreviousScene(usePreviousScene_),
+		  mediaSwitchStr(mediaSwitchStr_)
 	{
 	}
 };

@@ -1240,12 +1240,19 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 					array_obj, "restriction");
 			uint64_t time = obs_data_get_int(array_obj, "time");
 
+			string mediaStr = MakeMediaSwitchName(source, scene,
+							      transition, state,
+							      restriction, time)
+						  .toUtf8()
+						  .constData();
+
 			switcher->mediaSwitches.emplace_back(
 				GetWeakSourceByName(scene),
 				GetWeakSourceByName(source),
 				GetWeakTransitionByName(transition), state,
 				restriction, time,
-				(strcmp(scene, PREVIOUS_SCENE_NAME) == 0));
+				(strcmp(scene, PREVIOUS_SCENE_NAME) == 0),
+				mediaStr);
 
 			obs_data_release(array_obj);
 		}
