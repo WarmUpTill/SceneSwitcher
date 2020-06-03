@@ -453,6 +453,16 @@ struct SwitcherData {
 		    !WeakSourceValid(idleData.transition)) {
 			idleData.idleEnable = false;
 		}
+
+		for (size_t i = 0; i < mediaSwitches.size(); i++) {
+			MediaSwitch &s = mediaSwitches[i];
+			if ((!s.usePreviousScene &&
+			     !WeakSourceValid(s.scene)) ||
+			    !WeakSourceValid(s.source) ||
+			    !WeakSourceValid(s.transition))
+				mediaSwitches.erase(mediaSwitches.begin() +
+						    i--);
+		}
 	}
 	inline ~SwitcherData() { Stop(); }
 };
