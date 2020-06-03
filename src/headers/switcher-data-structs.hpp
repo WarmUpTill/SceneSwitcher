@@ -442,7 +442,8 @@ struct SwitcherData {
 
 		for (size_t i = 0; i < timeSwitches.size(); i++) {
 			TimeSwitch &s = timeSwitches[i];
-			if (!WeakSourceValid(s.scene) ||
+			if ((!s.usePreviousScene &&
+			     !WeakSourceValid(s.scene)) ||
 			    !WeakSourceValid(s.transition))
 				timeSwitches.erase(timeSwitches.begin() + i--);
 		}
