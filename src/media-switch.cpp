@@ -118,5 +118,6 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 			transition = mediaSwitch.transition;
 		}
 		mediaSwitch.matched = matched;
+		obs_source_release(source);
 	}
 }
