@@ -73,17 +73,23 @@ void SceneSwitcher::on_mediaRemove_clicked()
 	if (!item)
 		return;
 
-	int idx = ui->mediaSwitches->currentRow();
-	if (idx == -1)
-		return;
-
+	string mediaStr =
+		item->data(Qt::UserRole).toString().toUtf8().constData();
 	{
 		lock_guard<mutex> lock(switcher->m);
-
 		auto &switches = switcher->mediaSwitches;
-		switches.erase(switches.begin() + idx);
+
+		for (auto it = switches.begin(); it != switches.end(); ++it) {
+			auto &s = *it;
+
+			if (s.mediaSwitchStr == mediaStr) {
+				switches.erase(it);
+				break;
+			}
+		}
 	}
-	qDeleteAll(ui->mediaSwitches->selectedItems());
+
+	delete item;
 }
 
 void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
