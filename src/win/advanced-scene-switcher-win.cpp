@@ -105,22 +105,36 @@ pair<int, int> getCursorPos()
 	return pos;
 }
 
-// Argument added in lieu of fullscreen bug fix
 bool isFullscreen(std::string &title)
 {
 	RECT appBounds;
 	RECT rc;
+
+	HWND hwnd = GetWindow(GetDesktopWindow(), GW_CHILD);
+	while (hwnd)
+	{
+		string wtitle;
+		if (WindowValid(hwnd) && GetWindowTitle(hwnd, wtitle) && wtitle == title)
+			break;
+
+		hwnd = GetNextWindow(hwnd, GW_HWNDNEXT);
+	}
+
 	GetWindowRect(GetDesktopWindow(), &rc);
-	HWND hwnd = GetForegroundWindow();
 	if (hwnd != GetDesktopWindow() && hwnd != GetShellWindow())
 	{
 		GetWindowRect(hwnd, &appBounds);
-		if (rc.bottom == appBounds.bottom && rc.top == appBounds.top && rc.left == appBounds.left
-			&& rc.right == appBounds.right)
-		{
+		if
+		(
+			rc.bottom == appBounds.bottom
+			&& rc.top == appBounds.top
+			&& rc.left == appBounds.left
+			&& rc.right == appBounds.right
+		) {
 			return true;
 		}
 	}
+
 	return false;
 }
 
