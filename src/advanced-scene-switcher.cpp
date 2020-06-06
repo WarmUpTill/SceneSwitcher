@@ -353,7 +353,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		ui->readPathLineEdit->setDisabled(true);
 	}
 
-	if (switcher->th.joinable())
+	if (switcher->th && switcher->th->isRunning())
 		SetStarted();
 	else
 		SetStopped();
@@ -400,8 +400,17 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		item->setData(Qt::UserRole, text);
 	}
 
-	for (std::string p : switcher->threadPrioritiesNamesOrderdByPrio) {
-		ui->threadPriority->addItem(p.c_str());
+	for (int i = 0; i < switcher->threadPriorities.size(); ++i) {
+		ui->threadPriority->addItem(
+			switcher->threadPriorities[i].name.c_str());
+		ui->threadPriority->setItemData(
+			i, switcher->threadPriorities[i].description.c_str(),
+			Qt::ToolTipRole);
+		if (switcher->threadPriority ==
+		    switcher->threadPriorities[i].value) {
+			ui->threadPriority->setCurrentText(
+				switcher->threadPriorities[i].name.c_str());
+		}
 	}
 }
 
@@ -881,6 +890,9 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 				 switcher->functionNamesByPriority[6]);
 		obs_data_set_int(obj, "priority7",
 				 switcher->functionNamesByPriority[7]);
+
+		obs_data_set_int(obj, "threadPriority",
+				 switcher->threadPriority);
 
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
 
@@ -1362,6 +1374,11 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 				(DEFAULT_PRIORITY_7);
 		}
 
+		obs_data_set_default_int(obj, "threadPriority",
+					 QThread::NormalPriority);
+		switcher->threadPriority =
+			obs_data_get_int(obj, "threadPriority");
+
 		obs_data_array_release(array);
 		obs_data_array_release(screenRegionArray);
 		obs_data_array_release(pauseScenesArray);
@@ -1544,19 +1561,21 @@ bool SwitcherData::sceneChangedDuringWait()
 
 void SwitcherData::Start()
 {
-	if (!th.joinable()) {
+	if (!(th && th->isRunning())) {
 		stop = false;
-		switcher->th = thread([]() { switcher->Thread(); });
+		switcher->th = QThread::create([]() { switcher->Thread(); });
+		switcher->th->start((QThread::Priority)switcher->threadPriority);
 	}
 }
 
+
 void SwitcherData::Stop()
 {
-	if (th.joinable()) {
+	if (th && th->isRunning()) {
 		switcher->stop = true;
 		transitionCv.notify_one();
 		cv.notify_one();
-		th.join();
+		th->wait();
 	}
 }
 

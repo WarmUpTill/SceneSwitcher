@@ -8,7 +8,7 @@ void startHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pr
 
 	if (pressed)
 	{
-		if (!switcher->th.joinable())
+		if (!(switcher->th && switcher->th->isRunning()))
 			switcher->Start();
 	}
 
@@ -43,7 +43,7 @@ void stopHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pre
 
 	if (pressed)
 	{
-		if (switcher->th.joinable())
+		if (switcher->th && switcher->th->isRunning())
 			switcher->Stop();
 	}
 
@@ -78,7 +78,7 @@ void startStopToggleHotkeyFunc(void* data, obs_hotkey_id id, obs_hotkey_t* hotke
 
 	if (pressed)
 	{
-		if (switcher->th.joinable())
+		if (switcher->th && switcher->th->isRunning())
 			switcher->Stop();
 		else
 			switcher->Start();

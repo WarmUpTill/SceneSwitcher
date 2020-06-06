@@ -348,7 +348,7 @@
          <item>
           <widget class="QLabel" name="label_56">
            <property name="text">
-            <string>Use thread priority (experimental)</string>
+            <string>Use thread priority</string>
            </property>
           </widget>
          </item>
@@ -365,6 +365,13 @@
              <width>100</width>
              <height>0</height>
             </size>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_57">
+           <property name="text">
+            <string>(raising the priority higher than &quot;Normal&quot; is usually not recommended)</string>
            </property>
           </widget>
          </item>
