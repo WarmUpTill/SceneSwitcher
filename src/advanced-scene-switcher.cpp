@@ -64,8 +64,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
 		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
-		if (obs_source_media_get_state(source) !=
-		    OBS_MEDIA_STATE_NONE) {
+		if (strcmp(obs_source_get_id(source), "ffmpeg_source") == 0) {
 			const char *name = obs_source_get_name(source);
 			combo->addItem(name);
 		}
@@ -354,7 +353,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		ui->readPathLineEdit->setDisabled(true);
 	}
 
-	if (switcher->th.joinable())
+	if (switcher->th && switcher->th->isRunning())
 		SetStarted();
 	else
 		SetStopped();
@@ -401,8 +400,17 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		item->setData(Qt::UserRole, text);
 	}
 
-	for (std::string p : switcher->threadPrioritiesNamesOrderdByPrio) {
-		ui->threadPriority->addItem(p.c_str());
+	for (int i = 0; i < switcher->threadPriorities.size(); ++i) {
+		ui->threadPriority->addItem(
+			switcher->threadPriorities[i].name.c_str());
+		ui->threadPriority->setItemData(
+			i, switcher->threadPriorities[i].description.c_str(),
+			Qt::ToolTipRole);
+		if (switcher->threadPriority ==
+		    switcher->threadPriorities[i].value) {
+			ui->threadPriority->setCurrentText(
+				switcher->threadPriorities[i].name.c_str());
+		}
 	}
 }
 
@@ -885,6 +893,9 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_set_int(obj, "priority7",
 				 switcher->functionNamesByPriority[7]);
 
+		obs_data_set_int(obj, "threadPriority",
+				 switcher->threadPriority);
+
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
 
 		obs_data_array_release(array);
@@ -1246,12 +1257,19 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 					array_obj, "restriction");
 			uint64_t time = obs_data_get_int(array_obj, "time");
 
+			string mediaStr = MakeMediaSwitchName(source, scene,
+							      transition, state,
+							      restriction, time)
+						  .toUtf8()
+						  .constData();
+
 			switcher->mediaSwitches.emplace_back(
 				GetWeakSourceByName(scene),
 				GetWeakSourceByName(source),
 				GetWeakTransitionByName(transition), state,
 				restriction, time,
-				(strcmp(scene, PREVIOUS_SCENE_NAME) == 0));
+				(strcmp(scene, PREVIOUS_SCENE_NAME) == 0),
+				mediaStr);
 
 			obs_data_release(array_obj);
 		}
@@ -1362,6 +1380,11 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 				(DEFAULT_PRIORITY_7);
 		}
 
+		obs_data_set_default_int(obj, "threadPriority",
+					 QThread::NormalPriority);
+		switcher->threadPriority =
+			obs_data_get_int(obj, "threadPriority");
+
 		obs_data_array_release(array);
 		obs_data_array_release(screenRegionArray);
 		obs_data_array_release(pauseScenesArray);
@@ -1392,6 +1415,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
  ********************************************************************************/
 void SwitcherData::Thread()
 {
+	blog(LOG_INFO, "Advanced Scene Switcher started");
 	//to avoid scene duplication when rapidly switching scene collection
 	this_thread::sleep_for(chrono::seconds(2));
 
@@ -1483,7 +1507,8 @@ void SwitcherData::Thread()
 			switchScene(scene, transition, lock);
 		}
 	}
-endLoop:;
+endLoop:
+	blog(LOG_INFO, "Advanced Scene Switcher stopped");
 }
 
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
@@ -1542,19 +1567,23 @@ bool SwitcherData::sceneChangedDuringWait()
 
 void SwitcherData::Start()
 {
-	if (!th.joinable()) {
+	if (!(th && th->isRunning())) {
 		stop = false;
-		switcher->th = thread([]() { switcher->Thread(); });
+		switcher->th = new SwitcherThread();
+		switcher->th->start((QThread::Priority)switcher->threadPriority);
 	}
 }
 
+
 void SwitcherData::Stop()
 {
-	if (th.joinable()) {
+	if (th && th->isRunning()) {
 		switcher->stop = true;
 		transitionCv.notify_one();
 		cv.notify_one();
-		th.join();
+		th->wait();
+		delete th;
+		th = nullptr;
 	}
 }
 

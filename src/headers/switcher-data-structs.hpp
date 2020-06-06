@@ -3,7 +3,6 @@
 #include <chrono>
 #include <string>
 #include <vector>
-#include <thread>
 #include <regex>
 #include <mutex>
 #include <fstream>
@@ -214,18 +213,20 @@ struct MediaSwitch {
 	time_restriction restriction;
 	bool matched;
 	bool usePreviousScene;
+	std::string mediaSwitchStr;
 
 	inline MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
 			   OBSWeakSource transition_, obs_media_state state_,
 			   time_restriction restriction_, uint64_t time_,
-			   bool usePreviousScene_)
+			   bool usePreviousScene_, std::string mediaSwitchStr_)
 		: scene(scene_),
 		  source(source_),
 		  transition(transition_),
 		  state(state_),
 		  restriction(restriction_),
 		  time(time_),
-		  usePreviousScene(usePreviousScene_)
+		  usePreviousScene(usePreviousScene_),
+		  mediaSwitchStr(mediaSwitchStr_)
 	{
 	}
 };
@@ -252,11 +253,14 @@ struct TimeSwitch {
 
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 
+class SwitcherThread;
+
 /********************************************************************************
  * SwitcherData
  ********************************************************************************/
 struct SwitcherData {
-	thread th;
+	SwitcherThread *th;
+
 	condition_variable cv;
 	mutex m;
 	bool transitionActive = false;
@@ -311,17 +315,32 @@ struct SwitcherData {
 		DEFAULT_PRIORITY_3, DEFAULT_PRIORITY_4, DEFAULT_PRIORITY_5,
 		DEFAULT_PRIORITY_6, DEFAULT_PRIORITY_7};
 
-	std::vector<std::string> threadPrioritiesNamesOrderdByPrio{
-		"Lowest", "Low", "Normal", "High", "Highest", "Time critical",
+	struct ThreadPrio {
+		std::string name;
+		std::string description;
+		uint32_t value;
 	};
-	std::map<std::string, int> threadPriorities = {
-		{"Lowest", QThread::LowestPriority},
-		{"Low", QThread::LowPriority},
-		{"Normal", QThread::NormalPriority},
-		{"High", QThread::HighPriority},
-		{"Highest", QThread::HighestPriority},
-		{"Time critical", QThread::TimeCriticalPriority},
+
+	std::vector<ThreadPrio> threadPriorities{
+		{"Idle",
+		 "scheduled only when no other threads are running (lowest CPU load)",
+		 QThread::IdlePriority},
+		{"Lowest", "scheduled less often than LowPriority",
+		 QThread::LowestPriority},
+		{"Low", "scheduled less often than NormalPriority",
+		 QThread::LowPriority},
+		{"Normal", "the default priority of the operating system",
+		 QThread::NormalPriority},
+		{"High", "scheduled more often than NormalPriority",
+		 QThread::HighPriority},
+		{"Highest", "scheduled more often than HighPriority",
+		 QThread::HighestPriority},
+		{"Time critical",
+		 "scheduled as often as possible (highest CPU load)",
+		 QThread::TimeCriticalPriority},
 	};
+
+	uint32_t threadPriority = QThread::NormalPriority;
 
 	void Thread();
 	void Start();
@@ -442,7 +461,8 @@ struct SwitcherData {
 
 		for (size_t i = 0; i < timeSwitches.size(); i++) {
 			TimeSwitch &s = timeSwitches[i];
-			if (!WeakSourceValid(s.scene) ||
+			if ((!s.usePreviousScene &&
+			     !WeakSourceValid(s.scene)) ||
 			    !WeakSourceValid(s.transition))
 				timeSwitches.erase(timeSwitches.begin() + i--);
 		}
@@ -452,6 +472,23 @@ struct SwitcherData {
 		    !WeakSourceValid(idleData.transition)) {
 			idleData.idleEnable = false;
 		}
+
+		for (size_t i = 0; i < mediaSwitches.size(); i++) {
+			MediaSwitch &s = mediaSwitches[i];
+			if ((!s.usePreviousScene &&
+			     !WeakSourceValid(s.scene)) ||
+			    !WeakSourceValid(s.source) ||
+			    !WeakSourceValid(s.transition))
+				mediaSwitches.erase(mediaSwitches.begin() +
+						    i--);
+		}
 	}
 	inline ~SwitcherData() { Stop(); }
+};
+
+extern SwitcherData *switcher;
+class SwitcherThread : public QThread {
+public:
+	explicit SwitcherThread(){};
+	void run() { switcher->Thread(); };
 };

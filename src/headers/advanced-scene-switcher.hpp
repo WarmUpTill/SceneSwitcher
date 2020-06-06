@@ -120,6 +120,7 @@ public slots:
 	void on_fileScenesList_currentRowChanged(int idx);
 	void on_browseButton_3_clicked();
 
+	void on_mediaSwitches_currentRowChanged(int idx);
 	void on_mediaAdd_clicked();
 	void on_mediaRemove_clicked();
 
@@ -129,6 +130,7 @@ public slots:
 
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();
+	void on_threadPriority_currentTextChanged(const QString &text);
 
 	void updateScreenRegionCursorPos();
 

@@ -89,7 +89,7 @@ void SceneSwitcher::SetStopped()
 
 void SceneSwitcher::on_toggleStartButton_clicked()
 {
-	if (switcher->th.joinable())
+	if (switcher->th && switcher->th->isRunning())
 	{
 		switcher->Stop();
 		SetStopped();
