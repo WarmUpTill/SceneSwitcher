@@ -1569,7 +1569,7 @@ void SwitcherData::Start()
 {
 	if (!(th && th->isRunning())) {
 		stop = false;
-		switcher->th = QThread::create([]() { switcher->Thread(); });
+		switcher->th = new SwitcherThread();
 		switcher->th->start((QThread::Priority)switcher->threadPriority);
 	}
 }
@@ -1582,6 +1582,8 @@ void SwitcherData::Stop()
 		transitionCv.notify_one();
 		cv.notify_one();
 		th->wait();
+		delete th;
+		th = nullptr;
 	}
 }
 
