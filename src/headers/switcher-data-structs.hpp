@@ -253,14 +253,11 @@ struct TimeSwitch {
 
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 
-class SwitcherThread;
-
 /********************************************************************************
  * SwitcherData
  ********************************************************************************/
 struct SwitcherData {
-	SwitcherThread *th;
-
+	QThread* th = nullptr;
 	condition_variable cv;
 	mutex m;
 	bool transitionActive = false;
@@ -484,11 +481,4 @@ struct SwitcherData {
 		}
 	}
 	inline ~SwitcherData() { Stop(); }
-};
-
-extern SwitcherData *switcher;
-class SwitcherThread : public QThread {
-public:
-	explicit SwitcherThread(){};
-	void run() { switcher->Thread(); };
 };
