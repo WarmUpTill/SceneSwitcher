@@ -257,7 +257,7 @@ class SwitcherThread;
  * SwitcherData  
  ********************************************************************************/
 struct SwitcherData {
-	SwitcherThread *th;
+	SwitcherThread *th = nullptr;
 
 	condition_variable cv;
 	mutex m;
