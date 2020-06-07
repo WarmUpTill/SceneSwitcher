@@ -43,6 +43,36 @@ void SceneSwitcher::on_executables_currentRowChanged(int idx)
 	}
 }
 
+void SceneSwitcher::on_executableUp_clicked()
+{
+	int index = ui->executables->currentRow();
+	if (index != -1 && index != 0)
+	{
+		ui->executables->insertItem(index - 1, ui->executables->takeItem(index));
+		ui->executables->setCurrentRow(index - 1);
+
+		lock_guard<mutex> lock(switcher->m);
+
+		iter_swap(switcher->executableSwitches.begin() + index,
+				  switcher->executableSwitches.begin() + index - 1);
+	}
+}
+
+void SceneSwitcher::on_executableDown_clicked()
+{
+	int index = ui->executables->currentRow();
+	if (index != -1 && index != ui->executables->count() - 1)
+	{
+		ui->executables->insertItem(index + 1, ui->executables->takeItem(index));
+		ui->executables->setCurrentRow(index + 1);
+
+		lock_guard<mutex> lock(switcher->m);
+
+		iter_swap(switcher->executableSwitches.begin() + index,
+			  	  switcher->executableSwitches.begin() + index + 1);
+	}
+}
+
 void SceneSwitcher::on_executableAdd_clicked()
 {
 	QString sceneName = ui->executableScenes->currentText();

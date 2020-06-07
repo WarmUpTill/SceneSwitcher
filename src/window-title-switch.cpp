@@ -27,6 +27,36 @@ bool isFocused(std::string &title)
 	return (equals || matches);
 }
 
+void SceneSwitcher::on_up_clicked()
+{
+	int index = ui->switches->currentRow();
+	if (index != -1 && index != 0)
+	{
+		ui->switches->insertItem(index - 1, ui->switches->takeItem(index));
+		ui->switches->setCurrentRow(index - 1);
+
+		lock_guard<mutex> lock(switcher->m);
+
+		iter_swap(switcher->windowSwitches.begin() + index,
+				  switcher->windowSwitches.begin() + index - 1);
+	}
+}
+
+void SceneSwitcher::on_down_clicked()
+{
+	int index = ui->switches->currentRow();
+	if (index != -1 && index != ui->switches->count() - 1)
+	{
+		ui->switches->insertItem(index + 1, ui->switches->takeItem(index));
+		ui->switches->setCurrentRow(index + 1);
+
+		lock_guard<mutex> lock(switcher->m);
+
+		iter_swap(switcher->windowSwitches.begin() + index,
+			  	  switcher->windowSwitches.begin() + index + 1);
+	}
+}
+
 void SceneSwitcher::on_add_clicked()
 {
 	QString sceneName = ui->scenes->currentText();
