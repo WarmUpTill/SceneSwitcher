@@ -6,7 +6,7 @@
 
 using namespace std;
 
-static bool GetWindowTitle(HWND window, string& title)
+static bool GetWindowTitle(HWND window, string &title)
 {
 	size_t len = (size_t)GetWindowTextLengthW(window);
 	wstring wtitle;
@@ -45,14 +45,13 @@ static bool WindowValid(HWND window)
 	return true;
 }
 
-void GetWindowList(vector<string>& windows)
+void GetWindowList(vector<string> &windows)
 {
 	windows.resize(0);
 
 	HWND window = GetWindow(GetDesktopWindow(), GW_CHILD);
 
-	while (window)
-	{
+	while (window) {
 		string title;
 		if (WindowValid(window) && GetWindowTitle(window, title))
 			windows.emplace_back(title);
@@ -67,8 +66,7 @@ void GetWindowList(QStringList &windows)
 
 	HWND window = GetWindow(GetDesktopWindow(), GW_CHILD);
 
-	while (window)
-	{
+	while (window) {
 		string title;
 		if (WindowValid(window) && GetWindowTitle(window, title))
 			windows << QString::fromStdString(title);
@@ -76,7 +74,7 @@ void GetWindowList(QStringList &windows)
 	}
 }
 
-void GetCurrentWindowTitle(string& title)
+void GetCurrentWindowTitle(string &title)
 {
 	HWND window = GetForegroundWindow();
 	DWORD pid;
@@ -97,8 +95,7 @@ pair<int, int> getCursorPos()
 {
 	pair<int, int> pos(0, 0);
 	POINT cursorPos;
-	if (GetPhysicalCursorPos(&cursorPos))
-	{
+	if (GetPhysicalCursorPos(&cursorPos)) {
 		pos.first = cursorPos.x;
 		pos.second = cursorPos.y;
 	}
@@ -108,29 +105,28 @@ pair<int, int> getCursorPos()
 bool isFullscreen(std::string &title)
 {
 	RECT appBounds;
-	RECT rc;
+	MONITORINFO monitorInfo = {0};
 
 	HWND hwnd = GetWindow(GetDesktopWindow(), GW_CHILD);
-	while (hwnd)
-	{
+	while (hwnd) {
 		string wtitle;
-		if (WindowValid(hwnd) && GetWindowTitle(hwnd, wtitle) && wtitle == title)
+		if (WindowValid(hwnd) && GetWindowTitle(hwnd, wtitle) &&
+		    wtitle == title)
 			break;
 
 		hwnd = GetNextWindow(hwnd, GW_HWNDNEXT);
 	}
 
-	GetWindowRect(GetDesktopWindow(), &rc);
-	if (hwnd != GetDesktopWindow() && hwnd != GetShellWindow())
-	{
+	monitorInfo.cbSize = sizeof(MONITORINFO);
+	GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST),
+		       &monitorInfo);
+
+	if (hwnd && hwnd != GetDesktopWindow() && hwnd != GetShellWindow()) {
 		GetWindowRect(hwnd, &appBounds);
-		if
-		(
-			rc.bottom == appBounds.bottom
-			&& rc.top == appBounds.top
-			&& rc.left == appBounds.left
-			&& rc.right == appBounds.right
-		) {
+		if (monitorInfo.rcMonitor.bottom == appBounds.bottom &&
+		    monitorInfo.rcMonitor.top == appBounds.top &&
+		    monitorInfo.rcMonitor.left == appBounds.left &&
+		    monitorInfo.rcMonitor.right == appBounds.right) {
 			return true;
 		}
 	}
@@ -138,13 +134,15 @@ bool isFullscreen(std::string &title)
 	return false;
 }
 
-void GetProcessList(QStringList &processes) {
+void GetProcessList(QStringList &processes)
+{
 
 	HANDLE procSnapshot;
 	PROCESSENTRY32 procEntry;
 
 	procSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	if (procSnapshot == INVALID_HANDLE_VALUE) return;
+	if (procSnapshot == INVALID_HANDLE_VALUE)
+		return;
 
 	procEntry.dwSize = sizeof(PROCESSENTRY32);
 
@@ -155,9 +153,12 @@ void GetProcessList(QStringList &processes) {
 
 	do {
 		QString tempexe = QString::fromWCharArray(procEntry.szExeFile);
-		if (tempexe == "System") continue;
-		if (tempexe == "[System Process]") continue;
-		if (processes.contains(tempexe)) continue;
+		if (tempexe == "System")
+			continue;
+		if (tempexe == "[System Process]")
+			continue;
+		if (processes.contains(tempexe))
+			continue;
 		processes.append(tempexe);
 	} while (Process32Next(procSnapshot, &procEntry));
 
@@ -172,14 +173,18 @@ bool isInFocus(const QString &executable)
 	DWORD processId = 0;
 	GetWindowThreadProcessId(foregroundWindow, &processId);
 
-	HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
-	if (process == NULL) return false;
+	HANDLE process = OpenProcess(
+		PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+	if (process == NULL)
+		return false;
 
 	WCHAR executablePath[600];
 	GetModuleFileNameEx(process, 0, executablePath, 600);
 	CloseHandle(process);
 
-	QString file = QString::fromWCharArray(executablePath).split(QRegularExpression("(/|\\\\)")).back();
+	QString file = QString::fromWCharArray(executablePath)
+			       .split(QRegularExpression("(/|\\\\)"))
+			       .back();
 
 	// True if executable switch equals current window
 	bool equals = (executable == file);
