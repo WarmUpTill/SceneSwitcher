@@ -440,7 +440,7 @@
          <item>
           <widget class="QLabel" name="label_58">
            <property name="toolTip">
-            <string>https://regexr.com/</string>
+            <string/>
            </property>
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter either direct window titles or valid regex. You can check syntax and matches for regular expressions using &lt;a href=&quot;https://regexr.com&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#268bd2;&quot;&gt;RegExr&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
