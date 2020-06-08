@@ -47,7 +47,8 @@ struct WindowSceneSwitch {
 	bool focus;
 
 	inline WindowSceneSwitch(OBSWeakSource scene_, const char *window_,
-				 OBSWeakSource transition_, bool fullscreen_, bool focus_)
+				 OBSWeakSource transition_, bool fullscreen_,
+				 bool focus_)
 		: scene(scene_),
 		  window(window_),
 		  transition(transition_),

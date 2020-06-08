@@ -22,14 +22,15 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 	OBSWeakSource source2 = GetWeakSourceByQString(scene2Name);
 	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
 
-	QString text = MakeSceneRoundTripSwitchName(scene1Name, scene2Name, transitionName, delay);
+	QString text = MakeSceneRoundTripSwitchName(scene1Name, scene2Name,
+						    transitionName, delay);
 	QVariant v = QVariant::fromValue(text);
 
 	int idx = SceneRoundTripFindByData(scene1Name);
 
-	if (idx == -1)
-	{
-		QListWidgetItem* item = new QListWidgetItem(text, ui->sceneRoundTrips);
+	if (idx == -1) {
+		QListWidgetItem *item =
+			new QListWidgetItem(text, ui->sceneRoundTrips);
 		item->setData(Qt::UserRole, v);
 
 		lock_guard<mutex> lock(switcher->m);
@@ -37,23 +38,22 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 			source1, source2, transition, int(delay * 1000),
 			(scene2Name == QString(PREVIOUS_SCENE_NAME)),
 			text.toUtf8().constData());
-	}
-	else
-	{
-		QListWidgetItem* item = ui->sceneRoundTrips->item(idx);
+	} else {
+		QListWidgetItem *item = ui->sceneRoundTrips->item(idx);
 		item->setText(text);
 
 		{
 			lock_guard<mutex> lock(switcher->m);
-			for (auto& s : switcher->sceneRoundTripSwitches)
-			{
-				if (s.scene1 == source1)
-				{
+			for (auto &s : switcher->sceneRoundTripSwitches) {
+				if (s.scene1 == source1) {
 					s.scene2 = source2;
 					s.delay = int(delay * 1000);
 					s.transition = transition;
-					s.usePreviousScene = (scene2Name == QString(PREVIOUS_SCENE_NAME));
-					s.sceneRoundTripStr = text.toUtf8().constData();
+					s.usePreviousScene =
+						(scene2Name ==
+						 QString(PREVIOUS_SCENE_NAME));
+					s.sceneRoundTripStr =
+						text.toUtf8().constData();
 					break;
 				}
 			}
@@ -65,7 +65,7 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 
 void SceneSwitcher::on_sceneRoundTripRemove_clicked()
 {
-	QListWidgetItem* item = ui->sceneRoundTrips->currentItem();
+	QListWidgetItem *item = ui->sceneRoundTrips->currentItem();
 	if (!item)
 		return;
 
@@ -73,14 +73,12 @@ void SceneSwitcher::on_sceneRoundTripRemove_clicked()
 
 	{
 		lock_guard<mutex> lock(switcher->m);
-		auto& switches = switcher->sceneRoundTripSwitches;
+		auto &switches = switcher->sceneRoundTripSwitches;
 
-		for (auto it = switches.begin(); it != switches.end(); ++it)
-		{
-			auto& s = *it;
+		for (auto it = switches.begin(); it != switches.end(); ++it) {
+			auto &s = *it;
 
-			if (s.sceneRoundTripStr == text)
-			{
+			if (s.sceneRoundTripStr == text) {
 				switches.erase(it);
 				break;
 			}
@@ -96,22 +94,19 @@ void SceneSwitcher::on_autoStopSceneCheckBox_stateChanged(int state)
 		return;
 
 	lock_guard<mutex> lock(switcher->m);
-	if (!state)
-	{
+	if (!state) {
 		ui->autoStopScenes->setDisabled(true);
 		switcher->autoStopEnable = false;
-	}
-	else
-	{
+	} else {
 		ui->autoStopScenes->setDisabled(false);
 		switcher->autoStopEnable = true;
 	}
 }
 
-void SceneSwitcher::UpdateAutoStopScene(const QString& name)
+void SceneSwitcher::UpdateAutoStopScene(const QString &name)
 {
-	obs_source_t* scene = obs_get_source_by_name(name.toUtf8().constData());
-	obs_weak_source_t* ws = obs_source_get_weak_source(scene);
+	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
+	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
 
 	switcher->autoStopScene = ws;
 
@@ -119,7 +114,7 @@ void SceneSwitcher::UpdateAutoStopScene(const QString& name)
 	obs_source_release(scene);
 }
 
-void SceneSwitcher::on_autoStopScenes_currentTextChanged(const QString& text)
+void SceneSwitcher::on_autoStopScenes_currentTextChanged(const QString &text)
 {
 	if (loading)
 		return;
@@ -131,23 +126,30 @@ void SceneSwitcher::on_autoStopScenes_currentTextChanged(const QString& text)
 void SceneSwitcher::on_sceneRoundTripSave_clicked()
 {
 	QString directory = QFileDialog::getSaveFileName(
-		this, tr("Save Scene Round Trip to file ..."), QDir::currentPath(), tr("Text files (*.txt)"));
-	if (!directory.isEmpty())
-	{
+		this, tr("Save Scene Round Trip to file ..."),
+		QDir::currentPath(), tr("Text files (*.txt)"));
+	if (!directory.isEmpty()) {
 		QFile file(directory);
 		if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
 			return;
 		QTextStream out(&file);
-		for (SceneRoundTripSwitch s : switcher->sceneRoundTripSwitches)
-		{
-			out << QString::fromStdString(GetWeakSourceName(s.scene1)) << "\n";
+		for (SceneRoundTripSwitch s :
+		     switcher->sceneRoundTripSwitches) {
+			out << QString::fromStdString(
+				       GetWeakSourceName(s.scene1))
+			    << "\n";
 			if (s.usePreviousScene)
 				out << (PREVIOUS_SCENE_NAME) << "\n";
 			else
-				out << QString::fromStdString(GetWeakSourceName(s.scene2)) << "\n";
+				out << QString::fromStdString(
+					       GetWeakSourceName(s.scene2))
+				    << "\n";
 			out << s.delay << "\n";
-			out << QString::fromStdString(s.sceneRoundTripStr) << "\n";
-			out << QString::fromStdString(GetWeakSourceName(s.transition)) << "\n";
+			out << QString::fromStdString(s.sceneRoundTripStr)
+			    << "\n";
+			out << QString::fromStdString(
+				       GetWeakSourceName(s.transition))
+			    << "\n";
 		}
 	}
 }
@@ -157,9 +159,9 @@ void SceneSwitcher::on_sceneRoundTripLoad_clicked()
 	lock_guard<mutex> lock(switcher->m);
 
 	QString directory = QFileDialog::getOpenFileName(
-		this, tr("Select a file to read Scene Round Trip from ..."), QDir::currentPath(), tr("Text files (*.txt)"));
-	if (!directory.isEmpty())
-	{
+		this, tr("Select a file to read Scene Round Trip from ..."),
+		QDir::currentPath(), tr("Text files (*.txt)"));
+	if (!directory.isEmpty()) {
 		QFile file(directory);
 		if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
 			return;
@@ -169,26 +171,34 @@ void SceneSwitcher::on_sceneRoundTripLoad_clicked()
 
 		vector<SceneRoundTripSwitch> newSceneRoundTripSwitch;
 
-		while (!in.atEnd())
-		{
+		while (!in.atEnd()) {
 			QString line = in.readLine();
 			lines.push_back(line);
-			if (lines.size() == 5)
-			{
-				OBSWeakSource scene1 = GetWeakSourceByQString(lines[0]);
-				OBSWeakSource scene2 = GetWeakSourceByQString(lines[1]);
-				OBSWeakSource transition = GetWeakTransitionByQString(lines[4]);
+			if (lines.size() == 5) {
+				OBSWeakSource scene1 =
+					GetWeakSourceByQString(lines[0]);
+				OBSWeakSource scene2 =
+					GetWeakSourceByQString(lines[1]);
+				OBSWeakSource transition =
+					GetWeakTransitionByQString(lines[4]);
 
-				if (WeakSourceValid(scene1) && ((lines[1] == QString(PREVIOUS_SCENE_NAME)) || (WeakSourceValid(scene2)))
-					&& WeakSourceValid(transition))
-				{
-					newSceneRoundTripSwitch.emplace_back(SceneRoundTripSwitch(
-						GetWeakSourceByQString(lines[0]),
-						GetWeakSourceByQString(lines[1]),
-						GetWeakTransitionByQString(lines[4]),
-						lines[2].toInt(),
-						(lines[1] == QString(PREVIOUS_SCENE_NAME)),
-						lines[3].toStdString()));
+				if (WeakSourceValid(scene1) &&
+				    ((lines[1] ==
+				      QString(PREVIOUS_SCENE_NAME)) ||
+				     (WeakSourceValid(scene2))) &&
+				    WeakSourceValid(transition)) {
+					newSceneRoundTripSwitch.emplace_back(
+						SceneRoundTripSwitch(
+							GetWeakSourceByQString(
+								lines[0]),
+							GetWeakSourceByQString(
+								lines[1]),
+							GetWeakTransitionByQString(
+								lines[4]),
+							lines[2].toInt(),
+							(lines[1] ==
+							 QString(PREVIOUS_SCENE_NAME)),
+							lines[3].toStdString()));
 				}
 				lines.clear();
 			}
@@ -200,39 +210,42 @@ void SceneSwitcher::on_sceneRoundTripLoad_clicked()
 		switcher->sceneRoundTripSwitches.clear();
 		ui->sceneRoundTrips->clear();
 		switcher->sceneRoundTripSwitches = newSceneRoundTripSwitch;
-		for (SceneRoundTripSwitch s : switcher->sceneRoundTripSwitches)
-		{
-			QListWidgetItem* item = new QListWidgetItem(QString::fromStdString(s.sceneRoundTripStr), ui->sceneRoundTrips);
-			item->setData(Qt::UserRole, QString::fromStdString(s.sceneRoundTripStr));
+		for (SceneRoundTripSwitch s :
+		     switcher->sceneRoundTripSwitches) {
+			QListWidgetItem *item = new QListWidgetItem(
+				QString::fromStdString(s.sceneRoundTripStr),
+				ui->sceneRoundTrips);
+			item->setData(
+				Qt::UserRole,
+				QString::fromStdString(s.sceneRoundTripStr));
 		}
 	}
 }
 
-
-void SwitcherData::checkSceneRoundTrip(bool& match, OBSWeakSource& scene, OBSWeakSource& transition, unique_lock<mutex>& lock)
+void SwitcherData::checkSceneRoundTrip(bool &match, OBSWeakSource &scene,
+				       OBSWeakSource &transition,
+				       unique_lock<mutex> &lock)
 {
 	bool sceneRoundTripActive = false;
-	obs_source_t* currentSource = obs_frontend_get_current_scene();
-	obs_weak_source_t* ws = obs_source_get_weak_source(currentSource);
+	obs_source_t *currentSource = obs_frontend_get_current_scene();
+	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
-	for (SceneRoundTripSwitch& s : sceneRoundTripSwitches)
-	{
-		if (s.scene1 == ws)
-		{
+	for (SceneRoundTripSwitch &s : sceneRoundTripSwitches) {
+		if (s.scene1 == ws) {
 			sceneRoundTripActive = true;
 			int dur = s.delay - interval;
-			if (dur > 0)
-			{
+			if (dur > 0) {
 				waitScene = currentSource;
 				cv.wait_for(lock, chrono::milliseconds(dur));
 			}
-			obs_source_t* currentSource2 = obs_frontend_get_current_scene();
+			obs_source_t *currentSource2 =
+				obs_frontend_get_current_scene();
 
 			// only switch if user hasn't changed scene manually
-			if (currentSource == currentSource2)
-			{
+			if (currentSource == currentSource2) {
 				match = true;
-				scene = (s.usePreviousScene) ? previousScene : s.scene2;
+				scene = (s.usePreviousScene) ? previousScene
+							     : s.scene2;
 				transition = s.transition;
 			}
 			obs_source_release(currentSource2);
@@ -250,42 +263,41 @@ void SceneSwitcher::on_sceneRoundTrips_currentRowChanged(int idx)
 	if (idx == -1)
 		return;
 
-	QListWidgetItem* item = ui->sceneRoundTrips->item(idx);
+	QListWidgetItem *item = ui->sceneRoundTrips->item(idx);
 
 	QString sceneRoundTrip = item->text();
 
 	lock_guard<mutex> lock(switcher->m);
-	for (auto& s : switcher->sceneRoundTripSwitches)
-	{
-		if (sceneRoundTrip.compare(s.sceneRoundTripStr.c_str()) == 0)
-		{
+	for (auto &s : switcher->sceneRoundTripSwitches) {
+		if (sceneRoundTrip.compare(s.sceneRoundTripStr.c_str()) == 0) {
 			string scene1 = GetWeakSourceName(s.scene1);
 			string scene2 = GetWeakSourceName(s.scene2);
 			string transitionName = GetWeakSourceName(s.transition);
 			int delay = s.delay;
-			ui->sceneRoundTripScenes1->setCurrentText(scene1.c_str());
-			ui->sceneRoundTripScenes2->setCurrentText(scene2.c_str());
-			ui->sceneRoundTripTransitions->setCurrentText(transitionName.c_str());
-			ui->sceneRoundTripSpinBox->setValue((double)delay/1000);
+			ui->sceneRoundTripScenes1->setCurrentText(
+				scene1.c_str());
+			ui->sceneRoundTripScenes2->setCurrentText(
+				scene2.c_str());
+			ui->sceneRoundTripTransitions->setCurrentText(
+				transitionName.c_str());
+			ui->sceneRoundTripSpinBox->setValue((double)delay /
+							    1000);
 			break;
 		}
 	}
 }
 
-
-int SceneSwitcher::SceneRoundTripFindByData(const QString& scene1)
+int SceneSwitcher::SceneRoundTripFindByData(const QString &scene1)
 {
 	QRegExp rx(scene1 + " ->.*");
 	int count = ui->sceneRoundTrips->count();
 	int idx = -1;
 
-	for (int i = 0; i < count; i++)
-	{
-		QListWidgetItem* item = ui->sceneRoundTrips->item(i);
+	for (int i = 0; i < count; i++) {
+		QListWidgetItem *item = ui->sceneRoundTrips->item(i);
 		QString itemString = item->data(Qt::UserRole).toString();
 
-		if (rx.exactMatch(itemString))
-		{
+		if (rx.exactMatch(itemString)) {
 			idx = i;
 			break;
 		}
@@ -294,14 +306,12 @@ int SceneSwitcher::SceneRoundTripFindByData(const QString& scene1)
 	return idx;
 }
 
-
 void SwitcherData::autoStopStreamAndRecording()
 {
-	obs_source_t* currentSource = obs_frontend_get_current_scene();
-	obs_weak_source_t* ws = obs_source_get_weak_source(currentSource);
+	obs_source_t *currentSource = obs_frontend_get_current_scene();
+	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
-	if (ws && autoStopScene == ws)
-	{
+	if (ws && autoStopScene == ws) {
 		if (obs_frontend_streaming_active())
 			obs_frontend_streaming_stop();
 		if (obs_frontend_recording_active())

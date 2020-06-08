@@ -15,10 +15,10 @@ void SceneSwitcher::on_startAtLaunch_toggled(bool value)
 	switcher->startAtLaunch = value;
 }
 
-void SceneSwitcher::UpdateNonMatchingScene(const QString& name)
+void SceneSwitcher::UpdateNonMatchingScene(const QString &name)
 {
-	obs_source_t* scene = obs_get_source_by_name(name.toUtf8().constData());
-	obs_weak_source_t* ws = obs_source_get_weak_source(scene);
+	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
+	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
 
 	switcher->nonMatchingScene = ws;
 
@@ -57,7 +57,7 @@ void SceneSwitcher::on_noMatchRandomSwitch_clicked()
 	ui->noMatchSwitchScene->setEnabled(false);
 }
 
-void SceneSwitcher::on_noMatchSwitchScene_currentTextChanged(const QString& text)
+void SceneSwitcher::on_noMatchSwitchScene_currentTextChanged(const QString &text)
 {
 	if (loading)
 		return;
@@ -89,19 +89,16 @@ void SceneSwitcher::SetStopped()
 
 void SceneSwitcher::on_toggleStartButton_clicked()
 {
-	if (switcher->th && switcher->th->isRunning())
-	{
+	if (switcher->th && switcher->th->isRunning()) {
 		switcher->Stop();
 		SetStopped();
-	}
-	else
-	{
+	} else {
 		switcher->Start();
 		SetStarted();
 	}
 }
 
-void SceneSwitcher::closeEvent(QCloseEvent*)
+void SceneSwitcher::closeEvent(QCloseEvent *)
 {
 	obs_frontend_save();
 }

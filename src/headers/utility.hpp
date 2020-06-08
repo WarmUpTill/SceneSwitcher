@@ -14,13 +14,13 @@ static inline bool WeakSourceValid(obs_weak_source_t *ws)
 }
 
 static inline QString MakeSwitchName(const QString &scene, const QString &value,
-				     const QString &transition, bool fullscreen, bool focus)
+				     const QString &transition, bool fullscreen,
+				     bool focus)
 {
 	QString name = QStringLiteral("[") + scene + QStringLiteral(", ") +
-				  transition + QStringLiteral("]: ") + value;
+		       transition + QStringLiteral("]: ") + value;
 
-	if (fullscreen || focus)
-	{
+	if (fullscreen || focus) {
 		name += QStringLiteral(" (only if");
 
 		if (fullscreen)

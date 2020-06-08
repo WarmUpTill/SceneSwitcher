@@ -1,6 +1,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 
-void SwitcherData::checkIdleSwitch(bool& match, OBSWeakSource& scene, OBSWeakSource& transition)
+void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
+				   OBSWeakSource &transition)
 {
 	if (!idleData.idleEnable)
 		return;
@@ -11,44 +12,36 @@ void SwitcherData::checkIdleSwitch(bool& match, OBSWeakSource& scene, OBSWeakSou
 	GetCurrentWindowTitle(title);
 	//lock.lock();
 
-	for (string& window : ignoreIdleWindows)
-	{
-		if (window == title)
-		{
+	for (string &window : ignoreIdleWindows) {
+		if (window == title) {
 			ignoreIdle = true;
 			break;
 		}
 	}
 
-	if (!ignoreIdle)
-	{
-		for (string& window : ignoreIdleWindows)
-		{
-			try
-			{
-				bool matches = regex_match(title, regex(window));
-				if (matches)
-				{
+	if (!ignoreIdle) {
+		for (string &window : ignoreIdleWindows) {
+			try {
+				bool matches =
+					regex_match(title, regex(window));
+				if (matches) {
 					ignoreIdle = true;
 					break;
 				}
-			}
-			catch (const regex_error&)
-			{
+			} catch (const regex_error &) {
 			}
 		}
 	}
 
-	if (!ignoreIdle && secondsSinceLastInput() > idleData.time)
-	{
+	if (!ignoreIdle && secondsSinceLastInput() > idleData.time) {
 		if (idleData.alreadySwitched)
 			return;
-		scene = (idleData.usePreviousScene) ? previousScene : idleData.scene;
+		scene = (idleData.usePreviousScene) ? previousScene
+						    : idleData.scene;
 		transition = idleData.transition;
 		match = true;
 		idleData.alreadySwitched = true;
-	}
-	else
+	} else
 		idleData.alreadySwitched = false;
 }
 
@@ -58,16 +51,13 @@ void SceneSwitcher::on_idleCheckBox_stateChanged(int state)
 		return;
 
 	lock_guard<mutex> lock(switcher->m);
-	if (!state)
-	{
+	if (!state) {
 		ui->idleScenes->setDisabled(true);
 		ui->idleSpinBox->setDisabled(true);
 		ui->idleTransitions->setDisabled(true);
 
 		switcher->idleData.idleEnable = false;
-	}
-	else
-	{
+	} else {
 		ui->idleScenes->setDisabled(false);
 		ui->idleSpinBox->setDisabled(false);
 		ui->idleTransitions->setDisabled(false);
@@ -79,18 +69,17 @@ void SceneSwitcher::on_idleCheckBox_stateChanged(int state)
 	}
 }
 
-
-void SceneSwitcher::UpdateIdleDataTransition(const QString& name)
+void SceneSwitcher::UpdateIdleDataTransition(const QString &name)
 {
-	obs_weak_source_t* transition = GetWeakTransitionByQString(name);
+	obs_weak_source_t *transition = GetWeakTransitionByQString(name);
 	switcher->idleData.transition = transition;
 }
 
-void SceneSwitcher::UpdateIdleDataScene(const QString& name)
+void SceneSwitcher::UpdateIdleDataScene(const QString &name)
 {
 	switcher->idleData.usePreviousScene = (name == PREVIOUS_SCENE_NAME);
-	obs_source_t* scene = obs_get_source_by_name(name.toUtf8().constData());
-	obs_weak_source_t* ws = obs_source_get_weak_source(scene);
+	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
+	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
 
 	switcher->idleData.scene = ws;
 
@@ -98,7 +87,7 @@ void SceneSwitcher::UpdateIdleDataScene(const QString& name)
 	obs_source_release(scene);
 }
 
-void SceneSwitcher::on_idleTransitions_currentTextChanged(const QString& text)
+void SceneSwitcher::on_idleTransitions_currentTextChanged(const QString &text)
 {
 	if (loading)
 		return;
@@ -107,7 +96,7 @@ void SceneSwitcher::on_idleTransitions_currentTextChanged(const QString& text)
 	UpdateIdleDataTransition(text);
 }
 
-void SceneSwitcher::on_idleScenes_currentTextChanged(const QString& text)
+void SceneSwitcher::on_idleScenes_currentTextChanged(const QString &text)
 {
 	if (loading)
 		return;
@@ -131,15 +120,13 @@ void SceneSwitcher::on_ignoreIdleWindows_currentRowChanged(int idx)
 	if (idx == -1)
 		return;
 
-	QListWidgetItem* item = ui->ignoreIdleWindows->item(idx);
+	QListWidgetItem *item = ui->ignoreIdleWindows->item(idx);
 
 	QString window = item->data(Qt::UserRole).toString();
 
 	lock_guard<mutex> lock(switcher->m);
-	for (auto& w : switcher->ignoreIdleWindows)
-	{
-		if (window.compare(w.c_str()) == 0)
-		{
+	for (auto &w : switcher->ignoreIdleWindows) {
+		if (window.compare(w.c_str()) == 0) {
 			ui->ignoreIdleWindowsWindows->setCurrentText(w.c_str());
 			break;
 		}
@@ -155,22 +142,24 @@ void SceneSwitcher::on_ignoreIdleAdd_clicked()
 
 	QVariant v = QVariant::fromValue(windowName);
 
-	QList<QListWidgetItem*> items = ui->ignoreIdleWindows->findItems(windowName, Qt::MatchExactly);
+	QList<QListWidgetItem *> items =
+		ui->ignoreIdleWindows->findItems(windowName, Qt::MatchExactly);
 
-	if (items.size() == 0)
-	{
-		QListWidgetItem* item = new QListWidgetItem(windowName, ui->ignoreIdleWindows);
+	if (items.size() == 0) {
+		QListWidgetItem *item =
+			new QListWidgetItem(windowName, ui->ignoreIdleWindows);
 		item->setData(Qt::UserRole, v);
 
 		lock_guard<mutex> lock(switcher->m);
-		switcher->ignoreIdleWindows.emplace_back(windowName.toUtf8().constData());
+		switcher->ignoreIdleWindows.emplace_back(
+			windowName.toUtf8().constData());
 		ui->ignoreIdleWindows->sortItems();
 	}
 }
 
 void SceneSwitcher::on_ignoreIdleRemove_clicked()
 {
-	QListWidgetItem* item = ui->ignoreIdleWindows->currentItem();
+	QListWidgetItem *item = ui->ignoreIdleWindows->currentItem();
 	if (!item)
 		return;
 
@@ -178,14 +167,12 @@ void SceneSwitcher::on_ignoreIdleRemove_clicked()
 
 	{
 		lock_guard<mutex> lock(switcher->m);
-		auto& windows = switcher->ignoreIdleWindows;
+		auto &windows = switcher->ignoreIdleWindows;
 
-		for (auto it = windows.begin(); it != windows.end(); ++it)
-		{
-			auto& s = *it;
+		for (auto it = windows.begin(); it != windows.end(); ++it) {
+			auto &s = *it;
 
-			if (s == windowName.toUtf8().constData())
-			{
+			if (s == windowName.toUtf8().constData()) {
 				windows.erase(it);
 				break;
 			}
@@ -195,18 +182,16 @@ void SceneSwitcher::on_ignoreIdleRemove_clicked()
 	delete item;
 }
 
-int SceneSwitcher::IgnoreIdleWindowsFindByData(const QString& window)
+int SceneSwitcher::IgnoreIdleWindowsFindByData(const QString &window)
 {
 	int count = ui->ignoreIdleWindows->count();
 	int idx = -1;
 
-	for (int i = 0; i < count; i++)
-	{
-		QListWidgetItem* item = ui->ignoreIdleWindows->item(i);
+	for (int i = 0; i < count; i++) {
+		QListWidgetItem *item = ui->ignoreIdleWindows->item(i);
 		QString itemRegion = item->data(Qt::UserRole).toString();
 
-		if (itemRegion == window)
-		{
+		if (itemRegion == window) {
 			idx = i;
 			break;
 		}
