@@ -157,7 +157,7 @@ void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 		bool equals = (title == window);
 		// True if ignored switch matches title
 		bool matches = QString::fromStdString(title).contains(
-			QRegularExpression(window.c_str()));
+			QRegularExpression(QString::fromStdString(window)));
 
 		if (equals || matches) {
 			ignored = true;

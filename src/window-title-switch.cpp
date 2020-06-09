@@ -7,10 +7,10 @@ bool isRunning(std::string &title)
 
 	GetWindowList(windows);
 	// True if switch is running (direct)
-	bool equals = windows.contains(title.c_str());
+	bool equals = windows.contains(QString::fromStdString(title));
 	// True if switch is running (regex)
-	bool matches =
-		(windows.indexOf(QRegularExpression(title.c_str())) != -1);
+	bool matches = (windows.indexOf(QRegularExpression(
+				QString::fromStdString(title))) != -1);
 
 	return (equals || matches);
 }
@@ -24,7 +24,7 @@ bool isFocused(std::string &title)
 	bool equals = (title == current);
 	// True if switch matches current window
 	bool matches = QString::fromStdString(current).contains(
-		QRegularExpression(title.c_str()));
+		QRegularExpression(QString::fromStdString(title)));
 
 	return (equals || matches);
 }
@@ -277,7 +277,7 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 		bool equals = (title == window);
 		// True if ignored switch matches current window
 		bool matches = QString::fromStdString(title).contains(
-			QRegularExpression(window.c_str()));
+			QRegularExpression(QString::fromStdString(window)));
 
 		if (equals || matches) {
 			ignored = true;
@@ -295,9 +295,11 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 		// True if focus is disabled OR switch is focused
 		bool focus = (!s.focus || isFocused(s.window));
 		// True if current window is ignored AND switch matches last window
-		bool ignore = (ignored &&
-			       QString::fromStdString(title).contains(
-				       QRegularExpression(s.window.c_str())));
+		bool ignore =
+			(ignored &&
+			 QString::fromStdString(title).contains(
+				 QRegularExpression(
+					 QString::fromStdString(s.window))));
 
 		if (isRunning(s.window) && (fullscreen && (focus || ignore))) {
 			match = true;

@@ -274,7 +274,7 @@ bool isFullscreen(std::string &title)
 		bool equals = (title == name);
 		// True if switch matches window
 		bool matches = QString::fromStdString(name).contains(
-			QRegularExpression(title.c_str()));
+			QRegularExpression(QString::fromStdString(title)));
 
 		// If found, check if switch is fullscreen
 		if (equals || matches) {
