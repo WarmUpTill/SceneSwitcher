@@ -178,10 +178,11 @@ void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 					QRegularExpression(s.mExe)) != -1);
 		// True if focus is disabled OR switch is focused
 		bool focus = (!s.mInFocus || isInFocus(s.mExe));
-		// True if current window is ignored AND switch matches last window
+		// True if current window is ignored AND switch equals OR matches last window
 		bool ignore =
-			(ignored && QString::fromStdString(title).contains(
-					    QRegularExpression(s.mExe)));
+			(ignored && (title == s.mExe ||
+				     QString::fromStdString(title).contains(
+					     QRegularExpression(s.mExe))));
 
 		if ((equals || matches) && (focus || ignore)) {
 			match = true;

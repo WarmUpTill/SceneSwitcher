@@ -294,12 +294,13 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 		bool fullscreen = (!s.fullscreen || isFullscreen(s.window));
 		// True if focus is disabled OR switch is focused
 		bool focus = (!s.focus || isFocused(s.window));
-		// True if current window is ignored AND switch matches last window
+		// True if current window is ignored AND switch equals OR matches last window
 		bool ignore =
 			(ignored &&
-			 QString::fromStdString(title).contains(
-				 QRegularExpression(
-					 QString::fromStdString(s.window))));
+			 (title == s.window ||
+			  QString::fromStdString(title).contains(
+				  QRegularExpression(
+					  QString::fromStdString(s.window)))));
 
 		if (isRunning(s.window) && (fullscreen && (focus || ignore))) {
 			match = true;
