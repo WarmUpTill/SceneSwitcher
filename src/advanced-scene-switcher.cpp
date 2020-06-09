@@ -130,6 +130,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 
 	vector<string> windows;
 	GetWindowList(windows);
+	sort(windows.begin(), windows.end());
 
 	for (string &window : windows) {
 		ui->windows->addItem(window.c_str());
