@@ -11,16 +11,32 @@ void GetWindowList(vector<string> &windows)
 	windows.resize(0);
 
 	@autoreleasepool {
-		NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-		NSArray *array = [ws runningApplications];
-		for (NSRunningApplication *app in array) {
-			NSString *name = app.localizedName;
-			if (!name)
-				continue;
+		NSMutableArray *apps =
+			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
+				kCGWindowListOptionAll, kCGNullWindowID);
+		for (NSDictionary *app in apps) {
+			// Construct string from NSString accounting for nil
+			string name([[app objectForKey:@"kCGWindowName"]
+					    UTF8String],
+				    [[app objectForKey:@"kCGWindowName"]
+					    lengthOfBytesUsingEncoding:
+						    NSUTF8StringEncoding]);
+			string owner([[app objectForKey:@"kCGWindowOwnerName"]
+					     UTF8String],
+				     [[app objectForKey:@"kCGWindowOwnerName"]
+					     lengthOfBytesUsingEncoding:
+						     NSUTF8StringEncoding]);
 
-			const char *str = name.UTF8String;
-			if (str && *str)
-				windows.emplace_back(str);
+			// Check if name exists
+			if (!name.empty() &&
+			    find(windows.begin(), windows.end(), name) ==
+				    windows.end())
+				windows.emplace_back(name);
+			// Check if owner exists
+			else if (!owner.empty() &&
+				 find(windows.begin(), windows.end(), owner) ==
+					 windows.end())
+				windows.emplace_back(owner);
 		}
 	}
 }
@@ -31,16 +47,31 @@ void GetWindowList(QStringList &windows)
 	windows.clear();
 
 	@autoreleasepool {
-		NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-		NSArray *array = [ws runningApplications];
-		for (NSRunningApplication *app in array) {
-			NSString *name = app.localizedName;
-			if (!name)
-				continue;
+		NSMutableArray *apps =
+			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
+				kCGWindowListOptionAll, kCGNullWindowID);
+		for (NSDictionary *app in apps) {
+			// Construct string from NSString accounting for nil
+			string name([[app objectForKey:@"kCGWindowName"]
+					    UTF8String],
+				    [[app objectForKey:@"kCGWindowName"]
+					    lengthOfBytesUsingEncoding:
+						    NSUTF8StringEncoding]);
+			string owner([[app objectForKey:@"kCGWindowOwnerName"]
+					     UTF8String],
+				     [[app objectForKey:@"kCGWindowOwnerName"]
+					     lengthOfBytesUsingEncoding:
+						     NSUTF8StringEncoding]);
 
-			const char *str = name.UTF8String;
-			if (str && *str)
-				windows << QString(str);
+			// Check if name exists
+			if (!name.empty() &&
+			    !windows.contains(QString::fromStdString(name)))
+				windows << QString::fromStdString(name);
+			// Check if owner exists
+			else if (!owner.empty() &&
+				 !windows.contains(
+					 QString::fromStdString(name)))
+				windows << QString::fromStdString(owner);
 		}
 	}
 }
@@ -50,16 +81,36 @@ void GetCurrentWindowTitle(string &title)
 	title.resize(0);
 
 	@autoreleasepool {
-		NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-		NSRunningApplication *app = [ws frontmostApplication];
-		if (app) {
-			NSString *name = app.localizedName;
-			if (!name)
-				return;
+		NSMutableArray *apps =
+			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
+				kCGWindowListOptionOnScreenOnly,
+				kCGNullWindowID);
+		for (NSDictionary *app in apps) {
+			int layer =
+				[[app objectForKey:@"kCGWindowLayer"] intValue];
+			// True if window is frontmost
+			if (layer == 0) {
+				// Construct string from NSString accounting for nil
+				string name(
+					[[app objectForKey:@"kCGWindowName"]
+						UTF8String],
+					[[app objectForKey:@"kCGWindowName"]
+						lengthOfBytesUsingEncoding:
+							NSUTF8StringEncoding]);
+				string owner(
+					[[app objectForKey:@"kCGWindowOwnerName"]
+						UTF8String],
+					[[app objectForKey:@"kCGWindowOwnerName"]
+						lengthOfBytesUsingEncoding:
+							NSUTF8StringEncoding]);
 
-			const char *str = name.UTF8String;
-			if (str && *str)
-				title = str;
+				if (!name.empty())
+					title = name;
+				else if (!owner.empty())
+					title = owner;
+
+				break;
+			}
 		}
 	}
 }
@@ -75,54 +126,72 @@ pair<int, int> getCursorPos()
 	return pos;
 }
 
-// Argument added in lieu of fullscreen bug fix
-bool isFullscreen(std::string &title)
+bool isFullscreen(string &title)
 {
+	// Check for match
 	@autoreleasepool {
-		AXValueRef temp;
-		CGSize windowSize;
-		CGPoint windowPosition;
-		AXUIElementRef frontMostApp;
-		AXUIElementRef frontMostWindow;
+		NSArray *screens = [NSScreen screens];
+		NSMutableArray *apps =
+			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
+				kCGWindowListOptionAll, kCGNullWindowID);
+		for (NSDictionary *app in apps) {
+			// Construct string from NSString accounting for nil
+			string name([[app objectForKey:@"kCGWindowName"]
+					    UTF8String],
+				    [[app objectForKey:@"kCGWindowName"]
+					    lengthOfBytesUsingEncoding:
+						    NSUTF8StringEncoding]);
+			string owner([[app objectForKey:@"kCGWindowOwnerName"]
+					     UTF8String],
+				     [[app objectForKey:@"kCGWindowOwnerName"]
+					     lengthOfBytesUsingEncoding:
+						     NSUTF8StringEncoding]);
 
-		pid_t pid;
-		ProcessSerialNumber psn;
-		@try {
-			GetFrontProcess(&psn);
-			GetProcessPID(&psn, &pid);
-			frontMostApp = AXUIElementCreateApplication(pid);
+			// True if switch equals app
+			bool equals = (title == name || title == owner);
+			// True if switch matches app
+			bool matches = (QString::fromStdString(name).contains(
+						QRegularExpression(
+							QString::fromStdString(
+								title))) ||
+					QString::fromStdString(owner).contains(
+						QRegularExpression(
+							QString::fromStdString(
+								title))));
 
-			AXUIElementCopyAttributeValue(
-				frontMostApp, kAXFocusedWindowAttribute,
-				(CFTypeRef *)&frontMostWindow);
+			// If found, check if fullscreen
+			if (equals || matches) {
+				// Get window bounds
+				NSRect bounds;
+				CGRectMakeWithDictionaryRepresentation(
+					(CFDictionaryRef)[app
+						objectForKey:@"kCGWindowBounds"],
+					&bounds);
 
-			// Get the window size and position
-			AXUIElementCopyAttributeValue(frontMostWindow,
-						      kAXSizeAttribute,
-						      (CFTypeRef *)&temp);
-			AXValueGetValue(temp, kAXValueTypeCGSize, &windowSize);
-			CFRelease(temp);
+				// Compare to screen bounds
+				for (NSScreen *screen in screens) {
+					NSRect frame = [screen visibleFrame];
 
-			AXUIElementCopyAttributeValue(frontMostWindow,
-						      kAXPositionAttribute,
-						      (CFTypeRef *)&temp);
-			AXValueGetValue(temp, kAXValueTypeCGPoint,
-					&windowPosition);
-			CFRelease(temp);
+					// True if flipped window origin equals screen origin
+					bool origin =
+						(bounds.origin.x ==
+							 frame.origin.x &&
+						 ([screens[0] visibleFrame]
+								  .size.height -
+							  frame.size.height -
+							  bounds.origin.y ==
+						  frame.origin.y));
+					// True if window size equals screen size
+					bool size = NSEqualSizes(bounds.size,
+								 frame.size);
 
-			CGRect screenBound = CGDisplayBounds(CGMainDisplayID());
-			CGSize screenSize = screenBound.size;
-
-			if ((windowSize.width == screenSize.width) &&
-			    (windowSize.height == screenSize.height) &&
-			    (windowPosition.x == 0) && (windowPosition.y == 0))
-				return true;
-		} @catch (...) {
-			// deal with the exception
-		} @catch (NSException *exception) {
-			// deal with the exception
+					if (origin && size)
+						return true;
+				}
+			}
 		}
 	}
+
 	return false;
 }
 
