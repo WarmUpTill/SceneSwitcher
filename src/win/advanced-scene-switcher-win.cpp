@@ -111,7 +111,9 @@ bool isFullscreen(std::string &title)
 	while (hwnd) {
 		string wtitle;
 		if (WindowValid(hwnd) && GetWindowTitle(hwnd, wtitle) &&
-		    wtitle == title)
+		    (wtitle == title ||
+		     QString::fromStdString(wtitle).contains(QRegularExpression(
+			     QString::fromStdString(title)))))
 			break;
 
 		hwnd = GetNextWindow(hwnd, GW_HWNDNEXT);
