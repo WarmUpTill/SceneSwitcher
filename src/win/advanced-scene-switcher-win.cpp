@@ -124,6 +124,9 @@ bool isFullscreen(std::string &title)
 		       &monitorInfo);
 
 	if (hwnd && hwnd != GetDesktopWindow() && hwnd != GetShellWindow()) {
+		if (IsZoomed(hwnd)) {
+			return true;
+		}
 		GetWindowRect(hwnd, &appBounds);
 		if (monitorInfo.rcMonitor.bottom == appBounds.bottom &&
 		    monitorInfo.rcMonitor.top == appBounds.top &&
