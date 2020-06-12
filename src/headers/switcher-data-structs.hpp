@@ -34,14 +34,12 @@
 #define DEFAULT_PRIORITY_6 MEDIA_FUNC
 #define DEFAULT_PRIORITY_7 TIME_FUNC
 
-using namespace std;
-
 /********************************************************************************
  * Data structs for each scene switching method
  ********************************************************************************/
 struct WindowSceneSwitch {
 	OBSWeakSource scene;
-	string window;
+	std::string window;
 	OBSWeakSource transition;
 	bool fullscreen;
 	bool focus;
@@ -79,12 +77,12 @@ struct ScreenRegionSwitch {
 	OBSWeakSource scene;
 	OBSWeakSource transition;
 	int minX, minY, maxX, maxY;
-	string regionStr;
+	std::string regionStr;
 
 	inline ScreenRegionSwitch(OBSWeakSource scene_,
 				  OBSWeakSource transition_, int minX_,
 				  int minY_, int maxX_, int maxY_,
-				  string regionStr_)
+				  std::string regionStr_)
 		: scene(scene_),
 		  transition(transition_),
 		  minX(minX_),
@@ -102,12 +100,12 @@ struct SceneRoundTripSwitch {
 	OBSWeakSource transition;
 	int delay;
 	bool usePreviousScene;
-	string sceneRoundTripStr;
+	std::string sceneRoundTripStr;
 
 	inline SceneRoundTripSwitch(OBSWeakSource scene1_,
 				    OBSWeakSource scene2_,
 				    OBSWeakSource transition_, int delay_,
-				    bool usePreviousScene_, string str)
+				    bool usePreviousScene_, std::string str)
 		: scene1(scene1_),
 		  scene2(scene2_),
 		  transition(transition_),
@@ -122,10 +120,10 @@ struct RandomSwitch {
 	OBSWeakSource scene;
 	OBSWeakSource transition;
 	double delay;
-	string randomSwitchStr;
+	std::string randomSwitchStr;
 
 	inline RandomSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-			    double delay_, string str)
+			    double delay_, std::string str)
 		: scene(scene_),
 		  transition(transition_),
 		  delay(delay_),
@@ -138,11 +136,11 @@ struct SceneTransition {
 	OBSWeakSource scene1;
 	OBSWeakSource scene2;
 	OBSWeakSource transition;
-	string sceneTransitionStr;
+	std::string sceneTransitionStr;
 
 	inline SceneTransition(OBSWeakSource scene1_, OBSWeakSource scene2_,
 			       OBSWeakSource transition_,
-			       string sceneTransitionStr_)
+			       std::string sceneTransitionStr_)
 		: scene1(scene1_),
 		  scene2(scene2_),
 		  transition(transition_),
@@ -154,11 +152,11 @@ struct SceneTransition {
 struct DefaultSceneTransition {
 	OBSWeakSource scene;
 	OBSWeakSource transition;
-	string sceneTransitionStr;
+	std::string sceneTransitionStr;
 
 	inline DefaultSceneTransition(OBSWeakSource scene_,
 				      OBSWeakSource transition_,
-				      string sceneTransitionStr_)
+				      std::string sceneTransitionStr_)
 		: scene(scene_),
 		  transition(transition_),
 		  sceneTransitionStr(sceneTransitionStr_)
@@ -169,8 +167,8 @@ struct DefaultSceneTransition {
 struct FileSwitch {
 	OBSWeakSource scene;
 	OBSWeakSource transition;
-	string file;
-	string text;
+	std::string file;
+	std::string text;
 	bool useRegex = false;
 	bool useTime = false;
 	QDateTime lastMod;
@@ -191,9 +189,9 @@ struct FileSwitch {
 
 struct FileIOData {
 	bool readEnabled = false;
-	string readPath;
+	std::string readPath;
 	bool writeEnabled = false;
-	string writePath;
+	std::string writePath;
 };
 
 struct IdleData {
@@ -238,11 +236,11 @@ struct TimeSwitch {
 	QTime time;
 	bool matched;
 	bool usePreviousScene;
-	string timeSwitchStr;
+	std::string timeSwitchStr;
 
 	inline TimeSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			  QTime time_, bool usePreviousScene_,
-			  string timeSwitchStr_)
+			  std::string timeSwitchStr_)
 		: scene(scene_),
 		  transition(transition_),
 		  time(time_),
@@ -262,11 +260,11 @@ class SwitcherThread;
 struct SwitcherData {
 	SwitcherThread *th = nullptr;
 
-	condition_variable cv;
-	mutex m;
+	std::condition_variable cv;
+	std::mutex m;
 	bool transitionActive = false;
 	bool waitForTransition = false;
-	condition_variable transitionCv;
+	std::condition_variable transitionCv;
 	bool startAtLaunch = false;
 	bool stop = false;
 
@@ -279,39 +277,39 @@ struct SwitcherData {
 	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
 
-	vector<WindowSceneSwitch> windowSwitches;
-	vector<string> ignoreIdleWindows;
-	string lastTitle;
+	std::vector<WindowSceneSwitch> windowSwitches;
+	std::vector<std::string> ignoreIdleWindows;
+	std::string lastTitle;
 
-	vector<ScreenRegionSwitch> screenRegionSwitches;
+	std::vector<ScreenRegionSwitch> screenRegionSwitches;
 
-	vector<OBSWeakSource> pauseScenesSwitches;
+	std::vector<OBSWeakSource> pauseScenesSwitches;
 
-	vector<string> pauseWindowsSwitches;
+	std::vector<std::string> pauseWindowsSwitches;
 
-	vector<string> ignoreWindowsSwitches;
+	std::vector<std::string> ignoreWindowsSwitches;
 
-	vector<SceneRoundTripSwitch> sceneRoundTripSwitches;
+	std::vector<SceneRoundTripSwitch> sceneRoundTripSwitches;
 
-	vector<RandomSwitch> randomSwitches;
+	std::vector<RandomSwitch> randomSwitches;
 
 	FileIOData fileIO;
 	IdleData idleData;
-	vector<FileSwitch> fileSwitches;
+	std::vector<FileSwitch> fileSwitches;
 
-	vector<ExecutableSceneSwitch> executableSwitches;
+	std::vector<ExecutableSceneSwitch> executableSwitches;
 
 	bool autoStopEnable = false;
 	OBSWeakSource autoStopScene;
 
-	vector<SceneTransition> sceneTransitions;
-	vector<DefaultSceneTransition> defaultSceneTransitions;
+	std::vector<SceneTransition> sceneTransitions;
+	std::vector<DefaultSceneTransition> defaultSceneTransitions;
 
-	vector<MediaSwitch> mediaSwitches;
+	std::vector<MediaSwitch> mediaSwitches;
 
-	vector<TimeSwitch> timeSwitches;
+	std::vector<TimeSwitch> timeSwitches;
 
-	vector<int> functionNamesByPriority = vector<int>{
+	std::vector<int> functionNamesByPriority = std::vector<int>{
 		DEFAULT_PRIORITY_0, DEFAULT_PRIORITY_1, DEFAULT_PRIORITY_2,
 		DEFAULT_PRIORITY_3, DEFAULT_PRIORITY_4, DEFAULT_PRIORITY_5,
 		DEFAULT_PRIORITY_6, DEFAULT_PRIORITY_7};
@@ -355,7 +353,7 @@ struct SwitcherData {
 	bool checkPause();
 	void checkSceneRoundTrip(bool &match, OBSWeakSource &scene,
 				 OBSWeakSource &transition,
-				 unique_lock<mutex> &lock);
+				 std::unique_lock<std::mutex> &lock);
 	void checkIdleSwitch(bool &match, OBSWeakSource &scene,
 			     OBSWeakSource &transition);
 	void checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,

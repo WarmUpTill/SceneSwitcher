@@ -26,7 +26,7 @@ void SceneSwitcher::on_executables_currentRowChanged(int idx)
 
 	QString exec = item->data(Qt::UserRole).toString();
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->executableSwitches) {
 		if (exec.compare(s.mExe) == 0) {
 			QString sceneName = GetWeakSourceName(s.mScene).c_str();
@@ -50,7 +50,7 @@ void SceneSwitcher::on_executableUp_clicked()
 					    ui->executables->takeItem(index));
 		ui->executables->setCurrentRow(index - 1);
 
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 
 		iter_swap(switcher->executableSwitches.begin() + index,
 			  switcher->executableSwitches.begin() + index - 1);
@@ -65,7 +65,7 @@ void SceneSwitcher::on_executableDown_clicked()
 					    ui->executables->takeItem(index));
 		ui->executables->setCurrentRow(index + 1);
 
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 
 		iter_swap(switcher->executableSwitches.begin() + index,
 			  switcher->executableSwitches.begin() + index + 1);
@@ -92,7 +92,7 @@ void SceneSwitcher::on_executableAdd_clicked()
 	int idx = executableFindByData(exeName);
 
 	if (idx == -1) {
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->executableSwitches.emplace_back(
 			source, transition, exeName.toUtf8().constData(),
 			inFocus);
@@ -105,7 +105,7 @@ void SceneSwitcher::on_executableAdd_clicked()
 		item->setText(text);
 
 		{
-			lock_guard<mutex> lock(switcher->m);
+			std::lock_guard<std::mutex> lock(switcher->m);
 			for (auto &s : switcher->executableSwitches) {
 				if (s.mExe == exeName) {
 					s.mScene = source;
@@ -127,7 +127,7 @@ void SceneSwitcher::on_executableRemove_clicked()
 	QString exe = item->data(Qt::UserRole).toString();
 
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		auto &switches = switcher->executableSwitches;
 
 		for (auto it = switches.begin(); it != switches.end(); ++it) {
@@ -146,7 +146,7 @@ void SceneSwitcher::on_executableRemove_clicked()
 void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 				  OBSWeakSource &transition)
 {
-	string title;
+	std::string title;
 	QStringList runningProcesses;
 	bool ignored = false;
 

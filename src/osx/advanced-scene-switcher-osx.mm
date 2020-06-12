@@ -6,7 +6,7 @@
 #include <util/platform.h>
 #include "../headers/advanced-scene-switcher.hpp"
 
-void GetWindowList(vector<string> &windows)
+void GetWindowList(std::vector<std::string> &windows)
 {
 	windows.resize(0);
 
@@ -16,12 +16,12 @@ void GetWindowList(vector<string> &windows)
 				kCGWindowListOptionAll, kCGNullWindowID);
 		for (NSDictionary *app in apps) {
 			// Construct string from NSString accounting for nil
-			string name([[app objectForKey:@"kCGWindowName"]
+			std::string name([[app objectForKey:@"kCGWindowName"]
 					    UTF8String],
 				    [[app objectForKey:@"kCGWindowName"]
 					    lengthOfBytesUsingEncoding:
 						    NSUTF8StringEncoding]);
-			string owner([[app objectForKey:@"kCGWindowOwnerName"]
+			std::string owner([[app objectForKey:@"kCGWindowOwnerName"]
 					     UTF8String],
 				     [[app objectForKey:@"kCGWindowOwnerName"]
 					     lengthOfBytesUsingEncoding:
@@ -52,12 +52,12 @@ void GetWindowList(QStringList &windows)
 				kCGWindowListOptionAll, kCGNullWindowID);
 		for (NSDictionary *app in apps) {
 			// Construct string from NSString accounting for nil
-			string name([[app objectForKey:@"kCGWindowName"]
+			std::string name([[app objectForKey:@"kCGWindowName"]
 					    UTF8String],
 				    [[app objectForKey:@"kCGWindowName"]
 					    lengthOfBytesUsingEncoding:
 						    NSUTF8StringEncoding]);
-			string owner([[app objectForKey:@"kCGWindowOwnerName"]
+			std::string owner([[app objectForKey:@"kCGWindowOwnerName"]
 					     UTF8String],
 				     [[app objectForKey:@"kCGWindowOwnerName"]
 					     lengthOfBytesUsingEncoding:
@@ -76,7 +76,7 @@ void GetWindowList(QStringList &windows)
 	}
 }
 
-void GetCurrentWindowTitle(string &title)
+void GetCurrentWindowTitle(std::string &title)
 {
 	title.resize(0);
 
@@ -91,13 +91,13 @@ void GetCurrentWindowTitle(string &title)
 			// True if window is frontmost
 			if (layer == 0) {
 				// Construct string from NSString accounting for nil
-				string name(
+				std::string name(
 					[[app objectForKey:@"kCGWindowName"]
 						UTF8String],
 					[[app objectForKey:@"kCGWindowName"]
 						lengthOfBytesUsingEncoding:
 							NSUTF8StringEncoding]);
-				string owner(
+				std::string owner(
 					[[app objectForKey:@"kCGWindowOwnerName"]
 						UTF8String],
 					[[app objectForKey:@"kCGWindowOwnerName"]
@@ -115,9 +115,9 @@ void GetCurrentWindowTitle(string &title)
 	}
 }
 
-pair<int, int> getCursorPos()
+std::pair<int, int> getCursorPos()
 {
-	pair<int, int> pos(0, 0);
+	std::pair<int, int> pos(0, 0);
 	CGEventRef event = CGEventCreate(NULL);
 	CGPoint cursorPos = CGEventGetLocation(event);
 	CFRelease(event);
@@ -126,7 +126,7 @@ pair<int, int> getCursorPos()
 	return pos;
 }
 
-bool isFullscreen(string &title)
+bool isFullscreen(std::string &title)
 {
 	// Check for match
 	@autoreleasepool {
@@ -136,12 +136,12 @@ bool isFullscreen(string &title)
 				kCGWindowListOptionAll, kCGNullWindowID);
 		for (NSDictionary *app in apps) {
 			// Construct string from NSString accounting for nil
-			string name([[app objectForKey:@"kCGWindowName"]
+			std::string name([[app objectForKey:@"kCGWindowName"]
 					    UTF8String],
 				    [[app objectForKey:@"kCGWindowName"]
 					    lengthOfBytesUsingEncoding:
 						    NSUTF8StringEncoding]);
-			string owner([[app objectForKey:@"kCGWindowOwnerName"]
+			std::string owner([[app objectForKey:@"kCGWindowOwnerName"]
 					     UTF8String],
 				     [[app objectForKey:@"kCGWindowOwnerName"]
 					     lengthOfBytesUsingEncoding:
@@ -224,7 +224,7 @@ void GetProcessList(QStringList &list)
 
 bool isInFocus(const QString &executable)
 {
-	string current;
+	std::string current;
 	GetCurrentWindowTitle(current);
 
 	// True if executable switch equals current window

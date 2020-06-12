@@ -6,13 +6,13 @@ void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
 	if (!idleData.idleEnable)
 		return;
 
-	string title;
+	std::string title;
 	bool ignoreIdle = false;
 	//lock.unlock();
 	GetCurrentWindowTitle(title);
 	//lock.lock();
 
-	for (string &window : ignoreIdleWindows) {
+	for (std::string &window : ignoreIdleWindows) {
 		if (window == title) {
 			ignoreIdle = true;
 			break;
@@ -20,15 +20,15 @@ void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
 	}
 
 	if (!ignoreIdle) {
-		for (string &window : ignoreIdleWindows) {
+		for (std::string &window : ignoreIdleWindows) {
 			try {
-				bool matches =
-					regex_match(title, regex(window));
+				bool matches = std::regex_match(
+					title, std::regex(window));
 				if (matches) {
 					ignoreIdle = true;
 					break;
 				}
-			} catch (const regex_error &) {
+			} catch (const std::regex_error &) {
 			}
 		}
 	}
@@ -50,7 +50,7 @@ void SceneSwitcher::on_idleCheckBox_stateChanged(int state)
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	if (!state) {
 		ui->idleScenes->setDisabled(true);
 		ui->idleSpinBox->setDisabled(true);
@@ -92,7 +92,7 @@ void SceneSwitcher::on_idleTransitions_currentTextChanged(const QString &text)
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	UpdateIdleDataTransition(text);
 }
 
@@ -101,7 +101,7 @@ void SceneSwitcher::on_idleScenes_currentTextChanged(const QString &text)
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	UpdateIdleDataScene(text);
 }
 
@@ -109,7 +109,7 @@ void SceneSwitcher::on_idleSpinBox_valueChanged(int i)
 {
 	if (loading)
 		return;
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->idleData.time = i;
 }
 
@@ -124,7 +124,7 @@ void SceneSwitcher::on_ignoreIdleWindows_currentRowChanged(int idx)
 
 	QString window = item->data(Qt::UserRole).toString();
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &w : switcher->ignoreIdleWindows) {
 		if (window.compare(w.c_str()) == 0) {
 			ui->ignoreIdleWindowsWindows->setCurrentText(w.c_str());
@@ -150,7 +150,7 @@ void SceneSwitcher::on_ignoreIdleAdd_clicked()
 			new QListWidgetItem(windowName, ui->ignoreIdleWindows);
 		item->setData(Qt::UserRole, v);
 
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->ignoreIdleWindows.emplace_back(
 			windowName.toUtf8().constData());
 		ui->ignoreIdleWindows->sortItems();
@@ -166,7 +166,7 @@ void SceneSwitcher::on_ignoreIdleRemove_clicked()
 	QString windowName = item->data(Qt::UserRole).toString();
 
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		auto &windows = switcher->ignoreIdleWindows;
 
 		for (auto it = windows.begin(); it != windows.end(); ++it) {

@@ -34,7 +34,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 {
 	ui->setupUi(this);
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 
 	switcher->Prune();
 
@@ -128,11 +128,11 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		GetWeakSourceName(switcher->nonMatchingScene).c_str());
 	ui->checkInterval->setValue(switcher->interval);
 
-	vector<string> windows;
+	std::vector<std::string> windows;
 	GetWindowList(windows);
 	sort(windows.begin(), windows.end());
 
-	for (string &window : windows) {
+	for (std::string &window : windows) {
 		ui->windows->addItem(window.c_str());
 		ui->ignoreWindowsWindows->addItem(window.c_str());
 		ui->pauseWindowsWindows->addItem(window.c_str());
@@ -145,8 +145,8 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		ui->executable->addItem(process);
 
 	for (auto &s : switcher->executableSwitches) {
-		string sceneName = GetWeakSourceName(s.mScene);
-		string transitionName = GetWeakSourceName(s.mTransition);
+		std::string sceneName = GetWeakSourceName(s.mScene);
+		std::string transitionName = GetWeakSourceName(s.mTransition);
 		QString text = MakeSwitchNameExecutable(sceneName.c_str(),
 							s.mExe,
 							transitionName.c_str(),
@@ -158,8 +158,8 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	}
 
 	for (auto &s : switcher->windowSwitches) {
-		string sceneName = GetWeakSourceName(s.scene);
-		string transitionName = GetWeakSourceName(s.transition);
+		std::string sceneName = GetWeakSourceName(s.scene);
+		std::string transitionName = GetWeakSourceName(s.transition);
 		QString text = MakeSwitchName(sceneName.c_str(),
 					      s.window.c_str(),
 					      transitionName.c_str(),
@@ -170,8 +170,8 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	}
 
 	for (auto &s : switcher->screenRegionSwitches) {
-		string sceneName = GetWeakSourceName(s.scene);
-		string transitionName = GetWeakSourceName(s.transition);
+		std::string sceneName = GetWeakSourceName(s.scene);
+		std::string transitionName = GetWeakSourceName(s.transition);
 		QString text = MakeScreenRegionSwitchName(
 			sceneName.c_str(), transitionName.c_str(), s.minX,
 			s.minY, s.maxX, s.maxY);
@@ -192,7 +192,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	}
 
 	for (auto &scene : switcher->pauseScenesSwitches) {
-		string sceneName = GetWeakSourceName(scene);
+		std::string sceneName = GetWeakSourceName(scene);
 		QString text = QString::fromStdString(sceneName);
 
 		QListWidgetItem *item =
@@ -218,11 +218,11 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 
 	int smallestDelay = switcher->interval;
 	for (auto &s : switcher->sceneRoundTripSwitches) {
-		string sceneName1 = GetWeakSourceName(s.scene1);
-		string sceneName2 = (s.usePreviousScene)
-					    ? PREVIOUS_SCENE_NAME
-					    : GetWeakSourceName(s.scene2);
-		string transitionName = GetWeakSourceName(s.transition);
+		std::string sceneName1 = GetWeakSourceName(s.scene1);
+		std::string sceneName2 = (s.usePreviousScene)
+						 ? PREVIOUS_SCENE_NAME
+						 : GetWeakSourceName(s.scene2);
+		std::string transitionName = GetWeakSourceName(s.transition);
 		QString text = MakeSceneRoundTripSwitchName(
 			sceneName1.c_str(), sceneName2.c_str(),
 			transitionName.c_str(), (double)s.delay / 1000);
@@ -239,9 +239,9 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		: ui->intervalWarning->setVisible(false);
 
 	for (auto &s : switcher->sceneTransitions) {
-		string sceneName1 = GetWeakSourceName(s.scene1);
-		string sceneName2 = GetWeakSourceName(s.scene2);
-		string transitionName = GetWeakSourceName(s.transition);
+		std::string sceneName1 = GetWeakSourceName(s.scene1);
+		std::string sceneName2 = GetWeakSourceName(s.scene2);
+		std::string transitionName = GetWeakSourceName(s.transition);
 		QString text = MakeSceneTransitionName(sceneName1.c_str(),
 						       sceneName2.c_str(),
 						       transitionName.c_str());
@@ -253,8 +253,8 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	//(transitionDurationLongerThanInterval(switcher->interval)) ? ui->transitionWarning->setVisible(true) : ui->transitionWarning->setVisible(false);
 
 	for (auto &s : switcher->defaultSceneTransitions) {
-		string sceneName = GetWeakSourceName(s.scene);
-		string transitionName = GetWeakSourceName(s.transition);
+		std::string sceneName = GetWeakSourceName(s.scene);
+		std::string transitionName = GetWeakSourceName(s.transition);
 		QString text = MakeDefaultSceneTransitionName(
 			sceneName.c_str(), transitionName.c_str());
 
@@ -272,8 +272,8 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	}
 
 	for (auto &s : switcher->randomSwitches) {
-		string sceneName = GetWeakSourceName(s.scene);
-		string transitionName = GetWeakSourceName(s.transition);
+		std::string sceneName = GetWeakSourceName(s.scene);
+		std::string transitionName = GetWeakSourceName(s.transition);
 		QString text = MakeRandomSwitchName(
 			sceneName.c_str(), transitionName.c_str(), s.delay);
 
@@ -283,8 +283,8 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	}
 
 	for (auto &s : switcher->fileSwitches) {
-		string sceneName = GetWeakSourceName(s.scene);
-		string transitionName = GetWeakSourceName(s.transition);
+		std::string sceneName = GetWeakSourceName(s.scene);
+		std::string transitionName = GetWeakSourceName(s.transition);
 		QString listText = MakeFileSwitchName(
 			sceneName.c_str(), transitionName.c_str(),
 			s.file.c_str(), s.text.c_str(), s.useRegex, s.useTime);
@@ -295,11 +295,11 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	}
 
 	for (auto &s : switcher->mediaSwitches) {
-		string sourceName = GetWeakSourceName(s.source);
-		string sceneName = (s.usePreviousScene)
-					   ? PREVIOUS_SCENE_NAME
-					   : GetWeakSourceName(s.scene);
-		string transitionName = GetWeakSourceName(s.transition);
+		std::string sourceName = GetWeakSourceName(s.source);
+		std::string sceneName = (s.usePreviousScene)
+						? PREVIOUS_SCENE_NAME
+						: GetWeakSourceName(s.scene);
+		std::string transitionName = GetWeakSourceName(s.transition);
 		QString listText = MakeMediaSwitchName(
 			sourceName.c_str(), sceneName.c_str(),
 			transitionName.c_str(), s.state, s.restriction, s.time);
@@ -310,10 +310,10 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	}
 
 	for (auto &s : switcher->timeSwitches) {
-		string sceneName = (s.usePreviousScene)
-					   ? PREVIOUS_SCENE_NAME
-					   : GetWeakSourceName(s.scene);
-		string transitionName = GetWeakSourceName(s.transition);
+		std::string sceneName = (s.usePreviousScene)
+						? PREVIOUS_SCENE_NAME
+						: GetWeakSourceName(s.scene);
+		std::string transitionName = GetWeakSourceName(s.transition);
 		QString listText = MakeTimeSwitchName(
 			sceneName.c_str(), transitionName.c_str(), s.time);
 
@@ -369,7 +369,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	screenRegionTimer->start(1000);
 
 	for (int p : switcher->functionNamesByPriority) {
-		string s = "";
+		std::string s = "";
 		switch (p) {
 		case READ_FILE_FUNC:
 			s = "File Content";
@@ -422,9 +422,9 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 {
 	if (saving) {
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		obs_data_t *obj = obs_data_create();
-		obs_data_array_t *array = obs_data_array_create();
+		obs_data_array_t *windowTitleArray = obs_data_array_create();
 		obs_data_array_t *screenRegionArray = obs_data_array_create();
 		obs_data_array_t *pauseScenesArray = obs_data_array_create();
 		obs_data_array_t *pauseWindowsArray = obs_data_array_create();
@@ -465,7 +465,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 				obs_data_set_bool(array_obj, "fullscreen",
 						  s.fullscreen);
 				obs_data_set_bool(array_obj, "focus", s.focus);
-				obs_data_array_push_back(array, array_obj);
+				obs_data_array_push_back(windowTitleArray,
+							 array_obj);
 				obs_source_release(source);
 				obs_source_release(transition);
 			}
@@ -522,7 +523,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_release(array_obj);
 		}
 
-		for (string &window : switcher->pauseWindowsSwitches) {
+		for (std::string &window : switcher->pauseWindowsSwitches) {
 			obs_data_t *array_obj = obs_data_create();
 			obs_data_set_string(array_obj, "pauseWindow",
 					    window.c_str());
@@ -530,7 +531,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_release(array_obj);
 		}
 
-		for (string &window : switcher->ignoreWindowsSwitches) {
+		for (std::string &window : switcher->ignoreWindowsSwitches) {
 			obs_data_t *array_obj = obs_data_create();
 			obs_data_set_string(array_obj, "ignoreWindow",
 					    window.c_str());
@@ -710,7 +711,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_release(array_obj);
 		}
 
-		for (string &window : switcher->ignoreIdleWindows) {
+		for (std::string &window : switcher->ignoreIdleWindows) {
 			obs_data_t *array_obj = obs_data_create();
 			obs_data_set_string(array_obj, "window",
 					    window.c_str());
@@ -819,7 +820,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_release(array_obj);
 		}
 
-		string nonMatchingSceneName =
+		std::string nonMatchingSceneName =
 			GetWeakSourceName(switcher->nonMatchingScene);
 
 		obs_data_set_int(obj, "interval", switcher->interval);
@@ -829,7 +830,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 				 switcher->switchIfNotMatching);
 		obs_data_set_bool(obj, "active", !switcher->stop);
 
-		obs_data_set_array(obj, "switches", array);
+		obs_data_set_array(obj, "switches", windowTitleArray);
 		obs_data_set_array(obj, "screenRegion", screenRegionArray);
 		obs_data_set_array(obj, "pauseScenes", pauseScenesArray);
 		obs_data_set_array(obj, "pauseWindows", pauseWindowsArray);
@@ -847,16 +848,16 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_set_array(obj, "mediaSwitches", mediaArray);
 		obs_data_set_array(obj, "timeSwitches", timeArray);
 
-		string autoStopSceneName =
+		std::string autoStopSceneName =
 			GetWeakSourceName(switcher->autoStopScene);
 		obs_data_set_bool(obj, "autoStopEnable",
 				  switcher->autoStopEnable);
 		obs_data_set_string(obj, "autoStopSceneName",
 				    autoStopSceneName.c_str());
 
-		string idleSceneName =
+		std::string idleSceneName =
 			GetWeakSourceName(switcher->idleData.scene);
-		string idleTransitionName =
+		std::string idleTransitionName =
 			GetWeakSourceName(switcher->idleData.transition);
 		obs_data_set_bool(obj, "idleEnable",
 				  switcher->idleData.idleEnable);
@@ -899,7 +900,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
 
-		obs_data_array_release(array);
+		obs_data_array_release(windowTitleArray);
 		obs_data_array_release(screenRegionArray);
 		obs_data_array_release(pauseScenesArray);
 		obs_data_array_release(pauseWindowsArray);
@@ -920,7 +921,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 		obs_data_t *obj =
 			obs_data_get_obj(save_data, "advanced-scene-switcher");
-		obs_data_array_t *array = obs_data_get_array(obj, "switches");
+		obs_data_array_t *windowTitleArray =
+			obs_data_get_array(obj, "switches");
 		obs_data_array_t *screenRegionArray =
 			obs_data_get_array(obj, "screenRegion");
 		obs_data_array_t *pauseScenesArray =
@@ -958,7 +960,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 					 NO_SWITCH);
 		switcher->switchIfNotMatching = (NoMatch)obs_data_get_int(
 			obj, "switch_if_not_matching");
-		string nonMatchingScene =
+		std::string nonMatchingScene =
 			obs_data_get_string(obj, "non_matching_scene");
 		bool active = obs_data_get_bool(obj, "active");
 
@@ -966,10 +968,11 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			GetWeakSourceByName(nonMatchingScene.c_str());
 
 		switcher->windowSwitches.clear();
-		size_t count = obs_data_array_count(array);
+		size_t count = obs_data_array_count(windowTitleArray);
 
 		for (size_t i = 0; i < count; i++) {
-			obs_data_t *array_obj = obs_data_array_item(array, i);
+			obs_data_t *array_obj =
+				obs_data_array_item(windowTitleArray, i);
 
 			const char *scene =
 				obs_data_get_string(array_obj, "scene");
@@ -1006,7 +1009,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			int minY = obs_data_get_int(array_obj, "minY");
 			int maxX = obs_data_get_int(array_obj, "maxX");
 			int maxY = obs_data_get_int(array_obj, "maxY");
-			string regionStr = obs_data_get_string(
+			std::string regionStr = obs_data_get_string(
 				array_obj, "screenRegionStr");
 
 			switcher->screenRegionSwitches.emplace_back(
@@ -1085,11 +1088,11 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 				obs_data_get_int(
 					array_obj,
 					"sceneRoundTripDelayMs"); //to be compatible with older versions
-			string str = MakeSceneRoundTripSwitchName(
-					     scene1, scene2, transition,
-					     ((double)delay) / 1000.0)
-					     .toUtf8()
-					     .constData();
+			std::string str = MakeSceneRoundTripSwitchName(
+						  scene1, scene2, transition,
+						  ((double)delay) / 1000.0)
+						  .toUtf8()
+						  .constData();
 			const char *sceneRoundTripStr = str.c_str();
 
 			switcher->sceneRoundTripSwitches.emplace_back(
@@ -1257,11 +1260,11 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 					array_obj, "restriction");
 			uint64_t time = obs_data_get_int(array_obj, "time");
 
-			string mediaStr = MakeMediaSwitchName(source, scene,
-							      transition, state,
-							      restriction, time)
-						  .toUtf8()
-						  .constData();
+			std::string mediaStr =
+				MakeMediaSwitchName(source, scene, transition,
+						    state, restriction, time)
+					.toUtf8()
+					.constData();
 
 			switcher->mediaSwitches.emplace_back(
 				GetWeakSourceByName(scene),
@@ -1288,7 +1291,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			QTime time = QTime::fromString(
 				obs_data_get_string(array_obj, "time"));
 
-			string timeSwitchStr =
+			std::string timeSwitchStr =
 				MakeTimeSwitchName(scene, transition, time)
 					.toUtf8()
 					.constData();
@@ -1302,16 +1305,16 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_release(array_obj);
 		}
 
-		string autoStopScene =
+		std::string autoStopScene =
 			obs_data_get_string(obj, "autoStopSceneName");
 		switcher->autoStopEnable =
 			obs_data_get_bool(obj, "autoStopEnable");
 		switcher->autoStopScene =
 			GetWeakSourceByName(autoStopScene.c_str());
 
-		string idleSceneName =
+		std::string idleSceneName =
 			obs_data_get_string(obj, "idleSceneName");
-		string idleTransitionName =
+		std::string idleTransitionName =
 			obs_data_get_string(obj, "idleTransitionName");
 		switcher->idleData.scene =
 			GetWeakSourceByName(idleSceneName.c_str());
@@ -1385,7 +1388,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->threadPriority =
 			obs_data_get_int(obj, "threadPriority");
 
-		obs_data_array_release(array);
+		obs_data_array_release(windowTitleArray);
 		obs_data_array_release(screenRegionArray);
 		obs_data_array_release(pauseScenesArray);
 		obs_data_array_release(ignoreWindowsArray);
@@ -1417,21 +1420,21 @@ void SwitcherData::Thread()
 {
 	blog(LOG_INFO, "Advanced Scene Switcher started");
 	//to avoid scene duplication when rapidly switching scene collection
-	this_thread::sleep_for(chrono::seconds(2));
+	std::this_thread::sleep_for(std::chrono::seconds(2));
 
 	int sleep = 0;
 
 	while (true) {
 	startLoop:
-		unique_lock<mutex> lock(m);
+		std::unique_lock<std::mutex> lock(m);
 		bool match = false;
 		OBSWeakSource scene;
 		OBSWeakSource transition;
-		chrono::milliseconds duration;
+		std::chrono::milliseconds duration;
 		if (sleep > interval)
-			duration = chrono::milliseconds(sleep);
+			duration = std::chrono::milliseconds(sleep);
 		else
-			duration = chrono::milliseconds(interval);
+			duration = std::chrono::milliseconds(interval);
 		sleep = 0;
 		switcher->Prune();
 		writeSceneInfoToFile();
@@ -1512,7 +1515,7 @@ endLoop:
 }
 
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
-		 unique_lock<mutex> &lock)
+		 std::unique_lock<std::mutex> &lock)
 {
 	obs_source_t *source = obs_weak_source_get_source(scene);
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
@@ -1605,7 +1608,7 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 
 	case OBS_FRONTEND_EVENT_SCENE_CHANGED: {
 		SwitcherData *s = (SwitcherData *)switcher;
-		lock_guard<mutex> lock(s->m);
+		std::lock_guard<std::mutex> lock(s->m);
 		//stop waiting if scene was manually changed
 		if (s->sceneChangedDuringWait())
 			s->cv.notify_one();

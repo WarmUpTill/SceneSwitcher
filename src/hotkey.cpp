@@ -16,15 +16,15 @@ void startHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 
 	if (hotkeyData != NULL) {
 		char *path = obs_module_config_path("");
-		ofstream file;
-		file.open(string(path).append(START_HOTKEY_PATH),
-			  ofstream::trunc);
+		std::ofstream file;
+		file.open(std::string(path).append(START_HOTKEY_PATH),
+			  std::ofstream::trunc);
 		if (file.is_open()) {
 			size_t num = obs_data_array_count(hotkeyData);
 			for (size_t i = 0; i < num; i++) {
 				obs_data_t *data =
 					obs_data_array_item(hotkeyData, i);
-				string temp = obs_data_get_json(data);
+				std::string temp = obs_data_get_json(data);
 				obs_data_release(data);
 				file << temp;
 			}
@@ -50,15 +50,15 @@ void stopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 
 	if (hotkeyData != NULL) {
 		char *path = obs_module_config_path("");
-		ofstream file;
-		file.open(string(path).append(STOP_HOTKEY_PATH),
-			  ofstream::trunc);
+		std::ofstream file;
+		file.open(std::string(path).append(STOP_HOTKEY_PATH),
+			  std::ofstream::trunc);
 		if (file.is_open()) {
 			size_t num = obs_data_array_count(hotkeyData);
 			for (size_t i = 0; i < num; i++) {
 				obs_data_t *data =
 					obs_data_array_item(hotkeyData, i);
-				string temp = obs_data_get_json(data);
+				std::string temp = obs_data_get_json(data);
 				obs_data_release(data);
 				file << temp;
 			}
@@ -86,15 +86,15 @@ void startStopToggleHotkeyFunc(void *data, obs_hotkey_id id,
 
 	if (hotkeyData != NULL) {
 		char *path = obs_module_config_path("");
-		ofstream file;
-		file.open(string(path).append(TOGGLE_HOTKEY_PATH),
-			  ofstream::trunc);
+		std::ofstream file;
+		file.open(std::string(path).append(TOGGLE_HOTKEY_PATH),
+			  std::ofstream::trunc);
 		if (file.is_open()) {
 			size_t num = obs_data_array_count(hotkeyData);
 			for (size_t i = 0; i < num; i++) {
 				obs_data_t *data =
 					obs_data_array_item(hotkeyData, i);
-				string temp = obs_data_get_json(data);
+				std::string temp = obs_data_get_json(data);
 				obs_data_release(data);
 				file << temp;
 			}
@@ -105,28 +105,28 @@ void startStopToggleHotkeyFunc(void *data, obs_hotkey_id id,
 	obs_data_array_release(hotkeyData);
 }
 
-string loadConfigFile(string filename)
+std::string loadConfigFile(std::string filename)
 {
-	ifstream settingsFile;
+	std::ifstream settingsFile;
 	char *path = obs_module_config_path("");
-	string value;
+	std::string value;
 
-	settingsFile.open(string(path).append(filename));
+	settingsFile.open(std::string(path).append(filename));
 	if (settingsFile.is_open()) {
-		settingsFile.seekg(0, ios::end);
+		settingsFile.seekg(0, std::ios::end);
 		value.reserve(settingsFile.tellg());
-		settingsFile.seekg(0, ios::beg);
-		value.assign((istreambuf_iterator<char>(settingsFile)),
-			     istreambuf_iterator<char>());
+		settingsFile.seekg(0, std::ios::beg);
+		value.assign((std::istreambuf_iterator<char>(settingsFile)),
+			     std::istreambuf_iterator<char>());
 		settingsFile.close();
 	}
 	bfree(path);
 	return value;
 }
 
-void loadKeybinding(obs_hotkey_id hotkeyId, string path)
+void loadKeybinding(obs_hotkey_id hotkeyId, std::string path)
 {
-	string bindings = loadConfigFile(path);
+	std::string bindings = loadConfigFile(path);
 	if (!bindings.empty()) {
 		obs_data_array_t *hotkeyData = obs_data_array_create();
 		obs_data_t *data = obs_data_create_from_json(bindings.c_str());

@@ -18,7 +18,7 @@ void SceneSwitcher::on_pauseScenesAdd_clicked()
 			new QListWidgetItem(sceneName, ui->pauseScenes);
 		item->setData(Qt::UserRole, v);
 
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->pauseScenesSwitches.emplace_back(source);
 		ui->pauseScenes->sortItems();
 	}
@@ -33,7 +33,7 @@ void SceneSwitcher::on_pauseScenesRemove_clicked()
 	QString pauseScene = item->data(Qt::UserRole).toString();
 
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		auto &switches = switcher->pauseScenesSwitches;
 
 		for (auto it = switches.begin(); it != switches.end(); ++it) {
@@ -66,7 +66,7 @@ void SceneSwitcher::on_pauseWindowsAdd_clicked()
 			new QListWidgetItem(windowName, ui->pauseWindows);
 		item->setData(Qt::UserRole, v);
 
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->pauseWindowsSwitches.emplace_back(
 			windowName.toUtf8().constData());
 		ui->pauseWindows->sortItems();
@@ -82,7 +82,7 @@ void SceneSwitcher::on_pauseWindowsRemove_clicked()
 	QString windowName = item->data(Qt::UserRole).toString();
 
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		auto &switches = switcher->pauseWindowsSwitches;
 
 		for (auto it = switches.begin(); it != switches.end(); ++it) {
@@ -109,9 +109,9 @@ void SceneSwitcher::on_pauseScenes_currentRowChanged(int idx)
 
 	QString scene = item->data(Qt::UserRole).toString();
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->pauseScenesSwitches) {
-		string name = GetWeakSourceName(s);
+		std::string name = GetWeakSourceName(s);
 		if (scene.compare(name.c_str()) == 0) {
 			ui->pauseScenesScenes->setCurrentText(name.c_str());
 			break;
@@ -130,7 +130,7 @@ void SceneSwitcher::on_pauseWindows_currentRowChanged(int idx)
 
 	QString window = item->data(Qt::UserRole).toString();
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->pauseWindowsSwitches) {
 		if (window.compare(s.c_str()) == 0) {
 			ui->pauseWindowsWindows->setCurrentText(s.c_str());
@@ -190,12 +190,12 @@ bool SwitcherData::checkPause()
 	obs_source_release(currentSource);
 	obs_weak_source_release(ws);
 
-	string title;
+	std::string title;
 	if (!pause) {
 		//lock.unlock();
 		GetCurrentWindowTitle(title);
 		//lock.lock();
-		for (string &window : pauseWindowsSwitches) {
+		for (std::string &window : pauseWindowsSwitches) {
 			if (window == title) {
 				pause = true;
 				break;
@@ -207,15 +207,15 @@ bool SwitcherData::checkPause()
 		//lock.unlock();
 		GetCurrentWindowTitle(title);
 		//lock.lock();
-		for (string &window : pauseWindowsSwitches) {
+		for (std::string &window : pauseWindowsSwitches) {
 			try {
-				bool matches =
-					regex_match(title, regex(window));
+				bool matches = std::regex_match(
+					title, std::regex(window));
 				if (matches) {
 					pause = true;
 					break;
 				}
-			} catch (const regex_error &) {
+			} catch (const std::regex_error &) {
 			}
 		}
 	}

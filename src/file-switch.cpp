@@ -18,7 +18,7 @@ void SceneSwitcher::on_readFileCheckBox_stateChanged(int state)
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	if (!state) {
 		ui->browseButton_2->setDisabled(true);
 		ui->readPathLineEdit->setDisabled(true);
@@ -35,7 +35,7 @@ void SceneSwitcher::on_readPathLineEdit_textChanged(const QString &text)
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	if (text.isEmpty()) {
 		switcher->fileIO.readEnabled = false;
 		return;
@@ -49,7 +49,7 @@ void SceneSwitcher::on_writePathLineEdit_textChanged(const QString &text)
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	if (text.isEmpty()) {
 		switcher->fileIO.writeEnabled = false;
 		return;
@@ -196,7 +196,7 @@ void SceneSwitcher::on_fileAdd_clicked()
 		new QListWidgetItem(switchText, ui->fileScenesList);
 	item->setData(Qt::UserRole, v);
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->fileSwitches.emplace_back(source, transition,
 					    fileName.toUtf8().constData(),
 					    text.toUtf8().constData(), useRegex,
@@ -214,7 +214,7 @@ void SceneSwitcher::on_fileRemove_clicked()
 		return;
 
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 
 		auto &switches = switcher->fileSwitches;
 		switches.erase(switches.begin() + idx);
@@ -229,14 +229,14 @@ void SceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
 	if (idx == -1)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 
 	if (switcher->fileSwitches.size() <= idx)
 		return;
 	FileSwitch s = switcher->fileSwitches[idx];
 
-	string sceneName = GetWeakSourceName(s.scene);
-	string transitionName = GetWeakSourceName(s.transition);
+	std::string sceneName = GetWeakSourceName(s.scene);
+	std::string transitionName = GetWeakSourceName(s.transition);
 
 	ui->fileScenes->setCurrentText(sceneName.c_str());
 	ui->fileTransitions->setCurrentText(transitionName.c_str());

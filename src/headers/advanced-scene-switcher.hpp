@@ -152,7 +152,7 @@ bool isFullscreen(std::string &title);
 /********************************************************************************
  * Screenregion helper
  ********************************************************************************/
-pair<int, int> getCursorPos();
+std::pair<int, int> getCursorPos();
 
 /********************************************************************************
  * Idle detection helper
@@ -174,7 +174,7 @@ typedef struct obs_weak_source obs_weak_source_t;
 obs_weak_source_t *getNextTransition(obs_weak_source_t *scene1,
 				     obs_weak_source_t *scene2);
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
-		 unique_lock<mutex> &lock);
+		 std::unique_lock<std::mutex> &lock);
 
 /********************************************************************************
  * Hotkey helper
@@ -190,7 +190,7 @@ void startHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 		     bool pressed);
 void startStopToggleHotkeyFunc(void *data, obs_hotkey_id id,
 			       obs_hotkey_t *hotkey, bool pressed);
-void loadKeybinding(obs_hotkey_id hotkeyId, string path);
+void loadKeybinding(obs_hotkey_id hotkeyId, std::string path);
 
 /********************************************************************************
  * Main SwitcherData

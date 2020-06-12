@@ -17,7 +17,7 @@ bool isRunning(std::string &title)
 
 bool isFocused(std::string &title)
 {
-	string current;
+	std::string current;
 
 	GetCurrentWindowTitle(current);
 	// True if switch equals current window
@@ -37,7 +37,7 @@ void SceneSwitcher::on_up_clicked()
 					 ui->switches->takeItem(index));
 		ui->switches->setCurrentRow(index - 1);
 
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 
 		iter_swap(switcher->windowSwitches.begin() + index,
 			  switcher->windowSwitches.begin() + index - 1);
@@ -52,7 +52,7 @@ void SceneSwitcher::on_down_clicked()
 					 ui->switches->takeItem(index));
 		ui->switches->setCurrentRow(index + 1);
 
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 
 		iter_swap(switcher->windowSwitches.begin() + index,
 			  switcher->windowSwitches.begin() + index + 1);
@@ -80,7 +80,7 @@ void SceneSwitcher::on_add_clicked()
 	int idx = FindByData(windowName);
 
 	if (idx == -1) {
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->windowSwitches.emplace_back(
 			source, windowName.toUtf8().constData(), transition,
 			fullscreen, focus);
@@ -91,10 +91,10 @@ void SceneSwitcher::on_add_clicked()
 		QListWidgetItem *item = ui->switches->item(idx);
 		item->setText(text);
 
-		string window = windowName.toUtf8().constData();
+		std::string window = windowName.toUtf8().constData();
 
 		{
-			lock_guard<mutex> lock(switcher->m);
+			std::lock_guard<std::mutex> lock(switcher->m);
 			for (auto &s : switcher->windowSwitches) {
 				if (s.window == window) {
 					s.scene = source;
@@ -114,11 +114,11 @@ void SceneSwitcher::on_remove_clicked()
 	if (!item)
 		return;
 
-	string window =
+	std::string window =
 		item->data(Qt::UserRole).toString().toUtf8().constData();
 
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		auto &switches = switcher->windowSwitches;
 
 		for (auto it = switches.begin(); it != switches.end(); ++it) {
@@ -151,7 +151,7 @@ void SceneSwitcher::on_ignoreWindowsAdd_clicked()
 			new QListWidgetItem(windowName, ui->ignoreWindows);
 		item->setData(Qt::UserRole, v);
 
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->ignoreWindowsSwitches.emplace_back(
 			windowName.toUtf8().constData());
 	}
@@ -166,7 +166,7 @@ void SceneSwitcher::on_ignoreWindowsRemove_clicked()
 	QString windowName = item->data(Qt::UserRole).toString();
 
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		auto &switches = switcher->ignoreWindowsSwitches;
 
 		for (auto it = switches.begin(); it != switches.end(); ++it) {
@@ -229,11 +229,12 @@ void SceneSwitcher::on_switches_currentRowChanged(int idx)
 
 	QString window = item->data(Qt::UserRole).toString();
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->windowSwitches) {
 		if (window.compare(s.window.c_str()) == 0) {
-			string name = GetWeakSourceName(s.scene);
-			string transitionName = GetWeakSourceName(s.transition);
+			std::string name = GetWeakSourceName(s.scene);
+			std::string transitionName =
+				GetWeakSourceName(s.transition);
 			ui->scenes->setCurrentText(name.c_str());
 			ui->windows->setCurrentText(window);
 			ui->transitions->setCurrentText(transitionName.c_str());
@@ -255,7 +256,7 @@ void SceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
 
 	QString window = item->data(Qt::UserRole).toString();
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->ignoreWindowsSwitches) {
 		if (window.compare(s.c_str()) == 0) {
 			ui->ignoreWindowsWindows->setCurrentText(s.c_str());
@@ -267,7 +268,7 @@ void SceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
 void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 					  OBSWeakSource &transition)
 {
-	string title;
+	std::string title;
 	bool ignored = false;
 
 	// Check if current window is ignored

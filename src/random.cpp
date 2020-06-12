@@ -12,7 +12,7 @@ void SceneSwitcher::on_randomScenesList_currentRowChanged(int idx)
 
 	QString randomSceneStr = item->data(Qt::UserRole).toString();
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->randomSwitches) {
 		if (randomSceneStr.compare(s.randomSwitchStr.c_str()) == 0) {
 			QString sceneName = GetWeakSourceName(s.scene).c_str();
@@ -59,7 +59,7 @@ void SceneSwitcher::on_randomAdd_clicked()
 	int idx = randomFindByData(text);
 
 	if (idx == -1) {
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->randomSwitches.emplace_back(
 			source, transition, delay, text.toUtf8().constData());
 
@@ -71,7 +71,7 @@ void SceneSwitcher::on_randomAdd_clicked()
 		item->setText(text);
 
 		{
-			lock_guard<mutex> lock(switcher->m);
+			std::lock_guard<std::mutex> lock(switcher->m);
 			for (auto &s : switcher->randomSwitches) {
 				if (s.scene == source) {
 					s.delay = delay;
@@ -94,10 +94,11 @@ void SceneSwitcher::on_randomRemove_clicked()
 	if (!item)
 		return;
 
-	string text = item->data(Qt::UserRole).toString().toUtf8().constData();
+	std::string text =
+		item->data(Qt::UserRole).toString().toUtf8().constData();
 
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		auto &switches = switcher->randomSwitches;
 
 		for (auto it = switches.begin(); it != switches.end(); ++it) {
@@ -119,7 +120,7 @@ void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
 	if (randomSwitches.size() == 0)
 		return;
 
-	vector<RandomSwitch> rs(randomSwitches);
+	std::vector<RandomSwitch> rs(randomSwitches);
 	std::random_device rng;
 	std::mt19937 urng(rng());
 	std::shuffle(rs.begin(), rs.end(), urng);

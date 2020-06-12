@@ -12,7 +12,7 @@ void SceneSwitcher::on_mediaSwitches_currentRowChanged(int idx)
 
 	QString mediaSceneStr = item->data(Qt::UserRole).toString();
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->mediaSwitches) {
 		if (mediaSceneStr.compare(s.mediaSwitchStr.c_str()) == 0) {
 			QString sceneName = GetWeakSourceName(s.scene).c_str();
@@ -60,7 +60,7 @@ void SceneSwitcher::on_mediaAdd_clicked()
 		new QListWidgetItem(switchText, ui->mediaSwitches);
 	item->setData(Qt::UserRole, v);
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->mediaSwitches.emplace_back(
 		scene, source, transition, state, restriction, time,
 		(sceneName == QString(PREVIOUS_SCENE_NAME)),
@@ -73,10 +73,10 @@ void SceneSwitcher::on_mediaRemove_clicked()
 	if (!item)
 		return;
 
-	string mediaStr =
+	std::string mediaStr =
 		item->data(Qt::UserRole).toString().toUtf8().constData();
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		auto &switches = switcher->mediaSwitches;
 
 		for (auto it = switches.begin(); it != switches.end(); ++it) {

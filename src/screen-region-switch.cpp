@@ -3,7 +3,7 @@
 void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 					   OBSWeakSource &transition)
 {
-	pair<int, int> cursorPos = getCursorPos();
+	std::pair<int, int> cursorPos = getCursorPos();
 	int minRegionSize = 99999;
 
 	for (auto &s : screenRegionSwitches) {
@@ -22,9 +22,8 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 
 void SceneSwitcher::updateScreenRegionCursorPos()
 {
-	pair<int, int> position = getCursorPos();
+	std::pair<int, int> position = getCursorPos();
 	ui->cursorXPosition->setText(QString::number(position.first));
-	;
 	ui->cursorYPosition->setText(QString::number(position.second));
 }
 
@@ -41,8 +40,9 @@ void SceneSwitcher::on_screenRegionAdd_clicked()
 	int maxX = ui->screenRegionMaxX->value();
 	int maxY = ui->screenRegionMaxY->value();
 
-	string regionStr = to_string(minX) + ", " + to_string(minY) + " x " +
-			   to_string(maxX) + ", " + to_string(maxY);
+	std::string regionStr =
+		std::to_string(minX) + ", " + std::to_string(minY) + " x " +
+		std::to_string(maxX) + ", " + std::to_string(maxY);
 	QString region = QString::fromStdString(regionStr);
 
 	OBSWeakSource source = GetWeakSourceByQString(sceneName);
@@ -59,17 +59,17 @@ void SceneSwitcher::on_screenRegionAdd_clicked()
 			new QListWidgetItem(text, ui->screenRegions);
 		item->setData(Qt::UserRole, v);
 
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->screenRegionSwitches.emplace_back(
 			source, transition, minX, minY, maxX, maxY, regionStr);
 	} else {
 		QListWidgetItem *item = ui->screenRegions->item(idx);
 		item->setText(text);
 
-		string curRegion = region.toUtf8().constData();
+		std::string curRegion = region.toUtf8().constData();
 
 		{
-			lock_guard<mutex> lock(switcher->m);
+			std::lock_guard<std::mutex> lock(switcher->m);
 			for (auto &s : switcher->screenRegionSwitches) {
 				if (s.regionStr == curRegion) {
 					s.scene = source;
@@ -89,11 +89,11 @@ void SceneSwitcher::on_screenRegionRemove_clicked()
 	if (!item)
 		return;
 
-	string region =
+	std::string region =
 		item->data(Qt::UserRole).toString().toUtf8().constData();
 
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		auto &switches = switcher->screenRegionSwitches;
 
 		for (auto it = switches.begin(); it != switches.end(); ++it) {
@@ -120,11 +120,12 @@ void SceneSwitcher::on_screenRegions_currentRowChanged(int idx)
 
 	QString region = item->data(Qt::UserRole).toString();
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->screenRegionSwitches) {
 		if (region.compare(s.regionStr.c_str()) == 0) {
-			string name = GetWeakSourceName(s.scene);
-			string transitionName = GetWeakSourceName(s.transition);
+			std::string name = GetWeakSourceName(s.scene);
+			std::string transitionName =
+				GetWeakSourceName(s.transition);
 			ui->screenRegionScenes->setCurrentText(name.c_str());
 			ui->screenRegionsTransitions->setCurrentText(
 				transitionName.c_str());

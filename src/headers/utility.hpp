@@ -3,7 +3,6 @@
 #include <QString>
 #include <obs-frontend-api.h>
 #include "switcher-data-structs.hpp"
-using namespace std;
 
 static inline bool WeakSourceValid(obs_weak_source_t *ws)
 {
@@ -180,9 +179,9 @@ static inline QString MakeTimeSwitchName(const QString &scene,
 	return switchName;
 }
 
-static inline string GetWeakSourceName(obs_weak_source_t *weak_source)
+static inline std::string GetWeakSourceName(obs_weak_source_t *weak_source)
 {
-	string name;
+	std::string name;
 
 	obs_source_t *source = obs_weak_source_get_source(weak_source);
 	if (source) {

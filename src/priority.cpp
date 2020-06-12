@@ -7,7 +7,7 @@ void SceneSwitcher::on_threadPriority_currentTextChanged(const QString &text)
 	    ui->threadPriority->count() != switcher->threadPriorities.size())
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 
 	for (auto p : switcher->threadPriorities) {
 		if (p.name == text.toUtf8().constData()) {
@@ -25,7 +25,7 @@ void SceneSwitcher::on_priorityUp_clicked()
 			currentIndex - 1,
 			ui->priorityList->takeItem(currentIndex));
 		ui->priorityList->setCurrentRow(currentIndex - 1);
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 
 		iter_swap(switcher->functionNamesByPriority.begin() +
 				  currentIndex,
@@ -43,7 +43,7 @@ void SceneSwitcher::on_priorityDown_clicked()
 			currentIndex + 1,
 			ui->priorityList->takeItem(currentIndex));
 		ui->priorityList->setCurrentRow(currentIndex + 1);
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 
 		iter_swap(switcher->functionNamesByPriority.begin() +
 				  currentIndex,

@@ -33,7 +33,7 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 			new QListWidgetItem(text, ui->sceneRoundTrips);
 		item->setData(Qt::UserRole, v);
 
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->sceneRoundTripSwitches.emplace_back(
 			source1, source2, transition, int(delay * 1000),
 			(scene2Name == QString(PREVIOUS_SCENE_NAME)),
@@ -43,7 +43,7 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 		item->setText(text);
 
 		{
-			lock_guard<mutex> lock(switcher->m);
+			std::lock_guard<std::mutex> lock(switcher->m);
 			for (auto &s : switcher->sceneRoundTripSwitches) {
 				if (s.scene1 == source1) {
 					s.scene2 = source2;
@@ -69,10 +69,11 @@ void SceneSwitcher::on_sceneRoundTripRemove_clicked()
 	if (!item)
 		return;
 
-	string text = item->data(Qt::UserRole).toString().toUtf8().constData();
+	std::string text =
+		item->data(Qt::UserRole).toString().toUtf8().constData();
 
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		auto &switches = switcher->sceneRoundTripSwitches;
 
 		for (auto it = switches.begin(); it != switches.end(); ++it) {
@@ -93,7 +94,7 @@ void SceneSwitcher::on_autoStopSceneCheckBox_stateChanged(int state)
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	if (!state) {
 		ui->autoStopScenes->setDisabled(true);
 		switcher->autoStopEnable = false;
@@ -119,7 +120,7 @@ void SceneSwitcher::on_autoStopScenes_currentTextChanged(const QString &text)
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	UpdateAutoStopScene(text);
 }
 
@@ -156,7 +157,7 @@ void SceneSwitcher::on_sceneRoundTripSave_clicked()
 
 void SceneSwitcher::on_sceneRoundTripLoad_clicked()
 {
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 
 	QString directory = QFileDialog::getOpenFileName(
 		this, tr("Select a file to read Scene Round Trip from ..."),
@@ -167,9 +168,9 @@ void SceneSwitcher::on_sceneRoundTripLoad_clicked()
 			return;
 
 		QTextStream in(&file);
-		vector<QString> lines;
+		std::vector<QString> lines;
 
-		vector<SceneRoundTripSwitch> newSceneRoundTripSwitch;
+		std::vector<SceneRoundTripSwitch> newSceneRoundTripSwitch;
 
 		while (!in.atEnd()) {
 			QString line = in.readLine();
@@ -224,7 +225,7 @@ void SceneSwitcher::on_sceneRoundTripLoad_clicked()
 
 void SwitcherData::checkSceneRoundTrip(bool &match, OBSWeakSource &scene,
 				       OBSWeakSource &transition,
-				       unique_lock<mutex> &lock)
+				       std::unique_lock<std::mutex> &lock)
 {
 	bool sceneRoundTripActive = false;
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
@@ -236,7 +237,8 @@ void SwitcherData::checkSceneRoundTrip(bool &match, OBSWeakSource &scene,
 			int dur = s.delay - interval;
 			if (dur > 0) {
 				waitScene = currentSource;
-				cv.wait_for(lock, chrono::milliseconds(dur));
+				cv.wait_for(lock,
+					    std::chrono::milliseconds(dur));
 			}
 			obs_source_t *currentSource2 =
 				obs_frontend_get_current_scene();
@@ -267,12 +269,13 @@ void SceneSwitcher::on_sceneRoundTrips_currentRowChanged(int idx)
 
 	QString sceneRoundTrip = item->text();
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->sceneRoundTripSwitches) {
 		if (sceneRoundTrip.compare(s.sceneRoundTripStr.c_str()) == 0) {
-			string scene1 = GetWeakSourceName(s.scene1);
-			string scene2 = GetWeakSourceName(s.scene2);
-			string transitionName = GetWeakSourceName(s.transition);
+			std::string scene1 = GetWeakSourceName(s.scene1);
+			std::string scene2 = GetWeakSourceName(s.scene2);
+			std::string transitionName =
+				GetWeakSourceName(s.transition);
 			int delay = s.delay;
 			ui->sceneRoundTripScenes1->setCurrentText(
 				scene1.c_str());

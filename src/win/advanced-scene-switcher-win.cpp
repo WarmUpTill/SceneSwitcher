@@ -91,9 +91,9 @@ void GetCurrentWindowTitle(string &title)
 	GetWindowTitle(window, title);
 }
 
-pair<int, int> getCursorPos()
+std::pair<int, int> getCursorPos()
 {
-	pair<int, int> pos(0, 0);
+	std::pair<int, int> pos(0, 0);
 	POINT cursorPos;
 	if (GetPhysicalCursorPos(&cursorPos)) {
 		pos.first = cursorPos.x;

@@ -16,8 +16,6 @@
 #include <util/platform.h>
 #include "../headers/advanced-scene-switcher.hpp"
 
-using namespace std;
-
 static Display *xdisplay = 0;
 
 Display *disp()
@@ -164,7 +162,7 @@ static std::string GetWindowTitle(size_t i)
 	return windowTitle;
 }
 
-void GetWindowList(vector<string> &windows)
+void GetWindowList(std::vector<std::string> &windows)
 {
 	windows.resize(0);
 
@@ -185,7 +183,7 @@ void GetWindowList(QStringList &windows)
 	}
 }
 
-void GetCurrentWindowTitle(string &title)
+void GetCurrentWindowTitle(std::string &title)
 {
 	if (!ewmhIsSupported()) {
 		return;
@@ -225,9 +223,9 @@ void GetCurrentWindowTitle(string &title)
 	}
 }
 
-pair<int, int> getCursorPos()
+std::pair<int, int> getCursorPos()
 {
-	pair<int, int> pos(0, 0);
+	std::pair<int, int> pos(0, 0);
 	Display *dpy;
 	Window root;
 	Window ret_root;
@@ -243,7 +241,7 @@ pair<int, int> getCursorPos()
 
 	if (XQueryPointer(dpy, root, &ret_root, &ret_child, &root_x, &root_y,
 			  &win_x, &win_y, &mask)) {
-		pos = pair<int, int>(root_x, root_y);
+		pos = std::pair<int, int>(root_x, root_y);
 	}
 	XCloseDisplay(dpy);
 	return pos;
@@ -255,7 +253,7 @@ bool isFullscreen(std::string &title)
 		return false;
 
 	// Find switch in top level windows
-	vector<Window> windows = getTopLevelWindows();
+	std::vector<Window> windows = getTopLevelWindows();
 	for (auto &window : windows) {
 		XTextProperty text;
 		int status = XGetTextProperty(
@@ -306,7 +304,7 @@ void GetProcessList(QStringList &processes)
 {
 	processes.clear();
 	for (size_t i = 0; i < getTopLevelWindows().size(); ++i) {
-		string s = GetWindowTitle(i);
+		std::string s = GetWindowTitle(i);
 		if (s != "")
 			processes << QString::fromStdString(s);
 	}
@@ -314,7 +312,7 @@ void GetProcessList(QStringList &processes)
 
 bool isInFocus(const QString &executable)
 {
-	string current;
+	std::string current;
 	GetCurrentWindowTitle(current);
 
 	// True if executable switch equals current window

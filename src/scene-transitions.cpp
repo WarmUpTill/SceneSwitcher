@@ -27,7 +27,7 @@ void SceneSwitcher::on_transitionsAdd_clicked()
 			new QListWidgetItem(text, ui->sceneTransitions);
 		item->setData(Qt::UserRole, v);
 
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->sceneTransitions.emplace_back(
 			source1, source2, transition,
 			text.toUtf8().constData());
@@ -36,7 +36,7 @@ void SceneSwitcher::on_transitionsAdd_clicked()
 		item->setText(text);
 
 		{
-			lock_guard<mutex> lock(switcher->m);
+			std::lock_guard<std::mutex> lock(switcher->m);
 			for (auto &s : switcher->sceneTransitions) {
 				if (s.scene1 == source1 &&
 				    s.scene2 == source2) {
@@ -58,10 +58,11 @@ void SceneSwitcher::on_transitionsRemove_clicked()
 	if (!item)
 		return;
 
-	string text = item->data(Qt::UserRole).toString().toUtf8().constData();
+	std::string text =
+		item->data(Qt::UserRole).toString().toUtf8().constData();
 
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		auto &switches = switcher->sceneTransitions;
 
 		for (auto it = switches.begin(); it != switches.end(); ++it) {
@@ -100,7 +101,7 @@ void SceneSwitcher::on_defaultTransitionsAdd_clicked()
 			new QListWidgetItem(text, ui->defaultTransitions);
 		item->setData(Qt::UserRole, v);
 
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->defaultSceneTransitions.emplace_back(
 			source, transition, text.toUtf8().constData());
 	} else {
@@ -108,7 +109,7 @@ void SceneSwitcher::on_defaultTransitionsAdd_clicked()
 		item->setText(text);
 
 		{
-			lock_guard<mutex> lock(switcher->m);
+			std::lock_guard<std::mutex> lock(switcher->m);
 			for (auto &s : switcher->defaultSceneTransitions) {
 				if (s.scene == source) {
 					s.transition = transition;
@@ -129,10 +130,11 @@ void SceneSwitcher::on_defaultTransitionsRemove_clicked()
 	if (!item)
 		return;
 
-	string text = item->data(Qt::UserRole).toString().toUtf8().constData();
+	std::string text =
+		item->data(Qt::UserRole).toString().toUtf8().constData();
 
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		auto &switches = switcher->defaultSceneTransitions;
 
 		for (auto it = switches.begin(); it != switches.end(); ++it) {
@@ -218,13 +220,14 @@ void SceneSwitcher::on_sceneTransitions_currentRowChanged(int idx)
 
 	QString sceneTransition = item->data(Qt::UserRole).toString();
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->sceneTransitions) {
 		if (sceneTransition.compare(s.sceneTransitionStr.c_str()) ==
 		    0) {
-			string scene1 = GetWeakSourceName(s.scene1);
-			string scene2 = GetWeakSourceName(s.scene2);
-			string transitionName = GetWeakSourceName(s.transition);
+			std::string scene1 = GetWeakSourceName(s.scene1);
+			std::string scene2 = GetWeakSourceName(s.scene2);
+			std::string transitionName =
+				GetWeakSourceName(s.transition);
 			ui->transitionsScene1->setCurrentText(scene1.c_str());
 			ui->transitionsScene2->setCurrentText(scene2.c_str());
 			ui->transitionsTransitions->setCurrentText(
@@ -245,12 +248,13 @@ void SceneSwitcher::on_defaultTransitions_currentRowChanged(int idx)
 
 	QString sceneTransition = item->data(Qt::UserRole).toString();
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->defaultSceneTransitions) {
 		if (sceneTransition.compare(s.sceneTransitionStr.c_str()) ==
 		    0) {
-			string scene = GetWeakSourceName(s.scene);
-			string transitionName = GetWeakSourceName(s.transition);
+			std::string scene = GetWeakSourceName(s.scene);
+			std::string transitionName =
+				GetWeakSourceName(s.transition);
 			ui->defaultTransitionsScene->setCurrentText(
 				scene.c_str());
 			ui->defaultTransitionsTransitions->setCurrentText(

@@ -11,7 +11,7 @@ void SceneSwitcher::on_startAtLaunch_toggled(bool value)
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->startAtLaunch = value;
 }
 
@@ -31,7 +31,7 @@ void SceneSwitcher::on_noMatchDontSwitch_clicked()
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = NO_SWITCH;
 	ui->noMatchSwitchScene->setEnabled(false);
 }
@@ -41,7 +41,7 @@ void SceneSwitcher::on_noMatchSwitch_clicked()
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = SWITCH;
 	ui->noMatchSwitchScene->setEnabled(true);
 	UpdateNonMatchingScene(ui->noMatchSwitchScene->currentText());
@@ -52,7 +52,7 @@ void SceneSwitcher::on_noMatchRandomSwitch_clicked()
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = RANDOM_SWITCH;
 	ui->noMatchSwitchScene->setEnabled(false);
 }
@@ -62,7 +62,7 @@ void SceneSwitcher::on_noMatchSwitchScene_currentTextChanged(const QString &text
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	UpdateNonMatchingScene(text);
 }
 
@@ -71,7 +71,7 @@ void SceneSwitcher::on_checkInterval_valueChanged(int value)
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->interval = value;
 }
 

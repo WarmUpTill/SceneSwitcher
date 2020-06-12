@@ -11,7 +11,7 @@ void SceneSwitcher::on_timeSwitches_currentRowChanged(int idx)
 
 	QString timeScenestr = item->data(Qt::UserRole).toString();
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->timeSwitches) {
 		if (timeScenestr.compare(s.timeSwitchStr.c_str()) == 0) {
 			QString sceneName = GetWeakSourceName(s.scene).c_str();
@@ -59,7 +59,7 @@ void SceneSwitcher::on_timeAdd_clicked()
 	int idx = timeFindByData(time.toString());
 
 	if (idx == -1) {
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->timeSwitches.emplace_back(
 			source, transition, time,
 			(sceneName == QString(PREVIOUS_SCENE_NAME)),
@@ -73,7 +73,7 @@ void SceneSwitcher::on_timeAdd_clicked()
 		item->setText(text);
 
 		{
-			lock_guard<mutex> lock(switcher->m);
+			std::lock_guard<std::mutex> lock(switcher->m);
 			for (auto &s : switcher->timeSwitches) {
 				if (s.time == time) {
 					s.scene = source;
@@ -99,10 +99,11 @@ void SceneSwitcher::on_timeRemove_clicked()
 	if (!item)
 		return;
 
-	string text = item->data(Qt::UserRole).toString().toUtf8().constData();
+	std::string text =
+		item->data(Qt::UserRole).toString().toUtf8().constData();
 
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		auto &switches = switcher->timeSwitches;
 
 		for (auto it = switches.begin(); it != switches.end(); ++it) {
