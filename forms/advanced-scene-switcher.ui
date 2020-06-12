@@ -2620,7 +2620,7 @@
          <item>
           <widget class="QLabel" name="label_27">
            <property name="text">
-            <string>of no inputs </string>
+            <string>of no keyboard or mouse inputs </string>
            </property>
           </widget>
          </item>
