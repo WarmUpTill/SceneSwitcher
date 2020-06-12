@@ -10,11 +10,12 @@ void SceneSwitcher::on_pauseScenesAdd_clicked()
 	OBSWeakSource source = GetWeakSourceByQString(sceneName);
 	QVariant v = QVariant::fromValue(sceneName);
 
-	QList<QListWidgetItem*> items = ui->pauseScenes->findItems(sceneName, Qt::MatchExactly);
+	QList<QListWidgetItem *> items =
+		ui->pauseScenes->findItems(sceneName, Qt::MatchExactly);
 
-	if (items.size() == 0)
-	{
-		QListWidgetItem* item = new QListWidgetItem(sceneName, ui->pauseScenes);
+	if (items.size() == 0) {
+		QListWidgetItem *item =
+			new QListWidgetItem(sceneName, ui->pauseScenes);
 		item->setData(Qt::UserRole, v);
 
 		lock_guard<mutex> lock(switcher->m);
@@ -25,7 +26,7 @@ void SceneSwitcher::on_pauseScenesAdd_clicked()
 
 void SceneSwitcher::on_pauseScenesRemove_clicked()
 {
-	QListWidgetItem* item = ui->pauseScenes->currentItem();
+	QListWidgetItem *item = ui->pauseScenes->currentItem();
 	if (!item)
 		return;
 
@@ -33,14 +34,12 @@ void SceneSwitcher::on_pauseScenesRemove_clicked()
 
 	{
 		lock_guard<mutex> lock(switcher->m);
-		auto& switches = switcher->pauseScenesSwitches;
+		auto &switches = switcher->pauseScenesSwitches;
 
-		for (auto it = switches.begin(); it != switches.end(); ++it)
-		{
-			auto& s = *it;
+		for (auto it = switches.begin(); it != switches.end(); ++it) {
+			auto &s = *it;
 
-			if (s == GetWeakSourceByQString(pauseScene))
-			{
+			if (s == GetWeakSourceByQString(pauseScene)) {
 				switches.erase(it);
 				break;
 			}
@@ -59,22 +58,24 @@ void SceneSwitcher::on_pauseWindowsAdd_clicked()
 
 	QVariant v = QVariant::fromValue(windowName);
 
-	QList<QListWidgetItem*> items = ui->pauseWindows->findItems(windowName, Qt::MatchExactly);
+	QList<QListWidgetItem *> items =
+		ui->pauseWindows->findItems(windowName, Qt::MatchExactly);
 
-	if (items.size() == 0)
-	{
-		QListWidgetItem* item = new QListWidgetItem(windowName, ui->pauseWindows);
+	if (items.size() == 0) {
+		QListWidgetItem *item =
+			new QListWidgetItem(windowName, ui->pauseWindows);
 		item->setData(Qt::UserRole, v);
 
 		lock_guard<mutex> lock(switcher->m);
-		switcher->pauseWindowsSwitches.emplace_back(windowName.toUtf8().constData());
+		switcher->pauseWindowsSwitches.emplace_back(
+			windowName.toUtf8().constData());
 		ui->pauseWindows->sortItems();
 	}
 }
 
 void SceneSwitcher::on_pauseWindowsRemove_clicked()
 {
-	QListWidgetItem* item = ui->pauseWindows->currentItem();
+	QListWidgetItem *item = ui->pauseWindows->currentItem();
 	if (!item)
 		return;
 
@@ -82,14 +83,12 @@ void SceneSwitcher::on_pauseWindowsRemove_clicked()
 
 	{
 		lock_guard<mutex> lock(switcher->m);
-		auto& switches = switcher->pauseWindowsSwitches;
+		auto &switches = switcher->pauseWindowsSwitches;
 
-		for (auto it = switches.begin(); it != switches.end(); ++it)
-		{
-			auto& s = *it;
+		for (auto it = switches.begin(); it != switches.end(); ++it) {
+			auto &s = *it;
 
-			if (s == windowName.toUtf8().constData())
-			{
+			if (s == windowName.toUtf8().constData()) {
 				switches.erase(it);
 				break;
 			}
@@ -106,16 +105,14 @@ void SceneSwitcher::on_pauseScenes_currentRowChanged(int idx)
 	if (idx == -1)
 		return;
 
-	QListWidgetItem* item = ui->pauseScenes->item(idx);
+	QListWidgetItem *item = ui->pauseScenes->item(idx);
 
 	QString scene = item->data(Qt::UserRole).toString();
 
 	lock_guard<mutex> lock(switcher->m);
-	for (auto& s : switcher->pauseScenesSwitches)
-	{
+	for (auto &s : switcher->pauseScenesSwitches) {
 		string name = GetWeakSourceName(s);
-		if (scene.compare(name.c_str()) == 0)
-		{
+		if (scene.compare(name.c_str()) == 0) {
 			ui->pauseScenesScenes->setCurrentText(name.c_str());
 			break;
 		}
@@ -129,33 +126,29 @@ void SceneSwitcher::on_pauseWindows_currentRowChanged(int idx)
 	if (idx == -1)
 		return;
 
-	QListWidgetItem* item = ui->pauseWindows->item(idx);
+	QListWidgetItem *item = ui->pauseWindows->item(idx);
 
 	QString window = item->data(Qt::UserRole).toString();
 
 	lock_guard<mutex> lock(switcher->m);
-	for (auto& s : switcher->pauseWindowsSwitches)
-	{
-		if (window.compare(s.c_str()) == 0)
-		{
+	for (auto &s : switcher->pauseWindowsSwitches) {
+		if (window.compare(s.c_str()) == 0) {
 			ui->pauseWindowsWindows->setCurrentText(s.c_str());
 			break;
 		}
 	}
 }
 
-int SceneSwitcher::PauseScenesFindByData(const QString& scene)
+int SceneSwitcher::PauseScenesFindByData(const QString &scene)
 {
 	int count = ui->pauseScenes->count();
 	int idx = -1;
 
-	for (int i = 0; i < count; i++)
-	{
-		QListWidgetItem* item = ui->pauseScenes->item(i);
+	for (int i = 0; i < count; i++) {
+		QListWidgetItem *item = ui->pauseScenes->item(i);
 		QString itemRegion = item->data(Qt::UserRole).toString();
 
-		if (itemRegion == scene)
-		{
+		if (itemRegion == scene) {
 			idx = i;
 			break;
 		}
@@ -164,18 +157,16 @@ int SceneSwitcher::PauseScenesFindByData(const QString& scene)
 	return idx;
 }
 
-int SceneSwitcher::PauseWindowsFindByData(const QString& window)
+int SceneSwitcher::PauseWindowsFindByData(const QString &window)
 {
 	int count = ui->pauseWindows->count();
 	int idx = -1;
 
-	for (int i = 0; i < count; i++)
-	{
-		QListWidgetItem* item = ui->pauseWindows->item(i);
+	for (int i = 0; i < count; i++) {
+		QListWidgetItem *item = ui->pauseWindows->item(i);
 		QString itemRegion = item->data(Qt::UserRole).toString();
 
-		if (itemRegion == window)
-		{
+		if (itemRegion == window) {
 			idx = i;
 			break;
 		}
@@ -187,13 +178,11 @@ int SceneSwitcher::PauseWindowsFindByData(const QString& window)
 bool SwitcherData::checkPause()
 {
 	bool pause = false;
-	obs_source_t* currentSource = obs_frontend_get_current_scene();
-	obs_weak_source_t* ws = obs_source_get_weak_source(currentSource);
+	obs_source_t *currentSource = obs_frontend_get_current_scene();
+	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
-	for (OBSWeakSource& s : pauseScenesSwitches)
-	{
-		if (s == ws)
-		{
+	for (OBSWeakSource &s : pauseScenesSwitches) {
+		if (s == ws) {
 			pause = true;
 			break;
 		}
@@ -202,39 +191,31 @@ bool SwitcherData::checkPause()
 	obs_weak_source_release(ws);
 
 	string title;
-	if (!pause)
-	{
+	if (!pause) {
 		//lock.unlock();
 		GetCurrentWindowTitle(title);
 		//lock.lock();
-		for (string& window : pauseWindowsSwitches)
-		{
-			if (window == title)
-			{
+		for (string &window : pauseWindowsSwitches) {
+			if (window == title) {
 				pause = true;
 				break;
 			}
 		}
 	}
 
-	if (!pause)
-	{
+	if (!pause) {
 		//lock.unlock();
 		GetCurrentWindowTitle(title);
 		//lock.lock();
-		for (string& window : pauseWindowsSwitches)
-		{
-			try
-			{
-				bool matches = regex_match(title, regex(window));
-				if (matches)
-				{
+		for (string &window : pauseWindowsSwitches) {
+			try {
+				bool matches =
+					regex_match(title, regex(window));
+				if (matches) {
 					pause = true;
 					break;
 				}
-			}
-			catch (const regex_error&)
-			{
+			} catch (const regex_error &) {
 			}
 		}
 	}

@@ -51,6 +51,8 @@ public:
 
 public slots:
 	void on_switches_currentRowChanged(int idx);
+	void on_up_clicked();
+	void on_down_clicked();
 	void on_add_clicked();
 	void on_remove_clicked();
 	void on_noMatchDontSwitch_clicked();
@@ -99,6 +101,8 @@ public slots:
 	void on_writePathLineEdit_textChanged(const QString &text);
 	void on_browseButton_2_clicked();
 
+	void on_executableUp_clicked();
+	void on_executableDown_clicked();
 	void on_executableAdd_clicked();
 	void on_executableRemove_clicked();
 	void on_executables_currentRowChanged(int idx);
@@ -141,8 +145,9 @@ public slots:
  * Windowtitle helper
  ********************************************************************************/
 void GetWindowList(std::vector<std::string> &windows);
+void GetWindowList(QStringList &windows); // Overloaded
 void GetCurrentWindowTitle(std::string &title);
-bool isFullscreen();
+bool isFullscreen(std::string &title);
 
 /********************************************************************************
  * Screenregion helper
@@ -158,7 +163,7 @@ int secondsSinceLastInput();
  * Executable helper
  ********************************************************************************/
 void GetProcessList(QStringList &processes);
-bool isInFocus(const QString &exeToCheck);
+bool isInFocus(const QString &executable);
 
 /********************************************************************************
  * Sceneswitch helper

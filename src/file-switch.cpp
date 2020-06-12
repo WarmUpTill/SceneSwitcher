@@ -4,12 +4,11 @@
 #include <obs.hpp>
 #include "headers/advanced-scene-switcher.hpp"
 
-
-
 void SceneSwitcher::on_browseButton_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
-		this, tr("Select a file to write to ..."), QDir::currentPath(), tr("Text files (*.txt)"));
+		this, tr("Select a file to write to ..."), QDir::currentPath(),
+		tr("Text files (*.txt)"));
 	if (!path.isEmpty())
 		ui->writePathLineEdit->setText(path);
 }
@@ -20,28 +19,24 @@ void SceneSwitcher::on_readFileCheckBox_stateChanged(int state)
 		return;
 
 	lock_guard<mutex> lock(switcher->m);
-	if (!state)
-	{
+	if (!state) {
 		ui->browseButton_2->setDisabled(true);
 		ui->readPathLineEdit->setDisabled(true);
 		switcher->fileIO.readEnabled = false;
-	}
-	else
-	{
+	} else {
 		ui->browseButton_2->setDisabled(false);
 		ui->readPathLineEdit->setDisabled(false);
 		switcher->fileIO.readEnabled = true;
 	}
 }
 
-void SceneSwitcher::on_readPathLineEdit_textChanged(const QString& text)
+void SceneSwitcher::on_readPathLineEdit_textChanged(const QString &text)
 {
 	if (loading)
 		return;
 
 	lock_guard<mutex> lock(switcher->m);
-	if (text.isEmpty())
-	{
+	if (text.isEmpty()) {
 		switcher->fileIO.readEnabled = false;
 		return;
 	}
@@ -49,14 +44,13 @@ void SceneSwitcher::on_readPathLineEdit_textChanged(const QString& text)
 	switcher->fileIO.readPath = text.toUtf8().constData();
 }
 
-void SceneSwitcher::on_writePathLineEdit_textChanged(const QString& text)
+void SceneSwitcher::on_writePathLineEdit_textChanged(const QString &text)
 {
 	if (loading)
 		return;
 
 	lock_guard<mutex> lock(switcher->m);
-	if (text.isEmpty())
-	{
+	if (text.isEmpty()) {
 		switcher->fileIO.writeEnabled = false;
 		return;
 	}
@@ -67,7 +61,8 @@ void SceneSwitcher::on_writePathLineEdit_textChanged(const QString& text)
 void SceneSwitcher::on_browseButton_2_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
-		this, tr("Select a file to read from ..."), QDir::currentPath(), tr("Any files (*.*)"));
+		this, tr("Select a file to read from ..."), QDir::currentPath(),
+		tr("Any files (*.*)"));
 	if (!path.isEmpty())
 		ui->readPathLineEdit->setText(path);
 }
@@ -77,31 +72,32 @@ void SwitcherData::writeSceneInfoToFile()
 	if (!fileIO.writeEnabled || fileIO.writePath.empty())
 		return;
 
-	obs_source_t* currentSource = obs_frontend_get_current_scene();
+	obs_source_t *currentSource = obs_frontend_get_current_scene();
 
 	QFile file(QString::fromStdString(fileIO.writePath));
-	if (file.open(QIODevice::WriteOnly))
-	{
-		const char* msg = obs_source_get_name(currentSource);
+	if (file.open(QIODevice::WriteOnly)) {
+		const char *msg = obs_source_get_name(currentSource);
 		file.write(msg, qstrlen(msg));
 		file.close();
 	}
 	obs_source_release(currentSource);
 }
 
-void SwitcherData::checkSwitchInfoFromFile(bool& match, OBSWeakSource& scene, OBSWeakSource& transition)
+void SwitcherData::checkSwitchInfoFromFile(bool &match, OBSWeakSource &scene,
+					   OBSWeakSource &transition)
 {
 	if (!fileIO.readEnabled || fileIO.readPath.empty())
 		return;
 
 	QFile file(QString::fromStdString(fileIO.readPath));
-	if (file.open(QIODevice::ReadOnly))
-	{
+	if (file.open(QIODevice::ReadOnly)) {
 		QTextStream in(&file);
 		QString sceneStr = in.readLine();
-		obs_source_t* sceneRead = obs_get_source_by_name(sceneStr.toUtf8().constData());
-		if (sceneRead){
-			obs_weak_source_t* sceneReadWs = obs_source_get_weak_source(sceneRead);
+		obs_source_t *sceneRead =
+			obs_get_source_by_name(sceneStr.toUtf8().constData());
+		if (sceneRead) {
+			obs_weak_source_t *sceneReadWs =
+				obs_source_get_weak_source(sceneRead);
 
 			match = true;
 			scene = sceneReadWs;
@@ -114,32 +110,28 @@ void SwitcherData::checkSwitchInfoFromFile(bool& match, OBSWeakSource& scene, OB
 	}
 }
 
-void SwitcherData::checkFileContent(bool& match, OBSWeakSource& scene, OBSWeakSource& transition)
+void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
+				    OBSWeakSource &transition)
 {
-	for (FileSwitch& s : fileSwitches)
-	{
+	for (FileSwitch &s : fileSwitches) {
 		bool equal = false;
 		QString t = QString::fromStdString(s.text);
 		QFile file(QString::fromStdString(s.file));
 		if (!file.open(QIODevice::ReadOnly))
 			continue;
 
-		if (s.useTime)
-		{
+		if (s.useTime) {
 			QDateTime newLastMod = QFileInfo(file).lastModified();
 			if (s.lastMod == newLastMod)
 				continue;
 			s.lastMod = newLastMod;
 		}
-		
-		if (s.useRegex)
-		{
+
+		if (s.useRegex) {
 			QTextStream in(&file);
 			QRegExp rx(t);
 			equal = rx.exactMatch(in.readAll());
-		}	
-		else
-		{
+		} else {
 			/*Im using QTextStream here so the conversion between different lineendings is done by QT.
 			 *QT itself uses only the linefeed internally so the input by the user is always using that,
 			 *but the files selected by the user might use different line endings.
@@ -147,24 +139,21 @@ void SwitcherData::checkFileContent(bool& match, OBSWeakSource& scene, OBSWeakSo
 			 */
 			QTextStream in(&file);
 			QTextStream text(&t);
-			while (!in.atEnd() && !text.atEnd())
-			{
+			while (!in.atEnd() && !text.atEnd()) {
 				QString fileLine = in.readLine();
 				QString textLine = text.readLine();
-				if (QString::compare(fileLine, textLine, Qt::CaseSensitive) != 0)
-				{
+				if (QString::compare(fileLine, textLine,
+						     Qt::CaseSensitive) != 0) {
 					equal = false;
 					break;
-				}
-				else {
+				} else {
 					equal = true;
 				}
 			}
 		}
 		file.close();
 
-		if (equal)
-		{
+		if (equal) {
 			scene = s.scene;
 			transition = s.transition;
 			match = true;
@@ -177,7 +166,8 @@ void SwitcherData::checkFileContent(bool& match, OBSWeakSource& scene, OBSWeakSo
 void SceneSwitcher::on_browseButton_3_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
-		this, tr("Select a file to read from ..."), QDir::currentPath(), tr("Any files (*.*)"));
+		this, tr("Select a file to read from ..."), QDir::currentPath(),
+		tr("Any files (*.*)"));
 	if (!path.isEmpty())
 		ui->filePathLineEdit->setText(path);
 }
@@ -191,28 +181,31 @@ void SceneSwitcher::on_fileAdd_clicked()
 	bool useRegex = ui->fileContentRegExCheckBox->isChecked();
 	bool useTime = ui->fileContentTimeCheckBox->isChecked();
 
-	if (sceneName.isEmpty() || transitionName.isEmpty() || fileName.isEmpty() || text.isEmpty())
+	if (sceneName.isEmpty() || transitionName.isEmpty() ||
+	    fileName.isEmpty() || text.isEmpty())
 		return;
 
 	OBSWeakSource source = GetWeakSourceByQString(sceneName);
 	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
 
-	QString switchText = MakeFileSwitchName(sceneName, transitionName, fileName, text, useRegex, useTime);
+	QString switchText = MakeFileSwitchName(
+		sceneName, transitionName, fileName, text, useRegex, useTime);
 	QVariant v = QVariant::fromValue(switchText);
 
-
-	QListWidgetItem* item = new QListWidgetItem(switchText, ui->fileScenesList);
+	QListWidgetItem *item =
+		new QListWidgetItem(switchText, ui->fileScenesList);
 	item->setData(Qt::UserRole, v);
 
 	lock_guard<mutex> lock(switcher->m);
-	switcher->fileSwitches.emplace_back(
-		source, transition, fileName.toUtf8().constData(), text.toUtf8().constData(), useRegex, useTime);
-	
+	switcher->fileSwitches.emplace_back(source, transition,
+					    fileName.toUtf8().constData(),
+					    text.toUtf8().constData(), useRegex,
+					    useTime);
 }
 
 void SceneSwitcher::on_fileRemove_clicked()
 {
-	QListWidgetItem* item = ui->fileScenesList->currentItem();
+	QListWidgetItem *item = ui->fileScenesList->currentItem();
 	if (!item)
 		return;
 
@@ -223,7 +216,7 @@ void SceneSwitcher::on_fileRemove_clicked()
 	{
 		lock_guard<mutex> lock(switcher->m);
 
-		auto& switches = switcher->fileSwitches;
+		auto &switches = switcher->fileSwitches;
 		switches.erase(switches.begin() + idx);
 	}
 	qDeleteAll(ui->fileScenesList->selectedItems());

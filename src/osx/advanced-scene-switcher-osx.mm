@@ -6,141 +6,232 @@
 #include <util/platform.h>
 #include "../headers/advanced-scene-switcher.hpp"
 
-
 void GetWindowList(vector<string> &windows)
 {
-    windows.resize(0);
+	windows.resize(0);
 
-    @autoreleasepool {
-        NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-        NSArray *array = [ws runningApplications];
-        for (NSRunningApplication *app in array) {
-            NSString *name = app.localizedName;
-            if (!name)
-                continue;
+	@autoreleasepool {
+		NSMutableArray *apps =
+			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
+				kCGWindowListOptionAll, kCGNullWindowID);
+		for (NSDictionary *app in apps) {
+			// Construct string from NSString accounting for nil
+			string name([[app objectForKey:@"kCGWindowName"]
+					    UTF8String],
+				    [[app objectForKey:@"kCGWindowName"]
+					    lengthOfBytesUsingEncoding:
+						    NSUTF8StringEncoding]);
+			string owner([[app objectForKey:@"kCGWindowOwnerName"]
+					     UTF8String],
+				     [[app objectForKey:@"kCGWindowOwnerName"]
+					     lengthOfBytesUsingEncoding:
+						     NSUTF8StringEncoding]);
 
-            const char *str = name.UTF8String;
-            if (str && *str)
-                windows.emplace_back(str);
-        }
-    }
+			// Check if name exists
+			if (!name.empty() &&
+			    find(windows.begin(), windows.end(), name) ==
+				    windows.end())
+				windows.emplace_back(name);
+			// Check if owner exists
+			else if (!owner.empty() &&
+				 find(windows.begin(), windows.end(), owner) ==
+					 windows.end())
+				windows.emplace_back(owner);
+		}
+	}
+}
+
+// Overloaded
+void GetWindowList(QStringList &windows)
+{
+	windows.clear();
+
+	@autoreleasepool {
+		NSMutableArray *apps =
+			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
+				kCGWindowListOptionAll, kCGNullWindowID);
+		for (NSDictionary *app in apps) {
+			// Construct string from NSString accounting for nil
+			string name([[app objectForKey:@"kCGWindowName"]
+					    UTF8String],
+				    [[app objectForKey:@"kCGWindowName"]
+					    lengthOfBytesUsingEncoding:
+						    NSUTF8StringEncoding]);
+			string owner([[app objectForKey:@"kCGWindowOwnerName"]
+					     UTF8String],
+				     [[app objectForKey:@"kCGWindowOwnerName"]
+					     lengthOfBytesUsingEncoding:
+						     NSUTF8StringEncoding]);
+
+			// Check if name exists
+			if (!name.empty() &&
+			    !windows.contains(QString::fromStdString(name)))
+				windows << QString::fromStdString(name);
+			// Check if owner exists
+			else if (!owner.empty() &&
+				 !windows.contains(
+					 QString::fromStdString(name)))
+				windows << QString::fromStdString(owner);
+		}
+	}
 }
 
 void GetCurrentWindowTitle(string &title)
 {
-    title.resize(0);
+	title.resize(0);
 
-    @autoreleasepool {
-        NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-        NSRunningApplication *app = [ws frontmostApplication];
-        if (app) {
-            NSString *name = app.localizedName;
-            if (!name)
-                return;
+	@autoreleasepool {
+		NSMutableArray *apps =
+			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
+				kCGWindowListOptionOnScreenOnly,
+				kCGNullWindowID);
+		for (NSDictionary *app in apps) {
+			int layer =
+				[[app objectForKey:@"kCGWindowLayer"] intValue];
+			// True if window is frontmost
+			if (layer == 0) {
+				// Construct string from NSString accounting for nil
+				string name(
+					[[app objectForKey:@"kCGWindowName"]
+						UTF8String],
+					[[app objectForKey:@"kCGWindowName"]
+						lengthOfBytesUsingEncoding:
+							NSUTF8StringEncoding]);
+				string owner(
+					[[app objectForKey:@"kCGWindowOwnerName"]
+						UTF8String],
+					[[app objectForKey:@"kCGWindowOwnerName"]
+						lengthOfBytesUsingEncoding:
+							NSUTF8StringEncoding]);
 
-            const char *str = name.UTF8String;
-            if (str && *str)
-                title = str;
-        }
-    }
+				if (!name.empty())
+					title = name;
+				else if (!owner.empty())
+					title = owner;
+
+				break;
+			}
+		}
+	}
 }
 
-pair<int, int> getCursorPos() {     
-    pair<int, int> pos(0, 0);       
-    CGEventRef event = CGEventCreate(NULL);     
-    CGPoint cursorPos = CGEventGetLocation(event);      
-    CFRelease(event);       
-    pos.first = cursorPos.x;        
-    pos.second = cursorPos.y;       
-    return pos;     
- }
+pair<int, int> getCursorPos()
+{
+	pair<int, int> pos(0, 0);
+	CGEventRef event = CGEventCreate(NULL);
+	CGPoint cursorPos = CGEventGetLocation(event);
+	CFRelease(event);
+	pos.first = cursorPos.x;
+	pos.second = cursorPos.y;
+	return pos;
+}
 
-bool isFullscreen() {
-    @autoreleasepool {
-        AXValueRef temp;
-        CGSize windowSize;
-        CGPoint windowPosition;
-        AXUIElementRef frontMostApp;
-        AXUIElementRef frontMostWindow;
+bool isFullscreen(string &title)
+{
+	// Check for match
+	@autoreleasepool {
+		NSArray *screens = [NSScreen screens];
+		NSMutableArray *apps =
+			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
+				kCGWindowListOptionAll, kCGNullWindowID);
+		for (NSDictionary *app in apps) {
+			// Construct string from NSString accounting for nil
+			string name([[app objectForKey:@"kCGWindowName"]
+					    UTF8String],
+				    [[app objectForKey:@"kCGWindowName"]
+					    lengthOfBytesUsingEncoding:
+						    NSUTF8StringEncoding]);
+			string owner([[app objectForKey:@"kCGWindowOwnerName"]
+					     UTF8String],
+				     [[app objectForKey:@"kCGWindowOwnerName"]
+					     lengthOfBytesUsingEncoding:
+						     NSUTF8StringEncoding]);
 
-        pid_t pid;
-        ProcessSerialNumber psn;
-        @try {
-            GetFrontProcess(&psn);
-            GetProcessPID(&psn, &pid);
-            frontMostApp = AXUIElementCreateApplication(pid);
+			// True if switch equals app
+			bool equals = (title == name || title == owner);
+			// True if switch matches app
+			bool matches = (QString::fromStdString(name).contains(
+						QRegularExpression(
+							QString::fromStdString(
+								title))) ||
+					QString::fromStdString(owner).contains(
+						QRegularExpression(
+							QString::fromStdString(
+								title))));
 
-            AXUIElementCopyAttributeValue(
-            frontMostApp, kAXFocusedWindowAttribute, (CFTypeRef *)&frontMostWindow);
+			// If found, check if fullscreen
+			if (equals || matches) {
+				// Get window bounds
+				NSRect bounds;
+				CGRectMakeWithDictionaryRepresentation(
+					(CFDictionaryRef)[app
+						objectForKey:@"kCGWindowBounds"],
+					&bounds);
 
-            // Get the window size and position
-            AXUIElementCopyAttributeValue(
-               frontMostWindow, kAXSizeAttribute, (CFTypeRef *)&temp);
-            AXValueGetValue(temp, kAXValueTypeCGSize, &windowSize);             
-            CFRelease(temp);
+				// Compare to screen bounds
+				for (NSScreen *screen in screens) {
+					NSRect frame = [screen visibleFrame];
 
-            AXUIElementCopyAttributeValue(
-               frontMostWindow, kAXPositionAttribute, (CFTypeRef *)&temp);
-            AXValueGetValue(temp, kAXValueTypeCGPoint, &windowPosition);        
-               CFRelease(temp);
+					// True if flipped window origin equals screen origin
+					bool origin =
+						(bounds.origin.x ==
+							 frame.origin.x &&
+						 ([screens[0] visibleFrame]
+								  .size.height -
+							  frame.size.height -
+							  bounds.origin.y ==
+						  frame.origin.y));
+					// True if window size equals screen size
+					bool size = NSEqualSizes(bounds.size,
+								 frame.size);
 
-            CGRect screenBound = CGDisplayBounds(CGMainDisplayID());
-            CGSize screenSize = screenBound.size;
+					if (origin && size)
+						return true;
+				}
+			}
+		}
+	}
 
-            if((windowSize.width == screenSize.width) && (windowSize.height == screenSize.height) &&
-               (windowPosition.x == 0) && (windowPosition.y == 0))
-                    return true;
-        }
-        @catch (...) {
-        // deal with the exception
-        }
-        @catch (NSException *exception) {
-        // deal with the exception
-        }
-
-    }
-    return false;
+	return false;
 }
 
 int secondsSinceLastInput()
 {
-    double time = CGEventSourceSecondsSinceLastEventType(kCGEventSourceStateCombinedSessionState, kCGAnyInputEventType) + 0.5;
-    return (int) time;
+	double time = CGEventSourceSecondsSinceLastEventType(
+			      kCGEventSourceStateCombinedSessionState,
+			      kCGAnyInputEventType) +
+		      0.5;
+	return (int)time;
 }
 
-void GetProcessList(QStringList& list)
+void GetProcessList(QStringList &list)
 {
-    list.clear();
-    @autoreleasepool {
-        NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-        NSArray *array = [ws runningApplications];
-        for (NSRunningApplication *app in array) {
-            NSString *name = app.localizedName;
-            if (!name)
-                continue;
-            
-            const char *str = name.UTF8String;
-            if (str && *str)
-                list << (str);
-        }
-    }
+	list.clear();
+	@autoreleasepool {
+		NSWorkspace *ws = [NSWorkspace sharedWorkspace];
+		NSArray *array = [ws runningApplications];
+		for (NSRunningApplication *app in array) {
+			NSString *name = app.localizedName;
+			if (!name)
+				continue;
+
+			const char *str = name.UTF8String;
+			if (str && *str)
+				list << (str);
+		}
+	}
 }
 
-bool isInFocus(QString const& appQName)
+bool isInFocus(const QString &executable)
 {
-    QByteArray ba = appQName.toLocal8Bit();
-    const char * appName = ba.data();
-    @autoreleasepool {
-        NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-        NSRunningApplication *app = [ws frontmostApplication];
-        if (app) {
-            NSString *name = app.localizedName;
-            if (!name)
-                return false;
-            
-            const char *str = name.UTF8String;
-            return (str && *str && strcmp(appName,str) == 0 )? true : false;
-        }
-    }
-    return false;
+	string current;
+	GetCurrentWindowTitle(current);
+
+	// True if executable switch equals current window
+	bool equals = (executable.toStdString() == current);
+	// True if executable switch matches current window
+	bool matches = QString::fromStdString(current).contains(
+		QRegularExpression(executable));
+
+	return (equals || matches);
 }

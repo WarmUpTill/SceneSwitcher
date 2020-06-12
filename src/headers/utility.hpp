@@ -14,14 +14,26 @@ static inline bool WeakSourceValid(obs_weak_source_t *ws)
 }
 
 static inline QString MakeSwitchName(const QString &scene, const QString &value,
-				     const QString &transition, bool fullscreen)
+				     const QString &transition, bool fullscreen,
+				     bool focus)
 {
-	if (!fullscreen)
-		return QStringLiteral("[") + scene + QStringLiteral(", ") +
+	QString name = QStringLiteral("[") + scene + QStringLiteral(", ") +
 		       transition + QStringLiteral("]: ") + value;
-	return QStringLiteral("[") + scene + QStringLiteral(", ") + transition +
-	       QStringLiteral("]: ") + value +
-	       QStringLiteral(" (only if window is fullscreen)");
+
+	if (fullscreen || focus) {
+		name += QStringLiteral(" (only if");
+
+		if (fullscreen)
+			name += QStringLiteral(" fullscreen");
+		if (fullscreen && focus)
+			name += QStringLiteral(" and");
+		if (focus)
+			name += QStringLiteral(" focused");
+
+		name += QStringLiteral(")");
+	}
+
+	return name;
 }
 
 static inline QString MakeSwitchNameExecutable(const QString &scene,
@@ -34,7 +46,7 @@ static inline QString MakeSwitchNameExecutable(const QString &scene,
 		       transition + QStringLiteral("]: ") + value;
 	return QStringLiteral("[") + scene + QStringLiteral(", ") + transition +
 	       QStringLiteral("]: ") + value +
-	       QStringLiteral(" (only if window is focused)");
+	       QStringLiteral(" (only if focused)");
 }
 
 static inline QString MakeScreenRegionSwitchName(const QString &scene,

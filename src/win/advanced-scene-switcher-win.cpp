@@ -6,7 +6,7 @@
 
 using namespace std;
 
-static bool GetWindowTitle(HWND window, string& title)
+static bool GetWindowTitle(HWND window, string &title)
 {
 	size_t len = (size_t)GetWindowTextLengthW(window);
 	wstring wtitle;
@@ -45,12 +45,13 @@ static bool WindowValid(HWND window)
 	return true;
 }
 
-void GetWindowList(vector<string>& windows)
+void GetWindowList(vector<string> &windows)
 {
+	windows.resize(0);
+
 	HWND window = GetWindow(GetDesktopWindow(), GW_CHILD);
 
-	while (window)
-	{
+	while (window) {
 		string title;
 		if (WindowValid(window) && GetWindowTitle(window, title))
 			windows.emplace_back(title);
@@ -58,7 +59,22 @@ void GetWindowList(vector<string>& windows)
 	}
 }
 
-void GetCurrentWindowTitle(string& title)
+// Overloaded
+void GetWindowList(QStringList &windows)
+{
+	windows.clear();
+
+	HWND window = GetWindow(GetDesktopWindow(), GW_CHILD);
+
+	while (window) {
+		string title;
+		if (WindowValid(window) && GetWindowTitle(window, title))
+			windows << QString::fromStdString(title);
+		window = GetNextWindow(window, GW_HWNDNEXT);
+	}
+}
+
+void GetCurrentWindowTitle(string &title)
 {
 	HWND window = GetForegroundWindow();
 	DWORD pid;
@@ -79,39 +95,59 @@ pair<int, int> getCursorPos()
 {
 	pair<int, int> pos(0, 0);
 	POINT cursorPos;
-	if (GetPhysicalCursorPos(&cursorPos))
-	{
+	if (GetPhysicalCursorPos(&cursorPos)) {
 		pos.first = cursorPos.x;
 		pos.second = cursorPos.y;
 	}
 	return pos;
 }
 
-bool isFullscreen()
+bool isFullscreen(std::string &title)
 {
 	RECT appBounds;
-	RECT rc;
-	GetWindowRect(GetDesktopWindow(), &rc);
-	HWND hwnd = GetForegroundWindow();
-	if (hwnd != GetDesktopWindow() && hwnd != GetShellWindow())
-	{
+	MONITORINFO monitorInfo = {0};
+
+	HWND hwnd = GetWindow(GetDesktopWindow(), GW_CHILD);
+	while (hwnd) {
+		string wtitle;
+		if (WindowValid(hwnd) && GetWindowTitle(hwnd, wtitle) &&
+		    (wtitle == title ||
+		     QString::fromStdString(wtitle).contains(QRegularExpression(
+			     QString::fromStdString(title)))))
+			break;
+
+		hwnd = GetNextWindow(hwnd, GW_HWNDNEXT);
+	}
+
+	monitorInfo.cbSize = sizeof(MONITORINFO);
+	GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST),
+		       &monitorInfo);
+
+	if (hwnd && hwnd != GetDesktopWindow() && hwnd != GetShellWindow()) {
+		if (IsZoomed(hwnd)) {
+			return true;
+		}
 		GetWindowRect(hwnd, &appBounds);
-		if (rc.bottom == appBounds.bottom && rc.top == appBounds.top && rc.left == appBounds.left
-			&& rc.right == appBounds.right)
-		{
+		if (monitorInfo.rcMonitor.bottom == appBounds.bottom &&
+		    monitorInfo.rcMonitor.top == appBounds.top &&
+		    monitorInfo.rcMonitor.left == appBounds.left &&
+		    monitorInfo.rcMonitor.right == appBounds.right) {
 			return true;
 		}
 	}
+
 	return false;
 }
 
-void GetProcessList(QStringList &processes) {
+void GetProcessList(QStringList &processes)
+{
 
 	HANDLE procSnapshot;
 	PROCESSENTRY32 procEntry;
 
 	procSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	if (procSnapshot == INVALID_HANDLE_VALUE) return;
+	if (procSnapshot == INVALID_HANDLE_VALUE)
+		return;
 
 	procEntry.dwSize = sizeof(PROCESSENTRY32);
 
@@ -122,30 +158,45 @@ void GetProcessList(QStringList &processes) {
 
 	do {
 		QString tempexe = QString::fromWCharArray(procEntry.szExeFile);
-		if (tempexe == "System") continue;
-		if (tempexe == "[System Process]") continue;
-		if (processes.contains(tempexe)) continue;
+		if (tempexe == "System")
+			continue;
+		if (tempexe == "[System Process]")
+			continue;
+		if (processes.contains(tempexe))
+			continue;
 		processes.append(tempexe);
 	} while (Process32Next(procSnapshot, &procEntry));
 
 	CloseHandle(procSnapshot);
 }
 
-bool isInFocus(const QString &exeToCheck) {
+bool isInFocus(const QString &executable)
+{
 	// only checks if the current foreground window is from the same executable,
-	// may return true for incorrent not meant windows from a program
+	// may return true for any window from a program
 	HWND foregroundWindow = GetForegroundWindow();
 	DWORD processId = 0;
 	GetWindowThreadProcessId(foregroundWindow, &processId);
 
-	HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
-	if (process == NULL) return false;
+	HANDLE process = OpenProcess(
+		PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+	if (process == NULL)
+		return false;
 
 	WCHAR executablePath[600];
 	GetModuleFileNameEx(process, 0, executablePath, 600);
 	CloseHandle(process);
 
-	return exeToCheck == QString::fromWCharArray(executablePath).split(QRegExp("(/|\\\\)")).back();
+	QString file = QString::fromWCharArray(executablePath)
+			       .split(QRegularExpression("(/|\\\\)"))
+			       .back();
+
+	// True if executable switch equals current window
+	bool equals = (executable == file);
+	// True if executable switch matches current window
+	bool matches = file.contains(QRegularExpression(executable));
+
+	return (equals || matches);
 }
 
 int getLastInputTime()
