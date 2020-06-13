@@ -102,3 +102,103 @@ void SceneSwitcher::closeEvent(QCloseEvent *)
 {
 	obs_frontend_save();
 }
+
+void SwitcherData::saveGeneralSettings(obs_data_t *obj)
+{
+	obs_data_set_int(obj, "interval", switcher->interval);
+
+	std::string nonMatchingSceneName =
+		GetWeakSourceName(switcher->nonMatchingScene);
+	obs_data_set_string(obj, "non_matching_scene",
+			    nonMatchingSceneName.c_str());
+	obs_data_set_int(obj, "switch_if_not_matching",
+			 switcher->switchIfNotMatching);
+
+	obs_data_set_bool(obj, "active", !switcher->stop);
+
+	std::string autoStopSceneName =
+		GetWeakSourceName(switcher->autoStopScene);
+	obs_data_set_bool(obj, "autoStopEnable", switcher->autoStopEnable);
+	obs_data_set_string(obj, "autoStopSceneName",
+			    autoStopSceneName.c_str());
+
+	obs_data_set_int(obj, "priority0",
+			 switcher->functionNamesByPriority[0]);
+	obs_data_set_int(obj, "priority1",
+			 switcher->functionNamesByPriority[1]);
+	obs_data_set_int(obj, "priority2",
+			 switcher->functionNamesByPriority[2]);
+	obs_data_set_int(obj, "priority3",
+			 switcher->functionNamesByPriority[3]);
+	obs_data_set_int(obj, "priority4",
+			 switcher->functionNamesByPriority[4]);
+	obs_data_set_int(obj, "priority5",
+			 switcher->functionNamesByPriority[5]);
+	obs_data_set_int(obj, "priority6",
+			 switcher->functionNamesByPriority[6]);
+	obs_data_set_int(obj, "priority7",
+			 switcher->functionNamesByPriority[7]);
+
+	obs_data_set_int(obj, "threadPriority", switcher->threadPriority);
+}
+
+void SwitcherData::loadGeneralSettings(obs_data_t *obj)
+{
+	obs_data_set_default_int(obj, "interval", DEFAULT_INTERVAL);
+	switcher->interval = obs_data_get_int(obj, "interval");
+
+	obs_data_set_default_int(obj, "switch_if_not_matching", NO_SWITCH);
+	switcher->switchIfNotMatching =
+		(NoMatch)obs_data_get_int(obj, "switch_if_not_matching");
+	std::string nonMatchingScene =
+		obs_data_get_string(obj, "non_matching_scene");
+	switcher->nonMatchingScene =
+		GetWeakSourceByName(nonMatchingScene.c_str());
+
+	switcher->stop = !obs_data_get_bool(obj, "active");
+
+	std::string autoStopScene =
+		obs_data_get_string(obj, "autoStopSceneName");
+	switcher->autoStopEnable = obs_data_get_bool(obj, "autoStopEnable");
+	switcher->autoStopScene = GetWeakSourceByName(autoStopScene.c_str());
+
+	obs_data_set_default_int(obj, "priority0", DEFAULT_PRIORITY_0);
+	obs_data_set_default_int(obj, "priority1", DEFAULT_PRIORITY_1);
+	obs_data_set_default_int(obj, "priority2", DEFAULT_PRIORITY_2);
+	obs_data_set_default_int(obj, "priority3", DEFAULT_PRIORITY_3);
+	obs_data_set_default_int(obj, "priority4", DEFAULT_PRIORITY_4);
+	obs_data_set_default_int(obj, "priority5", DEFAULT_PRIORITY_5);
+	obs_data_set_default_int(obj, "priority6", DEFAULT_PRIORITY_6);
+	obs_data_set_default_int(obj, "priority7", DEFAULT_PRIORITY_7);
+
+	switcher->functionNamesByPriority[0] =
+		(obs_data_get_int(obj, "priority0"));
+	switcher->functionNamesByPriority[1] =
+		(obs_data_get_int(obj, "priority1"));
+	switcher->functionNamesByPriority[2] =
+		(obs_data_get_int(obj, "priority2"));
+	switcher->functionNamesByPriority[3] =
+		(obs_data_get_int(obj, "priority3"));
+	switcher->functionNamesByPriority[4] =
+		(obs_data_get_int(obj, "priority4"));
+	switcher->functionNamesByPriority[5] =
+		(obs_data_get_int(obj, "priority5"));
+	switcher->functionNamesByPriority[6] =
+		(obs_data_get_int(obj, "priority6"));
+	switcher->functionNamesByPriority[6] =
+		(obs_data_get_int(obj, "priority7"));
+	if (!switcher->prioFuncsValid()) {
+		switcher->functionNamesByPriority[0] = (DEFAULT_PRIORITY_0);
+		switcher->functionNamesByPriority[1] = (DEFAULT_PRIORITY_1);
+		switcher->functionNamesByPriority[2] = (DEFAULT_PRIORITY_2);
+		switcher->functionNamesByPriority[3] = (DEFAULT_PRIORITY_3);
+		switcher->functionNamesByPriority[4] = (DEFAULT_PRIORITY_4);
+		switcher->functionNamesByPriority[5] = (DEFAULT_PRIORITY_5);
+		switcher->functionNamesByPriority[6] = (DEFAULT_PRIORITY_6);
+		switcher->functionNamesByPriority[7] = (DEFAULT_PRIORITY_7);
+	}
+
+	obs_data_set_default_int(obj, "threadPriority",
+				 QThread::NormalPriority);
+	switcher->threadPriority = obs_data_get_int(obj, "threadPriority");
+}

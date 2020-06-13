@@ -245,3 +245,75 @@ void SceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
 	ui->fileContentRegExCheckBox->setChecked(s.useRegex);
 	ui->fileContentTimeCheckBox->setChecked(s.useTime);
 }
+
+void SwitcherData::saveFileSwitches(obs_data_t *obj)
+{
+	obs_data_array_t *fileArray = obs_data_array_create();
+	for (FileSwitch &s : switcher->fileSwitches) {
+		obs_data_t *array_obj = obs_data_create();
+
+		obs_source_t *source = obs_weak_source_get_source(s.scene);
+		obs_source_t *transition =
+			obs_weak_source_get_source(s.transition);
+
+		if (source && transition) {
+			const char *sceneName = obs_source_get_name(source);
+			const char *transitionName =
+				obs_source_get_name(transition);
+			obs_data_set_string(array_obj, "scene", sceneName);
+			obs_data_set_string(array_obj, "transition",
+					    transitionName);
+			obs_data_set_string(array_obj, "file", s.file.c_str());
+			obs_data_set_string(array_obj, "text", s.text.c_str());
+			obs_data_set_bool(array_obj, "useRegex", s.useRegex);
+			obs_data_set_bool(array_obj, "useTime", s.useTime);
+			obs_data_array_push_back(fileArray, array_obj);
+			obs_source_release(source);
+			obs_source_release(transition);
+		}
+
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "fileSwitches", fileArray);
+	obs_data_array_release(fileArray);
+
+	obs_data_set_bool(obj, "readEnabled", switcher->fileIO.readEnabled);
+	obs_data_set_string(obj, "readPath", switcher->fileIO.readPath.c_str());
+	obs_data_set_bool(obj, "writeEnabled", switcher->fileIO.writeEnabled);
+	obs_data_set_string(obj, "writePath",
+			    switcher->fileIO.writePath.c_str());
+}
+
+void SwitcherData::loadFileSwitches(obs_data_t *obj)
+{
+	switcher->fileSwitches.clear();
+	obs_data_array_t *fileArray = obs_data_get_array(obj, "fileSwitches");
+	size_t count = obs_data_array_count(fileArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj = obs_data_array_item(fileArray, i);
+
+		const char *scene = obs_data_get_string(array_obj, "scene");
+		const char *transition =
+			obs_data_get_string(array_obj, "transition");
+		const char *file = obs_data_get_string(array_obj, "file");
+		const char *text = obs_data_get_string(array_obj, "text");
+		bool useRegex = obs_data_get_bool(array_obj, "useRegex");
+		bool useTime = obs_data_get_bool(array_obj, "useTime");
+
+		switcher->fileSwitches.emplace_back(
+			GetWeakSourceByName(scene),
+			GetWeakTransitionByName(transition), file, text,
+			useRegex, useTime);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(fileArray);
+
+	obs_data_set_default_bool(obj, "readEnabled", false);
+	switcher->fileIO.readEnabled = obs_data_get_bool(obj, "readEnabled");
+	switcher->fileIO.readPath = obs_data_get_string(obj, "readPath");
+	obs_data_set_default_bool(obj, "writeEnabled", false);
+	switcher->fileIO.writeEnabled = obs_data_get_bool(obj, "writeEnabled");
+	switcher->fileIO.writePath = obs_data_get_string(obj, "writePath");
+}

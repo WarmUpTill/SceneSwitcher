@@ -373,6 +373,32 @@ struct SwitcherData {
 	void checkTimeSwitch(bool &match, OBSWeakSource &scene,
 			     OBSWeakSource &transition);
 
+	void saveWindowTitleSwitches(obs_data_t *obj);
+	void saveScreenRegionSwitches(obs_data_t *obj);
+	void savePauseSwitches(obs_data_t *obj);
+	void saveSceneRoundTripSwitches(obs_data_t *obj);
+	void saveSceneTransitions(obs_data_t *obj);
+	void saveIdleSwitches(obs_data_t *obj);
+	void saveExecutableSwitches(obs_data_t *obj);
+	void saveRandomSwitches(obs_data_t *obj);
+	void saveFileSwitches(obs_data_t *obj);
+	void saveMediaSwitches(obs_data_t *obj);
+	void saveTimeSwitches(obs_data_t *obj);
+	void saveGeneralSettings(obs_data_t *obj);
+
+	void loadWindowTitleSwitches(obs_data_t *obj);
+	void loadScreenRegionSwitches(obs_data_t *obj);
+	void loadPauseSwitches(obs_data_t *obj);
+	void loadSceneRoundTripSwitches(obs_data_t *obj);
+	void loadSceneTransitions(obs_data_t *obj);
+	void loadIdleSwitches(obs_data_t *obj);
+	void loadExecutableSwitches(obs_data_t *obj);
+	void loadRandomSwitches(obs_data_t *obj);
+	void loadFileSwitches(obs_data_t *obj);
+	void loadMediaSwitches(obs_data_t *obj);
+	void loadTimeSwitches(obs_data_t *obj);
+	void loadGeneralSettings(obs_data_t *obj);
+
 	void Prune()
 	{
 		for (size_t i = 0; i < windowSwitches.size(); i++) {

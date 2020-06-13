@@ -155,3 +155,70 @@ int SceneSwitcher::ScreenRegionFindByData(const QString &region)
 
 	return idx;
 }
+
+void SwitcherData::saveScreenRegionSwitches(obs_data_t *obj)
+{
+	obs_data_array_t *screenRegionArray = obs_data_array_create();
+	for (ScreenRegionSwitch &s : switcher->screenRegionSwitches) {
+		obs_data_t *array_obj = obs_data_create();
+
+		obs_source_t *source = obs_weak_source_get_source(s.scene);
+		obs_source_t *transition =
+			obs_weak_source_get_source(s.transition);
+		if (source && transition) {
+			const char *sceneName = obs_source_get_name(source);
+			const char *transitionName =
+				obs_source_get_name(transition);
+			obs_data_set_string(array_obj, "screenRegionScene",
+					    sceneName);
+			obs_data_set_string(array_obj, "transition",
+					    transitionName);
+			obs_data_set_int(array_obj, "minX", s.minX);
+			obs_data_set_int(array_obj, "minY", s.minY);
+			obs_data_set_int(array_obj, "maxX", s.maxX);
+			obs_data_set_int(array_obj, "maxY", s.maxY);
+			obs_data_set_string(array_obj, "screenRegionStr",
+					    s.regionStr.c_str());
+			obs_data_array_push_back(screenRegionArray, array_obj);
+			obs_source_release(source);
+			obs_source_release(transition);
+		}
+
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "screenRegion", screenRegionArray);
+	obs_data_array_release(screenRegionArray);
+}
+
+void SwitcherData::loadScreenRegionSwitches(obs_data_t *obj)
+{
+	switcher->screenRegionSwitches.clear();
+
+	obs_data_array_t *screenRegionArray =
+		obs_data_get_array(obj, "screenRegion");
+	size_t count = obs_data_array_count(screenRegionArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj =
+			obs_data_array_item(screenRegionArray, i);
+
+		const char *scene =
+			obs_data_get_string(array_obj, "screenRegionScene");
+		const char *transition =
+			obs_data_get_string(array_obj, "transition");
+		int minX = obs_data_get_int(array_obj, "minX");
+		int minY = obs_data_get_int(array_obj, "minY");
+		int maxX = obs_data_get_int(array_obj, "maxX");
+		int maxY = obs_data_get_int(array_obj, "maxY");
+		std::string regionStr =
+			obs_data_get_string(array_obj, "screenRegionStr");
+
+		switcher->screenRegionSwitches.emplace_back(
+			GetWeakSourceByName(scene),
+			GetWeakTransitionByName(transition), minX, minY, maxX,
+			maxY, regionStr);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(screenRegionArray);
+}

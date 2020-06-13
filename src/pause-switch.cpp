@@ -221,3 +221,75 @@ bool SwitcherData::checkPause()
 	}
 	return pause;
 }
+
+void SwitcherData::savePauseSwitches(obs_data_t *obj)
+{
+	obs_data_array_t *pauseScenesArray = obs_data_array_create();
+	for (OBSWeakSource &scene : switcher->pauseScenesSwitches) {
+		obs_data_t *array_obj = obs_data_create();
+
+		obs_source_t *source = obs_weak_source_get_source(scene);
+		if (source) {
+			const char *n = obs_source_get_name(source);
+			obs_data_set_string(array_obj, "pauseScene", n);
+			obs_data_array_push_back(pauseScenesArray, array_obj);
+			obs_source_release(source);
+		}
+
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "pauseScenes", pauseScenesArray);
+	obs_data_array_release(pauseScenesArray);
+
+	obs_data_array_t *pauseWindowsArray = obs_data_array_create();
+	for (std::string &window : switcher->pauseWindowsSwitches) {
+		obs_data_t *array_obj = obs_data_create();
+		obs_data_set_string(array_obj, "pauseWindow", window.c_str());
+		obs_data_array_push_back(pauseWindowsArray, array_obj);
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "pauseWindows", pauseWindowsArray);
+	obs_data_array_release(pauseWindowsArray);
+}
+
+void SwitcherData::loadPauseSwitches(obs_data_t *obj)
+{
+	switcher->pauseScenesSwitches.clear();
+
+	obs_data_array_t *pauseScenesArray =
+		obs_data_get_array(obj, "pauseScenes");
+	size_t count = obs_data_array_count(pauseScenesArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj =
+			obs_data_array_item(pauseScenesArray, i);
+
+		const char *scene =
+			obs_data_get_string(array_obj, "pauseScene");
+
+		switcher->pauseScenesSwitches.emplace_back(
+			GetWeakSourceByName(scene));
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(pauseScenesArray);
+
+	switcher->pauseWindowsSwitches.clear();
+
+	obs_data_array_t *pauseWindowsArray =
+		obs_data_get_array(obj, "pauseWindows");
+	count = obs_data_array_count(pauseWindowsArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj =
+			obs_data_array_item(pauseWindowsArray, i);
+
+		const char *window =
+			obs_data_get_string(array_obj, "pauseWindow");
+
+		switcher->pauseWindowsSwitches.emplace_back(window);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(pauseWindowsArray);
+}

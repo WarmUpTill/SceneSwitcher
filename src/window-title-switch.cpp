@@ -312,3 +312,93 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 		}
 	}
 }
+
+void SwitcherData::saveWindowTitleSwitches(obs_data_t *obj)
+{
+	obs_data_array_t *windowTitleArray = obs_data_array_create();
+	for (WindowSceneSwitch &s : switcher->windowSwitches) {
+		obs_data_t *array_obj = obs_data_create();
+
+		obs_source_t *source = obs_weak_source_get_source(s.scene);
+		obs_source_t *transition =
+			obs_weak_source_get_source(s.transition);
+		if (source && transition) {
+			const char *sceneName = obs_source_get_name(source);
+			const char *transitionName =
+				obs_source_get_name(transition);
+			obs_data_set_string(array_obj, "scene", sceneName);
+			obs_data_set_string(array_obj, "transition",
+					    transitionName);
+			obs_data_set_string(array_obj, "window_title",
+					    s.window.c_str());
+			obs_data_set_bool(array_obj, "fullscreen",
+					  s.fullscreen);
+			obs_data_set_bool(array_obj, "focus", s.focus);
+			obs_data_array_push_back(windowTitleArray, array_obj);
+			obs_source_release(source);
+			obs_source_release(transition);
+		}
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "switches", windowTitleArray);
+	obs_data_array_release(windowTitleArray);
+
+	obs_data_array_t *ignoreWindowsArray = obs_data_array_create();
+	for (std::string &window : switcher->ignoreWindowsSwitches) {
+		obs_data_t *array_obj = obs_data_create();
+		obs_data_set_string(array_obj, "ignoreWindow", window.c_str());
+		obs_data_array_push_back(ignoreWindowsArray, array_obj);
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "ignoreWindows", ignoreWindowsArray);
+	obs_data_array_release(ignoreWindowsArray);
+}
+
+void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
+{
+	switcher->windowSwitches.clear();
+
+	obs_data_array_t *windowTitleArray =
+		obs_data_get_array(obj, "switches");
+	size_t count = obs_data_array_count(windowTitleArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj =
+			obs_data_array_item(windowTitleArray, i);
+
+		const char *scene = obs_data_get_string(array_obj, "scene");
+		const char *transition =
+			obs_data_get_string(array_obj, "transition");
+		const char *window =
+			obs_data_get_string(array_obj, "window_title");
+		bool fullscreen = obs_data_get_bool(array_obj, "fullscreen");
+		bool focus = obs_data_get_bool(array_obj, "focus") ||
+			     !obs_data_has_user_value(array_obj, "focus");
+
+		switcher->windowSwitches.emplace_back(
+			GetWeakSourceByName(scene), window,
+			GetWeakTransitionByName(transition), fullscreen, focus);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(windowTitleArray);
+
+	switcher->ignoreWindowsSwitches.clear();
+
+	obs_data_array_t *ignoreWindowsArray =
+		obs_data_get_array(obj, "ignoreWindows");
+	count = obs_data_array_count(ignoreWindowsArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj =
+			obs_data_array_item(ignoreWindowsArray, i);
+
+		const char *window =
+			obs_data_get_string(array_obj, "ignoreWindow");
+
+		switcher->ignoreWindowsSwitches.emplace_back(window);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(ignoreWindowsArray);
+}

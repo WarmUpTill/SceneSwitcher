@@ -277,3 +277,119 @@ obs_weak_source_t *getNextTransition(obs_weak_source_t *scene1,
 	}
 	return ws;
 }
+
+void SwitcherData::saveSceneTransitions(obs_data_t *obj)
+{
+	obs_data_array_t *sceneTransitionsArray = obs_data_array_create();
+	for (SceneTransition &s : switcher->sceneTransitions) {
+		obs_data_t *array_obj = obs_data_create();
+
+		obs_source_t *source1 = obs_weak_source_get_source(s.scene1);
+		obs_source_t *source2 = obs_weak_source_get_source(s.scene2);
+		obs_source_t *transition =
+			obs_weak_source_get_source(s.transition);
+		if (source1 && source2 && transition) {
+			const char *sceneName1 = obs_source_get_name(source1);
+			const char *sceneName2 = obs_source_get_name(source2);
+			const char *transitionName =
+				obs_source_get_name(transition);
+			obs_data_set_string(array_obj, "Scene1", sceneName1);
+			obs_data_set_string(array_obj, "Scene2", sceneName2);
+			obs_data_set_string(array_obj, "transition",
+					    transitionName);
+			obs_data_set_string(array_obj, "Str",
+					    s.sceneTransitionStr.c_str());
+			obs_data_array_push_back(sceneTransitionsArray,
+						 array_obj);
+			obs_source_release(source1);
+			obs_source_release(source2);
+			obs_source_release(transition);
+		}
+
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "sceneTransitions", sceneTransitionsArray);
+	obs_data_array_release(sceneTransitionsArray);
+
+	obs_data_array_t *defaultTransitionsArray = obs_data_array_create();
+	for (DefaultSceneTransition &s : switcher->defaultSceneTransitions) {
+		obs_data_t *array_obj = obs_data_create();
+
+		obs_source_t *source = obs_weak_source_get_source(s.scene);
+		obs_source_t *transition =
+			obs_weak_source_get_source(s.transition);
+		if (source && transition) {
+			const char *sceneName = obs_source_get_name(source);
+			const char *transitionName =
+				obs_source_get_name(transition);
+			obs_data_set_string(array_obj, "Scene", sceneName);
+			obs_data_set_string(array_obj, "transition",
+					    transitionName);
+			obs_data_set_string(array_obj, "Str",
+					    s.sceneTransitionStr.c_str());
+			obs_data_array_push_back(defaultTransitionsArray,
+						 array_obj);
+			obs_source_release(source);
+			obs_source_release(transition);
+		}
+
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "defaultTransitions", defaultTransitionsArray);
+	obs_data_array_release(defaultTransitionsArray);
+}
+
+void SwitcherData::loadSceneTransitions(obs_data_t *obj)
+{
+	switcher->sceneTransitions.clear();
+
+	obs_data_array_t *sceneTransitionsArray =
+		obs_data_get_array(obj, "sceneTransitions");
+	size_t count = obs_data_array_count(sceneTransitionsArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj =
+			obs_data_array_item(sceneTransitionsArray, i);
+
+		const char *scene1 = obs_data_get_string(array_obj, "Scene1");
+		const char *scene2 = obs_data_get_string(array_obj, "Scene2");
+		const char *transition =
+			obs_data_get_string(array_obj, "transition");
+		const char *sceneTransitionsStr =
+			obs_data_get_string(array_obj, "Str");
+
+		switcher->sceneTransitions.emplace_back(
+			GetWeakSourceByName(scene1),
+			GetWeakSourceByName(scene2),
+			GetWeakTransitionByName(transition),
+			sceneTransitionsStr);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(sceneTransitionsArray);
+
+	switcher->defaultSceneTransitions.clear();
+
+	obs_data_array_t *defaultTransitionsArray =
+		obs_data_get_array(obj, "defaultTransitions");
+	count = obs_data_array_count(defaultTransitionsArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj =
+			obs_data_array_item(defaultTransitionsArray, i);
+
+		const char *scene = obs_data_get_string(array_obj, "Scene");
+		const char *transition =
+			obs_data_get_string(array_obj, "transition");
+		const char *sceneTransitionsStr =
+			obs_data_get_string(array_obj, "Str");
+
+		switcher->defaultSceneTransitions.emplace_back(
+			GetWeakSourceByName(scene),
+			GetWeakTransitionByName(transition),
+			sceneTransitionsStr);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(defaultTransitionsArray);
+}

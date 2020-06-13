@@ -146,3 +146,69 @@ void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
 		}
 	}
 }
+
+void SwitcherData::saveTimeSwitches(obs_data_t *obj)
+{
+	obs_data_array_t *timeArray = obs_data_array_create();
+	for (TimeSwitch &s : switcher->timeSwitches) {
+		obs_data_t *array_obj = obs_data_create();
+
+		obs_source_t *sceneSource = obs_weak_source_get_source(s.scene);
+		obs_source_t *transition =
+			obs_weak_source_get_source(s.transition);
+		if ((s.usePreviousScene || sceneSource) && transition) {
+			const char *sceneName =
+				obs_source_get_name(sceneSource);
+			const char *transitionName =
+				obs_source_get_name(transition);
+			obs_data_set_string(array_obj, "scene",
+					    s.usePreviousScene
+						    ? PREVIOUS_SCENE_NAME
+						    : sceneName);
+			obs_data_set_string(array_obj, "transition",
+					    transitionName);
+			obs_data_set_string(
+				array_obj, "time",
+				s.time.toString().toStdString().c_str());
+			obs_data_array_push_back(timeArray, array_obj);
+		}
+		obs_source_release(sceneSource);
+		obs_source_release(transition);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "timeSwitches", timeArray);
+	obs_data_array_release(timeArray);
+}
+
+void SwitcherData::loadTimeSwitches(obs_data_t *obj)
+{
+	switcher->timeSwitches.clear();
+
+	obs_data_array_t *timeArray = obs_data_get_array(obj, "timeSwitches");
+	size_t count = obs_data_array_count(timeArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj = obs_data_array_item(timeArray, i);
+
+		const char *scene = obs_data_get_string(array_obj, "scene");
+		const char *transition =
+			obs_data_get_string(array_obj, "transition");
+		QTime time = QTime::fromString(
+			obs_data_get_string(array_obj, "time"));
+
+		std::string timeSwitchStr =
+			MakeTimeSwitchName(scene, transition, time)
+				.toUtf8()
+				.constData();
+
+		switcher->timeSwitches.emplace_back(
+			GetWeakSourceByName(scene),
+			GetWeakTransitionByName(transition), time,
+			(strcmp(scene, PREVIOUS_SCENE_NAME) == 0),
+			timeSwitchStr);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(timeArray);
+}

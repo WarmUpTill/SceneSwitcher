@@ -199,3 +199,62 @@ int SceneSwitcher::IgnoreIdleWindowsFindByData(const QString &window)
 
 	return idx;
 }
+
+void SwitcherData::saveIdleSwitches(obs_data_t *obj)
+{
+	obs_data_array_t *ignoreIdleWindowsArray = obs_data_array_create();
+	for (std::string &window : switcher->ignoreIdleWindows) {
+		obs_data_t *array_obj = obs_data_create();
+		obs_data_set_string(array_obj, "window", window.c_str());
+		obs_data_array_push_back(ignoreIdleWindowsArray, array_obj);
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "ignoreIdleWindows", ignoreIdleWindowsArray);
+	obs_data_array_release(ignoreIdleWindowsArray);
+
+	std::string idleSceneName = GetWeakSourceName(switcher->idleData.scene);
+	std::string idleTransitionName =
+		GetWeakSourceName(switcher->idleData.transition);
+	obs_data_set_bool(obj, "idleEnable", switcher->idleData.idleEnable);
+	obs_data_set_string(obj, "idleSceneName",
+			    switcher->idleData.usePreviousScene
+				    ? PREVIOUS_SCENE_NAME
+				    : idleSceneName.c_str());
+	obs_data_set_string(obj, "idleTransitionName",
+			    idleTransitionName.c_str());
+	obs_data_set_int(obj, "idleTime", switcher->idleData.time);
+}
+
+void SwitcherData::loadIdleSwitches(obs_data_t *obj)
+{
+	switcher->ignoreIdleWindows.clear();
+
+	obs_data_array_t *ignoreIdleWindowsArray =
+		obs_data_get_array(obj, "ignoreIdleWindows");
+	size_t count = obs_data_array_count(ignoreIdleWindowsArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj =
+			obs_data_array_item(ignoreIdleWindowsArray, i);
+
+		const char *window = obs_data_get_string(array_obj, "window");
+
+		switcher->ignoreIdleWindows.emplace_back(window);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(ignoreIdleWindowsArray);
+
+	std::string idleSceneName = obs_data_get_string(obj, "idleSceneName");
+	std::string idleTransitionName =
+		obs_data_get_string(obj, "idleTransitionName");
+	switcher->idleData.scene = GetWeakSourceByName(idleSceneName.c_str());
+	switcher->idleData.transition =
+		GetWeakTransitionByName(idleTransitionName.c_str());
+	obs_data_set_default_bool(obj, "idleEnable", false);
+	switcher->idleData.idleEnable = obs_data_get_bool(obj, "idleEnable");
+	obs_data_set_default_int(obj, "idleTime", DEFAULT_IDLE_TIME);
+	switcher->idleData.time = obs_data_get_int(obj, "idleTime");
+	switcher->idleData.usePreviousScene =
+		(idleSceneName == PREVIOUS_SCENE_NAME);
+}

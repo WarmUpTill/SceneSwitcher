@@ -323,3 +323,93 @@ void SwitcherData::autoStopStreamAndRecording()
 	obs_source_release(currentSource);
 	obs_weak_source_release(ws);
 }
+
+void SwitcherData::saveSceneRoundTripSwitches(obs_data_t *obj)
+{
+	obs_data_array_t *sceneRoundTripArray = obs_data_array_create();
+	for (SceneRoundTripSwitch &s : switcher->sceneRoundTripSwitches) {
+		obs_data_t *array_obj = obs_data_create();
+
+		obs_source_t *source1 = obs_weak_source_get_source(s.scene1);
+		obs_source_t *source2 = obs_weak_source_get_source(s.scene2);
+		obs_source_t *transition =
+			obs_weak_source_get_source(s.transition);
+		if (source1 && (s.usePreviousScene || source2) && transition) {
+			const char *sceneName1 = obs_source_get_name(source1);
+			const char *sceneName2 = obs_source_get_name(source2);
+			const char *transitionName =
+				obs_source_get_name(transition);
+			obs_data_set_string(array_obj, "sceneRoundTripScene1",
+					    sceneName1);
+			obs_data_set_string(array_obj, "sceneRoundTripScene2",
+					    s.usePreviousScene
+						    ? PREVIOUS_SCENE_NAME
+						    : sceneName2);
+			obs_data_set_string(array_obj, "transition",
+					    transitionName);
+			obs_data_set_int(
+				array_obj, "sceneRoundTripDelay",
+				s.delay /
+					1000); //delay stored in two separate values
+			obs_data_set_int(
+				array_obj, "sceneRoundTripDelayMs",
+				s.delay %
+					1000); //to be compatible with older versions
+			obs_data_set_string(array_obj, "sceneRoundTripStr",
+					    s.sceneRoundTripStr.c_str());
+			obs_data_array_push_back(sceneRoundTripArray,
+						 array_obj);
+			obs_source_release(source1);
+			obs_source_release(source2);
+			obs_source_release(transition);
+		}
+
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "sceneRoundTrip", sceneRoundTripArray);
+	obs_data_array_release(sceneRoundTripArray);
+}
+
+void SwitcherData::loadSceneRoundTripSwitches(obs_data_t *obj)
+{
+	switcher->sceneRoundTripSwitches.clear();
+
+	obs_data_array_t *sceneRoundTripArray =
+		obs_data_get_array(obj, "sceneRoundTrip");
+	size_t count = obs_data_array_count(sceneRoundTripArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj =
+			obs_data_array_item(sceneRoundTripArray, i);
+
+		const char *scene1 =
+			obs_data_get_string(array_obj, "sceneRoundTripScene1");
+		const char *scene2 =
+			obs_data_get_string(array_obj, "sceneRoundTripScene2");
+		const char *transition =
+			obs_data_get_string(array_obj, "transition");
+		int delay = obs_data_get_int(
+			array_obj,
+			"sceneRoundTripDelay"); //delay stored in two separate values
+		delay = delay * 1000 +
+			obs_data_get_int(
+				array_obj,
+				"sceneRoundTripDelayMs"); //to be compatible with older versions
+		std::string str =
+			MakeSceneRoundTripSwitchName(scene1, scene2, transition,
+						     ((double)delay) / 1000.0)
+				.toUtf8()
+				.constData();
+		const char *sceneRoundTripStr = str.c_str();
+
+		switcher->sceneRoundTripSwitches.emplace_back(
+			GetWeakSourceByName(scene1),
+			GetWeakSourceByName(scene2),
+			GetWeakTransitionByName(transition), delay,
+			(strcmp(scene2, PREVIOUS_SCENE_NAME) == 0),
+			sceneRoundTripStr);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(sceneRoundTripArray);
+}

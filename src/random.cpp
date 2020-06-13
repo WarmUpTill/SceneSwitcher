@@ -135,3 +135,60 @@ void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
 		break;
 	}
 }
+
+void SwitcherData::saveRandomSwitches(obs_data_t *obj)
+{
+	obs_data_array_t *randomArray = obs_data_array_create();
+	for (RandomSwitch &s : switcher->randomSwitches) {
+		obs_data_t *array_obj = obs_data_create();
+
+		obs_source_t *source = obs_weak_source_get_source(s.scene);
+		obs_source_t *transition =
+			obs_weak_source_get_source(s.transition);
+
+		if (source && transition) {
+			const char *sceneName = obs_source_get_name(source);
+			const char *transitionName =
+				obs_source_get_name(transition);
+			obs_data_set_string(array_obj, "scene", sceneName);
+			obs_data_set_string(array_obj, "transition",
+					    transitionName);
+			obs_data_set_double(array_obj, "delay", s.delay);
+			obs_data_set_string(array_obj, "str",
+					    s.randomSwitchStr.c_str());
+			obs_data_array_push_back(randomArray, array_obj);
+			obs_source_release(source);
+			obs_source_release(transition);
+		}
+
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "randomSwitches", randomArray);
+	obs_data_array_release(randomArray);
+}
+
+void SwitcherData::loadRandomSwitches(obs_data_t *obj)
+{
+	switcher->randomSwitches.clear();
+
+	obs_data_array_t *randomArray =
+		obs_data_get_array(obj, "randomSwitches");
+	size_t count = obs_data_array_count(randomArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj = obs_data_array_item(randomArray, i);
+
+		const char *scene = obs_data_get_string(array_obj, "scene");
+		const char *transition =
+			obs_data_get_string(array_obj, "transition");
+		double delay = obs_data_get_double(array_obj, "delay");
+		const char *str = obs_data_get_string(array_obj, "str");
+
+		switcher->randomSwitches.emplace_back(
+			GetWeakSourceByName(scene),
+			GetWeakTransitionByName(transition), delay, str);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(randomArray);
+}
