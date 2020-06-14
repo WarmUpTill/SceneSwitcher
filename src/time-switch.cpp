@@ -142,6 +142,11 @@ void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
 			scene = (s.usePreviousScene) ? previousScene : s.scene;
 			transition = s.transition;
 			match = true;
+
+			if (verbose)
+				blog(LOG_INFO,
+				     "Advanced Scene Switcher time match");
+
 			break;
 		}
 	}

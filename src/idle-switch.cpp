@@ -41,6 +41,10 @@ void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
 		transition = idleData.transition;
 		match = true;
 		idleData.alreadySwitched = true;
+
+		if (verbose)
+			blog(LOG_INFO,
+				"Advanced Scene Switcher idle match");
 	} else
 		idleData.alreadySwitched = false;
 }

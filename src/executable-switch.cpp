@@ -189,6 +189,10 @@ void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 			scene = s.mScene;
 			transition = s.mTransition;
 
+			if (verbose)
+				blog(LOG_INFO,
+				     "Advanced Scene Switcher exec match");
+
 			break;
 		}
 	}

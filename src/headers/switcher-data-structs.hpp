@@ -267,6 +267,7 @@ struct SwitcherData {
 	std::condition_variable transitionCv;
 	bool startAtLaunch = false;
 	bool stop = false;
+	bool verbose = false;
 
 	int interval = DEFAULT_INTERVAL;
 

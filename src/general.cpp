@@ -103,6 +103,15 @@ void SceneSwitcher::closeEvent(QCloseEvent *)
 	obs_frontend_save();
 }
 
+void SceneSwitcher::on_verboseLogging_stateChanged(int state)
+{
+	if (loading)
+		return;
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->verbose = state;
+}
+
 void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 {
 	obs_data_set_int(obj, "interval", switcher->interval);
@@ -121,6 +130,8 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_bool(obj, "autoStopEnable", switcher->autoStopEnable);
 	obs_data_set_string(obj, "autoStopSceneName",
 			    autoStopSceneName.c_str());
+
+	obs_data_set_bool(obj, "verbose", switcher->verbose);
 
 	obs_data_set_int(obj, "priority0",
 			 switcher->functionNamesByPriority[0]);
@@ -161,6 +172,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		obs_data_get_string(obj, "autoStopSceneName");
 	switcher->autoStopEnable = obs_data_get_bool(obj, "autoStopEnable");
 	switcher->autoStopScene = GetWeakSourceByName(autoStopScene.c_str());
+
+	switcher->verbose = obs_data_get_bool(obj, "verbose");
 
 	obs_data_set_default_int(obj, "priority0", DEFAULT_PRIORITY_0);
 	obs_data_set_default_int(obj, "priority1", DEFAULT_PRIORITY_1);

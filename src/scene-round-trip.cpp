@@ -237,6 +237,12 @@ void SwitcherData::checkSceneRoundTrip(bool &match, OBSWeakSource &scene,
 			int dur = s.delay - interval;
 			if (dur > 0) {
 				waitScene = currentSource;
+
+				if (verbose)
+					blog(LOG_INFO,
+					     "Advanced Scene Switcher sequence sleep %d",
+					     dur);
+
 				cv.wait_for(lock,
 					    std::chrono::milliseconds(dur));
 			}

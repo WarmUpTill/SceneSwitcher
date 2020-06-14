@@ -191,6 +191,8 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		ui->autoStopScenes->setDisabled(true);
 	}
 
+	ui->verboseLogging->setChecked(switcher->verbose);
+
 	for (auto &scene : switcher->pauseScenesSwitches) {
 		std::string sceneName = GetWeakSourceName(scene);
 		QString text = QString::fromStdString(sceneName);
@@ -495,10 +497,19 @@ void SwitcherData::Thread()
 		OBSWeakSource scene;
 		OBSWeakSource transition;
 		std::chrono::milliseconds duration;
-		if (sleep > interval)
+		if (sleep > interval) {
 			duration = std::chrono::milliseconds(sleep);
-		else
+			if (verbose)
+				blog(LOG_INFO,
+				     "Advanced Scene Switcher sleep for %d",
+				     sleep);
+		} else {
 			duration = std::chrono::milliseconds(interval);
+			if (verbose)
+				blog(LOG_INFO,
+				     "Advanced Scene Switcher sleep for %d",
+				     interval);
+		}
 		sleep = 0;
 		switcher->Prune();
 		writeSceneInfoToFile();
@@ -612,6 +623,10 @@ void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 		lock.unlock();
 		obs_frontend_set_current_scene(source);
 		lock.lock();
+
+		if (switcher->verbose)
+			blog(LOG_INFO,
+				"Advanced Scene Switcher switched scene");
 
 		obs_weak_source_release(nextTransitionWs);
 	}

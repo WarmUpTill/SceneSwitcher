@@ -502,7 +502,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_48">
          <item>
-          <widget class="QCheckBox" name="autoStopSceneCheckBox_2">
+          <widget class="QCheckBox" name="verboseLogging">
            <property name="text">
             <string>Enable verbose logging (Only needed for debugging)</string>
            </property>

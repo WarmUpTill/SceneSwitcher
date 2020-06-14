@@ -88,6 +88,8 @@ public slots:
 	void on_autoStopSceneCheckBox_stateChanged(int state);
 	void on_autoStopScenes_currentTextChanged(const QString &text);
 
+	void on_verboseLogging_stateChanged(int state);
+
 	void on_sceneTransitions_currentRowChanged(int idx);
 	void on_transitionsAdd_clicked();
 	void on_transitionsRemove_clicked();

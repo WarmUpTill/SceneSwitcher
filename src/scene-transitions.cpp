@@ -162,6 +162,11 @@ void SwitcherData::setDefaultSceneTransitions()
 			//This might cancel the current transition
 			//There is no way to be sure when the previous transition finished
 			obs_frontend_set_current_transition(transition);
+
+			if (verbose)
+				blog(LOG_INFO,
+				     "Advanced Scene Switcher default transition set");
+
 			obs_source_release(transition);
 			break;
 		}

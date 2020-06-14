@@ -219,6 +219,11 @@ bool SwitcherData::checkPause()
 			}
 		}
 	}
+
+	if (verbose && pause)
+		blog(LOG_INFO,
+			"Advanced Scene Switcher pause match");
+
 	return pause;
 }
 
