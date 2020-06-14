@@ -89,41 +89,6 @@ void SceneSwitcher::on_sceneRoundTripRemove_clicked()
 	delete item;
 }
 
-void SceneSwitcher::on_autoStopSceneCheckBox_stateChanged(int state)
-{
-	if (loading)
-		return;
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	if (!state) {
-		ui->autoStopScenes->setDisabled(true);
-		switcher->autoStopEnable = false;
-	} else {
-		ui->autoStopScenes->setDisabled(false);
-		switcher->autoStopEnable = true;
-	}
-}
-
-void SceneSwitcher::UpdateAutoStopScene(const QString &name)
-{
-	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
-	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
-
-	switcher->autoStopScene = ws;
-
-	obs_weak_source_release(ws);
-	obs_source_release(scene);
-}
-
-void SceneSwitcher::on_autoStopScenes_currentTextChanged(const QString &text)
-{
-	if (loading)
-		return;
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	UpdateAutoStopScene(text);
-}
-
 void SceneSwitcher::on_sceneRoundTripSave_clicked()
 {
 	QString directory = QFileDialog::getSaveFileName(
@@ -313,21 +278,6 @@ int SceneSwitcher::SceneRoundTripFindByData(const QString &scene1)
 	}
 
 	return idx;
-}
-
-void SwitcherData::autoStopStreamAndRecording()
-{
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
-	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
-
-	if (ws && autoStopScene == ws) {
-		if (obs_frontend_streaming_active())
-			obs_frontend_streaming_stop();
-		if (obs_frontend_recording_active())
-			obs_frontend_recording_stop();
-	}
-	obs_source_release(currentSource);
-	obs_weak_source_release(ws);
 }
 
 void SwitcherData::saveSceneRoundTripSwitches(obs_data_t *obj)
