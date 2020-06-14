@@ -452,7 +452,7 @@
          <item>
           <widget class="QPushButton" name="exportSettings">
            <property name="text">
-            <string>Export settings from file</string>
+            <string>Export settings to file</string>
            </property>
           </widget>
          </item>

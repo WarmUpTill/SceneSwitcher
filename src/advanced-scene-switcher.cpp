@@ -37,6 +37,11 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	std::lock_guard<std::mutex> lock(switcher->m);
 
 	switcher->Prune();
+	loadUI();
+}
+
+void SceneSwitcher::loadUI()
+{
 
 	BPtr<char *> scenes = obs_frontend_get_scene_names();
 	char **temp = scenes;
@@ -626,7 +631,7 @@ void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 
 		if (switcher->verbose)
 			blog(LOG_INFO,
-				"Advanced Scene Switcher switched scene");
+			     "Advanced Scene Switcher switched scene");
 
 		obs_weak_source_release(nextTransitionWs);
 	}

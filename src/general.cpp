@@ -1,5 +1,9 @@
-#include "headers/advanced-scene-switcher.hpp"
 #include <obs-module.h>
+#include <QFileDialog>
+#include <QTextStream>
+#include <QMessageBox>
+
+#include "headers/advanced-scene-switcher.hpp"
 
 void SceneSwitcher::on_close_clicked()
 {
@@ -160,6 +164,86 @@ void SceneSwitcher::on_verboseLogging_stateChanged(int state)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->verbose = state;
+}
+
+void SceneSwitcher::on_exportSettings_clicked()
+{
+	QString directory = QFileDialog::getSaveFileName(
+		this, tr("Export Advanced Scene Switcher settings to file ..."),
+		QDir::currentPath(), tr("Text files (*.txt)"));
+	if (!directory.isEmpty()) {
+		QFile file(directory);
+		if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+			return;
+
+		obs_data_t *obj = obs_data_create();
+
+		switcher->saveWindowTitleSwitches(obj);
+		switcher->saveScreenRegionSwitches(obj);
+		switcher->savePauseSwitches(obj);
+		switcher->saveSceneRoundTripSwitches(obj);
+		switcher->saveSceneTransitions(obj);
+		switcher->saveIdleSwitches(obj);
+		switcher->saveExecutableSwitches(obj);
+		switcher->saveRandomSwitches(obj);
+		switcher->saveFileSwitches(obj);
+		switcher->saveMediaSwitches(obj);
+		switcher->saveTimeSwitches(obj);
+		switcher->saveGeneralSettings(obj);
+
+		obs_data_save_json(obj, file.fileName().toUtf8().constData());
+
+		obs_data_release(obj);
+	}
+}
+
+void SceneSwitcher::on_importSettings_clicked()
+{
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	QString directory = QFileDialog::getOpenFileName(
+		this,
+		tr("Import Advanced Scene Switcher settings from file ..."),
+		QDir::currentPath(), tr("Text files (*.txt)"));
+	if (!directory.isEmpty()) {
+		QFile file(directory);
+		if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+			return;
+
+		QTextStream in(&file);
+
+		obs_data_t *obj = obs_data_create_from_json_file(
+			file.fileName().toUtf8().constData());
+
+		if (!obj) {
+			QMessageBox Msgbox;
+			Msgbox.setText(
+				"Advanced Scene Switcher failed to import settings");
+			Msgbox.exec();
+			return;
+		}
+
+		switcher->loadWindowTitleSwitches(obj);
+		switcher->loadScreenRegionSwitches(obj);
+		switcher->loadPauseSwitches(obj);
+		switcher->loadSceneRoundTripSwitches(obj);
+		switcher->loadSceneTransitions(obj);
+		switcher->loadIdleSwitches(obj);
+		switcher->loadExecutableSwitches(obj);
+		switcher->loadRandomSwitches(obj);
+		switcher->loadFileSwitches(obj);
+		switcher->loadMediaSwitches(obj);
+		switcher->loadTimeSwitches(obj);
+		switcher->loadGeneralSettings(obj);
+
+		obs_data_release(obj);
+
+		QMessageBox Msgbox;
+		Msgbox.setText(
+			"Advanced Scene Switcher settings imported successfully");
+		Msgbox.exec();
+		close();
+	}
 }
 
 void SwitcherData::saveGeneralSettings(obs_data_t *obj)
