@@ -289,6 +289,9 @@ void SceneSwitcher::loadUI()
 		item->setData(Qt::UserRole, text);
 	}
 
+	ui->fileType->addItem("local");
+	ui->fileType->addItem("remote");
+
 	for (auto &s : switcher->fileSwitches) {
 		std::string sceneName = GetWeakSourceName(s.scene);
 		std::string transitionName = GetWeakSourceName(s.transition);

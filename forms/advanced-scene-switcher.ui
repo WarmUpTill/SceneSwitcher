@@ -2199,9 +2199,19 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_36">
          <item>
+          <widget class="QLabel" name="label_62">
+           <property name="text">
+            <string>If the</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="fileType"/>
+         </item>
+         <item>
           <widget class="QLabel" name="label_44">
            <property name="text">
-            <string>If the file</string>
+            <string>file</string>
            </property>
           </widget>
          </item>

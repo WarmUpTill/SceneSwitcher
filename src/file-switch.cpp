@@ -2,7 +2,12 @@
 #include <QTextStream>
 #include <QDateTime>
 #include <obs.hpp>
+#include <curl/curl.h>
+
 #include "headers/advanced-scene-switcher.hpp"
+
+#define LOCAL_FILE_IDX 0
+#define REMOTE_FILE_IDX 1
 
 void SceneSwitcher::on_browseButton_clicked()
 {
@@ -174,6 +179,15 @@ void SceneSwitcher::on_browseButton_3_clicked()
 		tr("Any files (*.*)"));
 	if (!path.isEmpty())
 		ui->filePathLineEdit->setText(path);
+}
+
+void SceneSwitcher::on_fileType_currentIndexChanged(int idx) {
+	if (idx == -1)
+		return;
+	if (idx == LOCAL_FILE_IDX)
+		ui->browseButton_3->setDisabled(false);
+	if (idx == REMOTE_FILE_IDX)
+		ui->browseButton_3->setDisabled(true);
 }
 
 void SceneSwitcher::on_fileAdd_clicked()

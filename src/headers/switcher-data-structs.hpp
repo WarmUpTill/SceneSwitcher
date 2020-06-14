@@ -169,6 +169,7 @@ struct FileSwitch {
 	OBSWeakSource transition;
 	std::string file;
 	std::string text;
+	bool local = true;
 	bool useRegex = false;
 	bool useTime = false;
 	QDateTime lastMod;
