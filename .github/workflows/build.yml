@@ -179,7 +179,7 @@ jobs:
     runs-on: [windows-latest]
     env:
       QT_VERSION: 5.10.1
-      CMAKE_GENERATOR: "Visual Studio 16 2019"
+      CMAKE_GENERATOR: "Visual Studio 15 2017"
       CMAKE_SYSTEM_VERSION: "10.0.18363.657"
     steps:
       - name: Add msbuild to PATH
@@ -233,7 +233,7 @@ jobs:
     runs-on: [windows-latest]
     env:
       QT_VERSION: 5.10.1
-      CMAKE_GENERATOR: "Visual Studio 16 2019"
+      CMAKE_GENERATOR: "Visual Studio 15 2017"
       CMAKE_SYSTEM_VERSION: "10.0.18363.657"
     steps:
       - name: Add msbuild to PATH
