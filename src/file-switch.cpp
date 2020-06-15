@@ -196,7 +196,8 @@ bool checkLocalFileContent(FileSwitch &s)
 		equal = rx.exactMatch(in.readAll());
 	} else {
 		QTextStream in(&file);
-		equal = compareIgnoringLineEnding(in.readAll(), t);
+		QString filedata = in.readAll();
+		equal = compareIgnoringLineEnding(filedata, t);
 	}
 	file.close();
 	return equal;
