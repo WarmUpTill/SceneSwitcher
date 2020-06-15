@@ -291,6 +291,9 @@ void SceneSwitcher::loadUI()
 
 	ui->fileType->addItem("local");
 	ui->fileType->addItem("remote");
+	ui->remoteFileWarningLabel->setText(
+		"Note that the scene switcher will try to access the remote location every " +
+		QString::number(switcher->interval) + "ms");
 
 	for (auto &s : switcher->fileSwitches) {
 		std::string sceneName = GetWeakSourceName(s.scene);

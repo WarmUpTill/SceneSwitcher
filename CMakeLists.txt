@@ -13,6 +13,7 @@ if(BUILD_OUT_OF_TREE)
 	find_package(LibObs REQUIRED)
 	find_package(Qt5Core REQUIRED)
 	find_package(Qt5Widgets REQUIRED)
+	find_package(Libcurl REQUIRED)
 	find_path(LIBOBS_FRONTEND_INCLUDE_DIR HINTS ${LIBOBS_INCLUDE_DIRS})
 	find_file(LIBOBS_FRONTEND_API_LIB NAMES libobs-frontend-api.* HINTS ${LIBOBS_LIB} )
 
@@ -96,14 +97,16 @@ if(BUILD_OUT_OF_TREE)
 		"${LIBOBS_INCLUDE_DIRS}"
 		"${LIBOBS_FRONTEND_INCLUDE_DIR}"
 		${Qt5Core_INCLUDES}
-		${Qt5Widgets_INCLUDES})
+		${Qt5Widgets_INCLUDES}
+		${LIBCURL_INCLUDE_DIRS})
 
 	target_link_libraries(advanced-scene-switcher
 		${advanced-scene-switcher_PLATFORM_LIBS}
 		${LIBOBS_LIB}
 		${LIBOBS_FRONTEND_API_LIB}
 		Qt5::Core
-		Qt5::Widgets)
+		Qt5::Widgets
+		${LIBCURL_LIBRARIES})
 
 	# Additional commands to install the module in the correct place.
 	# Find all the translation files so we can copy them to the correct
@@ -224,7 +227,8 @@ else ()
 		${advanced-scene-switcher_PLATFORM_LIBS}
 		obs-frontend-api
 		Qt5::Widgets
-		libobs)
+		libobs
+		${LIBCURL_LIBRARIES})
 
 	install_obs_plugin(advanced-scene-switcher data)
 endif()

@@ -115,48 +115,103 @@ void SwitcherData::checkSwitchInfoFromFile(bool &match, OBSWeakSource &scene,
 	}
 }
 
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb,
+			    void *userp)
+{
+	((std::string *)userp)->append((char *)contents, size * nmemb);
+	return size * nmemb;
+}
+
+std::string getRemoteData(std::string &url)
+{
+	CURL *curl;
+	CURLcode res;
+	std::string readBuffer;
+
+	curl = curl_easy_init();
+	if (curl) {
+		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+		res = curl_easy_perform(curl);
+		curl_easy_cleanup(curl);
+	}
+	return readBuffer;
+}
+
+bool compareIgnoringLineEnding(QString &s1, QString &s2)
+{
+	/*
+	Im using QTextStream here so the conversion between different lineendings is done by QT.
+	QT itself uses only the linefeed internally so the input by the user is always using that,
+	but the files selected by the user might use different line endings.
+	If you are reading this and know of a cleaner way to do this, please let me know :)
+	*/
+	QTextStream s1stream(&s1);
+	QTextStream s2stream(&s2);
+
+	while (!s1stream.atEnd() && !s2stream.atEnd()) {
+		QString s1s = s1stream.readLine();
+		QString s2s = s2stream.readLine();
+		if (QString::compare(s1s, s2s, Qt::CaseSensitive) != 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool checkRemoteFileContent(FileSwitch &s)
+{
+	std::string data = getRemoteData(s.file);
+	bool ret = false;
+	if (s.useRegex) {
+		ret = QString::fromStdString(data).contains(
+			QRegularExpression(QString::fromStdString(s.text)));
+		return ret;
+	}
+	QString t = QString::fromStdString(s.text);
+	QString d = QString::fromStdString(data);
+
+	return compareIgnoringLineEnding(t, d);
+}
+
+bool checkLocalFileContent(FileSwitch &s)
+{
+	bool equal = false;
+	QString t = QString::fromStdString(s.text);
+	QFile file(QString::fromStdString(s.file));
+	if (!file.open(QIODevice::ReadOnly))
+		return false;
+
+	if (s.useTime) {
+		QDateTime newLastMod = QFileInfo(file).lastModified();
+		if (s.lastMod == newLastMod)
+			return false;
+		s.lastMod = newLastMod;
+	}
+
+	if (s.useRegex) {
+		QTextStream in(&file);
+		QRegExp rx(t);
+		equal = rx.exactMatch(in.readAll());
+	} else {
+		QTextStream in(&file);
+		equal = compareIgnoringLineEnding(in.readAll(), t);
+	}
+	file.close();
+	return equal;
+}
+
 void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
 	for (FileSwitch &s : fileSwitches) {
 		bool equal = false;
-		QString t = QString::fromStdString(s.text);
-		QFile file(QString::fromStdString(s.file));
-		if (!file.open(QIODevice::ReadOnly))
-			continue;
-
-		if (s.useTime) {
-			QDateTime newLastMod = QFileInfo(file).lastModified();
-			if (s.lastMod == newLastMod)
-				continue;
-			s.lastMod = newLastMod;
-		}
-
-		if (s.useRegex) {
-			QTextStream in(&file);
-			QRegExp rx(t);
-			equal = rx.exactMatch(in.readAll());
+		if (s.remote) {
+			equal = checkRemoteFileContent(s);
 		} else {
-			/*Im using QTextStream here so the conversion between different lineendings is done by QT.
-			 *QT itself uses only the linefeed internally so the input by the user is always using that,
-			 *but the files selected by the user might use different line endings.
-			 *If you are reading this and know of a cleaner way to do this, please let me know :)
-			 */
-			QTextStream in(&file);
-			QTextStream text(&t);
-			while (!in.atEnd() && !text.atEnd()) {
-				QString fileLine = in.readLine();
-				QString textLine = text.readLine();
-				if (QString::compare(fileLine, textLine,
-						     Qt::CaseSensitive) != 0) {
-					equal = false;
-					break;
-				} else {
-					equal = true;
-				}
-			}
+			equal = checkLocalFileContent(s);
 		}
-		file.close();
 
 		if (equal) {
 			scene = s.scene;
@@ -181,13 +236,20 @@ void SceneSwitcher::on_browseButton_3_clicked()
 		ui->filePathLineEdit->setText(path);
 }
 
-void SceneSwitcher::on_fileType_currentIndexChanged(int idx) {
+void SceneSwitcher::on_fileType_currentIndexChanged(int idx)
+{
 	if (idx == -1)
 		return;
-	if (idx == LOCAL_FILE_IDX)
+	if (idx == LOCAL_FILE_IDX) {
 		ui->browseButton_3->setDisabled(false);
-	if (idx == REMOTE_FILE_IDX)
+		ui->fileContentTimeCheckBox->setDisabled(false);
+		ui->remoteFileWarningLabel->hide();
+	}
+	if (idx == REMOTE_FILE_IDX) {
 		ui->browseButton_3->setDisabled(true);
+		ui->fileContentTimeCheckBox->setDisabled(true);
+		ui->remoteFileWarningLabel->show();
+	}
 }
 
 void SceneSwitcher::on_fileAdd_clicked()
@@ -196,6 +258,7 @@ void SceneSwitcher::on_fileAdd_clicked()
 	QString transitionName = ui->fileTransitions->currentText();
 	QString fileName = ui->filePathLineEdit->text();
 	QString text = ui->fileTextEdit->toPlainText();
+	bool remote = (ui->fileType->currentIndex() == REMOTE_FILE_IDX);
 	bool useRegex = ui->fileContentRegExCheckBox->isChecked();
 	bool useTime = ui->fileContentTimeCheckBox->isChecked();
 
@@ -217,8 +280,8 @@ void SceneSwitcher::on_fileAdd_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->fileSwitches.emplace_back(source, transition,
 					    fileName.toUtf8().constData(),
-					    text.toUtf8().constData(), useRegex,
-					    useTime);
+					    text.toUtf8().constData(), remote,
+					    useRegex, useTime);
 }
 
 void SceneSwitcher::on_fileRemove_clicked()
@@ -260,6 +323,10 @@ void SceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
 	ui->fileTransitions->setCurrentText(transitionName.c_str());
 	ui->fileTextEdit->setPlainText(s.text.c_str());
 	ui->filePathLineEdit->setText(s.file.c_str());
+	if (s.remote)
+		ui->fileType->setCurrentIndex(REMOTE_FILE_IDX);
+	else
+		ui->fileType->setCurrentIndex(LOCAL_FILE_IDX);
 	ui->fileContentRegExCheckBox->setChecked(s.useRegex);
 	ui->fileContentTimeCheckBox->setChecked(s.useTime);
 }
@@ -283,6 +350,7 @@ void SwitcherData::saveFileSwitches(obs_data_t *obj)
 					    transitionName);
 			obs_data_set_string(array_obj, "file", s.file.c_str());
 			obs_data_set_string(array_obj, "text", s.text.c_str());
+			obs_data_set_bool(array_obj, "remote", s.remote);
 			obs_data_set_bool(array_obj, "useRegex", s.useRegex);
 			obs_data_set_bool(array_obj, "useTime", s.useTime);
 			obs_data_array_push_back(fileArray, array_obj);
@@ -316,12 +384,13 @@ void SwitcherData::loadFileSwitches(obs_data_t *obj)
 			obs_data_get_string(array_obj, "transition");
 		const char *file = obs_data_get_string(array_obj, "file");
 		const char *text = obs_data_get_string(array_obj, "text");
+		bool remote = obs_data_get_bool(array_obj, "remote");
 		bool useRegex = obs_data_get_bool(array_obj, "useRegex");
 		bool useTime = obs_data_get_bool(array_obj, "useTime");
 
 		switcher->fileSwitches.emplace_back(
 			GetWeakSourceByName(scene),
-			GetWeakTransitionByName(transition), file, text,
+			GetWeakTransitionByName(transition), file, text, remote,
 			useRegex, useTime);
 
 		obs_data_release(array_obj);

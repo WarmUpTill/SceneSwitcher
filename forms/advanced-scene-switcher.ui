@@ -2235,6 +2235,13 @@
         </layout>
        </item>
        <item>
+        <widget class="QLabel" name="remoteFileWarningLabel">
+         <property name="text">
+          <string>Please note that if you choose the remote option the scene switcher will try to access the remote location every x ms as specified on the General tab!</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPlainTextEdit" name="fileTextEdit"/>
        </item>
        <item>
