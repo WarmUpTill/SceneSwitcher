@@ -332,6 +332,36 @@ void SceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
 	ui->fileContentTimeCheckBox->setChecked(s.useTime);
 }
 
+void SceneSwitcher::on_fileUp_clicked()
+{
+	int index = ui->fileScenesList->currentRow();
+	if (index != -1 && index != 0) {
+		ui->fileScenesList->insertItem(
+			index - 1, ui->fileScenesList->takeItem(index));
+		ui->fileScenesList->setCurrentRow(index - 1);
+
+		std::lock_guard<std::mutex> lock(switcher->m);
+
+		iter_swap(switcher->fileSwitches.begin() + index,
+			  switcher->fileSwitches.begin() + index - 1);
+	}
+}
+
+void SceneSwitcher::on_fileDown_clicked()
+{
+	int index = ui->fileScenesList->currentRow();
+	if (index != -1 && index != ui->fileScenesList->count() - 1) {
+		ui->fileScenesList->insertItem(
+			index + 1, ui->fileScenesList->takeItem(index));
+		ui->fileScenesList->setCurrentRow(index + 1);
+
+		std::lock_guard<std::mutex> lock(switcher->m);
+
+		iter_swap(switcher->fileSwitches.begin() + index,
+			  switcher->fileSwitches.begin() + index + 1);
+	}
+}
+
 void SwitcherData::saveFileSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *fileArray = obs_data_array_create();

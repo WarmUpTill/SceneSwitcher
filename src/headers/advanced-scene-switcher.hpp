@@ -68,6 +68,8 @@ public slots:
 	void on_screenRegions_currentRowChanged(int idx);
 	void on_screenRegionAdd_clicked();
 	void on_screenRegionRemove_clicked();
+	void on_screenRegionUp_clicked();
+	void on_screenRegionDown_clicked();
 
 	void on_pauseScenes_currentRowChanged(int idx);
 	void on_pauseScenesAdd_clicked();
@@ -86,6 +88,8 @@ public slots:
 	void on_sceneRoundTripRemove_clicked();
 	void on_sceneRoundTripSave_clicked();
 	void on_sceneRoundTripLoad_clicked();
+	void on_sceneRoundTripUp_clicked();
+	void on_sceneRoundTripDown_clicked();
 
 	void on_autoStopSceneCheckBox_stateChanged(int state);
 	void on_autoStopScenes_currentTextChanged(const QString &text);
@@ -131,10 +135,14 @@ public slots:
 	void on_fileRemove_clicked();
 	void on_fileScenesList_currentRowChanged(int idx);
 	void on_browseButton_3_clicked();
+	void on_fileUp_clicked();
+	void on_fileDown_clicked();
 
 	void on_mediaSwitches_currentRowChanged(int idx);
 	void on_mediaAdd_clicked();
 	void on_mediaRemove_clicked();
+	void on_mediaUp_clicked();
+	void on_mediaDown_clicked();
 
 	void on_timeSwitches_currentRowChanged(int idx);
 	void on_timeAdd_clicked();

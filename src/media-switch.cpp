@@ -92,6 +92,36 @@ void SceneSwitcher::on_mediaRemove_clicked()
 	delete item;
 }
 
+void SceneSwitcher::on_mediaUp_clicked()
+{
+	int index = ui->mediaSwitches->currentRow();
+	if (index != -1 && index != 0) {
+		ui->mediaSwitches->insertItem(
+			index - 1, ui->mediaSwitches->takeItem(index));
+		ui->mediaSwitches->setCurrentRow(index - 1);
+
+		std::lock_guard<std::mutex> lock(switcher->m);
+
+		iter_swap(switcher->mediaSwitches.begin() + index,
+			  switcher->mediaSwitches.begin() + index - 1);
+	}
+}
+
+void SceneSwitcher::on_mediaDown_clicked()
+{
+	int index = ui->mediaSwitches->currentRow();
+	if (index != -1 && index != ui->mediaSwitches->count() - 1) {
+		ui->mediaSwitches->insertItem(
+			index + 1, ui->mediaSwitches->takeItem(index));
+		ui->mediaSwitches->setCurrentRow(index + 1);
+
+		std::lock_guard<std::mutex> lock(switcher->m);
+
+		iter_swap(switcher->mediaSwitches.begin() + index,
+			  switcher->mediaSwitches.begin() + index + 1);
+	}
+}
+
 void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {

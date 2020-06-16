@@ -280,6 +280,36 @@ int SceneSwitcher::SceneRoundTripFindByData(const QString &scene1)
 	return idx;
 }
 
+void SceneSwitcher::on_sceneRoundTripUp_clicked()
+{
+	int index = ui->sceneRoundTrips->currentRow();
+	if (index != -1 && index != 0) {
+		ui->sceneRoundTrips->insertItem(
+			index - 1, ui->sceneRoundTrips->takeItem(index));
+		ui->sceneRoundTrips->setCurrentRow(index - 1);
+
+		std::lock_guard<std::mutex> lock(switcher->m);
+
+		iter_swap(switcher->sceneRoundTripSwitches.begin() + index,
+			  switcher->sceneRoundTripSwitches.begin() + index - 1);
+	}
+}
+
+void SceneSwitcher::on_sceneRoundTripDown_clicked()
+{
+	int index = ui->sceneRoundTrips->currentRow();
+	if (index != -1 && index != ui->sceneRoundTrips->count() - 1) {
+		ui->sceneRoundTrips->insertItem(
+			index + 1, ui->sceneRoundTrips->takeItem(index));
+		ui->sceneRoundTrips->setCurrentRow(index + 1);
+
+		std::lock_guard<std::mutex> lock(switcher->m);
+
+		iter_swap(switcher->sceneRoundTripSwitches.begin() + index,
+			  switcher->sceneRoundTripSwitches.begin() + index + 1);
+	}
+}
+
 void SwitcherData::saveSceneRoundTripSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *sceneRoundTripArray = obs_data_array_create();

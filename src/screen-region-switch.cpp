@@ -18,7 +18,7 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 
 				if (verbose)
 					blog(LOG_INFO,
-						"Advanced Scene Switcher region match");
+					     "Advanced Scene Switcher region match");
 
 				break;
 			}
@@ -160,6 +160,36 @@ int SceneSwitcher::ScreenRegionFindByData(const QString &region)
 	}
 
 	return idx;
+}
+
+void SceneSwitcher::on_screenRegionUp_clicked()
+{
+	int index = ui->screenRegions->currentRow();
+	if (index != -1 && index != 0) {
+		ui->screenRegions->insertItem(
+			index - 1, ui->screenRegions->takeItem(index));
+		ui->screenRegions->setCurrentRow(index - 1);
+
+		std::lock_guard<std::mutex> lock(switcher->m);
+
+		iter_swap(switcher->screenRegionSwitches.begin() + index,
+			  switcher->screenRegionSwitches.begin() + index - 1);
+	}
+}
+
+void SceneSwitcher::on_screenRegionDown_clicked()
+{
+	int index = ui->screenRegions->currentRow();
+	if (index != -1 && index != ui->screenRegions->count() - 1) {
+		ui->screenRegions->insertItem(
+			index + 1, ui->screenRegions->takeItem(index));
+		ui->screenRegions->setCurrentRow(index + 1);
+
+		std::lock_guard<std::mutex> lock(switcher->m);
+
+		iter_swap(switcher->screenRegionSwitches.begin() + index,
+			  switcher->screenRegionSwitches.begin() + index + 1);
+	}
 }
 
 void SwitcherData::saveScreenRegionSwitches(obs_data_t *obj)

@@ -1679,7 +1679,7 @@
       <attribute name="title">
        <string notr="true">Region</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
+      <layout class="QVBoxLayout" name="verticalLayout_27">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
@@ -1879,7 +1879,7 @@
           </sizepolicy>
          </property>
          <property name="sortingEnabled">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -1918,6 +1918,91 @@
           </widget>
          </item>
          <item>
+          <spacer name="horizontalSpacer_50">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>5</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="Line" name="line_16">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_51">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>5</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="screenRegionUp">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string>upArrowIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="screenRegionDown">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string>downArrowIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="horizontalSpacer_3">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -1938,7 +2023,7 @@
       <attribute name="title">
        <string notr="true"> Media </string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_11">
+      <layout class="QVBoxLayout" name="verticalLayout_28">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_39">
          <item>
@@ -2039,15 +2124,12 @@
           <bool>true</bool>
          </property>
          <property name="sortingEnabled">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_40">
-         <property name="spacing">
-          <number>4</number>
-         </property>
          <item>
           <widget class="QPushButton" name="mediaAdd">
            <property name="maximumSize">
@@ -2077,6 +2159,91 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">removeIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_106">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>5</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="Line" name="line_34">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_107">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>5</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mediaUp">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string>upArrowIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mediaDown">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string>downArrowIconSmall</string>
            </property>
           </widget>
          </item>
@@ -2373,6 +2540,91 @@
           </widget>
          </item>
          <item>
+          <spacer name="horizontalSpacer_108">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>5</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="Line" name="line_35">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_109">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>5</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="fileUp">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string>upArrowIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="fileDown">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string>downArrowIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="horizontalSpacer_38">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -2613,10 +2865,7 @@
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_41">
-         <property name="spacing">
-          <number>4</number>
-         </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_99">
          <item>
           <widget class="QPushButton" name="timeAdd">
            <property name="maximumSize">
@@ -2981,15 +3230,12 @@
           </sizepolicy>
          </property>
          <property name="sortingEnabled">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_10">
-         <property name="spacing">
-          <number>4</number>
-         </property>
          <item>
           <widget class="QPushButton" name="sceneRoundTripAdd">
            <property name="maximumSize">
@@ -3019,6 +3265,91 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">removeIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_112">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>5</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="Line" name="line_37">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_113">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>5</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="sceneRoundTripUp">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string>upArrowIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="sceneRoundTripDown">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string>downArrowIconSmall</string>
            </property>
           </widget>
          </item>
