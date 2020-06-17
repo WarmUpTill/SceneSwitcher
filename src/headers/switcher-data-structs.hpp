@@ -270,6 +270,7 @@ struct SwitcherData {
 	bool startAtLaunch = false;
 	bool stop = false;
 	bool verbose = false;
+	bool tansitionOverrideOverride = false;
 
 	int interval = DEFAULT_INTERVAL;
 

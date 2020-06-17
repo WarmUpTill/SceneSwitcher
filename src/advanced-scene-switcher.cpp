@@ -270,6 +270,9 @@ void SceneSwitcher::loadUI()
 		item->setData(Qt::UserRole, text);
 	}
 
+	ui->transitionOverridecheckBox->setChecked(
+		switcher->tansitionOverrideOverride);
+
 	for (auto &window : switcher->ignoreIdleWindows) {
 		QString text = QString::fromStdString(window);
 
@@ -593,7 +596,8 @@ void SwitcherData::Thread()
 			checkRandom(match, scene, transition, sleep);
 		}
 		if (match) {
-			switchScene(scene, transition, lock);
+			switchScene(scene, transition,
+				    tansitionOverrideOverride, lock);
 		}
 	}
 endLoop:
@@ -601,45 +605,29 @@ endLoop:
 }
 
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
+		 bool &transitionOverrideOverride,
 		 std::unique_lock<std::mutex> &lock)
 {
 	obs_source_t *source = obs_weak_source_get_source(scene);
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 
 	if (source && source != currentSource) {
-		obs_weak_source_t *currentScene =
-			obs_source_get_weak_source(currentSource);
-		obs_weak_source_t *nextTransitionWs =
-			getNextTransition(currentScene, scene);
-		obs_weak_source_release(currentScene);
-
-		if (nextTransitionWs) {
-			obs_source_t *nextTransition =
-				obs_weak_source_get_source(nextTransitionWs);
-			lock.unlock();
-			obs_frontend_set_current_transition(nextTransition);
-			lock.lock();
-			obs_source_release(nextTransition);
-		} else if (transition) {
-			obs_source_t *nextTransition =
-				obs_weak_source_get_source(transition);
-			lock.unlock();
-			obs_frontend_set_current_transition(nextTransition);
-			lock.lock();
-			obs_source_release(nextTransition);
-		}
 
 		// this call might block when OBS_FRONTEND_EVENT_SCENE_CHANGED is active and mutex is held
 		// thus unlock mutex to avoid deadlock
 		lock.unlock();
+
+		transitionData td;
+		setNextTransition(scene, currentSource, transition,
+				  transitionOverrideOverride, td);
 		obs_frontend_set_current_scene(source);
+		if (transitionOverrideOverride)
+			restoreTransitionOverride(source, td);
 		lock.lock();
 
 		if (switcher->verbose)
 			blog(LOG_INFO,
 			     "Advanced Scene Switcher switched scene");
-
-		obs_weak_source_release(nextTransitionWs);
 	}
 	obs_source_release(currentSource);
 	obs_source_release(source);

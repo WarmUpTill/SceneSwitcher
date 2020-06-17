@@ -540,6 +540,20 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_14">
          <item>
+          <widget class="QCheckBox" name="transitionOverridecheckBox">
+           <property name="text">
+            <string>Scene transitions defined in the scene switcher take priority over Transition Overrides defined per scene</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="Line" name="line_17">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QLabel" name="label_36">
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The settings below only affect scene transitions caused by the scene switcher and not the ones you are causing manually. Additionally they will take priority over transition settings configured elsewhere in the scene switcher.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>

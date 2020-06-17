@@ -105,6 +105,7 @@ public slots:
 	void on_defaultTransitions_currentRowChanged(int idx);
 	void on_defaultTransitionsAdd_clicked();
 	void on_defaultTransitionsRemove_clicked();
+	void on_transitionOverridecheckBox_stateChanged(int state);
 
 	void on_browseButton_clicked();
 	void on_readFileCheckBox_stateChanged(int state);
@@ -187,9 +188,20 @@ bool isInFocus(const QString &executable);
 struct obs_weak_source;
 typedef struct obs_weak_source obs_weak_source_t;
 
-obs_weak_source_t *getNextTransition(obs_weak_source_t *scene1,
-				     obs_weak_source_t *scene2);
+typedef struct transitionData {
+	std::string name = "";
+	int duration = 0;
+} transitionData;
+
+void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
+		       OBSWeakSource &transition,
+		       bool &transitionOverrideOverride, transitionData &td);
+void overwriteTransitionOverride(obs_weak_source_t *sceneWs,
+				 obs_source_t *transition, transitionData &td);
+void restoreTransitionOverride(obs_source_t *scene, transitionData td);
+
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
+		 bool &transitionOverrideOverride,
 		 std::unique_lock<std::mutex> &lock);
 
 /********************************************************************************

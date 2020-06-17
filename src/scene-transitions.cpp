@@ -269,6 +269,19 @@ void SceneSwitcher::on_defaultTransitions_currentRowChanged(int idx)
 	}
 }
 
+void SceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
+{
+	if (loading)
+		return;
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	if (!state) {
+		switcher->tansitionOverrideOverride = false;
+	} else {
+		switcher->tansitionOverrideOverride = true;
+	}
+}
+
 obs_weak_source_t *getNextTransition(obs_weak_source_t *scene1,
 				     obs_weak_source_t *scene2)
 {
@@ -281,6 +294,63 @@ obs_weak_source_t *getNextTransition(obs_weak_source_t *scene1,
 		obs_weak_source_addref(ws);
 	}
 	return ws;
+}
+
+void overwriteTransitionOverride(obs_weak_source_t *sceneWs,
+				 obs_source_t *transition, transitionData &td)
+{
+	obs_source_t *scene = obs_weak_source_get_source(sceneWs);
+	obs_data_t *data = obs_source_get_private_settings(scene);
+
+	td.name = obs_data_get_string(data, "transition");
+	td.duration = obs_data_get_int(data, "duration");
+
+	const char *name = obs_source_get_name(transition);
+	int duration = obs_frontend_get_transition_duration();
+
+	obs_data_set_string(data, "transition", name);
+	obs_data_set_int(data, "transition_duration", duration);
+
+	obs_data_release(data);
+	obs_source_release(scene);
+}
+
+void restoreTransitionOverride(obs_source_t *scene, transitionData td)
+{
+	obs_data_t *data = obs_source_get_private_settings(scene);
+
+	obs_data_set_string(data, "transition", td.name.c_str());
+	obs_data_set_int(data, "transition_duration", td.duration);
+
+	obs_data_release(data);
+}
+
+void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
+		       OBSWeakSource &transition,
+		       bool &transitionOverrideOverride, transitionData &td)
+{
+	obs_weak_source_t *currentScene =
+		obs_source_get_weak_source(currentSource);
+	obs_weak_source_t *nextTransitionWs =
+		getNextTransition(currentScene, targetScene);
+	obs_weak_source_release(currentScene);
+
+	obs_source_t *nextTransition = nullptr;
+	if (nextTransitionWs) {
+		nextTransition = obs_weak_source_get_source(nextTransitionWs);
+	} else if (transition) {
+		nextTransition = obs_weak_source_get_source(transition);
+	}
+
+	if (nextTransition) {
+		obs_frontend_set_current_transition(nextTransition);
+	}
+
+	if (transitionOverrideOverride)
+		overwriteTransitionOverride(targetScene, nextTransition, td);
+
+	obs_weak_source_release(nextTransitionWs);
+	obs_source_release(nextTransition);
 }
 
 void SwitcherData::saveSceneTransitions(obs_data_t *obj)
@@ -342,6 +412,9 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 	}
 	obs_data_set_array(obj, "defaultTransitions", defaultTransitionsArray);
 	obs_data_array_release(defaultTransitionsArray);
+
+	obs_data_set_bool(obj, "tansitionOverrideOverride",
+			  switcher->tansitionOverrideOverride);
 }
 
 void SwitcherData::loadSceneTransitions(obs_data_t *obj)
@@ -397,4 +470,7 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(defaultTransitionsArray);
+
+	switcher->tansitionOverrideOverride =
+		obs_data_get_bool(obj, "tansitionOverrideOverride");
 }
