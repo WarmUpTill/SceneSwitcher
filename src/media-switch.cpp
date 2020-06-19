@@ -122,6 +122,19 @@ void SceneSwitcher::on_mediaDown_clicked()
 	}
 }
 
+void SceneSwitcher::on_mediaTimeRestrictions_currentIndexChanged(int idx)
+{
+	if (idx == -1)
+		return;
+
+	if ((time_restriction)ui->mediaTimeRestrictions->currentIndex() ==
+	    TIME_RESTRICTION_NONE) {
+		ui->mediaTime->setDisabled(true);
+	} else {
+		ui->mediaTime->setDisabled(false);
+	}
+}
+
 void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {

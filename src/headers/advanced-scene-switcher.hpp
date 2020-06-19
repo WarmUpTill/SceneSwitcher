@@ -144,6 +144,7 @@ public slots:
 	void on_mediaRemove_clicked();
 	void on_mediaUp_clicked();
 	void on_mediaDown_clicked();
+	void on_mediaTimeRestrictions_currentIndexChanged(int idx);
 
 	void on_timeSwitches_currentRowChanged(int idx);
 	void on_timeAdd_clicked();
