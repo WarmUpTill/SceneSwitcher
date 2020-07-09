@@ -332,7 +332,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(obs_data_get_int(obj, "priority5"));
 	switcher->functionNamesByPriority[6] =
 		(obs_data_get_int(obj, "priority6"));
-	switcher->functionNamesByPriority[6] =
+	switcher->functionNamesByPriority[7] =
 		(obs_data_get_int(obj, "priority7"));
 	if (!switcher->prioFuncsValid()) {
 		switcher->functionNamesByPriority[0] = (DEFAULT_PRIORITY_0);
