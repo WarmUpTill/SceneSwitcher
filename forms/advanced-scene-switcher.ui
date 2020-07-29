@@ -37,6 +37,9 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
+     <property name="movable">
+      <bool>true</bool>
+     </property>
      <widget class="QWidget" name="generalTab">
       <attribute name="title">
        <string notr="true">General</string>
@@ -45,7 +48,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_41">
          <item>
-          <widget class="QLabel" name="label_55">
+          <widget class="QLabel" name="label_63">
            <property name="text">
             <string>WARNING! Condition checking interval must be greater than the duration of transitions to avoid scene locking</string>
            </property>
@@ -394,7 +397,7 @@
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_44">
+        <layout class="QHBoxLayout" name="horizontalLayout_49">
          <item>
           <widget class="QLabel" name="label_56">
            <property name="text">
