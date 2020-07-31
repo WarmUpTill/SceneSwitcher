@@ -210,7 +210,7 @@ struct MediaSwitch {
 	OBSWeakSource source;
 	OBSWeakSource transition;
 	obs_media_state state;
-	uint64_t time;
+	int64_t time;
 	time_restriction restriction;
 	bool matched;
 	bool usePreviousScene;

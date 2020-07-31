@@ -452,18 +452,18 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "idleTabPos", 10);
 	obs_data_set_default_int(obj, "sequenceTabPos", 11);
 
-	switcher->tabOrder.emplace_back(obs_data_get_int(obj, "generalTabPos"));
-	switcher->tabOrder.emplace_back(
-		obs_data_get_int(obj, "transitionTabPos"));
-	switcher->tabOrder.emplace_back(obs_data_get_int(obj, "pauseTabPos"));
-	switcher->tabOrder.emplace_back(obs_data_get_int(obj, "titleTabPos"));
-	switcher->tabOrder.emplace_back(obs_data_get_int(obj, "exeTabPos"));
-	switcher->tabOrder.emplace_back(obs_data_get_int(obj, "regionTabPos"));
-	switcher->tabOrder.emplace_back(obs_data_get_int(obj, "mediaTabPos"));
-	switcher->tabOrder.emplace_back(obs_data_get_int(obj, "fileTabPos"));
-	switcher->tabOrder.emplace_back(obs_data_get_int(obj, "randomTabPos"));
-	switcher->tabOrder.emplace_back(obs_data_get_int(obj, "timeTabPos"));
-	switcher->tabOrder.emplace_back(obs_data_get_int(obj, "idleTabPos"));
-	switcher->tabOrder.emplace_back(
-		obs_data_get_int(obj, "sequenceTabPos"));
+	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "generalTabPos")));
+	switcher->tabOrder.emplace_back((int)(
+		obs_data_get_int(obj, "transitionTabPos")));
+	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "pauseTabPos")));
+	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "titleTabPos")));
+	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "exeTabPos")));
+	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "regionTabPos")));
+	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "mediaTabPos")));
+	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "fileTabPos")));
+	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "randomTabPos")));
+	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "timeTabPos")));
+	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "idleTabPos")));
+	switcher->tabOrder.emplace_back((int)(
+		obs_data_get_int(obj, "sequenceTabPos")));
 }
