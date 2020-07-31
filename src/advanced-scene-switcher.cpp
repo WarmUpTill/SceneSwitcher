@@ -45,6 +45,8 @@ void SceneSwitcher::loadUI()
 #if __APPLE__
 	setMinimumHeight(700);
 #endif
+	setTabOrder();
+
 	BPtr<char *> scenes = obs_frontend_get_scene_names();
 	char **temp = scenes;
 	while (*temp) {

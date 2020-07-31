@@ -2038,7 +2038,7 @@
      </widget>
      <widget class="QWidget" name="mediaTab">
       <attribute name="title">
-       <string notr="true"> Media </string>
+       <string notr="true">Media</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_28">
        <item>

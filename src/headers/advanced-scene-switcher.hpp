@@ -50,6 +50,7 @@ public:
 	void UpdateIdleDataScene(const QString &name);
 
 	void loadUI();
+	void setTabOrder();
 
 public slots:
 	void on_switches_currentRowChanged(int idx);
@@ -64,6 +65,7 @@ public slots:
 	void on_noMatchSwitchScene_currentTextChanged(const QString &text);
 	void on_checkInterval_valueChanged(int value);
 	void on_toggleStartButton_clicked();
+	void on_tabMoved(int from, int to);
 
 	void on_screenRegions_currentRowChanged(int idx);
 	void on_screenRegionAdd_clicked();

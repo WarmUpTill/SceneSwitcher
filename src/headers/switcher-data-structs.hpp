@@ -345,6 +345,8 @@ struct SwitcherData {
 
 	uint32_t threadPriority = QThread::NormalPriority;
 
+	std::vector<int> tabOrder;
+
 	void Thread();
 	void Start();
 	void Stop();
