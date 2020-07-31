@@ -35,6 +35,7 @@ jobs:
         shell: bash
         run: |
           cd UI/frontend-plugins/${{ env.PLUGIN_NAME }}/CI/macos
+          brew update
           brew bundle
           cd -
       - name: 'Install prerequisite: Pre-built dependencies'
