@@ -1,10 +1,12 @@
 #include <QMainWindow>
 #include <QDir>
+#include <QAction>
 
 #include <condition_variable>
 #include <chrono>
 #include <vector>
 #include <mutex>
+#include <thread>
 
 #include <obs-frontend-api.h>
 #include <obs-module.h>
