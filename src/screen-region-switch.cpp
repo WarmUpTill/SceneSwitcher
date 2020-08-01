@@ -1,3 +1,5 @@
+#include <QTimer>
+
 #include "headers/advanced-scene-switcher.hpp"
 
 void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
@@ -257,4 +259,28 @@ void SwitcherData::loadScreenRegionSwitches(obs_data_t *obj)
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(screenRegionArray);
+}
+
+void SceneSwitcher::setupRegionTab()
+{
+	populateSceneSelection(ui->screenRegionScenes, false);
+	populateTransitionSelection(ui->screenRegionsTransitions);
+
+	for (auto &s : switcher->screenRegionSwitches) {
+		std::string sceneName = GetWeakSourceName(s.scene);
+		std::string transitionName = GetWeakSourceName(s.transition);
+		QString text = MakeScreenRegionSwitchName(
+			sceneName.c_str(), transitionName.c_str(), s.minX,
+			s.minY, s.maxX, s.maxY);
+
+		QListWidgetItem *item =
+			new QListWidgetItem(text, ui->screenRegions);
+		item->setData(Qt::UserRole, s.regionStr.c_str());
+	}
+
+	// screen region cursor position
+	QTimer *screenRegionTimer = new QTimer(this);
+	connect(screenRegionTimer, SIGNAL(timeout()), this,
+		SLOT(updateScreenRegionCursorPos()));
+	screenRegionTimer->start(1000);
 }

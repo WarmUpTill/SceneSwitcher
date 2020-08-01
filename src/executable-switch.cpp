@@ -254,3 +254,27 @@ void SwitcherData::loadExecutableSwitches(obs_data_t *obj)
 	}
 	obs_data_array_release(executableArray);
 }
+
+void SceneSwitcher::setupExecutableTab()
+{
+	populateSceneSelection(ui->executableScenes, false);
+	populateTransitionSelection(ui->executableTransitions);
+
+	QStringList processes;
+	GetProcessList(processes);
+	for (QString &process : processes)
+		ui->executable->addItem(process);
+
+	for (auto &s : switcher->executableSwitches) {
+		std::string sceneName = GetWeakSourceName(s.mScene);
+		std::string transitionName = GetWeakSourceName(s.mTransition);
+		QString text = MakeSwitchNameExecutable(sceneName.c_str(),
+							s.mExe,
+							transitionName.c_str(),
+							s.mInFocus);
+
+		QListWidgetItem *item =
+			new QListWidgetItem(text, ui->executables);
+		item->setData(Qt::UserRole, s.mExe);
+	}
+}

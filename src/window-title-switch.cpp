@@ -402,3 +402,31 @@ void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
 	}
 	obs_data_array_release(ignoreWindowsArray);
 }
+
+void SceneSwitcher::setupTitleTab()
+{
+	populateSceneSelection(ui->scenes, false);
+	populateTransitionSelection(ui->transitions);
+	populateWindowSelection(ui->windows);
+	populateWindowSelection(ui->ignoreWindowsWindows);
+
+	for (auto &s : switcher->windowSwitches) {
+		std::string sceneName = GetWeakSourceName(s.scene);
+		std::string transitionName = GetWeakSourceName(s.transition);
+		QString text = MakeSwitchName(sceneName.c_str(),
+					      s.window.c_str(),
+					      transitionName.c_str(),
+					      s.fullscreen, s.focus);
+
+		QListWidgetItem *item = new QListWidgetItem(text, ui->switches);
+		item->setData(Qt::UserRole, s.window.c_str());
+	}
+
+	for (auto &window : switcher->ignoreWindowsSwitches) {
+		QString text = QString::fromStdString(window);
+
+		QListWidgetItem *item =
+			new QListWidgetItem(text, ui->ignoreWindows);
+		item->setData(Qt::UserRole, text);
+	}
+}

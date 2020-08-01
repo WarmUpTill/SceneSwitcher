@@ -50,6 +50,21 @@ public:
 	void UpdateIdleDataScene(const QString &name);
 
 	void loadUI();
+	void populateSceneSelection(QComboBox *sel, bool addPrevious);
+	void populateTransitionSelection(QComboBox *sel);
+	void populateWindowSelection(QComboBox *sel);
+	void setupGeneralTab();
+	void setupTitleTab();
+	void setupExecutableTab();
+	void setupRegionTab();
+	void setupPauseTab();
+	void setupSequenceTab();
+	void setupTransitionsTab();
+	void setupIdleTab();
+	void setupRandomTab();
+	void setupMediaTab();
+	void setupFileTab();
+	void setupTimeTab();
 	void setTabOrder();
 
 public slots:

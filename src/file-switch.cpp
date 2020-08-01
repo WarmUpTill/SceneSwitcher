@@ -435,3 +435,41 @@ void SwitcherData::loadFileSwitches(obs_data_t *obj)
 	switcher->fileIO.writeEnabled = obs_data_get_bool(obj, "writeEnabled");
 	switcher->fileIO.writePath = obs_data_get_string(obj, "writePath");
 }
+
+void SceneSwitcher::setupFileTab()
+{
+	populateSceneSelection(ui->fileScenes, false);
+	populateTransitionSelection(ui->fileTransitions);
+
+	ui->fileType->addItem("local");
+	ui->fileType->addItem("remote");
+	ui->remoteFileWarningLabel->setText(
+		"Note that the scene switcher will try to access the remote location every " +
+		QString::number(switcher->interval) + "ms");
+
+	for (auto &s : switcher->fileSwitches) {
+		std::string sceneName = GetWeakSourceName(s.scene);
+		std::string transitionName = GetWeakSourceName(s.transition);
+		QString listText = MakeFileSwitchName(
+			sceneName.c_str(), transitionName.c_str(),
+			s.file.c_str(), s.text.c_str(), s.useRegex, s.useTime);
+
+		QListWidgetItem *item =
+			new QListWidgetItem(listText, ui->fileScenesList);
+		item->setData(Qt::UserRole, listText);
+	}
+
+	ui->readPathLineEdit->setText(
+		QString::fromStdString(switcher->fileIO.readPath.c_str()));
+	ui->readFileCheckBox->setChecked(switcher->fileIO.readEnabled);
+	ui->writePathLineEdit->setText(
+		QString::fromStdString(switcher->fileIO.writePath.c_str()));
+
+	if (ui->readFileCheckBox->checkState()) {
+		ui->browseButton_2->setDisabled(false);
+		ui->readPathLineEdit->setDisabled(false);
+	} else {
+		ui->browseButton_2->setDisabled(true);
+		ui->readPathLineEdit->setDisabled(true);
+	}
+}

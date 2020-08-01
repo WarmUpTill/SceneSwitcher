@@ -393,3 +393,35 @@ void SwitcherData::loadSceneRoundTripSwitches(obs_data_t *obj)
 	}
 	obs_data_array_release(sceneRoundTripArray);
 }
+void SceneSwitcher::setupSequenceTab()
+{
+	populateSceneSelection(ui->sceneRoundTripScenes1, false);
+	populateSceneSelection(ui->sceneRoundTripScenes2, true);
+	populateTransitionSelection(ui->sceneRoundTripTransitions);
+
+	int smallestDelay = switcher->interval;
+	for (auto &s : switcher->sceneRoundTripSwitches) {
+		std::string sceneName1 = GetWeakSourceName(s.scene1);
+		std::string sceneName2 = (s.usePreviousScene)
+						 ? PREVIOUS_SCENE_NAME
+						 : GetWeakSourceName(s.scene2);
+		std::string transitionName = GetWeakSourceName(s.transition);
+		QString text = MakeSceneRoundTripSwitchName(
+			sceneName1.c_str(), sceneName2.c_str(),
+			transitionName.c_str(), s.delay);
+
+		QListWidgetItem *item =
+			new QListWidgetItem(text, ui->sceneRoundTrips);
+		item->setData(Qt::UserRole, text);
+
+		if (s.delay < smallestDelay)
+			smallestDelay = s.delay;
+	}
+	(smallestDelay * 1000 < switcher->interval)
+		? ui->intervalWarning->setVisible(true)
+		: ui->intervalWarning->setVisible(false);
+
+	ui->sceneRoundTripDelayUnits->addItem("seconds");
+	ui->sceneRoundTripDelayUnits->addItem("minutes");
+	ui->sceneRoundTripDelayUnits->addItem("hours");
+}

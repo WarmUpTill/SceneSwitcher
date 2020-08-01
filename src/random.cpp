@@ -196,3 +196,20 @@ void SwitcherData::loadRandomSwitches(obs_data_t *obj)
 	}
 	obs_data_array_release(randomArray);
 }
+
+void SceneSwitcher::setupRandomTab()
+{
+	populateSceneSelection(ui->randomScenes, false);
+	populateTransitionSelection(ui->randomTransitions);
+
+	for (auto &s : switcher->randomSwitches) {
+		std::string sceneName = GetWeakSourceName(s.scene);
+		std::string transitionName = GetWeakSourceName(s.transition);
+		QString text = MakeRandomSwitchName(
+			sceneName.c_str(), transitionName.c_str(), s.delay);
+
+		QListWidgetItem *item =
+			new QListWidgetItem(text, ui->randomScenesList);
+		item->setData(Qt::UserRole, text);
+	}
+}

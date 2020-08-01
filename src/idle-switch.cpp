@@ -43,8 +43,7 @@ void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
 		idleData.alreadySwitched = true;
 
 		if (verbose)
-			blog(LOG_INFO,
-				"Advanced Scene Switcher idle match");
+			blog(LOG_INFO, "Advanced Scene Switcher idle match");
 	} else
 		idleData.alreadySwitched = false;
 }
@@ -261,4 +260,38 @@ void SwitcherData::loadIdleSwitches(obs_data_t *obj)
 	switcher->idleData.time = obs_data_get_int(obj, "idleTime");
 	switcher->idleData.usePreviousScene =
 		(idleSceneName == PREVIOUS_SCENE_NAME);
+}
+
+void SceneSwitcher::setupIdleTab()
+{
+	populateSceneSelection(ui->idleScenes, true);
+	populateTransitionSelection(ui->idleTransitions);
+	populateWindowSelection(ui->ignoreIdleWindowsWindows);
+
+	for (auto &window : switcher->ignoreIdleWindows) {
+		QString text = QString::fromStdString(window);
+
+		QListWidgetItem *item =
+			new QListWidgetItem(text, ui->ignoreIdleWindows);
+		item->setData(Qt::UserRole, text);
+	}
+
+	ui->idleCheckBox->setChecked(switcher->idleData.idleEnable);
+	ui->idleScenes->setCurrentText(
+		switcher->idleData.usePreviousScene
+			? PREVIOUS_SCENE_NAME
+			: GetWeakSourceName(switcher->idleData.scene).c_str());
+	ui->idleTransitions->setCurrentText(
+		GetWeakSourceName(switcher->idleData.transition).c_str());
+	ui->idleSpinBox->setValue(switcher->idleData.time);
+
+	if (ui->idleCheckBox->checkState()) {
+		ui->idleScenes->setDisabled(false);
+		ui->idleSpinBox->setDisabled(false);
+		ui->idleTransitions->setDisabled(false);
+	} else {
+		ui->idleScenes->setDisabled(true);
+		ui->idleSpinBox->setDisabled(true);
+		ui->idleTransitions->setDisabled(true);
+	}
 }

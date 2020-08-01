@@ -217,3 +217,22 @@ void SwitcherData::loadTimeSwitches(obs_data_t *obj)
 	}
 	obs_data_array_release(timeArray);
 }
+
+void SceneSwitcher::setupTimeTab()
+{
+	populateSceneSelection(ui->timeScenes, true);
+	populateTransitionSelection(ui->timeTransitions);
+
+	for (auto &s : switcher->timeSwitches) {
+		std::string sceneName = (s.usePreviousScene)
+						? PREVIOUS_SCENE_NAME
+						: GetWeakSourceName(s.scene);
+		std::string transitionName = GetWeakSourceName(s.transition);
+		QString listText = MakeTimeSwitchName(
+			sceneName.c_str(), transitionName.c_str(), s.time);
+
+		QListWidgetItem *item =
+			new QListWidgetItem(listText, ui->timeSwitches);
+		item->setData(Qt::UserRole, listText);
+	}
+}

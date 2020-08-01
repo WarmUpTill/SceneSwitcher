@@ -221,8 +221,7 @@ bool SwitcherData::checkPause()
 	}
 
 	if (verbose && pause)
-		blog(LOG_INFO,
-			"Advanced Scene Switcher pause match");
+		blog(LOG_INFO, "Advanced Scene Switcher pause match");
 
 	return pause;
 }
@@ -297,4 +296,27 @@ void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(pauseWindowsArray);
+}
+
+void SceneSwitcher::setupPauseTab()
+{
+	populateSceneSelection(ui->pauseScenesScenes, false);
+	populateWindowSelection(ui->pauseWindowsWindows);
+
+	for (auto &scene : switcher->pauseScenesSwitches) {
+		std::string sceneName = GetWeakSourceName(scene);
+		QString text = QString::fromStdString(sceneName);
+
+		QListWidgetItem *item =
+			new QListWidgetItem(text, ui->pauseScenes);
+		item->setData(Qt::UserRole, text);
+	}
+
+	for (auto &window : switcher->pauseWindowsSwitches) {
+		QString text = QString::fromStdString(window);
+
+		QListWidgetItem *item =
+			new QListWidgetItem(text, ui->pauseWindows);
+		item->setData(Qt::UserRole, text);
+	}
 }

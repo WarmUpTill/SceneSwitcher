@@ -477,3 +477,87 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "sequenceTabPos")));
 }
+
+void SceneSwitcher::setupGeneralTab()
+{
+	populateSceneSelection(ui->noMatchSwitchScene, false);
+	populateSceneSelection(ui->autoStopScenes, false);
+
+	if (switcher->switchIfNotMatching == SWITCH) {
+		ui->noMatchSwitch->setChecked(true);
+		ui->noMatchSwitchScene->setEnabled(true);
+	} else if (switcher->switchIfNotMatching == NO_SWITCH) {
+		ui->noMatchDontSwitch->setChecked(true);
+		ui->noMatchSwitchScene->setEnabled(false);
+	} else {
+		ui->noMatchRandomSwitch->setChecked(true);
+		ui->noMatchSwitchScene->setEnabled(false);
+	}
+	ui->noMatchSwitchScene->setCurrentText(
+		GetWeakSourceName(switcher->nonMatchingScene).c_str());
+	ui->checkInterval->setValue(switcher->interval);
+
+	ui->autoStopSceneCheckBox->setChecked(switcher->autoStopEnable);
+	ui->autoStopScenes->setCurrentText(
+		GetWeakSourceName(switcher->autoStopScene).c_str());
+
+	if (ui->autoStopSceneCheckBox->checkState()) {
+		ui->autoStopScenes->setDisabled(false);
+	} else {
+		ui->autoStopScenes->setDisabled(true);
+	}
+
+	ui->verboseLogging->setChecked(switcher->verbose);
+
+	for (int p : switcher->functionNamesByPriority) {
+		std::string s = "";
+		switch (p) {
+		case READ_FILE_FUNC:
+			s = "File Content";
+			break;
+		case ROUND_TRIP_FUNC:
+			s = "Scene Sequence";
+			break;
+		case IDLE_FUNC:
+			s = "Idle Detection";
+			break;
+		case EXE_FUNC:
+			s = "Executable";
+			break;
+		case SCREEN_REGION_FUNC:
+			s = "Screen Region";
+			break;
+		case WINDOW_TITLE_FUNC:
+			s = "Window Title";
+			break;
+		case MEDIA_FUNC:
+			s = "Media";
+			break;
+		case TIME_FUNC:
+			s = "Time";
+			break;
+		}
+		QString text(s.c_str());
+		QListWidgetItem *item =
+			new QListWidgetItem(text, ui->priorityList);
+		item->setData(Qt::UserRole, text);
+	}
+
+	for (int i = 0; i < switcher->threadPriorities.size(); ++i) {
+		ui->threadPriority->addItem(
+			switcher->threadPriorities[i].name.c_str());
+		ui->threadPriority->setItemData(
+			i, switcher->threadPriorities[i].description.c_str(),
+			Qt::ToolTipRole);
+		if (switcher->threadPriority ==
+		    switcher->threadPriorities[i].value) {
+			ui->threadPriority->setCurrentText(
+				switcher->threadPriorities[i].name.c_str());
+		}
+	}
+
+	if (switcher->th && switcher->th->isRunning())
+		SetStarted();
+	else
+		SetStopped();
+}

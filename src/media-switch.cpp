@@ -251,3 +251,51 @@ void SwitcherData::loadMediaSwitches(obs_data_t *obj)
 	}
 	obs_data_array_release(mediaArray);
 }
+
+void SceneSwitcher::setupMediaTab()
+{
+	populateSceneSelection(ui->mediaScenes, true);
+	populateTransitionSelection(ui->mediaTransitions);
+
+	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
+	{
+		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
+		if (strcmp(obs_source_get_id(source), "ffmpeg_source") == 0) {
+			const char *name = obs_source_get_name(source);
+			combo->addItem(name);
+		}
+		return true;
+	};
+
+	obs_enum_sources(sourceEnum, ui->mediaSources);
+
+	ui->mediaStates->addItem("None");
+	ui->mediaStates->addItem("Playing");
+	ui->mediaStates->addItem("Opening");
+	ui->mediaStates->addItem("Buffering");
+	ui->mediaStates->addItem("Paused");
+	ui->mediaStates->addItem("Stopped");
+	ui->mediaStates->addItem("Ended");
+	ui->mediaStates->addItem("Error");
+
+	ui->mediaTimeRestrictions->addItem("None");
+	ui->mediaTimeRestrictions->addItem("Time shorter");
+	ui->mediaTimeRestrictions->addItem("Time longer");
+	ui->mediaTimeRestrictions->addItem("Time remaining shorter");
+	ui->mediaTimeRestrictions->addItem("Time remaining longer");
+
+	for (auto &s : switcher->mediaSwitches) {
+		std::string sourceName = GetWeakSourceName(s.source);
+		std::string sceneName = (s.usePreviousScene)
+						? PREVIOUS_SCENE_NAME
+						: GetWeakSourceName(s.scene);
+		std::string transitionName = GetWeakSourceName(s.transition);
+		QString listText = MakeMediaSwitchName(
+			sourceName.c_str(), sceneName.c_str(),
+			transitionName.c_str(), s.state, s.restriction, s.time);
+
+		QListWidgetItem *item =
+			new QListWidgetItem(listText, ui->mediaSwitches);
+		item->setData(Qt::UserRole, listText);
+	}
+}
