@@ -425,4 +425,18 @@ void SceneSwitcher::setupSequenceTab()
 	ui->sceneRoundTripDelayUnits->addItem("seconds");
 	ui->sceneRoundTripDelayUnits->addItem("minutes");
 	ui->sceneRoundTripDelayUnits->addItem("hours");
+
+	switch (switcher->sceneRoundTripUnitMultiplier) {
+	case 1:
+		ui->sceneRoundTripDelayUnits->setCurrentIndex(0);
+		break;
+	case 60:
+		ui->sceneRoundTripDelayUnits->setCurrentIndex(1);
+		break;
+	case 3600:
+		ui->sceneRoundTripDelayUnits->setCurrentIndex(2);
+		break;
+	default:
+		break;
+	}
 }
