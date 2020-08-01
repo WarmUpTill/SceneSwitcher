@@ -204,6 +204,7 @@ void SwitcherData::checkSceneRoundTrip(bool &match, OBSWeakSource &scene,
 
 				cv.wait_for(lock,
 					    std::chrono::milliseconds(dur));
+				waitScene = nullptr;
 			}
 			obs_source_t *currentSource2 =
 				obs_frontend_get_current_scene();

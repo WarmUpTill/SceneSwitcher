@@ -303,7 +303,6 @@ bool SwitcherData::sceneChangedDuringWait()
 	obs_source_release(currentSource);
 	if (waitScene && currentSource != waitScene)
 		r = true;
-	waitScene = NULL;
 	return r;
 }
 
@@ -338,32 +337,33 @@ extern "C" void FreeSceneSwitcher()
 	switcher = nullptr;
 }
 
+void handleSceneChange(SwitcherData *s)
+{
+	std::lock_guard<std::mutex> lock(s->m);
+	//stop waiting if scene was manually changed
+	if (s->sceneChangedDuringWait())
+		s->cv.notify_one();
+
+	//set previous scene
+	obs_source_t *source = obs_frontend_get_current_scene();
+	obs_weak_source_t *ws = obs_source_get_weak_source(source);
+	obs_source_release(source);
+	obs_weak_source_release(ws);
+	if (source && s->PreviousScene2 != ws) {
+		s->previousScene = s->PreviousScene2;
+		s->PreviousScene2 = ws;
+	}
+}
+
 static void OBSEvent(enum obs_frontend_event event, void *switcher)
 {
 	switch (event) {
 	case OBS_FRONTEND_EVENT_EXIT:
 		FreeSceneSwitcher();
 		break;
-
-	case OBS_FRONTEND_EVENT_SCENE_CHANGED: {
-		SwitcherData *s = (SwitcherData *)switcher;
-		std::lock_guard<std::mutex> lock(s->m);
-		//stop waiting if scene was manually changed
-		if (s->sceneChangedDuringWait())
-			s->cv.notify_one();
-
-		//set previous scene
-		obs_source_t *source = obs_frontend_get_current_scene();
-		obs_weak_source_t *ws = obs_source_get_weak_source(source);
-		obs_source_release(source);
-		obs_weak_source_release(ws);
-		if (source && s->PreviousScene2 != ws) {
-			s->previousScene = s->PreviousScene2;
-			s->PreviousScene2 = ws;
-		}
-
+	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
+		handleSceneChange((SwitcherData *)switcher);
 		break;
-	}
 	default:
 		break;
 	}
