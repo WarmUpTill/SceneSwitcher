@@ -1,8 +1,49 @@
 #include <QFileDialog>
 #include <QTextStream>
+#include <QMessageBox>
 #include <obs.hpp>
 
 #include "headers/advanced-scene-switcher.hpp"
+
+#define SECONDS_INDEX 0
+#define MINUTES_INDEX 1
+#define HOURS_INDEX 2
+
+void SceneSwitcher::on_sceneRoundTripDelayUnits_currentIndexChanged(int index)
+{
+	if (loading)
+		return;
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	double val = ui->sceneRoundTripSpinBox->value();
+
+	switch (switcher->sceneRoundTripUnitMultiplier) {
+	case 1:
+		val /= pow(60, index);
+		break;
+	case 60:
+		val /= pow(60, index - 1);
+		break;
+	case 3600:
+		val /= pow(60, index - 2);
+		break;
+	}
+
+	ui->sceneRoundTripSpinBox->setValue(val);
+
+	switch (index) {
+	case SECONDS_INDEX:
+		switcher->sceneRoundTripUnitMultiplier = 1;
+		break;
+	case MINUTES_INDEX:
+		switcher->sceneRoundTripUnitMultiplier = 60;
+		break;
+	case HOURS_INDEX:
+		switcher->sceneRoundTripUnitMultiplier = 3600;
+		break;
+	}
+}
 
 void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 {
@@ -13,7 +54,8 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 	if (scene1Name.isEmpty() || scene2Name.isEmpty())
 		return;
 
-	double delay = ui->sceneRoundTripSpinBox->value();
+	double delay = ui->sceneRoundTripSpinBox->value() *
+		       switcher->sceneRoundTripUnitMultiplier;
 
 	if (scene1Name == scene2Name)
 		return;
@@ -35,7 +77,7 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 
 		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->sceneRoundTripSwitches.emplace_back(
-			source1, source2, transition, int(delay * 1000),
+			source1, source2, transition, delay,
 			(scene2Name == QString(PREVIOUS_SCENE_NAME)),
 			text.toUtf8().constData());
 	} else {
@@ -47,7 +89,7 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 			for (auto &s : switcher->sceneRoundTripSwitches) {
 				if (s.scene1 == source1) {
 					s.scene2 = source2;
-					s.delay = int(delay * 1000);
+					s.delay = delay;
 					s.transition = transition;
 					s.usePreviousScene =
 						(scene2Name ==
@@ -94,30 +136,16 @@ void SceneSwitcher::on_sceneRoundTripSave_clicked()
 	QString directory = QFileDialog::getSaveFileName(
 		this, tr("Save Scene Round Trip to file ..."),
 		QDir::currentPath(), tr("Text files (*.txt)"));
-	if (!directory.isEmpty()) {
-		QFile file(directory);
-		if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-			return;
-		QTextStream out(&file);
-		for (SceneRoundTripSwitch s :
-		     switcher->sceneRoundTripSwitches) {
-			out << QString::fromStdString(
-				       GetWeakSourceName(s.scene1))
-			    << "\n";
-			if (s.usePreviousScene)
-				out << (PREVIOUS_SCENE_NAME) << "\n";
-			else
-				out << QString::fromStdString(
-					       GetWeakSourceName(s.scene2))
-				    << "\n";
-			out << s.delay << "\n";
-			out << QString::fromStdString(s.sceneRoundTripStr)
-			    << "\n";
-			out << QString::fromStdString(
-				       GetWeakSourceName(s.transition))
-			    << "\n";
-		}
-	}
+	if (directory.isEmpty())
+		return;
+	QFile file(directory);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+		return;
+
+	obs_data_t *obj = obs_data_create();
+	switcher->saveSceneRoundTripSwitches(obj);
+	obs_data_save_json(obj, file.fileName().toUtf8().constData());
+	obs_data_release(obj);
 }
 
 void SceneSwitcher::on_sceneRoundTripLoad_clicked()
@@ -127,65 +155,31 @@ void SceneSwitcher::on_sceneRoundTripLoad_clicked()
 	QString directory = QFileDialog::getOpenFileName(
 		this, tr("Select a file to read Scene Round Trip from ..."),
 		QDir::currentPath(), tr("Text files (*.txt)"));
-	if (!directory.isEmpty()) {
-		QFile file(directory);
-		if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-			return;
+	if (directory.isEmpty())
+		return;
 
-		QTextStream in(&file);
-		std::vector<QString> lines;
+	QFile file(directory);
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+		return;
 
-		std::vector<SceneRoundTripSwitch> newSceneRoundTripSwitch;
+	obs_data_t *obj = obs_data_create_from_json_file(
+		file.fileName().toUtf8().constData());
 
-		while (!in.atEnd()) {
-			QString line = in.readLine();
-			lines.push_back(line);
-			if (lines.size() == 5) {
-				OBSWeakSource scene1 =
-					GetWeakSourceByQString(lines[0]);
-				OBSWeakSource scene2 =
-					GetWeakSourceByQString(lines[1]);
-				OBSWeakSource transition =
-					GetWeakTransitionByQString(lines[4]);
-
-				if (WeakSourceValid(scene1) &&
-				    ((lines[1] ==
-				      QString(PREVIOUS_SCENE_NAME)) ||
-				     (WeakSourceValid(scene2))) &&
-				    WeakSourceValid(transition)) {
-					newSceneRoundTripSwitch.emplace_back(
-						SceneRoundTripSwitch(
-							GetWeakSourceByQString(
-								lines[0]),
-							GetWeakSourceByQString(
-								lines[1]),
-							GetWeakTransitionByQString(
-								lines[4]),
-							lines[2].toInt(),
-							(lines[1] ==
-							 QString(PREVIOUS_SCENE_NAME)),
-							lines[3].toStdString()));
-				}
-				lines.clear();
-			}
-		}
-
-		if (lines.size() != 0 || newSceneRoundTripSwitch.size() == 0)
-			return;
-
-		switcher->sceneRoundTripSwitches.clear();
-		ui->sceneRoundTrips->clear();
-		switcher->sceneRoundTripSwitches = newSceneRoundTripSwitch;
-		for (SceneRoundTripSwitch s :
-		     switcher->sceneRoundTripSwitches) {
-			QListWidgetItem *item = new QListWidgetItem(
-				QString::fromStdString(s.sceneRoundTripStr),
-				ui->sceneRoundTrips);
-			item->setData(
-				Qt::UserRole,
-				QString::fromStdString(s.sceneRoundTripStr));
-		}
+	if (!obj) {
+		QMessageBox Msgbox;
+		Msgbox.setText(
+			"Advanced Scene Switcher failed to import settings (try import with previous version of the plugin)");
+		Msgbox.exec();
+		return;
 	}
+	switcher->loadSceneRoundTripSwitches(obj);
+	obs_data_release(obj);
+
+	QMessageBox Msgbox;
+	Msgbox.setText(
+		"Advanced Scene Switcher settings imported successfully");
+	Msgbox.exec();
+	close();
 }
 
 void SwitcherData::checkSceneRoundTrip(bool &match, OBSWeakSource &scene,
@@ -199,7 +193,7 @@ void SwitcherData::checkSceneRoundTrip(bool &match, OBSWeakSource &scene,
 	for (SceneRoundTripSwitch &s : sceneRoundTripSwitches) {
 		if (s.scene1 == ws) {
 			sceneRoundTripActive = true;
-			int dur = s.delay - interval;
+			int dur = s.delay * 1000 - interval;
 			if (dur > 0) {
 				waitScene = currentSource;
 
@@ -247,15 +241,15 @@ void SceneSwitcher::on_sceneRoundTrips_currentRowChanged(int idx)
 			std::string scene2 = GetWeakSourceName(s.scene2);
 			std::string transitionName =
 				GetWeakSourceName(s.transition);
-			int delay = s.delay;
+			double delay = s.delay /
+				       switcher->sceneRoundTripUnitMultiplier;
 			ui->sceneRoundTripScenes1->setCurrentText(
 				scene1.c_str());
 			ui->sceneRoundTripScenes2->setCurrentText(
 				scene2.c_str());
 			ui->sceneRoundTripTransitions->setCurrentText(
 				transitionName.c_str());
-			ui->sceneRoundTripSpinBox->setValue((double)delay /
-							    1000);
+			ui->sceneRoundTripSpinBox->setValue(delay);
 			break;
 		}
 	}
@@ -333,14 +327,7 @@ void SwitcherData::saveSceneRoundTripSwitches(obs_data_t *obj)
 						    : sceneName2);
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
-			obs_data_set_int(
-				array_obj, "sceneRoundTripDelay",
-				s.delay /
-					1000); //delay stored in two separate values
-			obs_data_set_int(
-				array_obj, "sceneRoundTripDelayMs",
-				s.delay %
-					1000); //to be compatible with older versions
+			obs_data_set_double(array_obj, "delay", s.delay);
 			obs_data_set_string(array_obj, "sceneRoundTripStr",
 					    s.sceneRoundTripStr.c_str());
 			obs_data_array_push_back(sceneRoundTripArray,
@@ -374,18 +361,25 @@ void SwitcherData::loadSceneRoundTripSwitches(obs_data_t *obj)
 			obs_data_get_string(array_obj, "sceneRoundTripScene2");
 		const char *transition =
 			obs_data_get_string(array_obj, "transition");
-		int delay = obs_data_get_int(
-			array_obj,
-			"sceneRoundTripDelay"); //delay stored in two separate values
-		delay = delay * 1000 +
-			obs_data_get_int(
-				array_obj,
-				"sceneRoundTripDelayMs"); //to be compatible with older versions
-		std::string str =
-			MakeSceneRoundTripSwitchName(scene1, scene2, transition,
-						     ((double)delay) / 1000.0)
-				.toUtf8()
-				.constData();
+
+		double delay = 0;
+
+		// To be removed in future version
+		// to be compatible with older versions
+		if (!obs_data_has_user_value(array_obj, "delay")) {
+			delay = obs_data_get_int(array_obj,
+						 "sceneRoundTripDelay");
+			delay = delay * 1000 +
+				obs_data_get_int(array_obj,
+						 "sceneRoundTripDelayMs");
+		} else {
+			delay = obs_data_get_double(array_obj, "delay");
+		}
+
+		std::string str = MakeSceneRoundTripSwitchName(
+					  scene1, scene2, transition, delay)
+					  .toUtf8()
+					  .constData();
 		const char *sceneRoundTripStr = str.c_str();
 
 		switcher->sceneRoundTripSwitches.emplace_back(

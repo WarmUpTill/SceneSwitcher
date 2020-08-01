@@ -236,7 +236,7 @@ void SceneSwitcher::loadUI()
 		std::string transitionName = GetWeakSourceName(s.transition);
 		QString text = MakeSceneRoundTripSwitchName(
 			sceneName1.c_str(), sceneName2.c_str(),
-			transitionName.c_str(), (double)s.delay / 1000);
+			transitionName.c_str(), s.delay);
 
 		QListWidgetItem *item =
 			new QListWidgetItem(text, ui->sceneRoundTrips);
@@ -245,9 +245,13 @@ void SceneSwitcher::loadUI()
 		if (s.delay < smallestDelay)
 			smallestDelay = s.delay;
 	}
-	(smallestDelay < switcher->interval)
+	(smallestDelay * 1000 < switcher->interval)
 		? ui->intervalWarning->setVisible(true)
 		: ui->intervalWarning->setVisible(false);
+
+	ui->sceneRoundTripDelayUnits->addItem("seconds");
+	ui->sceneRoundTripDelayUnits->addItem("minutes");
+	ui->sceneRoundTripDelayUnits->addItem("hours");
 
 	for (auto &s : switcher->sceneTransitions) {
 		std::string sceneName1 = GetWeakSourceName(s.scene1);

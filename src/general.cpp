@@ -171,30 +171,31 @@ void SceneSwitcher::on_exportSettings_clicked()
 	QString directory = QFileDialog::getSaveFileName(
 		this, tr("Export Advanced Scene Switcher settings to file ..."),
 		QDir::currentPath(), tr("Text files (*.txt)"));
-	if (!directory.isEmpty()) {
-		QFile file(directory);
-		if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-			return;
+	if (directory.isEmpty())
+		return;
 
-		obs_data_t *obj = obs_data_create();
+	QFile file(directory);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+		return;
 
-		switcher->saveWindowTitleSwitches(obj);
-		switcher->saveScreenRegionSwitches(obj);
-		switcher->savePauseSwitches(obj);
-		switcher->saveSceneRoundTripSwitches(obj);
-		switcher->saveSceneTransitions(obj);
-		switcher->saveIdleSwitches(obj);
-		switcher->saveExecutableSwitches(obj);
-		switcher->saveRandomSwitches(obj);
-		switcher->saveFileSwitches(obj);
-		switcher->saveMediaSwitches(obj);
-		switcher->saveTimeSwitches(obj);
-		switcher->saveGeneralSettings(obj);
+	obs_data_t *obj = obs_data_create();
 
-		obs_data_save_json(obj, file.fileName().toUtf8().constData());
+	switcher->saveWindowTitleSwitches(obj);
+	switcher->saveScreenRegionSwitches(obj);
+	switcher->savePauseSwitches(obj);
+	switcher->saveSceneRoundTripSwitches(obj);
+	switcher->saveSceneTransitions(obj);
+	switcher->saveIdleSwitches(obj);
+	switcher->saveExecutableSwitches(obj);
+	switcher->saveRandomSwitches(obj);
+	switcher->saveFileSwitches(obj);
+	switcher->saveMediaSwitches(obj);
+	switcher->saveTimeSwitches(obj);
+	switcher->saveGeneralSettings(obj);
 
-		obs_data_release(obj);
-	}
+	obs_data_save_json(obj, file.fileName().toUtf8().constData());
+
+	obs_data_release(obj);
 }
 
 void SceneSwitcher::on_importSettings_clicked()
@@ -205,45 +206,44 @@ void SceneSwitcher::on_importSettings_clicked()
 		this,
 		tr("Import Advanced Scene Switcher settings from file ..."),
 		QDir::currentPath(), tr("Text files (*.txt)"));
-	if (!directory.isEmpty()) {
-		QFile file(directory);
-		if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-			return;
+	if (directory.isEmpty())
+		return;
 
-		QTextStream in(&file);
+	QFile file(directory);
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+		return;
 
-		obs_data_t *obj = obs_data_create_from_json_file(
-			file.fileName().toUtf8().constData());
+	obs_data_t *obj = obs_data_create_from_json_file(
+		file.fileName().toUtf8().constData());
 
-		if (!obj) {
-			QMessageBox Msgbox;
-			Msgbox.setText(
-				"Advanced Scene Switcher failed to import settings");
-			Msgbox.exec();
-			return;
-		}
-
-		switcher->loadWindowTitleSwitches(obj);
-		switcher->loadScreenRegionSwitches(obj);
-		switcher->loadPauseSwitches(obj);
-		switcher->loadSceneRoundTripSwitches(obj);
-		switcher->loadSceneTransitions(obj);
-		switcher->loadIdleSwitches(obj);
-		switcher->loadExecutableSwitches(obj);
-		switcher->loadRandomSwitches(obj);
-		switcher->loadFileSwitches(obj);
-		switcher->loadMediaSwitches(obj);
-		switcher->loadTimeSwitches(obj);
-		switcher->loadGeneralSettings(obj);
-
-		obs_data_release(obj);
-
+	if (!obj) {
 		QMessageBox Msgbox;
 		Msgbox.setText(
-			"Advanced Scene Switcher settings imported successfully");
+			"Advanced Scene Switcher failed to import settings");
 		Msgbox.exec();
-		close();
+		return;
 	}
+
+	switcher->loadWindowTitleSwitches(obj);
+	switcher->loadScreenRegionSwitches(obj);
+	switcher->loadPauseSwitches(obj);
+	switcher->loadSceneRoundTripSwitches(obj);
+	switcher->loadSceneTransitions(obj);
+	switcher->loadIdleSwitches(obj);
+	switcher->loadExecutableSwitches(obj);
+	switcher->loadRandomSwitches(obj);
+	switcher->loadFileSwitches(obj);
+	switcher->loadMediaSwitches(obj);
+	switcher->loadTimeSwitches(obj);
+	switcher->loadGeneralSettings(obj);
+
+	obs_data_release(obj);
+
+	QMessageBox Msgbox;
+	Msgbox.setText(
+		"Advanced Scene Switcher settings imported successfully");
+	Msgbox.exec();
+	close();
 }
 
 int findTabIndex(QTabBar *bar, int pos)
@@ -452,18 +452,28 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "idleTabPos", 10);
 	obs_data_set_default_int(obj, "sequenceTabPos", 11);
 
-	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "generalTabPos")));
-	switcher->tabOrder.emplace_back((int)(
-		obs_data_get_int(obj, "transitionTabPos")));
-	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "pauseTabPos")));
-	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "titleTabPos")));
-	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "exeTabPos")));
-	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "regionTabPos")));
-	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "mediaTabPos")));
-	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "fileTabPos")));
-	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "randomTabPos")));
-	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "timeTabPos")));
-	switcher->tabOrder.emplace_back((int)(obs_data_get_int(obj, "idleTabPos")));
-	switcher->tabOrder.emplace_back((int)(
-		obs_data_get_int(obj, "sequenceTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "generalTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "transitionTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "pauseTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "titleTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "exeTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "regionTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "mediaTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "fileTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "randomTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "timeTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "idleTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "sequenceTabPos")));
 }

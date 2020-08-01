@@ -3140,7 +3140,7 @@
       <attribute name="title">
        <string notr="true">Sequence</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_7">
+      <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_11">
          <item>
@@ -3199,12 +3199,15 @@
          <item>
           <widget class="QDoubleSpinBox" name="sceneRoundTripSpinBox">
            <property name="suffix">
-            <string>s</string>
+            <string/>
            </property>
            <property name="maximum">
-            <double>1000000.000000000000000</double>
+            <double>999999999.000000000000000</double>
            </property>
           </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="sceneRoundTripDelayUnits"/>
          </item>
          <item>
           <widget class="QLabel" name="label_17">

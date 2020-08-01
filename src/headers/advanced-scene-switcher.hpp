@@ -92,6 +92,7 @@ public slots:
 	void on_sceneRoundTripLoad_clicked();
 	void on_sceneRoundTripUp_clicked();
 	void on_sceneRoundTripDown_clicked();
+	void on_sceneRoundTripDelayUnits_currentIndexChanged(int index);
 
 	void on_autoStopSceneCheckBox_stateChanged(int state);
 	void on_autoStopScenes_currentTextChanged(const QString &text);

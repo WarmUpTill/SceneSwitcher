@@ -98,7 +98,7 @@ struct SceneRoundTripSwitch {
 	OBSWeakSource scene1;
 	OBSWeakSource scene2;
 	OBSWeakSource transition;
-	int delay;
+	double delay;
 	bool usePreviousScene;
 	std::string sceneRoundTripStr;
 
@@ -294,6 +294,7 @@ struct SwitcherData {
 	std::vector<std::string> ignoreWindowsSwitches;
 
 	std::vector<SceneRoundTripSwitch> sceneRoundTripSwitches;
+	int sceneRoundTripUnitMultiplier = 1;
 
 	std::vector<RandomSwitch> randomSwitches;
 
