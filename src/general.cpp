@@ -10,15 +10,6 @@ void SceneSwitcher::on_close_clicked()
 	done(0);
 }
 
-void SceneSwitcher::on_startAtLaunch_toggled(bool value)
-{
-	if (loading)
-		return;
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->startAtLaunch = value;
-}
-
 void SceneSwitcher::UpdateNonMatchingScene(const QString &name)
 {
 	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
@@ -59,6 +50,15 @@ void SceneSwitcher::on_noMatchRandomSwitch_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = RANDOM_SWITCH;
 	ui->noMatchSwitchScene->setEnabled(false);
+}
+
+void SceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
+{
+	if (loading)
+		return;
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->startupBehavior = (StartupBehavior)index;
 }
 
 void SceneSwitcher::on_noMatchSwitchScene_currentTextChanged(const QString &text)
@@ -337,6 +337,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 			 switcher->switchIfNotMatching);
 
 	obs_data_set_bool(obj, "active", !switcher->stop);
+	obs_data_set_int(obj, "startup_behavior", switcher->startupBehavior);
 
 	std::string autoStopSceneName =
 		GetWeakSourceName(switcher->autoStopScene);
@@ -393,6 +394,12 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		GetWeakSourceByName(nonMatchingScene.c_str());
 
 	switcher->stop = !obs_data_get_bool(obj, "active");
+	switcher->startupBehavior =
+		(StartupBehavior)obs_data_get_int(obj, "startup_behavior");
+	if (switcher->startupBehavior == START)
+		switcher->stop = false;
+	if (switcher->startupBehavior == STOP)
+		switcher->stop = true;
 
 	std::string autoStopScene =
 		obs_data_get_string(obj, "autoStopSceneName");
@@ -557,6 +564,13 @@ void SceneSwitcher::setupGeneralTab()
 				switcher->threadPriorities[i].name.c_str());
 		}
 	}
+
+	ui->startupBehavior->addItem(
+		"Start the scene switcher if it was running");
+	ui->startupBehavior->addItem("Always start the scene switcher");
+	ui->startupBehavior->addItem("Do not start the scene switcher");
+
+	ui->startupBehavior->setCurrentIndex(switcher->startupBehavior);
 
 	if (switcher->th && switcher->th->isRunning())
 		SetStarted();

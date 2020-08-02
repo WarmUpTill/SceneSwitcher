@@ -253,6 +253,7 @@ struct TimeSwitch {
 };
 
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
+typedef enum { PERSIST = 0, START = 1, STOP = 2 } StartupBehavior;
 
 class SwitcherThread;
 
@@ -267,7 +268,6 @@ struct SwitcherData {
 	bool transitionActive = false;
 	bool waitForTransition = false;
 	std::condition_variable transitionCv;
-	bool startAtLaunch = false;
 	bool stop = false;
 	bool verbose = false;
 	bool tansitionOverrideOverride = false;
@@ -280,6 +280,7 @@ struct SwitcherData {
 	OBSWeakSource lastRandomScene;
 	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
+	StartupBehavior startupBehavior = PERSIST;
 
 	std::vector<WindowSceneSwitch> windowSwitches;
 	std::vector<std::string> ignoreIdleWindows;
