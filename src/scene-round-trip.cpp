@@ -100,8 +100,6 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 				}
 			}
 		}
-
-		ui->sceneRoundTrips->sortItems();
 	}
 }
 

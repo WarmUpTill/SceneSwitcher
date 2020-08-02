@@ -86,8 +86,6 @@ void SceneSwitcher::on_screenRegionAdd_clicked()
 				}
 			}
 		}
-
-		ui->screenRegions->sortItems();
 	}
 }
 
