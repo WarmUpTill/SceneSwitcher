@@ -368,12 +368,12 @@ void SwitcherData::loadSceneRoundTripSwitches(obs_data_t *obj)
 		// To be removed in future version
 		// to be compatible with older versions
 		if (!obs_data_has_user_value(array_obj, "delay")) {
-			delay = obs_data_get_int(array_obj,
-						 "sceneRoundTripDelay");
-			delay = delay * 1000 +
-				obs_data_get_int(array_obj,
-						 "sceneRoundTripDelayMs");
-			delay /= 1000;
+			delay = double(obs_data_get_int(array_obj,
+							"sceneRoundTripDelay"));
+			delay = delay * 1000. +
+				double(obs_data_get_int(
+					array_obj, "sceneRoundTripDelayMs"));
+			delay /= 1000.;
 		} else {
 			delay = obs_data_get_double(array_obj, "delay");
 		}
@@ -402,7 +402,7 @@ void SceneSwitcher::setupSequenceTab()
 	populateSceneSelection(ui->sceneRoundTripScenes2, true);
 	populateTransitionSelection(ui->sceneRoundTripTransitions);
 
-	int smallestDelay = switcher->interval;
+	double smallestDelay = double(switcher->interval) / 1000;
 	for (auto &s : switcher->sceneRoundTripSwitches) {
 		std::string sceneName1 = GetWeakSourceName(s.scene1);
 		std::string sceneName2 = (s.usePreviousScene)

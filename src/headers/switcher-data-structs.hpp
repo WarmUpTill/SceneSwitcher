@@ -104,7 +104,7 @@ struct SceneRoundTripSwitch {
 
 	inline SceneRoundTripSwitch(OBSWeakSource scene1_,
 				    OBSWeakSource scene2_,
-				    OBSWeakSource transition_, int delay_,
+				    OBSWeakSource transition_, double delay_,
 				    bool usePreviousScene_, std::string str)
 		: scene1(scene1_),
 		  scene2(scene2_),
