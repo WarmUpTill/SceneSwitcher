@@ -373,6 +373,7 @@ void SwitcherData::loadSceneRoundTripSwitches(obs_data_t *obj)
 			delay = delay * 1000 +
 				obs_data_get_int(array_obj,
 						 "sceneRoundTripDelayMs");
+			delay /= 1000;
 		} else {
 			delay = obs_data_get_double(array_obj, "delay");
 		}
@@ -394,6 +395,7 @@ void SwitcherData::loadSceneRoundTripSwitches(obs_data_t *obj)
 	}
 	obs_data_array_release(sceneRoundTripArray);
 }
+
 void SceneSwitcher::setupSequenceTab()
 {
 	populateSceneSelection(ui->sceneRoundTripScenes1, false);
