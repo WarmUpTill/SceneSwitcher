@@ -128,6 +128,8 @@ void SceneSwitcher::on_autoStopSceneCheckBox_stateChanged(int state)
 	} else {
 		ui->autoStopScenes->setDisabled(false);
 		switcher->autoStopEnable = true;
+		if (!switcher->autoStopScene)
+			UpdateAutoStopScene(ui->autoStopScenes->currentText());
 	}
 }
 
