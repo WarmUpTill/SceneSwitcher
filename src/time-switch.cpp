@@ -71,6 +71,7 @@ void SceneSwitcher::on_timeAdd_clicked()
 	} else {
 		QListWidgetItem *item = ui->timeSwitches->item(idx);
 		item->setText(text);
+		item->setData(Qt::UserRole, v);
 
 		{
 			std::lock_guard<std::mutex> lock(switcher->m);
@@ -83,7 +84,6 @@ void SceneSwitcher::on_timeAdd_clicked()
 						 QString(PREVIOUS_SCENE_NAME));
 					s.timeSwitchStr =
 						text.toUtf8().constData();
-					;
 					break;
 				}
 			}
