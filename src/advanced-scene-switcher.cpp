@@ -195,10 +195,17 @@ void SwitcherData::Thread()
 		if (switcher->stop) {
 			break;
 		}
+
 		setDefaultSceneTransitions();
+
 		if (autoStopEnable) {
 			autoStopStreamAndRecording();
 		}
+
+		if (autoStartEnable) {
+			autoStartStreamRecording();
+		}
+
 		if (checkPause()) {
 			continue;
 		}

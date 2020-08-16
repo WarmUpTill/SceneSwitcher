@@ -254,6 +254,7 @@ struct TimeSwitch {
 
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 typedef enum { PERSIST = 0, START = 1, STOP = 2 } StartupBehavior;
+typedef enum { RECORDING = 0, STREAMING = 1, RECORINDGSTREAMING = 2 } AutoStartType;
 
 class SwitcherThread;
 
@@ -308,6 +309,10 @@ struct SwitcherData {
 	bool autoStopEnable = false;
 	OBSWeakSource autoStopScene;
 
+	bool autoStartEnable = false;
+	AutoStartType autoStartType = RECORDING;
+	OBSWeakSource autoStartScene;
+
 	std::vector<SceneTransition> sceneTransitions;
 	std::vector<DefaultSceneTransition> defaultSceneTransitions;
 
@@ -358,6 +363,7 @@ struct SwitcherData {
 	void writeSceneInfoToFile();
 	void setDefaultSceneTransitions();
 	void autoStopStreamAndRecording();
+	void autoStartStreamRecording();
 	bool checkPause();
 	void checkSceneRoundTrip(bool &match, OBSWeakSource &scene,
 				 OBSWeakSource &transition,

@@ -159,6 +159,73 @@ void SwitcherData::autoStopStreamAndRecording()
 	obs_weak_source_release(ws);
 }
 
+void SceneSwitcher::on_autoStartType_currentIndexChanged(int index)
+{
+	if (loading)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->autoStartType = (AutoStartType)index;
+}
+
+void SceneSwitcher::on_autoStartScenes_currentTextChanged(const QString &text)
+{
+	if (loading)
+		return;
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	UpdateAutoStartScene(text);
+}
+
+void SceneSwitcher::on_autoStartSceneCheckBox_stateChanged(int state)
+{
+	if (loading)
+		return;
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	if (!state) {
+		ui->autoStartScenes->setDisabled(true);
+		ui->autoStartType->setDisabled(true);
+		switcher->autoStartEnable = false;
+	} else {
+		ui->autoStartScenes->setDisabled(false);
+		ui->autoStartType->setDisabled(false);
+		switcher->autoStartEnable = true;
+		if (!switcher->autoStartScene)
+			UpdateAutoStartScene(
+				ui->autoStartScenes->currentText());
+	}
+}
+
+void SceneSwitcher::UpdateAutoStartScene(const QString &name)
+{
+	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
+	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
+
+	switcher->autoStartScene = ws;
+
+	obs_weak_source_release(ws);
+	obs_source_release(scene);
+}
+
+void SwitcherData::autoStartStreamRecording()
+{
+	obs_source_t *currentSource = obs_frontend_get_current_scene();
+	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
+
+	if (ws && autoStartScene == ws) {
+		if ((switcher->autoStartType == STREAMING ||
+		     switcher->autoStartType == RECORINDGSTREAMING) &&
+		    !obs_frontend_streaming_active())
+			obs_frontend_streaming_start();
+		if ((switcher->autoStartType == RECORDING ||
+		     switcher->autoStartType == RECORINDGSTREAMING) &&
+		    !obs_frontend_recording_active())
+			obs_frontend_recording_start();
+	}
+	obs_source_release(currentSource);
+	obs_weak_source_release(ws);
+}
+
 void SceneSwitcher::on_verboseLogging_stateChanged(int state)
 {
 	if (loading)
@@ -345,6 +412,13 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_string(obj, "autoStopSceneName",
 			    autoStopSceneName.c_str());
 
+	std::string autoStartSceneName =
+		GetWeakSourceName(switcher->autoStartScene);
+	obs_data_set_bool(obj, "autoStartEnable", switcher->autoStartEnable);
+	obs_data_set_int(obj, "autoStartType", switcher->autoStartType);
+	obs_data_set_string(obj, "autoStartSceneName",
+			    autoStartSceneName.c_str());
+
 	obs_data_set_bool(obj, "verbose", switcher->verbose);
 
 	obs_data_set_int(obj, "priority0",
@@ -405,6 +479,13 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		obs_data_get_string(obj, "autoStopSceneName");
 	switcher->autoStopEnable = obs_data_get_bool(obj, "autoStopEnable");
 	switcher->autoStopScene = GetWeakSourceByName(autoStopScene.c_str());
+
+	std::string autoStartScene =
+		obs_data_get_string(obj, "autoStartSceneName");
+	switcher->autoStartEnable = obs_data_get_bool(obj, "autoStartEnable");
+	switcher->autoStartType =
+		(AutoStartType)obs_data_get_int(obj, "autoStartType");
+	switcher->autoStartScene = GetWeakSourceByName(autoStartScene.c_str());
 
 	switcher->verbose = obs_data_get_bool(obj, "verbose");
 
@@ -491,6 +572,7 @@ void SceneSwitcher::setupGeneralTab()
 {
 	populateSceneSelection(ui->noMatchSwitchScene, false);
 	populateSceneSelection(ui->autoStopScenes, false);
+	populateSceneSelection(ui->autoStartScenes, false);
 
 	if (switcher->switchIfNotMatching == SWITCH) {
 		ui->noMatchSwitch->setChecked(true);
@@ -514,6 +596,23 @@ void SceneSwitcher::setupGeneralTab()
 		ui->autoStopScenes->setDisabled(false);
 	} else {
 		ui->autoStopScenes->setDisabled(true);
+	}
+
+	ui->autoStartType->addItem("Recording");
+	ui->autoStartType->addItem("Streaming");
+	ui->autoStartType->addItem("Recording and Streaming");
+
+	ui->autoStartSceneCheckBox->setChecked(switcher->autoStartEnable);
+	ui->autoStartScenes->setCurrentText(
+		GetWeakSourceName(switcher->autoStartScene).c_str());
+	ui->autoStartType->setCurrentIndex(switcher->autoStartType);
+
+	if (ui->autoStartSceneCheckBox->checkState()) {
+		ui->autoStartScenes->setDisabled(false);
+		ui->autoStartType->setDisabled(false);
+	} else {
+		ui->autoStartScenes->setDisabled(true);
+		ui->autoStartType->setDisabled(true);
 	}
 
 	ui->verboseLogging->setChecked(switcher->verbose);

@@ -46,6 +46,7 @@ public:
 
 	void UpdateNonMatchingScene(const QString &name);
 	void UpdateAutoStopScene(const QString &name);
+	void UpdateAutoStartScene(const QString &name);
 	void UpdateIdleDataTransition(const QString &name);
 	void UpdateIdleDataScene(const QString &name);
 
@@ -111,6 +112,10 @@ public slots:
 
 	void on_autoStopSceneCheckBox_stateChanged(int state);
 	void on_autoStopScenes_currentTextChanged(const QString &text);
+
+	void on_autoStartSceneCheckBox_stateChanged(int state);
+	void on_autoStartType_currentIndexChanged(int index);
+	void on_autoStartScenes_currentTextChanged(const QString &text);
 
 	void on_verboseLogging_stateChanged(int state);
 
