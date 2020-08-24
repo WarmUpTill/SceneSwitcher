@@ -362,6 +362,9 @@ void handleSceneChange(SwitcherData *s)
 		s->previousScene = s->PreviousScene2;
 		s->PreviousScene2 = ws;
 	}
+
+	//reset autostart
+	s->autoStartedRecently = false;
 }
 
 static void OBSEvent(enum obs_frontend_event event, void *switcher)
