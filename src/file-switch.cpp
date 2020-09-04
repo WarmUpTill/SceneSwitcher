@@ -444,6 +444,9 @@ void SceneSwitcher::setupFileTab()
 		"Note that the scene switcher will try to access the remote location every " +
 		QString::number(switcher->interval) + "ms");
 
+	if (switcher->curl)
+		ui->libcurlWarning->setVisible(false);
+
 	for (auto &s : switcher->fileSwitches) {
 		std::string sceneName = GetWeakSourceName(s.scene);
 		std::string transitionName = GetWeakSourceName(s.transition);
