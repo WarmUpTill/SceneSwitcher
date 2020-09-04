@@ -35,6 +35,7 @@ if(BUILD_OUT_OF_TREE)
 		src/headers/advanced-scene-switcher.hpp
 		src/headers/switcher-data-structs.hpp
 		src/headers/utility.hpp
+		src/headers/curl-helper.hpp
 		)
 
 	set(advanced-scene-switcher_SOURCES
@@ -55,6 +56,7 @@ if(BUILD_OUT_OF_TREE)
 		src/pause-switch.cpp
 		src/random.cpp
 		src/time-switch.cpp
+		src/curl-helper.cpp
 		)
 
 	set(advanced-scene-switcher_UI
@@ -105,8 +107,7 @@ if(BUILD_OUT_OF_TREE)
 		${LIBOBS_LIB}
 		${LIBOBS_FRONTEND_API_LIB}
 		Qt5::Core
-		Qt5::Widgets
-		${LIBCURL_LIBRARIES})
+		Qt5::Widgets)
 
 	# Additional commands to install the module in the correct place.
 	# Find all the translation files so we can copy them to the correct
@@ -167,6 +168,7 @@ else ()
 		src/headers/advanced-scene-switcher.hpp
 		src/headers/switcher-data-structs.hpp
 		src/headers/utility.hpp
+		src/headers/curl-helper.hpp
 		)
 
 	set(advanced-scene-switcher_SOURCES
@@ -187,6 +189,7 @@ else ()
 		src/pause-switch.cpp
 		src/random.cpp
 		src/time-switch.cpp
+		src/curl-helper.cpp
 		)
 
 	set(advanced-scene-switcher_UI
@@ -227,8 +230,7 @@ else ()
 		${advanced-scene-switcher_PLATFORM_LIBS}
 		obs-frontend-api
 		Qt5::Widgets
-		libobs
-		${LIBCURL_LIBRARIES})
+		libobs)
 
 	install_obs_plugin(advanced-scene-switcher data)
 endif()

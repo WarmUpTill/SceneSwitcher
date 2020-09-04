@@ -5,6 +5,7 @@
 #include <curl/curl.h>
 
 #include "headers/advanced-scene-switcher.hpp"
+#include "headers/curl-helper.hpp"
 
 #define LOCAL_FILE_IDX 0
 #define REMOTE_FILE_IDX 1
@@ -124,17 +125,13 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb,
 
 std::string getRemoteData(std::string &url)
 {
-	CURL *curl;
-	CURLcode res;
 	std::string readBuffer;
 
-	curl = curl_easy_init();
-	if (curl) {
-		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-		res = curl_easy_perform(curl);
-		curl_easy_cleanup(curl);
+	if (switcher->curl && f_curl_setopt && f_curl_perform) {
+		f_curl_setopt(switcher->curl, CURLOPT_URL, url.c_str());
+		f_curl_setopt(switcher->curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+		f_curl_setopt(switcher->curl, CURLOPT_WRITEDATA, &readBuffer);
+		f_curl_perform(switcher->curl);
 	}
 	return readBuffer;
 }

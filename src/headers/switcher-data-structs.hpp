@@ -8,6 +8,7 @@
 #include <fstream>
 #include <QDateTime>
 #include <QThread>
+#include <curl/curl.h>
 #include "utility.hpp"
 
 #define DEFAULT_INTERVAL 300
@@ -307,6 +308,7 @@ struct SwitcherData {
 	FileIOData fileIO;
 	IdleData idleData;
 	std::vector<FileSwitch> fileSwitches;
+	CURL *curl = nullptr;
 
 	std::vector<ExecutableSceneSwitch> executableSwitches;
 
