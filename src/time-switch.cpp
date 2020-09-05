@@ -1,5 +1,17 @@
 #include "headers/advanced-scene-switcher.hpp"
 
+static std::vector<std::pair<std::string, timeTrigger>> triggerTable = {
+	{"On any day", timeTrigger::ANY_DAY},
+	{"Mondays", timeTrigger::MONDAY},
+	{"Tuesdays", timeTrigger::TUSEDAY},
+	{"Wednesdays", timeTrigger::WEDNESDAY},
+	{"Thursdays", timeTrigger::THURSDAY},
+	{"Fridays", timeTrigger::FRIDAY},
+	{"Saturdays", timeTrigger::SATURDAY},
+	{"Sundays", timeTrigger::SUNDAY},
+	//{"Atfer streaming/recording start", timeTrigger::LIVE}
+};
+
 void SceneSwitcher::on_timeSwitches_currentRowChanged(int idx)
 {
 	if (loading)
@@ -18,6 +30,7 @@ void SceneSwitcher::on_timeSwitches_currentRowChanged(int idx)
 			QString transitionName =
 				GetWeakSourceName(s.transition).c_str();
 			ui->timeScenes->setCurrentText(sceneName);
+			ui->timeTrigger->setCurrentIndex(s.trigger);
 			ui->timeEdit->setTime(s.time);
 			ui->timeTransitions->setCurrentText(transitionName);
 			break;
@@ -25,9 +38,10 @@ void SceneSwitcher::on_timeSwitches_currentRowChanged(int idx)
 	}
 }
 
-int SceneSwitcher::timeFindByData(const QString &timeStr)
+int SceneSwitcher::timeFindByData(const timeTrigger &trigger, const QTime &time)
 {
-	QRegExp rx("At " + timeStr + " switch to .*");
+	QRegExp rx(MakeTimeSwitchName(QStringLiteral(".*"),
+				      QStringLiteral(".*"), trigger, time));
 	int count = ui->timeSwitches->count();
 
 	for (int i = 0; i < count; i++) {
@@ -53,15 +67,25 @@ void SceneSwitcher::on_timeAdd_clicked()
 	OBSWeakSource source = GetWeakSourceByQString(sceneName);
 	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
 
-	QString text = MakeTimeSwitchName(sceneName, transitionName, time);
+	std::string triggerStr = ui->timeTrigger->currentText().toStdString();
+	auto it = std::find_if(
+		triggerTable.begin(), triggerTable.end(),
+		[&triggerStr](
+			const std::pair<std::string, timeTrigger> &element) {
+			return element.first == triggerStr;
+		});
+	timeTrigger trigger = it->second;
+
+	QString text =
+		MakeTimeSwitchName(sceneName, transitionName, trigger, time);
 	QVariant v = QVariant::fromValue(text);
 
-	int idx = timeFindByData(time.toString());
+	int idx = timeFindByData(trigger, time);
 
 	if (idx == -1) {
 		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->timeSwitches.emplace_back(
-			source, transition, time,
+			source, transition, trigger, time,
 			(sceneName == QString(PREVIOUS_SCENE_NAME)),
 			text.toUtf8().constData());
 
@@ -76,7 +100,7 @@ void SceneSwitcher::on_timeAdd_clicked()
 		{
 			std::lock_guard<std::mutex> lock(switcher->m);
 			for (auto &s : switcher->timeSwitches) {
-				if (s.time == time) {
+				if (s.trigger == trigger && s.time == time) {
 					s.scene = source;
 					s.transition = transition;
 					s.usePreviousScene =
@@ -88,8 +112,6 @@ void SceneSwitcher::on_timeAdd_clicked()
 				}
 			}
 		}
-
-		ui->timeSwitches->sortItems();
 	}
 }
 
@@ -119,6 +141,36 @@ void SceneSwitcher::on_timeRemove_clicked()
 	delete item;
 }
 
+void SceneSwitcher::on_timeUp_clicked()
+{
+	int index = ui->timeSwitches->currentRow();
+	if (index != -1 && index != 0) {
+		ui->timeSwitches->insertItem(index - 1,
+					     ui->timeSwitches->takeItem(index));
+		ui->timeSwitches->setCurrentRow(index - 1);
+
+		std::lock_guard<std::mutex> lock(switcher->m);
+
+		iter_swap(switcher->timeSwitches.begin() + index,
+			  switcher->timeSwitches.begin() + index - 1);
+	}
+}
+
+void SceneSwitcher::on_timeDown_clicked()
+{
+	int index = ui->timeSwitches->currentRow();
+	if (index != -1 && index != ui->timeSwitches->count() - 1) {
+		ui->timeSwitches->insertItem(index + 1,
+					     ui->timeSwitches->takeItem(index));
+		ui->timeSwitches->setCurrentRow(index + 1);
+
+		std::lock_guard<std::mutex> lock(switcher->m);
+
+		iter_swap(switcher->timeSwitches.begin() + index,
+			  switcher->timeSwitches.begin() + index + 1);
+	}
+}
+
 void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
 				   OBSWeakSource &transition)
 {
@@ -128,6 +180,9 @@ void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
 	QTime now = QTime::currentTime();
 
 	for (TimeSwitch &s : timeSwitches) {
+		if (s.trigger != ANY_DAY && s.trigger != LIVE &&
+		    s.trigger != QDate::currentDate().dayOfWeek())
+			continue;
 
 		QTime validSwitchTimeWindow = s.time.addMSecs(interval);
 
@@ -172,6 +227,7 @@ void SwitcherData::saveTimeSwitches(obs_data_t *obj)
 						    : sceneName);
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
+			obs_data_set_int(array_obj, "trigger", s.trigger);
 			obs_data_set_string(
 				array_obj, "time",
 				s.time.toString().toStdString().c_str());
@@ -199,17 +255,19 @@ void SwitcherData::loadTimeSwitches(obs_data_t *obj)
 		const char *scene = obs_data_get_string(array_obj, "scene");
 		const char *transition =
 			obs_data_get_string(array_obj, "transition");
+		timeTrigger trigger =
+			(timeTrigger)obs_data_get_int(array_obj, "trigger");
 		QTime time = QTime::fromString(
 			obs_data_get_string(array_obj, "time"));
 
 		std::string timeSwitchStr =
-			MakeTimeSwitchName(scene, transition, time)
+			MakeTimeSwitchName(scene, transition, trigger, time)
 				.toUtf8()
 				.constData();
 
 		switcher->timeSwitches.emplace_back(
 			GetWeakSourceByName(scene),
-			GetWeakTransitionByName(transition), time,
+			GetWeakTransitionByName(transition), trigger, time,
 			(strcmp(scene, PREVIOUS_SCENE_NAME) == 0),
 			timeSwitchStr);
 
@@ -223,13 +281,24 @@ void SceneSwitcher::setupTimeTab()
 	populateSceneSelection(ui->timeScenes, true);
 	populateTransitionSelection(ui->timeTransitions);
 
+	for (auto t : triggerTable) {
+		ui->timeTrigger->addItem(t.first.c_str());
+	}
+
+	// assuming the streaming / recording entry is always last
+	/*ui->timeTrigger->setItemData(
+		(int)triggerTable.size() - 1,
+		"The time relative to the start of streaming / recording will be used",
+		Qt::ToolTipRole);*/
+
 	for (auto &s : switcher->timeSwitches) {
 		std::string sceneName = (s.usePreviousScene)
 						? PREVIOUS_SCENE_NAME
 						: GetWeakSourceName(s.scene);
 		std::string transitionName = GetWeakSourceName(s.transition);
-		QString listText = MakeTimeSwitchName(
-			sceneName.c_str(), transitionName.c_str(), s.time);
+		QString listText = MakeTimeSwitchName(sceneName.c_str(),
+						      transitionName.c_str(),
+						      s.trigger, s.time);
 
 		QListWidgetItem *item =
 			new QListWidgetItem(listText, ui->timeSwitches);
