@@ -170,7 +170,7 @@ void SceneSwitcher::on_timeDown_clicked()
 	}
 }
 
-bool timseInInterval(QTime &time1, QTime &time2, int &interval)
+bool timesAreInInterval(QTime &time1, QTime &time2, int &interval)
 {
 	bool ret = false;
 	QTime validSwitchTimeWindow = time1.addMSecs(interval);
@@ -191,7 +191,7 @@ bool checkLiveTime(TimeSwitch &s, QDateTime &start, int &interval)
 	QDateTime now = QDateTime::currentDateTime();
 	QTime timePassed = QTime(0, 0).addMSecs(start.msecsTo(now));
 
-	return timseInInterval(s.time, timePassed, interval);
+	return timesAreInInterval(s.time, timePassed, interval);
 }
 
 bool checkRegularTime(TimeSwitch &s, int &interval)
@@ -203,7 +203,7 @@ bool checkRegularTime(TimeSwitch &s, int &interval)
 
 	QTime now = QTime::currentTime();
 
-	return timseInInterval(s.time, now, interval);
+	return timesAreInInterval(s.time, now, interval);
 }
 
 void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
