@@ -9,8 +9,7 @@ static std::vector<std::pair<std::string, timeTrigger>> triggerTable = {
 	{"Fridays", timeTrigger::FRIDAY},
 	{"Saturdays", timeTrigger::SATURDAY},
 	{"Sundays", timeTrigger::SUNDAY},
-	//{"Atfer streaming/recording start", timeTrigger::LIVE}
-};
+	{"Atfer streaming/recording start", timeTrigger::LIVE}};
 
 void SceneSwitcher::on_timeSwitches_currentRowChanged(int idx)
 {
@@ -171,27 +170,53 @@ void SceneSwitcher::on_timeDown_clicked()
 	}
 }
 
+bool timseInInterval(QTime &time1, QTime &time2, int &interval)
+{
+	bool ret = false;
+	QTime validSwitchTimeWindow = time1.addMSecs(interval);
+
+	ret = time1 <= time2 && time2 <= validSwitchTimeWindow;
+	// check for overflow
+	if (!ret && validSwitchTimeWindow.msecsSinceStartOfDay() < interval) {
+		ret = time2 >= time1 || time2 <= validSwitchTimeWindow;
+	}
+	return ret;
+}
+
+bool checkLiveTime(TimeSwitch &s, QDateTime &start, int &interval)
+{
+	if (start.isNull())
+		return false;
+
+	QDateTime now = QDateTime::currentDateTime();
+	QTime timePassed = QTime(0, 0).addMSecs(start.msecsTo(now));
+
+	return timseInInterval(s.time, timePassed, interval);
+}
+
+bool checkRegularTime(TimeSwitch &s, int &interval)
+{
+	bool match = false;
+	if (s.trigger != ANY_DAY &&
+	    s.trigger != QDate::currentDate().dayOfWeek())
+		return false;
+
+	QTime now = QTime::currentTime();
+
+	return timseInInterval(s.time, now, interval);
+}
+
 void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
 				   OBSWeakSource &transition)
 {
 	if (timeSwitches.size() == 0)
 		return;
 
-	QTime now = QTime::currentTime();
-
 	for (TimeSwitch &s : timeSwitches) {
-		if (s.trigger != ANY_DAY && s.trigger != LIVE &&
-		    s.trigger != QDate::currentDate().dayOfWeek())
-			continue;
-
-		QTime validSwitchTimeWindow = s.time.addMSecs(interval);
-
-		match = s.time <= now && now <= validSwitchTimeWindow;
-		if (!match &&
-		    validSwitchTimeWindow.msecsSinceStartOfDay() < interval) {
-			// check for overflow
-			match = now >= s.time || now <= validSwitchTimeWindow;
-		}
+		if (s.trigger == LIVE)
+			match = checkLiveTime(s, liveTime, interval);
+		else
+			match = checkRegularTime(s, interval);
 
 		if (match) {
 			scene = (s.usePreviousScene) ? previousScene : s.scene;
@@ -286,10 +311,10 @@ void SceneSwitcher::setupTimeTab()
 	}
 
 	// assuming the streaming / recording entry is always last
-	/*ui->timeTrigger->setItemData(
+	ui->timeTrigger->setItemData(
 		(int)triggerTable.size() - 1,
 		"The time relative to the start of streaming / recording will be used",
-		Qt::ToolTipRole);*/
+		Qt::ToolTipRole);
 
 	for (auto &s : switcher->timeSwitches) {
 		std::string sceneName = (s.usePreviousScene)
