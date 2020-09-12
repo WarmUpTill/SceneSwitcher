@@ -16,7 +16,7 @@ jobs:
     runs-on: [macos-latest]
     env:
       QT_VERSION: 5.14.1
-      OSX_DEPS_VERSION: '2020-04-07'
+      OSX_DEPS_VERSION: '2020-08-30'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -43,13 +43,20 @@ jobs:
         run: |
           curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.OSX_DEPS_VERSION }}/osx-deps-${{ env.OSX_DEPS_VERSION }}.tar.gz
           tar -xf ./osx-deps-${{ env.OSX_DEPS_VERSION }}.tar.gz -C "/tmp"
+      - name: 'Install prerequisite: Pre-built dependency Qt'
+        if: steps.deps-qt-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-qt-${{ env.QT_VERSION }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
+          tar -xf ./macos-qt-${{ env.QT_VERSION }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
+          xattr -r -d com.apple.quarantine /tmp/obsdeps
       - name: Configure
         shell: bash
         run: |
           echo "add_subdirectory(${{ env.PLUGIN_NAME }})" >> UI/frontend-plugins/CMakeLists.txt
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DDepsPath="/tmp/obsdeps" -DQTDIR="/usr/local/Cellar/qt/${{ env.QT_VERSION }}" ..
+          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DDepsPath="/tmp/obsdeps" -DQTDIR="/tmp/obsdeps" ..
           cd -
       - name: Build
         shell: bash
