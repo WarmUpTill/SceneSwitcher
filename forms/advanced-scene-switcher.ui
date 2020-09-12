@@ -2917,13 +2917,23 @@
       <attribute name="title">
        <string notr="true">Time</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_10">
+      <layout class="QVBoxLayout" name="verticalLayout_6">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_42">
          <item>
+          <widget class="QComboBox" name="timeTrigger">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>0</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QLabel" name="label_55">
            <property name="text">
-            <string>At</string>
+            <string>at</string>
            </property>
           </widget>
          </item>
@@ -2989,12 +2999,12 @@
           <bool>true</bool>
          </property>
          <property name="sortingEnabled">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_99">
+        <layout class="QHBoxLayout" name="horizontalLayout_51">
          <item>
           <widget class="QPushButton" name="timeAdd">
            <property name="maximumSize">
@@ -3024,6 +3034,91 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">removeIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_110">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>5</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="Line" name="line_36">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_111">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>5</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="timeUp">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string>upArrowIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="timeDown">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string>downArrowIconSmall</string>
            </property>
           </widget>
          </item>

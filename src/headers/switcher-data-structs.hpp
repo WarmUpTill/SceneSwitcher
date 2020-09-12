@@ -235,16 +235,18 @@ struct MediaSwitch {
 struct TimeSwitch {
 	OBSWeakSource scene;
 	OBSWeakSource transition;
+	timeTrigger trigger;
 	QTime time;
 	bool matched;
 	bool usePreviousScene;
 	std::string timeSwitchStr;
 
 	inline TimeSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-			  QTime time_, bool usePreviousScene_,
-			  std::string timeSwitchStr_)
+			  timeTrigger trigger_, QTime time_,
+			  bool usePreviousScene_, std::string timeSwitchStr_)
 		: scene(scene_),
 		  transition(transition_),
+		  trigger(trigger_),
 		  time(time_),
 		  usePreviousScene(usePreviousScene_),
 		  timeSwitchStr(timeSwitchStr_)
@@ -324,6 +326,7 @@ struct SwitcherData {
 	std::vector<MediaSwitch> mediaSwitches;
 
 	std::vector<TimeSwitch> timeSwitches;
+	QDateTime liveTime;
 
 	std::vector<int> functionNamesByPriority = std::vector<int>{
 		DEFAULT_PRIORITY_0, DEFAULT_PRIORITY_1, DEFAULT_PRIORITY_2,

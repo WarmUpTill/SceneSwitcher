@@ -367,6 +367,16 @@ void handleSceneChange(SwitcherData *s)
 	s->autoStartedRecently = false;
 }
 
+void setLiveTime(SwitcherData *s)
+{
+	s->liveTime = QDateTime::currentDateTime();
+}
+
+void resetLiveTime(SwitcherData *s)
+{
+	s->liveTime = QDateTime();
+}
+
 static void OBSEvent(enum obs_frontend_event event, void *switcher)
 {
 	switch (event) {
@@ -375,6 +385,14 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 		break;
 	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
 		handleSceneChange((SwitcherData *)switcher);
+		break;
+	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
+	case OBS_FRONTEND_EVENT_STREAMING_STARTED:
+		setLiveTime((SwitcherData *)switcher);
+		break;
+	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
+	case OBS_FRONTEND_EVENT_STREAMING_STOPPED:
+		resetLiveTime((SwitcherData *)switcher);
 		break;
 	default:
 		break;
