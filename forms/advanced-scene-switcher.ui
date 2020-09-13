@@ -2404,7 +2404,7 @@
       <attribute name="title">
        <string notr="true">File</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_9">
+      <layout class="QVBoxLayout" name="verticalLayout_6">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_14">
          <item>
@@ -2534,6 +2534,22 @@
         <widget class="QLabel" name="remoteFileWarningLabel">
          <property name="text">
           <string>Please note that if you choose the remote option the scene switcher will try to access the remote location every x ms as specified on the General tab!</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="libcurlWarning">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Failed to load libcurl! Accesssing remote files will not be possible!</string>
          </property>
         </widget>
        </item>

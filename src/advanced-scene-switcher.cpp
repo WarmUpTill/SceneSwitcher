@@ -16,6 +16,7 @@
 #include "headers/switcher-data-structs.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
+#include "headers/curl-helper.hpp"
 
 SwitcherData *switcher = nullptr;
 
@@ -342,6 +343,13 @@ void SwitcherData::Stop()
  ********************************************************************************/
 extern "C" void FreeSceneSwitcher()
 {
+	if (loaded_curl_lib) {
+		if (switcher->curl && f_curl_cleanup)
+			f_curl_cleanup(switcher->curl);
+		delete loaded_curl_lib;
+		loaded_curl_lib = nullptr;
+	}
+
 	delete switcher;
 	switcher = nullptr;
 }
@@ -405,6 +413,10 @@ extern "C" void InitSceneSwitcher()
 		"Advanced Scene Switcher");
 
 	switcher = new SwitcherData;
+
+	if (loadCurl() && f_curl_init) {
+		switcher->curl = f_curl_init();
+	}
 
 	auto cb = []() {
 		QMainWindow *window =
