@@ -169,6 +169,7 @@ else ()
 		src/headers/switcher-data-structs.hpp
 		src/headers/utility.hpp
 		src/headers/curl-helper.hpp
+		src/headers/volume-control.hpp
 		)
 
 	set(advanced-scene-switcher_SOURCES
@@ -190,6 +191,7 @@ else ()
 		src/random.cpp
 		src/time-switch.cpp
 		src/curl-helper.cpp
+		src/volume-control.cpp
 		)
 
 	set(advanced-scene-switcher_UI

@@ -18,6 +18,8 @@
 #include "headers/utility.hpp"
 #include "headers/curl-helper.hpp"
 
+#include "headers/volume-control.hpp"
+
 SwitcherData *switcher = nullptr;
 
 /********************************************************************************
@@ -92,6 +94,12 @@ void SceneSwitcher::loadUI()
 	setupTimeTab();
 
 	setTabOrder();
+
+	//just for testing
+	obs_source_t *test = obs_get_source_by_name("Media Source 2");
+	VolControl *vol = new VolControl(test, true);
+	ui->horizontalLayout_10->addWidget(vol);
+	obs_source_release(test);
 
 	loading = false;
 }
