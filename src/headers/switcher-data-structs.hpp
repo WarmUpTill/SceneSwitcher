@@ -11,31 +11,31 @@
 #include <curl/curl.h>
 #include "utility.hpp"
 
-#define DEFAULT_INTERVAL 300
+constexpr auto default_interval = 300;
 
-#define DEFAULT_IDLE_TIME 60
+constexpr auto default_idle_time = 60;
 
-#define PREVIOUS_SCENE_NAME "Previous Scene"
+constexpr auto previous_scene_name = "Previous Scene";
 
-#define READ_FILE_FUNC 0
-#define ROUND_TRIP_FUNC 1
-#define IDLE_FUNC 2
-#define EXE_FUNC 3
-#define SCREEN_REGION_FUNC 4
-#define WINDOW_TITLE_FUNC 5
-#define MEDIA_FUNC 6
-#define TIME_FUNC 7
-#define AUDIO_FUNC 8
+constexpr auto read_file_func = 0;
+constexpr auto round_trip_func = 1;
+constexpr auto idle_func = 2;
+constexpr auto exe_func = 3;
+constexpr auto screen_region_func = 4;
+constexpr auto window_title_func = 5;
+constexpr auto media_func = 6;
+constexpr auto time_func = 7;
+constexpr auto audio_func = 8;
 
-#define DEFAULT_PRIORITY_0 READ_FILE_FUNC
-#define DEFAULT_PRIORITY_1 ROUND_TRIP_FUNC
-#define DEFAULT_PRIORITY_2 IDLE_FUNC
-#define DEFAULT_PRIORITY_3 EXE_FUNC
-#define DEFAULT_PRIORITY_4 SCREEN_REGION_FUNC
-#define DEFAULT_PRIORITY_5 WINDOW_TITLE_FUNC
-#define DEFAULT_PRIORITY_6 MEDIA_FUNC
-#define DEFAULT_PRIORITY_7 TIME_FUNC
-#define DEFAULT_PRIORITY_8 AUDIO_FUNC
+constexpr auto default_priority_0 = read_file_func;
+constexpr auto default_priority_1 = round_trip_func;
+constexpr auto default_priority_2 = idle_func;
+constexpr auto default_priority_3 = exe_func;
+constexpr auto default_priority_4 = screen_region_func;
+constexpr auto default_priority_5 = window_title_func;
+constexpr auto default_priority_6 = media_func;
+constexpr auto default_priority_7 = time_func;
+constexpr auto default_priority_8 = audio_func;
 
 /********************************************************************************
  * Data structs for each scene switching method
@@ -201,7 +201,7 @@ struct FileIOData {
 
 struct IdleData {
 	bool idleEnable = false;
-	int time = DEFAULT_IDLE_TIME;
+	int time = default_idle_time;
 	OBSWeakSource scene;
 	OBSWeakSource transition;
 	bool usePreviousScene;
@@ -299,7 +299,7 @@ struct SwitcherData {
 	bool verbose = false;
 	bool tansitionOverrideOverride = false;
 
-	int interval = DEFAULT_INTERVAL;
+	int interval = default_interval;
 
 	obs_source_t *waitScene = NULL; //scene during which wait started
 	OBSWeakSource previousScene = NULL;
@@ -352,9 +352,9 @@ struct SwitcherData {
 	std::vector<AudioSwitch> audioSwitches;
 
 	std::vector<int> functionNamesByPriority = std::vector<int>{
-		DEFAULT_PRIORITY_0, DEFAULT_PRIORITY_1, DEFAULT_PRIORITY_2,
-		DEFAULT_PRIORITY_3, DEFAULT_PRIORITY_4, DEFAULT_PRIORITY_5,
-		DEFAULT_PRIORITY_6, DEFAULT_PRIORITY_7, DEFAULT_PRIORITY_8};
+		default_priority_0, default_priority_1, default_priority_2,
+		default_priority_3, default_priority_4, default_priority_5,
+		default_priority_6, default_priority_7, default_priority_8};
 
 	struct ThreadPrio {
 		std::string name;

@@ -45,7 +45,7 @@ void SceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious)
 	}
 
 	if (addPrevious)
-		sel->addItem(PREVIOUS_SCENE_NAME);
+		sel->addItem(previous_scene_name);
 }
 
 void SceneSwitcher::populateTransitionSelection(QComboBox *sel)
@@ -216,27 +216,27 @@ void SwitcherData::Thread()
 
 		for (int switchFuncName : functionNamesByPriority) {
 			switch (switchFuncName) {
-			case READ_FILE_FUNC:
+			case read_file_func:
 				checkSwitchInfoFromFile(match, scene,
 							transition);
 				checkFileContent(match, scene, transition);
 				break;
-			case IDLE_FUNC:
+			case idle_func:
 				checkIdleSwitch(match, scene, transition);
 				break;
-			case EXE_FUNC:
+			case exe_func:
 				checkExeSwitch(match, scene, transition);
 				break;
 
-			case SCREEN_REGION_FUNC:
+			case screen_region_func:
 				checkScreenRegionSwitch(match, scene,
 							transition);
 				break;
-			case WINDOW_TITLE_FUNC:
+			case window_title_func:
 				checkWindowTitleSwitch(match, scene,
 						       transition);
 				break;
-			case ROUND_TRIP_FUNC:
+			case round_trip_func:
 				checkSceneRoundTrip(match, scene, transition,
 						    lock);
 				if (sceneChangedDuringWait()) //scene might have changed during the sleep
@@ -244,13 +244,13 @@ void SwitcherData::Thread()
 					goto startLoop;
 				}
 				break;
-			case MEDIA_FUNC:
+			case media_func:
 				checkMediaSwitch(match, scene, transition);
 				break;
-			case TIME_FUNC:
+			case time_func:
 				checkTimeSwitch(match, scene, transition);
 				break;
-			case AUDIO_FUNC:
+			case audio_func:
 				checkAudioSwitch(match, scene, transition);
 				break;
 			}

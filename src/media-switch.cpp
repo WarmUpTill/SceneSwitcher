@@ -63,7 +63,7 @@ void SceneSwitcher::on_mediaAdd_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->mediaSwitches.emplace_back(
 		scene, source, transition, state, restriction, time,
-		(sceneName == QString(PREVIOUS_SCENE_NAME)),
+		(sceneName == QString(previous_scene_name)),
 		switchText.toUtf8().constData());
 }
 
@@ -195,7 +195,7 @@ void SwitcherData::saveMediaSwitches(obs_data_t *obj)
 			obs_data_set_string(array_obj, "source", sourceName);
 			obs_data_set_string(array_obj, "scene",
 					    s.usePreviousScene
-						    ? PREVIOUS_SCENE_NAME
+						    ? previous_scene_name
 						    : sceneName);
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
@@ -244,7 +244,7 @@ void SwitcherData::loadMediaSwitches(obs_data_t *obj)
 		switcher->mediaSwitches.emplace_back(
 			GetWeakSourceByName(scene), GetWeakSourceByName(source),
 			GetWeakTransitionByName(transition), state, restriction,
-			time, (strcmp(scene, PREVIOUS_SCENE_NAME) == 0),
+			time, (strcmp(scene, previous_scene_name) == 0),
 			mediaStr);
 
 		obs_data_release(array_obj);
@@ -287,7 +287,7 @@ void SceneSwitcher::setupMediaTab()
 	for (auto &s : switcher->mediaSwitches) {
 		std::string sourceName = GetWeakSourceName(s.source);
 		std::string sceneName = (s.usePreviousScene)
-						? PREVIOUS_SCENE_NAME
+						? previous_scene_name
 						: GetWeakSourceName(s.scene);
 		std::string transitionName = GetWeakSourceName(s.transition);
 		QString listText = MakeMediaSwitchName(

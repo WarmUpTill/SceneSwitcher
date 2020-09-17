@@ -85,7 +85,7 @@ void SceneSwitcher::on_timeAdd_clicked()
 		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->timeSwitches.emplace_back(
 			source, transition, trigger, time,
-			(sceneName == QString(PREVIOUS_SCENE_NAME)),
+			(sceneName == QString(previous_scene_name)),
 			text.toUtf8().constData());
 
 		QListWidgetItem *item =
@@ -104,7 +104,7 @@ void SceneSwitcher::on_timeAdd_clicked()
 					s.transition = transition;
 					s.usePreviousScene =
 						(sceneName ==
-						 QString(PREVIOUS_SCENE_NAME));
+						 QString(previous_scene_name));
 					s.timeSwitchStr =
 						text.toUtf8().constData();
 					break;
@@ -247,7 +247,7 @@ void SwitcherData::saveTimeSwitches(obs_data_t *obj)
 				obs_source_get_name(transition);
 			obs_data_set_string(array_obj, "scene",
 					    s.usePreviousScene
-						    ? PREVIOUS_SCENE_NAME
+						    ? previous_scene_name
 						    : sceneName);
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
@@ -292,7 +292,7 @@ void SwitcherData::loadTimeSwitches(obs_data_t *obj)
 		switcher->timeSwitches.emplace_back(
 			GetWeakSourceByName(scene),
 			GetWeakTransitionByName(transition), trigger, time,
-			(strcmp(scene, PREVIOUS_SCENE_NAME) == 0),
+			(strcmp(scene, previous_scene_name) == 0),
 			timeSwitchStr);
 
 		obs_data_release(array_obj);
@@ -317,7 +317,7 @@ void SceneSwitcher::setupTimeTab()
 
 	for (auto &s : switcher->timeSwitches) {
 		std::string sceneName = (s.usePreviousScene)
-						? PREVIOUS_SCENE_NAME
+						? previous_scene_name
 						: GetWeakSourceName(s.scene);
 		std::string transitionName = GetWeakSourceName(s.transition);
 		QString listText = MakeTimeSwitchName(sceneName.c_str(),

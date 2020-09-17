@@ -66,7 +66,7 @@ void SceneSwitcher::on_audioAdd_clicked()
 		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->audioSwitches.emplace_back(
 			source, transition,
-			(sceneName == QString(PREVIOUS_SCENE_NAME)),
+			(sceneName == QString(previous_scene_name)),
 			text.toUtf8().constData());
 
 		QListWidgetItem *item =
@@ -86,7 +86,7 @@ void SceneSwitcher::on_audioAdd_clicked()
 					s.transition = transition;
 					s.usePreviousScene =
 						(sceneName ==
-						 QString(PREVIOUS_SCENE_NAME));
+						 QString(previous_scene_name));
 					s.audioSwitchStr =
 						text.toUtf8().constData();
 					break;
@@ -191,7 +191,7 @@ void SwitcherData::saveAudioSwitches(obs_data_t *obj)
 				obs_source_get_name(transition);
 			obs_data_set_string(array_obj, "scene",
 					    s.usePreviousScene
-						    ? PREVIOUS_SCENE_NAME
+						    ? previous_scene_name
 						    : sceneName);
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
@@ -228,7 +228,7 @@ void SwitcherData::loadAudioSwitches(obs_data_t *obj)
 		switcher->audioSwitches.emplace_back(
 			GetWeakSourceByName(scene),
 			GetWeakTransitionByName(transition),
-			(strcmp(scene, PREVIOUS_SCENE_NAME) == 0),
+			(strcmp(scene, previous_scene_name) == 0),
 			audioSwitchStr);
 
 		obs_data_release(array_obj);
@@ -249,7 +249,7 @@ void SceneSwitcher::setupAudioTab()
 
 	for (auto &s : switcher->audioSwitches) {
 		std::string sceneName = (s.usePreviousScene)
-						? PREVIOUS_SCENE_NAME
+						? previous_scene_name
 						: GetWeakSourceName(s.scene);
 		std::string transitionName = GetWeakSourceName(s.transition);
 		QString listText = MakeAudioSwitchName(sceneName.c_str(),

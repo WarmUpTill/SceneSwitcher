@@ -469,7 +469,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 {
-	obs_data_set_default_int(obj, "interval", DEFAULT_INTERVAL);
+	obs_data_set_default_int(obj, "interval", default_interval);
 	switcher->interval = obs_data_get_int(obj, "interval");
 
 	obs_data_set_default_int(obj, "switch_if_not_matching", NO_SWITCH);
@@ -502,15 +502,15 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 
 	switcher->verbose = obs_data_get_bool(obj, "verbose");
 
-	obs_data_set_default_int(obj, "priority0", DEFAULT_PRIORITY_0);
-	obs_data_set_default_int(obj, "priority1", DEFAULT_PRIORITY_1);
-	obs_data_set_default_int(obj, "priority2", DEFAULT_PRIORITY_2);
-	obs_data_set_default_int(obj, "priority3", DEFAULT_PRIORITY_3);
-	obs_data_set_default_int(obj, "priority4", DEFAULT_PRIORITY_4);
-	obs_data_set_default_int(obj, "priority5", DEFAULT_PRIORITY_5);
-	obs_data_set_default_int(obj, "priority6", DEFAULT_PRIORITY_6);
-	obs_data_set_default_int(obj, "priority7", DEFAULT_PRIORITY_7);
-	obs_data_set_default_int(obj, "priority8", DEFAULT_PRIORITY_8);
+	obs_data_set_default_int(obj, "priority0", default_priority_0);
+	obs_data_set_default_int(obj, "priority1", default_priority_1);
+	obs_data_set_default_int(obj, "priority2", default_priority_2);
+	obs_data_set_default_int(obj, "priority3", default_priority_3);
+	obs_data_set_default_int(obj, "priority4", default_priority_4);
+	obs_data_set_default_int(obj, "priority5", default_priority_5);
+	obs_data_set_default_int(obj, "priority6", default_priority_6);
+	obs_data_set_default_int(obj, "priority7", default_priority_7);
+	obs_data_set_default_int(obj, "priority8", default_priority_8);
 
 	switcher->functionNamesByPriority[0] =
 		(obs_data_get_int(obj, "priority0"));
@@ -531,15 +531,15 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	switcher->functionNamesByPriority[8] =
 		(obs_data_get_int(obj, "priority8"));
 	if (!switcher->prioFuncsValid()) {
-		switcher->functionNamesByPriority[0] = (DEFAULT_PRIORITY_0);
-		switcher->functionNamesByPriority[1] = (DEFAULT_PRIORITY_1);
-		switcher->functionNamesByPriority[2] = (DEFAULT_PRIORITY_2);
-		switcher->functionNamesByPriority[3] = (DEFAULT_PRIORITY_3);
-		switcher->functionNamesByPriority[4] = (DEFAULT_PRIORITY_4);
-		switcher->functionNamesByPriority[5] = (DEFAULT_PRIORITY_5);
-		switcher->functionNamesByPriority[6] = (DEFAULT_PRIORITY_6);
-		switcher->functionNamesByPriority[7] = (DEFAULT_PRIORITY_7);
-		switcher->functionNamesByPriority[8] = (DEFAULT_PRIORITY_8);
+		switcher->functionNamesByPriority[0] = (default_priority_0);
+		switcher->functionNamesByPriority[1] = (default_priority_1);
+		switcher->functionNamesByPriority[2] = (default_priority_2);
+		switcher->functionNamesByPriority[3] = (default_priority_3);
+		switcher->functionNamesByPriority[4] = (default_priority_4);
+		switcher->functionNamesByPriority[5] = (default_priority_5);
+		switcher->functionNamesByPriority[6] = (default_priority_6);
+		switcher->functionNamesByPriority[7] = (default_priority_7);
+		switcher->functionNamesByPriority[8] = (default_priority_8);
 	}
 
 	obs_data_set_default_int(obj, "threadPriority",
@@ -640,31 +640,31 @@ void SceneSwitcher::setupGeneralTab()
 	for (int p : switcher->functionNamesByPriority) {
 		std::string s = "";
 		switch (p) {
-		case READ_FILE_FUNC:
+		case read_file_func:
 			s = "File Content";
 			break;
-		case ROUND_TRIP_FUNC:
+		case round_trip_func:
 			s = "Scene Sequence";
 			break;
-		case IDLE_FUNC:
+		case idle_func:
 			s = "Idle Detection";
 			break;
-		case EXE_FUNC:
+		case exe_func:
 			s = "Executable";
 			break;
-		case SCREEN_REGION_FUNC:
+		case screen_region_func:
 			s = "Screen Region";
 			break;
-		case WINDOW_TITLE_FUNC:
+		case window_title_func:
 			s = "Window Title";
 			break;
-		case MEDIA_FUNC:
+		case media_func:
 			s = "Media";
 			break;
-		case TIME_FUNC:
+		case time_func:
 			s = "Time";
 			break;
-		case AUDIO_FUNC:
+		case audio_func:
 			s = "Audio";
 			break;
 		}
