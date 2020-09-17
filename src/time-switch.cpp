@@ -196,7 +196,6 @@ bool checkLiveTime(TimeSwitch &s, QDateTime &start, int &interval)
 
 bool checkRegularTime(TimeSwitch &s, int &interval)
 {
-	bool match = false;
 	if (s.trigger != ANY_DAY &&
 	    s.trigger != QDate::currentDate().dayOfWeek())
 		return false;
