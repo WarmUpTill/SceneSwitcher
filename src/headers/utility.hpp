@@ -224,6 +224,12 @@ static inline QString MakeTimeSwitchName(const QString &scene,
 	return switchName;
 }
 
+static inline QString MakeAudioSwitchName(const QString &scene,
+					  const QString &transition)
+{
+	return "todo";
+}
+
 static inline std::string GetWeakSourceName(obs_weak_source_t *weak_source)
 {
 	std::string name;

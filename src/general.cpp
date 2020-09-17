@@ -265,6 +265,7 @@ void SceneSwitcher::on_exportSettings_clicked()
 	switcher->saveFileSwitches(obj);
 	switcher->saveMediaSwitches(obj);
 	switcher->saveTimeSwitches(obj);
+	switcher->saveAudioSwitches(obj);
 	switcher->saveGeneralSettings(obj);
 
 	obs_data_save_json(obj, file.fileName().toUtf8().constData());
@@ -309,6 +310,7 @@ void SceneSwitcher::on_importSettings_clicked()
 	switcher->loadFileSwitches(obj);
 	switcher->loadMediaSwitches(obj);
 	switcher->loadTimeSwitches(obj);
+	switcher->loadAudioSwitches(obj);
 	switcher->loadGeneralSettings(obj);
 
 	obs_data_release(obj);
@@ -361,6 +363,9 @@ int findTabIndex(QTabBar *bar, int pos)
 		break;
 	case 11:
 		tabName = "Sequence";
+		break;
+	case 12:
+		tabName = "Audio";
 		break;
 	}
 
@@ -442,6 +447,8 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 			 switcher->functionNamesByPriority[6]);
 	obs_data_set_int(obj, "priority7",
 			 switcher->functionNamesByPriority[7]);
+	obs_data_set_int(obj, "priority8",
+			 switcher->functionNamesByPriority[8]);
 
 	obs_data_set_int(obj, "threadPriority", switcher->threadPriority);
 
@@ -457,6 +464,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "timeTabPos", switcher->tabOrder[9]);
 	obs_data_set_int(obj, "idleTabPos", switcher->tabOrder[10]);
 	obs_data_set_int(obj, "sequenceTabPos", switcher->tabOrder[11]);
+	obs_data_set_int(obj, "audioTabPos", switcher->tabOrder[12]);
 }
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
@@ -502,6 +510,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "priority5", DEFAULT_PRIORITY_5);
 	obs_data_set_default_int(obj, "priority6", DEFAULT_PRIORITY_6);
 	obs_data_set_default_int(obj, "priority7", DEFAULT_PRIORITY_7);
+	obs_data_set_default_int(obj, "priority8", DEFAULT_PRIORITY_8);
 
 	switcher->functionNamesByPriority[0] =
 		(obs_data_get_int(obj, "priority0"));
@@ -519,6 +528,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(obs_data_get_int(obj, "priority6"));
 	switcher->functionNamesByPriority[7] =
 		(obs_data_get_int(obj, "priority7"));
+	switcher->functionNamesByPriority[8] =
+		(obs_data_get_int(obj, "priority8"));
 	if (!switcher->prioFuncsValid()) {
 		switcher->functionNamesByPriority[0] = (DEFAULT_PRIORITY_0);
 		switcher->functionNamesByPriority[1] = (DEFAULT_PRIORITY_1);
@@ -528,6 +539,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		switcher->functionNamesByPriority[5] = (DEFAULT_PRIORITY_5);
 		switcher->functionNamesByPriority[6] = (DEFAULT_PRIORITY_6);
 		switcher->functionNamesByPriority[7] = (DEFAULT_PRIORITY_7);
+		switcher->functionNamesByPriority[8] = (DEFAULT_PRIORITY_8);
 	}
 
 	obs_data_set_default_int(obj, "threadPriority",
@@ -546,6 +558,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "timeTabPos", 9);
 	obs_data_set_default_int(obj, "idleTabPos", 10);
 	obs_data_set_default_int(obj, "sequenceTabPos", 11);
+	obs_data_set_default_int(obj, "audioTabPos", 12);
 
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "generalTabPos")));
@@ -571,6 +584,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(int)(obs_data_get_int(obj, "idleTabPos")));
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "sequenceTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "audioTabPos")));
 }
 
 void SceneSwitcher::setupGeneralTab()
@@ -648,6 +663,9 @@ void SceneSwitcher::setupGeneralTab()
 			break;
 		case TIME_FUNC:
 			s = "Time";
+			break;
+		case AUDIO_FUNC:
+			s = "Audio";
 			break;
 		}
 		QString text(s.c_str());

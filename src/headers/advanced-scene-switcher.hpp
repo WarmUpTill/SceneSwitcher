@@ -43,6 +43,7 @@ public:
 	int IgnoreIdleWindowsFindByData(const QString &window);
 	int randomFindByData(const QString &scene);
 	int timeFindByData(const timeTrigger &trigger, const QTime &time);
+	int audioFindByData(const QString &source, const double &volume);
 
 	void UpdateNonMatchingScene(const QString &name);
 	void UpdateAutoStopScene(const QString &name);
@@ -66,6 +67,7 @@ public:
 	void setupMediaTab();
 	void setupFileTab();
 	void setupTimeTab();
+	void setupAudioTab();
 	void setTabOrder();
 
 public slots:
@@ -174,6 +176,12 @@ public slots:
 	void on_timeRemove_clicked();
 	void on_timeUp_clicked();
 	void on_timeDown_clicked();
+
+	void on_audioAdd_clicked();
+	void on_audioRemove_clicked();
+	void on_audioUp_clicked();
+	void on_audioDown_clicked();
+	void on_audioSwitches_currentRowChanged(int idx);
 
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();

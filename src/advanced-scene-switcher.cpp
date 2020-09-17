@@ -18,8 +18,6 @@
 #include "headers/utility.hpp"
 #include "headers/curl-helper.hpp"
 
-#include "headers/volume-control.hpp"
-
 SwitcherData *switcher = nullptr;
 
 /********************************************************************************
@@ -92,14 +90,9 @@ void SceneSwitcher::loadUI()
 	setupMediaTab();
 	setupFileTab();
 	setupTimeTab();
+	setupAudioTab();
 
 	setTabOrder();
-
-	//just for testing
-	obs_source_t *test = obs_get_source_by_name("Media Source 2");
-	VolControl *vol = new VolControl(test, true);
-	ui->horizontalLayout_10->addWidget(vol);
-	obs_source_release(test);
 
 	loading = false;
 }
@@ -127,6 +120,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->saveFileSwitches(obj);
 		switcher->saveMediaSwitches(obj);
 		switcher->saveTimeSwitches(obj);
+		switcher->saveAudioSwitches(obj);
 		switcher->saveGeneralSettings(obj);
 
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
@@ -152,6 +146,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->loadFileSwitches(obj);
 		switcher->loadMediaSwitches(obj);
 		switcher->loadTimeSwitches(obj);
+		switcher->loadAudioSwitches(obj);
 		switcher->loadGeneralSettings(obj);
 
 		obs_data_release(obj);
@@ -254,6 +249,9 @@ void SwitcherData::Thread()
 				break;
 			case TIME_FUNC:
 				checkTimeSwitch(match, scene, transition);
+				break;
+			case AUDIO_FUNC:
+				checkAudioSwitch(match, scene, transition);
 				break;
 			}
 

@@ -190,6 +190,7 @@ else ()
 		src/pause-switch.cpp
 		src/random.cpp
 		src/time-switch.cpp
+		src/audio-switch.cpp
 		src/curl-helper.cpp
 		src/volume-control.cpp
 		)

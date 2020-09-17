@@ -25,6 +25,7 @@
 #define WINDOW_TITLE_FUNC 5
 #define MEDIA_FUNC 6
 #define TIME_FUNC 7
+#define AUDIO_FUNC 8
 
 #define DEFAULT_PRIORITY_0 READ_FILE_FUNC
 #define DEFAULT_PRIORITY_1 ROUND_TRIP_FUNC
@@ -34,6 +35,7 @@
 #define DEFAULT_PRIORITY_5 WINDOW_TITLE_FUNC
 #define DEFAULT_PRIORITY_6 MEDIA_FUNC
 #define DEFAULT_PRIORITY_7 TIME_FUNC
+#define DEFAULT_PRIORITY_8 AUDIO_FUNC
 
 /********************************************************************************
  * Data structs for each scene switching method
@@ -238,7 +240,6 @@ struct TimeSwitch {
 	OBSWeakSource transition;
 	timeTrigger trigger;
 	QTime time;
-	bool matched;
 	bool usePreviousScene;
 	std::string timeSwitchStr;
 
@@ -251,6 +252,24 @@ struct TimeSwitch {
 		  time(time_),
 		  usePreviousScene(usePreviousScene_),
 		  timeSwitchStr(timeSwitchStr_)
+	{
+	}
+};
+
+struct AudioSwitch {
+	OBSWeakSource scene;
+	OBSWeakSource audioSource;
+	OBSWeakSource transition;
+	double volume;
+	bool usePreviousScene;
+	std::string audioSwitchStr;
+
+	inline AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
+			   bool usePreviousScene_, std::string audioSwitchStr_)
+		: scene(scene_),
+		  transition(transition_),
+		  usePreviousScene(usePreviousScene_),
+		  audioSwitchStr(audioSwitchStr_)
 	{
 	}
 };
@@ -330,10 +349,12 @@ struct SwitcherData {
 	std::vector<TimeSwitch> timeSwitches;
 	QDateTime liveTime;
 
+	std::vector<AudioSwitch> audioSwitches;
+
 	std::vector<int> functionNamesByPriority = std::vector<int>{
 		DEFAULT_PRIORITY_0, DEFAULT_PRIORITY_1, DEFAULT_PRIORITY_2,
 		DEFAULT_PRIORITY_3, DEFAULT_PRIORITY_4, DEFAULT_PRIORITY_5,
-		DEFAULT_PRIORITY_6, DEFAULT_PRIORITY_7};
+		DEFAULT_PRIORITY_6, DEFAULT_PRIORITY_7, DEFAULT_PRIORITY_8};
 
 	struct ThreadPrio {
 		std::string name;
@@ -396,6 +417,8 @@ struct SwitcherData {
 			      OBSWeakSource &transition);
 	void checkTimeSwitch(bool &match, OBSWeakSource &scene,
 			     OBSWeakSource &transition);
+	void checkAudioSwitch(bool &match, OBSWeakSource &scene,
+			      OBSWeakSource &transition);
 
 	void saveWindowTitleSwitches(obs_data_t *obj);
 	void saveScreenRegionSwitches(obs_data_t *obj);
@@ -408,6 +431,7 @@ struct SwitcherData {
 	void saveFileSwitches(obs_data_t *obj);
 	void saveMediaSwitches(obs_data_t *obj);
 	void saveTimeSwitches(obs_data_t *obj);
+	void saveAudioSwitches(obs_data_t *obj);
 	void saveGeneralSettings(obs_data_t *obj);
 
 	void loadWindowTitleSwitches(obs_data_t *obj);
@@ -421,6 +445,7 @@ struct SwitcherData {
 	void loadFileSwitches(obs_data_t *obj);
 	void loadMediaSwitches(obs_data_t *obj);
 	void loadTimeSwitches(obs_data_t *obj);
+	void loadAudioSwitches(obs_data_t *obj);
 	void loadGeneralSettings(obs_data_t *obj);
 
 	void Prune()
@@ -529,6 +554,15 @@ struct SwitcherData {
 			    !WeakSourceValid(s.source) ||
 			    !WeakSourceValid(s.transition))
 				mediaSwitches.erase(mediaSwitches.begin() +
+						    i--);
+		}
+
+		for (size_t i = 0; i < audioSwitches.size(); i++) {
+			AudioSwitch &s = audioSwitches[i];
+			if ((!s.usePreviousScene &&
+			     !WeakSourceValid(s.scene)) ||
+			    !WeakSourceValid(s.transition))
+				audioSwitches.erase(audioSwitches.begin() +
 						    i--);
 		}
 	}
