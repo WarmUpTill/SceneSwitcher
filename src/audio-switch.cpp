@@ -241,6 +241,20 @@ void SceneSwitcher::setupAudioTab()
 	populateSceneSelection(ui->audioScenes, true);
 	populateTransitionSelection(ui->audioTransitions);
 
+	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
+	{
+		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
+		uint32_t flags = obs_source_get_output_flags(source);
+
+		if ((flags & OBS_SOURCE_AUDIO) != 0) {
+			const char *name = obs_source_get_name(source);
+			combo->addItem(name);
+		}
+		return true;
+	};
+
+	obs_enum_sources(sourceEnum, ui->audioSources);
+
 	//just for testing
 	obs_source_t *test = obs_get_source_by_name("Media Source 3");
 	VolControl *vol = new VolControl(test);
