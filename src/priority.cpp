@@ -61,7 +61,7 @@ bool SwitcherData::prioFuncsValid()
 		return false;
 
 	for (int p : functionNamesByPriority) {
-		if (p < 0 || p > 7)
+		if (p < 0 || p > 8)
 			return false;
 	}
 	return true;

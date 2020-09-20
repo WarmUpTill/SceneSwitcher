@@ -10,6 +10,7 @@
 #include "ui_advanced-scene-switcher.h"
 #endif
 #include "switcher-data-structs.hpp"
+#include "volume-control.hpp"
 
 class QCloseEvent;
 
@@ -21,6 +22,7 @@ class SceneSwitcher : public QDialog {
 
 public:
 	std::unique_ptr<Ui_SceneSwitcher> ui;
+	VolControl *volMeter = nullptr;
 	bool loading = true;
 
 	SceneSwitcher(QWidget *parent);
@@ -43,12 +45,14 @@ public:
 	int IgnoreIdleWindowsFindByData(const QString &window);
 	int randomFindByData(const QString &scene);
 	int timeFindByData(const timeTrigger &trigger, const QTime &time);
+	int audioFindByData(const QString &source, const int &volume);
 
 	void UpdateNonMatchingScene(const QString &name);
 	void UpdateAutoStopScene(const QString &name);
 	void UpdateAutoStartScene(const QString &name);
 	void UpdateIdleDataTransition(const QString &name);
 	void UpdateIdleDataScene(const QString &name);
+	void SetAudioVolumeMeter(const QString &name);
 
 	void loadUI();
 	void populateSceneSelection(QComboBox *sel, bool addPrevious);
@@ -66,6 +70,7 @@ public:
 	void setupMediaTab();
 	void setupFileTab();
 	void setupTimeTab();
+	void setupAudioTab();
 	void setTabOrder();
 
 public slots:
@@ -175,6 +180,13 @@ public slots:
 	void on_timeUp_clicked();
 	void on_timeDown_clicked();
 
+	void on_audioAdd_clicked();
+	void on_audioRemove_clicked();
+	void on_audioUp_clicked();
+	void on_audioDown_clicked();
+	void on_audioSwitches_currentRowChanged(int idx);
+	void on_audioSources_currentTextChanged(const QString &text);
+
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();
 	void on_threadPriority_currentTextChanged(const QString &text);
@@ -182,6 +194,8 @@ public slots:
 	void updateScreenRegionCursorPos();
 
 	void on_close_clicked();
+
+private:
 };
 
 /********************************************************************************
@@ -234,9 +248,9 @@ void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
  * Hotkey helper
  ********************************************************************************/
 
-#define TOGGLE_HOTKEY_PATH "hotkey_toggle.txt"
-#define STOP_HOTKEY_PATH "hotkey_stop.txt"
-#define START_HOTKEY_PATH "hotkey_start.txt"
+constexpr auto toggle_hotkey_path = "hotkey_toggle.txt";
+constexpr auto stop_hotkey_path = "hotkey_stop.txt";
+constexpr auto start_hotkey_path = "hotkey_start.txt";
 
 void stopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 		    bool pressed);

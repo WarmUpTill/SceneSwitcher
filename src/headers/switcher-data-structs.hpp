@@ -11,29 +11,31 @@
 #include <curl/curl.h>
 #include "utility.hpp"
 
-#define DEFAULT_INTERVAL 300
+constexpr auto default_interval = 300;
 
-#define DEFAULT_IDLE_TIME 60
+constexpr auto default_idle_time = 60;
 
-#define PREVIOUS_SCENE_NAME "Previous Scene"
+constexpr auto previous_scene_name = "Previous Scene";
 
-#define READ_FILE_FUNC 0
-#define ROUND_TRIP_FUNC 1
-#define IDLE_FUNC 2
-#define EXE_FUNC 3
-#define SCREEN_REGION_FUNC 4
-#define WINDOW_TITLE_FUNC 5
-#define MEDIA_FUNC 6
-#define TIME_FUNC 7
+constexpr auto read_file_func = 0;
+constexpr auto round_trip_func = 1;
+constexpr auto idle_func = 2;
+constexpr auto exe_func = 3;
+constexpr auto screen_region_func = 4;
+constexpr auto window_title_func = 5;
+constexpr auto media_func = 6;
+constexpr auto time_func = 7;
+constexpr auto audio_func = 8;
 
-#define DEFAULT_PRIORITY_0 READ_FILE_FUNC
-#define DEFAULT_PRIORITY_1 ROUND_TRIP_FUNC
-#define DEFAULT_PRIORITY_2 IDLE_FUNC
-#define DEFAULT_PRIORITY_3 EXE_FUNC
-#define DEFAULT_PRIORITY_4 SCREEN_REGION_FUNC
-#define DEFAULT_PRIORITY_5 WINDOW_TITLE_FUNC
-#define DEFAULT_PRIORITY_6 MEDIA_FUNC
-#define DEFAULT_PRIORITY_7 TIME_FUNC
+constexpr auto default_priority_0 = read_file_func;
+constexpr auto default_priority_1 = round_trip_func;
+constexpr auto default_priority_2 = idle_func;
+constexpr auto default_priority_3 = exe_func;
+constexpr auto default_priority_4 = screen_region_func;
+constexpr auto default_priority_5 = window_title_func;
+constexpr auto default_priority_6 = media_func;
+constexpr auto default_priority_7 = time_func;
+constexpr auto default_priority_8 = audio_func;
 
 /********************************************************************************
  * Data structs for each scene switching method
@@ -199,7 +201,7 @@ struct FileIOData {
 
 struct IdleData {
 	bool idleEnable = false;
-	int time = DEFAULT_IDLE_TIME;
+	int time = default_idle_time;
 	OBSWeakSource scene;
 	OBSWeakSource transition;
 	bool usePreviousScene;
@@ -238,7 +240,6 @@ struct TimeSwitch {
 	OBSWeakSource transition;
 	timeTrigger trigger;
 	QTime time;
-	bool matched;
 	bool usePreviousScene;
 	std::string timeSwitchStr;
 
@@ -252,6 +253,107 @@ struct TimeSwitch {
 		  usePreviousScene(usePreviousScene_),
 		  timeSwitchStr(timeSwitchStr_)
 	{
+	}
+};
+
+struct AudioSwitch {
+	OBSWeakSource scene;
+	OBSWeakSource audioSource;
+	OBSWeakSource transition;
+	int volumeThreshold;
+	float peak;
+	bool usePreviousScene;
+	obs_volmeter_t *volmeter;
+	std::string audioSwitchStr;
+
+	static void setVolumeLevel(void *data,
+				   const float magnitude[MAX_AUDIO_CHANNELS],
+				   const float peak[MAX_AUDIO_CHANNELS],
+				   const float inputPeak[MAX_AUDIO_CHANNELS])
+	{
+		UNUSED_PARAMETER(magnitude);
+		UNUSED_PARAMETER(inputPeak);
+		AudioSwitch *s = static_cast<AudioSwitch *>(data);
+
+		s->peak = peak[0];
+		for (int i = 1; i < MAX_AUDIO_CHANNELS; i++)
+			if (peak[i] > s->peak)
+				s->peak = peak[i];
+	}
+
+	inline AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
+			   OBSWeakSource audioSource_, int volumeThreshold_,
+			   bool usePreviousScene_, std::string audioSwitchStr_)
+		: scene(scene_),
+		  transition(transition_),
+		  audioSource(audioSource_),
+		  volumeThreshold(volumeThreshold_),
+		  usePreviousScene(usePreviousScene_),
+		  audioSwitchStr(audioSwitchStr_)
+	{
+		volmeter = obs_volmeter_create(OBS_FADER_LOG);
+		obs_volmeter_add_callback(volmeter, setVolumeLevel, this);
+		obs_source_t *as = obs_weak_source_get_source(audioSource);
+		if (!obs_volmeter_attach_source(volmeter, as)) {
+			const char *name = obs_source_get_name(as);
+			blog(LOG_WARNING,
+			     "failed to attach volmeter to source %s", name);
+		}
+		obs_source_release(as);
+	}
+
+	AudioSwitch(const AudioSwitch &other)
+		: scene(other.scene),
+		  transition(other.transition),
+		  audioSource(other.audioSource),
+		  volumeThreshold(other.volumeThreshold),
+		  usePreviousScene(other.usePreviousScene),
+		  audioSwitchStr(other.audioSwitchStr)
+	{
+		volmeter = obs_volmeter_create(OBS_FADER_LOG);
+		obs_volmeter_add_callback(volmeter, setVolumeLevel, this);
+		obs_source_t *as =
+			obs_weak_source_get_source(other.audioSource);
+		if (!obs_volmeter_attach_source(volmeter, as)) {
+			const char *name = obs_source_get_name(as);
+			blog(LOG_WARNING,
+			     "failed to attach volmeter to source %s", name);
+		}
+		obs_source_release(as);
+	}
+
+	AudioSwitch(AudioSwitch &&other)
+		: scene(other.scene),
+		  transition(other.transition),
+		  audioSource(other.audioSource),
+		  volumeThreshold(other.volumeThreshold),
+		  usePreviousScene(other.usePreviousScene),
+		  audioSwitchStr(other.audioSwitchStr),
+		  volmeter(other.volmeter)
+	{
+		other.volmeter = nullptr;
+	}
+
+	inline ~AudioSwitch()
+	{
+		obs_volmeter_remove_callback(volmeter, setVolumeLevel, this);
+		obs_volmeter_destroy(volmeter);
+	}
+
+	AudioSwitch &operator=(const AudioSwitch &other)
+	{
+		return *this = AudioSwitch(other);
+	}
+
+	AudioSwitch &operator=(AudioSwitch &&other) noexcept
+	{
+		if (this == &other) {
+			return *this;
+		}
+		obs_volmeter_destroy(volmeter);
+		volmeter = other.volmeter;
+		other.volmeter = nullptr;
+		return *this;
 	}
 };
 
@@ -280,7 +382,7 @@ struct SwitcherData {
 	bool verbose = false;
 	bool tansitionOverrideOverride = false;
 
-	int interval = DEFAULT_INTERVAL;
+	int interval = default_interval;
 
 	obs_source_t *waitScene = NULL; //scene during which wait started
 	OBSWeakSource previousScene = NULL;
@@ -330,10 +432,12 @@ struct SwitcherData {
 	std::vector<TimeSwitch> timeSwitches;
 	QDateTime liveTime;
 
+	std::vector<AudioSwitch> audioSwitches;
+
 	std::vector<int> functionNamesByPriority = std::vector<int>{
-		DEFAULT_PRIORITY_0, DEFAULT_PRIORITY_1, DEFAULT_PRIORITY_2,
-		DEFAULT_PRIORITY_3, DEFAULT_PRIORITY_4, DEFAULT_PRIORITY_5,
-		DEFAULT_PRIORITY_6, DEFAULT_PRIORITY_7};
+		default_priority_0, default_priority_1, default_priority_2,
+		default_priority_3, default_priority_4, default_priority_5,
+		default_priority_6, default_priority_7, default_priority_8};
 
 	struct ThreadPrio {
 		std::string name;
@@ -396,6 +500,8 @@ struct SwitcherData {
 			      OBSWeakSource &transition);
 	void checkTimeSwitch(bool &match, OBSWeakSource &scene,
 			     OBSWeakSource &transition);
+	void checkAudioSwitch(bool &match, OBSWeakSource &scene,
+			      OBSWeakSource &transition);
 
 	void saveWindowTitleSwitches(obs_data_t *obj);
 	void saveScreenRegionSwitches(obs_data_t *obj);
@@ -408,6 +514,7 @@ struct SwitcherData {
 	void saveFileSwitches(obs_data_t *obj);
 	void saveMediaSwitches(obs_data_t *obj);
 	void saveTimeSwitches(obs_data_t *obj);
+	void saveAudioSwitches(obs_data_t *obj);
 	void saveGeneralSettings(obs_data_t *obj);
 
 	void loadWindowTitleSwitches(obs_data_t *obj);
@@ -421,6 +528,7 @@ struct SwitcherData {
 	void loadFileSwitches(obs_data_t *obj);
 	void loadMediaSwitches(obs_data_t *obj);
 	void loadTimeSwitches(obs_data_t *obj);
+	void loadAudioSwitches(obs_data_t *obj);
 	void loadGeneralSettings(obs_data_t *obj);
 
 	void Prune()
@@ -529,6 +637,15 @@ struct SwitcherData {
 			    !WeakSourceValid(s.source) ||
 			    !WeakSourceValid(s.transition))
 				mediaSwitches.erase(mediaSwitches.begin() +
+						    i--);
+		}
+
+		for (size_t i = 0; i < audioSwitches.size(); i++) {
+			AudioSwitch &s = audioSwitches[i];
+			if ((!s.usePreviousScene &&
+			     !WeakSourceValid(s.scene)) ||
+			    !WeakSourceValid(s.transition))
+				audioSwitches.erase(audioSwitches.begin() +
 						    i--);
 		}
 	}

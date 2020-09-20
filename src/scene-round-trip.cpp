@@ -78,7 +78,7 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->sceneRoundTripSwitches.emplace_back(
 			source1, source2, transition, delay,
-			(scene2Name == QString(PREVIOUS_SCENE_NAME)),
+			(scene2Name == QString(previous_scene_name)),
 			text.toUtf8().constData());
 	} else {
 		QListWidgetItem *item = ui->sceneRoundTrips->item(idx);
@@ -93,7 +93,7 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 					s.transition = transition;
 					s.usePreviousScene =
 						(scene2Name ==
-						 QString(PREVIOUS_SCENE_NAME));
+						 QString(previous_scene_name));
 					s.sceneRoundTripStr =
 						text.toUtf8().constData();
 					break;
@@ -164,7 +164,7 @@ bool oldSceneRoundTripLoad(QFile *file)
 				GetWeakTransitionByQString(lines[4]);
 
 			if (WeakSourceValid(scene1) &&
-			    ((lines[1] == QString(PREVIOUS_SCENE_NAME)) ||
+			    ((lines[1] == QString(previous_scene_name)) ||
 			     (WeakSourceValid(scene2))) &&
 			    WeakSourceValid(transition)) {
 				newSceneRoundTripSwitch.emplace_back(
@@ -175,7 +175,7 @@ bool oldSceneRoundTripLoad(QFile *file)
 							lines[4]),
 						lines[2].toDouble() / 1000.,
 						(lines[1] ==
-						 QString(PREVIOUS_SCENE_NAME)),
+						 QString(previous_scene_name)),
 						lines[3].toStdString()));
 			}
 			lines.clear();
@@ -380,7 +380,7 @@ void SwitcherData::saveSceneRoundTripSwitches(obs_data_t *obj)
 					    sceneName1);
 			obs_data_set_string(array_obj, "sceneRoundTripScene2",
 					    s.usePreviousScene
-						    ? PREVIOUS_SCENE_NAME
+						    ? previous_scene_name
 						    : sceneName2);
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
@@ -444,7 +444,7 @@ void SwitcherData::loadSceneRoundTripSwitches(obs_data_t *obj)
 			GetWeakSourceByName(scene1),
 			GetWeakSourceByName(scene2),
 			GetWeakTransitionByName(transition), delay,
-			(strcmp(scene2, PREVIOUS_SCENE_NAME) == 0),
+			(strcmp(scene2, previous_scene_name) == 0),
 			sceneRoundTripStr);
 
 		obs_data_release(array_obj);
@@ -462,7 +462,7 @@ void SceneSwitcher::setupSequenceTab()
 	for (auto &s : switcher->sceneRoundTripSwitches) {
 		std::string sceneName1 = GetWeakSourceName(s.scene1);
 		std::string sceneName2 = (s.usePreviousScene)
-						 ? PREVIOUS_SCENE_NAME
+						 ? previous_scene_name
 						 : GetWeakSourceName(s.scene2);
 		std::string transitionName = GetWeakSourceName(s.transition);
 		QString text = MakeSceneRoundTripSwitchName(
