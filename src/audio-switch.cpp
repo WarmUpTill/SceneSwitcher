@@ -24,7 +24,8 @@ void SceneSwitcher::on_audioSwitches_currentRowChanged(int idx)
 			ui->audioScenes->setCurrentText(sceneName);
 			ui->audioTransitions->setCurrentText(transitionName);
 			ui->audioSources->setCurrentText(audioSrouceName);
-			ui->audioVolumeThreshold->setValue(s.volume);
+			ui->audioVolumeThreshold->setValue(s.volumeThreshold);
+			volMeter->GetSlider()->setValue(s.volumeThreshold);
 			break;
 		}
 	}
@@ -113,7 +114,7 @@ void SceneSwitcher::on_audioAdd_clicked()
 			std::lock_guard<std::mutex> lock(switcher->m);
 			for (auto &s : switcher->audioSwitches) {
 				if (s.audioSource == audioSource &&
-				    s.volume == vol) {
+				    s.volumeThreshold == vol) {
 					s.scene = source;
 					s.transition = transition;
 					s.usePreviousScene =
@@ -191,16 +192,24 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 		return;
 
 	for (AudioSwitch &s : audioSwitches) {
-		//TODO
+		obs_source_t *as = obs_weak_source_get_source(s.audioSource);
+		const char *name = obs_source_get_name(as);
+		bool audioActive = obs_source_active(as);
+		obs_source_release(as);
 
-		if (match) {
+		// peak will have a value from -60 db to 0 db
+		bool volumeThresholdreached = (s.peak + 60) * 1.7 >
+					      s.volumeThreshold;
+
+		if (volumeThresholdreached && audioActive) {
 			scene = (s.usePreviousScene) ? previousScene : s.scene;
 			transition = s.transition;
 			match = true;
 
 			if (verbose)
 				blog(LOG_INFO,
-				     "Advanced Scene Switcher audio match");
+				     "Advanced Scene Switcher audio match for %s",
+				     name);
 
 			break;
 		}
@@ -233,7 +242,8 @@ void SwitcherData::saveAudioSwitches(obs_data_t *obj)
 					    transitionName);
 			obs_data_set_string(array_obj, "audioSource",
 					    audioSourceName);
-			obs_data_set_int(array_obj, "volume", s.volume);
+			obs_data_set_int(array_obj, "volume",
+					 s.volumeThreshold);
 			obs_data_array_push_back(audioArray, array_obj);
 		}
 		obs_source_release(sceneSource);
@@ -308,7 +318,7 @@ void SceneSwitcher::setupAudioTab()
 		QString listText = MakeAudioSwitchName(sceneName.c_str(),
 						       transitionName.c_str(),
 						       audioSourceName.c_str(),
-						       s.volume);
+						       s.volumeThreshold);
 
 		QListWidgetItem *item =
 			new QListWidgetItem(listText, ui->audioSwitches);
