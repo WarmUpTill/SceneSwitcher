@@ -225,9 +225,16 @@ static inline QString MakeTimeSwitchName(const QString &scene,
 }
 
 static inline QString MakeAudioSwitchName(const QString &scene,
-					  const QString &transition)
+					  const QString &transition,
+					  const QString &audioSrouce,
+					  const int &volume)
 {
-	return "todo";
+	QString switchName = QStringLiteral("When volume of ") + audioSrouce +
+			     QStringLiteral(" is above ") +
+			     QString::number(volume) +
+			     QStringLiteral("% switch to ") + scene +
+			     QStringLiteral(" using ") + transition;
+	return switchName;
 }
 
 static inline std::string GetWeakSourceName(obs_weak_source_t *weak_source)

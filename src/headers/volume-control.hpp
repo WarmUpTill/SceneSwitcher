@@ -224,13 +224,11 @@ private:
 				   const float inputPeak[MAX_AUDIO_CHANNELS]);
 
 private slots:
-	void VolumeChanged();
 	void SliderChanged(int vol);
 	void updateText();
 
 public:
-	explicit VolControl(OBSSource source,
-			    bool vertical = false);
+	explicit VolControl(OBSSource source, bool vertical = false);
 	~VolControl();
 
 	inline obs_source_t *GetSource() const { return source; }
@@ -242,4 +240,6 @@ public:
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
 
 	void EnableSlider(bool enable);
+
+	QSlider *GetSlider() const;
 };

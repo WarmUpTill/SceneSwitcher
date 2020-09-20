@@ -33,16 +33,6 @@ void VolControl::OBSVolumeLevel(void *data,
 	volControl->volMeter->setLevels(magnitude, peak, inputPeak);
 }
 
-void VolControl::VolumeChanged()
-{
-	slider->blockSignals(true);
-	slider->setValue(
-		(int)(obs_fader_get_deflection(obs_fader) * FADER_PRECISION));
-	slider->blockSignals(false);
-
-	updateText();
-}
-
 void VolControl::SliderChanged(int vol)
 {
 	updateText();
@@ -176,7 +166,7 @@ VolControl::VolControl(OBSSource source_, bool vertical)
 	volLabel->setFont(font);
 
 	slider->setMinimum(0);
-	slider->setMaximum(int(FADER_PRECISION));
+	slider->setMaximum(100);
 
 	obs_fader_add_callback(obs_fader, OBSVolumeChanged, this);
 	obs_volmeter_add_callback(obs_volmeter, OBSVolumeLevel, this);
@@ -186,14 +176,16 @@ VolControl::VolControl(OBSSource source_, bool vertical)
 
 	obs_fader_attach_source(obs_fader, source);
 	obs_volmeter_attach_source(obs_volmeter, source);
-
-	/* Call volume changed once to init the slider position and label */
-	VolumeChanged();
 }
 
 void VolControl::EnableSlider(bool enable)
 {
 	slider->setEnabled(enable);
+}
+
+QSlider *VolControl::GetSlider() const
+{
+	return slider;
 }
 
 VolControl::~VolControl()

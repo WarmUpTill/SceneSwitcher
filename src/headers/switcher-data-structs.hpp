@@ -260,14 +260,17 @@ struct AudioSwitch {
 	OBSWeakSource scene;
 	OBSWeakSource audioSource;
 	OBSWeakSource transition;
-	double volume;
+	int volume;
 	bool usePreviousScene;
 	std::string audioSwitchStr;
 
 	inline AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
+			   OBSWeakSource audioSource_, int volume_,
 			   bool usePreviousScene_, std::string audioSwitchStr_)
 		: scene(scene_),
 		  transition(transition_),
+		  audioSource(audioSource_),
+		  volume(volume_),
 		  usePreviousScene(usePreviousScene_),
 		  audioSwitchStr(audioSwitchStr_)
 	{

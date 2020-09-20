@@ -17,19 +17,51 @@ void SceneSwitcher::on_audioSwitches_currentRowChanged(int idx)
 	for (auto &s : switcher->audioSwitches) {
 		if (audioScenestr.compare(s.audioSwitchStr.c_str()) == 0) {
 			QString sceneName = GetWeakSourceName(s.scene).c_str();
+			QString audioSrouceName =
+				GetWeakSourceName(s.audioSource).c_str();
 			QString transitionName =
 				GetWeakSourceName(s.transition).c_str();
 			ui->audioScenes->setCurrentText(sceneName);
 			ui->audioTransitions->setCurrentText(transitionName);
+			ui->audioSources->setCurrentText(audioSrouceName);
+			ui->audioVolumeThreshold->setValue(s.volume);
 			break;
 		}
 	}
 }
 
-int SceneSwitcher::audioFindByData(const QString &source, const double &volume)
+void SceneSwitcher::on_audioSources_currentTextChanged(const QString &text)
+{
+	SetAudioVolumeMeter(text);
+}
+
+void SceneSwitcher::SetAudioVolumeMeter(const QString &name)
+{
+	obs_source_t *soruce =
+		obs_get_source_by_name(name.toUtf8().constData());
+	if (!soruce) {
+		return;
+	}
+
+	if (volMeter) {
+		ui->audioControlLayout->removeWidget(volMeter);
+		delete volMeter;
+	}
+
+	volMeter = new VolControl(soruce);
+	ui->audioControlLayout->addWidget(volMeter);
+	obs_source_release(soruce);
+
+	QWidget::connect(volMeter->GetSlider(), SIGNAL(valueChanged(int)),
+			 ui->audioVolumeThreshold, SLOT(setValue(int)));
+	QWidget::connect(ui->audioVolumeThreshold, SIGNAL(valueChanged(int)),
+			 volMeter->GetSlider(), SLOT(setValue(int)));
+}
+
+int SceneSwitcher::audioFindByData(const QString &source, const int &volume)
 {
 	QRegExp rx(MakeAudioSwitchName(QStringLiteral(".*"),
-				       QStringLiteral(".*")));
+				       QStringLiteral(".*"), source, volume));
 	int count = ui->audioSwitches->count();
 
 	for (int i = 0; i < count; i++) {
@@ -48,7 +80,7 @@ void SceneSwitcher::on_audioAdd_clicked()
 	QString sceneName = ui->audioScenes->currentText();
 	QString transitionName = ui->audioTransitions->currentText();
 	QString audioSourceName = ui->audioSources->currentText();
-	double vol = ui->audioVolumeThreshold->value();
+	int vol = ui->audioVolumeThreshold->value();
 
 	if (sceneName.isEmpty() || audioSourceName.isEmpty())
 		return;
@@ -57,7 +89,8 @@ void SceneSwitcher::on_audioAdd_clicked()
 	OBSWeakSource audioSource = GetWeakSourceByQString(audioSourceName);
 	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
 
-	QString text = MakeAudioSwitchName(sceneName, transitionName);
+	QString text = MakeAudioSwitchName(sceneName, transitionName,
+					   audioSourceName, vol);
 	QVariant v = QVariant::fromValue(text);
 
 	int idx = audioFindByData(audioSourceName, vol);
@@ -65,10 +98,9 @@ void SceneSwitcher::on_audioAdd_clicked()
 	if (idx == -1) {
 		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->audioSwitches.emplace_back(
-			source, transition,
+			source, transition, audioSource, vol,
 			(sceneName == QString(previous_scene_name)),
 			text.toUtf8().constData());
-
 		QListWidgetItem *item =
 			new QListWidgetItem(text, ui->audioSwitches);
 		item->setData(Qt::UserRole, v);
@@ -184,21 +216,29 @@ void SwitcherData::saveAudioSwitches(obs_data_t *obj)
 		obs_source_t *sceneSource = obs_weak_source_get_source(s.scene);
 		obs_source_t *transition =
 			obs_weak_source_get_source(s.transition);
+		obs_source_t *audioSrouce =
+			obs_weak_source_get_source(s.audioSource);
 		if ((s.usePreviousScene || sceneSource) && transition) {
 			const char *sceneName =
 				obs_source_get_name(sceneSource);
 			const char *transitionName =
 				obs_source_get_name(transition);
+			const char *audioSourceName =
+				obs_source_get_name(audioSrouce);
 			obs_data_set_string(array_obj, "scene",
 					    s.usePreviousScene
 						    ? previous_scene_name
 						    : sceneName);
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
+			obs_data_set_string(array_obj, "audioSource",
+					    audioSourceName);
+			obs_data_set_int(array_obj, "volume", s.volume);
 			obs_data_array_push_back(audioArray, array_obj);
 		}
 		obs_source_release(sceneSource);
 		obs_source_release(transition);
+		obs_source_release(audioSrouce);
 
 		obs_data_release(array_obj);
 	}
@@ -219,15 +259,19 @@ void SwitcherData::loadAudioSwitches(obs_data_t *obj)
 		const char *scene = obs_data_get_string(array_obj, "scene");
 		const char *transition =
 			obs_data_get_string(array_obj, "transition");
+		const char *audioSource =
+			obs_data_get_string(array_obj, "audioSource");
+		int vol = obs_data_get_int(array_obj, "volume");
 
 		std::string audioSwitchStr =
-			MakeAudioSwitchName(scene, transition)
+			MakeAudioSwitchName(scene, transition, audioSource, vol)
 				.toUtf8()
 				.constData();
 
 		switcher->audioSwitches.emplace_back(
 			GetWeakSourceByName(scene),
 			GetWeakTransitionByName(transition),
+			GetWeakSourceByName(audioSource), vol,
 			(strcmp(scene, previous_scene_name) == 0),
 			audioSwitchStr);
 
@@ -255,19 +299,16 @@ void SceneSwitcher::setupAudioTab()
 
 	obs_enum_sources(sourceEnum, ui->audioSources);
 
-	//just for testing
-	obs_source_t *test = obs_get_source_by_name("Media Source 3");
-	VolControl *vol = new VolControl(test);
-	ui->audioControlLayout->addWidget(vol);
-	obs_source_release(test);
-
 	for (auto &s : switcher->audioSwitches) {
 		std::string sceneName = (s.usePreviousScene)
 						? previous_scene_name
 						: GetWeakSourceName(s.scene);
 		std::string transitionName = GetWeakSourceName(s.transition);
+		std::string audioSourceName = GetWeakSourceName(s.audioSource);
 		QString listText = MakeAudioSwitchName(sceneName.c_str(),
-						       transitionName.c_str());
+						       transitionName.c_str(),
+						       audioSourceName.c_str(),
+						       s.volume);
 
 		QListWidgetItem *item =
 			new QListWidgetItem(listText, ui->audioSwitches);

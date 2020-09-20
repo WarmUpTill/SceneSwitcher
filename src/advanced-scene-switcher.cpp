@@ -448,13 +448,13 @@ extern "C" void InitSceneSwitcher()
 		"startStopToggleSwitcherHotkey",
 		"Toggle Start/Stop for the Advanced Scene Switcher",
 		startStopToggleHotkeyFunc, NULL);
-	loadKeybinding(toggleHotkeyId, TOGGLE_HOTKEY_PATH);
+	loadKeybinding(toggleHotkeyId, toggle_hotkey_path);
 	obs_hotkey_id startHotkeyId = obs_hotkey_register_frontend(
 		"startSwitcherHotkey", "Start the Advanced Scene Switcher",
 		startHotkeyFunc, NULL);
-	loadKeybinding(startHotkeyId, START_HOTKEY_PATH);
+	loadKeybinding(startHotkeyId, start_hotkey_path);
 	obs_hotkey_id stopHotkeyId = obs_hotkey_register_frontend(
 		"stopSwitcherHotkey", "Stop the Advanced Scene Switcher",
 		stopHotkeyFunc, NULL);
-	loadKeybinding(stopHotkeyId, STOP_HOTKEY_PATH);
+	loadKeybinding(stopHotkeyId, stop_hotkey_path);
 }
