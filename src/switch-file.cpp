@@ -1,7 +1,6 @@
 #include <QFileDialog>
 #include <QTextStream>
 #include <QDateTime>
-#include <obs.hpp>
 #include <curl/curl.h>
 
 #include "headers/advanced-scene-switcher.hpp"

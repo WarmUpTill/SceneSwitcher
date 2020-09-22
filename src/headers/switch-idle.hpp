@@ -13,4 +13,10 @@ struct IdleData {
 	OBSWeakSource transition;
 	bool usePreviousScene;
 	bool alreadySwitched = false;
+
+	bool valid()
+	{
+		return (usePreviousScene || WeakSourceValid(scene)) &&
+		       WeakSourceValid(transition);
+	}
 };

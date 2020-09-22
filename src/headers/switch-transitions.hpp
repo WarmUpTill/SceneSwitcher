@@ -8,6 +8,12 @@ struct SceneTransition {
 	OBSWeakSource transition;
 	std::string sceneTransitionStr;
 
+	bool valid()
+	{
+		return (WeakSourceValid(scene1) && WeakSourceValid(scene2)) &&
+		       WeakSourceValid(transition);
+	}
+
 	inline SceneTransition(OBSWeakSource scene1_, OBSWeakSource scene2_,
 			       OBSWeakSource transition_,
 			       std::string sceneTransitionStr_)
@@ -23,6 +29,11 @@ struct DefaultSceneTransition {
 	OBSWeakSource scene;
 	OBSWeakSource transition;
 	std::string sceneTransitionStr;
+
+	bool valid()
+	{
+		return WeakSourceValid(scene) && WeakSourceValid(transition);
+	}
 
 	inline DefaultSceneTransition(OBSWeakSource scene_,
 				      OBSWeakSource transition_,

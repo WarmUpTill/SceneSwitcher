@@ -14,6 +14,12 @@ struct TimeSwitch {
 	bool usePreviousScene;
 	std::string timeSwitchStr;
 
+	bool valid()
+	{
+		return (usePreviousScene || WeakSourceValid(scene)) &&
+		       WeakSourceValid(transition);
+	}
+
 	inline TimeSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			  timeTrigger trigger_, QTime time_,
 			  bool usePreviousScene_, std::string timeSwitchStr_)

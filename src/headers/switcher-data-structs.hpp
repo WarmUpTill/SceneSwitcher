@@ -1,11 +1,8 @@
 #pragma once
 #include <condition_variable>
-#include <chrono>
 #include <string>
 #include <vector>
-#include <regex>
 #include <mutex>
-#include <fstream>
 #include <QDateTime>
 #include <QThread>
 #include <curl/curl.h>
@@ -21,7 +18,6 @@
 #include "switch-transitions.hpp"
 #include "switch-window.hpp"
 #include "swtich-sequence.hpp"
-
 #include "utility.hpp"
 
 constexpr auto default_interval = 300;
@@ -201,124 +197,7 @@ struct SwitcherData {
 	void loadAudioSwitches(obs_data_t *obj);
 	void loadGeneralSettings(obs_data_t *obj);
 
-	void Prune()
-	{
-		for (size_t i = 0; i < windowSwitches.size(); i++) {
-			WindowSceneSwitch &s = windowSwitches[i];
-			if (!WeakSourceValid(s.scene) ||
-			    !WeakSourceValid(s.transition))
-				windowSwitches.erase(windowSwitches.begin() +
-						     i--);
-		}
-
-		if (nonMatchingScene && !WeakSourceValid(nonMatchingScene)) {
-			switchIfNotMatching = NO_SWITCH;
-			nonMatchingScene = nullptr;
-		}
-
-		for (size_t i = 0; i < randomSwitches.size(); i++) {
-			RandomSwitch &s = randomSwitches[i];
-			if (!WeakSourceValid(s.scene) ||
-			    !WeakSourceValid(s.transition))
-				randomSwitches.erase(randomSwitches.begin() +
-						     i--);
-		}
-
-		for (size_t i = 0; i < screenRegionSwitches.size(); i++) {
-			ScreenRegionSwitch &s = screenRegionSwitches[i];
-			if (!WeakSourceValid(s.scene) ||
-			    !WeakSourceValid(s.transition))
-				screenRegionSwitches.erase(
-					screenRegionSwitches.begin() + i--);
-		}
-
-		for (size_t i = 0; i < pauseScenesSwitches.size(); i++) {
-			OBSWeakSource &scene = pauseScenesSwitches[i];
-			if (!WeakSourceValid(scene))
-				pauseScenesSwitches.erase(
-					pauseScenesSwitches.begin() + i--);
-		}
-
-		for (size_t i = 0; i < sceneRoundTripSwitches.size(); i++) {
-			SceneRoundTripSwitch &s = sceneRoundTripSwitches[i];
-			if (!WeakSourceValid(s.scene1) ||
-			    (!s.usePreviousScene &&
-			     !WeakSourceValid(s.scene2)) ||
-			    !WeakSourceValid(s.transition))
-				sceneRoundTripSwitches.erase(
-					sceneRoundTripSwitches.begin() + i--);
-		}
-
-		if (!WeakSourceValid(autoStopScene)) {
-			autoStopScene = nullptr;
-			autoStopEnable = false;
-		}
-
-		for (size_t i = 0; i < sceneTransitions.size(); i++) {
-			SceneTransition &s = sceneTransitions[i];
-			if (!WeakSourceValid(s.scene1) ||
-			    !WeakSourceValid(s.scene2) ||
-			    !WeakSourceValid(s.transition))
-				sceneTransitions.erase(
-					sceneTransitions.begin() + i--);
-		}
-
-		for (size_t i = 0; i < defaultSceneTransitions.size(); i++) {
-			DefaultSceneTransition &s = defaultSceneTransitions[i];
-			if (!WeakSourceValid(s.scene) ||
-			    !WeakSourceValid(s.transition))
-				defaultSceneTransitions.erase(
-					defaultSceneTransitions.begin() + i--);
-		}
-
-		for (size_t i = 0; i < executableSwitches.size(); i++) {
-			ExecutableSceneSwitch &s = executableSwitches[i];
-			if (!WeakSourceValid(s.mScene) ||
-			    !WeakSourceValid(s.mTransition))
-				executableSwitches.erase(
-					executableSwitches.begin() + i--);
-		}
-
-		for (size_t i = 0; i < fileSwitches.size(); i++) {
-			FileSwitch &s = fileSwitches[i];
-			if (!WeakSourceValid(s.scene) ||
-			    !WeakSourceValid(s.transition))
-				fileSwitches.erase(fileSwitches.begin() + i--);
-		}
-
-		for (size_t i = 0; i < timeSwitches.size(); i++) {
-			TimeSwitch &s = timeSwitches[i];
-			if ((!s.usePreviousScene &&
-			     !WeakSourceValid(s.scene)) ||
-			    !WeakSourceValid(s.transition))
-				timeSwitches.erase(timeSwitches.begin() + i--);
-		}
-
-		if (!idleData.usePreviousScene &&
-			    !WeakSourceValid(idleData.scene) ||
-		    !WeakSourceValid(idleData.transition)) {
-			idleData.idleEnable = false;
-		}
-
-		for (size_t i = 0; i < mediaSwitches.size(); i++) {
-			MediaSwitch &s = mediaSwitches[i];
-			if ((!s.usePreviousScene &&
-			     !WeakSourceValid(s.scene)) ||
-			    !WeakSourceValid(s.source) ||
-			    !WeakSourceValid(s.transition))
-				mediaSwitches.erase(mediaSwitches.begin() +
-						    i--);
-		}
-
-		for (size_t i = 0; i < audioSwitches.size(); i++) {
-			AudioSwitch &s = audioSwitches[i];
-			if ((!s.usePreviousScene &&
-			     !WeakSourceValid(s.scene)) ||
-			    !WeakSourceValid(s.transition))
-				audioSwitches.erase(audioSwitches.begin() +
-						    i--);
-		}
-	}
+	void Prune();
 	inline ~SwitcherData() { Stop(); }
 };
 

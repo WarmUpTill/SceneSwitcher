@@ -11,6 +11,11 @@ struct ExecutableSceneSwitch {
 	QString mExe;
 	bool mInFocus;
 
+	bool valid()
+	{
+		return WeakSourceValid(mScene) && WeakSourceValid(mTransition);
+	}
+
 	inline ExecutableSceneSwitch(OBSWeakSource scene,
 				     OBSWeakSource transition,
 				     const QString &exe, bool inFocus)

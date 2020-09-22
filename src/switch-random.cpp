@@ -1,5 +1,6 @@
-#include "headers/advanced-scene-switcher.hpp"
 #include <random>
+
+#include "headers/advanced-scene-switcher.hpp"
 
 void SceneSwitcher::on_randomScenesList_currentRowChanged(int idx)
 {

@@ -1,4 +1,3 @@
-#include <obs-module.h>
 #include "headers/advanced-scene-switcher.hpp"
 
 bool isRunning(std::string &title)

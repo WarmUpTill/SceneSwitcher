@@ -13,6 +13,13 @@ struct SceneRoundTripSwitch {
 	bool usePreviousScene;
 	std::string sceneRoundTripStr;
 
+	bool valid()
+	{
+		return WeakSourceValid(scene1) &&
+		       (usePreviousScene || WeakSourceValid(scene2)) &&
+		       WeakSourceValid(transition);
+	}
+
 	inline SceneRoundTripSwitch(OBSWeakSource scene1_,
 				    OBSWeakSource scene2_,
 				    OBSWeakSource transition_, double delay_,

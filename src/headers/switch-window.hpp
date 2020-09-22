@@ -12,6 +12,11 @@ struct WindowSceneSwitch {
 	bool fullscreen;
 	bool focus;
 
+	bool valid()
+	{
+		return WeakSourceValid(scene) && WeakSourceValid(transition);
+	}
+
 	inline WindowSceneSwitch(OBSWeakSource scene_, const char *window_,
 				 OBSWeakSource transition_, bool fullscreen_,
 				 bool focus_)

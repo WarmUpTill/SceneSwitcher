@@ -1,4 +1,5 @@
 #include <algorithm>
+
 #include "headers/advanced-scene-switcher.hpp"
 
 void SceneSwitcher::on_threadPriority_currentTextChanged(const QString &text)

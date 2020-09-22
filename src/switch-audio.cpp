@@ -1,5 +1,4 @@
 #include "headers/advanced-scene-switcher.hpp"
-
 #include "headers/volume-control.hpp"
 
 void SceneSwitcher::on_audioSwitches_currentRowChanged(int idx)

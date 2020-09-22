@@ -1,13 +1,12 @@
 #include <QFileDialog>
 #include <QTextStream>
 #include <QMessageBox>
-#include <obs.hpp>
 
 #include "headers/advanced-scene-switcher.hpp"
 
-#define SECONDS_INDEX 0
-#define MINUTES_INDEX 1
-#define HOURS_INDEX 2
+constexpr auto seconds_index = 0;
+constexpr auto minutes_index = 1;
+constexpr auto hours_index = 2;
 
 void SceneSwitcher::on_sceneRoundTripDelayUnits_currentIndexChanged(int index)
 {
@@ -33,13 +32,13 @@ void SceneSwitcher::on_sceneRoundTripDelayUnits_currentIndexChanged(int index)
 	ui->sceneRoundTripSpinBox->setValue(val);
 
 	switch (index) {
-	case SECONDS_INDEX:
+	case seconds_index:
 		switcher->sceneRoundTripUnitMultiplier = 1;
 		break;
-	case MINUTES_INDEX:
+	case minutes_index:
 		switcher->sceneRoundTripUnitMultiplier = 60;
 		break;
-	case HOURS_INDEX:
+	case hours_index:
 		switcher->sceneRoundTripUnitMultiplier = 3600;
 		break;
 	}

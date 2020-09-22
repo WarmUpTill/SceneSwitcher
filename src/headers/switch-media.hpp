@@ -17,6 +17,12 @@ struct MediaSwitch {
 	bool usePreviousScene;
 	std::string mediaSwitchStr;
 
+	bool valid()
+	{
+		return (usePreviousScene || WeakSourceValid(scene)) &&
+		       WeakSourceValid(source) && WeakSourceValid(transition);
+	}
+
 	inline MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
 			   OBSWeakSource transition_, obs_media_state state_,
 			   time_restriction restriction_, uint64_t time_,

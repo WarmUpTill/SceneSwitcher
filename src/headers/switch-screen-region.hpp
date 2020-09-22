@@ -11,6 +11,11 @@ struct ScreenRegionSwitch {
 	int minX, minY, maxX, maxY;
 	std::string regionStr;
 
+	bool valid()
+	{
+		return WeakSourceValid(scene) && WeakSourceValid(transition);
+	}
+
 	inline ScreenRegionSwitch(OBSWeakSource scene_,
 				  OBSWeakSource transition_, int minX_,
 				  int minY_, int maxX_, int maxY_,

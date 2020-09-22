@@ -15,6 +15,11 @@ struct FileSwitch {
 	bool useTime = false;
 	QDateTime lastMod;
 
+	bool valid()
+	{
+		return WeakSourceValid(scene) && WeakSourceValid(transition);
+	}
+
 	inline FileSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			  const char *file_, const char *text_, bool remote_,
 			  bool useRegex_, bool useTime_)

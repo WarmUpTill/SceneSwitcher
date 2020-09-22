@@ -30,6 +30,12 @@ struct AudioSwitch {
 				s->peak = peak[i];
 	}
 
+	bool valid()
+	{
+		return (usePreviousScene || WeakSourceValid(scene)) &&
+		       WeakSourceValid(transition);
+	}
+
 	inline AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			   OBSWeakSource audioSource_, int volumeThreshold_,
 			   bool usePreviousScene_, std::string audioSwitchStr_)

@@ -8,6 +8,11 @@ struct RandomSwitch {
 	double delay;
 	std::string randomSwitchStr;
 
+	bool valid()
+	{
+		return WeakSourceValid(scene) && WeakSourceValid(transition);
+	}
+
 	inline RandomSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			    double delay_, std::string str)
 		: scene(scene_),

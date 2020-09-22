@@ -1,4 +1,3 @@
-#include <obs-module.h>
 #include "headers/advanced-scene-switcher.hpp"
 
 void SceneSwitcher::on_mediaSwitches_currentRowChanged(int idx)

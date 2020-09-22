@@ -53,6 +53,7 @@ if(BUILD_OUT_OF_TREE)
 		${advanced-scene-switcher_SOURCES}
 		src/advanced-scene-switcher.cpp
 		src/advanced-scene-switcher-module.c
+		src/switcher-data-structs.cpp
 		src/switch-transitions.cpp
 		src/switch-screen-region.cpp
 		src/switch-priority.cpp
@@ -199,6 +200,7 @@ else ()
 		${advanced-scene-switcher_SOURCES}
 		src/advanced-scene-switcher.cpp
 		src/advanced-scene-switcher-module.c
+		src/switcher-data-structs.cpp
 		src/switch-transitions.cpp
 		src/switch-screen-region.cpp
 		src/switch-priority.cpp
