@@ -50,7 +50,7 @@ struct SwitcherData {
 
 	int interval = default_interval;
 
-	obs_source_t *waitScene = NULL; //scene during which wait started
+	obs_source_t *waitScene = NULL;
 	OBSWeakSource previousScene = NULL;
 	OBSWeakSource PreviousScene2 = NULL;
 	OBSWeakSource lastRandomScene;
