@@ -36,26 +36,38 @@ if(BUILD_OUT_OF_TREE)
 		src/headers/switcher-data-structs.hpp
 		src/headers/utility.hpp
 		src/headers/curl-helper.hpp
+		src/headers/switch-audio.hpp
+		src/headers/switch-executable.hpp
+		src/headers/switch-file.hpp
+		src/headers/switch-idle.hpp
+		src/headers/switch-media.hpp
+		src/headers/switch-random.hpp
+		src/headers/switch-screen-region.hpp
+		src/headers/switch-time.hpp
+		src/headers/switch-transitions.hpp
+		src/headers/switch-window.hpp
+		src/headers/swtich-sequence.hpp
 		)
 
 	set(advanced-scene-switcher_SOURCES
 		${advanced-scene-switcher_SOURCES}
 		src/advanced-scene-switcher.cpp
 		src/advanced-scene-switcher-module.c
-		src/scene-transitions.cpp
-		src/screen-region-switch.cpp
-		src/priority.cpp
-		src/executable-switch.cpp
-		src/idle-switch.cpp
-		src/scene-round-trip.cpp
-		src/file-switch.cpp
-		src/window-title-switch.cpp
-		src/media-switch.cpp
+		src/switch-transitions.cpp
+		src/switch-screen-region.cpp
+		src/switch-priority.cpp
+		src/switch-executable.cpp
+		src/switch-idle.cpp
+		src/switch-sequence.cpp
+		src/switch-file.cpp
+		src/switch-window.cpp
+		src/switch-media.cpp
 		src/hotkey.cpp
 		src/general.cpp
-		src/pause-switch.cpp
-		src/random.cpp
-		src/time-switch.cpp
+		src/switch-pause.cpp
+		src/switch-random.cpp
+		src/switch-time.cpp
+		src/switch-audio.cpp
 		src/curl-helper.cpp
 		)
 
@@ -170,27 +182,38 @@ else ()
 		src/headers/utility.hpp
 		src/headers/curl-helper.hpp
 		src/headers/volume-control.hpp
+		src/headers/switch-audio.hpp
+		src/headers/switch-executable.hpp
+		src/headers/switch-file.hpp
+		src/headers/switch-idle.hpp
+		src/headers/switch-media.hpp
+		src/headers/switch-random.hpp
+		src/headers/switch-screen-region.hpp
+		src/headers/switch-time.hpp
+		src/headers/switch-transitions.hpp
+		src/headers/switch-window.hpp
+		src/headers/swtich-sequence.hpp
 		)
 
 	set(advanced-scene-switcher_SOURCES
 		${advanced-scene-switcher_SOURCES}
 		src/advanced-scene-switcher.cpp
 		src/advanced-scene-switcher-module.c
-		src/scene-transitions.cpp
-		src/screen-region-switch.cpp
-		src/priority.cpp
-		src/executable-switch.cpp
-		src/idle-switch.cpp
-		src/scene-round-trip.cpp
-		src/file-switch.cpp
-		src/window-title-switch.cpp
-		src/media-switch.cpp
+		src/switch-transitions.cpp
+		src/switch-screen-region.cpp
+		src/switch-priority.cpp
+		src/switch-executable.cpp
+		src/switch-idle.cpp
+		src/switch-sequence.cpp
+		src/switch-file.cpp
+		src/switch-window.cpp
+		src/switch-media.cpp
 		src/hotkey.cpp
 		src/general.cpp
-		src/pause-switch.cpp
-		src/random.cpp
-		src/time-switch.cpp
-		src/audio-switch.cpp
+		src/switch-pause.cpp
+		src/switch-random.cpp
+		src/switch-time.cpp
+		src/switch-audio.cpp
 		src/curl-helper.cpp
 		src/volume-control.cpp
 		)
