@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include <obs.hpp>
 #include "utility.hpp"
 
 constexpr auto media_func = 6;
@@ -11,8 +10,8 @@ struct MediaSwitch {
 	OBSWeakSource source;
 	OBSWeakSource transition;
 	obs_media_state state;
-	int64_t time;
 	time_restriction restriction;
+	int64_t time;
 	bool matched;
 	bool usePreviousScene;
 	std::string mediaSwitchStr;

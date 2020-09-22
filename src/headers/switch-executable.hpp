@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <obs.hpp>
+#include "utility.hpp"
 
 constexpr auto exe_func = 3;
 constexpr auto default_priority_3 = exe_func;

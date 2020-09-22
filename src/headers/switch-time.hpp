@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <QDateTime>
-#include <obs.hpp>
+#include "utility.hpp"
 
 constexpr auto time_func = 7;
 constexpr auto default_priority_7 = time_func;

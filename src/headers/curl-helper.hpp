@@ -3,11 +3,11 @@
 #include <QLibrary>
 
 #if defined(WIN32)
-#define CURL_LIBRARY_NAME "libcurl.dll"
+constexpr auto curl_library_name = "libcurl.dll";
 #elif __APPLE__
-#define CURL_LIBRARY_NAME "libcurl.4.dylib"
+#define curl_library_name "libcurl.4.dylib"
 #else
-#define CURL_LIBRARY_NAME "libcurl.so.4"
+#define curl_library_name "libcurl.so.4"
 #endif
 
 typedef CURL *(*initFunction)(void);

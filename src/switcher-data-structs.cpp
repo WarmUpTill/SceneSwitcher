@@ -1,4 +1,5 @@
 #include "headers/switcher-data-structs.hpp"
+#include "headers/utility.hpp"
 
 void SwitcherData::Prune()
 {

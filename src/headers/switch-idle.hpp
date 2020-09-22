@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <obs.hpp>
+#include "utility.hpp"
 
 constexpr auto default_idle_time = 60;
 constexpr auto idle_func = 2;

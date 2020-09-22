@@ -674,7 +674,7 @@ void SceneSwitcher::setupGeneralTab()
 		item->setData(Qt::UserRole, text);
 	}
 
-	for (int i = 0; i < switcher->threadPriorities.size(); ++i) {
+	for (int i = 0; i < (int)switcher->threadPriorities.size(); ++i) {
 		ui->threadPriority->addItem(
 			switcher->threadPriorities[i].name.c_str());
 		ui->threadPriority->setItemData(

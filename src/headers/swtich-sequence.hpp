@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <obs.hpp>
+#include "utility.hpp"
 
 constexpr auto round_trip_func = 1;
 constexpr auto default_priority_1 = round_trip_func;

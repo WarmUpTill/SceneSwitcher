@@ -128,7 +128,8 @@ std::string getRemoteData(std::string &url)
 
 	if (switcher->curl && f_curl_setopt && f_curl_perform) {
 		f_curl_setopt(switcher->curl, CURLOPT_URL, url.c_str());
-		f_curl_setopt(switcher->curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+		f_curl_setopt(switcher->curl, CURLOPT_WRITEFUNCTION,
+			      WriteCallback);
 		f_curl_setopt(switcher->curl, CURLOPT_WRITEDATA, &readBuffer);
 		f_curl_perform(switcher->curl);
 	}
@@ -309,7 +310,7 @@ void SceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 
-	if (switcher->fileSwitches.size() <= idx)
+	if ((int)switcher->fileSwitches.size() <= idx)
 		return;
 	FileSwitch s = switcher->fileSwitches[idx];
 

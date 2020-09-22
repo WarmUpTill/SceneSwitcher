@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <obs.hpp>
+#include "utility.hpp"
 
 struct SceneTransition {
 	OBSWeakSource scene1;

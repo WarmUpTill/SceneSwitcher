@@ -241,13 +241,11 @@ void SwitcherData::checkSceneRoundTrip(bool &match, OBSWeakSource &scene,
 				       OBSWeakSource &transition,
 				       std::unique_lock<std::mutex> &lock)
 {
-	bool sceneRoundTripActive = false;
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
 	for (SceneRoundTripSwitch &s : sceneRoundTripSwitches) {
 		if (s.scene1 == ws) {
-			sceneRoundTripActive = true;
 			int dur = s.delay * 1000 - interval;
 			if (dur > 0) {
 				waitScene = currentSource;

@@ -18,7 +18,6 @@
 #include "switch-transitions.hpp"
 #include "switch-window.hpp"
 #include "swtich-sequence.hpp"
-#include "utility.hpp"
 
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";

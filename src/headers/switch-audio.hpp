@@ -1,19 +1,19 @@
 #pragma once
 #include <string>
-#include <obs.hpp>
+#include "utility.hpp"
 
 constexpr auto audio_func = 8;
 constexpr auto default_priority_8 = audio_func;
 
 struct AudioSwitch {
 	OBSWeakSource scene;
-	OBSWeakSource audioSource;
 	OBSWeakSource transition;
+	OBSWeakSource audioSource;
 	int volumeThreshold;
 	float peak;
 	bool usePreviousScene;
-	obs_volmeter_t *volmeter;
 	std::string audioSwitchStr;
+	obs_volmeter_t *volmeter;
 
 	static void setVolumeLevel(void *data,
 				   const float magnitude[MAX_AUDIO_CHANNELS],
