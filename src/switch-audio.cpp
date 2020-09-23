@@ -192,7 +192,6 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 
 	for (AudioSwitch &s : audioSwitches) {
 		obs_source_t *as = obs_weak_source_get_source(s.audioSource);
-		const char *name = obs_source_get_name(as);
 		bool audioActive = obs_source_active(as);
 		obs_source_release(as);
 
@@ -206,10 +205,7 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 			match = true;
 
 			if (verbose)
-				blog(LOG_INFO,
-				     "Advanced Scene Switcher audio match for %s",
-				     name);
-
+				s.logMatch();
 			break;
 		}
 	}

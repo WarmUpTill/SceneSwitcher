@@ -73,7 +73,7 @@ void SceneSwitcher::on_add_clicked()
 	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
 	QVariant v = QVariant::fromValue(windowName);
 
-	QString text = MakeSwitchName(sceneName, windowName, transitionName,
+	QString text = MakeWindowSwitchName(sceneName, windowName, transitionName,
 				      fullscreen, focus);
 
 	int idx = FindByData(windowName);
@@ -307,6 +307,8 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 			scene = s.scene;
 			transition = s.transition;
 
+			if (verbose)
+				s.logMatch();
 			break;
 		}
 	}
@@ -412,7 +414,7 @@ void SceneSwitcher::setupTitleTab()
 	for (auto &s : switcher->windowSwitches) {
 		std::string sceneName = GetWeakSourceName(s.scene);
 		std::string transitionName = GetWeakSourceName(s.transition);
-		QString text = MakeSwitchName(sceneName.c_str(),
+		QString text = MakeWindowSwitchName(sceneName.c_str(),
 					      s.window.c_str(),
 					      transitionName.c_str(),
 					      s.fullscreen, s.focus);
@@ -428,4 +430,27 @@ void SceneSwitcher::setupTitleTab()
 			new QListWidgetItem(text, ui->ignoreWindows);
 		item->setData(Qt::UserRole, text);
 	}
+}
+
+inline QString MakeWindowSwitchName(const QString &scene, const QString &value,
+				    const QString &transition, bool fullscreen,
+				    bool focus)
+{
+	QString name = QStringLiteral("[") + scene + QStringLiteral(", ") +
+		       transition + QStringLiteral("]: ") + value;
+
+	if (fullscreen || focus) {
+		name += QStringLiteral(" (only if");
+
+		if (fullscreen)
+			name += QStringLiteral(" fullscreen");
+		if (fullscreen && focus)
+			name += QStringLiteral(" and");
+		if (focus)
+			name += QStringLiteral(" focused");
+
+		name += QStringLiteral(")");
+	}
+
+	return name;
 }

@@ -2,32 +2,24 @@
 #include <string>
 #include <QDateTime>
 #include "utility.hpp"
+#include "switch-generic.hpp"
 
 constexpr auto time_func = 7;
 constexpr auto default_priority_7 = time_func;
 
-struct TimeSwitch {
-	OBSWeakSource scene;
-	OBSWeakSource transition;
+struct TimeSwitch : SceneSwitcherEntry {
 	timeTrigger trigger;
 	QTime time;
-	bool usePreviousScene;
 	std::string timeSwitchStr;
 
-	bool valid()
-	{
-		return (usePreviousScene || WeakSourceValid(scene)) &&
-		       WeakSourceValid(transition);
-	}
+	const char *getType() { return "time"; }
 
 	inline TimeSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			  timeTrigger trigger_, QTime time_,
 			  bool usePreviousScene_, std::string timeSwitchStr_)
-		: scene(scene_),
-		  transition(transition_),
+		: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
 		  trigger(trigger_),
 		  time(time_),
-		  usePreviousScene(usePreviousScene_),
 		  timeSwitchStr(timeSwitchStr_)
 	{
 	}

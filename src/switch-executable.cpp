@@ -28,15 +28,15 @@ void SceneSwitcher::on_executables_currentRowChanged(int idx)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->executableSwitches) {
-		if (exec.compare(s.mExe) == 0) {
-			QString sceneName = GetWeakSourceName(s.mScene).c_str();
+		if (exec.compare(s.exe) == 0) {
+			QString sceneName = GetWeakSourceName(s.scene).c_str();
 			QString transitionName =
-				GetWeakSourceName(s.mTransition).c_str();
+				GetWeakSourceName(s.transition).c_str();
 			ui->executableScenes->setCurrentText(sceneName);
 			ui->executable->setCurrentText(exec);
 			ui->executableTransitions->setCurrentText(
 				transitionName);
-			ui->requiresFocusCheckBox->setChecked(s.mInFocus);
+			ui->requiresFocusCheckBox->setChecked(s.inFocus);
 			break;
 		}
 	}
@@ -107,10 +107,10 @@ void SceneSwitcher::on_executableAdd_clicked()
 		{
 			std::lock_guard<std::mutex> lock(switcher->m);
 			for (auto &s : switcher->executableSwitches) {
-				if (s.mExe == exeName) {
-					s.mScene = source;
-					s.mTransition = transition;
-					s.mInFocus = inFocus;
+				if (s.exe == exeName) {
+					s.scene = source;
+					s.transition = transition;
+					s.inFocus = inFocus;
 					break;
 				}
 			}
@@ -133,7 +133,7 @@ void SceneSwitcher::on_executableRemove_clicked()
 		for (auto it = switches.begin(); it != switches.end(); ++it) {
 			auto &s = *it;
 
-			if (s.mExe == exe) {
+			if (s.exe == exe) {
 				switches.erase(it);
 				break;
 			}
@@ -172,27 +172,25 @@ void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 	GetProcessList(runningProcesses);
 	for (ExecutableSceneSwitch &s : executableSwitches) {
 		// True if executable switch is running (direct)
-		bool equals = runningProcesses.contains(s.mExe);
+		bool equals = runningProcesses.contains(s.exe);
 		// True if executable switch is running (regex)
 		bool matches = (runningProcesses.indexOf(
-					QRegularExpression(s.mExe)) != -1);
+					QRegularExpression(s.exe)) != -1);
 		// True if focus is disabled OR switch is focused
-		bool focus = (!s.mInFocus || isInFocus(s.mExe));
+		bool focus = (!s.inFocus || isInFocus(s.exe));
 		// True if current window is ignored AND switch equals OR matches last window
 		bool ignore =
-			(ignored && (title == s.mExe.toStdString() ||
+			(ignored && (title == s.exe.toStdString() ||
 				     QString::fromStdString(title).contains(
-					     QRegularExpression(s.mExe))));
+					     QRegularExpression(s.exe))));
 
 		if ((equals || matches) && (focus || ignore)) {
 			match = true;
-			scene = s.mScene;
-			transition = s.mTransition;
+			scene = s.scene;
+			transition = s.transition;
 
 			if (verbose)
-				blog(LOG_INFO,
-				     "Advanced Scene Switcher exec match");
-
+				s.logMatch();
 			break;
 		}
 	}
@@ -204,9 +202,9 @@ void SwitcherData::saveExecutableSwitches(obs_data_t *obj)
 	for (ExecutableSceneSwitch &s : switcher->executableSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source = obs_weak_source_get_source(s.mScene);
+		obs_source_t *source = obs_weak_source_get_source(s.scene);
 		obs_source_t *transition =
-			obs_weak_source_get_source(s.mTransition);
+			obs_weak_source_get_source(s.transition);
 
 		if (source && transition) {
 			const char *sceneName = obs_source_get_name(source);
@@ -216,8 +214,8 @@ void SwitcherData::saveExecutableSwitches(obs_data_t *obj)
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
 			obs_data_set_string(array_obj, "exefile",
-					    s.mExe.toUtf8());
-			obs_data_set_bool(array_obj, "infocus", s.mInFocus);
+					    s.exe.toUtf8());
+			obs_data_set_bool(array_obj, "infocus", s.inFocus);
 			obs_data_array_push_back(executableArray, array_obj);
 			obs_source_release(source);
 			obs_source_release(transition);
@@ -266,15 +264,15 @@ void SceneSwitcher::setupExecutableTab()
 		ui->executable->addItem(process);
 
 	for (auto &s : switcher->executableSwitches) {
-		std::string sceneName = GetWeakSourceName(s.mScene);
-		std::string transitionName = GetWeakSourceName(s.mTransition);
+		std::string sceneName = GetWeakSourceName(s.scene);
+		std::string transitionName = GetWeakSourceName(s.transition);
 		QString text = MakeSwitchNameExecutable(sceneName.c_str(),
-							s.mExe,
+							s.exe,
 							transitionName.c_str(),
-							s.mInFocus);
+							s.inFocus);
 
 		QListWidgetItem *item =
 			new QListWidgetItem(text, ui->executables);
-		item->setData(Qt::UserRole, s.mExe);
+		item->setData(Qt::UserRole, s.exe);
 	}
 }

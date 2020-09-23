@@ -1,45 +1,39 @@
 #pragma once
 #include <string>
 #include "utility.hpp"
+#include "switch-generic.hpp"
 
-struct SceneTransition {
-	OBSWeakSource scene1;
+struct SceneTransition : SceneSwitcherEntry {
 	OBSWeakSource scene2;
-	OBSWeakSource transition;
 	std::string sceneTransitionStr;
+
+	const char *getType() { return "transition"; }
 
 	bool valid()
 	{
-		return (WeakSourceValid(scene1) && WeakSourceValid(scene2)) &&
+		return (WeakSourceValid(scene) && WeakSourceValid(scene2)) &&
 		       WeakSourceValid(transition);
 	}
 
-	inline SceneTransition(OBSWeakSource scene1_, OBSWeakSource scene2_,
+	inline SceneTransition(OBSWeakSource scene_, OBSWeakSource scene2_,
 			       OBSWeakSource transition_,
 			       std::string sceneTransitionStr_)
-		: scene1(scene1_),
+		: SceneSwitcherEntry(scene_, transition_),
 		  scene2(scene2_),
-		  transition(transition_),
 		  sceneTransitionStr(sceneTransitionStr_)
 	{
 	}
 };
 
-struct DefaultSceneTransition {
-	OBSWeakSource scene;
-	OBSWeakSource transition;
+struct DefaultSceneTransition : SceneSwitcherEntry {
 	std::string sceneTransitionStr;
 
-	bool valid()
-	{
-		return WeakSourceValid(scene) && WeakSourceValid(transition);
-	}
+	const char *getType() { return "def_transition"; }
 
 	inline DefaultSceneTransition(OBSWeakSource scene_,
 				      OBSWeakSource transition_,
 				      std::string sceneTransitionStr_)
-		: scene(scene_),
-		  transition(transition_),
+		: SceneSwitcherEntry(scene_, transition_),
 		  sceneTransitionStr(sceneTransitionStr_)
 	{
 	}

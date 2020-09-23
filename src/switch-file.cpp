@@ -217,9 +217,7 @@ void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 			match = true;
 
 			if (verbose)
-				blog(LOG_INFO,
-				     "Advanced Scene Switcher file match");
-
+				s.logMatch();
 			break;
 		}
 	}

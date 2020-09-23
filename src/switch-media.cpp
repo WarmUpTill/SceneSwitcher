@@ -166,8 +166,7 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 			transition = mediaSwitch.transition;
 
 			if (verbose)
-				blog(LOG_INFO,
-				     "Advanced Scene Switcher meida match");
+				mediaSwitch.logMatch();
 		}
 		mediaSwitch.matched = matched;
 		obs_source_release(source);

@@ -135,8 +135,7 @@ void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
 		lastRandomScene = r.scene;
 
 		if (verbose)
-			blog(LOG_INFO, "Advanced Scene Switcher random match");
-
+			r.logMatch();
 		break;
 	}
 }

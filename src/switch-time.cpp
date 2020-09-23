@@ -223,9 +223,7 @@ void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
 			match = true;
 
 			if (verbose)
-				blog(LOG_INFO,
-				     "Advanced Scene Switcher time match");
-
+				s.logMatch();
 			break;
 		}
 	}

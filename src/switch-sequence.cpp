@@ -86,8 +86,8 @@ void SceneSwitcher::on_sceneRoundTripAdd_clicked()
 		{
 			std::lock_guard<std::mutex> lock(switcher->m);
 			for (auto &s : switcher->sceneRoundTripSwitches) {
-				if (s.scene1 == source1) {
-					s.scene2 = source2;
+				if (s.startScene == source1) {
+					s.scene = source2;
 					s.delay = delay;
 					s.transition = transition;
 					s.usePreviousScene =
@@ -245,15 +245,13 @@ void SwitcherData::checkSceneRoundTrip(bool &match, OBSWeakSource &scene,
 	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
 	for (SceneRoundTripSwitch &s : sceneRoundTripSwitches) {
-		if (s.scene1 == ws) {
+		if (s.startScene == ws) {
 			int dur = s.delay * 1000 - interval;
 			if (dur > 0) {
 				waitScene = currentSource;
 
 				if (verbose)
-					blog(LOG_INFO,
-					     "Advanced Scene Switcher sequence sleep %d",
-					     dur);
+					s.logSleep(dur);
 
 				cv.wait_for(lock,
 					    std::chrono::milliseconds(dur));
@@ -266,8 +264,10 @@ void SwitcherData::checkSceneRoundTrip(bool &match, OBSWeakSource &scene,
 			if (currentSource == currentSource2) {
 				match = true;
 				scene = (s.usePreviousScene) ? previousScene
-							     : s.scene2;
+							     : s.scene;
 				transition = s.transition;
+				if (verbose)
+					s.logMatch();
 			}
 			obs_source_release(currentSource2);
 			break;
@@ -291,8 +291,8 @@ void SceneSwitcher::on_sceneRoundTrips_currentRowChanged(int idx)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->sceneRoundTripSwitches) {
 		if (sceneRoundTrip.compare(s.sceneRoundTripStr.c_str()) == 0) {
-			std::string scene1 = GetWeakSourceName(s.scene1);
-			std::string scene2 = GetWeakSourceName(s.scene2);
+			std::string scene1 = GetWeakSourceName(s.startScene);
+			std::string scene2 = GetWeakSourceName(s.scene);
 			std::string transitionName =
 				GetWeakSourceName(s.transition);
 			double delay = s.delay /
@@ -364,8 +364,9 @@ void SwitcherData::saveSceneRoundTripSwitches(obs_data_t *obj)
 	for (SceneRoundTripSwitch &s : switcher->sceneRoundTripSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source1 = obs_weak_source_get_source(s.scene1);
-		obs_source_t *source2 = obs_weak_source_get_source(s.scene2);
+		obs_source_t *source1 =
+			obs_weak_source_get_source(s.startScene);
+		obs_source_t *source2 = obs_weak_source_get_source(s.scene);
 		obs_source_t *transition =
 			obs_weak_source_get_source(s.transition);
 		if (source1 && (s.usePreviousScene || source2) && transition) {
@@ -457,10 +458,10 @@ void SceneSwitcher::setupSequenceTab()
 
 	double smallestDelay = double(switcher->interval) / 1000;
 	for (auto &s : switcher->sceneRoundTripSwitches) {
-		std::string sceneName1 = GetWeakSourceName(s.scene1);
+		std::string sceneName1 = GetWeakSourceName(s.startScene);
 		std::string sceneName2 = (s.usePreviousScene)
 						 ? previous_scene_name
-						 : GetWeakSourceName(s.scene2);
+						 : GetWeakSourceName(s.scene);
 		std::string transitionName = GetWeakSourceName(s.transition);
 		QString text = MakeSceneRoundTripSwitchName(
 			sceneName1.c_str(), sceneName2.c_str(),

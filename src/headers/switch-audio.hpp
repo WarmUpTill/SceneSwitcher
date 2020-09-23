@@ -1,19 +1,19 @@
 #pragma once
 #include <string>
 #include "utility.hpp"
+#include "switch-generic.hpp"
 
 constexpr auto audio_func = 8;
 constexpr auto default_priority_8 = audio_func;
 
-struct AudioSwitch {
-	OBSWeakSource scene;
-	OBSWeakSource transition;
+struct AudioSwitch : virtual SceneSwitcherEntry {
 	OBSWeakSource audioSource;
 	int volumeThreshold;
 	float peak;
-	bool usePreviousScene;
 	std::string audioSwitchStr;
 	obs_volmeter_t *volmeter;
+
+	const char *getType() { return "audio"; }
 
 	static void setVolumeLevel(void *data,
 				   const float magnitude[MAX_AUDIO_CHANNELS],
@@ -33,17 +33,16 @@ struct AudioSwitch {
 	bool valid()
 	{
 		return (usePreviousScene || WeakSourceValid(scene)) &&
+		       WeakSourceValid(audioSource) &&
 		       WeakSourceValid(transition);
 	}
 
 	inline AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			   OBSWeakSource audioSource_, int volumeThreshold_,
 			   bool usePreviousScene_, std::string audioSwitchStr_)
-		: scene(scene_),
-		  transition(transition_),
+		: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
 		  audioSource(audioSource_),
 		  volumeThreshold(volumeThreshold_),
-		  usePreviousScene(usePreviousScene_),
 		  audioSwitchStr(audioSwitchStr_)
 	{
 		volmeter = obs_volmeter_create(OBS_FADER_LOG);
@@ -58,11 +57,10 @@ struct AudioSwitch {
 	}
 
 	AudioSwitch(const AudioSwitch &other)
-		: scene(other.scene),
-		  transition(other.transition),
+		: SceneSwitcherEntry(other.scene, other.transition,
+				     other.usePreviousScene),
 		  audioSource(other.audioSource),
 		  volumeThreshold(other.volumeThreshold),
-		  usePreviousScene(other.usePreviousScene),
 		  audioSwitchStr(other.audioSwitchStr)
 	{
 		volmeter = obs_volmeter_create(OBS_FADER_LOG);
@@ -78,11 +76,10 @@ struct AudioSwitch {
 	}
 
 	AudioSwitch(AudioSwitch &&other)
-		: scene(other.scene),
-		  transition(other.transition),
+		: SceneSwitcherEntry(other.scene, other.transition,
+				     other.usePreviousScene),
 		  audioSource(other.audioSource),
 		  volumeThreshold(other.volumeThreshold),
-		  usePreviousScene(other.usePreviousScene),
 		  audioSwitchStr(other.audioSwitchStr),
 		  volmeter(other.volmeter)
 	{

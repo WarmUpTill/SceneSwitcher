@@ -1,22 +1,17 @@
 #pragma once
 #include <string>
 #include "utility.hpp"
+#include "switch-generic.hpp"
 
-struct RandomSwitch {
-	OBSWeakSource scene;
-	OBSWeakSource transition;
+struct RandomSwitch : SceneSwitcherEntry {
 	double delay;
 	std::string randomSwitchStr;
 
-	bool valid()
-	{
-		return WeakSourceValid(scene) && WeakSourceValid(transition);
-	}
+	const char *getType() { return "random"; }
 
 	inline RandomSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			    double delay_, std::string str)
-		: scene(scene_),
-		  transition(transition_),
+		: SceneSwitcherEntry(scene_, transition_),
 		  delay(delay_),
 		  randomSwitchStr(str)
 	{

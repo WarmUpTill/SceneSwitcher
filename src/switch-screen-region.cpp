@@ -19,9 +19,7 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 				minRegionSize = regionSize;
 
 				if (verbose)
-					blog(LOG_INFO,
-					     "Advanced Scene Switcher region match");
-
+					s.logMatch();
 				break;
 			}
 		}

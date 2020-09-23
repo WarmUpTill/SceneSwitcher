@@ -11,29 +11,6 @@ static inline bool WeakSourceValid(obs_weak_source_t *ws)
 	return !!source;
 }
 
-static inline QString MakeSwitchName(const QString &scene, const QString &value,
-				     const QString &transition, bool fullscreen,
-				     bool focus)
-{
-	QString name = QStringLiteral("[") + scene + QStringLiteral(", ") +
-		       transition + QStringLiteral("]: ") + value;
-
-	if (fullscreen || focus) {
-		name += QStringLiteral(" (only if");
-
-		if (fullscreen)
-			name += QStringLiteral(" fullscreen");
-		if (fullscreen && focus)
-			name += QStringLiteral(" and");
-		if (focus)
-			name += QStringLiteral(" focused");
-
-		name += QStringLiteral(")");
-	}
-
-	return name;
-}
-
 static inline QString MakeSwitchNameExecutable(const QString &scene,
 					       const QString &value,
 					       const QString &transition,

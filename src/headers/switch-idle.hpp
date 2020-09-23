@@ -1,22 +1,16 @@
 #pragma once
 #include <string>
 #include "utility.hpp"
+#include "switch-generic.hpp"
 
 constexpr auto default_idle_time = 60;
 constexpr auto idle_func = 2;
 constexpr auto default_priority_2 = idle_func;
 
-struct IdleData {
+struct IdleData : SceneSwitcherEntry {
 	bool idleEnable = false;
 	int time = default_idle_time;
-	OBSWeakSource scene;
-	OBSWeakSource transition;
-	bool usePreviousScene;
 	bool alreadySwitched = false;
 
-	bool valid()
-	{
-		return (usePreviousScene || WeakSourceValid(scene)) &&
-		       WeakSourceValid(transition);
-	}
+	const char *getType() { return "idle"; }
 };

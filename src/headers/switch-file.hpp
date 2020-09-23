@@ -1,13 +1,12 @@
 #pragma once
 #include <string>
 #include "utility.hpp"
+#include "switch-generic.hpp"
 
 constexpr auto read_file_func = 0;
 constexpr auto default_priority_0 = read_file_func;
 
-struct FileSwitch {
-	OBSWeakSource scene;
-	OBSWeakSource transition;
+struct FileSwitch : SceneSwitcherEntry {
 	std::string file;
 	std::string text;
 	bool remote = false;
@@ -15,16 +14,12 @@ struct FileSwitch {
 	bool useTime = false;
 	QDateTime lastMod;
 
-	bool valid()
-	{
-		return WeakSourceValid(scene) && WeakSourceValid(transition);
-	}
+	const char *getType() { return "file"; }
 
 	inline FileSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			  const char *file_, const char *text_, bool remote_,
 			  bool useRegex_, bool useTime_)
-		: scene(scene_),
-		  transition(transition_),
+		: SceneSwitcherEntry(scene_, transition_),
 		  file(file_),
 		  text(text_),
 		  remote(remote_),
