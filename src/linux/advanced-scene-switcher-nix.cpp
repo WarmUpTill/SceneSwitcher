@@ -331,14 +331,8 @@ bool isFullscreen(std::string &title)
 				// True if window is fullscreen
 				bool fullscreen = states.contains(
 					"_NET_WM_STATE_FULLSCREEN");
-				// True if window is maximized vertically
-				bool vertical = states.contains(
-					"_NET_WM_STATE_MAXIMIZED_VERT");
-				// True if window is maximized horizontally
-				bool horizontal = states.contains(
-					"_NET_WM_STATE_MAXIMIZED_HORZ");
 
-				return (fullscreen || (vertical && horizontal));
+				return (fullscreen);
 			}
 
 			break;

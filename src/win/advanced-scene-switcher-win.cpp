@@ -104,6 +104,7 @@ std::pair<int, int> getCursorPos()
 
 bool isMaximized(std::string &title)
 {
+	RECT appBounds;
 	MONITORINFO monitorInfo = {0};
 
 	HWND hwnd = GetWindow(GetDesktopWindow(), GW_CHILD);
@@ -124,6 +125,13 @@ bool isMaximized(std::string &title)
 
 	if (hwnd && hwnd != GetDesktopWindow() && hwnd != GetShellWindow()) {
 		if (IsZoomed(hwnd)) {
+			return true;
+		}
+		GetWindowRect(hwnd, &appBounds);
+		if (monitorInfo.rcMonitor.bottom == appBounds.bottom &&
+		    monitorInfo.rcMonitor.top == appBounds.top &&
+		    monitorInfo.rcMonitor.left == appBounds.left &&
+		    monitorInfo.rcMonitor.right == appBounds.right) {
 			return true;
 		}
 	}
