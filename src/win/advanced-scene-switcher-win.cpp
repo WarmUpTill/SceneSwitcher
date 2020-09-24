@@ -102,9 +102,8 @@ std::pair<int, int> getCursorPos()
 	return pos;
 }
 
-bool isFullscreen(std::string &title)
+bool isMaximized(std::string &title)
 {
-	RECT appBounds;
 	MONITORINFO monitorInfo = {0};
 
 	HWND hwnd = GetWindow(GetDesktopWindow(), GW_CHILD);
@@ -127,6 +126,32 @@ bool isFullscreen(std::string &title)
 		if (IsZoomed(hwnd)) {
 			return true;
 		}
+	}
+	return false;
+}
+
+bool isFullscreen(std::string &title)
+{
+	RECT appBounds;
+	MONITORINFO monitorInfo = {0};
+
+	HWND hwnd = GetWindow(GetDesktopWindow(), GW_CHILD);
+	while (hwnd) {
+		string wtitle;
+		if (WindowValid(hwnd) && GetWindowTitle(hwnd, wtitle) &&
+		    (wtitle == title ||
+		     QString::fromStdString(wtitle).contains(QRegularExpression(
+			     QString::fromStdString(title)))))
+			break;
+
+		hwnd = GetNextWindow(hwnd, GW_HWNDNEXT);
+	}
+
+	monitorInfo.cbSize = sizeof(MONITORINFO);
+	GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST),
+		       &monitorInfo);
+
+	if (hwnd && hwnd != GetDesktopWindow() && hwnd != GetShellWindow()) {
 		GetWindowRect(hwnd, &appBounds);
 		if (monitorInfo.rcMonitor.bottom == appBounds.bottom &&
 		    monitorInfo.rcMonitor.top == appBounds.top &&

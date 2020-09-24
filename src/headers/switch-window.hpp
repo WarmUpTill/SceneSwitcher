@@ -9,16 +9,18 @@ constexpr auto default_priority_5 = window_title_func;
 struct WindowSceneSwitch : SceneSwitcherEntry {
 	std::string window;
 	bool fullscreen;
+	bool maximized;
 	bool focus;
 
 	const char *getType() { return "window"; }
 
 	inline WindowSceneSwitch(OBSWeakSource scene_, const char *window_,
 				 OBSWeakSource transition_, bool fullscreen_,
-				 bool focus_)
+				 bool maximized_, bool focus_)
 		: SceneSwitcherEntry(scene_, transition_),
 		  window(window_),
 		  fullscreen(fullscreen_),
+		  maximized(maximized_),
 		  focus(focus_)
 	{
 	}
@@ -27,4 +29,5 @@ struct WindowSceneSwitch : SceneSwitcherEntry {
 static inline QString MakeWindowSwitchName(const QString &scene,
 					   const QString &value,
 					   const QString &transition,
-					   bool fullscreen, bool focus);
+					   bool fullscreen, bool maximized,
+					   bool focus);

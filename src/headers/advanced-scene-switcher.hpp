@@ -205,6 +205,7 @@ void GetWindowList(std::vector<std::string> &windows);
 void GetWindowList(QStringList &windows); // Overloaded
 void GetCurrentWindowTitle(std::string &title);
 bool isFullscreen(std::string &title);
+bool isMaximized(std::string &title);
 
 /********************************************************************************
  * Screenregion helper

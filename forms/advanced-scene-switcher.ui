@@ -1246,14 +1246,21 @@
          <item>
           <widget class="QCheckBox" name="fullscreenCheckBox">
            <property name="text">
-            <string>only if fullscreen</string>
+            <string>if fullscreen</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="maximizedCheckBox">
+           <property name="text">
+            <string>if maximized</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QCheckBox" name="focusCheckBox">
            <property name="text">
-            <string>only if focused</string>
+            <string>if focused</string>
            </property>
           </widget>
          </item>

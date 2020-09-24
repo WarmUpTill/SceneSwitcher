@@ -247,6 +247,55 @@ std::pair<int, int> getCursorPos()
 	return pos;
 }
 
+bool isMaximized(std::string &title)
+{
+	if (!ewmhIsSupported())
+		return false;
+
+	// Find switch in top level windows
+	std::vector<Window> windows = getTopLevelWindows();
+	for (auto &window : windows) {
+		XTextProperty text;
+		int status = XGetTextProperty(
+			disp(), window, &text,
+			XInternAtom(disp(), "_NET_WM_NAME", true));
+		if (status == 0)
+			status = XGetTextProperty(disp(), window, &text,
+						  XInternAtom(disp(), "WM_NAME",
+							      true));
+		char *name = reinterpret_cast<char *>(text.value);
+
+		if (status == 0 || name == nullptr)
+			continue;
+
+		// True if switch equals window
+		bool equals = (title == name);
+		// True if switch matches window
+		bool matches = QString::fromStdString(name).contains(
+			QRegularExpression(QString::fromStdString(title)));
+
+		// If found, check if switch is maximized
+		if (equals || matches) {
+			QStringList states = getStates(window);
+
+			if (!states.isEmpty()) {
+				// True if window is maximized vertically
+				bool vertical = states.contains(
+					"_NET_WM_STATE_MAXIMIZED_VERT");
+				// True if window is maximized horizontally
+				bool horizontal = states.contains(
+					"_NET_WM_STATE_MAXIMIZED_HORZ");
+
+				return (vertical && horizontal);
+			}
+
+			break;
+		}
+	}
+
+	return false;
+}
+
 bool isFullscreen(std::string &title)
 {
 	if (!ewmhIsSupported())
