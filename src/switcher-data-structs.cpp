@@ -34,11 +34,11 @@ void SwitcherData::Prune()
 						  i--);
 	}
 
-	for (size_t i = 0; i < sceneRoundTripSwitches.size(); i++) {
-		SceneRoundTripSwitch &s = sceneRoundTripSwitches[i];
+	for (size_t i = 0; i < sceneSequenceSwitches.size(); i++) {
+		SceneSequenceSwitch &s = sceneSequenceSwitches[i];
 		if (!s.valid())
-			sceneRoundTripSwitches.erase(
-				sceneRoundTripSwitches.begin() + i--);
+			sceneSequenceSwitches.erase(
+				sceneSequenceSwitches.begin() + i--);
 	}
 
 	if (!WeakSourceValid(autoStopScene)) {

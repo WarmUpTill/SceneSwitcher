@@ -6,10 +6,10 @@
 constexpr auto round_trip_func = 1;
 constexpr auto default_priority_1 = round_trip_func;
 
-struct SceneRoundTripSwitch : SceneSwitcherEntry {
+struct SceneSequenceSwitch : SceneSwitcherEntry {
 	OBSWeakSource startScene;
 	double delay;
-	std::string sceneRoundTripStr;
+	std::string sceneSequenceStr;
 
 	const char *getType() { return "sequence"; }
 
@@ -26,19 +26,19 @@ struct SceneRoundTripSwitch : SceneSwitcherEntry {
 		     dur);
 	}
 
-	inline SceneRoundTripSwitch(OBSWeakSource startScene_,
+	inline SceneSequenceSwitch(OBSWeakSource startScene_,
 				    OBSWeakSource scene_,
 				    OBSWeakSource transition_, double delay_,
 				    bool usePreviousScene_, std::string str)
 		: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
 		  startScene(startScene_),
 		  delay(delay_),
-		  sceneRoundTripStr(str)
+		  sceneSequenceStr(str)
 	{
 	}
 };
 
-static inline QString MakeSceneRoundTripSwitchName(const QString &scene1,
+static inline QString MakeSceneSequenceSwitchName(const QString &scene1,
 						   const QString &scene2,
 						   const QString &transition,
 						   double delay);

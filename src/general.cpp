@@ -257,7 +257,7 @@ void SceneSwitcher::on_exportSettings_clicked()
 	switcher->saveWindowTitleSwitches(obj);
 	switcher->saveScreenRegionSwitches(obj);
 	switcher->savePauseSwitches(obj);
-	switcher->saveSceneRoundTripSwitches(obj);
+	switcher->saveSceneSequenceSwitches(obj);
 	switcher->saveSceneTransitions(obj);
 	switcher->saveIdleSwitches(obj);
 	switcher->saveExecutableSwitches(obj);
@@ -302,7 +302,7 @@ void SceneSwitcher::on_importSettings_clicked()
 	switcher->loadWindowTitleSwitches(obj);
 	switcher->loadScreenRegionSwitches(obj);
 	switcher->loadPauseSwitches(obj);
-	switcher->loadSceneRoundTripSwitches(obj);
+	switcher->loadSceneSequenceSwitches(obj);
 	switcher->loadSceneTransitions(obj);
 	switcher->loadIdleSwitches(obj);
 	switcher->loadExecutableSwitches(obj);

@@ -112,7 +112,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->saveWindowTitleSwitches(obj);
 		switcher->saveScreenRegionSwitches(obj);
 		switcher->savePauseSwitches(obj);
-		switcher->saveSceneRoundTripSwitches(obj);
+		switcher->saveSceneSequenceSwitches(obj);
 		switcher->saveSceneTransitions(obj);
 		switcher->saveIdleSwitches(obj);
 		switcher->saveExecutableSwitches(obj);
@@ -138,7 +138,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->loadWindowTitleSwitches(obj);
 		switcher->loadScreenRegionSwitches(obj);
 		switcher->loadPauseSwitches(obj);
-		switcher->loadSceneRoundTripSwitches(obj);
+		switcher->loadSceneSequenceSwitches(obj);
 		switcher->loadSceneTransitions(obj);
 		switcher->loadIdleSwitches(obj);
 		switcher->loadExecutableSwitches(obj);
@@ -236,7 +236,7 @@ void SwitcherData::Thread()
 						       transition);
 				break;
 			case round_trip_func:
-				checkSceneRoundTrip(match, scene, transition,
+				checkSceneSequence(match, scene, transition,
 						    lock);
 				if (sceneChangedDuringWait()) //scene might have changed during the sleep
 				{

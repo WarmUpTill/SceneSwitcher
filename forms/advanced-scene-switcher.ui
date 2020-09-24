@@ -3359,7 +3359,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="sceneRoundTripTab">
+     <widget class="QWidget" name="sceneSequenceTab">
       <attribute name="title">
        <string notr="true">Sequence</string>
       </attribute>
@@ -3374,7 +3374,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="sceneRoundTripScenes1">
+          <widget class="QComboBox" name="sceneSequenceScenes1">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -3397,7 +3397,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="sceneRoundTripScenes2">
+          <widget class="QComboBox" name="sceneSequenceScenes2">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -3420,7 +3420,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QDoubleSpinBox" name="sceneRoundTripSpinBox">
+          <widget class="QDoubleSpinBox" name="sceneSequenceSpinBox">
            <property name="suffix">
             <string/>
            </property>
@@ -3430,7 +3430,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="sceneRoundTripDelayUnits"/>
+          <widget class="QComboBox" name="sceneSequenceDelayUnits"/>
          </item>
          <item>
           <widget class="QLabel" name="label_17">
@@ -3440,7 +3440,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="sceneRoundTripTransitions"/>
+          <widget class="QComboBox" name="sceneSequenceTransitions"/>
          </item>
          <item>
           <spacer name="horizontalSpacer_9">
@@ -3465,7 +3465,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="sceneRoundTrips">
+        <widget class="QListWidget" name="sceneSequences">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -3480,7 +3480,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_10">
          <item>
-          <widget class="QPushButton" name="sceneRoundTripAdd">
+          <widget class="QPushButton" name="sceneSequenceAdd">
            <property name="maximumSize">
             <size>
              <width>22</width>
@@ -3496,7 +3496,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="sceneRoundTripRemove">
+          <widget class="QPushButton" name="sceneSequenceRemove">
            <property name="maximumSize">
             <size>
              <width>22</width>
@@ -3551,7 +3551,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="sceneRoundTripUp">
+          <widget class="QPushButton" name="sceneSequenceUp">
            <property name="maximumSize">
             <size>
              <width>22</width>
@@ -3574,7 +3574,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="sceneRoundTripDown">
+          <widget class="QPushButton" name="sceneSequenceDown">
            <property name="maximumSize">
             <size>
              <width>22</width>
@@ -3627,14 +3627,14 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_28">
          <item>
-          <widget class="QPushButton" name="sceneRoundTripSave">
+          <widget class="QPushButton" name="sceneSequenceSave">
            <property name="text">
             <string>Save Round Trips to file</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="sceneRoundTripLoad">
+          <widget class="QPushButton" name="sceneSequenceLoad">
            <property name="text">
             <string>Load Round Trips from file</string>
            </property>

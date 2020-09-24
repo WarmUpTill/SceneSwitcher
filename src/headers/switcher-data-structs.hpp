@@ -69,8 +69,8 @@ struct SwitcherData {
 
 	std::vector<std::string> ignoreWindowsSwitches;
 
-	std::vector<SceneRoundTripSwitch> sceneRoundTripSwitches;
-	int sceneRoundTripUnitMultiplier = 1;
+	std::vector<SceneSequenceSwitch> sceneSequenceSwitches;
+	int sceneSequenceMultiplier = 1;
 
 	std::vector<RandomSwitch> randomSwitches;
 
@@ -144,7 +144,7 @@ struct SwitcherData {
 	void autoStopStreamAndRecording();
 	void autoStartStreamRecording();
 	bool checkPause();
-	void checkSceneRoundTrip(bool &match, OBSWeakSource &scene,
+	void checkSceneSequence(bool &match, OBSWeakSource &scene,
 				 OBSWeakSource &transition,
 				 std::unique_lock<std::mutex> &lock);
 	void checkIdleSwitch(bool &match, OBSWeakSource &scene,
@@ -171,7 +171,7 @@ struct SwitcherData {
 	void saveWindowTitleSwitches(obs_data_t *obj);
 	void saveScreenRegionSwitches(obs_data_t *obj);
 	void savePauseSwitches(obs_data_t *obj);
-	void saveSceneRoundTripSwitches(obs_data_t *obj);
+	void saveSceneSequenceSwitches(obs_data_t *obj);
 	void saveSceneTransitions(obs_data_t *obj);
 	void saveIdleSwitches(obs_data_t *obj);
 	void saveExecutableSwitches(obs_data_t *obj);
@@ -185,7 +185,7 @@ struct SwitcherData {
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
 	void loadPauseSwitches(obs_data_t *obj);
-	void loadSceneRoundTripSwitches(obs_data_t *obj);
+	void loadSceneSequenceSwitches(obs_data_t *obj);
 	void loadSceneTransitions(obs_data_t *obj);
 	void loadIdleSwitches(obs_data_t *obj);
 	void loadExecutableSwitches(obs_data_t *obj);
