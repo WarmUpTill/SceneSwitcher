@@ -158,8 +158,6 @@ void SwitcherData::saveRandomSwitches(obs_data_t *obj)
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
 			obs_data_set_double(array_obj, "delay", s.delay);
-			obs_data_set_string(array_obj, "str",
-					    s.randomSwitchStr.c_str());
 			obs_data_array_push_back(randomArray, array_obj);
 			obs_source_release(source);
 			obs_source_release(transition);
@@ -186,11 +184,16 @@ void SwitcherData::loadRandomSwitches(obs_data_t *obj)
 		const char *transition =
 			obs_data_get_string(array_obj, "transition");
 		double delay = obs_data_get_double(array_obj, "delay");
-		const char *str = obs_data_get_string(array_obj, "str");
+
+		std::string randomSwitchStr =
+			MakeRandomSwitchName(scene, transition, delay)
+				.toUtf8()
+				.constData();
 
 		switcher->randomSwitches.emplace_back(
 			GetWeakSourceByName(scene),
-			GetWeakTransitionByName(transition), delay, str);
+			GetWeakTransitionByName(transition), delay,
+			randomSwitchStr);
 
 		obs_data_release(array_obj);
 	}

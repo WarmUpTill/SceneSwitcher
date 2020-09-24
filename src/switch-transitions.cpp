@@ -371,8 +371,6 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 			obs_data_set_string(array_obj, "Scene2", sceneName2);
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
-			obs_data_set_string(array_obj, "Str",
-					    s.sceneTransitionStr.c_str());
 			obs_data_array_push_back(sceneTransitionsArray,
 						 array_obj);
 			obs_source_release(source1);
@@ -399,8 +397,6 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 			obs_data_set_string(array_obj, "Scene", sceneName);
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
-			obs_data_set_string(array_obj, "Str",
-					    s.sceneTransitionStr.c_str());
 			obs_data_array_push_back(defaultTransitionsArray,
 						 array_obj);
 			obs_source_release(source);
@@ -432,8 +428,11 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 		const char *scene2 = obs_data_get_string(array_obj, "Scene2");
 		const char *transition =
 			obs_data_get_string(array_obj, "transition");
-		const char *sceneTransitionsStr =
-			obs_data_get_string(array_obj, "Str");
+
+		std::string sceneTransitionsStr =
+			MakeSceneTransitionName(scene1, scene2, transition)
+				.toUtf8()
+				.constData();
 
 		switcher->sceneTransitions.emplace_back(
 			GetWeakSourceByName(scene1),
@@ -458,8 +457,11 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 		const char *scene = obs_data_get_string(array_obj, "Scene");
 		const char *transition =
 			obs_data_get_string(array_obj, "transition");
-		const char *sceneTransitionsStr =
-			obs_data_get_string(array_obj, "Str");
+
+		std::string sceneTransitionsStr =
+			MakeDefaultSceneTransitionName(scene, transition)
+				.toUtf8()
+				.constData();
 
 		switcher->defaultSceneTransitions.emplace_back(
 			GetWeakSourceByName(scene),

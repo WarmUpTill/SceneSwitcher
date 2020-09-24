@@ -383,8 +383,6 @@ void SwitcherData::saveSceneRoundTripSwitches(obs_data_t *obj)
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
 			obs_data_set_double(array_obj, "delay", s.delay);
-			obs_data_set_string(array_obj, "sceneRoundTripStr",
-					    s.sceneRoundTripStr.c_str());
 			obs_data_array_push_back(sceneRoundTripArray,
 						 array_obj);
 			obs_source_release(source1);
