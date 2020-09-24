@@ -381,7 +381,13 @@ void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
 		const char *window =
 			obs_data_get_string(array_obj, "window_title");
 		bool fullscreen = obs_data_get_bool(array_obj, "fullscreen");
+#if __APPLE__
+		// TODO:
+		// not implemented on MacOS as I cannot test it
+		bool maximized = false;
+#else
 		bool maximized = obs_data_get_bool(array_obj, "maximized");
+#endif
 		bool focus = obs_data_get_bool(array_obj, "focus") ||
 			     !obs_data_has_user_value(array_obj, "focus");
 
