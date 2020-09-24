@@ -36,3 +36,9 @@ struct FileIOData {
 	bool writeEnabled = false;
 	std::string writePath;
 };
+
+static inline QString MakeFileSwitchName(const QString &scene,
+					 const QString &transition,
+					 const QString &fileName,
+					 const QString &text, bool useRegex,
+					 bool useTime);

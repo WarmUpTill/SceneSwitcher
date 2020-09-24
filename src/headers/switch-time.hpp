@@ -7,6 +7,18 @@
 constexpr auto time_func = 7;
 constexpr auto default_priority_7 = time_func;
 
+typedef enum {
+	ANY_DAY = 0,
+	MONDAY = 1,
+	TUSEDAY = 2,
+	WEDNESDAY = 3,
+	THURSDAY = 4,
+	FRIDAY = 5,
+	SATURDAY = 6,
+	SUNDAY = 7,
+	LIVE = 8
+} timeTrigger;
+
 struct TimeSwitch : SceneSwitcherEntry {
 	timeTrigger trigger;
 	QTime time;
@@ -24,3 +36,8 @@ struct TimeSwitch : SceneSwitcherEntry {
 	{
 	}
 };
+
+static inline QString MakeTimeSwitchName(const QString &scene,
+					 const QString &transition,
+					 const timeTrigger &trigger,
+					 const QTime &time);

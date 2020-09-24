@@ -13,16 +13,19 @@ struct SceneSwitcherEntry {
 		       WeakSourceValid(transition);
 	}
 
-	virtual const char* getType() { return "none"; }
+	virtual const char *getType() = 0;
+
+	// TODO
+	//virtual bool checkMatch() = 0;
 
 	virtual void SceneSwitcherEntry::logMatch()
 	{
 		obs_source_t *s = obs_weak_source_get_source(scene);
-		const char* name = obs_source_get_name(s);
+		const char *sceneName = obs_source_get_name(s);
 		obs_source_release(s);
 		blog(LOG_INFO,
-		     "Advanced Scene Switcher match for %s for scene %s",
-		     getType(), name);
+		     "Advanced Scene Switcher match for '%s' - switch to scene '%s'",
+		     getType(), sceneName);
 	}
 
 	inline SceneSwitcherEntry() : usePreviousScene(false) {}

@@ -21,3 +21,8 @@ struct ExecutableSceneSwitch : SceneSwitcherEntry {
 	{
 	}
 };
+
+static inline QString MakeSwitchNameExecutable(const QString &scene,
+					       const QString &value,
+					       const QString &transition,
+					       bool inFocus);

@@ -213,3 +213,12 @@ void SceneSwitcher::setupRandomTab()
 		item->setData(Qt::UserRole, text);
 	}
 }
+
+static inline QString MakeRandomSwitchName(const QString &scene,
+					   const QString &transition,
+					   double &delay)
+{
+	return QStringLiteral("[") + scene + QStringLiteral(", ") + transition +
+	       QStringLiteral("]: ") + QString::number(delay) +
+	       QStringLiteral(" seconds");
+}

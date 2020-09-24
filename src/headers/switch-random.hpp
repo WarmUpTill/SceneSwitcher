@@ -17,3 +17,7 @@ struct RandomSwitch : SceneSwitcherEntry {
 	{
 	}
 };
+
+static inline QString MakeRandomSwitchName(const QString &scene,
+					   const QString &transition,
+					   double &delay);

@@ -471,3 +471,27 @@ void SceneSwitcher::setupFileTab()
 		ui->readPathLineEdit->setDisabled(true);
 	}
 }
+
+static inline QString MakeFileSwitchName(const QString &scene,
+					 const QString &transition,
+					 const QString &fileName,
+					 const QString &text, bool useRegex,
+					 bool useTime)
+{
+	QString switchName = QStringLiteral("Switch to ") + scene +
+			     QStringLiteral(" using ") + transition +
+			     QStringLiteral(" if ") + fileName;
+	if (useTime)
+		switchName += QStringLiteral(" was modified and");
+	switchName += QStringLiteral(" contains");
+	if (useRegex)
+		switchName += QStringLiteral(" (RegEx): \n\"");
+	else
+		switchName += QStringLiteral(": \n\"");
+	if (text.length() > 30)
+		switchName += text.left(27) + QStringLiteral("...\"");
+	else
+		switchName += text + QStringLiteral("\"");
+
+	return switchName;
+}

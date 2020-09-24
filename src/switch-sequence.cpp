@@ -496,3 +496,14 @@ void SceneSwitcher::setupSequenceTab()
 		break;
 	}
 }
+
+static inline QString MakeSceneRoundTripSwitchName(const QString &scene1,
+						   const QString &scene2,
+						   const QString &transition,
+						   double delay)
+{
+	return scene1 + QStringLiteral(" -> wait for ") +
+	       QString::number(delay) + QStringLiteral(" seconds -> ") +
+	       scene2 + QStringLiteral(" (using ") + transition +
+	       QStringLiteral(" transition)");
+}

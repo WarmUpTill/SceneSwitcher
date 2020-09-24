@@ -25,6 +25,10 @@ struct SceneTransition : SceneSwitcherEntry {
 	}
 };
 
+static inline QString MakeSceneTransitionName(const QString &scene1,
+					      const QString &scene2,
+					      const QString &transition);
+
 struct DefaultSceneTransition : SceneSwitcherEntry {
 	std::string sceneTransitionStr;
 
@@ -38,3 +42,6 @@ struct DefaultSceneTransition : SceneSwitcherEntry {
 	{
 	}
 };
+
+static inline QString MakeDefaultSceneTransitionName(const QString &scene,
+						     const QString &transition);

@@ -25,3 +25,8 @@ struct ScreenRegionSwitch : SceneSwitcherEntry {
 	{
 	}
 };
+
+static inline QString MakeScreenRegionSwitchName(const QString &scene,
+						 const QString &transition,
+						 int minX, int minY, int maxX,
+						 int maxY);

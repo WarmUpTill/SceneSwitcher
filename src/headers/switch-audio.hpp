@@ -108,3 +108,8 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 		return *this;
 	}
 };
+
+static inline QString MakeAudioSwitchName(const QString &scene,
+					  const QString &transition,
+					  const QString &audioSrouce,
+					  const int &volume);

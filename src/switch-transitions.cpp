@@ -509,3 +509,17 @@ void SceneSwitcher::setupTransitionsTab()
 	ui->transitionOverridecheckBox->setChecked(
 		switcher->tansitionOverrideOverride);
 }
+
+static inline QString MakeSceneTransitionName(const QString &scene1,
+					      const QString &scene2,
+					      const QString &transition)
+{
+	return scene1 + QStringLiteral(" --- ") + transition +
+	       QStringLiteral(" --> ") + scene2;
+}
+
+static inline QString MakeDefaultSceneTransitionName(const QString &scene,
+						     const QString &transition)
+{
+	return scene + QStringLiteral(" --> ") + transition;
+}

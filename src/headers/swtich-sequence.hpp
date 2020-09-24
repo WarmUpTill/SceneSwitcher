@@ -37,3 +37,8 @@ struct SceneRoundTripSwitch : SceneSwitcherEntry {
 	{
 	}
 };
+
+static inline QString MakeSceneRoundTripSwitchName(const QString &scene1,
+						   const QString &scene2,
+						   const QString &transition,
+						   double delay);
