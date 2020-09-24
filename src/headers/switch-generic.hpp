@@ -7,7 +7,7 @@ struct SceneSwitcherEntry {
 	OBSWeakSource transition;
 	bool usePreviousScene;
 
-	virtual bool SceneSwitcherEntry::valid()
+	virtual bool valid()
 	{
 		return (usePreviousScene || WeakSourceValid(scene)) &&
 		       WeakSourceValid(transition);
@@ -18,7 +18,7 @@ struct SceneSwitcherEntry {
 	// TODO
 	//virtual bool checkMatch() = 0;
 
-	virtual void SceneSwitcherEntry::logMatch()
+	virtual void logMatch()
 	{
 		obs_source_t *s = obs_weak_source_get_source(scene);
 		const char *sceneName = obs_source_get_name(s);
