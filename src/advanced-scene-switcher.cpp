@@ -112,7 +112,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->saveWindowTitleSwitches(obj);
 		switcher->saveScreenRegionSwitches(obj);
 		switcher->savePauseSwitches(obj);
-		switcher->saveSceneRoundTripSwitches(obj);
+		switcher->saveSceneSequenceSwitches(obj);
 		switcher->saveSceneTransitions(obj);
 		switcher->saveIdleSwitches(obj);
 		switcher->saveExecutableSwitches(obj);
@@ -138,7 +138,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->loadWindowTitleSwitches(obj);
 		switcher->loadScreenRegionSwitches(obj);
 		switcher->loadPauseSwitches(obj);
-		switcher->loadSceneRoundTripSwitches(obj);
+		switcher->loadSceneSequenceSwitches(obj);
 		switcher->loadSceneTransitions(obj);
 		switcher->loadIdleSwitches(obj);
 		switcher->loadExecutableSwitches(obj);
@@ -153,9 +153,11 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 		switcher->m.unlock();
 
-		if (switcher->stop)
-			switcher->Stop();
-		else
+		// stop the scene switcher at least once
+		// to avoid issues with scene collection changes
+		bool start = !switcher->stop;
+		switcher->Stop();
+		if (start)
 			switcher->Start();
 	}
 }
@@ -166,9 +168,6 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 void SwitcherData::Thread()
 {
 	blog(LOG_INFO, "Advanced Scene Switcher started");
-	//to avoid scene duplication when rapidly switching scene collection
-	std::this_thread::sleep_for(std::chrono::seconds(2));
-
 	int sleep = 0;
 
 	while (true) {
@@ -237,7 +236,7 @@ void SwitcherData::Thread()
 						       transition);
 				break;
 			case round_trip_func:
-				checkSceneRoundTrip(match, scene, transition,
+				checkSceneSequence(match, scene, transition,
 						    lock);
 				if (sceneChangedDuringWait()) //scene might have changed during the sleep
 				{

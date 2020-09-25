@@ -37,7 +37,7 @@ public:
 	int PauseScenesFindByData(const QString &scene);
 	int PauseWindowsFindByData(const QString &window);
 	int IgnoreWindowsFindByData(const QString &window);
-	int SceneRoundTripFindByData(const QString &scene1);
+	int SceneSequenceFindByData(const QString &scene1);
 	int SceneTransitionsFindByData(const QString &scene1,
 				       const QString &scene2);
 	int DefaultTransitionsFindByData(const QString &scene);
@@ -106,14 +106,14 @@ public slots:
 	void on_ignoreWindowsAdd_clicked();
 	void on_ignoreWindowsRemove_clicked();
 
-	void on_sceneRoundTrips_currentRowChanged(int idx);
-	void on_sceneRoundTripAdd_clicked();
-	void on_sceneRoundTripRemove_clicked();
-	void on_sceneRoundTripSave_clicked();
-	void on_sceneRoundTripLoad_clicked();
-	void on_sceneRoundTripUp_clicked();
-	void on_sceneRoundTripDown_clicked();
-	void on_sceneRoundTripDelayUnits_currentIndexChanged(int index);
+	void on_sceneSequences_currentRowChanged(int idx);
+	void on_sceneSequenceAdd_clicked();
+	void on_sceneSequenceRemove_clicked();
+	void on_sceneSequenceSave_clicked();
+	void on_sceneSequenceLoad_clicked();
+	void on_sceneSequenceUp_clicked();
+	void on_sceneSequenceDown_clicked();
+	void on_sceneSequenceDelayUnits_currentIndexChanged(int index);
 
 	void on_autoStopSceneCheckBox_stateChanged(int state);
 	void on_autoStopScenes_currentTextChanged(const QString &text);
@@ -205,6 +205,7 @@ void GetWindowList(std::vector<std::string> &windows);
 void GetWindowList(QStringList &windows); // Overloaded
 void GetCurrentWindowTitle(std::string &title);
 bool isFullscreen(std::string &title);
+bool isMaximized(std::string &title);
 
 /********************************************************************************
  * Screenregion helper

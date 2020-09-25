@@ -1,7 +1,6 @@
 #include <QFileDialog>
 #include <QTextStream>
 #include <QDateTime>
-#include <obs.hpp>
 #include <curl/curl.h>
 
 #include "headers/advanced-scene-switcher.hpp"
@@ -129,7 +128,8 @@ std::string getRemoteData(std::string &url)
 
 	if (switcher->curl && f_curl_setopt && f_curl_perform) {
 		f_curl_setopt(switcher->curl, CURLOPT_URL, url.c_str());
-		f_curl_setopt(switcher->curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+		f_curl_setopt(switcher->curl, CURLOPT_WRITEFUNCTION,
+			      WriteCallback);
 		f_curl_setopt(switcher->curl, CURLOPT_WRITEDATA, &readBuffer);
 		f_curl_perform(switcher->curl);
 	}
@@ -217,9 +217,7 @@ void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 			match = true;
 
 			if (verbose)
-				blog(LOG_INFO,
-				     "Advanced Scene Switcher file match");
-
+				s.logMatch();
 			break;
 		}
 	}
@@ -310,7 +308,7 @@ void SceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 
-	if (switcher->fileSwitches.size() <= idx)
+	if ((int)switcher->fileSwitches.size() <= idx)
 		return;
 	FileSwitch s = switcher->fileSwitches[idx];
 
@@ -472,4 +470,28 @@ void SceneSwitcher::setupFileTab()
 		ui->browseButton_2->setDisabled(true);
 		ui->readPathLineEdit->setDisabled(true);
 	}
+}
+
+static inline QString MakeFileSwitchName(const QString &scene,
+					 const QString &transition,
+					 const QString &fileName,
+					 const QString &text, bool useRegex,
+					 bool useTime)
+{
+	QString switchName = QStringLiteral("Switch to ") + scene +
+			     QStringLiteral(" using ") + transition +
+			     QStringLiteral(" if ") + fileName;
+	if (useTime)
+		switchName += QStringLiteral(" was modified and");
+	switchName += QStringLiteral(" contains");
+	if (useRegex)
+		switchName += QStringLiteral(" (RegEx): \n\"");
+	else
+		switchName += QStringLiteral(": \n\"");
+	if (text.length() > 30)
+		switchName += text.left(27) + QStringLiteral("...\"");
+	else
+		switchName += text + QStringLiteral("\"");
+
+	return switchName;
 }

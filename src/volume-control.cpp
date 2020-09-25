@@ -20,7 +20,7 @@ QWeakPointer<VolumeMeterTimer> VolumeMeter::updateTimer;
 void VolControl::OBSVolumeChanged(void *data, float db)
 {
 	Q_UNUSED(db);
-	VolControl *volControl = static_cast<VolControl *>(data);
+	Q_UNUSED(data);
 }
 
 void VolControl::OBSVolumeLevel(void *data,
@@ -35,6 +35,7 @@ void VolControl::OBSVolumeLevel(void *data,
 
 void VolControl::SliderChanged(int vol)
 {
+	Q_UNUSED(vol);
 	updateText();
 }
 

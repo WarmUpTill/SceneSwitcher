@@ -15,7 +15,8 @@ QLibrary *loaded_curl_lib = nullptr;
 bool resolveCurl()
 {
 	f_curl_init = (initFunction)loaded_curl_lib->resolve("curl_easy_init");
-	f_curl_setopt = (setOptFunction)loaded_curl_lib->resolve("curl_easy_setopt");
+	f_curl_setopt =
+		(setOptFunction)loaded_curl_lib->resolve("curl_easy_setopt");
 	f_curl_perform =
 		(performFunction)loaded_curl_lib->resolve("curl_easy_perform");
 	f_curl_cleanup =
@@ -43,7 +44,8 @@ bool loadCurl()
 
 	for (QString path : locations) {
 		blog(LOG_INFO, "trying '%s'", path.toUtf8().constData());
-		QFileInfo libPath(QDir(path).absoluteFilePath(CURL_LIBRARY_NAME));
+		QFileInfo libPath(
+			QDir(path).absoluteFilePath(curl_library_name));
 
 		if (libPath.exists() && libPath.isFile()) {
 			QString libFilePath = libPath.absoluteFilePath();

@@ -1,5 +1,4 @@
 #include "headers/advanced-scene-switcher.hpp"
-
 #include "headers/volume-control.hpp"
 
 void SceneSwitcher::on_audioSwitches_currentRowChanged(int idx)
@@ -193,7 +192,6 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 
 	for (AudioSwitch &s : audioSwitches) {
 		obs_source_t *as = obs_weak_source_get_source(s.audioSource);
-		const char *name = obs_source_get_name(as);
 		bool audioActive = obs_source_active(as);
 		obs_source_release(as);
 
@@ -207,10 +205,7 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 			match = true;
 
 			if (verbose)
-				blog(LOG_INFO,
-				     "Advanced Scene Switcher audio match for %s",
-				     name);
-
+				s.logMatch();
 			break;
 		}
 	}
@@ -324,4 +319,17 @@ void SceneSwitcher::setupAudioTab()
 			new QListWidgetItem(listText, ui->audioSwitches);
 		item->setData(Qt::UserRole, listText);
 	}
+}
+
+static inline QString MakeAudioSwitchName(const QString &scene,
+					  const QString &transition,
+					  const QString &audioSrouce,
+					  const int &volume)
+{
+	QString switchName = QStringLiteral("When volume of ") + audioSrouce +
+			     QStringLiteral(" is above ") +
+			     QString::number(volume) +
+			     QStringLiteral("% switch to ") + scene +
+			     QStringLiteral(" using ") + transition;
+	return switchName;
 }

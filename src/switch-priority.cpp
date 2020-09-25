@@ -1,10 +1,11 @@
 #include <algorithm>
+
 #include "headers/advanced-scene-switcher.hpp"
 
 void SceneSwitcher::on_threadPriority_currentTextChanged(const QString &text)
 {
-	if (loading ||
-	    ui->threadPriority->count() != switcher->threadPriorities.size())
+	if (loading || ui->threadPriority->count() !=
+			       (int)switcher->threadPriorities.size())
 		return;
 
 	std::lock_guard<std::mutex> lock(switcher->m);
