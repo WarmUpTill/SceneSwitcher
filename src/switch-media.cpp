@@ -258,7 +258,9 @@ void SceneSwitcher::setupMediaTab()
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
 		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
-		if (strcmp(obs_source_get_id(source), "ffmpeg_source") == 0) {
+		std::string sourceId = obs_source_get_id(source);
+		if (sourceId.compare("ffmpeg_source") == 0 ||
+		    sourceId.compare("vlc_source") == 0) {
 			const char *name = obs_source_get_name(source);
 			combo->addItem(name);
 		}
