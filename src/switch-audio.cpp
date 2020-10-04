@@ -1,3 +1,6 @@
+#include <QWidget>
+#include <QHBoxLayout>
+
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/volume-control.hpp"
 
@@ -289,20 +292,7 @@ void SceneSwitcher::setupAudioTab()
 {
 	populateSceneSelection(ui->audioScenes, true);
 	populateTransitionSelection(ui->audioTransitions);
-
-	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
-	{
-		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
-		uint32_t flags = obs_source_get_output_flags(source);
-
-		if ((flags & OBS_SOURCE_AUDIO) != 0) {
-			const char *name = obs_source_get_name(source);
-			combo->addItem(name);
-		}
-		return true;
-	};
-
-	obs_enum_sources(sourceEnum, ui->audioSources);
+	populateAudioSelection(ui->audioSources);
 
 	for (auto &s : switcher->audioSwitches) {
 		std::string sceneName = (s.usePreviousScene)
@@ -315,9 +305,18 @@ void SceneSwitcher::setupAudioTab()
 						       audioSourceName.c_str(),
 						       s.volumeThreshold);
 
-		QListWidgetItem *item =
-			new QListWidgetItem(listText, ui->audioSwitches);
-		item->setData(Qt::UserRole, listText);
+		//QListWidgetItem *item =
+		//	new QListWidgetItem(listText, ui->audioSwitches);
+		//item->setData(Qt::UserRole, listText);
+
+		QListWidgetItem *item;
+		item = new QListWidgetItem(ui->audioSwitches);
+		ui->audioSwitches->addItem(item);
+		AudioSwitchWidget *sw = new AudioSwitchWidget(
+			nullptr, sceneName.c_str(), transitionName.c_str(),
+			audioSourceName.c_str(), s.volumeThreshold);
+		item->setSizeHint(sw->minimumSizeHint());
+		ui->audioSwitches->setItemWidget(item, sw);
 	}
 }
 
@@ -332,4 +331,65 @@ static inline QString MakeAudioSwitchName(const QString &scene,
 			     QStringLiteral("% switch to ") + scene +
 			     QStringLiteral(" using ") + transition;
 	return switchName;
+}
+
+AudioSwitchWidget::AudioSwitchWidget(QWidget *parent, const QString &audioScene,
+				     const QString &audioTransition,
+				     const QString &audioSource,
+				     const int &threshold)
+	: QWidget(parent)
+{
+	audioScenes = new QComboBox();
+	audioTransitions = new QComboBox();
+	audioSources = new QComboBox();
+	audioVolumeThreshold = new QSpinBox();
+
+	obs_source_t *soruce =
+		obs_get_source_by_name(audioSource.toUtf8().constData());
+	volMeter = new VolControl(soruce);
+	obs_source_release(soruce);
+
+	whenLabel = new QLabel("When the volume of");
+	aboveLabel = new QLabel("is above");
+	switchLabel = new QLabel("switch to");
+	usingLabel = new QLabel("using");
+
+	audioVolumeThreshold->setSuffix("%");
+	audioVolumeThreshold->setMaximum(100);
+	audioVolumeThreshold->setMinimum(0);
+
+	QWidget::connect(volMeter->GetSlider(), SIGNAL(valueChanged(int)),
+			 audioVolumeThreshold, SLOT(setValue(int)));
+	QWidget::connect(audioVolumeThreshold, SIGNAL(valueChanged(int)),
+			 volMeter->GetSlider(), SLOT(setValue(int)));
+
+	SceneSwitcher::populateSceneSelection(audioScenes, true);
+	SceneSwitcher::populateTransitionSelection(audioTransitions);
+	SceneSwitcher::populateAudioSelection(audioSources);
+
+	audioScenes->setCurrentText(audioScene);
+	audioTransitions->setCurrentText(audioTransition);
+	audioSources->setCurrentText(audioSource);
+	audioVolumeThreshold->setValue(threshold);
+
+	setStyleSheet("* { background-color: transparent; }");
+
+	QHBoxLayout *switchLayout = new QHBoxLayout;
+
+	switchLayout->addWidget(whenLabel);
+	switchLayout->addWidget(audioSources);
+	switchLayout->addWidget(aboveLabel);
+	switchLayout->addWidget(audioVolumeThreshold);
+	switchLayout->addWidget(switchLabel);
+	switchLayout->addWidget(audioScenes);
+	switchLayout->addWidget(usingLabel);
+	switchLayout->addWidget(audioTransitions);
+	switchLayout->addStretch();
+
+	QVBoxLayout *mainLayout = new QVBoxLayout;
+
+	mainLayout->addLayout(switchLayout);
+	mainLayout->addWidget(volMeter);
+
+	setLayout(mainLayout);
 }

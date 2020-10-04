@@ -1,7 +1,12 @@
 #pragma once
+#include <QComboBox>
+#include <QSpinBox>
+#include <QLabel>
 #include <string>
+
 #include "utility.hpp"
 #include "switch-generic.hpp"
+#include "volume-control.hpp"
 
 constexpr auto audio_func = 8;
 constexpr auto default_priority_8 = audio_func;
@@ -113,3 +118,27 @@ static inline QString MakeAudioSwitchName(const QString &scene,
 					  const QString &transition,
 					  const QString &audioSrouce,
 					  const int &volume);
+
+class AudioSwitchWidget : public QWidget {
+	Q_OBJECT
+
+public:
+	AudioSwitchWidget(QWidget *parent = nullptr,
+			  const QString &audioScene = "<none>",
+			  const QString &audioTransition = "<none>",
+			  const QString &audioSource = "<none>",
+			  const int &threshold = 0);
+
+private:
+	QComboBox *audioScenes;
+	QComboBox *audioTransitions;
+	QComboBox *audioSources;
+	QSpinBox *audioVolumeThreshold;
+
+	VolControl *volMeter;
+
+	QLabel *whenLabel;
+	QLabel *aboveLabel;
+	QLabel *switchLabel;
+	QLabel *usingLabel;
+};

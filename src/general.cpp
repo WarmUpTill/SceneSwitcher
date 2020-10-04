@@ -2,6 +2,8 @@
 #include <QFileDialog>
 #include <QTextStream>
 #include <QMessageBox>
+#include <QPropertyAnimation>
+#include <QGraphicsColorizeEffect>
 
 #include "headers/advanced-scene-switcher.hpp"
 
@@ -79,16 +81,52 @@ void SceneSwitcher::on_checkInterval_valueChanged(int value)
 	switcher->interval = value;
 }
 
+void SceneSwitcher::StartInactivePulse()
+{
+	ui->pluginRunningText->setStyleSheet("QLabel { \
+		border-style: outset; \
+		border-width: 2px; \
+		border-radius: 10px; \
+		border-color: rgb(0,0,0,0) \
+		}");
+
+	QGraphicsColorizeEffect *eEffect =
+		new QGraphicsColorizeEffect(ui->pluginRunningText);
+	ui->pluginRunningText->setGraphicsEffect(eEffect);
+	QPropertyAnimation *paAnimation =
+		new QPropertyAnimation(eEffect, "color");
+	paAnimation->setStartValue(QColor(0, 0, 0, 0));
+	paAnimation->setEndValue(QColor(Qt::red));
+	paAnimation->setDuration(1000);
+
+	connect(paAnimation, &QPropertyAnimation::finished, [paAnimation]() {
+		if (switcher->stop)
+			QTimer::singleShot(1000, [paAnimation] {
+				paAnimation->start();
+			});
+	});
+
+	paAnimation->start();
+}
+
+void SceneSwitcher::ResetInactivePulse()
+{
+	ui->pluginRunningText->setStyleSheet(
+		"QLabel { background-color: rgb(0,0,0,0); }");
+}
+
 void SceneSwitcher::SetStarted()
 {
 	ui->toggleStartButton->setText("Stop");
 	ui->pluginRunningText->setText("Active");
+	ResetInactivePulse();
 }
 
 void SceneSwitcher::SetStopped()
 {
 	ui->toggleStartButton->setText("Start");
 	ui->pluginRunningText->setText("Inactive");
+	StartInactivePulse();
 }
 
 void SceneSwitcher::on_toggleStartButton_clicked()

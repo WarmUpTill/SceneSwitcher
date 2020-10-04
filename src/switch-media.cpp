@@ -254,20 +254,7 @@ void SceneSwitcher::setupMediaTab()
 {
 	populateSceneSelection(ui->mediaScenes, true);
 	populateTransitionSelection(ui->mediaTransitions);
-
-	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
-	{
-		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
-		std::string sourceId = obs_source_get_id(source);
-		if (sourceId.compare("ffmpeg_source") == 0 ||
-		    sourceId.compare("vlc_source") == 0) {
-			const char *name = obs_source_get_name(source);
-			combo->addItem(name);
-		}
-		return true;
-	};
-
-	obs_enum_sources(sourceEnum, ui->mediaSources);
+	populateMediaSelection(ui->mediaSources);
 
 	ui->mediaStates->addItem("None");
 	ui->mediaStates->addItem("Playing");

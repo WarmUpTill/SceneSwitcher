@@ -55,9 +55,6 @@ public:
 	void SetAudioVolumeMeter(const QString &name);
 
 	void loadUI();
-	void populateSceneSelection(QComboBox *sel, bool addPrevious);
-	void populateTransitionSelection(QComboBox *sel);
-	void populateWindowSelection(QComboBox *sel);
 	void setupGeneralTab();
 	void setupTitleTab();
 	void setupExecutableTab();
@@ -73,6 +70,13 @@ public:
 	void setupAudioTab();
 	void setTabOrder();
 
+	static void populateSceneSelection(QComboBox *sel,
+					   bool addPrevious = false);
+	static void populateTransitionSelection(QComboBox *sel);
+	static void populateWindowSelection(QComboBox *sel);
+	static void populateAudioSelection(QComboBox *sel);
+	static void populateMediaSelection(QComboBox *sel);
+
 public slots:
 	void on_switches_currentRowChanged(int idx);
 	void on_up_clicked();
@@ -85,6 +89,8 @@ public slots:
 	void on_startupBehavior_currentIndexChanged(int index);
 	void on_noMatchSwitchScene_currentTextChanged(const QString &text);
 	void on_checkInterval_valueChanged(int value);
+	void StartInactivePulse();
+	void ResetInactivePulse();
 	void on_toggleStartButton_clicked();
 	void on_tabMoved(int from, int to);
 
