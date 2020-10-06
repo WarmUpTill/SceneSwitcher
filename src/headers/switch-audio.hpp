@@ -16,102 +16,24 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	int volumeThreshold;
 	float peak;
 	std::string audioSwitchStr;
-	obs_volmeter_t *volmeter;
+	obs_volmeter_t *volmeter = nullptr;
 
 	const char *getType() { return "audio"; }
-
+	bool valid();
 	static void setVolumeLevel(void *data,
 				   const float magnitude[MAX_AUDIO_CHANNELS],
 				   const float peak[MAX_AUDIO_CHANNELS],
-				   const float inputPeak[MAX_AUDIO_CHANNELS])
-	{
-		UNUSED_PARAMETER(magnitude);
-		UNUSED_PARAMETER(inputPeak);
-		AudioSwitch *s = static_cast<AudioSwitch *>(data);
-
-		s->peak = peak[0];
-		for (int i = 1; i < MAX_AUDIO_CHANNELS; i++)
-			if (peak[i] > s->peak)
-				s->peak = peak[i];
-	}
-
-	bool valid()
-	{
-		return (usePreviousScene || WeakSourceValid(scene)) &&
-		       WeakSourceValid(audioSource) &&
-		       WeakSourceValid(transition);
-	}
+				   const float inputPeak[MAX_AUDIO_CHANNELS]);
+	void resetVolmeter();
 
 	inline AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			   OBSWeakSource audioSource_, int volumeThreshold_,
-			   bool usePreviousScene_, std::string audioSwitchStr_)
-		: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
-		  audioSource(audioSource_),
-		  volumeThreshold(volumeThreshold_),
-		  audioSwitchStr(audioSwitchStr_)
-	{
-		volmeter = obs_volmeter_create(OBS_FADER_LOG);
-		obs_volmeter_add_callback(volmeter, setVolumeLevel, this);
-		obs_source_t *as = obs_weak_source_get_source(audioSource);
-		if (!obs_volmeter_attach_source(volmeter, as)) {
-			const char *name = obs_source_get_name(as);
-			blog(LOG_WARNING,
-			     "failed to attach volmeter to source %s", name);
-		}
-		obs_source_release(as);
-	}
-
-	AudioSwitch(const AudioSwitch &other)
-		: SceneSwitcherEntry(other.scene, other.transition,
-				     other.usePreviousScene),
-		  audioSource(other.audioSource),
-		  volumeThreshold(other.volumeThreshold),
-		  audioSwitchStr(other.audioSwitchStr)
-	{
-		volmeter = obs_volmeter_create(OBS_FADER_LOG);
-		obs_volmeter_add_callback(volmeter, setVolumeLevel, this);
-		obs_source_t *as =
-			obs_weak_source_get_source(other.audioSource);
-		if (!obs_volmeter_attach_source(volmeter, as)) {
-			const char *name = obs_source_get_name(as);
-			blog(LOG_WARNING,
-			     "failed to attach volmeter to source %s", name);
-		}
-		obs_source_release(as);
-	}
-
-	AudioSwitch(AudioSwitch &&other)
-		: SceneSwitcherEntry(other.scene, other.transition,
-				     other.usePreviousScene),
-		  audioSource(other.audioSource),
-		  volumeThreshold(other.volumeThreshold),
-		  audioSwitchStr(other.audioSwitchStr),
-		  volmeter(other.volmeter)
-	{
-		other.volmeter = nullptr;
-	}
-
-	inline ~AudioSwitch()
-	{
-		obs_volmeter_remove_callback(volmeter, setVolumeLevel, this);
-		obs_volmeter_destroy(volmeter);
-	}
-
-	AudioSwitch &operator=(const AudioSwitch &other)
-	{
-		return *this = AudioSwitch(other);
-	}
-
-	AudioSwitch &operator=(AudioSwitch &&other) noexcept
-	{
-		if (this == &other) {
-			return *this;
-		}
-		obs_volmeter_destroy(volmeter);
-		volmeter = other.volmeter;
-		other.volmeter = nullptr;
-		return *this;
-	}
+			   bool usePreviousScene_, std::string audioSwitchStr_);
+	AudioSwitch(const AudioSwitch &other);
+	AudioSwitch(AudioSwitch &&other);
+	inline ~AudioSwitch();
+	AudioSwitch &operator=(const AudioSwitch &other);
+	AudioSwitch &operator=(AudioSwitch &&other) noexcept;
 };
 
 static inline QString MakeAudioSwitchName(const QString &scene,
@@ -123,13 +45,18 @@ class AudioSwitchWidget : public QWidget {
 	Q_OBJECT
 
 public:
-	AudioSwitchWidget(QWidget *parent = nullptr,
-			  const QString &audioScene = "<none>",
-			  const QString &audioTransition = "<none>",
-			  const QString &audioSource = "<none>",
-			  const int &threshold = 0);
+	AudioSwitchWidget(AudioSwitch *s);
+	void UpdateVolmeterSource();
+
+private slots:
+	void SceneChanged(const QString &text);
+	void TransitionChanged(const QString &text);
+	void SourceChanged(const QString &text);
+	void VolumeThresholdChanged(int vol);
 
 private:
+	bool loading = true;
+
 	QComboBox *audioScenes;
 	QComboBox *audioTransitions;
 	QComboBox *audioSources;
@@ -141,4 +68,6 @@ private:
 	QLabel *aboveLabel;
 	QLabel *switchLabel;
 	QLabel *usingLabel;
+
+	AudioSwitch *switchData;
 };
