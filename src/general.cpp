@@ -209,11 +209,11 @@ void SceneSwitcher::UpdateAutoStartScene(const QString &name)
 
 void SwitcherData::autoStartStreamRecording()
 {
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
-	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
-
 	if (autoStartedRecently)
 		return;
+
+	obs_source_t *currentSource = obs_frontend_get_current_scene();
+	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
 	if (ws && autoStartScene == ws) {
 		if ((switcher->autoStartType == STREAMING ||
