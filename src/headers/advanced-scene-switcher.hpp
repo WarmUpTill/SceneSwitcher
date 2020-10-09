@@ -71,11 +71,16 @@ public:
 	void setTabOrder();
 
 	static void populateSceneSelection(QComboBox *sel,
-					   bool addPrevious = false);
-	static void populateTransitionSelection(QComboBox *sel);
-	static void populateWindowSelection(QComboBox *sel);
-	static void populateAudioSelection(QComboBox *sel);
-	static void populateMediaSelection(QComboBox *sel);
+					   bool addPrevious = false,
+					   bool addSelect = true);
+	static void populateTransitionSelection(QComboBox *sel,
+						bool addSelect = true);
+	static void populateWindowSelection(QComboBox *sel,
+					    bool addSelect = true);
+	static void populateAudioSelection(QComboBox *sel,
+					   bool addSelect = true);
+	static void populateMediaSelection(QComboBox *sel,
+					   bool addSelect = true);
 
 public slots:
 	void on_switches_currentRowChanged(int idx);

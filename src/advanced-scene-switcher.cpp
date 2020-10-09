@@ -1,6 +1,7 @@
 #include <QMainWindow>
 #include <QDir>
 #include <QAction>
+#include <QtGui\qstandarditemmodel.h>
 
 #include <condition_variable>
 #include <chrono>
@@ -304,8 +305,23 @@ void SwitcherData::Stop()
 	}
 }
 
-void SceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious)
+void addSelectionEntry(QComboBox *sel, const char *description)
 {
+	sel->addItem(description);
+	QStandardItemModel *model =
+		qobject_cast<QStandardItemModel *>(sel->model());
+	QModelIndex firstIndex =
+		model->index(0, sel->modelColumn(), sel->rootModelIndex());
+	QStandardItem *firstItem = model->itemFromIndex(firstIndex);
+	firstItem->setSelectable(false);
+}
+
+void SceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
+					   bool addSelect)
+{
+	if (addSelect)
+		addSelectionEntry(sel, "--select scene--");
+
 	BPtr<char *> scenes = obs_frontend_get_scene_names();
 	char **temp = scenes;
 	while (*temp) {
@@ -318,8 +334,11 @@ void SceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious)
 		sel->addItem(previous_scene_name);
 }
 
-void SceneSwitcher::populateTransitionSelection(QComboBox *sel)
+void SceneSwitcher::populateTransitionSelection(QComboBox *sel, bool addSelect)
 {
+	if (addSelect)
+		addSelectionEntry(sel, "--select transition--");
+
 	obs_frontend_source_list *transitions = new obs_frontend_source_list();
 	obs_frontend_get_transitions(transitions);
 
@@ -332,8 +351,11 @@ void SceneSwitcher::populateTransitionSelection(QComboBox *sel)
 	obs_frontend_source_list_free(transitions);
 }
 
-void SceneSwitcher::populateWindowSelection(QComboBox *sel)
+void SceneSwitcher::populateWindowSelection(QComboBox *sel, bool addSelect)
 {
+	if (addSelect)
+		addSelectionEntry(sel, "--select window--");
+
 	std::vector<std::string> windows;
 	GetWindowList(windows);
 	sort(windows.begin(), windows.end());
@@ -343,8 +365,11 @@ void SceneSwitcher::populateWindowSelection(QComboBox *sel)
 	}
 }
 
-void SceneSwitcher::populateAudioSelection(QComboBox *sel)
+void SceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
 {
+	if (addSelect)
+		addSelectionEntry(sel, "--select audio source--");
+
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
 		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
@@ -360,8 +385,11 @@ void SceneSwitcher::populateAudioSelection(QComboBox *sel)
 	obs_enum_sources(sourceEnum, sel);
 }
 
-void SceneSwitcher::populateMediaSelection(QComboBox *sel)
+void SceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
 {
+	if (addSelect)
+		addSelectionEntry(sel, "--select media source--");
+
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
 		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
