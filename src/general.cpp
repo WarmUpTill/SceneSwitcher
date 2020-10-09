@@ -414,7 +414,7 @@ int findTabIndex(QTabBar *bar, int pos)
 		}
 	}
 	if (at == -1)
-		blog(LOG_INFO, "Advanced Scene Switcher failed to find tab %s",
+		blog(LOG_INFO, "failed to find tab %s",
 		     tabName.toUtf8().constData());
 
 	return at;
