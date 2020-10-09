@@ -7,13 +7,13 @@ struct SceneSwitcherEntry {
 	OBSWeakSource transition = nullptr;
 	bool usePreviousScene = false;
 
+	virtual const char *getType() = 0;
+	virtual bool initialized() { return scene && transition; }
 	virtual bool valid()
 	{
 		return (usePreviousScene || WeakSourceValid(scene)) &&
 		       WeakSourceValid(transition);
 	}
-
-	virtual const char *getType() = 0;
 
 	// TODO
 	//virtual bool checkMatch() = 0;

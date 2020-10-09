@@ -19,6 +19,7 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	obs_volmeter_t *volmeter = nullptr;
 
 	const char *getType() { return "audio"; }
+	bool initialized();
 	bool valid();
 	static void setVolumeLevel(void *data,
 				   const float magnitude[MAX_AUDIO_CHANNELS],
@@ -48,6 +49,7 @@ class AudioSwitchWidget : public QWidget {
 public:
 	AudioSwitchWidget(AudioSwitch *s);
 	void UpdateVolmeterSource();
+	AudioSwitch& getSwitchData();
 
 private slots:
 	void SceneChanged(const QString &text);
