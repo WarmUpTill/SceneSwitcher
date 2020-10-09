@@ -129,7 +129,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
  ********************************************************************************/
 void SwitcherData::Thread()
 {
-	blog(LOG_INFO, "Advanced Scene Switcher started");
+	blog(LOG_INFO, "started");
 	int sleep = 0;
 
 	while (true) {
@@ -143,13 +143,13 @@ void SwitcherData::Thread()
 			duration = std::chrono::milliseconds(sleep);
 			if (verbose)
 				blog(LOG_INFO,
-				     "Advanced Scene Switcher sleep for %d",
+				     "sleep for %d",
 				     sleep);
 		} else {
 			duration = std::chrono::milliseconds(interval);
 			if (verbose)
 				blog(LOG_INFO,
-				     "Advanced Scene Switcher sleep for %d",
+				     "sleep for %d",
 				     interval);
 		}
 		sleep = 0;
@@ -239,7 +239,7 @@ void SwitcherData::Thread()
 		}
 	}
 endLoop:
-	blog(LOG_INFO, "Advanced Scene Switcher stopped");
+	blog(LOG_INFO, "stopped");
 }
 
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
@@ -265,7 +265,7 @@ void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 
 		if (switcher->verbose)
 			blog(LOG_INFO,
-			     "Advanced Scene Switcher switched scene");
+			     "switched scene");
 	}
 	obs_source_release(currentSource);
 	obs_source_release(source);

@@ -12,6 +12,8 @@
 #include "switcher-data-structs.hpp"
 #include "volume-control.hpp"
 
+#define blog(level, msg, ...) blog(level, "[adv-ss] " msg, ##__VA_ARGS__)
+
 class QCloseEvent;
 
 /*******************************************************************************
