@@ -3,9 +3,9 @@
 #include <obs.hpp>
 
 struct SceneSwitcherEntry {
-	OBSWeakSource scene;
-	OBSWeakSource transition;
-	bool usePreviousScene;
+	OBSWeakSource scene = nullptr;
+	OBSWeakSource transition = nullptr;
+	bool usePreviousScene = false;
 
 	virtual bool valid()
 	{
@@ -28,7 +28,7 @@ struct SceneSwitcherEntry {
 		     getType(), sceneName);
 	}
 
-	inline SceneSwitcherEntry() : usePreviousScene(false) {}
+	inline SceneSwitcherEntry() {}
 
 	inline SceneSwitcherEntry(OBSWeakSource scene_,
 				  OBSWeakSource transition_,

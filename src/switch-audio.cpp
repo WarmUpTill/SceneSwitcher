@@ -80,55 +80,15 @@ int SceneSwitcher::audioFindByData(const QString &source, const int &volume)
 
 void SceneSwitcher::on_audioAdd_clicked()
 {
-	QString sceneName = ui->audioScenes->currentText();
-	QString transitionName = ui->audioTransitions->currentText();
-	QString audioSourceName = ui->audioSources->currentText();
-	int vol = ui->audioVolumeThreshold->value();
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->audioSwitches.emplace_back(AudioSwitch());
 
-	if (sceneName.isEmpty() || audioSourceName.isEmpty())
-		return;
-
-	OBSWeakSource source = GetWeakSourceByQString(sceneName);
-	OBSWeakSource audioSource = GetWeakSourceByQString(audioSourceName);
-	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
-
-	QString text = MakeAudioSwitchName(sceneName, transitionName,
-					   audioSourceName, vol);
-	QVariant v = QVariant::fromValue(text);
-
-	int idx = audioFindByData(audioSourceName, vol);
-
-	if (idx == -1) {
-		std::lock_guard<std::mutex> lock(switcher->m);
-		switcher->audioSwitches.emplace_back(
-			source, transition, audioSource, vol,
-			(sceneName == QString(previous_scene_name)),
-			text.toUtf8().constData());
-		QListWidgetItem *item =
-			new QListWidgetItem(text, ui->audioSwitches);
-		item->setData(Qt::UserRole, v);
-	} else {
-		QListWidgetItem *item = ui->audioSwitches->item(idx);
-		item->setText(text);
-		item->setData(Qt::UserRole, v);
-
-		{
-			std::lock_guard<std::mutex> lock(switcher->m);
-			for (auto &s : switcher->audioSwitches) {
-				if (s.audioSource == audioSource &&
-				    s.volumeThreshold == vol) {
-					s.scene = source;
-					s.transition = transition;
-					s.usePreviousScene =
-						(sceneName ==
-						 QString(previous_scene_name));
-					s.audioSwitchStr =
-						text.toUtf8().constData();
-					break;
-				}
-			}
-		}
-	}
+	QListWidgetItem *item;
+	item = new QListWidgetItem(ui->audioSwitches);
+	ui->audioSwitches->addItem(item);
+	AudioSwitchWidget *sw = new AudioSwitchWidget(&switcher->audioSwitches.back());
+	item->setSizeHint(sw->minimumSizeHint());
+	ui->audioSwitches->setItemWidget(item, sw);
 }
 
 void SceneSwitcher::on_audioRemove_clicked()
@@ -300,14 +260,6 @@ void SceneSwitcher::setupAudioTab()
 						: GetWeakSourceName(s.scene);
 		std::string transitionName = GetWeakSourceName(s.transition);
 		std::string audioSourceName = GetWeakSourceName(s.audioSource);
-		QString listText = MakeAudioSwitchName(sceneName.c_str(),
-						       transitionName.c_str(),
-						       audioSourceName.c_str(),
-						       s.volumeThreshold);
-
-		//QListWidgetItem *item =
-		//	new QListWidgetItem(listText, ui->audioSwitches);
-		//item->setData(Qt::UserRole, listText);
 
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->audioSwitches);

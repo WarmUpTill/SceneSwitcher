@@ -12,9 +12,9 @@ constexpr auto audio_func = 8;
 constexpr auto default_priority_8 = audio_func;
 
 struct AudioSwitch : virtual SceneSwitcherEntry {
-	OBSWeakSource audioSource;
-	int volumeThreshold;
-	float peak;
+	OBSWeakSource audioSource = nullptr;
+	int volumeThreshold = 0;
+	float peak = -1;
 	std::string audioSwitchStr;
 	obs_volmeter_t *volmeter = nullptr;
 
@@ -26,6 +26,7 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 				   const float inputPeak[MAX_AUDIO_CHANNELS]);
 	void resetVolmeter();
 
+	inline AudioSwitch(){};
 	inline AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			   OBSWeakSource audioSource_, int volumeThreshold_,
 			   bool usePreviousScene_, std::string audioSwitchStr_);
