@@ -24,7 +24,6 @@ class SceneSwitcher : public QDialog {
 
 public:
 	std::unique_ptr<Ui_SceneSwitcher> ui;
-	VolControl *volMeter = nullptr;
 	bool loading = true;
 
 	SceneSwitcher(QWidget *parent);
@@ -47,14 +46,12 @@ public:
 	int IgnoreIdleWindowsFindByData(const QString &window);
 	int randomFindByData(const QString &scene);
 	int timeFindByData(const timeTrigger &trigger, const QTime &time);
-	int audioFindByData(const QString &source, const int &volume);
 
 	void UpdateNonMatchingScene(const QString &name);
 	void UpdateAutoStopScene(const QString &name);
 	void UpdateAutoStartScene(const QString &name);
 	void UpdateIdleDataTransition(const QString &name);
 	void UpdateIdleDataScene(const QString &name);
-	void SetAudioVolumeMeter(const QString &name);
 
 	void loadUI();
 	void setupGeneralTab();
@@ -197,8 +194,6 @@ public slots:
 	void on_audioRemove_clicked();
 	void on_audioUp_clicked();
 	void on_audioDown_clicked();
-	void on_audioSwitches_currentRowChanged(int idx);
-	void on_audioSources_currentTextChanged(const QString &text);
 
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();

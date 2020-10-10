@@ -15,7 +15,6 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	OBSWeakSource audioSource = nullptr;
 	int volumeThreshold = 0;
 	float peak = -1;
-	std::string audioSwitchStr;
 	obs_volmeter_t *volmeter = nullptr;
 
 	const char *getType() { return "audio"; }
@@ -30,18 +29,14 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	inline AudioSwitch(){};
 	inline AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			   OBSWeakSource audioSource_, int volumeThreshold_,
-			   bool usePreviousScene_, std::string audioSwitchStr_);
+			   bool usePreviousScene_);
 	AudioSwitch(const AudioSwitch &other);
 	AudioSwitch(AudioSwitch &&other);
 	inline ~AudioSwitch();
 	AudioSwitch &operator=(const AudioSwitch &other);
 	AudioSwitch &operator=(AudioSwitch &&other) noexcept;
+	friend void swap(AudioSwitch &first, AudioSwitch &second);
 };
-
-static inline QString MakeAudioSwitchName(const QString &scene,
-					  const QString &transition,
-					  const QString &audioSrouce,
-					  const int &volume);
 
 class AudioSwitchWidget : public QWidget {
 	Q_OBJECT
@@ -49,7 +44,7 @@ class AudioSwitchWidget : public QWidget {
 public:
 	AudioSwitchWidget(AudioSwitch *s);
 	void UpdateVolmeterSource();
-	AudioSwitch& getSwitchData();
+	AudioSwitch *getSwitchData();
 
 private slots:
 	void SceneChanged(const QString &text);

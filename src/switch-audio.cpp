@@ -4,60 +4,6 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/volume-control.hpp"
 
-void SceneSwitcher::on_audioSwitches_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-}
-
-void SceneSwitcher::on_audioSources_currentTextChanged(const QString &text)
-{
-	SetAudioVolumeMeter(text);
-}
-
-void SceneSwitcher::SetAudioVolumeMeter(const QString &name)
-{
-	obs_source_t *soruce =
-		obs_get_source_by_name(name.toUtf8().constData());
-	if (!soruce) {
-		return;
-	}
-
-	if (volMeter) {
-		ui->audioControlLayout->removeWidget(volMeter);
-		delete volMeter;
-	}
-
-	volMeter = new VolControl(soruce);
-	ui->audioControlLayout->addWidget(volMeter);
-	obs_source_release(soruce);
-
-	QWidget::connect(volMeter->GetSlider(), SIGNAL(valueChanged(int)),
-			 ui->audioVolumeThreshold, SLOT(setValue(int)));
-	QWidget::connect(ui->audioVolumeThreshold, SIGNAL(valueChanged(int)),
-			 volMeter->GetSlider(), SLOT(setValue(int)));
-}
-
-int SceneSwitcher::audioFindByData(const QString &source, const int &volume)
-{
-	QRegExp rx(MakeAudioSwitchName(QStringLiteral(".*"),
-				       QStringLiteral(".*"), source, volume));
-	int count = ui->audioSwitches->count();
-
-	for (int i = 0; i < count; i++) {
-		QListWidgetItem *item = ui->audioSwitches->item(i);
-		QString str = item->data(Qt::UserRole).toString();
-
-		if (rx.exactMatch(str))
-			return i;
-	}
-
-	return -1;
-}
-
 void SceneSwitcher::on_audioAdd_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
@@ -92,14 +38,22 @@ void SceneSwitcher::on_audioUp_clicked()
 {
 	int index = ui->audioSwitches->currentRow();
 	if (index != -1 && index != 0) {
+		delete ui->audioSwitches->itemWidget(
+			ui->audioSwitches->item(index));
+		AudioSwitchWidget *sw =
+			new AudioSwitchWidget(&switcher->audioSwitches[index]);
+
 		ui->audioSwitches->insertItem(
 			index - 1, ui->audioSwitches->takeItem(index));
+		ui->audioSwitches->setItemWidget(
+			ui->audioSwitches->item(index - 1), sw);
+
 		ui->audioSwitches->setCurrentRow(index - 1);
 
 		std::lock_guard<std::mutex> lock(switcher->m);
 
-		iter_swap(switcher->audioSwitches.begin() + index,
-			  switcher->audioSwitches.begin() + index - 1);
+		std::swap(switcher->audioSwitches[index],
+			  switcher->audioSwitches[index - 1]);
 	}
 }
 
@@ -107,14 +61,22 @@ void SceneSwitcher::on_audioDown_clicked()
 {
 	int index = ui->audioSwitches->currentRow();
 	if (index != -1 && index != ui->audioSwitches->count() - 1) {
+		delete ui->audioSwitches->itemWidget(
+			ui->audioSwitches->item(index));
+		AudioSwitchWidget *sw =
+			new AudioSwitchWidget(&switcher->audioSwitches[index]);
+
 		ui->audioSwitches->insertItem(
 			index + 1, ui->audioSwitches->takeItem(index));
+		ui->audioSwitches->setItemWidget(
+			ui->audioSwitches->item(index + 1), sw);
+
 		ui->audioSwitches->setCurrentRow(index + 1);
 
 		std::lock_guard<std::mutex> lock(switcher->m);
 
-		iter_swap(switcher->audioSwitches.begin() + index,
-			  switcher->audioSwitches.begin() + index + 1);
+		std::swap(switcher->audioSwitches[index],
+			  switcher->audioSwitches[index + 1]);
 	}
 }
 
@@ -125,6 +87,9 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 		return;
 
 	for (AudioSwitch &s : audioSwitches) {
+		if (!s.initialized())
+			continue;
+
 		obs_source_t *as = obs_weak_source_get_source(s.audioSource);
 		bool audioActive = obs_source_active(as);
 		obs_source_release(as);
@@ -202,17 +167,11 @@ void SwitcherData::loadAudioSwitches(obs_data_t *obj)
 			obs_data_get_string(array_obj, "audioSource");
 		int vol = obs_data_get_int(array_obj, "volume");
 
-		std::string audioSwitchStr =
-			MakeAudioSwitchName(scene, transition, audioSource, vol)
-				.toUtf8()
-				.constData();
-
 		switcher->audioSwitches.emplace_back(
 			GetWeakSourceByName(scene),
 			GetWeakTransitionByName(transition),
 			GetWeakSourceByName(audioSource), vol,
-			(strcmp(scene, previous_scene_name) == 0),
-			audioSwitchStr);
+			(strcmp(scene, previous_scene_name) == 0));
 
 		obs_data_release(array_obj);
 	}
@@ -221,10 +180,6 @@ void SwitcherData::loadAudioSwitches(obs_data_t *obj)
 
 void SceneSwitcher::setupAudioTab()
 {
-	populateSceneSelection(ui->audioScenes, true);
-	populateTransitionSelection(ui->audioTransitions);
-	populateAudioSelection(ui->audioSources);
-
 	for (auto &s : switcher->audioSwitches) {
 		std::string sceneName = (s.usePreviousScene)
 						? previous_scene_name
@@ -286,12 +241,10 @@ bool AudioSwitch::valid()
 
 inline AudioSwitch::AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 				OBSWeakSource audioSource_,
-				int volumeThreshold_, bool usePreviousScene_,
-				std::string audioSwitchStr_)
+				int volumeThreshold_, bool usePreviousScene_)
 	: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
 	  audioSource(audioSource_),
-	  volumeThreshold(volumeThreshold_),
-	  audioSwitchStr(audioSwitchStr_)
+	  volumeThreshold(volumeThreshold_)
 {
 	volmeter = obs_volmeter_create(OBS_FADER_LOG);
 	obs_volmeter_add_callback(volmeter, setVolumeLevel, this);
@@ -308,8 +261,7 @@ AudioSwitch::AudioSwitch(const AudioSwitch &other)
 	: SceneSwitcherEntry(other.scene, other.transition,
 			     other.usePreviousScene),
 	  audioSource(other.audioSource),
-	  volumeThreshold(other.volumeThreshold),
-	  audioSwitchStr(other.audioSwitchStr)
+	  volumeThreshold(other.volumeThreshold)
 {
 	volmeter = obs_volmeter_create(OBS_FADER_LOG);
 	obs_volmeter_add_callback(volmeter, setVolumeLevel, this);
@@ -327,7 +279,6 @@ AudioSwitch::AudioSwitch(AudioSwitch &&other)
 			     other.usePreviousScene),
 	  audioSource(other.audioSource),
 	  volumeThreshold(other.volumeThreshold),
-	  audioSwitchStr(other.audioSwitchStr),
 	  volmeter(other.volmeter)
 {
 	other.volmeter = nullptr;
@@ -341,6 +292,8 @@ inline AudioSwitch::~AudioSwitch()
 
 AudioSwitch &AudioSwitch::operator=(const AudioSwitch &other)
 {
+	AudioSwitch t(other);
+	swap(*this, t);
 	return *this = AudioSwitch(other);
 }
 
@@ -349,23 +302,27 @@ AudioSwitch &AudioSwitch::operator=(AudioSwitch &&other) noexcept
 	if (this == &other) {
 		return *this;
 	}
-	obs_volmeter_destroy(volmeter);
-	volmeter = other.volmeter;
+
+	swap(*this, other);
+
+	obs_volmeter_remove_callback(other.volmeter, setVolumeLevel, this);
+	obs_volmeter_destroy(other.volmeter);
 	other.volmeter = nullptr;
+
 	return *this;
 }
 
-static inline QString MakeAudioSwitchName(const QString &scene,
-					  const QString &transition,
-					  const QString &audioSrouce,
-					  const int &volume)
+void swap(AudioSwitch &first, AudioSwitch &second)
 {
-	QString switchName = QStringLiteral("When volume of ") + audioSrouce +
-			     QStringLiteral(" is above ") +
-			     QString::number(volume) +
-			     QStringLiteral("% switch to ") + scene +
-			     QStringLiteral(" using ") + transition;
-	return switchName;
+	std::swap(first.scene, second.scene);
+	std::swap(first.transition, second.transition);
+	std::swap(first.usePreviousScene, second.usePreviousScene);
+	std::swap(first.audioSource, second.audioSource);
+	std::swap(first.volumeThreshold, second.volumeThreshold);
+	std::swap(first.peak, second.peak);
+	std::swap(first.volmeter, second.volmeter);
+	first.resetVolmeter();
+	second.resetVolmeter();
 }
 
 AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s)
@@ -448,7 +405,6 @@ AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s)
 
 void AudioSwitchWidget::SceneChanged(const QString &text)
 {
-	// WRONG SIGNAL!
 	if (loading || !switchData)
 		return;
 	std::lock_guard<std::mutex> lock(switcher->m);
@@ -475,9 +431,9 @@ void AudioSwitchWidget::UpdateVolmeterSource()
 	volMeter->GetSlider()->setValue(switchData->volumeThreshold);
 }
 
-AudioSwitch &AudioSwitchWidget::getSwitchData()
+AudioSwitch *AudioSwitchWidget::getSwitchData()
 {
-	return *switchData;
+	return switchData;
 }
 
 void AudioSwitchWidget::TransitionChanged(const QString &text)

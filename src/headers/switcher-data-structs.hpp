@@ -2,6 +2,7 @@
 #include <condition_variable>
 #include <string>
 #include <vector>
+#include <deque>
 #include <mutex>
 #include <QDateTime>
 #include <QThread>
@@ -18,6 +19,7 @@
 #include "switch-transitions.hpp"
 #include "switch-window.hpp"
 #include "swtich-sequence.hpp"
+
 
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
@@ -97,7 +99,7 @@ struct SwitcherData {
 	std::vector<TimeSwitch> timeSwitches;
 	QDateTime liveTime;
 
-	std::vector<AudioSwitch> audioSwitches;
+	std::deque<AudioSwitch> audioSwitches;
 
 	std::vector<int> functionNamesByPriority = std::vector<int>{
 		default_priority_0, default_priority_1, default_priority_2,
