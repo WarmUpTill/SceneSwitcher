@@ -81,7 +81,7 @@ struct SwitcherData {
 	std::vector<FileSwitch> fileSwitches;
 	CURL *curl = nullptr;
 
-	std::vector<ExecutableSceneSwitch> executableSwitches;
+	std::deque<ExecutableSwitch> executableSwitches;
 
 	bool autoStopEnable = false;
 	OBSWeakSource autoStopScene;

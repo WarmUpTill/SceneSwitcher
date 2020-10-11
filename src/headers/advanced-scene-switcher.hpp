@@ -80,6 +80,8 @@ public:
 					   bool addSelect = true);
 	static void populateMediaSelection(QComboBox *sel,
 					   bool addSelect = true);
+	static void populateProcessSelection(QComboBox *sel,
+					     bool addSelect = true);
 
 	bool listMoveUp(QListWidget *list);
 	bool listMoveDown(QListWidget *list);
@@ -159,7 +161,6 @@ public slots:
 	void on_executableDown_clicked();
 	void on_executableAdd_clicked();
 	void on_executableRemove_clicked();
-	void on_executables_currentRowChanged(int idx);
 
 	void on_idleCheckBox_stateChanged(int state);
 	void on_idleTransitions_currentTextChanged(const QString &text);

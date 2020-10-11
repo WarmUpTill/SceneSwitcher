@@ -163,6 +163,17 @@ void SceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
 	obs_enum_sources(sourceEnum, sel);
 }
 
+void SceneSwitcher::populateProcessSelection(QComboBox *sel, bool addSelect)
+{
+	if (addSelect)
+		addSelectionEntry(sel, "--select process--");
+
+	QStringList processes;
+	GetProcessList(processes);
+	for (QString &process : processes)
+		sel->addItem(process);
+}
+
 bool SceneSwitcher::listMoveUp(QListWidget *list)
 {
 	int index = list->currentRow();

@@ -1,121 +1,17 @@
 #include "headers/advanced-scene-switcher.hpp"
 
-int SceneSwitcher::executableFindByData(const QString &exe)
-{
-	int count = ui->executables->count();
-
-	for (int i = 0; i < count; i++) {
-		QListWidgetItem *item = ui->executables->item(i);
-		QString itemExe = item->data(Qt::UserRole).toString();
-
-		if (itemExe == exe)
-			return i;
-	}
-
-	return -1;
-}
-
-void SceneSwitcher::on_executables_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem *item = ui->executables->item(idx);
-
-	QString exec = item->data(Qt::UserRole).toString();
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	for (auto &s : switcher->executableSwitches) {
-		if (exec.compare(s.exe) == 0) {
-			QString sceneName = GetWeakSourceName(s.scene).c_str();
-			QString transitionName =
-				GetWeakSourceName(s.transition).c_str();
-			ui->executableScenes->setCurrentText(sceneName);
-			ui->executable->setCurrentText(exec);
-			ui->executableTransitions->setCurrentText(
-				transitionName);
-			ui->requiresFocusCheckBox->setChecked(s.inFocus);
-			break;
-		}
-	}
-}
-
-void SceneSwitcher::on_executableUp_clicked()
-{
-	int index = ui->executables->currentRow();
-	if (index != -1 && index != 0) {
-		ui->executables->insertItem(index - 1,
-					    ui->executables->takeItem(index));
-		ui->executables->setCurrentRow(index - 1);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-
-		iter_swap(switcher->executableSwitches.begin() + index,
-			  switcher->executableSwitches.begin() + index - 1);
-	}
-}
-
-void SceneSwitcher::on_executableDown_clicked()
-{
-	int index = ui->executables->currentRow();
-	if (index != -1 && index != ui->executables->count() - 1) {
-		ui->executables->insertItem(index + 1,
-					    ui->executables->takeItem(index));
-		ui->executables->setCurrentRow(index + 1);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-
-		iter_swap(switcher->executableSwitches.begin() + index,
-			  switcher->executableSwitches.begin() + index + 1);
-	}
-}
-
 void SceneSwitcher::on_executableAdd_clicked()
 {
-	QString sceneName = ui->executableScenes->currentText();
-	QString exeName = ui->executable->currentText();
-	QString transitionName = ui->executableTransitions->currentText();
-	bool inFocus = ui->requiresFocusCheckBox->isChecked();
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->executableSwitches.emplace_back();
 
-	if (exeName.isEmpty() || sceneName.isEmpty())
-		return;
-
-	OBSWeakSource source = GetWeakSourceByQString(sceneName);
-	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
-	QVariant v = QVariant::fromValue(exeName);
-
-	QString text = MakeSwitchNameExecutable(sceneName, exeName,
-						transitionName, inFocus);
-
-	int idx = executableFindByData(exeName);
-
-	if (idx == -1) {
-		std::lock_guard<std::mutex> lock(switcher->m);
-		switcher->executableSwitches.emplace_back(
-			source, transition, exeName.toUtf8().constData(),
-			inFocus);
-
-		QListWidgetItem *item =
-			new QListWidgetItem(text, ui->executables);
-		item->setData(Qt::UserRole, v);
-	} else {
-		QListWidgetItem *item = ui->executables->item(idx);
-		item->setText(text);
-
-		{
-			std::lock_guard<std::mutex> lock(switcher->m);
-			for (auto &s : switcher->executableSwitches) {
-				if (s.exe == exeName) {
-					s.scene = source;
-					s.transition = transition;
-					s.inFocus = inFocus;
-					break;
-				}
-			}
-		}
-	}
+	QListWidgetItem *item;
+	item = new QListWidgetItem(ui->executables);
+	ui->executables->addItem(item);
+	ExecutableSwitchWidget *sw = new ExecutableSwitchWidget(
+		&switcher->executableSwitches.back());
+	item->setSizeHint(sw->minimumSizeHint());
+	ui->executables->setItemWidget(item, sw);
 }
 
 void SceneSwitcher::on_executableRemove_clicked()
@@ -124,23 +20,55 @@ void SceneSwitcher::on_executableRemove_clicked()
 	if (!item)
 		return;
 
-	QString exe = item->data(Qt::UserRole).toString();
-
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
+		int idx = ui->executables->currentRow();
 		auto &switches = switcher->executableSwitches;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it) {
-			auto &s = *it;
-
-			if (s.exe == exe) {
-				switches.erase(it);
-				break;
-			}
-		}
+		switches.erase(switches.begin() + idx);
 	}
 
 	delete item;
+}
+
+void SceneSwitcher::on_executableUp_clicked()
+{
+	int index = ui->executables->currentRow();
+	if (!listMoveUp(ui->executables))
+		return;
+
+	ExecutableSwitchWidget *s1 =
+		(ExecutableSwitchWidget *)ui->executables->itemWidget(
+			ui->executables->item(index));
+	ExecutableSwitchWidget *s2 =
+		(ExecutableSwitchWidget *)ui->executables->itemWidget(
+			ui->executables->item(index - 1));
+	ExecutableSwitchWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->executableSwitches[index],
+		  switcher->executableSwitches[index - 1]);
+}
+
+void SceneSwitcher::on_executableDown_clicked()
+{
+	int index = ui->executables->currentRow();
+
+	if (!listMoveDown(ui->executables))
+		return;
+
+	ExecutableSwitchWidget *s1 =
+		(ExecutableSwitchWidget *)ui->executables->itemWidget(
+			ui->executables->item(index));
+	ExecutableSwitchWidget *s2 =
+		(ExecutableSwitchWidget *)ui->executables->itemWidget(
+			ui->executables->item(index + 1));
+	ExecutableSwitchWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->executableSwitches[index],
+		  switcher->executableSwitches[index + 1]);
 }
 
 void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
@@ -170,7 +98,7 @@ void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 
 	// Check for match
 	GetProcessList(runningProcesses);
-	for (ExecutableSceneSwitch &s : executableSwitches) {
+	for (ExecutableSwitch &s : executableSwitches) {
 		// True if executable switch is running (direct)
 		bool equals = runningProcesses.contains(s.exe);
 		// True if executable switch is running (regex)
@@ -199,7 +127,7 @@ void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 void SwitcherData::saveExecutableSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *executableArray = obs_data_array_create();
-	for (ExecutableSceneSwitch &s : switcher->executableSwitches) {
+	for (ExecutableSwitch &s : switcher->executableSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
 		obs_source_t *source = obs_weak_source_get_source(s.scene);
@@ -255,37 +183,96 @@ void SwitcherData::loadExecutableSwitches(obs_data_t *obj)
 
 void SceneSwitcher::setupExecutableTab()
 {
-	populateSceneSelection(ui->executableScenes, false);
-	populateTransitionSelection(ui->executableTransitions);
-
-	QStringList processes;
-	GetProcessList(processes);
-	for (QString &process : processes)
-		ui->executable->addItem(process);
-
 	for (auto &s : switcher->executableSwitches) {
 		std::string sceneName = GetWeakSourceName(s.scene);
 		std::string transitionName = GetWeakSourceName(s.transition);
-		QString text = MakeSwitchNameExecutable(sceneName.c_str(),
-							s.exe,
-							transitionName.c_str(),
-							s.inFocus);
 
-		QListWidgetItem *item =
-			new QListWidgetItem(text, ui->executables);
-		item->setData(Qt::UserRole, s.exe);
+		QListWidgetItem *item;
+		item = new QListWidgetItem(ui->executables);
+		ui->executables->addItem(item);
+		ExecutableSwitchWidget *sw = new ExecutableSwitchWidget(&s);
+		item->setSizeHint(sw->minimumSizeHint());
+		ui->executables->setItemWidget(item, sw);
 	}
 }
 
-static inline QString MakeSwitchNameExecutable(const QString &scene,
-					       const QString &value,
-					       const QString &transition,
-					       bool inFocus)
+ExecutableSwitchWidget::ExecutableSwitchWidget(ExecutableSwitch *s)
+	: SwitchWidget(s, false)
 {
-	if (!inFocus)
-		return QStringLiteral("[") + scene + QStringLiteral(", ") +
-		       transition + QStringLiteral("]: ") + value;
-	return QStringLiteral("[") + scene + QStringLiteral(", ") + transition +
-	       QStringLiteral("]: ") + value +
-	       QStringLiteral(" (only if focused)");
+	processes = new QComboBox();
+	requiresFocus = new QCheckBox("only if focused");
+
+	whenLabel = new QLabel("When");
+	switchLabel = new QLabel("is running switch to");
+	usingLabel = new QLabel("using");
+
+	QWidget::connect(processes, SIGNAL(currentTextChanged(const QString &)),
+			 this, SLOT(ProcessChanged(const QString &)));
+	QWidget::connect(requiresFocus, SIGNAL(stateChanged(int)), this,
+			 SLOT(FocusChanged(int)));
+
+	SceneSwitcher::populateProcessSelection(processes);
+
+	if (s) {
+		scenes->setCurrentText(GetWeakSourceName(s->scene).c_str());
+		transitions->setCurrentText(
+			GetWeakSourceName(s->transition).c_str());
+		processes->setCurrentText(s->exe);
+		requiresFocus->setChecked(s->inFocus);
+	}
+
+	setStyleSheet("* { background-color: transparent; }");
+
+	QHBoxLayout *mainLayout = new QHBoxLayout;
+
+	mainLayout->addWidget(whenLabel);
+	mainLayout->addWidget(processes);
+	mainLayout->addWidget(switchLabel);
+	mainLayout->addWidget(scenes);
+	mainLayout->addWidget(usingLabel);
+	mainLayout->addWidget(transitions);
+	mainLayout->addWidget(requiresFocus);
+	mainLayout->addStretch();
+
+	setLayout(mainLayout);
+
+	switchData = s;
+
+	loading = false;
+}
+
+ExecutableSwitch *ExecutableSwitchWidget::getSwitchData()
+{
+	return switchData;
+}
+
+void ExecutableSwitchWidget::setSwitchData(ExecutableSwitch *s)
+{
+	switchData = s;
+}
+
+void ExecutableSwitchWidget::swapSwitchData(ExecutableSwitchWidget *s1,
+					    ExecutableSwitchWidget *s2)
+{
+	SwitchWidget::swapSwitchData(s1, s2);
+
+	ExecutableSwitch *t = s1->getSwitchData();
+	s1->setSwitchData(s2->getSwitchData());
+	s2->setSwitchData(t);
+}
+
+void ExecutableSwitchWidget::ProcessChanged(const QString &text)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->exe = text;
+}
+
+void ExecutableSwitchWidget::FocusChanged(int state)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->inFocus = state;
 }

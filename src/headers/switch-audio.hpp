@@ -2,7 +2,6 @@
 #include <QComboBox>
 #include <QSpinBox>
 #include <QLabel>
-#include <string>
 
 #include "utility.hpp"
 #include "switch-generic.hpp"
@@ -38,7 +37,7 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	friend void swap(AudioSwitch &first, AudioSwitch &second);
 };
 
-class AudioSwitchWidget : public QWidget {
+class AudioSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
@@ -51,16 +50,10 @@ public:
 				   AudioSwitchWidget *as2);
 
 private slots:
-	void SceneChanged(const QString &text);
-	void TransitionChanged(const QString &text);
 	void SourceChanged(const QString &text);
 	void VolumeThresholdChanged(int vol);
 
 private:
-	bool loading = true;
-
-	QComboBox *audioScenes;
-	QComboBox *audioTransitions;
 	QComboBox *audioSources;
 	QSpinBox *audioVolumeThreshold;
 

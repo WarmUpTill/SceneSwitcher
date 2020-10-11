@@ -70,7 +70,9 @@ if(BUILD_OUT_OF_TREE)
 		src/switch-random.cpp
 		src/switch-time.cpp
 		src/switch-audio.cpp
+		src/switch-generic.cpp
 		src/curl-helper.cpp
+		src/volume-control.cpp
 		)
 
 	set(advanced-scene-switcher_UI
@@ -218,6 +220,7 @@ else ()
 		src/switch-random.cpp
 		src/switch-time.cpp
 		src/switch-audio.cpp
+		src/switch-generic.cpp
 		src/curl-helper.cpp
 		src/volume-control.cpp
 		)

@@ -60,7 +60,7 @@ void SwitcherData::Prune()
 	}
 
 	for (size_t i = 0; i < executableSwitches.size(); i++) {
-		ExecutableSceneSwitch &s = executableSwitches[i];
+		ExecutableSwitch &s = executableSwitches[i];
 		if (!s.valid())
 			executableSwitches.erase(executableSwitches.begin() +
 						 i--);
