@@ -45,6 +45,10 @@ public:
 	AudioSwitchWidget(AudioSwitch *s);
 	void UpdateVolmeterSource();
 	AudioSwitch *getSwitchData();
+	void setSwitchData(AudioSwitch *s);
+
+	static void swapSwitchData(AudioSwitchWidget *as1,
+				   AudioSwitchWidget *as2);
 
 private slots:
 	void SceneChanged(const QString &text);

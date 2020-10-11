@@ -60,6 +60,144 @@ void SceneSwitcher::loadUI()
 }
 
 /********************************************************************************
+ * UI helpers
+ ********************************************************************************/
+
+void addSelectionEntry(QComboBox *sel, const char *description)
+{
+	sel->addItem(description);
+	QStandardItemModel *model =
+		qobject_cast<QStandardItemModel *>(sel->model());
+	QModelIndex firstIndex =
+		model->index(0, sel->modelColumn(), sel->rootModelIndex());
+	QStandardItem *firstItem = model->itemFromIndex(firstIndex);
+	firstItem->setSelectable(false);
+}
+
+void SceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
+					   bool addSelect)
+{
+	if (addSelect)
+		addSelectionEntry(sel, "--select scene--");
+
+	BPtr<char *> scenes = obs_frontend_get_scene_names();
+	char **temp = scenes;
+	while (*temp) {
+		const char *name = *temp;
+		sel->addItem(name);
+		temp++;
+	}
+
+	if (addPrevious)
+		sel->addItem(previous_scene_name);
+}
+
+void SceneSwitcher::populateTransitionSelection(QComboBox *sel, bool addSelect)
+{
+	if (addSelect)
+		addSelectionEntry(sel, "--select transition--");
+
+	obs_frontend_source_list *transitions = new obs_frontend_source_list();
+	obs_frontend_get_transitions(transitions);
+
+	for (size_t i = 0; i < transitions->sources.num; i++) {
+		const char *name =
+			obs_source_get_name(transitions->sources.array[i]);
+		sel->addItem(name);
+	}
+
+	obs_frontend_source_list_free(transitions);
+}
+
+void SceneSwitcher::populateWindowSelection(QComboBox *sel, bool addSelect)
+{
+	if (addSelect)
+		addSelectionEntry(sel, "--select window--");
+
+	std::vector<std::string> windows;
+	GetWindowList(windows);
+	sort(windows.begin(), windows.end());
+
+	for (std::string &window : windows) {
+		sel->addItem(window.c_str());
+	}
+}
+
+void SceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
+{
+	if (addSelect)
+		addSelectionEntry(sel, "--select audio source--");
+
+	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
+	{
+		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
+		uint32_t flags = obs_source_get_output_flags(source);
+
+		if ((flags & OBS_SOURCE_AUDIO) != 0) {
+			const char *name = obs_source_get_name(source);
+			combo->addItem(name);
+		}
+		return true;
+	};
+
+	obs_enum_sources(sourceEnum, sel);
+}
+
+void SceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
+{
+	if (addSelect)
+		addSelectionEntry(sel, "--select media source--");
+
+	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
+	{
+		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
+		std::string sourceId = obs_source_get_id(source);
+		if (sourceId.compare("ffmpeg_source") == 0 ||
+		    sourceId.compare("vlc_source") == 0) {
+			const char *name = obs_source_get_name(source);
+			combo->addItem(name);
+		}
+		return true;
+	};
+
+	obs_enum_sources(sourceEnum, sel);
+}
+
+bool SceneSwitcher::listMoveUp(QListWidget *list)
+{
+	int index = list->currentRow();
+	if (index == -1 || index == 0)
+		return false;
+
+	QWidget *row = list->itemWidget(list->currentItem());
+	QListWidgetItem *itemN = list->currentItem()->clone();
+
+	list->insertItem(index - 1, itemN);
+	list->setItemWidget(itemN, row);
+
+	list->takeItem(index + 1);
+	list->setCurrentRow(index - 1);
+	return true;
+}
+
+bool SceneSwitcher::listMoveDown(QListWidget *list)
+{
+	int index = list->currentRow();
+	if (index == -1 || index == list->count() - 1)
+		return false;
+
+	QWidget *row = list->itemWidget(list->currentItem());
+	QListWidgetItem *itemN = list->currentItem()->clone();
+
+	list->insertItem(index + 2, itemN);
+	list->setItemWidget(itemN, row);
+
+	list->takeItem(index);
+	list->setCurrentRow(index + 1);
+	return true;
+}
+
+/********************************************************************************
  * Saving and loading
  ********************************************************************************/
 static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
@@ -142,15 +280,11 @@ void SwitcherData::Thread()
 		if (sleep > interval) {
 			duration = std::chrono::milliseconds(sleep);
 			if (verbose)
-				blog(LOG_INFO,
-				     "sleep for %d",
-				     sleep);
+				blog(LOG_INFO, "sleep for %d", sleep);
 		} else {
 			duration = std::chrono::milliseconds(interval);
 			if (verbose)
-				blog(LOG_INFO,
-				     "sleep for %d",
-				     interval);
+				blog(LOG_INFO, "sleep for %d", interval);
 		}
 		sleep = 0;
 		switcher->Prune();
@@ -264,8 +398,7 @@ void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 		lock.lock();
 
 		if (switcher->verbose)
-			blog(LOG_INFO,
-			     "switched scene");
+			blog(LOG_INFO, "switched scene");
 	}
 	obs_source_release(currentSource);
 	obs_source_release(source);
@@ -303,106 +436,6 @@ void SwitcherData::Stop()
 		delete th;
 		th = nullptr;
 	}
-}
-
-void addSelectionEntry(QComboBox *sel, const char *description)
-{
-	sel->addItem(description);
-	QStandardItemModel *model =
-		qobject_cast<QStandardItemModel *>(sel->model());
-	QModelIndex firstIndex =
-		model->index(0, sel->modelColumn(), sel->rootModelIndex());
-	QStandardItem *firstItem = model->itemFromIndex(firstIndex);
-	firstItem->setSelectable(false);
-}
-
-void SceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
-					   bool addSelect)
-{
-	if (addSelect)
-		addSelectionEntry(sel, "--select scene--");
-
-	BPtr<char *> scenes = obs_frontend_get_scene_names();
-	char **temp = scenes;
-	while (*temp) {
-		const char *name = *temp;
-		sel->addItem(name);
-		temp++;
-	}
-
-	if (addPrevious)
-		sel->addItem(previous_scene_name);
-}
-
-void SceneSwitcher::populateTransitionSelection(QComboBox *sel, bool addSelect)
-{
-	if (addSelect)
-		addSelectionEntry(sel, "--select transition--");
-
-	obs_frontend_source_list *transitions = new obs_frontend_source_list();
-	obs_frontend_get_transitions(transitions);
-
-	for (size_t i = 0; i < transitions->sources.num; i++) {
-		const char *name =
-			obs_source_get_name(transitions->sources.array[i]);
-		sel->addItem(name);
-	}
-
-	obs_frontend_source_list_free(transitions);
-}
-
-void SceneSwitcher::populateWindowSelection(QComboBox *sel, bool addSelect)
-{
-	if (addSelect)
-		addSelectionEntry(sel, "--select window--");
-
-	std::vector<std::string> windows;
-	GetWindowList(windows);
-	sort(windows.begin(), windows.end());
-
-	for (std::string &window : windows) {
-		sel->addItem(window.c_str());
-	}
-}
-
-void SceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
-{
-	if (addSelect)
-		addSelectionEntry(sel, "--select audio source--");
-
-	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
-	{
-		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
-		uint32_t flags = obs_source_get_output_flags(source);
-
-		if ((flags & OBS_SOURCE_AUDIO) != 0) {
-			const char *name = obs_source_get_name(source);
-			combo->addItem(name);
-		}
-		return true;
-	};
-
-	obs_enum_sources(sourceEnum, sel);
-}
-
-void SceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
-{
-	if (addSelect)
-		addSelectionEntry(sel, "--select media source--");
-
-	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
-	{
-		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
-		std::string sourceId = obs_source_get_id(source);
-		if (sourceId.compare("ffmpeg_source") == 0 ||
-		    sourceId.compare("vlc_source") == 0) {
-			const char *name = obs_source_get_name(source);
-			combo->addItem(name);
-		}
-		return true;
-	};
-
-	obs_enum_sources(sourceEnum, sel);
 }
 
 /********************************************************************************

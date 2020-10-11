@@ -81,6 +81,9 @@ public:
 	static void populateMediaSelection(QComboBox *sel,
 					   bool addSelect = true);
 
+	bool listMoveUp(QListWidget *list);
+	bool listMoveDown(QListWidget *list);
+
 public slots:
 	void on_switches_currentRowChanged(int idx);
 	void on_up_clicked();

@@ -37,47 +37,42 @@ void SceneSwitcher::on_audioRemove_clicked()
 void SceneSwitcher::on_audioUp_clicked()
 {
 	int index = ui->audioSwitches->currentRow();
-	if (index != -1 && index != 0) {
-		delete ui->audioSwitches->itemWidget(
+	if (!listMoveUp(ui->audioSwitches))
+		return;
+
+	AudioSwitchWidget *as1 =
+		(AudioSwitchWidget *)ui->audioSwitches->itemWidget(
 			ui->audioSwitches->item(index));
-		AudioSwitchWidget *sw =
-			new AudioSwitchWidget(&switcher->audioSwitches[index]);
+	AudioSwitchWidget *as2 =
+		(AudioSwitchWidget *)ui->audioSwitches->itemWidget(
+			ui->audioSwitches->item(index - 1));
+	AudioSwitchWidget::swapSwitchData(as1, as2);
 
-		ui->audioSwitches->insertItem(
-			index - 1, ui->audioSwitches->takeItem(index));
-		ui->audioSwitches->setItemWidget(
-			ui->audioSwitches->item(index - 1), sw);
+	std::lock_guard<std::mutex> lock(switcher->m);
 
-		ui->audioSwitches->setCurrentRow(index - 1);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-
-		std::swap(switcher->audioSwitches[index],
-			  switcher->audioSwitches[index - 1]);
-	}
+	std::swap(switcher->audioSwitches[index],
+		  switcher->audioSwitches[index - 1]);
 }
 
 void SceneSwitcher::on_audioDown_clicked()
 {
 	int index = ui->audioSwitches->currentRow();
-	if (index != -1 && index != ui->audioSwitches->count() - 1) {
-		delete ui->audioSwitches->itemWidget(
+
+	if (!listMoveDown(ui->audioSwitches))
+		return;
+
+	AudioSwitchWidget *as1 =
+		(AudioSwitchWidget *)ui->audioSwitches->itemWidget(
 			ui->audioSwitches->item(index));
-		AudioSwitchWidget *sw =
-			new AudioSwitchWidget(&switcher->audioSwitches[index]);
+	AudioSwitchWidget *as2 =
+		(AudioSwitchWidget *)ui->audioSwitches->itemWidget(
+			ui->audioSwitches->item(index + 1));
+	AudioSwitchWidget::swapSwitchData(as1, as2);
 
-		ui->audioSwitches->insertItem(
-			index + 1, ui->audioSwitches->takeItem(index));
-		ui->audioSwitches->setItemWidget(
-			ui->audioSwitches->item(index + 1), sw);
+	std::lock_guard<std::mutex> lock(switcher->m);
 
-		ui->audioSwitches->setCurrentRow(index + 1);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-
-		std::swap(switcher->audioSwitches[index],
-			  switcher->audioSwitches[index + 1]);
-	}
+	std::swap(switcher->audioSwitches[index],
+		  switcher->audioSwitches[index + 1]);
 }
 
 void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
@@ -434,6 +429,19 @@ void AudioSwitchWidget::UpdateVolmeterSource()
 AudioSwitch *AudioSwitchWidget::getSwitchData()
 {
 	return switchData;
+}
+
+void AudioSwitchWidget::setSwitchData(AudioSwitch *s)
+{
+	switchData = s;
+}
+
+void AudioSwitchWidget::swapSwitchData(AudioSwitchWidget *as1,
+				       AudioSwitchWidget *as2)
+{
+	AudioSwitch *t = as1->getSwitchData();
+	as1->setSwitchData(as2->getSwitchData());
+	as2->setSwitchData(t);
 }
 
 void AudioSwitchWidget::TransitionChanged(const QString &text)
