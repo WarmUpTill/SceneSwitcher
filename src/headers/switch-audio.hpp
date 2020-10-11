@@ -25,13 +25,13 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 				   const float inputPeak[MAX_AUDIO_CHANNELS]);
 	void resetVolmeter();
 
-	inline AudioSwitch(){};
-	inline AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-			   OBSWeakSource audioSource_, int volumeThreshold_,
-			   bool usePreviousScene_);
+	AudioSwitch(){};
+	AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
+		    OBSWeakSource audioSource_, int volumeThreshold_,
+		    bool usePreviousScene_);
 	AudioSwitch(const AudioSwitch &other);
 	AudioSwitch(AudioSwitch &&other);
-	inline ~AudioSwitch();
+	~AudioSwitch();
 	AudioSwitch &operator=(const AudioSwitch &other);
 	AudioSwitch &operator=(AudioSwitch &&other) noexcept;
 	friend void swap(AudioSwitch &first, AudioSwitch &second);

@@ -232,9 +232,9 @@ bool AudioSwitch::valid()
 	return SceneSwitcherEntry::valid() && WeakSourceValid(audioSource);
 }
 
-inline AudioSwitch::AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-				OBSWeakSource audioSource_,
-				int volumeThreshold_, bool usePreviousScene_)
+AudioSwitch::AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
+			 OBSWeakSource audioSource_, int volumeThreshold_,
+			 bool usePreviousScene_)
 	: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
 	  audioSource(audioSource_),
 	  volumeThreshold(volumeThreshold_)
@@ -277,7 +277,7 @@ AudioSwitch::AudioSwitch(AudioSwitch &&other)
 	other.volmeter = nullptr;
 }
 
-inline AudioSwitch::~AudioSwitch()
+AudioSwitch::~AudioSwitch()
 {
 	obs_volmeter_remove_callback(volmeter, setVolumeLevel, this);
 	obs_volmeter_destroy(volmeter);

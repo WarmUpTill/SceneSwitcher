@@ -1,7 +1,7 @@
 #include <QMainWindow>
 #include <QDir>
 #include <QAction>
-#include <QtGui\qstandarditemmodel.h>
+#include <QtGui/qstandarditemmodel.h>
 
 #include <condition_variable>
 #include <chrono>
