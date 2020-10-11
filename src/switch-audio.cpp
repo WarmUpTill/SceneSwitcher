@@ -398,6 +398,24 @@ AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s)
 	loading = false;
 }
 
+AudioSwitch *AudioSwitchWidget::getSwitchData()
+{
+	return switchData;
+}
+
+void AudioSwitchWidget::setSwitchData(AudioSwitch *s)
+{
+	switchData = s;
+}
+
+void AudioSwitchWidget::swapSwitchData(AudioSwitchWidget *as1,
+				       AudioSwitchWidget *as2)
+{
+	AudioSwitch *t = as1->getSwitchData();
+	as1->setSwitchData(as2->getSwitchData());
+	as2->setSwitchData(t);
+}
+
 void AudioSwitchWidget::SceneChanged(const QString &text)
 {
 	if (loading || !switchData)
@@ -424,24 +442,6 @@ void AudioSwitchWidget::UpdateVolmeterSource()
 
 	// Slider will default to 0 so set it manually once
 	volMeter->GetSlider()->setValue(switchData->volumeThreshold);
-}
-
-AudioSwitch *AudioSwitchWidget::getSwitchData()
-{
-	return switchData;
-}
-
-void AudioSwitchWidget::setSwitchData(AudioSwitch *s)
-{
-	switchData = s;
-}
-
-void AudioSwitchWidget::swapSwitchData(AudioSwitchWidget *as1,
-				       AudioSwitchWidget *as2)
-{
-	AudioSwitch *t = as1->getSwitchData();
-	as1->setSwitchData(as2->getSwitchData());
-	as2->setSwitchData(t);
 }
 
 void AudioSwitchWidget::TransitionChanged(const QString &text)
