@@ -99,6 +99,8 @@ void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 	// Check for match
 	GetProcessList(runningProcesses);
 	for (ExecutableSwitch &s : executableSwitches) {
+		if (!s.initialized())
+			continue;
 		// True if executable switch is running (direct)
 		bool equals = runningProcesses.contains(s.exe);
 		// True if executable switch is running (regex)
@@ -214,9 +216,6 @@ ExecutableSwitchWidget::ExecutableSwitchWidget(ExecutableSwitch *s)
 	SceneSwitcher::populateProcessSelection(processes);
 
 	if (s) {
-		scenes->setCurrentText(GetWeakSourceName(s->scene).c_str());
-		transitions->setCurrentText(
-			GetWeakSourceName(s->transition).c_str());
 		processes->setCurrentText(s->exe);
 		requiresFocus->setChecked(s->inFocus);
 	}

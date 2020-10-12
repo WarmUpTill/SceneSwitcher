@@ -229,7 +229,8 @@ bool AudioSwitch::initialized()
 
 bool AudioSwitch::valid()
 {
-	return SceneSwitcherEntry::valid() && WeakSourceValid(audioSource);
+	return !initialized() ||
+	       (SceneSwitcherEntry::valid() && WeakSourceValid(audioSource));
 }
 
 AudioSwitch::AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
@@ -351,9 +352,6 @@ AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s) : SwitchWidget(s)
 	SceneSwitcher::populateAudioSelection(audioSources);
 
 	if (s) {
-		scenes->setCurrentText(GetWeakSourceName(s->scene).c_str());
-		transitions->setCurrentText(
-			GetWeakSourceName(s->transition).c_str());
 		audioSources->setCurrentText(
 			GetWeakSourceName(s->audioSource).c_str());
 		audioVolumeThreshold->setValue(s->volumeThreshold);
