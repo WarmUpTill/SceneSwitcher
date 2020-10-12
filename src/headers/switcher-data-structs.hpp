@@ -20,7 +20,6 @@
 #include "switch-window.hpp"
 #include "swtich-sequence.hpp"
 
-
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
 
@@ -94,7 +93,7 @@ struct SwitcherData {
 	std::vector<SceneTransition> sceneTransitions;
 	std::vector<DefaultSceneTransition> defaultSceneTransitions;
 
-	std::vector<MediaSwitch> mediaSwitches;
+	std::deque<MediaSwitch> mediaSwitches;
 
 	std::vector<TimeSwitch> timeSwitches;
 	QDateTime liveTime;
@@ -147,8 +146,8 @@ struct SwitcherData {
 	void autoStartStreamRecording();
 	bool checkPause();
 	void checkSceneSequence(bool &match, OBSWeakSource &scene,
-				 OBSWeakSource &transition,
-				 std::unique_lock<std::mutex> &lock);
+				OBSWeakSource &transition,
+				std::unique_lock<std::mutex> &lock);
 	void checkIdleSwitch(bool &match, OBSWeakSource &scene,
 			     OBSWeakSource &transition);
 	void checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
