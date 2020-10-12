@@ -134,6 +134,11 @@ struct SwitcherData {
 
 	std::vector<int> tabOrder;
 
+	bool hotkeysRegistered = false;
+	obs_hotkey_id startHotkey;
+	obs_hotkey_id stopHotkey;
+	obs_hotkey_id toggleHotkey;
+
 	void Thread();
 	void Start();
 	void Stop();
@@ -182,6 +187,7 @@ struct SwitcherData {
 	void saveTimeSwitches(obs_data_t *obj);
 	void saveAudioSwitches(obs_data_t *obj);
 	void saveGeneralSettings(obs_data_t *obj);
+	void saveHotkeys(obs_data_t *obj);
 
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
@@ -196,6 +202,7 @@ struct SwitcherData {
 	void loadTimeSwitches(obs_data_t *obj);
 	void loadAudioSwitches(obs_data_t *obj);
 	void loadGeneralSettings(obs_data_t *obj);
+	void loadHotkeys(obs_data_t *obj);
 
 	void Prune();
 	inline ~SwitcherData() { Stop(); }

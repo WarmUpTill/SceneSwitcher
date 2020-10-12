@@ -305,6 +305,7 @@ void SceneSwitcher::on_exportSettings_clicked()
 	switcher->saveTimeSwitches(obj);
 	switcher->saveAudioSwitches(obj);
 	switcher->saveGeneralSettings(obj);
+	switcher->saveHotkeys(obj);
 
 	obs_data_save_json(obj, file.fileName().toUtf8().constData());
 
@@ -350,6 +351,7 @@ void SceneSwitcher::on_importSettings_clicked()
 	switcher->loadTimeSwitches(obj);
 	switcher->loadAudioSwitches(obj);
 	switcher->loadGeneralSettings(obj);
+	switcher->loadHotkeys(obj);
 
 	obs_data_release(obj);
 

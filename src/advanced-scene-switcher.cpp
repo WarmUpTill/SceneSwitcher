@@ -233,6 +233,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->saveTimeSwitches(obj);
 		switcher->saveAudioSwitches(obj);
 		switcher->saveGeneralSettings(obj);
+		switcher->saveHotkeys(obj);
 
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
 
@@ -259,6 +260,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->loadTimeSwitches(obj);
 		switcher->loadAudioSwitches(obj);
 		switcher->loadGeneralSettings(obj);
+		switcher->loadHotkeys(obj);
 
 		obs_data_release(obj);
 
@@ -541,25 +543,4 @@ extern "C" void InitSceneSwitcher()
 	obs_frontend_add_event_callback(OBSEvent, switcher);
 
 	action->connect(action, &QAction::triggered, cb);
-
-	char *path = obs_module_config_path("");
-	QDir dir(path);
-	if (!dir.exists()) {
-		dir.mkpath(".");
-	}
-	bfree(path);
-
-	obs_hotkey_id toggleHotkeyId = obs_hotkey_register_frontend(
-		"startStopToggleSwitcherHotkey",
-		"Toggle Start/Stop for the Advanced Scene Switcher",
-		startStopToggleHotkeyFunc, NULL);
-	loadKeybinding(toggleHotkeyId, toggle_hotkey_path);
-	obs_hotkey_id startHotkeyId = obs_hotkey_register_frontend(
-		"startSwitcherHotkey", "Start the Advanced Scene Switcher",
-		startHotkeyFunc, NULL);
-	loadKeybinding(startHotkeyId, start_hotkey_path);
-	obs_hotkey_id stopHotkeyId = obs_hotkey_register_frontend(
-		"stopSwitcherHotkey", "Stop the Advanced Scene Switcher",
-		stopHotkeyFunc, NULL);
-	loadKeybinding(stopHotkeyId, stop_hotkey_path);
 }
