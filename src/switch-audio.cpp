@@ -4,8 +4,15 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/volume-control.hpp"
 
+#include <QPropertyAnimation>
+#include <QGraphicsColorizeEffect>
+
+QMetaObject::Connection test;
+
 void SceneSwitcher::on_audioAdd_clicked()
 {
+	ui->audioAdd->disconnect(test);
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->audioSwitches.emplace_back();
 
@@ -183,6 +190,9 @@ void SceneSwitcher::setupAudioTab()
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->audioSwitches->setItemWidget(item, sw);
 	}
+
+	if (switcher->audioSwitches.size() == 0)
+		test = PulseWidget(ui->audioAdd, QColor(Qt::green));
 }
 
 void AudioSwitch::setVolumeLevel(void *data,

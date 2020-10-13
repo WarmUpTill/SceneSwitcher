@@ -25,6 +25,7 @@ class SceneSwitcher : public QDialog {
 public:
 	std::unique_ptr<Ui_SceneSwitcher> ui;
 	bool loading = true;
+	QMetaObject::Connection inactivePluse;
 
 	SceneSwitcher(QWidget *parent);
 
@@ -82,6 +83,9 @@ public:
 					   bool addSelect = true);
 	static void populateProcessSelection(QComboBox *sel,
 					     bool addSelect = true);
+	QMetaObject::Connection PulseWidget(QWidget *widget, QColor endColor,
+					    QColor = QColor(0, 0, 0, 0),
+					    QString specifier = "");
 
 	bool listMoveUp(QListWidget *list);
 	bool listMoveDown(QListWidget *list);
@@ -98,8 +102,6 @@ public slots:
 	void on_startupBehavior_currentIndexChanged(int index);
 	void on_noMatchSwitchScene_currentTextChanged(const QString &text);
 	void on_checkInterval_valueChanged(int value);
-	void StartInactivePulse();
-	void ResetInactivePulse();
 	void on_toggleStartButton_clicked();
 	void on_tabMoved(int from, int to);
 

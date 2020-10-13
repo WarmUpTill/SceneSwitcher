@@ -2,6 +2,8 @@
 #include <QDir>
 #include <QAction>
 #include <QtGui/qstandarditemmodel.h>
+#include <QPropertyAnimation>
+#include <QGraphicsColorizeEffect>
 
 #include <condition_variable>
 #include <chrono>
@@ -206,6 +208,40 @@ bool SceneSwitcher::listMoveDown(QListWidget *list)
 	list->takeItem(index);
 	list->setCurrentRow(index + 1);
 	return true;
+}
+
+QMetaObject::Connection SceneSwitcher::PulseWidget(QWidget *widget,
+						   QColor endColor,
+						   QColor startColor,
+						   QString specifier)
+{
+	widget->setStyleSheet(specifier + "{ \
+		border-style: outset; \
+		border-width: 2px; \
+		border-radius: 10px; \
+		border-color: rgb(0,0,0,0) \
+		}");
+
+	QGraphicsColorizeEffect *eEffect = new QGraphicsColorizeEffect(widget);
+	widget->setGraphicsEffect(eEffect);
+	QPropertyAnimation *paAnimation =
+		new QPropertyAnimation(eEffect, "color");
+	paAnimation->setStartValue(startColor);
+	paAnimation->setEndValue(endColor);
+	paAnimation->setDuration(1000);
+	// play backward to return to original state on timer end
+	paAnimation->setDirection(QAbstractAnimation::Backward);
+
+	auto con = QWidget::connect(
+		paAnimation, &QPropertyAnimation::finished, [paAnimation]() {
+			QTimer::singleShot(1000, [paAnimation] {
+				paAnimation->start();
+			});
+		});
+
+	paAnimation->start();
+
+	return con;
 }
 
 /********************************************************************************
