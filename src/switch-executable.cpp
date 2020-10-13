@@ -186,9 +186,6 @@ void SwitcherData::loadExecutableSwitches(obs_data_t *obj)
 void SceneSwitcher::setupExecutableTab()
 {
 	for (auto &s : switcher->executableSwitches) {
-		std::string sceneName = GetWeakSourceName(s.scene);
-		std::string transitionName = GetWeakSourceName(s.transition);
-
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->executables);
 		ui->executables->addItem(item);

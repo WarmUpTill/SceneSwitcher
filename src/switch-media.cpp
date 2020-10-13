@@ -77,7 +77,7 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 	for (MediaSwitch &mediaSwitch : mediaSwitches) {
 		if (!mediaSwitch.initialized())
 			continue;
-		obs_source_t *source =
+		OBSSource source =
 			obs_weak_source_get_source(mediaSwitch.source);
 		auto duration = obs_source_media_get_duration(source);
 		auto time = obs_source_media_get_time(source);
@@ -108,7 +108,6 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 				mediaSwitch.logMatch();
 			break;
 		}
-		obs_source_release(source);
 	}
 }
 
@@ -185,12 +184,6 @@ void SwitcherData::loadMediaSwitches(obs_data_t *obj)
 void SceneSwitcher::setupMediaTab()
 {
 	for (auto &s : switcher->mediaSwitches) {
-		std::string sourceName = GetWeakSourceName(s.source);
-		std::string sceneName = (s.usePreviousScene)
-						? previous_scene_name
-						: GetWeakSourceName(s.scene);
-		std::string transitionName = GetWeakSourceName(s.transition);
-
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->mediaSwitches);
 		ui->mediaSwitches->addItem(item);

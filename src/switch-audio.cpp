@@ -176,12 +176,6 @@ void SwitcherData::loadAudioSwitches(obs_data_t *obj)
 void SceneSwitcher::setupAudioTab()
 {
 	for (auto &s : switcher->audioSwitches) {
-		std::string sceneName = (s.usePreviousScene)
-						? previous_scene_name
-						: GetWeakSourceName(s.scene);
-		std::string transitionName = GetWeakSourceName(s.transition);
-		std::string audioSourceName = GetWeakSourceName(s.audioSource);
-
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->audioSwitches);
 		ui->audioSwitches->addItem(item);
