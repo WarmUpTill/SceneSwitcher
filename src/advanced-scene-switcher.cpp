@@ -215,6 +215,9 @@ QMetaObject::Connection SceneSwitcher::PulseWidget(QWidget *widget,
 						   QColor startColor,
 						   QString specifier)
 {
+	if (switcher->disableHints)
+		return QMetaObject::Connection();
+
 	widget->setStyleSheet(specifier + "{ \
 		border-style: outset; \
 		border-width: 2px; \

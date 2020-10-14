@@ -243,9 +243,14 @@ void SceneSwitcher::on_verboseLogging_stateChanged(int state)
 {
 	if (loading)
 		return;
-
-	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->verbose = state;
+}
+
+void SceneSwitcher::on_uiHints_stateChanged(int state)
+{
+	if (loading)
+		return;
+	switcher->disableHints = state;
 }
 
 void SceneSwitcher::on_exportSettings_clicked()
@@ -440,6 +445,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 			    autoStartSceneName.c_str());
 
 	obs_data_set_bool(obj, "verbose", switcher->verbose);
+	obs_data_set_bool(obj, "disableHints", switcher->disableHints);
 
 	obs_data_set_int(obj, "priority0",
 			 switcher->functionNamesByPriority[0]);
@@ -511,6 +517,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	switcher->autoStartScene = GetWeakSourceByName(autoStartScene.c_str());
 
 	switcher->verbose = obs_data_get_bool(obj, "verbose");
+	switcher->disableHints = obs_data_get_bool(obj, "disableHints");
 
 	obs_data_set_default_int(obj, "priority0", default_priority_0);
 	obs_data_set_default_int(obj, "priority1", default_priority_1);
@@ -646,6 +653,7 @@ void SceneSwitcher::setupGeneralTab()
 	}
 
 	ui->verboseLogging->setChecked(switcher->verbose);
+	ui->uiHintsDisable->setChecked(switcher->disableHints);
 
 	for (int p : switcher->functionNamesByPriority) {
 		std::string s = "";

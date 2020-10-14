@@ -46,6 +46,7 @@ struct SwitcherData {
 	std::condition_variable transitionCv;
 	bool stop = false;
 	bool verbose = false;
+	bool disableHints = false;
 	bool tansitionOverrideOverride = false;
 
 	int interval = default_interval;

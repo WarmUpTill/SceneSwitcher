@@ -136,6 +136,7 @@ public slots:
 	void on_autoStartScenes_currentTextChanged(const QString &text);
 
 	void on_verboseLogging_stateChanged(int state);
+	void on_uiHints_stateChanged(int state);
 
 	void on_exportSettings_clicked();
 	void on_importSettings_clicked();
