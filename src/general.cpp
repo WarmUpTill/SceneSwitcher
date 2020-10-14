@@ -31,6 +31,7 @@ void SceneSwitcher::on_noMatchDontSwitch_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = NO_SWITCH;
 	ui->noMatchSwitchScene->setEnabled(false);
+	ui->randomDisabledWarning->setVisible(true);
 }
 
 void SceneSwitcher::on_noMatchSwitch_clicked()
@@ -42,6 +43,7 @@ void SceneSwitcher::on_noMatchSwitch_clicked()
 	switcher->switchIfNotMatching = SWITCH;
 	ui->noMatchSwitchScene->setEnabled(true);
 	UpdateNonMatchingScene(ui->noMatchSwitchScene->currentText());
+	ui->randomDisabledWarning->setVisible(true);
 }
 
 void SceneSwitcher::on_noMatchRandomSwitch_clicked()
@@ -52,6 +54,7 @@ void SceneSwitcher::on_noMatchRandomSwitch_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = RANDOM_SWITCH;
 	ui->noMatchSwitchScene->setEnabled(false);
+	ui->randomDisabledWarning->setVisible(false);
 }
 
 void SceneSwitcher::on_startupBehavior_currentIndexChanged(int index)

@@ -43,7 +43,6 @@ public:
 				       const QString &scene2);
 	int DefaultTransitionsFindByData(const QString &scene);
 	int IgnoreIdleWindowsFindByData(const QString &window);
-	int randomFindByData(const QString &scene);
 
 	void UpdateNonMatchingScene(const QString &name);
 	void UpdateAutoStopScene(const QString &name);
@@ -171,7 +170,6 @@ public slots:
 
 	void on_randomAdd_clicked();
 	void on_randomRemove_clicked();
-	void on_randomScenesList_currentRowChanged(int idx);
 
 	void on_fileAdd_clicked();
 	void on_fileRemove_clicked();

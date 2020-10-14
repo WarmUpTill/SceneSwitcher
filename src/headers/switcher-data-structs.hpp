@@ -73,7 +73,7 @@ struct SwitcherData {
 	std::vector<SceneSequenceSwitch> sceneSequenceSwitches;
 	int sceneSequenceMultiplier = 1;
 
-	std::vector<RandomSwitch> randomSwitches;
+	std::deque<RandomSwitch> randomSwitches;
 
 	FileIOData fileIO;
 	IdleData idleData;
