@@ -1,7 +1,11 @@
 #include "headers/advanced-scene-switcher.hpp"
 
+static QMetaObject::Connection addPulse;
+
 void SceneSwitcher::on_mediaAdd_clicked()
 {
+	ui->mediaAdd->disconnect(addPulse);
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->mediaSwitches.emplace_back();
 
@@ -191,6 +195,9 @@ void SceneSwitcher::setupMediaTab()
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->mediaSwitches->setItemWidget(item, sw);
 	}
+
+	if (switcher->mediaSwitches.size() == 0)
+		addPulse = PulseWidget(ui->mediaAdd, QColor(Qt::green));
 }
 
 bool MediaSwitch::initialized()

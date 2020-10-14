@@ -1,7 +1,11 @@
 #include "headers/advanced-scene-switcher.hpp"
 
+static QMetaObject::Connection addPulse;
+
 void SceneSwitcher::on_executableAdd_clicked()
 {
+	ui->executableAdd->disconnect(addPulse);
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->executableSwitches.emplace_back();
 
@@ -193,6 +197,9 @@ void SceneSwitcher::setupExecutableTab()
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->executables->setItemWidget(item, sw);
 	}
+
+	if (switcher->executableSwitches.size() == 0)
+		addPulse = PulseWidget(ui->executableAdd, QColor(Qt::green));
 }
 
 ExecutableSwitchWidget::ExecutableSwitchWidget(ExecutableSwitch *s)

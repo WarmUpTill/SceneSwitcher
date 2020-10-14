@@ -25,7 +25,6 @@ class SceneSwitcher : public QDialog {
 public:
 	std::unique_ptr<Ui_SceneSwitcher> ui;
 	bool loading = true;
-	QMetaObject::Connection inactivePluse;
 
 	SceneSwitcher(QWidget *parent);
 

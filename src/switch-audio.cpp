@@ -7,11 +7,11 @@
 #include <QPropertyAnimation>
 #include <QGraphicsColorizeEffect>
 
-QMetaObject::Connection test;
+static QMetaObject::Connection addPulse;
 
 void SceneSwitcher::on_audioAdd_clicked()
 {
-	ui->audioAdd->disconnect(test);
+	ui->audioAdd->disconnect(addPulse);
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->audioSwitches.emplace_back();
@@ -192,7 +192,7 @@ void SceneSwitcher::setupAudioTab()
 	}
 
 	if (switcher->audioSwitches.size() == 0)
-		test = PulseWidget(ui->audioAdd, QColor(Qt::green));
+		addPulse = PulseWidget(ui->audioAdd, QColor(Qt::green));
 }
 
 void AudioSwitch::setVolumeLevel(void *data,

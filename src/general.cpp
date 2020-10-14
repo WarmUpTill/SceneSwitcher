@@ -5,6 +5,8 @@
 
 #include "headers/advanced-scene-switcher.hpp"
 
+QMetaObject::Connection inactivePluse;
+
 void SceneSwitcher::on_close_clicked()
 {
 	done(0);
