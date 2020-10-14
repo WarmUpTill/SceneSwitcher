@@ -195,9 +195,6 @@ void SwitcherData::loadTimeSwitches(obs_data_t *obj)
 
 void SceneSwitcher::setupTimeTab()
 {
-	populateSceneSelection(ui->timeScenes, true);
-	populateTransitionSelection(ui->timeTransitions);
-
 	for (auto &s : switcher->timeSwitches) {
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->timeSwitches);
@@ -229,7 +226,7 @@ void populateTriggers(QComboBox *list)
 		Qt::ToolTipRole);
 }
 
-TimeSwitchWidget::TimeSwitchWidget(TimeSwitch *s) : SwitchWidget(s, false)
+TimeSwitchWidget::TimeSwitchWidget(TimeSwitch *s) : SwitchWidget(s)
 {
 	triggers = new QComboBox();
 	time = new QTimeEdit();
