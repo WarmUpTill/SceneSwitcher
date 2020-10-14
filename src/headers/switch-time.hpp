@@ -1,7 +1,7 @@
 #pragma once
-#include <string>
 #include <QDateTime>
-#include "utility.hpp"
+#include <QTimeEdit>
+
 #include "switch-generic.hpp"
 
 constexpr auto time_func = 7;
@@ -20,24 +20,43 @@ typedef enum {
 } timeTrigger;
 
 struct TimeSwitch : SceneSwitcherEntry {
-	timeTrigger trigger;
-	QTime time;
-	std::string timeSwitchStr;
+	timeTrigger trigger = ANY_DAY;
+	QTime time = QTime();
 
 	const char *getType() { return "time"; }
 
+	inline TimeSwitch(){};
 	inline TimeSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			  timeTrigger trigger_, QTime time_,
-			  bool usePreviousScene_, std::string timeSwitchStr_)
+			  bool usePreviousScene_)
 		: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
 		  trigger(trigger_),
-		  time(time_),
-		  timeSwitchStr(timeSwitchStr_)
+		  time(time_)
 	{
 	}
 };
 
-static inline QString MakeTimeSwitchName(const QString &scene,
-					 const QString &transition,
-					 const timeTrigger &trigger,
-					 const QTime &time);
+class TimeSwitchWidget : public SwitchWidget {
+	Q_OBJECT
+
+public:
+	TimeSwitchWidget(TimeSwitch *s);
+	TimeSwitch *getSwitchData();
+	void setSwitchData(TimeSwitch *s);
+
+	static void swapSwitchData(TimeSwitchWidget *s1, TimeSwitchWidget *s2);
+
+private slots:
+	void TriggerChanged(int index);
+	void TimeChanged(const QTime &time);
+
+private:
+	QComboBox *triggers;
+	QTimeEdit *time;
+
+	QLabel *atLabel;
+	QLabel *switchLabel;
+	QLabel *usingLabel;
+
+	TimeSwitch *switchData;
+};

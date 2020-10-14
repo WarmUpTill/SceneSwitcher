@@ -95,7 +95,7 @@ struct SwitcherData {
 
 	std::deque<MediaSwitch> mediaSwitches;
 
-	std::vector<TimeSwitch> timeSwitches;
+	std::deque<TimeSwitch> timeSwitches;
 	QDateTime liveTime;
 
 	std::deque<AudioSwitch> audioSwitches;

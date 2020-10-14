@@ -42,10 +42,8 @@ public:
 	int SceneTransitionsFindByData(const QString &scene1,
 				       const QString &scene2);
 	int DefaultTransitionsFindByData(const QString &scene);
-	int executableFindByData(const QString &exe);
 	int IgnoreIdleWindowsFindByData(const QString &window);
 	int randomFindByData(const QString &scene);
-	int timeFindByData(const timeTrigger &trigger, const QTime &time);
 
 	void UpdateNonMatchingScene(const QString &name);
 	void UpdateAutoStopScene(const QString &name);
@@ -187,7 +185,6 @@ public slots:
 	void on_mediaUp_clicked();
 	void on_mediaDown_clicked();
 
-	void on_timeSwitches_currentRowChanged(int idx);
 	void on_timeAdd_clicked();
 	void on_timeRemove_clicked();
 	void on_timeUp_clicked();
