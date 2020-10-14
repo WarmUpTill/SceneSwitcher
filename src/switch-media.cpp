@@ -256,8 +256,6 @@ MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
 			 SLOT(StateChanged(int)));
 	QWidget::connect(timeRestrictions, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(TimeRestrictionChanged(int)));
-	QWidget::connect(states, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(StateChanged(const QString &)));
 	QWidget::connect(time, SIGNAL(valueChanged(int)), this,
 			 SLOT(TimeChanged(int)));
 
