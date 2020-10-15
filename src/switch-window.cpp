@@ -40,10 +40,12 @@ void SceneSwitcher::on_windowUp_clicked()
 	if (!listMoveUp(ui->windowSwitches))
 		return;
 
-	WindowSwitchWidget *s1 = (WindowSwitchWidget *)ui->windowSwitches->itemWidget(
-		ui->windowSwitches->item(index));
-	WindowSwitchWidget *s2 = (WindowSwitchWidget *)ui->windowSwitches->itemWidget(
-		ui->windowSwitches->item(index - 1));
+	WindowSwitchWidget *s1 =
+		(WindowSwitchWidget *)ui->windowSwitches->itemWidget(
+			ui->windowSwitches->item(index));
+	WindowSwitchWidget *s2 =
+		(WindowSwitchWidget *)ui->windowSwitches->itemWidget(
+			ui->windowSwitches->item(index - 1));
 	WindowSwitchWidget::swapSwitchData(s1, s2);
 
 	std::lock_guard<std::mutex> lock(switcher->m);
@@ -59,10 +61,12 @@ void SceneSwitcher::on_windowDown_clicked()
 	if (!listMoveDown(ui->windowSwitches))
 		return;
 
-	WindowSwitchWidget *s1 = (WindowSwitchWidget *)ui->windowSwitches->itemWidget(
-		ui->windowSwitches->item(index));
-	WindowSwitchWidget *s2 = (WindowSwitchWidget *)ui->windowSwitches->itemWidget(
-		ui->windowSwitches->item(index + 1));
+	WindowSwitchWidget *s1 =
+		(WindowSwitchWidget *)ui->windowSwitches->itemWidget(
+			ui->windowSwitches->item(index));
+	WindowSwitchWidget *s2 =
+		(WindowSwitchWidget *)ui->windowSwitches->itemWidget(
+			ui->windowSwitches->item(index + 1));
 	WindowSwitchWidget::swapSwitchData(s1, s2);
 
 	std::lock_guard<std::mutex> lock(switcher->m);
@@ -380,6 +384,8 @@ WindowSwitchWidget::WindowSwitchWidget(WindowSwitch *s) : SwitchWidget(s, false)
 
 	SceneSwitcher::populateWindowSelection(windows);
 
+	windows->setEditable(true);
+	windows->setMaxVisibleItems(20);
 #if __APPLE__
 	// TODO:
 	// not implemented on MacOS as I cannot test it
