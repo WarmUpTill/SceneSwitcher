@@ -65,22 +65,30 @@ void SceneSwitcher::loadUI()
  * UI helpers
  ********************************************************************************/
 
-void addSelectionEntry(QComboBox *sel, const char *description)
+void addSelectionEntry(QComboBox *sel, const char *description,
+		       const char *tooltip = "")
 {
 	sel->addItem(description);
+
+	if (strcmp(tooltip, "") != 0) {
+		sel->setItemData(0, tooltip, Qt::ToolTipRole);
+	}
+
 	QStandardItemModel *model =
 		qobject_cast<QStandardItemModel *>(sel->model());
 	QModelIndex firstIndex =
 		model->index(0, sel->modelColumn(), sel->rootModelIndex());
 	QStandardItem *firstItem = model->itemFromIndex(firstIndex);
 	firstItem->setSelectable(false);
+	firstItem->setEnabled(false);
 }
 
 void SceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 					   bool addSelect)
 {
 	if (addSelect)
-		addSelectionEntry(sel, "--select scene--");
+		addSelectionEntry(sel, "--select scene--",
+				  "invalid entries will not be saved");
 
 	BPtr<char *> scenes = obs_frontend_get_scene_names();
 	char **temp = scenes;
@@ -128,7 +136,8 @@ void SceneSwitcher::populateWindowSelection(QComboBox *sel, bool addSelect)
 void SceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
 {
 	if (addSelect)
-		addSelectionEntry(sel, "--select audio source--");
+		addSelectionEntry(sel, "--select audio source--",
+				  "invalid entries will not be saved");
 
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
@@ -148,7 +157,8 @@ void SceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
 void SceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
 {
 	if (addSelect)
-		addSelectionEntry(sel, "--select media source--");
+		addSelectionEntry(sel, "--select media source--",
+				  "invalid entries will not be saved");
 
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
