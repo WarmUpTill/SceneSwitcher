@@ -246,7 +246,7 @@ void SceneSwitcher::on_verboseLogging_stateChanged(int state)
 	switcher->verbose = state;
 }
 
-void SceneSwitcher::on_uiHints_stateChanged(int state)
+void SceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 {
 	if (loading)
 		return;

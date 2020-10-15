@@ -59,7 +59,7 @@ struct SwitcherData {
 	NoMatch switchIfNotMatching = NO_SWITCH;
 	StartupBehavior startupBehavior = PERSIST;
 
-	std::vector<WindowSceneSwitch> windowSwitches;
+	std::deque<WindowSwitch> windowSwitches;
 	std::vector<std::string> ignoreIdleWindows;
 	std::string lastTitle;
 

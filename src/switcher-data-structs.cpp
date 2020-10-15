@@ -4,7 +4,7 @@
 void SwitcherData::Prune()
 {
 	for (size_t i = 0; i < windowSwitches.size(); i++) {
-		WindowSceneSwitch &s = windowSwitches[i];
+		WindowSwitch &s = windowSwitches[i];
 		if (!s.valid())
 			windowSwitches.erase(windowSwitches.begin() + i--);
 	}

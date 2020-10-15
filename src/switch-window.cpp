@@ -1,139 +1,74 @@
 #include "headers/advanced-scene-switcher.hpp"
 
-bool isRunning(std::string &title)
+static QMetaObject::Connection addPulse;
+
+void SceneSwitcher::on_windowAdd_clicked()
 {
-	QStringList windows;
+	ui->windowAdd->disconnect(addPulse);
 
-	GetWindowList(windows);
-	// True if switch is running (direct)
-	bool equals = windows.contains(QString::fromStdString(title));
-	// True if switch is running (regex)
-	bool matches = (windows.indexOf(QRegularExpression(
-				QString::fromStdString(title))) != -1);
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->windowSwitches.emplace_back();
 
-	return (equals || matches);
+	QListWidgetItem *item;
+	item = new QListWidgetItem(ui->windowSwitches);
+	ui->windowSwitches->addItem(item);
+	WindowSwitchWidget *sw =
+		new WindowSwitchWidget(&switcher->windowSwitches.back());
+	item->setSizeHint(sw->minimumSizeHint());
+	ui->windowSwitches->setItemWidget(item, sw);
 }
 
-bool isFocused(std::string &title)
+void SceneSwitcher::on_windowRemove_clicked()
 {
-	std::string current;
-
-	GetCurrentWindowTitle(current);
-	// True if switch equals current window
-	bool equals = (title == current);
-	// True if switch matches current window
-	bool matches = QString::fromStdString(current).contains(
-		QRegularExpression(QString::fromStdString(title)));
-
-	return (equals || matches);
-}
-
-void SceneSwitcher::on_up_clicked()
-{
-	int index = ui->switches->currentRow();
-	if (index != -1 && index != 0) {
-		ui->switches->insertItem(index - 1,
-					 ui->switches->takeItem(index));
-		ui->switches->setCurrentRow(index - 1);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-
-		iter_swap(switcher->windowSwitches.begin() + index,
-			  switcher->windowSwitches.begin() + index - 1);
-	}
-}
-
-void SceneSwitcher::on_down_clicked()
-{
-	int index = ui->switches->currentRow();
-	if (index != -1 && index != ui->switches->count() - 1) {
-		ui->switches->insertItem(index + 1,
-					 ui->switches->takeItem(index));
-		ui->switches->setCurrentRow(index + 1);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-
-		iter_swap(switcher->windowSwitches.begin() + index,
-			  switcher->windowSwitches.begin() + index + 1);
-	}
-}
-
-void SceneSwitcher::on_add_clicked()
-{
-	QString sceneName = ui->scenes->currentText();
-	QString windowName = ui->windows->currentText();
-	QString transitionName = ui->transitions->currentText();
-	bool fullscreen = ui->fullscreenCheckBox->isChecked();
-	bool maximized = ui->maximizedCheckBox->isChecked();
-	bool focus = ui->focusCheckBox->isChecked();
-
-	if (windowName.isEmpty() || sceneName.isEmpty())
-		return;
-
-	OBSWeakSource source = GetWeakSourceByQString(sceneName);
-	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
-	QVariant v = QVariant::fromValue(windowName);
-
-	QString text = MakeWindowSwitchName(sceneName, windowName,
-					    transitionName, fullscreen,
-					    maximized, focus);
-
-	int idx = FindByData(windowName);
-
-	if (idx == -1) {
-		std::lock_guard<std::mutex> lock(switcher->m);
-		switcher->windowSwitches.emplace_back(
-			source, windowName.toUtf8().constData(), transition,
-			fullscreen, maximized, focus);
-
-		QListWidgetItem *item = new QListWidgetItem(text, ui->switches);
-		item->setData(Qt::UserRole, v);
-	} else {
-		QListWidgetItem *item = ui->switches->item(idx);
-		item->setText(text);
-
-		std::string window = windowName.toUtf8().constData();
-
-		{
-			std::lock_guard<std::mutex> lock(switcher->m);
-			for (auto &s : switcher->windowSwitches) {
-				if (s.window == window) {
-					s.scene = source;
-					s.transition = transition;
-					s.fullscreen = fullscreen;
-					s.maximized = maximized;
-					s.focus = focus;
-					break;
-				}
-			}
-		}
-	}
-}
-
-void SceneSwitcher::on_remove_clicked()
-{
-	QListWidgetItem *item = ui->switches->currentItem();
+	QListWidgetItem *item = ui->windowSwitches->currentItem();
 	if (!item)
 		return;
 
-	std::string window =
-		item->data(Qt::UserRole).toString().toUtf8().constData();
-
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
+		int idx = ui->windowSwitches->currentRow();
 		auto &switches = switcher->windowSwitches;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it) {
-			auto &s = *it;
-
-			if (s.window == window) {
-				switches.erase(it);
-				break;
-			}
-		}
+		switches.erase(switches.begin() + idx);
 	}
 
 	delete item;
+}
+
+void SceneSwitcher::on_windowUp_clicked()
+{
+	int index = ui->windowSwitches->currentRow();
+	if (!listMoveUp(ui->windowSwitches))
+		return;
+
+	WindowSwitchWidget *s1 = (WindowSwitchWidget *)ui->windowSwitches->itemWidget(
+		ui->windowSwitches->item(index));
+	WindowSwitchWidget *s2 = (WindowSwitchWidget *)ui->windowSwitches->itemWidget(
+		ui->windowSwitches->item(index - 1));
+	WindowSwitchWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->windowSwitches[index],
+		  switcher->windowSwitches[index - 1]);
+}
+
+void SceneSwitcher::on_windowDown_clicked()
+{
+	int index = ui->windowSwitches->currentRow();
+
+	if (!listMoveDown(ui->windowSwitches))
+		return;
+
+	WindowSwitchWidget *s1 = (WindowSwitchWidget *)ui->windowSwitches->itemWidget(
+		ui->windowSwitches->item(index));
+	WindowSwitchWidget *s2 = (WindowSwitchWidget *)ui->windowSwitches->itemWidget(
+		ui->windowSwitches->item(index + 1));
+	WindowSwitchWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->windowSwitches[index],
+		  switcher->windowSwitches[index + 1]);
 }
 
 void SceneSwitcher::on_ignoreWindowsAdd_clicked()
@@ -184,24 +119,6 @@ void SceneSwitcher::on_ignoreWindowsRemove_clicked()
 	delete item;
 }
 
-int SceneSwitcher::FindByData(const QString &window)
-{
-	int count = ui->switches->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++) {
-		QListWidgetItem *item = ui->switches->item(i);
-		QString itemWindow = item->data(Qt::UserRole).toString();
-
-		if (itemWindow == window) {
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
 int SceneSwitcher::IgnoreWindowsFindByData(const QString &window)
 {
 	int count = ui->ignoreWindows->count();
@@ -218,34 +135,6 @@ int SceneSwitcher::IgnoreWindowsFindByData(const QString &window)
 	}
 
 	return idx;
-}
-
-void SceneSwitcher::on_switches_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem *item = ui->switches->item(idx);
-
-	QString window = item->data(Qt::UserRole).toString();
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	for (auto &s : switcher->windowSwitches) {
-		if (window.compare(s.window.c_str()) == 0) {
-			std::string name = GetWeakSourceName(s.scene);
-			std::string transitionName =
-				GetWeakSourceName(s.transition);
-			ui->scenes->setCurrentText(name.c_str());
-			ui->windows->setCurrentText(window);
-			ui->transitions->setCurrentText(transitionName.c_str());
-			ui->fullscreenCheckBox->setChecked(s.fullscreen);
-			ui->maximizedCheckBox->setChecked(s.maximized);
-			ui->focusCheckBox->setChecked(s.focus);
-			break;
-		}
-	}
 }
 
 void SceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
@@ -266,6 +155,34 @@ void SceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
 			break;
 		}
 	}
+}
+
+bool isRunning(std::string &title)
+{
+	QStringList windows;
+
+	GetWindowList(windows);
+	// True if switch is running (direct)
+	bool equals = windows.contains(QString::fromStdString(title));
+	// True if switch is running (regex)
+	bool matches = (windows.indexOf(QRegularExpression(
+				QString::fromStdString(title))) != -1);
+
+	return (equals || matches);
+}
+
+bool isFocused(std::string &title)
+{
+	std::string current;
+
+	GetCurrentWindowTitle(current);
+	// True if switch equals current window
+	bool equals = (title == current);
+	// True if switch matches current window
+	bool matches = QString::fromStdString(current).contains(
+		QRegularExpression(QString::fromStdString(title)));
+
+	return (equals || matches);
 }
 
 void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
@@ -293,7 +210,7 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 	lastTitle = title;
 
 	// Check for match
-	for (WindowSceneSwitch &s : windowSwitches) {
+	for (WindowSwitch &s : windowSwitches) {
 		// True if fullscreen is disabled OR current window is fullscreen
 		bool fullscreen = (!s.fullscreen || isFullscreen(s.window));
 		// True if maximized is disabled OR current window is maximized
@@ -324,7 +241,7 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 void SwitcherData::saveWindowTitleSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *windowTitleArray = obs_data_array_create();
-	for (WindowSceneSwitch &s : switcher->windowSwitches) {
+	for (WindowSwitch &s : switcher->windowSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
 		obs_source_t *source = obs_weak_source_get_source(s.scene);
@@ -422,23 +339,19 @@ void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
 
 void SceneSwitcher::setupTitleTab()
 {
-	populateSceneSelection(ui->scenes, false);
-	populateTransitionSelection(ui->transitions);
-	populateWindowSelection(ui->windows);
-	populateWindowSelection(ui->ignoreWindowsWindows);
-
 	for (auto &s : switcher->windowSwitches) {
-		std::string sceneName = GetWeakSourceName(s.scene);
-		std::string transitionName = GetWeakSourceName(s.transition);
-		QString text = MakeWindowSwitchName(sceneName.c_str(),
-						    s.window.c_str(),
-						    transitionName.c_str(),
-						    s.fullscreen, s.maximized,
-						    s.focus);
-
-		QListWidgetItem *item = new QListWidgetItem(text, ui->switches);
-		item->setData(Qt::UserRole, s.window.c_str());
+		QListWidgetItem *item;
+		item = new QListWidgetItem(ui->windowSwitches);
+		ui->windowSwitches->addItem(item);
+		WindowSwitchWidget *sw = new WindowSwitchWidget(&s);
+		item->setSizeHint(sw->minimumSizeHint());
+		ui->windowSwitches->setItemWidget(item, sw);
 	}
+
+	if (switcher->windowSwitches.size() == 0)
+		addPulse = PulseWidget(ui->windowAdd, QColor(Qt::green));
+
+	populateWindowSelection(ui->ignoreWindowsWindows);
 
 	for (auto &window : switcher->ignoreWindowsSwitches) {
 		QString text = QString::fromStdString(window);
@@ -447,36 +360,108 @@ void SceneSwitcher::setupTitleTab()
 			new QListWidgetItem(text, ui->ignoreWindows);
 		item->setData(Qt::UserRole, text);
 	}
+}
+
+WindowSwitchWidget::WindowSwitchWidget(WindowSwitch *s) : SwitchWidget(s, false)
+{
+	windows = new QComboBox();
+	fullscreen = new QCheckBox("if fullscreen");
+	maximized = new QCheckBox("if maximized");
+	focused = new QCheckBox("if focused");
+
+	QWidget::connect(windows, SIGNAL(currentTextChanged(const QString &)),
+			 this, SLOT(WindowChanged(const QString &)));
+	QWidget::connect(fullscreen, SIGNAL(stateChanged(int)), this,
+			 SLOT(FullscreenChanged(int)));
+	QWidget::connect(maximized, SIGNAL(stateChanged(int)), this,
+			 SLOT(MaximizedChanged(int)));
+	QWidget::connect(focused, SIGNAL(stateChanged(int)), this,
+			 SLOT(FocusChanged(int)));
+
+	SceneSwitcher::populateWindowSelection(windows);
 
 #if __APPLE__
 	// TODO:
 	// not implemented on MacOS as I cannot test it
-	ui->maximizedCheckBox->setDisabled(true);
-	ui->maximizedCheckBox->setVisible(false);
+	maximized->setDisabled(true);
+	maximized->setVisible(false);
 #endif
-}
 
-static inline QString MakeWindowSwitchName(const QString &scene,
-					   const QString &value,
-					   const QString &transition,
-					   bool fullscreen, bool maximized,
-					   bool focus)
-{
-	QString name = QStringLiteral("[") + scene + QStringLiteral(", ") +
-		       transition + QStringLiteral("]: ") + value;
-
-	if (fullscreen || maximized || focus) {
-		name += QStringLiteral(" (only if");
-
-		if (fullscreen)
-			name += QStringLiteral(" fullscreen ");
-		if (maximized)
-			name += QStringLiteral(" maximized ");
-		if (focus)
-			name += QStringLiteral(" focused");
-
-		name += QStringLiteral(")");
+	if (s) {
+		windows->setCurrentText(s->window.c_str());
+		fullscreen->setChecked(s->fullscreen);
+		maximized->setChecked(s->maximized);
+		focused->setChecked(s->focus);
 	}
 
-	return name;
+	setStyleSheet("* { background-color: transparent; }");
+
+	QHBoxLayout *mainLayout = new QHBoxLayout;
+
+	mainLayout->addWidget(windows);
+	mainLayout->addWidget(scenes);
+	mainLayout->addWidget(transitions);
+	mainLayout->addWidget(scenes);
+	mainLayout->addWidget(fullscreen);
+	mainLayout->addWidget(maximized);
+	mainLayout->addWidget(focused);
+	mainLayout->addStretch();
+
+	setLayout(mainLayout);
+
+	switchData = s;
+
+	loading = false;
+}
+
+WindowSwitch *WindowSwitchWidget::getSwitchData()
+{
+	return switchData;
+}
+
+void WindowSwitchWidget::setSwitchData(WindowSwitch *s)
+{
+	switchData = s;
+}
+
+void WindowSwitchWidget::swapSwitchData(WindowSwitchWidget *s1,
+					WindowSwitchWidget *s2)
+{
+	SwitchWidget::swapSwitchData(s1, s2);
+
+	WindowSwitch *t = s1->getSwitchData();
+	s1->setSwitchData(s2->getSwitchData());
+	s2->setSwitchData(t);
+}
+
+void WindowSwitchWidget::WindowChanged(const QString &text)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->window = text.toStdString();
+}
+
+void WindowSwitchWidget::FullscreenChanged(int state)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->fullscreen = state;
+}
+
+void WindowSwitchWidget::MaximizedChanged(int state)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->maximized = state;
+}
+
+void WindowSwitchWidget::FocusChanged(int state)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->focus = state;
 }

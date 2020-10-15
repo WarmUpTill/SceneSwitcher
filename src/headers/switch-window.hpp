@@ -1,22 +1,22 @@
 #pragma once
-#include <string>
 #include "utility.hpp"
 #include "switch-generic.hpp"
 
 constexpr auto window_title_func = 5;
 constexpr auto default_priority_5 = window_title_func;
 
-struct WindowSceneSwitch : SceneSwitcherEntry {
-	std::string window;
-	bool fullscreen;
-	bool maximized;
-	bool focus;
+struct WindowSwitch : SceneSwitcherEntry {
+	std::string window = "";
+	bool fullscreen = false;
+	bool maximized = false;
+	bool focus = true;
 
 	const char *getType() { return "window"; }
 
-	inline WindowSceneSwitch(OBSWeakSource scene_, const char *window_,
-				 OBSWeakSource transition_, bool fullscreen_,
-				 bool maximized_, bool focus_)
+	inline WindowSwitch() {}
+	inline WindowSwitch(OBSWeakSource scene_, const char *window_,
+			    OBSWeakSource transition_, bool fullscreen_,
+			    bool maximized_, bool focus_)
 		: SceneSwitcherEntry(scene_, transition_),
 		  window(window_),
 		  fullscreen(fullscreen_),
@@ -26,8 +26,28 @@ struct WindowSceneSwitch : SceneSwitcherEntry {
 	}
 };
 
-static inline QString MakeWindowSwitchName(const QString &scene,
-					   const QString &value,
-					   const QString &transition,
-					   bool fullscreen, bool maximized,
-					   bool focus);
+class WindowSwitchWidget : public SwitchWidget {
+	Q_OBJECT
+
+public:
+	WindowSwitchWidget(WindowSwitch *s);
+	WindowSwitch *getSwitchData();
+	void setSwitchData(WindowSwitch *s);
+
+	static void swapSwitchData(WindowSwitchWidget *s1,
+				   WindowSwitchWidget *s2);
+
+private slots:
+	void WindowChanged(const QString &text);
+	void FullscreenChanged(int state);
+	void MaximizedChanged(int state);
+	void FocusChanged(int state);
+
+private:
+	QComboBox *windows;
+	QCheckBox *fullscreen;
+	QCheckBox *maximized;
+	QCheckBox *focused;
+
+	WindowSwitch *switchData;
+};

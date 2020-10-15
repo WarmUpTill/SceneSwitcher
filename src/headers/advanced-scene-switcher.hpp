@@ -33,7 +33,6 @@ public:
 	void SetStarted();
 	void SetStopped();
 
-	int FindByData(const QString &window);
 	int ScreenRegionFindByData(const QString &region);
 	int PauseScenesFindByData(const QString &scene);
 	int PauseWindowsFindByData(const QString &window);
@@ -87,11 +86,10 @@ public:
 	bool listMoveDown(QListWidget *list);
 
 public slots:
-	void on_switches_currentRowChanged(int idx);
-	void on_up_clicked();
-	void on_down_clicked();
-	void on_add_clicked();
-	void on_remove_clicked();
+	void on_windowUp_clicked();
+	void on_windowDown_clicked();
+	void on_windowAdd_clicked();
+	void on_windowRemove_clicked();
 	void on_noMatchDontSwitch_clicked();
 	void on_noMatchSwitch_clicked();
 	void on_noMatchRandomSwitch_clicked();
@@ -136,7 +134,7 @@ public slots:
 	void on_autoStartScenes_currentTextChanged(const QString &text);
 
 	void on_verboseLogging_stateChanged(int state);
-	void on_uiHints_stateChanged(int state);
+	void on_uiHintsDisable_stateChanged(int state);
 
 	void on_exportSettings_clicked();
 	void on_importSettings_clicked();
