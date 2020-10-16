@@ -80,7 +80,7 @@ public:
 					     bool addSelect = true);
 	QMetaObject::Connection PulseWidget(QWidget *widget, QColor endColor,
 					    QColor = QColor(0, 0, 0, 0),
-					    QString specifier = "");
+					    QString specifier = "QLabel ");
 
 	bool listMoveUp(QListWidget *list);
 	bool listMoveDown(QListWidget *list);
