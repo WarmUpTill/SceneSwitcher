@@ -36,7 +36,6 @@ public:
 	int PauseScenesFindByData(const QString &scene);
 	int PauseWindowsFindByData(const QString &window);
 	int IgnoreWindowsFindByData(const QString &window);
-	int SceneSequenceFindByData(const QString &scene1);
 	int SceneTransitionsFindByData(const QString &scene1,
 				       const QString &scene2);
 	int DefaultTransitionsFindByData(const QString &scene);
@@ -117,14 +116,12 @@ public slots:
 	void on_ignoreWindowsAdd_clicked();
 	void on_ignoreWindowsRemove_clicked();
 
-	void on_sceneSequences_currentRowChanged(int idx);
 	void on_sceneSequenceAdd_clicked();
 	void on_sceneSequenceRemove_clicked();
 	void on_sceneSequenceSave_clicked();
 	void on_sceneSequenceLoad_clicked();
 	void on_sceneSequenceUp_clicked();
 	void on_sceneSequenceDown_clicked();
-	void on_sceneSequenceDelayUnits_currentIndexChanged(int index);
 
 	void on_autoStopSceneCheckBox_stateChanged(int state);
 	void on_autoStopScenes_currentTextChanged(const QString &text);

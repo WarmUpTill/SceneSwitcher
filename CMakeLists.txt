@@ -46,7 +46,7 @@ if(BUILD_OUT_OF_TREE)
 		src/headers/switch-time.hpp
 		src/headers/switch-transitions.hpp
 		src/headers/switch-window.hpp
-		src/headers/swtich-sequence.hpp
+		src/headers/switch-sequence.hpp
 		src/headers/switch-generic.hpp
 		)
 
@@ -196,7 +196,7 @@ else ()
 		src/headers/switch-time.hpp
 		src/headers/switch-transitions.hpp
 		src/headers/switch-window.hpp
-		src/headers/swtich-sequence.hpp
+		src/headers/switch-sequence.hpp
 		src/headers/switch-generic.hpp
 		)
 

@@ -18,7 +18,7 @@
 #include "switch-time.hpp"
 #include "switch-transitions.hpp"
 #include "switch-window.hpp"
-#include "swtich-sequence.hpp"
+#include "switch-sequence.hpp"
 
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
@@ -72,8 +72,7 @@ struct SwitcherData {
 
 	std::vector<std::string> ignoreWindowsSwitches;
 
-	std::vector<SceneSequenceSwitch> sceneSequenceSwitches;
-	int sceneSequenceMultiplier = 1;
+	std::deque<SceneSequenceSwitch> sceneSequenceSwitches;
 
 	std::deque<RandomSwitch> randomSwitches;
 
