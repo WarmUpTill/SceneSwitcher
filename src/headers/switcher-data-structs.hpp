@@ -47,6 +47,7 @@ struct SwitcherData {
 	bool stop = false;
 	bool verbose = false;
 	bool disableHints = false;
+	bool showFrame = false;
 	bool tansitionOverrideOverride = false;
 
 	int interval = default_interval;
@@ -63,7 +64,7 @@ struct SwitcherData {
 	std::vector<std::string> ignoreIdleWindows;
 	std::string lastTitle;
 
-	std::vector<ScreenRegionSwitch> screenRegionSwitches;
+	std::deque<ScreenRegionSwitch> screenRegionSwitches;
 
 	std::vector<OBSWeakSource> pauseScenesSwitches;
 

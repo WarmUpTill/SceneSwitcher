@@ -33,7 +33,6 @@ public:
 	void SetStarted();
 	void SetStopped();
 
-	int ScreenRegionFindByData(const QString &region);
 	int PauseScenesFindByData(const QString &scene);
 	int PauseWindowsFindByData(const QString &window);
 	int IgnoreWindowsFindByData(const QString &window);
@@ -99,7 +98,8 @@ public slots:
 	void on_toggleStartButton_clicked();
 	void on_tabMoved(int from, int to);
 
-	void on_screenRegions_currentRowChanged(int idx);
+	void on_screenRegionSwitches_currentRowChanged(int idx);
+	void on_showFrame_clicked();
 	void on_screenRegionAdd_clicked();
 	void on_screenRegionRemove_clicked();
 	void on_screenRegionUp_clicked();
