@@ -39,6 +39,7 @@ void SceneSwitcher::on_showFrame_clicked()
 
 void SceneSwitcher::on_screenRegionSwitches_currentRowChanged(int idx)
 {
+	UNUSED_PARAMETER(idx);
 	if (loading)
 		return;
 
