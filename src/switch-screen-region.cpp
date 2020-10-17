@@ -129,6 +129,9 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 	int minRegionSize = 99999;
 
 	for (auto &s : screenRegionSwitches) {
+		if (!s.initialized())
+			continue;
+
 		if (cursorPos.first >= s.minX && cursorPos.second >= s.minY &&
 		    cursorPos.first <= s.maxX && cursorPos.second <= s.maxY) {
 			int regionSize = (s.maxX - s.minX) + (s.maxY - s.minY);

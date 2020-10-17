@@ -47,6 +47,9 @@ void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
 	std::mt19937 urng(rng());
 	std::shuffle(rs.begin(), rs.end(), urng);
 	for (RandomSwitch &r : rs) {
+		if (!r.initialized())
+			continue;
+
 		if (r.scene == lastRandomScene)
 			continue;
 		scene = r.scene;

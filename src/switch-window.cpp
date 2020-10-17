@@ -215,6 +215,9 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 
 	// Check for match
 	for (WindowSwitch &s : windowSwitches) {
+		if (!s.initialized())
+			continue;
+
 		// True if fullscreen is disabled OR current window is fullscreen
 		bool fullscreen = (!s.fullscreen || isFullscreen(s.window));
 		// True if maximized is disabled OR current window is maximized

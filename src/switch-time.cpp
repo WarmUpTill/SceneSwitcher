@@ -113,6 +113,9 @@ void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
 		return;
 
 	for (TimeSwitch &s : timeSwitches) {
+		if (!s.initialized())
+			continue;
+
 		if (s.trigger == LIVE)
 			match = checkLiveTime(s, liveTime, interval);
 		else
