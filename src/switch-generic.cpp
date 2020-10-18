@@ -20,7 +20,7 @@ void SceneSwitcherEntry::logMatch()
 	obs_source_t *s = obs_weak_source_get_source(scene);
 	const char *sceneName = obs_source_get_name(s);
 	obs_source_release(s);
-	blog(LOG_INFO, "[adv-ss] match for '%s' - switch to scene '%s'",
+	blog(LOG_INFO, "match for '%s' - switch to scene '%s'",
 	     getType(), sceneName);
 }
 
