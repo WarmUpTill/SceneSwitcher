@@ -219,6 +219,9 @@ ExecutableSwitchWidget::ExecutableSwitchWidget(ExecutableSwitch *s)
 
 	AdvSceneSwitcher::populateProcessSelection(processes);
 
+	processes->setEditable(true);
+	processes->setMaxVisibleItems(20);
+
 	if (s) {
 		processes->setCurrentText(s->exe);
 		requiresFocus->setChecked(s->inFocus);
