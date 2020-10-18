@@ -8,7 +8,7 @@ static QMetaObject::Connection addPulse;
 
 void SceneSwitcher::on_sceneSequenceAdd_clicked()
 {
-	ui->sceneSequenceSwitches->disconnect(addPulse);
+	ui->sceneSequenceAdd->disconnect(addPulse);
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->sceneSequenceSwitches.emplace_back();
@@ -277,7 +277,7 @@ bool SceneSequenceSwitch::valid()
 
 void SceneSequenceSwitch::logSleep(int dur)
 {
-	blog(LOG_INFO, "Advanced Scene Switcher sequence sleep %d", dur);
+	blog(LOG_INFO, "sequence sleep %d", dur);
 }
 
 void populateDelayUnits(QComboBox *list)
