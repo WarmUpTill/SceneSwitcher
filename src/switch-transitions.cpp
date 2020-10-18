@@ -2,53 +2,16 @@
 
 void SceneSwitcher::on_transitionsAdd_clicked()
 {
-	QString scene1Name = ui->transitionsScene1->currentText();
-	QString scene2Name = ui->transitionsScene2->currentText();
-	QString transitionName = ui->transitionsTransitions->currentText();
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->sceneTransitions.emplace_back();
 
-	if (scene1Name.isEmpty() || scene2Name.isEmpty())
-		return;
-
-	if (scene1Name == scene2Name)
-		return;
-
-	OBSWeakSource source1 = GetWeakSourceByQString(scene1Name);
-	OBSWeakSource source2 = GetWeakSourceByQString(scene2Name);
-	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
-
-	QString text =
-		MakeSceneTransitionName(scene1Name, scene2Name, transitionName);
-	QVariant v = QVariant::fromValue(text);
-
-	int idx = SceneTransitionsFindByData(scene1Name, scene2Name);
-
-	if (idx == -1) {
-		QListWidgetItem *item =
-			new QListWidgetItem(text, ui->sceneTransitions);
-		item->setData(Qt::UserRole, v);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-		switcher->sceneTransitions.emplace_back(
-			source1, source2, transition,
-			text.toUtf8().constData());
-	} else {
-		QListWidgetItem *item = ui->sceneTransitions->item(idx);
-		item->setText(text);
-
-		{
-			std::lock_guard<std::mutex> lock(switcher->m);
-			for (auto &s : switcher->sceneTransitions) {
-				if (s.scene == source1 && s.scene2 == source2) {
-					s.transition = transition;
-					s.sceneTransitionStr =
-						text.toUtf8().constData();
-					break;
-				}
-			}
-		}
-
-		ui->sceneTransitions->sortItems();
-	}
+	QListWidgetItem *item;
+	item = new QListWidgetItem(ui->sceneTransitions);
+	ui->sceneTransitions->addItem(item);
+	TransitionSwitchWidget *sw =
+		new TransitionSwitchWidget(&switcher->sceneTransitions.back());
+	item->setSizeHint(sw->minimumSizeHint());
+	ui->sceneTransitions->setItemWidget(item, sw);
 }
 
 void SceneSwitcher::on_transitionsRemove_clicked()
@@ -57,70 +20,69 @@ void SceneSwitcher::on_transitionsRemove_clicked()
 	if (!item)
 		return;
 
-	std::string text =
-		item->data(Qt::UserRole).toString().toUtf8().constData();
-
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
+		int idx = ui->sceneTransitions->currentRow();
 		auto &switches = switcher->sceneTransitions;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it) {
-			auto &s = *it;
-
-			if (s.sceneTransitionStr == text) {
-				switches.erase(it);
-				break;
-			}
-		}
+		switches.erase(switches.begin() + idx);
 	}
 
 	delete item;
 }
 
-void SceneSwitcher::on_defaultTransitionsAdd_clicked()
+void SceneSwitcher::on_transitionsUp_clicked()
 {
-	QString sceneName = ui->defaultTransitionsScene->currentText();
-	QString transitionName =
-		ui->defaultTransitionsTransitions->currentText();
-
-	if (sceneName.isEmpty() || transitionName.isEmpty())
+	int index = ui->sceneTransitions->currentRow();
+	if (!listMoveUp(ui->sceneTransitions))
 		return;
 
-	OBSWeakSource source = GetWeakSourceByQString(sceneName);
-	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
+	TransitionSwitchWidget *s1 =
+		(TransitionSwitchWidget *)ui->sceneTransitions->itemWidget(
+			ui->sceneTransitions->item(index));
+	TransitionSwitchWidget *s2 =
+		(TransitionSwitchWidget *)ui->sceneTransitions->itemWidget(
+			ui->sceneTransitions->item(index - 1));
+	TransitionSwitchWidget::swapSwitchData(s1, s2);
 
-	QString text =
-		MakeDefaultSceneTransitionName(sceneName, transitionName);
-	QVariant v = QVariant::fromValue(text);
+	std::lock_guard<std::mutex> lock(switcher->m);
 
-	int idx = DefaultTransitionsFindByData(sceneName);
+	std::swap(switcher->sceneTransitions[index],
+		  switcher->sceneTransitions[index - 1]);
+}
 
-	if (idx == -1) {
-		QListWidgetItem *item =
-			new QListWidgetItem(text, ui->defaultTransitions);
-		item->setData(Qt::UserRole, v);
+void SceneSwitcher::on_transitionsDown_clicked()
+{
+	int index = ui->sceneTransitions->currentRow();
 
-		std::lock_guard<std::mutex> lock(switcher->m);
-		switcher->defaultSceneTransitions.emplace_back(
-			source, transition, text.toUtf8().constData());
-	} else {
-		QListWidgetItem *item = ui->defaultTransitions->item(idx);
-		item->setText(text);
+	if (!listMoveDown(ui->sceneTransitions))
+		return;
 
-		{
-			std::lock_guard<std::mutex> lock(switcher->m);
-			for (auto &s : switcher->defaultSceneTransitions) {
-				if (s.scene == source) {
-					s.transition = transition;
-					s.sceneTransitionStr =
-						text.toUtf8().constData();
-					break;
-				}
-			}
-		}
+	TransitionSwitchWidget *s1 =
+		(TransitionSwitchWidget *)ui->sceneTransitions->itemWidget(
+			ui->sceneTransitions->item(index));
+	TransitionSwitchWidget *s2 =
+		(TransitionSwitchWidget *)ui->sceneTransitions->itemWidget(
+			ui->sceneTransitions->item(index + 1));
+	TransitionSwitchWidget::swapSwitchData(s1, s2);
 
-		ui->defaultTransitions->sortItems();
-	}
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->sceneTransitions[index],
+		  switcher->sceneTransitions[index + 1]);
+}
+
+void SceneSwitcher::on_defaultTransitionsAdd_clicked()
+{
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->defaultSceneTransitions.emplace_back();
+
+	QListWidgetItem *item;
+	item = new QListWidgetItem(ui->defaultTransitions);
+	ui->defaultTransitions->addItem(item);
+	DefTransitionSwitchWidget *sw = new DefTransitionSwitchWidget(
+		&switcher->defaultSceneTransitions.back());
+	item->setSizeHint(sw->minimumSizeHint());
+	ui->defaultTransitions->setItemWidget(item, sw);
 }
 
 void SceneSwitcher::on_defaultTransitionsRemove_clicked()
@@ -129,24 +91,55 @@ void SceneSwitcher::on_defaultTransitionsRemove_clicked()
 	if (!item)
 		return;
 
-	std::string text =
-		item->data(Qt::UserRole).toString().toUtf8().constData();
-
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
+		int idx = ui->defaultTransitions->currentRow();
 		auto &switches = switcher->defaultSceneTransitions;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it) {
-			auto &s = *it;
-
-			if (s.sceneTransitionStr == text) {
-				switches.erase(it);
-				break;
-			}
-		}
+		switches.erase(switches.begin() + idx);
 	}
 
 	delete item;
+}
+
+void SceneSwitcher::on_defaultTransitionsUp_clicked()
+{
+	int index = ui->defaultTransitions->currentRow();
+	if (!listMoveUp(ui->defaultTransitions))
+		return;
+
+	TransitionSwitchWidget *s1 =
+		(TransitionSwitchWidget *)ui->defaultTransitions->itemWidget(
+			ui->defaultTransitions->item(index));
+	TransitionSwitchWidget *s2 =
+		(TransitionSwitchWidget *)ui->defaultTransitions->itemWidget(
+			ui->defaultTransitions->item(index - 1));
+	TransitionSwitchWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->defaultSceneTransitions[index],
+		  switcher->defaultSceneTransitions[index - 1]);
+}
+
+void SceneSwitcher::on_defaultTransitionsDown_clicked()
+{
+	int index = ui->defaultTransitions->currentRow();
+
+	if (!listMoveDown(ui->defaultTransitions))
+		return;
+
+	DefTransitionSwitchWidget *s1 =
+		(DefTransitionSwitchWidget *)ui->defaultTransitions->itemWidget(
+			ui->defaultTransitions->item(index));
+	DefTransitionSwitchWidget *s2 =
+		(DefTransitionSwitchWidget *)ui->defaultTransitions->itemWidget(
+			ui->defaultTransitions->item(index + 1));
+	DefTransitionSwitchWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->defaultSceneTransitions[index],
+		  switcher->defaultSceneTransitions[index + 1]);
 }
 
 void SwitcherData::setDefaultSceneTransitions()
@@ -172,100 +165,6 @@ void SwitcherData::setDefaultSceneTransitions()
 	}
 	obs_source_release(currentSource);
 	obs_weak_source_release(ws);
-}
-
-int SceneSwitcher::SceneTransitionsFindByData(const QString &scene1,
-					      const QString &scene2)
-{
-	QRegExp rx(scene1 + " --- .* --> " + scene2);
-	int count = ui->sceneTransitions->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++) {
-		QListWidgetItem *item = ui->sceneTransitions->item(i);
-		QString itemString = item->data(Qt::UserRole).toString();
-
-		if (rx.exactMatch(itemString)) {
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-int SceneSwitcher::DefaultTransitionsFindByData(const QString &scene)
-{
-	QRegExp rx(scene + " --> .*");
-	int count = ui->defaultTransitions->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++) {
-		QListWidgetItem *item = ui->defaultTransitions->item(i);
-		QString itemString = item->data(Qt::UserRole).toString();
-
-		if (rx.exactMatch(itemString)) {
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-void SceneSwitcher::on_sceneTransitions_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem *item = ui->sceneTransitions->item(idx);
-
-	QString sceneTransition = item->data(Qt::UserRole).toString();
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	for (auto &s : switcher->sceneTransitions) {
-		if (sceneTransition.compare(s.sceneTransitionStr.c_str()) ==
-		    0) {
-			std::string scene1 = GetWeakSourceName(s.scene);
-			std::string scene2 = GetWeakSourceName(s.scene2);
-			std::string transitionName =
-				GetWeakSourceName(s.transition);
-			ui->transitionsScene1->setCurrentText(scene1.c_str());
-			ui->transitionsScene2->setCurrentText(scene2.c_str());
-			ui->transitionsTransitions->setCurrentText(
-				transitionName.c_str());
-			break;
-		}
-	}
-}
-
-void SceneSwitcher::on_defaultTransitions_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem *item = ui->defaultTransitions->item(idx);
-
-	QString sceneTransition = item->data(Qt::UserRole).toString();
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	for (auto &s : switcher->defaultSceneTransitions) {
-		if (sceneTransition.compare(s.sceneTransitionStr.c_str()) ==
-		    0) {
-			std::string scene = GetWeakSourceName(s.scene);
-			std::string transitionName =
-				GetWeakSourceName(s.transition);
-			ui->defaultTransitionsScene->setCurrentText(
-				scene.c_str());
-			ui->defaultTransitionsTransitions->setCurrentText(
-				transitionName.c_str());
-			break;
-		}
-	}
 }
 
 void SceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
@@ -429,16 +328,10 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 		const char *transition =
 			obs_data_get_string(array_obj, "transition");
 
-		std::string sceneTransitionsStr =
-			MakeSceneTransitionName(scene1, scene2, transition)
-				.toUtf8()
-				.constData();
-
 		switcher->sceneTransitions.emplace_back(
 			GetWeakSourceByName(scene1),
 			GetWeakSourceByName(scene2),
-			GetWeakTransitionByName(transition),
-			sceneTransitionsStr);
+			GetWeakTransitionByName(transition));
 
 		obs_data_release(array_obj);
 	}
@@ -458,15 +351,9 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 		const char *transition =
 			obs_data_get_string(array_obj, "transition");
 
-		std::string sceneTransitionsStr =
-			MakeDefaultSceneTransitionName(scene, transition)
-				.toUtf8()
-				.constData();
-
 		switcher->defaultSceneTransitions.emplace_back(
 			GetWeakSourceByName(scene),
-			GetWeakTransitionByName(transition),
-			sceneTransitionsStr);
+			GetWeakTransitionByName(transition));
 
 		obs_data_release(array_obj);
 	}
@@ -478,50 +365,145 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 
 void SceneSwitcher::setupTransitionsTab()
 {
-	populateSceneSelection(ui->transitionsScene1, false);
-	populateSceneSelection(ui->transitionsScene2, false);
-	populateSceneSelection(ui->defaultTransitionsScene, false);
-	populateTransitionSelection(ui->transitionsTransitions);
-	populateTransitionSelection(ui->defaultTransitionsTransitions);
-
 	for (auto &s : switcher->sceneTransitions) {
-		std::string sceneName1 = GetWeakSourceName(s.scene);
-		std::string sceneName2 = GetWeakSourceName(s.scene2);
-		std::string transitionName = GetWeakSourceName(s.transition);
-		QString text = MakeSceneTransitionName(sceneName1.c_str(),
-						       sceneName2.c_str(),
-						       transitionName.c_str());
-
-		QListWidgetItem *item =
-			new QListWidgetItem(text, ui->sceneTransitions);
-		item->setData(Qt::UserRole, text);
+		QListWidgetItem *item;
+		item = new QListWidgetItem(ui->sceneTransitions);
+		ui->sceneTransitions->addItem(item);
+		TransitionSwitchWidget *sw = new TransitionSwitchWidget(&s);
+		item->setSizeHint(sw->minimumSizeHint());
+		ui->sceneTransitions->setItemWidget(item, sw);
 	}
 
 	for (auto &s : switcher->defaultSceneTransitions) {
-		std::string sceneName = GetWeakSourceName(s.scene);
-		std::string transitionName = GetWeakSourceName(s.transition);
-		QString text = MakeDefaultSceneTransitionName(
-			sceneName.c_str(), transitionName.c_str());
-
-		QListWidgetItem *item =
-			new QListWidgetItem(text, ui->defaultTransitions);
-		item->setData(Qt::UserRole, text);
+		QListWidgetItem *item;
+		item = new QListWidgetItem(ui->defaultTransitions);
+		ui->defaultTransitions->addItem(item);
+		DefTransitionSwitchWidget *sw =
+			new DefTransitionSwitchWidget(&s);
+		item->setSizeHint(sw->minimumSizeHint());
+		ui->defaultTransitions->setItemWidget(item, sw);
 	}
 
 	ui->transitionOverridecheckBox->setChecked(
 		switcher->tansitionOverrideOverride);
 }
 
-static inline QString MakeSceneTransitionName(const QString &scene1,
-					      const QString &scene2,
-					      const QString &transition)
+bool SceneTransition::initialized()
 {
-	return scene1 + QStringLiteral(" --- ") + transition +
-	       QStringLiteral(" --> ") + scene2;
+	return SceneSwitcherEntry::initialized() && scene2;
 }
 
-static inline QString MakeDefaultSceneTransitionName(const QString &scene,
-						     const QString &transition)
+bool SceneTransition::valid()
 {
-	return scene + QStringLiteral(" --> ") + transition;
+	return !initialized() ||
+	       (SceneSwitcherEntry::valid() && WeakSourceValid(scene2));
+}
+
+TransitionSwitchWidget::TransitionSwitchWidget(SceneTransition *s)
+	: SwitchWidget(s, false)
+{
+	scenes2 = new QComboBox();
+
+	switchLabel = new QLabel("Switch from scene");
+	toLabel = new QLabel("to scene");
+	usingLabel = new QLabel("using transition");
+
+	QWidget::connect(scenes2, SIGNAL(currentTextChanged(const QString &)),
+			 this, SLOT(Scene2Changed(const QString &)));
+
+	SceneSwitcher::populateSceneSelection(scenes2, false);
+
+	if (s) {
+		scenes2->setCurrentText(GetWeakSourceName(s->scene2).c_str());
+	}
+
+	setStyleSheet("* { background-color: transparent; }");
+
+	QHBoxLayout *mainLayout = new QHBoxLayout;
+
+	mainLayout->addWidget(switchLabel);
+	mainLayout->addWidget(scenes);
+	mainLayout->addWidget(toLabel);
+	mainLayout->addWidget(scenes2);
+	mainLayout->addWidget(usingLabel);
+	mainLayout->addWidget(transitions);
+	mainLayout->addStretch();
+
+	setLayout(mainLayout);
+
+	switchData = s;
+
+	loading = false;
+}
+
+SceneTransition *TransitionSwitchWidget::getSwitchData()
+{
+	return switchData;
+}
+
+void TransitionSwitchWidget::setSwitchData(SceneTransition *s)
+{
+	switchData = s;
+}
+
+void TransitionSwitchWidget::swapSwitchData(TransitionSwitchWidget *s1,
+					    TransitionSwitchWidget *s2)
+{
+	SwitchWidget::swapSwitchData(s1, s2);
+
+	SceneTransition *t = s1->getSwitchData();
+	s1->setSwitchData(s2->getSwitchData());
+	s2->setSwitchData(t);
+}
+
+void TransitionSwitchWidget::Scene2Changed(const QString &text)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->scene2 = GetWeakSourceByQString(text);
+}
+
+DefTransitionSwitchWidget::DefTransitionSwitchWidget(DefaultSceneTransition *s)
+	: SwitchWidget(s, false)
+{
+	whenLabel = new QLabel("When scene");
+	switchLabel =
+		new QLabel("is active change default scene transition to ");
+
+	setStyleSheet("* { background-color: transparent; }");
+
+	QHBoxLayout *mainLayout = new QHBoxLayout;
+
+	mainLayout->addWidget(whenLabel);
+	mainLayout->addWidget(scenes);
+	mainLayout->addWidget(switchLabel);
+	mainLayout->addWidget(transitions);
+	mainLayout->addStretch();
+
+	setLayout(mainLayout);
+
+	switchData = s;
+
+	loading = false;
+}
+
+DefaultSceneTransition *DefTransitionSwitchWidget::getSwitchData()
+{
+	return switchData;
+}
+
+void DefTransitionSwitchWidget::setSwitchData(DefaultSceneTransition *s)
+{
+	switchData = s;
+}
+
+void DefTransitionSwitchWidget::swapSwitchData(DefTransitionSwitchWidget *s1,
+					       DefTransitionSwitchWidget *s2)
+{
+	SwitchWidget::swapSwitchData(s1, s2);
+
+	DefaultSceneTransition *t = s1->getSwitchData();
+	s1->setSwitchData(s2->getSwitchData());
+	s2->setSwitchData(t);
 }

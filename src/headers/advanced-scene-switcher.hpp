@@ -36,9 +36,6 @@ public:
 	int PauseScenesFindByData(const QString &scene);
 	int PauseWindowsFindByData(const QString &window);
 	int IgnoreWindowsFindByData(const QString &window);
-	int SceneTransitionsFindByData(const QString &scene1,
-				       const QString &scene2);
-	int DefaultTransitionsFindByData(const QString &scene);
 	int IgnoreIdleWindowsFindByData(const QString &window);
 
 	void UpdateNonMatchingScene(const QString &name);
@@ -136,12 +133,14 @@ public slots:
 	void on_exportSettings_clicked();
 	void on_importSettings_clicked();
 
-	void on_sceneTransitions_currentRowChanged(int idx);
 	void on_transitionsAdd_clicked();
 	void on_transitionsRemove_clicked();
-	void on_defaultTransitions_currentRowChanged(int idx);
+	void on_transitionsUp_clicked();
+	void on_transitionsDown_clicked();
 	void on_defaultTransitionsAdd_clicked();
 	void on_defaultTransitionsRemove_clicked();
+	void on_defaultTransitionsUp_clicked();
+	void on_defaultTransitionsDown_clicked();
 	void on_transitionOverridecheckBox_stateChanged(int state);
 
 	void on_browseButton_clicked();

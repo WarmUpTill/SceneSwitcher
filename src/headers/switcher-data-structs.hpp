@@ -91,8 +91,8 @@ struct SwitcherData {
 	OBSWeakSource autoStartScene;
 	bool autoStartedRecently = false;
 
-	std::vector<SceneTransition> sceneTransitions;
-	std::vector<DefaultSceneTransition> defaultSceneTransitions;
+	std::deque<SceneTransition> sceneTransitions;
+	std::deque<DefaultSceneTransition> defaultSceneTransitions;
 
 	std::deque<MediaSwitch> mediaSwitches;
 
