@@ -26,8 +26,8 @@ SwitcherData *switcher = nullptr;
 /********************************************************************************
  * Create the Advanced Scene Switcher settings window
  ********************************************************************************/
-SceneSwitcher::SceneSwitcher(QWidget *parent)
-	: QDialog(parent), ui(new Ui_SceneSwitcher)
+AdvSceneSwitcher::AdvSceneSwitcher(QWidget *parent)
+	: QDialog(parent), ui(new Ui_AdvSceneSwitcher)
 {
 	ui->setupUi(this);
 
@@ -37,7 +37,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 	loadUI();
 }
 
-void SceneSwitcher::loadUI()
+void AdvSceneSwitcher::loadUI()
 {
 #if __APPLE__
 	setMinimumHeight(700);
@@ -83,8 +83,8 @@ void addSelectionEntry(QComboBox *sel, const char *description,
 	firstItem->setEnabled(false);
 }
 
-void SceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
-					   bool addSelect)
+void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
+					      bool addSelect)
 {
 	if (addSelect)
 		addSelectionEntry(sel, "--select scene--",
@@ -102,7 +102,8 @@ void SceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 		sel->addItem(previous_scene_name);
 }
 
-void SceneSwitcher::populateTransitionSelection(QComboBox *sel, bool addSelect)
+void AdvSceneSwitcher::populateTransitionSelection(QComboBox *sel,
+						   bool addSelect)
 {
 	if (addSelect)
 		addSelectionEntry(sel, "--select transition--");
@@ -119,7 +120,7 @@ void SceneSwitcher::populateTransitionSelection(QComboBox *sel, bool addSelect)
 	obs_frontend_source_list_free(transitions);
 }
 
-void SceneSwitcher::populateWindowSelection(QComboBox *sel, bool addSelect)
+void AdvSceneSwitcher::populateWindowSelection(QComboBox *sel, bool addSelect)
 {
 	if (addSelect)
 		addSelectionEntry(sel, "--select window--");
@@ -133,7 +134,7 @@ void SceneSwitcher::populateWindowSelection(QComboBox *sel, bool addSelect)
 	}
 }
 
-void SceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
+void AdvSceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
 {
 	if (addSelect)
 		addSelectionEntry(sel, "--select audio source--",
@@ -154,7 +155,7 @@ void SceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
 	obs_enum_sources(sourceEnum, sel);
 }
 
-void SceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
+void AdvSceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
 {
 	if (addSelect)
 		addSelectionEntry(sel, "--select media source--",
@@ -175,7 +176,7 @@ void SceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
 	obs_enum_sources(sourceEnum, sel);
 }
 
-void SceneSwitcher::populateProcessSelection(QComboBox *sel, bool addSelect)
+void AdvSceneSwitcher::populateProcessSelection(QComboBox *sel, bool addSelect)
 {
 	if (addSelect)
 		addSelectionEntry(sel, "--select process--");
@@ -186,7 +187,7 @@ void SceneSwitcher::populateProcessSelection(QComboBox *sel, bool addSelect)
 		sel->addItem(process);
 }
 
-bool SceneSwitcher::listMoveUp(QListWidget *list)
+bool AdvSceneSwitcher::listMoveUp(QListWidget *list)
 {
 	int index = list->currentRow();
 	if (index == -1 || index == 0)
@@ -203,7 +204,7 @@ bool SceneSwitcher::listMoveUp(QListWidget *list)
 	return true;
 }
 
-bool SceneSwitcher::listMoveDown(QListWidget *list)
+bool AdvSceneSwitcher::listMoveDown(QListWidget *list)
 {
 	int index = list->currentRow();
 	if (index == -1 || index == list->count() - 1)
@@ -220,10 +221,10 @@ bool SceneSwitcher::listMoveDown(QListWidget *list)
 	return true;
 }
 
-QMetaObject::Connection SceneSwitcher::PulseWidget(QWidget *widget,
-						   QColor endColor,
-						   QColor startColor,
-						   QString specifier)
+QMetaObject::Connection AdvSceneSwitcher::PulseWidget(QWidget *widget,
+						      QColor endColor,
+						      QColor startColor,
+						      QString specifier)
 {
 	if (switcher->disableHints)
 		return QMetaObject::Connection();
@@ -584,7 +585,7 @@ extern "C" void InitSceneSwitcher()
 		QMainWindow *window =
 			(QMainWindow *)obs_frontend_get_main_window();
 
-		SceneSwitcher ss(window);
+		AdvSceneSwitcher ss(window);
 		ss.exec();
 	};
 

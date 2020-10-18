@@ -6,7 +6,7 @@
 
 static QMetaObject::Connection addPulse;
 
-void SceneSwitcher::on_sceneSequenceAdd_clicked()
+void AdvSceneSwitcher::on_sceneSequenceAdd_clicked()
 {
 	ui->sceneSequenceAdd->disconnect(addPulse);
 
@@ -22,7 +22,7 @@ void SceneSwitcher::on_sceneSequenceAdd_clicked()
 	ui->sceneSequenceSwitches->setItemWidget(item, sw);
 }
 
-void SceneSwitcher::on_sceneSequenceRemove_clicked()
+void AdvSceneSwitcher::on_sceneSequenceRemove_clicked()
 {
 	QListWidgetItem *item = ui->sceneSequenceSwitches->currentItem();
 	if (!item)
@@ -38,7 +38,7 @@ void SceneSwitcher::on_sceneSequenceRemove_clicked()
 	delete item;
 }
 
-void SceneSwitcher::on_sceneSequenceUp_clicked()
+void AdvSceneSwitcher::on_sceneSequenceUp_clicked()
 {
 	int index = ui->sceneSequenceSwitches->currentRow();
 	if (!listMoveUp(ui->sceneSequenceSwitches))
@@ -58,7 +58,7 @@ void SceneSwitcher::on_sceneSequenceUp_clicked()
 		  switcher->sceneSequenceSwitches[index - 1]);
 }
 
-void SceneSwitcher::on_sceneSequenceDown_clicked()
+void AdvSceneSwitcher::on_sceneSequenceDown_clicked()
 {
 	int index = ui->sceneSequenceSwitches->currentRow();
 
@@ -79,7 +79,7 @@ void SceneSwitcher::on_sceneSequenceDown_clicked()
 		  switcher->sceneSequenceSwitches[index + 1]);
 }
 
-void SceneSwitcher::on_sceneSequenceSave_clicked()
+void AdvSceneSwitcher::on_sceneSequenceSave_clicked()
 {
 	QString directory = QFileDialog::getSaveFileName(
 		this, tr("Save Scene Sequence to file ..."),
@@ -96,7 +96,7 @@ void SceneSwitcher::on_sceneSequenceSave_clicked()
 	obs_data_release(obj);
 }
 
-void SceneSwitcher::on_sceneSequenceLoad_clicked()
+void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
 
@@ -249,7 +249,7 @@ void SwitcherData::loadSceneSequenceSwitches(obs_data_t *obj)
 	obs_data_array_release(sceneSequenceArray);
 }
 
-void SceneSwitcher::setupSequenceTab()
+void AdvSceneSwitcher::setupSequenceTab()
 {
 	for (auto &s : switcher->sceneSequenceSwitches) {
 		QListWidgetItem *item;
@@ -287,7 +287,7 @@ void populateDelayUnits(QComboBox *list)
 	list->addItem("hours");
 }
 
-SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s, false)
+SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
 {
 	delay = new QDoubleSpinBox();
 	delayUnits = new QComboBox();
@@ -307,7 +307,7 @@ SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s, false)
 			 SLOT(StartSceneChanged(const QString &)));
 
 	delay->setMaximum(99999.000000);
-	SceneSwitcher::populateSceneSelection(startScenes, false);
+	AdvSceneSwitcher::populateSceneSelection(startScenes, false);
 	populateDelayUnits(delayUnits);
 
 	if (s) {

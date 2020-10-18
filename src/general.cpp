@@ -7,12 +7,12 @@
 
 QMetaObject::Connection inactivePluse;
 
-void SceneSwitcher::on_close_clicked()
+void AdvSceneSwitcher::on_close_clicked()
 {
 	done(0);
 }
 
-void SceneSwitcher::UpdateNonMatchingScene(const QString &name)
+void AdvSceneSwitcher::UpdateNonMatchingScene(const QString &name)
 {
 	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
 	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
@@ -23,7 +23,7 @@ void SceneSwitcher::UpdateNonMatchingScene(const QString &name)
 	obs_source_release(scene);
 }
 
-void SceneSwitcher::on_noMatchDontSwitch_clicked()
+void AdvSceneSwitcher::on_noMatchDontSwitch_clicked()
 {
 	if (loading)
 		return;
@@ -34,7 +34,7 @@ void SceneSwitcher::on_noMatchDontSwitch_clicked()
 	ui->randomDisabledWarning->setVisible(true);
 }
 
-void SceneSwitcher::on_noMatchSwitch_clicked()
+void AdvSceneSwitcher::on_noMatchSwitch_clicked()
 {
 	if (loading)
 		return;
@@ -46,7 +46,7 @@ void SceneSwitcher::on_noMatchSwitch_clicked()
 	ui->randomDisabledWarning->setVisible(true);
 }
 
-void SceneSwitcher::on_noMatchRandomSwitch_clicked()
+void AdvSceneSwitcher::on_noMatchRandomSwitch_clicked()
 {
 	if (loading)
 		return;
@@ -57,7 +57,7 @@ void SceneSwitcher::on_noMatchRandomSwitch_clicked()
 	ui->randomDisabledWarning->setVisible(false);
 }
 
-void SceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
+void AdvSceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
 {
 	if (loading)
 		return;
@@ -66,7 +66,8 @@ void SceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
 	switcher->startupBehavior = (StartupBehavior)index;
 }
 
-void SceneSwitcher::on_noMatchSwitchScene_currentTextChanged(const QString &text)
+void AdvSceneSwitcher::on_noMatchSwitchScene_currentTextChanged(
+	const QString &text)
 {
 	if (loading)
 		return;
@@ -75,7 +76,7 @@ void SceneSwitcher::on_noMatchSwitchScene_currentTextChanged(const QString &text
 	UpdateNonMatchingScene(text);
 }
 
-void SceneSwitcher::on_checkInterval_valueChanged(int value)
+void AdvSceneSwitcher::on_checkInterval_valueChanged(int value)
 {
 	if (loading)
 		return;
@@ -84,14 +85,14 @@ void SceneSwitcher::on_checkInterval_valueChanged(int value)
 	switcher->interval = value;
 }
 
-void SceneSwitcher::SetStarted()
+void AdvSceneSwitcher::SetStarted()
 {
 	ui->toggleStartButton->setText("Stop");
 	ui->pluginRunningText->setText("Active");
 	ui->pluginRunningText->disconnect(inactivePluse);
 }
 
-void SceneSwitcher::SetStopped()
+void AdvSceneSwitcher::SetStopped()
 {
 	ui->toggleStartButton->setText("Start");
 	ui->pluginRunningText->setText("Inactive");
@@ -99,7 +100,7 @@ void SceneSwitcher::SetStopped()
 				    QColor(0, 0, 0, 0), "QLabel ");
 }
 
-void SceneSwitcher::on_toggleStartButton_clicked()
+void AdvSceneSwitcher::on_toggleStartButton_clicked()
 {
 	if (switcher->th && switcher->th->isRunning()) {
 		switcher->Stop();
@@ -110,12 +111,12 @@ void SceneSwitcher::on_toggleStartButton_clicked()
 	}
 }
 
-void SceneSwitcher::closeEvent(QCloseEvent *)
+void AdvSceneSwitcher::closeEvent(QCloseEvent *)
 {
 	obs_frontend_save();
 }
 
-void SceneSwitcher::on_autoStopScenes_currentTextChanged(const QString &text)
+void AdvSceneSwitcher::on_autoStopScenes_currentTextChanged(const QString &text)
 {
 	if (loading)
 		return;
@@ -124,7 +125,7 @@ void SceneSwitcher::on_autoStopScenes_currentTextChanged(const QString &text)
 	UpdateAutoStopScene(text);
 }
 
-void SceneSwitcher::on_autoStopSceneCheckBox_stateChanged(int state)
+void AdvSceneSwitcher::on_autoStopSceneCheckBox_stateChanged(int state)
 {
 	if (loading)
 		return;
@@ -141,7 +142,7 @@ void SceneSwitcher::on_autoStopSceneCheckBox_stateChanged(int state)
 	}
 }
 
-void SceneSwitcher::UpdateAutoStopScene(const QString &name)
+void AdvSceneSwitcher::UpdateAutoStopScene(const QString &name)
 {
 	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
 	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
@@ -167,7 +168,7 @@ void SwitcherData::autoStopStreamAndRecording()
 	obs_weak_source_release(ws);
 }
 
-void SceneSwitcher::on_autoStartType_currentIndexChanged(int index)
+void AdvSceneSwitcher::on_autoStartType_currentIndexChanged(int index)
 {
 	if (loading)
 		return;
@@ -175,7 +176,7 @@ void SceneSwitcher::on_autoStartType_currentIndexChanged(int index)
 	switcher->autoStartType = (AutoStartType)index;
 }
 
-void SceneSwitcher::on_autoStartScenes_currentTextChanged(const QString &text)
+void AdvSceneSwitcher::on_autoStartScenes_currentTextChanged(const QString &text)
 {
 	if (loading)
 		return;
@@ -184,7 +185,7 @@ void SceneSwitcher::on_autoStartScenes_currentTextChanged(const QString &text)
 	UpdateAutoStartScene(text);
 }
 
-void SceneSwitcher::on_autoStartSceneCheckBox_stateChanged(int state)
+void AdvSceneSwitcher::on_autoStartSceneCheckBox_stateChanged(int state)
 {
 	if (loading)
 		return;
@@ -204,7 +205,7 @@ void SceneSwitcher::on_autoStartSceneCheckBox_stateChanged(int state)
 	}
 }
 
-void SceneSwitcher::UpdateAutoStartScene(const QString &name)
+void AdvSceneSwitcher::UpdateAutoStartScene(const QString &name)
 {
 	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
 	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
@@ -239,21 +240,21 @@ void SwitcherData::autoStartStreamRecording()
 	autoStartedRecently = true;
 }
 
-void SceneSwitcher::on_verboseLogging_stateChanged(int state)
+void AdvSceneSwitcher::on_verboseLogging_stateChanged(int state)
 {
 	if (loading)
 		return;
 	switcher->verbose = state;
 }
 
-void SceneSwitcher::on_uiHintsDisable_stateChanged(int state)
+void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 {
 	if (loading)
 		return;
 	switcher->disableHints = state;
 }
 
-void SceneSwitcher::on_exportSettings_clicked()
+void AdvSceneSwitcher::on_exportSettings_clicked()
 {
 	QString directory = QFileDialog::getSaveFileName(
 		this, tr("Export Advanced Scene Switcher settings to file ..."),
@@ -287,7 +288,7 @@ void SceneSwitcher::on_exportSettings_clicked()
 	obs_data_release(obj);
 }
 
-void SceneSwitcher::on_importSettings_clicked()
+void AdvSceneSwitcher::on_importSettings_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
 
@@ -397,7 +398,7 @@ int findTabIndex(QTabBar *bar, int pos)
 	return at;
 }
 
-void SceneSwitcher::setTabOrder()
+void AdvSceneSwitcher::setTabOrder()
 {
 	QTabBar *bar = ui->tabWidget->tabBar();
 	for (int i = 0; i < bar->count(); ++i) {
@@ -407,10 +408,10 @@ void SceneSwitcher::setTabOrder()
 			bar->moveTab(curPos, i);
 	}
 
-	connect(bar, &QTabBar::tabMoved, this, &SceneSwitcher::on_tabMoved);
+	connect(bar, &QTabBar::tabMoved, this, &AdvSceneSwitcher::on_tabMoved);
 }
 
-void SceneSwitcher::on_tabMoved(int from, int to)
+void AdvSceneSwitcher::on_tabMoved(int from, int to)
 {
 	if (loading)
 		return;
@@ -605,7 +606,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(int)(obs_data_get_int(obj, "audioTabPos")));
 }
 
-void SceneSwitcher::setupGeneralTab()
+void AdvSceneSwitcher::setupGeneralTab()
 {
 	populateSceneSelection(ui->noMatchSwitchScene, false);
 	populateSceneSelection(ui->autoStopScenes, false);

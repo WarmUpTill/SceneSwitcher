@@ -4,7 +4,7 @@
 
 static QMetaObject::Connection addPulse;
 
-void SceneSwitcher::on_randomAdd_clicked()
+void AdvSceneSwitcher::on_randomAdd_clicked()
 {
 	ui->randomAdd->disconnect(addPulse);
 
@@ -20,7 +20,7 @@ void SceneSwitcher::on_randomAdd_clicked()
 	ui->randomSwitches->setItemWidget(item, sw);
 }
 
-void SceneSwitcher::on_randomRemove_clicked()
+void AdvSceneSwitcher::on_randomRemove_clicked()
 {
 	QListWidgetItem *item = ui->randomSwitches->currentItem();
 	if (!item)
@@ -118,7 +118,7 @@ void SwitcherData::loadRandomSwitches(obs_data_t *obj)
 	obs_data_array_release(randomArray);
 }
 
-void SceneSwitcher::setupRandomTab()
+void AdvSceneSwitcher::setupRandomTab()
 {
 	for (auto &s : switcher->randomSwitches) {
 		QListWidgetItem *item;

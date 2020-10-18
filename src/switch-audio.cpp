@@ -9,7 +9,7 @@
 
 static QMetaObject::Connection addPulse;
 
-void SceneSwitcher::on_audioAdd_clicked()
+void AdvSceneSwitcher::on_audioAdd_clicked()
 {
 	ui->audioAdd->disconnect(addPulse);
 
@@ -25,7 +25,7 @@ void SceneSwitcher::on_audioAdd_clicked()
 	ui->audioSwitches->setItemWidget(item, sw);
 }
 
-void SceneSwitcher::on_audioRemove_clicked()
+void AdvSceneSwitcher::on_audioRemove_clicked()
 {
 	QListWidgetItem *item = ui->audioSwitches->currentItem();
 	if (!item)
@@ -41,7 +41,7 @@ void SceneSwitcher::on_audioRemove_clicked()
 	delete item;
 }
 
-void SceneSwitcher::on_audioUp_clicked()
+void AdvSceneSwitcher::on_audioUp_clicked()
 {
 	int index = ui->audioSwitches->currentRow();
 	if (!listMoveUp(ui->audioSwitches))
@@ -61,7 +61,7 @@ void SceneSwitcher::on_audioUp_clicked()
 		  switcher->audioSwitches[index - 1]);
 }
 
-void SceneSwitcher::on_audioDown_clicked()
+void AdvSceneSwitcher::on_audioDown_clicked()
 {
 	int index = ui->audioSwitches->currentRow();
 
@@ -180,7 +180,7 @@ void SwitcherData::loadAudioSwitches(obs_data_t *obj)
 	obs_data_array_release(audioArray);
 }
 
-void SceneSwitcher::setupAudioTab()
+void AdvSceneSwitcher::setupAudioTab()
 {
 	for (auto &s : switcher->audioSwitches) {
 		QListWidgetItem *item;
@@ -353,7 +353,7 @@ AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s) : SwitchWidget(s)
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(SourceChanged(const QString &)));
 
-	SceneSwitcher::populateAudioSelection(audioSources);
+	AdvSceneSwitcher::populateAudioSelection(audioSources);
 
 	if (s) {
 		audioSources->setCurrentText(

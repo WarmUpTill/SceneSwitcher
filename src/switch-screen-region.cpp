@@ -24,7 +24,7 @@ void showCurrentFrame(QListWidget *list)
 	sw->showFrame();
 }
 
-void SceneSwitcher::on_showFrame_clicked()
+void AdvSceneSwitcher::on_showFrame_clicked()
 {
 	switcher->showFrame = !switcher->showFrame;
 
@@ -37,7 +37,7 @@ void SceneSwitcher::on_showFrame_clicked()
 	}
 }
 
-void SceneSwitcher::on_screenRegionSwitches_currentRowChanged(int idx)
+void AdvSceneSwitcher::on_screenRegionSwitches_currentRowChanged(int idx)
 {
 	UNUSED_PARAMETER(idx);
 	if (loading)
@@ -49,7 +49,7 @@ void SceneSwitcher::on_screenRegionSwitches_currentRowChanged(int idx)
 	}
 }
 
-void SceneSwitcher::on_screenRegionAdd_clicked()
+void AdvSceneSwitcher::on_screenRegionAdd_clicked()
 {
 	ui->screenRegionAdd->disconnect(addPulse);
 
@@ -65,7 +65,7 @@ void SceneSwitcher::on_screenRegionAdd_clicked()
 	ui->screenRegionSwitches->setItemWidget(item, sw);
 }
 
-void SceneSwitcher::on_screenRegionRemove_clicked()
+void AdvSceneSwitcher::on_screenRegionRemove_clicked()
 {
 	QListWidgetItem *item = ui->screenRegionSwitches->currentItem();
 	if (!item)
@@ -81,7 +81,7 @@ void SceneSwitcher::on_screenRegionRemove_clicked()
 	delete item;
 }
 
-void SceneSwitcher::on_screenRegionUp_clicked()
+void AdvSceneSwitcher::on_screenRegionUp_clicked()
 {
 	int index = ui->screenRegionSwitches->currentRow();
 	if (!listMoveUp(ui->screenRegionSwitches))
@@ -101,7 +101,7 @@ void SceneSwitcher::on_screenRegionUp_clicked()
 		  switcher->screenRegionSwitches[index - 1]);
 }
 
-void SceneSwitcher::on_screenRegionDown_clicked()
+void AdvSceneSwitcher::on_screenRegionDown_clicked()
 {
 	int index = ui->screenRegionSwitches->currentRow();
 
@@ -149,7 +149,7 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 	}
 }
 
-void SceneSwitcher::updateScreenRegionCursorPos()
+void AdvSceneSwitcher::updateScreenRegionCursorPos()
 {
 	std::pair<int, int> position = getCursorPos();
 	ui->cursorXPosition->setText(QString::number(position.first));
@@ -219,7 +219,7 @@ void SwitcherData::loadScreenRegionSwitches(obs_data_t *obj)
 	obs_data_array_release(screenRegionArray);
 }
 
-void SceneSwitcher::setupRegionTab()
+void AdvSceneSwitcher::setupRegionTab()
 {
 	for (auto &s : switcher->screenRegionSwitches) {
 		QListWidgetItem *item;

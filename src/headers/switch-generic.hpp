@@ -16,7 +16,7 @@ struct SceneSwitcherEntry {
 
 	inline SceneSwitcherEntry(OBSWeakSource scene_,
 				  OBSWeakSource transition_,
-				  bool usePreviousScene_ = true)
+				  bool usePreviousScene_ = false)
 		: scene(scene_),
 		  transition(transition_),
 		  usePreviousScene(usePreviousScene_)

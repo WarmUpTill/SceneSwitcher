@@ -2,7 +2,7 @@
 
 #include "headers/advanced-scene-switcher.hpp"
 
-void SceneSwitcher::on_pauseScenesAdd_clicked()
+void AdvSceneSwitcher::on_pauseScenesAdd_clicked()
 {
 	QString sceneName = ui->pauseScenesScenes->currentText();
 
@@ -26,7 +26,7 @@ void SceneSwitcher::on_pauseScenesAdd_clicked()
 	}
 }
 
-void SceneSwitcher::on_pauseScenesRemove_clicked()
+void AdvSceneSwitcher::on_pauseScenesRemove_clicked()
 {
 	QListWidgetItem *item = ui->pauseScenes->currentItem();
 	if (!item)
@@ -51,7 +51,7 @@ void SceneSwitcher::on_pauseScenesRemove_clicked()
 	delete item;
 }
 
-void SceneSwitcher::on_pauseWindowsAdd_clicked()
+void AdvSceneSwitcher::on_pauseWindowsAdd_clicked()
 {
 	QString windowName = ui->pauseWindowsWindows->currentText();
 
@@ -75,7 +75,7 @@ void SceneSwitcher::on_pauseWindowsAdd_clicked()
 	}
 }
 
-void SceneSwitcher::on_pauseWindowsRemove_clicked()
+void AdvSceneSwitcher::on_pauseWindowsRemove_clicked()
 {
 	QListWidgetItem *item = ui->pauseWindows->currentItem();
 	if (!item)
@@ -100,7 +100,7 @@ void SceneSwitcher::on_pauseWindowsRemove_clicked()
 	delete item;
 }
 
-void SceneSwitcher::on_pauseScenes_currentRowChanged(int idx)
+void AdvSceneSwitcher::on_pauseScenes_currentRowChanged(int idx)
 {
 	if (loading)
 		return;
@@ -121,7 +121,7 @@ void SceneSwitcher::on_pauseScenes_currentRowChanged(int idx)
 	}
 }
 
-void SceneSwitcher::on_pauseWindows_currentRowChanged(int idx)
+void AdvSceneSwitcher::on_pauseWindows_currentRowChanged(int idx)
 {
 	if (loading)
 		return;
@@ -141,7 +141,7 @@ void SceneSwitcher::on_pauseWindows_currentRowChanged(int idx)
 	}
 }
 
-int SceneSwitcher::PauseScenesFindByData(const QString &scene)
+int AdvSceneSwitcher::PauseScenesFindByData(const QString &scene)
 {
 	int count = ui->pauseScenes->count();
 	int idx = -1;
@@ -159,7 +159,7 @@ int SceneSwitcher::PauseScenesFindByData(const QString &scene)
 	return idx;
 }
 
-int SceneSwitcher::PauseWindowsFindByData(const QString &window)
+int AdvSceneSwitcher::PauseWindowsFindByData(const QString &window)
 {
 	int count = ui->pauseWindows->count();
 	int idx = -1;
@@ -300,7 +300,7 @@ void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 	obs_data_array_release(pauseWindowsArray);
 }
 
-void SceneSwitcher::setupPauseTab()
+void AdvSceneSwitcher::setupPauseTab()
 {
 	populateSceneSelection(ui->pauseScenesScenes, false);
 	populateWindowSelection(ui->pauseWindowsWindows);

@@ -20,8 +20,8 @@ void SceneSwitcherEntry::logMatch()
 	obs_source_t *s = obs_weak_source_get_source(scene);
 	const char *sceneName = obs_source_get_name(s);
 	obs_source_release(s);
-	blog(LOG_INFO, "match for '%s' - switch to scene '%s'",
-	     getType(), sceneName);
+	blog(LOG_INFO, "match for '%s' - switch to scene '%s'", getType(),
+	     sceneName);
 }
 
 SwitchWidget::SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene)
@@ -35,8 +35,8 @@ SwitchWidget::SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene)
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(TransitionChanged(const QString &)));
 
-	SceneSwitcher::populateSceneSelection(scenes, usePreviousScene);
-	SceneSwitcher::populateTransitionSelection(transitions);
+	AdvSceneSwitcher::populateSceneSelection(scenes, usePreviousScene);
+	AdvSceneSwitcher::populateTransitionSelection(transitions);
 
 	if (s) {
 		scenes->setCurrentText(GetWeakSourceName(s->scene).c_str());

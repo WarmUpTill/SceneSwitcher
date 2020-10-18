@@ -2,7 +2,7 @@
 
 static QMetaObject::Connection addPulse;
 
-void SceneSwitcher::on_executableAdd_clicked()
+void AdvSceneSwitcher::on_executableAdd_clicked()
 {
 	ui->executableAdd->disconnect(addPulse);
 
@@ -18,7 +18,7 @@ void SceneSwitcher::on_executableAdd_clicked()
 	ui->executables->setItemWidget(item, sw);
 }
 
-void SceneSwitcher::on_executableRemove_clicked()
+void AdvSceneSwitcher::on_executableRemove_clicked()
 {
 	QListWidgetItem *item = ui->executables->currentItem();
 	if (!item)
@@ -34,7 +34,7 @@ void SceneSwitcher::on_executableRemove_clicked()
 	delete item;
 }
 
-void SceneSwitcher::on_executableUp_clicked()
+void AdvSceneSwitcher::on_executableUp_clicked()
 {
 	int index = ui->executables->currentRow();
 	if (!listMoveUp(ui->executables))
@@ -54,7 +54,7 @@ void SceneSwitcher::on_executableUp_clicked()
 		  switcher->executableSwitches[index - 1]);
 }
 
-void SceneSwitcher::on_executableDown_clicked()
+void AdvSceneSwitcher::on_executableDown_clicked()
 {
 	int index = ui->executables->currentRow();
 
@@ -187,7 +187,7 @@ void SwitcherData::loadExecutableSwitches(obs_data_t *obj)
 	obs_data_array_release(executableArray);
 }
 
-void SceneSwitcher::setupExecutableTab()
+void AdvSceneSwitcher::setupExecutableTab()
 {
 	for (auto &s : switcher->executableSwitches) {
 		QListWidgetItem *item;
@@ -217,7 +217,7 @@ ExecutableSwitchWidget::ExecutableSwitchWidget(ExecutableSwitch *s)
 	QWidget::connect(requiresFocus, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
 
-	SceneSwitcher::populateProcessSelection(processes);
+	AdvSceneSwitcher::populateProcessSelection(processes);
 
 	if (s) {
 		processes->setCurrentText(s->exe);

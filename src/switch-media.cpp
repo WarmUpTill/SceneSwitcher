@@ -2,7 +2,7 @@
 
 static QMetaObject::Connection addPulse;
 
-void SceneSwitcher::on_mediaAdd_clicked()
+void AdvSceneSwitcher::on_mediaAdd_clicked()
 {
 	ui->mediaAdd->disconnect(addPulse);
 
@@ -18,7 +18,7 @@ void SceneSwitcher::on_mediaAdd_clicked()
 	ui->mediaSwitches->setItemWidget(item, sw);
 }
 
-void SceneSwitcher::on_mediaRemove_clicked()
+void AdvSceneSwitcher::on_mediaRemove_clicked()
 {
 	QListWidgetItem *item = ui->mediaSwitches->currentItem();
 	if (!item)
@@ -34,7 +34,7 @@ void SceneSwitcher::on_mediaRemove_clicked()
 	delete item;
 }
 
-void SceneSwitcher::on_mediaUp_clicked()
+void AdvSceneSwitcher::on_mediaUp_clicked()
 {
 	int index = ui->mediaSwitches->currentRow();
 	if (!listMoveUp(ui->mediaSwitches))
@@ -54,7 +54,7 @@ void SceneSwitcher::on_mediaUp_clicked()
 		  switcher->mediaSwitches[index - 1]);
 }
 
-void SceneSwitcher::on_mediaDown_clicked()
+void AdvSceneSwitcher::on_mediaDown_clicked()
 {
 	int index = ui->mediaSwitches->currentRow();
 
@@ -81,6 +81,7 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 	for (MediaSwitch &mediaSwitch : mediaSwitches) {
 		if (!mediaSwitch.initialized())
 			continue;
+
 		OBSSource source =
 			obs_weak_source_get_source(mediaSwitch.source);
 		auto duration = obs_source_media_get_duration(source);
@@ -185,7 +186,7 @@ void SwitcherData::loadMediaSwitches(obs_data_t *obj)
 	obs_data_array_release(mediaArray);
 }
 
-void SceneSwitcher::setupMediaTab()
+void AdvSceneSwitcher::setupMediaTab()
 {
 	for (auto &s : switcher->mediaSwitches) {
 		QListWidgetItem *item;
@@ -259,7 +260,7 @@ MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
 	QWidget::connect(time, SIGNAL(valueChanged(int)), this,
 			 SLOT(TimeChanged(int)));
 
-	SceneSwitcher::populateMediaSelection(meidaSources);
+	AdvSceneSwitcher::populateMediaSelection(meidaSources);
 	populateMediaStates(states);
 	populateTimeRestrictions(timeRestrictions);
 

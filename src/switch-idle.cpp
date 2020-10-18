@@ -50,7 +50,7 @@ void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
 		idleData.alreadySwitched = false;
 }
 
-void SceneSwitcher::on_idleCheckBox_stateChanged(int state)
+void AdvSceneSwitcher::on_idleCheckBox_stateChanged(int state)
 {
 	if (loading)
 		return;
@@ -74,13 +74,13 @@ void SceneSwitcher::on_idleCheckBox_stateChanged(int state)
 	}
 }
 
-void SceneSwitcher::UpdateIdleDataTransition(const QString &name)
+void AdvSceneSwitcher::UpdateIdleDataTransition(const QString &name)
 {
 	obs_weak_source_t *transition = GetWeakTransitionByQString(name);
 	switcher->idleData.transition = transition;
 }
 
-void SceneSwitcher::UpdateIdleDataScene(const QString &name)
+void AdvSceneSwitcher::UpdateIdleDataScene(const QString &name)
 {
 	switcher->idleData.usePreviousScene = (name == previous_scene_name);
 	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
@@ -92,7 +92,7 @@ void SceneSwitcher::UpdateIdleDataScene(const QString &name)
 	obs_source_release(scene);
 }
 
-void SceneSwitcher::on_idleTransitions_currentTextChanged(const QString &text)
+void AdvSceneSwitcher::on_idleTransitions_currentTextChanged(const QString &text)
 {
 	if (loading)
 		return;
@@ -101,7 +101,7 @@ void SceneSwitcher::on_idleTransitions_currentTextChanged(const QString &text)
 	UpdateIdleDataTransition(text);
 }
 
-void SceneSwitcher::on_idleScenes_currentTextChanged(const QString &text)
+void AdvSceneSwitcher::on_idleScenes_currentTextChanged(const QString &text)
 {
 	if (loading)
 		return;
@@ -110,7 +110,7 @@ void SceneSwitcher::on_idleScenes_currentTextChanged(const QString &text)
 	UpdateIdleDataScene(text);
 }
 
-void SceneSwitcher::on_idleSpinBox_valueChanged(int i)
+void AdvSceneSwitcher::on_idleSpinBox_valueChanged(int i)
 {
 	if (loading)
 		return;
@@ -118,7 +118,7 @@ void SceneSwitcher::on_idleSpinBox_valueChanged(int i)
 	switcher->idleData.time = i;
 }
 
-void SceneSwitcher::on_ignoreIdleWindows_currentRowChanged(int idx)
+void AdvSceneSwitcher::on_ignoreIdleWindows_currentRowChanged(int idx)
 {
 	if (loading)
 		return;
@@ -138,7 +138,7 @@ void SceneSwitcher::on_ignoreIdleWindows_currentRowChanged(int idx)
 	}
 }
 
-void SceneSwitcher::on_ignoreIdleAdd_clicked()
+void AdvSceneSwitcher::on_ignoreIdleAdd_clicked()
 {
 	QString windowName = ui->ignoreIdleWindowsWindows->currentText();
 
@@ -162,7 +162,7 @@ void SceneSwitcher::on_ignoreIdleAdd_clicked()
 	}
 }
 
-void SceneSwitcher::on_ignoreIdleRemove_clicked()
+void AdvSceneSwitcher::on_ignoreIdleRemove_clicked()
 {
 	QListWidgetItem *item = ui->ignoreIdleWindows->currentItem();
 	if (!item)
@@ -187,7 +187,7 @@ void SceneSwitcher::on_ignoreIdleRemove_clicked()
 	delete item;
 }
 
-int SceneSwitcher::IgnoreIdleWindowsFindByData(const QString &window)
+int AdvSceneSwitcher::IgnoreIdleWindowsFindByData(const QString &window)
 {
 	int count = ui->ignoreIdleWindows->count();
 	int idx = -1;
@@ -264,7 +264,7 @@ void SwitcherData::loadIdleSwitches(obs_data_t *obj)
 		(idleSceneName == previous_scene_name);
 }
 
-void SceneSwitcher::setupIdleTab()
+void AdvSceneSwitcher::setupIdleTab()
 {
 	populateSceneSelection(ui->idleScenes, true);
 	populateTransitionSelection(ui->idleTransitions);

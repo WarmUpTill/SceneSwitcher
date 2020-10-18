@@ -2,7 +2,7 @@
 
 static QMetaObject::Connection addPulse;
 
-void SceneSwitcher::on_windowAdd_clicked()
+void AdvSceneSwitcher::on_windowAdd_clicked()
 {
 	ui->windowAdd->disconnect(addPulse);
 
@@ -18,7 +18,7 @@ void SceneSwitcher::on_windowAdd_clicked()
 	ui->windowSwitches->setItemWidget(item, sw);
 }
 
-void SceneSwitcher::on_windowRemove_clicked()
+void AdvSceneSwitcher::on_windowRemove_clicked()
 {
 	QListWidgetItem *item = ui->windowSwitches->currentItem();
 	if (!item)
@@ -34,7 +34,7 @@ void SceneSwitcher::on_windowRemove_clicked()
 	delete item;
 }
 
-void SceneSwitcher::on_windowUp_clicked()
+void AdvSceneSwitcher::on_windowUp_clicked()
 {
 	int index = ui->windowSwitches->currentRow();
 	if (!listMoveUp(ui->windowSwitches))
@@ -54,7 +54,7 @@ void SceneSwitcher::on_windowUp_clicked()
 		  switcher->windowSwitches[index - 1]);
 }
 
-void SceneSwitcher::on_windowDown_clicked()
+void AdvSceneSwitcher::on_windowDown_clicked()
 {
 	int index = ui->windowSwitches->currentRow();
 
@@ -75,7 +75,7 @@ void SceneSwitcher::on_windowDown_clicked()
 		  switcher->windowSwitches[index + 1]);
 }
 
-void SceneSwitcher::on_ignoreWindowsAdd_clicked()
+void AdvSceneSwitcher::on_ignoreWindowsAdd_clicked()
 {
 	QString windowName = ui->ignoreWindowsWindows->currentText();
 
@@ -98,7 +98,7 @@ void SceneSwitcher::on_ignoreWindowsAdd_clicked()
 	}
 }
 
-void SceneSwitcher::on_ignoreWindowsRemove_clicked()
+void AdvSceneSwitcher::on_ignoreWindowsRemove_clicked()
 {
 	QListWidgetItem *item = ui->ignoreWindows->currentItem();
 	if (!item)
@@ -123,7 +123,7 @@ void SceneSwitcher::on_ignoreWindowsRemove_clicked()
 	delete item;
 }
 
-int SceneSwitcher::IgnoreWindowsFindByData(const QString &window)
+int AdvSceneSwitcher::IgnoreWindowsFindByData(const QString &window)
 {
 	int count = ui->ignoreWindows->count();
 	int idx = -1;
@@ -141,7 +141,7 @@ int SceneSwitcher::IgnoreWindowsFindByData(const QString &window)
 	return idx;
 }
 
-void SceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
+void AdvSceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
 {
 	if (loading)
 		return;
@@ -344,7 +344,7 @@ void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
 	obs_data_array_release(ignoreWindowsArray);
 }
 
-void SceneSwitcher::setupTitleTab()
+void AdvSceneSwitcher::setupTitleTab()
 {
 	for (auto &s : switcher->windowSwitches) {
 		QListWidgetItem *item;
@@ -385,7 +385,7 @@ WindowSwitchWidget::WindowSwitchWidget(WindowSwitch *s) : SwitchWidget(s, false)
 	QWidget::connect(focused, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
 
-	SceneSwitcher::populateWindowSelection(windows);
+	AdvSceneSwitcher::populateWindowSelection(windows);
 
 	windows->setEditable(true);
 	windows->setMaxVisibleItems(20);

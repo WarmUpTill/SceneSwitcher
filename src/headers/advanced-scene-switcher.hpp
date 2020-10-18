@@ -19,14 +19,14 @@ class QCloseEvent;
 /*******************************************************************************
  * Advanced Scene Switcher window
  *******************************************************************************/
-class SceneSwitcher : public QDialog {
+class AdvSceneSwitcher : public QDialog {
 	Q_OBJECT
 
 public:
-	std::unique_ptr<Ui_SceneSwitcher> ui;
+	std::unique_ptr<Ui_AdvSceneSwitcher> ui;
 	bool loading = true;
 
-	SceneSwitcher(QWidget *parent);
+	AdvSceneSwitcher(QWidget *parent);
 
 	void closeEvent(QCloseEvent *event) override;
 

@@ -1,6 +1,6 @@
 #include "headers/advanced-scene-switcher.hpp"
 
-void SceneSwitcher::on_transitionsAdd_clicked()
+void AdvSceneSwitcher::on_transitionsAdd_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->sceneTransitions.emplace_back();
@@ -14,7 +14,7 @@ void SceneSwitcher::on_transitionsAdd_clicked()
 	ui->sceneTransitions->setItemWidget(item, sw);
 }
 
-void SceneSwitcher::on_transitionsRemove_clicked()
+void AdvSceneSwitcher::on_transitionsRemove_clicked()
 {
 	QListWidgetItem *item = ui->sceneTransitions->currentItem();
 	if (!item)
@@ -30,7 +30,7 @@ void SceneSwitcher::on_transitionsRemove_clicked()
 	delete item;
 }
 
-void SceneSwitcher::on_transitionsUp_clicked()
+void AdvSceneSwitcher::on_transitionsUp_clicked()
 {
 	int index = ui->sceneTransitions->currentRow();
 	if (!listMoveUp(ui->sceneTransitions))
@@ -50,7 +50,7 @@ void SceneSwitcher::on_transitionsUp_clicked()
 		  switcher->sceneTransitions[index - 1]);
 }
 
-void SceneSwitcher::on_transitionsDown_clicked()
+void AdvSceneSwitcher::on_transitionsDown_clicked()
 {
 	int index = ui->sceneTransitions->currentRow();
 
@@ -71,7 +71,7 @@ void SceneSwitcher::on_transitionsDown_clicked()
 		  switcher->sceneTransitions[index + 1]);
 }
 
-void SceneSwitcher::on_defaultTransitionsAdd_clicked()
+void AdvSceneSwitcher::on_defaultTransitionsAdd_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->defaultSceneTransitions.emplace_back();
@@ -85,7 +85,7 @@ void SceneSwitcher::on_defaultTransitionsAdd_clicked()
 	ui->defaultTransitions->setItemWidget(item, sw);
 }
 
-void SceneSwitcher::on_defaultTransitionsRemove_clicked()
+void AdvSceneSwitcher::on_defaultTransitionsRemove_clicked()
 {
 	QListWidgetItem *item = ui->defaultTransitions->currentItem();
 	if (!item)
@@ -101,7 +101,7 @@ void SceneSwitcher::on_defaultTransitionsRemove_clicked()
 	delete item;
 }
 
-void SceneSwitcher::on_defaultTransitionsUp_clicked()
+void AdvSceneSwitcher::on_defaultTransitionsUp_clicked()
 {
 	int index = ui->defaultTransitions->currentRow();
 	if (!listMoveUp(ui->defaultTransitions))
@@ -121,7 +121,7 @@ void SceneSwitcher::on_defaultTransitionsUp_clicked()
 		  switcher->defaultSceneTransitions[index - 1]);
 }
 
-void SceneSwitcher::on_defaultTransitionsDown_clicked()
+void AdvSceneSwitcher::on_defaultTransitionsDown_clicked()
 {
 	int index = ui->defaultTransitions->currentRow();
 
@@ -149,6 +149,9 @@ void SwitcherData::setDefaultSceneTransitions()
 
 	for (DefaultSceneTransition &s : defaultSceneTransitions) {
 		if (s.scene == ws) {
+			if (!s.initialized())
+				continue;
+
 			obs_source_t *transition =
 				obs_weak_source_get_source(s.transition);
 			//This might cancel the current transition
@@ -156,8 +159,7 @@ void SwitcherData::setDefaultSceneTransitions()
 			obs_frontend_set_current_transition(transition);
 
 			if (verbose)
-				if (verbose)
-					s.logMatch();
+				s.logMatch();
 
 			obs_source_release(transition);
 			break;
@@ -167,7 +169,7 @@ void SwitcherData::setDefaultSceneTransitions()
 	obs_weak_source_release(ws);
 }
 
-void SceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
+void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
 {
 	if (loading)
 		return;
@@ -186,6 +188,9 @@ obs_weak_source_t *getNextTransition(obs_weak_source_t *scene1,
 	obs_weak_source_t *ws = nullptr;
 	if (scene1 && scene2) {
 		for (SceneTransition &t : switcher->sceneTransitions) {
+			if (!t.initialized())
+				continue;
+
 			if (t.scene == scene1 && t.scene2 == scene2)
 				ws = t.transition;
 		}
@@ -363,7 +368,7 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 		obs_data_get_bool(obj, "tansitionOverrideOverride");
 }
 
-void SceneSwitcher::setupTransitionsTab()
+void AdvSceneSwitcher::setupTransitionsTab()
 {
 	for (auto &s : switcher->sceneTransitions) {
 		QListWidgetItem *item;
@@ -411,7 +416,7 @@ TransitionSwitchWidget::TransitionSwitchWidget(SceneTransition *s)
 	QWidget::connect(scenes2, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(Scene2Changed(const QString &)));
 
-	SceneSwitcher::populateSceneSelection(scenes2, false);
+	AdvSceneSwitcher::populateSceneSelection(scenes2, false);
 
 	if (s) {
 		scenes2->setCurrentText(GetWeakSourceName(s->scene2).c_str());

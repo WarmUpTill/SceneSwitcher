@@ -9,7 +9,7 @@
 #define LOCAL_FILE_IDX 0
 #define REMOTE_FILE_IDX 1
 
-void SceneSwitcher::on_browseButton_clicked()
+void AdvSceneSwitcher::on_browseButton_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
 		this, tr("Select a file to write to ..."), QDir::currentPath(),
@@ -18,7 +18,7 @@ void SceneSwitcher::on_browseButton_clicked()
 		ui->writePathLineEdit->setText(path);
 }
 
-void SceneSwitcher::on_readFileCheckBox_stateChanged(int state)
+void AdvSceneSwitcher::on_readFileCheckBox_stateChanged(int state)
 {
 	if (loading)
 		return;
@@ -35,7 +35,7 @@ void SceneSwitcher::on_readFileCheckBox_stateChanged(int state)
 	}
 }
 
-void SceneSwitcher::on_readPathLineEdit_textChanged(const QString &text)
+void AdvSceneSwitcher::on_readPathLineEdit_textChanged(const QString &text)
 {
 	if (loading)
 		return;
@@ -49,7 +49,7 @@ void SceneSwitcher::on_readPathLineEdit_textChanged(const QString &text)
 	switcher->fileIO.readPath = text.toUtf8().constData();
 }
 
-void SceneSwitcher::on_writePathLineEdit_textChanged(const QString &text)
+void AdvSceneSwitcher::on_writePathLineEdit_textChanged(const QString &text)
 {
 	if (loading)
 		return;
@@ -63,7 +63,7 @@ void SceneSwitcher::on_writePathLineEdit_textChanged(const QString &text)
 	switcher->fileIO.writePath = text.toUtf8().constData();
 }
 
-void SceneSwitcher::on_browseButton_2_clicked()
+void AdvSceneSwitcher::on_browseButton_2_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
 		this, tr("Select a file to read from ..."), QDir::currentPath(),
@@ -223,7 +223,7 @@ void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 	}
 }
 
-void SceneSwitcher::on_browseButton_3_clicked()
+void AdvSceneSwitcher::on_browseButton_3_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
 		this, tr("Select a file to read from ..."), QDir::currentPath(),
@@ -232,7 +232,7 @@ void SceneSwitcher::on_browseButton_3_clicked()
 		ui->filePathLineEdit->setText(path);
 }
 
-void SceneSwitcher::on_fileType_currentIndexChanged(int idx)
+void AdvSceneSwitcher::on_fileType_currentIndexChanged(int idx)
 {
 	if (idx == -1)
 		return;
@@ -248,7 +248,7 @@ void SceneSwitcher::on_fileType_currentIndexChanged(int idx)
 	}
 }
 
-void SceneSwitcher::on_fileAdd_clicked()
+void AdvSceneSwitcher::on_fileAdd_clicked()
 {
 	QString sceneName = ui->fileScenes->currentText();
 	QString transitionName = ui->fileTransitions->currentText();
@@ -280,7 +280,7 @@ void SceneSwitcher::on_fileAdd_clicked()
 					    useRegex, useTime);
 }
 
-void SceneSwitcher::on_fileRemove_clicked()
+void AdvSceneSwitcher::on_fileRemove_clicked()
 {
 	QListWidgetItem *item = ui->fileScenesList->currentItem();
 	if (!item)
@@ -299,7 +299,7 @@ void SceneSwitcher::on_fileRemove_clicked()
 	qDeleteAll(ui->fileScenesList->selectedItems());
 }
 
-void SceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
+void AdvSceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
 {
 	if (loading)
 		return;
@@ -327,7 +327,7 @@ void SceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
 	ui->fileContentTimeCheckBox->setChecked(s.useTime);
 }
 
-void SceneSwitcher::on_fileUp_clicked()
+void AdvSceneSwitcher::on_fileUp_clicked()
 {
 	int index = ui->fileScenesList->currentRow();
 	if (index != -1 && index != 0) {
@@ -342,7 +342,7 @@ void SceneSwitcher::on_fileUp_clicked()
 	}
 }
 
-void SceneSwitcher::on_fileDown_clicked()
+void AdvSceneSwitcher::on_fileDown_clicked()
 {
 	int index = ui->fileScenesList->currentRow();
 	if (index != -1 && index != ui->fileScenesList->count() - 1) {
@@ -431,7 +431,7 @@ void SwitcherData::loadFileSwitches(obs_data_t *obj)
 	switcher->fileIO.writePath = obs_data_get_string(obj, "writePath");
 }
 
-void SceneSwitcher::setupFileTab()
+void AdvSceneSwitcher::setupFileTab()
 {
 	populateSceneSelection(ui->fileScenes, false);
 	populateTransitionSelection(ui->fileTransitions);

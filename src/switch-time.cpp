@@ -2,7 +2,7 @@
 
 static QMetaObject::Connection addPulse;
 
-void SceneSwitcher::on_timeAdd_clicked()
+void AdvSceneSwitcher::on_timeAdd_clicked()
 {
 	ui->timeAdd->disconnect(addPulse);
 
@@ -18,7 +18,7 @@ void SceneSwitcher::on_timeAdd_clicked()
 	ui->timeSwitches->setItemWidget(item, sw);
 }
 
-void SceneSwitcher::on_timeRemove_clicked()
+void AdvSceneSwitcher::on_timeRemove_clicked()
 {
 	QListWidgetItem *item = ui->timeSwitches->currentItem();
 	if (!item)
@@ -34,7 +34,7 @@ void SceneSwitcher::on_timeRemove_clicked()
 	delete item;
 }
 
-void SceneSwitcher::on_timeUp_clicked()
+void AdvSceneSwitcher::on_timeUp_clicked()
 {
 	int index = ui->timeSwitches->currentRow();
 	if (!listMoveUp(ui->timeSwitches))
@@ -52,7 +52,7 @@ void SceneSwitcher::on_timeUp_clicked()
 		  switcher->timeSwitches[index - 1]);
 }
 
-void SceneSwitcher::on_timeDown_clicked()
+void AdvSceneSwitcher::on_timeDown_clicked()
 {
 	int index = ui->timeSwitches->currentRow();
 
@@ -196,7 +196,7 @@ void SwitcherData::loadTimeSwitches(obs_data_t *obj)
 	obs_data_array_release(timeArray);
 }
 
-void SceneSwitcher::setupTimeTab()
+void AdvSceneSwitcher::setupTimeTab()
 {
 	for (auto &s : switcher->timeSwitches) {
 		QListWidgetItem *item;

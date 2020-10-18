@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SceneSwitcher</class>
- <widget class="QDialog" name="SceneSwitcher">
+ <class>AdvSceneSwitcher</class>
+ <widget class="QDialog" name="AdvSceneSwitcher">
   <property name="geometry">
    <rect>
     <x>0</x>
