@@ -93,6 +93,7 @@ struct SwitcherData {
 
 	std::deque<SceneTransition> sceneTransitions;
 	std::deque<DefaultSceneTransition> defaultSceneTransitions;
+	bool changedDefTransitionRecently = false;
 
 	std::deque<MediaSwitch> mediaSwitches;
 

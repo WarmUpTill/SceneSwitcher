@@ -144,6 +144,9 @@ void AdvSceneSwitcher::on_defaultTransitionsDown_clicked()
 
 void SwitcherData::setDefaultSceneTransitions()
 {
+	if (changedDefTransitionRecently)
+		return;
+
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
@@ -167,6 +170,7 @@ void SwitcherData::setDefaultSceneTransitions()
 	}
 	obs_source_release(currentSource);
 	obs_weak_source_release(ws);
+	changedDefTransitionRecently = true;
 }
 
 void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
@@ -191,8 +195,10 @@ obs_weak_source_t *getNextTransition(obs_weak_source_t *scene1,
 			if (!t.initialized())
 				continue;
 
-			if (t.scene == scene1 && t.scene2 == scene2)
+			if (t.scene == scene1 && t.scene2 == scene2) {
 				ws = t.transition;
+				break;
+			}
 		}
 		obs_weak_source_addref(ws);
 	}

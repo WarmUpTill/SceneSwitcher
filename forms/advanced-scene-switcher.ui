@@ -615,21 +615,21 @@
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="label_36">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The settings below only affect scene transitions caused by the scene switcher and not the ones you are causing manually. Additionally they will take priority over transition settings configured elsewhere in the scene switcher.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QGroupBox" name="transitionsGroup">
          <property name="title">
-          <string>Use transition for automated scene switch from scene1 to scene2</string>
+          <string>Use transition for automated scene switch from scene A to scene B</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_14">
+          <item>
+           <widget class="QLabel" name="label_36">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Only&lt;/span&gt; transitions caused by the scene switcher and not the ones you are causing manually are affected by these settings. &lt;br/&gt;Settings defined here take priority over transition settings configured elsewhere in the scene switcher.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item>
            <widget class="QListWidget" name="sceneTransitions">
             <property name="sizePolicy">

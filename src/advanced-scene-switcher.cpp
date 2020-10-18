@@ -534,8 +534,9 @@ void handleSceneChange(SwitcherData *s)
 		s->PreviousScene2 = ws;
 	}
 
-	//reset autostart
+	//reset events only hanled on scene change
 	s->autoStartedRecently = false;
+	s->changedDefTransitionRecently = false;
 }
 
 void setLiveTime(SwitcherData *s)
