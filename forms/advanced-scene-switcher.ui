@@ -2822,7 +2822,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="sceneSequences">
+        <widget class="QListWidget" name="sceneSequenceSwitches">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>

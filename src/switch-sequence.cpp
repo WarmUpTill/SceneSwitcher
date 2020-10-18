@@ -8,29 +8,29 @@ static QMetaObject::Connection addPulse;
 
 void SceneSwitcher::on_sceneSequenceAdd_clicked()
 {
-	ui->sceneSequences->disconnect(addPulse);
+	ui->sceneSequenceSwitches->disconnect(addPulse);
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->sceneSequenceSwitches.emplace_back();
 
 	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->sceneSequences);
-	ui->sceneSequences->addItem(item);
+	item = new QListWidgetItem(ui->sceneSequenceSwitches);
+	ui->sceneSequenceSwitches->addItem(item);
 	SequenceWidget *sw =
 		new SequenceWidget(&switcher->sceneSequenceSwitches.back());
 	item->setSizeHint(sw->minimumSizeHint());
-	ui->sceneSequences->setItemWidget(item, sw);
+	ui->sceneSequenceSwitches->setItemWidget(item, sw);
 }
 
 void SceneSwitcher::on_sceneSequenceRemove_clicked()
 {
-	QListWidgetItem *item = ui->sceneSequences->currentItem();
+	QListWidgetItem *item = ui->sceneSequenceSwitches->currentItem();
 	if (!item)
 		return;
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
-		int idx = ui->sceneSequences->currentRow();
+		int idx = ui->sceneSequenceSwitches->currentRow();
 		auto &switches = switcher->sceneSequenceSwitches;
 		switches.erase(switches.begin() + idx);
 	}
@@ -40,14 +40,16 @@ void SceneSwitcher::on_sceneSequenceRemove_clicked()
 
 void SceneSwitcher::on_sceneSequenceUp_clicked()
 {
-	int index = ui->sceneSequences->currentRow();
-	if (!listMoveUp(ui->sceneSequences))
+	int index = ui->sceneSequenceSwitches->currentRow();
+	if (!listMoveUp(ui->sceneSequenceSwitches))
 		return;
 
-	SequenceWidget *s1 = (SequenceWidget *)ui->sceneSequences->itemWidget(
-		ui->sceneSequences->item(index));
-	SequenceWidget *s2 = (SequenceWidget *)ui->sceneSequences->itemWidget(
-		ui->sceneSequences->item(index - 1));
+	SequenceWidget *s1 =
+		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(
+			ui->sceneSequenceSwitches->item(index));
+	SequenceWidget *s2 =
+		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(
+			ui->sceneSequenceSwitches->item(index - 1));
 	SequenceWidget::swapSwitchData(s1, s2);
 
 	std::lock_guard<std::mutex> lock(switcher->m);
@@ -58,15 +60,17 @@ void SceneSwitcher::on_sceneSequenceUp_clicked()
 
 void SceneSwitcher::on_sceneSequenceDown_clicked()
 {
-	int index = ui->sceneSequences->currentRow();
+	int index = ui->sceneSequenceSwitches->currentRow();
 
-	if (!listMoveDown(ui->sceneSequences))
+	if (!listMoveDown(ui->sceneSequenceSwitches))
 		return;
 
-	SequenceWidget *s1 = (SequenceWidget *)ui->sceneSequences->itemWidget(
-		ui->sceneSequences->item(index));
-	SequenceWidget *s2 = (SequenceWidget *)ui->sceneSequences->itemWidget(
-		ui->sceneSequences->item(index + 1));
+	SequenceWidget *s1 =
+		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(
+			ui->sceneSequenceSwitches->item(index));
+	SequenceWidget *s2 =
+		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(
+			ui->sceneSequenceSwitches->item(index + 1));
 	SequenceWidget::swapSwitchData(s1, s2);
 
 	std::lock_guard<std::mutex> lock(switcher->m);
@@ -249,11 +253,11 @@ void SceneSwitcher::setupSequenceTab()
 {
 	for (auto &s : switcher->sceneSequenceSwitches) {
 		QListWidgetItem *item;
-		item = new QListWidgetItem(ui->sceneSequences);
-		ui->sceneSequences->addItem(item);
+		item = new QListWidgetItem(ui->sceneSequenceSwitches);
+		ui->sceneSequenceSwitches->addItem(item);
 		SequenceWidget *sw = new SequenceWidget(&s);
 		item->setSizeHint(sw->minimumSizeHint());
-		ui->sceneSequences->setItemWidget(item, sw);
+		ui->sceneSequenceSwitches->setItemWidget(item, sw);
 	}
 
 	if (switcher->sceneSequenceSwitches.size() == 0)
