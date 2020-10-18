@@ -22,6 +22,8 @@ struct SceneSwitcherEntry {
 		  usePreviousScene(usePreviousScene_)
 	{
 	}
+
+	virtual ~SceneSwitcherEntry() {}
 };
 
 class SwitchWidget : public QWidget {
