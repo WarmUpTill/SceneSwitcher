@@ -16,6 +16,7 @@ typedef enum {
 struct MediaSwitch : SceneSwitcherEntry {
 	OBSWeakSource source = nullptr;
 	obs_media_state state = OBS_MEDIA_STATE_NONE;
+	bool anyState = false;
 	time_restriction restriction = TIME_RESTRICTION_NONE;
 	int64_t time = 0;
 
@@ -34,6 +35,7 @@ struct MediaSwitch : SceneSwitcherEntry {
 		  restriction(restriction_),
 		  time(time_)
 	{
+		anyState = state > 7;
 	}
 };
 

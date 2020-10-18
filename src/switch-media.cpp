@@ -88,7 +88,8 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 		auto time = obs_source_media_get_time(source);
 		obs_media_state state = obs_source_media_get_state(source);
 		bool matched =
-			state == mediaSwitch.state &&
+			((state == mediaSwitch.state) ||
+			 mediaSwitch.anyState) &&
 			(mediaSwitch.restriction == TIME_RESTRICTION_NONE ||
 			 (mediaSwitch.restriction == TIME_RESTRICTION_LONGER &&
 			  time > mediaSwitch.time) ||
@@ -222,6 +223,7 @@ void populateMediaStates(QComboBox *list)
 	list->addItem("Stopped");
 	list->addItem("Ended");
 	list->addItem("Error");
+	list->addItem("Any");
 }
 
 void populateTimeRestrictions(QComboBox *list)
@@ -332,6 +334,7 @@ void MediaSwitchWidget::StateChanged(int index)
 		return;
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->state = (obs_media_state)index;
+	switchData->anyState = switchData->state > 7;
 }
 
 void MediaSwitchWidget::TimeRestrictionChanged(int index)
