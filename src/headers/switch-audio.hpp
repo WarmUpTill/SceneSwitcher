@@ -1,9 +1,6 @@
 #pragma once
-#include <QComboBox>
 #include <QSpinBox>
-#include <QLabel>
 
-#include "utility.hpp"
 #include "switch-generic.hpp"
 #include "volume-control.hpp"
 

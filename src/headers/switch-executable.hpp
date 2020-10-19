@@ -1,9 +1,5 @@
 #pragma once
-#include <QComboBox>
 #include <QCheckBox>
-#include <QLabel>
-
-#include "utility.hpp"
 #include "switch-generic.hpp"
 
 constexpr auto exe_func = 3;

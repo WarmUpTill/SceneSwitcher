@@ -1,5 +1,4 @@
 #pragma once
-#include <QDateTime>
 #include <QTimeEdit>
 
 #include "switch-generic.hpp"

@@ -1,4 +1,5 @@
 #include "headers/advanced-scene-switcher.hpp"
+#include "headers/utility.hpp"
 
 void AdvSceneSwitcher::on_transitionsAdd_clicked()
 {

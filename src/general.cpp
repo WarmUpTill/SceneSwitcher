@@ -1,9 +1,8 @@
-#include <obs-module.h>
 #include <QFileDialog>
-#include <QTextStream>
 #include <QMessageBox>
 
 #include "headers/advanced-scene-switcher.hpp"
+#include "headers/utility.hpp"
 
 QMetaObject::Connection inactivePluse;
 

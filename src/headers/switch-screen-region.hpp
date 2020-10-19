@@ -1,5 +1,5 @@
 #pragma once
-#include "utility.hpp"
+#include <QSpinBox>
 #include "switch-generic.hpp"
 
 constexpr auto screen_region_func = 4;

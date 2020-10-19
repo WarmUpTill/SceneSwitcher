@@ -1,7 +1,5 @@
-#include <QWidget>
-#include <QHBoxLayout>
-
 #include "headers/advanced-scene-switcher.hpp"
+#include "headers/utility.hpp"
 
 bool SceneSwitcherEntry::initialized()
 {

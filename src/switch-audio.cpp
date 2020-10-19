@@ -1,11 +1,6 @@
-#include <QWidget>
-#include <QHBoxLayout>
-
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/volume-control.hpp"
-
-#include <QPropertyAnimation>
-#include <QGraphicsColorizeEffect>
+#include "headers/utility.hpp"
 
 static QMetaObject::Connection addPulse;
 

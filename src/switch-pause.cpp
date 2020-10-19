@@ -1,6 +1,7 @@
 #include <regex>
 
 #include "headers/advanced-scene-switcher.hpp"
+#include "headers/utility.hpp"
 
 void AdvSceneSwitcher::on_pauseScenesAdd_clicked()
 {

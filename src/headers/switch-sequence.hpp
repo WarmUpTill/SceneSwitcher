@@ -1,5 +1,4 @@
 #pragma once
-#include "utility.hpp"
 #include "switch-generic.hpp"
 
 constexpr auto round_trip_func = 1;

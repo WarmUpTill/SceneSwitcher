@@ -3,6 +3,7 @@
 #include <QMessageBox>
 
 #include "headers/advanced-scene-switcher.hpp"
+#include "headers/utility.hpp"
 
 static QMetaObject::Connection addPulse;
 

@@ -1,5 +1,4 @@
 #pragma once
-#include "utility.hpp"
 #include "switch-generic.hpp"
 
 constexpr auto window_title_func = 5;

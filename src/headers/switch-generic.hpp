@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
 #include <obs.hpp>
+#include <QComboBox>
 
 struct SceneSwitcherEntry {
 	OBSWeakSource scene = nullptr;

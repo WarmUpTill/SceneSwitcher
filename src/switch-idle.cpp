@@ -1,6 +1,7 @@
 #include <regex>
 
 #include "headers/advanced-scene-switcher.hpp"
+#include "headers/utility.hpp"
 
 void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
 				   OBSWeakSource &transition)

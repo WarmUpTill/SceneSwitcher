@@ -5,6 +5,7 @@
 
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/curl-helper.hpp"
+#include "headers/utility.hpp"
 
 #define LOCAL_FILE_IDX 0
 #define REMOTE_FILE_IDX 1
