@@ -1,6 +1,5 @@
 #pragma once
 #include <condition_variable>
-#include <string>
 #include <vector>
 #include <deque>
 #include <mutex>

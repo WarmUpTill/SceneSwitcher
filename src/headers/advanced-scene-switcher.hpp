@@ -1,16 +1,10 @@
 #pragma once
-
-#include <QDialog>
-#include <memory>
-#include <vector>
-#include <string>
 #ifdef BUILD_OUT_OF_TREE
 #include "../../forms/ui_advanced-scene-switcher.h"
 #else
 #include "ui_advanced-scene-switcher.h"
 #endif
 #include "switcher-data-structs.hpp"
-#include "volume-control.hpp"
 
 #define blog(level, msg, ...) blog(level, "[adv-ss] " msg, ##__VA_ARGS__)
 

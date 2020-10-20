@@ -1,24 +1,13 @@
 #include <QMainWindow>
-#include <QDir>
 #include <QAction>
 #include <QtGui/qstandarditemmodel.h>
 #include <QPropertyAnimation>
 #include <QGraphicsColorizeEffect>
 
-#include <condition_variable>
-#include <chrono>
-#include <vector>
-#include <mutex>
-#include <thread>
-
 #include <obs-frontend-api.h>
-#include <obs-module.h>
-#include <obs.hpp>
 #include <util/util.hpp>
 
-#include "headers/switcher-data-structs.hpp"
 #include "headers/advanced-scene-switcher.hpp"
-#include "headers/utility.hpp"
 #include "headers/curl-helper.hpp"
 
 SwitcherData *switcher = nullptr;
