@@ -18,24 +18,28 @@ struct MediaSwitch : SceneSwitcherEntry {
 	bool anyState = false;
 	time_restriction restriction = TIME_RESTRICTION_NONE;
 	int64_t time = 0;
+	std::atomic<bool> stopped = false;
+	std::atomic<bool> ended = false;
 
 	const char *getType() { return "media"; }
 	bool initialized();
 	bool valid();
 
+	void resetSignalHandler();
+	static void MediaStopped(void *data, calldata_t *);
+	static void MediaEnded(void *data, calldata_t *);
+
 	inline MediaSwitch(){};
 	inline MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
 			   OBSWeakSource transition_, obs_media_state state_,
 			   time_restriction restriction_, uint64_t time_,
-			   bool usePreviousScene_)
-		: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
-		  source(source_),
-		  state(state_),
-		  restriction(restriction_),
-		  time(time_)
-	{
-		anyState = state > 7;
-	}
+			   bool usePreviousScene_);
+	MediaSwitch(const MediaSwitch &other);
+	MediaSwitch(MediaSwitch &&other);
+	~MediaSwitch();
+	MediaSwitch &operator=(const MediaSwitch &other);
+	MediaSwitch &operator=(MediaSwitch &&other) noexcept;
+	friend void swap(MediaSwitch &first, MediaSwitch &second);
 };
 
 class MediaSwitchWidget : public SwitchWidget {

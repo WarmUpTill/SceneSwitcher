@@ -88,22 +88,43 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 		auto duration = obs_source_media_get_duration(source);
 		auto time = obs_source_media_get_time(source);
 		obs_media_state state = obs_source_media_get_state(source);
-		bool matched =
-			((state == mediaSwitch.state) ||
-			 mediaSwitch.anyState) &&
-			(mediaSwitch.restriction == TIME_RESTRICTION_NONE ||
-			 (mediaSwitch.restriction == TIME_RESTRICTION_LONGER &&
-			  time > mediaSwitch.time) ||
-			 (mediaSwitch.restriction == TIME_RESTRICTION_SHORTER &&
-			  time < mediaSwitch.time) ||
-			 (mediaSwitch.restriction ==
-				  TIME_RESTRICTION_REMAINING_SHORTER &&
-			  duration > time &&
-			  duration - time < mediaSwitch.time) ||
-			 (mediaSwitch.restriction ==
-				  TIME_RESTRICTION_REMAINING_LONGER &&
-			  duration > time &&
-			  duration - time > mediaSwitch.time));
+
+		bool matchedStopped = OBS_MEDIA_STATE_STOPPED &&
+				      mediaSwitch.stopped;
+		bool matchedEnded = OBS_MEDIA_STATE_ENDED && mediaSwitch.ended;
+
+		// reset for next check
+		mediaSwitch.stopped = false;
+		mediaSwitch.ended = false;
+
+		bool matchedState = ((state == mediaSwitch.state) ||
+				     mediaSwitch.anyState) ||
+				    matchedStopped || matchedEnded;
+
+		bool matchedTimeNone =
+			(mediaSwitch.restriction == TIME_RESTRICTION_NONE);
+		bool matchedTimeLonger =
+			(mediaSwitch.restriction == TIME_RESTRICTION_LONGER) &&
+			(time > mediaSwitch.time);
+		bool matchedTimeShorter =
+			(mediaSwitch.restriction == TIME_RESTRICTION_SHORTER) &&
+			(time < mediaSwitch.time);
+		bool matchedTimeRemainLonger =
+			(mediaSwitch.restriction ==
+			 TIME_RESTRICTION_REMAINING_LONGER) &&
+			(duration > time && duration - time > mediaSwitch.time);
+		bool matchedTimeRemainShorter =
+			(mediaSwitch.restriction ==
+			 TIME_RESTRICTION_REMAINING_SHORTER) &&
+			(duration > time && duration - time < mediaSwitch.time);
+
+		bool matchedTime = matchedTimeNone || matchedTimeLonger ||
+				   matchedTimeShorter ||
+				   matchedTimeRemainLonger ||
+				   matchedTimeRemainShorter;
+
+		bool matched = matchedState && matchedTime;
+
 		if (matched) {
 			match = true;
 			scene = (mediaSwitch.usePreviousScene)
@@ -212,6 +233,138 @@ bool MediaSwitch::valid()
 {
 	return !initialized() ||
 	       (SceneSwitcherEntry::valid() && WeakSourceValid(source));
+}
+
+void MediaSwitch::resetSignalHandler()
+{
+	OBSSource mediasource = obs_weak_source_get_source(source);
+	if (mediasource) {
+		signal_handler_t *sh =
+			obs_source_get_signal_handler(mediasource);
+		signal_handler_disconnect(sh, "media_stopped", MediaStopped,
+					  this);
+		signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
+		signal_handler_connect(sh, "media_stopped", MediaStopped, this);
+		signal_handler_connect(sh, "media_ended", MediaEnded, this);
+	}
+}
+
+void MediaSwitch::MediaStopped(void *data, calldata_t *)
+{
+	MediaSwitch *media = static_cast<MediaSwitch *>(data);
+	media->stopped = true;
+	blog(0, "stp");
+}
+
+void MediaSwitch::MediaEnded(void *data, calldata_t *)
+{
+	MediaSwitch *media = static_cast<MediaSwitch *>(data);
+	media->ended = true;
+	blog(0, "end");
+}
+
+inline MediaSwitch::MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
+				OBSWeakSource transition_,
+				obs_media_state state_,
+				time_restriction restriction_, uint64_t time_,
+				bool usePreviousScene_)
+	: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
+	  source(source_),
+	  state(state_),
+	  restriction(restriction_),
+	  time(time_)
+{
+	anyState = state > 7;
+	OBSSource mediasource = obs_weak_source_get_source(source);
+	if (mediasource) {
+		signal_handler_t *sh =
+			obs_source_get_signal_handler(mediasource);
+		signal_handler_connect(sh, "media_stopped", MediaStopped, this);
+		signal_handler_connect(sh, "media_ended", MediaEnded, this);
+	}
+}
+
+MediaSwitch::MediaSwitch(const MediaSwitch &other)
+	: SceneSwitcherEntry(other.scene, other.transition,
+			     other.usePreviousScene),
+	  source(other.source),
+	  state(other.state),
+	  restriction(other.restriction),
+	  time(other.time)
+{
+	anyState = state > 7;
+	OBSSource mediasource = obs_weak_source_get_source(source);
+	if (mediasource) {
+		signal_handler_t *sh =
+			obs_source_get_signal_handler(mediasource);
+		signal_handler_connect(sh, "media_stopped", MediaStopped, this);
+		signal_handler_connect(sh, "media_ended", MediaEnded, this);
+	}
+}
+
+MediaSwitch::MediaSwitch(MediaSwitch &&other)
+	: SceneSwitcherEntry(other.scene, other.transition,
+			     other.usePreviousScene),
+	  source(other.source),
+	  state(other.state),
+	  restriction(other.restriction),
+	  time(other.time),
+	  anyState(other.anyState)
+{
+}
+
+MediaSwitch::~MediaSwitch()
+{
+	OBSSource mediasource = obs_weak_source_get_source(source);
+	if (mediasource) {
+		signal_handler_t *sh =
+			obs_source_get_signal_handler(mediasource);
+		signal_handler_disconnect(sh, "media_stopped", MediaStopped,
+					  this);
+		signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
+	}
+}
+
+MediaSwitch &MediaSwitch::operator=(const MediaSwitch &other)
+{
+	MediaSwitch t(other);
+	swap(*this, t);
+	return *this = MediaSwitch(other);
+}
+
+MediaSwitch &MediaSwitch::operator=(MediaSwitch &&other) noexcept
+{
+	if (this == &other) {
+		return *this;
+	}
+
+	swap(*this, other);
+
+	OBSSource mediasource = obs_weak_source_get_source(other.source);
+	if (mediasource) {
+		signal_handler_t *sh =
+			obs_source_get_signal_handler(mediasource);
+		signal_handler_disconnect(sh, "media_stopped", MediaStopped,
+					  &other);
+		signal_handler_disconnect(sh, "media_ended", MediaEnded,
+					  &other);
+	}
+
+	return *this;
+}
+
+void swap(MediaSwitch &first, MediaSwitch &second)
+{
+	std::swap(first.scene, second.scene);
+	std::swap(first.transition, second.transition);
+	std::swap(first.usePreviousScene, second.usePreviousScene);
+	std::swap(first.source, second.source);
+	std::swap(first.state, second.state);
+	std::swap(first.restriction, second.restriction);
+	std::swap(first.time, second.time);
+	std::swap(first.anyState, second.anyState);
+	first.resetSignalHandler();
+	second.resetSignalHandler();
 }
 
 void populateMediaStates(QComboBox *list)
