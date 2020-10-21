@@ -75,8 +75,9 @@ struct SwitcherData {
 
 	std::deque<RandomSwitch> randomSwitches;
 
-	FileIOData fileIO;
 	IdleData idleData;
+
+	FileIOData fileIO;
 	std::vector<FileSwitch> fileSwitches;
 	CURL *curl = nullptr;
 
