@@ -38,8 +38,7 @@ void SceneSwitcher::on_transitionsAdd_clicked()
 		{
 			std::lock_guard<std::mutex> lock(switcher->m);
 			for (auto &s : switcher->sceneTransitions) {
-				if (s.scene1 == source1 &&
-				    s.scene2 == source2) {
+				if (s.scene == source1 && s.scene2 == source2) {
 					s.transition = transition;
 					s.sceneTransitionStr =
 						text.toUtf8().constData();
@@ -164,8 +163,8 @@ void SwitcherData::setDefaultSceneTransitions()
 			obs_frontend_set_current_transition(transition);
 
 			if (verbose)
-				blog(LOG_INFO,
-				     "Advanced Scene Switcher default transition set");
+				if (verbose)
+					s.logMatch();
 
 			obs_source_release(transition);
 			break;
@@ -229,7 +228,7 @@ void SceneSwitcher::on_sceneTransitions_currentRowChanged(int idx)
 	for (auto &s : switcher->sceneTransitions) {
 		if (sceneTransition.compare(s.sceneTransitionStr.c_str()) ==
 		    0) {
-			std::string scene1 = GetWeakSourceName(s.scene1);
+			std::string scene1 = GetWeakSourceName(s.scene);
 			std::string scene2 = GetWeakSourceName(s.scene2);
 			std::string transitionName =
 				GetWeakSourceName(s.transition);
@@ -288,7 +287,7 @@ obs_weak_source_t *getNextTransition(obs_weak_source_t *scene1,
 	obs_weak_source_t *ws = nullptr;
 	if (scene1 && scene2) {
 		for (SceneTransition &t : switcher->sceneTransitions) {
-			if (t.scene1 == scene1 && t.scene2 == scene2)
+			if (t.scene == scene1 && t.scene2 == scene2)
 				ws = t.transition;
 		}
 		obs_weak_source_addref(ws);
@@ -359,7 +358,7 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 	for (SceneTransition &s : switcher->sceneTransitions) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source1 = obs_weak_source_get_source(s.scene1);
+		obs_source_t *source1 = obs_weak_source_get_source(s.scene);
 		obs_source_t *source2 = obs_weak_source_get_source(s.scene2);
 		obs_source_t *transition =
 			obs_weak_source_get_source(s.transition);
@@ -372,8 +371,6 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 			obs_data_set_string(array_obj, "Scene2", sceneName2);
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
-			obs_data_set_string(array_obj, "Str",
-					    s.sceneTransitionStr.c_str());
 			obs_data_array_push_back(sceneTransitionsArray,
 						 array_obj);
 			obs_source_release(source1);
@@ -400,8 +397,6 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 			obs_data_set_string(array_obj, "Scene", sceneName);
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
-			obs_data_set_string(array_obj, "Str",
-					    s.sceneTransitionStr.c_str());
 			obs_data_array_push_back(defaultTransitionsArray,
 						 array_obj);
 			obs_source_release(source);
@@ -433,8 +428,11 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 		const char *scene2 = obs_data_get_string(array_obj, "Scene2");
 		const char *transition =
 			obs_data_get_string(array_obj, "transition");
-		const char *sceneTransitionsStr =
-			obs_data_get_string(array_obj, "Str");
+
+		std::string sceneTransitionsStr =
+			MakeSceneTransitionName(scene1, scene2, transition)
+				.toUtf8()
+				.constData();
 
 		switcher->sceneTransitions.emplace_back(
 			GetWeakSourceByName(scene1),
@@ -459,8 +457,11 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 		const char *scene = obs_data_get_string(array_obj, "Scene");
 		const char *transition =
 			obs_data_get_string(array_obj, "transition");
-		const char *sceneTransitionsStr =
-			obs_data_get_string(array_obj, "Str");
+
+		std::string sceneTransitionsStr =
+			MakeDefaultSceneTransitionName(scene, transition)
+				.toUtf8()
+				.constData();
 
 		switcher->defaultSceneTransitions.emplace_back(
 			GetWeakSourceByName(scene),
@@ -484,7 +485,7 @@ void SceneSwitcher::setupTransitionsTab()
 	populateTransitionSelection(ui->defaultTransitionsTransitions);
 
 	for (auto &s : switcher->sceneTransitions) {
-		std::string sceneName1 = GetWeakSourceName(s.scene1);
+		std::string sceneName1 = GetWeakSourceName(s.scene);
 		std::string sceneName2 = GetWeakSourceName(s.scene2);
 		std::string transitionName = GetWeakSourceName(s.transition);
 		QString text = MakeSceneTransitionName(sceneName1.c_str(),
@@ -495,9 +496,6 @@ void SceneSwitcher::setupTransitionsTab()
 			new QListWidgetItem(text, ui->sceneTransitions);
 		item->setData(Qt::UserRole, text);
 	}
-	//(transitionDurationLongerThanInterval(switcher->interval))
-	//	? ui->transitionWarning->setVisible(true)
-	//	: ui->transitionWarning->setVisible(false);
 
 	for (auto &s : switcher->defaultSceneTransitions) {
 		std::string sceneName = GetWeakSourceName(s.scene);
@@ -512,4 +510,18 @@ void SceneSwitcher::setupTransitionsTab()
 
 	ui->transitionOverridecheckBox->setChecked(
 		switcher->tansitionOverrideOverride);
+}
+
+static inline QString MakeSceneTransitionName(const QString &scene1,
+					      const QString &scene2,
+					      const QString &transition)
+{
+	return scene1 + QStringLiteral(" --- ") + transition +
+	       QStringLiteral(" --> ") + scene2;
+}
+
+static inline QString MakeDefaultSceneTransitionName(const QString &scene,
+						     const QString &transition)
+{
+	return scene + QStringLiteral(" --> ") + transition;
 }

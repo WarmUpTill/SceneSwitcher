@@ -1246,14 +1246,21 @@
          <item>
           <widget class="QCheckBox" name="fullscreenCheckBox">
            <property name="text">
-            <string>only if fullscreen</string>
+            <string>if fullscreen</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="maximizedCheckBox">
+           <property name="text">
+            <string>if maximized</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QCheckBox" name="focusCheckBox">
            <property name="text">
-            <string>only if focused</string>
+            <string>if focused</string>
            </property>
           </widget>
          </item>
@@ -2404,7 +2411,7 @@
       <attribute name="title">
        <string notr="true">File</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_9">
+      <layout class="QVBoxLayout" name="verticalLayout_7">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_14">
          <item>
@@ -2534,6 +2541,22 @@
         <widget class="QLabel" name="remoteFileWarningLabel">
          <property name="text">
           <string>Please note that if you choose the remote option the scene switcher will try to access the remote location every x ms as specified on the General tab!</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="libcurlWarning">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Failed to load libcurl! Accesssing remote files will not be possible!</string>
          </property>
         </widget>
        </item>
@@ -3343,7 +3366,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="sceneRoundTripTab">
+     <widget class="QWidget" name="sceneSequenceTab">
       <attribute name="title">
        <string notr="true">Sequence</string>
       </attribute>
@@ -3358,7 +3381,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="sceneRoundTripScenes1">
+          <widget class="QComboBox" name="sceneSequenceScenes1">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -3381,7 +3404,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="sceneRoundTripScenes2">
+          <widget class="QComboBox" name="sceneSequenceScenes2">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -3404,7 +3427,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QDoubleSpinBox" name="sceneRoundTripSpinBox">
+          <widget class="QDoubleSpinBox" name="sceneSequenceSpinBox">
            <property name="suffix">
             <string/>
            </property>
@@ -3414,7 +3437,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="sceneRoundTripDelayUnits"/>
+          <widget class="QComboBox" name="sceneSequenceDelayUnits"/>
          </item>
          <item>
           <widget class="QLabel" name="label_17">
@@ -3424,7 +3447,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="sceneRoundTripTransitions"/>
+          <widget class="QComboBox" name="sceneSequenceTransitions"/>
          </item>
          <item>
           <spacer name="horizontalSpacer_9">
@@ -3449,7 +3472,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="sceneRoundTrips">
+        <widget class="QListWidget" name="sceneSequences">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -3464,7 +3487,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_10">
          <item>
-          <widget class="QPushButton" name="sceneRoundTripAdd">
+          <widget class="QPushButton" name="sceneSequenceAdd">
            <property name="maximumSize">
             <size>
              <width>22</width>
@@ -3480,7 +3503,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="sceneRoundTripRemove">
+          <widget class="QPushButton" name="sceneSequenceRemove">
            <property name="maximumSize">
             <size>
              <width>22</width>
@@ -3535,7 +3558,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="sceneRoundTripUp">
+          <widget class="QPushButton" name="sceneSequenceUp">
            <property name="maximumSize">
             <size>
              <width>22</width>
@@ -3558,7 +3581,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="sceneRoundTripDown">
+          <widget class="QPushButton" name="sceneSequenceDown">
            <property name="maximumSize">
             <size>
              <width>22</width>
@@ -3611,14 +3634,14 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_28">
          <item>
-          <widget class="QPushButton" name="sceneRoundTripSave">
+          <widget class="QPushButton" name="sceneSequenceSave">
            <property name="text">
             <string>Save Round Trips to file</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="sceneRoundTripLoad">
+          <widget class="QPushButton" name="sceneSequenceLoad">
            <property name="text">
             <string>Load Round Trips from file</string>
            </property>
@@ -3626,6 +3649,257 @@
          </item>
          <item>
           <spacer name="horizontalSpacer_26">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="audioTab">
+      <attribute name="title">
+       <string>Audio</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_9">
+       <item>
+        <layout class="QVBoxLayout" name="audioControlLayout">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_52">
+           <item>
+            <widget class="QLabel" name="label_66">
+             <property name="text">
+              <string>When the volume of</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="audioSources">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>100</width>
+               <height>0</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_67">
+             <property name="text">
+              <string>is above</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="audioVolumeThreshold">
+             <property name="suffix">
+              <string>%</string>
+             </property>
+             <property name="maximum">
+              <number>100</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_68">
+             <property name="text">
+              <string>switch to</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="audioScenes">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>100</width>
+               <height>0</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_69">
+             <property name="text">
+              <string>using</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="audioTransitions"/>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_54">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QWidget" name="audioPlaceholder" native="true"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QListWidget" name="audioSwitches">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="sortingEnabled">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_53">
+         <item>
+          <widget class="QPushButton" name="audioAdd">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string notr="true">addIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="audioRemove">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string notr="true">removeIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_114">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>5</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="Line" name="line_38">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_115">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>5</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="audioUp">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string>upArrowIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="audioDown">
+           <property name="maximumSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string>downArrowIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_56">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>

@@ -1,9 +1,12 @@
 #include <obs-module.h>
+#include <fstream>
+#include <regex>
 #include "headers/advanced-scene-switcher.hpp"
 
 void startHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 		     bool pressed)
 {
+	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(hotkey);
 
@@ -11,33 +14,12 @@ void startHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 		if (!(switcher->th && switcher->th->isRunning()))
 			switcher->Start();
 	}
-
-	obs_data_array *hotkeyData = obs_hotkey_save(id);
-
-	if (hotkeyData != NULL) {
-		char *path = obs_module_config_path("");
-		std::ofstream file;
-		file.open(std::string(path).append(START_HOTKEY_PATH),
-			  std::ofstream::trunc);
-		if (file.is_open()) {
-			size_t num = obs_data_array_count(hotkeyData);
-			for (size_t i = 0; i < num; i++) {
-				obs_data_t *data =
-					obs_data_array_item(hotkeyData, i);
-				std::string temp = obs_data_get_json(data);
-				obs_data_release(data);
-				file << temp;
-			}
-			file.close();
-		}
-		bfree(path);
-	}
-	obs_data_array_release(hotkeyData);
 }
 
 void stopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 		    bool pressed)
 {
+	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(hotkey);
 
@@ -45,33 +27,12 @@ void stopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 		if (switcher->th && switcher->th->isRunning())
 			switcher->Stop();
 	}
-
-	obs_data_array *hotkeyData = obs_hotkey_save(id);
-
-	if (hotkeyData != NULL) {
-		char *path = obs_module_config_path("");
-		std::ofstream file;
-		file.open(std::string(path).append(STOP_HOTKEY_PATH),
-			  std::ofstream::trunc);
-		if (file.is_open()) {
-			size_t num = obs_data_array_count(hotkeyData);
-			for (size_t i = 0; i < num; i++) {
-				obs_data_t *data =
-					obs_data_array_item(hotkeyData, i);
-				std::string temp = obs_data_get_json(data);
-				obs_data_release(data);
-				file << temp;
-			}
-			file.close();
-		}
-		bfree(path);
-	}
-	obs_data_array_release(hotkeyData);
 }
 
 void startStopToggleHotkeyFunc(void *data, obs_hotkey_id id,
 			       obs_hotkey_t *hotkey, bool pressed)
 {
+	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(hotkey);
 
@@ -81,58 +42,60 @@ void startStopToggleHotkeyFunc(void *data, obs_hotkey_id id,
 		else
 			switcher->Start();
 	}
-
-	obs_data_array *hotkeyData = obs_hotkey_save(id);
-
-	if (hotkeyData != NULL) {
-		char *path = obs_module_config_path("");
-		std::ofstream file;
-		file.open(std::string(path).append(TOGGLE_HOTKEY_PATH),
-			  std::ofstream::trunc);
-		if (file.is_open()) {
-			size_t num = obs_data_array_count(hotkeyData);
-			for (size_t i = 0; i < num; i++) {
-				obs_data_t *data =
-					obs_data_array_item(hotkeyData, i);
-				std::string temp = obs_data_get_json(data);
-				obs_data_release(data);
-				file << temp;
-			}
-			file.close();
-		}
-		bfree(path);
-	}
-	obs_data_array_release(hotkeyData);
 }
 
-std::string loadConfigFile(std::string filename)
+void registerHotkeys()
 {
-	std::ifstream settingsFile;
-	char *path = obs_module_config_path("");
-	std::string value;
+	switcher->startHotkey = obs_hotkey_register_frontend(
+		"startSwitcherHotkey", "Start the Advanced Scene Switcher",
+		startHotkeyFunc, NULL);
+	switcher->stopHotkey = obs_hotkey_register_frontend(
+		"stopSwitcherHotkey", "Stop the Advanced Scene Switcher",
+		stopHotkeyFunc, NULL);
+	switcher->toggleHotkey = obs_hotkey_register_frontend(
+		"startStopToggleSwitcherHotkey",
+		"Toggle Start/Stop for the Advanced Scene Switcher",
+		startStopToggleHotkeyFunc, NULL);
 
-	settingsFile.open(std::string(path).append(filename));
-	if (settingsFile.is_open()) {
-		settingsFile.seekg(0, std::ios::end);
-		value.reserve(settingsFile.tellg());
-		settingsFile.seekg(0, std::ios::beg);
-		value.assign((std::istreambuf_iterator<char>(settingsFile)),
-			     std::istreambuf_iterator<char>());
-		settingsFile.close();
-	}
-	bfree(path);
-	return value;
+	switcher->hotkeysRegistered = true;
 }
 
-void loadKeybinding(obs_hotkey_id hotkeyId, std::string path)
+void SwitcherData::saveHotkeys(obs_data_t *obj)
 {
-	std::string bindings = loadConfigFile(path);
-	if (!bindings.empty()) {
-		obs_data_array_t *hotkeyData = obs_data_array_create();
-		obs_data_t *data = obs_data_create_from_json(bindings.c_str());
-		obs_data_array_insert(hotkeyData, 0, data);
-		obs_data_release(data);
-		obs_hotkey_load(hotkeyId, hotkeyData);
-		obs_data_array_release(hotkeyData);
-	}
+	obs_data_array_t *startHotkeyArrray =
+		obs_hotkey_save(switcher->startHotkey);
+	obs_data_set_array(obj, "startHotkey", startHotkeyArrray);
+	obs_data_array_release(startHotkeyArrray);
+
+	obs_data_array_t *stopHotkeyArrray =
+		obs_hotkey_save(switcher->stopHotkey);
+
+	obs_data_set_array(obj, "stopHotkey", stopHotkeyArrray);
+	obs_data_array_release(stopHotkeyArrray);
+
+	obs_data_array_t *toggleHotkeyArrray =
+		obs_hotkey_save(switcher->toggleHotkey);
+	obs_data_set_array(obj, "toggleHotkey", toggleHotkeyArrray);
+	obs_data_array_release(toggleHotkeyArrray);
+}
+
+void SwitcherData::loadHotkeys(obs_data_t *obj)
+{
+	if (!switcher->hotkeysRegistered)
+		registerHotkeys();
+
+	obs_data_array_t *startHotkeyArrray =
+		obs_data_get_array(obj, "startHotkey");
+	obs_hotkey_load(switcher->startHotkey, startHotkeyArrray);
+	obs_data_array_release(startHotkeyArrray);
+
+	obs_data_array_t *stopHotkeyArrray =
+		obs_data_get_array(obj, "stopHotkey");
+	obs_hotkey_load(switcher->stopHotkey, stopHotkeyArrray);
+	obs_data_array_release(stopHotkeyArrray);
+
+	obs_data_array_t *toggleHotkeyArrray =
+		obs_data_get_array(obj, "toggleHotkey");
+	obs_hotkey_load(switcher->toggleHotkey, toggleHotkeyArrray);
+	obs_data_array_release(toggleHotkeyArrray);
 }

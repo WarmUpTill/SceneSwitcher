@@ -10,6 +10,7 @@
 #include "ui_advanced-scene-switcher.h"
 #endif
 #include "switcher-data-structs.hpp"
+#include "volume-control.hpp"
 
 class QCloseEvent;
 
@@ -21,6 +22,7 @@ class SceneSwitcher : public QDialog {
 
 public:
 	std::unique_ptr<Ui_SceneSwitcher> ui;
+	VolControl *volMeter = nullptr;
 	bool loading = true;
 
 	SceneSwitcher(QWidget *parent);
@@ -35,7 +37,7 @@ public:
 	int PauseScenesFindByData(const QString &scene);
 	int PauseWindowsFindByData(const QString &window);
 	int IgnoreWindowsFindByData(const QString &window);
-	int SceneRoundTripFindByData(const QString &scene1);
+	int SceneSequenceFindByData(const QString &scene1);
 	int SceneTransitionsFindByData(const QString &scene1,
 				       const QString &scene2);
 	int DefaultTransitionsFindByData(const QString &scene);
@@ -43,12 +45,14 @@ public:
 	int IgnoreIdleWindowsFindByData(const QString &window);
 	int randomFindByData(const QString &scene);
 	int timeFindByData(const timeTrigger &trigger, const QTime &time);
+	int audioFindByData(const QString &source, const int &volume);
 
 	void UpdateNonMatchingScene(const QString &name);
 	void UpdateAutoStopScene(const QString &name);
 	void UpdateAutoStartScene(const QString &name);
 	void UpdateIdleDataTransition(const QString &name);
 	void UpdateIdleDataScene(const QString &name);
+	void SetAudioVolumeMeter(const QString &name);
 
 	void loadUI();
 	void populateSceneSelection(QComboBox *sel, bool addPrevious);
@@ -66,6 +70,7 @@ public:
 	void setupMediaTab();
 	void setupFileTab();
 	void setupTimeTab();
+	void setupAudioTab();
 	void setTabOrder();
 
 public slots:
@@ -101,14 +106,14 @@ public slots:
 	void on_ignoreWindowsAdd_clicked();
 	void on_ignoreWindowsRemove_clicked();
 
-	void on_sceneRoundTrips_currentRowChanged(int idx);
-	void on_sceneRoundTripAdd_clicked();
-	void on_sceneRoundTripRemove_clicked();
-	void on_sceneRoundTripSave_clicked();
-	void on_sceneRoundTripLoad_clicked();
-	void on_sceneRoundTripUp_clicked();
-	void on_sceneRoundTripDown_clicked();
-	void on_sceneRoundTripDelayUnits_currentIndexChanged(int index);
+	void on_sceneSequences_currentRowChanged(int idx);
+	void on_sceneSequenceAdd_clicked();
+	void on_sceneSequenceRemove_clicked();
+	void on_sceneSequenceSave_clicked();
+	void on_sceneSequenceLoad_clicked();
+	void on_sceneSequenceUp_clicked();
+	void on_sceneSequenceDown_clicked();
+	void on_sceneSequenceDelayUnits_currentIndexChanged(int index);
 
 	void on_autoStopSceneCheckBox_stateChanged(int state);
 	void on_autoStopScenes_currentTextChanged(const QString &text);
@@ -175,6 +180,13 @@ public slots:
 	void on_timeUp_clicked();
 	void on_timeDown_clicked();
 
+	void on_audioAdd_clicked();
+	void on_audioRemove_clicked();
+	void on_audioUp_clicked();
+	void on_audioDown_clicked();
+	void on_audioSwitches_currentRowChanged(int idx);
+	void on_audioSources_currentTextChanged(const QString &text);
+
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();
 	void on_threadPriority_currentTextChanged(const QString &text);
@@ -182,6 +194,8 @@ public slots:
 	void updateScreenRegionCursorPos();
 
 	void on_close_clicked();
+
+private:
 };
 
 /********************************************************************************
@@ -191,6 +205,7 @@ void GetWindowList(std::vector<std::string> &windows);
 void GetWindowList(QStringList &windows); // Overloaded
 void GetCurrentWindowTitle(std::string &title);
 bool isFullscreen(std::string &title);
+bool isMaximized(std::string &title);
 
 /********************************************************************************
  * Screenregion helper
@@ -229,22 +244,6 @@ void restoreTransitionOverride(obs_source_t *scene, transitionData td);
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 		 bool &transitionOverrideOverride,
 		 std::unique_lock<std::mutex> &lock);
-
-/********************************************************************************
- * Hotkey helper
- ********************************************************************************/
-
-#define TOGGLE_HOTKEY_PATH "hotkey_toggle.txt"
-#define STOP_HOTKEY_PATH "hotkey_stop.txt"
-#define START_HOTKEY_PATH "hotkey_start.txt"
-
-void stopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
-		    bool pressed);
-void startHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
-		     bool pressed);
-void startStopToggleHotkeyFunc(void *data, obs_hotkey_id id,
-			       obs_hotkey_t *hotkey, bool pressed);
-void loadKeybinding(obs_hotkey_id hotkeyId, std::string path);
 
 /********************************************************************************
  * Main SwitcherData

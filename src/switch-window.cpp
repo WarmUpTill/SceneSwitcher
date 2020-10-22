@@ -1,4 +1,3 @@
-#include <obs-module.h>
 #include "headers/advanced-scene-switcher.hpp"
 
 bool isRunning(std::string &title)
@@ -65,6 +64,7 @@ void SceneSwitcher::on_add_clicked()
 	QString windowName = ui->windows->currentText();
 	QString transitionName = ui->transitions->currentText();
 	bool fullscreen = ui->fullscreenCheckBox->isChecked();
+	bool maximized = ui->maximizedCheckBox->isChecked();
 	bool focus = ui->focusCheckBox->isChecked();
 
 	if (windowName.isEmpty() || sceneName.isEmpty())
@@ -74,8 +74,9 @@ void SceneSwitcher::on_add_clicked()
 	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
 	QVariant v = QVariant::fromValue(windowName);
 
-	QString text = MakeSwitchName(sceneName, windowName, transitionName,
-				      fullscreen, focus);
+	QString text = MakeWindowSwitchName(sceneName, windowName,
+					    transitionName, fullscreen,
+					    maximized, focus);
 
 	int idx = FindByData(windowName);
 
@@ -83,7 +84,7 @@ void SceneSwitcher::on_add_clicked()
 		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->windowSwitches.emplace_back(
 			source, windowName.toUtf8().constData(), transition,
-			fullscreen, focus);
+			fullscreen, maximized, focus);
 
 		QListWidgetItem *item = new QListWidgetItem(text, ui->switches);
 		item->setData(Qt::UserRole, v);
@@ -100,6 +101,7 @@ void SceneSwitcher::on_add_clicked()
 					s.scene = source;
 					s.transition = transition;
 					s.fullscreen = fullscreen;
+					s.maximized = maximized;
 					s.focus = focus;
 					break;
 				}
@@ -239,6 +241,7 @@ void SceneSwitcher::on_switches_currentRowChanged(int idx)
 			ui->windows->setCurrentText(window);
 			ui->transitions->setCurrentText(transitionName.c_str());
 			ui->fullscreenCheckBox->setChecked(s.fullscreen);
+			ui->maximizedCheckBox->setChecked(s.maximized);
 			ui->focusCheckBox->setChecked(s.focus);
 			break;
 		}
@@ -293,6 +296,8 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 	for (WindowSceneSwitch &s : windowSwitches) {
 		// True if fullscreen is disabled OR current window is fullscreen
 		bool fullscreen = (!s.fullscreen || isFullscreen(s.window));
+		// True if maximized is disabled OR current window is maximized
+		bool max = (!s.maximized || isMaximized(s.window));
 		// True if focus is disabled OR switch is focused
 		bool focus = (!s.focus || isFocused(s.window));
 		// True if current window is ignored AND switch equals OR matches last window
@@ -303,11 +308,14 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 				  QRegularExpression(
 					  QString::fromStdString(s.window)))));
 
-		if (isRunning(s.window) && (fullscreen && (focus || ignore))) {
+		if (isRunning(s.window) &&
+		    (fullscreen && (max && (focus || ignore)))) {
 			match = true;
 			scene = s.scene;
 			transition = s.transition;
 
+			if (verbose)
+				s.logMatch();
 			break;
 		}
 	}
@@ -333,6 +341,7 @@ void SwitcherData::saveWindowTitleSwitches(obs_data_t *obj)
 					    s.window.c_str());
 			obs_data_set_bool(array_obj, "fullscreen",
 					  s.fullscreen);
+			obs_data_set_bool(array_obj, "maximized", s.maximized);
 			obs_data_set_bool(array_obj, "focus", s.focus);
 			obs_data_array_push_back(windowTitleArray, array_obj);
 			obs_source_release(source);
@@ -372,12 +381,20 @@ void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
 		const char *window =
 			obs_data_get_string(array_obj, "window_title");
 		bool fullscreen = obs_data_get_bool(array_obj, "fullscreen");
+#if __APPLE__
+		// TODO:
+		// not implemented on MacOS as I cannot test it
+		bool maximized = false;
+#else
+		bool maximized = obs_data_get_bool(array_obj, "maximized");
+#endif
 		bool focus = obs_data_get_bool(array_obj, "focus") ||
 			     !obs_data_has_user_value(array_obj, "focus");
 
 		switcher->windowSwitches.emplace_back(
 			GetWeakSourceByName(scene), window,
-			GetWeakTransitionByName(transition), fullscreen, focus);
+			GetWeakTransitionByName(transition), fullscreen,
+			maximized, focus);
 
 		obs_data_release(array_obj);
 	}
@@ -413,10 +430,11 @@ void SceneSwitcher::setupTitleTab()
 	for (auto &s : switcher->windowSwitches) {
 		std::string sceneName = GetWeakSourceName(s.scene);
 		std::string transitionName = GetWeakSourceName(s.transition);
-		QString text = MakeSwitchName(sceneName.c_str(),
-					      s.window.c_str(),
-					      transitionName.c_str(),
-					      s.fullscreen, s.focus);
+		QString text = MakeWindowSwitchName(sceneName.c_str(),
+						    s.window.c_str(),
+						    transitionName.c_str(),
+						    s.fullscreen, s.maximized,
+						    s.focus);
 
 		QListWidgetItem *item = new QListWidgetItem(text, ui->switches);
 		item->setData(Qt::UserRole, s.window.c_str());
@@ -429,4 +447,36 @@ void SceneSwitcher::setupTitleTab()
 			new QListWidgetItem(text, ui->ignoreWindows);
 		item->setData(Qt::UserRole, text);
 	}
+
+#if __APPLE__
+	// TODO:
+	// not implemented on MacOS as I cannot test it
+	ui->maximizedCheckBox->setDisabled(true);
+	ui->maximizedCheckBox->setVisible(false);
+#endif
+}
+
+static inline QString MakeWindowSwitchName(const QString &scene,
+					   const QString &value,
+					   const QString &transition,
+					   bool fullscreen, bool maximized,
+					   bool focus)
+{
+	QString name = QStringLiteral("[") + scene + QStringLiteral(", ") +
+		       transition + QStringLiteral("]: ") + value;
+
+	if (fullscreen || maximized || focus) {
+		name += QStringLiteral(" (only if");
+
+		if (fullscreen)
+			name += QStringLiteral(" fullscreen ");
+		if (maximized)
+			name += QStringLiteral(" maximized ");
+		if (focus)
+			name += QStringLiteral(" focused");
+
+		name += QStringLiteral(")");
+	}
+
+	return name;
 }

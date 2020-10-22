@@ -1,3 +1,5 @@
+#include <regex>
+
 #include "headers/advanced-scene-switcher.hpp"
 
 void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
@@ -43,7 +45,7 @@ void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
 		idleData.alreadySwitched = true;
 
 		if (verbose)
-			blog(LOG_INFO, "Advanced Scene Switcher idle match");
+			idleData.logMatch();
 	} else
 		idleData.alreadySwitched = false;
 }
@@ -80,7 +82,7 @@ void SceneSwitcher::UpdateIdleDataTransition(const QString &name)
 
 void SceneSwitcher::UpdateIdleDataScene(const QString &name)
 {
-	switcher->idleData.usePreviousScene = (name == PREVIOUS_SCENE_NAME);
+	switcher->idleData.usePreviousScene = (name == previous_scene_name);
 	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
 	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
 
@@ -221,7 +223,7 @@ void SwitcherData::saveIdleSwitches(obs_data_t *obj)
 	obs_data_set_bool(obj, "idleEnable", switcher->idleData.idleEnable);
 	obs_data_set_string(obj, "idleSceneName",
 			    switcher->idleData.usePreviousScene
-				    ? PREVIOUS_SCENE_NAME
+				    ? previous_scene_name
 				    : idleSceneName.c_str());
 	obs_data_set_string(obj, "idleTransitionName",
 			    idleTransitionName.c_str());
@@ -256,10 +258,10 @@ void SwitcherData::loadIdleSwitches(obs_data_t *obj)
 		GetWeakTransitionByName(idleTransitionName.c_str());
 	obs_data_set_default_bool(obj, "idleEnable", false);
 	switcher->idleData.idleEnable = obs_data_get_bool(obj, "idleEnable");
-	obs_data_set_default_int(obj, "idleTime", DEFAULT_IDLE_TIME);
+	obs_data_set_default_int(obj, "idleTime", default_idle_time);
 	switcher->idleData.time = obs_data_get_int(obj, "idleTime");
 	switcher->idleData.usePreviousScene =
-		(idleSceneName == PREVIOUS_SCENE_NAME);
+		(idleSceneName == previous_scene_name);
 }
 
 void SceneSwitcher::setupIdleTab()
@@ -279,7 +281,7 @@ void SceneSwitcher::setupIdleTab()
 	ui->idleCheckBox->setChecked(switcher->idleData.idleEnable);
 	ui->idleScenes->setCurrentText(
 		switcher->idleData.usePreviousScene
-			? PREVIOUS_SCENE_NAME
+			? previous_scene_name
 			: GetWeakSourceName(switcher->idleData.scene).c_str());
 	ui->idleTransitions->setCurrentText(
 		GetWeakSourceName(switcher->idleData.transition).c_str());

@@ -126,6 +126,13 @@ std::pair<int, int> getCursorPos()
 	return pos;
 }
 
+// TODO:
+// not implemented on MacOS as I cannot test it
+bool isMaximized(std::string &title)
+{
+	return false;
+}
+
 bool isFullscreen(std::string &title)
 {
 	// Check for match

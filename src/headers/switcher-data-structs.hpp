@@ -1,258 +1,26 @@
 #pragma once
 #include <condition_variable>
-#include <chrono>
 #include <string>
 #include <vector>
-#include <regex>
 #include <mutex>
-#include <fstream>
 #include <QDateTime>
 #include <QThread>
-#include "utility.hpp"
+#include <curl/curl.h>
 
-#define DEFAULT_INTERVAL 300
+#include "switch-audio.hpp"
+#include "switch-executable.hpp"
+#include "switch-file.hpp"
+#include "switch-idle.hpp"
+#include "switch-media.hpp"
+#include "switch-random.hpp"
+#include "switch-screen-region.hpp"
+#include "switch-time.hpp"
+#include "switch-transitions.hpp"
+#include "switch-window.hpp"
+#include "swtich-sequence.hpp"
 
-#define DEFAULT_IDLE_TIME 60
-
-#define PREVIOUS_SCENE_NAME "Previous Scene"
-
-#define READ_FILE_FUNC 0
-#define ROUND_TRIP_FUNC 1
-#define IDLE_FUNC 2
-#define EXE_FUNC 3
-#define SCREEN_REGION_FUNC 4
-#define WINDOW_TITLE_FUNC 5
-#define MEDIA_FUNC 6
-#define TIME_FUNC 7
-
-#define DEFAULT_PRIORITY_0 READ_FILE_FUNC
-#define DEFAULT_PRIORITY_1 ROUND_TRIP_FUNC
-#define DEFAULT_PRIORITY_2 IDLE_FUNC
-#define DEFAULT_PRIORITY_3 EXE_FUNC
-#define DEFAULT_PRIORITY_4 SCREEN_REGION_FUNC
-#define DEFAULT_PRIORITY_5 WINDOW_TITLE_FUNC
-#define DEFAULT_PRIORITY_6 MEDIA_FUNC
-#define DEFAULT_PRIORITY_7 TIME_FUNC
-
-/********************************************************************************
- * Data structs for each scene switching method
- ********************************************************************************/
-struct WindowSceneSwitch {
-	OBSWeakSource scene;
-	std::string window;
-	OBSWeakSource transition;
-	bool fullscreen;
-	bool focus;
-
-	inline WindowSceneSwitch(OBSWeakSource scene_, const char *window_,
-				 OBSWeakSource transition_, bool fullscreen_,
-				 bool focus_)
-		: scene(scene_),
-		  window(window_),
-		  transition(transition_),
-		  fullscreen(fullscreen_),
-		  focus(focus_)
-	{
-	}
-};
-
-struct ExecutableSceneSwitch {
-	OBSWeakSource mScene;
-	OBSWeakSource mTransition;
-	QString mExe;
-	bool mInFocus;
-
-	inline ExecutableSceneSwitch(OBSWeakSource scene,
-				     OBSWeakSource transition,
-				     const QString &exe, bool inFocus)
-		: mScene(scene),
-		  mTransition(transition),
-		  mExe(exe),
-		  mInFocus(inFocus)
-	{
-	}
-};
-
-struct ScreenRegionSwitch {
-	OBSWeakSource scene;
-	OBSWeakSource transition;
-	int minX, minY, maxX, maxY;
-	std::string regionStr;
-
-	inline ScreenRegionSwitch(OBSWeakSource scene_,
-				  OBSWeakSource transition_, int minX_,
-				  int minY_, int maxX_, int maxY_,
-				  std::string regionStr_)
-		: scene(scene_),
-		  transition(transition_),
-		  minX(minX_),
-		  minY(minY_),
-		  maxX(maxX_),
-		  maxY(maxY_),
-		  regionStr(regionStr_)
-	{
-	}
-};
-
-struct SceneRoundTripSwitch {
-	OBSWeakSource scene1;
-	OBSWeakSource scene2;
-	OBSWeakSource transition;
-	double delay;
-	bool usePreviousScene;
-	std::string sceneRoundTripStr;
-
-	inline SceneRoundTripSwitch(OBSWeakSource scene1_,
-				    OBSWeakSource scene2_,
-				    OBSWeakSource transition_, double delay_,
-				    bool usePreviousScene_, std::string str)
-		: scene1(scene1_),
-		  scene2(scene2_),
-		  transition(transition_),
-		  delay(delay_),
-		  usePreviousScene(usePreviousScene_),
-		  sceneRoundTripStr(str)
-	{
-	}
-};
-
-struct RandomSwitch {
-	OBSWeakSource scene;
-	OBSWeakSource transition;
-	double delay;
-	std::string randomSwitchStr;
-
-	inline RandomSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-			    double delay_, std::string str)
-		: scene(scene_),
-		  transition(transition_),
-		  delay(delay_),
-		  randomSwitchStr(str)
-	{
-	}
-};
-
-struct SceneTransition {
-	OBSWeakSource scene1;
-	OBSWeakSource scene2;
-	OBSWeakSource transition;
-	std::string sceneTransitionStr;
-
-	inline SceneTransition(OBSWeakSource scene1_, OBSWeakSource scene2_,
-			       OBSWeakSource transition_,
-			       std::string sceneTransitionStr_)
-		: scene1(scene1_),
-		  scene2(scene2_),
-		  transition(transition_),
-		  sceneTransitionStr(sceneTransitionStr_)
-	{
-	}
-};
-
-struct DefaultSceneTransition {
-	OBSWeakSource scene;
-	OBSWeakSource transition;
-	std::string sceneTransitionStr;
-
-	inline DefaultSceneTransition(OBSWeakSource scene_,
-				      OBSWeakSource transition_,
-				      std::string sceneTransitionStr_)
-		: scene(scene_),
-		  transition(transition_),
-		  sceneTransitionStr(sceneTransitionStr_)
-	{
-	}
-};
-
-struct FileSwitch {
-	OBSWeakSource scene;
-	OBSWeakSource transition;
-	std::string file;
-	std::string text;
-	bool remote = false;
-	bool useRegex = false;
-	bool useTime = false;
-	QDateTime lastMod;
-
-	inline FileSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-			  const char *file_, const char *text_, bool remote_,
-			  bool useRegex_, bool useTime_)
-		: scene(scene_),
-		  transition(transition_),
-		  file(file_),
-		  text(text_),
-		  remote(remote_),
-		  useRegex(useRegex_),
-		  useTime(useTime_),
-		  lastMod()
-	{
-	}
-};
-
-struct FileIOData {
-	bool readEnabled = false;
-	std::string readPath;
-	bool writeEnabled = false;
-	std::string writePath;
-};
-
-struct IdleData {
-	bool idleEnable = false;
-	int time = DEFAULT_IDLE_TIME;
-	OBSWeakSource scene;
-	OBSWeakSource transition;
-	bool usePreviousScene;
-	bool alreadySwitched = false;
-};
-
-struct MediaSwitch {
-	OBSWeakSource scene;
-	OBSWeakSource source;
-	OBSWeakSource transition;
-	obs_media_state state;
-	int64_t time;
-	time_restriction restriction;
-	bool matched;
-	bool usePreviousScene;
-	std::string mediaSwitchStr;
-
-	inline MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
-			   OBSWeakSource transition_, obs_media_state state_,
-			   time_restriction restriction_, uint64_t time_,
-			   bool usePreviousScene_, std::string mediaSwitchStr_)
-		: scene(scene_),
-		  source(source_),
-		  transition(transition_),
-		  state(state_),
-		  restriction(restriction_),
-		  time(time_),
-		  usePreviousScene(usePreviousScene_),
-		  mediaSwitchStr(mediaSwitchStr_)
-	{
-	}
-};
-
-struct TimeSwitch {
-	OBSWeakSource scene;
-	OBSWeakSource transition;
-	timeTrigger trigger;
-	QTime time;
-	bool matched;
-	bool usePreviousScene;
-	std::string timeSwitchStr;
-
-	inline TimeSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-			  timeTrigger trigger_, QTime time_,
-			  bool usePreviousScene_, std::string timeSwitchStr_)
-		: scene(scene_),
-		  transition(transition_),
-		  trigger(trigger_),
-		  time(time_),
-		  usePreviousScene(usePreviousScene_),
-		  timeSwitchStr(timeSwitchStr_)
-	{
-	}
-};
+constexpr auto default_interval = 300;
+constexpr auto previous_scene_name = "Previous Scene";
 
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 typedef enum { PERSIST = 0, START = 1, STOP = 2 } StartupBehavior;
@@ -279,9 +47,9 @@ struct SwitcherData {
 	bool verbose = false;
 	bool tansitionOverrideOverride = false;
 
-	int interval = DEFAULT_INTERVAL;
+	int interval = default_interval;
 
-	obs_source_t *waitScene = NULL; //scene during which wait started
+	obs_source_t *waitScene = NULL;
 	OBSWeakSource previousScene = NULL;
 	OBSWeakSource PreviousScene2 = NULL;
 	OBSWeakSource lastRandomScene;
@@ -301,14 +69,15 @@ struct SwitcherData {
 
 	std::vector<std::string> ignoreWindowsSwitches;
 
-	std::vector<SceneRoundTripSwitch> sceneRoundTripSwitches;
-	int sceneRoundTripUnitMultiplier = 1;
+	std::vector<SceneSequenceSwitch> sceneSequenceSwitches;
+	int sceneSequenceMultiplier = 1;
 
 	std::vector<RandomSwitch> randomSwitches;
 
 	FileIOData fileIO;
 	IdleData idleData;
 	std::vector<FileSwitch> fileSwitches;
+	CURL *curl = nullptr;
 
 	std::vector<ExecutableSceneSwitch> executableSwitches;
 
@@ -328,10 +97,12 @@ struct SwitcherData {
 	std::vector<TimeSwitch> timeSwitches;
 	QDateTime liveTime;
 
+	std::vector<AudioSwitch> audioSwitches;
+
 	std::vector<int> functionNamesByPriority = std::vector<int>{
-		DEFAULT_PRIORITY_0, DEFAULT_PRIORITY_1, DEFAULT_PRIORITY_2,
-		DEFAULT_PRIORITY_3, DEFAULT_PRIORITY_4, DEFAULT_PRIORITY_5,
-		DEFAULT_PRIORITY_6, DEFAULT_PRIORITY_7};
+		default_priority_0, default_priority_1, default_priority_2,
+		default_priority_3, default_priority_4, default_priority_5,
+		default_priority_6, default_priority_7, default_priority_8};
 
 	struct ThreadPrio {
 		std::string name;
@@ -362,6 +133,11 @@ struct SwitcherData {
 
 	std::vector<int> tabOrder;
 
+	bool hotkeysRegistered = false;
+	obs_hotkey_id startHotkey;
+	obs_hotkey_id stopHotkey;
+	obs_hotkey_id toggleHotkey;
+
 	void Thread();
 	void Start();
 	void Stop();
@@ -373,7 +149,7 @@ struct SwitcherData {
 	void autoStopStreamAndRecording();
 	void autoStartStreamRecording();
 	bool checkPause();
-	void checkSceneRoundTrip(bool &match, OBSWeakSource &scene,
+	void checkSceneSequence(bool &match, OBSWeakSource &scene,
 				 OBSWeakSource &transition,
 				 std::unique_lock<std::mutex> &lock);
 	void checkIdleSwitch(bool &match, OBSWeakSource &scene,
@@ -394,11 +170,13 @@ struct SwitcherData {
 			      OBSWeakSource &transition);
 	void checkTimeSwitch(bool &match, OBSWeakSource &scene,
 			     OBSWeakSource &transition);
+	void checkAudioSwitch(bool &match, OBSWeakSource &scene,
+			      OBSWeakSource &transition);
 
 	void saveWindowTitleSwitches(obs_data_t *obj);
 	void saveScreenRegionSwitches(obs_data_t *obj);
 	void savePauseSwitches(obs_data_t *obj);
-	void saveSceneRoundTripSwitches(obs_data_t *obj);
+	void saveSceneSequenceSwitches(obs_data_t *obj);
 	void saveSceneTransitions(obs_data_t *obj);
 	void saveIdleSwitches(obs_data_t *obj);
 	void saveExecutableSwitches(obs_data_t *obj);
@@ -406,12 +184,14 @@ struct SwitcherData {
 	void saveFileSwitches(obs_data_t *obj);
 	void saveMediaSwitches(obs_data_t *obj);
 	void saveTimeSwitches(obs_data_t *obj);
+	void saveAudioSwitches(obs_data_t *obj);
 	void saveGeneralSettings(obs_data_t *obj);
+	void saveHotkeys(obs_data_t *obj);
 
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
 	void loadPauseSwitches(obs_data_t *obj);
-	void loadSceneRoundTripSwitches(obs_data_t *obj);
+	void loadSceneSequenceSwitches(obs_data_t *obj);
 	void loadSceneTransitions(obs_data_t *obj);
 	void loadIdleSwitches(obs_data_t *obj);
 	void loadExecutableSwitches(obs_data_t *obj);
@@ -419,117 +199,11 @@ struct SwitcherData {
 	void loadFileSwitches(obs_data_t *obj);
 	void loadMediaSwitches(obs_data_t *obj);
 	void loadTimeSwitches(obs_data_t *obj);
+	void loadAudioSwitches(obs_data_t *obj);
 	void loadGeneralSettings(obs_data_t *obj);
+	void loadHotkeys(obs_data_t *obj);
 
-	void Prune()
-	{
-		for (size_t i = 0; i < windowSwitches.size(); i++) {
-			WindowSceneSwitch &s = windowSwitches[i];
-			if (!WeakSourceValid(s.scene) ||
-			    !WeakSourceValid(s.transition))
-				windowSwitches.erase(windowSwitches.begin() +
-						     i--);
-		}
-
-		if (nonMatchingScene && !WeakSourceValid(nonMatchingScene)) {
-			switchIfNotMatching = NO_SWITCH;
-			nonMatchingScene = nullptr;
-		}
-
-		for (size_t i = 0; i < randomSwitches.size(); i++) {
-			RandomSwitch &s = randomSwitches[i];
-			if (!WeakSourceValid(s.scene) ||
-			    !WeakSourceValid(s.transition))
-				randomSwitches.erase(randomSwitches.begin() +
-						     i--);
-		}
-
-		for (size_t i = 0; i < screenRegionSwitches.size(); i++) {
-			ScreenRegionSwitch &s = screenRegionSwitches[i];
-			if (!WeakSourceValid(s.scene) ||
-			    !WeakSourceValid(s.transition))
-				screenRegionSwitches.erase(
-					screenRegionSwitches.begin() + i--);
-		}
-
-		for (size_t i = 0; i < pauseScenesSwitches.size(); i++) {
-			OBSWeakSource &scene = pauseScenesSwitches[i];
-			if (!WeakSourceValid(scene))
-				pauseScenesSwitches.erase(
-					pauseScenesSwitches.begin() + i--);
-		}
-
-		for (size_t i = 0; i < sceneRoundTripSwitches.size(); i++) {
-			SceneRoundTripSwitch &s = sceneRoundTripSwitches[i];
-			if (!WeakSourceValid(s.scene1) ||
-			    (!s.usePreviousScene &&
-			     !WeakSourceValid(s.scene2)) ||
-			    !WeakSourceValid(s.transition))
-				sceneRoundTripSwitches.erase(
-					sceneRoundTripSwitches.begin() + i--);
-		}
-
-		if (!WeakSourceValid(autoStopScene)) {
-			autoStopScene = nullptr;
-			autoStopEnable = false;
-		}
-
-		for (size_t i = 0; i < sceneTransitions.size(); i++) {
-			SceneTransition &s = sceneTransitions[i];
-			if (!WeakSourceValid(s.scene1) ||
-			    !WeakSourceValid(s.scene2) ||
-			    !WeakSourceValid(s.transition))
-				sceneTransitions.erase(
-					sceneTransitions.begin() + i--);
-		}
-
-		for (size_t i = 0; i < defaultSceneTransitions.size(); i++) {
-			DefaultSceneTransition &s = defaultSceneTransitions[i];
-			if (!WeakSourceValid(s.scene) ||
-			    !WeakSourceValid(s.transition))
-				defaultSceneTransitions.erase(
-					defaultSceneTransitions.begin() + i--);
-		}
-
-		for (size_t i = 0; i < executableSwitches.size(); i++) {
-			ExecutableSceneSwitch &s = executableSwitches[i];
-			if (!WeakSourceValid(s.mScene) ||
-			    !WeakSourceValid(s.mTransition))
-				executableSwitches.erase(
-					executableSwitches.begin() + i--);
-		}
-
-		for (size_t i = 0; i < fileSwitches.size(); i++) {
-			FileSwitch &s = fileSwitches[i];
-			if (!WeakSourceValid(s.scene) ||
-			    !WeakSourceValid(s.transition))
-				fileSwitches.erase(fileSwitches.begin() + i--);
-		}
-
-		for (size_t i = 0; i < timeSwitches.size(); i++) {
-			TimeSwitch &s = timeSwitches[i];
-			if ((!s.usePreviousScene &&
-			     !WeakSourceValid(s.scene)) ||
-			    !WeakSourceValid(s.transition))
-				timeSwitches.erase(timeSwitches.begin() + i--);
-		}
-
-		if (!idleData.usePreviousScene &&
-			    !WeakSourceValid(idleData.scene) ||
-		    !WeakSourceValid(idleData.transition)) {
-			idleData.idleEnable = false;
-		}
-
-		for (size_t i = 0; i < mediaSwitches.size(); i++) {
-			MediaSwitch &s = mediaSwitches[i];
-			if ((!s.usePreviousScene &&
-			     !WeakSourceValid(s.scene)) ||
-			    !WeakSourceValid(s.source) ||
-			    !WeakSourceValid(s.transition))
-				mediaSwitches.erase(mediaSwitches.begin() +
-						    i--);
-		}
-	}
+	void Prune();
 	inline ~SwitcherData() { Stop(); }
 };
 

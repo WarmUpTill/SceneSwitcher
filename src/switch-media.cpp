@@ -1,4 +1,3 @@
-#include <obs-module.h>
 #include "headers/advanced-scene-switcher.hpp"
 
 void SceneSwitcher::on_mediaSwitches_currentRowChanged(int idx)
@@ -63,7 +62,7 @@ void SceneSwitcher::on_mediaAdd_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->mediaSwitches.emplace_back(
 		scene, source, transition, state, restriction, time,
-		(sceneName == QString(PREVIOUS_SCENE_NAME)),
+		(sceneName == QString(previous_scene_name)),
 		switchText.toUtf8().constData());
 }
 
@@ -167,8 +166,7 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 			transition = mediaSwitch.transition;
 
 			if (verbose)
-				blog(LOG_INFO,
-				     "Advanced Scene Switcher meida match");
+				mediaSwitch.logMatch();
 		}
 		mediaSwitch.matched = matched;
 		obs_source_release(source);
@@ -195,7 +193,7 @@ void SwitcherData::saveMediaSwitches(obs_data_t *obj)
 			obs_data_set_string(array_obj, "source", sourceName);
 			obs_data_set_string(array_obj, "scene",
 					    s.usePreviousScene
-						    ? PREVIOUS_SCENE_NAME
+						    ? previous_scene_name
 						    : sceneName);
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
@@ -244,7 +242,7 @@ void SwitcherData::loadMediaSwitches(obs_data_t *obj)
 		switcher->mediaSwitches.emplace_back(
 			GetWeakSourceByName(scene), GetWeakSourceByName(source),
 			GetWeakTransitionByName(transition), state, restriction,
-			time, (strcmp(scene, PREVIOUS_SCENE_NAME) == 0),
+			time, (strcmp(scene, previous_scene_name) == 0),
 			mediaStr);
 
 		obs_data_release(array_obj);
@@ -260,7 +258,9 @@ void SceneSwitcher::setupMediaTab()
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
 		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
-		if (strcmp(obs_source_get_id(source), "ffmpeg_source") == 0) {
+		std::string sourceId = obs_source_get_id(source);
+		if (sourceId.compare("ffmpeg_source") == 0 ||
+		    sourceId.compare("vlc_source") == 0) {
 			const char *name = obs_source_get_name(source);
 			combo->addItem(name);
 		}
@@ -287,7 +287,7 @@ void SceneSwitcher::setupMediaTab()
 	for (auto &s : switcher->mediaSwitches) {
 		std::string sourceName = GetWeakSourceName(s.source);
 		std::string sceneName = (s.usePreviousScene)
-						? PREVIOUS_SCENE_NAME
+						? previous_scene_name
 						: GetWeakSourceName(s.scene);
 		std::string transitionName = GetWeakSourceName(s.transition);
 		QString listText = MakeMediaSwitchName(
@@ -298,4 +298,48 @@ void SceneSwitcher::setupMediaTab()
 			new QListWidgetItem(listText, ui->mediaSwitches);
 		item->setData(Qt::UserRole, listText);
 	}
+}
+
+static inline QString
+MakeMediaSwitchName(const QString &source, const QString &scene,
+		    const QString &transition, obs_media_state state,
+		    time_restriction restriction, uint64_t time)
+{
+	QString switchName = QStringLiteral("Switch to ") + scene +
+			     QStringLiteral(" using ") + transition +
+			     QStringLiteral(" if ") + source +
+			     QStringLiteral(" state is ");
+	if (state == OBS_MEDIA_STATE_NONE) {
+		switchName += QStringLiteral("none");
+	} else if (state == OBS_MEDIA_STATE_PLAYING) {
+		switchName += QStringLiteral("playing");
+	} else if (state == OBS_MEDIA_STATE_OPENING) {
+		switchName += QStringLiteral("opening");
+	} else if (state == OBS_MEDIA_STATE_BUFFERING) {
+		switchName += QStringLiteral("buffering");
+	} else if (state == OBS_MEDIA_STATE_PAUSED) {
+		switchName += QStringLiteral("paused");
+	} else if (state == OBS_MEDIA_STATE_STOPPED) {
+		switchName += QStringLiteral("stopped");
+	} else if (state == OBS_MEDIA_STATE_ENDED) {
+		switchName += QStringLiteral("ended");
+	} else if (state == OBS_MEDIA_STATE_ERROR) {
+		switchName += QStringLiteral("error");
+	}
+	if (restriction == TIME_RESTRICTION_SHORTER) {
+		switchName += QStringLiteral(" and time shorter than ");
+	} else if (restriction == TIME_RESTRICTION_LONGER) {
+		switchName += QStringLiteral(" and time longer than ");
+	} else if (restriction == TIME_RESTRICTION_REMAINING_SHORTER) {
+		switchName +=
+			QStringLiteral(" and time remaining shorter than ");
+	} else if (restriction == TIME_RESTRICTION_REMAINING_LONGER) {
+		switchName +=
+			QStringLiteral(" and time remaining longer than ");
+	}
+	if (restriction != TIME_RESTRICTION_NONE) {
+		switchName += std::to_string(time).c_str();
+		switchName += QStringLiteral(" ms");
+	}
+	return switchName;
 }

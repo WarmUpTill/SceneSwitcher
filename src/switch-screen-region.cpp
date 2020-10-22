@@ -19,9 +19,7 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 				minRegionSize = regionSize;
 
 				if (verbose)
-					blog(LOG_INFO,
-					     "Advanced Scene Switcher region match");
-
+					s.logMatch();
 				break;
 			}
 		}
@@ -213,8 +211,6 @@ void SwitcherData::saveScreenRegionSwitches(obs_data_t *obj)
 			obs_data_set_int(array_obj, "minY", s.minY);
 			obs_data_set_int(array_obj, "maxX", s.maxX);
 			obs_data_set_int(array_obj, "maxY", s.maxY);
-			obs_data_set_string(array_obj, "screenRegionStr",
-					    s.regionStr.c_str());
 			obs_data_array_push_back(screenRegionArray, array_obj);
 			obs_source_release(source);
 			obs_source_release(transition);
@@ -246,8 +242,12 @@ void SwitcherData::loadScreenRegionSwitches(obs_data_t *obj)
 		int minY = obs_data_get_int(array_obj, "minY");
 		int maxX = obs_data_get_int(array_obj, "maxX");
 		int maxY = obs_data_get_int(array_obj, "maxY");
+
 		std::string regionStr =
-			obs_data_get_string(array_obj, "screenRegionStr");
+			MakeScreenRegionSwitchName(scene, transition, minX,
+						   minY, maxX, maxY)
+				.toUtf8()
+				.constData();
 
 		switcher->screenRegionSwitches.emplace_back(
 			GetWeakSourceByName(scene),
@@ -281,4 +281,16 @@ void SceneSwitcher::setupRegionTab()
 	connect(screenRegionTimer, SIGNAL(timeout()), this,
 		SLOT(updateScreenRegionCursorPos()));
 	screenRegionTimer->start(1000);
+}
+
+static inline QString MakeScreenRegionSwitchName(const QString &scene,
+						 const QString &transition,
+						 int minX, int minY, int maxX,
+						 int maxY)
+{
+	return QStringLiteral("[") + scene + QStringLiteral(", ") + transition +
+	       QStringLiteral("]: ") + QString::number(minX) +
+	       QStringLiteral(", ") + QString::number(minY) +
+	       QStringLiteral(" x ") + QString::number(maxX) +
+	       QStringLiteral(", ") + QString::number(maxY);
 }
