@@ -35,6 +35,8 @@ jobs:
         shell: bash
         run: |
           cd UI/frontend-plugins/${{ env.PLUGIN_NAME }}/CI/macos
+          brew untap local/openssl
+          brew untap local/python2
           brew update
           brew bundle
           cd -
