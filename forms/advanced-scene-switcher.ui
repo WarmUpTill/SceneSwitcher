@@ -1172,43 +1172,26 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="ignoreWindowsTab">
+     <widget class="QWidget" name="titleTab">
       <attribute name="title">
        <string notr="true">Title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_44">
-         <item>
-          <widget class="QLabel" name="label_58">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter either direct window titles or valid regex. You can check syntax and matches for regular expressions using &lt;a href=&quot;https://regexr.com&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#268bd2;&quot;&gt;RegExr&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="textFormat">
-            <enum>Qt::AutoText</enum>
-           </property>
-           <property name="openExternalLinks">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_15">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
+        <widget class="QLabel" name="label_58">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter either direct window titles or valid regex. You can check syntax and matches for regular expressions using &lt;a href=&quot;https://regexr.com&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#268bd2;&quot;&gt;RegExr&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="textFormat">
+          <enum>Qt::AutoText</enum>
+         </property>
+         <property name="openExternalLinks">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QListWidget" name="windowSwitches">
@@ -1481,20 +1464,6 @@
           </spacer>
          </item>
         </layout>
-       </item>
-       <item>
-        <widget class="Line" name="line_9">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_47">
-         <property name="text">
-          <string>(If you want to add OBS itself as a window title use &quot;OBS&quot; - If you want to add ALT + TAB add &quot;Task Switching&quot;)</string>
-         </property>
-        </widget>
        </item>
       </layout>
      </widget>

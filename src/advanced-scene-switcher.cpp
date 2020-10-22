@@ -121,6 +121,13 @@ void AdvSceneSwitcher::populateWindowSelection(QComboBox *sel, bool addSelect)
 	for (std::string &window : windows) {
 		sel->addItem(window.c_str());
 	}
+
+#ifdef WIN32
+	sel->setItemData(
+		0,
+		"Use \"OBS\" to specify OBS window\nUse \"Task Switching\"to specify ALT + TAB",
+		Qt::ToolTipRole);
+#endif
 }
 
 void AdvSceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
