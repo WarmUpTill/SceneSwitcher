@@ -152,10 +152,9 @@ void SwitcherData::saveExecutableSwitches(obs_data_t *obj)
 					    s.exe.toUtf8());
 			obs_data_set_bool(array_obj, "infocus", s.inFocus);
 			obs_data_array_push_back(executableArray, array_obj);
-			obs_source_release(source);
-			obs_source_release(transition);
 		}
-
+		obs_source_release(source);
+		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "executableSwitches", executableArray);

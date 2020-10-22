@@ -202,11 +202,11 @@ void SwitcherData::saveSceneSequenceSwitches(obs_data_t *obj)
 			obs_data_set_int(array_obj, "delayMultiplier",
 					 s.delayMultiplier);
 			obs_data_array_push_back(sceneSequenceArray, array_obj);
-			obs_source_release(source1);
-			obs_source_release(source2);
-			obs_source_release(transition);
 		}
 
+		obs_source_release(source1);
+		obs_source_release(source2);
+		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "sceneRoundTrip", sceneSequenceArray);

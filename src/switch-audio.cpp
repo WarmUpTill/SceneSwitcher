@@ -118,7 +118,8 @@ void SwitcherData::saveAudioSwitches(obs_data_t *obj)
 			obs_weak_source_get_source(s.transition);
 		obs_source_t *audioSrouce =
 			obs_weak_source_get_source(s.audioSource);
-		if ((s.usePreviousScene || sceneSource) && transition) {
+		if ((s.usePreviousScene || sceneSource) && transition &&
+		    audioSrouce) {
 			const char *sceneName =
 				obs_source_get_name(sceneSource);
 			const char *transitionName =

@@ -284,11 +284,10 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 					    transitionName);
 			obs_data_array_push_back(sceneTransitionsArray,
 						 array_obj);
-			obs_source_release(source1);
-			obs_source_release(source2);
-			obs_source_release(transition);
 		}
-
+		obs_source_release(source1);
+		obs_source_release(source2);
+		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "sceneTransitions", sceneTransitionsArray);
@@ -310,10 +309,9 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 					    transitionName);
 			obs_data_array_push_back(defaultTransitionsArray,
 						 array_obj);
-			obs_source_release(source);
-			obs_source_release(transition);
 		}
-
+		obs_source_release(source);
+		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "defaultTransitions", defaultTransitionsArray);

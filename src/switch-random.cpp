@@ -84,10 +84,9 @@ void SwitcherData::saveRandomSwitches(obs_data_t *obj)
 					    transitionName);
 			obs_data_set_double(array_obj, "delay", s.delay);
 			obs_data_array_push_back(randomArray, array_obj);
-			obs_source_release(source);
-			obs_source_release(transition);
 		}
-
+		obs_source_release(source);
+		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "randomSwitches", randomArray);

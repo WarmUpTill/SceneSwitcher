@@ -269,9 +269,9 @@ void SwitcherData::saveWindowTitleSwitches(obs_data_t *obj)
 			obs_data_set_bool(array_obj, "maximized", s.maximized);
 			obs_data_set_bool(array_obj, "focus", s.focus);
 			obs_data_array_push_back(windowTitleArray, array_obj);
-			obs_source_release(source);
-			obs_source_release(transition);
 		}
+		obs_source_release(source);
+		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "switches", windowTitleArray);

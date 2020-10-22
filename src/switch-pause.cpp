@@ -240,9 +240,8 @@ void SwitcherData::savePauseSwitches(obs_data_t *obj)
 			const char *n = obs_source_get_name(source);
 			obs_data_set_string(array_obj, "pauseScene", n);
 			obs_data_array_push_back(pauseScenesArray, array_obj);
-			obs_source_release(source);
 		}
-
+		obs_source_release(source);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "pauseScenes", pauseScenesArray);

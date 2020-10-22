@@ -381,10 +381,9 @@ void SwitcherData::saveFileSwitches(obs_data_t *obj)
 			obs_data_set_bool(array_obj, "useRegex", s.useRegex);
 			obs_data_set_bool(array_obj, "useTime", s.useTime);
 			obs_data_array_push_back(fileArray, array_obj);
-			obs_source_release(source);
-			obs_source_release(transition);
 		}
-
+		obs_source_release(source);
+		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "fileSwitches", fileArray);

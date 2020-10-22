@@ -179,10 +179,9 @@ void SwitcherData::saveScreenRegionSwitches(obs_data_t *obj)
 			obs_data_set_int(array_obj, "maxX", s.maxX);
 			obs_data_set_int(array_obj, "maxY", s.maxY);
 			obs_data_array_push_back(screenRegionArray, array_obj);
-			obs_source_release(source);
-			obs_source_release(transition);
 		}
-
+		obs_source_release(source);
+		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "screenRegion", screenRegionArray);
