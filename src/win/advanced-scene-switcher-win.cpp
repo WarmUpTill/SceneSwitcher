@@ -23,8 +23,7 @@ static bool GetWindowTitle(HWND window, string &title)
 
 static bool WindowValid(HWND window)
 {
-	LONG_PTR styles, ex_styles;
-	RECT rect;
+	LONG_PTR styles;
 	DWORD id;
 
 	if (!IsWindowVisible(window))
@@ -33,12 +32,8 @@ static bool WindowValid(HWND window)
 	if (id == GetCurrentProcessId())
 		return false;
 
-	GetClientRect(window, &rect);
 	styles = GetWindowLongPtr(window, GWL_STYLE);
-	ex_styles = GetWindowLongPtr(window, GWL_EXSTYLE);
 
-	if (ex_styles & WS_EX_TOOLWINDOW)
-		return false;
 	if (styles & WS_CHILD)
 		return false;
 
