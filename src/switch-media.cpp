@@ -264,28 +264,20 @@ bool MediaSwitch::valid()
 void MediaSwitch::clearSignalHandler()
 {
 	obs_source_t *mediasource = obs_weak_source_get_source(source);
-	if (mediasource) {
-		signal_handler_t *sh =
-			obs_source_get_signal_handler(mediasource);
-		signal_handler_disconnect(sh, "media_stopped", MediaStopped,
-					  this);
-		signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
-	}
+	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
+	signal_handler_disconnect(sh, "media_stopped", MediaStopped, this);
+	signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
 	obs_source_release(mediasource);
 }
 
 void MediaSwitch::resetSignalHandler()
 {
 	obs_source_t *mediasource = obs_weak_source_get_source(source);
-	if (mediasource) {
-		signal_handler_t *sh =
-			obs_source_get_signal_handler(mediasource);
-		signal_handler_disconnect(sh, "media_stopped", MediaStopped,
-					  this);
-		signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
-		signal_handler_connect(sh, "media_stopped", MediaStopped, this);
-		signal_handler_connect(sh, "media_ended", MediaEnded, this);
-	}
+	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
+	signal_handler_disconnect(sh, "media_stopped", MediaStopped, this);
+	signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
+	signal_handler_connect(sh, "media_stopped", MediaStopped, this);
+	signal_handler_connect(sh, "media_ended", MediaEnded, this);
 	obs_source_release(mediasource);
 }
 
@@ -314,12 +306,9 @@ inline MediaSwitch::MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
 {
 	anyState = state > 7;
 	obs_source_t *mediasource = obs_weak_source_get_source(source);
-	if (mediasource) {
-		signal_handler_t *sh =
-			obs_source_get_signal_handler(mediasource);
-		signal_handler_connect(sh, "media_stopped", MediaStopped, this);
-		signal_handler_connect(sh, "media_ended", MediaEnded, this);
-	}
+	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
+	signal_handler_connect(sh, "media_stopped", MediaStopped, this);
+	signal_handler_connect(sh, "media_ended", MediaEnded, this);
 	obs_source_release(mediasource);
 }
 
@@ -333,12 +322,9 @@ MediaSwitch::MediaSwitch(const MediaSwitch &other)
 {
 	anyState = state > 7;
 	obs_source_t *mediasource = obs_weak_source_get_source(source);
-	if (mediasource) {
-		signal_handler_t *sh =
-			obs_source_get_signal_handler(mediasource);
-		signal_handler_connect(sh, "media_stopped", MediaStopped, this);
-		signal_handler_connect(sh, "media_ended", MediaEnded, this);
-	}
+	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
+	signal_handler_connect(sh, "media_stopped", MediaStopped, this);
+	signal_handler_connect(sh, "media_ended", MediaEnded, this);
 	obs_source_release(mediasource);
 }
 
@@ -356,13 +342,9 @@ MediaSwitch::MediaSwitch(MediaSwitch &&other)
 MediaSwitch::~MediaSwitch()
 {
 	obs_source_t *mediasource = obs_weak_source_get_source(source);
-	if (mediasource) {
-		signal_handler_t *sh =
-			obs_source_get_signal_handler(mediasource);
-		signal_handler_disconnect(sh, "media_stopped", MediaStopped,
-					  this);
-		signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
-	}
+	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
+	signal_handler_disconnect(sh, "media_stopped", MediaStopped, this);
+	signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
 	obs_source_release(mediasource);
 }
 
@@ -382,14 +364,9 @@ MediaSwitch &MediaSwitch::operator=(MediaSwitch &&other) noexcept
 	swap(*this, other);
 
 	obs_source_t *mediasource = obs_weak_source_get_source(other.source);
-	if (mediasource) {
-		signal_handler_t *sh =
-			obs_source_get_signal_handler(mediasource);
-		signal_handler_disconnect(sh, "media_stopped", MediaStopped,
-					  &other);
-		signal_handler_disconnect(sh, "media_ended", MediaEnded,
-					  &other);
-	}
+	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
+	signal_handler_disconnect(sh, "media_stopped", MediaStopped, &other);
+	signal_handler_disconnect(sh, "media_ended", MediaEnded, &other);
 	obs_source_release(mediasource);
 
 	return *this;
