@@ -83,15 +83,41 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 		if (!mediaSwitch.initialized())
 			continue;
 
-		OBSSource source =
+		obs_source_t *source =
 			obs_weak_source_get_source(mediaSwitch.source);
 		auto duration = obs_source_media_get_duration(source);
 		auto time = obs_source_media_get_time(source);
 		obs_media_state state = obs_source_media_get_state(source);
+		obs_source_release(source);
 
-		bool matchedStopped = OBS_MEDIA_STATE_STOPPED &&
+		bool matchedStopped = mediaSwitch.state ==
+					      OBS_MEDIA_STATE_STOPPED &&
 				      mediaSwitch.stopped;
-		bool matchedEnded = OBS_MEDIA_STATE_ENDED && mediaSwitch.ended;
+
+		// The signal for the state ended is intentionally not used here
+		// so matchedEnded can be used to specify the end of a VLC playlist
+		// by two consequtive matches of OBS_MEDIA_STATE_ENDED
+		//
+		// This was done to reduce the likelyhood of interpreting a single
+		// OBS_MEDIA_STATE_ENDED caught by obs_source_media_get_state()
+		// as the end of the playlist of the VLC source, while actually being
+		// in the middle of switching to the next item of the playlist
+		//
+		// If there is a separate obs_media_sate in the future for the
+		// "end of playlist reached" signal the line below can be used
+		// and an additional check for this new singal can be introduced
+		//
+		// bool matchedEnded = mediaSwitch.state == OBS_MEDIA_STATE_ENDED &&
+		//		    mediaSwitch.ended;
+
+		bool matchedEnded = false;
+
+		if (state == OBS_MEDIA_STATE_ENDED) {
+			matchedEnded = mediaSwitch.previousStateEnded;
+			mediaSwitch.previousStateEnded = true;
+		} else {
+			mediaSwitch.previousStateEnded = false;
+		}
 
 		// reset for next check
 		mediaSwitch.stopped = false;
@@ -235,9 +261,22 @@ bool MediaSwitch::valid()
 	       (SceneSwitcherEntry::valid() && WeakSourceValid(source));
 }
 
+void MediaSwitch::clearSignalHandler()
+{
+	obs_source_t *mediasource = obs_weak_source_get_source(source);
+	if (mediasource) {
+		signal_handler_t *sh =
+			obs_source_get_signal_handler(mediasource);
+		signal_handler_disconnect(sh, "media_stopped", MediaStopped,
+					  this);
+		signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
+	}
+	obs_source_release(mediasource);
+}
+
 void MediaSwitch::resetSignalHandler()
 {
-	OBSSource mediasource = obs_weak_source_get_source(source);
+	obs_source_t *mediasource = obs_weak_source_get_source(source);
 	if (mediasource) {
 		signal_handler_t *sh =
 			obs_source_get_signal_handler(mediasource);
@@ -247,20 +286,19 @@ void MediaSwitch::resetSignalHandler()
 		signal_handler_connect(sh, "media_stopped", MediaStopped, this);
 		signal_handler_connect(sh, "media_ended", MediaEnded, this);
 	}
+	obs_source_release(mediasource);
 }
 
 void MediaSwitch::MediaStopped(void *data, calldata_t *)
 {
 	MediaSwitch *media = static_cast<MediaSwitch *>(data);
 	media->stopped = true;
-	blog(0, "stp");
 }
 
 void MediaSwitch::MediaEnded(void *data, calldata_t *)
 {
 	MediaSwitch *media = static_cast<MediaSwitch *>(data);
 	media->ended = true;
-	blog(0, "end");
 }
 
 inline MediaSwitch::MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
@@ -275,13 +313,14 @@ inline MediaSwitch::MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
 	  time(time_)
 {
 	anyState = state > 7;
-	OBSSource mediasource = obs_weak_source_get_source(source);
+	obs_source_t *mediasource = obs_weak_source_get_source(source);
 	if (mediasource) {
 		signal_handler_t *sh =
 			obs_source_get_signal_handler(mediasource);
 		signal_handler_connect(sh, "media_stopped", MediaStopped, this);
 		signal_handler_connect(sh, "media_ended", MediaEnded, this);
 	}
+	obs_source_release(mediasource);
 }
 
 MediaSwitch::MediaSwitch(const MediaSwitch &other)
@@ -293,13 +332,14 @@ MediaSwitch::MediaSwitch(const MediaSwitch &other)
 	  time(other.time)
 {
 	anyState = state > 7;
-	OBSSource mediasource = obs_weak_source_get_source(source);
+	obs_source_t *mediasource = obs_weak_source_get_source(source);
 	if (mediasource) {
 		signal_handler_t *sh =
 			obs_source_get_signal_handler(mediasource);
 		signal_handler_connect(sh, "media_stopped", MediaStopped, this);
 		signal_handler_connect(sh, "media_ended", MediaEnded, this);
 	}
+	obs_source_release(mediasource);
 }
 
 MediaSwitch::MediaSwitch(MediaSwitch &&other)
@@ -315,7 +355,7 @@ MediaSwitch::MediaSwitch(MediaSwitch &&other)
 
 MediaSwitch::~MediaSwitch()
 {
-	OBSSource mediasource = obs_weak_source_get_source(source);
+	obs_source_t *mediasource = obs_weak_source_get_source(source);
 	if (mediasource) {
 		signal_handler_t *sh =
 			obs_source_get_signal_handler(mediasource);
@@ -323,6 +363,7 @@ MediaSwitch::~MediaSwitch()
 					  this);
 		signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
 	}
+	obs_source_release(mediasource);
 }
 
 MediaSwitch &MediaSwitch::operator=(const MediaSwitch &other)
@@ -340,7 +381,7 @@ MediaSwitch &MediaSwitch::operator=(MediaSwitch &&other) noexcept
 
 	swap(*this, other);
 
-	OBSSource mediasource = obs_weak_source_get_source(other.source);
+	obs_source_t *mediasource = obs_weak_source_get_source(other.source);
 	if (mediasource) {
 		signal_handler_t *sh =
 			obs_source_get_signal_handler(mediasource);
@@ -349,6 +390,7 @@ MediaSwitch &MediaSwitch::operator=(MediaSwitch &&other) noexcept
 		signal_handler_disconnect(sh, "media_ended", MediaEnded,
 					  &other);
 	}
+	obs_source_release(mediasource);
 
 	return *this;
 }
@@ -479,7 +521,9 @@ void MediaSwitchWidget::SourceChanged(const QString &text)
 	if (loading || !switchData)
 		return;
 	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->clearSignalHandler();
 	switchData->source = GetWeakSourceByQString(text);
+	switchData->resetSignalHandler();
 }
 
 void MediaSwitchWidget::StateChanged(int index)

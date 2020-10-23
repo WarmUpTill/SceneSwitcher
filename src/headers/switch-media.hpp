@@ -21,10 +21,14 @@ struct MediaSwitch : SceneSwitcherEntry {
 	std::atomic<bool> stopped = false;
 	std::atomic<bool> ended = false;
 
+	// workaround to enable use of "ended" to specify end of VLC playlist
+	bool previousStateEnded = false;
+
 	const char *getType() { return "media"; }
 	bool initialized();
 	bool valid();
 
+	void clearSignalHandler();
 	void resetSignalHandler();
 	static void MediaStopped(void *data, calldata_t *);
 	static void MediaEnded(void *data, calldata_t *);
