@@ -74,6 +74,8 @@ void SwitchWidget::SceneChanged(const QString &text)
 		return;
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->usePreviousScene = text.compare(previous_scene_name) == 0;
+	if (switchData->usePreviousScene)
+		return;
 	switchData->scene = GetWeakSourceByQString(text);
 }
 
