@@ -333,9 +333,9 @@ MediaSwitch::MediaSwitch(MediaSwitch &&other)
 			     other.usePreviousScene),
 	  source(other.source),
 	  state(other.state),
+	  anyState(other.anyState),
 	  restriction(other.restriction),
-	  time(other.time),
-	  anyState(other.anyState)
+	  time(other.time)
 {
 }
 
