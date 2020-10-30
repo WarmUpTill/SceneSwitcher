@@ -17,8 +17,9 @@ void SceneSwitcherEntry::logMatch()
 {
 	const char *sceneName = previous_scene_name;
 	if (!usePreviousScene) {
-		OBSSource s = obs_weak_source_get_source(scene);
+		obs_source_t *s = obs_weak_source_get_source(scene);
 		sceneName = obs_source_get_name(s);
+		obs_source_release(s);
 	}
 	blog(LOG_INFO, "match for '%s' - switch to scene '%s'", getType(),
 	     sceneName);
