@@ -221,13 +221,6 @@ bool isInFocus(const QString &executable);
 /********************************************************************************
  * Sceneswitch helper
  ********************************************************************************/
-struct obs_weak_source;
-typedef struct obs_weak_source obs_weak_source_t;
-
-typedef struct transitionData {
-	std::string name = "";
-	int duration = 0;
-} transitionData;
 
 void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 		       OBSWeakSource &transition,

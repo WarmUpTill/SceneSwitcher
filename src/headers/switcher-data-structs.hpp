@@ -30,6 +30,12 @@ typedef enum {
 	RECORINDGSTREAMING = 2
 } AutoStartType;
 
+typedef struct transitionData {
+	std::string name = "";
+	int duration = 0;
+
+} transitionData;
+
 class SwitcherThread;
 
 /********************************************************************************
