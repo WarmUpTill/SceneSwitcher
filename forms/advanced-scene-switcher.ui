@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SceneSwitcher</class>
- <widget class="QDialog" name="SceneSwitcher">
+ <class>AdvSceneSwitcher</class>
+ <widget class="QDialog" name="AdvSceneSwitcher">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -44,597 +44,545 @@
       <attribute name="title">
        <string notr="true">General</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_41">
-         <item>
-          <widget class="QLabel" name="label_63">
-           <property name="text">
-            <string>WARNING! Condition checking interval must be greater than the duration of transitions to avoid scene locking</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="Line" name="line_6">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_4">
-         <item row="0" column="2">
-          <widget class="Line" name="line_13">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="10">
-          <spacer name="horizontalSpacer_47">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="5">
-          <spacer name="horizontalSpacer_52">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>0</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="0">
-          <layout class="QGridLayout" name="gridLayout_2">
-           <item row="2" column="1">
-            <widget class="QPushButton" name="toggleStartButton">
-             <property name="text">
-              <string>Start</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>Check switch conditions every</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QLabel" name="pluginRunningText">
-             <property name="text">
-              <string notr="true">Not Active</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_5">
-             <property name="text">
-              <string>Advanced Scene Switcher is:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QSpinBox" name="checkInterval">
-             <property name="minimumSize">
-              <size>
-               <width>100</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="suffix">
-              <string notr="true">ms</string>
-             </property>
-             <property name="minimum">
-              <number>50</number>
-             </property>
-             <property name="maximum">
-              <number>20000</number>
-             </property>
-             <property name="value">
-              <number>300</number>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="0" column="4">
-          <layout class="QGridLayout" name="gridLayout">
-           <item row="0" column="2">
-            <layout class="QHBoxLayout" name="horizontalLayout_43">
-             <item>
-              <widget class="QRadioButton" name="noMatchDontSwitch">
-               <property name="text">
-                <string>Don't switch</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item row="2" column="2">
-            <layout class="QHBoxLayout" name="horizontalLayout_45">
-             <item>
-              <widget class="QRadioButton" name="noMatchRandomSwitch">
-               <property name="text">
-                <string>Switch to any scene in Random tab</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item row="1" column="2">
-            <layout class="QHBoxLayout" name="horizontalLayout">
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <property name="rightMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
-              <number>0</number>
-             </property>
-             <item>
-              <widget class="QRadioButton" name="noMatchSwitch">
-               <property name="text">
-                <string>Switch to:</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QComboBox" name="noMatchSwitchScene">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>100</width>
-                 <height>0</height>
-                </size>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item row="1" column="1">
-            <layout class="QHBoxLayout" name="horizontalLayout_46">
-             <item>
-              <widget class="QLabel" name="label_2">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>If no switch condition is met</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </item>
-         <item row="0" column="3">
-          <spacer name="horizontalSpacer_46">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>0</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="9">
-          <widget class="QComboBox" name="startupBehavior"/>
-         </item>
-         <item row="0" column="1">
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>0</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="7">
-          <spacer name="horizontalSpacer_53">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>10</width>
-             <height>0</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="6">
-          <widget class="Line" name="line_18">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="8">
-          <widget class="QLabel" name="label_64">
-           <property name="text">
-            <string>On startup:</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="Line" name="line_8">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
+      <layout class="QVBoxLayout" name="verticalLayout_19">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_31">
          <item>
-          <widget class="QLabel" name="description">
-           <property name="text">
-            <string>Order the different switching methods in order of their priority (with the highest priority being at the top):</string>
-           </property>
-          </widget>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="QGroupBox" name="statusBox">
+             <property name="title">
+              <string>Status</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_4">
+              <item row="0" column="0">
+               <layout class="QGridLayout" name="gridLayout_2">
+                <item row="4" column="0">
+                 <widget class="QLabel" name="label_13">
+                  <property name="text">
+                   <string>Hotkeys can be defined in the OBS settings</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="label_5">
+                  <property name="text">
+                   <string>Advanced Scene Switcher is:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="0">
+                 <widget class="QLabel" name="label_64">
+                  <property name="text">
+                   <string>On startup:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QPushButton" name="toggleStartButton">
+                  <property name="text">
+                   <string>Start</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QComboBox" name="startupBehavior"/>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QSpinBox" name="checkInterval">
+                  <property name="minimumSize">
+                   <size>
+                    <width>100</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="suffix">
+                   <string notr="true">ms</string>
+                  </property>
+                  <property name="minimum">
+                   <number>50</number>
+                  </property>
+                  <property name="maximum">
+                   <number>20000</number>
+                  </property>
+                  <property name="value">
+                   <number>300</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_4">
+                  <property name="text">
+                   <string>Check switch conditions every</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <layout class="QHBoxLayout" name="horizontalLayout_47">
+                  <item>
+                   <widget class="QLabel" name="pluginRunningText">
+                    <property name="text">
+                     <string notr="true">Not Active</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <spacer name="horizontalSpacer">
+                    <property name="orientation">
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>40</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="generalSettingsBox">
+             <property name="title">
+              <string>General behavior</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_5">
+              <item row="3" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_50">
+                <item>
+                 <widget class="QCheckBox" name="autoStartSceneCheckBox">
+                  <property name="text">
+                   <string>Automatically start</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="autoStartType">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>100</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_65">
+                  <property name="text">
+                   <string>on scene</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="autoStartScenes">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>100</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_55">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="0">
+               <layout class="QGridLayout" name="gridLayout">
+                <item row="0" column="2">
+                 <layout class="QHBoxLayout" name="horizontalLayout_43">
+                  <item>
+                   <widget class="QRadioButton" name="noMatchDontSwitch">
+                    <property name="text">
+                     <string>Don't switch</string>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item row="2" column="2">
+                 <layout class="QHBoxLayout" name="horizontalLayout_45">
+                  <item>
+                   <widget class="QRadioButton" name="noMatchRandomSwitch">
+                    <property name="text">
+                     <string>Switch to any scene in Random tab</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item row="1" column="2">
+                 <layout class="QHBoxLayout" name="horizontalLayout">
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <item>
+                   <widget class="QRadioButton" name="noMatchSwitch">
+                    <property name="text">
+                     <string>Switch to:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QComboBox" name="noMatchSwitchScene">
+                    <property name="enabled">
+                     <bool>true</bool>
+                    </property>
+                    <property name="minimumSize">
+                     <size>
+                      <width>100</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item row="1" column="1">
+                 <layout class="QHBoxLayout" name="horizontalLayout_46">
+                  <item>
+                   <widget class="QLabel" name="label_2">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="text">
+                     <string>If no switch condition is met</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </item>
+              <item row="4" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_52">
+                <item>
+                 <widget class="QCheckBox" name="verboseLogging">
+                  <property name="text">
+                   <string>Enable verbose logging</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_49">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="2" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_33">
+                <item>
+                 <widget class="QCheckBox" name="autoStopSceneCheckBox">
+                  <property name="text">
+                   <string>Automatically stop streaming/recording on scene</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="autoStopScenes">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>100</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_19">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="1" column="0">
+               <widget class="Line" name="line_6">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_48">
+                <item>
+                 <widget class="QCheckBox" name="uiHintsDisable">
+                  <property name="text">
+                   <string>Disable UI hints</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_52">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
-          <spacer name="horizontalSpacer_30">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="QListWidget" name="priorityList"/>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_32">
-         <item>
-          <widget class="QPushButton" name="priorityUp">
-           <property name="maximumSize">
-            <size>
-             <width>22</width>
-             <height>22</height>
-            </size>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/up.png</normaloff>../../../forms/images/up.png</iconset>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-           <property name="themeID" stdset="0">
-            <string notr="true">upArrowIconSmall</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="priorityDown">
-           <property name="maximumSize">
-            <size>
-             <width>22</width>
-             <height>22</height>
-            </size>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/down.png</normaloff>../../../forms/images/down.png</iconset>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-           <property name="themeID" stdset="0">
-            <string notr="true">downArrowIconSmall</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_31">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_33">
-         <item>
-          <widget class="QCheckBox" name="autoStopSceneCheckBox">
-           <property name="text">
-            <string>Automatically stop streaming/recording on scene</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="autoStopScenes">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_19">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_50">
-         <item>
-          <widget class="QCheckBox" name="autoStartSceneCheckBox">
-           <property name="text">
-            <string>Automatically start</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="autoStartType">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_65">
-           <property name="text">
-            <string>on scene</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="autoStartScenes">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_55">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="Line" name="line_10">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_49">
-         <item>
-          <widget class="QLabel" name="label_56">
-           <property name="text">
-            <string>Use thread priority</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="threadPriority">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_57">
-           <property name="text">
-            <string>(raising the priority higher than &quot;Normal&quot; is usually not recommended)</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_41">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="Line" name="line_7">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_47">
-         <item>
-          <widget class="QPushButton" name="exportSettings">
-           <property name="text">
-            <string>Export settings to file</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="importSettings">
-           <property name="text">
-            <string>Import settings from file</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_48">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="Line" name="line_15">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_13">
-         <property name="text">
-          <string>(You can set a Hotkey to start and stop the scene switcher under Settings / Hotkeys / Toggle Start Stop for the Advanced Scene Switcher)</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="Line" name="line_14">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_48">
-         <item>
-          <widget class="QCheckBox" name="verboseLogging">
-           <property name="text">
-            <string>Enable verbose logging (Only needed for debugging)</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_49">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
+          <layout class="QVBoxLayout" name="verticalLayout_18">
+           <item>
+            <widget class="QGroupBox" name="priorityBox">
+             <property name="title">
+              <string>Priority</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_16">
+              <item>
+               <widget class="QLabel" name="description">
+                <property name="text">
+                 <string>Switching methods priority (Highest priority is at the top)</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_10">
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_41">
+                  <item>
+                   <widget class="QListWidget" name="priorityList"/>
+                  </item>
+                  <item>
+                   <spacer name="horizontalSpacer_30">
+                    <property name="orientation">
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>40</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_32">
+                <item>
+                 <widget class="QPushButton" name="priorityUp">
+                  <property name="maximumSize">
+                   <size>
+                    <width>22</width>
+                    <height>22</height>
+                   </size>
+                  </property>
+                  <property name="icon">
+                   <iconset>
+                    <normaloff>../../../forms/images/up.png</normaloff>../../../forms/images/up.png</iconset>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
+                  </property>
+                  <property name="themeID" stdset="0">
+                   <string notr="true">upArrowIconSmall</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="priorityDown">
+                  <property name="maximumSize">
+                   <size>
+                    <width>22</width>
+                    <height>22</height>
+                   </size>
+                  </property>
+                  <property name="icon">
+                   <iconset>
+                    <normaloff>../../../forms/images/down.png</normaloff>../../../forms/images/down.png</iconset>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
+                  </property>
+                  <property name="themeID" stdset="0">
+                   <string notr="true">downArrowIconSmall</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_31">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <spacer name="verticalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_49">
+                <item>
+                 <widget class="QLabel" name="label_56">
+                  <property name="text">
+                   <string>Use thread priority</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="threadPriority">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>100</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_41">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_57">
+                <property name="text">
+                 <string>(Raising the priority above &quot;Normal&quot; is not recommended)</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="saveLoadBox">
+             <property name="title">
+              <string>Save / load settings</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_17">
+              <item>
+               <widget class="QPushButton" name="exportSettings">
+                <property name="text">
+                 <string>Export</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="importSettings">
+                <property name="text">
+                 <string>Import</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
@@ -653,293 +601,343 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_15">
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_14">
-         <item>
-          <widget class="QCheckBox" name="transitionOverridecheckBox">
-           <property name="text">
-            <string>Scene transitions defined in the scene switcher take priority over Transition Overrides defined per scene</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="Line" name="line_17">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_36">
-           <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The settings below only affect scene transitions caused by the scene switcher and not the ones you are causing manually. Additionally they will take priority over transition settings configured elsewhere in the scene switcher.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="wordWrap">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_18">
-           <item>
-            <widget class="QLabel" name="label_19">
-             <property name="text">
-              <string>Switch from scene</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="transitionsScene1">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>100</width>
-               <height>0</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_20">
-             <property name="text">
-              <string>to scene</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="transitionsScene2">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>100</width>
-               <height>0</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_21">
-             <property name="text">
-              <string>using transition</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="transitionsTransitions"/>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_16">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QListWidget" name="sceneTransitions">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="sortingEnabled">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_19">
-           <property name="spacing">
-            <number>4</number>
-           </property>
-           <item>
-            <widget class="QPushButton" name="transitionsAdd">
-             <property name="maximumSize">
-              <size>
-               <width>22</width>
-               <height>22</height>
-              </size>
-             </property>
-             <property name="flat">
-              <bool>true</bool>
-             </property>
-             <property name="themeID" stdset="0">
-              <string notr="true">addIconSmall</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="transitionsRemove">
-             <property name="maximumSize">
-              <size>
-               <width>22</width>
-               <height>22</height>
-              </size>
-             </property>
-             <property name="flat">
-              <bool>true</bool>
-             </property>
-             <property name="themeID" stdset="0">
-              <string notr="true">removeIconSmall</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_17">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>5</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
-         </item>
-        </layout>
+        <widget class="QCheckBox" name="transitionOverridecheckBox">
+         <property name="text">
+          <string>Scene transitions defined in the scene switcher take priority over Transition Overrides defined per scene</string>
+         </property>
+        </widget>
        </item>
        <item>
-        <widget class="Line" name="line_3">
+        <widget class="Line" name="line_17">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_12">
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_30">
-           <item>
-            <widget class="QLabel" name="label_33">
-             <property name="text">
-              <string>When scene</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="defaultTransitionsScene">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>100</width>
-               <height>0</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_34">
-             <property name="text">
-              <string>is active change default scene transition to </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="defaultTransitionsTransitions"/>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_28">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QListWidget" name="defaultTransitions">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="sortingEnabled">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_29">
-           <item>
-            <widget class="QPushButton" name="defaultTransitionsAdd">
-             <property name="maximumSize">
-              <size>
-               <width>22</width>
-               <height>22</height>
-              </size>
-             </property>
-             <property name="flat">
-              <bool>true</bool>
-             </property>
-             <property name="themeID" stdset="0">
-              <string notr="true">addIconSmall</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="defaultTransitionsRemove">
-             <property name="maximumSize">
-              <size>
-               <width>22</width>
-               <height>22</height>
-              </size>
-             </property>
-             <property name="flat">
-              <bool>true</bool>
-             </property>
-             <property name="themeID" stdset="0">
-              <string notr="true">removeIconSmall</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_27">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
-         </item>
-        </layout>
+        <widget class="QGroupBox" name="transitionsGroup">
+         <property name="title">
+          <string>Use transition for automated scene switch from scene A to scene B</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_14">
+          <item>
+           <widget class="QLabel" name="label_36">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Only&lt;/span&gt; transitions caused by the scene switcher and not the ones you are causing manually are affected by these settings. &lt;br/&gt;Settings defined here take priority over transition settings configured elsewhere in the scene switcher.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QListWidget" name="sceneTransitions">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="sortingEnabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_19">
+            <property name="spacing">
+             <number>4</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="transitionsAdd">
+              <property name="maximumSize">
+               <size>
+                <width>22</width>
+                <height>22</height>
+               </size>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+              <property name="themeID" stdset="0">
+               <string notr="true">addIconSmall</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="transitionsRemove">
+              <property name="maximumSize">
+               <size>
+                <width>22</width>
+                <height>22</height>
+               </size>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+              <property name="themeID" stdset="0">
+               <string notr="true">removeIconSmall</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_48">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>5</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="Line" name="line_14">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_53">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>5</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="transitionsUp">
+              <property name="maximumSize">
+               <size>
+                <width>22</width>
+                <height>22</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+              <property name="themeID" stdset="0">
+               <string>upArrowIconSmall</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="transitionsDown">
+              <property name="maximumSize">
+               <size>
+                <width>22</width>
+                <height>22</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+              <property name="themeID" stdset="0">
+               <string>downArrowIconSmall</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_17">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>5</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="defaultTransitionsGroup">
+         <property name="title">
+          <string>Change transition if scene is active</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_12">
+          <item>
+           <widget class="QListWidget" name="defaultTransitions">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="sortingEnabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_29">
+            <item>
+             <widget class="QPushButton" name="defaultTransitionsAdd">
+              <property name="maximumSize">
+               <size>
+                <width>22</width>
+                <height>22</height>
+               </size>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+              <property name="themeID" stdset="0">
+               <string notr="true">addIconSmall</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="defaultTransitionsRemove">
+              <property name="maximumSize">
+               <size>
+                <width>22</width>
+                <height>22</height>
+               </size>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+              <property name="themeID" stdset="0">
+               <string notr="true">removeIconSmall</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_54">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>5</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="Line" name="line_13">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_47">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>5</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="defaultTransitionsUp">
+              <property name="maximumSize">
+               <size>
+                <width>22</width>
+                <height>22</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+              <property name="themeID" stdset="0">
+               <string>upArrowIconSmall</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="defaultTransitionsDown">
+              <property name="maximumSize">
+               <size>
+                <width>22</width>
+                <height>22</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+              <property name="themeID" stdset="0">
+               <string>downArrowIconSmall</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_27">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -1174,113 +1172,29 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="ignoreWindowsTab">
+     <widget class="QWidget" name="titleTab">
       <attribute name="title">
        <string notr="true">Title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_44">
-         <item>
-          <widget class="QLabel" name="label_58">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter either direct window titles or valid regex. You can check syntax and matches for regular expressions using &lt;a href=&quot;https://regexr.com&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#268bd2;&quot;&gt;RegExr&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="textFormat">
-            <enum>Qt::AutoText</enum>
-           </property>
-           <property name="openExternalLinks">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_15">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
+        <widget class="QLabel" name="label_58">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter either direct window titles or valid regex. You can check syntax and matches for regular expressions using &lt;a href=&quot;https://regexr.com&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#268bd2;&quot;&gt;RegExr&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="textFormat">
+          <enum>Qt::AutoText</enum>
+         </property>
+         <property name="openExternalLinks">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_12">
-         <item>
-          <widget class="QComboBox" name="windows">
-           <property name="editable">
-            <bool>true</bool>
-           </property>
-           <property name="maxVisibleItems">
-            <number>20</number>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="scenes">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="transitions"/>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="fullscreenCheckBox">
-           <property name="text">
-            <string>if fullscreen</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="maximizedCheckBox">
-           <property name="text">
-            <string>if maximized</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="focusCheckBox">
-           <property name="text">
-            <string>if focused</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_34">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="QListWidget" name="switches">
+        <widget class="QListWidget" name="windowSwitches">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -1298,7 +1212,7 @@
           <number>4</number>
          </property>
          <item>
-          <widget class="QPushButton" name="add">
+          <widget class="QPushButton" name="windowAdd">
            <property name="maximumSize">
             <size>
              <width>22</width>
@@ -1314,7 +1228,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="remove">
+          <widget class="QPushButton" name="windowRemove">
            <property name="maximumSize">
             <size>
              <width>22</width>
@@ -1369,7 +1283,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="up">
+          <widget class="QPushButton" name="windowUp">
            <property name="maximumSize">
             <size>
              <width>22</width>
@@ -1392,7 +1306,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="down">
+          <widget class="QPushButton" name="windowDown">
            <property name="maximumSize">
             <size>
              <width>22</width>
@@ -1551,20 +1465,6 @@
          </item>
         </layout>
        </item>
-       <item>
-        <widget class="Line" name="line_9">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_47">
-         <property name="text">
-          <string>(If you want to add OBS itself as a window title use &quot;OBS&quot; - If you want to add ALT + TAB add &quot;Task Switching&quot;)</string>
-         </property>
-        </widget>
-       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="executableTab">
@@ -1575,89 +1475,6 @@
        <string notr="true">Executable</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_11">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_24">
-         <item>
-          <widget class="QLabel" name="label_24">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;WARNING! Simultaneously running multiple applications from the same executable may result in undesired behavior&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="textFormat">
-            <enum>Qt::AutoText</enum>
-           </property>
-           <property name="openExternalLinks">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_22">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_23">
-         <item>
-          <widget class="QComboBox" name="executable">
-           <property name="editable">
-            <bool>true</bool>
-           </property>
-           <property name="maxVisibleItems">
-            <number>20</number>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="executableScenes">
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="executableTransitions"/>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="requiresFocusCheckBox">
-           <property name="text">
-            <string>only if focused</string>
-           </property>
-           <property name="autoRepeatInterval">
-            <number>100</number>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_21">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
        <item>
         <widget class="QListWidget" name="executables">
          <property name="enabled">
@@ -1817,139 +1634,6 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_27">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
-         <item>
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>If cursor is in</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QSpinBox" name="screenRegionMinX">
-           <property name="prefix">
-            <string>Min X: </string>
-           </property>
-           <property name="minimum">
-            <number>-1000000</number>
-           </property>
-           <property name="maximum">
-            <number>1000000</number>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QSpinBox" name="screenRegionMinY">
-           <property name="prefix">
-            <string>Min Y: </string>
-           </property>
-           <property name="minimum">
-            <number>-1000000</number>
-           </property>
-           <property name="maximum">
-            <number>1000000</number>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_6">
-           <property name="text">
-            <string>x</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QSpinBox" name="screenRegionMaxX">
-           <property name="prefix">
-            <string>Max X: </string>
-           </property>
-           <property name="minimum">
-            <number>-1000000</number>
-           </property>
-           <property name="maximum">
-            <number>1000000</number>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QSpinBox" name="screenRegionMaxY">
-           <property name="prefix">
-            <string>Max Y: </string>
-           </property>
-           <property name="minimum">
-            <number>-1000000</number>
-           </property>
-           <property name="maximum">
-            <number>1000000</number>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_14">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_17">
-         <item>
-          <widget class="QLabel" name="label_3">
-           <property name="text">
-            <string>switch to</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="screenRegionScenes">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_18">
-           <property name="text">
-            <string>using</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="screenRegionsTransitions"/>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_13">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
         <layout class="QHBoxLayout" name="horizontalLayout_20">
          <item>
           <widget class="QLabel" name="label_22">
@@ -1992,6 +1676,20 @@
           </widget>
          </item>
          <item>
+          <widget class="Line" name="line_7">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="showFrame">
+           <property name="text">
+            <string>Show guide frames</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="horizontalSpacer_18">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -2007,7 +1705,7 @@
         </layout>
        </item>
        <item>
-        <widget class="QListWidget" name="screenRegions">
+        <widget class="QListWidget" name="screenRegionSwitches">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -2160,100 +1858,6 @@
        <string notr="true">Media</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_28">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_39">
-         <item>
-          <widget class="QLabel" name="label_48">
-           <property name="text">
-            <string>When</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="mediaSources"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_49">
-           <property name="text">
-            <string>state is</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="mediaStates"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_50">
-           <property name="text">
-            <string>and</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="mediaTimeRestrictions"/>
-         </item>
-         <item>
-          <widget class="QSpinBox" name="mediaTime">
-           <property name="suffix">
-            <string notr="true">ms</string>
-           </property>
-           <property name="minimum">
-            <number>0</number>
-           </property>
-           <property name="maximum">
-            <number>1000000</number>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_51">
-           <property name="text">
-            <string>switch to</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="mediaScenes">
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_52">
-           <property name="text">
-            <string>using the</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="mediaTransitions"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_53">
-           <property name="text">
-            <string>transition</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_29">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
        <item>
         <widget class="QListWidget" name="mediaSwitches">
          <property name="enabled">
@@ -2799,81 +2403,14 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_8">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <item>
-          <widget class="QLabel" name="label_42">
-           <property name="text">
-            <string>If no switch condition is met switch to </string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="randomScenes">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_43">
-           <property name="text">
-            <string>using the</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="randomTransitions"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_41">
-           <property name="text">
-            <string>transition for a duration of</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QDoubleSpinBox" name="randomSpinBox">
-           <property name="suffix">
-            <string>s</string>
-           </property>
-           <property name="maximum">
-            <double>999999999.990000009536743</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_14">
-           <property name="text">
-            <string>or any of the options below:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_36">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
+        <widget class="QLabel" name="randomDisabledWarning">
+         <property name="text">
+          <string>Functionality disabled - To activate select &quot;If no switch condition is met switch to any scene in Random tab&quot; on General tab</string>
+         </property>
+        </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="randomScenesList">
+        <widget class="QListWidget" name="randomSwitches">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -2881,7 +2418,7 @@
           </sizepolicy>
          </property>
          <property name="sortingEnabled">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -2941,81 +2478,6 @@
        <string notr="true">Time</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_6">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_42">
-         <item>
-          <widget class="QComboBox" name="timeTrigger">
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_55">
-           <property name="text">
-            <string>at</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QTimeEdit" name="timeEdit">
-           <property name="displayFormat">
-            <string>HH:mm:ss</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_59">
-           <property name="text">
-            <string>switch to</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="timeScenes">
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_60">
-           <property name="text">
-            <string>using the</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="timeTransitions"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_61">
-           <property name="text">
-            <string>transition</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_40">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
        <item>
         <widget class="QListWidget" name="timeSwitches">
          <property name="enabled">
@@ -3372,99 +2834,6 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_11">
-         <item>
-          <widget class="QLabel" name="label_10">
-           <property name="text">
-            <string>When</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="sceneSequenceScenes1">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_11">
-           <property name="text">
-            <string>is active switch to</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="sceneSequenceScenes2">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_12">
-           <property name="text">
-            <string>after</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QDoubleSpinBox" name="sceneSequenceSpinBox">
-           <property name="suffix">
-            <string/>
-           </property>
-           <property name="maximum">
-            <double>999999999.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="sceneSequenceDelayUnits"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_17">
-           <property name="text">
-            <string>using</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="sceneSequenceTransitions"/>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_9">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
         <widget class="QLabel" name="label_35">
          <property name="text">
           <string>A sequence of automatic scene switches can be cancelled by either pausing/stopping the scene switcher or manually switching to a different scene</string>
@@ -3472,7 +2841,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="sceneSequences">
+        <widget class="QListWidget" name="sceneSequenceSwitches">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -3616,19 +2985,6 @@
            </property>
           </spacer>
          </item>
-         <item>
-          <widget class="QLabel" name="intervalWarning">
-           <property name="font">
-            <font>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>SWITCHER CONDITION CHECK INTERVAL LONGER THAN SHORTEST SCENE ROUND TRIP WAIT (This might lead to undesired switching behaviour)</string>
-           </property>
-          </widget>
-         </item>
         </layout>
        </item>
        <item>
@@ -3669,103 +3025,6 @@
        <string>Audio</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_9">
-       <item>
-        <layout class="QVBoxLayout" name="audioControlLayout">
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_52">
-           <item>
-            <widget class="QLabel" name="label_66">
-             <property name="text">
-              <string>When the volume of</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="audioSources">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>100</width>
-               <height>0</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_67">
-             <property name="text">
-              <string>is above</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QSpinBox" name="audioVolumeThreshold">
-             <property name="suffix">
-              <string>%</string>
-             </property>
-             <property name="maximum">
-              <number>100</number>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_68">
-             <property name="text">
-              <string>switch to</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="audioScenes">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>100</width>
-               <height>0</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_69">
-             <property name="text">
-              <string>using</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="audioTransitions"/>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_54">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QWidget" name="audioPlaceholder" native="true"/>
-         </item>
-        </layout>
-       </item>
        <item>
         <widget class="QListWidget" name="audioSwitches">
          <property name="sizePolicy">

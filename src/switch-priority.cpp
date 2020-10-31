@@ -2,7 +2,7 @@
 
 #include "headers/advanced-scene-switcher.hpp"
 
-void SceneSwitcher::on_threadPriority_currentTextChanged(const QString &text)
+void AdvSceneSwitcher::on_threadPriority_currentTextChanged(const QString &text)
 {
 	if (loading || ui->threadPriority->count() !=
 			       (int)switcher->threadPriorities.size())
@@ -18,7 +18,7 @@ void SceneSwitcher::on_threadPriority_currentTextChanged(const QString &text)
 	}
 }
 
-void SceneSwitcher::on_priorityUp_clicked()
+void AdvSceneSwitcher::on_priorityUp_clicked()
 {
 	int currentIndex = ui->priorityList->currentRow();
 	if (currentIndex != -1 && currentIndex != 0) {
@@ -35,7 +35,7 @@ void SceneSwitcher::on_priorityUp_clicked()
 	}
 }
 
-void SceneSwitcher::on_priorityDown_clicked()
+void AdvSceneSwitcher::on_priorityDown_clicked()
 {
 	int currentIndex = ui->priorityList->currentRow();
 	if (currentIndex != -1 &&

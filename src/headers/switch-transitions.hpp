@@ -1,47 +1,71 @@
 #pragma once
-#include <string>
-#include "utility.hpp"
 #include "switch-generic.hpp"
 
 struct SceneTransition : SceneSwitcherEntry {
-	OBSWeakSource scene2;
-	std::string sceneTransitionStr;
+	OBSWeakSource scene2 = nullptr;
 
 	const char *getType() { return "transition"; }
+	bool initialized();
+	bool valid();
 
-	bool valid()
-	{
-		return (WeakSourceValid(scene) && WeakSourceValid(scene2)) &&
-		       WeakSourceValid(transition);
-	}
-
+	inline SceneTransition(){};
 	inline SceneTransition(OBSWeakSource scene_, OBSWeakSource scene2_,
-			       OBSWeakSource transition_,
-			       std::string sceneTransitionStr_)
-		: SceneSwitcherEntry(scene_, transition_),
-		  scene2(scene2_),
-		  sceneTransitionStr(sceneTransitionStr_)
+			       OBSWeakSource transition_)
+		: SceneSwitcherEntry(scene_, transition_), scene2(scene2_)
 	{
 	}
 };
 
-static inline QString MakeSceneTransitionName(const QString &scene1,
-					      const QString &scene2,
-					      const QString &transition);
-
 struct DefaultSceneTransition : SceneSwitcherEntry {
-	std::string sceneTransitionStr;
 
 	const char *getType() { return "def_transition"; }
 
+	inline DefaultSceneTransition(){};
 	inline DefaultSceneTransition(OBSWeakSource scene_,
-				      OBSWeakSource transition_,
-				      std::string sceneTransitionStr_)
-		: SceneSwitcherEntry(scene_, transition_),
-		  sceneTransitionStr(sceneTransitionStr_)
+				      OBSWeakSource transition_)
+		: SceneSwitcherEntry(scene_, transition_)
 	{
 	}
 };
 
-static inline QString MakeDefaultSceneTransitionName(const QString &scene,
-						     const QString &transition);
+class TransitionSwitchWidget : public SwitchWidget {
+	Q_OBJECT
+
+public:
+	TransitionSwitchWidget(SceneTransition *s);
+	SceneTransition *getSwitchData();
+	void setSwitchData(SceneTransition *s);
+
+	static void swapSwitchData(TransitionSwitchWidget *s1,
+				   TransitionSwitchWidget *s2);
+
+private slots:
+	void Scene2Changed(const QString &text);
+
+private:
+	QComboBox *scenes2;
+
+	QLabel *switchLabel;
+	QLabel *toLabel;
+	QLabel *usingLabel;
+
+	SceneTransition *switchData;
+};
+
+class DefTransitionSwitchWidget : public SwitchWidget {
+	Q_OBJECT
+
+public:
+	DefTransitionSwitchWidget(DefaultSceneTransition *s);
+	DefaultSceneTransition *getSwitchData();
+	void setSwitchData(DefaultSceneTransition *s);
+
+	static void swapSwitchData(DefTransitionSwitchWidget *s1,
+				   DefTransitionSwitchWidget *s2);
+
+private:
+	QLabel *whenLabel;
+	QLabel *switchLabel;
+
+	DefaultSceneTransition *switchData;
+};

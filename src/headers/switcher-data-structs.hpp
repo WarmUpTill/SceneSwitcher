@@ -1,7 +1,7 @@
 #pragma once
 #include <condition_variable>
-#include <string>
 #include <vector>
+#include <deque>
 #include <mutex>
 #include <QDateTime>
 #include <QThread>
@@ -17,7 +17,7 @@
 #include "switch-time.hpp"
 #include "switch-transitions.hpp"
 #include "switch-window.hpp"
-#include "swtich-sequence.hpp"
+#include "switch-sequence.hpp"
 
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
@@ -29,6 +29,12 @@ typedef enum {
 	STREAMING = 1,
 	RECORINDGSTREAMING = 2
 } AutoStartType;
+
+typedef struct transitionData {
+	std::string name = "";
+	int duration = 0;
+
+} transitionData;
 
 class SwitcherThread;
 
@@ -45,6 +51,8 @@ struct SwitcherData {
 	std::condition_variable transitionCv;
 	bool stop = false;
 	bool verbose = false;
+	bool disableHints = false;
+	bool showFrame = false;
 	bool tansitionOverrideOverride = false;
 
 	int interval = default_interval;
@@ -57,11 +65,11 @@ struct SwitcherData {
 	NoMatch switchIfNotMatching = NO_SWITCH;
 	StartupBehavior startupBehavior = PERSIST;
 
-	std::vector<WindowSceneSwitch> windowSwitches;
+	std::deque<WindowSwitch> windowSwitches;
 	std::vector<std::string> ignoreIdleWindows;
 	std::string lastTitle;
 
-	std::vector<ScreenRegionSwitch> screenRegionSwitches;
+	std::deque<ScreenRegionSwitch> screenRegionSwitches;
 
 	std::vector<OBSWeakSource> pauseScenesSwitches;
 
@@ -69,17 +77,17 @@ struct SwitcherData {
 
 	std::vector<std::string> ignoreWindowsSwitches;
 
-	std::vector<SceneSequenceSwitch> sceneSequenceSwitches;
-	int sceneSequenceMultiplier = 1;
+	std::deque<SceneSequenceSwitch> sceneSequenceSwitches;
 
-	std::vector<RandomSwitch> randomSwitches;
+	std::deque<RandomSwitch> randomSwitches;
+
+	IdleData idleData;
 
 	FileIOData fileIO;
-	IdleData idleData;
 	std::vector<FileSwitch> fileSwitches;
 	CURL *curl = nullptr;
 
-	std::vector<ExecutableSceneSwitch> executableSwitches;
+	std::deque<ExecutableSwitch> executableSwitches;
 
 	bool autoStopEnable = false;
 	OBSWeakSource autoStopScene;
@@ -89,15 +97,16 @@ struct SwitcherData {
 	OBSWeakSource autoStartScene;
 	bool autoStartedRecently = false;
 
-	std::vector<SceneTransition> sceneTransitions;
-	std::vector<DefaultSceneTransition> defaultSceneTransitions;
+	std::deque<SceneTransition> sceneTransitions;
+	std::deque<DefaultSceneTransition> defaultSceneTransitions;
+	bool changedDefTransitionRecently = false;
 
-	std::vector<MediaSwitch> mediaSwitches;
+	std::deque<MediaSwitch> mediaSwitches;
 
-	std::vector<TimeSwitch> timeSwitches;
+	std::deque<TimeSwitch> timeSwitches;
 	QDateTime liveTime;
 
-	std::vector<AudioSwitch> audioSwitches;
+	std::deque<AudioSwitch> audioSwitches;
 
 	std::vector<int> functionNamesByPriority = std::vector<int>{
 		default_priority_0, default_priority_1, default_priority_2,
@@ -150,8 +159,8 @@ struct SwitcherData {
 	void autoStartStreamRecording();
 	bool checkPause();
 	void checkSceneSequence(bool &match, OBSWeakSource &scene,
-				 OBSWeakSource &transition,
-				 std::unique_lock<std::mutex> &lock);
+				OBSWeakSource &transition,
+				std::unique_lock<std::mutex> &lock);
 	void checkIdleSwitch(bool &match, OBSWeakSource &scene,
 			     OBSWeakSource &transition);
 	void checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
