@@ -151,7 +151,7 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 
 		bool matched = matchedState && matchedTime;
 
-		if (matched) {
+		if (matched && !mediaSwitch.matched) {
 			match = true;
 			scene = (mediaSwitch.usePreviousScene)
 					? previousScene
@@ -160,8 +160,12 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 
 			if (verbose)
 				mediaSwitch.logMatch();
-			break;
 		}
+
+		mediaSwitch.matched = matched;
+
+		if (match)
+			break;
 	}
 }
 
