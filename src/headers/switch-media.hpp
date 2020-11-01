@@ -18,6 +18,9 @@ struct MediaSwitch : SceneSwitcherEntry {
 	bool anyState = false;
 	time_restriction restriction = TIME_RESTRICTION_NONE;
 	int64_t time = 0;
+
+	bool matched = false;
+
 	std::atomic<bool> stopped = false;
 	std::atomic<bool> ended = false;
 
