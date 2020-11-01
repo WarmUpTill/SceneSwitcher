@@ -43,7 +43,8 @@ bool loadCurl()
 #endif
 
 	for (QString path : locations) {
-		blog(LOG_INFO, "[adv-ss] trying '%s'", path.toUtf8().constData());
+		blog(LOG_INFO, "[adv-ss] trying '%s'",
+		     path.toUtf8().constData());
 		QFileInfo libPath(
 			QDir(path).absoluteFilePath(curl_library_name));
 
