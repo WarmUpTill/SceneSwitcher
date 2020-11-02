@@ -19,6 +19,7 @@ struct MediaSwitch : SceneSwitcherEntry {
 	time_restriction restriction = TIME_RESTRICTION_NONE;
 	int64_t time = 0;
 
+	// trigger scene change only once even if media state might trigger repeatedly
 	bool matched = false;
 
 	std::atomic<bool> stopped = false;
