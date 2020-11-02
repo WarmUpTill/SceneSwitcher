@@ -17,15 +17,16 @@ void GetWindowList(std::vector<std::string> &windows)
 		for (NSDictionary *app in apps) {
 			// Construct string from NSString accounting for nil
 			std::string name([[app objectForKey:@"kCGWindowName"]
-					    UTF8String],
-				    [[app objectForKey:@"kCGWindowName"]
-					    lengthOfBytesUsingEncoding:
-						    NSUTF8StringEncoding]);
-			std::string owner([[app objectForKey:@"kCGWindowOwnerName"]
-					     UTF8String],
-				     [[app objectForKey:@"kCGWindowOwnerName"]
-					     lengthOfBytesUsingEncoding:
-						     NSUTF8StringEncoding]);
+						 UTF8String],
+					 [[app objectForKey:@"kCGWindowName"]
+						 lengthOfBytesUsingEncoding:
+							 NSUTF8StringEncoding]);
+			std::string owner(
+				[[app objectForKey:@"kCGWindowOwnerName"]
+					UTF8String],
+				[[app objectForKey:@"kCGWindowOwnerName"]
+					lengthOfBytesUsingEncoding:
+						NSUTF8StringEncoding]);
 
 			// Check if name exists
 			if (!name.empty() &&
@@ -53,15 +54,16 @@ void GetWindowList(QStringList &windows)
 		for (NSDictionary *app in apps) {
 			// Construct string from NSString accounting for nil
 			std::string name([[app objectForKey:@"kCGWindowName"]
-					    UTF8String],
-				    [[app objectForKey:@"kCGWindowName"]
-					    lengthOfBytesUsingEncoding:
-						    NSUTF8StringEncoding]);
-			std::string owner([[app objectForKey:@"kCGWindowOwnerName"]
-					     UTF8String],
-				     [[app objectForKey:@"kCGWindowOwnerName"]
-					     lengthOfBytesUsingEncoding:
-						     NSUTF8StringEncoding]);
+						 UTF8String],
+					 [[app objectForKey:@"kCGWindowName"]
+						 lengthOfBytesUsingEncoding:
+							 NSUTF8StringEncoding]);
+			std::string owner(
+				[[app objectForKey:@"kCGWindowOwnerName"]
+					UTF8String],
+				[[app objectForKey:@"kCGWindowOwnerName"]
+					lengthOfBytesUsingEncoding:
+						NSUTF8StringEncoding]);
 
 			// Check if name exists
 			if (!name.empty() &&
@@ -144,15 +146,16 @@ bool isFullscreen(std::string &title)
 		for (NSDictionary *app in apps) {
 			// Construct string from NSString accounting for nil
 			std::string name([[app objectForKey:@"kCGWindowName"]
-					    UTF8String],
-				    [[app objectForKey:@"kCGWindowName"]
-					    lengthOfBytesUsingEncoding:
-						    NSUTF8StringEncoding]);
-			std::string owner([[app objectForKey:@"kCGWindowOwnerName"]
-					     UTF8String],
-				     [[app objectForKey:@"kCGWindowOwnerName"]
-					     lengthOfBytesUsingEncoding:
-						     NSUTF8StringEncoding]);
+						 UTF8String],
+					 [[app objectForKey:@"kCGWindowName"]
+						 lengthOfBytesUsingEncoding:
+							 NSUTF8StringEncoding]);
+			std::string owner(
+				[[app objectForKey:@"kCGWindowOwnerName"]
+					UTF8String],
+				[[app objectForKey:@"kCGWindowOwnerName"]
+					lengthOfBytesUsingEncoding:
+						NSUTF8StringEncoding]);
 
 			// True if switch equals app
 			bool equals = (title == name || title == owner);

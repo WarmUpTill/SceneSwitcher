@@ -3,132 +3,93 @@
 #include <QMessageBox>
 
 #include "headers/advanced-scene-switcher.hpp"
+#include "headers/utility.hpp"
 
-constexpr auto seconds_index = 0;
-constexpr auto minutes_index = 1;
-constexpr auto hours_index = 2;
+static QMetaObject::Connection addPulse;
 
-void SceneSwitcher::on_sceneSequenceDelayUnits_currentIndexChanged(int index)
+void AdvSceneSwitcher::on_sceneSequenceAdd_clicked()
 {
-	if (loading)
-		return;
+	ui->sceneSequenceAdd->disconnect(addPulse);
 
 	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->sceneSequenceSwitches.emplace_back();
 
-	double val = ui->sceneSequenceSpinBox->value();
-
-	switch (switcher->sceneSequenceMultiplier) {
-	case 1:
-		val /= pow(60, index);
-		break;
-	case 60:
-		val /= pow(60, index - 1);
-		break;
-	case 3600:
-		val /= pow(60, index - 2);
-		break;
-	}
-
-	ui->sceneSequenceSpinBox->setValue(val);
-
-	switch (index) {
-	case seconds_index:
-		switcher->sceneSequenceMultiplier = 1;
-		break;
-	case minutes_index:
-		switcher->sceneSequenceMultiplier = 60;
-		break;
-	case hours_index:
-		switcher->sceneSequenceMultiplier = 3600;
-		break;
-	}
+	QListWidgetItem *item;
+	item = new QListWidgetItem(ui->sceneSequenceSwitches);
+	ui->sceneSequenceSwitches->addItem(item);
+	SequenceWidget *sw =
+		new SequenceWidget(&switcher->sceneSequenceSwitches.back());
+	item->setSizeHint(sw->minimumSizeHint());
+	ui->sceneSequenceSwitches->setItemWidget(item, sw);
 }
 
-void SceneSwitcher::on_sceneSequenceAdd_clicked()
+void AdvSceneSwitcher::on_sceneSequenceRemove_clicked()
 {
-	QString scene1Name = ui->sceneSequenceScenes1->currentText();
-	QString scene2Name = ui->sceneSequenceScenes2->currentText();
-	QString transitionName = ui->sceneSequenceTransitions->currentText();
-
-	if (scene1Name.isEmpty() || scene2Name.isEmpty())
-		return;
-
-	double delay = ui->sceneSequenceSpinBox->value() *
-		       switcher->sceneSequenceMultiplier;
-
-	if (scene1Name == scene2Name)
-		return;
-
-	OBSWeakSource source1 = GetWeakSourceByQString(scene1Name);
-	OBSWeakSource source2 = GetWeakSourceByQString(scene2Name);
-	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
-
-	QString text = MakeSceneSequenceSwitchName(scene1Name, scene2Name,
-						    transitionName, delay);
-	QVariant v = QVariant::fromValue(text);
-
-	int idx = SceneSequenceFindByData(scene1Name);
-
-	if (idx == -1) {
-		QListWidgetItem *item =
-			new QListWidgetItem(text, ui->sceneSequences);
-		item->setData(Qt::UserRole, v);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-		switcher->sceneSequenceSwitches.emplace_back(
-			source1, source2, transition, delay,
-			(scene2Name == QString(previous_scene_name)),
-			text.toUtf8().constData());
-	} else {
-		QListWidgetItem *item = ui->sceneSequences->item(idx);
-		item->setText(text);
-
-		{
-			std::lock_guard<std::mutex> lock(switcher->m);
-			for (auto &s : switcher->sceneSequenceSwitches) {
-				if (s.startScene == source1) {
-					s.scene = source2;
-					s.delay = delay;
-					s.transition = transition;
-					s.usePreviousScene =
-						(scene2Name ==
-						 QString(previous_scene_name));
-					s.sceneSequenceStr =
-						text.toUtf8().constData();
-					break;
-				}
-			}
-		}
-	}
-}
-
-void SceneSwitcher::on_sceneSequenceRemove_clicked()
-{
-	QListWidgetItem *item = ui->sceneSequences->currentItem();
+	QListWidgetItem *item = ui->sceneSequenceSwitches->currentItem();
 	if (!item)
 		return;
 
-	std::string text =
-		item->data(Qt::UserRole).toString().toUtf8().constData();
-
 	{
+		// might be in waiting state of sequence
+		// causing invalid access after wakeup
+		// thus we need to stop the main thread before delete
+		bool wasRunning = !switcher->stop;
+		switcher->Stop();
+
 		std::lock_guard<std::mutex> lock(switcher->m);
+		int idx = ui->sceneSequenceSwitches->currentRow();
 		auto &switches = switcher->sceneSequenceSwitches;
+		switches.erase(switches.begin() + idx);
 
-		for (auto it = switches.begin(); it != switches.end(); ++it) {
-			auto &s = *it;
-
-			if (s.sceneSequenceStr == text) {
-				switches.erase(it);
-				break;
-			}
-		}
+		if (wasRunning)
+			switcher->Start();
 	}
 
 	delete item;
 }
 
-void SceneSwitcher::on_sceneSequenceSave_clicked()
+void AdvSceneSwitcher::on_sceneSequenceUp_clicked()
+{
+	int index = ui->sceneSequenceSwitches->currentRow();
+	if (!listMoveUp(ui->sceneSequenceSwitches))
+		return;
+
+	SequenceWidget *s1 =
+		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(
+			ui->sceneSequenceSwitches->item(index));
+	SequenceWidget *s2 =
+		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(
+			ui->sceneSequenceSwitches->item(index - 1));
+	SequenceWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->sceneSequenceSwitches[index],
+		  switcher->sceneSequenceSwitches[index - 1]);
+}
+
+void AdvSceneSwitcher::on_sceneSequenceDown_clicked()
+{
+	int index = ui->sceneSequenceSwitches->currentRow();
+
+	if (!listMoveDown(ui->sceneSequenceSwitches))
+		return;
+
+	SequenceWidget *s1 =
+		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(
+			ui->sceneSequenceSwitches->item(index));
+	SequenceWidget *s2 =
+		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(
+			ui->sceneSequenceSwitches->item(index + 1));
+	SequenceWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->sceneSequenceSwitches[index],
+		  switcher->sceneSequenceSwitches[index + 1]);
+}
+
+void AdvSceneSwitcher::on_sceneSequenceSave_clicked()
 {
 	QString directory = QFileDialog::getSaveFileName(
 		this, tr("Save Scene Sequence to file ..."),
@@ -145,54 +106,8 @@ void SceneSwitcher::on_sceneSequenceSave_clicked()
 	obs_data_release(obj);
 }
 
-// to be removed once support for old file format is dropped
-bool oldSceneRoundTripLoad(QFile *file)
+void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 {
-	QTextStream in(file);
-	std::vector<QString> lines;
-
-	std::vector<SceneSequenceSwitch> newSceneRoundTripSwitch;
-
-	while (!in.atEnd()) {
-		QString line = in.readLine();
-		lines.push_back(line);
-		if (lines.size() == 5) {
-			OBSWeakSource scene1 = GetWeakSourceByQString(lines[0]);
-			OBSWeakSource scene2 = GetWeakSourceByQString(lines[1]);
-			OBSWeakSource transition =
-				GetWeakTransitionByQString(lines[4]);
-
-			if (WeakSourceValid(scene1) &&
-			    ((lines[1] == QString(previous_scene_name)) ||
-			     (WeakSourceValid(scene2))) &&
-			    WeakSourceValid(transition)) {
-				newSceneRoundTripSwitch.emplace_back(
-					SceneSequenceSwitch(
-						GetWeakSourceByQString(lines[0]),
-						GetWeakSourceByQString(lines[1]),
-						GetWeakTransitionByQString(
-							lines[4]),
-						lines[2].toDouble() / 1000.,
-						(lines[1] ==
-						 QString(previous_scene_name)),
-						lines[3].toStdString()));
-			}
-			lines.clear();
-		}
-	}
-
-	if (lines.size() != 0 || newSceneRoundTripSwitch.size() == 0)
-		return false;
-
-	switcher->sceneSequenceSwitches.clear();
-	switcher->sceneSequenceSwitches = newSceneRoundTripSwitch;
-	return true;
-}
-
-void SceneSwitcher::on_sceneSequenceLoad_clicked()
-{
-	std::lock_guard<std::mutex> lock(switcher->m);
-
 	QString directory = QFileDialog::getOpenFileName(
 		this, tr("Select a file to read Scene Sequence from ..."),
 		QDir::currentPath(), tr("Text files (*.txt)"));
@@ -208,26 +123,23 @@ void SceneSwitcher::on_sceneSequenceLoad_clicked()
 
 	if (!obj) {
 		QMessageBox Msgbox;
-		QString txt =
-			"Advanced Scene Switcher failed to import settings!\n";
-		txt += "Falling back to old format.";
-		Msgbox.setText(txt);
+		Msgbox.setText(
+			"Advanced Scene Switcher failed to import settings!");
 		Msgbox.exec();
-		if (oldSceneRoundTripLoad(&file)) {
-			QString txt =
-				"Advanced Scene Switcher settings imported successfully!\n";
-			txt += "Please resave settings as support for old format will be dropped in next version.";
-			Msgbox.setText(txt);
-			Msgbox.exec();
-			close();
-		} else {
-			Msgbox.setText(
-				"Advanced Scene Switcher failed to import settings!");
-			Msgbox.exec();
-		}
 		return;
 	}
+
+	// might be in waiting state of sequence
+	// causing invalid access after wakeup
+	// thus we need to stop the main thread before delete
+	bool wasRunning = !switcher->stop;
+	switcher->Stop();
+
 	switcher->loadSceneSequenceSwitches(obj);
+
+	if (wasRunning)
+		switcher->Start();
+
 	obs_data_release(obj);
 
 	QMessageBox Msgbox;
@@ -238,13 +150,16 @@ void SceneSwitcher::on_sceneSequenceLoad_clicked()
 }
 
 void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
-				       OBSWeakSource &transition,
-				       std::unique_lock<std::mutex> &lock)
+				      OBSWeakSource &transition,
+				      std::unique_lock<std::mutex> &lock)
 {
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
 	for (SceneSequenceSwitch &s : sceneSequenceSwitches) {
+		if (!s.initialized())
+			continue;
+
 		if (s.startScene == ws) {
 			int dur = s.delay * 1000 - interval;
 			if (dur > 0) {
@@ -277,87 +192,6 @@ void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 	obs_weak_source_release(ws);
 }
 
-void SceneSwitcher::on_sceneSequences_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem *item = ui->sceneSequences->item(idx);
-
-	QString sceneSequence = item->text();
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	for (auto &s : switcher->sceneSequenceSwitches) {
-		if (sceneSequence.compare(s.sceneSequenceStr.c_str()) == 0) {
-			std::string scene1 = GetWeakSourceName(s.startScene);
-			std::string scene2 = GetWeakSourceName(s.scene);
-			std::string transitionName =
-				GetWeakSourceName(s.transition);
-			double delay = s.delay /
-				       switcher->sceneSequenceMultiplier;
-			ui->sceneSequenceScenes1->setCurrentText(
-				scene1.c_str());
-			ui->sceneSequenceScenes2->setCurrentText(
-				scene2.c_str());
-			ui->sceneSequenceTransitions->setCurrentText(
-				transitionName.c_str());
-			ui->sceneSequenceSpinBox->setValue(delay);
-			break;
-		}
-	}
-}
-
-int SceneSwitcher::SceneSequenceFindByData(const QString &scene1)
-{
-	QRegExp rx(scene1 + " ->.*");
-	int count = ui->sceneSequences->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++) {
-		QListWidgetItem *item = ui->sceneSequences->item(i);
-		QString itemString = item->data(Qt::UserRole).toString();
-
-		if (rx.exactMatch(itemString)) {
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-void SceneSwitcher::on_sceneSequenceUp_clicked()
-{
-	int index = ui->sceneSequences->currentRow();
-	if (index != -1 && index != 0) {
-		ui->sceneSequences->insertItem(
-			index - 1, ui->sceneSequences->takeItem(index));
-		ui->sceneSequences->setCurrentRow(index - 1);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-
-		iter_swap(switcher->sceneSequenceSwitches.begin() + index,
-			  switcher->sceneSequenceSwitches.begin() + index - 1);
-	}
-}
-
-void SceneSwitcher::on_sceneSequenceDown_clicked()
-{
-	int index = ui->sceneSequences->currentRow();
-	if (index != -1 && index != ui->sceneSequences->count() - 1) {
-		ui->sceneSequences->insertItem(
-			index + 1, ui->sceneSequences->takeItem(index));
-		ui->sceneSequences->setCurrentRow(index + 1);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-
-		iter_swap(switcher->sceneSequenceSwitches.begin() + index,
-			  switcher->sceneSequenceSwitches.begin() + index + 1);
-	}
-}
-
 void SwitcherData::saveSceneSequenceSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *sceneSequenceArray = obs_data_array_create();
@@ -383,13 +217,14 @@ void SwitcherData::saveSceneSequenceSwitches(obs_data_t *obj)
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
 			obs_data_set_double(array_obj, "delay", s.delay);
-			obs_data_array_push_back(sceneSequenceArray,
-						 array_obj);
-			obs_source_release(source1);
-			obs_source_release(source2);
-			obs_source_release(transition);
+			obs_data_set_int(array_obj, "delayMultiplier",
+					 s.delayMultiplier);
+			obs_data_array_push_back(sceneSequenceArray, array_obj);
 		}
 
+		obs_source_release(source1);
+		obs_source_release(source2);
+		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "sceneRoundTrip", sceneSequenceArray);
@@ -414,94 +249,189 @@ void SwitcherData::loadSceneSequenceSwitches(obs_data_t *obj)
 			obs_data_get_string(array_obj, "sceneRoundTripScene2");
 		const char *transition =
 			obs_data_get_string(array_obj, "transition");
-
-		double delay = 0;
-
-		// To be removed in future version
-		// to be compatible with older versions
-		if (!obs_data_has_user_value(array_obj, "delay")) {
-			delay = double(obs_data_get_int(array_obj,
-							"sceneRoundTripDelay"));
-			delay = delay * 1000. +
-				double(obs_data_get_int(
-					array_obj, "sceneRoundTripDelayMs"));
-			delay /= 1000.;
-		} else {
-			delay = obs_data_get_double(array_obj, "delay");
-		}
-
-		std::string str = MakeSceneSequenceSwitchName(
-					  scene1, scene2, transition, delay)
-					  .toUtf8()
-					  .constData();
-		const char *sceneSequenceStr = str.c_str();
+		double delay = obs_data_get_double(array_obj, "delay");
+		int delayMultiplier =
+			obs_data_get_int(array_obj, "delayMultiplier");
+		if (delayMultiplier == 0 ||
+		    (delayMultiplier != 1 && delayMultiplier % 60 != 0))
+			delayMultiplier = 1;
 
 		switcher->sceneSequenceSwitches.emplace_back(
 			GetWeakSourceByName(scene1),
 			GetWeakSourceByName(scene2),
 			GetWeakTransitionByName(transition), delay,
-			(strcmp(scene2, previous_scene_name) == 0),
-			sceneSequenceStr);
+			delayMultiplier,
+			(strcmp(scene2, previous_scene_name) == 0));
 
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(sceneSequenceArray);
 }
 
-void SceneSwitcher::setupSequenceTab()
+void AdvSceneSwitcher::setupSequenceTab()
 {
-	populateSceneSelection(ui->sceneSequenceScenes1, false);
-	populateSceneSelection(ui->sceneSequenceScenes2, true);
-	populateTransitionSelection(ui->sceneSequenceTransitions);
-
-	double smallestDelay = double(switcher->interval) / 1000;
 	for (auto &s : switcher->sceneSequenceSwitches) {
-		std::string sceneName1 = GetWeakSourceName(s.startScene);
-		std::string sceneName2 = (s.usePreviousScene)
-						 ? previous_scene_name
-						 : GetWeakSourceName(s.scene);
-		std::string transitionName = GetWeakSourceName(s.transition);
-		QString text = MakeSceneSequenceSwitchName(
-			sceneName1.c_str(), sceneName2.c_str(),
-			transitionName.c_str(), s.delay);
-
-		QListWidgetItem *item =
-			new QListWidgetItem(text, ui->sceneSequences);
-		item->setData(Qt::UserRole, text);
-
-		if (s.delay < smallestDelay)
-			smallestDelay = s.delay;
+		QListWidgetItem *item;
+		item = new QListWidgetItem(ui->sceneSequenceSwitches);
+		ui->sceneSequenceSwitches->addItem(item);
+		SequenceWidget *sw = new SequenceWidget(&s);
+		item->setSizeHint(sw->minimumSizeHint());
+		ui->sceneSequenceSwitches->setItemWidget(item, sw);
 	}
-	(smallestDelay * 1000 < switcher->interval)
-		? ui->intervalWarning->setVisible(true)
-		: ui->intervalWarning->setVisible(false);
 
-	ui->sceneSequenceDelayUnits->addItem("seconds");
-	ui->sceneSequenceDelayUnits->addItem("minutes");
-	ui->sceneSequenceDelayUnits->addItem("hours");
+	if (switcher->sceneSequenceSwitches.size() == 0)
+		addPulse = PulseWidget(ui->sceneSequenceAdd, QColor(Qt::green));
+}
 
-	switch (switcher->sceneSequenceMultiplier) {
-	case 1:
-		ui->sceneSequenceDelayUnits->setCurrentIndex(0);
+bool SceneSequenceSwitch::initialized()
+{
+	return SceneSwitcherEntry::initialized() && startScene;
+}
+
+bool SceneSequenceSwitch::valid()
+{
+	return !initialized() ||
+	       (SceneSwitcherEntry::valid() && WeakSourceValid(startScene));
+}
+
+void SceneSequenceSwitch::logSleep(int dur)
+{
+	blog(LOG_INFO, "sequence sleep %d", dur);
+}
+
+void populateDelayUnits(QComboBox *list)
+{
+	list->addItem("seconds");
+	list->addItem("minutes");
+	list->addItem("hours");
+}
+
+SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
+{
+	delay = new QDoubleSpinBox();
+	delayUnits = new QComboBox();
+	startScenes = new QComboBox();
+
+	whenLabel = new QLabel("When");
+	switchLabel = new QLabel("is active switch to");
+	afterLabel = new QLabel("after");
+	usingLabel = new QLabel("using");
+
+	QWidget::connect(delay, SIGNAL(valueChanged(double)), this,
+			 SLOT(DelayChanged(double)));
+	QWidget::connect(delayUnits, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(DelayUnitsChanged(int)));
+	QWidget::connect(startScenes,
+			 SIGNAL(currentTextChanged(const QString &)), this,
+			 SLOT(StartSceneChanged(const QString &)));
+
+	delay->setMaximum(99999.000000);
+	AdvSceneSwitcher::populateSceneSelection(startScenes, false);
+	populateDelayUnits(delayUnits);
+
+	if (s) {
+		switch (s->delayMultiplier) {
+		case 1:
+			delayUnits->setCurrentIndex(0);
+			break;
+		case 60:
+			delayUnits->setCurrentIndex(1);
+			break;
+		case 3600:
+			delayUnits->setCurrentIndex(2);
+			break;
+		default:
+			delayUnits->setCurrentIndex(0);
+		}
+		startScenes->setCurrentText(
+			GetWeakSourceName(s->startScene).c_str());
+	}
+
+	setStyleSheet("* { background-color: transparent; }");
+
+	QHBoxLayout *mainLayout = new QHBoxLayout;
+
+	mainLayout->addWidget(whenLabel);
+	mainLayout->addWidget(startScenes);
+	mainLayout->addWidget(switchLabel);
+	mainLayout->addWidget(scenes);
+	mainLayout->addWidget(afterLabel);
+	mainLayout->addWidget(delay);
+	mainLayout->addWidget(delayUnits);
+	mainLayout->addWidget(usingLabel);
+	mainLayout->addWidget(transitions);
+	mainLayout->addStretch();
+
+	setLayout(mainLayout);
+
+	switchData = s;
+
+	loading = false;
+
+	UpdateDelay();
+}
+
+SceneSequenceSwitch *SequenceWidget::getSwitchData()
+{
+	return switchData;
+}
+
+void SequenceWidget::setSwitchData(SceneSequenceSwitch *s)
+{
+	switchData = s;
+}
+
+void SequenceWidget::swapSwitchData(SequenceWidget *s1, SequenceWidget *s2)
+{
+	SwitchWidget::swapSwitchData(s1, s2);
+
+	SceneSequenceSwitch *t = s1->getSwitchData();
+	s1->setSwitchData(s2->getSwitchData());
+	s2->setSwitchData(t);
+}
+
+void SequenceWidget::UpdateDelay()
+{
+	if (switchData)
+		delay->setValue(switchData->delay /
+				switchData->delayMultiplier);
+}
+
+void SequenceWidget::DelayChanged(double delay)
+{
+	if (loading || !switchData)
+		return;
+	switchData->delay = delay * switchData->delayMultiplier;
+}
+
+void SequenceWidget::DelayUnitsChanged(int idx)
+{
+	if (loading || !switchData)
+		return;
+
+	delay_units unit = (delay_units)idx;
+
+	switch (unit) {
+	case SECONDS:
+		switchData->delayMultiplier = 1;
 		break;
-	case 60:
-		ui->sceneSequenceDelayUnits->setCurrentIndex(1);
+	case MINUTES:
+		switchData->delayMultiplier = 60;
 		break;
-	case 3600:
-		ui->sceneSequenceDelayUnits->setCurrentIndex(2);
+	case HOURS:
+		switchData->delayMultiplier = 60 * 60;
 		break;
 	default:
 		break;
 	}
+
+	UpdateDelay();
 }
 
-static inline QString MakeSceneSequenceSwitchName(const QString &scene1,
-						   const QString &scene2,
-						   const QString &transition,
-						   double delay)
+void SequenceWidget::StartSceneChanged(const QString &text)
 {
-	return scene1 + QStringLiteral(" -> wait for ") +
-	       QString::number(delay) + QStringLiteral(" seconds -> ") +
-	       scene2 + QStringLiteral(" (using ") + transition +
-	       QStringLiteral(" transition)");
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->startScene = GetWeakSourceByQString(text);
 }

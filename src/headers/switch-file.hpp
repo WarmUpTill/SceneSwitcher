@@ -1,6 +1,4 @@
 #pragma once
-#include <string>
-#include "utility.hpp"
 #include "switch-generic.hpp"
 
 constexpr auto read_file_func = 0;

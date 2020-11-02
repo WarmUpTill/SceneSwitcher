@@ -1,48 +1,50 @@
 #pragma once
-#include <string>
 #include <obs.hpp>
+#include <QComboBox>
 
 struct SceneSwitcherEntry {
-	OBSWeakSource scene;
-	OBSWeakSource transition;
-	bool usePreviousScene;
-
-	virtual bool valid()
-	{
-		return (usePreviousScene || WeakSourceValid(scene)) &&
-		       WeakSourceValid(transition);
-	}
+	OBSWeakSource scene = nullptr;
+	OBSWeakSource transition = nullptr;
+	bool usePreviousScene = false;
 
 	virtual const char *getType() = 0;
+	virtual bool initialized();
+	virtual bool valid();
+	virtual void logMatch();
 
-	// TODO
-	//virtual bool checkMatch() = 0;
-
-	virtual void logMatch()
-	{
-		obs_source_t *s = obs_weak_source_get_source(scene);
-		const char *sceneName = obs_source_get_name(s);
-		obs_source_release(s);
-		blog(LOG_INFO,
-		     "Advanced Scene Switcher match for '%s' - switch to scene '%s'",
-		     getType(), sceneName);
-	}
-
-	inline SceneSwitcherEntry() : usePreviousScene(false) {}
+	inline SceneSwitcherEntry() {}
 
 	inline SceneSwitcherEntry(OBSWeakSource scene_,
 				  OBSWeakSource transition_,
-				  bool usePreviousScene_)
+				  bool usePreviousScene_ = false)
 		: scene(scene_),
 		  transition(transition_),
 		  usePreviousScene(usePreviousScene_)
 	{
 	}
-	inline SceneSwitcherEntry(OBSWeakSource scene_,
-				  OBSWeakSource transition_)
-		: scene(scene_),
-		  transition(transition_),
-		  usePreviousScene(false)
-	{
-	}
+
+	virtual ~SceneSwitcherEntry() {}
+};
+
+class SwitchWidget : public QWidget {
+	Q_OBJECT
+
+public:
+	SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene = true);
+	virtual SceneSwitcherEntry *getSwitchData();
+	virtual void setSwitchData(SceneSwitcherEntry *s);
+
+	static void swapSwitchData(SwitchWidget *s1, SwitchWidget *s2);
+
+private slots:
+	void SceneChanged(const QString &text);
+	void TransitionChanged(const QString &text);
+
+protected:
+	bool loading = true;
+
+	QComboBox *scenes;
+	QComboBox *transitions;
+
+	SceneSwitcherEntry *switchData;
 };

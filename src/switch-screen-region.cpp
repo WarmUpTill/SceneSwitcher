@@ -1,6 +1,127 @@
 #include <QTimer>
 
 #include "headers/advanced-scene-switcher.hpp"
+#include "headers/utility.hpp"
+
+static QMetaObject::Connection addPulse;
+
+void clearFrames(QListWidget *list)
+{
+	for (int i = 0; i < list->count(); ++i) {
+		ScreenRegionWidget *sw =
+			(ScreenRegionWidget *)list->itemWidget(list->item(i));
+		sw->hideFrame();
+	}
+}
+
+void showCurrentFrame(QListWidget *list)
+{
+	QListWidgetItem *item = list->currentItem();
+
+	if (!item)
+		return;
+
+	ScreenRegionWidget *sw = (ScreenRegionWidget *)list->itemWidget(item);
+	sw->showFrame();
+}
+
+void AdvSceneSwitcher::on_showFrame_clicked()
+{
+	switcher->showFrame = !switcher->showFrame;
+
+	if (switcher->showFrame) {
+		ui->showFrame->setText("Hide guide frames");
+		showCurrentFrame(ui->screenRegionSwitches);
+	} else {
+		ui->showFrame->setText("Show guide frames");
+		clearFrames(ui->screenRegionSwitches);
+	}
+}
+
+void AdvSceneSwitcher::on_screenRegionSwitches_currentRowChanged(int idx)
+{
+	UNUSED_PARAMETER(idx);
+	if (loading)
+		return;
+
+	if (switcher->showFrame) {
+		clearFrames(ui->screenRegionSwitches);
+		showCurrentFrame(ui->screenRegionSwitches);
+	}
+}
+
+void AdvSceneSwitcher::on_screenRegionAdd_clicked()
+{
+	ui->screenRegionAdd->disconnect(addPulse);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->screenRegionSwitches.emplace_back();
+
+	QListWidgetItem *item;
+	item = new QListWidgetItem(ui->screenRegionSwitches);
+	ui->screenRegionSwitches->addItem(item);
+	ScreenRegionWidget *sw =
+		new ScreenRegionWidget(&switcher->screenRegionSwitches.back());
+	item->setSizeHint(sw->minimumSizeHint());
+	ui->screenRegionSwitches->setItemWidget(item, sw);
+}
+
+void AdvSceneSwitcher::on_screenRegionRemove_clicked()
+{
+	QListWidgetItem *item = ui->screenRegionSwitches->currentItem();
+	if (!item)
+		return;
+
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		int idx = ui->screenRegionSwitches->currentRow();
+		auto &switches = switcher->screenRegionSwitches;
+		switches.erase(switches.begin() + idx);
+	}
+
+	delete item;
+}
+
+void AdvSceneSwitcher::on_screenRegionUp_clicked()
+{
+	int index = ui->screenRegionSwitches->currentRow();
+	if (!listMoveUp(ui->screenRegionSwitches))
+		return;
+
+	ScreenRegionWidget *s1 =
+		(ScreenRegionWidget *)ui->screenRegionSwitches->itemWidget(
+			ui->screenRegionSwitches->item(index));
+	ScreenRegionWidget *s2 =
+		(ScreenRegionWidget *)ui->screenRegionSwitches->itemWidget(
+			ui->screenRegionSwitches->item(index - 1));
+	ScreenRegionWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->screenRegionSwitches[index],
+		  switcher->screenRegionSwitches[index - 1]);
+}
+
+void AdvSceneSwitcher::on_screenRegionDown_clicked()
+{
+	int index = ui->screenRegionSwitches->currentRow();
+
+	if (!listMoveDown(ui->screenRegionSwitches))
+		return;
+
+	ScreenRegionWidget *s1 =
+		(ScreenRegionWidget *)ui->screenRegionSwitches->itemWidget(
+			ui->screenRegionSwitches->item(index));
+	ScreenRegionWidget *s2 =
+		(ScreenRegionWidget *)ui->screenRegionSwitches->itemWidget(
+			ui->screenRegionSwitches->item(index + 1));
+	ScreenRegionWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->screenRegionSwitches[index],
+		  switcher->screenRegionSwitches[index + 1]);
+}
 
 void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 					   OBSWeakSource &transition)
@@ -9,6 +130,9 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 	int minRegionSize = 99999;
 
 	for (auto &s : screenRegionSwitches) {
+		if (!s.initialized())
+			continue;
+
 		if (cursorPos.first >= s.minX && cursorPos.second >= s.minY &&
 		    cursorPos.first <= s.maxX && cursorPos.second <= s.maxY) {
 			int regionSize = (s.maxX - s.minX) + (s.maxY - s.minY);
@@ -26,168 +150,11 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 	}
 }
 
-void SceneSwitcher::updateScreenRegionCursorPos()
+void AdvSceneSwitcher::updateScreenRegionCursorPos()
 {
 	std::pair<int, int> position = getCursorPos();
 	ui->cursorXPosition->setText(QString::number(position.first));
 	ui->cursorYPosition->setText(QString::number(position.second));
-}
-
-void SceneSwitcher::on_screenRegionAdd_clicked()
-{
-	QString sceneName = ui->screenRegionScenes->currentText();
-	QString transitionName = ui->screenRegionsTransitions->currentText();
-
-	if (sceneName.isEmpty())
-		return;
-
-	int minX = ui->screenRegionMinX->value();
-	int minY = ui->screenRegionMinY->value();
-	int maxX = ui->screenRegionMaxX->value();
-	int maxY = ui->screenRegionMaxY->value();
-
-	std::string regionStr =
-		std::to_string(minX) + ", " + std::to_string(minY) + " x " +
-		std::to_string(maxX) + ", " + std::to_string(maxY);
-	QString region = QString::fromStdString(regionStr);
-
-	OBSWeakSource source = GetWeakSourceByQString(sceneName);
-	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
-	QVariant v = QVariant::fromValue(region);
-
-	QString text = MakeScreenRegionSwitchName(sceneName, transitionName,
-						  minX, minY, maxX, maxY);
-
-	int idx = ScreenRegionFindByData(region);
-
-	if (idx == -1) {
-		QListWidgetItem *item =
-			new QListWidgetItem(text, ui->screenRegions);
-		item->setData(Qt::UserRole, v);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-		switcher->screenRegionSwitches.emplace_back(
-			source, transition, minX, minY, maxX, maxY, regionStr);
-	} else {
-		QListWidgetItem *item = ui->screenRegions->item(idx);
-		item->setText(text);
-
-		std::string curRegion = region.toUtf8().constData();
-
-		{
-			std::lock_guard<std::mutex> lock(switcher->m);
-			for (auto &s : switcher->screenRegionSwitches) {
-				if (s.regionStr == curRegion) {
-					s.scene = source;
-					s.transition = transition;
-					break;
-				}
-			}
-		}
-	}
-}
-
-void SceneSwitcher::on_screenRegionRemove_clicked()
-{
-	QListWidgetItem *item = ui->screenRegions->currentItem();
-	if (!item)
-		return;
-
-	std::string region =
-		item->data(Qt::UserRole).toString().toUtf8().constData();
-
-	{
-		std::lock_guard<std::mutex> lock(switcher->m);
-		auto &switches = switcher->screenRegionSwitches;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it) {
-			auto &s = *it;
-
-			if (s.regionStr == region) {
-				switches.erase(it);
-				break;
-			}
-		}
-	}
-
-	delete item;
-}
-
-void SceneSwitcher::on_screenRegions_currentRowChanged(int idx)
-{
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
-
-	QListWidgetItem *item = ui->screenRegions->item(idx);
-
-	QString region = item->data(Qt::UserRole).toString();
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	for (auto &s : switcher->screenRegionSwitches) {
-		if (region.compare(s.regionStr.c_str()) == 0) {
-			std::string name = GetWeakSourceName(s.scene);
-			std::string transitionName =
-				GetWeakSourceName(s.transition);
-			ui->screenRegionScenes->setCurrentText(name.c_str());
-			ui->screenRegionsTransitions->setCurrentText(
-				transitionName.c_str());
-			ui->screenRegionMinX->setValue(s.minX);
-			ui->screenRegionMinY->setValue(s.minY);
-			ui->screenRegionMaxX->setValue(s.maxX);
-			ui->screenRegionMaxY->setValue(s.maxY);
-			break;
-		}
-	}
-}
-
-int SceneSwitcher::ScreenRegionFindByData(const QString &region)
-{
-	int count = ui->screenRegions->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++) {
-		QListWidgetItem *item = ui->screenRegions->item(i);
-		QString itemRegion = item->data(Qt::UserRole).toString();
-
-		if (itemRegion == region) {
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-void SceneSwitcher::on_screenRegionUp_clicked()
-{
-	int index = ui->screenRegions->currentRow();
-	if (index != -1 && index != 0) {
-		ui->screenRegions->insertItem(
-			index - 1, ui->screenRegions->takeItem(index));
-		ui->screenRegions->setCurrentRow(index - 1);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-
-		iter_swap(switcher->screenRegionSwitches.begin() + index,
-			  switcher->screenRegionSwitches.begin() + index - 1);
-	}
-}
-
-void SceneSwitcher::on_screenRegionDown_clicked()
-{
-	int index = ui->screenRegions->currentRow();
-	if (index != -1 && index != ui->screenRegions->count() - 1) {
-		ui->screenRegions->insertItem(
-			index + 1, ui->screenRegions->takeItem(index));
-		ui->screenRegions->setCurrentRow(index + 1);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-
-		iter_swap(switcher->screenRegionSwitches.begin() + index,
-			  switcher->screenRegionSwitches.begin() + index + 1);
-	}
 }
 
 void SwitcherData::saveScreenRegionSwitches(obs_data_t *obj)
@@ -212,10 +179,9 @@ void SwitcherData::saveScreenRegionSwitches(obs_data_t *obj)
 			obs_data_set_int(array_obj, "maxX", s.maxX);
 			obs_data_set_int(array_obj, "maxY", s.maxY);
 			obs_data_array_push_back(screenRegionArray, array_obj);
-			obs_source_release(source);
-			obs_source_release(transition);
 		}
-
+		obs_source_release(source);
+		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "screenRegion", screenRegionArray);
@@ -243,38 +209,29 @@ void SwitcherData::loadScreenRegionSwitches(obs_data_t *obj)
 		int maxX = obs_data_get_int(array_obj, "maxX");
 		int maxY = obs_data_get_int(array_obj, "maxY");
 
-		std::string regionStr =
-			MakeScreenRegionSwitchName(scene, transition, minX,
-						   minY, maxX, maxY)
-				.toUtf8()
-				.constData();
-
 		switcher->screenRegionSwitches.emplace_back(
 			GetWeakSourceByName(scene),
 			GetWeakTransitionByName(transition), minX, minY, maxX,
-			maxY, regionStr);
+			maxY);
 
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(screenRegionArray);
 }
 
-void SceneSwitcher::setupRegionTab()
+void AdvSceneSwitcher::setupRegionTab()
 {
-	populateSceneSelection(ui->screenRegionScenes, false);
-	populateTransitionSelection(ui->screenRegionsTransitions);
-
 	for (auto &s : switcher->screenRegionSwitches) {
-		std::string sceneName = GetWeakSourceName(s.scene);
-		std::string transitionName = GetWeakSourceName(s.transition);
-		QString text = MakeScreenRegionSwitchName(
-			sceneName.c_str(), transitionName.c_str(), s.minX,
-			s.minY, s.maxX, s.maxY);
-
-		QListWidgetItem *item =
-			new QListWidgetItem(text, ui->screenRegions);
-		item->setData(Qt::UserRole, s.regionStr.c_str());
+		QListWidgetItem *item;
+		item = new QListWidgetItem(ui->screenRegionSwitches);
+		ui->screenRegionSwitches->addItem(item);
+		ScreenRegionWidget *sw = new ScreenRegionWidget(&s);
+		item->setSizeHint(sw->minimumSizeHint());
+		ui->screenRegionSwitches->setItemWidget(item, sw);
 	}
+
+	if (switcher->screenRegionSwitches.size() == 0)
+		addPulse = PulseWidget(ui->screenRegionAdd, QColor(Qt::green));
 
 	// screen region cursor position
 	QTimer *screenRegionTimer = new QTimer(this);
@@ -283,14 +240,155 @@ void SceneSwitcher::setupRegionTab()
 	screenRegionTimer->start(1000);
 }
 
-static inline QString MakeScreenRegionSwitchName(const QString &scene,
-						 const QString &transition,
-						 int minX, int minY, int maxX,
-						 int maxY)
+ScreenRegionWidget::ScreenRegionWidget(ScreenRegionSwitch *s)
+	: SwitchWidget(s, false)
 {
-	return QStringLiteral("[") + scene + QStringLiteral(", ") + transition +
-	       QStringLiteral("]: ") + QString::number(minX) +
-	       QStringLiteral(", ") + QString::number(minY) +
-	       QStringLiteral(" x ") + QString::number(maxX) +
-	       QStringLiteral(", ") + QString::number(maxY);
+	minX = new QSpinBox();
+	minY = new QSpinBox();
+	maxX = new QSpinBox();
+	maxY = new QSpinBox();
+
+	cursorLabel = new QLabel("If cursor is in");
+	xLabel = new QLabel("x");
+	switchLabel = new QLabel("switch to");
+	usingLabel = new QLabel("using");
+
+	minX->setPrefix("Min X: ");
+	minY->setPrefix("Min Y: ");
+	maxX->setPrefix("Max X: ");
+	maxY->setPrefix("Max Y: ");
+
+	minX->setMinimum(-1000000);
+	minY->setMinimum(-1000000);
+	maxX->setMinimum(-1000000);
+	maxY->setMinimum(-1000000);
+
+	minX->setMaximum(1000000);
+	minY->setMaximum(1000000);
+	maxX->setMaximum(1000000);
+	maxY->setMaximum(1000000);
+
+	QWidget::connect(minX, SIGNAL(valueChanged(int)), this,
+			 SLOT(MinXChanged(int)));
+	QWidget::connect(minY, SIGNAL(valueChanged(int)), this,
+			 SLOT(MinYChanged(int)));
+	QWidget::connect(maxX, SIGNAL(valueChanged(int)), this,
+			 SLOT(MaxXChanged(int)));
+	QWidget::connect(maxY, SIGNAL(valueChanged(int)), this,
+			 SLOT(MaxYChanged(int)));
+
+	if (s) {
+		minX->setValue(s->minX);
+		minY->setValue(s->minY);
+		maxX->setValue(s->maxX);
+		maxY->setValue(s->maxY);
+	}
+
+	setStyleSheet("* { background-color: transparent; }");
+
+	QHBoxLayout *mainLayout = new QHBoxLayout;
+
+	mainLayout->addWidget(cursorLabel);
+	mainLayout->addWidget(minX);
+	mainLayout->addWidget(minY);
+	mainLayout->addWidget(xLabel);
+	mainLayout->addWidget(maxX);
+	mainLayout->addWidget(maxY);
+	mainLayout->addWidget(switchLabel);
+	mainLayout->addWidget(scenes);
+	mainLayout->addWidget(usingLabel);
+	mainLayout->addWidget(transitions);
+	mainLayout->addStretch();
+
+	setLayout(mainLayout);
+
+	switchData = s;
+
+	loading = false;
+}
+
+ScreenRegionSwitch *ScreenRegionWidget::getSwitchData()
+{
+	return switchData;
+}
+
+void ScreenRegionWidget::setSwitchData(ScreenRegionSwitch *s)
+{
+	switchData = s;
+}
+
+void ScreenRegionWidget::swapSwitchData(ScreenRegionWidget *s1,
+					ScreenRegionWidget *s2)
+{
+	SwitchWidget::swapSwitchData(s1, s2);
+
+	ScreenRegionSwitch *t = s1->getSwitchData();
+	s1->setSwitchData(s2->getSwitchData());
+	s2->setSwitchData(t);
+}
+
+void ScreenRegionWidget::showFrame()
+{
+	drawFrame();
+	helperFrame.show();
+}
+
+void ScreenRegionWidget::hideFrame()
+{
+	helperFrame.hide();
+}
+
+void ScreenRegionWidget::MinXChanged(int pos)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->minX = pos;
+
+	drawFrame();
+}
+
+void ScreenRegionWidget::MinYChanged(int pos)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->minY = pos;
+
+	drawFrame();
+}
+
+void ScreenRegionWidget::MaxXChanged(int pos)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->maxX = pos;
+
+	drawFrame();
+}
+
+void ScreenRegionWidget::MaxYChanged(int pos)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->maxY = pos;
+
+	drawFrame();
+}
+
+void ScreenRegionWidget::drawFrame()
+{
+	helperFrame.setFrameStyle(QFrame::Box | QFrame::Plain);
+	helperFrame.setWindowFlags(Qt::FramelessWindowHint | Qt::Tool |
+				   Qt::WindowTransparentForInput |
+				   Qt::WindowDoesNotAcceptFocus |
+				   Qt::WindowStaysOnTopHint);
+	helperFrame.setAttribute(Qt::WA_TranslucentBackground, true);
+
+	if (switchData)
+		helperFrame.setGeometry(switchData->minX, switchData->minY,
+					switchData->maxX - switchData->minX,
+					switchData->maxY - switchData->minY);
 }

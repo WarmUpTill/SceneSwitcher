@@ -46,7 +46,7 @@ if(BUILD_OUT_OF_TREE)
 		src/headers/switch-time.hpp
 		src/headers/switch-transitions.hpp
 		src/headers/switch-window.hpp
-		src/headers/swtich-sequence.hpp
+		src/headers/switch-sequence.hpp
 		src/headers/switch-generic.hpp
 		)
 
@@ -70,7 +70,9 @@ if(BUILD_OUT_OF_TREE)
 		src/switch-random.cpp
 		src/switch-time.cpp
 		src/switch-audio.cpp
+		src/switch-generic.cpp
 		src/curl-helper.cpp
+		src/volume-control.cpp
 		)
 
 	set(advanced-scene-switcher_UI
@@ -194,7 +196,7 @@ else ()
 		src/headers/switch-time.hpp
 		src/headers/switch-transitions.hpp
 		src/headers/switch-window.hpp
-		src/headers/swtich-sequence.hpp
+		src/headers/switch-sequence.hpp
 		src/headers/switch-generic.hpp
 		)
 
@@ -218,6 +220,7 @@ else ()
 		src/switch-random.cpp
 		src/switch-time.cpp
 		src/switch-audio.cpp
+		src/switch-generic.cpp
 		src/curl-helper.cpp
 		src/volume-control.cpp
 		)

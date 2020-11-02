@@ -23,11 +23,11 @@ bool resolveCurl()
 		(cleanupFunction)loaded_curl_lib->resolve("curl_easy_cleanup");
 
 	if (f_curl_init && f_curl_setopt && f_curl_perform && f_curl_cleanup) {
-		blog(LOG_INFO, "curl loaded successfully");
+		blog(LOG_INFO, "[adv-ss] curl loaded successfully");
 		return true;
 	}
 
-	blog(LOG_INFO, "curl symbols not resolved");
+	blog(LOG_INFO, "[adv-ss] curl symbols not resolved");
 	return false;
 }
 
@@ -43,13 +43,14 @@ bool loadCurl()
 #endif
 
 	for (QString path : locations) {
-		blog(LOG_INFO, "trying '%s'", path.toUtf8().constData());
+		blog(LOG_INFO, "[adv-ss] trying '%s'",
+		     path.toUtf8().constData());
 		QFileInfo libPath(
 			QDir(path).absoluteFilePath(curl_library_name));
 
 		if (libPath.exists() && libPath.isFile()) {
 			QString libFilePath = libPath.absoluteFilePath();
-			blog(LOG_INFO, "found curl library at '%s'",
+			blog(LOG_INFO, "[adv-ss] found curl library at '%s'",
 			     libFilePath.toUtf8().constData());
 
 			loaded_curl_lib = new QLibrary(libFilePath, nullptr);
@@ -62,6 +63,6 @@ bool loadCurl()
 		}
 	}
 
-	blog(LOG_ERROR, "can't find the curl library");
+	blog(LOG_WARNING, "[adv-ss] can't find the curl library");
 	return false;
 }

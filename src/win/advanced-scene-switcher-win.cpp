@@ -3,13 +3,16 @@
 #include "../headers/advanced-scene-switcher.hpp"
 #include <TlHelp32.h>
 #include <Psapi.h>
+#include <locale>
+#include <codecvt>
+#include <string>
 
-using namespace std;
+#define MAX_SEARCH 1000
 
-static bool GetWindowTitle(HWND window, string &title)
+static bool GetWindowTitle(HWND window, std::string &title)
 {
 	size_t len = (size_t)GetWindowTextLengthW(window);
-	wstring wtitle;
+	std::wstring wtitle;
 
 	wtitle.resize(len);
 	if (!GetWindowTextW(window, &wtitle[0], (int)len + 1))
@@ -40,36 +43,55 @@ static bool WindowValid(HWND window)
 	return true;
 }
 
-void GetWindowList(vector<string> &windows)
+BOOL CALLBACK GetTitleCB(HWND hwnd, LPARAM lParam)
 {
-	windows.resize(0);
+	if (!WindowValid(hwnd)) {
+		return TRUE;
+	}
 
-	HWND window = GetWindow(GetDesktopWindow(), GW_CHILD);
+	std::string title;
+	GetWindowTitle(hwnd, title);
+	if (title.empty())
+		return TRUE;
 
-	while (window) {
-		string title;
-		if (WindowValid(window) && GetWindowTitle(window, title))
-			windows.emplace_back(title);
-		window = GetNextWindow(window, GW_HWNDNEXT);
+	std::vector<std::string> &titles =
+		*reinterpret_cast<std::vector<std::string> *>(lParam);
+	titles.push_back(title);
+
+	return TRUE;
+}
+
+VOID EnumWindowsWithMetro(__in WNDENUMPROC lpEnumFunc, __in LPARAM lParam)
+{
+	HWND childWindow = NULL;
+	int i = 0;
+
+	while (i < MAX_SEARCH &&
+	       (childWindow = FindWindowEx(NULL, childWindow, NULL, NULL))) {
+		if (!lpEnumFunc(childWindow, lParam))
+			return;
+		i++;
 	}
 }
 
-// Overloaded
+void GetWindowList(std::vector<std::string> &windows)
+{
+	windows.resize(0);
+	EnumWindowsWithMetro(GetTitleCB, reinterpret_cast<LPARAM>(&windows));
+}
+
 void GetWindowList(QStringList &windows)
 {
 	windows.clear();
 
-	HWND window = GetWindow(GetDesktopWindow(), GW_CHILD);
-
-	while (window) {
-		string title;
-		if (WindowValid(window) && GetWindowTitle(window, title))
-			windows << QString::fromStdString(title);
-		window = GetNextWindow(window, GW_HWNDNEXT);
+	std::vector<std::string> w;
+	GetWindowList(w);
+	for (auto window : w) {
+		windows << QString::fromStdString(window);
 	}
 }
 
-void GetCurrentWindowTitle(string &title)
+void GetCurrentWindowTitle(std::string &title)
 {
 	HWND window = GetForegroundWindow();
 	DWORD pid;
@@ -97,22 +119,26 @@ std::pair<int, int> getCursorPos()
 	return pos;
 }
 
+HWND getHWNDfromTitle(std::string title)
+{
+	HWND hwnd = NULL;
+
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	std::wstring wTitle = converter.from_bytes(title);
+
+	hwnd = FindWindowEx(NULL, NULL, NULL, wTitle.c_str());
+	return hwnd;
+}
+
 bool isMaximized(std::string &title)
 {
 	RECT appBounds;
 	MONITORINFO monitorInfo = {0};
+	HWND hwnd = NULL;
 
-	HWND hwnd = GetWindow(GetDesktopWindow(), GW_CHILD);
-	while (hwnd) {
-		string wtitle;
-		if (WindowValid(hwnd) && GetWindowTitle(hwnd, wtitle) &&
-		    (wtitle == title ||
-		     QString::fromStdString(wtitle).contains(QRegularExpression(
-			     QString::fromStdString(title)))))
-			break;
-
-		hwnd = GetNextWindow(hwnd, GW_HWNDNEXT);
-	}
+	hwnd = getHWNDfromTitle(title);
+	if (!hwnd)
+		return false;
 
 	monitorInfo.cbSize = sizeof(MONITORINFO);
 	GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST),
@@ -138,17 +164,11 @@ bool isFullscreen(std::string &title)
 	RECT appBounds;
 	MONITORINFO monitorInfo = {0};
 
-	HWND hwnd = GetWindow(GetDesktopWindow(), GW_CHILD);
-	while (hwnd) {
-		string wtitle;
-		if (WindowValid(hwnd) && GetWindowTitle(hwnd, wtitle) &&
-		    (wtitle == title ||
-		     QString::fromStdString(wtitle).contains(QRegularExpression(
-			     QString::fromStdString(title)))))
-			break;
+	HWND hwnd = NULL;
+	hwnd = getHWNDfromTitle(title);
 
-		hwnd = GetNextWindow(hwnd, GW_HWNDNEXT);
-	}
+	if (!hwnd)
+		return false;
 
 	monitorInfo.cbSize = sizeof(MONITORINFO);
 	GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST),

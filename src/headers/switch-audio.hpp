@@ -1,115 +1,65 @@
 #pragma once
-#include <string>
-#include "utility.hpp"
+#include <QSpinBox>
+
 #include "switch-generic.hpp"
+#include "volume-control.hpp"
 
 constexpr auto audio_func = 8;
 constexpr auto default_priority_8 = audio_func;
 
 struct AudioSwitch : virtual SceneSwitcherEntry {
-	OBSWeakSource audioSource;
-	int volumeThreshold;
-	float peak;
-	std::string audioSwitchStr;
-	obs_volmeter_t *volmeter;
+	OBSWeakSource audioSource = nullptr;
+	int volumeThreshold = 0;
+	float peak = -1;
+	obs_volmeter_t *volmeter = nullptr;
 
 	const char *getType() { return "audio"; }
-
+	bool initialized();
+	bool valid();
 	static void setVolumeLevel(void *data,
 				   const float magnitude[MAX_AUDIO_CHANNELS],
 				   const float peak[MAX_AUDIO_CHANNELS],
-				   const float inputPeak[MAX_AUDIO_CHANNELS])
-	{
-		UNUSED_PARAMETER(magnitude);
-		UNUSED_PARAMETER(inputPeak);
-		AudioSwitch *s = static_cast<AudioSwitch *>(data);
+				   const float inputPeak[MAX_AUDIO_CHANNELS]);
+	void resetVolmeter();
 
-		s->peak = peak[0];
-		for (int i = 1; i < MAX_AUDIO_CHANNELS; i++)
-			if (peak[i] > s->peak)
-				s->peak = peak[i];
-	}
-
-	bool valid()
-	{
-		return (usePreviousScene || WeakSourceValid(scene)) &&
-		       WeakSourceValid(audioSource) &&
-		       WeakSourceValid(transition);
-	}
-
-	inline AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-			   OBSWeakSource audioSource_, int volumeThreshold_,
-			   bool usePreviousScene_, std::string audioSwitchStr_)
-		: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
-		  audioSource(audioSource_),
-		  volumeThreshold(volumeThreshold_),
-		  audioSwitchStr(audioSwitchStr_)
-	{
-		volmeter = obs_volmeter_create(OBS_FADER_LOG);
-		obs_volmeter_add_callback(volmeter, setVolumeLevel, this);
-		obs_source_t *as = obs_weak_source_get_source(audioSource);
-		if (!obs_volmeter_attach_source(volmeter, as)) {
-			const char *name = obs_source_get_name(as);
-			blog(LOG_WARNING,
-			     "failed to attach volmeter to source %s", name);
-		}
-		obs_source_release(as);
-	}
-
-	AudioSwitch(const AudioSwitch &other)
-		: SceneSwitcherEntry(other.scene, other.transition,
-				     other.usePreviousScene),
-		  audioSource(other.audioSource),
-		  volumeThreshold(other.volumeThreshold),
-		  audioSwitchStr(other.audioSwitchStr)
-	{
-		volmeter = obs_volmeter_create(OBS_FADER_LOG);
-		obs_volmeter_add_callback(volmeter, setVolumeLevel, this);
-		obs_source_t *as =
-			obs_weak_source_get_source(other.audioSource);
-		if (!obs_volmeter_attach_source(volmeter, as)) {
-			const char *name = obs_source_get_name(as);
-			blog(LOG_WARNING,
-			     "failed to attach volmeter to source %s", name);
-		}
-		obs_source_release(as);
-	}
-
-	AudioSwitch(AudioSwitch &&other)
-		: SceneSwitcherEntry(other.scene, other.transition,
-				     other.usePreviousScene),
-		  audioSource(other.audioSource),
-		  volumeThreshold(other.volumeThreshold),
-		  audioSwitchStr(other.audioSwitchStr),
-		  volmeter(other.volmeter)
-	{
-		other.volmeter = nullptr;
-	}
-
-	inline ~AudioSwitch()
-	{
-		obs_volmeter_remove_callback(volmeter, setVolumeLevel, this);
-		obs_volmeter_destroy(volmeter);
-	}
-
-	AudioSwitch &operator=(const AudioSwitch &other)
-	{
-		return *this = AudioSwitch(other);
-	}
-
-	AudioSwitch &operator=(AudioSwitch &&other) noexcept
-	{
-		if (this == &other) {
-			return *this;
-		}
-		obs_volmeter_destroy(volmeter);
-		volmeter = other.volmeter;
-		other.volmeter = nullptr;
-		return *this;
-	}
+	AudioSwitch(){};
+	AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
+		    OBSWeakSource audioSource_, int volumeThreshold_,
+		    bool usePreviousScene_);
+	AudioSwitch(const AudioSwitch &other);
+	AudioSwitch(AudioSwitch &&other);
+	~AudioSwitch();
+	AudioSwitch &operator=(const AudioSwitch &other);
+	AudioSwitch &operator=(AudioSwitch &&other) noexcept;
+	friend void swap(AudioSwitch &first, AudioSwitch &second);
 };
 
-static inline QString MakeAudioSwitchName(const QString &scene,
-					  const QString &transition,
-					  const QString &audioSrouce,
-					  const int &volume);
+class AudioSwitchWidget : public SwitchWidget {
+	Q_OBJECT
+
+public:
+	AudioSwitchWidget(AudioSwitch *s);
+	void UpdateVolmeterSource();
+	AudioSwitch *getSwitchData();
+	void setSwitchData(AudioSwitch *s);
+
+	static void swapSwitchData(AudioSwitchWidget *as1,
+				   AudioSwitchWidget *as2);
+
+private slots:
+	void SourceChanged(const QString &text);
+	void VolumeThresholdChanged(int vol);
+
+private:
+	QComboBox *audioSources;
+	QSpinBox *audioVolumeThreshold;
+
+	VolControl *volMeter;
+
+	QLabel *whenLabel;
+	QLabel *aboveLabel;
+	QLabel *switchLabel;
+	QLabel *usingLabel;
+
+	AudioSwitch *switchData;
+};
