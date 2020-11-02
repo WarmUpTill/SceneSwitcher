@@ -99,8 +99,6 @@ void AdvSceneSwitcher::on_sceneSequenceSave_clicked()
 
 void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 {
-	std::lock_guard<std::mutex> lock(switcher->m);
-
 	QString directory = QFileDialog::getOpenFileName(
 		this, tr("Select a file to read Scene Sequence from ..."),
 		QDir::currentPath(), tr("Text files (*.txt)"));
@@ -121,7 +119,14 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 		Msgbox.exec();
 		return;
 	}
+	bool wasRunning = !switcher->stop;
+	switcher->Stop();
+
 	switcher->loadSceneSequenceSwitches(obj);
+
+	if (wasRunning)
+		switcher->Start();
+
 	obs_data_release(obj);
 
 	QMessageBox Msgbox;
