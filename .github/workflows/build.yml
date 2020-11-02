@@ -59,7 +59,7 @@ jobs:
           echo "add_subdirectory(${{ env.PLUGIN_NAME }})" >> UI/frontend-plugins/CMakeLists.txt
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DDISABLE_PYTHON=ON -DDepsPath="/tmp/obsdeps" -DQTDIR="/tmp/obsdeps" ..
+          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DDISABLE_PYTHON=ON -DBUILD_CAPTIONS=true -DDepsPath="/tmp/obsdeps" -DQTDIR="/tmp/obsdeps" ..
           cd -
       - name: Build
         shell: bash
