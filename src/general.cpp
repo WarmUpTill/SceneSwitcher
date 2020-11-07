@@ -468,6 +468,14 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 
 	obs_data_set_int(obj, "threadPriority", switcher->threadPriority);
 
+	// After fresh install of OBS the vector can be empty
+	// as save() might be called before first load()
+	if (switcher->tabOrder.size() < 13) {
+		switcher->tabOrder = std::vector<int>(13);
+		std::iota(switcher->tabOrder.begin(), switcher->tabOrder.end(),
+			  0);
+	}
+
 	obs_data_set_int(obj, "generalTabPos", switcher->tabOrder[0]);
 	obs_data_set_int(obj, "transitionTabPos", switcher->tabOrder[1]);
 	obs_data_set_int(obj, "pauseTabPos", switcher->tabOrder[2]);
