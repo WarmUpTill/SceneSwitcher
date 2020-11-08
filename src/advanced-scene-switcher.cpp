@@ -515,7 +515,6 @@ extern "C" void FreeSceneSwitcher()
 
 void handleSceneChange(SwitcherData *s)
 {
-	std::lock_guard<std::mutex> lock(s->m);
 	//stop waiting if scene was manually changed
 	if (s->sceneChangedDuringWait())
 		s->cv.notify_one();
