@@ -330,7 +330,6 @@ void SwitcherData::Thread()
 	int sleep = 0;
 
 	while (true) {
-	startLoop:
 		std::unique_lock<std::mutex> lock(m);
 		bool match = false;
 		OBSWeakSource scene;
@@ -393,10 +392,6 @@ void SwitcherData::Thread()
 			case round_trip_func:
 				checkSceneSequence(match, scene, transition,
 						   lock);
-				if (sceneChangedDuringWait()) //scene might have changed during the sleep
-				{
-					goto startLoop;
-				}
 				break;
 			case media_func:
 				checkMediaSwitch(match, scene, transition);
