@@ -183,7 +183,10 @@ void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 				transition = s.transition;
 				if (verbose)
 					s.logMatch();
+			} else if (verbose) {
+				blog(LOG_INFO, "sequence canceled");
 			}
+
 			obs_source_release(currentSource2);
 			break;
 		}
