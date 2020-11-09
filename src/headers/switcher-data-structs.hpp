@@ -57,9 +57,9 @@ struct SwitcherData {
 
 	int interval = default_interval;
 
-	obs_source_t *waitScene = NULL;
-	OBSWeakSource previousScene = NULL;
-	OBSWeakSource PreviousScene2 = NULL;
+	obs_source_t *waitScene = nullptr;
+	OBSWeakSource previousScene = nullptr;
+	OBSWeakSource previousScene2 = nullptr;
 	OBSWeakSource lastRandomScene;
 	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
