@@ -19,12 +19,12 @@ jobs:
       MACOS_DEPS_VERSION: '2020-08-30'
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           repository: obsproject/obs-studio
           submodules: 'recursive'
       - name: "Checkout plugin"
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           path: UI/frontend-plugins/${{ env.PLUGIN_NAME }}
       - name: Fetch Git Tags
@@ -93,7 +93,7 @@ jobs:
           mv UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.pkg ./nightly/${FILE_NAME}
       - name: Publish
         if: success()
-        uses: actions/upload-artifact@v2-preview
+        uses: actions/upload-artifact@v2.2.1
         with:
           name: '${{ env.FILE_NAME }}'
           path: ./nightly/*.pkg
@@ -102,12 +102,12 @@ jobs:
     runs-on: [ubuntu-latest]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           repository: obsproject/obs-studio
           submodules: 'recursive'
       - name: "Checkout plugin"
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           path: UI/frontend-plugins/${{ env.PLUGIN_NAME }}
       - name: Add plugin to obs cmake
@@ -181,7 +181,7 @@ jobs:
           mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.LIB_NAME }}.so ./${{ env.PLUGIN_NAME }}/bin/64bit/${{ env.LIB_NAME }}.so
           tar -cvzf "${FILE_NAME}" ${{ env.PLUGIN_NAME }}
       - name: 'Publish'
-        uses: actions/upload-artifact@v2-preview
+        uses: actions/upload-artifact@v2.2.1
         with:
           name: '${{ env.FILE_NAME }}'
           path: '*.tar.gz'
@@ -196,12 +196,12 @@ jobs:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
       - name: Checkout obs
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           repository: obsproject/obs-studio
           submodules: 'recursive'
       - name: Checkout plugin
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           path: UI/frontend-plugins/${{ env.PLUGIN_NAME}}
       - name: Add plugin to obs cmake
@@ -235,7 +235,7 @@ jobs:
           7z a ${env:FILE_NAME} .\build\*
       - name: Publish
         if: success()
-        uses: actions/upload-artifact@v2-preview
+        uses: actions/upload-artifact@v2.2.1
         with:
           name: '${{ env.FILE_NAME }}'
           path: '*-win64.zip'
@@ -250,12 +250,12 @@ jobs:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
       - name: Checkout obs
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           repository: obsproject/obs-studio
           submodules: 'recursive'
       - name: Checkout plugin
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           path: UI/frontend-plugins/${{ env.PLUGIN_NAME }}
       - name: Add plugin to obs cmake
@@ -289,7 +289,7 @@ jobs:
           7z a ${env:FILE_NAME} .\build\*
       - name: Publish
         if: success()
-        uses: actions/upload-artifact@v2-preview
+        uses: actions/upload-artifact@v2.2.1
         with:
           name: '${{ env.FILE_NAME }}'
           path: '*-win32.zip'
