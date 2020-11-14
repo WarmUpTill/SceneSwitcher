@@ -19,12 +19,12 @@ jobs:
       MACOS_DEPS_VERSION: '2020-08-30'
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           repository: obsproject/obs-studio
           submodules: 'recursive'
       - name: "Checkout plugin"
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           path: UI/frontend-plugins/${{ env.PLUGIN_NAME }}
       - name: Fetch Git Tags
@@ -86,14 +86,14 @@ jobs:
           install_name_tool -change /tmp/obsdeps/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
           FILE_DATE=$(date +%Y-%m-%d)
           FILE_NAME=${{ env.PLUGIN_NAME }}-$FILE_DATE-${{ github.sha }}-macos.pkg
-          echo "::set-env name=FILE_NAME::${FILE_NAME}"
+          echo "FILE_NAME=${FILE_NAME}" >> $GITHUB_ENV
           packagesbuild ./CI/macos/${{ env.PLUGIN_NAME }}.pkgproj
           cd -
           mkdir ./nightly
           mv UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.pkg ./nightly/${FILE_NAME}
       - name: Publish
         if: success()
-        uses: actions/upload-artifact@v2-preview
+        uses: actions/upload-artifact@v2.2.1
         with:
           name: '${{ env.FILE_NAME }}'
           path: ./nightly/*.pkg
@@ -102,12 +102,12 @@ jobs:
     runs-on: [ubuntu-latest]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           repository: obsproject/obs-studio
           submodules: 'recursive'
       - name: "Checkout plugin"
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           path: UI/frontend-plugins/${{ env.PLUGIN_NAME }}
       - name: Add plugin to obs cmake
@@ -176,12 +176,12 @@ jobs:
         run: |
           FILE_DATE=$(date +%Y-%m-%d)
           FILE_NAME=${{ env.PLUGIN_NAME }}-$FILE_DATE-${{ github.sha }}-linux64.tar.gz
-          echo "::set-env name=FILE_NAME::${FILE_NAME}"
+          echo "FILE_NAME=${FILE_NAME}" >> $GITHUB_ENV
           mkdir -p ./${{ env.PLUGIN_NAME }}/bin/64bit/
           mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.LIB_NAME }}.so ./${{ env.PLUGIN_NAME }}/bin/64bit/${{ env.LIB_NAME }}.so
           tar -cvzf "${FILE_NAME}" ${{ env.PLUGIN_NAME }}
       - name: 'Publish'
-        uses: actions/upload-artifact@v2-preview
+        uses: actions/upload-artifact@v2.2.1
         with:
           name: '${{ env.FILE_NAME }}'
           path: '*.tar.gz'
@@ -194,14 +194,14 @@ jobs:
       CMAKE_SYSTEM_VERSION: "10.0.18363.657"
     steps:
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.0
+        uses: microsoft/setup-msbuild@v1.0.2
       - name: Checkout obs
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           repository: obsproject/obs-studio
           submodules: 'recursive'
       - name: Checkout plugin
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           path: UI/frontend-plugins/${{ env.PLUGIN_NAME}}
       - name: Add plugin to obs cmake
@@ -230,12 +230,12 @@ jobs:
         run: |
           $env:FILE_DATE=(Get-Date -UFormat "%F")
           $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-win64.zip"
-          echo "::set-env name=FILE_NAME::${env:FILE_NAME}"
+          echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
           robocopy .\build64\rundir\RelWithDebInfo\obs-plugins\64bit\ .\build\obs-plugins\64bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
       - name: Publish
         if: success()
-        uses: actions/upload-artifact@v2-preview
+        uses: actions/upload-artifact@v2.2.1
         with:
           name: '${{ env.FILE_NAME }}'
           path: '*-win64.zip'
@@ -248,14 +248,14 @@ jobs:
       CMAKE_SYSTEM_VERSION: "10.0.18363.657"
     steps:
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.0
+        uses: microsoft/setup-msbuild@v1.0.2
       - name: Checkout obs
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           repository: obsproject/obs-studio
           submodules: 'recursive'
       - name: Checkout plugin
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           path: UI/frontend-plugins/${{ env.PLUGIN_NAME }}
       - name: Add plugin to obs cmake
@@ -284,12 +284,12 @@ jobs:
         run: |
           $env:FILE_DATE=(Get-Date -UFormat "%F")
           $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-win32.zip"
-          echo "::set-env name=FILE_NAME::${env:FILE_NAME}"
+          echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
           robocopy .\build32\rundir\RelWithDebInfo\obs-plugins\32bit\ .\build\obs-plugins\32bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
       - name: Publish
         if: success()
-        uses: actions/upload-artifact@v2-preview
+        uses: actions/upload-artifact@v2.2.1
         with:
           name: '${{ env.FILE_NAME }}'
           path: '*-win32.zip'
