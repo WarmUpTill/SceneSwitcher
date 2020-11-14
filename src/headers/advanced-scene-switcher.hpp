@@ -124,6 +124,9 @@ public slots:
 	void on_verboseLogging_stateChanged(int state);
 	void on_uiHintsDisable_stateChanged(int state);
 
+	void on_writeStatusToFile_stateChanged(int state);
+	void on_selectStatusFile_clicked();
+
 	void on_exportSettings_clicked();
 	void on_importSettings_clicked();
 

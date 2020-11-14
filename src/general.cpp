@@ -1,5 +1,6 @@
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QTextStream>
 
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
@@ -253,6 +254,35 @@ void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 	switcher->disableHints = state;
 }
 
+void AdvSceneSwitcher::on_writeStatusToFile_stateChanged(int state)
+{
+	if (loading)
+		return;
+	switcher->writeStatusTofile = state;
+}
+
+void AdvSceneSwitcher::on_selectStatusFile_clicked()
+{
+	QString path = QFileDialog::getOpenFileName(
+		this, tr("Select a file to write status to ..."),
+		QDir::currentPath(), "Any files (*.*)");
+
+	if (!path.isEmpty()) {
+
+		std::lock_guard<std::mutex> lock(switcher->m);
+		switcher->statusFile = path;
+	}
+}
+
+void SwitcherData::writeToStatusFile(QString msg)
+{
+	QFile file(switcher->statusFile);
+	if (file.open(QIODevice::ReadWrite)) {
+		QTextStream stream(&file);
+		stream << msg << endl;
+	}
+}
+
 void AdvSceneSwitcher::on_exportSettings_clicked()
 {
 	QString directory = QFileDialog::getSaveFileName(
@@ -447,6 +477,11 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_bool(obj, "verbose", switcher->verbose);
 	obs_data_set_bool(obj, "disableHints", switcher->disableHints);
 
+	obs_data_set_bool(obj, "writeStatusToFile",
+			  switcher->writeStatusTofile);
+	obs_data_set_string(obj, "statusFile",
+			    switcher->statusFile.toUtf8().constData());
+
 	obs_data_set_int(obj, "priority0",
 			 switcher->functionNamesByPriority[0]);
 	obs_data_set_int(obj, "priority1",
@@ -526,6 +561,10 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 
 	switcher->verbose = obs_data_get_bool(obj, "verbose");
 	switcher->disableHints = obs_data_get_bool(obj, "disableHints");
+
+	switcher->writeStatusTofile =
+		obs_data_get_bool(obj, "writeStatusToFile");
+	switcher->statusFile = obs_data_get_string(obj, "statusFile");
 
 	obs_data_set_default_int(obj, "priority0", default_priority_0);
 	obs_data_set_default_int(obj, "priority1", default_priority_1);
@@ -662,6 +701,8 @@ void AdvSceneSwitcher::setupGeneralTab()
 
 	ui->verboseLogging->setChecked(switcher->verbose);
 	ui->uiHintsDisable->setChecked(switcher->disableHints);
+
+	ui->writeStatusToFile->setChecked(switcher->writeStatusTofile);
 
 	for (int p : switcher->functionNamesByPriority) {
 		std::string s = "";

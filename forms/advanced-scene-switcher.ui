@@ -58,35 +58,18 @@
               <item row="0" column="0">
                <layout class="QGridLayout" name="gridLayout_2">
                 <item row="4" column="0">
-                 <widget class="QLabel" name="label_13">
-                  <property name="text">
-                   <string>Hotkeys can be defined in the OBS settings</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_5">
-                  <property name="text">
-                   <string>Advanced Scene Switcher is:</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0">
                  <widget class="QLabel" name="label_64">
                   <property name="text">
                    <string>On startup:</string>
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="1">
-                 <widget class="QPushButton" name="toggleStartButton">
+                <item row="5" column="0">
+                 <widget class="QLabel" name="label_13">
                   <property name="text">
-                   <string>Start</string>
+                   <string>Hotkeys can be defined in the OBS settings</string>
                   </property>
                  </widget>
-                </item>
-                <item row="3" column="1">
-                 <widget class="QComboBox" name="startupBehavior"/>
                 </item>
                 <item row="0" column="1">
                  <widget class="QSpinBox" name="checkInterval">
@@ -117,6 +100,13 @@
                   </property>
                  </widget>
                 </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="label_5">
+                  <property name="text">
+                   <string>Advanced Scene Switcher is:</string>
+                  </property>
+                 </widget>
+                </item>
                 <item row="1" column="1">
                  <layout class="QHBoxLayout" name="horizontalLayout_47">
                   <item>
@@ -140,6 +130,30 @@
                    </spacer>
                   </item>
                  </layout>
+                </item>
+                <item row="3" column="0">
+                 <widget class="QCheckBox" name="writeStatusToFile">
+                  <property name="text">
+                   <string>Write status to file</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="1">
+                 <widget class="QComboBox" name="startupBehavior"/>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QPushButton" name="toggleStartButton">
+                  <property name="text">
+                   <string>Start</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QPushButton" name="selectStatusFile">
+                  <property name="text">
+                   <string>Select File</string>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </item>

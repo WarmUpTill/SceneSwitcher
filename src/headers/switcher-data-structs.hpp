@@ -55,6 +55,9 @@ struct SwitcherData {
 	bool showFrame = false;
 	bool tansitionOverrideOverride = false;
 
+	bool writeStatusTofile = false;
+	QString statusFile;
+
 	int interval = default_interval;
 
 	obs_source_t *waitScene = nullptr;
@@ -154,6 +157,7 @@ struct SwitcherData {
 	bool sceneChangedDuringWait();
 	bool prioFuncsValid();
 	void writeSceneInfoToFile();
+	void writeToStatusFile(QString status);
 	void setDefaultSceneTransitions();
 	void autoStopStreamAndRecording();
 	void autoStartStreamRecording();

@@ -471,6 +471,10 @@ void SwitcherData::Start()
 		switcher->th = new SwitcherThread();
 		switcher->th->start(
 			(QThread::Priority)switcher->threadPriority);
+
+		if (switcher->writeStatusTofile) {
+			writeToStatusFile("running");
+		}
 	}
 }
 
@@ -483,6 +487,10 @@ void SwitcherData::Stop()
 		th->wait();
 		delete th;
 		th = nullptr;
+
+		if (switcher->writeStatusTofile) {
+			writeToStatusFile("stopped");
+		}
 	}
 }
 
