@@ -330,7 +330,6 @@ void SwitcherData::Thread()
 	int sleep = 0;
 
 	while (true) {
-	startLoop:
 		std::unique_lock<std::mutex> lock(m);
 		bool match = false;
 		OBSWeakSource scene;
@@ -393,10 +392,6 @@ void SwitcherData::Thread()
 			case round_trip_func:
 				checkSceneSequence(match, scene, transition,
 						   lock);
-				if (sceneChangedDuringWait()) //scene might have changed during the sleep
-				{
-					goto startLoop;
-				}
 				break;
 			case media_func:
 				checkMediaSwitch(match, scene, transition);
@@ -443,18 +438,12 @@ void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 
 	if (source && source != currentSource) {
-
-		// this call might block when OBS_FRONTEND_EVENT_SCENE_CHANGED is active and mutex is held
-		// thus unlock mutex to avoid deadlock
-		lock.unlock();
-
 		transitionData td;
 		setNextTransition(scene, currentSource, transition,
 				  transitionOverrideOverride, td);
 		obs_frontend_set_current_scene(source);
 		if (transitionOverrideOverride)
 			restoreTransitionOverride(source, td);
-		lock.lock();
 
 		if (switcher->verbose)
 			blog(LOG_INFO, "switched scene");
@@ -515,7 +504,6 @@ extern "C" void FreeSceneSwitcher()
 
 void handleSceneChange(SwitcherData *s)
 {
-	std::lock_guard<std::mutex> lock(s->m);
 	//stop waiting if scene was manually changed
 	if (s->sceneChangedDuringWait())
 		s->cv.notify_one();
@@ -525,9 +513,9 @@ void handleSceneChange(SwitcherData *s)
 	obs_weak_source_t *ws = obs_source_get_weak_source(source);
 	obs_source_release(source);
 	obs_weak_source_release(ws);
-	if (source && s->PreviousScene2 != ws) {
-		s->previousScene = s->PreviousScene2;
-		s->PreviousScene2 = ws;
+	if (source && s->previousScene2 != ws) {
+		s->previousScene = s->previousScene2;
+		s->previousScene2 = ws;
 	}
 
 	//reset events only hanled on scene change
@@ -545,6 +533,9 @@ void resetLiveTime(SwitcherData *s)
 	s->liveTime = QDateTime();
 }
 
+// Note to future self:
+// be careful using switcher->m here as there is potential for deadlocks when using
+// frontend functions such as obs_frontend_set_current_scene()
 static void OBSEvent(enum obs_frontend_event event, void *switcher)
 {
 	switch (event) {

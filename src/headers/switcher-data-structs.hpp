@@ -57,9 +57,9 @@ struct SwitcherData {
 
 	int interval = default_interval;
 
-	obs_source_t *waitScene = NULL;
-	OBSWeakSource previousScene = NULL;
-	OBSWeakSource PreviousScene2 = NULL;
+	obs_source_t *waitScene = nullptr;
+	OBSWeakSource previousScene = nullptr;
+	OBSWeakSource previousScene2 = nullptr;
 	OBSWeakSource lastRandomScene;
 	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
@@ -143,9 +143,9 @@ struct SwitcherData {
 	std::vector<int> tabOrder;
 
 	bool hotkeysRegistered = false;
-	obs_hotkey_id startHotkey;
-	obs_hotkey_id stopHotkey;
-	obs_hotkey_id toggleHotkey;
+	obs_hotkey_id startHotkey = 0;
+	obs_hotkey_id stopHotkey = 0;
+	obs_hotkey_id toggleHotkey = 0;
 
 	void Thread();
 	void Start();
