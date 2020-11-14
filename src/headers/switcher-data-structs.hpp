@@ -143,9 +143,9 @@ struct SwitcherData {
 	std::vector<int> tabOrder;
 
 	bool hotkeysRegistered = false;
-	obs_hotkey_id startHotkey;
-	obs_hotkey_id stopHotkey;
-	obs_hotkey_id toggleHotkey;
+	obs_hotkey_id startHotkey = 0;
+	obs_hotkey_id stopHotkey = 0;
+	obs_hotkey_id toggleHotkey = 0;
 
 	void Thread();
 	void Start();
