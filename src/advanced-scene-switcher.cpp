@@ -9,6 +9,7 @@
 
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/curl-helper.hpp"
+#include "headers/version.h"
 
 SwitcherData *switcher = nullptr;
 
@@ -560,6 +561,8 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 
 extern "C" void InitSceneSwitcher()
 {
+	blog(LOG_INFO, "version: %s", g_GIT_SHA1);
+
 	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(
 		"Advanced Scene Switcher");
 
