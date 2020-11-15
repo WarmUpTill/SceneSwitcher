@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.5)
 
 project(advanced-scene-switcher)
 
+# generate version info
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/src/version.cpp" @ONLY)
+
 if(BUILD_OUT_OF_TREE)
 	# out of tree builds
 	# credits to c3r1c3
@@ -48,6 +54,7 @@ if(BUILD_OUT_OF_TREE)
 		src/headers/switch-window.hpp
 		src/headers/switch-sequence.hpp
 		src/headers/switch-generic.hpp
+		src/headers/version.h
 		)
 
 	set(advanced-scene-switcher_SOURCES
@@ -73,6 +80,7 @@ if(BUILD_OUT_OF_TREE)
 		src/switch-generic.cpp
 		src/curl-helper.cpp
 		src/volume-control.cpp
+		src/version.cpp
 		)
 
 	set(advanced-scene-switcher_UI
@@ -198,6 +206,7 @@ else ()
 		src/headers/switch-window.hpp
 		src/headers/switch-sequence.hpp
 		src/headers/switch-generic.hpp
+		src/headers/version.h
 		)
 
 	set(advanced-scene-switcher_SOURCES
@@ -223,6 +232,7 @@ else ()
 		src/switch-generic.cpp
 		src/curl-helper.cpp
 		src/volume-control.cpp
+		src/version.cpp
 		)
 
 	set(advanced-scene-switcher_UI
