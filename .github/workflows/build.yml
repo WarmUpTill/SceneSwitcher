@@ -34,11 +34,15 @@ jobs:
       - name: 'Install prerequisites (Homebrew)'
         shell: bash
         run: |
-          cd UI/frontend-plugins/${{ env.PLUGIN_NAME }}/CI/macos
-          brew untap local/openssl
-          brew untap local/python2
-          brew update
-          brew bundle
+          if [ -d /usr/local/opt/openssl@1.0.2t ]; then
+              brew uninstall openssl@1.0.2t
+              brew untap local/openssl
+          fi
+          if [ -d /usr/local/opt/python@2.7.17 ]; then
+              brew uninstall python@2.7.17
+              brew untap local/python2
+          fi
+          brew bundle --file ./CI/scripts/macos/Brewfile
           cd -
       - name: 'Install prerequisite: Pre-built dependencies'
         if: steps.deps-cache.outputs.cache-hit != 'true'
@@ -59,7 +63,7 @@ jobs:
           echo "add_subdirectory(${{ env.PLUGIN_NAME }})" >> UI/frontend-plugins/CMakeLists.txt
           mkdir ./build
           cd ./build
-          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DDISABLE_PYTHON=ON -DBUILD_CAPTIONS=true -DDepsPath="/tmp/obsdeps" -DQTDIR="/tmp/obsdeps" -DSWIGDIR="/tmp/obsdeps" ..
+          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DDISABLE_PYTHON=ON -DDepsPath="/tmp/obsdeps" -DQTDIR="/tmp/obsdeps" -DSWIGDIR="/tmp/obsdeps" ..
           cd -
       - name: Build
         shell: bash
