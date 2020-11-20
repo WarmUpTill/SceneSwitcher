@@ -4,6 +4,7 @@
 #include <QPropertyAnimation>
 #include <QGraphicsColorizeEffect>
 
+#include <obs-module.h>
 #include <obs-frontend-api.h>
 #include <util/util.hpp>
 
@@ -564,7 +565,7 @@ extern "C" void InitSceneSwitcher()
 	blog(LOG_INFO, "version: %s", g_GIT_SHA1);
 
 	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(
-		"Advanced Scene Switcher");
+		obs_module_text("AdvSceneSwitcher.pluginName"));
 
 	switcher = new SwitcherData;
 
