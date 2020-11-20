@@ -43,7 +43,6 @@ jobs:
               brew untap local/python2
           fi
           brew bundle --file ./CI/scripts/macos/Brewfile
-          cd -
       - name: 'Install prerequisite: Pre-built dependencies'
         if: steps.deps-cache.outputs.cache-hit != 'true'
         shell: bash
