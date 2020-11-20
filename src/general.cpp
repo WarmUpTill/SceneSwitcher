@@ -337,58 +337,56 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 	close();
 }
 
-int findTabIndex(QTabBar *bar, int pos)
+int findTabIndex(QTabWidget *tabWidget, int pos)
 {
 	int at = -1;
 
 	QString tabName = "";
 	switch (pos) {
 	case 0:
-		tabName = "General";
+		tabName = "generalTab";
 		break;
 	case 1:
-		tabName = "Transition";
+		tabName = "transitionsTab";
 		break;
 	case 2:
-		tabName = "Pause";
+		tabName = "pauseScenesTab";
 		break;
 	case 3:
-		tabName = "Title";
+		tabName = "windowTitleTab";
 		break;
 	case 4:
-		tabName = "Executable";
+		tabName = "executableTab";
 		break;
 	case 5:
-		tabName = "Region";
+		tabName = "screenRegionTab";
 		break;
 	case 6:
-		tabName = "Media";
+		tabName = "mediaTab";
 		break;
 	case 7:
-		tabName = "File";
+		tabName = "fileTab";
 		break;
 	case 8:
-		tabName = "Random";
+		tabName = "randomTab";
 		break;
 	case 9:
-		tabName = "Time";
+		tabName = "timeTab";
 		break;
 	case 10:
-		tabName = "Idle";
+		tabName = "idleTab";
 		break;
 	case 11:
-		tabName = "Sequence";
+		tabName = "sceneSequenceTab";
 		break;
 	case 12:
-		tabName = "Audio";
+		tabName = "audioTab";
 		break;
 	}
 
-	for (int i = 0; i < bar->count(); ++i) {
-		if (bar->tabText(i).compare(tabName) == 0) {
-			at = i;
-			break;
-		}
+	QWidget *page = tabWidget->findChild<QWidget *>(tabName);
+	if (page) {
+		at = tabWidget->indexOf(page);
 	}
 	if (at == -1)
 		blog(LOG_INFO, "failed to find tab %s",
@@ -401,7 +399,7 @@ void AdvSceneSwitcher::setTabOrder()
 {
 	QTabBar *bar = ui->tabWidget->tabBar();
 	for (int i = 0; i < bar->count(); ++i) {
-		int curPos = findTabIndex(bar, switcher->tabOrder[i]);
+		int curPos = findTabIndex(ui->tabWidget, switcher->tabOrder[i]);
 
 		if (i != curPos && curPos != -1)
 			bar->moveTab(curPos, i);
