@@ -2634,7 +2634,7 @@
          <item>
           <widget class="QLabel" name="label_26">
            <property name="text">
-            <string>AdvSceneSwitcher.timeTab.condition1</string>
+            <string>AdvSceneSwitcher.idleTab.condition1</string>
            </property>
           </widget>
          </item>
@@ -2657,14 +2657,14 @@
          <item>
           <widget class="QLabel" name="label_27">
            <property name="text">
-            <string>AdvSceneSwitcher.timeTab.condition2</string>
+            <string>AdvSceneSwitcher.idleTab.condition2</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QLabel" name="label_30">
            <property name="text">
-            <string>AdvSceneSwitcher.fileTab.switchToScene</string>
+            <string>AdvSceneSwitcher.idleTab.switchToScene</string>
            </property>
           </widget>
          </item>
@@ -2687,7 +2687,7 @@
          <item>
           <widget class="QLabel" name="label_28">
            <property name="text">
-            <string>AdvSceneSwitcher.fileTab.usingTransition1</string>
+            <string>AdvSceneSwitcher.idleTab.usingTransition1</string>
            </property>
           </widget>
          </item>
@@ -2697,7 +2697,7 @@
          <item>
           <widget class="QLabel" name="label_29">
            <property name="text">
-            <string>AdvSceneSwitcher.fileTab.usingTransition2</string>
+            <string>AdvSceneSwitcher.idleTab.usingTransition2</string>
            </property>
           </widget>
          </item>
