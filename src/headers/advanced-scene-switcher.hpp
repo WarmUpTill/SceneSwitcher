@@ -228,10 +228,8 @@ void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 void overwriteTransitionOverride(obs_weak_source_t *sceneWs,
 				 obs_source_t *transition, transitionData &td);
 void restoreTransitionOverride(obs_source_t *scene, transitionData td);
-
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
-		 bool &transitionOverrideOverride,
-		 std::unique_lock<std::mutex> &lock);
+		 bool &transitionOverrideOverride);
 
 /********************************************************************************
  * Main SwitcherData
