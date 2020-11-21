@@ -99,7 +99,7 @@ struct SwitcherData {
 
 	std::deque<SceneTransition> sceneTransitions;
 	std::deque<DefaultSceneTransition> defaultSceneTransitions;
-	bool changedDefTransitionRecently = false;
+	bool checkedDefTransition = false;
 
 	std::deque<MediaSwitch> mediaSwitches;
 
@@ -154,10 +154,12 @@ struct SwitcherData {
 	bool sceneChangedDuringWait();
 	bool prioFuncsValid();
 	void writeSceneInfoToFile();
-	void setDefaultSceneTransitions();
 	void autoStopStreamAndRecording();
 	void autoStartStreamRecording();
 	bool checkPause();
+	void checkDefaultSceneTransitions(bool &match,
+					  OBSWeakSource &transition);
+	void setCurrentDefTransition(OBSWeakSource &transition);
 	void checkSceneSequence(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition,
 				std::unique_lock<std::mutex> &lock);

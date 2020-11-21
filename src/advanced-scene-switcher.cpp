@@ -335,6 +335,8 @@ void SwitcherData::Thread()
 		bool match = false;
 		OBSWeakSource scene;
 		OBSWeakSource transition;
+		bool defTransitionMatch = false;
+		OBSWeakSource defTransition;
 		std::chrono::milliseconds duration;
 		if (sleep > interval) {
 			duration = std::chrono::milliseconds(sleep);
@@ -354,8 +356,6 @@ void SwitcherData::Thread()
 			break;
 		}
 
-		setDefaultSceneTransitions();
-
 		if (autoStopEnable) {
 			autoStopStreamAndRecording();
 		}
@@ -367,6 +367,8 @@ void SwitcherData::Thread()
 		if (checkPause()) {
 			continue;
 		}
+
+		checkDefaultSceneTransitions(defTransitionMatch, defTransition);
 
 		for (int switchFuncName : functionNamesByPriority) {
 			switch (switchFuncName) {
@@ -422,9 +424,22 @@ void SwitcherData::Thread()
 		if (!match && switchIfNotMatching == RANDOM_SWITCH) {
 			checkRandom(match, scene, transition, sleep);
 		}
+
+		// After this point we will call frontend functions
+		// obs_frontend_set_current_scene() and
+		// obs_frontend_set_current_transition()
+		//
+		// During this time SaveSceneSwitcher() could be called
+		// leading to a deadlock, so we have to unlock()
+		lock.unlock();
+
+		if (!match && defTransitionMatch) {
+			setCurrentDefTransition(defTransition);
+		}
+
 		if (match) {
 			switchScene(scene, transition,
-				    tansitionOverrideOverride, lock);
+				    tansitionOverrideOverride);
 		}
 	}
 endLoop:
@@ -432,8 +447,7 @@ endLoop:
 }
 
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
-		 bool &transitionOverrideOverride,
-		 std::unique_lock<std::mutex> &lock)
+		 bool &transitionOverrideOverride)
 {
 	obs_source_t *source = obs_weak_source_get_source(scene);
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
@@ -451,18 +465,6 @@ void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 	}
 	obs_source_release(currentSource);
 	obs_source_release(source);
-}
-
-bool SwitcherData::sceneChangedDuringWait()
-{
-	bool r = false;
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
-	if (!currentSource)
-		return true;
-	obs_source_release(currentSource);
-	if (waitScene && currentSource != waitScene)
-		r = true;
-	return r;
 }
 
 void SwitcherData::Start()
@@ -485,6 +487,15 @@ void SwitcherData::Stop()
 		delete th;
 		th = nullptr;
 	}
+}
+
+bool SwitcherData::sceneChangedDuringWait()
+{
+	obs_source_t *currentSource = obs_frontend_get_current_scene();
+	if (!currentSource)
+		return true;
+	obs_source_release(currentSource);
+	return (waitScene && currentSource != waitScene);
 }
 
 /********************************************************************************
@@ -521,7 +532,11 @@ void handleSceneChange(SwitcherData *s)
 
 	//reset events only hanled on scene change
 	s->autoStartedRecently = false;
-	s->changedDefTransitionRecently = false;
+}
+
+void handleTransitionStop(SwitcherData *s)
+{
+	s->checkedDefTransition = false;
 }
 
 void setLiveTime(SwitcherData *s)
@@ -545,6 +560,9 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 		break;
 	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
 		handleSceneChange((SwitcherData *)switcher);
+		break;
+	case OBS_FRONTEND_EVENT_TRANSITION_STOPPED:
+		handleTransitionStop((SwitcherData *)switcher);
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
 	case OBS_FRONTEND_EVENT_STREAMING_STARTED:
