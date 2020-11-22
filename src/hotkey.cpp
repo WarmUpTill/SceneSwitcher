@@ -47,14 +47,16 @@ void startStopToggleHotkeyFunc(void *data, obs_hotkey_id id,
 void registerHotkeys()
 {
 	switcher->startHotkey = obs_hotkey_register_frontend(
-		"startSwitcherHotkey", "Start the Advanced Scene Switcher",
+		"startSwitcherHotkey",
+		obs_module_text("AdvSceneSwitcher.hotkey.startSwitcherHotkey"),
 		startHotkeyFunc, NULL);
 	switcher->stopHotkey = obs_hotkey_register_frontend(
-		"stopSwitcherHotkey", "Stop the Advanced Scene Switcher",
+		"stopSwitcherHotkey",
+		obs_module_text("AdvSceneSwitcher.hotkey.stopSwitcherHotkey"),
 		stopHotkeyFunc, NULL);
 	switcher->toggleHotkey = obs_hotkey_register_frontend(
 		"startStopToggleSwitcherHotkey",
-		"Toggle Start/Stop for the Advanced Scene Switcher",
+		obs_module_text("AdvSceneSwitcher.hotkey.startStopToggleSwitcherHotkey"),
 		startStopToggleHotkeyFunc, NULL);
 
 	switcher->hotkeysRegistered = true;

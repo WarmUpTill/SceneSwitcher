@@ -1,5 +1,6 @@
 #pragma once
 #include <obs.hpp>
+#include <obs-module.h>
 #include <QString>
 #include <obs-frontend-api.h>
 
