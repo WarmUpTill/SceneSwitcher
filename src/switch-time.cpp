@@ -214,19 +214,18 @@ void AdvSceneSwitcher::setupTimeTab()
 
 void populateTriggers(QComboBox *list)
 {
-	list->addItem("On any day");
-	list->addItem("Mondays");
-	list->addItem("Tuesdays");
-	list->addItem("Wednesdays");
-	list->addItem("Thursdays");
-	list->addItem("Fridays");
-	list->addItem("Saturdays");
-	list->addItem("Sundays");
-	list->addItem("Atfer streaming/recording start");
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.anyDay"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.mondays"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.tuesdays"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.wednesdays"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.thursdays"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.fridays"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.saturdays"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.sundays"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.afterstart"));
 
 	list->setItemData(
-		8,
-		"The time relative to the start of streaming / recording will be used",
+		8, obs_module_text("AdvSceneSwitcher.timeTab.afterstart.tip"),
 		Qt::ToolTipRole);
 }
 
@@ -235,9 +234,12 @@ TimeSwitchWidget::TimeSwitchWidget(TimeSwitch *s) : SwitchWidget(s)
 	triggers = new QComboBox();
 	time = new QTimeEdit();
 
-	atLabel = new QLabel("at");
-	switchLabel = new QLabel("switch to");
-	usingLabel = new QLabel("using");
+	atLabel =
+		new QLabel(obs_module_text("AdvSceneSwitcher.timeTab.atLabel"));
+	switchLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.timeTab.switchLabel"));
+	usingLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.timeTab.usingLabel"));
 
 	QWidget::connect(triggers, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TriggerChanged(int)));

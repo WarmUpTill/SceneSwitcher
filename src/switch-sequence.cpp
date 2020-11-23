@@ -92,8 +92,12 @@ void AdvSceneSwitcher::on_sceneSequenceDown_clicked()
 void AdvSceneSwitcher::on_sceneSequenceSave_clicked()
 {
 	QString directory = QFileDialog::getSaveFileName(
-		this, tr("Save Scene Sequence to file ..."),
-		QDir::currentPath(), tr("Text files (*.txt)"));
+		this,
+		tr(obs_module_text(
+			"AdvSceneSwitcher.sceneSequenceTab.saveTitle")),
+		QDir::currentPath(),
+		tr(obs_module_text(
+			"AdvSceneSwitcher.sceneSequenceTab.fileType")));
 	if (directory.isEmpty())
 		return;
 	QFile file(directory);
@@ -109,8 +113,12 @@ void AdvSceneSwitcher::on_sceneSequenceSave_clicked()
 void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 {
 	QString directory = QFileDialog::getOpenFileName(
-		this, tr("Select a file to read Scene Sequence from ..."),
-		QDir::currentPath(), tr("Text files (*.txt)"));
+		this,
+		tr(obs_module_text(
+			"AdvSceneSwitcher.sceneSequenceTab.loadTitle")),
+		QDir::currentPath(),
+		tr(obs_module_text(
+			"AdvSceneSwitcher.sceneSequenceTab.fileType")));
 	if (directory.isEmpty())
 		return;
 
@@ -123,8 +131,8 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 
 	if (!obj) {
 		QMessageBox Msgbox;
-		Msgbox.setText(
-			"Advanced Scene Switcher failed to import settings!");
+		Msgbox.setText(obs_module_text(
+			"AdvSceneSwitcher.sceneSequenceTab.loadFail"));
 		Msgbox.exec();
 		return;
 	}
@@ -143,8 +151,8 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 	obs_data_release(obj);
 
 	QMessageBox Msgbox;
-	Msgbox.setText(
-		"Advanced Scene Switcher settings imported successfully!");
+	Msgbox.setText(obs_module_text(
+		"AdvSceneSwitcher.sceneSequenceTab.loadSuccess"));
 	Msgbox.exec();
 	close();
 }

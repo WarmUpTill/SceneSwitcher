@@ -56,7 +56,8 @@ void registerHotkeys()
 		stopHotkeyFunc, NULL);
 	switcher->toggleHotkey = obs_hotkey_register_frontend(
 		"startStopToggleSwitcherHotkey",
-		obs_module_text("AdvSceneSwitcher.hotkey.startStopToggleSwitcherHotkey"),
+		obs_module_text(
+			"AdvSceneSwitcher.hotkey.startStopToggleSwitcherHotkey"),
 		startStopToggleHotkeyFunc, NULL);
 
 	switcher->hotkeysRegistered = true;

@@ -86,7 +86,8 @@ void AdvSceneSwitcher::on_checkInterval_valueChanged(int value)
 
 void AdvSceneSwitcher::SetStarted()
 {
-	ui->toggleStartButton->setText(obs_module_text("AdvSceneSwitcher.generalTab.status.stop"));
+	ui->toggleStartButton->setText(
+		obs_module_text("AdvSceneSwitcher.generalTab.status.stop"));
 	ui->pluginRunningText->setText(
 		obs_module_text("AdvSceneSwitcher.status.active"));
 	ui->pluginRunningText->disconnect(inactivePluse);
