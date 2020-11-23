@@ -482,8 +482,8 @@ DefTransitionSwitchWidget::DefTransitionSwitchWidget(DefaultSceneTransition *s)
 {
 	whenLabel = new QLabel(
 		obs_module_text("AdvSceneSwitcher.transitionTab.whenLabel"));
-	switchLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.transitionTab.switchDefaultLabel"));
+	switchLabel = new QLabel(obs_module_text(
+		"AdvSceneSwitcher.transitionTab.switchDefaultLabel"));
 
 	setStyleSheet("* { background-color: transparent; }");
 
