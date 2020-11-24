@@ -86,15 +86,19 @@ void AdvSceneSwitcher::on_checkInterval_valueChanged(int value)
 
 void AdvSceneSwitcher::SetStarted()
 {
-	ui->toggleStartButton->setText("Stop");
-	ui->pluginRunningText->setText("Active");
+	ui->toggleStartButton->setText(
+		obs_module_text("AdvSceneSwitcher.generalTab.status.stop"));
+	ui->pluginRunningText->setText(
+		obs_module_text("AdvSceneSwitcher.status.active"));
 	ui->pluginRunningText->disconnect(inactivePluse);
 }
 
 void AdvSceneSwitcher::SetStopped()
 {
-	ui->toggleStartButton->setText("Start");
-	ui->pluginRunningText->setText("Inactive");
+	ui->toggleStartButton->setText(
+		obs_module_text("AdvSceneSwitcher.generalTab.status.start"));
+	ui->pluginRunningText->setText(
+		obs_module_text("AdvSceneSwitcher.status.inactive"));
 	inactivePluse = PulseWidget(ui->pluginRunningText, QColor(Qt::red),
 				    QColor(0, 0, 0, 0), "QLabel ");
 }
@@ -256,8 +260,12 @@ void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 void AdvSceneSwitcher::on_exportSettings_clicked()
 {
 	QString directory = QFileDialog::getSaveFileName(
-		this, tr("Export Advanced Scene Switcher settings to file ..."),
-		QDir::currentPath(), tr("Text files (*.txt)"));
+		this,
+		tr(obs_module_text(
+			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.importWindowTitle")),
+		QDir::currentPath(),
+		tr(obs_module_text(
+			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType")));
 	if (directory.isEmpty())
 		return;
 
@@ -293,8 +301,11 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 
 	QString directory = QFileDialog::getOpenFileName(
 		this,
-		tr("Import Advanced Scene Switcher settings from file ..."),
-		QDir::currentPath(), tr("Text files (*.txt)"));
+		tr(obs_module_text(
+			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.importWindowTitle")),
+		QDir::currentPath(),
+		tr(obs_module_text(
+			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType")));
 	if (directory.isEmpty())
 		return;
 
@@ -307,8 +318,8 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 
 	if (!obj) {
 		QMessageBox Msgbox;
-		Msgbox.setText(
-			"Advanced Scene Switcher failed to import settings");
+		Msgbox.setText(obs_module_text(
+			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.loadFail"));
 		Msgbox.exec();
 		return;
 	}
@@ -331,8 +342,8 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 	obs_data_release(obj);
 
 	QMessageBox Msgbox;
-	Msgbox.setText(
-		"Advanced Scene Switcher settings imported successfully");
+	Msgbox.setText(obs_module_text(
+		"AdvSceneSwitcher.generalTab.saveOrLoadsettings.loadSuccess"));
 	Msgbox.exec();
 	close();
 }
@@ -641,9 +652,12 @@ void AdvSceneSwitcher::setupGeneralTab()
 		ui->autoStopScenes->setDisabled(true);
 	}
 
-	ui->autoStartType->addItem("Recording");
-	ui->autoStartType->addItem("Streaming");
-	ui->autoStartType->addItem("Recording and Streaming");
+	ui->autoStartType->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.recording"));
+	ui->autoStartType->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.streaming"));
+	ui->autoStartType->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.recordingAndStreaming"));
 
 	ui->autoStartSceneCheckBox->setChecked(switcher->autoStartEnable);
 	ui->autoStartScenes->setCurrentText(
@@ -665,31 +679,40 @@ void AdvSceneSwitcher::setupGeneralTab()
 		std::string s = "";
 		switch (p) {
 		case read_file_func:
-			s = "File Content";
+			s = obs_module_text(
+				"AdvSceneSwitcher.generalTab.priority.fileContent");
 			break;
 		case round_trip_func:
-			s = "Scene Sequence";
+			s = obs_module_text(
+				"AdvSceneSwitcher.generalTab.priority.sceneSequence");
 			break;
 		case idle_func:
-			s = "Idle Detection";
+			s = obs_module_text(
+				"AdvSceneSwitcher.generalTab.priority.idleDetection");
 			break;
 		case exe_func:
-			s = "Executable";
+			s = obs_module_text(
+				"AdvSceneSwitcher.generalTab.priority.executable");
 			break;
 		case screen_region_func:
-			s = "Screen Region";
+			s = obs_module_text(
+				"AdvSceneSwitcher.generalTab.priority.screenRegion");
 			break;
 		case window_title_func:
-			s = "Window Title";
+			s = obs_module_text(
+				"AdvSceneSwitcher.generalTab.priority.windowTitle");
 			break;
 		case media_func:
-			s = "Media";
+			s = obs_module_text(
+				"AdvSceneSwitcher.generalTab.priority.media");
 			break;
 		case time_func:
-			s = "Time";
+			s = obs_module_text(
+				"AdvSceneSwitcher.generalTab.priority.time");
 			break;
 		case audio_func:
-			s = "Audio";
+			s = obs_module_text(
+				"AdvSceneSwitcher.generalTab.priority.audio");
 			break;
 		}
 		QString text(s.c_str());
@@ -711,10 +734,12 @@ void AdvSceneSwitcher::setupGeneralTab()
 		}
 	}
 
-	ui->startupBehavior->addItem(
-		"Start the scene switcher if it was running");
-	ui->startupBehavior->addItem("Always start the scene switcher");
-	ui->startupBehavior->addItem("Do not start the scene switcher");
+	ui->startupBehavior->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.onStartup.asLastRun"));
+	ui->startupBehavior->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.onStartup.alwaysStart"));
+	ui->startupBehavior->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.onStartup.doNotStart"));
 
 	ui->startupBehavior->setCurrentIndex(switcher->startupBehavior);
 

@@ -373,9 +373,12 @@ void AdvSceneSwitcher::setupTitleTab()
 WindowSwitchWidget::WindowSwitchWidget(WindowSwitch *s) : SwitchWidget(s, false)
 {
 	windows = new QComboBox();
-	fullscreen = new QCheckBox("if fullscreen");
-	maximized = new QCheckBox("if maximized");
-	focused = new QCheckBox("if focused");
+	fullscreen = new QCheckBox(
+		obs_module_text("AdvSceneSwitcher.windowTitleTab.fullscreen"));
+	maximized = new QCheckBox(
+		obs_module_text("AdvSceneSwitcher.windowTitleTab.maximized"));
+	focused = new QCheckBox(
+		obs_module_text("AdvSceneSwitcher.windowTitleTab.focused"));
 
 	QWidget::connect(windows, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(WindowChanged(const QString &)));

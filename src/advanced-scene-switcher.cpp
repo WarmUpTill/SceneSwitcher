@@ -4,6 +4,7 @@
 #include <QPropertyAnimation>
 #include <QGraphicsColorizeEffect>
 
+#include <obs-module.h>
 #include <obs-frontend-api.h>
 #include <util/util.hpp>
 
@@ -77,8 +78,10 @@ void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 					      bool addSelect)
 {
 	if (addSelect)
-		addSelectionEntry(sel, "--select scene--",
-				  "invalid entries will not be saved");
+		addSelectionEntry(
+			sel, obs_module_text("AdvSceneSwitcher.selectScene"),
+			obs_module_text(
+				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
 
 	BPtr<char *> scenes = obs_frontend_get_scene_names();
 	char **temp = scenes;
@@ -96,7 +99,9 @@ void AdvSceneSwitcher::populateTransitionSelection(QComboBox *sel,
 						   bool addSelect)
 {
 	if (addSelect)
-		addSelectionEntry(sel, "--select transition--");
+		addSelectionEntry(
+			sel,
+			obs_module_text("AdvSceneSwitcher.selectTransition"));
 
 	obs_frontend_source_list *transitions = new obs_frontend_source_list();
 	obs_frontend_get_transitions(transitions);
@@ -113,7 +118,8 @@ void AdvSceneSwitcher::populateTransitionSelection(QComboBox *sel,
 void AdvSceneSwitcher::populateWindowSelection(QComboBox *sel, bool addSelect)
 {
 	if (addSelect)
-		addSelectionEntry(sel, "--select window--");
+		addSelectionEntry(
+			sel, obs_module_text("AdvSceneSwitcher.selectWindow"));
 
 	std::vector<std::string> windows;
 	GetWindowList(windows);
@@ -124,18 +130,19 @@ void AdvSceneSwitcher::populateWindowSelection(QComboBox *sel, bool addSelect)
 	}
 
 #ifdef WIN32
-	sel->setItemData(
-		0,
-		"Use \"OBS\" to specify OBS window\nUse \"Task Switching\"to specify ALT + TAB",
-		Qt::ToolTipRole);
+	sel->setItemData(0, obs_module_text("AdvSceneSwitcher.selectWindowTip"),
+			 Qt::ToolTipRole);
 #endif
 }
 
 void AdvSceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
 {
 	if (addSelect)
-		addSelectionEntry(sel, "--select audio source--",
-				  "invalid entries will not be saved");
+		addSelectionEntry(
+			sel,
+			obs_module_text("AdvSceneSwitcher.selectAudioSource"),
+			obs_module_text(
+				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
 
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
@@ -155,8 +162,11 @@ void AdvSceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
 void AdvSceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
 {
 	if (addSelect)
-		addSelectionEntry(sel, "--select media source--",
-				  "invalid entries will not be saved");
+		addSelectionEntry(
+			sel,
+			obs_module_text("AdvSceneSwitcher.selectMediaSource"),
+			obs_module_text(
+				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
 
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
@@ -176,7 +186,8 @@ void AdvSceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
 void AdvSceneSwitcher::populateProcessSelection(QComboBox *sel, bool addSelect)
 {
 	if (addSelect)
-		addSelectionEntry(sel, "--select process--");
+		addSelectionEntry(
+			sel, obs_module_text("AdvSceneSwitcher.selectProcess"));
 
 	QStringList processes;
 	GetProcessList(processes);
@@ -582,7 +593,7 @@ extern "C" void InitSceneSwitcher()
 	blog(LOG_INFO, "version: %s", g_GIT_SHA1);
 
 	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(
-		"Advanced Scene Switcher");
+		obs_module_text("AdvSceneSwitcher.pluginName"));
 
 	switcher = new SwitcherData;
 

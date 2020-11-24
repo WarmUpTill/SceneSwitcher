@@ -418,9 +418,12 @@ TransitionSwitchWidget::TransitionSwitchWidget(SceneTransition *s)
 {
 	scenes2 = new QComboBox();
 
-	switchLabel = new QLabel("Switch from scene");
-	toLabel = new QLabel("to scene");
-	usingLabel = new QLabel("using transition");
+	switchLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.transitionTab.switchLabel"));
+	toLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.transitionTab.toLabel"));
+	usingLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.transitionTab.usingLabel"));
 
 	QWidget::connect(scenes2, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(Scene2Changed(const QString &)));
@@ -481,9 +484,10 @@ void TransitionSwitchWidget::Scene2Changed(const QString &text)
 DefTransitionSwitchWidget::DefTransitionSwitchWidget(DefaultSceneTransition *s)
 	: SwitchWidget(s, false)
 {
-	whenLabel = new QLabel("When scene");
-	switchLabel =
-		new QLabel("is active change default scene transition to ");
+	whenLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.transitionTab.whenLabel"));
+	switchLabel = new QLabel(obs_module_text(
+		"AdvSceneSwitcher.transitionTab.switchDefaultLabel"));
 
 	setStyleSheet("* { background-color: transparent; }");
 

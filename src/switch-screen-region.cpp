@@ -30,10 +30,12 @@ void AdvSceneSwitcher::on_showFrame_clicked()
 	switcher->showFrame = !switcher->showFrame;
 
 	if (switcher->showFrame) {
-		ui->showFrame->setText("Hide guide frames");
+		ui->showFrame->setText(obs_module_text(
+			"AdvSceneSwitcher.screenRegionTab.hideGuideFrames"));
 		showCurrentFrame(ui->screenRegionSwitches);
 	} else {
-		ui->showFrame->setText("Show guide frames");
+		ui->showFrame->setText(obs_module_text(
+			"AdvSceneSwitcher.screenRegionTab.showGuideFrames"));
 		clearFrames(ui->screenRegionSwitches);
 	}
 }
@@ -248,10 +250,13 @@ ScreenRegionWidget::ScreenRegionWidget(ScreenRegionSwitch *s)
 	maxX = new QSpinBox();
 	maxY = new QSpinBox();
 
-	cursorLabel = new QLabel("If cursor is in");
+	cursorLabel = new QLabel(obs_module_text(
+		"AdvSceneSwitcher.screenRegionTab.cursorLabel"));
 	xLabel = new QLabel("x");
-	switchLabel = new QLabel("switch to");
-	usingLabel = new QLabel("using");
+	switchLabel = new QLabel(obs_module_text(
+		"AdvSceneSwitcher.screenRegionTab.switchLabel"));
+	usingLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.screenRegionTab.usingLabel"));
 
 	minX->setPrefix("Min X: ");
 	minY->setPrefix("Min Y: ");

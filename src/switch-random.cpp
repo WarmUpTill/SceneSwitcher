@@ -143,9 +143,12 @@ RandomSwitchWidget::RandomSwitchWidget(RandomSwitch *s) : SwitchWidget(s, false)
 {
 	delay = new QDoubleSpinBox();
 
-	switchLabel = new QLabel("If no switch condition is met switch to ");
-	usingLabel = new QLabel("using");
-	forLabel = new QLabel("for");
+	switchLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.randomTab.switchLabel"));
+	usingLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.randomTab.usingLabel"));
+	forLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.randomTab.forLabel"));
 
 	QWidget::connect(delay, SIGNAL(valueChanged(double)), this,
 			 SLOT(DelayChanged(double)));

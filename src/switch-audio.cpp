@@ -330,10 +330,14 @@ AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s) : SwitchWidget(s)
 	volMeter = new VolControl(soruce);
 	obs_source_release(soruce);
 
-	whenLabel = new QLabel("When the volume of");
-	aboveLabel = new QLabel("is above");
-	switchLabel = new QLabel("switch to");
-	usingLabel = new QLabel("using");
+	whenLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.audioTab.whenLabel"));
+	aboveLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.audioTab.aboveLabel"));
+	switchLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.audioTab.switchLabel"));
+	usingLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.audioTab.usingLabel"));
 
 	audioVolumeThreshold->setSuffix("%");
 	audioVolumeThreshold->setMaximum(100);
