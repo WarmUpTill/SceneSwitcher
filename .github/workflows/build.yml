@@ -236,7 +236,7 @@ jobs:
           $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-win64.zip"
           echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
           robocopy .\build64\rundir\RelWithDebInfo\obs-plugins\64bit\ .\build\obs-plugins\64bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
-          robocopy .\build64\rundir\RelWithDebInfo\data\obs-plugins\${{ env.PLUGIN_NAME }}\ .\build\data\obs-plugins\${{ env.LIB_NAME }}\ /E /XF .gitignore
+          robocopy .\build64\rundir\RelWithDebInfo\data\obs-plugins\${{ env.LIB_NAME }}\ .\build\data\obs-plugins\${{ env.LIB_NAME }}\ /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
       - name: Publish
         if: success()
@@ -291,7 +291,7 @@ jobs:
           $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-win32.zip"
           echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
           robocopy .\build32\rundir\RelWithDebInfo\obs-plugins\32bit\ .\build\obs-plugins\32bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
-          robocopy .\build32\rundir\RelWithDebInfo\data\obs-plugins\${{ env.PLUGIN_NAME }}\ .\build\data\obs-plugins\${{ env.LIB_NAME }}\ /E /XF .gitignore
+          robocopy .\build32\rundir\RelWithDebInfo\data\obs-plugins\${{ env.LIB_NAME }}\ .\build\data\obs-plugins\${{ env.LIB_NAME }}\ /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
       - name: Publish
         if: success()
