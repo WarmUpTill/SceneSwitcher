@@ -40,8 +40,7 @@ void AdvSceneSwitcher::on_showFrame_clicked()
 
 void AdvSceneSwitcher::on_screenRegionSwitches_currentRowChanged(int idx)
 {
-	UNUSED_PARAMETER(idx);
-	if (loading)
+	if (loading || idx == -1)
 		return;
 
 	if (switcher->showFrame) {
