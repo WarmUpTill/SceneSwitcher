@@ -206,11 +206,15 @@ ExecutableSwitchWidget::ExecutableSwitchWidget(ExecutableSwitch *s)
 	: SwitchWidget(s, false)
 {
 	processes = new QComboBox();
-	requiresFocus = new QCheckBox(obs_module_text("AdvSceneSwitcher.executableTab.requiresFocus"));
+	requiresFocus = new QCheckBox(obs_module_text(
+		"AdvSceneSwitcher.executableTab.requiresFocus"));
 
-	whenLabel = new QLabel(obs_module_text("AdvSceneSwitcher.executableTab.whenLabel"));
-	switchLabel = new QLabel(obs_module_text("AdvSceneSwitcher.executableTab.switchLabel"));
-	usingLabel = new QLabel(obs_module_text("AdvSceneSwitcher.executableTab.usingLabel"));
+	whenLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.executableTab.whenLabel"));
+	switchLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.executableTab.switchLabel"));
+	usingLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.executableTab.usingLabel"));
 
 	QWidget::connect(processes, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(ProcessChanged(const QString &)));

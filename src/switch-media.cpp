@@ -393,23 +393,34 @@ void swap(MediaSwitch &first, MediaSwitch &second)
 void populateMediaStates(QComboBox *list)
 {
 	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.none"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.playing"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.opening"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.buffering"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.paused"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.stopped"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.mediaTab.states.playing"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.mediaTab.states.opening"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.mediaTab.states.buffering"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.mediaTab.states.paused"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.mediaTab.states.stopped"));
 	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.ended")));
-	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.error"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.mediaTab.states.error"));
 	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.any"));
 }
 
 void populateTimeRestrictions(QComboBox *list)
 {
-	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.timeRestriction.none"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.timeRestriction.shorter"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.timeRestriction.longer"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.timeRestriction.remainShorter"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.timeRestriction.remainLonger"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.mediaTab.timeRestriction.none"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.mediaTab.timeRestriction.shorter"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.mediaTab.timeRestriction.longer"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.mediaTab.timeRestriction.remainShorter"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.mediaTab.timeRestriction.remainLonger"));
 }
 
 MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
@@ -419,11 +430,16 @@ MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
 	timeRestrictions = new QComboBox();
 	time = new QSpinBox();
 
-	whenLabel = new QLabel(obs_module_text("AdvSceneSwitcher.mediaTab.whenLabel"));
-	stateLabel = new QLabel(obs_module_text("AdvSceneSwitcher.mediaTab.stateLabel"));
-	andLabel = new QLabel(obs_module_text("AdvSceneSwitcher.mediaTab.andLabel"));
-	switchLabel = new QLabel(obs_module_text("AdvSceneSwitcher.mediaTab.switchLabel"));
-	usingLabel = new QLabel(obs_module_text("AdvSceneSwitcher.mediaTab.usingLabel"));
+	whenLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.mediaTab.whenLabel"));
+	stateLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.mediaTab.stateLabel"));
+	andLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.mediaTab.andLabel"));
+	switchLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.mediaTab.switchLabel"));
+	usingLabel = new QLabel(
+		obs_module_text("AdvSceneSwitcher.mediaTab.usingLabel"));
 
 	time->setSuffix("ms");
 	time->setMaximum(99999999);

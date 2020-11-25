@@ -13,7 +13,9 @@
 void AdvSceneSwitcher::on_browseButton_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
-		this, tr(obs_module_text("AdvSceneSwitcher.fileTab.selectWrite")), QDir::currentPath(),
+		this,
+		tr(obs_module_text("AdvSceneSwitcher.fileTab.selectWrite")),
+		QDir::currentPath(),
 		tr(obs_module_text("AdvSceneSwitcher.fileTab.textFileType")));
 	if (!path.isEmpty())
 		ui->writePathLineEdit->setText(path);
@@ -67,7 +69,9 @@ void AdvSceneSwitcher::on_writePathLineEdit_textChanged(const QString &text)
 void AdvSceneSwitcher::on_browseButton_2_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
-		this, tr(obs_module_text("AdvSceneSwitcher.fileTab.selectRead")), QDir::currentPath(),
+		this,
+		tr(obs_module_text("AdvSceneSwitcher.fileTab.selectRead")),
+		QDir::currentPath(),
 		tr(obs_module_text("AdvSceneSwitcher.fileTab.anyFileType")));
 	if (!path.isEmpty())
 		ui->readPathLineEdit->setText(path);
@@ -227,7 +231,9 @@ void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 void AdvSceneSwitcher::on_browseButton_3_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
-		this, tr(obs_module_text("AdvSceneSwitcher.fileTab.selectRead")), QDir::currentPath(),
+		this,
+		tr(obs_module_text("AdvSceneSwitcher.fileTab.selectRead")),
+		QDir::currentPath(),
 		tr(obs_module_text("AdvSceneSwitcher.fileTab.anyFileType")));
 	if (!path.isEmpty())
 		ui->filePathLineEdit->setText(path);
@@ -436,11 +442,13 @@ void AdvSceneSwitcher::setupFileTab()
 	populateSceneSelection(ui->fileScenes, false);
 	populateTransitionSelection(ui->fileTransitions);
 
-	ui->fileType->addItem(obs_module_text("AdvSceneSwitcher.fileTab.local"));
-	ui->fileType->addItem(obs_module_text("AdvSceneSwitcher.fileTab.remote"));
+	ui->fileType->addItem(
+		obs_module_text("AdvSceneSwitcher.fileTab.local"));
+	ui->fileType->addItem(
+		obs_module_text("AdvSceneSwitcher.fileTab.remote"));
 	ui->remoteFileWarningLabel->setText(
 		obs_module_text("AdvSceneSwitcher.fileTab.remoteFileWarning1") +
-		QString::number(switcher->interval) + 
+		QString::number(switcher->interval) +
 		obs_module_text("AdvSceneSwitcher.fileTab.remoteFileWarning2"));
 
 	if (switcher->curl)
