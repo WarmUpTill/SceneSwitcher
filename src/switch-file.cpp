@@ -436,8 +436,8 @@ void AdvSceneSwitcher::setupFileTab()
 	populateSceneSelection(ui->fileScenes, false);
 	populateTransitionSelection(ui->fileTransitions);
 
-	ui->fileType->addItem("local");
-	ui->fileType->addItem("remote");
+	ui->fileType->addItem(obs_module_text("AdvSceneSwitcher.fileTab.local"));
+	ui->fileType->addItem(obs_module_text("AdvSceneSwitcher.fileTab.remote"));
 	ui->remoteFileWarningLabel->setText(
 		obs_module_text("AdvSceneSwitcher.fileTab.remoteFileWarning1") +
 		QString::number(switcher->interval) + 

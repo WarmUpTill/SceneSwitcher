@@ -1996,7 +1996,7 @@
          <item>
           <widget class="QLabel" name="label_54">
            <property name="text">
-            <string>Implemented by Exeldro</string>
+            <string>AdvSceneSwitcher.mediaTab.implemented</string>
            </property>
           </widget>
          </item>
