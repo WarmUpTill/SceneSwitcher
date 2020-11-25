@@ -312,9 +312,9 @@ void SceneSequenceSwitch::logSleep(int dur)
 
 void populateDelayUnits(QComboBox *list)
 {
-	list->addItem("seconds");
-	list->addItem("minutes");
-	list->addItem("hours");
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.secends"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.minutes"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
 }
 
 SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
@@ -323,6 +323,7 @@ SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
 	delayUnits = new QComboBox();
 	startScenes = new QComboBox();
 
+	//TODO: auto change layout/template for different language
 	whenLabel = new QLabel("When");
 	switchLabel = new QLabel("is active switch to");
 	afterLabel = new QLabel("after");

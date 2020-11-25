@@ -13,8 +13,8 @@
 void AdvSceneSwitcher::on_browseButton_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
-		this, tr("Select a file to write to ..."), QDir::currentPath(),
-		tr("Text files (*.txt)"));
+		this, tr(obs_module_text("AdvSceneSwitcher.fileTab.selectWrite")), QDir::currentPath(),
+		tr(obs_module_text("AdvSceneSwitcher.fileTab.textFileType")));
 	if (!path.isEmpty())
 		ui->writePathLineEdit->setText(path);
 }
@@ -67,8 +67,8 @@ void AdvSceneSwitcher::on_writePathLineEdit_textChanged(const QString &text)
 void AdvSceneSwitcher::on_browseButton_2_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
-		this, tr("Select a file to read from ..."), QDir::currentPath(),
-		tr("Any files (*.*)"));
+		this, tr(obs_module_text("AdvSceneSwitcher.fileTab.selectRead")), QDir::currentPath(),
+		tr(obs_module_text("AdvSceneSwitcher.fileTab.anyFileType")));
 	if (!path.isEmpty())
 		ui->readPathLineEdit->setText(path);
 }
@@ -227,8 +227,8 @@ void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 void AdvSceneSwitcher::on_browseButton_3_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
-		this, tr("Select a file to read from ..."), QDir::currentPath(),
-		tr("Any files (*.*)"));
+		this, tr(obs_module_text("AdvSceneSwitcher.fileTab.selectRead")), QDir::currentPath(),
+		tr(obs_module_text("AdvSceneSwitcher.fileTab.anyFileType")));
 	if (!path.isEmpty())
 		ui->filePathLineEdit->setText(path);
 }
@@ -439,8 +439,9 @@ void AdvSceneSwitcher::setupFileTab()
 	ui->fileType->addItem("local");
 	ui->fileType->addItem("remote");
 	ui->remoteFileWarningLabel->setText(
-		"Note that the scene switcher will try to access the remote location every " +
-		QString::number(switcher->interval) + "ms");
+		obs_module_text("AdvSceneSwitcher.fileTab.remoteFileWarning1") +
+		QString::number(switcher->interval) + 
+		obs_module_text("AdvSceneSwitcher.fileTab.remoteFileWarning2"));
 
 	if (switcher->curl)
 		ui->libcurlWarning->setVisible(false);
@@ -478,6 +479,7 @@ static inline QString MakeFileSwitchName(const QString &scene,
 					 const QString &text, bool useRegex,
 					 bool useTime)
 {
+	//TODO: auto change layout/template for different language
 	QString switchName = QStringLiteral("Switch to ") + scene +
 			     QStringLiteral(" using ") + transition +
 			     QStringLiteral(" if ") + fileName;
