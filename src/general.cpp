@@ -159,11 +159,15 @@ void SwitcherData::autoStopStreamAndRecording()
 
 	if (ws && autoStopScene == ws) {
 		if (obs_frontend_streaming_active()) {
-			blog(LOG_INFO, "Stopping stream because scene '%s' is active", obs_source_get_name(currentSource));
+			blog(LOG_INFO,
+			     "Stopping stream because scene '%s' is active",
+			     obs_source_get_name(currentSource));
 			obs_frontend_streaming_stop();
 		}
 		if (obs_frontend_recording_active()) {
-			blog(LOG_INFO, "Stopping record because scene '%s' is active", obs_source_get_name(currentSource));
+			blog(LOG_INFO,
+			     "Stopping record because scene '%s' is active",
+			     obs_source_get_name(currentSource));
 			obs_frontend_recording_stop();
 		}
 	}
@@ -231,13 +235,17 @@ void SwitcherData::autoStartStreamRecording()
 		if ((switcher->autoStartType == STREAMING ||
 		     switcher->autoStartType == RECORINDGSTREAMING) &&
 		    !obs_frontend_streaming_active()) {
-			blog(LOG_INFO, "Starting stream because scene '%s' is active", obs_source_get_name(currentSource));
+			blog(LOG_INFO,
+			     "Starting stream because scene '%s' is active",
+			     obs_source_get_name(currentSource));
 			obs_frontend_streaming_start();
 		}
 		if ((switcher->autoStartType == RECORDING ||
 		     switcher->autoStartType == RECORINDGSTREAMING) &&
 		    !obs_frontend_recording_active()) {
-			blog(LOG_INFO, "Starting record because scene '%s' is active", obs_source_get_name(currentSource));
+			blog(LOG_INFO,
+			     "Starting record because scene '%s' is active",
+			     obs_source_get_name(currentSource));
 			obs_frontend_recording_start();
 		}
 	}
