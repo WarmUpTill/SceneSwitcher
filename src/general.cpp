@@ -431,6 +431,13 @@ void AdvSceneSwitcher::on_tabMoved(int from, int to)
 	std::swap(switcher->tabOrder[from], switcher->tabOrder[to]);
 }
 
+void AdvSceneSwitcher::on_tabWidget_currentChanged(int index)
+{
+	switcher->showFrame = false;
+	clearFrames(ui->screenRegionSwitches);
+	SetShowFrames();
+}
+
 void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 {
 	obs_data_set_int(obj, "interval", switcher->interval);
