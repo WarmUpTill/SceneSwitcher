@@ -27,6 +27,10 @@ public:
 	void SetStarted();
 	void SetStopped();
 
+	void SetShowFrames();
+	void SetHideFrames();
+	void clearFrames(QListWidget *list);
+
 	int PauseScenesFindByData(const QString &scene);
 	int PauseWindowsFindByData(const QString &window);
 	int IgnoreWindowsFindByData(const QString &window);
@@ -87,6 +91,7 @@ public slots:
 	void on_checkInterval_valueChanged(int value);
 	void on_toggleStartButton_clicked();
 	void on_tabMoved(int from, int to);
+	void on_tabWidget_currentChanged(int index);
 
 	void on_screenRegionSwitches_currentRowChanged(int idx);
 	void on_showFrame_clicked();

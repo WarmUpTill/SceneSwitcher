@@ -5,7 +5,7 @@
 
 static QMetaObject::Connection addPulse;
 
-void clearFrames(QListWidget *list)
+void AdvSceneSwitcher::clearFrames(QListWidget *list)
 {
 	for (int i = 0; i < list->count(); ++i) {
 		ScreenRegionWidget *sw =
@@ -25,15 +25,25 @@ void showCurrentFrame(QListWidget *list)
 	sw->showFrame();
 }
 
+void AdvSceneSwitcher::SetShowFrames()
+{
+	ui->showFrame->setText("Show guide frames");
+}
+
+void AdvSceneSwitcher::SetHideFrames()
+{
+	ui->showFrame->setText("Hide guide frames");
+}
+
 void AdvSceneSwitcher::on_showFrame_clicked()
 {
 	switcher->showFrame = !switcher->showFrame;
 
 	if (switcher->showFrame) {
-		ui->showFrame->setText("Hide guide frames");
+		SetHideFrames();
 		showCurrentFrame(ui->screenRegionSwitches);
 	} else {
-		ui->showFrame->setText("Show guide frames");
+		SetShowFrames();
 		clearFrames(ui->screenRegionSwitches);
 	}
 }
