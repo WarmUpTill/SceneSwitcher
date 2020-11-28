@@ -403,7 +403,8 @@ void populateMediaStates(QComboBox *list)
 		obs_module_text("AdvSceneSwitcher.mediaTab.states.paused"));
 	list->addItem(
 		obs_module_text("AdvSceneSwitcher.mediaTab.states.stopped"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.ended")));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.mediaTab.states.ended"));
 	list->addItem(
 		obs_module_text("AdvSceneSwitcher.mediaTab.states.error"));
 	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.any"));
