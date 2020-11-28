@@ -158,10 +158,18 @@ void SwitcherData::autoStopStreamAndRecording()
 	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
 	if (ws && autoStopScene == ws) {
-		if (obs_frontend_streaming_active())
+		if (obs_frontend_streaming_active()) {
+			blog(LOG_INFO,
+			     "Stopping stream because scene '%s' is active",
+			     obs_source_get_name(currentSource));
 			obs_frontend_streaming_stop();
-		if (obs_frontend_recording_active())
+		}
+		if (obs_frontend_recording_active()) {
+			blog(LOG_INFO,
+			     "Stopping record because scene '%s' is active",
+			     obs_source_get_name(currentSource));
 			obs_frontend_recording_stop();
+		}
 	}
 	obs_source_release(currentSource);
 	obs_weak_source_release(ws);
@@ -226,12 +234,20 @@ void SwitcherData::autoStartStreamRecording()
 	if (ws && autoStartScene == ws) {
 		if ((switcher->autoStartType == STREAMING ||
 		     switcher->autoStartType == RECORINDGSTREAMING) &&
-		    !obs_frontend_streaming_active())
+		    !obs_frontend_streaming_active()) {
+			blog(LOG_INFO,
+			     "Starting stream because scene '%s' is active",
+			     obs_source_get_name(currentSource));
 			obs_frontend_streaming_start();
+		}
 		if ((switcher->autoStartType == RECORDING ||
 		     switcher->autoStartType == RECORINDGSTREAMING) &&
-		    !obs_frontend_recording_active())
+		    !obs_frontend_recording_active()) {
+			blog(LOG_INFO,
+			     "Starting record because scene '%s' is active",
+			     obs_source_get_name(currentSource));
 			obs_frontend_recording_start();
+		}
 	}
 	obs_source_release(currentSource);
 	obs_weak_source_release(ws);
@@ -337,58 +353,56 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 	close();
 }
 
-int findTabIndex(QTabBar *bar, int pos)
+int findTabIndex(QTabWidget *tabWidget, int pos)
 {
 	int at = -1;
 
 	QString tabName = "";
 	switch (pos) {
 	case 0:
-		tabName = "General";
+		tabName = "generalTab";
 		break;
 	case 1:
-		tabName = "Transition";
+		tabName = "transitionsTab";
 		break;
 	case 2:
-		tabName = "Pause";
+		tabName = "pauseScenesTab";
 		break;
 	case 3:
-		tabName = "Title";
+		tabName = "windowTitleTab";
 		break;
 	case 4:
-		tabName = "Executable";
+		tabName = "executableTab";
 		break;
 	case 5:
-		tabName = "Region";
+		tabName = "screenRegionTab";
 		break;
 	case 6:
-		tabName = "Media";
+		tabName = "mediaTab";
 		break;
 	case 7:
-		tabName = "File";
+		tabName = "fileTab";
 		break;
 	case 8:
-		tabName = "Random";
+		tabName = "randomTab";
 		break;
 	case 9:
-		tabName = "Time";
+		tabName = "timeTab";
 		break;
 	case 10:
-		tabName = "Idle";
+		tabName = "idleTab";
 		break;
 	case 11:
-		tabName = "Sequence";
+		tabName = "sceneSequenceTab";
 		break;
 	case 12:
-		tabName = "Audio";
+		tabName = "audioTab";
 		break;
 	}
 
-	for (int i = 0; i < bar->count(); ++i) {
-		if (bar->tabText(i).compare(tabName) == 0) {
-			at = i;
-			break;
-		}
+	QWidget *page = tabWidget->findChild<QWidget *>(tabName);
+	if (page) {
+		at = tabWidget->indexOf(page);
 	}
 	if (at == -1)
 		blog(LOG_INFO, "failed to find tab %s",
@@ -401,7 +415,7 @@ void AdvSceneSwitcher::setTabOrder()
 {
 	QTabBar *bar = ui->tabWidget->tabBar();
 	for (int i = 0; i < bar->count(); ++i) {
-		int curPos = findTabIndex(bar, switcher->tabOrder[i]);
+		int curPos = findTabIndex(ui->tabWidget, switcher->tabOrder[i]);
 
 		if (i != curPos && curPos != -1)
 			bar->moveTab(curPos, i);
@@ -415,6 +429,13 @@ void AdvSceneSwitcher::on_tabMoved(int from, int to)
 	if (loading)
 		return;
 	std::swap(switcher->tabOrder[from], switcher->tabOrder[to]);
+}
+
+void AdvSceneSwitcher::on_tabWidget_currentChanged(int index)
+{
+	switcher->showFrame = false;
+	clearFrames(ui->screenRegionSwitches);
+	SetShowFrames();
 }
 
 void SwitcherData::saveGeneralSettings(obs_data_t *obj)

@@ -586,13 +586,6 @@
          </item>
         </layout>
        </item>
-       <item>
-        <widget class="QPushButton" name="close">
-         <property name="text">
-          <string>Close</string>
-         </property>
-        </widget>
-       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="transitionsTab">
@@ -1172,7 +1165,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="titleTab">
+     <widget class="QWidget" name="windowTitleTab">
       <attribute name="title">
        <string notr="true">Title</string>
       </attribute>
@@ -2624,7 +2617,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="IdleTab">
+     <widget class="QWidget" name="idleTab">
       <attribute name="title">
        <string notr="true">Idle</string>
       </attribute>
@@ -3174,6 +3167,13 @@
        </item>
       </layout>
      </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="close">
+     <property name="text">
+      <string>Close</string>
+     </property>
     </widget>
    </item>
   </layout>

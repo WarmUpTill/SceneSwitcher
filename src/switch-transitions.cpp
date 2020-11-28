@@ -143,9 +143,10 @@ void AdvSceneSwitcher::on_defaultTransitionsDown_clicked()
 		  switcher->defaultSceneTransitions[index + 1]);
 }
 
-void SwitcherData::setDefaultSceneTransitions()
+void SwitcherData::checkDefaultSceneTransitions(bool &match,
+						OBSWeakSource &transition)
 {
-	if (changedDefTransitionRecently)
+	if (checkedDefTransition)
 		return;
 
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
@@ -156,22 +157,25 @@ void SwitcherData::setDefaultSceneTransitions()
 			if (!s.initialized())
 				continue;
 
-			obs_source_t *transition =
-				obs_weak_source_get_source(s.transition);
-			//This might cancel the current transition
-			//There is no way to be sure when the previous transition finished
-			obs_frontend_set_current_transition(transition);
+			match = true;
+			transition = s.transition;
 
 			if (verbose)
 				s.logMatch();
-
-			obs_source_release(transition);
 			break;
 		}
 	}
 	obs_source_release(currentSource);
 	obs_weak_source_release(ws);
-	changedDefTransitionRecently = true;
+
+	checkedDefTransition = true;
+}
+
+void SwitcherData::setCurrentDefTransition(OBSWeakSource &transition)
+{
+	obs_source_t *transitionSource = obs_weak_source_get_source(transition);
+	obs_frontend_set_current_transition(transitionSource);
+	obs_source_release(transitionSource);
 }
 
 void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)

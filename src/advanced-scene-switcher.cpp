@@ -9,6 +9,7 @@
 
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/curl-helper.hpp"
+#include "headers/version.h"
 
 SwitcherData *switcher = nullptr;
 
@@ -330,11 +331,12 @@ void SwitcherData::Thread()
 	int sleep = 0;
 
 	while (true) {
-	startLoop:
 		std::unique_lock<std::mutex> lock(m);
 		bool match = false;
 		OBSWeakSource scene;
 		OBSWeakSource transition;
+		bool defTransitionMatch = false;
+		OBSWeakSource defTransition;
 		std::chrono::milliseconds duration;
 		if (sleep > interval) {
 			duration = std::chrono::milliseconds(sleep);
@@ -354,8 +356,6 @@ void SwitcherData::Thread()
 			break;
 		}
 
-		setDefaultSceneTransitions();
-
 		if (autoStopEnable) {
 			autoStopStreamAndRecording();
 		}
@@ -367,6 +367,8 @@ void SwitcherData::Thread()
 		if (checkPause()) {
 			continue;
 		}
+
+		checkDefaultSceneTransitions(defTransitionMatch, defTransition);
 
 		for (int switchFuncName : functionNamesByPriority) {
 			switch (switchFuncName) {
@@ -393,10 +395,6 @@ void SwitcherData::Thread()
 			case round_trip_func:
 				checkSceneSequence(match, scene, transition,
 						   lock);
-				if (sceneChangedDuringWait()) //scene might have changed during the sleep
-				{
-					goto startLoop;
-				}
 				break;
 			case media_func:
 				checkMediaSwitch(match, scene, transition);
@@ -426,9 +424,22 @@ void SwitcherData::Thread()
 		if (!match && switchIfNotMatching == RANDOM_SWITCH) {
 			checkRandom(match, scene, transition, sleep);
 		}
+
+		// After this point we will call frontend functions
+		// obs_frontend_set_current_scene() and
+		// obs_frontend_set_current_transition()
+		//
+		// During this time SaveSceneSwitcher() could be called
+		// leading to a deadlock, so we have to unlock()
+		lock.unlock();
+
+		if (!match && defTransitionMatch) {
+			setCurrentDefTransition(defTransition);
+		}
+
 		if (match) {
 			switchScene(scene, transition,
-				    tansitionOverrideOverride, lock);
+				    tansitionOverrideOverride);
 		}
 	}
 endLoop:
@@ -436,43 +447,24 @@ endLoop:
 }
 
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
-		 bool &transitionOverrideOverride,
-		 std::unique_lock<std::mutex> &lock)
+		 bool &transitionOverrideOverride)
 {
 	obs_source_t *source = obs_weak_source_get_source(scene);
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 
 	if (source && source != currentSource) {
-
-		// this call might block when OBS_FRONTEND_EVENT_SCENE_CHANGED is active and mutex is held
-		// thus unlock mutex to avoid deadlock
-		lock.unlock();
-
 		transitionData td;
 		setNextTransition(scene, currentSource, transition,
 				  transitionOverrideOverride, td);
 		obs_frontend_set_current_scene(source);
 		if (transitionOverrideOverride)
 			restoreTransitionOverride(source, td);
-		lock.lock();
 
 		if (switcher->verbose)
 			blog(LOG_INFO, "switched scene");
 	}
 	obs_source_release(currentSource);
 	obs_source_release(source);
-}
-
-bool SwitcherData::sceneChangedDuringWait()
-{
-	bool r = false;
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
-	if (!currentSource)
-		return true;
-	obs_source_release(currentSource);
-	if (waitScene && currentSource != waitScene)
-		r = true;
-	return r;
 }
 
 void SwitcherData::Start()
@@ -497,6 +489,15 @@ void SwitcherData::Stop()
 	}
 }
 
+bool SwitcherData::sceneChangedDuringWait()
+{
+	obs_source_t *currentSource = obs_frontend_get_current_scene();
+	if (!currentSource)
+		return true;
+	obs_source_release(currentSource);
+	return (waitScene && currentSource != waitScene);
+}
+
 /********************************************************************************
  * OBS module setup
  ********************************************************************************/
@@ -515,7 +516,6 @@ extern "C" void FreeSceneSwitcher()
 
 void handleSceneChange(SwitcherData *s)
 {
-	std::lock_guard<std::mutex> lock(s->m);
 	//stop waiting if scene was manually changed
 	if (s->sceneChangedDuringWait())
 		s->cv.notify_one();
@@ -532,7 +532,11 @@ void handleSceneChange(SwitcherData *s)
 
 	//reset events only hanled on scene change
 	s->autoStartedRecently = false;
-	s->changedDefTransitionRecently = false;
+}
+
+void handleTransitionStop(SwitcherData *s)
+{
+	s->checkedDefTransition = false;
 }
 
 void setLiveTime(SwitcherData *s)
@@ -545,6 +549,9 @@ void resetLiveTime(SwitcherData *s)
 	s->liveTime = QDateTime();
 }
 
+// Note to future self:
+// be careful using switcher->m here as there is potential for deadlocks when using
+// frontend functions such as obs_frontend_set_current_scene()
 static void OBSEvent(enum obs_frontend_event event, void *switcher)
 {
 	switch (event) {
@@ -553,6 +560,9 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 		break;
 	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
 		handleSceneChange((SwitcherData *)switcher);
+		break;
+	case OBS_FRONTEND_EVENT_TRANSITION_STOPPED:
+		handleTransitionStop((SwitcherData *)switcher);
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
 	case OBS_FRONTEND_EVENT_STREAMING_STARTED:
@@ -569,6 +579,8 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 
 extern "C" void InitSceneSwitcher()
 {
+	blog(LOG_INFO, "version: %s", g_GIT_SHA1);
+
 	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(
 		"Advanced Scene Switcher");
 

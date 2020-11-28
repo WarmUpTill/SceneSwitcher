@@ -99,7 +99,7 @@ struct SwitcherData {
 
 	std::deque<SceneTransition> sceneTransitions;
 	std::deque<DefaultSceneTransition> defaultSceneTransitions;
-	bool changedDefTransitionRecently = false;
+	bool checkedDefTransition = false;
 
 	std::deque<MediaSwitch> mediaSwitches;
 
@@ -143,9 +143,9 @@ struct SwitcherData {
 	std::vector<int> tabOrder;
 
 	bool hotkeysRegistered = false;
-	obs_hotkey_id startHotkey;
-	obs_hotkey_id stopHotkey;
-	obs_hotkey_id toggleHotkey;
+	obs_hotkey_id startHotkey = 0;
+	obs_hotkey_id stopHotkey = 0;
+	obs_hotkey_id toggleHotkey = 0;
 
 	void Thread();
 	void Start();
@@ -154,10 +154,12 @@ struct SwitcherData {
 	bool sceneChangedDuringWait();
 	bool prioFuncsValid();
 	void writeSceneInfoToFile();
-	void setDefaultSceneTransitions();
 	void autoStopStreamAndRecording();
 	void autoStartStreamRecording();
 	bool checkPause();
+	void checkDefaultSceneTransitions(bool &match,
+					  OBSWeakSource &transition);
+	void setCurrentDefTransition(OBSWeakSource &transition);
 	void checkSceneSequence(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition,
 				std::unique_lock<std::mutex> &lock);

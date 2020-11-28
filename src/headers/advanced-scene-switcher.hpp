@@ -27,6 +27,10 @@ public:
 	void SetStarted();
 	void SetStopped();
 
+	void SetShowFrames();
+	void SetHideFrames();
+	void clearFrames(QListWidget *list);
+
 	int PauseScenesFindByData(const QString &scene);
 	int PauseWindowsFindByData(const QString &window);
 	int IgnoreWindowsFindByData(const QString &window);
@@ -87,6 +91,7 @@ public slots:
 	void on_checkInterval_valueChanged(int value);
 	void on_toggleStartButton_clicked();
 	void on_tabMoved(int from, int to);
+	void on_tabWidget_currentChanged(int index);
 
 	void on_screenRegionSwitches_currentRowChanged(int idx);
 	void on_showFrame_clicked();
@@ -228,10 +233,8 @@ void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 void overwriteTransitionOverride(obs_weak_source_t *sceneWs,
 				 obs_source_t *transition, transitionData &td);
 void restoreTransitionOverride(obs_source_t *scene, transitionData td);
-
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
-		 bool &transitionOverrideOverride,
-		 std::unique_lock<std::mutex> &lock);
+		 bool &transitionOverrideOverride);
 
 /********************************************************************************
  * Main SwitcherData
