@@ -125,13 +125,18 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 		bool matchedEnded =
 			ended && (mediaSwitch.state == OBS_MEDIA_STATE_ENDED);
 
+		// match if playedToEnd was true in last interval
+		// and playback is currently ended
 		bool matchedPlayedToEnd = mediaSwitch.state ==
 						  media_played_to_end_idx &&
 					  mediaSwitch.playedToEnd && ended;
 
+		// interval * 2 to make sure not to miss any state changes
+		// which happened during check of the conditions
 		mediaSwitch.playedToEnd = mediaSwitch.playedToEnd ||
-					  (duration - time <= interval);
+					  (duration - time <= interval * 2);
 
+		// reset
 		if (ended)
 			mediaSwitch.playedToEnd = false;
 
