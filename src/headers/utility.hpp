@@ -2,6 +2,8 @@
 #include <obs.hpp>
 #include <obs-module.h>
 #include <QString>
+#include <QLayout>
+#include <QLabel>
 #include <obs-frontend-api.h>
 
 static inline bool WeakSourceValid(obs_weak_source_t *ws)
@@ -82,4 +84,62 @@ static inline OBSWeakSource GetWeakTransitionByName(const char *transitionName)
 static inline OBSWeakSource GetWeakTransitionByQString(const QString &name)
 {
 	return GetWeakTransitionByName(name.toUtf8().constData());
+}
+
+static inline std::string
+getNextDelim(std::string text,
+	     std::unordered_map<std::string, QWidget *> placeholders)
+{
+	size_t pos = std::string::npos;
+	std::string res = "";
+
+	for (const auto &ph : placeholders) {
+		size_t newPos = text.find(ph.first);
+		if (newPos <= pos) {
+			pos = newPos;
+			res = ph.first;
+		}
+	}
+
+	if (pos == std::string::npos)
+		return "";
+
+	return res;
+}
+
+/**
+ * Populate layout with labels and widgets based on provided text
+ *
+ * @param text		Text based on which labels are generated and widgets are placed.
+ * @param layout	Layout in which the widgets and labels will be placed.
+ * @param placeholders	Map containing a mapping of placeholder strings to widgets.
+ */
+static inline void
+placeWidgets(std::string text, QBoxLayout *layout,
+	     std::unordered_map<std::string, QWidget *> placeholders)
+{
+	std::vector<std::pair<std::string, QWidget *>> labelsWidgetsPairs;
+
+	std::string delim = getNextDelim(text, placeholders);
+	while (delim != "") {
+		size_t pos = text.find(delim);
+		if (pos != std::string::npos) {
+			labelsWidgetsPairs.emplace_back(text.substr(0, pos),
+							placeholders[delim]);
+			text.erase(0, pos + delim.length());
+		}
+		delim = getNextDelim(text, placeholders);
+	}
+
+	if (text != "") {
+		labelsWidgetsPairs.emplace_back(text, nullptr);
+	}
+
+	for (auto &lw : labelsWidgetsPairs) {
+		if (lw.first != "")
+			layout->addWidget(new QLabel(lw.first.c_str()));
+		if (lw.second)
+			layout->addWidget(lw.second);
+	}
+	layout->addStretch();
 }

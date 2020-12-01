@@ -330,15 +330,6 @@ AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s) : SwitchWidget(s)
 	volMeter = new VolControl(soruce);
 	obs_source_release(soruce);
 
-	whenLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.audioTab.whenLabel"));
-	aboveLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.audioTab.aboveLabel"));
-	switchLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.audioTab.switchLabel"));
-	usingLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.audioTab.usingLabel"));
-
 	audioVolumeThreshold->setSuffix("%");
 	audioVolumeThreshold->setMaximum(100);
 	audioVolumeThreshold->setMinimum(0);
@@ -365,15 +356,14 @@ AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s) : SwitchWidget(s)
 
 	QHBoxLayout *switchLayout = new QHBoxLayout;
 
-	switchLayout->addWidget(whenLabel);
-	switchLayout->addWidget(audioSources);
-	switchLayout->addWidget(aboveLabel);
-	switchLayout->addWidget(audioVolumeThreshold);
-	switchLayout->addWidget(switchLabel);
-	switchLayout->addWidget(scenes);
-	switchLayout->addWidget(usingLabel);
-	switchLayout->addWidget(transitions);
-	switchLayout->addStretch();
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{audioSources}}", audioSources},
+		{"{{volumeWidget}}", audioVolumeThreshold},
+		{"{{scenes}}", scenes},
+		{"{{transitions}}", transitions}};
+
+	placeWidgets(obs_module_text("AdvSceneSwitcher.audioTab.entry"),
+		     switchLayout, widgetPlaceholders);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 
