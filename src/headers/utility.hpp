@@ -1,9 +1,12 @@
 #pragma once
-#include <obs.hpp>
-#include <obs-module.h>
+
 #include <QString>
 #include <QLayout>
 #include <QLabel>
+#include <unordered_map>
+
+#include <obs.hpp>
+#include <obs-module.h>
 #include <obs-frontend-api.h>
 
 static inline bool WeakSourceValid(obs_weak_source_t *ws)
