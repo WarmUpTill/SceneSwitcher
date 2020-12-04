@@ -31,9 +31,5 @@ private slots:
 private:
 	QDoubleSpinBox *delay;
 
-	QLabel *switchLabel;
-	QLabel *usingLabel;
-	QLabel *forLabel;
-
 	RandomSwitch *switchData;
 };

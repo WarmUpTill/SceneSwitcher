@@ -323,12 +323,6 @@ SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
 	delayUnits = new QComboBox();
 	startScenes = new QComboBox();
 
-	//TODO: auto change layout/template for different language
-	whenLabel = new QLabel("When");
-	switchLabel = new QLabel("is active switch to");
-	afterLabel = new QLabel("after");
-	usingLabel = new QLabel("using");
-
 	QWidget::connect(delay, SIGNAL(valueChanged(double)), this,
 			 SLOT(DelayChanged(double)));
 	QWidget::connect(delayUnits, SIGNAL(currentIndexChanged(int)), this,
@@ -362,18 +356,14 @@ SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
 	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	mainLayout->addWidget(whenLabel);
-	mainLayout->addWidget(startScenes);
-	mainLayout->addWidget(switchLabel);
-	mainLayout->addWidget(scenes);
-	mainLayout->addWidget(afterLabel);
-	mainLayout->addWidget(delay);
-	mainLayout->addWidget(delayUnits);
-	mainLayout->addWidget(usingLabel);
-	mainLayout->addWidget(transitions);
-	mainLayout->addStretch();
-
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{startScenes}}", startScenes},
+		{"{{scenes}}", scenes},
+		{"{{delay}}", delay},
+		{"{{delayUnits}}", delayUnits},
+		{"{{transitions}}", transitions}};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.sceneSequenceTab.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	switchData = s;

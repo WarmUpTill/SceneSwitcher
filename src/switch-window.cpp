@@ -410,16 +410,15 @@ WindowSwitchWidget::WindowSwitchWidget(WindowSwitch *s) : SwitchWidget(s, false)
 	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	mainLayout->addWidget(windows);
-	mainLayout->addWidget(scenes);
-	mainLayout->addWidget(transitions);
-	mainLayout->addWidget(scenes);
-	mainLayout->addWidget(fullscreen);
-	mainLayout->addWidget(maximized);
-	mainLayout->addWidget(focused);
-	mainLayout->addStretch();
-
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{windows}}", windows},
+		{"{{scenes}}", scenes},
+		{"{{transitions}}", transitions},
+		{"{{fullscreen}}", fullscreen},
+		{"{{maximized}}", maximized},
+		{"{{focused}}", focused}};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.windowTitleTab.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	switchData = s;

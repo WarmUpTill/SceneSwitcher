@@ -355,13 +355,11 @@ AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s) : SwitchWidget(s)
 	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *switchLayout = new QHBoxLayout;
-
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{audioSources}}", audioSources},
 		{"{{volumeWidget}}", audioVolumeThreshold},
 		{"{{scenes}}", scenes},
 		{"{{transitions}}", transitions}};
-
 	placeWidgets(obs_module_text("AdvSceneSwitcher.audioTab.entry"),
 		     switchLayout, widgetPlaceholders);
 

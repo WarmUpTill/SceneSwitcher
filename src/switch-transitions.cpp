@@ -418,13 +418,6 @@ TransitionSwitchWidget::TransitionSwitchWidget(SceneTransition *s)
 {
 	scenes2 = new QComboBox();
 
-	switchLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.transitionTab.switchLabel"));
-	toLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.transitionTab.toLabel"));
-	usingLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.transitionTab.usingLabel"));
-
 	QWidget::connect(scenes2, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(Scene2Changed(const QString &)));
 
@@ -437,15 +430,12 @@ TransitionSwitchWidget::TransitionSwitchWidget(SceneTransition *s)
 	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	mainLayout->addWidget(switchLabel);
-	mainLayout->addWidget(scenes);
-	mainLayout->addWidget(toLabel);
-	mainLayout->addWidget(scenes2);
-	mainLayout->addWidget(usingLabel);
-	mainLayout->addWidget(transitions);
-	mainLayout->addStretch();
-
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{scenes}}", scenes},
+		{"{{scenes2}}", scenes2},
+		{"{{transitions}}", transitions}};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.transitionTab.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	switchData = s;
@@ -484,21 +474,15 @@ void TransitionSwitchWidget::Scene2Changed(const QString &text)
 DefTransitionSwitchWidget::DefTransitionSwitchWidget(DefaultSceneTransition *s)
 	: SwitchWidget(s, false)
 {
-	whenLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.transitionTab.whenLabel"));
-	switchLabel = new QLabel(obs_module_text(
-		"AdvSceneSwitcher.transitionTab.switchDefaultLabel"));
-
 	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	mainLayout->addWidget(whenLabel);
-	mainLayout->addWidget(scenes);
-	mainLayout->addWidget(switchLabel);
-	mainLayout->addWidget(transitions);
-	mainLayout->addStretch();
-
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{scenes}}", scenes}, {"{{transitions}}", transitions}};
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.transitionTab.defaultTransitionEntry"),
+		mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	switchData = s;

@@ -40,9 +40,5 @@ private:
 	QComboBox *processes;
 	QCheckBox *requiresFocus;
 
-	QLabel *whenLabel;
-	QLabel *switchLabel;
-	QLabel *usingLabel;
-
 	ExecutableSwitch *switchData;
 };

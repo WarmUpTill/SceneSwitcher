@@ -431,17 +431,6 @@ MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
 	timeRestrictions = new QComboBox();
 	time = new QSpinBox();
 
-	whenLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.mediaTab.whenLabel"));
-	stateLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.mediaTab.stateLabel"));
-	andLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.mediaTab.andLabel"));
-	switchLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.mediaTab.switchLabel"));
-	usingLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.mediaTab.usingLabel"));
-
 	time->setSuffix("ms");
 	time->setMaximum(99999999);
 	time->setMinimum(0);
@@ -473,20 +462,15 @@ MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
 	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	mainLayout->addWidget(whenLabel);
-	mainLayout->addWidget(meidaSources);
-	mainLayout->addWidget(stateLabel);
-	mainLayout->addWidget(states);
-	mainLayout->addWidget(andLabel);
-	mainLayout->addWidget(timeRestrictions);
-	mainLayout->addWidget(time);
-	mainLayout->addWidget(switchLabel);
-	mainLayout->addWidget(scenes);
-	mainLayout->addWidget(usingLabel);
-	mainLayout->addWidget(transitions);
-	mainLayout->addStretch();
-
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{meidaSources}}", meidaSources},
+		{"{{states}}", states},
+		{"{{timeRestrictions}}", timeRestrictions},
+		{"{{time}}", time},
+		{"{{scenes}}", scenes},
+		{"{{transitions}}", transitions}};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.mediaTab.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	switchData = s;

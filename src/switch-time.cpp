@@ -234,13 +234,6 @@ TimeSwitchWidget::TimeSwitchWidget(TimeSwitch *s) : SwitchWidget(s)
 	triggers = new QComboBox();
 	time = new QTimeEdit();
 
-	atLabel =
-		new QLabel(obs_module_text("AdvSceneSwitcher.timeTab.atLabel"));
-	switchLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.timeTab.switchLabel"));
-	usingLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.timeTab.usingLabel"));
-
 	QWidget::connect(triggers, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TriggerChanged(int)));
 	QWidget::connect(time, SIGNAL(timeChanged(const QTime &)), this,
@@ -257,16 +250,13 @@ TimeSwitchWidget::TimeSwitchWidget(TimeSwitch *s) : SwitchWidget(s)
 	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	mainLayout->addWidget(triggers);
-	mainLayout->addWidget(atLabel);
-	mainLayout->addWidget(time);
-	mainLayout->addWidget(switchLabel);
-	mainLayout->addWidget(scenes);
-	mainLayout->addWidget(usingLabel);
-	mainLayout->addWidget(transitions);
-	mainLayout->addStretch();
-
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{triggers}}", triggers},
+		{"{{time}}", time},
+		{"{{scenes}}", scenes},
+		{"{{transitions}}", transitions}};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.timeTab.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	switchData = s;

@@ -250,14 +250,6 @@ ScreenRegionWidget::ScreenRegionWidget(ScreenRegionSwitch *s)
 	maxX = new QSpinBox();
 	maxY = new QSpinBox();
 
-	cursorLabel = new QLabel(obs_module_text(
-		"AdvSceneSwitcher.screenRegionTab.cursorLabel"));
-	xLabel = new QLabel("x");
-	switchLabel = new QLabel(obs_module_text(
-		"AdvSceneSwitcher.screenRegionTab.switchLabel"));
-	usingLabel = new QLabel(
-		obs_module_text("AdvSceneSwitcher.screenRegionTab.usingLabel"));
-
 	minX->setPrefix("Min X: ");
 	minY->setPrefix("Min Y: ");
 	maxX->setPrefix("Max X: ");
@@ -292,19 +284,12 @@ ScreenRegionWidget::ScreenRegionWidget(ScreenRegionSwitch *s)
 	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	mainLayout->addWidget(cursorLabel);
-	mainLayout->addWidget(minX);
-	mainLayout->addWidget(minY);
-	mainLayout->addWidget(xLabel);
-	mainLayout->addWidget(maxX);
-	mainLayout->addWidget(maxY);
-	mainLayout->addWidget(switchLabel);
-	mainLayout->addWidget(scenes);
-	mainLayout->addWidget(usingLabel);
-	mainLayout->addWidget(transitions);
-	mainLayout->addStretch();
-
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{minX}}", minX},     {"{{minY}}", minY},
+		{"{{maxX}}", maxX},     {"{{maxY}}", maxY},
+		{"{{scenes}}", scenes}, {"{{transitions}}", transitions}};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.screenRegionTab.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	switchData = s;
