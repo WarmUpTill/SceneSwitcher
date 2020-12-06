@@ -415,15 +415,7 @@ void SwitcherData::Thread()
 			}
 		}
 
-		if (!match && switchIfNotMatching == SWITCH &&
-		    nonMatchingScene) {
-			match = true;
-			scene = nonMatchingScene;
-			transition = nullptr;
-		}
-		if (!match && switchIfNotMatching == RANDOM_SWITCH) {
-			checkRandom(match, scene, transition, sleep);
-		}
+		checkNoMatchSwitch(match, scene, transition, sleep);
 
 		// After this point we will call frontend functions
 		// obs_frontend_set_current_scene() and
