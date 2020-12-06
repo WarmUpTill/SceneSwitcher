@@ -289,10 +289,20 @@
                      </sizepolicy>
                     </property>
                     <property name="text">
-                     <string>If no switch condition is met</string>
+                     <string>If no switch condition is met for</string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="noMatchDelay">
+                    <property name="suffix">
+                     <string>s</string>
+                    </property>
+                    <property name="maximum">
+                     <double>999999.989999999990687</double>
                     </property>
                    </widget>
                   </item>
