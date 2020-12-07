@@ -28,7 +28,7 @@ void showCurrentFrame(QListWidget *list)
 void AdvSceneSwitcher::SetShowFrames()
 {
 	ui->showFrame->setText(obs_module_text(
-		"AdvSceneSwitcher.screenRegionTab.showGuideFrames"))
+		"AdvSceneSwitcher.screenRegionTab.showGuideFrames"));
 }
 
 void AdvSceneSwitcher::SetHideFrames()
