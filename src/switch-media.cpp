@@ -3,6 +3,9 @@
 
 static QMetaObject::Connection addPulse;
 
+constexpr auto media_played_to_end_idx = 8;
+constexpr auto media_any_idx = 9;
+
 void AdvSceneSwitcher::on_mediaAdd_clicked()
 {
 	ui->mediaAdd->disconnect(addPulse);
@@ -110,14 +113,32 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 		// bool matchedEnded = mediaSwitch.state == OBS_MEDIA_STATE_ENDED &&
 		//		    mediaSwitch.ended;
 
-		bool matchedEnded = false;
+		bool ended = false;
 
 		if (state == OBS_MEDIA_STATE_ENDED) {
-			matchedEnded = mediaSwitch.previousStateEnded;
+			ended = mediaSwitch.previousStateEnded;
 			mediaSwitch.previousStateEnded = true;
 		} else {
 			mediaSwitch.previousStateEnded = false;
 		}
+
+		bool matchedEnded =
+			ended && (mediaSwitch.state == OBS_MEDIA_STATE_ENDED);
+
+		// match if playedToEnd was true in last interval
+		// and playback is currently ended
+		bool matchedPlayedToEnd = mediaSwitch.state ==
+						  media_played_to_end_idx &&
+					  mediaSwitch.playedToEnd && ended;
+
+		// interval * 2 to make sure not to miss any state changes
+		// which happened during check of the conditions
+		mediaSwitch.playedToEnd = mediaSwitch.playedToEnd ||
+					  (duration - time <= interval * 2);
+
+		// reset
+		if (ended)
+			mediaSwitch.playedToEnd = false;
 
 		// reset for next check
 		mediaSwitch.stopped = false;
@@ -125,7 +146,8 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 
 		bool matchedState = ((state == mediaSwitch.state) ||
 				     mediaSwitch.anyState) ||
-				    matchedStopped || matchedEnded;
+				    matchedStopped || matchedEnded ||
+				    matchedPlayedToEnd;
 
 		bool matchedTimeNone =
 			(mediaSwitch.restriction == TIME_RESTRICTION_NONE);
@@ -308,7 +330,7 @@ inline MediaSwitch::MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
 	  restriction(restriction_),
 	  time(time_)
 {
-	anyState = state > 7;
+	anyState = state == media_any_idx;
 	obs_source_t *mediasource = obs_weak_source_get_source(source);
 	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
 	signal_handler_connect(sh, "media_stopped", MediaStopped, this);
@@ -324,7 +346,7 @@ MediaSwitch::MediaSwitch(const MediaSwitch &other)
 	  restriction(other.restriction),
 	  time(other.time)
 {
-	anyState = state > 7;
+	anyState = state == media_any_idx;
 	obs_source_t *mediasource = obs_weak_source_get_source(source);
 	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
 	signal_handler_connect(sh, "media_stopped", MediaStopped, this);
@@ -407,6 +429,8 @@ void populateMediaStates(QComboBox *list)
 		obs_module_text("AdvSceneSwitcher.mediaTab.states.ended"));
 	list->addItem(
 		obs_module_text("AdvSceneSwitcher.mediaTab.states.error"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.mediaTab.states.playedToEnd"));
 	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.any"));
 }
 
@@ -514,7 +538,7 @@ void MediaSwitchWidget::StateChanged(int index)
 		return;
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->state = (obs_media_state)index;
-	switchData->anyState = switchData->state > 7;
+	switchData->anyState = switchData->state == media_any_idx;
 }
 
 void MediaSwitchWidget::TimeRestrictionChanged(int index)

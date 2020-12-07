@@ -63,6 +63,8 @@ struct SwitcherData {
 	OBSWeakSource lastRandomScene;
 	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
+	double noMatchDelay;
+	double noMatchCount = 0;
 	StartupBehavior startupBehavior = PERSIST;
 
 	std::deque<WindowSwitch> windowSwitches;
@@ -183,6 +185,8 @@ struct SwitcherData {
 			     OBSWeakSource &transition);
 	void checkAudioSwitch(bool &match, OBSWeakSource &scene,
 			      OBSWeakSource &transition);
+	void checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
+				OBSWeakSource &transition, int &sleep);
 
 	void saveWindowTitleSwitches(obs_data_t *obj);
 	void saveScreenRegionSwitches(obs_data_t *obj);

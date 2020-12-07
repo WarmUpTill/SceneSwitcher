@@ -296,6 +296,16 @@
                     </property>
                    </widget>
                   </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="noMatchDelay">
+                    <property name="suffix">
+                     <string>s</string>
+                    </property>
+                    <property name="maximum">
+                     <double>999999.989999999990687</double>
+                    </property>
+                   </widget>
+                  </item>
                  </layout>
                 </item>
                </layout>
