@@ -219,6 +219,7 @@ struct SwitcherData {
 	void loadHotkeys(obs_data_t *obj);
 
 	void Prune();
+
 	inline ~SwitcherData() { Stop(); }
 };
 
