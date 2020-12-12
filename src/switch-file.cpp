@@ -1,6 +1,7 @@
 #include <QFileDialog>
 #include <QTextStream>
 #include <QDateTime>
+#include <functional>
 #include <curl/curl.h>
 
 #include "headers/advanced-scene-switcher.hpp"
@@ -9,6 +10,8 @@
 
 #define LOCAL_FILE_IDX 0
 #define REMOTE_FILE_IDX 1
+
+std::hash<std::string> strHash;
 
 void AdvSceneSwitcher::on_browseButton_clicked()
 {
@@ -162,24 +165,33 @@ bool compareIgnoringLineEnding(QString &s1, QString &s2)
 	return true;
 }
 
+bool matchFileContent(QString &filedata, FileSwitch &s)
+{
+	if (s.onlyMatchIfChanged) {
+		size_t newHash = strHash(filedata.toUtf8().constData());
+		if (newHash == s.lastHash)
+			return false;
+		s.lastHash = newHash;
+	}
+
+	if (s.useRegex) {
+		return filedata.contains(
+			QRegularExpression(QString::fromStdString(s.text)));
+	}
+
+	QString text = QString::fromStdString(s.text);
+	return compareIgnoringLineEnding(text, filedata);
+}
+
 bool checkRemoteFileContent(FileSwitch &s)
 {
 	std::string data = getRemoteData(s.file);
-	bool ret = false;
-	if (s.useRegex) {
-		ret = QString::fromStdString(data).contains(
-			QRegularExpression(QString::fromStdString(s.text)));
-		return ret;
-	}
-	QString t = QString::fromStdString(s.text);
-	QString d = QString::fromStdString(data);
-
-	return compareIgnoringLineEnding(t, d);
+	QString text = QString::fromStdString(s.text);
+	return matchFileContent(text, s);
 }
 
 bool checkLocalFileContent(FileSwitch &s)
 {
-	bool equal = false;
 	QString t = QString::fromStdString(s.text);
 	QFile file(QString::fromStdString(s.file));
 	if (!file.open(QIODevice::ReadOnly))
@@ -192,17 +204,11 @@ bool checkLocalFileContent(FileSwitch &s)
 		s.lastMod = newLastMod;
 	}
 
-	if (s.useRegex) {
-		QTextStream in(&file);
-		QRegExp rx(t);
-		equal = rx.exactMatch(in.readAll());
-	} else {
-		QTextStream in(&file);
-		QString filedata = in.readAll();
-		equal = compareIgnoringLineEnding(filedata, t);
-	}
+	QString filedata = QTextStream(&file).readAll();
+	bool match = matchFileContent(filedata, s);
+
 	file.close();
-	return equal;
+	return match;
 }
 
 void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
@@ -264,6 +270,7 @@ void AdvSceneSwitcher::on_fileAdd_clicked()
 	bool remote = (ui->fileType->currentIndex() == REMOTE_FILE_IDX);
 	bool useRegex = ui->fileContentRegExCheckBox->isChecked();
 	bool useTime = ui->fileContentTimeCheckBox->isChecked();
+	bool onlyMatchIfChanged = ui->onlyMatchIfChanged->isChecked();
 
 	if (sceneName.isEmpty() || transitionName.isEmpty() ||
 	    fileName.isEmpty() || text.isEmpty())
@@ -272,8 +279,9 @@ void AdvSceneSwitcher::on_fileAdd_clicked()
 	OBSWeakSource source = GetWeakSourceByQString(sceneName);
 	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
 
-	QString switchText = MakeFileSwitchName(
-		sceneName, transitionName, fileName, text, useRegex, useTime);
+	QString switchText = MakeFileSwitchName(sceneName, transitionName,
+						fileName, text, useRegex,
+						useTime, onlyMatchIfChanged);
 	QVariant v = QVariant::fromValue(switchText);
 
 	QListWidgetItem *item =
@@ -284,7 +292,8 @@ void AdvSceneSwitcher::on_fileAdd_clicked()
 	switcher->fileSwitches.emplace_back(source, transition,
 					    fileName.toUtf8().constData(),
 					    text.toUtf8().constData(), remote,
-					    useRegex, useTime);
+					    useRegex, useTime,
+					    onlyMatchIfChanged);
 }
 
 void AdvSceneSwitcher::on_fileRemove_clicked()
@@ -332,6 +341,7 @@ void AdvSceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
 		ui->fileType->setCurrentIndex(LOCAL_FILE_IDX);
 	ui->fileContentRegExCheckBox->setChecked(s.useRegex);
 	ui->fileContentTimeCheckBox->setChecked(s.useTime);
+	ui->onlyMatchIfChanged->setChecked(s.onlyMatchIfChanged);
 }
 
 void AdvSceneSwitcher::on_fileUp_clicked()
@@ -386,6 +396,8 @@ void SwitcherData::saveFileSwitches(obs_data_t *obj)
 			obs_data_set_bool(array_obj, "remote", s.remote);
 			obs_data_set_bool(array_obj, "useRegex", s.useRegex);
 			obs_data_set_bool(array_obj, "useTime", s.useTime);
+			obs_data_set_bool(array_obj, "onlyMatchIfChanged",
+					  s.onlyMatchIfChanged);
 			obs_data_array_push_back(fileArray, array_obj);
 		}
 		obs_source_release(source);
@@ -419,11 +431,13 @@ void SwitcherData::loadFileSwitches(obs_data_t *obj)
 		bool remote = obs_data_get_bool(array_obj, "remote");
 		bool useRegex = obs_data_get_bool(array_obj, "useRegex");
 		bool useTime = obs_data_get_bool(array_obj, "useTime");
+		bool onlyMatchIfChanged =
+			obs_data_get_bool(array_obj, "onlyMatchIfChanged");
 
 		switcher->fileSwitches.emplace_back(
 			GetWeakSourceByName(scene),
 			GetWeakTransitionByName(transition), file, text, remote,
-			useRegex, useTime);
+			useRegex, useTime, onlyMatchIfChanged);
 
 		obs_data_release(array_obj);
 	}
@@ -459,7 +473,8 @@ void AdvSceneSwitcher::setupFileTab()
 		std::string transitionName = GetWeakSourceName(s.transition);
 		QString listText = MakeFileSwitchName(
 			sceneName.c_str(), transitionName.c_str(),
-			s.file.c_str(), s.text.c_str(), s.useRegex, s.useTime);
+			s.file.c_str(), s.text.c_str(), s.useRegex, s.useTime,
+			s.onlyMatchIfChanged);
 
 		QListWidgetItem *item =
 			new QListWidgetItem(listText, ui->fileScenesList);
@@ -485,7 +500,7 @@ static inline QString MakeFileSwitchName(const QString &scene,
 					 const QString &transition,
 					 const QString &fileName,
 					 const QString &text, bool useRegex,
-					 bool useTime)
+					 bool useTime, bool onlyMatchIfChanged)
 {
 	//TODO: auto change layout/template for different language
 	QString switchName = QStringLiteral("Switch to ") + scene +
@@ -493,6 +508,8 @@ static inline QString MakeFileSwitchName(const QString &scene,
 			     QStringLiteral(" if ") + fileName;
 	if (useTime)
 		switchName += QStringLiteral(" was modified and");
+	if (onlyMatchIfChanged)
+		switchName += QStringLiteral(" if the contents changed and");
 	switchName += QStringLiteral(" contains");
 	if (useRegex)
 		switchName += QStringLiteral(" (RegEx): \n\"");

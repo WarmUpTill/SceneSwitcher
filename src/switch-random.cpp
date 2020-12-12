@@ -51,7 +51,7 @@ void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
 		if (!r.initialized())
 			continue;
 
-		if (r.scene == lastRandomScene)
+		if (r.scene == lastRandomScene && randomSwitches.size() != 1)
 			continue;
 		scene = r.scene;
 		transition = r.transition;

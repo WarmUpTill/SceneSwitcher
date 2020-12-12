@@ -2187,6 +2187,13 @@
           </widget>
          </item>
          <item>
+          <widget class="QCheckBox" name="onlyMatchIfChanged">
+           <property name="text">
+            <string>Only match if content changed</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="horizontalSpacer_11">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>

@@ -340,29 +340,45 @@ void SwitcherData::Thread()
 {
 	blog(LOG_INFO, "started");
 	int sleep = 0;
+	std::chrono::milliseconds duration;
+	auto startTime = std::chrono::high_resolution_clock::now();
+	auto endTime = std::chrono::high_resolution_clock::now();
 
 	while (true) {
 		std::unique_lock<std::mutex> lock(m);
+
 		bool match = false;
 		OBSWeakSource scene;
 		OBSWeakSource transition;
+
 		bool defTransitionMatch = false;
 		OBSWeakSource defTransition;
-		std::chrono::milliseconds duration;
-		if (sleep > interval) {
+
+		endTime = std::chrono::high_resolution_clock::now();
+
+		auto runTime =
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				endTime - startTime);
+
+		if (sleep) {
 			duration = std::chrono::milliseconds(sleep);
-			if (verbose)
-				blog(LOG_INFO, "sleep for %d", sleep);
 		} else {
-			duration = std::chrono::milliseconds(interval);
-			if (verbose)
-				blog(LOG_INFO, "sleep for %d", interval);
+			duration =
+				std::chrono::milliseconds(interval) - runTime;
+			if (duration.count() < 0)
+				duration = std::chrono::milliseconds(0);
 		}
-		sleep = 0;
-		switcher->Prune();
-		writeSceneInfoToFile();
+
 		//sleep for a bit
+		if (verbose)
+			blog(LOG_INFO, "sleep for %d", duration.count());
 		cv.wait_for(lock, duration);
+
+		startTime = std::chrono::high_resolution_clock::now();
+		sleep = 0;
+
+		switcher->Prune();
+
 		if (switcher->stop) {
 			break;
 		}
@@ -394,7 +410,6 @@ void SwitcherData::Thread()
 			case exe_func:
 				checkExeSwitch(match, scene, transition);
 				break;
-
 			case screen_region_func:
 				checkScreenRegionSwitch(match, scene,
 							transition);
@@ -444,6 +459,8 @@ void SwitcherData::Thread()
 			switchScene(scene, transition,
 				    tansitionOverrideOverride);
 		}
+
+		writeSceneInfoToFile();
 	}
 endLoop:
 	blog(LOG_INFO, "stopped");
