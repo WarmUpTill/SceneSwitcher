@@ -8,10 +8,8 @@
 #include "headers/curl-helper.hpp"
 #include "headers/utility.hpp"
 
-#define LOCAL_FILE_IDX 0
-#define REMOTE_FILE_IDX 1
-
-std::hash<std::string> strHash;
+static QMetaObject::Connection addPulse;
+static std::hash<std::string> strHash;
 
 void AdvSceneSwitcher::on_browseButton_clicked()
 {
@@ -194,7 +192,7 @@ bool checkLocalFileContent(FileSwitch &s)
 {
 	QString t = QString::fromStdString(s.text);
 	QFile file(QString::fromStdString(s.file));
-	if (!file.open(QIODevice::ReadOnly))
+	if (s.file.empty() || !file.open(QIODevice::ReadOnly))
 		return false;
 
 	if (s.useTime) {
@@ -234,88 +232,37 @@ void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 	}
 }
 
-void AdvSceneSwitcher::on_browseButton_3_clicked()
-{
-	QString path = QFileDialog::getOpenFileName(
-		this,
-		tr(obs_module_text("AdvSceneSwitcher.fileTab.selectRead")),
-		QDir::currentPath(),
-		tr(obs_module_text("AdvSceneSwitcher.fileTab.anyFileType")));
-	if (!path.isEmpty())
-		ui->filePathLineEdit->setText(path);
-}
-
-void AdvSceneSwitcher::on_fileType_currentIndexChanged(int idx)
-{
-	if (idx == -1)
-		return;
-	if (idx == LOCAL_FILE_IDX) {
-		ui->browseButton_3->setDisabled(false);
-		ui->fileContentTimeCheckBox->setDisabled(false);
-		ui->remoteFileWarningLabel->hide();
-	}
-	if (idx == REMOTE_FILE_IDX) {
-		ui->browseButton_3->setDisabled(true);
-		ui->fileContentTimeCheckBox->setDisabled(true);
-		ui->remoteFileWarningLabel->show();
-	}
-}
-
 void AdvSceneSwitcher::on_fileAdd_clicked()
 {
-	QString sceneName = ui->fileScenes->currentText();
-	QString transitionName = ui->fileTransitions->currentText();
-	QString fileName = ui->filePathLineEdit->text();
-	QString text = ui->fileTextEdit->toPlainText();
-	bool remote = (ui->fileType->currentIndex() == REMOTE_FILE_IDX);
-	bool useRegex = ui->fileContentRegExCheckBox->isChecked();
-	bool useTime = ui->fileContentTimeCheckBox->isChecked();
-	bool onlyMatchIfChanged = ui->onlyMatchIfChanged->isChecked();
-
-	if (sceneName.isEmpty() || transitionName.isEmpty() ||
-	    fileName.isEmpty() || text.isEmpty())
-		return;
-
-	OBSWeakSource source = GetWeakSourceByQString(sceneName);
-	OBSWeakSource transition = GetWeakTransitionByQString(transitionName);
-
-	QString switchText = MakeFileSwitchName(sceneName, transitionName,
-						fileName, text, useRegex,
-						useTime, onlyMatchIfChanged);
-	QVariant v = QVariant::fromValue(switchText);
-
-	QListWidgetItem *item =
-		new QListWidgetItem(switchText, ui->fileScenesList);
-	item->setData(Qt::UserRole, v);
-
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->fileSwitches.emplace_back(source, transition,
-					    fileName.toUtf8().constData(),
-					    text.toUtf8().constData(), remote,
-					    useRegex, useTime,
-					    onlyMatchIfChanged);
+	switcher->fileSwitches.emplace_back();
+
+	QListWidgetItem *item;
+	item = new QListWidgetItem(ui->fileSwitches);
+	ui->fileSwitches->addItem(item);
+	FileSwitchWidget *sw =
+		new FileSwitchWidget(&switcher->fileSwitches.back());
+	item->setSizeHint(sw->minimumSizeHint());
+	ui->fileSwitches->setItemWidget(item, sw);
 }
 
 void AdvSceneSwitcher::on_fileRemove_clicked()
 {
-	QListWidgetItem *item = ui->fileScenesList->currentItem();
+	QListWidgetItem *item = ui->fileSwitches->currentItem();
 	if (!item)
-		return;
-
-	int idx = ui->fileScenesList->currentRow();
-	if (idx == -1)
 		return;
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
-
+		int idx = ui->fileSwitches->currentRow();
 		auto &switches = switcher->fileSwitches;
 		switches.erase(switches.begin() + idx);
 	}
-	qDeleteAll(ui->fileScenesList->selectedItems());
+
+	delete item;
 }
 
-void AdvSceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
+void AdvSceneSwitcher::on_fileSwitches_currentRowChanged(int idx)
 {
 	if (loading)
 		return;
@@ -327,51 +274,47 @@ void AdvSceneSwitcher::on_fileScenesList_currentRowChanged(int idx)
 	if ((int)switcher->fileSwitches.size() <= idx)
 		return;
 	FileSwitch s = switcher->fileSwitches[idx];
-
-	std::string sceneName = GetWeakSourceName(s.scene);
-	std::string transitionName = GetWeakSourceName(s.transition);
-
-	ui->fileScenes->setCurrentText(sceneName.c_str());
-	ui->fileTransitions->setCurrentText(transitionName.c_str());
-	ui->fileTextEdit->setPlainText(s.text.c_str());
-	ui->filePathLineEdit->setText(s.file.c_str());
 	if (s.remote)
-		ui->fileType->setCurrentIndex(REMOTE_FILE_IDX);
+		ui->remoteFileWarningLabel->show();
 	else
-		ui->fileType->setCurrentIndex(LOCAL_FILE_IDX);
-	ui->fileContentRegExCheckBox->setChecked(s.useRegex);
-	ui->fileContentTimeCheckBox->setChecked(s.useTime);
-	ui->onlyMatchIfChanged->setChecked(s.onlyMatchIfChanged);
+		ui->remoteFileWarningLabel->hide();
 }
 
 void AdvSceneSwitcher::on_fileUp_clicked()
 {
-	int index = ui->fileScenesList->currentRow();
-	if (index != -1 && index != 0) {
-		ui->fileScenesList->insertItem(
-			index - 1, ui->fileScenesList->takeItem(index));
-		ui->fileScenesList->setCurrentRow(index - 1);
+	int index = ui->fileSwitches->currentRow();
+	if (!listMoveUp(ui->fileSwitches))
+		return;
 
-		std::lock_guard<std::mutex> lock(switcher->m);
+	FileSwitchWidget *s1 = (FileSwitchWidget *)ui->fileSwitches->itemWidget(
+		ui->fileSwitches->item(index));
+	FileSwitchWidget *s2 = (FileSwitchWidget *)ui->fileSwitches->itemWidget(
+		ui->fileSwitches->item(index - 1));
+	FileSwitchWidget::swapSwitchData(s1, s2);
 
-		iter_swap(switcher->fileSwitches.begin() + index,
-			  switcher->fileSwitches.begin() + index - 1);
-	}
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->fileSwitches[index],
+		  switcher->fileSwitches[index - 1]);
 }
 
 void AdvSceneSwitcher::on_fileDown_clicked()
 {
-	int index = ui->fileScenesList->currentRow();
-	if (index != -1 && index != ui->fileScenesList->count() - 1) {
-		ui->fileScenesList->insertItem(
-			index + 1, ui->fileScenesList->takeItem(index));
-		ui->fileScenesList->setCurrentRow(index + 1);
+	int index = ui->fileSwitches->currentRow();
 
-		std::lock_guard<std::mutex> lock(switcher->m);
+	if (!listMoveDown(ui->fileSwitches))
+		return;
 
-		iter_swap(switcher->fileSwitches.begin() + index,
-			  switcher->fileSwitches.begin() + index + 1);
-	}
+	FileSwitchWidget *s1 = (FileSwitchWidget *)ui->fileSwitches->itemWidget(
+		ui->fileSwitches->item(index));
+	FileSwitchWidget *s2 = (FileSwitchWidget *)ui->fileSwitches->itemWidget(
+		ui->fileSwitches->item(index + 1));
+	FileSwitchWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->fileSwitches[index],
+		  switcher->fileSwitches[index + 1]);
 }
 
 void SwitcherData::saveFileSwitches(obs_data_t *obj)
@@ -453,33 +396,26 @@ void SwitcherData::loadFileSwitches(obs_data_t *obj)
 
 void AdvSceneSwitcher::setupFileTab()
 {
-	populateSceneSelection(ui->fileScenes, false);
-	populateTransitionSelection(ui->fileTransitions);
-
-	ui->fileType->addItem(
-		obs_module_text("AdvSceneSwitcher.fileTab.local"));
-	ui->fileType->addItem(
-		obs_module_text("AdvSceneSwitcher.fileTab.remote"));
 	ui->remoteFileWarningLabel->setText(
 		obs_module_text("AdvSceneSwitcher.fileTab.remoteFileWarning1") +
 		QString::number(switcher->interval) +
 		obs_module_text("AdvSceneSwitcher.fileTab.remoteFileWarning2"));
+	ui->remoteFileWarningLabel->hide();
 
 	if (switcher->curl)
 		ui->libcurlWarning->setVisible(false);
 
 	for (auto &s : switcher->fileSwitches) {
-		std::string sceneName = GetWeakSourceName(s.scene);
-		std::string transitionName = GetWeakSourceName(s.transition);
-		QString listText = MakeFileSwitchName(
-			sceneName.c_str(), transitionName.c_str(),
-			s.file.c_str(), s.text.c_str(), s.useRegex, s.useTime,
-			s.onlyMatchIfChanged);
-
-		QListWidgetItem *item =
-			new QListWidgetItem(listText, ui->fileScenesList);
-		item->setData(Qt::UserRole, listText);
+		QListWidgetItem *item;
+		item = new QListWidgetItem(ui->fileSwitches);
+		ui->fileSwitches->addItem(item);
+		FileSwitchWidget *sw = new FileSwitchWidget(&s);
+		item->setSizeHint(sw->minimumSizeHint());
+		ui->fileSwitches->setItemWidget(item, sw);
 	}
+
+	if (switcher->fileSwitches.size() == 0)
+		addPulse = PulseWidget(ui->fileAdd, QColor(Qt::green));
 
 	ui->readPathLineEdit->setText(
 		QString::fromStdString(switcher->fileIO.readPath.c_str()));
@@ -521,4 +457,178 @@ static inline QString MakeFileSwitchName(const QString &scene,
 		switchName += text + QStringLiteral("\"");
 
 	return switchName;
+}
+
+FileSwitchWidget::FileSwitchWidget(FileSwitch *s) : SwitchWidget(s, false)
+{
+	fileType = new QComboBox();
+	filePath = new QLineEdit(obs_module_text("AdvSceneSwitcher.enterPath"));
+	browseButton =
+		new QPushButton(obs_module_text("AdvSceneSwitcher.browse"));
+	browseButton->setStyleSheet("border:1px solid gray;");
+	matchText = new QPlainTextEdit(
+		obs_module_text("AdvSceneSwitcher.enterText"));
+	useRegex = new QCheckBox(
+		obs_module_text("AdvSceneSwitcher.fileTab.useRegExp"));
+	checkModificationDate = new QCheckBox(obs_module_text(
+		"AdvSceneSwitcher.fileTab.checkfileContentTime"));
+	checkFileContent = new QCheckBox(
+		obs_module_text("AdvSceneSwitcher.fileTab.checkfileContent"));
+
+	QWidget::connect(fileType, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(FileTypeChanged(int)));
+	QWidget::connect(filePath, SIGNAL(editingFinished()), this,
+			 SLOT(FilePathChanged()));
+	QWidget::connect(browseButton, SIGNAL(clicked()), this,
+			 SLOT(BrowseButtonClicked()));
+	QWidget::connect(matchText, SIGNAL(textChanged()), this,
+			 SLOT(MatchTextChanged()));
+	QWidget::connect(useRegex, SIGNAL(stateChanged(int)), this,
+			 SLOT(UseRegexChanged(int)));
+	QWidget::connect(checkModificationDate, SIGNAL(stateChanged(int)), this,
+			 SLOT(CheckModificationDateChanged(int)));
+	QWidget::connect(checkFileContent, SIGNAL(stateChanged(int)), this,
+			 SLOT(CheckFileContentChanged(int)));
+
+	fileType->addItem(obs_module_text("AdvSceneSwitcher.fileTab.local"));
+	fileType->addItem(obs_module_text("AdvSceneSwitcher.fileTab.remote"));
+
+	if (s) {
+		if (s->remote)
+			fileType->setCurrentIndex(1);
+		else
+			fileType->setCurrentIndex(0);
+		filePath->setText(QString::fromStdString(s->file));
+		matchText->setPlainText(QString::fromStdString(s->text));
+		useRegex->setChecked(s->useRegex);
+		checkModificationDate->setChecked(s->useTime);
+		checkFileContent->setChecked(s->onlyMatchIfChanged);
+	}
+
+	setStyleSheet("* { background-color: transparent; }");
+
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{fileType}}", fileType},
+		{"{{filePath}}", filePath},
+		{"{{browseButton}}", browseButton},
+		{"{{matchText}}", matchText},
+		{"{{useRegex}}", useRegex},
+		{"{{checkModificationDate}}", checkModificationDate},
+		{"{{checkFileContent}}", checkFileContent},
+		{"{{scenes}}", scenes},
+		{"{{transitions}}", transitions}};
+
+	QVBoxLayout *mainLayout = new QVBoxLayout;
+	QHBoxLayout *line1Layout = new QHBoxLayout;
+	QHBoxLayout *line2Layout = new QHBoxLayout;
+	QHBoxLayout *line3Layout = new QHBoxLayout;
+	placeWidgets(obs_module_text("AdvSceneSwitcher.fileTab.entry"),
+		     line1Layout, widgetPlaceholders);
+	placeWidgets(obs_module_text("AdvSceneSwitcher.fileTab.entry2"),
+		     line2Layout, widgetPlaceholders, false);
+	placeWidgets(obs_module_text("AdvSceneSwitcher.fileTab.entry3"),
+		     line3Layout, widgetPlaceholders);
+	mainLayout->addLayout(line1Layout);
+	mainLayout->addLayout(line2Layout);
+	mainLayout->addLayout(line3Layout);
+
+	setLayout(mainLayout);
+
+	switchData = s;
+
+	loading = false;
+}
+
+FileSwitch *FileSwitchWidget::getSwitchData()
+{
+	return switchData;
+}
+
+void FileSwitchWidget::setSwitchData(FileSwitch *s)
+{
+	switchData = s;
+}
+
+void FileSwitchWidget::swapSwitchData(FileSwitchWidget *s1,
+				      FileSwitchWidget *s2)
+{
+	SwitchWidget::swapSwitchData(s1, s2);
+
+	FileSwitch *t = s1->getSwitchData();
+	s1->setSwitchData(s2->getSwitchData());
+	s2->setSwitchData(t);
+}
+
+void FileSwitchWidget::FileTypeChanged(int index)
+{
+	if (loading || !switchData)
+		return;
+
+	if ((file_type)index == LOCAL) {
+		browseButton->setDisabled(false);
+		checkModificationDate->setDisabled(false);
+	} else {
+		browseButton->setDisabled(true);
+		checkModificationDate->setDisabled(true);
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->remote = (file_type)index == REMOTE;
+}
+
+void FileSwitchWidget::FilePathChanged()
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->file = filePath->text().toUtf8().constData();
+}
+
+void FileSwitchWidget::BrowseButtonClicked()
+{
+	if (loading || !switchData)
+		return;
+
+	QString path = QFileDialog::getOpenFileName(
+		this,
+		tr(obs_module_text("AdvSceneSwitcher.fileTab.selectRead")),
+		QDir::currentPath(),
+		tr(obs_module_text("AdvSceneSwitcher.fileTab.anyFileType")));
+	if (path.isEmpty())
+		return;
+
+	filePath->setText(path);
+	FilePathChanged();
+}
+
+void FileSwitchWidget::MatchTextChanged()
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->text = matchText->toPlainText().toUtf8().constData();
+}
+
+void FileSwitchWidget::UseRegexChanged(int state)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->useRegex = state;
+}
+
+void FileSwitchWidget::CheckModificationDateChanged(int state)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->useTime = state;
+}
+
+void FileSwitchWidget::CheckFileContentChanged(int state)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->onlyMatchIfChanged = state;
 }

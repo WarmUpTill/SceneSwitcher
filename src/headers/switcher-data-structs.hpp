@@ -86,7 +86,7 @@ struct SwitcherData {
 	IdleData idleData;
 
 	FileIOData fileIO;
-	std::vector<FileSwitch> fileSwitches;
+	std::deque<FileSwitch> fileSwitches;
 	CURL *curl = nullptr;
 
 	std::deque<ExecutableSwitch> executableSwitches;

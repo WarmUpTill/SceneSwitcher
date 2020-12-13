@@ -116,10 +116,12 @@ getNextDelim(std::string text,
  * @param text		Text based on which labels are generated and widgets are placed.
  * @param layout	Layout in which the widgets and labels will be placed.
  * @param placeholders	Map containing a mapping of placeholder strings to widgets.
+ * @param addStretch	Add addStretch() to layout.
  */
 static inline void
 placeWidgets(std::string text, QBoxLayout *layout,
-	     std::unordered_map<std::string, QWidget *> placeholders)
+	     std::unordered_map<std::string, QWidget *> placeholders,
+	     bool addStretch = true)
 {
 	std::vector<std::pair<std::string, QWidget *>> labelsWidgetsPairs;
 
@@ -144,5 +146,6 @@ placeWidgets(std::string text, QBoxLayout *layout,
 		if (lw.second)
 			layout->addWidget(lw.second);
 	}
-	layout->addStretch();
+	if (addStretch)
+		layout->addStretch();
 }

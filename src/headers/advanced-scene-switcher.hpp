@@ -145,7 +145,6 @@ public slots:
 
 	void on_browseButton_clicked();
 	void on_readFileCheckBox_stateChanged(int state);
-	void on_fileType_currentIndexChanged(int idx);
 	void on_readPathLineEdit_textChanged(const QString &text);
 	void on_writePathLineEdit_textChanged(const QString &text);
 	void on_browseButton_2_clicked();
@@ -168,8 +167,7 @@ public slots:
 
 	void on_fileAdd_clicked();
 	void on_fileRemove_clicked();
-	void on_fileScenesList_currentRowChanged(int idx);
-	void on_browseButton_3_clicked();
+	void on_fileSwitches_currentRowChanged(int idx);
 	void on_fileUp_clicked();
 	void on_fileDown_clicked();
 
