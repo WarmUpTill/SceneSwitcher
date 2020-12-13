@@ -153,7 +153,7 @@ bool compareIgnoringLineEnding(QString &s1, QString &s2)
 	QTextStream s1stream(&s1);
 	QTextStream s2stream(&s2);
 
-	while (!s1stream.atEnd() && !s2stream.atEnd()) {
+	while (!s1stream.atEnd() || !s2stream.atEnd()) {
 		QString s1s = s1stream.readLine();
 		QString s2s = s2stream.readLine();
 		if (QString::compare(s1s, s2s, Qt::CaseSensitive) != 0) {
@@ -173,8 +173,8 @@ bool matchFileContent(QString &filedata, FileSwitch &s)
 	}
 
 	if (s.useRegex) {
-		return filedata.contains(
-			QRegularExpression(QString::fromStdString(s.text)));
+		QRegExp rx(QString::fromStdString(s.text));
+		return rx.exactMatch(filedata);
 	}
 
 	QString text = QString::fromStdString(s.text);
