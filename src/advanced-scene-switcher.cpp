@@ -354,8 +354,11 @@ void SwitcherData::Thread()
 		} else {
 			duration =
 				std::chrono::milliseconds(interval) - runTime;
-			if (duration.count() < 0)
-				duration = std::chrono::milliseconds(0);
+			if (duration.count() < 1) {
+				blog(LOG_INFO,
+				     "detected busy loop - refusing to sleep less than 1ms");
+				duration = std::chrono::milliseconds(50);
+			}
 		}
 
 		//sleep for a bit
