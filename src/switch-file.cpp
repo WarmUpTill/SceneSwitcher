@@ -94,6 +94,19 @@ void SwitcherData::writeSceneInfoToFile()
 	obs_source_release(currentSource);
 }
 
+void SwitcherData::writeToStatusFile(QString msg)
+{
+	if (!fileIO.writeEnabled || fileIO.writePath.empty())
+		return;
+
+	QFile file(QString::fromStdString(fileIO.writePath));
+	if (file.open(QIODevice::ReadWrite)) {
+		QTextStream stream(&file);
+		stream << msg << endl;
+	}
+	file.close();
+}
+
 void SwitcherData::checkSwitchInfoFromFile(bool &match, OBSWeakSource &scene,
 					   OBSWeakSource &transition)
 {

@@ -494,6 +494,9 @@ void SwitcherData::Start()
 		switcher->th = new SwitcherThread();
 		switcher->th->start(
 			(QThread::Priority)switcher->threadPriority);
+
+		// Will be overwritten quickly but might be useful
+		writeToStatusFile("Advanced Scene Switcher running");
 	}
 }
 
@@ -506,6 +509,8 @@ void SwitcherData::Stop()
 		th->wait();
 		delete th;
 		th = nullptr;
+
+		writeToStatusFile("Advanced Scene Switcher stopped");
 	}
 }
 

@@ -156,6 +156,7 @@ struct SwitcherData {
 	bool sceneChangedDuringWait();
 	bool prioFuncsValid();
 	void writeSceneInfoToFile();
+	void writeToStatusFile(QString status);
 	void autoStopStreamAndRecording();
 	void autoStartStreamRecording();
 	bool checkPause();
