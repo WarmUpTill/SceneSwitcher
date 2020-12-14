@@ -1,6 +1,7 @@
 #pragma once
 #include "switch-generic.hpp"
 #include <QPlainTextEdit>
+#include <obs-module.h>
 
 constexpr auto read_file_func = 0;
 constexpr auto default_priority_0 = read_file_func;
@@ -11,8 +12,8 @@ typedef enum {
 } file_type;
 
 struct FileSwitch : SceneSwitcherEntry {
-	std::string file;
-	std::string text;
+	std::string file = obs_module_text("AdvSceneSwitcher.enterPath");
+	std::string text = obs_module_text("AdvSceneSwitcher.enterText");
 	bool remote = false;
 	bool useRegex = false;
 	bool useTime = false;
