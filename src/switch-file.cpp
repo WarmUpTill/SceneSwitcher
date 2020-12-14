@@ -449,6 +449,7 @@ FileSwitchWidget::FileSwitchWidget(FileSwitch *s) : SwitchWidget(s, false)
 {
 	fileType = new QComboBox();
 	filePath = new QLineEdit(obs_module_text("AdvSceneSwitcher.enterPath"));
+	filePath->setStyleSheet("border:1px solid gray;");
 	browseButton =
 		new QPushButton(obs_module_text("AdvSceneSwitcher.browse"));
 	browseButton->setStyleSheet("border:1px solid gray;");
