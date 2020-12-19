@@ -289,10 +289,20 @@
                      </sizepolicy>
                     </property>
                     <property name="text">
-                     <string>If no switch condition is met</string>
+                     <string>If no switch condition is met for</string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="noMatchDelay">
+                    <property name="suffix">
+                     <string>s</string>
+                    </property>
+                    <property name="maximum">
+                     <double>999999.989999999990687</double>
                     </property>
                    </widget>
                   </item>
@@ -585,13 +595,6 @@
           </layout>
          </item>
         </layout>
-       </item>
-       <item>
-        <widget class="QPushButton" name="close">
-         <property name="text">
-          <string>Close</string>
-         </property>
-        </widget>
        </item>
       </layout>
      </widget>
@@ -1172,7 +1175,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="titleTab">
+     <widget class="QWidget" name="windowTitleTab">
       <attribute name="title">
        <string notr="true">Title</string>
       </attribute>
@@ -2184,6 +2187,13 @@
           </widget>
          </item>
          <item>
+          <widget class="QCheckBox" name="onlyMatchIfChanged">
+           <property name="text">
+            <string>Only match if content changed</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="horizontalSpacer_11">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -2624,7 +2634,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="IdleTab">
+     <widget class="QWidget" name="idleTab">
       <attribute name="title">
        <string notr="true">Idle</string>
       </attribute>
@@ -3174,6 +3184,13 @@
        </item>
       </layout>
      </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="close">
+     <property name="text">
+      <string>Close</string>
+     </property>
     </widget>
    </item>
   </layout>

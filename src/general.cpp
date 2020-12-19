@@ -56,6 +56,14 @@ void AdvSceneSwitcher::on_noMatchRandomSwitch_clicked()
 	ui->randomDisabledWarning->setVisible(false);
 }
 
+void AdvSceneSwitcher::on_noMatchDelay_valueChanged(double i)
+{
+	if (loading)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->noMatchDelay = i;
+}
+
 void AdvSceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
 {
 	if (loading)
@@ -158,10 +166,18 @@ void SwitcherData::autoStopStreamAndRecording()
 	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
 	if (ws && autoStopScene == ws) {
-		if (obs_frontend_streaming_active())
+		if (obs_frontend_streaming_active()) {
+			blog(LOG_INFO,
+			     "Stopping stream because scene '%s' is active",
+			     obs_source_get_name(currentSource));
 			obs_frontend_streaming_stop();
-		if (obs_frontend_recording_active())
+		}
+		if (obs_frontend_recording_active()) {
+			blog(LOG_INFO,
+			     "Stopping record because scene '%s' is active",
+			     obs_source_get_name(currentSource));
 			obs_frontend_recording_stop();
+		}
 	}
 	obs_source_release(currentSource);
 	obs_weak_source_release(ws);
@@ -226,12 +242,20 @@ void SwitcherData::autoStartStreamRecording()
 	if (ws && autoStartScene == ws) {
 		if ((switcher->autoStartType == STREAMING ||
 		     switcher->autoStartType == RECORINDGSTREAMING) &&
-		    !obs_frontend_streaming_active())
+		    !obs_frontend_streaming_active()) {
+			blog(LOG_INFO,
+			     "Starting stream because scene '%s' is active",
+			     obs_source_get_name(currentSource));
 			obs_frontend_streaming_start();
+		}
 		if ((switcher->autoStartType == RECORDING ||
 		     switcher->autoStartType == RECORINDGSTREAMING) &&
-		    !obs_frontend_recording_active())
+		    !obs_frontend_recording_active()) {
+			blog(LOG_INFO,
+			     "Starting record because scene '%s' is active",
+			     obs_source_get_name(currentSource));
 			obs_frontend_recording_start();
+		}
 	}
 	obs_source_release(currentSource);
 	obs_weak_source_release(ws);
@@ -337,58 +361,56 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 	close();
 }
 
-int findTabIndex(QTabBar *bar, int pos)
+int findTabIndex(QTabWidget *tabWidget, int pos)
 {
 	int at = -1;
 
 	QString tabName = "";
 	switch (pos) {
 	case 0:
-		tabName = "General";
+		tabName = "generalTab";
 		break;
 	case 1:
-		tabName = "Transition";
+		tabName = "transitionsTab";
 		break;
 	case 2:
-		tabName = "Pause";
+		tabName = "pauseScenesTab";
 		break;
 	case 3:
-		tabName = "Title";
+		tabName = "windowTitleTab";
 		break;
 	case 4:
-		tabName = "Executable";
+		tabName = "executableTab";
 		break;
 	case 5:
-		tabName = "Region";
+		tabName = "screenRegionTab";
 		break;
 	case 6:
-		tabName = "Media";
+		tabName = "mediaTab";
 		break;
 	case 7:
-		tabName = "File";
+		tabName = "fileTab";
 		break;
 	case 8:
-		tabName = "Random";
+		tabName = "randomTab";
 		break;
 	case 9:
-		tabName = "Time";
+		tabName = "timeTab";
 		break;
 	case 10:
-		tabName = "Idle";
+		tabName = "idleTab";
 		break;
 	case 11:
-		tabName = "Sequence";
+		tabName = "sceneSequenceTab";
 		break;
 	case 12:
-		tabName = "Audio";
+		tabName = "audioTab";
 		break;
 	}
 
-	for (int i = 0; i < bar->count(); ++i) {
-		if (bar->tabText(i).compare(tabName) == 0) {
-			at = i;
-			break;
-		}
+	QWidget *page = tabWidget->findChild<QWidget *>(tabName);
+	if (page) {
+		at = tabWidget->indexOf(page);
 	}
 	if (at == -1)
 		blog(LOG_INFO, "failed to find tab %s",
@@ -401,7 +423,7 @@ void AdvSceneSwitcher::setTabOrder()
 {
 	QTabBar *bar = ui->tabWidget->tabBar();
 	for (int i = 0; i < bar->count(); ++i) {
-		int curPos = findTabIndex(bar, switcher->tabOrder[i]);
+		int curPos = findTabIndex(ui->tabWidget, switcher->tabOrder[i]);
 
 		if (i != curPos && curPos != -1)
 			bar->moveTab(curPos, i);
@@ -417,6 +439,15 @@ void AdvSceneSwitcher::on_tabMoved(int from, int to)
 	std::swap(switcher->tabOrder[from], switcher->tabOrder[to]);
 }
 
+void AdvSceneSwitcher::on_tabWidget_currentChanged(int index)
+{
+	UNUSED_PARAMETER(index);
+
+	switcher->showFrame = false;
+	clearFrames(ui->screenRegionSwitches);
+	SetShowFrames();
+}
+
 void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 {
 	obs_data_set_int(obj, "interval", switcher->interval);
@@ -427,6 +458,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 			    nonMatchingSceneName.c_str());
 	obs_data_set_int(obj, "switch_if_not_matching",
 			 switcher->switchIfNotMatching);
+	obs_data_set_double(obj, "noMatchDelay", switcher->noMatchDelay);
 
 	obs_data_set_bool(obj, "active", !switcher->stop);
 	obs_data_set_int(obj, "startup_behavior", switcher->startupBehavior);
@@ -503,6 +535,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		obs_data_get_string(obj, "non_matching_scene");
 	switcher->nonMatchingScene =
 		GetWeakSourceByName(nonMatchingScene.c_str());
+	switcher->noMatchDelay = obs_data_get_double(obj, "noMatchDelay");
 
 	switcher->stop = !obs_data_get_bool(obj, "active");
 	switcher->startupBehavior =
@@ -613,6 +646,29 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(int)(obs_data_get_int(obj, "audioTabPos")));
 }
 
+void SwitcherData::checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
+				      OBSWeakSource &transition, int &sleep)
+{
+	if (match) {
+		noMatchCount = 0;
+		return;
+	}
+
+	if ((noMatchCount * interval) / 1000.0 < noMatchDelay) {
+		noMatchCount++;
+		return;
+	}
+
+	if (switchIfNotMatching == SWITCH && nonMatchingScene) {
+		match = true;
+		scene = nonMatchingScene;
+		transition = nullptr;
+	}
+	if (switchIfNotMatching == RANDOM_SWITCH) {
+		checkRandom(match, scene, transition, sleep);
+	}
+}
+
 void AdvSceneSwitcher::setupGeneralTab()
 {
 	populateSceneSelection(ui->noMatchSwitchScene, false);
@@ -631,6 +687,9 @@ void AdvSceneSwitcher::setupGeneralTab()
 	}
 	ui->noMatchSwitchScene->setCurrentText(
 		GetWeakSourceName(switcher->nonMatchingScene).c_str());
+	ui->noMatchDelay->setValue(switcher->noMatchDelay);
+	ui->noMatchDelay->setToolTip(
+		"Will only ever be as accurate as the configured check interval.");
 	ui->checkInterval->setValue(switcher->interval);
 
 	ui->autoStopSceneCheckBox->setChecked(switcher->autoStopEnable);

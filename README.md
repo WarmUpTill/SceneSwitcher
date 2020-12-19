@@ -3,7 +3,7 @@ An automated scene switcher for OBS Studio
 
 More information can be found on https://obsproject.com/forum/resources/automatic-scene-switching.395/
 
-## Compiling in tree
+## Compiling in tree (recommended)
 Add the "SceneSwitcher" source directory to your obs-studio source directory under obs-studio/UI/frontend-plugins/:
 ```
 cd obs-studio/UI/frontend-plugins/
