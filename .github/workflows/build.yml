@@ -15,8 +15,8 @@ jobs:
     name: "macOS 64-bit"
     runs-on: [macos-latest]
     env:
-      QT_VERSION: 5.14.1
-      MACOS_DEPS_VERSION: '2020-08-30'
+      QT_VERSION: '5.15.2'
+      MACOS_DEPS_VERSION: '2020-12-11'
     steps:
       - name: Checkout
         uses: actions/checkout@v2.3.4
@@ -180,10 +180,10 @@ jobs:
           FILE_DATE=$(date +%Y-%m-%d)
           FILE_NAME=${{ env.PLUGIN_NAME }}-$FILE_DATE-${{ github.sha }}-linux64.tar.gz
           echo "FILE_NAME=${FILE_NAME}" >> $GITHUB_ENV
-          mkdir -p ./${{ env.PLUGIN_NAME }}/bin/64bit/
-          mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.LIB_NAME }}.so ./${{ env.PLUGIN_NAME }}/bin/64bit/${{ env.LIB_NAME }}.so
-          mv ./UI/frontend-plugins/${{ env.PLUGIN_NAME }}/data ./${{ env.PLUGIN_NAME }}/data
-          tar -cvzf "${FILE_NAME}" ${{ env.PLUGIN_NAME }}
+          mkdir -p ./${{ env.LIB_NAME }}/bin/64bit/
+          mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.LIB_NAME }}.so ./${{ env.LIB_NAME }}/bin/64bit/${{ env.LIB_NAME }}.so
+          mv ./UI/frontend-plugins/${{ env.PLUGIN_NAME }}/data ./${{ env.LIB_NAME }}/data
+          tar -cvzf "${FILE_NAME}" ${{ env.LIB_NAME }}
       - name: 'Publish'
         uses: actions/upload-artifact@v2.2.1
         with:
@@ -299,3 +299,35 @@ jobs:
         with:
           name: '${{ env.FILE_NAME }}'
           path: '*-win32.zip'
+  release:
+    needs: [macos64, ubuntu64, win64, win32]
+    name: 'Create Release'
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: "Checkout plugin"
+        uses: actions/checkout@v2.3.4
+        with:
+          path: plugin/${{ env.PLUGIN_NAME }}
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+      - name: 'Package'
+        shell: bash
+        run: |
+          mkdir -p ${{ env.PLUGIN_NAME }}/Linux ${{ env.PLUGIN_NAME }}/MacOs ${{ env.PLUGIN_NAME }}/Windows
+          tar xf artifacts/${{ env.PLUGIN_NAME }}*-linux64.tar.gz/${{ env.PLUGIN_NAME }}*-linux64.tar.gz -C ${{ env.PLUGIN_NAME }}/Linux/
+          mv artifacts/${{ env.PLUGIN_NAME }}*-macos.pkg/${{ env.PLUGIN_NAME }}*-macos.pkg ${{ env.PLUGIN_NAME }}/MacOs/${{ env.PLUGIN_NAME }}.pkg
+          unzip -o artifacts/${{ env.PLUGIN_NAME }}*-win32.zip/${{ env.PLUGIN_NAME }}*-win32.zip -d ${{ env.PLUGIN_NAME }}/Windows/
+          unzip -o artifacts/${{ env.PLUGIN_NAME }}*-win64.zip/${{ env.PLUGIN_NAME }}*-win64.zip -d ${{ env.PLUGIN_NAME }}/Windows/
+          rm ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/32bit/advanced-scene-switcher.pdb
+          rm ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/64bit/advanced-scene-switcher.pdb
+          cp plugin/${{ env.PLUGIN_NAME }}/CI/release/README.txt ${{ env.PLUGIN_NAME }}/
+          FILE_NAME=${{ env.PLUGIN_NAME }}.zip
+          zip -r ${FILE_NAME} ${{ env.PLUGIN_NAME }}/
+      - name: Publish
+        if: success()
+        uses: actions/upload-artifact@v2.2.1
+        with:
+          name: "Release"
+          path: '*.zip'
