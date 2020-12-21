@@ -51,11 +51,6 @@ private:
 
 	QFrame helperFrame;
 
-	QLabel *cursorLabel;
-	QLabel *xLabel;
-	QLabel *switchLabel;
-	QLabel *usingLabel;
-
 	ScreenRegionSwitch *switchData;
 
 	void drawFrame();

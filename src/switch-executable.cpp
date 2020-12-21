@@ -206,11 +206,8 @@ ExecutableSwitchWidget::ExecutableSwitchWidget(ExecutableSwitch *s)
 	: SwitchWidget(s, false)
 {
 	processes = new QComboBox();
-	requiresFocus = new QCheckBox("only if focused");
-
-	whenLabel = new QLabel("When");
-	switchLabel = new QLabel("is running switch to");
-	usingLabel = new QLabel("using");
+	requiresFocus = new QCheckBox(obs_module_text(
+		"AdvSceneSwitcher.executableTab.requiresFocus"));
 
 	QWidget::connect(processes, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(ProcessChanged(const QString &)));
@@ -230,16 +227,13 @@ ExecutableSwitchWidget::ExecutableSwitchWidget(ExecutableSwitch *s)
 	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	mainLayout->addWidget(whenLabel);
-	mainLayout->addWidget(processes);
-	mainLayout->addWidget(switchLabel);
-	mainLayout->addWidget(scenes);
-	mainLayout->addWidget(usingLabel);
-	mainLayout->addWidget(transitions);
-	mainLayout->addWidget(requiresFocus);
-	mainLayout->addStretch();
-
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{processes}}", processes},
+		{"{{requiresFocus}}", requiresFocus},
+		{"{{scenes}}", scenes},
+		{"{{transitions}}", transitions}};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.executableTab.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	switchData = s;

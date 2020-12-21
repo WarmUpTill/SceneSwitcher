@@ -182,6 +182,7 @@ jobs:
           echo "FILE_NAME=${FILE_NAME}" >> $GITHUB_ENV
           mkdir -p ./${{ env.PLUGIN_NAME }}/bin/64bit/
           mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.LIB_NAME }}.so ./${{ env.PLUGIN_NAME }}/bin/64bit/${{ env.LIB_NAME }}.so
+          mv ./UI/frontend-plugins/${{ env.PLUGIN_NAME }}/data ./${{ env.PLUGIN_NAME }}/data
           tar -cvzf "${FILE_NAME}" ${{ env.PLUGIN_NAME }}
       - name: 'Publish'
         uses: actions/upload-artifact@v2.2.1
@@ -235,6 +236,7 @@ jobs:
           $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-win64.zip"
           echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
           robocopy .\build64\rundir\RelWithDebInfo\obs-plugins\64bit\ .\build\obs-plugins\64bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
+          robocopy .\build64\rundir\RelWithDebInfo\data\obs-plugins\${{ env.LIB_NAME }}\ .\build\data\obs-plugins\${{ env.LIB_NAME }}\ /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
       - name: Publish
         if: success()
@@ -289,6 +291,7 @@ jobs:
           $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-win32.zip"
           echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
           robocopy .\build32\rundir\RelWithDebInfo\obs-plugins\32bit\ .\build\obs-plugins\32bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
+          robocopy .\build32\rundir\RelWithDebInfo\data\obs-plugins\${{ env.LIB_NAME }}\ .\build\data\obs-plugins\${{ env.LIB_NAME }}\ /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
       - name: Publish
         if: success()

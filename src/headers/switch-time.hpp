@@ -53,9 +53,5 @@ private:
 	QComboBox *triggers;
 	QTimeEdit *time;
 
-	QLabel *atLabel;
-	QLabel *switchLabel;
-	QLabel *usingLabel;
-
 	TimeSwitch *switchData;
 };

@@ -53,13 +53,7 @@ private slots:
 private:
 	QComboBox *audioSources;
 	QSpinBox *audioVolumeThreshold;
-
 	VolControl *volMeter;
-
-	QLabel *whenLabel;
-	QLabel *aboveLabel;
-	QLabel *switchLabel;
-	QLabel *usingLabel;
 
 	AudioSwitch *switchData;
 };

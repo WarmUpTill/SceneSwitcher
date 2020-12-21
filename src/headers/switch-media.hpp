@@ -75,11 +75,5 @@ private:
 	QComboBox *timeRestrictions;
 	QSpinBox *time;
 
-	QLabel *whenLabel;
-	QLabel *stateLabel;
-	QLabel *andLabel;
-	QLabel *switchLabel;
-	QLabel *usingLabel;
-
 	MediaSwitch *switchData;
 };

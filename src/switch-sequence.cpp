@@ -92,8 +92,12 @@ void AdvSceneSwitcher::on_sceneSequenceDown_clicked()
 void AdvSceneSwitcher::on_sceneSequenceSave_clicked()
 {
 	QString directory = QFileDialog::getSaveFileName(
-		this, tr("Save Scene Sequence to file ..."),
-		QDir::currentPath(), tr("Text files (*.txt)"));
+		this,
+		tr(obs_module_text(
+			"AdvSceneSwitcher.sceneSequenceTab.saveTitle")),
+		QDir::currentPath(),
+		tr(obs_module_text(
+			"AdvSceneSwitcher.sceneSequenceTab.fileType")));
 	if (directory.isEmpty())
 		return;
 	QFile file(directory);
@@ -109,8 +113,12 @@ void AdvSceneSwitcher::on_sceneSequenceSave_clicked()
 void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 {
 	QString directory = QFileDialog::getOpenFileName(
-		this, tr("Select a file to read Scene Sequence from ..."),
-		QDir::currentPath(), tr("Text files (*.txt)"));
+		this,
+		tr(obs_module_text(
+			"AdvSceneSwitcher.sceneSequenceTab.loadTitle")),
+		QDir::currentPath(),
+		tr(obs_module_text(
+			"AdvSceneSwitcher.sceneSequenceTab.fileType")));
 	if (directory.isEmpty())
 		return;
 
@@ -123,8 +131,8 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 
 	if (!obj) {
 		QMessageBox Msgbox;
-		Msgbox.setText(
-			"Advanced Scene Switcher failed to import settings!");
+		Msgbox.setText(obs_module_text(
+			"AdvSceneSwitcher.sceneSequenceTab.loadFail"));
 		Msgbox.exec();
 		return;
 	}
@@ -143,8 +151,8 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 	obs_data_release(obj);
 
 	QMessageBox Msgbox;
-	Msgbox.setText(
-		"Advanced Scene Switcher settings imported successfully!");
+	Msgbox.setText(obs_module_text(
+		"AdvSceneSwitcher.sceneSequenceTab.loadSuccess"));
 	Msgbox.exec();
 	close();
 }
@@ -304,9 +312,9 @@ void SceneSequenceSwitch::logSleep(int dur)
 
 void populateDelayUnits(QComboBox *list)
 {
-	list->addItem("seconds");
-	list->addItem("minutes");
-	list->addItem("hours");
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.secends"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.minutes"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
 }
 
 SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
@@ -314,11 +322,6 @@ SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
 	delay = new QDoubleSpinBox();
 	delayUnits = new QComboBox();
 	startScenes = new QComboBox();
-
-	whenLabel = new QLabel("When");
-	switchLabel = new QLabel("is active switch to");
-	afterLabel = new QLabel("after");
-	usingLabel = new QLabel("using");
 
 	QWidget::connect(delay, SIGNAL(valueChanged(double)), this,
 			 SLOT(DelayChanged(double)));
@@ -353,18 +356,14 @@ SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
 	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	mainLayout->addWidget(whenLabel);
-	mainLayout->addWidget(startScenes);
-	mainLayout->addWidget(switchLabel);
-	mainLayout->addWidget(scenes);
-	mainLayout->addWidget(afterLabel);
-	mainLayout->addWidget(delay);
-	mainLayout->addWidget(delayUnits);
-	mainLayout->addWidget(usingLabel);
-	mainLayout->addWidget(transitions);
-	mainLayout->addStretch();
-
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{startScenes}}", startScenes},
+		{"{{scenes}}", scenes},
+		{"{{delay}}", delay},
+		{"{{delayUnits}}", delayUnits},
+		{"{{transitions}}", transitions}};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.sceneSequenceTab.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	switchData = s;

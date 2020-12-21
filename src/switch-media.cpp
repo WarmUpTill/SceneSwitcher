@@ -414,25 +414,38 @@ void swap(MediaSwitch &first, MediaSwitch &second)
 
 void populateMediaStates(QComboBox *list)
 {
-	list->addItem("None");
-	list->addItem("Playing");
-	list->addItem("Opening");
-	list->addItem("Buffering");
-	list->addItem("Paused");
-	list->addItem("Stopped");
-	list->addItem("Ended");
-	list->addItem("Error");
-	list->addItem("Played to end");
-	list->addItem("Any");
+	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.none"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.mediaTab.states.playing"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.mediaTab.states.opening"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.mediaTab.states.buffering"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.mediaTab.states.paused"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.mediaTab.states.stopped"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.mediaTab.states.ended"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.mediaTab.states.error"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.mediaTab.states.playedToEnd"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.any"));
 }
 
 void populateTimeRestrictions(QComboBox *list)
 {
-	list->addItem("None");
-	list->addItem("Time shorter");
-	list->addItem("Time longer");
-	list->addItem("Time remaining shorter");
-	list->addItem("Time remaining longer");
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.mediaTab.timeRestriction.none"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.mediaTab.timeRestriction.shorter"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.mediaTab.timeRestriction.longer"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.mediaTab.timeRestriction.remainShorter"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.mediaTab.timeRestriction.remainLonger"));
 }
 
 MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
@@ -441,12 +454,6 @@ MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
 	states = new QComboBox();
 	timeRestrictions = new QComboBox();
 	time = new QSpinBox();
-
-	whenLabel = new QLabel("When");
-	stateLabel = new QLabel("state is");
-	andLabel = new QLabel("and");
-	switchLabel = new QLabel("switch to");
-	usingLabel = new QLabel("using");
 
 	time->setSuffix("ms");
 	time->setMaximum(99999999);
@@ -479,20 +486,15 @@ MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
 	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	mainLayout->addWidget(whenLabel);
-	mainLayout->addWidget(meidaSources);
-	mainLayout->addWidget(stateLabel);
-	mainLayout->addWidget(states);
-	mainLayout->addWidget(andLabel);
-	mainLayout->addWidget(timeRestrictions);
-	mainLayout->addWidget(time);
-	mainLayout->addWidget(switchLabel);
-	mainLayout->addWidget(scenes);
-	mainLayout->addWidget(usingLabel);
-	mainLayout->addWidget(transitions);
-	mainLayout->addStretch();
-
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{meidaSources}}", meidaSources},
+		{"{{states}}", states},
+		{"{{timeRestrictions}}", timeRestrictions},
+		{"{{time}}", time},
+		{"{{scenes}}", scenes},
+		{"{{transitions}}", transitions}};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.mediaTab.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	switchData = s;
