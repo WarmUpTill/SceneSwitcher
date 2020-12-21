@@ -315,17 +315,13 @@ jobs:
       - name: 'Package'
         shell: bash
         run: |
-          mkdir -p ${{ env.PLUGIN_NAME }}/Linux ${{ env.PLUGIN_NAME }}/MacOs ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/64bit ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/32bit tmp
-          unzip artifacts/${{ env.PLUGIN_NAME }}*-linux64.tar.gz.zip -d tmp/
-          tar xf tmp/${{ env.PLUGIN_NAME }}*-linux64.tar.gz -C ${{ env.PLUGIN_NAME }}/Linux/
-          unzip artifacts/${{ env.PLUGIN_NAME }}*-macos.pkg.zip -d tmp/
-          mv tmp/${{ env.PLUGIN_NAME }}*-macos.pkg ${{ env.PLUGIN_NAME }}/MacOs/${{ env.PLUGIN_NAME }}.pkg
-          unzip artifacts/${{ env.PLUGIN_NAME }}*-win32.zip.zip -d tmp/
-          unzip artifacts/${{ env.PLUGIN_NAME }}*-win64.zip.zip -d tmp/
-          unzip -o tmp/${{ env.PLUGIN_NAME }}*-win32.zip -d ${{ env.PLUGIN_NAME }}/Windows/
-          unzip -o tmp/${{ env.PLUGIN_NAME }}*-win64.zip -d ${{ env.PLUGIN_NAME }}/Windows/
-          rm ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/64bit/advanced-scene-switcher.pdb
+          mkdir -p ${{ env.PLUGIN_NAME }}/Linux ${{ env.PLUGIN_NAME }}/MacOs ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/64bit ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/32bit
+          tar xf artifacts/${{ env.PLUGIN_NAME }}*-linux64.tar.gz -C ${{ env.PLUGIN_NAME }}/Linux/
+          mv artifacts/${{ env.PLUGIN_NAME }}*-macos.pkg ${{ env.PLUGIN_NAME }}/MacOs/${{ env.PLUGIN_NAME }}.pkg
+          unzip -o artifacts/${{ env.PLUGIN_NAME }}*-win32.zip -d ${{ env.PLUGIN_NAME }}/Windows/
+          unzip -o artifacts/${{ env.PLUGIN_NAME }}*-win64.zip -d ${{ env.PLUGIN_NAME }}/Windows/
           rm ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/32bit/advanced-scene-switcher.pdb
+          rm ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/64bit/advanced-scene-switcher.pdb
           cp plugin/${{ env.PLUGIN_NAME }}/CI/release/README.txt ${{ env.PLUGIN_NAME }}/
           FILE_DATE=$(date +%Y-%m-%d)
           FILE_NAME=${{ env.PLUGIN_NAME }}-$FILE_DATE.zip
