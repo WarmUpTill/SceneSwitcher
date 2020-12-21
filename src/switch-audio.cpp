@@ -256,13 +256,13 @@ bool AudioSwitch::valid()
 
 AudioSwitch::AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			 OBSWeakSource audioSource_, int volumeThreshold_,
-			 audioCondition condition_, double delay_,
+			 audioCondition condition_, double duration_,
 			 bool usePreviousScene_)
 	: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
 	  audioSource(audioSource_),
 	  volumeThreshold(volumeThreshold_),
 	  condition(condition_),
-	  duration(delay_)
+	  duration(duration_)
 {
 	volmeter = obs_volmeter_create(OBS_FADER_LOG);
 	obs_volmeter_add_callback(volmeter, setVolumeLevel, this);

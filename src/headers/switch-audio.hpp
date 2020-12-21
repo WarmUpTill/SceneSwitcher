@@ -33,7 +33,7 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	AudioSwitch(){};
 	AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 		    OBSWeakSource audioSource_, int volumeThreshold_,
-		    audioCondition condition_, double delay_,
+		    audioCondition condition_, double duration_,
 		    bool usePreviousScene_);
 	AudioSwitch(const AudioSwitch &other);
 	AudioSwitch(AudioSwitch &&other);
