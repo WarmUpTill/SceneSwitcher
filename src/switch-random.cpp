@@ -143,10 +143,6 @@ RandomSwitchWidget::RandomSwitchWidget(RandomSwitch *s) : SwitchWidget(s, false)
 {
 	delay = new QDoubleSpinBox();
 
-	switchLabel = new QLabel("If no switch condition is met switch to ");
-	usingLabel = new QLabel("using");
-	forLabel = new QLabel("for");
-
 	QWidget::connect(delay, SIGNAL(valueChanged(double)), this,
 			 SLOT(DelayChanged(double)));
 
@@ -160,15 +156,12 @@ RandomSwitchWidget::RandomSwitchWidget(RandomSwitch *s) : SwitchWidget(s, false)
 	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	mainLayout->addWidget(switchLabel);
-	mainLayout->addWidget(scenes);
-	mainLayout->addWidget(usingLabel);
-	mainLayout->addWidget(transitions);
-	mainLayout->addWidget(forLabel);
-	mainLayout->addWidget(delay);
-	mainLayout->addStretch();
-
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{scenes}}", scenes},
+		{"{{transitions}}", transitions},
+		{"{{delay}}", delay}};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.randomTab.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	switchData = s;

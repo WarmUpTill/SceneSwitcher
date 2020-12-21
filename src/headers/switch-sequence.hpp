@@ -55,10 +55,5 @@ private:
 	QComboBox *delayUnits;
 	QComboBox *startScenes;
 
-	QLabel *whenLabel;
-	QLabel *switchLabel;
-	QLabel *afterLabel;
-	QLabel *usingLabel;
-
 	SceneSequenceSwitch *switchData;
 };

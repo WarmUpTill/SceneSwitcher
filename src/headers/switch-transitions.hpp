@@ -45,10 +45,6 @@ private slots:
 private:
 	QComboBox *scenes2;
 
-	QLabel *switchLabel;
-	QLabel *toLabel;
-	QLabel *usingLabel;
-
 	SceneTransition *switchData;
 };
 
@@ -64,8 +60,5 @@ public:
 				   DefTransitionSwitchWidget *s2);
 
 private:
-	QLabel *whenLabel;
-	QLabel *switchLabel;
-
 	DefaultSceneTransition *switchData;
 };

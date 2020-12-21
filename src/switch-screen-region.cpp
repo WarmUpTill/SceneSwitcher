@@ -27,12 +27,14 @@ void showCurrentFrame(QListWidget *list)
 
 void AdvSceneSwitcher::SetShowFrames()
 {
-	ui->showFrame->setText("Show guide frames");
+	ui->showFrame->setText(obs_module_text(
+		"AdvSceneSwitcher.screenRegionTab.showGuideFrames"));
 }
 
 void AdvSceneSwitcher::SetHideFrames()
 {
-	ui->showFrame->setText("Hide guide frames");
+	ui->showFrame->setText(obs_module_text(
+		"AdvSceneSwitcher.screenRegionTab.hideGuideFrames"));
 }
 
 void AdvSceneSwitcher::on_showFrame_clicked()
@@ -257,11 +259,6 @@ ScreenRegionWidget::ScreenRegionWidget(ScreenRegionSwitch *s)
 	maxX = new QSpinBox();
 	maxY = new QSpinBox();
 
-	cursorLabel = new QLabel("If cursor is in");
-	xLabel = new QLabel("x");
-	switchLabel = new QLabel("switch to");
-	usingLabel = new QLabel("using");
-
 	minX->setPrefix("Min X: ");
 	minY->setPrefix("Min Y: ");
 	maxX->setPrefix("Max X: ");
@@ -296,19 +293,12 @@ ScreenRegionWidget::ScreenRegionWidget(ScreenRegionSwitch *s)
 	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	mainLayout->addWidget(cursorLabel);
-	mainLayout->addWidget(minX);
-	mainLayout->addWidget(minY);
-	mainLayout->addWidget(xLabel);
-	mainLayout->addWidget(maxX);
-	mainLayout->addWidget(maxY);
-	mainLayout->addWidget(switchLabel);
-	mainLayout->addWidget(scenes);
-	mainLayout->addWidget(usingLabel);
-	mainLayout->addWidget(transitions);
-	mainLayout->addStretch();
-
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{minX}}", minX},     {"{{minY}}", minY},
+		{"{{maxX}}", maxX},     {"{{maxY}}", maxY},
+		{"{{scenes}}", scenes}, {"{{transitions}}", transitions}};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.screenRegionTab.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	switchData = s;

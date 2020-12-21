@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Advanced Scene Switcher</string>
+   <string>AdvSceneSwitcher.windowTitle</string>
   </property>
   <property name="sizeGripEnabled">
    <bool>true</bool>
@@ -42,7 +42,7 @@
      </property>
      <widget class="QWidget" name="generalTab">
       <attribute name="title">
-       <string notr="true">General</string>
+       <string>AdvSceneSwitcher.generalTab.title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_19">
        <item>
@@ -52,7 +52,7 @@
            <item>
             <widget class="QGroupBox" name="statusBox">
              <property name="title">
-              <string>Status</string>
+              <string>AdvSceneSwitcher.generalTab.status</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_4">
               <item row="0" column="0">
@@ -60,28 +60,28 @@
                 <item row="4" column="0">
                  <widget class="QLabel" name="label_13">
                   <property name="text">
-                   <string>Hotkeys can be defined in the OBS settings</string>
+                   <string>AdvSceneSwitcher.generalTab.status.hotkeytips</string>
                   </property>
                  </widget>
                 </item>
                 <item row="1" column="0">
                  <widget class="QLabel" name="label_5">
                   <property name="text">
-                   <string>Advanced Scene Switcher is:</string>
+                   <string>AdvSceneSwitcher.generalTab.status.currentStatus</string>
                   </property>
                  </widget>
                 </item>
                 <item row="3" column="0">
                  <widget class="QLabel" name="label_64">
                   <property name="text">
-                   <string>On startup:</string>
+                   <string>AdvSceneSwitcher.generalTab.status.onStartup</string>
                   </property>
                  </widget>
                 </item>
                 <item row="2" column="1">
                  <widget class="QPushButton" name="toggleStartButton">
                   <property name="text">
-                   <string>Start</string>
+                   <string>AdvSceneSwitcher.generalTab.status.start</string>
                   </property>
                  </widget>
                 </item>
@@ -113,7 +113,7 @@
                 <item row="0" column="0">
                  <widget class="QLabel" name="label_4">
                   <property name="text">
-                   <string>Check switch conditions every</string>
+                   <string>AdvSceneSwitcher.generalTab.status.checkInterval</string>
                   </property>
                  </widget>
                 </item>
@@ -122,7 +122,7 @@
                   <item>
                    <widget class="QLabel" name="pluginRunningText">
                     <property name="text">
-                     <string notr="true">Not Active</string>
+                     <string>AdvSceneSwitcher.status.inactive</string>
                     </property>
                    </widget>
                   </item>
@@ -149,7 +149,7 @@
            <item>
             <widget class="QGroupBox" name="generalSettingsBox">
              <property name="title">
-              <string>General behavior</string>
+              <string>AdvSceneSwitcher.generalTab.generalBehavior</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_5">
               <item row="3" column="0">
@@ -157,7 +157,7 @@
                 <item>
                  <widget class="QCheckBox" name="autoStartSceneCheckBox">
                   <property name="text">
-                   <string>Automatically start</string>
+                   <string>AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart1</string>
                   </property>
                  </widget>
                 </item>
@@ -180,7 +180,7 @@
                 <item>
                  <widget class="QLabel" name="label_65">
                   <property name="text">
-                   <string>on scene</string>
+                   <string>AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart2</string>
                   </property>
                  </widget>
                 </item>
@@ -222,7 +222,7 @@
                   <item>
                    <widget class="QRadioButton" name="noMatchDontSwitch">
                     <property name="text">
-                     <string>Don't switch</string>
+                     <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.dontSwitch</string>
                     </property>
                     <property name="checked">
                      <bool>true</bool>
@@ -236,7 +236,7 @@
                   <item>
                    <widget class="QRadioButton" name="noMatchRandomSwitch">
                     <property name="text">
-                     <string>Switch to any scene in Random tab</string>
+                     <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.switchToRandom</string>
                     </property>
                    </widget>
                   </item>
@@ -259,7 +259,7 @@
                   <item>
                    <widget class="QRadioButton" name="noMatchSwitch">
                     <property name="text">
-                     <string>Switch to:</string>
+                     <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.switchTo</string>
                     </property>
                    </widget>
                   </item>
@@ -289,7 +289,7 @@
                      </sizepolicy>
                     </property>
                     <property name="text">
-                     <string>If no switch condition is met for</string>
+                     <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMet</string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -315,7 +315,7 @@
                 <item>
                  <widget class="QCheckBox" name="verboseLogging">
                   <property name="text">
-                   <string>Enable verbose logging</string>
+                   <string>AdvSceneSwitcher.generalTab.generalBehavior.verboseLogging</string>
                   </property>
                  </widget>
                 </item>
@@ -339,7 +339,7 @@
                 <item>
                  <widget class="QCheckBox" name="autoStopSceneCheckBox">
                   <property name="text">
-                   <string>Automatically stop streaming/recording on scene</string>
+                   <string>AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStop</string>
                   </property>
                  </widget>
                 </item>
@@ -386,7 +386,7 @@
                 <item>
                  <widget class="QCheckBox" name="uiHintsDisable">
                   <property name="text">
-                   <string>Disable UI hints</string>
+                   <string>AdvSceneSwitcher.generalTab.generalBehavior.disableUIHints</string>
                   </property>
                  </widget>
                 </item>
@@ -415,13 +415,13 @@
            <item>
             <widget class="QGroupBox" name="priorityBox">
              <property name="title">
-              <string>Priority</string>
+              <string>AdvSceneSwitcher.generalTab.priority</string>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_16">
               <item>
                <widget class="QLabel" name="description">
                 <property name="text">
-                 <string>Switching methods priority (Highest priority is at the top)</string>
+                 <string>AdvSceneSwitcher.generalTab.priority.description</string>
                 </property>
                </widget>
               </item>
@@ -524,7 +524,7 @@
                 <item>
                  <widget class="QLabel" name="label_56">
                   <property name="text">
-                   <string>Use thread priority</string>
+                   <string>AdvSceneSwitcher.generalTab.priority.threadPriority</string>
                   </property>
                  </widget>
                 </item>
@@ -562,7 +562,7 @@
               <item>
                <widget class="QLabel" name="label_57">
                 <property name="text">
-                 <string>(Raising the priority above &quot;Normal&quot; is not recommended)</string>
+                 <string>AdvSceneSwitcher.generalTab.priority.threadPriorityNotice</string>
                 </property>
                </widget>
               </item>
@@ -572,20 +572,20 @@
            <item>
             <widget class="QGroupBox" name="saveLoadBox">
              <property name="title">
-              <string>Save / load settings</string>
+              <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings</string>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_17">
               <item>
                <widget class="QPushButton" name="exportSettings">
                 <property name="text">
-                 <string>Export</string>
+                 <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings.export</string>
                 </property>
                </widget>
               </item>
               <item>
                <widget class="QPushButton" name="importSettings">
                 <property name="text">
-                 <string>Import</string>
+                 <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings.import</string>
                 </property>
                </widget>
               </item>
@@ -600,13 +600,13 @@
      </widget>
      <widget class="QWidget" name="transitionsTab">
       <attribute name="title">
-       <string notr="true">Transition</string>
+       <string>AdvSceneSwitcher.transitionTab.title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_15">
        <item>
         <widget class="QCheckBox" name="transitionOverridecheckBox">
          <property name="text">
-          <string>Scene transitions defined in the scene switcher take priority over Transition Overrides defined per scene</string>
+          <string>AdvSceneSwitcher.transitionTab.transitionOverride</string>
          </property>
         </widget>
        </item>
@@ -620,13 +620,13 @@
        <item>
         <widget class="QGroupBox" name="transitionsGroup">
          <property name="title">
-          <string>Use transition for automated scene switch from scene A to scene B</string>
+          <string>AdvSceneSwitcher.transitionTab.transitionForAToB</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_14">
           <item>
            <widget class="QLabel" name="label_36">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Only&lt;/span&gt; transitions caused by the scene switcher and not the ones you are causing manually are affected by these settings. &lt;br/&gt;Settings defined here take priority over transition settings configured elsewhere in the scene switcher.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>AdvSceneSwitcher.transitionTab.transitionForAToB.description</string>
             </property>
             <property name="wordWrap">
              <bool>true</bool>
@@ -789,7 +789,7 @@
        <item>
         <widget class="QGroupBox" name="defaultTransitionsGroup">
          <property name="title">
-          <string>Change transition if scene is active</string>
+          <string>AdvSceneSwitcher.transitionTab.defaultTransition</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_12">
           <item>
@@ -946,7 +946,7 @@
      </widget>
      <widget class="QWidget" name="pauseScenesTab">
       <attribute name="title">
-       <string notr="true">Pause</string>
+       <string>AdvSceneSwitcher.pauseScenesTab.title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
@@ -954,7 +954,7 @@
          <item>
           <widget class="QLabel" name="label_7">
            <property name="text">
-            <string>Pause the Scene Switcher on scene</string>
+            <string>AdvSceneSwitcher.pauseScenesTab.pauseOnScene</string>
            </property>
           </widget>
          </item>
@@ -1066,7 +1066,7 @@
          <item>
           <widget class="QLabel" name="label_37">
            <property name="text">
-            <string>Pause the Scene Switcher when </string>
+            <string>AdvSceneSwitcher.pauseScenesTab.pauseInFocus1</string>
            </property>
           </widget>
          </item>
@@ -1092,7 +1092,7 @@
          <item>
           <widget class="QLabel" name="label_38">
            <property name="text">
-            <string>is in focus</string>
+            <string>AdvSceneSwitcher.pauseScenesTab.pauseInFocus2</string>
            </property>
           </widget>
          </item>
@@ -1177,7 +1177,7 @@
      </widget>
      <widget class="QWidget" name="windowTitleTab">
       <attribute name="title">
-       <string notr="true">Title</string>
+       <string>AdvSceneSwitcher.windowTitleTab.title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
@@ -1186,7 +1186,7 @@
           <string/>
          </property>
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter either direct window titles or valid regex. You can check syntax and matches for regular expressions using &lt;a href=&quot;https://regexr.com&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#268bd2;&quot;&gt;RegExr&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>AdvSceneSwitcher.windowTitleTab.regexrDescription</string>
          </property>
          <property name="textFormat">
           <enum>Qt::AutoText</enum>
@@ -1358,7 +1358,7 @@
          <item>
           <widget class="QLabel" name="label_8">
            <property name="text">
-            <string>Stay on the currently selected scene when </string>
+            <string>AdvSceneSwitcher.windowTitleTab.stayInFocus1</string>
            </property>
           </widget>
          </item>
@@ -1384,7 +1384,7 @@
          <item>
           <widget class="QLabel" name="label_9">
            <property name="text">
-            <string>is focused</string>
+            <string>AdvSceneSwitcher.windowTitleTab.stayInFocus2</string>
            </property>
           </widget>
          </item>
@@ -1475,7 +1475,7 @@
        <cursorShape>ArrowCursor</cursorShape>
       </property>
       <attribute name="title">
-       <string notr="true">Executable</string>
+       <string>AdvSceneSwitcher.executableTab.title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_11">
        <item>
@@ -1623,7 +1623,7 @@
          <item>
           <widget class="QLabel" name="label_25">
            <property name="text">
-            <string>Implemented by dasOven</string>
+            <string>AdvSceneSwitcher.executableTab.implemented</string>
            </property>
           </widget>
          </item>
@@ -1633,7 +1633,7 @@
      </widget>
      <widget class="QWidget" name="screenRegionTab">
       <attribute name="title">
-       <string notr="true">Region</string>
+       <string>AdvSceneSwitcher.screenRegionTab.title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_27">
        <item>
@@ -1641,7 +1641,7 @@
          <item>
           <widget class="QLabel" name="label_22">
            <property name="text">
-            <string>Cursor is currently at:</string>
+            <string>AdvSceneSwitcher.screenRegionTab.currentPosition</string>
            </property>
           </widget>
          </item>
@@ -1688,7 +1688,7 @@
          <item>
           <widget class="QPushButton" name="showFrame">
            <property name="text">
-            <string>Show guide frames</string>
+            <string>AdvSceneSwitcher.screenRegionTab.showGuideFrames</string>
            </property>
           </widget>
          </item>
@@ -1858,7 +1858,7 @@
      </widget>
      <widget class="QWidget" name="mediaTab">
       <attribute name="title">
-       <string notr="true">Media</string>
+       <string>AdvSceneSwitcher.mediaTab.title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_28">
        <item>
@@ -2006,7 +2006,7 @@
          <item>
           <widget class="QLabel" name="label_54">
            <property name="text">
-            <string>Implemented by Exeldro</string>
+            <string>AdvSceneSwitcher.mediaTab.implemented</string>
            </property>
           </widget>
          </item>
@@ -2016,406 +2016,274 @@
      </widget>
      <widget class="QWidget" name="fileTab">
       <attribute name="title">
-       <string notr="true">File</string>
+       <string>AdvSceneSwitcher.fileTab.title</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_7">
+      <layout class="QVBoxLayout" name="verticalLayout_21">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_14">
-         <item>
-          <widget class="QLabel" name="label_15">
-           <property name="text">
-            <string>Write the name of the current scene to this file:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="writePathLineEdit"/>
-         </item>
-         <item>
-          <widget class="QPushButton" name="browseButton">
-           <property name="text">
-            <string>Browse</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="Line" name="line_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+        <widget class="QGroupBox" name="groupBox">
+         <property name="title">
+          <string>AdvSceneSwitcher.fileTab.readWriteSceneFile</string>
          </property>
+         <layout class="QVBoxLayout" name="verticalLayout_7">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_14">
+            <item>
+             <widget class="QLabel" name="label_15">
+              <property name="text">
+               <string>AdvSceneSwitcher.fileTab.currentSceneOutputFile</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="writePathLineEdit"/>
+            </item>
+            <item>
+             <widget class="QPushButton" name="browseButton">
+              <property name="text">
+               <string>AdvSceneSwitcher.browse</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_16">
+            <item>
+             <widget class="QCheckBox" name="readFileCheckBox">
+              <property name="text">
+               <string>AdvSceneSwitcher.fileTab.switchSceneBaseOnFile</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_12">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_15">
+            <item>
+             <widget class="QLabel" name="label_16">
+              <property name="text">
+               <string>AdvSceneSwitcher.fileTab.switchSceneNameInputFile</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="readPathLineEdit"/>
+            </item>
+            <item>
+             <widget class="QPushButton" name="browseButton_2">
+              <property name="text">
+               <string>AdvSceneSwitcher.browse</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_16">
-         <item>
-          <widget class="QCheckBox" name="readFileCheckBox">
-           <property name="text">
-            <string>Enable switching of scenes based on file input</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_12">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_15">
-         <item>
-          <widget class="QLabel" name="label_16">
-           <property name="text">
-            <string>Read scene name to be switched to from this file:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="readPathLineEdit"/>
-         </item>
-         <item>
-          <widget class="QPushButton" name="browseButton_2">
-           <property name="text">
-            <string>Browse</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="Line" name="line">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+        <widget class="QGroupBox" name="groupBox_2">
+         <property name="title">
+          <string>AdvSceneSwitcher.fileTab.switchSceneBaseOnFileContent</string>
          </property>
+         <layout class="QVBoxLayout" name="verticalLayout_20">
+          <item>
+           <widget class="QLabel" name="remoteFileWarningLabel">
+            <property name="text">
+             <string>AdvSceneSwitcher.fileTab.remoteFileWarning</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="libcurlWarning">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>AdvSceneSwitcher.fileTab.libcurlWarning</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QListWidget" name="fileSwitches">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="sortingEnabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_35">
+            <item>
+             <widget class="QPushButton" name="fileAdd">
+              <property name="maximumSize">
+               <size>
+                <width>22</width>
+                <height>22</height>
+               </size>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+              <property name="themeID" stdset="0">
+               <string notr="true">addIconSmall</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="fileRemove">
+              <property name="maximumSize">
+               <size>
+                <width>22</width>
+                <height>22</height>
+               </size>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+              <property name="themeID" stdset="0">
+               <string notr="true">removeIconSmall</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_108">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>5</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="Line" name="line_35">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_109">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>5</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="fileUp">
+              <property name="maximumSize">
+               <size>
+                <width>22</width>
+                <height>22</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+              <property name="themeID" stdset="0">
+               <string>upArrowIconSmall</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="fileDown">
+              <property name="maximumSize">
+               <size>
+                <width>22</width>
+                <height>22</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+              <property name="themeID" stdset="0">
+               <string>downArrowIconSmall</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_38">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
         </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_39">
-         <property name="text">
-          <string>Switch scene based on file contents:</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_36">
-         <item>
-          <widget class="QLabel" name="label_62">
-           <property name="text">
-            <string>If the</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="fileType"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_44">
-           <property name="text">
-            <string>file</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="filePathLineEdit"/>
-         </item>
-         <item>
-          <widget class="QPushButton" name="browseButton_3">
-           <property name="text">
-            <string>Browse</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_40">
-           <property name="text">
-            <string>contains:</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="QLabel" name="remoteFileWarningLabel">
-         <property name="text">
-          <string>Please note that if you choose the remote option the scene switcher will try to access the remote location every x ms as specified on the General tab!</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="libcurlWarning">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Failed to load libcurl! Accesssing remote files will not be possible!</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPlainTextEdit" name="fileTextEdit"/>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_37">
-         <item>
-          <widget class="QCheckBox" name="fileContentRegExCheckBox">
-           <property name="text">
-            <string>Use regular expression (pattern matching)</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="fileContentTimeCheckBox">
-           <property name="text">
-            <string>Only check contents if modification date changed</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="onlyMatchIfChanged">
-           <property name="text">
-            <string>Only match if content changed</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_11">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_38">
-         <item>
-          <widget class="QLabel" name="label_45">
-           <property name="text">
-            <string>switch to</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="fileScenes">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_46">
-           <property name="text">
-            <string>using</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="fileTransitions"/>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="QListWidget" name="fileScenesList">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="sortingEnabled">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_35">
-         <item>
-          <widget class="QPushButton" name="fileAdd">
-           <property name="maximumSize">
-            <size>
-             <width>22</width>
-             <height>22</height>
-            </size>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-           <property name="themeID" stdset="0">
-            <string notr="true">addIconSmall</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="fileRemove">
-           <property name="maximumSize">
-            <size>
-             <width>22</width>
-             <height>22</height>
-            </size>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-           <property name="themeID" stdset="0">
-            <string notr="true">removeIconSmall</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_108">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>5</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="Line" name="line_35">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_109">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>5</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QPushButton" name="fileUp">
-           <property name="maximumSize">
-            <size>
-             <width>22</width>
-             <height>22</height>
-            </size>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-           <property name="themeID" stdset="0">
-            <string>upArrowIconSmall</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="fileDown">
-           <property name="maximumSize">
-            <size>
-             <width>22</width>
-             <height>22</height>
-            </size>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-           <property name="themeID" stdset="0">
-            <string>downArrowIconSmall</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_38">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
        </item>
       </layout>
      </widget>
      <widget class="QWidget" name="randomTab">
       <attribute name="title">
-       <string notr="true">Random</string>
+       <string>AdvSceneSwitcher.randomTab.title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_8">
        <item>
         <widget class="QLabel" name="randomDisabledWarning">
          <property name="text">
-          <string>Functionality disabled - To activate select &quot;If no switch condition is met switch to any scene in Random tab&quot; on General tab</string>
+          <string>AdvSceneSwitcher.randomTab.randomDisabledWarning</string>
          </property>
         </widget>
        </item>
@@ -2485,7 +2353,7 @@
      </widget>
      <widget class="QWidget" name="timeTab">
       <attribute name="title">
-       <string notr="true">Time</string>
+       <string>AdvSceneSwitcher.timeTab.title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_6">
        <item>
@@ -2636,13 +2504,13 @@
      </widget>
      <widget class="QWidget" name="idleTab">
       <attribute name="title">
-       <string notr="true">Idle</string>
+       <string>AdvSceneSwitcher.idleTab.title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_13">
        <item>
         <widget class="QCheckBox" name="idleCheckBox">
          <property name="text">
-          <string>Enable Idle Detection</string>
+          <string>AdvSceneSwitcher.idleTab.enable</string>
          </property>
         </widget>
        </item>
@@ -2651,7 +2519,7 @@
          <item>
           <widget class="QLabel" name="label_26">
            <property name="text">
-            <string>After </string>
+            <string>AdvSceneSwitcher.idleTab.condition1</string>
            </property>
           </widget>
          </item>
@@ -2674,14 +2542,14 @@
          <item>
           <widget class="QLabel" name="label_27">
            <property name="text">
-            <string>of no keyboard or mouse inputs </string>
+            <string>AdvSceneSwitcher.idleTab.condition2</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QLabel" name="label_30">
            <property name="text">
-            <string>switch to scene</string>
+            <string>AdvSceneSwitcher.idleTab.switchToScene</string>
            </property>
           </widget>
          </item>
@@ -2704,7 +2572,7 @@
          <item>
           <widget class="QLabel" name="label_28">
            <property name="text">
-            <string>using the</string>
+            <string>AdvSceneSwitcher.idleTab.usingTransition1</string>
            </property>
           </widget>
          </item>
@@ -2714,7 +2582,7 @@
          <item>
           <widget class="QLabel" name="label_29">
            <property name="text">
-            <string>transition</string>
+            <string>AdvSceneSwitcher.idleTab.usingTransition2</string>
            </property>
           </widget>
          </item>
@@ -2738,7 +2606,7 @@
          <item>
           <widget class="QLabel" name="label_31">
            <property name="text">
-            <string>Do not switch if</string>
+            <string>AdvSceneSwitcher.idleTab.dontSwitchIfFocus1</string>
            </property>
           </widget>
          </item>
@@ -2755,7 +2623,7 @@
          <item>
           <widget class="QLabel" name="label_32">
            <property name="text">
-            <string>is in focus</string>
+            <string>AdvSceneSwitcher.idleTab.dontSwitchIfFocus2</string>
            </property>
           </widget>
          </item>
@@ -2840,13 +2708,13 @@
      </widget>
      <widget class="QWidget" name="sceneSequenceTab">
       <attribute name="title">
-       <string notr="true">Sequence</string>
+       <string>AdvSceneSwitcher.sceneSequenceTab.title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <widget class="QLabel" name="label_35">
          <property name="text">
-          <string>A sequence of automatic scene switches can be cancelled by either pausing/stopping the scene switcher or manually switching to a different scene</string>
+          <string>AdvSceneSwitcher.sceneSequenceTab.description</string>
          </property>
         </widget>
        </item>
@@ -3002,14 +2870,14 @@
          <item>
           <widget class="QPushButton" name="sceneSequenceSave">
            <property name="text">
-            <string>Save Round Trips to file</string>
+            <string>AdvSceneSwitcher.sceneSequenceTab.save</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QPushButton" name="sceneSequenceLoad">
            <property name="text">
-            <string>Load Round Trips from file</string>
+            <string>AdvSceneSwitcher.sceneSequenceTab.load</string>
            </property>
           </widget>
          </item>
@@ -3032,7 +2900,7 @@
      </widget>
      <widget class="QWidget" name="audioTab">
       <attribute name="title">
-       <string>Audio</string>
+       <string>AdvSceneSwitcher.audioTab.title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_9">
        <item>
@@ -3189,7 +3057,7 @@
    <item>
     <widget class="QPushButton" name="close">
      <property name="text">
-      <string>Close</string>
+      <string>AdvSceneSwitcher.close</string>
      </property>
     </widget>
    </item>

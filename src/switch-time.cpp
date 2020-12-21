@@ -214,19 +214,18 @@ void AdvSceneSwitcher::setupTimeTab()
 
 void populateTriggers(QComboBox *list)
 {
-	list->addItem("On any day");
-	list->addItem("Mondays");
-	list->addItem("Tuesdays");
-	list->addItem("Wednesdays");
-	list->addItem("Thursdays");
-	list->addItem("Fridays");
-	list->addItem("Saturdays");
-	list->addItem("Sundays");
-	list->addItem("Atfer streaming/recording start");
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.anyDay"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.mondays"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.tuesdays"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.wednesdays"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.thursdays"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.fridays"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.saturdays"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.sundays"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.afterstart"));
 
 	list->setItemData(
-		8,
-		"The time relative to the start of streaming / recording will be used",
+		8, obs_module_text("AdvSceneSwitcher.timeTab.afterstart.tip"),
 		Qt::ToolTipRole);
 }
 
@@ -234,10 +233,6 @@ TimeSwitchWidget::TimeSwitchWidget(TimeSwitch *s) : SwitchWidget(s)
 {
 	triggers = new QComboBox();
 	time = new QTimeEdit();
-
-	atLabel = new QLabel("at");
-	switchLabel = new QLabel("switch to");
-	usingLabel = new QLabel("using");
 
 	QWidget::connect(triggers, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TriggerChanged(int)));
@@ -255,16 +250,13 @@ TimeSwitchWidget::TimeSwitchWidget(TimeSwitch *s) : SwitchWidget(s)
 	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	mainLayout->addWidget(triggers);
-	mainLayout->addWidget(atLabel);
-	mainLayout->addWidget(time);
-	mainLayout->addWidget(switchLabel);
-	mainLayout->addWidget(scenes);
-	mainLayout->addWidget(usingLabel);
-	mainLayout->addWidget(transitions);
-	mainLayout->addStretch();
-
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{triggers}}", triggers},
+		{"{{time}}", time},
+		{"{{scenes}}", scenes},
+		{"{{transitions}}", transitions}};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.timeTab.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	switchData = s;
