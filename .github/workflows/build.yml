@@ -315,6 +315,7 @@ jobs:
       - name: 'Package'
         shell: bash
         run: |
+          find .
           mkdir -p ${{ env.PLUGIN_NAME }}/Linux ${{ env.PLUGIN_NAME }}/MacOs ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/64bit ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/32bit
           tar xf artifacts/${{ env.PLUGIN_NAME }}*-linux64.tar.gz -C ${{ env.PLUGIN_NAME }}/Linux/
           mv artifacts/${{ env.PLUGIN_NAME }}*-macos.pkg ${{ env.PLUGIN_NAME }}/MacOs/${{ env.PLUGIN_NAME }}.pkg
