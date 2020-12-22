@@ -287,6 +287,8 @@ jobs:
           tar xf artifacts/${{ env.PLUGIN_NAME }}*-linux64.tar.gz/${{ env.PLUGIN_NAME }}*-linux64.tar.gz -C ${{ env.PLUGIN_NAME }}/Linux/
           mv artifacts/${{ env.PLUGIN_NAME }}*-macos.pkg/${{ env.PLUGIN_NAME }}*-macos.pkg ${{ env.PLUGIN_NAME }}/MacOs/${{ env.PLUGIN_NAME }}.pkg
           unzip -o artifacts/${{ env.PLUGIN_NAME }}*-win32.zip/${{ env.PLUGIN_NAME }}*-windows.zip -d ${{ env.PLUGIN_NAME }}/Windows/
+          rm ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/32bit/advanced-scene-switcher.pdb
+          rm ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/64bit/advanced-scene-switcher.pdb
           cp plugin/${{ env.PLUGIN_NAME }}/CI/release/README.txt ${{ env.PLUGIN_NAME }}/
           FILE_NAME=${{ env.PLUGIN_NAME }}.zip
           zip -r ${FILE_NAME} ${{ env.PLUGIN_NAME }}/
