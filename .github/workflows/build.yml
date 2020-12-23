@@ -189,13 +189,14 @@ jobs:
         with:
           name: '${{ env.FILE_NAME }}'
           path: '*.tar.gz'
-  win64:
-    name: Windows 64-bit
+  windows:
+    name: Windows
     runs-on: [windows-latest]
     env:
       QT_VERSION: 5.10.1
       CMAKE_GENERATOR: "Visual Studio 16 2019"
       CMAKE_SYSTEM_VERSION: "10.0.18363.657"
+      WINDOWS_DEPS_VERSION: '2017'
     steps:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
@@ -219,88 +220,55 @@ jobs:
           7z x Qt_${{ env.QT_VERSION }}.7z -o"${{ github.workspace }}/cmbuild/QT"
       - name: 'Install prerequisite: Pre-built dependencies'
         run: |
-          curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies2017.zip -f --retry 5 -C -
-          7z x dependencies2017.zip -o"${{ github.workspace }}/cmbuild/deps"
+          curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -f --retry 5 -C -
+          7z x dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
       - name: Configure
         run: |
-          mkdir ./build
-          mkdir ./build64
-          cd ./build64
-          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=false -DCOMPILE_D3D12_HOOK=false -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017_64" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
-      - name: Build
-        run: msbuild /m /p:Configuration=RelWithDebInfo .\build64\obs-studio.sln
-      - name: Package
-        if: success()
-        run: |
-          $env:FILE_DATE=(Get-Date -UFormat "%F")
-          $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-win64.zip"
-          echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
-          robocopy .\build64\rundir\RelWithDebInfo\obs-plugins\64bit\ .\build\obs-plugins\64bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
-          robocopy .\build64\rundir\RelWithDebInfo\data\obs-plugins\${{ env.LIB_NAME }}\ .\build\data\obs-plugins\${{ env.LIB_NAME }}\ /E /XF .gitignore
-          7z a ${env:FILE_NAME} .\build\*
-      - name: Publish
-        if: success()
-        uses: actions/upload-artifact@v2.2.1
-        with:
-          name: '${{ env.FILE_NAME }}'
-          path: '*-win64.zip'
-  win32:
-    name: Windows 32-bit
-    runs-on: [windows-latest]
-    env:
-      QT_VERSION: 5.10.1
-      CMAKE_GENERATOR: "Visual Studio 16 2019"
-      CMAKE_SYSTEM_VERSION: "10.0.18363.657"
-    steps:
-      - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.2
-      - name: Checkout obs
-        uses: actions/checkout@v2.3.4
-        with:
-          repository: obsproject/obs-studio
-          submodules: 'recursive'
-      - name: Checkout plugin
-        uses: actions/checkout@v2.3.4
-        with:
-          path: UI/frontend-plugins/${{ env.PLUGIN_NAME }}
-      - name: Add plugin to obs cmake
-        shell: cmd
-        run: echo add_subdirectory(${{ env.PLUGIN_NAME }}) >> UI/frontend-plugins/CMakeLists.txt
-      - name: Fetch Git Tags
-        run: git fetch --prune --tags --unshallow
-      - name: 'Install prerequisite: QT'
-        run: |
-          curl -kLO https://cdn-fastly.obsproject.com/downloads/Qt_${{ env.QT_VERSION }}.7z -f --retry 5 -C -
-          7z x Qt_${{ env.QT_VERSION }}.7z -o"${{ github.workspace }}/cmbuild/QT"
-      - name: 'Install prerequisite: Pre-built dependencies'
-        run: |
-          curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies2017.zip -f --retry 5 -C -
-          7z x dependencies2017.zip -o"${{ github.workspace }}/cmbuild/deps"
-      - name: Configure
-        run: |
-          mkdir ./build
+          mkdir ./package
           mkdir ./build32
           cd ./build32
-          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=false -DCOMPILE_D3D12_HOOK=false -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=false -DBUILD_CAPTIONS=false -DCOMPILE_D3D12_HOOK=false -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
+          cd ..
+          mkdir ./build64
+          cd ./build64
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=false -DBUILD_CAPTIONS=false -DCOMPILE_D3D12_HOOK=false -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017_64" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
       - name: Build
-        run: msbuild /m /p:Configuration=RelWithDebInfo .\build32\obs-studio.sln
+        run: |
+          msbuild /m /p:Configuration=RelWithDebInfo .\build32\obs-studio.sln
+          msbuild /m /p:Configuration=RelWithDebInfo .\build64\obs-studio.sln
       - name: Package
         if: success()
         run: |
           $env:FILE_DATE=(Get-Date -UFormat "%F")
-          $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-win32.zip"
+          $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-windows"
           echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
-          robocopy .\build32\rundir\RelWithDebInfo\obs-plugins\32bit\ .\build\obs-plugins\32bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
-          robocopy .\build32\rundir\RelWithDebInfo\data\obs-plugins\${{ env.LIB_NAME }}\ .\build\data\obs-plugins\${{ env.LIB_NAME }}\ /E /XF .gitignore
-          7z a ${env:FILE_NAME} .\build\*
-      - name: Publish
+          robocopy .\build32\rundir\RelWithDebInfo\obs-plugins\32bit\ .\package\obs-plugins\32bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
+          robocopy .\build64\rundir\RelWithDebInfo\obs-plugins\64bit\ .\package\obs-plugins\64bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
+          robocopy .\build64\rundir\RelWithDebInfo\data\obs-plugins\${{ env.LIB_NAME }}\ .\package\data\obs-plugins\${{ env.LIB_NAME }}\ /E /XF .gitignore
+          exit 0
+      - name: Publish zip
         if: success()
         uses: actions/upload-artifact@v2.2.1
         with:
           name: '${{ env.FILE_NAME }}'
-          path: '*-win32.zip'
+          path: package/*
+      - name: "Package Installer (Prereqs)"
+        run: |
+          curl "-kL" "https://github.com/Xaymar/msvc-redist-helper/releases/download/0.1/msvc-redist-helper-64.exe" "-f" "--retry" "5" "-o" "msvc-redist-helper-64.exe"
+          curl "-kL" "https://github.com/Xaymar/msvc-redist-helper/releases/download/0.1/msvc-redist-helper-32.exe" "-f" "--retry" "5" "-o" "msvc-redist-helper-32.exe"
+          curl "-kL" "https://files.jrsoftware.org/is/6/innosetup-6.0.3.exe" "-f" "--retry" "5" "-o" "inno.exe"
+          .\inno.exe /VERYSILENT /SP- /SUPPRESSMSGBOXES /NORESTART
+      - name: "Package Installer (Compile)"
+        run: |
+          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' /Qp ".\build64\UI\frontend-plugins\${{ env.PLUGIN_NAME }}\CI\windows\setup.iss"
+      - name: Publish installer
+        if: success()
+        uses: actions/upload-artifact@v2.2.0
+        with:
+          name: '${{ env.FILE_NAME }}-installer'
+          path: build64/UI/frontend-plugins/SceneSwitcher/CI/windows/Output/*.exe
   release:
-    needs: [macos64, ubuntu64, win64, win32]
+    needs: [macos64, ubuntu64, windows]
     name: 'Create Release'
     runs-on: [ubuntu-latest]
     steps:
@@ -318,8 +286,8 @@ jobs:
           mkdir -p ${{ env.PLUGIN_NAME }}/Linux ${{ env.PLUGIN_NAME }}/MacOs ${{ env.PLUGIN_NAME }}/Windows
           tar xf artifacts/${{ env.PLUGIN_NAME }}*-linux64.tar.gz/${{ env.PLUGIN_NAME }}*-linux64.tar.gz -C ${{ env.PLUGIN_NAME }}/Linux/
           mv artifacts/${{ env.PLUGIN_NAME }}*-macos.pkg/${{ env.PLUGIN_NAME }}*-macos.pkg ${{ env.PLUGIN_NAME }}/MacOs/${{ env.PLUGIN_NAME }}.pkg
-          unzip -o artifacts/${{ env.PLUGIN_NAME }}*-win32.zip/${{ env.PLUGIN_NAME }}*-win32.zip -d ${{ env.PLUGIN_NAME }}/Windows/
-          unzip -o artifacts/${{ env.PLUGIN_NAME }}*-win64.zip/${{ env.PLUGIN_NAME }}*-win64.zip -d ${{ env.PLUGIN_NAME }}/Windows/
+          mv ./artifacts/${{ env.PLUGIN_NAME }}*-windows/* ${{ env.PLUGIN_NAME }}/Windows/
+          mv ./artifacts/${{ env.PLUGIN_NAME }}*-windows-installer/*.exe ${{ env.PLUGIN_NAME }}/Windows/
           rm ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/32bit/advanced-scene-switcher.pdb
           rm ${{ env.PLUGIN_NAME }}/Windows/obs-plugins/64bit/advanced-scene-switcher.pdb
           cp plugin/${{ env.PLUGIN_NAME }}/CI/release/README.txt ${{ env.PLUGIN_NAME }}/
