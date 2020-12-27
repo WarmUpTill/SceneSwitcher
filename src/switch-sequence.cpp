@@ -9,18 +9,13 @@ static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_sceneSequenceAdd_clicked()
 {
-	ui->sceneSequenceAdd->disconnect(addPulse);
-
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->sceneSequenceSwitches.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->sceneSequenceSwitches);
-	ui->sceneSequenceSwitches->addItem(item);
-	SequenceWidget *sw =
-		new SequenceWidget(&switcher->sceneSequenceSwitches.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->sceneSequenceSwitches->setItemWidget(item, sw);
+	listAddClicked(
+		ui->sceneSequenceSwitches,
+		new SequenceWidget(&switcher->sceneSequenceSwitches.back()),
+		ui->sceneSequenceAdd, &addPulse);
 }
 
 void AdvSceneSwitcher::on_sceneSequenceRemove_clicked()

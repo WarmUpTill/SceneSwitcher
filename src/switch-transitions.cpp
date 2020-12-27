@@ -6,13 +6,9 @@ void AdvSceneSwitcher::on_transitionsAdd_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->sceneTransitions.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->sceneTransitions);
-	ui->sceneTransitions->addItem(item);
-	TransitionSwitchWidget *sw =
-		new TransitionSwitchWidget(&switcher->sceneTransitions.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->sceneTransitions->setItemWidget(item, sw);
+	listAddClicked(
+		ui->sceneTransitions,
+		new TransitionSwitchWidget(&switcher->sceneTransitions.back()));
 }
 
 void AdvSceneSwitcher::on_transitionsRemove_clicked()
@@ -77,13 +73,9 @@ void AdvSceneSwitcher::on_defaultTransitionsAdd_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->defaultSceneTransitions.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->defaultTransitions);
-	ui->defaultTransitions->addItem(item);
-	DefTransitionSwitchWidget *sw = new DefTransitionSwitchWidget(
-		&switcher->defaultSceneTransitions.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->defaultTransitions->setItemWidget(item, sw);
+	listAddClicked(ui->defaultTransitions,
+		       new DefTransitionSwitchWidget(
+			       &switcher->defaultSceneTransitions.back()));
 }
 
 void AdvSceneSwitcher::on_defaultTransitionsRemove_clicked()

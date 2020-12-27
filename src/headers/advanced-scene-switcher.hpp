@@ -75,6 +75,9 @@ public:
 					    QColor = QColor(0, 0, 0, 0),
 					    QString specifier = "QLabel ");
 
+	void listAddClicked(QListWidget *list, SwitchWidget *newWidget,
+			    QPushButton *addButton = nullptr,
+			    QMetaObject::Connection *addHighlight = nullptr);
 	bool listMoveUp(QListWidget *list);
 	bool listMoveDown(QListWidget *list);
 

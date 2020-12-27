@@ -8,18 +8,12 @@ constexpr auto media_any_idx = 9;
 
 void AdvSceneSwitcher::on_mediaAdd_clicked()
 {
-	ui->mediaAdd->disconnect(addPulse);
-
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->mediaSwitches.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->mediaSwitches);
-	ui->mediaSwitches->addItem(item);
-	MediaSwitchWidget *sw =
-		new MediaSwitchWidget(&switcher->mediaSwitches.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->mediaSwitches->setItemWidget(item, sw);
+	listAddClicked(ui->mediaSwitches,
+		       new MediaSwitchWidget(&switcher->mediaSwitches.back()),
+		       ui->mediaAdd, &addPulse);
 }
 
 void AdvSceneSwitcher::on_mediaRemove_clicked()

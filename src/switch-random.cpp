@@ -7,18 +7,12 @@ static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_randomAdd_clicked()
 {
-	ui->randomAdd->disconnect(addPulse);
-
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->randomSwitches.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->randomSwitches);
-	ui->randomSwitches->addItem(item);
-	RandomSwitchWidget *sw =
-		new RandomSwitchWidget(&switcher->randomSwitches.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->randomSwitches->setItemWidget(item, sw);
+	listAddClicked(ui->randomSwitches,
+		       new RandomSwitchWidget(&switcher->randomSwitches.back()),
+		       ui->randomAdd, &addPulse);
 }
 
 void AdvSceneSwitcher::on_randomRemove_clicked()

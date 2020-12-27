@@ -173,6 +173,7 @@ bool compareIgnoringLineEnding(QString &s1, QString &s2)
 			return false;
 		}
 	}
+
 	return true;
 }
 
@@ -250,13 +251,9 @@ void AdvSceneSwitcher::on_fileAdd_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->fileSwitches.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->fileSwitches);
-	ui->fileSwitches->addItem(item);
-	FileSwitchWidget *sw =
-		new FileSwitchWidget(&switcher->fileSwitches.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->fileSwitches->setItemWidget(item, sw);
+	listAddClicked(ui->fileSwitches,
+		       new FileSwitchWidget(&switcher->fileSwitches.back()),
+		       ui->fileAdd, &addPulse);
 }
 
 void AdvSceneSwitcher::on_fileRemove_clicked()

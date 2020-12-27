@@ -63,18 +63,13 @@ void AdvSceneSwitcher::on_screenRegionSwitches_currentRowChanged(int idx)
 
 void AdvSceneSwitcher::on_screenRegionAdd_clicked()
 {
-	ui->screenRegionAdd->disconnect(addPulse);
-
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->screenRegionSwitches.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->screenRegionSwitches);
-	ui->screenRegionSwitches->addItem(item);
-	ScreenRegionWidget *sw =
-		new ScreenRegionWidget(&switcher->screenRegionSwitches.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->screenRegionSwitches->setItemWidget(item, sw);
+	listAddClicked(
+		ui->screenRegionSwitches,
+		new ScreenRegionWidget(&switcher->screenRegionSwitches.back()),
+		ui->screenRegionAdd, &addPulse);
 }
 
 void AdvSceneSwitcher::on_screenRegionRemove_clicked()

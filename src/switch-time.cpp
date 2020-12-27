@@ -5,18 +5,12 @@ static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_timeAdd_clicked()
 {
-	ui->timeAdd->disconnect(addPulse);
-
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->timeSwitches.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->timeSwitches);
-	ui->timeSwitches->addItem(item);
-	TimeSwitchWidget *sw =
-		new TimeSwitchWidget(&switcher->timeSwitches.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->timeSwitches->setItemWidget(item, sw);
+	listAddClicked(ui->timeSwitches,
+		       new TimeSwitchWidget(&switcher->timeSwitches.back()),
+		       ui->timeAdd, &addPulse);
 }
 
 void AdvSceneSwitcher::on_timeRemove_clicked()

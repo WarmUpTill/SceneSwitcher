@@ -195,6 +195,29 @@ void AdvSceneSwitcher::populateProcessSelection(QComboBox *sel, bool addSelect)
 		sel->addItem(process);
 }
 
+void AdvSceneSwitcher::listAddClicked(QListWidget *list,
+				      SwitchWidget *newWidget,
+				      QPushButton *addButton,
+				      QMetaObject::Connection *addHighlight)
+{
+	if (!list || !newWidget) {
+		blog(LOG_WARNING,
+		     "listAddClicked called without valid list or widget");
+		return;
+	}
+
+	if (addButton && addHighlight)
+		addButton->disconnect(*addHighlight);
+
+	QListWidgetItem *item;
+	item = new QListWidgetItem(list);
+	list->addItem(item);
+	item->setSizeHint(newWidget->minimumSizeHint());
+	list->setItemWidget(item, newWidget);
+
+	list->scrollToItem(item);
+}
+
 bool AdvSceneSwitcher::listMoveUp(QListWidget *list)
 {
 	int index = list->currentRow();
