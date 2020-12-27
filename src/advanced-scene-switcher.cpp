@@ -146,17 +146,22 @@ void AdvSceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
 
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
-		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
+		std::vector<std::string> *list =
+			reinterpret_cast<std::vector<std::string> *>(data);
 		uint32_t flags = obs_source_get_output_flags(source);
 
 		if ((flags & OBS_SOURCE_AUDIO) != 0) {
-			const char *name = obs_source_get_name(source);
-			combo->addItem(name);
+			list->push_back(obs_source_get_name(source));
 		}
 		return true;
 	};
 
-	obs_enum_sources(sourceEnum, sel);
+	std::vector<std::string> audioSources;
+	obs_enum_sources(sourceEnum, &audioSources);
+	sort(audioSources.begin(), audioSources.end());
+	for (std::string &source : audioSources) {
+		sel->addItem(source.c_str());
+	}
 }
 
 void AdvSceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
@@ -170,17 +175,22 @@ void AdvSceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
 
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
-		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
+		std::vector<std::string> *list =
+			reinterpret_cast<std::vector<std::string> *>(data);
 		std::string sourceId = obs_source_get_id(source);
 		if (sourceId.compare("ffmpeg_source") == 0 ||
 		    sourceId.compare("vlc_source") == 0) {
-			const char *name = obs_source_get_name(source);
-			combo->addItem(name);
+			list->push_back(obs_source_get_name(source));
 		}
 		return true;
 	};
 
-	obs_enum_sources(sourceEnum, sel);
+	std::vector<std::string> meidaSources;
+	obs_enum_sources(sourceEnum, &meidaSources);
+	sort(meidaSources.begin(), meidaSources.end());
+	for (std::string &source : meidaSources) {
+		sel->addItem(source.c_str());
+	}
 }
 
 void AdvSceneSwitcher::populateProcessSelection(QComboBox *sel, bool addSelect)
@@ -191,6 +201,7 @@ void AdvSceneSwitcher::populateProcessSelection(QComboBox *sel, bool addSelect)
 
 	QStringList processes;
 	GetProcessList(processes);
+	processes.sort();
 	for (QString &process : processes)
 		sel->addItem(process);
 }
