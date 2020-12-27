@@ -169,10 +169,13 @@ bool compareIgnoringLineEnding(QString &s1, QString &s2)
 	while (!s1stream.atEnd() || !s2stream.atEnd()) {
 		QString s1s = s1stream.readLine();
 		QString s2s = s2stream.readLine();
-		if (QString::compare(s1s, s2s, Qt::CaseSensitive) != 0) {
+		if (s1s != s2s) {
 			return false;
 		}
 	}
+
+	if (!s1stream.atEnd() && !s2stream.atEnd())
+		return false;
 
 	return true;
 }
@@ -198,8 +201,8 @@ bool matchFileContent(QString &filedata, FileSwitch &s)
 bool checkRemoteFileContent(FileSwitch &s)
 {
 	std::string data = getRemoteData(s.file);
-	QString text = QString::fromStdString(s.text);
-	return matchFileContent(text, s);
+	QString qdata = QString::fromStdString(data);
+	return matchFileContent(qdata, s);
 }
 
 bool checkLocalFileContent(FileSwitch &s)
@@ -227,6 +230,9 @@ void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
 	for (FileSwitch &s : fileSwitches) {
+		if (!s.initialized())
+			continue;
+
 		bool equal = false;
 		if (s.remote) {
 			equal = checkRemoteFileContent(s);
