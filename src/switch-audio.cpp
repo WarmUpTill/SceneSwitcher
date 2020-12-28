@@ -6,18 +6,12 @@ static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_audioAdd_clicked()
 {
-	ui->audioAdd->disconnect(addPulse);
-
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->audioSwitches.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->audioSwitches);
-	ui->audioSwitches->addItem(item);
-	AudioSwitchWidget *sw =
-		new AudioSwitchWidget(&switcher->audioSwitches.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->audioSwitches->setItemWidget(item, sw);
+	listAddClicked(ui->audioSwitches,
+		       new AudioSwitchWidget(&switcher->audioSwitches.back()),
+		       ui->audioAdd, &addPulse);
 }
 
 void AdvSceneSwitcher::on_audioRemove_clicked()
@@ -351,8 +345,6 @@ AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s) : SwitchWidget(s)
 			GetWeakSourceName(s->audioSource).c_str());
 		audioVolumeThreshold->setValue(s->volumeThreshold);
 	}
-
-	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *switchLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {

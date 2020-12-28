@@ -5,18 +5,13 @@ static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_executableAdd_clicked()
 {
-	ui->executableAdd->disconnect(addPulse);
-
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->executableSwitches.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->executables);
-	ui->executables->addItem(item);
-	ExecutableSwitchWidget *sw = new ExecutableSwitchWidget(
-		&switcher->executableSwitches.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->executables->setItemWidget(item, sw);
+	listAddClicked(ui->executables,
+		       new ExecutableSwitchWidget(
+			       &switcher->executableSwitches.back()),
+		       ui->executableAdd, &addPulse);
 }
 
 void AdvSceneSwitcher::on_executableRemove_clicked()
@@ -223,8 +218,6 @@ ExecutableSwitchWidget::ExecutableSwitchWidget(ExecutableSwitch *s)
 		processes->setCurrentText(s->exe);
 		requiresFocus->setChecked(s->inFocus);
 	}
-
-	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {

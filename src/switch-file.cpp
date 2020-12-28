@@ -169,10 +169,14 @@ bool compareIgnoringLineEnding(QString &s1, QString &s2)
 	while (!s1stream.atEnd() || !s2stream.atEnd()) {
 		QString s1s = s1stream.readLine();
 		QString s2s = s2stream.readLine();
-		if (QString::compare(s1s, s2s, Qt::CaseSensitive) != 0) {
+		if (s1s != s2s) {
 			return false;
 		}
 	}
+
+	if (!s1stream.atEnd() && !s2stream.atEnd())
+		return false;
+
 	return true;
 }
 
@@ -197,8 +201,8 @@ bool matchFileContent(QString &filedata, FileSwitch &s)
 bool checkRemoteFileContent(FileSwitch &s)
 {
 	std::string data = getRemoteData(s.file);
-	QString text = QString::fromStdString(s.text);
-	return matchFileContent(text, s);
+	QString qdata = QString::fromStdString(data);
+	return matchFileContent(qdata, s);
 }
 
 bool checkLocalFileContent(FileSwitch &s)
@@ -226,6 +230,9 @@ void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
 	for (FileSwitch &s : fileSwitches) {
+		if (!s.initialized())
+			continue;
+
 		bool equal = false;
 		if (s.remote) {
 			equal = checkRemoteFileContent(s);
@@ -250,13 +257,9 @@ void AdvSceneSwitcher::on_fileAdd_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->fileSwitches.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->fileSwitches);
-	ui->fileSwitches->addItem(item);
-	FileSwitchWidget *sw =
-		new FileSwitchWidget(&switcher->fileSwitches.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->fileSwitches->setItemWidget(item, sw);
+	listAddClicked(ui->fileSwitches,
+		       new FileSwitchWidget(&switcher->fileSwitches.back()),
+		       ui->fileAdd, &addPulse);
 }
 
 void AdvSceneSwitcher::on_fileRemove_clicked()
@@ -489,8 +492,6 @@ FileSwitchWidget::FileSwitchWidget(FileSwitch *s) : SwitchWidget(s, false)
 		checkModificationDate->setChecked(s->useTime);
 		checkFileContent->setChecked(s->onlyMatchIfChanged);
 	}
-
-	setStyleSheet("* { background-color: transparent; }");
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{fileType}}", fileType},
