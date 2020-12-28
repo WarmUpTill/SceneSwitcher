@@ -86,10 +86,26 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 		obs_source_release(as);
 
 		// peak will have a value from -60 db to 0 db
-		bool volumeThresholdreached = ((double)s.peak + 60) * 1.7 >
-					      s.volumeThreshold;
+		bool volumeThresholdreached = false;
 
-		if (volumeThresholdreached && audioActive) {
+		if (s.condition == ABOVE)
+			volumeThresholdreached = ((double)s.peak + 60) * 1.7 >
+						 s.volumeThreshold;
+		else
+			volumeThresholdreached = ((double)s.peak + 60) * 1.7 <
+						 s.volumeThreshold;
+
+		if (volumeThresholdreached) {
+			s.matchCount++;
+		} else {
+			s.matchCount = 0;
+		}
+
+		bool durationReached =
+			(s.matchCount * (unsigned int)interval) / 1000.0 >=
+			s.duration;
+
+		if (durationReached && audioActive) {
 			scene = (s.usePreviousScene) ? previousScene : s.scene;
 			transition = s.transition;
 			match = true;
@@ -130,6 +146,8 @@ void SwitcherData::saveAudioSwitches(obs_data_t *obj)
 					    audioSourceName);
 			obs_data_set_int(array_obj, "volume",
 					 s.volumeThreshold);
+			obs_data_set_int(array_obj, "condition", s.condition);
+			obs_data_set_double(array_obj, "duration", s.duration);
 			obs_data_array_push_back(audioArray, array_obj);
 		}
 		obs_source_release(sceneSource);
@@ -158,12 +176,15 @@ void SwitcherData::loadAudioSwitches(obs_data_t *obj)
 		const char *audioSource =
 			obs_data_get_string(array_obj, "audioSource");
 		int vol = obs_data_get_int(array_obj, "volume");
+		audioCondition condition = (audioCondition)obs_data_get_int(
+			array_obj, "condition");
+		double duration = obs_data_get_double(array_obj, "duration");
 
 		switcher->audioSwitches.emplace_back(
 			GetWeakSourceByName(scene),
 			GetWeakTransitionByName(transition),
-			GetWeakSourceByName(audioSource), vol,
-			(strcmp(scene, previous_scene_name) == 0));
+			GetWeakSourceByName(audioSource), vol, condition,
+			duration, (strcmp(scene, previous_scene_name) == 0));
 
 		obs_data_release(array_obj);
 	}
@@ -229,10 +250,13 @@ bool AudioSwitch::valid()
 
 AudioSwitch::AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 			 OBSWeakSource audioSource_, int volumeThreshold_,
+			 audioCondition condition_, double duration_,
 			 bool usePreviousScene_)
 	: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
 	  audioSource(audioSource_),
-	  volumeThreshold(volumeThreshold_)
+	  volumeThreshold(volumeThreshold_),
+	  condition(condition_),
+	  duration(duration_)
 {
 	volmeter = obs_volmeter_create(OBS_FADER_LOG);
 	obs_volmeter_add_callback(volmeter, setVolumeLevel, this);
@@ -249,7 +273,9 @@ AudioSwitch::AudioSwitch(const AudioSwitch &other)
 	: SceneSwitcherEntry(other.scene, other.transition,
 			     other.usePreviousScene),
 	  audioSource(other.audioSource),
-	  volumeThreshold(other.volumeThreshold)
+	  volumeThreshold(other.volumeThreshold),
+	  condition(other.condition),
+	  duration(other.duration)
 {
 	volmeter = obs_volmeter_create(OBS_FADER_LOG);
 	obs_volmeter_add_callback(volmeter, setVolumeLevel, this);
@@ -267,6 +293,8 @@ AudioSwitch::AudioSwitch(AudioSwitch &&other)
 			     other.usePreviousScene),
 	  audioSource(other.audioSource),
 	  volumeThreshold(other.volumeThreshold),
+	  condition(other.condition),
+	  duration(other.duration),
 	  volmeter(other.volmeter)
 {
 	other.volmeter = nullptr;
@@ -307,16 +335,28 @@ void swap(AudioSwitch &first, AudioSwitch &second)
 	std::swap(first.usePreviousScene, second.usePreviousScene);
 	std::swap(first.audioSource, second.audioSource);
 	std::swap(first.volumeThreshold, second.volumeThreshold);
+	std::swap(first.condition, second.condition);
+	std::swap(first.duration, second.duration);
 	std::swap(first.peak, second.peak);
 	std::swap(first.volmeter, second.volmeter);
 	first.resetVolmeter();
 	second.resetVolmeter();
 }
 
+void populateConditionSelection(QComboBox *list)
+{
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.audioTab.condition.above"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.audioTab.condition.below"));
+}
+
 AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s) : SwitchWidget(s)
 {
 	audioSources = new QComboBox();
+	condition = new QComboBox();
 	audioVolumeThreshold = new QSpinBox();
+	duration = new QDoubleSpinBox();
 
 	obs_source_t *soruce = nullptr;
 	if (s)
@@ -328,28 +368,41 @@ AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s) : SwitchWidget(s)
 	audioVolumeThreshold->setMaximum(100);
 	audioVolumeThreshold->setMinimum(0);
 
+	duration->setMinimum(0.0);
+	duration->setMaximum(99.000000);
+	duration->setSuffix("s");
+
 	QWidget::connect(volMeter->GetSlider(), SIGNAL(valueChanged(int)),
 			 audioVolumeThreshold, SLOT(setValue(int)));
 	QWidget::connect(audioVolumeThreshold, SIGNAL(valueChanged(int)),
 			 volMeter->GetSlider(), SLOT(setValue(int)));
 	QWidget::connect(audioVolumeThreshold, SIGNAL(valueChanged(int)), this,
 			 SLOT(VolumeThresholdChanged(int)));
+	QWidget::connect(condition, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(ConditionChanged(int)));
+	QWidget::connect(duration, SIGNAL(valueChanged(double)), this,
+			 SLOT(DurationChanged(double)));
 	QWidget::connect(audioSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(SourceChanged(const QString &)));
 
 	AdvSceneSwitcher::populateAudioSelection(audioSources);
+	populateConditionSelection(condition);
 
 	if (s) {
 		audioSources->setCurrentText(
 			GetWeakSourceName(s->audioSource).c_str());
 		audioVolumeThreshold->setValue(s->volumeThreshold);
+		condition->setCurrentIndex(s->condition);
+		duration->setValue(s->duration);
 	}
 
 	QHBoxLayout *switchLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{audioSources}}", audioSources},
 		{"{{volumeWidget}}", audioVolumeThreshold},
+		{"{{condition}}", condition},
+		{"{{duration}}", duration},
 		{"{{scenes}}", scenes},
 		{"{{transitions}}", transitions}};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.audioTab.entry"),
@@ -423,4 +476,20 @@ void AudioSwitchWidget::VolumeThresholdChanged(int vol)
 		return;
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->volumeThreshold = vol;
+}
+
+void AudioSwitchWidget::ConditionChanged(int cond)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->condition = (audioCondition)cond;
+}
+
+void AudioSwitchWidget::DurationChanged(double dur)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->duration = dur;
 }

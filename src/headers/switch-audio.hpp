@@ -7,9 +7,17 @@
 constexpr auto audio_func = 8;
 constexpr auto default_priority_8 = audio_func;
 
+typedef enum {
+	ABOVE,
+	BELOW,
+} audioCondition;
+
 struct AudioSwitch : virtual SceneSwitcherEntry {
 	OBSWeakSource audioSource = nullptr;
 	int volumeThreshold = 0;
+	audioCondition condition = ABOVE;
+	double duration = 0;
+	unsigned int matchCount = 0;
 	float peak = -1;
 	obs_volmeter_t *volmeter = nullptr;
 
@@ -25,6 +33,7 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	AudioSwitch(){};
 	AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 		    OBSWeakSource audioSource_, int volumeThreshold_,
+		    audioCondition condition_, double duration_,
 		    bool usePreviousScene_);
 	AudioSwitch(const AudioSwitch &other);
 	AudioSwitch(AudioSwitch &&other);
@@ -49,10 +58,14 @@ public:
 private slots:
 	void SourceChanged(const QString &text);
 	void VolumeThresholdChanged(int vol);
+	void ConditionChanged(int cond);
+	void DurationChanged(double dur);
 
 private:
 	QComboBox *audioSources;
+	QComboBox *condition;
 	QSpinBox *audioVolumeThreshold;
+	QDoubleSpinBox *duration;
 	VolControl *volMeter;
 
 	AudioSwitch *switchData;
