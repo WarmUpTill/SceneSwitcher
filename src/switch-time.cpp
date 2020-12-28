@@ -68,6 +68,9 @@ void AdvSceneSwitcher::on_timeDown_clicked()
 
 bool timesAreInInterval(QTime &time1, QTime &time2, int &interval)
 {
+	if (time1.isNull() || time2.isNull())
+		return false;
+
 	bool ret = false;
 	QTime validSwitchTimeWindow = time1.addMSecs(interval);
 
