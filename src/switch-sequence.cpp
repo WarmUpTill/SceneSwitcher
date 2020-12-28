@@ -348,8 +348,6 @@ SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
 			GetWeakSourceName(s->startScene).c_str());
 	}
 
-	setStyleSheet("* { background-color: transparent; }");
-
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{startScenes}}", startScenes},

@@ -477,8 +477,6 @@ MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
 			time->setDisabled(true);
 	}
 
-	setStyleSheet("* { background-color: transparent; }");
-
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{meidaSources}}", meidaSources},

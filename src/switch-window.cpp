@@ -401,8 +401,6 @@ WindowSwitchWidget::WindowSwitchWidget(WindowSwitch *s) : SwitchWidget(s, false)
 		focused->setChecked(s->focus);
 	}
 
-	setStyleSheet("* { background-color: transparent; }");
-
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{windows}}", windows},

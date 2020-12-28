@@ -147,8 +147,6 @@ RandomSwitchWidget::RandomSwitchWidget(RandomSwitch *s) : SwitchWidget(s, false)
 		delay->setValue(s->delay);
 	}
 
-	setStyleSheet("* { background-color: transparent; }");
-
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", scenes},

@@ -30,6 +30,12 @@ SwitchWidget::SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene)
 	scenes = new QComboBox();
 	transitions = new QComboBox();
 
+	// Depending on selected OBS theme some widgets might have a different
+	// background color than the listwidget and might look out of place
+	setStyleSheet("QLabel { background-color: transparent; }\
+		       QSlider { background-color: transparent; }\
+		       QCheckBox { background-color: transparent; }");
+
 	QWidget::connect(scenes, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(SceneChanged(const QString &)));
 	QWidget::connect(transitions,

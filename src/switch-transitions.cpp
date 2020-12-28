@@ -419,8 +419,6 @@ TransitionSwitchWidget::TransitionSwitchWidget(SceneTransition *s)
 		scenes2->setCurrentText(GetWeakSourceName(s->scene2).c_str());
 	}
 
-	setStyleSheet("* { background-color: transparent; }");
-
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", scenes},
@@ -466,8 +464,6 @@ void TransitionSwitchWidget::Scene2Changed(const QString &text)
 DefTransitionSwitchWidget::DefTransitionSwitchWidget(DefaultSceneTransition *s)
 	: SwitchWidget(s, false)
 {
-	setStyleSheet("* { background-color: transparent; }");
-
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", scenes}, {"{{transitions}}", transitions}};

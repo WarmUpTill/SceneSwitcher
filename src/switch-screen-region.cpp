@@ -285,8 +285,6 @@ ScreenRegionWidget::ScreenRegionWidget(ScreenRegionSwitch *s)
 		maxY->setValue(s->maxY);
 	}
 
-	setStyleSheet("* { background-color: transparent; }");
-
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{minX}}", minX},     {"{{minY}}", minY},

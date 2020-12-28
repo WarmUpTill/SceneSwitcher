@@ -219,8 +219,6 @@ ExecutableSwitchWidget::ExecutableSwitchWidget(ExecutableSwitch *s)
 		requiresFocus->setChecked(s->inFocus);
 	}
 
-	setStyleSheet("* { background-color: transparent; }");
-
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{processes}}", processes},

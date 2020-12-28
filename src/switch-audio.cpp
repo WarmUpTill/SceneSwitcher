@@ -346,8 +346,6 @@ AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s) : SwitchWidget(s)
 		audioVolumeThreshold->setValue(s->volumeThreshold);
 	}
 
-	setStyleSheet("* { background-color: transparent; }");
-
 	QHBoxLayout *switchLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{audioSources}}", audioSources},

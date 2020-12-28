@@ -493,8 +493,6 @@ FileSwitchWidget::FileSwitchWidget(FileSwitch *s) : SwitchWidget(s, false)
 		checkFileContent->setChecked(s->onlyMatchIfChanged);
 	}
 
-	setStyleSheet("* { background-color: transparent; }");
-
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{fileType}}", fileType},
 		{"{{filePath}}", filePath},
