@@ -20,7 +20,7 @@ typedef enum {
 
 struct TimeSwitch : SceneSwitcherEntry {
 	timeTrigger trigger = ANY_DAY;
-	QTime time = QTime();
+	QTime time = QTime(0, 0);
 
 	const char *getType() { return "time"; }
 
