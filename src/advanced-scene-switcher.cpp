@@ -185,10 +185,10 @@ void AdvSceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
 		return true;
 	};
 
-	std::vector<std::string> meidaSources;
-	obs_enum_sources(sourceEnum, &meidaSources);
-	sort(meidaSources.begin(), meidaSources.end());
-	for (std::string &source : meidaSources) {
+	std::vector<std::string> mediaSources;
+	obs_enum_sources(sourceEnum, &mediaSources);
+	sort(mediaSources.begin(), mediaSources.end());
+	for (std::string &source : mediaSources) {
 		sel->addItem(source.c_str());
 	}
 }

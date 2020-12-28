@@ -70,7 +70,7 @@ private slots:
 	void TimeChanged(int time);
 
 private:
-	QComboBox *meidaSources;
+	QComboBox *mediaSources;
 	QComboBox *states;
 	QComboBox *timeRestrictions;
 	QSpinBox *time;
