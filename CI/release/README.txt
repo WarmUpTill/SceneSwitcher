@@ -1,7 +1,9 @@
 Note that you will have to use OBS version 25 or newer!
 
 --- WINDOWS ---
-Copy the 'obs-plugins' and 'data' folders in the respective OBS Studio installation directory.
+Recommended: Run the provided installer. (You might have to click 'More info' and select 'Run anyway' if it is blocked by Windows)
+
+Alternatively manually copy the 'obs-plugins' and 'data' folders in the respective OBS Studio installation directory.
 It is usually located at 'C:\Program Files (x86)\obs-studio\'.
 Rember to install the Visual C++ Redistributable for Visual Studio 2019, if you have not done so already. (See plugin overview page)
 
@@ -10,7 +12,7 @@ Recommended: Run the provided installer. (You might have to right click and sele
 
 Alternatively extract the *so file and data folder and either ...
 
-... right click the OBS app inside your Applications folder and choose 'Show Package Contents'. 
+... right click the OBS app inside your Applications folder and choose 'Show Package Contents'.
 Copy the advanced-scene-switcher.so file to 'Contents/Plugins' and the 'data' folder to 'Contents/Resources'.
 
 ... or copy the advanced-scene-switcher.so file to Library/Application Support/obs-studio/plugins/advanced-scene-switcher/bin/ .
