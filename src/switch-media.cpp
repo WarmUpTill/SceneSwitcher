@@ -444,7 +444,7 @@ void populateTimeRestrictions(QComboBox *list)
 
 MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
 {
-	meidaSources = new QComboBox();
+	mediaSources = new QComboBox();
 	states = new QComboBox();
 	timeRestrictions = new QComboBox();
 	time = new QSpinBox();
@@ -453,7 +453,7 @@ MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
 	time->setMaximum(99999999);
 	time->setMinimum(0);
 
-	QWidget::connect(meidaSources,
+	QWidget::connect(mediaSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(SourceChanged(const QString &)));
 	QWidget::connect(states, SIGNAL(currentIndexChanged(int)), this,
@@ -463,12 +463,12 @@ MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
 	QWidget::connect(time, SIGNAL(valueChanged(int)), this,
 			 SLOT(TimeChanged(int)));
 
-	AdvSceneSwitcher::populateMediaSelection(meidaSources);
+	AdvSceneSwitcher::populateMediaSelection(mediaSources);
 	populateMediaStates(states);
 	populateTimeRestrictions(timeRestrictions);
 
 	if (s) {
-		meidaSources->setCurrentText(
+		mediaSources->setCurrentText(
 			GetWeakSourceName(s->source).c_str());
 		states->setCurrentIndex(s->state);
 		timeRestrictions->setCurrentIndex(s->restriction);
@@ -479,7 +479,7 @@ MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{meidaSources}}", meidaSources},
+		{"{{mediaSources}}", mediaSources},
 		{"{{states}}", states},
 		{"{{timeRestrictions}}", timeRestrictions},
 		{"{{time}}", time},
