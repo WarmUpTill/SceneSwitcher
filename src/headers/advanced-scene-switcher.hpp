@@ -31,7 +31,6 @@ public:
 	void SetHideFrames();
 	void clearFrames(QListWidget *list);
 
-	int PauseScenesFindByData(const QString &scene);
 	int PauseWindowsFindByData(const QString &window);
 	int IgnoreWindowsFindByData(const QString &window);
 	int IgnoreIdleWindowsFindByData(const QString &window);
@@ -104,9 +103,10 @@ public slots:
 	void on_screenRegionUp_clicked();
 	void on_screenRegionDown_clicked();
 
-	void on_pauseScenes_currentRowChanged(int idx);
-	void on_pauseScenesAdd_clicked();
-	void on_pauseScenesRemove_clicked();
+	void on_pauseUp_clicked();
+	void on_pauseDown_clicked();
+	void on_pauseAdd_clicked();
+	void on_pauseRemove_clicked();
 
 	void on_pauseWindows_currentRowChanged(int idx);
 	void on_pauseWindowsAdd_clicked();

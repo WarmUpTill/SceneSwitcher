@@ -54,6 +54,7 @@ if(BUILD_OUT_OF_TREE)
 		src/headers/switch-file.hpp
 		src/headers/switch-idle.hpp
 		src/headers/switch-media.hpp
+		src/headers/switch-pause.hpp
 		src/headers/switch-random.hpp
 		src/headers/switch-screen-region.hpp
 		src/headers/switch-time.hpp
@@ -206,6 +207,7 @@ else ()
 		src/headers/switch-file.hpp
 		src/headers/switch-idle.hpp
 		src/headers/switch-media.hpp
+		src/headers/switch-pause.hpp
 		src/headers/switch-random.hpp
 		src/headers/switch-screen-region.hpp
 		src/headers/switch-time.hpp

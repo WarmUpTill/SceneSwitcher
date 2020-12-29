@@ -12,6 +12,7 @@
 #include "switch-file.hpp"
 #include "switch-idle.hpp"
 #include "switch-media.hpp"
+#include "switch-pause.hpp"
 #include "switch-random.hpp"
 #include "switch-screen-region.hpp"
 #include "switch-time.hpp"
@@ -104,6 +105,8 @@ struct SwitcherData {
 	bool checkedDefTransition = false;
 
 	std::deque<MediaSwitch> mediaSwitches;
+
+	std::deque<PauseEntry> pauseEntries;
 
 	std::deque<TimeSwitch> timeSwitches;
 	QDateTime liveTime;
