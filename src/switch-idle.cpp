@@ -83,7 +83,9 @@ void AdvSceneSwitcher::UpdateIdleDataTransition(const QString &name)
 
 void AdvSceneSwitcher::UpdateIdleDataScene(const QString &name)
 {
-	switcher->idleData.usePreviousScene = (name == previous_scene_name);
+	switcher->idleData.usePreviousScene =
+		(name ==
+		 obs_module_text("AdvSceneSwitcher.selectPreviousScene"));
 	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
 	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
 
@@ -280,10 +282,13 @@ void AdvSceneSwitcher::setupIdleTab()
 	}
 
 	ui->idleCheckBox->setChecked(switcher->idleData.idleEnable);
-	ui->idleScenes->setCurrentText(
-		switcher->idleData.usePreviousScene
-			? previous_scene_name
-			: GetWeakSourceName(switcher->idleData.scene).c_str());
+	if (switcher->idleData.usePreviousScene) {
+		ui->idleScenes->setCurrentText(obs_module_text(
+			"AdvSceneSwitcher.selectPreviousScene"));
+	} else {
+		ui->idleScenes->setCurrentText(
+			GetWeakSourceName(switcher->idleData.scene).c_str());
+	}
 	ui->idleTransitions->setCurrentText(
 		GetWeakSourceName(switcher->idleData.transition).c_str());
 	ui->idleSpinBox->setValue(switcher->idleData.time);

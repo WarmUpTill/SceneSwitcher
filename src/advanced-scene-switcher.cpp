@@ -92,7 +92,8 @@ void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 	}
 
 	if (addPrevious)
-		sel->addItem(previous_scene_name);
+		sel->addItem(obs_module_text(
+			"AdvSceneSwitcher.selectPreviousScene"));
 }
 
 void AdvSceneSwitcher::populateTransitionSelection(QComboBox *sel,
