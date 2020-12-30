@@ -103,9 +103,6 @@ struct SwitcherData {
 	std::deque<MediaSwitch> mediaSwitches;
 
 	std::deque<PauseEntry> pauseEntries;
-	// To be removed as they are replaced by pauseEntries
-	std::vector<OBSWeakSource> pauseScenesSwitches;
-	std::vector<std::string> pauseWindowsSwitches;
 
 	std::deque<TimeSwitch> timeSwitches;
 	QDateTime liveTime;

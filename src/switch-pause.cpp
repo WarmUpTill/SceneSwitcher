@@ -224,12 +224,16 @@ void SwitcherData::savePauseSwitches(obs_data_t *obj)
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "pauseEntries", pauseScenesArray);
+	obs_data_set_int(obj, "oldPauseValuesImported", 1);
 	obs_data_array_release(pauseScenesArray);
 }
 
 void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 {
 	switcher->pauseEntries.clear();
+
+	// To be removed in future builds once most users have migrated
+	loadOldPauseSwitches(obj);
 
 	obs_data_array_t *pauseArray = obs_data_get_array(obj, "pauseEntries");
 	size_t count = obs_data_array_count(pauseArray);
@@ -256,7 +260,8 @@ void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 
 void SwitcherData::loadOldPauseSwitches(obs_data_t *obj)
 {
-	switcher->pauseScenesSwitches.clear();
+	if (obs_data_get_int(obj, "oldPauseValuesImported"))
+		return;
 
 	obs_data_array_t *pauseScenesArray =
 		obs_data_get_array(obj, "pauseScenes");
@@ -269,14 +274,13 @@ void SwitcherData::loadOldPauseSwitches(obs_data_t *obj)
 		const char *scene =
 			obs_data_get_string(array_obj, "pauseScene");
 
-		switcher->pauseScenesSwitches.emplace_back(
-			GetWeakSourceByName(scene));
+		switcher->pauseEntries.emplace_back(GetWeakSourceByName(scene),
+						    PauseType::Scene,
+						    PauseTarget::All, "");
 
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(pauseScenesArray);
-
-	switcher->pauseWindowsSwitches.clear();
 
 	obs_data_array_t *pauseWindowsArray =
 		obs_data_get_array(obj, "pauseWindows");
@@ -289,7 +293,8 @@ void SwitcherData::loadOldPauseSwitches(obs_data_t *obj)
 		const char *window =
 			obs_data_get_string(array_obj, "pauseWindow");
 
-		switcher->pauseWindowsSwitches.emplace_back(window);
+		switcher->pauseEntries.emplace_back(nullptr, PauseType::Window,
+						    PauseTarget::All, window);
 
 		obs_data_release(array_obj);
 	}
@@ -354,6 +359,9 @@ PauseEntryWidget::PauseEntryWidget(PauseEntry *s) : SwitchWidget(s, false)
 	populatePauseTypes(pauseTypes);
 	populatePauseTargets(pauseTargets);
 	AdvSceneSwitcher::populateWindowSelection(windows);
+
+	windows->setEditable(true);
+	windows->setMaxVisibleItems(20);
 
 	if (s) {
 		scenes->setCurrentText(GetWeakSourceName(s->scene).c_str());
