@@ -1,6 +1,8 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+bool DefaultSceneTransition::pause = false;
+
 void AdvSceneSwitcher::on_transitionsAdd_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
@@ -138,7 +140,7 @@ void AdvSceneSwitcher::on_defaultTransitionsDown_clicked()
 void SwitcherData::checkDefaultSceneTransitions(bool &match,
 						OBSWeakSource &transition)
 {
-	if (checkedDefTransition)
+	if (checkedDefTransition || DefaultSceneTransition::pause)
 		return;
 
 	obs_source_t *currentSource = obs_frontend_get_current_scene();

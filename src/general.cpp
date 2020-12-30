@@ -385,7 +385,7 @@ int findTabIndex(QTabWidget *tabWidget, int pos)
 		tabName = "transitionsTab";
 		break;
 	case 2:
-		tabName = "pauseScenesTab";
+		tabName = "pauseTab";
 		break;
 	case 3:
 		tabName = "windowTitleTab";

@@ -19,6 +19,7 @@ typedef enum {
 } timeTrigger;
 
 struct TimeSwitch : SceneSwitcherEntry {
+	static bool pause;
 	timeTrigger trigger = ANY_DAY;
 	QTime time = QTime(0, 0);
 

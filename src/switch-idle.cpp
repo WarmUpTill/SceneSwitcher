@@ -3,10 +3,12 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+bool IdleData::pause = false;
+
 void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
 				   OBSWeakSource &transition)
 {
-	if (!idleData.idleEnable)
+	if (!idleData.idleEnable || IdleData::pause)
 		return;
 
 	std::string title;

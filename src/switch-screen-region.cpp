@@ -3,6 +3,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+bool ScreenRegionSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::clearFrames(QListWidget *list)
@@ -132,6 +133,9 @@ void AdvSceneSwitcher::on_screenRegionDown_clicked()
 void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 					   OBSWeakSource &transition)
 {
+	if (ScreenRegionSwitch::pause)
+		return;
+
 	std::pair<int, int> cursorPos = getCursorPos();
 	int minRegionSize = 99999;
 

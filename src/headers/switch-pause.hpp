@@ -8,7 +8,17 @@ enum class PauseType {
 
 enum class PauseTarget {
 	All,
+	Transition,
 	Window,
+	Executable,
+	Region,
+	Media,
+	File,
+	Random,
+	Time,
+	Idle,
+	Sequence,
+	Audio,
 };
 
 struct PauseEntry : SceneSwitcherEntry {
@@ -17,6 +27,7 @@ struct PauseEntry : SceneSwitcherEntry {
 	std::string window = "";
 
 	const char *getType() { return "pause"; }
+	bool valid();
 
 	inline PauseEntry(){};
 	inline PauseEntry(OBSWeakSource scene_, PauseType pauseType_,

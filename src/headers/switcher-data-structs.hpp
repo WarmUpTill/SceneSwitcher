@@ -74,10 +74,6 @@ struct SwitcherData {
 
 	std::deque<ScreenRegionSwitch> screenRegionSwitches;
 
-	std::vector<OBSWeakSource> pauseScenesSwitches;
-
-	std::vector<std::string> pauseWindowsSwitches;
-
 	std::vector<std::string> ignoreWindowsSwitches;
 
 	std::deque<SceneSequenceSwitch> sceneSequenceSwitches;
@@ -107,6 +103,9 @@ struct SwitcherData {
 	std::deque<MediaSwitch> mediaSwitches;
 
 	std::deque<PauseEntry> pauseEntries;
+	// To be removed as they are replaced by pauseEntries
+	std::vector<OBSWeakSource> pauseScenesSwitches;
+	std::vector<std::string> pauseWindowsSwitches;
 
 	std::deque<TimeSwitch> timeSwitches;
 	QDateTime liveTime;
@@ -210,6 +209,7 @@ struct SwitcherData {
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
 	void loadPauseSwitches(obs_data_t *obj);
+	void loadOldPauseSwitches(obs_data_t *obj);
 	void loadSceneSequenceSwitches(obs_data_t *obj);
 	void loadSceneTransitions(obs_data_t *obj);
 	void loadIdleSwitches(obs_data_t *obj);
