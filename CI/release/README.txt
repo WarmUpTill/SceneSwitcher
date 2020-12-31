@@ -5,9 +5,9 @@ Recommended: Run the provided installer. (You might have to click 'More info' an
 
 Alternatively manually copy the 'obs-plugins' and 'data' folders in the respective OBS Studio installation directory.
 It is usually located at 'C:\Program Files (x86)\obs-studio\'.
-Rember to install the Visual C++ Redistributable for Visual Studio 2019, if you have not done so already. (See plugin overview page)
+Remember to install the Visual C++ Redistributable for Visual Studio 2019, if you have not done so already. (See plugin overview page)
 
---- MACOS ---
+--- MAC OS ---
 Recommended: Run the provided installer. (You might have to right click and select 'open' if it is blocked)
 
 Alternatively extract the *so file and data folder and either ...
