@@ -408,7 +408,7 @@ void SwitcherData::Thread()
 
 		//sleep for a bit
 		if (verbose)
-			blog(LOG_INFO, "sleep for %d", duration.count());
+			blog(LOG_INFO, "sleep for %ld", duration.count());
 		cv.wait_for(lock, duration);
 
 		startTime = std::chrono::high_resolution_clock::now();
