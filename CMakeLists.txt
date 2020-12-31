@@ -7,6 +7,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/src/version.cpp" @ONLY)
+
 if(WIN32)
 	get_filename_component(ISS_PLUGIN_FILES_DIR "${CMAKE_BINARY_DIR}\\..\\package" ABSOLUTE)
 	file(TO_NATIVE_PATH "${ISS_PLUGIN_FILES_DIR}" ISS_PLUGIN_FILES_DIR)
@@ -118,6 +119,14 @@ qt5_wrap_ui(advanced-scene-switcher_UI_HEADERS
 	${advanced-scene-switcher_UI}
 	${advanced-scene-switcher_PLATFORM_UI})
 
+add_library(advanced-scene-switcher MODULE
+	${advanced-scene-switcher_HEADERS}
+	${advanced-scene-switcher_SOURCES}
+	${advanced-scene-switcher_UI_HEADERS}
+	${advanced-scene-switcher_PLATFORM_SOURCES}
+	${advanced-scene-switcher_PLATFORM_HEADERS}
+	)
+
 if(BUILD_OUT_OF_TREE)
 	include_directories(
 		"${LIBOBS_INCLUDE_DIRS}"
@@ -174,14 +183,6 @@ if(BUILD_OUT_OF_TREE)
 				DESTINATION "${CMAKE_INSTALL_PREFIX}/share/obs/obs-plugins/advanced-scene-switcher/locale")
 	endif()
 else()
-	add_library(advanced-scene-switcher MODULE
-		${advanced-scene-switcher_HEADERS}
-		${advanced-scene-switcher_SOURCES}
-		${advanced-scene-switcher_UI_HEADERS}
-		${advanced-scene-switcher_PLATFORM_SOURCES}
-		${advanced-scene-switcher_PLATFORM_HEADERS}
-		)
-
 	target_link_libraries(advanced-scene-switcher
 		${advanced-scene-switcher_PLATFORM_LIBS}
 		obs-frontend-api
