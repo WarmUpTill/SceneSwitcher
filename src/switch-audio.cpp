@@ -2,6 +2,7 @@
 #include "headers/volume-control.hpp"
 #include "headers/utility.hpp"
 
+bool AudioSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_audioAdd_clicked()
@@ -74,7 +75,7 @@ void AdvSceneSwitcher::on_audioDown_clicked()
 void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
-	if (audioSwitches.size() == 0)
+	if (AudioSwitch::pause)
 		return;
 
 	for (AudioSwitch &s : audioSwitches) {

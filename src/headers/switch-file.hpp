@@ -12,6 +12,7 @@ typedef enum {
 } file_type;
 
 struct FileSwitch : SceneSwitcherEntry {
+	static bool pause;
 	std::string file = obs_module_text("AdvSceneSwitcher.enterPath");
 	std::string text = obs_module_text("AdvSceneSwitcher.enterText");
 	bool remote = false;

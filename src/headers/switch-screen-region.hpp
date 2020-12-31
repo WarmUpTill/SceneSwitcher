@@ -6,6 +6,7 @@ constexpr auto screen_region_func = 4;
 constexpr auto default_priority_4 = screen_region_func;
 
 struct ScreenRegionSwitch : SceneSwitcherEntry {
+	static bool pause;
 	int minX = 0, minY = 0, maxX = 0, maxY = 0;
 
 	const char *getType() { return "region"; }

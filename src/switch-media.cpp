@@ -1,6 +1,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+bool MediaSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
 constexpr auto media_played_to_end_idx = 8;
@@ -76,6 +77,9 @@ void AdvSceneSwitcher::on_mediaDown_clicked()
 void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
+	if (MediaSwitch::pause)
+		return;
+
 	for (MediaSwitch &mediaSwitch : mediaSwitches) {
 		if (!mediaSwitch.initialized())
 			continue;

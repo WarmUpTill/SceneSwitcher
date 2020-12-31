@@ -68,175 +68,203 @@ void AdvSceneSwitcher::on_pauseDown_clicked()
 		  switcher->pauseEntries[index + 1]);
 }
 
-void AdvSceneSwitcher::on_pauseWindowsAdd_clicked()
+void resetPause()
 {
-	QString windowName = ui->pauseWindowsWindows->currentText();
+	DefaultSceneTransition::pause = false;
+	WindowSwitch::pause = false;
+	ExecutableSwitch::pause = false;
+	ScreenRegionSwitch::pause = false;
+	MediaSwitch::pause = false;
+	FileSwitch::pause = false;
+	RandomSwitch::pause = false;
+	TimeSwitch::pause = false;
+	IdleData::pause = false;
+	SceneSequenceSwitch::pause = false;
+	AudioSwitch::pause = false;
+}
 
-	if (windowName.isEmpty())
-		return;
-
-	QVariant v = QVariant::fromValue(windowName);
-
-	QList<QListWidgetItem *> items =
-		ui->pauseWindows->findItems(windowName, Qt::MatchExactly);
-
-	if (items.size() == 0) {
-		QListWidgetItem *item =
-			new QListWidgetItem(windowName, ui->pauseWindows);
-		item->setData(Qt::UserRole, v);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-		switcher->pauseWindowsSwitches.emplace_back(
-			windowName.toUtf8().constData());
-		ui->pauseWindows->sortItems();
+void setPauseTarget(PauseTarget &target, bool &verbose)
+{
+	switch (target) {
+	case PauseTarget::All:
+		if (verbose)
+			blog(LOG_INFO, "pause all switching");
+		break;
+	case PauseTarget::Transition:
+		if (verbose)
+			blog(LOG_INFO, "pause def_transition switching");
+		DefaultSceneTransition::pause = true;
+		break;
+	case PauseTarget::Window:
+		if (verbose)
+			blog(LOG_INFO, "pause window switching");
+		WindowSwitch::pause = true;
+		break;
+	case PauseTarget::Executable:
+		if (verbose)
+			blog(LOG_INFO, "pause exec switching");
+		ExecutableSwitch::pause = true;
+		break;
+	case PauseTarget::Region:
+		if (verbose)
+			blog(LOG_INFO, "pause region switching");
+		ScreenRegionSwitch::pause = true;
+		break;
+	case PauseTarget::Media:
+		if (verbose)
+			blog(LOG_INFO, "pause media switching");
+		MediaSwitch::pause = true;
+		break;
+	case PauseTarget::File:
+		if (verbose)
+			blog(LOG_INFO, "pause file switching");
+		FileSwitch::pause = true;
+		break;
+	case PauseTarget::Random:
+		if (verbose)
+			blog(LOG_INFO, "pause random switching");
+		RandomSwitch::pause = true;
+		break;
+	case PauseTarget::Time:
+		if (verbose)
+			blog(LOG_INFO, "pause time switching");
+		TimeSwitch::pause = true;
+		break;
+	case PauseTarget::Idle:
+		if (verbose)
+			blog(LOG_INFO, "pause idle switching");
+		IdleData::pause = true;
+		break;
+	case PauseTarget::Sequence:
+		if (verbose)
+			blog(LOG_INFO, "pause sequence switching");
+		SceneSequenceSwitch::pause = true;
+		break;
+	case PauseTarget::Audio:
+		if (verbose)
+			blog(LOG_INFO, "pause audio switching");
+		AudioSwitch::pause = true;
+		break;
 	}
 }
 
-void AdvSceneSwitcher::on_pauseWindowsRemove_clicked()
+bool checkPauseScene(obs_weak_source_t *currentScene, obs_weak_source_t *scene,
+		     PauseTarget &target, bool &verbose)
 {
-	QListWidgetItem *item = ui->pauseWindows->currentItem();
-	if (!item)
-		return;
+	if (currentScene != scene)
+		return false;
 
-	QString windowName = item->data(Qt::UserRole).toString();
-
-	{
-		std::lock_guard<std::mutex> lock(switcher->m);
-		auto &switches = switcher->pauseWindowsSwitches;
-
-		for (auto it = switches.begin(); it != switches.end(); ++it) {
-			auto &s = *it;
-
-			if (s == windowName.toUtf8().constData()) {
-				switches.erase(it);
-				break;
-			}
-		}
-	}
-
-	delete item;
+	setPauseTarget(target, verbose);
+	if (target == PauseTarget::All)
+		return true;
+	return false;
 }
-
-void AdvSceneSwitcher::on_pauseWindows_currentRowChanged(int idx)
+bool checkPauseWindow(std::string &currentTitle, std::string &title,
+		      PauseTarget &target, bool &verbose)
 {
-	if (loading)
-		return;
-	if (idx == -1)
-		return;
+	if (currentTitle != title)
+		return false;
 
-	QListWidgetItem *item = ui->pauseWindows->item(idx);
-
-	QString window = item->data(Qt::UserRole).toString();
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	for (auto &s : switcher->pauseWindowsSwitches) {
-		if (window.compare(s.c_str()) == 0) {
-			ui->pauseWindowsWindows->setCurrentText(s.c_str());
-			break;
-		}
-	}
-}
-
-int AdvSceneSwitcher::PauseWindowsFindByData(const QString &window)
-{
-	int count = ui->pauseWindows->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++) {
-		QListWidgetItem *item = ui->pauseWindows->item(i);
-		QString itemRegion = item->data(Qt::UserRole).toString();
-
-		if (itemRegion == window) {
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
+	setPauseTarget(target, verbose);
+	if (target == PauseTarget::All)
+		return true;
+	return false;
 }
 
 bool SwitcherData::checkPause()
 {
-	bool pause = false;
+	bool pauseAll = false;
+
+	std::string title;
+	GetCurrentWindowTitle(title);
+
+	resetPause();
+
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
-	for (OBSWeakSource &s : pauseScenesSwitches) {
-		if (s == ws) {
-			pause = true;
+	for (PauseEntry &s : pauseEntries) {
+		if (s.pauseType == PauseType::Scene)
+			pauseAll = checkPauseScene(ws, s.scene, s.pauseTarget,
+						   verbose);
+		else
+			pauseAll = checkPauseWindow(title, s.window,
+						    s.pauseTarget, verbose);
+		if (pauseAll)
 			break;
-		}
 	}
+
 	obs_source_release(currentSource);
 	obs_weak_source_release(ws);
 
-	std::string title;
-	if (!pause) {
-		GetCurrentWindowTitle(title);
-		for (std::string &window : pauseWindowsSwitches) {
-			if (window == title) {
-				pause = true;
-				break;
-			}
-		}
-	}
-
-	if (!pause) {
-		GetCurrentWindowTitle(title);
-		for (std::string &window : pauseWindowsSwitches) {
-			try {
-				bool matches = std::regex_match(
-					title, std::regex(window));
-				if (matches) {
-					pause = true;
-					break;
-				}
-			} catch (const std::regex_error &) {
-			}
-		}
-	}
-
-	if (verbose && pause)
-		blog(LOG_INFO, "pause match");
-
-	return pause;
+	return pauseAll;
 }
 
 void SwitcherData::savePauseSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *pauseScenesArray = obs_data_array_create();
-	for (OBSWeakSource &scene : switcher->pauseScenesSwitches) {
+	for (PauseEntry &s : switcher->pauseEntries) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source = obs_weak_source_get_source(scene);
+		obs_data_set_int(array_obj, "pauseType",
+				 static_cast<int>(s.pauseType));
+		obs_data_set_int(array_obj, "pauseTarget",
+				 static_cast<int>(s.pauseTarget));
+		obs_data_set_string(array_obj, "pauseWindow", s.window.c_str());
+
+		obs_source_t *source = obs_weak_source_get_source(s.scene);
 		if (source) {
 			const char *n = obs_source_get_name(source);
 			obs_data_set_string(array_obj, "pauseScene", n);
-			obs_data_array_push_back(pauseScenesArray, array_obj);
 		}
+
+		obs_data_array_push_back(pauseScenesArray, array_obj);
+
 		obs_source_release(source);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "pauseEntries", pauseScenesArray);
+	obs_data_set_int(obj, "oldPauseValuesImported", 1);
 	obs_data_array_release(pauseScenesArray);
-
-	obs_data_array_t *pauseWindowsArray = obs_data_array_create();
-	for (std::string &window : switcher->pauseWindowsSwitches) {
-		obs_data_t *array_obj = obs_data_create();
-		obs_data_set_string(array_obj, "pauseWindow", window.c_str());
-		obs_data_array_push_back(pauseWindowsArray, array_obj);
-		obs_data_release(array_obj);
-	}
-	obs_data_set_array(obj, "pauseWindows", pauseWindowsArray);
-	obs_data_array_release(pauseWindowsArray);
 }
 
 void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 {
-	switcher->pauseScenesSwitches.clear();
+	switcher->pauseEntries.clear();
+
+	// To be removed in future builds once most users have migrated
+	loadOldPauseSwitches(obj);
+
+	obs_data_array_t *pauseArray = obs_data_get_array(obj, "pauseEntries");
+	size_t count = obs_data_array_count(pauseArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj = obs_data_array_item(pauseArray, i);
+
+		PauseType type = static_cast<PauseType>(
+			obs_data_get_int(array_obj, "pauseType"));
+		PauseTarget target = static_cast<PauseTarget>(
+			obs_data_get_int(array_obj, "pauseTarget"));
+		const char *scene =
+			obs_data_get_string(array_obj, "pauseScene");
+		const char *window =
+			obs_data_get_string(array_obj, "pauseWindow");
+
+		switcher->pauseEntries.emplace_back(GetWeakSourceByName(scene),
+						    type, target, window);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(pauseArray);
+}
+
+void SwitcherData::loadOldPauseSwitches(obs_data_t *obj)
+{
+	if (obs_data_get_int(obj, "oldPauseValuesImported"))
+		return;
 
 	obs_data_array_t *pauseScenesArray =
-		obs_data_get_array(obj, "pauseEntries");
+		obs_data_get_array(obj, "pauseScenes");
 	size_t count = obs_data_array_count(pauseScenesArray);
 
 	for (size_t i = 0; i < count; i++) {
@@ -246,14 +274,13 @@ void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 		const char *scene =
 			obs_data_get_string(array_obj, "pauseScene");
 
-		switcher->pauseScenesSwitches.emplace_back(
-			GetWeakSourceByName(scene));
+		switcher->pauseEntries.emplace_back(GetWeakSourceByName(scene),
+						    PauseType::Scene,
+						    PauseTarget::All, "");
 
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(pauseScenesArray);
-
-	switcher->pauseWindowsSwitches.clear();
 
 	obs_data_array_t *pauseWindowsArray =
 		obs_data_get_array(obj, "pauseWindows");
@@ -266,7 +293,8 @@ void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 		const char *window =
 			obs_data_get_string(array_obj, "pauseWindow");
 
-		switcher->pauseWindowsSwitches.emplace_back(window);
+		switcher->pauseEntries.emplace_back(nullptr, PauseType::Window,
+						    PauseTarget::All, window);
 
 		obs_data_release(array_obj);
 	}
@@ -275,25 +303,17 @@ void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 
 void AdvSceneSwitcher::setupPauseTab()
 {
-	populateSceneSelection(ui->pauseScenesScenes, false);
-	populateWindowSelection(ui->pauseWindowsWindows);
-
-	for (auto &scene : switcher->pauseScenesSwitches) {
-		std::string sceneName = GetWeakSourceName(scene);
-		QString text = QString::fromStdString(sceneName);
-
-		QListWidgetItem *item =
-			new QListWidgetItem(text, ui->pauseEntries);
-		item->setData(Qt::UserRole, text);
+	for (auto &s : switcher->pauseEntries) {
+		QListWidgetItem *item;
+		item = new QListWidgetItem(ui->pauseEntries);
+		ui->pauseEntries->addItem(item);
+		PauseEntryWidget *sw = new PauseEntryWidget(&s);
+		item->setSizeHint(sw->minimumSizeHint());
+		ui->pauseEntries->setItemWidget(item, sw);
 	}
 
-	for (auto &window : switcher->pauseWindowsSwitches) {
-		QString text = QString::fromStdString(window);
-
-		QListWidgetItem *item =
-			new QListWidgetItem(text, ui->pauseWindows);
-		item->setData(Qt::UserRole, text);
-	}
+	if (switcher->pauseEntries.size() == 0)
+		addPulse = PulseWidget(ui->pauseAdd, QColor(Qt::green));
 }
 
 void populatePauseTypes(QComboBox *list)
@@ -308,6 +328,7 @@ void populatePauseTargets(QComboBox *list)
 {
 	list->addItem(
 		obs_module_text("AdvSceneSwitcher.pauseTab.pauseTargetAll"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.transitionTab.title"));
 	list->addItem(obs_module_text("AdvSceneSwitcher.windowTitleTab.title"));
 	list->addItem(obs_module_text("AdvSceneSwitcher.executableTab.title"));
 	list->addItem(
@@ -338,6 +359,9 @@ PauseEntryWidget::PauseEntryWidget(PauseEntry *s) : SwitchWidget(s, false)
 	populatePauseTypes(pauseTypes);
 	populatePauseTargets(pauseTargets);
 	AdvSceneSwitcher::populateWindowSelection(windows);
+
+	windows->setEditable(true);
+	windows->setMaxVisibleItems(20);
 
 	if (s) {
 		scenes->setCurrentText(GetWeakSourceName(s->scene).c_str());
@@ -423,4 +447,9 @@ void PauseEntryWidget::WindowChanged(const QString &text)
 		return;
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->window = text.toStdString();
+}
+
+bool PauseEntry::valid()
+{
+	return true;
 }

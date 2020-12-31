@@ -1,6 +1,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+bool WindowSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_windowAdd_clicked()
@@ -187,6 +188,9 @@ bool isFocused(std::string &title)
 void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 					  OBSWeakSource &transition)
 {
+	if (WindowSwitch::pause)
+		return;
+
 	std::string title;
 	bool ignored = false;
 

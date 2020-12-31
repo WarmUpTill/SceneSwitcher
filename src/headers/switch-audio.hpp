@@ -13,6 +13,7 @@ typedef enum {
 } audioCondition;
 
 struct AudioSwitch : virtual SceneSwitcherEntry {
+	static bool pause;
 	OBSWeakSource audioSource = nullptr;
 	int volumeThreshold = 0;
 	audioCondition condition = ABOVE;
