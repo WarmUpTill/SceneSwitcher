@@ -13,6 +13,7 @@ typedef enum {
 } time_restriction;
 
 struct MediaSwitch : SceneSwitcherEntry {
+	static bool pause;
 	OBSWeakSource source = nullptr;
 	obs_media_state state = OBS_MEDIA_STATE_NONE;
 	bool anyState = false;

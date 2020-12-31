@@ -3,6 +3,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+bool RandomSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_randomAdd_clicked()
@@ -34,7 +35,7 @@ void AdvSceneSwitcher::on_randomRemove_clicked()
 void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
 			       OBSWeakSource &transition, int &delay)
 {
-	if (randomSwitches.size() == 0)
+	if (randomSwitches.size() == 0 || RandomSwitch::pause)
 		return;
 
 	std::deque<RandomSwitch> rs(randomSwitches);

@@ -944,53 +944,13 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="pauseScenesTab">
+     <widget class="QWidget" name="pauseTab">
       <attribute name="title">
-       <string>AdvSceneSwitcher.pauseScenesTab.title</string>
+       <string>AdvSceneSwitcher.pauseTab.title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_7">
-         <item>
-          <widget class="QLabel" name="label_7">
-           <property name="text">
-            <string>AdvSceneSwitcher.pauseScenesTab.pauseOnScene</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="pauseScenesScenes">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_5">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="QListWidget" name="pauseScenes">
+        <widget class="QListWidget" name="pauseEntries">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -998,17 +958,17 @@
           </sizepolicy>
          </property>
          <property name="sortingEnabled">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_6">
+        <layout class="QHBoxLayout" name="horizontalLayout_17">
          <property name="spacing">
           <number>4</number>
          </property>
          <item>
-          <widget class="QPushButton" name="pauseScenesAdd">
+          <widget class="QPushButton" name="pauseAdd">
            <property name="maximumSize">
             <size>
              <width>22</width>
@@ -1024,7 +984,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pauseScenesRemove">
+          <widget class="QPushButton" name="pauseRemove">
            <property name="maximumSize">
             <size>
              <width>22</width>
@@ -1040,126 +1000,92 @@
           </widget>
          </item>
          <item>
-          <spacer name="horizontalSpacer_4">
+          <spacer name="horizontalSpacer_46">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
            <property name="sizeHint" stdset="0">
             <size>
-             <width>40</width>
+             <width>5</width>
              <height>20</height>
             </size>
            </property>
           </spacer>
          </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="Line" name="line_4">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_34">
          <item>
-          <widget class="QLabel" name="label_37">
-           <property name="text">
-            <string>AdvSceneSwitcher.pauseScenesTab.pauseInFocus1</string>
+          <widget class="Line" name="line_15">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="pauseWindowsWindows">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="editable">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_38">
-           <property name="text">
-            <string>AdvSceneSwitcher.pauseScenesTab.pauseInFocus2</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_33">
+          <spacer name="horizontalSpacer_57">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
            <property name="sizeHint" stdset="0">
             <size>
-             <width>40</width>
+             <width>5</width>
              <height>20</height>
             </size>
            </property>
           </spacer>
          </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="QListWidget" name="pauseWindows">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="sortingEnabled">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_21">
          <item>
-          <widget class="QPushButton" name="pauseWindowsAdd">
+          <widget class="QPushButton" name="pauseUp">
            <property name="maximumSize">
             <size>
              <width>22</width>
              <height>22</height>
             </size>
            </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
+           </property>
            <property name="flat">
             <bool>true</bool>
            </property>
            <property name="themeID" stdset="0">
-            <string notr="true">addIconSmall</string>
+            <string>upArrowIconSmall</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pauseWindowsRemove">
+          <widget class="QPushButton" name="pauseDown">
            <property name="maximumSize">
             <size>
              <width>22</width>
              <height>22</height>
             </size>
            </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
+           </property>
            <property name="flat">
             <bool>true</bool>
            </property>
            <property name="themeID" stdset="0">
-            <string notr="true">removeIconSmall</string>
+            <string>downArrowIconSmall</string>
            </property>
           </widget>
          </item>
          <item>
-          <spacer name="horizontalSpacer_32">
+          <spacer name="horizontalSpacer_11">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>

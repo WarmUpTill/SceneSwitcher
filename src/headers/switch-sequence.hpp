@@ -11,6 +11,7 @@ typedef enum {
 } delay_units;
 
 struct SceneSequenceSwitch : SceneSwitcherEntry {
+	static bool pause;
 	OBSWeakSource startScene = nullptr;
 	double delay = 0;
 	int delayMultiplier = 1;

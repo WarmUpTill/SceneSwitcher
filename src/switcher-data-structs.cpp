@@ -27,11 +27,10 @@ void SwitcherData::Prune()
 				screenRegionSwitches.begin() + i--);
 	}
 
-	for (size_t i = 0; i < pauseScenesSwitches.size(); i++) {
-		OBSWeakSource &scene = pauseScenesSwitches[i];
-		if (!WeakSourceValid(scene))
-			pauseScenesSwitches.erase(pauseScenesSwitches.begin() +
-						  i--);
+	for (size_t i = 0; i < pauseEntries.size(); i++) {
+		PauseEntry &s = pauseEntries[i];
+		if (!s.valid())
+			pauseEntries.erase(pauseEntries.begin() + i--);
 	}
 
 	for (size_t i = 0; i < sceneSequenceSwitches.size(); i++) {

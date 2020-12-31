@@ -1,6 +1,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+bool ExecutableSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_executableAdd_clicked()
@@ -74,6 +75,9 @@ void AdvSceneSwitcher::on_executableDown_clicked()
 void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 				  OBSWeakSource &transition)
 {
+	if (executableSwitches.size() == 0 || ExecutableSwitch::pause)
+		return;
+
 	std::string title;
 	QStringList runningProcesses;
 	bool ignored = false;

@@ -12,6 +12,7 @@
 #include "switch-file.hpp"
 #include "switch-idle.hpp"
 #include "switch-media.hpp"
+#include "switch-pause.hpp"
 #include "switch-random.hpp"
 #include "switch-screen-region.hpp"
 #include "switch-time.hpp"
@@ -73,10 +74,6 @@ struct SwitcherData {
 
 	std::deque<ScreenRegionSwitch> screenRegionSwitches;
 
-	std::vector<OBSWeakSource> pauseScenesSwitches;
-
-	std::vector<std::string> pauseWindowsSwitches;
-
 	std::vector<std::string> ignoreWindowsSwitches;
 
 	std::deque<SceneSequenceSwitch> sceneSequenceSwitches;
@@ -104,6 +101,8 @@ struct SwitcherData {
 	bool checkedDefTransition = false;
 
 	std::deque<MediaSwitch> mediaSwitches;
+
+	std::deque<PauseEntry> pauseEntries;
 
 	std::deque<TimeSwitch> timeSwitches;
 	QDateTime liveTime;
@@ -207,6 +206,7 @@ struct SwitcherData {
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
 	void loadPauseSwitches(obs_data_t *obj);
+	void loadOldPauseSwitches(obs_data_t *obj);
 	void loadSceneSequenceSwitches(obs_data_t *obj);
 	void loadSceneTransitions(obs_data_t *obj);
 	void loadIdleSwitches(obs_data_t *obj);

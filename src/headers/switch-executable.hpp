@@ -6,6 +6,7 @@ constexpr auto exe_func = 3;
 constexpr auto default_priority_3 = exe_func;
 
 struct ExecutableSwitch : SceneSwitcherEntry {
+	static bool pause;
 	QString exe = "";
 	bool inFocus = false;
 

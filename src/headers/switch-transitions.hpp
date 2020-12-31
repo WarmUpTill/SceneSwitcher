@@ -17,6 +17,7 @@ struct SceneTransition : SceneSwitcherEntry {
 };
 
 struct DefaultSceneTransition : SceneSwitcherEntry {
+	static bool pause;
 
 	const char *getType() { return "def_transition"; }
 

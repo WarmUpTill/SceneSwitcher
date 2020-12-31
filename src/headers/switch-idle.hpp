@@ -6,6 +6,7 @@ constexpr auto idle_func = 2;
 constexpr auto default_priority_2 = idle_func;
 
 struct IdleData : SceneSwitcherEntry {
+	static bool pause;
 	bool idleEnable = false;
 	int time = default_idle_time;
 	bool alreadySwitched = false;
