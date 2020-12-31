@@ -106,7 +106,7 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 			(s.matchCount * (unsigned int)interval) / 1000.0 >=
 			s.duration;
 
-		if (durationReached && audioActive) {
+		if (volumeThresholdreached && durationReached && audioActive) {
 			scene = (s.usePreviousScene) ? previousScene : s.scene;
 			transition = s.transition;
 			match = true;
