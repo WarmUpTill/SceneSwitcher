@@ -8,6 +8,7 @@
 #include "headers/curl-helper.hpp"
 #include "headers/utility.hpp"
 
+bool FileSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 static std::hash<std::string> strHash;
 
@@ -229,6 +230,9 @@ bool checkLocalFileContent(FileSwitch &s)
 void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
+	if (FileSwitch::pause)
+		return;
+
 	for (FileSwitch &s : fileSwitches) {
 		if (!s.initialized())
 			continue;

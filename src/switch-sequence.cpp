@@ -5,6 +5,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+bool SceneSequenceSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_sceneSequenceAdd_clicked()
@@ -156,6 +157,9 @@ void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 				      OBSWeakSource &transition,
 				      std::unique_lock<std::mutex> &lock)
 {
+	if (SceneSequenceSwitch::pause)
+		return;
+
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 

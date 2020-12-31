@@ -1,6 +1,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+bool TimeSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_timeAdd_clicked()
@@ -107,7 +108,7 @@ bool checkRegularTime(TimeSwitch &s, int &interval)
 void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
 				   OBSWeakSource &transition)
 {
-	if (timeSwitches.size() == 0)
+	if (TimeSwitch::pause)
 		return;
 
 	for (TimeSwitch &s : timeSwitches) {

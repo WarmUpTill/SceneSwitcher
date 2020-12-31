@@ -2,6 +2,7 @@
 #include "switch-generic.hpp"
 
 struct RandomSwitch : SceneSwitcherEntry {
+	static bool pause;
 	double delay = 0.0;
 
 	const char *getType() { return "random"; }
