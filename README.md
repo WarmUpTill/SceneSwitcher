@@ -49,9 +49,9 @@ Most versions of Linux you can use cmake-gui or the command line.
 
 **For the command line:**  
 ```
-cmake -DBUILD_OUT_OF_TREE=1 -DLIBOBS_INCLUDE_DIR="<path to the libobs/ sub-folder in obs-studio's source code>"
--DLIBOBS_FRONTEND_INCLUDE_DIR="<path to the UI/obs-frontend-api/ sub-folder in obs-studio's source code>"
--DLIBOBS_FRONTEND_API_LIB="< path to the libobs-frontend-api.so file (usually in the same place as LIBOBS_LIB)>"
+cmake -DBUILD_OUT_OF_TREE=1 -DLIBOBS_INCLUDE_DIR="<path to the libobs/ sub-folder in obs-studio's source code>" \
+-DLIBOBS_FRONTEND_INCLUDE_DIR="<path to the UI/obs-frontend-api/ sub-folder in obs-studio's source code>" \
+-DLIBOBS_FRONTEND_API_LIB="< path to the libobs-frontend-api.so file (usually in the same place as LIBOBS_LIB)>" \
 -DCMAKE_INSTALL_PREFIX=/usr ..
 make -j4
 sudo make install
