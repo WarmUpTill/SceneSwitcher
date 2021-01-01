@@ -178,6 +178,7 @@ void matchUninterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
 			  std::unique_lock<std::mutex> &lock, bool &match,
 			  OBSWeakSource &scene, OBSWeakSource &transition)
 {
+	// scene was already active for the previous cycle so remove this time
 	int dur = s.delay * 1000 - switcher->interval;
 	if (dur > 0) {
 		switcher->waitScene = currentSource;
