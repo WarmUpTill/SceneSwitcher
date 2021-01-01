@@ -153,6 +153,58 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 	close();
 }
 
+void matchInterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
+			bool &match, OBSWeakSource &scene,
+			OBSWeakSource &transition)
+{
+	bool durationReached = s.matchCount * (switcher->interval / 1000.0) >=
+			       s.delay;
+
+	s.matchCount++;
+
+	if (durationReached) {
+		match = true;
+		scene = (s.usePreviousScene) ? switcher->previousScene
+					     : s.scene;
+		transition = s.transition;
+		s.matchCount = 0;
+		if (switcher->verbose)
+			s.logMatch();
+	}
+}
+
+void matchUninterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
+			  obs_source_t *currentSource,
+			  std::unique_lock<std::mutex> &lock, bool &match,
+			  OBSWeakSource &scene, OBSWeakSource &transition)
+{
+	int dur = s.delay * 1000 - switcher->interval;
+	if (dur > 0) {
+		switcher->waitScene = currentSource;
+
+		if (switcher->verbose)
+			s.logSleep(dur);
+
+		switcher->cv.wait_for(lock, std::chrono::milliseconds(dur));
+		switcher->waitScene = nullptr;
+	}
+	obs_source_t *currentSource2 = obs_frontend_get_current_scene();
+
+	// only switch if user hasn't changed scene manually
+	if (currentSource == currentSource2) {
+		match = true;
+		scene = (s.usePreviousScene) ? switcher->previousScene
+					     : s.scene;
+		transition = s.transition;
+		if (switcher->verbose)
+			s.logMatch();
+	} else if (switcher->verbose) {
+		blog(LOG_INFO, "sequence canceled");
+	}
+
+	obs_source_release(currentSource2);
+}
+
 void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 				      OBSWeakSource &transition,
 				      std::unique_lock<std::mutex> &lock)
@@ -168,34 +220,20 @@ void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 			continue;
 
 		if (s.startScene == ws) {
-			int dur = s.delay * 1000 - interval;
-			if (dur > 0) {
-				waitScene = currentSource;
 
-				if (verbose)
-					s.logSleep(dur);
-
-				cv.wait_for(lock,
-					    std::chrono::milliseconds(dur));
-				waitScene = nullptr;
-			}
-			obs_source_t *currentSource2 =
-				obs_frontend_get_current_scene();
-
-			// only switch if user hasn't changed scene manually
-			if (currentSource == currentSource2) {
-				match = true;
-				scene = (s.usePreviousScene) ? previousScene
-							     : s.scene;
-				transition = s.transition;
-				if (verbose)
-					s.logMatch();
-			} else if (verbose) {
-				blog(LOG_INFO, "sequence canceled");
+			if (s.interruptible) {
+				matchInterruptible(switcher, s, match, scene,
+						   transition);
+			} else {
+				matchUninterruptible(switcher, s, currentSource,
+						     lock, match, scene,
+						     transition);
 			}
 
-			obs_source_release(currentSource2);
-			break;
+			if (match)
+				break;
+		} else {
+			s.matchCount = 0;
 		}
 	}
 	obs_source_release(currentSource);
@@ -229,6 +267,8 @@ void SwitcherData::saveSceneSequenceSwitches(obs_data_t *obj)
 			obs_data_set_double(array_obj, "delay", s.delay);
 			obs_data_set_int(array_obj, "delayMultiplier",
 					 s.delayMultiplier);
+			obs_data_set_bool(array_obj, "interruptible",
+					  s.interruptible);
 			obs_data_array_push_back(sceneSequenceArray, array_obj);
 		}
 
@@ -265,12 +305,14 @@ void SwitcherData::loadSceneSequenceSwitches(obs_data_t *obj)
 		if (delayMultiplier == 0 ||
 		    (delayMultiplier != 1 && delayMultiplier % 60 != 0))
 			delayMultiplier = 1;
+		bool interruptible =
+			obs_data_get_bool(array_obj, "interruptible");
 
 		switcher->sceneSequenceSwitches.emplace_back(
 			GetWeakSourceByName(scene1),
 			GetWeakSourceByName(scene2),
 			GetWeakTransitionByName(transition), delay,
-			delayMultiplier,
+			delayMultiplier, interruptible,
 			(strcmp(scene2, previous_scene_name) == 0));
 
 		obs_data_release(array_obj);
@@ -321,6 +363,8 @@ SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
 	delay = new QDoubleSpinBox();
 	delayUnits = new QComboBox();
 	startScenes = new QComboBox();
+	interruptible = new QCheckBox(obs_module_text(
+		"AdvSceneSwitcher.sceneSequenceTab.interruptible"));
 
 	QWidget::connect(delay, SIGNAL(valueChanged(double)), this,
 			 SLOT(DelayChanged(double)));
@@ -329,10 +373,14 @@ SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
 	QWidget::connect(startScenes,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(StartSceneChanged(const QString &)));
+	QWidget::connect(interruptible, SIGNAL(stateChanged(int)), this,
+			 SLOT(InterruptibleChanged(int)));
 
 	delay->setMaximum(99999.000000);
 	AdvSceneSwitcher::populateSceneSelection(startScenes, false);
 	populateDelayUnits(delayUnits);
+	interruptible->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.sceneSequenceTab.interruptibleHint"));
 
 	if (s) {
 		switch (s->delayMultiplier) {
@@ -350,6 +398,7 @@ SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
 		}
 		startScenes->setCurrentText(
 			GetWeakSourceName(s->startScene).c_str());
+		interruptible->setChecked(s->interruptible);
 	}
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
@@ -358,7 +407,8 @@ SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
 		{"{{scenes}}", scenes},
 		{"{{delay}}", delay},
 		{"{{delayUnits}}", delayUnits},
-		{"{{transitions}}", transitions}};
+		{"{{transitions}}", transitions},
+		{"{{interruptible}}", interruptible}};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.sceneSequenceTab.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
@@ -433,4 +483,12 @@ void SequenceWidget::StartSceneChanged(const QString &text)
 		return;
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->startScene = GetWeakSourceByQString(text);
+}
+
+void SequenceWidget::InterruptibleChanged(int state)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->interruptible = state;
 }
