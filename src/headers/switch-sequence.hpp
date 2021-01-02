@@ -15,6 +15,8 @@ struct SceneSequenceSwitch : SceneSwitcherEntry {
 	OBSWeakSource startScene = nullptr;
 	double delay = 0;
 	int delayMultiplier = 1;
+	bool interruptible = false;
+	unsigned int matchCount = 0;
 
 	const char *getType() { return "sequence"; }
 	bool initialized();
@@ -25,11 +27,13 @@ struct SceneSequenceSwitch : SceneSwitcherEntry {
 	inline SceneSequenceSwitch(OBSWeakSource startScene_,
 				   OBSWeakSource scene_,
 				   OBSWeakSource transition_, double delay_,
-				   int delayMultiplier_, bool usePreviousScene_)
+				   int delayMultiplier_, bool interruptible_,
+				   bool usePreviousScene_)
 		: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
 		  startScene(startScene_),
 		  delay(delay_),
-		  delayMultiplier(delayMultiplier_)
+		  delayMultiplier(delayMultiplier_),
+		  interruptible(interruptible_)
 	{
 	}
 };
@@ -50,11 +54,13 @@ private slots:
 	void DelayChanged(double delay);
 	void DelayUnitsChanged(int idx);
 	void StartSceneChanged(const QString &text);
+	void InterruptibleChanged(int state);
 
 private:
 	QDoubleSpinBox *delay;
 	QComboBox *delayUnits;
 	QComboBox *startScenes;
+	QCheckBox *interruptible;
 
 	SceneSequenceSwitch *switchData;
 };
