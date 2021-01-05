@@ -183,6 +183,7 @@ public slots:
 	void on_audioRemove_clicked();
 	void on_audioUp_clicked();
 	void on_audioDown_clicked();
+	void on_audioFallback_toggled(bool on);
 
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();

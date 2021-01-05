@@ -44,6 +44,13 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	friend void swap(AudioSwitch &first, AudioSwitch &second);
 };
 
+struct AudioSwitchFallback : virtual SceneSwitcherEntry {
+	const char *getType() { return "audio_fallback"; }
+	bool enable = false;
+	double duration = 0;
+	unsigned int matchCount = 0;
+};
+
 class AudioSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
@@ -70,4 +77,19 @@ private:
 	VolControl *volMeter;
 
 	AudioSwitch *switchData;
+};
+
+class AudioSwitchFallbackWidget : public SwitchWidget {
+	Q_OBJECT
+
+public:
+	AudioSwitchFallbackWidget(AudioSwitchFallback *s);
+
+private slots:
+	void DurationChanged(double dur);
+
+private:
+	QDoubleSpinBox *duration;
+
+	AudioSwitchFallback *switchData;
 };

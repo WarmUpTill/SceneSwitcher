@@ -72,11 +72,42 @@ void AdvSceneSwitcher::on_audioDown_clicked()
 		  switcher->audioSwitches[index + 1]);
 }
 
+void AdvSceneSwitcher::on_audioFallback_toggled(bool on)
+{
+	if (loading || !switcher)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->audioFallback.enable = on;
+}
+
+void SwitcherData::checkAudioSwitchFallback(OBSWeakSource &scene,
+					    OBSWeakSource &transition)
+{
+	bool durationReached =
+		((unsigned long long)audioFallback.matchCount * interval) /
+			1000.0 >=
+		audioFallback.duration;
+
+	if (durationReached) {
+
+		scene = (audioFallback.usePreviousScene) ? previousScene
+							 : audioFallback.scene;
+		transition = audioFallback.transition;
+
+		if (verbose)
+			audioFallback.logMatch();
+	}
+
+	audioFallback.matchCount++;
+}
+
 void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
 	if (AudioSwitch::pause)
 		return;
+
+	bool fallbackChecked = false; // false if one or no match
 
 	for (AudioSwitch &s : audioSwitches) {
 		if (!s.initialized())
@@ -103,19 +134,56 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 		}
 
 		bool durationReached =
-			(s.matchCount * (unsigned int)interval) / 1000.0 >=
+			((unsigned long long)s.matchCount * interval) /
+				1000.0 >=
 			s.duration;
 
 		if (volumeThresholdreached && durationReached && audioActive) {
+			if (match) {
+				checkAudioSwitchFallback(scene, transition);
+				fallbackChecked = true;
+				break;
+			}
+
 			scene = (s.usePreviousScene) ? previousScene : s.scene;
 			transition = s.transition;
 			match = true;
 
 			if (verbose)
 				s.logMatch();
-			break;
+
+			if (!audioFallback.enable)
+				break;
 		}
 	}
+
+	if (!fallbackChecked)
+		audioFallback.matchCount = 0;
+}
+
+void saveAudioFallback(obs_data_t *obj, AudioSwitchFallback &audioFallback)
+{
+	obs_source_t *fallbackSceneSource =
+		obs_weak_source_get_source(audioFallback.scene);
+	obs_source_t *fallbackTransition =
+		obs_weak_source_get_source(audioFallback.transition);
+
+	const char *fallbackSceneName =
+		obs_source_get_name(fallbackSceneSource);
+	const char *fallbackTransitionName =
+		obs_source_get_name(fallbackTransition);
+
+	obs_data_set_bool(obj, "audioFallbackEnable", audioFallback.enable);
+	obs_data_set_string(obj, "audioFallbackScene",
+			    audioFallback.usePreviousScene ? previous_scene_name
+							   : fallbackSceneName);
+	obs_data_set_string(obj, "audioFallbackTransition",
+			    fallbackTransitionName);
+	obs_data_set_double(obj, "audioFallbackDuration",
+			    audioFallback.duration);
+
+	obs_source_release(fallbackSceneSource);
+	obs_source_release(fallbackTransition);
 }
 
 void SwitcherData::saveAudioSwitches(obs_data_t *obj)
@@ -159,6 +227,25 @@ void SwitcherData::saveAudioSwitches(obs_data_t *obj)
 	}
 	obs_data_set_array(obj, "audioSwitches", audioArray);
 	obs_data_array_release(audioArray);
+
+	saveAudioFallback(obj, audioFallback);
+}
+
+void loadAudioFallback(obs_data_t *obj, AudioSwitchFallback &audioFallback)
+{
+	const char *fallbackSceneName =
+		obs_data_get_string(obj, "audioFallbackScene");
+	const char *fallbackTransitionName =
+		obs_data_get_string(obj, "audioFallbackTransition");
+
+	audioFallback.enable = obs_data_get_bool(obj, "audioFallbackEnable");
+	audioFallback.duration =
+		obs_data_get_double(obj, "audioFallbackDuration");
+	audioFallback.scene = GetWeakSourceByName(fallbackSceneName);
+	audioFallback.transition =
+		GetWeakTransitionByName(fallbackTransitionName);
+	audioFallback.usePreviousScene =
+		strcmp(fallbackSceneName, previous_scene_name) == 0;
 }
 
 void SwitcherData::loadAudioSwitches(obs_data_t *obj)
@@ -190,6 +277,8 @@ void SwitcherData::loadAudioSwitches(obs_data_t *obj)
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(audioArray);
+
+	loadAudioFallback(obj, audioFallback);
 }
 
 void AdvSceneSwitcher::setupAudioTab()
@@ -205,6 +294,11 @@ void AdvSceneSwitcher::setupAudioTab()
 
 	if (switcher->audioSwitches.size() == 0)
 		addPulse = PulseWidget(ui->audioAdd, QColor(Qt::green));
+
+	AudioSwitchFallbackWidget *fb =
+		new AudioSwitchFallbackWidget(&switcher->audioFallback);
+	ui->audioFallbackLayout->addWidget(fb);
+	ui->audioFallback->setChecked(switcher->audioFallback.enable);
 }
 
 void AudioSwitch::setVolumeLevel(void *data,
@@ -488,6 +582,45 @@ void AudioSwitchWidget::ConditionChanged(int cond)
 }
 
 void AudioSwitchWidget::DurationChanged(double dur)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->duration = dur;
+}
+
+AudioSwitchFallbackWidget::AudioSwitchFallbackWidget(AudioSwitchFallback *s)
+	: SwitchWidget(s)
+{
+	duration = new QDoubleSpinBox();
+
+	duration->setMinimum(0.0);
+	duration->setMaximum(99.000000);
+	duration->setSuffix("s");
+
+	QWidget::connect(duration, SIGNAL(valueChanged(double)), this,
+			 SLOT(DurationChanged(double)));
+
+	if (s) {
+		duration->setValue(s->duration);
+	}
+
+	QHBoxLayout *mainLayout = new QHBoxLayout;
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{scenes}}", scenes},
+		{"{{duration}}", duration},
+		{"{{transitions}}", transitions}};
+	placeWidgets(
+		obs_module_text("AdvSceneSwitcher.audioTab.multiMatchfallback"),
+		mainLayout, widgetPlaceholders);
+	setLayout(mainLayout);
+
+	switchData = s;
+
+	loading = false;
+}
+
+void AudioSwitchFallbackWidget::DurationChanged(double dur)
 {
 	if (loading || !switchData)
 		return;

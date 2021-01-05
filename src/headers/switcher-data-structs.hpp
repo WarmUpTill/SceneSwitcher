@@ -108,6 +108,7 @@ struct SwitcherData {
 	QDateTime liveTime;
 
 	std::deque<AudioSwitch> audioSwitches;
+	AudioSwitchFallback audioFallback;
 
 	std::vector<int> functionNamesByPriority = std::vector<int>{
 		default_priority_0, default_priority_1, default_priority_2,
@@ -185,6 +186,8 @@ struct SwitcherData {
 			     OBSWeakSource &transition);
 	void checkAudioSwitch(bool &match, OBSWeakSource &scene,
 			      OBSWeakSource &transition);
+	void checkAudioSwitchFallback(OBSWeakSource &scene,
+				      OBSWeakSource &transition);
 	void checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition, int &sleep);
 
