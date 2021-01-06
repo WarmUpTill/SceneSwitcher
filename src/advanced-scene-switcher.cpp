@@ -481,6 +481,8 @@ void SwitcherData::Thread()
 
 		checkNoMatchSwitch(match, scene, transition, sleep);
 
+		checkSwitchCooldown(match);
+
 		// After this point we will call frontend functions
 		// obs_frontend_set_current_scene() and
 		// obs_frontend_set_current_transition()
