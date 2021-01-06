@@ -68,6 +68,9 @@ struct SwitcherData {
 	double noMatchCount = 0;
 	StartupBehavior startupBehavior = PERSIST;
 
+	double cooldown = 0.;
+	std::chrono::high_resolution_clock::time_point lastMatchTime;
+
 	std::deque<WindowSwitch> windowSwitches;
 	std::vector<std::string> ignoreIdleWindows;
 	std::string lastTitle;
@@ -187,6 +190,7 @@ struct SwitcherData {
 			      OBSWeakSource &transition);
 	void checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition, int &sleep);
+	void checkSwitchCooldown(bool &match);
 
 	void saveWindowTitleSwitches(obs_data_t *obj);
 	void saveScreenRegionSwitches(obs_data_t *obj);

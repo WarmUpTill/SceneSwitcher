@@ -680,6 +680,26 @@ void SwitcherData::checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
 	}
 }
 
+void SwitcherData::checkSwitchCooldown(bool &match)
+{
+	if (!match || cooldown == 0.) {
+		return;
+	}
+
+	auto now = std::chrono::high_resolution_clock::now();
+	auto timePassed = std::chrono::duration_cast<std::chrono::milliseconds>(
+		now - lastMatchTime);
+
+	if (timePassed.count() > cooldown * 1000) {
+		lastMatchTime = now;
+		return;
+	}
+
+	match = false;
+	if (verbose)
+		blog(LOG_INFO, "cooldown active - ignoring match");
+}
+
 void AdvSceneSwitcher::setupGeneralTab()
 {
 	populateSceneSelection(ui->noMatchSwitchScene, false);
