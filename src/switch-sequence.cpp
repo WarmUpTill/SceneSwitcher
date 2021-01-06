@@ -167,7 +167,6 @@ void matchInterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
 		scene = (s.usePreviousScene) ? switcher->previousScene
 					     : s.scene;
 		transition = s.transition;
-		s.matchCount = 0;
 		if (switcher->verbose)
 			s.logMatch();
 	}
@@ -221,18 +220,17 @@ void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 			continue;
 
 		if (s.startScene == ws) {
-
-			if (s.interruptible) {
-				matchInterruptible(switcher, s, match, scene,
-						   transition);
-			} else {
-				matchUninterruptible(switcher, s, currentSource,
-						     lock, match, scene,
-						     transition);
+			if (!match) {
+				if (s.interruptible) {
+					matchInterruptible(switcher, s, match,
+							   scene, transition);
+				} else {
+					matchUninterruptible(switcher, s,
+							     currentSource,
+							     lock, match, scene,
+							     transition);
+				}
 			}
-
-			if (match)
-				break;
 		} else {
 			s.matchCount = 0;
 		}
