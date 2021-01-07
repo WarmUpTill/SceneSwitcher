@@ -83,6 +83,14 @@ void AdvSceneSwitcher::on_noMatchSwitchScene_currentTextChanged(
 	UpdateNonMatchingScene(text);
 }
 
+void AdvSceneSwitcher::on_cooldownTime_valueChanged(double i)
+{
+	if (loading)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->cooldown = i;
+}
+
 void AdvSceneSwitcher::on_checkInterval_valueChanged(int value)
 {
 	if (loading)
@@ -471,6 +479,8 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 			 switcher->switchIfNotMatching);
 	obs_data_set_double(obj, "noMatchDelay", switcher->noMatchDelay);
 
+	obs_data_set_double(obj, "cooldown", switcher->cooldown);
+
 	obs_data_set_bool(obj, "active", !switcher->stop);
 	obs_data_set_int(obj, "startup_behavior", switcher->startupBehavior);
 
@@ -547,6 +557,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	switcher->nonMatchingScene =
 		GetWeakSourceByName(nonMatchingScene.c_str());
 	switcher->noMatchDelay = obs_data_get_double(obj, "noMatchDelay");
+
+	switcher->cooldown = obs_data_get_double(obj, "cooldown");
 
 	switcher->stop = !obs_data_get_bool(obj, "active");
 	switcher->startupBehavior =
@@ -680,6 +692,26 @@ void SwitcherData::checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
 	}
 }
 
+void SwitcherData::checkSwitchCooldown(bool &match)
+{
+	if (!match || cooldown == 0.) {
+		return;
+	}
+
+	auto now = std::chrono::high_resolution_clock::now();
+	auto timePassed = std::chrono::duration_cast<std::chrono::milliseconds>(
+		now - lastMatchTime);
+
+	if (timePassed.count() > cooldown * 1000) {
+		lastMatchTime = now;
+		return;
+	}
+
+	match = false;
+	if (verbose)
+		blog(LOG_INFO, "cooldown active - ignoring match");
+}
+
 void AdvSceneSwitcher::setupGeneralTab()
 {
 	populateSceneSelection(ui->noMatchSwitchScene, false);
@@ -702,6 +734,10 @@ void AdvSceneSwitcher::setupGeneralTab()
 	ui->noMatchDelay->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.generalTab.generalBehavior.onNoMetDelayTooltip"));
 	ui->checkInterval->setValue(switcher->interval);
+
+	ui->cooldownTime->setValue(switcher->cooldown);
+	ui->cooldownTime->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.cooldownHint"));
 
 	ui->autoStopSceneCheckBox->setChecked(switcher->autoStopEnable);
 	ui->autoStopScenes->setCurrentText(
