@@ -1,3 +1,5 @@
+#include <float.h>
+
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/volume-control.hpp"
 #include "headers/utility.hpp"
