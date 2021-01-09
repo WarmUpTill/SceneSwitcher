@@ -56,6 +56,7 @@ public:
 	void setupAudioTab();
 	void setTabOrder();
 
+	void DisplayMessage(QString msg);
 	static void populateSceneSelection(QComboBox *sel,
 					   bool addPrevious = false,
 					   bool addSelect = true);
