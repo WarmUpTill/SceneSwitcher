@@ -32,7 +32,7 @@ AdvSceneSwitcher::AdvSceneSwitcher(QWidget *parent)
 bool translationAvailable()
 {
 	return !!strcmp(obs_module_text("AdvSceneSwitcher.pluginName"),
-		       "AdvSceneSwitcher.pluginName");
+			"AdvSceneSwitcher.pluginName");
 }
 
 void AdvSceneSwitcher::loadUI()
