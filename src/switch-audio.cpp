@@ -1,3 +1,5 @@
+#include <float.h>
+
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/volume-control.hpp"
 #include "headers/utility.hpp"
@@ -126,6 +128,9 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 		else
 			volumeThresholdreached = ((double)s.peak + 60) * 1.7 <
 						 s.volumeThreshold;
+
+		// reset for next check
+		s.peak = -FLT_MAX;
 
 		if (volumeThresholdreached) {
 			s.matchCount++;
@@ -310,10 +315,24 @@ void AudioSwitch::setVolumeLevel(void *data,
 	UNUSED_PARAMETER(inputPeak);
 	AudioSwitch *s = static_cast<AudioSwitch *>(data);
 
-	s->peak = peak[0];
 	for (int i = 1; i < MAX_AUDIO_CHANNELS; i++)
 		if (peak[i] > s->peak)
 			s->peak = peak[i];
+}
+
+obs_volmeter_t *AddVolmeterToSource(AudioSwitch *entry, obs_weak_source *source)
+{
+	obs_volmeter_t *volmeter = obs_volmeter_create(OBS_FADER_LOG);
+	obs_volmeter_add_callback(volmeter, AudioSwitch::setVolumeLevel, entry);
+	obs_source_t *as = obs_weak_source_get_source(source);
+	if (!obs_volmeter_attach_source(volmeter, as)) {
+		const char *name = obs_source_get_name(as);
+		blog(LOG_WARNING, "failed to attach volmeter to source %s",
+		     name);
+	}
+	obs_source_release(as);
+
+	return volmeter;
 }
 
 void AudioSwitch::resetVolmeter()
@@ -321,15 +340,7 @@ void AudioSwitch::resetVolmeter()
 	obs_volmeter_remove_callback(volmeter, setVolumeLevel, this);
 	obs_volmeter_destroy(volmeter);
 
-	volmeter = obs_volmeter_create(OBS_FADER_LOG);
-	obs_volmeter_add_callback(volmeter, setVolumeLevel, this);
-	obs_source_t *as = obs_weak_source_get_source(audioSource);
-	if (!obs_volmeter_attach_source(volmeter, as)) {
-		const char *name = obs_source_get_name(as);
-		blog(LOG_WARNING, "failed to attach volmeter to source %s",
-		     name);
-	}
-	obs_source_release(as);
+	volmeter = AddVolmeterToSource(this, audioSource);
 }
 
 bool AudioSwitch::initialized()
@@ -353,15 +364,7 @@ AudioSwitch::AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
 	  condition(condition_),
 	  duration(duration_)
 {
-	volmeter = obs_volmeter_create(OBS_FADER_LOG);
-	obs_volmeter_add_callback(volmeter, setVolumeLevel, this);
-	obs_source_t *as = obs_weak_source_get_source(audioSource);
-	if (!obs_volmeter_attach_source(volmeter, as)) {
-		const char *name = obs_source_get_name(as);
-		blog(LOG_WARNING, "failed to attach volmeter to source %s",
-		     name);
-	}
-	obs_source_release(as);
+	volmeter = AddVolmeterToSource(this, audioSource);
 }
 
 AudioSwitch::AudioSwitch(const AudioSwitch &other)
@@ -372,15 +375,7 @@ AudioSwitch::AudioSwitch(const AudioSwitch &other)
 	  condition(other.condition),
 	  duration(other.duration)
 {
-	volmeter = obs_volmeter_create(OBS_FADER_LOG);
-	obs_volmeter_add_callback(volmeter, setVolumeLevel, this);
-	obs_source_t *as = obs_weak_source_get_source(other.audioSource);
-	if (!obs_volmeter_attach_source(volmeter, as)) {
-		const char *name = obs_source_get_name(as);
-		blog(LOG_WARNING, "failed to attach volmeter to source %s",
-		     name);
-	}
-	obs_source_release(as);
+	volmeter = AddVolmeterToSource(this, other.audioSource);
 }
 
 AudioSwitch::AudioSwitch(AudioSwitch &&other)
