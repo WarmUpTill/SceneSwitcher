@@ -1,5 +1,4 @@
 #include <QFileDialog>
-#include <QMessageBox>
 
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
@@ -349,10 +348,8 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 		file.fileName().toUtf8().constData());
 
 	if (!obj) {
-		QMessageBox Msgbox;
-		Msgbox.setText(obs_module_text(
+		DisplayMessage(obs_module_text(
 			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.loadFail"));
-		Msgbox.exec();
 		return;
 	}
 
@@ -373,10 +370,8 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 
 	obs_data_release(obj);
 
-	QMessageBox Msgbox;
-	Msgbox.setText(obs_module_text(
+	DisplayMessage(obs_module_text(
 		"AdvSceneSwitcher.generalTab.saveOrLoadsettings.loadSuccess"));
-	Msgbox.exec();
 	close();
 }
 

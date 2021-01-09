@@ -3,6 +3,7 @@
 #include <QtGui/qstandarditemmodel.h>
 #include <QPropertyAnimation>
 #include <QGraphicsColorizeEffect>
+#include <QMessageBox>
 
 #include <obs-module.h>
 #include <obs-frontend-api.h>
@@ -28,8 +29,19 @@ AdvSceneSwitcher::AdvSceneSwitcher(QWidget *parent)
 	loadUI();
 }
 
+bool translationAvailable()
+{
+	return !!strcmp(obs_module_text("AdvSceneSwitcher.pluginName"),
+		       "AdvSceneSwitcher.pluginName");
+}
+
 void AdvSceneSwitcher::loadUI()
 {
+	if (!translationAvailable()) {
+		DisplayMessage("Failed to find plug-in's 'data' directory.\n"
+			       "Please check installation instructions!");
+	}
+
 #if __APPLE__
 	setMinimumHeight(700);
 #endif
@@ -55,6 +67,13 @@ void AdvSceneSwitcher::loadUI()
 /********************************************************************************
  * UI helpers
  ********************************************************************************/
+void AdvSceneSwitcher::DisplayMessage(QString msg)
+{
+	QMessageBox Msgbox;
+	Msgbox.setWindowTitle("Advanced Scene Switcher");
+	Msgbox.setText(msg);
+	Msgbox.exec();
+}
 
 void addSelectionEntry(QComboBox *sel, const char *description,
 		       const char *tooltip = "")
