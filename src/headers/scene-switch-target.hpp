@@ -34,7 +34,7 @@ struct SwitchTarget {
 	};
 };
 
-class SceneGroupWidget {
+class SceneGroupWidget : public QWidget {
 	Q_OBJECT
 
 public:

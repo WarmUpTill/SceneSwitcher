@@ -9,3 +9,5 @@ void SceneGroup::UpdateCount() {}
 void SceneGroup::UpdateTime() {}
 
 void SceneGroup::getNextScene() {}
+
+void SceneGroupWidget::ConditionChanged(int cond) {}

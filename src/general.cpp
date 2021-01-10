@@ -3,6 +3,8 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+constexpr auto tab_count = 14;
+
 QMetaObject::Connection inactivePluse;
 
 void AdvSceneSwitcher::on_close_clicked()
@@ -420,6 +422,9 @@ int findTabIndex(QTabWidget *tabWidget, int pos)
 	case 12:
 		tabName = "audioTab";
 		break;
+	case 13:
+		tabName = "sceneGroupTab";
+		break;
 	}
 
 	QWidget *page = tabWidget->findChild<QWidget *>(tabName);
@@ -518,8 +523,8 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 
 	// After fresh install of OBS the vector can be empty
 	// as save() might be called before first load()
-	if (switcher->tabOrder.size() < 13) {
-		switcher->tabOrder = std::vector<int>(13);
+	if (switcher->tabOrder.size() < tab_count) {
+		switcher->tabOrder = std::vector<int>(tab_count);
 		std::iota(switcher->tabOrder.begin(), switcher->tabOrder.end(),
 			  0);
 	}
@@ -537,6 +542,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "idleTabPos", switcher->tabOrder[10]);
 	obs_data_set_int(obj, "sequenceTabPos", switcher->tabOrder[11]);
 	obs_data_set_int(obj, "audioTabPos", switcher->tabOrder[12]);
+	obs_data_set_int(obj, "sceneGroupTabPos", switcher->tabOrder[13]);
 }
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
@@ -635,6 +641,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "idleTabPos", 10);
 	obs_data_set_default_int(obj, "sequenceTabPos", 11);
 	obs_data_set_default_int(obj, "audioTabPos", 12);
+	obs_data_set_default_int(obj, "sceneGroupTabPos", 13);
 
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "generalTabPos")));
@@ -662,6 +669,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(int)(obs_data_get_int(obj, "sequenceTabPos")));
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "audioTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "sceneGroupTabPos")));
 }
 
 void SwitcherData::checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
