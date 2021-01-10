@@ -54,6 +54,7 @@ public:
 	void setupFileTab();
 	void setupTimeTab();
 	void setupAudioTab();
+	void setupSceneGroupTab();
 	void setTabOrder();
 
 	void DisplayMessage(QString msg);
@@ -186,6 +187,13 @@ public slots:
 	void on_audioUp_clicked();
 	void on_audioDown_clicked();
 	void on_audioFallback_toggled(bool on);
+
+	void on_sceneGroupAdd_clicked();
+	void on_sceneGroupRemove_clicked();
+	void on_sceneGroups_currentRowChanged(int idx);
+
+	void on_sceneGroupSceneAdd_clicked();
+	void on_sceneGroupSceneRemove_clicked();
 
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();

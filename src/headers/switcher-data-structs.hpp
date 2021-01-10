@@ -7,6 +7,7 @@
 #include <QThread>
 #include <curl/curl.h>
 
+#include "scene-switch-target.hpp"
 #include "switch-audio.hpp"
 #include "switch-executable.hpp"
 #include "switch-file.hpp"
@@ -113,6 +114,8 @@ struct SwitcherData {
 	std::deque<AudioSwitch> audioSwitches;
 	AudioSwitchFallback audioFallback;
 
+	std::deque<SceneGroup> sceneGroups;
+
 	std::vector<int> functionNamesByPriority = std::vector<int>{
 		default_priority_0, default_priority_1, default_priority_2,
 		default_priority_3, default_priority_4, default_priority_5,
@@ -207,6 +210,7 @@ struct SwitcherData {
 	void saveMediaSwitches(obs_data_t *obj);
 	void saveTimeSwitches(obs_data_t *obj);
 	void saveAudioSwitches(obs_data_t *obj);
+	void saveSceneGroups(obs_data_t *obj);
 	void saveGeneralSettings(obs_data_t *obj);
 	void saveHotkeys(obs_data_t *obj);
 
@@ -223,6 +227,7 @@ struct SwitcherData {
 	void loadMediaSwitches(obs_data_t *obj);
 	void loadTimeSwitches(obs_data_t *obj);
 	void loadAudioSwitches(obs_data_t *obj);
+	void loadSceneGroups(obs_data_t *obj);
 	void loadGeneralSettings(obs_data_t *obj);
 	void loadHotkeys(obs_data_t *obj);
 

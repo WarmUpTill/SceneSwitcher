@@ -58,6 +58,7 @@ void AdvSceneSwitcher::loadUI()
 	setupFileTab();
 	setupTimeTab();
 	setupAudioTab();
+	setupSceneGroupTab();
 
 	setTabOrder();
 
@@ -344,6 +345,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->saveMediaSwitches(obj);
 		switcher->saveTimeSwitches(obj);
 		switcher->saveAudioSwitches(obj);
+		switcher->saveSceneGroups(obj);
 		switcher->saveGeneralSettings(obj);
 		switcher->saveHotkeys(obj);
 
@@ -371,6 +373,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->loadMediaSwitches(obj);
 		switcher->loadTimeSwitches(obj);
 		switcher->loadAudioSwitches(obj);
+		switcher->loadSceneGroups(obj);
 		switcher->loadGeneralSettings(obj);
 		switcher->loadHotkeys(obj);
 
