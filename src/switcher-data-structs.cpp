@@ -92,4 +92,10 @@ void SwitcherData::Prune()
 		if (!s.valid())
 			audioSwitches.erase(audioSwitches.begin() + i--);
 	}
+
+	for (auto &sg : sceneGroups) {
+		for (size_t i = 0; i < sg.scenes.size(); i++)
+			if (!WeakSourceValid(sg.scenes[i]))
+				sg.scenes.erase(sg.scenes.begin() + i--);
+	}
 }

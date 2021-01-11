@@ -67,24 +67,93 @@ void AdvSceneSwitcher::on_sceneGroupAdd_clicked()
 	ui->sceneGroups->setCurrentItem(item);
 }
 
-void AdvSceneSwitcher::on_sceneGroupRemove_clicked() {}
+void AdvSceneSwitcher::on_sceneGroupRemove_clicked()
+{
+	QListWidgetItem *item = ui->sceneGroups->currentItem();
+	if (!item)
+		return;
+
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		int idx = ui->sceneGroups->currentRow();
+		auto &sg = switcher->sceneGroups;
+		sg.erase(sg.begin() + idx);
+	}
+
+	delete item;
+}
+
+void AdvSceneSwitcher::SetEditSceneGroup(SceneGroup &sg)
+{
+	ui->sceneGroupName->setText(sg.name.c_str());
+	ui->sceneGroupScenes->clear();
+
+	for (auto &s : sg.scenes) {
+		QString sceneName =
+			QString::fromStdString(GetWeakSourceName(s));
+		QVariant v = QVariant::fromValue(sceneName);
+		QListWidgetItem *item =
+			new QListWidgetItem(sceneName, ui->sceneGroupScenes);
+		item->setData(Qt::UserRole, v);
+	}
+
+	ui->sceneGroupEdit->setDisabled(false);
+}
 
 void AdvSceneSwitcher::on_sceneGroups_currentRowChanged(int idx)
 {
 	if (loading)
 		return;
-	if (idx == -1)
+	if (idx == -1) {
+		ui->sceneGroupEdit->setDisabled(true);
 		return;
+	}
 
-	ui->sceneGroupName->setText(switcher->sceneGroups[idx].name.c_str());
-	// ...
+	QListWidgetItem *item = ui->sceneGroups->item(idx);
+	QString sgName = item->data(Qt::UserRole).toString();
 
-	ui->sceneGroupName->setDisabled(false);
-	ui->sceneGroupSceneSelection->setDisabled(false);
-	ui->sceneGroupScenes->setDisabled(false);
+	std::lock_guard<std::mutex> lock(switcher->m);
+	for (auto &sg : switcher->sceneGroups) {
+		if (sgName.compare(sg.name.c_str()) == 0) {
+			SetEditSceneGroup(sg);
+			break;
+		}
+	}
 }
 
-void AdvSceneSwitcher::on_sceneGroupSceneAdd_clicked() {}
+void AdvSceneSwitcher::on_sceneGroupSceneAdd_clicked()
+{
+	SceneGroup *currentSG = nullptr;
+
+	QListWidgetItem *sgItem = ui->sceneGroups->currentItem();
+	if (!sgItem)
+		return;
+
+	QString sgName = sgItem->data(Qt::UserRole).toString();
+	std::lock_guard<std::mutex> lock(switcher->m);
+	for (auto &sg : switcher->sceneGroups) {
+		if (sgName.compare(sg.name.c_str()) == 0) {
+			currentSG = &sg;
+			break;
+		}
+	}
+
+	QString sceneName = ui->sceneGroupSceneSelection->currentText();
+
+	if (sceneName.isEmpty())
+		return;
+
+	OBSWeakSource source = GetWeakSourceByQString(sceneName);
+	if (!source)
+		return;
+
+	QVariant v = QVariant::fromValue(sceneName);
+	QListWidgetItem *item =
+		new QListWidgetItem(sceneName, ui->sceneGroupScenes);
+	item->setData(Qt::UserRole, v);
+
+	currentSG->scenes.emplace_back(source);
+}
 
 void AdvSceneSwitcher::on_sceneGroupSceneRemove_clicked() {}
 
@@ -150,9 +219,8 @@ void SwitcherData::loadSceneGroups(obs_data_t *obj)
 			obs_data_t *scenesArray_obj =
 				obs_data_array_item(scenesArray, j);
 			const char *scene =
-				obs_data_get_string(array_obj, "scene");
-			if (scene)
-				scenes.emplace_back(GetWeakSourceByName(scene));
+				obs_data_get_string(scenesArray_obj, "scene");
+			scenes.emplace_back(GetWeakSourceByName(scene));
 		}
 
 		int count = obs_data_get_int(array_obj, "count");
@@ -178,9 +246,7 @@ void AdvSceneSwitcher::setupSceneGroupTab()
 		item->setData(Qt::UserRole, text);
 	}
 
-	ui->sceneGroupName->setDisabled(true);
-	ui->sceneGroupSceneSelection->setDisabled(true);
-	ui->sceneGroupScenes->setDisabled(true);
+	ui->sceneGroupEdit->setDisabled(true);
 }
 
 SGNameDialog::SGNameDialog(QWidget *parent) : QDialog(parent)

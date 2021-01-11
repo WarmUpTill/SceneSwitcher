@@ -39,6 +39,7 @@ public:
 	void UpdateAutoStartScene(const QString &name);
 	void UpdateIdleDataTransition(const QString &name);
 	void UpdateIdleDataScene(const QString &name);
+	void SetEditSceneGroup(SceneGroup &sg);
 
 	void loadUI();
 	void setupGeneralTab();
