@@ -47,16 +47,18 @@ void AdvSceneSwitcher::on_sceneGroupAdd_clicked()
 		obs_module_text("AdvSceneSwitcher.sceneGroupTab.add"), name,
 		placeHolderText);
 
-	if (accepted) {
-		if (name.empty()) {
-			return;
-		}
+	if (!accepted) {
+		return;
+	}
 
-		if (sceneGroupNameExists(name)) {
-			DisplayMessage(obs_module_text(
-				"AdvSceneSwitcher.sceneGroupTab.exists"));
-			return;
-		}
+	if (name.empty()) {
+		return;
+	}
+
+	if (sceneGroupNameExists(name)) {
+		DisplayMessage(obs_module_text(
+			"AdvSceneSwitcher.sceneGroupTab.exists"));
+		return;
 	}
 
 	switcher->sceneGroups.emplace_back(name);
@@ -82,6 +84,10 @@ void AdvSceneSwitcher::on_sceneGroupRemove_clicked()
 
 	delete item;
 }
+
+void AdvSceneSwitcher::on_sceneGroupUp_clicked() {}
+
+void AdvSceneSwitcher::on_sceneGroupDown_clicked() {}
 
 void AdvSceneSwitcher::SetEditSceneGroup(SceneGroup &sg)
 {
@@ -121,22 +127,31 @@ void AdvSceneSwitcher::on_sceneGroups_currentRowChanged(int idx)
 	}
 }
 
-void AdvSceneSwitcher::on_sceneGroupSceneAdd_clicked()
+SceneGroup *getSelectedSG(Ui_AdvSceneSwitcher *ui)
 {
 	SceneGroup *currentSG = nullptr;
-
 	QListWidgetItem *sgItem = ui->sceneGroups->currentItem();
+
 	if (!sgItem)
-		return;
+		return currentSG;
 
 	QString sgName = sgItem->data(Qt::UserRole).toString();
-	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &sg : switcher->sceneGroups) {
 		if (sgName.compare(sg.name.c_str()) == 0) {
 			currentSG = &sg;
 			break;
 		}
 	}
+
+	return currentSG;
+}
+
+void AdvSceneSwitcher::on_sceneGroupSceneAdd_clicked()
+{
+	std::lock_guard<std::mutex> lock(switcher->m);
+	SceneGroup *currentSG = getSelectedSG(ui.get());
+	if (!currentSG)
+		return;
 
 	QString sceneName = ui->sceneGroupSceneSelection->currentText();
 
@@ -155,7 +170,23 @@ void AdvSceneSwitcher::on_sceneGroupSceneAdd_clicked()
 	currentSG->scenes.emplace_back(source);
 }
 
-void AdvSceneSwitcher::on_sceneGroupSceneRemove_clicked() {}
+void AdvSceneSwitcher::on_sceneGroupSceneRemove_clicked()
+{
+	std::lock_guard<std::mutex> lock(switcher->m);
+	SceneGroup *currentSG = getSelectedSG(ui.get());
+	if (!currentSG)
+		return;
+
+	int idx = ui->sceneGroupScenes->currentRow();
+	if (idx == -1)
+		return;
+
+	auto &scenes = currentSG->scenes;
+	scenes.erase(scenes.begin() + idx);
+
+	auto item = ui->sceneGroupScenes->currentItem();
+	delete item;
+}
 
 void SwitcherData::saveSceneGroups(obs_data_t *obj)
 {
@@ -214,14 +245,16 @@ void SwitcherData::loadSceneGroups(obs_data_t *obj)
 		std::vector<OBSWeakSource> scenes;
 		obs_data_array_t *scenesArray =
 			obs_data_get_array(array_obj, "scenes");
-		size_t scenesCount = obs_data_array_count(sceneGroupArray);
+		size_t scenesCount = obs_data_array_count(scenesArray);
 		for (size_t j = 0; j < scenesCount; j++) {
 			obs_data_t *scenesArray_obj =
 				obs_data_array_item(scenesArray, j);
 			const char *scene =
 				obs_data_get_string(scenesArray_obj, "scene");
 			scenes.emplace_back(GetWeakSourceByName(scene));
+			obs_data_release(scenesArray_obj);
 		}
+		obs_data_array_release(scenesArray);
 
 		int count = obs_data_get_int(array_obj, "count");
 		double time = obs_data_get_double(array_obj, "time");
