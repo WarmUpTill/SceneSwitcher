@@ -3124,7 +3124,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QPushButton" name="audioUp_2">
+             <widget class="QPushButton" name="sceneGroupUp">
               <property name="maximumSize">
                <size>
                 <width>22</width>
@@ -3147,7 +3147,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="audioDown_2">
+             <widget class="QPushButton" name="sceneGroupDown">
               <property name="maximumSize">
                <size>
                 <width>22</width>
@@ -3320,7 +3320,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QPushButton" name="audioUp_3">
+             <widget class="QPushButton" name="sceneGroupSceneUp">
               <property name="maximumSize">
                <size>
                 <width>22</width>
@@ -3343,7 +3343,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="audioDown_3">
+             <widget class="QPushButton" name="sceneGroupSceneDown">
               <property name="maximumSize">
                <size>
                 <width>22</width>

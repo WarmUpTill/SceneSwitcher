@@ -3,6 +3,8 @@
 #include "headers\advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+static QMetaObject::Connection addPulse;
+
 void SceneGroup::AddScene() {}
 
 void SceneGroup::RemoveScene() {}
@@ -67,6 +69,8 @@ void AdvSceneSwitcher::on_sceneGroupAdd_clicked()
 	QListWidgetItem *item = new QListWidgetItem(text, ui->sceneGroups);
 	item->setData(Qt::UserRole, text);
 	ui->sceneGroups->setCurrentItem(item);
+
+	ui->sceneGroupAdd->disconnect(addPulse);
 }
 
 void AdvSceneSwitcher::on_sceneGroupRemove_clicked()
@@ -85,9 +89,35 @@ void AdvSceneSwitcher::on_sceneGroupRemove_clicked()
 	delete item;
 }
 
-void AdvSceneSwitcher::on_sceneGroupUp_clicked() {}
+void AdvSceneSwitcher::on_sceneGroupUp_clicked()
+{
+	int index = ui->sceneGroups->currentRow();
+	if (index != -1 && index != 0) {
+		ui->sceneGroups->insertItem(index - 1,
+					    ui->sceneGroups->takeItem(index));
+		ui->sceneGroups->setCurrentRow(index - 1);
 
-void AdvSceneSwitcher::on_sceneGroupDown_clicked() {}
+		std::lock_guard<std::mutex> lock(switcher->m);
+
+		iter_swap(switcher->sceneGroups.begin() + index,
+			  switcher->sceneGroups.begin() + index - 1);
+	}
+}
+
+void AdvSceneSwitcher::on_sceneGroupDown_clicked()
+{
+	int index = ui->sceneGroups->currentRow();
+	if (index != -1 && index != ui->sceneGroups->count() - 1) {
+		ui->sceneGroups->insertItem(index + 1,
+					    ui->sceneGroups->takeItem(index));
+		ui->sceneGroups->setCurrentRow(index + 1);
+
+		std::lock_guard<std::mutex> lock(switcher->m);
+
+		iter_swap(switcher->sceneGroups.begin() + index,
+			  switcher->sceneGroups.begin() + index + 1);
+	}
+}
 
 void AdvSceneSwitcher::SetEditSceneGroup(SceneGroup &sg)
 {
@@ -188,6 +218,42 @@ void AdvSceneSwitcher::on_sceneGroupSceneRemove_clicked()
 	delete item;
 }
 
+void AdvSceneSwitcher::on_sceneGroupSceneUp_clicked()
+{
+	std::lock_guard<std::mutex> lock(switcher->m);
+	SceneGroup *currentSG = getSelectedSG(ui.get());
+	if (!currentSG)
+		return;
+
+	int index = ui->sceneGroupScenes->currentRow();
+	if (index != -1 && index != 0) {
+		ui->sceneGroupScenes->insertItem(
+			index - 1, ui->sceneGroupScenes->takeItem(index));
+		ui->sceneGroupScenes->setCurrentRow(index - 1);
+
+		iter_swap(currentSG->scenes.begin() + index,
+			  currentSG->scenes.begin() + index - 1);
+	}
+}
+
+void AdvSceneSwitcher::on_sceneGroupSceneDown_clicked()
+{
+	std::lock_guard<std::mutex> lock(switcher->m);
+	SceneGroup *currentSG = getSelectedSG(ui.get());
+	if (!currentSG)
+		return;
+
+	int index = ui->sceneGroupScenes->currentRow();
+	if (index != -1 && index != ui->sceneGroupScenes->count() - 1) {
+		ui->sceneGroupScenes->insertItem(
+			index + 1, ui->sceneGroupScenes->takeItem(index));
+		ui->sceneGroupScenes->setCurrentRow(index + 1);
+
+		iter_swap(currentSG->scenes.begin() + index,
+			  currentSG->scenes.begin() + index + 1);
+	}
+}
+
 void SwitcherData::saveSceneGroups(obs_data_t *obj)
 {
 	obs_data_array_t *sceneGroupArray = obs_data_array_create();
@@ -278,6 +344,9 @@ void AdvSceneSwitcher::setupSceneGroupTab()
 			new QListWidgetItem(text, ui->sceneGroups);
 		item->setData(Qt::UserRole, text);
 	}
+
+	if (switcher->sceneGroups.size() == 0)
+		addPulse = PulseWidget(ui->sceneGroupAdd, QColor(Qt::green));
 
 	ui->sceneGroupEdit->setDisabled(true);
 }

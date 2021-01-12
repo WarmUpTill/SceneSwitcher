@@ -197,6 +197,8 @@ public slots:
 
 	void on_sceneGroupSceneAdd_clicked();
 	void on_sceneGroupSceneRemove_clicked();
+	void on_sceneGroupSceneUp_clicked();
+	void on_sceneGroupSceneDown_clicked();
 
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();
