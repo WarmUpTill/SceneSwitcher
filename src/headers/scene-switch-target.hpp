@@ -5,6 +5,8 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QComboBox>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
 #include <obs.hpp>
 
 enum class AdvanceCondition {
@@ -54,20 +56,30 @@ struct SwitchTarget {
 	SceneGroup group;
 };
 
-class SceneGroupWidget : public QWidget {
+class SceneGroupEditWidget : public QWidget {
 	Q_OBJECT
 
 public:
-	SceneGroupWidget(SceneGroup *s);
+	SceneGroupEditWidget();
+	void SetEditSceneGroup(SceneGroup *sg);
+	void ShowCurrentTypeEdit();
+
 private slots:
-	void ConditionChanged(int cond);
-	//...
+	void TypeChanged(int type);
+	void CountChanged(int count);
+	void TimeChanged(double time);
 
 private:
-	QComboBox *scenes;
-	QComboBox *condition;
+	QComboBox *type;
 
-	SceneGroup *group;
+	QWidget *timeEdit;
+	QWidget *countEdit;
+
+	QSpinBox *count;
+	QDoubleSpinBox *time;
+	QLabel *random;
+
+	SceneGroup *sceneGroup = nullptr;
 };
 
 // Based on OBS's NameDialog

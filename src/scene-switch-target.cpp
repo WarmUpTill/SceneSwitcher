@@ -4,6 +4,7 @@
 #include "headers/utility.hpp"
 
 static QMetaObject::Connection addPulse;
+SceneGroupEditWidget *typeEdit = nullptr;
 
 void SceneGroup::AddScene() {}
 
@@ -14,8 +15,6 @@ void SceneGroup::UpdateCount() {}
 void SceneGroup::UpdateTime() {}
 
 void SceneGroup::getNextScene() {}
-
-void SceneGroupWidget::ConditionChanged(int cond) {}
 
 bool sceneGroupNameExists(std::string name)
 {
@@ -134,6 +133,7 @@ void AdvSceneSwitcher::SetEditSceneGroup(SceneGroup &sg)
 	}
 
 	ui->sceneGroupEdit->setDisabled(false);
+	typeEdit->SetEditSceneGroup(&sg);
 }
 
 void AdvSceneSwitcher::on_sceneGroups_currentRowChanged(int idx)
@@ -148,7 +148,6 @@ void AdvSceneSwitcher::on_sceneGroups_currentRowChanged(int idx)
 	QListWidgetItem *item = ui->sceneGroups->item(idx);
 	QString sgName = item->data(Qt::UserRole).toString();
 
-	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &sg : switcher->sceneGroups) {
 		if (sgName.compare(sg.name.c_str()) == 0) {
 			SetEditSceneGroup(sg);
@@ -348,6 +347,9 @@ void AdvSceneSwitcher::setupSceneGroupTab()
 	if (switcher->sceneGroups.size() == 0)
 		addPulse = PulseWidget(ui->sceneGroupAdd, QColor(Qt::green));
 
+	typeEdit = new SceneGroupEditWidget();
+	ui->sceneGroupTypeEdit->addWidget(typeEdit);
+
 	ui->sceneGroupEdit->setDisabled(true);
 }
 
@@ -410,4 +412,146 @@ bool SGNameDialog::AskForName(QWidget *parent, const QString &title,
 	userTextInput = dialog.userText->text().toUtf8().constData();
 	CleanWhitespace(userTextInput);
 	return true;
+}
+
+void populateTypeSelection(QComboBox *list)
+{
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.sceneGroupTab.type.count"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.sceneGroupTab.type.time"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.sceneGroupTab.type.random"));
+}
+
+SceneGroupEditWidget::SceneGroupEditWidget()
+{
+	//w->setContentsMargins(0, 0, 0, 0);
+	type = new QComboBox();
+	populateTypeSelection(type);
+
+	QWidget::connect(type, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(TypeChanged(int)));
+
+	QHBoxLayout *typeLayout = new QHBoxLayout();
+	typeLayout->setContentsMargins(0, 0, 0, 0);
+
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{type}}", type}};
+	placeWidgets(
+		obs_module_text("AdvSceneSwitcher.sceneGroupTab.edit.type"),
+		typeLayout, widgetPlaceholders);
+
+	countEdit = new QWidget();
+	count = new QSpinBox();
+
+	count->setMinimum(0);
+	count->setMaximum(999);
+
+	QWidget::connect(count, SIGNAL(valueChanged(int)), this,
+			 SLOT(CountChanged(int)));
+
+	QHBoxLayout *countLayout = new QHBoxLayout(countEdit);
+	countLayout->setContentsMargins(0, 0, 0, 0);
+
+	widgetPlaceholders = {{"{{count}}", count}};
+	placeWidgets(
+		obs_module_text("AdvSceneSwitcher.sceneGroupTab.edit.count"),
+		countLayout, widgetPlaceholders);
+
+	timeEdit = new QWidget();
+	time = new QDoubleSpinBox();
+
+	time->setMinimum(0.0);
+	time->setMaximum(99999999.00);
+	time->setSuffix("s");
+
+	QWidget::connect(time, SIGNAL(valueChanged(double)), this,
+			 SLOT(TimeChanged(double)));
+
+	QHBoxLayout *timeLayout = new QHBoxLayout(timeEdit);
+	timeLayout->setContentsMargins(0, 0, 0, 0);
+
+	widgetPlaceholders = {{"{{time}}", time}};
+	placeWidgets(
+		obs_module_text("AdvSceneSwitcher.sceneGroupTab.edit.time"),
+		timeLayout, widgetPlaceholders);
+
+	random = new QLabel(
+		obs_module_text("AdvSceneSwitcher.sceneGroupTab.edit.random"));
+
+	QVBoxLayout *mainLayout = new QVBoxLayout;
+	mainLayout->setContentsMargins(0, 0, 0, 0);
+	mainLayout->addLayout(typeLayout);
+	mainLayout->addWidget(countEdit);
+	mainLayout->addWidget(timeEdit);
+	mainLayout->addWidget(random);
+
+	setLayout(mainLayout);
+
+	countEdit->setVisible(false);
+	timeEdit->setVisible(false);
+	random->setVisible(false);
+
+	sceneGroup = nullptr;
+}
+
+void SceneGroupEditWidget::ShowCurrentTypeEdit()
+{
+	if (!sceneGroup)
+		return;
+
+	countEdit->setVisible(false);
+	timeEdit->setVisible(false);
+	random->setVisible(false);
+
+	switch (sceneGroup->type) {
+	case AdvanceCondition::Count:
+		countEdit->setVisible(true);
+		break;
+	case AdvanceCondition::Time:
+		timeEdit->setVisible(true);
+		break;
+	case AdvanceCondition::Random:
+		random->setVisible(true);
+		break;
+	}
+}
+
+void SceneGroupEditWidget::SetEditSceneGroup(SceneGroup *sg)
+{
+	if (!sg)
+		return;
+	sceneGroup = sg;
+	type->setCurrentIndex(static_cast<int>(sg->type));
+	count->setValue(sg->count);
+	time->setValue(sg->time);
+	ShowCurrentTypeEdit();
+}
+
+void SceneGroupEditWidget::TypeChanged(int type)
+{
+	if (!sceneGroup)
+		return;
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	sceneGroup->type = static_cast<AdvanceCondition>(type);
+
+	ShowCurrentTypeEdit();
+}
+
+void SceneGroupEditWidget::CountChanged(int count)
+{
+	if (!sceneGroup)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	sceneGroup->count = count;
+}
+
+void SceneGroupEditWidget::TimeChanged(double time)
+{
+	if (!sceneGroup)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	sceneGroup->time = time;
 }
