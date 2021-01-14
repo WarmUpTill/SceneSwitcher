@@ -7,6 +7,7 @@
 #include <QComboBox>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
+#include <QCheckBox>
 #include <obs.hpp>
 
 enum class AdvanceCondition {
@@ -16,30 +17,37 @@ enum class AdvanceCondition {
 };
 
 struct SceneGroup {
-	void AddScene();
-	void RemoveScene();
-	void UpdateCount();
-	void UpdateTime();
-
-	void getNextScene();
+	OBSWeakSource getNextScene();
+	OBSWeakSource getNextSceneCount();
+	OBSWeakSource getNextSceneTime();
+	OBSWeakSource getNextSceneRandom();
+	void advanceIdx();
 
 	AdvanceCondition type = AdvanceCondition::Count;
 	std::vector<OBSWeakSource> scenes = {};
 
 	std::string name = "no-name";
-	int count = 0;
+	int count = 1;
 	double time = 0;
+	bool repeat = false;
+
+	size_t currentIdx = 0;
+
+	int currentCount = -1;
+	std::chrono::high_resolution_clock::time_point lastAdvTime;
+	OBSWeakSource lastRandomScene = nullptr;
 
 	inline SceneGroup(){};
 	inline SceneGroup(std::string name_) : name(name_){};
 	inline SceneGroup(std::string name_, AdvanceCondition type_,
 			  std::vector<OBSWeakSource> scenes_, int count_,
-			  double time_)
+			  double time_, bool repeat_)
 		: name(name_),
 		  type(type_),
 		  scenes(scenes_),
 		  count(count_),
-		  time(time_)
+		  time(time_),
+		  repeat(repeat_)
 	{
 	}
 };
@@ -68,6 +76,7 @@ private slots:
 	void TypeChanged(int type);
 	void CountChanged(int count);
 	void TimeChanged(double time);
+	void RepeatChanged(int state);
 
 private:
 	QComboBox *type;
@@ -78,6 +87,8 @@ private:
 	QSpinBox *count;
 	QDoubleSpinBox *time;
 	QLabel *random;
+
+	QCheckBox *repeat;
 
 	SceneGroup *sceneGroup = nullptr;
 };
