@@ -29,7 +29,7 @@ typedef enum {
 	RECORDING = 0,
 	STREAMING = 1,
 	RECORINDGSTREAMING = 2
-} AutoStartType;
+} AutoStartStopType;
 
 typedef struct transitionData {
 	std::string name = "";
@@ -92,10 +92,11 @@ struct SwitcherData {
 	std::deque<ExecutableSwitch> executableSwitches;
 
 	bool autoStopEnable = false;
+	AutoStartStopType autoStopType = RECORINDGSTREAMING;
 	OBSWeakSource autoStopScene;
 
 	bool autoStartEnable = false;
-	AutoStartType autoStartType = RECORDING;
+	AutoStartStopType autoStartType = RECORDING;
 	OBSWeakSource autoStartScene;
 	bool autoStartedRecently = false;
 
