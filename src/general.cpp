@@ -761,6 +761,8 @@ void AdvSceneSwitcher::setupGeneralTab()
 	ui->cooldownTime->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.generalTab.generalBehavior.cooldownHint"));
 
+	populateAutoStartStopTypeSelection(ui->autoStopType);
+
 	ui->autoStopSceneCheckBox->setChecked(switcher->autoStopEnable);
 	ui->autoStopScenes->setCurrentText(
 		GetWeakSourceName(switcher->autoStopScene).c_str());
@@ -775,7 +777,6 @@ void AdvSceneSwitcher::setupGeneralTab()
 	}
 
 	populateAutoStartStopTypeSelection(ui->autoStartType);
-	populateAutoStartStopTypeSelection(ui->autoStopType);
 
 	ui->autoStartSceneCheckBox->setChecked(switcher->autoStartEnable);
 	ui->autoStartScenes->setCurrentText(
