@@ -169,7 +169,6 @@ void matchInterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
 }
 
 void matchUninterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
-
 			  obs_source_t *currentSource,
 			  std::unique_lock<std::mutex> &lock, bool &match,
 			  SwitchTarget &target, OBSWeakSource &transition)

@@ -13,9 +13,7 @@ void SwitcherData::checkIdleSwitch(bool &match, SwitchTarget &target,
 
 	std::string title;
 	bool ignoreIdle = false;
-	//lock.unlock();
 	GetCurrentWindowTitle(title);
-	//lock.lock();
 
 	for (std::string &window : ignoreIdleWindows) {
 		if (window == title) {
