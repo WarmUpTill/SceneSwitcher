@@ -750,6 +750,14 @@ void AdvSceneSwitcher::setupGeneralTab()
 	populateSceneSelection(ui->autoStopScenes, false);
 	populateSceneSelection(ui->autoStartScenes, false);
 
+	TargetSelection *test = new TargetSelection();
+	populateSceneSelection(test);
+	ui->horizontalLayout_33->addWidget(test);
+	QWidget::connect(
+		this,
+		SIGNAL(SceneGroupRenamed(const QString &, const QString &)),
+		test, SLOT(SceneGroupRename(const QString &, const QString &)));
+
 	if (switcher->switchIfNotMatching == SWITCH) {
 		ui->noMatchSwitch->setChecked(true);
 		ui->noMatchSwitchScene->setEnabled(true);

@@ -27,6 +27,26 @@ struct SceneSwitcherEntry {
 	virtual ~SceneSwitcherEntry() {}
 };
 
+class TargetSelection : public QComboBox {
+	Q_OBJECT
+private slots:
+	void SceneGroupRename(const QString &oldName, const QString newName)
+	{
+		bool renameSelected = currentText() == oldName;
+		int idx = findText(oldName);
+
+		if (idx == -1) {
+			return;
+		}
+
+		removeItem(idx);
+		insertItem(idx, newName);
+
+		if (renameSelected)
+			setCurrentIndex(findText(newName));
+	}
+};
+
 class SwitchWidget : public QWidget {
 	Q_OBJECT
 

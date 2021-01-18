@@ -59,9 +59,12 @@ public:
 	void setTabOrder();
 
 	void DisplayMessage(QString msg);
+
 	static void populateSceneSelection(QComboBox *sel,
 					   bool addPrevious = false,
-					   bool addSelect = true);
+					   bool addSelect = true,
+					   bool addSceneGroup = true);
+
 	static void populateTransitionSelection(QComboBox *sel,
 						bool addSelect = true);
 	static void populateWindowSelection(QComboBox *sel,
@@ -81,6 +84,9 @@ public:
 			    QMetaObject::Connection *addHighlight = nullptr);
 	bool listMoveUp(QListWidget *list);
 	bool listMoveDown(QListWidget *list);
+
+signals:
+	void SceneGroupRenamed(const QString &oldName, const QString newName);
 
 public slots:
 	void on_windowUp_clicked();

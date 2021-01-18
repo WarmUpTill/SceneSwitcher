@@ -95,8 +95,11 @@ void addSelectionEntry(QComboBox *sel, const char *description,
 }
 
 void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
-					      bool addSelect)
+					      bool addSelect,
+					      bool addSceneGroup)
 {
+	sel->clear();
+
 	if (addSelect)
 		addSelectionEntry(
 			sel, obs_module_text("AdvSceneSwitcher.selectScene"),
@@ -114,6 +117,12 @@ void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 	if (addPrevious)
 		sel->addItem(obs_module_text(
 			"AdvSceneSwitcher.selectPreviousScene"));
+
+	if (addSceneGroup) {
+		for (auto &sg : switcher->sceneGroups) {
+			sel->addItem(QString::fromStdString(sg.name));
+		}
+	}
 }
 
 void AdvSceneSwitcher::populateTransitionSelection(QComboBox *sel,

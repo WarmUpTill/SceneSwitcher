@@ -216,10 +216,12 @@ void AdvSceneSwitcher::on_sceneGroupName_editingFinished()
 		return;
 
 	QString newName = ui->sceneGroupName->text();
-	if (newName.isEmpty() ||
-	    newName == QString::fromStdString(currentSG->name)) {
+	QString oldName = QString::fromStdString(currentSG->name);
+
+	if (newName.isEmpty() || newName == oldName) {
 		nameValid = false;
 	}
+
 	if (nameValid && sceneGroupNameExists(newName.toUtf8().constData())) {
 		DisplayMessage(obs_module_text(
 			"AdvSceneSwitcher.sceneGroupTab.exists"));
@@ -233,9 +235,10 @@ void AdvSceneSwitcher::on_sceneGroupName_editingFinished()
 		sgItem->setData(Qt::UserRole, newName);
 		sgItem->setText(newName);
 	} else {
-		ui->sceneGroupName->setText(
-			QString::fromStdString(currentSG->name));
+		ui->sceneGroupName->setText(oldName);
 	}
+
+	emit SceneGroupRenamed(oldName, newName);
 }
 
 void AdvSceneSwitcher::SetEditSceneGroup(SceneGroup &sg)
