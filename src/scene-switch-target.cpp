@@ -188,6 +188,56 @@ void AdvSceneSwitcher::on_sceneGroupDown_clicked()
 	}
 }
 
+SceneGroup *getSelectedSG(Ui_AdvSceneSwitcher *ui)
+{
+	SceneGroup *currentSG = nullptr;
+	QListWidgetItem *sgItem = ui->sceneGroups->currentItem();
+
+	if (!sgItem)
+		return currentSG;
+
+	QString sgName = sgItem->data(Qt::UserRole).toString();
+	for (auto &sg : switcher->sceneGroups) {
+		if (sgName.compare(sg.name.c_str()) == 0) {
+			currentSG = &sg;
+			break;
+		}
+	}
+
+	return currentSG;
+}
+
+void AdvSceneSwitcher::on_sceneGroupName_editingFinished()
+{
+	bool nameValid = true;
+
+	SceneGroup *currentSG = getSelectedSG(ui.get());
+	if (!currentSG)
+		return;
+
+	QString newName = ui->sceneGroupName->text();
+	if (newName.isEmpty() ||
+	    newName == QString::fromStdString(currentSG->name)) {
+		nameValid = false;
+	}
+	if (nameValid && sceneGroupNameExists(newName.toUtf8().constData())) {
+		DisplayMessage(obs_module_text(
+			"AdvSceneSwitcher.sceneGroupTab.exists"));
+		nameValid = false;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	if (nameValid) {
+		currentSG->name = newName.toUtf8().constData();
+		QListWidgetItem *sgItem = ui->sceneGroups->currentItem();
+		sgItem->setData(Qt::UserRole, newName);
+		sgItem->setText(newName);
+	} else {
+		ui->sceneGroupName->setText(
+			QString::fromStdString(currentSG->name));
+	}
+}
+
 void AdvSceneSwitcher::SetEditSceneGroup(SceneGroup &sg)
 {
 	ui->sceneGroupName->setText(sg.name.c_str());
@@ -224,25 +274,6 @@ void AdvSceneSwitcher::on_sceneGroups_currentRowChanged(int idx)
 			break;
 		}
 	}
-}
-
-SceneGroup *getSelectedSG(Ui_AdvSceneSwitcher *ui)
-{
-	SceneGroup *currentSG = nullptr;
-	QListWidgetItem *sgItem = ui->sceneGroups->currentItem();
-
-	if (!sgItem)
-		return currentSG;
-
-	QString sgName = sgItem->data(Qt::UserRole).toString();
-	for (auto &sg : switcher->sceneGroups) {
-		if (sgName.compare(sg.name.c_str()) == 0) {
-			currentSG = &sg;
-			break;
-		}
-	}
-
-	return currentSG;
 }
 
 void AdvSceneSwitcher::on_sceneGroupSceneAdd_clicked()

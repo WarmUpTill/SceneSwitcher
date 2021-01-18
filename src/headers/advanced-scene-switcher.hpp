@@ -194,6 +194,7 @@ public slots:
 	void on_sceneGroupRemove_clicked();
 	void on_sceneGroupUp_clicked();
 	void on_sceneGroupDown_clicked();
+	void on_sceneGroupName_editingFinished();
 	void on_sceneGroups_currentRowChanged(int idx);
 
 	void on_sceneGroupSceneAdd_clicked();
