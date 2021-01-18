@@ -185,7 +185,7 @@ bool isFocused(std::string &title)
 	return (equals || matches);
 }
 
-void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
+void SwitcherData::checkWindowTitleSwitch(bool &match, SwitchTarget &target,
 					  OBSWeakSource &transition)
 {
 	if (WindowSwitch::pause)
@@ -234,7 +234,8 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 		if (isRunning(s.window) &&
 		    (fullscreen && (max && (focus || ignore)))) {
 			match = true;
-			scene = s.scene;
+			target.type = SwitchTargetType::Scene;
+			target.scene = s.scene;
 			transition = s.transition;
 
 			if (verbose)

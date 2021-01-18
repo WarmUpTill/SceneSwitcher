@@ -5,7 +5,7 @@
 
 bool IdleData::pause = false;
 
-void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
+void SwitcherData::checkIdleSwitch(bool &match, SwitchTarget &target,
 				   OBSWeakSource &transition)
 {
 	if (!idleData.idleEnable || IdleData::pause)
@@ -41,8 +41,9 @@ void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
 	if (!ignoreIdle && secondsSinceLastInput() > idleData.time) {
 		if (idleData.alreadySwitched)
 			return;
-		scene = (idleData.usePreviousScene) ? previousScene
-						    : idleData.scene;
+		target.type = SwitchTargetType::Scene;
+		target.scene = (idleData.usePreviousScene) ? previousScene
+							   : idleData.scene;
 		transition = idleData.transition;
 		match = true;
 		idleData.alreadySwitched = true;

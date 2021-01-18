@@ -82,7 +82,7 @@ void AdvSceneSwitcher::on_audioFallback_toggled(bool on)
 	switcher->audioFallback.enable = on;
 }
 
-void SwitcherData::checkAudioSwitchFallback(OBSWeakSource &scene,
+void SwitcherData::checkAudioSwitchFallback(SwitchTarget &target,
 					    OBSWeakSource &transition)
 {
 	bool durationReached =
@@ -91,9 +91,10 @@ void SwitcherData::checkAudioSwitchFallback(OBSWeakSource &scene,
 		audioFallback.duration;
 
 	if (durationReached) {
-
-		scene = (audioFallback.usePreviousScene) ? previousScene
-							 : audioFallback.scene;
+		target.type = SwitchTargetType::Scene;
+		target.scene = (audioFallback.usePreviousScene)
+				       ? previousScene
+				       : audioFallback.scene;
 		transition = audioFallback.transition;
 
 		if (verbose)
@@ -103,7 +104,7 @@ void SwitcherData::checkAudioSwitchFallback(OBSWeakSource &scene,
 	audioFallback.matchCount++;
 }
 
-void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
+void SwitcherData::checkAudioSwitch(bool &match, SwitchTarget &target,
 				    OBSWeakSource &transition)
 {
 	if (AudioSwitch::pause)
@@ -145,12 +146,14 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 
 		if (volumeThresholdreached && durationReached && audioActive) {
 			if (match) {
-				checkAudioSwitchFallback(scene, transition);
+				checkAudioSwitchFallback(target, transition);
 				fallbackChecked = true;
 				break;
 			}
 
-			scene = (s.usePreviousScene) ? previousScene : s.scene;
+			target.type = SwitchTargetType::Scene;
+			target.scene = (s.usePreviousScene) ? previousScene
+							    : s.scene;
 			transition = s.transition;
 			match = true;
 

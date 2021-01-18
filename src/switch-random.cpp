@@ -32,7 +32,7 @@ void AdvSceneSwitcher::on_randomRemove_clicked()
 	delete item;
 }
 
-void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
+void SwitcherData::checkRandom(bool &match, SwitchTarget &target,
 			       OBSWeakSource &transition, int &delay)
 {
 	if (randomSwitches.size() == 0 || RandomSwitch::pause)
@@ -48,7 +48,8 @@ void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
 
 		if (r.scene == lastRandomScene && randomSwitches.size() != 1)
 			continue;
-		scene = r.scene;
+		target.type = SwitchTargetType::Scene;
+		target.scene = r.scene;
 		transition = r.transition;
 		delay = (int)r.delay * 1000;
 		match = true;

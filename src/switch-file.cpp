@@ -108,7 +108,7 @@ void SwitcherData::writeToStatusFile(QString msg)
 	file.close();
 }
 
-void SwitcherData::checkSwitchInfoFromFile(bool &match, OBSWeakSource &scene,
+void SwitcherData::checkSwitchInfoFromFile(bool &match, SwitchTarget &target,
 					   OBSWeakSource &transition)
 {
 	if (!fileIO.readEnabled || fileIO.readPath.empty())
@@ -125,7 +125,8 @@ void SwitcherData::checkSwitchInfoFromFile(bool &match, OBSWeakSource &scene,
 				obs_source_get_weak_source(sceneRead);
 
 			match = true;
-			scene = sceneReadWs;
+			target.type = SwitchTargetType::Scene;
+			target.scene = sceneReadWs;
 			transition = nullptr;
 
 			obs_weak_source_release(sceneReadWs);
@@ -227,7 +228,7 @@ bool checkLocalFileContent(FileSwitch &s)
 	return match;
 }
 
-void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
+void SwitcherData::checkFileContent(bool &match, SwitchTarget &target,
 				    OBSWeakSource &transition)
 {
 	if (FileSwitch::pause)
@@ -245,7 +246,8 @@ void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 		}
 
 		if (equal) {
-			scene = s.scene;
+			target.type = SwitchTargetType::Scene;
+			target.scene = s.scene;
 			transition = s.transition;
 			match = true;
 

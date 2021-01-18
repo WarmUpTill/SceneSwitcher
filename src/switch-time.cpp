@@ -105,7 +105,7 @@ bool checkRegularTime(TimeSwitch &s, int &interval)
 	return timesAreInInterval(s.time, now, interval);
 }
 
-void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
+void SwitcherData::checkTimeSwitch(bool &match, SwitchTarget &target,
 				   OBSWeakSource &transition)
 {
 	if (TimeSwitch::pause)
@@ -121,7 +121,9 @@ void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
 			match = checkRegularTime(s, interval);
 
 		if (match) {
-			scene = (s.usePreviousScene) ? previousScene : s.scene;
+			target.type = SwitchTargetType::Scene;
+			target.scene = (s.usePreviousScene) ? previousScene
+							    : s.scene;
 			transition = s.transition;
 			match = true;
 

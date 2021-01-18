@@ -170,32 +170,33 @@ struct SwitcherData {
 	void checkDefaultSceneTransitions(bool &match,
 					  OBSWeakSource &transition);
 	void setCurrentDefTransition(OBSWeakSource &transition);
-	void checkSceneSequence(bool &match, OBSWeakSource &scene,
+	void checkSceneSequence(bool &match, SwitchTarget &target,
 				OBSWeakSource &transition,
 				std::unique_lock<std::mutex> &lock);
-	void checkIdleSwitch(bool &match, OBSWeakSource &scene,
+	void checkIdleSwitch(bool &match, SwitchTarget &target,
 			     OBSWeakSource &transition);
-	void checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
+	void checkWindowTitleSwitch(bool &match, SwitchTarget &target,
 				    OBSWeakSource &transition);
-	void checkExeSwitch(bool &match, OBSWeakSource &scene,
+	void checkExeSwitch(bool &match, SwitchTarget &target,
 			    OBSWeakSource &transition);
-	void checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
+	void checkScreenRegionSwitch(bool &match, SwitchTarget &target,
 				     OBSWeakSource &transition);
-	void checkSwitchInfoFromFile(bool &match, OBSWeakSource &scene,
+	void checkSwitchInfoFromFile(bool &match, SwitchTarget &target,
 				     OBSWeakSource &transition);
-	void checkFileContent(bool &match, OBSWeakSource &scene,
+	void checkFileContent(bool &match, SwitchTarget &target,
 			      OBSWeakSource &transition);
-	void checkRandom(bool &match, OBSWeakSource &scene,
+	void checkRandom(bool &match, SwitchTarget &target,
 			 OBSWeakSource &transition, int &delay);
-	void checkMediaSwitch(bool &match, OBSWeakSource &scene,
+	void checkMediaSwitch(bool &match, SwitchTarget &target,
 			      OBSWeakSource &transition);
-	void checkTimeSwitch(bool &match, OBSWeakSource &scene,
+	void checkTimeSwitch(bool &match, SwitchTarget &target,
 			     OBSWeakSource &transition);
-	void checkAudioSwitch(bool &match, OBSWeakSource &scene,
+	void checkAudioSwitch(bool &match, SwitchTarget &target,
 			      OBSWeakSource &transition);
-	void checkAudioSwitchFallback(OBSWeakSource &scene,
+	void checkAudioSwitchFallback(SwitchTarget &target,
+
 				      OBSWeakSource &transition);
-	void checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
+	void checkNoMatchSwitch(bool &match, SwitchTarget &target,
 				OBSWeakSource &transition, int &sleep);
 	void checkSwitchCooldown(bool &match);
 

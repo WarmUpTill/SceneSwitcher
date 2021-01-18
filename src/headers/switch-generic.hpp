@@ -3,6 +3,7 @@
 #include <QComboBox>
 
 struct SceneSwitcherEntry {
+	SwitchTarget target;
 	OBSWeakSource scene = nullptr;
 	OBSWeakSource transition = nullptr;
 	bool usePreviousScene = false;

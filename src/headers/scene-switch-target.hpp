@@ -58,9 +58,10 @@ enum class SwitchTargetType {
 };
 
 struct SwitchTarget {
-	SwitchTargetType type;
+	SwitchTargetType type = SwitchTargetType::Scene;
 
-	OBSWeakSource scene;
+	OBSWeakSource scene = nullptr;
+	bool usePreviousScene = false;
 	SceneGroup group;
 };
 

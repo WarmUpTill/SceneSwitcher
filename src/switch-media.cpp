@@ -74,7 +74,7 @@ void AdvSceneSwitcher::on_mediaDown_clicked()
 		  switcher->mediaSwitches[index + 1]);
 }
 
-void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
+void SwitcherData::checkMediaSwitch(bool &match, SwitchTarget &target,
 				    OBSWeakSource &transition)
 {
 	if (MediaSwitch::pause)
@@ -173,9 +173,10 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 
 		if (matched && !mediaSwitch.matched) {
 			match = true;
-			scene = (mediaSwitch.usePreviousScene)
-					? previousScene
-					: mediaSwitch.scene;
+			target.type = SwitchTargetType::Scene;
+			target.scene = (mediaSwitch.usePreviousScene)
+					       ? previousScene
+					       : mediaSwitch.scene;
 			transition = mediaSwitch.transition;
 
 			if (verbose)
