@@ -123,6 +123,7 @@ public slots:
 	void on_sceneSequenceDown_clicked();
 
 	void on_autoStopSceneCheckBox_stateChanged(int state);
+	void on_autoStopType_currentIndexChanged(int index);
 	void on_autoStopScenes_currentTextChanged(const QString &text);
 
 	void on_autoStartSceneCheckBox_stateChanged(int state);

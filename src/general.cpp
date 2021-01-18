@@ -153,13 +153,23 @@ void AdvSceneSwitcher::on_autoStopSceneCheckBox_stateChanged(int state)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	if (!state) {
 		ui->autoStopScenes->setDisabled(true);
+		ui->autoStopType->setDisabled(true);
 		switcher->autoStopEnable = false;
 	} else {
 		ui->autoStopScenes->setDisabled(false);
+		ui->autoStopType->setDisabled(false);
 		switcher->autoStopEnable = true;
 		if (!switcher->autoStopScene)
 			UpdateAutoStopScene(ui->autoStopScenes->currentText());
 	}
+}
+
+void AdvSceneSwitcher::on_autoStopType_currentIndexChanged(int index)
+{
+	if (loading)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->autoStopType = (AutoStartStopType)index;
 }
 
 void AdvSceneSwitcher::UpdateAutoStopScene(const QString &name)
@@ -179,13 +189,17 @@ void SwitcherData::autoStopStreamAndRecording()
 	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
 	if (ws && autoStopScene == ws) {
-		if (obs_frontend_streaming_active()) {
+		if ((switcher->autoStopType == STREAMING ||
+		     switcher->autoStopType == RECORINDGSTREAMING) &&
+		    obs_frontend_streaming_active()) {
 			blog(LOG_INFO,
 			     "Stopping stream because scene '%s' is active",
 			     obs_source_get_name(currentSource));
 			obs_frontend_streaming_stop();
 		}
-		if (obs_frontend_recording_active()) {
+		if ((switcher->autoStopType == RECORDING ||
+		     switcher->autoStopType == RECORINDGSTREAMING) &&
+		    obs_frontend_recording_active()) {
 			blog(LOG_INFO,
 			     "Stopping record because scene '%s' is active",
 			     obs_source_get_name(currentSource));
@@ -201,7 +215,7 @@ void AdvSceneSwitcher::on_autoStartType_currentIndexChanged(int index)
 	if (loading)
 		return;
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->autoStartType = (AutoStartType)index;
+	switcher->autoStartType = (AutoStartStopType)index;
 }
 
 void AdvSceneSwitcher::on_autoStartScenes_currentTextChanged(const QString &text)
@@ -487,6 +501,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	std::string autoStopSceneName =
 		GetWeakSourceName(switcher->autoStopScene);
 	obs_data_set_bool(obj, "autoStopEnable", switcher->autoStopEnable);
+	obs_data_set_int(obj, "autoStopType", switcher->autoStopType);
 	obs_data_set_string(obj, "autoStopSceneName",
 			    autoStopSceneName.c_str());
 
@@ -572,13 +587,15 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	std::string autoStopScene =
 		obs_data_get_string(obj, "autoStopSceneName");
 	switcher->autoStopEnable = obs_data_get_bool(obj, "autoStopEnable");
+	switcher->autoStopType =
+		(AutoStartStopType)obs_data_get_int(obj, "autoStopType");
 	switcher->autoStopScene = GetWeakSourceByName(autoStopScene.c_str());
 
 	std::string autoStartScene =
 		obs_data_get_string(obj, "autoStartSceneName");
 	switcher->autoStartEnable = obs_data_get_bool(obj, "autoStartEnable");
 	switcher->autoStartType =
-		(AutoStartType)obs_data_get_int(obj, "autoStartType");
+		(AutoStartStopType)obs_data_get_int(obj, "autoStartType");
 	switcher->autoStartScene = GetWeakSourceByName(autoStartScene.c_str());
 
 	switcher->verbose = obs_data_get_bool(obj, "verbose");
@@ -716,6 +733,16 @@ void SwitcherData::checkSwitchCooldown(bool &match)
 		blog(LOG_INFO, "cooldown active - ignoring match");
 }
 
+void populateAutoStartStopTypeSelection(QComboBox *cb)
+{
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.recording"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.streaming"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.recordingAndStreaming"));
+}
+
 void AdvSceneSwitcher::setupGeneralTab()
 {
 	populateSceneSelection(ui->noMatchSwitchScene, false);
@@ -743,22 +770,22 @@ void AdvSceneSwitcher::setupGeneralTab()
 	ui->cooldownTime->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.generalTab.generalBehavior.cooldownHint"));
 
+	populateAutoStartStopTypeSelection(ui->autoStopType);
+
 	ui->autoStopSceneCheckBox->setChecked(switcher->autoStopEnable);
 	ui->autoStopScenes->setCurrentText(
 		GetWeakSourceName(switcher->autoStopScene).c_str());
+	ui->autoStopType->setCurrentIndex(switcher->autoStopType);
 
 	if (ui->autoStopSceneCheckBox->checkState()) {
 		ui->autoStopScenes->setDisabled(false);
+		ui->autoStopType->setDisabled(false);
 	} else {
 		ui->autoStopScenes->setDisabled(true);
+		ui->autoStopType->setDisabled(true);
 	}
 
-	ui->autoStartType->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.recording"));
-	ui->autoStartType->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.streaming"));
-	ui->autoStartType->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.recordingAndStreaming"));
+	populateAutoStartStopTypeSelection(ui->autoStartType);
 
 	ui->autoStartSceneCheckBox->setChecked(switcher->autoStartEnable);
 	ui->autoStartScenes->setCurrentText(

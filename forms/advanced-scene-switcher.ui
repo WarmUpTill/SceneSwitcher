@@ -370,7 +370,17 @@
                 <item>
                  <widget class="QCheckBox" name="autoStopSceneCheckBox">
                   <property name="text">
-                   <string>AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStop</string>
+                   <string>AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStop1</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="autoStopType"/>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_3">
+                  <property name="text">
+                   <string>AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStop2</string>
                   </property>
                  </widget>
                 </item>
