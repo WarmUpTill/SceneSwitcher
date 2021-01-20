@@ -342,6 +342,11 @@ void AdvSceneSwitcher::on_exportSettings_clicked()
 
 void AdvSceneSwitcher::on_importSettings_clicked()
 {
+	// scene switcher could be stuck in a sequence
+	// so it needs to be stopped before importing new settings
+	bool start = !switcher->stop;
+	switcher->Stop();
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 
 	QString directory = QFileDialog::getOpenFileName(
@@ -387,6 +392,10 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 	DisplayMessage(obs_module_text(
 		"AdvSceneSwitcher.generalTab.saveOrLoadsettings.loadSuccess"));
 	close();
+
+	// restart scene switcher if it was active
+	if (start)
+		switcher->Start();
 }
 
 int findTabIndex(QTabWidget *tabWidget, int pos)
