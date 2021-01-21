@@ -10,7 +10,7 @@ void AdvSceneSwitcher::on_executableAdd_clicked()
 	switcher->executableSwitches.emplace_back();
 
 	listAddClicked(ui->executables,
-		       new ExecutableSwitchWidget(
+		       new ExecutableSwitchWidget(this,
 			       &switcher->executableSwitches.back()),
 		       ui->executableAdd, &addPulse);
 }
@@ -192,7 +192,7 @@ void AdvSceneSwitcher::setupExecutableTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->executables);
 		ui->executables->addItem(item);
-		ExecutableSwitchWidget *sw = new ExecutableSwitchWidget(&s);
+		ExecutableSwitchWidget *sw = new ExecutableSwitchWidget(this,&s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->executables->setItemWidget(item, sw);
 	}
@@ -201,8 +201,9 @@ void AdvSceneSwitcher::setupExecutableTab()
 		addPulse = PulseWidget(ui->executableAdd, QColor(Qt::green));
 }
 
-ExecutableSwitchWidget::ExecutableSwitchWidget(ExecutableSwitch *s)
-	: SwitchWidget(s, false)
+ExecutableSwitchWidget::ExecutableSwitchWidget(QWidget *parent,
+					       ExecutableSwitch *s)
+	: SwitchWidget(parent,s, false, true)
 {
 	processes = new QComboBox();
 	requiresFocus = new QCheckBox(obs_module_text(

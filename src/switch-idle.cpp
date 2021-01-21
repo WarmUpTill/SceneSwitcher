@@ -269,7 +269,7 @@ void SwitcherData::loadIdleSwitches(obs_data_t *obj)
 
 void AdvSceneSwitcher::setupIdleTab()
 {
-	populateSceneSelection(ui->idleScenes, true);
+	populateSceneSelection(ui->idleScenes, true, false);
 	populateTransitionSelection(ui->idleTransitions);
 	populateWindowSelection(ui->ignoreIdleWindowsWindows);
 

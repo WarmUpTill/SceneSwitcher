@@ -40,7 +40,7 @@ class TimeSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	TimeSwitchWidget(TimeSwitch *s);
+	TimeSwitchWidget(QWidget *parent, TimeSwitch *s);
 	TimeSwitch *getSwitchData();
 	void setSwitchData(TimeSwitch *s);
 

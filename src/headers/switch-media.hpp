@@ -57,7 +57,7 @@ class MediaSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	MediaSwitchWidget(MediaSwitch *s);
+	MediaSwitchWidget(QWidget *parent, MediaSwitch *s);
 	MediaSwitch *getSwitchData();
 	void setSwitchData(MediaSwitch *s);
 

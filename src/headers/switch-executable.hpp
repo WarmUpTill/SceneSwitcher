@@ -26,7 +26,7 @@ class ExecutableSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	ExecutableSwitchWidget(ExecutableSwitch *s);
+	ExecutableSwitchWidget(QWidget *parent, ExecutableSwitch *s);
 	ExecutableSwitch *getSwitchData();
 	void setSwitchData(ExecutableSwitch *s);
 

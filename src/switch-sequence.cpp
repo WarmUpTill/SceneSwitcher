@@ -12,10 +12,10 @@ void AdvSceneSwitcher::on_sceneSequenceAdd_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->sceneSequenceSwitches.emplace_back();
 
-	listAddClicked(
-		ui->sceneSequenceSwitches,
-		new SequenceWidget(&switcher->sceneSequenceSwitches.back()),
-		ui->sceneSequenceAdd, &addPulse);
+	listAddClicked(ui->sceneSequenceSwitches,
+		       new SequenceWidget(
+			       this, &switcher->sceneSequenceSwitches.back()),
+		       ui->sceneSequenceAdd, &addPulse);
 }
 
 void AdvSceneSwitcher::on_sceneSequenceRemove_clicked()
@@ -148,9 +148,7 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 	close();
 }
 
-void matchInterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
-			bool &match, OBSWeakSource &scene,
-			OBSWeakSource &transition)
+bool matchInterruptible(SwitcherData *switcher, SceneSequenceSwitch &s)
 {
 	bool durationReached = s.matchCount * (switcher->interval / 1000.0) >=
 			       s.delay;
@@ -158,20 +156,16 @@ void matchInterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
 	s.matchCount++;
 
 	if (durationReached) {
-		match = true;
-		scene = (s.usePreviousScene) ? switcher->previousScene
-					     : s.scene;
-		transition = s.transition;
-		if (switcher->verbose)
-			s.logMatch();
+		return true;
 	}
+	return false;
 }
 
-void matchUninterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
+bool matchUninterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
 			  obs_source_t *currentSource,
-			  std::unique_lock<std::mutex> &lock, bool &match,
-			  OBSWeakSource &scene, OBSWeakSource &transition)
+			  std::unique_lock<std::mutex> &lock)
 {
+	bool ret = false;
 	// scene was already active for the previous cycle so remove this time
 	int dur = s.delay * 1000 - switcher->interval;
 	if (dur > 0) {
@@ -187,17 +181,13 @@ void matchUninterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
 
 	// only switch if user hasn't changed scene manually
 	if (currentSource == currentSource2) {
-		match = true;
-		scene = (s.usePreviousScene) ? switcher->previousScene
-					     : s.scene;
-		transition = s.transition;
-		if (switcher->verbose)
-			s.logMatch();
+		ret = true;
 	} else if (switcher->verbose) {
 		blog(LOG_INFO, "sequence canceled");
 	}
 
 	obs_source_release(currentSource2);
+	return ret;
 }
 
 void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
@@ -217,13 +207,20 @@ void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 		if (s.startScene == ws) {
 			if (!match) {
 				if (s.interruptible) {
-					matchInterruptible(switcher, s, match,
-							   scene, transition);
+					match = matchInterruptible(switcher, s);
 				} else {
-					matchUninterruptible(switcher, s,
-							     currentSource,
-							     lock, match, scene,
-							     transition);
+					match = matchUninterruptible(
+						switcher, s, currentSource,
+						lock);
+				}
+
+				if (match) {
+					scene = (s.usePreviousScene)
+							? switcher->previousScene
+							: s.getScene();
+					transition = s.transition;
+					if (switcher->verbose)
+						s.logMatch();
 				}
 			}
 		} else {
@@ -320,7 +317,7 @@ void AdvSceneSwitcher::setupSequenceTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->sceneSequenceSwitches);
 		ui->sceneSequenceSwitches->addItem(item);
-		SequenceWidget *sw = new SequenceWidget(&s);
+		SequenceWidget *sw = new SequenceWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->sceneSequenceSwitches->setItemWidget(item, sw);
 	}
@@ -352,7 +349,8 @@ void populateDelayUnits(QComboBox *list)
 	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
 }
 
-SequenceWidget::SequenceWidget(SceneSequenceSwitch *s) : SwitchWidget(s)
+SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s)
+	: SwitchWidget(parent, s, true, true)
 {
 	delay = new QDoubleSpinBox();
 	delayUnits = new QComboBox();

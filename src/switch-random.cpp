@@ -12,7 +12,7 @@ void AdvSceneSwitcher::on_randomAdd_clicked()
 	switcher->randomSwitches.emplace_back();
 
 	listAddClicked(ui->randomSwitches,
-		       new RandomSwitchWidget(&switcher->randomSwitches.back()),
+		       new RandomSwitchWidget(this, &switcher->randomSwitches.back()),
 		       ui->randomAdd, &addPulse);
 }
 
@@ -119,7 +119,7 @@ void AdvSceneSwitcher::setupRandomTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->randomSwitches);
 		ui->randomSwitches->addItem(item);
-		RandomSwitchWidget *sw = new RandomSwitchWidget(&s);
+		RandomSwitchWidget *sw = new RandomSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->randomSwitches->setItemWidget(item, sw);
 	}
@@ -134,7 +134,8 @@ void AdvSceneSwitcher::setupRandomTab()
 		ui->randomDisabledWarning->setVisible(false);
 }
 
-RandomSwitchWidget::RandomSwitchWidget(RandomSwitch *s) : SwitchWidget(s, false)
+RandomSwitchWidget::RandomSwitchWidget(QWidget *parent, RandomSwitch *s)
+	: SwitchWidget(parent, s, false, false)
 {
 	delay = new QDoubleSpinBox();
 

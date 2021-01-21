@@ -262,7 +262,7 @@ void AdvSceneSwitcher::on_fileAdd_clicked()
 	switcher->fileSwitches.emplace_back();
 
 	listAddClicked(ui->fileSwitches,
-		       new FileSwitchWidget(&switcher->fileSwitches.back()),
+		       new FileSwitchWidget(this,&switcher->fileSwitches.back()),
 		       ui->fileAdd, &addPulse);
 }
 
@@ -429,7 +429,7 @@ void AdvSceneSwitcher::setupFileTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->fileSwitches);
 		ui->fileSwitches->addItem(item);
-		FileSwitchWidget *sw = new FileSwitchWidget(&s);
+		FileSwitchWidget *sw = new FileSwitchWidget(this,&s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->fileSwitches->setItemWidget(item, sw);
 	}
@@ -452,7 +452,8 @@ void AdvSceneSwitcher::setupFileTab()
 	}
 }
 
-FileSwitchWidget::FileSwitchWidget(FileSwitch *s) : SwitchWidget(s, false)
+FileSwitchWidget::FileSwitchWidget(QWidget *parent, FileSwitch *s)
+	: SwitchWidget(parent,s, false, true)
 {
 	fileType = new QComboBox();
 	filePath = new QLineEdit();

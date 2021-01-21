@@ -28,7 +28,7 @@ class ScreenRegionWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	ScreenRegionWidget(ScreenRegionSwitch *s);
+	ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s);
 	ScreenRegionSwitch *getSwitchData();
 	void setSwitchData(ScreenRegionSwitch *s);
 

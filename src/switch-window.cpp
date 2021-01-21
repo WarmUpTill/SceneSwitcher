@@ -10,7 +10,7 @@ void AdvSceneSwitcher::on_windowAdd_clicked()
 	switcher->windowSwitches.emplace_back();
 
 	listAddClicked(ui->windowSwitches,
-		       new WindowSwitchWidget(&switcher->windowSwitches.back()),
+		       new WindowSwitchWidget(this, &switcher->windowSwitches.back()),
 		       ui->windowAdd, &addPulse);
 }
 
@@ -349,7 +349,7 @@ void AdvSceneSwitcher::setupTitleTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->windowSwitches);
 		ui->windowSwitches->addItem(item);
-		WindowSwitchWidget *sw = new WindowSwitchWidget(&s);
+		WindowSwitchWidget *sw = new WindowSwitchWidget(this,&s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->windowSwitches->setItemWidget(item, sw);
 	}
@@ -368,7 +368,8 @@ void AdvSceneSwitcher::setupTitleTab()
 	}
 }
 
-WindowSwitchWidget::WindowSwitchWidget(WindowSwitch *s) : SwitchWidget(s, false)
+WindowSwitchWidget::WindowSwitchWidget(QWidget *parent, WindowSwitch *s)
+	: SwitchWidget(parent, s, false, true)
 {
 	windows = new QComboBox();
 	fullscreen = new QCheckBox(

@@ -3,14 +3,16 @@
 
 bool SceneSwitcherEntry::initialized()
 {
-	return (usePreviousScene || WeakSourceValid(scene)) && transition;
+	return (usePreviousScene || WeakSourceValid(scene) ||
+		group.name != invalid_scene_group_name) &&
+	       transition;
 }
 
 bool SceneSwitcherEntry::valid()
 {
-	return !initialized() ||
-	       ((usePreviousScene || WeakSourceValid(scene)) &&
-		WeakSourceValid(transition));
+	return !initialized() || ((usePreviousScene || WeakSourceValid(scene) ||
+				   group.name != invalid_scene_group_name) &&
+				  WeakSourceValid(transition));
 }
 
 void SceneSwitcherEntry::logMatch()
@@ -23,6 +25,18 @@ void SceneSwitcherEntry::logMatch()
 	}
 	blog(LOG_INFO, "match for '%s' - switch to scene '%s'", getType(),
 	     sceneName);
+}
+
+OBSWeakSource SceneSwitcherEntry::getScene()
+{
+	OBSWeakSource nextScene = nullptr;
+	if (targetType == SwitchTargetType::Scene) {
+		nextScene = scene;
+
+	} else {
+		nextScene = group.getNextScene();
+	}
+	return nextScene;
 }
 
 void SwitchWidget::SceneGroupAdd(const QString &name)
@@ -67,8 +81,8 @@ void SwitchWidget::SceneGroupRename(const QString &oldName,
 		scenes->setCurrentIndex(scenes->findText(newName));
 }
 
-SwitchWidget::SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene,
-			   bool addSceneGroup)
+SwitchWidget::SwitchWidget(QWidget *parent, SceneSwitcherEntry *s,
+			   bool usePreviousScene, bool addSceneGroup)
 {
 	scenes = new QComboBox();
 	transitions = new QComboBox();
@@ -84,6 +98,15 @@ SwitchWidget::SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene,
 	QWidget::connect(transitions,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(TransitionChanged(const QString &)));
+
+	QWidget::connect(parent, SIGNAL(SceneGroupAdded(const QString &)), this,
+			 SLOT(SceneGroupAdd(const QString &)));
+	QWidget::connect(parent, SIGNAL(SceneGroupRemoved(const QString &)),
+			 this, SLOT(SceneGroupRemove(const QString &)));
+	QWidget::connect(
+		parent,
+		SIGNAL(SceneGroupRenamed(const QString &, const QString &)),
+		this, SLOT(SceneGroupRename(const QString &, const QString &)));
 
 	AdvSceneSwitcher::populateSceneSelection(scenes, usePreviousScene,
 						 addSceneGroup);

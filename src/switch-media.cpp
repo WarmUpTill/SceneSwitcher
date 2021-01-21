@@ -13,7 +13,8 @@ void AdvSceneSwitcher::on_mediaAdd_clicked()
 	switcher->mediaSwitches.emplace_back();
 
 	listAddClicked(ui->mediaSwitches,
-		       new MediaSwitchWidget(&switcher->mediaSwitches.back()),
+		       new MediaSwitchWidget(this,
+					     &switcher->mediaSwitches.back()),
 		       ui->mediaAdd, &addPulse);
 }
 
@@ -265,7 +266,7 @@ void AdvSceneSwitcher::setupMediaTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->mediaSwitches);
 		ui->mediaSwitches->addItem(item);
-		MediaSwitchWidget *sw = new MediaSwitchWidget(&s);
+		MediaSwitchWidget *sw = new MediaSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->mediaSwitches->setItemWidget(item, sw);
 	}
@@ -446,7 +447,8 @@ void populateTimeRestrictions(QComboBox *list)
 		"AdvSceneSwitcher.mediaTab.timeRestriction.remainLonger"));
 }
 
-MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
+MediaSwitchWidget::MediaSwitchWidget(QWidget *parent, MediaSwitch *s)
+	: SwitchWidget(parent, s, true, true)
 {
 	mediaSources = new QComboBox();
 	states = new QComboBox();

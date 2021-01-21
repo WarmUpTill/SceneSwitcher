@@ -42,7 +42,7 @@ class SequenceWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	SequenceWidget(SceneSequenceSwitch *s);
+	SequenceWidget(QWidget *parent, SceneSequenceSwitch *s);
 	SceneSequenceSwitch *getSwitchData();
 	void setSwitchData(SceneSequenceSwitch *s);
 

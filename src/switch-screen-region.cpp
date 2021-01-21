@@ -69,7 +69,7 @@ void AdvSceneSwitcher::on_screenRegionAdd_clicked()
 
 	listAddClicked(
 		ui->screenRegionSwitches,
-		new ScreenRegionWidget(&switcher->screenRegionSwitches.back()),
+		new ScreenRegionWidget(this, &switcher->screenRegionSwitches.back()),
 		ui->screenRegionAdd, &addPulse);
 }
 
@@ -235,7 +235,7 @@ void AdvSceneSwitcher::setupRegionTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->screenRegionSwitches);
 		ui->screenRegionSwitches->addItem(item);
-		ScreenRegionWidget *sw = new ScreenRegionWidget(&s);
+		ScreenRegionWidget *sw = new ScreenRegionWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->screenRegionSwitches->setItemWidget(item, sw);
 	}
@@ -250,8 +250,8 @@ void AdvSceneSwitcher::setupRegionTab()
 	screenRegionTimer->start(1000);
 }
 
-ScreenRegionWidget::ScreenRegionWidget(ScreenRegionSwitch *s)
-	: SwitchWidget(s, false)
+ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
+	: SwitchWidget(parent, s, false, true)
 {
 	minX = new QSpinBox();
 	minY = new QSpinBox();

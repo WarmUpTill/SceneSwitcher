@@ -10,7 +10,7 @@ void AdvSceneSwitcher::on_timeAdd_clicked()
 	switcher->timeSwitches.emplace_back();
 
 	listAddClicked(ui->timeSwitches,
-		       new TimeSwitchWidget(&switcher->timeSwitches.back()),
+		       new TimeSwitchWidget(this, &switcher->timeSwitches.back()),
 		       ui->timeAdd, &addPulse);
 }
 
@@ -201,7 +201,7 @@ void AdvSceneSwitcher::setupTimeTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->timeSwitches);
 		ui->timeSwitches->addItem(item);
-		TimeSwitchWidget *sw = new TimeSwitchWidget(&s);
+		TimeSwitchWidget *sw = new TimeSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->timeSwitches->setItemWidget(item, sw);
 	}
@@ -227,7 +227,8 @@ void populateTriggers(QComboBox *list)
 		Qt::ToolTipRole);
 }
 
-TimeSwitchWidget::TimeSwitchWidget(TimeSwitch *s) : SwitchWidget(s)
+TimeSwitchWidget::TimeSwitchWidget(QWidget *parent, TimeSwitch *s)
+	: SwitchWidget(parent, s, true, true)
 {
 	triggers = new QComboBox();
 	time = new QTimeEdit();

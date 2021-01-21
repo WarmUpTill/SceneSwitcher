@@ -19,7 +19,7 @@ class RandomSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	RandomSwitchWidget(RandomSwitch *s);
+	RandomSwitchWidget(QWidget *parent, RandomSwitch *s);
 	RandomSwitch *getSwitchData();
 	void setSwitchData(RandomSwitch *s);
 

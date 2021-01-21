@@ -55,7 +55,7 @@ class AudioSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	AudioSwitchWidget(AudioSwitch *s);
+	AudioSwitchWidget(QWidget *parent, AudioSwitch *s);
 	void UpdateVolmeterSource();
 	AudioSwitch *getSwitchData();
 	void setSwitchData(AudioSwitch *s);
@@ -83,7 +83,7 @@ class AudioSwitchFallbackWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	AudioSwitchFallbackWidget(AudioSwitchFallback *s);
+	AudioSwitchFallbackWidget(QWidget *parent, AudioSwitchFallback *s);
 
 private slots:
 	void DurationChanged(double dur);

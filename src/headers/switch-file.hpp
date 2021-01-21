@@ -45,7 +45,7 @@ class FileSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	FileSwitchWidget(FileSwitch *s);
+	FileSwitchWidget(QWidget *parent, FileSwitch *s);
 	FileSwitch *getSwitchData();
 	void setSwitchData(FileSwitch *s);
 

@@ -10,6 +10,8 @@
 #include <QCheckBox>
 #include <obs.hpp>
 
+auto constexpr invalid_scene_group_name = "invalid-scene-group";
+
 enum class AdvanceCondition {
 	Count,
 	Time,
@@ -26,7 +28,7 @@ struct SceneGroup {
 	AdvanceCondition type = AdvanceCondition::Count;
 	std::vector<OBSWeakSource> scenes = {};
 
-	std::string name = "invalid-scene-group";
+	std::string name = invalid_scene_group_name;
 	int count = 1;
 	double time = 0;
 	bool repeat = false;

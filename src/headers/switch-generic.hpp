@@ -13,6 +13,7 @@ struct SceneSwitcherEntry {
 	virtual bool initialized();
 	virtual bool valid();
 	virtual void logMatch();
+	virtual OBSWeakSource getScene();
 
 	inline SceneSwitcherEntry() {}
 
@@ -32,7 +33,8 @@ class SwitchWidget : public QWidget {
 	Q_OBJECT
 
 public:
-	SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene = true,
+	SwitchWidget(QWidget *parent, SceneSwitcherEntry *s,
+		     bool usePreviousScene = true,
 		     bool addSceneGroup = false);
 	virtual SceneSwitcherEntry *getSwitchData();
 	virtual void setSwitchData(SceneSwitcherEntry *s);

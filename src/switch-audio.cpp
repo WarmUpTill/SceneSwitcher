@@ -13,22 +13,9 @@ void AdvSceneSwitcher::on_audioAdd_clicked()
 	switcher->audioSwitches.emplace_back();
 
 	AudioSwitchWidget *sw =
-		new AudioSwitchWidget(&switcher->audioSwitches.back());
+		new AudioSwitchWidget(this, &switcher->audioSwitches.back());
 
 	listAddClicked(ui->audioSwitches, sw, ui->audioAdd, &addPulse);
-
-	QWidget::connect(
-		this,
-		SIGNAL(SceneGroupAdded(const QString &)), sw,
-		SLOT(SceneGroupAdd(const QString &)));
-	QWidget::connect(
-		this,
-		SIGNAL(SceneGroupRemoved(const QString &)), sw,
-		SLOT(SceneGroupRemove(const QString &)));
-	QWidget::connect(
-		this,
-		SIGNAL(SceneGroupRenamed(const QString &, const QString &)), sw,
-		SLOT(SceneGroupRename(const QString &, const QString &)));
 }
 
 void AdvSceneSwitcher::on_audioRemove_clicked()
@@ -306,7 +293,7 @@ void AdvSceneSwitcher::setupAudioTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->audioSwitches);
 		ui->audioSwitches->addItem(item);
-		AudioSwitchWidget *sw = new AudioSwitchWidget(&s);
+		AudioSwitchWidget *sw = new AudioSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->audioSwitches->setItemWidget(item, sw);
 	}
@@ -315,7 +302,7 @@ void AdvSceneSwitcher::setupAudioTab()
 		addPulse = PulseWidget(ui->audioAdd, QColor(Qt::green));
 
 	AudioSwitchFallbackWidget *fb =
-		new AudioSwitchFallbackWidget(&switcher->audioFallback);
+		new AudioSwitchFallbackWidget(this, &switcher->audioFallback);
 	ui->audioFallbackLayout->addWidget(fb);
 	ui->audioFallback->setChecked(switcher->audioFallback.enable);
 }
@@ -455,7 +442,8 @@ void populateConditionSelection(QComboBox *list)
 		obs_module_text("AdvSceneSwitcher.audioTab.condition.below"));
 }
 
-AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s) : SwitchWidget(s, true, true)
+AudioSwitchWidget::AudioSwitchWidget(QWidget *parent, AudioSwitch *s)
+	: SwitchWidget(parent, s, true, true)
 {
 	audioSources = new QComboBox();
 	condition = new QComboBox();
@@ -598,8 +586,9 @@ void AudioSwitchWidget::DurationChanged(double dur)
 	switchData->duration = dur;
 }
 
-AudioSwitchFallbackWidget::AudioSwitchFallbackWidget(AudioSwitchFallback *s)
-	: SwitchWidget(s)
+AudioSwitchFallbackWidget::AudioSwitchFallbackWidget(QWidget *parent,
+						     AudioSwitchFallback *s)
+	: SwitchWidget(parent, s)
 {
 	duration = new QDoubleSpinBox();
 

@@ -30,7 +30,7 @@ class WindowSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	WindowSwitchWidget(WindowSwitch *s);
+	WindowSwitchWidget(QWidget *parent, WindowSwitch *s);
 	WindowSwitch *getSwitchData();
 	void setSwitchData(WindowSwitch *s);
 
