@@ -38,7 +38,8 @@ class SwitchWidget : public QWidget {
 	Q_OBJECT
 
 public:
-	SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene = true, bool addSceneGroup = false);
+	SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene = true,
+		     bool addSceneGroup = false);
 	virtual SceneSwitcherEntry *getSwitchData();
 	virtual void setSwitchData(SceneSwitcherEntry *s);
 

@@ -254,7 +254,7 @@ void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 void overwriteTransitionOverride(obs_weak_source_t *sceneWs,
 				 obs_source_t *transition, transitionData &td);
 void restoreTransitionOverride(obs_source_t *scene, transitionData td);
-void switchScene(SwitchTarget &target, OBSWeakSource &transition,
+void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 		 bool &transitionOverrideOverride);
 
 /********************************************************************************

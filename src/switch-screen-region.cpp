@@ -130,7 +130,7 @@ void AdvSceneSwitcher::on_screenRegionDown_clicked()
 		  switcher->screenRegionSwitches[index + 1]);
 }
 
-void SwitcherData::checkScreenRegionSwitch(bool &match, SwitchTarget &target,
+void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 					   OBSWeakSource &transition)
 {
 	if (ScreenRegionSwitch::pause)
@@ -148,8 +148,7 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, SwitchTarget &target,
 			int regionSize = (s.maxX - s.minX) + (s.maxY - s.minY);
 			if (regionSize < minRegionSize) {
 				match = true;
-				target.type = SwitchTargetType::Scene;
-				target.scene = s.scene;
+				scene = s.scene;
 				transition = s.transition;
 				minRegionSize = regionSize;
 

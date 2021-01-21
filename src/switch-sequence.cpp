@@ -149,7 +149,7 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 }
 
 void matchInterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
-			bool &match, SwitchTarget &target,
+			bool &match, OBSWeakSource &scene,
 			OBSWeakSource &transition)
 {
 	bool durationReached = s.matchCount * (switcher->interval / 1000.0) >=
@@ -159,9 +159,8 @@ void matchInterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
 
 	if (durationReached) {
 		match = true;
-		target.type = SwitchTargetType::Scene;
-		target.scene = (s.usePreviousScene) ? switcher->previousScene
-						    : s.scene;
+		scene = (s.usePreviousScene) ? switcher->previousScene
+					     : s.scene;
 		transition = s.transition;
 		if (switcher->verbose)
 			s.logMatch();
@@ -171,7 +170,7 @@ void matchInterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
 void matchUninterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
 			  obs_source_t *currentSource,
 			  std::unique_lock<std::mutex> &lock, bool &match,
-			  SwitchTarget &target, OBSWeakSource &transition)
+			  OBSWeakSource &scene, OBSWeakSource &transition)
 {
 	// scene was already active for the previous cycle so remove this time
 	int dur = s.delay * 1000 - switcher->interval;
@@ -189,9 +188,8 @@ void matchUninterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
 	// only switch if user hasn't changed scene manually
 	if (currentSource == currentSource2) {
 		match = true;
-		target.type = SwitchTargetType::Scene;
-		target.scene = (s.usePreviousScene) ? switcher->previousScene
-						    : s.scene;
+		scene = (s.usePreviousScene) ? switcher->previousScene
+					     : s.scene;
 		transition = s.transition;
 		if (switcher->verbose)
 			s.logMatch();
@@ -202,7 +200,7 @@ void matchUninterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
 	obs_source_release(currentSource2);
 }
 
-void SwitcherData::checkSceneSequence(bool &match, SwitchTarget &target,
+void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 				      OBSWeakSource &transition,
 				      std::unique_lock<std::mutex> &lock)
 {
@@ -220,12 +218,11 @@ void SwitcherData::checkSceneSequence(bool &match, SwitchTarget &target,
 			if (!match) {
 				if (s.interruptible) {
 					matchInterruptible(switcher, s, match,
-							   target, transition);
+							   scene, transition);
 				} else {
 					matchUninterruptible(switcher, s,
 							     currentSource,
-							     lock, match,
-							     target,
+							     lock, match, scene,
 							     transition);
 				}
 			}

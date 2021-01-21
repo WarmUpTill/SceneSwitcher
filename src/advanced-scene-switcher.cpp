@@ -414,7 +414,7 @@ void SwitcherData::Thread()
 		std::unique_lock<std::mutex> lock(m);
 
 		bool match = false;
-		SwitchTarget target;
+		OBSWeakSource scene;
 		OBSWeakSource transition;
 
 		bool defTransitionMatch = false;
@@ -469,36 +469,36 @@ void SwitcherData::Thread()
 		for (int switchFuncName : functionNamesByPriority) {
 			switch (switchFuncName) {
 			case read_file_func:
-				checkSwitchInfoFromFile(match, target,
+				checkSwitchInfoFromFile(match, scene,
 							transition);
-				checkFileContent(match, target, transition);
+				checkFileContent(match, scene, transition);
 				break;
 			case idle_func:
-				checkIdleSwitch(match, target, transition);
+				checkIdleSwitch(match, scene, transition);
 				break;
 			case exe_func:
-				checkExeSwitch(match, target, transition);
+				checkExeSwitch(match, scene, transition);
 				break;
 			case screen_region_func:
-				checkScreenRegionSwitch(match, target,
+				checkScreenRegionSwitch(match, scene,
 							transition);
 				break;
 			case window_title_func:
-				checkWindowTitleSwitch(match, target,
+				checkWindowTitleSwitch(match, scene,
 						       transition);
 				break;
 			case round_trip_func:
-				checkSceneSequence(match, target, transition,
+				checkSceneSequence(match, scene, transition,
 						   lock);
 				break;
 			case media_func:
-				checkMediaSwitch(match, target, transition);
+				checkMediaSwitch(match, scene, transition);
 				break;
 			case time_func:
-				checkTimeSwitch(match, target, transition);
+				checkTimeSwitch(match, scene, transition);
 				break;
 			case audio_func:
-				checkAudioSwitch(match, target, transition);
+				checkAudioSwitch(match, scene, transition);
 				break;
 			}
 
@@ -510,7 +510,7 @@ void SwitcherData::Thread()
 			}
 		}
 
-		checkNoMatchSwitch(match, target, transition, sleep);
+		checkNoMatchSwitch(match, scene, transition, sleep);
 
 		checkSwitchCooldown(match);
 
@@ -527,7 +527,7 @@ void SwitcherData::Thread()
 		}
 
 		if (match) {
-			switchScene(target, transition,
+			switchScene(scene, transition,
 				    tansitionOverrideOverride);
 		}
 
@@ -537,19 +537,12 @@ endLoop:
 	blog(LOG_INFO, "stopped");
 }
 
-void switchScene(SwitchTarget &target, OBSWeakSource &transition,
+void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 		 bool &transitionOverrideOverride)
 {
-	OBSWeakSource scene = nullptr;
-
-	if (target.type == SwitchTargetType::Scene) {
-		scene = target.scene;
-	} else {
-		scene = target.group.getNextScene();
-	}
-
 	if (!scene && switcher->verbose) {
 		blog(LOG_INFO, "nothing to switch to");
+		return;
 	}
 
 	obs_source_t *source = obs_weak_source_get_source(scene);

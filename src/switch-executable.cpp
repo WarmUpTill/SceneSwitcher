@@ -72,7 +72,7 @@ void AdvSceneSwitcher::on_executableDown_clicked()
 		  switcher->executableSwitches[index + 1]);
 }
 
-void SwitcherData::checkExeSwitch(bool &match, SwitchTarget &target,
+void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 				  OBSWeakSource &transition)
 {
 	if (executableSwitches.size() == 0 || ExecutableSwitch::pause)
@@ -120,8 +120,7 @@ void SwitcherData::checkExeSwitch(bool &match, SwitchTarget &target,
 
 		if ((equals || matches) && (focus || ignore)) {
 			match = true;
-			target.type = SwitchTargetType::Scene;
-			target.scene = s.scene;
+			scene = s.scene;
 			transition = s.transition;
 
 			if (verbose)

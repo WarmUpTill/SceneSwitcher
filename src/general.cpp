@@ -699,7 +699,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(int)(obs_data_get_int(obj, "sceneGroupTabPos")));
 }
 
-void SwitcherData::checkNoMatchSwitch(bool &match, SwitchTarget &target,
+void SwitcherData::checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
 				      OBSWeakSource &transition, int &sleep)
 {
 	if (match) {
@@ -714,12 +714,11 @@ void SwitcherData::checkNoMatchSwitch(bool &match, SwitchTarget &target,
 
 	if (switchIfNotMatching == SWITCH && nonMatchingScene) {
 		match = true;
-		target.type = SwitchTargetType::Scene;
-		target.scene = nonMatchingScene;
+		scene = nonMatchingScene;
 		transition = nullptr;
 	}
 	if (switchIfNotMatching == RANDOM_SWITCH) {
-		checkRandom(match, target, transition, sleep);
+		checkRandom(match, scene, transition, sleep);
 	}
 }
 
