@@ -4,14 +4,14 @@
 bool SceneSwitcherEntry::initialized()
 {
 	return (usePreviousScene || WeakSourceValid(scene) ||
-		group.name != invalid_scene_group_name) &&
+		SceneGroupValid(group)) &&
 	       transition;
 }
 
 bool SceneSwitcherEntry::valid()
 {
 	return !initialized() || ((usePreviousScene || WeakSourceValid(scene) ||
-				   group.name != invalid_scene_group_name) &&
+				   SceneGroupValid(group)) &&
 				  WeakSourceValid(transition));
 }
 
@@ -34,7 +34,7 @@ OBSWeakSource SceneSwitcherEntry::getScene()
 		nextScene = scene;
 
 	} else {
-		nextScene = group.getNextScene();
+		nextScene = group->getNextScene();
 	}
 	return nextScene;
 }
@@ -59,6 +59,14 @@ void SwitchWidget::SceneGroupRemove(const QString &name)
 	}
 
 	scenes->removeItem(idx);
+
+	if (switchData && switchData->group == GetSceneGroupByQString(name)) {
+		std::lock_guard<std::mutex> lock(switcher->m);
+		switchData->targetType = SwitchTargetType::Scene;
+		switchData->scene = nullptr;
+	}
+
+	scenes->setCurrentIndex(0);
 }
 
 void SwitchWidget::SceneGroupRename(const QString &oldName,
@@ -113,12 +121,17 @@ SwitchWidget::SwitchWidget(QWidget *parent, SceneSwitcherEntry *s,
 	AdvSceneSwitcher::populateTransitionSelection(transitions);
 
 	if (s) {
-		if (s->usePreviousScene)
+		if (s->usePreviousScene) {
 			scenes->setCurrentText(obs_module_text(
 				"AdvSceneSwitcher.selectPreviousScene"));
-		else
+		} else {
 			scenes->setCurrentText(
 				GetWeakSourceName(s->scene).c_str());
+			if (s->targetType == SwitchTargetType::SceneGroup &&
+			    s->group)
+				scenes->setCurrentText(
+					QString::fromStdString(s->group->name));
+		}
 		transitions->setCurrentText(
 			GetWeakSourceName(s->transition).c_str());
 	}

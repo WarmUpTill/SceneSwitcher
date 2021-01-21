@@ -24,12 +24,14 @@ struct SceneSequenceSwitch : SceneSwitcherEntry {
 	void logSleep(int dur);
 
 	inline SceneSequenceSwitch(){};
-	inline SceneSequenceSwitch(OBSWeakSource startScene_,
-				   OBSWeakSource scene_,
+	inline SceneSequenceSwitch(SwitchTargetType targetType_,
+				   OBSWeakSource startScene_,
+				   OBSWeakSource scene_, SceneGroup *group_,
 				   OBSWeakSource transition_, double delay_,
 				   int delayMultiplier_, bool interruptible_,
 				   bool usePreviousScene_)
-		: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
+		: SceneSwitcherEntry(targetType_, scene_, group_, transition_,
+				     usePreviousScene_),
 		  startScene(startScene_),
 		  delay(delay_),
 		  delayMultiplier(delayMultiplier_),

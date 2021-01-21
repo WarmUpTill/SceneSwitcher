@@ -243,6 +243,8 @@ void SwitcherData::saveSceneSequenceSwitches(obs_data_t *obj)
 		obs_source_t *transition =
 			obs_weak_source_get_source(s.transition);
 		if (source1 && (s.usePreviousScene || source2) && transition) {
+			obs_data_set_int(array_obj, "targetType",
+					 static_cast<int>(s.targetType));
 			const char *sceneName1 = obs_source_get_name(source1);
 			const char *sceneName2 = obs_source_get_name(source2);
 			const char *transitionName =
@@ -283,7 +285,8 @@ void SwitcherData::loadSceneSequenceSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj =
 			obs_data_array_item(sceneSequenceArray, i);
-
+		SwitchTargetType target = static_cast<SwitchTargetType>(
+			obs_data_get_int(array_obj, "targetType"));
 		const char *scene1 =
 			obs_data_get_string(array_obj, "sceneRoundTripScene1");
 		const char *scene2 =
@@ -300,8 +303,10 @@ void SwitcherData::loadSceneSequenceSwitches(obs_data_t *obj)
 			obs_data_get_bool(array_obj, "interruptible");
 
 		switcher->sceneSequenceSwitches.emplace_back(
+			target,
 			GetWeakSourceByName(scene1),
 			GetWeakSourceByName(scene2),
+			GetSceneGroupByName(scene2),
 			GetWeakTransitionByName(transition), delay,
 			delayMultiplier, interruptible,
 			(strcmp(scene2, previous_scene_name) == 0));

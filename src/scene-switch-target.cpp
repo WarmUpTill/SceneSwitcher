@@ -135,7 +135,10 @@ void AdvSceneSwitcher::on_sceneGroupAdd_clicked()
 		return;
 	}
 
-	switcher->sceneGroups.emplace_back(name);
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		switcher->sceneGroups.emplace_back(name);
+	}
 	QString text = QString::fromStdString(name);
 
 	QListWidgetItem *item = new QListWidgetItem(text, ui->sceneGroups);
@@ -237,16 +240,18 @@ void AdvSceneSwitcher::on_sceneGroupName_editingFinished()
 		nameValid = false;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
-	if (nameValid) {
-		currentSG->name = newName.toUtf8().constData();
-		QListWidgetItem *sgItem = ui->sceneGroups->currentItem();
-		sgItem->setData(Qt::UserRole, newName);
-		sgItem->setText(newName);
-	} else {
-		ui->sceneGroupName->setText(oldName);
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		if (nameValid) {
+			currentSG->name = newName.toUtf8().constData();
+			QListWidgetItem *sgItem =
+				ui->sceneGroups->currentItem();
+			sgItem->setData(Qt::UserRole, newName);
+			sgItem->setText(newName);
+		} else {
+			ui->sceneGroupName->setText(oldName);
+		}
 	}
-
 	emit SceneGroupRenamed(oldName, newName);
 }
 

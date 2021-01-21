@@ -4,7 +4,7 @@
 
 struct SceneSwitcherEntry {
 	SwitchTargetType targetType = SwitchTargetType::Scene;
-	SceneGroup group;
+	SceneGroup *group = nullptr;
 	OBSWeakSource scene = nullptr;
 	OBSWeakSource transition = nullptr;
 	bool usePreviousScene = false;
@@ -26,6 +26,26 @@ struct SceneSwitcherEntry {
 	{
 	}
 
+	inline SceneSwitcherEntry(SceneGroup *group_, OBSWeakSource transition_,
+				  bool usePreviousScene_ = false)
+		: group(group_),
+		  transition(transition_),
+		  usePreviousScene(usePreviousScene_)
+	{
+	}
+
+	inline SceneSwitcherEntry(SwitchTargetType targetType_,
+				  OBSWeakSource scene_, SceneGroup *group_,
+				  OBSWeakSource transition_,
+				  bool usePreviousScene_ = false)
+		: targetType(targetType_),
+		  scene(scene_),
+		  group(group_),
+		  transition(transition_),
+		  usePreviousScene(usePreviousScene_)
+	{
+	}
+
 	virtual ~SceneSwitcherEntry() {}
 };
 
@@ -34,8 +54,7 @@ class SwitchWidget : public QWidget {
 
 public:
 	SwitchWidget(QWidget *parent, SceneSwitcherEntry *s,
-		     bool usePreviousScene = true,
-		     bool addSceneGroup = false);
+		     bool usePreviousScene = true, bool addSceneGroup = false);
 	virtual SceneSwitcherEntry *getSwitchData();
 	virtual void setSwitchData(SceneSwitcherEntry *s);
 
