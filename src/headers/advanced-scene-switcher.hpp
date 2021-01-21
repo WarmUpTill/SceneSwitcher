@@ -86,6 +86,8 @@ public:
 	bool listMoveDown(QListWidget *list);
 
 signals:
+	void SceneGroupAdded(const QString &name);
+	void SceneGroupRemoved(const QString &name);
 	void SceneGroupRenamed(const QString &oldName, const QString newName);
 
 public slots:

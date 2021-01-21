@@ -28,12 +28,6 @@ struct SceneSwitcherEntry {
 	virtual ~SceneSwitcherEntry() {}
 };
 
-class TargetSelection : public QComboBox {
-	Q_OBJECT
-private slots:
-	void SceneGroupRename(const QString &oldName, const QString newName);
-};
-
 class SwitchWidget : public QWidget {
 	Q_OBJECT
 
@@ -48,11 +42,14 @@ public:
 private slots:
 	void SceneChanged(const QString &text);
 	void TransitionChanged(const QString &text);
+	void SceneGroupAdd(const QString &name);
+	void SceneGroupRemove(const QString &name);
+	void SceneGroupRename(const QString &oldName, const QString &newName);
 
 protected:
 	bool loading = true;
 
-	TargetSelection *scenes;
+	QComboBox *scenes;
 	QComboBox *transitions;
 
 	SceneSwitcherEntry *switchData;

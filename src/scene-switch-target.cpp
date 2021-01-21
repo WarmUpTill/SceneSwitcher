@@ -142,6 +142,8 @@ void AdvSceneSwitcher::on_sceneGroupAdd_clicked()
 	ui->sceneGroups->setCurrentItem(item);
 
 	ui->sceneGroupAdd->disconnect(addPulse);
+
+	emit SceneGroupAdded(QString::fromStdString(name));
 }
 
 void AdvSceneSwitcher::on_sceneGroupRemove_clicked()
@@ -150,14 +152,18 @@ void AdvSceneSwitcher::on_sceneGroupRemove_clicked()
 	if (!item)
 		return;
 
+	QString name;
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
 		int idx = ui->sceneGroups->currentRow();
 		auto &sg = switcher->sceneGroups;
+		name = QString::fromStdString(sg[idx].name);
 		sg.erase(sg.begin() + idx);
 	}
 
 	delete item;
+
+	emit SceneGroupRemoved(name);
 }
 
 void AdvSceneSwitcher::on_sceneGroupUp_clicked()

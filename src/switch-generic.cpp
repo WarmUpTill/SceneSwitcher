@@ -25,27 +25,52 @@ void SceneSwitcherEntry::logMatch()
 	     sceneName);
 }
 
-void TargetSelection::SceneGroupRename(const QString &oldName,
-				       const QString newName)
+void SwitchWidget::SceneGroupAdd(const QString &name)
 {
-	bool renameSelected = currentText() == oldName;
-	int idx = findText(oldName);
+	if (!scenes)
+		return;
+
+	scenes->addItem(name);
+}
+
+void SwitchWidget::SceneGroupRemove(const QString &name)
+{
+	if (!scenes)
+		return;
+
+	int idx = scenes->findText(name);
 
 	if (idx == -1) {
 		return;
 	}
 
-	removeItem(idx);
-	insertItem(idx, newName);
+	scenes->removeItem(idx);
+}
+
+void SwitchWidget::SceneGroupRename(const QString &oldName,
+				    const QString &newName)
+{
+	if (!scenes)
+		return;
+
+	bool renameSelected = scenes->currentText() == oldName;
+	int idx = scenes->findText(oldName);
+
+	if (idx == -1) {
+		return;
+	}
+
+	scenes->removeItem(idx);
+	scenes->insertItem(idx, newName);
 
 	if (renameSelected)
-		setCurrentIndex(findText(newName));
+		scenes->setCurrentIndex(scenes->findText(newName));
 }
 
 SwitchWidget::SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene,
 			   bool addSceneGroup)
 {
-	scenes = new TargetSelection();
+	scenes = new QComboBox();
 	transitions = new QComboBox();
 
 	// Depending on selected OBS theme some widgets might have a different

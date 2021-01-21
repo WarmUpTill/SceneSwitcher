@@ -12,9 +12,23 @@ void AdvSceneSwitcher::on_audioAdd_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->audioSwitches.emplace_back();
 
-	listAddClicked(ui->audioSwitches,
-		       new AudioSwitchWidget(&switcher->audioSwitches.back()),
-		       ui->audioAdd, &addPulse);
+	AudioSwitchWidget *sw =
+		new AudioSwitchWidget(&switcher->audioSwitches.back());
+
+	listAddClicked(ui->audioSwitches, sw, ui->audioAdd, &addPulse);
+
+	QWidget::connect(
+		this,
+		SIGNAL(SceneGroupAdded(const QString &)), sw,
+		SLOT(SceneGroupAdd(const QString &)));
+	QWidget::connect(
+		this,
+		SIGNAL(SceneGroupRemoved(const QString &)), sw,
+		SLOT(SceneGroupRemove(const QString &)));
+	QWidget::connect(
+		this,
+		SIGNAL(SceneGroupRenamed(const QString &, const QString &)), sw,
+		SLOT(SceneGroupRename(const QString &, const QString &)));
 }
 
 void AdvSceneSwitcher::on_audioRemove_clicked()
@@ -441,7 +455,7 @@ void populateConditionSelection(QComboBox *list)
 		obs_module_text("AdvSceneSwitcher.audioTab.condition.below"));
 }
 
-AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s) : SwitchWidget(s)
+AudioSwitchWidget::AudioSwitchWidget(AudioSwitch *s) : SwitchWidget(s, true, true)
 {
 	audioSources = new QComboBox();
 	condition = new QComboBox();
