@@ -25,9 +25,27 @@ void SceneSwitcherEntry::logMatch()
 	     sceneName);
 }
 
-SwitchWidget::SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene)
+void TargetSelection::SceneGroupRename(const QString &oldName,
+				       const QString newName)
 {
-	scenes = new QComboBox();
+	bool renameSelected = currentText() == oldName;
+	int idx = findText(oldName);
+
+	if (idx == -1) {
+		return;
+	}
+
+	removeItem(idx);
+	insertItem(idx, newName);
+
+	if (renameSelected)
+		setCurrentIndex(findText(newName));
+}
+
+SwitchWidget::SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene,
+			   bool addSceneGroup)
+{
+	scenes = new TargetSelection();
 	transitions = new QComboBox();
 
 	// Depending on selected OBS theme some widgets might have a different
@@ -42,7 +60,8 @@ SwitchWidget::SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene)
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(TransitionChanged(const QString &)));
 
-	AdvSceneSwitcher::populateSceneSelection(scenes, usePreviousScene);
+	AdvSceneSwitcher::populateSceneSelection(scenes, usePreviousScene,
+						 addSceneGroup);
 	AdvSceneSwitcher::populateTransitionSelection(transitions);
 
 	if (s) {
@@ -90,7 +109,14 @@ void SwitchWidget::SceneChanged(const QString &text)
 	switchData->usePreviousScene = isPreviousScene(text);
 	if (switchData->usePreviousScene)
 		return;
+
 	switchData->scene = GetWeakSourceByQString(text);
+	switchData->targetType = SwitchTargetType::Scene;
+
+	if (!switchData->scene) {
+		switchData->group = GetSceneGroupByQString(text);
+		switchData->targetType = SwitchTargetType::SceneGroup;
+	}
 }
 
 void SwitchWidget::TransitionChanged(const QString &text)

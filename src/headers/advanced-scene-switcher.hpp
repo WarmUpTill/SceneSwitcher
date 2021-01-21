@@ -62,8 +62,8 @@ public:
 
 	static void populateSceneSelection(QComboBox *sel,
 					   bool addPrevious = false,
-					   bool addSelect = true,
-					   bool addSceneGroup = true);
+					   bool addSceneGroup = true,
+					   bool addSelect = true);
 
 	static void populateTransitionSelection(QComboBox *sel,
 						bool addSelect = true);

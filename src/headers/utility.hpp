@@ -30,6 +30,24 @@ static inline std::string GetWeakSourceName(obs_weak_source_t *weak_source)
 	return name;
 }
 
+static inline SceneGroup GetSceneGroupByName(const char *name)
+{
+	if (!switcher)
+		return SceneGroup();
+
+	for (SceneGroup &sg : switcher->sceneGroups) {
+		if (sg.name == name) {
+			return sg;
+		}
+	}
+	return SceneGroup();
+}
+
+static inline SceneGroup GetSceneGroupByQString(const QString &name)
+{
+	return GetSceneGroupByName(name.toUtf8().constData());
+}
+
 static inline OBSWeakSource GetWeakSourceByName(const char *name)
 {
 	OBSWeakSource weak;

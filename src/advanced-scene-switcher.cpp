@@ -95,8 +95,8 @@ void addSelectionEntry(QComboBox *sel, const char *description,
 }
 
 void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
-					      bool addSelect,
-					      bool addSceneGroup)
+					      bool addSceneGroup,
+					      bool addSelect)
 {
 	sel->clear();
 

@@ -3,7 +3,8 @@
 #include <QComboBox>
 
 struct SceneSwitcherEntry {
-	SwitchTarget target;
+	SwitchTargetType targetType = SwitchTargetType::Scene;
+	SceneGroup group;
 	OBSWeakSource scene = nullptr;
 	OBSWeakSource transition = nullptr;
 	bool usePreviousScene = false;
@@ -30,28 +31,14 @@ struct SceneSwitcherEntry {
 class TargetSelection : public QComboBox {
 	Q_OBJECT
 private slots:
-	void SceneGroupRename(const QString &oldName, const QString newName)
-	{
-		bool renameSelected = currentText() == oldName;
-		int idx = findText(oldName);
-
-		if (idx == -1) {
-			return;
-		}
-
-		removeItem(idx);
-		insertItem(idx, newName);
-
-		if (renameSelected)
-			setCurrentIndex(findText(newName));
-	}
+	void SceneGroupRename(const QString &oldName, const QString newName);
 };
 
 class SwitchWidget : public QWidget {
 	Q_OBJECT
 
 public:
-	SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene = true);
+	SwitchWidget(SceneSwitcherEntry *s, bool usePreviousScene = true, bool addSceneGroup = false);
 	virtual SceneSwitcherEntry *getSwitchData();
 	virtual void setSwitchData(SceneSwitcherEntry *s);
 
@@ -64,7 +51,7 @@ private slots:
 protected:
 	bool loading = true;
 
-	QComboBox *scenes;
+	TargetSelection *scenes;
 	QComboBox *transitions;
 
 	SceneSwitcherEntry *switchData;

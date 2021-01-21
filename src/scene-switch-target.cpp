@@ -98,7 +98,9 @@ bool sceneGroupNameExists(std::string name)
 		if (sg.name == name)
 			return true;
 	}
-	return false;
+
+	return (name ==
+		obs_module_text("AdvSceneSwitcher.selectPreviousScene"));
 }
 
 void AdvSceneSwitcher::on_sceneGroupAdd_clicked()

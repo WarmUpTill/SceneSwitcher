@@ -26,7 +26,7 @@ struct SceneGroup {
 	AdvanceCondition type = AdvanceCondition::Count;
 	std::vector<OBSWeakSource> scenes = {};
 
-	std::string name = "no-name";
+	std::string name = "invalid-scene-group";
 	int count = 1;
 	double time = 0;
 	bool repeat = false;
@@ -55,14 +55,6 @@ struct SceneGroup {
 enum class SwitchTargetType {
 	Scene,
 	SceneGroup,
-};
-
-struct SwitchTarget {
-	SwitchTargetType type = SwitchTargetType::Scene;
-
-	OBSWeakSource scene = nullptr;
-	bool usePreviousScene = false;
-	SceneGroup group;
 };
 
 class SceneGroupEditWidget : public QWidget {
