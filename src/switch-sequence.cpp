@@ -237,37 +237,9 @@ void SwitcherData::saveSceneSequenceSwitches(obs_data_t *obj)
 	for (SceneSequenceSwitch &s : switcher->sceneSequenceSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source1 =
-			obs_weak_source_get_source(s.startScene);
-		obs_source_t *source2 = obs_weak_source_get_source(s.scene);
-		obs_source_t *transition =
-			obs_weak_source_get_source(s.transition);
-		if (source1 && (s.usePreviousScene || source2) && transition) {
-			obs_data_set_int(array_obj, "targetType",
-					 static_cast<int>(s.targetType));
-			const char *sceneName1 = obs_source_get_name(source1);
-			const char *sceneName2 = obs_source_get_name(source2);
-			const char *transitionName =
-				obs_source_get_name(transition);
-			obs_data_set_string(array_obj, "sceneRoundTripScene1",
-					    sceneName1);
-			obs_data_set_string(array_obj, "sceneRoundTripScene2",
-					    s.usePreviousScene
-						    ? previous_scene_name
-						    : sceneName2);
-			obs_data_set_string(array_obj, "transition",
-					    transitionName);
-			obs_data_set_double(array_obj, "delay", s.delay);
-			obs_data_set_int(array_obj, "delayMultiplier",
-					 s.delayMultiplier);
-			obs_data_set_bool(array_obj, "interruptible",
-					  s.interruptible);
-			obs_data_array_push_back(sceneSequenceArray, array_obj);
-		}
+		s.save(array_obj);
+		obs_data_array_push_back(sceneSequenceArray, array_obj);
 
-		obs_source_release(source1);
-		obs_source_release(source2);
-		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "sceneRoundTrip", sceneSequenceArray);
@@ -285,31 +257,9 @@ void SwitcherData::loadSceneSequenceSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj =
 			obs_data_array_item(sceneSequenceArray, i);
-		SwitchTargetType target = static_cast<SwitchTargetType>(
-			obs_data_get_int(array_obj, "targetType"));
-		const char *scene1 =
-			obs_data_get_string(array_obj, "sceneRoundTripScene1");
-		const char *scene2 =
-			obs_data_get_string(array_obj, "sceneRoundTripScene2");
-		const char *transition =
-			obs_data_get_string(array_obj, "transition");
-		double delay = obs_data_get_double(array_obj, "delay");
-		int delayMultiplier =
-			obs_data_get_int(array_obj, "delayMultiplier");
-		if (delayMultiplier == 0 ||
-		    (delayMultiplier != 1 && delayMultiplier % 60 != 0))
-			delayMultiplier = 1;
-		bool interruptible =
-			obs_data_get_bool(array_obj, "interruptible");
 
-		switcher->sceneSequenceSwitches.emplace_back(
-			target,
-			GetWeakSourceByName(scene1),
-			GetWeakSourceByName(scene2),
-			GetSceneGroupByName(scene2),
-			GetWeakTransitionByName(transition), delay,
-			delayMultiplier, interruptible,
-			(strcmp(scene2, previous_scene_name) == 0));
+		switcher->sceneSequenceSwitches.emplace_back();
+		sceneSequenceSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
 	}
@@ -345,6 +295,76 @@ bool SceneSequenceSwitch::valid()
 void SceneSequenceSwitch::logSleep(int dur)
 {
 	blog(LOG_INFO, "sequence sleep %d", dur);
+}
+
+void SceneSequenceSwitch::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj);
+
+	obs_source_t *source = obs_weak_source_get_source(startScene);
+	const char *startSceneName = obs_source_get_name(source);
+	obs_data_set_string(obj, "startScene", startSceneName);
+	obs_source_release(source);
+
+	obs_data_set_double(obj, "delay", delay);
+
+	obs_data_set_int(obj, "delayMultiplier", delayMultiplier);
+
+	obs_data_set_bool(obj, "interruptible", interruptible);
+}
+
+// To be removed in future version
+bool loadOldScequence(obs_data_t *obj, SceneSequenceSwitch *s)
+{
+	if (!s)
+		return false;
+
+	const char *scene1 = obs_data_get_string(obj, "sceneRoundTripScene1");
+
+	if (strcmp(scene1, "") == 0)
+		return false;
+
+	s->startScene = GetWeakSourceByName(scene1);
+
+	const char *scene2 = obs_data_get_string(obj, "sceneRoundTripScene2");
+	s->scene = GetWeakSourceByName(scene2);
+
+	const char *transition = obs_data_get_string(obj, "transition");
+	s->transition = GetWeakTransitionByName(transition);
+
+	s->delay = obs_data_get_double(obj, "delay");
+
+	int delayMultiplier = obs_data_get_int(obj, "delayMultiplier");
+	if (delayMultiplier == 0 ||
+	    (delayMultiplier != 1 && delayMultiplier % 60 != 0))
+		delayMultiplier = 1;
+	s->delayMultiplier = delayMultiplier;
+
+	s->interruptible = obs_data_get_bool(obj, "interruptible");
+
+	s->usePreviousScene = strcmp(scene2, previous_scene_name) == 0;
+
+	return true;
+}
+
+void SceneSequenceSwitch::load(obs_data_t *obj)
+{
+	if (loadOldScequence(obj, this))
+		return;
+
+	SceneSwitcherEntry::load(obj);
+
+	const char *scene = obs_data_get_string(obj, "startScene");
+	startScene = GetWeakSourceByName(scene);
+
+	delay = obs_data_get_double(obj, "delay");
+
+	delayMultiplier = obs_data_get_int(obj, "delayMultiplier");
+	if (delayMultiplier == 0 ||
+	    (delayMultiplier != 1 && delayMultiplier % 60 != 0))
+		delayMultiplier = 1;
+
+	interruptible = obs_data_get_bool(obj, "interruptible");
 }
 
 void populateDelayUnits(QComboBox *list)
