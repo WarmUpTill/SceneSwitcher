@@ -342,6 +342,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 		obs_data_t *obj = obs_data_create();
 
+		switcher->saveSceneGroups(obj);
 		switcher->saveWindowTitleSwitches(obj);
 		switcher->saveScreenRegionSwitches(obj);
 		switcher->savePauseSwitches(obj);
@@ -354,7 +355,6 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->saveMediaSwitches(obj);
 		switcher->saveTimeSwitches(obj);
 		switcher->saveAudioSwitches(obj);
-		switcher->saveSceneGroups(obj);
 		switcher->saveGeneralSettings(obj);
 		switcher->saveHotkeys(obj);
 
@@ -370,6 +370,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		if (!obj)
 			obj = obs_data_create();
 
+		switcher->loadSceneGroups(obj);
 		switcher->loadWindowTitleSwitches(obj);
 		switcher->loadScreenRegionSwitches(obj);
 		switcher->loadPauseSwitches(obj);
@@ -382,7 +383,6 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->loadMediaSwitches(obj);
 		switcher->loadTimeSwitches(obj);
 		switcher->loadAudioSwitches(obj);
-		switcher->loadSceneGroups(obj);
 		switcher->loadGeneralSettings(obj);
 		switcher->loadHotkeys(obj);
 
