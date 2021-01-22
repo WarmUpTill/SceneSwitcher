@@ -39,6 +39,55 @@ OBSWeakSource SceneSwitcherEntry::getScene()
 	return nextScene;
 }
 
+void SceneSwitcherEntry::save(obs_data_t *obj)
+{
+	obs_data_set_int(obj, "targetType", static_cast<int>(targetType));
+
+	const char *targetName = "";
+
+	if (targetType == SwitchTargetType::Scene) {
+		if (usePreviousScene) {
+			targetName = previous_scene_name;
+		} else {
+			obs_source_t *sceneSource =
+				obs_weak_source_get_source(scene);
+			targetName = obs_source_get_name(sceneSource);
+			obs_source_release(sceneSource);
+		}
+	} else if (targetType == SwitchTargetType::SceneGroup) {
+		targetName = group->name.c_str();
+	}
+
+	obs_data_set_string(obj, "target", targetName);
+
+	obs_source_t *transitionSource = obs_weak_source_get_source(transition);
+	const char *transitionName = obs_source_get_name(transitionSource);
+	obs_source_release(transitionSource);
+
+	obs_data_set_string(obj, "transition", transitionName);
+}
+
+void SceneSwitcherEntry::load(obs_data_t *obj)
+{
+	targetType = static_cast<SwitchTargetType>(
+		obs_data_get_int(obj, "targetType"));
+
+	const char *targetName = obs_data_get_string(obj, "target");
+
+	if (targetType == SwitchTargetType::Scene) {
+		usePreviousScene = strcmp(targetName, previous_scene_name) == 0;
+		if (!usePreviousScene)
+			scene = GetWeakSourceByName(targetName);
+	} else if (targetType == SwitchTargetType::SceneGroup) {
+		group = GetSceneGroupByName(targetName);
+	}
+
+	const char *transitionName = obs_data_get_string(obj, "transition");
+	transition = GetWeakTransitionByName(transitionName);
+
+	usePreviousScene = strcmp(targetName, previous_scene_name) == 0;
+}
+
 void SwitchWidget::SceneGroupAdd(const QString &name)
 {
 	if (!scenes)

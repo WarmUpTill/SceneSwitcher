@@ -14,6 +14,8 @@ struct SceneSwitcherEntry {
 	virtual bool valid();
 	virtual void logMatch();
 	virtual OBSWeakSource getScene();
+	virtual void save(obs_data_t *obj);
+	virtual void load(obs_data_t *obj);
 
 	inline SceneSwitcherEntry() {}
 
