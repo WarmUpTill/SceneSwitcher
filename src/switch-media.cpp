@@ -174,9 +174,7 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 
 		if (matched && !mediaSwitch.matched) {
 			match = true;
-			scene = (mediaSwitch.usePreviousScene)
-					? previousScene
-					: mediaSwitch.scene;
+			scene = mediaSwitch.getScene();
 			transition = mediaSwitch.transition;
 
 			if (verbose)
@@ -196,33 +194,8 @@ void SwitcherData::saveMediaSwitches(obs_data_t *obj)
 	for (MediaSwitch &s : switcher->mediaSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source = obs_weak_source_get_source(s.source);
-		obs_source_t *sceneSource = obs_weak_source_get_source(s.scene);
-		obs_source_t *transition =
-			obs_weak_source_get_source(s.transition);
-		if ((s.usePreviousScene || sceneSource) && source &&
-		    transition) {
-			const char *sourceName = obs_source_get_name(source);
-			const char *sceneName =
-				obs_source_get_name(sceneSource);
-			const char *transitionName =
-				obs_source_get_name(transition);
-			obs_data_set_string(array_obj, "source", sourceName);
-			obs_data_set_string(array_obj, "scene",
-					    s.usePreviousScene
-						    ? previous_scene_name
-						    : sceneName);
-			obs_data_set_string(array_obj, "transition",
-					    transitionName);
-			obs_data_set_int(array_obj, "state", s.state);
-			obs_data_set_int(array_obj, "restriction",
-					 s.restriction);
-			obs_data_set_int(array_obj, "time", s.time);
-			obs_data_array_push_back(mediaArray, array_obj);
-		}
-		obs_source_release(source);
-		obs_source_release(sceneSource);
-		obs_source_release(transition);
+		s.save(array_obj);
+		obs_data_array_push_back(mediaArray, array_obj);
 
 		obs_data_release(array_obj);
 	}
@@ -239,21 +212,8 @@ void SwitcherData::loadMediaSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(mediaArray, i);
 
-		const char *source = obs_data_get_string(array_obj, "source");
-		const char *scene = obs_data_get_string(array_obj, "scene");
-		const char *transition =
-			obs_data_get_string(array_obj, "transition");
-		obs_media_state state =
-			(obs_media_state)obs_data_get_int(array_obj, "state");
-		time_restriction restriction =
-			(time_restriction)obs_data_get_int(array_obj,
-							   "restriction");
-		uint64_t time = obs_data_get_int(array_obj, "time");
-
-		switcher->mediaSwitches.emplace_back(
-			GetWeakSourceByName(scene), GetWeakSourceByName(source),
-			GetWeakTransitionByName(transition), state, restriction,
-			time, (strcmp(scene, previous_scene_name) == 0));
+		switcher->mediaSwitches.emplace_back();
+		mediaSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
 	}
@@ -284,6 +244,63 @@ bool MediaSwitch::valid()
 {
 	return !initialized() ||
 	       (SceneSwitcherEntry::valid() && WeakSourceValid(source));
+}
+
+void MediaSwitch::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj);
+
+	obs_source_t *s = obs_weak_source_get_source(source);
+	const char *sourceName = obs_source_get_name(s);
+	obs_data_set_string(obj, "source", sourceName);
+	obs_source_release(s);
+
+	obs_data_set_int(obj, "state", state);
+	obs_data_set_int(obj, "restriction", restriction);
+	obs_data_set_int(obj, "time", time);
+}
+
+// To be removed in future version
+bool loadOldMedia(obs_data_t *obj, MediaSwitch *s)
+{
+	if (!s)
+		return false;
+
+	const char *scene = obs_data_get_string(obj, "scene");
+
+	if (strcmp(scene, "") == 0)
+		return false;
+
+	s->scene = GetWeakSourceByName(scene);
+
+	const char *transition = obs_data_get_string(obj, "transition");
+	s->transition = GetWeakTransitionByName(transition);
+
+	const char *source = obs_data_get_string(obj, "source");
+	s->source = GetWeakSourceByName(source);
+
+	s->state = (obs_media_state)obs_data_get_int(obj, "state");
+	s->restriction = (time_restriction)obs_data_get_int(obj, "restriction");
+	s->time = obs_data_get_int(obj, "time");
+	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
+
+	return true;
+}
+
+void MediaSwitch::load(obs_data_t *obj)
+{
+
+	if (loadOldMedia(obj, this))
+		return;
+
+	SceneSwitcherEntry::load(obj);
+
+	const char *sourceName = obs_data_get_string(obj, "source");
+	source = GetWeakSourceByName(sourceName);
+
+	state = (obs_media_state)obs_data_get_int(obj, "state");
+	restriction = (time_restriction)obs_data_get_int(obj, "restriction");
+	time = obs_data_get_int(obj, "time");
 }
 
 void MediaSwitch::clearSignalHandler()
