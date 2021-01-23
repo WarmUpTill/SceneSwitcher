@@ -378,7 +378,7 @@
                  <widget class="QComboBox" name="autoStopType"/>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_3">
+                 <widget class="QLabel" name="label_6">
                   <property name="text">
                    <string>AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStop2</string>
                   </property>
