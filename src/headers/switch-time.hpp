@@ -26,16 +26,6 @@ struct TimeSwitch : SceneSwitcherEntry {
 	const char *getType() { return "time"; }
 	void save(obs_data_t *obj);
 	void load(obs_data_t *obj);
-
-	inline TimeSwitch(){};
-	inline TimeSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-			  timeTrigger trigger_, QTime time_,
-			  bool usePreviousScene_)
-		: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
-		  trigger(trigger_),
-		  time(time_)
-	{
-	}
 };
 
 class TimeSwitchWidget : public SwitchWidget {

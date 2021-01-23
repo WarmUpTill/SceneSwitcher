@@ -45,12 +45,12 @@ struct SceneSwitcherEntry {
 	}
 
 	inline SceneSwitcherEntry(SwitchTargetType targetType_,
-				  OBSWeakSource scene_, SceneGroup *group_,
+				  SceneGroup *group_, OBSWeakSource scene_,
 				  OBSWeakSource transition_,
 				  bool usePreviousScene_ = false)
 		: targetType(targetType_),
-		  scene(scene_),
 		  group(group_),
+		  scene(scene_),
 		  transition(transition_),
 		  usePreviousScene(usePreviousScene_)
 	{

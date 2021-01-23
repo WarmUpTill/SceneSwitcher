@@ -24,22 +24,6 @@ struct SceneSequenceSwitch : SceneSwitcherEntry {
 	void logSleep(int dur);
 	void save(obs_data_t *obj);
 	void load(obs_data_t *obj);
-
-	inline SceneSequenceSwitch(){};
-	inline SceneSequenceSwitch(SwitchTargetType targetType_,
-				   OBSWeakSource startScene_,
-				   OBSWeakSource scene_, SceneGroup *group_,
-				   OBSWeakSource transition_, double delay_,
-				   int delayMultiplier_, bool interruptible_,
-				   bool usePreviousScene_)
-		: SceneSwitcherEntry(targetType_, scene_, group_, transition_,
-				     usePreviousScene_),
-		  startScene(startScene_),
-		  delay(delay_),
-		  delayMultiplier(delayMultiplier_),
-		  interruptible(interruptible_)
-	{
-	}
 };
 
 class SequenceWidget : public SwitchWidget {

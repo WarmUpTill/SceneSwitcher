@@ -43,10 +43,7 @@ struct MediaSwitch : SceneSwitcherEntry {
 	static void MediaEnded(void *data, calldata_t *);
 
 	inline MediaSwitch(){};
-	inline MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
-			   OBSWeakSource transition_, obs_media_state state_,
-			   time_restriction restriction_, uint64_t time_,
-			   bool usePreviousScene_);
+
 	MediaSwitch(const MediaSwitch &other);
 	MediaSwitch(MediaSwitch &&other);
 	~MediaSwitch();

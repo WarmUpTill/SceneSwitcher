@@ -343,8 +343,8 @@ void MediaSwitch::MediaEnded(void *data, calldata_t *)
 }
 
 MediaSwitch::MediaSwitch(const MediaSwitch &other)
-	: SceneSwitcherEntry(other.scene, other.transition,
-			     other.usePreviousScene),
+	: SceneSwitcherEntry(other.targetType, other.group, other.scene,
+			     other.transition, other.usePreviousScene),
 	  source(other.source),
 	  state(other.state),
 	  restriction(other.restriction),
@@ -359,8 +359,8 @@ MediaSwitch::MediaSwitch(const MediaSwitch &other)
 }
 
 MediaSwitch::MediaSwitch(MediaSwitch &&other)
-	: SceneSwitcherEntry(other.scene, other.transition,
-			     other.usePreviousScene),
+	: SceneSwitcherEntry(other.targetType, other.group, other.scene,
+			     other.transition, other.usePreviousScene),
 	  source(other.source),
 	  state(other.state),
 	  anyState(other.anyState),
@@ -404,6 +404,8 @@ MediaSwitch &MediaSwitch::operator=(MediaSwitch &&other) noexcept
 
 void swap(MediaSwitch &first, MediaSwitch &second)
 {
+	std::swap(first.targetType, second.targetType);
+	std::swap(first.group, second.group);
 	std::swap(first.scene, second.scene);
 	std::swap(first.transition, second.transition);
 	std::swap(first.usePreviousScene, second.usePreviousScene);

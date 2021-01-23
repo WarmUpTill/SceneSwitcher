@@ -12,18 +12,6 @@ struct ScreenRegionSwitch : SceneSwitcherEntry {
 	const char *getType() { return "region"; }
 	void save(obs_data_t *obj);
 	void load(obs_data_t *obj);
-
-	inline ScreenRegionSwitch(){};
-	inline ScreenRegionSwitch(OBSWeakSource scene_,
-				  OBSWeakSource transition_, int minX_,
-				  int minY_, int maxX_, int maxY_)
-		: SceneSwitcherEntry(scene_, transition_),
-		  minX(minX_),
-		  minY(minY_),
-		  maxX(maxX_),
-		  maxY(maxY_)
-	{
-	}
 };
 
 class ScreenRegionWidget : public SwitchWidget {

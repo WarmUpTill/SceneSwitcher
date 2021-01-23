@@ -14,14 +14,6 @@ struct ExecutableSwitch : SceneSwitcherEntry {
 	void save(obs_data_t *obj);
 	void load(obs_data_t *obj);
 
-	inline ExecutableSwitch(){};
-	inline ExecutableSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-				const QString &exe_, bool inFocus_)
-		: SceneSwitcherEntry(scene_, transition_),
-		  exe(exe_),
-		  inFocus(inFocus_)
-	{
-	}
 };
 
 class ExecutableSwitchWidget : public SwitchWidget {

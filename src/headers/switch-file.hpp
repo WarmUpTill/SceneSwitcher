@@ -25,22 +25,6 @@ struct FileSwitch : SceneSwitcherEntry {
 	const char *getType() { return "file"; }
 	void save(obs_data_t *obj);
 	void load(obs_data_t *obj);
-
-	inline FileSwitch(){};
-	inline FileSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-			  const char *file_, const char *text_, bool remote_,
-			  bool useRegex_, bool useTime_,
-			  bool onlyMatchIfChanged_)
-		: SceneSwitcherEntry(scene_, transition_),
-		  file(file_),
-		  text(text_),
-		  remote(remote_),
-		  useRegex(useRegex_),
-		  useTime(useTime_),
-		  onlyMatchIfChanged(onlyMatchIfChanged_),
-		  lastMod()
-	{
-	}
 };
 
 class FileSwitchWidget : public SwitchWidget {

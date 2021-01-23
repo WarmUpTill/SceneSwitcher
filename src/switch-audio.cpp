@@ -349,22 +349,9 @@ void AudioSwitchFallback::load(obs_data_t *obj)
 	duration = obs_data_get_double(obj, "audioFallbackDuration");
 }
 
-AudioSwitch::AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-			 OBSWeakSource audioSource_, int volumeThreshold_,
-			 audioCondition condition_, double duration_,
-			 bool usePreviousScene_)
-	: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
-	  audioSource(audioSource_),
-	  volumeThreshold(volumeThreshold_),
-	  condition(condition_),
-	  duration(duration_)
-{
-	volmeter = AddVolmeterToSource(this, audioSource);
-}
-
 AudioSwitch::AudioSwitch(const AudioSwitch &other)
-	: SceneSwitcherEntry(other.scene, other.transition,
-			     other.usePreviousScene),
+	: SceneSwitcherEntry(other.targetType, other.group, other.scene,
+			     other.transition, other.usePreviousScene),
 	  audioSource(other.audioSource),
 	  volumeThreshold(other.volumeThreshold),
 	  condition(other.condition),
@@ -374,8 +361,8 @@ AudioSwitch::AudioSwitch(const AudioSwitch &other)
 }
 
 AudioSwitch::AudioSwitch(AudioSwitch &&other)
-	: SceneSwitcherEntry(other.scene, other.transition,
-			     other.usePreviousScene),
+	: SceneSwitcherEntry(other.targetType, other.group, other.scene,
+			     other.transition, other.usePreviousScene),
 	  audioSource(other.audioSource),
 	  volumeThreshold(other.volumeThreshold),
 	  condition(other.condition),
@@ -415,6 +402,8 @@ AudioSwitch &AudioSwitch::operator=(AudioSwitch &&other) noexcept
 
 void swap(AudioSwitch &first, AudioSwitch &second)
 {
+	std::swap(first.targetType, second.targetType);
+	std::swap(first.group, second.group);
 	std::swap(first.scene, second.scene);
 	std::swap(first.transition, second.transition);
 	std::swap(first.usePreviousScene, second.usePreviousScene);
