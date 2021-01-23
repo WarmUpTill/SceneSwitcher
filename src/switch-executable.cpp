@@ -224,7 +224,7 @@ void ExecutableSwitch::load(obs_data_t *obj)
 
 ExecutableSwitchWidget::ExecutableSwitchWidget(QWidget *parent,
 					       ExecutableSwitch *s)
-	: SwitchWidget(parent, s, false, true)
+	: SwitchWidget(parent, s, true, true)
 {
 	processes = new QComboBox();
 	requiresFocus = new QCheckBox(obs_module_text(

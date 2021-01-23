@@ -37,8 +37,6 @@ public:
 	void UpdateNonMatchingScene(const QString &name);
 	void UpdateAutoStopScene(const QString &name);
 	void UpdateAutoStartScene(const QString &name);
-	void UpdateIdleDataTransition(const QString &name);
-	void UpdateIdleDataScene(const QString &name);
 	void SetEditSceneGroup(SceneGroup &sg);
 
 	void loadUI();
@@ -167,9 +165,6 @@ public slots:
 	void on_executableRemove_clicked();
 
 	void on_idleCheckBox_stateChanged(int state);
-	void on_idleTransitions_currentTextChanged(const QString &text);
-	void on_idleScenes_currentTextChanged(const QString &text);
-	void on_idleSpinBox_valueChanged(int i);
 	void on_ignoreIdleWindows_currentRowChanged(int idx);
 	void on_ignoreIdleAdd_clicked();
 	void on_ignoreIdleRemove_clicked();

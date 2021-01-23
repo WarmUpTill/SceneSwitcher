@@ -476,7 +476,7 @@ void FileSwitch::load(obs_data_t *obj)
 }
 
 FileSwitchWidget::FileSwitchWidget(QWidget *parent, FileSwitch *s)
-	: SwitchWidget(parent, s, false, true)
+	: SwitchWidget(parent, s, true, true)
 {
 	fileType = new QComboBox();
 	filePath = new QLineEdit();

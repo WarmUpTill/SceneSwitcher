@@ -15,3 +15,18 @@ struct IdleData : SceneSwitcherEntry {
 	void save(obs_data_t *obj);
 	void load(obs_data_t *obj);
 };
+
+class IdleWidget : public SwitchWidget {
+	Q_OBJECT
+
+public:
+	IdleWidget(QWidget *parent, IdleData *s);
+
+private slots:
+	void DurationChanged(int dur);
+
+private:
+	QSpinBox *duration;
+
+	IdleData *switchData;
+};
