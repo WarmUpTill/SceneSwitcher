@@ -12,6 +12,8 @@ struct WindowSwitch : SceneSwitcherEntry {
 	bool focus = true;
 
 	const char *getType() { return "window"; }
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 
 	inline WindowSwitch() {}
 	inline WindowSwitch(OBSWeakSource scene_, const char *window_,
