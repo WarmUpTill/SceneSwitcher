@@ -173,8 +173,7 @@ struct SwitcherData {
 					  OBSWeakSource &transition);
 	void setCurrentDefTransition(OBSWeakSource &transition);
 	void checkSceneSequence(bool &match, OBSWeakSource &scene,
-				OBSWeakSource &transition,
-				std::unique_lock<std::mutex> &lock);
+				OBSWeakSource &transition, int &linger);
 	void checkIdleSwitch(bool &match, OBSWeakSource &scene,
 			     OBSWeakSource &transition);
 	void checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,

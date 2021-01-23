@@ -424,6 +424,7 @@ void SwitcherData::Thread()
 {
 	blog(LOG_INFO, "started");
 	int sleep = 0;
+	int linger = 0;
 	std::chrono::milliseconds duration;
 	auto startTime = std::chrono::high_resolution_clock::now();
 	auto endTime = std::chrono::high_resolution_clock::now();
@@ -447,8 +448,8 @@ void SwitcherData::Thread()
 		if (sleep) {
 			duration = std::chrono::milliseconds(sleep);
 		} else {
-			duration =
-				std::chrono::milliseconds(interval) - runTime;
+			duration = std::chrono::milliseconds(interval) +
+				   std::chrono::milliseconds(linger) - runTime;
 			if (duration.count() < 1) {
 				blog(LOG_INFO,
 				     "detected busy loop - refusing to sleep less than 1ms");
@@ -463,6 +464,7 @@ void SwitcherData::Thread()
 
 		startTime = std::chrono::high_resolution_clock::now();
 		sleep = 0;
+		linger = 0;
 
 		switcher->Prune();
 
@@ -507,7 +509,7 @@ void SwitcherData::Thread()
 				break;
 			case round_trip_func:
 				checkSceneSequence(match, scene, transition,
-						   lock);
+						   linger);
 				break;
 			case media_func:
 				checkMediaSwitch(match, scene, transition);
@@ -531,6 +533,29 @@ void SwitcherData::Thread()
 		checkNoMatchSwitch(match, scene, transition, sleep);
 
 		checkSwitchCooldown(match);
+
+		if (linger) {
+			duration = std::chrono::milliseconds(linger);
+			if (verbose)
+				blog(LOG_INFO,
+				     "sleep for %ld before switching scene",
+				     duration.count());
+
+			cv.wait_for(lock, duration);
+
+			if (switcher->stop) {
+				break;
+			}
+
+			if (sceneChangedDuringWait()) {
+				if (verbose)
+					blog(LOG_INFO,
+					     "scene was changed manually - ignoring match",
+					     duration.count());
+				match = false;
+				linger = 0;
+			}
+		}
 
 		// After this point we will call frontend functions
 		// obs_frontend_set_current_scene() and
