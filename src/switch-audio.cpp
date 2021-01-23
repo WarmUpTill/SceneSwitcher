@@ -93,8 +93,7 @@ void SwitcherData::checkAudioSwitchFallback(OBSWeakSource &scene,
 
 	if (durationReached) {
 
-		scene = (audioFallback.usePreviousScene) ? previousScene
-							 : audioFallback.scene;
+		scene = audioFallback.getScene();
 		transition = audioFallback.transition;
 
 		if (verbose)
@@ -151,7 +150,7 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 				break;
 			}
 
-			scene = (s.usePreviousScene) ? previousScene : s.scene;
+			scene = s.getScene();
 			transition = s.transition;
 			match = true;
 
