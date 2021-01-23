@@ -153,6 +153,8 @@ struct SwitcherData {
 	obs_hotkey_id stopHotkey = 0;
 	obs_hotkey_id toggleHotkey = 0;
 
+	bool versionChanged(obs_data_t *obj, std::string currentVersion);
+
 	void Thread();
 	void Start();
 	void Stop();
@@ -210,6 +212,7 @@ struct SwitcherData {
 	void saveAudioSwitches(obs_data_t *obj);
 	void saveGeneralSettings(obs_data_t *obj);
 	void saveHotkeys(obs_data_t *obj);
+	void saveVersion(obs_data_t *obj, std::string currentVersion);
 
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
