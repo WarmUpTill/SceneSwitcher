@@ -13,7 +13,6 @@ struct ExecutableSwitch : SceneSwitcherEntry {
 	const char *getType() { return "exec"; }
 	void save(obs_data_t *obj);
 	void load(obs_data_t *obj);
-
 };
 
 class ExecutableSwitchWidget : public SwitchWidget {
