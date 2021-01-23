@@ -57,14 +57,14 @@ void SceneSwitcherEntry::logMatch()
 
 OBSWeakSource SceneSwitcherEntry::getScene()
 {
-	OBSWeakSource nextScene = nullptr;
 	if (targetType == SwitchTargetType::Scene) {
-		nextScene = scene;
-
-	} else {
-		nextScene = group->getNextScene();
+		if (usePreviousScene && switcher)
+			return switcher->previousScene;
+		return scene;
+	} else if (targetType == SwitchTargetType::SceneGroup) {
+		return group->getNextScene();
 	}
-	return nextScene;
+	return nullptr;
 }
 
 void SceneSwitcherEntry::save(obs_data_t *obj, const char *targetTypeSaveName,
