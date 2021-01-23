@@ -273,7 +273,7 @@ void ScreenRegionSwitch::load(obs_data_t *obj)
 }
 
 ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
-	: SwitchWidget(parent, s, false, true)
+	: SwitchWidget(parent, s, true, true)
 {
 	minX = new QSpinBox();
 	minY = new QSpinBox();

@@ -397,7 +397,7 @@ void WindowSwitch::load(obs_data_t *obj)
 }
 
 WindowSwitchWidget::WindowSwitchWidget(QWidget *parent, WindowSwitch *s)
-	: SwitchWidget(parent, s, false, true)
+	: SwitchWidget(parent, s, true, true)
 {
 	windows = new QComboBox();
 	fullscreen = new QCheckBox(

@@ -4,6 +4,7 @@
 #include "headers/utility.hpp"
 
 bool IdleData::pause = false;
+IdleWidget *idleWidget = nullptr;
 
 void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
 				   OBSWeakSource &transition)
@@ -57,67 +58,12 @@ void AdvSceneSwitcher::on_idleCheckBox_stateChanged(int state)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	if (!state) {
-		ui->idleScenes->setDisabled(true);
-		ui->idleSpinBox->setDisabled(true);
-		ui->idleTransitions->setDisabled(true);
-
 		switcher->idleData.idleEnable = false;
+		idleWidget->setDisabled(true);
 	} else {
-		ui->idleScenes->setDisabled(false);
-		ui->idleSpinBox->setDisabled(false);
-		ui->idleTransitions->setDisabled(false);
-
 		switcher->idleData.idleEnable = true;
-
-		UpdateIdleDataTransition(ui->idleTransitions->currentText());
-		UpdateIdleDataScene(ui->idleScenes->currentText());
+		idleWidget->setDisabled(false);
 	}
-}
-
-void AdvSceneSwitcher::UpdateIdleDataTransition(const QString &name)
-{
-	obs_weak_source_t *transition = GetWeakTransitionByQString(name);
-	switcher->idleData.transition = transition;
-}
-
-void AdvSceneSwitcher::UpdateIdleDataScene(const QString &name)
-{
-	switcher->idleData.usePreviousScene =
-		(name ==
-		 obs_module_text("AdvSceneSwitcher.selectPreviousScene"));
-	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
-	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
-
-	switcher->idleData.scene = ws;
-
-	obs_weak_source_release(ws);
-	obs_source_release(scene);
-}
-
-void AdvSceneSwitcher::on_idleTransitions_currentTextChanged(const QString &text)
-{
-	if (loading)
-		return;
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	UpdateIdleDataTransition(text);
-}
-
-void AdvSceneSwitcher::on_idleScenes_currentTextChanged(const QString &text)
-{
-	if (loading)
-		return;
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	UpdateIdleDataScene(text);
-}
-
-void AdvSceneSwitcher::on_idleSpinBox_valueChanged(int i)
-{
-	if (loading)
-		return;
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->idleData.time = i;
 }
 
 void AdvSceneSwitcher::on_ignoreIdleWindows_currentRowChanged(int idx)
@@ -250,8 +196,6 @@ void SwitcherData::loadIdleSwitches(obs_data_t *obj)
 
 void AdvSceneSwitcher::setupIdleTab()
 {
-	populateSceneSelection(ui->idleScenes, true, false);
-	populateTransitionSelection(ui->idleTransitions);
 	populateWindowSelection(ui->ignoreIdleWindowsWindows);
 
 	for (auto &window : switcher->ignoreIdleWindows) {
@@ -262,26 +206,14 @@ void AdvSceneSwitcher::setupIdleTab()
 		item->setData(Qt::UserRole, text);
 	}
 
+	idleWidget = new IdleWidget(this, &switcher->idleData);
+	ui->idleWidgetLayout->addWidget(idleWidget);
 	ui->idleCheckBox->setChecked(switcher->idleData.idleEnable);
-	if (switcher->idleData.usePreviousScene) {
-		ui->idleScenes->setCurrentText(obs_module_text(
-			"AdvSceneSwitcher.selectPreviousScene"));
-	} else {
-		ui->idleScenes->setCurrentText(
-			GetWeakSourceName(switcher->idleData.scene).c_str());
-	}
-	ui->idleTransitions->setCurrentText(
-		GetWeakSourceName(switcher->idleData.transition).c_str());
-	ui->idleSpinBox->setValue(switcher->idleData.time);
 
 	if (ui->idleCheckBox->checkState()) {
-		ui->idleScenes->setDisabled(false);
-		ui->idleSpinBox->setDisabled(false);
-		ui->idleTransitions->setDisabled(false);
+		idleWidget->setDisabled(false);
 	} else {
-		ui->idleScenes->setDisabled(true);
-		ui->idleSpinBox->setDisabled(true);
-		ui->idleTransitions->setDisabled(true);
+		idleWidget->setDisabled(true);
 	}
 }
 
@@ -301,4 +233,42 @@ void IdleData::load(obs_data_t *obj)
 
 	idleEnable = obs_data_get_bool(obj, "idleEnable");
 	time = obs_data_get_int(obj, "idleTime");
+}
+
+IdleWidget::IdleWidget(QWidget *parent, IdleData *s)
+	: SwitchWidget(parent, s, true, true)
+{
+	duration = new QSpinBox();
+
+	duration->setMinimum(0);
+	duration->setMaximum(1000000);
+	duration->setSuffix("s");
+
+	QWidget::connect(duration, SIGNAL(valueChanged(int)), this,
+			 SLOT(DurationChanged(int)));
+
+	if (s) {
+		duration->setValue(s->time);
+	}
+
+	QHBoxLayout *mainLayout = new QHBoxLayout;
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{duration}}", duration},
+		{"{{scenes}}", scenes},
+		{"{{transitions}}", transitions}};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.idleTab.idleswitch"),
+		     mainLayout, widgetPlaceholders);
+	setLayout(mainLayout);
+
+	switchData = s;
+
+	loading = false;
+}
+
+void IdleWidget::DurationChanged(int dur)
+{
+	if (loading)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->idleData.time = dur;
 }
