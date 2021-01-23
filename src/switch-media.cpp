@@ -301,6 +301,13 @@ void MediaSwitch::load(obs_data_t *obj)
 	state = (obs_media_state)obs_data_get_int(obj, "state");
 	restriction = (time_restriction)obs_data_get_int(obj, "restriction");
 	time = obs_data_get_int(obj, "time");
+
+	anyState = state == media_any_idx;
+	obs_source_t *mediasource = obs_weak_source_get_source(source);
+	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
+	signal_handler_connect(sh, "media_stopped", MediaStopped, this);
+	signal_handler_connect(sh, "media_ended", MediaEnded, this);
+	obs_source_release(mediasource);
 }
 
 void MediaSwitch::clearSignalHandler()
@@ -333,25 +340,6 @@ void MediaSwitch::MediaEnded(void *data, calldata_t *)
 {
 	MediaSwitch *media = static_cast<MediaSwitch *>(data);
 	media->ended = true;
-}
-
-inline MediaSwitch::MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
-				OBSWeakSource transition_,
-				obs_media_state state_,
-				time_restriction restriction_, uint64_t time_,
-				bool usePreviousScene_)
-	: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
-	  source(source_),
-	  state(state_),
-	  restriction(restriction_),
-	  time(time_)
-{
-	anyState = state == media_any_idx;
-	obs_source_t *mediasource = obs_weak_source_get_source(source);
-	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
-	signal_handler_connect(sh, "media_stopped", MediaStopped, this);
-	signal_handler_connect(sh, "media_ended", MediaEnded, this);
-	obs_source_release(mediasource);
 }
 
 MediaSwitch::MediaSwitch(const MediaSwitch &other)
