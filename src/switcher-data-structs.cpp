@@ -93,3 +93,14 @@ void SwitcherData::Prune()
 			audioSwitches.erase(audioSwitches.begin() + i--);
 	}
 }
+
+bool SwitcherData::versionChanged(obs_data_t *obj, std::string currentVersion)
+{
+	std::string previousVersion = obs_data_get_string(obj, "version");
+	return previousVersion != currentVersion;
+}
+
+void SwitcherData::saveVersion(obs_data_t *obj, std::string currentVersion)
+{
+	obs_data_set_string(obj, "version", currentVersion.c_str());
+}

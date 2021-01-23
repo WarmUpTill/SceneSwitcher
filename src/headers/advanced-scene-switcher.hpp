@@ -56,7 +56,8 @@ public:
 	void setupAudioTab();
 	void setTabOrder();
 
-	void DisplayMessage(QString msg);
+	static bool DisplayMessage(QString msg, bool question = false);
+	static void AskBackup(obs_data_t *obj);
 	static void populateSceneSelection(QComboBox *sel,
 					   bool addPrevious = false,
 					   bool addSelect = true);
