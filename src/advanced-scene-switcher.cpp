@@ -59,6 +59,7 @@ void AdvSceneSwitcher::loadUI()
 	setupFileTab();
 	setupTimeTab();
 	setupAudioTab();
+	setupSceneGroupTab();
 
 	setTabOrder();
 
@@ -109,8 +110,11 @@ void addSelectionEntry(QComboBox *sel, const char *description,
 }
 
 void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
+					      bool addSceneGroup,
 					      bool addSelect)
 {
+	sel->clear();
+
 	if (addSelect)
 		addSelectionEntry(
 			sel, obs_module_text("AdvSceneSwitcher.selectScene"),
@@ -128,6 +132,12 @@ void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 	if (addPrevious)
 		sel->addItem(obs_module_text(
 			"AdvSceneSwitcher.selectPreviousScene"));
+
+	if (addSceneGroup) {
+		for (auto &sg : switcher->sceneGroups) {
+			sel->addItem(QString::fromStdString(sg.name));
+		}
+	}
 }
 
 void AdvSceneSwitcher::populateTransitionSelection(QComboBox *sel,
@@ -347,6 +357,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 		obs_data_t *obj = obs_data_create();
 
+		switcher->saveSceneGroups(obj);
 		switcher->saveWindowTitleSwitches(obj);
 		switcher->saveScreenRegionSwitches(obj);
 		switcher->savePauseSwitches(obj);
@@ -377,6 +388,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		if (switcher->versionChanged(obj, g_GIT_SHA1))
 			AdvSceneSwitcher::AskBackup(obj);
 
+		switcher->loadSceneGroups(obj);
 		switcher->loadWindowTitleSwitches(obj);
 		switcher->loadScreenRegionSwitches(obj);
 		switcher->loadPauseSwitches(obj);
@@ -546,6 +558,11 @@ endLoop:
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 		 bool &transitionOverrideOverride)
 {
+	if (!scene && switcher->verbose) {
+		blog(LOG_INFO, "nothing to switch to");
+		return;
+	}
+
 	obs_source_t *source = obs_weak_source_get_source(scene);
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 

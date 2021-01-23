@@ -10,7 +10,8 @@ void AdvSceneSwitcher::on_windowAdd_clicked()
 	switcher->windowSwitches.emplace_back();
 
 	listAddClicked(ui->windowSwitches,
-		       new WindowSwitchWidget(&switcher->windowSwitches.back()),
+		       new WindowSwitchWidget(this,
+					      &switcher->windowSwitches.back()),
 		       ui->windowAdd, &addPulse);
 }
 
@@ -234,7 +235,7 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 		if (isRunning(s.window) &&
 		    (fullscreen && (max && (focus || ignore)))) {
 			match = true;
-			scene = s.scene;
+			scene = s.getScene();
 			transition = s.transition;
 
 			if (verbose)
@@ -250,26 +251,9 @@ void SwitcherData::saveWindowTitleSwitches(obs_data_t *obj)
 	for (WindowSwitch &s : switcher->windowSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source = obs_weak_source_get_source(s.scene);
-		obs_source_t *transition =
-			obs_weak_source_get_source(s.transition);
-		if (source && transition) {
-			const char *sceneName = obs_source_get_name(source);
-			const char *transitionName =
-				obs_source_get_name(transition);
-			obs_data_set_string(array_obj, "scene", sceneName);
-			obs_data_set_string(array_obj, "transition",
-					    transitionName);
-			obs_data_set_string(array_obj, "window_title",
-					    s.window.c_str());
-			obs_data_set_bool(array_obj, "fullscreen",
-					  s.fullscreen);
-			obs_data_set_bool(array_obj, "maximized", s.maximized);
-			obs_data_set_bool(array_obj, "focus", s.focus);
-			obs_data_array_push_back(windowTitleArray, array_obj);
-		}
-		obs_source_release(source);
-		obs_source_release(transition);
+		s.save(array_obj);
+		obs_data_array_push_back(windowTitleArray, array_obj);
+
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "switches", windowTitleArray);
@@ -298,26 +282,8 @@ void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
 		obs_data_t *array_obj =
 			obs_data_array_item(windowTitleArray, i);
 
-		const char *scene = obs_data_get_string(array_obj, "scene");
-		const char *transition =
-			obs_data_get_string(array_obj, "transition");
-		const char *window =
-			obs_data_get_string(array_obj, "window_title");
-		bool fullscreen = obs_data_get_bool(array_obj, "fullscreen");
-#if __APPLE__
-		// TODO:
-		// not implemented on MacOS as I cannot test it
-		bool maximized = false;
-#else
-		bool maximized = obs_data_get_bool(array_obj, "maximized");
-#endif
-		bool focus = obs_data_get_bool(array_obj, "focus") ||
-			     !obs_data_has_user_value(array_obj, "focus");
-
-		switcher->windowSwitches.emplace_back(
-			GetWeakSourceByName(scene), window,
-			GetWeakTransitionByName(transition), fullscreen,
-			maximized, focus);
+		switcher->windowSwitches.emplace_back();
+		windowSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
 	}
@@ -349,7 +315,7 @@ void AdvSceneSwitcher::setupTitleTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->windowSwitches);
 		ui->windowSwitches->addItem(item);
-		WindowSwitchWidget *sw = new WindowSwitchWidget(&s);
+		WindowSwitchWidget *sw = new WindowSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->windowSwitches->setItemWidget(item, sw);
 	}
@@ -368,7 +334,70 @@ void AdvSceneSwitcher::setupTitleTab()
 	}
 }
 
-WindowSwitchWidget::WindowSwitchWidget(WindowSwitch *s) : SwitchWidget(s, false)
+void WindowSwitch::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj);
+
+	obs_data_set_string(obj, "windowTitle", window.c_str());
+	obs_data_set_bool(obj, "fullscreen", fullscreen);
+	obs_data_set_bool(obj, "maximized", maximized);
+	obs_data_set_bool(obj, "focus", focus);
+}
+
+// To be removed in future version
+bool loadOldWindow(obs_data_t *obj, WindowSwitch *s)
+{
+	if (!s)
+		return false;
+
+	const char *scene = obs_data_get_string(obj, "scene");
+
+	if (strcmp(scene, "") == 0)
+		return false;
+
+	s->scene = GetWeakSourceByName(scene);
+
+	const char *transition = obs_data_get_string(obj, "transition");
+	s->transition = GetWeakTransitionByName(transition);
+
+	s->window = obs_data_get_string(obj, "window_title");
+	s->fullscreen = obs_data_get_bool(obj, "fullscreen");
+#if __APPLE__
+	// TODO:
+	// not implemented on MacOS as I cannot test it
+	s->maximized = false;
+#else
+	s->maximized = obs_data_get_bool(obj, "maximized");
+#endif
+	s->focus = obs_data_get_bool(obj, "focus") ||
+		   !obs_data_has_user_value(obj, "focus");
+	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
+
+	return true;
+}
+
+void WindowSwitch::load(obs_data_t *obj)
+{
+	if (loadOldWindow(obj, this))
+		return;
+
+	SceneSwitcherEntry::load(obj);
+
+	window = obs_data_get_string(obj, "windowTitle");
+	fullscreen = obs_data_get_bool(obj, "fullscreen");
+#if __APPLE__
+	// TODO:
+	// not implemented on MacOS as I cannot test it
+	maximized = false;
+#else
+	maximized = obs_data_get_bool(obj, "maximized");
+#endif
+	focus = obs_data_get_bool(obj, "focus") ||
+		!obs_data_has_user_value(obj, "focus");
+}
+
+WindowSwitchWidget::WindowSwitchWidget(QWidget *parent, WindowSwitch *s)
+	: SwitchWidget(parent, s, false, true)
 {
 	windows = new QComboBox();
 	fullscreen = new QCheckBox(

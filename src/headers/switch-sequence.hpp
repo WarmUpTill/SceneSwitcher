@@ -22,27 +22,15 @@ struct SceneSequenceSwitch : SceneSwitcherEntry {
 	bool initialized();
 	bool valid();
 	void logSleep(int dur);
-
-	inline SceneSequenceSwitch(){};
-	inline SceneSequenceSwitch(OBSWeakSource startScene_,
-				   OBSWeakSource scene_,
-				   OBSWeakSource transition_, double delay_,
-				   int delayMultiplier_, bool interruptible_,
-				   bool usePreviousScene_)
-		: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
-		  startScene(startScene_),
-		  delay(delay_),
-		  delayMultiplier(delayMultiplier_),
-		  interruptible(interruptible_)
-	{
-	}
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 };
 
 class SequenceWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	SequenceWidget(SceneSequenceSwitch *s);
+	SequenceWidget(QWidget *parent, SceneSequenceSwitch *s);
 	SceneSequenceSwitch *getSwitchData();
 	void setSwitchData(SceneSequenceSwitch *s);
 

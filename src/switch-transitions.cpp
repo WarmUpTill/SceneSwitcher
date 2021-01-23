@@ -8,9 +8,9 @@ void AdvSceneSwitcher::on_transitionsAdd_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->sceneTransitions.emplace_back();
 
-	listAddClicked(
-		ui->sceneTransitions,
-		new TransitionSwitchWidget(&switcher->sceneTransitions.back()));
+	listAddClicked(ui->sceneTransitions,
+		       new TransitionSwitchWidget(
+			       this, &switcher->sceneTransitions.back()));
 }
 
 void AdvSceneSwitcher::on_transitionsRemove_clicked()
@@ -77,6 +77,7 @@ void AdvSceneSwitcher::on_defaultTransitionsAdd_clicked()
 
 	listAddClicked(ui->defaultTransitions,
 		       new DefTransitionSwitchWidget(
+			       this,
 			       &switcher->defaultSceneTransitions.back()));
 }
 
@@ -377,7 +378,8 @@ void AdvSceneSwitcher::setupTransitionsTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->sceneTransitions);
 		ui->sceneTransitions->addItem(item);
-		TransitionSwitchWidget *sw = new TransitionSwitchWidget(&s);
+		TransitionSwitchWidget *sw =
+			new TransitionSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->sceneTransitions->setItemWidget(item, sw);
 	}
@@ -387,7 +389,7 @@ void AdvSceneSwitcher::setupTransitionsTab()
 		item = new QListWidgetItem(ui->defaultTransitions);
 		ui->defaultTransitions->addItem(item);
 		DefTransitionSwitchWidget *sw =
-			new DefTransitionSwitchWidget(&s);
+			new DefTransitionSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->defaultTransitions->setItemWidget(item, sw);
 	}
@@ -407,8 +409,9 @@ bool SceneTransition::valid()
 	       (SceneSwitcherEntry::valid() && WeakSourceValid(scene2));
 }
 
-TransitionSwitchWidget::TransitionSwitchWidget(SceneTransition *s)
-	: SwitchWidget(s, false)
+TransitionSwitchWidget::TransitionSwitchWidget(QWidget *parent,
+					       SceneTransition *s)
+	: SwitchWidget(parent, s, false)
 {
 	scenes2 = new QComboBox();
 
@@ -463,8 +466,9 @@ void TransitionSwitchWidget::Scene2Changed(const QString &text)
 	switchData->scene2 = GetWeakSourceByQString(text);
 }
 
-DefTransitionSwitchWidget::DefTransitionSwitchWidget(DefaultSceneTransition *s)
-	: SwitchWidget(s, false)
+DefTransitionSwitchWidget::DefTransitionSwitchWidget(QWidget *parent,
+						     DefaultSceneTransition *s)
+	: SwitchWidget(parent, s, false)
 {
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {

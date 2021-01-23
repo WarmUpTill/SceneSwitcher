@@ -12,25 +12,15 @@ struct WindowSwitch : SceneSwitcherEntry {
 	bool focus = true;
 
 	const char *getType() { return "window"; }
-
-	inline WindowSwitch() {}
-	inline WindowSwitch(OBSWeakSource scene_, const char *window_,
-			    OBSWeakSource transition_, bool fullscreen_,
-			    bool maximized_, bool focus_)
-		: SceneSwitcherEntry(scene_, transition_),
-		  window(window_),
-		  fullscreen(fullscreen_),
-		  maximized(maximized_),
-		  focus(focus_)
-	{
-	}
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 };
 
 class WindowSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	WindowSwitchWidget(WindowSwitch *s);
+	WindowSwitchWidget(QWidget *parent, WindowSwitch *s);
 	WindowSwitch *getSwitchData();
 	void setSwitchData(WindowSwitch *s);
 

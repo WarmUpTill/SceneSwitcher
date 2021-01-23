@@ -39,6 +39,7 @@ public:
 	void UpdateAutoStartScene(const QString &name);
 	void UpdateIdleDataTransition(const QString &name);
 	void UpdateIdleDataScene(const QString &name);
+	void SetEditSceneGroup(SceneGroup &sg);
 
 	void loadUI();
 	void setupGeneralTab();
@@ -54,13 +55,17 @@ public:
 	void setupFileTab();
 	void setupTimeTab();
 	void setupAudioTab();
+	void setupSceneGroupTab();
 	void setTabOrder();
 
 	static bool DisplayMessage(QString msg, bool question = false);
 	static void AskBackup(obs_data_t *obj);
+
 	static void populateSceneSelection(QComboBox *sel,
 					   bool addPrevious = false,
+					   bool addSceneGroup = false,
 					   bool addSelect = true);
+
 	static void populateTransitionSelection(QComboBox *sel,
 						bool addSelect = true);
 	static void populateWindowSelection(QComboBox *sel,
@@ -80,6 +85,11 @@ public:
 			    QMetaObject::Connection *addHighlight = nullptr);
 	bool listMoveUp(QListWidget *list);
 	bool listMoveDown(QListWidget *list);
+
+signals:
+	void SceneGroupAdded(const QString &name);
+	void SceneGroupRemoved(const QString &name);
+	void SceneGroupRenamed(const QString &oldName, const QString newName);
 
 public slots:
 	void on_windowUp_clicked();
@@ -188,6 +198,18 @@ public slots:
 	void on_audioUp_clicked();
 	void on_audioDown_clicked();
 	void on_audioFallback_toggled(bool on);
+
+	void on_sceneGroupAdd_clicked();
+	void on_sceneGroupRemove_clicked();
+	void on_sceneGroupUp_clicked();
+	void on_sceneGroupDown_clicked();
+	void on_sceneGroupName_editingFinished();
+	void on_sceneGroups_currentRowChanged(int idx);
+
+	void on_sceneGroupSceneAdd_clicked();
+	void on_sceneGroupSceneRemove_clicked();
+	void on_sceneGroupSceneUp_clicked();
+	void on_sceneGroupSceneDown_clicked();
 
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();

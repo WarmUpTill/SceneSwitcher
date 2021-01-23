@@ -34,6 +34,8 @@ struct MediaSwitch : SceneSwitcherEntry {
 	const char *getType() { return "media"; }
 	bool initialized();
 	bool valid();
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 
 	void clearSignalHandler();
 	void resetSignalHandler();
@@ -41,10 +43,7 @@ struct MediaSwitch : SceneSwitcherEntry {
 	static void MediaEnded(void *data, calldata_t *);
 
 	inline MediaSwitch(){};
-	inline MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
-			   OBSWeakSource transition_, obs_media_state state_,
-			   time_restriction restriction_, uint64_t time_,
-			   bool usePreviousScene_);
+
 	MediaSwitch(const MediaSwitch &other);
 	MediaSwitch(MediaSwitch &&other);
 	~MediaSwitch();
@@ -57,7 +56,7 @@ class MediaSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	MediaSwitchWidget(MediaSwitch *s);
+	MediaSwitchWidget(QWidget *parent, MediaSwitch *s);
 	MediaSwitch *getSwitchData();
 	void setSwitchData(MediaSwitch *s);
 

@@ -44,7 +44,7 @@ class PauseEntryWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	PauseEntryWidget(PauseEntry *s);
+	PauseEntryWidget(QWidget *parent, PauseEntry *s);
 	PauseEntry *getSwitchData();
 	void setSwitchData(PauseEntry *s);
 

@@ -245,7 +245,7 @@ void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 		}
 
 		if (equal) {
-			scene = s.scene;
+			scene = s.getScene();
 			transition = s.transition;
 			match = true;
 
@@ -262,7 +262,8 @@ void AdvSceneSwitcher::on_fileAdd_clicked()
 	switcher->fileSwitches.emplace_back();
 
 	listAddClicked(ui->fileSwitches,
-		       new FileSwitchWidget(&switcher->fileSwitches.back()),
+		       new FileSwitchWidget(this,
+					    &switcher->fileSwitches.back()),
 		       ui->fileAdd, &addPulse);
 }
 
@@ -343,28 +344,9 @@ void SwitcherData::saveFileSwitches(obs_data_t *obj)
 	for (FileSwitch &s : switcher->fileSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source = obs_weak_source_get_source(s.scene);
-		obs_source_t *transition =
-			obs_weak_source_get_source(s.transition);
+		s.save(array_obj);
+		obs_data_array_push_back(fileArray, array_obj);
 
-		if (source && transition) {
-			const char *sceneName = obs_source_get_name(source);
-			const char *transitionName =
-				obs_source_get_name(transition);
-			obs_data_set_string(array_obj, "scene", sceneName);
-			obs_data_set_string(array_obj, "transition",
-					    transitionName);
-			obs_data_set_string(array_obj, "file", s.file.c_str());
-			obs_data_set_string(array_obj, "text", s.text.c_str());
-			obs_data_set_bool(array_obj, "remote", s.remote);
-			obs_data_set_bool(array_obj, "useRegex", s.useRegex);
-			obs_data_set_bool(array_obj, "useTime", s.useTime);
-			obs_data_set_bool(array_obj, "onlyMatchIfChanged",
-					  s.onlyMatchIfChanged);
-			obs_data_array_push_back(fileArray, array_obj);
-		}
-		obs_source_release(source);
-		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "fileSwitches", fileArray);
@@ -386,21 +368,8 @@ void SwitcherData::loadFileSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(fileArray, i);
 
-		const char *scene = obs_data_get_string(array_obj, "scene");
-		const char *transition =
-			obs_data_get_string(array_obj, "transition");
-		const char *file = obs_data_get_string(array_obj, "file");
-		const char *text = obs_data_get_string(array_obj, "text");
-		bool remote = obs_data_get_bool(array_obj, "remote");
-		bool useRegex = obs_data_get_bool(array_obj, "useRegex");
-		bool useTime = obs_data_get_bool(array_obj, "useTime");
-		bool onlyMatchIfChanged =
-			obs_data_get_bool(array_obj, "onlyMatchIfChanged");
-
-		switcher->fileSwitches.emplace_back(
-			GetWeakSourceByName(scene),
-			GetWeakTransitionByName(transition), file, text, remote,
-			useRegex, useTime, onlyMatchIfChanged);
+		switcher->fileSwitches.emplace_back();
+		fileSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
 	}
@@ -429,7 +398,7 @@ void AdvSceneSwitcher::setupFileTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->fileSwitches);
 		ui->fileSwitches->addItem(item);
-		FileSwitchWidget *sw = new FileSwitchWidget(&s);
+		FileSwitchWidget *sw = new FileSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->fileSwitches->setItemWidget(item, sw);
 	}
@@ -452,7 +421,62 @@ void AdvSceneSwitcher::setupFileTab()
 	}
 }
 
-FileSwitchWidget::FileSwitchWidget(FileSwitch *s) : SwitchWidget(s, false)
+void FileSwitch::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj);
+
+	obs_data_set_string(obj, "file", file.c_str());
+	obs_data_set_string(obj, "text", text.c_str());
+	obs_data_set_bool(obj, "remote", remote);
+	obs_data_set_bool(obj, "useRegex", useRegex);
+	obs_data_set_bool(obj, "useTime", useTime);
+	obs_data_set_bool(obj, "onlyMatchIfChanged", onlyMatchIfChanged);
+}
+
+// To be removed in future version
+bool loadOldFile(obs_data_t *obj, FileSwitch *s)
+{
+	if (!s)
+		return false;
+
+	const char *scene = obs_data_get_string(obj, "scene");
+
+	if (strcmp(scene, "") == 0)
+		return false;
+
+	s->scene = GetWeakSourceByName(scene);
+
+	const char *transition = obs_data_get_string(obj, "transition");
+	s->transition = GetWeakTransitionByName(transition);
+
+	s->file = obs_data_get_string(obj, "file");
+	s->text = obs_data_get_string(obj, "text");
+	s->remote = obs_data_get_bool(obj, "remote");
+	s->useRegex = obs_data_get_bool(obj, "useRegex");
+	s->useTime = obs_data_get_bool(obj, "useTime");
+	s->onlyMatchIfChanged = obs_data_get_bool(obj, "onlyMatchIfChanged");
+	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
+
+	return true;
+}
+
+void FileSwitch::load(obs_data_t *obj)
+{
+	if (loadOldFile(obj, this))
+		return;
+
+	SceneSwitcherEntry::load(obj);
+
+	file = obs_data_get_string(obj, "file");
+	text = obs_data_get_string(obj, "text");
+	remote = obs_data_get_bool(obj, "remote");
+	useRegex = obs_data_get_bool(obj, "useRegex");
+	useTime = obs_data_get_bool(obj, "useTime");
+	onlyMatchIfChanged = obs_data_get_bool(obj, "onlyMatchIfChanged");
+}
+
+FileSwitchWidget::FileSwitchWidget(QWidget *parent, FileSwitch *s)
+	: SwitchWidget(parent, s, false, true)
 {
 	fileType = new QComboBox();
 	filePath = new QLineEdit();

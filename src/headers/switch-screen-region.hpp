@@ -10,25 +10,15 @@ struct ScreenRegionSwitch : SceneSwitcherEntry {
 	int minX = 0, minY = 0, maxX = 0, maxY = 0;
 
 	const char *getType() { return "region"; }
-
-	inline ScreenRegionSwitch(){};
-	inline ScreenRegionSwitch(OBSWeakSource scene_,
-				  OBSWeakSource transition_, int minX_,
-				  int minY_, int maxX_, int maxY_)
-		: SceneSwitcherEntry(scene_, transition_),
-		  minX(minX_),
-		  minY(minY_),
-		  maxX(maxX_),
-		  maxY(maxY_)
-	{
-	}
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 };
 
 class ScreenRegionWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	ScreenRegionWidget(ScreenRegionSwitch *s);
+	ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s);
 	ScreenRegionSwitch *getSwitchData();
 	void setSwitchData(ScreenRegionSwitch *s);
 

@@ -25,6 +25,8 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	const char *getType() { return "audio"; }
 	bool initialized();
 	bool valid();
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 	static void setVolumeLevel(void *data,
 				   const float magnitude[MAX_AUDIO_CHANNELS],
 				   const float peak[MAX_AUDIO_CHANNELS],
@@ -32,10 +34,6 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	void resetVolmeter();
 
 	AudioSwitch(){};
-	AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-		    OBSWeakSource audioSource_, int volumeThreshold_,
-		    audioCondition condition_, double duration_,
-		    bool usePreviousScene_);
 	AudioSwitch(const AudioSwitch &other);
 	AudioSwitch(AudioSwitch &&other);
 	~AudioSwitch();
@@ -46,6 +44,9 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 
 struct AudioSwitchFallback : virtual SceneSwitcherEntry {
 	const char *getType() { return "audio_fallback"; }
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
+
 	bool enable = false;
 	double duration = 0;
 	unsigned int matchCount = 0;
@@ -55,7 +56,7 @@ class AudioSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	AudioSwitchWidget(AudioSwitch *s);
+	AudioSwitchWidget(QWidget *parent, AudioSwitch *s);
 	void UpdateVolmeterSource();
 	AudioSwitch *getSwitchData();
 	void setSwitchData(AudioSwitch *s);
@@ -83,7 +84,7 @@ class AudioSwitchFallbackWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	AudioSwitchFallbackWidget(AudioSwitchFallback *s);
+	AudioSwitchFallbackWidget(QWidget *parent, AudioSwitchFallback *s);
 
 private slots:
 	void DurationChanged(double dur);

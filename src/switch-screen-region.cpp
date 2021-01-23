@@ -67,10 +67,10 @@ void AdvSceneSwitcher::on_screenRegionAdd_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->screenRegionSwitches.emplace_back();
 
-	listAddClicked(
-		ui->screenRegionSwitches,
-		new ScreenRegionWidget(&switcher->screenRegionSwitches.back()),
-		ui->screenRegionAdd, &addPulse);
+	listAddClicked(ui->screenRegionSwitches,
+		       new ScreenRegionWidget(
+			       this, &switcher->screenRegionSwitches.back()),
+		       ui->screenRegionAdd, &addPulse);
 }
 
 void AdvSceneSwitcher::on_screenRegionRemove_clicked()
@@ -148,7 +148,7 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 			int regionSize = (s.maxX - s.minX) + (s.maxY - s.minY);
 			if (regionSize < minRegionSize) {
 				match = true;
-				scene = s.scene;
+				scene = s.getScene();
 				transition = s.transition;
 				minRegionSize = regionSize;
 
@@ -173,25 +173,9 @@ void SwitcherData::saveScreenRegionSwitches(obs_data_t *obj)
 	for (ScreenRegionSwitch &s : switcher->screenRegionSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source = obs_weak_source_get_source(s.scene);
-		obs_source_t *transition =
-			obs_weak_source_get_source(s.transition);
-		if (source && transition) {
-			const char *sceneName = obs_source_get_name(source);
-			const char *transitionName =
-				obs_source_get_name(transition);
-			obs_data_set_string(array_obj, "screenRegionScene",
-					    sceneName);
-			obs_data_set_string(array_obj, "transition",
-					    transitionName);
-			obs_data_set_int(array_obj, "minX", s.minX);
-			obs_data_set_int(array_obj, "minY", s.minY);
-			obs_data_set_int(array_obj, "maxX", s.maxX);
-			obs_data_set_int(array_obj, "maxY", s.maxY);
-			obs_data_array_push_back(screenRegionArray, array_obj);
-		}
-		obs_source_release(source);
-		obs_source_release(transition);
+		s.save(array_obj);
+		obs_data_array_push_back(screenRegionArray, array_obj);
+
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "screenRegion", screenRegionArray);
@@ -210,19 +194,8 @@ void SwitcherData::loadScreenRegionSwitches(obs_data_t *obj)
 		obs_data_t *array_obj =
 			obs_data_array_item(screenRegionArray, i);
 
-		const char *scene =
-			obs_data_get_string(array_obj, "screenRegionScene");
-		const char *transition =
-			obs_data_get_string(array_obj, "transition");
-		int minX = obs_data_get_int(array_obj, "minX");
-		int minY = obs_data_get_int(array_obj, "minY");
-		int maxX = obs_data_get_int(array_obj, "maxX");
-		int maxY = obs_data_get_int(array_obj, "maxY");
-
-		switcher->screenRegionSwitches.emplace_back(
-			GetWeakSourceByName(scene),
-			GetWeakTransitionByName(transition), minX, minY, maxX,
-			maxY);
+		switcher->screenRegionSwitches.emplace_back();
+		screenRegionSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
 	}
@@ -235,7 +208,7 @@ void AdvSceneSwitcher::setupRegionTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->screenRegionSwitches);
 		ui->screenRegionSwitches->addItem(item);
-		ScreenRegionWidget *sw = new ScreenRegionWidget(&s);
+		ScreenRegionWidget *sw = new ScreenRegionWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->screenRegionSwitches->setItemWidget(item, sw);
 	}
@@ -250,8 +223,57 @@ void AdvSceneSwitcher::setupRegionTab()
 	screenRegionTimer->start(1000);
 }
 
-ScreenRegionWidget::ScreenRegionWidget(ScreenRegionSwitch *s)
-	: SwitchWidget(s, false)
+void ScreenRegionSwitch::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj);
+
+	obs_data_set_int(obj, "minX", minX);
+	obs_data_set_int(obj, "minY", minY);
+	obs_data_set_int(obj, "maxX", maxX);
+	obs_data_set_int(obj, "maxY", maxY);
+}
+
+// To be removed in future version
+bool loadOldRegion(obs_data_t *obj, ScreenRegionSwitch *s)
+{
+	if (!s)
+		return false;
+
+	const char *scene = obs_data_get_string(obj, "screenRegionScene");
+
+	if (strcmp(scene, "") == 0)
+		return false;
+
+	s->scene = GetWeakSourceByName(scene);
+
+	const char *transition = obs_data_get_string(obj, "transition");
+	s->transition = GetWeakTransitionByName(transition);
+
+	s->minX = obs_data_get_int(obj, "minX");
+	s->minY = obs_data_get_int(obj, "minY");
+	s->maxX = obs_data_get_int(obj, "maxX");
+	s->maxY = obs_data_get_int(obj, "maxY");
+
+	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
+
+	return true;
+}
+
+void ScreenRegionSwitch::load(obs_data_t *obj)
+{
+	if (loadOldRegion(obj, this))
+		return;
+
+	SceneSwitcherEntry::load(obj);
+
+	minX = obs_data_get_int(obj, "minX");
+	minY = obs_data_get_int(obj, "minY");
+	maxX = obs_data_get_int(obj, "maxX");
+	maxY = obs_data_get_int(obj, "maxY");
+}
+
+ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
+	: SwitchWidget(parent, s, false, true)
 {
 	minX = new QSpinBox();
 	minY = new QSpinBox();

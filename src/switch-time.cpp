@@ -10,7 +10,8 @@ void AdvSceneSwitcher::on_timeAdd_clicked()
 	switcher->timeSwitches.emplace_back();
 
 	listAddClicked(ui->timeSwitches,
-		       new TimeSwitchWidget(&switcher->timeSwitches.back()),
+		       new TimeSwitchWidget(this,
+					    &switcher->timeSwitches.back()),
 		       ui->timeAdd, &addPulse);
 }
 
@@ -121,7 +122,7 @@ void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
 			match = checkRegularTime(s, interval);
 
 		if (match) {
-			scene = (s.usePreviousScene) ? previousScene : s.scene;
+			scene = s.getScene();
 			transition = s.transition;
 			match = true;
 
@@ -138,28 +139,8 @@ void SwitcherData::saveTimeSwitches(obs_data_t *obj)
 	for (TimeSwitch &s : switcher->timeSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *sceneSource = obs_weak_source_get_source(s.scene);
-		obs_source_t *transition =
-			obs_weak_source_get_source(s.transition);
-		if ((s.usePreviousScene || sceneSource) && transition) {
-			const char *sceneName =
-				obs_source_get_name(sceneSource);
-			const char *transitionName =
-				obs_source_get_name(transition);
-			obs_data_set_string(array_obj, "scene",
-					    s.usePreviousScene
-						    ? previous_scene_name
-						    : sceneName);
-			obs_data_set_string(array_obj, "transition",
-					    transitionName);
-			obs_data_set_int(array_obj, "trigger", s.trigger);
-			obs_data_set_string(
-				array_obj, "time",
-				s.time.toString().toStdString().c_str());
-			obs_data_array_push_back(timeArray, array_obj);
-		}
-		obs_source_release(sceneSource);
-		obs_source_release(transition);
+		s.save(array_obj);
+		obs_data_array_push_back(timeArray, array_obj);
 
 		obs_data_release(array_obj);
 	}
@@ -177,18 +158,8 @@ void SwitcherData::loadTimeSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(timeArray, i);
 
-		const char *scene = obs_data_get_string(array_obj, "scene");
-		const char *transition =
-			obs_data_get_string(array_obj, "transition");
-		timeTrigger trigger =
-			(timeTrigger)obs_data_get_int(array_obj, "trigger");
-		QTime time = QTime::fromString(
-			obs_data_get_string(array_obj, "time"));
-
-		switcher->timeSwitches.emplace_back(
-			GetWeakSourceByName(scene),
-			GetWeakTransitionByName(transition), trigger, time,
-			(strcmp(scene, previous_scene_name) == 0));
+		switcher->timeSwitches.emplace_back();
+		timeSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
 	}
@@ -201,13 +172,55 @@ void AdvSceneSwitcher::setupTimeTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->timeSwitches);
 		ui->timeSwitches->addItem(item);
-		TimeSwitchWidget *sw = new TimeSwitchWidget(&s);
+		TimeSwitchWidget *sw = new TimeSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->timeSwitches->setItemWidget(item, sw);
 	}
 
 	if (switcher->timeSwitches.size() == 0)
 		addPulse = PulseWidget(ui->timeAdd, QColor(Qt::green));
+}
+
+void TimeSwitch::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj);
+
+	obs_data_set_int(obj, "trigger", trigger);
+	obs_data_set_string(obj, "time", time.toString().toStdString().c_str());
+}
+
+// To be removed in future version
+bool loadOldTime(obs_data_t *obj, TimeSwitch *s)
+{
+	if (!s)
+		return false;
+
+	const char *scene = obs_data_get_string(obj, "scene");
+
+	if (strcmp(scene, "") == 0)
+		return false;
+
+	s->scene = GetWeakSourceByName(scene);
+
+	const char *transition = obs_data_get_string(obj, "transition");
+	s->transition = GetWeakTransitionByName(transition);
+
+	s->trigger = (timeTrigger)obs_data_get_int(obj, "trigger");
+	s->time = QTime::fromString(obs_data_get_string(obj, "time"));
+	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
+
+	return true;
+}
+
+void TimeSwitch::load(obs_data_t *obj)
+{
+	if (loadOldTime(obj, this))
+		return;
+
+	SceneSwitcherEntry::load(obj);
+
+	trigger = (timeTrigger)obs_data_get_int(obj, "trigger");
+	time = QTime::fromString(obs_data_get_string(obj, "time"));
 }
 
 void populateTriggers(QComboBox *list)
@@ -227,7 +240,8 @@ void populateTriggers(QComboBox *list)
 		Qt::ToolTipRole);
 }
 
-TimeSwitchWidget::TimeSwitchWidget(TimeSwitch *s) : SwitchWidget(s)
+TimeSwitchWidget::TimeSwitchWidget(QWidget *parent, TimeSwitch *s)
+	: SwitchWidget(parent, s, true, true)
 {
 	triggers = new QComboBox();
 	time = new QTimeEdit();

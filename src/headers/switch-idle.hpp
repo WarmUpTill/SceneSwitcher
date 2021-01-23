@@ -12,4 +12,6 @@ struct IdleData : SceneSwitcherEntry {
 	bool alreadySwitched = false;
 
 	const char *getType() { return "idle"; }
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 };

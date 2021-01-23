@@ -11,7 +11,7 @@ void AdvSceneSwitcher::on_executableAdd_clicked()
 
 	listAddClicked(ui->executables,
 		       new ExecutableSwitchWidget(
-			       &switcher->executableSwitches.back()),
+			       this, &switcher->executableSwitches.back()),
 		       ui->executableAdd, &addPulse);
 }
 
@@ -120,7 +120,7 @@ void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 
 		if ((equals || matches) && (focus || ignore)) {
 			match = true;
-			scene = s.scene;
+			scene = s.getScene();
 			transition = s.transition;
 
 			if (verbose)
@@ -136,24 +136,9 @@ void SwitcherData::saveExecutableSwitches(obs_data_t *obj)
 	for (ExecutableSwitch &s : switcher->executableSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source = obs_weak_source_get_source(s.scene);
-		obs_source_t *transition =
-			obs_weak_source_get_source(s.transition);
+		s.save(array_obj);
+		obs_data_array_push_back(executableArray, array_obj);
 
-		if (source && transition) {
-			const char *sceneName = obs_source_get_name(source);
-			const char *transitionName =
-				obs_source_get_name(transition);
-			obs_data_set_string(array_obj, "scene", sceneName);
-			obs_data_set_string(array_obj, "transition",
-					    transitionName);
-			obs_data_set_string(array_obj, "exefile",
-					    s.exe.toUtf8());
-			obs_data_set_bool(array_obj, "infocus", s.inFocus);
-			obs_data_array_push_back(executableArray, array_obj);
-		}
-		obs_source_release(source);
-		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "executableSwitches", executableArray);
@@ -171,15 +156,8 @@ void SwitcherData::loadExecutableSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(executableArray, i);
 
-		const char *scene = obs_data_get_string(array_obj, "scene");
-		const char *transition =
-			obs_data_get_string(array_obj, "transition");
-		const char *exe = obs_data_get_string(array_obj, "exefile");
-		bool infocus = obs_data_get_bool(array_obj, "infocus");
-
-		switcher->executableSwitches.emplace_back(
-			GetWeakSourceByName(scene),
-			GetWeakTransitionByName(transition), exe, infocus);
+		switcher->executableSwitches.emplace_back();
+		executableSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
 	}
@@ -192,7 +170,8 @@ void AdvSceneSwitcher::setupExecutableTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->executables);
 		ui->executables->addItem(item);
-		ExecutableSwitchWidget *sw = new ExecutableSwitchWidget(&s);
+		ExecutableSwitchWidget *sw =
+			new ExecutableSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->executables->setItemWidget(item, sw);
 	}
@@ -201,8 +180,51 @@ void AdvSceneSwitcher::setupExecutableTab()
 		addPulse = PulseWidget(ui->executableAdd, QColor(Qt::green));
 }
 
-ExecutableSwitchWidget::ExecutableSwitchWidget(ExecutableSwitch *s)
-	: SwitchWidget(s, false)
+void ExecutableSwitch::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj);
+
+	obs_data_set_string(obj, "exefile", exe.toUtf8());
+	obs_data_set_bool(obj, "infocus", inFocus);
+}
+
+// To be removed in future version
+bool loadOldExe(obs_data_t *obj, ExecutableSwitch *s)
+{
+	if (!s)
+		return false;
+
+	const char *scene = obs_data_get_string(obj, "scene");
+
+	if (strcmp(scene, "") == 0)
+		return false;
+
+	s->scene = GetWeakSourceByName(scene);
+
+	const char *transition = obs_data_get_string(obj, "transition");
+	s->transition = GetWeakTransitionByName(transition);
+
+	s->exe = obs_data_get_string(obj, "exefile");
+	s->inFocus = obs_data_get_bool(obj, "infocus");
+	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
+
+	return true;
+}
+
+void ExecutableSwitch::load(obs_data_t *obj)
+{
+	if (loadOldExe(obj, this))
+		return;
+
+	SceneSwitcherEntry::load(obj);
+
+	exe = obs_data_get_string(obj, "exefile");
+	inFocus = obs_data_get_bool(obj, "infocus");
+}
+
+ExecutableSwitchWidget::ExecutableSwitchWidget(QWidget *parent,
+					       ExecutableSwitch *s)
+	: SwitchWidget(parent, s, false, true)
 {
 	processes = new QComboBox();
 	requiresFocus = new QCheckBox(obs_module_text(

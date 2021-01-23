@@ -11,7 +11,8 @@ void AdvSceneSwitcher::on_pauseAdd_clicked()
 	switcher->pauseEntries.emplace_back();
 
 	listAddClicked(ui->pauseEntries,
-		       new PauseEntryWidget(&switcher->pauseEntries.back()),
+		       new PauseEntryWidget(this,
+					    &switcher->pauseEntries.back()),
 		       ui->pauseAdd, &addPulse);
 }
 
@@ -307,7 +308,7 @@ void AdvSceneSwitcher::setupPauseTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->pauseEntries);
 		ui->pauseEntries->addItem(item);
-		PauseEntryWidget *sw = new PauseEntryWidget(&s);
+		PauseEntryWidget *sw = new PauseEntryWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->pauseEntries->setItemWidget(item, sw);
 	}
@@ -343,7 +344,8 @@ void populatePauseTargets(QComboBox *list)
 	list->addItem(obs_module_text("AdvSceneSwitcher.audioTab.title"));
 }
 
-PauseEntryWidget::PauseEntryWidget(PauseEntry *s) : SwitchWidget(s, false)
+PauseEntryWidget::PauseEntryWidget(QWidget *parent, PauseEntry *s)
+	: SwitchWidget(parent, s, false, false)
 {
 	pauseTypes = new QComboBox();
 	pauseTargets = new QComboBox();
