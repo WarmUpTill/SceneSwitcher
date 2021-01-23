@@ -205,9 +205,7 @@ bool loadOldExe(obs_data_t *obj, ExecutableSwitch *s)
 	s->transition = GetWeakTransitionByName(transition);
 
 	s->exe = obs_data_get_string(obj, "exefile");
-
 	s->inFocus = obs_data_get_bool(obj, "infocus");
-
 	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
 
 	return true;
@@ -221,7 +219,6 @@ void ExecutableSwitch::load(obs_data_t *obj)
 	SceneSwitcherEntry::load(obj);
 
 	exe = obs_data_get_string(obj, "exefile");
-
 	inFocus = obs_data_get_bool(obj, "infocus");
 }
 
