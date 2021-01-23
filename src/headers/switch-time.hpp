@@ -24,6 +24,8 @@ struct TimeSwitch : SceneSwitcherEntry {
 	QTime time = QTime(0, 0);
 
 	const char *getType() { return "time"; }
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 
 	inline TimeSwitch(){};
 	inline TimeSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
