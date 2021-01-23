@@ -10,6 +10,8 @@ struct ScreenRegionSwitch : SceneSwitcherEntry {
 	int minX = 0, minY = 0, maxX = 0, maxY = 0;
 
 	const char *getType() { return "region"; }
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 
 	inline ScreenRegionSwitch(){};
 	inline ScreenRegionSwitch(OBSWeakSource scene_,
