@@ -249,9 +249,12 @@ void SwitchWidget::SceneChanged(const QString &text)
 	if (loading || !switchData)
 		return;
 	std::lock_guard<std::mutex> lock(switcher->m);
+
 	switchData->usePreviousScene = isPreviousScene(text);
-	if (switchData->usePreviousScene)
+	if (switchData->usePreviousScene) {
+		switchData->targetType = SwitchTargetType::Scene;
 		return;
+	}
 
 	switchData->scene = GetWeakSourceByQString(text);
 	switchData->targetType = SwitchTargetType::Scene;
