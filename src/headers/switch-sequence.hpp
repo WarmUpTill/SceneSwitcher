@@ -21,7 +21,6 @@ struct SceneSequenceSwitch : SceneSwitcherEntry {
 	const char *getType() { return "sequence"; }
 	bool initialized();
 	bool valid();
-	void logSleep(int dur);
 	void save(obs_data_t *obj);
 	void load(obs_data_t *obj);
 };

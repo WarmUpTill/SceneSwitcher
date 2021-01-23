@@ -162,37 +162,20 @@ bool matchInterruptible(SwitcherData *switcher, SceneSequenceSwitch &s)
 }
 
 bool matchUninterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
-			  obs_source_t *currentSource,
-			  std::unique_lock<std::mutex> &lock)
+			  obs_source_t *currentSource, int &linger)
 {
-	bool ret = false;
 	// scene was already active for the previous cycle so remove this time
 	int dur = s.delay * 1000 - switcher->interval;
 	if (dur > 0) {
 		switcher->waitScene = currentSource;
-
-		if (switcher->verbose)
-			s.logSleep(dur);
-
-		switcher->cv.wait_for(lock, std::chrono::milliseconds(dur));
-		switcher->waitScene = nullptr;
-	}
-	obs_source_t *currentSource2 = obs_frontend_get_current_scene();
-
-	// only switch if user hasn't changed scene manually
-	if (currentSource == currentSource2) {
-		ret = true;
-	} else if (switcher->verbose) {
-		blog(LOG_INFO, "sequence canceled");
+		linger = dur;
 	}
 
-	obs_source_release(currentSource2);
-	return ret;
+	return true;
 }
 
 void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
-				      OBSWeakSource &transition,
-				      std::unique_lock<std::mutex> &lock)
+				      OBSWeakSource &transition, int &linger)
 {
 	if (SceneSequenceSwitch::pause)
 		return;
@@ -211,13 +194,11 @@ void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 				} else {
 					match = matchUninterruptible(
 						switcher, s, currentSource,
-						lock);
+						linger);
 				}
 
 				if (match) {
-					scene = (s.usePreviousScene)
-							? switcher->previousScene
-							: s.getScene();
+					scene = s.getScene();
 					transition = s.transition;
 					if (switcher->verbose)
 						s.logMatch();
@@ -290,11 +271,6 @@ bool SceneSequenceSwitch::valid()
 {
 	return !initialized() ||
 	       (SceneSwitcherEntry::valid() && WeakSourceValid(startScene));
-}
-
-void SceneSequenceSwitch::logSleep(int dur)
-{
-	blog(LOG_INFO, "sequence sleep %d", dur);
 }
 
 void SceneSequenceSwitch::save(obs_data_t *obj)
