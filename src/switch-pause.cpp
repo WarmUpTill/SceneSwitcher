@@ -11,7 +11,8 @@ void AdvSceneSwitcher::on_pauseAdd_clicked()
 	switcher->pauseEntries.emplace_back();
 
 	listAddClicked(ui->pauseEntries,
-		       new PauseEntryWidget(this, &switcher->pauseEntries.back()),
+		       new PauseEntryWidget(this,
+					    &switcher->pauseEntries.back()),
 		       ui->pauseAdd, &addPulse);
 }
 
