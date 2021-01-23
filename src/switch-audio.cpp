@@ -167,91 +167,21 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 		audioFallback.matchCount = 0;
 }
 
-void saveAudioFallback(obs_data_t *obj, AudioSwitchFallback &audioFallback)
-{
-	obs_source_t *fallbackSceneSource =
-		obs_weak_source_get_source(audioFallback.scene);
-	obs_source_t *fallbackTransition =
-		obs_weak_source_get_source(audioFallback.transition);
-
-	const char *fallbackSceneName =
-		obs_source_get_name(fallbackSceneSource);
-	const char *fallbackTransitionName =
-		obs_source_get_name(fallbackTransition);
-
-	obs_data_set_bool(obj, "audioFallbackEnable", audioFallback.enable);
-	obs_data_set_string(obj, "audioFallbackScene",
-			    audioFallback.usePreviousScene ? previous_scene_name
-							   : fallbackSceneName);
-	obs_data_set_string(obj, "audioFallbackTransition",
-			    fallbackTransitionName);
-	obs_data_set_double(obj, "audioFallbackDuration",
-			    audioFallback.duration);
-
-	obs_source_release(fallbackSceneSource);
-	obs_source_release(fallbackTransition);
-}
-
 void SwitcherData::saveAudioSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *audioArray = obs_data_array_create();
 	for (AudioSwitch &s : switcher->audioSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *sceneSource = obs_weak_source_get_source(s.scene);
-		obs_source_t *transition =
-			obs_weak_source_get_source(s.transition);
-		obs_source_t *audioSrouce =
-			obs_weak_source_get_source(s.audioSource);
-		if ((s.usePreviousScene || sceneSource) && transition &&
-		    audioSrouce) {
-			const char *sceneName =
-				obs_source_get_name(sceneSource);
-			const char *transitionName =
-				obs_source_get_name(transition);
-			const char *audioSourceName =
-				obs_source_get_name(audioSrouce);
-			obs_data_set_string(array_obj, "scene",
-					    s.usePreviousScene
-						    ? previous_scene_name
-						    : sceneName);
-			obs_data_set_string(array_obj, "transition",
-					    transitionName);
-			obs_data_set_string(array_obj, "audioSource",
-					    audioSourceName);
-			obs_data_set_int(array_obj, "volume",
-					 s.volumeThreshold);
-			obs_data_set_int(array_obj, "condition", s.condition);
-			obs_data_set_double(array_obj, "duration", s.duration);
-			obs_data_array_push_back(audioArray, array_obj);
-		}
-		obs_source_release(sceneSource);
-		obs_source_release(transition);
-		obs_source_release(audioSrouce);
+		s.save(array_obj);
+		obs_data_array_push_back(audioArray, array_obj);
 
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "audioSwitches", audioArray);
 	obs_data_array_release(audioArray);
 
-	saveAudioFallback(obj, audioFallback);
-}
-
-void loadAudioFallback(obs_data_t *obj, AudioSwitchFallback &audioFallback)
-{
-	const char *fallbackSceneName =
-		obs_data_get_string(obj, "audioFallbackScene");
-	const char *fallbackTransitionName =
-		obs_data_get_string(obj, "audioFallbackTransition");
-
-	audioFallback.enable = obs_data_get_bool(obj, "audioFallbackEnable");
-	audioFallback.duration =
-		obs_data_get_double(obj, "audioFallbackDuration");
-	audioFallback.scene = GetWeakSourceByName(fallbackSceneName);
-	audioFallback.transition =
-		GetWeakTransitionByName(fallbackTransitionName);
-	audioFallback.usePreviousScene =
-		strcmp(fallbackSceneName, previous_scene_name) == 0;
+	audioFallback.save(obj);
 }
 
 void SwitcherData::loadAudioSwitches(obs_data_t *obj)
@@ -264,27 +194,14 @@ void SwitcherData::loadAudioSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(audioArray, i);
 
-		const char *scene = obs_data_get_string(array_obj, "scene");
-		const char *transition =
-			obs_data_get_string(array_obj, "transition");
-		const char *audioSource =
-			obs_data_get_string(array_obj, "audioSource");
-		int vol = obs_data_get_int(array_obj, "volume");
-		audioCondition condition = (audioCondition)obs_data_get_int(
-			array_obj, "condition");
-		double duration = obs_data_get_double(array_obj, "duration");
-
-		switcher->audioSwitches.emplace_back(
-			GetWeakSourceByName(scene),
-			GetWeakTransitionByName(transition),
-			GetWeakSourceByName(audioSource), vol, condition,
-			duration, (strcmp(scene, previous_scene_name) == 0));
+		switcher->audioSwitches.emplace_back();
+		audioSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(audioArray);
 
-	loadAudioFallback(obj, audioFallback);
+	audioFallback.load(obj);
 }
 
 void AdvSceneSwitcher::setupAudioTab()
@@ -353,6 +270,89 @@ bool AudioSwitch::valid()
 {
 	return !initialized() ||
 	       (SceneSwitcherEntry::valid() && WeakSourceValid(audioSource));
+}
+
+void AudioSwitch::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj);
+
+	obs_source_t *source = obs_weak_source_get_source(audioSource);
+	const char *audioSourceName = obs_source_get_name(source);
+	obs_data_set_string(obj, "audioSource", audioSourceName);
+	obs_source_release(source);
+
+	obs_data_set_int(obj, "volume", volumeThreshold);
+
+	obs_data_set_int(obj, "condition", condition);
+
+	obs_data_set_double(obj, "duration", duration);
+}
+
+// To be removed in future version
+bool loadOldAudio(obs_data_t *obj, AudioSwitch *s)
+{
+	if (!s)
+		return false;
+
+	const char *scene = obs_data_get_string(obj, "scene");
+
+	if (strcmp(scene, "") == 0)
+		return false;
+
+	s->scene = GetWeakSourceByName(scene);
+
+	const char *transition = obs_data_get_string(obj, "transition");
+	s->transition = GetWeakTransitionByName(transition);
+
+	const char *audioSource = obs_data_get_string(obj, "audioSource");
+	s->audioSource = GetWeakSourceByName(audioSource);
+
+	s->volumeThreshold = obs_data_get_int(obj, "volume");
+
+	s->condition = (audioCondition)obs_data_get_int(obj, "condition");
+
+	s->duration = obs_data_get_double(obj, "duration");
+
+	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
+
+	return true;
+}
+
+void AudioSwitch::load(obs_data_t *obj)
+{
+	if (loadOldAudio(obj, this))
+		return;
+
+	SceneSwitcherEntry::load(obj);
+
+	const char *audioSourceName = obs_data_get_string(obj, "audioSource");
+	audioSource = GetWeakSourceByName(audioSourceName);
+
+	volumeThreshold = obs_data_get_int(obj, "volume");
+	condition = (audioCondition)obs_data_get_int(obj, "condition");
+	duration = obs_data_get_double(obj, "duration");
+}
+
+void AudioSwitchFallback::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj, "audioFallbackTargetType",
+				 "audioFallbackScene",
+				 "audioFallbackTransition");
+
+	obs_data_set_bool(obj, "audioFallbackEnable", enable);
+
+	obs_data_set_double(obj, "audioFallbackDuration", duration);
+}
+
+void AudioSwitchFallback::load(obs_data_t *obj)
+{
+	SceneSwitcherEntry::load(obj, "audioFallbackTargetType",
+				 "audioFallbackScene",
+				 "audioFallbackTransition");
+
+	enable = obs_data_get_bool(obj, "audioFallbackEnable");
+
+	duration = obs_data_get_double(obj, "audioFallbackDuration");
 }
 
 AudioSwitch::AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
@@ -588,7 +588,7 @@ void AudioSwitchWidget::DurationChanged(double dur)
 
 AudioSwitchFallbackWidget::AudioSwitchFallbackWidget(QWidget *parent,
 						     AudioSwitchFallback *s)
-	: SwitchWidget(parent, s)
+	: SwitchWidget(parent, s, true, true)
 {
 	duration = new QDoubleSpinBox();
 

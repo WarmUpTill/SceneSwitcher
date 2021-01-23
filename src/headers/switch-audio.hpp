@@ -25,6 +25,8 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	const char *getType() { return "audio"; }
 	bool initialized();
 	bool valid();
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 	static void setVolumeLevel(void *data,
 				   const float magnitude[MAX_AUDIO_CHANNELS],
 				   const float peak[MAX_AUDIO_CHANNELS],
@@ -46,6 +48,9 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 
 struct AudioSwitchFallback : virtual SceneSwitcherEntry {
 	const char *getType() { return "audio_fallback"; }
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
+
 	bool enable = false;
 	double duration = 0;
 	unsigned int matchCount = 0;
