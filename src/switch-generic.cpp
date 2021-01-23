@@ -39,9 +39,11 @@ OBSWeakSource SceneSwitcherEntry::getScene()
 	return nextScene;
 }
 
-void SceneSwitcherEntry::save(obs_data_t *obj)
+void SceneSwitcherEntry::save(obs_data_t *obj, const char *targetTypeSaveName,
+			      const char *targetSaveName,
+			      const char *transitionSaveName)
 {
-	obs_data_set_int(obj, "targetType", static_cast<int>(targetType));
+	obs_data_set_int(obj, targetTypeSaveName, static_cast<int>(targetType));
 
 	const char *targetName = "";
 
@@ -58,21 +60,23 @@ void SceneSwitcherEntry::save(obs_data_t *obj)
 		targetName = group->name.c_str();
 	}
 
-	obs_data_set_string(obj, "target", targetName);
+	obs_data_set_string(obj, targetSaveName, targetName);
 
 	obs_source_t *transitionSource = obs_weak_source_get_source(transition);
 	const char *transitionName = obs_source_get_name(transitionSource);
 	obs_source_release(transitionSource);
 
-	obs_data_set_string(obj, "transition", transitionName);
+	obs_data_set_string(obj, transitionSaveName, transitionName);
 }
 
-void SceneSwitcherEntry::load(obs_data_t *obj)
+void SceneSwitcherEntry::load(obs_data_t *obj, const char *targetTypeLoadName,
+			      const char *targetLoadName,
+			      const char *transitionLoadName)
 {
 	targetType = static_cast<SwitchTargetType>(
-		obs_data_get_int(obj, "targetType"));
+		obs_data_get_int(obj, targetTypeLoadName));
 
-	const char *targetName = obs_data_get_string(obj, "target");
+	const char *targetName = obs_data_get_string(obj, targetLoadName);
 
 	if (targetType == SwitchTargetType::Scene) {
 		usePreviousScene = strcmp(targetName, previous_scene_name) == 0;
@@ -82,7 +86,8 @@ void SceneSwitcherEntry::load(obs_data_t *obj)
 		group = GetSceneGroupByName(targetName);
 	}
 
-	const char *transitionName = obs_data_get_string(obj, "transition");
+	const char *transitionName =
+		obs_data_get_string(obj, transitionLoadName);
 	transition = GetWeakTransitionByName(transitionName);
 
 	usePreviousScene = strcmp(targetName, previous_scene_name) == 0;
