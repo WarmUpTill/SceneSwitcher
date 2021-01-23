@@ -11,6 +11,8 @@ struct ExecutableSwitch : SceneSwitcherEntry {
 	bool inFocus = false;
 
 	const char *getType() { return "exec"; }
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 
 	inline ExecutableSwitch(){};
 	inline ExecutableSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
