@@ -120,7 +120,7 @@ void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 
 		if ((equals || matches) && (focus || ignore)) {
 			match = true;
-			scene = s.scene;
+			scene = s.getScene();
 			transition = s.transition;
 
 			if (verbose)
