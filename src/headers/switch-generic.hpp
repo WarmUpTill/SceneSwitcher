@@ -12,6 +12,8 @@ struct SceneSwitcherEntry {
 	virtual const char *getType() = 0;
 	virtual bool initialized();
 	virtual bool valid();
+	virtual void logMatchScene();
+	virtual void logMatchSceneGroup();
 	virtual void logMatch();
 	virtual OBSWeakSource getScene();
 	virtual void save(obs_data_t *obj,

@@ -15,7 +15,7 @@ bool SceneSwitcherEntry::valid()
 				  WeakSourceValid(transition));
 }
 
-void SceneSwitcherEntry::logMatch()
+void SceneSwitcherEntry::logMatchScene()
 {
 	const char *sceneName = previous_scene_name;
 	if (!usePreviousScene) {
@@ -27,9 +27,37 @@ void SceneSwitcherEntry::logMatch()
 	     sceneName);
 }
 
+void SceneSwitcherEntry::logMatchSceneGroup()
+{
+	if (group->scenes.empty()) {
+		blog(LOG_INFO,
+		     "match for '%s' - but no scenes specified in '%s'",
+		     getType(), group->name.c_str());
+		return;
+	}
+
+	const char *sceneName = previous_scene_name;
+	obs_source_t *s =
+		obs_weak_source_get_source(group->scenes[group->currentIdx]);
+	sceneName = obs_source_get_name(s);
+	obs_source_release(s);
+
+	blog(LOG_INFO, "match for '%s' - switch to scene '%s' using '%s'",
+	     getType(), sceneName, group->name.c_str());
+}
+
+void SceneSwitcherEntry::logMatch()
+{
+	if (targetType == SwitchTargetType::Scene) {
+		logMatchScene();
+	} else if (targetType == SwitchTargetType::SceneGroup) {
+		logMatchSceneGroup();
+	}
+}
+
 OBSWeakSource SceneSwitcherEntry::getScene()
 {
-	OBSWeakSource nextScene = nullptr;
+	obs_weak_source_t *nextScene = nullptr;
 	if (targetType == SwitchTargetType::Scene) {
 		nextScene = scene;
 
