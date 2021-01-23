@@ -1827,16 +1827,30 @@
       <attribute name="title">
        <string>AdvSceneSwitcher.mediaTab.title</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_28">
+      <layout class="QVBoxLayout" name="verticalLayout_26">
        <item>
-        <widget class="QListWidget" name="mediaSwitches">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="sortingEnabled">
-          <bool>false</bool>
-         </property>
-        </widget>
+        <layout class="QGridLayout" name="gridLayout_3">
+         <item row="0" column="0">
+          <widget class="QListWidget" name="mediaSwitches">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sortingEnabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="mediaHelp">
+           <property name="text">
+            <string>Some useful media tab tips here :)</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_40">

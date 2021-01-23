@@ -16,6 +16,8 @@ void AdvSceneSwitcher::on_mediaAdd_clicked()
 		       new MediaSwitchWidget(this,
 					     &switcher->mediaSwitches.back()),
 		       ui->mediaAdd, &addPulse);
+
+	ui->mediaHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_mediaRemove_clicked()
@@ -231,8 +233,15 @@ void AdvSceneSwitcher::setupMediaTab()
 		ui->mediaSwitches->setItemWidget(item, sw);
 	}
 
-	if (switcher->mediaSwitches.size() == 0)
+	ui->mediaHelp->setText(
+		obs_module_text("AdvSceneSwitcher.mediaTab.help"));
+
+	if (switcher->mediaSwitches.size() == 0) {
 		addPulse = PulseWidget(ui->mediaAdd, QColor(Qt::green));
+		ui->mediaHelp->setVisible(true);
+	} else {
+		ui->mediaHelp->setVisible(false);
+	}
 }
 
 bool MediaSwitch::initialized()
