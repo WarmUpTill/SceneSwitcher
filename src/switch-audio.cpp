@@ -325,6 +325,8 @@ void AudioSwitch::load(obs_data_t *obj)
 	volumeThreshold = obs_data_get_int(obj, "volume");
 	condition = (audioCondition)obs_data_get_int(obj, "condition");
 	duration = obs_data_get_double(obj, "duration");
+
+	volmeter = AddVolmeterToSource(this, audioSource);
 }
 
 void AudioSwitchFallback::save(obs_data_t *obj)
