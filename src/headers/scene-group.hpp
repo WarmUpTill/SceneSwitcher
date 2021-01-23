@@ -25,10 +25,9 @@ struct SceneGroup {
 	OBSWeakSource getNextSceneRandom();
 	void advanceIdx();
 
+	std::string name = invalid_scene_group_name;
 	AdvanceCondition type = AdvanceCondition::Count;
 	std::vector<OBSWeakSource> scenes = {};
-
-	std::string name = invalid_scene_group_name;
 	int count = 1;
 	double time = 0;
 	bool repeat = false;
