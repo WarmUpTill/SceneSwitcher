@@ -23,6 +23,8 @@ struct FileSwitch : SceneSwitcherEntry {
 	size_t lastHash = 0;
 
 	const char *getType() { return "file"; }
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 
 	inline FileSwitch(){};
 	inline FileSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
