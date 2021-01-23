@@ -57,7 +57,7 @@ void SceneSwitcherEntry::logMatch()
 
 OBSWeakSource SceneSwitcherEntry::getScene()
 {
-	obs_weak_source_t *nextScene = nullptr;
+	OBSWeakSource nextScene = nullptr;
 	if (targetType == SwitchTargetType::Scene) {
 		nextScene = scene;
 
