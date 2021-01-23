@@ -281,9 +281,7 @@ void AudioSwitch::save(obs_data_t *obj)
 	obs_source_release(source);
 
 	obs_data_set_int(obj, "volume", volumeThreshold);
-
 	obs_data_set_int(obj, "condition", condition);
-
 	obs_data_set_double(obj, "duration", duration);
 }
 
@@ -307,11 +305,8 @@ bool loadOldAudio(obs_data_t *obj, AudioSwitch *s)
 	s->audioSource = GetWeakSourceByName(audioSource);
 
 	s->volumeThreshold = obs_data_get_int(obj, "volume");
-
 	s->condition = (audioCondition)obs_data_get_int(obj, "condition");
-
 	s->duration = obs_data_get_double(obj, "duration");
-
 	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
 
 	return true;
@@ -339,7 +334,6 @@ void AudioSwitchFallback::save(obs_data_t *obj)
 				 "audioFallbackTransition");
 
 	obs_data_set_bool(obj, "audioFallbackEnable", enable);
-
 	obs_data_set_double(obj, "audioFallbackDuration", duration);
 }
 
@@ -350,7 +344,6 @@ void AudioSwitchFallback::load(obs_data_t *obj)
 				 "audioFallbackTransition");
 
 	enable = obs_data_get_bool(obj, "audioFallbackEnable");
-
 	duration = obs_data_get_double(obj, "audioFallbackDuration");
 }
 

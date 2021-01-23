@@ -185,7 +185,6 @@ void ExecutableSwitch::save(obs_data_t *obj)
 	SceneSwitcherEntry::save(obj);
 
 	obs_data_set_string(obj, "exefile", exe.toUtf8());
-
 	obs_data_set_bool(obj, "infocus", inFocus);
 }
 
