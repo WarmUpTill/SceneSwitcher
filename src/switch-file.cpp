@@ -245,7 +245,7 @@ void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 		}
 
 		if (equal) {
-			scene = s.scene;
+			scene = s.getScene();
 			transition = s.transition;
 			match = true;
 
