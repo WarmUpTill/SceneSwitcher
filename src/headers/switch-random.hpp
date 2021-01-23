@@ -6,6 +6,8 @@ struct RandomSwitch : SceneSwitcherEntry {
 	double delay = 0.0;
 
 	const char *getType() { return "random"; }
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 
 	inline RandomSwitch() {}
 	inline RandomSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
