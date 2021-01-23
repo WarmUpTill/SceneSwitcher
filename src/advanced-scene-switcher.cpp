@@ -38,8 +38,9 @@ bool translationAvailable()
 void AdvSceneSwitcher::loadUI()
 {
 	if (!translationAvailable()) {
-		DisplayMessage("Failed to find plug-in's 'data' directory.\n"
-			       "Please check installation instructions!");
+		(void)DisplayMessage(
+			"Failed to find plug-in's 'data' directory.\n"
+			"Please check installation instructions!");
 	}
 
 #if __APPLE__
@@ -68,12 +69,26 @@ void AdvSceneSwitcher::loadUI()
 /********************************************************************************
  * UI helpers
  ********************************************************************************/
-void AdvSceneSwitcher::DisplayMessage(QString msg)
+bool AdvSceneSwitcher::DisplayMessage(QString msg, bool question)
 {
-	QMessageBox Msgbox;
-	Msgbox.setWindowTitle("Advanced Scene Switcher");
-	Msgbox.setText(msg);
-	Msgbox.exec();
+	if (question) {
+		QMessageBox::StandardButton reply;
+		reply = QMessageBox::question(
+			nullptr, "Advanced Scene Switcher", msg,
+			QMessageBox::Yes | QMessageBox::No);
+		if (reply == QMessageBox::Yes) {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		QMessageBox Msgbox;
+		Msgbox.setWindowTitle("Advanced Scene Switcher");
+		Msgbox.setText(msg);
+		Msgbox.exec();
+	}
+
+	return false;
 }
 
 void addSelectionEntry(QComboBox *sel, const char *description,
@@ -357,6 +372,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->saveAudioSwitches(obj);
 		switcher->saveGeneralSettings(obj);
 		switcher->saveHotkeys(obj);
+		switcher->saveVersion(obj, g_GIT_SHA1);
 
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
 
@@ -369,6 +385,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 		if (!obj)
 			obj = obs_data_create();
+		if (switcher->versionChanged(obj, g_GIT_SHA1))
+			AdvSceneSwitcher::AskBackup(obj);
 
 		switcher->loadSceneGroups(obj);
 		switcher->loadWindowTitleSwitches(obj);
