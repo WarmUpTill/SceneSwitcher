@@ -665,27 +665,34 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_14">
           <item>
-           <widget class="QLabel" name="label_36">
-            <property name="text">
-             <string>AdvSceneSwitcher.transitionTab.transitionForAToB.description</string>
-            </property>
-            <property name="wordWrap">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QListWidget" name="sceneTransitions">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="sortingEnabled">
-             <bool>false</bool>
-            </property>
-           </widget>
+           <layout class="QGridLayout" name="gridLayout_9">
+            <item row="0" column="0">
+             <widget class="QListWidget" name="sceneTransitions">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="sortingEnabled">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="transitionHelp">
+              <property name="text">
+               <string>AdvSceneSwitcher.transitionTab.transitionsHelp</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_19">
@@ -834,17 +841,34 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_12">
           <item>
-           <widget class="QListWidget" name="defaultTransitions">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="sortingEnabled">
-             <bool>false</bool>
-            </property>
-           </widget>
+           <layout class="QGridLayout" name="gridLayout_10">
+            <item row="0" column="0">
+             <widget class="QListWidget" name="defaultTransitions">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="sortingEnabled">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="defaultTransitionHelp">
+              <property name="text">
+               <string>AdvSceneSwitcher.transitionTab.defaultTransitionsHelp</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_29">
@@ -991,17 +1015,34 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
-        <widget class="QListWidget" name="pauseEntries">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="sortingEnabled">
-          <bool>false</bool>
-         </property>
-        </widget>
+        <layout class="QGridLayout" name="gridLayout_6">
+         <item row="0" column="0">
+          <widget class="QListWidget" name="pauseEntries">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="sortingEnabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="pauseHelp">
+           <property name="text">
+            <string>AdvSceneSwitcher.pauseTab.help</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_17">
@@ -1164,17 +1205,34 @@
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="windowSwitches">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="sortingEnabled">
-          <bool>false</bool>
-         </property>
-        </widget>
+        <layout class="QGridLayout" name="gridLayout_7">
+         <item row="0" column="0">
+          <widget class="QListWidget" name="windowSwitches">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="sortingEnabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="windowHelp">
+           <property name="text">
+            <string>AdvSceneSwitcher.windowTitleTab.windowsHelp</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_13">
@@ -1371,17 +1429,34 @@
         </layout>
        </item>
        <item>
-        <widget class="QListWidget" name="ignoreWindows">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="sortingEnabled">
-          <bool>true</bool>
-         </property>
-        </widget>
+        <layout class="QGridLayout" name="gridLayout_8">
+         <item row="0" column="0">
+          <widget class="QListWidget" name="ignoreWindows">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="sortingEnabled">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="ignoreWindowHelp">
+           <property name="text">
+            <string>AdvSceneSwitcher.windowTitleTab.ignoreWindowsHelp</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_8">
@@ -1446,14 +1521,31 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_11">
        <item>
-        <widget class="QListWidget" name="executables">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="sortingEnabled">
-          <bool>false</bool>
-         </property>
-        </widget>
+        <layout class="QGridLayout" name="gridLayout_11">
+         <item row="0" column="0">
+          <widget class="QListWidget" name="executables">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sortingEnabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="exeHelp">
+           <property name="text">
+            <string>AdvSceneSwitcher.executableTab.help</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_22">
@@ -1675,17 +1767,34 @@
         </layout>
        </item>
        <item>
-        <widget class="QListWidget" name="screenRegionSwitches">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="sortingEnabled">
-          <bool>false</bool>
-         </property>
-        </widget>
+        <layout class="QGridLayout" name="gridLayout_12">
+         <item row="0" column="0">
+          <widget class="QListWidget" name="screenRegionSwitches">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="sortingEnabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="regionHelp">
+           <property name="text">
+            <string>AdvSceneSwitcher.screenRegionTab.help</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_5">
@@ -1843,10 +1952,13 @@
          <item row="0" column="0">
           <widget class="QLabel" name="mediaHelp">
            <property name="text">
-            <string>Some useful media tab tips here :)</string>
+            <string>AdvSceneSwitcher.mediaTab.help</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -2105,17 +2217,34 @@
            </widget>
           </item>
           <item>
-           <widget class="QListWidget" name="fileSwitches">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="sortingEnabled">
-             <bool>false</bool>
-            </property>
-           </widget>
+           <layout class="QGridLayout" name="gridLayout_13">
+            <item row="0" column="0">
+             <widget class="QListWidget" name="fileSwitches">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="sortingEnabled">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="fileHelp">
+              <property name="text">
+               <string>AdvSceneSwitcher.fileTab.help</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_35">
@@ -2269,17 +2398,34 @@
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="randomSwitches">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="sortingEnabled">
-          <bool>false</bool>
-         </property>
-        </widget>
+        <layout class="QGridLayout" name="gridLayout_14">
+         <item row="0" column="0">
+          <widget class="QListWidget" name="randomSwitches">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="sortingEnabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="randomHelp">
+           <property name="text">
+            <string>AdvSceneSwitcher.randomTab.help</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -2336,16 +2482,33 @@
       <attribute name="title">
        <string>AdvSceneSwitcher.timeTab.title</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_6">
+      <layout class="QVBoxLayout" name="verticalLayout_25">
        <item>
-        <widget class="QListWidget" name="timeSwitches">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="sortingEnabled">
-          <bool>false</bool>
-         </property>
-        </widget>
+        <layout class="QGridLayout" name="gridLayout_15">
+         <item row="0" column="0">
+          <widget class="QListWidget" name="timeSwitches">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sortingEnabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="timeHelp">
+           <property name="text">
+            <string>AdvSceneSwitcher.timeTab.help</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_51">
@@ -2700,17 +2863,34 @@
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="sceneSequenceSwitches">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="sortingEnabled">
-          <bool>false</bool>
-         </property>
-        </widget>
+        <layout class="QGridLayout" name="gridLayout_16">
+         <item row="0" column="0">
+          <widget class="QListWidget" name="sceneSequenceSwitches">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="sortingEnabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="sequenceHelp">
+           <property name="text">
+            <string>AdvSceneSwitcher.sceneSequenceTab.help</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_10">
@@ -2889,19 +3069,36 @@
          <property name="title">
           <string/>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_22">
+         <layout class="QVBoxLayout" name="verticalLayout_6">
           <item>
-           <widget class="QListWidget" name="audioSwitches">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="sortingEnabled">
-             <bool>false</bool>
-            </property>
-           </widget>
+           <layout class="QGridLayout" name="gridLayout_17">
+            <item row="0" column="0">
+             <widget class="QListWidget" name="audioSwitches">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="sortingEnabled">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="audioHelp">
+              <property name="text">
+               <string>AdvSceneSwitcher.audioTab.help</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_53">
@@ -3070,9 +3267,26 @@
          <property name="title">
           <string>AdvSceneSwitcher.sceneGroupTab.list</string>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_24">
+         <layout class="QVBoxLayout" name="verticalLayout_22">
           <item>
-           <widget class="QListWidget" name="sceneGroups"/>
+           <layout class="QGridLayout" name="gridLayout_18">
+            <item row="0" column="0">
+             <widget class="QListWidget" name="sceneGroups"/>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="sceneGroupHelp">
+              <property name="text">
+               <string>AdvSceneSwitcher.sceneGroupTab.help</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_54">
@@ -3216,7 +3430,7 @@
          <property name="title">
           <string>AdvSceneSwitcher.sceneGroupTab.edit</string>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_25">
+         <layout class="QVBoxLayout" name="verticalLayout_24">
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_4">
             <item>
@@ -3250,6 +3464,13 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_7">
             <item>
+             <widget class="QLabel" name="label_7">
+              <property name="text">
+               <string>AdvSceneSwitcher.sceneGroupTab.edit.addScene</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QComboBox" name="sceneGroupSceneSelection"/>
             </item>
             <item>
@@ -3268,7 +3489,24 @@
            </layout>
           </item>
           <item>
-           <widget class="QListWidget" name="sceneGroupScenes"/>
+           <layout class="QGridLayout" name="gridLayout_19">
+            <item row="0" column="0">
+             <widget class="QListWidget" name="sceneGroupScenes"/>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="sceneGroupScenesHelp">
+              <property name="text">
+               <string>AdvSceneSwitcher.sceneGroupTab.scenes.help</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_55">

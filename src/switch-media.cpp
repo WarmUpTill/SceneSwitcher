@@ -233,9 +233,6 @@ void AdvSceneSwitcher::setupMediaTab()
 		ui->mediaSwitches->setItemWidget(item, sw);
 	}
 
-	ui->mediaHelp->setText(
-		obs_module_text("AdvSceneSwitcher.mediaTab.help"));
-
 	if (switcher->mediaSwitches.size() == 0) {
 		addPulse = PulseWidget(ui->mediaAdd, QColor(Qt::green));
 		ui->mediaHelp->setVisible(true);

@@ -265,6 +265,8 @@ void AdvSceneSwitcher::on_fileAdd_clicked()
 		       new FileSwitchWidget(this,
 					    &switcher->fileSwitches.back()),
 		       ui->fileAdd, &addPulse);
+
+	ui->fileHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_fileRemove_clicked()
@@ -403,8 +405,12 @@ void AdvSceneSwitcher::setupFileTab()
 		ui->fileSwitches->setItemWidget(item, sw);
 	}
 
-	if (switcher->fileSwitches.size() == 0)
+	if (switcher->fileSwitches.size() == 0) {
 		addPulse = PulseWidget(ui->fileAdd, QColor(Qt::green));
+		ui->fileHelp->setVisible(true);
+	} else {
+		ui->fileHelp->setVisible(false);
+	}
 
 	ui->readPathLineEdit->setText(
 		QString::fromStdString(switcher->fileIO.readPath.c_str()));

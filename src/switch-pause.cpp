@@ -14,6 +14,8 @@ void AdvSceneSwitcher::on_pauseAdd_clicked()
 		       new PauseEntryWidget(this,
 					    &switcher->pauseEntries.back()),
 		       ui->pauseAdd, &addPulse);
+
+	ui->pauseHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_pauseRemove_clicked()
@@ -313,8 +315,12 @@ void AdvSceneSwitcher::setupPauseTab()
 		ui->pauseEntries->setItemWidget(item, sw);
 	}
 
-	if (switcher->pauseEntries.size() == 0)
+	if (switcher->pauseEntries.size() == 0) {
 		addPulse = PulseWidget(ui->pauseAdd, QColor(Qt::green));
+		ui->pauseHelp->setVisible(true);
+	} else {
+		ui->pauseHelp->setVisible(false);
+	}
 }
 
 void populatePauseTypes(QComboBox *list)

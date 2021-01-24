@@ -16,6 +16,8 @@ void AdvSceneSwitcher::on_audioAdd_clicked()
 		new AudioSwitchWidget(this, &switcher->audioSwitches.back());
 
 	listAddClicked(ui->audioSwitches, sw, ui->audioAdd, &addPulse);
+
+	ui->audioHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_audioRemove_clicked()
@@ -214,8 +216,12 @@ void AdvSceneSwitcher::setupAudioTab()
 		ui->audioSwitches->setItemWidget(item, sw);
 	}
 
-	if (switcher->audioSwitches.size() == 0)
+	if (switcher->audioSwitches.size() == 0) {
 		addPulse = PulseWidget(ui->audioAdd, QColor(Qt::green));
+		ui->audioHelp->setVisible(true);
+	} else {
+		ui->audioHelp->setVisible(false);
+	}
 
 	AudioSwitchFallbackWidget *fb =
 		new AudioSwitchFallbackWidget(this, &switcher->audioFallback);
