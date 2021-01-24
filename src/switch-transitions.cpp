@@ -11,6 +11,8 @@ void AdvSceneSwitcher::on_transitionsAdd_clicked()
 	listAddClicked(ui->sceneTransitions,
 		       new TransitionSwitchWidget(
 			       this, &switcher->sceneTransitions.back()));
+
+	ui->transitionHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_transitionsRemove_clicked()
@@ -79,6 +81,8 @@ void AdvSceneSwitcher::on_defaultTransitionsAdd_clicked()
 		       new DefTransitionSwitchWidget(
 			       this,
 			       &switcher->defaultSceneTransitions.back()));
+
+	ui->defaultTransitionHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_defaultTransitionsRemove_clicked()
@@ -384,6 +388,12 @@ void AdvSceneSwitcher::setupTransitionsTab()
 		ui->sceneTransitions->setItemWidget(item, sw);
 	}
 
+	if (switcher->sceneTransitions.size() == 0) {
+		ui->transitionHelp->setVisible(true);
+	} else {
+		ui->transitionHelp->setVisible(false);
+	}
+
 	for (auto &s : switcher->defaultSceneTransitions) {
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->defaultTransitions);
@@ -392,6 +402,12 @@ void AdvSceneSwitcher::setupTransitionsTab()
 			new DefTransitionSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->defaultTransitions->setItemWidget(item, sw);
+	}
+
+	if (switcher->defaultSceneTransitions.size() == 0) {
+		ui->defaultTransitionHelp->setVisible(true);
+	} else {
+		ui->defaultTransitionHelp->setVisible(false);
 	}
 
 	ui->transitionOverridecheckBox->setChecked(

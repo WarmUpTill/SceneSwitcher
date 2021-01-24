@@ -71,6 +71,8 @@ void AdvSceneSwitcher::on_screenRegionAdd_clicked()
 		       new ScreenRegionWidget(
 			       this, &switcher->screenRegionSwitches.back()),
 		       ui->screenRegionAdd, &addPulse);
+
+	ui->regionHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_screenRegionRemove_clicked()
@@ -213,8 +215,12 @@ void AdvSceneSwitcher::setupRegionTab()
 		ui->screenRegionSwitches->setItemWidget(item, sw);
 	}
 
-	if (switcher->screenRegionSwitches.size() == 0)
+	if (switcher->screenRegionSwitches.size() == 0) {
 		addPulse = PulseWidget(ui->screenRegionAdd, QColor(Qt::green));
+		ui->regionHelp->setVisible(true);
+	} else {
+		ui->regionHelp->setVisible(false);
+	}
 
 	// screen region cursor position
 	QTimer *screenRegionTimer = new QTimer(this);

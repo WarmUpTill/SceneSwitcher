@@ -13,6 +13,8 @@ void AdvSceneSwitcher::on_executableAdd_clicked()
 		       new ExecutableSwitchWidget(
 			       this, &switcher->executableSwitches.back()),
 		       ui->executableAdd, &addPulse);
+
+	ui->exeHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_executableRemove_clicked()
@@ -176,8 +178,12 @@ void AdvSceneSwitcher::setupExecutableTab()
 		ui->executables->setItemWidget(item, sw);
 	}
 
-	if (switcher->executableSwitches.size() == 0)
+	if (switcher->executableSwitches.size() == 0) {
 		addPulse = PulseWidget(ui->executableAdd, QColor(Qt::green));
+		ui->exeHelp->setVisible(true);
+	} else {
+		ui->exeHelp->setVisible(false);
+	}
 }
 
 void ExecutableSwitch::save(obs_data_t *obj)

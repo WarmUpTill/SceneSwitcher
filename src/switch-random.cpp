@@ -15,6 +15,8 @@ void AdvSceneSwitcher::on_randomAdd_clicked()
 		       new RandomSwitchWidget(this,
 					      &switcher->randomSwitches.back()),
 		       ui->randomAdd, &addPulse);
+
+	ui->randomHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_randomRemove_clicked()
@@ -106,8 +108,12 @@ void AdvSceneSwitcher::setupRandomTab()
 		ui->randomSwitches->setItemWidget(item, sw);
 	}
 
-	if (switcher->randomSwitches.size() == 0)
+	if (switcher->randomSwitches.size() == 0) {
 		addPulse = PulseWidget(ui->randomAdd, QColor(Qt::green));
+		ui->randomHelp->setVisible(true);
+	} else {
+		ui->randomHelp->setVisible(false);
+	}
 
 	if (switcher->switchIfNotMatching != RANDOM_SWITCH)
 		PulseWidget(ui->randomDisabledWarning, QColor(Qt::red),

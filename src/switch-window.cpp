@@ -13,6 +13,8 @@ void AdvSceneSwitcher::on_windowAdd_clicked()
 		       new WindowSwitchWidget(this,
 					      &switcher->windowSwitches.back()),
 		       ui->windowAdd, &addPulse);
+
+	ui->windowHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_windowRemove_clicked()
@@ -93,6 +95,8 @@ void AdvSceneSwitcher::on_ignoreWindowsAdd_clicked()
 		switcher->ignoreWindowsSwitches.emplace_back(
 			windowName.toUtf8().constData());
 	}
+
+	ui->ignoreWindowHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_ignoreWindowsRemove_clicked()
@@ -320,8 +324,12 @@ void AdvSceneSwitcher::setupTitleTab()
 		ui->windowSwitches->setItemWidget(item, sw);
 	}
 
-	if (switcher->windowSwitches.size() == 0)
+	if (switcher->windowSwitches.size() == 0) {
 		addPulse = PulseWidget(ui->windowAdd, QColor(Qt::green));
+		ui->windowHelp->setVisible(true);
+	} else {
+		ui->windowHelp->setVisible(false);
+	}
 
 	populateWindowSelection(ui->ignoreWindowsWindows);
 
@@ -331,6 +339,12 @@ void AdvSceneSwitcher::setupTitleTab()
 		QListWidgetItem *item =
 			new QListWidgetItem(text, ui->ignoreWindows);
 		item->setData(Qt::UserRole, text);
+	}
+
+	if (switcher->ignoreWindowsSwitches.size() == 0) {
+		ui->ignoreWindowHelp->setVisible(true);
+	} else {
+		ui->ignoreWindowHelp->setVisible(false);
 	}
 }
 

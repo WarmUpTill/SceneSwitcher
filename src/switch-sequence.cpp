@@ -16,6 +16,8 @@ void AdvSceneSwitcher::on_sceneSequenceAdd_clicked()
 		       new SequenceWidget(
 			       this, &switcher->sceneSequenceSwitches.back()),
 		       ui->sceneSequenceAdd, &addPulse);
+
+	ui->sequenceHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_sceneSequenceRemove_clicked()
@@ -258,8 +260,12 @@ void AdvSceneSwitcher::setupSequenceTab()
 		ui->sceneSequenceSwitches->setItemWidget(item, sw);
 	}
 
-	if (switcher->sceneSequenceSwitches.size() == 0)
+	if (switcher->sceneSequenceSwitches.size() == 0) {
 		addPulse = PulseWidget(ui->sceneSequenceAdd, QColor(Qt::green));
+		ui->sequenceHelp->setVisible(true);
+	} else {
+		ui->sequenceHelp->setVisible(false);
+	}
 }
 
 bool SceneSequenceSwitch::initialized()

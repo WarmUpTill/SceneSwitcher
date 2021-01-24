@@ -13,6 +13,8 @@ void AdvSceneSwitcher::on_timeAdd_clicked()
 		       new TimeSwitchWidget(this,
 					    &switcher->timeSwitches.back()),
 		       ui->timeAdd, &addPulse);
+
+	ui->timeHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_timeRemove_clicked()
@@ -177,8 +179,12 @@ void AdvSceneSwitcher::setupTimeTab()
 		ui->timeSwitches->setItemWidget(item, sw);
 	}
 
-	if (switcher->timeSwitches.size() == 0)
+	if (switcher->timeSwitches.size() == 0) {
 		addPulse = PulseWidget(ui->timeAdd, QColor(Qt::green));
+		ui->timeHelp->setVisible(true);
+	} else {
+		ui->timeHelp->setVisible(false);
+	}
 }
 
 void TimeSwitch::save(obs_data_t *obj)

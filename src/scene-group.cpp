@@ -146,6 +146,7 @@ void AdvSceneSwitcher::on_sceneGroupAdd_clicked()
 	ui->sceneGroups->setCurrentItem(item);
 
 	ui->sceneGroupAdd->disconnect(addPulse);
+	ui->sceneGroupHelp->setVisible(false);
 
 	emit SceneGroupAdded(QString::fromStdString(name));
 }
@@ -271,6 +272,12 @@ void AdvSceneSwitcher::SetEditSceneGroup(SceneGroup &sg)
 
 	ui->sceneGroupEdit->setDisabled(false);
 	typeEdit->SetEditSceneGroup(&sg);
+
+	if (sg.scenes.size() == 0) {
+		ui->sceneGroupScenesHelp->setVisible(true);
+	} else {
+		ui->sceneGroupScenesHelp->setVisible(false);
+	}
 }
 
 void AdvSceneSwitcher::on_sceneGroups_currentRowChanged(int idx)
@@ -315,6 +322,8 @@ void AdvSceneSwitcher::on_sceneGroupSceneAdd_clicked()
 	item->setData(Qt::UserRole, v);
 
 	currentSG->scenes.emplace_back(source);
+
+	ui->sceneGroupScenesHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_sceneGroupSceneRemove_clicked()
@@ -464,8 +473,12 @@ void AdvSceneSwitcher::setupSceneGroupTab()
 		item->setData(Qt::UserRole, text);
 	}
 
-	if (switcher->sceneGroups.size() == 0)
+	if (switcher->sceneGroups.size() == 0) {
 		addPulse = PulseWidget(ui->sceneGroupAdd, QColor(Qt::green));
+		ui->sceneGroupHelp->setVisible(true);
+	} else {
+		ui->sceneGroupHelp->setVisible(false);
+	}
 
 	typeEdit = new SceneGroupEditWidget();
 	ui->sceneGroupTypeEdit->addWidget(typeEdit);
