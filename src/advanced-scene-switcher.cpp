@@ -550,8 +550,7 @@ void SwitcherData::Thread()
 			if (sceneChangedDuringWait()) {
 				if (verbose)
 					blog(LOG_INFO,
-					     "scene was changed manually - ignoring match",
-					     duration.count());
+					     "scene was changed manually - ignoring match");
 				match = false;
 				linger = 0;
 			}
