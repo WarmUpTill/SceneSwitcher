@@ -349,6 +349,24 @@ void SceneSequenceSwitch::load(obs_data_t *obj)
 	interruptible = obs_data_get_bool(obj, "interruptible");
 }
 
+bool SceneSequenceSwitch::reduce()
+{
+	if (!extendedSequence) {
+		return true;
+	}
+	if (extendedSequence->reduce())
+		extendedSequence.reset(nullptr);
+	return false;
+}
+
+SceneSequenceSwitch *SceneSequenceSwitch::extend()
+{
+	if (extendedSequence)
+		return extendedSequence->extend();
+	extendedSequence = std::make_unique<SceneSequenceSwitch>();
+	return extendedSequence.get();
+}
+
 void populateDelayUnits(QComboBox *list)
 {
 	list->addItem(obs_module_text("AdvSceneSwitcher.unit.secends"));
@@ -356,14 +374,34 @@ void populateDelayUnits(QComboBox *list)
 	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
 }
 
-SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s)
+SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
+			       bool extendSequence)
 	: SwitchWidget(parent, s, true, true)
 {
+	this->setParent(parent);
+
 	delay = new QDoubleSpinBox();
 	delayUnits = new QComboBox();
 	startScenes = new QComboBox();
 	interruptible = new QCheckBox(obs_module_text(
 		"AdvSceneSwitcher.sceneSequenceTab.interruptible"));
+	extend = new QPushButton();
+	reduce = new QPushButton();
+
+	extend->setProperty("themeID",
+			    QVariant(QStringLiteral("addIconSmall")));
+	reduce->setProperty("themeID",
+			    QVariant(QStringLiteral("removeIconSmall")));
+
+	extend->setMaximumSize(22, 22);
+	reduce->setMaximumSize(22, 22);
+
+	// We need to extend the generic SwitchWidget::SceneChanged()
+	// with our own SequenceWidget::SceneChanged()
+	// so the old singal / slot needs to be disconnected
+	scenes->disconnect();
+	QWidget::connect(scenes, SIGNAL(currentTextChanged(const QString &)),
+			 this, SLOT(SceneChanged(const QString &)));
 
 	QWidget::connect(delay, SIGNAL(valueChanged(double)), this,
 			 SLOT(DelayChanged(double)));
@@ -374,6 +412,10 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s)
 			 SLOT(StartSceneChanged(const QString &)));
 	QWidget::connect(interruptible, SIGNAL(stateChanged(int)), this,
 			 SLOT(InterruptibleChanged(int)));
+	QWidget::connect(extend, SIGNAL(clicked()), this,
+			 SLOT(ExtendClicked()));
+	QWidget::connect(reduce, SIGNAL(clicked()), this,
+			 SLOT(ReduceClicked()));
 
 	delay->setMaximum(99999.000000);
 	AdvSceneSwitcher::populateSceneSelection(startScenes, false);
@@ -400,17 +442,45 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s)
 		interruptible->setChecked(s->interruptible);
 	}
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{startScenes}}", startScenes},
-		{"{{scenes}}", scenes},
-		{"{{delay}}", delay},
-		{"{{delayUnits}}", delayUnits},
-		{"{{transitions}}", transitions},
-		{"{{interruptible}}", interruptible}};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.sceneSequenceTab.entry"),
-		     mainLayout, widgetPlaceholders);
-	setLayout(mainLayout);
+	if (extendSequence) {
+		QHBoxLayout *mainLayout = new QHBoxLayout;
+		std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+			{"{{scenes}}", scenes},
+			{"{{delay}}", delay},
+			{"{{delayUnits}}", delayUnits},
+			{"{{transitions}}", transitions}};
+		placeWidgets(
+			obs_module_text(
+				"AdvSceneSwitcher.sceneSequenceTab.extendEntry"),
+			mainLayout, widgetPlaceholders);
+		setLayout(mainLayout);
+	} else {
+		QHBoxLayout *startSequence = new QHBoxLayout;
+		std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+			{"{{startScenes}}", startScenes},
+			{"{{scenes}}", scenes},
+			{"{{delay}}", delay},
+			{"{{delayUnits}}", delayUnits},
+			{"{{transitions}}", transitions},
+			{"{{interruptible}}", interruptible}};
+		placeWidgets(obs_module_text(
+				     "AdvSceneSwitcher.sceneSequenceTab.entry"),
+			     startSequence, widgetPlaceholders);
+
+		//exetend widgets placed here
+		extendSequenceLayout = new QVBoxLayout;
+
+		QHBoxLayout *extendSequenceControlsLayout = new QHBoxLayout;
+		extendSequenceControlsLayout->addWidget(extend);
+		extendSequenceControlsLayout->addWidget(reduce);
+		extendSequenceControlsLayout->addStretch();
+
+		QVBoxLayout *mainLayout = new QVBoxLayout;
+		mainLayout->addLayout(startSequence);
+		mainLayout->addLayout(extendSequenceLayout);
+		mainLayout->addLayout(extendSequenceControlsLayout);
+		setLayout(mainLayout);
+	}
 
 	switchData = s;
 
@@ -476,6 +546,18 @@ void SequenceWidget::DelayUnitsChanged(int idx)
 	UpdateDelay();
 }
 
+void SequenceWidget::SceneChanged(const QString &text)
+{
+	if (loading || !switchData)
+		return;
+	SwitchWidget::SceneChanged(text);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	if (switchData->extendedSequence)
+		switchData->extendedSequence->startScene = switchData->scene;
+}
+
 void SequenceWidget::StartSceneChanged(const QString &text)
 {
 	if (loading || !switchData)
@@ -490,4 +572,29 @@ void SequenceWidget::InterruptibleChanged(int state)
 		return;
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->interruptible = state;
+}
+
+void SequenceWidget::ExtendClicked()
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	auto es = switchData->extend();
+
+	SequenceWidget *ew = new SequenceWidget(this->parentWidget(), es, true);
+	extendSequenceLayout->addWidget(ew);
+}
+
+void SequenceWidget::ReduceClicked()
+{
+	if (loading || !switchData)
+		return;
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->reduce();
+
+	int count = extendSequenceLayout->count();
+	auto item = extendSequenceLayout->takeAt(count - 1);
+	if (item)
+		delete item;
 }
