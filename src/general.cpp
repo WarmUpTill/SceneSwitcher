@@ -334,7 +334,7 @@ void AdvSceneSwitcher::on_exportSettings_clicked()
 	QString directory = QFileDialog::getSaveFileName(
 		this,
 		tr(obs_module_text(
-			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.importWindowTitle")),
+			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.exportWindowTitle")),
 		QDir::currentPath(),
 		tr(obs_module_text(
 			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType")));
