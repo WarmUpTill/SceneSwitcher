@@ -8,6 +8,7 @@
 #include <curl/curl.h>
 
 #include "scene-group.hpp"
+#include "scene-trigger.hpp"
 #include "switch-audio.hpp"
 #include "switch-executable.hpp"
 #include "switch-file.hpp"

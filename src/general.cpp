@@ -3,7 +3,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
-constexpr auto tab_count = 14;
+constexpr auto tab_count = 15;
 
 QMetaObject::Connection inactivePluse;
 
@@ -473,6 +473,9 @@ int findTabIndex(QTabWidget *tabWidget, int pos)
 	case 13:
 		tabName = "sceneGroupTab";
 		break;
+	case 14:
+		tabName = "sceneTriggerTab";
+		break;
 	}
 
 	QWidget *page = tabWidget->findChild<QWidget *>(tabName);
@@ -592,6 +595,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "sequenceTabPos", switcher->tabOrder[11]);
 	obs_data_set_int(obj, "audioTabPos", switcher->tabOrder[12]);
 	obs_data_set_int(obj, "sceneGroupTabPos", switcher->tabOrder[13]);
+	obs_data_set_int(obj, "triggerTabPos", switcher->tabOrder[14]);
 }
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
@@ -693,6 +697,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "sequenceTabPos", 11);
 	obs_data_set_default_int(obj, "audioTabPos", 12);
 	obs_data_set_default_int(obj, "sceneGroupTabPos", 13);
+	obs_data_set_default_int(obj, "triggerTabPos", 14);
 
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "generalTabPos")));
@@ -722,6 +727,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(int)(obs_data_get_int(obj, "audioTabPos")));
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "sceneGroupTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "triggerTabPos")));
 }
 
 void SwitcherData::checkNoMatchSwitch(bool &match, OBSWeakSource &scene,

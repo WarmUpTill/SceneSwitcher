@@ -53,6 +53,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/curl-helper.hpp
 	src/headers/volume-control.hpp
 	src/headers/scene-group.hpp
+	src/headers/scene-trigger.hpp
 	src/headers/switch-audio.hpp
 	src/headers/switch-executable.hpp
 	src/headers/switch-file.hpp
@@ -75,6 +76,7 @@ set(advanced-scene-switcher_SOURCES
 	src/advanced-scene-switcher-module.c
 	src/switcher-data-structs.cpp
 	src/scene-group.cpp
+	src/scene-trigger.cpp
 	src/switch-transitions.cpp
 	src/switch-screen-region.cpp
 	src/switch-priority.cpp
