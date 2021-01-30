@@ -640,13 +640,15 @@ void handleSceneChange(SwitcherData *s)
 	obs_weak_source_t *ws = obs_source_get_weak_source(source);
 	obs_source_release(source);
 	obs_weak_source_release(ws);
-	if (source && s->previousScene2 != ws) {
-		s->previousScene = s->previousScene2;
-		s->previousScene2 = ws;
+	if (source && s->previousSceneHelper != ws) {
+		s->previousScene = s->previousSceneHelper;
+		s->previousSceneHelper = ws;
 	}
 
 	//reset events only hanled on scene change
 	s->autoStartedRecently = false;
+
+	switcher->checkTriggers();
 }
 
 void handleTransitionStop(SwitcherData *s)

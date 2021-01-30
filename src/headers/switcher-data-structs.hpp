@@ -62,7 +62,7 @@ struct SwitcherData {
 
 	obs_source_t *waitScene = nullptr;
 	OBSWeakSource previousScene = nullptr;
-	OBSWeakSource previousScene2 = nullptr;
+	OBSWeakSource previousSceneHelper = nullptr;
 	OBSWeakSource lastRandomScene;
 	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
@@ -202,6 +202,7 @@ struct SwitcherData {
 	void checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition, int &sleep);
 	void checkSwitchCooldown(bool &match);
+	void checkTriggers();
 
 	void saveSettings(obs_data_t *obj);
 	void saveWindowTitleSwitches(obs_data_t *obj);

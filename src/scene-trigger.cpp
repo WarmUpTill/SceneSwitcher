@@ -74,13 +74,129 @@ void AdvSceneSwitcher::on_triggerDown_clicked()
 		  switcher->sceneTriggers[index + 1]);
 }
 
-//void SwitcherData::checkTriggers()
-//{
-//	if (TimeSwitch::pause)
-//		return;
-//	}
-//}
-//
+void SceneTrigger::logMatch()
+{
+	const char *actionName = "";
+
+	switch (triggerAction) {
+	case sceneTriggerAction::NONE:
+		actionName = "NONE";
+		break;
+	case sceneTriggerAction::START_RECORDING:
+		actionName = "START RECORDING";
+		break;
+	case sceneTriggerAction::PAUSE_RECORDING:
+		actionName = "PAUSE RECORDING";
+		break;
+	case sceneTriggerAction::UNPAUSE_RECORDING:
+		actionName = "UNPAUSE RECORDING";
+		break;
+	case sceneTriggerAction::STOP_RECORDING:
+		actionName = "STOP RECORDING";
+		break;
+	case sceneTriggerAction::START_STREAMING:
+		actionName = "START STREAMING";
+		break;
+	case sceneTriggerAction::STOP_STREAMING:
+		actionName = "STOP STREAMING";
+		break;
+	case sceneTriggerAction::START_REPLAY_BUFFER:
+		actionName = "START REPLAY BUFFER";
+		break;
+	case sceneTriggerAction::STOP_REPLAY_BUFFER:
+		actionName = "STOP REPLAY BUFFER";
+		break;
+	default:
+		break;
+	}
+
+	blog(LOG_INFO, "triggering action '%s' after %f seconds", actionName,
+	     duration);
+}
+
+void actionThread(sceneTriggerAction action, double delay)
+{
+	long long mil = delay * 1000;
+	std::this_thread::sleep_for(std::chrono::milliseconds(mil));
+
+	switch (action) {
+	case sceneTriggerAction::NONE:
+		break;
+	case sceneTriggerAction::START_RECORDING:
+		obs_frontend_recording_start();
+		break;
+	case sceneTriggerAction::PAUSE_RECORDING:
+		obs_frontend_recording_pause(true);
+		break;
+	case sceneTriggerAction::UNPAUSE_RECORDING:
+		obs_frontend_recording_pause(false);
+		break;
+	case sceneTriggerAction::STOP_RECORDING:
+		obs_frontend_recording_stop();
+		break;
+	case sceneTriggerAction::START_STREAMING:
+		obs_frontend_streaming_start();
+		break;
+	case sceneTriggerAction::STOP_STREAMING:
+		obs_frontend_streaming_stop();
+		break;
+	case sceneTriggerAction::START_REPLAY_BUFFER:
+		obs_frontend_replay_buffer_start();
+		break;
+	case sceneTriggerAction::STOP_REPLAY_BUFFER:
+		obs_frontend_replay_buffer_stop();
+		break;
+	default:
+		break;
+	}
+}
+
+void SceneTrigger::performAction()
+{
+	if (triggerAction == sceneTriggerAction::NONE)
+		return;
+
+	std::thread t(actionThread, triggerAction, duration);
+	t.detach();
+}
+
+bool SceneTrigger::checkMatch(OBSWeakSource previousScene)
+{
+	OBSSource source = obs_frontend_get_current_scene();
+	OBSWeakSource currentScene = obs_source_get_weak_source(source);
+	obs_source_release(source);
+	obs_weak_source_release(currentScene);
+
+	switch (triggerType) {
+	case sceneTriggerType::NONE:
+		return false;
+	case sceneTriggerType::SCENE_ACTIVE:
+		return currentScene == scene;
+	case sceneTriggerType::SCENE_INACTIVE:
+		return currentScene != scene;
+	case sceneTriggerType::SCENE_LEAVE:
+		return previousScene == scene;
+	}
+	return false;
+}
+
+void SwitcherData::checkTriggers()
+{
+	if (SceneTrigger::pause) {
+		return;
+	}
+
+	for (auto &t : sceneTriggers) {
+		if (t.checkMatch(previousScene)) {
+			if (verbose) {
+				t.logMatch();
+			}
+
+			t.performAction();
+		}
+	}
+}
+
 void SwitcherData::saveSceneTriggers(obs_data_t *obj)
 {
 	obs_data_array_t *triggerArray = obs_data_array_create();
@@ -168,13 +284,21 @@ inline void populateActions(QComboBox *list)
 	list->addItem(obs_module_text(
 		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.none"));
 	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.startRecording"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.pauseRecording"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.unpauseRecording"));
+	list->addItem(obs_module_text(
 		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.stopRecording"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.startStreaming"));
 	list->addItem(obs_module_text(
 		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.stopStreaming"));
 	list->addItem(obs_module_text(
-		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.startRecording"));
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.startReplayBuffer"));
 	list->addItem(obs_module_text(
-		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.startStreaming"));
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.stopReplayBuffer"));
 }
 
 SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
@@ -189,9 +313,9 @@ SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
 	duration->setSuffix("s");
 
 	QWidget::connect(triggers, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(TriggerChanged(int)));
+			 SLOT(TriggerTypeChanged(int)));
 	QWidget::connect(actions, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(ActionChanged(int)));
+			 SLOT(TriggerActionChanged(int)));
 	QWidget::connect(duration, SIGNAL(valueChanged(double)), this,
 			 SLOT(DurationChanged(double)));
 

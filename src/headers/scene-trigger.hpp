@@ -11,10 +11,16 @@ enum class sceneTriggerType {
 
 enum class sceneTriggerAction {
 	NONE = 0,
-	STOP_RECORDING = 1,
-	STOP_STREAMING = 2,
-	START_RECORDING = 3,
-	START_STREAMING = 4,
+	START_RECORDING,
+	PAUSE_RECORDING,
+	UNPAUSE_RECORDING,
+	STOP_RECORDING,
+
+	START_STREAMING,
+	STOP_STREAMING,
+
+	START_REPLAY_BUFFER,
+	STOP_REPLAY_BUFFER,
 };
 
 struct SceneTrigger : SceneSwitcherEntry {
@@ -26,6 +32,10 @@ struct SceneTrigger : SceneSwitcherEntry {
 	const char *getType() { return "trigger"; }
 	void save(obs_data_t *obj);
 	void load(obs_data_t *obj);
+
+	bool checkMatch(OBSWeakSource previousScene);
+	void performAction();
+	void logMatch();
 };
 
 class SceneTriggerWidget : public SwitchWidget {
