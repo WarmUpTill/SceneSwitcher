@@ -3571,7 +3571,7 @@
        <item>
         <layout class="QGridLayout" name="gridLayout_20">
          <item row="0" column="0">
-          <widget class="QListWidget" name="sceneTriggerSwitches">
+          <widget class="QListWidget" name="sceneTriggers">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -3584,7 +3584,7 @@
           </widget>
          </item>
          <item row="0" column="0">
-          <widget class="QLabel" name="tiggerHelp">
+          <widget class="QLabel" name="triggerHelp">
            <property name="text">
             <string>AdvSceneSwitcher.sceneTriggerTab.help</string>
            </property>
