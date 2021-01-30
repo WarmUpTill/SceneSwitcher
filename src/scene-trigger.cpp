@@ -1,3 +1,5 @@
+#include <thread>
+
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
