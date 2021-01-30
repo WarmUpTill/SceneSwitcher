@@ -77,7 +77,8 @@ private slots:
 protected:
 	virtual void SceneGroupAdd(const QString &name);
 	virtual void SceneGroupRemove(const QString &name);
-	virtual void SceneGroupRename(const QString &oldName, const QString &newName);
+	virtual void SceneGroupRename(const QString &oldName,
+				      const QString &newName);
 
 	bool loading = true;
 

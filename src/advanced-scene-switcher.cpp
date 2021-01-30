@@ -122,8 +122,7 @@ void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
 
 	if (addIgnore)
-		sel->addItem(obs_module_text(
-			"AdvSceneSwitcher.selectIgnore"));
+		sel->addItem(obs_module_text("AdvSceneSwitcher.selectIgnore"));
 
 	BPtr<char *> scenes = obs_frontend_get_scene_names();
 	char **temp = scenes;

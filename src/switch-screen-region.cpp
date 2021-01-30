@@ -333,8 +333,8 @@ ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
 	maxY->setMaximum(1000000);
 
 	QWidget::connect(excludeScenes,
-			 SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(ExcludeSceneChanged(const QString &)));
+			 SIGNAL(currentTextChanged(const QString &)), this,
+			 SLOT(ExcludeSceneChanged(const QString &)));
 
 	QWidget::connect(minX, SIGNAL(valueChanged(int)), this,
 			 SLOT(MinXChanged(int)));
@@ -359,9 +359,12 @@ ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{minX}}", minX},     {"{{minY}}", minY},
-		{"{{maxX}}", maxX},     {"{{maxY}}", maxY},
-		{"{{scenes}}", scenes}, {"{{transitions}}", transitions},
+		{"{{minX}}", minX},
+		{"{{minY}}", minY},
+		{"{{maxX}}", maxX},
+		{"{{maxY}}", maxY},
+		{"{{scenes}}", scenes},
+		{"{{transitions}}", transitions},
 		{"{{excludeScenes}}", excludeScenes}};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.screenRegionTab.entry"),
 		     mainLayout, widgetPlaceholders);
@@ -457,7 +460,6 @@ void ScreenRegionWidget::SceneGroupRename(const QString &oldName,
 	if (renameSelected)
 		excludeScenes->setCurrentIndex(
 			excludeScenes->findText(newName));
-
 }
 
 void ScreenRegionWidget::ExcludeSceneChanged(const QString &text)
