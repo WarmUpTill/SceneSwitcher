@@ -4,71 +4,75 @@
 bool SceneTrigger::pause = false;
 static QMetaObject::Connection addPulse;
 
-//void AdvSceneSwitcher::on_triggerAdd_clicked()
-//{
-//	std::lock_guard<std::mutex> lock(switcher->m);
-//	switcher->sceneTriggerSwitches.emplace_back();
-//
-//	listAddClicked(ui->sceneTriggerSwitches,
-//		       new TimeSwitchWidget(this,
-//					    &switcher->timeSwitches.back()),
-//		       ui->timeAdd, &addPulse);
-//
-//	ui->tiggerHelp->setVisible(false);
-//}
-//
-//void AdvSceneSwitcher::on_triggerRemove_clicked()
-//{
-//	QListWidgetItem *item = ui->sceneTriggerSwitches->currentItem();
-//	if (!item)
-//		return;
-//
-//	{
-//		std::lock_guard<std::mutex> lock(switcher->m);
-//		int idx = ui->timeSwitches->currentRow();
-//		auto &switches = switcher->timeSwitches;
-//		switches.erase(switches.begin() + idx);
-//	}
-//
-//	delete item;
-//}
-//
-//void AdvSceneSwitcher::on_triggerUp_clicked()
-//{
-//	int index = ui->timeSwitches->currentRow();
-//	if (!listMoveUp(ui->timeSwitches))
-//		return;
-//
-//	TimeSwitchWidget *s1 = (TimeSwitchWidget *)ui->timeSwitches->itemWidget(
-//		ui->timeSwitches->item(index));
-//	TimeSwitchWidget *s2 = (TimeSwitchWidget *)ui->timeSwitches->itemWidget(
-//		ui->timeSwitches->item(index - 1));
-//	TimeSwitchWidget::swapSwitchData(s1, s2);
-//
-//	std::lock_guard<std::mutex> lock(switcher->m);
-//
-//	std::swap(switcher->timeSwitches[index],
-//		  switcher->timeSwitches[index - 1]);
-//}
-//
-//void AdvSceneSwitcher::on_triggerDown_clicked()
-//{
-//	int index = ui->timeSwitches->currentRow();
-//
-//	if (!listMoveDown(ui->timeSwitches))
-//		return;
-//
-//	TimeSwitchWidget *s1 = (TimeSwitchWidget *)ui->timeSwitches->itemWidget(
-//		ui->timeSwitches->item(index));
-//	TimeSwitchWidget *s2 = (TimeSwitchWidget *)ui->timeSwitches->itemWidget(
-//		ui->timeSwitches->item(index + 1));
-//	TimeSwitchWidget::swapSwitchData(s1, s2);
-//
-//	std::lock_guard<std::mutex> lock(switcher->m);
-//
-//	std::swap(switcher->timeSwitches[index],
-//		  switcher->timeSwitches[index + 1]);
-//}
+void AdvSceneSwitcher::on_triggerAdd_clicked()
+{
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->sceneTriggers.emplace_back();
+
+	listAddClicked(ui->sceneTriggers,
+		       new SceneTriggerWidget(this,
+					      &switcher->sceneTriggers.back()),
+		       ui->triggerAdd, &addPulse);
+
+	ui->triggerHelp->setVisible(false);
+}
+
+void AdvSceneSwitcher::on_triggerRemove_clicked()
+{
+	QListWidgetItem *item = ui->sceneTriggers->currentItem();
+	if (!item)
+		return;
+
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		int idx = ui->sceneTriggers->currentRow();
+		auto &switches = switcher->sceneTriggers;
+		switches.erase(switches.begin() + idx);
+	}
+
+	delete item;
+}
+
+void AdvSceneSwitcher::on_triggerUp_clicked()
+{
+	int index = ui->sceneTriggers->currentRow();
+	if (!listMoveUp(ui->sceneTriggers))
+		return;
+
+	SceneTriggerWidget *s1 =
+		(SceneTriggerWidget *)ui->sceneTriggers->itemWidget(
+			ui->sceneTriggers->item(index));
+	SceneTriggerWidget *s2 =
+		(SceneTriggerWidget *)ui->sceneTriggers->itemWidget(
+			ui->sceneTriggers->item(index - 1));
+	SceneTriggerWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->sceneTriggers[index],
+		  switcher->sceneTriggers[index - 1]);
+}
+
+void AdvSceneSwitcher::on_triggerDown_clicked()
+{
+	int index = ui->sceneTriggers->currentRow();
+
+	if (!listMoveDown(ui->sceneTriggers))
+		return;
+
+	SceneTriggerWidget *s1 =
+		(SceneTriggerWidget *)ui->sceneTriggers->itemWidget(
+			ui->sceneTriggers->item(index));
+	SceneTriggerWidget *s2 =
+		(SceneTriggerWidget *)ui->sceneTriggers->itemWidget(
+			ui->sceneTriggers->item(index + 1));
+	SceneTriggerWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->sceneTriggers[index],
+		  switcher->sceneTriggers[index + 1]);
+}
 
 //void SwitcherData::checkTriggers()
 //{
@@ -77,77 +81,100 @@ static QMetaObject::Connection addPulse;
 //	}
 //}
 //
-//void SwitcherData::saveSceneTriggers(obs_data_t *obj)
-//{
-//	obs_data_array_t *timeArray = obs_data_array_create();
-//	for (TimeSwitch &s : switcher->timeSwitches) {
-//		obs_data_t *array_obj = obs_data_create();
-//
-//		s.save(array_obj);
-//		obs_data_array_push_back(timeArray, array_obj);
-//
-//		obs_data_release(array_obj);
-//	}
-//	obs_data_set_array(obj, "timeSwitches", timeArray);
-//	obs_data_array_release(timeArray);
-//}
-//
-//void SwitcherData::loadSceneTriggers(obs_data_t *obj)
-//{
-//	switcher->timeSwitches.clear();
-//
-//	obs_data_array_t *timeArray = obs_data_get_array(obj, "timeSwitches");
-//	size_t count = obs_data_array_count(timeArray);
-//
-//	for (size_t i = 0; i < count; i++) {
-//		obs_data_t *array_obj = obs_data_array_item(timeArray, i);
-//
-//		switcher->timeSwitches.emplace_back();
-//		timeSwitches.back().load(array_obj);
-//
-//		obs_data_release(array_obj);
-//	}
-//	obs_data_array_release(timeArray);
-//}
-//
-//void AdvSceneSwitcher::setupTriggerTab()
-//{
-//	for (auto &s : switcher->timeSwitches) {
-//		QListWidgetItem *item;
-//		item = new QListWidgetItem(ui->timeSwitches);
-//		ui->timeSwitches->addItem(item);
-//		TimeSwitchWidget *sw = new TimeSwitchWidget(this, &s);
-//		item->setSizeHint(sw->minimumSizeHint());
-//		ui->timeSwitches->setItemWidget(item, sw);
-//	}
-//
-//	if (switcher->timeSwitches.size() == 0) {
-//		addPulse = PulseWidget(ui->timeAdd, QColor(Qt::green));
-//		ui->timeHelp->setVisible(true);
-//	} else {
-//		ui->timeHelp->setVisible(false);
-//	}
-//}
+void SwitcherData::saveSceneTriggers(obs_data_t *obj)
+{
+	obs_data_array_t *triggerArray = obs_data_array_create();
+	for (auto &s : switcher->sceneTriggers) {
+		obs_data_t *array_obj = obs_data_create();
+
+		s.save(array_obj);
+		obs_data_array_push_back(triggerArray, array_obj);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "triggers", triggerArray);
+	obs_data_array_release(triggerArray);
+}
+
+void SwitcherData::loadSceneTriggers(obs_data_t *obj)
+{
+	switcher->sceneTriggers.clear();
+
+	obs_data_array_t *triggerArray = obs_data_get_array(obj, "triggers");
+	size_t count = obs_data_array_count(triggerArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj = obs_data_array_item(triggerArray, i);
+
+		switcher->sceneTriggers.emplace_back();
+		sceneTriggers.back().load(array_obj);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(triggerArray);
+}
+
+void AdvSceneSwitcher::setupTriggerTab()
+{
+	for (auto &s : switcher->sceneTriggers) {
+		QListWidgetItem *item;
+		item = new QListWidgetItem(ui->sceneTriggers);
+		ui->sceneTriggers->addItem(item);
+		SceneTriggerWidget *sw = new SceneTriggerWidget(this, &s);
+		item->setSizeHint(sw->minimumSizeHint());
+		ui->sceneTriggers->setItemWidget(item, sw);
+	}
+
+	if (switcher->sceneTriggers.size() == 0) {
+		addPulse = PulseWidget(ui->triggerAdd, QColor(Qt::green));
+		ui->triggerHelp->setVisible(true);
+	} else {
+		ui->triggerHelp->setVisible(false);
+	}
+}
 
 void SceneTrigger::save(obs_data_t *obj)
 {
 	SceneSwitcherEntry::save(obj, "unused", "scene", "unused");
 
-	//obs_data_set_int(obj, "trigger", trigger);
-	//obs_data_set_string(obj, "time", time.toString().toStdString().c_str());
+	obs_data_set_int(obj, "triggerType", static_cast<int>(triggerType));
+	obs_data_set_int(obj, "triggerAction", static_cast<int>(triggerAction));
 }
 
 void SceneTrigger::load(obs_data_t *obj)
 {
-	SceneSwitcherEntry::load(obj, "unused", "scene", "unused");
+	SceneSwitcherEntry::load(obj, "unused", "scene", "unused2");
 
-	//trigger = (timeTrigger)obs_data_get_int(obj, "trigger");
-	//time = QTime::fromString(obs_data_get_string(obj, "time"));
+	triggerType = static_cast<sceneTriggerType>(
+		obs_data_get_int(obj, "triggerType"));
+	triggerAction = static_cast<sceneTriggerAction>(
+		obs_data_get_int(obj, "triggerAction"));
 }
 
 inline void populateTriggers(QComboBox *list)
 {
-	//list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.anyDay"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerType.none"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerType.sceneActive"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerType.sceneInactive"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerType.sceneLeave"));
+}
+
+inline void populateActions(QComboBox *list)
+{
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.none"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.stopRecording"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.stopStreaming"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.startRecording"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.startStreaming"));
 }
 
 SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
@@ -157,32 +184,39 @@ SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
 	actions = new QComboBox();
 	duration = new QDoubleSpinBox();
 
-	//QWidget::connect(triggers, SIGNAL(currentIndexChanged(int)), this,
-	//		 SLOT(TriggerChanged(int)));
-	//QWidget::connect(time, SIGNAL(timeChanged(const QTime &)), this,
-	//		 SLOT(TimeChanged(const QTime &)));
-	//
-	//populateTriggers(triggers);
-	//time->setDisplayFormat("HH:mm:ss");
-	//
-	//if (s) {
-	//	triggers->setCurrentIndex(s->trigger);
-	//	time->setTime(s->time);
-	//}
-	//
-	//QHBoxLayout *mainLayout = new QHBoxLayout;
-	//std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-	//	{"{{triggers}}", triggers},
-	//	{"{{time}}", time},
-	//	{"{{scenes}}", scenes},
-	//	{"{{transitions}}", transitions}};
-	//placeWidgets(obs_module_text("AdvSceneSwitcher.timeTab.entry"),
-	//	     mainLayout, widgetPlaceholders);
-	//setLayout(mainLayout);
-	//
-	//switchData = s;
-	//
-	//loading = false;
+	duration->setMinimum(0.0);
+	duration->setMaximum(99.000000);
+	duration->setSuffix("s");
+
+	QWidget::connect(triggers, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(TriggerChanged(int)));
+	QWidget::connect(actions, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(ActionChanged(int)));
+	QWidget::connect(duration, SIGNAL(valueChanged(double)), this,
+			 SLOT(DurationChanged(double)));
+
+	populateTriggers(triggers);
+	populateActions(actions);
+
+	if (s) {
+		triggers->setCurrentIndex(static_cast<int>(s->triggerType));
+		actions->setCurrentIndex(static_cast<int>(s->triggerAction));
+		duration->setValue(s->duration);
+	}
+
+	QHBoxLayout *mainLayout = new QHBoxLayout;
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{triggers}}", triggers},
+		{"{{actions}}", actions},
+		{"{{duration}}", duration},
+		{"{{scenes}}", scenes}};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.sceneTriggerTab.entry"),
+		     mainLayout, widgetPlaceholders);
+	setLayout(mainLayout);
+
+	switchData = s;
+
+	loading = false;
 }
 
 SceneTrigger *SceneTriggerWidget::getSwitchData()
@@ -205,8 +239,26 @@ void SceneTriggerWidget::swapSwitchData(SceneTriggerWidget *s1,
 	s2->setSwitchData(t);
 }
 
-void SceneTriggerWidget::TriggerTypeChanged(int index) {}
+void SceneTriggerWidget::TriggerTypeChanged(int index)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->triggerType = static_cast<sceneTriggerType>(index);
+}
 
-void SceneTriggerWidget::TriggerActionChanged(int index) {}
+void SceneTriggerWidget::TriggerActionChanged(int index)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->triggerAction = static_cast<sceneTriggerAction>(index);
+}
 
-void SceneTriggerWidget::DurationChanged(double dur) {}
+void SceneTriggerWidget::DurationChanged(double dur)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->duration = dur;
+}
