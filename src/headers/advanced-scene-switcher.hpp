@@ -54,6 +54,7 @@ public:
 	void setupTimeTab();
 	void setupAudioTab();
 	void setupSceneGroupTab();
+	void setupTriggerTab();
 	void setTabOrder();
 
 	static bool DisplayMessage(QString msg, bool question = false);
@@ -206,6 +207,11 @@ public slots:
 	void on_sceneGroupSceneUp_clicked();
 	void on_sceneGroupSceneDown_clicked();
 
+	void on_triggerAdd_clicked();
+	void on_triggerRemove_clicked();
+	void on_triggerUp_clicked();
+	void on_triggerDown_clicked();
+
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();
 	void on_threadPriority_currentTextChanged(const QString &text);
@@ -254,6 +260,8 @@ void overwriteTransitionOverride(obs_weak_source_t *sceneWs,
 void restoreTransitionOverride(obs_source_t *scene, transitionData td);
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 		 bool &transitionOverrideOverride);
+
+
 
 /********************************************************************************
  * Main SwitcherData

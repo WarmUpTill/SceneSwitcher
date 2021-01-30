@@ -2,6 +2,7 @@
 
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
+#include "headers/version.h"
 
 constexpr auto tab_count = 15;
 
@@ -347,20 +348,7 @@ void AdvSceneSwitcher::on_exportSettings_clicked()
 
 	obs_data_t *obj = obs_data_create();
 
-	switcher->saveWindowTitleSwitches(obj);
-	switcher->saveScreenRegionSwitches(obj);
-	switcher->savePauseSwitches(obj);
-	switcher->saveSceneSequenceSwitches(obj);
-	switcher->saveSceneTransitions(obj);
-	switcher->saveIdleSwitches(obj);
-	switcher->saveExecutableSwitches(obj);
-	switcher->saveRandomSwitches(obj);
-	switcher->saveFileSwitches(obj);
-	switcher->saveMediaSwitches(obj);
-	switcher->saveTimeSwitches(obj);
-	switcher->saveAudioSwitches(obj);
-	switcher->saveGeneralSettings(obj);
-	switcher->saveHotkeys(obj);
+	switcher->saveSettings(obj);
 
 	obs_data_save_json(obj, file.fileName().toUtf8().constData());
 
@@ -399,20 +387,7 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 		return;
 	}
 
-	switcher->loadWindowTitleSwitches(obj);
-	switcher->loadScreenRegionSwitches(obj);
-	switcher->loadPauseSwitches(obj);
-	switcher->loadSceneSequenceSwitches(obj);
-	switcher->loadSceneTransitions(obj);
-	switcher->loadIdleSwitches(obj);
-	switcher->loadExecutableSwitches(obj);
-	switcher->loadRandomSwitches(obj);
-	switcher->loadFileSwitches(obj);
-	switcher->loadMediaSwitches(obj);
-	switcher->loadTimeSwitches(obj);
-	switcher->loadAudioSwitches(obj);
-	switcher->loadGeneralSettings(obj);
-	switcher->loadHotkeys(obj);
+	switcher->loadSettings(obj);
 
 	obs_data_release(obj);
 
@@ -516,6 +491,53 @@ void AdvSceneSwitcher::on_tabWidget_currentChanged(int index)
 	switcher->showFrame = false;
 	clearFrames(ui->screenRegionSwitches);
 	SetShowFrames();
+}
+
+void SwitcherData::loadSettings(obs_data_t *obj)
+{
+	if (!obj)
+		return;
+
+	switcher->loadSceneGroups(obj);
+	switcher->loadWindowTitleSwitches(obj);
+	switcher->loadScreenRegionSwitches(obj);
+	switcher->loadPauseSwitches(obj);
+	switcher->loadSceneSequenceSwitches(obj);
+	switcher->loadSceneTransitions(obj);
+	switcher->loadIdleSwitches(obj);
+	switcher->loadExecutableSwitches(obj);
+	switcher->loadRandomSwitches(obj);
+	switcher->loadFileSwitches(obj);
+	switcher->loadMediaSwitches(obj);
+	switcher->loadTimeSwitches(obj);
+	switcher->loadAudioSwitches(obj);
+	switcher->loadSceneTriggers(obj);
+	switcher->loadGeneralSettings(obj);
+	switcher->loadHotkeys(obj);
+}
+
+void SwitcherData::saveSettings(obs_data_t *obj)
+{
+	if (!obj)
+		return;
+
+	saveSceneGroups(obj);
+	saveWindowTitleSwitches(obj);
+	saveScreenRegionSwitches(obj);
+	savePauseSwitches(obj);
+	saveSceneSequenceSwitches(obj);
+	saveSceneTransitions(obj);
+	saveIdleSwitches(obj);
+	saveExecutableSwitches(obj);
+	saveRandomSwitches(obj);
+	saveFileSwitches(obj);
+	saveMediaSwitches(obj);
+	saveTimeSwitches(obj);
+	saveAudioSwitches(obj);
+	saveSceneTriggers(obj);
+	saveGeneralSettings(obj);
+	saveHotkeys(obj);
+	saveVersion(obj, g_GIT_SHA1);
 }
 
 void SwitcherData::saveGeneralSettings(obs_data_t *obj)

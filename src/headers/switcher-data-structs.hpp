@@ -93,6 +93,8 @@ struct SwitcherData {
 
 	std::deque<ExecutableSwitch> executableSwitches;
 
+	std::deque<SceneTrigger> sceneTriggers;
+
 	bool autoStopEnable = false;
 	AutoStartStopType autoStopType = RECORINDGSTREAMING;
 	OBSWeakSource autoStopScene;
@@ -201,6 +203,7 @@ struct SwitcherData {
 				OBSWeakSource &transition, int &sleep);
 	void checkSwitchCooldown(bool &match);
 
+	void saveSettings(obs_data_t *obj);
 	void saveWindowTitleSwitches(obs_data_t *obj);
 	void saveScreenRegionSwitches(obs_data_t *obj);
 	void savePauseSwitches(obs_data_t *obj);
@@ -214,10 +217,12 @@ struct SwitcherData {
 	void saveTimeSwitches(obs_data_t *obj);
 	void saveAudioSwitches(obs_data_t *obj);
 	void saveSceneGroups(obs_data_t *obj);
+	void saveSceneTriggers(obs_data_t *obj);
 	void saveGeneralSettings(obs_data_t *obj);
 	void saveHotkeys(obs_data_t *obj);
 	void saveVersion(obs_data_t *obj, std::string currentVersion);
 
+	void loadSettings(obs_data_t *obj);
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
 	void loadPauseSwitches(obs_data_t *obj);
@@ -232,6 +237,7 @@ struct SwitcherData {
 	void loadTimeSwitches(obs_data_t *obj);
 	void loadAudioSwitches(obs_data_t *obj);
 	void loadSceneGroups(obs_data_t *obj);
+	void loadSceneTriggers(obs_data_t *obj);
 	void loadGeneralSettings(obs_data_t *obj);
 	void loadHotkeys(obs_data_t *obj);
 

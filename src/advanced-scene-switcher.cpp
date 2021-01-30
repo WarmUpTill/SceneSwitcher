@@ -60,6 +60,7 @@ void AdvSceneSwitcher::loadUI()
 	setupTimeTab();
 	setupAudioTab();
 	setupSceneGroupTab();
+	setupTriggerTab();
 
 	setTabOrder();
 
@@ -357,22 +358,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 		obs_data_t *obj = obs_data_create();
 
-		switcher->saveSceneGroups(obj);
-		switcher->saveWindowTitleSwitches(obj);
-		switcher->saveScreenRegionSwitches(obj);
-		switcher->savePauseSwitches(obj);
-		switcher->saveSceneSequenceSwitches(obj);
-		switcher->saveSceneTransitions(obj);
-		switcher->saveIdleSwitches(obj);
-		switcher->saveExecutableSwitches(obj);
-		switcher->saveRandomSwitches(obj);
-		switcher->saveFileSwitches(obj);
-		switcher->saveMediaSwitches(obj);
-		switcher->saveTimeSwitches(obj);
-		switcher->saveAudioSwitches(obj);
-		switcher->saveGeneralSettings(obj);
-		switcher->saveHotkeys(obj);
-		switcher->saveVersion(obj, g_GIT_SHA1);
+		switcher->saveSettings(obj);
 
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
 
@@ -388,21 +374,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		if (switcher->versionChanged(obj, g_GIT_SHA1))
 			AdvSceneSwitcher::AskBackup(obj);
 
-		switcher->loadSceneGroups(obj);
-		switcher->loadWindowTitleSwitches(obj);
-		switcher->loadScreenRegionSwitches(obj);
-		switcher->loadPauseSwitches(obj);
-		switcher->loadSceneSequenceSwitches(obj);
-		switcher->loadSceneTransitions(obj);
-		switcher->loadIdleSwitches(obj);
-		switcher->loadExecutableSwitches(obj);
-		switcher->loadRandomSwitches(obj);
-		switcher->loadFileSwitches(obj);
-		switcher->loadMediaSwitches(obj);
-		switcher->loadTimeSwitches(obj);
-		switcher->loadAudioSwitches(obj);
-		switcher->loadGeneralSettings(obj);
-		switcher->loadHotkeys(obj);
+		switcher->loadSettings(obj);
 
 		obs_data_release(obj);
 
