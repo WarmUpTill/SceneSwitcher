@@ -21,6 +21,8 @@ enum class sceneTriggerAction {
 
 	START_REPLAY_BUFFER,
 	STOP_REPLAY_BUFFER,
+
+	MUTE_SOURCE,
 };
 
 struct SceneTrigger : SceneSwitcherEntry {
@@ -28,6 +30,7 @@ struct SceneTrigger : SceneSwitcherEntry {
 	sceneTriggerType triggerType = sceneTriggerType::NONE;
 	sceneTriggerAction triggerAction = sceneTriggerAction::NONE;
 	double duration = 0;
+	OBSWeakSource audioSource = nullptr;
 
 	const char *getType() { return "trigger"; }
 	void save(obs_data_t *obj);
@@ -53,11 +56,13 @@ private slots:
 	void TriggerTypeChanged(int index);
 	void TriggerActionChanged(int index);
 	void DurationChanged(double dur);
+	void AudioSourceChanged(const QString &text);
 
 private:
 	QComboBox *triggers;
 	QComboBox *actions;
 	QDoubleSpinBox *duration;
+	QComboBox *audioSources;
 
 	SceneTrigger *switchData;
 };

@@ -78,7 +78,7 @@ void AdvSceneSwitcher::on_triggerDown_clicked()
 
 void SceneTrigger::logMatch()
 {
-	const char *actionName = "";
+	std::string actionName = "";
 
 	switch (triggerAction) {
 	case sceneTriggerAction::NONE:
@@ -108,15 +108,19 @@ void SceneTrigger::logMatch()
 	case sceneTriggerAction::STOP_REPLAY_BUFFER:
 		actionName = "STOP REPLAY BUFFER";
 		break;
+	case sceneTriggerAction::MUTE_SOURCE:
+		actionName = "MUTE (" + GetWeakSourceName(audioSource) + ")";
+		break;
 	default:
+		actionName = "UNKOWN";
 		break;
 	}
 
-	blog(LOG_INFO, "triggering action '%s' after %f seconds", actionName,
-	     duration);
+	blog(LOG_INFO, "triggering action '%s' after %f seconds",
+	     actionName.c_str(), duration);
 }
 
-void actionThread(sceneTriggerAction action, double delay)
+void frontEndActionThread(sceneTriggerAction action, double delay)
 {
 	long long mil = delay * 1000;
 	std::this_thread::sleep_for(std::chrono::milliseconds(mil));
@@ -148,9 +152,34 @@ void actionThread(sceneTriggerAction action, double delay)
 	case sceneTriggerAction::STOP_REPLAY_BUFFER:
 		obs_frontend_replay_buffer_stop();
 		break;
+	case sceneTriggerAction::MUTE_SOURCE:
+		obs_frontend_replay_buffer_stop();
+		break;
 	default:
 		break;
 	}
+}
+
+void muteThread(OBSWeakSource source, double delay)
+{
+	long long mil = delay * 1000;
+	std::this_thread::sleep_for(std::chrono::milliseconds(mil));
+
+	auto s = obs_weak_source_get_source(source);
+	obs_source_set_muted(s, true);
+	obs_source_release(s);
+}
+
+bool isFrontendAction(sceneTriggerAction triggerAction)
+{
+	return triggerAction == sceneTriggerAction::START_RECORDING ||
+	       triggerAction == sceneTriggerAction::PAUSE_RECORDING ||
+	       triggerAction == sceneTriggerAction::UNPAUSE_RECORDING ||
+	       triggerAction == sceneTriggerAction::STOP_RECORDING ||
+	       triggerAction == sceneTriggerAction::START_STREAMING ||
+	       triggerAction == sceneTriggerAction::STOP_STREAMING ||
+	       triggerAction == sceneTriggerAction::START_REPLAY_BUFFER ||
+	       triggerAction == sceneTriggerAction::STOP_REPLAY_BUFFER;
 }
 
 void SceneTrigger::performAction()
@@ -158,7 +187,12 @@ void SceneTrigger::performAction()
 	if (triggerAction == sceneTriggerAction::NONE)
 		return;
 
-	std::thread t(actionThread, triggerAction, duration);
+	std::thread t;
+
+	if (isFrontendAction(triggerAction))
+		t = std::thread(frontEndActionThread, triggerAction, duration);
+	else
+		t = std::thread(muteThread, audioSource, duration);
 	t.detach();
 }
 
@@ -253,20 +287,34 @@ void AdvSceneSwitcher::setupTriggerTab()
 
 void SceneTrigger::save(obs_data_t *obj)
 {
-	SceneSwitcherEntry::save(obj, "unused", "scene", "unused");
+	obs_source_t *sceneSource = obs_weak_source_get_source(scene);
+	const char *sceneName = obs_source_get_name(sceneSource);
+	obs_data_set_string(obj, "scene", sceneName);
+	obs_source_release(sceneSource);
 
 	obs_data_set_int(obj, "triggerType", static_cast<int>(triggerType));
 	obs_data_set_int(obj, "triggerAction", static_cast<int>(triggerAction));
+	obs_data_set_double(obj, "duration", duration);
+
+	obs_source_t *source = obs_weak_source_get_source(audioSource);
+	const char *audioSourceName = obs_source_get_name(source);
+	obs_data_set_string(obj, "audioSource", audioSourceName);
+	obs_source_release(source);
 }
 
 void SceneTrigger::load(obs_data_t *obj)
 {
-	SceneSwitcherEntry::load(obj, "unused", "scene", "unused2");
+	const char *sceneName = obs_data_get_string(obj, "scene");
+	scene = GetWeakSourceByName(sceneName);
 
 	triggerType = static_cast<sceneTriggerType>(
 		obs_data_get_int(obj, "triggerType"));
 	triggerAction = static_cast<sceneTriggerAction>(
 		obs_data_get_int(obj, "triggerAction"));
+	duration = obs_data_get_double(obj, "duration");
+
+	const char *audioSourceName = obs_data_get_string(obj, "audioSource");
+	audioSource = GetWeakSourceByName(audioSourceName);
 }
 
 inline void populateTriggers(QComboBox *list)
@@ -301,6 +349,8 @@ inline void populateActions(QComboBox *list)
 		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.startReplayBuffer"));
 	list->addItem(obs_module_text(
 		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.stopReplayBuffer"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.muteSource"));
 }
 
 SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
@@ -309,6 +359,7 @@ SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
 	triggers = new QComboBox();
 	actions = new QComboBox();
 	duration = new QDoubleSpinBox();
+	audioSources = new QComboBox();
 
 	duration->setMinimum(0.0);
 	duration->setMaximum(99.000000);
@@ -320,20 +371,32 @@ SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
 			 SLOT(TriggerActionChanged(int)));
 	QWidget::connect(duration, SIGNAL(valueChanged(double)), this,
 			 SLOT(DurationChanged(double)));
+	QWidget::connect(audioSources,
+			 SIGNAL(currentTextChanged(const QString &)), this,
+			 SLOT(AudioSourceChanged(const QString &)));
 
 	populateTriggers(triggers);
 	populateActions(actions);
+	AdvSceneSwitcher::populateAudioSelection(audioSources);
 
 	if (s) {
 		triggers->setCurrentIndex(static_cast<int>(s->triggerType));
 		actions->setCurrentIndex(static_cast<int>(s->triggerAction));
 		duration->setValue(s->duration);
+
+		audioSources->setCurrentText(
+			GetWeakSourceName(s->audioSource).c_str());
+		if (s->triggerAction == sceneTriggerAction::MUTE_SOURCE)
+			audioSources->show();
+		else
+			audioSources->hide();
 	}
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{triggers}}", triggers},
 		{"{{actions}}", actions},
+		{"{{audioSources}}", audioSources},
 		{"{{duration}}", duration},
 		{"{{scenes}}", scenes}};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.sceneTriggerTab.entry"),
@@ -377,8 +440,16 @@ void SceneTriggerWidget::TriggerActionChanged(int index)
 {
 	if (loading || !switchData)
 		return;
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switchData->triggerAction = static_cast<sceneTriggerAction>(index);
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		switchData->triggerAction =
+			static_cast<sceneTriggerAction>(index);
+	}
+
+	if (switchData->triggerAction == sceneTriggerAction::MUTE_SOURCE)
+		audioSources->show();
+	else
+		audioSources->hide();
 }
 
 void SceneTriggerWidget::DurationChanged(double dur)
@@ -387,4 +458,12 @@ void SceneTriggerWidget::DurationChanged(double dur)
 		return;
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->duration = dur;
+}
+
+void SceneTriggerWidget::AudioSourceChanged(const QString &text)
+{
+	if (loading || !switchData)
+		return;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->audioSource = GetWeakSourceByQString(text);
 }
