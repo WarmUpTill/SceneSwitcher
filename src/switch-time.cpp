@@ -229,7 +229,7 @@ void TimeSwitch::load(obs_data_t *obj)
 	time = QTime::fromString(obs_data_get_string(obj, "time"));
 }
 
-void populateTriggers(QComboBox *list)
+inline void populateTriggers(QComboBox *list)
 {
 	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.anyDay"));
 	list->addItem(obs_module_text("AdvSceneSwitcher.timeTab.mondays"));
