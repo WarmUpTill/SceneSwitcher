@@ -261,8 +261,6 @@ void restoreTransitionOverride(obs_source_t *scene, transitionData td);
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 		 bool &transitionOverrideOverride);
 
-
-
 /********************************************************************************
  * Main SwitcherData
  ********************************************************************************/
