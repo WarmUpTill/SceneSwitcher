@@ -7,6 +7,7 @@ constexpr auto default_priority_4 = screen_region_func;
 
 struct ScreenRegionSwitch : SceneSwitcherEntry {
 	static bool pause;
+	OBSWeakSource excludeScene = nullptr;
 	int minX = 0, minY = 0, maxX = 0, maxY = 0;
 
 	const char *getType() { return "region"; }
@@ -29,12 +30,18 @@ public:
 	void hideFrame();
 
 private slots:
+	void SceneGroupAdd(const QString &name);
+	void SceneGroupRemove(const QString &name);
+	void SceneGroupRename(const QString &oldName, const QString &newName);
+
+	void ExcludeSceneChanged(const QString &text);
 	void MinXChanged(int pos);
 	void MinYChanged(int pos);
 	void MaxXChanged(int pos);
 	void MaxYChanged(int pos);
 
 private:
+	QComboBox *excludeScenes;
 	QSpinBox *minX;
 	QSpinBox *minY;
 	QSpinBox *maxX;

@@ -73,11 +73,12 @@ public:
 private slots:
 	void SceneChanged(const QString &text);
 	void TransitionChanged(const QString &text);
-	void SceneGroupAdd(const QString &name);
-	void SceneGroupRemove(const QString &name);
-	void SceneGroupRename(const QString &oldName, const QString &newName);
 
 protected:
+	virtual void SceneGroupAdd(const QString &name);
+	virtual void SceneGroupRemove(const QString &name);
+	virtual void SceneGroupRename(const QString &oldName, const QString &newName);
+
 	bool loading = true;
 
 	QComboBox *scenes;
