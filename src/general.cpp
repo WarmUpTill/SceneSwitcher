@@ -628,13 +628,13 @@ void SwitcherData::checkSwitchCooldown(bool &match)
 void populateAutoStartEventSelection(QComboBox *cb)
 {
 	cb->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.never"));
+		"AdvSceneSwitcher.generalTab.status.autoStart.never"));
 	cb->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.recording"));
+		"AdvSceneSwitcher.generalTab.status.autoStart.recording"));
 	cb->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.streaming"));
+		"AdvSceneSwitcher.generalTab.status.autoStart.streaming"));
 	cb->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.recordingAndStreaming"));
+		"AdvSceneSwitcher.generalTab.status.autoStart.recordingAndStreaming"));
 }
 
 void AdvSceneSwitcher::setupGeneralTab()
