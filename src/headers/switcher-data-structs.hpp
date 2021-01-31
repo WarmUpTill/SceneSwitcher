@@ -8,6 +8,7 @@
 #include <curl/curl.h>
 
 #include "scene-group.hpp"
+#include "scene-trigger.hpp"
 #include "switch-audio.hpp"
 #include "switch-executable.hpp"
 #include "switch-file.hpp"
@@ -26,11 +27,7 @@ constexpr auto previous_scene_name = "Previous Scene";
 
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 typedef enum { PERSIST = 0, START = 1, STOP = 2 } StartupBehavior;
-typedef enum {
-	RECORDING = 0,
-	STREAMING = 1,
-	RECORINDGSTREAMING = 2
-} AutoStartStopType;
+
 enum class AutoStartEvent {
 	NEVER,
 	RECORDING,
@@ -67,7 +64,7 @@ struct SwitcherData {
 
 	obs_source_t *waitScene = nullptr;
 	OBSWeakSource previousScene = nullptr;
-	OBSWeakSource previousScene2 = nullptr;
+	OBSWeakSource previousSceneHelper = nullptr;
 	OBSWeakSource lastRandomScene;
 	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
@@ -99,14 +96,7 @@ struct SwitcherData {
 
 	std::deque<ExecutableSwitch> executableSwitches;
 
-	bool autoStopEnable = false;
-	AutoStartStopType autoStopType = RECORINDGSTREAMING;
-	OBSWeakSource autoStopScene;
-
-	bool autoStartEnable = false;
-	AutoStartStopType autoStartType = RECORDING;
-	OBSWeakSource autoStartScene;
-	bool autoStartedRecently = false;
+	std::deque<SceneTrigger> sceneTriggers;
 
 	std::deque<SceneTransition> sceneTransitions;
 	std::deque<DefaultSceneTransition> defaultSceneTransitions;
@@ -173,8 +163,6 @@ struct SwitcherData {
 	bool prioFuncsValid();
 	void writeSceneInfoToFile();
 	void writeToStatusFile(QString status);
-	void autoStopStreamAndRecording();
-	void autoStartStreamRecording();
 	bool checkPause();
 	void checkDefaultSceneTransitions(bool &match,
 					  OBSWeakSource &transition);
@@ -206,7 +194,9 @@ struct SwitcherData {
 	void checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition, int &sleep);
 	void checkSwitchCooldown(bool &match);
+	void checkTriggers();
 
+	void saveSettings(obs_data_t *obj);
 	void saveWindowTitleSwitches(obs_data_t *obj);
 	void saveScreenRegionSwitches(obs_data_t *obj);
 	void savePauseSwitches(obs_data_t *obj);
@@ -220,10 +210,12 @@ struct SwitcherData {
 	void saveTimeSwitches(obs_data_t *obj);
 	void saveAudioSwitches(obs_data_t *obj);
 	void saveSceneGroups(obs_data_t *obj);
+	void saveSceneTriggers(obs_data_t *obj);
 	void saveGeneralSettings(obs_data_t *obj);
 	void saveHotkeys(obs_data_t *obj);
 	void saveVersion(obs_data_t *obj, std::string currentVersion);
 
+	void loadSettings(obs_data_t *obj);
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
 	void loadPauseSwitches(obs_data_t *obj);
@@ -238,6 +230,7 @@ struct SwitcherData {
 	void loadTimeSwitches(obs_data_t *obj);
 	void loadAudioSwitches(obs_data_t *obj);
 	void loadSceneGroups(obs_data_t *obj);
+	void loadSceneTriggers(obs_data_t *obj);
 	void loadGeneralSettings(obs_data_t *obj);
 	void loadHotkeys(obs_data_t *obj);
 

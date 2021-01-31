@@ -35,8 +35,6 @@ public:
 	int IgnoreIdleWindowsFindByData(const QString &window);
 
 	void UpdateNonMatchingScene(const QString &name);
-	void UpdateAutoStopScene(const QString &name);
-	void UpdateAutoStartScene(const QString &name);
 	void SetEditSceneGroup(SceneGroup &sg);
 
 	void loadUI();
@@ -54,6 +52,7 @@ public:
 	void setupTimeTab();
 	void setupAudioTab();
 	void setupSceneGroupTab();
+	void setupTriggerTab();
 	void setTabOrder();
 
 	static bool DisplayMessage(QString msg, bool question = false);
@@ -130,14 +129,6 @@ public slots:
 	void on_sceneSequenceUp_clicked();
 	void on_sceneSequenceDown_clicked();
 
-	void on_autoStopSceneCheckBox_stateChanged(int state);
-	void on_autoStopType_currentIndexChanged(int index);
-	void on_autoStopScenes_currentTextChanged(const QString &text);
-
-	void on_autoStartSceneCheckBox_stateChanged(int state);
-	void on_autoStartType_currentIndexChanged(int index);
-	void on_autoStartScenes_currentTextChanged(const QString &text);
-
 	void on_verboseLogging_stateChanged(int state);
 	void on_uiHintsDisable_stateChanged(int state);
 
@@ -206,6 +197,11 @@ public slots:
 	void on_sceneGroupSceneRemove_clicked();
 	void on_sceneGroupSceneUp_clicked();
 	void on_sceneGroupSceneDown_clicked();
+
+	void on_triggerAdd_clicked();
+	void on_triggerRemove_clicked();
+	void on_triggerUp_clicked();
+	void on_triggerDown_clicked();
 
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();
