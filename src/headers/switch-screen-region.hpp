@@ -30,10 +30,6 @@ public:
 	void hideFrame();
 
 private slots:
-	void SceneGroupAdd(const QString &name);
-	void SceneGroupRemove(const QString &name);
-	void SceneGroupRename(const QString &oldName, const QString &newName);
-
 	void ExcludeSceneChanged(const QString &text);
 	void MinXChanged(int pos);
 	void MinYChanged(int pos);

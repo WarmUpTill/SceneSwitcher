@@ -406,62 +406,6 @@ void ScreenRegionWidget::hideFrame()
 	helperFrame.hide();
 }
 
-void ScreenRegionWidget::SceneGroupAdd(const QString &name)
-{
-	SwitchWidget::SceneGroupAdd(name);
-
-	if (!excludeScenes)
-		return;
-
-	excludeScenes->addItem(name);
-}
-
-void ScreenRegionWidget::SceneGroupRemove(const QString &name)
-{
-	SwitchWidget::SceneGroupRemove(name);
-
-	if (!excludeScenes)
-		return;
-
-	int idx = excludeScenes->findText(name);
-
-	if (idx == -1) {
-		return;
-	}
-
-	excludeScenes->removeItem(idx);
-
-	if (switchData) {
-		std::lock_guard<std::mutex> lock(switcher->m);
-		switchData->excludeScene = nullptr;
-	}
-
-	excludeScenes->setCurrentIndex(0);
-}
-
-void ScreenRegionWidget::SceneGroupRename(const QString &oldName,
-					  const QString &newName)
-{
-	SwitchWidget::SceneGroupRename(oldName, newName);
-
-	if (!excludeScenes)
-		return;
-
-	bool renameSelected = excludeScenes->currentText() == oldName;
-	int idx = excludeScenes->findText(oldName);
-
-	if (idx == -1) {
-		return;
-	}
-
-	excludeScenes->removeItem(idx);
-	excludeScenes->insertItem(idx, newName);
-
-	if (renameSelected)
-		excludeScenes->setCurrentIndex(
-			excludeScenes->findText(newName));
-}
-
 void ScreenRegionWidget::ExcludeSceneChanged(const QString &text)
 {
 	if (loading || !switchData)
