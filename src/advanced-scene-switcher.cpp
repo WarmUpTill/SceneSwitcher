@@ -444,14 +444,6 @@ void SwitcherData::Thread()
 			break;
 		}
 
-		if (autoStopEnable) {
-			autoStopStreamAndRecording();
-		}
-
-		if (autoStartEnable) {
-			autoStartStreamRecording();
-		}
-
 		if (checkPause()) {
 			continue;
 		}
@@ -644,9 +636,6 @@ void handleSceneChange(SwitcherData *s)
 		s->previousScene = s->previousSceneHelper;
 		s->previousSceneHelper = ws;
 	}
-
-	//reset events only hanled on scene change
-	s->autoStartedRecently = false;
 
 	switcher->checkTriggers();
 }

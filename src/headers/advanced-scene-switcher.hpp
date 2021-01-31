@@ -35,8 +35,6 @@ public:
 	int IgnoreIdleWindowsFindByData(const QString &window);
 
 	void UpdateNonMatchingScene(const QString &name);
-	void UpdateAutoStopScene(const QString &name);
-	void UpdateAutoStartScene(const QString &name);
 	void SetEditSceneGroup(SceneGroup &sg);
 
 	void loadUI();
@@ -129,14 +127,6 @@ public slots:
 	void on_sceneSequenceLoad_clicked();
 	void on_sceneSequenceUp_clicked();
 	void on_sceneSequenceDown_clicked();
-
-	void on_autoStopSceneCheckBox_stateChanged(int state);
-	void on_autoStopType_currentIndexChanged(int index);
-	void on_autoStopScenes_currentTextChanged(const QString &text);
-
-	void on_autoStartSceneCheckBox_stateChanged(int state);
-	void on_autoStartType_currentIndexChanged(int index);
-	void on_autoStartScenes_currentTextChanged(const QString &text);
 
 	void on_verboseLogging_stateChanged(int state);
 	void on_uiHintsDisable_stateChanged(int state);

@@ -27,11 +27,6 @@ constexpr auto previous_scene_name = "Previous Scene";
 
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 typedef enum { PERSIST = 0, START = 1, STOP = 2 } StartupBehavior;
-typedef enum {
-	RECORDING = 0,
-	STREAMING = 1,
-	RECORINDGSTREAMING = 2
-} AutoStartStopType;
 
 typedef struct transitionData {
 	std::string name = "";
@@ -94,15 +89,6 @@ struct SwitcherData {
 	std::deque<ExecutableSwitch> executableSwitches;
 
 	std::deque<SceneTrigger> sceneTriggers;
-
-	bool autoStopEnable = false;
-	AutoStartStopType autoStopType = RECORINDGSTREAMING;
-	OBSWeakSource autoStopScene;
-
-	bool autoStartEnable = false;
-	AutoStartStopType autoStartType = RECORDING;
-	OBSWeakSource autoStartScene;
-	bool autoStartedRecently = false;
 
 	std::deque<SceneTransition> sceneTransitions;
 	std::deque<DefaultSceneTransition> defaultSceneTransitions;
@@ -169,8 +155,6 @@ struct SwitcherData {
 	bool prioFuncsValid();
 	void writeSceneInfoToFile();
 	void writeToStatusFile(QString status);
-	void autoStopStreamAndRecording();
-	void autoStartStreamRecording();
 	bool checkPause();
 	void checkDefaultSceneTransitions(bool &match,
 					  OBSWeakSource &transition);
