@@ -74,6 +74,15 @@ void AdvSceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
 	switcher->startupBehavior = (StartupBehavior)index;
 }
 
+void AdvSceneSwitcher::on_autoStartEvent_currentIndexChanged(int index)
+{
+	if (loading)
+		return;
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->autoStartEvent = static_cast<AutoStartEvent>(index);
+}
+
 void AdvSceneSwitcher::on_noMatchSwitchScene_currentTextChanged(
 	const QString &text)
 {
@@ -531,6 +540,8 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 
 	obs_data_set_bool(obj, "active", !switcher->stop);
 	obs_data_set_int(obj, "startup_behavior", switcher->startupBehavior);
+	obs_data_set_int(obj, "autoStartEvent",
+			 static_cast<int>(switcher->autoStartEvent));
 
 	std::string autoStopSceneName =
 		GetWeakSourceName(switcher->autoStopScene);
@@ -617,6 +628,9 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		switcher->stop = false;
 	if (switcher->startupBehavior == STOP)
 		switcher->stop = true;
+
+	switcher->autoStartEvent = static_cast<AutoStartEvent>(
+		obs_data_get_int(obj, "autoStartEvent"));
 
 	std::string autoStopScene =
 		obs_data_get_string(obj, "autoStopSceneName");
@@ -777,6 +791,18 @@ void populateAutoStartStopTypeSelection(QComboBox *cb)
 		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.recordingAndStreaming"));
 }
 
+void populateAutoStartEventSelection(QComboBox *cb)
+{
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.never"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.recording"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.streaming"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.recordingAndStreaming"));
+}
+
 void AdvSceneSwitcher::setupGeneralTab()
 {
 	populateSceneSelection(ui->noMatchSwitchScene, false);
@@ -902,6 +928,8 @@ void AdvSceneSwitcher::setupGeneralTab()
 		"AdvSceneSwitcher.generalTab.status.onStartup.alwaysStart"));
 	ui->startupBehavior->addItem(obs_module_text(
 		"AdvSceneSwitcher.generalTab.status.onStartup.doNotStart"));
+
+	populateAutoStartEventSelection(ui->autoStartEvent);
 
 	ui->startupBehavior->setCurrentIndex(switcher->startupBehavior);
 

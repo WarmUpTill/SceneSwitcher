@@ -31,6 +31,12 @@ typedef enum {
 	STREAMING = 1,
 	RECORINDGSTREAMING = 2
 } AutoStartStopType;
+enum class AutoStartEvent {
+	NEVER,
+	RECORDING,
+	STREAMING,
+	RECORINDG_OR_STREAMING,
+};
 
 typedef struct transitionData {
 	std::string name = "";
@@ -68,6 +74,7 @@ struct SwitcherData {
 	double noMatchDelay;
 	double noMatchCount = 0;
 	StartupBehavior startupBehavior = PERSIST;
+	AutoStartEvent autoStartEvent = AutoStartEvent::NEVER;
 
 	double cooldown = 0.;
 	std::chrono::high_resolution_clock::time_point lastMatchTime;

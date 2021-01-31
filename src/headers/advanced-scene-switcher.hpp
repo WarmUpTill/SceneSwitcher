@@ -100,6 +100,7 @@ public slots:
 	void on_noMatchDelay_valueChanged(double i);
 	void on_cooldownTime_valueChanged(double i);
 	void on_startupBehavior_currentIndexChanged(int index);
+	void on_autoStartEvent_currentIndexChanged(int index);
 	void on_noMatchSwitchScene_currentTextChanged(const QString &text);
 	void on_checkInterval_valueChanged(int value);
 	void on_toggleStartButton_clicked();

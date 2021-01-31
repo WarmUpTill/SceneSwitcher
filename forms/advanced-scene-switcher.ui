@@ -57,34 +57,6 @@
              <layout class="QGridLayout" name="gridLayout_4">
               <item row="0" column="0">
                <layout class="QGridLayout" name="gridLayout_2">
-                <item row="4" column="0">
-                 <widget class="QLabel" name="label_13">
-                  <property name="text">
-                   <string>AdvSceneSwitcher.generalTab.status.hotkeytips</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_5">
-                  <property name="text">
-                   <string>AdvSceneSwitcher.generalTab.status.currentStatus</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0">
-                 <widget class="QLabel" name="label_64">
-                  <property name="text">
-                   <string>AdvSceneSwitcher.generalTab.status.onStartup</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QPushButton" name="toggleStartButton">
-                  <property name="text">
-                   <string>AdvSceneSwitcher.generalTab.status.start</string>
-                  </property>
-                 </widget>
-                </item>
                 <item row="3" column="1">
                  <widget class="QComboBox" name="startupBehavior"/>
                 </item>
@@ -117,6 +89,13 @@
                   </property>
                  </widget>
                 </item>
+                <item row="2" column="1">
+                 <widget class="QPushButton" name="toggleStartButton">
+                  <property name="text">
+                   <string>AdvSceneSwitcher.generalTab.status.start</string>
+                  </property>
+                 </widget>
+                </item>
                 <item row="1" column="1">
                  <layout class="QHBoxLayout" name="horizontalLayout_47">
                   <item>
@@ -140,6 +119,37 @@
                    </spacer>
                   </item>
                  </layout>
+                </item>
+                <item row="5" column="0">
+                 <widget class="QLabel" name="label_13">
+                  <property name="text">
+                   <string>AdvSceneSwitcher.generalTab.status.hotkeytips</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="0">
+                 <widget class="QLabel" name="label_64">
+                  <property name="text">
+                   <string>AdvSceneSwitcher.generalTab.status.onStartup</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="label_5">
+                  <property name="text">
+                   <string>AdvSceneSwitcher.generalTab.status.currentStatus</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="0">
+                 <widget class="QLabel" name="label_10">
+                  <property name="text">
+                   <string>AdvSceneSwitcher.generalTab.status.autoStart</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="1">
+                 <widget class="QComboBox" name="autoStartEvent"/>
                 </item>
                </layout>
               </item>
