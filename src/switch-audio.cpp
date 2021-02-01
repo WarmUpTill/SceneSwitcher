@@ -437,11 +437,12 @@ AudioSwitchWidget::AudioSwitchWidget(QWidget *parent, AudioSwitch *s)
 	audioVolumeThreshold = new QSpinBox();
 	duration = new QDoubleSpinBox();
 
-	obs_source_t *soruce = nullptr;
-	if (s)
-		soruce = obs_weak_source_get_source(s->audioSource);
-	volMeter = new VolControl(soruce);
-	obs_source_release(soruce);
+	obs_source_t *source = nullptr;
+	if (s) {
+		source = obs_weak_source_get_source(s->audioSource);
+	}
+	volMeter = new VolControl(source);
+	obs_source_release(source);
 
 	audioVolumeThreshold->setSuffix("%");
 	audioVolumeThreshold->setMaximum(100);
