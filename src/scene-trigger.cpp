@@ -239,7 +239,7 @@ bool SceneTrigger::checkMatch(OBSWeakSource previousScene)
 
 void SwitcherData::checkTriggers()
 {
-	if (SceneTrigger::pause) {
+	if (SceneTrigger::pause || stop) {
 		return;
 	}
 
