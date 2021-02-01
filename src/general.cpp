@@ -487,6 +487,9 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	if (switcher->startupBehavior == STOP)
 		switcher->stop = true;
 
+	switcher->autoStartEvent = static_cast<AutoStartEvent>(
+		obs_data_get_int(obj, "autoStartEvent"));
+
 	switcher->verbose = obs_data_get_bool(obj, "verbose");
 	switcher->disableHints = obs_data_get_bool(obj, "disableHints");
 
@@ -625,6 +628,16 @@ void SwitcherData::checkSwitchCooldown(bool &match)
 		blog(LOG_INFO, "cooldown active - ignoring match");
 }
 
+void populateStartupBehavior(QComboBox *cb)
+{
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.onStartup.asLastRun"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.onStartup.alwaysStart"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.onStartup.doNotStart"));
+}
+
 void populateAutoStartEventSelection(QComboBox *cb)
 {
 	cb->addItem(obs_module_text(
@@ -724,16 +737,12 @@ void AdvSceneSwitcher::setupGeneralTab()
 		}
 	}
 
-	ui->startupBehavior->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.status.onStartup.asLastRun"));
-	ui->startupBehavior->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.status.onStartup.alwaysStart"));
-	ui->startupBehavior->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.status.onStartup.doNotStart"));
+	populateStartupBehavior(ui->startupBehavior);
+	ui->startupBehavior->setCurrentIndex(switcher->startupBehavior);
 
 	populateAutoStartEventSelection(ui->autoStartEvent);
-
-	ui->startupBehavior->setCurrentIndex(switcher->startupBehavior);
+	ui->autoStartEvent->setCurrentIndex(
+		static_cast<int>(switcher->autoStartEvent));
 
 	if (switcher->th && switcher->th->isRunning())
 		SetStarted();
