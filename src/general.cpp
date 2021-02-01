@@ -25,8 +25,9 @@ void AdvSceneSwitcher::UpdateNonMatchingScene(const QString &name)
 
 void AdvSceneSwitcher::on_noMatchDontSwitch_clicked()
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = NO_SWITCH;
@@ -36,8 +37,9 @@ void AdvSceneSwitcher::on_noMatchDontSwitch_clicked()
 
 void AdvSceneSwitcher::on_noMatchSwitch_clicked()
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = SWITCH;
@@ -48,8 +50,9 @@ void AdvSceneSwitcher::on_noMatchSwitch_clicked()
 
 void AdvSceneSwitcher::on_noMatchRandomSwitch_clicked()
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = RANDOM_SWITCH;
@@ -59,16 +62,19 @@ void AdvSceneSwitcher::on_noMatchRandomSwitch_clicked()
 
 void AdvSceneSwitcher::on_noMatchDelay_valueChanged(double i)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->noMatchDelay = i;
 }
 
 void AdvSceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->startupBehavior = (StartupBehavior)index;
@@ -77,8 +83,9 @@ void AdvSceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
 void AdvSceneSwitcher::on_noMatchSwitchScene_currentTextChanged(
 	const QString &text)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	UpdateNonMatchingScene(text);
@@ -86,16 +93,19 @@ void AdvSceneSwitcher::on_noMatchSwitchScene_currentTextChanged(
 
 void AdvSceneSwitcher::on_cooldownTime_valueChanged(double i)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->cooldown = i;
 }
 
 void AdvSceneSwitcher::on_checkInterval_valueChanged(int value)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->interval = value;
@@ -138,8 +148,9 @@ void AdvSceneSwitcher::closeEvent(QCloseEvent *)
 
 void AdvSceneSwitcher::on_autoStopScenes_currentTextChanged(const QString &text)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	UpdateAutoStopScene(text);
@@ -292,15 +303,19 @@ void SwitcherData::autoStartStreamRecording()
 
 void AdvSceneSwitcher::on_verboseLogging_stateChanged(int state)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
+
 	switcher->verbose = state;
 }
 
 void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
+
 	switcher->disableHints = state;
 }
 
@@ -309,8 +324,9 @@ void AdvSceneSwitcher::AskBackup(obs_data_t *obj)
 	bool backupSettings = DisplayMessage(
 		obs_module_text("AdvSceneSwitcher.askBackup"), true);
 
-	if (!backupSettings)
+	if (!backupSettings) {
 		return;
+	}
 
 	QString directory = QFileDialog::getSaveFileName(
 		nullptr,
@@ -319,12 +335,14 @@ void AdvSceneSwitcher::AskBackup(obs_data_t *obj)
 		QDir::currentPath(),
 		obs_module_text(
 			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType"));
-	if (directory.isEmpty())
+	if (directory.isEmpty()) {
 		return;
+	}
 
 	QFile file(directory);
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 		return;
+	}
 
 	obs_data_save_json(obj, file.fileName().toUtf8().constData());
 }
@@ -338,12 +356,14 @@ void AdvSceneSwitcher::on_exportSettings_clicked()
 		QDir::currentPath(),
 		tr(obs_module_text(
 			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType")));
-	if (directory.isEmpty())
+	if (directory.isEmpty()) {
 		return;
+	}
 
 	QFile file(directory);
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 		return;
+	}
 
 	obs_data_t *obj = obs_data_create();
 
@@ -383,12 +403,14 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 		QDir::currentPath(),
 		tr(obs_module_text(
 			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType")));
-	if (directory.isEmpty())
+	if (directory.isEmpty()) {
 		return;
+	}
 
 	QFile file(directory);
-	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 		return;
+	}
 
 	obs_data_t *obj = obs_data_create_from_json_file(
 		file.fileName().toUtf8().constData());
@@ -421,8 +443,9 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 	close();
 
 	// restart scene switcher if it was active
-	if (start)
+	if (start) {
 		switcher->Start();
+	}
 }
 
 int findTabIndex(QTabWidget *tabWidget, int pos)
@@ -479,9 +502,10 @@ int findTabIndex(QTabWidget *tabWidget, int pos)
 	if (page) {
 		at = tabWidget->indexOf(page);
 	}
-	if (at == -1)
+	if (at == -1) {
 		blog(LOG_INFO, "failed to find tab %s",
 		     tabName.toUtf8().constData());
+	}
 
 	return at;
 }
@@ -492,8 +516,9 @@ void AdvSceneSwitcher::setTabOrder()
 	for (int i = 0; i < bar->count(); ++i) {
 		int curPos = findTabIndex(ui->tabWidget, switcher->tabOrder[i]);
 
-		if (i != curPos && curPos != -1)
+		if (i != curPos && curPos != -1) {
 			bar->moveTab(curPos, i);
+		}
 	}
 
 	connect(bar, &QTabBar::tabMoved, this, &AdvSceneSwitcher::on_tabMoved);
@@ -501,8 +526,10 @@ void AdvSceneSwitcher::setTabOrder()
 
 void AdvSceneSwitcher::on_tabMoved(int from, int to)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
+
 	std::swap(switcher->tabOrder[from], switcher->tabOrder[to]);
 }
 
@@ -613,10 +640,12 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	switcher->stop = !obs_data_get_bool(obj, "active");
 	switcher->startupBehavior =
 		(StartupBehavior)obs_data_get_int(obj, "startup_behavior");
-	if (switcher->startupBehavior == START)
+	if (switcher->startupBehavior == START) {
 		switcher->stop = false;
-	if (switcher->startupBehavior == STOP)
+	}
+	if (switcher->startupBehavior == STOP) {
 		switcher->stop = true;
+	}
 
 	std::string autoStopScene =
 		obs_data_get_string(obj, "autoStopSceneName");
@@ -763,8 +792,9 @@ void SwitcherData::checkSwitchCooldown(bool &match)
 	}
 
 	match = false;
-	if (verbose)
+	if (verbose) {
 		blog(LOG_INFO, "cooldown active - ignoring match");
+	}
 }
 
 void populateAutoStartStopTypeSelection(QComboBox *cb)
@@ -905,8 +935,9 @@ void AdvSceneSwitcher::setupGeneralTab()
 
 	ui->startupBehavior->setCurrentIndex(switcher->startupBehavior);
 
-	if (switcher->th && switcher->th->isRunning())
+	if (switcher->th && switcher->th->isRunning()) {
 		SetStarted();
-	else
+	} else {
 		SetStopped();
+	}
 }

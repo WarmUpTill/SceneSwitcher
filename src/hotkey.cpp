@@ -11,8 +11,9 @@ void startHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 	UNUSED_PARAMETER(hotkey);
 
 	if (pressed) {
-		if (!(switcher->th && switcher->th->isRunning()))
+		if (!(switcher->th && switcher->th->isRunning())) {
 			switcher->Start();
+		}
 	}
 }
 
@@ -24,8 +25,9 @@ void stopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 	UNUSED_PARAMETER(hotkey);
 
 	if (pressed) {
-		if (switcher->th && switcher->th->isRunning())
+		if (switcher->th && switcher->th->isRunning()) {
 			switcher->Stop();
+		}
 	}
 }
 
@@ -37,10 +39,11 @@ void startStopToggleHotkeyFunc(void *data, obs_hotkey_id id,
 	UNUSED_PARAMETER(hotkey);
 
 	if (pressed) {
-		if (switcher->th && switcher->th->isRunning())
+		if (switcher->th && switcher->th->isRunning()) {
 			switcher->Stop();
-		else
+		} else {
 			switcher->Start();
+		}
 	}
 }
 
@@ -84,8 +87,9 @@ void SwitcherData::saveHotkeys(obs_data_t *obj)
 
 void SwitcherData::loadHotkeys(obs_data_t *obj)
 {
-	if (!switcher->hotkeysRegistered)
+	if (!switcher->hotkeysRegistered) {
 		registerHotkeys();
+	}
 
 	obs_data_array_t *startHotkeyArrray =
 		obs_data_get_array(obj, "startHotkey");

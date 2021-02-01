@@ -15,8 +15,9 @@ static bool GetWindowTitle(HWND window, std::string &title)
 	std::wstring wtitle;
 
 	wtitle.resize(len);
-	if (!GetWindowTextW(window, &wtitle[0], (int)len + 1))
+	if (!GetWindowTextW(window, &wtitle[0], (int)len + 1)) {
 		return false;
+	}
 
 	len = os_wcs_to_utf8(wtitle.c_str(), 0, nullptr, 0);
 	title.resize(len);
@@ -29,16 +30,19 @@ static bool WindowValid(HWND window)
 	LONG_PTR styles;
 	DWORD id;
 
-	if (!IsWindowVisible(window))
+	if (!IsWindowVisible(window)) {
 		return false;
+	}
 	GetWindowThreadProcessId(window, &id);
-	if (id == GetCurrentProcessId())
+	if (id == GetCurrentProcessId()) {
 		return false;
+	}
 
 	styles = GetWindowLongPtr(window, GWL_STYLE);
 
-	if (styles & WS_CHILD)
+	if (styles & WS_CHILD) {
 		return false;
+	}
 
 	return true;
 }
@@ -51,8 +55,9 @@ BOOL CALLBACK GetTitleCB(HWND hwnd, LPARAM lParam)
 
 	std::string title;
 	GetWindowTitle(hwnd, title);
-	if (title.empty())
+	if (title.empty()) {
 		return TRUE;
+	}
 
 	std::vector<std::string> &titles =
 		*reinterpret_cast<std::vector<std::string> *>(lParam);
@@ -68,8 +73,9 @@ VOID EnumWindowsWithMetro(__in WNDENUMPROC lpEnumFunc, __in LPARAM lParam)
 
 	while (i < MAX_SEARCH &&
 	       (childWindow = FindWindowEx(NULL, childWindow, NULL, NULL))) {
-		if (!lpEnumFunc(childWindow, lParam))
+		if (!lpEnumFunc(childWindow, lParam)) {
 			return;
+		}
 		i++;
 	}
 }
@@ -140,8 +146,9 @@ bool isMaximized(std::string &title)
 	HWND hwnd = NULL;
 
 	hwnd = getHWNDfromTitle(title);
-	if (!hwnd)
+	if (!hwnd) {
 		return false;
+	}
 
 	monitorInfo.cbSize = sizeof(MONITORINFO);
 	GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST),
@@ -170,8 +177,9 @@ bool isFullscreen(std::string &title)
 	HWND hwnd = NULL;
 	hwnd = getHWNDfromTitle(title);
 
-	if (!hwnd)
+	if (!hwnd) {
 		return false;
+	}
 
 	monitorInfo.cbSize = sizeof(MONITORINFO);
 	GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST),
@@ -197,8 +205,9 @@ void GetProcessList(QStringList &processes)
 	PROCESSENTRY32 procEntry;
 
 	procSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	if (procSnapshot == INVALID_HANDLE_VALUE)
+	if (procSnapshot == INVALID_HANDLE_VALUE) {
 		return;
+	}
 
 	procEntry.dwSize = sizeof(PROCESSENTRY32);
 
@@ -209,12 +218,15 @@ void GetProcessList(QStringList &processes)
 
 	do {
 		QString tempexe = QString::fromWCharArray(procEntry.szExeFile);
-		if (tempexe == "System")
+		if (tempexe == "System") {
 			continue;
-		if (tempexe == "[System Process]")
+		}
+		if (tempexe == "[System Process]") {
 			continue;
-		if (processes.contains(tempexe))
+		}
+		if (processes.contains(tempexe)) {
 			continue;
+		}
 		processes.append(tempexe);
 	} while (Process32Next(procSnapshot, &procEntry));
 
@@ -231,8 +243,9 @@ bool isInFocus(const QString &executable)
 
 	HANDLE process = OpenProcess(
 		PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
-	if (process == NULL)
+	if (process == NULL) {
 		return false;
+	}
 
 	WCHAR executablePath[600];
 	GetModuleFileNameEx(process, 0, executablePath, 600);
@@ -254,8 +267,9 @@ int getLastInputTime()
 {
 	LASTINPUTINFO lastInputInfo;
 	lastInputInfo.cbSize = sizeof(LASTINPUTINFO);
-	if (GetLastInputInfo(&lastInputInfo))
+	if (GetLastInputInfo(&lastInputInfo)) {
 		return lastInputInfo.dwTime;
+	}
 	return 0;
 }
 

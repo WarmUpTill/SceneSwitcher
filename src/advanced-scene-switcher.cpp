@@ -115,11 +115,12 @@ void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 {
 	sel->clear();
 
-	if (addSelect)
+	if (addSelect) {
 		addSelectionEntry(
 			sel, obs_module_text("AdvSceneSwitcher.selectScene"),
 			obs_module_text(
 				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
+	}
 
 	BPtr<char *> scenes = obs_frontend_get_scene_names();
 	char **temp = scenes;
@@ -129,9 +130,10 @@ void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 		temp++;
 	}
 
-	if (addPrevious)
+	if (addPrevious) {
 		sel->addItem(obs_module_text(
 			"AdvSceneSwitcher.selectPreviousScene"));
+	}
 
 	if (addSceneGroup) {
 		for (auto &sg : switcher->sceneGroups) {
@@ -143,10 +145,11 @@ void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 void AdvSceneSwitcher::populateTransitionSelection(QComboBox *sel,
 						   bool addSelect)
 {
-	if (addSelect)
+	if (addSelect) {
 		addSelectionEntry(
 			sel,
 			obs_module_text("AdvSceneSwitcher.selectTransition"));
+	}
 
 	obs_frontend_source_list *transitions = new obs_frontend_source_list();
 	obs_frontend_get_transitions(transitions);
@@ -162,9 +165,10 @@ void AdvSceneSwitcher::populateTransitionSelection(QComboBox *sel,
 
 void AdvSceneSwitcher::populateWindowSelection(QComboBox *sel, bool addSelect)
 {
-	if (addSelect)
+	if (addSelect) {
 		addSelectionEntry(
 			sel, obs_module_text("AdvSceneSwitcher.selectWindow"));
+	}
 
 	std::vector<std::string> windows;
 	GetWindowList(windows);
@@ -182,12 +186,13 @@ void AdvSceneSwitcher::populateWindowSelection(QComboBox *sel, bool addSelect)
 
 void AdvSceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
 {
-	if (addSelect)
+	if (addSelect) {
 		addSelectionEntry(
 			sel,
 			obs_module_text("AdvSceneSwitcher.selectAudioSource"),
 			obs_module_text(
 				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
+	}
 
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
@@ -211,12 +216,13 @@ void AdvSceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
 
 void AdvSceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
 {
-	if (addSelect)
+	if (addSelect) {
 		addSelectionEntry(
 			sel,
 			obs_module_text("AdvSceneSwitcher.selectMediaSource"),
 			obs_module_text(
 				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
+	}
 
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
@@ -240,9 +246,10 @@ void AdvSceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
 
 void AdvSceneSwitcher::populateProcessSelection(QComboBox *sel, bool addSelect)
 {
-	if (addSelect)
+	if (addSelect) {
 		addSelectionEntry(
 			sel, obs_module_text("AdvSceneSwitcher.selectProcess"));
+	}
 
 	QStringList processes;
 	GetProcessList(processes);
@@ -262,8 +269,9 @@ void AdvSceneSwitcher::listAddClicked(QListWidget *list,
 		return;
 	}
 
-	if (addButton && addHighlight)
+	if (addButton && addHighlight) {
 		addButton->disconnect(*addHighlight);
+	}
 
 	QListWidgetItem *item;
 	item = new QListWidgetItem(list);
@@ -277,8 +285,9 @@ void AdvSceneSwitcher::listAddClicked(QListWidget *list,
 bool AdvSceneSwitcher::listMoveUp(QListWidget *list)
 {
 	int index = list->currentRow();
-	if (index == -1 || index == 0)
+	if (index == -1 || index == 0) {
 		return false;
+	}
 
 	QWidget *row = list->itemWidget(list->currentItem());
 	QListWidgetItem *itemN = list->currentItem()->clone();
@@ -294,8 +303,9 @@ bool AdvSceneSwitcher::listMoveUp(QListWidget *list)
 bool AdvSceneSwitcher::listMoveDown(QListWidget *list)
 {
 	int index = list->currentRow();
-	if (index == -1 || index == list->count() - 1)
+	if (index == -1 || index == list->count() - 1) {
 		return false;
+	}
 
 	QWidget *row = list->itemWidget(list->currentItem());
 	QListWidgetItem *itemN = list->currentItem()->clone();
@@ -313,8 +323,9 @@ QMetaObject::Connection AdvSceneSwitcher::PulseWidget(QWidget *widget,
 						      QColor startColor,
 						      QString specifier)
 {
-	if (switcher->disableHints)
+	if (switcher->disableHints) {
 		return QMetaObject::Connection();
+	}
 
 	widget->setStyleSheet(specifier + "{ \
 		border-style: outset; \
@@ -383,10 +394,12 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_t *obj =
 			obs_data_get_obj(save_data, "advanced-scene-switcher");
 
-		if (!obj)
+		if (!obj) {
 			obj = obs_data_create();
-		if (switcher->versionChanged(obj, g_GIT_SHA1))
+		}
+		if (switcher->versionChanged(obj, g_GIT_SHA1)) {
 			AdvSceneSwitcher::AskBackup(obj);
+		}
 
 		switcher->loadSceneGroups(obj);
 		switcher->loadWindowTitleSwitches(obj);
@@ -412,8 +425,9 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		// to avoid issues with scene collection changes
 		bool start = !switcher->stop;
 		switcher->Stop();
-		if (start)
+		if (start) {
 			switcher->Start();
+		}
 	}
 }
 
@@ -458,8 +472,9 @@ void SwitcherData::Thread()
 		}
 
 		//sleep for a bit
-		if (verbose)
+		if (verbose) {
 			blog(LOG_INFO, "sleep for %ld", duration.count());
+		}
 		cv.wait_for(lock, duration);
 
 		startTime = std::chrono::high_resolution_clock::now();
@@ -536,10 +551,11 @@ void SwitcherData::Thread()
 
 		if (linger) {
 			duration = std::chrono::milliseconds(linger);
-			if (verbose)
+			if (verbose) {
 				blog(LOG_INFO,
 				     "sleep for %ld before switching scene",
 				     duration.count());
+			}
 
 			cv.wait_for(lock, duration);
 
@@ -548,9 +564,11 @@ void SwitcherData::Thread()
 			}
 
 			if (sceneChangedDuringWait()) {
-				if (verbose)
+				if (verbose) {
 					blog(LOG_INFO,
 					     "scene was changed manually - ignoring match");
+				}
+
 				match = false;
 				linger = 0;
 			}
@@ -595,11 +613,13 @@ void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 		setNextTransition(scene, currentSource, transition,
 				  transitionOverrideOverride, td);
 		obs_frontend_set_current_scene(source);
-		if (transitionOverrideOverride)
+		if (transitionOverrideOverride) {
 			restoreTransitionOverride(source, td);
+		}
 
-		if (switcher->verbose)
+		if (switcher->verbose) {
 			blog(LOG_INFO, "switched scene");
+		}
 	}
 	obs_source_release(currentSource);
 	obs_source_release(source);
@@ -635,8 +655,9 @@ void SwitcherData::Stop()
 bool SwitcherData::sceneChangedDuringWait()
 {
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
-	if (!currentSource)
+	if (!currentSource) {
 		return true;
+	}
 	obs_source_release(currentSource);
 	return (waitScene && currentSource != waitScene);
 }
@@ -647,8 +668,9 @@ bool SwitcherData::sceneChangedDuringWait()
 extern "C" void FreeSceneSwitcher()
 {
 	if (loaded_curl_lib) {
-		if (switcher->curl && f_curl_cleanup)
+		if (switcher->curl && f_curl_cleanup) {
 			f_curl_cleanup(switcher->curl);
+		}
 		delete loaded_curl_lib;
 		loaded_curl_lib = nullptr;
 	}
@@ -660,8 +682,9 @@ extern "C" void FreeSceneSwitcher()
 void handleSceneChange(SwitcherData *s)
 {
 	//stop waiting if scene was manually changed
-	if (s->sceneChangedDuringWait())
+	if (s->sceneChangedDuringWait()) {
 		s->cv.notify_one();
+	}
 
 	//set previous scene
 	obs_source_t *source = obs_frontend_get_current_scene();
