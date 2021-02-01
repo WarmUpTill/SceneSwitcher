@@ -60,6 +60,7 @@ void AdvSceneSwitcher::loadUI()
 	setupTimeTab();
 	setupAudioTab();
 	setupSceneGroupTab();
+	setupTriggerTab();
 
 	setTabOrder();
 
@@ -368,22 +369,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 		obs_data_t *obj = obs_data_create();
 
-		switcher->saveSceneGroups(obj);
-		switcher->saveWindowTitleSwitches(obj);
-		switcher->saveScreenRegionSwitches(obj);
-		switcher->savePauseSwitches(obj);
-		switcher->saveSceneSequenceSwitches(obj);
-		switcher->saveSceneTransitions(obj);
-		switcher->saveIdleSwitches(obj);
-		switcher->saveExecutableSwitches(obj);
-		switcher->saveRandomSwitches(obj);
-		switcher->saveFileSwitches(obj);
-		switcher->saveMediaSwitches(obj);
-		switcher->saveTimeSwitches(obj);
-		switcher->saveAudioSwitches(obj);
-		switcher->saveGeneralSettings(obj);
-		switcher->saveHotkeys(obj);
-		switcher->saveVersion(obj, g_GIT_SHA1);
+		switcher->saveSettings(obj);
 
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
 
@@ -401,21 +387,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			AdvSceneSwitcher::AskBackup(obj);
 		}
 
-		switcher->loadSceneGroups(obj);
-		switcher->loadWindowTitleSwitches(obj);
-		switcher->loadScreenRegionSwitches(obj);
-		switcher->loadPauseSwitches(obj);
-		switcher->loadSceneSequenceSwitches(obj);
-		switcher->loadSceneTransitions(obj);
-		switcher->loadIdleSwitches(obj);
-		switcher->loadExecutableSwitches(obj);
-		switcher->loadRandomSwitches(obj);
-		switcher->loadFileSwitches(obj);
-		switcher->loadMediaSwitches(obj);
-		switcher->loadTimeSwitches(obj);
-		switcher->loadAudioSwitches(obj);
-		switcher->loadGeneralSettings(obj);
-		switcher->loadHotkeys(obj);
+		switcher->loadSettings(obj);
 
 		obs_data_release(obj);
 
@@ -485,14 +457,6 @@ void SwitcherData::Thread()
 
 		if (switcher->stop) {
 			break;
-		}
-
-		if (autoStopEnable) {
-			autoStopStreamAndRecording();
-		}
-
-		if (autoStartEnable) {
-			autoStartStreamRecording();
 		}
 
 		if (checkPause()) {
@@ -691,13 +655,12 @@ void handleSceneChange(SwitcherData *s)
 	obs_weak_source_t *ws = obs_source_get_weak_source(source);
 	obs_source_release(source);
 	obs_weak_source_release(ws);
-	if (source && s->previousScene2 != ws) {
-		s->previousScene = s->previousScene2;
-		s->previousScene2 = ws;
+	if (source && s->previousSceneHelper != ws) {
+		s->previousScene = s->previousSceneHelper;
+		s->previousSceneHelper = ws;
 	}
 
-	//reset events only hanled on scene change
-	s->autoStartedRecently = false;
+	switcher->checkTriggers();
 }
 
 void handleTransitionStop(SwitcherData *s)
@@ -713,6 +676,20 @@ void setLiveTime(SwitcherData *s)
 void resetLiveTime(SwitcherData *s)
 {
 	s->liveTime = QDateTime();
+}
+
+void checkAutoStartRecording(SwitcherData *s)
+{
+	if (s->autoStartEvent == AutoStartEvent::RECORDING ||
+	    s->autoStartEvent == AutoStartEvent::RECORINDG_OR_STREAMING)
+		s->Start();
+}
+
+void checkAutoStartStreaming(SwitcherData *s)
+{
+	if (s->autoStartEvent == AutoStartEvent::STREAMING ||
+	    s->autoStartEvent == AutoStartEvent::RECORINDG_OR_STREAMING)
+		s->Start();
 }
 
 // Note to future self:
@@ -731,8 +708,12 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 		handleTransitionStop((SwitcherData *)switcher);
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
+		setLiveTime((SwitcherData *)switcher);
+		checkAutoStartRecording((SwitcherData *)switcher);
+		break;
 	case OBS_FRONTEND_EVENT_STREAMING_STARTED:
 		setLiveTime((SwitcherData *)switcher);
+		checkAutoStartStreaming((SwitcherData *)switcher);
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
 	case OBS_FRONTEND_EVENT_STREAMING_STOPPED:
