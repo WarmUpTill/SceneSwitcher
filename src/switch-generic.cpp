@@ -190,23 +190,8 @@ SwitchWidget::SwitchWidget(QWidget *parent, SceneSwitcherEntry *s,
 						 addSceneGroup);
 	AdvSceneSwitcher::populateTransitionSelection(transitions);
 
-	if (s) {
-		if (s->usePreviousScene) {
-			scenes->setCurrentText(obs_module_text(
-				"AdvSceneSwitcher.selectPreviousScene"));
-		} else {
-			scenes->setCurrentText(
-				GetWeakSourceName(s->scene).c_str());
-			if (s->targetType == SwitchTargetType::SceneGroup &&
-			    s->group)
-				scenes->setCurrentText(
-					QString::fromStdString(s->group->name));
-		}
-		transitions->setCurrentText(
-			GetWeakSourceName(s->transition).c_str());
-	}
-
 	switchData = s;
+	showSwitchData();
 }
 
 SceneSwitcherEntry *SwitchWidget::getSwitchData()
@@ -217,6 +202,29 @@ SceneSwitcherEntry *SwitchWidget::getSwitchData()
 void SwitchWidget::setSwitchData(SceneSwitcherEntry *s)
 {
 	switchData = s;
+}
+
+void SwitchWidget::showSwitchData()
+{
+	if (!switchData)
+		return;
+
+	transitions->setCurrentText(
+		GetWeakSourceName(switchData->transition).c_str());
+
+	if (switchData->usePreviousScene) {
+		scenes->setCurrentText(obs_module_text(
+			"AdvSceneSwitcher.selectPreviousScene"));
+		return;
+	}
+
+	scenes->setCurrentText(GetWeakSourceName(switchData->scene).c_str());
+
+	if (switchData->group &&
+	    switchData->targetType == SwitchTargetType::SceneGroup) {
+		scenes->setCurrentText(
+			QString::fromStdString(switchData->group->name));
+	}
 }
 
 void SwitchWidget::swapSwitchData(SwitchWidget *s1, SwitchWidget *s2)

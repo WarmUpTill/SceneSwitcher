@@ -67,6 +67,7 @@ public:
 		     bool usePreviousScene = true, bool addSceneGroup = false);
 	virtual SceneSwitcherEntry *getSwitchData();
 	virtual void setSwitchData(SceneSwitcherEntry *s);
+	void showSwitchData();
 
 	static void swapSwitchData(SwitchWidget *s1, SwitchWidget *s2);
 
