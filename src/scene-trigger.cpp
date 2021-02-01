@@ -78,7 +78,26 @@ void AdvSceneSwitcher::on_triggerDown_clicked()
 
 void SceneTrigger::logMatch()
 {
+	std::string sceneName = "";
+	std::string statusName = "";
 	std::string actionName = "";
+
+	switch (triggerType) {
+	case sceneTriggerType::NONE:
+		statusName = "NONE";
+		break;
+	case sceneTriggerType::SCENE_ACTIVE:
+		statusName = "SCENE ACTIVE";
+		break;
+	case sceneTriggerType::SCENE_INACTIVE:
+		statusName = "SCENE INACTIVE";
+		break;
+	case sceneTriggerType::SCENE_LEAVE:
+		statusName = "SCENE LEAVE";
+		break;
+	default:
+		break;
+	}
 
 	switch (triggerAction) {
 	case sceneTriggerAction::NONE:
@@ -116,7 +135,9 @@ void SceneTrigger::logMatch()
 		break;
 	}
 
-	blog(LOG_INFO, "triggering action '%s' after %f seconds",
+	blog(LOG_INFO,
+	     "scene '%s' in status '%s' triggering action '%s' after %f seconds",
+	     GetWeakSourceName(scene).c_str(), statusName.c_str(),
 	     actionName.c_str(), duration);
 }
 
@@ -218,7 +239,7 @@ bool SceneTrigger::checkMatch(OBSWeakSource previousScene)
 
 void SwitcherData::checkTriggers()
 {
-	if (SceneTrigger::pause) {
+	if (SceneTrigger::pause || stop) {
 		return;
 	}
 
