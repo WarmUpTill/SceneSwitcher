@@ -65,6 +65,11 @@ OBSWeakSource SceneGroup::getNextSceneRandom()
 	return nullptr;
 }
 
+OBSWeakSource SceneGroup::getCurrentScene()
+{
+	return scenes[currentIdx];
+}
+
 OBSWeakSource SceneGroup::getNextScene()
 {
 	if (scenes.empty())

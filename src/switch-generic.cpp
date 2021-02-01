@@ -34,8 +34,7 @@ void SceneSwitcherEntry::logMatchSceneGroup()
 		return;
 	}
 
-	std::string sceneName =
-		GetWeakSourceName(group->scenes[group->currentIdx]);
+	std::string sceneName = GetWeakSourceName(group->getCurrentScene());
 
 	blog(LOG_INFO, "match for '%s' - switch to scene '%s' using '%s'",
 	     getType(), sceneName.c_str(), group->name.c_str());
