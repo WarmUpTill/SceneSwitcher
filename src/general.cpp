@@ -156,7 +156,6 @@ void AdvSceneSwitcher::closeEvent(QCloseEvent *)
 	obs_frontend_save();
 }
 
-
 void AdvSceneSwitcher::on_verboseLogging_stateChanged(int state)
 {
 	if (loading) {
@@ -774,7 +773,7 @@ void AdvSceneSwitcher::setupGeneralTab()
 	ui->autoStartEvent->setCurrentIndex(
 		static_cast<int>(switcher->autoStartEvent));
 
-	if (switcher->th && switcher->th->isRunning()){
+	if (switcher->th && switcher->th->isRunning()) {
 		SetStarted();
 	} else {
 		SetStopped();
