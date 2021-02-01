@@ -256,10 +256,7 @@ void MediaSwitch::save(obs_data_t *obj)
 {
 	SceneSwitcherEntry::save(obj);
 
-	obs_source_t *s = obs_weak_source_get_source(source);
-	const char *sourceName = obs_source_get_name(s);
-	obs_data_set_string(obj, "source", sourceName);
-	obs_source_release(s);
+	obs_data_set_string(obj, "source", GetWeakSourceName(source).c_str());
 
 	obs_data_set_int(obj, "state", state);
 	obs_data_set_int(obj, "restriction", restriction);

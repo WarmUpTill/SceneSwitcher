@@ -283,10 +283,8 @@ void SceneSequenceSwitch::save(obs_data_t *obj)
 {
 	SceneSwitcherEntry::save(obj);
 
-	obs_source_t *source = obs_weak_source_get_source(startScene);
-	const char *startSceneName = obs_source_get_name(source);
-	obs_data_set_string(obj, "startScene", startSceneName);
-	obs_source_release(source);
+	obs_data_set_string(obj, "startScene",
+			    GetWeakSourceName(startScene).c_str());
 
 	obs_data_set_double(obj, "delay", delay);
 

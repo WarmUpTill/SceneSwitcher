@@ -281,10 +281,8 @@ void AudioSwitch::save(obs_data_t *obj)
 {
 	SceneSwitcherEntry::save(obj);
 
-	obs_source_t *source = obs_weak_source_get_source(audioSource);
-	const char *audioSourceName = obs_source_get_name(source);
-	obs_data_set_string(obj, "audioSource", audioSourceName);
-	obs_source_release(source);
+	obs_data_set_string(obj, "audioSource",
+			    GetWeakSourceName(audioSource).c_str());
 
 	obs_data_set_int(obj, "volume", volumeThreshold);
 	obs_data_set_int(obj, "condition", condition);

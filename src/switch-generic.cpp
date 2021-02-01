@@ -17,14 +17,12 @@ bool SceneSwitcherEntry::valid()
 
 void SceneSwitcherEntry::logMatchScene()
 {
-	const char *sceneName = previous_scene_name;
+	std::string sceneName = previous_scene_name;
 	if (!usePreviousScene) {
-		obs_source_t *s = obs_weak_source_get_source(scene);
-		sceneName = obs_source_get_name(s);
-		obs_source_release(s);
+		sceneName = GetWeakSourceName(scene);
 	}
 	blog(LOG_INFO, "match for '%s' - switch to scene '%s'", getType(),
-	     sceneName);
+	     sceneName.c_str());
 }
 
 void SceneSwitcherEntry::logMatchSceneGroup()
@@ -36,14 +34,11 @@ void SceneSwitcherEntry::logMatchSceneGroup()
 		return;
 	}
 
-	const char *sceneName = previous_scene_name;
-	obs_source_t *s =
-		obs_weak_source_get_source(group->scenes[group->currentIdx]);
-	sceneName = obs_source_get_name(s);
-	obs_source_release(s);
+	std::string sceneName =
+		GetWeakSourceName(group->scenes[group->currentIdx]);
 
 	blog(LOG_INFO, "match for '%s' - switch to scene '%s' using '%s'",
-	     getType(), sceneName, group->name.c_str());
+	     getType(), sceneName.c_str(), group->name.c_str());
 }
 
 void SceneSwitcherEntry::logMatch()
@@ -73,28 +68,22 @@ void SceneSwitcherEntry::save(obs_data_t *obj, const char *targetTypeSaveName,
 {
 	obs_data_set_int(obj, targetTypeSaveName, static_cast<int>(targetType));
 
-	const char *targetName = "";
+	std::string targetName = "";
 
 	if (targetType == SwitchTargetType::Scene) {
 		if (usePreviousScene) {
 			targetName = previous_scene_name;
 		} else {
-			obs_source_t *sceneSource =
-				obs_weak_source_get_source(scene);
-			targetName = obs_source_get_name(sceneSource);
-			obs_source_release(sceneSource);
+			targetName = GetWeakSourceName(scene);
 		}
 	} else if (targetType == SwitchTargetType::SceneGroup) {
 		targetName = group->name.c_str();
 	}
 
-	obs_data_set_string(obj, targetSaveName, targetName);
+	obs_data_set_string(obj, targetSaveName, targetName.c_str());
 
-	obs_source_t *transitionSource = obs_weak_source_get_source(transition);
-	const char *transitionName = obs_source_get_name(transitionSource);
-	obs_source_release(transitionSource);
-
-	obs_data_set_string(obj, transitionSaveName, transitionName);
+	obs_data_set_string(obj, transitionSaveName,
+			    GetWeakSourceName(transition).c_str());
 }
 
 void SceneSwitcherEntry::load(obs_data_t *obj, const char *targetTypeLoadName,
