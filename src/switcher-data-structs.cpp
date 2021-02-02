@@ -5,8 +5,9 @@ void SwitcherData::Prune()
 {
 	for (size_t i = 0; i < windowSwitches.size(); i++) {
 		WindowSwitch &s = windowSwitches[i];
-		if (!s.valid())
+		if (!s.valid()) {
 			windowSwitches.erase(windowSwitches.begin() + i--);
+		}
 	}
 
 	if (nonMatchingScene && !WeakSourceValid(nonMatchingScene)) {
@@ -16,60 +17,69 @@ void SwitcherData::Prune()
 
 	for (size_t i = 0; i < randomSwitches.size(); i++) {
 		RandomSwitch &s = randomSwitches[i];
-		if (!s.valid())
+		if (!s.valid()) {
 			randomSwitches.erase(randomSwitches.begin() + i--);
+		}
 	}
 
 	for (size_t i = 0; i < screenRegionSwitches.size(); i++) {
 		ScreenRegionSwitch &s = screenRegionSwitches[i];
-		if (!s.valid())
+		if (!s.valid()) {
 			screenRegionSwitches.erase(
 				screenRegionSwitches.begin() + i--);
+		}
 	}
 
 	for (size_t i = 0; i < pauseEntries.size(); i++) {
 		PauseEntry &s = pauseEntries[i];
-		if (!s.valid())
+		if (!s.valid()) {
 			pauseEntries.erase(pauseEntries.begin() + i--);
+		}
 	}
 
 	for (size_t i = 0; i < sceneSequenceSwitches.size(); i++) {
 		SceneSequenceSwitch &s = sceneSequenceSwitches[i];
-		if (!s.valid())
+		if (!s.valid()) {
 			sceneSequenceSwitches.erase(
 				sceneSequenceSwitches.begin() + i--);
+		}
 	}
 
 	for (size_t i = 0; i < sceneTransitions.size(); i++) {
 		SceneTransition &s = sceneTransitions[i];
-		if (!s.valid())
+		if (!s.valid()) {
 			sceneTransitions.erase(sceneTransitions.begin() + i--);
+		}
 	}
 
 	for (size_t i = 0; i < defaultSceneTransitions.size(); i++) {
 		DefaultSceneTransition &s = defaultSceneTransitions[i];
-		if (!s.valid())
+		if (!s.valid()) {
 			defaultSceneTransitions.erase(
 				defaultSceneTransitions.begin() + i--);
+		}
 	}
 
 	for (size_t i = 0; i < executableSwitches.size(); i++) {
 		ExecutableSwitch &s = executableSwitches[i];
-		if (!s.valid())
+		if (!s.valid()) {
 			executableSwitches.erase(executableSwitches.begin() +
 						 i--);
+		}
 	}
 
 	for (size_t i = 0; i < fileSwitches.size(); i++) {
 		FileSwitch &s = fileSwitches[i];
-		if (!s.valid())
+		if (!s.valid()) {
 			fileSwitches.erase(fileSwitches.begin() + i--);
+		}
 	}
 
 	for (size_t i = 0; i < timeSwitches.size(); i++) {
 		TimeSwitch &s = timeSwitches[i];
-		if (!s.valid())
+		if (!s.valid()) {
 			timeSwitches.erase(timeSwitches.begin() + i--);
+		}
 	}
 
 	if (!idleData.valid()) {
@@ -78,20 +88,23 @@ void SwitcherData::Prune()
 
 	for (size_t i = 0; i < mediaSwitches.size(); i++) {
 		MediaSwitch &s = mediaSwitches[i];
-		if (!s.valid())
+		if (!s.valid()) {
 			mediaSwitches.erase(mediaSwitches.begin() + i--);
+		}
 	}
 
 	for (size_t i = 0; i < audioSwitches.size(); i++) {
 		AudioSwitch &s = audioSwitches[i];
-		if (!s.valid())
+		if (!s.valid()) {
 			audioSwitches.erase(audioSwitches.begin() + i--);
+		}
 	}
 
 	for (auto &sg : sceneGroups) {
 		for (size_t i = 0; i < sg.scenes.size(); i++)
-			if (!WeakSourceValid(sg.scenes[i]))
+			if (!WeakSourceValid(sg.scenes[i])) {
 				sg.scenes.erase(sg.scenes.begin() + i--);
+			}
 	}
 }
 
