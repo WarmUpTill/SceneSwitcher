@@ -194,9 +194,12 @@ void checkWindowTitleSwitchRegex(WindowSwitch &s,
 				 OBSWeakSource &transition)
 {
 	for (auto &window : windowList) {
-		std::regex expr(s.window);
-		if (!std::regex_match(window, expr)) {
-			continue;
+		try {
+			std::regex expr(s.window);
+			if (!std::regex_match(window, expr)) {
+				continue;
+			}
+		} catch (const std::regex_error &) {
 		}
 
 		bool focus = window == currentWindowTitle;
@@ -225,12 +228,16 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 	for (auto &window : ignoreWindowsSwitches) {
 		bool equals = (currentWindowTitle == window);
 
-		std::regex expr(window);
-		bool matches = std::regex_match(currentWindowTitle, expr);
+		try {
+			std::regex expr(window);
+			bool matches =
+				std::regex_match(currentWindowTitle, expr);
 
-		if (equals || matches) {
-			currentWindowTitle = lastTitle;
-			break;
+			if (equals || matches) {
+				currentWindowTitle = lastTitle;
+				break;
+			}
+		} catch (const std::regex_error &) {
 		}
 	}
 
