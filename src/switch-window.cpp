@@ -60,7 +60,7 @@ void AdvSceneSwitcher::on_windowDown_clicked()
 	int index = ui->windowSwitches->currentRow();
 
 	if (!listMoveDown(ui->windowSwitches)) {
-		return
+		return;
 	}
 
 	WindowSwitchWidget *s1 =

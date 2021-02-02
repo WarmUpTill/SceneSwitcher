@@ -160,7 +160,7 @@ bool checkPauseWindow(std::string &currentTitle, std::string &title,
 	}
 
 	setPauseTarget(target, verbose);
-	return (target == PauseTarget::All)
+	return (target == PauseTarget::All);
 }
 
 bool SwitcherData::checkPause()
