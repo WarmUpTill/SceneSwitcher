@@ -90,62 +90,50 @@ void setPauseTarget(PauseTarget &target, bool &verbose)
 {
 	switch (target) {
 	case PauseTarget::All:
-		if (verbose)
-			blog(LOG_INFO, "pause all switching");
+		vblog(LOG_INFO, "pause all switching");
 		break;
 	case PauseTarget::Transition:
-		if (verbose)
-			blog(LOG_INFO, "pause def_transition switching");
+		vblog(LOG_INFO, "pause def_transition switching");
 		DefaultSceneTransition::pause = true;
 		break;
 	case PauseTarget::Window:
-		if (verbose)
-			blog(LOG_INFO, "pause window switching");
+		vblog(LOG_INFO, "pause window switching");
 		WindowSwitch::pause = true;
 		break;
 	case PauseTarget::Executable:
-		if (verbose)
-			blog(LOG_INFO, "pause exec switching");
+		vblog(LOG_INFO, "pause exec switching");
 		ExecutableSwitch::pause = true;
 		break;
 	case PauseTarget::Region:
-		if (verbose)
-			blog(LOG_INFO, "pause region switching");
+		vblog(LOG_INFO, "pause region switching");
 		ScreenRegionSwitch::pause = true;
 		break;
 	case PauseTarget::Media:
-		if (verbose)
-			blog(LOG_INFO, "pause media switching");
+		vblog(LOG_INFO, "pause media switching");
 		MediaSwitch::pause = true;
 		break;
 	case PauseTarget::File:
-		if (verbose)
-			blog(LOG_INFO, "pause file switching");
+		vblog(LOG_INFO, "pause file switching");
 		FileSwitch::pause = true;
 		break;
 	case PauseTarget::Random:
-		if (verbose)
-			blog(LOG_INFO, "pause random switching");
+		vblog(LOG_INFO, "pause random switching");
 		RandomSwitch::pause = true;
 		break;
 	case PauseTarget::Time:
-		if (verbose)
-			blog(LOG_INFO, "pause time switching");
+		vblog(LOG_INFO, "pause time switching");
 		TimeSwitch::pause = true;
 		break;
 	case PauseTarget::Idle:
-		if (verbose)
-			blog(LOG_INFO, "pause idle switching");
+		vblog(LOG_INFO, "pause idle switching");
 		IdleData::pause = true;
 		break;
 	case PauseTarget::Sequence:
-		if (verbose)
-			blog(LOG_INFO, "pause sequence switching");
+		vblog(LOG_INFO, "pause sequence switching");
 		SceneSequenceSwitch::pause = true;
 		break;
 	case PauseTarget::Audio:
-		if (verbose)
-			blog(LOG_INFO, "pause audio switching");
+		vblog(LOG_INFO, "pause audio switching");
 		AudioSwitch::pause = true;
 		break;
 	}

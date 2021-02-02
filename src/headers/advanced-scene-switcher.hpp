@@ -7,6 +7,10 @@
 #include "switcher-data-structs.hpp"
 
 #define blog(level, msg, ...) blog(level, "[adv-ss] " msg, ##__VA_ARGS__)
+#define vblog(level, msg, ...)                               \
+	if (verbose) {                                       \
+		blog(level, "[adv-ss] " msg, ##__VA_ARGS__); \
+	}
 
 class QCloseEvent;
 

@@ -655,9 +655,7 @@ void SwitcherData::checkSwitchCooldown(bool &match)
 	}
 
 	match = false;
-	if (verbose) {
-		blog(LOG_INFO, "cooldown active - ignoring match");
-	}
+	vblog(LOG_INFO, "cooldown active - ignoring match");
 }
 
 void populateStartupBehavior(QComboBox *cb)

@@ -558,10 +558,11 @@ void SceneTriggerWidget::TriggerActionChanged(int index)
 			static_cast<sceneTriggerAction>(index);
 	}
 
-	if (switchData->triggerAction == sceneTriggerAction::MUTE_SOURCE)
+	if (switchData->triggerAction == sceneTriggerAction::MUTE_SOURCE) {
 		audioSources->show();
-	else
+	} else {
 		audioSources->hide();
+	}
 }
 
 void SceneTriggerWidget::DurationChanged(double dur)

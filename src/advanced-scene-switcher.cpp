@@ -444,9 +444,7 @@ void SwitcherData::Thread()
 		}
 
 		//sleep for a bit
-		if (verbose) {
-			blog(LOG_INFO, "sleep for %ld", duration.count());
-		}
+		vblog(LOG_INFO, "sleep for %ld", duration.count());
 		cv.wait_for(lock, duration);
 
 		startTime = std::chrono::high_resolution_clock::now();
@@ -515,11 +513,8 @@ void SwitcherData::Thread()
 
 		if (linger) {
 			duration = std::chrono::milliseconds(linger);
-			if (verbose) {
-				blog(LOG_INFO,
-				     "sleep for %ld before switching scene",
-				     duration.count());
-			}
+			vblog(LOG_INFO, "sleep for %ld before switching scene",
+			      duration.count());
 
 			cv.wait_for(lock, duration);
 
@@ -528,10 +523,8 @@ void SwitcherData::Thread()
 			}
 
 			if (sceneChangedDuringWait()) {
-				if (verbose) {
-					blog(LOG_INFO,
-					     "scene was changed manually - ignoring match");
-				}
+				vblog(LOG_INFO,
+				      "scene was changed manually - ignoring match");
 
 				match = false;
 				linger = 0;
