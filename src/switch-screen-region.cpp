@@ -364,8 +364,10 @@ void ScreenRegionWidget::hideFrame()
 
 void ScreenRegionWidget::MinXChanged(int pos)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->minX = pos;
 
@@ -374,8 +376,10 @@ void ScreenRegionWidget::MinXChanged(int pos)
 
 void ScreenRegionWidget::MinYChanged(int pos)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->minY = pos;
 
@@ -384,8 +388,10 @@ void ScreenRegionWidget::MinYChanged(int pos)
 
 void ScreenRegionWidget::MaxXChanged(int pos)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->maxX = pos;
 
@@ -394,8 +400,10 @@ void ScreenRegionWidget::MaxXChanged(int pos)
 
 void ScreenRegionWidget::MaxYChanged(int pos)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->maxY = pos;
 

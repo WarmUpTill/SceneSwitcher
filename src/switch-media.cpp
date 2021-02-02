@@ -532,8 +532,10 @@ void MediaSwitchWidget::swapSwitchData(MediaSwitchWidget *s1,
 
 void MediaSwitchWidget::SourceChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->clearSignalHandler();
 	switchData->source = GetWeakSourceByQString(text);
@@ -542,8 +544,10 @@ void MediaSwitchWidget::SourceChanged(const QString &text)
 
 void MediaSwitchWidget::StateChanged(int index)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->state = (obs_media_state)index;
 	switchData->anyState = switchData->state == media_any_idx;
@@ -551,8 +555,9 @@ void MediaSwitchWidget::StateChanged(int index)
 
 void MediaSwitchWidget::TimeRestrictionChanged(int index)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
 
 	if ((time_restriction)index == TIME_RESTRICTION_NONE)
 		time->setDisabled(true);
@@ -565,8 +570,10 @@ void MediaSwitchWidget::TimeRestrictionChanged(int index)
 
 void MediaSwitchWidget::TimeChanged(int time)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->time = time;
 }

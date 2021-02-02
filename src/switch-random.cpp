@@ -185,8 +185,10 @@ void RandomSwitchWidget::swapSwitchData(RandomSwitchWidget *s1,
 
 void RandomSwitchWidget::DelayChanged(double d)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->delay = d;
 }

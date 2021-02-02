@@ -476,8 +476,10 @@ void TransitionSwitchWidget::swapSwitchData(TransitionSwitchWidget *s1,
 
 void TransitionSwitchWidget::Scene2Changed(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->scene2 = GetWeakSourceByQString(text);
 }

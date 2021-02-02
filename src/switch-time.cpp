@@ -302,16 +302,20 @@ void TimeSwitchWidget::swapSwitchData(TimeSwitchWidget *s1,
 
 void TimeSwitchWidget::TriggerChanged(int index)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->trigger = (timeTrigger)index;
 }
 
 void TimeSwitchWidget::TimeChanged(const QTime &time)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->time = time;
 }

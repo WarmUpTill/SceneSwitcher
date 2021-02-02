@@ -581,8 +581,9 @@ void FileSwitchWidget::swapSwitchData(FileSwitchWidget *s1,
 
 void FileSwitchWidget::FileTypeChanged(int index)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
 
 	if ((file_type)index == LOCAL) {
 		browseButton->setDisabled(false);
@@ -598,16 +599,19 @@ void FileSwitchWidget::FileTypeChanged(int index)
 
 void FileSwitchWidget::FilePathChanged()
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->file = filePath->text().toUtf8().constData();
 }
 
 void FileSwitchWidget::BrowseButtonClicked()
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
 
 	QString path = QFileDialog::getOpenFileName(
 		this,
@@ -623,32 +627,40 @@ void FileSwitchWidget::BrowseButtonClicked()
 
 void FileSwitchWidget::MatchTextChanged()
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->text = matchText->toPlainText().toUtf8().constData();
 }
 
 void FileSwitchWidget::UseRegexChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->useRegex = state;
 }
 
 void FileSwitchWidget::CheckModificationDateChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->useTime = state;
 }
 
 void FileSwitchWidget::CheckFileContentChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->onlyMatchIfChanged = state;
 }

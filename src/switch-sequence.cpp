@@ -445,15 +445,18 @@ void SequenceWidget::UpdateDelay()
 
 void SequenceWidget::DelayChanged(double delay)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	switchData->delay = delay * switchData->delayMultiplier;
 }
 
 void SequenceWidget::DelayUnitsChanged(int idx)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
 
 	delay_units unit = (delay_units)idx;
 
@@ -476,16 +479,20 @@ void SequenceWidget::DelayUnitsChanged(int idx)
 
 void SequenceWidget::StartSceneChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->startScene = GetWeakSourceByQString(text);
 }
 
 void SequenceWidget::InterruptibleChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->interruptible = state;
 }

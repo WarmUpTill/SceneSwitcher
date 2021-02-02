@@ -487,32 +487,40 @@ void WindowSwitchWidget::swapSwitchData(WindowSwitchWidget *s1,
 
 void WindowSwitchWidget::WindowChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->window = text.toStdString();
 }
 
 void WindowSwitchWidget::FullscreenChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->fullscreen = state;
 }
 
 void WindowSwitchWidget::MaximizedChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->maximized = state;
 }
 
 void WindowSwitchWidget::FocusChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->focus = state;
 }

@@ -423,8 +423,10 @@ void PauseEntryWidget::swapSwitchData(PauseEntryWidget *s1,
 
 void PauseEntryWidget::PauseTypeChanged(int index)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->pauseType = static_cast<PauseType>(index);
 
@@ -443,16 +445,20 @@ void PauseEntryWidget::PauseTypeChanged(int index)
 
 void PauseEntryWidget::PauseTargetChanged(int index)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->pauseTarget = static_cast<PauseTarget>(index);
 }
 
 void PauseEntryWidget::WindowChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->window = text.toStdString();
 }

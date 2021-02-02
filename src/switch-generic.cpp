@@ -242,8 +242,10 @@ bool isPreviousScene(const QString &text)
 
 void SwitchWidget::SceneChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 
 	switchData->usePreviousScene = isPreviousScene(text);
@@ -263,8 +265,10 @@ void SwitchWidget::SceneChanged(const QString &text)
 
 void SwitchWidget::TransitionChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->transition = GetWeakTransitionByQString(text);
 }

@@ -20,8 +20,9 @@ void AdvSceneSwitcher::on_executableAdd_clicked()
 void AdvSceneSwitcher::on_executableRemove_clicked()
 {
 	QListWidgetItem *item = ui->executables->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -36,8 +37,9 @@ void AdvSceneSwitcher::on_executableRemove_clicked()
 void AdvSceneSwitcher::on_executableUp_clicked()
 {
 	int index = ui->executables->currentRow();
-	if (!listMoveUp(ui->executables))
+	if (!listMoveUp(ui->executables)) {
 		return;
+	}
 
 	ExecutableSwitchWidget *s1 =
 		(ExecutableSwitchWidget *)ui->executables->itemWidget(
@@ -57,8 +59,9 @@ void AdvSceneSwitcher::on_executableDown_clicked()
 {
 	int index = ui->executables->currentRow();
 
-	if (!listMoveDown(ui->executables))
+	if (!listMoveDown(ui->executables)) {
 		return;
+	}
 
 	ExecutableSwitchWidget *s1 =
 		(ExecutableSwitchWidget *)ui->executables->itemWidget(
@@ -77,8 +80,9 @@ void AdvSceneSwitcher::on_executableDown_clicked()
 void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 				  OBSWeakSource &transition)
 {
-	if (executableSwitches.size() == 0 || ExecutableSwitch::pause)
+	if (executableSwitches.size() == 0 || ExecutableSwitch::pause) {
 		return;
+	}
 
 	std::string title;
 	QStringList runningProcesses;
@@ -105,15 +109,15 @@ void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 	// Check for match
 	GetProcessList(runningProcesses);
 	for (ExecutableSwitch &s : executableSwitches) {
-		if (!s.initialized())
+		if (!s.initialized()) {
 			continue;
-		// True if executable switch is running (direct)
+		}
+
 		bool equals = runningProcesses.contains(s.exe);
-		// True if executable switch is running (regex)
 		bool matches = (runningProcesses.indexOf(
 					QRegularExpression(s.exe)) != -1);
-		// True if focus is disabled OR switch is focused
 		bool focus = (!s.inFocus || isInFocus(s.exe));
+
 		// True if current window is ignored AND switch equals OR matches last window
 		bool ignore =
 			(ignored && (title == s.exe.toStdString() ||
@@ -125,8 +129,9 @@ void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 			scene = s.getScene();
 			transition = s.transition;
 
-			if (verbose)
+			if (verbose) {
 				s.logMatch();
+			}
 			break;
 		}
 	}
@@ -197,13 +202,15 @@ void ExecutableSwitch::save(obs_data_t *obj)
 // To be removed in future version
 bool loadOldExe(obs_data_t *obj, ExecutableSwitch *s)
 {
-	if (!s)
+	if (!s) {
 		return false;
+	}
 
 	const char *scene = obs_data_get_string(obj, "scene");
 
-	if (strcmp(scene, "") == 0)
+	if (strcmp(scene, "") == 0) {
 		return false;
+	}
 
 	s->scene = GetWeakSourceByName(scene);
 
@@ -219,8 +226,9 @@ bool loadOldExe(obs_data_t *obj, ExecutableSwitch *s)
 
 void ExecutableSwitch::load(obs_data_t *obj)
 {
-	if (loadOldExe(obj, this))
+	if (loadOldExe(obj, this)) {
 		return;
+	}
 
 	SceneSwitcherEntry::load(obj);
 
@@ -288,16 +296,20 @@ void ExecutableSwitchWidget::swapSwitchData(ExecutableSwitchWidget *s1,
 
 void ExecutableSwitchWidget::ProcessChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->exe = text;
 }
 
 void ExecutableSwitchWidget::FocusChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->inFocus = state;
 }
