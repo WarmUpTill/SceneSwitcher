@@ -23,8 +23,9 @@ void AdvSceneSwitcher::on_mediaAdd_clicked()
 void AdvSceneSwitcher::on_mediaRemove_clicked()
 {
 	QListWidgetItem *item = ui->mediaSwitches->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -39,8 +40,9 @@ void AdvSceneSwitcher::on_mediaRemove_clicked()
 void AdvSceneSwitcher::on_mediaUp_clicked()
 {
 	int index = ui->mediaSwitches->currentRow();
-	if (!listMoveUp(ui->mediaSwitches))
+	if (!listMoveUp(ui->mediaSwitches)) {
 		return;
+	}
 
 	MediaSwitchWidget *s1 =
 		(MediaSwitchWidget *)ui->mediaSwitches->itemWidget(
@@ -60,8 +62,9 @@ void AdvSceneSwitcher::on_mediaDown_clicked()
 {
 	int index = ui->mediaSwitches->currentRow();
 
-	if (!listMoveDown(ui->mediaSwitches))
+	if (!listMoveDown(ui->mediaSwitches)) {
 		return;
+	}
 
 	MediaSwitchWidget *s1 =
 		(MediaSwitchWidget *)ui->mediaSwitches->itemWidget(
@@ -80,12 +83,14 @@ void AdvSceneSwitcher::on_mediaDown_clicked()
 void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
-	if (MediaSwitch::pause)
+	if (MediaSwitch::pause) {
 		return;
+	}
 
 	for (MediaSwitch &mediaSwitch : mediaSwitches) {
-		if (!mediaSwitch.initialized())
+		if (!mediaSwitch.initialized()) {
 			continue;
+		}
 
 		obs_source_t *source =
 			obs_weak_source_get_source(mediaSwitch.source);
@@ -138,8 +143,9 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 					  (duration - time <= interval * 2);
 
 		// reset
-		if (ended)
+		if (ended) {
 			mediaSwitch.playedToEnd = false;
+		}
 
 		// reset for next check
 		mediaSwitch.stopped = false;
@@ -179,14 +185,16 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 			scene = mediaSwitch.getScene();
 			transition = mediaSwitch.transition;
 
-			if (verbose)
+			if (verbose) {
 				mediaSwitch.logMatch();
+			}
 		}
 
 		mediaSwitch.matched = matched;
 
-		if (match)
+		if (match) {
 			break;
+		}
 	}
 }
 
@@ -266,13 +274,15 @@ void MediaSwitch::save(obs_data_t *obj)
 // To be removed in future version
 bool loadOldMedia(obs_data_t *obj, MediaSwitch *s)
 {
-	if (!s)
+	if (!s) {
 		return false;
+	}
 
 	const char *scene = obs_data_get_string(obj, "scene");
 
-	if (strcmp(scene, "") == 0)
+	if (strcmp(scene, "") == 0) {
 		return false;
+	}
 
 	s->scene = GetWeakSourceByName(scene);
 
@@ -293,8 +303,9 @@ bool loadOldMedia(obs_data_t *obj, MediaSwitch *s)
 void MediaSwitch::load(obs_data_t *obj)
 {
 
-	if (loadOldMedia(obj, this))
+	if (loadOldMedia(obj, this)) {
 		return;
+	}
 
 	SceneSwitcherEntry::load(obj);
 
@@ -489,8 +500,9 @@ MediaSwitchWidget::MediaSwitchWidget(QWidget *parent, MediaSwitch *s)
 		states->setCurrentIndex(s->state);
 		timeRestrictions->setCurrentIndex(s->restriction);
 		time->setValue(s->time);
-		if (s->restriction == TIME_RESTRICTION_NONE)
+		if (s->restriction == TIME_RESTRICTION_NONE) {
 			time->setDisabled(true);
+		}
 	}
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
@@ -559,10 +571,11 @@ void MediaSwitchWidget::TimeRestrictionChanged(int index)
 		return;
 	}
 
-	if ((time_restriction)index == TIME_RESTRICTION_NONE)
+	if ((time_restriction)index == TIME_RESTRICTION_NONE) {
 		time->setDisabled(true);
-	else
+	} else {
 		time->setDisabled(false);
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->restriction = (time_restriction)index;
