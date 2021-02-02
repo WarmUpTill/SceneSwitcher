@@ -21,8 +21,9 @@ void AdvSceneSwitcher::on_pauseAdd_clicked()
 void AdvSceneSwitcher::on_pauseRemove_clicked()
 {
 	QListWidgetItem *item = ui->pauseEntries->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -37,8 +38,9 @@ void AdvSceneSwitcher::on_pauseRemove_clicked()
 void AdvSceneSwitcher::on_pauseUp_clicked()
 {
 	int index = ui->pauseEntries->currentRow();
-	if (!listMoveUp(ui->pauseEntries))
+	if (!listMoveUp(ui->pauseEntries)) {
 		return;
+	}
 
 	PauseEntryWidget *s1 = (PauseEntryWidget *)ui->pauseEntries->itemWidget(
 		ui->pauseEntries->item(index));
@@ -56,8 +58,9 @@ void AdvSceneSwitcher::on_pauseDown_clicked()
 {
 	int index = ui->pauseEntries->currentRow();
 
-	if (!listMoveDown(ui->pauseEntries))
+	if (!listMoveDown(ui->pauseEntries)) {
 		return;
+	}
 
 	PauseEntryWidget *s1 = (PauseEntryWidget *)ui->pauseEntries->itemWidget(
 		ui->pauseEntries->item(index));
@@ -142,24 +145,22 @@ void setPauseTarget(PauseTarget &target, bool &verbose)
 bool checkPauseScene(obs_weak_source_t *currentScene, obs_weak_source_t *scene,
 		     PauseTarget &target, bool &verbose)
 {
-	if (currentScene != scene)
+	if (currentScene != scene) {
 		return false;
+	}
 
 	setPauseTarget(target, verbose);
-	if (target == PauseTarget::All)
-		return true;
-	return false;
+	return (target == PauseTarget::All);
 }
 bool checkPauseWindow(std::string &currentTitle, std::string &title,
 		      PauseTarget &target, bool &verbose)
 {
-	if (currentTitle != title)
+	if (currentTitle != title) {
 		return false;
+	}
 
 	setPauseTarget(target, verbose);
-	if (target == PauseTarget::All)
-		return true;
-	return false;
+	return (target == PauseTarget::All)
 }
 
 bool SwitcherData::checkPause()
@@ -175,14 +176,16 @@ bool SwitcherData::checkPause()
 	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
 	for (PauseEntry &s : pauseEntries) {
-		if (s.pauseType == PauseType::Scene)
+		if (s.pauseType == PauseType::Scene) {
 			pauseAll = checkPauseScene(ws, s.scene, s.pauseTarget,
 						   verbose);
-		else
+		} else {
 			pauseAll = checkPauseWindow(title, s.window,
 						    s.pauseTarget, verbose);
-		if (pauseAll)
+		}
+		if (pauseAll) {
 			break;
+		}
 	}
 
 	obs_source_release(currentSource);
@@ -251,8 +254,9 @@ void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 
 void SwitcherData::loadOldPauseSwitches(obs_data_t *obj)
 {
-	if (obs_data_get_int(obj, "oldPauseValuesImported"))
+	if (obs_data_get_int(obj, "oldPauseValuesImported")) {
 		return;
+	}
 
 	obs_data_array_t *pauseScenesArray =
 		obs_data_get_array(obj, "pauseScenes");
