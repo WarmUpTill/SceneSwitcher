@@ -15,9 +15,9 @@
 
 SwitcherData *switcher = nullptr;
 
-/********************************************************************************
+/******************************************************************************
  * Create the Advanced Scene Switcher settings window
- ********************************************************************************/
+ ******************************************************************************/
 AdvSceneSwitcher::AdvSceneSwitcher(QWidget *parent)
 	: QDialog(parent), ui(new Ui_AdvSceneSwitcher)
 {
@@ -67,9 +67,9 @@ void AdvSceneSwitcher::loadUI()
 	loading = false;
 }
 
-/********************************************************************************
+/******************************************************************************
  * UI helpers
- ********************************************************************************/
+ ******************************************************************************/
 bool AdvSceneSwitcher::DisplayMessage(QString msg, bool question)
 {
 	if (question) {
@@ -342,7 +342,7 @@ QMetaObject::Connection AdvSceneSwitcher::PulseWidget(QWidget *widget,
 	paAnimation->setStartValue(startColor);
 	paAnimation->setEndValue(endColor);
 	paAnimation->setDuration(1000);
-	// play backward to return to original state on timer end
+	// Play backwards to return to original state on timer end
 	paAnimation->setDirection(QAbstractAnimation::Backward);
 
 	auto con = QWidget::connect(
@@ -357,9 +357,9 @@ QMetaObject::Connection AdvSceneSwitcher::PulseWidget(QWidget *widget,
 	return con;
 }
 
-/********************************************************************************
+/******************************************************************************
  * Saving and loading
- ********************************************************************************/
+ ******************************************************************************/
 static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 {
 	if (saving) {
@@ -393,8 +393,8 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 		switcher->m.unlock();
 
-		// stop the scene switcher at least once
-		// to avoid issues with scene collection changes
+		// Stop the scene switcher at least once to
+		// avoid scene duplication issues with scene collection changes
 		bool start = !switcher->stop;
 		switcher->Stop();
 		if (start) {
@@ -403,9 +403,9 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 	}
 }
 
-/********************************************************************************
+/******************************************************************************
  * Main switcher thread
- ********************************************************************************/
+ ******************************************************************************/
 void SwitcherData::Thread()
 {
 	blog(LOG_INFO, "started");
@@ -443,7 +443,6 @@ void SwitcherData::Thread()
 			}
 		}
 
-		//sleep for a bit
 		vblog(LOG_INFO, "sleep for %ld", duration.count());
 		cv.wait_for(lock, duration);
 
@@ -619,9 +618,9 @@ bool SwitcherData::sceneChangedDuringWait()
 	return (waitScene && currentSource != waitScene);
 }
 
-/********************************************************************************
+/******************************************************************************
  * OBS module setup
- ********************************************************************************/
+ ******************************************************************************/
 extern "C" void FreeSceneSwitcher()
 {
 	if (loaded_curl_lib) {
@@ -638,12 +637,12 @@ extern "C" void FreeSceneSwitcher()
 
 void handleSceneChange(SwitcherData *s)
 {
-	//stop waiting if scene was manually changed
+	// Stop waiting if scene was manually changed
 	if (s->sceneChangedDuringWait()) {
 		s->cv.notify_one();
 	}
 
-	//set previous scene
+	// Set previous scene
 	obs_source_t *source = obs_frontend_get_current_scene();
 	obs_weak_source_t *ws = obs_source_get_weak_source(source);
 	obs_source_release(source);

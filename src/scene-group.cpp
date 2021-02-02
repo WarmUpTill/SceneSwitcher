@@ -584,7 +584,6 @@ void populateTypeSelection(QComboBox *list)
 
 SceneGroupEditWidget::SceneGroupEditWidget()
 {
-	//w->setContentsMargins(0, 0, 0, 0);
 	type = new QComboBox();
 	populateTypeSelection(type);
 

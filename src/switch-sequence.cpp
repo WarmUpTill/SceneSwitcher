@@ -28,7 +28,7 @@ void AdvSceneSwitcher::on_sceneSequenceRemove_clicked()
 	}
 
 	{
-		// might be in waiting state of sequence
+		// Might be in waiting state of sequence
 		// causing invalid access after wakeup
 		// thus we need to stop the main thread before delete
 		bool wasRunning = !switcher->stop;
@@ -140,7 +140,7 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 		return;
 	}
 
-	// might be in waiting state of sequence
+	// Might be in waiting state of sequence
 	// causing invalid access after wakeup
 	// thus we need to stop the main thread before delete
 	bool wasRunning = !switcher->stop;

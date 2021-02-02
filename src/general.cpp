@@ -232,7 +232,7 @@ void AdvSceneSwitcher::on_exportSettings_clicked()
 
 void AdvSceneSwitcher::on_importSettings_clicked()
 {
-	// scene switcher could be stuck in a sequence
+	// Scene switcher could be stuck in a sequence
 	// so it needs to be stopped before importing new settings
 	bool start = !switcher->stop;
 	switcher->Stop();
@@ -272,7 +272,7 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 		"AdvSceneSwitcher.generalTab.saveOrLoadsettings.loadSuccess"));
 	close();
 
-	// restart scene switcher if it was active
+	// Restart scene switcher if it was active
 	if (start) {
 		switcher->Start();
 	}

@@ -83,7 +83,7 @@ bool timesAreInInterval(QTime &time1, QTime &time2, int &interval)
 	QTime validSwitchTimeWindow = time1.addMSecs(interval);
 
 	ret = time1 <= time2 && time2 <= validSwitchTimeWindow;
-	// check for overflow
+	// Check for overflow
 	if (!ret && validSwitchTimeWindow.msecsSinceStartOfDay() < interval) {
 		ret = time2 >= time1 || time2 <= validSwitchTimeWindow;
 	}

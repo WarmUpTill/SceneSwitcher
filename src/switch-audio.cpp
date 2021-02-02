@@ -118,7 +118,7 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 		return;
 	}
 
-	bool fallbackChecked = false; // false if one or no match
+	bool fallbackChecked = false; // false if only one or no match
 
 	for (AudioSwitch &s : audioSwitches) {
 		if (!s.initialized()) {
@@ -140,7 +140,7 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 						 s.volumeThreshold;
 		}
 
-		// reset for next check
+		// Reset for next check
 		s.peak = -FLT_MAX;
 
 		if (volumeThresholdreached) {

@@ -20,13 +20,13 @@ struct MediaSwitch : SceneSwitcherEntry {
 	time_restriction restriction = TIME_RESTRICTION_NONE;
 	int64_t time = 0;
 
-	// trigger scene change only once even if media state might trigger repeatedly
+	// Trigger scene change only once even if media state might trigger repeatedly
 	bool matched = false;
 
 	std::atomic_bool stopped = {false};
 	std::atomic_bool ended = {false};
 
-	// workaround to enable use of "ended" to specify end of VLC playlist
+	// Workaround to enable use of "ended" to specify end of VLC playlist
 	bool previousStateEnded = false;
 
 	bool playedToEnd = false;
