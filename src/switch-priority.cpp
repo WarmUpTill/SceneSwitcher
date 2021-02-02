@@ -58,12 +58,14 @@ bool SwitcherData::prioFuncsValid()
 	auto it = std::unique(functionNamesByPriority.begin(),
 			      functionNamesByPriority.end());
 	bool wasUnique = (it == functionNamesByPriority.end());
-	if (!wasUnique)
+	if (!wasUnique) {
 		return false;
+	}
 
 	for (int p : functionNamesByPriority) {
-		if (p < 0 || p > 8)
+		if (p < 0 || p > 8) {
 			return false;
+		}
 	}
 	return true;
 }

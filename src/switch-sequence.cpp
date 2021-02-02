@@ -23,8 +23,9 @@ void AdvSceneSwitcher::on_sceneSequenceAdd_clicked()
 void AdvSceneSwitcher::on_sceneSequenceRemove_clicked()
 {
 	QListWidgetItem *item = ui->sceneSequenceSwitches->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		// might be in waiting state of sequence
@@ -38,8 +39,9 @@ void AdvSceneSwitcher::on_sceneSequenceRemove_clicked()
 		auto &switches = switcher->sceneSequenceSwitches;
 		switches.erase(switches.begin() + idx);
 
-		if (wasRunning)
+		if (wasRunning) {
 			switcher->Start();
+		}
 	}
 
 	delete item;
@@ -48,8 +50,9 @@ void AdvSceneSwitcher::on_sceneSequenceRemove_clicked()
 void AdvSceneSwitcher::on_sceneSequenceUp_clicked()
 {
 	int index = ui->sceneSequenceSwitches->currentRow();
-	if (!listMoveUp(ui->sceneSequenceSwitches))
+	if (!listMoveUp(ui->sceneSequenceSwitches)) {
 		return;
+	}
 
 	SequenceWidget *s1 =
 		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(
@@ -69,8 +72,9 @@ void AdvSceneSwitcher::on_sceneSequenceDown_clicked()
 {
 	int index = ui->sceneSequenceSwitches->currentRow();
 
-	if (!listMoveDown(ui->sceneSequenceSwitches))
+	if (!listMoveDown(ui->sceneSequenceSwitches)) {
 		return;
+	}
 
 	SequenceWidget *s1 =
 		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(
@@ -95,11 +99,13 @@ void AdvSceneSwitcher::on_sceneSequenceSave_clicked()
 		QDir::currentPath(),
 		tr(obs_module_text(
 			"AdvSceneSwitcher.sceneSequenceTab.fileType")));
-	if (directory.isEmpty())
+	if (directory.isEmpty()) {
 		return;
+	}
 	QFile file(directory);
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 		return;
+	}
 
 	obs_data_t *obj = obs_data_create();
 	switcher->saveSceneSequenceSwitches(obj);
@@ -116,12 +122,14 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 		QDir::currentPath(),
 		tr(obs_module_text(
 			"AdvSceneSwitcher.sceneSequenceTab.fileType")));
-	if (directory.isEmpty())
+	if (directory.isEmpty()) {
 		return;
+	}
 
 	QFile file(directory);
-	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 		return;
+	}
 
 	obs_data_t *obj = obs_data_create_from_json_file(
 		file.fileName().toUtf8().constData());
@@ -140,8 +148,9 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 
 	switcher->loadSceneSequenceSwitches(obj);
 
-	if (wasRunning)
+	if (wasRunning) {
 		switcher->Start();
+	}
 
 	obs_data_release(obj);
 
@@ -179,15 +188,17 @@ bool matchUninterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
 void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 				      OBSWeakSource &transition, int &linger)
 {
-	if (SceneSequenceSwitch::pause)
+	if (SceneSequenceSwitch::pause) {
 		return;
+	}
 
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
 	for (SceneSequenceSwitch &s : sceneSequenceSwitches) {
-		if (!s.initialized())
+		if (!s.initialized()) {
 			continue;
+		}
 
 		if (s.startScene == ws) {
 			if (!match) {
@@ -202,8 +213,9 @@ void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 				if (match) {
 					scene = s.getScene();
 					transition = s.transition;
-					if (switcher->verbose)
+					if (switcher->verbose) {
 						s.logMatch();
+					}
 				}
 			}
 		} else {
@@ -296,13 +308,15 @@ void SceneSequenceSwitch::save(obs_data_t *obj)
 // To be removed in future version
 bool loadOldScequence(obs_data_t *obj, SceneSequenceSwitch *s)
 {
-	if (!s)
+	if (!s) {
 		return false;
+	}
 
 	const char *scene1 = obs_data_get_string(obj, "sceneRoundTripScene1");
 
-	if (strcmp(scene1, "") == 0)
+	if (strcmp(scene1, "") == 0) {
 		return false;
+	}
 
 	s->startScene = GetWeakSourceByName(scene1);
 
@@ -329,8 +343,9 @@ bool loadOldScequence(obs_data_t *obj, SceneSequenceSwitch *s)
 
 void SceneSequenceSwitch::load(obs_data_t *obj)
 {
-	if (loadOldScequence(obj, this))
+	if (loadOldScequence(obj, this)) {
 		return;
+	}
 
 	SceneSwitcherEntry::load(obj);
 
@@ -438,9 +453,10 @@ void SequenceWidget::swapSwitchData(SequenceWidget *s1, SequenceWidget *s2)
 
 void SequenceWidget::UpdateDelay()
 {
-	if (switchData)
+	if (switchData) {
 		delay->setValue(switchData->delay /
 				switchData->delayMultiplier);
+	}
 }
 
 void SequenceWidget::DelayChanged(double delay)

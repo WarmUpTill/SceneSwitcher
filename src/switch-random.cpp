@@ -22,8 +22,9 @@ void AdvSceneSwitcher::on_randomAdd_clicked()
 void AdvSceneSwitcher::on_randomRemove_clicked()
 {
 	QListWidgetItem *item = ui->randomSwitches->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -38,27 +39,32 @@ void AdvSceneSwitcher::on_randomRemove_clicked()
 void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
 			       OBSWeakSource &transition, int &delay)
 {
-	if (randomSwitches.size() == 0 || RandomSwitch::pause)
+	if (randomSwitches.size() == 0 || RandomSwitch::pause) {
 		return;
+	}
 
 	std::deque<RandomSwitch> rs(randomSwitches);
 	std::random_device rng;
 	std::mt19937 urng(rng());
 	std::shuffle(rs.begin(), rs.end(), urng);
 	for (RandomSwitch &r : rs) {
-		if (!r.initialized())
+		if (!r.initialized()) {
 			continue;
+		}
 
-		if (r.scene == lastRandomScene && randomSwitches.size() != 1)
+		if (r.scene == lastRandomScene && randomSwitches.size() != 1) {
 			continue;
+		}
+
 		scene = r.getScene();
 		transition = r.transition;
 		delay = (int)r.delay * 1000;
 		match = true;
 		lastRandomScene = r.scene;
 
-		if (verbose)
+		if (verbose) {
 			r.logMatch();
+		}
 		break;
 	}
 }
@@ -115,11 +121,12 @@ void AdvSceneSwitcher::setupRandomTab()
 		ui->randomHelp->setVisible(false);
 	}
 
-	if (switcher->switchIfNotMatching != RANDOM_SWITCH)
+	if (switcher->switchIfNotMatching != RANDOM_SWITCH) {
 		PulseWidget(ui->randomDisabledWarning, QColor(Qt::red),
 			    QColor(0, 0, 0, 0), "QLabel ");
-	else
+	} else {
 		ui->randomDisabledWarning->setVisible(false);
+	}
 }
 
 void RandomSwitch::save(obs_data_t *obj)

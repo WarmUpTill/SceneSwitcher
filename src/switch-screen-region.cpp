@@ -19,8 +19,9 @@ void showCurrentFrame(QListWidget *list)
 {
 	QListWidgetItem *item = list->currentItem();
 
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	ScreenRegionWidget *sw = (ScreenRegionWidget *)list->itemWidget(item);
 	sw->showFrame();
@@ -53,8 +54,9 @@ void AdvSceneSwitcher::on_showFrame_clicked()
 
 void AdvSceneSwitcher::on_screenRegionSwitches_currentRowChanged(int idx)
 {
-	if (loading || idx == -1)
+	if (loading || idx == -1) {
 		return;
+	}
 
 	if (switcher->showFrame) {
 		clearFrames(ui->screenRegionSwitches);
@@ -78,8 +80,9 @@ void AdvSceneSwitcher::on_screenRegionAdd_clicked()
 void AdvSceneSwitcher::on_screenRegionRemove_clicked()
 {
 	QListWidgetItem *item = ui->screenRegionSwitches->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -94,8 +97,9 @@ void AdvSceneSwitcher::on_screenRegionRemove_clicked()
 void AdvSceneSwitcher::on_screenRegionUp_clicked()
 {
 	int index = ui->screenRegionSwitches->currentRow();
-	if (!listMoveUp(ui->screenRegionSwitches))
+	if (!listMoveUp(ui->screenRegionSwitches)) {
 		return;
+	}
 
 	ScreenRegionWidget *s1 =
 		(ScreenRegionWidget *)ui->screenRegionSwitches->itemWidget(
@@ -115,8 +119,9 @@ void AdvSceneSwitcher::on_screenRegionDown_clicked()
 {
 	int index = ui->screenRegionSwitches->currentRow();
 
-	if (!listMoveDown(ui->screenRegionSwitches))
+	if (!listMoveDown(ui->screenRegionSwitches)) {
 		return;
+	}
 
 	ScreenRegionWidget *s1 =
 		(ScreenRegionWidget *)ui->screenRegionSwitches->itemWidget(
@@ -135,15 +140,17 @@ void AdvSceneSwitcher::on_screenRegionDown_clicked()
 void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 					   OBSWeakSource &transition)
 {
-	if (ScreenRegionSwitch::pause)
+	if (ScreenRegionSwitch::pause) {
 		return;
+	}
 
 	std::pair<int, int> cursorPos = getCursorPos();
 	int minRegionSize = 99999;
 
 	for (auto &s : screenRegionSwitches) {
-		if (!s.initialized())
+		if (!s.initialized()) {
 			continue;
+		}
 
 		if (cursorPos.first >= s.minX && cursorPos.second >= s.minY &&
 		    cursorPos.first <= s.maxX && cursorPos.second <= s.maxY) {
@@ -154,8 +161,9 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 				transition = s.transition;
 				minRegionSize = regionSize;
 
-				if (verbose)
+				if (verbose) {
 					s.logMatch();
+				}
 				break;
 			}
 		}
@@ -242,13 +250,15 @@ void ScreenRegionSwitch::save(obs_data_t *obj)
 // To be removed in future version
 bool loadOldRegion(obs_data_t *obj, ScreenRegionSwitch *s)
 {
-	if (!s)
+	if (!s) {
 		return false;
+	}
 
 	const char *scene = obs_data_get_string(obj, "screenRegionScene");
 
-	if (strcmp(scene, "") == 0)
+	if (strcmp(scene, "") == 0) {
 		return false;
+	}
 
 	s->scene = GetWeakSourceByName(scene);
 
@@ -267,8 +277,9 @@ bool loadOldRegion(obs_data_t *obj, ScreenRegionSwitch *s)
 
 void ScreenRegionSwitch::load(obs_data_t *obj)
 {
-	if (loadOldRegion(obj, this))
+	if (loadOldRegion(obj, this)) {
 		return;
+	}
 
 	SceneSwitcherEntry::load(obj);
 
@@ -419,8 +430,9 @@ void ScreenRegionWidget::drawFrame()
 				   Qt::WindowStaysOnTopHint);
 	helperFrame.setAttribute(Qt::WA_TranslucentBackground, true);
 
-	if (switchData)
+	if (switchData) {
 		helperFrame.setGeometry(switchData->minX, switchData->minY,
 					switchData->maxX - switchData->minX,
 					switchData->maxY - switchData->minY);
+	}
 }
