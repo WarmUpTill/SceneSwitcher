@@ -52,8 +52,9 @@ void SceneSwitcherEntry::logMatch()
 OBSWeakSource SceneSwitcherEntry::getScene()
 {
 	if (targetType == SwitchTargetType::Scene) {
-		if (usePreviousScene && switcher)
+		if (usePreviousScene && switcher) {
 			return switcher->previousScene;
+		}
 		return scene;
 	} else if (targetType == SwitchTargetType::SceneGroup) {
 		return group->getNextScene();
@@ -96,8 +97,9 @@ void SceneSwitcherEntry::load(obs_data_t *obj, const char *targetTypeLoadName,
 
 	if (targetType == SwitchTargetType::Scene) {
 		usePreviousScene = strcmp(targetName, previous_scene_name) == 0;
-		if (!usePreviousScene)
+		if (!usePreviousScene) {
 			scene = GetWeakSourceByName(targetName);
+		}
 	} else if (targetType == SwitchTargetType::SceneGroup) {
 		group = GetSceneGroupByName(targetName);
 	}
@@ -111,16 +113,18 @@ void SceneSwitcherEntry::load(obs_data_t *obj, const char *targetTypeLoadName,
 
 void SwitchWidget::SceneGroupAdd(const QString &name)
 {
-	if (!scenes)
+	if (!scenes) {
 		return;
+	}
 
 	scenes->addItem(name);
 }
 
 void SwitchWidget::SceneGroupRemove(const QString &name)
 {
-	if (!scenes)
+	if (!scenes) {
 		return;
+	}
 
 	int idx = scenes->findText(name);
 
@@ -142,8 +146,9 @@ void SwitchWidget::SceneGroupRemove(const QString &name)
 void SwitchWidget::SceneGroupRename(const QString &oldName,
 				    const QString &newName)
 {
-	if (!scenes)
+	if (!scenes) {
 		return;
+	}
 
 	bool renameSelected = scenes->currentText() == oldName;
 	int idx = scenes->findText(oldName);
@@ -155,8 +160,9 @@ void SwitchWidget::SceneGroupRename(const QString &oldName,
 	scenes->removeItem(idx);
 	scenes->insertItem(idx, newName);
 
-	if (renameSelected)
+	if (renameSelected) {
 		scenes->setCurrentIndex(scenes->findText(newName));
+	}
 }
 
 SwitchWidget::SwitchWidget(QWidget *parent, SceneSwitcherEntry *s,
@@ -206,8 +212,9 @@ void SwitchWidget::setSwitchData(SceneSwitcherEntry *s)
 
 void SwitchWidget::showSwitchData()
 {
-	if (!switchData)
+	if (!switchData) {
 		return;
+	}
 
 	transitions->setCurrentText(
 		GetWeakSourceName(switchData->transition).c_str());
