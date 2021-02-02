@@ -9,8 +9,9 @@ IdleWidget *idleWidget = nullptr;
 void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
 				   OBSWeakSource &transition)
 {
-	if (!idleData.idleEnable || IdleData::pause)
+	if (!idleData.idleEnable || IdleData::pause) {
 		return;
+	}
 
 	std::string title;
 	bool ignoreIdle = false;
@@ -38,23 +39,26 @@ void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
 	}
 
 	if (!ignoreIdle && secondsSinceLastInput() > idleData.time) {
-		if (idleData.alreadySwitched)
+		if (idleData.alreadySwitched) {
 			return;
+		}
 		scene = idleData.getScene();
 		transition = idleData.transition;
 		match = true;
 		idleData.alreadySwitched = true;
 
-		if (verbose)
+		if (verbose) {
 			idleData.logMatch();
+		}
 	} else
 		idleData.alreadySwitched = false;
 }
 
 void AdvSceneSwitcher::on_idleCheckBox_stateChanged(int state)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	if (!state) {
@@ -68,10 +72,12 @@ void AdvSceneSwitcher::on_idleCheckBox_stateChanged(int state)
 
 void AdvSceneSwitcher::on_ignoreIdleWindows_currentRowChanged(int idx)
 {
-	if (loading)
+	if (loading) {
 		return;
-	if (idx == -1)
+	}
+	if (idx == -1) {
 		return;
+	}
 
 	QListWidgetItem *item = ui->ignoreIdleWindows->item(idx);
 
@@ -90,8 +96,9 @@ void AdvSceneSwitcher::on_ignoreIdleAdd_clicked()
 {
 	QString windowName = ui->ignoreIdleWindowsWindows->currentText();
 
-	if (windowName.isEmpty())
+	if (windowName.isEmpty()) {
 		return;
+	}
 
 	QVariant v = QVariant::fromValue(windowName);
 
@@ -113,8 +120,9 @@ void AdvSceneSwitcher::on_ignoreIdleAdd_clicked()
 void AdvSceneSwitcher::on_ignoreIdleRemove_clicked()
 {
 	QListWidgetItem *item = ui->ignoreIdleWindows->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	QString windowName = item->data(Qt::UserRole).toString();
 
@@ -267,8 +275,10 @@ IdleWidget::IdleWidget(QWidget *parent, IdleData *s)
 
 void IdleWidget::DurationChanged(int dur)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->idleData.time = dur;
 }
