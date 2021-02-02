@@ -23,8 +23,9 @@ void AdvSceneSwitcher::on_audioAdd_clicked()
 void AdvSceneSwitcher::on_audioRemove_clicked()
 {
 	QListWidgetItem *item = ui->audioSwitches->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -39,8 +40,9 @@ void AdvSceneSwitcher::on_audioRemove_clicked()
 void AdvSceneSwitcher::on_audioUp_clicked()
 {
 	int index = ui->audioSwitches->currentRow();
-	if (!listMoveUp(ui->audioSwitches))
+	if (!listMoveUp(ui->audioSwitches)) {
 		return;
+	}
 
 	AudioSwitchWidget *s1 =
 		(AudioSwitchWidget *)ui->audioSwitches->itemWidget(
@@ -60,8 +62,9 @@ void AdvSceneSwitcher::on_audioDown_clicked()
 {
 	int index = ui->audioSwitches->currentRow();
 
-	if (!listMoveDown(ui->audioSwitches))
+	if (!listMoveDown(ui->audioSwitches)) {
 		return;
+	}
 
 	AudioSwitchWidget *s1 =
 		(AudioSwitchWidget *)ui->audioSwitches->itemWidget(
@@ -79,8 +82,10 @@ void AdvSceneSwitcher::on_audioDown_clicked()
 
 void AdvSceneSwitcher::on_audioFallback_toggled(bool on)
 {
-	if (loading || !switcher)
+	if (loading || !switcher) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->audioFallback.enable = on;
 }
@@ -98,8 +103,9 @@ void SwitcherData::checkAudioSwitchFallback(OBSWeakSource &scene,
 		scene = audioFallback.getScene();
 		transition = audioFallback.transition;
 
-		if (verbose)
+		if (verbose) {
 			audioFallback.logMatch();
+		}
 	}
 
 	audioFallback.matchCount++;
@@ -108,14 +114,16 @@ void SwitcherData::checkAudioSwitchFallback(OBSWeakSource &scene,
 void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
-	if (AudioSwitch::pause)
+	if (AudioSwitch::pause) {
 		return;
+	}
 
 	bool fallbackChecked = false; // false if one or no match
 
 	for (AudioSwitch &s : audioSwitches) {
-		if (!s.initialized())
+		if (!s.initialized()) {
 			continue;
+		}
 
 		obs_source_t *as = obs_weak_source_get_source(s.audioSource);
 		bool audioActive = obs_source_active(as);
@@ -124,12 +132,13 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 		// peak will have a value from -60 db to 0 db
 		bool volumeThresholdreached = false;
 
-		if (s.condition == ABOVE)
+		if (s.condition == ABOVE) {
 			volumeThresholdreached = ((double)s.peak + 60) * 1.7 >
 						 s.volumeThreshold;
-		else
+		} else {
 			volumeThresholdreached = ((double)s.peak + 60) * 1.7 <
 						 s.volumeThreshold;
+		}
 
 		// reset for next check
 		s.peak = -FLT_MAX;
@@ -156,16 +165,19 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 			transition = s.transition;
 			match = true;
 
-			if (verbose)
+			if (verbose) {
 				s.logMatch();
+			}
 
-			if (!audioFallback.enable)
+			if (!audioFallback.enable) {
 				break;
+			}
 		}
 	}
 
-	if (!fallbackChecked)
+	if (!fallbackChecked) {
 		audioFallback.matchCount = 0;
+	}
 }
 
 void SwitcherData::saveAudioSwitches(obs_data_t *obj)
@@ -238,9 +250,11 @@ void AudioSwitch::setVolumeLevel(void *data,
 	UNUSED_PARAMETER(inputPeak);
 	AudioSwitch *s = static_cast<AudioSwitch *>(data);
 
-	for (int i = 1; i < MAX_AUDIO_CHANNELS; i++)
-		if (peak[i] > s->peak)
+	for (int i = 1; i < MAX_AUDIO_CHANNELS; i++) {
+		if (peak[i] > s->peak) {
 			s->peak = peak[i];
+		}
+	}
 }
 
 obs_volmeter_t *AddVolmeterToSource(AudioSwitch *entry, obs_weak_source *source)
@@ -292,13 +306,15 @@ void AudioSwitch::save(obs_data_t *obj)
 // To be removed in future version
 bool loadOldAudio(obs_data_t *obj, AudioSwitch *s)
 {
-	if (!s)
+	if (!s) {
 		return false;
+	}
 
 	const char *scene = obs_data_get_string(obj, "scene");
 
-	if (strcmp(scene, "") == 0)
+	if (strcmp(scene, "") == 0) {
 		return false;
+	}
 
 	s->scene = GetWeakSourceByName(scene);
 
@@ -318,8 +334,9 @@ bool loadOldAudio(obs_data_t *obj, AudioSwitch *s)
 
 void AudioSwitch::load(obs_data_t *obj)
 {
-	if (loadOldAudio(obj, this))
+	if (loadOldAudio(obj, this)) {
 		return;
+	}
 
 	SceneSwitcherEntry::load(obj);
 
@@ -542,8 +559,10 @@ void AudioSwitchWidget::UpdateVolmeterSource()
 
 void AudioSwitchWidget::SourceChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->audioSource = GetWeakSourceByQString(text);
 	switchData->resetVolmeter();
@@ -552,24 +571,30 @@ void AudioSwitchWidget::SourceChanged(const QString &text)
 
 void AudioSwitchWidget::VolumeThresholdChanged(int vol)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->volumeThreshold = vol;
 }
 
 void AudioSwitchWidget::ConditionChanged(int cond)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->condition = (audioCondition)cond;
 }
 
 void AudioSwitchWidget::DurationChanged(double dur)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->duration = dur;
 }
@@ -608,8 +633,10 @@ AudioSwitchFallbackWidget::AudioSwitchFallbackWidget(QWidget *parent,
 
 void AudioSwitchFallbackWidget::DurationChanged(double dur)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->duration = dur;
 }

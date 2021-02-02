@@ -83,8 +83,9 @@ void AdvSceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
 
 void AdvSceneSwitcher::on_autoStartEvent_currentIndexChanged(int index)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->autoStartEvent = static_cast<AutoStartEvent>(index);
@@ -376,8 +377,9 @@ void AdvSceneSwitcher::on_tabWidget_currentChanged(int index)
 
 void SwitcherData::loadSettings(obs_data_t *obj)
 {
-	if (!obj)
+	if (!obj) {
 		return;
+	}
 
 	switcher->loadSceneGroups(obj);
 	switcher->loadWindowTitleSwitches(obj);
@@ -399,8 +401,9 @@ void SwitcherData::loadSettings(obs_data_t *obj)
 
 void SwitcherData::saveSettings(obs_data_t *obj)
 {
-	if (!obj)
+	if (!obj) {
 		return;
+	}
 
 	saveSceneGroups(obj);
 	saveWindowTitleSwitches(obj);
