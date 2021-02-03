@@ -112,15 +112,21 @@ void addSelectionEntry(QComboBox *sel, const char *description,
 
 void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 					      bool addSceneGroup,
-					      bool addSelect)
+					      bool addSelect,
+					      std::string selectText)
 {
 	sel->clear();
 
 	if (addSelect) {
-		addSelectionEntry(
-			sel, obs_module_text("AdvSceneSwitcher.selectScene"),
-			obs_module_text(
-				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
+		if (selectText.empty()) {
+			addSelectionEntry(
+				sel,
+				obs_module_text("AdvSceneSwitcher.selectScene"),
+				obs_module_text(
+					"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
+		} else {
+			addSelectionEntry(sel, selectText.c_str());
+		}
 	}
 
 	BPtr<char *> scenes = obs_frontend_get_scene_names();
