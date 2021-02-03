@@ -569,7 +569,6 @@ void SceneTriggerWidget::TriggerActionChanged(int index)
 
 void SceneTriggerWidget::DurationChanged(double dur)
 {
-
 	if (loading || !switchData) {
 		return;
 	}

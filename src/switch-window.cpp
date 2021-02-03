@@ -1,3 +1,5 @@
+#include <regex>
+
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
@@ -169,28 +171,47 @@ void AdvSceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
 	}
 }
 
-bool isRunning(std::string &title)
+void checkWindowTitleSwitchDirect(WindowSwitch &s,
+				  std::string &currentWindowTitle, bool &match,
+				  OBSWeakSource &scene,
+				  OBSWeakSource &transition)
 {
-	QStringList windows;
+	bool focus = s.window == currentWindowTitle;
+	bool fullscreen = (!s.fullscreen || isFullscreen(s.window));
+	bool max = (!s.maximized || isMaximized(s.window));
 
-	GetWindowList(windows);
-	bool equals = windows.contains(QString::fromStdString(title));
-	bool matches = (windows.indexOf(QRegularExpression(
-				QString::fromStdString(title))) != -1);
-
-	return (equals || matches);
+	if (focus && fullscreen && max) {
+		match = true;
+		scene = s.getScene();
+		transition = s.transition;
+	}
 }
 
-bool isFocused(std::string &title)
+void checkWindowTitleSwitchRegex(WindowSwitch &s,
+				 std::string &currentWindowTitle,
+				 std::vector<std::string> windowList,
+				 bool &match, OBSWeakSource &scene,
+				 OBSWeakSource &transition)
 {
-	std::string current;
+	for (auto &window : windowList) {
+		try {
+			std::regex expr(s.window);
+			if (!std::regex_match(window, expr)) {
+				continue;
+			}
+		} catch (const std::regex_error &) {
+		}
 
-	GetCurrentWindowTitle(current);
-	bool equals = (title == current);
-	bool matches = QString::fromStdString(current).contains(
-		QRegularExpression(QString::fromStdString(title)));
+		bool focus = window == currentWindowTitle;
+		bool fullscreen = (!s.fullscreen || isFullscreen(window));
+		bool max = (!s.maximized || isMaximized(window));
 
-	return (equals || matches);
+		if (focus && fullscreen && max) {
+			match = true;
+			scene = s.getScene();
+			transition = s.transition;
+		}
+	}
 }
 
 void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
@@ -200,48 +221,47 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 		return;
 	}
 
-	std::string title;
-	bool ignored = false;
+	std::string currentWindowTitle;
+	GetCurrentWindowTitle(currentWindowTitle);
 
 	// Check if current window is ignored
-	GetCurrentWindowTitle(title);
 	for (auto &window : ignoreWindowsSwitches) {
-		bool equals = (title == window);
-		bool matches = QString::fromStdString(title).contains(
-			QRegularExpression(QString::fromStdString(window)));
+		bool equals = (currentWindowTitle == window);
 
-		if (equals || matches) {
-			ignored = true;
-			title = lastTitle;
+		try {
+			std::regex expr(window);
+			bool matches =
+				std::regex_match(currentWindowTitle, expr);
 
-			break;
+			if (equals || matches) {
+				currentWindowTitle = lastTitle;
+				break;
+			}
+		} catch (const std::regex_error &) {
 		}
 	}
-	lastTitle = title;
 
-	// Check for match
+	lastTitle = currentWindowTitle;
+
+	std::vector<std::string> windowList;
+	GetWindowList(windowList);
+
 	for (WindowSwitch &s : windowSwitches) {
 		if (!s.initialized()) {
 			continue;
 		}
 
-		bool fullscreen = (!s.fullscreen || isFullscreen(s.window));
-		bool max = (!s.maximized || isMaximized(s.window));
-		bool focus = (!s.focus || isFocused(s.window));
-		// True if current window is ignored AND switch equals OR matches last window
-		bool ignore =
-			(ignored &&
-			 (title == s.window ||
-			  QString::fromStdString(title).contains(
-				  QRegularExpression(
-					  QString::fromStdString(s.window)))));
+		if (std::find(windowList.begin(), windowList.end(), s.window) !=
+		    windowList.end()) {
+			checkWindowTitleSwitchDirect(s, currentWindowTitle,
+						     match, scene, transition);
+		} else {
+			checkWindowTitleSwitchRegex(s, currentWindowTitle,
+						    windowList, match, scene,
+						    transition);
+		}
 
-		if (isRunning(s.window) &&
-		    (fullscreen && (max && (focus || ignore)))) {
-			match = true;
-			scene = s.getScene();
-			transition = s.transition;
-
+		if (match) {
 			if (verbose) {
 				s.logMatch();
 			}
