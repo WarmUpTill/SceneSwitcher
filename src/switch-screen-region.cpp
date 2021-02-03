@@ -260,12 +260,8 @@ void ScreenRegionSwitch::save(obs_data_t *obj)
 {
 	SceneSwitcherEntry::save(obj);
 
-	const char *excludeSceneName = "";
-	obs_source_t *excludeSceneSource =
-		obs_weak_source_get_source(excludeScene);
-	excludeSceneName = obs_source_get_name(excludeSceneSource);
-	obs_source_release(excludeSceneSource);
-	obs_data_set_string(obj, "excludeScene", excludeSceneName);
+	obs_data_set_string(obj, "excludeScene",
+			    GetWeakSourceName(excludeScene).c_str());
 
 	obs_data_set_int(obj, "minX", minX);
 	obs_data_set_int(obj, "minY", minY);
