@@ -411,6 +411,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 
 	obs_data_set_bool(obj, "active", !switcher->stop);
 	obs_data_set_int(obj, "startup_behavior", switcher->startupBehavior);
+
 	obs_data_set_int(obj, "autoStartEvent",
 			 static_cast<int>(switcher->autoStartEvent));
 
