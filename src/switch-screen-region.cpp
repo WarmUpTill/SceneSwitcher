@@ -139,8 +139,9 @@ void AdvSceneSwitcher::on_screenRegionDown_clicked()
 
 bool shouldIgnoreSceneSwitch(ScreenRegionSwitch &matchingRegion)
 {
-	if (!matchingRegion.excludeScene)
+	if (!matchingRegion.excludeScene) {
 		return false;
+	}
 
 	obs_source_t *currentScene = obs_frontend_get_current_scene();
 	OBSWeakSource ws = obs_source_get_weak_source(currentScene);
@@ -418,10 +419,11 @@ void ScreenRegionWidget::hideFrame()
 
 void ScreenRegionWidget::ExcludeSceneChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
-	std::lock_guard<std::mutex> lock(switcher->m);
+	}
 
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->excludeScene = GetWeakSourceByQString(text);
 }
 
