@@ -75,6 +75,15 @@ void AdvSceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
 	switcher->startupBehavior = (StartupBehavior)index;
 }
 
+void AdvSceneSwitcher::on_autoStartEvent_currentIndexChanged(int index)
+{
+	if (loading)
+		return;
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->autoStartEvent = static_cast<AutoStartEvent>(index);
+}
+
 void AdvSceneSwitcher::on_noMatchSwitchScene_currentTextChanged(
 	const QString &text)
 {
@@ -403,6 +412,9 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_bool(obj, "active", !switcher->stop);
 	obs_data_set_int(obj, "startup_behavior", switcher->startupBehavior);
 
+	obs_data_set_int(obj, "autoStartEvent",
+			 static_cast<int>(switcher->autoStartEvent));
+
 	obs_data_set_bool(obj, "verbose", switcher->verbose);
 	obs_data_set_bool(obj, "disableHints", switcher->disableHints);
 
@@ -475,6 +487,9 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		switcher->stop = false;
 	if (switcher->startupBehavior == STOP)
 		switcher->stop = true;
+
+	switcher->autoStartEvent = static_cast<AutoStartEvent>(
+		obs_data_get_int(obj, "autoStartEvent"));
 
 	switcher->verbose = obs_data_get_bool(obj, "verbose");
 	switcher->disableHints = obs_data_get_bool(obj, "disableHints");
@@ -614,6 +629,28 @@ void SwitcherData::checkSwitchCooldown(bool &match)
 		blog(LOG_INFO, "cooldown active - ignoring match");
 }
 
+void populateStartupBehavior(QComboBox *cb)
+{
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.onStartup.asLastRun"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.onStartup.alwaysStart"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.onStartup.doNotStart"));
+}
+
+void populateAutoStartEventSelection(QComboBox *cb)
+{
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.autoStart.never"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.autoStart.recording"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.autoStart.streaming"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.autoStart.recordingAndStreaming"));
+}
+
 void AdvSceneSwitcher::setupGeneralTab()
 {
 	populateSceneSelection(ui->noMatchSwitchScene, false);
@@ -701,14 +738,12 @@ void AdvSceneSwitcher::setupGeneralTab()
 		}
 	}
 
-	ui->startupBehavior->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.status.onStartup.asLastRun"));
-	ui->startupBehavior->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.status.onStartup.alwaysStart"));
-	ui->startupBehavior->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.status.onStartup.doNotStart"));
-
+	populateStartupBehavior(ui->startupBehavior);
 	ui->startupBehavior->setCurrentIndex(switcher->startupBehavior);
+
+	populateAutoStartEventSelection(ui->autoStartEvent);
+	ui->autoStartEvent->setCurrentIndex(
+		static_cast<int>(switcher->autoStartEvent));
 
 	if (switcher->th && switcher->th->isRunning())
 		SetStarted();

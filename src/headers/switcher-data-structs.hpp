@@ -28,6 +28,13 @@ constexpr auto previous_scene_name = "Previous Scene";
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 typedef enum { PERSIST = 0, START = 1, STOP = 2 } StartupBehavior;
 
+enum class AutoStartEvent {
+	NEVER,
+	RECORDING,
+	STREAMING,
+	RECORINDG_OR_STREAMING,
+};
+
 typedef struct transitionData {
 	std::string name = "";
 	int duration = 0;
@@ -64,6 +71,7 @@ struct SwitcherData {
 	double noMatchDelay;
 	double noMatchCount = 0;
 	StartupBehavior startupBehavior = PERSIST;
+	AutoStartEvent autoStartEvent = AutoStartEvent::NEVER;
 
 	double cooldown = 0.;
 	std::chrono::high_resolution_clock::time_point lastMatchTime;

@@ -662,6 +662,20 @@ void resetLiveTime(SwitcherData *s)
 	s->liveTime = QDateTime();
 }
 
+void checkAutoStartRecording(SwitcherData *s)
+{
+	if (s->autoStartEvent == AutoStartEvent::RECORDING ||
+	    s->autoStartEvent == AutoStartEvent::RECORINDG_OR_STREAMING)
+		s->Start();
+}
+
+void checkAutoStartStreaming(SwitcherData *s)
+{
+	if (s->autoStartEvent == AutoStartEvent::STREAMING ||
+	    s->autoStartEvent == AutoStartEvent::RECORINDG_OR_STREAMING)
+		s->Start();
+}
+
 // Note to future self:
 // be careful using switcher->m here as there is potential for deadlocks when using
 // frontend functions such as obs_frontend_set_current_scene()
@@ -678,8 +692,12 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 		handleTransitionStop((SwitcherData *)switcher);
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
+		setLiveTime((SwitcherData *)switcher);
+		checkAutoStartRecording((SwitcherData *)switcher);
+		break;
 	case OBS_FRONTEND_EVENT_STREAMING_STARTED:
 		setLiveTime((SwitcherData *)switcher);
+		checkAutoStartStreaming((SwitcherData *)switcher);
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
 	case OBS_FRONTEND_EVENT_STREAMING_STOPPED:
