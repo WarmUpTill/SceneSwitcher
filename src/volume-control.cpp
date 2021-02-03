@@ -82,7 +82,10 @@ VolControl::VolControl(OBSSource source_, bool vertical)
 	nameLabel = new QLabel();
 	volLabel = new QLabel();
 
-	QString sourceName = obs_source_get_name(source);
+	QString sourceName = "";
+	if (source) {
+		obs_source_get_name(source);
+	}
 	setObjectName(sourceName);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;

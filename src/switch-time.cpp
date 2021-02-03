@@ -20,8 +20,9 @@ void AdvSceneSwitcher::on_timeAdd_clicked()
 void AdvSceneSwitcher::on_timeRemove_clicked()
 {
 	QListWidgetItem *item = ui->timeSwitches->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -36,8 +37,9 @@ void AdvSceneSwitcher::on_timeRemove_clicked()
 void AdvSceneSwitcher::on_timeUp_clicked()
 {
 	int index = ui->timeSwitches->currentRow();
-	if (!listMoveUp(ui->timeSwitches))
+	if (!listMoveUp(ui->timeSwitches)) {
 		return;
+	}
 
 	TimeSwitchWidget *s1 = (TimeSwitchWidget *)ui->timeSwitches->itemWidget(
 		ui->timeSwitches->item(index));
@@ -55,8 +57,9 @@ void AdvSceneSwitcher::on_timeDown_clicked()
 {
 	int index = ui->timeSwitches->currentRow();
 
-	if (!listMoveDown(ui->timeSwitches))
+	if (!listMoveDown(ui->timeSwitches)) {
 		return;
+	}
 
 	TimeSwitchWidget *s1 = (TimeSwitchWidget *)ui->timeSwitches->itemWidget(
 		ui->timeSwitches->item(index));
@@ -72,14 +75,15 @@ void AdvSceneSwitcher::on_timeDown_clicked()
 
 bool timesAreInInterval(QTime &time1, QTime &time2, int &interval)
 {
-	if (time1.isNull() || time2.isNull())
+	if (time1.isNull() || time2.isNull()) {
 		return false;
+	}
 
 	bool ret = false;
 	QTime validSwitchTimeWindow = time1.addMSecs(interval);
 
 	ret = time1 <= time2 && time2 <= validSwitchTimeWindow;
-	// check for overflow
+	// Check for overflow
 	if (!ret && validSwitchTimeWindow.msecsSinceStartOfDay() < interval) {
 		ret = time2 >= time1 || time2 <= validSwitchTimeWindow;
 	}
@@ -88,8 +92,9 @@ bool timesAreInInterval(QTime &time1, QTime &time2, int &interval)
 
 bool checkLiveTime(TimeSwitch &s, QDateTime &start, int &interval)
 {
-	if (start.isNull())
+	if (start.isNull()) {
 		return false;
+	}
 
 	QDateTime now = QDateTime::currentDateTime();
 	QTime timePassed = QTime(0, 0).addMSecs(start.msecsTo(now));
@@ -111,25 +116,29 @@ bool checkRegularTime(TimeSwitch &s, int &interval)
 void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
 				   OBSWeakSource &transition)
 {
-	if (TimeSwitch::pause)
+	if (TimeSwitch::pause) {
 		return;
+	}
 
 	for (TimeSwitch &s : timeSwitches) {
-		if (!s.initialized())
+		if (!s.initialized()) {
 			continue;
+		}
 
-		if (s.trigger == LIVE)
+		if (s.trigger == LIVE) {
 			match = checkLiveTime(s, liveTime, interval);
-		else
+		} else {
 			match = checkRegularTime(s, interval);
+		}
 
 		if (match) {
 			scene = s.getScene();
 			transition = s.transition;
 			match = true;
 
-			if (verbose)
+			if (verbose) {
 				s.logMatch();
+			}
 			break;
 		}
 	}
@@ -198,13 +207,15 @@ void TimeSwitch::save(obs_data_t *obj)
 // To be removed in future version
 bool loadOldTime(obs_data_t *obj, TimeSwitch *s)
 {
-	if (!s)
+	if (!s) {
 		return false;
+	}
 
 	const char *scene = obs_data_get_string(obj, "scene");
 
-	if (strcmp(scene, "") == 0)
+	if (strcmp(scene, "") == 0) {
 		return false;
+	}
 
 	s->scene = GetWeakSourceByName(scene);
 
@@ -220,8 +231,9 @@ bool loadOldTime(obs_data_t *obj, TimeSwitch *s)
 
 void TimeSwitch::load(obs_data_t *obj)
 {
-	if (loadOldTime(obj, this))
+	if (loadOldTime(obj, this)) {
 		return;
+	}
 
 	SceneSwitcherEntry::load(obj);
 
@@ -302,16 +314,20 @@ void TimeSwitchWidget::swapSwitchData(TimeSwitchWidget *s1,
 
 void TimeSwitchWidget::TriggerChanged(int index)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->trigger = (timeTrigger)index;
 }
 
 void TimeSwitchWidget::TimeChanged(const QTime &time)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->time = time;
 }

@@ -21,8 +21,9 @@ void AdvSceneSwitcher::on_pauseAdd_clicked()
 void AdvSceneSwitcher::on_pauseRemove_clicked()
 {
 	QListWidgetItem *item = ui->pauseEntries->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -37,8 +38,9 @@ void AdvSceneSwitcher::on_pauseRemove_clicked()
 void AdvSceneSwitcher::on_pauseUp_clicked()
 {
 	int index = ui->pauseEntries->currentRow();
-	if (!listMoveUp(ui->pauseEntries))
+	if (!listMoveUp(ui->pauseEntries)) {
 		return;
+	}
 
 	PauseEntryWidget *s1 = (PauseEntryWidget *)ui->pauseEntries->itemWidget(
 		ui->pauseEntries->item(index));
@@ -56,8 +58,9 @@ void AdvSceneSwitcher::on_pauseDown_clicked()
 {
 	int index = ui->pauseEntries->currentRow();
 
-	if (!listMoveDown(ui->pauseEntries))
+	if (!listMoveDown(ui->pauseEntries)) {
 		return;
+	}
 
 	PauseEntryWidget *s1 = (PauseEntryWidget *)ui->pauseEntries->itemWidget(
 		ui->pauseEntries->item(index));
@@ -90,62 +93,50 @@ void setPauseTarget(PauseTarget &target, bool &verbose)
 {
 	switch (target) {
 	case PauseTarget::All:
-		if (verbose)
-			blog(LOG_INFO, "pause all switching");
+		vblog(LOG_INFO, "pause all switching");
 		break;
 	case PauseTarget::Transition:
-		if (verbose)
-			blog(LOG_INFO, "pause def_transition switching");
+		vblog(LOG_INFO, "pause def_transition switching");
 		DefaultSceneTransition::pause = true;
 		break;
 	case PauseTarget::Window:
-		if (verbose)
-			blog(LOG_INFO, "pause window switching");
+		vblog(LOG_INFO, "pause window switching");
 		WindowSwitch::pause = true;
 		break;
 	case PauseTarget::Executable:
-		if (verbose)
-			blog(LOG_INFO, "pause exec switching");
+		vblog(LOG_INFO, "pause exec switching");
 		ExecutableSwitch::pause = true;
 		break;
 	case PauseTarget::Region:
-		if (verbose)
-			blog(LOG_INFO, "pause region switching");
+		vblog(LOG_INFO, "pause region switching");
 		ScreenRegionSwitch::pause = true;
 		break;
 	case PauseTarget::Media:
-		if (verbose)
-			blog(LOG_INFO, "pause media switching");
+		vblog(LOG_INFO, "pause media switching");
 		MediaSwitch::pause = true;
 		break;
 	case PauseTarget::File:
-		if (verbose)
-			blog(LOG_INFO, "pause file switching");
+		vblog(LOG_INFO, "pause file switching");
 		FileSwitch::pause = true;
 		break;
 	case PauseTarget::Random:
-		if (verbose)
-			blog(LOG_INFO, "pause random switching");
+		vblog(LOG_INFO, "pause random switching");
 		RandomSwitch::pause = true;
 		break;
 	case PauseTarget::Time:
-		if (verbose)
-			blog(LOG_INFO, "pause time switching");
+		vblog(LOG_INFO, "pause time switching");
 		TimeSwitch::pause = true;
 		break;
 	case PauseTarget::Idle:
-		if (verbose)
-			blog(LOG_INFO, "pause idle switching");
+		vblog(LOG_INFO, "pause idle switching");
 		IdleData::pause = true;
 		break;
 	case PauseTarget::Sequence:
-		if (verbose)
-			blog(LOG_INFO, "pause sequence switching");
+		vblog(LOG_INFO, "pause sequence switching");
 		SceneSequenceSwitch::pause = true;
 		break;
 	case PauseTarget::Audio:
-		if (verbose)
-			blog(LOG_INFO, "pause audio switching");
+		vblog(LOG_INFO, "pause audio switching");
 		AudioSwitch::pause = true;
 		break;
 	}
@@ -154,24 +145,22 @@ void setPauseTarget(PauseTarget &target, bool &verbose)
 bool checkPauseScene(obs_weak_source_t *currentScene, obs_weak_source_t *scene,
 		     PauseTarget &target, bool &verbose)
 {
-	if (currentScene != scene)
+	if (currentScene != scene) {
 		return false;
+	}
 
 	setPauseTarget(target, verbose);
-	if (target == PauseTarget::All)
-		return true;
-	return false;
+	return (target == PauseTarget::All);
 }
 bool checkPauseWindow(std::string &currentTitle, std::string &title,
 		      PauseTarget &target, bool &verbose)
 {
-	if (currentTitle != title)
+	if (currentTitle != title) {
 		return false;
+	}
 
 	setPauseTarget(target, verbose);
-	if (target == PauseTarget::All)
-		return true;
-	return false;
+	return (target == PauseTarget::All);
 }
 
 bool SwitcherData::checkPause()
@@ -187,14 +176,16 @@ bool SwitcherData::checkPause()
 	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
 	for (PauseEntry &s : pauseEntries) {
-		if (s.pauseType == PauseType::Scene)
+		if (s.pauseType == PauseType::Scene) {
 			pauseAll = checkPauseScene(ws, s.scene, s.pauseTarget,
 						   verbose);
-		else
+		} else {
 			pauseAll = checkPauseWindow(title, s.window,
 						    s.pauseTarget, verbose);
-		if (pauseAll)
+		}
+		if (pauseAll) {
 			break;
+		}
 	}
 
 	obs_source_release(currentSource);
@@ -263,8 +254,9 @@ void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 
 void SwitcherData::loadOldPauseSwitches(obs_data_t *obj)
 {
-	if (obs_data_get_int(obj, "oldPauseValuesImported"))
+	if (obs_data_get_int(obj, "oldPauseValuesImported")) {
 		return;
+	}
 
 	obs_data_array_t *pauseScenesArray =
 		obs_data_get_array(obj, "pauseScenes");
@@ -423,8 +415,10 @@ void PauseEntryWidget::swapSwitchData(PauseEntryWidget *s1,
 
 void PauseEntryWidget::PauseTypeChanged(int index)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->pauseType = static_cast<PauseType>(index);
 
@@ -443,16 +437,20 @@ void PauseEntryWidget::PauseTypeChanged(int index)
 
 void PauseEntryWidget::PauseTargetChanged(int index)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->pauseTarget = static_cast<PauseTarget>(index);
 }
 
 void PauseEntryWidget::WindowChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->window = text.toStdString();
 }

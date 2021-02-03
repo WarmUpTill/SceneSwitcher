@@ -19,8 +19,9 @@ void showCurrentFrame(QListWidget *list)
 {
 	QListWidgetItem *item = list->currentItem();
 
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	ScreenRegionWidget *sw = (ScreenRegionWidget *)list->itemWidget(item);
 	sw->showFrame();
@@ -53,8 +54,9 @@ void AdvSceneSwitcher::on_showFrame_clicked()
 
 void AdvSceneSwitcher::on_screenRegionSwitches_currentRowChanged(int idx)
 {
-	if (loading || idx == -1)
+	if (loading || idx == -1) {
 		return;
+	}
 
 	if (switcher->showFrame) {
 		clearFrames(ui->screenRegionSwitches);
@@ -78,8 +80,9 @@ void AdvSceneSwitcher::on_screenRegionAdd_clicked()
 void AdvSceneSwitcher::on_screenRegionRemove_clicked()
 {
 	QListWidgetItem *item = ui->screenRegionSwitches->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -94,8 +97,9 @@ void AdvSceneSwitcher::on_screenRegionRemove_clicked()
 void AdvSceneSwitcher::on_screenRegionUp_clicked()
 {
 	int index = ui->screenRegionSwitches->currentRow();
-	if (!listMoveUp(ui->screenRegionSwitches))
+	if (!listMoveUp(ui->screenRegionSwitches)) {
 		return;
+	}
 
 	ScreenRegionWidget *s1 =
 		(ScreenRegionWidget *)ui->screenRegionSwitches->itemWidget(
@@ -115,8 +119,9 @@ void AdvSceneSwitcher::on_screenRegionDown_clicked()
 {
 	int index = ui->screenRegionSwitches->currentRow();
 
-	if (!listMoveDown(ui->screenRegionSwitches))
+	if (!listMoveDown(ui->screenRegionSwitches)) {
 		return;
+	}
 
 	ScreenRegionWidget *s1 =
 		(ScreenRegionWidget *)ui->screenRegionSwitches->itemWidget(
@@ -134,8 +139,9 @@ void AdvSceneSwitcher::on_screenRegionDown_clicked()
 
 bool shouldIgnoreSceneSwitch(ScreenRegionSwitch &matchingRegion)
 {
-	if (!matchingRegion.excludeScene)
+	if (!matchingRegion.excludeScene) {
 		return false;
+	}
 
 	obs_source_t *currentScene = obs_frontend_get_current_scene();
 	OBSWeakSource ws = obs_source_get_weak_source(currentScene);
@@ -148,15 +154,17 @@ bool shouldIgnoreSceneSwitch(ScreenRegionSwitch &matchingRegion)
 void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 					   OBSWeakSource &transition)
 {
-	if (ScreenRegionSwitch::pause)
+	if (ScreenRegionSwitch::pause) {
 		return;
+	}
 
 	std::pair<int, int> cursorPos = getCursorPos();
 	int minRegionSize = 99999;
 
 	for (auto &s : screenRegionSwitches) {
-		if (!s.initialized())
+		if (!s.initialized()) {
 			continue;
+		}
 
 		if (cursorPos.first >= s.minX && cursorPos.second >= s.minY &&
 		    cursorPos.first <= s.maxX && cursorPos.second <= s.maxY) {
@@ -172,8 +180,9 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 				transition = s.transition;
 				minRegionSize = regionSize;
 
-				if (verbose)
+				if (verbose) {
 					s.logMatch();
+				}
 				break;
 			}
 		}
@@ -251,12 +260,8 @@ void ScreenRegionSwitch::save(obs_data_t *obj)
 {
 	SceneSwitcherEntry::save(obj);
 
-	const char *excludeSceneName = "";
-	obs_source_t *excludeSceneSource =
-		obs_weak_source_get_source(excludeScene);
-	excludeSceneName = obs_source_get_name(excludeSceneSource);
-	obs_source_release(excludeSceneSource);
-	obs_data_set_string(obj, "excludeScene", excludeSceneName);
+	obs_data_set_string(obj, "excludeScene",
+			    GetWeakSourceName(excludeScene).c_str());
 
 	obs_data_set_int(obj, "minX", minX);
 	obs_data_set_int(obj, "minY", minY);
@@ -267,13 +272,15 @@ void ScreenRegionSwitch::save(obs_data_t *obj)
 // To be removed in future version
 bool loadOldRegion(obs_data_t *obj, ScreenRegionSwitch *s)
 {
-	if (!s)
+	if (!s) {
 		return false;
+	}
 
 	const char *scene = obs_data_get_string(obj, "screenRegionScene");
 
-	if (strcmp(scene, "") == 0)
+	if (strcmp(scene, "") == 0) {
 		return false;
+	}
 
 	s->scene = GetWeakSourceByName(scene);
 
@@ -292,8 +299,9 @@ bool loadOldRegion(obs_data_t *obj, ScreenRegionSwitch *s)
 
 void ScreenRegionSwitch::load(obs_data_t *obj)
 {
-	if (loadOldRegion(obj, this))
+	if (loadOldRegion(obj, this)) {
 		return;
+	}
 
 	SceneSwitcherEntry::load(obj);
 
@@ -407,17 +415,20 @@ void ScreenRegionWidget::hideFrame()
 
 void ScreenRegionWidget::ExcludeSceneChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
-	std::lock_guard<std::mutex> lock(switcher->m);
+	}
 
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->excludeScene = GetWeakSourceByQString(text);
 }
 
 void ScreenRegionWidget::MinXChanged(int pos)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->minX = pos;
 
@@ -426,8 +437,10 @@ void ScreenRegionWidget::MinXChanged(int pos)
 
 void ScreenRegionWidget::MinYChanged(int pos)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->minY = pos;
 
@@ -436,8 +449,10 @@ void ScreenRegionWidget::MinYChanged(int pos)
 
 void ScreenRegionWidget::MaxXChanged(int pos)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->maxX = pos;
 
@@ -446,8 +461,10 @@ void ScreenRegionWidget::MaxXChanged(int pos)
 
 void ScreenRegionWidget::MaxYChanged(int pos)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->maxY = pos;
 
@@ -463,8 +480,9 @@ void ScreenRegionWidget::drawFrame()
 				   Qt::WindowStaysOnTopHint);
 	helperFrame.setAttribute(Qt::WA_TranslucentBackground, true);
 
-	if (switchData)
+	if (switchData) {
 		helperFrame.setGeometry(switchData->minX, switchData->minY,
 					switchData->maxX - switchData->minX,
 					switchData->maxY - switchData->minY);
+	}
 }

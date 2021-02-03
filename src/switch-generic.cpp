@@ -17,14 +17,12 @@ bool SceneSwitcherEntry::valid()
 
 void SceneSwitcherEntry::logMatchScene()
 {
-	const char *sceneName = previous_scene_name;
+	std::string sceneName = previous_scene_name;
 	if (!usePreviousScene) {
-		obs_source_t *s = obs_weak_source_get_source(scene);
-		sceneName = obs_source_get_name(s);
-		obs_source_release(s);
+		sceneName = GetWeakSourceName(scene);
 	}
 	blog(LOG_INFO, "match for '%s' - switch to scene '%s'", getType(),
-	     sceneName);
+	     sceneName.c_str());
 }
 
 void SceneSwitcherEntry::logMatchSceneGroup()
@@ -36,14 +34,10 @@ void SceneSwitcherEntry::logMatchSceneGroup()
 		return;
 	}
 
-	const char *sceneName = previous_scene_name;
-	obs_source_t *s =
-		obs_weak_source_get_source(group->scenes[group->currentIdx]);
-	sceneName = obs_source_get_name(s);
-	obs_source_release(s);
+	std::string sceneName = GetWeakSourceName(group->getCurrentScene());
 
 	blog(LOG_INFO, "match for '%s' - switch to scene '%s' using '%s'",
-	     getType(), sceneName, group->name.c_str());
+	     getType(), sceneName.c_str(), group->name.c_str());
 }
 
 void SceneSwitcherEntry::logMatch()
@@ -58,8 +52,9 @@ void SceneSwitcherEntry::logMatch()
 OBSWeakSource SceneSwitcherEntry::getScene()
 {
 	if (targetType == SwitchTargetType::Scene) {
-		if (usePreviousScene && switcher)
+		if (usePreviousScene && switcher) {
 			return switcher->previousScene;
+		}
 		return scene;
 	} else if (targetType == SwitchTargetType::SceneGroup) {
 		return group->getNextScene();
@@ -73,28 +68,22 @@ void SceneSwitcherEntry::save(obs_data_t *obj, const char *targetTypeSaveName,
 {
 	obs_data_set_int(obj, targetTypeSaveName, static_cast<int>(targetType));
 
-	const char *targetName = "";
+	std::string targetName = "";
 
 	if (targetType == SwitchTargetType::Scene) {
 		if (usePreviousScene) {
 			targetName = previous_scene_name;
 		} else {
-			obs_source_t *sceneSource =
-				obs_weak_source_get_source(scene);
-			targetName = obs_source_get_name(sceneSource);
-			obs_source_release(sceneSource);
+			targetName = GetWeakSourceName(scene);
 		}
 	} else if (targetType == SwitchTargetType::SceneGroup) {
 		targetName = group->name.c_str();
 	}
 
-	obs_data_set_string(obj, targetSaveName, targetName);
+	obs_data_set_string(obj, targetSaveName, targetName.c_str());
 
-	obs_source_t *transitionSource = obs_weak_source_get_source(transition);
-	const char *transitionName = obs_source_get_name(transitionSource);
-	obs_source_release(transitionSource);
-
-	obs_data_set_string(obj, transitionSaveName, transitionName);
+	obs_data_set_string(obj, transitionSaveName,
+			    GetWeakSourceName(transition).c_str());
 }
 
 void SceneSwitcherEntry::load(obs_data_t *obj, const char *targetTypeLoadName,
@@ -108,8 +97,9 @@ void SceneSwitcherEntry::load(obs_data_t *obj, const char *targetTypeLoadName,
 
 	if (targetType == SwitchTargetType::Scene) {
 		usePreviousScene = strcmp(targetName, previous_scene_name) == 0;
-		if (!usePreviousScene)
+		if (!usePreviousScene) {
 			scene = GetWeakSourceByName(targetName);
+		}
 	} else if (targetType == SwitchTargetType::SceneGroup) {
 		group = GetSceneGroupByName(targetName);
 	}
@@ -123,16 +113,18 @@ void SceneSwitcherEntry::load(obs_data_t *obj, const char *targetTypeLoadName,
 
 void SwitchWidget::SceneGroupAdd(const QString &name)
 {
-	if (!scenes)
+	if (!scenes) {
 		return;
+	}
 
 	scenes->addItem(name);
 }
 
 void SwitchWidget::SceneGroupRemove(const QString &name)
 {
-	if (!scenes)
+	if (!scenes) {
 		return;
+	}
 
 	int idx = scenes->findText(name);
 
@@ -154,8 +146,9 @@ void SwitchWidget::SceneGroupRemove(const QString &name)
 void SwitchWidget::SceneGroupRename(const QString &oldName,
 				    const QString &newName)
 {
-	if (!scenes)
+	if (!scenes) {
 		return;
+	}
 
 	bool renameSelected = scenes->currentText() == oldName;
 	int idx = scenes->findText(oldName);
@@ -167,8 +160,9 @@ void SwitchWidget::SceneGroupRename(const QString &oldName,
 	scenes->removeItem(idx);
 	scenes->insertItem(idx, newName);
 
-	if (renameSelected)
+	if (renameSelected) {
 		scenes->setCurrentIndex(scenes->findText(newName));
+	}
 }
 
 SwitchWidget::SwitchWidget(QWidget *parent, SceneSwitcherEntry *s,
@@ -202,23 +196,8 @@ SwitchWidget::SwitchWidget(QWidget *parent, SceneSwitcherEntry *s,
 						 addSceneGroup);
 	AdvSceneSwitcher::populateTransitionSelection(transitions);
 
-	if (s) {
-		if (s->usePreviousScene) {
-			scenes->setCurrentText(obs_module_text(
-				"AdvSceneSwitcher.selectPreviousScene"));
-		} else {
-			scenes->setCurrentText(
-				GetWeakSourceName(s->scene).c_str());
-			if (s->targetType == SwitchTargetType::SceneGroup &&
-			    s->group)
-				scenes->setCurrentText(
-					QString::fromStdString(s->group->name));
-		}
-		transitions->setCurrentText(
-			GetWeakSourceName(s->transition).c_str());
-	}
-
 	switchData = s;
+	showSwitchData();
 }
 
 SceneSwitcherEntry *SwitchWidget::getSwitchData()
@@ -229,6 +208,30 @@ SceneSwitcherEntry *SwitchWidget::getSwitchData()
 void SwitchWidget::setSwitchData(SceneSwitcherEntry *s)
 {
 	switchData = s;
+}
+
+void SwitchWidget::showSwitchData()
+{
+	if (!switchData) {
+		return;
+	}
+
+	transitions->setCurrentText(
+		GetWeakSourceName(switchData->transition).c_str());
+
+	if (switchData->usePreviousScene) {
+		scenes->setCurrentText(obs_module_text(
+			"AdvSceneSwitcher.selectPreviousScene"));
+		return;
+	}
+
+	scenes->setCurrentText(GetWeakSourceName(switchData->scene).c_str());
+
+	if (switchData->group &&
+	    switchData->targetType == SwitchTargetType::SceneGroup) {
+		scenes->setCurrentText(
+			QString::fromStdString(switchData->group->name));
+	}
 }
 
 void SwitchWidget::swapSwitchData(SwitchWidget *s1, SwitchWidget *s2)
@@ -246,8 +249,10 @@ bool isPreviousScene(const QString &text)
 
 void SwitchWidget::SceneChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 
 	switchData->usePreviousScene = isPreviousScene(text);
@@ -267,8 +272,10 @@ void SwitchWidget::SceneChanged(const QString &text)
 
 void SwitchWidget::TransitionChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->transition = GetWeakTransitionByQString(text);
 }

@@ -22,8 +22,9 @@ void AdvSceneSwitcher::on_triggerAdd_clicked()
 void AdvSceneSwitcher::on_triggerRemove_clicked()
 {
 	QListWidgetItem *item = ui->sceneTriggers->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -38,8 +39,9 @@ void AdvSceneSwitcher::on_triggerRemove_clicked()
 void AdvSceneSwitcher::on_triggerUp_clicked()
 {
 	int index = ui->sceneTriggers->currentRow();
-	if (!listMoveUp(ui->sceneTriggers))
+	if (!listMoveUp(ui->sceneTriggers)) {
 		return;
+	}
 
 	SceneTriggerWidget *s1 =
 		(SceneTriggerWidget *)ui->sceneTriggers->itemWidget(
@@ -59,8 +61,9 @@ void AdvSceneSwitcher::on_triggerDown_clicked()
 {
 	int index = ui->sceneTriggers->currentRow();
 
-	if (!listMoveDown(ui->sceneTriggers))
+	if (!listMoveDown(ui->sceneTriggers)) {
 		return;
+	}
 
 	SceneTriggerWidget *s1 =
 		(SceneTriggerWidget *)ui->sceneTriggers->itemWidget(
@@ -205,15 +208,18 @@ bool isFrontendAction(sceneTriggerAction triggerAction)
 
 void SceneTrigger::performAction()
 {
-	if (triggerAction == sceneTriggerAction::NONE)
+	if (triggerAction == sceneTriggerAction::NONE) {
 		return;
+	}
 
 	std::thread t;
 
-	if (isFrontendAction(triggerAction))
+	if (isFrontendAction(triggerAction)) {
 		t = std::thread(frontEndActionThread, triggerAction, duration);
-	else
+	} else {
 		t = std::thread(muteThread, audioSource, duration);
+	}
+
 	t.detach();
 }
 
@@ -488,10 +494,12 @@ SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
 
 		audioSources->setCurrentText(
 			GetWeakSourceName(s->audioSource).c_str());
-		if (s->triggerAction == sceneTriggerAction::MUTE_SOURCE)
+
+		if (s->triggerAction == sceneTriggerAction::MUTE_SOURCE) {
 			audioSources->show();
-		else
+		} else {
 			audioSources->hide();
+		}
 	}
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
@@ -532,40 +540,50 @@ void SceneTriggerWidget::swapSwitchData(SceneTriggerWidget *s1,
 
 void SceneTriggerWidget::TriggerTypeChanged(int index)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->triggerType = static_cast<sceneTriggerType>(index);
 }
 
 void SceneTriggerWidget::TriggerActionChanged(int index)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
 		switchData->triggerAction =
 			static_cast<sceneTriggerAction>(index);
 	}
 
-	if (switchData->triggerAction == sceneTriggerAction::MUTE_SOURCE)
+	if (switchData->triggerAction == sceneTriggerAction::MUTE_SOURCE) {
 		audioSources->show();
-	else
+	} else {
 		audioSources->hide();
+	}
 }
 
 void SceneTriggerWidget::DurationChanged(double dur)
 {
-	if (loading || !switchData)
+
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->duration = dur;
 }
 
 void SceneTriggerWidget::AudioSourceChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->audioSource = GetWeakSourceByQString(text);
 }

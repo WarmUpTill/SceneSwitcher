@@ -12,10 +12,11 @@ void SceneGroup::advanceIdx()
 	currentIdx++;
 
 	if (currentIdx >= scenes.size()) {
-		if (repeat)
+		if (repeat) {
 			currentIdx = 0;
-		else
+		} else {
 			currentIdx = scenes.size() - 1;
+		}
 	}
 }
 
@@ -31,8 +32,9 @@ OBSWeakSource SceneGroup::getNextSceneCount()
 
 OBSWeakSource SceneGroup::getNextSceneTime()
 {
-	if (lastAdvTime.time_since_epoch().count() == 0)
+	if (lastAdvTime.time_since_epoch().count() == 0) {
 		lastAdvTime = std::chrono::high_resolution_clock::now();
+	}
 
 	auto now = std::chrono::high_resolution_clock::now();
 	auto passedTime = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -48,16 +50,19 @@ OBSWeakSource SceneGroup::getNextSceneTime()
 
 OBSWeakSource SceneGroup::getNextSceneRandom()
 {
-	if (scenes.size() == 1)
+	if (scenes.size() == 1) {
 		return *scenes.begin();
+	}
 
 	std::vector<OBSWeakSource> rs(scenes);
 	std::random_device rng;
 	std::mt19937 urng(rng());
 	std::shuffle(rs.begin(), rs.end(), urng);
 	for (OBSWeakSource &s : rs) {
-		if (s == lastRandomScene)
+		if (s == lastRandomScene) {
 			continue;
+		}
+
 		lastRandomScene = s;
 
 		return s;
@@ -65,10 +70,16 @@ OBSWeakSource SceneGroup::getNextSceneRandom()
 	return nullptr;
 }
 
+OBSWeakSource SceneGroup::getCurrentScene()
+{
+	return scenes[currentIdx];
+}
+
 OBSWeakSource SceneGroup::getNextScene()
 {
-	if (scenes.empty())
+	if (scenes.empty()) {
 		return nullptr;
+	}
 
 	switch (type) {
 	case AdvanceCondition::Count:
@@ -95,8 +106,9 @@ bool sceneGroupNameExists(std::string name)
 	}
 
 	for (SceneGroup &sg : switcher->sceneGroups) {
-		if (sg.name == name)
+		if (sg.name == name) {
 			return true;
+		}
 	}
 
 	return (name == obs_module_text(
@@ -154,8 +166,9 @@ void AdvSceneSwitcher::on_sceneGroupAdd_clicked()
 void AdvSceneSwitcher::on_sceneGroupRemove_clicked()
 {
 	QListWidgetItem *item = ui->sceneGroups->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	QString name;
 	{
@@ -206,8 +219,9 @@ SceneGroup *getSelectedSG(Ui_AdvSceneSwitcher *ui)
 	SceneGroup *currentSG = nullptr;
 	QListWidgetItem *sgItem = ui->sceneGroups->currentItem();
 
-	if (!sgItem)
+	if (!sgItem) {
 		return currentSG;
+	}
 
 	QString sgName = sgItem->data(Qt::UserRole).toString();
 	for (auto &sg : switcher->sceneGroups) {
@@ -225,8 +239,9 @@ void AdvSceneSwitcher::on_sceneGroupName_editingFinished()
 	bool nameValid = true;
 
 	SceneGroup *currentSG = getSelectedSG(ui.get());
-	if (!currentSG)
+	if (!currentSG) {
 		return;
+	}
 
 	QString newName = ui->sceneGroupName->text();
 	QString oldName = QString::fromStdString(currentSG->name);
@@ -282,8 +297,10 @@ void AdvSceneSwitcher::SetEditSceneGroup(SceneGroup &sg)
 
 void AdvSceneSwitcher::on_sceneGroups_currentRowChanged(int idx)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
+
 	if (idx == -1) {
 		ui->sceneGroupEdit->setDisabled(true);
 		return;
@@ -304,17 +321,20 @@ void AdvSceneSwitcher::on_sceneGroupSceneAdd_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
 	SceneGroup *currentSG = getSelectedSG(ui.get());
-	if (!currentSG)
+	if (!currentSG) {
 		return;
+	}
 
 	QString sceneName = ui->sceneGroupSceneSelection->currentText();
 
-	if (sceneName.isEmpty())
+	if (sceneName.isEmpty()) {
 		return;
+	}
 
 	OBSWeakSource source = GetWeakSourceByQString(sceneName);
-	if (!source)
+	if (!source) {
 		return;
+	}
 
 	QVariant v = QVariant::fromValue(sceneName);
 	QListWidgetItem *item =
@@ -330,12 +350,14 @@ void AdvSceneSwitcher::on_sceneGroupSceneRemove_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
 	SceneGroup *currentSG = getSelectedSG(ui.get());
-	if (!currentSG)
+	if (!currentSG) {
 		return;
+	}
 
 	int idx = ui->sceneGroupScenes->currentRow();
-	if (idx == -1)
+	if (idx == -1) {
 		return;
+	}
 
 	auto &scenes = currentSG->scenes;
 	scenes.erase(scenes.begin() + idx);
@@ -348,8 +370,9 @@ void AdvSceneSwitcher::on_sceneGroupSceneUp_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
 	SceneGroup *currentSG = getSelectedSG(ui.get());
-	if (!currentSG)
+	if (!currentSG) {
 		return;
+	}
 
 	int index = ui->sceneGroupScenes->currentRow();
 	if (index != -1 && index != 0) {
@@ -366,8 +389,9 @@ void AdvSceneSwitcher::on_sceneGroupSceneDown_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
 	SceneGroup *currentSG = getSelectedSG(ui.get());
-	if (!currentSG)
+	if (!currentSG) {
 		return;
+	}
 
 	int index = ui->sceneGroupScenes->currentRow();
 	if (index != -1 && index != ui->sceneGroupScenes->count() - 1) {
@@ -528,8 +552,9 @@ bool SGNameDialog::AskForName(QWidget *parent, const QString &title,
 			      const QString &text, std::string &userTextInput,
 			      const QString &placeHolder, int maxSize)
 {
-	if (maxSize <= 0 || maxSize > 32767)
+	if (maxSize <= 0 || maxSize > 32767) {
 		maxSize = 170;
+	}
 
 	SGNameDialog dialog(parent);
 	dialog.setWindowTitle(title);
@@ -559,7 +584,6 @@ void populateTypeSelection(QComboBox *list)
 
 SceneGroupEditWidget::SceneGroupEditWidget()
 {
-	//w->setContentsMargins(0, 0, 0, 0);
 	type = new QComboBox();
 	populateTypeSelection(type);
 
@@ -639,8 +663,9 @@ SceneGroupEditWidget::SceneGroupEditWidget()
 
 void SceneGroupEditWidget::ShowCurrentTypeEdit()
 {
-	if (!sceneGroup)
+	if (!sceneGroup) {
 		return;
+	}
 
 	countEdit->setVisible(false);
 	timeEdit->setVisible(false);
@@ -664,8 +689,10 @@ void SceneGroupEditWidget::ShowCurrentTypeEdit()
 
 void SceneGroupEditWidget::SetEditSceneGroup(SceneGroup *sg)
 {
-	if (!sg)
+	if (!sg) {
 		return;
+	}
+
 	sceneGroup = sg;
 	type->setCurrentIndex(static_cast<int>(sg->type));
 	count->setValue(sg->count);
@@ -676,8 +703,9 @@ void SceneGroupEditWidget::SetEditSceneGroup(SceneGroup *sg)
 
 void SceneGroupEditWidget::TypeChanged(int type)
 {
-	if (!sceneGroup)
+	if (!sceneGroup) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	sceneGroup->type = static_cast<AdvanceCondition>(type);
@@ -687,24 +715,30 @@ void SceneGroupEditWidget::TypeChanged(int type)
 
 void SceneGroupEditWidget::CountChanged(int count)
 {
-	if (!sceneGroup)
+	if (!sceneGroup) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	sceneGroup->count = count;
 }
 
 void SceneGroupEditWidget::TimeChanged(double time)
 {
-	if (!sceneGroup)
+	if (!sceneGroup) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	sceneGroup->time = time;
 }
 
 void SceneGroupEditWidget::RepeatChanged(int state)
 {
-	if (!sceneGroup)
+	if (!sceneGroup) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	sceneGroup->repeat = state;
 }
