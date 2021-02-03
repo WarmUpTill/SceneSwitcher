@@ -219,6 +219,7 @@ void SceneTrigger::performAction()
 	} else {
 		t = std::thread(muteThread, audioSource, duration);
 	}
+
 	t.detach();
 }
 
@@ -493,6 +494,7 @@ SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
 
 		audioSources->setCurrentText(
 			GetWeakSourceName(s->audioSource).c_str());
+
 		if (s->triggerAction == sceneTriggerAction::MUTE_SOURCE) {
 			audioSources->show();
 		} else {

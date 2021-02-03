@@ -137,6 +137,20 @@ void AdvSceneSwitcher::on_screenRegionDown_clicked()
 		  switcher->screenRegionSwitches[index + 1]);
 }
 
+bool shouldIgnoreSceneSwitch(ScreenRegionSwitch &matchingRegion)
+{
+	if (!matchingRegion.excludeScene) {
+		return false;
+	}
+
+	obs_source_t *currentScene = obs_frontend_get_current_scene();
+	OBSWeakSource ws = obs_source_get_weak_source(currentScene);
+	obs_weak_source_release(ws);
+	obs_source_release(currentScene);
+
+	return matchingRegion.excludeScene == ws;
+}
+
 void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 					   OBSWeakSource &transition)
 {
@@ -156,6 +170,11 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 		    cursorPos.first <= s.maxX && cursorPos.second <= s.maxY) {
 			int regionSize = (s.maxX - s.minX) + (s.maxY - s.minY);
 			if (regionSize < minRegionSize) {
+				if (shouldIgnoreSceneSwitch(s)) {
+					// We technically have a match.
+					// But just ignore it.
+					return;
+				}
 				match = true;
 				scene = s.getScene();
 				transition = s.transition;
@@ -241,6 +260,9 @@ void ScreenRegionSwitch::save(obs_data_t *obj)
 {
 	SceneSwitcherEntry::save(obj);
 
+	obs_data_set_string(obj, "excludeScene",
+			    GetWeakSourceName(excludeScene).c_str());
+
 	obs_data_set_int(obj, "minX", minX);
 	obs_data_set_int(obj, "minY", minY);
 	obs_data_set_int(obj, "maxX", maxX);
@@ -283,6 +305,9 @@ void ScreenRegionSwitch::load(obs_data_t *obj)
 
 	SceneSwitcherEntry::load(obj);
 
+	const char *excludeSceneName = obs_data_get_string(obj, "excludeScene");
+	excludeScene = GetWeakSourceByName(excludeSceneName);
+
 	minX = obs_data_get_int(obj, "minX");
 	minY = obs_data_get_int(obj, "minY");
 	maxX = obs_data_get_int(obj, "maxX");
@@ -292,6 +317,7 @@ void ScreenRegionSwitch::load(obs_data_t *obj)
 ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
 	: SwitchWidget(parent, s, true, true)
 {
+	excludeScenes = new QComboBox();
 	minX = new QSpinBox();
 	minY = new QSpinBox();
 	maxX = new QSpinBox();
@@ -312,6 +338,9 @@ ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
 	maxX->setMaximum(1000000);
 	maxY->setMaximum(1000000);
 
+	QWidget::connect(excludeScenes,
+			 SIGNAL(currentTextChanged(const QString &)), this,
+			 SLOT(ExcludeSceneChanged(const QString &)));
 	QWidget::connect(minX, SIGNAL(valueChanged(int)), this,
 			 SLOT(MinXChanged(int)));
 	QWidget::connect(minY, SIGNAL(valueChanged(int)), this,
@@ -321,7 +350,14 @@ ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
 	QWidget::connect(maxY, SIGNAL(valueChanged(int)), this,
 			 SLOT(MaxYChanged(int)));
 
+	AdvSceneSwitcher::populateSceneSelection(
+		excludeScenes, false, false, true,
+		obs_module_text(
+			"AdvSceneSwitcher.screenRegionTab.excludeScenes.None"));
+
 	if (s) {
+		excludeScenes->setCurrentText(
+			GetWeakSourceName(s->excludeScene).c_str());
 		minX->setValue(s->minX);
 		minY->setValue(s->minY);
 		maxX->setValue(s->maxX);
@@ -330,9 +366,13 @@ ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{minX}}", minX},     {"{{minY}}", minY},
-		{"{{maxX}}", maxX},     {"{{maxY}}", maxY},
-		{"{{scenes}}", scenes}, {"{{transitions}}", transitions}};
+		{"{{minX}}", minX},
+		{"{{minY}}", minY},
+		{"{{maxX}}", maxX},
+		{"{{maxY}}", maxY},
+		{"{{scenes}}", scenes},
+		{"{{transitions}}", transitions},
+		{"{{excludeScenes}}", excludeScenes}};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.screenRegionTab.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
@@ -371,6 +411,16 @@ void ScreenRegionWidget::showFrame()
 void ScreenRegionWidget::hideFrame()
 {
 	helperFrame.hide();
+}
+
+void ScreenRegionWidget::ExcludeSceneChanged(const QString &text)
+{
+	if (loading || !switchData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->excludeScene = GetWeakSourceByQString(text);
 }
 
 void ScreenRegionWidget::MinXChanged(int pos)

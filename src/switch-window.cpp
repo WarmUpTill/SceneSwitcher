@@ -262,8 +262,9 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 		}
 
 		if (match) {
-			if (verbose)
+			if (verbose){
 				s.logMatch();
+			}
 			break;
 		}
 	}
