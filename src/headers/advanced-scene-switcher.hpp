@@ -63,7 +63,7 @@ public:
 					   bool addPrevious = false,
 					   bool addSceneGroup = false,
 					   bool addSelect = true,
-					   bool addIgnore = false);
+					   std::string selectText = "");
 
 	static void populateTransitionSelection(QComboBox *sel,
 						bool addSelect = true);

@@ -333,7 +333,6 @@ ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
 	QWidget::connect(excludeScenes,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ExcludeSceneChanged(const QString &)));
-
 	QWidget::connect(minX, SIGNAL(valueChanged(int)), this,
 			 SLOT(MinXChanged(int)));
 	QWidget::connect(minY, SIGNAL(valueChanged(int)), this,
@@ -343,8 +342,10 @@ ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
 	QWidget::connect(maxY, SIGNAL(valueChanged(int)), this,
 			 SLOT(MaxYChanged(int)));
 
-	AdvSceneSwitcher::populateSceneSelection(excludeScenes, false, false,
-						 false, true);
+	AdvSceneSwitcher::populateSceneSelection(
+		excludeScenes, false, false, true,
+		obs_module_text(
+			"AdvSceneSwitcher.screenRegionTab.excludeScenes.None"));
 
 	if (s) {
 		excludeScenes->setCurrentText(
