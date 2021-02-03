@@ -138,13 +138,11 @@ bool shouldIgnoreSceneSwitch(ScreenRegionSwitch &matchingRegion)
 		return false;
 
 	obs_source_t *currentScene = obs_frontend_get_current_scene();
-	const char *currentSceneName = obs_source_get_name(currentScene);
+	OBSWeakSource ws = obs_source_get_weak_source(currentScene);
+	obs_weak_source_release(ws);
 	obs_source_release(currentScene);
 
-	std::string excludeSceneName =
-		GetWeakSourceName(matchingRegion.excludeScene);
-
-	return excludeSceneName.compare(currentSceneName) == 0;
+	return matchingRegion.excludeScene == ws;
 }
 
 void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
