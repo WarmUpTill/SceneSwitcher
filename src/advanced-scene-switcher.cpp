@@ -659,10 +659,9 @@ void handleSceneChange(SwitcherData *s)
 	}
 
 	switcher->checkTriggers();
-}
 
-void handleTransitionStop(SwitcherData *s)
-{
+	// Handled here due to OBS_FRONTEND_EVENT_TRANSITION_STOPPED
+	// seemingly firing too early
 	s->checkedDefTransition = false;
 }
 
@@ -701,9 +700,6 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 		break;
 	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
 		handleSceneChange((SwitcherData *)switcher);
-		break;
-	case OBS_FRONTEND_EVENT_TRANSITION_STOPPED:
-		handleTransitionStop((SwitcherData *)switcher);
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
 		setLiveTime((SwitcherData *)switcher);
