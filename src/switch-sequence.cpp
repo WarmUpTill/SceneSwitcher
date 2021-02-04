@@ -1,5 +1,6 @@
 #include <QFileDialog>
 #include <QTextStream>
+#include <QScrollArea>
 
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
@@ -303,6 +304,22 @@ void SceneSequenceSwitch::save(obs_data_t *obj)
 	obs_data_set_int(obj, "delayMultiplier", delayMultiplier);
 
 	obs_data_set_bool(obj, "interruptible", interruptible);
+
+	auto cur = extendedSequence.get();
+
+	obs_data_array_t *extendScenes = obs_data_array_create();
+	while (cur) {
+		obs_data_t *array_obj = obs_data_create();
+
+		obs_data_set_string(array_obj, "scene",
+				    GetWeakSourceName(cur->scene).c_str());
+		obs_data_array_push_back(extendScenes, array_obj);
+
+		obs_data_release(array_obj);
+		cur = cur->extendedSequence.get();
+	}
+	obs_data_set_array(obj, "extendScenes", extendScenes);
+	obs_data_array_release(extendScenes);
 }
 
 // To be removed in future version
@@ -360,6 +377,24 @@ void SceneSequenceSwitch::load(obs_data_t *obj)
 		delayMultiplier = 1;
 
 	interruptible = obs_data_get_bool(obj, "interruptible");
+
+	auto cur = this;
+
+	obs_data_array_t *extendScenes =
+		obs_data_get_array(obj, "extendScenes");
+	size_t count = obs_data_array_count(extendScenes);
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj = obs_data_array_item(extendScenes, i);
+
+		cur->extendedSequence = std::make_unique<SceneSequenceSwitch>();
+
+		const char *sceneName = obs_data_get_string(array_obj, "scene");
+		cur->extendedSequence->scene = GetWeakSourceByName(sceneName);
+
+		cur = cur->extendedSequence.get();
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(extendScenes);
 }
 
 bool SceneSequenceSwitch::reduce()
@@ -389,9 +424,61 @@ void populateDelayUnits(QComboBox *list)
 	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
 }
 
+QString makeExtendText(SceneSequenceSwitch *s)
+{
+	if (!s) {
+		return "";
+	}
+
+	QString ext(obs_module_text(
+		"AdvSceneSwitcher.sceneSequenceTab.extendEntry"));
+
+	QString sceneName = GetWeakSourceName(s->scene).c_str();
+	if (sceneName.isEmpty()) {
+		sceneName = obs_module_text("AdvSceneSwitcher.selectScene");
+	}
+	ext.replace("{{scenes}}", sceneName);
+
+	ext.replace("{{delay}}",
+		    QString::number(s->delay / s->delayMultiplier));
+	switch (s->delayMultiplier) {
+	case 1:
+		ext.replace("{{delayUnits}}",
+			    obs_module_text("AdvSceneSwitcher.unit.secends"));
+		break;
+	case 60:
+		ext.replace("{{delayUnits}}",
+			    obs_module_text("AdvSceneSwitcher.unit.minutes"));
+		break;
+	case 60 * 60:
+		ext.replace("{{delayUnits}}",
+			    obs_module_text("AdvSceneSwitcher.unit.hours"));
+		break;
+	default:
+		ext.replace("{{delayUnits}}",
+			    obs_module_text("?How did i get here?"));
+		break;
+	}
+
+	QString transitionName = GetWeakSourceName(s->transition).c_str();
+	if (transitionName.isEmpty()) {
+		transitionName =
+			obs_module_text("AdvSceneSwitcher.selectTransition");
+	}
+	ext.replace("{{transitions}}", transitionName);
+
+
+
+	if (s->extendedSequence.get()) {
+		return ext += ext + " | " + makeExtendText(s->extendedSequence.get());
+	} else {
+		return ext;
+	}
+}
+
 SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
-			       bool extendSequence)
-	: SwitchWidget(parent, s, true, true)
+			       bool extendSequence, bool editExtendMode)
+	: SwitchWidget(parent, s, !extendSequence, true)
 {
 	this->setParent(parent);
 
@@ -400,6 +487,9 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 	startScenes = new QComboBox();
 	interruptible = new QCheckBox(obs_module_text(
 		"AdvSceneSwitcher.sceneSequenceTab.interruptible"));
+	extendText = new QLabel();
+	edit = new QPushButton(obs_module_text(
+		"AdvSceneSwitcher.sceneSequenceTab.extendEdit"));
 	extend = new QPushButton();
 	reduce = new QPushButton();
 
@@ -427,6 +517,7 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 			 SLOT(StartSceneChanged(const QString &)));
 	QWidget::connect(interruptible, SIGNAL(stateChanged(int)), this,
 			 SLOT(InterruptibleChanged(int)));
+	QWidget::connect(edit, SIGNAL(clicked()), this, SLOT(EditClicked()));
 	QWidget::connect(extend, SIGNAL(clicked()), this,
 			 SLOT(ExtendClicked()));
 	QWidget::connect(reduce, SIGNAL(clicked()), this,
@@ -484,15 +575,34 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 
 		//exetend widgets placed here
 		extendSequenceLayout = new QVBoxLayout;
+		if (s) {
+			if (!editExtendMode) {
+				extendText->setText(makeExtendText(
+					s->extendedSequence.get()));
+			} else {
+				auto cur = s->extendedSequence.get();
+				while (cur != nullptr) {
+					extendSequenceLayout->addWidget(
+						new SequenceWidget(parent, cur,
+								   true, true));
+					cur = cur->extendedSequence.get();
+				}
+			}
+		}
 
 		QHBoxLayout *extendSequenceControlsLayout = new QHBoxLayout;
-		extendSequenceControlsLayout->addWidget(extend);
-		extendSequenceControlsLayout->addWidget(reduce);
+		if (editExtendMode) {
+			extendSequenceControlsLayout->addWidget(extend);
+			extendSequenceControlsLayout->addWidget(reduce);
+		} else {
+			extendSequenceControlsLayout->addWidget(edit);
+		}
 		extendSequenceControlsLayout->addStretch();
 
 		QVBoxLayout *mainLayout = new QVBoxLayout;
 		mainLayout->addLayout(startSequence);
 		mainLayout->addLayout(extendSequenceLayout);
+		mainLayout->addWidget(extendText);
 		mainLayout->addLayout(extendSequenceControlsLayout);
 		setLayout(mainLayout);
 	}
@@ -599,6 +709,25 @@ void SequenceWidget::InterruptibleChanged(int state)
 	switchData->interruptible = state;
 }
 
+void SequenceWidget::UpdateExtendText()
+{
+	extendText->setText(makeExtendText(switchData->extendedSequence.get()));
+}
+
+void SequenceWidget::EditClicked()
+{
+	QDialog editDialog;
+	SequenceWidget editWidget(this, switchData, false, true);
+	QHBoxLayout layout;
+	layout.addWidget(&editWidget);
+	editDialog.setLayout(&layout);
+	editDialog.setWindowTitle(obs_module_text(
+		"AdvSceneSwitcher.sceneSequenceTab.extendEdit"));
+	editDialog.exec();
+
+	UpdateExtendText();
+}
+
 void SequenceWidget::ExtendClicked()
 {
 	if (loading || !switchData) {
@@ -624,6 +753,7 @@ void SequenceWidget::ReduceClicked()
 	int count = extendSequenceLayout->count();
 	auto item = extendSequenceLayout->takeAt(count - 1);
 	if (item) {
+		item->widget()->setVisible(false);
 		delete item;
 	}
 }

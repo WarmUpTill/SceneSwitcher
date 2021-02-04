@@ -37,13 +37,15 @@ class SequenceWidget : public SwitchWidget {
 
 public:
 	SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
-		       bool extendSequence = false);
+		       bool extendSequence = false,
+		       bool editExtendMode = false);
 	SceneSequenceSwitch *getSwitchData();
 	void setSwitchData(SceneSequenceSwitch *s);
 
 	static void swapSwitchData(SequenceWidget *s1, SequenceWidget *s2);
 
 	void UpdateDelay();
+	void UpdateExtendText();
 
 private slots:
 	void SceneChanged(const QString &text);
@@ -51,6 +53,7 @@ private slots:
 	void DelayUnitsChanged(int idx);
 	void StartSceneChanged(const QString &text);
 	void InterruptibleChanged(int state);
+	void EditClicked();
 	void ExtendClicked();
 	void ReduceClicked();
 
@@ -60,6 +63,8 @@ protected:
 	QComboBox *startScenes;
 	QCheckBox *interruptible;
 	QVBoxLayout *extendSequenceLayout;
+	QLabel *extendText;
+	QPushButton *edit;
 	QPushButton *extend;
 	QPushButton *reduce;
 
