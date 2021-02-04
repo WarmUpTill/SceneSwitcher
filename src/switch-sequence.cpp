@@ -367,15 +367,17 @@ bool SceneSequenceSwitch::reduce()
 	if (!extendedSequence) {
 		return true;
 	}
-	if (extendedSequence->reduce())
+	if (extendedSequence->reduce()) {
 		extendedSequence.reset(nullptr);
+	}
 	return false;
 }
 
 SceneSequenceSwitch *SceneSequenceSwitch::extend()
 {
-	if (extendedSequence)
+	if (extendedSequence) {
 		return extendedSequence->extend();
+	}
 	extendedSequence = std::make_unique<SceneSequenceSwitch>();
 	return extendedSequence.get();
 }
@@ -565,14 +567,16 @@ void SequenceWidget::DelayUnitsChanged(int idx)
 
 void SequenceWidget::SceneChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
-	SwitchWidget::SceneChanged(text);
+	}
 
+	SwitchWidget::SceneChanged(text);
 	std::lock_guard<std::mutex> lock(switcher->m);
 
-	if (switchData->extendedSequence)
+	if (switchData->extendedSequence) {
 		switchData->extendedSequence->startScene = switchData->scene;
+	}
 }
 
 void SequenceWidget::StartSceneChanged(const QString &text)
@@ -597,8 +601,10 @@ void SequenceWidget::InterruptibleChanged(int state)
 
 void SequenceWidget::ExtendClicked()
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	auto es = switchData->extend();
 
@@ -608,14 +614,16 @@ void SequenceWidget::ExtendClicked()
 
 void SequenceWidget::ReduceClicked()
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->reduce();
 
 	int count = extendSequenceLayout->count();
 	auto item = extendSequenceLayout->takeAt(count - 1);
-	if (item)
+	if (item) {
 		delete item;
+	}
 }
