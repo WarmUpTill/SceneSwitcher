@@ -2,8 +2,9 @@
 
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
+#include "headers/version.h"
 
-constexpr auto tab_count = 14;
+constexpr auto tab_count = 15;
 
 QMetaObject::Connection inactivePluse;
 
@@ -25,8 +26,9 @@ void AdvSceneSwitcher::UpdateNonMatchingScene(const QString &name)
 
 void AdvSceneSwitcher::on_noMatchDontSwitch_clicked()
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = NO_SWITCH;
@@ -36,8 +38,9 @@ void AdvSceneSwitcher::on_noMatchDontSwitch_clicked()
 
 void AdvSceneSwitcher::on_noMatchSwitch_clicked()
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = SWITCH;
@@ -48,8 +51,9 @@ void AdvSceneSwitcher::on_noMatchSwitch_clicked()
 
 void AdvSceneSwitcher::on_noMatchRandomSwitch_clicked()
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = RANDOM_SWITCH;
@@ -59,26 +63,40 @@ void AdvSceneSwitcher::on_noMatchRandomSwitch_clicked()
 
 void AdvSceneSwitcher::on_noMatchDelay_valueChanged(double i)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->noMatchDelay = i;
 }
 
 void AdvSceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->startupBehavior = (StartupBehavior)index;
 }
 
+void AdvSceneSwitcher::on_autoStartEvent_currentIndexChanged(int index)
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->autoStartEvent = static_cast<AutoStartEvent>(index);
+}
+
 void AdvSceneSwitcher::on_noMatchSwitchScene_currentTextChanged(
 	const QString &text)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	UpdateNonMatchingScene(text);
@@ -86,16 +104,19 @@ void AdvSceneSwitcher::on_noMatchSwitchScene_currentTextChanged(
 
 void AdvSceneSwitcher::on_cooldownTime_valueChanged(double i)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->cooldown = i;
 }
 
 void AdvSceneSwitcher::on_checkInterval_valueChanged(int value)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->interval = value;
@@ -136,171 +157,21 @@ void AdvSceneSwitcher::closeEvent(QCloseEvent *)
 	obs_frontend_save();
 }
 
-void AdvSceneSwitcher::on_autoStopScenes_currentTextChanged(const QString &text)
-{
-	if (loading)
-		return;
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	UpdateAutoStopScene(text);
-}
-
-void AdvSceneSwitcher::on_autoStopSceneCheckBox_stateChanged(int state)
-{
-	if (loading)
-		return;
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	if (!state) {
-		ui->autoStopScenes->setDisabled(true);
-		ui->autoStopType->setDisabled(true);
-		switcher->autoStopEnable = false;
-	} else {
-		ui->autoStopScenes->setDisabled(false);
-		ui->autoStopType->setDisabled(false);
-		switcher->autoStopEnable = true;
-		if (!switcher->autoStopScene)
-			UpdateAutoStopScene(ui->autoStopScenes->currentText());
-	}
-}
-
-void AdvSceneSwitcher::on_autoStopType_currentIndexChanged(int index)
-{
-	if (loading)
-		return;
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->autoStopType = (AutoStartStopType)index;
-}
-
-void AdvSceneSwitcher::UpdateAutoStopScene(const QString &name)
-{
-	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
-	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
-
-	switcher->autoStopScene = ws;
-
-	obs_weak_source_release(ws);
-	obs_source_release(scene);
-}
-
-void SwitcherData::autoStopStreamAndRecording()
-{
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
-	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
-
-	if (ws && autoStopScene == ws) {
-		if ((switcher->autoStopType == STREAMING ||
-		     switcher->autoStopType == RECORINDGSTREAMING) &&
-		    obs_frontend_streaming_active()) {
-			blog(LOG_INFO,
-			     "Stopping stream because scene '%s' is active",
-			     obs_source_get_name(currentSource));
-			obs_frontend_streaming_stop();
-		}
-		if ((switcher->autoStopType == RECORDING ||
-		     switcher->autoStopType == RECORINDGSTREAMING) &&
-		    obs_frontend_recording_active()) {
-			blog(LOG_INFO,
-			     "Stopping record because scene '%s' is active",
-			     obs_source_get_name(currentSource));
-			obs_frontend_recording_stop();
-		}
-	}
-	obs_source_release(currentSource);
-	obs_weak_source_release(ws);
-}
-
-void AdvSceneSwitcher::on_autoStartType_currentIndexChanged(int index)
-{
-	if (loading)
-		return;
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->autoStartType = (AutoStartStopType)index;
-}
-
-void AdvSceneSwitcher::on_autoStartScenes_currentTextChanged(const QString &text)
-{
-	if (loading)
-		return;
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	UpdateAutoStartScene(text);
-}
-
-void AdvSceneSwitcher::on_autoStartSceneCheckBox_stateChanged(int state)
-{
-	if (loading)
-		return;
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	if (!state) {
-		ui->autoStartScenes->setDisabled(true);
-		ui->autoStartType->setDisabled(true);
-		switcher->autoStartEnable = false;
-	} else {
-		ui->autoStartScenes->setDisabled(false);
-		ui->autoStartType->setDisabled(false);
-		switcher->autoStartEnable = true;
-		if (!switcher->autoStartScene)
-			UpdateAutoStartScene(
-				ui->autoStartScenes->currentText());
-	}
-}
-
-void AdvSceneSwitcher::UpdateAutoStartScene(const QString &name)
-{
-	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
-	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
-
-	switcher->autoStartScene = ws;
-
-	obs_weak_source_release(ws);
-	obs_source_release(scene);
-}
-
-void SwitcherData::autoStartStreamRecording()
-{
-	if (autoStartedRecently)
-		return;
-
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
-	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
-
-	if (ws && autoStartScene == ws) {
-		if ((switcher->autoStartType == STREAMING ||
-		     switcher->autoStartType == RECORINDGSTREAMING) &&
-		    !obs_frontend_streaming_active()) {
-			blog(LOG_INFO,
-			     "Starting stream because scene '%s' is active",
-			     obs_source_get_name(currentSource));
-			obs_frontend_streaming_start();
-		}
-		if ((switcher->autoStartType == RECORDING ||
-		     switcher->autoStartType == RECORINDGSTREAMING) &&
-		    !obs_frontend_recording_active()) {
-			blog(LOG_INFO,
-			     "Starting record because scene '%s' is active",
-			     obs_source_get_name(currentSource));
-			obs_frontend_recording_start();
-		}
-	}
-	obs_source_release(currentSource);
-	obs_weak_source_release(ws);
-
-	autoStartedRecently = true;
-}
-
 void AdvSceneSwitcher::on_verboseLogging_stateChanged(int state)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
+
 	switcher->verbose = state;
 }
 
 void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
+
 	switcher->disableHints = state;
 }
 
@@ -309,8 +180,9 @@ void AdvSceneSwitcher::AskBackup(obs_data_t *obj)
 	bool backupSettings = DisplayMessage(
 		obs_module_text("AdvSceneSwitcher.askBackup"), true);
 
-	if (!backupSettings)
+	if (!backupSettings) {
 		return;
+	}
 
 	QString directory = QFileDialog::getSaveFileName(
 		nullptr,
@@ -319,12 +191,14 @@ void AdvSceneSwitcher::AskBackup(obs_data_t *obj)
 		QDir::currentPath(),
 		obs_module_text(
 			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType"));
-	if (directory.isEmpty())
+	if (directory.isEmpty()) {
 		return;
+	}
 
 	QFile file(directory);
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 		return;
+	}
 
 	obs_data_save_json(obj, file.fileName().toUtf8().constData());
 }
@@ -334,33 +208,22 @@ void AdvSceneSwitcher::on_exportSettings_clicked()
 	QString directory = QFileDialog::getSaveFileName(
 		this,
 		tr(obs_module_text(
-			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.importWindowTitle")),
+			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.exportWindowTitle")),
 		QDir::currentPath(),
 		tr(obs_module_text(
 			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType")));
-	if (directory.isEmpty())
+	if (directory.isEmpty()) {
 		return;
+	}
 
 	QFile file(directory);
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 		return;
+	}
 
 	obs_data_t *obj = obs_data_create();
 
-	switcher->saveWindowTitleSwitches(obj);
-	switcher->saveScreenRegionSwitches(obj);
-	switcher->savePauseSwitches(obj);
-	switcher->saveSceneSequenceSwitches(obj);
-	switcher->saveSceneTransitions(obj);
-	switcher->saveIdleSwitches(obj);
-	switcher->saveExecutableSwitches(obj);
-	switcher->saveRandomSwitches(obj);
-	switcher->saveFileSwitches(obj);
-	switcher->saveMediaSwitches(obj);
-	switcher->saveTimeSwitches(obj);
-	switcher->saveAudioSwitches(obj);
-	switcher->saveGeneralSettings(obj);
-	switcher->saveHotkeys(obj);
+	switcher->saveSettings(obj);
 
 	obs_data_save_json(obj, file.fileName().toUtf8().constData());
 
@@ -369,7 +232,7 @@ void AdvSceneSwitcher::on_exportSettings_clicked()
 
 void AdvSceneSwitcher::on_importSettings_clicked()
 {
-	// scene switcher could be stuck in a sequence
+	// Scene switcher could be stuck in a sequence
 	// so it needs to be stopped before importing new settings
 	bool start = !switcher->stop;
 	switcher->Stop();
@@ -383,12 +246,14 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 		QDir::currentPath(),
 		tr(obs_module_text(
 			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType")));
-	if (directory.isEmpty())
+	if (directory.isEmpty()) {
 		return;
+	}
 
 	QFile file(directory);
-	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 		return;
+	}
 
 	obs_data_t *obj = obs_data_create_from_json_file(
 		file.fileName().toUtf8().constData());
@@ -399,20 +264,7 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 		return;
 	}
 
-	switcher->loadWindowTitleSwitches(obj);
-	switcher->loadScreenRegionSwitches(obj);
-	switcher->loadPauseSwitches(obj);
-	switcher->loadSceneSequenceSwitches(obj);
-	switcher->loadSceneTransitions(obj);
-	switcher->loadIdleSwitches(obj);
-	switcher->loadExecutableSwitches(obj);
-	switcher->loadRandomSwitches(obj);
-	switcher->loadFileSwitches(obj);
-	switcher->loadMediaSwitches(obj);
-	switcher->loadTimeSwitches(obj);
-	switcher->loadAudioSwitches(obj);
-	switcher->loadGeneralSettings(obj);
-	switcher->loadHotkeys(obj);
+	switcher->loadSettings(obj);
 
 	obs_data_release(obj);
 
@@ -420,9 +272,10 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 		"AdvSceneSwitcher.generalTab.saveOrLoadsettings.loadSuccess"));
 	close();
 
-	// restart scene switcher if it was active
-	if (start)
+	// Restart scene switcher if it was active
+	if (start) {
 		switcher->Start();
+	}
 }
 
 int findTabIndex(QTabWidget *tabWidget, int pos)
@@ -473,15 +326,19 @@ int findTabIndex(QTabWidget *tabWidget, int pos)
 	case 13:
 		tabName = "sceneGroupTab";
 		break;
+	case 14:
+		tabName = "sceneTriggerTab";
+		break;
 	}
 
 	QWidget *page = tabWidget->findChild<QWidget *>(tabName);
 	if (page) {
 		at = tabWidget->indexOf(page);
 	}
-	if (at == -1)
+	if (at == -1) {
 		blog(LOG_INFO, "failed to find tab %s",
 		     tabName.toUtf8().constData());
+	}
 
 	return at;
 }
@@ -492,8 +349,9 @@ void AdvSceneSwitcher::setTabOrder()
 	for (int i = 0; i < bar->count(); ++i) {
 		int curPos = findTabIndex(ui->tabWidget, switcher->tabOrder[i]);
 
-		if (i != curPos && curPos != -1)
+		if (i != curPos && curPos != -1) {
 			bar->moveTab(curPos, i);
+		}
 	}
 
 	connect(bar, &QTabBar::tabMoved, this, &AdvSceneSwitcher::on_tabMoved);
@@ -501,8 +359,10 @@ void AdvSceneSwitcher::setTabOrder()
 
 void AdvSceneSwitcher::on_tabMoved(int from, int to)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
+
 	std::swap(switcher->tabOrder[from], switcher->tabOrder[to]);
 }
 
@@ -513,6 +373,55 @@ void AdvSceneSwitcher::on_tabWidget_currentChanged(int index)
 	switcher->showFrame = false;
 	clearFrames(ui->screenRegionSwitches);
 	SetShowFrames();
+}
+
+void SwitcherData::loadSettings(obs_data_t *obj)
+{
+	if (!obj) {
+		return;
+	}
+
+	switcher->loadSceneGroups(obj);
+	switcher->loadWindowTitleSwitches(obj);
+	switcher->loadScreenRegionSwitches(obj);
+	switcher->loadPauseSwitches(obj);
+	switcher->loadSceneSequenceSwitches(obj);
+	switcher->loadSceneTransitions(obj);
+	switcher->loadIdleSwitches(obj);
+	switcher->loadExecutableSwitches(obj);
+	switcher->loadRandomSwitches(obj);
+	switcher->loadFileSwitches(obj);
+	switcher->loadMediaSwitches(obj);
+	switcher->loadTimeSwitches(obj);
+	switcher->loadAudioSwitches(obj);
+	switcher->loadSceneTriggers(obj);
+	switcher->loadGeneralSettings(obj);
+	switcher->loadHotkeys(obj);
+}
+
+void SwitcherData::saveSettings(obs_data_t *obj)
+{
+	if (!obj) {
+		return;
+	}
+
+	saveSceneGroups(obj);
+	saveWindowTitleSwitches(obj);
+	saveScreenRegionSwitches(obj);
+	savePauseSwitches(obj);
+	saveSceneSequenceSwitches(obj);
+	saveSceneTransitions(obj);
+	saveIdleSwitches(obj);
+	saveExecutableSwitches(obj);
+	saveRandomSwitches(obj);
+	saveFileSwitches(obj);
+	saveMediaSwitches(obj);
+	saveTimeSwitches(obj);
+	saveAudioSwitches(obj);
+	saveSceneTriggers(obj);
+	saveGeneralSettings(obj);
+	saveHotkeys(obj);
+	saveVersion(obj, g_GIT_SHA1);
 }
 
 void SwitcherData::saveGeneralSettings(obs_data_t *obj)
@@ -532,19 +441,8 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_bool(obj, "active", !switcher->stop);
 	obs_data_set_int(obj, "startup_behavior", switcher->startupBehavior);
 
-	std::string autoStopSceneName =
-		GetWeakSourceName(switcher->autoStopScene);
-	obs_data_set_bool(obj, "autoStopEnable", switcher->autoStopEnable);
-	obs_data_set_int(obj, "autoStopType", switcher->autoStopType);
-	obs_data_set_string(obj, "autoStopSceneName",
-			    autoStopSceneName.c_str());
-
-	std::string autoStartSceneName =
-		GetWeakSourceName(switcher->autoStartScene);
-	obs_data_set_bool(obj, "autoStartEnable", switcher->autoStartEnable);
-	obs_data_set_int(obj, "autoStartType", switcher->autoStartType);
-	obs_data_set_string(obj, "autoStartSceneName",
-			    autoStartSceneName.c_str());
+	obs_data_set_int(obj, "autoStartEvent",
+			 static_cast<int>(switcher->autoStartEvent));
 
 	obs_data_set_bool(obj, "verbose", switcher->verbose);
 	obs_data_set_bool(obj, "disableHints", switcher->disableHints);
@@ -592,6 +490,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "sequenceTabPos", switcher->tabOrder[11]);
 	obs_data_set_int(obj, "audioTabPos", switcher->tabOrder[12]);
 	obs_data_set_int(obj, "sceneGroupTabPos", switcher->tabOrder[13]);
+	obs_data_set_int(obj, "triggerTabPos", switcher->tabOrder[14]);
 }
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
@@ -613,24 +512,15 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	switcher->stop = !obs_data_get_bool(obj, "active");
 	switcher->startupBehavior =
 		(StartupBehavior)obs_data_get_int(obj, "startup_behavior");
-	if (switcher->startupBehavior == START)
+	if (switcher->startupBehavior == START) {
 		switcher->stop = false;
-	if (switcher->startupBehavior == STOP)
+	}
+	if (switcher->startupBehavior == STOP) {
 		switcher->stop = true;
+	}
 
-	std::string autoStopScene =
-		obs_data_get_string(obj, "autoStopSceneName");
-	switcher->autoStopEnable = obs_data_get_bool(obj, "autoStopEnable");
-	switcher->autoStopType =
-		(AutoStartStopType)obs_data_get_int(obj, "autoStopType");
-	switcher->autoStopScene = GetWeakSourceByName(autoStopScene.c_str());
-
-	std::string autoStartScene =
-		obs_data_get_string(obj, "autoStartSceneName");
-	switcher->autoStartEnable = obs_data_get_bool(obj, "autoStartEnable");
-	switcher->autoStartType =
-		(AutoStartStopType)obs_data_get_int(obj, "autoStartType");
-	switcher->autoStartScene = GetWeakSourceByName(autoStartScene.c_str());
+	switcher->autoStartEvent = static_cast<AutoStartEvent>(
+		obs_data_get_int(obj, "autoStartEvent"));
 
 	switcher->verbose = obs_data_get_bool(obj, "verbose");
 	switcher->disableHints = obs_data_get_bool(obj, "disableHints");
@@ -693,6 +583,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "sequenceTabPos", 11);
 	obs_data_set_default_int(obj, "audioTabPos", 12);
 	obs_data_set_default_int(obj, "sceneGroupTabPos", 13);
+	obs_data_set_default_int(obj, "triggerTabPos", 14);
 
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "generalTabPos")));
@@ -722,6 +613,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(int)(obs_data_get_int(obj, "audioTabPos")));
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "sceneGroupTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "triggerTabPos")));
 }
 
 void SwitcherData::checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
@@ -763,25 +656,34 @@ void SwitcherData::checkSwitchCooldown(bool &match)
 	}
 
 	match = false;
-	if (verbose)
-		blog(LOG_INFO, "cooldown active - ignoring match");
+	vblog(LOG_INFO, "cooldown active - ignoring match");
 }
 
-void populateAutoStartStopTypeSelection(QComboBox *cb)
+void populateStartupBehavior(QComboBox *cb)
 {
 	cb->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.recording"));
+		"AdvSceneSwitcher.generalTab.status.onStartup.asLastRun"));
 	cb->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.streaming"));
+		"AdvSceneSwitcher.generalTab.status.onStartup.alwaysStart"));
 	cb->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.generalBehavior.automaticallyStart.recordingAndStreaming"));
+		"AdvSceneSwitcher.generalTab.status.onStartup.doNotStart"));
+}
+
+void populateAutoStartEventSelection(QComboBox *cb)
+{
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.autoStart.never"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.autoStart.recording"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.autoStart.streaming"));
+	cb->addItem(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.autoStart.recordingAndStreaming"));
 }
 
 void AdvSceneSwitcher::setupGeneralTab()
 {
 	populateSceneSelection(ui->noMatchSwitchScene, false);
-	populateSceneSelection(ui->autoStopScenes, false);
-	populateSceneSelection(ui->autoStartScenes, false);
 
 	if (switcher->switchIfNotMatching == SWITCH) {
 		ui->noMatchSwitch->setChecked(true);
@@ -803,36 +705,6 @@ void AdvSceneSwitcher::setupGeneralTab()
 	ui->cooldownTime->setValue(switcher->cooldown);
 	ui->cooldownTime->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.generalTab.generalBehavior.cooldownHint"));
-
-	populateAutoStartStopTypeSelection(ui->autoStopType);
-
-	ui->autoStopSceneCheckBox->setChecked(switcher->autoStopEnable);
-	ui->autoStopScenes->setCurrentText(
-		GetWeakSourceName(switcher->autoStopScene).c_str());
-	ui->autoStopType->setCurrentIndex(switcher->autoStopType);
-
-	if (ui->autoStopSceneCheckBox->checkState()) {
-		ui->autoStopScenes->setDisabled(false);
-		ui->autoStopType->setDisabled(false);
-	} else {
-		ui->autoStopScenes->setDisabled(true);
-		ui->autoStopType->setDisabled(true);
-	}
-
-	populateAutoStartStopTypeSelection(ui->autoStartType);
-
-	ui->autoStartSceneCheckBox->setChecked(switcher->autoStartEnable);
-	ui->autoStartScenes->setCurrentText(
-		GetWeakSourceName(switcher->autoStartScene).c_str());
-	ui->autoStartType->setCurrentIndex(switcher->autoStartType);
-
-	if (ui->autoStartSceneCheckBox->checkState()) {
-		ui->autoStartScenes->setDisabled(false);
-		ui->autoStartType->setDisabled(false);
-	} else {
-		ui->autoStartScenes->setDisabled(true);
-		ui->autoStartType->setDisabled(true);
-	}
 
 	ui->verboseLogging->setChecked(switcher->verbose);
 	ui->uiHintsDisable->setChecked(switcher->disableHints);
@@ -896,17 +768,16 @@ void AdvSceneSwitcher::setupGeneralTab()
 		}
 	}
 
-	ui->startupBehavior->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.status.onStartup.asLastRun"));
-	ui->startupBehavior->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.status.onStartup.alwaysStart"));
-	ui->startupBehavior->addItem(obs_module_text(
-		"AdvSceneSwitcher.generalTab.status.onStartup.doNotStart"));
-
+	populateStartupBehavior(ui->startupBehavior);
 	ui->startupBehavior->setCurrentIndex(switcher->startupBehavior);
 
-	if (switcher->th && switcher->th->isRunning())
+	populateAutoStartEventSelection(ui->autoStartEvent);
+	ui->autoStartEvent->setCurrentIndex(
+		static_cast<int>(switcher->autoStartEvent));
+
+	if (switcher->th && switcher->th->isRunning()) {
 		SetStarted();
-	else
+	} else {
 		SetStopped();
+	}
 }

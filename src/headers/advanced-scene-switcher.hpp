@@ -7,6 +7,10 @@
 #include "switcher-data-structs.hpp"
 
 #define blog(level, msg, ...) blog(level, "[adv-ss] " msg, ##__VA_ARGS__)
+#define vblog(level, msg, ...)                               \
+	if (verbose) {                                       \
+		blog(level, "[adv-ss] " msg, ##__VA_ARGS__); \
+	}
 
 class QCloseEvent;
 
@@ -35,8 +39,6 @@ public:
 	int IgnoreIdleWindowsFindByData(const QString &window);
 
 	void UpdateNonMatchingScene(const QString &name);
-	void UpdateAutoStopScene(const QString &name);
-	void UpdateAutoStartScene(const QString &name);
 	void SetEditSceneGroup(SceneGroup &sg);
 
 	void loadUI();
@@ -54,6 +56,7 @@ public:
 	void setupTimeTab();
 	void setupAudioTab();
 	void setupSceneGroupTab();
+	void setupTriggerTab();
 	void setTabOrder();
 
 	static bool DisplayMessage(QString msg, bool question = false);
@@ -62,7 +65,8 @@ public:
 	static void populateSceneSelection(QComboBox *sel,
 					   bool addPrevious = false,
 					   bool addSceneGroup = false,
-					   bool addSelect = true);
+					   bool addSelect = true,
+					   std::string selectText = "");
 
 	static void populateTransitionSelection(QComboBox *sel,
 						bool addSelect = true);
@@ -100,6 +104,7 @@ public slots:
 	void on_noMatchDelay_valueChanged(double i);
 	void on_cooldownTime_valueChanged(double i);
 	void on_startupBehavior_currentIndexChanged(int index);
+	void on_autoStartEvent_currentIndexChanged(int index);
 	void on_noMatchSwitchScene_currentTextChanged(const QString &text);
 	void on_checkInterval_valueChanged(int value);
 	void on_toggleStartButton_clicked();
@@ -128,14 +133,6 @@ public slots:
 	void on_sceneSequenceLoad_clicked();
 	void on_sceneSequenceUp_clicked();
 	void on_sceneSequenceDown_clicked();
-
-	void on_autoStopSceneCheckBox_stateChanged(int state);
-	void on_autoStopType_currentIndexChanged(int index);
-	void on_autoStopScenes_currentTextChanged(const QString &text);
-
-	void on_autoStartSceneCheckBox_stateChanged(int state);
-	void on_autoStartType_currentIndexChanged(int index);
-	void on_autoStartScenes_currentTextChanged(const QString &text);
 
 	void on_verboseLogging_stateChanged(int state);
 	void on_uiHintsDisable_stateChanged(int state);
@@ -206,6 +203,11 @@ public slots:
 	void on_sceneGroupSceneUp_clicked();
 	void on_sceneGroupSceneDown_clicked();
 
+	void on_triggerAdd_clicked();
+	void on_triggerRemove_clicked();
+	void on_triggerUp_clicked();
+	void on_triggerDown_clicked();
+
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();
 	void on_threadPriority_currentTextChanged(const QString &text);
@@ -217,34 +219,34 @@ public slots:
 private:
 };
 
-/********************************************************************************
+/******************************************************************************
  * Windowtitle helper
- ********************************************************************************/
+ ******************************************************************************/
 void GetWindowList(std::vector<std::string> &windows);
-void GetWindowList(QStringList &windows); // Overloaded
+void GetWindowList(QStringList &windows);
 void GetCurrentWindowTitle(std::string &title);
 bool isFullscreen(std::string &title);
 bool isMaximized(std::string &title);
 
-/********************************************************************************
+/******************************************************************************
  * Screenregion helper
- ********************************************************************************/
+ ******************************************************************************/
 std::pair<int, int> getCursorPos();
 
-/********************************************************************************
+/******************************************************************************
  * Idle detection helper
- ********************************************************************************/
+ ******************************************************************************/
 int secondsSinceLastInput();
 
-/********************************************************************************
+/******************************************************************************
  * Executable helper
- ********************************************************************************/
+ ******************************************************************************/
 void GetProcessList(QStringList &processes);
 bool isInFocus(const QString &executable);
 
-/********************************************************************************
+/******************************************************************************
  * Sceneswitch helper
- ********************************************************************************/
+ ******************************************************************************/
 
 void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 		       OBSWeakSource &transition,
@@ -255,8 +257,8 @@ void restoreTransitionOverride(obs_source_t *scene, transitionData td);
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 		 bool &transitionOverrideOverride);
 
-/********************************************************************************
+/******************************************************************************
  * Main SwitcherData
- ********************************************************************************/
+ ******************************************************************************/
 struct SwitcherData;
 extern SwitcherData *switcher;

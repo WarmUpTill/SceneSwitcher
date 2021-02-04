@@ -1,3 +1,5 @@
+#include <regex>
+
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
@@ -20,8 +22,9 @@ void AdvSceneSwitcher::on_windowAdd_clicked()
 void AdvSceneSwitcher::on_windowRemove_clicked()
 {
 	QListWidgetItem *item = ui->windowSwitches->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -36,8 +39,9 @@ void AdvSceneSwitcher::on_windowRemove_clicked()
 void AdvSceneSwitcher::on_windowUp_clicked()
 {
 	int index = ui->windowSwitches->currentRow();
-	if (!listMoveUp(ui->windowSwitches))
+	if (!listMoveUp(ui->windowSwitches)) {
 		return;
+	}
 
 	WindowSwitchWidget *s1 =
 		(WindowSwitchWidget *)ui->windowSwitches->itemWidget(
@@ -57,8 +61,9 @@ void AdvSceneSwitcher::on_windowDown_clicked()
 {
 	int index = ui->windowSwitches->currentRow();
 
-	if (!listMoveDown(ui->windowSwitches))
+	if (!listMoveDown(ui->windowSwitches)) {
 		return;
+	}
 
 	WindowSwitchWidget *s1 =
 		(WindowSwitchWidget *)ui->windowSwitches->itemWidget(
@@ -78,8 +83,9 @@ void AdvSceneSwitcher::on_ignoreWindowsAdd_clicked()
 {
 	QString windowName = ui->ignoreWindowsWindows->currentText();
 
-	if (windowName.isEmpty())
+	if (windowName.isEmpty()) {
 		return;
+	}
 
 	QVariant v = QVariant::fromValue(windowName);
 
@@ -102,8 +108,9 @@ void AdvSceneSwitcher::on_ignoreWindowsAdd_clicked()
 void AdvSceneSwitcher::on_ignoreWindowsRemove_clicked()
 {
 	QListWidgetItem *item = ui->ignoreWindows->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	QString windowName = item->data(Qt::UserRole).toString();
 
@@ -144,10 +151,12 @@ int AdvSceneSwitcher::IgnoreWindowsFindByData(const QString &window)
 
 void AdvSceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
 {
-	if (loading)
+	if (loading) {
 		return;
-	if (idx == -1)
+	}
+	if (idx == -1) {
 		return;
+	}
 
 	QListWidgetItem *item = ui->ignoreWindows->item(idx);
 
@@ -162,88 +171,100 @@ void AdvSceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
 	}
 }
 
-bool isRunning(std::string &title)
+void checkWindowTitleSwitchDirect(WindowSwitch &s,
+				  std::string &currentWindowTitle, bool &match,
+				  OBSWeakSource &scene,
+				  OBSWeakSource &transition)
 {
-	QStringList windows;
+	bool focus = s.window == currentWindowTitle;
+	bool fullscreen = (!s.fullscreen || isFullscreen(s.window));
+	bool max = (!s.maximized || isMaximized(s.window));
 
-	GetWindowList(windows);
-	// True if switch is running (direct)
-	bool equals = windows.contains(QString::fromStdString(title));
-	// True if switch is running (regex)
-	bool matches = (windows.indexOf(QRegularExpression(
-				QString::fromStdString(title))) != -1);
-
-	return (equals || matches);
+	if (focus && fullscreen && max) {
+		match = true;
+		scene = s.getScene();
+		transition = s.transition;
+	}
 }
 
-bool isFocused(std::string &title)
+void checkWindowTitleSwitchRegex(WindowSwitch &s,
+				 std::string &currentWindowTitle,
+				 std::vector<std::string> windowList,
+				 bool &match, OBSWeakSource &scene,
+				 OBSWeakSource &transition)
 {
-	std::string current;
+	for (auto &window : windowList) {
+		try {
+			std::regex expr(s.window);
+			if (!std::regex_match(window, expr)) {
+				continue;
+			}
+		} catch (const std::regex_error &) {
+		}
 
-	GetCurrentWindowTitle(current);
-	// True if switch equals current window
-	bool equals = (title == current);
-	// True if switch matches current window
-	bool matches = QString::fromStdString(current).contains(
-		QRegularExpression(QString::fromStdString(title)));
+		bool focus = window == currentWindowTitle;
+		bool fullscreen = (!s.fullscreen || isFullscreen(window));
+		bool max = (!s.maximized || isMaximized(window));
 
-	return (equals || matches);
+		if (focus && fullscreen && max) {
+			match = true;
+			scene = s.getScene();
+			transition = s.transition;
+		}
+	}
 }
 
 void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 					  OBSWeakSource &transition)
 {
-	if (WindowSwitch::pause)
+	if (WindowSwitch::pause) {
 		return;
+	}
 
-	std::string title;
-	bool ignored = false;
+	std::string currentWindowTitle;
+	GetCurrentWindowTitle(currentWindowTitle);
 
 	// Check if current window is ignored
-	GetCurrentWindowTitle(title);
 	for (auto &window : ignoreWindowsSwitches) {
-		// True if ignored switch equals current window
-		bool equals = (title == window);
-		// True if ignored switch matches current window
-		bool matches = QString::fromStdString(title).contains(
-			QRegularExpression(QString::fromStdString(window)));
+		bool equals = (currentWindowTitle == window);
 
-		if (equals || matches) {
-			ignored = true;
-			title = lastTitle;
+		try {
+			std::regex expr(window);
+			bool matches =
+				std::regex_match(currentWindowTitle, expr);
 
-			break;
+			if (equals || matches) {
+				currentWindowTitle = lastTitle;
+				break;
+			}
+		} catch (const std::regex_error &) {
 		}
 	}
-	lastTitle = title;
 
-	// Check for match
+	lastTitle = currentWindowTitle;
+
+	std::vector<std::string> windowList;
+	GetWindowList(windowList);
+
 	for (WindowSwitch &s : windowSwitches) {
-		if (!s.initialized())
+		if (!s.initialized()) {
 			continue;
+		}
 
-		// True if fullscreen is disabled OR current window is fullscreen
-		bool fullscreen = (!s.fullscreen || isFullscreen(s.window));
-		// True if maximized is disabled OR current window is maximized
-		bool max = (!s.maximized || isMaximized(s.window));
-		// True if focus is disabled OR switch is focused
-		bool focus = (!s.focus || isFocused(s.window));
-		// True if current window is ignored AND switch equals OR matches last window
-		bool ignore =
-			(ignored &&
-			 (title == s.window ||
-			  QString::fromStdString(title).contains(
-				  QRegularExpression(
-					  QString::fromStdString(s.window)))));
+		if (std::find(windowList.begin(), windowList.end(), s.window) !=
+		    windowList.end()) {
+			checkWindowTitleSwitchDirect(s, currentWindowTitle,
+						     match, scene, transition);
+		} else {
+			checkWindowTitleSwitchRegex(s, currentWindowTitle,
+						    windowList, match, scene,
+						    transition);
+		}
 
-		if (isRunning(s.window) &&
-		    (fullscreen && (max && (focus || ignore)))) {
-			match = true;
-			scene = s.getScene();
-			transition = s.transition;
-
-			if (verbose)
+		if (match) {
+			if (verbose) {
 				s.logMatch();
+			}
 			break;
 		}
 	}
@@ -361,13 +382,15 @@ void WindowSwitch::save(obs_data_t *obj)
 // To be removed in future version
 bool loadOldWindow(obs_data_t *obj, WindowSwitch *s)
 {
-	if (!s)
+	if (!s) {
 		return false;
+	}
 
 	const char *scene = obs_data_get_string(obj, "scene");
 
-	if (strcmp(scene, "") == 0)
+	if (strcmp(scene, "") == 0) {
 		return false;
+	}
 
 	s->scene = GetWeakSourceByName(scene);
 
@@ -392,8 +415,9 @@ bool loadOldWindow(obs_data_t *obj, WindowSwitch *s)
 
 void WindowSwitch::load(obs_data_t *obj)
 {
-	if (loadOldWindow(obj, this))
+	if (loadOldWindow(obj, this)) {
 		return;
+	}
 
 	SceneSwitcherEntry::load(obj);
 
@@ -487,32 +511,40 @@ void WindowSwitchWidget::swapSwitchData(WindowSwitchWidget *s1,
 
 void WindowSwitchWidget::WindowChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->window = text.toStdString();
 }
 
 void WindowSwitchWidget::FullscreenChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->fullscreen = state;
 }
 
 void WindowSwitchWidget::MaximizedChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->maximized = state;
 }
 
 void WindowSwitchWidget::FocusChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->focus = state;
 }

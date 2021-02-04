@@ -18,8 +18,9 @@ void AdvSceneSwitcher::on_transitionsAdd_clicked()
 void AdvSceneSwitcher::on_transitionsRemove_clicked()
 {
 	QListWidgetItem *item = ui->sceneTransitions->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -34,8 +35,9 @@ void AdvSceneSwitcher::on_transitionsRemove_clicked()
 void AdvSceneSwitcher::on_transitionsUp_clicked()
 {
 	int index = ui->sceneTransitions->currentRow();
-	if (!listMoveUp(ui->sceneTransitions))
+	if (!listMoveUp(ui->sceneTransitions)) {
 		return;
+	}
 
 	TransitionSwitchWidget *s1 =
 		(TransitionSwitchWidget *)ui->sceneTransitions->itemWidget(
@@ -55,8 +57,9 @@ void AdvSceneSwitcher::on_transitionsDown_clicked()
 {
 	int index = ui->sceneTransitions->currentRow();
 
-	if (!listMoveDown(ui->sceneTransitions))
+	if (!listMoveDown(ui->sceneTransitions)) {
 		return;
+	}
 
 	TransitionSwitchWidget *s1 =
 		(TransitionSwitchWidget *)ui->sceneTransitions->itemWidget(
@@ -88,8 +91,9 @@ void AdvSceneSwitcher::on_defaultTransitionsAdd_clicked()
 void AdvSceneSwitcher::on_defaultTransitionsRemove_clicked()
 {
 	QListWidgetItem *item = ui->defaultTransitions->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -104,8 +108,9 @@ void AdvSceneSwitcher::on_defaultTransitionsRemove_clicked()
 void AdvSceneSwitcher::on_defaultTransitionsUp_clicked()
 {
 	int index = ui->defaultTransitions->currentRow();
-	if (!listMoveUp(ui->defaultTransitions))
+	if (!listMoveUp(ui->defaultTransitions)) {
 		return;
+	}
 
 	TransitionSwitchWidget *s1 =
 		(TransitionSwitchWidget *)ui->defaultTransitions->itemWidget(
@@ -125,8 +130,9 @@ void AdvSceneSwitcher::on_defaultTransitionsDown_clicked()
 {
 	int index = ui->defaultTransitions->currentRow();
 
-	if (!listMoveDown(ui->defaultTransitions))
+	if (!listMoveDown(ui->defaultTransitions)) {
 		return;
+	}
 
 	DefTransitionSwitchWidget *s1 =
 		(DefTransitionSwitchWidget *)ui->defaultTransitions->itemWidget(
@@ -145,22 +151,25 @@ void AdvSceneSwitcher::on_defaultTransitionsDown_clicked()
 void SwitcherData::checkDefaultSceneTransitions(bool &match,
 						OBSWeakSource &transition)
 {
-	if (checkedDefTransition || DefaultSceneTransition::pause)
+	if (checkedDefTransition || DefaultSceneTransition::pause) {
 		return;
+	}
 
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
 
 	for (DefaultSceneTransition &s : defaultSceneTransitions) {
 		if (s.scene == ws) {
-			if (!s.initialized())
+			if (!s.initialized()) {
 				continue;
+			}
 
 			match = true;
 			transition = s.transition;
 
-			if (verbose)
+			if (verbose) {
 				s.logMatch();
+			}
 			break;
 		}
 	}
@@ -179,8 +188,9 @@ void SwitcherData::setCurrentDefTransition(OBSWeakSource &transition)
 
 void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	if (!state) {
@@ -196,8 +206,9 @@ obs_weak_source_t *getNextTransition(obs_weak_source_t *scene1,
 	obs_weak_source_t *ws = nullptr;
 	if (scene1 && scene2) {
 		for (SceneTransition &t : switcher->sceneTransitions) {
-			if (!t.initialized())
+			if (!t.initialized()) {
 				continue;
+			}
 
 			if (t.scene == scene1 && t.scene2 == scene2) {
 				ws = t.transition;
@@ -259,8 +270,9 @@ void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 		obs_frontend_set_current_transition(nextTransition);
 	}
 
-	if (transitionOverrideOverride)
+	if (transitionOverrideOverride) {
 		overwriteTransitionOverride(targetScene, nextTransition, td);
+	}
 
 	obs_weak_source_release(nextTransitionWs);
 	obs_source_release(nextTransition);
@@ -476,8 +488,10 @@ void TransitionSwitchWidget::swapSwitchData(TransitionSwitchWidget *s1,
 
 void TransitionSwitchWidget::Scene2Changed(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->scene2 = GetWeakSourceByQString(text);
 }

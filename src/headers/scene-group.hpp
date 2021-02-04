@@ -19,6 +19,7 @@ enum class AdvanceCondition {
 };
 
 struct SceneGroup {
+	OBSWeakSource getCurrentScene();
 	OBSWeakSource getNextScene();
 	OBSWeakSource getNextSceneCount();
 	OBSWeakSource getNextSceneTime();
