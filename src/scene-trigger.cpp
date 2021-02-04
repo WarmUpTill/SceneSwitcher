@@ -425,7 +425,7 @@ void SceneTrigger::load(obs_data_t *obj)
 	audioSource = GetWeakSourceByName(audioSourceName);
 }
 
-inline void populateTriggers(QComboBox *list)
+static inline void populateTriggers(QComboBox *list)
 {
 	list->addItem(obs_module_text(
 		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerType.none"));
