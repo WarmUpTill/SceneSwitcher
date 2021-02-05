@@ -223,13 +223,9 @@ void SceneTrigger::performAction()
 	t.detach();
 }
 
-bool SceneTrigger::checkMatch(OBSWeakSource previousScene)
+bool SceneTrigger::checkMatch(OBSWeakSource currentScene,
+			      OBSWeakSource previousScene)
 {
-	OBSSource source = obs_frontend_get_current_scene();
-	OBSWeakSource currentScene = obs_source_get_weak_source(source);
-	obs_source_release(source);
-	obs_weak_source_release(currentScene);
-
 	switch (triggerType) {
 	case sceneTriggerType::NONE:
 		return false;
@@ -249,12 +245,18 @@ void SwitcherData::checkTriggers()
 		return;
 	}
 
+	OBSSource source = obs_frontend_get_current_scene();
+	OBSWeakSource currentScene = obs_source_get_weak_source(source);
+
 	for (auto &t : sceneTriggers) {
-		if (t.checkMatch(previousScene)) {
+		if (t.checkMatch(currentScene, previousScene)) {
 			t.logMatch();
 			t.performAction();
 		}
 	}
+
+	obs_source_release(source);
+	obs_weak_source_release(currentScene);
 }
 
 void SwitcherData::saveSceneTriggers(obs_data_t *obj)
