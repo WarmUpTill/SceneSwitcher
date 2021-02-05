@@ -100,7 +100,6 @@ struct SwitcherData {
 
 	std::deque<SceneTransition> sceneTransitions;
 	std::deque<DefaultSceneTransition> defaultSceneTransitions;
-	bool checkedDefTransition = false;
 
 	std::deque<MediaSwitch> mediaSwitches;
 
@@ -164,9 +163,7 @@ struct SwitcherData {
 	void writeSceneInfoToFile();
 	void writeToStatusFile(QString status);
 	bool checkPause();
-	void checkDefaultSceneTransitions(bool &match,
-					  OBSWeakSource &transition);
-	void setCurrentDefTransition(OBSWeakSource &transition);
+	void checkDefaultSceneTransitions();
 	void checkSceneSequence(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition, int &linger);
 	void checkIdleSwitch(bool &match, OBSWeakSource &scene,
