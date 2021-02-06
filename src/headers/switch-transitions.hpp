@@ -20,6 +20,8 @@ struct DefaultSceneTransition : SceneSwitcherEntry {
 	static bool pause;
 
 	const char *getType() { return "def_transition"; }
+	bool checkMatch(OBSWeakSource currentScene);
+	void setTransition();
 
 	inline DefaultSceneTransition(){};
 	inline DefaultSceneTransition(OBSWeakSource scene_,
