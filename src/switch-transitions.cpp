@@ -1,3 +1,5 @@
+#include <thread>
+
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
@@ -148,42 +150,28 @@ void AdvSceneSwitcher::on_defaultTransitionsDown_clicked()
 		  switcher->defaultSceneTransitions[index + 1]);
 }
 
-void SwitcherData::checkDefaultSceneTransitions(bool &match,
-						OBSWeakSource &transition)
+void SwitcherData::checkDefaultSceneTransitions()
 {
-	if (checkedDefTransition || DefaultSceneTransition::pause) {
+	if (DefaultSceneTransition::pause || stop) {
 		return;
 	}
 
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
-	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
+	obs_source_t *currentSceneSource = obs_frontend_get_current_scene();
+	obs_weak_source_t *currentScene =
+		obs_source_get_weak_source(currentSceneSource);
 
-	for (DefaultSceneTransition &s : defaultSceneTransitions) {
-		if (s.scene == ws) {
-			if (!s.initialized()) {
-				continue;
-			}
-
-			match = true;
-			transition = s.transition;
-
+	for (auto &t : defaultSceneTransitions) {
+		if (t.checkMatch(currentScene)) {
 			if (verbose) {
-				s.logMatch();
+				t.logMatch();
 			}
+			t.setTransition();
 			break;
 		}
 	}
-	obs_source_release(currentSource);
-	obs_weak_source_release(ws);
 
-	checkedDefTransition = true;
-}
-
-void SwitcherData::setCurrentDefTransition(OBSWeakSource &transition)
-{
-	obs_source_t *transitionSource = obs_weak_source_get_source(transition);
-	obs_frontend_set_current_transition(transitionSource);
-	obs_source_release(transitionSource);
+	obs_weak_source_release(currentScene);
+	obs_source_release(currentSceneSource);
 }
 
 void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
@@ -532,4 +520,38 @@ void DefTransitionSwitchWidget::swapSwitchData(DefTransitionSwitchWidget *s1,
 	DefaultSceneTransition *t = s1->getSwitchData();
 	s1->setSwitchData(s2->getSwitchData());
 	s2->setSwitchData(t);
+}
+
+bool DefaultSceneTransition::checkMatch(OBSWeakSource currentScene)
+{
+	return scene == currentScene;
+}
+
+void setTransitionDelayed(OBSWeakSource transition)
+{
+	// A hardcoded delay of 50 ms before switching transition type is
+	// necessary due to OBS_FRONTEND_EVENT_SCENE_CHANGED seemingly firing a
+	// bit too early and thus leading to canceled transitions.
+	//
+	// The same is to be the case for OBS_FRONTEND_EVENT_TRANSITION_STOPPED.
+	//
+	// 50 ms was chosen as it seems to avoid the problem mentioned above and
+	// becuase that is the minimum value which can be chosen for the scene
+	// switcher's check interval.
+	// Thus it can be made sure that the delayed setting of the transition
+	// does not interfere with any new scene changes triggered by the scene
+	// switcher
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+	obs_source_t *transitionSource = obs_weak_source_get_source(transition);
+	obs_frontend_set_current_transition(transitionSource);
+	obs_source_release(transitionSource);
+}
+
+void DefaultSceneTransition::setTransition()
+{
+	std::thread t;
+	t = std::thread(setTransitionDelayed, transition);
+	t.detach();
 }
