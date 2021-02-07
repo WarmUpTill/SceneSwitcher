@@ -57,6 +57,7 @@ public:
 	void setupAudioTab();
 	void setupSceneGroupTab();
 	void setupTriggerTab();
+	void setupVideoTab();
 	void setTabOrder();
 
 	static bool DisplayMessage(QString msg, bool question = false);
@@ -190,6 +191,12 @@ public slots:
 	void on_audioUp_clicked();
 	void on_audioDown_clicked();
 	void on_audioFallback_toggled(bool on);
+
+	void on_videoAdd_clicked();
+	void on_videoRemove_clicked();
+	void on_videoUp_clicked();
+	void on_videoDown_clicked();
+	void on_getScreenshot_clicked();
 
 	void on_sceneGroupAdd_clicked();
 	void on_sceneGroupRemove_clicked();

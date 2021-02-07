@@ -3108,7 +3108,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_12">
          <item>
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="getScreenshot">
            <property name="text">
             <string>AdvSceneSwitcher.videoTab.getScreenshot</string>
            </property>
