@@ -36,7 +36,8 @@ struct SceneTrigger : SceneSwitcherEntry {
 	void save(obs_data_t *obj);
 	void load(obs_data_t *obj);
 
-	bool checkMatch(OBSWeakSource previousScene);
+	bool checkMatch(OBSWeakSource currentScene,
+			OBSWeakSource previousScene);
 	void performAction();
 	void logMatch();
 };
