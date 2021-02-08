@@ -25,8 +25,8 @@ struct SceneSequenceSwitch : SceneSwitcherEntry {
 	const char *getType() { return "sequence"; }
 	bool initialized();
 	bool valid();
-	void save(obs_data_t *obj);
-	void load(obs_data_t *obj);
+	void save(obs_data_t *obj, bool saveExt = true);
+	void load(obs_data_t *obj, bool saveExt = true);
 
 	bool reduce();
 	SceneSequenceSwitch *extend();
@@ -53,7 +53,6 @@ private slots:
 	void DelayUnitsChanged(int idx);
 	void StartSceneChanged(const QString &text);
 	void InterruptibleChanged(int state);
-	void EditClicked();
 	void ExtendClicked();
 	void ReduceClicked();
 
@@ -63,10 +62,15 @@ protected:
 	QComboBox *startScenes;
 	QCheckBox *interruptible;
 	QVBoxLayout *extendSequenceLayout;
-	QLabel *extendText;
-	QPushButton *edit;
 	QPushButton *extend;
 	QPushButton *reduce;
+
+	// I would prefer having a list of only widgets of type editExtendMode
+	// but I am not sure how to implement that.
+	//
+	// So use edit button to bring up edit widget and
+	// add a label to disaplay current extended sequence state.
+	QLabel *extendText;
 
 	SceneSequenceSwitch *switchData;
 };

@@ -5,6 +5,8 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+constexpr auto max_extend_text_size = 150;
+
 bool SceneSequenceSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
@@ -160,6 +162,30 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 	close();
 }
 
+void AdvSceneSwitcher::on_sequenceEdit_clicked()
+{
+	int index = ui->sceneSequenceSwitches->currentRow();
+	if (index == -1) {
+		return;
+	}
+
+	SequenceWidget *currentWidget =
+		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(
+			ui->sceneSequenceSwitches->item(index));
+
+	QDialog edit;
+	SequenceWidget editWidget(this, currentWidget->getSwitchData(), false,
+				  true);
+	QHBoxLayout layout;
+	layout.addWidget(&editWidget);
+	edit.setLayout(&layout);
+	edit.setWindowTitle(obs_module_text(
+		"AdvSceneSwitcher.sceneSequenceTab.extendEdit"));
+	edit.exec();
+
+	currentWidget->UpdateExtendText();
+}
+
 bool matchInterruptible(SwitcherData *switcher, SceneSequenceSwitch &s)
 {
 	bool durationReached = s.matchCount * (switcher->interval / 1000.0) >=
@@ -292,34 +318,30 @@ bool SceneSequenceSwitch::valid()
 	       (SceneSwitcherEntry::valid() && WeakSourceValid(startScene));
 }
 
-void SceneSequenceSwitch::save(obs_data_t *obj)
+void SceneSequenceSwitch::save(obs_data_t *obj, bool saveExt)
 {
 	SceneSwitcherEntry::save(obj);
 
 	obs_data_set_string(obj, "startScene",
 			    GetWeakSourceName(startScene).c_str());
-
 	obs_data_set_double(obj, "delay", delay);
-
 	obs_data_set_int(obj, "delayMultiplier", delayMultiplier);
-
 	obs_data_set_bool(obj, "interruptible", interruptible);
 
-	auto cur = extendedSequence.get();
+	if (saveExt) {
+		auto cur = extendedSequence.get();
 
-	obs_data_array_t *extendScenes = obs_data_array_create();
-	while (cur) {
-		obs_data_t *array_obj = obs_data_create();
-
-		obs_data_set_string(array_obj, "scene",
-				    GetWeakSourceName(cur->scene).c_str());
-		obs_data_array_push_back(extendScenes, array_obj);
-
-		obs_data_release(array_obj);
-		cur = cur->extendedSequence.get();
+		obs_data_array_t *extendScenes = obs_data_array_create();
+		while (cur) {
+			obs_data_t *array_obj = obs_data_create();
+			cur->save(array_obj, false);
+			obs_data_array_push_back(extendScenes, array_obj);
+			obs_data_release(array_obj);
+			cur = cur->extendedSequence.get();
+		}
+		obs_data_set_array(obj, "extendScenes", extendScenes);
+		obs_data_array_release(extendScenes);
 	}
-	obs_data_set_array(obj, "extendScenes", extendScenes);
-	obs_data_array_release(extendScenes);
 }
 
 // To be removed in future version
@@ -358,7 +380,7 @@ bool loadOldScequence(obs_data_t *obj, SceneSequenceSwitch *s)
 	return true;
 }
 
-void SceneSequenceSwitch::load(obs_data_t *obj)
+void SceneSequenceSwitch::load(obs_data_t *obj, bool saveExt)
 {
 	if (loadOldScequence(obj, this)) {
 		return;
@@ -378,23 +400,26 @@ void SceneSequenceSwitch::load(obs_data_t *obj)
 
 	interruptible = obs_data_get_bool(obj, "interruptible");
 
-	auto cur = this;
+	if (saveExt) {
+		auto cur = this;
 
-	obs_data_array_t *extendScenes =
-		obs_data_get_array(obj, "extendScenes");
-	size_t count = obs_data_array_count(extendScenes);
-	for (size_t i = 0; i < count; i++) {
-		obs_data_t *array_obj = obs_data_array_item(extendScenes, i);
+		obs_data_array_t *extendScenes =
+			obs_data_get_array(obj, "extendScenes");
+		size_t count = obs_data_array_count(extendScenes);
+		for (size_t i = 0; i < count; i++) {
+			obs_data_t *array_obj =
+				obs_data_array_item(extendScenes, i);
 
-		cur->extendedSequence = std::make_unique<SceneSequenceSwitch>();
+			cur->extendedSequence =
+				std::make_unique<SceneSequenceSwitch>();
 
-		const char *sceneName = obs_data_get_string(array_obj, "scene");
-		cur->extendedSequence->scene = GetWeakSourceByName(sceneName);
+			cur->extendedSequence->load(array_obj, false);
 
-		cur = cur->extendedSequence.get();
-		obs_data_release(array_obj);
+			cur = cur->extendedSequence.get();
+			obs_data_release(array_obj);
+		}
+		obs_data_array_release(extendScenes);
 	}
-	obs_data_array_release(extendScenes);
 }
 
 bool SceneSequenceSwitch::reduce()
@@ -424,53 +449,45 @@ void populateDelayUnits(QComboBox *list)
 	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
 }
 
-QString makeExtendText(SceneSequenceSwitch *s)
+QString makeExtendText(SceneSequenceSwitch *s, int curLen = 0)
 {
 	if (!s) {
 		return "";
 	}
 
-	QString ext(obs_module_text(
-		"AdvSceneSwitcher.sceneSequenceTab.extendEntry"));
+	QString ext = "";
+
+	ext = QString::number(s->delay / s->delayMultiplier) + " ";
+
+	switch (s->delayMultiplier) {
+	case 1:
+		ext += obs_module_text("AdvSceneSwitcher.unit.secends");
+		break;
+	case 60:
+		ext += obs_module_text("AdvSceneSwitcher.unit.minutes");
+		break;
+	case 60 * 60:
+		ext += obs_module_text("AdvSceneSwitcher.unit.hours");
+		break;
+	default:
+		ext += obs_module_text("?????");
+		break;
+	}
 
 	QString sceneName = GetWeakSourceName(s->scene).c_str();
 	if (sceneName.isEmpty()) {
 		sceneName = obs_module_text("AdvSceneSwitcher.selectScene");
 	}
-	ext.replace("{{scenes}}", sceneName);
+	ext += " -> [" + sceneName + "]";
 
-	ext.replace("{{delay}}",
-		    QString::number(s->delay / s->delayMultiplier));
-	switch (s->delayMultiplier) {
-	case 1:
-		ext.replace("{{delayUnits}}",
-			    obs_module_text("AdvSceneSwitcher.unit.secends"));
-		break;
-	case 60:
-		ext.replace("{{delayUnits}}",
-			    obs_module_text("AdvSceneSwitcher.unit.minutes"));
-		break;
-	case 60 * 60:
-		ext.replace("{{delayUnits}}",
-			    obs_module_text("AdvSceneSwitcher.unit.hours"));
-		break;
-	default:
-		ext.replace("{{delayUnits}}",
-			    obs_module_text("?How did i get here?"));
-		break;
+	if (ext.length() + curLen > max_extend_text_size) {
+		return "...";
 	}
-
-	QString transitionName = GetWeakSourceName(s->transition).c_str();
-	if (transitionName.isEmpty()) {
-		transitionName =
-			obs_module_text("AdvSceneSwitcher.selectTransition");
-	}
-	ext.replace("{{transitions}}", transitionName);
-
-
 
 	if (s->extendedSequence.get()) {
-		return ext += ext + " | " + makeExtendText(s->extendedSequence.get());
+		return ext +=
+		       "    |    " + makeExtendText(s->extendedSequence.get(),
+						    curLen + ext.length());
 	} else {
 		return ext;
 	}
@@ -488,8 +505,6 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 	interruptible = new QCheckBox(obs_module_text(
 		"AdvSceneSwitcher.sceneSequenceTab.interruptible"));
 	extendText = new QLabel();
-	edit = new QPushButton(obs_module_text(
-		"AdvSceneSwitcher.sceneSequenceTab.extendEdit"));
 	extend = new QPushButton();
 	reduce = new QPushButton();
 
@@ -517,7 +532,7 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 			 SLOT(StartSceneChanged(const QString &)));
 	QWidget::connect(interruptible, SIGNAL(stateChanged(int)), this,
 			 SLOT(InterruptibleChanged(int)));
-	QWidget::connect(edit, SIGNAL(clicked()), this, SLOT(EditClicked()));
+
 	QWidget::connect(extend, SIGNAL(clicked()), this,
 			 SLOT(ExtendClicked()));
 	QWidget::connect(reduce, SIGNAL(clicked()), this,
@@ -594,8 +609,6 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 		if (editExtendMode) {
 			extendSequenceControlsLayout->addWidget(extend);
 			extendSequenceControlsLayout->addWidget(reduce);
-		} else {
-			extendSequenceControlsLayout->addWidget(edit);
 		}
 		extendSequenceControlsLayout->addStretch();
 
@@ -712,20 +725,6 @@ void SequenceWidget::InterruptibleChanged(int state)
 void SequenceWidget::UpdateExtendText()
 {
 	extendText->setText(makeExtendText(switchData->extendedSequence.get()));
-}
-
-void SequenceWidget::EditClicked()
-{
-	QDialog editDialog;
-	SequenceWidget editWidget(this, switchData, false, true);
-	QHBoxLayout layout;
-	layout.addWidget(&editWidget);
-	editDialog.setLayout(&layout);
-	editDialog.setWindowTitle(obs_module_text(
-		"AdvSceneSwitcher.sceneSequenceTab.extendEdit"));
-	editDialog.exec();
-
-	UpdateExtendText();
 }
 
 void SequenceWidget::ExtendClicked()
