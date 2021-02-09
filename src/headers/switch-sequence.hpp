@@ -20,6 +20,9 @@ struct SceneSequenceSwitch : SceneSwitcherEntry {
 	bool interruptible = false;
 	unsigned int matchCount = 0;
 
+	// nullptr marks start point and reaching end of extended sequence
+	SceneSequenceSwitch *activeSequence = nullptr;
+
 	std::unique_ptr<SceneSequenceSwitch> extendedSequence = nullptr;
 
 	const char *getType() { return "sequence"; }
@@ -30,6 +33,13 @@ struct SceneSequenceSwitch : SceneSwitcherEntry {
 
 	bool reduce();
 	SceneSequenceSwitch *extend();
+
+	bool checkMatch(OBSWeakSource currentScene, int &linger);
+	bool checkDurationMatchInterruptible();
+	void prepareUninterruptibleMatch(OBSWeakSource currentScene,
+					 int &linger);
+	void advanceActiveSequence();
+	void logAdvanceSequence();
 };
 
 class SequenceWidget : public SwitchWidget {

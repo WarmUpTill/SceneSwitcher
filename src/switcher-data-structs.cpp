@@ -43,6 +43,15 @@ void SwitcherData::Prune()
 			sceneSequenceSwitches.erase(
 				sceneSequenceSwitches.begin() + i--);
 		}
+
+		auto cur = &s;
+		while (cur != nullptr) {
+			if (cur->extendedSequence &&
+			    !cur->extendedSequence->valid()) {
+				cur->extendedSequence.reset(nullptr);
+			}
+			cur = cur->extendedSequence.get();
+		}
 	}
 
 	for (size_t i = 0; i < sceneTransitions.size(); i++) {

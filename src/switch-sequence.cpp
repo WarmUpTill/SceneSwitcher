@@ -186,32 +186,6 @@ void AdvSceneSwitcher::on_sequenceEdit_clicked()
 	currentWidget->UpdateExtendText();
 }
 
-bool matchInterruptible(SwitcherData *switcher, SceneSequenceSwitch &s)
-{
-	bool durationReached = s.matchCount * (switcher->interval / 1000.0) >=
-			       s.delay;
-
-	s.matchCount++;
-
-	if (durationReached) {
-		return true;
-	}
-	return false;
-}
-
-bool matchUninterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
-			  obs_source_t *currentSource, int &linger)
-{
-	// scene was already active for the previous cycle so remove this time
-	int dur = s.delay * 1000 - switcher->interval;
-	if (dur > 0) {
-		switcher->waitScene = currentSource;
-		linger = dur;
-	}
-
-	return true;
-}
-
 void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 				      OBSWeakSource &transition, int &linger)
 {
@@ -219,38 +193,35 @@ void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 		return;
 	}
 
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
-	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
+	obs_source_t *currentSceneSource = obs_frontend_get_current_scene();
+	obs_weak_source_t *currentScene =
+		obs_source_get_weak_source(currentSceneSource);
 
 	for (SceneSequenceSwitch &s : sceneSequenceSwitches) {
-		if (!s.initialized()) {
-			continue;
-		}
+		bool matched = s.checkMatch(currentScene, linger);
 
-		if (s.startScene == ws) {
-			if (!match) {
-				if (s.interruptible) {
-					match = matchInterruptible(switcher, s);
-				} else {
-					match = matchUninterruptible(
-						switcher, s, currentSource,
-						linger);
-				}
+		if (!match && matched) {
+			match = matched;
 
-				if (match) {
-					scene = s.getScene();
-					transition = s.transition;
-					if (switcher->verbose) {
-						s.logMatch();
-					}
+			if (s.activeSequence) {
+				scene = s.activeSequence->getScene();
+				transition = s.activeSequence->transition;
+			} else {
+				scene = s.getScene();
+				transition = s.transition;
+				if (switcher->verbose) {
+					s.logMatch();
 				}
 			}
-		} else {
-			s.matchCount = 0;
+
+			s.advanceActiveSequence();
+			if (switcher->verbose) {
+				s.logAdvanceSequence();
+			}
 		}
 	}
-	obs_source_release(currentSource);
-	obs_weak_source_release(ws);
+	obs_source_release(currentSceneSource);
+	obs_weak_source_release(currentScene);
 }
 
 void SwitcherData::saveSceneSequenceSwitches(obs_data_t *obj)
@@ -424,6 +395,9 @@ void SceneSequenceSwitch::load(obs_data_t *obj, bool saveExt)
 
 bool SceneSequenceSwitch::reduce()
 {
+	// Reset activeSequence just in case it was one of the deleted entries
+	activeSequence = nullptr;
+
 	if (!extendedSequence) {
 		return true;
 	}
@@ -439,7 +413,79 @@ SceneSequenceSwitch *SceneSequenceSwitch::extend()
 		return extendedSequence->extend();
 	}
 	extendedSequence = std::make_unique<SceneSequenceSwitch>();
+	extendedSequence->startScene = scene;
 	return extendedSequence.get();
+}
+
+bool SceneSequenceSwitch::checkMatch(OBSWeakSource currentScene, int &linger)
+{
+	if (!initialized()) {
+		return false;
+	}
+
+	bool match = false;
+
+	if (activeSequence) {
+		return activeSequence->checkMatch(currentScene, linger);
+	}
+
+	if (startScene == currentScene) {
+		if (interruptible) {
+			match = checkDurationMatchInterruptible();
+		} else {
+			match = true;
+			prepareUninterruptibleMatch(currentScene, linger);
+		}
+	} else {
+		matchCount = 0;
+	}
+
+	return match;
+}
+
+bool SceneSequenceSwitch::checkDurationMatchInterruptible()
+{
+	bool durationReached = matchCount * (switcher->interval / 1000.0) >=
+			       delay;
+	matchCount++;
+	if (durationReached) {
+		matchCount = 0;
+		return true;
+	}
+	return false;
+}
+
+void SceneSequenceSwitch::prepareUninterruptibleMatch(
+	OBSWeakSource currentScene, int &linger)
+{
+	int dur = delay * 1000;
+	if (dur > 0) {
+		switcher->waitScene = obs_weak_source_get_source(currentScene);
+		obs_source_release(switcher->waitScene);
+		linger = dur;
+	}
+}
+
+void SceneSequenceSwitch::advanceActiveSequence()
+{
+	if (activeSequence) {
+		activeSequence = activeSequence->extendedSequence.get();
+	} else {
+		activeSequence = extendedSequence.get();
+	}
+
+	// Reinit old matchCount value in case it was previously set
+	if (activeSequence) {
+		activeSequence->matchCount = 0;
+	}
+}
+
+void SceneSequenceSwitch::logAdvanceSequence()
+{
+	if (activeSequence) {
+		blog(LOG_INFO, "continuing sequence with %s",
+		     GetWeakSourceName(activeSequence->startScene).c_str());
+	}
 }
 
 void populateDelayUnits(QComboBox *list)
@@ -720,6 +766,12 @@ void SequenceWidget::InterruptibleChanged(int state)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->interruptible = state;
+
+	auto cur = switchData->extendedSequence.get();
+	while (cur != nullptr) {
+		cur->interruptible = state;
+		cur = cur->extendedSequence.get();
+	}
 }
 
 void SequenceWidget::UpdateExtendText()
