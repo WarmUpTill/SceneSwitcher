@@ -66,7 +66,7 @@ protected:
 	QPushButton *reduce;
 
 	// I would prefer having a list of only widgets of type editExtendMode
-	// but I am not sure how to implement that.
+	// but I am not sure how to best implement that using a QListWidget.
 	//
 	// So use edit button to bring up edit widget and
 	// add a label to disaplay current extended sequence state.
