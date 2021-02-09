@@ -428,9 +428,6 @@ void SwitcherData::Thread()
 		OBSWeakSource scene;
 		OBSWeakSource transition;
 
-		bool defTransitionMatch = false;
-		OBSWeakSource defTransition;
-
 		endTime = std::chrono::high_resolution_clock::now();
 
 		auto runTime =
@@ -465,8 +462,6 @@ void SwitcherData::Thread()
 		if (checkPause()) {
 			continue;
 		}
-
-		checkDefaultSceneTransitions(defTransitionMatch, defTransition);
 
 		for (int switchFuncName : functionNamesByPriority) {
 			switch (switchFuncName) {
@@ -543,10 +538,6 @@ void SwitcherData::Thread()
 		// During this time SaveSceneSwitcher() could be called
 		// leading to a deadlock, so we have to unlock()
 		lock.unlock();
-
-		if (!match && defTransitionMatch) {
-			setCurrentDefTransition(defTransition);
-		}
 
 		if (match) {
 			switchScene(scene, transition,
@@ -658,12 +649,8 @@ void handleSceneChange(SwitcherData *s)
 		s->previousSceneHelper = ws;
 	}
 
-	switcher->checkTriggers();
-}
-
-void handleTransitionStop(SwitcherData *s)
-{
-	s->checkedDefTransition = false;
+	s->checkTriggers();
+	s->checkDefaultSceneTransitions();
 }
 
 void setLiveTime(SwitcherData *s)
@@ -701,9 +688,6 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 		break;
 	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
 		handleSceneChange((SwitcherData *)switcher);
-		break;
-	case OBS_FRONTEND_EVENT_TRANSITION_STOPPED:
-		handleTransitionStop((SwitcherData *)switcher);
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
 		setLiveTime((SwitcherData *)switcher);
