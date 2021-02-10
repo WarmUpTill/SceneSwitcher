@@ -34,12 +34,14 @@ struct SceneSequenceSwitch : SceneSwitcherEntry {
 	bool reduce();
 	SceneSequenceSwitch *extend();
 
-	bool checkMatch(OBSWeakSource currentScene, int &linger);
+	bool checkMatch(OBSWeakSource currentScene, int &linger,
+			SceneSequenceSwitch *root = nullptr);
 	bool checkDurationMatchInterruptible();
 	void prepareUninterruptibleMatch(OBSWeakSource currentScene,
 					 int &linger);
 	void advanceActiveSequence();
 	void logAdvanceSequence();
+	void logSequenceCanceled();
 };
 
 class SequenceWidget : public SwitchWidget {

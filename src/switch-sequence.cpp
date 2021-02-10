@@ -417,7 +417,8 @@ SceneSequenceSwitch *SceneSequenceSwitch::extend()
 	return extendedSequence.get();
 }
 
-bool SceneSequenceSwitch::checkMatch(OBSWeakSource currentScene, int &linger)
+bool SceneSequenceSwitch::checkMatch(OBSWeakSource currentScene, int &linger,
+				     SceneSequenceSwitch *root)
 {
 	if (!initialized()) {
 		return false;
@@ -426,7 +427,7 @@ bool SceneSequenceSwitch::checkMatch(OBSWeakSource currentScene, int &linger)
 	bool match = false;
 
 	if (activeSequence) {
-		return activeSequence->checkMatch(currentScene, linger);
+		return activeSequence->checkMatch(currentScene, linger, this);
 	}
 
 	if (startScene == currentScene) {
@@ -438,6 +439,11 @@ bool SceneSequenceSwitch::checkMatch(OBSWeakSource currentScene, int &linger)
 		}
 	} else {
 		matchCount = 0;
+
+		if (root) {
+			root->activeSequence = nullptr;
+			logSequenceCanceled();
+		}
 	}
 
 	return match;
@@ -486,6 +492,11 @@ void SceneSequenceSwitch::logAdvanceSequence()
 		blog(LOG_INFO, "continuing sequence with %s",
 		     GetWeakSourceName(activeSequence->startScene).c_str());
 	}
+}
+
+void SceneSequenceSwitch::logSequenceCanceled()
+{
+	blog(LOG_INFO, "unexpected scene change - cancel sequence");
 }
 
 void populateDelayUnits(QComboBox *list)
