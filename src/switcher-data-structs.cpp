@@ -49,6 +49,7 @@ void SwitcherData::Prune()
 			if (cur->extendedSequence &&
 			    !cur->extendedSequence->valid()) {
 				cur->extendedSequence.reset(nullptr);
+				s.activeSequence = nullptr;
 			}
 			cur = cur->extendedSequence.get();
 		}
