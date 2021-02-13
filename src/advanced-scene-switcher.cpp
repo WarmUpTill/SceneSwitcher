@@ -454,61 +454,17 @@ void SwitcherData::Thread()
 		linger = 0;
 
 		switcher->Prune();
-
 		if (switcher->stop) {
 			break;
 		}
-
 		if (checkPause()) {
 			continue;
 		}
-
-		for (int switchFuncName : functionNamesByPriority) {
-			switch (switchFuncName) {
-			case read_file_func:
-				checkSwitchInfoFromFile(match, scene,
-							transition);
-				checkFileContent(match, scene, transition);
-				break;
-			case idle_func:
-				checkIdleSwitch(match, scene, transition);
-				break;
-			case exe_func:
-				checkExeSwitch(match, scene, transition);
-				break;
-			case screen_region_func:
-				checkScreenRegionSwitch(match, scene,
-							transition);
-				break;
-			case window_title_func:
-				checkWindowTitleSwitch(match, scene,
-						       transition);
-				break;
-			case round_trip_func:
-				checkSceneSequence(match, scene, transition,
-						   linger);
-				break;
-			case media_func:
-				checkMediaSwitch(match, scene, transition);
-				break;
-			case time_func:
-				checkTimeSwitch(match, scene, transition);
-				break;
-			case audio_func:
-				checkAudioSwitch(match, scene, transition);
-				break;
-			}
-
-			if (switcher->stop) {
-				goto endLoop;
-			}
-			if (match) {
-				break;
-			}
+		match = checkForMatch(scene, transition, linger);
+		if (switcher->stop) {
+			break;
 		}
-
 		checkNoMatchSwitch(match, scene, transition, sleep);
-
 		checkSwitchCooldown(match);
 
 		if (linger) {
@@ -546,8 +502,62 @@ void SwitcherData::Thread()
 
 		writeSceneInfoToFile();
 	}
-endLoop:
+
 	blog(LOG_INFO, "stopped");
+}
+
+bool SwitcherData::checkForMatch(OBSWeakSource &scene,
+				 OBSWeakSource &transition, int &linger)
+{
+	bool match = false;
+
+	if (sceneSequenceActive) {
+		checkSceneSequence(match, scene, transition, linger);
+		if (match) {
+			return match;
+		}
+	}
+
+	for (int switchFuncName : functionNamesByPriority) {
+		switch (switchFuncName) {
+		case read_file_func:
+			checkSwitchInfoFromFile(match, scene, transition);
+			checkFileContent(match, scene, transition);
+			break;
+		case idle_func:
+			checkIdleSwitch(match, scene, transition);
+			break;
+		case exe_func:
+			checkExeSwitch(match, scene, transition);
+			break;
+		case screen_region_func:
+			checkScreenRegionSwitch(match, scene, transition);
+			break;
+		case window_title_func:
+			checkWindowTitleSwitch(match, scene, transition);
+			break;
+		case round_trip_func:
+			checkSceneSequence(match, scene, transition, linger);
+			break;
+		case media_func:
+			checkMediaSwitch(match, scene, transition);
+			break;
+		case time_func:
+			checkTimeSwitch(match, scene, transition);
+			break;
+		case audio_func:
+			checkAudioSwitch(match, scene, transition);
+			break;
+		}
+
+		if (switcher->stop) {
+			return false;
+		}
+		if (match) {
+			break;
+		}
+	}
+	return match;
 }
 
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,

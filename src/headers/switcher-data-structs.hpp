@@ -84,7 +84,7 @@ struct SwitcherData {
 
 	std::vector<std::string> ignoreWindowsSwitches;
 
-	bool extendedSequenceActive = false;
+	bool sceneSequenceActive = false;
 	std::deque<SceneSequenceSwitch> sceneSequenceSwitches;
 
 	std::deque<RandomSwitch> randomSwitches;
@@ -160,11 +160,14 @@ struct SwitcherData {
 	void Stop();
 
 	bool sceneChangedDuringWait();
+
 	bool prioFuncsValid();
+
 	void writeSceneInfoToFile();
 	void writeToStatusFile(QString status);
-	bool checkPause();
-	void checkDefaultSceneTransitions();
+
+	bool checkForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
+			   int &linger);
 	void checkSceneSequence(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition, int &linger);
 	void checkIdleSwitch(bool &match, OBSWeakSource &scene,
@@ -193,6 +196,8 @@ struct SwitcherData {
 				OBSWeakSource &transition, int &sleep);
 	void checkSwitchCooldown(bool &match);
 	void checkTriggers();
+	bool checkPause();
+	void checkDefaultSceneTransitions();
 
 	void saveSettings(obs_data_t *obj);
 	void saveWindowTitleSwitches(obs_data_t *obj);

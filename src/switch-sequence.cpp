@@ -189,6 +189,8 @@ void AdvSceneSwitcher::on_sequenceEdit_clicked()
 void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 				      OBSWeakSource &transition, int &linger)
 {
+	switcher->sceneSequenceActive = false;
+
 	if (SceneSequenceSwitch::pause) {
 		return;
 	}
@@ -217,6 +219,13 @@ void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 			s.advanceActiveSequence();
 			if (switcher->verbose) {
 				s.logAdvanceSequence();
+			}
+
+			// Ignore other switching methods if sequence is not
+			// interruptible and has not reached its end
+			if (s.activeSequence) {
+				switcher->sceneSequenceActive =
+					!s.interruptible;
 			}
 		}
 	}
@@ -421,6 +430,9 @@ bool SceneSequenceSwitch::checkMatch(OBSWeakSource currentScene, int &linger,
 				     SceneSequenceSwitch *root)
 {
 	if (!initialized()) {
+		if (root) {
+			root->activeSequence = nullptr;
+		}
 		return false;
 	}
 
@@ -489,8 +501,9 @@ void SceneSequenceSwitch::advanceActiveSequence()
 void SceneSequenceSwitch::logAdvanceSequence()
 {
 	if (activeSequence) {
-		blog(LOG_INFO, "continuing sequence with %s",
-		     GetWeakSourceName(activeSequence->startScene).c_str());
+		blog(LOG_INFO, "continuing sequence with '%s' -> '%s'",
+		     GetWeakSourceName(activeSequence->startScene).c_str(),
+		     GetWeakSourceName(activeSequence->scene).c_str());
 	}
 }
 
