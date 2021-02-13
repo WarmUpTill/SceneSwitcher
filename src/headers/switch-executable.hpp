@@ -6,26 +6,20 @@ constexpr auto exe_func = 3;
 constexpr auto default_priority_3 = exe_func;
 
 struct ExecutableSwitch : SceneSwitcherEntry {
+	static bool pause;
 	QString exe = "";
 	bool inFocus = false;
 
 	const char *getType() { return "exec"; }
-
-	inline ExecutableSwitch(){};
-	inline ExecutableSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-				const QString &exe_, bool inFocus_)
-		: SceneSwitcherEntry(scene_, transition_),
-		  exe(exe_),
-		  inFocus(inFocus_)
-	{
-	}
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 };
 
 class ExecutableSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	ExecutableSwitchWidget(ExecutableSwitch *s);
+	ExecutableSwitchWidget(QWidget *parent, ExecutableSwitch *s);
 	ExecutableSwitch *getSwitchData();
 	void setSwitchData(ExecutableSwitch *s);
 

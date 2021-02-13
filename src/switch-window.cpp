@@ -1,29 +1,30 @@
+#include <regex>
+
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+bool WindowSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_windowAdd_clicked()
 {
-	ui->windowAdd->disconnect(addPulse);
-
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->windowSwitches.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->windowSwitches);
-	ui->windowSwitches->addItem(item);
-	WindowSwitchWidget *sw =
-		new WindowSwitchWidget(&switcher->windowSwitches.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->windowSwitches->setItemWidget(item, sw);
+	listAddClicked(ui->windowSwitches,
+		       new WindowSwitchWidget(this,
+					      &switcher->windowSwitches.back()),
+		       ui->windowAdd, &addPulse);
+
+	ui->windowHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_windowRemove_clicked()
 {
 	QListWidgetItem *item = ui->windowSwitches->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -38,8 +39,9 @@ void AdvSceneSwitcher::on_windowRemove_clicked()
 void AdvSceneSwitcher::on_windowUp_clicked()
 {
 	int index = ui->windowSwitches->currentRow();
-	if (!listMoveUp(ui->windowSwitches))
+	if (!listMoveUp(ui->windowSwitches)) {
 		return;
+	}
 
 	WindowSwitchWidget *s1 =
 		(WindowSwitchWidget *)ui->windowSwitches->itemWidget(
@@ -59,8 +61,9 @@ void AdvSceneSwitcher::on_windowDown_clicked()
 {
 	int index = ui->windowSwitches->currentRow();
 
-	if (!listMoveDown(ui->windowSwitches))
+	if (!listMoveDown(ui->windowSwitches)) {
 		return;
+	}
 
 	WindowSwitchWidget *s1 =
 		(WindowSwitchWidget *)ui->windowSwitches->itemWidget(
@@ -80,8 +83,9 @@ void AdvSceneSwitcher::on_ignoreWindowsAdd_clicked()
 {
 	QString windowName = ui->ignoreWindowsWindows->currentText();
 
-	if (windowName.isEmpty())
+	if (windowName.isEmpty()) {
 		return;
+	}
 
 	QVariant v = QVariant::fromValue(windowName);
 
@@ -97,13 +101,16 @@ void AdvSceneSwitcher::on_ignoreWindowsAdd_clicked()
 		switcher->ignoreWindowsSwitches.emplace_back(
 			windowName.toUtf8().constData());
 	}
+
+	ui->ignoreWindowHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_ignoreWindowsRemove_clicked()
 {
 	QListWidgetItem *item = ui->ignoreWindows->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	QString windowName = item->data(Qt::UserRole).toString();
 
@@ -144,10 +151,12 @@ int AdvSceneSwitcher::IgnoreWindowsFindByData(const QString &window)
 
 void AdvSceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
 {
-	if (loading)
+	if (loading) {
 		return;
-	if (idx == -1)
+	}
+	if (idx == -1) {
 		return;
+	}
 
 	QListWidgetItem *item = ui->ignoreWindows->item(idx);
 
@@ -162,85 +171,100 @@ void AdvSceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
 	}
 }
 
-bool isRunning(std::string &title)
+void checkWindowTitleSwitchDirect(WindowSwitch &s,
+				  std::string &currentWindowTitle, bool &match,
+				  OBSWeakSource &scene,
+				  OBSWeakSource &transition)
 {
-	QStringList windows;
+	bool focus = s.window == currentWindowTitle;
+	bool fullscreen = (!s.fullscreen || isFullscreen(s.window));
+	bool max = (!s.maximized || isMaximized(s.window));
 
-	GetWindowList(windows);
-	// True if switch is running (direct)
-	bool equals = windows.contains(QString::fromStdString(title));
-	// True if switch is running (regex)
-	bool matches = (windows.indexOf(QRegularExpression(
-				QString::fromStdString(title))) != -1);
-
-	return (equals || matches);
+	if (focus && fullscreen && max) {
+		match = true;
+		scene = s.getScene();
+		transition = s.transition;
+	}
 }
 
-bool isFocused(std::string &title)
+void checkWindowTitleSwitchRegex(WindowSwitch &s,
+				 std::string &currentWindowTitle,
+				 std::vector<std::string> windowList,
+				 bool &match, OBSWeakSource &scene,
+				 OBSWeakSource &transition)
 {
-	std::string current;
+	for (auto &window : windowList) {
+		try {
+			std::regex expr(s.window);
+			if (!std::regex_match(window, expr)) {
+				continue;
+			}
+		} catch (const std::regex_error &) {
+		}
 
-	GetCurrentWindowTitle(current);
-	// True if switch equals current window
-	bool equals = (title == current);
-	// True if switch matches current window
-	bool matches = QString::fromStdString(current).contains(
-		QRegularExpression(QString::fromStdString(title)));
+		bool focus = window == currentWindowTitle;
+		bool fullscreen = (!s.fullscreen || isFullscreen(window));
+		bool max = (!s.maximized || isMaximized(window));
 
-	return (equals || matches);
+		if (focus && fullscreen && max) {
+			match = true;
+			scene = s.getScene();
+			transition = s.transition;
+		}
+	}
 }
 
 void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 					  OBSWeakSource &transition)
 {
-	std::string title;
-	bool ignored = false;
+	if (WindowSwitch::pause) {
+		return;
+	}
+
+	std::string currentWindowTitle;
+	GetCurrentWindowTitle(currentWindowTitle);
 
 	// Check if current window is ignored
-	GetCurrentWindowTitle(title);
 	for (auto &window : ignoreWindowsSwitches) {
-		// True if ignored switch equals current window
-		bool equals = (title == window);
-		// True if ignored switch matches current window
-		bool matches = QString::fromStdString(title).contains(
-			QRegularExpression(QString::fromStdString(window)));
+		bool equals = (currentWindowTitle == window);
 
-		if (equals || matches) {
-			ignored = true;
-			title = lastTitle;
+		try {
+			std::regex expr(window);
+			bool matches =
+				std::regex_match(currentWindowTitle, expr);
 
-			break;
+			if (equals || matches) {
+				currentWindowTitle = lastTitle;
+				break;
+			}
+		} catch (const std::regex_error &) {
 		}
 	}
-	lastTitle = title;
 
-	// Check for match
+	lastTitle = currentWindowTitle;
+
+	std::vector<std::string> windowList;
+	GetWindowList(windowList);
+
 	for (WindowSwitch &s : windowSwitches) {
-		if (!s.initialized())
+		if (!s.initialized()) {
 			continue;
+		}
 
-		// True if fullscreen is disabled OR current window is fullscreen
-		bool fullscreen = (!s.fullscreen || isFullscreen(s.window));
-		// True if maximized is disabled OR current window is maximized
-		bool max = (!s.maximized || isMaximized(s.window));
-		// True if focus is disabled OR switch is focused
-		bool focus = (!s.focus || isFocused(s.window));
-		// True if current window is ignored AND switch equals OR matches last window
-		bool ignore =
-			(ignored &&
-			 (title == s.window ||
-			  QString::fromStdString(title).contains(
-				  QRegularExpression(
-					  QString::fromStdString(s.window)))));
+		if (std::find(windowList.begin(), windowList.end(), s.window) !=
+		    windowList.end()) {
+			checkWindowTitleSwitchDirect(s, currentWindowTitle,
+						     match, scene, transition);
+		} else {
+			checkWindowTitleSwitchRegex(s, currentWindowTitle,
+						    windowList, match, scene,
+						    transition);
+		}
 
-		if (isRunning(s.window) &&
-		    (fullscreen && (max && (focus || ignore)))) {
-			match = true;
-			scene = s.scene;
-			transition = s.transition;
-
-			if (verbose)
+		if (match) {
+			if (verbose) {
 				s.logMatch();
+			}
 			break;
 		}
 	}
@@ -252,26 +276,9 @@ void SwitcherData::saveWindowTitleSwitches(obs_data_t *obj)
 	for (WindowSwitch &s : switcher->windowSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source = obs_weak_source_get_source(s.scene);
-		obs_source_t *transition =
-			obs_weak_source_get_source(s.transition);
-		if (source && transition) {
-			const char *sceneName = obs_source_get_name(source);
-			const char *transitionName =
-				obs_source_get_name(transition);
-			obs_data_set_string(array_obj, "scene", sceneName);
-			obs_data_set_string(array_obj, "transition",
-					    transitionName);
-			obs_data_set_string(array_obj, "window_title",
-					    s.window.c_str());
-			obs_data_set_bool(array_obj, "fullscreen",
-					  s.fullscreen);
-			obs_data_set_bool(array_obj, "maximized", s.maximized);
-			obs_data_set_bool(array_obj, "focus", s.focus);
-			obs_data_array_push_back(windowTitleArray, array_obj);
-		}
-		obs_source_release(source);
-		obs_source_release(transition);
+		s.save(array_obj);
+		obs_data_array_push_back(windowTitleArray, array_obj);
+
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "switches", windowTitleArray);
@@ -300,26 +307,8 @@ void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
 		obs_data_t *array_obj =
 			obs_data_array_item(windowTitleArray, i);
 
-		const char *scene = obs_data_get_string(array_obj, "scene");
-		const char *transition =
-			obs_data_get_string(array_obj, "transition");
-		const char *window =
-			obs_data_get_string(array_obj, "window_title");
-		bool fullscreen = obs_data_get_bool(array_obj, "fullscreen");
-#if __APPLE__
-		// TODO:
-		// not implemented on MacOS as I cannot test it
-		bool maximized = false;
-#else
-		bool maximized = obs_data_get_bool(array_obj, "maximized");
-#endif
-		bool focus = obs_data_get_bool(array_obj, "focus") ||
-			     !obs_data_has_user_value(array_obj, "focus");
-
-		switcher->windowSwitches.emplace_back(
-			GetWeakSourceByName(scene), window,
-			GetWeakTransitionByName(transition), fullscreen,
-			maximized, focus);
+		switcher->windowSwitches.emplace_back();
+		windowSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
 	}
@@ -351,13 +340,17 @@ void AdvSceneSwitcher::setupTitleTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->windowSwitches);
 		ui->windowSwitches->addItem(item);
-		WindowSwitchWidget *sw = new WindowSwitchWidget(&s);
+		WindowSwitchWidget *sw = new WindowSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->windowSwitches->setItemWidget(item, sw);
 	}
 
-	if (switcher->windowSwitches.size() == 0)
+	if (switcher->windowSwitches.size() == 0) {
 		addPulse = PulseWidget(ui->windowAdd, QColor(Qt::green));
+		ui->windowHelp->setVisible(true);
+	} else {
+		ui->windowHelp->setVisible(false);
+	}
 
 	populateWindowSelection(ui->ignoreWindowsWindows);
 
@@ -368,9 +361,81 @@ void AdvSceneSwitcher::setupTitleTab()
 			new QListWidgetItem(text, ui->ignoreWindows);
 		item->setData(Qt::UserRole, text);
 	}
+
+	if (switcher->ignoreWindowsSwitches.size() == 0) {
+		ui->ignoreWindowHelp->setVisible(true);
+	} else {
+		ui->ignoreWindowHelp->setVisible(false);
+	}
 }
 
-WindowSwitchWidget::WindowSwitchWidget(WindowSwitch *s) : SwitchWidget(s, false)
+void WindowSwitch::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj);
+
+	obs_data_set_string(obj, "windowTitle", window.c_str());
+	obs_data_set_bool(obj, "fullscreen", fullscreen);
+	obs_data_set_bool(obj, "maximized", maximized);
+	obs_data_set_bool(obj, "focus", focus);
+}
+
+// To be removed in future version
+bool loadOldWindow(obs_data_t *obj, WindowSwitch *s)
+{
+	if (!s) {
+		return false;
+	}
+
+	const char *scene = obs_data_get_string(obj, "scene");
+
+	if (strcmp(scene, "") == 0) {
+		return false;
+	}
+
+	s->scene = GetWeakSourceByName(scene);
+
+	const char *transition = obs_data_get_string(obj, "transition");
+	s->transition = GetWeakTransitionByName(transition);
+
+	s->window = obs_data_get_string(obj, "window_title");
+	s->fullscreen = obs_data_get_bool(obj, "fullscreen");
+#if __APPLE__
+	// TODO:
+	// not implemented on MacOS as I cannot test it
+	s->maximized = false;
+#else
+	s->maximized = obs_data_get_bool(obj, "maximized");
+#endif
+	s->focus = obs_data_get_bool(obj, "focus") ||
+		   !obs_data_has_user_value(obj, "focus");
+	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
+
+	return true;
+}
+
+void WindowSwitch::load(obs_data_t *obj)
+{
+	if (loadOldWindow(obj, this)) {
+		return;
+	}
+
+	SceneSwitcherEntry::load(obj);
+
+	window = obs_data_get_string(obj, "windowTitle");
+	fullscreen = obs_data_get_bool(obj, "fullscreen");
+#if __APPLE__
+	// TODO:
+	// not implemented on MacOS as I cannot test it
+	maximized = false;
+#else
+	maximized = obs_data_get_bool(obj, "maximized");
+#endif
+	focus = obs_data_get_bool(obj, "focus") ||
+		!obs_data_has_user_value(obj, "focus");
+}
+
+WindowSwitchWidget::WindowSwitchWidget(QWidget *parent, WindowSwitch *s)
+	: SwitchWidget(parent, s, true, true)
 {
 	windows = new QComboBox();
 	fullscreen = new QCheckBox(
@@ -406,8 +471,6 @@ WindowSwitchWidget::WindowSwitchWidget(WindowSwitch *s) : SwitchWidget(s, false)
 		maximized->setChecked(s->maximized);
 		focused->setChecked(s->focus);
 	}
-
-	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -448,32 +511,40 @@ void WindowSwitchWidget::swapSwitchData(WindowSwitchWidget *s1,
 
 void WindowSwitchWidget::WindowChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->window = text.toStdString();
 }
 
 void WindowSwitchWidget::FullscreenChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->fullscreen = state;
 }
 
 void WindowSwitchWidget::MaximizedChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->maximized = state;
 }
 
 void WindowSwitchWidget::FocusChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->focus = state;
 }

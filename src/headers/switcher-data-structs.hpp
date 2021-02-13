@@ -7,11 +7,14 @@
 #include <QThread>
 #include <curl/curl.h>
 
+#include "scene-group.hpp"
+#include "scene-trigger.hpp"
 #include "switch-audio.hpp"
 #include "switch-executable.hpp"
 #include "switch-file.hpp"
 #include "switch-idle.hpp"
 #include "switch-media.hpp"
+#include "switch-pause.hpp"
 #include "switch-random.hpp"
 #include "switch-screen-region.hpp"
 #include "switch-time.hpp"
@@ -24,11 +27,13 @@ constexpr auto previous_scene_name = "Previous Scene";
 
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 typedef enum { PERSIST = 0, START = 1, STOP = 2 } StartupBehavior;
-typedef enum {
-	RECORDING = 0,
-	STREAMING = 1,
-	RECORINDGSTREAMING = 2
-} AutoStartType;
+
+enum class AutoStartEvent {
+	NEVER,
+	RECORDING,
+	STREAMING,
+	RECORINDG_OR_STREAMING,
+};
 
 typedef struct transitionData {
 	std::string name = "";
@@ -59,23 +64,23 @@ struct SwitcherData {
 
 	obs_source_t *waitScene = nullptr;
 	OBSWeakSource previousScene = nullptr;
-	OBSWeakSource previousScene2 = nullptr;
+	OBSWeakSource previousSceneHelper = nullptr;
 	OBSWeakSource lastRandomScene;
 	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
 	double noMatchDelay;
 	double noMatchCount = 0;
 	StartupBehavior startupBehavior = PERSIST;
+	AutoStartEvent autoStartEvent = AutoStartEvent::NEVER;
+
+	double cooldown = 0.;
+	std::chrono::high_resolution_clock::time_point lastMatchTime;
 
 	std::deque<WindowSwitch> windowSwitches;
 	std::vector<std::string> ignoreIdleWindows;
 	std::string lastTitle;
 
 	std::deque<ScreenRegionSwitch> screenRegionSwitches;
-
-	std::vector<OBSWeakSource> pauseScenesSwitches;
-
-	std::vector<std::string> pauseWindowsSwitches;
 
 	std::vector<std::string> ignoreWindowsSwitches;
 
@@ -91,24 +96,22 @@ struct SwitcherData {
 
 	std::deque<ExecutableSwitch> executableSwitches;
 
-	bool autoStopEnable = false;
-	OBSWeakSource autoStopScene;
-
-	bool autoStartEnable = false;
-	AutoStartType autoStartType = RECORDING;
-	OBSWeakSource autoStartScene;
-	bool autoStartedRecently = false;
+	std::deque<SceneTrigger> sceneTriggers;
 
 	std::deque<SceneTransition> sceneTransitions;
 	std::deque<DefaultSceneTransition> defaultSceneTransitions;
-	bool checkedDefTransition = false;
 
 	std::deque<MediaSwitch> mediaSwitches;
+
+	std::deque<PauseEntry> pauseEntries;
 
 	std::deque<TimeSwitch> timeSwitches;
 	QDateTime liveTime;
 
 	std::deque<AudioSwitch> audioSwitches;
+	AudioSwitchFallback audioFallback;
+
+	std::deque<SceneGroup> sceneGroups;
 
 	std::vector<int> functionNamesByPriority = std::vector<int>{
 		default_priority_0, default_priority_1, default_priority_2,
@@ -149,6 +152,8 @@ struct SwitcherData {
 	obs_hotkey_id stopHotkey = 0;
 	obs_hotkey_id toggleHotkey = 0;
 
+	bool versionChanged(obs_data_t *obj, std::string currentVersion);
+
 	void Thread();
 	void Start();
 	void Stop();
@@ -157,15 +162,10 @@ struct SwitcherData {
 	bool prioFuncsValid();
 	void writeSceneInfoToFile();
 	void writeToStatusFile(QString status);
-	void autoStopStreamAndRecording();
-	void autoStartStreamRecording();
 	bool checkPause();
-	void checkDefaultSceneTransitions(bool &match,
-					  OBSWeakSource &transition);
-	void setCurrentDefTransition(OBSWeakSource &transition);
+	void checkDefaultSceneTransitions();
 	void checkSceneSequence(bool &match, OBSWeakSource &scene,
-				OBSWeakSource &transition,
-				std::unique_lock<std::mutex> &lock);
+				OBSWeakSource &transition, int &linger);
 	void checkIdleSwitch(bool &match, OBSWeakSource &scene,
 			     OBSWeakSource &transition);
 	void checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
@@ -186,9 +186,14 @@ struct SwitcherData {
 			     OBSWeakSource &transition);
 	void checkAudioSwitch(bool &match, OBSWeakSource &scene,
 			      OBSWeakSource &transition);
+	void checkAudioSwitchFallback(OBSWeakSource &scene,
+				      OBSWeakSource &transition);
 	void checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition, int &sleep);
+	void checkSwitchCooldown(bool &match);
+	void checkTriggers();
 
+	void saveSettings(obs_data_t *obj);
 	void saveWindowTitleSwitches(obs_data_t *obj);
 	void saveScreenRegionSwitches(obs_data_t *obj);
 	void savePauseSwitches(obs_data_t *obj);
@@ -201,12 +206,17 @@ struct SwitcherData {
 	void saveMediaSwitches(obs_data_t *obj);
 	void saveTimeSwitches(obs_data_t *obj);
 	void saveAudioSwitches(obs_data_t *obj);
+	void saveSceneGroups(obs_data_t *obj);
+	void saveSceneTriggers(obs_data_t *obj);
 	void saveGeneralSettings(obs_data_t *obj);
 	void saveHotkeys(obs_data_t *obj);
+	void saveVersion(obs_data_t *obj, std::string currentVersion);
 
+	void loadSettings(obs_data_t *obj);
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
 	void loadPauseSwitches(obs_data_t *obj);
+	void loadOldPauseSwitches(obs_data_t *obj);
 	void loadSceneSequenceSwitches(obs_data_t *obj);
 	void loadSceneTransitions(obs_data_t *obj);
 	void loadIdleSwitches(obs_data_t *obj);
@@ -216,6 +226,8 @@ struct SwitcherData {
 	void loadMediaSwitches(obs_data_t *obj);
 	void loadTimeSwitches(obs_data_t *obj);
 	void loadAudioSwitches(obs_data_t *obj);
+	void loadSceneGroups(obs_data_t *obj);
+	void loadSceneTriggers(obs_data_t *obj);
 	void loadGeneralSettings(obs_data_t *obj);
 	void loadHotkeys(obs_data_t *obj);
 

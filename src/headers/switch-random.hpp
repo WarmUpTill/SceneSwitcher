@@ -2,23 +2,19 @@
 #include "switch-generic.hpp"
 
 struct RandomSwitch : SceneSwitcherEntry {
+	static bool pause;
 	double delay = 0.0;
 
 	const char *getType() { return "random"; }
-
-	inline RandomSwitch() {}
-	inline RandomSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-			    double delay_)
-		: SceneSwitcherEntry(scene_, transition_), delay(delay_)
-	{
-	}
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 };
 
 class RandomSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	RandomSwitchWidget(RandomSwitch *s);
+	RandomSwitchWidget(QWidget *parent, RandomSwitch *s);
 	RandomSwitch *getSwitchData();
 	void setSwitchData(RandomSwitch *s);
 

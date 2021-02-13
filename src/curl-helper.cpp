@@ -54,9 +54,9 @@ bool loadCurl()
 			     libFilePath.toUtf8().constData());
 
 			loaded_curl_lib = new QLibrary(libFilePath, nullptr);
-			if (resolveCurl())
+			if (resolveCurl()) {
 				return true;
-			else {
+			} else {
 				delete loaded_curl_lib;
 				loaded_curl_lib = nullptr;
 			}

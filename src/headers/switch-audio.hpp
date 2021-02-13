@@ -7,15 +7,26 @@
 constexpr auto audio_func = 8;
 constexpr auto default_priority_8 = audio_func;
 
+typedef enum {
+	ABOVE,
+	BELOW,
+} audioCondition;
+
 struct AudioSwitch : virtual SceneSwitcherEntry {
+	static bool pause;
 	OBSWeakSource audioSource = nullptr;
 	int volumeThreshold = 0;
+	audioCondition condition = ABOVE;
+	double duration = 0;
+	unsigned int matchCount = 0;
 	float peak = -1;
 	obs_volmeter_t *volmeter = nullptr;
 
 	const char *getType() { return "audio"; }
 	bool initialized();
 	bool valid();
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 	static void setVolumeLevel(void *data,
 				   const float magnitude[MAX_AUDIO_CHANNELS],
 				   const float peak[MAX_AUDIO_CHANNELS],
@@ -23,9 +34,6 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	void resetVolmeter();
 
 	AudioSwitch(){};
-	AudioSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-		    OBSWeakSource audioSource_, int volumeThreshold_,
-		    bool usePreviousScene_);
 	AudioSwitch(const AudioSwitch &other);
 	AudioSwitch(AudioSwitch &&other);
 	~AudioSwitch();
@@ -34,11 +42,21 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	friend void swap(AudioSwitch &first, AudioSwitch &second);
 };
 
+struct AudioSwitchFallback : virtual SceneSwitcherEntry {
+	const char *getType() { return "audio_fallback"; }
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
+
+	bool enable = false;
+	double duration = 0;
+	unsigned int matchCount = 0;
+};
+
 class AudioSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	AudioSwitchWidget(AudioSwitch *s);
+	AudioSwitchWidget(QWidget *parent, AudioSwitch *s);
 	void UpdateVolmeterSource();
 	AudioSwitch *getSwitchData();
 	void setSwitchData(AudioSwitch *s);
@@ -49,11 +67,30 @@ public:
 private slots:
 	void SourceChanged(const QString &text);
 	void VolumeThresholdChanged(int vol);
+	void ConditionChanged(int cond);
+	void DurationChanged(double dur);
 
 private:
 	QComboBox *audioSources;
+	QComboBox *condition;
 	QSpinBox *audioVolumeThreshold;
+	QDoubleSpinBox *duration;
 	VolControl *volMeter;
 
 	AudioSwitch *switchData;
+};
+
+class AudioSwitchFallbackWidget : public SwitchWidget {
+	Q_OBJECT
+
+public:
+	AudioSwitchFallbackWidget(QWidget *parent, AudioSwitchFallback *s);
+
+private slots:
+	void DurationChanged(double dur);
+
+private:
+	QDoubleSpinBox *duration;
+
+	AudioSwitchFallback *switchData;
 };

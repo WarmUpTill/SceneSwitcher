@@ -17,8 +17,11 @@ struct SceneTransition : SceneSwitcherEntry {
 };
 
 struct DefaultSceneTransition : SceneSwitcherEntry {
+	static bool pause;
 
 	const char *getType() { return "def_transition"; }
+	bool checkMatch(OBSWeakSource currentScene);
+	void setTransition();
 
 	inline DefaultSceneTransition(){};
 	inline DefaultSceneTransition(OBSWeakSource scene_,
@@ -32,7 +35,7 @@ class TransitionSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	TransitionSwitchWidget(SceneTransition *s);
+	TransitionSwitchWidget(QWidget *parent, SceneTransition *s);
 	SceneTransition *getSwitchData();
 	void setSwitchData(SceneTransition *s);
 
@@ -52,7 +55,7 @@ class DefTransitionSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	DefTransitionSwitchWidget(DefaultSceneTransition *s);
+	DefTransitionSwitchWidget(QWidget *parent, DefaultSceneTransition *s);
 	DefaultSceneTransition *getSwitchData();
 	void setSwitchData(DefaultSceneTransition *s);
 

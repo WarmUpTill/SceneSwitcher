@@ -13,19 +13,20 @@ typedef enum {
 } time_restriction;
 
 struct MediaSwitch : SceneSwitcherEntry {
+	static bool pause;
 	OBSWeakSource source = nullptr;
 	obs_media_state state = OBS_MEDIA_STATE_NONE;
 	bool anyState = false;
 	time_restriction restriction = TIME_RESTRICTION_NONE;
 	int64_t time = 0;
 
-	// trigger scene change only once even if media state might trigger repeatedly
+	// Trigger scene change only once even if media state might trigger repeatedly
 	bool matched = false;
 
-	std::atomic<bool> stopped = false;
-	std::atomic<bool> ended = false;
+	std::atomic_bool stopped = {false};
+	std::atomic_bool ended = {false};
 
-	// workaround to enable use of "ended" to specify end of VLC playlist
+	// Workaround to enable use of "ended" to specify end of VLC playlist
 	bool previousStateEnded = false;
 
 	bool playedToEnd = false;
@@ -33,6 +34,8 @@ struct MediaSwitch : SceneSwitcherEntry {
 	const char *getType() { return "media"; }
 	bool initialized();
 	bool valid();
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 
 	void clearSignalHandler();
 	void resetSignalHandler();
@@ -40,10 +43,7 @@ struct MediaSwitch : SceneSwitcherEntry {
 	static void MediaEnded(void *data, calldata_t *);
 
 	inline MediaSwitch(){};
-	inline MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
-			   OBSWeakSource transition_, obs_media_state state_,
-			   time_restriction restriction_, uint64_t time_,
-			   bool usePreviousScene_);
+
 	MediaSwitch(const MediaSwitch &other);
 	MediaSwitch(MediaSwitch &&other);
 	~MediaSwitch();
@@ -56,7 +56,7 @@ class MediaSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	MediaSwitchWidget(MediaSwitch *s);
+	MediaSwitchWidget(QWidget *parent, MediaSwitch *s);
 	MediaSwitch *getSwitchData();
 	void setSwitchData(MediaSwitch *s);
 
@@ -70,7 +70,7 @@ private slots:
 	void TimeChanged(int time);
 
 private:
-	QComboBox *meidaSources;
+	QComboBox *mediaSources;
 	QComboBox *states;
 	QComboBox *timeRestrictions;
 	QSpinBox *time;

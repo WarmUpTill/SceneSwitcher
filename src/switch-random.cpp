@@ -3,29 +3,28 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+bool RandomSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_randomAdd_clicked()
 {
-	ui->randomAdd->disconnect(addPulse);
-
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->randomSwitches.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->randomSwitches);
-	ui->randomSwitches->addItem(item);
-	RandomSwitchWidget *sw =
-		new RandomSwitchWidget(&switcher->randomSwitches.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->randomSwitches->setItemWidget(item, sw);
+	listAddClicked(ui->randomSwitches,
+		       new RandomSwitchWidget(this,
+					      &switcher->randomSwitches.back()),
+		       ui->randomAdd, &addPulse);
+
+	ui->randomHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_randomRemove_clicked()
 {
 	QListWidgetItem *item = ui->randomSwitches->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -40,27 +39,32 @@ void AdvSceneSwitcher::on_randomRemove_clicked()
 void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
 			       OBSWeakSource &transition, int &delay)
 {
-	if (randomSwitches.size() == 0)
+	if (randomSwitches.size() == 0 || RandomSwitch::pause) {
 		return;
+	}
 
 	std::deque<RandomSwitch> rs(randomSwitches);
 	std::random_device rng;
 	std::mt19937 urng(rng());
 	std::shuffle(rs.begin(), rs.end(), urng);
 	for (RandomSwitch &r : rs) {
-		if (!r.initialized())
+		if (!r.initialized()) {
 			continue;
+		}
 
-		if (r.scene == lastRandomScene && randomSwitches.size() != 1)
+		if (r.scene == lastRandomScene && randomSwitches.size() != 1) {
 			continue;
-		scene = r.scene;
+		}
+
+		scene = r.getScene();
 		transition = r.transition;
 		delay = (int)r.delay * 1000;
 		match = true;
 		lastRandomScene = r.scene;
 
-		if (verbose)
+		if (verbose) {
 			r.logMatch();
+		}
 		break;
 	}
 }
@@ -71,22 +75,9 @@ void SwitcherData::saveRandomSwitches(obs_data_t *obj)
 	for (RandomSwitch &s : switcher->randomSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source = obs_weak_source_get_source(s.scene);
-		obs_source_t *transition =
-			obs_weak_source_get_source(s.transition);
+		s.save(array_obj);
+		obs_data_array_push_back(randomArray, array_obj);
 
-		if (source && transition) {
-			const char *sceneName = obs_source_get_name(source);
-			const char *transitionName =
-				obs_source_get_name(transition);
-			obs_data_set_string(array_obj, "scene", sceneName);
-			obs_data_set_string(array_obj, "transition",
-					    transitionName);
-			obs_data_set_double(array_obj, "delay", s.delay);
-			obs_data_array_push_back(randomArray, array_obj);
-		}
-		obs_source_release(source);
-		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "randomSwitches", randomArray);
@@ -104,14 +95,8 @@ void SwitcherData::loadRandomSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(randomArray, i);
 
-		const char *scene = obs_data_get_string(array_obj, "scene");
-		const char *transition =
-			obs_data_get_string(array_obj, "transition");
-		double delay = obs_data_get_double(array_obj, "delay");
-
-		switcher->randomSwitches.emplace_back(
-			GetWeakSourceByName(scene),
-			GetWeakTransitionByName(transition), delay);
+		switcher->randomSwitches.emplace_back();
+		randomSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
 	}
@@ -124,22 +109,40 @@ void AdvSceneSwitcher::setupRandomTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->randomSwitches);
 		ui->randomSwitches->addItem(item);
-		RandomSwitchWidget *sw = new RandomSwitchWidget(&s);
+		RandomSwitchWidget *sw = new RandomSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->randomSwitches->setItemWidget(item, sw);
 	}
 
-	if (switcher->randomSwitches.size() == 0)
+	if (switcher->randomSwitches.size() == 0) {
 		addPulse = PulseWidget(ui->randomAdd, QColor(Qt::green));
+		ui->randomHelp->setVisible(true);
+	} else {
+		ui->randomHelp->setVisible(false);
+	}
 
-	if (switcher->switchIfNotMatching != RANDOM_SWITCH)
+	if (switcher->switchIfNotMatching != RANDOM_SWITCH) {
 		PulseWidget(ui->randomDisabledWarning, QColor(Qt::red),
 			    QColor(0, 0, 0, 0), "QLabel ");
-	else
+	} else {
 		ui->randomDisabledWarning->setVisible(false);
+	}
 }
 
-RandomSwitchWidget::RandomSwitchWidget(RandomSwitch *s) : SwitchWidget(s, false)
+void RandomSwitch::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj, "targetType", "scene");
+	obs_data_set_double(obj, "delay", delay);
+}
+
+void RandomSwitch::load(obs_data_t *obj)
+{
+	SceneSwitcherEntry::load(obj, "targetType", "scene");
+	delay = obs_data_get_double(obj, "delay");
+}
+
+RandomSwitchWidget::RandomSwitchWidget(QWidget *parent, RandomSwitch *s)
+	: SwitchWidget(parent, s, false, false)
 {
 	delay = new QDoubleSpinBox();
 
@@ -152,8 +155,6 @@ RandomSwitchWidget::RandomSwitchWidget(RandomSwitch *s) : SwitchWidget(s, false)
 	if (s) {
 		delay->setValue(s->delay);
 	}
-
-	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -191,8 +192,10 @@ void RandomSwitchWidget::swapSwitchData(RandomSwitchWidget *s1,
 
 void RandomSwitchWidget::DelayChanged(double d)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->delay = d;
 }

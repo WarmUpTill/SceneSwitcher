@@ -1,25 +1,28 @@
+#include <thread>
+
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
+
+bool DefaultSceneTransition::pause = false;
 
 void AdvSceneSwitcher::on_transitionsAdd_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->sceneTransitions.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->sceneTransitions);
-	ui->sceneTransitions->addItem(item);
-	TransitionSwitchWidget *sw =
-		new TransitionSwitchWidget(&switcher->sceneTransitions.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->sceneTransitions->setItemWidget(item, sw);
+	listAddClicked(ui->sceneTransitions,
+		       new TransitionSwitchWidget(
+			       this, &switcher->sceneTransitions.back()));
+
+	ui->transitionHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_transitionsRemove_clicked()
 {
 	QListWidgetItem *item = ui->sceneTransitions->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -34,8 +37,9 @@ void AdvSceneSwitcher::on_transitionsRemove_clicked()
 void AdvSceneSwitcher::on_transitionsUp_clicked()
 {
 	int index = ui->sceneTransitions->currentRow();
-	if (!listMoveUp(ui->sceneTransitions))
+	if (!listMoveUp(ui->sceneTransitions)) {
 		return;
+	}
 
 	TransitionSwitchWidget *s1 =
 		(TransitionSwitchWidget *)ui->sceneTransitions->itemWidget(
@@ -55,8 +59,9 @@ void AdvSceneSwitcher::on_transitionsDown_clicked()
 {
 	int index = ui->sceneTransitions->currentRow();
 
-	if (!listMoveDown(ui->sceneTransitions))
+	if (!listMoveDown(ui->sceneTransitions)) {
 		return;
+	}
 
 	TransitionSwitchWidget *s1 =
 		(TransitionSwitchWidget *)ui->sceneTransitions->itemWidget(
@@ -77,20 +82,20 @@ void AdvSceneSwitcher::on_defaultTransitionsAdd_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->defaultSceneTransitions.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->defaultTransitions);
-	ui->defaultTransitions->addItem(item);
-	DefTransitionSwitchWidget *sw = new DefTransitionSwitchWidget(
-		&switcher->defaultSceneTransitions.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->defaultTransitions->setItemWidget(item, sw);
+	listAddClicked(ui->defaultTransitions,
+		       new DefTransitionSwitchWidget(
+			       this,
+			       &switcher->defaultSceneTransitions.back()));
+
+	ui->defaultTransitionHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_defaultTransitionsRemove_clicked()
 {
 	QListWidgetItem *item = ui->defaultTransitions->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -105,8 +110,9 @@ void AdvSceneSwitcher::on_defaultTransitionsRemove_clicked()
 void AdvSceneSwitcher::on_defaultTransitionsUp_clicked()
 {
 	int index = ui->defaultTransitions->currentRow();
-	if (!listMoveUp(ui->defaultTransitions))
+	if (!listMoveUp(ui->defaultTransitions)) {
 		return;
+	}
 
 	TransitionSwitchWidget *s1 =
 		(TransitionSwitchWidget *)ui->defaultTransitions->itemWidget(
@@ -126,8 +132,9 @@ void AdvSceneSwitcher::on_defaultTransitionsDown_clicked()
 {
 	int index = ui->defaultTransitions->currentRow();
 
-	if (!listMoveDown(ui->defaultTransitions))
+	if (!listMoveDown(ui->defaultTransitions)) {
 		return;
+	}
 
 	DefTransitionSwitchWidget *s1 =
 		(DefTransitionSwitchWidget *)ui->defaultTransitions->itemWidget(
@@ -143,45 +150,35 @@ void AdvSceneSwitcher::on_defaultTransitionsDown_clicked()
 		  switcher->defaultSceneTransitions[index + 1]);
 }
 
-void SwitcherData::checkDefaultSceneTransitions(bool &match,
-						OBSWeakSource &transition)
+void SwitcherData::checkDefaultSceneTransitions()
 {
-	if (checkedDefTransition)
+	if (DefaultSceneTransition::pause || stop) {
 		return;
+	}
 
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
-	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
+	obs_source_t *currentSceneSource = obs_frontend_get_current_scene();
+	obs_weak_source_t *currentScene =
+		obs_source_get_weak_source(currentSceneSource);
 
-	for (DefaultSceneTransition &s : defaultSceneTransitions) {
-		if (s.scene == ws) {
-			if (!s.initialized())
-				continue;
-
-			match = true;
-			transition = s.transition;
-
-			if (verbose)
-				s.logMatch();
+	for (auto &t : defaultSceneTransitions) {
+		if (t.checkMatch(currentScene)) {
+			if (verbose) {
+				t.logMatch();
+			}
+			t.setTransition();
 			break;
 		}
 	}
-	obs_source_release(currentSource);
-	obs_weak_source_release(ws);
 
-	checkedDefTransition = true;
-}
-
-void SwitcherData::setCurrentDefTransition(OBSWeakSource &transition)
-{
-	obs_source_t *transitionSource = obs_weak_source_get_source(transition);
-	obs_frontend_set_current_transition(transitionSource);
-	obs_source_release(transitionSource);
+	obs_weak_source_release(currentScene);
+	obs_source_release(currentSceneSource);
 }
 
 void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	if (!state) {
@@ -197,8 +194,9 @@ obs_weak_source_t *getNextTransition(obs_weak_source_t *scene1,
 	obs_weak_source_t *ws = nullptr;
 	if (scene1 && scene2) {
 		for (SceneTransition &t : switcher->sceneTransitions) {
-			if (!t.initialized())
+			if (!t.initialized()) {
 				continue;
+			}
 
 			if (t.scene == scene1 && t.scene2 == scene2) {
 				ws = t.transition;
@@ -260,8 +258,9 @@ void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 		obs_frontend_set_current_transition(nextTransition);
 	}
 
-	if (transitionOverrideOverride)
+	if (transitionOverrideOverride) {
 		overwriteTransitionOverride(targetScene, nextTransition, td);
+	}
 
 	obs_weak_source_release(nextTransitionWs);
 	obs_source_release(nextTransition);
@@ -383,9 +382,16 @@ void AdvSceneSwitcher::setupTransitionsTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->sceneTransitions);
 		ui->sceneTransitions->addItem(item);
-		TransitionSwitchWidget *sw = new TransitionSwitchWidget(&s);
+		TransitionSwitchWidget *sw =
+			new TransitionSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->sceneTransitions->setItemWidget(item, sw);
+	}
+
+	if (switcher->sceneTransitions.size() == 0) {
+		ui->transitionHelp->setVisible(true);
+	} else {
+		ui->transitionHelp->setVisible(false);
 	}
 
 	for (auto &s : switcher->defaultSceneTransitions) {
@@ -393,9 +399,15 @@ void AdvSceneSwitcher::setupTransitionsTab()
 		item = new QListWidgetItem(ui->defaultTransitions);
 		ui->defaultTransitions->addItem(item);
 		DefTransitionSwitchWidget *sw =
-			new DefTransitionSwitchWidget(&s);
+			new DefTransitionSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->defaultTransitions->setItemWidget(item, sw);
+	}
+
+	if (switcher->defaultSceneTransitions.size() == 0) {
+		ui->defaultTransitionHelp->setVisible(true);
+	} else {
+		ui->defaultTransitionHelp->setVisible(false);
 	}
 
 	ui->transitionOverridecheckBox->setChecked(
@@ -413,8 +425,9 @@ bool SceneTransition::valid()
 	       (SceneSwitcherEntry::valid() && WeakSourceValid(scene2));
 }
 
-TransitionSwitchWidget::TransitionSwitchWidget(SceneTransition *s)
-	: SwitchWidget(s, false)
+TransitionSwitchWidget::TransitionSwitchWidget(QWidget *parent,
+					       SceneTransition *s)
+	: SwitchWidget(parent, s, false)
 {
 	scenes2 = new QComboBox();
 
@@ -426,8 +439,6 @@ TransitionSwitchWidget::TransitionSwitchWidget(SceneTransition *s)
 	if (s) {
 		scenes2->setCurrentText(GetWeakSourceName(s->scene2).c_str());
 	}
-
-	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -465,17 +476,18 @@ void TransitionSwitchWidget::swapSwitchData(TransitionSwitchWidget *s1,
 
 void TransitionSwitchWidget::Scene2Changed(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->scene2 = GetWeakSourceByQString(text);
 }
 
-DefTransitionSwitchWidget::DefTransitionSwitchWidget(DefaultSceneTransition *s)
-	: SwitchWidget(s, false)
+DefTransitionSwitchWidget::DefTransitionSwitchWidget(QWidget *parent,
+						     DefaultSceneTransition *s)
+	: SwitchWidget(parent, s, false)
 {
-	setStyleSheet("* { background-color: transparent; }");
-
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", scenes}, {"{{transitions}}", transitions}};
@@ -508,4 +520,38 @@ void DefTransitionSwitchWidget::swapSwitchData(DefTransitionSwitchWidget *s1,
 	DefaultSceneTransition *t = s1->getSwitchData();
 	s1->setSwitchData(s2->getSwitchData());
 	s2->setSwitchData(t);
+}
+
+bool DefaultSceneTransition::checkMatch(OBSWeakSource currentScene)
+{
+	return scene == currentScene;
+}
+
+void setTransitionDelayed(OBSWeakSource transition)
+{
+	// A hardcoded delay of 50 ms before switching transition type is
+	// necessary due to OBS_FRONTEND_EVENT_SCENE_CHANGED seemingly firing a
+	// bit too early and thus leading to canceled transitions.
+	//
+	// The same is to be the case for OBS_FRONTEND_EVENT_TRANSITION_STOPPED.
+	//
+	// 50 ms was chosen as it seems to avoid the problem mentioned above and
+	// becuase that is the minimum value which can be chosen for the scene
+	// switcher's check interval.
+	// Thus it can be made sure that the delayed setting of the transition
+	// does not interfere with any new scene changes triggered by the scene
+	// switcher
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+	obs_source_t *transitionSource = obs_weak_source_get_source(transition);
+	obs_frontend_set_current_transition(transitionSource);
+	obs_source_release(transitionSource);
+}
+
+void DefaultSceneTransition::setTransition()
+{
+	std::thread t;
+	t = std::thread(setTransitionDelayed, transition);
+	t.detach();
 }

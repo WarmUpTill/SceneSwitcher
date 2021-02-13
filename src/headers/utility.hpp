@@ -9,11 +9,20 @@
 #include <obs-module.h>
 #include <obs-frontend-api.h>
 
+static inline bool SceneGroupValid(SceneGroup *group)
+{
+	if (group) {
+		return group->name != invalid_scene_group_name;
+	}
+	return false;
+}
+
 static inline bool WeakSourceValid(obs_weak_source_t *ws)
 {
 	obs_source_t *source = obs_weak_source_get_source(ws);
-	if (source)
+	if (source) {
 		obs_source_release(source);
+	}
 	return !!source;
 }
 
@@ -28,6 +37,26 @@ static inline std::string GetWeakSourceName(obs_weak_source_t *weak_source)
 	}
 
 	return name;
+}
+
+static inline SceneGroup *GetSceneGroupByName(const char *name)
+{
+	if (!switcher) {
+		return nullptr;
+	}
+
+	for (SceneGroup &sg : switcher->sceneGroups) {
+		if (sg.name == name) {
+			return &sg;
+		}
+	}
+
+	return nullptr;
+}
+
+static inline SceneGroup *GetSceneGroupByQString(const QString &name)
+{
+	return GetSceneGroupByName(name.toUtf8().constData());
 }
 
 static inline OBSWeakSource GetWeakSourceByName(const char *name)
@@ -104,8 +133,9 @@ getNextDelim(std::string text,
 		}
 	}
 
-	if (pos == std::string::npos)
+	if (pos == std::string::npos) {
 		return "";
+	}
 
 	return res;
 }
@@ -141,11 +171,14 @@ placeWidgets(std::string text, QBoxLayout *layout,
 	}
 
 	for (auto &lw : labelsWidgetsPairs) {
-		if (lw.first != "")
+		if (lw.first != "") {
 			layout->addWidget(new QLabel(lw.first.c_str()));
-		if (lw.second)
+		}
+		if (lw.second) {
 			layout->addWidget(lw.second);
+		}
 	}
-	if (addStretch)
+	if (addStretch) {
 		layout->addStretch();
+	}
 }

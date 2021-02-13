@@ -3,6 +3,7 @@
 #include <QtGui/qstandarditemmodel.h>
 #include <QPropertyAnimation>
 #include <QGraphicsColorizeEffect>
+#include <QMessageBox>
 
 #include <obs-module.h>
 #include <obs-frontend-api.h>
@@ -14,9 +15,9 @@
 
 SwitcherData *switcher = nullptr;
 
-/********************************************************************************
+/******************************************************************************
  * Create the Advanced Scene Switcher settings window
- ********************************************************************************/
+ ******************************************************************************/
 AdvSceneSwitcher::AdvSceneSwitcher(QWidget *parent)
 	: QDialog(parent), ui(new Ui_AdvSceneSwitcher)
 {
@@ -28,8 +29,20 @@ AdvSceneSwitcher::AdvSceneSwitcher(QWidget *parent)
 	loadUI();
 }
 
+bool translationAvailable()
+{
+	return !!strcmp(obs_module_text("AdvSceneSwitcher.pluginName"),
+			"AdvSceneSwitcher.pluginName");
+}
+
 void AdvSceneSwitcher::loadUI()
 {
+	if (!translationAvailable()) {
+		(void)DisplayMessage(
+			"Failed to find plug-in's 'data' directory.\n"
+			"Please check installation instructions!");
+	}
+
 #if __APPLE__
 	setMinimumHeight(700);
 #endif
@@ -46,15 +59,38 @@ void AdvSceneSwitcher::loadUI()
 	setupFileTab();
 	setupTimeTab();
 	setupAudioTab();
+	setupSceneGroupTab();
+	setupTriggerTab();
 
 	setTabOrder();
 
 	loading = false;
 }
 
-/********************************************************************************
+/******************************************************************************
  * UI helpers
- ********************************************************************************/
+ ******************************************************************************/
+bool AdvSceneSwitcher::DisplayMessage(QString msg, bool question)
+{
+	if (question) {
+		QMessageBox::StandardButton reply;
+		reply = QMessageBox::question(
+			nullptr, "Advanced Scene Switcher", msg,
+			QMessageBox::Yes | QMessageBox::No);
+		if (reply == QMessageBox::Yes) {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		QMessageBox Msgbox;
+		Msgbox.setWindowTitle("Advanced Scene Switcher");
+		Msgbox.setText(msg);
+		Msgbox.exec();
+	}
+
+	return false;
+}
 
 void addSelectionEntry(QComboBox *sel, const char *description,
 		       const char *tooltip = "")
@@ -75,13 +111,23 @@ void addSelectionEntry(QComboBox *sel, const char *description,
 }
 
 void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
-					      bool addSelect)
+					      bool addSceneGroup,
+					      bool addSelect,
+					      std::string selectText)
 {
-	if (addSelect)
-		addSelectionEntry(
-			sel, obs_module_text("AdvSceneSwitcher.selectScene"),
-			obs_module_text(
-				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
+	sel->clear();
+
+	if (addSelect) {
+		if (selectText.empty()) {
+			addSelectionEntry(
+				sel,
+				obs_module_text("AdvSceneSwitcher.selectScene"),
+				obs_module_text(
+					"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
+		} else {
+			addSelectionEntry(sel, selectText.c_str());
+		}
+	}
 
 	BPtr<char *> scenes = obs_frontend_get_scene_names();
 	char **temp = scenes;
@@ -91,17 +137,26 @@ void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 		temp++;
 	}
 
-	if (addPrevious)
-		sel->addItem(previous_scene_name);
+	if (addPrevious) {
+		sel->addItem(obs_module_text(
+			"AdvSceneSwitcher.selectPreviousScene"));
+	}
+
+	if (addSceneGroup) {
+		for (auto &sg : switcher->sceneGroups) {
+			sel->addItem(QString::fromStdString(sg.name));
+		}
+	}
 }
 
 void AdvSceneSwitcher::populateTransitionSelection(QComboBox *sel,
 						   bool addSelect)
 {
-	if (addSelect)
+	if (addSelect) {
 		addSelectionEntry(
 			sel,
 			obs_module_text("AdvSceneSwitcher.selectTransition"));
+	}
 
 	obs_frontend_source_list *transitions = new obs_frontend_source_list();
 	obs_frontend_get_transitions(transitions);
@@ -117,9 +172,10 @@ void AdvSceneSwitcher::populateTransitionSelection(QComboBox *sel,
 
 void AdvSceneSwitcher::populateWindowSelection(QComboBox *sel, bool addSelect)
 {
-	if (addSelect)
+	if (addSelect) {
 		addSelectionEntry(
 			sel, obs_module_text("AdvSceneSwitcher.selectWindow"));
+	}
 
 	std::vector<std::string> windows;
 	GetWindowList(windows);
@@ -137,69 +193,108 @@ void AdvSceneSwitcher::populateWindowSelection(QComboBox *sel, bool addSelect)
 
 void AdvSceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
 {
-	if (addSelect)
+	if (addSelect) {
 		addSelectionEntry(
 			sel,
 			obs_module_text("AdvSceneSwitcher.selectAudioSource"),
 			obs_module_text(
 				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
+	}
 
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
-		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
+		std::vector<std::string> *list =
+			reinterpret_cast<std::vector<std::string> *>(data);
 		uint32_t flags = obs_source_get_output_flags(source);
 
 		if ((flags & OBS_SOURCE_AUDIO) != 0) {
-			const char *name = obs_source_get_name(source);
-			combo->addItem(name);
+			list->push_back(obs_source_get_name(source));
 		}
 		return true;
 	};
 
-	obs_enum_sources(sourceEnum, sel);
+	std::vector<std::string> audioSources;
+	obs_enum_sources(sourceEnum, &audioSources);
+	sort(audioSources.begin(), audioSources.end());
+	for (std::string &source : audioSources) {
+		sel->addItem(source.c_str());
+	}
 }
 
 void AdvSceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
 {
-	if (addSelect)
+	if (addSelect) {
 		addSelectionEntry(
 			sel,
 			obs_module_text("AdvSceneSwitcher.selectMediaSource"),
 			obs_module_text(
 				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
+	}
 
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
-		QComboBox *combo = reinterpret_cast<QComboBox *>(data);
+		std::vector<std::string> *list =
+			reinterpret_cast<std::vector<std::string> *>(data);
 		std::string sourceId = obs_source_get_id(source);
 		if (sourceId.compare("ffmpeg_source") == 0 ||
 		    sourceId.compare("vlc_source") == 0) {
-			const char *name = obs_source_get_name(source);
-			combo->addItem(name);
+			list->push_back(obs_source_get_name(source));
 		}
 		return true;
 	};
 
-	obs_enum_sources(sourceEnum, sel);
+	std::vector<std::string> mediaSources;
+	obs_enum_sources(sourceEnum, &mediaSources);
+	sort(mediaSources.begin(), mediaSources.end());
+	for (std::string &source : mediaSources) {
+		sel->addItem(source.c_str());
+	}
 }
 
 void AdvSceneSwitcher::populateProcessSelection(QComboBox *sel, bool addSelect)
 {
-	if (addSelect)
+	if (addSelect) {
 		addSelectionEntry(
 			sel, obs_module_text("AdvSceneSwitcher.selectProcess"));
+	}
 
 	QStringList processes;
 	GetProcessList(processes);
+	processes.sort();
 	for (QString &process : processes)
 		sel->addItem(process);
+}
+
+void AdvSceneSwitcher::listAddClicked(QListWidget *list,
+				      SwitchWidget *newWidget,
+				      QPushButton *addButton,
+				      QMetaObject::Connection *addHighlight)
+{
+	if (!list || !newWidget) {
+		blog(LOG_WARNING,
+		     "listAddClicked called without valid list or widget");
+		return;
+	}
+
+	if (addButton && addHighlight) {
+		addButton->disconnect(*addHighlight);
+	}
+
+	QListWidgetItem *item;
+	item = new QListWidgetItem(list);
+	list->addItem(item);
+	item->setSizeHint(newWidget->minimumSizeHint());
+	list->setItemWidget(item, newWidget);
+
+	list->scrollToItem(item);
 }
 
 bool AdvSceneSwitcher::listMoveUp(QListWidget *list)
 {
 	int index = list->currentRow();
-	if (index == -1 || index == 0)
+	if (index == -1 || index == 0) {
 		return false;
+	}
 
 	QWidget *row = list->itemWidget(list->currentItem());
 	QListWidgetItem *itemN = list->currentItem()->clone();
@@ -215,8 +310,9 @@ bool AdvSceneSwitcher::listMoveUp(QListWidget *list)
 bool AdvSceneSwitcher::listMoveDown(QListWidget *list)
 {
 	int index = list->currentRow();
-	if (index == -1 || index == list->count() - 1)
+	if (index == -1 || index == list->count() - 1) {
 		return false;
+	}
 
 	QWidget *row = list->itemWidget(list->currentItem());
 	QListWidgetItem *itemN = list->currentItem()->clone();
@@ -234,8 +330,9 @@ QMetaObject::Connection AdvSceneSwitcher::PulseWidget(QWidget *widget,
 						      QColor startColor,
 						      QString specifier)
 {
-	if (switcher->disableHints)
+	if (switcher->disableHints) {
 		return QMetaObject::Connection();
+	}
 
 	widget->setStyleSheet(specifier + "{ \
 		border-style: outset; \
@@ -251,7 +348,7 @@ QMetaObject::Connection AdvSceneSwitcher::PulseWidget(QWidget *widget,
 	paAnimation->setStartValue(startColor);
 	paAnimation->setEndValue(endColor);
 	paAnimation->setDuration(1000);
-	// play backward to return to original state on timer end
+	// Play backwards to return to original state on timer end
 	paAnimation->setDirection(QAbstractAnimation::Backward);
 
 	auto con = QWidget::connect(
@@ -266,9 +363,9 @@ QMetaObject::Connection AdvSceneSwitcher::PulseWidget(QWidget *widget,
 	return con;
 }
 
-/********************************************************************************
+/******************************************************************************
  * Saving and loading
- ********************************************************************************/
+ ******************************************************************************/
 static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 {
 	if (saving) {
@@ -278,20 +375,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 		obs_data_t *obj = obs_data_create();
 
-		switcher->saveWindowTitleSwitches(obj);
-		switcher->saveScreenRegionSwitches(obj);
-		switcher->savePauseSwitches(obj);
-		switcher->saveSceneSequenceSwitches(obj);
-		switcher->saveSceneTransitions(obj);
-		switcher->saveIdleSwitches(obj);
-		switcher->saveExecutableSwitches(obj);
-		switcher->saveRandomSwitches(obj);
-		switcher->saveFileSwitches(obj);
-		switcher->saveMediaSwitches(obj);
-		switcher->saveTimeSwitches(obj);
-		switcher->saveAudioSwitches(obj);
-		switcher->saveGeneralSettings(obj);
-		switcher->saveHotkeys(obj);
+		switcher->saveSettings(obj);
 
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
 
@@ -302,44 +386,37 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_t *obj =
 			obs_data_get_obj(save_data, "advanced-scene-switcher");
 
-		if (!obj)
+		if (!obj) {
 			obj = obs_data_create();
+		}
+		if (switcher->versionChanged(obj, g_GIT_SHA1)) {
+			AdvSceneSwitcher::AskBackup(obj);
+		}
 
-		switcher->loadWindowTitleSwitches(obj);
-		switcher->loadScreenRegionSwitches(obj);
-		switcher->loadPauseSwitches(obj);
-		switcher->loadSceneSequenceSwitches(obj);
-		switcher->loadSceneTransitions(obj);
-		switcher->loadIdleSwitches(obj);
-		switcher->loadExecutableSwitches(obj);
-		switcher->loadRandomSwitches(obj);
-		switcher->loadFileSwitches(obj);
-		switcher->loadMediaSwitches(obj);
-		switcher->loadTimeSwitches(obj);
-		switcher->loadAudioSwitches(obj);
-		switcher->loadGeneralSettings(obj);
-		switcher->loadHotkeys(obj);
+		switcher->loadSettings(obj);
 
 		obs_data_release(obj);
 
 		switcher->m.unlock();
 
-		// stop the scene switcher at least once
-		// to avoid issues with scene collection changes
+		// Stop the scene switcher at least once to
+		// avoid scene duplication issues with scene collection changes
 		bool start = !switcher->stop;
 		switcher->Stop();
-		if (start)
+		if (start) {
 			switcher->Start();
+		}
 	}
 }
 
-/********************************************************************************
+/******************************************************************************
  * Main switcher thread
- ********************************************************************************/
+ ******************************************************************************/
 void SwitcherData::Thread()
 {
 	blog(LOG_INFO, "started");
 	int sleep = 0;
+	int linger = 0;
 	std::chrono::milliseconds duration;
 	auto startTime = std::chrono::high_resolution_clock::now();
 	auto endTime = std::chrono::high_resolution_clock::now();
@@ -351,9 +428,6 @@ void SwitcherData::Thread()
 		OBSWeakSource scene;
 		OBSWeakSource transition;
 
-		bool defTransitionMatch = false;
-		OBSWeakSource defTransition;
-
 		endTime = std::chrono::high_resolution_clock::now();
 
 		auto runTime =
@@ -363,8 +437,8 @@ void SwitcherData::Thread()
 		if (sleep) {
 			duration = std::chrono::milliseconds(sleep);
 		} else {
-			duration =
-				std::chrono::milliseconds(interval) - runTime;
+			duration = std::chrono::milliseconds(interval) +
+				   std::chrono::milliseconds(linger) - runTime;
 			if (duration.count() < 1) {
 				blog(LOG_INFO,
 				     "detected busy loop - refusing to sleep less than 1ms");
@@ -372,13 +446,12 @@ void SwitcherData::Thread()
 			}
 		}
 
-		//sleep for a bit
-		if (verbose)
-			blog(LOG_INFO, "sleep for %d", duration.count());
+		vblog(LOG_INFO, "try to sleep for %ld", duration.count());
 		cv.wait_for(lock, duration);
 
 		startTime = std::chrono::high_resolution_clock::now();
 		sleep = 0;
+		linger = 0;
 
 		switcher->Prune();
 
@@ -386,19 +459,9 @@ void SwitcherData::Thread()
 			break;
 		}
 
-		if (autoStopEnable) {
-			autoStopStreamAndRecording();
-		}
-
-		if (autoStartEnable) {
-			autoStartStreamRecording();
-		}
-
 		if (checkPause()) {
 			continue;
 		}
-
-		checkDefaultSceneTransitions(defTransitionMatch, defTransition);
 
 		for (int switchFuncName : functionNamesByPriority) {
 			switch (switchFuncName) {
@@ -423,7 +486,7 @@ void SwitcherData::Thread()
 				break;
 			case round_trip_func:
 				checkSceneSequence(match, scene, transition,
-						   lock);
+						   linger);
 				break;
 			case media_func:
 				checkMediaSwitch(match, scene, transition);
@@ -446,6 +509,28 @@ void SwitcherData::Thread()
 
 		checkNoMatchSwitch(match, scene, transition, sleep);
 
+		checkSwitchCooldown(match);
+
+		if (linger) {
+			duration = std::chrono::milliseconds(linger);
+			vblog(LOG_INFO, "sleep for %ld before switching scene",
+			      duration.count());
+
+			cv.wait_for(lock, duration);
+
+			if (switcher->stop) {
+				break;
+			}
+
+			if (sceneChangedDuringWait()) {
+				vblog(LOG_INFO,
+				      "scene was changed manually - ignoring match");
+
+				match = false;
+				linger = 0;
+			}
+		}
+
 		// After this point we will call frontend functions
 		// obs_frontend_set_current_scene() and
 		// obs_frontend_set_current_transition()
@@ -453,10 +538,6 @@ void SwitcherData::Thread()
 		// During this time SaveSceneSwitcher() could be called
 		// leading to a deadlock, so we have to unlock()
 		lock.unlock();
-
-		if (!match && defTransitionMatch) {
-			setCurrentDefTransition(defTransition);
-		}
 
 		if (match) {
 			switchScene(scene, transition,
@@ -472,6 +553,11 @@ endLoop:
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 		 bool &transitionOverrideOverride)
 {
+	if (!scene && switcher->verbose) {
+		blog(LOG_INFO, "nothing to switch to");
+		return;
+	}
+
 	obs_source_t *source = obs_weak_source_get_source(scene);
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 
@@ -480,11 +566,13 @@ void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 		setNextTransition(scene, currentSource, transition,
 				  transitionOverrideOverride, td);
 		obs_frontend_set_current_scene(source);
-		if (transitionOverrideOverride)
+		if (transitionOverrideOverride) {
 			restoreTransitionOverride(source, td);
+		}
 
-		if (switcher->verbose)
+		if (switcher->verbose) {
 			blog(LOG_INFO, "switched scene");
+		}
 	}
 	obs_source_release(currentSource);
 	obs_source_release(source);
@@ -520,20 +608,22 @@ void SwitcherData::Stop()
 bool SwitcherData::sceneChangedDuringWait()
 {
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
-	if (!currentSource)
+	if (!currentSource) {
 		return true;
+	}
 	obs_source_release(currentSource);
 	return (waitScene && currentSource != waitScene);
 }
 
-/********************************************************************************
+/******************************************************************************
  * OBS module setup
- ********************************************************************************/
+ ******************************************************************************/
 extern "C" void FreeSceneSwitcher()
 {
 	if (loaded_curl_lib) {
-		if (switcher->curl && f_curl_cleanup)
+		if (switcher->curl && f_curl_cleanup) {
 			f_curl_cleanup(switcher->curl);
+		}
 		delete loaded_curl_lib;
 		loaded_curl_lib = nullptr;
 	}
@@ -544,27 +634,23 @@ extern "C" void FreeSceneSwitcher()
 
 void handleSceneChange(SwitcherData *s)
 {
-	//stop waiting if scene was manually changed
-	if (s->sceneChangedDuringWait())
+	// Stop waiting if scene was changed
+	if (s->sceneChangedDuringWait()) {
 		s->cv.notify_one();
+	}
 
-	//set previous scene
+	// Set previous scene
 	obs_source_t *source = obs_frontend_get_current_scene();
 	obs_weak_source_t *ws = obs_source_get_weak_source(source);
 	obs_source_release(source);
 	obs_weak_source_release(ws);
-	if (source && s->previousScene2 != ws) {
-		s->previousScene = s->previousScene2;
-		s->previousScene2 = ws;
+	if (source && s->previousSceneHelper != ws) {
+		s->previousScene = s->previousSceneHelper;
+		s->previousSceneHelper = ws;
 	}
 
-	//reset events only hanled on scene change
-	s->autoStartedRecently = false;
-}
-
-void handleTransitionStop(SwitcherData *s)
-{
-	s->checkedDefTransition = false;
+	s->checkTriggers();
+	s->checkDefaultSceneTransitions();
 }
 
 void setLiveTime(SwitcherData *s)
@@ -575,6 +661,20 @@ void setLiveTime(SwitcherData *s)
 void resetLiveTime(SwitcherData *s)
 {
 	s->liveTime = QDateTime();
+}
+
+void checkAutoStartRecording(SwitcherData *s)
+{
+	if (s->autoStartEvent == AutoStartEvent::RECORDING ||
+	    s->autoStartEvent == AutoStartEvent::RECORINDG_OR_STREAMING)
+		s->Start();
+}
+
+void checkAutoStartStreaming(SwitcherData *s)
+{
+	if (s->autoStartEvent == AutoStartEvent::STREAMING ||
+	    s->autoStartEvent == AutoStartEvent::RECORINDG_OR_STREAMING)
+		s->Start();
 }
 
 // Note to future self:
@@ -589,12 +689,13 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
 		handleSceneChange((SwitcherData *)switcher);
 		break;
-	case OBS_FRONTEND_EVENT_TRANSITION_STOPPED:
-		handleTransitionStop((SwitcherData *)switcher);
-		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
+		setLiveTime((SwitcherData *)switcher);
+		checkAutoStartRecording((SwitcherData *)switcher);
+		break;
 	case OBS_FRONTEND_EVENT_STREAMING_STARTED:
 		setLiveTime((SwitcherData *)switcher);
+		checkAutoStartStreaming((SwitcherData *)switcher);
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
 	case OBS_FRONTEND_EVENT_STREAMING_STOPPED:

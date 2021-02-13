@@ -1,6 +1,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+bool MediaSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
 constexpr auto media_played_to_end_idx = 8;
@@ -8,25 +9,23 @@ constexpr auto media_any_idx = 9;
 
 void AdvSceneSwitcher::on_mediaAdd_clicked()
 {
-	ui->mediaAdd->disconnect(addPulse);
-
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->mediaSwitches.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->mediaSwitches);
-	ui->mediaSwitches->addItem(item);
-	MediaSwitchWidget *sw =
-		new MediaSwitchWidget(&switcher->mediaSwitches.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->mediaSwitches->setItemWidget(item, sw);
+	listAddClicked(ui->mediaSwitches,
+		       new MediaSwitchWidget(this,
+					     &switcher->mediaSwitches.back()),
+		       ui->mediaAdd, &addPulse);
+
+	ui->mediaHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_mediaRemove_clicked()
 {
 	QListWidgetItem *item = ui->mediaSwitches->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -41,8 +40,9 @@ void AdvSceneSwitcher::on_mediaRemove_clicked()
 void AdvSceneSwitcher::on_mediaUp_clicked()
 {
 	int index = ui->mediaSwitches->currentRow();
-	if (!listMoveUp(ui->mediaSwitches))
+	if (!listMoveUp(ui->mediaSwitches)) {
 		return;
+	}
 
 	MediaSwitchWidget *s1 =
 		(MediaSwitchWidget *)ui->mediaSwitches->itemWidget(
@@ -62,8 +62,9 @@ void AdvSceneSwitcher::on_mediaDown_clicked()
 {
 	int index = ui->mediaSwitches->currentRow();
 
-	if (!listMoveDown(ui->mediaSwitches))
+	if (!listMoveDown(ui->mediaSwitches)) {
 		return;
+	}
 
 	MediaSwitchWidget *s1 =
 		(MediaSwitchWidget *)ui->mediaSwitches->itemWidget(
@@ -82,9 +83,14 @@ void AdvSceneSwitcher::on_mediaDown_clicked()
 void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
+	if (MediaSwitch::pause) {
+		return;
+	}
+
 	for (MediaSwitch &mediaSwitch : mediaSwitches) {
-		if (!mediaSwitch.initialized())
+		if (!mediaSwitch.initialized()) {
 			continue;
+		}
 
 		obs_source_t *source =
 			obs_weak_source_get_source(mediaSwitch.source);
@@ -137,8 +143,9 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 					  (duration - time <= interval * 2);
 
 		// reset
-		if (ended)
+		if (ended) {
 			mediaSwitch.playedToEnd = false;
+		}
 
 		// reset for next check
 		mediaSwitch.stopped = false;
@@ -175,19 +182,19 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 
 		if (matched && !mediaSwitch.matched) {
 			match = true;
-			scene = (mediaSwitch.usePreviousScene)
-					? previousScene
-					: mediaSwitch.scene;
+			scene = mediaSwitch.getScene();
 			transition = mediaSwitch.transition;
 
-			if (verbose)
+			if (verbose) {
 				mediaSwitch.logMatch();
+			}
 		}
 
 		mediaSwitch.matched = matched;
 
-		if (match)
+		if (match) {
 			break;
+		}
 	}
 }
 
@@ -197,33 +204,8 @@ void SwitcherData::saveMediaSwitches(obs_data_t *obj)
 	for (MediaSwitch &s : switcher->mediaSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source = obs_weak_source_get_source(s.source);
-		obs_source_t *sceneSource = obs_weak_source_get_source(s.scene);
-		obs_source_t *transition =
-			obs_weak_source_get_source(s.transition);
-		if ((s.usePreviousScene || sceneSource) && source &&
-		    transition) {
-			const char *sourceName = obs_source_get_name(source);
-			const char *sceneName =
-				obs_source_get_name(sceneSource);
-			const char *transitionName =
-				obs_source_get_name(transition);
-			obs_data_set_string(array_obj, "source", sourceName);
-			obs_data_set_string(array_obj, "scene",
-					    s.usePreviousScene
-						    ? previous_scene_name
-						    : sceneName);
-			obs_data_set_string(array_obj, "transition",
-					    transitionName);
-			obs_data_set_int(array_obj, "state", s.state);
-			obs_data_set_int(array_obj, "restriction",
-					 s.restriction);
-			obs_data_set_int(array_obj, "time", s.time);
-			obs_data_array_push_back(mediaArray, array_obj);
-		}
-		obs_source_release(source);
-		obs_source_release(sceneSource);
-		obs_source_release(transition);
+		s.save(array_obj);
+		obs_data_array_push_back(mediaArray, array_obj);
 
 		obs_data_release(array_obj);
 	}
@@ -240,21 +222,8 @@ void SwitcherData::loadMediaSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(mediaArray, i);
 
-		const char *source = obs_data_get_string(array_obj, "source");
-		const char *scene = obs_data_get_string(array_obj, "scene");
-		const char *transition =
-			obs_data_get_string(array_obj, "transition");
-		obs_media_state state =
-			(obs_media_state)obs_data_get_int(array_obj, "state");
-		time_restriction restriction =
-			(time_restriction)obs_data_get_int(array_obj,
-							   "restriction");
-		uint64_t time = obs_data_get_int(array_obj, "time");
-
-		switcher->mediaSwitches.emplace_back(
-			GetWeakSourceByName(scene), GetWeakSourceByName(source),
-			GetWeakTransitionByName(transition), state, restriction,
-			time, (strcmp(scene, previous_scene_name) == 0));
+		switcher->mediaSwitches.emplace_back();
+		mediaSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
 	}
@@ -267,13 +236,17 @@ void AdvSceneSwitcher::setupMediaTab()
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->mediaSwitches);
 		ui->mediaSwitches->addItem(item);
-		MediaSwitchWidget *sw = new MediaSwitchWidget(&s);
+		MediaSwitchWidget *sw = new MediaSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->mediaSwitches->setItemWidget(item, sw);
 	}
 
-	if (switcher->mediaSwitches.size() == 0)
+	if (switcher->mediaSwitches.size() == 0) {
 		addPulse = PulseWidget(ui->mediaAdd, QColor(Qt::green));
+		ui->mediaHelp->setVisible(true);
+	} else {
+		ui->mediaHelp->setVisible(false);
+	}
 }
 
 bool MediaSwitch::initialized()
@@ -285,6 +258,70 @@ bool MediaSwitch::valid()
 {
 	return !initialized() ||
 	       (SceneSwitcherEntry::valid() && WeakSourceValid(source));
+}
+
+void MediaSwitch::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj);
+
+	obs_data_set_string(obj, "source", GetWeakSourceName(source).c_str());
+
+	obs_data_set_int(obj, "state", state);
+	obs_data_set_int(obj, "restriction", restriction);
+	obs_data_set_int(obj, "time", time);
+}
+
+// To be removed in future version
+bool loadOldMedia(obs_data_t *obj, MediaSwitch *s)
+{
+	if (!s) {
+		return false;
+	}
+
+	const char *scene = obs_data_get_string(obj, "scene");
+
+	if (strcmp(scene, "") == 0) {
+		return false;
+	}
+
+	s->scene = GetWeakSourceByName(scene);
+
+	const char *transition = obs_data_get_string(obj, "transition");
+	s->transition = GetWeakTransitionByName(transition);
+
+	const char *source = obs_data_get_string(obj, "source");
+	s->source = GetWeakSourceByName(source);
+
+	s->state = (obs_media_state)obs_data_get_int(obj, "state");
+	s->restriction = (time_restriction)obs_data_get_int(obj, "restriction");
+	s->time = obs_data_get_int(obj, "time");
+	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
+
+	return true;
+}
+
+void MediaSwitch::load(obs_data_t *obj)
+{
+
+	if (loadOldMedia(obj, this)) {
+		return;
+	}
+
+	SceneSwitcherEntry::load(obj);
+
+	const char *sourceName = obs_data_get_string(obj, "source");
+	source = GetWeakSourceByName(sourceName);
+
+	state = (obs_media_state)obs_data_get_int(obj, "state");
+	restriction = (time_restriction)obs_data_get_int(obj, "restriction");
+	time = obs_data_get_int(obj, "time");
+
+	anyState = state == media_any_idx;
+	obs_source_t *mediasource = obs_weak_source_get_source(source);
+	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
+	signal_handler_connect(sh, "media_stopped", MediaStopped, this);
+	signal_handler_connect(sh, "media_ended", MediaEnded, this);
+	obs_source_release(mediasource);
 }
 
 void MediaSwitch::clearSignalHandler()
@@ -319,28 +356,9 @@ void MediaSwitch::MediaEnded(void *data, calldata_t *)
 	media->ended = true;
 }
 
-inline MediaSwitch::MediaSwitch(OBSWeakSource scene_, OBSWeakSource source_,
-				OBSWeakSource transition_,
-				obs_media_state state_,
-				time_restriction restriction_, uint64_t time_,
-				bool usePreviousScene_)
-	: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
-	  source(source_),
-	  state(state_),
-	  restriction(restriction_),
-	  time(time_)
-{
-	anyState = state == media_any_idx;
-	obs_source_t *mediasource = obs_weak_source_get_source(source);
-	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
-	signal_handler_connect(sh, "media_stopped", MediaStopped, this);
-	signal_handler_connect(sh, "media_ended", MediaEnded, this);
-	obs_source_release(mediasource);
-}
-
 MediaSwitch::MediaSwitch(const MediaSwitch &other)
-	: SceneSwitcherEntry(other.scene, other.transition,
-			     other.usePreviousScene),
+	: SceneSwitcherEntry(other.targetType, other.group, other.scene,
+			     other.transition, other.usePreviousScene),
 	  source(other.source),
 	  state(other.state),
 	  restriction(other.restriction),
@@ -355,8 +373,8 @@ MediaSwitch::MediaSwitch(const MediaSwitch &other)
 }
 
 MediaSwitch::MediaSwitch(MediaSwitch &&other)
-	: SceneSwitcherEntry(other.scene, other.transition,
-			     other.usePreviousScene),
+	: SceneSwitcherEntry(other.targetType, other.group, other.scene,
+			     other.transition, other.usePreviousScene),
 	  source(other.source),
 	  state(other.state),
 	  anyState(other.anyState),
@@ -400,6 +418,8 @@ MediaSwitch &MediaSwitch::operator=(MediaSwitch &&other) noexcept
 
 void swap(MediaSwitch &first, MediaSwitch &second)
 {
+	std::swap(first.targetType, second.targetType);
+	std::swap(first.group, second.group);
 	std::swap(first.scene, second.scene);
 	std::swap(first.transition, second.transition);
 	std::swap(first.usePreviousScene, second.usePreviousScene);
@@ -448,9 +468,10 @@ void populateTimeRestrictions(QComboBox *list)
 		"AdvSceneSwitcher.mediaTab.timeRestriction.remainLonger"));
 }
 
-MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
+MediaSwitchWidget::MediaSwitchWidget(QWidget *parent, MediaSwitch *s)
+	: SwitchWidget(parent, s, true, true)
 {
-	meidaSources = new QComboBox();
+	mediaSources = new QComboBox();
 	states = new QComboBox();
 	timeRestrictions = new QComboBox();
 	time = new QSpinBox();
@@ -459,7 +480,7 @@ MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
 	time->setMaximum(99999999);
 	time->setMinimum(0);
 
-	QWidget::connect(meidaSources,
+	QWidget::connect(mediaSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(SourceChanged(const QString &)));
 	QWidget::connect(states, SIGNAL(currentIndexChanged(int)), this,
@@ -469,25 +490,24 @@ MediaSwitchWidget::MediaSwitchWidget(MediaSwitch *s) : SwitchWidget(s)
 	QWidget::connect(time, SIGNAL(valueChanged(int)), this,
 			 SLOT(TimeChanged(int)));
 
-	AdvSceneSwitcher::populateMediaSelection(meidaSources);
+	AdvSceneSwitcher::populateMediaSelection(mediaSources);
 	populateMediaStates(states);
 	populateTimeRestrictions(timeRestrictions);
 
 	if (s) {
-		meidaSources->setCurrentText(
+		mediaSources->setCurrentText(
 			GetWeakSourceName(s->source).c_str());
 		states->setCurrentIndex(s->state);
 		timeRestrictions->setCurrentIndex(s->restriction);
 		time->setValue(s->time);
-		if (s->restriction == TIME_RESTRICTION_NONE)
+		if (s->restriction == TIME_RESTRICTION_NONE) {
 			time->setDisabled(true);
+		}
 	}
-
-	setStyleSheet("* { background-color: transparent; }");
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{meidaSources}}", meidaSources},
+		{"{{mediaSources}}", mediaSources},
 		{"{{states}}", states},
 		{"{{timeRestrictions}}", timeRestrictions},
 		{"{{time}}", time},
@@ -524,8 +544,10 @@ void MediaSwitchWidget::swapSwitchData(MediaSwitchWidget *s1,
 
 void MediaSwitchWidget::SourceChanged(const QString &text)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->clearSignalHandler();
 	switchData->source = GetWeakSourceByQString(text);
@@ -534,8 +556,10 @@ void MediaSwitchWidget::SourceChanged(const QString &text)
 
 void MediaSwitchWidget::StateChanged(int index)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->state = (obs_media_state)index;
 	switchData->anyState = switchData->state == media_any_idx;
@@ -543,13 +567,15 @@ void MediaSwitchWidget::StateChanged(int index)
 
 void MediaSwitchWidget::TimeRestrictionChanged(int index)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
 
-	if ((time_restriction)index == TIME_RESTRICTION_NONE)
+	if ((time_restriction)index == TIME_RESTRICTION_NONE) {
 		time->setDisabled(true);
-	else
+	} else {
 		time->setDisabled(false);
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->restriction = (time_restriction)index;
@@ -557,8 +583,10 @@ void MediaSwitchWidget::TimeRestrictionChanged(int index)
 
 void MediaSwitchWidget::TimeChanged(int time)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->time = time;
 }

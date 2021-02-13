@@ -12,6 +12,7 @@ typedef enum {
 } file_type;
 
 struct FileSwitch : SceneSwitcherEntry {
+	static bool pause;
 	std::string file = obs_module_text("AdvSceneSwitcher.enterPath");
 	std::string text = obs_module_text("AdvSceneSwitcher.enterText");
 	bool remote = false;
@@ -22,29 +23,15 @@ struct FileSwitch : SceneSwitcherEntry {
 	size_t lastHash = 0;
 
 	const char *getType() { return "file"; }
-
-	inline FileSwitch(){};
-	inline FileSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-			  const char *file_, const char *text_, bool remote_,
-			  bool useRegex_, bool useTime_,
-			  bool onlyMatchIfChanged_)
-		: SceneSwitcherEntry(scene_, transition_),
-		  file(file_),
-		  text(text_),
-		  remote(remote_),
-		  useRegex(useRegex_),
-		  useTime(useTime_),
-		  onlyMatchIfChanged(onlyMatchIfChanged_),
-		  lastMod()
-	{
-	}
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 };
 
 class FileSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	FileSwitchWidget(FileSwitch *s);
+	FileSwitchWidget(QWidget *parent, FileSwitch *s);
 	FileSwitch *getSwitchData();
 	void setSwitchData(FileSwitch *s);
 

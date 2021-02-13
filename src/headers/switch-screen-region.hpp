@@ -6,28 +6,20 @@ constexpr auto screen_region_func = 4;
 constexpr auto default_priority_4 = screen_region_func;
 
 struct ScreenRegionSwitch : SceneSwitcherEntry {
+	static bool pause;
+	OBSWeakSource excludeScene = nullptr;
 	int minX = 0, minY = 0, maxX = 0, maxY = 0;
 
 	const char *getType() { return "region"; }
-
-	inline ScreenRegionSwitch(){};
-	inline ScreenRegionSwitch(OBSWeakSource scene_,
-				  OBSWeakSource transition_, int minX_,
-				  int minY_, int maxX_, int maxY_)
-		: SceneSwitcherEntry(scene_, transition_),
-		  minX(minX_),
-		  minY(minY_),
-		  maxX(maxX_),
-		  maxY(maxY_)
-	{
-	}
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 };
 
 class ScreenRegionWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	ScreenRegionWidget(ScreenRegionSwitch *s);
+	ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s);
 	ScreenRegionSwitch *getSwitchData();
 	void setSwitchData(ScreenRegionSwitch *s);
 
@@ -38,12 +30,14 @@ public:
 	void hideFrame();
 
 private slots:
+	void ExcludeSceneChanged(const QString &text);
 	void MinXChanged(int pos);
 	void MinYChanged(int pos);
 	void MaxXChanged(int pos);
 	void MaxYChanged(int pos);
 
 private:
+	QComboBox *excludeScenes;
 	QSpinBox *minX;
 	QSpinBox *minY;
 	QSpinBox *maxX;

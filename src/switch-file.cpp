@@ -8,6 +8,7 @@
 #include "headers/curl-helper.hpp"
 #include "headers/utility.hpp"
 
+bool FileSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 static std::hash<std::string> strHash;
 
@@ -18,14 +19,16 @@ void AdvSceneSwitcher::on_browseButton_clicked()
 		tr(obs_module_text("AdvSceneSwitcher.fileTab.selectWrite")),
 		QDir::currentPath(),
 		tr(obs_module_text("AdvSceneSwitcher.fileTab.textFileType")));
-	if (!path.isEmpty())
+	if (!path.isEmpty()) {
 		ui->writePathLineEdit->setText(path);
+	}
 }
 
 void AdvSceneSwitcher::on_readFileCheckBox_stateChanged(int state)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	if (!state) {
@@ -41,8 +44,9 @@ void AdvSceneSwitcher::on_readFileCheckBox_stateChanged(int state)
 
 void AdvSceneSwitcher::on_readPathLineEdit_textChanged(const QString &text)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	if (text.isEmpty()) {
@@ -55,8 +59,9 @@ void AdvSceneSwitcher::on_readPathLineEdit_textChanged(const QString &text)
 
 void AdvSceneSwitcher::on_writePathLineEdit_textChanged(const QString &text)
 {
-	if (loading)
+	if (loading) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	if (text.isEmpty()) {
@@ -74,14 +79,16 @@ void AdvSceneSwitcher::on_browseButton_2_clicked()
 		tr(obs_module_text("AdvSceneSwitcher.fileTab.selectRead")),
 		QDir::currentPath(),
 		tr(obs_module_text("AdvSceneSwitcher.fileTab.anyFileType")));
-	if (!path.isEmpty())
+	if (!path.isEmpty()) {
 		ui->readPathLineEdit->setText(path);
+	}
 }
 
 void SwitcherData::writeSceneInfoToFile()
 {
-	if (!fileIO.writeEnabled || fileIO.writePath.empty())
+	if (!fileIO.writeEnabled || fileIO.writePath.empty()) {
 		return;
+	}
 
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 
@@ -96,8 +103,9 @@ void SwitcherData::writeSceneInfoToFile()
 
 void SwitcherData::writeToStatusFile(QString msg)
 {
-	if (!fileIO.writeEnabled || fileIO.writePath.empty())
+	if (!fileIO.writeEnabled || fileIO.writePath.empty()) {
 		return;
+	}
 
 	QFile file(QString::fromStdString(fileIO.writePath));
 	if (file.open(QIODevice::ReadWrite)) {
@@ -110,8 +118,9 @@ void SwitcherData::writeToStatusFile(QString msg)
 void SwitcherData::checkSwitchInfoFromFile(bool &match, OBSWeakSource &scene,
 					   OBSWeakSource &transition)
 {
-	if (!fileIO.readEnabled || fileIO.readPath.empty())
+	if (!fileIO.readEnabled || fileIO.readPath.empty()) {
 		return;
+	}
 
 	QFile file(QString::fromStdString(fileIO.readPath));
 	if (file.open(QIODevice::ReadOnly)) {
@@ -169,10 +178,15 @@ bool compareIgnoringLineEnding(QString &s1, QString &s2)
 	while (!s1stream.atEnd() || !s2stream.atEnd()) {
 		QString s1s = s1stream.readLine();
 		QString s2s = s2stream.readLine();
-		if (QString::compare(s1s, s2s, Qt::CaseSensitive) != 0) {
+		if (s1s != s2s) {
 			return false;
 		}
 	}
+
+	if (!s1stream.atEnd() && !s2stream.atEnd()) {
+		return false;
+	}
+
 	return true;
 }
 
@@ -180,8 +194,9 @@ bool matchFileContent(QString &filedata, FileSwitch &s)
 {
 	if (s.onlyMatchIfChanged) {
 		size_t newHash = strHash(filedata.toUtf8().constData());
-		if (newHash == s.lastHash)
+		if (newHash == s.lastHash) {
 			return false;
+		}
 		s.lastHash = newHash;
 	}
 
@@ -197,21 +212,23 @@ bool matchFileContent(QString &filedata, FileSwitch &s)
 bool checkRemoteFileContent(FileSwitch &s)
 {
 	std::string data = getRemoteData(s.file);
-	QString text = QString::fromStdString(s.text);
-	return matchFileContent(text, s);
+	QString qdata = QString::fromStdString(data);
+	return matchFileContent(qdata, s);
 }
 
 bool checkLocalFileContent(FileSwitch &s)
 {
 	QString t = QString::fromStdString(s.text);
 	QFile file(QString::fromStdString(s.file));
-	if (s.file.empty() || !file.open(QIODevice::ReadOnly))
+	if (s.file.empty() || !file.open(QIODevice::ReadOnly)) {
 		return false;
+	}
 
 	if (s.useTime) {
 		QDateTime newLastMod = QFileInfo(file).lastModified();
-		if (s.lastMod == newLastMod)
+		if (s.lastMod == newLastMod) {
 			return false;
+		}
 		s.lastMod = newLastMod;
 	}
 
@@ -225,7 +242,15 @@ bool checkLocalFileContent(FileSwitch &s)
 void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
+	if (FileSwitch::pause) {
+		return;
+	}
+
 	for (FileSwitch &s : fileSwitches) {
+		if (!s.initialized()) {
+			continue;
+		}
+
 		bool equal = false;
 		if (s.remote) {
 			equal = checkRemoteFileContent(s);
@@ -234,12 +259,13 @@ void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 		}
 
 		if (equal) {
-			scene = s.scene;
+			scene = s.getScene();
 			transition = s.transition;
 			match = true;
 
-			if (verbose)
+			if (verbose) {
 				s.logMatch();
+			}
 			break;
 		}
 	}
@@ -250,20 +276,20 @@ void AdvSceneSwitcher::on_fileAdd_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->fileSwitches.emplace_back();
 
-	QListWidgetItem *item;
-	item = new QListWidgetItem(ui->fileSwitches);
-	ui->fileSwitches->addItem(item);
-	FileSwitchWidget *sw =
-		new FileSwitchWidget(&switcher->fileSwitches.back());
-	item->setSizeHint(sw->minimumSizeHint());
-	ui->fileSwitches->setItemWidget(item, sw);
+	listAddClicked(ui->fileSwitches,
+		       new FileSwitchWidget(this,
+					    &switcher->fileSwitches.back()),
+		       ui->fileAdd, &addPulse);
+
+	ui->fileHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_fileRemove_clicked()
 {
 	QListWidgetItem *item = ui->fileSwitches->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
@@ -277,27 +303,32 @@ void AdvSceneSwitcher::on_fileRemove_clicked()
 
 void AdvSceneSwitcher::on_fileSwitches_currentRowChanged(int idx)
 {
-	if (loading)
+	if (loading) {
 		return;
-	if (idx == -1)
+	}
+	if (idx == -1) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 
-	if ((int)switcher->fileSwitches.size() <= idx)
+	if ((int)switcher->fileSwitches.size() <= idx) {
 		return;
+	}
 	FileSwitch s = switcher->fileSwitches[idx];
-	if (s.remote)
+	if (s.remote) {
 		ui->remoteFileWarningLabel->show();
-	else
+	} else {
 		ui->remoteFileWarningLabel->hide();
+	}
 }
 
 void AdvSceneSwitcher::on_fileUp_clicked()
 {
 	int index = ui->fileSwitches->currentRow();
-	if (!listMoveUp(ui->fileSwitches))
+	if (!listMoveUp(ui->fileSwitches)) {
 		return;
+	}
 
 	FileSwitchWidget *s1 = (FileSwitchWidget *)ui->fileSwitches->itemWidget(
 		ui->fileSwitches->item(index));
@@ -315,8 +346,9 @@ void AdvSceneSwitcher::on_fileDown_clicked()
 {
 	int index = ui->fileSwitches->currentRow();
 
-	if (!listMoveDown(ui->fileSwitches))
+	if (!listMoveDown(ui->fileSwitches)) {
 		return;
+	}
 
 	FileSwitchWidget *s1 = (FileSwitchWidget *)ui->fileSwitches->itemWidget(
 		ui->fileSwitches->item(index));
@@ -336,28 +368,9 @@ void SwitcherData::saveFileSwitches(obs_data_t *obj)
 	for (FileSwitch &s : switcher->fileSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source = obs_weak_source_get_source(s.scene);
-		obs_source_t *transition =
-			obs_weak_source_get_source(s.transition);
+		s.save(array_obj);
+		obs_data_array_push_back(fileArray, array_obj);
 
-		if (source && transition) {
-			const char *sceneName = obs_source_get_name(source);
-			const char *transitionName =
-				obs_source_get_name(transition);
-			obs_data_set_string(array_obj, "scene", sceneName);
-			obs_data_set_string(array_obj, "transition",
-					    transitionName);
-			obs_data_set_string(array_obj, "file", s.file.c_str());
-			obs_data_set_string(array_obj, "text", s.text.c_str());
-			obs_data_set_bool(array_obj, "remote", s.remote);
-			obs_data_set_bool(array_obj, "useRegex", s.useRegex);
-			obs_data_set_bool(array_obj, "useTime", s.useTime);
-			obs_data_set_bool(array_obj, "onlyMatchIfChanged",
-					  s.onlyMatchIfChanged);
-			obs_data_array_push_back(fileArray, array_obj);
-		}
-		obs_source_release(source);
-		obs_source_release(transition);
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "fileSwitches", fileArray);
@@ -379,21 +392,8 @@ void SwitcherData::loadFileSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(fileArray, i);
 
-		const char *scene = obs_data_get_string(array_obj, "scene");
-		const char *transition =
-			obs_data_get_string(array_obj, "transition");
-		const char *file = obs_data_get_string(array_obj, "file");
-		const char *text = obs_data_get_string(array_obj, "text");
-		bool remote = obs_data_get_bool(array_obj, "remote");
-		bool useRegex = obs_data_get_bool(array_obj, "useRegex");
-		bool useTime = obs_data_get_bool(array_obj, "useTime");
-		bool onlyMatchIfChanged =
-			obs_data_get_bool(array_obj, "onlyMatchIfChanged");
-
-		switcher->fileSwitches.emplace_back(
-			GetWeakSourceByName(scene),
-			GetWeakTransitionByName(transition), file, text, remote,
-			useRegex, useTime, onlyMatchIfChanged);
+		switcher->fileSwitches.emplace_back();
+		fileSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
 	}
@@ -415,20 +415,25 @@ void AdvSceneSwitcher::setupFileTab()
 		obs_module_text("AdvSceneSwitcher.fileTab.remoteFileWarning2"));
 	ui->remoteFileWarningLabel->hide();
 
-	if (switcher->curl)
+	if (switcher->curl) {
 		ui->libcurlWarning->setVisible(false);
+	}
 
 	for (auto &s : switcher->fileSwitches) {
 		QListWidgetItem *item;
 		item = new QListWidgetItem(ui->fileSwitches);
 		ui->fileSwitches->addItem(item);
-		FileSwitchWidget *sw = new FileSwitchWidget(&s);
+		FileSwitchWidget *sw = new FileSwitchWidget(this, &s);
 		item->setSizeHint(sw->minimumSizeHint());
 		ui->fileSwitches->setItemWidget(item, sw);
 	}
 
-	if (switcher->fileSwitches.size() == 0)
+	if (switcher->fileSwitches.size() == 0) {
 		addPulse = PulseWidget(ui->fileAdd, QColor(Qt::green));
+		ui->fileHelp->setVisible(true);
+	} else {
+		ui->fileHelp->setVisible(false);
+	}
 
 	ui->readPathLineEdit->setText(
 		QString::fromStdString(switcher->fileIO.readPath.c_str()));
@@ -445,7 +450,65 @@ void AdvSceneSwitcher::setupFileTab()
 	}
 }
 
-FileSwitchWidget::FileSwitchWidget(FileSwitch *s) : SwitchWidget(s, false)
+void FileSwitch::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj);
+
+	obs_data_set_string(obj, "file", file.c_str());
+	obs_data_set_string(obj, "text", text.c_str());
+	obs_data_set_bool(obj, "remote", remote);
+	obs_data_set_bool(obj, "useRegex", useRegex);
+	obs_data_set_bool(obj, "useTime", useTime);
+	obs_data_set_bool(obj, "onlyMatchIfChanged", onlyMatchIfChanged);
+}
+
+// To be removed in future version
+bool loadOldFile(obs_data_t *obj, FileSwitch *s)
+{
+	if (!s) {
+		return false;
+	}
+
+	const char *scene = obs_data_get_string(obj, "scene");
+
+	if (strcmp(scene, "") == 0) {
+		return false;
+	}
+
+	s->scene = GetWeakSourceByName(scene);
+
+	const char *transition = obs_data_get_string(obj, "transition");
+	s->transition = GetWeakTransitionByName(transition);
+
+	s->file = obs_data_get_string(obj, "file");
+	s->text = obs_data_get_string(obj, "text");
+	s->remote = obs_data_get_bool(obj, "remote");
+	s->useRegex = obs_data_get_bool(obj, "useRegex");
+	s->useTime = obs_data_get_bool(obj, "useTime");
+	s->onlyMatchIfChanged = obs_data_get_bool(obj, "onlyMatchIfChanged");
+	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
+
+	return true;
+}
+
+void FileSwitch::load(obs_data_t *obj)
+{
+	if (loadOldFile(obj, this)) {
+		return;
+	}
+
+	SceneSwitcherEntry::load(obj);
+
+	file = obs_data_get_string(obj, "file");
+	text = obs_data_get_string(obj, "text");
+	remote = obs_data_get_bool(obj, "remote");
+	useRegex = obs_data_get_bool(obj, "useRegex");
+	useTime = obs_data_get_bool(obj, "useTime");
+	onlyMatchIfChanged = obs_data_get_bool(obj, "onlyMatchIfChanged");
+}
+
+FileSwitchWidget::FileSwitchWidget(QWidget *parent, FileSwitch *s)
+	: SwitchWidget(parent, s, true, true)
 {
 	fileType = new QComboBox();
 	filePath = new QLineEdit();
@@ -479,18 +542,17 @@ FileSwitchWidget::FileSwitchWidget(FileSwitch *s) : SwitchWidget(s, false)
 	fileType->addItem(obs_module_text("AdvSceneSwitcher.fileTab.remote"));
 
 	if (s) {
-		if (s->remote)
+		if (s->remote) {
 			fileType->setCurrentIndex(1);
-		else
+		} else {
 			fileType->setCurrentIndex(0);
+		}
 		filePath->setText(QString::fromStdString(s->file));
 		matchText->setPlainText(QString::fromStdString(s->text));
 		useRegex->setChecked(s->useRegex);
 		checkModificationDate->setChecked(s->useTime);
 		checkFileContent->setChecked(s->onlyMatchIfChanged);
 	}
-
-	setStyleSheet("* { background-color: transparent; }");
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{fileType}}", fileType},
@@ -546,8 +608,9 @@ void FileSwitchWidget::swapSwitchData(FileSwitchWidget *s1,
 
 void FileSwitchWidget::FileTypeChanged(int index)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
 
 	if ((file_type)index == LOCAL) {
 		browseButton->setDisabled(false);
@@ -563,24 +626,28 @@ void FileSwitchWidget::FileTypeChanged(int index)
 
 void FileSwitchWidget::FilePathChanged()
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->file = filePath->text().toUtf8().constData();
 }
 
 void FileSwitchWidget::BrowseButtonClicked()
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
 
 	QString path = QFileDialog::getOpenFileName(
 		this,
 		tr(obs_module_text("AdvSceneSwitcher.fileTab.selectRead")),
 		QDir::currentPath(),
 		tr(obs_module_text("AdvSceneSwitcher.fileTab.anyFileType")));
-	if (path.isEmpty())
+	if (path.isEmpty()) {
 		return;
+	}
 
 	filePath->setText(path);
 	FilePathChanged();
@@ -588,32 +655,40 @@ void FileSwitchWidget::BrowseButtonClicked()
 
 void FileSwitchWidget::MatchTextChanged()
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->text = matchText->toPlainText().toUtf8().constData();
 }
 
 void FileSwitchWidget::UseRegexChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->useRegex = state;
 }
 
 void FileSwitchWidget::CheckModificationDateChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->useTime = state;
 }
 
 void FileSwitchWidget::CheckFileContentChanged(int state)
 {
-	if (loading || !switchData)
+	if (loading || !switchData) {
 		return;
+	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->onlyMatchIfChanged = state;
 }

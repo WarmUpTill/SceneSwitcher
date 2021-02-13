@@ -19,27 +19,20 @@ typedef enum {
 } timeTrigger;
 
 struct TimeSwitch : SceneSwitcherEntry {
+	static bool pause;
 	timeTrigger trigger = ANY_DAY;
-	QTime time = QTime();
+	QTime time = QTime(0, 0);
 
 	const char *getType() { return "time"; }
-
-	inline TimeSwitch(){};
-	inline TimeSwitch(OBSWeakSource scene_, OBSWeakSource transition_,
-			  timeTrigger trigger_, QTime time_,
-			  bool usePreviousScene_)
-		: SceneSwitcherEntry(scene_, transition_, usePreviousScene_),
-		  trigger(trigger_),
-		  time(time_)
-	{
-	}
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 };
 
 class TimeSwitchWidget : public SwitchWidget {
 	Q_OBJECT
 
 public:
-	TimeSwitchWidget(TimeSwitch *s);
+	TimeSwitchWidget(QWidget *parent, TimeSwitch *s);
 	TimeSwitch *getSwitchData();
 	void setSwitchData(TimeSwitch *s);
 
