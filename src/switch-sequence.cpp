@@ -162,6 +162,20 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 	close();
 }
 
+void AdvSceneSwitcher::OpenSequenceExtendEdit(SequenceWidget *sw)
+{
+	QDialog edit;
+	SequenceWidget editWidget(this, sw->getSwitchData(), false, true);
+	QHBoxLayout layout;
+	layout.addWidget(&editWidget);
+	edit.setLayout(&layout);
+	edit.setWindowTitle(obs_module_text(
+		"AdvSceneSwitcher.sceneSequenceTab.extendEdit"));
+	edit.exec();
+
+	sw->UpdateExtendText();
+}
+
 void AdvSceneSwitcher::on_sequenceEdit_clicked()
 {
 	int index = ui->sceneSequenceSwitches->currentRow();
@@ -173,17 +187,15 @@ void AdvSceneSwitcher::on_sequenceEdit_clicked()
 		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(
 			ui->sceneSequenceSwitches->item(index));
 
-	QDialog edit;
-	SequenceWidget editWidget(this, currentWidget->getSwitchData(), false,
-				  true);
-	QHBoxLayout layout;
-	layout.addWidget(&editWidget);
-	edit.setLayout(&layout);
-	edit.setWindowTitle(obs_module_text(
-		"AdvSceneSwitcher.sceneSequenceTab.extendEdit"));
-	edit.exec();
+	OpenSequenceExtendEdit(currentWidget);
+}
 
-	currentWidget->UpdateExtendText();
+void AdvSceneSwitcher::on_sceneSequenceSwitches_itemDoubleClicked(
+	QListWidgetItem *item)
+{
+	SequenceWidget *currentWidget =
+		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(item);
+	OpenSequenceExtendEdit(currentWidget);
 }
 
 void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
