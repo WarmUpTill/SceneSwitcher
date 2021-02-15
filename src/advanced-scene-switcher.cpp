@@ -92,8 +92,9 @@ bool AdvSceneSwitcher::DisplayMessage(QString msg, bool question)
 	return false;
 }
 
-void addSelectionEntry(QComboBox *sel, const char *description,
-		       const char *tooltip = "")
+void AdvSceneSwitcher::addSelectionEntry(QComboBox *sel,
+					 const char *description,
+					 bool selectable, const char *tooltip)
 {
 	sel->addItem(description);
 
@@ -106,14 +107,17 @@ void addSelectionEntry(QComboBox *sel, const char *description,
 	QModelIndex firstIndex =
 		model->index(0, sel->modelColumn(), sel->rootModelIndex());
 	QStandardItem *firstItem = model->itemFromIndex(firstIndex);
-	firstItem->setSelectable(false);
-	firstItem->setEnabled(false);
+	if (!selectable) {
+		firstItem->setSelectable(false);
+		firstItem->setEnabled(false);
+	}
 }
 
 void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 					      bool addSceneGroup,
 					      bool addSelect,
-					      std::string selectText)
+					      std::string selectText,
+					      bool selectable)
 {
 	sel->clear();
 
@@ -122,10 +126,11 @@ void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 			addSelectionEntry(
 				sel,
 				obs_module_text("AdvSceneSwitcher.selectScene"),
+				selectable,
 				obs_module_text(
 					"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
 		} else {
-			addSelectionEntry(sel, selectText.c_str());
+			addSelectionEntry(sel, selectText.c_str(), selectable);
 		}
 	}
 
@@ -150,12 +155,14 @@ void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 }
 
 void AdvSceneSwitcher::populateTransitionSelection(QComboBox *sel,
-						   bool addSelect)
+						   bool addSelect,
+						   bool selectable)
 {
 	if (addSelect) {
 		addSelectionEntry(
 			sel,
-			obs_module_text("AdvSceneSwitcher.selectTransition"));
+			obs_module_text("AdvSceneSwitcher.selectTransition"),
+			selectable);
 	}
 
 	obs_frontend_source_list *transitions = new obs_frontend_source_list();
@@ -197,6 +204,7 @@ void AdvSceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
 		addSelectionEntry(
 			sel,
 			obs_module_text("AdvSceneSwitcher.selectAudioSource"),
+			false,
 			obs_module_text(
 				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
 	}
@@ -227,6 +235,7 @@ void AdvSceneSwitcher::populateMediaSelection(QComboBox *sel, bool addSelect)
 		addSelectionEntry(
 			sel,
 			obs_module_text("AdvSceneSwitcher.selectMediaSource"),
+			false,
 			obs_module_text(
 				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
 	}

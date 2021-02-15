@@ -429,8 +429,11 @@ void SceneTrigger::load(obs_data_t *obj)
 
 static inline void populateTriggers(QComboBox *list)
 {
-	list->addItem(obs_module_text(
-		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerType.none"));
+	AdvSceneSwitcher::addSelectionEntry(
+		list,
+		obs_module_text(
+			"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerType.none"));
+
 	list->addItem(obs_module_text(
 		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerType.sceneActive"));
 	list->addItem(obs_module_text(
@@ -441,8 +444,11 @@ static inline void populateTriggers(QComboBox *list)
 
 inline void populateActions(QComboBox *list)
 {
-	list->addItem(obs_module_text(
-		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.none"));
+	AdvSceneSwitcher::addSelectionEntry(
+		list,
+		obs_module_text(
+			"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.none"));
+
 	list->addItem(obs_module_text(
 		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.startRecording"));
 	list->addItem(obs_module_text(
