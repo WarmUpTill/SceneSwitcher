@@ -84,7 +84,7 @@ struct SwitcherData {
 
 	std::vector<std::string> ignoreWindowsSwitches;
 
-	bool sceneSequenceActive = false;
+	bool uninterruptibleSceneSequenceActive = false;
 	std::deque<SceneSequenceSwitch> sceneSequenceSwitches;
 
 	std::deque<RandomSwitch> randomSwitches;

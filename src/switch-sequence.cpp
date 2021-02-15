@@ -201,8 +201,6 @@ void AdvSceneSwitcher::on_sceneSequenceSwitches_itemDoubleClicked(
 void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 				      OBSWeakSource &transition, int &linger)
 {
-	switcher->sceneSequenceActive = false;
-
 	if (SceneSequenceSwitch::pause) {
 		return;
 	}
@@ -212,6 +210,12 @@ void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 		obs_source_get_weak_source(currentSceneSource);
 
 	for (SceneSequenceSwitch &s : sceneSequenceSwitches) {
+		// Continue the active uninterruptible sequence and skip others
+		if (uninterruptibleSceneSequenceActive &&
+		    s.activeSequence == nullptr) {
+			continue;
+		}
+
 		bool matched = s.checkMatch(currentScene, linger);
 
 		if (!match && matched) {
@@ -223,24 +227,29 @@ void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 			} else {
 				scene = s.getScene();
 				transition = s.transition;
-				if (switcher->verbose) {
+				if (verbose) {
 					s.logMatch();
 				}
 			}
 
 			s.advanceActiveSequence();
-			if (switcher->verbose) {
+			if (verbose) {
 				s.logAdvanceSequence();
 			}
 
 			// Ignore other switching methods if sequence is not
 			// interruptible and has not reached its end
 			if (s.activeSequence) {
-				switcher->sceneSequenceActive =
+				uninterruptibleSceneSequenceActive =
 					!s.interruptible;
 			}
 		}
 	}
+
+	if (!match) {
+		uninterruptibleSceneSequenceActive = false;
+	}
+
 	obs_source_release(currentSceneSource);
 	obs_weak_source_release(currentScene);
 }

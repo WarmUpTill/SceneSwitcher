@@ -511,7 +511,7 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 {
 	bool match = false;
 
-	if (sceneSequenceActive) {
+	if (uninterruptibleSceneSequenceActive) {
 		checkSceneSequence(match, scene, transition, linger);
 		if (match) {
 			return match;
