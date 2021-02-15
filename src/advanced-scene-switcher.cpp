@@ -155,6 +155,7 @@ void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 }
 
 void AdvSceneSwitcher::populateTransitionSelection(QComboBox *sel,
+						   bool addCurrent,
 						   bool addSelect,
 						   bool selectable)
 {
@@ -163,6 +164,11 @@ void AdvSceneSwitcher::populateTransitionSelection(QComboBox *sel,
 			sel,
 			obs_module_text("AdvSceneSwitcher.selectTransition"),
 			selectable);
+	}
+
+	if (addCurrent) {
+		sel->addItem(
+			obs_module_text("AdvSceneSwitcher.currentTransition"));
 	}
 
 	obs_frontend_source_list *transitions = new obs_frontend_source_list();

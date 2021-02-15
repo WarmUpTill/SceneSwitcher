@@ -73,6 +73,7 @@ public:
 					   bool selectable = false);
 
 	static void populateTransitionSelection(QComboBox *sel,
+						bool addCurrent = true,
 						bool addSelect = true,
 						bool selectable = false);
 	static void populateWindowSelection(QComboBox *sel,

@@ -427,7 +427,7 @@ bool SceneTransition::valid()
 
 TransitionSwitchWidget::TransitionSwitchWidget(QWidget *parent,
 					       SceneTransition *s)
-	: SwitchWidget(parent, s, false)
+	: SwitchWidget(parent, s, false, false, false)
 {
 	scenes2 = new QComboBox();
 
@@ -486,7 +486,7 @@ void TransitionSwitchWidget::Scene2Changed(const QString &text)
 
 DefTransitionSwitchWidget::DefTransitionSwitchWidget(QWidget *parent,
 						     DefaultSceneTransition *s)
-	: SwitchWidget(parent, s, false)
+	: SwitchWidget(parent, s, false, false, false)
 {
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
