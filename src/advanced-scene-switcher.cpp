@@ -446,7 +446,7 @@ void SwitcherData::Thread()
 			}
 		}
 
-		vblog(LOG_INFO, "sleep for %ld", duration.count());
+		vblog(LOG_INFO, "try to sleep for %ld", duration.count());
 		cv.wait_for(lock, duration);
 
 		startTime = std::chrono::high_resolution_clock::now();
@@ -634,7 +634,7 @@ extern "C" void FreeSceneSwitcher()
 
 void handleSceneChange(SwitcherData *s)
 {
-	// Stop waiting if scene was manually changed
+	// Stop waiting if scene was changed
 	if (s->sceneChangedDuringWait()) {
 		s->cv.notify_one();
 	}
