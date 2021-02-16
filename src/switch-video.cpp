@@ -1,3 +1,5 @@
+#include <QFileDialog>
+
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
@@ -6,75 +8,75 @@ static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_videoAdd_clicked()
 {
-	//	std::lock_guard<std::mutex> lock(switcher->m);
-	//	switcher->audioSwitches.emplace_back();
-	//
-	//	AudioSwitchWidget *sw =
-	//		new AudioSwitchWidget(this, &switcher->audioSwitches.back());
-	//
-	//	listAddClicked(ui->audioSwitches, sw, ui->audioAdd, &addPulse);
-	//
-	//	ui->audioHelp->setVisible(false);
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->videoSwitches.emplace_back();
+
+	VideoSwitchWidget *sw =
+		new VideoSwitchWidget(this, &switcher->videoSwitches.back());
+
+	listAddClicked(ui->videoSwitches, sw, ui->videoAdd, &addPulse);
+
+	ui->videoHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_videoRemove_clicked()
 {
-	//	QListWidgetItem *item = ui->audioSwitches->currentItem();
-	//	if (!item) {
-	//		return;
-	//	}
-	//
-	//	{
-	//		std::lock_guard<std::mutex> lock(switcher->m);
-	//		int idx = ui->audioSwitches->currentRow();
-	//		auto &switches = switcher->audioSwitches;
-	//		switches.erase(switches.begin() + idx);
-	//	}
-	//
-	//	delete item;
+	QListWidgetItem *item = ui->videoSwitches->currentItem();
+	if (!item) {
+		return;
+	}
+
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		int idx = ui->videoSwitches->currentRow();
+		auto &switches = switcher->videoSwitches;
+		switches.erase(switches.begin() + idx);
+	}
+
+	delete item;
 }
 
 void AdvSceneSwitcher::on_videoUp_clicked()
 {
-	//	int index = ui->audioSwitches->currentRow();
-	//	if (!listMoveUp(ui->audioSwitches)) {
-	//		return;
-	//	}
-	//
-	//	AudioSwitchWidget *s1 =
-	//		(AudioSwitchWidget *)ui->audioSwitches->itemWidget(
-	//			ui->audioSwitches->item(index));
-	//	AudioSwitchWidget *s2 =
-	//		(AudioSwitchWidget *)ui->audioSwitches->itemWidget(
-	//			ui->audioSwitches->item(index - 1));
-	//	AudioSwitchWidget::swapSwitchData(s1, s2);
-	//
-	//	std::lock_guard<std::mutex> lock(switcher->m);
-	//
-	//	std::swap(switcher->audioSwitches[index],
-	//		  switcher->audioSwitches[index - 1]);
+	int index = ui->videoSwitches->currentRow();
+	if (!listMoveUp(ui->videoSwitches)) {
+		return;
+	}
+
+	VideoSwitchWidget *s1 =
+		(VideoSwitchWidget *)ui->videoSwitches->itemWidget(
+			ui->videoSwitches->item(index));
+	VideoSwitchWidget *s2 =
+		(VideoSwitchWidget *)ui->videoSwitches->itemWidget(
+			ui->videoSwitches->item(index - 1));
+	VideoSwitchWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->videoSwitches[index],
+		  switcher->videoSwitches[index - 1]);
 }
 
 void AdvSceneSwitcher::on_videoDown_clicked()
 {
-	//	int index = ui->audioSwitches->currentRow();
-	//
-	//	if (!listMoveDown(ui->audioSwitches)) {
-	//		return;
-	//	}
-	//
-	//	AudioSwitchWidget *s1 =
-	//		(AudioSwitchWidget *)ui->audioSwitches->itemWidget(
-	//			ui->audioSwitches->item(index));
-	//	AudioSwitchWidget *s2 =
-	//		(AudioSwitchWidget *)ui->audioSwitches->itemWidget(
-	//			ui->audioSwitches->item(index + 1));
-	//	AudioSwitchWidget::swapSwitchData(s1, s2);
-	//
-	//	std::lock_guard<std::mutex> lock(switcher->m);
-	//
-	//	std::swap(switcher->audioSwitches[index],
-	//		  switcher->audioSwitches[index + 1]);
+	int index = ui->videoSwitches->currentRow();
+
+	if (!listMoveDown(ui->videoSwitches)) {
+		return;
+	}
+
+	VideoSwitchWidget *s1 =
+		(VideoSwitchWidget *)ui->videoSwitches->itemWidget(
+			ui->videoSwitches->item(index));
+	VideoSwitchWidget *s2 =
+		(VideoSwitchWidget *)ui->videoSwitches->itemWidget(
+			ui->videoSwitches->item(index + 1));
+	VideoSwitchWidget::swapSwitchData(s1, s2);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	std::swap(switcher->videoSwitches[index],
+		  switcher->videoSwitches[index + 1]);
 }
 
 void AdvSceneSwitcher::on_getScreenshot_clicked() {}
@@ -89,63 +91,54 @@ void SwitcherData::checkVideoSwitch(bool &match, OBSWeakSource &scene,
 
 void SwitcherData::saveVideoSwitches(obs_data_t *obj)
 {
-	//	obs_data_array_t *audioArray = obs_data_array_create();
-	//	for (AudioSwitch &s : switcher->audioSwitches) {
-	//		obs_data_t *array_obj = obs_data_create();
-	//
-	//		s.save(array_obj);
-	//		obs_data_array_push_back(audioArray, array_obj);
-	//
-	//		obs_data_release(array_obj);
-	//	}
-	//	obs_data_set_array(obj, "audioSwitches", audioArray);
-	//	obs_data_array_release(audioArray);
-	//
-	//	audioFallback.save(obj);
+	obs_data_array_t *videoArray = obs_data_array_create();
+	for (VideoSwitch &s : videoSwitches) {
+		obs_data_t *array_obj = obs_data_create();
+
+		s.save(array_obj);
+		obs_data_array_push_back(videoArray, array_obj);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "videoSwitches", videoArray);
+	obs_data_array_release(videoArray);
 }
 
 void SwitcherData::loadVideoSwitches(obs_data_t *obj)
 {
-	//	switcher->audioSwitches.clear();
-	//
-	//	obs_data_array_t *audioArray = obs_data_get_array(obj, "audioSwitches");
-	//	size_t count = obs_data_array_count(audioArray);
-	//
-	//	for (size_t i = 0; i < count; i++) {
-	//		obs_data_t *array_obj = obs_data_array_item(audioArray, i);
-	//
-	//		switcher->audioSwitches.emplace_back();
-	//		audioSwitches.back().load(array_obj);
-	//
-	//		obs_data_release(array_obj);
-	//	}
-	//	obs_data_array_release(audioArray);
-	//
-	//	audioFallback.load(obj);
+	switcher->videoSwitches.clear();
+
+	obs_data_array_t *videoArray = obs_data_get_array(obj, "videoSwitches");
+	size_t count = obs_data_array_count(videoArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj = obs_data_array_item(videoArray, i);
+
+		switcher->videoSwitches.emplace_back();
+		videoSwitches.back().load(array_obj);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(videoArray);
 }
 
 void AdvSceneSwitcher::setupVideoTab()
 {
-	//	for (auto &s : switcher->audioSwitches) {
-	//		QListWidgetItem *item;
-	//		item = new QListWidgetItem(ui->audioSwitches);
-	//		ui->audioSwitches->addItem(item);
-	//		AudioSwitchWidget *sw = new AudioSwitchWidget(this, &s);
-	//		item->setSizeHint(sw->minimumSizeHint());
-	//		ui->audioSwitches->setItemWidget(item, sw);
-	//	}
-	//
-	//	if (switcher->audioSwitches.size() == 0) {
-	//		addPulse = PulseWidget(ui->audioAdd, QColor(Qt::green));
-	//		ui->audioHelp->setVisible(true);
-	//	} else {
-	//		ui->audioHelp->setVisible(false);
-	//	}
-	//
-	//	AudioSwitchFallbackWidget *fb =
-	//		new AudioSwitchFallbackWidget(this, &switcher->audioFallback);
-	//	ui->audioFallbackLayout->addWidget(fb);
-	//	ui->audioFallback->setChecked(switcher->audioFallback.enable);
+	for (auto &s : switcher->videoSwitches) {
+		QListWidgetItem *item;
+		item = new QListWidgetItem(ui->videoSwitches);
+		ui->videoSwitches->addItem(item);
+		VideoSwitchWidget *sw = new VideoSwitchWidget(this, &s);
+		item->setSizeHint(sw->minimumSizeHint());
+		ui->videoSwitches->setItemWidget(item, sw);
+	}
+
+	if (switcher->videoSwitches.size() == 0) {
+		addPulse = PulseWidget(ui->videoAdd, QColor(Qt::green));
+		ui->videoHelp->setVisible(true);
+	} else {
+		ui->videoHelp->setVisible(false);
+	}
 }
 
 bool VideoSwitch::initialized()
@@ -189,23 +182,34 @@ VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
 	: SwitchWidget(parent, s, true, true)
 {
 	videoSources = new QComboBox();
+	filePath = new QLineEdit();
+	browseButton =
+		new QPushButton(obs_module_text("AdvSceneSwitcher.browse"));
+	browseButton->setStyleSheet("border:1px solid gray;");
 
 	obs_source_t *source = nullptr;
 
 	QWidget::connect(videoSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(SourceChanged(const QString &)));
+	QWidget::connect(filePath, SIGNAL(editingFinished()), this,
+			 SLOT(FilePathChanged()));
+	QWidget::connect(browseButton, SIGNAL(clicked()), this,
+			 SLOT(BrowseButtonClicked()));
 
 	AdvSceneSwitcher::populateAudioSelection(videoSources);
 
 	if (s) {
 		videoSources->setCurrentText(
 			GetWeakSourceName(s->videoSource).c_str());
+		filePath->setText(QString::fromStdString(s->file));
 	}
 
 	QHBoxLayout *switchLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{videoSources}}", videoSources},
+		{"{{filePath}}", filePath},
+		{"{{browseButton}}", browseButton},
 		{"{{scenes}}", scenes},
 		{"{{transitions}}", transitions}};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.videoTab.entry"),
@@ -249,4 +253,33 @@ void VideoSwitchWidget::SourceChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->videoSource = GetWeakSourceByQString(text);
+}
+
+void VideoSwitchWidget::FilePathChanged()
+{
+	if (loading || !switchData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->file = filePath->text().toUtf8().constData();
+}
+
+void VideoSwitchWidget::BrowseButtonClicked()
+{
+	if (loading || !switchData) {
+		return;
+	}
+
+	QString path = QFileDialog::getOpenFileName(
+		this,
+		tr(obs_module_text("AdvSceneSwitcher.fileTab.selectRead")),
+		QDir::currentPath(),
+		tr(obs_module_text("AdvSceneSwitcher.fileTab.anyFileType")));
+	if (path.isEmpty()) {
+		return;
+	}
+
+	filePath->setText(path);
+	FilePathChanged();
 }

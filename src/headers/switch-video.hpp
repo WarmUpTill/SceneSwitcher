@@ -7,6 +7,7 @@ constexpr auto default_priority_9 = video_func;
 struct VideoSwitch : virtual SceneSwitcherEntry {
 	static bool pause;
 	OBSWeakSource videoSource = nullptr;
+	std::string file = obs_module_text("AdvSceneSwitcher.enterPath");
 
 	const char *getType() { return "video"; }
 	bool initialized();
@@ -28,7 +29,6 @@ class VideoSwitchWidget : public SwitchWidget {
 
 public:
 	VideoSwitchWidget(QWidget *parent, VideoSwitch *s);
-	void UpdateVolmeterSource();
 	VideoSwitch *getSwitchData();
 	void setSwitchData(VideoSwitch *s);
 
@@ -37,9 +37,13 @@ public:
 
 private slots:
 	void SourceChanged(const QString &text);
+	void FilePathChanged();
+	void BrowseButtonClicked();
 
 private:
 	QComboBox *videoSources;
+	QLineEdit *filePath;
+	QPushButton *browseButton;
 
 	VideoSwitch *switchData;
 };

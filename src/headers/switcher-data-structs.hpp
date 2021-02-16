@@ -112,6 +112,8 @@ struct SwitcherData {
 	std::deque<AudioSwitch> audioSwitches;
 	AudioSwitchFallback audioFallback;
 
+	std::deque<VideoSwitch> videoSwitches;
+
 	std::deque<SceneGroup> sceneGroups;
 
 	std::vector<int> functionNamesByPriority = std::vector<int>{

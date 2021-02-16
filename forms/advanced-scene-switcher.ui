@@ -3078,19 +3078,6 @@
        <item>
         <layout class="QGridLayout" name="gridLayout_22">
          <item row="0" column="0">
-          <widget class="QLabel" name="videoHelp">
-           <property name="text">
-            <string>AdvSceneSwitcher.videoTab.help</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-           <property name="wordWrap">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
           <widget class="QListWidget" name="videoSwitches">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -3103,29 +3090,18 @@
            </property>
           </widget>
          </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_12">
-         <item>
-          <widget class="QPushButton" name="getScreenshot">
+         <item row="0" column="0">
+          <widget class="QLabel" name="videoHelp">
            <property name="text">
-            <string>AdvSceneSwitcher.videoTab.getScreenshot</string>
+            <string>AdvSceneSwitcher.videoTab.help</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
            </property>
           </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_9">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
          </item>
         </layout>
        </item>
@@ -3245,6 +3221,20 @@
            </property>
            <property name="themeID" stdset="0">
             <string>downArrowIconSmall</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="Line" name="line">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="getScreenshot">
+           <property name="text">
+            <string>AdvSceneSwitcher.videoTab.getScreenshot</string>
            </property>
           </widget>
          </item>

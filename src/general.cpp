@@ -384,22 +384,23 @@ void SwitcherData::loadSettings(obs_data_t *obj)
 		return;
 	}
 
-	switcher->loadSceneGroups(obj);
-	switcher->loadWindowTitleSwitches(obj);
-	switcher->loadScreenRegionSwitches(obj);
-	switcher->loadPauseSwitches(obj);
-	switcher->loadSceneSequenceSwitches(obj);
-	switcher->loadSceneTransitions(obj);
-	switcher->loadIdleSwitches(obj);
-	switcher->loadExecutableSwitches(obj);
-	switcher->loadRandomSwitches(obj);
-	switcher->loadFileSwitches(obj);
-	switcher->loadMediaSwitches(obj);
-	switcher->loadTimeSwitches(obj);
-	switcher->loadAudioSwitches(obj);
-	switcher->loadSceneTriggers(obj);
-	switcher->loadGeneralSettings(obj);
-	switcher->loadHotkeys(obj);
+	loadSceneGroups(obj);
+	loadWindowTitleSwitches(obj);
+	loadScreenRegionSwitches(obj);
+	loadPauseSwitches(obj);
+	loadSceneSequenceSwitches(obj);
+	loadSceneTransitions(obj);
+	loadIdleSwitches(obj);
+	loadExecutableSwitches(obj);
+	loadRandomSwitches(obj);
+	loadFileSwitches(obj);
+	loadMediaSwitches(obj);
+	loadTimeSwitches(obj);
+	loadAudioSwitches(obj);
+	loadVideoSwitches(obj);
+	loadSceneTriggers(obj);
+	loadGeneralSettings(obj);
+	loadHotkeys(obj);
 }
 
 void SwitcherData::saveSettings(obs_data_t *obj)
@@ -421,6 +422,7 @@ void SwitcherData::saveSettings(obs_data_t *obj)
 	saveMediaSwitches(obj);
 	saveTimeSwitches(obj);
 	saveAudioSwitches(obj);
+	saveVideoSwitches(obj);
 	saveSceneTriggers(obj);
 	saveGeneralSettings(obj);
 	saveHotkeys(obj);
@@ -770,6 +772,10 @@ void AdvSceneSwitcher::setupGeneralTab()
 		case audio_func:
 			s = obs_module_text(
 				"AdvSceneSwitcher.generalTab.priority.audio");
+			break;
+		case video_func:
+			s = obs_module_text(
+				"AdvSceneSwitcher.generalTab.priority.video");
 			break;
 		}
 		QString text(s.c_str());
