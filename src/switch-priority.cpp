@@ -55,15 +55,18 @@ void AdvSceneSwitcher::on_priorityDown_clicked()
 
 bool SwitcherData::prioFuncsValid()
 {
-	auto it = std::unique(functionNamesByPriority.begin(),
-			      functionNamesByPriority.end());
-	bool wasUnique = (it == functionNamesByPriority.end());
+	auto fNBPCopy = functionNamesByPriority;
+
+	std::sort(fNBPCopy.begin(), fNBPCopy.end());
+	auto it = std::unique(fNBPCopy.begin(), fNBPCopy.end());
+	bool wasUnique = (it == fNBPCopy.end());
+
 	if (!wasUnique) {
 		return false;
 	}
 
 	for (int p : functionNamesByPriority) {
-		if (p < 0 || p > 8) {
+		if (p < 0 || p > 9) {
 			return false;
 		}
 	}
