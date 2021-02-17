@@ -498,6 +498,9 @@ void SwitcherData::Thread()
 			case audio_func:
 				checkAudioSwitch(match, scene, transition);
 				break;
+			case video_func:
+				checkVideoSwitch(match, scene, transition);
+				break;
 			}
 
 			if (switcher->stop) {

@@ -470,6 +470,8 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 			 switcher->functionNamesByPriority[7]);
 	obs_data_set_int(obj, "priority8",
 			 switcher->functionNamesByPriority[8]);
+	obs_data_set_int(obj, "priority9",
+			 switcher->functionNamesByPriority[9]);
 
 	obs_data_set_int(obj, "threadPriority", switcher->threadPriority);
 
@@ -557,6 +559,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(obs_data_get_int(obj, "priority7"));
 	switcher->functionNamesByPriority[8] =
 		(obs_data_get_int(obj, "priority8"));
+	switcher->functionNamesByPriority[9] =
+		(obs_data_get_int(obj, "priority9"));
 	if (!switcher->prioFuncsValid()) {
 		switcher->functionNamesByPriority[0] = (default_priority_0);
 		switcher->functionNamesByPriority[1] = (default_priority_1);
@@ -567,6 +571,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		switcher->functionNamesByPriority[6] = (default_priority_6);
 		switcher->functionNamesByPriority[7] = (default_priority_7);
 		switcher->functionNamesByPriority[8] = (default_priority_8);
+		switcher->functionNamesByPriority[9] = (default_priority_9);
 	}
 
 	obs_data_set_default_int(obj, "threadPriority",

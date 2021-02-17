@@ -119,7 +119,8 @@ struct SwitcherData {
 	std::vector<int> functionNamesByPriority = std::vector<int>{
 		default_priority_0, default_priority_1, default_priority_2,
 		default_priority_3, default_priority_4, default_priority_5,
-		default_priority_6, default_priority_7, default_priority_8};
+		default_priority_6, default_priority_7, default_priority_8,
+		default_priority_9};
 
 	struct ThreadPrio {
 		std::string name;
