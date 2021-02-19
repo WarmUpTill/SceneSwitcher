@@ -323,6 +323,8 @@ void SceneSequenceSwitch::save(obs_data_t *obj, bool saveExt)
 {
 	SceneSwitcherEntry::save(obj);
 
+	obs_data_set_int(obj, "startTargetType",
+			 static_cast<int>(startTargetType));
 	obs_data_set_string(obj, "startScene",
 			    GetWeakSourceName(startScene).c_str());
 	obs_data_set_double(obj, "delay", delay);
@@ -388,7 +390,8 @@ void SceneSequenceSwitch::load(obs_data_t *obj, bool saveExt)
 	}
 
 	SceneSwitcherEntry::load(obj);
-
+	startTargetType = static_cast<SwitchTargetType>(
+		obs_data_get_int(obj, "startTargetType"));
 	const char *scene = obs_data_get_string(obj, "startScene");
 	startScene = GetWeakSourceByName(scene);
 
@@ -507,14 +510,41 @@ void SceneSequenceSwitch::prepareUninterruptibleMatch(
 
 void SceneSequenceSwitch::advanceActiveSequence()
 {
+	// Set start Scene
+	OBSWeakSource currentSceneGroupScene = nullptr;
+	if (targetType == SwitchTargetType::SceneGroup && group) {
+		currentSceneGroupScene = group->getCurrentScene();
+	}
+
 	if (activeSequence) {
 		activeSequence = activeSequence->extendedSequence.get();
 	} else {
 		activeSequence = extendedSequence.get();
 	}
 
-	// Reinit old matchCount value in case it was previously set
 	if (activeSequence) {
+		if (activeSequence->startTargetType ==
+		    SwitchTargetType::SceneGroup) {
+			activeSequence->startScene = currentSceneGroupScene;
+		}
+		if (activeSequence->targetType == SwitchTargetType::Scene &&
+		    !activeSequence->scene) {
+			blog(LOG_WARNING,
+			     "cannot advance sequence - null scene set");
+			activeSequence = nullptr;
+		}
+		if (activeSequence->targetType ==
+			    SwitchTargetType::SceneGroup &&
+		    activeSequence->group &&
+		    activeSequence->group->scenes.empty()) {
+			blog(LOG_WARNING,
+			     "cannot advance sequence - no scenes specified in '%s'",
+			     activeSequence->group->name.c_str());
+			activeSequence = nullptr;
+			return;
+		}
+
+		// Reinit old matchCount value in case it was previously set
 		activeSequence->matchCount = 0;
 	}
 }
@@ -522,9 +552,18 @@ void SceneSequenceSwitch::advanceActiveSequence()
 void SceneSequenceSwitch::logAdvanceSequence()
 {
 	if (activeSequence) {
+		std::string targetName =
+			GetWeakSourceName(activeSequence->scene);
+
+		if (activeSequence->targetType ==
+			    SwitchTargetType::SceneGroup &&
+		    activeSequence->group) {
+			targetName = activeSequence->group->name;
+		}
+
 		blog(LOG_INFO, "continuing sequence with '%s' -> '%s'",
 		     GetWeakSourceName(activeSequence->startScene).c_str(),
-		     GetWeakSourceName(activeSequence->scene).c_str());
+		     targetName.c_str());
 	}
 }
 
@@ -566,6 +605,9 @@ QString makeExtendText(SceneSequenceSwitch *s, int curLen = 0)
 	}
 
 	QString sceneName = GetWeakSourceName(s->scene).c_str();
+	if (s->targetType == SwitchTargetType::SceneGroup && s->group) {
+		sceneName = QString::fromStdString(s->group->name);
+	}
 	if (sceneName.isEmpty()) {
 		sceneName = obs_module_text("AdvSceneSwitcher.selectScene");
 	}
@@ -779,6 +821,18 @@ void SequenceWidget::DelayUnitsChanged(int idx)
 	UpdateDelay();
 }
 
+void SequenceWidget::setExtendedSequenceStartScene()
+{
+	switchData->extendedSequence->startScene = switchData->scene;
+	switchData->extendedSequence->startTargetType = SwitchTargetType::Scene;
+
+	if (switchData->targetType == SwitchTargetType::SceneGroup) {
+		switchData->extendedSequence->startScene = nullptr;
+		switchData->extendedSequence->startTargetType =
+			SwitchTargetType::SceneGroup;
+	}
+}
+
 void SequenceWidget::SceneChanged(const QString &text)
 {
 	if (loading || !switchData) {
@@ -789,7 +843,7 @@ void SequenceWidget::SceneChanged(const QString &text)
 	std::lock_guard<std::mutex> lock(switcher->m);
 
 	if (switchData->extendedSequence) {
-		switchData->extendedSequence->startScene = switchData->scene;
+		setExtendedSequenceStartScene();
 	}
 }
 

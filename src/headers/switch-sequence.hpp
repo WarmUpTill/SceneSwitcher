@@ -14,6 +14,7 @@ typedef enum {
 
 struct SceneSequenceSwitch : SceneSwitcherEntry {
 	static bool pause;
+	SwitchTargetType startTargetType = SwitchTargetType::Scene;
 	OBSWeakSource startScene = nullptr;
 	double delay = 0;
 	int delayMultiplier = 1;
@@ -58,6 +59,7 @@ public:
 
 	void UpdateDelay();
 	void UpdateExtendText();
+	void setExtendedSequenceStartScene();
 
 private slots:
 	void SceneChanged(const QString &text);
