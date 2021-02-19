@@ -23,6 +23,7 @@ enum class sceneTriggerAction {
 	STOP_REPLAY_BUFFER,
 
 	MUTE_SOURCE,
+	UNMUTE_SOURCE,
 };
 
 struct SceneTrigger : SceneSwitcherEntry {
