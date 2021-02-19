@@ -62,14 +62,20 @@ public:
 	static bool DisplayMessage(QString msg, bool question = false);
 	static void AskBackup(obs_data_t *obj);
 
+	static void addSelectionEntry(QComboBox *sel, const char *description,
+				      bool selectable = false,
+				      const char *tooltip = "");
 	static void populateSceneSelection(QComboBox *sel,
 					   bool addPrevious = false,
 					   bool addSceneGroup = false,
 					   bool addSelect = true,
-					   std::string selectText = "");
+					   std::string selectText = "",
+					   bool selectable = false);
 
 	static void populateTransitionSelection(QComboBox *sel,
-						bool addSelect = true);
+						bool addCurrent = true,
+						bool addSelect = true,
+						bool selectable = false);
 	static void populateWindowSelection(QComboBox *sel,
 					    bool addSelect = true);
 	static void populateAudioSelection(QComboBox *sel,

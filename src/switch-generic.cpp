@@ -5,14 +5,15 @@ bool SceneSwitcherEntry::initialized()
 {
 	return (usePreviousScene || WeakSourceValid(scene) ||
 		SceneGroupValid(group)) &&
-	       transition;
+	       (useCurrentTransition || transition);
 }
 
 bool SceneSwitcherEntry::valid()
 {
-	return !initialized() || ((usePreviousScene || WeakSourceValid(scene) ||
-				   SceneGroupValid(group)) &&
-				  WeakSourceValid(transition));
+	return !initialized() ||
+	       ((usePreviousScene || WeakSourceValid(scene) ||
+		 SceneGroupValid(group)) &&
+		(useCurrentTransition || WeakSourceValid(transition)));
 }
 
 void SceneSwitcherEntry::logMatchScene()
@@ -82,8 +83,11 @@ void SceneSwitcherEntry::save(obs_data_t *obj, const char *targetTypeSaveName,
 
 	obs_data_set_string(obj, targetSaveName, targetName.c_str());
 
-	obs_data_set_string(obj, transitionSaveName,
-			    GetWeakSourceName(transition).c_str());
+	std::string transitionName = current_transition_name;
+	if (!useCurrentTransition) {
+		transitionName = GetWeakSourceName(transition);
+	}
+	obs_data_set_string(obj, transitionSaveName, transitionName.c_str());
 }
 
 void SceneSwitcherEntry::load(obs_data_t *obj, const char *targetTypeLoadName,
@@ -104,11 +108,14 @@ void SceneSwitcherEntry::load(obs_data_t *obj, const char *targetTypeLoadName,
 		group = GetSceneGroupByName(targetName);
 	}
 
+	usePreviousScene = strcmp(targetName, previous_scene_name) == 0;
+
 	const char *transitionName =
 		obs_data_get_string(obj, transitionLoadName);
 	transition = GetWeakTransitionByName(transitionName);
 
-	usePreviousScene = strcmp(targetName, previous_scene_name) == 0;
+	useCurrentTransition =
+		strcmp(transitionName, current_transition_name) == 0;
 }
 
 void SwitchWidget::SceneGroupAdd(const QString &name)
@@ -166,7 +173,8 @@ void SwitchWidget::SceneGroupRename(const QString &oldName,
 }
 
 SwitchWidget::SwitchWidget(QWidget *parent, SceneSwitcherEntry *s,
-			   bool usePreviousScene, bool addSceneGroup)
+			   bool usePreviousScene, bool addSceneGroup,
+			   bool addCurrentTransition)
 {
 	scenes = new QComboBox();
 	transitions = new QComboBox();
@@ -194,7 +202,8 @@ SwitchWidget::SwitchWidget(QWidget *parent, SceneSwitcherEntry *s,
 
 	AdvSceneSwitcher::populateSceneSelection(scenes, usePreviousScene,
 						 addSceneGroup);
-	AdvSceneSwitcher::populateTransitionSelection(transitions);
+	AdvSceneSwitcher::populateTransitionSelection(transitions,
+						      addCurrentTransition);
 
 	switchData = s;
 	showSwitchData();
@@ -218,6 +227,10 @@ void SwitchWidget::showSwitchData()
 
 	transitions->setCurrentText(
 		GetWeakSourceName(switchData->transition).c_str());
+	if (switchData->useCurrentTransition) {
+		transitions->setCurrentText(
+			obs_module_text("AdvSceneSwitcher.currentTransition"));
+	}
 
 	if (switchData->usePreviousScene) {
 		scenes->setCurrentText(obs_module_text(
@@ -278,4 +291,5 @@ void SwitchWidget::TransitionChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->transition = GetWeakTransitionByQString(text);
+	switchData->useCurrentTransition = switchData->transition == nullptr;
 }

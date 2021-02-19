@@ -24,6 +24,7 @@
 
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
+constexpr auto current_transition_name = "Current Transition";
 
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 typedef enum { PERSIST = 0, START = 1, STOP = 2 } StartupBehavior;
