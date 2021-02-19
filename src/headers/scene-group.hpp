@@ -37,7 +37,7 @@ struct SceneGroup {
 
 	int currentCount = -1;
 	std::chrono::high_resolution_clock::time_point lastAdvTime;
-	OBSWeakSource lastRandomScene = nullptr;
+	int lastRandomScene = -1;
 
 	inline SceneGroup(){};
 	inline SceneGroup(std::string name_) : name(name_){};
