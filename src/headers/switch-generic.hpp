@@ -8,6 +8,7 @@ struct SceneSwitcherEntry {
 	OBSWeakSource scene = nullptr;
 	OBSWeakSource transition = nullptr;
 	bool usePreviousScene = false;
+	bool useCurrentTransition = false;
 
 	virtual const char *getType() = 0;
 	virtual bool initialized();
@@ -64,7 +65,8 @@ class SwitchWidget : public QWidget {
 
 public:
 	SwitchWidget(QWidget *parent, SceneSwitcherEntry *s,
-		     bool usePreviousScene = true, bool addSceneGroup = false);
+		     bool usePreviousScene = true, bool addSceneGroup = false,
+		     bool addCurrentTransition = true);
 	virtual SceneSwitcherEntry *getSwitchData();
 	virtual void setSwitchData(SceneSwitcherEntry *s);
 	void showSwitchData();
