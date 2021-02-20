@@ -133,6 +133,9 @@ void SceneTrigger::logMatch()
 	case sceneTriggerAction::MUTE_SOURCE:
 		actionName = "MUTE (" + GetWeakSourceName(audioSource) + ")";
 		break;
+	case sceneTriggerAction::UNMUTE_SOURCE:
+		actionName = "UNMUTE (" + GetWeakSourceName(audioSource) + ")";
+		break;
 	default:
 		actionName = "UNKOWN";
 		break;
@@ -176,21 +179,20 @@ void frontEndActionThread(sceneTriggerAction action, double delay)
 	case sceneTriggerAction::STOP_REPLAY_BUFFER:
 		obs_frontend_replay_buffer_stop();
 		break;
-	case sceneTriggerAction::MUTE_SOURCE:
-		obs_frontend_replay_buffer_stop();
-		break;
 	default:
+		blog(LOG_WARNING, "ignoring unexpected frontend action '%d'",
+		     action);
 		break;
 	}
 }
 
-void muteThread(OBSWeakSource source, double delay)
+void muteThread(OBSWeakSource source, double delay, bool mute)
 {
 	long long mil = delay * 1000;
 	std::this_thread::sleep_for(std::chrono::milliseconds(mil));
 
 	auto s = obs_weak_source_get_source(source);
-	obs_source_set_muted(s, true);
+	obs_source_set_muted(s, mute);
 	obs_source_release(s);
 }
 
@@ -206,6 +208,12 @@ bool isFrontendAction(sceneTriggerAction triggerAction)
 	       triggerAction == sceneTriggerAction::STOP_REPLAY_BUFFER;
 }
 
+bool isAudioAction(sceneTriggerAction t)
+{
+	return t == sceneTriggerAction::MUTE_SOURCE ||
+	       t == sceneTriggerAction::UNMUTE_SOURCE;
+}
+
 void SceneTrigger::performAction()
 {
 	if (triggerAction == sceneTriggerAction::NONE) {
@@ -216,8 +224,11 @@ void SceneTrigger::performAction()
 
 	if (isFrontendAction(triggerAction)) {
 		t = std::thread(frontEndActionThread, triggerAction, duration);
+	} else if (isAudioAction(triggerAction)) {
+		bool mute = triggerAction == sceneTriggerAction::MUTE_SOURCE;
+		t = std::thread(muteThread, audioSource, duration, mute);
 	} else {
-		t = std::thread(muteThread, audioSource, duration);
+		blog(LOG_WARNING, "ignoring unkown action '%d'", triggerAction);
 	}
 
 	t.detach();
@@ -467,6 +478,8 @@ inline void populateActions(QComboBox *list)
 		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.stopReplayBuffer"));
 	list->addItem(obs_module_text(
 		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.muteSource"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.unmuteSource"));
 }
 
 SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
@@ -503,7 +516,7 @@ SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
 		audioSources->setCurrentText(
 			GetWeakSourceName(s->audioSource).c_str());
 
-		if (s->triggerAction == sceneTriggerAction::MUTE_SOURCE) {
+		if (isAudioAction(s->triggerAction)) {
 			audioSources->show();
 		} else {
 			audioSources->hide();
@@ -568,7 +581,7 @@ void SceneTriggerWidget::TriggerActionChanged(int index)
 			static_cast<sceneTriggerAction>(index);
 	}
 
-	if (switchData->triggerAction == sceneTriggerAction::MUTE_SOURCE) {
+	if (isAudioAction(switchData->triggerAction)) {
 		audioSources->show();
 	} else {
 		audioSources->hide();
