@@ -129,6 +129,7 @@ void AdvSceneSwitcher::SetStarted()
 	ui->pluginRunningText->setText(
 		obs_module_text("AdvSceneSwitcher.status.active"));
 	ui->pluginRunningText->disconnect(inactivePluse);
+	currentStatusActive = true;
 }
 
 void AdvSceneSwitcher::SetStopped()
@@ -139,6 +140,7 @@ void AdvSceneSwitcher::SetStopped()
 		obs_module_text("AdvSceneSwitcher.status.inactive"));
 	inactivePluse = PulseWidget(ui->pluginRunningText, QColor(Qt::red),
 				    QColor(0, 0, 0, 0), "QLabel ");
+	currentStatusActive = false;
 }
 
 void AdvSceneSwitcher::on_toggleStartButton_clicked()
@@ -711,6 +713,21 @@ void populateAutoStartEventSelection(QComboBox *cb)
 		"AdvSceneSwitcher.generalTab.status.autoStart.recordingAndStreaming"));
 }
 
+void AdvSceneSwitcher::updateStatus()
+{
+	if (switcher->th && switcher->th->isRunning()) {
+		if (currentStatusActive) {
+			return;
+		}
+		SetStarted();
+	} else {
+		if (!currentStatusActive) {
+			return;
+		}
+		SetStopped();
+	}
+}
+
 void AdvSceneSwitcher::setupGeneralTab()
 {
 	populateSceneSelection(ui->noMatchSwitchScene, false);
@@ -814,4 +831,10 @@ void AdvSceneSwitcher::setupGeneralTab()
 	} else {
 		SetStopped();
 	}
+
+	// Updates the UI status element if the status changed externally
+	// (e.g. via hotkeys)
+	QTimer *statusTimer = new QTimer(this);
+	connect(statusTimer, SIGNAL(timeout()), this, SLOT(updateStatus()));
+	statusTimer->start(1000);
 }

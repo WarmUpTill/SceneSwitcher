@@ -51,27 +51,26 @@ OBSWeakSource SceneGroup::getNextSceneTime()
 OBSWeakSource SceneGroup::getNextSceneRandom()
 {
 	if (scenes.size() == 1) {
-		return *scenes.begin();
+		currentIdx = 0;
+		return scenes[currentIdx];
 	}
 
-	std::vector<OBSWeakSource> rs(scenes);
-	std::random_device rng;
-	std::mt19937 urng(rng());
-	std::shuffle(rs.begin(), rs.end(), urng);
-	for (OBSWeakSource &s : rs) {
-		if (s == lastRandomScene) {
-			continue;
-		}
+	int rIdx = lastRandomScene;
+	do {
+		rIdx = rand() % scenes.size();
+	} while (rIdx == lastRandomScene);
 
-		lastRandomScene = s;
+	lastRandomScene = rIdx;
+	currentIdx = rIdx;
 
-		return s;
-	}
-	return nullptr;
+	return scenes[currentIdx];
 }
 
 OBSWeakSource SceneGroup::getCurrentScene()
 {
+	if (scenes.size() < currentIdx + 1) {
+		return nullptr;
+	}
 	return scenes[currentIdx];
 }
 

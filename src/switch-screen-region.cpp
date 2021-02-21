@@ -353,7 +353,8 @@ ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
 	AdvSceneSwitcher::populateSceneSelection(
 		excludeScenes, false, false, true,
 		obs_module_text(
-			"AdvSceneSwitcher.screenRegionTab.excludeScenes.None"));
+			"AdvSceneSwitcher.screenRegionTab.excludeScenes.None"),
+		true);
 
 	if (s) {
 		excludeScenes->setCurrentText(
