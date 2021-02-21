@@ -118,7 +118,8 @@ void SwitcherData::writeToStatusFile(QString msg)
 void SwitcherData::checkSwitchInfoFromFile(bool &match, OBSWeakSource &scene,
 					   OBSWeakSource &transition)
 {
-	if (!fileIO.readEnabled || fileIO.readPath.empty()) {
+	if (!fileIO.readEnabled || fileIO.readPath.empty() ||
+	    FileSwitch::pause) {
 		return;
 	}
 
