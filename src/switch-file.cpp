@@ -124,24 +124,31 @@ void SwitcherData::checkSwitchInfoFromFile(bool &match, OBSWeakSource &scene,
 	}
 
 	QFile file(QString::fromStdString(fileIO.readPath));
-	if (file.open(QIODevice::ReadOnly)) {
-		QTextStream in(&file);
-		QString sceneStr = in.readLine();
-		obs_source_t *sceneRead =
-			obs_get_source_by_name(sceneStr.toUtf8().constData());
-		if (sceneRead) {
-			obs_weak_source_t *sceneReadWs =
-				obs_source_get_weak_source(sceneRead);
-
-			match = true;
-			scene = sceneReadWs;
-			transition = nullptr;
-
-			obs_weak_source_release(sceneReadWs);
-			obs_source_release(sceneRead);
-		}
-		file.close();
+	if (!file.open(QIODevice::ReadOnly)) {
+		return;
 	}
+
+	QTextStream in(&file);
+
+	QString sceneStr = in.readLine();
+	OBSWeakSource sceneRead = GetWeakSourceByQString(sceneStr);
+
+	QString transitionStr = in.readLine();
+	OBSWeakSource transitionRead =
+		GetWeakTransitionByQString(transitionStr);
+
+	if (sceneRead) {
+		match = true;
+		scene = sceneRead;
+		transition = transitionRead;
+
+		vblog(LOG_INFO,
+		      "match for 'file' - read scene '%s' and transition '%s' from file '%s'",
+		      sceneStr.toUtf8().constData(),
+		      transitionStr.toUtf8().constData(),
+		      fileIO.readPath.c_str());
+	}
+	file.close();
 }
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb,
