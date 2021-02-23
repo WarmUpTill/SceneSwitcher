@@ -23,6 +23,7 @@ class AdvSceneSwitcher : public QDialog {
 public:
 	std::unique_ptr<Ui_AdvSceneSwitcher> ui;
 	bool loading = true;
+	bool currentStatusActive = false;
 
 	AdvSceneSwitcher(QWidget *parent);
 
@@ -222,6 +223,7 @@ public slots:
 	void on_threadPriority_currentTextChanged(const QString &text);
 
 	void updateScreenRegionCursorPos();
+	void updateStatus();
 
 	void on_close_clicked();
 
