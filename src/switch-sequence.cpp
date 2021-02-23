@@ -166,6 +166,7 @@ void AdvSceneSwitcher::OpenSequenceExtendEdit(SequenceWidget *sw)
 	QDialog edit;
 	SequenceWidget editWidget(this, sw->getSwitchData(), false, true);
 	QHBoxLayout layout;
+	layout.setSizeConstraint(QLayout::SetFixedSize);
 	layout.addWidget(&editWidget);
 	edit.setLayout(&layout);
 	edit.setWindowTitle(obs_module_text(
