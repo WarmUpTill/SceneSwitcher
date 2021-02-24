@@ -167,12 +167,10 @@ struct SwitcherData {
 	bool sceneChangedDuringWait();
 
 	bool prioFuncsValid();
-<<<<<<< HEAD
+
 	bool tabOrderValid();
 	void resetTabOrder();
-=======
 
->>>>>>> master
 	void writeSceneInfoToFile();
 	void writeToStatusFile(QString status);
 
