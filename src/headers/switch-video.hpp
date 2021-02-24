@@ -4,16 +4,21 @@
 constexpr auto video_func = 9;
 constexpr auto default_priority_9 = video_func;
 
-class AdvSSScreenshotObj : public QObject {
-	Q_OBJECT
+enum class videoSwitchType {
+	MATCH,
+	DIFFER,
+	HAS_NOT_CHANGED,
+};
 
+class AdvSSScreenshotObj {
 public:
 	AdvSSScreenshotObj(obs_source_t *source);
-	~AdvSSScreenshotObj() override;
+	~AdvSSScreenshotObj();
+
 	void Screenshot();
 	void Download();
 	void Copy();
-	void MuxAndFinish();
+	void MarkDone();
 
 	gs_texrender_t *texrender = nullptr;
 	gs_stagesurf_t *stagesurf = nullptr;
@@ -22,19 +27,26 @@ public:
 	QImage image;
 	uint32_t cx = 0;
 	uint32_t cy = 0;
-	std::thread th;
 
 	int stage = 0;
 
-public slots:
-	void Save();
+	bool done = false;
+	std::chrono::steady_clock::time_point time;
 };
 
 struct VideoSwitch : virtual SceneSwitcherEntry {
 	static bool pause;
+
+	videoSwitchType type = videoSwitchType::MATCH;
 	OBSWeakSource videoSource = nullptr;
 	std::string file = obs_module_text("AdvSceneSwitcher.enterPath");
-	AdvSSScreenshotObj *screenshotData = nullptr;
+	double duration = 0;
+
+	std::unique_ptr<AdvSSScreenshotObj> screenshotData = nullptr;
+	std::chrono::steady_clock::time_point previousTime{};
+	QImage matchImage;
+
+	std::chrono::milliseconds currentMatchDuration{};
 
 	const char *getType() { return "video"; }
 	bool initialized();
@@ -45,11 +57,6 @@ struct VideoSwitch : virtual SceneSwitcherEntry {
 	bool checkMatch();
 
 	VideoSwitch(){};
-	//VideoSwitch(const VideoSwitch &other);
-	//VideoSwitch(VideoSwitch &&other);
-	//~VideoSwitch();
-	//VideoSwitch &operator=(const VideoSwitch &other);
-	//VideoSwitch &operator=(VideoSwitch &&other) noexcept;
 	friend void swap(VideoSwitch &first, VideoSwitch &second);
 };
 
