@@ -532,6 +532,7 @@ void SceneSequenceSwitch::advanceActiveSequence()
 			blog(LOG_WARNING,
 			     "cannot advance sequence - null scene set");
 			activeSequence = nullptr;
+			return;
 		}
 		if (activeSequence->targetType ==
 			    SwitchTargetType::SceneGroup &&
