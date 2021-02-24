@@ -136,6 +136,12 @@ void SceneTrigger::logMatch()
 	case sceneTriggerAction::UNMUTE_SOURCE:
 		actionName = "UNMUTE (" + GetWeakSourceName(audioSource) + ")";
 		break;
+	case sceneTriggerAction::START_SWITCHER:
+		actionName = "START SCENE SWITCHER";
+		break;
+	case sceneTriggerAction::STOP_SWITCHER:
+		actionName = "STOP SCENE SWITCHER";
+		break;
 	default:
 		actionName = "UNKOWN";
 		break;
@@ -196,6 +202,18 @@ void muteThread(OBSWeakSource source, double delay, bool mute)
 	obs_source_release(s);
 }
 
+void statusThread(double delay, bool stop)
+{
+	long long mil = delay * 1000;
+	std::this_thread::sleep_for(std::chrono::milliseconds(mil));
+
+	if (stop) {
+		switcher->Stop();
+	} else {
+		switcher->Start();
+	}
+}
+
 bool isFrontendAction(sceneTriggerAction triggerAction)
 {
 	return triggerAction == sceneTriggerAction::START_RECORDING ||
@@ -214,6 +232,12 @@ bool isAudioAction(sceneTriggerAction t)
 	       t == sceneTriggerAction::UNMUTE_SOURCE;
 }
 
+bool isSwitcherStatusAction(sceneTriggerAction t)
+{
+	return t == sceneTriggerAction::START_SWITCHER ||
+	       t == sceneTriggerAction::STOP_SWITCHER;
+}
+
 void SceneTrigger::performAction()
 {
 	if (triggerAction == sceneTriggerAction::NONE) {
@@ -227,6 +251,9 @@ void SceneTrigger::performAction()
 	} else if (isAudioAction(triggerAction)) {
 		bool mute = triggerAction == sceneTriggerAction::MUTE_SOURCE;
 		t = std::thread(muteThread, audioSource, duration, mute);
+	} else if (isSwitcherStatusAction(triggerAction)) {
+		bool stop = triggerAction == sceneTriggerAction::STOP_SWITCHER;
+		t = std::thread(statusThread, duration, stop);
 	} else {
 		blog(LOG_WARNING, "ignoring unkown action '%d'", triggerAction);
 	}
@@ -252,7 +279,7 @@ bool SceneTrigger::checkMatch(OBSWeakSource currentScene,
 
 void SwitcherData::checkTriggers()
 {
-	if (SceneTrigger::pause || stop) {
+	if (SceneTrigger::pause) {
 		return;
 	}
 
@@ -260,6 +287,10 @@ void SwitcherData::checkTriggers()
 	OBSWeakSource currentScene = obs_source_get_weak_source(source);
 
 	for (auto &t : sceneTriggers) {
+		if (stop && !isSwitcherStatusAction(t.triggerAction)) {
+			continue;
+		}
+
 		if (t.checkMatch(currentScene, previousScene)) {
 			t.logMatch();
 			t.performAction();
@@ -480,6 +511,10 @@ inline void populateActions(QComboBox *list)
 		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.muteSource"));
 	list->addItem(obs_module_text(
 		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.unmuteSource"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.startSwitcher"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.stopSwitcher"));
 }
 
 SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)

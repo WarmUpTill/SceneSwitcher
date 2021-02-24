@@ -73,7 +73,7 @@ public:
 
 	static void swapSwitchData(SwitchWidget *s1, SwitchWidget *s2);
 
-private slots:
+protected slots:
 	void SceneChanged(const QString &text);
 	void TransitionChanged(const QString &text);
 	void SceneGroupAdd(const QString &name);

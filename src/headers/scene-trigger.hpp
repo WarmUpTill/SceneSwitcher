@@ -24,6 +24,9 @@ enum class sceneTriggerAction {
 
 	MUTE_SOURCE,
 	UNMUTE_SOURCE,
+
+	START_SWITCHER,
+	STOP_SWITCHER,
 };
 
 struct SceneTrigger : SceneSwitcherEntry {
