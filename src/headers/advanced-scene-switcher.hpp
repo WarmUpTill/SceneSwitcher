@@ -40,6 +40,7 @@ public:
 	int IgnoreIdleWindowsFindByData(const QString &window);
 
 	void UpdateNonMatchingScene(const QString &name);
+	void OpenSequenceExtendEdit(SequenceWidget *sw);
 	void SetEditSceneGroup(SceneGroup &sg);
 
 	void loadUI();
@@ -136,10 +137,12 @@ public slots:
 
 	void on_sceneSequenceAdd_clicked();
 	void on_sceneSequenceRemove_clicked();
-	void on_sceneSequenceSave_clicked();
-	void on_sceneSequenceLoad_clicked();
 	void on_sceneSequenceUp_clicked();
 	void on_sceneSequenceDown_clicked();
+	void on_sceneSequenceSave_clicked();
+	void on_sceneSequenceLoad_clicked();
+	void on_sequenceEdit_clicked();
+	void on_sceneSequenceSwitches_itemDoubleClicked(QListWidgetItem *item);
 
 	void on_verboseLogging_stateChanged(int state);
 	void on_uiHintsDisable_stateChanged(int state);

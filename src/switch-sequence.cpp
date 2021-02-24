@@ -4,6 +4,8 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+constexpr auto max_extend_text_size = 150;
+
 bool SceneSequenceSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
@@ -159,30 +161,41 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 	close();
 }
 
-bool matchInterruptible(SwitcherData *switcher, SceneSequenceSwitch &s)
+void AdvSceneSwitcher::OpenSequenceExtendEdit(SequenceWidget *sw)
 {
-	bool durationReached = s.matchCount * (switcher->interval / 1000.0) >=
-			       s.delay;
+	QDialog edit;
+	SequenceWidget editWidget(this, sw->getSwitchData(), false, true);
+	QHBoxLayout layout;
+	layout.setSizeConstraint(QLayout::SetFixedSize);
+	layout.addWidget(&editWidget);
+	edit.setLayout(&layout);
+	edit.setWindowTitle(obs_module_text(
+		"AdvSceneSwitcher.sceneSequenceTab.extendEdit"));
+	edit.exec();
 
-	s.matchCount++;
-
-	if (durationReached) {
-		return true;
-	}
-	return false;
+	sw->UpdateExtendText();
 }
 
-bool matchUninterruptible(SwitcherData *switcher, SceneSequenceSwitch &s,
-			  obs_source_t *currentSource, int &linger)
+void AdvSceneSwitcher::on_sequenceEdit_clicked()
 {
-	// scene was already active for the previous cycle so remove this time
-	int dur = s.delay * 1000 - switcher->interval;
-	if (dur > 0) {
-		switcher->waitScene = currentSource;
-		linger = dur;
+	int index = ui->sceneSequenceSwitches->currentRow();
+	if (index == -1) {
+		return;
 	}
 
-	return true;
+	SequenceWidget *currentWidget =
+		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(
+			ui->sceneSequenceSwitches->item(index));
+
+	OpenSequenceExtendEdit(currentWidget);
+}
+
+void AdvSceneSwitcher::on_sceneSequenceSwitches_itemDoubleClicked(
+	QListWidgetItem *item)
+{
+	SequenceWidget *currentWidget =
+		(SequenceWidget *)ui->sceneSequenceSwitches->itemWidget(item);
+	OpenSequenceExtendEdit(currentWidget);
 }
 
 void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
@@ -192,38 +205,53 @@ void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 		return;
 	}
 
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
-	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
+	obs_source_t *currentSceneSource = obs_frontend_get_current_scene();
+	obs_weak_source_t *currentScene =
+		obs_source_get_weak_source(currentSceneSource);
 
 	for (SceneSequenceSwitch &s : sceneSequenceSwitches) {
-		if (!s.initialized()) {
+		// Continue the active uninterruptible sequence and skip others
+		if (uninterruptibleSceneSequenceActive &&
+		    s.activeSequence == nullptr) {
 			continue;
 		}
 
-		if (s.startScene == ws) {
-			if (!match) {
-				if (s.interruptible) {
-					match = matchInterruptible(switcher, s);
-				} else {
-					match = matchUninterruptible(
-						switcher, s, currentSource,
-						linger);
-				}
+		bool matched = s.checkMatch(currentScene, linger);
 
-				if (match) {
-					scene = s.getScene();
-					transition = s.transition;
-					if (switcher->verbose) {
-						s.logMatch();
-					}
+		if (!match && matched) {
+			match = matched;
+
+			if (s.activeSequence) {
+				scene = s.activeSequence->getScene();
+				transition = s.activeSequence->transition;
+			} else {
+				scene = s.getScene();
+				transition = s.transition;
+				if (verbose) {
+					s.logMatch();
 				}
 			}
-		} else {
-			s.matchCount = 0;
+
+			s.advanceActiveSequence();
+			if (verbose) {
+				s.logAdvanceSequence();
+			}
+
+			// Ignore other switching methods if sequence is not
+			// interruptible and has not reached its end
+			if (s.activeSequence) {
+				uninterruptibleSceneSequenceActive =
+					!s.interruptible;
+			}
 		}
 	}
-	obs_source_release(currentSource);
-	obs_weak_source_release(ws);
+
+	if (!match) {
+		uninterruptibleSceneSequenceActive = false;
+	}
+
+	obs_source_release(currentSceneSource);
+	obs_weak_source_release(currentScene);
 }
 
 void SwitcherData::saveSceneSequenceSwitches(obs_data_t *obj)
@@ -291,18 +319,32 @@ bool SceneSequenceSwitch::valid()
 	       (SceneSwitcherEntry::valid() && WeakSourceValid(startScene));
 }
 
-void SceneSequenceSwitch::save(obs_data_t *obj)
+void SceneSequenceSwitch::save(obs_data_t *obj, bool saveExt)
 {
 	SceneSwitcherEntry::save(obj);
 
+	obs_data_set_int(obj, "startTargetType",
+			 static_cast<int>(startTargetType));
 	obs_data_set_string(obj, "startScene",
 			    GetWeakSourceName(startScene).c_str());
-
 	obs_data_set_double(obj, "delay", delay);
-
 	obs_data_set_int(obj, "delayMultiplier", delayMultiplier);
-
 	obs_data_set_bool(obj, "interruptible", interruptible);
+
+	if (saveExt) {
+		auto cur = extendedSequence.get();
+
+		obs_data_array_t *extendScenes = obs_data_array_create();
+		while (cur) {
+			obs_data_t *array_obj = obs_data_create();
+			cur->save(array_obj, false);
+			obs_data_array_push_back(extendScenes, array_obj);
+			obs_data_release(array_obj);
+			cur = cur->extendedSequence.get();
+		}
+		obs_data_set_array(obj, "extendScenes", extendScenes);
+		obs_data_array_release(extendScenes);
+	}
 }
 
 // To be removed in future version
@@ -341,14 +383,15 @@ bool loadOldScequence(obs_data_t *obj, SceneSequenceSwitch *s)
 	return true;
 }
 
-void SceneSequenceSwitch::load(obs_data_t *obj)
+void SceneSequenceSwitch::load(obs_data_t *obj, bool saveExt)
 {
 	if (loadOldScequence(obj, this)) {
 		return;
 	}
 
 	SceneSwitcherEntry::load(obj);
-
+	startTargetType = static_cast<SwitchTargetType>(
+		obs_data_get_int(obj, "startTargetType"));
 	const char *scene = obs_data_get_string(obj, "startScene");
 	startScene = GetWeakSourceByName(scene);
 
@@ -360,6 +403,173 @@ void SceneSequenceSwitch::load(obs_data_t *obj)
 		delayMultiplier = 1;
 
 	interruptible = obs_data_get_bool(obj, "interruptible");
+
+	if (saveExt) {
+		auto cur = this;
+
+		obs_data_array_t *extendScenes =
+			obs_data_get_array(obj, "extendScenes");
+		size_t count = obs_data_array_count(extendScenes);
+		for (size_t i = 0; i < count; i++) {
+			obs_data_t *array_obj =
+				obs_data_array_item(extendScenes, i);
+
+			cur->extendedSequence =
+				std::make_unique<SceneSequenceSwitch>();
+
+			cur->extendedSequence->load(array_obj, false);
+
+			cur = cur->extendedSequence.get();
+			obs_data_release(array_obj);
+		}
+		obs_data_array_release(extendScenes);
+	}
+}
+
+bool SceneSequenceSwitch::reduce()
+{
+	// Reset activeSequence just in case it was one of the deleted entries
+	activeSequence = nullptr;
+
+	if (!extendedSequence) {
+		return true;
+	}
+	if (extendedSequence->reduce()) {
+		extendedSequence.reset(nullptr);
+	}
+	return false;
+}
+
+SceneSequenceSwitch *SceneSequenceSwitch::extend()
+{
+	if (extendedSequence) {
+		return extendedSequence->extend();
+	}
+	extendedSequence = std::make_unique<SceneSequenceSwitch>();
+	extendedSequence->startScene = scene;
+	return extendedSequence.get();
+}
+
+bool SceneSequenceSwitch::checkMatch(OBSWeakSource currentScene, int &linger,
+				     SceneSequenceSwitch *root)
+{
+	if (!initialized()) {
+		if (root) {
+			root->activeSequence = nullptr;
+		}
+		return false;
+	}
+
+	bool match = false;
+
+	if (activeSequence) {
+		return activeSequence->checkMatch(currentScene, linger, this);
+	}
+
+	if (startScene == currentScene) {
+		if (interruptible) {
+			match = checkDurationMatchInterruptible();
+		} else {
+			match = true;
+			prepareUninterruptibleMatch(currentScene, linger);
+		}
+	} else {
+		matchCount = 0;
+
+		if (root) {
+			root->activeSequence = nullptr;
+			logSequenceCanceled();
+		}
+	}
+
+	return match;
+}
+
+bool SceneSequenceSwitch::checkDurationMatchInterruptible()
+{
+	bool durationReached = matchCount * (switcher->interval / 1000.0) >=
+			       delay;
+	matchCount++;
+	if (durationReached) {
+		matchCount = 0;
+		return true;
+	}
+	return false;
+}
+
+void SceneSequenceSwitch::prepareUninterruptibleMatch(
+	OBSWeakSource currentScene, int &linger)
+{
+	int dur = delay * 1000;
+	if (dur > 0) {
+		switcher->waitScene = obs_weak_source_get_source(currentScene);
+		obs_source_release(switcher->waitScene);
+		linger = dur;
+	}
+}
+
+void SceneSequenceSwitch::advanceActiveSequence()
+{
+	// Set start Scene
+	OBSWeakSource currentSceneGroupScene = nullptr;
+	if (targetType == SwitchTargetType::SceneGroup && group) {
+		currentSceneGroupScene = group->getCurrentScene();
+	}
+
+	if (activeSequence) {
+		activeSequence = activeSequence->extendedSequence.get();
+	} else {
+		activeSequence = extendedSequence.get();
+	}
+
+	if (activeSequence) {
+		if (activeSequence->startTargetType ==
+		    SwitchTargetType::SceneGroup) {
+			activeSequence->startScene = currentSceneGroupScene;
+		}
+		if (activeSequence->targetType == SwitchTargetType::Scene &&
+		    !activeSequence->scene) {
+			blog(LOG_WARNING,
+			     "cannot advance sequence - null scene set");
+			activeSequence = nullptr;
+		}
+		if (activeSequence->targetType ==
+			    SwitchTargetType::SceneGroup &&
+		    activeSequence->group &&
+		    activeSequence->group->scenes.empty()) {
+			blog(LOG_WARNING,
+			     "cannot advance sequence - no scenes specified in '%s'",
+			     activeSequence->group->name.c_str());
+			activeSequence = nullptr;
+			return;
+		}
+
+		// Reinit old matchCount value in case it was previously set
+		activeSequence->matchCount = 0;
+	}
+}
+
+void SceneSequenceSwitch::logAdvanceSequence()
+{
+	if (activeSequence) {
+		std::string targetName =
+			GetWeakSourceName(activeSequence->scene);
+
+		if (activeSequence->targetType ==
+			    SwitchTargetType::SceneGroup &&
+		    activeSequence->group) {
+			targetName = activeSequence->group->name;
+		}
+
+		blog(LOG_INFO, "continuing sequence with '%s' -> '%s'",
+		     GetWeakSourceName(activeSequence->startScene).c_str(),
+		     targetName.c_str());
+	}
+}
+
+void SceneSequenceSwitch::logSequenceCanceled()
+{
+	blog(LOG_INFO, "unexpected scene change - cancel sequence");
 }
 
 void populateDelayUnits(QComboBox *list)
@@ -369,14 +579,82 @@ void populateDelayUnits(QComboBox *list)
 	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
 }
 
-SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s)
-	: SwitchWidget(parent, s, true, true)
+QString makeExtendText(SceneSequenceSwitch *s, int curLen = 0)
 {
+	if (!s) {
+		return "";
+	}
+
+	QString ext = "";
+
+	ext = QString::number(s->delay / s->delayMultiplier) + " ";
+
+	switch (s->delayMultiplier) {
+	case 1:
+		ext += obs_module_text("AdvSceneSwitcher.unit.secends");
+		break;
+	case 60:
+		ext += obs_module_text("AdvSceneSwitcher.unit.minutes");
+		break;
+	case 60 * 60:
+		ext += obs_module_text("AdvSceneSwitcher.unit.hours");
+		break;
+	default:
+		ext += obs_module_text("?????");
+		break;
+	}
+
+	QString sceneName = GetWeakSourceName(s->scene).c_str();
+	if (s->targetType == SwitchTargetType::SceneGroup && s->group) {
+		sceneName = QString::fromStdString(s->group->name);
+	}
+	if (sceneName.isEmpty()) {
+		sceneName = obs_module_text("AdvSceneSwitcher.selectScene");
+	}
+	ext += " -> [" + sceneName + "]";
+
+	if (ext.length() + curLen > max_extend_text_size) {
+		return "...";
+	}
+
+	if (s->extendedSequence.get()) {
+		return ext +=
+		       "    |    " + makeExtendText(s->extendedSequence.get(),
+						    curLen + ext.length());
+	} else {
+		return ext;
+	}
+}
+
+SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
+			       bool extendSequence, bool editExtendMode)
+	: SwitchWidget(parent, s, !extendSequence, true)
+{
+	this->setParent(parent);
+
 	delay = new QDoubleSpinBox();
 	delayUnits = new QComboBox();
 	startScenes = new QComboBox();
 	interruptible = new QCheckBox(obs_module_text(
 		"AdvSceneSwitcher.sceneSequenceTab.interruptible"));
+	extendText = new QLabel();
+	extend = new QPushButton();
+	reduce = new QPushButton();
+
+	extend->setProperty("themeID",
+			    QVariant(QStringLiteral("addIconSmall")));
+	reduce->setProperty("themeID",
+			    QVariant(QStringLiteral("removeIconSmall")));
+
+	extend->setMaximumSize(22, 22);
+	reduce->setMaximumSize(22, 22);
+
+	// We need to extend the generic SwitchWidget::SceneChanged()
+	// with our own SequenceWidget::SceneChanged()
+	// so the old singal / slot needs to be disconnected
+	scenes->disconnect();
+	QWidget::connect(scenes, SIGNAL(currentTextChanged(const QString &)),
+			 this, SLOT(SceneChanged(const QString &)));
 
 	QWidget::connect(delay, SIGNAL(valueChanged(double)), this,
 			 SLOT(DelayChanged(double)));
@@ -387,6 +665,11 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s)
 			 SLOT(StartSceneChanged(const QString &)));
 	QWidget::connect(interruptible, SIGNAL(stateChanged(int)), this,
 			 SLOT(InterruptibleChanged(int)));
+
+	QWidget::connect(extend, SIGNAL(clicked()), this,
+			 SLOT(ExtendClicked()));
+	QWidget::connect(reduce, SIGNAL(clicked()), this,
+			 SLOT(ReduceClicked()));
 
 	delay->setMaximum(99999.000000);
 	AdvSceneSwitcher::populateSceneSelection(startScenes, false);
@@ -413,17 +696,62 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s)
 		interruptible->setChecked(s->interruptible);
 	}
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{startScenes}}", startScenes},
-		{"{{scenes}}", scenes},
-		{"{{delay}}", delay},
-		{"{{delayUnits}}", delayUnits},
-		{"{{transitions}}", transitions},
-		{"{{interruptible}}", interruptible}};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.sceneSequenceTab.entry"),
-		     mainLayout, widgetPlaceholders);
-	setLayout(mainLayout);
+	if (extendSequence) {
+		QHBoxLayout *mainLayout = new QHBoxLayout;
+		std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+			{"{{scenes}}", scenes},
+			{"{{delay}}", delay},
+			{"{{delayUnits}}", delayUnits},
+			{"{{transitions}}", transitions}};
+		placeWidgets(
+			obs_module_text(
+				"AdvSceneSwitcher.sceneSequenceTab.extendEntry"),
+			mainLayout, widgetPlaceholders);
+		setLayout(mainLayout);
+	} else {
+		QHBoxLayout *startSequence = new QHBoxLayout;
+		std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+			{"{{startScenes}}", startScenes},
+			{"{{scenes}}", scenes},
+			{"{{delay}}", delay},
+			{"{{delayUnits}}", delayUnits},
+			{"{{transitions}}", transitions},
+			{"{{interruptible}}", interruptible}};
+		placeWidgets(obs_module_text(
+				     "AdvSceneSwitcher.sceneSequenceTab.entry"),
+			     startSequence, widgetPlaceholders);
+
+		//exetend widgets placed here
+		extendSequenceLayout = new QVBoxLayout;
+		if (s) {
+			if (!editExtendMode) {
+				extendText->setText(makeExtendText(
+					s->extendedSequence.get()));
+			} else {
+				auto cur = s->extendedSequence.get();
+				while (cur != nullptr) {
+					extendSequenceLayout->addWidget(
+						new SequenceWidget(parent, cur,
+								   true, true));
+					cur = cur->extendedSequence.get();
+				}
+			}
+		}
+
+		QHBoxLayout *extendSequenceControlsLayout = new QHBoxLayout;
+		if (editExtendMode) {
+			extendSequenceControlsLayout->addWidget(extend);
+			extendSequenceControlsLayout->addWidget(reduce);
+		}
+		extendSequenceControlsLayout->addStretch();
+
+		QVBoxLayout *mainLayout = new QVBoxLayout;
+		mainLayout->addLayout(startSequence);
+		mainLayout->addLayout(extendSequenceLayout);
+		mainLayout->addWidget(extendText);
+		mainLayout->addLayout(extendSequenceControlsLayout);
+		setLayout(mainLayout);
+	}
 
 	switchData = s;
 
@@ -493,6 +821,32 @@ void SequenceWidget::DelayUnitsChanged(int idx)
 	UpdateDelay();
 }
 
+void SequenceWidget::setExtendedSequenceStartScene()
+{
+	switchData->extendedSequence->startScene = switchData->scene;
+	switchData->extendedSequence->startTargetType = SwitchTargetType::Scene;
+
+	if (switchData->targetType == SwitchTargetType::SceneGroup) {
+		switchData->extendedSequence->startScene = nullptr;
+		switchData->extendedSequence->startTargetType =
+			SwitchTargetType::SceneGroup;
+	}
+}
+
+void SequenceWidget::SceneChanged(const QString &text)
+{
+	if (loading || !switchData) {
+		return;
+	}
+
+	SwitchWidget::SceneChanged(text);
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	if (switchData->extendedSequence) {
+		setExtendedSequenceStartScene();
+	}
+}
+
 void SequenceWidget::StartSceneChanged(const QString &text)
 {
 	if (loading || !switchData) {
@@ -511,4 +865,45 @@ void SequenceWidget::InterruptibleChanged(int state)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->interruptible = state;
+
+	auto cur = switchData->extendedSequence.get();
+	while (cur != nullptr) {
+		cur->interruptible = state;
+		cur = cur->extendedSequence.get();
+	}
+}
+
+void SequenceWidget::UpdateExtendText()
+{
+	extendText->setText(makeExtendText(switchData->extendedSequence.get()));
+}
+
+void SequenceWidget::ExtendClicked()
+{
+	if (loading || !switchData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	auto es = switchData->extend();
+
+	SequenceWidget *ew = new SequenceWidget(this->parentWidget(), es, true);
+	extendSequenceLayout->addWidget(ew);
+}
+
+void SequenceWidget::ReduceClicked()
+{
+	if (loading || !switchData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->reduce();
+
+	int count = extendSequenceLayout->count();
+	auto item = extendSequenceLayout->takeAt(count - 1);
+	if (item) {
+		item->widget()->setVisible(false);
+		delete item;
+	}
 }
