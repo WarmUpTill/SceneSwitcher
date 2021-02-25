@@ -435,9 +435,12 @@ VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
 	filePath = new QLineEdit();
 	browseButton =
 		new QPushButton(obs_module_text("AdvSceneSwitcher.browse"));
-	browseButton->setStyleSheet("border:1px solid gray;");
 	ignoreInactiveSource = new QCheckBox(obs_module_text(
 		"AdvSceneSwitcher.videoTab.ignoreInactiveSource"));
+
+	filePath->setFixedWidth(100);
+
+	browseButton->setStyleSheet("border:1px solid gray;");
 
 	duration->setMinimum(0.0);
 	duration->setMaximum(99.000000);
