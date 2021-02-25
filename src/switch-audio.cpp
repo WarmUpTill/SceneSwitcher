@@ -438,7 +438,7 @@ void swap(AudioSwitch &first, AudioSwitch &second)
 	second.resetVolmeter();
 }
 
-void populateConditionSelection(QComboBox *list)
+static inline void populateConditionSelection(QComboBox *list)
 {
 	list->addItem(
 		obs_module_text("AdvSceneSwitcher.audioTab.condition.above"));
