@@ -43,6 +43,7 @@ struct VideoSwitch : virtual SceneSwitcherEntry {
 	OBSWeakSource videoSource = nullptr;
 	std::string file = obs_module_text("AdvSceneSwitcher.enterPath");
 	double duration = 0;
+	bool ignoreInactiveSource = false;
 
 	std::unique_ptr<AdvSSScreenshotObj> screenshotData = nullptr;
 	std::chrono::steady_clock::time_point previousTime{};
@@ -80,6 +81,7 @@ private slots:
 	void DurationChanged(double dur);
 	void FilePathChanged();
 	void BrowseButtonClicked();
+	void IgnoreInactiveChanged(int state);
 
 private:
 	QComboBox *videoSources;
@@ -87,6 +89,7 @@ private:
 	QDoubleSpinBox *duration;
 	QLineEdit *filePath;
 	QPushButton *browseButton;
+	QCheckBox *ignoreInactiveSource;
 
 	VideoSwitch *switchData;
 };

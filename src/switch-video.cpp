@@ -303,6 +303,7 @@ void VideoSwitch::save(obs_data_t *obj)
 	obs_data_set_int(obj, "condition", static_cast<int>(condition));
 	obs_data_set_double(obj, "duration", duration);
 	obs_data_set_string(obj, "filePath", file.c_str());
+	obs_data_set_bool(obj, "ignoreInactiveSource", ignoreInactiveSource);
 }
 
 void VideoSwitch::load(obs_data_t *obj)
@@ -315,6 +316,7 @@ void VideoSwitch::load(obs_data_t *obj)
 		obs_data_get_int(obj, "condition"));
 	duration = obs_data_get_double(obj, "duration");
 	file = obs_data_get_string(obj, "filePath");
+	ignoreInactiveSource = obs_data_get_bool(obj, "ignoreInactiveSource");
 
 	if (condition != videoSwitchType::HAS_NOT_CHANGED) {
 		loadImageFromFile();
@@ -341,11 +343,19 @@ void VideoSwitch::loadImageFromFile()
 
 bool VideoSwitch::checkMatch()
 {
+	if (ignoreInactiveSource) {
+		obs_source_t *vs = obs_weak_source_get_source(videoSource);
+		bool videoActive = obs_source_active(vs);
+		obs_source_release(vs);
+
+		if (!videoActive) {
+			return false;
+		}
+	}
+
 	bool match = false;
 
-	if (!screenshotData) {
-		getScreenshot();
-	} else {
+	if (screenshotData) {
 		if (screenshotData->done) {
 			bool conditionMatch = false;
 
@@ -376,7 +386,10 @@ bool VideoSwitch::checkMatch()
 				currentMatchDuration = {};
 			}
 
-			if (currentMatchDuration.count() >= duration * 1000) {
+			bool durationMatch = currentMatchDuration.count() >=
+					     duration * 1000;
+
+			if (conditionMatch && durationMatch) {
 				match = true;
 			}
 
@@ -389,6 +402,7 @@ bool VideoSwitch::checkMatch()
 		}
 	}
 
+	getScreenshot();
 	return match;
 }
 
@@ -422,6 +436,8 @@ VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
 	browseButton =
 		new QPushButton(obs_module_text("AdvSceneSwitcher.browse"));
 	browseButton->setStyleSheet("border:1px solid gray;");
+	ignoreInactiveSource = new QCheckBox(obs_module_text(
+		"AdvSceneSwitcher.videoTab.ignoreInactiveSource"));
 
 	duration->setMinimum(0.0);
 	duration->setMaximum(99.000000);
@@ -438,6 +454,8 @@ VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
 			 SLOT(FilePathChanged()));
 	QWidget::connect(browseButton, SIGNAL(clicked()), this,
 			 SLOT(BrowseButtonClicked()));
+	QWidget::connect(ignoreInactiveSource, SIGNAL(stateChanged(int)), this,
+			 SLOT(IgnoreInactiveChanged(int)));
 
 	// TODO:
 	// Figure out why scene do not work for "match exactly".
@@ -451,6 +469,7 @@ VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
 		condition->setCurrentIndex(static_cast<int>(s->condition));
 		duration->setValue(s->duration);
 		filePath->setText(QString::fromStdString(s->file));
+		ignoreInactiveSource->setChecked(s->ignoreInactiveSource);
 
 		if (s->condition == videoSwitchType::HAS_NOT_CHANGED) {
 			filePath->hide();
@@ -468,6 +487,7 @@ VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
 		{"{{duration}}", duration},
 		{"{{filePath}}", filePath},
 		{"{{browseButton}}", browseButton},
+		{"{{ignoreInactiveSource}}", ignoreInactiveSource},
 		{"{{scenes}}", scenes},
 		{"{{transitions}}", transitions}};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.videoTab.entry"),
@@ -576,4 +596,14 @@ void VideoSwitchWidget::BrowseButtonClicked()
 
 	filePath->setText(path);
 	FilePathChanged();
+}
+
+void VideoSwitchWidget::IgnoreInactiveChanged(int state)
+{
+	if (loading || !switchData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->ignoreInactiveSource = state;
 }
