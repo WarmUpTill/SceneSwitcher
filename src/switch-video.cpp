@@ -300,6 +300,9 @@ void VideoSwitch::save(obs_data_t *obj)
 
 	obs_data_set_string(obj, "videoSource",
 			    GetWeakSourceName(videoSource).c_str());
+	obs_data_set_int(obj, "condition", static_cast<int>(condition));
+	obs_data_set_double(obj, "duration", duration);
+	obs_data_set_string(obj, "filePath", file.c_str());
 }
 
 void VideoSwitch::load(obs_data_t *obj)
@@ -308,6 +311,10 @@ void VideoSwitch::load(obs_data_t *obj)
 
 	const char *videoSourceName = obs_data_get_string(obj, "videoSource");
 	videoSource = GetWeakSourceByName(videoSourceName);
+	condition = static_cast<videoSwitchType>(
+		obs_data_get_int(obj, "condition"));
+	duration = obs_data_get_double(obj, "duration");
+	file = obs_data_get_string(obj, "filePath");
 }
 
 void VideoSwitch::GetScreenshot()
@@ -359,34 +366,67 @@ void swap(VideoSwitch &first, VideoSwitch &second)
 	std::swap(first.videoSource, second.videoSource);
 }
 
+static inline void populateConditionSelection(QComboBox *list)
+{
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.videoTab.condition.match"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.videoTab.condition.differ"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.videoTab.condition.hasNotChanged"));
+}
+
 VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
 	: SwitchWidget(parent, s, true, true)
 {
 	videoSources = new QComboBox();
+	condition = new QComboBox();
+	duration = new QDoubleSpinBox();
 	filePath = new QLineEdit();
 	browseButton =
 		new QPushButton(obs_module_text("AdvSceneSwitcher.browse"));
 	browseButton->setStyleSheet("border:1px solid gray;");
 
+	duration->setMinimum(0.0);
+	duration->setMaximum(99.000000);
+	duration->setSuffix("s");
+
 	QWidget::connect(videoSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(SourceChanged(const QString &)));
+	QWidget::connect(condition, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(ConditionChanged(int)));
+	QWidget::connect(duration, SIGNAL(valueChanged(double)), this,
+			 SLOT(DurationChanged(double)));
 	QWidget::connect(filePath, SIGNAL(editingFinished()), this,
 			 SLOT(FilePathChanged()));
 	QWidget::connect(browseButton, SIGNAL(clicked()), this,
 			 SLOT(BrowseButtonClicked()));
 
 	AdvSceneSwitcher::populateSceneSelection(videoSources);
+	populateConditionSelection(condition);
 
 	if (s) {
 		videoSources->setCurrentText(
 			GetWeakSourceName(s->videoSource).c_str());
+		condition->setCurrentIndex(static_cast<int>(s->condition));
+		duration->setValue(s->duration);
 		filePath->setText(QString::fromStdString(s->file));
+
+		if (s->condition == videoSwitchType::HAS_NOT_CHANGED) {
+			filePath->hide();
+			browseButton->hide();
+		} else {
+			filePath->show();
+			browseButton->show();
+		}
 	}
 
 	QHBoxLayout *switchLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{videoSources}}", videoSources},
+		{"{{condition}}", condition},
+		{"{{duration}}", duration},
 		{"{{filePath}}", filePath},
 		{"{{browseButton}}", browseButton},
 		{"{{scenes}}", scenes},
@@ -432,6 +472,34 @@ void VideoSwitchWidget::SourceChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->videoSource = GetWeakSourceByQString(text);
+}
+
+void VideoSwitchWidget::ConditionChanged(int cond)
+{
+	if (loading || !switchData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->condition = static_cast<videoSwitchType>(cond);
+
+	if (switchData->condition == videoSwitchType::HAS_NOT_CHANGED) {
+		filePath->hide();
+		browseButton->hide();
+	} else {
+		filePath->show();
+		browseButton->show();
+	}
+}
+
+void VideoSwitchWidget::DurationChanged(double dur)
+{
+	if (loading || !switchData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->duration = dur;
 }
 
 void VideoSwitchWidget::FilePathChanged()

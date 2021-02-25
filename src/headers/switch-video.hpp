@@ -1,4 +1,6 @@
 #pragma once
+#include <QSpinBox>
+
 #include "switch-generic.hpp"
 
 constexpr auto video_func = 9;
@@ -37,7 +39,7 @@ public:
 struct VideoSwitch : virtual SceneSwitcherEntry {
 	static bool pause;
 
-	videoSwitchType type = videoSwitchType::MATCH;
+	videoSwitchType condition = videoSwitchType::MATCH;
 	OBSWeakSource videoSource = nullptr;
 	std::string file = obs_module_text("AdvSceneSwitcher.enterPath");
 	double duration = 0;
@@ -73,11 +75,15 @@ public:
 
 private slots:
 	void SourceChanged(const QString &text);
+	void ConditionChanged(int cond);
+	void DurationChanged(double dur);
 	void FilePathChanged();
 	void BrowseButtonClicked();
 
 private:
 	QComboBox *videoSources;
+	QComboBox *condition;
+	QDoubleSpinBox *duration;
 	QLineEdit *filePath;
 	QPushButton *browseButton;
 
