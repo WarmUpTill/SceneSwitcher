@@ -342,7 +342,7 @@ bool VideoSwitch::checkMatch()
 				currentMatchDuration = {};
 			}
 
-			if (currentMatchDuration.count() >= duration) {
+			if (currentMatchDuration.count() >= duration * 1000) {
 				match = true;
 			}
 
