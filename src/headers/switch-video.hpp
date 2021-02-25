@@ -55,7 +55,8 @@ struct VideoSwitch : virtual SceneSwitcherEntry {
 	bool valid();
 	void save(obs_data_t *obj);
 	void load(obs_data_t *obj);
-	void GetScreenshot();
+	void getScreenshot();
+	void loadImageFromFile();
 	bool checkMatch();
 
 	VideoSwitch(){};

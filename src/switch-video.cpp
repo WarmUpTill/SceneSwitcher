@@ -315,13 +315,28 @@ void VideoSwitch::load(obs_data_t *obj)
 		obs_data_get_int(obj, "condition"));
 	duration = obs_data_get_double(obj, "duration");
 	file = obs_data_get_string(obj, "filePath");
+
+	if (condition != videoSwitchType::HAS_NOT_CHANGED) {
+		loadImageFromFile();
+	}
 }
 
-void VideoSwitch::GetScreenshot()
+void VideoSwitch::getScreenshot()
 {
 	auto source = obs_weak_source_get_source(videoSource);
 	screenshotData = std::make_unique<AdvSSScreenshotObj>(source);
 	obs_source_release(source);
+}
+
+void VideoSwitch::loadImageFromFile()
+{
+	if (!matchImage.load(QString::fromStdString(file))) {
+		blog(LOG_WARNING, "Cannot load image data from file '%s'",
+		     file.c_str());
+		return;
+	}
+	matchImage =
+		matchImage.convertToFormat(QImage::Format::Format_RGBX8888);
 }
 
 bool VideoSwitch::checkMatch()
@@ -329,10 +344,29 @@ bool VideoSwitch::checkMatch()
 	bool match = false;
 
 	if (!screenshotData) {
-		GetScreenshot();
+		getScreenshot();
 	} else {
 		if (screenshotData->done) {
-			if (screenshotData->image == matchImage) {
+			bool conditionMatch = false;
+
+			switch (condition) {
+			case videoSwitchType::MATCH:
+				conditionMatch = screenshotData->image ==
+						 matchImage;
+				break;
+			case videoSwitchType::DIFFER:
+				conditionMatch = screenshotData->image !=
+						 matchImage;
+				break;
+			case videoSwitchType::HAS_NOT_CHANGED:
+				conditionMatch = screenshotData->image ==
+						 matchImage;
+				break;
+			default:
+				break;
+			}
+
+			if (conditionMatch) {
 				currentMatchDuration +=
 					std::chrono::duration_cast<
 						std::chrono::milliseconds>(
@@ -346,7 +380,9 @@ bool VideoSwitch::checkMatch()
 				match = true;
 			}
 
-			matchImage = std::move(screenshotData->image);
+			if (condition == videoSwitchType::HAS_NOT_CHANGED) {
+				matchImage = std::move(screenshotData->image);
+			}
 			previousTime = std::move(screenshotData->time);
 
 			screenshotData.reset(nullptr);
@@ -403,7 +439,10 @@ VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
 	QWidget::connect(browseButton, SIGNAL(clicked()), this,
 			 SLOT(BrowseButtonClicked()));
 
-	AdvSceneSwitcher::populateSceneSelection(videoSources);
+	// TODO:
+	// Figure out why scene do not work for "match exactly".
+	// Until then do not allow selecting scenes
+	AdvSceneSwitcher::populateVideoSelection(videoSources, false);
 	populateConditionSelection(condition);
 
 	if (s) {
@@ -490,6 +529,13 @@ void VideoSwitchWidget::ConditionChanged(int cond)
 		filePath->show();
 		browseButton->show();
 	}
+
+	// Reload image data to avoid incorrect matches.
+	//
+	// Condition type HAS_NOT_CHANGED will use matchImage to store previous
+	// frame of video source, which will differ from the image stored at
+	// specified file location.
+	switchData->loadImageFromFile();
 }
 
 void VideoSwitchWidget::DurationChanged(double dur)
@@ -510,6 +556,7 @@ void VideoSwitchWidget::FilePathChanged()
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->file = filePath->text().toUtf8().constData();
+	switchData->loadImageFromFile();
 }
 
 void VideoSwitchWidget::BrowseButtonClicked()

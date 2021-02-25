@@ -83,6 +83,9 @@ public:
 					    bool addSelect = true);
 	static void populateAudioSelection(QComboBox *sel,
 					   bool addSelect = true);
+	static void populateVideoSelection(QComboBox *sel,
+					   bool addScenes = true,
+					   bool addSelect = true);
 	static void populateMediaSelection(QComboBox *sel,
 					   bool addSelect = true);
 	static void populateProcessSelection(QComboBox *sel,
