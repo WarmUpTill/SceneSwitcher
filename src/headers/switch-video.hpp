@@ -33,7 +33,7 @@ public:
 	int stage = 0;
 
 	bool done = false;
-	std::chrono::steady_clock::time_point time;
+	std::chrono::high_resolution_clock::time_point time;
 };
 
 struct VideoSwitch : virtual SceneSwitcherEntry {
@@ -46,7 +46,7 @@ struct VideoSwitch : virtual SceneSwitcherEntry {
 	bool ignoreInactiveSource = false;
 
 	std::unique_ptr<AdvSSScreenshotObj> screenshotData = nullptr;
-	std::chrono::steady_clock::time_point previousTime{};
+	std::chrono::high_resolution_clock::time_point previousTime{};
 	QImage matchImage;
 
 	std::chrono::milliseconds currentMatchDuration{};
