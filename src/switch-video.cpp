@@ -349,6 +349,7 @@ bool VideoSwitch::checkMatch()
 		obs_source_release(vs);
 
 		if (!videoActive) {
+			screenshotData.reset(nullptr);
 			return false;
 		}
 	}
