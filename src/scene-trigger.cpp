@@ -187,7 +187,7 @@ void frontEndActionThread(sceneTriggerAction action, double delay)
 		break;
 	default:
 		blog(LOG_WARNING, "ignoring unexpected frontend action '%d'",
-		     action);
+		     static_cast<int>(action));
 		break;
 	}
 }
@@ -255,7 +255,8 @@ void SceneTrigger::performAction()
 		bool stop = triggerAction == sceneTriggerAction::STOP_SWITCHER;
 		t = std::thread(statusThread, duration, stop);
 	} else {
-		blog(LOG_WARNING, "ignoring unkown action '%d'", triggerAction);
+		blog(LOG_WARNING, "ignoring unkown action '%d'",
+		     static_cast<int>(triggerAction));
 	}
 
 	t.detach();
