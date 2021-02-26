@@ -440,19 +440,12 @@ void AdvSceneSwitcher::setupTriggerTab()
 
 void SceneTrigger::save(obs_data_t *obj)
 {
-	obs_source_t *sceneSource = obs_weak_source_get_source(scene);
-	const char *sceneName = obs_source_get_name(sceneSource);
-	obs_data_set_string(obj, "scene", sceneName);
-	obs_source_release(sceneSource);
-
+	obs_data_set_string(obj, "scene", GetWeakSourceName(scene).c_str());
 	obs_data_set_int(obj, "triggerType", static_cast<int>(triggerType));
 	obs_data_set_int(obj, "triggerAction", static_cast<int>(triggerAction));
 	obs_data_set_double(obj, "duration", duration);
-
-	obs_source_t *source = obs_weak_source_get_source(audioSource);
-	const char *audioSourceName = obs_source_get_name(source);
-	obs_data_set_string(obj, "audioSource", audioSourceName);
-	obs_source_release(source);
+	obs_data_set_string(obj, "audioSource",
+			    GetWeakSourceName(audioSource).c_str());
 }
 
 void SceneTrigger::load(obs_data_t *obj)
