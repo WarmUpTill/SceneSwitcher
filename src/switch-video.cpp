@@ -1,6 +1,7 @@
 #include <QFileDialog>
 #include <QBuffer>
 #include <QToolTip>
+#include <thread>
 
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
