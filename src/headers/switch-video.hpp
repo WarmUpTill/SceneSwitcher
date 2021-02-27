@@ -57,7 +57,7 @@ struct VideoSwitch : virtual SceneSwitcherEntry {
 	void save(obs_data_t *obj);
 	void load(obs_data_t *obj);
 	void getScreenshot();
-	void loadImageFromFile();
+	bool loadImageFromFile();
 	bool checkMatch();
 
 	VideoSwitch(){};
@@ -74,6 +74,8 @@ public:
 
 	static void swapSwitchData(VideoSwitchWidget *as1,
 				   VideoSwitchWidget *as2);
+
+	void UpdatePreviewTooltip();
 
 private slots:
 	void SourceChanged(const QString &text);

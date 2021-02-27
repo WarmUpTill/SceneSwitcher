@@ -1,4 +1,6 @@
 #include <QFileDialog>
+#include <QBuffer>
+#include <QToolTip>
 
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
@@ -319,7 +321,7 @@ void VideoSwitch::load(obs_data_t *obj)
 	ignoreInactiveSource = obs_data_get_bool(obj, "ignoreInactiveSource");
 
 	if (condition != videoSwitchType::HAS_NOT_CHANGED) {
-		loadImageFromFile();
+		(void)loadImageFromFile();
 	}
 }
 
@@ -330,15 +332,16 @@ void VideoSwitch::getScreenshot()
 	obs_source_release(source);
 }
 
-void VideoSwitch::loadImageFromFile()
+bool VideoSwitch::loadImageFromFile()
 {
 	if (!matchImage.load(QString::fromStdString(file))) {
 		blog(LOG_WARNING, "Cannot load image data from file '%s'",
 		     file.c_str());
-		return;
+		return false;
 	}
 	matchImage =
 		matchImage.convertToFormat(QImage::Format::Format_RGBX8888);
+	return true;
 }
 
 bool VideoSwitch::checkMatch()
@@ -503,6 +506,7 @@ VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
 	setLayout(mainLayout);
 
 	switchData = s;
+	UpdatePreviewTooltip();
 
 	loading = false;
 }
@@ -525,6 +529,28 @@ void VideoSwitchWidget::swapSwitchData(VideoSwitchWidget *s1,
 	VideoSwitch *t = s1->getSwitchData();
 	s1->setSwitchData(s2->getSwitchData());
 	s2->setSwitchData(t);
+}
+
+void VideoSwitchWidget::UpdatePreviewTooltip()
+{
+	if (!switchData ||
+	    switchData->condition == videoSwitchType::HAS_NOT_CHANGED) {
+		return;
+	}
+
+	QImage preview =
+		switchData->matchImage.scaled({300, 300}, Qt::KeepAspectRatio);
+
+	QByteArray data;
+	QBuffer buffer(&data);
+	if (!preview.save(&buffer, "PNG")) {
+		return;
+	}
+
+	QString html =
+		QString("<html><img src='data:image/png;base64, %0'/></html>")
+			.arg(QString(data.toBase64()));
+	this->setToolTip(html);
 }
 
 void VideoSwitchWidget::SourceChanged(const QString &text)
@@ -559,7 +585,9 @@ void VideoSwitchWidget::ConditionChanged(int cond)
 	// Condition type HAS_NOT_CHANGED will use matchImage to store previous
 	// frame of video source, which will differ from the image stored at
 	// specified file location.
-	switchData->loadImageFromFile();
+	if (switchData->loadImageFromFile()) {
+		UpdatePreviewTooltip();
+	}
 }
 
 void VideoSwitchWidget::DurationChanged(double dur)
@@ -580,7 +608,9 @@ void VideoSwitchWidget::FilePathChanged()
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->file = filePath->text().toUtf8().constData();
-	switchData->loadImageFromFile();
+	if (switchData->loadImageFromFile()) {
+		UpdatePreviewTooltip();
+	}
 }
 
 void VideoSwitchWidget::BrowseButtonClicked()
