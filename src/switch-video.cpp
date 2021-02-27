@@ -327,6 +327,9 @@ void AdvSceneSwitcher::setupVideoTab()
 	} else {
 		ui->videoHelp->setVisible(false);
 	}
+
+	ui->getScreenshot->setToolTip(
+		obs_module_text("AdvSceneSwitcher.videoTab.getScreenshotHelp"));
 }
 
 bool VideoSwitch::initialized()
