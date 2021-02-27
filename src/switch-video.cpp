@@ -481,9 +481,6 @@ VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
 		if (s->condition == videoSwitchType::HAS_NOT_CHANGED) {
 			filePath->hide();
 			browseButton->hide();
-		} else {
-			filePath->show();
-			browseButton->show();
 		}
 	}
 
