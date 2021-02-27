@@ -211,7 +211,50 @@ void AdvSceneSwitcher::on_videoDown_clicked()
 		  switcher->videoSwitches[index + 1]);
 }
 
-void AdvSceneSwitcher::on_getScreenshot_clicked() {}
+void AdvSceneSwitcher::on_getScreenshot_clicked()
+{
+	QListWidgetItem *item = ui->videoSwitches->currentItem();
+
+	if (!item) {
+		return;
+	}
+
+	VideoSwitchWidget *sw =
+		(VideoSwitchWidget *)ui->videoSwitches->itemWidget(item);
+	auto s = sw->getSwitchData();
+	if (!s || !s->videoSource) {
+		return;
+	}
+
+	auto source = obs_weak_source_get_source(s->videoSource);
+	auto screenshotData = std::make_unique<AdvSSScreenshotObj>(source);
+	obs_source_release(source);
+
+	QString filePath = QFileDialog::getSaveFileName(this);
+	if (filePath.isEmpty()) {
+		return;
+	}
+
+	QFile file(filePath);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		return;
+	}
+
+	// During selection of the save path enough time should usually have
+	// passed already
+	// Add this just in case ...
+	if (!screenshotData->done) {
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+	}
+
+	if (!screenshotData->done) {
+		DisplayMessage("Failed to get screenshot of source!");
+		return;
+	}
+
+	screenshotData->image.save(file.fileName());
+	sw->SetFilePath(file.fileName());
+}
 
 void SwitcherData::checkVideoSwitch(bool &match, OBSWeakSource &scene,
 				    OBSWeakSource &transition)
@@ -548,6 +591,12 @@ void VideoSwitchWidget::UpdatePreviewTooltip()
 		QString("<html><img src='data:image/png;base64, %0'/></html>")
 			.arg(QString(data.toBase64()));
 	this->setToolTip(html);
+}
+
+void VideoSwitchWidget::SetFilePath(const QString &text)
+{
+	filePath->setText(text);
+	FilePathChanged();
 }
 
 void VideoSwitchWidget::SourceChanged(const QString &text)

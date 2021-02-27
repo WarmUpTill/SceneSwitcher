@@ -76,6 +76,7 @@ public:
 				   VideoSwitchWidget *as2);
 
 	void UpdatePreviewTooltip();
+	void SetFilePath(const QString &text);
 
 private slots:
 	void SourceChanged(const QString &text);
