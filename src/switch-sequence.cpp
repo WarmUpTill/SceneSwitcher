@@ -679,6 +679,8 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 	interruptible->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.sceneSequenceTab.interruptibleHint"));
 
+	// The extended sequence widgets never exist on their own and are always
+	// place inside a non-extend sequence widget
 	if (extendSequence) {
 		QHBoxLayout *mainLayout = new QHBoxLayout;
 		std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -704,7 +706,7 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 				     "AdvSceneSwitcher.sceneSequenceTab.entry"),
 			     startSequence, widgetPlaceholders);
 
-		//exetend widgets placed here
+		// The exetend widgets placed here
 		extendSequenceLayout = new QVBoxLayout;
 		if (s) {
 			if (!editExtendMode) {
