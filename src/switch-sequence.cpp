@@ -574,11 +574,17 @@ void SceneSequenceSwitch::logSequenceCanceled()
 	blog(LOG_INFO, "unexpected scene change - cancel sequence");
 }
 
-void populateDelayUnits(QComboBox *list)
+QString delayMultiplierToString(int delayMultiplier)
 {
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.secends"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.minutes"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
+	switch (delayMultiplier) {
+	case 1:
+		return obs_module_text("AdvSceneSwitcher.unit.secends");
+	case 60:
+		return obs_module_text("AdvSceneSwitcher.unit.minutes");
+	case 60 * 60:
+		return obs_module_text("AdvSceneSwitcher.unit.hours");
+	}
+	return "???";
 }
 
 QString makeExtendText(SceneSequenceSwitch *s, int curLen = 0)
@@ -590,21 +596,7 @@ QString makeExtendText(SceneSequenceSwitch *s, int curLen = 0)
 	QString ext = "";
 
 	ext = QString::number(s->delay / s->delayMultiplier) + " ";
-
-	switch (s->delayMultiplier) {
-	case 1:
-		ext += obs_module_text("AdvSceneSwitcher.unit.secends");
-		break;
-	case 60:
-		ext += obs_module_text("AdvSceneSwitcher.unit.minutes");
-		break;
-	case 60 * 60:
-		ext += obs_module_text("AdvSceneSwitcher.unit.hours");
-		break;
-	default:
-		ext += obs_module_text("?????");
-		break;
-	}
+	ext += delayMultiplierToString(s->delayMultiplier);
 
 	QString sceneName = GetWeakSourceName(s->scene).c_str();
 	if (s->targetType == SwitchTargetType::SceneGroup && s->group) {
@@ -626,6 +618,13 @@ QString makeExtendText(SceneSequenceSwitch *s, int curLen = 0)
 	} else {
 		return ext;
 	}
+}
+
+void populateDelayUnits(QComboBox *list)
+{
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.secends"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.minutes"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
 }
 
 SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
@@ -877,9 +876,11 @@ void SequenceWidget::UpdateWidgetStatus(bool showExtendText)
 		delayUnits->setCurrentIndex(0);
 	}
 	UpdateDelay();
+
 	startScenes->setCurrentText(
 		GetWeakSourceName(switchData->startScene).c_str());
 	interruptible->setChecked(switchData->interruptible);
+
 	SwitchWidget::showSwitchData();
 }
 
