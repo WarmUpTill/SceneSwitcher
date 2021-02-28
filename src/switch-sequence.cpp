@@ -30,20 +30,10 @@ void AdvSceneSwitcher::on_sceneSequenceRemove_clicked()
 	}
 
 	{
-		// Might be in waiting state of sequence
-		// causing invalid access after wakeup
-		// thus we need to stop the main thread before delete
-		bool wasRunning = !switcher->stop;
-		switcher->Stop();
-
 		std::lock_guard<std::mutex> lock(switcher->m);
 		int idx = ui->sceneSequenceSwitches->currentRow();
 		auto &switches = switcher->sceneSequenceSwitches;
 		switches.erase(switches.begin() + idx);
-
-		if (wasRunning) {
-			switcher->Start();
-		}
 	}
 
 	delete item;
@@ -142,17 +132,7 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 		return;
 	}
 
-	// Might be in waiting state of sequence
-	// causing invalid access after wakeup
-	// thus we need to stop the main thread before delete
-	bool wasRunning = !switcher->stop;
-	switcher->Stop();
-
 	switcher->loadSceneSequenceSwitches(obj);
-
-	if (wasRunning) {
-		switcher->Start();
-	}
 
 	obs_data_release(obj);
 
