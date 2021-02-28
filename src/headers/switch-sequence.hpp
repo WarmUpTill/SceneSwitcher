@@ -50,15 +50,15 @@ class SequenceWidget : public SwitchWidget {
 
 public:
 	SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
-		       bool extendSequence = false,
-		       bool editExtendMode = false);
+		       bool extendSequence = false, bool editExtendMode = false,
+		       bool showExtendText = true);
 	SceneSequenceSwitch *getSwitchData();
 	void setSwitchData(SceneSequenceSwitch *s);
 
 	static void swapSwitchData(SequenceWidget *s1, SequenceWidget *s2);
 
 	void UpdateDelay();
-	void UpdateExtendText();
+	void UpdateWidgetStatus(bool showExtendText);
 	void setExtendedSequenceStartScene();
 
 private slots:
