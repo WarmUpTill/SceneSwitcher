@@ -30,20 +30,10 @@ void AdvSceneSwitcher::on_sceneSequenceRemove_clicked()
 	}
 
 	{
-		// Might be in waiting state of sequence
-		// causing invalid access after wakeup
-		// thus we need to stop the main thread before delete
-		bool wasRunning = !switcher->stop;
-		switcher->Stop();
-
 		std::lock_guard<std::mutex> lock(switcher->m);
 		int idx = ui->sceneSequenceSwitches->currentRow();
 		auto &switches = switcher->sceneSequenceSwitches;
 		switches.erase(switches.begin() + idx);
-
-		if (wasRunning) {
-			switcher->Start();
-		}
 	}
 
 	delete item;
@@ -142,17 +132,7 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 		return;
 	}
 
-	// Might be in waiting state of sequence
-	// causing invalid access after wakeup
-	// thus we need to stop the main thread before delete
-	bool wasRunning = !switcher->stop;
-	switcher->Stop();
-
 	switcher->loadSceneSequenceSwitches(obj);
-
-	if (wasRunning) {
-		switcher->Start();
-	}
 
 	obs_data_release(obj);
 
@@ -164,7 +144,8 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 void AdvSceneSwitcher::OpenSequenceExtendEdit(SequenceWidget *sw)
 {
 	QDialog edit;
-	SequenceWidget editWidget(this, sw->getSwitchData(), false, true);
+	SequenceWidget editWidget(this, sw->getSwitchData(), false, true,
+				  false);
 	QHBoxLayout layout;
 	layout.setSizeConstraint(QLayout::SetFixedSize);
 	layout.addWidget(&editWidget);
@@ -173,7 +154,7 @@ void AdvSceneSwitcher::OpenSequenceExtendEdit(SequenceWidget *sw)
 		"AdvSceneSwitcher.sceneSequenceTab.extendEdit"));
 	edit.exec();
 
-	sw->UpdateExtendText();
+	sw->UpdateWidgetStatus(true);
 }
 
 void AdvSceneSwitcher::on_sequenceEdit_clicked()
@@ -573,11 +554,17 @@ void SceneSequenceSwitch::logSequenceCanceled()
 	blog(LOG_INFO, "unexpected scene change - cancel sequence");
 }
 
-void populateDelayUnits(QComboBox *list)
+QString delayMultiplierToString(int delayMultiplier)
 {
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.secends"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.minutes"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
+	switch (delayMultiplier) {
+	case 1:
+		return obs_module_text("AdvSceneSwitcher.unit.secends");
+	case 60:
+		return obs_module_text("AdvSceneSwitcher.unit.minutes");
+	case 60 * 60:
+		return obs_module_text("AdvSceneSwitcher.unit.hours");
+	}
+	return "???";
 }
 
 QString makeExtendText(SceneSequenceSwitch *s, int curLen = 0)
@@ -589,21 +576,7 @@ QString makeExtendText(SceneSequenceSwitch *s, int curLen = 0)
 	QString ext = "";
 
 	ext = QString::number(s->delay / s->delayMultiplier) + " ";
-
-	switch (s->delayMultiplier) {
-	case 1:
-		ext += obs_module_text("AdvSceneSwitcher.unit.secends");
-		break;
-	case 60:
-		ext += obs_module_text("AdvSceneSwitcher.unit.minutes");
-		break;
-	case 60 * 60:
-		ext += obs_module_text("AdvSceneSwitcher.unit.hours");
-		break;
-	default:
-		ext += obs_module_text("?????");
-		break;
-	}
+	ext += delayMultiplierToString(s->delayMultiplier);
 
 	QString sceneName = GetWeakSourceName(s->scene).c_str();
 	if (s->targetType == SwitchTargetType::SceneGroup && s->group) {
@@ -627,8 +600,16 @@ QString makeExtendText(SceneSequenceSwitch *s, int curLen = 0)
 	}
 }
 
+void populateDelayUnits(QComboBox *list)
+{
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.secends"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.minutes"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
+}
+
 SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
-			       bool extendSequence, bool editExtendMode)
+			       bool extendSequence, bool editExtendMode,
+			       bool showExtendText)
 	: SwitchWidget(parent, s, !extendSequence, true)
 {
 	this->setParent(parent);
@@ -678,25 +659,8 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 	interruptible->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.sceneSequenceTab.interruptibleHint"));
 
-	if (s) {
-		switch (s->delayMultiplier) {
-		case 1:
-			delayUnits->setCurrentIndex(0);
-			break;
-		case 60:
-			delayUnits->setCurrentIndex(1);
-			break;
-		case 3600:
-			delayUnits->setCurrentIndex(2);
-			break;
-		default:
-			delayUnits->setCurrentIndex(0);
-		}
-		startScenes->setCurrentText(
-			GetWeakSourceName(s->startScene).c_str());
-		interruptible->setChecked(s->interruptible);
-	}
-
+	// The extended sequence widgets never exist on their own and are always
+	// place inside a non-extend sequence widget
 	if (extendSequence) {
 		QHBoxLayout *mainLayout = new QHBoxLayout;
 		std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -722,7 +686,7 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 				     "AdvSceneSwitcher.sceneSequenceTab.entry"),
 			     startSequence, widgetPlaceholders);
 
-		//exetend widgets placed here
+		// The exetend widgets placed here
 		extendSequenceLayout = new QVBoxLayout;
 		if (s) {
 			if (!editExtendMode) {
@@ -755,10 +719,9 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 	}
 
 	switchData = s;
+	UpdateWidgetStatus(showExtendText);
 
 	loading = false;
-
-	UpdateDelay();
 }
 
 SceneSequenceSwitch *SequenceWidget::getSwitchData()
@@ -874,9 +837,33 @@ void SequenceWidget::InterruptibleChanged(int state)
 	}
 }
 
-void SequenceWidget::UpdateExtendText()
+void SequenceWidget::UpdateWidgetStatus(bool showExtendText)
 {
-	extendText->setText(makeExtendText(switchData->extendedSequence.get()));
+	if (showExtendText) {
+		extendText->setText(
+			makeExtendText(switchData->extendedSequence.get()));
+	}
+
+	switch (switchData->delayMultiplier) {
+	case 1:
+		delayUnits->setCurrentIndex(0);
+		break;
+	case 60:
+		delayUnits->setCurrentIndex(1);
+		break;
+	case 3600:
+		delayUnits->setCurrentIndex(2);
+		break;
+	default:
+		delayUnits->setCurrentIndex(0);
+	}
+	UpdateDelay();
+
+	startScenes->setCurrentText(
+		GetWeakSourceName(switchData->startScene).c_str());
+	interruptible->setChecked(switchData->interruptible);
+
+	SwitchWidget::showSwitchData();
 }
 
 void SequenceWidget::ExtendClicked()
