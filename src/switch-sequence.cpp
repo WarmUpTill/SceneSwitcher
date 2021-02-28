@@ -164,7 +164,8 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 void AdvSceneSwitcher::OpenSequenceExtendEdit(SequenceWidget *sw)
 {
 	QDialog edit;
-	SequenceWidget editWidget(this, sw->getSwitchData(), false, true);
+	SequenceWidget editWidget(this, sw->getSwitchData(), false, true,
+				  false);
 	QHBoxLayout layout;
 	layout.setSizeConstraint(QLayout::SetFixedSize);
 	layout.addWidget(&editWidget);
@@ -173,7 +174,7 @@ void AdvSceneSwitcher::OpenSequenceExtendEdit(SequenceWidget *sw)
 		"AdvSceneSwitcher.sceneSequenceTab.extendEdit"));
 	edit.exec();
 
-	sw->UpdateExtendText();
+	sw->UpdateWidgetStatus(true);
 }
 
 void AdvSceneSwitcher::on_sequenceEdit_clicked()
@@ -628,7 +629,8 @@ QString makeExtendText(SceneSequenceSwitch *s, int curLen = 0)
 }
 
 SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
-			       bool extendSequence, bool editExtendMode)
+			       bool extendSequence, bool editExtendMode,
+			       bool showExtendText)
 	: SwitchWidget(parent, s, !extendSequence, true)
 {
 	this->setParent(parent);
@@ -677,25 +679,6 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 	populateDelayUnits(delayUnits);
 	interruptible->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.sceneSequenceTab.interruptibleHint"));
-
-	if (s) {
-		switch (s->delayMultiplier) {
-		case 1:
-			delayUnits->setCurrentIndex(0);
-			break;
-		case 60:
-			delayUnits->setCurrentIndex(1);
-			break;
-		case 3600:
-			delayUnits->setCurrentIndex(2);
-			break;
-		default:
-			delayUnits->setCurrentIndex(0);
-		}
-		startScenes->setCurrentText(
-			GetWeakSourceName(s->startScene).c_str());
-		interruptible->setChecked(s->interruptible);
-	}
 
 	if (extendSequence) {
 		QHBoxLayout *mainLayout = new QHBoxLayout;
@@ -755,10 +738,9 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 	}
 
 	switchData = s;
+	UpdateWidgetStatus(showExtendText);
 
 	loading = false;
-
-	UpdateDelay();
 }
 
 SceneSequenceSwitch *SequenceWidget::getSwitchData()
@@ -874,9 +856,31 @@ void SequenceWidget::InterruptibleChanged(int state)
 	}
 }
 
-void SequenceWidget::UpdateExtendText()
+void SequenceWidget::UpdateWidgetStatus(bool showExtendText)
 {
-	extendText->setText(makeExtendText(switchData->extendedSequence.get()));
+	if (showExtendText) {
+		extendText->setText(
+			makeExtendText(switchData->extendedSequence.get()));
+	}
+
+	switch (switchData->delayMultiplier) {
+	case 1:
+		delayUnits->setCurrentIndex(0);
+		break;
+	case 60:
+		delayUnits->setCurrentIndex(1);
+		break;
+	case 3600:
+		delayUnits->setCurrentIndex(2);
+		break;
+	default:
+		delayUnits->setCurrentIndex(0);
+	}
+	UpdateDelay();
+	startScenes->setCurrentText(
+		GetWeakSourceName(switchData->startScene).c_str());
+	interruptible->setChecked(switchData->interruptible);
+	SwitchWidget::showSwitchData();
 }
 
 void SequenceWidget::ExtendClicked()
