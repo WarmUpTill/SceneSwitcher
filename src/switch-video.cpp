@@ -471,6 +471,11 @@ static inline void populateConditionSelection(QComboBox *list)
 {
 	list->addItem(
 		obs_module_text("AdvSceneSwitcher.videoTab.condition.match"));
+	list->setItemData(
+		0,
+		obs_module_text(
+			"AdvSceneSwitcher.videoTab.condition.match.tooltip"),
+		Qt::ToolTipRole);
 	list->addItem(
 		obs_module_text("AdvSceneSwitcher.videoTab.condition.differ"));
 	list->addItem(obs_module_text(
