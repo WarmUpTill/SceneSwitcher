@@ -66,6 +66,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/switch-file.hpp
 	src/headers/switch-idle.hpp
 	src/headers/switch-media.hpp
+	src/headers/switch-network.hpp
 	src/headers/switch-pause.hpp
 	src/headers/switch-random.hpp
 	src/headers/switch-screen-region.hpp
@@ -94,6 +95,7 @@ set(advanced-scene-switcher_SOURCES
 	src/switch-file.cpp
 	src/switch-window.cpp
 	src/switch-media.cpp
+	src/switch-network.cpp
 	src/hotkey.cpp
 	src/general.cpp
 	src/switch-pause.cpp
