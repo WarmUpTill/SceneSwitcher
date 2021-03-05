@@ -4,7 +4,7 @@
 #include "headers/utility.hpp"
 #include "headers/version.h"
 
-constexpr auto tab_count = 15;
+constexpr auto tab_count = 16;
 
 QMetaObject::Connection inactivePluse;
 
@@ -326,9 +326,12 @@ int findTabIndex(QTabWidget *tabWidget, int pos)
 		tabName = "audioTab";
 		break;
 	case 13:
-		tabName = "sceneGroupTab";
+		tabName = "videoTab";
 		break;
 	case 14:
+		tabName = "sceneGroupTab";
+		break;
+	case 15:
 		tabName = "sceneTriggerTab";
 		break;
 	}
@@ -383,22 +386,23 @@ void SwitcherData::loadSettings(obs_data_t *obj)
 		return;
 	}
 
-	switcher->loadSceneGroups(obj);
-	switcher->loadWindowTitleSwitches(obj);
-	switcher->loadScreenRegionSwitches(obj);
-	switcher->loadPauseSwitches(obj);
-	switcher->loadSceneSequenceSwitches(obj);
-	switcher->loadSceneTransitions(obj);
-	switcher->loadIdleSwitches(obj);
-	switcher->loadExecutableSwitches(obj);
-	switcher->loadRandomSwitches(obj);
-	switcher->loadFileSwitches(obj);
-	switcher->loadMediaSwitches(obj);
-	switcher->loadTimeSwitches(obj);
-	switcher->loadAudioSwitches(obj);
-	switcher->loadSceneTriggers(obj);
-	switcher->loadGeneralSettings(obj);
-	switcher->loadHotkeys(obj);
+	loadSceneGroups(obj);
+	loadWindowTitleSwitches(obj);
+	loadScreenRegionSwitches(obj);
+	loadPauseSwitches(obj);
+	loadSceneSequenceSwitches(obj);
+	loadSceneTransitions(obj);
+	loadIdleSwitches(obj);
+	loadExecutableSwitches(obj);
+	loadRandomSwitches(obj);
+	loadFileSwitches(obj);
+	loadMediaSwitches(obj);
+	loadTimeSwitches(obj);
+	loadAudioSwitches(obj);
+	loadVideoSwitches(obj);
+	loadSceneTriggers(obj);
+	loadGeneralSettings(obj);
+	loadHotkeys(obj);
 }
 
 void SwitcherData::saveSettings(obs_data_t *obj)
@@ -420,6 +424,7 @@ void SwitcherData::saveSettings(obs_data_t *obj)
 	saveMediaSwitches(obj);
 	saveTimeSwitches(obj);
 	saveAudioSwitches(obj);
+	saveVideoSwitches(obj);
 	saveSceneTriggers(obj);
 	saveGeneralSettings(obj);
 	saveHotkeys(obj);
@@ -467,15 +472,15 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 			 switcher->functionNamesByPriority[7]);
 	obs_data_set_int(obj, "priority8",
 			 switcher->functionNamesByPriority[8]);
+	obs_data_set_int(obj, "priority9",
+			 switcher->functionNamesByPriority[9]);
 
 	obs_data_set_int(obj, "threadPriority", switcher->threadPriority);
 
 	// After fresh install of OBS the vector can be empty
 	// as save() might be called before first load()
-	if (switcher->tabOrder.size() < tab_count) {
-		switcher->tabOrder = std::vector<int>(tab_count);
-		std::iota(switcher->tabOrder.begin(), switcher->tabOrder.end(),
-			  0);
+	if (tabOrder.size() < tab_count) {
+		resetTabOrder();
 	}
 
 	obs_data_set_int(obj, "generalTabPos", switcher->tabOrder[0]);
@@ -491,8 +496,9 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "idleTabPos", switcher->tabOrder[10]);
 	obs_data_set_int(obj, "sequenceTabPos", switcher->tabOrder[11]);
 	obs_data_set_int(obj, "audioTabPos", switcher->tabOrder[12]);
-	obs_data_set_int(obj, "sceneGroupTabPos", switcher->tabOrder[13]);
-	obs_data_set_int(obj, "triggerTabPos", switcher->tabOrder[14]);
+	obs_data_set_int(obj, "videoTabPos", switcher->tabOrder[13]);
+	obs_data_set_int(obj, "sceneGroupTabPos", switcher->tabOrder[14]);
+	obs_data_set_int(obj, "triggerTabPos", switcher->tabOrder[15]);
 }
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
@@ -555,6 +561,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(obs_data_get_int(obj, "priority7"));
 	switcher->functionNamesByPriority[8] =
 		(obs_data_get_int(obj, "priority8"));
+	switcher->functionNamesByPriority[9] =
+		(obs_data_get_int(obj, "priority9"));
 	if (!switcher->prioFuncsValid()) {
 		switcher->functionNamesByPriority[0] = (default_priority_0);
 		switcher->functionNamesByPriority[1] = (default_priority_1);
@@ -565,6 +573,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		switcher->functionNamesByPriority[6] = (default_priority_6);
 		switcher->functionNamesByPriority[7] = (default_priority_7);
 		switcher->functionNamesByPriority[8] = (default_priority_8);
+		switcher->functionNamesByPriority[9] = (default_priority_9);
 	}
 
 	obs_data_set_default_int(obj, "threadPriority",
@@ -584,8 +593,9 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "idleTabPos", 10);
 	obs_data_set_default_int(obj, "sequenceTabPos", 11);
 	obs_data_set_default_int(obj, "audioTabPos", 12);
-	obs_data_set_default_int(obj, "sceneGroupTabPos", 13);
-	obs_data_set_default_int(obj, "triggerTabPos", 14);
+	obs_data_set_default_int(obj, "videoTabPos", 13);
+	obs_data_set_default_int(obj, "sceneGroupTabPos", 14);
+	obs_data_set_default_int(obj, "triggerTabPos", 15);
 
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "generalTabPos")));
@@ -614,9 +624,29 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "audioTabPos")));
 	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "videoTabPos")));
+	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "sceneGroupTabPos")));
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "triggerTabPos")));
+
+	if (!tabOrderValid()) {
+		resetTabOrder();
+	}
+}
+
+bool SwitcherData::tabOrderValid()
+{
+	auto tmp = tabOrder;
+	std::sort(tmp.begin(), tmp.end());
+	auto it = std::unique(tmp.begin(), tmp.end());
+	return it == tmp.end();
+}
+
+void SwitcherData::resetTabOrder()
+{
+	tabOrder = std::vector<int>(tab_count);
+	std::iota(switcher->tabOrder.begin(), switcher->tabOrder.end(), 0);
 }
 
 void SwitcherData::checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
@@ -764,6 +794,10 @@ void AdvSceneSwitcher::setupGeneralTab()
 		case audio_func:
 			s = obs_module_text(
 				"AdvSceneSwitcher.generalTab.priority.audio");
+			break;
+		case video_func:
+			s = obs_module_text(
+				"AdvSceneSwitcher.generalTab.priority.video");
 			break;
 		}
 		QString text(s.c_str());

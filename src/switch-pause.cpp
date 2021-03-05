@@ -87,6 +87,7 @@ void resetPause()
 	IdleData::pause = false;
 	SceneSequenceSwitch::pause = false;
 	AudioSwitch::pause = false;
+	VideoSwitch::pause = false;
 }
 
 void setPauseTarget(PauseTarget &target, bool &verbose)
@@ -138,6 +139,10 @@ void setPauseTarget(PauseTarget &target, bool &verbose)
 	case PauseTarget::Audio:
 		vblog(LOG_INFO, "pause audio switching");
 		AudioSwitch::pause = true;
+		break;
+	case PauseTarget::Video:
+		vblog(LOG_INFO, "pause video switching");
+		VideoSwitch::pause = true;
 		break;
 	}
 }
@@ -340,6 +345,7 @@ void populatePauseTargets(QComboBox *list)
 	list->addItem(
 		obs_module_text("AdvSceneSwitcher.sceneSequenceTab.title"));
 	list->addItem(obs_module_text("AdvSceneSwitcher.audioTab.title"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.VideoTab.title"));
 }
 
 PauseEntryWidget::PauseEntryWidget(QWidget *parent, PauseEntry *s)

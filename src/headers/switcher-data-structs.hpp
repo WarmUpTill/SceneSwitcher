@@ -21,6 +21,7 @@
 #include "switch-transitions.hpp"
 #include "switch-window.hpp"
 #include "switch-sequence.hpp"
+#include "switch-video.hpp"
 
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
@@ -113,12 +114,15 @@ struct SwitcherData {
 	std::deque<AudioSwitch> audioSwitches;
 	AudioSwitchFallback audioFallback;
 
+	std::deque<VideoSwitch> videoSwitches;
+
 	std::deque<SceneGroup> sceneGroups;
 
 	std::vector<int> functionNamesByPriority = std::vector<int>{
 		default_priority_0, default_priority_1, default_priority_2,
 		default_priority_3, default_priority_4, default_priority_5,
-		default_priority_6, default_priority_7, default_priority_8};
+		default_priority_6, default_priority_7, default_priority_8,
+		default_priority_9};
 
 	struct ThreadPrio {
 		std::string name;
@@ -164,6 +168,9 @@ struct SwitcherData {
 
 	bool prioFuncsValid();
 
+	bool tabOrderValid();
+	void resetTabOrder();
+
 	void writeSceneInfoToFile();
 	void writeToStatusFile(QString status);
 
@@ -193,6 +200,8 @@ struct SwitcherData {
 			      OBSWeakSource &transition);
 	void checkAudioSwitchFallback(OBSWeakSource &scene,
 				      OBSWeakSource &transition);
+	void checkVideoSwitch(bool &match, OBSWeakSource &scene,
+			      OBSWeakSource &transition);
 	void checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition, int &sleep);
 	void checkSwitchCooldown(bool &match);
@@ -215,6 +224,7 @@ struct SwitcherData {
 	void saveAudioSwitches(obs_data_t *obj);
 	void saveSceneGroups(obs_data_t *obj);
 	void saveSceneTriggers(obs_data_t *obj);
+	void saveVideoSwitches(obs_data_t *obj);
 	void saveGeneralSettings(obs_data_t *obj);
 	void saveHotkeys(obs_data_t *obj);
 	void saveVersion(obs_data_t *obj, std::string currentVersion);
@@ -235,6 +245,7 @@ struct SwitcherData {
 	void loadAudioSwitches(obs_data_t *obj);
 	void loadSceneGroups(obs_data_t *obj);
 	void loadSceneTriggers(obs_data_t *obj);
+	void loadVideoSwitches(obs_data_t *obj);
 	void loadGeneralSettings(obs_data_t *obj);
 	void loadHotkeys(obs_data_t *obj);
 

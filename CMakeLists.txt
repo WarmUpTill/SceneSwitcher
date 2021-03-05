@@ -73,6 +73,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/switch-transitions.hpp
 	src/headers/switch-window.hpp
 	src/headers/switch-sequence.hpp
+	src/headers/switch-video.hpp
 	src/headers/switch-generic.hpp
 	src/headers/version.h
 	)
@@ -99,6 +100,7 @@ set(advanced-scene-switcher_SOURCES
 	src/switch-random.cpp
 	src/switch-time.cpp
 	src/switch-audio.cpp
+	src/switch-video.cpp
 	src/switch-generic.cpp
 	src/curl-helper.cpp
 	src/volume-control.cpp

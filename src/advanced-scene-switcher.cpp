@@ -59,6 +59,7 @@ void AdvSceneSwitcher::loadUI()
 	setupFileTab();
 	setupTimeTab();
 	setupAudioTab();
+	setupVideoTab();
 	setupSceneGroupTab();
 	setupTriggerTab();
 
@@ -119,8 +120,6 @@ void AdvSceneSwitcher::populateSceneSelection(QComboBox *sel, bool addPrevious,
 					      std::string selectText,
 					      bool selectable)
 {
-	sel->clear();
-
 	if (addSelect) {
 		if (selectText.empty()) {
 			addSelectionEntry(
@@ -232,6 +231,42 @@ void AdvSceneSwitcher::populateAudioSelection(QComboBox *sel, bool addSelect)
 	sort(audioSources.begin(), audioSources.end());
 	for (std::string &source : audioSources) {
 		sel->addItem(source.c_str());
+	}
+}
+
+void AdvSceneSwitcher::populateVideoSelection(QComboBox *sel, bool addScenes,
+					      bool addSelect)
+{
+	if (addSelect) {
+		addSelectionEntry(
+			sel,
+			obs_module_text("AdvSceneSwitcher.selectVideoSource"),
+			false,
+			obs_module_text(
+				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
+	}
+
+	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
+	{
+		std::vector<std::string> *list =
+			reinterpret_cast<std::vector<std::string> *>(data);
+		uint32_t flags = obs_source_get_output_flags(source);
+		std::string test = obs_source_get_name(source);
+		if ((flags & (OBS_SOURCE_VIDEO | OBS_SOURCE_ASYNC)) != 0) {
+			list->push_back(obs_source_get_name(source));
+		}
+		return true;
+	};
+
+	std::vector<std::string> videoSources;
+	obs_enum_sources(sourceEnum, &videoSources);
+	sort(videoSources.begin(), videoSources.end());
+	for (std::string &source : videoSources) {
+		sel->addItem(source.c_str());
+	}
+
+	if (addScenes) {
+		populateSceneSelection(sel, false, false, false);
 	}
 }
 
@@ -562,6 +597,9 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 			break;
 		case audio_func:
 			checkAudioSwitch(match, scene, transition);
+			break;
+		case video_func:
+			checkVideoSwitch(match, scene, transition);
 			break;
 		}
 
