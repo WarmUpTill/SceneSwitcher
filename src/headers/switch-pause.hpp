@@ -19,6 +19,7 @@ enum class PauseTarget {
 	Idle,
 	Sequence,
 	Audio,
+	Video,
 };
 
 struct PauseEntry : SceneSwitcherEntry {
