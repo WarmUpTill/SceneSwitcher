@@ -126,7 +126,7 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 		}
 
 		obs_source_t *as = obs_weak_source_get_source(s.audioSource);
-		bool audioActive = obs_source_active(as);
+		bool audioActive = true; //obs_source_active(as);
 		obs_source_release(as);
 
 		// peak will have a value from -60 db to 0 db
