@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(advanced-scene-switcher)
+add_definitions(-DASIO_STANDALONE)
 
 # generate version info
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
@@ -51,6 +52,11 @@ if(UNIX AND NOT APPLE)
 	link_libraries(${X11_LIBRARIES})
 	include_directories(${X11_INCLUDE_DIR})
 endif()
+
+include_directories(
+	"${CMAKE_CURRENT_SOURCE_DIR}/deps/asio/asio/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/deps/websocketpp"
+	)
 
 set(advanced-scene-switcher_HEADERS
 	${advanced-scene-switcher_HEADERS}
@@ -115,6 +121,8 @@ set(advanced-scene-switcher_UI
 	)
 
 if(WIN32)
+	add_definitions(-D_WEBSOCKETPP_CPP11_STL_)
+
 	set(advanced-scene-switcher_PLATFORM_SOURCES
 		src/win/advanced-scene-switcher-win.cpp)
 elseif(APPLE)

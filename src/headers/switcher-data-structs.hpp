@@ -22,6 +22,7 @@
 #include "switch-window.hpp"
 #include "switch-sequence.hpp"
 #include "switch-video.hpp"
+#include "switch-network.hpp"
 
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
