@@ -18,6 +18,7 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	int volumeThreshold = 0;
 	audioCondition condition = ABOVE;
 	double duration = 0;
+	bool ignoreInactiveSource = true;
 	unsigned int matchCount = 0;
 	float peak = -1;
 	obs_volmeter_t *volmeter = nullptr;
@@ -69,12 +70,14 @@ private slots:
 	void VolumeThresholdChanged(int vol);
 	void ConditionChanged(int cond);
 	void DurationChanged(double dur);
+	void IgnoreInactiveChanged(int state);
 
 private:
 	QComboBox *audioSources;
 	QComboBox *condition;
 	QSpinBox *audioVolumeThreshold;
 	QDoubleSpinBox *duration;
+	QCheckBox *ignoreInactiveSource;
 	VolControl *volMeter;
 
 	AudioSwitch *switchData;
