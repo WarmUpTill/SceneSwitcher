@@ -271,7 +271,7 @@ jobs:
   release:
     needs: [macos64, ubuntu64, windows]
     name: 'Create Release'
-    runs-on: [ubuntu-latest]
+    runs-on: [ubuntu-18.04]
     steps:
       - name: "Checkout plugin"
         uses: actions/checkout@v2.3.4
