@@ -431,6 +431,8 @@ void AdvSceneSwitcher::setupTransitionsTab()
 	ui->transitionOverridecheckBox->setChecked(
 		switcher->tansitionOverrideOverride);
 	ui->defTransitionDelay->setValue(DefaultSceneTransition::delay);
+	ui->defTransitionDelay->setToolTip(
+		obs_module_text("AdvSceneSwitcher.transitionTab.defaultTransition.delay.help"));
 }
 
 bool SceneTransition::initialized()
