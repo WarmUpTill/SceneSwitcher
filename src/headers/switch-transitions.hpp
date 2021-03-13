@@ -18,6 +18,7 @@ struct SceneTransition : SceneSwitcherEntry {
 
 struct DefaultSceneTransition : SceneSwitcherEntry {
 	static bool pause;
+	static unsigned int delay;
 
 	const char *getType() { return "def_transition"; }
 	bool checkMatch(OBSWeakSource currentScene);
