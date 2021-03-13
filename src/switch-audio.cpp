@@ -125,9 +125,16 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 			continue;
 		}
 
-		obs_source_t *as = obs_weak_source_get_source(s.audioSource);
-		bool audioActive = obs_source_active(as);
-		obs_source_release(as);
+		if (s.ignoreInactiveSource) {
+			obs_source_t *as =
+				obs_weak_source_get_source(s.audioSource);
+			bool audioActive = obs_source_active(as);
+			obs_source_release(as);
+
+			if (!audioActive) {
+				continue;
+			}
+		}
 
 		// peak will have a value from -60 db to 0 db
 		bool volumeThresholdreached = false;
@@ -154,7 +161,7 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 				1000.0 >=
 			s.duration;
 
-		if (volumeThresholdreached && durationReached && audioActive) {
+		if (volumeThresholdreached && durationReached) {
 			if (match) {
 				checkAudioSwitchFallback(scene, transition);
 				fallbackChecked = true;
@@ -301,6 +308,7 @@ void AudioSwitch::save(obs_data_t *obj)
 	obs_data_set_int(obj, "volume", volumeThreshold);
 	obs_data_set_int(obj, "condition", condition);
 	obs_data_set_double(obj, "duration", duration);
+	obs_data_set_bool(obj, "ignoreInactiveSource", ignoreInactiveSource);
 }
 
 // To be removed in future version
@@ -346,6 +354,7 @@ void AudioSwitch::load(obs_data_t *obj)
 	volumeThreshold = obs_data_get_int(obj, "volume");
 	condition = (audioCondition)obs_data_get_int(obj, "condition");
 	duration = obs_data_get_double(obj, "duration");
+	ignoreInactiveSource = obs_data_get_bool(obj, "ignoreInactiveSource");
 
 	volmeter = AddVolmeterToSource(this, audioSource);
 }
@@ -453,6 +462,8 @@ AudioSwitchWidget::AudioSwitchWidget(QWidget *parent, AudioSwitch *s)
 	condition = new QComboBox();
 	audioVolumeThreshold = new QSpinBox();
 	duration = new QDoubleSpinBox();
+	ignoreInactiveSource = new QCheckBox(obs_module_text(
+		"AdvSceneSwitcher.audioTab.ignoreInactiveSource"));
 
 	obs_source_t *source = nullptr;
 	if (s) {
@@ -482,6 +493,8 @@ AudioSwitchWidget::AudioSwitchWidget(QWidget *parent, AudioSwitch *s)
 	QWidget::connect(audioSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(SourceChanged(const QString &)));
+	QWidget::connect(ignoreInactiveSource, SIGNAL(stateChanged(int)), this,
+			 SLOT(IgnoreInactiveChanged(int)));
 
 	AdvSceneSwitcher::populateAudioSelection(audioSources);
 	populateConditionSelection(condition);
@@ -492,6 +505,7 @@ AudioSwitchWidget::AudioSwitchWidget(QWidget *parent, AudioSwitch *s)
 		audioVolumeThreshold->setValue(s->volumeThreshold);
 		condition->setCurrentIndex(s->condition);
 		duration->setValue(s->duration);
+		ignoreInactiveSource->setChecked(s->ignoreInactiveSource);
 	}
 
 	QHBoxLayout *switchLayout = new QHBoxLayout;
@@ -500,6 +514,7 @@ AudioSwitchWidget::AudioSwitchWidget(QWidget *parent, AudioSwitch *s)
 		{"{{volumeWidget}}", audioVolumeThreshold},
 		{"{{condition}}", condition},
 		{"{{duration}}", duration},
+		{"{{ignoreInactiveSource}}", ignoreInactiveSource},
 		{"{{scenes}}", scenes},
 		{"{{transitions}}", transitions}};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.audioTab.entry"),
@@ -597,6 +612,16 @@ void AudioSwitchWidget::DurationChanged(double dur)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->duration = dur;
+}
+
+void AudioSwitchWidget::IgnoreInactiveChanged(int state)
+{
+	if (loading || !switchData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->ignoreInactiveSource = state;
 }
 
 AudioSwitchFallbackWidget::AudioSwitchFallbackWidget(QWidget *parent,
