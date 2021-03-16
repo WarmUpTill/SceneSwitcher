@@ -430,9 +430,24 @@ void AdvSceneSwitcher::setupTransitionsTab()
 
 	ui->transitionOverridecheckBox->setChecked(
 		switcher->tansitionOverrideOverride);
-	ui->defTransitionDelay->setValue(DefaultSceneTransition::delay);
-	ui->defTransitionDelay->setToolTip(obs_module_text(
+
+	QSpinBox *defTransitionDelay = new QSpinBox();
+	defTransitionDelay->setSuffix("ms");
+	defTransitionDelay->setMinimum(50);
+	defTransitionDelay->setMaximum(10000);
+	defTransitionDelay->setValue(DefaultSceneTransition::delay);
+	defTransitionDelay->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.transitionTab.defaultTransition.delay.help"));
+
+	QWidget::connect(defTransitionDelay, SIGNAL(valueChanged(int)), this,
+			 SLOT(on_defTransitionDelay_valueChanged(int)));
+
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{defTransitionDelay}}", defTransitionDelay}};
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.transitionTab.defaultTransition.delay"),
+		ui->defTransitionDelayLayout, widgetPlaceholders);
 }
 
 bool SceneTransition::initialized()
