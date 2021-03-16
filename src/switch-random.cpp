@@ -142,7 +142,7 @@ void RandomSwitch::load(obs_data_t *obj)
 }
 
 RandomSwitchWidget::RandomSwitchWidget(QWidget *parent, RandomSwitch *s)
-	: SwitchWidget(parent, s, false, false)
+	: SwitchWidget(parent, s, false, true)
 {
 	delay = new QDoubleSpinBox();
 
