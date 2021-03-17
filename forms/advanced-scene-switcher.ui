@@ -738,6 +738,9 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_12">
           <item>
+           <layout class="QHBoxLayout" name="defTransitionDelayLayout"/>
+          </item>
+          <item>
            <layout class="QGridLayout" name="gridLayout_10">
             <item row="0" column="0">
              <widget class="QListWidget" name="defaultTransitions">

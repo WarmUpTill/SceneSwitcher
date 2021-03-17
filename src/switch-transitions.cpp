@@ -3,7 +3,9 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+constexpr auto default_def_transition_dealy = 50;
 bool DefaultSceneTransition::pause = false;
+unsigned int DefaultSceneTransition::delay = default_def_transition_dealy;
 
 void AdvSceneSwitcher::on_transitionsAdd_clicked()
 {
@@ -188,6 +190,16 @@ void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
 	}
 }
 
+void AdvSceneSwitcher::on_defTransitionDelay_valueChanged(int value)
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	DefaultSceneTransition::delay = value;
+}
+
 obs_weak_source_t *getNextTransition(obs_weak_source_t *scene1,
 				     obs_weak_source_t *scene2)
 {
@@ -322,6 +334,10 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 
 	obs_data_set_bool(obj, "tansitionOverrideOverride",
 			  switcher->tansitionOverrideOverride);
+	obs_data_set_default_int(obj, "defTransitionDelay",
+				 default_def_transition_dealy);
+	obs_data_set_int(obj, "defTransitionDelay",
+			 DefaultSceneTransition::delay);
 }
 
 void SwitcherData::loadSceneTransitions(obs_data_t *obj)
@@ -374,6 +390,8 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 
 	switcher->tansitionOverrideOverride =
 		obs_data_get_bool(obj, "tansitionOverrideOverride");
+	DefaultSceneTransition::delay =
+		obs_data_get_int(obj, "defTransitionDelay");
 }
 
 void AdvSceneSwitcher::setupTransitionsTab()
@@ -412,6 +430,24 @@ void AdvSceneSwitcher::setupTransitionsTab()
 
 	ui->transitionOverridecheckBox->setChecked(
 		switcher->tansitionOverrideOverride);
+
+	QSpinBox *defTransitionDelay = new QSpinBox();
+	defTransitionDelay->setSuffix("ms");
+	defTransitionDelay->setMinimum(50);
+	defTransitionDelay->setMaximum(10000);
+	defTransitionDelay->setValue(DefaultSceneTransition::delay);
+	defTransitionDelay->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.transitionTab.defaultTransition.delay.help"));
+
+	QWidget::connect(defTransitionDelay, SIGNAL(valueChanged(int)), this,
+			 SLOT(on_defTransitionDelay_valueChanged(int)));
+
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{defTransitionDelay}}", defTransitionDelay}};
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.transitionTab.defaultTransition.delay"),
+		ui->defTransitionDelayLayout, widgetPlaceholders);
 }
 
 bool SceneTransition::initialized()
@@ -527,7 +563,7 @@ bool DefaultSceneTransition::checkMatch(OBSWeakSource currentScene)
 	return scene == currentScene;
 }
 
-void setTransitionDelayed(OBSWeakSource transition)
+void setTransitionDelayed(OBSWeakSource transition, unsigned int delay)
 {
 	// A hardcoded delay of 50 ms before switching transition type is
 	// necessary due to OBS_FRONTEND_EVENT_SCENE_CHANGED seemingly firing a
@@ -535,14 +571,14 @@ void setTransitionDelayed(OBSWeakSource transition)
 	//
 	// The same is to be the case for OBS_FRONTEND_EVENT_TRANSITION_STOPPED.
 	//
-	// 50 ms was chosen as it seems to avoid the problem mentioned above and
-	// becuase that is the minimum value which can be chosen for the scene
-	// switcher's check interval.
+	// 50 ms was chosen as a default value as it seems to avoid the problem
+	// mentioned above and becuase that is the minimum value which can be
+	// chosen for the scene switcher's check interval.
 	// Thus it can be made sure that the delayed setting of the transition
 	// does not interfere with any new scene changes triggered by the scene
 	// switcher
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	std::this_thread::sleep_for(std::chrono::milliseconds(delay));
 
 	obs_source_t *transitionSource = obs_weak_source_get_source(transition);
 	obs_frontend_set_current_transition(transitionSource);
@@ -552,6 +588,6 @@ void setTransitionDelayed(OBSWeakSource transition)
 void DefaultSceneTransition::setTransition()
 {
 	std::thread t;
-	t = std::thread(setTransitionDelayed, transition);
+	t = std::thread(setTransitionDelayed, transition, delay);
 	t.detach();
 }
