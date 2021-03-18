@@ -1,3 +1,7 @@
+/*
+Most of this code is based on https://github.com/Palakis/obs-websocket
+*/
+
 #pragma once
 
 #include <map>
@@ -12,6 +16,35 @@
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
+class NetworkConfig {
+public:
+	NetworkConfig();
+	void Load(obs_data_t *obj);
+	void Save(obs_data_t *obj);
+	void SetDefaults(obs_data_t *obj);
+
+	void SetPassword(QString password);
+	bool CheckAuth(QString userChallenge);
+	QString GenerateSalt();
+	static QString GenerateSecret(QString password, QString salt);
+
+	// Server
+	bool ServerEnabled;
+	uint64_t ServerPort;
+	bool LockToIPv4;
+
+	bool ServerAuthRequired;
+	QString Secret;
+	QString Salt;
+	QString SessionChallenge;
+
+	// Client
+	bool ClientEnabled;
+	std::string Address;
+	uint64_t ClientPort;
+	bool ClientAuthRequired;
+	std::string ClientPassword;
+};
 
 class ConnectionProperties {
 public:
@@ -41,7 +74,7 @@ private:
 	void onOpen(connection_hdl hdl);
 	void onMessage(connection_hdl hdl, server::message_ptr message);
 	void onClose(connection_hdl hdl);
-	
+
 	QString getRemoteEndpoint(connection_hdl hdl);
 
 	server _server;
