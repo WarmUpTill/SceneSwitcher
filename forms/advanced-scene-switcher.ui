@@ -3288,52 +3288,63 @@
          <property name="checked">
           <bool>false</bool>
          </property>
-         <layout class="QGridLayout" name="gridLayout_24">
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_17">
+         <layout class="QVBoxLayout" name="verticalLayout_31">
+          <item>
+           <layout class="QGridLayout" name="gridLayout_24">
+            <item row="3" column="1">
+             <widget class="QCheckBox" name="lockToIPv4">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.lockToIPv4</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QSpinBox" name="serverPort">
+              <property name="minimum">
+               <number>1024</number>
+              </property>
+              <property name="maximum">
+               <number>65535</number>
+              </property>
+              <property name="value">
+               <number>55555</number>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLineEdit" name="serverPassword">
+              <property name="echoMode">
+               <enum>QLineEdit::Password</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_14">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.password</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_17">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.port</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QCheckBox" name="serverAuthRequired">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.authRequired</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="serverRestart">
             <property name="text">
-             <string>AdvSceneSwitcher.networkTab.server.port</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QSpinBox" name="serverPort">
-            <property name="minimum">
-             <number>1024</number>
-            </property>
-            <property name="maximum">
-             <number>65535</number>
-            </property>
-            <property name="value">
-             <number>55555</number>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QCheckBox" name="serverAuthRequired">
-            <property name="text">
-             <string>AdvSceneSwitcher.networkTab.server.authRequired</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_14">
-            <property name="text">
-             <string>AdvSceneSwitcher.networkTab.server.password</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QLineEdit" name="serverPassword">
-            <property name="echoMode">
-             <enum>QLineEdit::Password</enum>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QCheckBox" name="lockToIPv4">
-            <property name="text">
-             <string>AdvSceneSwitcher.networkTab.server.lockToIPv4</string>
+             <string>AdvSceneSwitcher.networkTab.server.restart</string>
             </property>
            </widget>
           </item>
@@ -3354,6 +3365,23 @@
          <layout class="QGridLayout" name="gridLayout_23">
           <item row="0" column="0">
            <layout class="QGridLayout" name="gridLayout_21">
+            <item row="0" column="1">
+             <widget class="QLineEdit" name="clientHostname"/>
+            </item>
+            <item row="2" column="1">
+             <widget class="QCheckBox" name="clientAuthRequired">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.client.authRequired</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QLineEdit" name="clientPassword">
+              <property name="echoMode">
+               <enum>QLineEdit::Password</enum>
+              </property>
+             </widget>
+            </item>
             <item row="0" column="0">
              <widget class="QLabel" name="label_6">
               <property name="text">
@@ -3361,8 +3389,12 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="1">
-             <widget class="QLineEdit" name="clientHostname"/>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_12">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.client.password</string>
+              </property>
+             </widget>
             </item>
             <item row="1" column="0">
              <widget class="QLabel" name="label_11">
@@ -3384,28 +3416,14 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="1">
-             <widget class="QCheckBox" name="clientAuthRequired">
-              <property name="text">
-               <string>AdvSceneSwitcher.networkTab.client.authRequired</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="0">
-             <widget class="QLabel" name="label_12">
-              <property name="text">
-               <string>AdvSceneSwitcher.networkTab.client.password</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="1">
-             <widget class="QLineEdit" name="clientPassword">
-              <property name="echoMode">
-               <enum>QLineEdit::Password</enum>
-              </property>
-             </widget>
-            </item>
            </layout>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="clientReconnect">
+            <property name="text">
+             <string>AdvSceneSwitcher.networkTab.client.reconnect</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>

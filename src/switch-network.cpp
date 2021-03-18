@@ -372,3 +372,27 @@ QString WSServer::getRemoteEndpoint(connection_hdl hdl)
 	auto conn = _server.get_con_from_hdl(hdl);
 	return QString::fromStdString(conn->get_remote_endpoint());
 }
+
+void AdvSceneSwitcher::on_serverSettings_toggled(bool on) {}
+
+void AdvSceneSwitcher::on_serverPort_valueChanged(int value) {}
+
+void AdvSceneSwitcher::on_serverAuthRequired_stateChanged(int state) {}
+
+void AdvSceneSwitcher::on_serverPassword_textChanged(const QString &text) {}
+
+void AdvSceneSwitcher::on_lockToIPv4_stateChanged(int state) {}
+
+void AdvSceneSwitcher::on_serverRestart_clicked() {}
+
+void AdvSceneSwitcher::on_clientSettings_toggled(bool on) {}
+
+void AdvSceneSwitcher::on_clientHostname_textChanged(const QString &text) {}
+
+void AdvSceneSwitcher::on_clientPort_valueChanged(int value) {}
+
+void AdvSceneSwitcher::on_clientAuthRequired_stateChanged(int state) {}
+
+void AdvSceneSwitcher::on_clientPassword_textChanged(const QString &text) {}
+
+void AdvSceneSwitcher::on_clientReconnect_clicked() {}
