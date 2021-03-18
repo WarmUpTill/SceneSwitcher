@@ -60,6 +60,7 @@ void AdvSceneSwitcher::loadUI()
 	setupTimeTab();
 	setupAudioTab();
 	setupVideoTab();
+	setupNetworkTab();
 	setupSceneGroupTab();
 	setupTriggerTab();
 

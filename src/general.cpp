@@ -403,6 +403,7 @@ void SwitcherData::loadSettings(obs_data_t *obj)
 	loadTimeSwitches(obj);
 	loadAudioSwitches(obj);
 	loadVideoSwitches(obj);
+	loadNetworkSettings(obj);
 	loadSceneTriggers(obj);
 	loadGeneralSettings(obj);
 	loadHotkeys(obj);
@@ -428,6 +429,7 @@ void SwitcherData::saveSettings(obs_data_t *obj)
 	saveTimeSwitches(obj);
 	saveAudioSwitches(obj);
 	saveVideoSwitches(obj);
+	saveNetworkSwitches(obj);
 	saveSceneTriggers(obj);
 	saveGeneralSettings(obj);
 	saveHotkeys(obj);

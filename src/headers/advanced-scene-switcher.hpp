@@ -60,6 +60,7 @@ public:
 	void setupSceneGroupTab();
 	void setupTriggerTab();
 	void setupVideoTab();
+	void setupNetworkTab();
 	void setTabOrder();
 
 	static bool DisplayMessage(QString msg, bool question = false);

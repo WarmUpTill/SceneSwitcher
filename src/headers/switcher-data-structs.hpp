@@ -115,6 +115,9 @@ struct SwitcherData {
 	std::deque<AudioSwitch> audioSwitches;
 	AudioSwitchFallback audioFallback;
 
+	WSServer server;
+	NetworkConfig networkConfig;
+
 	std::deque<VideoSwitch> videoSwitches;
 
 	std::deque<SceneGroup> sceneGroups;
@@ -226,6 +229,7 @@ struct SwitcherData {
 	void saveSceneGroups(obs_data_t *obj);
 	void saveSceneTriggers(obs_data_t *obj);
 	void saveVideoSwitches(obs_data_t *obj);
+	void saveNetworkSwitches(obs_data_t *obj);
 	void saveGeneralSettings(obs_data_t *obj);
 	void saveHotkeys(obs_data_t *obj);
 	void saveVersion(obs_data_t *obj, std::string currentVersion);
@@ -247,6 +251,7 @@ struct SwitcherData {
 	void loadSceneGroups(obs_data_t *obj);
 	void loadSceneTriggers(obs_data_t *obj);
 	void loadVideoSwitches(obs_data_t *obj);
+	void loadNetworkSettings(obs_data_t *obj);
 	void loadGeneralSettings(obs_data_t *obj);
 	void loadHotkeys(obs_data_t *obj);
 

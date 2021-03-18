@@ -45,7 +45,7 @@ void NetworkConfig::Load(obs_data_t *obj)
 {
 	ServerEnabled = obs_data_get_bool(obj, PARAM_SERVER_ENABLE);
 	ServerPort = obs_data_get_int(obj, PARAM_SERVER_PORT);
-	LockToIPv4 = obs_data_get_bool(obj, PARAM_SERVER_PORT);
+	LockToIPv4 = obs_data_get_bool(obj, PARAM_LOCKTOIPV4);
 	ServerAuthRequired = obs_data_get_bool(obj, PARAM_SERVER_AUTHREQUIRED);
 	Secret = obs_data_get_string(obj, PARAM_SECRET);
 	Salt = obs_data_get_string(obj, PARAM_SALT);
@@ -61,7 +61,7 @@ void NetworkConfig::Save(obs_data_t *obj)
 {
 	obs_data_set_bool(obj, PARAM_SERVER_ENABLE, ServerEnabled);
 	obs_data_set_int(obj, PARAM_SERVER_PORT, ServerPort);
-	obs_data_set_bool(obj, PARAM_SERVER_PORT, LockToIPv4);
+	obs_data_set_bool(obj, PARAM_LOCKTOIPV4, LockToIPv4);
 	obs_data_set_bool(obj, PARAM_SERVER_AUTHREQUIRED, ServerAuthRequired);
 	obs_data_set_string(obj, PARAM_SECRET, Secret.toUtf8().constData());
 	obs_data_set_string(obj, PARAM_SALT, Salt.toUtf8().constData());
@@ -77,7 +77,7 @@ void NetworkConfig::SetDefaults(obs_data_t *obj)
 {
 	obs_data_set_default_bool(obj, PARAM_SERVER_ENABLE, ServerEnabled);
 	obs_data_set_default_int(obj, PARAM_SERVER_PORT, ServerPort);
-	obs_data_set_default_bool(obj, PARAM_SERVER_PORT, LockToIPv4);
+	obs_data_set_default_bool(obj, PARAM_LOCKTOIPV4, LockToIPv4);
 	obs_data_set_default_bool(obj, PARAM_SERVER_AUTHREQUIRED,
 				  ServerAuthRequired);
 	obs_data_set_default_string(obj, PARAM_SECRET,
@@ -289,14 +289,13 @@ void WSServer::onOpen(connection_hdl hdl)
 	     clientIp.toUtf8().constData());
 }
 
-std::string processMessage(std::string payload)
+std::string processMessage(std::string payload,
+			   ConnectionProperties &_connProperties)
 {
-	//auto config = GetConfig();
-	//if ((config && config->AuthRequired) &&
-	//    (!authNotRequired.contains(request.methodName())) &&
-	//    (!_connProperties.isAuthenticated())) {
-	//	return RpcResponse::fail(request, "Not Authenticated");
-	//}
+	auto config = switcher->networkConfig;
+	if (config.ServerAuthRequired && !_connProperties.isAuthenticated()) {
+		return "Not Authenticated";
+	}
 
 	std::string msgContainer(payload);
 	const char *msg = msgContainer.c_str();
@@ -337,7 +336,7 @@ void WSServer::onMessage(connection_hdl hdl, server::message_ptr message)
 			_connectionProperties[hdl];
 		locker.unlock();
 
-		std::string response = processMessage(payload);
+		std::string response = processMessage(payload, connProperties);
 		websocketpp::lib::error_code errorCode;
 		_server.send(hdl, response, websocketpp::frame::opcode::text,
 			     errorCode);
@@ -373,26 +372,163 @@ QString WSServer::getRemoteEndpoint(connection_hdl hdl)
 	return QString::fromStdString(conn->get_remote_endpoint());
 }
 
-void AdvSceneSwitcher::on_serverSettings_toggled(bool on) {}
+void SwitcherData::loadNetworkSettings(obs_data_t *obj)
+{
+	networkConfig.Load(obj);
+	// TODO:
+	// Start / Stop server ...
+}
 
-void AdvSceneSwitcher::on_serverPort_valueChanged(int value) {}
+void SwitcherData::saveNetworkSwitches(obs_data_t *obj)
+{
+	networkConfig.Save(obj);
+}
 
-void AdvSceneSwitcher::on_serverAuthRequired_stateChanged(int state) {}
+void AdvSceneSwitcher::setupNetworkTab()
+{
+	ui->serverSettings->setChecked(switcher->networkConfig.ServerEnabled);
+	ui->serverPort->setValue(switcher->networkConfig.ServerPort);
+	ui->serverAuthRequired->setChecked(
+		switcher->networkConfig.ServerAuthRequired);
+	ui->serverPassword->setDisabled(
+		!switcher->networkConfig.ServerAuthRequired);
+	ui->serverPassword->setText("setSuperSecurePasswordPlaceholder");
+	ui->lockToIPv4->setChecked(switcher->networkConfig.LockToIPv4);
 
-void AdvSceneSwitcher::on_serverPassword_textChanged(const QString &text) {}
+	ui->clientSettings->setChecked(switcher->networkConfig.ClientEnabled);
+	ui->clientHostname->setText(switcher->networkConfig.Address.c_str());
+	ui->clientPort->setValue(switcher->networkConfig.ClientPort);
+	ui->clientAuthRequired->setChecked(
+		switcher->networkConfig.ClientAuthRequired);
+	ui->clientPassword->setDisabled(
+		!switcher->networkConfig.ClientAuthRequired);
+	ui->clientPassword->setText("setSuperSecurePasswordPlaceholder");
+}
 
-void AdvSceneSwitcher::on_lockToIPv4_stateChanged(int state) {}
+void AdvSceneSwitcher::on_serverSettings_toggled(bool on)
+{
+	if (loading) {
+		return;
+	}
 
-void AdvSceneSwitcher::on_serverRestart_clicked() {}
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->networkConfig.ServerEnabled = on;
+}
 
-void AdvSceneSwitcher::on_clientSettings_toggled(bool on) {}
+void AdvSceneSwitcher::on_serverPort_valueChanged(int value)
+{
+	if (loading) {
+		return;
+	}
 
-void AdvSceneSwitcher::on_clientHostname_textChanged(const QString &text) {}
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->networkConfig.ServerPort = value;
+}
 
-void AdvSceneSwitcher::on_clientPort_valueChanged(int value) {}
+void AdvSceneSwitcher::on_serverAuthRequired_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
 
-void AdvSceneSwitcher::on_clientAuthRequired_stateChanged(int state) {}
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->networkConfig.ServerAuthRequired = state;
 
-void AdvSceneSwitcher::on_clientPassword_textChanged(const QString &text) {}
+	ui->serverPassword->setDisabled(!state);
+}
 
-void AdvSceneSwitcher::on_clientReconnect_clicked() {}
+void AdvSceneSwitcher::on_serverPassword_textChanged(const QString &text)
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->networkConfig.SetPassword(text);
+}
+
+void AdvSceneSwitcher::on_lockToIPv4_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->networkConfig.LockToIPv4 = state;
+}
+
+void AdvSceneSwitcher::on_serverRestart_clicked()
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->server.stop();
+	if (switcher->networkConfig.ServerEnabled) {
+		switcher->server.start(switcher->networkConfig.ServerPort,
+				       switcher->networkConfig.LockToIPv4);
+	}
+}
+
+void AdvSceneSwitcher::on_clientSettings_toggled(bool on)
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->networkConfig.ClientEnabled = on;
+}
+
+void AdvSceneSwitcher::on_clientHostname_textChanged(const QString &text)
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->networkConfig.Address = text.toUtf8().constData();
+}
+
+void AdvSceneSwitcher::on_clientPort_valueChanged(int value)
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->networkConfig.ClientPort = value;
+}
+
+void AdvSceneSwitcher::on_clientAuthRequired_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->networkConfig.ClientAuthRequired = state;
+	ui->clientPassword->setDisabled(!state);
+}
+
+void AdvSceneSwitcher::on_clientPassword_textChanged(const QString &text)
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->networkConfig.ClientPassword = text.toUtf8().constData();
+}
+
+void AdvSceneSwitcher::on_clientReconnect_clicked()
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	// TODO:
+	// implement connect ...
+}
