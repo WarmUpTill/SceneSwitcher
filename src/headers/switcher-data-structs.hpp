@@ -69,6 +69,7 @@ struct SwitcherData {
 	OBSWeakSource previousScene = nullptr;
 	OBSWeakSource previousSceneHelper = nullptr;
 	OBSWeakSource lastRandomScene;
+	SceneGroup *lastRandomSceneGroup;
 	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
 	double noMatchDelay;

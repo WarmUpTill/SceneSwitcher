@@ -52,8 +52,15 @@ void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
 			continue;
 		}
 
-		if (r.scene == lastRandomScene && randomSwitches.size() != 1) {
-			continue;
+		if (randomSwitches.size() != 1) {
+			if (r.targetType == SwitchTargetType::Scene &&
+			    r.scene == lastRandomScene) {
+				continue;
+			} else if (r.targetType ==
+					   SwitchTargetType::SceneGroup &&
+				   r.group && r.group == lastRandomSceneGroup) {
+				continue;
+			}
 		}
 
 		scene = r.getScene();
@@ -61,6 +68,7 @@ void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
 		delay = (int)r.delay * 1000;
 		match = true;
 		lastRandomScene = r.scene;
+		lastRandomSceneGroup = r.group;
 
 		if (verbose) {
 			r.logMatch();

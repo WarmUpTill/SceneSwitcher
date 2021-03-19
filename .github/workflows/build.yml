@@ -75,8 +75,9 @@ jobs:
         if: success()
         shell: bash
         run: |
-          curl -L -O https://s3-us-west-2.amazonaws.com/obs-nightly/Packages.pkg
-          sudo installer -pkg ./Packages.pkg -target /
+          curl -L -O http://s.sudre.free.fr/Software/files/Packages.dmg
+          sudo hdiutil attach ./Packages.dmg
+          sudo installer -pkg /Volumes/Packages\ 1.2.9/Install\ Packages.pkg -target /
       - name: Package
         if: success()
         shell: bash
