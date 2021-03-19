@@ -13,8 +13,10 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 #include <QtCore/QVariantHash>
 #include <QtCore/QThreadPool>
 
+#include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
+#include <websocketpp/client.hpp>
 
 class NetworkConfig {
 public:
@@ -27,6 +29,8 @@ public:
 	bool CheckAuth(QString userChallenge);
 	QString GenerateSalt();
 	static QString GenerateSecret(QString password, QString salt);
+
+	std::string GetClientUri();
 
 	// Server
 	bool ServerEnabled;
@@ -86,4 +90,26 @@ private:
 		_connectionProperties;
 	QMutex _clMutex;
 	QThreadPool _threadPool;
+};
+
+typedef websocketpp::client<websocketpp::config::asio_client> client;
+
+class WSClient : public QObject {
+	Q_OBJECT
+
+public:
+	explicit WSClient();
+	virtual ~WSClient();
+	void connect(std::string uri);
+	void disconnect();
+
+private:
+	void onOpen(connection_hdl hdl);
+	void onFail(connection_hdl hdl);
+	void onMessage(connection_hdl hdl, client::message_ptr message);
+	void onClose(connection_hdl hdl);
+
+	client _client;
+	std::string _uri;
+	connection_hdl _connection;
 };

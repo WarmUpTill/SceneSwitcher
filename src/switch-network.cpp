@@ -24,8 +24,10 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 #define PARAM_CLIENT_AUTHREQUIRED "ClientAuthRequired"
 #define PARAM_CLIENT_PASS "ClientPass"
 
+#define RECONNECT_DELAY 5
+
 NetworkConfig::NetworkConfig()
-	: ServerEnabled(true),
+	: ServerEnabled(false),
 	  ServerPort(55555),
 	  LockToIPv4(false),
 	  ServerAuthRequired(true),
@@ -43,6 +45,8 @@ NetworkConfig::NetworkConfig()
 
 void NetworkConfig::Load(obs_data_t *obj)
 {
+	SetDefaults(obj);
+
 	ServerEnabled = obs_data_get_bool(obj, PARAM_SERVER_ENABLE);
 	ServerPort = obs_data_get_int(obj, PARAM_SERVER_PORT);
 	LockToIPv4 = obs_data_get_bool(obj, PARAM_LOCKTOIPV4);
@@ -123,6 +127,11 @@ QString NetworkConfig::GenerateSecret(QString password, QString salt)
 	QString challenge = challengeHash.toBase64();
 
 	return challenge;
+}
+
+std::string NetworkConfig::GetClientUri()
+{
+	return "ws://" + Address + ":" + std::to_string(ClientPort);
 }
 
 void NetworkConfig::SetPassword(QString password)
@@ -311,14 +320,26 @@ std::string processMessage(std::string payload,
 		return "missing request parameters";
 	}
 
-	auto scene = GetWeakSourceByName(obs_data_get_string(data, "scene"));
-	auto transition =
-		GetWeakSourceByName(obs_data_get_string(data, "transition"));
-
-	switchScene(scene, transition, switcher->tansitionOverrideOverride);
+	std::string sceneName = obs_data_get_string(data, "scene");
+	std::string transitionName = obs_data_get_string(data, "transition");
 
 	obs_data_release(data);
-	return "ok";
+
+	auto scene = GetWeakSourceByName(sceneName.c_str());
+	if (!scene) {
+		return "ignoring request - unknown scene '" + sceneName + "'";
+	}
+
+	std::string ret = "message ok";
+
+	auto transition = GetWeakTransitionByName(transitionName.c_str());
+	if (!transition) {
+		ret += " - ignoring invalid transition: '" + transitionName +
+		       "'";
+	}
+
+	switchScene(scene, transition, switcher->tansitionOverrideOverride);
+	return ret;
 }
 
 void WSServer::onMessage(connection_hdl hdl, server::message_ptr message)
@@ -372,16 +393,106 @@ QString WSServer::getRemoteEndpoint(connection_hdl hdl)
 	return QString::fromStdString(conn->get_remote_endpoint());
 }
 
+WSClient::WSClient() : QObject(nullptr)
+{
+	_client.get_alog().clear_channels(
+		websocketpp::log::alevel::frame_header |
+		websocketpp::log::alevel::frame_payload |
+		websocketpp::log::alevel::control);
+	_client.init_asio();
+#ifndef _WIN32
+	_client.set_reuse_addr(true);
+#endif
+
+	_client.set_open_handler(bind(&WSClient::onOpen, this, ::_1));
+	_client.set_fail_handler(bind(&WSClient::onFail, this, ::_1));
+	_client.set_message_handler(
+		bind(&WSClient::onMessage, this, ::_1, ::_2));
+	_client.set_close_handler(bind(&WSClient::onClose, this, ::_1));
+}
+
+WSClient::~WSClient()
+{
+	disconnect();
+}
+
+void WSClient::connect(std::string uri)
+{ //
+	//if (_client..is_listening() &&
+	//    (port == _serverPort && _lockToIPv4 == lockToIPv4)) {
+	//	blog(LOG_INFO,
+	//	     "WSServer::start: server already on this port and protocol mode. no restart needed");
+	//	return;
+	//}
+	//
+	//if (_server.is_listening()) {
+	//	stop();
+	//}
+	//
+	//_server.reset();
+
+	_uri = uri;
+	// Create a connection to the given URI and queue it for connection once
+	// the event loop starts
+	websocketpp::lib::error_code ec;
+	client::connection_ptr con = _client.get_connection(uri, ec);
+	_client.connect(con);
+
+	// Start the ASIO io_service run loop
+	_client.run();
+}
+
+void WSClient::disconnect()
+{
+	_client.close(_connection, websocketpp::close::status::normal, "");
+}
+
+void WSClient::onOpen(connection_hdl hdl)
+{
+	_connection = hdl;
+}
+
+void WSClient::onFail(connection_hdl hdl)
+{
+	blog(LOG_INFO, "connection to %s failed", _uri.c_str());
+
+	if (switcher->networkConfig.ClientEnabled) {
+		blog(LOG_INFO, "trying to reconnect to %s in %d seconds.",
+		     _uri.c_str(), RECONNECT_DELAY);
+		std::this_thread::sleep_for(
+			std::chrono::seconds(RECONNECT_DELAY));
+	}
+}
+
+void WSClient::onMessage(connection_hdl hdl, client::message_ptr message) {}
+
+void WSClient::onClose(connection_hdl hdl)
+{
+	blog(LOG_INFO, "client-connection to %s closed.", _uri.c_str());
+
+	if (switcher->networkConfig.ClientEnabled) {
+		blog(LOG_INFO, "trying to reconnect to %s in %d seconds.",
+		     switcher->networkConfig.Address, RECONNECT_DELAY);
+		std::this_thread::sleep_for(
+			std::chrono::seconds(RECONNECT_DELAY));
+	}
+}
+
 void SwitcherData::loadNetworkSettings(obs_data_t *obj)
 {
 	networkConfig.Load(obj);
-	// TODO:
-	// Start / Stop server ...
+	if (networkConfig.ServerEnabled) {
+		switcher->server.start(networkConfig.ServerPort,
+				       networkConfig.LockToIPv4);
+	}
 }
 
 void SwitcherData::saveNetworkSwitches(obs_data_t *obj)
 {
 	networkConfig.Save(obj);
+	if (!networkConfig.ServerEnabled) {
+		switcher->server.stop();
+	}
 }
 
 void AdvSceneSwitcher::setupNetworkTab()
@@ -529,6 +640,5 @@ void AdvSceneSwitcher::on_clientReconnect_clicked()
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	// TODO:
-	// implement connect ...
+	switcher->client.connect(switcher->networkConfig.GetClientUri());
 }

@@ -117,6 +117,7 @@ struct SwitcherData {
 	AudioSwitchFallback audioFallback;
 
 	WSServer server;
+	WSClient client;
 	NetworkConfig networkConfig;
 
 	std::deque<VideoSwitch> videoSwitches;
