@@ -257,7 +257,7 @@ void AudioSwitch::setVolumeLevel(void *data,
 	UNUSED_PARAMETER(inputPeak);
 	AudioSwitch *s = static_cast<AudioSwitch *>(data);
 
-	for (int i = 1; i < MAX_AUDIO_CHANNELS; i++) {
+	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
 		if (peak[i] > s->peak) {
 			s->peak = peak[i];
 		}

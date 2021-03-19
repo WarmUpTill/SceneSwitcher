@@ -1,5 +1,6 @@
 #pragma once
 #include <QSpinBox>
+#include <limits>
 
 #include "switch-generic.hpp"
 #include "volume-control.hpp"
@@ -20,7 +21,7 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	double duration = 0;
 	bool ignoreInactiveSource = true;
 	unsigned int matchCount = 0;
-	float peak = -1;
+	float peak = -std::numeric_limits<float>::infinity();
 	obs_volmeter_t *volmeter = nullptr;
 
 	const char *getType() { return "audio"; }
