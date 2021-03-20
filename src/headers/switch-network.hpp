@@ -48,6 +48,8 @@ public:
 	uint64_t ClientPort;
 	bool ClientAuthRequired;
 	std::string ClientPassword;
+	// TODO: Implement sendAll handling
+	bool SendAll;
 };
 
 class ConnectionProperties {
@@ -101,6 +103,7 @@ public:
 	explicit WSClient();
 	virtual ~WSClient();
 	void connect(std::string uri);
+	void sendMessage(OBSWeakSource scene, OBSWeakSource transition);
 	void disconnect();
 
 private:

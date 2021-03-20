@@ -26,6 +26,9 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 
 #define RECONNECT_DELAY 5
 
+#define SCENE_ENTRY "scene"
+#define TRANSITION_ENTRY "transition"
+
 NetworkConfig::NetworkConfig()
 	: ServerEnabled(false),
 	  ServerPort(55555),
@@ -318,13 +321,14 @@ std::string processMessage(std::string payload,
 		return "invalid JSON payload";
 	}
 
-	if (!obs_data_has_user_value(data, "scene") ||
-	    !obs_data_has_user_value(data, "transition")) {
+	if (!obs_data_has_user_value(data, SCENE_ENTRY) ||
+	    !obs_data_has_user_value(data, TRANSITION_ENTRY)) {
 		return "missing request parameters";
 	}
 
-	std::string sceneName = obs_data_get_string(data, "scene");
-	std::string transitionName = obs_data_get_string(data, "transition");
+	std::string sceneName = obs_data_get_string(data, SCENE_ENTRY);
+	std::string transitionName =
+		obs_data_get_string(data, TRANSITION_ENTRY);
 
 	obs_data_release(data);
 
@@ -336,7 +340,7 @@ std::string processMessage(std::string payload,
 	std::string ret = "message ok";
 
 	auto transition = GetWeakTransitionByName(transitionName.c_str());
-	if (!transition) {
+	if (switcher->verbose && !transition) {
 		ret += " - ignoring invalid transition: '" + transitionName +
 		       "'";
 	}
@@ -454,18 +458,36 @@ void WSClient::connect(std::string uri)
 	blog(LOG_INFO, "WSClient::connect: exited");
 }
 
+void WSClient::sendMessage(OBSWeakSource scene, OBSWeakSource transition)
+{
+	if (!scene) {
+		return;
+	}
+
+	OBSData data = obs_data_create();
+	obs_data_set_string(data, SCENE_ENTRY,
+			    GetWeakSourceName(scene).c_str());
+	obs_data_set_string(data, TRANSITION_ENTRY,
+			    GetWeakSourceName(transition).c_str());
+	std::string message = obs_data_get_json(data);
+	obs_data_release(data);
+
+	websocketpp::lib::error_code ec;
+	_client.send(_connection, message, websocketpp::frame::opcode::text,
+		     ec);
+
+	if (switcher->verbose) {
+		blog(LOG_INFO, "client sent message:\n%s", message.c_str());
+	}
+}
+
 void WSClient::disconnect()
 {
 	_retry = false;
-	try {
-		if (!_connection.expired()) {
-			_client.close(_connection,
-				      websocketpp::close::status::normal,
-				      "Client stopping");
-		}
-	} catch (websocketpp::lib::error_code e) {
-		blog(LOG_WARNING, "WSClient::disconnect: %s", e.message().c_str());
-	} catch (...) {
+	websocketpp::lib::error_code ec;
+	if (!_connection.expired()) {
+		_client.close(_connection, websocketpp::close::status::normal,
+			      "Client stopping", ec);
 	}
 
 	if (_thread.joinable()) {
@@ -657,6 +679,7 @@ void AdvSceneSwitcher::on_clientPassword_textChanged(const QString &text)
 	switcher->networkConfig.ClientPassword = text.toUtf8().constData();
 }
 
+// TODO: dont block UI in reconnect loop
 void AdvSceneSwitcher::on_clientReconnect_clicked()
 {
 	if (loading) {

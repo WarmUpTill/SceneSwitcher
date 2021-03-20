@@ -547,6 +547,9 @@ void SwitcherData::Thread()
 		lock.unlock();
 
 		if (match) {
+			if (networkConfig.ClientEnabled) {
+				client.sendMessage(scene, transition);
+			}
 			switchScene(scene, transition,
 				    tansitionOverrideOverride);
 		}
@@ -727,6 +730,11 @@ void handleSceneChange(SwitcherData *s)
 
 	s->checkTriggers();
 	s->checkDefaultSceneTransitions();
+
+	if (switcher->networkConfig.ClientEnabled &&
+	    switcher->networkConfig.SendAll) {
+		switcher->client.sendMessage(ws, nullptr);
+	}
 }
 
 void setLiveTime(SwitcherData *s)
