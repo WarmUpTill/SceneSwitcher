@@ -464,7 +464,7 @@ void WSClient::disconnect()
 				      "Client stopping");
 		}
 	} catch (websocketpp::lib::error_code e) {
-		blog(LOG_WARNING, "WSClient::disconnect: %s", e.message());
+		blog(LOG_WARNING, "WSClient::disconnect: %s", e.message().c_str());
 	} catch (...) {
 	}
 
@@ -487,7 +487,7 @@ void WSClient::onMessage(connection_hdl hdl, client::message_ptr message)
 {
 	if (message->get_payload() != "message ok") {
 		blog(LOG_WARNING, "received response: %s",
-		     message->get_payload());
+		     message->get_payload().c_str());
 	}
 }
 
