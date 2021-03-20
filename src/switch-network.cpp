@@ -234,6 +234,7 @@ void WSServer::start(quint16 port, bool lockToIPv4)
 		_server.listen(_serverPort, errorCode);
 	}
 
+	// TODO adjust error Messagebox
 	if (errorCode) {
 		std::string errorCodeMessage = errorCode.message();
 		blog(LOG_INFO, "server: listen failed: %s",
@@ -258,12 +259,14 @@ void WSServer::start(quint16 port, bool lockToIPv4)
 	_server.start_accept();
 
 	QtConcurrent::run([=]() {
-		blog(LOG_INFO, "io thread started");
+		blog(LOG_INFO, "WSServer::start: io thread started");
 		_server.run();
-		blog(LOG_INFO, "io thread exited");
+		blog(LOG_INFO, "WSServer::start: io thread exited");
 	});
 
-	blog(LOG_INFO, "server started successfully on port %d", _serverPort);
+	blog(LOG_INFO,
+	     "WSServer::start: server started successfully on port %d",
+	     _serverPort);
 }
 
 void WSServer::stop()
@@ -417,74 +420,85 @@ WSClient::~WSClient()
 }
 
 void WSClient::connect(std::string uri)
-{ //
-	//if (_client..is_listening() &&
-	//    (port == _serverPort && _lockToIPv4 == lockToIPv4)) {
-	//	blog(LOG_INFO,
-	//	     "WSServer::start: server already on this port and protocol mode. no restart needed");
-	//	return;
-	//}
-	//
-	//if (_server.is_listening()) {
-	//	stop();
-	//}
-	//
-	//_server.reset();
-
+{
+	disconnect();
+	_client.reset();
 	_uri = uri;
-	// Create a connection to the given URI and queue it for connection once
-	// the event loop starts
-	websocketpp::lib::error_code ec;
-	client::connection_ptr con = _client.get_connection(uri, ec);
-	_client.connect(con);
+	_retry = true;
 
-	// Start the ASIO io_service run loop
-	_client.run();
+	_thread = std::thread([=]() {
+		while (_retry) {
+			// Create a connection to the given URI and queue it for connection once
+			// the event loop starts
+			websocketpp::lib::error_code ec;
+			client::connection_ptr con =
+				_client.get_connection(uri, ec);
+			_client.connect(con);
+			_connection = connection_hdl(con);
+
+			// Start the ASIO io_service run loop
+			blog(LOG_INFO, "WSClient::connect: io thread started");
+			_client.run();
+			blog(LOG_INFO, "WSClient::connect: io thread exited");
+
+			if (_retry) {
+				blog(LOG_INFO,
+				     "trying to reconnect to %s in %d seconds.",
+				     _uri.c_str(), RECONNECT_DELAY);
+				std::this_thread::sleep_for(
+					std::chrono::seconds(RECONNECT_DELAY));
+			}
+		}
+	});
+
+	blog(LOG_INFO, "WSClient::connect: exited");
 }
 
 void WSClient::disconnect()
 {
-	_client.close(_connection, websocketpp::close::status::normal, "");
+	_retry = false;
+	try {
+		if (!_connection.expired()) {
+			_client.close(_connection,
+				      websocketpp::close::status::normal,
+				      "Client stopping");
+		}
+	} catch (websocketpp::lib::error_code e) {
+		blog(LOG_WARNING, "WSClient::disconnect: %s", e.message());
+	} catch (...) {
+	}
+
+	if (_thread.joinable()) {
+		_thread.join();
+	}
 }
 
 void WSClient::onOpen(connection_hdl hdl)
 {
-	_connection = hdl;
+	blog(LOG_INFO, "connection to %s opened", _uri.c_str());
 }
 
 void WSClient::onFail(connection_hdl hdl)
 {
 	blog(LOG_INFO, "connection to %s failed", _uri.c_str());
-
-	if (switcher->networkConfig.ClientEnabled) {
-		blog(LOG_INFO, "trying to reconnect to %s in %d seconds.",
-		     _uri.c_str(), RECONNECT_DELAY);
-		std::this_thread::sleep_for(
-			std::chrono::seconds(RECONNECT_DELAY));
-	}
 }
 
-void WSClient::onMessage(connection_hdl hdl, client::message_ptr message) {}
+void WSClient::onMessage(connection_hdl hdl, client::message_ptr message)
+{
+	if (message->get_payload() != "message ok") {
+		blog(LOG_WARNING, "received response: %s",
+		     message->get_payload());
+	}
+}
 
 void WSClient::onClose(connection_hdl hdl)
 {
 	blog(LOG_INFO, "client-connection to %s closed.", _uri.c_str());
-
-	if (switcher->networkConfig.ClientEnabled) {
-		blog(LOG_INFO, "trying to reconnect to %s in %d seconds.",
-		     switcher->networkConfig.Address, RECONNECT_DELAY);
-		std::this_thread::sleep_for(
-			std::chrono::seconds(RECONNECT_DELAY));
-	}
 }
 
 void SwitcherData::loadNetworkSettings(obs_data_t *obj)
 {
 	networkConfig.Load(obj);
-	if (networkConfig.ServerEnabled) {
-		switcher->server.start(networkConfig.ServerPort,
-				       networkConfig.LockToIPv4);
-	}
 }
 
 void SwitcherData::saveNetworkSwitches(obs_data_t *obj)
@@ -524,6 +538,12 @@ void AdvSceneSwitcher::on_serverSettings_toggled(bool on)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->networkConfig.ServerEnabled = on;
+	if (on) {
+		switcher->server.start(switcher->networkConfig.ServerPort,
+				       switcher->networkConfig.LockToIPv4);
+	} else {
+		switcher->server.stop();
+	}
 }
 
 void AdvSceneSwitcher::on_serverPort_valueChanged(int value)
@@ -575,11 +595,8 @@ void AdvSceneSwitcher::on_serverRestart_clicked()
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->server.stop();
-	if (switcher->networkConfig.ServerEnabled) {
-		switcher->server.start(switcher->networkConfig.ServerPort,
-				       switcher->networkConfig.LockToIPv4);
-	}
+	switcher->server.start(switcher->networkConfig.ServerPort,
+			       switcher->networkConfig.LockToIPv4);
 }
 
 void AdvSceneSwitcher::on_clientSettings_toggled(bool on)
@@ -590,6 +607,13 @@ void AdvSceneSwitcher::on_clientSettings_toggled(bool on)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->networkConfig.ClientEnabled = on;
+
+	if (on) {
+		switcher->client.connect(
+			switcher->networkConfig.GetClientUri());
+	} else {
+		switcher->client.disconnect();
+	}
 }
 
 void AdvSceneSwitcher::on_clientHostname_textChanged(const QString &text)

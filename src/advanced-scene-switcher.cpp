@@ -653,6 +653,15 @@ void SwitcherData::Start()
 		// Will be overwritten quickly but might be useful
 		writeToStatusFile("Advanced Scene Switcher running");
 	}
+
+	if (networkConfig.ServerEnabled) {
+		server.start(networkConfig.ServerPort,
+			     networkConfig.LockToIPv4);
+	}
+
+	if (networkConfig.ClientEnabled) {
+		client.connect(networkConfig.GetClientUri());
+	}
 }
 
 void SwitcherData::Stop()
@@ -667,6 +676,9 @@ void SwitcherData::Stop()
 
 		writeToStatusFile("Advanced Scene Switcher stopped");
 	}
+
+	server.stop();
+	client.disconnect();
 }
 
 bool SwitcherData::sceneChangedDuringWait()

@@ -112,4 +112,7 @@ private:
 	client _client;
 	std::string _uri;
 	connection_hdl _connection;
+	std::thread _thread;
+
+	bool _retry = false;
 };
