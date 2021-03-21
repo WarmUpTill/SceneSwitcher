@@ -141,8 +141,7 @@ void WSServer::start(quint16 port, bool lockToIPv4)
 		     errorCodeMessage.c_str());
 
 		obs_frontend_push_ui_translation(obs_module_get_string);
-		QString errorTitle =
-			tr("AdvSceneSwitcher.windowTitle");
+		QString errorTitle = tr("AdvSceneSwitcher.windowTitle");
 		QString errorMessage =
 			tr("AdvSceneSwitcher.networkTab.startFailed.message")
 				.arg(_serverPort)
