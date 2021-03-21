@@ -3325,6 +3325,20 @@
               </property>
              </widget>
             </item>
+            <item row="2" column="1">
+             <widget class="QLabel" name="serverStatus">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.status.notRunning</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_19">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.status.currentStatus</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
           <item>

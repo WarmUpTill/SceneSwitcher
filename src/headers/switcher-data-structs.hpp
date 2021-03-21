@@ -117,6 +117,7 @@ struct SwitcherData {
 	AudioSwitchFallback audioFallback;
 
 	WSServer server;
+	ServerStatus serverStatus = ServerStatus::NOT_RUNNING;
 	WSClient client;
 	ClientStatus clientStatus = ClientStatus::DISCONNECTED;
 	NetworkConfig networkConfig;

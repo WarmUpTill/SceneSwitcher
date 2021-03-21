@@ -142,9 +142,9 @@ void WSServer::start(quint16 port, bool lockToIPv4)
 
 		obs_frontend_push_ui_translation(obs_module_get_string);
 		QString errorTitle =
-			tr("OBSWebsocket.Server.StartFailed.Title");
+			tr("AdvSceneSwitcher.windowTitle");
 		QString errorMessage =
-			tr("OBSWebsocket.Server.StartFailed.Message")
+			tr("AdvSceneSwitcher.networkTab.startFailed.message")
 				.arg(_serverPort)
 				.arg(errorCodeMessage.c_str());
 		obs_frontend_pop_ui_translation();
@@ -155,6 +155,7 @@ void WSServer::start(quint16 port, bool lockToIPv4)
 
 		return;
 	}
+	switcher->serverStatus = ServerStatus::STARTING;
 
 	_server.start_accept();
 
@@ -164,6 +165,7 @@ void WSServer::start(quint16 port, bool lockToIPv4)
 		blog(LOG_INFO, "WSServer::start: io thread exited");
 	});
 
+	switcher->serverStatus = ServerStatus::RUNNING;
 	blog(LOG_INFO,
 	     "WSServer::start: server started successfully on port %d",
 	     _serverPort);
@@ -188,6 +190,7 @@ void WSServer::stop()
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 
+	switcher->serverStatus = ServerStatus::NOT_RUNNING;
 	blog(LOG_INFO, "server stopped successfully");
 }
 
@@ -435,6 +438,8 @@ void AdvSceneSwitcher::setupNetworkTab()
 	QTimer *statusTimer = new QTimer(this);
 	connect(statusTimer, SIGNAL(timeout()), this,
 		SLOT(updateClientStatus()));
+	connect(statusTimer, SIGNAL(timeout()), this,
+		SLOT(updateServerStatus()));
 	statusTimer->start(500);
 }
 
@@ -483,6 +488,26 @@ void AdvSceneSwitcher::on_serverRestart_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->server.start(switcher->networkConfig.ServerPort,
 			       switcher->networkConfig.LockToIPv4);
+}
+
+void AdvSceneSwitcher::updateServerStatus()
+{
+	switch (switcher->serverStatus) {
+	case ServerStatus::NOT_RUNNING:
+		ui->serverStatus->setText(obs_module_text(
+			"AdvSceneSwitcher.networkTab.server.status.notRunning"));
+		break;
+	case ServerStatus::STARTING:
+		ui->serverStatus->setText(obs_module_text(
+			"AdvSceneSwitcher.networkTab.server.status.starting"));
+		break;
+	case ServerStatus::RUNNING:
+		ui->serverStatus->setText(obs_module_text(
+			"AdvSceneSwitcher.networkTab.server.status.running"));
+		break;
+	default:
+		break;
+	}
 }
 
 void AdvSceneSwitcher::on_clientSettings_toggled(bool on)

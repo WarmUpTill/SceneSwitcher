@@ -68,6 +68,12 @@ private:
 	QThreadPool _threadPool;
 };
 
+enum class ServerStatus {
+	NOT_RUNNING,
+	STARTING,
+	RUNNING,
+};
+
 class WSClient : public QObject {
 	Q_OBJECT
 
