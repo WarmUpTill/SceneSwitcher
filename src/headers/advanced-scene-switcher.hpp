@@ -222,6 +222,7 @@ public slots:
 	void on_clientPort_valueChanged(int value);
 	void on_restrictSend_stateChanged(int state);
 	void on_clientReconnect_clicked();
+	void updateClientStatus();
 
 	void on_sceneGroupAdd_clicked();
 	void on_sceneGroupRemove_clicked();

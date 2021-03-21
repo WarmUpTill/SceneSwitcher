@@ -118,6 +118,7 @@ struct SwitcherData {
 
 	WSServer server;
 	WSClient client;
+	ClientStatus clientStatus = ClientStatus::DISCONNECTED;
 	NetworkConfig networkConfig;
 
 	std::deque<VideoSwitch> videoSwitches;

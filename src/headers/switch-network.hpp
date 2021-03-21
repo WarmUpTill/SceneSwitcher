@@ -91,3 +91,9 @@ private:
 
 	bool _retry = false;
 };
+
+enum class ClientStatus {
+	DISCONNECTED,
+	CONNECTING,
+	CONNECTED,
+};

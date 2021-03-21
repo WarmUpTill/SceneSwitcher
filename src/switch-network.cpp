@@ -318,6 +318,7 @@ void WSClient::connect(std::string uri)
 
 	_thread = std::thread([=]() {
 		while (_retry) {
+			switcher->clientStatus = ClientStatus::CONNECTING;
 			// Create a connection to the given URI and queue it for connection once
 			// the event loop starts
 			websocketpp::lib::error_code ec;
@@ -341,6 +342,7 @@ void WSClient::connect(std::string uri)
 		}
 	});
 
+	switcher->clientStatus = ClientStatus::DISCONNECTED;
 	blog(LOG_INFO, "WSClient::connect: exited");
 }
 
@@ -384,6 +386,7 @@ void WSClient::disconnect()
 void WSClient::onOpen(connection_hdl hdl)
 {
 	blog(LOG_INFO, "connection to %s opened", _uri.c_str());
+	switcher->clientStatus = ClientStatus::CONNECTED;
 }
 
 void WSClient::onFail(connection_hdl hdl)
@@ -402,6 +405,7 @@ void WSClient::onMessage(connection_hdl hdl, client::message_ptr message)
 void WSClient::onClose(connection_hdl hdl)
 {
 	blog(LOG_INFO, "client-connection to %s closed.", _uri.c_str());
+	switcher->clientStatus = ClientStatus::DISCONNECTED;
 }
 
 void SwitcherData::loadNetworkSettings(obs_data_t *obj)
@@ -427,6 +431,11 @@ void AdvSceneSwitcher::setupNetworkTab()
 	ui->clientHostname->setText(switcher->networkConfig.Address.c_str());
 	ui->clientPort->setValue(switcher->networkConfig.ClientPort);
 	ui->restrictSend->setChecked(!switcher->networkConfig.SendAll);
+
+	QTimer *statusTimer = new QTimer(this);
+	connect(statusTimer, SIGNAL(timeout()), this,
+		SLOT(updateClientStatus()));
+	statusTimer->start(500);
 }
 
 void AdvSceneSwitcher::on_serverSettings_toggled(bool on)
@@ -532,4 +541,24 @@ void AdvSceneSwitcher::on_clientReconnect_clicked()
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->client.connect(switcher->networkConfig.GetClientUri());
+}
+
+void AdvSceneSwitcher::updateClientStatus()
+{
+	switch (switcher->clientStatus) {
+	case ClientStatus::DISCONNECTED:
+		ui->clientStatus->setText(obs_module_text(
+			"AdvSceneSwitcher.networkTab.client.status.disconnected"));
+		break;
+	case ClientStatus::CONNECTING:
+		ui->clientStatus->setText(obs_module_text(
+			"AdvSceneSwitcher.networkTab.client.status.connecting"));
+		break;
+	case ClientStatus::CONNECTED:
+		ui->clientStatus->setText(obs_module_text(
+			"AdvSceneSwitcher.networkTab.client.status.connected"));
+		break;
+	default:
+		break;
+	}
 }
