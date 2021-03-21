@@ -18,17 +18,16 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 #include <websocketpp/server.hpp>
 #include <websocketpp/client.hpp>
 
+using websocketpp::connection_hdl;
+typedef websocketpp::server<websocketpp::config::asio> server;
+typedef websocketpp::client<websocketpp::config::asio_client> client;
+
 class NetworkConfig {
 public:
 	NetworkConfig();
 	void Load(obs_data_t *obj);
 	void Save(obs_data_t *obj);
 	void SetDefaults(obs_data_t *obj);
-
-	void SetPassword(QString password);
-	bool CheckAuth(QString userChallenge);
-	QString GenerateSalt();
-	static QString GenerateSecret(QString password, QString salt);
 
 	std::string GetClientUri();
 
@@ -37,34 +36,12 @@ public:
 	uint64_t ServerPort;
 	bool LockToIPv4;
 
-	bool ServerAuthRequired;
-	QString Secret;
-	QString Salt;
-	QString SessionChallenge;
-
 	// Client
 	bool ClientEnabled;
 	std::string Address;
 	uint64_t ClientPort;
-	bool ClientAuthRequired;
-	std::string ClientPassword;
-	// TODO: Implement sendAll handling
 	bool SendAll;
 };
-
-class ConnectionProperties {
-public:
-	explicit ConnectionProperties();
-	bool isAuthenticated();
-	void setAuthenticated(bool authenticated);
-
-private:
-	std::atomic<bool> _authenticated;
-};
-
-using websocketpp::connection_hdl;
-
-typedef websocketpp::server<websocketpp::config::asio> server;
 
 class WSServer : public QObject {
 	Q_OBJECT
@@ -87,14 +64,9 @@ private:
 	quint16 _serverPort;
 	bool _lockToIPv4;
 	std::set<connection_hdl, std::owner_less<connection_hdl>> _connections;
-	std::map<connection_hdl, ConnectionProperties,
-		 std::owner_less<connection_hdl>>
-		_connectionProperties;
 	QMutex _clMutex;
 	QThreadPool _threadPool;
 };
-
-typedef websocketpp::client<websocketpp::config::asio_client> client;
 
 class WSClient : public QObject {
 	Q_OBJECT

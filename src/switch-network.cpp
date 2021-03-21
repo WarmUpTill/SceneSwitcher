@@ -14,36 +14,30 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 #define PARAM_SERVER_ENABLE "ServerEnabled"
 #define PARAM_SERVER_PORT "ServerPort"
 #define PARAM_LOCKTOIPV4 "LockToIPv4"
-#define PARAM_SERVER_AUTHREQUIRED "ServerAuthRequired"
-#define PARAM_SECRET "AuthSecret"
-#define PARAM_SALT "AuthSalt"
 
 #define PARAM_CLIENT_ENABLE "ClientEnabled"
 #define PARAM_CLIENT_PORT "ClientPort"
 #define PARAM_ADDRESS "Address"
-#define PARAM_CLIENT_AUTHREQUIRED "ClientAuthRequired"
-#define PARAM_CLIENT_PASS "ClientPass"
+#define PARAM_CLIENT_SENDALL "SendAll"
 
 #define RECONNECT_DELAY 5
 
 #define SCENE_ENTRY "scene"
 #define TRANSITION_ENTRY "transition"
 
+using websocketpp::lib::placeholders::_1;
+using websocketpp::lib::placeholders::_2;
+using websocketpp::lib::bind;
+
 NetworkConfig::NetworkConfig()
 	: ServerEnabled(false),
 	  ServerPort(55555),
 	  LockToIPv4(false),
-	  ServerAuthRequired(true),
-	  Secret(""),
-	  Salt(""),
 	  ClientEnabled(false),
 	  Address(""),
 	  ClientPort(55555),
-	  ClientAuthRequired(false),
-	  ClientPassword("")
+	  SendAll(true)
 {
-	qsrand(QTime::currentTime().msec());
-	SessionChallenge = GenerateSalt();
 }
 
 void NetworkConfig::Load(obs_data_t *obj)
@@ -53,15 +47,11 @@ void NetworkConfig::Load(obs_data_t *obj)
 	ServerEnabled = obs_data_get_bool(obj, PARAM_SERVER_ENABLE);
 	ServerPort = obs_data_get_int(obj, PARAM_SERVER_PORT);
 	LockToIPv4 = obs_data_get_bool(obj, PARAM_LOCKTOIPV4);
-	ServerAuthRequired = obs_data_get_bool(obj, PARAM_SERVER_AUTHREQUIRED);
-	Secret = obs_data_get_string(obj, PARAM_SECRET);
-	Salt = obs_data_get_string(obj, PARAM_SALT);
 
 	ClientEnabled = obs_data_get_bool(obj, PARAM_CLIENT_ENABLE);
 	Address = obs_data_get_string(obj, PARAM_ADDRESS);
 	ClientPort = obs_data_get_int(obj, PARAM_CLIENT_PORT);
-	ClientAuthRequired = obs_data_get_bool(obj, PARAM_CLIENT_AUTHREQUIRED);
-	ClientPassword = obs_data_get_string(obj, PARAM_CLIENT_PASS);
+	SendAll = obs_data_get_bool(obj, PARAM_CLIENT_SENDALL);
 }
 
 void NetworkConfig::Save(obs_data_t *obj)
@@ -69,15 +59,11 @@ void NetworkConfig::Save(obs_data_t *obj)
 	obs_data_set_bool(obj, PARAM_SERVER_ENABLE, ServerEnabled);
 	obs_data_set_int(obj, PARAM_SERVER_PORT, ServerPort);
 	obs_data_set_bool(obj, PARAM_LOCKTOIPV4, LockToIPv4);
-	obs_data_set_bool(obj, PARAM_SERVER_AUTHREQUIRED, ServerAuthRequired);
-	obs_data_set_string(obj, PARAM_SECRET, Secret.toUtf8().constData());
-	obs_data_set_string(obj, PARAM_SALT, Salt.toUtf8().constData());
 
 	obs_data_set_bool(obj, PARAM_CLIENT_ENABLE, ClientEnabled);
 	obs_data_set_string(obj, PARAM_ADDRESS, Address.c_str());
 	obs_data_set_int(obj, PARAM_CLIENT_PORT, ClientPort);
-	obs_data_set_bool(obj, PARAM_CLIENT_AUTHREQUIRED, ClientAuthRequired);
-	obs_data_set_string(obj, PARAM_CLIENT_PASS, ClientPassword.c_str());
+	obs_data_set_bool(obj, PARAM_CLIENT_SENDALL, SendAll);
 }
 
 void NetworkConfig::SetDefaults(obs_data_t *obj)
@@ -85,106 +71,17 @@ void NetworkConfig::SetDefaults(obs_data_t *obj)
 	obs_data_set_default_bool(obj, PARAM_SERVER_ENABLE, ServerEnabled);
 	obs_data_set_default_int(obj, PARAM_SERVER_PORT, ServerPort);
 	obs_data_set_default_bool(obj, PARAM_LOCKTOIPV4, LockToIPv4);
-	obs_data_set_default_bool(obj, PARAM_SERVER_AUTHREQUIRED,
-				  ServerAuthRequired);
-	obs_data_set_default_string(obj, PARAM_SECRET,
-				    Secret.toUtf8().constData());
-	obs_data_set_default_string(obj, PARAM_SALT, Salt.toUtf8().constData());
 
 	obs_data_set_default_bool(obj, PARAM_CLIENT_ENABLE, ClientEnabled);
 	obs_data_set_default_string(obj, PARAM_ADDRESS, Address.c_str());
 	obs_data_set_default_int(obj, PARAM_CLIENT_PORT, ClientPort);
-	obs_data_set_default_bool(obj, PARAM_CLIENT_AUTHREQUIRED,
-				  ClientAuthRequired);
-	obs_data_set_default_string(obj, PARAM_CLIENT_PASS,
-				    ClientPassword.c_str());
-}
-
-QString NetworkConfig::GenerateSalt()
-{
-	// Generate 32 random chars
-	const size_t randomCount = 32;
-	QByteArray randomChars;
-	for (size_t i = 0; i < randomCount; i++) {
-		randomChars.append((char)qrand());
-	}
-
-	// Convert the 32 random chars to a base64 string
-	QString salt = randomChars.toBase64();
-
-	return salt;
-}
-
-QString NetworkConfig::GenerateSecret(QString password, QString salt)
-{
-	// Concatenate the password and the salt
-	QString passAndSalt = "";
-	passAndSalt += password;
-	passAndSalt += salt;
-
-	// Generate a SHA256 hash of the password and salt
-	auto challengeHash = QCryptographicHash::hash(
-		passAndSalt.toUtf8(), QCryptographicHash::Algorithm::Sha256);
-
-	// Encode SHA256 hash to Base64
-	QString challenge = challengeHash.toBase64();
-
-	return challenge;
+	obs_data_set_default_bool(obj, PARAM_CLIENT_SENDALL, SendAll);
 }
 
 std::string NetworkConfig::GetClientUri()
 {
 	return "ws://" + Address + ":" + std::to_string(ClientPort);
 }
-
-void NetworkConfig::SetPassword(QString password)
-{
-	QString newSalt = GenerateSalt();
-	QString newChallenge = GenerateSecret(password, newSalt);
-
-	this->Salt = newSalt;
-	this->Secret = newChallenge;
-}
-
-bool NetworkConfig::CheckAuth(QString response)
-{
-	// Concatenate auth secret with the challenge sent to the user
-	QString challengeAndResponse = "";
-	challengeAndResponse += Secret;
-	challengeAndResponse += SessionChallenge;
-
-	// Generate a SHA256 hash of challengeAndResponse
-	auto hash =
-		QCryptographicHash::hash(challengeAndResponse.toUtf8(),
-					 QCryptographicHash::Algorithm::Sha256);
-
-	// Encode the SHA256 hash to Base64
-	QString expectedResponse = hash.toBase64();
-
-	bool authSuccess = false;
-	if (response == expectedResponse) {
-		SessionChallenge = GenerateSalt();
-		authSuccess = true;
-	}
-
-	return authSuccess;
-}
-
-ConnectionProperties::ConnectionProperties() : _authenticated(false) {}
-
-bool ConnectionProperties::isAuthenticated()
-{
-	return _authenticated.load();
-}
-
-void ConnectionProperties::setAuthenticated(bool authenticated)
-{
-	_authenticated.store(authenticated);
-}
-
-using websocketpp::lib::placeholders::_1;
-using websocketpp::lib::placeholders::_2;
-using websocketpp::lib::bind;
 
 WSServer::WSServer()
 	: QObject(nullptr), _connections(), _clMutex(QMutex::Recursive)
@@ -280,8 +177,9 @@ void WSServer::stop()
 
 	_server.stop_listening();
 	for (connection_hdl hdl : _connections) {
+		websocketpp::lib::error_code ec;
 		_server.close(hdl, websocketpp::close::status::going_away,
-			      "Server stopping");
+			      "Server stopping", ec);
 	}
 
 	_threadPool.waitForDone();
@@ -304,14 +202,9 @@ void WSServer::onOpen(connection_hdl hdl)
 	     clientIp.toUtf8().constData());
 }
 
-std::string processMessage(std::string payload,
-			   ConnectionProperties &_connProperties)
+std::string processMessage(std::string payload)
 {
 	auto config = switcher->networkConfig;
-	if (config.ServerAuthRequired && !_connProperties.isAuthenticated()) {
-		return "Not Authenticated";
-	}
-
 	std::string msgContainer(payload);
 	const char *msg = msgContainer.c_str();
 
@@ -358,13 +251,7 @@ void WSServer::onMessage(connection_hdl hdl, server::message_ptr message)
 
 	QtConcurrent::run(&_threadPool, [=]() {
 		std::string payload = message->get_payload();
-
-		QMutexLocker locker(&_clMutex);
-		ConnectionProperties &connProperties =
-			_connectionProperties[hdl];
-		locker.unlock();
-
-		std::string response = processMessage(payload, connProperties);
+		std::string response = processMessage(payload);
 		websocketpp::lib::error_code errorCode;
 		_server.send(hdl, response, websocketpp::frame::opcode::text,
 			     errorCode);
@@ -381,7 +268,6 @@ void WSServer::onClose(connection_hdl hdl)
 {
 	QMutexLocker locker(&_clMutex);
 	_connections.erase(hdl);
-	_connectionProperties.erase(hdl);
 	locker.unlock();
 
 	auto conn = _server.get_con_from_hdl(hdl);
@@ -535,21 +421,12 @@ void AdvSceneSwitcher::setupNetworkTab()
 {
 	ui->serverSettings->setChecked(switcher->networkConfig.ServerEnabled);
 	ui->serverPort->setValue(switcher->networkConfig.ServerPort);
-	ui->serverAuthRequired->setChecked(
-		switcher->networkConfig.ServerAuthRequired);
-	ui->serverPassword->setDisabled(
-		!switcher->networkConfig.ServerAuthRequired);
-	ui->serverPassword->setText("setSuperSecurePasswordPlaceholder");
 	ui->lockToIPv4->setChecked(switcher->networkConfig.LockToIPv4);
 
 	ui->clientSettings->setChecked(switcher->networkConfig.ClientEnabled);
 	ui->clientHostname->setText(switcher->networkConfig.Address.c_str());
 	ui->clientPort->setValue(switcher->networkConfig.ClientPort);
-	ui->clientAuthRequired->setChecked(
-		switcher->networkConfig.ClientAuthRequired);
-	ui->clientPassword->setDisabled(
-		!switcher->networkConfig.ClientAuthRequired);
-	ui->clientPassword->setText("setSuperSecurePasswordPlaceholder");
+	ui->restrictSend->setChecked(!switcher->networkConfig.SendAll);
 }
 
 void AdvSceneSwitcher::on_serverSettings_toggled(bool on)
@@ -576,28 +453,6 @@ void AdvSceneSwitcher::on_serverPort_valueChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->networkConfig.ServerPort = value;
-}
-
-void AdvSceneSwitcher::on_serverAuthRequired_stateChanged(int state)
-{
-	if (loading) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->networkConfig.ServerAuthRequired = state;
-
-	ui->serverPassword->setDisabled(!state);
-}
-
-void AdvSceneSwitcher::on_serverPassword_textChanged(const QString &text)
-{
-	if (loading) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->networkConfig.SetPassword(text);
 }
 
 void AdvSceneSwitcher::on_lockToIPv4_stateChanged(int state)
@@ -658,25 +513,14 @@ void AdvSceneSwitcher::on_clientPort_valueChanged(int value)
 	switcher->networkConfig.ClientPort = value;
 }
 
-void AdvSceneSwitcher::on_clientAuthRequired_stateChanged(int state)
+void AdvSceneSwitcher::on_restrictSend_stateChanged(int state)
 {
 	if (loading) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->networkConfig.ClientAuthRequired = state;
-	ui->clientPassword->setDisabled(!state);
-}
-
-void AdvSceneSwitcher::on_clientPassword_textChanged(const QString &text)
-{
-	if (loading) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->networkConfig.ClientPassword = text.toUtf8().constData();
+	switcher->networkConfig.SendAll = !state;
 }
 
 // TODO: dont block UI in reconnect loop
