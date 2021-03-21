@@ -71,7 +71,7 @@ struct SwitcherData {
 	SceneGroup *lastRandomSceneGroup;
 	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
-	double noMatchDelay;
+	double noMatchDelay = 0;
 	double noMatchCount = 0;
 	StartupBehavior startupBehavior = PERSIST;
 	AutoStartEvent autoStartEvent = AutoStartEvent::NEVER;
