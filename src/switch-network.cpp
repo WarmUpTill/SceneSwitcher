@@ -20,7 +20,7 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 #define PARAM_ADDRESS "Address"
 #define PARAM_CLIENT_SENDALL "SendAll"
 
-#define RECONNECT_DELAY 5
+#define RECONNECT_DELAY 3
 
 #define SCENE_ENTRY "scene"
 #define TRANSITION_ENTRY "transition"
@@ -336,12 +336,12 @@ WSClient::~WSClient()
 void WSClient::connect(std::string uri)
 {
 	disconnect();
-	_client.reset();
 	_uri = uri;
 	_retry = true;
 
 	_thread = std::thread([=]() {
 		while (_retry) {
+			_client.reset();
 			switcher->clientStatus = ClientStatus::CONNECTING;
 			// Create a connection to the given URI and queue it for connection once
 			// the event loop starts
