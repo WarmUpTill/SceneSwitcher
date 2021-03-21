@@ -4,7 +4,6 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 
 #include <QtWidgets/QMainWindow>
 #include <QtConcurrent/QtConcurrent>
-#include <QCryptographicHash>
 #include <QTime>
 #include <QMessageBox>
 
@@ -20,7 +19,7 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 #define PARAM_ADDRESS "Address"
 #define PARAM_CLIENT_SENDALL "SendAll"
 
-#define RECONNECT_DELAY 3
+#define RECONNECT_DELAY 10
 
 #define SCENE_ENTRY "scene"
 #define TRANSITION_ENTRY "transition"
@@ -353,15 +352,18 @@ void WSClient::connect(std::string uri)
 
 			// Start the ASIO io_service run loop
 			blog(LOG_INFO, "WSClient::connect: io thread started");
+			_connected = true;
 			_client.run();
+			_connected = false;
 			blog(LOG_INFO, "WSClient::connect: io thread exited");
 
 			if (_retry) {
+				std::unique_lock<std::mutex> lck(_waitMtx);
 				blog(LOG_INFO,
 				     "trying to reconnect to %s in %d seconds.",
 				     _uri.c_str(), RECONNECT_DELAY);
-				std::this_thread::sleep_for(
-					std::chrono::seconds(RECONNECT_DELAY));
+				_cv.wait_for(lck, std::chrono::seconds(
+							  RECONNECT_DELAY));
 			}
 		}
 	});
@@ -374,7 +376,18 @@ void WSClient::disconnect()
 {
 	_retry = false;
 	websocketpp::lib::error_code ec;
-	if (!_connection.expired()) {
+	_client.close(_connection, websocketpp::close::status::normal,
+		      "Client stopping", ec);
+
+	{
+		std::unique_lock<std::mutex> waitLck(_waitMtx);
+		blog(LOG_INFO, "trying to reconnect to %s in %d seconds.",
+		     _uri.c_str(), RECONNECT_DELAY);
+		_cv.notify_all();
+	}
+
+	while (_connected) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		_client.close(_connection, websocketpp::close::status::normal,
 			      "Client stopping", ec);
 	}
@@ -571,7 +584,6 @@ void AdvSceneSwitcher::on_restrictSend_stateChanged(int state)
 	switcher->networkConfig.SendAll = !state;
 }
 
-// TODO: dont block UI in reconnect loop
 void AdvSceneSwitcher::on_clientReconnect_clicked()
 {
 	if (loading) {

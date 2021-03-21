@@ -4,14 +4,14 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 
 #pragma once
 
-#include <map>
 #include <set>
-#include <atomic>
 #include <QtCore/QObject>
 #include <QtCore/QMutex>
 #include <QtCore/QSharedPointer>
 #include <QtCore/QVariantHash>
 #include <QtCore/QThreadPool>
+#include <mutex>
+#include <condition_variable>
 
 #include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/config/asio_no_tls.hpp>
@@ -94,8 +94,10 @@ private:
 	std::string _uri;
 	connection_hdl _connection;
 	std::thread _thread;
-
 	bool _retry = false;
+	std::atomic_bool _connected = {false};
+	std::mutex _waitMtx;
+	std::condition_variable _cv;
 };
 
 enum class ClientStatus {
