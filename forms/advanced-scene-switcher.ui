@@ -3325,17 +3325,24 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="1">
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_19">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.status.currentStatus</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
              <widget class="QLabel" name="serverStatus">
               <property name="text">
                <string>AdvSceneSwitcher.networkTab.server.status.notRunning</string>
               </property>
              </widget>
             </item>
-            <item row="2" column="0">
-             <widget class="QLabel" name="label_19">
+            <item row="2" column="1">
+             <widget class="QCheckBox" name="restrictSend">
               <property name="text">
-               <string>AdvSceneSwitcher.networkTab.server.status.currentStatus</string>
+               <string>AdvSceneSwitcher.networkTab.server.restrictSendToAutomatedSwitches</string>
               </property>
              </widget>
             </item>
@@ -3381,13 +3388,6 @@
             </item>
             <item row="0" column="1">
              <widget class="QLineEdit" name="clientHostname"/>
-            </item>
-            <item row="2" column="1">
-             <widget class="QCheckBox" name="restrictSend">
-              <property name="text">
-               <string>AdvSceneSwitcher.networkTab.client.restrictSendToAutomatedSwitches</string>
-              </property>
-             </widget>
             </item>
             <item row="1" column="1">
              <widget class="QSpinBox" name="clientPort">

@@ -547,8 +547,8 @@ void SwitcherData::Thread()
 		lock.unlock();
 
 		if (match) {
-			if (networkConfig.ClientEnabled) {
-				client.sendMessage(scene, transition);
+			if (networkConfig.ServerEnabled) {
+				server.sendMessage(scene, transition);
 			}
 			switchScene(scene, transition,
 				    tansitionOverrideOverride);
@@ -731,9 +731,9 @@ void handleSceneChange(SwitcherData *s)
 	s->checkTriggers();
 	s->checkDefaultSceneTransitions();
 
-	if (switcher->networkConfig.ClientEnabled &&
+	if (switcher->networkConfig.ServerEnabled &&
 	    switcher->networkConfig.SendAll) {
-		switcher->client.sendMessage(ws, nullptr);
+		switcher->server.sendMessage(ws, nullptr);
 	}
 }
 

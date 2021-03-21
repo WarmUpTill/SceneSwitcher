@@ -51,6 +51,7 @@ public:
 	virtual ~WSServer();
 	void start(quint16 port, bool lockToIPv4);
 	void stop();
+	void sendMessage(OBSWeakSource scene, OBSWeakSource transition);
 	QThreadPool *threadPool() { return &_threadPool; }
 
 private:
@@ -81,7 +82,6 @@ public:
 	explicit WSClient();
 	virtual ~WSClient();
 	void connect(std::string uri);
-	void sendMessage(OBSWeakSource scene, OBSWeakSource transition);
 	void disconnect();
 
 private:

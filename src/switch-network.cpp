@@ -134,7 +134,6 @@ void WSServer::start(quint16 port, bool lockToIPv4)
 		_server.listen(_serverPort, errorCode);
 	}
 
-	// TODO adjust error Messagebox
 	if (errorCode) {
 		std::string errorCodeMessage = errorCode.message();
 		blog(LOG_INFO, "server: listen failed: %s",
@@ -191,6 +190,36 @@ void WSServer::stop()
 
 	switcher->serverStatus = ServerStatus::NOT_RUNNING;
 	blog(LOG_INFO, "server stopped successfully");
+}
+
+void WSServer::sendMessage(OBSWeakSource scene, OBSWeakSource transition)
+{
+	if (!scene) {
+		return;
+	}
+
+	OBSData data = obs_data_create();
+	obs_data_set_string(data, SCENE_ENTRY,
+			    GetWeakSourceName(scene).c_str());
+	obs_data_set_string(data, TRANSITION_ENTRY,
+			    GetWeakSourceName(transition).c_str());
+	std::string message = obs_data_get_json(data);
+	obs_data_release(data);
+
+	for (connection_hdl hdl : _connections) {
+		websocketpp::lib::error_code ec;
+		_server.send(hdl, message, websocketpp::frame::opcode::text,
+			     ec);
+		if (ec) {
+			std::string errorCodeMessage = ec.message();
+			blog(LOG_INFO, "server: send failed: %s",
+			     errorCodeMessage.c_str());
+		}
+	}
+
+	if (switcher->verbose) {
+		blog(LOG_INFO, "server sent message:\n%s", message.c_str());
+	}
 }
 
 void WSServer::onOpen(connection_hdl hdl)
@@ -252,16 +281,9 @@ void WSServer::onMessage(connection_hdl hdl, server::message_ptr message)
 	}
 
 	QtConcurrent::run(&_threadPool, [=]() {
-		std::string payload = message->get_payload();
-		std::string response = processMessage(payload);
-		websocketpp::lib::error_code errorCode;
-		_server.send(hdl, response, websocketpp::frame::opcode::text,
-			     errorCode);
-
-		if (errorCode) {
-			std::string errorCodeMessage = errorCode.message();
-			blog(LOG_INFO, "server(response): send failed: %s",
-			     errorCodeMessage.c_str());
+		if (message->get_payload() != "message ok") {
+			blog(LOG_WARNING, "received response: %s",
+			     message->get_payload().c_str());
 		}
 	});
 }
@@ -348,29 +370,6 @@ void WSClient::connect(std::string uri)
 	blog(LOG_INFO, "WSClient::connect: exited");
 }
 
-void WSClient::sendMessage(OBSWeakSource scene, OBSWeakSource transition)
-{
-	if (!scene) {
-		return;
-	}
-
-	OBSData data = obs_data_create();
-	obs_data_set_string(data, SCENE_ENTRY,
-			    GetWeakSourceName(scene).c_str());
-	obs_data_set_string(data, TRANSITION_ENTRY,
-			    GetWeakSourceName(transition).c_str());
-	std::string message = obs_data_get_json(data);
-	obs_data_release(data);
-
-	websocketpp::lib::error_code ec;
-	_client.send(_connection, message, websocketpp::frame::opcode::text,
-		     ec);
-
-	if (switcher->verbose) {
-		blog(LOG_INFO, "client sent message:\n%s", message.c_str());
-	}
-}
-
 void WSClient::disconnect()
 {
 	_retry = false;
@@ -398,9 +397,25 @@ void WSClient::onFail(connection_hdl hdl)
 
 void WSClient::onMessage(connection_hdl hdl, client::message_ptr message)
 {
-	if (message->get_payload() != "message ok") {
-		blog(LOG_WARNING, "received response: %s",
-		     message->get_payload().c_str());
+	auto opcode = message->get_opcode();
+	if (opcode != websocketpp::frame::opcode::text) {
+		return;
+	}
+
+	std::string payload = message->get_payload();
+	std::string response = processMessage(payload);
+	websocketpp::lib::error_code errorCode;
+	_client.send(hdl, response, websocketpp::frame::opcode::text,
+		     errorCode);
+
+	if (errorCode) {
+		std::string errorCodeMessage = errorCode.message();
+		blog(LOG_INFO, "client(response): send failed: %s",
+		     errorCodeMessage.c_str());
+	}
+
+	if (switcher->verbose) {
+		blog(LOG_INFO, "client sent message:\n%s", response.c_str());
 	}
 }
 
