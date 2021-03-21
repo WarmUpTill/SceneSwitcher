@@ -6,6 +6,8 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
 # Runs the Clang Formatter in parallel on the code base.
 # Return codes:
 #  - 1 there are files to be formatted
@@ -27,7 +29,7 @@ else
     CLANG_FORMAT=clang-format
 fi
 
-find .. -type d \( -path ./deps \
--o -path ./cmake \
--o -path ./build \) -prune -type f -o -name '*.h' -or -name '*.hpp' -or -name '*.m' -or -name '*.mm' -or -name '*.c' -or -name '*.cpp' \
+find $SCRIPTPATH/.. -type d \( -path $SCRIPTPATH/../deps \
+-o -path $SCRIPTPATH/../cmake \
+-o -path $SCRIPTPATH/../build \) -prune -type f -o -name '*.h' -or -name '*.hpp' -or -name '*.m' -or -name '*.mm' -or -name '*.c' -or -name '*.cpp' \
 | xargs -L100 -P${NPROC} ${CLANG_FORMAT} -i -style=file  -fallback-style=none
