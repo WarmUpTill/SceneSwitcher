@@ -176,7 +176,7 @@ void checkWindowTitleSwitchDirect(WindowSwitch &s,
 				  OBSWeakSource &scene,
 				  OBSWeakSource &transition)
 {
-	bool focus = s.window == currentWindowTitle;
+	bool focus = (!s.focus || s.window == currentWindowTitle);
 	bool fullscreen = (!s.fullscreen || isFullscreen(s.window));
 	bool max = (!s.maximized || isMaximized(s.window));
 
@@ -202,7 +202,7 @@ void checkWindowTitleSwitchRegex(WindowSwitch &s,
 		} catch (const std::regex_error &) {
 		}
 
-		bool focus = window == currentWindowTitle;
+		bool focus = (!s.focus || window == currentWindowTitle);
 		bool fullscreen = (!s.fullscreen || isFullscreen(window));
 		bool max = (!s.maximized || isMaximized(window));
 
