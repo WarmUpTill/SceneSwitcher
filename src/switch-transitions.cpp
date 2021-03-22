@@ -190,7 +190,7 @@ void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
 	}
 }
 
-void AdvSceneSwitcher::on_defTransitionDelay_valueChanged(int value)
+void AdvSceneSwitcher::defTransitionDelayValueChanged(int value)
 {
 	if (loading) {
 		return;
@@ -440,7 +440,7 @@ void AdvSceneSwitcher::setupTransitionsTab()
 		"AdvSceneSwitcher.transitionTab.defaultTransition.delay.help"));
 
 	QWidget::connect(defTransitionDelay, SIGNAL(valueChanged(int)), this,
-			 SLOT(on_defTransitionDelay_valueChanged(int)));
+			 SLOT(defTransitionDelayValueChanged(int)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{defTransitionDelay}}", defTransitionDelay}};
