@@ -4,7 +4,7 @@
 #include "headers/utility.hpp"
 #include "headers/version.h"
 
-constexpr auto tab_count = 16;
+constexpr auto tab_count = 17;
 
 QMetaObject::Connection inactivePluse;
 
@@ -334,6 +334,9 @@ int findTabIndex(QTabWidget *tabWidget, int pos)
 	case 15:
 		tabName = "sceneTriggerTab";
 		break;
+	case 16:
+		tabName = "reworkTab";
+		break;
 	}
 
 	QWidget *page = tabWidget->findChild<QWidget *>(tabName);
@@ -499,6 +502,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "videoTabPos", switcher->tabOrder[13]);
 	obs_data_set_int(obj, "sceneGroupTabPos", switcher->tabOrder[14]);
 	obs_data_set_int(obj, "triggerTabPos", switcher->tabOrder[15]);
+	obs_data_set_int(obj, "reworkTabPos", switcher->tabOrder[16]);
 }
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
@@ -596,6 +600,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "videoTabPos", 13);
 	obs_data_set_default_int(obj, "sceneGroupTabPos", 14);
 	obs_data_set_default_int(obj, "triggerTabPos", 15);
+	obs_data_set_default_int(obj, "reworkTabPos", 16);
 
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "generalTabPos")));
@@ -629,6 +634,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(int)(obs_data_get_int(obj, "sceneGroupTabPos")));
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "triggerTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "reworkTabPos")));
 
 	if (!tabOrderValid()) {
 		resetTabOrder();
