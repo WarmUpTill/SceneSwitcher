@@ -60,6 +60,7 @@ public:
 	void setupSceneGroupTab();
 	void setupTriggerTab();
 	void setupVideoTab();
+	void setupTestTab();
 	void setTabOrder();
 
 	static bool DisplayMessage(QString msg, bool question = false);
@@ -237,6 +238,9 @@ public slots:
 	void updateStatus();
 
 	void on_close_clicked();
+
+	void on_conditionAdd_clicked();
+	void on_conditionRemove_clicked();
 
 private:
 };

@@ -62,6 +62,7 @@ void AdvSceneSwitcher::loadUI()
 	setupVideoTab();
 	setupSceneGroupTab();
 	setupTriggerTab();
+	setupTestTab();
 
 	setTabOrder();
 
