@@ -83,12 +83,14 @@ public:
 	virtual ~WSClient();
 	void connect(std::string uri);
 	void disconnect();
+	std::string getFail() { return _failMsg; }
 
 private:
 	void onOpen(connection_hdl hdl);
 	void onFail(connection_hdl hdl);
 	void onMessage(connection_hdl hdl, client::message_ptr message);
 	void onClose(connection_hdl hdl);
+	void connectThread();
 
 	client _client;
 	std::string _uri;
@@ -98,10 +100,12 @@ private:
 	std::atomic_bool _connected = {false};
 	std::mutex _waitMtx;
 	std::condition_variable _cv;
+	std::string _failMsg;
 };
 
 enum class ClientStatus {
 	DISCONNECTED,
 	CONNECTING,
 	CONNECTED,
+	FAIL,
 };

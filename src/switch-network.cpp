@@ -334,21 +334,21 @@ WSClient::~WSClient()
 	disconnect();
 }
 
-void WSClient::connect(std::string uri)
+void WSClient::connectThread()
 {
-	disconnect();
-	_uri = uri;
-	_retry = true;
-
-	_thread = std::thread([=]() {
-		while (_retry) {
-			_client.reset();
-			switcher->clientStatus = ClientStatus::CONNECTING;
-			// Create a connection to the given URI and queue it for connection once
-			// the event loop starts
-			websocketpp::lib::error_code ec;
-			client::connection_ptr con =
-				_client.get_connection(uri, ec);
+	while (_retry) {
+		_client.reset();
+		switcher->clientStatus = ClientStatus::CONNECTING;
+		// Create a connection to the given URI and queue it for connection once
+		// the event loop starts
+		websocketpp::lib::error_code ec;
+		client::connection_ptr con = _client.get_connection(_uri, ec);
+		if (ec) {
+			_failMsg = ec.message();
+			blog(LOG_INFO, "client: connect failed: %s",
+			     _failMsg.c_str());
+			switcher->clientStatus = ClientStatus::FAIL;
+		} else {
 			_client.connect(con);
 			_connection = connection_hdl(con);
 
@@ -358,17 +358,26 @@ void WSClient::connect(std::string uri)
 			_client.run();
 			_connected = false;
 			blog(LOG_INFO, "WSClient::connect: io thread exited");
-
-			if (_retry) {
-				std::unique_lock<std::mutex> lck(_waitMtx);
-				blog(LOG_INFO,
-				     "trying to reconnect to %s in %d seconds.",
-				     _uri.c_str(), RECONNECT_DELAY);
-				_cv.wait_for(lck, std::chrono::seconds(
-							  RECONNECT_DELAY));
-			}
 		}
-	});
+
+		if (_retry) {
+			std::unique_lock<std::mutex> lck(_waitMtx);
+			blog(LOG_INFO,
+			     "trying to reconnect to %s in %d seconds.",
+			     _uri.c_str(), RECONNECT_DELAY);
+			_cv.wait_for(lck,
+				     std::chrono::seconds(RECONNECT_DELAY));
+		}
+	}
+}
+
+void WSClient::connect(std::string uri)
+{
+	disconnect();
+	_uri = uri;
+	_retry = true;
+
+	_thread = std::thread(&WSClient::connectThread, this);
 
 	switcher->clientStatus = ClientStatus::DISCONNECTED;
 	blog(LOG_INFO, "WSClient::connect: exited");
@@ -613,6 +622,10 @@ void AdvSceneSwitcher::updateClientStatus()
 	case ClientStatus::CONNECTED:
 		ui->clientStatus->setText(obs_module_text(
 			"AdvSceneSwitcher.networkTab.client.status.connected"));
+		break;
+	case ClientStatus::FAIL:
+		ui->clientStatus->setText(QString("Error: ") +
+					  switcher->client.getFail().c_str());
 		break;
 	default:
 		break;
