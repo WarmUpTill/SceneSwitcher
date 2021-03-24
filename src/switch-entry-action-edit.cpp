@@ -1,9 +1,9 @@
 #include "headers/switch-entry-action-edit.hpp"
 
-std::vector<std::string> actionTypes{"AdvSceneSwitcher.logic.and",
-				     "AdvSceneSwitcher.logic.or",
-				     "AdvSceneSwitcher.logic.andNot",
-				     "AdvSceneSwitcher.logic.orNot"};
+std::vector<std::string> actionTypes{"AdvSceneSwitcher.action.switchScene",
+				     "AdvSceneSwitcher.logic.muteSource",
+				     "AdvSceneSwitcher.logic.unmuteSource",
+				     "AdvSceneSwitcher.logic.blablabla"};
 
 static inline void populateActionSelection(QComboBox *list, bool root = false)
 {
@@ -12,58 +12,27 @@ static inline void populateActionSelection(QComboBox *list, bool root = false)
 	}
 }
 
-SwitchEntryActionEdit::SwitchEntryActionEdit(QWidget *parent,
-					     SceneSequenceSwitch *entryData)
+SwitchEntryActionEdit::SwitchEntryActionEdit(
+	QWidget *parent, std::deque<SceneSequenceSwitch> *entryData)
 {
 	this->setParent(parent);
 
-	_logicSelection = new QComboBox();
-	_conditionSelection = new QComboBox();
-	_conditionLayout = new QVBoxLayout();
+	_actionSelection = new QComboBox();
+	_actionWidgetLayout = new QVBoxLayout();
 	_group = new QGroupBox();
 	_groupLayout = new QVBoxLayout;
-	_childLayout = new QVBoxLayout;
-	_extend = new QPushButton();
-	_reduce = new QPushButton();
 
-	_extend->setProperty("themeID",
-			     QVariant(QStringLiteral("addIconSmall")));
-	_reduce->setProperty("themeID",
-			     QVariant(QStringLiteral("removeIconSmall")));
+	QWidget::connect(_actionSelection, SIGNAL(currentIndexChanged(int)),
+			 this, SLOT(populateActionSelection(int)));
 
-	_extend->setMaximumSize(22, 22);
-	_reduce->setMaximumSize(22, 22);
+	populateActionSelection(_actionSelection, !parent);
 
-	QWidget::connect(_logicSelection, SIGNAL(currentIndexChanged(int)),
-			 this, SLOT(LogicSelectionChanged(int)));
-	QWidget::connect(_conditionSelection, SIGNAL(currentIndexChanged(int)),
-			 this, SLOT(ConditionSelectionChanged(int)));
-	QWidget::connect(_extend, SIGNAL(clicked()), this,
-			 SLOT(ExtendClicked()));
-	QWidget::connect(_reduce, SIGNAL(clicked()), this,
-			 SLOT(ReduceClicked()));
+	QHBoxLayout *actionLayout = new QHBoxLayout;
+	actionLayout->addWidget(_actionSelection);
+	actionLayout->addStretch();
 
-	populateActionSelection(_logicSelection, !parent);
-
-	QHBoxLayout *logicLayout = new QHBoxLayout;
-	logicLayout->addWidget(_logicSelection);
-	logicLayout->addStretch();
-
-	QHBoxLayout *conditionTypeSelectionLayout = new QHBoxLayout;
-	conditionTypeSelectionLayout->addWidget(_conditionSelection);
-	conditionTypeSelectionLayout->addStretch();
-
-	_groupLayout->addLayout(logicLayout);
-	_groupLayout->addLayout(conditionTypeSelectionLayout);
-	_groupLayout->addLayout(_conditionLayout);
-
-	QHBoxLayout *controlsLayout = new QHBoxLayout;
-	controlsLayout->addWidget(_extend);
-	controlsLayout->addWidget(_reduce);
-	controlsLayout->addStretch();
-	_groupLayout->addLayout(controlsLayout);
-
-	_groupLayout->addLayout(_childLayout);
+	_groupLayout->addLayout(actionLayout);
+	_groupLayout->addLayout(_actionWidgetLayout);
 	_group->setLayout(_groupLayout);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
@@ -77,32 +46,31 @@ SwitchEntryActionEdit::SwitchEntryActionEdit(QWidget *parent,
 }
 
 void SwitchEntryActionEdit::ActionSelectionChanged(int idx) {}
+
 void SwitchEntryActionEdit::UpdateEntryData() {}
 
-void SwitchEntryActionEdit::ExtendClicked()
+void AdvSceneSwitcher::on_actionAdd_clicked()
 {
-	if (_loading || !_entryData) {
-		return;
+	SwitchEntryActionEdit *newEntry;
+
+	int count = ui->reworkEditActionLayout->count();
+	auto item = ui->reworkEditActionLayout->itemAt(count - 1);
+
+	if (item) {
+		auto widget = item->widget();
+		newEntry = new SwitchEntryActionEdit(widget);
+	} else {
+		newEntry = new SwitchEntryActionEdit();
 	}
 
-	//std::lock_guard<std::mutex> lock(switcher->m);
-	//auto es = switchData->extend();
-
-	//SwitchEntryEdit *ew = new SwitchEntryEdit(this->parentWidget());
-	//_childLayout->addWidget(ew);
+	ui->reworkEditActionLayout->addWidget(newEntry);
 }
 
-void SwitchEntryActionEdit::ReduceClicked()
+void AdvSceneSwitcher::on_actionRemove_clicked()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
+	int count = ui->reworkEditActionLayout->count();
+	auto item = ui->reworkEditActionLayout->takeAt(count - 1);
 
-	//std::lock_guard<std::mutex> lock(switcher->m);
-	//switchData->reduce();
-
-	int count = _childLayout->count();
-	auto item = _childLayout->takeAt(count - 1);
 	if (item) {
 		auto widget = item->widget();
 		if (widget) {

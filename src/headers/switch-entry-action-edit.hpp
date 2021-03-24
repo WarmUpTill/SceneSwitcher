@@ -7,26 +7,21 @@ class SwitchEntryActionEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	SwitchEntryActionEdit(QWidget *parent = nullptr,
-			      SceneSequenceSwitch *entryData = nullptr);
+	SwitchEntryActionEdit(
+		QWidget *parent = nullptr,
+		std::deque<SceneSequenceSwitch> *entryData = nullptr);
 	void UpdateEntryData();
 
 private slots:
 	void ActionSelectionChanged(int idx);
-	void ExtendClicked();
-	void ReduceClicked();
 
 protected:
-	QComboBox *_logicSelection;
-	QComboBox *_conditionSelection;
-	QVBoxLayout *_conditionLayout;
+	QComboBox *_actionSelection;
+	QVBoxLayout *_actionWidgetLayout;
 	QVBoxLayout *_groupLayout;
 	QGroupBox *_group;
-	QVBoxLayout *_childLayout;
-	QPushButton *_extend;
-	QPushButton *_reduce;
 
-	SceneSequenceSwitch *_entryData;
+	std::deque<SceneSequenceSwitch> *_entryData;
 
 private:
 	bool _loading = true;

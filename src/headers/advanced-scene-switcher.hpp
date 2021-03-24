@@ -254,6 +254,8 @@ public slots:
 
 	void on_conditionAdd_clicked();
 	void on_conditionRemove_clicked();
+	void on_actionAdd_clicked();
+	void on_actionRemove_clicked();
 
 private:
 };

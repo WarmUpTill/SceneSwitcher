@@ -35,7 +35,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>16</number>
+      <number>17</number>
      </property>
      <property name="movable">
       <bool>true</bool>
@@ -4204,7 +4204,7 @@
          <property name="title">
           <string>Edit Scene Switch</string>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_31">
+         <layout class="QVBoxLayout" name="verticalLayout_34" stretch="1,1,20,1,10">
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="0,0,0">
             <item>
@@ -4233,6 +4233,13 @@
            </layout>
           </item>
           <item>
+           <widget class="Line" name="line_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QScrollArea" name="scrollArea">
             <property name="widgetResizable">
              <bool>true</bool>
@@ -4243,14 +4250,14 @@
                <x>0</x>
                <y>0</y>
                <width>767</width>
-               <height>399</height>
+               <height>281</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_30" stretch="10,1">
               <item>
                <layout class="QGridLayout" name="gridLayout_21">
                 <item row="0" column="0">
-                 <widget class="QLabel" name="switchEntryEditHelp">
+                 <widget class="QLabel" name="switchEntryEditConditionHelp">
                   <property name="enabled">
                    <bool>false</bool>
                   </property>
@@ -4266,7 +4273,7 @@
                  </widget>
                 </item>
                 <item row="0" column="0">
-                 <layout class="QVBoxLayout" name="reworkEditLayout"/>
+                 <layout class="QVBoxLayout" name="reworkEditConditionLayout"/>
                 </item>
                </layout>
               </item>
@@ -4324,13 +4331,6 @@
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_11">
-            <property name="text">
-             <string>conditions here ...</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="Line" name="line_8">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -4338,10 +4338,94 @@
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_12">
-            <property name="text">
-             <string>action here ...</string>
+           <widget class="QScrollArea" name="scrollArea_2">
+            <property name="widgetResizable">
+             <bool>true</bool>
             </property>
+            <widget class="QWidget" name="scrollAreaWidgetContents_3">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>767</width>
+               <height>139</height>
+              </rect>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_33" stretch="10,1">
+              <item>
+               <layout class="QGridLayout" name="gridLayout_25">
+                <item row="0" column="0">
+                 <widget class="QLabel" name="switchEntryEditActionHelp">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
+                  <property name="text">
+                   <string>AdvSceneSwitcher.testTab.editHelp</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0">
+                 <layout class="QVBoxLayout" name="reworkEditActionLayout"/>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_21">
+                <item>
+                 <widget class="QPushButton" name="actionAdd">
+                  <property name="maximumSize">
+                   <size>
+                    <width>22</width>
+                    <height>22</height>
+                   </size>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
+                  </property>
+                  <property name="themeID" stdset="0">
+                   <string notr="true">addIconSmall</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="actionRemove">
+                  <property name="maximumSize">
+                   <size>
+                    <width>22</width>
+                    <height>22</height>
+                   </size>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
+                  </property>
+                  <property name="themeID" stdset="0">
+                   <string notr="true">removeIconSmall</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_14">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
            </widget>
           </item>
          </layout>

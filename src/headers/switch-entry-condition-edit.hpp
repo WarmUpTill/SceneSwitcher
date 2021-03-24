@@ -23,7 +23,7 @@ private slots:
 protected:
 	QComboBox *_logicSelection;
 	QComboBox *_conditionSelection;
-	QVBoxLayout *_conditionLayout;
+	QVBoxLayout *_conditionWidgetLayout;
 	QVBoxLayout *_groupLayout;
 	QGroupBox *_group;
 	QVBoxLayout *_childLayout;

@@ -44,7 +44,7 @@ SwitchEntryConditionEdit::SwitchEntryConditionEdit(
 
 	_logicSelection = new QComboBox();
 	_conditionSelection = new QComboBox();
-	_conditionLayout = new QVBoxLayout();
+	_conditionWidgetLayout = new QVBoxLayout();
 	_group = new QGroupBox();
 	_groupLayout = new QVBoxLayout;
 	_childLayout = new QVBoxLayout;
@@ -81,7 +81,7 @@ SwitchEntryConditionEdit::SwitchEntryConditionEdit(
 
 	_groupLayout->addLayout(logicLayout);
 	_groupLayout->addLayout(conditionTypeSelectionLayout);
-	_groupLayout->addLayout(_conditionLayout);
+	_groupLayout->addLayout(_conditionWidgetLayout);
 
 	QHBoxLayout *controlsLayout = new QHBoxLayout;
 	controlsLayout->addWidget(_extend);
@@ -124,29 +124,14 @@ bool SwitchEntryConditionEdit::IsRootNode()
 
 void SwitchEntryConditionEdit::UpdateEntryData() {}
 
-static inline void clearLayout(QLayout *layout)
-{
-	QLayoutItem *item;
-	while ((item = layout->takeAt(0))) {
-		if (item->layout()) {
-			clearLayout(item->layout());
-			delete item->layout();
-		}
-		if (item->widget()) {
-			delete item->widget();
-		}
-		delete item;
-	}
-}
-
 void SwitchEntryConditionEdit::ConditionSelectionChanged(int idx)
 {
-	clearLayout(_conditionLayout);
+	clearLayout(_conditionWidgetLayout);
 
 	if (idx == 3) {
 		auto test = new SceneSequenceSwitch;
 		auto widget = new SequenceWidget(this, test);
-		_conditionLayout->addWidget(widget);
+		_conditionWidgetLayout->addWidget(widget);
 	}
 }
 
@@ -184,20 +169,26 @@ void SwitchEntryConditionEdit::ReduceClicked()
 	}
 }
 
+#include "headers/switch-entry-action-edit.hpp"
+
 void AdvSceneSwitcher::setupTestTab()
 {
 	SwitchEntryConditionEdit *test = new SwitchEntryConditionEdit();
-	ui->reworkEditLayout->addWidget(test);
+	ui->reworkEditConditionLayout->addWidget(test);
 
-	ui->switchEntryEditHelp->hide();
+	auto *test2 = new SwitchEntryActionEdit();
+	ui->reworkEditActionLayout->addWidget(test2);
+
+	ui->switchEntryEditConditionHelp->hide();
+	ui->switchEntryEditActionHelp->hide();
 }
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()
 {
 	SwitchEntryConditionEdit *newEntry;
 
-	int count = ui->reworkEditLayout->count();
-	auto item = ui->reworkEditLayout->itemAt(count - 1);
+	int count = ui->reworkEditConditionLayout->count();
+	auto item = ui->reworkEditConditionLayout->itemAt(count - 1);
 
 	if (item) {
 		auto widget = item->widget();
@@ -206,13 +197,13 @@ void AdvSceneSwitcher::on_conditionAdd_clicked()
 		newEntry = new SwitchEntryConditionEdit();
 	}
 
-	ui->reworkEditLayout->addWidget(newEntry);
+	ui->reworkEditConditionLayout->addWidget(newEntry);
 }
 
 void AdvSceneSwitcher::on_conditionRemove_clicked()
 {
-	int count = ui->reworkEditLayout->count();
-	auto item = ui->reworkEditLayout->takeAt(count - 1);
+	int count = ui->reworkEditConditionLayout->count();
+	auto item = ui->reworkEditConditionLayout->takeAt(count - 1);
 
 	if (item) {
 		auto widget = item->widget();
