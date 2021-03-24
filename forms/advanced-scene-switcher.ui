@@ -2828,7 +2828,7 @@
           </widget>
          </item>
          <item>
-          <widget class="Line" name="line">
+          <widget class="Line" name="line_2">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
            </property>
@@ -3269,6 +3269,184 @@
           </spacer>
          </item>
         </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="networkTab">
+      <attribute name="title">
+       <string>AdvSceneSwitcher.networkTab.title</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_30">
+       <item>
+        <widget class="QLabel" name="label_12">
+         <property name="text">
+          <string>AdvSceneSwitcher.networkTab.warning</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="serverSettings">
+         <property name="title">
+          <string>AdvSceneSwitcher.networkTab.server</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_31">
+          <item>
+           <layout class="QGridLayout" name="gridLayout_24">
+            <item row="0" column="1">
+             <widget class="QSpinBox" name="serverPort">
+              <property name="minimum">
+               <number>1024</number>
+              </property>
+              <property name="maximum">
+               <number>65535</number>
+              </property>
+              <property name="value">
+               <number>55555</number>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_17">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.port</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QCheckBox" name="lockToIPv4">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.lockToIPv4</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_19">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.status.currentStatus</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QLabel" name="serverStatus">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.status.notRunning</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QCheckBox" name="restrictSend">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.restrictSendToAutomatedSwitches</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="serverRestart">
+            <property name="text">
+             <string>AdvSceneSwitcher.networkTab.server.restart</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="clientSettings">
+         <property name="title">
+          <string>AdvSceneSwitcher.networkTab.client</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_23">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="gridLayout_21">
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_11">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.client.port</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_6">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.client.address</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLineEdit" name="clientHostname">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QSpinBox" name="clientPort">
+              <property name="minimum">
+               <number>1024</number>
+              </property>
+              <property name="maximum">
+               <number>65535</number>
+              </property>
+              <property name="value">
+               <number>55555</number>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QLabel" name="clientStatus">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.client.status.disconnected</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_14">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.client.status.currentStatus</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="clientReconnect">
+            <property name="text">
+             <string>AdvSceneSwitcher.networkTab.client.reconnect</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </widget>

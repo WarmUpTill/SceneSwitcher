@@ -1,3 +1,4 @@
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <util/platform.h>
 #include "../headers/advanced-scene-switcher.hpp"
