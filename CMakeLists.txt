@@ -82,7 +82,8 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/switch-sequence.hpp
 	src/headers/switch-video.hpp
 	src/headers/switch-generic.hpp
-	src/headers/switch-entry-edit.hpp
+	src/headers/switch-entry-action-edit.hpp
+	src/headers/switch-entry-condition-edit.hpp
 	src/headers/version.h
 	)
 
@@ -111,7 +112,8 @@ set(advanced-scene-switcher_SOURCES
 	src/switch-audio.cpp
 	src/switch-video.cpp
 	src/switch-generic.cpp
-	src/switch-entry-edit.cpp
+	src/switch-entry-action-edit.cpp
+	src/switch-entry-condition-edit.cpp
 	src/curl-helper.cpp
 	src/volume-control.cpp
 	src/version.cpp

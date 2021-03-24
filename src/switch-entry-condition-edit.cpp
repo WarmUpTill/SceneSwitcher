@@ -1,6 +1,6 @@
-#include "headers/switch-entry-edit.hpp"
+#include "headers/switch-entry-condition-edit.hpp"
 
-bool SwitchEntryEdit::enableAdvancedLogic = false;
+bool SwitchEntryConditionEdit::enableAdvancedLogic = false;
 
 std::vector<std::string> logicTypesRoot{"AdvSceneSwitcher.logic.none",
 					"AdvSceneSwitcher.logic.not"};
@@ -37,8 +37,8 @@ static inline void populateConditionSelection(QComboBox *list)
 	}
 }
 
-SwitchEntryEdit::SwitchEntryEdit(QWidget *parent,
-				 SceneSequenceSwitch *entryData)
+SwitchEntryConditionEdit::SwitchEntryConditionEdit(
+	QWidget *parent, SceneSequenceSwitch *entryData)
 {
 	this->setParent(parent);
 
@@ -108,7 +108,7 @@ SwitchEntryEdit::SwitchEntryEdit(QWidget *parent,
 	_loading = false;
 }
 
-void SwitchEntryEdit::LogicSelectionChanged(int idx)
+void SwitchEntryConditionEdit::LogicSelectionChanged(int idx)
 {
 	if (IsRootNode()) {
 		_group->setTitle(obs_module_text(logicTypesRoot[idx].c_str()));
@@ -117,12 +117,12 @@ void SwitchEntryEdit::LogicSelectionChanged(int idx)
 	}
 }
 
-bool SwitchEntryEdit::IsRootNode()
+bool SwitchEntryConditionEdit::IsRootNode()
 {
 	return _isRoot;
 }
 
-void SwitchEntryEdit::UpdateEntryData() {}
+void SwitchEntryConditionEdit::UpdateEntryData() {}
 
 static inline void clearLayout(QLayout *layout)
 {
@@ -139,7 +139,7 @@ static inline void clearLayout(QLayout *layout)
 	}
 }
 
-void SwitchEntryEdit::ConditionSelectionChanged(int idx)
+void SwitchEntryConditionEdit::ConditionSelectionChanged(int idx)
 {
 	clearLayout(_conditionLayout);
 
@@ -150,7 +150,7 @@ void SwitchEntryEdit::ConditionSelectionChanged(int idx)
 	}
 }
 
-void SwitchEntryEdit::ExtendClicked()
+void SwitchEntryConditionEdit::ExtendClicked()
 {
 	if (_loading || !_entryData) {
 		return;
@@ -159,11 +159,12 @@ void SwitchEntryEdit::ExtendClicked()
 	//std::lock_guard<std::mutex> lock(switcher->m);
 	//auto es = switchData->extend();
 
-	SwitchEntryEdit *ew = new SwitchEntryEdit(this->parentWidget());
+	SwitchEntryConditionEdit *ew =
+		new SwitchEntryConditionEdit(this->parentWidget());
 	_childLayout->addWidget(ew);
 }
 
-void SwitchEntryEdit::ReduceClicked()
+void SwitchEntryConditionEdit::ReduceClicked()
 {
 	if (_loading || !_entryData) {
 		return;
@@ -185,7 +186,7 @@ void SwitchEntryEdit::ReduceClicked()
 
 void AdvSceneSwitcher::setupTestTab()
 {
-	SwitchEntryEdit *test = new SwitchEntryEdit();
+	SwitchEntryConditionEdit *test = new SwitchEntryConditionEdit();
 	ui->reworkEditLayout->addWidget(test);
 
 	ui->switchEntryEditHelp->hide();
@@ -193,16 +194,16 @@ void AdvSceneSwitcher::setupTestTab()
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()
 {
-	SwitchEntryEdit *newEntry;
+	SwitchEntryConditionEdit *newEntry;
 
 	int count = ui->reworkEditLayout->count();
 	auto item = ui->reworkEditLayout->itemAt(count - 1);
 
 	if (item) {
 		auto widget = item->widget();
-		newEntry = new SwitchEntryEdit(widget);
+		newEntry = new SwitchEntryConditionEdit(widget);
 	} else {
-		newEntry = new SwitchEntryEdit();
+		newEntry = new SwitchEntryConditionEdit();
 	}
 
 	ui->reworkEditLayout->addWidget(newEntry);

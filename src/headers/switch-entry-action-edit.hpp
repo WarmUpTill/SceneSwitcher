@@ -3,20 +3,16 @@
 
 #include <QGroupBox>
 
-class SwitchEntryEdit : public QWidget {
+class SwitchEntryActionEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	SwitchEntryEdit(QWidget *parent = nullptr,
-			SceneSequenceSwitch *entryData = nullptr);
-	bool IsRootNode();
+	SwitchEntryActionEdit(QWidget *parent = nullptr,
+			      SceneSequenceSwitch *entryData = nullptr);
 	void UpdateEntryData();
 
-	static bool enableAdvancedLogic;
-
 private slots:
-	void LogicSelectionChanged(int idx);
-	void ConditionSelectionChanged(int idx);
+	void ActionSelectionChanged(int idx);
 	void ExtendClicked();
 	void ReduceClicked();
 
@@ -33,6 +29,5 @@ protected:
 	SceneSequenceSwitch *_entryData;
 
 private:
-	bool _isRoot = true;
 	bool _loading = true;
 };
