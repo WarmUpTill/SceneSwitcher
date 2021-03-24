@@ -4,7 +4,7 @@
 #include "headers/utility.hpp"
 #include "headers/version.h"
 
-constexpr auto tab_count = 17;
+constexpr auto tab_count = 18;
 
 QMetaObject::Connection inactivePluse;
 
@@ -329,12 +329,15 @@ int findTabIndex(QTabWidget *tabWidget, int pos)
 		tabName = "videoTab";
 		break;
 	case 14:
-		tabName = "sceneGroupTab";
+		tabName = "networkTab";
 		break;
 	case 15:
-		tabName = "sceneTriggerTab";
+		tabName = "sceneGroupTab";
 		break;
 	case 16:
+		tabName = "sceneTriggerTab";
+		break;
+	case 17:
 		tabName = "reworkTab";
 		break;
 	}
@@ -403,6 +406,7 @@ void SwitcherData::loadSettings(obs_data_t *obj)
 	loadTimeSwitches(obj);
 	loadAudioSwitches(obj);
 	loadVideoSwitches(obj);
+	loadNetworkSettings(obj);
 	loadSceneTriggers(obj);
 	loadGeneralSettings(obj);
 	loadHotkeys(obj);
@@ -428,6 +432,7 @@ void SwitcherData::saveSettings(obs_data_t *obj)
 	saveTimeSwitches(obj);
 	saveAudioSwitches(obj);
 	saveVideoSwitches(obj);
+	saveNetworkSwitches(obj);
 	saveSceneTriggers(obj);
 	saveGeneralSettings(obj);
 	saveHotkeys(obj);
@@ -500,9 +505,10 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "sequenceTabPos", switcher->tabOrder[11]);
 	obs_data_set_int(obj, "audioTabPos", switcher->tabOrder[12]);
 	obs_data_set_int(obj, "videoTabPos", switcher->tabOrder[13]);
-	obs_data_set_int(obj, "sceneGroupTabPos", switcher->tabOrder[14]);
-	obs_data_set_int(obj, "triggerTabPos", switcher->tabOrder[15]);
-	obs_data_set_int(obj, "reworkTabPos", switcher->tabOrder[16]);
+	obs_data_set_int(obj, "networkTabPos", switcher->tabOrder[14]);
+	obs_data_set_int(obj, "sceneGroupTabPos", switcher->tabOrder[15]);
+	obs_data_set_int(obj, "triggerTabPos", switcher->tabOrder[16]);
+	obs_data_set_int(obj, "reworkTabPos", switcher->tabOrder[17]);
 }
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
@@ -598,9 +604,10 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "sequenceTabPos", 11);
 	obs_data_set_default_int(obj, "audioTabPos", 12);
 	obs_data_set_default_int(obj, "videoTabPos", 13);
-	obs_data_set_default_int(obj, "sceneGroupTabPos", 14);
-	obs_data_set_default_int(obj, "triggerTabPos", 15);
-	obs_data_set_default_int(obj, "reworkTabPos", 16);
+	obs_data_set_default_int(obj, "networkTabPos", 14);
+	obs_data_set_default_int(obj, "sceneGroupTabPos", 15);
+	obs_data_set_default_int(obj, "triggerTabPos", 16);
+	obs_data_set_default_int(obj, "reworkTabPos", 17);
 
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "generalTabPos")));
@@ -630,6 +637,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(int)(obs_data_get_int(obj, "audioTabPos")));
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "videoTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "networkTabPos")));
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "sceneGroupTabPos")));
 	switcher->tabOrder.emplace_back(

@@ -22,6 +22,7 @@
 #include "switch-window.hpp"
 #include "switch-sequence.hpp"
 #include "switch-video.hpp"
+#include "switch-network.hpp"
 
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
@@ -71,7 +72,7 @@ struct SwitcherData {
 	SceneGroup *lastRandomSceneGroup;
 	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
-	double noMatchDelay;
+	double noMatchDelay = 0;
 	double noMatchCount = 0;
 	StartupBehavior startupBehavior = PERSIST;
 	AutoStartEvent autoStartEvent = AutoStartEvent::NEVER;
@@ -114,6 +115,12 @@ struct SwitcherData {
 
 	std::deque<AudioSwitch> audioSwitches;
 	AudioSwitchFallback audioFallback;
+
+	WSServer server;
+	ServerStatus serverStatus = ServerStatus::NOT_RUNNING;
+	WSClient client;
+	ClientStatus clientStatus = ClientStatus::DISCONNECTED;
+	NetworkConfig networkConfig;
 
 	std::deque<VideoSwitch> videoSwitches;
 
@@ -226,6 +233,7 @@ struct SwitcherData {
 	void saveSceneGroups(obs_data_t *obj);
 	void saveSceneTriggers(obs_data_t *obj);
 	void saveVideoSwitches(obs_data_t *obj);
+	void saveNetworkSwitches(obs_data_t *obj);
 	void saveGeneralSettings(obs_data_t *obj);
 	void saveHotkeys(obs_data_t *obj);
 	void saveVersion(obs_data_t *obj, std::string currentVersion);
@@ -247,6 +255,7 @@ struct SwitcherData {
 	void loadSceneGroups(obs_data_t *obj);
 	void loadSceneTriggers(obs_data_t *obj);
 	void loadVideoSwitches(obs_data_t *obj);
+	void loadNetworkSettings(obs_data_t *obj);
 	void loadGeneralSettings(obs_data_t *obj);
 	void loadHotkeys(obs_data_t *obj);
 

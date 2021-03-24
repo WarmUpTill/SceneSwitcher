@@ -60,6 +60,7 @@ public:
 	void setupSceneGroupTab();
 	void setupTriggerTab();
 	void setupVideoTab();
+	void setupNetworkTab();
 	void setupTestTab();
 	void setTabOrder();
 
@@ -164,7 +165,7 @@ public slots:
 	void on_defaultTransitionsUp_clicked();
 	void on_defaultTransitionsDown_clicked();
 	void on_transitionOverridecheckBox_stateChanged(int state);
-	void on_defTransitionDelay_valueChanged(int value);
+	void defTransitionDelayValueChanged(int value);
 
 	void on_browseButton_clicked();
 	void on_readFileCheckBox_stateChanged(int state);
@@ -212,6 +213,18 @@ public slots:
 	void on_videoUp_clicked();
 	void on_videoDown_clicked();
 	void on_getScreenshot_clicked();
+
+	void on_serverSettings_toggled(bool on);
+	void on_serverPort_valueChanged(int value);
+	void on_lockToIPv4_stateChanged(int state);
+	void on_serverRestart_clicked();
+	void updateServerStatus();
+	void on_clientSettings_toggled(bool on);
+	void on_clientHostname_textChanged(const QString &text);
+	void on_clientPort_valueChanged(int value);
+	void on_restrictSend_stateChanged(int state);
+	void on_clientReconnect_clicked();
+	void updateClientStatus();
 
 	void on_sceneGroupAdd_clicked();
 	void on_sceneGroupRemove_clicked();

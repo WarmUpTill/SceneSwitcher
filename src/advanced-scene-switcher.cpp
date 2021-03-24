@@ -60,6 +60,7 @@ void AdvSceneSwitcher::loadUI()
 	setupTimeTab();
 	setupAudioTab();
 	setupVideoTab();
+	setupNetworkTab();
 	setupSceneGroupTab();
 	setupTriggerTab();
 	setupTestTab();
@@ -547,6 +548,9 @@ void SwitcherData::Thread()
 		lock.unlock();
 
 		if (match) {
+			if (networkConfig.ServerEnabled) {
+				server.sendMessage(scene, transition);
+			}
 			switchScene(scene, transition,
 				    tansitionOverrideOverride);
 		}
@@ -653,6 +657,15 @@ void SwitcherData::Start()
 		// Will be overwritten quickly but might be useful
 		writeToStatusFile("Advanced Scene Switcher running");
 	}
+
+	if (networkConfig.ServerEnabled) {
+		server.start(networkConfig.ServerPort,
+			     networkConfig.LockToIPv4);
+	}
+
+	if (networkConfig.ClientEnabled) {
+		client.connect(networkConfig.GetClientUri());
+	}
 }
 
 void SwitcherData::Stop()
@@ -667,6 +680,9 @@ void SwitcherData::Stop()
 
 		writeToStatusFile("Advanced Scene Switcher stopped");
 	}
+
+	server.stop();
+	client.disconnect();
 }
 
 bool SwitcherData::sceneChangedDuringWait()
@@ -715,6 +731,11 @@ void handleSceneChange(SwitcherData *s)
 
 	s->checkTriggers();
 	s->checkDefaultSceneTransitions();
+
+	if (switcher->networkConfig.ServerEnabled &&
+	    switcher->networkConfig.SendAll) {
+		switcher->server.sendMessage(ws, nullptr);
+	}
 }
 
 void setLiveTime(SwitcherData *s)
