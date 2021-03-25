@@ -1,6 +1,5 @@
 #pragma once
-
-#include "macro-entry.hpp"
+#include "macro-action-edit.hpp"
 
 class MacroActionSwitchScene : public MacroAction {
 public:

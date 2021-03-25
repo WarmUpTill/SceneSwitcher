@@ -13,7 +13,7 @@ std::unordered_map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 	{LogicType::ROOT_NOT, {"AdvSceneSwitcher.logic.not"}},
 };
 
-bool MacroEntry::checkMatch()
+bool Macro::checkMatch()
 {
 	bool match = false;
 	for (auto &c : _conditions) {
@@ -51,7 +51,7 @@ bool MacroEntry::checkMatch()
 	return match;
 }
 
-bool MacroEntry::performAction()
+bool Macro::performAction()
 {
 	bool ret = false;
 	for (auto &a : _actions) {
@@ -59,16 +59,4 @@ bool MacroEntry::performAction()
 	}
 
 	return ret;
-}
-
-void AdvSceneSwitcher::setupMacroTab()
-{
-	MacroConditionEdit *test = new MacroConditionEdit();
-	ui->macroEditConditionLayout->addWidget(test);
-
-	auto *test2 = new MacroActionEdit();
-	ui->macroEditActionLayout->addWidget(test2);
-
-	//ui->macroEditConditionHelp->hide();
-	//ui->macroEditActionHelp->hide();
 }

@@ -1,4 +1,6 @@
-#include "headers\macro-action-switch-scene.hpp"
+#include "headers/macro-action-switch-scene.hpp"
+#include "headers/advanced-scene-switcher.hpp"
+#include "headers/utility.hpp"
 
 bool MacroActionSwitchScene::PerformAction()
 {

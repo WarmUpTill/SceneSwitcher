@@ -24,6 +24,8 @@
 #include "switch-video.hpp"
 #include "switch-network.hpp"
 
+#include "macro-entry.hpp"
+
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
 constexpr auto current_transition_name = "Current Transition";

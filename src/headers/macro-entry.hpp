@@ -1,7 +1,10 @@
 #pragma once
-
-#include "advanced-scene-switcher.hpp"
-#include "utility.hpp"
+#include <string>
+#include <deque>
+#include <memory>
+#include <unordered_map>
+#include <obs.hpp>
+#include <obs-module.h>
 
 enum class LogicType {
 	NONE,
@@ -16,7 +19,7 @@ enum class LogicType {
 };
 
 struct LogicTypeInfo {
-	std ::string _name;
+	std::string _name;
 };
 
 class MacroCondition {

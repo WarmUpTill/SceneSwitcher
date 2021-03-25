@@ -1,5 +1,7 @@
 #include "headers/macro-action-edit.hpp"
 #include "headers/macro-action-switch-scene.hpp"
+#include "headers/utility.hpp"
+#include "headers/advanced-scene-switcher.hpp"
 
 std::vector<std::string> actionTypes{"AdvSceneSwitcher.action.switchScene",
 				     "AdvSceneSwitcher.action.wait",
@@ -15,7 +17,7 @@ static inline void populateActionSelection(QComboBox *list, bool root = false)
 }
 
 MacroActionEdit::MacroActionEdit(QWidget *parent,
-				 std::deque<SceneSequenceSwitch> *entryData)
+				 std::deque<MacroAction> *entryData)
 {
 	this->setParent(parent);
 

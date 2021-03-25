@@ -1,6 +1,7 @@
 #pragma once
-
 #include "macro-entry.hpp"
+#include <QWidget>
+#include <QComboBox>
 
 class MacroConditionScene : public MacroCondition {
 public:

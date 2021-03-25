@@ -9,13 +9,6 @@
 #include <obs-module.h>
 #include <obs-frontend-api.h>
 
-static inline bool SceneGroupValid(SceneGroup *group)
-{
-	if (group) {
-		return group->name != invalid_scene_group_name;
-	}
-	return false;
-}
 
 static inline bool WeakSourceValid(obs_weak_source_t *ws)
 {
@@ -37,26 +30,6 @@ static inline std::string GetWeakSourceName(obs_weak_source_t *weak_source)
 	}
 
 	return name;
-}
-
-static inline SceneGroup *GetSceneGroupByName(const char *name)
-{
-	if (!switcher) {
-		return nullptr;
-	}
-
-	for (SceneGroup &sg : switcher->sceneGroups) {
-		if (sg.name == name) {
-			return &sg;
-		}
-	}
-
-	return nullptr;
-}
-
-static inline SceneGroup *GetSceneGroupByQString(const QString &name)
-{
-	return GetSceneGroupByName(name.toUtf8().constData());
 }
 
 static inline OBSWeakSource GetWeakSourceByName(const char *name)

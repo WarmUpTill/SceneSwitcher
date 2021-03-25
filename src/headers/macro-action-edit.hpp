@@ -1,14 +1,18 @@
-#include "advanced-scene-switcher.hpp"
-#include "utility.hpp"
+#pragma once
 
+#include <QWidget>
+#include <QComboBox>
+#include <QVBoxLayout>
 #include <QGroupBox>
+#include <deque>
+#include "macro-entry.hpp"
 
 class MacroActionEdit : public QWidget {
 	Q_OBJECT
 
 public:
 	MacroActionEdit(QWidget *parent = nullptr,
-			std::deque<SceneSequenceSwitch> *entryData = nullptr);
+			std::deque<MacroAction> *entryData = nullptr);
 	void UpdateEntryData();
 
 private slots:
@@ -20,7 +24,7 @@ protected:
 	QVBoxLayout *_groupLayout;
 	QGroupBox *_group;
 
-	std::deque<SceneSequenceSwitch> *_entryData;
+	std::deque<MacroAction> *_entryData;
 
 private:
 	bool _loading = true;

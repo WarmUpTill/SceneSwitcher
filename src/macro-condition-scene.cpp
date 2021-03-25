@@ -1,4 +1,7 @@
 #include "headers/macro-condition-scene.hpp"
+#include "headers/utility.hpp"
+#include "headers/advanced-scene-switcher.hpp"
+
 
 bool MacroConditionScene::CheckCondition()
 {
