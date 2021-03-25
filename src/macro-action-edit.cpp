@@ -1,4 +1,5 @@
 #include "headers/macro-action-edit.hpp"
+#include "headers/macro-action-switch-scene.hpp"
 
 std::vector<std::string> actionTypes{"AdvSceneSwitcher.action.switchScene",
 				     "AdvSceneSwitcher.action.wait",
@@ -24,7 +25,7 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	_groupLayout = new QVBoxLayout;
 
 	QWidget::connect(_actionSelection, SIGNAL(currentIndexChanged(int)),
-			 this, SLOT(populateActionSelection(int)));
+			 this, SLOT(ActionSelectionChanged(int)));
 
 	populateActionSelection(_actionSelection, !parent);
 
@@ -46,7 +47,14 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	_loading = false;
 }
 
-void MacroActionEdit::ActionSelectionChanged(int idx) {}
+void MacroActionEdit::ActionSelectionChanged(int idx) {
+	clearLayout(_actionWidgetLayout);
+
+	if (idx == 0) {
+		auto widget = new MacroActionSwitchSceneEdit();
+		_actionWidgetLayout->addWidget(widget);
+	}
+}
 
 void MacroActionEdit::UpdateEntryData() {}
 
