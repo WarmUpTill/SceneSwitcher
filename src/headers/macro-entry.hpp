@@ -41,11 +41,11 @@ private:
 	int _id;
 };
 
-class MacroEntry {
+class Macro {
 
 public:
-	MacroEntry();
-	virtual ~MacroEntry();
+	Macro();
+	virtual ~Macro();
 
 	bool checkMatch();
 	bool performAction();
