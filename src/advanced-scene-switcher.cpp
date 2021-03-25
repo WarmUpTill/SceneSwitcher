@@ -63,7 +63,7 @@ void AdvSceneSwitcher::loadUI()
 	setupNetworkTab();
 	setupSceneGroupTab();
 	setupTriggerTab();
-	setupTestTab();
+	setupMacroTab();
 
 	setTabOrder();
 

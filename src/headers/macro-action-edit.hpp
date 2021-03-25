@@ -3,13 +3,12 @@
 
 #include <QGroupBox>
 
-class SwitchEntryActionEdit : public QWidget {
+class MacroActionEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	SwitchEntryActionEdit(
-		QWidget *parent = nullptr,
-		std::deque<SceneSequenceSwitch> *entryData = nullptr);
+	MacroActionEdit(QWidget *parent = nullptr,
+			std::deque<SceneSequenceSwitch> *entryData = nullptr);
 	void UpdateEntryData();
 
 private slots:

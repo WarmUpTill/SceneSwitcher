@@ -61,7 +61,7 @@ public:
 	void setupTriggerTab();
 	void setupVideoTab();
 	void setupNetworkTab();
-	void setupTestTab();
+	void setupMacroTab();
 	void setTabOrder();
 
 	static bool DisplayMessage(QString msg, bool question = false);

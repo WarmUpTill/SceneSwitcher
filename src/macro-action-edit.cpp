@@ -1,9 +1,10 @@
-#include "headers/switch-entry-action-edit.hpp"
+#include "headers/macro-action-edit.hpp"
 
 std::vector<std::string> actionTypes{"AdvSceneSwitcher.action.switchScene",
-				     "AdvSceneSwitcher.logic.muteSource",
-				     "AdvSceneSwitcher.logic.unmuteSource",
-				     "AdvSceneSwitcher.logic.blablabla"};
+				     "AdvSceneSwitcher.action.wait",
+				     "AdvSceneSwitcher.action.muteSource",
+				     "AdvSceneSwitcher.action.unmuteSource",
+				     "AdvSceneSwitcher.action.blablabla"};
 
 static inline void populateActionSelection(QComboBox *list, bool root = false)
 {
@@ -12,8 +13,8 @@ static inline void populateActionSelection(QComboBox *list, bool root = false)
 	}
 }
 
-SwitchEntryActionEdit::SwitchEntryActionEdit(
-	QWidget *parent, std::deque<SceneSequenceSwitch> *entryData)
+MacroActionEdit::MacroActionEdit(QWidget *parent,
+				 std::deque<SceneSequenceSwitch> *entryData)
 {
 	this->setParent(parent);
 
@@ -45,31 +46,31 @@ SwitchEntryActionEdit::SwitchEntryActionEdit(
 	_loading = false;
 }
 
-void SwitchEntryActionEdit::ActionSelectionChanged(int idx) {}
+void MacroActionEdit::ActionSelectionChanged(int idx) {}
 
-void SwitchEntryActionEdit::UpdateEntryData() {}
+void MacroActionEdit::UpdateEntryData() {}
 
 void AdvSceneSwitcher::on_actionAdd_clicked()
 {
-	SwitchEntryActionEdit *newEntry;
+	MacroActionEdit *newEntry;
 
-	int count = ui->reworkEditActionLayout->count();
-	auto item = ui->reworkEditActionLayout->itemAt(count - 1);
+	int count = ui->macroEditActionLayout->count();
+	auto item = ui->macroEditActionLayout->itemAt(count - 1);
 
 	if (item) {
 		auto widget = item->widget();
-		newEntry = new SwitchEntryActionEdit(widget);
+		newEntry = new MacroActionEdit(widget);
 	} else {
-		newEntry = new SwitchEntryActionEdit();
+		newEntry = new MacroActionEdit();
 	}
 
-	ui->reworkEditActionLayout->addWidget(newEntry);
+	ui->macroEditActionLayout->addWidget(newEntry);
 }
 
 void AdvSceneSwitcher::on_actionRemove_clicked()
 {
-	int count = ui->reworkEditActionLayout->count();
-	auto item = ui->reworkEditActionLayout->takeAt(count - 1);
+	int count = ui->macroEditActionLayout->count();
+	auto item = ui->macroEditActionLayout->takeAt(count - 1);
 
 	if (item) {
 		auto widget = item->widget();

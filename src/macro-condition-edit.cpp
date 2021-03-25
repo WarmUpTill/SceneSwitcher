@@ -1,6 +1,6 @@
-#include "headers/switch-entry-condition-edit.hpp"
+#include "headers/macro-condition-edit.hpp"
 
-bool SwitchEntryConditionEdit::enableAdvancedLogic = false;
+bool MacroConditionEdit::enableAdvancedLogic = false;
 
 std::vector<std::string> logicTypesRoot{"AdvSceneSwitcher.logic.none",
 					"AdvSceneSwitcher.logic.not"};
@@ -37,8 +37,8 @@ static inline void populateConditionSelection(QComboBox *list)
 	}
 }
 
-SwitchEntryConditionEdit::SwitchEntryConditionEdit(
-	QWidget *parent, SceneSequenceSwitch *entryData)
+MacroConditionEdit::MacroConditionEdit(QWidget *parent,
+				       SceneSequenceSwitch *entryData)
 {
 	this->setParent(parent);
 
@@ -108,7 +108,7 @@ SwitchEntryConditionEdit::SwitchEntryConditionEdit(
 	_loading = false;
 }
 
-void SwitchEntryConditionEdit::LogicSelectionChanged(int idx)
+void MacroConditionEdit::LogicSelectionChanged(int idx)
 {
 	if (IsRootNode()) {
 		_group->setTitle(obs_module_text(logicTypesRoot[idx].c_str()));
@@ -117,25 +117,25 @@ void SwitchEntryConditionEdit::LogicSelectionChanged(int idx)
 	}
 }
 
-bool SwitchEntryConditionEdit::IsRootNode()
+bool MacroConditionEdit::IsRootNode()
 {
 	return _isRoot;
 }
 
-void SwitchEntryConditionEdit::UpdateEntryData() {}
+void MacroConditionEdit::UpdateEntryData() {}
 
-void SwitchEntryConditionEdit::ConditionSelectionChanged(int idx)
+void MacroConditionEdit::ConditionSelectionChanged(int idx)
 {
 	clearLayout(_conditionWidgetLayout);
 
-	if (idx == 3) {
+	if (idx == 0) {
 		auto test = new SceneSequenceSwitch;
 		auto widget = new SequenceWidget(this, test);
 		_conditionWidgetLayout->addWidget(widget);
 	}
 }
 
-void SwitchEntryConditionEdit::ExtendClicked()
+void MacroConditionEdit::ExtendClicked()
 {
 	if (_loading || !_entryData) {
 		return;
@@ -144,12 +144,11 @@ void SwitchEntryConditionEdit::ExtendClicked()
 	//std::lock_guard<std::mutex> lock(switcher->m);
 	//auto es = switchData->extend();
 
-	SwitchEntryConditionEdit *ew =
-		new SwitchEntryConditionEdit(this->parentWidget());
+	MacroConditionEdit *ew = new MacroConditionEdit(this->parentWidget());
 	_childLayout->addWidget(ew);
 }
 
-void SwitchEntryConditionEdit::ReduceClicked()
+void MacroConditionEdit::ReduceClicked()
 {
 	if (_loading || !_entryData) {
 		return;
@@ -169,41 +168,41 @@ void SwitchEntryConditionEdit::ReduceClicked()
 	}
 }
 
-#include "headers/switch-entry-action-edit.hpp"
+#include "headers/macro-action-edit.hpp"
 
-void AdvSceneSwitcher::setupTestTab()
+void AdvSceneSwitcher::setupMacroTab()
 {
-	SwitchEntryConditionEdit *test = new SwitchEntryConditionEdit();
-	ui->reworkEditConditionLayout->addWidget(test);
+	MacroConditionEdit *test = new MacroConditionEdit();
+	ui->macroEditConditionLayout->addWidget(test);
 
-	auto *test2 = new SwitchEntryActionEdit();
-	ui->reworkEditActionLayout->addWidget(test2);
+	auto *test2 = new MacroActionEdit();
+	ui->macroEditActionLayout->addWidget(test2);
 
-	ui->switchEntryEditConditionHelp->hide();
-	ui->switchEntryEditActionHelp->hide();
+	ui->macroEditConditionHelp->hide();
+	ui->macroEditActionHelp->hide();
 }
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()
 {
-	SwitchEntryConditionEdit *newEntry;
+	MacroConditionEdit *newEntry;
 
-	int count = ui->reworkEditConditionLayout->count();
-	auto item = ui->reworkEditConditionLayout->itemAt(count - 1);
+	int count = ui->macroEditConditionLayout->count();
+	auto item = ui->macroEditConditionLayout->itemAt(count - 1);
 
 	if (item) {
 		auto widget = item->widget();
-		newEntry = new SwitchEntryConditionEdit(widget);
+		newEntry = new MacroConditionEdit(widget);
 	} else {
-		newEntry = new SwitchEntryConditionEdit();
+		newEntry = new MacroConditionEdit();
 	}
 
-	ui->reworkEditConditionLayout->addWidget(newEntry);
+	ui->macroEditConditionLayout->addWidget(newEntry);
 }
 
 void AdvSceneSwitcher::on_conditionRemove_clicked()
 {
-	int count = ui->reworkEditConditionLayout->count();
-	auto item = ui->reworkEditConditionLayout->takeAt(count - 1);
+	int count = ui->macroEditConditionLayout->count();
+	auto item = ui->macroEditConditionLayout->takeAt(count - 1);
 
 	if (item) {
 		auto widget = item->widget();

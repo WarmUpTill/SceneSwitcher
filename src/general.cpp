@@ -290,55 +290,55 @@ int findTabIndex(QTabWidget *tabWidget, int pos)
 		tabName = "generalTab";
 		break;
 	case 1:
-		tabName = "transitionsTab";
+		tabName = "macroTab";
 		break;
 	case 2:
-		tabName = "pauseTab";
+		tabName = "transitionsTab";
 		break;
 	case 3:
-		tabName = "windowTitleTab";
+		tabName = "pauseTab";
 		break;
 	case 4:
-		tabName = "executableTab";
+		tabName = "windowTitleTab";
 		break;
 	case 5:
-		tabName = "screenRegionTab";
+		tabName = "executableTab";
 		break;
 	case 6:
-		tabName = "mediaTab";
+		tabName = "screenRegionTab";
 		break;
 	case 7:
-		tabName = "fileTab";
+		tabName = "mediaTab";
 		break;
 	case 8:
-		tabName = "randomTab";
+		tabName = "fileTab";
 		break;
 	case 9:
-		tabName = "timeTab";
+		tabName = "randomTab";
 		break;
 	case 10:
-		tabName = "idleTab";
+		tabName = "timeTab";
 		break;
 	case 11:
-		tabName = "sceneSequenceTab";
+		tabName = "idleTab";
 		break;
 	case 12:
-		tabName = "audioTab";
+		tabName = "sceneSequenceTab";
 		break;
 	case 13:
-		tabName = "videoTab";
+		tabName = "audioTab";
 		break;
 	case 14:
-		tabName = "networkTab";
+		tabName = "videoTab";
 		break;
 	case 15:
-		tabName = "sceneGroupTab";
+		tabName = "networkTab";
 		break;
 	case 16:
-		tabName = "sceneTriggerTab";
+		tabName = "sceneGroupTab";
 		break;
 	case 17:
-		tabName = "reworkTab";
+		tabName = "sceneTriggerTab";
 		break;
 	}
 
@@ -492,23 +492,23 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	}
 
 	obs_data_set_int(obj, "generalTabPos", switcher->tabOrder[0]);
-	obs_data_set_int(obj, "transitionTabPos", switcher->tabOrder[1]);
-	obs_data_set_int(obj, "pauseTabPos", switcher->tabOrder[2]);
-	obs_data_set_int(obj, "titleTabPos", switcher->tabOrder[3]);
-	obs_data_set_int(obj, "exeTabPos", switcher->tabOrder[4]);
-	obs_data_set_int(obj, "regionTabPos", switcher->tabOrder[5]);
-	obs_data_set_int(obj, "mediaTabPos", switcher->tabOrder[6]);
-	obs_data_set_int(obj, "fileTabPos", switcher->tabOrder[7]);
-	obs_data_set_int(obj, "randomTabPos", switcher->tabOrder[8]);
-	obs_data_set_int(obj, "timeTabPos", switcher->tabOrder[9]);
-	obs_data_set_int(obj, "idleTabPos", switcher->tabOrder[10]);
-	obs_data_set_int(obj, "sequenceTabPos", switcher->tabOrder[11]);
-	obs_data_set_int(obj, "audioTabPos", switcher->tabOrder[12]);
-	obs_data_set_int(obj, "videoTabPos", switcher->tabOrder[13]);
-	obs_data_set_int(obj, "networkTabPos", switcher->tabOrder[14]);
-	obs_data_set_int(obj, "sceneGroupTabPos", switcher->tabOrder[15]);
-	obs_data_set_int(obj, "triggerTabPos", switcher->tabOrder[16]);
-	obs_data_set_int(obj, "reworkTabPos", switcher->tabOrder[17]);
+	obs_data_set_int(obj, "macroTabPos", switcher->tabOrder[1]);
+	obs_data_set_int(obj, "transitionTabPos", switcher->tabOrder[2]);
+	obs_data_set_int(obj, "pauseTabPos", switcher->tabOrder[3]);
+	obs_data_set_int(obj, "titleTabPos", switcher->tabOrder[4]);
+	obs_data_set_int(obj, "exeTabPos", switcher->tabOrder[5]);
+	obs_data_set_int(obj, "regionTabPos", switcher->tabOrder[6]);
+	obs_data_set_int(obj, "mediaTabPos", switcher->tabOrder[7]);
+	obs_data_set_int(obj, "fileTabPos", switcher->tabOrder[8]);
+	obs_data_set_int(obj, "randomTabPos", switcher->tabOrder[9]);
+	obs_data_set_int(obj, "timeTabPos", switcher->tabOrder[10]);
+	obs_data_set_int(obj, "idleTabPos", switcher->tabOrder[11]);
+	obs_data_set_int(obj, "sequenceTabPos", switcher->tabOrder[12]);
+	obs_data_set_int(obj, "audioTabPos", switcher->tabOrder[13]);
+	obs_data_set_int(obj, "videoTabPos", switcher->tabOrder[14]);
+	obs_data_set_int(obj, "networkTabPos", switcher->tabOrder[15]);
+	obs_data_set_int(obj, "sceneGroupTabPos", switcher->tabOrder[16]);
+	obs_data_set_int(obj, "triggerTabPos", switcher->tabOrder[17]);
 }
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
@@ -591,26 +591,28 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	switcher->threadPriority = obs_data_get_int(obj, "threadPriority");
 
 	obs_data_set_default_int(obj, "generalTabPos", 0);
-	obs_data_set_default_int(obj, "transitionTabPos", 1);
-	obs_data_set_default_int(obj, "pauseTabPos", 2);
-	obs_data_set_default_int(obj, "titleTabPos", 3);
-	obs_data_set_default_int(obj, "exeTabPos", 4);
-	obs_data_set_default_int(obj, "regionTabPos", 5);
-	obs_data_set_default_int(obj, "mediaTabPos", 6);
-	obs_data_set_default_int(obj, "fileTabPos", 7);
-	obs_data_set_default_int(obj, "randomTabPos", 8);
-	obs_data_set_default_int(obj, "timeTabPos", 9);
-	obs_data_set_default_int(obj, "idleTabPos", 10);
-	obs_data_set_default_int(obj, "sequenceTabPos", 11);
-	obs_data_set_default_int(obj, "audioTabPos", 12);
-	obs_data_set_default_int(obj, "videoTabPos", 13);
-	obs_data_set_default_int(obj, "networkTabPos", 14);
-	obs_data_set_default_int(obj, "sceneGroupTabPos", 15);
-	obs_data_set_default_int(obj, "triggerTabPos", 16);
-	obs_data_set_default_int(obj, "reworkTabPos", 17);
+	obs_data_set_default_int(obj, "macroTabPos", 1);
+	obs_data_set_default_int(obj, "transitionTabPos", 2);
+	obs_data_set_default_int(obj, "pauseTabPos", 3);
+	obs_data_set_default_int(obj, "titleTabPos", 4);
+	obs_data_set_default_int(obj, "exeTabPos", 5);
+	obs_data_set_default_int(obj, "regionTabPos", 6);
+	obs_data_set_default_int(obj, "mediaTabPos", 7);
+	obs_data_set_default_int(obj, "fileTabPos", 8);
+	obs_data_set_default_int(obj, "randomTabPos", 9);
+	obs_data_set_default_int(obj, "timeTabPos", 10);
+	obs_data_set_default_int(obj, "idleTabPos", 11);
+	obs_data_set_default_int(obj, "sequenceTabPos", 12);
+	obs_data_set_default_int(obj, "audioTabPos", 13);
+	obs_data_set_default_int(obj, "videoTabPos", 14);
+	obs_data_set_default_int(obj, "networkTabPos", 15);
+	obs_data_set_default_int(obj, "sceneGroupTabPos", 16);
+	obs_data_set_default_int(obj, "triggerTabPos", 17);
 
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "generalTabPos")));
+	switcher->tabOrder.emplace_back(
+		(int)(obs_data_get_int(obj, "macroTabPos")));
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "transitionTabPos")));
 	switcher->tabOrder.emplace_back(
@@ -643,8 +645,6 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(int)(obs_data_get_int(obj, "sceneGroupTabPos")));
 	switcher->tabOrder.emplace_back(
 		(int)(obs_data_get_int(obj, "triggerTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "reworkTabPos")));
 
 	if (!tabOrderValid()) {
 		resetTabOrder();

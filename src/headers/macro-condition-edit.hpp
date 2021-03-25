@@ -3,12 +3,12 @@
 
 #include <QGroupBox>
 
-class SwitchEntryConditionEdit : public QWidget {
+class MacroConditionEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	SwitchEntryConditionEdit(QWidget *parent = nullptr,
-				 SceneSequenceSwitch *entryData = nullptr);
+	MacroConditionEdit(QWidget *parent = nullptr,
+			   SceneSequenceSwitch *entryData = nullptr);
 	bool IsRootNode();
 	void UpdateEntryData();
 
