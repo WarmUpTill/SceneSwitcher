@@ -82,6 +82,8 @@ struct SwitcherData {
 	double cooldown = 0.;
 	std::chrono::high_resolution_clock::time_point lastMatchTime;
 
+	std::deque<Macro> macros;
+
 	std::deque<WindowSwitch> windowSwitches;
 	std::vector<std::string> ignoreIdleWindows;
 	std::string lastTitle;
