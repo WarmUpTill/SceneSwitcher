@@ -729,7 +729,7 @@
          <property name="title">
           <string>Edit Scene Switch</string>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_34" stretch="1,1,20,1,10">
+         <layout class="QVBoxLayout" name="verticalLayout_34" stretch="1,20,10">
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="0,0,0">
             <item>
@@ -758,13 +758,6 @@
            </layout>
           </item>
           <item>
-           <widget class="Line" name="line_3">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QScrollArea" name="scrollArea">
             <property name="widgetResizable">
              <bool>true</bool>
@@ -775,7 +768,7 @@
                <x>0</x>
                <y>0</y>
                <width>767</width>
-               <height>281</height>
+               <height>293</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_35" stretch="10,1">
@@ -856,13 +849,6 @@
            </widget>
           </item>
           <item>
-           <widget class="Line" name="line_8">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QScrollArea" name="scrollArea_2">
             <property name="widgetResizable">
              <bool>true</bool>
@@ -873,7 +859,7 @@
                <x>0</x>
                <y>0</y>
                <width>767</width>
-               <height>139</height>
+               <height>145</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_33" stretch="10,1">
