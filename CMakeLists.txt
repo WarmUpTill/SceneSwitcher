@@ -83,6 +83,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/switch-video.hpp
 	src/headers/switch-generic.hpp
 	src/headers/macro-action-edit.hpp
+	src/headers/macro-action-switch-scene.hpp
 	src/headers/macro-condition-edit.hpp
 	src/headers/macro-condition-scene.hpp
 	src/headers/macro-entry.hpp
@@ -115,6 +116,7 @@ set(advanced-scene-switcher_SOURCES
 	src/switch-video.cpp
 	src/switch-generic.cpp
 	src/macro-action-edit.cpp
+	src/macro-action-switch-scene.cpp
 	src/macro-condition-edit.cpp
 	src/macro-condition-scene.cpp
 	src/macro-entry.cpp
