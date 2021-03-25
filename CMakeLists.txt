@@ -120,6 +120,7 @@ set(advanced-scene-switcher_SOURCES
 	src/macro-condition-edit.cpp
 	src/macro-condition-scene.cpp
 	src/macro-entry.cpp
+	src/macro-tab.cpp
 	src/curl-helper.cpp
 	src/volume-control.cpp
 	src/version.cpp
