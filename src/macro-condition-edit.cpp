@@ -12,14 +12,18 @@ std::vector<std::string> conditionTypes{
 static inline void populateLogicSelection(QComboBox *list, bool root = false)
 {
 	if (root) {
-		for (auto entry : MacroCondition::logicTypesRoot) {
-			list->addItem(
-				obs_module_text(entry.second._name.c_str()));
+		for (auto entry : MacroCondition::logicTypes) {
+			if (static_cast<int>(entry.first) >= 100) {
+				list->addItem(obs_module_text(
+					entry.second._name.c_str()));
+			}
 		}
 	} else {
 		for (auto entry : MacroCondition::logicTypes) {
-			list->addItem(
-				obs_module_text(entry.second._name.c_str()));
+			if (static_cast<int>(entry.first) < 100) {
+				list->addItem(obs_module_text(
+					entry.second._name.c_str()));
+			}
 		}
 	}
 }
@@ -105,9 +109,9 @@ MacroConditionEdit::MacroConditionEdit(QWidget *parent,
 void MacroConditionEdit::LogicSelectionChanged(int idx)
 {
 	if (IsRootNode()) {
-		LogicTypeRoot type = static_cast<LogicTypeRoot>(idx);
+		LogicType type = static_cast<LogicType>(idx + 100);
 		_group->setTitle(obs_module_text(
-			MacroCondition::logicTypesRoot[type]._name.c_str()));
+			MacroCondition::logicTypes[type]._name.c_str()));
 	} else {
 		LogicType type = static_cast<LogicType>(idx);
 		_group->setTitle(obs_module_text(

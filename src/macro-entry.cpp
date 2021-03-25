@@ -9,13 +9,57 @@ std::unordered_map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 	{LogicType::OR, {"AdvSceneSwitcher.logic.or"}},
 	{LogicType::AND_NOT, {"AdvSceneSwitcher.logic.andNot"}},
 	{LogicType::OR_NOT, {"AdvSceneSwitcher.logic.orNot"}},
+	{LogicType::ROOT_NONE, {"AdvSceneSwitcher.logic.none"}},
+	{LogicType::ROOT_NOT, {"AdvSceneSwitcher.logic.not"}},
 };
 
-std::unordered_map<LogicTypeRoot, LogicTypeInfo>
-	MacroCondition::logicTypesRoot = {
-		{LogicTypeRoot::NONE, {"AdvSceneSwitcher.logic.none"}},
-		{LogicTypeRoot::NOT, {"AdvSceneSwitcher.logic.not"}},
-};
+bool MacroEntry::checkMatch()
+{
+	bool match = false;
+	for (auto &c : _conditions) {
+		bool cond = c->CheckCondition();
+
+		switch (c->GetLogicType()) {
+		case LogicType::NONE:
+			blog(LOG_INFO, "ignoring condition check 'none'");
+			continue;
+			break;
+		case LogicType::AND:
+			match = match && cond;
+			break;
+		case LogicType::OR:
+			match = match || cond;
+			break;
+		case LogicType::AND_NOT:
+			match = match && !cond;
+			break;
+		case LogicType::OR_NOT:
+			match = match || !cond;
+			break;
+		case LogicType::ROOT_NONE:
+			match = cond;
+			break;
+		case LogicType::ROOT_NOT:
+			match = !cond;
+			break;
+		default:
+			blog(LOG_INFO, "ignoring unkown condition check");
+			break;
+		}
+	}
+
+	return match;
+}
+
+bool MacroEntry::performAction()
+{
+	bool ret = false;
+	for (auto &a : _actions) {
+		ret = ret && a->PerformAction();
+	}
+
+	return ret;
+}
 
 void AdvSceneSwitcher::setupMacroTab()
 {

@@ -34,7 +34,7 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(MacroConditionScene *entryData)
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", _sceneSelection},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.macro.scene.entry"),
+	placeWidgets(obs_module_text("AdvSceneSwitcher.macro.condition.scene.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
