@@ -2,14 +2,6 @@
 
 bool MacroConditionEdit::enableAdvancedLogic = false;
 
-std::vector<std::string> logicTypesRoot{"AdvSceneSwitcher.logic.none",
-					"AdvSceneSwitcher.logic.not"};
-
-std::vector<std::string> logicTypes{"AdvSceneSwitcher.logic.and",
-				    "AdvSceneSwitcher.logic.or",
-				    "AdvSceneSwitcher.logic.andNot",
-				    "AdvSceneSwitcher.logic.orNot"};
-
 std::vector<std::string> conditionTypes{
 	"AdvSceneSwitcher.condition.scene", "AdvSceneSwitcher.logic.media",
 	"AdvSceneSwitcher.logic.audio",     "AdvSceneSwitcher.logic.video",
@@ -20,12 +12,14 @@ std::vector<std::string> conditionTypes{
 static inline void populateLogicSelection(QComboBox *list, bool root = false)
 {
 	if (root) {
-		for (auto entry : logicTypesRoot) {
-			list->addItem(obs_module_text(entry.c_str()));
+		for (auto entry : MacroCondition::logicTypesRoot) {
+			list->addItem(
+				obs_module_text(entry.second._name.c_str()));
 		}
 	} else {
-		for (auto entry : logicTypes) {
-			list->addItem(obs_module_text(entry.c_str()));
+		for (auto entry : MacroCondition::logicTypes) {
+			list->addItem(
+				obs_module_text(entry.second._name.c_str()));
 		}
 	}
 }
@@ -111,9 +105,13 @@ MacroConditionEdit::MacroConditionEdit(QWidget *parent,
 void MacroConditionEdit::LogicSelectionChanged(int idx)
 {
 	if (IsRootNode()) {
-		_group->setTitle(obs_module_text(logicTypesRoot[idx].c_str()));
+		LogicTypeRoot type = static_cast<LogicTypeRoot>(idx);
+		_group->setTitle(obs_module_text(
+			MacroCondition::logicTypesRoot[type]._name.c_str()));
 	} else {
-		_group->setTitle(obs_module_text(logicTypes[idx].c_str()));
+		LogicType type = static_cast<LogicType>(idx);
+		_group->setTitle(obs_module_text(
+			MacroCondition::logicTypes[type]._name.c_str()));
 	}
 }
 
@@ -129,8 +127,7 @@ void MacroConditionEdit::ConditionSelectionChanged(int idx)
 	clearLayout(_conditionWidgetLayout);
 
 	if (idx == 0) {
-		auto test = new SceneSequenceSwitch;
-		auto widget = new SequenceWidget(this, test);
+		auto widget = new MacroConditionSceneEdit();
 		_conditionWidgetLayout->addWidget(widget);
 	}
 }
@@ -166,20 +163,6 @@ void MacroConditionEdit::ReduceClicked()
 		}
 		delete item;
 	}
-}
-
-#include "headers/macro-action-edit.hpp"
-
-void AdvSceneSwitcher::setupMacroTab()
-{
-	MacroConditionEdit *test = new MacroConditionEdit();
-	ui->macroEditConditionLayout->addWidget(test);
-
-	auto *test2 = new MacroActionEdit();
-	ui->macroEditActionLayout->addWidget(test2);
-
-	ui->macroEditConditionHelp->hide();
-	ui->macroEditActionHelp->hide();
 }
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()
