@@ -156,6 +156,9 @@ void AdvSceneSwitcher::on_toggleStartButton_clicked()
 
 void AdvSceneSwitcher::closeEvent(QCloseEvent *)
 {
+	switcher->windowPos = this->pos();
+	switcher->windowSize = this->size();
+
 	obs_frontend_save();
 }
 
@@ -166,6 +169,15 @@ void AdvSceneSwitcher::on_verboseLogging_stateChanged(int state)
 	}
 
 	switcher->verbose = state;
+}
+
+void AdvSceneSwitcher::on_saveWindowGeo_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	switcher->saveWindowGeo = state;
 }
 
 void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
@@ -365,6 +377,14 @@ void AdvSceneSwitcher::setTabOrder()
 	connect(bar, &QTabBar::tabMoved, this, &AdvSceneSwitcher::on_tabMoved);
 }
 
+void AdvSceneSwitcher::restoreWindowGeo()
+{
+	if (switcher->saveWindowGeo) {
+		this->resize(switcher->windowSize);
+		this->move(switcher->windowPos);
+	}
+}
+
 void AdvSceneSwitcher::on_tabMoved(int from, int to)
 {
 	if (loading) {
@@ -505,6 +525,12 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "networkTabPos", switcher->tabOrder[14]);
 	obs_data_set_int(obj, "sceneGroupTabPos", switcher->tabOrder[15]);
 	obs_data_set_int(obj, "triggerTabPos", switcher->tabOrder[16]);
+
+	obs_data_set_bool(obj, "saveWindowGeo", saveWindowGeo);
+	obs_data_set_int(obj, "windowPosX", switcher->windowPos.x());
+	obs_data_set_int(obj, "windowPosY", switcher->windowPos.y());
+	obs_data_set_int(obj, "windowWidth", switcher->windowSize.width());
+	obs_data_set_int(obj, "windowHeight", switcher->windowSize.height());
 }
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
@@ -642,6 +668,12 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	if (!tabOrderValid()) {
 		resetTabOrder();
 	}
+
+	saveWindowGeo = obs_data_get_bool(obj, "saveWindowGeo");
+	windowPos = {(int)obs_data_get_int(obj, "windowPosX"),
+		     (int)obs_data_get_int(obj, "windowPosY")};
+	windowSize = {(int)obs_data_get_int(obj, "windowWidth"),
+		      (int)obs_data_get_int(obj, "windowHeight")};
 }
 
 bool SwitcherData::tabOrderValid()
@@ -763,6 +795,7 @@ void AdvSceneSwitcher::setupGeneralTab()
 		"AdvSceneSwitcher.generalTab.generalBehavior.cooldownHint"));
 
 	ui->verboseLogging->setChecked(switcher->verbose);
+	ui->saveWindowGeo->setChecked(switcher->saveWindowGeo);
 	ui->uiHintsDisable->setChecked(switcher->disableHints);
 
 	for (int p : switcher->functionNamesByPriority) {
