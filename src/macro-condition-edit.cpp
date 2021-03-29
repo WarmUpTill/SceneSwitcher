@@ -184,6 +184,7 @@ void AdvSceneSwitcher::on_conditionAdd_clicked()
 	}
 
 	ui->macroEditConditionLayout->addWidget(newEntry);
+	ui->macroEditConditionHelp->hide();
 }
 
 void AdvSceneSwitcher::on_conditionRemove_clicked()

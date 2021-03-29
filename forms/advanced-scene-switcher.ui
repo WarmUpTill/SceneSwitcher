@@ -574,7 +574,7 @@
           <item>
            <layout class="QGridLayout" name="gridLayout_26">
             <item row="0" column="0">
-             <widget class="QListWidget" name="sceneSwitches">
+             <widget class="QListWidget" name="macros">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                 <horstretch>0</horstretch>
@@ -587,7 +587,7 @@
              </widget>
             </item>
             <item row="0" column="0">
-             <widget class="QLabel" name="label_18">
+             <widget class="QLabel" name="macroHelp">
               <property name="enabled">
                <bool>false</bool>
               </property>
@@ -607,7 +607,7 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_61">
             <item>
-             <widget class="QPushButton" name="sceneSwitchAdd">
+             <widget class="QPushButton" name="macroAdd">
               <property name="maximumSize">
                <size>
                 <width>22</width>
@@ -623,7 +623,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="sceneSwitchRemove">
+             <widget class="QPushButton" name="macroRemove">
               <property name="maximumSize">
                <size>
                 <width>22</width>
@@ -678,7 +678,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QPushButton" name="sceneSwitchUp">
+             <widget class="QPushButton" name="macroUp">
               <property name="maximumSize">
                <size>
                 <width>22</width>
@@ -701,7 +701,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="sceneSwitchDown">
+             <widget class="QPushButton" name="macroDown">
               <property name="maximumSize">
                <size>
                 <width>22</width>
@@ -764,7 +764,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEdit"/>
+             <widget class="QLineEdit" name="macroName"/>
             </item>
             <item>
              <spacer name="horizontalSpacer_13">

@@ -13,6 +13,10 @@ std::unordered_map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 	{LogicType::ROOT_NOT, {"AdvSceneSwitcher.logic.not"}},
 };
 
+Macro::Macro(std::string name) : _name(name) {}
+
+Macro::~Macro() {}
+
 bool Macro::checkMatch()
 {
 	bool match = false;

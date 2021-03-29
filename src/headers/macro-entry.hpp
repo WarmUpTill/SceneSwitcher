@@ -47,11 +47,12 @@ private:
 class Macro {
 
 public:
-	Macro();
+	Macro(std::string name = "");
 	virtual ~Macro();
 
 	bool checkMatch();
 	bool performAction();
+	std::string Name() { return _name; }
 
 private:
 	std::string _name = "";

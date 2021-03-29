@@ -49,7 +49,8 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	_loading = false;
 }
 
-void MacroActionEdit::ActionSelectionChanged(int idx) {
+void MacroActionEdit::ActionSelectionChanged(int idx)
+{
 	clearLayout(_actionWidgetLayout);
 
 	if (idx == 0) {
@@ -75,6 +76,7 @@ void AdvSceneSwitcher::on_actionAdd_clicked()
 	}
 
 	ui->macroEditActionLayout->addWidget(newEntry);
+	ui->macroEditActionHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_actionRemove_clicked()

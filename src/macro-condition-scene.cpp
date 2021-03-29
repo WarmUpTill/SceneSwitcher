@@ -2,7 +2,6 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-
 bool MacroConditionScene::CheckCondition()
 {
 	obs_source_t *rawScene = obs_frontend_get_current_scene();
@@ -37,8 +36,9 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(MacroConditionScene *entryData)
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", _sceneSelection},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.macro.condition.scene.entry"),
-		     mainLayout, widgetPlaceholders);
+	placeWidgets(
+		obs_module_text("AdvSceneSwitcher.macro.condition.scene.entry"),
+		mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	_entryData = entryData;

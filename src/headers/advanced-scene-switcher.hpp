@@ -126,6 +126,17 @@ public slots:
 	void on_tabMoved(int from, int to);
 	void on_tabWidget_currentChanged(int index);
 
+	void on_macroAdd_clicked();
+	void on_macroRemove_clicked();
+	void on_macroUp_clicked();
+	void on_macroDown_clicked();
+	void on_macroName_editingFinished();
+	void on_macros_currentRowChanged(int idx);
+	void on_conditionAdd_clicked();
+	void on_conditionRemove_clicked();
+	void on_actionAdd_clicked();
+	void on_actionRemove_clicked();
+
 	void on_screenRegionSwitches_currentRowChanged(int idx);
 	void on_showFrame_clicked();
 	void on_screenRegionAdd_clicked();
@@ -253,11 +264,6 @@ public slots:
 	void updateStatus();
 
 	void on_close_clicked();
-
-	void on_conditionAdd_clicked();
-	void on_conditionRemove_clicked();
-	void on_actionAdd_clicked();
-	void on_actionRemove_clicked();
 
 private:
 };

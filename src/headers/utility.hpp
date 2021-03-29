@@ -9,7 +9,6 @@
 #include <obs-module.h>
 #include <obs-frontend-api.h>
 
-
 static inline bool WeakSourceValid(obs_weak_source_t *ws)
 {
 	obs_source_t *source = obs_weak_source_get_source(ws);
