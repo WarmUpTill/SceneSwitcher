@@ -66,6 +66,7 @@ void AdvSceneSwitcher::loadUI()
 	setupMacroTab();
 
 	setTabOrder();
+	restoreWindowGeo();
 
 	loading = false;
 }
