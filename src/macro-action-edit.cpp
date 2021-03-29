@@ -91,4 +91,6 @@ void AdvSceneSwitcher::on_actionRemove_clicked()
 		}
 		delete item;
 	}
+
+	//ui->macroEditActionHelp->setVisible(true);
 }
