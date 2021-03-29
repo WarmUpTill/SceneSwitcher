@@ -1,7 +1,9 @@
 #include <QVBoxLayout>
 #include <QDialogButtonBox>
 #include <random>
+
 #include "headers/advanced-scene-switcher.hpp"
+#include "headers/name-dialog.hpp"
 #include "headers/utility.hpp"
 
 static QMetaObject::Connection addPulse;
@@ -127,7 +129,7 @@ void AdvSceneSwitcher::on_sceneGroupAdd_clicked()
 		placeHolderText = format.arg(++i);
 	}
 
-	bool accepted = SGNameDialog::AskForName(
+	bool accepted = AdvSSNameDialog::AskForName(
 		this, obs_module_text("AdvSceneSwitcher.sceneGroupTab.add"),
 		obs_module_text("AdvSceneSwitcher.sceneGroupTab.add"), name,
 		placeHolderText);
@@ -507,68 +509,6 @@ void AdvSceneSwitcher::setupSceneGroupTab()
 	ui->sceneGroupTypeEdit->addWidget(typeEdit);
 
 	ui->sceneGroupEdit->setDisabled(true);
-}
-
-SGNameDialog::SGNameDialog(QWidget *parent) : QDialog(parent)
-{
-	setModal(true);
-	setWindowModality(Qt::WindowModality::WindowModal);
-	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-	setFixedWidth(555);
-	setMinimumHeight(100);
-	QVBoxLayout *layout = new QVBoxLayout;
-	setLayout(layout);
-
-	label = new QLabel(this);
-	layout->addWidget(label);
-	label->setText("Set Text");
-
-	userText = new QLineEdit(this);
-	layout->addWidget(userText);
-
-	QDialogButtonBox *buttonbox = new QDialogButtonBox(
-		QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-	layout->addWidget(buttonbox);
-	buttonbox->setCenterButtons(true);
-	connect(buttonbox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-	connect(buttonbox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-}
-
-static bool IsWhitespace(char ch)
-{
-	return ch == ' ' || ch == '\t';
-}
-
-static void CleanWhitespace(std::string &str)
-{
-	while (str.size() && IsWhitespace(str.back()))
-		str.erase(str.end() - 1);
-	while (str.size() && IsWhitespace(str.front()))
-		str.erase(str.begin());
-}
-
-bool SGNameDialog::AskForName(QWidget *parent, const QString &title,
-			      const QString &text, std::string &userTextInput,
-			      const QString &placeHolder, int maxSize)
-{
-	if (maxSize <= 0 || maxSize > 32767) {
-		maxSize = 170;
-	}
-
-	SGNameDialog dialog(parent);
-	dialog.setWindowTitle(title);
-
-	dialog.label->setText(text);
-	dialog.userText->setMaxLength(maxSize);
-	dialog.userText->setText(placeHolder);
-	dialog.userText->selectAll();
-
-	if (dialog.exec() != DialogCode::Accepted) {
-		return false;
-	}
-	userTextInput = dialog.userText->text().toUtf8().constData();
-	CleanWhitespace(userTextInput);
-	return true;
 }
 
 void populateTypeSelection(QComboBox *list)
