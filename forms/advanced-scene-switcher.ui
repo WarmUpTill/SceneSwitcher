@@ -749,7 +749,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="groupBox_6">
+        <widget class="QGroupBox" name="macroEdit">
          <property name="title">
           <string>Edit Scene Switch</string>
          </property>

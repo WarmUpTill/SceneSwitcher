@@ -62,7 +62,20 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 	ui->macroHelp->setVisible(false);
 }
 
-void AdvSceneSwitcher::on_macroRemove_clicked() {}
+void AdvSceneSwitcher::on_macroRemove_clicked()
+{
+	QListWidgetItem *item = ui->macros->currentItem();
+	if (!item) {
+		return;
+	}
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		int idx = ui->macros->currentRow();
+		switcher->macros.erase(switcher->macros.begin() + idx);
+	}
+
+	delete item;
+}
 
 void AdvSceneSwitcher::on_macroUp_clicked() {}
 
@@ -70,7 +83,56 @@ void AdvSceneSwitcher::on_macroDown_clicked() {}
 
 void AdvSceneSwitcher::on_macroName_editingFinished() {}
 
-void AdvSceneSwitcher::on_macros_currentRowChanged(int idx) {}
+void AdvSceneSwitcher::SetEditMacro(Macro &m)
+{
+	ui->macroName->setText(m.Name().c_str());
+	clearLayout(ui->macroEditConditionLayout);
+	clearLayout(ui->macroEditActionLayout);
+
+	for (auto &c : m.Conditions()) {
+		//add conditions widgets
+	}
+
+	for (auto &a : m.Actions()) {
+		//add action widgets
+	}
+
+	ui->macroEdit->setDisabled(false);
+
+	if (m.Conditions().size() == 0) {
+		ui->macroEditConditionHelp->setVisible(true);
+	} else {
+		ui->macroEditConditionHelp->setVisible(false);
+	}
+
+	if (m.Actions().size() == 0) {
+		ui->macroEditActionHelp->setVisible(true);
+	} else {
+		ui->macroEditActionHelp->setVisible(false);
+	}
+}
+
+void AdvSceneSwitcher::on_macros_currentRowChanged(int idx)
+{
+	if (loading) {
+		return;
+	}
+
+	if (idx == -1) {
+		ui->macroEdit->setDisabled(true);
+		return;
+	}
+
+	QListWidgetItem *item = ui->macros->item(idx);
+	QString macroName = item->data(Qt::UserRole).toString();
+
+	for (auto &m : switcher->macros) {
+		if (macroName.compare(m.Name().c_str()) == 0) {
+			SetEditMacro(m);
+			break;
+		}
+	}
+}
 
 void AdvSceneSwitcher::setupMacroTab()
 {
