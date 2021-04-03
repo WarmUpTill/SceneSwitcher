@@ -529,6 +529,12 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "networkTabPos", switcher->tabOrder[15]);
 	obs_data_set_int(obj, "sceneGroupTabPos", switcher->tabOrder[16]);
 	obs_data_set_int(obj, "triggerTabPos", switcher->tabOrder[17]);
+
+	obs_data_set_bool(obj, "saveWindowGeo", saveWindowGeo);
+	obs_data_set_int(obj, "windowPosX", switcher->windowPos.x());
+	obs_data_set_int(obj, "windowPosY", switcher->windowPos.y());
+	obs_data_set_int(obj, "windowWidth", switcher->windowSize.width());
+	obs_data_set_int(obj, "windowHeight", switcher->windowSize.height());
 }
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
