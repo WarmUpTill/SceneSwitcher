@@ -43,12 +43,12 @@ public:
 	bool SendAll;
 };
 
-class AdvSSWSServer : public QObject {
+class WSServer : public QObject {
 	Q_OBJECT
 
 public:
-	explicit AdvSSWSServer();
-	virtual ~AdvSSWSServer();
+	explicit WSServer();
+	virtual ~WSServer();
 	void start(quint16 port, bool lockToIPv4);
 	void stop();
 	void sendMessage(OBSWeakSource scene, OBSWeakSource transition);
@@ -75,12 +75,12 @@ enum class ServerStatus {
 	RUNNING,
 };
 
-class AdvSSWSClient : public QObject {
+class WSClient : public QObject {
 	Q_OBJECT
 
 public:
-	explicit AdvSSWSClient();
-	virtual ~AdvSSWSClient();
+	explicit WSClient();
+	virtual ~WSClient();
 	void connect(std::string uri);
 	void disconnect();
 	std::string getFail() { return _failMsg; }
