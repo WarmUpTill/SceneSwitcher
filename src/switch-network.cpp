@@ -24,11 +24,63 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 #define SCENE_ENTRY "scene"
 #define TRANSITION_ENTRY "transition"
 
-#if !(__APPLE__)
-
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
+
+NetworkConfig::NetworkConfig()
+	: ServerEnabled(false),
+	  ServerPort(55555),
+	  LockToIPv4(false),
+	  ClientEnabled(false),
+	  Address(""),
+	  ClientPort(55555),
+	  SendAll(true)
+{
+}
+
+void NetworkConfig::Load(obs_data_t *obj)
+{
+	SetDefaults(obj);
+
+	ServerEnabled = obs_data_get_bool(obj, PARAM_SERVER_ENABLE);
+	ServerPort = obs_data_get_int(obj, PARAM_SERVER_PORT);
+	LockToIPv4 = obs_data_get_bool(obj, PARAM_LOCKTOIPV4);
+
+	ClientEnabled = obs_data_get_bool(obj, PARAM_CLIENT_ENABLE);
+	Address = obs_data_get_string(obj, PARAM_ADDRESS);
+	ClientPort = obs_data_get_int(obj, PARAM_CLIENT_PORT);
+	SendAll = obs_data_get_bool(obj, PARAM_CLIENT_SENDALL);
+}
+
+void NetworkConfig::Save(obs_data_t *obj)
+{
+	obs_data_set_bool(obj, PARAM_SERVER_ENABLE, ServerEnabled);
+	obs_data_set_int(obj, PARAM_SERVER_PORT, ServerPort);
+	obs_data_set_bool(obj, PARAM_LOCKTOIPV4, LockToIPv4);
+
+	obs_data_set_bool(obj, PARAM_CLIENT_ENABLE, ClientEnabled);
+	obs_data_set_string(obj, PARAM_ADDRESS, Address.c_str());
+	obs_data_set_int(obj, PARAM_CLIENT_PORT, ClientPort);
+	obs_data_set_bool(obj, PARAM_CLIENT_SENDALL, SendAll);
+}
+
+void NetworkConfig::SetDefaults(obs_data_t *obj)
+{
+	obs_data_set_default_bool(obj, PARAM_SERVER_ENABLE, ServerEnabled);
+	obs_data_set_default_int(obj, PARAM_SERVER_PORT, ServerPort);
+	obs_data_set_default_bool(obj, PARAM_LOCKTOIPV4, LockToIPv4);
+
+	obs_data_set_default_bool(obj, PARAM_CLIENT_ENABLE, ClientEnabled);
+	obs_data_set_default_string(obj, PARAM_ADDRESS, Address.c_str());
+	obs_data_set_default_int(obj, PARAM_CLIENT_PORT, ClientPort);
+	obs_data_set_default_bool(obj, PARAM_CLIENT_SENDALL, SendAll);
+}
+
+std::string NetworkConfig::GetClientUri()
+{
+	return "ws://" + Address + ":" + std::to_string(ClientPort);
+}
 
 WSServer::WSServer()
 	: QObject(nullptr), _connections(), _clMutex(QMutex::Recursive)
@@ -400,62 +452,6 @@ void WSClient::onClose(connection_hdl hdl)
 	switcher->clientStatus = ClientStatus::DISCONNECTED;
 }
 
-#endif
-
-NetworkConfig::NetworkConfig()
-	: ServerEnabled(false),
-	  ServerPort(55555),
-	  LockToIPv4(false),
-	  ClientEnabled(false),
-	  Address(""),
-	  ClientPort(55555),
-	  SendAll(true)
-{
-}
-
-void NetworkConfig::Load(obs_data_t *obj)
-{
-	SetDefaults(obj);
-
-	ServerEnabled = obs_data_get_bool(obj, PARAM_SERVER_ENABLE);
-	ServerPort = obs_data_get_int(obj, PARAM_SERVER_PORT);
-	LockToIPv4 = obs_data_get_bool(obj, PARAM_LOCKTOIPV4);
-
-	ClientEnabled = obs_data_get_bool(obj, PARAM_CLIENT_ENABLE);
-	Address = obs_data_get_string(obj, PARAM_ADDRESS);
-	ClientPort = obs_data_get_int(obj, PARAM_CLIENT_PORT);
-	SendAll = obs_data_get_bool(obj, PARAM_CLIENT_SENDALL);
-}
-
-void NetworkConfig::Save(obs_data_t *obj)
-{
-	obs_data_set_bool(obj, PARAM_SERVER_ENABLE, ServerEnabled);
-	obs_data_set_int(obj, PARAM_SERVER_PORT, ServerPort);
-	obs_data_set_bool(obj, PARAM_LOCKTOIPV4, LockToIPv4);
-
-	obs_data_set_bool(obj, PARAM_CLIENT_ENABLE, ClientEnabled);
-	obs_data_set_string(obj, PARAM_ADDRESS, Address.c_str());
-	obs_data_set_int(obj, PARAM_CLIENT_PORT, ClientPort);
-	obs_data_set_bool(obj, PARAM_CLIENT_SENDALL, SendAll);
-}
-
-void NetworkConfig::SetDefaults(obs_data_t *obj)
-{
-	obs_data_set_default_bool(obj, PARAM_SERVER_ENABLE, ServerEnabled);
-	obs_data_set_default_int(obj, PARAM_SERVER_PORT, ServerPort);
-	obs_data_set_default_bool(obj, PARAM_LOCKTOIPV4, LockToIPv4);
-
-	obs_data_set_default_bool(obj, PARAM_CLIENT_ENABLE, ClientEnabled);
-	obs_data_set_default_string(obj, PARAM_ADDRESS, Address.c_str());
-	obs_data_set_default_int(obj, PARAM_CLIENT_PORT, ClientPort);
-	obs_data_set_default_bool(obj, PARAM_CLIENT_SENDALL, SendAll);
-}
-
-std::string NetworkConfig::GetClientUri()
-{
-	return "ws://" + Address + ":" + std::to_string(ClientPort);
-}
-
 void SwitcherData::loadNetworkSettings(obs_data_t *obj)
 {
 	networkConfig.Load(obj);
@@ -471,13 +467,6 @@ void SwitcherData::saveNetworkSwitches(obs_data_t *obj)
 
 void AdvSceneSwitcher::setupNetworkTab()
 {
-#if __APPLE__
-	ui->clientSettings->setDisabled(true);
-	ui->serverSettings->setDisabled(true);
-	ui->networkTabWarningLabel->setText(
-		obs_module_text("AdvSceneSwitcher.networkTab.DisabledWarning"));
-#endif
-
 	ui->serverSettings->setChecked(switcher->networkConfig.ServerEnabled);
 	ui->serverPort->setValue(switcher->networkConfig.ServerPort);
 	ui->lockToIPv4->setChecked(switcher->networkConfig.LockToIPv4);
