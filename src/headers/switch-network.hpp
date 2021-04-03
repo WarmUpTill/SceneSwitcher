@@ -4,9 +4,6 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 
 #pragma once
 
-// Due to iussues with asio the network functionality will be disabled on macOS
-#if !(__APPLE__)
-
 #include <set>
 #include <QtCore/QObject>
 #include <QtCore/QMutex>
@@ -16,15 +13,35 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 #include <mutex>
 #include <condition_variable>
 
+#include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
-
-#include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/client.hpp>
 
 using websocketpp::connection_hdl;
 typedef websocketpp::server<websocketpp::config::asio> server;
 typedef websocketpp::client<websocketpp::config::asio_client> client;
+
+class NetworkConfig {
+public:
+	NetworkConfig();
+	void Load(obs_data_t *obj);
+	void Save(obs_data_t *obj);
+	void SetDefaults(obs_data_t *obj);
+
+	std::string GetClientUri();
+
+	// Server
+	bool ServerEnabled;
+	uint64_t ServerPort;
+	bool LockToIPv4;
+
+	// Client
+	bool ClientEnabled;
+	std::string Address;
+	uint64_t ClientPort;
+	bool SendAll;
+};
 
 class WSServer : public QObject {
 	Q_OBJECT
@@ -50,6 +67,12 @@ private:
 	std::set<connection_hdl, std::owner_less<connection_hdl>> _connections;
 	QMutex _clMutex;
 	QThreadPool _threadPool;
+};
+
+enum class ServerStatus {
+	NOT_RUNNING,
+	STARTING,
+	RUNNING,
 };
 
 class WSClient : public QObject {
@@ -78,62 +101,6 @@ private:
 	std::mutex _waitMtx;
 	std::condition_variable _cv;
 	std::string _failMsg;
-};
-
-#else
-
-class WSServer : public QObject {
-	Q_OBJECT
-
-public:
-	explicit WSServer(){};
-	virtual ~WSServer(){};
-	void start(quint16 port, bool lockToIPv4){};
-	void stop(){};
-	void sendMessage(OBSWeakSource scene, OBSWeakSource transition){};
-};
-
-class WSClient : public QObject {
-	Q_OBJECT
-
-public:
-	explicit WSClient(){};
-	virtual ~WSClient(){};
-	void connect(std::string uri){};
-	void disconnect(){};
-	std::string getFail() { return _failMsg; }
-
-private:
-	std::string _failMsg;
-};
-
-#endif
-
-class NetworkConfig {
-public:
-	NetworkConfig();
-	void Load(obs_data_t *obj);
-	void Save(obs_data_t *obj);
-	void SetDefaults(obs_data_t *obj);
-
-	std::string GetClientUri();
-
-	// Server
-	bool ServerEnabled;
-	uint64_t ServerPort;
-	bool LockToIPv4;
-
-	// Client
-	bool ClientEnabled;
-	std::string Address;
-	uint64_t ClientPort;
-	bool SendAll;
-};
-
-enum class ServerStatus {
-	NOT_RUNNING,
-	STARTING,
-	RUNNING,
 };
 
 enum class ClientStatus {
