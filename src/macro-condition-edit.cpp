@@ -200,5 +200,7 @@ void AdvSceneSwitcher::on_conditionRemove_clicked()
 		delete item;
 	}
 
-	//ui->macroEditConditionHelp->setVisible(true);
+	if (count == 1) {
+		ui->macroEditConditionHelp->setVisible(true);
+	}
 }

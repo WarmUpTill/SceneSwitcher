@@ -75,6 +75,10 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 	}
 
 	delete item;
+
+	if (ui->macros->count() == 0) {
+		ui->macroHelp->setVisible(true);
+	}
 }
 
 void AdvSceneSwitcher::on_macroUp_clicked() {}
