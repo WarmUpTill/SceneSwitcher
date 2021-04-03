@@ -82,7 +82,7 @@ std::string NetworkConfig::GetClientUri()
 	return "ws://" + Address + ":" + std::to_string(ClientPort);
 }
 
-WSServer::WSServer()
+AdvSSWSServer::AdvSSWSServer()
 	: QObject(nullptr), _connections(), _clMutex(QMutex::Recursive)
 {
 	_server.get_alog().clear_channels(
@@ -94,18 +94,18 @@ WSServer::WSServer()
 	_server.set_reuse_addr(true);
 #endif
 
-	_server.set_open_handler(bind(&WSServer::onOpen, this, ::_1));
-	_server.set_close_handler(bind(&WSServer::onClose, this, ::_1));
+	_server.set_open_handler(bind(&AdvSSWSServer::onOpen, this, ::_1));
+	_server.set_close_handler(bind(&AdvSSWSServer::onClose, this, ::_1));
 	_server.set_message_handler(
-		bind(&WSServer::onMessage, this, ::_1, ::_2));
+		bind(&AdvSSWSServer::onMessage, this, ::_1, ::_2));
 }
 
-WSServer::~WSServer()
+AdvSSWSServer::~AdvSSWSServer()
 {
 	stop();
 }
 
-void WSServer::start(quint16 port, bool lockToIPv4)
+void AdvSSWSServer::start(quint16 port, bool lockToIPv4)
 {
 	if (_server.is_listening() &&
 	    (port == _serverPort && _lockToIPv4 == lockToIPv4)) {
@@ -168,7 +168,7 @@ void WSServer::start(quint16 port, bool lockToIPv4)
 	     _serverPort);
 }
 
-void WSServer::stop()
+void AdvSSWSServer::stop()
 {
 	if (!_server.is_listening()) {
 		return;
@@ -191,7 +191,7 @@ void WSServer::stop()
 	blog(LOG_INFO, "server stopped successfully");
 }
 
-void WSServer::sendMessage(OBSWeakSource scene, OBSWeakSource transition)
+void AdvSSWSServer::sendMessage(OBSWeakSource scene, OBSWeakSource transition)
 {
 	if (!scene) {
 		return;
@@ -221,7 +221,7 @@ void WSServer::sendMessage(OBSWeakSource scene, OBSWeakSource transition)
 	}
 }
 
-void WSServer::onOpen(connection_hdl hdl)
+void AdvSSWSServer::onOpen(connection_hdl hdl)
 {
 	QMutexLocker locker(&_clMutex);
 	_connections.insert(hdl);
@@ -272,7 +272,7 @@ std::string processMessage(std::string payload)
 	return ret;
 }
 
-void WSServer::onMessage(connection_hdl hdl, server::message_ptr message)
+void AdvSSWSServer::onMessage(connection_hdl hdl, server::message_ptr message)
 {
 	UNUSED_PARAMETER(hdl);
 
@@ -289,7 +289,7 @@ void WSServer::onMessage(connection_hdl hdl, server::message_ptr message)
 	});
 }
 
-void WSServer::onClose(connection_hdl hdl)
+void AdvSSWSServer::onClose(connection_hdl hdl)
 {
 	QMutexLocker locker(&_clMutex);
 	_connections.erase(hdl);
@@ -305,13 +305,13 @@ void WSServer::onClose(connection_hdl hdl)
 	}
 }
 
-QString WSServer::getRemoteEndpoint(connection_hdl hdl)
+QString AdvSSWSServer::getRemoteEndpoint(connection_hdl hdl)
 {
 	auto conn = _server.get_con_from_hdl(hdl);
 	return QString::fromStdString(conn->get_remote_endpoint());
 }
 
-WSClient::WSClient() : QObject(nullptr)
+AdvSSWSClient::AdvSSWSClient() : QObject(nullptr)
 {
 	_client.get_alog().clear_channels(
 		websocketpp::log::alevel::frame_header |
@@ -322,19 +322,19 @@ WSClient::WSClient() : QObject(nullptr)
 	_client.set_reuse_addr(true);
 #endif
 
-	_client.set_open_handler(bind(&WSClient::onOpen, this, ::_1));
-	_client.set_fail_handler(bind(&WSClient::onFail, this, ::_1));
+	_client.set_open_handler(bind(&AdvSSWSClient::onOpen, this, ::_1));
+	_client.set_fail_handler(bind(&AdvSSWSClient::onFail, this, ::_1));
 	_client.set_message_handler(
-		bind(&WSClient::onMessage, this, ::_1, ::_2));
-	_client.set_close_handler(bind(&WSClient::onClose, this, ::_1));
+		bind(&AdvSSWSClient::onMessage, this, ::_1, ::_2));
+	_client.set_close_handler(bind(&AdvSSWSClient::onClose, this, ::_1));
 }
 
-WSClient::~WSClient()
+AdvSSWSClient::~AdvSSWSClient()
 {
 	disconnect();
 }
 
-void WSClient::connectThread()
+void AdvSSWSClient::connectThread()
 {
 	while (_retry) {
 		_client.reset();
@@ -371,19 +371,19 @@ void WSClient::connectThread()
 	}
 }
 
-void WSClient::connect(std::string uri)
+void AdvSSWSClient::connect(std::string uri)
 {
 	disconnect();
 	_uri = uri;
 	_retry = true;
 
-	_thread = std::thread(&WSClient::connectThread, this);
+	_thread = std::thread(&AdvSSWSClient::connectThread, this);
 
 	switcher->clientStatus = ClientStatus::DISCONNECTED;
 	blog(LOG_INFO, "WSClient::connect: exited");
 }
 
-void WSClient::disconnect()
+void AdvSSWSClient::disconnect()
 {
 	_retry = false;
 	websocketpp::lib::error_code ec;
@@ -408,20 +408,20 @@ void WSClient::disconnect()
 	}
 }
 
-void WSClient::onOpen(connection_hdl hdl)
+void AdvSSWSClient::onOpen(connection_hdl hdl)
 {
 	UNUSED_PARAMETER(hdl);
 	blog(LOG_INFO, "connection to %s opened", _uri.c_str());
 	switcher->clientStatus = ClientStatus::CONNECTED;
 }
 
-void WSClient::onFail(connection_hdl hdl)
+void AdvSSWSClient::onFail(connection_hdl hdl)
 {
 	UNUSED_PARAMETER(hdl);
 	blog(LOG_INFO, "connection to %s failed", _uri.c_str());
 }
 
-void WSClient::onMessage(connection_hdl hdl, client::message_ptr message)
+void AdvSSWSClient::onMessage(connection_hdl hdl, client::message_ptr message)
 {
 	auto opcode = message->get_opcode();
 	if (opcode != websocketpp::frame::opcode::text) {
@@ -445,7 +445,7 @@ void WSClient::onMessage(connection_hdl hdl, client::message_ptr message)
 	}
 }
 
-void WSClient::onClose(connection_hdl hdl)
+void AdvSSWSClient::onClose(connection_hdl hdl)
 {
 	UNUSED_PARAMETER(hdl);
 	blog(LOG_INFO, "client-connection to %s closed.", _uri.c_str());

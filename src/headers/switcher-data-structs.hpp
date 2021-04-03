@@ -116,9 +116,9 @@ struct SwitcherData {
 	std::deque<AudioSwitch> audioSwitches;
 	AudioSwitchFallback audioFallback;
 
-	WSServer server;
+	AdvSSWSServer server;
 	ServerStatus serverStatus = ServerStatus::NOT_RUNNING;
-	WSClient client;
+	AdvSSWSClient client;
 	ClientStatus clientStatus = ClientStatus::DISCONNECTED;
 	NetworkConfig networkConfig;
 
