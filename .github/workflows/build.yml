@@ -173,7 +173,7 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/obs-studio-portable" -DWITH_RTMPS=OFF -DBUILD_BROWSER=OFF ..
+          cmake -DENABLE_PIPEWIRE=OFF -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/obs-studio-portable" -DWITH_RTMPS=OFF -DBUILD_BROWSER=OFF ..
       - name: 'Build'
         shell: bash
         working-directory: ${{ github.workspace }}/build
