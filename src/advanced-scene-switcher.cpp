@@ -65,6 +65,7 @@ void AdvSceneSwitcher::loadUI()
 	setupTriggerTab();
 
 	setTabOrder();
+	restoreWindowGeo();
 
 	loading = false;
 }

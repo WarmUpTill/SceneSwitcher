@@ -166,6 +166,10 @@ struct SwitcherData {
 	obs_hotkey_id stopHotkey = 0;
 	obs_hotkey_id toggleHotkey = 0;
 
+	bool saveWindowGeo = false;
+	QPoint windowPos = {};
+	QSize windowSize = {};
+
 	bool versionChanged(obs_data_t *obj, std::string currentVersion);
 
 	void Thread();
