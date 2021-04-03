@@ -4,22 +4,19 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 
 #pragma once
 
-#include <map>
 #include <set>
 #include <QtCore/QObject>
 #include <QtCore/QMutex>
 #include <QtCore/QSharedPointer>
 #include <QtCore/QVariantHash>
 #include <QtCore/QThreadPool>
-
-#include <websocketpp/config/asio_no_tls.hpp>
-#include <websocketpp/server.hpp>
-
-#include <websocketpp/config/asio_no_tls_client.hpp>
-#include <websocketpp/client.hpp>
-
 #include <mutex>
 #include <condition_variable>
+
+#include <websocketpp/config/asio_no_tls_client.hpp>
+#include <websocketpp/config/asio_no_tls.hpp>
+#include <websocketpp/server.hpp>
+#include <websocketpp/client.hpp>
 
 using websocketpp::connection_hdl;
 typedef websocketpp::server<websocketpp::config::asio> server;
