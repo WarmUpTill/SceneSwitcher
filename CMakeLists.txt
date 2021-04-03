@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(advanced-scene-switcher)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 add_definitions(-DASIO_STANDALONE)
 
 # generate version info
@@ -186,6 +190,7 @@ if(BUILD_OUT_OF_TREE)
 
 	# OSX
 	if(APPLE)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -fvisibility=default")
 		set_target_properties(advanced-scene-switcher PROPERTIES PREFIX "")
 	endif()
 
