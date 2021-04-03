@@ -93,12 +93,18 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 	clearLayout(ui->macroEditConditionLayout);
 	clearLayout(ui->macroEditActionLayout);
 
+	bool root = true;
 	for (auto &c : m.Conditions()) {
-		//add conditions widgets
+		auto newEntry = new MacroConditionEdit(c.get(), root);
+		ui->macroEditConditionLayout->addWidget(newEntry);
+		ui->macroEditConditionHelp->setVisible(false);
+		root = false;
 	}
 
 	for (auto &a : m.Actions()) {
-		//add action widgets
+		auto newEntry = new MacroActionEdit(a.get());
+		ui->macroEditActionLayout->addWidget(newEntry);
+		ui->macroEditActionHelp->setVisible(false);
 	}
 
 	ui->macroEdit->setDisabled(false);

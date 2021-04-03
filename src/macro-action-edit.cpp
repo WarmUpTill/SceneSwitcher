@@ -9,18 +9,15 @@ std::vector<std::string> actionTypes{"AdvSceneSwitcher.action.switchScene",
 				     "AdvSceneSwitcher.action.unmuteSource",
 				     "AdvSceneSwitcher.action.blablabla"};
 
-static inline void populateActionSelection(QComboBox *list, bool root = false)
+static inline void populateActionSelection(QComboBox *list)
 {
 	for (auto entry : actionTypes) {
 		list->addItem(obs_module_text(entry.c_str()));
 	}
 }
 
-MacroActionEdit::MacroActionEdit(QWidget *parent,
-				 std::deque<MacroAction> *entryData)
+MacroActionEdit::MacroActionEdit(MacroAction *entryData)
 {
-	this->setParent(parent);
-
 	_actionSelection = new QComboBox();
 	_actionWidgetLayout = new QVBoxLayout();
 	_group = new QGroupBox();
@@ -29,7 +26,7 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	QWidget::connect(_actionSelection, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(ActionSelectionChanged(int)));
 
-	populateActionSelection(_actionSelection, !parent);
+	populateActionSelection(_actionSelection);
 
 	QHBoxLayout *actionLayout = new QHBoxLayout;
 	actionLayout->addWidget(_actionSelection);
@@ -43,7 +40,7 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	mainLayout->addWidget(_group);
 	setLayout(mainLayout);
 
-	//_entryData = entryData;
+	_entryData = entryData;
 	UpdateEntryData();
 
 	_loading = false;
@@ -63,18 +60,7 @@ void MacroActionEdit::UpdateEntryData() {}
 
 void AdvSceneSwitcher::on_actionAdd_clicked()
 {
-	MacroActionEdit *newEntry;
-
-	int count = ui->macroEditActionLayout->count();
-	auto item = ui->macroEditActionLayout->itemAt(count - 1);
-
-	if (item) {
-		auto widget = item->widget();
-		newEntry = new MacroActionEdit(widget);
-	} else {
-		newEntry = new MacroActionEdit();
-	}
-
+	auto newEntry = new MacroActionEdit();
 	ui->macroEditActionLayout->addWidget(newEntry);
 	ui->macroEditActionHelp->setVisible(false);
 }

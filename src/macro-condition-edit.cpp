@@ -35,11 +35,8 @@ static inline void populateConditionSelection(QComboBox *list)
 	}
 }
 
-MacroConditionEdit::MacroConditionEdit(QWidget *parent,
-				       SceneSequenceSwitch *entryData)
+MacroConditionEdit::MacroConditionEdit(MacroCondition *entryData, bool root)
 {
-	this->setParent(parent);
-
 	_logicSelection = new QComboBox();
 	_conditionSelection = new QComboBox();
 	_conditionWidgetLayout = new QVBoxLayout();
@@ -66,7 +63,7 @@ MacroConditionEdit::MacroConditionEdit(QWidget *parent,
 	QWidget::connect(_reduce, SIGNAL(clicked()), this,
 			 SLOT(ReduceClicked()));
 
-	populateLogicSelection(_logicSelection, !parent);
+	populateLogicSelection(_logicSelection, root);
 	populateConditionSelection(_conditionSelection);
 
 	QHBoxLayout *logicLayout = new QHBoxLayout;
@@ -99,10 +96,10 @@ MacroConditionEdit::MacroConditionEdit(QWidget *parent,
 	mainLayout->addWidget(_group);
 	setLayout(mainLayout);
 
-	//_entryData = entryData;
+	_entryData = entryData;
 	UpdateEntryData();
 
-	_isRoot = parent == nullptr;
+	_isRoot = root;
 	_loading = false;
 }
 
@@ -145,7 +142,7 @@ void MacroConditionEdit::ExtendClicked()
 	//std::lock_guard<std::mutex> lock(switcher->m);
 	//auto es = switchData->extend();
 
-	MacroConditionEdit *ew = new MacroConditionEdit(this->parentWidget());
+	MacroConditionEdit *ew = new MacroConditionEdit(nullptr, false);
 	_childLayout->addWidget(ew);
 }
 
@@ -171,18 +168,8 @@ void MacroConditionEdit::ReduceClicked()
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()
 {
-	MacroConditionEdit *newEntry;
-
 	int count = ui->macroEditConditionLayout->count();
-	auto item = ui->macroEditConditionLayout->itemAt(count - 1);
-
-	if (item) {
-		auto widget = item->widget();
-		newEntry = new MacroConditionEdit(widget);
-	} else {
-		newEntry = new MacroConditionEdit();
-	}
-
+	auto newEntry = new MacroConditionEdit(nullptr, count == 0);
 	ui->macroEditConditionLayout->addWidget(newEntry);
 	ui->macroEditConditionHelp->setVisible(false);
 }

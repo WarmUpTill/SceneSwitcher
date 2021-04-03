@@ -11,8 +11,7 @@ class MacroActionEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroActionEdit(QWidget *parent = nullptr,
-			std::deque<MacroAction> *entryData = nullptr);
+	MacroActionEdit(MacroAction *entryData = nullptr);
 	void UpdateEntryData();
 
 private slots:
@@ -24,7 +23,7 @@ protected:
 	QVBoxLayout *_groupLayout;
 	QGroupBox *_group;
 
-	std::deque<MacroAction> *_entryData;
+	MacroAction *_entryData;
 
 private:
 	bool _loading = true;

@@ -11,8 +11,8 @@ class MacroConditionEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroConditionEdit(QWidget *parent = nullptr,
-			   SceneSequenceSwitch *entryData = nullptr);
+	MacroConditionEdit(MacroCondition *entryData = nullptr,
+			   bool root = true);
 	bool IsRootNode();
 	void UpdateEntryData();
 
@@ -34,7 +34,7 @@ protected:
 	QPushButton *_extend;
 	QPushButton *_reduce;
 
-	SceneSequenceSwitch *_entryData;
+	MacroCondition *_entryData;
 
 private:
 	bool _isRoot = true;

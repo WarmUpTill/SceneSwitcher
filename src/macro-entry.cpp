@@ -9,7 +9,7 @@ std::unordered_map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 	{LogicType::OR, {"AdvSceneSwitcher.logic.or"}},
 	{LogicType::AND_NOT, {"AdvSceneSwitcher.logic.andNot"}},
 	{LogicType::OR_NOT, {"AdvSceneSwitcher.logic.orNot"}},
-	{LogicType::ROOT_NONE, {"AdvSceneSwitcher.logic.none"}},
+	{LogicType::ROOT_NONE, {"AdvSceneSwitcher.logic.rootNone"}},
 	{LogicType::ROOT_NOT, {"AdvSceneSwitcher.logic.not"}},
 };
 
