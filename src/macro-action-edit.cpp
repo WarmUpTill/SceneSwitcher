@@ -60,13 +60,26 @@ void MacroActionEdit::UpdateEntryData() {}
 
 void AdvSceneSwitcher::on_actionAdd_clicked()
 {
-	auto newEntry = new MacroActionEdit();
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+	std::lock_guard<std::mutex> lock(switcher->m);
+	macro->Actions().emplace_back();
+	auto newEntry = new MacroActionEdit(macro->Actions().back().get());
 	ui->macroEditActionLayout->addWidget(newEntry);
 	ui->macroEditActionHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_actionRemove_clicked()
 {
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+	std::lock_guard<std::mutex> lock(switcher->m);
+	macro->Actions().pop_back();
+
 	int count = ui->macroEditActionLayout->count();
 	auto item = ui->macroEditActionLayout->takeAt(count - 1);
 

@@ -168,14 +168,28 @@ void MacroConditionEdit::ReduceClicked()
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()
 {
-	int count = ui->macroEditConditionLayout->count();
-	auto newEntry = new MacroConditionEdit(nullptr, count == 0);
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+	std::lock_guard<std::mutex> lock(switcher->m);
+	bool root = macro->Conditions().size() == 0;
+	macro->Conditions().emplace_back();
+	auto newEntry =
+		new MacroConditionEdit(macro->Conditions().back().get(), root);
 	ui->macroEditConditionLayout->addWidget(newEntry);
 	ui->macroEditConditionHelp->setVisible(false);
 }
 
 void AdvSceneSwitcher::on_conditionRemove_clicked()
 {
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+	std::lock_guard<std::mutex> lock(switcher->m);
+	macro->Conditions().pop_back();
+
 	int count = ui->macroEditConditionLayout->count();
 	auto item = ui->macroEditConditionLayout->takeAt(count - 1);
 

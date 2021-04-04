@@ -81,9 +81,31 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 	}
 }
 
-void AdvSceneSwitcher::on_macroUp_clicked() {}
+void AdvSceneSwitcher::on_macroUp_clicked()
+{
+	std::lock_guard<std::mutex> lock(switcher->m);
+	int index = ui->macros->currentRow();
+	if (index != -1 && index != 0) {
+		ui->macros->insertItem(index - 1, ui->macros->takeItem(index));
+		ui->macros->setCurrentRow(index - 1);
 
-void AdvSceneSwitcher::on_macroDown_clicked() {}
+		iter_swap(switcher->macros.begin() + index,
+			  switcher->macros.begin() + index - 1);
+	}
+}
+
+void AdvSceneSwitcher::on_macroDown_clicked()
+{
+	std::lock_guard<std::mutex> lock(switcher->m);
+	int index = ui->macros->currentRow();
+	if (index != -1 && index != ui->macros->count() - 1) {
+		ui->macros->insertItem(index + 1, ui->macros->takeItem(index));
+		ui->macros->setCurrentRow(index + 1);
+
+		iter_swap(switcher->macros.begin() + index,
+			  switcher->macros.begin() + index + 1);
+	}
+}
 
 void AdvSceneSwitcher::on_macroName_editingFinished() {}
 
@@ -120,6 +142,26 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 	} else {
 		ui->macroEditActionHelp->setVisible(false);
 	}
+}
+
+Macro *AdvSceneSwitcher::getSelectedMacro()
+{
+	Macro *macro = nullptr;
+	QListWidgetItem *item = ui->macros->currentItem();
+
+	if (!item) {
+		return macro;
+	}
+
+	QString name = item->data(Qt::UserRole).toString();
+	for (auto &m : switcher->macros) {
+		if (name.compare(m.Name().c_str()) == 0) {
+			macro = &m;
+			break;
+		}
+	}
+
+	return macro;
 }
 
 void AdvSceneSwitcher::on_macros_currentRowChanged(int idx)

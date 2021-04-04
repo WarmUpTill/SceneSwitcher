@@ -42,6 +42,8 @@ public:
 	void UpdateNonMatchingScene(const QString &name);
 	void OpenSequenceExtendEdit(SequenceWidget *sw);
 	void SetEditSceneGroup(SceneGroup &sg);
+
+	Macro *getSelectedMacro();
 	void SetEditMacro(Macro &m);
 
 	void loadUI();
