@@ -62,6 +62,7 @@ struct SwitcherData {
 	bool disableHints = false;
 	bool showFrame = false;
 	bool tansitionOverrideOverride = false;
+	bool adjustActiveTransitionType = true;
 
 	int interval = default_interval;
 

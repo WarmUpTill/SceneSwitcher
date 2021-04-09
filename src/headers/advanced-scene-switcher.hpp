@@ -287,12 +287,14 @@ bool isInFocus(const QString &executable);
 
 void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 		       OBSWeakSource &transition,
-		       bool &transitionOverrideOverride, transitionData &td);
+		       bool transitionOverrideOverride,
+		       bool adjustActiveTransitionType, transitionData &td);
 void overwriteTransitionOverride(obs_weak_source_t *sceneWs,
 				 obs_source_t *transition, transitionData &td);
 void restoreTransitionOverride(obs_source_t *scene, transitionData td);
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
-		 bool &transitionOverrideOverride);
+		 bool transitionOverrideOverride,
+		 bool adjustActiveTransitionType, bool verbose);
 
 /******************************************************************************
  * Main SwitcherData

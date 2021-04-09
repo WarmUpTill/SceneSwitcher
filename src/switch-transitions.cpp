@@ -251,7 +251,8 @@ void restoreTransitionOverride(obs_source_t *scene, transitionData td)
 
 void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 		       OBSWeakSource &transition,
-		       bool &transitionOverrideOverride, transitionData &td)
+		       bool transitionOverrideOverride,
+		       bool adjustActiveTransitionType, transitionData &td)
 {
 	obs_weak_source_t *currentScene =
 		obs_source_get_weak_source(currentSource);
@@ -266,7 +267,7 @@ void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 		nextTransition = obs_weak_source_get_source(transition);
 	}
 
-	if (nextTransition) {
+	if (nextTransition && adjustActiveTransitionType) {
 		obs_frontend_set_current_transition(nextTransition);
 	}
 
