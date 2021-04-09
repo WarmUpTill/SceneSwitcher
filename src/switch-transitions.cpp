@@ -190,6 +190,16 @@ void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
 	}
 }
 
+void AdvSceneSwitcher::on_adjustActiveTransitionType_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->adjustActiveTransitionType = state;
+}
+
 void AdvSceneSwitcher::defTransitionDelayValueChanged(int value)
 {
 	if (loading) {
@@ -335,6 +345,8 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 
 	obs_data_set_bool(obj, "tansitionOverrideOverride",
 			  switcher->tansitionOverrideOverride);
+	obs_data_set_bool(obj, "adjustActiveTransitionType",
+			  switcher->adjustActiveTransitionType);
 	obs_data_set_default_int(obj, "defTransitionDelay",
 				 default_def_transition_dealy);
 	obs_data_set_int(obj, "defTransitionDelay",
@@ -391,6 +403,8 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 
 	switcher->tansitionOverrideOverride =
 		obs_data_get_bool(obj, "tansitionOverrideOverride");
+	switcher->adjustActiveTransitionType =
+		obs_data_get_bool(obj, "adjustActiveTransitionType");
 	DefaultSceneTransition::delay =
 		obs_data_get_int(obj, "defTransitionDelay");
 }
@@ -431,6 +445,8 @@ void AdvSceneSwitcher::setupTransitionsTab()
 
 	ui->transitionOverridecheckBox->setChecked(
 		switcher->tansitionOverrideOverride);
+	ui->adjustActiveTransitionType->setChecked(
+		switcher->adjustActiveTransitionType);
 
 	QSpinBox *defTransitionDelay = new QSpinBox();
 	defTransitionDelay->setSuffix("ms");

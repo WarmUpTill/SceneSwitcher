@@ -166,6 +166,7 @@ public slots:
 	void on_defaultTransitionsUp_clicked();
 	void on_defaultTransitionsDown_clicked();
 	void on_transitionOverridecheckBox_stateChanged(int state);
+	void on_adjustActiveTransitionType_stateChanged(int state);
 	void defTransitionDelayValueChanged(int value);
 
 	void on_browseButton_clicked();
