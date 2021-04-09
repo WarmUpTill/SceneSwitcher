@@ -182,18 +182,27 @@ void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
-	if (!state) {
-		switcher->tansitionOverrideOverride = false;
-	} else {
-		switcher->tansitionOverrideOverride = true;
+	if (!state && !switcher->adjustActiveTransitionType) {
+		DisplayMessage(obs_module_text(
+			"AdvSceneSwitcher.transitionTab.transitionBehaviorSelectionError"));
+		ui->adjustActiveTransitionType->setChecked(true);
 	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->tansitionOverrideOverride = state;
 }
 
 void AdvSceneSwitcher::on_adjustActiveTransitionType_stateChanged(int state)
 {
 	if (loading) {
 		return;
+	}
+
+	// This option only makes sense if we are allowed to use transition overrides
+	if (!state && !switcher->tansitionOverrideOverride) {
+		DisplayMessage(obs_module_text(
+			"AdvSceneSwitcher.transitionTab.transitionBehaviorSelectionError"));
+		ui->transitionOverridecheckBox->setChecked(true);
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
