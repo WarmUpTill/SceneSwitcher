@@ -142,6 +142,12 @@ void SceneTrigger::logMatch()
 	case sceneTriggerAction::STOP_SWITCHER:
 		actionName = "STOP SCENE SWITCHER";
 		break;
+	case sceneTriggerAction::START_VCAM:
+		actionName = "START VIRTUAL CAMERA";
+		break;
+	case sceneTriggerAction::STOP_VCAM:
+		actionName = "STOP VIRTUAL CAMERA";
+		break;
 	default:
 		actionName = "UNKOWN";
 		break;
@@ -185,6 +191,12 @@ void frontEndActionThread(sceneTriggerAction action, double delay)
 	case sceneTriggerAction::STOP_REPLAY_BUFFER:
 		obs_frontend_replay_buffer_stop();
 		break;
+	case sceneTriggerAction::START_VCAM:
+		obs_frontend_start_virtualcam();
+		break;
+	case sceneTriggerAction::STOP_VCAM:
+		obs_frontend_stop_virtualcam();
+		break;
 	default:
 		blog(LOG_WARNING, "ignoring unexpected frontend action '%d'",
 		     static_cast<int>(action));
@@ -223,7 +235,9 @@ bool isFrontendAction(sceneTriggerAction triggerAction)
 	       triggerAction == sceneTriggerAction::START_STREAMING ||
 	       triggerAction == sceneTriggerAction::STOP_STREAMING ||
 	       triggerAction == sceneTriggerAction::START_REPLAY_BUFFER ||
-	       triggerAction == sceneTriggerAction::STOP_REPLAY_BUFFER;
+	       triggerAction == sceneTriggerAction::STOP_REPLAY_BUFFER ||
+	       triggerAction == sceneTriggerAction::START_VCAM ||
+	       triggerAction == sceneTriggerAction::STOP_VCAM;
 }
 
 bool isAudioAction(sceneTriggerAction t)
@@ -509,6 +523,10 @@ inline void populateActions(QComboBox *list)
 		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.startSwitcher"));
 	list->addItem(obs_module_text(
 		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.stopSwitcher"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.startVirtualCamera"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.stopVirtualCamera"));
 }
 
 SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
