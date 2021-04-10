@@ -203,6 +203,10 @@ void GetCurrentWindowTitle(std::string &title)
 					 &format, &num, &bytes,
 					 (uint8_t **)&data);
 
+	if (data == nullptr) {
+		return;
+	}
+
 	int status = 0;
 	XTextProperty text;
 	if (xstatus == Success) {

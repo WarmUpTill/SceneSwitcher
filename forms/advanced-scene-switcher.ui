@@ -974,18 +974,42 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_15">
        <item>
-        <widget class="QCheckBox" name="transitionOverridecheckBox">
-         <property name="text">
-          <string>AdvSceneSwitcher.transitionTab.transitionOverride</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="Line" name="line_17">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
+        <layout class="QGridLayout" name="gridLayout_5">
+         <item row="1" column="1">
+          <widget class="QCheckBox" name="adjustActiveTransitionType">
+           <property name="text">
+            <string>AdvSceneSwitcher.transitionTab.adjustActiveTransitionType</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_12">
+           <property name="text">
+            <string>AdvSceneSwitcher.transitionTab.setTransitionBy</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QCheckBox" name="transitionOverridecheckBox">
+           <property name="text">
+            <string>AdvSceneSwitcher.transitionTab.transitionOverride</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <spacer name="horizontalSpacer_9">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
        </item>
        <item>
         <widget class="QGroupBox" name="transitionsGroup">

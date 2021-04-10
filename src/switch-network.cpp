@@ -268,7 +268,8 @@ std::string processMessage(std::string payload)
 		       "'";
 	}
 
-	switchScene(scene, transition, switcher->tansitionOverrideOverride);
+	switchScene(scene, transition, switcher->tansitionOverrideOverride,
+		    switcher->adjustActiveTransitionType, switcher->verbose);
 	return ret;
 }
 
