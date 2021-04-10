@@ -182,12 +182,31 @@ void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
-	if (!state) {
-		switcher->tansitionOverrideOverride = false;
-	} else {
-		switcher->tansitionOverrideOverride = true;
+	if (!state && !switcher->adjustActiveTransitionType) {
+		DisplayMessage(obs_module_text(
+			"AdvSceneSwitcher.transitionTab.transitionBehaviorSelectionError"));
+		ui->adjustActiveTransitionType->setChecked(true);
 	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->tansitionOverrideOverride = state;
+}
+
+void AdvSceneSwitcher::on_adjustActiveTransitionType_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	// This option only makes sense if we are allowed to use transition overrides
+	if (!state && !switcher->tansitionOverrideOverride) {
+		DisplayMessage(obs_module_text(
+			"AdvSceneSwitcher.transitionTab.transitionBehaviorSelectionError"));
+		ui->transitionOverridecheckBox->setChecked(true);
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->adjustActiveTransitionType = state;
 }
 
 void AdvSceneSwitcher::defTransitionDelayValueChanged(int value)
@@ -251,7 +270,8 @@ void restoreTransitionOverride(obs_source_t *scene, transitionData td)
 
 void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 		       OBSWeakSource &transition,
-		       bool &transitionOverrideOverride, transitionData &td)
+		       bool transitionOverrideOverride,
+		       bool adjustActiveTransitionType, transitionData &td)
 {
 	obs_weak_source_t *currentScene =
 		obs_source_get_weak_source(currentSource);
@@ -266,7 +286,7 @@ void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 		nextTransition = obs_weak_source_get_source(transition);
 	}
 
-	if (nextTransition) {
+	if (nextTransition && adjustActiveTransitionType) {
 		obs_frontend_set_current_transition(nextTransition);
 	}
 
@@ -334,6 +354,8 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 
 	obs_data_set_bool(obj, "tansitionOverrideOverride",
 			  switcher->tansitionOverrideOverride);
+	obs_data_set_bool(obj, "adjustActiveTransitionType",
+			  switcher->adjustActiveTransitionType);
 	obs_data_set_default_int(obj, "defTransitionDelay",
 				 default_def_transition_dealy);
 	obs_data_set_int(obj, "defTransitionDelay",
@@ -390,6 +412,8 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 
 	switcher->tansitionOverrideOverride =
 		obs_data_get_bool(obj, "tansitionOverrideOverride");
+	switcher->adjustActiveTransitionType =
+		obs_data_get_bool(obj, "adjustActiveTransitionType");
 	DefaultSceneTransition::delay =
 		obs_data_get_int(obj, "defTransitionDelay");
 }
@@ -430,6 +454,8 @@ void AdvSceneSwitcher::setupTransitionsTab()
 
 	ui->transitionOverridecheckBox->setChecked(
 		switcher->tansitionOverrideOverride);
+	ui->adjustActiveTransitionType->setChecked(
+		switcher->adjustActiveTransitionType);
 
 	QSpinBox *defTransitionDelay = new QSpinBox();
 	defTransitionDelay->setSuffix("ms");

@@ -166,6 +166,7 @@ public slots:
 	void on_defaultTransitionsUp_clicked();
 	void on_defaultTransitionsDown_clicked();
 	void on_transitionOverridecheckBox_stateChanged(int state);
+	void on_adjustActiveTransitionType_stateChanged(int state);
 	void defTransitionDelayValueChanged(int value);
 
 	void on_browseButton_clicked();
@@ -287,12 +288,14 @@ bool isInFocus(const QString &executable);
 
 void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 		       OBSWeakSource &transition,
-		       bool &transitionOverrideOverride, transitionData &td);
+		       bool transitionOverrideOverride,
+		       bool adjustActiveTransitionType, transitionData &td);
 void overwriteTransitionOverride(obs_weak_source_t *sceneWs,
 				 obs_source_t *transition, transitionData &td);
 void restoreTransitionOverride(obs_source_t *scene, transitionData td);
 void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
-		 bool &transitionOverrideOverride);
+		 bool transitionOverrideOverride,
+		 bool adjustActiveTransitionType, bool verbose);
 
 /******************************************************************************
  * Main SwitcherData
