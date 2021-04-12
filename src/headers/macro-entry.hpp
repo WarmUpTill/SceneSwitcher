@@ -53,14 +53,12 @@ public:
 	bool checkMatch();
 	bool performAction();
 	std::string Name() { return _name; }
+	void SetName(std::string name) { _name = name; }
 	std::deque<std::shared_ptr<MacroCondition>> &Conditions()
 	{
 		return _conditions;
 	}
-	std::deque<std::shared_ptr<MacroAction>> &Actions()
-	{
-		return _actions;
-	}
+	std::deque<std::shared_ptr<MacroAction>> &Actions() { return _actions; }
 
 private:
 	std::string _name = "";

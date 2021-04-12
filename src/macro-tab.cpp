@@ -107,7 +107,40 @@ void AdvSceneSwitcher::on_macroDown_clicked()
 	}
 }
 
-void AdvSceneSwitcher::on_macroName_editingFinished() {}
+void AdvSceneSwitcher::on_macroName_editingFinished()
+{
+	bool nameValid = true;
+
+	Macro *macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	QString newName = ui->macroName->text();
+	QString oldName = QString::fromStdString(macro->Name());
+
+	if (newName.isEmpty() || newName == oldName) {
+		nameValid = false;
+	}
+
+	if (nameValid && macroNameExists(newName.toUtf8().constData())) {
+		DisplayMessage(
+			obs_module_text("AdvSceneSwitcher.macroTab.exists"));
+		nameValid = false;
+	}
+
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		if (nameValid) {
+			macro->SetName(newName.toUtf8().constData());
+			QListWidgetItem *item = ui->macros->currentItem();
+			item->setData(Qt::UserRole, newName);
+			item->setText(newName);
+		} else {
+			ui->macroName->setText(oldName);
+		}
+	}
+}
 
 void AdvSceneSwitcher::SetEditMacro(Macro &m)
 {
