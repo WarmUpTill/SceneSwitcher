@@ -3,6 +3,34 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
+std::map<int, MacroActionInfo> MacroActionFactory::_methods;
+
+bool MacroActionFactory::Register(int id, MacroActionInfo info)
+{
+	if (auto it = _methods.find(id); it == _methods.end()) {
+		_methods[id] = info;
+		return true;
+	}
+	return false;
+}
+
+std::shared_ptr<MacroAction> MacroActionFactory::Create(const int id)
+{
+	if (auto it = _methods.find(id); it != _methods.end())
+		return it->second._createFunc();
+
+	return nullptr;
+}
+
+QWidget *MacroActionFactory::CreateWidget(const int id)
+{
+	if (auto it = _methods.find(id); it != _methods.end())
+		return it->second._createWidgetFunc();
+
+	return nullptr;
+}
+
+// DELETE ME :)
 std::vector<std::string> actionTypes{"AdvSceneSwitcher.action.switchScene",
 				     "AdvSceneSwitcher.action.wait",
 				     "AdvSceneSwitcher.action.muteSource",
@@ -11,8 +39,8 @@ std::vector<std::string> actionTypes{"AdvSceneSwitcher.action.switchScene",
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (auto entry : actionTypes) {
-		list->addItem(obs_module_text(entry.c_str()));
+	for (auto entry : MacroActionFactory::GetActionTypes()) {
+		list->addItem(obs_module_text(entry.second._name.c_str()));
 	}
 }
 
@@ -50,10 +78,8 @@ void MacroActionEdit::ActionSelectionChanged(int idx)
 {
 	clearLayout(_actionWidgetLayout);
 
-	if (idx == 0) {
-		auto widget = new MacroActionSwitchSceneEdit();
-		_actionWidgetLayout->addWidget(widget);
-	}
+	auto widget = MacroActionFactory::CreateWidget(idx);
+	_actionWidgetLayout->addWidget(widget);
 }
 
 void MacroActionEdit::UpdateEntryData() {}

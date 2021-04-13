@@ -41,7 +41,7 @@ public:
 	virtual bool PerformAction() = 0;
 
 private:
-	int _id;
+	static bool _registered;
 };
 
 class Macro {

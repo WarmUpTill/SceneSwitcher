@@ -2,6 +2,10 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+bool MacroActionSwitchScene::_registered = MacroActionFactory::Register(
+	0, {MacroActionSwitchScene::Create, MacroActionSwitchSceneEdit::Create,
+	    "AdvSceneSwitcher.action.switchScene"});
+
 bool MacroActionSwitchScene::PerformAction()
 {
 	auto scene = obs_weak_source_get_source(_scene);

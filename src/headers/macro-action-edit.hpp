@@ -7,6 +7,29 @@
 #include <deque>
 #include "macro-entry.hpp"
 
+struct MacroActionInfo {
+	using TCreateMethod = std::shared_ptr<MacroAction> (*)();
+	using TCreateWidgetMethod = QWidget *(*)();
+	TCreateMethod _createFunc;
+	TCreateWidgetMethod _createWidgetFunc;
+	std::string _name;
+};
+
+class MacroActionFactory {
+public:
+	using TCreateMethod = std::shared_ptr<MacroAction> (*)();
+
+public:
+	MacroActionFactory() = delete;
+	static bool Register(int id, MacroActionInfo);
+	static std::shared_ptr<MacroAction> Create(const int id);
+	static QWidget *CreateWidget(const int id);
+	static auto GetActionTypes() { return _methods; }
+
+private:
+	static std::map<int, MacroActionInfo> _methods;
+};
+
 class MacroActionEdit : public QWidget {
 	Q_OBJECT
 
