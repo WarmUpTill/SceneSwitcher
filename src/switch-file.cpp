@@ -470,41 +470,8 @@ void FileSwitch::save(obs_data_t *obj)
 	obs_data_set_bool(obj, "onlyMatchIfChanged", onlyMatchIfChanged);
 }
 
-// To be removed in future version
-bool loadOldFile(obs_data_t *obj, FileSwitch *s)
-{
-	if (!s) {
-		return false;
-	}
-
-	const char *scene = obs_data_get_string(obj, "scene");
-
-	if (strcmp(scene, "") == 0) {
-		return false;
-	}
-
-	s->scene = GetWeakSourceByName(scene);
-
-	const char *transition = obs_data_get_string(obj, "transition");
-	s->transition = GetWeakTransitionByName(transition);
-
-	s->file = obs_data_get_string(obj, "file");
-	s->text = obs_data_get_string(obj, "text");
-	s->remote = obs_data_get_bool(obj, "remote");
-	s->useRegex = obs_data_get_bool(obj, "useRegex");
-	s->useTime = obs_data_get_bool(obj, "useTime");
-	s->onlyMatchIfChanged = obs_data_get_bool(obj, "onlyMatchIfChanged");
-	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
-
-	return true;
-}
-
 void FileSwitch::load(obs_data_t *obj)
 {
-	if (loadOldFile(obj, this)) {
-		return;
-	}
-
 	SceneSwitcherEntry::load(obj);
 
 	file = obs_data_get_string(obj, "file");
