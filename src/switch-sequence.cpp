@@ -328,48 +328,8 @@ void SceneSequenceSwitch::save(obs_data_t *obj, bool saveExt)
 	}
 }
 
-// To be removed in future version
-bool loadOldScequence(obs_data_t *obj, SceneSequenceSwitch *s)
-{
-	if (!s) {
-		return false;
-	}
-
-	const char *scene1 = obs_data_get_string(obj, "sceneRoundTripScene1");
-
-	if (strcmp(scene1, "") == 0) {
-		return false;
-	}
-
-	s->startScene = GetWeakSourceByName(scene1);
-
-	const char *scene2 = obs_data_get_string(obj, "sceneRoundTripScene2");
-	s->scene = GetWeakSourceByName(scene2);
-
-	const char *transition = obs_data_get_string(obj, "transition");
-	s->transition = GetWeakTransitionByName(transition);
-
-	s->delay = obs_data_get_double(obj, "delay");
-
-	int delayMultiplier = obs_data_get_int(obj, "delayMultiplier");
-	if (delayMultiplier == 0 ||
-	    (delayMultiplier != 1 && delayMultiplier % 60 != 0))
-		delayMultiplier = 1;
-	s->delayMultiplier = delayMultiplier;
-
-	s->interruptible = obs_data_get_bool(obj, "interruptible");
-
-	s->usePreviousScene = strcmp(scene2, previous_scene_name) == 0;
-
-	return true;
-}
-
 void SceneSequenceSwitch::load(obs_data_t *obj, bool saveExt)
 {
-	if (loadOldScequence(obj, this)) {
-		return;
-	}
-
 	SceneSwitcherEntry::load(obj);
 	startTargetType = static_cast<SwitchTargetType>(
 		obs_data_get_int(obj, "startTargetType"));

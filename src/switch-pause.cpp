@@ -231,9 +231,6 @@ void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 {
 	switcher->pauseEntries.clear();
 
-	// To be removed in future builds once most users have migrated
-	loadOldPauseSwitches(obj);
-
 	obs_data_array_t *pauseArray = obs_data_get_array(obj, "pauseEntries");
 	size_t count = obs_data_array_count(pauseArray);
 
@@ -255,50 +252,6 @@ void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(pauseArray);
-}
-
-void SwitcherData::loadOldPauseSwitches(obs_data_t *obj)
-{
-	if (obs_data_get_int(obj, "oldPauseValuesImported")) {
-		return;
-	}
-
-	obs_data_array_t *pauseScenesArray =
-		obs_data_get_array(obj, "pauseScenes");
-	size_t count = obs_data_array_count(pauseScenesArray);
-
-	for (size_t i = 0; i < count; i++) {
-		obs_data_t *array_obj =
-			obs_data_array_item(pauseScenesArray, i);
-
-		const char *scene =
-			obs_data_get_string(array_obj, "pauseScene");
-
-		switcher->pauseEntries.emplace_back(GetWeakSourceByName(scene),
-						    PauseType::Scene,
-						    PauseTarget::All, "");
-
-		obs_data_release(array_obj);
-	}
-	obs_data_array_release(pauseScenesArray);
-
-	obs_data_array_t *pauseWindowsArray =
-		obs_data_get_array(obj, "pauseWindows");
-	count = obs_data_array_count(pauseWindowsArray);
-
-	for (size_t i = 0; i < count; i++) {
-		obs_data_t *array_obj =
-			obs_data_array_item(pauseWindowsArray, i);
-
-		const char *window =
-			obs_data_get_string(array_obj, "pauseWindow");
-
-		switcher->pauseEntries.emplace_back(nullptr, PauseType::Window,
-						    PauseTarget::All, window);
-
-		obs_data_release(array_obj);
-	}
-	obs_data_array_release(pauseWindowsArray);
 }
 
 void AdvSceneSwitcher::setupPauseTab()

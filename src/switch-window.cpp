@@ -379,46 +379,8 @@ void WindowSwitch::save(obs_data_t *obj)
 	obs_data_set_bool(obj, "focus", focus);
 }
 
-// To be removed in future version
-bool loadOldWindow(obs_data_t *obj, WindowSwitch *s)
-{
-	if (!s) {
-		return false;
-	}
-
-	const char *scene = obs_data_get_string(obj, "scene");
-
-	if (strcmp(scene, "") == 0) {
-		return false;
-	}
-
-	s->scene = GetWeakSourceByName(scene);
-
-	const char *transition = obs_data_get_string(obj, "transition");
-	s->transition = GetWeakTransitionByName(transition);
-
-	s->window = obs_data_get_string(obj, "window_title");
-	s->fullscreen = obs_data_get_bool(obj, "fullscreen");
-#if __APPLE__
-	// TODO:
-	// not implemented on MacOS as I cannot test it
-	s->maximized = false;
-#else
-	s->maximized = obs_data_get_bool(obj, "maximized");
-#endif
-	s->focus = obs_data_get_bool(obj, "focus") ||
-		   !obs_data_has_user_value(obj, "focus");
-	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
-
-	return true;
-}
-
 void WindowSwitch::load(obs_data_t *obj)
 {
-	if (loadOldWindow(obj, this)) {
-		return;
-	}
-
 	SceneSwitcherEntry::load(obj);
 
 	window = obs_data_get_string(obj, "windowTitle");

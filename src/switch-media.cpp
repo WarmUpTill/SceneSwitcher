@@ -271,42 +271,8 @@ void MediaSwitch::save(obs_data_t *obj)
 	obs_data_set_int(obj, "time", time);
 }
 
-// To be removed in future version
-bool loadOldMedia(obs_data_t *obj, MediaSwitch *s)
-{
-	if (!s) {
-		return false;
-	}
-
-	const char *scene = obs_data_get_string(obj, "scene");
-
-	if (strcmp(scene, "") == 0) {
-		return false;
-	}
-
-	s->scene = GetWeakSourceByName(scene);
-
-	const char *transition = obs_data_get_string(obj, "transition");
-	s->transition = GetWeakTransitionByName(transition);
-
-	const char *source = obs_data_get_string(obj, "source");
-	s->source = GetWeakSourceByName(source);
-
-	s->state = (obs_media_state)obs_data_get_int(obj, "state");
-	s->restriction = (time_restriction)obs_data_get_int(obj, "restriction");
-	s->time = obs_data_get_int(obj, "time");
-	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
-
-	return true;
-}
-
 void MediaSwitch::load(obs_data_t *obj)
 {
-
-	if (loadOldMedia(obj, this)) {
-		return;
-	}
-
 	SceneSwitcherEntry::load(obj);
 
 	const char *sourceName = obs_data_get_string(obj, "source");
