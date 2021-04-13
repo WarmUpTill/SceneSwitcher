@@ -199,37 +199,8 @@ void ExecutableSwitch::save(obs_data_t *obj)
 	obs_data_set_bool(obj, "infocus", inFocus);
 }
 
-// To be removed in future version
-bool loadOldExe(obs_data_t *obj, ExecutableSwitch *s)
-{
-	if (!s) {
-		return false;
-	}
-
-	const char *scene = obs_data_get_string(obj, "scene");
-
-	if (strcmp(scene, "") == 0) {
-		return false;
-	}
-
-	s->scene = GetWeakSourceByName(scene);
-
-	const char *transition = obs_data_get_string(obj, "transition");
-	s->transition = GetWeakTransitionByName(transition);
-
-	s->exe = obs_data_get_string(obj, "exefile");
-	s->inFocus = obs_data_get_bool(obj, "infocus");
-	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
-
-	return true;
-}
-
 void ExecutableSwitch::load(obs_data_t *obj)
 {
-	if (loadOldExe(obj, this)) {
-		return;
-	}
-
 	SceneSwitcherEntry::load(obj);
 
 	exe = obs_data_get_string(obj, "exefile");

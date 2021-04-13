@@ -269,40 +269,8 @@ void ScreenRegionSwitch::save(obs_data_t *obj)
 	obs_data_set_int(obj, "maxY", maxY);
 }
 
-// To be removed in future version
-bool loadOldRegion(obs_data_t *obj, ScreenRegionSwitch *s)
-{
-	if (!s) {
-		return false;
-	}
-
-	const char *scene = obs_data_get_string(obj, "screenRegionScene");
-
-	if (strcmp(scene, "") == 0) {
-		return false;
-	}
-
-	s->scene = GetWeakSourceByName(scene);
-
-	const char *transition = obs_data_get_string(obj, "transition");
-	s->transition = GetWeakTransitionByName(transition);
-
-	s->minX = obs_data_get_int(obj, "minX");
-	s->minY = obs_data_get_int(obj, "minY");
-	s->maxX = obs_data_get_int(obj, "maxX");
-	s->maxY = obs_data_get_int(obj, "maxY");
-
-	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
-
-	return true;
-}
-
 void ScreenRegionSwitch::load(obs_data_t *obj)
 {
-	if (loadOldRegion(obj, this)) {
-		return;
-	}
-
 	SceneSwitcherEntry::load(obj);
 
 	const char *excludeSceneName = obs_data_get_string(obj, "excludeScene");

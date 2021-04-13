@@ -204,37 +204,8 @@ void TimeSwitch::save(obs_data_t *obj)
 	obs_data_set_string(obj, "time", time.toString().toStdString().c_str());
 }
 
-// To be removed in future version
-bool loadOldTime(obs_data_t *obj, TimeSwitch *s)
-{
-	if (!s) {
-		return false;
-	}
-
-	const char *scene = obs_data_get_string(obj, "scene");
-
-	if (strcmp(scene, "") == 0) {
-		return false;
-	}
-
-	s->scene = GetWeakSourceByName(scene);
-
-	const char *transition = obs_data_get_string(obj, "transition");
-	s->transition = GetWeakTransitionByName(transition);
-
-	s->trigger = (timeTrigger)obs_data_get_int(obj, "trigger");
-	s->time = QTime::fromString(obs_data_get_string(obj, "time"));
-	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
-
-	return true;
-}
-
 void TimeSwitch::load(obs_data_t *obj)
 {
-	if (loadOldTime(obj, this)) {
-		return;
-	}
-
 	SceneSwitcherEntry::load(obj);
 
 	trigger = (timeTrigger)obs_data_get_int(obj, "trigger");
