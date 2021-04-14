@@ -80,13 +80,14 @@ void AdvSceneSwitcher::on_mediaDown_clicked()
 		  switcher->mediaSwitches[index + 1]);
 }
 
-void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkMediaSwitch(OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
 	if (MediaSwitch::pause) {
-		return;
+		return false;
 	}
 
+	bool match = false;
 	for (MediaSwitch &mediaSwitch : mediaSwitches) {
 		if (!mediaSwitch.initialized()) {
 			continue;
@@ -196,6 +197,7 @@ void SwitcherData::checkMediaSwitch(bool &match, OBSWeakSource &scene,
 			break;
 		}
 	}
+	return match;
 }
 
 void SwitcherData::saveMediaSwitches(obs_data_t *obj)

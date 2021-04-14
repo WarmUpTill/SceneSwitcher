@@ -6,16 +6,17 @@
 bool IdleData::pause = false;
 IdleWidget *idleWidget = nullptr;
 
-void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkIdleSwitch(OBSWeakSource &scene,
 				   OBSWeakSource &transition)
 {
 	if (!idleData.idleEnable || IdleData::pause) {
-		return;
+		return false;
 	}
 
 	std::string title;
 	bool ignoreIdle = false;
 	GetCurrentWindowTitle(title);
+	bool match = false;
 
 	for (std::string &window : ignoreIdleWindows) {
 		if (window == title) {
@@ -40,7 +41,7 @@ void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
 
 	if (!ignoreIdle && secondsSinceLastInput() > idleData.time) {
 		if (idleData.alreadySwitched) {
-			return;
+			return false;
 		}
 		scene = idleData.getScene();
 		transition = idleData.transition;
@@ -50,8 +51,11 @@ void SwitcherData::checkIdleSwitch(bool &match, OBSWeakSource &scene,
 		if (verbose) {
 			idleData.logMatch();
 		}
-	} else
+	} else {
 		idleData.alreadySwitched = false;
+	}
+
+	return match;
 }
 
 void AdvSceneSwitcher::on_idleCheckBox_stateChanged(int state)

@@ -151,15 +151,16 @@ bool shouldIgnoreSceneSwitch(ScreenRegionSwitch &matchingRegion)
 	return matchingRegion.excludeScene == ws;
 }
 
-void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkScreenRegionSwitch(OBSWeakSource &scene,
 					   OBSWeakSource &transition)
 {
 	if (ScreenRegionSwitch::pause) {
-		return;
+		return false;
 	}
 
 	std::pair<int, int> cursorPos = getCursorPos();
 	int minRegionSize = 99999;
+	bool match = false;
 
 	for (auto &s : screenRegionSwitches) {
 		if (!s.initialized()) {
@@ -173,7 +174,7 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 				if (shouldIgnoreSceneSwitch(s)) {
 					// We technically have a match.
 					// But just ignore it.
-					return;
+					return false;
 				}
 				match = true;
 				scene = s.getScene();
@@ -187,6 +188,7 @@ void SwitcherData::checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
 			}
 		}
 	}
+	return match;
 }
 
 void AdvSceneSwitcher::updateScreenRegionCursorPos()

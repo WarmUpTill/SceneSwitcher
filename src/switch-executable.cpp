@@ -77,16 +77,17 @@ void AdvSceneSwitcher::on_executableDown_clicked()
 		  switcher->executableSwitches[index + 1]);
 }
 
-void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkExeSwitch(OBSWeakSource &scene,
 				  OBSWeakSource &transition)
 {
 	if (executableSwitches.size() == 0 || ExecutableSwitch::pause) {
-		return;
+		return false;
 	}
 
 	std::string title;
 	QStringList runningProcesses;
 	bool ignored = false;
+	bool match = false;
 
 	// Check if current window is ignored
 	GetCurrentWindowTitle(title);
@@ -135,6 +136,8 @@ void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 			break;
 		}
 	}
+
+	return match;
 }
 
 void SwitcherData::saveExecutableSwitches(obs_data_t *obj)

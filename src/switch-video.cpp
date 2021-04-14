@@ -257,13 +257,14 @@ void AdvSceneSwitcher::on_getScreenshot_clicked()
 	sw->SetFilePath(file.fileName());
 }
 
-void SwitcherData::checkVideoSwitch(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkVideoSwitch(OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
 	if (VideoSwitch::pause) {
-		return;
+		return false;
 	}
 
+	bool match = false;
 	for (auto &s : videoSwitches) {
 		bool matched = s.checkMatch();
 		if (!match && matched) {
@@ -275,6 +276,7 @@ void SwitcherData::checkVideoSwitch(bool &match, OBSWeakSource &scene,
 			}
 		}
 	}
+	return match;
 }
 
 void SwitcherData::saveVideoSwitches(obs_data_t *obj)
