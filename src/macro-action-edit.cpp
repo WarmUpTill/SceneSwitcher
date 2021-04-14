@@ -30,7 +30,7 @@ QWidget *MacroActionFactory::CreateWidget(const int id)
 	return nullptr;
 }
 
-// DELETE ME :)
+// TODO: DELETE ME :)
 std::vector<std::string> actionTypes{"AdvSceneSwitcher.action.switchScene",
 				     "AdvSceneSwitcher.action.wait",
 				     "AdvSceneSwitcher.action.muteSource",

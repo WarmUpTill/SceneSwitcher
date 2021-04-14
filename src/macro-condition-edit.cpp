@@ -29,6 +29,7 @@ QWidget *MacroConditionFactory::CreateWidget(const int id)
 	return nullptr;
 }
 
+// TODO: DELETE ME :)
 std::vector<std::string> conditionTypes{
 	"AdvSceneSwitcher.condition.scene", "AdvSceneSwitcher.logic.media",
 	"AdvSceneSwitcher.logic.audio",     "AdvSceneSwitcher.logic.video",
