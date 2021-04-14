@@ -1,6 +1,11 @@
+#include "headers/macro-condition-edit.hpp"
 #include "headers/macro-condition-scene.hpp"
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
+
+bool MacroConditionScene::_registered = MacroConditionFactory::Register(
+	0, {MacroConditionScene::Create, MacroConditionSceneEdit::Create,
+	    "AdvSceneSwitcher.condition.scene"});
 
 bool MacroConditionScene::CheckCondition()
 {

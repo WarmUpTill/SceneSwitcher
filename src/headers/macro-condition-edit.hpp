@@ -7,6 +7,29 @@
 
 #include <QGroupBox>
 
+struct MacroConditionInfo {
+	using TCreateMethod = std::shared_ptr<MacroCondition> (*)();
+	using TCreateWidgetMethod = QWidget *(*)();
+	TCreateMethod _createFunc;
+	TCreateWidgetMethod _createWidgetFunc;
+	std::string _name;
+};
+
+class MacroConditionFactory {
+public:
+	using TCreateMethod = std::shared_ptr<MacroCondition> (*)();
+
+public:
+	MacroConditionFactory() = delete;
+	static bool Register(int id, MacroConditionInfo);
+	static std::shared_ptr<MacroCondition> Create(const int id);
+	static QWidget *CreateWidget(const int id);
+	static auto GetConditionTypes() { return _methods; }
+
+private:
+	static std::map<int, MacroConditionInfo> _methods;
+};
+
 class MacroConditionEdit : public QWidget {
 	Q_OBJECT
 

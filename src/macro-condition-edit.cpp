@@ -2,6 +2,33 @@
 
 bool MacroConditionEdit::enableAdvancedLogic = false;
 
+std::map<int, MacroConditionInfo> MacroConditionFactory::_methods;
+
+bool MacroConditionFactory::Register(int id, MacroConditionInfo info)
+{
+	if (auto it = _methods.find(id); it == _methods.end()) {
+		_methods[id] = info;
+		return true;
+	}
+	return false;
+}
+
+std::shared_ptr<MacroCondition> MacroConditionFactory::Create(const int id)
+{
+	if (auto it = _methods.find(id); it != _methods.end())
+		return it->second._createFunc();
+
+	return nullptr;
+}
+
+QWidget *MacroConditionFactory::CreateWidget(const int id)
+{
+	if (auto it = _methods.find(id); it != _methods.end())
+		return it->second._createWidgetFunc();
+
+	return nullptr;
+}
+
 std::vector<std::string> conditionTypes{
 	"AdvSceneSwitcher.condition.scene", "AdvSceneSwitcher.logic.media",
 	"AdvSceneSwitcher.logic.audio",     "AdvSceneSwitcher.logic.video",
@@ -30,8 +57,8 @@ static inline void populateLogicSelection(QComboBox *list, bool root = false)
 
 static inline void populateConditionSelection(QComboBox *list)
 {
-	for (auto entry : conditionTypes) {
-		list->addItem(obs_module_text(entry.c_str()));
+	for (auto entry : MacroConditionFactory::GetConditionTypes()) {
+		list->addItem(obs_module_text(entry.second._name.c_str()));
 	}
 }
 
@@ -127,10 +154,8 @@ void MacroConditionEdit::ConditionSelectionChanged(int idx)
 {
 	clearLayout(_conditionWidgetLayout);
 
-	if (idx == 0) {
-		auto widget = new MacroConditionSceneEdit();
-		_conditionWidgetLayout->addWidget(widget);
-	}
+	auto widget = MacroConditionFactory::CreateWidget(idx);
+	_conditionWidgetLayout->addWidget(widget);
 }
 
 void MacroConditionEdit::ExtendClicked()

@@ -33,7 +33,7 @@ public:
 
 private:
 	LogicType _logic;
-	int _id;
+	static bool _registered;
 };
 
 class MacroAction {
