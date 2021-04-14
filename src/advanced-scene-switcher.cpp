@@ -568,7 +568,7 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 	bool match = false;
 
 	if (uninterruptibleSceneSequenceActive) {
-		checkSceneSequence(match, scene, transition, linger);
+		match = checkSceneSequence(scene, transition, linger);
 		if (match) {
 			return match;
 		}
@@ -577,35 +577,35 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 	for (int switchFuncName : functionNamesByPriority) {
 		switch (switchFuncName) {
 		case read_file_func:
-			checkSwitchInfoFromFile(match, scene, transition);
-			checkFileContent(match, scene, transition);
+			match = checkSwitchInfoFromFile(scene, transition);
+			match = checkFileContent(scene, transition);
 			break;
 		case idle_func:
-			checkIdleSwitch(match, scene, transition);
+			match = checkIdleSwitch(scene, transition);
 			break;
 		case exe_func:
-			checkExeSwitch(match, scene, transition);
+			match = checkExeSwitch(scene, transition);
 			break;
 		case screen_region_func:
-			checkScreenRegionSwitch(match, scene, transition);
+			match = checkScreenRegionSwitch(scene, transition);
 			break;
 		case window_title_func:
-			checkWindowTitleSwitch(match, scene, transition);
+			match = checkWindowTitleSwitch(scene, transition);
 			break;
 		case round_trip_func:
-			checkSceneSequence(match, scene, transition, linger);
+			match = checkSceneSequence(scene, transition, linger);
 			break;
 		case media_func:
-			checkMediaSwitch(match, scene, transition);
+			match = checkMediaSwitch(scene, transition);
 			break;
 		case time_func:
-			checkTimeSwitch(match, scene, transition);
+			match = checkTimeSwitch(scene, transition);
 			break;
 		case audio_func:
-			checkAudioSwitch(match, scene, transition);
+			match = checkAudioSwitch(scene, transition);
 			break;
 		case video_func:
-			checkVideoSwitch(match, scene, transition);
+			match = checkVideoSwitch(scene, transition);
 			break;
 		}
 

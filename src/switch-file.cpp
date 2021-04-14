@@ -115,19 +115,20 @@ void SwitcherData::writeToStatusFile(QString msg)
 	file.close();
 }
 
-void SwitcherData::checkSwitchInfoFromFile(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkSwitchInfoFromFile(OBSWeakSource &scene,
 					   OBSWeakSource &transition)
 {
 	if (!fileIO.readEnabled || fileIO.readPath.empty() ||
 	    FileSwitch::pause) {
-		return;
+		return false;
 	}
 
 	QFile file(QString::fromStdString(fileIO.readPath));
 	if (!file.open(QIODevice::ReadOnly)) {
-		return;
+		return false;
 	}
 
+	bool match = false;
 	QTextStream in(&file);
 
 	QString sceneStr = in.readLine();
@@ -149,6 +150,8 @@ void SwitcherData::checkSwitchInfoFromFile(bool &match, OBSWeakSource &scene,
 		      fileIO.readPath.c_str());
 	}
 	file.close();
+
+	return match;
 }
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb,
@@ -247,13 +250,14 @@ bool checkLocalFileContent(FileSwitch &s)
 	return match;
 }
 
-void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkFileContent(OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
 	if (FileSwitch::pause) {
-		return;
+		return false;
 	}
 
+	bool match = false;
 	for (FileSwitch &s : fileSwitches) {
 		if (!s.initialized()) {
 			continue;
@@ -277,6 +281,7 @@ void SwitcherData::checkFileContent(bool &match, OBSWeakSource &scene,
 			break;
 		}
 	}
+	return match;
 }
 
 void AdvSceneSwitcher::on_fileAdd_clicked()

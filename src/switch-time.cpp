@@ -113,13 +113,14 @@ bool checkRegularTime(TimeSwitch &s, int &interval)
 	return timesAreInInterval(s.time, now, interval);
 }
 
-void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkTimeSwitch(OBSWeakSource &scene,
 				   OBSWeakSource &transition)
 {
 	if (TimeSwitch::pause) {
-		return;
+		return false;
 	}
 
+	bool match = false;
 	for (TimeSwitch &s : timeSwitches) {
 		if (!s.initialized()) {
 			continue;
@@ -142,6 +143,7 @@ void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
 			break;
 		}
 	}
+	return match;
 }
 
 void SwitcherData::saveTimeSwitches(obs_data_t *obj)

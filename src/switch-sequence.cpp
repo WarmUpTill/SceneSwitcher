@@ -179,16 +179,17 @@ void AdvSceneSwitcher::on_sceneSequenceSwitches_itemDoubleClicked(
 	OpenSequenceExtendEdit(currentWidget);
 }
 
-void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkSceneSequence(OBSWeakSource &scene,
 				      OBSWeakSource &transition, int &linger)
 {
 	if (SceneSequenceSwitch::pause) {
-		return;
+		return false;
 	}
 
 	obs_source_t *currentSceneSource = obs_frontend_get_current_scene();
 	obs_weak_source_t *currentScene =
 		obs_source_get_weak_source(currentSceneSource);
+	bool match = false;
 
 	for (SceneSequenceSwitch &s : sceneSequenceSwitches) {
 		// Continue the active uninterruptible sequence and skip others
@@ -233,6 +234,8 @@ void SwitcherData::checkSceneSequence(bool &match, OBSWeakSource &scene,
 
 	obs_source_release(currentSceneSource);
 	obs_weak_source_release(currentScene);
+
+	return match;
 }
 
 void SwitcherData::saveSceneSequenceSwitches(obs_data_t *obj)

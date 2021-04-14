@@ -36,17 +36,18 @@ void AdvSceneSwitcher::on_randomRemove_clicked()
 	delete item;
 }
 
-void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
-			       OBSWeakSource &transition, int &delay)
+bool SwitcherData::checkRandom(OBSWeakSource &scene, OBSWeakSource &transition,
+			       int &delay)
 {
 	if (randomSwitches.size() == 0 || RandomSwitch::pause) {
-		return;
+		return false;
 	}
 
 	std::deque<RandomSwitch> rs(randomSwitches);
 	std::random_device rng;
 	std::mt19937 urng(rng());
 	std::shuffle(rs.begin(), rs.end(), urng);
+	bool match = false;
 	for (RandomSwitch &r : rs) {
 		if (!r.initialized()) {
 			continue;
@@ -75,6 +76,7 @@ void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
 		}
 		break;
 	}
+	return match;
 }
 
 void SwitcherData::saveRandomSwitches(obs_data_t *obj)
