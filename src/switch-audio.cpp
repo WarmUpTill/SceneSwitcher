@@ -111,13 +111,14 @@ void SwitcherData::checkAudioSwitchFallback(OBSWeakSource &scene,
 	audioFallback.matchCount++;
 }
 
-void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkAudioSwitch(OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
 	if (AudioSwitch::pause) {
-		return;
+		return false;
 	}
 
+	bool match = false;
 	bool fallbackChecked = false; // false if only one or no match
 
 	for (AudioSwitch &s : audioSwitches) {
@@ -185,6 +186,8 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 	if (!fallbackChecked) {
 		audioFallback.matchCount = 0;
 	}
+
+	return match;
 }
 
 void SwitcherData::saveAudioSwitches(obs_data_t *obj)

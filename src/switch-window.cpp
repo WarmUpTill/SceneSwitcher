@@ -214,15 +214,16 @@ void checkWindowTitleSwitchRegex(WindowSwitch &s,
 	}
 }
 
-void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkWindowTitleSwitch(OBSWeakSource &scene,
 					  OBSWeakSource &transition)
 {
 	if (WindowSwitch::pause) {
-		return;
+		return false;
 	}
 
 	std::string currentWindowTitle;
 	GetCurrentWindowTitle(currentWindowTitle);
+	bool match = false;
 
 	// Check if current window is ignored
 	for (auto &window : ignoreWindowsSwitches) {
@@ -268,6 +269,7 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 			break;
 		}
 	}
+	return match;
 }
 
 void SwitcherData::saveWindowTitleSwitches(obs_data_t *obj)

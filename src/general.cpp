@@ -709,7 +709,7 @@ void SwitcherData::checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
 		transition = nullptr;
 	}
 	if (switchIfNotMatching == RANDOM_SWITCH) {
-		checkRandom(match, scene, transition, sleep);
+		match = checkRandom(scene, transition, sleep);
 	}
 }
 
