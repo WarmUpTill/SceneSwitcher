@@ -221,9 +221,5 @@ void AdvSceneSwitcher::on_macros_currentRowChanged(int idx)
 
 void AdvSceneSwitcher::setupMacroTab()
 {
-	MacroConditionEdit *test = new MacroConditionEdit();
-	ui->macroEditConditionLayout->addWidget(test);
-
-	auto *test2 = new MacroActionEdit();
-	ui->macroEditActionLayout->addWidget(test2);
+	;
 }
