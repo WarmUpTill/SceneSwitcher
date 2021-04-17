@@ -86,6 +86,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/macro-action-switch-scene.hpp
 	src/headers/macro-condition-edit.hpp
 	src/headers/macro-condition-scene.hpp
+	src/headers/macro-condition-window.hpp
 	src/headers/macro-entry.hpp
 	src/headers/name-dialog.hpp
 	src/headers/version.h
@@ -120,6 +121,7 @@ set(advanced-scene-switcher_SOURCES
 	src/macro-action-switch-scene.cpp
 	src/macro-condition-edit.cpp
 	src/macro-condition-scene.cpp
+	src/macro-condition-window.cpp
 	src/macro-entry.cpp
 	src/macro-tab.cpp
 	src/name-dialog.cpp
