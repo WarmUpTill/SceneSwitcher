@@ -132,6 +132,8 @@ MacroConditionEdit::MacroConditionEdit(
 
 	_isRoot = root;
 	_loading = false;
+
+	LogicSelectionChanged(0); // display correct logic name
 }
 
 void MacroConditionEdit::LogicSelectionChanged(int idx)
