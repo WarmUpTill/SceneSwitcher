@@ -14,6 +14,9 @@ public:
 	}
 
 	OBSWeakSource _scene;
+
+private:
+	static bool _registered;
 };
 
 class MacroConditionSceneEdit : public QWidget {

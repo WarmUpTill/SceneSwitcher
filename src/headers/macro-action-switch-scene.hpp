@@ -11,6 +11,9 @@ public:
 		return std::make_shared<MacroActionSwitchScene>();
 	}
 	OBSWeakSource _scene = nullptr;
+
+private:
+	static bool _registered;
 };
 
 class MacroActionSwitchSceneEdit : public QWidget {

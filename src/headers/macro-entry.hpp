@@ -33,15 +33,11 @@ public:
 
 private:
 	LogicType _logic;
-	static bool _registered;
 };
 
 class MacroAction {
 public:
 	virtual bool PerformAction() = 0;
-
-private:
-	static bool _registered;
 };
 
 class Macro {
