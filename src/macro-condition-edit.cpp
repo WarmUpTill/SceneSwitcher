@@ -165,6 +165,9 @@ void MacroConditionEdit::ConditionSelectionChanged(int idx)
 		return;
 	}
 
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData.reset();
+	_entryData = MacroConditionFactory::Create(idx);
 	clearLayout(_conditionWidgetLayout);
 	auto widget = MacroConditionFactory::CreateWidget(idx, _entryData);
 	_conditionWidgetLayout->addWidget(widget);
