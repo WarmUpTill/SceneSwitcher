@@ -20,16 +20,21 @@ class MacroConditionSceneEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroConditionSceneEdit(MacroConditionScene *entryData = nullptr);
+	MacroConditionSceneEdit(
+		std::shared_ptr<MacroConditionScene> cond = nullptr);
 	void UpdateEntryData();
-	static QWidget *Create() { return new MacroConditionSceneEdit(); }
+	static QWidget *Create(std::shared_ptr<MacroCondition> cond)
+	{
+		return new MacroConditionSceneEdit(
+			std::dynamic_pointer_cast<MacroConditionScene>(cond));
+	}
 
 private slots:
 	void SceneChanged(const QString &text);
 
 protected:
 	QComboBox *_sceneSelection;
-	MacroConditionScene *_entryData;
+	std::shared_ptr<MacroConditionScene> _entryData;
 
 private:
 	bool _loading = true;

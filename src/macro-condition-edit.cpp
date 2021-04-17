@@ -21,10 +21,12 @@ std::shared_ptr<MacroCondition> MacroConditionFactory::Create(const int id)
 	return nullptr;
 }
 
-QWidget *MacroConditionFactory::CreateWidget(const int id)
+QWidget *
+MacroConditionFactory::CreateWidget(const int id,
+				    std::shared_ptr<MacroCondition> cond)
 {
 	if (auto it = _methods.find(id); it != _methods.end())
-		return it->second._createWidgetFunc();
+		return it->second._createWidgetFunc(cond);
 
 	return nullptr;
 }
@@ -63,7 +65,8 @@ static inline void populateConditionSelection(QComboBox *list)
 	}
 }
 
-MacroConditionEdit::MacroConditionEdit(MacroCondition *entryData, bool root)
+MacroConditionEdit::MacroConditionEdit(
+	std::shared_ptr<MacroCondition> entryData, int type, bool root)
 {
 	_logicSelection = new QComboBox();
 	_conditionSelection = new QComboBox();
@@ -125,7 +128,7 @@ MacroConditionEdit::MacroConditionEdit(MacroCondition *entryData, bool root)
 	setLayout(mainLayout);
 
 	_entryData = entryData;
-	UpdateEntryData();
+	UpdateEntryData(type);
 
 	_isRoot = root;
 	_loading = false;
@@ -149,13 +152,21 @@ bool MacroConditionEdit::IsRootNode()
 	return _isRoot;
 }
 
-void MacroConditionEdit::UpdateEntryData() {}
+void MacroConditionEdit::UpdateEntryData(int type)
+{
+	clearLayout(_conditionWidgetLayout);
+	auto widget = MacroConditionFactory::CreateWidget(type, _entryData);
+	_conditionWidgetLayout->addWidget(widget);
+}
 
 void MacroConditionEdit::ConditionSelectionChanged(int idx)
 {
-	clearLayout(_conditionWidgetLayout);
+	if (_loading || !_entryData) {
+		return;
+	}
 
-	auto widget = MacroConditionFactory::CreateWidget(idx);
+	clearLayout(_conditionWidgetLayout);
+	auto widget = MacroConditionFactory::CreateWidget(idx, _entryData);
 	_conditionWidgetLayout->addWidget(widget);
 }
 
@@ -198,11 +209,12 @@ void AdvSceneSwitcher::on_conditionAdd_clicked()
 	if (!macro) {
 		return;
 	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	bool root = macro->Conditions().size() == 0;
-	macro->Conditions().emplace_back();
+	macro->Conditions().emplace_back(MacroConditionFactory::Create(0));
 	auto newEntry =
-		new MacroConditionEdit(macro->Conditions().back().get(), root);
+		new MacroConditionEdit(macro->Conditions().back(), 0, root);
 	ui->macroEditConditionLayout->addWidget(newEntry);
 	ui->macroEditConditionHelp->setVisible(false);
 }

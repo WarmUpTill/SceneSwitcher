@@ -9,7 +9,8 @@
 
 struct MacroConditionInfo {
 	using TCreateMethod = std::shared_ptr<MacroCondition> (*)();
-	using TCreateWidgetMethod = QWidget *(*)();
+	using TCreateWidgetMethod =
+		QWidget *(*)(std::shared_ptr<MacroCondition>);
 	TCreateMethod _createFunc;
 	TCreateWidgetMethod _createWidgetFunc;
 	std::string _name;
@@ -23,7 +24,8 @@ public:
 	MacroConditionFactory() = delete;
 	static bool Register(int id, MacroConditionInfo);
 	static std::shared_ptr<MacroCondition> Create(const int id);
-	static QWidget *CreateWidget(const int id);
+	static QWidget *CreateWidget(const int id,
+				     std::shared_ptr<MacroCondition>);
 	static auto GetConditionTypes() { return _methods; }
 
 private:
@@ -34,10 +36,10 @@ class MacroConditionEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroConditionEdit(MacroCondition *entryData = nullptr,
-			   bool root = true);
+	MacroConditionEdit(std::shared_ptr<MacroCondition> = nullptr,
+			   int type = 0, bool root = true);
 	bool IsRootNode();
-	void UpdateEntryData();
+	void UpdateEntryData(int type);
 
 	static bool enableAdvancedLogic;
 
@@ -57,7 +59,7 @@ protected:
 	QPushButton *_extend;
 	QPushButton *_reduce;
 
-	MacroCondition *_entryData;
+	std::shared_ptr<MacroCondition> _entryData;
 
 private:
 	bool _isRoot = true;

@@ -27,7 +27,8 @@ bool MacroConditionScene::Load()
 	return false;
 }
 
-MacroConditionSceneEdit::MacroConditionSceneEdit(MacroConditionScene *entryData)
+MacroConditionSceneEdit::MacroConditionSceneEdit(
+	std::shared_ptr<MacroConditionScene> entryData)
 {
 	_sceneSelection = new QComboBox();
 
