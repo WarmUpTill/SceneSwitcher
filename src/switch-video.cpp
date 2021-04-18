@@ -355,6 +355,11 @@ void VideoSwitch::save(obs_data_t *obj)
 	obs_data_set_bool(obj, "ignoreInactiveSource", ignoreInactiveSource);
 }
 
+bool requiresFileInput(videoSwitchType t)
+{
+	return t == videoSwitchType::MATCH || t == videoSwitchType::DIFFER;
+}
+
 void VideoSwitch::load(obs_data_t *obj)
 {
 	SceneSwitcherEntry::load(obj);
@@ -367,7 +372,7 @@ void VideoSwitch::load(obs_data_t *obj)
 	file = obs_data_get_string(obj, "filePath");
 	ignoreInactiveSource = obs_data_get_bool(obj, "ignoreInactiveSource");
 
-	if (condition != videoSwitchType::HAS_NOT_CHANGED) {
+	if (requiresFileInput(condition)) {
 		(void)loadImageFromFile();
 	}
 }
@@ -423,6 +428,10 @@ bool VideoSwitch::checkMatch()
 				conditionMatch = screenshotData->image ==
 						 matchImage;
 				break;
+			case videoSwitchType::HAS_CHANGED:
+				conditionMatch = screenshotData->image !=
+						 matchImage;
+				break;
 			default:
 				break;
 			}
@@ -444,7 +453,7 @@ bool VideoSwitch::checkMatch()
 				match = true;
 			}
 
-			if (condition == videoSwitchType::HAS_NOT_CHANGED) {
+			if (!requiresFileInput(condition)) {
 				matchImage = std::move(screenshotData->image);
 			}
 			previousTime = std::move(screenshotData->time);
@@ -480,6 +489,8 @@ static inline void populateConditionSelection(QComboBox *list)
 		obs_module_text("AdvSceneSwitcher.videoTab.condition.differ"));
 	list->addItem(obs_module_text(
 		"AdvSceneSwitcher.videoTab.condition.hasNotChanged"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.videoTab.condition.hasChanged"));
 }
 
 VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
@@ -530,7 +541,7 @@ VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
 		filePath->setText(QString::fromStdString(s->file));
 		ignoreInactiveSource->setChecked(s->ignoreInactiveSource);
 
-		if (s->condition == videoSwitchType::HAS_NOT_CHANGED) {
+		if (!requiresFileInput(s->condition)) {
 			filePath->hide();
 			browseButton->hide();
 		}
@@ -582,8 +593,7 @@ void VideoSwitchWidget::swapSwitchData(VideoSwitchWidget *s1,
 
 void VideoSwitchWidget::UpdatePreviewTooltip()
 {
-	if (!switchData ||
-	    switchData->condition == videoSwitchType::HAS_NOT_CHANGED) {
+	if (!switchData || !requiresFileInput(switchData->condition)) {
 		return;
 	}
 
@@ -627,12 +637,12 @@ void VideoSwitchWidget::ConditionChanged(int cond)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->condition = static_cast<videoSwitchType>(cond);
 
-	if (switchData->condition == videoSwitchType::HAS_NOT_CHANGED) {
-		filePath->hide();
-		browseButton->hide();
-	} else {
+	if (requiresFileInput(switchData->condition)) {
 		filePath->show();
 		browseButton->show();
+	} else {
+		filePath->hide();
+		browseButton->hide();
 	}
 
 	// Reload image data to avoid incorrect matches.
