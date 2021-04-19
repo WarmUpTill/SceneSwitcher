@@ -105,7 +105,7 @@ void AdvSceneSwitcher::on_actionAdd_clicked()
 	}
 	std::lock_guard<std::mutex> lock(switcher->m);
 	macro->Actions().emplace_back(MacroActionFactory::Create(0));
-	auto newEntry = new MacroActionEdit(macro->Actions().back(),0);
+	auto newEntry = new MacroActionEdit(macro->Actions().back(), 0);
 	ui->macroEditActionLayout->addWidget(newEntry);
 	ui->macroEditActionHelp->setVisible(false);
 }

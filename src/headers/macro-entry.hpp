@@ -34,7 +34,6 @@ public:
 
 private:
 	LogicType _logic;
-
 };
 
 class MacroAction {
