@@ -82,8 +82,10 @@ void MacroActionEdit::ActionSelectionChanged(int idx)
 		return;
 	}
 
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData.reset();
+	_entryData = MacroActionFactory::Create(idx);
 	clearLayout(_actionWidgetLayout);
-
 	auto widget = MacroActionFactory::CreateWidget(idx, _entryData);
 	_actionWidgetLayout->addWidget(widget);
 }
