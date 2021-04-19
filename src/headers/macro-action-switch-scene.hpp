@@ -6,6 +6,8 @@ public:
 	bool PerformAction();
 	bool Save();
 	bool Load();
+	int GetId() { return id; };
+
 	static std::shared_ptr<MacroAction> Create()
 	{
 		return std::make_shared<MacroActionSwitchScene>();
@@ -14,22 +16,29 @@ public:
 
 private:
 	static bool _registered;
+	static const int id;
 };
 
 class MacroActionSwitchSceneEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroActionSwitchSceneEdit(MacroActionSwitchScene *entryData = nullptr);
+	MacroActionSwitchSceneEdit(
+		std::shared_ptr<MacroActionSwitchScene> entryData = nullptr);
 	void UpdateEntryData();
-	static QWidget *Create() { return new MacroActionSwitchSceneEdit(); }
+	static QWidget *Create(std::shared_ptr<MacroAction> action)
+	{
+		return new MacroActionSwitchSceneEdit(
+			std::dynamic_pointer_cast<MacroActionSwitchScene>(
+				action));
+	}
 
 private slots:
 	void SceneChanged(const QString &text);
 
 protected:
 	QComboBox *_sceneSelection;
-	MacroActionSwitchScene *_entryData;
+	std::shared_ptr<MacroActionSwitchScene> _entryData;
 
 private:
 	bool _loading = true;

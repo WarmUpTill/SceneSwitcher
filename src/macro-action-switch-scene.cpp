@@ -2,9 +2,12 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+const int MacroActionSwitchScene::id = 0;
+
 bool MacroActionSwitchScene::_registered = MacroActionFactory::Register(
-	0, {MacroActionSwitchScene::Create, MacroActionSwitchSceneEdit::Create,
-	    "AdvSceneSwitcher.action.switchScene"});
+	MacroActionSwitchScene::id,
+	{MacroActionSwitchScene::Create, MacroActionSwitchSceneEdit::Create,
+	 "AdvSceneSwitcher.action.switchScene"});
 
 bool MacroActionSwitchScene::PerformAction()
 {
@@ -15,8 +18,18 @@ bool MacroActionSwitchScene::PerformAction()
 	return true;
 }
 
+bool MacroActionSwitchScene::Save()
+{
+	return false;
+}
+
+bool MacroActionSwitchScene::Load()
+{
+	return false;
+}
+
 MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
-	MacroActionSwitchScene *entryData)
+	std::shared_ptr<MacroActionSwitchScene> entryData)
 {
 	_sceneSelection = new QComboBox();
 

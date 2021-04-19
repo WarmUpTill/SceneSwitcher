@@ -157,7 +157,7 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 	}
 
 	for (auto &a : m.Actions()) {
-		auto newEntry = new MacroActionEdit(a.get());
+		auto newEntry = new MacroActionEdit(a);
 		ui->macroEditActionLayout->addWidget(newEntry);
 		ui->macroEditActionHelp->setVisible(false);
 	}

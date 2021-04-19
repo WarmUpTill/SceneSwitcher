@@ -40,6 +40,7 @@ private:
 class MacroAction {
 public:
 	virtual bool PerformAction() = 0;
+	virtual int GetId() = 0;
 };
 
 class Macro {

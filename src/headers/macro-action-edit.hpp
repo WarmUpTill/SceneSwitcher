@@ -9,7 +9,7 @@
 
 struct MacroActionInfo {
 	using TCreateMethod = std::shared_ptr<MacroAction> (*)();
-	using TCreateWidgetMethod = QWidget *(*)();
+	using TCreateWidgetMethod = QWidget *(*)(std::shared_ptr<MacroAction>);
 	TCreateMethod _createFunc;
 	TCreateWidgetMethod _createWidgetFunc;
 	std::string _name;
@@ -17,13 +17,15 @@ struct MacroActionInfo {
 
 class MacroActionFactory {
 public:
-	using TCreateMethod = std::shared_ptr<MacroAction> (*)();
+	using TCreateMethod = std::shared_ptr<MacroAction> (*)(
+		const int id, std::shared_ptr<MacroCondition>);
 
 public:
 	MacroActionFactory() = delete;
 	static bool Register(int id, MacroActionInfo);
 	static std::shared_ptr<MacroAction> Create(const int id);
-	static QWidget *CreateWidget(const int id);
+	static QWidget *CreateWidget(const int id,
+				     std::shared_ptr<MacroAction> action);
 	static auto GetActionTypes() { return _methods; }
 
 private:
@@ -34,8 +36,8 @@ class MacroActionEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroActionEdit(MacroAction *entryData = nullptr);
-	void UpdateEntryData();
+	MacroActionEdit(std::shared_ptr<MacroAction> = nullptr, int type = 0);
+	void UpdateEntryData(int type);
 
 private slots:
 	void ActionSelectionChanged(int idx);
@@ -46,7 +48,7 @@ protected:
 	QVBoxLayout *_groupLayout;
 	QGroupBox *_group;
 
-	MacroAction *_entryData;
+	std::shared_ptr<MacroAction> _entryData;
 
 private:
 	bool _loading = true;
