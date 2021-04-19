@@ -35,7 +35,7 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 
 	QWidget::connect(_windowSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
-			 SLOT(WindowChanged(int)));
+			 SLOT(WindowChanged(const QString &)));
 
 	AdvSceneSwitcher::populateWindowSelection(_windowSelection);
 

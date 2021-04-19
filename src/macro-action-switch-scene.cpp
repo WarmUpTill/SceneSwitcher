@@ -35,7 +35,7 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 
 	QWidget::connect(_sceneSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
-			 SLOT(SceneChanged(int)));
+			 SLOT(SceneChanged(const QString &)));
 
 	AdvSceneSwitcher::populateSceneSelection(_sceneSelection);
 
