@@ -18,12 +18,12 @@ bool MacroConditionWindow::CheckCondition()
 	return currentWindow == _window;
 }
 
-bool MacroConditionWindow::Save()
+bool MacroConditionWindow::Save(obs_data_t *obj)
 {
 	return false;
 }
 
-bool MacroConditionWindow::Load()
+bool MacroConditionWindow::Load(obs_data_t *obj)
 {
 	return false;
 }

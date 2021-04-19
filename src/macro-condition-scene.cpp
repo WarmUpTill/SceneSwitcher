@@ -20,12 +20,12 @@ bool MacroConditionScene::CheckCondition()
 	return ret;
 }
 
-bool MacroConditionScene::Save()
+bool MacroConditionScene::Save(obs_data_t *obj)
 {
 	return false;
 }
 
-bool MacroConditionScene::Load()
+bool MacroConditionScene::Load(obs_data_t *obj)
 {
 	return false;
 }

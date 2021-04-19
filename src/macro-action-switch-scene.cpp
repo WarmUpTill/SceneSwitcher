@@ -15,16 +15,6 @@ bool MacroActionSwitchScene::PerformAction()
 	return true;
 }
 
-bool MacroActionSwitchScene::Save()
-{
-	return false;
-}
-
-bool MacroActionSwitchScene::Load()
-{
-	return false;
-}
-
 MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	MacroActionSwitchScene *entryData)
 {

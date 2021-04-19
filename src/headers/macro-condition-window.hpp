@@ -6,8 +6,8 @@
 class MacroConditionWindow : public MacroCondition {
 public:
 	bool CheckCondition();
-	bool Save();
-	bool Load();
+	bool Save(obs_data_t *obj);
+	bool Load(obs_data_t *obj);
 	int GetId() { return id; };
 	static std::shared_ptr<MacroCondition> Create()
 	{

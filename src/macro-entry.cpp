@@ -64,3 +64,39 @@ bool Macro::performAction()
 
 	return ret;
 }
+
+bool Macro::Save(obs_data_t *obj)
+{
+	obs_data_set_string(obj, "name", _name.c_str());
+
+	obs_data_array_t *conditions = obs_data_array_create();
+	for (auto &c : _conditions) {
+		obs_data_t *array_obj = obs_data_create();
+
+		c->Save(array_obj);
+		obs_data_array_push_back(conditions, array_obj);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "conditions", conditions);
+	obs_data_array_release(conditions);
+
+	obs_data_array_t *actions = obs_data_array_create();
+	for (auto &a : _actions) {
+		obs_data_t *array_obj = obs_data_create();
+
+		//a->Save(array_obj);
+		obs_data_array_push_back(actions, array_obj);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "actions", actions);
+	obs_data_array_release(actions);
+
+	return true;
+}
+
+bool Macro::Load(obs_data_t *obj)
+{
+	return false;
+}

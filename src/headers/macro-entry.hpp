@@ -25,8 +25,8 @@ struct LogicTypeInfo {
 class MacroCondition {
 public:
 	virtual bool CheckCondition() = 0;
-	virtual bool Save() = 0;
-	virtual bool Load() = 0;
+	virtual bool Save(obs_data_t *obj) = 0;
+	virtual bool Load(obs_data_t *obj) = 0;
 	virtual int GetId() = 0;
 	LogicType GetLogicType() { return _logic; }
 
@@ -57,6 +57,9 @@ public:
 		return _conditions;
 	}
 	std::deque<std::shared_ptr<MacroAction>> &Actions() { return _actions; }
+
+	bool Save(obs_data_t *obj);
+	bool Load(obs_data_t *obj);
 
 private:
 	std::string _name = "";
