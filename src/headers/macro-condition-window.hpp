@@ -8,6 +8,7 @@ public:
 	bool CheckCondition();
 	bool Save();
 	bool Load();
+	int GetId() { return id; };
 	static std::shared_ptr<MacroCondition> Create()
 	{
 		return std::make_shared<MacroConditionWindow>();
@@ -17,6 +18,7 @@ public:
 
 private:
 	static bool _registered;
+	static const int id;
 };
 
 class MacroConditionWindowEdit : public QWidget {

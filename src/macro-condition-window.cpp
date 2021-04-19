@@ -3,9 +3,12 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
+const int MacroConditionWindow::id = 1;
+
 bool MacroConditionWindow::_registered = MacroConditionFactory::Register(
-	1, {MacroConditionWindow::Create, MacroConditionWindowEdit::Create,
-	    "AdvSceneSwitcher.condition.window"});
+	MacroConditionWindow::id,
+	{MacroConditionWindow::Create, MacroConditionWindowEdit::Create,
+	 "AdvSceneSwitcher.condition.window"});
 
 bool MacroConditionWindow::CheckCondition()
 {

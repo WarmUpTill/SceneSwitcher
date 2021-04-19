@@ -27,12 +27,14 @@ public:
 	virtual bool CheckCondition() = 0;
 	virtual bool Save() = 0;
 	virtual bool Load() = 0;
+	virtual int GetId() = 0;
 	LogicType GetLogicType() { return _logic; }
 
 	static std::unordered_map<LogicType, LogicTypeInfo> logicTypes;
 
 private:
 	LogicType _logic;
+
 };
 
 class MacroAction {
