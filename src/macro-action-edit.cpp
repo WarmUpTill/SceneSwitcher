@@ -117,6 +117,9 @@ void AdvSceneSwitcher::on_actionRemove_clicked()
 		return;
 	}
 	std::lock_guard<std::mutex> lock(switcher->m);
+	if (macro->Actions().empty()) {
+		return;
+	}
 	macro->Actions().pop_back();
 
 	int count = ui->macroEditActionLayout->count();

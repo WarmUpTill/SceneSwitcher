@@ -252,6 +252,9 @@ void AdvSceneSwitcher::on_conditionRemove_clicked()
 		return;
 	}
 	std::lock_guard<std::mutex> lock(switcher->m);
+	if (macro->Conditions().empty()) {
+		return;
+	}
 	macro->Conditions().pop_back();
 
 	int count = ui->macroEditConditionLayout->count();
