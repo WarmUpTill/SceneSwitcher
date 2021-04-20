@@ -53,7 +53,15 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	_loading = false;
 }
 
-void MacroActionSwitchSceneEdit::UpdateEntryData() {}
+void MacroActionSwitchSceneEdit::UpdateEntryData()
+{
+	if (!_entryData) {
+		return;
+	}
+
+	_sceneSelection->setCurrentText(
+		GetWeakSourceName(_entryData->_scene).c_str());
+}
 
 void MacroActionSwitchSceneEdit::SceneChanged(const QString &text)
 {

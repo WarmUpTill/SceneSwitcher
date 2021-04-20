@@ -43,14 +43,15 @@ static inline void populateLogicSelection(QComboBox *list, bool root = false)
 {
 	if (root) {
 		for (auto entry : MacroCondition::logicTypes) {
-			if (static_cast<int>(entry.first) >= 100) {
+			if (static_cast<int>(entry.first) < logic_root_offset) {
 				list->addItem(obs_module_text(
 					entry.second._name.c_str()));
 			}
 		}
 	} else {
 		for (auto entry : MacroCondition::logicTypes) {
-			if (static_cast<int>(entry.first) < 100) {
+			if (static_cast<int>(entry.first) >=
+			    logic_root_offset) {
 				list->addItem(obs_module_text(
 					entry.second._name.c_str()));
 			}
@@ -66,7 +67,7 @@ static inline void populateConditionSelection(QComboBox *list)
 }
 
 MacroConditionEdit::MacroConditionEdit(
-	std::shared_ptr<MacroCondition> entryData, int type, bool root)
+	std::shared_ptr<MacroCondition> *entryData, int type, bool root)
 {
 	_logicSelection = new QComboBox();
 	_conditionSelection = new QComboBox();
@@ -128,25 +129,27 @@ MacroConditionEdit::MacroConditionEdit(
 	setLayout(mainLayout);
 
 	_entryData = entryData;
-	UpdateEntryData(type);
-
 	_isRoot = root;
+	UpdateEntryData(type);
 	_loading = false;
-
-	LogicSelectionChanged(0); // display correct logic name
 }
 
 void MacroConditionEdit::LogicSelectionChanged(int idx)
 {
-	if (IsRootNode()) {
-		LogicType type = static_cast<LogicType>(idx + 100);
-		_group->setTitle(obs_module_text(
-			MacroCondition::logicTypes[type]._name.c_str()));
-	} else {
-		LogicType type = static_cast<LogicType>(idx);
-		_group->setTitle(obs_module_text(
-			MacroCondition::logicTypes[type]._name.c_str()));
+	if (_loading || !_entryData) {
+		return;
 	}
+
+	LogicType type;
+	if (IsRootNode()) {
+		type = static_cast<LogicType>(idx);
+	} else {
+		type = static_cast<LogicType>(idx + logic_root_offset);
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->get()->SetLogicType(type);
+	SetGroupTitle();
 }
 
 bool MacroConditionEdit::IsRootNode()
@@ -154,11 +157,27 @@ bool MacroConditionEdit::IsRootNode()
 	return _isRoot;
 }
 
+void MacroConditionEdit::SetGroupTitle()
+{
+	_group->setTitle(obs_module_text(
+		MacroCondition::logicTypes[_entryData->get()->GetLogicType()]
+			._name.c_str()));
+}
+
 void MacroConditionEdit::UpdateEntryData(int type)
 {
 	clearLayout(_conditionWidgetLayout);
-	auto widget = MacroConditionFactory::CreateWidget(type, _entryData);
+	auto widget = MacroConditionFactory::CreateWidget(type, *_entryData);
 	_conditionWidgetLayout->addWidget(widget);
+
+	auto logic = _entryData->get()->GetLogicType();
+	if (IsRootNode()) {
+		_logicSelection->setCurrentIndex(static_cast<int>(logic));
+	} else {
+		_logicSelection->setCurrentIndex(static_cast<int>(logic) -
+						 logic_root_offset);
+	}
+	SetGroupTitle();
 }
 
 void MacroConditionEdit::ConditionSelectionChanged(int idx)
@@ -168,10 +187,10 @@ void MacroConditionEdit::ConditionSelectionChanged(int idx)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData.reset();
-	_entryData = MacroConditionFactory::Create(idx);
+	_entryData->reset();
+	*_entryData = MacroConditionFactory::Create(idx);
 	clearLayout(_conditionWidgetLayout);
-	auto widget = MacroConditionFactory::CreateWidget(idx, _entryData);
+	auto widget = MacroConditionFactory::CreateWidget(idx, *_entryData);
 	_conditionWidgetLayout->addWidget(widget);
 }
 
@@ -218,8 +237,10 @@ void AdvSceneSwitcher::on_conditionAdd_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	bool root = macro->Conditions().size() == 0;
 	macro->Conditions().emplace_back(MacroConditionFactory::Create(0));
+	auto logic = root ? LogicType::ROOT_NONE : LogicType::NONE;
+	macro->Conditions().back()->SetLogicType(logic);
 	auto newEntry =
-		new MacroConditionEdit(macro->Conditions().back(), 0, root);
+		new MacroConditionEdit(&macro->Conditions().back(), 0, root);
 	ui->macroEditConditionLayout->addWidget(newEntry);
 	ui->macroEditConditionHelp->setVisible(false);
 }

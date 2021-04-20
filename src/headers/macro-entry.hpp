@@ -6,16 +6,17 @@
 #include <obs.hpp>
 #include <obs-module.h>
 
+constexpr auto logic_root_offset = 100;
+
 enum class LogicType {
-	NONE,
+	ROOT_NONE = 0,
+	ROOT_NOT,
+	// leave some space for potential expansion
+	NONE = 100,
 	AND,
 	OR,
 	AND_NOT,
 	OR_NOT,
-
-	// conditions specific to first entry
-	ROOT_NONE = 100,
-	ROOT_NOT
 };
 
 struct LogicTypeInfo {
@@ -29,6 +30,7 @@ public:
 	virtual bool Load(obs_data_t *obj) = 0;
 	virtual int GetId() = 0;
 	LogicType GetLogicType() { return _logic; }
+	void SetLogicType(LogicType &logic) { _logic = logic; }
 
 	static std::unordered_map<LogicType, LogicTypeInfo> logicTypes;
 

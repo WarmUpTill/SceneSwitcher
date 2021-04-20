@@ -150,14 +150,14 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 
 	bool root = true;
 	for (auto &c : m.Conditions()) {
-		auto newEntry = new MacroConditionEdit(c, root);
+		auto newEntry = new MacroConditionEdit(&c, c->GetId(), root);
 		ui->macroEditConditionLayout->addWidget(newEntry);
 		ui->macroEditConditionHelp->setVisible(false);
 		root = false;
 	}
 
 	for (auto &a : m.Actions()) {
-		auto newEntry = new MacroActionEdit(a);
+		auto newEntry = new MacroActionEdit(&a, a->GetId());
 		ui->macroEditActionLayout->addWidget(newEntry);
 		ui->macroEditActionHelp->setVisible(false);
 	}
@@ -221,5 +221,17 @@ void AdvSceneSwitcher::on_macros_currentRowChanged(int idx)
 
 void AdvSceneSwitcher::setupMacroTab()
 {
-	;
+	for (auto &m : switcher->macros) {
+		QString text = QString::fromStdString(m.Name());
+
+		QListWidgetItem *item = new QListWidgetItem(text, ui->macros);
+		item->setData(Qt::UserRole, text);
+	}
+
+	if (switcher->macros.size() == 0) {
+		addPulse = PulseWidget(ui->macroAdd, QColor(Qt::green));
+		ui->macroHelp->setVisible(true);
+	} else {
+		ui->macroHelp->setVisible(false);
+	}
 }

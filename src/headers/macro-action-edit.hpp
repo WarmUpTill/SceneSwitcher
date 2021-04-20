@@ -36,7 +36,7 @@ class MacroActionEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroActionEdit(std::shared_ptr<MacroAction> = nullptr, int type = 0);
+	MacroActionEdit(std::shared_ptr<MacroAction> * = nullptr, int type = 0);
 	void UpdateEntryData(int type);
 
 private slots:
@@ -48,7 +48,7 @@ protected:
 	QVBoxLayout *_groupLayout;
 	QGroupBox *_group;
 
-	std::shared_ptr<MacroAction> _entryData;
+	std::shared_ptr<MacroAction>* _entryData;
 
 private:
 	bool _loading = true;

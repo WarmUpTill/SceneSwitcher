@@ -36,9 +36,10 @@ class MacroConditionEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroConditionEdit(std::shared_ptr<MacroCondition> = nullptr,
+	MacroConditionEdit(std::shared_ptr<MacroCondition> * = nullptr,
 			   int type = 0, bool root = true);
 	bool IsRootNode();
+	void SetGroupTitle();
 	void UpdateEntryData(int type);
 
 	static bool enableAdvancedLogic;
@@ -59,7 +60,7 @@ protected:
 	QPushButton *_extend;
 	QPushButton *_reduce;
 
-	std::shared_ptr<MacroCondition> _entryData;
+	std::shared_ptr<MacroCondition> *_entryData;
 
 private:
 	bool _isRoot = true;

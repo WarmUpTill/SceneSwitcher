@@ -48,7 +48,14 @@ MacroActionWaitEdit::MacroActionWaitEdit(
 	_loading = false;
 }
 
-void MacroActionWaitEdit::UpdateEntryData() {}
+void MacroActionWaitEdit::UpdateEntryData()
+{
+	if (!_entryData) {
+		return;
+	}
+
+	_duration->setValue(_entryData->_duration);
+}
 
 void MacroActionWaitEdit::DurationChanged(double value)
 {
