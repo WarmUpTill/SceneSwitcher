@@ -187,8 +187,10 @@ void MacroConditionEdit::ConditionSelectionChanged(int idx)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
+	auto logic = _entryData->get()->GetLogicType();
 	_entryData->reset();
 	*_entryData = MacroConditionFactory::Create(idx);
+	_entryData->get()->SetLogicType(logic);
 	clearLayout(_conditionWidgetLayout);
 	auto widget = MacroConditionFactory::CreateWidget(idx, *_entryData);
 	_conditionWidgetLayout->addWidget(widget);
