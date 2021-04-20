@@ -48,7 +48,7 @@ protected:
 	QVBoxLayout *_groupLayout;
 	QGroupBox *_group;
 
-	std::shared_ptr<MacroAction>* _entryData;
+	std::shared_ptr<MacroAction> *_entryData;
 
 private:
 	bool _loading = true;
