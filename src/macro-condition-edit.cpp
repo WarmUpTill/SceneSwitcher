@@ -148,7 +148,7 @@ void MacroConditionEdit::LogicSelectionChanged(int idx)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->get()->SetLogicType(type);
+	(*_entryData)->SetLogicType(type);
 	SetGroupTitle();
 }
 
@@ -160,7 +160,7 @@ bool MacroConditionEdit::IsRootNode()
 void MacroConditionEdit::SetGroupTitle()
 {
 	_group->setTitle(obs_module_text(
-		MacroCondition::logicTypes[_entryData->get()->GetLogicType()]
+		MacroCondition::logicTypes[(*_entryData)->GetLogicType()]
 			._name.c_str()));
 }
 
@@ -170,7 +170,7 @@ void MacroConditionEdit::UpdateEntryData(int type)
 	auto widget = MacroConditionFactory::CreateWidget(type, *_entryData);
 	_conditionWidgetLayout->addWidget(widget);
 
-	auto logic = _entryData->get()->GetLogicType();
+	auto logic = (*_entryData)->GetLogicType();
 	if (IsRootNode()) {
 		_logicSelection->setCurrentIndex(static_cast<int>(logic));
 	} else {
@@ -187,10 +187,10 @@ void MacroConditionEdit::ConditionSelectionChanged(int idx)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	auto logic = _entryData->get()->GetLogicType();
+	auto logic = (*_entryData)->GetLogicType();
 	_entryData->reset();
 	*_entryData = MacroConditionFactory::Create(idx);
-	_entryData->get()->SetLogicType(logic);
+	(*_entryData)->SetLogicType(logic);
 	clearLayout(_conditionWidgetLayout);
 	auto widget = MacroConditionFactory::CreateWidget(idx, *_entryData);
 	_conditionWidgetLayout->addWidget(widget);
