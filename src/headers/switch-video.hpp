@@ -10,6 +10,7 @@ enum class videoSwitchType {
 	MATCH,
 	DIFFER,
 	HAS_NOT_CHANGED,
+	HAS_CHANGED,
 };
 
 class AdvSSScreenshotObj {
