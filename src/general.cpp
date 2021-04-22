@@ -435,7 +435,10 @@ void SwitcherData::saveSettings(obs_data_t *obj)
 		return;
 	}
 
+	// Needs to be loaded before any entries which might rely on scene group
+	// selections to be available.
 	saveSceneGroups(obj);
+
 	saveWindowTitleSwitches(obj);
 	saveScreenRegionSwitches(obj);
 	savePauseSwitches(obj);
