@@ -235,3 +235,34 @@ void AdvSceneSwitcher::setupMacroTab()
 		ui->macroHelp->setVisible(false);
 	}
 }
+
+void SwitcherData::saveMacros(obs_data_t *obj)
+{
+	obs_data_array_t *macroArray = obs_data_array_create();
+	for (auto &m : macros) {
+		obs_data_t *array_obj = obs_data_create();
+
+		m.Save(array_obj);
+		obs_data_array_push_back(macroArray, array_obj);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, "macros", macroArray);
+	obs_data_array_release(macroArray);
+}
+
+void SwitcherData::loadMacros(obs_data_t *obj)
+{
+	macros.clear();
+
+	obs_data_array_t *macroArray = obs_data_get_array(obj, "macros");
+	size_t count = obs_data_array_count(macroArray);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj = obs_data_array_item(macroArray, i);
+		macros.emplace_back();
+		macros.back().Load(array_obj);
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(macroArray);
+}

@@ -16,14 +16,18 @@ bool MacroActionWait::PerformAction()
 	return true;
 }
 
-bool MacroActionWait::Save()
+bool MacroActionWait::Save(obs_data_t *obj)
 {
-	return false;
+	MacroAction::Save(obj);
+	obs_data_set_double(obj, "duration", _duration);
+	return true;
 }
 
-bool MacroActionWait::Load()
+bool MacroActionWait::Load(obs_data_t *obj)
 {
-	return false;
+	MacroAction::Load(obj);
+	_duration = obs_data_get_double(obj, "duration");
+	return true;
 }
 
 MacroActionWaitEdit::MacroActionWaitEdit(

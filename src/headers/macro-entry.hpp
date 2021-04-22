@@ -41,6 +41,8 @@ private:
 class MacroAction {
 public:
 	virtual bool PerformAction() = 0;
+	virtual bool Save(obs_data_t *obj) = 0;
+	virtual bool Load(obs_data_t *obj) = 0;
 	virtual int GetId() = 0;
 };
 

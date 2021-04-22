@@ -227,6 +227,7 @@ struct SwitcherData {
 	void checkDefaultSceneTransitions();
 
 	void saveSettings(obs_data_t *obj);
+	void saveMacros(obs_data_t *obj);
 	void saveWindowTitleSwitches(obs_data_t *obj);
 	void saveScreenRegionSwitches(obs_data_t *obj);
 	void savePauseSwitches(obs_data_t *obj);
@@ -248,6 +249,7 @@ struct SwitcherData {
 	void saveVersion(obs_data_t *obj, std::string currentVersion);
 
 	void loadSettings(obs_data_t *obj);
+	void loadMacros(obs_data_t *obj);
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
 	void loadPauseSwitches(obs_data_t *obj);

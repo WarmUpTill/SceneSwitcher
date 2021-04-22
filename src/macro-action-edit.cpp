@@ -92,6 +92,7 @@ void MacroActionEdit::ActionSelectionChanged(int idx)
 
 void MacroActionEdit::UpdateEntryData(int type)
 {
+	_actionSelection->setCurrentIndex(type);
 	clearLayout(_actionWidgetLayout);
 	auto widget = MacroActionFactory::CreateWidget(type, *_entryData);
 	_actionWidgetLayout->addWidget(widget);

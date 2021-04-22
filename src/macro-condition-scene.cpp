@@ -22,12 +22,16 @@ bool MacroConditionScene::CheckCondition()
 
 bool MacroConditionScene::Save(obs_data_t *obj)
 {
-	return false;
+	MacroCondition::Save(obj);
+	obs_data_set_string(obj, "scene", GetWeakSourceName(_scene).c_str());
+	return true;
 }
 
 bool MacroConditionScene::Load(obs_data_t *obj)
 {
-	return false;
+	MacroCondition::Load(obj);
+	_scene = GetWeakSourceByName(obs_data_get_string(obj, "scene"));
+	return true;
 }
 
 MacroConditionSceneEdit::MacroConditionSceneEdit(

@@ -18,14 +18,18 @@ bool MacroActionSwitchScene::PerformAction()
 	return true;
 }
 
-bool MacroActionSwitchScene::Save()
+bool MacroActionSwitchScene::Save(obs_data_t *obj)
 {
-	return false;
+	MacroAction::Save(obj);
+	obs_data_set_string(obj, "scene", GetWeakSourceName(_scene).c_str());
+	return true;
 }
 
-bool MacroActionSwitchScene::Load()
+bool MacroActionSwitchScene::Load(obs_data_t *obj)
 {
-	return false;
+	MacroAction::Load(obj);
+	_scene = GetWeakSourceByName(obs_data_get_string(obj, "scene"));
+	return true;
 }
 
 MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(

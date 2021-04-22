@@ -166,6 +166,7 @@ void MacroConditionEdit::SetGroupTitle()
 
 void MacroConditionEdit::UpdateEntryData(int type)
 {
+	_conditionSelection->setCurrentIndex(type);
 	clearLayout(_conditionWidgetLayout);
 	auto widget = MacroConditionFactory::CreateWidget(type, *_entryData);
 	_conditionWidgetLayout->addWidget(widget);

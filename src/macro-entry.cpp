@@ -85,7 +85,7 @@ bool Macro::Save(obs_data_t *obj)
 	for (auto &a : _actions) {
 		obs_data_t *array_obj = obs_data_create();
 
-		//a->Save(array_obj);
+		a->Save(array_obj);
 		obs_data_array_push_back(actions, array_obj);
 
 		obs_data_release(array_obj);
@@ -98,5 +98,61 @@ bool Macro::Save(obs_data_t *obj)
 
 bool Macro::Load(obs_data_t *obj)
 {
-	return false;
+	_name = obs_data_get_string(obj, "name");
+
+	obs_data_array_t *conditions = obs_data_get_array(obj, "conditions");
+	size_t count = obs_data_array_count(conditions);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj = obs_data_array_item(conditions, i);
+
+		int id = obs_data_get_int(array_obj, "id");
+
+		_conditions.emplace_back(MacroConditionFactory::Create(id));
+		_conditions.back()->Load(array_obj);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(conditions);
+
+	obs_data_array_t *actions = obs_data_get_array(obj, "actions");
+	count = obs_data_array_count(actions);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj = obs_data_array_item(actions, i);
+
+		int id = obs_data_get_int(array_obj, "id");
+
+		_actions.emplace_back(MacroActionFactory::Create(id));
+		_actions.back()->Load(array_obj);
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(actions);
+
+	return true;
+}
+
+bool MacroCondition::Save(obs_data_t *obj)
+{
+	obs_data_set_int(obj, "id", GetId());
+	obs_data_set_int(obj, "logic", static_cast<int>(_logic));
+	return true;
+}
+
+bool MacroCondition::Load(obs_data_t *obj)
+{
+	_logic = static_cast<LogicType>(obs_data_get_int(obj, "logic"));
+	return true;
+}
+
+bool MacroAction::Save(obs_data_t *obj)
+{
+	obs_data_set_int(obj, "id", GetId());
+	return true;
+}
+
+bool MacroAction::Load(obs_data_t *obj)
+{
+	return true;
 }

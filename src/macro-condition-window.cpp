@@ -20,12 +20,16 @@ bool MacroConditionWindow::CheckCondition()
 
 bool MacroConditionWindow::Save(obs_data_t *obj)
 {
-	return false;
+	MacroCondition::Save(obj);
+	obs_data_set_string(obj, "window", _window.c_str());
+	return true;
 }
 
 bool MacroConditionWindow::Load(obs_data_t *obj)
 {
-	return false;
+	MacroCondition::Load(obj);
+	_window = obs_data_get_string(obj, "window");
+	return true;
 }
 
 MacroConditionWindowEdit::MacroConditionWindowEdit(

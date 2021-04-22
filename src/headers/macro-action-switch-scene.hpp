@@ -4,8 +4,8 @@
 class MacroActionSwitchScene : public MacroAction {
 public:
 	bool PerformAction();
-	bool Save();
-	bool Load();
+	bool Save(obs_data_t *obj);
+	bool Load(obs_data_t *obj);
 	int GetId() { return id; };
 
 	static std::shared_ptr<MacroAction> Create()
