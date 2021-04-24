@@ -219,10 +219,11 @@ void AdvSceneSwitcher::defTransitionDelayValueChanged(int value)
 	DefaultSceneTransition::delay = value;
 }
 
-obs_weak_source_t *getNextTransition(obs_weak_source_t *scene1,
-				     obs_weak_source_t *scene2)
+std::pair<obs_weak_source_t *, int> getNextTransition(obs_weak_source_t *scene1,
+						      obs_weak_source_t *scene2)
 {
 	obs_weak_source_t *ws = nullptr;
+	int duration = 0;
 	if (scene1 && scene2) {
 		for (SceneTransition &t : switcher->sceneTransitions) {
 			if (!t.initialized()) {
@@ -231,16 +232,18 @@ obs_weak_source_t *getNextTransition(obs_weak_source_t *scene1,
 
 			if (t.scene == scene1 && t.scene2 == scene2) {
 				ws = t.transition;
+				duration = t.duration * 1000;
 				break;
 			}
 		}
 		obs_weak_source_addref(ws);
 	}
-	return ws;
+	return std::make_pair(ws, duration);
 }
 
 void overwriteTransitionOverride(obs_weak_source_t *sceneWs,
-				 obs_source_t *transition, transitionData &td)
+				 obs_source_t *transition,
+				 int nextTransitionDuration, transitionData &td)
 {
 	obs_source_t *scene = obs_weak_source_get_source(sceneWs);
 	obs_data_t *data = obs_source_get_private_settings(scene);
@@ -249,10 +252,9 @@ void overwriteTransitionOverride(obs_weak_source_t *sceneWs,
 	td.duration = obs_data_get_int(data, "duration");
 
 	const char *name = obs_source_get_name(transition);
-	int duration = obs_frontend_get_transition_duration();
 
 	obs_data_set_string(data, "transition", name);
-	obs_data_set_int(data, "transition_duration", duration);
+	obs_data_set_int(data, "transition_duration", nextTransitionDuration);
 
 	obs_data_release(data);
 	obs_source_release(scene);
@@ -275,9 +277,11 @@ void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 {
 	obs_weak_source_t *currentScene =
 		obs_source_get_weak_source(currentSource);
-	obs_weak_source_t *nextTransitionWs =
-		getNextTransition(currentScene, targetScene);
+	auto tinfo = getNextTransition(currentScene, targetScene);
 	obs_weak_source_release(currentScene);
+
+	obs_weak_source_t *nextTransitionWs = tinfo.first;
+	int nextTransitionDuration = tinfo.second;
 
 	obs_source_t *nextTransition = nullptr;
 	if (nextTransitionWs) {
@@ -287,11 +291,13 @@ void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 	}
 
 	if (nextTransition && adjustActiveTransitionType) {
+		obs_frontend_set_transition_duration(nextTransitionDuration);
 		obs_frontend_set_current_transition(nextTransition);
 	}
 
 	if (transitionOverrideOverride) {
-		overwriteTransitionOverride(targetScene, nextTransition, td);
+		overwriteTransitionOverride(targetScene, nextTransition,
+					    nextTransitionDuration, td);
 	}
 
 	obs_weak_source_release(nextTransitionWs);
@@ -317,6 +323,7 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 			obs_data_set_string(array_obj, "Scene2", sceneName2);
 			obs_data_set_string(array_obj, "transition",
 					    transitionName);
+			obs_data_set_double(array_obj, "duration", s.duration);
 			obs_data_array_push_back(sceneTransitionsArray,
 						 array_obj);
 		}
@@ -378,11 +385,12 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 		const char *scene2 = obs_data_get_string(array_obj, "Scene2");
 		const char *transition =
 			obs_data_get_string(array_obj, "transition");
+		double duration = obs_data_get_double(array_obj, "duration");
 
 		switcher->sceneTransitions.emplace_back(
 			GetWeakSourceByName(scene1),
 			GetWeakSourceByName(scene2),
-			GetWeakTransitionByName(transition));
+			GetWeakTransitionByName(transition), duration);
 
 		obs_data_release(array_obj);
 	}
@@ -492,20 +500,29 @@ TransitionSwitchWidget::TransitionSwitchWidget(QWidget *parent,
 	: SwitchWidget(parent, s, false, false, false)
 {
 	scenes2 = new QComboBox();
+	duration = new QDoubleSpinBox();
+
+	duration->setMinimum(0.0);
+	duration->setMaximum(99.000000);
+	duration->setSuffix("s");
 
 	QWidget::connect(scenes2, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(Scene2Changed(const QString &)));
+	QWidget::connect(duration, SIGNAL(valueChanged(double)), this,
+			 SLOT(DurationChanged(double)));
 
 	AdvSceneSwitcher::populateSceneSelection(scenes2, false);
 
 	if (s) {
 		scenes2->setCurrentText(GetWeakSourceName(s->scene2).c_str());
+		duration->setValue(s->duration);
 	}
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", scenes},
 		{"{{scenes2}}", scenes2},
+		{"{{duration}}", duration},
 		{"{{transitions}}", transitions}};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.transitionTab.entry"),
 		     mainLayout, widgetPlaceholders);
@@ -544,6 +561,16 @@ void TransitionSwitchWidget::Scene2Changed(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->scene2 = GetWeakSourceByQString(text);
+}
+
+void TransitionSwitchWidget::DurationChanged(double dur)
+{
+	if (loading || !switchData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->duration = dur;
 }
 
 DefTransitionSwitchWidget::DefTransitionSwitchWidget(QWidget *parent,
