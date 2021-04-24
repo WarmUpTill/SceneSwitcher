@@ -180,7 +180,8 @@ void AdvSceneSwitcher::on_sceneSequenceSwitches_itemDoubleClicked(
 }
 
 bool SwitcherData::checkSceneSequence(OBSWeakSource &scene,
-				      OBSWeakSource &transition, int &linger)
+				      OBSWeakSource &transition, int &linger,
+				      bool &setPrevSceneAfterLinger)
 {
 	if (SceneSequenceSwitch::pause) {
 		return false;
@@ -206,9 +207,12 @@ bool SwitcherData::checkSceneSequence(OBSWeakSource &scene,
 			if (s.activeSequence) {
 				scene = s.activeSequence->getScene();
 				transition = s.activeSequence->transition;
+				setPrevSceneAfterLinger =
+					s.activeSequence->usePreviousScene;
 			} else {
 				scene = s.getScene();
 				transition = s.transition;
+				setPrevSceneAfterLinger = s.usePreviousScene;
 				if (verbose) {
 					s.logMatch();
 				}

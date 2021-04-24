@@ -479,6 +479,9 @@ void SwitcherData::Thread()
 		bool match = false;
 		OBSWeakSource scene;
 		OBSWeakSource transition;
+		// The previous scene might have changed during the linger duration,
+		// if a longer transition is used than the configured check interval
+		bool setPrevSceneAfterLinger = false;
 
 		endTime = std::chrono::high_resolution_clock::now();
 
@@ -512,7 +515,8 @@ void SwitcherData::Thread()
 		if (checkPause()) {
 			continue;
 		}
-		match = checkForMatch(scene, transition, linger);
+		match = checkForMatch(scene, transition, linger,
+				      setPrevSceneAfterLinger);
 		if (switcher->stop) {
 			break;
 		}
@@ -536,6 +540,8 @@ void SwitcherData::Thread()
 
 				match = false;
 				linger = 0;
+			} else if (setPrevSceneAfterLinger) {
+				scene = previousScene;
 			}
 		}
 
@@ -563,12 +569,14 @@ void SwitcherData::Thread()
 }
 
 bool SwitcherData::checkForMatch(OBSWeakSource &scene,
-				 OBSWeakSource &transition, int &linger)
+				 OBSWeakSource &transition, int &linger,
+				 bool &setPrevSceneAfterLinger)
 {
 	bool match = false;
 
 	if (uninterruptibleSceneSequenceActive) {
-		match = checkSceneSequence(scene, transition, linger);
+		match = checkSceneSequence(scene, transition, linger,
+					   setPrevSceneAfterLinger);
 		if (match) {
 			return match;
 		}
@@ -593,7 +601,8 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 			match = checkWindowTitleSwitch(scene, transition);
 			break;
 		case round_trip_func:
-			match = checkSceneSequence(scene, transition, linger);
+			match = checkSceneSequence(scene, transition, linger,
+						   setPrevSceneAfterLinger);
 			break;
 		case media_func:
 			match = checkMediaSwitch(scene, transition);
