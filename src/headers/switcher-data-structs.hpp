@@ -193,6 +193,7 @@ struct SwitcherData {
 
 	bool checkForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
 			   int &linger);
+	void checkMacros();
 	void checkSceneSequence(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition, int &linger);
 	void checkIdleSwitch(bool &match, OBSWeakSource &scene,

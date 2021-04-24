@@ -266,3 +266,12 @@ void SwitcherData::loadMacros(obs_data_t *obj)
 	}
 	obs_data_array_release(macroArray);
 }
+
+void SwitcherData::checkMacros()
+{
+	for (auto &m : macros) {
+		if (m.checkMatch()) {
+			m.performAction();
+		}
+	}
+}

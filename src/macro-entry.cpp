@@ -57,7 +57,7 @@ bool Macro::checkMatch()
 
 bool Macro::performAction()
 {
-	bool ret = false;
+	bool ret = true;
 	for (auto &a : _actions) {
 		ret = ret && a->PerformAction();
 	}
