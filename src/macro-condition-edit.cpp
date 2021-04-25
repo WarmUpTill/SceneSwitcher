@@ -91,10 +91,14 @@ MacroConditionEdit::MacroConditionEdit(
 	populateConditionSelection(_conditionSelection);
 
 	QHBoxLayout *logicLayout = new QHBoxLayout;
+	logicLayout->addWidget(new QLabel(
+		obs_module_text("AdvSceneSwitcher.macroTab.edit.logic")));
 	logicLayout->addWidget(_logicSelection);
 	logicLayout->addStretch();
 
 	QHBoxLayout *conditionTypeSelectionLayout = new QHBoxLayout;
+	conditionTypeSelectionLayout->addWidget(new QLabel(
+		obs_module_text("AdvSceneSwitcher.macroTab.edit.condition")));
 	conditionTypeSelectionLayout->addWidget(_conditionSelection);
 	conditionTypeSelectionLayout->addStretch();
 

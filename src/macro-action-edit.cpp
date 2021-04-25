@@ -52,6 +52,8 @@ MacroActionEdit::MacroActionEdit(std::shared_ptr<MacroAction> *entryData,
 	populateActionSelection(_actionSelection);
 
 	QHBoxLayout *actionLayout = new QHBoxLayout;
+	actionLayout->addWidget(new QLabel(
+		obs_module_text("AdvSceneSwitcher.macroTab.edit.action")));
 	actionLayout->addWidget(_actionSelection);
 	actionLayout->addStretch();
 
