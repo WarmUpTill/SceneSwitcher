@@ -35,7 +35,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <property name="movable">
       <bool>true</bool>
@@ -568,7 +568,7 @@
        <item>
         <widget class="QGroupBox" name="groupBox_5">
          <property name="title">
-          <string>Scene Switches</string>
+          <string>AdvSceneSwitcher.macroTab.macros</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_32">
           <item>
@@ -751,7 +751,7 @@
        <item>
         <widget class="QGroupBox" name="macroEdit">
          <property name="title">
-          <string>Edit Scene Switch</string>
+          <string>AdvSceneSwitcher.macroTab.edit</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_34" stretch="1,20,10">
           <item>
@@ -759,7 +759,7 @@
             <item>
              <widget class="QLabel" name="label_20">
               <property name="text">
-               <string>Name...</string>
+               <string>AdvSceneSwitcher.macroTab.name</string>
               </property>
              </widget>
             </item>
