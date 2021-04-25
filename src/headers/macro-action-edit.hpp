@@ -5,7 +5,7 @@
 #include <QVBoxLayout>
 #include <QGroupBox>
 #include <deque>
-#include "macro-entry.hpp"
+#include "macro.hpp"
 
 struct MacroActionInfo {
 	using TCreateMethod = std::shared_ptr<MacroAction> (*)();

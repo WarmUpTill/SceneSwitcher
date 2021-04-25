@@ -1,7 +1,7 @@
 #pragma once
 
 #include "advanced-scene-switcher.hpp"
-#include "macro-entry.hpp"
+#include "macro.hpp"
 #include "macro-condition-scene.hpp"
 #include "utility.hpp"
 

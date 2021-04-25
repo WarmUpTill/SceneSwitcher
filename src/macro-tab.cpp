@@ -1,4 +1,4 @@
-#include "headers/macro-entry.hpp"
+#include "headers/macro.hpp"
 #include "headers/macro-action-edit.hpp"
 #include "headers/macro-condition-edit.hpp"
 #include "headers/advanced-scene-switcher.hpp"

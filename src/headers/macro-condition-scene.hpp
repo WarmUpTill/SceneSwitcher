@@ -1,5 +1,5 @@
 #pragma once
-#include "macro-entry.hpp"
+#include "macro.hpp"
 #include <QWidget>
 #include <QComboBox>
 
