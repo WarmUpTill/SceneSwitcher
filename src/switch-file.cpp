@@ -378,7 +378,7 @@ void AdvSceneSwitcher::on_fileDown_clicked()
 void SwitcherData::saveFileSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *fileArray = obs_data_array_create();
-	for (FileSwitch &s : switcher->fileSwitches) {
+	for (FileSwitch &s : fileSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
 		s.save(array_obj);
@@ -389,23 +389,22 @@ void SwitcherData::saveFileSwitches(obs_data_t *obj)
 	obs_data_set_array(obj, "fileSwitches", fileArray);
 	obs_data_array_release(fileArray);
 
-	obs_data_set_bool(obj, "readEnabled", switcher->fileIO.readEnabled);
-	obs_data_set_string(obj, "readPath", switcher->fileIO.readPath.c_str());
-	obs_data_set_bool(obj, "writeEnabled", switcher->fileIO.writeEnabled);
-	obs_data_set_string(obj, "writePath",
-			    switcher->fileIO.writePath.c_str());
+	obs_data_set_bool(obj, "readEnabled", fileIO.readEnabled);
+	obs_data_set_string(obj, "readPath", fileIO.readPath.c_str());
+	obs_data_set_bool(obj, "writeEnabled", fileIO.writeEnabled);
+	obs_data_set_string(obj, "writePath", fileIO.writePath.c_str());
 }
 
 void SwitcherData::loadFileSwitches(obs_data_t *obj)
 {
-	switcher->fileSwitches.clear();
+	fileSwitches.clear();
 	obs_data_array_t *fileArray = obs_data_get_array(obj, "fileSwitches");
 	size_t count = obs_data_array_count(fileArray);
 
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(fileArray, i);
 
-		switcher->fileSwitches.emplace_back();
+		fileSwitches.emplace_back();
 		fileSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
@@ -413,11 +412,11 @@ void SwitcherData::loadFileSwitches(obs_data_t *obj)
 	obs_data_array_release(fileArray);
 
 	obs_data_set_default_bool(obj, "readEnabled", false);
-	switcher->fileIO.readEnabled = obs_data_get_bool(obj, "readEnabled");
-	switcher->fileIO.readPath = obs_data_get_string(obj, "readPath");
+	fileIO.readEnabled = obs_data_get_bool(obj, "readEnabled");
+	fileIO.readPath = obs_data_get_string(obj, "readPath");
 	obs_data_set_default_bool(obj, "writeEnabled", false);
-	switcher->fileIO.writeEnabled = obs_data_get_bool(obj, "writeEnabled");
-	switcher->fileIO.writePath = obs_data_get_string(obj, "writePath");
+	fileIO.writeEnabled = obs_data_get_bool(obj, "writeEnabled");
+	fileIO.writePath = obs_data_get_string(obj, "writePath");
 }
 
 void AdvSceneSwitcher::setupFileTab()

@@ -203,7 +203,7 @@ bool SwitcherData::checkMediaSwitch(OBSWeakSource &scene,
 void SwitcherData::saveMediaSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *mediaArray = obs_data_array_create();
-	for (MediaSwitch &s : switcher->mediaSwitches) {
+	for (MediaSwitch &s : mediaSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
 		s.save(array_obj);
@@ -218,13 +218,13 @@ void SwitcherData::saveMediaSwitches(obs_data_t *obj)
 void SwitcherData::loadMediaSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *mediaArray = obs_data_get_array(obj, "mediaSwitches");
-	switcher->mediaSwitches.clear();
+	mediaSwitches.clear();
 	size_t count = obs_data_array_count(mediaArray);
 
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(mediaArray, i);
 
-		switcher->mediaSwitches.emplace_back();
+		mediaSwitches.emplace_back();
 		mediaSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);

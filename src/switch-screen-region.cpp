@@ -201,7 +201,7 @@ void AdvSceneSwitcher::updateScreenRegionCursorPos()
 void SwitcherData::saveScreenRegionSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *screenRegionArray = obs_data_array_create();
-	for (ScreenRegionSwitch &s : switcher->screenRegionSwitches) {
+	for (ScreenRegionSwitch &s : screenRegionSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
 		s.save(array_obj);
@@ -215,7 +215,7 @@ void SwitcherData::saveScreenRegionSwitches(obs_data_t *obj)
 
 void SwitcherData::loadScreenRegionSwitches(obs_data_t *obj)
 {
-	switcher->screenRegionSwitches.clear();
+	screenRegionSwitches.clear();
 
 	obs_data_array_t *screenRegionArray =
 		obs_data_get_array(obj, "screenRegion");
@@ -225,7 +225,7 @@ void SwitcherData::loadScreenRegionSwitches(obs_data_t *obj)
 		obs_data_t *array_obj =
 			obs_data_array_item(screenRegionArray, i);
 
-		switcher->screenRegionSwitches.emplace_back();
+		screenRegionSwitches.emplace_back();
 		screenRegionSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);

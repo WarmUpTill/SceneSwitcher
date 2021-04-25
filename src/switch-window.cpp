@@ -275,7 +275,7 @@ bool SwitcherData::checkWindowTitleSwitch(OBSWeakSource &scene,
 void SwitcherData::saveWindowTitleSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *windowTitleArray = obs_data_array_create();
-	for (WindowSwitch &s : switcher->windowSwitches) {
+	for (WindowSwitch &s : windowSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
 		s.save(array_obj);
@@ -287,7 +287,7 @@ void SwitcherData::saveWindowTitleSwitches(obs_data_t *obj)
 	obs_data_array_release(windowTitleArray);
 
 	obs_data_array_t *ignoreWindowsArray = obs_data_array_create();
-	for (std::string &window : switcher->ignoreWindowsSwitches) {
+	for (std::string &window : ignoreWindowsSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 		obs_data_set_string(array_obj, "ignoreWindow", window.c_str());
 		obs_data_array_push_back(ignoreWindowsArray, array_obj);
@@ -299,7 +299,7 @@ void SwitcherData::saveWindowTitleSwitches(obs_data_t *obj)
 
 void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
 {
-	switcher->windowSwitches.clear();
+	windowSwitches.clear();
 
 	obs_data_array_t *windowTitleArray =
 		obs_data_get_array(obj, "switches");
@@ -309,14 +309,14 @@ void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
 		obs_data_t *array_obj =
 			obs_data_array_item(windowTitleArray, i);
 
-		switcher->windowSwitches.emplace_back();
+		windowSwitches.emplace_back();
 		windowSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(windowTitleArray);
 
-	switcher->ignoreWindowsSwitches.clear();
+	ignoreWindowsSwitches.clear();
 
 	obs_data_array_t *ignoreWindowsArray =
 		obs_data_get_array(obj, "ignoreWindows");
@@ -329,7 +329,7 @@ void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
 		const char *window =
 			obs_data_get_string(array_obj, "ignoreWindow");
 
-		switcher->ignoreWindowsSwitches.emplace_back(window);
+		ignoreWindowsSwitches.emplace_back(window);
 
 		obs_data_release(array_obj);
 	}

@@ -245,7 +245,7 @@ bool SwitcherData::checkSceneSequence(OBSWeakSource &scene,
 void SwitcherData::saveSceneSequenceSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *sceneSequenceArray = obs_data_array_create();
-	for (SceneSequenceSwitch &s : switcher->sceneSequenceSwitches) {
+	for (SceneSequenceSwitch &s : sceneSequenceSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
 		s.save(array_obj);
@@ -259,7 +259,7 @@ void SwitcherData::saveSceneSequenceSwitches(obs_data_t *obj)
 
 void SwitcherData::loadSceneSequenceSwitches(obs_data_t *obj)
 {
-	switcher->sceneSequenceSwitches.clear();
+	sceneSequenceSwitches.clear();
 
 	obs_data_array_t *sceneSequenceArray =
 		obs_data_get_array(obj, "sceneRoundTrip");
@@ -269,7 +269,7 @@ void SwitcherData::loadSceneSequenceSwitches(obs_data_t *obj)
 		obs_data_t *array_obj =
 			obs_data_array_item(sceneSequenceArray, i);
 
-		switcher->sceneSequenceSwitches.emplace_back();
+		sceneSequenceSwitches.emplace_back();
 		sceneSequenceSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
