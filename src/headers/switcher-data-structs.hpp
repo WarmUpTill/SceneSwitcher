@@ -241,7 +241,6 @@ struct SwitcherData {
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
 	void loadPauseSwitches(obs_data_t *obj);
-	void loadOldPauseSwitches(obs_data_t *obj);
 	void loadSceneSequenceSwitches(obs_data_t *obj);
 	void loadSceneTransitions(obs_data_t *obj);
 	void loadIdleSwitches(obs_data_t *obj);
