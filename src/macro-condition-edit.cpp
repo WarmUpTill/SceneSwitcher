@@ -149,11 +149,22 @@ bool MacroConditionEdit::IsRootNode()
 	return _isRoot;
 }
 
+bool isRootLogicType(LogicType l)
+{
+	return static_cast<int>(l) < logic_root_offset;
+}
+
 void MacroConditionEdit::SetGroupTitle()
 {
-	_group->setTitle(obs_module_text(
+	std::string title;
+	if (!isRootLogicType((*_entryData)->GetLogicType())) {
+		title += "... ";
+	}
+	title += obs_module_text(
 		MacroCondition::logicTypes[(*_entryData)->GetLogicType()]
-			._name.c_str()));
+			._name.c_str());
+	title += " ... ";
+	_group->setTitle(QString::fromStdString(title));
 }
 
 void MacroConditionEdit::UpdateEntryData(int type)
