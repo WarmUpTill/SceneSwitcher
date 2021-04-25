@@ -193,7 +193,7 @@ bool SwitcherData::checkAudioSwitch(OBSWeakSource &scene,
 void SwitcherData::saveAudioSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *audioArray = obs_data_array_create();
-	for (AudioSwitch &s : switcher->audioSwitches) {
+	for (AudioSwitch &s : audioSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
 		s.save(array_obj);
@@ -209,7 +209,7 @@ void SwitcherData::saveAudioSwitches(obs_data_t *obj)
 
 void SwitcherData::loadAudioSwitches(obs_data_t *obj)
 {
-	switcher->audioSwitches.clear();
+	audioSwitches.clear();
 
 	obs_data_array_t *audioArray = obs_data_get_array(obj, "audioSwitches");
 	size_t count = obs_data_array_count(audioArray);
@@ -217,7 +217,7 @@ void SwitcherData::loadAudioSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(audioArray, i);
 
-		switcher->audioSwitches.emplace_back();
+		audioSwitches.emplace_back();
 		audioSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);

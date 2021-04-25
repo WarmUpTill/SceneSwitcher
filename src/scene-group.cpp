@@ -406,7 +406,7 @@ void AdvSceneSwitcher::on_sceneGroupSceneDown_clicked()
 void SwitcherData::saveSceneGroups(obs_data_t *obj)
 {
 	obs_data_array_t *sceneGroupArray = obs_data_array_create();
-	for (SceneGroup &sg : switcher->sceneGroups) {
+	for (SceneGroup &sg : sceneGroups) {
 		obs_data_t *array_obj = obs_data_create();
 
 		obs_data_set_string(array_obj, "name", sg.name.c_str());
@@ -445,7 +445,7 @@ void SwitcherData::saveSceneGroups(obs_data_t *obj)
 
 void SwitcherData::loadSceneGroups(obs_data_t *obj)
 {
-	switcher->sceneGroups.clear();
+	sceneGroups.clear();
 
 	obs_data_array_t *sceneGroupArray =
 		obs_data_get_array(obj, "sceneGroups");
@@ -476,8 +476,8 @@ void SwitcherData::loadSceneGroups(obs_data_t *obj)
 		double time = obs_data_get_double(array_obj, "time");
 		bool repeat = obs_data_get_bool(array_obj, "repeat");
 
-		switcher->sceneGroups.emplace_back(name, type, scenes, count,
-						   time, repeat);
+		sceneGroups.emplace_back(name, type, scenes, count, time,
+					 repeat);
 
 		obs_data_release(array_obj);
 	}

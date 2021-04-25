@@ -461,49 +461,37 @@ void SwitcherData::saveSettings(obs_data_t *obj)
 
 void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 {
-	obs_data_set_int(obj, "interval", switcher->interval);
+	obs_data_set_int(obj, "interval", interval);
 
-	std::string nonMatchingSceneName =
-		GetWeakSourceName(switcher->nonMatchingScene);
+	std::string nonMatchingSceneName = GetWeakSourceName(nonMatchingScene);
 	obs_data_set_string(obj, "non_matching_scene",
 			    nonMatchingSceneName.c_str());
-	obs_data_set_int(obj, "switch_if_not_matching",
-			 switcher->switchIfNotMatching);
-	obs_data_set_double(obj, "noMatchDelay", switcher->noMatchDelay);
+	obs_data_set_int(obj, "switch_if_not_matching", switchIfNotMatching);
+	obs_data_set_double(obj, "noMatchDelay", noMatchDelay);
 
-	obs_data_set_double(obj, "cooldown", switcher->cooldown);
+	obs_data_set_double(obj, "cooldown", cooldown);
 
-	obs_data_set_bool(obj, "active", !switcher->stop);
-	obs_data_set_int(obj, "startup_behavior", switcher->startupBehavior);
+	obs_data_set_bool(obj, "active", !stop);
+	obs_data_set_int(obj, "startup_behavior", startupBehavior);
 
 	obs_data_set_int(obj, "autoStartEvent",
-			 static_cast<int>(switcher->autoStartEvent));
+			 static_cast<int>(autoStartEvent));
 
-	obs_data_set_bool(obj, "verbose", switcher->verbose);
-	obs_data_set_bool(obj, "disableHints", switcher->disableHints);
+	obs_data_set_bool(obj, "verbose", verbose);
+	obs_data_set_bool(obj, "disableHints", disableHints);
 
-	obs_data_set_int(obj, "priority0",
-			 switcher->functionNamesByPriority[0]);
-	obs_data_set_int(obj, "priority1",
-			 switcher->functionNamesByPriority[1]);
-	obs_data_set_int(obj, "priority2",
-			 switcher->functionNamesByPriority[2]);
-	obs_data_set_int(obj, "priority3",
-			 switcher->functionNamesByPriority[3]);
-	obs_data_set_int(obj, "priority4",
-			 switcher->functionNamesByPriority[4]);
-	obs_data_set_int(obj, "priority5",
-			 switcher->functionNamesByPriority[5]);
-	obs_data_set_int(obj, "priority6",
-			 switcher->functionNamesByPriority[6]);
-	obs_data_set_int(obj, "priority7",
-			 switcher->functionNamesByPriority[7]);
-	obs_data_set_int(obj, "priority8",
-			 switcher->functionNamesByPriority[8]);
-	obs_data_set_int(obj, "priority9",
-			 switcher->functionNamesByPriority[9]);
+	obs_data_set_int(obj, "priority0", functionNamesByPriority[0]);
+	obs_data_set_int(obj, "priority1", functionNamesByPriority[1]);
+	obs_data_set_int(obj, "priority2", functionNamesByPriority[2]);
+	obs_data_set_int(obj, "priority3", functionNamesByPriority[3]);
+	obs_data_set_int(obj, "priority4", functionNamesByPriority[4]);
+	obs_data_set_int(obj, "priority5", functionNamesByPriority[5]);
+	obs_data_set_int(obj, "priority6", functionNamesByPriority[6]);
+	obs_data_set_int(obj, "priority7", functionNamesByPriority[7]);
+	obs_data_set_int(obj, "priority8", functionNamesByPriority[8]);
+	obs_data_set_int(obj, "priority9", functionNamesByPriority[9]);
 
-	obs_data_set_int(obj, "threadPriority", switcher->threadPriority);
+	obs_data_set_int(obj, "threadPriority", threadPriority);
 
 	// After fresh install of OBS the vector can be empty
 	// as save() might be called before first load()
@@ -511,62 +499,61 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 		resetTabOrder();
 	}
 
-	obs_data_set_int(obj, "generalTabPos", switcher->tabOrder[0]);
-	obs_data_set_int(obj, "transitionTabPos", switcher->tabOrder[1]);
-	obs_data_set_int(obj, "pauseTabPos", switcher->tabOrder[2]);
-	obs_data_set_int(obj, "titleTabPos", switcher->tabOrder[3]);
-	obs_data_set_int(obj, "exeTabPos", switcher->tabOrder[4]);
-	obs_data_set_int(obj, "regionTabPos", switcher->tabOrder[5]);
-	obs_data_set_int(obj, "mediaTabPos", switcher->tabOrder[6]);
-	obs_data_set_int(obj, "fileTabPos", switcher->tabOrder[7]);
-	obs_data_set_int(obj, "randomTabPos", switcher->tabOrder[8]);
-	obs_data_set_int(obj, "timeTabPos", switcher->tabOrder[9]);
-	obs_data_set_int(obj, "idleTabPos", switcher->tabOrder[10]);
-	obs_data_set_int(obj, "sequenceTabPos", switcher->tabOrder[11]);
-	obs_data_set_int(obj, "audioTabPos", switcher->tabOrder[12]);
-	obs_data_set_int(obj, "videoTabPos", switcher->tabOrder[13]);
-	obs_data_set_int(obj, "networkTabPos", switcher->tabOrder[14]);
-	obs_data_set_int(obj, "sceneGroupTabPos", switcher->tabOrder[15]);
-	obs_data_set_int(obj, "triggerTabPos", switcher->tabOrder[16]);
+	obs_data_set_int(obj, "generalTabPos", tabOrder[0]);
+	obs_data_set_int(obj, "transitionTabPos", tabOrder[1]);
+	obs_data_set_int(obj, "pauseTabPos", tabOrder[2]);
+	obs_data_set_int(obj, "titleTabPos", tabOrder[3]);
+	obs_data_set_int(obj, "exeTabPos", tabOrder[4]);
+	obs_data_set_int(obj, "regionTabPos", tabOrder[5]);
+	obs_data_set_int(obj, "mediaTabPos", tabOrder[6]);
+	obs_data_set_int(obj, "fileTabPos", tabOrder[7]);
+	obs_data_set_int(obj, "randomTabPos", tabOrder[8]);
+	obs_data_set_int(obj, "timeTabPos", tabOrder[9]);
+	obs_data_set_int(obj, "idleTabPos", tabOrder[10]);
+	obs_data_set_int(obj, "sequenceTabPos", tabOrder[11]);
+	obs_data_set_int(obj, "audioTabPos", tabOrder[12]);
+	obs_data_set_int(obj, "videoTabPos", tabOrder[13]);
+	obs_data_set_int(obj, "networkTabPos", tabOrder[14]);
+	obs_data_set_int(obj, "sceneGroupTabPos", tabOrder[15]);
+	obs_data_set_int(obj, "triggerTabPos", tabOrder[16]);
 
 	obs_data_set_bool(obj, "saveWindowGeo", saveWindowGeo);
-	obs_data_set_int(obj, "windowPosX", switcher->windowPos.x());
-	obs_data_set_int(obj, "windowPosY", switcher->windowPos.y());
-	obs_data_set_int(obj, "windowWidth", switcher->windowSize.width());
-	obs_data_set_int(obj, "windowHeight", switcher->windowSize.height());
+	obs_data_set_int(obj, "windowPosX", windowPos.x());
+	obs_data_set_int(obj, "windowPosY", windowPos.y());
+	obs_data_set_int(obj, "windowWidth", windowSize.width());
+	obs_data_set_int(obj, "windowHeight", windowSize.height());
 }
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 {
 	obs_data_set_default_int(obj, "interval", default_interval);
-	switcher->interval = obs_data_get_int(obj, "interval");
+	interval = obs_data_get_int(obj, "interval");
 
 	obs_data_set_default_int(obj, "switch_if_not_matching", NO_SWITCH);
-	switcher->switchIfNotMatching =
+	switchIfNotMatching =
 		(NoMatch)obs_data_get_int(obj, "switch_if_not_matching");
-	std::string nonMatchingScene =
+	std::string nonMatchingSceneName =
 		obs_data_get_string(obj, "non_matching_scene");
-	switcher->nonMatchingScene =
-		GetWeakSourceByName(nonMatchingScene.c_str());
-	switcher->noMatchDelay = obs_data_get_double(obj, "noMatchDelay");
+	nonMatchingScene = GetWeakSourceByName(nonMatchingSceneName.c_str());
+	noMatchDelay = obs_data_get_double(obj, "noMatchDelay");
 
-	switcher->cooldown = obs_data_get_double(obj, "cooldown");
+	cooldown = obs_data_get_double(obj, "cooldown");
 
-	switcher->stop = !obs_data_get_bool(obj, "active");
-	switcher->startupBehavior =
+	stop = !obs_data_get_bool(obj, "active");
+	startupBehavior =
 		(StartupBehavior)obs_data_get_int(obj, "startup_behavior");
-	if (switcher->startupBehavior == START) {
-		switcher->stop = false;
+	if (startupBehavior == START) {
+		stop = false;
 	}
-	if (switcher->startupBehavior == STOP) {
-		switcher->stop = true;
+	if (startupBehavior == STOP) {
+		stop = true;
 	}
 
-	switcher->autoStartEvent = static_cast<AutoStartEvent>(
+	autoStartEvent = static_cast<AutoStartEvent>(
 		obs_data_get_int(obj, "autoStartEvent"));
 
-	switcher->verbose = obs_data_get_bool(obj, "verbose");
-	switcher->disableHints = obs_data_get_bool(obj, "disableHints");
+	verbose = obs_data_get_bool(obj, "verbose");
+	disableHints = obs_data_get_bool(obj, "disableHints");
 
 	obs_data_set_default_int(obj, "priority0", default_priority_0);
 	obs_data_set_default_int(obj, "priority1", default_priority_1);
@@ -578,42 +565,32 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "priority7", default_priority_7);
 	obs_data_set_default_int(obj, "priority8", default_priority_8);
 
-	switcher->functionNamesByPriority[0] =
-		(obs_data_get_int(obj, "priority0"));
-	switcher->functionNamesByPriority[1] =
-		(obs_data_get_int(obj, "priority1"));
-	switcher->functionNamesByPriority[2] =
-		(obs_data_get_int(obj, "priority2"));
-	switcher->functionNamesByPriority[3] =
-		(obs_data_get_int(obj, "priority3"));
-	switcher->functionNamesByPriority[4] =
-		(obs_data_get_int(obj, "priority4"));
-	switcher->functionNamesByPriority[5] =
-		(obs_data_get_int(obj, "priority5"));
-	switcher->functionNamesByPriority[6] =
-		(obs_data_get_int(obj, "priority6"));
-	switcher->functionNamesByPriority[7] =
-		(obs_data_get_int(obj, "priority7"));
-	switcher->functionNamesByPriority[8] =
-		(obs_data_get_int(obj, "priority8"));
-	switcher->functionNamesByPriority[9] =
-		(obs_data_get_int(obj, "priority9"));
-	if (!switcher->prioFuncsValid()) {
-		switcher->functionNamesByPriority[0] = (default_priority_0);
-		switcher->functionNamesByPriority[1] = (default_priority_1);
-		switcher->functionNamesByPriority[2] = (default_priority_2);
-		switcher->functionNamesByPriority[3] = (default_priority_3);
-		switcher->functionNamesByPriority[4] = (default_priority_4);
-		switcher->functionNamesByPriority[5] = (default_priority_5);
-		switcher->functionNamesByPriority[6] = (default_priority_6);
-		switcher->functionNamesByPriority[7] = (default_priority_7);
-		switcher->functionNamesByPriority[8] = (default_priority_8);
-		switcher->functionNamesByPriority[9] = (default_priority_9);
+	functionNamesByPriority[0] = (obs_data_get_int(obj, "priority0"));
+	functionNamesByPriority[1] = (obs_data_get_int(obj, "priority1"));
+	functionNamesByPriority[2] = (obs_data_get_int(obj, "priority2"));
+	functionNamesByPriority[3] = (obs_data_get_int(obj, "priority3"));
+	functionNamesByPriority[4] = (obs_data_get_int(obj, "priority4"));
+	functionNamesByPriority[5] = (obs_data_get_int(obj, "priority5"));
+	functionNamesByPriority[6] = (obs_data_get_int(obj, "priority6"));
+	functionNamesByPriority[7] = (obs_data_get_int(obj, "priority7"));
+	functionNamesByPriority[8] = (obs_data_get_int(obj, "priority8"));
+	functionNamesByPriority[9] = (obs_data_get_int(obj, "priority9"));
+	if (!prioFuncsValid()) {
+		functionNamesByPriority[0] = (default_priority_0);
+		functionNamesByPriority[1] = (default_priority_1);
+		functionNamesByPriority[2] = (default_priority_2);
+		functionNamesByPriority[3] = (default_priority_3);
+		functionNamesByPriority[4] = (default_priority_4);
+		functionNamesByPriority[5] = (default_priority_5);
+		functionNamesByPriority[6] = (default_priority_6);
+		functionNamesByPriority[7] = (default_priority_7);
+		functionNamesByPriority[8] = (default_priority_8);
+		functionNamesByPriority[9] = (default_priority_9);
 	}
 
 	obs_data_set_default_int(obj, "threadPriority",
 				 QThread::NormalPriority);
-	switcher->threadPriority = obs_data_get_int(obj, "threadPriority");
+	threadPriority = obs_data_get_int(obj, "threadPriority");
 
 	obs_data_set_default_int(obj, "generalTabPos", 0);
 	obs_data_set_default_int(obj, "transitionTabPos", 1);
@@ -633,40 +610,23 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "sceneGroupTabPos", 15);
 	obs_data_set_default_int(obj, "triggerTabPos", 16);
 
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "generalTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "transitionTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "pauseTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "titleTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "exeTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "regionTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "mediaTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "fileTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "randomTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "timeTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "idleTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "sequenceTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "audioTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "videoTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "networkTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "sceneGroupTabPos")));
-	switcher->tabOrder.emplace_back(
-		(int)(obs_data_get_int(obj, "triggerTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "generalTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "transitionTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "pauseTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "titleTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "exeTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "regionTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "mediaTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "fileTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "randomTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "timeTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "idleTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "sequenceTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "audioTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "videoTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "networkTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "sceneGroupTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "triggerTabPos")));
 
 	if (!tabOrderValid()) {
 		resetTabOrder();
@@ -690,7 +650,7 @@ bool SwitcherData::tabOrderValid()
 void SwitcherData::resetTabOrder()
 {
 	tabOrder = std::vector<int>(tab_count);
-	std::iota(switcher->tabOrder.begin(), switcher->tabOrder.end(), 0);
+	std::iota(tabOrder.begin(), tabOrder.end(), 0);
 }
 
 void SwitcherData::checkNoMatchSwitch(bool &match, OBSWeakSource &scene,

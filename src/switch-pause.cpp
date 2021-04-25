@@ -202,7 +202,7 @@ bool SwitcherData::checkPause()
 void SwitcherData::savePauseSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *pauseScenesArray = obs_data_array_create();
-	for (PauseEntry &s : switcher->pauseEntries) {
+	for (PauseEntry &s : pauseEntries) {
 		obs_data_t *array_obj = obs_data_create();
 
 		obs_data_set_int(array_obj, "pauseType",
@@ -229,7 +229,7 @@ void SwitcherData::savePauseSwitches(obs_data_t *obj)
 
 void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 {
-	switcher->pauseEntries.clear();
+	pauseEntries.clear();
 
 	obs_data_array_t *pauseArray = obs_data_get_array(obj, "pauseEntries");
 	size_t count = obs_data_array_count(pauseArray);
@@ -246,8 +246,8 @@ void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 		const char *window =
 			obs_data_get_string(array_obj, "pauseWindow");
 
-		switcher->pauseEntries.emplace_back(GetWeakSourceByName(scene),
-						    type, target, window);
+		pauseEntries.emplace_back(GetWeakSourceByName(scene), type,
+					  target, window);
 
 		obs_data_release(array_obj);
 	}

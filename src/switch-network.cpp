@@ -462,7 +462,7 @@ void SwitcherData::saveNetworkSwitches(obs_data_t *obj)
 {
 	networkConfig.Save(obj);
 	if (!networkConfig.ServerEnabled) {
-		switcher->server.stop();
+		server.stop();
 	}
 }
 

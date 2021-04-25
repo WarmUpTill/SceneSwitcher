@@ -296,7 +296,7 @@ void SwitcherData::saveVideoSwitches(obs_data_t *obj)
 
 void SwitcherData::loadVideoSwitches(obs_data_t *obj)
 {
-	switcher->videoSwitches.clear();
+	videoSwitches.clear();
 
 	obs_data_array_t *videoArray = obs_data_get_array(obj, "videoSwitches");
 	size_t count = obs_data_array_count(videoArray);
@@ -304,7 +304,7 @@ void SwitcherData::loadVideoSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(videoArray, i);
 
-		switcher->videoSwitches.emplace_back();
+		videoSwitches.emplace_back();
 		videoSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);

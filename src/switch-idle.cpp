@@ -168,7 +168,7 @@ int AdvSceneSwitcher::IgnoreIdleWindowsFindByData(const QString &window)
 void SwitcherData::saveIdleSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *ignoreIdleWindowsArray = obs_data_array_create();
-	for (std::string &window : switcher->ignoreIdleWindows) {
+	for (std::string &window : ignoreIdleWindows) {
 		obs_data_t *array_obj = obs_data_create();
 		obs_data_set_string(array_obj, "window", window.c_str());
 		obs_data_array_push_back(ignoreIdleWindowsArray, array_obj);
@@ -182,7 +182,7 @@ void SwitcherData::saveIdleSwitches(obs_data_t *obj)
 
 void SwitcherData::loadIdleSwitches(obs_data_t *obj)
 {
-	switcher->ignoreIdleWindows.clear();
+	ignoreIdleWindows.clear();
 
 	obs_data_array_t *ignoreIdleWindowsArray =
 		obs_data_get_array(obj, "ignoreIdleWindows");
@@ -194,7 +194,7 @@ void SwitcherData::loadIdleSwitches(obs_data_t *obj)
 
 		const char *window = obs_data_get_string(array_obj, "window");
 
-		switcher->ignoreIdleWindows.emplace_back(window);
+		ignoreIdleWindows.emplace_back(window);
 
 		obs_data_release(array_obj);
 	}
