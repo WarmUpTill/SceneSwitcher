@@ -504,6 +504,8 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 			 switcher->functionNamesByPriority[8]);
 	obs_data_set_int(obj, "priority9",
 			 switcher->functionNamesByPriority[9]);
+	obs_data_set_int(obj, "priority10",
+			 switcher->functionNamesByPriority[10]);
 
 	obs_data_set_int(obj, "threadPriority", switcher->threadPriority);
 
@@ -601,6 +603,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		(obs_data_get_int(obj, "priority8"));
 	switcher->functionNamesByPriority[9] =
 		(obs_data_get_int(obj, "priority9"));
+	switcher->functionNamesByPriority[10] =
+		(obs_data_get_int(obj, "priority10"));
 	if (!switcher->prioFuncsValid()) {
 		switcher->functionNamesByPriority[0] = (default_priority_0);
 		switcher->functionNamesByPriority[1] = (default_priority_1);
@@ -612,6 +616,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		switcher->functionNamesByPriority[7] = (default_priority_7);
 		switcher->functionNamesByPriority[8] = (default_priority_8);
 		switcher->functionNamesByPriority[9] = (default_priority_9);
+		switcher->functionNamesByPriority[10] = (default_priority_10);
 	}
 
 	obs_data_set_default_int(obj, "threadPriority",
@@ -849,6 +854,10 @@ void AdvSceneSwitcher::setupGeneralTab()
 		case video_func:
 			s = obs_module_text(
 				"AdvSceneSwitcher.generalTab.priority.video");
+			break;
+		case macro_func:
+			s = obs_module_text(
+				"AdvSceneSwitcher.generalTab.priority.macro");
 			break;
 		}
 		QString text(s.c_str());

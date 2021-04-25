@@ -6,6 +6,9 @@
 #include <obs.hpp>
 #include <obs-module.h>
 
+constexpr auto macro_func = 10;
+constexpr auto default_priority_10 = macro_func;
+
 constexpr auto logic_root_offset = 100;
 
 enum class LogicType {

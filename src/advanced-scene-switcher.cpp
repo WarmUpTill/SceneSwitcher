@@ -568,8 +568,6 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 {
 	bool match = false;
 
-	checkMacros();
-
 	if (uninterruptibleSceneSequenceActive) {
 		checkSceneSequence(match, scene, transition, linger);
 		if (match) {
@@ -609,6 +607,9 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 			break;
 		case video_func:
 			checkVideoSwitch(match, scene, transition);
+			break;
+		case macro_func:
+			match = checkMacros();
 			break;
 		}
 

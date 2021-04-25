@@ -135,7 +135,7 @@ struct SwitcherData {
 		default_priority_0, default_priority_1, default_priority_2,
 		default_priority_3, default_priority_4, default_priority_5,
 		default_priority_6, default_priority_7, default_priority_8,
-		default_priority_9};
+		default_priority_9, default_priority_10};
 
 	struct ThreadPrio {
 		std::string name;
@@ -193,7 +193,7 @@ struct SwitcherData {
 
 	bool checkForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
 			   int &linger);
-	void checkMacros();
+	bool checkMacros();
 	void checkSceneSequence(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition, int &linger);
 	void checkIdleSwitch(bool &match, OBSWeakSource &scene,
