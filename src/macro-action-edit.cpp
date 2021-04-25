@@ -31,13 +31,6 @@ QWidget *MacroActionFactory::CreateWidget(const int id,
 	return nullptr;
 }
 
-// TODO: DELETE ME :)
-std::vector<std::string> actionTypes{"AdvSceneSwitcher.action.switchScene",
-				     "AdvSceneSwitcher.action.wait",
-				     "AdvSceneSwitcher.action.muteSource",
-				     "AdvSceneSwitcher.action.unmuteSource",
-				     "AdvSceneSwitcher.action.blablabla"};
-
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (auto entry : MacroActionFactory::GetActionTypes()) {

@@ -31,14 +31,6 @@ MacroConditionFactory::CreateWidget(const int id,
 	return nullptr;
 }
 
-// TODO: DELETE ME :)
-std::vector<std::string> conditionTypes{
-	"AdvSceneSwitcher.condition.scene", "AdvSceneSwitcher.logic.media",
-	"AdvSceneSwitcher.logic.audio",     "AdvSceneSwitcher.logic.video",
-	"AdvSceneSwitcher.logic.time",      "AdvSceneSwitcher.logic.region",
-	"AdvSceneSwitcher.logic.window",    "AdvSceneSwitcher.logic.process",
-	"AdvSceneSwitcher.logic.file",      "AdvSceneSwitcher.logic.idle"};
-
 static inline void populateLogicSelection(QComboBox *list, bool root = false)
 {
 	if (root) {
