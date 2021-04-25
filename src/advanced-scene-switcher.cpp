@@ -480,6 +480,9 @@ void SwitcherData::Thread()
 		bool match = false;
 		OBSWeakSource scene;
 		OBSWeakSource transition;
+		// The previous scene might have changed during the linger duration,
+		// if a longer transition is used than the configured check interval
+		bool setPrevSceneAfterLinger = false;
 
 		endTime = std::chrono::high_resolution_clock::now();
 
@@ -506,15 +509,16 @@ void SwitcherData::Thread()
 		sleep = 0;
 		linger = 0;
 
-		switcher->Prune();
-		if (switcher->stop) {
+		Prune();
+		if (stop) {
 			break;
 		}
 		if (checkPause()) {
 			continue;
 		}
-		match = checkForMatch(scene, transition, linger);
-		if (switcher->stop) {
+		match = checkForMatch(scene, transition, linger,
+				      setPrevSceneAfterLinger);
+		if (stop) {
 			break;
 		}
 		checkNoMatchSwitch(match, scene, transition, sleep);
@@ -527,7 +531,7 @@ void SwitcherData::Thread()
 
 			cv.wait_for(lock, duration);
 
-			if (switcher->stop) {
+			if (stop) {
 				break;
 			}
 
@@ -537,6 +541,8 @@ void SwitcherData::Thread()
 
 				match = false;
 				linger = 0;
+			} else if (setPrevSceneAfterLinger) {
+				scene = previousScene;
 			}
 		}
 
@@ -564,12 +570,14 @@ void SwitcherData::Thread()
 }
 
 bool SwitcherData::checkForMatch(OBSWeakSource &scene,
-				 OBSWeakSource &transition, int &linger)
+				 OBSWeakSource &transition, int &linger,
+				 bool &setPrevSceneAfterLinger)
 {
 	bool match = false;
 
 	if (uninterruptibleSceneSequenceActive) {
-		checkSceneSequence(match, scene, transition, linger);
+		match = checkSceneSequence(scene, transition, linger,
+					   setPrevSceneAfterLinger);
 		if (match) {
 			return match;
 		}
@@ -578,42 +586,43 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 	for (int switchFuncName : functionNamesByPriority) {
 		switch (switchFuncName) {
 		case read_file_func:
-			checkSwitchInfoFromFile(match, scene, transition);
-			checkFileContent(match, scene, transition);
+			match = checkSwitchInfoFromFile(scene, transition);
+			match = checkFileContent(scene, transition);
 			break;
 		case idle_func:
-			checkIdleSwitch(match, scene, transition);
+			match = checkIdleSwitch(scene, transition);
 			break;
 		case exe_func:
-			checkExeSwitch(match, scene, transition);
+			match = checkExeSwitch(scene, transition);
 			break;
 		case screen_region_func:
-			checkScreenRegionSwitch(match, scene, transition);
+			match = checkScreenRegionSwitch(scene, transition);
 			break;
 		case window_title_func:
-			checkWindowTitleSwitch(match, scene, transition);
+			match = checkWindowTitleSwitch(scene, transition);
 			break;
 		case round_trip_func:
-			checkSceneSequence(match, scene, transition, linger);
+			match = checkSceneSequence(scene, transition, linger,
+						   setPrevSceneAfterLinger);
 			break;
 		case media_func:
-			checkMediaSwitch(match, scene, transition);
+			match = checkMediaSwitch(scene, transition);
 			break;
 		case time_func:
-			checkTimeSwitch(match, scene, transition);
+			match = checkTimeSwitch(scene, transition);
 			break;
 		case audio_func:
-			checkAudioSwitch(match, scene, transition);
+			match = checkAudioSwitch(scene, transition);
 			break;
 		case video_func:
-			checkVideoSwitch(match, scene, transition);
+			match = checkVideoSwitch(scene, transition);
 			break;
 		case macro_func:
 			match = checkMacros();
 			break;
 		}
 
-		if (switcher->stop) {
+		if (stop) {
 			return false;
 		}
 		if (match) {
@@ -657,9 +666,8 @@ void SwitcherData::Start()
 {
 	if (!(th && th->isRunning())) {
 		stop = false;
-		switcher->th = new SwitcherThread();
-		switcher->th->start(
-			(QThread::Priority)switcher->threadPriority);
+		th = new SwitcherThread();
+		th->start((QThread::Priority)threadPriority);
 
 		// Will be overwritten quickly but might be useful
 		writeToStatusFile("Advanced Scene Switcher running");
@@ -678,7 +686,7 @@ void SwitcherData::Start()
 void SwitcherData::Stop()
 {
 	if (th && th->isRunning()) {
-		switcher->stop = true;
+		stop = true;
 		transitionCv.notify_one();
 		cv.notify_one();
 		th->wait();

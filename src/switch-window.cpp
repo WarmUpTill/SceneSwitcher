@@ -214,15 +214,16 @@ void checkWindowTitleSwitchRegex(WindowSwitch &s,
 	}
 }
 
-void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkWindowTitleSwitch(OBSWeakSource &scene,
 					  OBSWeakSource &transition)
 {
 	if (WindowSwitch::pause) {
-		return;
+		return false;
 	}
 
 	std::string currentWindowTitle;
 	GetCurrentWindowTitle(currentWindowTitle);
+	bool match = false;
 
 	// Check if current window is ignored
 	for (auto &window : ignoreWindowsSwitches) {
@@ -268,12 +269,13 @@ void SwitcherData::checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
 			break;
 		}
 	}
+	return match;
 }
 
 void SwitcherData::saveWindowTitleSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *windowTitleArray = obs_data_array_create();
-	for (WindowSwitch &s : switcher->windowSwitches) {
+	for (WindowSwitch &s : windowSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
 		s.save(array_obj);
@@ -285,7 +287,7 @@ void SwitcherData::saveWindowTitleSwitches(obs_data_t *obj)
 	obs_data_array_release(windowTitleArray);
 
 	obs_data_array_t *ignoreWindowsArray = obs_data_array_create();
-	for (std::string &window : switcher->ignoreWindowsSwitches) {
+	for (std::string &window : ignoreWindowsSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 		obs_data_set_string(array_obj, "ignoreWindow", window.c_str());
 		obs_data_array_push_back(ignoreWindowsArray, array_obj);
@@ -297,7 +299,7 @@ void SwitcherData::saveWindowTitleSwitches(obs_data_t *obj)
 
 void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
 {
-	switcher->windowSwitches.clear();
+	windowSwitches.clear();
 
 	obs_data_array_t *windowTitleArray =
 		obs_data_get_array(obj, "switches");
@@ -307,14 +309,14 @@ void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
 		obs_data_t *array_obj =
 			obs_data_array_item(windowTitleArray, i);
 
-		switcher->windowSwitches.emplace_back();
+		windowSwitches.emplace_back();
 		windowSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(windowTitleArray);
 
-	switcher->ignoreWindowsSwitches.clear();
+	ignoreWindowsSwitches.clear();
 
 	obs_data_array_t *ignoreWindowsArray =
 		obs_data_get_array(obj, "ignoreWindows");
@@ -327,7 +329,7 @@ void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
 		const char *window =
 			obs_data_get_string(array_obj, "ignoreWindow");
 
-		switcher->ignoreWindowsSwitches.emplace_back(window);
+		ignoreWindowsSwitches.emplace_back(window);
 
 		obs_data_release(array_obj);
 	}
@@ -379,46 +381,8 @@ void WindowSwitch::save(obs_data_t *obj)
 	obs_data_set_bool(obj, "focus", focus);
 }
 
-// To be removed in future version
-bool loadOldWindow(obs_data_t *obj, WindowSwitch *s)
-{
-	if (!s) {
-		return false;
-	}
-
-	const char *scene = obs_data_get_string(obj, "scene");
-
-	if (strcmp(scene, "") == 0) {
-		return false;
-	}
-
-	s->scene = GetWeakSourceByName(scene);
-
-	const char *transition = obs_data_get_string(obj, "transition");
-	s->transition = GetWeakTransitionByName(transition);
-
-	s->window = obs_data_get_string(obj, "window_title");
-	s->fullscreen = obs_data_get_bool(obj, "fullscreen");
-#if __APPLE__
-	// TODO:
-	// not implemented on MacOS as I cannot test it
-	s->maximized = false;
-#else
-	s->maximized = obs_data_get_bool(obj, "maximized");
-#endif
-	s->focus = obs_data_get_bool(obj, "focus") ||
-		   !obs_data_has_user_value(obj, "focus");
-	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
-
-	return true;
-}
-
 void WindowSwitch::load(obs_data_t *obj)
 {
-	if (loadOldWindow(obj, this)) {
-		return;
-	}
-
 	SceneSwitcherEntry::load(obj);
 
 	window = obs_data_get_string(obj, "windowTitle");

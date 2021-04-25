@@ -305,7 +305,7 @@ void SwitcherData::checkTriggers()
 void SwitcherData::saveSceneTriggers(obs_data_t *obj)
 {
 	obs_data_array_t *triggerArray = obs_data_array_create();
-	for (auto &s : switcher->sceneTriggers) {
+	for (auto &s : sceneTriggers) {
 		obs_data_t *array_obj = obs_data_create();
 
 		s.save(array_obj);
@@ -317,93 +317,9 @@ void SwitcherData::saveSceneTriggers(obs_data_t *obj)
 	obs_data_array_release(triggerArray);
 }
 
-// To be removed in future version
-void loadOldAutoStopStart(obs_data_t *obj)
-{
-	typedef enum {
-		RECORDING = 0,
-		STREAMING = 1,
-		RECORINDGSTREAMING = 2
-	} AutoStartStopType;
-
-	if (obs_data_get_bool(obj, "autoStopEnable")) {
-		std::string autoStopScene =
-			obs_data_get_string(obj, "autoStopSceneName");
-		int action = obs_data_get_int(obj, "autoStopType");
-
-		if (action == RECORDING) {
-			switcher->sceneTriggers.emplace_back();
-			auto &s = switcher->sceneTriggers.back();
-			s.scene = GetWeakSourceByName(autoStopScene.c_str());
-			s.triggerType = sceneTriggerType::SCENE_ACTIVE;
-			s.triggerAction = sceneTriggerAction::STOP_RECORDING;
-		}
-
-		if (action == STREAMING) {
-			switcher->sceneTriggers.emplace_back();
-			auto &s = switcher->sceneTriggers.back();
-			s.scene = GetWeakSourceByName(autoStopScene.c_str());
-			s.triggerType = sceneTriggerType::SCENE_ACTIVE;
-			s.triggerAction = sceneTriggerAction::STOP_STREAMING;
-		}
-
-		if (action == RECORINDGSTREAMING) {
-			switcher->sceneTriggers.emplace_back();
-			auto &s = switcher->sceneTriggers.back();
-			s.scene = GetWeakSourceByName(autoStopScene.c_str());
-			s.triggerType = sceneTriggerType::SCENE_ACTIVE;
-			s.triggerAction = sceneTriggerAction::STOP_RECORDING;
-
-			switcher->sceneTriggers.emplace_back();
-			auto &s2 = switcher->sceneTriggers.back();
-			s2.scene = GetWeakSourceByName(autoStopScene.c_str());
-			s2.triggerType = sceneTriggerType::SCENE_ACTIVE;
-			s2.triggerAction = sceneTriggerAction::STOP_STREAMING;
-		}
-	}
-
-	if (obs_data_get_bool(obj, "autoStartEnable")) {
-		std::string autoStartScene =
-			obs_data_get_string(obj, "autoStartSceneName");
-		int action = obs_data_get_int(obj, "autoStartType");
-
-		if (action == RECORDING) {
-			switcher->sceneTriggers.emplace_back();
-			auto &s = switcher->sceneTriggers.back();
-			s.scene = GetWeakSourceByName(autoStartScene.c_str());
-			s.triggerType = sceneTriggerType::SCENE_ACTIVE;
-			s.triggerAction = sceneTriggerAction::START_RECORDING;
-		}
-
-		if (action == STREAMING) {
-			switcher->sceneTriggers.emplace_back();
-			auto &s = switcher->sceneTriggers.back();
-			s.scene = GetWeakSourceByName(autoStartScene.c_str());
-			s.triggerType = sceneTriggerType::SCENE_ACTIVE;
-			s.triggerAction = sceneTriggerAction::START_STREAMING;
-		}
-
-		if (action == RECORINDGSTREAMING) {
-			switcher->sceneTriggers.emplace_back();
-			auto &s = switcher->sceneTriggers.back();
-			s.scene = GetWeakSourceByName(autoStartScene.c_str());
-			s.triggerType = sceneTriggerType::SCENE_ACTIVE;
-			s.triggerAction = sceneTriggerAction::START_RECORDING;
-
-			switcher->sceneTriggers.emplace_back();
-			auto &s2 = switcher->sceneTriggers.back();
-			s2.scene = GetWeakSourceByName(autoStartScene.c_str());
-			s2.triggerType = sceneTriggerType::SCENE_ACTIVE;
-			s2.triggerAction = sceneTriggerAction::START_STREAMING;
-		}
-	}
-}
-
 void SwitcherData::loadSceneTriggers(obs_data_t *obj)
 {
-	switcher->sceneTriggers.clear();
-
-	loadOldAutoStopStart(obj);
+	sceneTriggers.clear();
 
 	obs_data_array_t *triggerArray = obs_data_get_array(obj, "triggers");
 	size_t count = obs_data_array_count(triggerArray);
@@ -411,7 +327,7 @@ void SwitcherData::loadSceneTriggers(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(triggerArray, i);
 
-		switcher->sceneTriggers.emplace_back();
+		sceneTriggers.emplace_back();
 		sceneTriggers.back().load(array_obj);
 
 		obs_data_release(array_obj);

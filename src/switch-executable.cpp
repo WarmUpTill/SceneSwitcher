@@ -77,16 +77,17 @@ void AdvSceneSwitcher::on_executableDown_clicked()
 		  switcher->executableSwitches[index + 1]);
 }
 
-void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkExeSwitch(OBSWeakSource &scene,
 				  OBSWeakSource &transition)
 {
 	if (executableSwitches.size() == 0 || ExecutableSwitch::pause) {
-		return;
+		return false;
 	}
 
 	std::string title;
 	QStringList runningProcesses;
 	bool ignored = false;
+	bool match = false;
 
 	// Check if current window is ignored
 	GetCurrentWindowTitle(title);
@@ -135,12 +136,14 @@ void SwitcherData::checkExeSwitch(bool &match, OBSWeakSource &scene,
 			break;
 		}
 	}
+
+	return match;
 }
 
 void SwitcherData::saveExecutableSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *executableArray = obs_data_array_create();
-	for (ExecutableSwitch &s : switcher->executableSwitches) {
+	for (ExecutableSwitch &s : executableSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
 		s.save(array_obj);
@@ -154,7 +157,7 @@ void SwitcherData::saveExecutableSwitches(obs_data_t *obj)
 
 void SwitcherData::loadExecutableSwitches(obs_data_t *obj)
 {
-	switcher->executableSwitches.clear();
+	executableSwitches.clear();
 
 	obs_data_array_t *executableArray =
 		obs_data_get_array(obj, "executableSwitches");
@@ -163,7 +166,7 @@ void SwitcherData::loadExecutableSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(executableArray, i);
 
-		switcher->executableSwitches.emplace_back();
+		executableSwitches.emplace_back();
 		executableSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
@@ -199,37 +202,8 @@ void ExecutableSwitch::save(obs_data_t *obj)
 	obs_data_set_bool(obj, "infocus", inFocus);
 }
 
-// To be removed in future version
-bool loadOldExe(obs_data_t *obj, ExecutableSwitch *s)
-{
-	if (!s) {
-		return false;
-	}
-
-	const char *scene = obs_data_get_string(obj, "scene");
-
-	if (strcmp(scene, "") == 0) {
-		return false;
-	}
-
-	s->scene = GetWeakSourceByName(scene);
-
-	const char *transition = obs_data_get_string(obj, "transition");
-	s->transition = GetWeakTransitionByName(transition);
-
-	s->exe = obs_data_get_string(obj, "exefile");
-	s->inFocus = obs_data_get_bool(obj, "infocus");
-	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
-
-	return true;
-}
-
 void ExecutableSwitch::load(obs_data_t *obj)
 {
-	if (loadOldExe(obj, this)) {
-		return;
-	}
-
 	SceneSwitcherEntry::load(obj);
 
 	exe = obs_data_get_string(obj, "exefile");

@@ -301,7 +301,7 @@ void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 {
 	obs_data_array_t *sceneTransitionsArray = obs_data_array_create();
-	for (SceneTransition &s : switcher->sceneTransitions) {
+	for (SceneTransition &s : sceneTransitions) {
 		obs_data_t *array_obj = obs_data_create();
 
 		obs_source_t *source1 = obs_weak_source_get_source(s.scene);
@@ -329,7 +329,7 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 	obs_data_array_release(sceneTransitionsArray);
 
 	obs_data_array_t *defaultTransitionsArray = obs_data_array_create();
-	for (DefaultSceneTransition &s : switcher->defaultSceneTransitions) {
+	for (DefaultSceneTransition &s : defaultSceneTransitions) {
 		obs_data_t *array_obj = obs_data_create();
 
 		obs_source_t *source = obs_weak_source_get_source(s.scene);
@@ -353,9 +353,9 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 	obs_data_array_release(defaultTransitionsArray);
 
 	obs_data_set_bool(obj, "tansitionOverrideOverride",
-			  switcher->tansitionOverrideOverride);
+			  tansitionOverrideOverride);
 	obs_data_set_bool(obj, "adjustActiveTransitionType",
-			  switcher->adjustActiveTransitionType);
+			  adjustActiveTransitionType);
 	obs_data_set_default_int(obj, "defTransitionDelay",
 				 default_def_transition_dealy);
 	obs_data_set_int(obj, "defTransitionDelay",
@@ -364,7 +364,7 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 
 void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 {
-	switcher->sceneTransitions.clear();
+	sceneTransitions.clear();
 
 	obs_data_array_t *sceneTransitionsArray =
 		obs_data_get_array(obj, "sceneTransitions");
@@ -379,7 +379,7 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 		const char *transition =
 			obs_data_get_string(array_obj, "transition");
 
-		switcher->sceneTransitions.emplace_back(
+		sceneTransitions.emplace_back(
 			GetWeakSourceByName(scene1),
 			GetWeakSourceByName(scene2),
 			GetWeakTransitionByName(transition));
@@ -388,7 +388,7 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 	}
 	obs_data_array_release(sceneTransitionsArray);
 
-	switcher->defaultSceneTransitions.clear();
+	defaultSceneTransitions.clear();
 
 	obs_data_array_t *defaultTransitionsArray =
 		obs_data_get_array(obj, "defaultTransitions");
@@ -402,7 +402,7 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 		const char *transition =
 			obs_data_get_string(array_obj, "transition");
 
-		switcher->defaultSceneTransitions.emplace_back(
+		defaultSceneTransitions.emplace_back(
 			GetWeakSourceByName(scene),
 			GetWeakTransitionByName(transition));
 
@@ -410,9 +410,9 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 	}
 	obs_data_array_release(defaultTransitionsArray);
 
-	switcher->tansitionOverrideOverride =
+	tansitionOverrideOverride =
 		obs_data_get_bool(obj, "tansitionOverrideOverride");
-	switcher->adjustActiveTransitionType =
+	adjustActiveTransitionType =
 		obs_data_get_bool(obj, "adjustActiveTransitionType");
 	DefaultSceneTransition::delay =
 		obs_data_get_int(obj, "defTransitionDelay");

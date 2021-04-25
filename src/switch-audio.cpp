@@ -111,13 +111,14 @@ void SwitcherData::checkAudioSwitchFallback(OBSWeakSource &scene,
 	audioFallback.matchCount++;
 }
 
-void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkAudioSwitch(OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
 	if (AudioSwitch::pause) {
-		return;
+		return false;
 	}
 
+	bool match = false;
 	bool fallbackChecked = false; // false if only one or no match
 
 	for (AudioSwitch &s : audioSwitches) {
@@ -185,12 +186,14 @@ void SwitcherData::checkAudioSwitch(bool &match, OBSWeakSource &scene,
 	if (!fallbackChecked) {
 		audioFallback.matchCount = 0;
 	}
+
+	return match;
 }
 
 void SwitcherData::saveAudioSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *audioArray = obs_data_array_create();
-	for (AudioSwitch &s : switcher->audioSwitches) {
+	for (AudioSwitch &s : audioSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
 		s.save(array_obj);
@@ -206,7 +209,7 @@ void SwitcherData::saveAudioSwitches(obs_data_t *obj)
 
 void SwitcherData::loadAudioSwitches(obs_data_t *obj)
 {
-	switcher->audioSwitches.clear();
+	audioSwitches.clear();
 
 	obs_data_array_t *audioArray = obs_data_get_array(obj, "audioSwitches");
 	size_t count = obs_data_array_count(audioArray);
@@ -214,7 +217,7 @@ void SwitcherData::loadAudioSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(audioArray, i);
 
-		switcher->audioSwitches.emplace_back();
+		audioSwitches.emplace_back();
 		audioSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
@@ -311,41 +314,8 @@ void AudioSwitch::save(obs_data_t *obj)
 	obs_data_set_bool(obj, "ignoreInactiveSource", ignoreInactiveSource);
 }
 
-// To be removed in future version
-bool loadOldAudio(obs_data_t *obj, AudioSwitch *s)
-{
-	if (!s) {
-		return false;
-	}
-
-	const char *scene = obs_data_get_string(obj, "scene");
-
-	if (strcmp(scene, "") == 0) {
-		return false;
-	}
-
-	s->scene = GetWeakSourceByName(scene);
-
-	const char *transition = obs_data_get_string(obj, "transition");
-	s->transition = GetWeakTransitionByName(transition);
-
-	const char *audioSource = obs_data_get_string(obj, "audioSource");
-	s->audioSource = GetWeakSourceByName(audioSource);
-
-	s->volumeThreshold = obs_data_get_int(obj, "volume");
-	s->condition = (audioCondition)obs_data_get_int(obj, "condition");
-	s->duration = obs_data_get_double(obj, "duration");
-	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
-
-	return true;
-}
-
 void AudioSwitch::load(obs_data_t *obj)
 {
-	if (loadOldAudio(obj, this)) {
-		return;
-	}
-
 	SceneSwitcherEntry::load(obj);
 
 	const char *audioSourceName = obs_data_get_string(obj, "audioSource");

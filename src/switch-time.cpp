@@ -113,13 +113,14 @@ bool checkRegularTime(TimeSwitch &s, int &interval)
 	return timesAreInInterval(s.time, now, interval);
 }
 
-void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkTimeSwitch(OBSWeakSource &scene,
 				   OBSWeakSource &transition)
 {
 	if (TimeSwitch::pause) {
-		return;
+		return false;
 	}
 
+	bool match = false;
 	for (TimeSwitch &s : timeSwitches) {
 		if (!s.initialized()) {
 			continue;
@@ -142,12 +143,13 @@ void SwitcherData::checkTimeSwitch(bool &match, OBSWeakSource &scene,
 			break;
 		}
 	}
+	return match;
 }
 
 void SwitcherData::saveTimeSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *timeArray = obs_data_array_create();
-	for (TimeSwitch &s : switcher->timeSwitches) {
+	for (TimeSwitch &s : timeSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
 		s.save(array_obj);
@@ -161,7 +163,7 @@ void SwitcherData::saveTimeSwitches(obs_data_t *obj)
 
 void SwitcherData::loadTimeSwitches(obs_data_t *obj)
 {
-	switcher->timeSwitches.clear();
+	timeSwitches.clear();
 
 	obs_data_array_t *timeArray = obs_data_get_array(obj, "timeSwitches");
 	size_t count = obs_data_array_count(timeArray);
@@ -169,7 +171,7 @@ void SwitcherData::loadTimeSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(timeArray, i);
 
-		switcher->timeSwitches.emplace_back();
+		timeSwitches.emplace_back();
 		timeSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
@@ -204,37 +206,8 @@ void TimeSwitch::save(obs_data_t *obj)
 	obs_data_set_string(obj, "time", time.toString().toStdString().c_str());
 }
 
-// To be removed in future version
-bool loadOldTime(obs_data_t *obj, TimeSwitch *s)
-{
-	if (!s) {
-		return false;
-	}
-
-	const char *scene = obs_data_get_string(obj, "scene");
-
-	if (strcmp(scene, "") == 0) {
-		return false;
-	}
-
-	s->scene = GetWeakSourceByName(scene);
-
-	const char *transition = obs_data_get_string(obj, "transition");
-	s->transition = GetWeakTransitionByName(transition);
-
-	s->trigger = (timeTrigger)obs_data_get_int(obj, "trigger");
-	s->time = QTime::fromString(obs_data_get_string(obj, "time"));
-	s->usePreviousScene = strcmp(scene, previous_scene_name) == 0;
-
-	return true;
-}
-
 void TimeSwitch::load(obs_data_t *obj)
 {
-	if (loadOldTime(obj, this)) {
-		return;
-	}
-
 	SceneSwitcherEntry::load(obj);
 
 	trigger = (timeTrigger)obs_data_get_int(obj, "trigger");

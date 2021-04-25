@@ -29,6 +29,7 @@
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
 constexpr auto current_transition_name = "Current Transition";
+constexpr auto tab_count = 18;
 
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 typedef enum { PERSIST = 0, START = 1, STOP = 2 } StartupBehavior;
@@ -164,7 +165,7 @@ struct SwitcherData {
 
 	uint32_t threadPriority = QThread::NormalPriority;
 
-	std::vector<int> tabOrder;
+	std::vector<int> tabOrder = std::vector<int>(tab_count);
 
 	bool hotkeysRegistered = false;
 	obs_hotkey_id startHotkey = 0;
@@ -192,34 +193,27 @@ struct SwitcherData {
 	void writeToStatusFile(QString status);
 
 	bool checkForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
-			   int &linger);
+			   int &linger, bool &setPreviousSceneAsMatch);
 	bool checkMacros();
-	void checkSceneSequence(bool &match, OBSWeakSource &scene,
-				OBSWeakSource &transition, int &linger);
-	void checkIdleSwitch(bool &match, OBSWeakSource &scene,
-			     OBSWeakSource &transition);
-	void checkWindowTitleSwitch(bool &match, OBSWeakSource &scene,
+	bool checkSceneSequence(OBSWeakSource &scene, OBSWeakSource &transition,
+				int &linger, bool &setPrevSceneAfterLinger);
+	bool checkIdleSwitch(OBSWeakSource &scene, OBSWeakSource &transition);
+	bool checkWindowTitleSwitch(OBSWeakSource &scene,
 				    OBSWeakSource &transition);
-	void checkExeSwitch(bool &match, OBSWeakSource &scene,
-			    OBSWeakSource &transition);
-	void checkScreenRegionSwitch(bool &match, OBSWeakSource &scene,
+	bool checkExeSwitch(OBSWeakSource &scene, OBSWeakSource &transition);
+	bool checkScreenRegionSwitch(OBSWeakSource &scene,
 				     OBSWeakSource &transition);
-	void checkSwitchInfoFromFile(bool &match, OBSWeakSource &scene,
+	bool checkSwitchInfoFromFile(OBSWeakSource &scene,
 				     OBSWeakSource &transition);
-	void checkFileContent(bool &match, OBSWeakSource &scene,
-			      OBSWeakSource &transition);
-	void checkRandom(bool &match, OBSWeakSource &scene,
-			 OBSWeakSource &transition, int &delay);
-	void checkMediaSwitch(bool &match, OBSWeakSource &scene,
-			      OBSWeakSource &transition);
-	void checkTimeSwitch(bool &match, OBSWeakSource &scene,
-			     OBSWeakSource &transition);
-	void checkAudioSwitch(bool &match, OBSWeakSource &scene,
-			      OBSWeakSource &transition);
+	bool checkFileContent(OBSWeakSource &scene, OBSWeakSource &transition);
+	bool checkRandom(OBSWeakSource &scene, OBSWeakSource &transition,
+			 int &delay);
+	bool checkMediaSwitch(OBSWeakSource &scene, OBSWeakSource &transition);
+	bool checkTimeSwitch(OBSWeakSource &scene, OBSWeakSource &transition);
+	bool checkAudioSwitch(OBSWeakSource &scene, OBSWeakSource &transition);
 	void checkAudioSwitchFallback(OBSWeakSource &scene,
 				      OBSWeakSource &transition);
-	void checkVideoSwitch(bool &match, OBSWeakSource &scene,
-			      OBSWeakSource &transition);
+	bool checkVideoSwitch(OBSWeakSource &scene, OBSWeakSource &transition);
 	void checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition, int &sleep);
 	void checkSwitchCooldown(bool &match);
@@ -254,7 +248,6 @@ struct SwitcherData {
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
 	void loadPauseSwitches(obs_data_t *obj);
-	void loadOldPauseSwitches(obs_data_t *obj);
 	void loadSceneSequenceSwitches(obs_data_t *obj);
 	void loadSceneTransitions(obs_data_t *obj);
 	void loadIdleSwitches(obs_data_t *obj);

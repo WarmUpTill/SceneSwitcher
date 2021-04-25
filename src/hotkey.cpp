@@ -68,41 +68,38 @@ void registerHotkeys()
 
 void SwitcherData::saveHotkeys(obs_data_t *obj)
 {
-	obs_data_array_t *startHotkeyArrray =
-		obs_hotkey_save(switcher->startHotkey);
+	obs_data_array_t *startHotkeyArrray = obs_hotkey_save(startHotkey);
 	obs_data_set_array(obj, "startHotkey", startHotkeyArrray);
 	obs_data_array_release(startHotkeyArrray);
 
-	obs_data_array_t *stopHotkeyArrray =
-		obs_hotkey_save(switcher->stopHotkey);
+	obs_data_array_t *stopHotkeyArrray = obs_hotkey_save(stopHotkey);
 
 	obs_data_set_array(obj, "stopHotkey", stopHotkeyArrray);
 	obs_data_array_release(stopHotkeyArrray);
 
-	obs_data_array_t *toggleHotkeyArrray =
-		obs_hotkey_save(switcher->toggleHotkey);
+	obs_data_array_t *toggleHotkeyArrray = obs_hotkey_save(toggleHotkey);
 	obs_data_set_array(obj, "toggleHotkey", toggleHotkeyArrray);
 	obs_data_array_release(toggleHotkeyArrray);
 }
 
 void SwitcherData::loadHotkeys(obs_data_t *obj)
 {
-	if (!switcher->hotkeysRegistered) {
+	if (!hotkeysRegistered) {
 		registerHotkeys();
 	}
 
 	obs_data_array_t *startHotkeyArrray =
 		obs_data_get_array(obj, "startHotkey");
-	obs_hotkey_load(switcher->startHotkey, startHotkeyArrray);
+	obs_hotkey_load(startHotkey, startHotkeyArrray);
 	obs_data_array_release(startHotkeyArrray);
 
 	obs_data_array_t *stopHotkeyArrray =
 		obs_data_get_array(obj, "stopHotkey");
-	obs_hotkey_load(switcher->stopHotkey, stopHotkeyArrray);
+	obs_hotkey_load(stopHotkey, stopHotkeyArrray);
 	obs_data_array_release(stopHotkeyArrray);
 
 	obs_data_array_t *toggleHotkeyArrray =
 		obs_data_get_array(obj, "toggleHotkey");
-	obs_hotkey_load(switcher->toggleHotkey, toggleHotkeyArrray);
+	obs_hotkey_load(toggleHotkey, toggleHotkeyArrray);
 	obs_data_array_release(toggleHotkeyArrray);
 }

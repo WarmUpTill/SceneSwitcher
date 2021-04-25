@@ -36,17 +36,18 @@ void AdvSceneSwitcher::on_randomRemove_clicked()
 	delete item;
 }
 
-void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
-			       OBSWeakSource &transition, int &delay)
+bool SwitcherData::checkRandom(OBSWeakSource &scene, OBSWeakSource &transition,
+			       int &delay)
 {
 	if (randomSwitches.size() == 0 || RandomSwitch::pause) {
-		return;
+		return false;
 	}
 
 	std::deque<RandomSwitch> rs(randomSwitches);
 	std::random_device rng;
 	std::mt19937 urng(rng());
 	std::shuffle(rs.begin(), rs.end(), urng);
+	bool match = false;
 	for (RandomSwitch &r : rs) {
 		if (!r.initialized()) {
 			continue;
@@ -75,12 +76,13 @@ void SwitcherData::checkRandom(bool &match, OBSWeakSource &scene,
 		}
 		break;
 	}
+	return match;
 }
 
 void SwitcherData::saveRandomSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *randomArray = obs_data_array_create();
-	for (RandomSwitch &s : switcher->randomSwitches) {
+	for (RandomSwitch &s : randomSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
 		s.save(array_obj);
@@ -94,7 +96,7 @@ void SwitcherData::saveRandomSwitches(obs_data_t *obj)
 
 void SwitcherData::loadRandomSwitches(obs_data_t *obj)
 {
-	switcher->randomSwitches.clear();
+	randomSwitches.clear();
 
 	obs_data_array_t *randomArray =
 		obs_data_get_array(obj, "randomSwitches");
@@ -103,7 +105,7 @@ void SwitcherData::loadRandomSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(randomArray, i);
 
-		switcher->randomSwitches.emplace_back();
+		randomSwitches.emplace_back();
 		randomSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);

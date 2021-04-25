@@ -257,13 +257,14 @@ void AdvSceneSwitcher::on_getScreenshot_clicked()
 	sw->SetFilePath(file.fileName());
 }
 
-void SwitcherData::checkVideoSwitch(bool &match, OBSWeakSource &scene,
+bool SwitcherData::checkVideoSwitch(OBSWeakSource &scene,
 				    OBSWeakSource &transition)
 {
 	if (VideoSwitch::pause) {
-		return;
+		return false;
 	}
 
+	bool match = false;
 	for (auto &s : videoSwitches) {
 		bool matched = s.checkMatch();
 		if (!match && matched) {
@@ -275,6 +276,7 @@ void SwitcherData::checkVideoSwitch(bool &match, OBSWeakSource &scene,
 			}
 		}
 	}
+	return match;
 }
 
 void SwitcherData::saveVideoSwitches(obs_data_t *obj)
@@ -294,7 +296,7 @@ void SwitcherData::saveVideoSwitches(obs_data_t *obj)
 
 void SwitcherData::loadVideoSwitches(obs_data_t *obj)
 {
-	switcher->videoSwitches.clear();
+	videoSwitches.clear();
 
 	obs_data_array_t *videoArray = obs_data_get_array(obj, "videoSwitches");
 	size_t count = obs_data_array_count(videoArray);
@@ -302,7 +304,7 @@ void SwitcherData::loadVideoSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(videoArray, i);
 
-		switcher->videoSwitches.emplace_back();
+		videoSwitches.emplace_back();
 		videoSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
