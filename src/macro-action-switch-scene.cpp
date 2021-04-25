@@ -11,10 +11,9 @@ bool MacroActionSwitchScene::_registered = MacroActionFactory::Register(
 
 bool MacroActionSwitchScene::PerformAction()
 {
-	auto scene = obs_weak_source_get_source(_scene);
-	obs_frontend_set_current_scene(scene);
-	obs_source_release(scene);
-
+	OBSWeakSource transition = nullptr;
+	switchScene(_scene, transition, switcher->tansitionOverrideOverride,
+		    switcher->adjustActiveTransitionType, switcher->verbose);
 	return true;
 }
 
