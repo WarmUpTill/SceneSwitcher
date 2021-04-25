@@ -8,7 +8,7 @@ const int MacroConditionRegion::id = 2;
 bool MacroConditionRegion::_registered = MacroConditionFactory::Register(
 	MacroConditionRegion::id,
 	{MacroConditionRegion::Create, MacroConditionRegionEdit::Create,
-	 "AdvSceneSwitcher.condition.scene"});
+	 "AdvSceneSwitcher.condition.region"});
 
 bool MacroConditionRegion::CheckCondition()
 {
