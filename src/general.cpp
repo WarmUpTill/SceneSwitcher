@@ -4,8 +4,6 @@
 #include "headers/utility.hpp"
 #include "headers/version.h"
 
-constexpr auto tab_count = 17;
-
 QMetaObject::Connection inactivePluse;
 
 void AdvSceneSwitcher::on_close_clicked()
@@ -365,6 +363,10 @@ int findTabIndex(QTabWidget *tabWidget, int pos)
 
 void AdvSceneSwitcher::setTabOrder()
 {
+	if (!switcher->tabOrderValid()) {
+		switcher->resetTabOrder();
+	}
+
 	QTabBar *bar = ui->tabWidget->tabBar();
 	for (int i = 0; i < bar->count(); ++i) {
 		int curPos = findTabIndex(ui->tabWidget, switcher->tabOrder[i]);
@@ -493,12 +495,6 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 
 	obs_data_set_int(obj, "threadPriority", threadPriority);
 
-	// After fresh install of OBS the vector can be empty
-	// as save() might be called before first load()
-	if (tabOrder.size() < tab_count) {
-		resetTabOrder();
-	}
-
 	obs_data_set_int(obj, "generalTabPos", tabOrder[0]);
 	obs_data_set_int(obj, "transitionTabPos", tabOrder[1]);
 	obs_data_set_int(obj, "pauseTabPos", tabOrder[2]);
@@ -610,6 +606,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "sceneGroupTabPos", 15);
 	obs_data_set_default_int(obj, "triggerTabPos", 16);
 
+	tabOrder.clear();
 	tabOrder.emplace_back((int)(obs_data_get_int(obj, "generalTabPos")));
 	tabOrder.emplace_back((int)(obs_data_get_int(obj, "transitionTabPos")));
 	tabOrder.emplace_back((int)(obs_data_get_int(obj, "pauseTabPos")));
@@ -641,10 +638,16 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 
 bool SwitcherData::tabOrderValid()
 {
-	auto tmp = tabOrder;
-	std::sort(tmp.begin(), tmp.end());
-	auto it = std::unique(tmp.begin(), tmp.end());
-	return it == tmp.end();
+	auto tmp = std::vector<int>(tab_count);
+	std::iota(tmp.begin(), tmp.end(), 0);
+
+	for (auto &p : tmp) {
+		auto it = std::find(tabOrder.begin(), tabOrder.end(), p);
+		if (it == tabOrder.end()) {
+			return false;
+		}
+	}
+	return true;
 }
 
 void SwitcherData::resetTabOrder()

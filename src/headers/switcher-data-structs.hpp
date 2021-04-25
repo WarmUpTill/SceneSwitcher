@@ -27,6 +27,7 @@
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
 constexpr auto current_transition_name = "Current Transition";
+constexpr auto tab_count = 17;
 
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 typedef enum { PERSIST = 0, START = 1, STOP = 2 } StartupBehavior;
@@ -160,7 +161,7 @@ struct SwitcherData {
 
 	uint32_t threadPriority = QThread::NormalPriority;
 
-	std::vector<int> tabOrder;
+	std::vector<int> tabOrder = std::vector<int>(tab_count);
 
 	bool hotkeysRegistered = false;
 	obs_hotkey_id startHotkey = 0;
