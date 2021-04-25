@@ -508,8 +508,8 @@ void SwitcherData::Thread()
 		sleep = 0;
 		linger = 0;
 
-		switcher->Prune();
-		if (switcher->stop) {
+		Prune();
+		if (stop) {
 			break;
 		}
 		if (checkPause()) {
@@ -517,7 +517,7 @@ void SwitcherData::Thread()
 		}
 		match = checkForMatch(scene, transition, linger,
 				      setPrevSceneAfterLinger);
-		if (switcher->stop) {
+		if (stop) {
 			break;
 		}
 		checkNoMatchSwitch(match, scene, transition, sleep);
@@ -530,7 +530,7 @@ void SwitcherData::Thread()
 
 			cv.wait_for(lock, duration);
 
-			if (switcher->stop) {
+			if (stop) {
 				break;
 			}
 
@@ -618,7 +618,7 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 			break;
 		}
 
-		if (switcher->stop) {
+		if (stop) {
 			return false;
 		}
 		if (match) {
@@ -662,9 +662,8 @@ void SwitcherData::Start()
 {
 	if (!(th && th->isRunning())) {
 		stop = false;
-		switcher->th = new SwitcherThread();
-		switcher->th->start(
-			(QThread::Priority)switcher->threadPriority);
+		th = new SwitcherThread();
+		th->start((QThread::Priority)threadPriority);
 
 		// Will be overwritten quickly but might be useful
 		writeToStatusFile("Advanced Scene Switcher running");
@@ -683,7 +682,7 @@ void SwitcherData::Start()
 void SwitcherData::Stop()
 {
 	if (th && th->isRunning()) {
-		switcher->stop = true;
+		stop = true;
 		transitionCv.notify_one();
 		cv.notify_one();
 		th->wait();

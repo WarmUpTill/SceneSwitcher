@@ -305,7 +305,7 @@ void SwitcherData::checkTriggers()
 void SwitcherData::saveSceneTriggers(obs_data_t *obj)
 {
 	obs_data_array_t *triggerArray = obs_data_array_create();
-	for (auto &s : switcher->sceneTriggers) {
+	for (auto &s : sceneTriggers) {
 		obs_data_t *array_obj = obs_data_create();
 
 		s.save(array_obj);
@@ -319,7 +319,7 @@ void SwitcherData::saveSceneTriggers(obs_data_t *obj)
 
 void SwitcherData::loadSceneTriggers(obs_data_t *obj)
 {
-	switcher->sceneTriggers.clear();
+	sceneTriggers.clear();
 
 	obs_data_array_t *triggerArray = obs_data_get_array(obj, "triggers");
 	size_t count = obs_data_array_count(triggerArray);
@@ -327,7 +327,7 @@ void SwitcherData::loadSceneTriggers(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(triggerArray, i);
 
-		switcher->sceneTriggers.emplace_back();
+		sceneTriggers.emplace_back();
 		sceneTriggers.back().load(array_obj);
 
 		obs_data_release(array_obj);

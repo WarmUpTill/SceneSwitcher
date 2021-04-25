@@ -149,7 +149,7 @@ bool SwitcherData::checkTimeSwitch(OBSWeakSource &scene,
 void SwitcherData::saveTimeSwitches(obs_data_t *obj)
 {
 	obs_data_array_t *timeArray = obs_data_array_create();
-	for (TimeSwitch &s : switcher->timeSwitches) {
+	for (TimeSwitch &s : timeSwitches) {
 		obs_data_t *array_obj = obs_data_create();
 
 		s.save(array_obj);
@@ -163,7 +163,7 @@ void SwitcherData::saveTimeSwitches(obs_data_t *obj)
 
 void SwitcherData::loadTimeSwitches(obs_data_t *obj)
 {
-	switcher->timeSwitches.clear();
+	timeSwitches.clear();
 
 	obs_data_array_t *timeArray = obs_data_get_array(obj, "timeSwitches");
 	size_t count = obs_data_array_count(timeArray);
@@ -171,7 +171,7 @@ void SwitcherData::loadTimeSwitches(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(timeArray, i);
 
-		switcher->timeSwitches.emplace_back();
+		timeSwitches.emplace_back();
 		timeSwitches.back().load(array_obj);
 
 		obs_data_release(array_obj);
