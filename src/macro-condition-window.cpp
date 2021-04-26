@@ -36,6 +36,8 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 	std::shared_ptr<MacroConditionWindow> entryData)
 {
 	_windowSelection = new QComboBox();
+	_windowSelection->setEditable(true);
+	_windowSelection->setMaxVisibleItems(20);
 
 	QWidget::connect(_windowSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
