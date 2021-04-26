@@ -27,7 +27,7 @@ bool MacroConditionAudio::CheckCondition()
 	}
 
 	// Reset for next check
-	_peak = -FLT_MAX;
+	_peak = -std::numeric_limits<float>::infinity();
 
 	if (volumeThresholdreached) {
 		_matchCount++;
