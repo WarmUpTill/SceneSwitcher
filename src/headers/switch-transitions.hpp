@@ -10,6 +10,8 @@ struct SceneTransition : SceneSwitcherEntry {
 	const char *getType() { return "transition"; }
 	bool initialized();
 	bool valid();
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 
 	inline SceneTransition(){};
 	inline SceneTransition(OBSWeakSource scene_, OBSWeakSource scene2_,
@@ -26,6 +28,8 @@ struct DefaultSceneTransition : SceneSwitcherEntry {
 	static unsigned int delay;
 
 	const char *getType() { return "def_transition"; }
+	void save(obs_data_t *obj);
+	void load(obs_data_t *obj);
 	bool checkMatch(OBSWeakSource currentScene);
 	void setTransition();
 
