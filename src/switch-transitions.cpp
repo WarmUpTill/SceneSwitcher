@@ -304,25 +304,9 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 	for (SceneTransition &s : sceneTransitions) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source1 = obs_weak_source_get_source(s.scene);
-		obs_source_t *source2 = obs_weak_source_get_source(s.scene2);
-		obs_source_t *transition =
-			obs_weak_source_get_source(s.transition);
-		if (source1 && source2 && transition) {
-			const char *sceneName1 = obs_source_get_name(source1);
-			const char *sceneName2 = obs_source_get_name(source2);
-			const char *transitionName =
-				obs_source_get_name(transition);
-			obs_data_set_string(array_obj, "Scene1", sceneName1);
-			obs_data_set_string(array_obj, "Scene2", sceneName2);
-			obs_data_set_string(array_obj, "transition",
-					    transitionName);
-			obs_data_array_push_back(sceneTransitionsArray,
-						 array_obj);
-		}
-		obs_source_release(source1);
-		obs_source_release(source2);
-		obs_source_release(transition);
+		s.save(array_obj);
+		obs_data_array_push_back(sceneTransitionsArray, array_obj);
+
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "sceneTransitions", sceneTransitionsArray);
@@ -332,21 +316,9 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 	for (DefaultSceneTransition &s : defaultSceneTransitions) {
 		obs_data_t *array_obj = obs_data_create();
 
-		obs_source_t *source = obs_weak_source_get_source(s.scene);
-		obs_source_t *transition =
-			obs_weak_source_get_source(s.transition);
-		if (source && transition) {
-			const char *sceneName = obs_source_get_name(source);
-			const char *transitionName =
-				obs_source_get_name(transition);
-			obs_data_set_string(array_obj, "Scene", sceneName);
-			obs_data_set_string(array_obj, "transition",
-					    transitionName);
-			obs_data_array_push_back(defaultTransitionsArray,
-						 array_obj);
-		}
-		obs_source_release(source);
-		obs_source_release(transition);
+		s.save(array_obj);
+		obs_data_array_push_back(defaultTransitionsArray, array_obj);
+
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "defaultTransitions", defaultTransitionsArray);
@@ -487,6 +459,19 @@ bool SceneTransition::valid()
 	       (SceneSwitcherEntry::valid() && WeakSourceValid(scene2));
 }
 
+void SceneTransition::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj, "targetType", "Scene1");
+	obs_data_set_string(obj, "Scene2", GetWeakSourceName(scene2).c_str());
+}
+
+void SceneTransition::load(obs_data_t *obj)
+{
+	SceneSwitcherEntry::load(obj, "targetType", "Scene1");
+	const char *sourceName = obs_data_get_string(obj, "Scene2");
+	scene2 = GetWeakSourceByName(sourceName);
+}
+
 TransitionSwitchWidget::TransitionSwitchWidget(QWidget *parent,
 					       SceneTransition *s)
 	: SwitchWidget(parent, s, false, false, false)
@@ -582,6 +567,16 @@ void DefTransitionSwitchWidget::swapSwitchData(DefTransitionSwitchWidget *s1,
 	DefaultSceneTransition *t = s1->getSwitchData();
 	s1->setSwitchData(s2->getSwitchData());
 	s2->setSwitchData(t);
+}
+
+void DefaultSceneTransition::save(obs_data_t *obj)
+{
+	SceneSwitcherEntry::save(obj, "targetType", "Scene");
+}
+
+void DefaultSceneTransition::load(obs_data_t *obj)
+{
+	SceneSwitcherEntry::load(obj, "targetType", "Scene");
 }
 
 bool DefaultSceneTransition::checkMatch(OBSWeakSource currentScene)
