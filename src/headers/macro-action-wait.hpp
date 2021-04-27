@@ -2,6 +2,11 @@
 #include <QDoubleSpinBox>
 #include "macro-action-edit.hpp"
 
+enum class WaitType {
+	FIXED,
+	RANDOM,
+};
+
 class MacroActionWait : public MacroAction {
 public:
 	bool PerformAction();
@@ -13,6 +18,8 @@ public:
 		return std::make_shared<MacroActionWait>();
 	}
 	double _duration = 0.;
+	double _duration2 = 0.;
+	WaitType _waitType = WaitType::FIXED;
 
 private:
 	static bool _registered;
@@ -26,6 +33,8 @@ public:
 	MacroActionWaitEdit(
 		std::shared_ptr<MacroActionWait> entryData = nullptr);
 	void UpdateEntryData();
+	void SetupFixedDurationEdit();
+	void SetupRandomDurationEdit();
 	static QWidget *Create(std::shared_ptr<MacroAction> action)
 	{
 		return new MacroActionWaitEdit(
@@ -34,11 +43,16 @@ public:
 
 private slots:
 	void DurationChanged(double value);
+	void Duration2Changed(double value);
+	void TypeChanged(int value);
 
 protected:
 	QDoubleSpinBox *_duration;
+	QDoubleSpinBox *_duration2;
+	QComboBox *_waitType;
 	std::shared_ptr<MacroActionWait> _entryData;
 
 private:
+	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
