@@ -12,6 +12,7 @@ enum class AudioCondition {
 
 class MacroConditionAudio : public MacroCondition {
 public:
+	~MacroConditionAudio();
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);

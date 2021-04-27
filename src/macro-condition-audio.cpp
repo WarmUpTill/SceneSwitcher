@@ -15,6 +15,12 @@ static std::unordered_map<AudioCondition, std::string> audioConditionTypes = {
 	{AudioCondition::BELOW, "AdvSceneSwitcher.audioTab.condition.below"},
 };
 
+MacroConditionAudio::~MacroConditionAudio()
+{
+	obs_volmeter_remove_callback(_volmeter, SetVolumeLevel, this);
+	obs_volmeter_destroy(_volmeter);
+}
+
 bool MacroConditionAudio::CheckCondition()
 {
 	// peak will have a value from -60 db to 0 db
