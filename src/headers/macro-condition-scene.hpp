@@ -3,6 +3,11 @@
 #include <QWidget>
 #include <QComboBox>
 
+enum class SceneType {
+	CURRENT,
+	PREVIOUS,
+};
+
 class MacroConditionScene : public MacroCondition {
 public:
 	bool CheckCondition();
@@ -15,6 +20,7 @@ public:
 	}
 
 	OBSWeakSource _scene;
+	SceneType _type;
 
 private:
 	static bool _registered;
@@ -36,9 +42,11 @@ public:
 
 private slots:
 	void SceneChanged(const QString &text);
+	void TypeChanged(int value);
 
 protected:
 	QComboBox *_sceneSelection;
+	QComboBox *_sceneType;
 	std::shared_ptr<MacroConditionScene> _entryData;
 
 private:
