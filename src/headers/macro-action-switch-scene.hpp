@@ -1,7 +1,8 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "switch-generic.hpp"
 
-class MacroActionSwitchScene : public MacroAction {
+class MacroActionSwitchScene : public MacroAction, public SceneSwitcherEntry {
 public:
 	bool PerformAction();
 	bool Save(obs_data_t *obj);
@@ -12,20 +13,19 @@ public:
 	{
 		return std::make_shared<MacroActionSwitchScene>();
 	}
-	OBSWeakSource _scene = nullptr;
 
 private:
+	const char *getType() { return "MacroActionSwitchScene"; }
 	static bool _registered;
 	static const int id;
 };
 
-class MacroActionSwitchSceneEdit : public QWidget {
+class MacroActionSwitchSceneEdit : public SwitchWidget {
 	Q_OBJECT
 
 public:
 	MacroActionSwitchSceneEdit(
 		std::shared_ptr<MacroActionSwitchScene> entryData = nullptr);
-	void UpdateEntryData();
 	static QWidget *Create(std::shared_ptr<MacroAction> action)
 	{
 		return new MacroActionSwitchSceneEdit(
@@ -33,13 +33,6 @@ public:
 				action));
 	}
 
-private slots:
-	void SceneChanged(const QString &text);
-
 protected:
-	QComboBox *_sceneSelection;
 	std::shared_ptr<MacroActionSwitchScene> _entryData;
-
-private:
-	bool _loading = true;
 };
