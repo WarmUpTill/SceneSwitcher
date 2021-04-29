@@ -4,6 +4,7 @@
 #include <limits>
 #include <QWidget>
 #include <QComboBox>
+#include <chrono>
 
 enum class AudioCondition {
 	ABOVE,
@@ -35,7 +36,7 @@ public:
 
 private:
 	float _peak = -std::numeric_limits<float>::infinity();
-	unsigned int _matchCount = 0;
+	std::chrono::high_resolution_clock::time_point _startTime;
 	static bool _registered;
 	static const int id;
 };

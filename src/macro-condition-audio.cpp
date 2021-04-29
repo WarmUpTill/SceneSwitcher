@@ -36,15 +36,16 @@ bool MacroConditionAudio::CheckCondition()
 	_peak = -std::numeric_limits<float>::infinity();
 
 	if (volumeThresholdreached) {
-		_matchCount++;
+		if (_startTime.time_since_epoch().count() == 0) {
+			_startTime = std::chrono::high_resolution_clock::now();
+		}
 	} else {
-		_matchCount = 0;
+		_startTime = {};
 	}
 
-	bool durationReached =
-		((unsigned long long)_matchCount * switcher->interval) /
-			1000.0 >=
-		_duration;
+	auto runTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::high_resolution_clock::now() - _startTime);
+	bool durationReached = runTime.count() >= _duration * 1000;
 
 	return (volumeThresholdreached && durationReached);
 }
