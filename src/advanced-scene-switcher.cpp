@@ -593,8 +593,8 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 	for (int switchFuncName : functionNamesByPriority) {
 		switch (switchFuncName) {
 		case read_file_func:
-			match = checkSwitchInfoFromFile(scene, transition);
-			match = checkFileContent(scene, transition);
+			match = checkSwitchInfoFromFile(scene, transition) ||
+				checkFileContent(scene, transition);
 			break;
 		case idle_func:
 			match = checkIdleSwitch(scene, transition);

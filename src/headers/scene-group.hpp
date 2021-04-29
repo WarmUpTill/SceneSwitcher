@@ -54,11 +54,6 @@ struct SceneGroup {
 	}
 };
 
-enum class SwitchTargetType {
-	Scene,
-	SceneGroup,
-};
-
 class SceneGroupEditWidget : public QWidget {
 	Q_OBJECT
 
