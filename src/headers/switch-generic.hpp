@@ -2,6 +2,11 @@
 #include <obs.hpp>
 #include <QComboBox>
 
+enum class SwitchTargetType {
+	Scene,
+	SceneGroup,
+};
+
 struct SceneSwitcherEntry {
 	SwitchTargetType targetType = SwitchTargetType::Scene;
 	SceneGroup *group = nullptr;
