@@ -483,6 +483,7 @@ void SwitcherData::Thread()
 		// The previous scene might have changed during the linger duration,
 		// if a longer transition is used than the configured check interval
 		bool setPrevSceneAfterLinger = false;
+		bool macroMatch = false;
 
 		endTime = std::chrono::high_resolution_clock::now();
 
@@ -517,7 +518,7 @@ void SwitcherData::Thread()
 			continue;
 		}
 		match = checkForMatch(scene, transition, linger,
-				      setPrevSceneAfterLinger);
+				      setPrevSceneAfterLinger, macroMatch);
 		if (stop) {
 			break;
 		}
@@ -558,9 +559,14 @@ void SwitcherData::Thread()
 			if (networkConfig.ServerEnabled) {
 				server.sendMessage(scene, transition);
 			}
-			switchScene(scene, transition,
-				    tansitionOverrideOverride,
-				    adjustActiveTransitionType, verbose);
+			if (macroMatch) {
+				runMacros();
+			} else {
+				switchScene(scene, transition,
+					    tansitionOverrideOverride,
+					    adjustActiveTransitionType,
+					    verbose);
+			}
 		}
 
 		writeSceneInfoToFile();
@@ -571,7 +577,8 @@ void SwitcherData::Thread()
 
 bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 				 OBSWeakSource &transition, int &linger,
-				 bool &setPrevSceneAfterLinger)
+				 bool &setPrevSceneAfterLinger,
+				 bool &macroMatch)
 {
 	bool match = false;
 
@@ -618,7 +625,10 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 			match = checkVideoSwitch(scene, transition);
 			break;
 		case macro_func:
-			match = checkMacros();
+			if (checkMacros()) {
+				match = true;
+				macroMatch = true;
+			}
 			break;
 		}
 

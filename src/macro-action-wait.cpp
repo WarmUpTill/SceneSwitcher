@@ -31,9 +31,10 @@ bool MacroActionWait::PerformAction()
 		sleep_duration = unif(re);
 	}
 
-	std::this_thread::sleep_for(
-		std::chrono::milliseconds((long long)(sleep_duration * 1000)));
-	return true;
+	std::unique_lock<std::mutex> lock(switcher->m);
+	switcher->cv.wait_for(lock, std::chrono::milliseconds((
+					    long long)(sleep_duration * 1000)));
+	return !switcher->stop;
 }
 
 bool MacroActionWait::Save(obs_data_t *obj)

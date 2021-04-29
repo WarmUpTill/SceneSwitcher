@@ -193,8 +193,10 @@ struct SwitcherData {
 	void writeToStatusFile(QString status);
 
 	bool checkForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
-			   int &linger, bool &setPreviousSceneAsMatch);
+			   int &linger, bool &setPreviousSceneAsMatch,
+			   bool &macroMatch);
 	bool checkMacros();
+	bool runMacros();
 	bool checkSceneSequence(OBSWeakSource &scene, OBSWeakSource &transition,
 				int &linger, bool &setPrevSceneAfterLinger);
 	bool checkIdleSwitch(OBSWeakSource &scene, OBSWeakSource &transition);

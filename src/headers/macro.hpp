@@ -57,6 +57,7 @@ public:
 
 	bool checkMatch();
 	bool performAction();
+	bool Matched() { return _matched; }
 	std::string Name() { return _name; }
 	void SetName(std::string name) { _name = name; }
 	std::deque<std::shared_ptr<MacroCondition>> &Conditions()
@@ -72,4 +73,5 @@ private:
 	std::string _name = "";
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;
 	std::deque<std::shared_ptr<MacroAction>> _actions;
+	bool _matched = false;
 };

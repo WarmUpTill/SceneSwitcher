@@ -19,7 +19,7 @@ Macro::~Macro() {}
 
 bool Macro::checkMatch()
 {
-	bool match = false;
+	_matched = false;
 	for (auto &c : _conditions) {
 		bool cond = c->CheckCondition();
 
@@ -29,22 +29,22 @@ bool Macro::checkMatch()
 			continue;
 			break;
 		case LogicType::AND:
-			match = match && cond;
+			_matched = _matched && cond;
 			break;
 		case LogicType::OR:
-			match = match || cond;
+			_matched = _matched || cond;
 			break;
 		case LogicType::AND_NOT:
-			match = match && !cond;
+			_matched = _matched && !cond;
 			break;
 		case LogicType::OR_NOT:
-			match = match || !cond;
+			_matched = _matched || !cond;
 			break;
 		case LogicType::ROOT_NONE:
-			match = cond;
+			_matched = cond;
 			break;
 		case LogicType::ROOT_NOT:
-			match = !cond;
+			_matched = !cond;
 			break;
 		default:
 			blog(LOG_INFO, "ignoring unkown condition check");
@@ -52,7 +52,7 @@ bool Macro::checkMatch()
 		}
 	}
 
-	return match;
+	return _matched;
 }
 
 bool Macro::performAction()
@@ -191,12 +191,22 @@ void SwitcherData::loadMacros(obs_data_t *obj)
 bool SwitcherData::checkMacros()
 {
 	bool ret = false;
-
 	for (auto &m : macros) {
 		if (m.checkMatch()) {
-			m.performAction();
 			ret = true;
 		}
 	}
 	return ret;
+}
+
+bool SwitcherData::runMacros()
+{
+	for (auto &m : macros) {
+		if (m.Matched()) {
+			if (!m.performAction()) {
+				return false;
+			}
+		}
+	}
+	return true;
 }
