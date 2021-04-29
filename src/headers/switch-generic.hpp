@@ -2,6 +2,8 @@
 #include <obs.hpp>
 #include <QComboBox>
 
+#include "scene-group.hpp"
+
 enum class SwitchTargetType {
 	Scene,
 	SceneGroup,
