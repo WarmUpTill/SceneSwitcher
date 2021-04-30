@@ -108,8 +108,16 @@ bool Macro::Load(obs_data_t *obj)
 
 		int id = obs_data_get_int(array_obj, "id");
 
-		_conditions.emplace_back(MacroConditionFactory::Create(id));
-		_conditions.back()->Load(array_obj);
+		auto newEntry = MacroConditionFactory::Create(id);
+		if (newEntry) {
+			_conditions.emplace_back(
+				MacroConditionFactory::Create(id));
+			_conditions.back()->Load(array_obj);
+		} else {
+			blog(LOG_WARNING,
+			     "discarding condition entry with unkown id (%d) for macro %s",
+			     id, _name);
+		}
 
 		obs_data_release(array_obj);
 	}
@@ -123,8 +131,15 @@ bool Macro::Load(obs_data_t *obj)
 
 		int id = obs_data_get_int(array_obj, "id");
 
-		_actions.emplace_back(MacroActionFactory::Create(id));
-		_actions.back()->Load(array_obj);
+		auto newEntry = MacroActionFactory::Create(id);
+		if (newEntry) {
+			_actions.emplace_back(newEntry);
+			_actions.back()->Load(array_obj);
+		} else {
+			blog(LOG_WARNING,
+			     "discarding action entry with unkown id (%d) for macro %s",
+			     id, _name);
+		}
 
 		obs_data_release(array_obj);
 	}
