@@ -1,7 +1,5 @@
 #include "headers/macro-condition-edit.hpp"
 
-bool MacroConditionEdit::enableAdvancedLogic = false;
-
 std::map<int, MacroConditionInfo> MacroConditionFactory::_methods;
 
 bool MacroConditionFactory::Register(int id, MacroConditionInfo info)
@@ -68,26 +66,11 @@ MacroConditionEdit::MacroConditionEdit(
 	_conditionWidgetLayout = new QVBoxLayout();
 	_group = new QGroupBox();
 	_groupLayout = new QVBoxLayout;
-	_childLayout = new QVBoxLayout;
-	_extend = new QPushButton();
-	_reduce = new QPushButton();
-
-	_extend->setProperty("themeID",
-			     QVariant(QStringLiteral("addIconSmall")));
-	_reduce->setProperty("themeID",
-			     QVariant(QStringLiteral("removeIconSmall")));
-
-	_extend->setMaximumSize(22, 22);
-	_reduce->setMaximumSize(22, 22);
 
 	QWidget::connect(_logicSelection, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(LogicSelectionChanged(int)));
 	QWidget::connect(_conditionSelection, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(ConditionSelectionChanged(int)));
-	QWidget::connect(_extend, SIGNAL(clicked()), this,
-			 SLOT(ExtendClicked()));
-	QWidget::connect(_reduce, SIGNAL(clicked()), this,
-			 SLOT(ReduceClicked()));
 
 	populateLogicSelection(_logicSelection, root);
 	populateConditionSelection(_conditionSelection);
@@ -109,17 +92,9 @@ MacroConditionEdit::MacroConditionEdit(
 	_groupLayout->addLayout(_conditionWidgetLayout);
 
 	QHBoxLayout *controlsLayout = new QHBoxLayout;
-	controlsLayout->addWidget(_extend);
-	controlsLayout->addWidget(_reduce);
 	controlsLayout->addStretch();
 	_groupLayout->addLayout(controlsLayout);
 
-	if (!enableAdvancedLogic) {
-		_extend->hide();
-		_reduce->hide();
-	}
-
-	_groupLayout->addLayout(_childLayout);
 	_group->setLayout(_groupLayout);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
@@ -206,39 +181,6 @@ void MacroConditionEdit::ConditionSelectionChanged(int idx)
 	auto widget =
 		MacroConditionFactory::CreateWidget(idx, this, *_entryData);
 	_conditionWidgetLayout->addWidget(widget);
-}
-
-void MacroConditionEdit::ExtendClicked()
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	//std::lock_guard<std::mutex> lock(switcher->m);
-	//auto es = switchData->extend();
-
-	MacroConditionEdit *ew = new MacroConditionEdit(nullptr, false);
-	_childLayout->addWidget(ew);
-}
-
-void MacroConditionEdit::ReduceClicked()
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	//std::lock_guard<std::mutex> lock(switcher->m);
-	//switchData->reduce();
-
-	int count = _childLayout->count();
-	auto item = _childLayout->takeAt(count - 1);
-	if (item) {
-		auto widget = item->widget();
-		if (widget) {
-			widget->setVisible(false);
-		}
-		delete item;
-	}
 }
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()
