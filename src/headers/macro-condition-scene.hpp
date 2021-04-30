@@ -2,6 +2,7 @@
 #include "macro.hpp"
 #include <QWidget>
 #include <QComboBox>
+#include "duration-control.hpp"
 
 enum class SceneType {
 	CURRENT,
@@ -21,6 +22,7 @@ public:
 
 	OBSWeakSource _scene;
 	SceneType _type;
+	Duration _duration;
 
 private:
 	static bool _registered;
@@ -46,10 +48,13 @@ public:
 private slots:
 	void SceneChanged(const QString &text);
 	void TypeChanged(int value);
+	void DurationChanged(double seconds);
+	void DurationUnitChanged(DurationUnit unit);
 
 protected:
 	QComboBox *_sceneSelection;
 	QComboBox *_sceneType;
+	DurationSelection *_duration;
 	std::shared_ptr<MacroConditionScene> _entryData;
 
 private:

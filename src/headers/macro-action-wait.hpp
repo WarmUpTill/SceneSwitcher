@@ -1,6 +1,7 @@
 #pragma once
 #include <QDoubleSpinBox>
 #include "macro-action-edit.hpp"
+#include "duration-control.hpp"
 
 enum class WaitType {
 	FIXED,
@@ -17,8 +18,8 @@ public:
 	{
 		return std::make_shared<MacroActionWait>();
 	}
-	double _duration = 0.;
-	double _duration2 = 0.;
+	Duration _duration;
+	Duration _duration2;
 	WaitType _waitType = WaitType::FIXED;
 
 private:
@@ -46,12 +47,14 @@ public:
 
 private slots:
 	void DurationChanged(double value);
+	void DurationUnitChanged(DurationUnit unit);
 	void Duration2Changed(double value);
+	void Duration2UnitChanged(DurationUnit unit);
 	void TypeChanged(int value);
 
 protected:
-	QDoubleSpinBox *_duration;
-	QDoubleSpinBox *_duration2;
+	DurationSelection *_duration;
+	DurationSelection *_duration2;
 	QComboBox *_waitType;
 	std::shared_ptr<MacroActionWait> _entryData;
 

@@ -23,10 +23,14 @@ bool MacroActionWait::PerformAction()
 {
 	double sleep_duration;
 	if (_waitType == WaitType::FIXED) {
-		sleep_duration = _duration;
+		sleep_duration = _duration.seconds;
 	} else {
-		double min = (_duration < _duration2) ? _duration : _duration2;
-		double max = (_duration < _duration2) ? _duration2 : _duration;
+		double min = (_duration.seconds < _duration2.seconds)
+				     ? _duration.seconds
+				     : _duration2.seconds;
+		double max = (_duration.seconds < _duration2.seconds)
+				     ? _duration2.seconds
+				     : _duration.seconds;
 		std::uniform_real_distribution<double> unif(min, max);
 		sleep_duration = unif(re);
 	}
@@ -40,8 +44,8 @@ bool MacroActionWait::PerformAction()
 bool MacroActionWait::Save(obs_data_t *obj)
 {
 	MacroAction::Save(obj);
-	obs_data_set_double(obj, "duration", _duration);
-	obs_data_set_double(obj, "duration2", _duration2);
+	_duration.Save(obj);
+	_duration2.Save(obj, "seconds2", "displayUnit2");
 	obs_data_set_int(obj, "waitType", static_cast<int>(_waitType));
 	return true;
 }
@@ -49,8 +53,8 @@ bool MacroActionWait::Save(obs_data_t *obj)
 bool MacroActionWait::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	_duration = obs_data_get_double(obj, "duration");
-	_duration2 = obs_data_get_double(obj, "duration2");
+	_duration.Load(obj);
+	_duration2.Load(obj, "seconds2", "displayUnit2");
 	_waitType = static_cast<WaitType>(obs_data_get_int(obj, "waitType"));
 	return true;
 }
@@ -66,24 +70,20 @@ MacroActionWaitEdit::MacroActionWaitEdit(
 	QWidget *parent, std::shared_ptr<MacroActionWait> entryData)
 	: QWidget(parent)
 {
-	_duration = new QDoubleSpinBox();
-	_duration2 = new QDoubleSpinBox();
+	_duration = new DurationSelection();
+	_duration2 = new DurationSelection();
 	_waitType = new QComboBox();
-
-	_duration->setMinimum(0.0);
-	_duration->setMaximum(9999999.);
-	_duration->setSuffix("s");
-
-	_duration2->setMinimum(0.0);
-	_duration2->setMaximum(9999999.);
-	_duration2->setSuffix("s");
 
 	populateTypeSelection(_waitType);
 
-	QWidget::connect(_duration, SIGNAL(valueChanged(double)), this,
+	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
 			 SLOT(DurationChanged(double)));
-	QWidget::connect(_duration2, SIGNAL(valueChanged(double)), this,
+	QWidget::connect(_duration, SIGNAL(UnitChanged(DurationUnit)), this,
+			 SLOT(DurationUnitChanged(DurationUnit)));
+	QWidget::connect(_duration2, SIGNAL(DurationChanged(double)), this,
 			 SLOT(Duration2Changed(double)));
+	QWidget::connect(_duration2, SIGNAL(UnitChanged(DurationUnit)), this,
+			 SLOT(Duration2UnitChanged(DurationUnit)));
 	QWidget::connect(_waitType, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TypeChanged(int)));
 
@@ -107,8 +107,8 @@ void MacroActionWaitEdit::UpdateEntryData()
 		SetupRandomDurationEdit();
 	}
 
-	_duration->setValue(_entryData->_duration);
-	_duration2->setValue(_entryData->_duration2);
+	_duration->SetDuration(_entryData->_duration);
+	_duration2->SetDuration(_entryData->_duration2);
 	_waitType->setCurrentIndex(static_cast<int>(_entryData->_waitType));
 }
 
@@ -145,16 +145,6 @@ void MacroActionWaitEdit::SetupRandomDurationEdit()
 	_duration2->show();
 }
 
-void MacroActionWaitEdit::Duration2Changed(double value)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration2 = value;
-}
-
 void MacroActionWaitEdit::TypeChanged(int value)
 {
 	if (_loading || !_entryData) {
@@ -173,12 +163,42 @@ void MacroActionWaitEdit::TypeChanged(int value)
 	_entryData->_waitType = type;
 }
 
-void MacroActionWaitEdit::DurationChanged(double value)
+void MacroActionWaitEdit::DurationChanged(double seconds)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration = value;
+	_entryData->_duration.seconds = seconds;
+}
+
+void MacroActionWaitEdit::DurationUnitChanged(DurationUnit unit)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_duration.displayUnit = unit;
+}
+
+void MacroActionWaitEdit::Duration2Changed(double seconds)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_duration2.seconds = seconds;
+}
+
+void MacroActionWaitEdit::Duration2UnitChanged(DurationUnit unit)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_duration2.displayUnit = unit;
 }

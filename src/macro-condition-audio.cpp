@@ -35,19 +35,11 @@ bool MacroConditionAudio::CheckCondition()
 	// Reset for next check
 	_peak = -std::numeric_limits<float>::infinity();
 
-	if (volumeThresholdreached) {
-		if (_startTime.time_since_epoch().count() == 0) {
-			_startTime = std::chrono::high_resolution_clock::now();
-		}
-	} else {
-		_startTime = {};
+	if (!volumeThresholdreached) {
+		_duration.Reset();
+		return false;
 	}
-
-	auto runTime = std::chrono::duration_cast<std::chrono::milliseconds>(
-		std::chrono::high_resolution_clock::now() - _startTime);
-	bool durationReached = runTime.count() >= _duration * 1000;
-
-	return (volumeThresholdreached && durationReached);
+	return _duration.DurationReached();
 }
 
 bool MacroConditionAudio::Save(obs_data_t *obj)
@@ -57,7 +49,7 @@ bool MacroConditionAudio::Save(obs_data_t *obj)
 			    GetWeakSourceName(_audioSource).c_str());
 	obs_data_set_int(obj, "volume", _volume);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
-	obs_data_set_double(obj, "duration", _duration);
+	_duration.Save(obj);
 	return true;
 }
 
@@ -87,7 +79,7 @@ bool MacroConditionAudio::Load(obs_data_t *obj)
 	_volume = obs_data_get_int(obj, "volume");
 	_condition =
 		static_cast<AudioCondition>(obs_data_get_int(obj, "condition"));
-	_duration = obs_data_get_double(obj, "duration");
+	_duration.Load(obj);
 
 	_volmeter = AddVolmeterToSource(this, _audioSource);
 	return true;
@@ -131,21 +123,17 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 	_audioSources = new QComboBox();
 	_condition = new QComboBox();
 	_volume = new QSpinBox();
-	_duration = new QDoubleSpinBox();
+	_duration = new DurationSelection(parent, false);
 
 	_volume->setSuffix("%");
 	_volume->setMaximum(100);
 	_volume->setMinimum(0);
 
-	_duration->setMinimum(0.0);
-	_duration->setMaximum(99.000000);
-	_duration->setSuffix("s");
-
 	QWidget::connect(_volume, SIGNAL(valueChanged(int)), this,
 			 SLOT(VolumeThresholdChanged(int)));
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
-	QWidget::connect(_duration, SIGNAL(valueChanged(double)), this,
+	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
 			 SLOT(DurationChanged(double)));
 	QWidget::connect(_audioSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
@@ -227,14 +215,14 @@ void MacroConditionAudioEdit::ConditionChanged(int cond)
 	_entryData->_condition = static_cast<AudioCondition>(cond);
 }
 
-void MacroConditionAudioEdit::DurationChanged(double dur)
+void MacroConditionAudioEdit::DurationChanged(double seconds)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration = dur;
+	_entryData->_duration.seconds = seconds;
 }
 
 void MacroConditionAudioEdit::UpdateEntryData()
@@ -247,6 +235,6 @@ void MacroConditionAudioEdit::UpdateEntryData()
 		GetWeakSourceName(_entryData->_audioSource).c_str());
 	_volume->setValue(_entryData->_volume);
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
-	_duration->setValue(_entryData->_duration);
+	_duration->SetDuration(_entryData->_duration);
 	UpdateVolmeterSource();
 }
