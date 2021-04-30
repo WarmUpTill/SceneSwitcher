@@ -31,13 +31,16 @@ class MacroActionWaitEdit : public QWidget {
 
 public:
 	MacroActionWaitEdit(
+		QWidget *parent,
 		std::shared_ptr<MacroActionWait> entryData = nullptr);
 	void UpdateEntryData();
 	void SetupFixedDurationEdit();
 	void SetupRandomDurationEdit();
-	static QWidget *Create(std::shared_ptr<MacroAction> action)
+	static QWidget *Create(QWidget *parent,
+			       std::shared_ptr<MacroAction> action)
 	{
 		return new MacroActionWaitEdit(
+			parent,
 			std::dynamic_pointer_cast<MacroActionWait>(action));
 	}
 

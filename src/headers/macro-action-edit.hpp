@@ -9,7 +9,8 @@
 
 struct MacroActionInfo {
 	using TCreateMethod = std::shared_ptr<MacroAction> (*)();
-	using TCreateWidgetMethod = QWidget *(*)(std::shared_ptr<MacroAction>);
+	using TCreateWidgetMethod = QWidget *(*)(QWidget *parent,
+						 std::shared_ptr<MacroAction>);
 	TCreateMethod _createFunc;
 	TCreateWidgetMethod _createWidgetFunc;
 	std::string _name;
@@ -17,14 +18,10 @@ struct MacroActionInfo {
 
 class MacroActionFactory {
 public:
-	using TCreateMethod = std::shared_ptr<MacroAction> (*)(
-		const int id, std::shared_ptr<MacroCondition>);
-
-public:
 	MacroActionFactory() = delete;
 	static bool Register(int id, MacroActionInfo);
 	static std::shared_ptr<MacroAction> Create(const int id);
-	static QWidget *CreateWidget(const int id,
+	static QWidget *CreateWidget(const int id, QWidget *parent,
 				     std::shared_ptr<MacroAction> action);
 	static auto GetActionTypes() { return _methods; }
 
@@ -36,7 +33,8 @@ class MacroActionEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroActionEdit(std::shared_ptr<MacroAction> * = nullptr, int type = 0);
+	MacroActionEdit(QWidget *parent = nullptr,
+			std::shared_ptr<MacroAction> * = nullptr, int type = 0);
 	void UpdateEntryData(int type);
 
 private slots:

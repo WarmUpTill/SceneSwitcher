@@ -22,11 +22,11 @@ std::shared_ptr<MacroAction> MacroActionFactory::Create(const int id)
 	return nullptr;
 }
 
-QWidget *MacroActionFactory::CreateWidget(const int id,
+QWidget *MacroActionFactory::CreateWidget(const int id, QWidget *parent,
 					  std::shared_ptr<MacroAction> action)
 {
 	if (auto it = _methods.find(id); it != _methods.end())
-		return it->second._createWidgetFunc(action);
+		return it->second._createWidgetFunc(parent, action);
 
 	return nullptr;
 }
@@ -38,8 +38,10 @@ static inline void populateActionSelection(QComboBox *list)
 	}
 }
 
-MacroActionEdit::MacroActionEdit(std::shared_ptr<MacroAction> *entryData,
+MacroActionEdit::MacroActionEdit(QWidget *parent,
+				 std::shared_ptr<MacroAction> *entryData,
 				 int type)
+	: QWidget(parent)
 {
 	_actionSelection = new QComboBox();
 	_actionWidgetLayout = new QVBoxLayout();
@@ -81,7 +83,7 @@ void MacroActionEdit::ActionSelectionChanged(int idx)
 	_entryData->reset();
 	*_entryData = MacroActionFactory::Create(idx);
 	clearLayout(_actionWidgetLayout);
-	auto widget = MacroActionFactory::CreateWidget(idx, *_entryData);
+	auto widget = MacroActionFactory::CreateWidget(idx, this, *_entryData);
 	_actionWidgetLayout->addWidget(widget);
 }
 
@@ -89,7 +91,7 @@ void MacroActionEdit::UpdateEntryData(int type)
 {
 	_actionSelection->setCurrentIndex(type);
 	clearLayout(_actionWidgetLayout);
-	auto widget = MacroActionFactory::CreateWidget(type, *_entryData);
+	auto widget = MacroActionFactory::CreateWidget(type, this, *_entryData);
 	_actionWidgetLayout->addWidget(widget);
 }
 
@@ -101,7 +103,7 @@ void AdvSceneSwitcher::on_actionAdd_clicked()
 	}
 	std::lock_guard<std::mutex> lock(switcher->m);
 	macro->Actions().emplace_back(MacroActionFactory::Create(0));
-	auto newEntry = new MacroActionEdit(&macro->Actions().back(), 0);
+	auto newEntry = new MacroActionEdit(this, &macro->Actions().back(), 0);
 	ui->macroEditActionLayout->addWidget(newEntry);
 	ui->macroEditActionHelp->setVisible(false);
 }

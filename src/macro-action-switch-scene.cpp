@@ -32,8 +32,8 @@ bool MacroActionSwitchScene::Load(obs_data_t *obj)
 }
 
 MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
-	std::shared_ptr<MacroActionSwitchScene> entryData)
-	: SwitchWidget(nullptr, entryData.get(), true, true)
+	QWidget *parent, std::shared_ptr<MacroActionSwitchScene> entryData)
+	: SwitchWidget(parent->parentWidget(), entryData.get(), true, true)
 {
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {

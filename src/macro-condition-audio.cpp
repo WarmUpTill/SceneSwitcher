@@ -125,7 +125,8 @@ static inline void populateConditionSelection(QComboBox *list)
 }
 
 MacroConditionAudioEdit::MacroConditionAudioEdit(
-	std::shared_ptr<MacroConditionAudio> entryData)
+	QWidget *parent, std::shared_ptr<MacroConditionAudio> entryData)
+	: QWidget(parent)
 {
 	_audioSources = new QComboBox();
 	_condition = new QComboBox();

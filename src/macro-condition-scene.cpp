@@ -55,7 +55,7 @@ static inline void populateTypeSelection(QComboBox *list)
 }
 
 MacroConditionSceneEdit::MacroConditionSceneEdit(
-	std::shared_ptr<MacroConditionScene> entryData)
+	QWidget *parent, std::shared_ptr<MacroConditionScene> entryData)
 {
 	_sceneSelection = new QComboBox();
 	_sceneType = new QComboBox();

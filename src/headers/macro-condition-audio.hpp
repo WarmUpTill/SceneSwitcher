@@ -46,11 +46,14 @@ class MacroConditionAudioEdit : public QWidget {
 
 public:
 	MacroConditionAudioEdit(
+		QWidget *parent,
 		std::shared_ptr<MacroConditionAudio> cond = nullptr);
 	void UpdateEntryData();
-	static QWidget *Create(std::shared_ptr<MacroCondition> cond)
+	static QWidget *Create(QWidget *parent,
+			       std::shared_ptr<MacroCondition> cond)
 	{
 		return new MacroConditionAudioEdit(
+			parent,
 			std::dynamic_pointer_cast<MacroConditionAudio>(cond));
 	}
 	void UpdateVolmeterSource();

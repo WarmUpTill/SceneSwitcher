@@ -38,7 +38,7 @@ bool MacroConditionRegion::Load(obs_data_t *obj)
 }
 
 MacroConditionRegionEdit::MacroConditionRegionEdit(
-	std::shared_ptr<MacroConditionRegion> entryData)
+	QWidget *parent, std::shared_ptr<MacroConditionRegion> entryData)
 {
 	_minX = new QSpinBox();
 	_minY = new QSpinBox();

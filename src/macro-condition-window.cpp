@@ -33,7 +33,7 @@ bool MacroConditionWindow::Load(obs_data_t *obj)
 }
 
 MacroConditionWindowEdit::MacroConditionWindowEdit(
-	std::shared_ptr<MacroConditionWindow> entryData)
+	QWidget *parent, std::shared_ptr<MacroConditionWindow> entryData)
 {
 	_windowSelection = new QComboBox();
 	_windowSelection->setEditable(true);

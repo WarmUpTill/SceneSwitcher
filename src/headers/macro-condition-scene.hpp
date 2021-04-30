@@ -32,11 +32,14 @@ class MacroConditionSceneEdit : public QWidget {
 
 public:
 	MacroConditionSceneEdit(
+		QWidget *parent,
 		std::shared_ptr<MacroConditionScene> cond = nullptr);
 	void UpdateEntryData();
-	static QWidget *Create(std::shared_ptr<MacroCondition> cond)
+	static QWidget *Create(QWidget *parent,
+			       std::shared_ptr<MacroCondition> cond)
 	{
 		return new MacroConditionSceneEdit(
+			parent,
 			std::dynamic_pointer_cast<MacroConditionScene>(cond));
 	}
 

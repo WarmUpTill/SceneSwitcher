@@ -63,7 +63,8 @@ static inline void populateTypeSelection(QComboBox *list)
 }
 
 MacroActionWaitEdit::MacroActionWaitEdit(
-	std::shared_ptr<MacroActionWait> entryData)
+	QWidget *parent, std::shared_ptr<MacroActionWait> entryData)
+	: QWidget(parent)
 {
 	_duration = new QDoubleSpinBox();
 	_duration2 = new QDoubleSpinBox();

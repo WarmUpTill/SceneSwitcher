@@ -25,10 +25,13 @@ class MacroActionSwitchSceneEdit : public SwitchWidget {
 
 public:
 	MacroActionSwitchSceneEdit(
+		QWidget *parent,
 		std::shared_ptr<MacroActionSwitchScene> entryData = nullptr);
-	static QWidget *Create(std::shared_ptr<MacroAction> action)
+	static QWidget *Create(QWidget *parent,
+			       std::shared_ptr<MacroAction> action)
 	{
 		return new MacroActionSwitchSceneEdit(
+			parent,
 			std::dynamic_pointer_cast<MacroActionSwitchScene>(
 				action));
 	}

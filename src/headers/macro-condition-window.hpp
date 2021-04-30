@@ -26,11 +26,14 @@ class MacroConditionWindowEdit : public QWidget {
 
 public:
 	MacroConditionWindowEdit(
+		QWidget *parent,
 		std::shared_ptr<MacroConditionWindow> cond = nullptr);
 	void UpdateEntryData();
-	static QWidget *Create(std::shared_ptr<MacroCondition> cond)
+	static QWidget *Create(QWidget *parent,
+			       std::shared_ptr<MacroCondition> cond)
 	{
 		return new MacroConditionWindowEdit(
+			parent,
 			std::dynamic_pointer_cast<MacroConditionWindow>(cond));
 	}
 

@@ -10,7 +10,7 @@
 struct MacroConditionInfo {
 	using TCreateMethod = std::shared_ptr<MacroCondition> (*)();
 	using TCreateWidgetMethod =
-		QWidget *(*)(std::shared_ptr<MacroCondition>);
+		QWidget *(*)(QWidget *parent, std::shared_ptr<MacroCondition>);
 	TCreateMethod _createFunc;
 	TCreateWidgetMethod _createWidgetFunc;
 	std::string _name;
@@ -18,13 +18,10 @@ struct MacroConditionInfo {
 
 class MacroConditionFactory {
 public:
-	using TCreateMethod = std::shared_ptr<MacroCondition> (*)();
-
-public:
 	MacroConditionFactory() = delete;
 	static bool Register(int id, MacroConditionInfo);
 	static std::shared_ptr<MacroCondition> Create(const int id);
-	static QWidget *CreateWidget(const int id,
+	static QWidget *CreateWidget(const int id, QWidget *parent,
 				     std::shared_ptr<MacroCondition>);
 	static auto GetConditionTypes() { return _methods; }
 
@@ -36,7 +33,8 @@ class MacroConditionEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroConditionEdit(std::shared_ptr<MacroCondition> * = nullptr,
+	MacroConditionEdit(QWidget *parent = nullptr,
+			   std::shared_ptr<MacroCondition> * = nullptr,
 			   int type = 0, bool root = true);
 	bool IsRootNode();
 	void SetGroupTitle();

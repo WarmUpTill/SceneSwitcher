@@ -150,14 +150,15 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 
 	bool root = true;
 	for (auto &c : m.Conditions()) {
-		auto newEntry = new MacroConditionEdit(&c, c->GetId(), root);
+		auto newEntry =
+			new MacroConditionEdit(this, &c, c->GetId(), root);
 		ui->macroEditConditionLayout->addWidget(newEntry);
 		ui->macroEditConditionHelp->setVisible(false);
 		root = false;
 	}
 
 	for (auto &a : m.Actions()) {
-		auto newEntry = new MacroActionEdit(&a, a->GetId());
+		auto newEntry = new MacroActionEdit(this, &a, a->GetId());
 		ui->macroEditActionLayout->addWidget(newEntry);
 		ui->macroEditActionHelp->setVisible(false);
 	}
