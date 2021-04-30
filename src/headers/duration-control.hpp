@@ -14,9 +14,9 @@ enum class DurationUnit {
 
 class Duration {
 public:
-	void Save(obs_data_t *obj, const char *secondsName="seconds",
+	void Save(obs_data_t *obj, const char *secondsName = "seconds",
 		  const char *unitName = "displayUnit");
-	void Load(obs_data_t *obj, const char *secondsName="seconds",
+	void Load(obs_data_t *obj, const char *secondsName = "seconds",
 		  const char *unitName = "displayUnit");
 
 	bool DurationReached();
