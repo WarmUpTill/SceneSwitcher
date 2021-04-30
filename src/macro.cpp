@@ -116,7 +116,7 @@ bool Macro::Load(obs_data_t *obj)
 		} else {
 			blog(LOG_WARNING,
 			     "discarding condition entry with unkown id (%d) for macro %s",
-			     id, _name);
+			     id, _name.c_str());
 		}
 
 		obs_data_release(array_obj);
@@ -138,7 +138,7 @@ bool Macro::Load(obs_data_t *obj)
 		} else {
 			blog(LOG_WARNING,
 			     "discarding action entry with unkown id (%d) for macro %s",
-			     id, _name);
+			     id, _name.c_str());
 		}
 
 		obs_data_release(array_obj);
