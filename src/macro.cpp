@@ -154,6 +154,7 @@ bool MacroAction::Save(obs_data_t *obj)
 
 bool MacroAction::Load(obs_data_t *obj)
 {
+	UNUSED_PARAMETER(obj);
 	return true;
 }
 
