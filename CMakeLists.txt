@@ -86,6 +86,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/macro-condition-edit.hpp
 	src/headers/macro-condition-audio.hpp
 	src/headers/macro-condition-file.hpp
+	src/headers/macro-condition-media.hpp
 	src/headers/macro-condition-region.hpp
 	src/headers/macro-condition-scene.hpp
 	src/headers/macro-condition-window.hpp
@@ -128,6 +129,7 @@ set(advanced-scene-switcher_SOURCES
 	src/macro-condition-edit.cpp
 	src/macro-condition-audio.cpp
 	src/macro-condition-file.cpp
+	src/macro-condition-media.cpp
 	src/macro-condition-region.cpp
 	src/macro-condition-scene.cpp
 	src/macro-condition-window.cpp
