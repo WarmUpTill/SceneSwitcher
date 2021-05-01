@@ -25,7 +25,9 @@ bool Macro::checkMatch()
 
 		switch (c->GetLogicType()) {
 		case LogicType::NONE:
-			blog(LOG_INFO, "ignoring condition check 'none'");
+			blog(LOG_INFO,
+			     "ignoring condition check 'none' for '%s'",
+			     _name.c_str());
 			continue;
 			break;
 		case LogicType::AND:
@@ -47,7 +49,9 @@ bool Macro::checkMatch()
 			_matched = !cond;
 			break;
 		default:
-			blog(LOG_INFO, "ignoring unkown condition check");
+			blog(LOG_INFO,
+			     "ignoring unkown condition check for '%s'",
+			     _name.c_str());
 			break;
 		}
 	}
