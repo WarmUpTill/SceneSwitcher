@@ -400,7 +400,7 @@ void swap(MediaSwitch &first, MediaSwitch &second)
 	second.resetSignalHandler();
 }
 
-void populateMediaStates(QComboBox *list)
+static void populateMediaStates(QComboBox *list)
 {
 	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.none"));
 	list->addItem(
@@ -422,7 +422,7 @@ void populateMediaStates(QComboBox *list)
 	list->addItem(obs_module_text("AdvSceneSwitcher.mediaTab.states.any"));
 }
 
-void populateTimeRestrictions(QComboBox *list)
+static void populateTimeRestrictions(QComboBox *list)
 {
 	list->addItem(obs_module_text(
 		"AdvSceneSwitcher.mediaTab.timeRestriction.none"));
