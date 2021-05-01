@@ -14,7 +14,16 @@ public:
 		return std::make_shared<MacroConditionWindow>();
 	}
 
+private:
+	bool CheckWindowTitleSwitchDirect(std::string &currentWindowTitle);
+	bool CheckWindowTitleSwitchRegex(std::string &currentWindowTitle,
+					 std::vector<std::string> &windowList);
+
+public:
 	std::string _window;
+	bool _fullscreen = false;
+	bool _maximized = false;
+	bool _focus = true;
 
 private:
 	static bool _registered;
@@ -39,9 +48,15 @@ public:
 
 private slots:
 	void WindowChanged(const QString &text);
+	void FullscreenChanged(int state);
+	void MaximizedChanged(int state);
+	void FocusChanged(int state);
 
 protected:
 	QComboBox *_windowSelection;
+	QCheckBox *_fullscreen;
+	QCheckBox *_maximized;
+	QCheckBox *_focused;
 	std::shared_ptr<MacroConditionWindow> _entryData;
 
 private:
