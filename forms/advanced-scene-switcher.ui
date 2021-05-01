@@ -570,7 +570,7 @@
          <property name="title">
           <string>AdvSceneSwitcher.macroTab.macros</string>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_32">
+         <layout class="QVBoxLayout" name="verticalLayout_36">
           <item>
            <layout class="QGridLayout" name="gridLayout_26">
             <item row="0" column="0">
