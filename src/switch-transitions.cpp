@@ -290,14 +290,17 @@ void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
 		nextTransition = obs_weak_source_get_source(transition);
 	}
 
-	if (nextTransition && adjustActiveTransitionType) {
-		obs_frontend_set_transition_duration(nextTransitionDuration);
-		obs_frontend_set_current_transition(nextTransition);
-	}
+	if (nextTransition) {
+		if (adjustActiveTransitionType) {
+			obs_frontend_set_transition_duration(
+				nextTransitionDuration);
+			obs_frontend_set_current_transition(nextTransition);
+		}
 
-	if (transitionOverrideOverride) {
-		overwriteTransitionOverride(targetScene, nextTransition,
-					    nextTransitionDuration, td);
+		if (transitionOverrideOverride) {
+			overwriteTransitionOverride(targetScene, nextTransition,
+						    nextTransitionDuration, td);
+		}
 	}
 
 	obs_weak_source_release(nextTransitionWs);
