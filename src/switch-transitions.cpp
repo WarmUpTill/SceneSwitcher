@@ -351,18 +351,8 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj =
 			obs_data_array_item(sceneTransitionsArray, i);
-
-		const char *scene1 = obs_data_get_string(array_obj, "Scene1");
-		const char *scene2 = obs_data_get_string(array_obj, "Scene2");
-		const char *transition =
-			obs_data_get_string(array_obj, "transition");
-		double duration = obs_data_get_double(array_obj, "duration");
-
-		sceneTransitions.emplace_back(
-			GetWeakSourceByName(scene1),
-			GetWeakSourceByName(scene2),
-			GetWeakTransitionByName(transition), duration);
-
+		sceneTransitions.emplace_back();
+		sceneTransitions.back().load(array_obj);
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(sceneTransitionsArray);
@@ -376,15 +366,8 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj =
 			obs_data_array_item(defaultTransitionsArray, i);
-
-		const char *scene = obs_data_get_string(array_obj, "Scene");
-		const char *transition =
-			obs_data_get_string(array_obj, "transition");
-
-		defaultSceneTransitions.emplace_back(
-			GetWeakSourceByName(scene),
-			GetWeakTransitionByName(transition));
-
+		defaultSceneTransitions.emplace_back();
+		defaultSceneTransitions.back().load(array_obj);
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(defaultTransitionsArray);
