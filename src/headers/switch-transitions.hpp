@@ -1,8 +1,11 @@
 #pragma once
+#include <QDoubleSpinBox>
+
 #include "switch-generic.hpp"
 
 struct SceneTransition : SceneSwitcherEntry {
 	OBSWeakSource scene2 = nullptr;
+	double duration = 0.;
 
 	const char *getType() { return "transition"; }
 	bool initialized();
@@ -12,8 +15,10 @@ struct SceneTransition : SceneSwitcherEntry {
 
 	inline SceneTransition(){};
 	inline SceneTransition(OBSWeakSource scene_, OBSWeakSource scene2_,
-			       OBSWeakSource transition_)
-		: SceneSwitcherEntry(scene_, transition_), scene2(scene2_)
+			       OBSWeakSource transition_, double duration_)
+		: SceneSwitcherEntry(scene_, transition_),
+		  scene2(scene2_),
+		  duration(duration_)
 	{
 	}
 };
@@ -49,9 +54,11 @@ public:
 
 private slots:
 	void Scene2Changed(const QString &text);
+	void DurationChanged(double dur);
 
 private:
 	QComboBox *scenes2;
+	QDoubleSpinBox *duration;
 
 	SceneTransition *switchData;
 };
