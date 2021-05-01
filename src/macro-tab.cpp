@@ -4,6 +4,8 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/name-dialog.hpp"
 
+#include <QMenu>
+
 static QMetaObject::Connection addPulse;
 
 bool macroNameExists(std::string name)
@@ -17,9 +19,8 @@ bool macroNameExists(std::string name)
 	return false;
 }
 
-void AdvSceneSwitcher::on_macroAdd_clicked()
+bool AdvSceneSwitcher::addNewMacro(std::string &name)
 {
-	std::string name;
 	QString format{
 		obs_module_text("AdvSceneSwitcher.macroTab.defaultname")};
 
@@ -31,26 +32,35 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 
 	bool accepted = AdvSSNameDialog::AskForName(
 		this, obs_module_text("AdvSceneSwitcher.macroTab.add"),
-		obs_module_text("AdvSceneSwitcher.macroTab.add"), name,
+		obs_module_text("AdvSceneSwitcher.macroTab.name"), name,
 		placeHolderText);
 
 	if (!accepted) {
-		return;
+		return false;
 	}
 
 	if (name.empty()) {
-		return;
+		return false;
 	}
 
 	if (macroNameExists(name)) {
 		DisplayMessage(
 			obs_module_text("AdvSceneSwitcher.macroTab.exists"));
-		return;
+		return false;
 	}
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->macros.emplace_back(name);
+	}
+	return true;
+}
+
+void AdvSceneSwitcher::on_macroAdd_clicked()
+{
+	std::string name;
+	if (!addNewMacro(name)) {
+		return;
 	}
 	QString text = QString::fromStdString(name);
 
@@ -235,4 +245,38 @@ void AdvSceneSwitcher::setupMacroTab()
 	} else {
 		ui->macroHelp->setVisible(false);
 	}
+
+	ui->macros->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(ui->macros, SIGNAL(customContextMenuRequested(QPoint)), this,
+		SLOT(showMacroContextMenu(QPoint)));
+}
+
+void AdvSceneSwitcher::showMacroContextMenu(const QPoint &pos)
+{
+	QPoint globalPos = ui->macros->mapToGlobal(pos);
+	QMenu myMenu;
+	myMenu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.copy"),
+			 this, SLOT(copyMacro()));
+	myMenu.exec(globalPos);
+}
+
+void AdvSceneSwitcher::copyMacro()
+{
+	obs_data_t *data = obs_data_create();
+	getSelectedMacro()->Save(data);
+
+	std::string name;
+	if (!addNewMacro(name)) {
+		obs_data_release(data);
+		return;
+	}
+
+	switcher->macros.back().Load(data);
+	switcher->macros.back().SetName(name);
+	obs_data_release(data);
+
+	QString text = QString::fromStdString(name);
+	QListWidgetItem *item = new QListWidgetItem(text, ui->macros);
+	item->setData(Qt::UserRole, text);
+	ui->macros->setCurrentItem(item);
 }

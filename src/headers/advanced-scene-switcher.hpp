@@ -43,6 +43,7 @@ public:
 	void OpenSequenceExtendEdit(SequenceWidget *sw);
 	void SetEditSceneGroup(SceneGroup &sg);
 
+	bool addNewMacro(std::string &name);
 	Macro *getSelectedMacro();
 	void SetEditMacro(Macro &m);
 
@@ -139,6 +140,8 @@ public slots:
 	void on_conditionRemove_clicked();
 	void on_actionAdd_clicked();
 	void on_actionRemove_clicked();
+	void showMacroContextMenu(const QPoint &);
+	void copyMacro();
 
 	void on_screenRegionSwitches_currentRowChanged(int idx);
 	void on_showFrame_clicked();
