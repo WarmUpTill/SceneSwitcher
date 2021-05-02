@@ -4,7 +4,9 @@
 #import <Carbon/Carbon.h>
 #include <Carbon/Carbon.h>
 #include <util/platform.h>
-#include "../headers/advanced-scene-switcher.hpp"
+#include <vector>
+#include <QStringList>
+#include <QRegularExpression>
 
 void GetWindowList(std::vector<std::string> &windows)
 {
