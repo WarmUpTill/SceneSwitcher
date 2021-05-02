@@ -63,8 +63,6 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/advanced-scene-switcher.hpp
 	src/headers/switcher-data-structs.hpp
 	src/headers/utility.hpp
-	src/headers/curl-helper.hpp
-	src/headers/volume-control.hpp
 	src/headers/scene-group.hpp
 	src/headers/scene-trigger.hpp
 	src/headers/switch-audio.hpp
@@ -82,6 +80,9 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/switch-sequence.hpp
 	src/headers/switch-video.hpp
 	src/headers/switch-generic.hpp
+	src/headers/curl-helper.hpp
+	src/headers/duration-control.hpp
+	src/headers/volume-control.hpp
 	src/headers/version.h
 	)
 
@@ -111,6 +112,7 @@ set(advanced-scene-switcher_SOURCES
 	src/switch-video.cpp
 	src/switch-generic.cpp
 	src/curl-helper.cpp
+	src/duration-control.cpp
 	src/volume-control.cpp
 	src/version.cpp
 	)
