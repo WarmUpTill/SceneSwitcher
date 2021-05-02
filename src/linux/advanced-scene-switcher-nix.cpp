@@ -14,7 +14,9 @@
 #undef Status
 #undef Unsorted
 #include <util/platform.h>
-#include "../headers/advanced-scene-switcher.hpp"
+#include <vector>
+#include <QStringList>
+#include <QRegularExpression>
 
 static Display *xdisplay = 0;
 
