@@ -115,8 +115,10 @@ public slots:
 	void on_noMatchDontSwitch_clicked();
 	void on_noMatchSwitch_clicked();
 	void on_noMatchRandomSwitch_clicked();
-	void on_noMatchDelay_valueChanged(double i);
-	void on_cooldownTime_valueChanged(double i);
+	void NoMatchDelayDurationChanged(double);
+	void NoMatchDelayUnitChanged(DurationUnit);
+	void CooldownDurationChanged(double);
+	void CooldownUnitChanged(DurationUnit);
 	void on_startupBehavior_currentIndexChanged(int index);
 	void on_autoStartEvent_currentIndexChanged(int index);
 	void on_noMatchSwitchScene_currentTextChanged(const QString &text);

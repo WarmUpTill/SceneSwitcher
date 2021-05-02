@@ -24,6 +24,8 @@
 #include "switch-video.hpp"
 #include "switch-network.hpp"
 
+#include "duration-control.hpp"
+
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
 constexpr auto current_transition_name = "Current Transition";
@@ -74,12 +76,11 @@ struct SwitcherData {
 	SceneGroup *lastRandomSceneGroup;
 	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
-	double noMatchDelay = 0;
-	double noMatchCount = 0;
+	Duration noMatchDelay;
 	StartupBehavior startupBehavior = PERSIST;
 	AutoStartEvent autoStartEvent = AutoStartEvent::NEVER;
 
-	double cooldown = 0.;
+	Duration cooldown;
 	std::chrono::high_resolution_clock::time_point lastMatchTime;
 
 	std::deque<WindowSwitch> windowSwitches;
