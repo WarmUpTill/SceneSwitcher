@@ -2,24 +2,17 @@
 #include <QVBoxLayout>
 
 #include "switch-generic.hpp"
+#include "duration-control.hpp"
 
 constexpr auto round_trip_func = 1;
 constexpr auto default_priority_1 = round_trip_func;
-
-typedef enum {
-	SECONDS,
-	MINUTES,
-	HOURS,
-} delay_units;
 
 struct SceneSequenceSwitch : SceneSwitcherEntry {
 	static bool pause;
 	SwitchTargetType startTargetType = SwitchTargetType::Scene;
 	OBSWeakSource startScene = nullptr;
-	double delay = 0;
-	int delayMultiplier = 1;
+	Duration delay;
 	bool interruptible = false;
-	unsigned int matchCount = 0;
 
 	// nullptr marks start point and reaching end of extended sequence
 	SceneSequenceSwitch *activeSequence = nullptr;
@@ -57,22 +50,20 @@ public:
 
 	static void swapSwitchData(SequenceWidget *s1, SequenceWidget *s2);
 
-	void UpdateDelay();
 	void UpdateWidgetStatus(bool showExtendText);
 	void setExtendedSequenceStartScene();
 
 private slots:
 	void SceneChanged(const QString &text);
 	void DelayChanged(double delay);
-	void DelayUnitsChanged(int idx);
+	void DelayUnitsChanged(DurationUnit);
 	void StartSceneChanged(const QString &text);
 	void InterruptibleChanged(int state);
 	void ExtendClicked();
 	void ReduceClicked();
 
 protected:
-	QDoubleSpinBox *delay;
-	QComboBox *delayUnits;
+	DurationSelection *delay;
 	QComboBox *startScenes;
 	QCheckBox *interruptible;
 	QVBoxLayout *extendSequenceLayout;
