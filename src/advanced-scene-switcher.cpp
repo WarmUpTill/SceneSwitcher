@@ -556,9 +556,6 @@ void SwitcherData::Thread()
 		lock.unlock();
 
 		if (match) {
-			if (networkConfig.ServerEnabled) {
-				server.sendMessage(scene, transition);
-			}
 			if (macroMatch) {
 				runMacros();
 			} else {
@@ -666,6 +663,10 @@ void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
 
 		if (verbose) {
 			blog(LOG_INFO, "switched scene");
+		}
+
+		if (switcher->networkConfig.ServerEnabled) {
+			switcher->server.sendMessage(scene, transition);
 		}
 	}
 	obs_source_release(currentSource);

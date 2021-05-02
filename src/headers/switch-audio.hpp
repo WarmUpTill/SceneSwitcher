@@ -3,6 +3,7 @@
 #include <limits>
 
 #include "switch-generic.hpp"
+#include "duration-control.hpp"
 #include "volume-control.hpp"
 
 constexpr auto audio_func = 8;
@@ -18,9 +19,8 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 	OBSWeakSource audioSource = nullptr;
 	int volumeThreshold = 0;
 	audioCondition condition = ABOVE;
-	double duration = 0;
+	Duration duration;
 	bool ignoreInactiveSource = true;
-	unsigned int matchCount = 0;
 	float peak = -std::numeric_limits<float>::infinity();
 	obs_volmeter_t *volmeter = nullptr;
 
@@ -50,8 +50,7 @@ struct AudioSwitchFallback : virtual SceneSwitcherEntry {
 	void load(obs_data_t *obj);
 
 	bool enable = false;
-	double duration = 0;
-	unsigned int matchCount = 0;
+	Duration duration;
 };
 
 class AudioSwitchWidget : public SwitchWidget {
@@ -77,7 +76,7 @@ private:
 	QComboBox *audioSources;
 	QComboBox *condition;
 	QSpinBox *audioVolumeThreshold;
-	QDoubleSpinBox *duration;
+	DurationSelection *duration;
 	QCheckBox *ignoreInactiveSource;
 	VolControl *volMeter;
 
@@ -94,7 +93,7 @@ private slots:
 	void DurationChanged(double dur);
 
 private:
-	QDoubleSpinBox *duration;
+	DurationSelection *duration;
 
 	AudioSwitchFallback *switchData;
 };

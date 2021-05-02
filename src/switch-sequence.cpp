@@ -315,8 +315,7 @@ void SceneSequenceSwitch::save(obs_data_t *obj, bool saveExt)
 			 static_cast<int>(startTargetType));
 	obs_data_set_string(obj, "startScene",
 			    GetWeakSourceName(startScene).c_str());
-	obs_data_set_double(obj, "delay", delay);
-	obs_data_set_int(obj, "delayMultiplier", delayMultiplier);
+	delay.Save(obj, "delay");
 	obs_data_set_bool(obj, "interruptible", interruptible);
 
 	if (saveExt) {
@@ -342,13 +341,7 @@ void SceneSequenceSwitch::load(obs_data_t *obj, bool saveExt)
 		obs_data_get_int(obj, "startTargetType"));
 	const char *scene = obs_data_get_string(obj, "startScene");
 	startScene = GetWeakSourceByName(scene);
-
-	delay = obs_data_get_double(obj, "delay");
-
-	delayMultiplier = obs_data_get_int(obj, "delayMultiplier");
-	if (delayMultiplier == 0 ||
-	    (delayMultiplier != 1 && delayMultiplier % 60 != 0))
-		delayMultiplier = 1;
+	delay.Load(obj, "delay");
 
 	interruptible = obs_data_get_bool(obj, "interruptible");
 
@@ -422,7 +415,7 @@ bool SceneSequenceSwitch::checkMatch(OBSWeakSource currentScene, int &linger,
 			prepareUninterruptibleMatch(currentScene, linger);
 		}
 	} else {
-		matchCount = 0;
+		delay.Reset();
 
 		if (root) {
 			root->activeSequence = nullptr;
@@ -435,11 +428,8 @@ bool SceneSequenceSwitch::checkMatch(OBSWeakSource currentScene, int &linger,
 
 bool SceneSequenceSwitch::checkDurationMatchInterruptible()
 {
-	bool durationReached = matchCount * (switcher->interval / 1000.0) >=
-			       delay;
-	matchCount++;
-	if (durationReached) {
-		matchCount = 0;
+	if (delay.DurationReached()) {
+		delay.Reset();
 		return true;
 	}
 	return false;
@@ -448,7 +438,7 @@ bool SceneSequenceSwitch::checkDurationMatchInterruptible()
 void SceneSequenceSwitch::prepareUninterruptibleMatch(
 	OBSWeakSource currentScene, int &linger)
 {
-	int dur = delay * 1000;
+	int dur = delay.seconds * 1000;
 	if (dur > 0) {
 		switcher->waitScene = obs_weak_source_get_source(currentScene);
 		obs_source_release(switcher->waitScene);
@@ -493,8 +483,8 @@ void SceneSequenceSwitch::advanceActiveSequence()
 			return;
 		}
 
-		// Reinit old matchCount value in case it was previously set
-		activeSequence->matchCount = 0;
+		// Reinit delay in case it was previously set
+		activeSequence->delay.Reset();
 	}
 }
 
@@ -521,19 +511,6 @@ void SceneSequenceSwitch::logSequenceCanceled()
 	blog(LOG_INFO, "unexpected scene change - cancel sequence");
 }
 
-QString delayMultiplierToString(int delayMultiplier)
-{
-	switch (delayMultiplier) {
-	case 1:
-		return obs_module_text("AdvSceneSwitcher.unit.secends");
-	case 60:
-		return obs_module_text("AdvSceneSwitcher.unit.minutes");
-	case 60 * 60:
-		return obs_module_text("AdvSceneSwitcher.unit.hours");
-	}
-	return "???";
-}
-
 QString makeExtendText(SceneSequenceSwitch *s, int curLen = 0)
 {
 	if (!s) {
@@ -542,8 +519,7 @@ QString makeExtendText(SceneSequenceSwitch *s, int curLen = 0)
 
 	QString ext = "";
 
-	ext = QString::number(s->delay / s->delayMultiplier) + " ";
-	ext += delayMultiplierToString(s->delayMultiplier);
+	ext = QString::fromStdString(s->delay.ToString()) + " ";
 
 	QString sceneName = GetWeakSourceName(s->scene).c_str();
 	if (s->targetType == SwitchTargetType::SceneGroup && s->group) {
@@ -567,13 +543,6 @@ QString makeExtendText(SceneSequenceSwitch *s, int curLen = 0)
 	}
 }
 
-void populateDelayUnits(QComboBox *list)
-{
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.secends"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.minutes"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
-}
-
 SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 			       bool extendSequence, bool editExtendMode,
 			       bool showExtendText)
@@ -581,8 +550,7 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 {
 	this->setParent(parent);
 
-	delay = new QDoubleSpinBox();
-	delayUnits = new QComboBox();
+	delay = new DurationSelection();
 	startScenes = new QComboBox();
 	interruptible = new QCheckBox(obs_module_text(
 		"AdvSceneSwitcher.sceneSequenceTab.interruptible"));
@@ -605,10 +573,10 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 	QWidget::connect(scenes, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(SceneChanged(const QString &)));
 
-	QWidget::connect(delay, SIGNAL(valueChanged(double)), this,
+	QWidget::connect(delay, SIGNAL(DurationChanged(double)), this,
 			 SLOT(DelayChanged(double)));
-	QWidget::connect(delayUnits, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(DelayUnitsChanged(int)));
+	QWidget::connect(delay, SIGNAL(UnitChanged(DurationUnit)), this,
+			 SLOT(DelayUnitsChanged(DurationUnit)));
 	QWidget::connect(startScenes,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(StartSceneChanged(const QString &)));
@@ -620,9 +588,7 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 	QWidget::connect(reduce, SIGNAL(clicked()), this,
 			 SLOT(ReduceClicked()));
 
-	delay->setMaximum(99999.000000);
 	AdvSceneSwitcher::populateSceneSelection(startScenes, false);
-	populateDelayUnits(delayUnits);
 	interruptible->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.sceneSequenceTab.interruptibleHint"));
 
@@ -633,7 +599,6 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 		std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 			{"{{scenes}}", scenes},
 			{"{{delay}}", delay},
-			{"{{delayUnits}}", delayUnits},
 			{"{{transitions}}", transitions}};
 		placeWidgets(
 			obs_module_text(
@@ -646,7 +611,6 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 			{"{{startScenes}}", startScenes},
 			{"{{scenes}}", scenes},
 			{"{{delay}}", delay},
-			{"{{delayUnits}}", delayUnits},
 			{"{{transitions}}", transitions},
 			{"{{interruptible}}", interruptible}};
 		placeWidgets(obs_module_text(
@@ -710,46 +674,24 @@ void SequenceWidget::swapSwitchData(SequenceWidget *s1, SequenceWidget *s2)
 	s2->setSwitchData(t);
 }
 
-void SequenceWidget::UpdateDelay()
-{
-	if (switchData) {
-		delay->setValue(switchData->delay /
-				switchData->delayMultiplier);
-	}
-}
-
-void SequenceWidget::DelayChanged(double delay)
+void SequenceWidget::DelayChanged(double sec)
 {
 	if (loading || !switchData) {
 		return;
 	}
 
-	switchData->delay = delay * switchData->delayMultiplier;
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->delay.seconds = sec;
 }
 
-void SequenceWidget::DelayUnitsChanged(int idx)
+void SequenceWidget::DelayUnitsChanged(DurationUnit unit)
 {
 	if (loading || !switchData) {
 		return;
 	}
 
-	delay_units unit = (delay_units)idx;
-
-	switch (unit) {
-	case SECONDS:
-		switchData->delayMultiplier = 1;
-		break;
-	case MINUTES:
-		switchData->delayMultiplier = 60;
-		break;
-	case HOURS:
-		switchData->delayMultiplier = 60 * 60;
-		break;
-	default:
-		break;
-	}
-
-	UpdateDelay();
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->delay.displayUnit = unit;
 }
 
 void SequenceWidget::setExtendedSequenceStartScene()
@@ -811,21 +753,7 @@ void SequenceWidget::UpdateWidgetStatus(bool showExtendText)
 			makeExtendText(switchData->extendedSequence.get()));
 	}
 
-	switch (switchData->delayMultiplier) {
-	case 1:
-		delayUnits->setCurrentIndex(0);
-		break;
-	case 60:
-		delayUnits->setCurrentIndex(1);
-		break;
-	case 3600:
-		delayUnits->setCurrentIndex(2);
-		break;
-	default:
-		delayUnits->setCurrentIndex(0);
-	}
-	UpdateDelay();
-
+	delay->SetDuration(switchData->delay);
 	startScenes->setCurrentText(
 		GetWeakSourceName(switchData->startScene).c_str());
 	interruptible->setChecked(switchData->interruptible);

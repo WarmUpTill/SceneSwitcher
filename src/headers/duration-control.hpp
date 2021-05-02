@@ -21,6 +21,7 @@ public:
 
 	bool DurationReached();
 	void Reset();
+	std::string ToString();
 
 	double seconds = 0.;
 	// only used for UI

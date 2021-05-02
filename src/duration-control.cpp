@@ -1,6 +1,8 @@
 #include "headers/duration-control.hpp"
 #include "obs-module.h"
 
+#include <sstream>
+#include <iomanip>
 #include <QHBoxLayout>
 
 void Duration::Save(obs_data_t *obj, const char *secondsName,
@@ -34,13 +36,6 @@ void Duration::Reset()
 	_startTime = {};
 }
 
-static void populateUnits(QComboBox *list)
-{
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.secends"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.minutes"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
-}
-
 int durationUnitToMultiplier(DurationUnit u)
 {
 	switch (u) {
@@ -55,6 +50,38 @@ int durationUnitToMultiplier(DurationUnit u)
 	}
 
 	return 0;
+}
+
+std::string durationUnitToString(DurationUnit u)
+{
+	switch (u) {
+	case DurationUnit::SECONDS:
+		return obs_module_text("AdvSceneSwitcher.unit.secends");
+	case DurationUnit::MINUTES:
+		return obs_module_text("AdvSceneSwitcher.unit.minutes");
+	case DurationUnit::HOURS:
+		return obs_module_text("AdvSceneSwitcher.unit.hours");
+	default:
+		break;
+	}
+
+	return "";
+}
+
+std::string Duration::ToString()
+{
+	std::ostringstream ss;
+	ss << std::fixed << std::setprecision(2)
+	   << seconds / durationUnitToMultiplier(displayUnit) << " "
+	   << durationUnitToString(displayUnit);
+	return ss.str();
+}
+
+static void populateUnits(QComboBox *list)
+{
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.secends"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.minutes"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
 }
 
 DurationSelection::DurationSelection(QWidget *parent, bool showUnitSelection)
