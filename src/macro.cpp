@@ -114,8 +114,7 @@ bool Macro::Load(obs_data_t *obj)
 
 		auto newEntry = MacroConditionFactory::Create(id);
 		if (newEntry) {
-			_conditions.emplace_back(
-				MacroConditionFactory::Create(id));
+			_conditions.emplace_back(newEntry);
 			_conditions.back()->Load(array_obj);
 		} else {
 			blog(LOG_WARNING,
