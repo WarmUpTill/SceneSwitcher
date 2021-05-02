@@ -1,12 +1,14 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <util/platform.h>
-#include "../headers/advanced-scene-switcher.hpp"
 #include <TlHelp32.h>
 #include <Psapi.h>
 #include <locale>
 #include <codecvt>
 #include <string>
+#include <vector>
+#include <QStringList>
+#include <QRegularExpression>
 
 #define MAX_SEARCH 1000
 
