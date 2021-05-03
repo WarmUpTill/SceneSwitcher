@@ -64,7 +64,6 @@ public:
 	void setTabOrder();
 	void restoreWindowGeo();
 
-	static bool DisplayMessage(QString msg, bool question = false);
 	static void AskBackup(obs_data_t *obj);
 
 	static void addSelectionEntry(QComboBox *sel, const char *description,
