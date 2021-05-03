@@ -206,10 +206,10 @@ static inline bool DisplayMessage(QString msg, bool question = false)
 			return false;
 		}
 	} else {
-		QMessageBox msgbox;
-		msgbox.setWindowTitle("Advanced Scene Switcher");
-		msgbox.setText(msg);
-		msgbox.exec();
+		QMessageBox Msgbox;
+		Msgbox.setWindowTitle("Advanced Scene Switcher");
+		Msgbox.setText(msg);
+		Msgbox.exec();
 	}
 
 	return false;
