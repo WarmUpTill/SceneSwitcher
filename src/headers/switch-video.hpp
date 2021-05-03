@@ -2,6 +2,7 @@
 #include <QSpinBox>
 
 #include "switch-generic.hpp"
+#include "screenshot-helper.hpp"
 
 constexpr auto video_func = 9;
 constexpr auto default_priority_9 = video_func;
@@ -11,30 +12,6 @@ enum class videoSwitchType {
 	DIFFER,
 	HAS_NOT_CHANGED,
 	HAS_CHANGED,
-};
-
-class AdvSSScreenshotObj {
-public:
-	AdvSSScreenshotObj(obs_source_t *source);
-	~AdvSSScreenshotObj();
-
-	void Screenshot();
-	void Download();
-	void Copy();
-	void MarkDone();
-
-	gs_texrender_t *texrender = nullptr;
-	gs_stagesurf_t *stagesurf = nullptr;
-	OBSWeakSource weakSource;
-	std::string path;
-	QImage image;
-	uint32_t cx = 0;
-	uint32_t cy = 0;
-
-	int stage = 0;
-
-	bool done = false;
-	std::chrono::high_resolution_clock::time_point time;
 };
 
 struct VideoSwitch : virtual SceneSwitcherEntry {

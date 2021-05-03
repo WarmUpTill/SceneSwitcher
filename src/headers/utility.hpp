@@ -4,6 +4,7 @@
 #include <QTextStream>
 #include <QLayout>
 #include <QLabel>
+#include <QMessageBox>
 #include <unordered_map>
 
 #include <obs.hpp>
@@ -190,4 +191,26 @@ static inline bool compareIgnoringLineEnding(QString &s1, QString &s2)
 	}
 
 	return true;
+}
+
+static inline bool DisplayMessage(QString msg, bool question = false)
+{
+	if (question) {
+		QMessageBox::StandardButton reply;
+		reply = QMessageBox::question(
+			nullptr, "Advanced Scene Switcher", msg,
+			QMessageBox::Yes | QMessageBox::No);
+		if (reply == QMessageBox::Yes) {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		QMessageBox msgbox;
+		msgbox.setWindowTitle("Advanced Scene Switcher");
+		msgbox.setText(msg);
+		msgbox.exec();
+	}
+
+	return false;
 }

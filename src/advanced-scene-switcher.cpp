@@ -11,6 +11,7 @@
 
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/curl-helper.hpp"
+#include "headers/utility.hpp"
 #include "headers/version.h"
 
 SwitcherData *switcher = nullptr;
@@ -74,28 +75,6 @@ void AdvSceneSwitcher::loadUI()
 /******************************************************************************
  * UI helpers
  ******************************************************************************/
-bool AdvSceneSwitcher::DisplayMessage(QString msg, bool question)
-{
-	if (question) {
-		QMessageBox::StandardButton reply;
-		reply = QMessageBox::question(
-			nullptr, "Advanced Scene Switcher", msg,
-			QMessageBox::Yes | QMessageBox::No);
-		if (reply == QMessageBox::Yes) {
-			return true;
-		} else {
-			return false;
-		}
-	} else {
-		QMessageBox Msgbox;
-		Msgbox.setWindowTitle("Advanced Scene Switcher");
-		Msgbox.setText(msg);
-		Msgbox.exec();
-	}
-
-	return false;
-}
-
 void AdvSceneSwitcher::addSelectionEntry(QComboBox *sel,
 					 const char *description,
 					 bool selectable, const char *tooltip)
