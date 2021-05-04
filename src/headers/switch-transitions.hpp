@@ -5,7 +5,7 @@
 
 struct SceneTransition : SceneSwitcherEntry {
 	OBSWeakSource scene2 = nullptr;
-	double duration = 0.;
+	double duration = 0.3;
 
 	const char *getType() { return "transition"; }
 	bool initialized();
