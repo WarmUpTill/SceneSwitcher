@@ -183,7 +183,12 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 
 void MacroConditionVideoEdit::UpdatePreviewTooltip()
 {
-	if (!_entryData || !requiresFileInput(_entryData->_condition)) {
+	if (!_entryData) {
+		return;
+	}
+
+	if (!requiresFileInput(_entryData->_condition)) {
+		this->setToolTip("");
 		return;
 	}
 
