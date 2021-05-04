@@ -3,7 +3,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
-constexpr auto default_def_transition_dealy = 50;
+constexpr auto default_def_transition_dealy = 300;
 bool DefaultSceneTransition::pause = false;
 unsigned int DefaultSceneTransition::delay = default_def_transition_dealy;
 
@@ -335,6 +335,8 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 
 	obs_data_set_bool(obj, "tansitionOverrideOverride",
 			  tansitionOverrideOverride);
+	obs_data_set_default_bool(obj, "adjustActiveTransitionType",
+				  adjustActiveTransitionType);
 	obs_data_set_bool(obj, "adjustActiveTransitionType",
 			  adjustActiveTransitionType);
 	obs_data_set_default_int(obj, "defTransitionDelay",
