@@ -249,7 +249,7 @@ void overwriteTransitionOverride(obs_weak_source_t *sceneWs,
 	obs_data_t *data = obs_source_get_private_settings(scene);
 
 	td.name = obs_data_get_string(data, "transition");
-	td.duration = obs_data_get_int(data, "duration");
+	td.duration = obs_data_get_int(data, "transition_duration");
 
 	const char *name = obs_source_get_name(transition);
 
