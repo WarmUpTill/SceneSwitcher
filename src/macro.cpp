@@ -3,7 +3,7 @@
 #include "headers/macro-action-edit.hpp"
 #include "headers/macro-condition-edit.hpp"
 
-std::unordered_map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
+const std::unordered_map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 	{LogicType::NONE, {"AdvSceneSwitcher.logic.none"}},
 	{LogicType::AND, {"AdvSceneSwitcher.logic.and"}},
 	{LogicType::OR, {"AdvSceneSwitcher.logic.or"}},
@@ -100,9 +100,44 @@ bool Macro::Save(obs_data_t *obj)
 	return true;
 }
 
+bool isValidLogic(LogicType t, bool root)
+{
+	bool isRoot = isRootLogicType(t);
+	if (!isRoot == root) {
+		return false;
+	}
+	if (isRoot) {
+		if (t >= LogicType::ROOT_LAST) {
+			return false;
+		}
+	} else if (t >= LogicType::LAST) {
+		return false;
+	}
+	return true;
+}
+
+void setValidLogic(MacroCondition *c, bool root, std::string name)
+{
+	if (isValidLogic(c->GetLogicType(), root)) {
+		return;
+	}
+	if (root) {
+		c->SetLogicType(LogicType::ROOT_NONE);
+		blog(LOG_WARNING,
+		     "setting invalid logic selection to 'if' for macro %s",
+		     name.c_str());
+	} else {
+		c->SetLogicType(LogicType::NONE);
+		blog(LOG_WARNING,
+		     "setting invalid logic selection to 'ignore' for macro %s",
+		     name.c_str());
+	}
+}
+
 bool Macro::Load(obs_data_t *obj)
 {
 	_name = obs_data_get_string(obj, "name");
+	bool root = true;
 
 	obs_data_array_t *conditions = obs_data_get_array(obj, "conditions");
 	size_t count = obs_data_array_count(conditions);
@@ -115,7 +150,9 @@ bool Macro::Load(obs_data_t *obj)
 		auto newEntry = MacroConditionFactory::Create(id);
 		if (newEntry) {
 			_conditions.emplace_back(newEntry);
-			_conditions.back()->Load(array_obj);
+			auto c = _conditions.back().get();
+			c->Load(array_obj);
+			setValidLogic(c, root, _name);
 		} else {
 			blog(LOG_WARNING,
 			     "discarding condition entry with unkown id (%d) for macro %s",
@@ -123,6 +160,7 @@ bool Macro::Load(obs_data_t *obj)
 		}
 
 		obs_data_release(array_obj);
+		root = false;
 	}
 	obs_data_array_release(conditions);
 

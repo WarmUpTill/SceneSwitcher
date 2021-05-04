@@ -14,13 +14,20 @@ constexpr auto logic_root_offset = 100;
 enum class LogicType {
 	ROOT_NONE = 0,
 	ROOT_NOT,
+	ROOT_LAST,
 	// leave some space for potential expansion
 	NONE = 100,
 	AND,
 	OR,
 	AND_NOT,
 	OR_NOT,
+	LAST,
 };
+
+static inline bool isRootLogicType(LogicType l)
+{
+	return static_cast<int>(l) < logic_root_offset;
+}
 
 struct LogicTypeInfo {
 	std::string _name;
@@ -33,9 +40,9 @@ public:
 	virtual bool Load(obs_data_t *obj) = 0;
 	virtual int GetId() = 0;
 	LogicType GetLogicType() { return _logic; }
-	void SetLogicType(LogicType &logic) { _logic = logic; }
+	void SetLogicType(LogicType logic) { _logic = logic; }
 
-	static std::unordered_map<LogicType, LogicTypeInfo> logicTypes;
+	static const std::unordered_map<LogicType, LogicTypeInfo> logicTypes;
 
 private:
 	LogicType _logic;
