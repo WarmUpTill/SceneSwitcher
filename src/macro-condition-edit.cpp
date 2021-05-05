@@ -148,8 +148,8 @@ void MacroConditionEdit::UpdateEntryData(int type)
 {
 	_conditionSelection->setCurrentIndex(type);
 	clearLayout(_conditionWidgetLayout);
-	auto widget =
-		MacroConditionFactory::CreateWidget(type, this, *_entryData);
+	auto widget = MacroConditionFactory::CreateWidget(type, window(),
+							  *_entryData);
 	_conditionWidgetLayout->addWidget(widget);
 
 	auto logic = (*_entryData)->GetLogicType();
@@ -175,7 +175,7 @@ void MacroConditionEdit::ConditionSelectionChanged(int idx)
 	(*_entryData)->SetLogicType(logic);
 	clearLayout(_conditionWidgetLayout);
 	auto widget =
-		MacroConditionFactory::CreateWidget(idx, this, *_entryData);
+		MacroConditionFactory::CreateWidget(idx, window(), *_entryData);
 	_conditionWidgetLayout->addWidget(widget);
 }
 

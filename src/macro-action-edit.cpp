@@ -83,7 +83,8 @@ void MacroActionEdit::ActionSelectionChanged(int idx)
 	_entryData->reset();
 	*_entryData = MacroActionFactory::Create(idx);
 	clearLayout(_actionWidgetLayout);
-	auto widget = MacroActionFactory::CreateWidget(idx, this, *_entryData);
+	auto widget =
+		MacroActionFactory::CreateWidget(idx, window(), *_entryData);
 	_actionWidgetLayout->addWidget(widget);
 }
 
@@ -91,7 +92,8 @@ void MacroActionEdit::UpdateEntryData(int type)
 {
 	_actionSelection->setCurrentIndex(type);
 	clearLayout(_actionWidgetLayout);
-	auto widget = MacroActionFactory::CreateWidget(type, this, *_entryData);
+	auto widget =
+		MacroActionFactory::CreateWidget(type, window(), *_entryData);
 	_actionWidgetLayout->addWidget(widget);
 }
 
