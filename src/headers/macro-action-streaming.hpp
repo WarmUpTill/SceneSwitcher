@@ -1,6 +1,7 @@
 #pragma once
 #include <QDoubleSpinBox>
 #include "macro-action-edit.hpp"
+#include "duration-control.hpp"
 
 enum class StreamAction {
 	STOP,
@@ -21,6 +22,8 @@ public:
 	StreamAction _action = StreamAction::STOP;
 
 private:
+	Duration _retryCooldown;
+
 	static bool _registered;
 	static const int id;
 };

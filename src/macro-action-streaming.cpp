@@ -18,10 +18,17 @@ bool MacroActionStream::PerformAction()
 {
 	switch (_action) {
 	case StreamAction::STOP:
-		obs_frontend_streaming_stop();
+		if (obs_frontend_streaming_active()) {
+			obs_frontend_streaming_stop();
+		}
 		break;
 	case StreamAction::START:
-		obs_frontend_streaming_start();
+		if (!obs_frontend_streaming_active() &&
+		    _retryCooldown.DurationReached()) {
+			obs_frontend_streaming_start();
+			_retryCooldown.seconds++;
+			_retryCooldown.Reset();
+		}
 		break;
 	default:
 		break;
