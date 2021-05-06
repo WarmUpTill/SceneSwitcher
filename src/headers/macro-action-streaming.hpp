@@ -22,6 +22,8 @@ public:
 	StreamAction _action = StreamAction::STOP;
 
 private:
+	// Acts as a safeguard for misconfigured streaming setups leading to an
+	// endless error spam.
 	Duration _retryCooldown;
 
 	static bool _registered;
