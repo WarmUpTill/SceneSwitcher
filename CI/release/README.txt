@@ -28,6 +28,7 @@ Examples are ...
 /usr/share/obs/obs-plugins/
 ~/.config/obs-studio/plugins/advanced-scene-switcher/bin/64bit/
 ~/.local/share/flatpak/app/com.obsproject.Studio/x86_64/stable/active/files/lib/obs-plugins/
+/var/lib/flatpak/app/com.obsproject.Studio/x86_64/stable/active/files/lib/obs-plugins/
 
 Unfortunately the expected location of the locale, which can be found in the data folder, can vary also.
 The data folder usually should be copied to:
@@ -36,5 +37,6 @@ The data folder usually should be copied to:
 If this does not work you can try to copy the "locale" folder found inside the data folder to:
 /usr/share/obs/obs-plugins/advanced-scene-switcher/locale
 ~/.local/share/flatpak/app/com.obsproject.Studio/x86_64/stable/active/files/share/obs/obs-plugins/advanced-scene-switcher/locale
+/var/lib/flatpak/app/com.obsproject.Studio/x86_64/stable/active/files/share/obs/obs-plugins/advanced-scene-switcher/locale
 
 In doubt please check where other "en-US.ini" files are located on your system.
