@@ -83,6 +83,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/macro-action-edit.hpp
 	src/headers/macro-action-audio.hpp
 	src/headers/macro-action-recording.hpp
+	src/headers/macro-action-replay-buffer.hpp
 	src/headers/macro-action-streaming.hpp
 	src/headers/macro-action-switch-scene.hpp
 	src/headers/macro-action-wait.hpp
@@ -131,6 +132,7 @@ set(advanced-scene-switcher_SOURCES
 	src/macro-action-edit.cpp
 	src/macro-action-audio.cpp
 	src/macro-action-recording.cpp
+	src/macro-action-replay-buffer.cpp
 	src/macro-action-streaming.cpp
 	src/macro-action-switch-scene.cpp
 	src/macro-action-wait.cpp
