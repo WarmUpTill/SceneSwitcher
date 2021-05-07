@@ -189,7 +189,7 @@ void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->tansitionOverrideOverride = state;
+	switcher->transitionOverrideOverride = state;
 }
 
 void AdvSceneSwitcher::on_adjustActiveTransitionType_stateChanged(int state)
@@ -199,7 +199,7 @@ void AdvSceneSwitcher::on_adjustActiveTransitionType_stateChanged(int state)
 	}
 
 	// This option only makes sense if we are allowed to use transition overrides
-	if (!state && !switcher->tansitionOverrideOverride) {
+	if (!state && !switcher->transitionOverrideOverride) {
 		DisplayMessage(obs_module_text(
 			"AdvSceneSwitcher.transitionTab.transitionBehaviorSelectionError"));
 		ui->transitionOverridecheckBox->setChecked(true);
@@ -236,25 +236,22 @@ std::pair<obs_weak_source_t *, int> getNextTransition(obs_weak_source_t *scene1,
 				break;
 			}
 		}
-		obs_weak_source_addref(ws);
 	}
 	return std::make_pair(ws, duration);
 }
 
-void overwriteTransitionOverride(obs_weak_source_t *sceneWs,
-				 obs_source_t *transition,
-				 int nextTransitionDuration, transitionData &td)
+void overwriteTransitionOverride(sceneSwitchInfo ssi, transitionData &td)
 {
-	obs_source_t *scene = obs_weak_source_get_source(sceneWs);
+	obs_source_t *scene = obs_weak_source_get_source(ssi.scene);
 	obs_data_t *data = obs_source_get_private_settings(scene);
 
 	td.name = obs_data_get_string(data, "transition");
 	td.duration = obs_data_get_int(data, "transition_duration");
 
-	const char *name = obs_source_get_name(transition);
+	std::string name = GetWeakSourceName(ssi.transition);
 
-	obs_data_set_string(data, "transition", name);
-	obs_data_set_int(data, "transition_duration", nextTransitionDuration);
+	obs_data_set_string(data, "transition", name.c_str());
+	obs_data_set_int(data, "transition_duration", ssi.duration);
 
 	obs_data_release(data);
 	obs_source_release(scene);
@@ -270,41 +267,54 @@ void restoreTransitionOverride(obs_source_t *scene, transitionData td)
 	obs_data_release(data);
 }
 
-void setNextTransition(OBSWeakSource &targetScene, obs_source_t *currentSource,
-		       OBSWeakSource &transition,
-		       bool transitionOverrideOverride,
-		       bool adjustActiveTransitionType, transitionData &td)
+void setNextTransition(sceneSwitchInfo &sceneSwitch,
+		       obs_source_t *currentSource, transitionData &td)
 {
+	// Priority:
+	// 1. Transition tab
+	// 2. Individual switcher entry
+	// 3. Current transition settings
+
+	// Transition Tab
 	obs_weak_source_t *currentScene =
 		obs_source_get_weak_source(currentSource);
-	auto tinfo = getNextTransition(currentScene, targetScene);
+	auto tinfo = getNextTransition(currentScene, sceneSwitch.scene);
 	obs_weak_source_release(currentScene);
 
-	obs_weak_source_t *nextTransitionWs = tinfo.first;
+	OBSWeakSource nextTransition = tinfo.first;
 	int nextTransitionDuration = tinfo.second;
 
-	obs_source_t *nextTransition = nullptr;
-	if (nextTransitionWs) {
-		nextTransition = obs_weak_source_get_source(nextTransitionWs);
-	} else if (transition) {
-		nextTransition = obs_weak_source_get_source(transition);
+	// Individual switcher entry
+	if (!nextTransition) {
+		nextTransition = sceneSwitch.transition;
+	}
+	if (!nextTransitionDuration) {
+		nextTransitionDuration = sceneSwitch.duration;
 	}
 
-	if (nextTransition) {
-		if (adjustActiveTransitionType) {
-			obs_frontend_set_transition_duration(
-				nextTransitionDuration);
-			obs_frontend_set_current_transition(nextTransition);
-		}
-
-		if (transitionOverrideOverride) {
-			overwriteTransitionOverride(targetScene, nextTransition,
-						    nextTransitionDuration, td);
-		}
+	// Current transition settings
+	if (!nextTransition) {
+		auto ct = obs_frontend_get_current_transition();
+		nextTransition = obs_source_get_weak_source(ct);
+		obs_weak_source_release(nextTransition);
+		obs_source_release(ct);
+	}
+	if (!nextTransitionDuration) {
+		nextTransitionDuration = obs_frontend_get_transition_duration();
 	}
 
-	obs_weak_source_release(nextTransitionWs);
-	obs_source_release(nextTransition);
+	if (switcher->adjustActiveTransitionType) {
+		obs_frontend_set_transition_duration(nextTransitionDuration);
+		auto t = obs_weak_source_get_source(nextTransition);
+		obs_frontend_set_current_transition(t);
+		obs_source_release(t);
+	}
+
+	if (switcher->transitionOverrideOverride) {
+		overwriteTransitionOverride({sceneSwitch.scene, nextTransition,
+					     nextTransitionDuration},
+					    td);
+	}
 }
 
 void SwitcherData::saveSceneTransitions(obs_data_t *obj)
@@ -334,7 +344,7 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 	obs_data_array_release(defaultTransitionsArray);
 
 	obs_data_set_bool(obj, "tansitionOverrideOverride",
-			  tansitionOverrideOverride);
+			  transitionOverrideOverride);
 	obs_data_set_default_bool(obj, "adjustActiveTransitionType",
 				  adjustActiveTransitionType);
 	obs_data_set_bool(obj, "adjustActiveTransitionType",
@@ -377,7 +387,7 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 	}
 	obs_data_array_release(defaultTransitionsArray);
 
-	tansitionOverrideOverride =
+	transitionOverrideOverride =
 		obs_data_get_bool(obj, "tansitionOverrideOverride");
 	adjustActiveTransitionType =
 		obs_data_get_bool(obj, "adjustActiveTransitionType");
@@ -420,7 +430,7 @@ void AdvSceneSwitcher::setupTransitionsTab()
 	}
 
 	ui->transitionOverridecheckBox->setChecked(
-		switcher->tansitionOverrideOverride);
+		switcher->transitionOverrideOverride);
 	ui->adjustActiveTransitionType->setChecked(
 		switcher->adjustActiveTransitionType);
 

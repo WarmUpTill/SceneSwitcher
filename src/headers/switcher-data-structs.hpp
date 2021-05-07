@@ -42,6 +42,13 @@ enum class AutoStartEvent {
 	RECORINDG_OR_STREAMING,
 };
 
+typedef struct sceneSwitchInfo {
+	OBSWeakSource scene;
+	OBSWeakSource transition;
+	int duration = 0;
+
+} sceneSwitchInfo;
+
 typedef struct transitionData {
 	std::string name = "";
 	int duration = 0;
@@ -65,7 +72,7 @@ struct SwitcherData {
 	bool verbose = false;
 	bool disableHints = false;
 	bool showFrame = false;
-	bool tansitionOverrideOverride = false;
+	bool transitionOverrideOverride = false;
 	bool adjustActiveTransitionType = true;
 
 	int interval = default_interval;

@@ -22,6 +22,8 @@ using websocketpp::connection_hdl;
 typedef websocketpp::server<websocketpp::config::asio> server;
 typedef websocketpp::client<websocketpp::config::asio_client> client;
 
+struct sceneSwitchInfo;
+
 class NetworkConfig {
 public:
 	NetworkConfig();
@@ -51,7 +53,7 @@ public:
 	virtual ~WSServer();
 	void start(quint16 port, bool lockToIPv4);
 	void stop();
-	void sendMessage(OBSWeakSource scene, OBSWeakSource transition);
+	void sendMessage(sceneSwitchInfo sceneSwitch);
 	QThreadPool *threadPool() { return &_threadPool; }
 
 private:

@@ -12,8 +12,7 @@ bool MacroActionSwitchScene::_registered = MacroActionFactory::Register(
 bool MacroActionSwitchScene::PerformAction()
 {
 	OBSWeakSource scene = getScene();
-	switchScene(scene, transition, switcher->tansitionOverrideOverride,
-		    switcher->adjustActiveTransitionType, switcher->verbose);
+	switchScene({scene, transition, (int)(_duration.seconds * 1000)});
 	return true;
 }
 
