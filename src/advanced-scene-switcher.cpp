@@ -533,9 +533,7 @@ void SwitcherData::Thread()
 		lock.unlock();
 
 		if (match) {
-			switchScene(scene, transition,
-				    tansitionOverrideOverride,
-				    adjustActiveTransitionType, verbose);
+			switchScene({scene, transition, 0});
 		}
 
 		writeSceneInfoToFile();
@@ -604,34 +602,32 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 	return match;
 }
 
-void switchScene(OBSWeakSource &scene, OBSWeakSource &transition,
-		 bool transitionOverrideOverride,
-		 bool adjustActiveTransitionType, bool verbose)
+void switchScene(sceneSwitchInfo sceneSwitch)
 {
-	if (!scene && verbose) {
+	if (!sceneSwitch.scene && switcher->verbose) {
 		blog(LOG_INFO, "nothing to switch to");
 		return;
 	}
 
-	obs_source_t *source = obs_weak_source_get_source(scene);
+	obs_source_t *source = obs_weak_source_get_source(sceneSwitch.scene);
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 
 	if (source && source != currentSource) {
-		transitionData td;
-		setNextTransition(scene, currentSource, transition,
-				  transitionOverrideOverride,
-				  adjustActiveTransitionType, td);
+		transitionData currentTransitionData;
+		setNextTransition(sceneSwitch, currentSource,
+				  currentTransitionData);
 		obs_frontend_set_current_scene(source);
-		if (transitionOverrideOverride) {
-			restoreTransitionOverride(source, td);
+		if (switcher->transitionOverrideOverride) {
+			restoreTransitionOverride(source,
+						  currentTransitionData);
 		}
 
-		if (verbose) {
+		if (switcher->verbose) {
 			blog(LOG_INFO, "switched scene");
 		}
 
 		if (switcher->networkConfig.ServerEnabled) {
-			switcher->server.sendMessage(scene, transition);
+			switcher->server.sendMessage(sceneSwitch);
 		}
 	}
 	obs_source_release(currentSource);
@@ -725,7 +721,7 @@ void handleSceneChange(SwitcherData *s)
 
 	if (switcher->networkConfig.ServerEnabled &&
 	    switcher->networkConfig.SendAll) {
-		switcher->server.sendMessage(ws, nullptr);
+		switcher->server.sendMessage({ws, nullptr, 0});
 	}
 }
 

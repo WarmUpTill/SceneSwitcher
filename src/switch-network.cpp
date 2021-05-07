@@ -23,6 +23,7 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 
 #define SCENE_ENTRY "scene"
 #define TRANSITION_ENTRY "transition"
+#define TRANSITION_DURATION "duration"
 
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
@@ -191,17 +192,18 @@ void WSServer::stop()
 	blog(LOG_INFO, "server stopped successfully");
 }
 
-void WSServer::sendMessage(OBSWeakSource scene, OBSWeakSource transition)
+void WSServer::sendMessage(sceneSwitchInfo sceneSwitch)
 {
-	if (!scene) {
+	if (!sceneSwitch.scene) {
 		return;
 	}
 
 	OBSData data = obs_data_create();
 	obs_data_set_string(data, SCENE_ENTRY,
-			    GetWeakSourceName(scene).c_str());
+			    GetWeakSourceName(sceneSwitch.scene).c_str());
 	obs_data_set_string(data, TRANSITION_ENTRY,
-			    GetWeakSourceName(transition).c_str());
+			    GetWeakSourceName(sceneSwitch.transition).c_str());
+	obs_data_set_int(data, TRANSITION_DURATION, sceneSwitch.duration);
 	std::string message = obs_data_get_json(data);
 	obs_data_release(data);
 
@@ -245,13 +247,15 @@ std::string processMessage(std::string payload)
 	}
 
 	if (!obs_data_has_user_value(data, SCENE_ENTRY) ||
-	    !obs_data_has_user_value(data, TRANSITION_ENTRY)) {
+	    !obs_data_has_user_value(data, TRANSITION_ENTRY) ||
+	    !obs_data_has_user_value(data, TRANSITION_DURATION)) {
 		return "missing request parameters";
 	}
 
 	std::string sceneName = obs_data_get_string(data, SCENE_ENTRY);
 	std::string transitionName =
 		obs_data_get_string(data, TRANSITION_ENTRY);
+	int duration = obs_data_get_int(data, TRANSITION_DURATION);
 
 	obs_data_release(data);
 
@@ -268,8 +272,7 @@ std::string processMessage(std::string payload)
 		       "'";
 	}
 
-	switchScene(scene, transition, switcher->tansitionOverrideOverride,
-		    switcher->adjustActiveTransitionType, switcher->verbose);
+	switchScene({scene, transition, duration});
 	return ret;
 }
 
