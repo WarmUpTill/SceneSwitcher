@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "switch-generic.hpp"
+#include "duration-control.hpp"
 
 class MacroActionSwitchScene : public MacroAction, public SceneSwitcherEntry {
 public:
@@ -13,9 +14,11 @@ public:
 	{
 		return std::make_shared<MacroActionSwitchScene>();
 	}
+	Duration _duration;
 
 private:
 	const char *getType() { return "MacroActionSwitchScene"; }
+
 	static bool _registered;
 	static const int id;
 };
@@ -36,6 +39,10 @@ public:
 				action));
 	}
 
+private slots:
+	void DurationChanged(double seconds);
+
 protected:
+	DurationSelection *_duration;
 	std::shared_ptr<MacroActionSwitchScene> _entryData;
 };
