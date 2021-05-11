@@ -11,7 +11,7 @@ Section::Section(const int animationDuration, QWidget *parent)
 	_headerWidgetLayout = new QHBoxLayout();
 
 	_toggleButton->setStyleSheet("QToolButton {border: none;}");
-	_toggleButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+	_toggleButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
 	_toggleButton->setArrowType(Qt::ArrowType::RightArrow);
 	_toggleButton->setCheckable(true);
 	_toggleButton->setChecked(true);
@@ -50,6 +50,7 @@ void Section::Collapse(bool collapsed)
 
 void Section::SetContent(QWidget *w)
 {
+	// Clean up previous content
 	if (_contentArea) {
 		auto oldLayout = _contentArea->layout();
 		if (oldLayout) {
@@ -59,6 +60,9 @@ void Section::SetContent(QWidget *w)
 	}
 
 	delete _contentArea;
+	delete _toggleAnimation;
+
+	// Setup contentArea
 	_contentArea = new QScrollArea(this);
 	_contentArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
@@ -68,10 +72,12 @@ void Section::SetContent(QWidget *w)
 
 	auto newLayout = new QVBoxLayout();
 	newLayout->addWidget(w);
-	w->show();
 	_contentArea->setLayout(newLayout);
 
-	delete _toggleAnimation;
+	connect(_toggleButton, &QToolButton::toggled, this, &Section::Collapse);
+	_mainLayout->addWidget(_contentArea, 1, 0, 1, 3);
+
+	// Animation Setup
 	_toggleAnimation = new QParallelAnimationGroup(this);
 	_toggleAnimation->addAnimation(
 		new QPropertyAnimation(this, "minimumHeight"));
@@ -80,10 +86,6 @@ void Section::SetContent(QWidget *w)
 	_toggleAnimation->addAnimation(
 		new QPropertyAnimation(_contentArea, "maximumHeight"));
 
-	connect(_toggleButton, &QToolButton::toggled, this, &Section::Collapse);
-	_mainLayout->addWidget(_contentArea, 1, 0, 1, 3);
-
-	// Animation Setup
 	const auto collapsedHeight =
 		sizeHint().height() - _contentArea->maximumHeight();
 	auto contentHeight = newLayout->sizeHint().height();
