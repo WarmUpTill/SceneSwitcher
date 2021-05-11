@@ -6,6 +6,7 @@
 #include <QGroupBox>
 #include <deque>
 #include "macro.hpp"
+#include "section.hpp"
 
 struct MacroActionInfo {
 	using TCreateMethod = std::shared_ptr<MacroAction> (*)();
@@ -36,15 +37,14 @@ public:
 	MacroActionEdit(QWidget *parent = nullptr,
 			std::shared_ptr<MacroAction> * = nullptr, int type = 0);
 	void UpdateEntryData(int type);
+	void Collapse(bool collapsed);
 
 private slots:
 	void ActionSelectionChanged(int idx);
 
 protected:
 	QComboBox *_actionSelection;
-	QVBoxLayout *_actionWidgetLayout;
-	QVBoxLayout *_groupLayout;
-	QGroupBox *_group;
+	Section *_section;
 
 	std::shared_ptr<MacroAction> *_entryData;
 

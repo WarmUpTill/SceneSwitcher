@@ -44,27 +44,17 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	: QWidget(parent)
 {
 	_actionSelection = new QComboBox();
-	_actionWidgetLayout = new QVBoxLayout();
-	_group = new QGroupBox();
-	_groupLayout = new QVBoxLayout;
+	_section = new Section(300);
 
 	QWidget::connect(_actionSelection, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(ActionSelectionChanged(int)));
 
 	populateActionSelection(_actionSelection);
 
-	QHBoxLayout *actionLayout = new QHBoxLayout;
-	actionLayout->addWidget(new QLabel(
-		obs_module_text("AdvSceneSwitcher.macroTab.edit.action")));
-	actionLayout->addWidget(_actionSelection);
-	actionLayout->addStretch();
+	_section->AddHeaderWidget(_actionSelection);
 
-	_groupLayout->addLayout(actionLayout);
-	_groupLayout->addLayout(_actionWidgetLayout);
-	_group->setLayout(_groupLayout);
-
-	QHBoxLayout *mainLayout = new QHBoxLayout;
-	mainLayout->addWidget(_group);
+	QVBoxLayout *mainLayout = new QVBoxLayout;
+	mainLayout->addWidget(_section);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -82,19 +72,23 @@ void MacroActionEdit::ActionSelectionChanged(int idx)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->reset();
 	*_entryData = MacroActionFactory::Create(idx);
-	clearLayout(_actionWidgetLayout);
 	auto widget =
 		MacroActionFactory::CreateWidget(idx, window(), *_entryData);
-	_actionWidgetLayout->addWidget(widget);
+	_section->SetContent(widget);
+	_section->Collapse(false);
 }
 
 void MacroActionEdit::UpdateEntryData(int type)
 {
 	_actionSelection->setCurrentIndex(type);
-	clearLayout(_actionWidgetLayout);
 	auto widget =
 		MacroActionFactory::CreateWidget(type, window(), *_entryData);
-	_actionWidgetLayout->addWidget(widget);
+	_section->SetContent(widget);
+}
+
+void MacroActionEdit::Collapse(bool collapsed)
+{
+	_section->Collapse(collapsed);
 }
 
 void AdvSceneSwitcher::on_actionAdd_clicked()
@@ -108,6 +102,7 @@ void AdvSceneSwitcher::on_actionAdd_clicked()
 	auto newEntry = new MacroActionEdit(this, &macro->Actions().back(), 0);
 	ui->macroEditActionLayout->addWidget(newEntry);
 	ui->macroEditActionHelp->setVisible(false);
+	newEntry->Collapse(false);
 }
 
 void AdvSceneSwitcher::on_actionRemove_clicked()

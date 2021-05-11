@@ -3,6 +3,7 @@
 #include "advanced-scene-switcher.hpp"
 #include "macro.hpp"
 #include "macro-condition-scene.hpp"
+#include "section.hpp"
 #include "utility.hpp"
 
 #include <QGroupBox>
@@ -37,8 +38,8 @@ public:
 			   std::shared_ptr<MacroCondition> * = nullptr,
 			   int type = 0, bool root = true);
 	bool IsRootNode();
-	void SetGroupTitle();
 	void UpdateEntryData(int type);
+	void Collapse(bool collapsed);
 
 private slots:
 	void LogicSelectionChanged(int idx);
@@ -47,9 +48,7 @@ private slots:
 protected:
 	QComboBox *_logicSelection;
 	QComboBox *_conditionSelection;
-	QVBoxLayout *_conditionWidgetLayout;
-	QVBoxLayout *_groupLayout;
-	QGroupBox *_group;
+	Section *_section;
 
 	std::shared_ptr<MacroCondition> *_entryData;
 

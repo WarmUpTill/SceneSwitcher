@@ -63,9 +63,7 @@ MacroConditionEdit::MacroConditionEdit(
 {
 	_logicSelection = new QComboBox();
 	_conditionSelection = new QComboBox();
-	_conditionWidgetLayout = new QVBoxLayout();
-	_group = new QGroupBox();
-	_groupLayout = new QVBoxLayout;
+	_section = new Section(300);
 
 	QWidget::connect(_logicSelection, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(LogicSelectionChanged(int)));
@@ -75,30 +73,11 @@ MacroConditionEdit::MacroConditionEdit(
 	populateLogicSelection(_logicSelection, root);
 	populateConditionSelection(_conditionSelection);
 
-	QHBoxLayout *logicLayout = new QHBoxLayout;
-	logicLayout->addWidget(new QLabel(
-		obs_module_text("AdvSceneSwitcher.macroTab.edit.logic")));
-	logicLayout->addWidget(_logicSelection);
-	logicLayout->addStretch();
+	_section->AddHeaderWidget(_logicSelection);
+	_section->AddHeaderWidget(_conditionSelection);
 
-	QHBoxLayout *conditionTypeSelectionLayout = new QHBoxLayout;
-	conditionTypeSelectionLayout->addWidget(new QLabel(
-		obs_module_text("AdvSceneSwitcher.macroTab.edit.condition")));
-	conditionTypeSelectionLayout->addWidget(_conditionSelection);
-	conditionTypeSelectionLayout->addStretch();
-
-	_groupLayout->addLayout(logicLayout);
-	_groupLayout->addLayout(conditionTypeSelectionLayout);
-	_groupLayout->addLayout(_conditionWidgetLayout);
-
-	QHBoxLayout *controlsLayout = new QHBoxLayout;
-	controlsLayout->addStretch();
-	_groupLayout->addLayout(controlsLayout);
-
-	_group->setLayout(_groupLayout);
-
-	QHBoxLayout *mainLayout = new QHBoxLayout;
-	mainLayout->addWidget(_group);
+	QVBoxLayout *mainLayout = new QVBoxLayout;
+	mainLayout->addWidget(_section);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -122,7 +101,6 @@ void MacroConditionEdit::LogicSelectionChanged(int idx)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	(*_entryData)->SetLogicType(type);
-	SetGroupTitle();
 }
 
 bool MacroConditionEdit::IsRootNode()
@@ -130,28 +108,11 @@ bool MacroConditionEdit::IsRootNode()
 	return _isRoot;
 }
 
-void MacroConditionEdit::SetGroupTitle()
-{
-	std::string title;
-	if (!isRootLogicType((*_entryData)->GetLogicType())) {
-		title += "... ";
-	}
-
-	title += obs_module_text(
-		MacroCondition::logicTypes.find((*_entryData)->GetLogicType())
-			->second._name.c_str());
-	title += " ... ";
-	_group->setTitle(QString::fromStdString(title));
-}
-
 void MacroConditionEdit::UpdateEntryData(int type)
 {
 	_conditionSelection->setCurrentIndex(type);
-	clearLayout(_conditionWidgetLayout);
 	auto widget = MacroConditionFactory::CreateWidget(type, window(),
 							  *_entryData);
-	_conditionWidgetLayout->addWidget(widget);
-
 	auto logic = (*_entryData)->GetLogicType();
 	if (IsRootNode()) {
 		_logicSelection->setCurrentIndex(static_cast<int>(logic));
@@ -159,7 +120,12 @@ void MacroConditionEdit::UpdateEntryData(int type)
 		_logicSelection->setCurrentIndex(static_cast<int>(logic) -
 						 logic_root_offset);
 	}
-	SetGroupTitle();
+	_section->SetContent(widget);
+}
+
+void MacroConditionEdit::Collapse(bool collapsed)
+{
+	_section->Collapse(collapsed);
 }
 
 void MacroConditionEdit::ConditionSelectionChanged(int idx)
@@ -173,10 +139,10 @@ void MacroConditionEdit::ConditionSelectionChanged(int idx)
 	_entryData->reset();
 	*_entryData = MacroConditionFactory::Create(idx);
 	(*_entryData)->SetLogicType(logic);
-	clearLayout(_conditionWidgetLayout);
 	auto widget =
 		MacroConditionFactory::CreateWidget(idx, window(), *_entryData);
-	_conditionWidgetLayout->addWidget(widget);
+	_section->SetContent(widget);
+	_section->Collapse(false);
 }
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()
@@ -195,6 +161,7 @@ void AdvSceneSwitcher::on_conditionAdd_clicked()
 		this, &macro->Conditions().back(), 0, root);
 	ui->macroEditConditionLayout->addWidget(newEntry);
 	ui->macroEditConditionHelp->setVisible(false);
+	newEntry->Collapse(false);
 }
 
 void AdvSceneSwitcher::on_conditionRemove_clicked()
