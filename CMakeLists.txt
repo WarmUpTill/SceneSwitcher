@@ -100,6 +100,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/screenshot-helper.hpp
 	src/headers/name-dialog.hpp
 	src/headers/duration-control.hpp
+	src/headers/section.hpp
 	src/headers/volume-control.hpp
 	src/headers/version.h
 	)
@@ -150,6 +151,7 @@ set(advanced-scene-switcher_SOURCES
 	src/screenshot-helper.cpp
 	src/name-dialog.cpp
 	src/duration-control.cpp
+	src/section.cpp
 	src/volume-control.cpp
 	src/version.cpp
 	)
