@@ -1,4 +1,3 @@
-#include <QScrollbar>
 #include "headers/macro-condition-edit.hpp"
 
 std::map<int, MacroConditionInfo> MacroConditionFactory::_methods;
