@@ -129,5 +129,7 @@ void MacroConditionStreamEdit::UpdateEntryData()
 		return;
 	}
 
+	_streamState->setCurrentIndex(
+		static_cast<int>(_entryData->_streamState));
 	_duration->SetDuration(_entryData->_duration);
 }
