@@ -35,7 +35,8 @@ class MacroActionEdit : public QWidget {
 
 public:
 	MacroActionEdit(QWidget *parent = nullptr,
-			std::shared_ptr<MacroAction> * = nullptr, int type = 0);
+			std::shared_ptr<MacroAction> * = nullptr, int type = 0,
+			bool startCollapsed = false);
 	void UpdateEntryData(int type);
 	void Collapse(bool collapsed);
 

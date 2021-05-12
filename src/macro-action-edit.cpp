@@ -40,7 +40,7 @@ static inline void populateActionSelection(QComboBox *list)
 
 MacroActionEdit::MacroActionEdit(QWidget *parent,
 				 std::shared_ptr<MacroAction> *entryData,
-				 int type)
+				 int type, bool startCollapsed)
 	: QWidget(parent)
 {
 	_actionSelection = new QComboBox();
@@ -61,6 +61,7 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	UpdateEntryData(type);
 
 	_loading = false;
+	_section->Collapse(startCollapsed);
 }
 
 void MacroActionEdit::ActionSelectionChanged(int idx)

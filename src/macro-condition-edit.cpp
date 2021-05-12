@@ -58,7 +58,7 @@ static inline void populateConditionSelection(QComboBox *list)
 
 MacroConditionEdit::MacroConditionEdit(
 	QWidget *parent, std::shared_ptr<MacroCondition> *entryData, int type,
-	bool root)
+	bool root, bool startCollapsed)
 	: QWidget(parent)
 {
 	_logicSelection = new QComboBox();
@@ -84,6 +84,7 @@ MacroConditionEdit::MacroConditionEdit(
 	_isRoot = root;
 	UpdateEntryData(type);
 	_loading = false;
+	_section->Collapse(startCollapsed);
 }
 
 void MacroConditionEdit::LogicSelectionChanged(int idx)

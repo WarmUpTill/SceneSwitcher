@@ -36,7 +36,8 @@ class MacroConditionEdit : public QWidget {
 public:
 	MacroConditionEdit(QWidget *parent = nullptr,
 			   std::shared_ptr<MacroCondition> * = nullptr,
-			   int type = 0, bool root = true);
+			   int type = 0, bool root = true,
+			   bool startCollapsed = false);
 	bool IsRootNode();
 	void UpdateEntryData(int type);
 	void Collapse(bool collapsed);
