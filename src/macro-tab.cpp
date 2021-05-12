@@ -255,6 +255,8 @@ void AdvSceneSwitcher::setupMacroTab()
 	ui->macros->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(ui->macros, SIGNAL(customContextMenuRequested(QPoint)), this,
 		SLOT(showMacroContextMenu(QPoint)));
+
+	ui->macroEdit->setDisabled(true);
 }
 
 void AdvSceneSwitcher::showMacroContextMenu(const QPoint &pos)
