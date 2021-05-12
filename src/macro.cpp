@@ -258,6 +258,7 @@ bool SwitcherData::checkMacros()
 
 bool SwitcherData::runMacros()
 {
+	macroSceneSwitched = false;
 	for (auto &m : macros) {
 		if (m.Matched()) {
 			if (!m.performAction()) {

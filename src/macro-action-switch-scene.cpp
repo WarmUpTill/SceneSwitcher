@@ -11,7 +11,12 @@ bool MacroActionSwitchScene::_registered = MacroActionFactory::Register(
 
 bool MacroActionSwitchScene::PerformAction()
 {
+	if (switcher->macroSceneSwitched) {
+		return false;
+	}
+
 	OBSWeakSource scene = getScene();
+	switcher->macroSceneSwitched = true;
 	switchScene({scene, transition, (int)(_duration.seconds * 1000)});
 	return true;
 }
