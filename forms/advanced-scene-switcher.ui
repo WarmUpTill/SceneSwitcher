@@ -562,7 +562,7 @@
                <bool>false</bool>
               </property>
               <property name="text">
-               <string>AdvSceneSwitcher.testTab.help</string>
+               <string>AdvSceneSwitcher.macroTab.help</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignCenter</set>
@@ -774,7 +774,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="text">
-                   <string>AdvSceneSwitcher.testTab.editHelp</string>
+                   <string>AdvSceneSwitcher.macroTab.editConditionHelp</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -865,7 +865,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="text">
-                   <string>AdvSceneSwitcher.testTab.editHelp</string>
+                   <string>AdvSceneSwitcher.macroTab.editActionHelp</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
