@@ -40,6 +40,7 @@ Section::Section(const int animationDuration, QWidget *parent)
 
 void Section::Collapse(bool collapsed)
 {
+	_toggleButton->setChecked(collapsed);
 	_toggleButton->setArrowType(!collapsed ? Qt::ArrowType::DownArrow
 					       : Qt::ArrowType::RightArrow);
 	_toggleAnimation->setDirection(!collapsed
@@ -73,8 +74,6 @@ void Section::SetContent(QWidget *w)
 	auto newLayout = new QVBoxLayout();
 	newLayout->addWidget(w);
 	_contentArea->setLayout(newLayout);
-
-	connect(_toggleButton, &QToolButton::toggled, this, &Section::Collapse);
 	_mainLayout->addWidget(_contentArea, 1, 0, 1, 3);
 
 	// Animation Setup
