@@ -169,16 +169,13 @@ MacroConditionFileEdit::MacroConditionFileEdit(
 	QHBoxLayout *line2Layout = new QHBoxLayout;
 	QHBoxLayout *line3Layout = new QHBoxLayout;
 	placeWidgets(
-		obs_module_text(
-			"AdvSceneSwitcher.macro.condition.file.entry.line1"),
+		obs_module_text("AdvSceneSwitcher.condition.file.entry.line1"),
 		line1Layout, widgetPlaceholders);
 	placeWidgets(
-		obs_module_text(
-			"AdvSceneSwitcher.macro.condition.file.entry.line2"),
+		obs_module_text("AdvSceneSwitcher.condition.file.entry.line2"),
 		line2Layout, widgetPlaceholders, false);
 	placeWidgets(
-		obs_module_text(
-			"AdvSceneSwitcher.macro.condition.file.entry.line3"),
+		obs_module_text("AdvSceneSwitcher.condition.file.entry.line3"),
 		line3Layout, widgetPlaceholders);
 	mainLayout->addLayout(line1Layout);
 	mainLayout->addLayout(line2Layout);

@@ -78,8 +78,7 @@ MacroConditionRegionEdit::MacroConditionRegionEdit(
 		{"{{maxX}}", _maxX},
 		{"{{maxY}}", _maxY}};
 
-	placeWidgets(obs_module_text(
-			     "AdvSceneSwitcher.macro.condition.region.entry"),
+	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.region.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

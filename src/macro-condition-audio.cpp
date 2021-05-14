@@ -11,8 +11,8 @@ bool MacroConditionAudio::_registered = MacroConditionFactory::Register(
 	 "AdvSceneSwitcher.condition.audio"});
 
 static std::unordered_map<AudioCondition, std::string> audioConditionTypes = {
-	{AudioCondition::ABOVE, "AdvSceneSwitcher.audioTab.condition.above"},
-	{AudioCondition::BELOW, "AdvSceneSwitcher.audioTab.condition.below"},
+	{AudioCondition::ABOVE, "AdvSceneSwitcher.ondition.audio.state.above"},
+	{AudioCondition::BELOW, "AdvSceneSwitcher.ondition.audio.state.below"},
 };
 
 MacroConditionAudio::~MacroConditionAudio()
@@ -148,9 +148,8 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 		{"{{volume}}", _volume},
 		{"{{condition}}", _condition},
 		{"{{duration}}", _duration}};
-	placeWidgets(
-		obs_module_text("AdvSceneSwitcher.macro.condition.audio.entry"),
-		switchLayout, widgetPlaceholders);
+	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.audio.entry"),
+		     switchLayout, widgetPlaceholders);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 

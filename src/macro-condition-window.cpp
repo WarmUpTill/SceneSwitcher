@@ -127,14 +127,12 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	QHBoxLayout *line1Layout = new QHBoxLayout;
 	QHBoxLayout *line2Layout = new QHBoxLayout;
-	placeWidgets(
-		obs_module_text(
-			"AdvSceneSwitcher.macro.condition.window.entry.line1"),
-		line1Layout, widgetPlaceholders);
-	placeWidgets(
-		obs_module_text(
-			"AdvSceneSwitcher.macro.condition.window.entry.line2"),
-		line2Layout, widgetPlaceholders);
+	placeWidgets(obs_module_text(
+			     "AdvSceneSwitcher.condition.window.entry.line1"),
+		     line1Layout, widgetPlaceholders);
+	placeWidgets(obs_module_text(
+			     "AdvSceneSwitcher.condition.window.entry.line2"),
+		     line2Layout, widgetPlaceholders);
 	mainLayout->addLayout(line1Layout);
 	mainLayout->addLayout(line2Layout);
 	setLayout(mainLayout);

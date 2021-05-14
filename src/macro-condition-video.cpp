@@ -171,9 +171,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 		{"{{filePath}}", _filePath},
 		{"{{browseButton}}", _browseButton},
 	};
-	placeWidgets(
-		obs_module_text("AdvSceneSwitcher.macro.condition.video.entry"),
-		mainLayout, widgetPlaceholders);
+	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.video.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	_entryData = entryData;

@@ -89,9 +89,8 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 		{"{{audioSources}}", _audioSources},
 		{"{{actions}}", _actions},
 	};
-	placeWidgets(
-		obs_module_text("AdvSceneSwitcher.macro.action.audio.entry"),
-		mainLayout, widgetPlaceholders);
+	placeWidgets(obs_module_text("AdvSceneSwitcher.action.audio.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	_entryData = entryData;

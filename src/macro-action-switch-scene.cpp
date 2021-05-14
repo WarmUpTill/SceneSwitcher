@@ -53,9 +53,8 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 		{"{{transitions}}", transitions},
 		{"{{duration}}", _duration},
 	};
-	placeWidgets(
-		obs_module_text("AdvSceneSwitcher.macro.action.scene.entry"),
-		mainLayout, widgetPlaceholders);
+	placeWidgets(obs_module_text("AdvSceneSwitcher.action.scene.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	_entryData = entryData;

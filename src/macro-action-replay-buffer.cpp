@@ -93,9 +93,8 @@ MacroActionReplayBufferEdit::MacroActionReplayBufferEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{actions}}", _actions},
 	};
-	placeWidgets(
-		obs_module_text("AdvSceneSwitcher.macro.action.replay.entry"),
-		mainLayout, widgetPlaceholders);
+	placeWidgets(obs_module_text("AdvSceneSwitcher.action.replay.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	_entryData = entryData;

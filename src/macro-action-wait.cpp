@@ -124,9 +124,9 @@ void MacroActionWaitEdit::SetupFixedDurationEdit()
 		{"{{duration}}", _duration},
 		{"{{waitType}}", _waitType},
 	};
-	placeWidgets(obs_module_text(
-			     "AdvSceneSwitcher.macro.action.wait.entry.fixed"),
-		     _mainLayout, widgetPlaceholders);
+	placeWidgets(
+		obs_module_text("AdvSceneSwitcher.action.wait.entry.fixed"),
+		_mainLayout, widgetPlaceholders);
 	_duration2->hide();
 }
 
@@ -141,9 +141,9 @@ void MacroActionWaitEdit::SetupRandomDurationEdit()
 		{"{{duration2}}", _duration2},
 		{"{{waitType}}", _waitType},
 	};
-	placeWidgets(obs_module_text(
-			     "AdvSceneSwitcher.macro.action.wait.entry.random"),
-		     _mainLayout, widgetPlaceholders);
+	placeWidgets(
+		obs_module_text("AdvSceneSwitcher.action.wait.entry.random"),
+		_mainLayout, widgetPlaceholders);
 	_duration2->show();
 }
 

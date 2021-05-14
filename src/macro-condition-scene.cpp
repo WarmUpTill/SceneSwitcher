@@ -88,9 +88,8 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 		{"{{sceneType}}", _sceneType},
 		{"{{duration}}", _duration},
 	};
-	placeWidgets(
-		obs_module_text("AdvSceneSwitcher.macro.condition.scene.entry"),
-		mainLayout, widgetPlaceholders);
+	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.scene.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	_entryData = entryData;

@@ -87,8 +87,7 @@ MacroConditionRecordEdit::MacroConditionRecordEdit(
 		{"{{duration}}", _duration},
 	};
 
-	placeWidgets(obs_module_text(
-			     "AdvSceneSwitcher.macro.condition.record.entry"),
+	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.record.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

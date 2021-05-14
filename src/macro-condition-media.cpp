@@ -268,9 +268,8 @@ MacroConditionMediaEdit::MacroConditionMediaEdit(
 		{"{{timeRestrictions}}", _timeRestrictions},
 		{"{{time}}", _time},
 	};
-	placeWidgets(
-		obs_module_text("AdvSceneSwitcher.macro.condition.media.entry"),
-		mainLayout, widgetPlaceholders);
+	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.media.entry"),
+		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
 	_entryData = entryData;

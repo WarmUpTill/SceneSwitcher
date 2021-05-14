@@ -98,8 +98,7 @@ MacroActionRecordEdit::MacroActionRecordEdit(
 		{"{{actions}}", _actions},
 		{"{{pauseHint}}", _pauseHint},
 	};
-	placeWidgets(obs_module_text(
-			     "AdvSceneSwitcher.macro.action.recording.entry"),
+	placeWidgets(obs_module_text("AdvSceneSwitcher.action.recording.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

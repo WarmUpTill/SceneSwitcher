@@ -59,8 +59,7 @@ MacroConditionPluginStateEdit::MacroConditionPluginStateEdit(
 		{"{{condition}}", _condition},
 	};
 	placeWidgets(
-		obs_module_text(
-			"AdvSceneSwitcher.macro.condition.pluginState.entry"),
+		obs_module_text("AdvSceneSwitcher.condition.pluginState.entry"),
 		switchLayout, widgetPlaceholders);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;

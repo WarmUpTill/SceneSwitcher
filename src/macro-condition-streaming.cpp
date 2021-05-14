@@ -83,8 +83,7 @@ MacroConditionStreamEdit::MacroConditionStreamEdit(
 		{"{{duration}}", _duration},
 	};
 
-	placeWidgets(obs_module_text(
-			     "AdvSceneSwitcher.macro.condition.stream.entry"),
+	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.stream.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
