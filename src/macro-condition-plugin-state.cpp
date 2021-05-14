@@ -3,7 +3,7 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-const int MacroConditionPluginState::id = 9;
+const int MacroConditionPluginState::id = 10;
 
 bool MacroConditionPluginState::_registered = MacroConditionFactory::Register(
 	MacroConditionPluginState::id,
