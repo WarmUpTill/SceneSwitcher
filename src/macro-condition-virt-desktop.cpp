@@ -46,19 +46,36 @@ MacroConditionVirtDesktopEdit::MacroConditionVirtDesktopEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionVirtDesktop> entryData)
 	: QWidget(parent)
 {
+	_currentDesktop = new QLabel();
+	_currentDesktop->setTextInteractionFlags(Qt::TextSelectableByMouse);
 	_virtDesktops = new QComboBox();
 	QWidget::connect(_virtDesktops, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(DesktopChanged(int)));
 	populateVirtualDesktopSelection(_virtDesktops);
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
+	QVBoxLayout *mainLayout = new QVBoxLayout;
+	QHBoxLayout *line1Layout = new QHBoxLayout;
+	QHBoxLayout *line2Layout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{virtDesktops}}", _virtDesktops},
+		{"{{currentDesktop}}", _currentDesktop},
 	};
 	placeWidgets(
-		obs_module_text("AdvSceneSwitcher.condition.virtDesktop.entry"),
-		mainLayout, widgetPlaceholders);
+		obs_module_text(
+			"AdvSceneSwitcher.condition.virtDesktop.entry.line1"),
+		line1Layout, widgetPlaceholders);
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.virtDesktop.entry.line2"),
+		line2Layout, widgetPlaceholders);
+	mainLayout->addLayout(line1Layout);
+	mainLayout->addLayout(line2Layout);
 	setLayout(mainLayout);
+
+	// Current virtual desktop position
+	QTimer *timer = new QTimer(this);
+	connect(timer, SIGNAL(timeout()), this, SLOT(UpdateCurrentDesktop()));
+	timer->start(1000);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -82,4 +99,15 @@ void MacroConditionVirtDesktopEdit::UpdateEntryData()
 	}
 
 	_virtDesktops->setCurrentIndex(_entryData->_desktop);
+}
+
+void MacroConditionVirtDesktopEdit::UpdateCurrentDesktop()
+{
+	long curDesktop;
+	if (GetCurrentVirtualDesktop(curDesktop)) {
+		_currentDesktop->setText(QString::number(curDesktop));
+	} else {
+		_currentDesktop->setText(obs_module_text(
+			"AdvSceneSwitcher.condition.virtDesktop.notAvailable"));
+	}
 }

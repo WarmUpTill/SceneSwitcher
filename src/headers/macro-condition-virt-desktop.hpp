@@ -39,9 +39,11 @@ public:
 
 private slots:
 	void DesktopChanged(int value);
+	void UpdateCurrentDesktop();
 
 protected:
 	QComboBox *_virtDesktops;
+	QLabel *_currentDesktop;
 	std::shared_ptr<MacroConditionVirtDesktop> _entryData;
 
 private:
