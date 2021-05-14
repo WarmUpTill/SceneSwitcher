@@ -65,6 +65,9 @@ bool Macro::PerformAction()
 	for (auto &a : _actions) {
 		ret = ret && a->PerformAction();
 		a->LogAction();
+		if (!ret) {
+			return false;
+		}
 	}
 
 	return ret;
