@@ -394,7 +394,7 @@ int secondsSinceLastInput()
 	return idle_time;
 }
 
-static bool GetCurrentVirtualDesktop(long &desktop)
+bool GetCurrentVirtualDesktop(long &desktop)
 {
 	Atom type;
 	long unsigned nitems;
@@ -426,7 +426,7 @@ static bool GetCurrentVirtualDesktop(long &desktop)
 	return desktop != -1;
 }
 
-static bool GetVirtualDesktopCount(long &ndesktops)
+bool GetVirtualDesktopCount(long &ndesktops)
 {
 	Atom type;
 	long unsigned nitems;
