@@ -284,6 +284,8 @@ void GetWindowList(QStringList &windows);
 void GetCurrentWindowTitle(std::string &title);
 bool isFullscreen(std::string &title);
 bool isMaximized(std::string &title);
+bool GetCurrentVirtualDesktop(long &desktop);
+bool GetVirtualDesktopCount(long &ndesktops);
 
 /******************************************************************************
  * Screenregion helper

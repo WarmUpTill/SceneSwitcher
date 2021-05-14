@@ -393,3 +393,67 @@ int secondsSinceLastInput()
 
 	return idle_time;
 }
+
+static bool GetCurrentVirtualDesktop(long &desktop)
+{
+	Atom type;
+	long unsigned nitems;
+	long unsigned int bytes = 0;
+	int format = 0;
+	unsigned char *data;
+	Window root;
+	Atom request;
+	Display *display = disp();
+
+	//TODO check for _NET_CURRENT_DESKTOP
+	if (!ewmhIsSupported()) {
+		return false;
+	}
+
+	request = XInternAtom(display, "_NET_CURRENT_DESKTOP", False);
+	root = XDefaultRootWindow(display);
+
+	int status = XGetWindowProperty(display, root, request, 0L, 1L, false,
+					XA_CARDINAL, &type, &format, &nitems,
+					&bytes, &data);
+
+	if (status == Success && nitems > 0) {
+		desktop = *((long *)data);
+	} else {
+		desktop = -1;
+	}
+	free(data);
+	return desktop != -1;
+}
+
+static bool GetVirtualDesktopCount(long &ndesktops)
+{
+	Atom type;
+	long unsigned nitems;
+	long unsigned int bytes = 0;
+	int format = 0;
+	unsigned char *data;
+	Window root;
+	Atom request;
+	Display *display = disp();
+
+	//TODO check for _NET_NUMBER_OF_DESKTOPS
+	if (!ewmhIsSupported()) {
+		return false;
+	}
+
+	request = XInternAtom(display, "_NET_CURRENT_DESKTOP", False);
+	root = XDefaultRootWindow(display);
+
+	int status = XGetWindowProperty(display, root, request, 0L, 1L, false,
+					XA_CARDINAL, &type, &format, &nitems,
+					&bytes, &data);
+
+	if (status == Success && nitems > 0) {
+		ndesktops = *((long *)data);
+	} else {
+		ndesktops = 0;
+	}
+	free(data);
+	return ndesktops != 0;
+}

@@ -100,6 +100,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/macro-condition-scene.hpp
 	src/headers/macro-condition-streaming.hpp
 	src/headers/macro-condition-video.hpp
+	src/headers/macro-condition-virt-desktop.hpp
 	src/headers/macro-condition-window.hpp
 	src/headers/macro.hpp
 	src/headers/curl-helper.hpp
@@ -156,6 +157,7 @@ set(advanced-scene-switcher_SOURCES
 	src/macro-condition-scene.cpp
 	src/macro-condition-streaming.cpp
 	src/macro-condition-video.cpp
+	src/macro-condition-virt-desktop.cpp
 	src/macro-condition-window.cpp
 	src/macro.cpp
 	src/macro-tab.cpp

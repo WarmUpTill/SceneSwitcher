@@ -285,3 +285,13 @@ int secondsSinceLastInput()
 {
 	return (getTime() - getLastInputTime()) / 1000;
 }
+
+bool GetCurrentVirtualDesktop(long &desktop)
+{
+	return false;
+}
+
+bool GetVirtualDesktopCount(long &ndesktops)
+{
+	return false;
+}
