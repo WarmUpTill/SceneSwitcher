@@ -33,7 +33,8 @@ public:
 	{
 		return new MacroConditionVirtDesktopEdit(
 			parent,
-			std::dynamic_pointer_cast<MacroConditionVirtDesktop>(cond));
+			std::dynamic_pointer_cast<MacroConditionVirtDesktop>(
+				cond));
 	}
 
 private slots:
