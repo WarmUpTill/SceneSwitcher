@@ -63,8 +63,8 @@ public:
 	Macro(std::string name = "");
 	virtual ~Macro();
 
-	bool checkMatch();
-	bool performAction();
+	bool CeckMatch();
+	bool PerformAction();
 	bool Matched() { return _matched; }
 	std::string Name() { return _name; }
 	void SetName(std::string name) { _name = name; }

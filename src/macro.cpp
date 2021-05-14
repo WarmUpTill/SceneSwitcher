@@ -17,7 +17,7 @@ Macro::Macro(std::string name) : _name(name) {}
 
 Macro::~Macro() {}
 
-bool Macro::checkMatch()
+bool Macro::CeckMatch()
 {
 	_matched = false;
 	for (auto &c : _conditions) {
@@ -59,7 +59,7 @@ bool Macro::checkMatch()
 	return _matched;
 }
 
-bool Macro::performAction()
+bool Macro::PerformAction()
 {
 	bool ret = true;
 	for (auto &a : _actions) {
@@ -255,7 +255,7 @@ bool SwitcherData::checkMacros()
 {
 	bool ret = false;
 	for (auto &m : macros) {
-		if (m.checkMatch()) {
+		if (m.CeckMatch()) {
 			ret = true;
 		}
 	}
@@ -268,7 +268,7 @@ bool SwitcherData::runMacros()
 	for (auto &m : macros) {
 		if (m.Matched()) {
 			blog(LOG_INFO, "running macro: %s", m.Name().c_str());
-			if (!m.performAction()) {
+			if (!m.PerformAction()) {
 				blog(LOG_WARNING, "abort macro: %s",
 				     m.Name().c_str());
 				return false;
