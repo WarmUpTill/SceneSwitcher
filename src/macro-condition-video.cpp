@@ -15,7 +15,7 @@ bool MacroConditionVideo::_registered = MacroConditionFactory::Register(
 	{MacroConditionVideo::Create, MacroConditionVideoEdit::Create,
 	 "AdvSceneSwitcher.condition.video"});
 
-static std::unordered_map<VideoCondition, std::string> conditionTypes = {
+static std::map<VideoCondition, std::string> conditionTypes = {
 	{VideoCondition::MATCH,
 	 "AdvSceneSwitcher.condition.video.condition.match"},
 	{VideoCondition::DIFFER,

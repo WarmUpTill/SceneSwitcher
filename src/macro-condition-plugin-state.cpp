@@ -11,10 +11,9 @@ bool MacroConditionPluginState::_registered = MacroConditionFactory::Register(
 	 MacroConditionPluginStateEdit::Create,
 	 "AdvSceneSwitcher.condition.pluginState"});
 
-static std::unordered_map<PluginStateCondition, std::string>
-	pluginStateConditionTypes = {
-		{PluginStateCondition::SCENESWITCHED,
-		 "AdvSceneSwitcher.condition.pluginState.state.sceneSwitched"},
+static std::map<PluginStateCondition, std::string> pluginStateConditionTypes = {
+	{PluginStateCondition::SCENESWITCHED,
+	 "AdvSceneSwitcher.condition.pluginState.state.sceneSwitched"},
 };
 
 bool MacroConditionPluginState::CheckCondition()

@@ -9,7 +9,7 @@ bool MacroActionStream::_registered = MacroActionFactory::Register(
 	{MacroActionStream::Create, MacroActionStreamEdit::Create,
 	 "AdvSceneSwitcher.action.streaming"});
 
-const static std::unordered_map<StreamAction, std::string> actionTypes = {
+const static std::map<StreamAction, std::string> actionTypes = {
 	{StreamAction::STOP, "AdvSceneSwitcher.action.streaming.type.stop"},
 	{StreamAction::START, "AdvSceneSwitcher.action.streaming.type.start"},
 };

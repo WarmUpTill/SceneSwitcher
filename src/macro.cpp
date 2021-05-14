@@ -4,7 +4,7 @@
 #include "headers/macro-condition-edit.hpp"
 #include "headers/macro-action-switch-scene.hpp"
 
-const std::unordered_map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
+const std::map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 	{LogicType::NONE, {"AdvSceneSwitcher.logic.none"}},
 	{LogicType::AND, {"AdvSceneSwitcher.logic.and"}},
 	{LogicType::OR, {"AdvSceneSwitcher.logic.or"}},
