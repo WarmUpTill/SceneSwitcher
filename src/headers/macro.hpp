@@ -77,6 +77,9 @@ public:
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 
+	// Helper function for plugin state condition regarding scene change
+	bool SwitchesScene();
+
 private:
 	std::string _name = "";
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;

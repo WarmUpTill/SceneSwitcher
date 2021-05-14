@@ -1,0 +1,94 @@
+#include "headers/macro-condition-edit.hpp"
+#include "headers/macro-condition-plugin-state.hpp"
+#include "headers/utility.hpp"
+#include "headers/advanced-scene-switcher.hpp"
+
+const int MacroConditionPluginState::id = 9;
+
+bool MacroConditionPluginState::_registered = MacroConditionFactory::Register(
+	MacroConditionPluginState::id,
+	{MacroConditionPluginState::Create,
+	 MacroConditionPluginStateEdit::Create,
+	 "AdvSceneSwitcher.condition.pluginState"});
+
+static std::unordered_map<PluginStateCondition, std::string>
+	pluginStateConditionTypes = {
+		{PluginStateCondition::SCENESWITCHED,
+		 "AdvSceneSwitcher.condition.pluginState.state.sceneSwitched"},
+};
+
+bool MacroConditionPluginState::CheckCondition()
+{
+	return switcher->macroSceneSwitched;
+}
+
+bool MacroConditionPluginState::Save(obs_data_t *obj)
+{
+	MacroCondition::Save(obj);
+	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
+	return true;
+}
+
+bool MacroConditionPluginState::Load(obs_data_t *obj)
+{
+	MacroCondition::Load(obj);
+	_condition = static_cast<PluginStateCondition>(
+		obs_data_get_int(obj, "condition"));
+	return true;
+}
+
+static inline void populateConditionSelection(QComboBox *list)
+{
+	for (auto entry : pluginStateConditionTypes) {
+		list->addItem(obs_module_text(entry.second.c_str()));
+	}
+}
+
+MacroConditionPluginStateEdit::MacroConditionPluginStateEdit(
+	QWidget *parent, std::shared_ptr<MacroConditionPluginState> entryData)
+	: QWidget(parent)
+{
+	_condition = new QComboBox();
+
+	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(ConditionChanged(int)));
+	populateConditionSelection(_condition);
+
+	QHBoxLayout *switchLayout = new QHBoxLayout;
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{condition}}", _condition},
+	};
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.macro.condition.pluginState.entry"),
+		switchLayout, widgetPlaceholders);
+
+	QVBoxLayout *mainLayout = new QVBoxLayout;
+
+	mainLayout->addLayout(switchLayout);
+
+	setLayout(mainLayout);
+
+	_entryData = entryData;
+	UpdateEntryData();
+	_loading = false;
+}
+
+void MacroConditionPluginStateEdit::ConditionChanged(int cond)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_condition = static_cast<PluginStateCondition>(cond);
+}
+
+void MacroConditionPluginStateEdit::UpdateEntryData()
+{
+	if (!_entryData) {
+		return;
+	}
+
+	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
+}

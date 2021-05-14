@@ -463,6 +463,7 @@ void SwitcherData::Thread()
 		// if a longer transition is used than the configured check interval
 		bool setPrevSceneAfterLinger = false;
 		bool macroMatch = false;
+		macroSceneSwitched = false;
 
 		endTime = std::chrono::high_resolution_clock::now();
 

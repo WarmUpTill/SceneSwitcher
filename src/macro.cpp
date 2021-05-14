@@ -2,6 +2,7 @@
 
 #include "headers/macro-action-edit.hpp"
 #include "headers/macro-condition-edit.hpp"
+#include "headers/macro-action-switch-scene.hpp"
 
 const std::unordered_map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 	{LogicType::NONE, {"AdvSceneSwitcher.logic.none"}},
@@ -193,6 +194,17 @@ bool Macro::Load(obs_data_t *obj)
 	return true;
 }
 
+bool Macro::SwitchesScene()
+{
+	MacroActionSwitchScene temp;
+	for (auto &a : _actions) {
+		if (a->GetId() == temp.GetId()) {
+			return true;
+		}
+	}
+	return false;
+}
+
 bool MacroCondition::Save(obs_data_t *obj)
 {
 	obs_data_set_int(obj, "id", GetId());
@@ -260,6 +272,11 @@ bool SwitcherData::checkMacros()
 	for (auto &m : macros) {
 		if (m.CeckMatch()) {
 			ret = true;
+			// This has to be performed here for now as actions are
+			// not performed immediately after checking conditions.
+			if (m.SwitchesScene()) {
+				switcher->macroSceneSwitched = true;
+			}
 		}
 	}
 	return ret;
@@ -267,7 +284,6 @@ bool SwitcherData::checkMacros()
 
 bool SwitcherData::runMacros()
 {
-	macroSceneSwitched = false;
 	for (auto &m : macros) {
 		if (m.Matched()) {
 			blog(LOG_INFO, "running macro: %s", m.Name().c_str());
