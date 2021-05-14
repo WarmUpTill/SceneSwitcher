@@ -26,9 +26,9 @@ bool Macro::CeckMatch()
 
 		switch (c->GetLogicType()) {
 		case LogicType::NONE:
-			blog(LOG_INFO,
-			     "ignoring condition check 'none' for '%s'",
-			     _name.c_str());
+			vblog(LOG_INFO,
+			      "ignoring condition check 'none' for '%s'",
+			      _name.c_str());
 			continue;
 			break;
 		case LogicType::AND:
@@ -50,7 +50,7 @@ bool Macro::CeckMatch()
 			_matched = !cond;
 			break;
 		default:
-			blog(LOG_INFO,
+			blog(LOG_WARNING,
 			     "ignoring unkown condition check for '%s'",
 			     _name.c_str());
 			break;
