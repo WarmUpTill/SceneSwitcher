@@ -9,7 +9,7 @@ bool MacroActionRecord::_registered = MacroActionFactory::Register(
 	{MacroActionRecord::Create, MacroActionRecordEdit::Create,
 	 "AdvSceneSwitcher.action.recording"});
 
-const static std::unordered_map<RecordAction, std::string> actionTypes = {
+const static std::map<RecordAction, std::string> actionTypes = {
 	{RecordAction::STOP, "AdvSceneSwitcher.action.recording.type.stop"},
 	{RecordAction::START, "AdvSceneSwitcher.action.recording.type.start"},
 	{RecordAction::PAUSE, "AdvSceneSwitcher.action.recording.type.pause"},

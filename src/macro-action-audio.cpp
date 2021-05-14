@@ -9,7 +9,7 @@ bool MacroActionAudio::_registered = MacroActionFactory::Register(
 	{MacroActionAudio::Create, MacroActionAudioEdit::Create,
 	 "AdvSceneSwitcher.action.audio"});
 
-const static std::unordered_map<AudioAction, std::string> actionTypes = {
+const static std::map<AudioAction, std::string> actionTypes = {
 	{AudioAction::MUTE, "AdvSceneSwitcher.action.audio.type.mute"},
 	{AudioAction::UNMUTE, "AdvSceneSwitcher.action.audio.type.unmute"},
 };

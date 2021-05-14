@@ -10,7 +10,7 @@ bool MacroConditionStream::_registered = MacroConditionFactory::Register(
 	{MacroConditionStream::Create, MacroConditionStreamEdit::Create,
 	 "AdvSceneSwitcher.condition.stream"});
 
-static std::unordered_map<StreamState, std::string> streamStates = {
+static std::map<StreamState, std::string> streamStates = {
 	{StreamState::STOP, "AdvSceneSwitcher.condition.stream.state.stop"},
 	{StreamState::START, "AdvSceneSwitcher.condition.stream.state.start"},
 };
