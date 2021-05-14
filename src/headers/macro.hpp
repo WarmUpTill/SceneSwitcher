@@ -2,7 +2,7 @@
 #include <string>
 #include <deque>
 #include <memory>
-#include <unordered_map>
+#include <map>
 #include <obs.hpp>
 #include <obs-module.h>
 
@@ -42,7 +42,7 @@ public:
 	LogicType GetLogicType() { return _logic; }
 	void SetLogicType(LogicType logic) { _logic = logic; }
 
-	static const std::unordered_map<LogicType, LogicTypeInfo> logicTypes;
+	static const std::map<LogicType, LogicTypeInfo> logicTypes;
 
 private:
 	LogicType _logic;

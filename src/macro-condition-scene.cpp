@@ -10,7 +10,7 @@ bool MacroConditionScene::_registered = MacroConditionFactory::Register(
 	{MacroConditionScene::Create, MacroConditionSceneEdit::Create,
 	 "AdvSceneSwitcher.condition.scene"});
 
-static std::unordered_map<SceneType, std::string> sceneTypes = {
+static std::map<SceneType, std::string> sceneTypes = {
 	{SceneType::CURRENT, "AdvSceneSwitcher.condition.scene.type.current"},
 	{SceneType::PREVIOUS, "AdvSceneSwitcher.condition.scene.type.previous"},
 };

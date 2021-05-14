@@ -10,7 +10,7 @@ bool MacroConditionAudio::_registered = MacroConditionFactory::Register(
 	{MacroConditionAudio::Create, MacroConditionAudioEdit::Create,
 	 "AdvSceneSwitcher.condition.audio"});
 
-static std::unordered_map<AudioCondition, std::string> audioConditionTypes = {
+static std::map<AudioCondition, std::string> audioConditionTypes = {
 	{AudioCondition::ABOVE, "AdvSceneSwitcher.ondition.audio.state.above"},
 	{AudioCondition::BELOW, "AdvSceneSwitcher.ondition.audio.state.below"},
 };

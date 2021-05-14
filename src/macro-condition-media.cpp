@@ -10,21 +10,20 @@ bool MacroConditionMedia::_registered = MacroConditionFactory::Register(
 	{MacroConditionMedia::Create, MacroConditionMediaEdit::Create,
 	 "AdvSceneSwitcher.condition.media"});
 
-static std::unordered_map<MediaTimeRestriction, std::string>
-	mediaTimeRestrictions = {
-		{MediaTimeRestriction::TIME_RESTRICTION_NONE,
-		 "AdvSceneSwitcher.mediaTab.timeRestriction.none"},
-		{MediaTimeRestriction::TIME_RESTRICTION_SHORTER,
-		 "AdvSceneSwitcher.mediaTab.timeRestriction.shorter"},
-		{MediaTimeRestriction::TIME_RESTRICTION_LONGER,
-		 "AdvSceneSwitcher.mediaTab.timeRestriction.longer"},
-		{MediaTimeRestriction::TIME_RESTRICTION_REMAINING_SHORTER,
-		 "AdvSceneSwitcher.mediaTab.timeRestriction.remainShorter"},
-		{MediaTimeRestriction::TIME_RESTRICTION_REMAINING_LONGER,
-		 "AdvSceneSwitcher.mediaTab.timeRestriction.remainLonger"},
+static std::map<MediaTimeRestriction, std::string> mediaTimeRestrictions = {
+	{MediaTimeRestriction::TIME_RESTRICTION_NONE,
+	 "AdvSceneSwitcher.mediaTab.timeRestriction.none"},
+	{MediaTimeRestriction::TIME_RESTRICTION_SHORTER,
+	 "AdvSceneSwitcher.mediaTab.timeRestriction.shorter"},
+	{MediaTimeRestriction::TIME_RESTRICTION_LONGER,
+	 "AdvSceneSwitcher.mediaTab.timeRestriction.longer"},
+	{MediaTimeRestriction::TIME_RESTRICTION_REMAINING_SHORTER,
+	 "AdvSceneSwitcher.mediaTab.timeRestriction.remainShorter"},
+	{MediaTimeRestriction::TIME_RESTRICTION_REMAINING_LONGER,
+	 "AdvSceneSwitcher.mediaTab.timeRestriction.remainLonger"},
 };
 
-static std::unordered_map<MediaState, std::string> mediaStates = {
+static std::map<MediaState, std::string> mediaStates = {
 	{MediaState::OBS_MEDIA_STATE_NONE,
 	 "AdvSceneSwitcher.mediaTab.states.none"},
 	{MediaState::OBS_MEDIA_STATE_PLAYING,
