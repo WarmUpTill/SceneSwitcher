@@ -58,8 +58,8 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	setLayout(mainLayout);
 
 	_entryData = entryData;
-	SwitchWidget::loading = false;
 	_duration->SetDuration(_entryData->_duration);
+	SwitchWidget::loading = false;
 }
 
 void MacroActionSwitchSceneEdit::DurationChanged(double seconds)
