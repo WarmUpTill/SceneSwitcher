@@ -80,9 +80,31 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/switch-sequence.hpp
 	src/headers/switch-video.hpp
 	src/headers/switch-generic.hpp
+	src/headers/macro-action-edit.hpp
+	src/headers/macro-action-audio.hpp
+	src/headers/macro-action-recording.hpp
+	src/headers/macro-action-replay-buffer.hpp
+	src/headers/macro-action-run.hpp
+	src/headers/macro-action-streaming.hpp
+	src/headers/macro-action-switch-scene.hpp
+	src/headers/macro-action-wait.hpp
+	src/headers/macro-condition-edit.hpp
+	src/headers/macro-condition-audio.hpp
+	src/headers/macro-condition-file.hpp
+	src/headers/macro-condition-media.hpp
+	src/headers/macro-condition-plugin-state.hpp
+	src/headers/macro-condition-recording.hpp
+	src/headers/macro-condition-region.hpp
+	src/headers/macro-condition-scene.hpp
+	src/headers/macro-condition-streaming.hpp
+	src/headers/macro-condition-video.hpp
+	src/headers/macro-condition-window.hpp
+	src/headers/macro.hpp
 	src/headers/curl-helper.hpp
 	src/headers/screenshot-helper.hpp
+	src/headers/name-dialog.hpp
 	src/headers/duration-control.hpp
+	src/headers/section.hpp
 	src/headers/volume-control.hpp
 	src/headers/version.h
 	)
@@ -112,9 +134,32 @@ set(advanced-scene-switcher_SOURCES
 	src/switch-audio.cpp
 	src/switch-video.cpp
 	src/switch-generic.cpp
+	src/macro-action-edit.cpp
+	src/macro-action-audio.cpp
+	src/macro-action-recording.cpp
+	src/macro-action-replay-buffer.cpp
+	src/macro-action-run.cpp
+	src/macro-action-streaming.cpp
+	src/macro-action-switch-scene.cpp
+	src/macro-action-wait.cpp
+	src/macro-condition-edit.cpp
+	src/macro-condition-audio.cpp
+	src/macro-condition-file.cpp
+	src/macro-condition-media.cpp
+	src/macro-condition-plugin-state.cpp
+	src/macro-condition-recording.cpp
+	src/macro-condition-region.cpp
+	src/macro-condition-scene.cpp
+	src/macro-condition-streaming.cpp
+	src/macro-condition-video.cpp
+	src/macro-condition-window.cpp
+	src/macro.cpp
+	src/macro-tab.cpp
 	src/curl-helper.cpp
 	src/screenshot-helper.cpp
+	src/name-dialog.cpp
 	src/duration-control.cpp
+	src/section.cpp
 	src/volume-control.cpp
 	src/version.cpp
 	)

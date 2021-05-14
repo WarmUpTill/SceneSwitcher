@@ -64,6 +64,7 @@ void AdvSceneSwitcher::loadUI()
 	setupNetworkTab();
 	setupSceneGroupTab();
 	setupTriggerTab();
+	setupMacroTab();
 
 	setTabOrder();
 	restoreWindowGeo();
@@ -461,6 +462,8 @@ void SwitcherData::Thread()
 		// The previous scene might have changed during the linger duration,
 		// if a longer transition is used than the configured check interval
 		bool setPrevSceneAfterLinger = false;
+		bool macroMatch = false;
+		macroSceneSwitched = false;
 
 		endTime = std::chrono::high_resolution_clock::now();
 
@@ -495,7 +498,7 @@ void SwitcherData::Thread()
 			continue;
 		}
 		match = checkForMatch(scene, transition, linger,
-				      setPrevSceneAfterLinger);
+				      setPrevSceneAfterLinger, macroMatch);
 		if (stop) {
 			break;
 		}
@@ -533,7 +536,11 @@ void SwitcherData::Thread()
 		lock.unlock();
 
 		if (match) {
-			switchScene({scene, transition, 0});
+			if (macroMatch) {
+				runMacros();
+			} else {
+				switchScene({scene, transition, 0});
+			}
 		}
 
 		writeSceneInfoToFile();
@@ -544,7 +551,8 @@ void SwitcherData::Thread()
 
 bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 				 OBSWeakSource &transition, int &linger,
-				 bool &setPrevSceneAfterLinger)
+				 bool &setPrevSceneAfterLinger,
+				 bool &macroMatch)
 {
 	bool match = false;
 
@@ -589,6 +597,12 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 			break;
 		case video_func:
 			match = checkVideoSwitch(scene, transition);
+			break;
+		case macro_func:
+			if (checkMacros()) {
+				match = true;
+				macroMatch = true;
+			}
 			break;
 		}
 

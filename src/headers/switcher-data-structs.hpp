@@ -24,12 +24,13 @@
 #include "switch-video.hpp"
 #include "switch-network.hpp"
 
+#include "macro.hpp"
 #include "duration-control.hpp"
 
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
 constexpr auto current_transition_name = "Current Transition";
-constexpr auto tab_count = 17;
+constexpr auto tab_count = 18;
 
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 typedef enum { PERSIST = 0, START = 1, STOP = 2 } StartupBehavior;
@@ -90,6 +91,11 @@ struct SwitcherData {
 	Duration cooldown;
 	std::chrono::high_resolution_clock::time_point lastMatchTime;
 
+	std::deque<Macro> macros;
+	// Allow only one macro scene change per scene switcher interval
+	// with the top macro having the highest priority
+	bool macroSceneSwitched = false;
+
 	std::deque<WindowSwitch> windowSwitches;
 	std::vector<std::string> ignoreIdleWindows;
 	std::string lastTitle;
@@ -140,7 +146,7 @@ struct SwitcherData {
 		default_priority_0, default_priority_1, default_priority_2,
 		default_priority_3, default_priority_4, default_priority_5,
 		default_priority_6, default_priority_7, default_priority_8,
-		default_priority_9};
+		default_priority_9, default_priority_10};
 
 	struct ThreadPrio {
 		std::string name;
@@ -197,7 +203,10 @@ struct SwitcherData {
 	void writeToStatusFile(QString status);
 
 	bool checkForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
-			   int &linger, bool &setPreviousSceneAsMatch);
+			   int &linger, bool &setPreviousSceneAsMatch,
+			   bool &macroMatch);
+	bool checkMacros();
+	bool runMacros();
 	bool checkSceneSequence(OBSWeakSource &scene, OBSWeakSource &transition,
 				int &linger, bool &setPrevSceneAfterLinger);
 	bool checkIdleSwitch(OBSWeakSource &scene, OBSWeakSource &transition);
@@ -225,6 +234,7 @@ struct SwitcherData {
 	void checkDefaultSceneTransitions();
 
 	void saveSettings(obs_data_t *obj);
+	void saveMacros(obs_data_t *obj);
 	void saveWindowTitleSwitches(obs_data_t *obj);
 	void saveScreenRegionSwitches(obs_data_t *obj);
 	void savePauseSwitches(obs_data_t *obj);
@@ -246,6 +256,7 @@ struct SwitcherData {
 	void saveVersion(obs_data_t *obj, std::string currentVersion);
 
 	void loadSettings(obs_data_t *obj);
+	void loadMacros(obs_data_t *obj);
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
 	void loadPauseSwitches(obs_data_t *obj);

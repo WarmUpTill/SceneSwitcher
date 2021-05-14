@@ -161,7 +161,7 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb,
 	return size * nmemb;
 }
 
-std::string getRemoteData(std::string &url)
+static std::string getRemoteData(std::string &url)
 {
 	std::string readBuffer;
 

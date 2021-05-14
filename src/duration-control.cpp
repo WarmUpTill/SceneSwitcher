@@ -51,6 +51,7 @@ int durationUnitToMultiplier(DurationUnit u)
 
 	return 0;
 }
+
 std::string durationUnitToString(DurationUnit u)
 {
 	switch (u) {

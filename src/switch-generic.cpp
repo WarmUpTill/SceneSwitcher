@@ -1,6 +1,34 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
+static inline bool SceneGroupValid(SceneGroup *group)
+{
+	if (group) {
+		return group->name != invalid_scene_group_name;
+	}
+	return false;
+}
+
+static inline SceneGroup *GetSceneGroupByName(const char *name)
+{
+	if (!switcher) {
+		return nullptr;
+	}
+
+	for (SceneGroup &sg : switcher->sceneGroups) {
+		if (sg.name == name) {
+			return &sg;
+		}
+	}
+
+	return nullptr;
+}
+
+static inline SceneGroup *GetSceneGroupByQString(const QString &name)
+{
+	return GetSceneGroupByName(name.toUtf8().constData());
+}
+
 bool SceneSwitcherEntry::initialized()
 {
 	return (usePreviousScene || WeakSourceValid(scene) ||

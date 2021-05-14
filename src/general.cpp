@@ -320,51 +320,54 @@ int findTabIndex(QTabWidget *tabWidget, int pos)
 		tabName = "generalTab";
 		break;
 	case 1:
-		tabName = "transitionsTab";
+		tabName = "macroTab";
 		break;
 	case 2:
-		tabName = "pauseTab";
+		tabName = "transitionsTab";
 		break;
 	case 3:
-		tabName = "windowTitleTab";
+		tabName = "pauseTab";
 		break;
 	case 4:
-		tabName = "executableTab";
+		tabName = "windowTitleTab";
 		break;
 	case 5:
-		tabName = "screenRegionTab";
+		tabName = "executableTab";
 		break;
 	case 6:
-		tabName = "mediaTab";
+		tabName = "screenRegionTab";
 		break;
 	case 7:
-		tabName = "fileTab";
+		tabName = "mediaTab";
 		break;
 	case 8:
-		tabName = "randomTab";
+		tabName = "fileTab";
 		break;
 	case 9:
-		tabName = "timeTab";
+		tabName = "randomTab";
 		break;
 	case 10:
-		tabName = "idleTab";
+		tabName = "timeTab";
 		break;
 	case 11:
-		tabName = "sceneSequenceTab";
+		tabName = "idleTab";
 		break;
 	case 12:
-		tabName = "audioTab";
+		tabName = "sceneSequenceTab";
 		break;
 	case 13:
-		tabName = "videoTab";
+		tabName = "audioTab";
 		break;
 	case 14:
-		tabName = "networkTab";
+		tabName = "videoTab";
 		break;
 	case 15:
-		tabName = "sceneGroupTab";
+		tabName = "networkTab";
 		break;
 	case 16:
+		tabName = "sceneGroupTab";
+		break;
+	case 17:
 		tabName = "sceneTriggerTab";
 		break;
 	}
@@ -432,6 +435,7 @@ void SwitcherData::loadSettings(obs_data_t *obj)
 	}
 
 	loadSceneGroups(obj);
+	loadMacros(obj);
 	loadWindowTitleSwitches(obj);
 	loadScreenRegionSwitches(obj);
 	loadPauseSwitches(obj);
@@ -461,6 +465,7 @@ void SwitcherData::saveSettings(obs_data_t *obj)
 	// selections to be available.
 	saveSceneGroups(obj);
 
+	saveMacros(obj);
 	saveWindowTitleSwitches(obj);
 	saveScreenRegionSwitches(obj);
 	savePauseSwitches(obj);
@@ -512,26 +517,28 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "priority7", functionNamesByPriority[7]);
 	obs_data_set_int(obj, "priority8", functionNamesByPriority[8]);
 	obs_data_set_int(obj, "priority9", functionNamesByPriority[9]);
+	obs_data_set_int(obj, "priority10", functionNamesByPriority[10]);
 
 	obs_data_set_int(obj, "threadPriority", threadPriority);
 
 	obs_data_set_int(obj, "generalTabPos", tabOrder[0]);
-	obs_data_set_int(obj, "transitionTabPos", tabOrder[1]);
-	obs_data_set_int(obj, "pauseTabPos", tabOrder[2]);
-	obs_data_set_int(obj, "titleTabPos", tabOrder[3]);
-	obs_data_set_int(obj, "exeTabPos", tabOrder[4]);
-	obs_data_set_int(obj, "regionTabPos", tabOrder[5]);
-	obs_data_set_int(obj, "mediaTabPos", tabOrder[6]);
-	obs_data_set_int(obj, "fileTabPos", tabOrder[7]);
-	obs_data_set_int(obj, "randomTabPos", tabOrder[8]);
-	obs_data_set_int(obj, "timeTabPos", tabOrder[9]);
-	obs_data_set_int(obj, "idleTabPos", tabOrder[10]);
-	obs_data_set_int(obj, "sequenceTabPos", tabOrder[11]);
-	obs_data_set_int(obj, "audioTabPos", tabOrder[12]);
-	obs_data_set_int(obj, "videoTabPos", tabOrder[13]);
-	obs_data_set_int(obj, "networkTabPos", tabOrder[14]);
-	obs_data_set_int(obj, "sceneGroupTabPos", tabOrder[15]);
-	obs_data_set_int(obj, "triggerTabPos", tabOrder[16]);
+	obs_data_set_int(obj, "macroTabPos", tabOrder[1]);
+	obs_data_set_int(obj, "transitionTabPos", tabOrder[2]);
+	obs_data_set_int(obj, "pauseTabPos", tabOrder[3]);
+	obs_data_set_int(obj, "titleTabPos", tabOrder[4]);
+	obs_data_set_int(obj, "exeTabPos", tabOrder[5]);
+	obs_data_set_int(obj, "regionTabPos", tabOrder[6]);
+	obs_data_set_int(obj, "mediaTabPos", tabOrder[7]);
+	obs_data_set_int(obj, "fileTabPos", tabOrder[8]);
+	obs_data_set_int(obj, "randomTabPos", tabOrder[9]);
+	obs_data_set_int(obj, "timeTabPos", tabOrder[10]);
+	obs_data_set_int(obj, "idleTabPos", tabOrder[11]);
+	obs_data_set_int(obj, "sequenceTabPos", tabOrder[12]);
+	obs_data_set_int(obj, "audioTabPos", tabOrder[13]);
+	obs_data_set_int(obj, "videoTabPos", tabOrder[14]);
+	obs_data_set_int(obj, "networkTabPos", tabOrder[15]);
+	obs_data_set_int(obj, "sceneGroupTabPos", tabOrder[16]);
+	obs_data_set_int(obj, "triggerTabPos", tabOrder[17]);
 
 	obs_data_set_bool(obj, "saveWindowGeo", saveWindowGeo);
 	obs_data_set_int(obj, "windowPosX", windowPos.x());
@@ -591,6 +598,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	functionNamesByPriority[7] = (obs_data_get_int(obj, "priority7"));
 	functionNamesByPriority[8] = (obs_data_get_int(obj, "priority8"));
 	functionNamesByPriority[9] = (obs_data_get_int(obj, "priority9"));
+	functionNamesByPriority[10] = (obs_data_get_int(obj, "priority10"));
 	if (!prioFuncsValid()) {
 		functionNamesByPriority[0] = (default_priority_0);
 		functionNamesByPriority[1] = (default_priority_1);
@@ -602,6 +610,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		functionNamesByPriority[7] = (default_priority_7);
 		functionNamesByPriority[8] = (default_priority_8);
 		functionNamesByPriority[9] = (default_priority_9);
+		functionNamesByPriority[10] = (default_priority_10);
 	}
 
 	obs_data_set_default_int(obj, "threadPriority",
@@ -609,25 +618,27 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	threadPriority = obs_data_get_int(obj, "threadPriority");
 
 	obs_data_set_default_int(obj, "generalTabPos", 0);
-	obs_data_set_default_int(obj, "transitionTabPos", 1);
-	obs_data_set_default_int(obj, "pauseTabPos", 2);
-	obs_data_set_default_int(obj, "titleTabPos", 3);
-	obs_data_set_default_int(obj, "exeTabPos", 4);
-	obs_data_set_default_int(obj, "regionTabPos", 5);
-	obs_data_set_default_int(obj, "mediaTabPos", 6);
-	obs_data_set_default_int(obj, "fileTabPos", 7);
-	obs_data_set_default_int(obj, "randomTabPos", 8);
-	obs_data_set_default_int(obj, "timeTabPos", 9);
-	obs_data_set_default_int(obj, "idleTabPos", 10);
-	obs_data_set_default_int(obj, "sequenceTabPos", 11);
-	obs_data_set_default_int(obj, "audioTabPos", 12);
-	obs_data_set_default_int(obj, "videoTabPos", 13);
-	obs_data_set_default_int(obj, "networkTabPos", 14);
-	obs_data_set_default_int(obj, "sceneGroupTabPos", 15);
-	obs_data_set_default_int(obj, "triggerTabPos", 16);
+	obs_data_set_default_int(obj, "macroTabPos", 1);
+	obs_data_set_default_int(obj, "transitionTabPos", 2);
+	obs_data_set_default_int(obj, "pauseTabPos", 3);
+	obs_data_set_default_int(obj, "titleTabPos", 4);
+	obs_data_set_default_int(obj, "exeTabPos", 5);
+	obs_data_set_default_int(obj, "regionTabPos", 6);
+	obs_data_set_default_int(obj, "mediaTabPos", 7);
+	obs_data_set_default_int(obj, "fileTabPos", 8);
+	obs_data_set_default_int(obj, "randomTabPos", 9);
+	obs_data_set_default_int(obj, "timeTabPos", 10);
+	obs_data_set_default_int(obj, "idleTabPos", 11);
+	obs_data_set_default_int(obj, "sequenceTabPos", 12);
+	obs_data_set_default_int(obj, "audioTabPos", 13);
+	obs_data_set_default_int(obj, "videoTabPos", 14);
+	obs_data_set_default_int(obj, "networkTabPos", 15);
+	obs_data_set_default_int(obj, "sceneGroupTabPos", 16);
+	obs_data_set_default_int(obj, "triggerTabPos", 17);
 
 	tabOrder.clear();
 	tabOrder.emplace_back((int)(obs_data_get_int(obj, "generalTabPos")));
+	tabOrder.emplace_back((int)(obs_data_get_int(obj, "macroTabPos")));
 	tabOrder.emplace_back((int)(obs_data_get_int(obj, "transitionTabPos")));
 	tabOrder.emplace_back((int)(obs_data_get_int(obj, "pauseTabPos")));
 	tabOrder.emplace_back((int)(obs_data_get_int(obj, "titleTabPos")));
@@ -835,6 +846,10 @@ void AdvSceneSwitcher::setupGeneralTab()
 		case video_func:
 			s = obs_module_text(
 				"AdvSceneSwitcher.generalTab.priority.video");
+			break;
+		case macro_func:
+			s = obs_module_text(
+				"AdvSceneSwitcher.generalTab.priority.macro");
 			break;
 		}
 		QString text(s.c_str());
