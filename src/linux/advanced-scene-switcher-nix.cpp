@@ -442,7 +442,7 @@ bool GetVirtualDesktopCount(long &ndesktops)
 		return false;
 	}
 
-	request = XInternAtom(display, "_NET_CURRENT_DESKTOP", False);
+	request = XInternAtom(display, "_NET_NUMBER_OF_DESKTOPS", False);
 	root = XDefaultRootWindow(display);
 
 	int status = XGetWindowProperty(display, root, request, 0L, 1L, false,
