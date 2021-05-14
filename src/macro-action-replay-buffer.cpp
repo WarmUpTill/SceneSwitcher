@@ -9,7 +9,7 @@ bool MacroActionReplayBuffer::_registered = MacroActionFactory::Register(
 	{MacroActionReplayBuffer::Create, MacroActionReplayBufferEdit::Create,
 	 "AdvSceneSwitcher.action.replay"});
 
-static std::unordered_map<ReplayBufferAction, std::string> actionTypes = {
+const static std::unordered_map<ReplayBufferAction, std::string> actionTypes = {
 	{ReplayBufferAction::STOP, "AdvSceneSwitcher.action.replay.type.stop"},
 	{ReplayBufferAction::START,
 	 "AdvSceneSwitcher.action.replay.type.start"},
@@ -43,6 +43,17 @@ bool MacroActionReplayBuffer::PerformAction()
 		break;
 	}
 	return true;
+}
+
+void MacroActionReplayBuffer::LogAction()
+{
+	auto it = actionTypes.find(_action);
+	if (it != actionTypes.end()) {
+		vblog(LOG_INFO, "performed action \"%s\"", it->second.c_str());
+	} else {
+		blog(LOG_WARNING, "ignored unknown replay buffer action %d",
+		     _action);
+	}
 }
 
 bool MacroActionReplayBuffer::Save(obs_data_t *obj)

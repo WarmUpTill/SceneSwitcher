@@ -8,7 +8,7 @@
 
 #define blog(level, msg, ...) blog(level, "[adv-ss] " msg, ##__VA_ARGS__)
 #define vblog(level, msg, ...)                   \
-	if (verbose) {                           \
+	if (switcher->verbose) {                 \
 		blog(level, msg, ##__VA_ARGS__); \
 	}
 

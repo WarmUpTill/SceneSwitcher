@@ -34,6 +34,8 @@ bool MacroActionWait::PerformAction()
 		std::uniform_real_distribution<double> unif(min, max);
 		sleep_duration = unif(re);
 	}
+	vblog(LOG_INFO, "perform action wait with duration of %f",
+	      sleep_duration);
 
 	std::unique_lock<std::mutex> lock(switcher->m);
 	switcher->cv.wait_for(lock, std::chrono::milliseconds((

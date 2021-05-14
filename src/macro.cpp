@@ -64,6 +64,7 @@ bool Macro::performAction()
 	bool ret = true;
 	for (auto &a : _actions) {
 		ret = ret && a->PerformAction();
+		a->LogAction();
 	}
 
 	return ret;
@@ -214,6 +215,11 @@ bool MacroAction::Load(obs_data_t *obj)
 	return true;
 }
 
+void MacroAction::LogAction()
+{
+	blog(LOG_INFO, "performed action %d", GetId());
+}
+
 void SwitcherData::saveMacros(obs_data_t *obj)
 {
 	obs_data_array_t *macroArray = obs_data_array_create();
@@ -261,7 +267,10 @@ bool SwitcherData::runMacros()
 	macroSceneSwitched = false;
 	for (auto &m : macros) {
 		if (m.Matched()) {
+			blog(LOG_INFO, "running macro: %s", m.Name().c_str());
 			if (!m.performAction()) {
+				blog(LOG_WARNING, "abort macro: %s",
+				     m.Name().c_str());
 				return false;
 			}
 		}

@@ -54,6 +54,7 @@ public:
 	virtual bool Save(obs_data_t *obj) = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
 	virtual int GetId() = 0;
+	virtual void LogAction();
 };
 
 class Macro {

@@ -9,7 +9,7 @@ bool MacroActionAudio::_registered = MacroActionFactory::Register(
 	{MacroActionAudio::Create, MacroActionAudioEdit::Create,
 	 "AdvSceneSwitcher.action.audio"});
 
-static std::unordered_map<AudioAction, std::string> actionTypes = {
+const static std::unordered_map<AudioAction, std::string> actionTypes = {
 	{AudioAction::MUTE, "AdvSceneSwitcher.action.audio.type.mute"},
 	{AudioAction::UNMUTE, "AdvSceneSwitcher.action.audio.type.unmute"},
 };
@@ -29,6 +29,18 @@ bool MacroActionAudio::PerformAction()
 	}
 	obs_source_release(s);
 	return true;
+}
+
+void MacroActionAudio::LogAction()
+{
+	auto it = actionTypes.find(_action);
+	if (it != actionTypes.end()) {
+		vblog(LOG_INFO, "performed action \"%s\" for source \"%s\"",
+		      it->second.c_str(),
+		      GetWeakSourceName(_audioSource).c_str());
+	} else {
+		blog(LOG_WARNING, "ignored unknown audio action %d", _action);
+	}
 }
 
 bool MacroActionAudio::Save(obs_data_t *obj)

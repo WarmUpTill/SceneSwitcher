@@ -12,6 +12,7 @@ enum class ReplayBufferAction {
 class MacroActionReplayBuffer : public MacroAction {
 public:
 	bool PerformAction();
+	void LogAction();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	int GetId() { return id; };

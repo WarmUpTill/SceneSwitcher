@@ -9,7 +9,7 @@ bool MacroActionRecord::_registered = MacroActionFactory::Register(
 	{MacroActionRecord::Create, MacroActionRecordEdit::Create,
 	 "AdvSceneSwitcher.action.recording"});
 
-static std::unordered_map<RecordAction, std::string> actionTypes = {
+const static std::unordered_map<RecordAction, std::string> actionTypes = {
 	{RecordAction::STOP, "AdvSceneSwitcher.action.recording.type.stop"},
 	{RecordAction::START, "AdvSceneSwitcher.action.recording.type.start"},
 	{RecordAction::PAUSE, "AdvSceneSwitcher.action.recording.type.pause"},
@@ -46,6 +46,17 @@ bool MacroActionRecord::PerformAction()
 		break;
 	}
 	return true;
+}
+
+void MacroActionRecord::LogAction()
+{
+	auto it = actionTypes.find(_action);
+	if (it != actionTypes.end()) {
+		vblog(LOG_INFO, "performed action \"%s\"", it->second.c_str());
+	} else {
+		blog(LOG_WARNING, "ignored unknown recording action %d",
+		     _action);
+	}
 }
 
 bool MacroActionRecord::Save(obs_data_t *obj)

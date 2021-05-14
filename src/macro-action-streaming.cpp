@@ -9,7 +9,7 @@ bool MacroActionStream::_registered = MacroActionFactory::Register(
 	{MacroActionStream::Create, MacroActionStreamEdit::Create,
 	 "AdvSceneSwitcher.action.streaming"});
 
-static std::unordered_map<StreamAction, std::string> actionTypes = {
+const static std::unordered_map<StreamAction, std::string> actionTypes = {
 	{StreamAction::STOP, "AdvSceneSwitcher.action.streaming.type.stop"},
 	{StreamAction::START, "AdvSceneSwitcher.action.streaming.type.start"},
 };
@@ -34,6 +34,17 @@ bool MacroActionStream::PerformAction()
 		break;
 	}
 	return true;
+}
+
+void MacroActionStream::LogAction()
+{
+	auto it = actionTypes.find(_action);
+	if (it != actionTypes.end()) {
+		vblog(LOG_INFO, "performed action \"%s\"", it->second.c_str());
+	} else {
+		blog(LOG_WARNING, "ignored unknown streaming action %d",
+		     _action);
+	}
 }
 
 bool MacroActionStream::Save(obs_data_t *obj)
