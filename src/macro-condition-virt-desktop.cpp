@@ -47,16 +47,14 @@ MacroConditionVirtDesktopEdit::MacroConditionVirtDesktopEdit(
 	: QWidget(parent)
 {
 	_virtDesktops = new QComboBox();
-
 	QWidget::connect(_virtDesktops, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(DesktopChanged(int)));
+	populateVirtualDesktopSelection(_virtDesktops);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{virtDesktops}}", _virtDesktops},
 	};
-
 	placeWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.virtDesktop.entry"),
 		mainLayout, widgetPlaceholders);
