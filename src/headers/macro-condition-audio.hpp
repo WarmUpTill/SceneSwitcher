@@ -38,7 +38,6 @@ public:
 
 private:
 	float _peak = -std::numeric_limits<float>::infinity();
-	std::chrono::high_resolution_clock::time_point _startTime;
 	static bool _registered;
 	static const int id;
 };
