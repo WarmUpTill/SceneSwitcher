@@ -55,7 +55,7 @@ void MacroActionRecord::LogAction()
 		vblog(LOG_INFO, "performed action \"%s\"", it->second.c_str());
 	} else {
 		blog(LOG_WARNING, "ignored unknown recording action %d",
-		     _action);
+		     static_cast<int>(_action));
 	}
 }
 

@@ -39,7 +39,8 @@ void MacroActionAudio::LogAction()
 		      it->second.c_str(),
 		      GetWeakSourceName(_audioSource).c_str());
 	} else {
-		blog(LOG_WARNING, "ignored unknown audio action %d", _action);
+		blog(LOG_WARNING, "ignored unknown audio action %d",
+		     static_cast<int>(_action));
 	}
 }
 
