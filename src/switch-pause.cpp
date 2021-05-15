@@ -90,7 +90,7 @@ void resetPause()
 	VideoSwitch::pause = false;
 }
 
-void setPauseTarget(PauseTarget &target, bool &verbose)
+void setPauseTarget(PauseTarget &target)
 {
 	switch (target) {
 	case PauseTarget::All:
@@ -148,23 +148,23 @@ void setPauseTarget(PauseTarget &target, bool &verbose)
 }
 
 bool checkPauseScene(obs_weak_source_t *currentScene, obs_weak_source_t *scene,
-		     PauseTarget &target, bool &verbose)
+		     PauseTarget &target)
 {
 	if (currentScene != scene) {
 		return false;
 	}
 
-	setPauseTarget(target, verbose);
+	setPauseTarget(target);
 	return (target == PauseTarget::All);
 }
 bool checkPauseWindow(std::string &currentTitle, std::string &title,
-		      PauseTarget &target, bool &verbose)
+		      PauseTarget &target)
 {
 	if (currentTitle != title) {
 		return false;
 	}
 
-	setPauseTarget(target, verbose);
+	setPauseTarget(target);
 	return (target == PauseTarget::All);
 }
 
@@ -182,11 +182,10 @@ bool SwitcherData::checkPause()
 
 	for (PauseEntry &s : pauseEntries) {
 		if (s.pauseType == PauseType::Scene) {
-			pauseAll = checkPauseScene(ws, s.scene, s.pauseTarget,
-						   verbose);
+			pauseAll = checkPauseScene(ws, s.scene, s.pauseTarget);
 		} else {
 			pauseAll = checkPauseWindow(title, s.window,
-						    s.pauseTarget, verbose);
+						    s.pauseTarget);
 		}
 		if (pauseAll) {
 			break;
