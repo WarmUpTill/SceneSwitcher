@@ -1,10 +1,12 @@
 #pragma once
-#include <QDoubleSpinBox>
+#include <QSpinBox>
 #include "macro-action-edit.hpp"
 
 enum class AudioAction {
 	MUTE,
 	UNMUTE,
+	SOURCE_VOLUME,
+	MASTER_VOLUME,
 };
 
 class MacroActionAudio : public MacroAction {
@@ -21,6 +23,7 @@ public:
 
 	OBSWeakSource _audioSource;
 	AudioAction _action = AudioAction::MUTE;
+	int _volume = 0;
 
 private:
 	static bool _registered;
@@ -46,10 +49,12 @@ public:
 private slots:
 	void SourceChanged(const QString &text);
 	void ActionChanged(int value);
+	void VolumeChanged(int value);
 
 protected:
 	QComboBox *_audioSources;
 	QComboBox *_actions;
+	QSpinBox *_volumePercent;
 	std::shared_ptr<MacroActionAudio> _entryData;
 
 private:

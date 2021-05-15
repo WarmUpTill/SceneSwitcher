@@ -12,6 +12,10 @@ bool MacroActionAudio::_registered = MacroActionFactory::Register(
 const static std::map<AudioAction, std::string> actionTypes = {
 	{AudioAction::MUTE, "AdvSceneSwitcher.action.audio.type.mute"},
 	{AudioAction::UNMUTE, "AdvSceneSwitcher.action.audio.type.unmute"},
+	{AudioAction::SOURCE_VOLUME,
+	 "AdvSceneSwitcher.action.audio.type.sourceVolume"},
+	{AudioAction::MASTER_VOLUME,
+	 "AdvSceneSwitcher.action.audio.type.masterVolume"},
 };
 
 bool MacroActionAudio::PerformAction()
@@ -24,6 +28,12 @@ bool MacroActionAudio::PerformAction()
 	case AudioAction::UNMUTE:
 		obs_source_set_muted(s, false);
 		break;
+	case AudioAction::SOURCE_VOLUME:
+		obs_source_set_volume(s, (float)_volume / 100.0f);
+		break;
+	case AudioAction::MASTER_VOLUME:
+		obs_set_master_volume((float)_volume / 100.0f);
+		break;
 	default:
 		break;
 	}
@@ -35,9 +45,10 @@ void MacroActionAudio::LogAction()
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
-		vblog(LOG_INFO, "performed action \"%s\" for source \"%s\"",
+		vblog(LOG_INFO,
+		      "performed action \"%s\" for source \"%s\" with volume %d",
 		      it->second.c_str(),
-		      GetWeakSourceName(_audioSource).c_str());
+		      GetWeakSourceName(_audioSource).c_str(), _volume);
 	} else {
 		blog(LOG_WARNING, "ignored unknown audio action %d",
 		     static_cast<int>(_action));
@@ -50,6 +61,7 @@ bool MacroActionAudio::Save(obs_data_t *obj)
 	obs_data_set_string(obj, "audioSource",
 			    GetWeakSourceName(_audioSource).c_str());
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
+	obs_data_set_int(obj, "volume", _volume);
 	return true;
 }
 
@@ -59,6 +71,7 @@ bool MacroActionAudio::Load(obs_data_t *obj)
 	const char *audioSourceName = obs_data_get_string(obj, "audioSource");
 	_audioSource = GetWeakSourceByName(audioSourceName);
 	_action = static_cast<AudioAction>(obs_data_get_int(obj, "action"));
+	_volume = obs_data_get_int(obj, "volume");
 	return true;
 }
 
@@ -75,6 +88,10 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 {
 	_audioSources = new QComboBox();
 	_actions = new QComboBox();
+	_volumePercent = new QSpinBox();
+	_volumePercent->setMinimum(0);
+	_volumePercent->setMaximum(2000);
+	_volumePercent->setSuffix("%");
 
 	populateActionSelection(_actions);
 	AdvSceneSwitcher::populateAudioSelection(_audioSources);
@@ -84,11 +101,14 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	QWidget::connect(_audioSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(SourceChanged(const QString &)));
+	QWidget::connect(_volumePercent, SIGNAL(valueChanged(int)), this,
+			 SLOT(VolumeChanged(int)));
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{audioSources}}", _audioSources},
 		{"{{actions}}", _actions},
+		{"{{volume}}", _volumePercent},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.audio.entry"),
 		     mainLayout, widgetPlaceholders);
@@ -97,6 +117,17 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	_entryData = entryData;
 	UpdateEntryData();
 	_loading = false;
+}
+
+bool hasVolumeControl(AudioAction action)
+{
+	return action == AudioAction::SOURCE_VOLUME ||
+	       action == AudioAction::MASTER_VOLUME;
+}
+
+bool hasSourceControl(AudioAction action)
+{
+	return action != AudioAction::MASTER_VOLUME;
 }
 
 void MacroActionAudioEdit::UpdateEntryData()
@@ -108,6 +139,19 @@ void MacroActionAudioEdit::UpdateEntryData()
 	_audioSources->setCurrentText(
 		GetWeakSourceName(_entryData->_audioSource).c_str());
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_volumePercent->setValue(_entryData->_volume);
+
+	if (hasVolumeControl(_entryData->_action)) {
+		_volumePercent->show();
+	} else {
+		_volumePercent->hide();
+	}
+
+	if (hasSourceControl(_entryData->_action)) {
+		_audioSources->show();
+	} else {
+		_audioSources->hide();
+	}
 }
 
 void MacroActionAudioEdit::SourceChanged(const QString &text)
@@ -128,4 +172,15 @@ void MacroActionAudioEdit::ActionChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<AudioAction>(value);
+	UpdateEntryData();
+}
+
+void MacroActionAudioEdit::VolumeChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_volume = value;
 }
