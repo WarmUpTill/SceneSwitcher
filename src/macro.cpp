@@ -2,7 +2,7 @@
 
 #include "headers/macro-action-edit.hpp"
 #include "headers/macro-condition-edit.hpp"
-#include "headers/macro-action-switch-scene.hpp"
+#include "headers/macro-action-scene-switch.hpp"
 
 const std::map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 	{LogicType::NONE, {"AdvSceneSwitcher.logic.none"}},

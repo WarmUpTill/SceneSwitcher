@@ -1,5 +1,5 @@
 #include "headers/macro-action-edit.hpp"
-#include "headers/macro-action-switch-scene.hpp"
+#include "headers/macro-action-scene-switch.hpp"
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
