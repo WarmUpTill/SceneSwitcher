@@ -37,6 +37,7 @@ public:
 	MacroActionAudioEdit(
 		QWidget *parent,
 		std::shared_ptr<MacroActionAudio> entryData = nullptr);
+	void SetWidgetVisibility();
 	void UpdateEntryData();
 	static QWidget *Create(QWidget *parent,
 			       std::shared_ptr<MacroAction> action)
