@@ -92,6 +92,27 @@ static inline OBSWeakSource GetWeakTransitionByQString(const QString &name)
 	return GetWeakTransitionByName(name.toUtf8().constData());
 }
 
+static inline OBSWeakSource GetWeakFilterByName(OBSWeakSource source,
+						const char *name)
+{
+	OBSWeakSource weak;
+	auto s = obs_weak_source_get_source(source);
+	if (s) {
+		auto filterSource = obs_source_get_filter_by_name(s, name);
+		weak = obs_source_get_weak_source(filterSource);
+		obs_weak_source_release(weak);
+		obs_source_release(filterSource);
+		obs_source_release(s);
+	}
+	return weak;
+}
+
+static inline OBSWeakSource GetWeakFilterByQString(OBSWeakSource source,
+						   const QString &name)
+{
+	return GetWeakFilterByName(source, name.toUtf8().constData());
+}
+
 static inline std::string
 getNextDelim(std::string text,
 	     std::unordered_map<std::string, QWidget *> placeholders)
