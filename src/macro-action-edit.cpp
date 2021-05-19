@@ -31,6 +31,14 @@ QWidget *MacroActionFactory::CreateWidget(const int id, QWidget *parent,
 	return nullptr;
 }
 
+std::string MacroActionFactory::GetActionName(int id)
+{
+	if (auto it = _methods.find(id); it != _methods.end()) {
+		return it->second._name;
+	}
+	return "unknown action";
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (auto entry : MacroActionFactory::GetActionTypes()) {

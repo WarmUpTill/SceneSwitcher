@@ -25,6 +25,7 @@ public:
 	static QWidget *CreateWidget(const int id, QWidget *parent,
 				     std::shared_ptr<MacroCondition>);
 	static auto GetConditionTypes() { return _methods; }
+	static std::string GetConditionName(int id);
 
 private:
 	static std::map<int, MacroConditionInfo> _methods;
