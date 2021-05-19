@@ -25,6 +25,7 @@ public:
 	static QWidget *CreateWidget(const int id, QWidget *parent,
 				     std::shared_ptr<MacroAction> action);
 	static auto GetActionTypes() { return _methods; }
+	static std::string GetActionName(int id);
 
 private:
 	static std::map<int, MacroActionInfo> _methods;

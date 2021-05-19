@@ -29,6 +29,14 @@ MacroConditionFactory::CreateWidget(const int id, QWidget *parent,
 	return nullptr;
 }
 
+std::string MacroConditionFactory::GetConditionName(int id)
+{
+	if (auto it = _methods.find(id); it != _methods.end()) {
+		return it->second._name;
+	}
+	return "unknown condition";
+}
+
 static inline void populateLogicSelection(QComboBox *list, bool root = false)
 {
 	if (root) {

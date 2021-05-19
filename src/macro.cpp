@@ -55,8 +55,13 @@ bool Macro::CeckMatch()
 			     _name.c_str());
 			break;
 		}
+		vblog(LOG_INFO, "condition %s returned %d",
+		      MacroConditionFactory::GetConditionName(c->GetId())
+			      .c_str(),
+		      cond);
 	}
 
+	vblog(LOG_INFO, "Macro %s returned %d", _name.c_str(), _matched);
 	return _matched;
 }
 
@@ -232,7 +237,8 @@ bool MacroAction::Load(obs_data_t *obj)
 
 void MacroAction::LogAction()
 {
-	blog(LOG_INFO, "performed action %d", GetId());
+	vblog(LOG_INFO, "performed action %s",
+	      MacroActionFactory::GetActionName(GetId()).c_str());
 }
 
 void SwitcherData::saveMacros(obs_data_t *obj)
