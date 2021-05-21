@@ -3,7 +3,7 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-const int MacroConditionScene::id = 0;
+const std::string MacroConditionScene::id = "scene";
 
 bool MacroConditionScene::_registered = MacroConditionFactory::Register(
 	MacroConditionScene::id,

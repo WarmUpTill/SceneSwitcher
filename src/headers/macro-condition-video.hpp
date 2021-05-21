@@ -19,7 +19,7 @@ public:
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
-	int GetId() { return id; };
+	std::string GetId() { return id; };
 	QImage GetMatchImage() { return _matchImage; };
 	static std::shared_ptr<MacroCondition> Create()
 	{
@@ -39,7 +39,7 @@ private:
 	std::unique_ptr<AdvSSScreenshotObj> _screenshotData = nullptr;
 	QImage _matchImage;
 	static bool _registered;
-	static const int id;
+	static const std::string id;
 };
 
 class MacroConditionVideoEdit : public QWidget {

@@ -2,7 +2,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
-const int MacroActionStream::id = 3;
+const std::string MacroActionStream::id = "streaming";
 
 bool MacroActionStream::_registered = MacroActionFactory::Register(
 	MacroActionStream::id,

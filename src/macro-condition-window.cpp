@@ -5,7 +5,7 @@
 
 #include <regex>
 
-const int MacroConditionWindow::id = 1;
+const std::string MacroConditionWindow::id = "window";
 
 bool MacroConditionWindow::_registered = MacroConditionFactory::Register(
 	MacroConditionWindow::id,

@@ -2,7 +2,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
-const int MacroActionSwitchScene::id = 0;
+const std::string MacroActionSwitchScene::id = "scene_switch";
 
 bool MacroActionSwitchScene::_registered = MacroActionFactory::Register(
 	MacroActionSwitchScene::id,

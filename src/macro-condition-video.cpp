@@ -8,7 +8,7 @@
 #include <QToolTip>
 #include <QMessageBox>
 
-const int MacroConditionVideo::id = 6;
+const std::string MacroConditionVideo::id = "video";
 
 bool MacroConditionVideo::_registered = MacroConditionFactory::Register(
 	MacroConditionVideo::id,

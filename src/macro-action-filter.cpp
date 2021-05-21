@@ -2,7 +2,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
-const int MacroActionFilter::id = 8;
+const std::string MacroActionFilter::id = "filter";
 
 bool MacroActionFilter::_registered = MacroActionFactory::Register(
 	MacroActionFilter::id,

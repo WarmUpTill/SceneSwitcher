@@ -2,7 +2,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
-const int MacroActionSceneVisibility::id = 7;
+const std::string MacroActionSceneVisibility::id = "scene_visibility";
 
 bool MacroActionSceneVisibility::_registered = MacroActionFactory::Register(
 	MacroActionSceneVisibility::id,

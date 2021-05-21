@@ -38,7 +38,7 @@ public:
 	virtual bool CheckCondition() = 0;
 	virtual bool Save(obs_data_t *obj) = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
-	virtual int GetId() = 0;
+	virtual std::string GetId() = 0;
 	LogicType GetLogicType() { return _logic; }
 	void SetLogicType(LogicType logic) { _logic = logic; }
 
@@ -53,7 +53,7 @@ public:
 	virtual bool PerformAction() = 0;
 	virtual bool Save(obs_data_t *obj) = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
-	virtual int GetId() = 0;
+	virtual std::string GetId() = 0;
 	virtual void LogAction();
 };
 

@@ -5,7 +5,7 @@
 #include <QProcess>
 #include <QFileDialog>
 
-const int MacroActionRun::id = 6;
+const std::string MacroActionRun::id = "run";
 
 bool MacroActionRun::_registered = MacroActionFactory::Register(
 	MacroActionRun::id, {MacroActionRun::Create, MacroActionRunEdit::Create,

@@ -20,15 +20,16 @@ struct MacroActionInfo {
 class MacroActionFactory {
 public:
 	MacroActionFactory() = delete;
-	static bool Register(int id, MacroActionInfo);
-	static std::shared_ptr<MacroAction> Create(const int id);
-	static QWidget *CreateWidget(const int id, QWidget *parent,
+	static bool Register(std::string id, MacroActionInfo);
+	static std::shared_ptr<MacroAction> Create(const std::string id);
+	static QWidget *CreateWidget(const std::string id, QWidget *parent,
 				     std::shared_ptr<MacroAction> action);
 	static auto GetActionTypes() { return _methods; }
-	static std::string GetActionName(int id);
+	static std::string GetActionName(const std::string id);
+	static std::string GetIdByName(const QString &name);
 
 private:
-	static std::map<int, MacroActionInfo> _methods;
+	static std::map<std::string, MacroActionInfo> _methods;
 };
 
 class MacroActionEdit : public QWidget {
@@ -36,13 +37,14 @@ class MacroActionEdit : public QWidget {
 
 public:
 	MacroActionEdit(QWidget *parent = nullptr,
-			std::shared_ptr<MacroAction> * = nullptr, int type = 0,
+			std::shared_ptr<MacroAction> * = nullptr,
+			std::string id = "scene_switch",
 			bool startCollapsed = false);
-	void UpdateEntryData(int type);
+	void UpdateEntryData(std::string id);
 	void Collapse(bool collapsed);
 
 private slots:
-	void ActionSelectionChanged(int idx);
+	void ActionSelectionChanged(const QString &text);
 
 protected:
 	QComboBox *_actionSelection;

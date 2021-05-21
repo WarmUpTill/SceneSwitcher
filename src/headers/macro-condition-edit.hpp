@@ -20,15 +20,16 @@ struct MacroConditionInfo {
 class MacroConditionFactory {
 public:
 	MacroConditionFactory() = delete;
-	static bool Register(int id, MacroConditionInfo);
-	static std::shared_ptr<MacroCondition> Create(const int id);
-	static QWidget *CreateWidget(const int id, QWidget *parent,
+	static bool Register(const std::string &, MacroConditionInfo);
+	static std::shared_ptr<MacroCondition> Create(const std::string);
+	static QWidget *CreateWidget(const std::string &id, QWidget *parent,
 				     std::shared_ptr<MacroCondition>);
 	static auto GetConditionTypes() { return _methods; }
-	static std::string GetConditionName(int id);
+	static std::string GetConditionName(const std::string &);
+	static std::string GetIdByName(const QString& name);
 
 private:
-	static std::map<int, MacroConditionInfo> _methods;
+	static std::map<std::string, MacroConditionInfo> _methods;
 };
 
 class MacroConditionEdit : public QWidget {
@@ -37,15 +38,15 @@ class MacroConditionEdit : public QWidget {
 public:
 	MacroConditionEdit(QWidget *parent = nullptr,
 			   std::shared_ptr<MacroCondition> * = nullptr,
-			   int type = 0, bool root = true,
+			   const std::string &id = "scene", bool root = true,
 			   bool startCollapsed = false);
 	bool IsRootNode();
-	void UpdateEntryData(int type);
+	void UpdateEntryData(const std::string &id);
 	void Collapse(bool collapsed);
 
 private slots:
 	void LogicSelectionChanged(int idx);
-	void ConditionSelectionChanged(int idx);
+	void ConditionSelectionChanged(const QString &text);
 
 protected:
 	QComboBox *_logicSelection;

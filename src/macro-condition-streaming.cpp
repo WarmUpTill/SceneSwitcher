@@ -3,7 +3,7 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-const int MacroConditionStream::id = 7;
+const std::string MacroConditionStream::id = "streaming";
 
 bool MacroConditionStream::_registered = MacroConditionFactory::Register(
 	MacroConditionStream::id,

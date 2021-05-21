@@ -10,7 +10,7 @@ public:
 	void LogAction();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
-	int GetId() { return id; };
+	std::string GetId() { return id; };
 	static std::shared_ptr<MacroAction> Create()
 	{
 		return std::make_shared<MacroActionRun>();
@@ -20,7 +20,7 @@ public:
 
 private:
 	static bool _registered;
-	static const int id;
+	static const std::string id;
 };
 
 class MacroActionRunEdit : public QWidget {

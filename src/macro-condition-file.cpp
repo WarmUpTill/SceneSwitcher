@@ -7,7 +7,7 @@
 #include <QTextStream>
 #include <QFileDialog>
 
-const int MacroConditionFile::id = 4;
+const std::string MacroConditionFile::id = "file";
 
 bool MacroConditionFile::_registered = MacroConditionFactory::Register(
 	MacroConditionFile::id,
