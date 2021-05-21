@@ -2,7 +2,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
-const int MacroActionReplayBuffer::id = 5;
+const std::string MacroActionReplayBuffer::id = "replay_buffer";
 
 bool MacroActionReplayBuffer::_registered = MacroActionFactory::Register(
 	MacroActionReplayBuffer::id,

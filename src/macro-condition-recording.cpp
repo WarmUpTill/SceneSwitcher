@@ -3,7 +3,7 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-const int MacroConditionRecord::id = 8;
+const std::string MacroConditionRecord::id = "recording";
 
 bool MacroConditionRecord::_registered = MacroConditionFactory::Register(
 	MacroConditionRecord::id,

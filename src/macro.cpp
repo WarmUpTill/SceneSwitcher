@@ -155,7 +155,7 @@ bool Macro::Load(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(conditions, i);
 
-		int id = obs_data_get_int(array_obj, "id");
+		std::string id = obs_data_get_string(array_obj, "id");
 
 		auto newEntry = MacroConditionFactory::Create(id);
 		if (newEntry) {
@@ -165,8 +165,8 @@ bool Macro::Load(obs_data_t *obj)
 			setValidLogic(c, root, _name);
 		} else {
 			blog(LOG_WARNING,
-			     "discarding condition entry with unkown id (%d) for macro %s",
-			     id, _name.c_str());
+			     "discarding condition entry with unkown id (%s) for macro %s",
+			     id.c_str(), _name.c_str());
 		}
 
 		obs_data_release(array_obj);
@@ -180,7 +180,7 @@ bool Macro::Load(obs_data_t *obj)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(actions, i);
 
-		int id = obs_data_get_int(array_obj, "id");
+		std::string id = obs_data_get_string(array_obj, "id");
 
 		auto newEntry = MacroActionFactory::Create(id);
 		if (newEntry) {
@@ -188,8 +188,8 @@ bool Macro::Load(obs_data_t *obj)
 			_actions.back()->Load(array_obj);
 		} else {
 			blog(LOG_WARNING,
-			     "discarding action entry with unkown id (%d) for macro %s",
-			     id, _name.c_str());
+			     "discarding action entry with unkown id (%s) for macro %s",
+			     id.c_str(), _name.c_str());
 		}
 
 		obs_data_release(array_obj);
@@ -202,8 +202,9 @@ bool Macro::Load(obs_data_t *obj)
 bool Macro::SwitchesScene()
 {
 	MacroActionSwitchScene temp;
+	auto sceneSwitchId = temp.GetId();
 	for (auto &a : _actions) {
-		if (a->GetId() == temp.GetId()) {
+		if (a->GetId() == sceneSwitchId) {
 			return true;
 		}
 	}
@@ -212,7 +213,7 @@ bool Macro::SwitchesScene()
 
 bool MacroCondition::Save(obs_data_t *obj)
 {
-	obs_data_set_int(obj, "id", GetId());
+	obs_data_set_string(obj, "id", GetId().c_str());
 	obs_data_set_int(obj, "logic", static_cast<int>(_logic));
 	return true;
 }
@@ -225,7 +226,7 @@ bool MacroCondition::Load(obs_data_t *obj)
 
 bool MacroAction::Save(obs_data_t *obj)
 {
-	obs_data_set_int(obj, "id", GetId());
+	obs_data_set_string(obj, "id", GetId().c_str());
 	return true;
 }
 

@@ -2,7 +2,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
-const int MacroActionAudio::id = 2;
+const std::string MacroActionAudio::id = "audio";
 
 bool MacroActionAudio::_registered = MacroActionFactory::Register(
 	MacroActionAudio::id,

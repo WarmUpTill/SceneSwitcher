@@ -5,7 +5,7 @@
 
 #include <regex>
 
-const int MacroConditionProcess::id = 9;
+const std::string MacroConditionProcess::id = "process";
 
 bool MacroConditionProcess::_registered = MacroConditionFactory::Register(
 	MacroConditionProcess::id,

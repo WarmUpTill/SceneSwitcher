@@ -4,7 +4,7 @@
 
 #include <random>
 
-const int MacroActionWait::id = 1;
+const std::string MacroActionWait::id = "wait";
 
 bool MacroActionWait::_registered = MacroActionFactory::Register(
 	MacroActionWait::id,

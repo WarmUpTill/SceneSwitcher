@@ -3,7 +3,7 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-const int MacroConditionInterval::id = 12;
+const std::string MacroConditionInterval::id = "interval";
 
 bool MacroConditionInterval::_registered = MacroConditionFactory::Register(
 	MacroConditionInterval::id,

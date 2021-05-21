@@ -3,7 +3,7 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-const int MacroConditionAudio::id = 3;
+const std::string MacroConditionAudio::id = "audio";
 
 bool MacroConditionAudio::_registered = MacroConditionFactory::Register(
 	MacroConditionAudio::id,

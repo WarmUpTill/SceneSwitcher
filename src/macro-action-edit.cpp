@@ -3,9 +3,9 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-std::map<int, MacroActionInfo> MacroActionFactory::_methods;
+std::map<std::string, MacroActionInfo> MacroActionFactory::_methods;
 
-bool MacroActionFactory::Register(int id, MacroActionInfo info)
+bool MacroActionFactory::Register(std::string id, MacroActionInfo info)
 {
 	if (auto it = _methods.find(id); it == _methods.end()) {
 		_methods[id] = info;
@@ -14,7 +14,7 @@ bool MacroActionFactory::Register(int id, MacroActionInfo info)
 	return false;
 }
 
-std::shared_ptr<MacroAction> MacroActionFactory::Create(const int id)
+std::shared_ptr<MacroAction> MacroActionFactory::Create(const std::string id)
 {
 	if (auto it = _methods.find(id); it != _methods.end())
 		return it->second._createFunc();
@@ -22,7 +22,7 @@ std::shared_ptr<MacroAction> MacroActionFactory::Create(const int id)
 	return nullptr;
 }
 
-QWidget *MacroActionFactory::CreateWidget(const int id, QWidget *parent,
+QWidget *MacroActionFactory::CreateWidget(const std::string id, QWidget *parent,
 					  std::shared_ptr<MacroAction> action)
 {
 	if (auto it = _methods.find(id); it != _methods.end())
@@ -31,12 +31,22 @@ QWidget *MacroActionFactory::CreateWidget(const int id, QWidget *parent,
 	return nullptr;
 }
 
-std::string MacroActionFactory::GetActionName(int id)
+std::string MacroActionFactory::GetActionName(const std::string id)
 {
 	if (auto it = _methods.find(id); it != _methods.end()) {
 		return it->second._name;
 	}
 	return "unknown action";
+}
+
+std::string MacroActionFactory::GetIdByName(const QString &name)
+{
+	for (auto it : _methods) {
+		if (name == obs_module_text(it.second._name.c_str())) {
+			return it.first;
+		}
+	}
+	return "";
 }
 
 static inline void populateActionSelection(QComboBox *list)
@@ -48,14 +58,15 @@ static inline void populateActionSelection(QComboBox *list)
 
 MacroActionEdit::MacroActionEdit(QWidget *parent,
 				 std::shared_ptr<MacroAction> *entryData,
-				 int type, bool startCollapsed)
+				 std::string id, bool startCollapsed)
 	: QWidget(parent)
 {
 	_actionSelection = new QComboBox();
 	_section = new Section(300);
 
-	QWidget::connect(_actionSelection, SIGNAL(currentIndexChanged(int)),
-			 this, SLOT(ActionSelectionChanged(int)));
+	QWidget::connect(_actionSelection,
+			 SIGNAL(currentTextChanged(const QString &)), this,
+			 SLOT(ActionSelectionChanged(const QString &)));
 
 	populateActionSelection(_actionSelection);
 
@@ -66,32 +77,35 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	setLayout(mainLayout);
 
 	_entryData = entryData;
-	UpdateEntryData(type);
+	UpdateEntryData(id);
 
 	_loading = false;
 	_section->Collapse(startCollapsed);
 }
 
-void MacroActionEdit::ActionSelectionChanged(int idx)
+void MacroActionEdit::ActionSelectionChanged(const QString &text)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
+	std::string id = MacroActionFactory::GetIdByName(text);
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->reset();
-	*_entryData = MacroActionFactory::Create(idx);
+	*_entryData = MacroActionFactory::Create(id);
 	auto widget =
-		MacroActionFactory::CreateWidget(idx, window(), *_entryData);
+		MacroActionFactory::CreateWidget(id, window(), *_entryData);
 	_section->SetContent(widget);
 	_section->Collapse(false);
 }
 
-void MacroActionEdit::UpdateEntryData(int type)
+void MacroActionEdit::UpdateEntryData(std::string id)
 {
-	_actionSelection->setCurrentIndex(type);
+	_actionSelection->setCurrentText(
+		obs_module_text(MacroActionFactory::GetActionName(id).c_str()));
 	auto widget =
-		MacroActionFactory::CreateWidget(type, window(), *_entryData);
+		MacroActionFactory::CreateWidget(id, window(), *_entryData);
 	_section->SetContent(widget);
 }
 
@@ -106,9 +120,13 @@ void AdvSceneSwitcher::on_actionAdd_clicked()
 	if (!macro) {
 		return;
 	}
+
+	MacroActionSwitchScene temp;
+	std::string id = temp.GetId();
+
 	std::lock_guard<std::mutex> lock(switcher->m);
-	macro->Actions().emplace_back(MacroActionFactory::Create(0));
-	auto newEntry = new MacroActionEdit(this, &macro->Actions().back(), 0);
+	macro->Actions().emplace_back(MacroActionFactory::Create(id));
+	auto newEntry = new MacroActionEdit(this, &macro->Actions().back(), id);
 	ui->macroEditActionLayout->addWidget(newEntry);
 	ui->macroEditActionHelp->setVisible(false);
 	newEntry->Collapse(false);

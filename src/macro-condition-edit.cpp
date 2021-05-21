@@ -1,8 +1,10 @@
 #include "headers/macro-condition-edit.hpp"
+#include "headers/macro-condition-scene.hpp"
 
-std::map<int, MacroConditionInfo> MacroConditionFactory::_methods;
+std::map<std::string, MacroConditionInfo> MacroConditionFactory::_methods;
 
-bool MacroConditionFactory::Register(int id, MacroConditionInfo info)
+bool MacroConditionFactory::Register(const std::string &id,
+				     MacroConditionInfo info)
 {
 	if (auto it = _methods.find(id); it == _methods.end()) {
 		_methods[id] = info;
@@ -11,7 +13,8 @@ bool MacroConditionFactory::Register(int id, MacroConditionInfo info)
 	return false;
 }
 
-std::shared_ptr<MacroCondition> MacroConditionFactory::Create(const int id)
+std::shared_ptr<MacroCondition>
+MacroConditionFactory::Create(const std::string id)
 {
 	if (auto it = _methods.find(id); it != _methods.end())
 		return it->second._createFunc();
@@ -20,7 +23,7 @@ std::shared_ptr<MacroCondition> MacroConditionFactory::Create(const int id)
 }
 
 QWidget *
-MacroConditionFactory::CreateWidget(const int id, QWidget *parent,
+MacroConditionFactory::CreateWidget(const std::string &id, QWidget *parent,
 				    std::shared_ptr<MacroCondition> cond)
 {
 	if (auto it = _methods.find(id); it != _methods.end())
@@ -29,12 +32,22 @@ MacroConditionFactory::CreateWidget(const int id, QWidget *parent,
 	return nullptr;
 }
 
-std::string MacroConditionFactory::GetConditionName(int id)
+std::string MacroConditionFactory::GetConditionName(const std::string &id)
 {
 	if (auto it = _methods.find(id); it != _methods.end()) {
 		return it->second._name;
 	}
 	return "unknown condition";
+}
+
+std::string MacroConditionFactory::GetIdByName(const QString &name)
+{
+	for (auto it : _methods) {
+		if (name == obs_module_text(it.second._name.c_str())) {
+			return it.first;
+		}
+	}
+	return "";
 }
 
 static inline void populateLogicSelection(QComboBox *list, bool root = false)
@@ -65,8 +78,8 @@ static inline void populateConditionSelection(QComboBox *list)
 }
 
 MacroConditionEdit::MacroConditionEdit(
-	QWidget *parent, std::shared_ptr<MacroCondition> *entryData, int type,
-	bool root, bool startCollapsed)
+	QWidget *parent, std::shared_ptr<MacroCondition> *entryData,
+	const std::string &id, bool root, bool startCollapsed)
 	: QWidget(parent)
 {
 	_logicSelection = new QComboBox();
@@ -75,8 +88,9 @@ MacroConditionEdit::MacroConditionEdit(
 
 	QWidget::connect(_logicSelection, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(LogicSelectionChanged(int)));
-	QWidget::connect(_conditionSelection, SIGNAL(currentIndexChanged(int)),
-			 this, SLOT(ConditionSelectionChanged(int)));
+	QWidget::connect(_conditionSelection,
+			 SIGNAL(currentTextChanged(const QString &)), this,
+			 SLOT(ConditionSelectionChanged(const QString &)));
 
 	populateLogicSelection(_logicSelection, root);
 	populateConditionSelection(_conditionSelection);
@@ -90,7 +104,7 @@ MacroConditionEdit::MacroConditionEdit(
 
 	_entryData = entryData;
 	_isRoot = root;
-	UpdateEntryData(type);
+	UpdateEntryData(id);
 	_loading = false;
 	_section->Collapse(startCollapsed);
 }
@@ -117,11 +131,12 @@ bool MacroConditionEdit::IsRootNode()
 	return _isRoot;
 }
 
-void MacroConditionEdit::UpdateEntryData(int type)
+void MacroConditionEdit::UpdateEntryData(const std::string &id)
 {
-	_conditionSelection->setCurrentIndex(type);
-	auto widget = MacroConditionFactory::CreateWidget(type, window(),
-							  *_entryData);
+	_conditionSelection->setCurrentText(obs_module_text(
+		MacroConditionFactory::GetConditionName(id).c_str()));
+	auto widget =
+		MacroConditionFactory::CreateWidget(id, window(), *_entryData);
 	auto logic = (*_entryData)->GetLogicType();
 	if (IsRootNode()) {
 		_logicSelection->setCurrentIndex(static_cast<int>(logic));
@@ -137,19 +152,21 @@ void MacroConditionEdit::Collapse(bool collapsed)
 	_section->Collapse(collapsed);
 }
 
-void MacroConditionEdit::ConditionSelectionChanged(int idx)
+void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
+	std::string id = MacroConditionFactory::GetIdByName(text);
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	auto logic = (*_entryData)->GetLogicType();
 	_entryData->reset();
-	*_entryData = MacroConditionFactory::Create(idx);
+	*_entryData = MacroConditionFactory::Create(id);
 	(*_entryData)->SetLogicType(logic);
 	auto widget =
-		MacroConditionFactory::CreateWidget(idx, window(), *_entryData);
+		MacroConditionFactory::CreateWidget(id, window(), *_entryData);
 	_section->SetContent(widget);
 	_section->Collapse(false);
 }
@@ -160,14 +177,16 @@ void AdvSceneSwitcher::on_conditionAdd_clicked()
 	if (!macro) {
 		return;
 	}
+	MacroConditionScene temp;
+	std::string id = temp.GetId();
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	bool root = macro->Conditions().size() == 0;
-	macro->Conditions().emplace_back(MacroConditionFactory::Create(0));
+	macro->Conditions().emplace_back(MacroConditionFactory::Create(id));
 	auto logic = root ? LogicType::ROOT_NONE : LogicType::NONE;
 	macro->Conditions().back()->SetLogicType(logic);
 	auto newEntry = new MacroConditionEdit(
-		this, &macro->Conditions().back(), 0, root);
+		this, &macro->Conditions().back(), id, root);
 	ui->macroEditConditionLayout->addWidget(newEntry);
 	ui->macroEditConditionHelp->setVisible(false);
 	newEntry->Collapse(false);
