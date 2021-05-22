@@ -13,13 +13,7 @@ const auto actionsCollapseThreshold = 2;
 
 bool macroNameExists(std::string name)
 {
-	for (auto &m : switcher->macros) {
-		if (m.Name() == name) {
-			return true;
-		}
-	}
-
-	return false;
+	return !!GetMacroByName(name.c_str());
 }
 
 bool AdvSceneSwitcher::addNewMacro(std::string &name)
@@ -208,22 +202,14 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 
 Macro *AdvSceneSwitcher::getSelectedMacro()
 {
-	Macro *macro = nullptr;
 	QListWidgetItem *item = ui->macros->currentItem();
 
 	if (!item) {
-		return macro;
+		return nullptr;
 	}
 
 	QString name = item->text();
-	for (auto &m : switcher->macros) {
-		if (name.compare(m.Name().c_str()) == 0) {
-			macro = &m;
-			break;
-		}
-	}
-
-	return macro;
+	return GetMacroByQString(name);
 }
 
 void AdvSceneSwitcher::on_macros_currentRowChanged(int idx)
@@ -240,11 +226,9 @@ void AdvSceneSwitcher::on_macros_currentRowChanged(int idx)
 	QListWidgetItem *item = ui->macros->item(idx);
 	QString macroName = item->text();
 
-	for (auto &m : switcher->macros) {
-		if (macroName.compare(m.Name().c_str()) == 0) {
-			SetEditMacro(m);
-			break;
-		}
+	auto macro = GetMacroByQString(macroName);
+	if (macro) {
+		SetEditMacro(*macro);
 	}
 }
 
