@@ -68,6 +68,8 @@ public:
 	bool Matched() { return _matched; }
 	std::string Name() { return _name; }
 	void SetName(std::string name) { _name = name; }
+	void SetPaused(bool pause = true) { _paused = pause; }
+	bool Paused() { return _paused; }
 	std::deque<std::shared_ptr<MacroCondition>> &Conditions()
 	{
 		return _conditions;
@@ -85,4 +87,5 @@ private:
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;
 	std::deque<std::shared_ptr<MacroAction>> _actions;
 	bool _matched = false;
+	bool _paused = false;
 };

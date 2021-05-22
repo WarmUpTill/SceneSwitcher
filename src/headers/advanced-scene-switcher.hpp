@@ -137,6 +137,7 @@ public slots:
 	void on_macroDown_clicked();
 	void on_macroName_editingFinished();
 	void on_macros_currentRowChanged(int idx);
+	void on_macros_itemChanged(QListWidgetItem *);
 	void on_conditionAdd_clicked();
 	void on_conditionRemove_clicked();
 	void on_actionAdd_clicked();

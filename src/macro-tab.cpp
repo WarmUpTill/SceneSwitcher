@@ -236,6 +236,22 @@ void AdvSceneSwitcher::on_macros_currentRowChanged(int idx)
 	}
 }
 
+void AdvSceneSwitcher::on_macros_itemChanged(QListWidgetItem *item)
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	QString name = item->data(Qt::UserRole).toString();
+	for (auto &m : switcher->macros) {
+		if (name.compare(m.Name().c_str()) == 0) {
+			m.SetPaused(item->checkState() != Qt::Checked);
+			break;
+		}
+	}
+}
+
 void AdvSceneSwitcher::setupMacroTab()
 {
 	for (auto &m : switcher->macros) {
@@ -243,6 +259,12 @@ void AdvSceneSwitcher::setupMacroTab()
 
 		QListWidgetItem *item = new QListWidgetItem(text, ui->macros);
 		item->setData(Qt::UserRole, text);
+		item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+		if (m.Paused()) {
+			item->setCheckState(Qt::Unchecked);
+		} else {
+			item->setCheckState(Qt::Checked);
+		}
 	}
 
 	if (switcher->macros.size() == 0) {

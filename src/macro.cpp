@@ -20,6 +20,10 @@ Macro::~Macro() {}
 
 bool Macro::CeckMatch()
 {
+	if (_paused) {
+		vblog(LOG_INFO, "Macro %s is paused", _name.c_str());
+		return false;
+	}
 	_matched = false;
 	for (auto &c : _conditions) {
 		bool cond = c->CheckCondition();
@@ -80,6 +84,7 @@ bool Macro::PerformAction()
 bool Macro::Save(obs_data_t *obj)
 {
 	obs_data_set_string(obj, "name", _name.c_str());
+	obs_data_set_bool(obj, "pause", _paused);
 
 	obs_data_array_t *conditions = obs_data_array_create();
 	for (auto &c : _conditions) {
@@ -145,6 +150,7 @@ void setValidLogic(MacroCondition *c, bool root, std::string name)
 bool Macro::Load(obs_data_t *obj)
 {
 	_name = obs_data_get_string(obj, "name");
+	_paused = obs_data_get_bool(obj, "pause");
 	bool root = true;
 
 	obs_data_array_t *conditions = obs_data_get_array(obj, "conditions");
