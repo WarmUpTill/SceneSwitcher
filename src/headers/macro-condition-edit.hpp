@@ -26,7 +26,7 @@ public:
 				     std::shared_ptr<MacroCondition>);
 	static auto GetConditionTypes() { return _methods; }
 	static std::string GetConditionName(const std::string &);
-	static std::string GetIdByName(const QString& name);
+	static std::string GetIdByName(const QString &name);
 
 private:
 	static std::map<std::string, MacroConditionInfo> _methods;
