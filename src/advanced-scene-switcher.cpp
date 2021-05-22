@@ -422,11 +422,11 @@ extern "C" void FreeSceneSwitcher()
 	switcher = nullptr;
 }
 
-void handleSceneChange(SwitcherData *s)
+void handleSceneChange()
 {
 	// Stop waiting if scene was changed
-	if (s->sceneChangedDuringWait()) {
-		s->cv.notify_one();
+	if (switcher->sceneChangedDuringWait()) {
+		switcher->cv.notify_one();
 	}
 
 	// Set previous scene
@@ -434,13 +434,13 @@ void handleSceneChange(SwitcherData *s)
 	obs_weak_source_t *ws = obs_source_get_weak_source(source);
 	obs_source_release(source);
 	obs_weak_source_release(ws);
-	if (source && s->previousSceneHelper != ws) {
-		s->previousScene = s->previousSceneHelper;
-		s->previousSceneHelper = ws;
+	if (source && switcher->previousSceneHelper != ws) {
+		switcher->previousScene = switcher->previousSceneHelper;
+		switcher->previousSceneHelper = ws;
 	}
 
-	s->checkTriggers();
-	s->checkDefaultSceneTransitions();
+	switcher->checkTriggers();
+	switcher->checkDefaultSceneTransitions();
 
 	if (switcher->networkConfig.ServerEnabled &&
 	    switcher->networkConfig.SendAll) {
@@ -448,28 +448,28 @@ void handleSceneChange(SwitcherData *s)
 	}
 }
 
-void setLiveTime(SwitcherData *s)
+void setLiveTime()
 {
-	s->liveTime = QDateTime::currentDateTime();
+	switcher->liveTime = QDateTime::currentDateTime();
 }
 
-void resetLiveTime(SwitcherData *s)
+void resetLiveTime()
 {
-	s->liveTime = QDateTime();
+	switcher->liveTime = QDateTime();
 }
 
-void checkAutoStartRecording(SwitcherData *s)
+void checkAutoStartRecording()
 {
-	if (s->autoStartEvent == AutoStartEvent::RECORDING ||
-	    s->autoStartEvent == AutoStartEvent::RECORINDG_OR_STREAMING)
-		s->Start();
+	if (switcher->autoStartEvent == AutoStartEvent::RECORDING ||
+	    switcher->autoStartEvent == AutoStartEvent::RECORINDG_OR_STREAMING)
+		switcher->Start();
 }
 
-void checkAutoStartStreaming(SwitcherData *s)
+void checkAutoStartStreaming()
 {
-	if (s->autoStartEvent == AutoStartEvent::STREAMING ||
-	    s->autoStartEvent == AutoStartEvent::RECORINDG_OR_STREAMING)
-		s->Start();
+	if (switcher->autoStartEvent == AutoStartEvent::STREAMING ||
+	    switcher->autoStartEvent == AutoStartEvent::RECORINDG_OR_STREAMING)
+		switcher->Start();
 }
 
 // Note to future self:
@@ -477,24 +477,28 @@ void checkAutoStartStreaming(SwitcherData *s)
 // frontend functions such as obs_frontend_set_current_scene()
 static void OBSEvent(enum obs_frontend_event event, void *switcher)
 {
+	if (!switcher) {
+		return;
+	}
+
 	switch (event) {
 	case OBS_FRONTEND_EVENT_EXIT:
 		FreeSceneSwitcher();
 		break;
 	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
-		handleSceneChange((SwitcherData *)switcher);
+		handleSceneChange();
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
-		setLiveTime((SwitcherData *)switcher);
-		checkAutoStartRecording((SwitcherData *)switcher);
+		setLiveTime();
+		checkAutoStartRecording();
 		break;
 	case OBS_FRONTEND_EVENT_STREAMING_STARTED:
-		setLiveTime((SwitcherData *)switcher);
-		checkAutoStartStreaming((SwitcherData *)switcher);
+		setLiveTime();
+		checkAutoStartStreaming();
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
 	case OBS_FRONTEND_EVENT_STREAMING_STOPPED:
-		resetLiveTime((SwitcherData *)switcher);
+		resetLiveTime();
 		break;
 	default:
 		break;
