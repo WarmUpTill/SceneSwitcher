@@ -440,8 +440,6 @@ void SceneSequenceSwitch::prepareUninterruptibleMatch(
 {
 	int dur = delay.seconds * 1000;
 	if (dur > 0) {
-		switcher->waitScene = obs_weak_source_get_source(currentScene);
-		obs_source_release(switcher->waitScene);
 		linger = dur;
 	}
 }
