@@ -5,6 +5,7 @@
 #include <map>
 #include <obs.hpp>
 #include <obs-module.h>
+#include <QString>
 
 constexpr auto macro_func = 10;
 constexpr auto default_priority_10 = macro_func;
@@ -89,3 +90,6 @@ private:
 	bool _matched = false;
 	bool _paused = false;
 };
+
+Macro *GetMacroByName(const char *name);
+Macro *GetMacroByQString(const QString &name);
