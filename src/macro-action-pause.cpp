@@ -53,6 +53,9 @@ void MacroActionPause::LogAction()
 bool MacroActionPause::Save(obs_data_t *obj)
 {
 	MacroAction::Save(obj);
+	if (_macro) {
+		obs_data_set_string(obj, "macro", _macro->Name().c_str());
+	}
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	return true;
 }
@@ -60,6 +63,7 @@ bool MacroActionPause::Save(obs_data_t *obj)
 bool MacroActionPause::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
+	_macro = GetMacroByName(obs_data_get_string(obj, "macro"));
 	_action = static_cast<PauseAction>(obs_data_get_int(obj, "action"));
 	return true;
 }
