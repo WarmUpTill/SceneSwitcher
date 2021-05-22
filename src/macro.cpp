@@ -353,7 +353,7 @@ bool SwitcherData::runMacros()
 {
 	for (auto &m : macros) {
 		if (m.Matched()) {
-			blog(LOG_INFO, "running macro: %s", m.Name().c_str());
+			vblog(LOG_INFO, "running macro: %s", m.Name().c_str());
 			if (!m.PerformAction()) {
 				blog(LOG_WARNING, "abort macro: %s",
 				     m.Name().c_str());
