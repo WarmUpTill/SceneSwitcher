@@ -69,6 +69,8 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 
 	QListWidgetItem *item = new QListWidgetItem(text, ui->macros);
 	item->setData(Qt::UserRole, text);
+	item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+	item->setCheckState(Qt::Checked);
 	ui->macros->setCurrentItem(item);
 
 	ui->macroAdd->disconnect(addPulse);
@@ -152,8 +154,11 @@ void AdvSceneSwitcher::on_macroName_editingFinished()
 		if (nameValid) {
 			macro->SetName(newName.toUtf8().constData());
 			QListWidgetItem *item = ui->macros->currentItem();
-			item->setData(Qt::UserRole, newName);
+			// Don't trigger itemChanged()
+			// pause state remains as is
+			ui->macros->blockSignals(true);
 			item->setText(newName);
+			ui->macros->blockSignals(false);
 		} else {
 			ui->macroName->setText(oldName);
 		}
@@ -210,7 +215,7 @@ Macro *AdvSceneSwitcher::getSelectedMacro()
 		return macro;
 	}
 
-	QString name = item->data(Qt::UserRole).toString();
+	QString name = item->text();
 	for (auto &m : switcher->macros) {
 		if (name.compare(m.Name().c_str()) == 0) {
 			macro = &m;
@@ -233,7 +238,7 @@ void AdvSceneSwitcher::on_macros_currentRowChanged(int idx)
 	}
 
 	QListWidgetItem *item = ui->macros->item(idx);
-	QString macroName = item->data(Qt::UserRole).toString();
+	QString macroName = item->text();
 
 	for (auto &m : switcher->macros) {
 		if (macroName.compare(m.Name().c_str()) == 0) {
@@ -250,7 +255,7 @@ void AdvSceneSwitcher::on_macros_itemChanged(QListWidgetItem *item)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	QString name = item->data(Qt::UserRole).toString();
+	QString name = item->text();
 
 	auto m = GetMacroByQString(name);
 	if (m) {
