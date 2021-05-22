@@ -192,6 +192,7 @@ struct SwitcherData {
 	void Start();
 	void Stop();
 
+	void setWaitScene();
 	bool sceneChangedDuringWait();
 
 	bool prioFuncsValid();
