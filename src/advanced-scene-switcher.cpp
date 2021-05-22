@@ -484,6 +484,7 @@ void SwitcherData::Thread()
 		}
 
 		vblog(LOG_INFO, "try to sleep for %ld", duration.count());
+		setWaitScene();
 		cv.wait_for(lock, duration);
 
 		startTime = std::chrono::high_resolution_clock::now();
@@ -510,6 +511,7 @@ void SwitcherData::Thread()
 			vblog(LOG_INFO, "sleep for %ld before switching scene",
 			      duration.count());
 
+			setWaitScene();
 			cv.wait_for(lock, duration);
 
 			if (stop) {
@@ -684,6 +686,12 @@ void SwitcherData::Stop()
 
 	server.stop();
 	client.disconnect();
+}
+
+void SwitcherData::setWaitScene()
+{
+	waitScene = obs_frontend_get_current_scene();
+	obs_source_release(waitScene);
 }
 
 bool SwitcherData::sceneChangedDuringWait()
