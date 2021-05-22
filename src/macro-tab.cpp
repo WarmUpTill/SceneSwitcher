@@ -303,5 +303,7 @@ void AdvSceneSwitcher::copyMacro()
 	QString text = QString::fromStdString(name);
 	QListWidgetItem *item = new QListWidgetItem(text, ui->macros);
 	item->setData(Qt::UserRole, text);
+	item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+	item->setCheckState(Qt::Checked);
 	ui->macros->setCurrentItem(item);
 }
