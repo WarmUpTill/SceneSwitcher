@@ -73,6 +73,8 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 
 	ui->macroAdd->disconnect(addPulse);
 	ui->macroHelp->setVisible(false);
+
+	emit MacroAdded(QString::fromStdString(name));
 }
 
 void AdvSceneSwitcher::on_macroRemove_clicked()
@@ -81,9 +83,11 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 	if (!item) {
 		return;
 	}
+	QString name;
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
 		int idx = ui->macros->currentRow();
+		QString::fromStdString(switcher->macros[idx].Name());
 		switcher->macros.erase(switcher->macros.begin() + idx);
 	}
 
@@ -92,6 +96,7 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 	if (ui->macros->count() == 0) {
 		ui->macroHelp->setVisible(true);
 	}
+	emit MacroRemoved(name);
 }
 
 void AdvSceneSwitcher::on_macroUp_clicked()
@@ -153,6 +158,8 @@ void AdvSceneSwitcher::on_macroName_editingFinished()
 			ui->macroName->setText(oldName);
 		}
 	}
+
+	emit MacroRenamed(oldName, newName);
 }
 
 void AdvSceneSwitcher::SetEditMacro(Macro &m)
@@ -244,11 +251,10 @@ void AdvSceneSwitcher::on_macros_itemChanged(QListWidgetItem *item)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	QString name = item->data(Qt::UserRole).toString();
-	for (auto &m : switcher->macros) {
-		if (name.compare(m.Name().c_str()) == 0) {
-			m.SetPaused(item->checkState() != Qt::Checked);
-			break;
-		}
+
+	auto m = GetMacroByQString(name);
+	if (m) {
+		m->SetPaused(item->checkState() != Qt::Checked);
 	}
 }
 

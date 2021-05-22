@@ -369,3 +369,19 @@ bool SwitcherData::runMacros()
 	}
 	return true;
 }
+
+Macro *GetMacroByName(const char *name)
+{
+	for (auto &m : switcher->macros) {
+		if (m.Name() == name) {
+			return &m;
+		}
+	}
+
+	return nullptr;
+}
+
+Macro *GetMacroByQString(const QString &name)
+{
+	return GetMacroByName(name.toUtf8().constData());
+}
