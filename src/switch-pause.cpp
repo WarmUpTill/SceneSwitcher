@@ -222,7 +222,6 @@ void SwitcherData::savePauseSwitches(obs_data_t *obj)
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "pauseEntries", pauseScenesArray);
-	obs_data_set_int(obj, "oldPauseValuesImported", 1);
 	obs_data_array_release(pauseScenesArray);
 }
 
