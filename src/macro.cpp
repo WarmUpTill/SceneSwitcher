@@ -4,6 +4,9 @@
 #include "headers/macro-condition-edit.hpp"
 #include "headers/macro-action-scene-switch.hpp"
 
+#include <limits>
+#undef max
+
 const std::map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 	{LogicType::NONE, {"AdvSceneSwitcher.logic.none"}},
 	{LogicType::AND, {"AdvSceneSwitcher.logic.and"}},
@@ -85,7 +88,9 @@ bool Macro::PerformAction()
 			return false;
 		}
 	}
-
+	if (ret && _count != std::numeric_limits<int>::max()) {
+		_count++;
+	}
 	return ret;
 }
 
