@@ -71,6 +71,8 @@ public:
 	void SetName(const std::string &name) { _name = name; }
 	void SetPaused(bool pause = true) { _paused = pause; }
 	bool Paused() { return _paused; }
+	int GetCount() { return _count; };
+	void ResetCount() { _count = 0; };
 	std::deque<std::shared_ptr<MacroCondition>> &Conditions()
 	{
 		return _conditions;
@@ -89,6 +91,7 @@ private:
 	std::deque<std::shared_ptr<MacroAction>> _actions;
 	bool _matched = false;
 	bool _paused = false;
+	int _count = 0;
 };
 
 Macro *GetMacroByName(const char *name);
