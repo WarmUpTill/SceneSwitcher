@@ -650,6 +650,13 @@ void switchScene(const sceneSwitchInfo &sceneSwitch)
 	obs_source_release(source);
 }
 
+void switchPreviewScene(const OBSWeakSource &ws)
+{
+	auto source = obs_weak_source_get_source(ws);
+	obs_frontend_set_current_preview_scene(source);
+	obs_source_release(source);
+}
+
 void SwitcherData::Start()
 {
 	if (!(th && th->isRunning())) {
@@ -771,6 +778,18 @@ void checkAutoStartStreaming()
 		switcher->Start();
 }
 
+void handlePeviewSceneChange()
+{
+	if (switcher->networkConfig.ServerEnabled &&
+	    switcher->networkConfig.SendPreview) {
+		auto source = obs_frontend_get_current_preview_scene();
+		auto weak = obs_source_get_weak_source(source);
+		switcher->server.sendMessage({weak, nullptr, 0}, true);
+		obs_weak_source_release(weak);
+		obs_source_release(source);
+	}
+}
+
 // Note to future self:
 // be careful using switcher->m here as there is potential for deadlocks when using
 // frontend functions such as obs_frontend_set_current_scene()
@@ -786,6 +805,9 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 		break;
 	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
 		handleSceneChange();
+		break;
+	case OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED:
+		handlePeviewSceneChange();
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
 		setLiveTime();
