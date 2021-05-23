@@ -1,5 +1,6 @@
 #pragma once
 #include "macro.hpp"
+#include "macro-selection.hpp"
 #include <QWidget>
 #include <QSpinBox>
 #include <QLabel>
@@ -49,16 +50,14 @@ public:
 
 private slots:
 	void MacroChanged(const QString &text);
+	void MacroRemove(const QString &name);
 	void CountChanged(int value);
 	void ConditionChanged(int cond);
-	void MacroAdd(const QString &name);
-	void MacroRemove(const QString &name);
-	void MacroRename(const QString &oldName, const QString &newName);
 	void ResetClicked();
 	void UpdateCount();
 
 protected:
-	QComboBox *_macros;
+	MacroSelection *_macros;
 	QComboBox *_conditions;
 	QSpinBox *_count;
 	QLabel *_currentCount;

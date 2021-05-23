@@ -75,36 +75,21 @@ static inline void populateActionSelection(QComboBox *list)
 	}
 }
 
-static inline void populateMacroSelection(QComboBox *list)
-{
-	list->addItem(obs_module_text("AdvSceneSwitcher.selectMacro"));
-	for (auto &m : switcher->macros) {
-		list->addItem(QString::fromStdString(m.Name()));
-	}
-}
-
 MacroActionPauseEdit::MacroActionPauseEdit(
 	QWidget *parent, std::shared_ptr<MacroActionPause> entryData)
 	: QWidget(parent)
 {
-	_macros = new QComboBox();
+	_macros = new MacroSelection(parent);
 	_actions = new QComboBox();
 
 	populateActionSelection(_actions);
-	populateMacroSelection(_macros);
 
 	QWidget::connect(_macros, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(MacroChanged(const QString &)));
-	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(ActionChanged(int)));
-	QWidget::connect(parent, SIGNAL(MacroAdded(const QString &)), this,
-			 SLOT(MacroAdd(const QString &)));
 	QWidget::connect(parent, SIGNAL(MacroRemoved(const QString &)), this,
 			 SLOT(MacroRemove(const QString &)));
-	QWidget::connect(parent,
-			 SIGNAL(MacroRenamed(const QString &, const QString &)),
-			 this,
-			 SLOT(MacroRename(const QString &, const QString &)));
+	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(ActionChanged(int)));
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -126,12 +111,7 @@ void MacroActionPauseEdit::UpdateEntryData()
 		return;
 	}
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
-	if (_entryData->_macro) {
-		_macros->setCurrentText(
-			QString::fromStdString(_entryData->_macro->Name()));
-	} else {
-		_macros->setCurrentIndex(0);
-	}
+	_macros->SetCurrentMacro(_entryData->_macro);
 }
 
 void MacroActionPauseEdit::MacroChanged(const QString &text)
@@ -154,11 +134,6 @@ void MacroActionPauseEdit::ActionChanged(int value)
 	_entryData->_action = static_cast<PauseAction>(value);
 }
 
-void MacroActionPauseEdit::MacroAdd(const QString &name)
-{
-	_macros->addItem(name);
-}
-
 void MacroActionPauseEdit::MacroRemove(const QString &name)
 {
 	int idx = _macros->findText(name);
@@ -171,19 +146,4 @@ void MacroActionPauseEdit::MacroRemove(const QString &name)
 		_entryData->_macro = nullptr;
 	}
 	_macros->setCurrentIndex(0);
-}
-
-void MacroActionPauseEdit::MacroRename(const QString &oldName,
-				       const QString &newName)
-{
-	bool renameSelected = _macros->currentText() == oldName;
-	int idx = _macros->findText(oldName);
-	if (idx == -1) {
-		return;
-	}
-	_macros->removeItem(idx);
-	_macros->insertItem(idx, newName);
-	if (renameSelected) {
-		_macros->setCurrentIndex(_macros->findText(newName));
-	}
 }
