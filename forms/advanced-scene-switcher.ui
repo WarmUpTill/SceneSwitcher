@@ -3727,6 +3727,13 @@
          <layout class="QVBoxLayout" name="verticalLayout_31">
           <item>
            <layout class="QGridLayout" name="gridLayout_24">
+            <item row="4" column="1">
+             <widget class="QLabel" name="serverStatus">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.status.notRunning</string>
+              </property>
+             </widget>
+            </item>
             <item row="0" column="1">
              <widget class="QSpinBox" name="serverPort">
               <property name="minimum">
@@ -3740,13 +3747,6 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_17">
-              <property name="text">
-               <string>AdvSceneSwitcher.networkTab.server.port</string>
-              </property>
-             </widget>
-            </item>
             <item row="1" column="1">
              <widget class="QCheckBox" name="lockToIPv4">
               <property name="text">
@@ -3754,17 +3754,10 @@
               </property>
              </widget>
             </item>
-            <item row="3" column="0">
-             <widget class="QLabel" name="label_19">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_17">
               <property name="text">
-               <string>AdvSceneSwitcher.networkTab.server.status.currentStatus</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="1">
-             <widget class="QLabel" name="serverStatus">
-              <property name="text">
-               <string>AdvSceneSwitcher.networkTab.server.status.notRunning</string>
+               <string>AdvSceneSwitcher.networkTab.server.port</string>
               </property>
              </widget>
             </item>
@@ -3772,6 +3765,20 @@
              <widget class="QCheckBox" name="restrictSend">
               <property name="text">
                <string>AdvSceneSwitcher.networkTab.server.restrictSendToAutomatedSwitches</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_19">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.status.currentStatus</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QCheckBox" name="sendPreview">
+              <property name="text">
+               <string>AdvSceneSwitcher.networkTab.server.sendPreview</string>
               </property>
              </widget>
             </item>

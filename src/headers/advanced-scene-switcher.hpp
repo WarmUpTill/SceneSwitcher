@@ -212,6 +212,7 @@ public slots:
 	void on_clientHostname_textChanged(const QString &text);
 	void on_clientPort_valueChanged(int value);
 	void on_restrictSend_stateChanged(int state);
+	void on_sendPreview_stateChanged(int state);
 	void on_clientReconnect_clicked();
 	void updateClientStatus();
 
@@ -254,6 +255,7 @@ void overwriteTransitionOverride(const sceneSwitchInfo &ssi,
 				 transitionData &td);
 void restoreTransitionOverride(obs_source_t *scene, const transitionData &td);
 void switchScene(const sceneSwitchInfo &ssi);
+void switchPreviewScene(const OBSWeakSource &ws);
 
 /******************************************************************************
  * Main SwitcherData
