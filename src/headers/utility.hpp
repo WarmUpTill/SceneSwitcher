@@ -114,7 +114,7 @@ static inline OBSWeakSource GetWeakFilterByQString(OBSWeakSource source,
 }
 
 static inline std::string
-getNextDelim(std::string text,
+getNextDelim(const std::string &text,
 	     std::unordered_map<std::string, QWidget *> placeholders)
 {
 	size_t pos = std::string::npos;
@@ -214,7 +214,7 @@ static inline bool compareIgnoringLineEnding(QString &s1, QString &s2)
 	return true;
 }
 
-static inline bool DisplayMessage(QString msg, bool question = false)
+static inline bool DisplayMessage(const QString &msg, bool question = false)
 {
 	if (question) {
 		QMessageBox::StandardButton reply;

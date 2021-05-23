@@ -286,8 +286,8 @@ private:
 void GetWindowList(std::vector<std::string> &windows);
 void GetWindowList(QStringList &windows);
 void GetCurrentWindowTitle(std::string &title);
-bool isFullscreen(std::string &title);
-bool isMaximized(std::string &title);
+bool isFullscreen(const std::string &title);
+bool isMaximized(const std::string &title);
 
 /******************************************************************************
  * Screenregion helper
@@ -309,11 +309,12 @@ bool isInFocus(const QString &executable);
  * Sceneswitch helper
  ******************************************************************************/
 
-void setNextTransition(sceneSwitchInfo &ssi, obs_source_t *currentSource,
+void setNextTransition(const sceneSwitchInfo &ssi, obs_source_t *currentSource,
 		       transitionData &td);
-void overwriteTransitionOverride(sceneSwitchInfo ssi, transitionData &td);
-void restoreTransitionOverride(obs_source_t *scene, transitionData td);
-void switchScene(sceneSwitchInfo ssi);
+void overwriteTransitionOverride(const sceneSwitchInfo &ssi,
+				 transitionData &td);
+void restoreTransitionOverride(obs_source_t *scene, const transitionData &td);
+void switchScene(const sceneSwitchInfo &ssi);
 
 /******************************************************************************
  * Main SwitcherData

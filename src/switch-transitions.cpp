@@ -240,7 +240,7 @@ std::pair<obs_weak_source_t *, int> getNextTransition(obs_weak_source_t *scene1,
 	return std::make_pair(ws, duration);
 }
 
-void overwriteTransitionOverride(sceneSwitchInfo ssi, transitionData &td)
+void overwriteTransitionOverride(const sceneSwitchInfo &ssi, transitionData &td)
 {
 	obs_source_t *scene = obs_weak_source_get_source(ssi.scene);
 	obs_data_t *data = obs_source_get_private_settings(scene);
@@ -257,7 +257,7 @@ void overwriteTransitionOverride(sceneSwitchInfo ssi, transitionData &td)
 	obs_source_release(scene);
 }
 
-void restoreTransitionOverride(obs_source_t *scene, transitionData td)
+void restoreTransitionOverride(obs_source_t *scene, const transitionData &td)
 {
 	obs_data_t *data = obs_source_get_private_settings(scene);
 
@@ -267,7 +267,7 @@ void restoreTransitionOverride(obs_source_t *scene, transitionData td)
 	obs_data_release(data);
 }
 
-void setNextTransition(sceneSwitchInfo &sceneSwitch,
+void setNextTransition(const sceneSwitchInfo &sceneSwitch,
 		       obs_source_t *currentSource, transitionData &td)
 {
 	// Priority:

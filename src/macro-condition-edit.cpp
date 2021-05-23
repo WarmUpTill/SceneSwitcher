@@ -14,7 +14,7 @@ bool MacroConditionFactory::Register(const std::string &id,
 }
 
 std::shared_ptr<MacroCondition>
-MacroConditionFactory::Create(const std::string id)
+MacroConditionFactory::Create(const std::string &id)
 {
 	if (auto it = _methods.find(id); it != _methods.end())
 		return it->second._createFunc();

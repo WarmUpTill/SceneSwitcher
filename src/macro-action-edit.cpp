@@ -5,7 +5,7 @@
 
 std::map<std::string, MacroActionInfo> MacroActionFactory::_methods;
 
-bool MacroActionFactory::Register(std::string id, MacroActionInfo info)
+bool MacroActionFactory::Register(const std::string &id, MacroActionInfo info)
 {
 	if (auto it = _methods.find(id); it == _methods.end()) {
 		_methods[id] = info;
@@ -14,7 +14,7 @@ bool MacroActionFactory::Register(std::string id, MacroActionInfo info)
 	return false;
 }
 
-std::shared_ptr<MacroAction> MacroActionFactory::Create(const std::string id)
+std::shared_ptr<MacroAction> MacroActionFactory::Create(const std::string &id)
 {
 	if (auto it = _methods.find(id); it != _methods.end())
 		return it->second._createFunc();
@@ -22,7 +22,8 @@ std::shared_ptr<MacroAction> MacroActionFactory::Create(const std::string id)
 	return nullptr;
 }
 
-QWidget *MacroActionFactory::CreateWidget(const std::string id, QWidget *parent,
+QWidget *MacroActionFactory::CreateWidget(const std::string &id,
+					  QWidget *parent,
 					  std::shared_ptr<MacroAction> action)
 {
 	if (auto it = _methods.find(id); it != _methods.end())
@@ -31,7 +32,7 @@ QWidget *MacroActionFactory::CreateWidget(const std::string id, QWidget *parent,
 	return nullptr;
 }
 
-std::string MacroActionFactory::GetActionName(const std::string id)
+std::string MacroActionFactory::GetActionName(const std::string &id)
 {
 	if (auto it = _methods.find(id); it != _methods.end()) {
 		return it->second._name;
@@ -58,7 +59,7 @@ static inline void populateActionSelection(QComboBox *list)
 
 MacroActionEdit::MacroActionEdit(QWidget *parent,
 				 std::shared_ptr<MacroAction> *entryData,
-				 std::string id, bool startCollapsed)
+				 const std::string &id, bool startCollapsed)
 	: QWidget(parent)
 {
 	_actionSelection = new QComboBox();
@@ -100,7 +101,7 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 	_section->Collapse(false);
 }
 
-void MacroActionEdit::UpdateEntryData(std::string id)
+void MacroActionEdit::UpdateEntryData(const std::string &id)
 {
 	_actionSelection->setCurrentText(
 		obs_module_text(MacroActionFactory::GetActionName(id).c_str()));

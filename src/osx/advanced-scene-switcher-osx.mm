@@ -155,7 +155,7 @@ bool nameMachesPattern(std::string windowName, std::string pattern)
 		.contains(QRegularExpression(QString::fromStdString(pattern)));
 }
 
-bool isMaximized(std::string &title)
+bool isMaximized(const std::string &title)
 {
 	@autoreleasepool {
 		NSArray *screens = [NSScreen screens];
@@ -204,7 +204,7 @@ bool isWindowFullscreenOnScreen(NSDictionary *app, NSScreen *screen)
 	return NSEqualSizes(windowBounds.size, screenFrame.size);
 }
 
-bool isFullscreen(std::string &title)
+bool isFullscreen(const std::string &title)
 {
 	@autoreleasepool {
 		NSArray *screens = [NSScreen screens];

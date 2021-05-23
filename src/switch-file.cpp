@@ -101,7 +101,7 @@ void SwitcherData::writeSceneInfoToFile()
 	obs_source_release(currentSource);
 }
 
-void SwitcherData::writeToStatusFile(QString msg)
+void SwitcherData::writeToStatusFile(const QString &msg)
 {
 	if (!fileIO.writeEnabled || fileIO.writePath.empty()) {
 		return;

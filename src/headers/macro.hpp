@@ -68,7 +68,7 @@ public:
 	bool PerformAction();
 	bool Matched() { return _matched; }
 	std::string Name() { return _name; }
-	void SetName(std::string name) { _name = name; }
+	void SetName(const std::string &name) { _name = name; }
 	void SetPaused(bool pause = true) { _paused = pause; }
 	bool Paused() { return _paused; }
 	std::deque<std::shared_ptr<MacroCondition>> &Conditions()

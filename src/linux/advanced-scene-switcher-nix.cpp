@@ -253,7 +253,7 @@ std::pair<int, int> getCursorPos()
 	return pos;
 }
 
-bool isMaximized(std::string &title)
+bool isMaximized(const std::string &title)
 {
 	if (!ewmhIsSupported())
 		return false;
@@ -302,7 +302,7 @@ bool isMaximized(std::string &title)
 	return false;
 }
 
-bool isFullscreen(std::string &title)
+bool isFullscreen(const std::string &title)
 {
 	if (!ewmhIsSupported())
 		return false;
