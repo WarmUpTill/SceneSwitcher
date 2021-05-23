@@ -63,19 +63,11 @@ static inline void populateConditionSelection(QComboBox *list)
 	}
 }
 
-static inline void populateMacroSelection(QComboBox *list)
-{
-	list->addItem(obs_module_text("AdvSceneSwitcher.selectMacro"));
-	for (auto &m : switcher->macros) {
-		list->addItem(QString::fromStdString(m.Name()));
-	}
-}
-
 MacroConditionCounterEdit::MacroConditionCounterEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionCounter> entryData)
 	: QWidget(parent)
 {
-	_macros = new QComboBox();
+	_macros = new MacroSelection(parent);
 	_conditions = new QComboBox();
 	_count = new QSpinBox();
 	_currentCount = new QLabel();
@@ -83,27 +75,18 @@ MacroConditionCounterEdit::MacroConditionCounterEdit(
 		obs_module_text("AdvSceneSwitcher.condition.counter.reset"));
 
 	_count->setMaximum(10000000);
-
 	populateConditionSelection(_conditions);
-	populateMacroSelection(_macros);
 
 	QWidget::connect(_macros, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(MacroChanged(const QString &)));
+	QWidget::connect(parent, SIGNAL(MacroRemoved(const QString &)), this,
+			 SLOT(MacroRemove(const QString &)));
 	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_count, SIGNAL(valueChanged(int)), this,
 			 SLOT(CountChanged(int)));
 	QWidget::connect(_resetCount, SIGNAL(clicked()), this,
 			 SLOT(ResetClicked()));
-
-	QWidget::connect(parent, SIGNAL(MacroAdded(const QString &)), this,
-			 SLOT(MacroAdd(const QString &)));
-	QWidget::connect(parent, SIGNAL(MacroRemoved(const QString &)), this,
-			 SLOT(MacroRemove(const QString &)));
-	QWidget::connect(parent,
-			 SIGNAL(MacroRenamed(const QString &, const QString &)),
-			 this,
-			 SLOT(MacroRename(const QString &, const QString &)));
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	QHBoxLayout *line1Layout = new QHBoxLayout;
@@ -136,12 +119,7 @@ void MacroConditionCounterEdit::UpdateEntryData()
 		return;
 	}
 
-	if (_entryData->_macro) {
-		_macros->setCurrentText(
-			QString::fromStdString(_entryData->_macro->Name()));
-	} else {
-		_macros->setCurrentIndex(0);
-	}
+	_macros->SetCurrentMacro(_entryData->_macro);
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_count->setValue(_entryData->_count);
 	ResetTimer();
@@ -178,11 +156,6 @@ void MacroConditionCounterEdit::ConditionChanged(int cond)
 	_entryData->_condition = static_cast<CounterCondition>(cond);
 }
 
-void MacroConditionCounterEdit::MacroAdd(const QString &name)
-{
-	_macros->addItem(name);
-}
-
 void MacroConditionCounterEdit::MacroRemove(const QString &name)
 {
 	int idx = _macros->findText(name);
@@ -195,21 +168,6 @@ void MacroConditionCounterEdit::MacroRemove(const QString &name)
 		_entryData->_macro = nullptr;
 	}
 	_macros->setCurrentIndex(0);
-}
-
-void MacroConditionCounterEdit::MacroRename(const QString &oldName,
-					    const QString &newName)
-{
-	bool renameSelected = _macros->currentText() == oldName;
-	int idx = _macros->findText(oldName);
-	if (idx == -1) {
-		return;
-	}
-	_macros->removeItem(idx);
-	_macros->insertItem(idx, newName);
-	if (renameSelected) {
-		_macros->setCurrentIndex(_macros->findText(newName));
-	}
 }
 
 void MacroConditionCounterEdit::ResetClicked()

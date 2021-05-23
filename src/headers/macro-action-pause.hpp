@@ -1,6 +1,7 @@
 #pragma once
 #include <QDoubleSpinBox>
 #include "macro-action-edit.hpp"
+#include "macro-selection.hpp"
 
 enum class PauseAction {
 	PAUSE,
@@ -45,13 +46,11 @@ public:
 
 private slots:
 	void MacroChanged(const QString &text);
-	void ActionChanged(int value);
-	void MacroAdd(const QString &name);
 	void MacroRemove(const QString &name);
-	void MacroRename(const QString &oldName, const QString &newName);
+	void ActionChanged(int value);
 
 protected:
-	QComboBox *_macros;
+	MacroSelection *_macros;
 	QComboBox *_actions;
 	std::shared_ptr<MacroActionPause> _entryData;
 

@@ -108,6 +108,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/macro-condition-video.hpp
 	src/headers/macro-condition-window.hpp
 	src/headers/macro.hpp
+	src/headers/macro-selection.hpp
 	src/headers/curl-helper.hpp
 	src/headers/screenshot-helper.hpp
 	src/headers/name-dialog.hpp
@@ -173,6 +174,7 @@ set(advanced-scene-switcher_SOURCES
 	src/macro-condition-video.cpp
 	src/macro-condition-window.cpp
 	src/macro.cpp
+	src/macro-selection.cpp
 	src/macro-tab.cpp
 	src/curl-helper.cpp
 	src/screenshot-helper.cpp
