@@ -40,9 +40,9 @@ struct SceneGroup {
 	int lastRandomScene = -1;
 
 	inline SceneGroup(){};
-	inline SceneGroup(std::string name_) : name(name_){};
-	inline SceneGroup(std::string name_, AdvanceCondition type_,
-			  std::vector<OBSWeakSource> scenes_, int count_,
+	inline SceneGroup(const std::string &name_) : name(name_){};
+	inline SceneGroup(const std::string &name_, AdvanceCondition type_,
+			  const std::vector<OBSWeakSource> &scenes_, int count_,
 			  double time_, bool repeat_)
 		: name(name_),
 		  type(type_),

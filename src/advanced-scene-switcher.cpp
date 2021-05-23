@@ -618,7 +618,7 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 	return match;
 }
 
-void switchScene(sceneSwitchInfo sceneSwitch)
+void switchScene(const sceneSwitchInfo &sceneSwitch)
 {
 	if (!sceneSwitch.scene && switcher->verbose) {
 		blog(LOG_INFO, "nothing to switch to");

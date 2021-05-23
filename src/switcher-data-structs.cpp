@@ -124,7 +124,8 @@ bool SwitcherData::versionChanged(obs_data_t *obj, std::string currentVersion)
 	return previousVersion != currentVersion;
 }
 
-void SwitcherData::saveVersion(obs_data_t *obj, std::string currentVersion)
+void SwitcherData::saveVersion(obs_data_t *obj,
+			       const std::string &currentVersion)
 {
 	obs_data_set_string(obj, "version", currentVersion.c_str());
 }

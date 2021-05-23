@@ -21,7 +21,7 @@ class MacroConditionFactory {
 public:
 	MacroConditionFactory() = delete;
 	static bool Register(const std::string &, MacroConditionInfo);
-	static std::shared_ptr<MacroCondition> Create(const std::string);
+	static std::shared_ptr<MacroCondition> Create(const std::string &);
 	static QWidget *CreateWidget(const std::string &id, QWidget *parent,
 				     std::shared_ptr<MacroCondition>);
 	static auto GetConditionTypes() { return _methods; }
