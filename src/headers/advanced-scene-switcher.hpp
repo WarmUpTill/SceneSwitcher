@@ -107,6 +107,9 @@ public:
 	bool listMoveDown(QListWidget *list);
 
 signals:
+	void MacroAdded(const QString &name);
+	void MacroRemoved(const QString &name);
+	void MacroRenamed(const QString &oldName, const QString newName);
 	void SceneGroupAdded(const QString &name);
 	void SceneGroupRemoved(const QString &name);
 	void SceneGroupRenamed(const QString &oldName, const QString newName);
@@ -137,6 +140,7 @@ public slots:
 	void on_macroDown_clicked();
 	void on_macroName_editingFinished();
 	void on_macros_currentRowChanged(int idx);
+	void on_macros_itemChanged(QListWidgetItem *);
 	void on_conditionAdd_clicked();
 	void on_conditionRemove_clicked();
 	void on_actionAdd_clicked();

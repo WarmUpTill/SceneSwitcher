@@ -5,6 +5,7 @@
 #include <map>
 #include <obs.hpp>
 #include <obs-module.h>
+#include <QString>
 
 constexpr auto macro_func = 10;
 constexpr auto default_priority_10 = macro_func;
@@ -68,6 +69,8 @@ public:
 	bool Matched() { return _matched; }
 	std::string Name() { return _name; }
 	void SetName(std::string name) { _name = name; }
+	void SetPaused(bool pause = true) { _paused = pause; }
+	bool Paused() { return _paused; }
 	std::deque<std::shared_ptr<MacroCondition>> &Conditions()
 	{
 		return _conditions;
@@ -85,4 +88,8 @@ private:
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;
 	std::deque<std::shared_ptr<MacroAction>> _actions;
 	bool _matched = false;
+	bool _paused = false;
 };
+
+Macro *GetMacroByName(const char *name);
+Macro *GetMacroByQString(const QString &name);
