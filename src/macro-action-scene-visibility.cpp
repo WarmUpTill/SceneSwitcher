@@ -17,20 +17,40 @@ const static std::map<SceneVisibilityAction, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.sceneVisibility.type.hide"},
 };
 
+struct VisInfo {
+	std::string name;
+	bool visible;
+};
+
+static bool visibilityEnum(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
+{
+	VisInfo *vInfo = reinterpret_cast<VisInfo *>(ptr);
+	auto sourceName = obs_source_get_name(obs_sceneitem_get_source(item));
+	if (vInfo->name == sourceName) {
+		obs_sceneitem_set_visible(item, vInfo->visible);
+	}
+
+	if (obs_sceneitem_is_group(item)) {
+		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
+		obs_scene_enum_items(scene, visibilityEnum, ptr);
+	}
+
+	return true;
+}
+
 bool MacroActionSceneVisibility::PerformAction()
 {
 	auto s = obs_weak_source_get_source(_scene);
 	auto scene = obs_scene_from_source(s);
 	auto sourceName = GetWeakSourceName(_source);
+	VisInfo vInfo = {sourceName, _action == SceneVisibilityAction::SHOW};
+
 	switch (_action) {
 	case SceneVisibilityAction::SHOW:
-		obs_sceneitem_set_visible(
-			obs_scene_find_source(scene, sourceName.c_str()), true);
+		obs_scene_enum_items(scene, visibilityEnum, &vInfo);
 		break;
 	case SceneVisibilityAction::HIDE:
-		obs_sceneitem_set_visible(
-			obs_scene_find_source(scene, sourceName.c_str()),
-			false);
+		obs_scene_enum_items(scene, visibilityEnum, &vInfo);
 		break;
 	default:
 		break;
@@ -83,24 +103,14 @@ static inline void populateActionSelection(QComboBox *list)
 
 static bool enumItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 {
-	QComboBox *list = reinterpret_cast<QComboBox *>(ptr);
+	std::set<QString> *names = reinterpret_cast<std::set<QString> *>(ptr);
 
 	if (obs_sceneitem_is_group(item)) {
-		obs_data_t *data = obs_sceneitem_get_private_settings(item);
-
-		bool collapse = obs_data_get_bool(data, "collapsed");
-		if (!collapse) {
-			obs_scene_t *scene =
-				obs_sceneitem_group_get_scene(item);
-
-			obs_scene_enum_items(scene, enumItem, ptr);
-		}
-
-		obs_data_release(data);
-	} else {
-		auto name = obs_source_get_name(obs_sceneitem_get_source(item));
-		list->addItem(name);
+		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
+		obs_scene_enum_items(scene, enumItem, ptr);
 	}
+	auto name = obs_source_get_name(obs_sceneitem_get_source(item));
+	names->emplace(name);
 	return true;
 }
 
@@ -109,10 +119,15 @@ static inline void populateSceneItems(QComboBox *list,
 {
 	list->clear();
 	list->addItem(obs_module_text("AdvSceneSwitcher.selectItem"));
+	std::set<QString> names;
 	auto s = obs_weak_source_get_source(sceneWeakSource);
 	auto scene = obs_scene_from_source(s);
-	obs_scene_enum_items(scene, enumItem, list);
+	obs_scene_enum_items(scene, enumItem, &names);
 	obs_source_release(s);
+
+	for (auto &name : names) {
+		list->addItem(name);
+	}
 }
 
 MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
