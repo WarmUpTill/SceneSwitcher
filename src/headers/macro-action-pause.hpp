@@ -8,7 +8,7 @@ enum class PauseAction {
 	UNPAUSE,
 };
 
-class MacroActionPause : public MacroAction {
+class MacroActionPause : public MacroRefAction {
 public:
 	bool PerformAction();
 	void LogAction();
@@ -21,7 +21,6 @@ public:
 	}
 
 	PauseAction _action = PauseAction::PAUSE;
-	Macro *_macro = nullptr;
 
 private:
 	static bool _registered;

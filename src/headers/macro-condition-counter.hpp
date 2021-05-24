@@ -12,7 +12,7 @@ enum class CounterCondition {
 	EQUAL,
 };
 
-class MacroConditionCounter : public MacroCondition {
+class MacroConditionCounter : public MacroRefCondition {
 public:
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
@@ -23,7 +23,6 @@ public:
 		return std::make_shared<MacroConditionCounter>();
 	}
 
-	Macro *_macro = nullptr;
 	CounterCondition _condition = CounterCondition::BELOW;
 	int _count = 0;
 

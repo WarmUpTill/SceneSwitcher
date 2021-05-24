@@ -216,6 +216,23 @@ bool Macro::Load(obs_data_t *obj)
 	return true;
 }
 
+void Macro::ResolveMacroRef()
+{
+	for (auto &c : _conditions) {
+		MacroRefCondition *ref =
+			dynamic_cast<MacroRefCondition *>(c.get());
+		if (ref) {
+			ref->_macro.UpdateRef();
+		}
+	}
+	for (auto &a : _actions) {
+		MacroRefAction *ref = dynamic_cast<MacroRefAction *>(a.get());
+		if (ref) {
+			ref->_macro.UpdateRef();
+		}
+	}
+}
+
 bool Macro::SwitchesScene()
 {
 	MacroActionSwitchScene temp;
@@ -350,6 +367,10 @@ void SwitcherData::loadMacros(obs_data_t *obj)
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(macroArray);
+
+	for (auto &m : macros) {
+		m.ResolveMacroRef();
+	}
 }
 
 bool SwitcherData::checkMacros()
@@ -397,4 +418,54 @@ Macro *GetMacroByName(const char *name)
 Macro *GetMacroByQString(const QString &name)
 {
 	return GetMacroByName(name.toUtf8().constData());
+}
+
+MacroRef::MacroRef(std::string name) : _name(name)
+{
+	UpdateRef();
+}
+void MacroRef::UpdateRef()
+{
+	_ref = GetMacroByName(_name.c_str());
+}
+void MacroRef::UpdateRef(std::string newName)
+{
+	_name = newName;
+	UpdateRef();
+}
+void MacroRef::UpdateRef(QString newName)
+{
+	_name = newName.toStdString();
+	UpdateRef();
+}
+void MacroRef::Save(obs_data_t *obj)
+{
+	if (_ref) {
+		obs_data_set_string(obj, "macro", _ref->Name().c_str());
+	}
+}
+void MacroRef::Load(obs_data_t *obj)
+{
+	_name = obs_data_get_string(obj, "macro");
+	UpdateRef();
+}
+
+Macro *MacroRef::get()
+{
+	return _ref;
+}
+
+Macro *MacroRef::operator->()
+{
+	return _ref;
+}
+
+void MacroRefCondition::ResolveMacroRef()
+{
+	_macro.UpdateRef();
+}
+
+void MacroRefAction::ResolveMacroRef()
+{
+	_macro.UpdateRef();
 }

@@ -59,7 +59,6 @@ public:
 };
 
 class Macro {
-
 public:
 	Macro(std::string name = "");
 	virtual ~Macro();
@@ -81,6 +80,9 @@ public:
 
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
+	// Some macros can refer to other macros, which are not yet loaded.
+	// Use this function to set these references after loading is complete.
+	void ResolveMacroRef();
 
 	// Helper function for plugin state condition regarding scene change
 	bool SwitchesScene();
@@ -96,3 +98,32 @@ private:
 
 Macro *GetMacroByName(const char *name);
 Macro *GetMacroByQString(const QString &name);
+
+class MacroRef {
+public:
+	MacroRef(){};
+	MacroRef(std::string name);
+	void UpdateRef();
+	void UpdateRef(std::string name);
+	void UpdateRef(QString name);
+	void Save(obs_data_t *obj);
+	void Load(obs_data_t *obj);
+	Macro *get();
+	Macro *operator->();
+
+private:
+	std::string _name = "";
+	Macro *_ref = nullptr;
+};
+
+class MacroRefCondition : public MacroCondition {
+public:
+	void ResolveMacroRef();
+	MacroRef _macro;
+};
+
+class MacroRefAction : public MacroAction {
+public:
+	void ResolveMacroRef();
+	MacroRef _macro;
+};

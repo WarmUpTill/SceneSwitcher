@@ -16,7 +16,7 @@ const static std::map<PauseAction, std::string> actionTypes = {
 
 bool MacroActionPause::PerformAction()
 {
-	if (!_macro) {
+	if (!_macro.get()) {
 		return true;
 	}
 
@@ -35,7 +35,7 @@ bool MacroActionPause::PerformAction()
 
 void MacroActionPause::LogAction()
 {
-	if (!_macro) {
+	if (!_macro.get()) {
 		return;
 	}
 	switch (_action) {
@@ -53,9 +53,7 @@ void MacroActionPause::LogAction()
 bool MacroActionPause::Save(obs_data_t *obj)
 {
 	MacroAction::Save(obj);
-	if (_macro) {
-		obs_data_set_string(obj, "macro", _macro->Name().c_str());
-	}
+	_macro.Save(obj);
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	return true;
 }
@@ -63,7 +61,7 @@ bool MacroActionPause::Save(obs_data_t *obj)
 bool MacroActionPause::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	_macro = GetMacroByName(obs_data_get_string(obj, "macro"));
+	_macro.Load(obj);
 	_action = static_cast<PauseAction>(obs_data_get_int(obj, "action"));
 	return true;
 }
@@ -111,7 +109,7 @@ void MacroActionPauseEdit::UpdateEntryData()
 		return;
 	}
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
-	_macros->SetCurrentMacro(_entryData->_macro);
+	_macros->SetCurrentMacro(_entryData->_macro.get());
 }
 
 void MacroActionPauseEdit::MacroChanged(const QString &text)
@@ -121,7 +119,7 @@ void MacroActionPauseEdit::MacroChanged(const QString &text)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_macro = GetMacroByQString(text);
+	_entryData->_macro.UpdateRef(text);
 }
 
 void MacroActionPauseEdit::ActionChanged(int value)
@@ -136,14 +134,8 @@ void MacroActionPauseEdit::ActionChanged(int value)
 
 void MacroActionPauseEdit::MacroRemove(const QString &name)
 {
-	int idx = _macros->findText(name);
-	if (idx == -1) {
-		return;
+	UNUSED_PARAMETER(name);
+	if (_entryData) {
+		_entryData->_macro.UpdateRef();
 	}
-	_macros->removeItem(idx);
-	if (_entryData && _entryData->_macro == GetMacroByQString(name)) {
-		std::lock_guard<std::mutex> lock(switcher->m);
-		_entryData->_macro = nullptr;
-	}
-	_macros->setCurrentIndex(0);
 }
