@@ -79,7 +79,7 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 	QWidget::connect(_duration, SIGNAL(UnitChanged(DurationUnit)), this,
 			 SLOT(DurationUnitChanged(DurationUnit)));
 
-	AdvSceneSwitcher::populateSceneSelection(_sceneSelection);
+	populateSceneSelection(_sceneSelection);
 	populateTypeSelection(_sceneType);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;

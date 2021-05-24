@@ -499,7 +499,10 @@ void AdvSceneSwitcher::setupSceneGroupTab()
 	}
 
 	if (switcher->sceneGroups.size() == 0) {
-		addPulse = PulseWidget(ui->sceneGroupAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse = PulseWidget(ui->sceneGroupAdd,
+					       QColor(Qt::green));
+		}
 		ui->sceneGroupHelp->setVisible(true);
 	} else {
 		ui->sceneGroupHelp->setVisible(false);

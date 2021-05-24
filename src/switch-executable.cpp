@@ -187,7 +187,10 @@ void AdvSceneSwitcher::setupExecutableTab()
 	}
 
 	if (switcher->executableSwitches.size() == 0) {
-		addPulse = PulseWidget(ui->executableAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse = PulseWidget(ui->executableAdd,
+					       QColor(Qt::green));
+		}
 		ui->exeHelp->setVisible(true);
 	} else {
 		ui->exeHelp->setVisible(false);
@@ -223,7 +226,7 @@ ExecutableSwitchWidget::ExecutableSwitchWidget(QWidget *parent,
 	QWidget::connect(requiresFocus, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
 
-	AdvSceneSwitcher::populateProcessSelection(processes);
+	populateProcessSelection(processes);
 
 	processes->setEditable(true);
 	processes->setMaxVisibleItems(20);

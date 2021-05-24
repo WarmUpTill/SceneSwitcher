@@ -264,7 +264,9 @@ void AdvSceneSwitcher::setupPauseTab()
 	}
 
 	if (switcher->pauseEntries.size() == 0) {
-		addPulse = PulseWidget(ui->pauseAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse = PulseWidget(ui->pauseAdd, QColor(Qt::green));
+		}
 		ui->pauseHelp->setVisible(true);
 	} else {
 		ui->pauseHelp->setVisible(false);
@@ -315,7 +317,7 @@ PauseEntryWidget::PauseEntryWidget(QWidget *parent, PauseEntry *s)
 
 	populatePauseTypes(pauseTypes);
 	populatePauseTargets(pauseTargets);
-	AdvSceneSwitcher::populateWindowSelection(windows);
+	populateWindowSelection(windows);
 
 	windows->setEditable(true);
 	windows->setMaxVisibleItems(20);

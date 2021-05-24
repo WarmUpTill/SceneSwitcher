@@ -115,7 +115,7 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 	QWidget::connect(_focused, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
 
-	AdvSceneSwitcher::populateWindowSelection(_windowSelection);
+	populateWindowSelection(_windowSelection);
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{windows}}", _windowSelection},

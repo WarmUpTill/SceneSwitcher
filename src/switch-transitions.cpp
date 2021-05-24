@@ -495,7 +495,7 @@ TransitionSwitchWidget::TransitionSwitchWidget(QWidget *parent,
 	QWidget::connect(duration, SIGNAL(valueChanged(double)), this,
 			 SLOT(DurationChanged(double)));
 
-	AdvSceneSwitcher::populateSceneSelection(scenes2, false);
+	populateSceneSelection(scenes2);
 
 	if (s) {
 		scenes2->setCurrentText(GetWeakSourceName(s->scene2).c_str());

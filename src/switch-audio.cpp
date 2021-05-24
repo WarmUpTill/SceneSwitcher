@@ -224,7 +224,9 @@ void AdvSceneSwitcher::setupAudioTab()
 	}
 
 	if (switcher->audioSwitches.size() == 0) {
-		addPulse = PulseWidget(ui->audioAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse = PulseWidget(ui->audioAdd, QColor(Qt::green));
+		}
 		ui->audioHelp->setVisible(true);
 	} else {
 		ui->audioHelp->setVisible(false);
@@ -447,7 +449,7 @@ AudioSwitchWidget::AudioSwitchWidget(QWidget *parent, AudioSwitch *s)
 	QWidget::connect(ignoreInactiveSource, SIGNAL(stateChanged(int)), this,
 			 SLOT(IgnoreInactiveChanged(int)));
 
-	AdvSceneSwitcher::populateAudioSelection(audioSources);
+	populateAudioSelection(audioSources);
 	populateConditionSelection(condition);
 
 	if (s) {

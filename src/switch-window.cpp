@@ -348,7 +348,10 @@ void AdvSceneSwitcher::setupTitleTab()
 	}
 
 	if (switcher->windowSwitches.size() == 0) {
-		addPulse = PulseWidget(ui->windowAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse =
+				PulseWidget(ui->windowAdd, QColor(Qt::green));
+		}
 		ui->windowHelp->setVisible(true);
 	} else {
 		ui->windowHelp->setVisible(false);
@@ -418,7 +421,7 @@ WindowSwitchWidget::WindowSwitchWidget(QWidget *parent, WindowSwitch *s)
 	QWidget::connect(focused, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
 
-	AdvSceneSwitcher::populateWindowSelection(windows);
+	populateWindowSelection(windows);
 
 	windows->setEditable(true);
 	windows->setMaxVisibleItems(20);

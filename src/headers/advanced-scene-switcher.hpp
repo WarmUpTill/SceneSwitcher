@@ -5,6 +5,7 @@
 #include "ui_advanced-scene-switcher.h"
 #endif
 #include "switcher-data-structs.hpp"
+#include "platform-funcs.hpp"
 
 #define blog(level, msg, ...) blog(level, "[adv-ss] " msg, ##__VA_ARGS__)
 #define vblog(level, msg, ...)                   \
@@ -68,43 +69,7 @@ public:
 	void setupMacroTab();
 	void setTabOrder();
 	void restoreWindowGeo();
-
 	static void AskBackup(obs_data_t *obj);
-
-	static void addSelectionEntry(QComboBox *sel, const char *description,
-				      bool selectable = false,
-				      const char *tooltip = "");
-	static void populateSceneSelection(QComboBox *sel,
-					   bool addPrevious = false,
-					   bool addSceneGroup = false,
-					   bool addSelect = true,
-					   std::string selectText = "",
-					   bool selectable = false);
-
-	static void populateTransitionSelection(QComboBox *sel,
-						bool addCurrent = true,
-						bool addSelect = true,
-						bool selectable = false);
-	static void populateWindowSelection(QComboBox *sel,
-					    bool addSelect = true);
-	static void populateAudioSelection(QComboBox *sel,
-					   bool addSelect = true);
-	static void populateVideoSelection(QComboBox *sel,
-					   bool addScenes = true,
-					   bool addSelect = true);
-	static void populateMediaSelection(QComboBox *sel,
-					   bool addSelect = true);
-	static void populateProcessSelection(QComboBox *sel,
-					     bool addSelect = true);
-	QMetaObject::Connection PulseWidget(QWidget *widget, QColor endColor,
-					    QColor = QColor(0, 0, 0, 0),
-					    QString specifier = "QLabel ");
-
-	void listAddClicked(QListWidget *list, SwitchWidget *newWidget,
-			    QPushButton *addButton = nullptr,
-			    QMetaObject::Connection *addHighlight = nullptr);
-	bool listMoveUp(QListWidget *list);
-	bool listMoveDown(QListWidget *list);
 
 signals:
 	void MacroAdded(const QString &name);
@@ -279,31 +244,6 @@ public slots:
 
 private:
 };
-
-/******************************************************************************
- * Windowtitle helper
- ******************************************************************************/
-void GetWindowList(std::vector<std::string> &windows);
-void GetWindowList(QStringList &windows);
-void GetCurrentWindowTitle(std::string &title);
-bool isFullscreen(const std::string &title);
-bool isMaximized(const std::string &title);
-
-/******************************************************************************
- * Screenregion helper
- ******************************************************************************/
-std::pair<int, int> getCursorPos();
-
-/******************************************************************************
- * Idle detection helper
- ******************************************************************************/
-int secondsSinceLastInput();
-
-/******************************************************************************
- * Executable helper
- ******************************************************************************/
-void GetProcessList(QStringList &processes);
-bool isInFocus(const QString &executable);
 
 /******************************************************************************
  * Sceneswitch helper

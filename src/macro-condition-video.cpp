@@ -160,7 +160,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	QWidget::connect(_browseButton, SIGNAL(clicked()), this,
 			 SLOT(BrowseButtonClicked()));
 
-	AdvSceneSwitcher::populateVideoSelection(_videoSelection, false);
+	populateVideoSelection(_videoSelection);
 	populateConditionSelection(_condition);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
