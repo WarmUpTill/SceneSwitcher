@@ -1,31 +1,37 @@
-#include "headers/macro-action-pause.hpp"
+#include "headers/macro-action-macro.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
-const std::string MacroActionPause::id = "pause";
+const std::string MacroActionMacro::id = "macro";
 
-bool MacroActionPause::_registered = MacroActionFactory::Register(
-	MacroActionPause::id,
-	{MacroActionPause::Create, MacroActionPauseEdit::Create,
-	 "AdvSceneSwitcher.action.pause"});
+bool MacroActionMacro::_registered = MacroActionFactory::Register(
+	MacroActionMacro::id,
+	{MacroActionMacro::Create, MacroActionMacroEdit::Create,
+	 "AdvSceneSwitcher.action.macro"});
 
-const static std::map<PauseAction, std::string> actionTypes = {
-	{PauseAction::PAUSE, "AdvSceneSwitcher.action.pause.type.pause"},
-	{PauseAction::UNPAUSE, "AdvSceneSwitcher.action.pause.type.unpause"},
+const static std::map<PerformMacroAction, std::string> actionTypes = {
+	{PerformMacroAction::PAUSE, "AdvSceneSwitcher.action.macro.type.pause"},
+	{PerformMacroAction::UNPAUSE,
+	 "AdvSceneSwitcher.action.macro.type.unpause"},
+	{PerformMacroAction::RESET_COUNTER,
+	 "AdvSceneSwitcher.action.macro.type.resetCounter"},
 };
 
-bool MacroActionPause::PerformAction()
+bool MacroActionMacro::PerformAction()
 {
 	if (!_macro.get()) {
 		return true;
 	}
 
 	switch (_action) {
-	case PauseAction::PAUSE:
+	case PerformMacroAction::PAUSE:
 		_macro->SetPaused();
 		break;
-	case PauseAction::UNPAUSE:
+	case PerformMacroAction::UNPAUSE:
 		_macro->SetPaused(false);
+		break;
+	case PerformMacroAction::RESET_COUNTER:
+		_macro->ResetCount();
 		break;
 	default:
 		break;
@@ -33,24 +39,28 @@ bool MacroActionPause::PerformAction()
 	return true;
 }
 
-void MacroActionPause::LogAction()
+void MacroActionMacro::LogAction()
 {
 	if (!_macro.get()) {
 		return;
 	}
 	switch (_action) {
-	case PauseAction::PAUSE:
+	case PerformMacroAction::PAUSE:
 		vblog(LOG_INFO, "paused \"%s\"", _macro->Name().c_str());
 		break;
-	case PauseAction::UNPAUSE:
+	case PerformMacroAction::UNPAUSE:
 		vblog(LOG_INFO, "unpaused \"%s\"", _macro->Name().c_str());
+		break;
+	case PerformMacroAction::RESET_COUNTER:
+		vblog(LOG_INFO, "reset counter for \"%s\"",
+		      _macro->Name().c_str());
 		break;
 	default:
 		break;
 	}
 }
 
-bool MacroActionPause::Save(obs_data_t *obj)
+bool MacroActionMacro::Save(obs_data_t *obj)
 {
 	MacroAction::Save(obj);
 	_macro.Save(obj);
@@ -58,11 +68,12 @@ bool MacroActionPause::Save(obs_data_t *obj)
 	return true;
 }
 
-bool MacroActionPause::Load(obs_data_t *obj)
+bool MacroActionMacro::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 	_macro.Load(obj);
-	_action = static_cast<PauseAction>(obs_data_get_int(obj, "action"));
+	_action = static_cast<PerformMacroAction>(
+		obs_data_get_int(obj, "action"));
 	return true;
 }
 
@@ -73,8 +84,8 @@ static inline void populateActionSelection(QComboBox *list)
 	}
 }
 
-MacroActionPauseEdit::MacroActionPauseEdit(
-	QWidget *parent, std::shared_ptr<MacroActionPause> entryData)
+MacroActionMacroEdit::MacroActionMacroEdit(
+	QWidget *parent, std::shared_ptr<MacroActionMacro> entryData)
 	: QWidget(parent)
 {
 	_macros = new MacroSelection(parent);
@@ -94,7 +105,7 @@ MacroActionPauseEdit::MacroActionPauseEdit(
 		{"{{actions}}", _actions},
 		{"{{macros}}", _macros},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.pause.entry"),
+	placeWidgets(obs_module_text("AdvSceneSwitcher.action.macro.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
@@ -103,7 +114,7 @@ MacroActionPauseEdit::MacroActionPauseEdit(
 	_loading = false;
 }
 
-void MacroActionPauseEdit::UpdateEntryData()
+void MacroActionMacroEdit::UpdateEntryData()
 {
 	if (!_entryData) {
 		return;
@@ -112,7 +123,7 @@ void MacroActionPauseEdit::UpdateEntryData()
 	_macros->SetCurrentMacro(_entryData->_macro.get());
 }
 
-void MacroActionPauseEdit::MacroChanged(const QString &text)
+void MacroActionMacroEdit::MacroChanged(const QString &text)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -122,17 +133,17 @@ void MacroActionPauseEdit::MacroChanged(const QString &text)
 	_entryData->_macro.UpdateRef(text);
 }
 
-void MacroActionPauseEdit::ActionChanged(int value)
+void MacroActionMacroEdit::ActionChanged(int value)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_action = static_cast<PauseAction>(value);
+	_entryData->_action = static_cast<PerformMacroAction>(value);
 }
 
-void MacroActionPauseEdit::MacroRemove(const QString &name)
+void MacroActionMacroEdit::MacroRemove(const QString &name)
 {
 	UNUSED_PARAMETER(name);
 	if (_entryData) {
