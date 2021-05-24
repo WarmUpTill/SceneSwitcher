@@ -3,12 +3,13 @@
 #include "macro-action-edit.hpp"
 #include "macro-selection.hpp"
 
-enum class PauseAction {
+enum class PerformMacroAction {
 	PAUSE,
 	UNPAUSE,
+	RESET_COUNTER,
 };
 
-class MacroActionPause : public MacroRefAction {
+class MacroActionMacro : public MacroRefAction {
 public:
 	bool PerformAction();
 	void LogAction();
@@ -17,30 +18,30 @@ public:
 	std::string GetId() { return id; };
 	static std::shared_ptr<MacroAction> Create()
 	{
-		return std::make_shared<MacroActionPause>();
+		return std::make_shared<MacroActionMacro>();
 	}
 
-	PauseAction _action = PauseAction::PAUSE;
+	PerformMacroAction _action = PerformMacroAction::PAUSE;
 
 private:
 	static bool _registered;
 	static const std::string id;
 };
 
-class MacroActionPauseEdit : public QWidget {
+class MacroActionMacroEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroActionPauseEdit(
+	MacroActionMacroEdit(
 		QWidget *parent,
-		std::shared_ptr<MacroActionPause> entryData = nullptr);
+		std::shared_ptr<MacroActionMacro> entryData = nullptr);
 	void UpdateEntryData();
 	static QWidget *Create(QWidget *parent,
 			       std::shared_ptr<MacroAction> action)
 	{
-		return new MacroActionPauseEdit(
+		return new MacroActionMacroEdit(
 			parent,
-			std::dynamic_pointer_cast<MacroActionPause>(action));
+			std::dynamic_pointer_cast<MacroActionMacro>(action));
 	}
 
 private slots:
@@ -51,7 +52,7 @@ private slots:
 protected:
 	MacroSelection *_macros;
 	QComboBox *_actions;
-	std::shared_ptr<MacroActionPause> _entryData;
+	std::shared_ptr<MacroActionMacro> _entryData;
 
 private:
 	QHBoxLayout *_mainLayout;
