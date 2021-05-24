@@ -33,6 +33,10 @@ public:
 
 	std::string GetClientUri();
 
+	bool ShouldSendSceneChange();
+	bool ShouldSendFrontendSceneChange();
+	bool ShouldSendPrviewSceneChange();
+
 	// Server
 	bool ServerEnabled;
 	uint64_t ServerPort;
@@ -42,7 +46,8 @@ public:
 	bool ClientEnabled;
 	std::string Address;
 	uint64_t ClientPort;
-	bool SendAll;
+	bool SendSceneChange;
+	bool SendSceneChangeAll;
 	bool SendPreview;
 };
 

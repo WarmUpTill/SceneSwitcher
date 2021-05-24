@@ -343,7 +343,7 @@ void switchScene(const sceneSwitchInfo &sceneSwitch)
 			blog(LOG_INFO, "switched scene");
 		}
 
-		if (switcher->networkConfig.ServerEnabled) {
+		if (switcher->networkConfig.ShouldSendSceneChange()) {
 			switcher->server.sendMessage(sceneSwitch);
 		}
 	}
@@ -449,8 +449,7 @@ void handleSceneChange()
 	switcher->checkTriggers();
 	switcher->checkDefaultSceneTransitions();
 
-	if (switcher->networkConfig.ServerEnabled &&
-	    switcher->networkConfig.SendAll) {
+	if (switcher->networkConfig.ShouldSendFrontendSceneChange()) {
 		switcher->server.sendMessage({ws, nullptr, 0});
 	}
 }
@@ -481,8 +480,7 @@ void checkAutoStartStreaming()
 
 void handlePeviewSceneChange()
 {
-	if (switcher->networkConfig.ServerEnabled &&
-	    switcher->networkConfig.SendPreview) {
+	if (switcher->networkConfig.ShouldSendPrviewSceneChange()) {
 		auto source = obs_frontend_get_current_preview_scene();
 		auto weak = obs_source_get_weak_source(source);
 		switcher->server.sendMessage({weak, nullptr, 0}, true);
