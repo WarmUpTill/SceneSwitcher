@@ -69,7 +69,6 @@ public:
 	void setupMacroTab();
 	void setTabOrder();
 	void restoreWindowGeo();
-	static void AskBackup(obs_data_t *obj);
 
 signals:
 	void MacroAdded(const QString &name);
