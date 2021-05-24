@@ -1,5 +1,6 @@
 #pragma once
 #include <QSpinBox>
+#include <QLabel>
 #include "macro-action-edit.hpp"
 
 enum class SourceAction {
@@ -50,6 +51,7 @@ private slots:
 protected:
 	QComboBox *_sources;
 	QComboBox *_actions;
+	QLabel *_warning;
 	std::shared_ptr<MacroActionSource> _entryData;
 
 private:
