@@ -73,6 +73,8 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 {
 	_sources = new QComboBox();
 	_actions = new QComboBox();
+	_warning = new QLabel(
+		obs_module_text("AdvSceneSwitcher.action.source.warning"));
 
 	populateActionSelection(_actions);
 	populateSourceSelection(_sources);
@@ -82,13 +84,16 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(SourceChanged(const QString &)));
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
+	QVBoxLayout *mainLayout = new QVBoxLayout;
+	QHBoxLayout *entryLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{sources}}", _sources},
 		{"{{actions}}", _actions},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.source.entry"),
-		     mainLayout, widgetPlaceholders);
+		     entryLayout, widgetPlaceholders);
+	mainLayout->addLayout(entryLayout);
+	mainLayout->addWidget(_warning);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
