@@ -67,22 +67,6 @@ static inline void populateActionSelection(QComboBox *list)
 	}
 }
 
-static inline void populateSources(QComboBox *list)
-{
-	auto enumSourcesWithSources = [](void *param, obs_source_t *source) {
-		if (!source) {
-			return true;
-		}
-		QComboBox *list = reinterpret_cast<QComboBox *>(param);
-		list->addItem(obs_source_get_name(source));
-		return true;
-	};
-
-	list->clear();
-	list->addItem(obs_module_text("AdvSceneSwitcher.selectSource"));
-	obs_enum_sources(enumSourcesWithSources, list);
-}
-
 MacroActionSourceEdit::MacroActionSourceEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSource> entryData)
 	: QWidget(parent)
@@ -91,7 +75,7 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	_actions = new QComboBox();
 
 	populateActionSelection(_actions);
-	populateSources(_sources);
+	populateSourceSelection(_sources);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));

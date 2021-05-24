@@ -99,7 +99,7 @@ MacroActionMediaEdit::MacroActionMediaEdit(
 	_actions = new QComboBox();
 
 	populateActionSelection(_actions);
-	AdvSceneSwitcher::populateMediaSelection(_mediaSources);
+	populateMediaSelection(_mediaSources);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));

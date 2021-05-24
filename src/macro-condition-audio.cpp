@@ -139,7 +139,7 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(SourceChanged(const QString &)));
 
-	AdvSceneSwitcher::populateAudioSelection(_audioSources);
+	populateAudioSelection(_audioSources);
 	populateConditionSelection(_condition);
 
 	QHBoxLayout *switchLayout = new QHBoxLayout;

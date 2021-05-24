@@ -124,7 +124,7 @@ MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
 	_actions = new QComboBox();
 
 	populateActionSelection(_actions);
-	AdvSceneSwitcher::populateSceneSelection(_scenes);
+	populateSceneSelection(_scenes);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));

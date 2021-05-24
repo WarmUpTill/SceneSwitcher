@@ -263,7 +263,9 @@ void AdvSceneSwitcher::setupMacroTab()
 	}
 
 	if (switcher->macros.size() == 0) {
-		addPulse = PulseWidget(ui->macroAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse = PulseWidget(ui->macroAdd, QColor(Qt::green));
+		}
 		ui->macroHelp->setVisible(true);
 	} else {
 		ui->macroHelp->setVisible(false);

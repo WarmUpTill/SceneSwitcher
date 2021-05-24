@@ -62,7 +62,6 @@ set(advanced-scene-switcher_HEADERS
 	${advanced-scene-switcher_HEADERS}
 	src/headers/advanced-scene-switcher.hpp
 	src/headers/switcher-data-structs.hpp
-	src/headers/utility.hpp
 	src/headers/scene-group.hpp
 	src/headers/scene-trigger.hpp
 	src/headers/switch-audio.hpp
@@ -113,6 +112,8 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/name-dialog.hpp
 	src/headers/duration-control.hpp
 	src/headers/section.hpp
+	src/headers/platform-funcs.hpp
+	src/headers/utility.hpp
 	src/headers/volume-control.hpp
 	src/headers/version.h
 	)
@@ -176,6 +177,7 @@ set(advanced-scene-switcher_SOURCES
 	src/name-dialog.cpp
 	src/duration-control.cpp
 	src/section.cpp
+	src/utility.cpp
 	src/volume-control.cpp
 	src/version.cpp
 	)

@@ -156,8 +156,11 @@ void AdvSceneSwitcher::SetStopped()
 		obs_module_text("AdvSceneSwitcher.generalTab.status.start"));
 	ui->pluginRunningText->setText(
 		obs_module_text("AdvSceneSwitcher.status.inactive"));
-	inactivePluse = PulseWidget(ui->pluginRunningText, QColor(Qt::red),
-				    QColor(0, 0, 0, 0), "QLabel ");
+	if (!switcher->disableHints) {
+		inactivePluse = PulseWidget(ui->pluginRunningText,
+					    QColor(Qt::red), QColor(0, 0, 0, 0),
+					    "QLabel ");
+	}
 	currentStatusActive = false;
 }
 

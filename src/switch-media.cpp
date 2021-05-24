@@ -244,7 +244,9 @@ void AdvSceneSwitcher::setupMediaTab()
 	}
 
 	if (switcher->mediaSwitches.size() == 0) {
-		addPulse = PulseWidget(ui->mediaAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse = PulseWidget(ui->mediaAdd, QColor(Qt::green));
+		}
 		ui->mediaHelp->setVisible(true);
 	} else {
 		ui->mediaHelp->setVisible(false);
@@ -458,7 +460,7 @@ MediaSwitchWidget::MediaSwitchWidget(QWidget *parent, MediaSwitch *s)
 	QWidget::connect(time, SIGNAL(valueChanged(int)), this,
 			 SLOT(TimeChanged(int)));
 
-	AdvSceneSwitcher::populateMediaSelection(mediaSources);
+	populateMediaSelection(mediaSources);
 	populateMediaStates(states);
 	populateTimeRestrictions(timeRestrictions);
 

@@ -256,7 +256,7 @@ MacroConditionMediaEdit::MacroConditionMediaEdit(
 	QWidget::connect(_time, SIGNAL(UnitChanged(DurationUnit)), this,
 			 SLOT(TimeUnitChanged(DurationUnit)));
 
-	AdvSceneSwitcher::populateMediaSelection(_mediaSources);
+	populateMediaSelection(_mediaSources);
 	populateMediaStates(_states);
 	populateMediaTimeRestrictions(_timeRestrictions);
 

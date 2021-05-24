@@ -94,7 +94,7 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	_volumePercent->setSuffix("%");
 
 	populateActionSelection(_actions);
-	AdvSceneSwitcher::populateAudioSelection(_audioSources);
+	populateAudioSelection(_audioSources);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));

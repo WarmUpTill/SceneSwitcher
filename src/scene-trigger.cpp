@@ -347,7 +347,10 @@ void AdvSceneSwitcher::setupTriggerTab()
 	}
 
 	if (switcher->sceneTriggers.size() == 0) {
-		addPulse = PulseWidget(ui->triggerAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse =
+				PulseWidget(ui->triggerAdd, QColor(Qt::green));
+		}
 		ui->triggerHelp->setVisible(true);
 	} else {
 		ui->triggerHelp->setVisible(false);
@@ -381,7 +384,7 @@ void SceneTrigger::load(obs_data_t *obj)
 
 static inline void populateTriggers(QComboBox *list)
 {
-	AdvSceneSwitcher::addSelectionEntry(
+	addSelectionEntry(
 		list,
 		obs_module_text(
 			"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerType.none"));
@@ -396,7 +399,7 @@ static inline void populateTriggers(QComboBox *list)
 
 inline void populateActions(QComboBox *list)
 {
-	AdvSceneSwitcher::addSelectionEntry(
+	addSelectionEntry(
 		list,
 		obs_module_text(
 			"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.none"));
@@ -451,7 +454,7 @@ SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
 
 	populateTriggers(triggers);
 	populateActions(actions);
-	AdvSceneSwitcher::populateAudioSelection(audioSources);
+	populateAudioSelection(audioSources);
 
 	if (s) {
 		triggers->setCurrentIndex(static_cast<int>(s->triggerType));

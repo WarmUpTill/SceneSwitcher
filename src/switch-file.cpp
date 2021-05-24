@@ -415,7 +415,9 @@ void AdvSceneSwitcher::setupFileTab()
 	}
 
 	if (switcher->fileSwitches.size() == 0) {
-		addPulse = PulseWidget(ui->fileAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse = PulseWidget(ui->fileAdd, QColor(Qt::green));
+		}
 		ui->fileHelp->setVisible(true);
 	} else {
 		ui->fileHelp->setVisible(false);
