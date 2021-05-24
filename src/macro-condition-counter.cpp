@@ -21,13 +21,17 @@ static std::map<CounterCondition, std::string> counterConditionTypes = {
 
 bool MacroConditionCounter::CheckCondition()
 {
+	if (!_macro.get()) {
+		return false;
+	}
+
 	switch (_condition) {
 	case CounterCondition::BELOW:
-		return _macro && _macro->GetCount() < _count;
+		return _macro->GetCount() < _count;
 	case CounterCondition::ABOVE:
-		return _macro && _macro->GetCount() > _count;
+		return _macro->GetCount() > _count;
 	case CounterCondition::EQUAL:
-		return _macro && _macro->GetCount() == _count;
+		return _macro->GetCount() == _count;
 	default:
 		break;
 	}
@@ -38,9 +42,7 @@ bool MacroConditionCounter::CheckCondition()
 bool MacroConditionCounter::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
-	if (_macro) {
-		obs_data_set_string(obj, "macro", _macro->Name().c_str());
-	}
+	_macro.Save(obj);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_int(obj, "count", _count);
 	return true;
@@ -49,7 +51,7 @@ bool MacroConditionCounter::Save(obs_data_t *obj)
 bool MacroConditionCounter::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	_macro = GetMacroByName(obs_data_get_string(obj, "macro"));
+	_macro.Load(obj);
 	_condition = static_cast<CounterCondition>(
 		obs_data_get_int(obj, "condition"));
 	_count = obs_data_get_int(obj, "count");
@@ -119,7 +121,7 @@ void MacroConditionCounterEdit::UpdateEntryData()
 		return;
 	}
 
-	_macros->SetCurrentMacro(_entryData->_macro);
+	_macros->SetCurrentMacro(_entryData->_macro.get());
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_count->setValue(_entryData->_count);
 	ResetTimer();
@@ -132,7 +134,7 @@ void MacroConditionCounterEdit::MacroChanged(const QString &text)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_macro = GetMacroByQString(text);
+	_entryData->_macro.UpdateRef(text);
 	ResetTimer();
 }
 
@@ -158,21 +160,15 @@ void MacroConditionCounterEdit::ConditionChanged(int cond)
 
 void MacroConditionCounterEdit::MacroRemove(const QString &name)
 {
-	int idx = _macros->findText(name);
-	if (idx == -1) {
-		return;
+	UNUSED_PARAMETER(name);
+	if (_entryData) {
+		_entryData->_macro.UpdateRef();
 	}
-	_macros->removeItem(idx);
-	if (_entryData && _entryData->_macro == GetMacroByQString(name)) {
-		std::lock_guard<std::mutex> lock(switcher->m);
-		_entryData->_macro = nullptr;
-	}
-	_macros->setCurrentIndex(0);
 }
 
 void MacroConditionCounterEdit::ResetClicked()
 {
-	if (_loading || !_entryData || !_entryData->_macro) {
+	if (_loading || !_entryData || !_entryData->_macro.get()) {
 		return;
 	}
 
@@ -182,7 +178,7 @@ void MacroConditionCounterEdit::ResetClicked()
 
 void MacroConditionCounterEdit::UpdateCount()
 {
-	if (_entryData && _entryData->_macro) {
+	if (_entryData && _entryData->_macro.get()) {
 		_currentCount->setText(
 			QString::number(_entryData->_macro->GetCount()));
 	} else {
