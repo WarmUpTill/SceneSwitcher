@@ -247,6 +247,7 @@ public slots:
 	void on_clientSettings_toggled(bool on);
 	void on_clientHostname_textChanged(const QString &text);
 	void on_clientPort_valueChanged(int value);
+	void on_sendSceneChange_stateChanged(int state);
 	void on_restrictSend_stateChanged(int state);
 	void on_sendPreview_stateChanged(int state);
 	void on_clientReconnect_clicked();
