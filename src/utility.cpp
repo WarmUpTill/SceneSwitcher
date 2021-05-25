@@ -268,6 +268,7 @@ void populateSourceSelection(QComboBox *list, bool addSelect)
 	}
 
 	obs_enum_sources(enumSourcesWithSources, list);
+	list->model()->sort(0);
 }
 
 void populateTransitionSelection(QComboBox *sel, bool addCurrent,
