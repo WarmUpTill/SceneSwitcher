@@ -214,6 +214,7 @@ void MacroConditionSourceEdit::SetSettingsSelectionVisible(bool visible)
 	_settings->setVisible(visible);
 	_getSettings->setVisible(visible);
 	_regex->setVisible(visible);
+	adjustSize();
 }
 
 void MacroConditionSourceEdit::UpdateEntryData()
