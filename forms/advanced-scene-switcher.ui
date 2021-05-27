@@ -770,8 +770,14 @@
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_35" stretch="10,1">
+               <property name="sizeConstraint">
+                <enum>QLayout::SetMinAndMaxSize</enum>
+               </property>
                <item>
                 <layout class="QGridLayout" name="gridLayout_27">
+                 <property name="sizeConstraint">
+                  <enum>QLayout::SetMinAndMaxSize</enum>
+                 </property>
                  <item row="0" column="0">
                   <widget class="QLabel" name="macroEditConditionHelp">
                    <property name="enabled">
@@ -789,7 +795,11 @@
                   </widget>
                  </item>
                  <item row="0" column="0">
-                  <layout class="QVBoxLayout" name="macroEditConditionLayout"/>
+                  <layout class="QVBoxLayout" name="macroEditConditionLayout">
+                   <property name="sizeConstraint">
+                    <enum>QLayout::SetFixedSize</enum>
+                   </property>
+                  </layout>
                  </item>
                 </layout>
                </item>
@@ -859,6 +869,9 @@
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_33" stretch="10,1">
+               <property name="sizeConstraint">
+                <enum>QLayout::SetMinAndMaxSize</enum>
+               </property>
                <item>
                 <layout class="QGridLayout" name="gridLayout_25">
                  <item row="0" column="0">
@@ -878,7 +891,11 @@
                   </widget>
                  </item>
                  <item row="0" column="0">
-                  <layout class="QVBoxLayout" name="macroEditActionLayout"/>
+                  <layout class="QVBoxLayout" name="macroEditActionLayout">
+                   <property name="sizeConstraint">
+                    <enum>QLayout::SetMinAndMaxSize</enum>
+                   </property>
+                  </layout>
                  </item>
                 </layout>
                </item>

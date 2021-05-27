@@ -78,10 +78,9 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	setLayout(mainLayout);
 
 	_entryData = entryData;
-	UpdateEntryData(id);
+	UpdateEntryData(id, startCollapsed);
 
 	_loading = false;
-	_section->Collapse(startCollapsed);
 }
 
 void MacroActionEdit::ActionSelectionChanged(const QString &text)
@@ -97,22 +96,16 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 	*_entryData = MacroActionFactory::Create(id);
 	auto widget =
 		MacroActionFactory::CreateWidget(id, window(), *_entryData);
-	_section->SetContent(widget);
-	_section->Collapse(false);
+	_section->SetContent(widget, false);
 }
 
-void MacroActionEdit::UpdateEntryData(const std::string &id)
+void MacroActionEdit::UpdateEntryData(const std::string &id, bool collapse)
 {
 	_actionSelection->setCurrentText(
 		obs_module_text(MacroActionFactory::GetActionName(id).c_str()));
 	auto widget =
 		MacroActionFactory::CreateWidget(id, window(), *_entryData);
-	_section->SetContent(widget);
-}
-
-void MacroActionEdit::Collapse(bool collapsed)
-{
-	_section->Collapse(collapsed);
+	_section->SetContent(widget, collapse);
 }
 
 void AdvSceneSwitcher::on_actionAdd_clicked()
@@ -127,10 +120,10 @@ void AdvSceneSwitcher::on_actionAdd_clicked()
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	macro->Actions().emplace_back(MacroActionFactory::Create(id));
-	auto newEntry = new MacroActionEdit(this, &macro->Actions().back(), id);
+	auto newEntry =
+		new MacroActionEdit(this, &macro->Actions().back(), id, false);
 	ui->macroEditActionLayout->addWidget(newEntry);
 	ui->macroEditActionHelp->setVisible(false);
-	newEntry->Collapse(false);
 }
 
 void AdvSceneSwitcher::on_actionRemove_clicked()
