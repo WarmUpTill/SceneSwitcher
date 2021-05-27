@@ -40,8 +40,7 @@ public:
 			std::shared_ptr<MacroAction> * = nullptr,
 			const std::string &id = "scene_switch",
 			bool startCollapsed = false);
-	void UpdateEntryData(const std::string &id);
-	void Collapse(bool collapsed);
+	void UpdateEntryData(const std::string &id, bool collapse);
 
 private slots:
 	void ActionSelectionChanged(const QString &text);

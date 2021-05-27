@@ -41,8 +41,7 @@ public:
 			   const std::string &id = "scene", bool root = true,
 			   bool startCollapsed = false);
 	bool IsRootNode();
-	void UpdateEntryData(const std::string &id);
-	void Collapse(bool collapsed);
+	void UpdateEntryData(const std::string &id, bool collapse);
 
 private slots:
 	void LogicSelectionChanged(int idx);

@@ -104,9 +104,8 @@ MacroConditionEdit::MacroConditionEdit(
 
 	_entryData = entryData;
 	_isRoot = root;
-	UpdateEntryData(id);
+	UpdateEntryData(id, startCollapsed);
 	_loading = false;
-	_section->Collapse(startCollapsed);
 }
 
 void MacroConditionEdit::LogicSelectionChanged(int idx)
@@ -131,7 +130,7 @@ bool MacroConditionEdit::IsRootNode()
 	return _isRoot;
 }
 
-void MacroConditionEdit::UpdateEntryData(const std::string &id)
+void MacroConditionEdit::UpdateEntryData(const std::string &id, bool collapse)
 {
 	_conditionSelection->setCurrentText(obs_module_text(
 		MacroConditionFactory::GetConditionName(id).c_str()));
@@ -144,12 +143,7 @@ void MacroConditionEdit::UpdateEntryData(const std::string &id)
 		_logicSelection->setCurrentIndex(static_cast<int>(logic) -
 						 logic_root_offset);
 	}
-	_section->SetContent(widget);
-}
-
-void MacroConditionEdit::Collapse(bool collapsed)
-{
-	_section->Collapse(collapsed);
+	_section->SetContent(widget, collapse);
 }
 
 void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
@@ -167,8 +161,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 	(*_entryData)->SetLogicType(logic);
 	auto widget =
 		MacroConditionFactory::CreateWidget(id, window(), *_entryData);
-	_section->SetContent(widget);
-	_section->Collapse(false);
+	_section->SetContent(widget, false);
 }
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()
@@ -186,10 +179,9 @@ void AdvSceneSwitcher::on_conditionAdd_clicked()
 	auto logic = root ? LogicType::ROOT_NONE : LogicType::NONE;
 	macro->Conditions().back()->SetLogicType(logic);
 	auto newEntry = new MacroConditionEdit(
-		this, &macro->Conditions().back(), id, root);
+		this, &macro->Conditions().back(), id, root, false);
 	ui->macroEditConditionLayout->addWidget(newEntry);
 	ui->macroEditConditionHelp->setVisible(false);
-	newEntry->Collapse(false);
 }
 
 void AdvSceneSwitcher::on_conditionRemove_clicked()
