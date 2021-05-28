@@ -53,3 +53,53 @@ private:
 
 	double _unitMultiplier;
 };
+
+enum class DurationCondition {
+	NONE,
+	MORE,
+	EQUAL,
+	LESS,
+};
+
+class DurationConstraint {
+public:
+	void Save(obs_data_t *obj, const char *condName = "time_constraint",
+		  const char *secondsName = "seconds",
+		  const char *unitName = "displayUnit");
+	void Load(obs_data_t *obj, const char *condName = "time_constraint",
+		  const char *secondsName = "seconds",
+		  const char *unitName = "displayUnit");
+	void SetCondition(DurationCondition cond) { _type = cond; }
+	void SetDuration(const Duration &dur) { _dur = dur; }
+	void SetValue(double value) { _dur.seconds = value; }
+	void SetUnit(DurationUnit u) { _dur.displayUnit = u; }
+	DurationCondition GetCondition() { return _type; }
+	Duration GetDuration() { return _dur; }
+	bool DurationReached();
+	void Reset();
+
+private:
+	DurationCondition _type = DurationCondition::NONE;
+	Duration _dur;
+	bool _timeReached = false;
+};
+
+class DurationConstraintEdit : public QWidget {
+	Q_OBJECT
+public:
+	DurationConstraintEdit(QWidget *parent = nullptr);
+	void SetValue(DurationConstraint &value);
+	void SetUnit(DurationUnit u);
+	void SetDuration(const Duration &d);
+
+private slots:
+	void _ConditionChanged(int value);
+signals:
+	void DurationChanged(double value);
+	void UnitChanged(DurationUnit u);
+	void ConditionChanged(DurationCondition value);
+
+private:
+	DurationSelection *_duration;
+	QComboBox *_condition;
+};

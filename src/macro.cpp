@@ -33,6 +33,10 @@ bool Macro::CeckMatch()
 	_matched = false;
 	for (auto &c : _conditions) {
 		bool cond = c->CheckCondition();
+		if (!cond) {
+			c->ResetDuration();
+		}
+		cond = cond && c->DurationReached();
 
 		switch (c->GetLogicType()) {
 		case LogicType::NONE:
@@ -350,13 +354,35 @@ bool MacroCondition::Save(obs_data_t *obj)
 {
 	obs_data_set_string(obj, "id", GetId().c_str());
 	obs_data_set_int(obj, "logic", static_cast<int>(_logic));
+	_duration.Save(obj);
 	return true;
 }
 
 bool MacroCondition::Load(obs_data_t *obj)
 {
 	_logic = static_cast<LogicType>(obs_data_get_int(obj, "logic"));
+	_duration.Load(obj);
 	return true;
+}
+
+void MacroCondition::SetDurationConstraint(const DurationConstraint &dur)
+{
+	_duration = dur;
+}
+
+void MacroCondition::SetDurationCondition(DurationCondition cond)
+{
+	_duration.SetCondition(cond);
+}
+
+void MacroCondition::SetDurationUnit(DurationUnit u)
+{
+	_duration.SetUnit(u);
+}
+
+void MacroCondition::SetDuration(double seconds)
+{
+	_duration.SetValue(seconds);
 }
 
 bool MacroAction::Save(obs_data_t *obj)

@@ -2,7 +2,6 @@
 #include "macro.hpp"
 #include <QWidget>
 #include <QComboBox>
-#include "duration-control.hpp"
 
 enum class RecordState {
 	STOP,
@@ -22,7 +21,6 @@ public:
 	}
 
 	RecordState _recordState;
-	Duration _duration;
 
 private:
 	static bool _registered;
@@ -47,12 +45,9 @@ public:
 
 private slots:
 	void StateChanged(int value);
-	void DurationChanged(double seconds);
-	void DurationUnitChanged(DurationUnit unit);
 
 protected:
 	QComboBox *_recordState;
-	DurationSelection *_duration;
 	std::shared_ptr<MacroConditionRecord> _entryData;
 
 private:

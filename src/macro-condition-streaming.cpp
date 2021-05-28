@@ -28,20 +28,13 @@ bool MacroConditionStream::CheckCondition()
 	default:
 		break;
 	}
-
-	if (!stateMatch) {
-		_duration.Reset();
-		return false;
-	}
-
-	return _duration.DurationReached();
+	return stateMatch;
 }
 
 bool MacroConditionStream::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "state", static_cast<int>(_streamState));
-	_duration.Save(obj);
 	return true;
 }
 
@@ -49,7 +42,6 @@ bool MacroConditionStream::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_streamState = static_cast<StreamState>(obs_data_get_int(obj, "state"));
-	_duration.Load(obj);
 	return true;
 }
 
@@ -65,14 +57,9 @@ MacroConditionStreamEdit::MacroConditionStreamEdit(
 	: QWidget(parent)
 {
 	_streamState = new QComboBox();
-	_duration = new DurationSelection();
 
 	QWidget::connect(_streamState, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(StateChanged(int)));
-	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
-	QWidget::connect(_duration, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(DurationUnitChanged(DurationUnit)));
 
 	populateStateSelection(_streamState);
 
@@ -80,7 +67,6 @@ MacroConditionStreamEdit::MacroConditionStreamEdit(
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{streamState}}", _streamState},
-		{"{{duration}}", _duration},
 	};
 
 	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.stream.entry"),
@@ -102,26 +88,6 @@ void MacroConditionStreamEdit::StateChanged(int value)
 	_entryData->_streamState = static_cast<StreamState>(value);
 }
 
-void MacroConditionStreamEdit::DurationChanged(double seconds)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.seconds = seconds;
-}
-
-void MacroConditionStreamEdit::DurationUnitChanged(DurationUnit unit)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.displayUnit = unit;
-}
-
 void MacroConditionStreamEdit::UpdateEntryData()
 {
 	if (!_entryData) {
@@ -130,5 +96,4 @@ void MacroConditionStreamEdit::UpdateEntryData()
 
 	_streamState->setCurrentIndex(
 		static_cast<int>(_entryData->_streamState));
-	_duration->SetDuration(_entryData->_duration);
 }

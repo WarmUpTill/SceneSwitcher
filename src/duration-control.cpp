@@ -1,4 +1,5 @@
 #include "headers/duration-control.hpp"
+#include "headers/utility.hpp"
 #include "obs-module.h"
 
 #include <sstream>
@@ -99,6 +100,8 @@ DurationSelection::DurationSelection(QWidget *parent, bool showUnitSelection)
 			 SLOT(_UnitChanged(int)));
 
 	QHBoxLayout *layout = new QHBoxLayout;
+	layout->setContentsMargins(0, 0, 0, 0);
+	layout->setSpacing(11);
 	layout->addWidget(_duration);
 	if (showUnitSelection) {
 		layout->addWidget(_unitSelection);
@@ -136,4 +139,105 @@ void DurationSelection::_UnitChanged(int idx)
 			    (prevMultiplier / _unitMultiplier));
 
 	emit UnitChanged(unit);
+}
+
+void DurationConstraint::Save(obs_data_t *obj, const char *condName,
+			      const char *secondsName, const char *unitName)
+{
+	obs_data_set_int(obj, condName, static_cast<int>(_type));
+	_dur.Save(obj, secondsName, unitName);
+}
+
+void DurationConstraint::Load(obs_data_t *obj, const char *condName,
+			      const char *secondsName, const char *unitName)
+{
+	_type = static_cast<DurationCondition>(obs_data_get_int(obj, condName));
+	_dur.Load(obj, secondsName, unitName);
+}
+
+bool DurationConstraint::DurationReached()
+{
+	switch (_type) {
+	case DurationCondition::NONE:
+		return true;
+		break;
+	case DurationCondition::MORE:
+		return _dur.DurationReached();
+		break;
+	case DurationCondition::EQUAL:
+		if (_dur.DurationReached() && !_timeReached) {
+			_timeReached = true;
+			return true;
+		}
+		break;
+	case DurationCondition::LESS:
+		return !_dur.DurationReached();
+		break;
+	default:
+		break;
+	}
+	return false;
+}
+
+void DurationConstraint::Reset()
+{
+	_timeReached = false;
+	_dur.Reset();
+}
+
+static void populateConditions(QComboBox *list)
+{
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.duration.condition.none"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.duration.condition.more"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.duration.condition.equal"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.duration.condition.less"));
+}
+
+DurationConstraintEdit::DurationConstraintEdit(QWidget *parent)
+{
+	_condition = new QComboBox(parent);
+	_duration = new DurationSelection(parent);
+	populateConditions(_condition);
+	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(_ConditionChanged(int)));
+
+	QObject::connect(_duration, &DurationSelection::DurationChanged, this,
+			 &DurationConstraintEdit::DurationChanged);
+	QObject::connect(_duration, &DurationSelection::UnitChanged, this,
+			 &DurationConstraintEdit::UnitChanged);
+
+	QHBoxLayout *layout = new QHBoxLayout;
+	layout->setContentsMargins(0, 0, 0, 0);
+	layout->setSpacing(11);
+	layout->addWidget(_condition);
+	layout->addWidget(_duration);
+	setLayout(layout);
+}
+
+void DurationConstraintEdit::SetValue(DurationConstraint &value)
+{
+	_duration->SetDuration(value.GetDuration());
+	_condition->setCurrentIndex(static_cast<int>(value.GetCondition()));
+	_duration->setVisible(value.GetCondition() != DurationCondition::NONE);
+}
+
+void DurationConstraintEdit::SetUnit(DurationUnit u)
+{
+	_duration->SetUnit(u);
+}
+
+void DurationConstraintEdit::SetDuration(const Duration &d)
+{
+	_duration->SetDuration(d);
+}
+
+void DurationConstraintEdit::_ConditionChanged(int value)
+{
+	auto cond = static_cast<DurationCondition>(value);
+	_duration->setVisible(cond != DurationCondition::NONE);
+	emit ConditionChanged(cond);
 }

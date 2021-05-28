@@ -8,7 +8,7 @@ const std::string MacroConditionInterval::id = "interval";
 bool MacroConditionInterval::_registered = MacroConditionFactory::Register(
 	MacroConditionInterval::id,
 	{MacroConditionInterval::Create, MacroConditionIntervalEdit::Create,
-	 "AdvSceneSwitcher.condition.interval"});
+	 "AdvSceneSwitcher.condition.interval", false});
 
 bool MacroConditionInterval::CheckCondition()
 {

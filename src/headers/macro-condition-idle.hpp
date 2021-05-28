@@ -1,8 +1,9 @@
 #pragma once
 #include "macro.hpp"
+#include "duration-control.hpp"
+
 #include <QWidget>
 #include <QComboBox>
-#include "duration-control.hpp"
 
 class MacroConditionIdle : public MacroCondition {
 public:

@@ -16,9 +16,9 @@ bool MacroConditionFactory::Register(const std::string &id,
 std::shared_ptr<MacroCondition>
 MacroConditionFactory::Create(const std::string &id)
 {
-	if (auto it = _methods.find(id); it != _methods.end())
+	if (auto it = _methods.find(id); it != _methods.end()) {
 		return it->second._createFunc();
-
+	}
 	return nullptr;
 }
 
@@ -26,9 +26,9 @@ QWidget *
 MacroConditionFactory::CreateWidget(const std::string &id, QWidget *parent,
 				    std::shared_ptr<MacroCondition> cond)
 {
-	if (auto it = _methods.find(id); it != _methods.end())
+	if (auto it = _methods.find(id); it != _methods.end()) {
 		return it->second._createWidgetFunc(parent, cond);
-
+	}
 	return nullptr;
 }
 
@@ -48,6 +48,14 @@ std::string MacroConditionFactory::GetIdByName(const QString &name)
 		}
 	}
 	return "";
+}
+
+bool MacroConditionFactory::UsesDurationConstraint(const std::string &id)
+{
+	if (auto it = _methods.find(id); it != _methods.end()) {
+		return it->second._useDurationConstraint;
+	}
+	return false;
 }
 
 static inline void populateLogicSelection(QComboBox *list, bool root = false)
@@ -85,18 +93,27 @@ MacroConditionEdit::MacroConditionEdit(
 	_logicSelection = new QComboBox();
 	_conditionSelection = new QComboBox();
 	_section = new Section(300);
+	_dur = new DurationConstraintEdit();
 
 	QWidget::connect(_logicSelection, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(LogicSelectionChanged(int)));
 	QWidget::connect(_conditionSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ConditionSelectionChanged(const QString &)));
+	QWidget::connect(_dur, SIGNAL(DurationChanged(double)), this,
+			 SLOT(DurationChanged(double)));
+	QWidget::connect(_dur, SIGNAL(UnitChanged(DurationUnit)), this,
+			 SLOT(DurationUnitChanged(DurationUnit)));
+	QWidget::connect(_dur, SIGNAL(ConditionChanged(DurationCondition)),
+			 this,
+			 SLOT(DurationConditionChanged(DurationCondition)));
 
 	populateLogicSelection(_logicSelection, root);
 	populateConditionSelection(_conditionSelection);
 
 	_section->AddHeaderWidget(_logicSelection);
 	_section->AddHeaderWidget(_conditionSelection);
+	_section->AddHeaderWidget(_dur);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addWidget(_section);
@@ -144,6 +161,10 @@ void MacroConditionEdit::UpdateEntryData(const std::string &id, bool collapse)
 						 logic_root_offset);
 	}
 	_section->SetContent(widget, collapse);
+
+	_dur->setVisible(MacroConditionFactory::UsesDurationConstraint(id));
+	auto constraint = (*_entryData)->GetDurationConstraint();
+	_dur->SetValue(constraint);
 }
 
 void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
@@ -154,6 +175,9 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 
 	std::string id = MacroConditionFactory::GetIdByName(text);
 
+	auto temp = DurationConstraint();
+	_dur->SetValue(temp);
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	auto logic = (*_entryData)->GetLogicType();
 	_entryData->reset();
@@ -162,6 +186,37 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 	auto widget =
 		MacroConditionFactory::CreateWidget(id, window(), *_entryData);
 	_section->SetContent(widget, false);
+	_dur->setVisible(MacroConditionFactory::UsesDurationConstraint(id));
+}
+
+void MacroConditionEdit::DurationChanged(double seconds)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	(*_entryData)->SetDuration(seconds);
+}
+
+void MacroConditionEdit::DurationConditionChanged(DurationCondition cond)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	(*_entryData)->SetDurationCondition(cond);
+}
+
+void MacroConditionEdit::DurationUnitChanged(DurationUnit unit)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	(*_entryData)->SetDurationUnit(unit);
 }
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()
