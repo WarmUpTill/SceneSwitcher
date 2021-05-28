@@ -1,6 +1,5 @@
 #pragma once
 #include "macro.hpp"
-#include <limits>
 #include <QWidget>
 #include <QComboBox>
 
