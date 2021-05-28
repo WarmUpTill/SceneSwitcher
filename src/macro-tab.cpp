@@ -9,7 +9,7 @@
 static QMetaObject::Connection addPulse;
 
 const auto conditionsCollapseThreshold = 4;
-const auto actionsCollapseThreshold = 2;
+const auto actionsCollapseThreshold = 4;
 
 bool macroNameExists(std::string name)
 {
