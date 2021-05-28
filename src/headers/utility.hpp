@@ -21,6 +21,7 @@ OBSWeakSource GetWeakTransitionByQString(const QString &name);
 OBSWeakSource GetWeakFilterByName(OBSWeakSource source, const char *name);
 OBSWeakSource GetWeakFilterByQString(OBSWeakSource source, const QString &name);
 bool compareIgnoringLineEnding(QString &s1, QString &s2);
+std::string getSourceSettings(OBSWeakSource ws);
 
 /**
  * Populate layout with labels and widgets based on provided text
