@@ -17,9 +17,16 @@ const std::map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 	{LogicType::ROOT_NOT, {"AdvSceneSwitcher.logic.not"}},
 };
 
-Macro::Macro(std::string name) : _name(name) {}
+Macro::Macro(const std::string &name)
+{
+	SetupHotkeys();
+	SetName(name);
+}
 
-Macro::~Macro() {}
+Macro::~Macro()
+{
+	ClearHotkeys();
+}
 
 bool Macro::CeckMatch()
 {
@@ -94,10 +101,23 @@ bool Macro::PerformAction()
 	return ret;
 }
 
+void Macro::SetName(const std::string &name)
+{
+	_name = name;
+	SetHotkeysDesc();
+}
+
 bool Macro::Save(obs_data_t *obj)
 {
 	obs_data_set_string(obj, "name", _name.c_str());
 	obs_data_set_bool(obj, "pause", _paused);
+
+	obs_data_array_t *pauseHotkey = obs_hotkey_save(_pauseHotkey);
+	obs_data_set_array(obj, "pauseHotkey", pauseHotkey);
+	obs_data_array_release(pauseHotkey);
+	obs_data_array_t *unpauseHotkey = obs_hotkey_save(_unpauseHotkey);
+	obs_data_set_array(obj, "unpauseHotkey", unpauseHotkey);
+	obs_data_array_release(unpauseHotkey);
 
 	obs_data_array_t *conditions = obs_data_array_create();
 	for (auto &c : _conditions) {
@@ -164,8 +184,19 @@ bool Macro::Load(obs_data_t *obj)
 {
 	_name = obs_data_get_string(obj, "name");
 	_paused = obs_data_get_bool(obj, "pause");
-	bool root = true;
 
+	obs_data_array_t *pauseHotkey = obs_data_get_array(obj, "pauseHotkey");
+	obs_hotkey_load(_pauseHotkey, pauseHotkey);
+	obs_data_array_release(pauseHotkey);
+
+	obs_data_array_t *unpauseHotkey =
+		obs_data_get_array(obj, "unpauseHotkey");
+	obs_hotkey_load(_unpauseHotkey, unpauseHotkey);
+	obs_data_array_release(unpauseHotkey);
+
+	SetHotkeysDesc();
+
+	bool root = true;
 	obs_data_array_t *conditions = obs_data_get_array(obj, "conditions");
 	size_t count = obs_data_array_count(conditions);
 
@@ -212,7 +243,6 @@ bool Macro::Load(obs_data_t *obj)
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(actions);
-
 	return true;
 }
 
@@ -243,6 +273,77 @@ bool Macro::SwitchesScene()
 		}
 	}
 	return false;
+}
+
+static void pauseCB(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
+		    bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(hotkey);
+	if (pressed) {
+		auto m = static_cast<Macro *>(data);
+		m->SetPaused(true);
+	}
+}
+
+static void unpauseCB(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
+		      bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(hotkey);
+	if (pressed) {
+		auto m = static_cast<Macro *>(data);
+		m->SetPaused(false);
+	}
+}
+
+static int macroHotkeyID = 0;
+
+void Macro::SetupHotkeys()
+{
+	if (_pauseHotkey != OBS_INVALID_HOTKEY_ID ||
+	    _unpauseHotkey != OBS_INVALID_HOTKEY_ID) {
+		ClearHotkeys();
+	}
+
+	macroHotkeyID++;
+
+	std::string hotkeyName =
+		"macro_pause_hotkey_" + std::to_string(macroHotkeyID);
+	QString format{obs_module_text("AdvSceneSwitcher.hotkey.macro.pause")};
+	QString hotkeyDesc = format.arg(QString::fromStdString(_name));
+	_pauseHotkey = obs_hotkey_register_frontend(
+		hotkeyName.c_str(), hotkeyDesc.toStdString().c_str(), pauseCB,
+		this);
+
+	macroHotkeyID++;
+
+	hotkeyName = "macro_pause_hotkey_" + _name;
+	format = {obs_module_text("AdvSceneSwitcher.hotkey.macro.unpause")};
+	hotkeyDesc = format.arg(QString::fromStdString(_name));
+	_unpauseHotkey = obs_hotkey_register_frontend(
+		hotkeyName.c_str(), hotkeyDesc.toStdString().c_str(), unpauseCB,
+		this);
+}
+
+void Macro::ClearHotkeys()
+{
+	obs_hotkey_unregister(_pauseHotkey);
+	obs_hotkey_unregister(_unpauseHotkey);
+}
+
+void Macro::SetHotkeysDesc()
+{
+	QString format{obs_module_text("AdvSceneSwitcher.hotkey.macro.pause")};
+	QString hotkeyDesc = format.arg(QString::fromStdString(_name));
+	obs_hotkey_set_description(_pauseHotkey,
+				   hotkeyDesc.toStdString().c_str());
+	format = {obs_module_text("AdvSceneSwitcher.hotkey.macro.unpause")};
+	hotkeyDesc = format.arg(QString::fromStdString(_name));
+	obs_hotkey_set_description(_unpauseHotkey,
+				   hotkeyDesc.toStdString().c_str());
 }
 
 bool MacroCondition::Save(obs_data_t *obj)
