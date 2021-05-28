@@ -114,6 +114,7 @@ static inline void populateSourcesWithFilter(QComboBox *list)
 		return true;
 	};
 	obs_enum_sources(enumSourcesWithFilters, list);
+	obs_enum_scenes(enumSourcesWithFilters, list);
 	list->model()->sort(0);
 	addSelectionEntry(list,
 			  obs_module_text("AdvSceneSwitcher.selectSource"));
