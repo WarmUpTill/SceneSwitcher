@@ -60,14 +60,14 @@ public:
 
 class Macro {
 public:
-	Macro(std::string name = "");
+	Macro(const std::string &name = "");
 	virtual ~Macro();
 
 	bool CeckMatch();
 	bool PerformAction();
 	bool Matched() { return _matched; }
 	std::string Name() { return _name; }
-	void SetName(const std::string &name) { _name = name; }
+	void SetName(const std::string &name);
 	void SetPaused(bool pause = true) { _paused = pause; }
 	bool Paused() { return _paused; }
 	int GetCount() { return _count; };
@@ -88,12 +88,18 @@ public:
 	bool SwitchesScene();
 
 private:
+	void SetupHotkeys();
+	void ClearHotkeys();
+	void SetHotkeysDesc();
+
 	std::string _name = "";
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;
 	std::deque<std::shared_ptr<MacroAction>> _actions;
 	bool _matched = false;
 	bool _paused = false;
 	int _count = 0;
+	obs_hotkey_id _pauseHotkey = OBS_INVALID_HOTKEY_ID;
+	obs_hotkey_id _unpauseHotkey = OBS_INVALID_HOTKEY_ID;
 };
 
 Macro *GetMacroByName(const char *name);
