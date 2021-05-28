@@ -15,6 +15,7 @@ struct MacroConditionInfo {
 	TCreateMethod _createFunc;
 	TCreateWidgetMethod _createWidgetFunc;
 	std::string _name;
+	bool _useDurationConstraint = true;
 };
 
 class MacroConditionFactory {
@@ -27,6 +28,7 @@ public:
 	static auto GetConditionTypes() { return _methods; }
 	static std::string GetConditionName(const std::string &);
 	static std::string GetIdByName(const QString &name);
+	static bool UsesDurationConstraint(const std::string &id);
 
 private:
 	static std::map<std::string, MacroConditionInfo> _methods;
@@ -46,11 +48,15 @@ public:
 private slots:
 	void LogicSelectionChanged(int idx);
 	void ConditionSelectionChanged(const QString &text);
+	void DurationChanged(double seconds);
+	void DurationConditionChanged(DurationCondition cond);
+	void DurationUnitChanged(DurationUnit unit);
 
 protected:
 	QComboBox *_logicSelection;
 	QComboBox *_conditionSelection;
 	Section *_section;
+	DurationConstraintEdit *_dur;
 
 	std::shared_ptr<MacroCondition> *_entryData;
 

@@ -1,4 +1,6 @@
 #pragma once
+#include "duration-control.hpp"
+
 #include <string>
 #include <deque>
 #include <memory>
@@ -40,13 +42,22 @@ public:
 	virtual bool Save(obs_data_t *obj) = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
 	virtual std::string GetId() = 0;
+
 	LogicType GetLogicType() { return _logic; }
 	void SetLogicType(LogicType logic) { _logic = logic; }
-
 	static const std::map<LogicType, LogicTypeInfo> logicTypes;
+
+	bool DurationReached() { return _duration.DurationReached(); }
+	void ResetDuration() { _duration.Reset(); }
+	DurationConstraint GetDurationConstraint() { return _duration; }
+	void SetDurationConstraint(const DurationConstraint &dur);
+	void SetDurationCondition(DurationCondition cond);
+	void SetDurationUnit(DurationUnit u);
+	void SetDuration(double seconds);
 
 private:
 	LogicType _logic;
+	DurationConstraint _duration;
 };
 
 class MacroAction {

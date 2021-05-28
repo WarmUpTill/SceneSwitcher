@@ -6,8 +6,6 @@
 #include <QComboBox>
 #include <chrono>
 
-#include "duration-control.hpp"
-
 enum class AudioCondition {
 	ABOVE,
 	BELOW,
@@ -33,7 +31,6 @@ public:
 	OBSWeakSource _audioSource;
 	int _volume = 0;
 	AudioCondition _condition = AudioCondition::ABOVE;
-	Duration _duration;
 	obs_volmeter_t *_volmeter = nullptr;
 
 private:
@@ -63,13 +60,11 @@ private slots:
 	void SourceChanged(const QString &text);
 	void VolumeThresholdChanged(int vol);
 	void ConditionChanged(int cond);
-	void DurationChanged(double seconds);
 
 protected:
 	QComboBox *_audioSources;
 	QComboBox *_condition;
 	QSpinBox *_volume;
-	DurationSelection *_duration;
 	VolControl *_volMeter = nullptr;
 	std::shared_ptr<MacroConditionAudio> _entryData;
 

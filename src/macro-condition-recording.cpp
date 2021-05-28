@@ -32,20 +32,13 @@ bool MacroConditionRecord::CheckCondition()
 	default:
 		break;
 	}
-
-	if (!stateMatch) {
-		_duration.Reset();
-		return false;
-	}
-
-	return _duration.DurationReached();
+	return stateMatch;
 }
 
 bool MacroConditionRecord::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "state", static_cast<int>(_recordState));
-	_duration.Save(obj);
 	return true;
 }
 
@@ -53,7 +46,6 @@ bool MacroConditionRecord::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_recordState = static_cast<RecordState>(obs_data_get_int(obj, "state"));
-	_duration.Load(obj);
 	return true;
 }
 
@@ -69,14 +61,9 @@ MacroConditionRecordEdit::MacroConditionRecordEdit(
 	: QWidget(parent)
 {
 	_recordState = new QComboBox();
-	_duration = new DurationSelection();
 
 	QWidget::connect(_recordState, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(StateChanged(int)));
-	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
-	QWidget::connect(_duration, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(DurationUnitChanged(DurationUnit)));
 
 	populateStateSelection(_recordState);
 
@@ -84,7 +71,6 @@ MacroConditionRecordEdit::MacroConditionRecordEdit(
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{recordState}}", _recordState},
-		{"{{duration}}", _duration},
 	};
 
 	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.record.entry"),
@@ -106,26 +92,6 @@ void MacroConditionRecordEdit::StateChanged(int value)
 	_entryData->_recordState = static_cast<RecordState>(value);
 }
 
-void MacroConditionRecordEdit::DurationChanged(double seconds)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.seconds = seconds;
-}
-
-void MacroConditionRecordEdit::DurationUnitChanged(DurationUnit unit)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.displayUnit = unit;
-}
-
 void MacroConditionRecordEdit::UpdateEntryData()
 {
 	if (!_entryData) {
@@ -134,5 +100,4 @@ void MacroConditionRecordEdit::UpdateEntryData()
 
 	_recordState->setCurrentIndex(
 		static_cast<int>(_entryData->_recordState));
-	_duration->SetDuration(_entryData->_duration);
 }
