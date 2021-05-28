@@ -81,10 +81,11 @@ static inline void populateFilters(QComboBox *list,
 		list->addItem(name);
 	};
 
-	list->clear();
-	list->addItem(obs_module_text("AdvSceneSwitcher.selectFilter"));
 	auto s = obs_weak_source_get_source(weakSource);
 	obs_source_enum_filters(s, enumFilters, list);
+	list->model()->sort(0);
+	addSelectionEntry(list,
+			  obs_module_text("AdvSceneSwitcher.selectFilter"));
 	obs_source_release(s);
 }
 
@@ -112,10 +113,11 @@ static inline void populateSourcesWithFilter(QComboBox *list)
 		}
 		return true;
 	};
-
-	list->clear();
-	list->addItem(obs_module_text("AdvSceneSwitcher.selectSource"));
 	obs_enum_sources(enumSourcesWithFilters, list);
+	obs_enum_scenes(enumSourcesWithFilters, list);
+	list->model()->sort(0);
+	addSelectionEntry(list,
+			  obs_module_text("AdvSceneSwitcher.selectSource"));
 }
 
 MacroActionFilterEdit::MacroActionFilterEdit(
@@ -174,6 +176,7 @@ void MacroActionFilterEdit::SourceChanged(const QString &text)
 		std::lock_guard<std::mutex> lock(switcher->m);
 		_entryData->_source = GetWeakSourceByQString(text);
 	}
+	_filters->clear();
 	populateFilters(_filters, _entryData->_source);
 }
 

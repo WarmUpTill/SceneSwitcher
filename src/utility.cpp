@@ -243,7 +243,7 @@ bool DisplayMessage(const QString &msg, bool question)
 void addSelectionEntry(QComboBox *sel, const char *description, bool selectable,
 		       const char *tooltip)
 {
-	sel->addItem(description);
+	sel->insertItem(0, description);
 
 	if (strcmp(tooltip, "") != 0) {
 		sel->setItemData(0, tooltip, Qt::ToolTipRole);
@@ -271,31 +271,19 @@ void populateSourceSelection(QComboBox *list, bool addSelect)
 		return true;
 	};
 
-	list->clear();
+	obs_enum_sources(enumSourcesWithSources, list);
+
+	list->model()->sort(0);
 	if (addSelect) {
 		addSelectionEntry(
 			list, obs_module_text("AdvSceneSwitcher.selectSource"),
 			false);
 	}
-
-	obs_enum_sources(enumSourcesWithSources, list);
-	list->model()->sort(0);
 }
 
 void populateTransitionSelection(QComboBox *sel, bool addCurrent,
 				 bool addSelect, bool selectable)
 {
-	if (addSelect) {
-		addSelectionEntry(
-			sel,
-			obs_module_text("AdvSceneSwitcher.selectTransition"),
-			selectable);
-	}
-
-	if (addCurrent) {
-		sel->addItem(
-			obs_module_text("AdvSceneSwitcher.currentTransition"));
-	}
 
 	obs_frontend_source_list *transitions = new obs_frontend_source_list();
 	obs_frontend_get_transitions(transitions);
@@ -307,23 +295,38 @@ void populateTransitionSelection(QComboBox *sel, bool addCurrent,
 	}
 
 	obs_frontend_source_list_free(transitions);
+
+	sel->model()->sort(0);
+
+	if (addCurrent) {
+		sel->insertItem(
+			0,
+			obs_module_text("AdvSceneSwitcher.currentTransition"));
+	}
+
+	if (addSelect) {
+		addSelectionEntry(
+			sel,
+			obs_module_text("AdvSceneSwitcher.selectTransition"),
+			selectable);
+	}
 }
 
 void populateWindowSelection(QComboBox *sel, bool addSelect)
 {
-	if (addSelect) {
-		addSelectionEntry(
-			sel, obs_module_text("AdvSceneSwitcher.selectWindow"));
-	}
 
 	std::vector<std::string> windows;
 	GetWindowList(windows);
-	sort(windows.begin(), windows.end());
 
 	for (std::string &window : windows) {
 		sel->addItem(window.c_str());
 	}
 
+	sel->model()->sort(0);
+	if (addSelect) {
+		addSelectionEntry(
+			sel, obs_module_text("AdvSceneSwitcher.selectWindow"));
+	}
 #ifdef WIN32
 	sel->setItemData(0, obs_module_text("AdvSceneSwitcher.selectWindowTip"),
 			 Qt::ToolTipRole);
@@ -332,14 +335,6 @@ void populateWindowSelection(QComboBox *sel, bool addSelect)
 
 void populateAudioSelection(QComboBox *sel, bool addSelect)
 {
-	if (addSelect) {
-		addSelectionEntry(
-			sel,
-			obs_module_text("AdvSceneSwitcher.selectAudioSource"),
-			false,
-			obs_module_text(
-				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
-	}
 
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
@@ -355,22 +350,24 @@ void populateAudioSelection(QComboBox *sel, bool addSelect)
 
 	std::vector<std::string> audioSources;
 	obs_enum_sources(sourceEnum, &audioSources);
-	sort(audioSources.begin(), audioSources.end());
+
 	for (std::string &source : audioSources) {
 		sel->addItem(source.c_str());
+	}
+
+	sel->model()->sort(0);
+	if (addSelect) {
+		addSelectionEntry(
+			sel,
+			obs_module_text("AdvSceneSwitcher.selectAudioSource"),
+			false,
+			obs_module_text(
+				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
 	}
 }
 
 void populateVideoSelection(QComboBox *sel, bool addSelect)
 {
-	if (addSelect) {
-		addSelectionEntry(
-			sel,
-			obs_module_text("AdvSceneSwitcher.selectVideoSource"),
-			false,
-			obs_module_text(
-				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
-	}
 
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
@@ -390,19 +387,20 @@ void populateVideoSelection(QComboBox *sel, bool addSelect)
 	for (std::string &source : videoSources) {
 		sel->addItem(source.c_str());
 	}
-}
 
-void populateMediaSelection(QComboBox *sel, bool addSelect)
-{
+	sel->model()->sort(0);
 	if (addSelect) {
 		addSelectionEntry(
 			sel,
-			obs_module_text("AdvSceneSwitcher.selectMediaSource"),
+			obs_module_text("AdvSceneSwitcher.selectVideoSource"),
 			false,
 			obs_module_text(
 				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
 	}
+}
 
+void populateMediaSelection(QComboBox *sel, bool addSelect)
+{
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
 	{
 		std::vector<std::string> *list =
@@ -417,24 +415,35 @@ void populateMediaSelection(QComboBox *sel, bool addSelect)
 
 	std::vector<std::string> mediaSources;
 	obs_enum_sources(sourceEnum, &mediaSources);
-	sort(mediaSources.begin(), mediaSources.end());
 	for (std::string &source : mediaSources) {
 		sel->addItem(source.c_str());
+	}
+
+	sel->model()->sort(0);
+	if (addSelect) {
+		addSelectionEntry(
+			sel,
+			obs_module_text("AdvSceneSwitcher.selectMediaSource"),
+			false,
+			obs_module_text(
+				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
 	}
 }
 
 void populateProcessSelection(QComboBox *sel, bool addSelect)
 {
+	QStringList processes;
+	GetProcessList(processes);
+	processes.sort();
+	for (QString &process : processes) {
+		sel->addItem(process);
+	}
+
+	sel->model()->sort(0);
 	if (addSelect) {
 		addSelectionEntry(
 			sel, obs_module_text("AdvSceneSwitcher.selectProcess"));
 	}
-
-	QStringList processes;
-	GetProcessList(processes);
-	processes.sort();
-	for (QString &process : processes)
-		sel->addItem(process);
 }
 
 void populateSceneSelection(QComboBox *sel, bool addPrevious,
@@ -442,19 +451,6 @@ void populateSceneSelection(QComboBox *sel, bool addPrevious,
 			    std::deque<SceneGroup> *sceneGroups, bool addSelect,
 			    std::string selectText, bool selectable)
 {
-	if (addSelect) {
-		if (selectText.empty()) {
-			addSelectionEntry(
-				sel,
-				obs_module_text("AdvSceneSwitcher.selectScene"),
-				selectable,
-				obs_module_text(
-					"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
-		} else {
-			addSelectionEntry(sel, selectText.c_str(), selectable);
-		}
-	}
-
 	BPtr<char *> scenes = obs_frontend_get_scene_names();
 	char **temp = scenes;
 	while (*temp) {
@@ -471,6 +467,20 @@ void populateSceneSelection(QComboBox *sel, bool addPrevious,
 	if (addSceneGroup && sceneGroups) {
 		for (auto &sg : *sceneGroups) {
 			sel->addItem(QString::fromStdString(sg.name));
+		}
+	}
+
+	sel->model()->sort(0);
+	if (addSelect) {
+		if (selectText.empty()) {
+			addSelectionEntry(
+				sel,
+				obs_module_text("AdvSceneSwitcher.selectScene"),
+				selectable,
+				obs_module_text(
+					"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
+		} else {
+			addSelectionEntry(sel, selectText.c_str(), selectable);
 		}
 	}
 }
