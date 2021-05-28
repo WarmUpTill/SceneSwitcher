@@ -21,17 +21,6 @@ static std::map<SourceCondition, std::string> sourceConditionTypes = {
 	 "AdvSceneSwitcher.condition.source.type.settings"},
 };
 
-std::string getSourceSettings(OBSWeakSource ws)
-{
-	auto s = obs_weak_source_get_source(ws);
-	obs_data_t *data = obs_source_get_settings(s);
-	std::string settings = obs_data_get_json(data);
-	obs_data_release(data);
-	obs_source_release(s);
-
-	return settings;
-}
-
 bool checkSettings(const OBSWeakSource &source, const std::string &settings,
 		   bool useRegex)
 {
