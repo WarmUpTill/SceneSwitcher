@@ -1,11 +1,15 @@
 #pragma once
+#include "macro-action-edit.hpp"
+
 #include <QSpinBox>
 #include <QLabel>
-#include "macro-action-edit.hpp"
+#include <QPushButton>
+#include <QPlainTextEdit>
 
 enum class SourceAction {
 	ENABLE,
 	DISABLE,
+	SETTINGS,
 };
 
 class MacroActionSource : public MacroAction {
@@ -21,6 +25,7 @@ public:
 	}
 
 	OBSWeakSource _source;
+	std::string _settings = "";
 	SourceAction _action = SourceAction::ENABLE;
 
 private:
@@ -47,14 +52,19 @@ public:
 private slots:
 	void SourceChanged(const QString &text);
 	void ActionChanged(int value);
+	void GetSettingsClicked();
+	void SettingsChanged();
 
 protected:
 	QComboBox *_sources;
 	QComboBox *_actions;
+	QPushButton *_getSettings;
+	QPlainTextEdit *_settings;
 	QLabel *_warning;
 	std::shared_ptr<MacroActionSource> _entryData;
 
 private:
+	void SetWidgetVisibility(bool);
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
