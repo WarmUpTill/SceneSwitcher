@@ -12,7 +12,25 @@ bool MacroActionSource::_registered = MacroActionFactory::Register(
 const static std::map<SourceAction, std::string> actionTypes = {
 	{SourceAction::ENABLE, "AdvSceneSwitcher.action.source.type.enable"},
 	{SourceAction::DISABLE, "AdvSceneSwitcher.action.source.type.disable"},
+	{SourceAction::SETTINGS,
+	 "AdvSceneSwitcher.action.source.type.settings"},
 };
+
+void setSourceSettings(obs_source_t *s, const std::string &settings)
+{
+	if (settings.empty()) {
+		return;
+	}
+
+	obs_data_t *data = obs_data_create_from_json(settings.c_str());
+	if (!data) {
+		blog(LOG_WARNING, "invalid source settings provided: \n%s",
+		     settings.c_str());
+		return;
+	}
+	obs_source_update(s, data);
+	obs_data_release(data);
+}
 
 bool MacroActionSource::PerformAction()
 {
@@ -23,6 +41,9 @@ bool MacroActionSource::PerformAction()
 		break;
 	case SourceAction::DISABLE:
 		obs_source_set_enabled(s, false);
+		break;
+	case SourceAction::SETTINGS:
+		setSourceSettings(s, _settings);
 		break;
 	default:
 		break;
@@ -48,6 +69,7 @@ bool MacroActionSource::Save(obs_data_t *obj)
 	MacroAction::Save(obj);
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
+	obs_data_set_string(obj, "settings", _settings.c_str());
 	return true;
 }
 
@@ -57,6 +79,7 @@ bool MacroActionSource::Load(obs_data_t *obj)
 	const char *sourceName = obs_data_get_string(obj, "source");
 	_source = GetWeakSourceByName(sourceName);
 	_action = static_cast<SourceAction>(obs_data_get_int(obj, "action"));
+	_settings = obs_data_get_string(obj, "settings");
 	return true;
 }
 
@@ -73,6 +96,9 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 {
 	_sources = new QComboBox();
 	_actions = new QComboBox();
+	_getSettings = new QPushButton(
+		obs_module_text("AdvSceneSwitcher.action.source.getSettings"));
+	_settings = new QPlainTextEdit();
 	_warning = new QLabel(
 		obs_module_text("AdvSceneSwitcher.action.source.warning"));
 
@@ -83,17 +109,28 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 			 SLOT(ActionChanged(int)));
 	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(SourceChanged(const QString &)));
+	QWidget::connect(_getSettings, SIGNAL(clicked()), this,
+			 SLOT(GetSettingsClicked()));
+	QWidget::connect(_settings, SIGNAL(textChanged()), this,
+			 SLOT(SettingsChanged()));
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	QHBoxLayout *entryLayout = new QHBoxLayout;
+	QHBoxLayout *buttonLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{sources}}", _sources},
 		{"{{actions}}", _actions},
+		{"{{settings}}", _settings},
+		{"{{getSettings}}", _getSettings},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.source.entry"),
 		     entryLayout, widgetPlaceholders);
 	mainLayout->addLayout(entryLayout);
 	mainLayout->addWidget(_warning);
+	mainLayout->addWidget(_settings);
+	buttonLayout->addWidget(_getSettings);
+	buttonLayout->addStretch();
+	mainLayout->addLayout(buttonLayout);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -110,6 +147,8 @@ void MacroActionSourceEdit::UpdateEntryData()
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_sources->setCurrentText(
 		GetWeakSourceName(_entryData->_source).c_str());
+	_settings->setPlainText(QString::fromStdString(_entryData->_settings));
+	SetWidgetVisibility(_entryData->_action == SourceAction::SETTINGS);
 }
 
 void MacroActionSourceEdit::SourceChanged(const QString &text)
@@ -130,4 +169,33 @@ void MacroActionSourceEdit::ActionChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<SourceAction>(value);
+	SetWidgetVisibility(_entryData->_action == SourceAction::SETTINGS);
+}
+
+void MacroActionSourceEdit::GetSettingsClicked()
+{
+	if (_loading || !_entryData || !_entryData->_source) {
+		return;
+	}
+
+	_settings->setPlainText(
+		QString::fromStdString(getSourceSettings(_entryData->_source)));
+}
+
+void MacroActionSourceEdit::SettingsChanged()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_settings = _settings->toPlainText().toStdString();
+}
+
+void MacroActionSourceEdit::SetWidgetVisibility(bool showSettings)
+{
+	_settings->setVisible(showSettings);
+	_getSettings->setVisible(showSettings);
+	_warning->setVisible(!showSettings);
+	adjustSize();
 }
