@@ -1,9 +1,20 @@
 #include "headers/macro-selection.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
+#include <QStandardItemModel>
+
 MacroSelection::MacroSelection(QWidget *parent) : QComboBox(parent)
 {
 	addItem(obs_module_text("AdvSceneSwitcher.selectMacro"));
+
+	QStandardItemModel *model =
+		qobject_cast<QStandardItemModel *>(this->model());
+	QModelIndex firstIndex =
+		model->index(0, modelColumn(), rootModelIndex());
+	QStandardItem *firstItem = model->itemFromIndex(firstIndex);
+	firstItem->setSelectable(false);
+	firstItem->setEnabled(false);
+
 	for (auto &m : switcher->macros) {
 		addItem(QString::fromStdString(m.Name()));
 	}

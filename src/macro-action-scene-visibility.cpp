@@ -117,8 +117,6 @@ static bool enumItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 static inline void populateSceneItems(QComboBox *list,
 				      OBSWeakSource sceneWeakSource = nullptr)
 {
-	list->clear();
-	list->addItem(obs_module_text("AdvSceneSwitcher.selectItem"));
 	std::set<QString> names;
 	auto s = obs_weak_source_get_source(sceneWeakSource);
 	auto scene = obs_scene_from_source(s);
@@ -128,6 +126,8 @@ static inline void populateSceneItems(QComboBox *list,
 	for (auto &name : names) {
 		list->addItem(name);
 	}
+	list->model()->sort(0);
+	addSelectionEntry(list, obs_module_text("AdvSceneSwitcher.selectItem"));
 }
 
 MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
@@ -186,6 +186,7 @@ void MacroActionSceneVisibilityEdit::SceneChanged(const QString &text)
 		std::lock_guard<std::mutex> lock(switcher->m);
 		_entryData->_scene = GetWeakSourceByQString(text);
 	}
+	_sources->clear();
 	populateSceneItems(_sources, _entryData->_scene);
 }
 
