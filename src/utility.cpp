@@ -279,6 +279,7 @@ void populateSourceSelection(QComboBox *list, bool addSelect)
 			list, obs_module_text("AdvSceneSwitcher.selectSource"),
 			false);
 	}
+	list->setCurrentIndex(0);
 }
 
 void populateTransitionSelection(QComboBox *sel, bool addCurrent,
@@ -310,6 +311,7 @@ void populateTransitionSelection(QComboBox *sel, bool addCurrent,
 			obs_module_text("AdvSceneSwitcher.selectTransition"),
 			selectable);
 	}
+	sel->setCurrentIndex(0);
 }
 
 void populateWindowSelection(QComboBox *sel, bool addSelect)
@@ -327,6 +329,7 @@ void populateWindowSelection(QComboBox *sel, bool addSelect)
 		addSelectionEntry(
 			sel, obs_module_text("AdvSceneSwitcher.selectWindow"));
 	}
+	sel->setCurrentIndex(0);
 #ifdef WIN32
 	sel->setItemData(0, obs_module_text("AdvSceneSwitcher.selectWindowTip"),
 			 Qt::ToolTipRole);
@@ -364,6 +367,7 @@ void populateAudioSelection(QComboBox *sel, bool addSelect)
 			obs_module_text(
 				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
 	}
+	sel->setCurrentIndex(0);
 }
 
 void populateVideoSelection(QComboBox *sel, bool addSelect)
@@ -397,6 +401,7 @@ void populateVideoSelection(QComboBox *sel, bool addSelect)
 			obs_module_text(
 				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
 	}
+	sel->setCurrentIndex(0);
 }
 
 void populateMediaSelection(QComboBox *sel, bool addSelect)
@@ -428,6 +433,7 @@ void populateMediaSelection(QComboBox *sel, bool addSelect)
 			obs_module_text(
 				"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
 	}
+	sel->setCurrentIndex(0);
 }
 
 void populateProcessSelection(QComboBox *sel, bool addSelect)
@@ -444,6 +450,7 @@ void populateProcessSelection(QComboBox *sel, bool addSelect)
 		addSelectionEntry(
 			sel, obs_module_text("AdvSceneSwitcher.selectProcess"));
 	}
+	sel->setCurrentIndex(0);
 }
 
 void populateSceneSelection(QComboBox *sel, bool addPrevious,
@@ -483,6 +490,7 @@ void populateSceneSelection(QComboBox *sel, bool addPrevious,
 			addSelectionEntry(sel, selectText.c_str(), selectable);
 		}
 	}
+	sel->setCurrentIndex(0);
 }
 
 QMetaObject::Connection PulseWidget(QWidget *widget, QColor endColor,
