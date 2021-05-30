@@ -151,6 +151,14 @@ void DurationConstraint::Save(obs_data_t *obj, const char *condName,
 void DurationConstraint::Load(obs_data_t *obj, const char *condName,
 			      const char *secondsName, const char *unitName)
 {
+	// For backwards compatability check if duration value exist without
+	// time constraint condition - if so assume DurationCondition::MORE
+	if (!obs_data_has_user_value(obj, condName) &&
+	    obs_data_has_user_value(obj, secondsName)) {
+		obs_data_set_int(obj, condName,
+				 static_cast<int>(DurationCondition::MORE));
+	}
+
 	_type = static_cast<DurationCondition>(obs_data_get_int(obj, condName));
 	_dur.Load(obj, secondsName, unitName);
 }
