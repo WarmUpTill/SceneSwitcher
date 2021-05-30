@@ -138,7 +138,6 @@ void Section::SetupAnimations()
 
 void Section::CleanUpPreviousContent()
 {
-	// Clean up previous content
 	if (_contentArea) {
 		auto oldLayout = _contentArea->layout();
 		if (oldLayout) {
