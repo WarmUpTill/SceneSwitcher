@@ -128,6 +128,7 @@ static inline void populateSceneItems(QComboBox *list,
 	}
 	list->model()->sort(0);
 	addSelectionEntry(list, obs_module_text("AdvSceneSwitcher.selectItem"));
+	list->setCurrentIndex(0);
 }
 
 MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
