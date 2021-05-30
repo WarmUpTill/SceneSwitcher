@@ -38,6 +38,7 @@ private:
 	QWidget *_content = nullptr;
 	int _animationDuration;
 	std::atomic_bool _transitioning = {false};
+	std::atomic_bool _collapsed = {false};
 	int _headerHeight = 0;
 	int _contentHeight = 0;
 };

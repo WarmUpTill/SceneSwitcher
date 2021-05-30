@@ -49,6 +49,7 @@ void Section::Collapse(bool collapse)
 					       ? QAbstractAnimation::Forward
 					       : QAbstractAnimation::Backward);
 	_transitioning = true;
+	_collapsed = collapse;
 	_toggleAnimation->start();
 }
 
@@ -93,7 +94,7 @@ void Section::AddHeaderWidget(QWidget *w)
 
 bool Section::eventFilter(QObject *obj, QEvent *event)
 {
-	if (event->type() == QEvent::Resize && !_transitioning) {
+	if (event->type() == QEvent::Resize && !_transitioning && !_collapsed) {
 		_contentHeight = _content->sizeHint().height();
 		setMaximumHeight(_headerHeight + _contentHeight);
 		setMinimumHeight(_headerHeight + _contentHeight);
