@@ -87,6 +87,7 @@ static inline void populateFilters(QComboBox *list,
 	addSelectionEntry(list,
 			  obs_module_text("AdvSceneSwitcher.selectFilter"));
 	obs_source_release(s);
+	list->setCurrentIndex(0);
 }
 
 static inline void hasFilterEnum(obs_source_t *, obs_source_t *filter,
@@ -118,6 +119,7 @@ static inline void populateSourcesWithFilter(QComboBox *list)
 	list->model()->sort(0);
 	addSelectionEntry(list,
 			  obs_module_text("AdvSceneSwitcher.selectSource"));
+	list->setCurrentIndex(0);
 }
 
 MacroActionFilterEdit::MacroActionFilterEdit(
