@@ -218,13 +218,11 @@ std::string getSourceSettings(OBSWeakSource ws)
 	return settings;
 }
 
-std::filesystem::path getDataFilePath(const std::string &file)
+std::string getDataFilePath(const std::string &file)
 {
-	const char *root_path = obs_get_module_data_path(obs_current_module());
-	if (root_path) {
-		auto ret = std::filesystem::u8path(root_path);
-		ret.append(file.data());
-		return ret;
+	std::string root_path = obs_get_module_data_path(obs_current_module());
+	if (!root_path.empty()) {
+		return root_path + "/" + file;
 	}
 	return "";
 }

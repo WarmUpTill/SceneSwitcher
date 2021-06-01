@@ -2,6 +2,7 @@
 #include <QWidget>
 #include <QDoubleSpinBox>
 #include <QComboBox>
+#include <QPushButton>
 #include <chrono>
 
 #include "obs-data.h"
@@ -94,12 +95,16 @@ public:
 
 private slots:
 	void _ConditionChanged(int value);
+	void ToggleClicked();
 signals:
 	void DurationChanged(double value);
 	void UnitChanged(DurationUnit u);
 	void ConditionChanged(DurationCondition value);
 
 private:
+	void Collapse(bool collapse);
+
 	DurationSelection *_duration;
 	QComboBox *_condition;
+	QPushButton *_toggle;
 };

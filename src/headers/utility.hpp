@@ -10,7 +10,6 @@
 #include <obs-frontend-api.h>
 #include <deque>
 #include <unordered_map>
-#include <filesystem>
 #include "scene-group.hpp"
 
 bool WeakSourceValid(obs_weak_source_t *ws);
@@ -23,7 +22,7 @@ OBSWeakSource GetWeakFilterByName(OBSWeakSource source, const char *name);
 OBSWeakSource GetWeakFilterByQString(OBSWeakSource source, const QString &name);
 bool compareIgnoringLineEnding(QString &s1, QString &s2);
 std::string getSourceSettings(OBSWeakSource ws);
-std::filesystem::path getDataFilePath(const std::string &file);
+std::string getDataFilePath(const std::string &file);
 
 /**
  * Populate layout with labels and widgets based on provided text
