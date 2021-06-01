@@ -209,21 +209,28 @@ DurationConstraintEdit::DurationConstraintEdit(QWidget *parent)
 {
 	_condition = new QComboBox(parent);
 	_duration = new DurationSelection(parent);
+	_toggle = new QPushButton(parent);
+	_toggle->setMaximumSize(22, 22);
+	_toggle->setIcon(
+		QIcon(QString::fromStdString(getDataFilePath("res/time.svg"))));
 	populateConditions(_condition);
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(_ConditionChanged(int)));
-
 	QObject::connect(_duration, &DurationSelection::DurationChanged, this,
 			 &DurationConstraintEdit::DurationChanged);
 	QObject::connect(_duration, &DurationSelection::UnitChanged, this,
 			 &DurationConstraintEdit::UnitChanged);
+	QWidget::connect(_toggle, SIGNAL(clicked()), this,
+			 SLOT(ToggleClicked()));
 
 	QHBoxLayout *layout = new QHBoxLayout;
 	layout->setContentsMargins(0, 0, 0, 0);
 	layout->setSpacing(11);
+	layout->addWidget(_toggle);
 	layout->addWidget(_condition);
 	layout->addWidget(_duration);
 	setLayout(layout);
+	Collapse(true);
 }
 
 void DurationConstraintEdit::SetValue(DurationConstraint &value)
@@ -246,6 +253,18 @@ void DurationConstraintEdit::SetDuration(const Duration &d)
 void DurationConstraintEdit::_ConditionChanged(int value)
 {
 	auto cond = static_cast<DurationCondition>(value);
-	_duration->setVisible(cond != DurationCondition::NONE);
+	Collapse(cond == DurationCondition::NONE);
 	emit ConditionChanged(cond);
+}
+
+void DurationConstraintEdit::ToggleClicked()
+{
+	Collapse(false);
+}
+
+void DurationConstraintEdit::Collapse(bool collapse)
+{
+	_toggle->setVisible(collapse);
+	_duration->setVisible(!collapse);
+	_condition->setVisible(!collapse);
 }
