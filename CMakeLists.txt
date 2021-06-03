@@ -82,6 +82,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/macro-action-edit.hpp
 	src/headers/macro-action-audio.hpp
 	src/headers/macro-action-filter.hpp
+	src/headers/macro-action-hotkey.hpp
 	src/headers/macro-action-macro.hpp
 	src/headers/macro-action-media.hpp
 	src/headers/macro-action-plugin-state.hpp
@@ -112,6 +113,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/macro.hpp
 	src/headers/macro-selection.hpp
 	src/headers/curl-helper.hpp
+	src/headers/hotkey.hpp
 	src/headers/screenshot-helper.hpp
 	src/headers/name-dialog.hpp
 	src/headers/duration-control.hpp
@@ -150,6 +152,7 @@ set(advanced-scene-switcher_SOURCES
 	src/macro-action-edit.cpp
 	src/macro-action-audio.cpp
 	src/macro-action-filter.cpp
+	src/macro-action-hotkey.cpp
 	src/macro-action-macro.cpp
 	src/macro-action-media.cpp
 	src/macro-action-plugin-state.cpp
