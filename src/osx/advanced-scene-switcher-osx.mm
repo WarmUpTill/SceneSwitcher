@@ -1,3 +1,5 @@
+#include "../headers/hotkey.hpp"
+
 #import <AppKit/AppKit.h>
 #import <CoreFoundation/CoreFoundation.h>
 #import <CoreGraphics/CGEvent.h>
@@ -281,3 +283,5 @@ bool isInFocus(const QString &executable)
 
 	return (equals || matches);
 }
+
+void PressKeys(const std::vector<HotkeyType> &keys) {}

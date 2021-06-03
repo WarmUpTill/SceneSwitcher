@@ -1,3 +1,5 @@
+#include "../headers/hotkey.hpp"
+
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
@@ -393,3 +395,5 @@ int secondsSinceLastInput()
 
 	return idle_time;
 }
+
+void PressKeys(const std::vector<HotkeyType> &keys) {}

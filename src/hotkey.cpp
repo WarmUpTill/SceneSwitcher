@@ -1,7 +1,8 @@
+#include "headers/hotkey.hpp"
+#include "headers/advanced-scene-switcher.hpp"
 #include <obs-module.h>
 #include <fstream>
 #include <regex>
-#include "headers/advanced-scene-switcher.hpp"
 
 void startHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 		     bool pressed)
