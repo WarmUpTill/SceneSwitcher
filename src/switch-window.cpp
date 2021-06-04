@@ -390,13 +390,7 @@ void WindowSwitch::load(obs_data_t *obj)
 
 	window = obs_data_get_string(obj, "windowTitle");
 	fullscreen = obs_data_get_bool(obj, "fullscreen");
-#if __APPLE__
-	// TODO:
-	// not implemented on MacOS as I cannot test it
-	maximized = false;
-#else
 	maximized = obs_data_get_bool(obj, "maximized");
-#endif
 	focus = obs_data_get_bool(obj, "focus") ||
 		!obs_data_has_user_value(obj, "focus");
 }
@@ -425,12 +419,6 @@ WindowSwitchWidget::WindowSwitchWidget(QWidget *parent, WindowSwitch *s)
 
 	windows->setEditable(true);
 	windows->setMaxVisibleItems(20);
-#if __APPLE__
-	// TODO:
-	// not implemented on MacOS as I cannot test it
-	maximized->setDisabled(true);
-	maximized->setVisible(false);
-#endif
 
 	if (s) {
 		windows->setCurrentText(s->window.c_str());
