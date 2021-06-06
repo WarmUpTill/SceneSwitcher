@@ -396,4 +396,4 @@ int secondsSinceLastInput()
 	return idle_time;
 }
 
-void PressKeys(const std::vector<HotkeyType> &keys) {}
+void PressKeys(const std::vector<HotkeyType> keys) {}
