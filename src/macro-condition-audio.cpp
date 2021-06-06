@@ -3,7 +3,7 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-const int MacroConditionAudio::id = 3;
+const std::string MacroConditionAudio::id = "audio";
 
 bool MacroConditionAudio::_registered = MacroConditionFactory::Register(
 	MacroConditionAudio::id,
@@ -11,8 +11,8 @@ bool MacroConditionAudio::_registered = MacroConditionFactory::Register(
 	 "AdvSceneSwitcher.condition.audio"});
 
 static std::map<AudioCondition, std::string> audioConditionTypes = {
-	{AudioCondition::ABOVE, "AdvSceneSwitcher.ondition.audio.state.above"},
-	{AudioCondition::BELOW, "AdvSceneSwitcher.ondition.audio.state.below"},
+	{AudioCondition::ABOVE, "AdvSceneSwitcher.condition.audio.state.above"},
+	{AudioCondition::BELOW, "AdvSceneSwitcher.condition.audio.state.below"},
 };
 
 MacroConditionAudio::~MacroConditionAudio()
@@ -35,11 +35,7 @@ bool MacroConditionAudio::CheckCondition()
 	// Reset for next check
 	_peak = -std::numeric_limits<float>::infinity();
 
-	if (!volumeThresholdreached) {
-		_duration.Reset();
-		return false;
-	}
-	return _duration.DurationReached();
+	return volumeThresholdreached;
 }
 
 bool MacroConditionAudio::Save(obs_data_t *obj)
@@ -49,7 +45,6 @@ bool MacroConditionAudio::Save(obs_data_t *obj)
 			    GetWeakSourceName(_audioSource).c_str());
 	obs_data_set_int(obj, "volume", _volume);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
-	_duration.Save(obj);
 	return true;
 }
 
@@ -75,12 +70,9 @@ bool MacroConditionAudio::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	const char *audioSourceName = obs_data_get_string(obj, "audioSource");
 	_audioSource = GetWeakSourceByName(audioSourceName);
-
 	_volume = obs_data_get_int(obj, "volume");
 	_condition =
 		static_cast<AudioCondition>(obs_data_get_int(obj, "condition"));
-	_duration.Load(obj);
-
 	_volmeter = AddVolmeterToSource(this, _audioSource);
 	return true;
 }
@@ -123,7 +115,6 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 	_audioSources = new QComboBox();
 	_condition = new QComboBox();
 	_volume = new QSpinBox();
-	_duration = new DurationSelection(parent, false);
 
 	_volume->setSuffix("%");
 	_volume->setMaximum(100);
@@ -133,13 +124,11 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 			 SLOT(VolumeThresholdChanged(int)));
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
-	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
 	QWidget::connect(_audioSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(SourceChanged(const QString &)));
 
-	AdvSceneSwitcher::populateAudioSelection(_audioSources);
+	populateAudioSelection(_audioSources);
 	populateConditionSelection(_condition);
 
 	QHBoxLayout *switchLayout = new QHBoxLayout;
@@ -147,7 +136,7 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 		{"{{audioSources}}", _audioSources},
 		{"{{volume}}", _volume},
 		{"{{condition}}", _condition},
-		{"{{duration}}", _duration}};
+	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.audio.entry"),
 		     switchLayout, widgetPlaceholders);
 
@@ -214,16 +203,6 @@ void MacroConditionAudioEdit::ConditionChanged(int cond)
 	_entryData->_condition = static_cast<AudioCondition>(cond);
 }
 
-void MacroConditionAudioEdit::DurationChanged(double seconds)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.seconds = seconds;
-}
-
 void MacroConditionAudioEdit::UpdateEntryData()
 {
 	if (!_entryData) {
@@ -234,6 +213,5 @@ void MacroConditionAudioEdit::UpdateEntryData()
 		GetWeakSourceName(_entryData->_audioSource).c_str());
 	_volume->setValue(_entryData->_volume);
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
-	_duration->SetDuration(_entryData->_duration);
 	UpdateVolmeterSource();
 }

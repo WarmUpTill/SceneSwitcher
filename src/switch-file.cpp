@@ -101,7 +101,7 @@ void SwitcherData::writeSceneInfoToFile()
 	obs_source_release(currentSource);
 }
 
-void SwitcherData::writeToStatusFile(QString msg)
+void SwitcherData::writeToStatusFile(const QString &msg)
 {
 	if (!fileIO.writeEnabled || fileIO.writePath.empty()) {
 		return;
@@ -415,7 +415,9 @@ void AdvSceneSwitcher::setupFileTab()
 	}
 
 	if (switcher->fileSwitches.size() == 0) {
-		addPulse = PulseWidget(ui->fileAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse = PulseWidget(ui->fileAdd, QColor(Qt::green));
+		}
 		ui->fileHelp->setVisible(true);
 	} else {
 		ui->fileHelp->setVisible(false);

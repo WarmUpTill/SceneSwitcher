@@ -2,7 +2,6 @@
 #include "macro.hpp"
 #include <QWidget>
 #include <QComboBox>
-#include "duration-control.hpp"
 
 enum class StreamState {
 	STOP,
@@ -14,18 +13,17 @@ public:
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
-	int GetId() { return id; };
+	std::string GetId() { return id; };
 	static std::shared_ptr<MacroCondition> Create()
 	{
 		return std::make_shared<MacroConditionStream>();
 	}
 
 	StreamState _streamState;
-	Duration _duration;
 
 private:
 	static bool _registered;
-	static const int id;
+	static const std::string id;
 };
 
 class MacroConditionStreamEdit : public QWidget {
@@ -46,12 +44,9 @@ public:
 
 private slots:
 	void StateChanged(int value);
-	void DurationChanged(double seconds);
-	void DurationUnitChanged(DurationUnit unit);
 
 protected:
 	QComboBox *_streamState;
-	DurationSelection *_duration;
 	std::shared_ptr<MacroConditionStream> _entryData;
 
 private:

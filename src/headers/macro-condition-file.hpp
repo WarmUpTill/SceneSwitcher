@@ -18,7 +18,7 @@ public:
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
-	int GetId() { return id; };
+	std::string GetId() { return id; };
 	static std::shared_ptr<MacroCondition> Create()
 	{
 		return std::make_shared<MacroConditionFile>();
@@ -39,7 +39,7 @@ private:
 	QDateTime _lastMod;
 	size_t _lastHash = 0;
 	static bool _registered;
-	static const int id;
+	static const std::string id;
 };
 
 class MacroConditionFileEdit : public QWidget {

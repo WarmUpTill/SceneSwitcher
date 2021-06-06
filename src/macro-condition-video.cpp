@@ -8,7 +8,7 @@
 #include <QToolTip>
 #include <QMessageBox>
 
-const int MacroConditionVideo::id = 6;
+const std::string MacroConditionVideo::id = "video";
 
 bool MacroConditionVideo::_registered = MacroConditionFactory::Register(
 	MacroConditionVideo::id,
@@ -39,15 +39,7 @@ bool MacroConditionVideo::CheckCondition()
 
 	if (_screenshotData) {
 		if (_screenshotData->done) {
-			bool imageMatch = Compare();
-
-			if (!imageMatch) {
-				_duration.Reset();
-			}
-
-			if (imageMatch && _duration.DurationReached()) {
-				match = true;
-			}
+			match = Compare();
 
 			if (!requiresFileInput(_condition)) {
 				_matchImage = std::move(_screenshotData->image);
@@ -66,7 +58,6 @@ bool MacroConditionVideo::Save(obs_data_t *obj)
 	obs_data_set_string(obj, "videoSource",
 			    GetWeakSourceName(_videoSource).c_str());
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
-	_duration.Save(obj);
 	obs_data_set_string(obj, "filePath", _file.c_str());
 	return true;
 }
@@ -77,7 +68,6 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 	_videoSource = GetWeakSourceByName(videoSourceName);
 	_condition =
 		static_cast<VideoCondition>(obs_data_get_int(obj, "condition"));
-	_duration.Load(obj);
 	_file = obs_data_get_string(obj, "filePath");
 
 	if (requiresFileInput(_condition)) {
@@ -137,7 +127,6 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 {
 	_videoSelection = new QComboBox();
 	_condition = new QComboBox();
-	_duration = new DurationSelection();
 	_filePath = new QLineEdit();
 	_browseButton =
 		new QPushButton(obs_module_text("AdvSceneSwitcher.browse"));
@@ -151,23 +140,18 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 SLOT(SourceChanged(const QString &)));
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
-	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
-	QWidget::connect(_duration, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(DurationUnitChanged(DurationUnit)));
 	QWidget::connect(_filePath, SIGNAL(editingFinished()), this,
 			 SLOT(FilePathChanged()));
 	QWidget::connect(_browseButton, SIGNAL(clicked()), this,
 			 SLOT(BrowseButtonClicked()));
 
-	AdvSceneSwitcher::populateVideoSelection(_videoSelection, false);
+	populateVideoSelection(_videoSelection);
 	populateConditionSelection(_condition);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{videoSources}}", _videoSelection},
 		{"{{condition}}", _condition},
-		{"{{duration}}", _duration},
 		{"{{filePath}}", _filePath},
 		{"{{browseButton}}", _browseButton},
 	};
@@ -324,26 +308,6 @@ void MacroConditionVideoEdit::BrowseButtonClicked()
 	SetFilePath(path);
 }
 
-void MacroConditionVideoEdit::DurationChanged(double seconds)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.seconds = seconds;
-}
-
-void MacroConditionVideoEdit::DurationUnitChanged(DurationUnit unit)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.displayUnit = unit;
-}
-
 void MacroConditionVideoEdit::UpdateEntryData()
 {
 	if (!_entryData) {
@@ -353,7 +317,6 @@ void MacroConditionVideoEdit::UpdateEntryData()
 	_videoSelection->setCurrentText(
 		GetWeakSourceName(_entryData->_videoSource).c_str());
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
-	_duration->SetDuration(_entryData->_duration);
 	_filePath->setText(QString::fromStdString(_entryData->_file));
 
 	if (!requiresFileInput(_entryData->_condition)) {

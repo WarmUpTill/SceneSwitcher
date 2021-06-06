@@ -289,7 +289,10 @@ void AdvSceneSwitcher::setupSequenceTab()
 	}
 
 	if (switcher->sceneSequenceSwitches.size() == 0) {
-		addPulse = PulseWidget(ui->sceneSequenceAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse = PulseWidget(ui->sceneSequenceAdd,
+					       QColor(Qt::green));
+		}
 		ui->sequenceHelp->setVisible(true);
 	} else {
 		ui->sequenceHelp->setVisible(false);
@@ -440,8 +443,6 @@ void SceneSequenceSwitch::prepareUninterruptibleMatch(
 {
 	int dur = delay.seconds * 1000;
 	if (dur > 0) {
-		switcher->waitScene = obs_weak_source_get_source(currentScene);
-		obs_source_release(switcher->waitScene);
 		linger = dur;
 	}
 }
@@ -588,7 +589,7 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 	QWidget::connect(reduce, SIGNAL(clicked()), this,
 			 SLOT(ReduceClicked()));
 
-	AdvSceneSwitcher::populateSceneSelection(startScenes, false);
+	populateSceneSelection(startScenes);
 	interruptible->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.sceneSequenceTab.interruptibleHint"));
 

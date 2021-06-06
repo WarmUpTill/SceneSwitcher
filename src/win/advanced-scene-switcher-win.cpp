@@ -145,7 +145,7 @@ HWND getHWNDfromTitle(std::string title)
 	return hwnd;
 }
 
-bool isMaximized(std::string &title)
+bool isMaximized(const std::string &title)
 {
 	RECT appBounds;
 	MONITORINFO monitorInfo = {0};
@@ -175,7 +175,7 @@ bool isMaximized(std::string &title)
 	return false;
 }
 
-bool isFullscreen(std::string &title)
+bool isFullscreen(const std::string &title)
 {
 	RECT appBounds;
 	MONITORINFO monitorInfo = {0};

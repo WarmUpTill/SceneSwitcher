@@ -5,7 +5,7 @@
 
 #include <regex>
 
-const int MacroConditionProcess::id = 9;
+const std::string MacroConditionProcess::id = "process";
 
 bool MacroConditionProcess::_registered = MacroConditionFactory::Register(
 	MacroConditionProcess::id,
@@ -61,7 +61,7 @@ MacroConditionProcessEdit::MacroConditionProcessEdit(
 	QWidget::connect(_focused, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
 
-	AdvSceneSwitcher::populateProcessSelection(_processSelection);
+	populateProcessSelection(_processSelection);
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{processes}}", _processSelection},

@@ -192,6 +192,7 @@ struct SwitcherData {
 	void Start();
 	void Stop();
 
+	void setWaitScene();
 	bool sceneChangedDuringWait();
 
 	bool prioFuncsValid();
@@ -200,7 +201,7 @@ struct SwitcherData {
 	void resetTabOrder();
 
 	void writeSceneInfoToFile();
-	void writeToStatusFile(QString status);
+	void writeToStatusFile(const QString &msg);
 
 	bool checkForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
 			   int &linger, bool &setPreviousSceneAsMatch,
@@ -253,7 +254,7 @@ struct SwitcherData {
 	void saveNetworkSwitches(obs_data_t *obj);
 	void saveGeneralSettings(obs_data_t *obj);
 	void saveHotkeys(obs_data_t *obj);
-	void saveVersion(obs_data_t *obj, std::string currentVersion);
+	void saveVersion(obs_data_t *obj, const std::string &currentVersion);
 
 	void loadSettings(obs_data_t *obj);
 	void loadMacros(obs_data_t *obj);

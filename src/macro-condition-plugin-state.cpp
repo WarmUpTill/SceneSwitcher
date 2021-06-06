@@ -3,13 +3,13 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-const int MacroConditionPluginState::id = 11;
+const std::string MacroConditionPluginState::id = "plugin_state";
 
 bool MacroConditionPluginState::_registered = MacroConditionFactory::Register(
 	MacroConditionPluginState::id,
 	{MacroConditionPluginState::Create,
 	 MacroConditionPluginStateEdit::Create,
-	 "AdvSceneSwitcher.condition.pluginState"});
+	 "AdvSceneSwitcher.condition.pluginState", false});
 
 static std::map<PluginStateCondition, std::string> pluginStateConditionTypes = {
 	{PluginStateCondition::SCENESWITCHED,

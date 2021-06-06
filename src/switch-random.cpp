@@ -125,15 +125,20 @@ void AdvSceneSwitcher::setupRandomTab()
 	}
 
 	if (switcher->randomSwitches.size() == 0) {
-		addPulse = PulseWidget(ui->randomAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse =
+				PulseWidget(ui->randomAdd, QColor(Qt::green));
+		}
 		ui->randomHelp->setVisible(true);
 	} else {
 		ui->randomHelp->setVisible(false);
 	}
 
 	if (switcher->switchIfNotMatching != RANDOM_SWITCH) {
-		PulseWidget(ui->randomDisabledWarning, QColor(Qt::red),
-			    QColor(0, 0, 0, 0), "QLabel ");
+		if (!switcher->disableHints) {
+			PulseWidget(ui->randomDisabledWarning, QColor(Qt::red),
+				    QColor(0, 0, 0, 0), "QLabel ");
+		}
 	} else {
 		ui->randomDisabledWarning->setVisible(false);
 	}

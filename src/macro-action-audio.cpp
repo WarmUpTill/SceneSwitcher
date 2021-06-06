@@ -2,7 +2,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
-const int MacroActionAudio::id = 2;
+const std::string MacroActionAudio::id = "audio";
 
 bool MacroActionAudio::_registered = MacroActionFactory::Register(
 	MacroActionAudio::id,
@@ -94,7 +94,7 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	_volumePercent->setSuffix("%");
 
 	populateActionSelection(_actions);
-	AdvSceneSwitcher::populateAudioSelection(_audioSources);
+	populateAudioSelection(_audioSources);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
@@ -130,17 +130,8 @@ bool hasSourceControl(AudioAction action)
 	return action != AudioAction::MASTER_VOLUME;
 }
 
-void MacroActionAudioEdit::UpdateEntryData()
+void MacroActionAudioEdit::SetWidgetVisibility()
 {
-	if (!_entryData) {
-		return;
-	}
-
-	_audioSources->setCurrentText(
-		GetWeakSourceName(_entryData->_audioSource).c_str());
-	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
-	_volumePercent->setValue(_entryData->_volume);
-
 	if (hasVolumeControl(_entryData->_action)) {
 		_volumePercent->show();
 	} else {
@@ -152,6 +143,20 @@ void MacroActionAudioEdit::UpdateEntryData()
 	} else {
 		_audioSources->hide();
 	}
+}
+
+void MacroActionAudioEdit::UpdateEntryData()
+{
+	if (!_entryData) {
+		return;
+	}
+
+	_audioSources->setCurrentText(
+		GetWeakSourceName(_entryData->_audioSource).c_str());
+	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_volumePercent->setValue(_entryData->_volume);
+
+	SetWidgetVisibility();
 }
 
 void MacroActionAudioEdit::SourceChanged(const QString &text)
@@ -172,7 +177,7 @@ void MacroActionAudioEdit::ActionChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<AudioAction>(value);
-	UpdateEntryData();
+	SetWidgetVisibility();
 }
 
 void MacroActionAudioEdit::VolumeChanged(int value)

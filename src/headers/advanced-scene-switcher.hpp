@@ -5,6 +5,7 @@
 #include "ui_advanced-scene-switcher.h"
 #endif
 #include "switcher-data-structs.hpp"
+#include "platform-funcs.hpp"
 
 #define blog(level, msg, ...) blog(level, "[adv-ss] " msg, ##__VA_ARGS__)
 #define vblog(level, msg, ...)                   \
@@ -69,44 +70,10 @@ public:
 	void setTabOrder();
 	void restoreWindowGeo();
 
-	static void AskBackup(obs_data_t *obj);
-
-	static void addSelectionEntry(QComboBox *sel, const char *description,
-				      bool selectable = false,
-				      const char *tooltip = "");
-	static void populateSceneSelection(QComboBox *sel,
-					   bool addPrevious = false,
-					   bool addSceneGroup = false,
-					   bool addSelect = true,
-					   std::string selectText = "",
-					   bool selectable = false);
-
-	static void populateTransitionSelection(QComboBox *sel,
-						bool addCurrent = true,
-						bool addSelect = true,
-						bool selectable = false);
-	static void populateWindowSelection(QComboBox *sel,
-					    bool addSelect = true);
-	static void populateAudioSelection(QComboBox *sel,
-					   bool addSelect = true);
-	static void populateVideoSelection(QComboBox *sel,
-					   bool addScenes = true,
-					   bool addSelect = true);
-	static void populateMediaSelection(QComboBox *sel,
-					   bool addSelect = true);
-	static void populateProcessSelection(QComboBox *sel,
-					     bool addSelect = true);
-	QMetaObject::Connection PulseWidget(QWidget *widget, QColor endColor,
-					    QColor = QColor(0, 0, 0, 0),
-					    QString specifier = "QLabel ");
-
-	void listAddClicked(QListWidget *list, SwitchWidget *newWidget,
-			    QPushButton *addButton = nullptr,
-			    QMetaObject::Connection *addHighlight = nullptr);
-	bool listMoveUp(QListWidget *list);
-	bool listMoveDown(QListWidget *list);
-
 signals:
+	void MacroAdded(const QString &name);
+	void MacroRemoved(const QString &name);
+	void MacroRenamed(const QString &oldName, const QString newName);
 	void SceneGroupAdded(const QString &name);
 	void SceneGroupRemoved(const QString &name);
 	void SceneGroupRenamed(const QString &oldName, const QString newName);
@@ -137,6 +104,7 @@ public slots:
 	void on_macroDown_clicked();
 	void on_macroName_editingFinished();
 	void on_macros_currentRowChanged(int idx);
+	void on_macros_itemChanged(QListWidgetItem *);
 	void on_conditionAdd_clicked();
 	void on_conditionRemove_clicked();
 	void on_actionAdd_clicked();
@@ -243,7 +211,9 @@ public slots:
 	void on_clientSettings_toggled(bool on);
 	void on_clientHostname_textChanged(const QString &text);
 	void on_clientPort_valueChanged(int value);
+	void on_sendSceneChange_stateChanged(int state);
 	void on_restrictSend_stateChanged(int state);
+	void on_sendPreview_stateChanged(int state);
 	void on_clientReconnect_clicked();
 	void updateClientStatus();
 
@@ -277,41 +247,16 @@ private:
 };
 
 /******************************************************************************
- * Windowtitle helper
- ******************************************************************************/
-void GetWindowList(std::vector<std::string> &windows);
-void GetWindowList(QStringList &windows);
-void GetCurrentWindowTitle(std::string &title);
-bool isFullscreen(std::string &title);
-bool isMaximized(std::string &title);
-bool GetCurrentVirtualDesktop(long &desktop);
-bool GetVirtualDesktopCount(long &ndesktops);
-
-/******************************************************************************
- * Screenregion helper
- ******************************************************************************/
-std::pair<int, int> getCursorPos();
-
-/******************************************************************************
- * Idle detection helper
- ******************************************************************************/
-int secondsSinceLastInput();
-
-/******************************************************************************
- * Executable helper
- ******************************************************************************/
-void GetProcessList(QStringList &processes);
-bool isInFocus(const QString &executable);
-
-/******************************************************************************
  * Sceneswitch helper
  ******************************************************************************/
 
-void setNextTransition(sceneSwitchInfo &ssi, obs_source_t *currentSource,
+void setNextTransition(const sceneSwitchInfo &ssi, obs_source_t *currentSource,
 		       transitionData &td);
-void overwriteTransitionOverride(sceneSwitchInfo ssi, transitionData &td);
-void restoreTransitionOverride(obs_source_t *scene, transitionData td);
-void switchScene(sceneSwitchInfo ssi);
+void overwriteTransitionOverride(const sceneSwitchInfo &ssi,
+				 transitionData &td);
+void restoreTransitionOverride(obs_source_t *scene, const transitionData &td);
+void switchScene(const sceneSwitchInfo &ssi);
+void switchPreviewScene(const OBSWeakSource &ws);
 
 /******************************************************************************
  * Main SwitcherData

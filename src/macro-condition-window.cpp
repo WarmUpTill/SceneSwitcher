@@ -5,7 +5,7 @@
 
 #include <regex>
 
-const int MacroConditionWindow::id = 1;
+const std::string MacroConditionWindow::id = "window";
 
 bool MacroConditionWindow::_registered = MacroConditionFactory::Register(
 	MacroConditionWindow::id,
@@ -83,12 +83,7 @@ bool MacroConditionWindow::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	_window = obs_data_get_string(obj, "window");
 	_fullscreen = obs_data_get_bool(obj, "fullscreen");
-#if __APPLE__
-	// TODO: Implement maximized check on MacOS
-	_maximized = false;
-#else
 	_maximized = obs_data_get_bool(obj, "maximized");
-#endif
 	_focus = obs_data_get_bool(obj, "focus");
 	return true;
 }
@@ -115,7 +110,7 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 	QWidget::connect(_focused, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
 
-	AdvSceneSwitcher::populateWindowSelection(_windowSelection);
+	populateWindowSelection(_windowSelection);
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{windows}}", _windowSelection},

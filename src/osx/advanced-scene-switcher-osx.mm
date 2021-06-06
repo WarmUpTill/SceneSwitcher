@@ -17,7 +17,6 @@ void GetWindowList(std::vector<std::string> &windows)
 			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
 				kCGWindowListOptionAll, kCGNullWindowID);
 		for (NSDictionary *app in apps) {
-			// Construct string from NSString accounting for nil
 			std::string name([[app objectForKey:@"kCGWindowName"]
 						 UTF8String],
 					 [[app objectForKey:@"kCGWindowName"]
@@ -30,53 +29,26 @@ void GetWindowList(std::vector<std::string> &windows)
 					lengthOfBytesUsingEncoding:
 						NSUTF8StringEncoding]);
 
-			// Check if name exists
 			if (!name.empty() &&
 			    find(windows.begin(), windows.end(), name) ==
 				    windows.end())
 				windows.emplace_back(name);
-			// Check if owner exists
-			else if (!owner.empty() &&
-				 find(windows.begin(), windows.end(), owner) ==
-					 windows.end())
+
+			if (!owner.empty() &&
+			    find(windows.begin(), windows.end(), owner) ==
+				    windows.end())
 				windows.emplace_back(owner);
 		}
 	}
 }
 
-// Overloaded
 void GetWindowList(QStringList &windows)
 {
 	windows.clear();
-
-	@autoreleasepool {
-		NSMutableArray *apps =
-			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
-				kCGWindowListOptionAll, kCGNullWindowID);
-		for (NSDictionary *app in apps) {
-			// Construct string from NSString accounting for nil
-			std::string name([[app objectForKey:@"kCGWindowName"]
-						 UTF8String],
-					 [[app objectForKey:@"kCGWindowName"]
-						 lengthOfBytesUsingEncoding:
-							 NSUTF8StringEncoding]);
-			std::string owner(
-				[[app objectForKey:@"kCGWindowOwnerName"]
-					UTF8String],
-				[[app objectForKey:@"kCGWindowOwnerName"]
-					lengthOfBytesUsingEncoding:
-						NSUTF8StringEncoding]);
-
-			// Check if name exists
-			if (!name.empty() &&
-			    !windows.contains(QString::fromStdString(name)))
-				windows << QString::fromStdString(name);
-			// Check if owner exists
-			else if (!owner.empty() &&
-				 !windows.contains(
-					 QString::fromStdString(name)))
-				windows << QString::fromStdString(owner);
-		}
+	std::vector<std::string> temp;
+	GetWindowList(temp);
+	for (auto &w : temp) {
+		windows << QString::fromStdString(w);
 	}
 }
 
@@ -94,7 +66,6 @@ void GetCurrentWindowTitle(std::string &title)
 				[[app objectForKey:@"kCGWindowLayer"] intValue];
 			// True if window is frontmost
 			if (layer == 0) {
-				// Construct string from NSString accounting for nil
 				std::string name(
 					[[app objectForKey:@"kCGWindowName"]
 						UTF8String],
@@ -130,23 +101,68 @@ std::pair<int, int> getCursorPos()
 	return pos;
 }
 
-// TODO:
-// not implemented on MacOS as I cannot test it
-bool isMaximized(std::string &title)
+bool isWindowOriginOnScreen(NSDictionary *app, NSScreen *screen,
+			    bool fullscreen = false)
 {
-	return false;
+	NSArray *screens = [NSScreen screens];
+	NSRect mainScreenFrame = [screens[0] frame];
+	NSRect screenFrame;
+	if (fullscreen) {
+		screenFrame = [screen frame];
+	} else {
+		screenFrame = [screen visibleFrame];
+	}
+	NSRect windowBounds;
+	CGRectMakeWithDictionaryRepresentation(
+		(CFDictionaryRef)[app objectForKey:@"kCGWindowBounds"],
+		&windowBounds);
+
+	return (windowBounds.origin.x == screenFrame.origin.x &&
+		(mainScreenFrame.size.height - screenFrame.size.height -
+			 windowBounds.origin.y ==
+		 screenFrame.origin.y));
 }
 
-bool isFullscreen(std::string &title)
+bool isWindowMaximizedOnScreen(NSDictionary *app, NSScreen *screen)
 {
-	// Check for match
+	double maximizedTolerance = 0.99;
+	NSRect screenFrame = [screen frame];
+	NSRect windowBounds;
+	CGRectMakeWithDictionaryRepresentation(
+		(CFDictionaryRef)[app objectForKey:@"kCGWindowBounds"],
+		&windowBounds);
+
+	int sumX = windowBounds.origin.x + windowBounds.size.width;
+	int sumY = windowBounds.origin.y + windowBounds.size.height;
+
+	// Return false if window spans over multiple screens
+	if (sumX > screenFrame.size.width) {
+		return false;
+	}
+	if (sumY > screenFrame.size.height) {
+		return false;
+	}
+
+	return ((double)sumX / (double)screenFrame.size.width) >
+		       maximizedTolerance &&
+	       ((double)sumY / (double)screenFrame.size.height) >
+		       maximizedTolerance;
+}
+
+bool nameMachesPattern(std::string windowName, std::string pattern)
+{
+	return QString::fromStdString(windowName)
+		.contains(QRegularExpression(QString::fromStdString(pattern)));
+}
+
+bool isMaximized(const std::string &title)
+{
 	@autoreleasepool {
 		NSArray *screens = [NSScreen screens];
 		NSMutableArray *apps =
 			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
 				kCGWindowListOptionAll, kCGNullWindowID);
 		for (NSDictionary *app in apps) {
-			// Construct string from NSString accounting for nil
 			std::string name([[app objectForKey:@"kCGWindowName"]
 						 UTF8String],
 					 [[app objectForKey:@"kCGWindowName"]
@@ -159,51 +175,69 @@ bool isFullscreen(std::string &title)
 					lengthOfBytesUsingEncoding:
 						NSUTF8StringEncoding]);
 
-			// True if switch equals app
 			bool equals = (title == name || title == owner);
-			// True if switch matches app
-			bool matches = (QString::fromStdString(name).contains(
-						QRegularExpression(
-							QString::fromStdString(
-								title))) ||
-					QString::fromStdString(owner).contains(
-						QRegularExpression(
-							QString::fromStdString(
-								title))));
-
-			// If found, check if fullscreen
+			bool matches = nameMachesPattern(name, title) ||
+				       nameMachesPattern(owner, title);
 			if (equals || matches) {
-				// Get window bounds
-				NSRect bounds;
-				CGRectMakeWithDictionaryRepresentation(
-					(CFDictionaryRef)[app
-						objectForKey:@"kCGWindowBounds"],
-					&bounds);
-
-				// Compare to screen bounds
 				for (NSScreen *screen in screens) {
-					NSRect frame = [screen visibleFrame];
+					if (isWindowOriginOnScreen(app,
+								   screen) &&
+					    isWindowMaximizedOnScreen(app,
+								      screen)) {
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
 
-					// True if flipped window origin equals screen origin
-					bool origin =
-						(bounds.origin.x ==
-							 frame.origin.x &&
-						 ([screens[0] visibleFrame]
-								  .size.height -
-							  frame.size.height -
-							  bounds.origin.y ==
-						  frame.origin.y));
-					// True if window size equals screen size
-					bool size = NSEqualSizes(bounds.size,
-								 frame.size);
+bool isWindowFullscreenOnScreen(NSDictionary *app, NSScreen *screen)
+{
+	NSRect screenFrame = [screen frame];
+	NSRect windowBounds;
+	CGRectMakeWithDictionaryRepresentation(
+		(CFDictionaryRef)[app objectForKey:@"kCGWindowBounds"],
+		&windowBounds);
 
-					if (origin && size)
+	return NSEqualSizes(windowBounds.size, screenFrame.size);
+}
+
+bool isFullscreen(const std::string &title)
+{
+	@autoreleasepool {
+		NSArray *screens = [NSScreen screens];
+		NSMutableArray *apps =
+			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
+				kCGWindowListOptionAll, kCGNullWindowID);
+		for (NSDictionary *app in apps) {
+			std::string name([[app objectForKey:@"kCGWindowName"]
+						 UTF8String],
+					 [[app objectForKey:@"kCGWindowName"]
+						 lengthOfBytesUsingEncoding:
+							 NSUTF8StringEncoding]);
+			std::string owner(
+				[[app objectForKey:@"kCGWindowOwnerName"]
+					UTF8String],
+				[[app objectForKey:@"kCGWindowOwnerName"]
+					lengthOfBytesUsingEncoding:
+						NSUTF8StringEncoding]);
+
+			bool equals = (title == name || title == owner);
+			bool matches = nameMachesPattern(name, title) ||
+				       nameMachesPattern(owner, title);
+			if (equals || matches) {
+				for (NSScreen *screen in screens) {
+					if (isWindowOriginOnScreen(app, screen,
+								   true) &&
+					    isWindowFullscreenOnScreen(app,
+								       screen))
 						return true;
 				}
 			}
 		}
 	}
-
 	return false;
 }
 

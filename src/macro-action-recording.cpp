@@ -2,7 +2,7 @@
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
-const int MacroActionRecord::id = 4;
+const std::string MacroActionRecord::id = "recording";
 
 bool MacroActionRecord::_registered = MacroActionFactory::Register(
 	MacroActionRecord::id,

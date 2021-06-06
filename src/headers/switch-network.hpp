@@ -33,6 +33,10 @@ public:
 
 	std::string GetClientUri();
 
+	bool ShouldSendSceneChange();
+	bool ShouldSendFrontendSceneChange();
+	bool ShouldSendPrviewSceneChange();
+
 	// Server
 	bool ServerEnabled;
 	uint64_t ServerPort;
@@ -42,7 +46,9 @@ public:
 	bool ClientEnabled;
 	std::string Address;
 	uint64_t ClientPort;
-	bool SendAll;
+	bool SendSceneChange;
+	bool SendSceneChangeAll;
+	bool SendPreview;
 };
 
 class WSServer : public QObject {
@@ -53,7 +59,7 @@ public:
 	virtual ~WSServer();
 	void start(quint16 port, bool lockToIPv4);
 	void stop();
-	void sendMessage(sceneSwitchInfo sceneSwitch);
+	void sendMessage(sceneSwitchInfo sceneSwitch, bool preview = false);
 	QThreadPool *threadPool() { return &_threadPool; }
 
 private:

@@ -1,10 +1,10 @@
 #pragma once
 #include "macro.hpp"
+#include "screenshot-helper.hpp"
+
 #include <QWidget>
 #include <QComboBox>
 #include <chrono>
-#include "duration-control.hpp"
-#include "screenshot-helper.hpp"
 
 enum class VideoCondition {
 	MATCH,
@@ -19,7 +19,7 @@ public:
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
-	int GetId() { return id; };
+	std::string GetId() { return id; };
 	QImage GetMatchImage() { return _matchImage; };
 	static std::shared_ptr<MacroCondition> Create()
 	{
@@ -30,7 +30,6 @@ public:
 
 	OBSWeakSource _videoSource;
 	VideoCondition _condition = VideoCondition::MATCH;
-	Duration _duration;
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
 
 private:
@@ -39,7 +38,7 @@ private:
 	std::unique_ptr<AdvSSScreenshotObj> _screenshotData = nullptr;
 	QImage _matchImage;
 	static bool _registered;
-	static const int id;
+	static const std::string id;
 };
 
 class MacroConditionVideoEdit : public QWidget {
@@ -66,12 +65,9 @@ private slots:
 	void ConditionChanged(int cond);
 	void FilePathChanged();
 	void BrowseButtonClicked();
-	void DurationChanged(double seconds);
-	void DurationUnitChanged(DurationUnit unit);
 
 protected:
 	QComboBox *_videoSelection;
-	DurationSelection *_duration;
 	QComboBox *_condition;
 	QLineEdit *_filePath;
 	QPushButton *_browseButton;

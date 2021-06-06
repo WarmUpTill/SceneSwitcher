@@ -194,7 +194,9 @@ void AdvSceneSwitcher::setupVideoTab()
 	}
 
 	if (switcher->videoSwitches.size() == 0) {
-		addPulse = PulseWidget(ui->videoAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse = PulseWidget(ui->videoAdd, QColor(Qt::green));
+		}
 		ui->videoHelp->setVisible(true);
 	} else {
 		ui->videoHelp->setVisible(false);
@@ -399,10 +401,7 @@ VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
 	QWidget::connect(ignoreInactiveSource, SIGNAL(stateChanged(int)), this,
 			 SLOT(IgnoreInactiveChanged(int)));
 
-	// TODO:
-	// Figure out why scene do not work for "match exactly".
-	// Until then do not allow selecting scenes
-	AdvSceneSwitcher::populateVideoSelection(videoSources, false);
+	populateVideoSelection(videoSources);
 	populateConditionSelection(condition);
 
 	if (s) {

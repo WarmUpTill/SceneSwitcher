@@ -1,8 +1,8 @@
-#include <QFileDialog>
-
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 #include "headers/version.h"
+
+#include <QFileDialog>
 
 QMetaObject::Connection inactivePluse;
 
@@ -156,8 +156,11 @@ void AdvSceneSwitcher::SetStopped()
 		obs_module_text("AdvSceneSwitcher.generalTab.status.start"));
 	ui->pluginRunningText->setText(
 		obs_module_text("AdvSceneSwitcher.status.inactive"));
-	inactivePluse = PulseWidget(ui->pluginRunningText, QColor(Qt::red),
-				    QColor(0, 0, 0, 0), "QLabel ");
+	if (!switcher->disableHints) {
+		inactivePluse = PulseWidget(ui->pluginRunningText,
+					    QColor(Qt::red), QColor(0, 0, 0, 0),
+					    "QLabel ");
+	}
 	currentStatusActive = false;
 }
 
@@ -205,34 +208,6 @@ void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 	}
 
 	switcher->disableHints = state;
-}
-
-void AdvSceneSwitcher::AskBackup(obs_data_t *obj)
-{
-	bool backupSettings = DisplayMessage(
-		obs_module_text("AdvSceneSwitcher.askBackup"), true);
-
-	if (!backupSettings) {
-		return;
-	}
-
-	QString directory = QFileDialog::getSaveFileName(
-		nullptr,
-		obs_module_text(
-			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.importWindowTitle"),
-		QDir::currentPath(),
-		obs_module_text(
-			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType"));
-	if (directory.isEmpty()) {
-		return;
-	}
-
-	QFile file(directory);
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-		return;
-	}
-
-	obs_data_save_json(obj, file.fileName().toUtf8().constData());
 }
 
 void AdvSceneSwitcher::on_exportSettings_clicked()

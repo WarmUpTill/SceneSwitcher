@@ -3,12 +3,12 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-const int MacroConditionIdle::id = 10;
+const std::string MacroConditionIdle::id = "idle";
 
 bool MacroConditionIdle::_registered = MacroConditionFactory::Register(
 	MacroConditionIdle::id,
 	{MacroConditionIdle::Create, MacroConditionIdleEdit::Create,
-	 "AdvSceneSwitcher.condition.idle"});
+	 "AdvSceneSwitcher.condition.idle", false});
 
 bool MacroConditionIdle::CheckCondition()
 {

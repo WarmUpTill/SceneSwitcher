@@ -3,7 +3,7 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-const int MacroConditionRegion::id = 2;
+const std::string MacroConditionRegion::id = "region";
 
 bool MacroConditionRegion::_registered = MacroConditionFactory::Register(
 	MacroConditionRegion::id,

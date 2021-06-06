@@ -1,6 +1,8 @@
-#include <QPropertyAnimation>
 #include "headers/section.hpp"
 #include "headers/utility.hpp"
+
+#include <QPropertyAnimation>
+#include <QEvent>
 
 Section::Section(const int animationDuration, QWidget *parent)
 	: QWidget(parent), _animationDuration(animationDuration)
@@ -38,45 +40,74 @@ Section::Section(const int animationDuration, QWidget *parent)
 	connect(_toggleButton, &QToolButton::toggled, this, &Section::Collapse);
 }
 
-void Section::Collapse(bool collapsed)
+void Section::Collapse(bool collapse)
 {
-	_toggleButton->setChecked(collapsed);
-	_toggleButton->setArrowType(!collapsed ? Qt::ArrowType::DownArrow
-					       : Qt::ArrowType::RightArrow);
-	_toggleAnimation->setDirection(!collapsed
+	_toggleButton->setChecked(collapse);
+	_toggleButton->setArrowType(!collapse ? Qt::ArrowType::DownArrow
+					      : Qt::ArrowType::RightArrow);
+	_toggleAnimation->setDirection(!collapse
 					       ? QAbstractAnimation::Forward
 					       : QAbstractAnimation::Backward);
+	_transitioning = true;
+	_collapsed = collapse;
 	_toggleAnimation->start();
 }
 
-void Section::SetContent(QWidget *w)
+void Section::SetContent(QWidget *w, bool collapsed)
 {
-	// Clean up previous content
-	if (_contentArea) {
-		auto oldLayout = _contentArea->layout();
-		if (oldLayout) {
-			clearLayout(oldLayout);
-			delete oldLayout;
-		}
-	}
-
+	CleanUpPreviousContent();
 	delete _contentArea;
-	delete _toggleAnimation;
 
 	// Setup contentArea
 	_contentArea = new QScrollArea(this);
 	_contentArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-
-	// Start out collapsed
+	_contentArea->setStyleSheet("QScrollArea { border: none; }");
 	_contentArea->setMaximumHeight(0);
 	_contentArea->setMinimumHeight(0);
 
+	w->installEventFilter(this);
+	_content = w;
 	auto newLayout = new QVBoxLayout();
+	newLayout->setContentsMargins(0, 0, 0, 0);
 	newLayout->addWidget(w);
 	_contentArea->setLayout(newLayout);
 	_mainLayout->addWidget(_contentArea, 1, 0, 1, 3);
 
-	// Animation Setup
+	_headerHeight = sizeHint().height() - _contentArea->maximumHeight();
+	_contentHeight = newLayout->sizeHint().height();
+
+	if (collapsed) {
+		this->setMinimumHeight(_headerHeight);
+		_contentArea->setMaximumHeight(0);
+	} else {
+		this->setMinimumHeight(_headerHeight + _contentHeight);
+		_contentArea->setMaximumHeight(_contentHeight);
+	}
+	SetupAnimations();
+	Collapse(collapsed);
+}
+
+void Section::AddHeaderWidget(QWidget *w)
+{
+	_headerWidgetLayout->addWidget(w);
+}
+
+bool Section::eventFilter(QObject *obj, QEvent *event)
+{
+	if (event->type() == QEvent::Resize && !_transitioning && !_collapsed) {
+		_contentHeight = _content->sizeHint().height();
+		setMaximumHeight(_headerHeight + _contentHeight);
+		setMinimumHeight(_headerHeight + _contentHeight);
+		_contentArea->setMaximumHeight(_contentHeight);
+		SetupAnimations();
+	}
+	return QObject::eventFilter(obj, event);
+}
+
+void Section::SetupAnimations()
+{
+	delete _toggleAnimation;
+
 	_toggleAnimation = new QParallelAnimationGroup(this);
 	_toggleAnimation->addAnimation(
 		new QPropertyAnimation(this, "minimumHeight"));
@@ -85,17 +116,13 @@ void Section::SetContent(QWidget *w)
 	_toggleAnimation->addAnimation(
 		new QPropertyAnimation(_contentArea, "maximumHeight"));
 
-	const auto collapsedHeight =
-		sizeHint().height() - _contentArea->maximumHeight();
-	auto contentHeight = newLayout->sizeHint().height();
-
 	for (int i = 0; i < _toggleAnimation->animationCount() - 1; ++i) {
 		QPropertyAnimation *SectionAnimation =
 			static_cast<QPropertyAnimation *>(
 				_toggleAnimation->animationAt(i));
 		SectionAnimation->setDuration(_animationDuration);
-		SectionAnimation->setStartValue(collapsedHeight);
-		SectionAnimation->setEndValue(collapsedHeight + contentHeight);
+		SectionAnimation->setStartValue(_headerHeight);
+		SectionAnimation->setEndValue(_headerHeight + _contentHeight);
 	}
 
 	QPropertyAnimation *contentAnimation =
@@ -103,10 +130,24 @@ void Section::SetContent(QWidget *w)
 			_toggleAnimation->animationCount() - 1));
 	contentAnimation->setDuration(_animationDuration);
 	contentAnimation->setStartValue(0);
-	contentAnimation->setEndValue(contentHeight);
+	contentAnimation->setEndValue(_contentHeight);
+
+	QWidget::connect(_toggleAnimation, SIGNAL(finished()), this,
+			 SLOT(AnimationFinished()));
 }
 
-void Section::AddHeaderWidget(QWidget *w)
+void Section::CleanUpPreviousContent()
 {
-	_headerWidgetLayout->addWidget(w);
+	if (_contentArea) {
+		auto oldLayout = _contentArea->layout();
+		if (oldLayout) {
+			clearLayout(oldLayout);
+			delete oldLayout;
+		}
+	}
+}
+
+void Section::AnimationFinished()
+{
+	_transitioning = false;
 }

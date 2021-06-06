@@ -245,7 +245,10 @@ void AdvSceneSwitcher::setupRegionTab()
 	}
 
 	if (switcher->screenRegionSwitches.size() == 0) {
-		addPulse = PulseWidget(ui->screenRegionAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse = PulseWidget(ui->screenRegionAdd,
+					       QColor(Qt::green));
+		}
 		ui->regionHelp->setVisible(true);
 	} else {
 		ui->regionHelp->setVisible(false);
@@ -320,8 +323,8 @@ ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
 	QWidget::connect(maxY, SIGNAL(valueChanged(int)), this,
 			 SLOT(MaxYChanged(int)));
 
-	AdvSceneSwitcher::populateSceneSelection(
-		excludeScenes, false, false, true,
+	populateSceneSelection(
+		excludeScenes, false, false, nullptr, true,
 		obs_module_text(
 			"AdvSceneSwitcher.screenRegionTab.excludeScenes.None"),
 		true);

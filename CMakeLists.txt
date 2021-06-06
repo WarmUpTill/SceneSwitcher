@@ -62,7 +62,6 @@ set(advanced-scene-switcher_HEADERS
 	${advanced-scene-switcher_HEADERS}
 	src/headers/advanced-scene-switcher.hpp
 	src/headers/switcher-data-structs.hpp
-	src/headers/utility.hpp
 	src/headers/scene-group.hpp
 	src/headers/scene-trigger.hpp
 	src/headers/switch-audio.hpp
@@ -82,32 +81,44 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/switch-generic.hpp
 	src/headers/macro-action-edit.hpp
 	src/headers/macro-action-audio.hpp
+	src/headers/macro-action-filter.hpp
+	src/headers/macro-action-macro.hpp
+	src/headers/macro-action-media.hpp
+	src/headers/macro-action-plugin-state.hpp
 	src/headers/macro-action-recording.hpp
 	src/headers/macro-action-replay-buffer.hpp
 	src/headers/macro-action-run.hpp
+	src/headers/macro-action-scene-switch.hpp
+	src/headers/macro-action-scene-visibility.hpp
+	src/headers/macro-action-source.hpp
 	src/headers/macro-action-streaming.hpp
-	src/headers/macro-action-switch-scene.hpp
 	src/headers/macro-action-wait.hpp
 	src/headers/macro-condition-edit.hpp
 	src/headers/macro-condition-audio.hpp
+	src/headers/macro-condition-counter.hpp
 	src/headers/macro-condition-file.hpp
 	src/headers/macro-condition-idle.hpp
+	src/headers/macro-condition-interval.hpp
 	src/headers/macro-condition-media.hpp
 	src/headers/macro-condition-plugin-state.hpp
 	src/headers/macro-condition-process.hpp
 	src/headers/macro-condition-recording.hpp
 	src/headers/macro-condition-region.hpp
 	src/headers/macro-condition-scene.hpp
+	src/headers/macro-condition-source.hpp
 	src/headers/macro-condition-streaming.hpp
 	src/headers/macro-condition-video.hpp
 	src/headers/macro-condition-virt-desktop.hpp
 	src/headers/macro-condition-window.hpp
 	src/headers/macro.hpp
+	src/headers/macro-selection.hpp
 	src/headers/curl-helper.hpp
 	src/headers/screenshot-helper.hpp
 	src/headers/name-dialog.hpp
 	src/headers/duration-control.hpp
 	src/headers/section.hpp
+	src/headers/platform-funcs.hpp
+	src/headers/utility.hpp
 	src/headers/volume-control.hpp
 	src/headers/version.h
 	)
@@ -139,33 +150,44 @@ set(advanced-scene-switcher_SOURCES
 	src/switch-generic.cpp
 	src/macro-action-edit.cpp
 	src/macro-action-audio.cpp
+	src/macro-action-filter.cpp
+	src/macro-action-macro.cpp
+	src/macro-action-media.cpp
+	src/macro-action-plugin-state.cpp
 	src/macro-action-recording.cpp
 	src/macro-action-replay-buffer.cpp
 	src/macro-action-run.cpp
+	src/macro-action-scene-switch.cpp
+	src/macro-action-scene-visibility.cpp
+	src/macro-action-source.cpp
 	src/macro-action-streaming.cpp
-	src/macro-action-switch-scene.cpp
 	src/macro-action-wait.cpp
 	src/macro-condition-edit.cpp
 	src/macro-condition-audio.cpp
+	src/macro-condition-counter.cpp
 	src/macro-condition-file.cpp
 	src/macro-condition-idle.cpp
+	src/macro-condition-interval.cpp
 	src/macro-condition-media.cpp
 	src/macro-condition-plugin-state.cpp
 	src/macro-condition-process.cpp
 	src/macro-condition-recording.cpp
 	src/macro-condition-region.cpp
 	src/macro-condition-scene.cpp
+	src/macro-condition-source.cpp
 	src/macro-condition-streaming.cpp
 	src/macro-condition-video.cpp
 	src/macro-condition-virt-desktop.cpp
 	src/macro-condition-window.cpp
 	src/macro.cpp
+	src/macro-selection.cpp
 	src/macro-tab.cpp
 	src/curl-helper.cpp
 	src/screenshot-helper.cpp
 	src/name-dialog.cpp
 	src/duration-control.cpp
 	src/section.cpp
+	src/utility.cpp
 	src/volume-control.cpp
 	src/version.cpp
 	)

@@ -191,7 +191,9 @@ void AdvSceneSwitcher::setupTimeTab()
 	}
 
 	if (switcher->timeSwitches.size() == 0) {
-		addPulse = PulseWidget(ui->timeAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse = PulseWidget(ui->timeAdd, QColor(Qt::green));
+		}
 		ui->timeHelp->setVisible(true);
 	} else {
 		ui->timeHelp->setVisible(false);

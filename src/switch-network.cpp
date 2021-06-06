@@ -17,13 +17,16 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 #define PARAM_CLIENT_ENABLE "ClientEnabled"
 #define PARAM_CLIENT_PORT "ClientPort"
 #define PARAM_ADDRESS "Address"
-#define PARAM_CLIENT_SENDALL "SendAll"
+#define PARAM_CLIENT_SEND_SCENE_CHANGE "SendSceneChange"
+#define PARAM_CLIENT_SEND_SCENE_CHANGE_ALL "SendSceneChangeAll"
+#define PARAM_CLIENT_SENDPREVIEW "SendPreview"
 
 #define RECONNECT_DELAY 10
 
 #define SCENE_ENTRY "scene"
 #define TRANSITION_ENTRY "transition"
 #define TRANSITION_DURATION "duration"
+#define SET_PREVIEW "preview"
 
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
@@ -36,7 +39,9 @@ NetworkConfig::NetworkConfig()
 	  ClientEnabled(false),
 	  Address(""),
 	  ClientPort(55555),
-	  SendAll(true)
+	  SendSceneChange(true),
+	  SendSceneChangeAll(true),
+	  SendPreview(true)
 {
 }
 
@@ -51,7 +56,11 @@ void NetworkConfig::Load(obs_data_t *obj)
 	ClientEnabled = obs_data_get_bool(obj, PARAM_CLIENT_ENABLE);
 	Address = obs_data_get_string(obj, PARAM_ADDRESS);
 	ClientPort = obs_data_get_int(obj, PARAM_CLIENT_PORT);
-	SendAll = obs_data_get_bool(obj, PARAM_CLIENT_SENDALL);
+	SendSceneChange =
+		obs_data_get_bool(obj, PARAM_CLIENT_SEND_SCENE_CHANGE);
+	SendSceneChangeAll =
+		obs_data_get_bool(obj, PARAM_CLIENT_SEND_SCENE_CHANGE_ALL);
+	SendPreview = obs_data_get_bool(obj, PARAM_CLIENT_SENDPREVIEW);
 }
 
 void NetworkConfig::Save(obs_data_t *obj)
@@ -63,7 +72,10 @@ void NetworkConfig::Save(obs_data_t *obj)
 	obs_data_set_bool(obj, PARAM_CLIENT_ENABLE, ClientEnabled);
 	obs_data_set_string(obj, PARAM_ADDRESS, Address.c_str());
 	obs_data_set_int(obj, PARAM_CLIENT_PORT, ClientPort);
-	obs_data_set_bool(obj, PARAM_CLIENT_SENDALL, SendAll);
+	obs_data_set_bool(obj, PARAM_CLIENT_SEND_SCENE_CHANGE, SendSceneChange);
+	obs_data_set_bool(obj, PARAM_CLIENT_SEND_SCENE_CHANGE_ALL,
+			  SendSceneChangeAll);
+	obs_data_set_bool(obj, PARAM_CLIENT_SENDPREVIEW, SendPreview);
 }
 
 void NetworkConfig::SetDefaults(obs_data_t *obj)
@@ -75,12 +87,31 @@ void NetworkConfig::SetDefaults(obs_data_t *obj)
 	obs_data_set_default_bool(obj, PARAM_CLIENT_ENABLE, ClientEnabled);
 	obs_data_set_default_string(obj, PARAM_ADDRESS, Address.c_str());
 	obs_data_set_default_int(obj, PARAM_CLIENT_PORT, ClientPort);
-	obs_data_set_default_bool(obj, PARAM_CLIENT_SENDALL, SendAll);
+	obs_data_set_default_bool(obj, PARAM_CLIENT_SEND_SCENE_CHANGE,
+				  SendSceneChange);
+	obs_data_set_default_bool(obj, PARAM_CLIENT_SEND_SCENE_CHANGE_ALL,
+				  SendSceneChangeAll);
+	obs_data_set_default_bool(obj, PARAM_CLIENT_SENDPREVIEW, SendPreview);
 }
 
 std::string NetworkConfig::GetClientUri()
 {
 	return "ws://" + Address + ":" + std::to_string(ClientPort);
+}
+
+bool NetworkConfig::ShouldSendSceneChange()
+{
+	return ServerEnabled && SendSceneChange;
+}
+
+bool NetworkConfig::ShouldSendFrontendSceneChange()
+{
+	return ShouldSendSceneChange() && SendSceneChangeAll;
+}
+
+bool NetworkConfig::ShouldSendPrviewSceneChange()
+{
+	return ServerEnabled && SendPreview;
 }
 
 WSServer::WSServer()
@@ -192,7 +223,7 @@ void WSServer::stop()
 	blog(LOG_INFO, "server stopped successfully");
 }
 
-void WSServer::sendMessage(sceneSwitchInfo sceneSwitch)
+void WSServer::sendMessage(sceneSwitchInfo sceneSwitch, bool preview)
 {
 	if (!sceneSwitch.scene) {
 		return;
@@ -204,6 +235,7 @@ void WSServer::sendMessage(sceneSwitchInfo sceneSwitch)
 	obs_data_set_string(data, TRANSITION_ENTRY,
 			    GetWeakSourceName(sceneSwitch.transition).c_str());
 	obs_data_set_int(data, TRANSITION_DURATION, sceneSwitch.duration);
+	obs_data_set_bool(data, SET_PREVIEW, preview);
 	std::string message = obs_data_get_json(data);
 	obs_data_release(data);
 
@@ -248,7 +280,8 @@ std::string processMessage(std::string payload)
 
 	if (!obs_data_has_user_value(data, SCENE_ENTRY) ||
 	    !obs_data_has_user_value(data, TRANSITION_ENTRY) ||
-	    !obs_data_has_user_value(data, TRANSITION_DURATION)) {
+	    !obs_data_has_user_value(data, TRANSITION_DURATION) ||
+	    !obs_data_has_user_value(data, SET_PREVIEW)) {
 		return "missing request parameters";
 	}
 
@@ -256,6 +289,7 @@ std::string processMessage(std::string payload)
 	std::string transitionName =
 		obs_data_get_string(data, TRANSITION_ENTRY);
 	int duration = obs_data_get_int(data, TRANSITION_DURATION);
+	bool preview = obs_data_get_bool(data, SET_PREVIEW);
 
 	obs_data_release(data);
 
@@ -271,8 +305,11 @@ std::string processMessage(std::string payload)
 		ret += " - ignoring invalid transition: '" + transitionName +
 		       "'";
 	}
-
-	switchScene({scene, transition, duration});
+	if (preview) {
+		switchPreviewScene(scene);
+	} else {
+		switchScene({scene, transition, duration});
+	}
 	return ret;
 }
 
@@ -478,7 +515,12 @@ void AdvSceneSwitcher::setupNetworkTab()
 	ui->clientSettings->setChecked(switcher->networkConfig.ClientEnabled);
 	ui->clientHostname->setText(switcher->networkConfig.Address.c_str());
 	ui->clientPort->setValue(switcher->networkConfig.ClientPort);
-	ui->restrictSend->setChecked(!switcher->networkConfig.SendAll);
+	ui->sendSceneChange->setChecked(
+		switcher->networkConfig.SendSceneChange);
+	ui->restrictSend->setChecked(
+		!switcher->networkConfig.SendSceneChangeAll);
+	ui->sendPreview->setChecked(switcher->networkConfig.SendPreview);
+	ui->restrictSend->setDisabled(!switcher->networkConfig.SendSceneChange);
 
 	QTimer *statusTimer = new QTimer(this);
 	connect(statusTimer, SIGNAL(timeout()), this,
@@ -592,6 +634,17 @@ void AdvSceneSwitcher::on_clientPort_valueChanged(int value)
 	switcher->networkConfig.ClientPort = value;
 }
 
+void AdvSceneSwitcher::on_sendSceneChange_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->networkConfig.SendSceneChange = state;
+	ui->restrictSend->setDisabled(!state);
+}
+
 void AdvSceneSwitcher::on_restrictSend_stateChanged(int state)
 {
 	if (loading) {
@@ -599,7 +652,17 @@ void AdvSceneSwitcher::on_restrictSend_stateChanged(int state)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->networkConfig.SendAll = !state;
+	switcher->networkConfig.SendSceneChangeAll = !state;
+}
+
+void AdvSceneSwitcher::on_sendPreview_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->networkConfig.SendPreview = state;
 }
 
 void AdvSceneSwitcher::on_clientReconnect_clicked()

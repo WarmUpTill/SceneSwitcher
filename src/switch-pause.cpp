@@ -222,7 +222,6 @@ void SwitcherData::savePauseSwitches(obs_data_t *obj)
 		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "pauseEntries", pauseScenesArray);
-	obs_data_set_int(obj, "oldPauseValuesImported", 1);
 	obs_data_array_release(pauseScenesArray);
 }
 
@@ -265,7 +264,9 @@ void AdvSceneSwitcher::setupPauseTab()
 	}
 
 	if (switcher->pauseEntries.size() == 0) {
-		addPulse = PulseWidget(ui->pauseAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse = PulseWidget(ui->pauseAdd, QColor(Qt::green));
+		}
 		ui->pauseHelp->setVisible(true);
 	} else {
 		ui->pauseHelp->setVisible(false);
@@ -316,7 +317,7 @@ PauseEntryWidget::PauseEntryWidget(QWidget *parent, PauseEntry *s)
 
 	populatePauseTypes(pauseTypes);
 	populatePauseTargets(pauseTargets);
-	AdvSceneSwitcher::populateWindowSelection(windows);
+	populateWindowSelection(windows);
 
 	windows->setEditable(true);
 	windows->setMaxVisibleItems(20);

@@ -3,7 +3,7 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-const int MacroConditionMedia::id = 5;
+const std::string MacroConditionMedia::id = "media";
 
 bool MacroConditionMedia::_registered = MacroConditionFactory::Register(
 	MacroConditionMedia::id,
@@ -256,7 +256,7 @@ MacroConditionMediaEdit::MacroConditionMediaEdit(
 	QWidget::connect(_time, SIGNAL(UnitChanged(DurationUnit)), this,
 			 SLOT(TimeUnitChanged(DurationUnit)));
 
-	AdvSceneSwitcher::populateMediaSelection(_mediaSources);
+	populateMediaSelection(_mediaSources);
 	populateMediaStates(_states);
 	populateMediaTimeRestrictions(_timeRestrictions);
 

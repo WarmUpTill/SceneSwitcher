@@ -348,7 +348,10 @@ void AdvSceneSwitcher::setupTitleTab()
 	}
 
 	if (switcher->windowSwitches.size() == 0) {
-		addPulse = PulseWidget(ui->windowAdd, QColor(Qt::green));
+		if (!switcher->disableHints) {
+			addPulse =
+				PulseWidget(ui->windowAdd, QColor(Qt::green));
+		}
 		ui->windowHelp->setVisible(true);
 	} else {
 		ui->windowHelp->setVisible(false);
@@ -387,13 +390,7 @@ void WindowSwitch::load(obs_data_t *obj)
 
 	window = obs_data_get_string(obj, "windowTitle");
 	fullscreen = obs_data_get_bool(obj, "fullscreen");
-#if __APPLE__
-	// TODO:
-	// not implemented on MacOS as I cannot test it
-	maximized = false;
-#else
 	maximized = obs_data_get_bool(obj, "maximized");
-#endif
 	focus = obs_data_get_bool(obj, "focus") ||
 		!obs_data_has_user_value(obj, "focus");
 }
@@ -418,16 +415,10 @@ WindowSwitchWidget::WindowSwitchWidget(QWidget *parent, WindowSwitch *s)
 	QWidget::connect(focused, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
 
-	AdvSceneSwitcher::populateWindowSelection(windows);
+	populateWindowSelection(windows);
 
 	windows->setEditable(true);
 	windows->setMaxVisibleItems(20);
-#if __APPLE__
-	// TODO:
-	// not implemented on MacOS as I cannot test it
-	maximized->setDisabled(true);
-	maximized->setVisible(false);
-#endif
 
 	if (s) {
 		windows->setCurrentText(s->window.c_str());
