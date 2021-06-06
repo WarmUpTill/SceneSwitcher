@@ -1,4 +1,3 @@
-#pragma once
 #include "headers/utility.hpp"
 #include "headers/platform-funcs.hpp"
 
