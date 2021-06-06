@@ -9,3 +9,5 @@ std::pair<int, int> getCursorPos();
 int secondsSinceLastInput();
 void GetProcessList(QStringList &processes);
 bool isInFocus(const QString &executable);
+bool GetCurrentVirtualDesktop(long &desktop);
+bool GetVirtualDesktopCount(long &ndesktops);

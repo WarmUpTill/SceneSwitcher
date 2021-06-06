@@ -1,5 +1,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <objectarray.h>
+#include <shobjidl_core.h>
 #include <util/platform.h>
 #include <TlHelp32.h>
 #include <Psapi.h>
@@ -11,6 +13,7 @@
 #include <QRegularExpression>
 
 #define MAX_SEARCH 1000
+#define MAXDESKTOPS 255
 
 static bool GetWindowTitle(HWND window, std::string &title)
 {
@@ -284,4 +287,266 @@ int getTime()
 int secondsSinceLastInput()
 {
 	return (getTime() - getLastInputTime()) / 1000;
+}
+
+// Virtual Desktop code
+// based on https://github.com/Eun/MoveToDesktop/
+//
+// TODO:
+// - clean up
+// - call FreeCom() on exit
+
+struct IApplicationView : public IUnknown {
+public:
+};
+
+MIDL_INTERFACE("FF72FFDD-BE7E-43FC-9C03-AD81681E88E4")
+IVirtualDesktop : public IUnknown
+{
+public:
+	virtual HRESULT STDMETHODCALLTYPE IsViewVisible(
+		IApplicationView * pView, int *pfVisible) = 0;
+
+	virtual HRESULT STDMETHODCALLTYPE GetID(GUID * pGuid) = 0;
+};
+
+class IVirtualDesktopManagerInternal : public IUnknown {
+public:
+	virtual HRESULT STDMETHODCALLTYPE GetCount(UINT *pCount) = 0;
+
+	virtual HRESULT STDMETHODCALLTYPE MoveViewToDesktop(
+		IApplicationView *pView, IVirtualDesktop *pDesktop) = 0;
+
+	// 10240
+	virtual HRESULT STDMETHODCALLTYPE CanViewMoveDesktops(
+		IApplicationView *pView, int *pfCanViewMoveDesktops) = 0;
+
+	virtual HRESULT STDMETHODCALLTYPE
+	GetCurrentDesktop(IVirtualDesktop **desktop) = 0;
+
+	virtual HRESULT STDMETHODCALLTYPE
+	GetDesktops(IObjectArray **ppDesktops) = 0;
+
+	virtual HRESULT STDMETHODCALLTYPE
+	SwitchDesktop(IVirtualDesktop *pDesktop) = 0;
+
+	virtual HRESULT STDMETHODCALLTYPE
+	CreateDesktopW(IVirtualDesktop **ppNewDesktop) = 0;
+
+	// pFallbackDesktop - ??????? ???? ?? ??????? ????? ???????? ??????? ????? ???????? ??????????
+	virtual HRESULT STDMETHODCALLTYPE
+	RemoveDesktop(IVirtualDesktop *pRemove,
+		      IVirtualDesktop *pFallbackDesktop) = 0;
+
+	// 10240
+	virtual HRESULT STDMETHODCALLTYPE
+	FindDesktop(GUID *desktopId, IVirtualDesktop **ppDesktop) = 0;
+};
+
+IServiceProvider *pServiceProvider = nullptr;
+IVirtualDesktopManager *pDesktopManager = nullptr;
+IVirtualDesktopManagerInternal *pDesktopManagerInternal = nullptr;
+
+const CLSID CLSID_ImmersiveShell = {0xC2F03A33, 0x21F5, 0x47FA, 0xB4,
+				    0xBB,       0x15,   0x63,   0x62,
+				    0xA2,       0xF2,   0x39};
+
+const CLSID CLSID_VirtualDesktopAPI_Unknown = {0xC5E0CDCA, 0x7B6E, 0x41B2, 0x9F,
+					       0xC4,       0xD9,   0x39,   0x75,
+					       0xCC,       0x46,   0x7B};
+
+const IID IID_IVirtualDesktopManagerInternal = {0xEF9F1A6C, 0xD3CC, 0x4358,
+						0xB7,       0x12,   0xF8,
+						0x4B,       0x63,   0x5B,
+						0xEB,       0xE7};
+
+const IID UUID_IVirtualDesktopManagerInternal_10130{0xEF9F1A6C, 0xD3CC, 0x4358,
+						    0xB7,       0x12,   0xF8,
+						    0x4B,       0x63,   0x5B,
+						    0xEB,       0xE7};
+const IID UUID_IVirtualDesktopManagerInternal_10240{0xAF8DA486, 0x95BB, 0x4460,
+						    0xB3,       0xB7,   0x6E,
+						    0x7A,       0x6B,   0x29,
+						    0x62,       0xB5};
+const IID UUID_IVirtualDesktopManagerInternal_14393{0xf31574d6, 0xb682, 0x4cdc,
+						    0xbd,       0x56,   0x18,
+						    0x27,       0x86,   0x0a,
+						    0xbe,       0xc6};
+
+enum EComStatus {
+	COMSTATUS_UNINITIALIZED,
+	COMSTATUS_INITIALIZED,
+	COMSTATUS_ERROR,
+};
+
+int ComStatus = COMSTATUS_UNINITIALIZED;
+#define COMMAND_TIMEOUT 500 // Blocks Command below this timeout
+bool bAddedMenu = false;
+bool bReadIni = false;
+bool bSwitchDesktopAfterMove = false;
+bool bCreateNewDesktopOnMove = false;
+bool bDeleteEmptyDesktops = true;
+ULONGLONG nLastCommand = 0;
+
+UINT16 GetWinBuildNumber()
+{
+	UINT16 buildNumbers[] = {10130, 10240, 14393};
+	OSVERSIONINFOEXW osvi = {sizeof(osvi), 0, 0, 0, 0, {0}, 0, 0};
+	ULONGLONG mask = ::VerSetConditionMask(0, VER_BUILDNUMBER, VER_EQUAL);
+
+	for (size_t i = 0; i < sizeof(buildNumbers) / sizeof(buildNumbers[0]);
+	     i++) {
+		osvi.dwBuildNumber = buildNumbers[i];
+		if (VerifyVersionInfoW(&osvi, VER_BUILDNUMBER, mask) != FALSE) {
+			return buildNumbers[i];
+		}
+	}
+
+	return 0;
+}
+
+BOOL InitCom()
+{
+	if (ComStatus == COMSTATUS_INITIALIZED) {
+		return true;
+	} else if (ComStatus == COMSTATUS_ERROR) {
+		return false;
+	}
+
+	ComStatus = COMSTATUS_ERROR;
+	HRESULT hr = ::CoInitialize(NULL);
+	if (FAILED(hr)) {
+		return FALSE;
+	}
+
+	hr = ::CoCreateInstance(CLSID_ImmersiveShell, NULL, CLSCTX_LOCAL_SERVER,
+				__uuidof(IServiceProvider),
+				(PVOID *)&pServiceProvider);
+	if (FAILED(hr)) {
+		return FALSE;
+	}
+
+	hr = pServiceProvider->QueryService(__uuidof(IVirtualDesktopManager),
+					    &pDesktopManager);
+	if (FAILED(hr)) {
+		pServiceProvider->Release();
+		pServiceProvider = nullptr;
+		return FALSE;
+	}
+
+	UINT16 buildNumber = GetWinBuildNumber();
+
+	switch (buildNumber) {
+	case 10130:
+		hr = pServiceProvider->QueryService(
+			CLSID_VirtualDesktopAPI_Unknown,
+			UUID_IVirtualDesktopManagerInternal_10130,
+			(void **)&pDesktopManagerInternal);
+		break;
+	case 10240:
+		hr = pServiceProvider->QueryService(
+			CLSID_VirtualDesktopAPI_Unknown,
+			UUID_IVirtualDesktopManagerInternal_10240,
+			(void **)&pDesktopManagerInternal);
+		break;
+	case 14393:
+	default:
+		hr = pServiceProvider->QueryService(
+			CLSID_VirtualDesktopAPI_Unknown,
+			UUID_IVirtualDesktopManagerInternal_14393,
+			(void **)&pDesktopManagerInternal);
+		break;
+	}
+	if (FAILED(hr)) {
+		pDesktopManager->Release();
+		pDesktopManager = nullptr;
+		pServiceProvider->Release();
+		pServiceProvider = nullptr;
+		return FALSE;
+	}
+
+	ComStatus = COMSTATUS_INITIALIZED;
+	return TRUE;
+}
+
+VOID FreeCom()
+{
+	if (ComStatus == COMSTATUS_INITIALIZED) {
+		pDesktopManager->Release();
+		pDesktopManagerInternal->Release();
+		pServiceProvider->Release();
+		ComStatus = COMSTATUS_UNINITIALIZED;
+	}
+}
+
+bool GetCurrentVirtualDesktop(long &desktop)
+{
+	UINT count = 0;
+	IObjectArray *pObjectArray = nullptr;
+	IVirtualDesktop *pCurrentDesktop = nullptr;
+
+	if (!InitCom()) {
+		return false;
+	}
+
+	HRESULT hr = pDesktopManagerInternal->GetDesktops(&pObjectArray);
+	if (FAILED(hr)) {
+		return false;
+	}
+
+	hr = pObjectArray->GetCount(&count);
+	if (FAILED(hr)) {
+		pObjectArray->Release();
+		return false;
+	}
+
+	hr = pDesktopManagerInternal->GetCurrentDesktop(&pCurrentDesktop);
+	if (FAILED(hr)) {
+		pObjectArray->Release();
+		return false;
+	}
+	int index = -1;
+	for (UINT i = 0; i < count && i < MAXDESKTOPS && index == -1; ++i) {
+		IVirtualDesktop *pDesktop = nullptr;
+
+		if (FAILED(pObjectArray->GetAt(i, __uuidof(IVirtualDesktop),
+					       (void **)&pDesktop)))
+			continue;
+		if (pDesktop == pCurrentDesktop) {
+			index = i;
+		}
+		pDesktop->Release();
+	}
+
+	pObjectArray->Release();
+
+	if (pCurrentDesktop != nullptr) {
+		pCurrentDesktop->Release();
+	}
+	desktop = index;
+	return true;
+}
+
+bool GetVirtualDesktopCount(long &ndesktops)
+{
+	if (!InitCom()) {
+		return false;
+	}
+	IObjectArray *pObjectArray = nullptr;
+	HRESULT hr = pDesktopManagerInternal->GetDesktops(&pObjectArray);
+	if (FAILED(hr)) {
+		return false;
+	}
+
+	UINT count;
+	hr = pObjectArray->GetCount(&count);
+	if (FAILED(hr)) {
+		pObjectArray->Release();
+		return false;
+	}
+
+	pObjectArray->Release();
+	ndesktops = count;
+
+	return true;
 }

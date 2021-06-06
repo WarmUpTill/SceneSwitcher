@@ -281,3 +281,13 @@ bool isInFocus(const QString &executable)
 
 	return (equals || matches);
 }
+
+bool GetCurrentVirtualDesktop(long &desktop)
+{
+	return false;
+}
+
+bool GetVirtualDesktopCount(long &ndesktops)
+{
+	return false;
+}
