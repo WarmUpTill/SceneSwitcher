@@ -3,7 +3,7 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-const int MacroConditionVirtDesktop::id = 12;
+const std::string MacroConditionVirtDesktop::id = "virtual_desktop";
 
 bool MacroConditionVirtDesktop::_registered = MacroConditionFactory::Register(
 	MacroConditionVirtDesktop::id,
