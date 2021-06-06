@@ -57,6 +57,8 @@ bool MacroActionHotkey::Save(obs_data_t *obj)
 	obs_data_set_bool(obj, "right_ctrl", _rightCtrl);
 	obs_data_set_bool(obj, "left_alt", _leftAlt);
 	obs_data_set_bool(obj, "right_alt", _rightAlt);
+	obs_data_set_bool(obj, "left_meta", _leftMeta);
+	obs_data_set_bool(obj, "right_meta", _rightMeta);
 	return true;
 }
 
@@ -70,6 +72,8 @@ bool MacroActionHotkey::Load(obs_data_t *obj)
 	_rightCtrl = obs_data_get_bool(obj, "right_ctrl");
 	_leftAlt = obs_data_get_bool(obj, "left_alt");
 	_rightAlt = obs_data_get_bool(obj, "right_alt");
+	_leftMeta = obs_data_get_bool(obj, "left_meta");
+	_rightMeta = obs_data_get_bool(obj, "right_meta");
 	return true;
 }
 
@@ -200,6 +204,10 @@ MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 		obs_module_text("AdvSceneSwitcher.action.hotkey.leftAlt"));
 	_rightAlt = new QCheckBox(
 		obs_module_text("AdvSceneSwitcher.action.hotkey.rightAlt"));
+	_leftMeta = new QCheckBox(
+		obs_module_text("AdvSceneSwitcher.action.hotkey.leftMeta"));
+	_rightMeta = new QCheckBox(
+		obs_module_text("AdvSceneSwitcher.action.hotkey.rightMeta"));
 
 	populateKeySelection(_keys);
 
@@ -217,6 +225,10 @@ MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 			 SLOT(LAltChanged(int)));
 	QWidget::connect(_rightAlt, SIGNAL(stateChanged(int)), this,
 			 SLOT(RAltChanged(int)));
+	QWidget::connect(_leftMeta, SIGNAL(stateChanged(int)), this,
+			 SLOT(LMetaChanged(int)));
+	QWidget::connect(_rightMeta, SIGNAL(stateChanged(int)), this,
+			 SLOT(RMetaChanged(int)));
 
 	QHBoxLayout *line1Layout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -232,6 +244,8 @@ MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 	line2Layout->addWidget(_rightCtrl);
 	line2Layout->addWidget(_leftAlt);
 	line2Layout->addWidget(_rightAlt);
+	line2Layout->addWidget(_leftMeta);
+	line2Layout->addWidget(_rightMeta);
 	line2Layout->addStretch();
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
@@ -257,6 +271,8 @@ void MacroActionHotkeyEdit::UpdateEntryData()
 	_rightCtrl->setChecked(_entryData->_rightCtrl);
 	_leftAlt->setChecked(_entryData->_leftAlt);
 	_rightAlt->setChecked(_entryData->_rightAlt);
+	_leftMeta->setChecked(_entryData->_leftMeta);
+	_rightMeta->setChecked(_entryData->_rightMeta);
 }
 
 void MacroActionHotkeyEdit::LShiftChanged(int state)
@@ -317,6 +333,26 @@ void MacroActionHotkeyEdit::RAltChanged(int state)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_rightAlt = state;
+}
+
+void MacroActionHotkeyEdit::LMetaChanged(int state)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_leftMeta = state;
+}
+
+void MacroActionHotkeyEdit::RMetaChanged(int state)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_rightMeta = state;
 }
 
 void MacroActionHotkeyEdit::KeyChanged(int key)

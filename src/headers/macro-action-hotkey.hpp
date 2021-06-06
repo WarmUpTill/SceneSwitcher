@@ -24,6 +24,8 @@ public:
 	bool _rightCtrl = false;
 	bool _leftAlt = false;
 	bool _rightAlt = false;
+	bool _leftMeta = false;
+	bool _rightMeta = false;
 
 private:
 	static bool _registered;
@@ -54,6 +56,8 @@ private slots:
 	void RCtrlChanged(int state);
 	void LAltChanged(int state);
 	void RAltChanged(int state);
+	void LMetaChanged(int state);
+	void RMetaChanged(int state);
 
 protected:
 	QComboBox *_keys;
@@ -63,6 +67,8 @@ protected:
 	QCheckBox *_rightCtrl;
 	QCheckBox *_leftAlt;
 	QCheckBox *_rightAlt;
+	QCheckBox *_leftMeta;
+	QCheckBox *_rightMeta;
 
 	std::shared_ptr<MacroActionHotkey> _entryData;
 
