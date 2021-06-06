@@ -35,7 +35,8 @@ bool MacroActionHotkey::PerformAction()
 	}
 
 	if (!keys.empty()) {
-		PressKeys(keys);
+		std::thread t([keys]() { PressKeys(keys); });
+		t.detach();
 	}
 
 	return true;

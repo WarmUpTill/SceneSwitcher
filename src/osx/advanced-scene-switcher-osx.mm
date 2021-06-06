@@ -284,4 +284,4 @@ bool isInFocus(const QString &executable)
 	return (equals || matches);
 }
 
-void PressKeys(const std::vector<HotkeyType> &keys) {}
+void PressKeys(const std::vector<HotkeyType> keys) {}
