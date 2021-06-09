@@ -31,8 +31,7 @@ struct SceneSequenceSwitch : SceneSwitcherEntry {
 	bool checkMatch(OBSWeakSource currentScene, int &linger,
 			SceneSequenceSwitch *root = nullptr);
 	bool checkDurationMatchInterruptible();
-	void prepareUninterruptibleMatch(OBSWeakSource currentScene,
-					 int &linger);
+	void prepareUninterruptibleMatch(int &linger);
 	void advanceActiveSequence();
 	void logAdvanceSequence();
 	void logSequenceCanceled();
