@@ -251,6 +251,12 @@ MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(line1Layout);
 	mainLayout->addLayout(line2Layout);
+
+	if (!canSimulateKeyPresses) {
+		mainLayout->addWidget(new QLabel(obs_module_text(
+			"AdvSceneSwitcher.action.hotkey.disabled")));
+	}
+
 	setLayout(mainLayout);
 
 	_entryData = entryData;

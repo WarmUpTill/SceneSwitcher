@@ -1,5 +1,7 @@
 #pragma once
 
+extern bool canSimulateKeyPresses;
+
 enum class HotkeyType {
 	Key_NoKey = 0,
 
