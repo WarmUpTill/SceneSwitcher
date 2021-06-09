@@ -397,3 +397,7 @@ int secondsSinceLastInput()
 }
 
 void PressKeys(const std::vector<HotkeyType> keys) {}
+
+void PlatformCleanup() {}
+
+void PlatformInit() {}

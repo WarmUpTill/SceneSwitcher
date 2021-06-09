@@ -433,6 +433,8 @@ extern "C" void FreeSceneSwitcher()
 		loaded_curl_lib = nullptr;
 	}
 
+	PlatformCleanup();
+
 	delete switcher;
 	switcher = nullptr;
 }
@@ -545,6 +547,8 @@ extern "C" void InitSceneSwitcher()
 	if (loadCurl() && f_curl_init) {
 		switcher->curl = f_curl_init();
 	}
+
+	PlatformInit();
 
 	auto cb = []() {
 		QMainWindow *window =

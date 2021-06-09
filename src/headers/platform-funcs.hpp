@@ -11,3 +11,5 @@ int secondsSinceLastInput();
 void GetProcessList(QStringList &processes);
 bool isInFocus(const QString &executable);
 void PressKeys(const std::vector<HotkeyType> keys);
+void PlatformInit();
+void PlatformCleanup();

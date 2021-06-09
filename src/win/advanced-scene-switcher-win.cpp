@@ -11,6 +11,7 @@
 #include <vector>
 #include <QStringList>
 #include <QRegularExpression>
+#include "..\headers\platform-funcs.hpp"
 
 #define MAX_SEARCH 1000
 
@@ -441,3 +442,7 @@ int secondsSinceLastInput()
 {
 	return (getTime() - getLastInputTime()) / 1000;
 }
+
+void PlatformInit() {}
+
+void PlatformCleanup() {}
