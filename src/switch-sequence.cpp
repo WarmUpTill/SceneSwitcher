@@ -1,5 +1,6 @@
 #include <QFileDialog>
 #include <QTextStream>
+#include <QScrollArea>
 
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
@@ -144,11 +145,17 @@ void AdvSceneSwitcher::on_sceneSequenceLoad_clicked()
 void AdvSceneSwitcher::OpenSequenceExtendEdit(SequenceWidget *sw)
 {
 	QDialog edit;
+	QScrollArea scrollArea;
 	SequenceWidget editWidget(this, sw->getSwitchData(), false, true,
 				  false);
+	scrollArea.setMinimumWidth(1000);
+	scrollArea.setSizePolicy(QSizePolicy::MinimumExpanding,
+				 QSizePolicy::MinimumExpanding);
+	scrollArea.setWidget(&editWidget);
+	scrollArea.setWidgetResizable(true);
 	QHBoxLayout layout;
-	layout.setSizeConstraint(QLayout::SetFixedSize);
-	layout.addWidget(&editWidget);
+	layout.setSizeConstraint(QLayout::SetMinimumSize);
+	layout.addWidget(&scrollArea);
 	edit.setLayout(&layout);
 	edit.setWindowTitle(obs_module_text(
 		"AdvSceneSwitcher.sceneSequenceTab.extendEdit"));
