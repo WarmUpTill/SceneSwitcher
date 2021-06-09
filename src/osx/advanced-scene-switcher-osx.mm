@@ -10,6 +10,8 @@
 #include <QStringList>
 #include <QRegularExpression>
 
+bool canSimulateKeyPresses = false;
+
 void GetWindowList(std::vector<std::string> &windows)
 {
 	windows.resize(0);
