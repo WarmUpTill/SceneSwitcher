@@ -15,6 +15,8 @@
 
 #define MAX_SEARCH 1000
 
+bool canSimulateKeyPresses = true;
+
 static bool GetWindowTitle(HWND window, std::string &title)
 {
 	size_t len = (size_t)GetWindowTextLengthW(window);
