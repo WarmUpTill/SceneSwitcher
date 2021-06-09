@@ -39,7 +39,7 @@ void MacroActionPluginState::LogAction()
 	auto it = actionTypes.find(_action);
 	switch (_action) {
 	case PluginStateAction::STOP:
-		blog(LOG_INFO, "stop() called by macro", it->second.c_str());
+		blog(LOG_INFO, "stop() called by macro");
 		break;
 	default:
 		blog(LOG_WARNING, "ignored unknown pluginState action %d",

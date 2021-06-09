@@ -415,7 +415,7 @@ bool SceneSequenceSwitch::checkMatch(OBSWeakSource currentScene, int &linger,
 			match = checkDurationMatchInterruptible();
 		} else {
 			match = true;
-			prepareUninterruptibleMatch(currentScene, linger);
+			prepareUninterruptibleMatch(linger);
 		}
 	} else {
 		delay.Reset();
@@ -438,8 +438,7 @@ bool SceneSequenceSwitch::checkDurationMatchInterruptible()
 	return false;
 }
 
-void SceneSequenceSwitch::prepareUninterruptibleMatch(
-	OBSWeakSource currentScene, int &linger)
+void SceneSequenceSwitch::prepareUninterruptibleMatch(int &linger)
 {
 	int dur = delay.seconds * 1000;
 	if (dur > 0) {
