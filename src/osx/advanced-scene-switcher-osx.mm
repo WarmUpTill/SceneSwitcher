@@ -409,6 +409,10 @@ void PressKeys(const std::vector<HotkeyType> keys)
 {
 	long modifierFlags = 0;
 	auto source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
+	if (!source) {
+		canSimulateKeyPresses = false;
+		return;
+	}
 
 	// Press keys
 	for (auto &key : keys) {
