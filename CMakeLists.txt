@@ -95,7 +95,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/macro-action-wait.hpp
 	src/headers/macro-condition-edit.hpp
 	src/headers/macro-condition-audio.hpp
-	src/headers/macro-condition-counter.hpp
+	src/headers/macro-condition-macro.hpp
 	src/headers/macro-condition-file.hpp
 	src/headers/macro-condition-idle.hpp
 	src/headers/macro-condition-interval.hpp
@@ -163,7 +163,7 @@ set(advanced-scene-switcher_SOURCES
 	src/macro-action-wait.cpp
 	src/macro-condition-edit.cpp
 	src/macro-condition-audio.cpp
-	src/macro-condition-counter.cpp
+	src/macro-condition-macro.cpp
 	src/macro-condition-file.cpp
 	src/macro-condition-idle.cpp
 	src/macro-condition-interval.cpp
