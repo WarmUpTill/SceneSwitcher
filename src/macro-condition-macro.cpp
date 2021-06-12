@@ -1,5 +1,5 @@
 #include "headers/macro-condition-edit.hpp"
-#include "headers/macro-condition-counter.hpp"
+#include "headers/macro-condition-macro.hpp"
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
