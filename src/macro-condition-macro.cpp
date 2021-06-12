@@ -3,29 +3,46 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-const std::string MacroConditionCounter::id = "counter";
+const std::string MacroConditionMacro::id = "macro";
 
-bool MacroConditionCounter::_registered = MacroConditionFactory::Register(
-	MacroConditionCounter::id,
-	{MacroConditionCounter::Create, MacroConditionCounterEdit::Create,
-	 "AdvSceneSwitcher.condition.counter"});
+bool MacroConditionMacro::_registered = MacroConditionFactory::Register(
+	MacroConditionMacro::id,
+	{MacroConditionMacro::Create, MacroConditionMacroEdit::Create,
+	 "AdvSceneSwitcher.condition.macro"});
+
+// TODO: Remove in future version - just added for backward compatibility
+static std::string idOld = "counter";
+static bool oldRegisterd = MacroConditionFactory::Register(
+	idOld, {MacroConditionMacro::Create, MacroConditionMacroEdit::Create,
+		"AdvSceneSwitcher.condition.macro"});
+
+static std::map<MacroConditionMacroType, std::string> macroConditionTypes = {
+	{MacroConditionMacroType::COUNT,
+	 "AdvSceneSwitcher.condition.macro.type.count"},
+	{MacroConditionMacroType::STATE,
+	 "AdvSceneSwitcher.condition.macro.type.state"},
+};
 
 static std::map<CounterCondition, std::string> counterConditionTypes = {
 	{CounterCondition::BELOW,
-	 "AdvSceneSwitcher.condition.counter.type.below"},
+	 "AdvSceneSwitcher.condition.macro.count.type.below"},
 	{CounterCondition::ABOVE,
-	 "AdvSceneSwitcher.condition.counter.type.above"},
+	 "AdvSceneSwitcher.condition.macro.count.type.above"},
 	{CounterCondition::EQUAL,
-	 "AdvSceneSwitcher.condition.counter.type.equal"},
+	 "AdvSceneSwitcher.condition.macro.count.type.equal"},
 };
 
-bool MacroConditionCounter::CheckCondition()
+bool MacroConditionMacro::CheckStateCondition()
 {
-	if (!_macro.get()) {
-		return false;
-	}
+	// Note:
+	// Depending on the order the macro conditions are checked Matched() might
+	// still return the state of the previous interval
+	return _macro->Matched();
+}
 
-	switch (_condition) {
+bool MacroConditionMacro::CheckCountCondition()
+{
+	switch (_counterCondition) {
 	case CounterCondition::BELOW:
 		return _macro->GetCount() < _count;
 	case CounterCondition::ABOVE:
@@ -39,23 +56,53 @@ bool MacroConditionCounter::CheckCondition()
 	return false;
 }
 
-bool MacroConditionCounter::Save(obs_data_t *obj)
+bool MacroConditionMacro::CheckCondition()
+{
+	if (!_macro.get()) {
+		return false;
+	}
+
+	switch (_type) {
+	case MacroConditionMacroType::STATE:
+		return CheckStateCondition();
+		break;
+	case MacroConditionMacroType::COUNT:
+		return CheckCountCondition();
+		break;
+	default:
+		break;
+	}
+
+	return false;
+}
+
+bool MacroConditionMacro::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
 	_macro.Save(obj);
-	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
+	obs_data_set_int(obj, "type", static_cast<int>(_type));
+	obs_data_set_int(obj, "condition", static_cast<int>(_counterCondition));
 	obs_data_set_int(obj, "count", _count);
 	return true;
 }
 
-bool MacroConditionCounter::Load(obs_data_t *obj)
+bool MacroConditionMacro::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_macro.Load(obj);
-	_condition = static_cast<CounterCondition>(
+	_type = static_cast<MacroConditionMacroType>(
+		obs_data_get_int(obj, "type"));
+	_counterCondition = static_cast<CounterCondition>(
 		obs_data_get_int(obj, "condition"));
 	_count = obs_data_get_int(obj, "count");
 	return true;
+}
+
+static inline void populateTypeSelection(QComboBox *list)
+{
+	for (auto entry : macroConditionTypes) {
+		list->addItem(obs_module_text(entry.second.c_str()));
+	}
 }
 
 static inline void populateConditionSelection(QComboBox *list)
@@ -65,49 +112,48 @@ static inline void populateConditionSelection(QComboBox *list)
 	}
 }
 
-MacroConditionCounterEdit::MacroConditionCounterEdit(
-	QWidget *parent, std::shared_ptr<MacroConditionCounter> entryData)
+MacroConditionMacroEdit::MacroConditionMacroEdit(
+	QWidget *parent, std::shared_ptr<MacroConditionMacro> entryData)
 	: QWidget(parent)
 {
 	_macros = new MacroSelection(parent);
-	_conditions = new QComboBox();
-	_count = new QSpinBox();
-	_currentCount = new QLabel();
-	_resetCount = new QPushButton(
-		obs_module_text("AdvSceneSwitcher.condition.counter.reset"));
+	_types = new QComboBox(parent);
+	_counterConditions = new QComboBox(parent);
+	_count = new QSpinBox(parent);
+	_currentCount = new QLabel(parent);
+	_resetCount = new QPushButton(obs_module_text(
+		"AdvSceneSwitcher.condition.macro.count.reset"));
 
 	_count->setMaximum(10000000);
-	populateConditionSelection(_conditions);
+	populateTypeSelection(_types);
+	populateConditionSelection(_counterConditions);
 
 	QWidget::connect(_macros, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(MacroChanged(const QString &)));
 	QWidget::connect(parent, SIGNAL(MacroRemoved(const QString &)), this,
 			 SLOT(MacroRemove(const QString &)));
-	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(ConditionChanged(int)));
+	QWidget::connect(_types, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(TypeChanged(int)));
+	QWidget::connect(_counterConditions, SIGNAL(currentIndexChanged(int)),
+			 this, SLOT(ConditionChanged(int)));
 	QWidget::connect(_count, SIGNAL(valueChanged(int)), this,
 			 SLOT(CountChanged(int)));
 	QWidget::connect(_resetCount, SIGNAL(clicked()), this,
 			 SLOT(ResetClicked()));
 
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	QHBoxLayout *line1Layout = new QHBoxLayout;
-	QHBoxLayout *line2Layout = new QHBoxLayout;
+	auto typesLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{macros}}", _macros},
-		{"{{conditions}}", _conditions},
-		{"{{count}}", _count},
-		{"{{currentCount}}", _currentCount},
-		{"{{resetCount}}", _resetCount},
+		{"{{types}}", _types},
 	};
 	placeWidgets(obs_module_text(
-			     "AdvSceneSwitcher.condition.counter.entry.line1"),
-		     line1Layout, widgetPlaceholders);
-	placeWidgets(obs_module_text(
-			     "AdvSceneSwitcher.condition.counter.entry.line2"),
-		     line2Layout, widgetPlaceholders);
-	mainLayout->addLayout(line1Layout);
-	mainLayout->addLayout(line2Layout);
+			     "AdvSceneSwitcher.condition.macro.type.selection"),
+		     typesLayout, widgetPlaceholders);
+	_settingsLine1 = new QHBoxLayout;
+	_settingsLine2 = new QHBoxLayout;
+	auto mainLayout = new QVBoxLayout;
+	mainLayout->addLayout(typesLayout);
+	mainLayout->addLayout(_settingsLine1);
+	mainLayout->addLayout(_settingsLine2);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -115,19 +161,84 @@ MacroConditionCounterEdit::MacroConditionCounterEdit(
 	_loading = false;
 }
 
-void MacroConditionCounterEdit::UpdateEntryData()
+void MacroConditionMacroEdit::ClearLayouts()
+{
+	_settingsLine1->removeWidget(_macros);
+	_settingsLine1->removeWidget(_counterConditions);
+	_settingsLine1->removeWidget(_count);
+	_settingsLine2->removeWidget(_currentCount);
+	_settingsLine2->removeWidget(_resetCount);
+	clearLayout(_settingsLine1);
+	clearLayout(_settingsLine2);
+}
+
+void MacroConditionMacroEdit::SetupStateWidgets()
+{
+	ClearLayouts();
+
+	_counterConditions->hide();
+	_count->hide();
+	_currentCount->hide();
+	_resetCount->hide();
+
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{macros}}", _macros},
+	};
+	placeWidgets(
+		obs_module_text("AdvSceneSwitcher.condition.macro.state.entry"),
+		_settingsLine1, widgetPlaceholders);
+	adjustSize();
+}
+
+void MacroConditionMacroEdit::SetupCountWidgets()
+{
+	ClearLayouts();
+
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{macros}}", _macros},
+		{"{{conditions}}", _counterConditions},
+		{"{{count}}", _count},
+		{"{{currentCount}}", _currentCount},
+		{"{{resetCount}}", _resetCount},
+	};
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.macro.count.entry.line1"),
+		_settingsLine1, widgetPlaceholders);
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.macro.count.entry.line2"),
+		_settingsLine2, widgetPlaceholders);
+
+	_counterConditions->show();
+	_count->show();
+	_currentCount->show();
+	_resetCount->show();
+
+	adjustSize();
+}
+
+void MacroConditionMacroEdit::UpdateEntryData()
 {
 	if (!_entryData) {
 		return;
 	}
 
+	if (_entryData->_type == MacroConditionMacroType::STATE) {
+		SetupStateWidgets();
+	} else {
+		SetupCountWidgets();
+	}
+
 	_macros->SetCurrentMacro(_entryData->_macro.get());
-	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
+	_types->setCurrentIndex(static_cast<int>(_entryData->_type));
+	_counterConditions->setCurrentIndex(
+		static_cast<int>(_entryData->_counterCondition));
 	_count->setValue(_entryData->_count);
 	ResetTimer();
 }
 
-void MacroConditionCounterEdit::MacroChanged(const QString &text)
+void MacroConditionMacroEdit::MacroChanged(const QString &text)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -138,7 +249,7 @@ void MacroConditionCounterEdit::MacroChanged(const QString &text)
 	ResetTimer();
 }
 
-void MacroConditionCounterEdit::CountChanged(int value)
+void MacroConditionMacroEdit::CountChanged(int value)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -148,17 +259,17 @@ void MacroConditionCounterEdit::CountChanged(int value)
 	_entryData->_count = value;
 }
 
-void MacroConditionCounterEdit::ConditionChanged(int cond)
+void MacroConditionMacroEdit::ConditionChanged(int cond)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_condition = static_cast<CounterCondition>(cond);
+	_entryData->_counterCondition = static_cast<CounterCondition>(cond);
 }
 
-void MacroConditionCounterEdit::MacroRemove(const QString &name)
+void MacroConditionMacroEdit::MacroRemove(const QString &name)
 {
 	UNUSED_PARAMETER(name);
 	if (_entryData) {
@@ -166,7 +277,22 @@ void MacroConditionCounterEdit::MacroRemove(const QString &name)
 	}
 }
 
-void MacroConditionCounterEdit::ResetClicked()
+void MacroConditionMacroEdit::TypeChanged(int type)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_type = static_cast<MacroConditionMacroType>(type);
+	if (_entryData->_type == MacroConditionMacroType::STATE) {
+		SetupStateWidgets();
+	} else {
+		SetupCountWidgets();
+	}
+}
+
+void MacroConditionMacroEdit::ResetClicked()
 {
 	if (_loading || !_entryData || !_entryData->_macro.get()) {
 		return;
@@ -176,7 +302,7 @@ void MacroConditionCounterEdit::ResetClicked()
 	ResetTimer();
 }
 
-void MacroConditionCounterEdit::UpdateCount()
+void MacroConditionMacroEdit::UpdateCount()
 {
 	if (_entryData && _entryData->_macro.get()) {
 		_currentCount->setText(
@@ -186,7 +312,7 @@ void MacroConditionCounterEdit::UpdateCount()
 	}
 }
 
-void MacroConditionCounterEdit::ResetTimer()
+void MacroConditionMacroEdit::ResetTimer()
 {
 	_timer.reset(new QTimer(this));
 	connect(_timer.get(), SIGNAL(timeout()), this, SLOT(UpdateCount()));
