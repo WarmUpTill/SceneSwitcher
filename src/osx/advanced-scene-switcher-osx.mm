@@ -12,7 +12,7 @@
 #include <map>
 #include <thread>
 
-bool canSimulateKeyPresses = false;
+bool canSimulateKeyPresses = true;
 
 void GetWindowList(std::vector<std::string> &windows)
 {
@@ -420,6 +420,11 @@ void PressKeys(const std::vector<HotkeyType> keys)
 		CGKeyCode inputKeyCode = it->second;
 		CGEventRef keyPress =
 			CGEventCreateKeyboardEvent(source, inputKeyCode, true);
+		if (!keyPress) {
+			canSimulateKeyPresses = false;
+			CFRelease(source);
+			return;
+		}
 		CGEventSetFlags(keyPress, modifierFlags);
 		CGEventPost(kCGAnnotatedSessionEventTap, keyPress);
 		CFRelease(keyPress);
