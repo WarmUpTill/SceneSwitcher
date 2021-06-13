@@ -407,6 +407,15 @@ static std::map<HotkeyType, CGKeyCode> keyTable = {
 
 void PressKeys(const std::vector<HotkeyType> keys)
 {
+	// Check premissions
+	NSDictionary *options =
+		@{static_cast<id>(kAXTrustedCheckOptionPrompt): @YES};
+	if (!AXIsProcessTrustedWithOptions(
+		    static_cast<CFDictionaryRef>(options))) {
+		canSimulateKeyPresses = false;
+		return;
+	}
+
 	long modifierFlags = 0;
 	auto source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
 	if (!source) {
@@ -467,6 +476,11 @@ void PressKeys(const std::vector<HotkeyType> keys)
 		CGKeyCode inputKeyCode = it->second;
 		CGEventRef keyRelease =
 			CGEventCreateKeyboardEvent(source, inputKeyCode, false);
+		if (!keyRelease) {
+			canSimulateKeyPresses = false;
+			CFRelease(source);
+			return;
+		}
 		CGEventPost(kCGAnnotatedSessionEventTap, keyRelease);
 		CFRelease(keyRelease);
 	}
