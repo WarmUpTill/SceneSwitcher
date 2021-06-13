@@ -4,10 +4,15 @@
 
 const std::string MacroActionHotkey::id = "hotkey";
 
+// TODO:
+// I can't seem to get this to work so drop support for this functionality
+// on MacOS
+#if !__APPLE__
 bool MacroActionHotkey::_registered = MacroActionFactory::Register(
 	MacroActionHotkey::id,
 	{MacroActionHotkey::Create, MacroActionHotkeyEdit::Create,
 	 "AdvSceneSwitcher.action.hotkey"});
+#endif
 
 bool MacroActionHotkey::PerformAction()
 {

@@ -407,6 +407,12 @@ static std::map<HotkeyType, CGKeyCode> keyTable = {
 
 void PressKeys(const std::vector<HotkeyType> keys)
 {
+	// TODO:
+	// I can't seem to get this to work so drop support for this functionality
+	// on MacOS
+	canSimulateKeyPresses = false;
+	return;
+
 	// Check premissions
 	NSDictionary *options =
 		@{(__bridge id)kAXTrustedCheckOptionPrompt: @NO};
