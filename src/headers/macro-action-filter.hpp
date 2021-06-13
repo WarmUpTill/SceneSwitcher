@@ -1,10 +1,12 @@
 #pragma once
 #include <QSpinBox>
+#include <QPlainTextEdit>
 #include "macro-action-edit.hpp"
 
 enum class FilterAction {
 	ENABLE,
 	DISABLE,
+	SETTINGS,
 };
 
 class MacroActionFilter : public MacroAction {
@@ -22,6 +24,7 @@ public:
 	OBSWeakSource _source;
 	OBSWeakSource _filter;
 	FilterAction _action = FilterAction::ENABLE;
+	std::string _settings = "";
 
 private:
 	static bool _registered;
@@ -48,14 +51,18 @@ private slots:
 	void SourceChanged(const QString &text);
 	void FilterChanged(const QString &text);
 	void ActionChanged(int value);
+	void GetSettingsClicked();
+	void SettingsChanged();
 
 protected:
 	QComboBox *_sources;
 	QComboBox *_filters;
 	QComboBox *_actions;
+	QPushButton *_getSettings;
+	QPlainTextEdit *_settings;
 	std::shared_ptr<MacroActionFilter> _entryData;
 
 private:
-	QHBoxLayout *_mainLayout;
+	void SetWidgetVisibility(bool);
 	bool _loading = true;
 };

@@ -65,6 +65,5 @@ protected:
 
 private:
 	void SetWidgetVisibility(bool);
-	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
