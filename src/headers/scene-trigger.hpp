@@ -27,6 +27,9 @@ enum class sceneTriggerAction {
 
 	START_SWITCHER,
 	STOP_SWITCHER,
+
+	START_VCAM,
+	STOP_VCAM,
 };
 
 struct SceneTrigger : SceneSwitcherEntry {
