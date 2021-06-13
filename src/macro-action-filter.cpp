@@ -12,6 +12,8 @@ bool MacroActionFilter::_registered = MacroActionFactory::Register(
 const static std::map<FilterAction, std::string> actionTypes = {
 	{FilterAction::ENABLE, "AdvSceneSwitcher.action.filter.type.enable"},
 	{FilterAction::DISABLE, "AdvSceneSwitcher.action.filter.type.disable"},
+	{FilterAction::SETTINGS,
+	 "AdvSceneSwitcher.action.filter.type.settings"},
 };
 
 bool MacroActionFilter::PerformAction()
@@ -23,6 +25,9 @@ bool MacroActionFilter::PerformAction()
 		break;
 	case FilterAction::DISABLE:
 		obs_source_set_enabled(s, false);
+		break;
+	case FilterAction::SETTINGS:
+		setSourceSettings(s, _settings);
 		break;
 	default:
 		break;
@@ -51,6 +56,7 @@ bool MacroActionFilter::Save(obs_data_t *obj)
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
 	obs_data_set_string(obj, "filter", GetWeakSourceName(_filter).c_str());
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
+	obs_data_set_string(obj, "settings", _settings.c_str());
 	return true;
 }
 
@@ -62,6 +68,7 @@ bool MacroActionFilter::Load(obs_data_t *obj)
 	const char *filterName = obs_data_get_string(obj, "filter");
 	_filter = GetWeakFilterByQString(_source, filterName);
 	_action = static_cast<FilterAction>(obs_data_get_int(obj, "action"));
+	_settings = obs_data_get_string(obj, "settings");
 	return true;
 }
 
@@ -72,56 +79,6 @@ static inline void populateActionSelection(QComboBox *list)
 	}
 }
 
-static inline void populateFilters(QComboBox *list,
-				   OBSWeakSource weakSource = nullptr)
-{
-	auto enumFilters = [](obs_source_t *, obs_source_t *filter, void *ptr) {
-		QComboBox *list = reinterpret_cast<QComboBox *>(ptr);
-		auto name = obs_source_get_name(filter);
-		list->addItem(name);
-	};
-
-	auto s = obs_weak_source_get_source(weakSource);
-	obs_source_enum_filters(s, enumFilters, list);
-	list->model()->sort(0);
-	addSelectionEntry(list,
-			  obs_module_text("AdvSceneSwitcher.selectFilter"));
-	obs_source_release(s);
-	list->setCurrentIndex(0);
-}
-
-static inline void hasFilterEnum(obs_source_t *, obs_source_t *filter,
-				 void *ptr)
-{
-	if (!filter) {
-		return;
-	}
-	bool *hasFilter = reinterpret_cast<bool *>(ptr);
-	*hasFilter = true;
-}
-
-static inline void populateSourcesWithFilter(QComboBox *list)
-{
-	auto enumSourcesWithFilters = [](void *param, obs_source_t *source) {
-		if (!source) {
-			return true;
-		}
-		QComboBox *list = reinterpret_cast<QComboBox *>(param);
-		bool hasFilter = false;
-		obs_source_enum_filters(source, hasFilterEnum, &hasFilter);
-		if (hasFilter) {
-			list->addItem(obs_source_get_name(source));
-		}
-		return true;
-	};
-	obs_enum_sources(enumSourcesWithFilters, list);
-	obs_enum_scenes(enumSourcesWithFilters, list);
-	list->model()->sort(0);
-	addSelectionEntry(list,
-			  obs_module_text("AdvSceneSwitcher.selectSource"));
-	list->setCurrentIndex(0);
-}
-
 MacroActionFilterEdit::MacroActionFilterEdit(
 	QWidget *parent, std::shared_ptr<MacroActionFilter> entryData)
 	: QWidget(parent)
@@ -129,9 +86,12 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 	_sources = new QComboBox();
 	_filters = new QComboBox();
 	_actions = new QComboBox();
+	_getSettings = new QPushButton(
+		obs_module_text("AdvSceneSwitcher.action.filter.getSettings"));
+	_settings = new QPlainTextEdit();
 
 	populateActionSelection(_actions);
-	populateSourcesWithFilter(_sources);
+	populateSourcesWithFilterSelection(_sources);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
@@ -139,15 +99,29 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 			 this, SLOT(SourceChanged(const QString &)));
 	QWidget::connect(_filters, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(FilterChanged(const QString &)));
+	QWidget::connect(_getSettings, SIGNAL(clicked()), this,
+			 SLOT(GetSettingsClicked()));
+	QWidget::connect(_settings, SIGNAL(textChanged()), this,
+			 SLOT(SettingsChanged()));
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
+	QHBoxLayout *entryLayout = new QHBoxLayout;
+
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{sources}}", _sources},
-		{"{{filters}}", _filters},
-		{"{{actions}}", _actions},
+		{"{{sources}}", _sources},         {"{{filters}}", _filters},
+		{"{{actions}}", _actions},         {"{{settings}}", _settings},
+		{"{{getSettings}}", _getSettings},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.filter.entry"),
-		     mainLayout, widgetPlaceholders);
+		     entryLayout, widgetPlaceholders);
+
+	QHBoxLayout *buttonLayout = new QHBoxLayout;
+	buttonLayout->addWidget(_getSettings);
+	buttonLayout->addStretch();
+
+	QVBoxLayout *mainLayout = new QVBoxLayout;
+	mainLayout->addLayout(entryLayout);
+	mainLayout->addWidget(_settings);
+	mainLayout->addLayout(buttonLayout);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -164,9 +138,11 @@ void MacroActionFilterEdit::UpdateEntryData()
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_sources->setCurrentText(
 		GetWeakSourceName(_entryData->_source).c_str());
-	populateFilters(_filters, _entryData->_source);
+	populateFilterSelection(_filters, _entryData->_source);
 	_filters->setCurrentText(
 		GetWeakSourceName(_entryData->_filter).c_str());
+	_settings->setPlainText(QString::fromStdString(_entryData->_settings));
+	SetWidgetVisibility(_entryData->_action == FilterAction::SETTINGS);
 }
 
 void MacroActionFilterEdit::SourceChanged(const QString &text)
@@ -179,7 +155,7 @@ void MacroActionFilterEdit::SourceChanged(const QString &text)
 		_entryData->_source = GetWeakSourceByQString(text);
 	}
 	_filters->clear();
-	populateFilters(_filters, _entryData->_source);
+	populateFilterSelection(_filters, _entryData->_source);
 }
 
 void MacroActionFilterEdit::FilterChanged(const QString &text)
@@ -200,4 +176,33 @@ void MacroActionFilterEdit::ActionChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<FilterAction>(value);
+	SetWidgetVisibility(_entryData->_action == FilterAction::SETTINGS);
+}
+
+void MacroActionFilterEdit::GetSettingsClicked()
+{
+	if (_loading || !_entryData || !_entryData->_source ||
+	    !_entryData->_filter) {
+		return;
+	}
+
+	_settings->setPlainText(
+		QString::fromStdString(getSourceSettings(_entryData->_filter)));
+}
+
+void MacroActionFilterEdit::SettingsChanged()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_settings = _settings->toPlainText().toStdString();
+}
+
+void MacroActionFilterEdit::SetWidgetVisibility(bool showSettings)
+{
+	_settings->setVisible(showSettings);
+	_getSettings->setVisible(showSettings);
+	adjustSize();
 }

@@ -98,6 +98,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/macro-condition-audio.hpp
 	src/headers/macro-condition-macro.hpp
 	src/headers/macro-condition-file.hpp
+	src/headers/macro-condition-filter.hpp
 	src/headers/macro-condition-idle.hpp
 	src/headers/macro-condition-interval.hpp
 	src/headers/macro-condition-media.hpp
@@ -168,6 +169,7 @@ set(advanced-scene-switcher_SOURCES
 	src/macro-condition-audio.cpp
 	src/macro-condition-macro.cpp
 	src/macro-condition-file.cpp
+	src/macro-condition-filter.cpp
 	src/macro-condition-idle.cpp
 	src/macro-condition-interval.cpp
 	src/macro-condition-media.cpp
