@@ -55,6 +55,7 @@ bool MacroConditionSource::Save(obs_data_t *obj)
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_string(obj, "settings", _settings.c_str());
+	obs_data_set_bool(obj, "regex", _regex);
 	return true;
 }
 
@@ -66,6 +67,7 @@ bool MacroConditionSource::Load(obs_data_t *obj)
 	_condition = static_cast<SourceCondition>(
 		obs_data_get_int(obj, "condition"));
 	_settings = obs_data_get_string(obj, "settings");
+	_regex = obs_data_get_bool(obj, "regex");
 	return true;
 }
 
