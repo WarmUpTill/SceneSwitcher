@@ -21,23 +21,6 @@ static std::map<SourceCondition, std::string> sourceConditionTypes = {
 	 "AdvSceneSwitcher.condition.source.type.settings"},
 };
 
-bool checkSettings(const OBSWeakSource &source, const std::string &settings,
-		   bool useRegex)
-{
-	bool ret = false;
-	std::string currentSettings = getSourceSettings(source);
-	if (useRegex) {
-		try {
-			std::regex expr(settings);
-			ret = std::regex_match(currentSettings, expr);
-		} catch (const std::regex_error &) {
-		}
-	} else {
-		ret = currentSettings == settings;
-	}
-	return ret;
-}
-
 bool MacroConditionSource::CheckCondition()
 {
 	if (!_source) {
@@ -55,7 +38,7 @@ bool MacroConditionSource::CheckCondition()
 		ret = obs_source_showing(s);
 		break;
 	case SourceCondition::SETTINGS:
-		ret = checkSettings(_source, _settings, _regex);
+		ret = compareSourceSettings(_source, _settings, _regex);
 		break;
 	default:
 		break;

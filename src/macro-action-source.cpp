@@ -16,22 +16,6 @@ const static std::map<SourceAction, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.source.type.settings"},
 };
 
-void setSourceSettings(obs_source_t *s, const std::string &settings)
-{
-	if (settings.empty()) {
-		return;
-	}
-
-	obs_data_t *data = obs_data_create_from_json(settings.c_str());
-	if (!data) {
-		blog(LOG_WARNING, "invalid source settings provided: \n%s",
-		     settings.c_str());
-		return;
-	}
-	obs_source_update(s, data);
-	obs_data_release(data);
-}
-
 bool MacroActionSource::PerformAction()
 {
 	auto s = obs_weak_source_get_source(_source);
