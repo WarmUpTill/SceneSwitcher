@@ -408,10 +408,12 @@ static std::map<HotkeyType, CGKeyCode> keyTable = {
 void PressKeys(const std::vector<HotkeyType> keys)
 {
 	// Check premissions
-	NSDictionary *options =
-		@{static_cast<id>(kAXTrustedCheckOptionPrompt): @YES};
-	if (!AXIsProcessTrustedWithOptions(
-		    static_cast<CFDictionaryRef>(options))) {
+	NSDictionary *options = @{(id)kAXTrustedCheckOptionPrompt: @NO};
+	if (!AXIsProcessTrustedWithOptions((CFDictionaryRef)options)) {
+		NSString *urlString =
+			@"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility";
+		[[NSWorkspace sharedWorkspace]
+			openURL:[NSURL URLWithString:urlString]];
 		canSimulateKeyPresses = false;
 		return;
 	}
