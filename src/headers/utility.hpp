@@ -22,6 +22,9 @@ OBSWeakSource GetWeakFilterByName(OBSWeakSource source, const char *name);
 OBSWeakSource GetWeakFilterByQString(OBSWeakSource source, const QString &name);
 bool compareIgnoringLineEnding(QString &s1, QString &s2);
 std::string getSourceSettings(OBSWeakSource ws);
+void setSourceSettings(obs_source_t *s, const std::string &settings);
+bool compareSourceSettings(const OBSWeakSource &source,
+			   const std::string &settings, bool regex);
 std::string getDataFilePath(const std::string &file);
 
 /**
@@ -61,3 +64,6 @@ void populateSceneSelection(QComboBox *sel, bool addPrevious = false,
 			    std::deque<SceneGroup> *sceneGroups = nullptr,
 			    bool addSelect = true, std::string selectText = "",
 			    bool selectable = false);
+void populateSourcesWithFilterSelection(QComboBox *list);
+void populateFilterSelection(QComboBox *list,
+			     OBSWeakSource weakSource = nullptr);

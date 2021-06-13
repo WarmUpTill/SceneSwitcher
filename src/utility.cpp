@@ -11,6 +11,7 @@
 #include <QTimer>
 #include <QMessageBox>
 #include <unordered_map>
+#include <regex>
 #include <obs-module.h>
 #include <util/util.hpp>
 
@@ -215,6 +216,39 @@ std::string getSourceSettings(OBSWeakSource ws)
 	obs_source_release(s);
 
 	return settings;
+}
+
+void setSourceSettings(obs_source_t *s, const std::string &settings)
+{
+	if (settings.empty()) {
+		return;
+	}
+
+	obs_data_t *data = obs_data_create_from_json(settings.c_str());
+	if (!data) {
+		blog(LOG_WARNING, "invalid source settings provided: \n%s",
+		     settings.c_str());
+		return;
+	}
+	obs_source_update(s, data);
+	obs_data_release(data);
+}
+
+bool compareSourceSettings(const OBSWeakSource &source,
+			   const std::string &settings, bool useRegex)
+{
+	bool ret = false;
+	std::string currentSettings = getSourceSettings(source);
+	if (useRegex) {
+		try {
+			std::regex expr(settings);
+			ret = std::regex_match(currentSettings, expr);
+		} catch (const std::regex_error &) {
+		}
+	} else {
+		ret = currentSettings == settings;
+	}
+	return ret;
 }
 
 std::string getDataFilePath(const std::string &file)
@@ -499,6 +533,55 @@ void populateSceneSelection(QComboBox *sel, bool addPrevious,
 		}
 	}
 	sel->setCurrentIndex(0);
+}
+
+static inline void hasFilterEnum(obs_source_t *, obs_source_t *filter,
+				 void *ptr)
+{
+	if (!filter) {
+		return;
+	}
+	bool *hasFilter = reinterpret_cast<bool *>(ptr);
+	*hasFilter = true;
+}
+
+void populateSourcesWithFilterSelection(QComboBox *list)
+{
+	auto enumSourcesWithFilters = [](void *param, obs_source_t *source) {
+		if (!source) {
+			return true;
+		}
+		QComboBox *list = reinterpret_cast<QComboBox *>(param);
+		bool hasFilter = false;
+		obs_source_enum_filters(source, hasFilterEnum, &hasFilter);
+		if (hasFilter) {
+			list->addItem(obs_source_get_name(source));
+		}
+		return true;
+	};
+	obs_enum_sources(enumSourcesWithFilters, list);
+	obs_enum_scenes(enumSourcesWithFilters, list);
+	list->model()->sort(0);
+	addSelectionEntry(list,
+			  obs_module_text("AdvSceneSwitcher.selectSource"));
+	list->setCurrentIndex(0);
+}
+
+void populateFilterSelection(QComboBox *list, OBSWeakSource weakSource)
+{
+	auto enumFilters = [](obs_source_t *, obs_source_t *filter, void *ptr) {
+		QComboBox *list = reinterpret_cast<QComboBox *>(ptr);
+		auto name = obs_source_get_name(filter);
+		list->addItem(name);
+	};
+
+	auto s = obs_weak_source_get_source(weakSource);
+	obs_source_enum_filters(s, enumFilters, list);
+	list->model()->sort(0);
+	addSelectionEntry(list,
+			  obs_module_text("AdvSceneSwitcher.selectFilter"));
+	obs_source_release(s);
+	list->setCurrentIndex(0);
 }
 
 QMetaObject::Connection PulseWidget(QWidget *widget, QColor endColor,
