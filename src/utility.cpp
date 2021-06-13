@@ -598,8 +598,7 @@ static bool enumSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 	return true;
 }
 
-void populateSceneItemSelection(QComboBox *list,
-				OBSWeakSource sceneWeakSource)
+void populateSceneItemSelection(QComboBox *list, OBSWeakSource sceneWeakSource)
 {
 	std::set<QString> names;
 	auto s = obs_weak_source_get_source(sceneWeakSource);
