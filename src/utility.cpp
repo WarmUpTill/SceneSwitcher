@@ -12,6 +12,7 @@
 #include <QMessageBox>
 #include <unordered_map>
 #include <regex>
+#include <set>
 #include <obs-module.h>
 #include <util/util.hpp>
 
@@ -581,6 +582,36 @@ void populateFilterSelection(QComboBox *list, OBSWeakSource weakSource)
 	addSelectionEntry(list,
 			  obs_module_text("AdvSceneSwitcher.selectFilter"));
 	obs_source_release(s);
+	list->setCurrentIndex(0);
+}
+
+static bool enumSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
+{
+	std::set<QString> *names = reinterpret_cast<std::set<QString> *>(ptr);
+
+	if (obs_sceneitem_is_group(item)) {
+		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
+		obs_scene_enum_items(scene, enumSceneItem, ptr);
+	}
+	auto name = obs_source_get_name(obs_sceneitem_get_source(item));
+	names->emplace(name);
+	return true;
+}
+
+void populateSceneItemSelection(QComboBox *list,
+				OBSWeakSource sceneWeakSource)
+{
+	std::set<QString> names;
+	auto s = obs_weak_source_get_source(sceneWeakSource);
+	auto scene = obs_scene_from_source(s);
+	obs_scene_enum_items(scene, enumSceneItem, &names);
+	obs_source_release(s);
+
+	for (auto &name : names) {
+		list->addItem(name);
+	}
+	list->model()->sort(0);
+	addSelectionEntry(list, obs_module_text("AdvSceneSwitcher.selectItem"));
 	list->setCurrentIndex(0);
 }
 
