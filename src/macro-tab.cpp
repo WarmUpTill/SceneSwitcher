@@ -105,6 +105,10 @@ void AdvSceneSwitcher::on_macroUp_clicked()
 
 		iter_swap(switcher->macros.begin() + index,
 			  switcher->macros.begin() + index - 1);
+
+		for (auto &m : switcher->macros) {
+			m.ResolveMacroRef();
+		}
 	}
 }
 
@@ -118,6 +122,10 @@ void AdvSceneSwitcher::on_macroDown_clicked()
 
 		iter_swap(switcher->macros.begin() + index,
 			  switcher->macros.begin() + index + 1);
+
+		for (auto &m : switcher->macros) {
+			m.ResolveMacroRef();
+		}
 	}
 }
 
