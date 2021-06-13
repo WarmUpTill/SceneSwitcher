@@ -160,6 +160,7 @@ jobs:
            libxcb-xinerama0-dev \
            libxcomposite-dev \
            libxinerama-dev \
+           libxtst-dev \
            libmbedtls-dev \
            pkg-config \
            python3-dev \
