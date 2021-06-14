@@ -21,6 +21,7 @@ public:
 		  const char *unitName = "displayUnit");
 
 	bool DurationReached();
+	double TimeRemaining();
 	void Reset();
 	std::string ToString();
 
