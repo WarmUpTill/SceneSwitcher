@@ -205,7 +205,7 @@ bool checkLocalFileContent(FileSwitch &s)
 {
 	QString t = QString::fromStdString(s.text);
 	QFile file(QString::fromStdString(s.file));
-	if (s.file.empty() || !file.open(QIODevice::ReadOnly)) {
+	if (!file.open(QIODevice::ReadOnly)) {
 		return false;
 	}
 
