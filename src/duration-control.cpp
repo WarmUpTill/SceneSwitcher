@@ -32,6 +32,20 @@ bool Duration::DurationReached()
 	return runTime.count() >= seconds * 1000;
 }
 
+double Duration::TimeRemaining()
+{
+	if (_startTime.time_since_epoch().count() == 0) {
+		return seconds;
+	}
+	auto runTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::high_resolution_clock::now() - _startTime);
+
+	if (runTime.count() >= seconds * 1000) {
+		return 0;
+	}
+	return (seconds * 1000 - runTime.count()) / 1000.;
+}
+
 void Duration::Reset()
 {
 	_startTime = {};

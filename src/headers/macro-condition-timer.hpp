@@ -2,9 +2,10 @@
 #include "macro.hpp"
 #include <QWidget>
 #include <QComboBox>
+#include <QTimer>
 #include "duration-control.hpp"
 
-class MacroConditionInterval : public MacroCondition {
+class MacroConditionTimer : public MacroCondition {
 public:
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
@@ -12,41 +13,48 @@ public:
 	std::string GetId() { return id; };
 	static std::shared_ptr<MacroCondition> Create()
 	{
-		return std::make_shared<MacroConditionInterval>();
+		return std::make_shared<MacroConditionTimer>();
 	}
 
 	Duration _duration;
+	bool _oneshot = false;
 
 private:
 	static bool _registered;
 	static const std::string id;
 };
 
-class MacroConditionIntervalEdit : public QWidget {
+class MacroConditionTimerEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroConditionIntervalEdit(
+	MacroConditionTimerEdit(
 		QWidget *parent,
-		std::shared_ptr<MacroConditionInterval> cond = nullptr);
+		std::shared_ptr<MacroConditionTimer> cond = nullptr);
 	void UpdateEntryData();
 	static QWidget *Create(QWidget *parent,
 			       std::shared_ptr<MacroCondition> cond)
 	{
-		return new MacroConditionIntervalEdit(
+		return new MacroConditionTimerEdit(
 			parent,
-			std::dynamic_pointer_cast<MacroConditionInterval>(
-				cond));
+			std::dynamic_pointer_cast<MacroConditionTimer>(cond));
 	}
 
 private slots:
 	void DurationChanged(double seconds);
 	void DurationUnitChanged(DurationUnit unit);
+	void AutoResetChanged(int state);
+	void ResetClicked();
+	void UpdateTimeRemaining();
 
 protected:
 	DurationSelection *_duration;
-	std::shared_ptr<MacroConditionInterval> _entryData;
+	QCheckBox *_autoReset;
+	QPushButton *_reset;
+	QLabel *_remaining;
+	std::shared_ptr<MacroConditionTimer> _entryData;
 
 private:
+	QTimer timer;
 	bool _loading = true;
 };
