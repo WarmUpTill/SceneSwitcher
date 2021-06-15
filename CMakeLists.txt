@@ -101,6 +101,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/macro-condition-macro.hpp
 	src/headers/macro-condition-file.hpp
 	src/headers/macro-condition-filter.hpp
+	src/headers/macro-condition-hotkey.hpp
 	src/headers/macro-condition-idle.hpp
 	src/headers/macro-condition-media.hpp
 	src/headers/macro-condition-plugin-state.hpp
@@ -176,6 +177,7 @@ set(advanced-scene-switcher_SOURCES
 	src/macro-condition-macro.cpp
 	src/macro-condition-file.cpp
 	src/macro-condition-filter.cpp
+	src/macro-condition-hotkey.cpp
 	src/macro-condition-idle.cpp
 	src/macro-condition-media.cpp
 	src/macro-condition-plugin-state.cpp
