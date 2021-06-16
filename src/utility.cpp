@@ -235,6 +235,36 @@ void setSourceSettings(obs_source_t *s, const std::string &settings)
 	obs_data_release(data);
 }
 
+struct ItemInfo {
+	std::string name;
+	std::vector<obs_sceneitem_t *> items = {};
+};
+
+static bool getSceneItems(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
+{
+	ItemInfo *moveInfo = reinterpret_cast<ItemInfo *>(ptr);
+	auto sourceName = obs_source_get_name(obs_sceneitem_get_source(item));
+	if (moveInfo->name == sourceName) {
+		obs_sceneitem_addref(item);
+		moveInfo->items.push_back(item);
+	}
+
+	if (obs_sceneitem_is_group(item)) {
+		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
+		obs_scene_enum_items(scene, getSceneItems, ptr);
+	}
+
+	return true;
+}
+
+std::vector<obs_scene_item *> getSceneItemsWithName(OBSScene scene,
+						    std::string &name)
+{
+	ItemInfo itemInfo = {name};
+	obs_scene_enum_items(scene, getSceneItems, &itemInfo);
+	return itemInfo.items;
+}
+
 bool compareSourceSettings(const OBSWeakSource &source,
 			   const std::string &settings, bool useRegex)
 {
