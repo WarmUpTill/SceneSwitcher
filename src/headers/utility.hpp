@@ -25,6 +25,8 @@ std::string getSourceSettings(OBSWeakSource ws);
 void setSourceSettings(obs_source_t *s, const std::string &settings);
 bool compareSourceSettings(const OBSWeakSource &source,
 			   const std::string &settings, bool regex);
+std::vector<obs_scene_item *> getSceneItemsWithName(OBSScene scene,
+						    std::string &name);
 std::string getDataFilePath(const std::string &file);
 
 /**

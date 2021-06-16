@@ -22,37 +22,14 @@ const static std::map<SceneOrderAction, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.sceneOrder.type.movePosition"},
 };
 
-struct MoveInfo {
-	std::string name;
-	std::vector<obs_sceneitem_t *> items = {};
-};
-
-static bool getSceneItems(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
-{
-	MoveInfo *moveInfo = reinterpret_cast<MoveInfo *>(ptr);
-	auto sourceName = obs_source_get_name(obs_sceneitem_get_source(item));
-	if (moveInfo->name == sourceName) {
-		obs_sceneitem_addref(item);
-		moveInfo->items.push_back(item);
-	}
-
-	if (obs_sceneitem_is_group(item)) {
-		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
-		obs_scene_enum_items(scene, getSceneItems, ptr);
-	}
-
-	return true;
-}
-
 bool MacroActionSceneOrder::PerformAction()
 {
 	auto s = obs_weak_source_get_source(_scene);
 	auto scene = obs_scene_from_source(s);
-	auto sourceName = GetWeakSourceName(_source);
-	MoveInfo moveInfo = {sourceName};
-	obs_scene_enum_items(scene, getSceneItems, &moveInfo);
+	auto name = GetWeakSourceName(_source);
+	auto items = getSceneItemsWithName(scene, name);
 
-	for (auto &i : moveInfo.items) {
+	for (auto &i : items) {
 		switch (_action) {
 		case SceneOrderAction::MOVE_UP:
 			obs_sceneitem_set_order(i, OBS_ORDER_MOVE_UP);
