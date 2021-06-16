@@ -64,7 +64,7 @@ void MacroActionSceneVisibility::LogAction()
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
 		vblog(LOG_INFO,
-		      "performed action \"%s\" for source \"%s\" on scene \"%s\"",
+		      "performed visibility action \"%s\" for source \"%s\" on scene \"%s\"",
 		      it->second.c_str(), GetWeakSourceName(_scene).c_str(),
 		      GetWeakSourceName(_scene).c_str());
 	} else {
