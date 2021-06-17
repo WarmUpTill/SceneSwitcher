@@ -92,8 +92,6 @@ struct SwitcherData {
 	std::chrono::high_resolution_clock::time_point lastMatchTime;
 
 	std::deque<Macro> macros;
-	// Allow only one macro scene change per scene switcher interval
-	// with the top macro having the highest priority
 	bool macroSceneSwitched = false;
 
 	std::deque<WindowSwitch> windowSwitches;
