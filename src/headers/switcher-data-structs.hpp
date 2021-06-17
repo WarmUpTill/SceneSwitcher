@@ -93,6 +93,7 @@ struct SwitcherData {
 
 	std::deque<Macro> macros;
 	bool macroSceneSwitched = false;
+	bool replayBufferSaved = false;
 
 	std::deque<WindowSwitch> windowSwitches;
 	std::vector<std::string> ignoreIdleWindows;
