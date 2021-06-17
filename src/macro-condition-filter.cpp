@@ -181,7 +181,7 @@ void MacroConditionFilterEdit::GetSettingsClicked()
 	}
 
 	_settings->setPlainText(
-		QString::fromStdString(getSourceSettings(_entryData->_filter)));
+		fromatJsonString(getSourceSettings(_entryData->_filter)));
 }
 
 void MacroConditionFilterEdit::SettingsChanged()
