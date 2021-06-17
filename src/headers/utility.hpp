@@ -28,6 +28,8 @@ bool compareSourceSettings(const OBSWeakSource &source,
 std::vector<obs_scene_item *> getSceneItemsWithName(OBSScene scene,
 						    std::string &name);
 std::string getDataFilePath(const std::string &file);
+QString fromatJsonString(std::string);
+QString fromatJsonString(const char *);
 
 /**
  * Populate layout with labels and widgets based on provided text
