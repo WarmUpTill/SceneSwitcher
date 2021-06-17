@@ -10,6 +10,7 @@
 #include <QGraphicsColorizeEffect>
 #include <QTimer>
 #include <QMessageBox>
+#include <QJsonDocument>
 #include <unordered_map>
 #include <regex>
 #include <set>
@@ -289,6 +290,17 @@ std::string getDataFilePath(const std::string &file)
 		return root_path + "/" + file;
 	}
 	return "";
+}
+
+QString fromatJsonString(std::string s)
+{
+	return fromatJsonString(s.c_str());
+}
+
+QString fromatJsonString(const char *json)
+{
+	QJsonDocument doc = QJsonDocument::fromJson(json);
+	return doc.toJson(QJsonDocument::Indented);
 }
 
 bool DisplayMessage(const QString &msg, bool question)
