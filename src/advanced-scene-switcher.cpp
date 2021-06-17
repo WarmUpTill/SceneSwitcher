@@ -499,6 +499,11 @@ void handlePeviewSceneChange()
 	}
 }
 
+void setReplayBufferSaved()
+{
+	switcher->replayBufferSaved = true;
+}
+
 // Note to future self:
 // be careful using switcher->m here as there is potential for deadlocks when using
 // frontend functions such as obs_frontend_set_current_scene()
@@ -529,6 +534,9 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
 	case OBS_FRONTEND_EVENT_STREAMING_STOPPED:
 		resetLiveTime();
+		break;
+	case OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
+		setReplayBufferSaved();
 		break;
 	default:
 		break;
