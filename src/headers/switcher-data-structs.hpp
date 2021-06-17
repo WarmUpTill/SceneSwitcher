@@ -97,6 +97,7 @@ struct SwitcherData {
 	bool macroSceneSwitched = false;
 
 	std::deque<WindowSwitch> windowSwitches;
+	WindowSwitch *lastMatch;
 	std::vector<std::string> ignoreIdleWindows;
 	std::string lastTitle;
 

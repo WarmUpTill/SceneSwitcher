@@ -172,9 +172,7 @@ void AdvSceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
 }
 
 void checkWindowTitleSwitchDirect(WindowSwitch &s,
-				  std::string &currentWindowTitle, bool &match,
-				  OBSWeakSource &scene,
-				  OBSWeakSource &transition)
+				  std::string &currentWindowTitle, bool &match)
 {
 	bool focus = (!s.focus || s.window == currentWindowTitle);
 	bool fullscreen = (!s.fullscreen || isFullscreen(s.window));
@@ -182,16 +180,13 @@ void checkWindowTitleSwitchDirect(WindowSwitch &s,
 
 	if (focus && fullscreen && max) {
 		match = true;
-		scene = s.getScene();
-		transition = s.transition;
 	}
 }
 
 void checkWindowTitleSwitchRegex(WindowSwitch &s,
 				 std::string &currentWindowTitle,
 				 std::vector<std::string> windowList,
-				 bool &match, OBSWeakSource &scene,
-				 OBSWeakSource &transition)
+				 bool &match)
 {
 	for (auto &window : windowList) {
 		try {
@@ -208,8 +203,6 @@ void checkWindowTitleSwitchRegex(WindowSwitch &s,
 
 		if (focus && fullscreen && max) {
 			match = true;
-			scene = s.getScene();
-			transition = s.transition;
 		}
 	}
 }
@@ -250,22 +243,29 @@ bool SwitcherData::checkWindowTitleSwitch(OBSWeakSource &scene,
 			continue;
 		}
 		if (!s.keepMatching) {
-			if(currentWindowTitle == lastTitle){
+			if(lastMatch == &s || currentWindowTitle == lastTitle){
 				continue;
 			}
 		}
 
 		if (std::find(windowList.begin(), windowList.end(), s.window) !=
 		    windowList.end()) {
-			checkWindowTitleSwitchDirect(s, currentWindowTitle,
-						     match, scene, transition);
+			checkWindowTitleSwitchDirect(s, currentWindowTitle, match);
+			if(match && !s.keepMatching){
+				checkWindowTitleSwitchDirect(s, lastTitle, match);
+			}
 		} else {
-			checkWindowTitleSwitchRegex(s, currentWindowTitle,
-						    windowList, match, scene,
-						    transition);
+			checkWindowTitleSwitchRegex(s, currentWindowTitle, windowList, match);
+			if(match && !s.keepMatching){
+				checkWindowTitleSwitchRegex(s, lastTitle, windowList, match);
+			}
 		}
 
 		if (match) {
+			lastMatch = &s;
+
+			scene = s.getScene();
+			transition = s.transition;
 			if (verbose) {
 				s.logMatch();
 			}
