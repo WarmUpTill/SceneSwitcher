@@ -163,7 +163,7 @@ void MacroActionSourceEdit::GetSettingsClicked()
 	}
 
 	_settings->setPlainText(
-		QString::fromStdString(getSourceSettings(_entryData->_source)));
+		fromatJsonString(getSourceSettings(_entryData->_source)));
 }
 
 void MacroActionSourceEdit::SettingsChanged()
