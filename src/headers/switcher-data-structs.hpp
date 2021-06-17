@@ -178,9 +178,9 @@ struct SwitcherData {
 	std::vector<int> tabOrder = std::vector<int>(tab_count);
 
 	bool hotkeysRegistered = false;
-	obs_hotkey_id startHotkey = 0;
-	obs_hotkey_id stopHotkey = 0;
-	obs_hotkey_id toggleHotkey = 0;
+	obs_hotkey_id startHotkey = OBS_INVALID_HOTKEY_ID;
+	obs_hotkey_id stopHotkey = OBS_INVALID_HOTKEY_ID;
+	obs_hotkey_id toggleHotkey = OBS_INVALID_HOTKEY_ID;
 
 	bool saveWindowGeo = false;
 	QPoint windowPos = {};
