@@ -10,6 +10,7 @@ struct WindowSwitch : SceneSwitcherEntry {
 	bool fullscreen = false;
 	bool maximized = false;
 	bool focus = true;
+	bool keepMatching = true;
 
 	const char *getType() { return "window"; }
 	void save(obs_data_t *obj);
@@ -32,12 +33,14 @@ private slots:
 	void FullscreenChanged(int state);
 	void MaximizedChanged(int state);
 	void FocusChanged(int state);
+	void KeepMatchingChanged(int state);
 
 private:
 	QComboBox *windows;
 	QCheckBox *fullscreen;
 	QCheckBox *maximized;
 	QCheckBox *focused;
+	QCheckBox *keepMatching;
 
 	WindowSwitch *switchData;
 };

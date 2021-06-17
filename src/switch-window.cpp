@@ -242,14 +242,17 @@ bool SwitcherData::checkWindowTitleSwitch(OBSWeakSource &scene,
 		}
 	}
 
-	lastTitle = currentWindowTitle;
-
 	std::vector<std::string> windowList;
 	GetWindowList(windowList);
 
 	for (WindowSwitch &s : windowSwitches) {
 		if (!s.initialized()) {
 			continue;
+		}
+		if (!s.keepMatching) {
+			if(currentWindowTitle == lastTitle){
+				continue;
+			}
 		}
 
 		if (std::find(windowList.begin(), windowList.end(), s.window) !=
@@ -269,6 +272,9 @@ bool SwitcherData::checkWindowTitleSwitch(OBSWeakSource &scene,
 			break;
 		}
 	}
+
+	lastTitle = currentWindowTitle;
+
 	return match;
 }
 
@@ -382,6 +388,7 @@ void WindowSwitch::save(obs_data_t *obj)
 	obs_data_set_bool(obj, "fullscreen", fullscreen);
 	obs_data_set_bool(obj, "maximized", maximized);
 	obs_data_set_bool(obj, "focus", focus);
+	obs_data_set_bool(obj, "keepMatching", keepMatching);
 }
 
 void WindowSwitch::load(obs_data_t *obj)
@@ -393,6 +400,7 @@ void WindowSwitch::load(obs_data_t *obj)
 	maximized = obs_data_get_bool(obj, "maximized");
 	focus = obs_data_get_bool(obj, "focus") ||
 		!obs_data_has_user_value(obj, "focus");
+	keepMatching = obs_data_get_bool(obj, "keepMatching");
 }
 
 WindowSwitchWidget::WindowSwitchWidget(QWidget *parent, WindowSwitch *s)
@@ -405,6 +413,9 @@ WindowSwitchWidget::WindowSwitchWidget(QWidget *parent, WindowSwitch *s)
 		obs_module_text("AdvSceneSwitcher.windowTitleTab.maximized"));
 	focused = new QCheckBox(
 		obs_module_text("AdvSceneSwitcher.windowTitleTab.focused"));
+	// MYTODO: text
+	keepMatching = new QCheckBox(
+		obs_module_text("AdvSceneSwitcher.windowTitleTab.keepMatching"));
 
 	QWidget::connect(windows, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(WindowChanged(const QString &)));
@@ -414,6 +425,8 @@ WindowSwitchWidget::WindowSwitchWidget(QWidget *parent, WindowSwitch *s)
 			 SLOT(MaximizedChanged(int)));
 	QWidget::connect(focused, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
+	QWidget::connect(keepMatching, SIGNAL(stateChanged(int)), this,
+			 SLOT(KeepMatchingChanged(int)));
 
 	populateWindowSelection(windows);
 
@@ -425,6 +438,7 @@ WindowSwitchWidget::WindowSwitchWidget(QWidget *parent, WindowSwitch *s)
 		fullscreen->setChecked(s->fullscreen);
 		maximized->setChecked(s->maximized);
 		focused->setChecked(s->focus);
+		keepMatching->setChecked(s->keepMatching);
 	}
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
@@ -434,7 +448,8 @@ WindowSwitchWidget::WindowSwitchWidget(QWidget *parent, WindowSwitch *s)
 		{"{{transitions}}", transitions},
 		{"{{fullscreen}}", fullscreen},
 		{"{{maximized}}", maximized},
-		{"{{focused}}", focused}};
+		{"{{focused}}", focused},
+		{"{{keepMatching}}", keepMatching}};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.windowTitleTab.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
@@ -502,4 +517,15 @@ void WindowSwitchWidget::FocusChanged(int state)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->focus = state;
+}
+
+
+void WindowSwitchWidget::KeepMatchingChanged(int state)
+{
+	if (loading || !switchData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->keepMatching = state;
 }
