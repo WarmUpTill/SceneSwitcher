@@ -16,7 +16,7 @@ public:
 	static bool AskForName(QWidget *parent, const QString &title,
 			       const QString &text, std::string &userTextInput,
 			       const QString &placeHolder = QString(""),
-			       int maxSize = 170);
+			       int maxSize = 170, bool clean = true);
 
 private:
 	QLabel *label;
