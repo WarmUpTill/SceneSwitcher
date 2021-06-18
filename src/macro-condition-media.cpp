@@ -189,6 +189,14 @@ bool MacroConditionMedia::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroConditionMedia::GetShortDesc()
+{
+	if (_source) {
+		return GetWeakSourceName(_source);
+	}
+	return "";
+}
+
 void MacroConditionMedia::ClearSignalHandler()
 {
 	obs_source_t *mediasource = obs_weak_source_get_source(_source);
@@ -286,6 +294,8 @@ void MacroConditionMediaEdit::SourceChanged(const QString &text)
 	_entryData->ClearSignalHandler();
 	_entryData->_source = GetWeakSourceByQString(text);
 	_entryData->ResetSignalHandler();
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 MediaState getMediaStateFromIdx(int idx)

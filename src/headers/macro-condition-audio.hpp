@@ -17,6 +17,7 @@ public:
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
+	std::string GetShortDesc();
 	std::string GetId() { return id; };
 	static std::shared_ptr<MacroCondition> Create()
 	{
@@ -60,6 +61,8 @@ private slots:
 	void SourceChanged(const QString &text);
 	void VolumeThresholdChanged(int vol);
 	void ConditionChanged(int cond);
+signals:
+	void HeaderInfoChanged(const QString &);
 
 protected:
 	QComboBox *_audioSources;

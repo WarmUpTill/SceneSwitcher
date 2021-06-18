@@ -12,6 +12,7 @@ public:
 	void LogAction();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
+	std::string GetShortDesc();
 	std::string GetId() { return id; };
 	static std::shared_ptr<MacroAction> Create()
 	{
@@ -48,6 +49,8 @@ private slots:
 	void RemoveArg();
 	void ArgUp();
 	void ArgDown();
+signals:
+	void HeaderInfoChanged(const QString &);
 
 protected:
 	std::shared_ptr<MacroActionRun> _entryData;

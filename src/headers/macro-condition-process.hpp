@@ -8,6 +8,7 @@ public:
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
+	std::string GetShortDesc();
 	std::string GetId() { return id; };
 	static std::shared_ptr<MacroCondition> Create()
 	{
@@ -41,6 +42,8 @@ public:
 private slots:
 	void ProcessChanged(const QString &text);
 	void FocusChanged(int state);
+signals:
+	void HeaderInfoChanged(const QString &);
 
 protected:
 	QComboBox *_processSelection;

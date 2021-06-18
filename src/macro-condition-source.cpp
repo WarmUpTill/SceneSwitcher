@@ -71,6 +71,14 @@ bool MacroConditionSource::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroConditionSource::GetShortDesc()
+{
+	if (_source) {
+		return GetWeakSourceName(_source);
+	}
+	return "";
+}
+
 static inline void populateConditionSelection(QComboBox *list)
 {
 	for (auto entry : sourceConditionTypes) {
@@ -140,6 +148,8 @@ void MacroConditionSourceEdit::SourceChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_source = GetWeakSourceByQString(text);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroConditionSourceEdit::ConditionChanged(int index)

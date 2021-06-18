@@ -22,6 +22,7 @@ public:
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
+	std::string GetShortDesc();
 	std::string GetId() { return id; };
 	static std::shared_ptr<MacroCondition> Create()
 	{
@@ -64,6 +65,8 @@ private slots:
 	void ConditionChanged(int cond);
 	void ResetClicked();
 	void UpdateCount();
+signals:
+	void HeaderInfoChanged(const QString &);
 
 protected:
 	MacroSelection *_macros;

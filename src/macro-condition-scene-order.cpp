@@ -133,6 +133,15 @@ bool MacroConditionSceneOrder::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroConditionSceneOrder::GetShortDesc()
+{
+	if (_scene && _source) {
+		return GetWeakSourceName(_scene) + " - " +
+		       GetWeakSourceName(_source);
+	}
+	return "";
+}
+
 static inline void populateConditionSelection(QComboBox *list)
 {
 	for (auto entry : sceneOrderConditionTypes) {
@@ -208,6 +217,8 @@ void MacroConditionSceneOrderEdit::SourceChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_source = GetWeakSourceByQString(text);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroConditionSceneOrderEdit::Source2Changed(const QString &text)

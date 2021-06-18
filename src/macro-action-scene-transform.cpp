@@ -118,6 +118,15 @@ bool MacroActionSceneTransform::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroActionSceneTransform::GetShortDesc()
+{
+	if (_scene && _source) {
+		return GetWeakSourceName(_scene) + " - " +
+		       GetWeakSourceName(_source);
+	}
+	return "";
+}
+
 std::string MacroActionSceneTransform::GetSettings()
 {
 	auto data = obs_data_create();
@@ -222,6 +231,8 @@ void MacroActionSceneTransformEdit::SourceChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_source = GetWeakSourceByQString(text);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroActionSceneTransformEdit::GetSettingsClicked()

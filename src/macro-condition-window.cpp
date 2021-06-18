@@ -94,6 +94,11 @@ bool MacroConditionWindow::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroConditionWindow::GetShortDesc()
+{
+	return _window;
+}
+
 MacroConditionWindowEdit::MacroConditionWindowEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionWindow> entryData)
 	: QWidget(parent)
@@ -155,6 +160,8 @@ void MacroConditionWindowEdit::WindowChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_window = text.toStdString();
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroConditionWindowEdit::FullscreenChanged(int state)

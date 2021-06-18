@@ -9,6 +9,7 @@ public:
 	void LogAction();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
+	std::string GetShortDesc();
 	std::string GetId() { return id; };
 	static std::shared_ptr<MacroAction> Create()
 	{
@@ -49,6 +50,8 @@ private slots:
 	void SourceChanged(const QString &text);
 	void GetSettingsClicked();
 	void SettingsChanged();
+signals:
+	void HeaderInfoChanged(const QString &);
 
 protected:
 	QComboBox *_scenes;

@@ -84,6 +84,14 @@ bool MacroActionMedia::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroActionMedia::GetShortDesc()
+{
+	if (_mediaSource) {
+		return GetWeakSourceName(_mediaSource);
+	}
+	return "";
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (auto entry : actionTypes) {
@@ -140,6 +148,8 @@ void MacroActionMediaEdit::SourceChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_mediaSource = GetWeakSourceByQString(text);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroActionMediaEdit::ActionChanged(int value)

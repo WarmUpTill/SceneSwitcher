@@ -119,6 +119,11 @@ bool MacroConditionFile::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroConditionFile::GetShortDesc()
+{
+	return _file;
+}
+
 MacroConditionFileEdit::MacroConditionFileEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionFile> entryData)
 	: QWidget(parent)
@@ -231,6 +236,8 @@ void MacroConditionFileEdit::FilePathChanged()
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_file = _filePath->text().toUtf8().constData();
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroConditionFileEdit::BrowseButtonClicked()

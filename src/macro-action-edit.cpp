@@ -64,6 +64,7 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 {
 	_actionSelection = new QComboBox();
 	_section = new Section(300);
+	_headerInfo = new QLabel();
 
 	QWidget::connect(_actionSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
@@ -72,6 +73,7 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	populateActionSelection(_actionSelection);
 
 	_section->AddHeaderWidget(_actionSelection);
+	_section->AddHeaderWidget(_headerInfo);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addWidget(_section);
@@ -90,12 +92,14 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 	}
 
 	std::string id = MacroActionFactory::GetIdByName(text);
+	HeaderInfoChanged("");
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->reset();
 	*_entryData = MacroActionFactory::Create(id);
-	auto widget =
-		MacroActionFactory::CreateWidget(id, window(), *_entryData);
+	auto widget = MacroActionFactory::CreateWidget(id, this, *_entryData);
+	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
+			 this, SLOT(HeaderInfoChanged(const QString &)));
 	_section->SetContent(widget, false);
 }
 
@@ -103,9 +107,18 @@ void MacroActionEdit::UpdateEntryData(const std::string &id, bool collapse)
 {
 	_actionSelection->setCurrentText(
 		obs_module_text(MacroActionFactory::GetActionName(id).c_str()));
-	auto widget =
-		MacroActionFactory::CreateWidget(id, window(), *_entryData);
+	auto widget = MacroActionFactory::CreateWidget(id, this, *_entryData);
+	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
+			 this, SLOT(HeaderInfoChanged(const QString &)));
+	HeaderInfoChanged(
+		QString::fromStdString((*_entryData)->GetShortDesc()));
 	_section->SetContent(widget, collapse);
+}
+
+void MacroActionEdit::HeaderInfoChanged(const QString &text)
+{
+	_headerInfo->setVisible(!text.isEmpty());
+	_headerInfo->setText(text);
 }
 
 void AdvSceneSwitcher::on_actionAdd_clicked()

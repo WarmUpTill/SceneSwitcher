@@ -67,6 +67,14 @@ bool MacroActionSource::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroActionSource::GetShortDesc()
+{
+	if (_source) {
+		return GetWeakSourceName(_source);
+	}
+	return "";
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (auto entry : actionTypes) {
@@ -143,6 +151,8 @@ void MacroActionSourceEdit::SourceChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_source = GetWeakSourceByQString(text);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroActionSourceEdit::ActionChanged(int value)
