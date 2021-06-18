@@ -24,6 +24,7 @@ public:
 	bool _fullscreen = false;
 	bool _maximized = false;
 	bool _focus = true;
+	bool _windowFocusChanged = false;
 
 private:
 	static bool _registered;
@@ -50,13 +51,15 @@ private slots:
 	void WindowChanged(const QString &text);
 	void FullscreenChanged(int state);
 	void MaximizedChanged(int state);
-	void FocusChanged(int state);
+	void FocusedChanged(int state);
+	void WindowFocusChanged(int state);
 
 protected:
 	QComboBox *_windowSelection;
 	QCheckBox *_fullscreen;
 	QCheckBox *_maximized;
 	QCheckBox *_focused;
+	QCheckBox *_windowFocusChanged;
 	std::shared_ptr<MacroConditionWindow> _entryData;
 
 private:
