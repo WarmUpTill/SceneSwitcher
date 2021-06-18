@@ -47,11 +47,14 @@ bool MacroConditionWindow::CheckWindowTitleSwitchRegex(
 	return match;
 }
 
+bool foregroundWindowChanged()
+{
+	return switcher->currentTitle != switcher->lastTitle;
+}
+
 bool MacroConditionWindow::CheckCondition()
 {
-	std::string currentWindowTitle;
-	GetCurrentWindowTitle(currentWindowTitle);
-
+	std::string currentWindowTitle = switcher->currentTitle;
 	std::vector<std::string> windowList;
 	GetWindowList(windowList);
 
@@ -64,6 +67,7 @@ bool MacroConditionWindow::CheckCondition()
 		match = CheckWindowTitleSwitchRegex(currentWindowTitle,
 						    windowList);
 	}
+	match = match && (!_windowFocusChanged || foregroundWindowChanged());
 
 	return match;
 }
@@ -75,6 +79,7 @@ bool MacroConditionWindow::Save(obs_data_t *obj)
 	obs_data_set_bool(obj, "fullscreen", _fullscreen);
 	obs_data_set_bool(obj, "maximized", _maximized);
 	obs_data_set_bool(obj, "focus", _focus);
+	obs_data_set_bool(obj, "windowFocusChanged", _windowFocusChanged);
 	return true;
 }
 
@@ -85,6 +90,7 @@ bool MacroConditionWindow::Load(obs_data_t *obj)
 	_fullscreen = obs_data_get_bool(obj, "fullscreen");
 	_maximized = obs_data_get_bool(obj, "maximized");
 	_focus = obs_data_get_bool(obj, "focus");
+	_windowFocusChanged = obs_data_get_bool(obj, "windowFocusChanged");
 	return true;
 }
 
@@ -99,6 +105,7 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 	_fullscreen = new QCheckBox();
 	_maximized = new QCheckBox();
 	_focused = new QCheckBox();
+	_windowFocusChanged = new QCheckBox();
 
 	QWidget::connect(_windowSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
@@ -108,7 +115,9 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 	QWidget::connect(_maximized, SIGNAL(stateChanged(int)), this,
 			 SLOT(MaximizedChanged(int)));
 	QWidget::connect(_focused, SIGNAL(stateChanged(int)), this,
-			 SLOT(FocusChanged(int)));
+			 SLOT(FocusedChanged(int)));
+	QWidget::connect(_windowFocusChanged, SIGNAL(stateChanged(int)), this,
+			 SLOT(WindowFocusChanged(int)));
 
 	populateWindowSelection(_windowSelection);
 
@@ -117,6 +126,7 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 		{"{{fullscreen}}", _fullscreen},
 		{"{{maximized}}", _maximized},
 		{"{{focused}}", _focused},
+		{"{{windowFocusChanged}}", _windowFocusChanged},
 	};
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
@@ -167,7 +177,7 @@ void MacroConditionWindowEdit::MaximizedChanged(int state)
 	_entryData->_maximized = state;
 }
 
-void MacroConditionWindowEdit::FocusChanged(int state)
+void MacroConditionWindowEdit::FocusedChanged(int state)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -175,6 +185,16 @@ void MacroConditionWindowEdit::FocusChanged(int state)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_focus = state;
+}
+
+void MacroConditionWindowEdit::WindowFocusChanged(int state)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_windowFocusChanged = state;
 }
 
 void MacroConditionWindowEdit::UpdateEntryData()
@@ -187,4 +207,5 @@ void MacroConditionWindowEdit::UpdateEntryData()
 	_fullscreen->setChecked(_entryData->_fullscreen);
 	_maximized->setChecked(_entryData->_maximized);
 	_focused->setChecked(_entryData->_focus);
+	_windowFocusChanged->setChecked(_entryData->_windowFocusChanged);
 }
