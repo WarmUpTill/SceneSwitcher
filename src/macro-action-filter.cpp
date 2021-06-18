@@ -72,6 +72,15 @@ bool MacroActionFilter::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroActionFilter::GetShortDesc()
+{
+	if (_filter && _source) {
+		return GetWeakSourceName(_source) + " - " +
+		       GetWeakSourceName(_filter);
+	}
+	return "";
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (auto entry : actionTypes) {
@@ -166,6 +175,8 @@ void MacroActionFilterEdit::FilterChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_filter = GetWeakFilterByQString(_entryData->_source, text);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroActionFilterEdit::ActionChanged(int value)

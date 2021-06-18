@@ -41,6 +41,11 @@ bool MacroConditionProcess::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroConditionProcess::GetShortDesc()
+{
+	return _process;
+}
+
 MacroConditionProcessEdit::MacroConditionProcessEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionProcess> entryData)
 	: QWidget(parent)
@@ -83,6 +88,8 @@ void MacroConditionProcessEdit::ProcessChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_process = text.toStdString();
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroConditionProcessEdit::FocusChanged(int state)

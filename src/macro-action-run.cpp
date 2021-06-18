@@ -56,6 +56,11 @@ bool MacroActionRun::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroActionRun::GetShortDesc()
+{
+	return _path;
+}
+
 MacroActionRunEdit::MacroActionRunEdit(
 	QWidget *parent, std::shared_ptr<MacroActionRun> entryData)
 	: QWidget(parent)
@@ -143,6 +148,8 @@ void MacroActionRunEdit::FilePathChanged()
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_path = _filePath->text().toUtf8().constData();
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroActionRunEdit::BrowseButtonClicked()

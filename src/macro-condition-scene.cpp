@@ -48,6 +48,14 @@ bool MacroConditionScene::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroConditionScene::GetShortDesc()
+{
+	if (_scene) {
+		return GetWeakSourceName(_scene);
+	}
+	return "";
+}
+
 static inline void populateTypeSelection(QComboBox *list)
 {
 	for (auto entry : sceneTypes) {
@@ -93,6 +101,8 @@ void MacroConditionSceneEdit::SceneChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_scene = GetWeakSourceByQString(text);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroConditionSceneEdit::TypeChanged(int value)

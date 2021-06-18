@@ -76,6 +76,14 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroConditionVideo::GetShortDesc()
+{
+	if (_videoSource) {
+		return GetWeakSourceName(_videoSource);
+	}
+	return "";
+}
+
 void MacroConditionVideo::GetScreenshot()
 {
 	auto source = obs_weak_source_get_source(_videoSource);
@@ -204,6 +212,8 @@ void MacroConditionVideoEdit::SourceChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_videoSource = GetWeakSourceByQString(text);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroConditionVideoEdit::ConditionChanged(int cond)

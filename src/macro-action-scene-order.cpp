@@ -93,6 +93,15 @@ bool MacroActionSceneOrder::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroActionSceneOrder::GetShortDesc()
+{
+	if (_scene && _source) {
+		return GetWeakSourceName(_scene) + " - " +
+		       GetWeakSourceName(_source);
+	}
+	return "";
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (auto entry : actionTypes) {
@@ -175,6 +184,8 @@ void MacroActionSceneOrderEdit::SourceChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_source = GetWeakSourceByQString(text);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroActionSceneOrderEdit::ActionChanged(int value)

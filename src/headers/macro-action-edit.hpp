@@ -4,6 +4,7 @@
 #include <QComboBox>
 #include <QVBoxLayout>
 #include <QGroupBox>
+#include <QLabel>
 #include <deque>
 #include "macro.hpp"
 #include "section.hpp"
@@ -44,10 +45,12 @@ public:
 
 private slots:
 	void ActionSelectionChanged(const QString &text);
+	void HeaderInfoChanged(const QString &);
 
 protected:
 	QComboBox *_actionSelection;
 	Section *_section;
+	QLabel *_headerInfo;
 
 	std::shared_ptr<MacroAction> *_entryData;
 

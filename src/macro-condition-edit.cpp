@@ -93,6 +93,7 @@ MacroConditionEdit::MacroConditionEdit(
 	_logicSelection = new QComboBox();
 	_conditionSelection = new QComboBox();
 	_section = new Section(300);
+	_headerInfo = new QLabel();
 	_dur = new DurationConstraintEdit();
 
 	QWidget::connect(_logicSelection, SIGNAL(currentIndexChanged(int)),
@@ -113,6 +114,7 @@ MacroConditionEdit::MacroConditionEdit(
 
 	_section->AddHeaderWidget(_logicSelection);
 	_section->AddHeaderWidget(_conditionSelection);
+	_section->AddHeaderWidget(_headerInfo);
 	_section->AddHeaderWidget(_dur);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
@@ -152,7 +154,11 @@ void MacroConditionEdit::UpdateEntryData(const std::string &id, bool collapse)
 	_conditionSelection->setCurrentText(obs_module_text(
 		MacroConditionFactory::GetConditionName(id).c_str()));
 	auto widget =
-		MacroConditionFactory::CreateWidget(id, window(), *_entryData);
+		MacroConditionFactory::CreateWidget(id, this, *_entryData);
+	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
+			 this, SLOT(HeaderInfoChanged(const QString &)));
+	HeaderInfoChanged(
+		QString::fromStdString((*_entryData)->GetShortDesc()));
 	auto logic = (*_entryData)->GetLogicType();
 	if (IsRootNode()) {
 		_logicSelection->setCurrentIndex(static_cast<int>(logic));
@@ -177,6 +183,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 
 	auto temp = DurationConstraint();
 	_dur->SetValue(temp);
+	HeaderInfoChanged("");
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	auto logic = (*_entryData)->GetLogicType();
@@ -184,7 +191,9 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 	*_entryData = MacroConditionFactory::Create(id);
 	(*_entryData)->SetLogicType(logic);
 	auto widget =
-		MacroConditionFactory::CreateWidget(id, window(), *_entryData);
+		MacroConditionFactory::CreateWidget(id, this, *_entryData);
+	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
+			 this, SLOT(HeaderInfoChanged(const QString &)));
 	_section->SetContent(widget, false);
 	_dur->setVisible(MacroConditionFactory::UsesDurationConstraint(id));
 }
@@ -217,6 +226,12 @@ void MacroConditionEdit::DurationUnitChanged(DurationUnit unit)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	(*_entryData)->SetDurationUnit(unit);
+}
+
+void MacroConditionEdit::HeaderInfoChanged(const QString &text)
+{
+	_headerInfo->setVisible(!text.isEmpty());
+	_headerInfo->setText(text);
 }
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()

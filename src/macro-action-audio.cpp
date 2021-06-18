@@ -75,6 +75,14 @@ bool MacroActionAudio::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroActionAudio::GetShortDesc()
+{
+	if (_audioSource) {
+		return GetWeakSourceName(_audioSource);
+	}
+	return "";
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (auto entry : actionTypes) {
@@ -167,6 +175,8 @@ void MacroActionAudioEdit::SourceChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_audioSource = GetWeakSourceByQString(text);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroActionAudioEdit::ActionChanged(int value)

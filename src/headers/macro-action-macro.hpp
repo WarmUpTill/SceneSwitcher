@@ -15,6 +15,7 @@ public:
 	void LogAction();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
+	std::string GetShortDesc();
 	std::string GetId() { return id; };
 	static std::shared_ptr<MacroAction> Create()
 	{
@@ -48,6 +49,8 @@ private slots:
 	void MacroChanged(const QString &text);
 	void MacroRemove(const QString &name);
 	void ActionChanged(int value);
+signals:
+	void HeaderInfoChanged(const QString &);
 
 protected:
 	MacroSelection *_macros;

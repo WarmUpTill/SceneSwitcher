@@ -51,11 +51,13 @@ private slots:
 	void DurationChanged(double seconds);
 	void DurationConditionChanged(DurationCondition cond);
 	void DurationUnitChanged(DurationUnit unit);
+	void HeaderInfoChanged(const QString &);
 
 protected:
 	QComboBox *_logicSelection;
 	QComboBox *_conditionSelection;
 	Section *_section;
+	QLabel *_headerInfo;
 	DurationConstraintEdit *_dur;
 
 	std::shared_ptr<MacroCondition> *_entryData;

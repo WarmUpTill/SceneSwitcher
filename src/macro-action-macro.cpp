@@ -77,6 +77,14 @@ bool MacroActionMacro::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroActionMacro::GetShortDesc()
+{
+	if (_macro.get()) {
+		return _macro->Name();
+	}
+	return "";
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (auto entry : actionTypes) {
@@ -131,6 +139,8 @@ void MacroActionMacroEdit::MacroChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_macro.UpdateRef(text);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroActionMacroEdit::ActionChanged(int value)

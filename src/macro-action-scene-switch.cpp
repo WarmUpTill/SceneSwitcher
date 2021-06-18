@@ -39,6 +39,17 @@ bool MacroActionSwitchScene::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroActionSwitchScene::GetShortDesc()
+{
+	if (targetType == SwitchTargetType::Scene && scene) {
+		return GetWeakSourceName(scene);
+	}
+	if (targetType == SwitchTargetType::SceneGroup && group) {
+		return group->name;
+	}
+	return "";
+}
+
 MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSwitchScene> entryData)
 	: SwitchWidget(parent, entryData.get(), true, true)
@@ -46,6 +57,8 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	_duration = new DurationSelection(parent, false);
 	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
 			 SLOT(DurationChanged(double)));
+	QWidget::connect(scenes, SIGNAL(currentTextChanged(const QString &)),
+			 this, SLOT(ChangeHeaderInfo(const QString &)));
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -70,4 +83,10 @@ void MacroActionSwitchSceneEdit::DurationChanged(double seconds)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_duration.seconds = seconds;
+}
+
+void MacroActionSwitchSceneEdit::ChangeHeaderInfo(const QString &)
+{
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }

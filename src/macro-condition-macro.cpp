@@ -98,6 +98,14 @@ bool MacroConditionMacro::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroConditionMacro::GetShortDesc()
+{
+	if (_macro.get()) {
+		return _macro->Name();
+	}
+	return "";
+}
+
 static inline void populateTypeSelection(QComboBox *list)
 {
 	for (auto entry : macroConditionTypes) {
@@ -247,6 +255,8 @@ void MacroConditionMacroEdit::MacroChanged(const QString &text)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_macro.UpdateRef(text);
 	ResetTimer();
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroConditionMacroEdit::CountChanged(int value)

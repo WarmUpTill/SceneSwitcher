@@ -19,6 +19,7 @@ public:
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
+	std::string GetShortDesc();
 	std::string GetId() { return id; };
 	QImage GetMatchImage() { return _matchImage; };
 	static std::shared_ptr<MacroCondition> Create()
@@ -65,6 +66,8 @@ private slots:
 	void ConditionChanged(int cond);
 	void FilePathChanged();
 	void BrowseButtonClicked();
+signals:
+	void HeaderInfoChanged(const QString &);
 
 protected:
 	QComboBox *_videoSelection;

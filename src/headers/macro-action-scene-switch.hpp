@@ -9,6 +9,7 @@ public:
 	void LogAction();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
+	std::string GetShortDesc();
 	std::string GetId() { return id; };
 
 	static std::shared_ptr<MacroAction> Create()
@@ -42,6 +43,9 @@ public:
 
 private slots:
 	void DurationChanged(double seconds);
+	void ChangeHeaderInfo(const QString &);
+signals:
+	void HeaderInfoChanged(const QString &);
 
 protected:
 	DurationSelection *_duration;

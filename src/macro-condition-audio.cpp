@@ -77,6 +77,14 @@ bool MacroConditionAudio::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroConditionAudio::GetShortDesc()
+{
+	if (_audioSource) {
+		return GetWeakSourceName(_audioSource);
+	}
+	return "";
+}
+
 void MacroConditionAudio::SetVolumeLevel(
 	void *data, const float magnitude[MAX_AUDIO_CHANNELS],
 	const float peak[MAX_AUDIO_CHANNELS],
@@ -181,6 +189,8 @@ void MacroConditionAudioEdit::SourceChanged(const QString &text)
 	_entryData->_audioSource = GetWeakSourceByQString(text);
 	_entryData->ResetVolmeter();
 	UpdateVolmeterSource();
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroConditionAudioEdit::VolumeThresholdChanged(int vol)

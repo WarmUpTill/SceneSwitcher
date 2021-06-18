@@ -365,6 +365,11 @@ bool MacroCondition::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroCondition::GetShortDesc()
+{
+	return "";
+}
+
 void MacroCondition::SetDurationConstraint(const DurationConstraint &dur)
 {
 	_duration = dur;
@@ -395,6 +400,11 @@ bool MacroAction::Load(obs_data_t *obj)
 {
 	UNUSED_PARAMETER(obj);
 	return true;
+}
+
+std::string MacroAction::GetShortDesc()
+{
+	return "";
 }
 
 void MacroAction::LogAction()
