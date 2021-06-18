@@ -1,3 +1,10 @@
+/******************************************************************************
+    Note: Long-term goal is to remove this tab / file.
+    Most functionality shall be moved to the Macro tab instead.
+
+    So if you plan to make changes here, please consider applying them to the
+    corresponding macro tab functionality instead.
+******************************************************************************/
 #pragma once
 #include "switch-generic.hpp"
 
