@@ -221,29 +221,8 @@ bool SwitcherData::checkWindowTitleSwitch(OBSWeakSource &scene,
 		return false;
 	}
 
-	std::string currentWindowTitle;
-	GetCurrentWindowTitle(currentWindowTitle);
+	std::string currentWindowTitle = switcher->currentTitle;
 	bool match = false;
-
-	// Check if current window is ignored
-	for (auto &window : ignoreWindowsSwitches) {
-		bool equals = (currentWindowTitle == window);
-
-		try {
-			std::regex expr(window);
-			bool matches =
-				std::regex_match(currentWindowTitle, expr);
-
-			if (equals || matches) {
-				currentWindowTitle = lastTitle;
-				break;
-			}
-		} catch (const std::regex_error &) {
-		}
-	}
-
-	lastTitle = currentWindowTitle;
-
 	std::vector<std::string> windowList;
 	GetWindowList(windowList);
 

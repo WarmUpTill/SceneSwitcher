@@ -84,28 +84,10 @@ bool SwitcherData::checkExeSwitch(OBSWeakSource &scene,
 		return false;
 	}
 
-	std::string title;
+	std::string title = switcher->currentTitle;
 	QStringList runningProcesses;
 	bool ignored = false;
 	bool match = false;
-
-	// Check if current window is ignored
-	GetCurrentWindowTitle(title);
-	for (auto &window : ignoreWindowsSwitches) {
-		// True if ignored switch equals title
-		bool equals = (title == window);
-		// True if ignored switch matches title
-		bool matches = QString::fromStdString(title).contains(
-			QRegularExpression(QString::fromStdString(window)));
-
-		if (equals || matches) {
-			ignored = true;
-			title = lastTitle;
-
-			break;
-		}
-	}
-	lastTitle = title;
 
 	// Check for match
 	GetProcessList(runningProcesses);

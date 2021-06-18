@@ -1,6 +1,7 @@
 #include <QMainWindow>
 #include <QAction>
 #include <QFileDialog>
+#include <regex>
 
 #include <obs-module.h>
 #include <obs-frontend-api.h>
@@ -199,6 +200,7 @@ void SwitcherData::Thread()
 		if (checkPause()) {
 			continue;
 		}
+		setPreconditions();
 		match = checkForMatch(scene, transition, linger,
 				      setPrevSceneAfterLinger, macroMatch);
 		if (stop) {
@@ -250,6 +252,31 @@ void SwitcherData::Thread()
 	}
 
 	blog(LOG_INFO, "stopped");
+}
+
+void SwitcherData::setPreconditions()
+{
+	// Window title
+	lastTitle = currentTitle;
+	std::string title;
+	GetCurrentWindowTitle(title);
+	for (auto &window : ignoreWindowsSwitches) {
+		bool equals = (title == window);
+		bool matches = false;
+		if (!equals) {
+			try {
+				std::regex expr(window);
+				matches = std::regex_match(title, expr);
+
+			} catch (const std::regex_error &) {
+			}
+		}
+		if (equals || matches) {
+			title = lastTitle;
+			break;
+		}
+	}
+	currentTitle = title;
 }
 
 bool SwitcherData::checkForMatch(OBSWeakSource &scene,
