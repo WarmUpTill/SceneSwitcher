@@ -171,9 +171,7 @@ bool checkPauseWindow(std::string &currentTitle, std::string &title,
 bool SwitcherData::checkPause()
 {
 	bool pauseAll = false;
-
-	std::string title;
-	GetCurrentWindowTitle(title);
+	std::string title = switcher->currentTitle;
 
 	resetPause();
 

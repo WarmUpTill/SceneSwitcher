@@ -13,9 +13,8 @@ bool SwitcherData::checkIdleSwitch(OBSWeakSource &scene,
 		return false;
 	}
 
-	std::string title;
+	std::string title = switcher->currentTitle;
 	bool ignoreIdle = false;
-	GetCurrentWindowTitle(title);
 	bool match = false;
 
 	for (std::string &window : ignoreIdleWindows) {

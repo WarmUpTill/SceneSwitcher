@@ -98,6 +98,7 @@ struct SwitcherData {
 	std::deque<WindowSwitch> windowSwitches;
 	std::vector<std::string> ignoreIdleWindows;
 	std::string lastTitle;
+	std::string currentTitle;
 
 	std::deque<ScreenRegionSwitch> screenRegionSwitches;
 
@@ -202,6 +203,7 @@ struct SwitcherData {
 	void writeSceneInfoToFile();
 	void writeToStatusFile(const QString &msg);
 
+	void setPreconditions();
 	bool checkForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
 			   int &linger, bool &setPreviousSceneAsMatch,
 			   bool &macroMatch);

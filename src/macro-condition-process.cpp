@@ -14,12 +14,8 @@ bool MacroConditionProcess::_registered = MacroConditionFactory::Register(
 
 bool MacroConditionProcess::CheckCondition()
 {
-	std::string title;
 	QStringList runningProcesses;
-
 	QString proc = QString::fromStdString(_process);
-
-	GetCurrentWindowTitle(title);
 	GetProcessList(runningProcesses);
 
 	bool equals = runningProcesses.contains(proc);
