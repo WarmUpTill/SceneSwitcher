@@ -3,6 +3,8 @@
 
 #include <QLineEdit>
 #include <QPushButton>
+#include <QListWidget>
+#include <QStringList>
 
 class MacroActionRun : public MacroAction {
 public:
@@ -17,6 +19,7 @@ public:
 	}
 
 	std::string _path = obs_module_text("AdvSceneSwitcher.enterPath");
+	QStringList _args;
 
 private:
 	static bool _registered;
@@ -41,6 +44,10 @@ public:
 private slots:
 	void FilePathChanged();
 	void BrowseButtonClicked();
+	void AddArg();
+	void RemoveArg();
+	void ArgUp();
+	void ArgDown();
 
 protected:
 	std::shared_ptr<MacroActionRun> _entryData;
@@ -48,5 +55,10 @@ protected:
 private:
 	QLineEdit *_filePath;
 	QPushButton *_browseButton;
+	QListWidget *_argList;
+	QPushButton *_addArg;
+	QPushButton *_removeArg;
+	QPushButton *_argUp;
+	QPushButton *_argDown;
 	bool _loading = true;
 };
