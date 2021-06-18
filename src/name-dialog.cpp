@@ -43,7 +43,8 @@ static void CleanWhitespace(std::string &str)
 bool AdvSSNameDialog::AskForName(QWidget *parent, const QString &title,
 				 const QString &text,
 				 std::string &userTextInput,
-				 const QString &placeHolder, int maxSize)
+				 const QString &placeHolder, int maxSize,
+				 bool clean)
 {
 	if (maxSize <= 0 || maxSize > 32767) {
 		maxSize = 170;
@@ -61,6 +62,8 @@ bool AdvSSNameDialog::AskForName(QWidget *parent, const QString &title,
 		return false;
 	}
 	userTextInput = dialog.userText->text().toUtf8().constData();
-	CleanWhitespace(userTextInput);
+	if (clean) {
+		CleanWhitespace(userTextInput);
+	}
 	return true;
 }
