@@ -46,6 +46,13 @@ public:
 private slots:
 	void ActionSelectionChanged(const QString &text);
 	void HeaderInfoChanged(const QString &);
+signals:
+	void MacroAdded(const QString &name);
+	void MacroRemoved(const QString &name);
+	void MacroRenamed(const QString &oldName, const QString newName);
+	void SceneGroupAdded(const QString &name);
+	void SceneGroupRemoved(const QString &name);
+	void SceneGroupRenamed(const QString &oldName, const QString newName);
 
 protected:
 	QComboBox *_actionSelection;

@@ -108,6 +108,22 @@ MacroConditionEdit::MacroConditionEdit(
 	QWidget::connect(_dur, SIGNAL(ConditionChanged(DurationCondition)),
 			 this,
 			 SLOT(DurationConditionChanged(DurationCondition)));
+	QWidget::connect(parent, SIGNAL(MacroAdded(const QString &)), this,
+			 SIGNAL(MacroAdded(const QString &)));
+	QWidget::connect(parent, SIGNAL(MacroRemoved(const QString &)), this,
+			 SIGNAL(MacroRemoved(const QString &)));
+	QWidget::connect(parent,
+			 SIGNAL(MacroRenamed(const QString &, const QString)),
+			 this,
+			 SIGNAL(MacroRenamed(const QString &, const QString)));
+	QWidget::connect(parent, SIGNAL(SceneGroupAdded(const QString &)), this,
+			 SIGNAL(SceneGroupAdded(const QString &)));
+	QWidget::connect(parent, SIGNAL(SceneGroupRemoved(const QString &)),
+			 this, SIGNAL(SceneGroupRemoved(const QString &)));
+	QWidget::connect(
+		parent,
+		SIGNAL(SceneGroupRenamed(const QString &, const QString)), this,
+		SIGNAL(SceneGroupRenamed(const QString &, const QString)));
 
 	populateLogicSelection(_logicSelection, root);
 	populateConditionSelection(_conditionSelection);

@@ -69,6 +69,22 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	QWidget::connect(_actionSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ActionSelectionChanged(const QString &)));
+	QWidget::connect(parent, SIGNAL(MacroAdded(const QString &)), this,
+			 SIGNAL(MacroAdded(const QString &)));
+	QWidget::connect(parent, SIGNAL(MacroRemoved(const QString &)), this,
+			 SIGNAL(MacroRemoved(const QString &)));
+	QWidget::connect(parent,
+			 SIGNAL(MacroRenamed(const QString &, const QString)),
+			 this,
+			 SIGNAL(MacroRenamed(const QString &, const QString)));
+	QWidget::connect(parent, SIGNAL(SceneGroupAdded(const QString &)), this,
+			 SIGNAL(SceneGroupAdded(const QString &)));
+	QWidget::connect(parent, SIGNAL(SceneGroupRemoved(const QString &)),
+			 this, SIGNAL(SceneGroupRemoved(const QString &)));
+	QWidget::connect(
+		parent,
+		SIGNAL(SceneGroupRenamed(const QString &, const QString)), this,
+		SIGNAL(SceneGroupRenamed(const QString &, const QString)));
 
 	populateActionSelection(_actionSelection);
 
