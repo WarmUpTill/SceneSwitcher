@@ -52,6 +52,13 @@ private slots:
 	void DurationConditionChanged(DurationCondition cond);
 	void DurationUnitChanged(DurationUnit unit);
 	void HeaderInfoChanged(const QString &);
+signals:
+	void MacroAdded(const QString &name);
+	void MacroRemoved(const QString &name);
+	void MacroRenamed(const QString &oldName, const QString newName);
+	void SceneGroupAdded(const QString &name);
+	void SceneGroupRemoved(const QString &name);
+	void SceneGroupRenamed(const QString &oldName, const QString newName);
 
 protected:
 	QComboBox *_logicSelection;
