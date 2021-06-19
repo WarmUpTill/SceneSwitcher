@@ -81,6 +81,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/switch-generic.hpp
 	src/headers/macro-action-edit.hpp
 	src/headers/macro-action-audio.hpp
+	src/headers/macro-action-file.hpp
 	src/headers/macro-action-filter.hpp
 	src/headers/macro-action-hotkey.hpp
 	src/headers/macro-action-macro.hpp
@@ -159,6 +160,7 @@ set(advanced-scene-switcher_SOURCES
 	src/switch-generic.cpp
 	src/macro-action-edit.cpp
 	src/macro-action-audio.cpp
+	src/macro-action-file.cpp
 	src/macro-action-filter.cpp
 	src/macro-action-hotkey.cpp
 	src/macro-action-macro.cpp
