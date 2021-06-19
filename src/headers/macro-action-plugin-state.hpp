@@ -4,6 +4,7 @@
 
 enum class PluginStateAction {
 	STOP,
+	NO_MATCH_BEHAVIOUR,
 };
 
 class MacroActionPluginState : public MacroAction {
@@ -19,6 +20,8 @@ public:
 	}
 
 	PluginStateAction _action = PluginStateAction::STOP;
+	int _value = 0;
+	OBSWeakSource _scene;
 
 private:
 	static bool _registered;
@@ -44,12 +47,17 @@ public:
 
 private slots:
 	void ActionChanged(int value);
+	void ValueChanged(int value);
+	void SceneChanged(const QString &text);
 
 protected:
 	QComboBox *_actions;
+	QComboBox *_values;
+	QComboBox *_scenes;
 	std::shared_ptr<MacroActionPluginState> _entryData;
 
 private:
+	void SetWidgetVisibility(PluginStateAction, int);
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
