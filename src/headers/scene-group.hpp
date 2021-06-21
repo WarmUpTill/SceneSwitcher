@@ -82,3 +82,6 @@ private:
 
 	SceneGroup *sceneGroup = nullptr;
 };
+
+SceneGroup *GetSceneGroupByName(const char *name);
+SceneGroup *GetSceneGroupByQString(const QString &name);

@@ -684,3 +684,23 @@ void SceneGroupEditWidget::RepeatChanged(int state)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	sceneGroup->repeat = state;
 }
+
+SceneGroup *GetSceneGroupByName(const char *name)
+{
+	if (!switcher) {
+		return nullptr;
+	}
+
+	for (SceneGroup &sg : switcher->sceneGroups) {
+		if (sg.name == name) {
+			return &sg;
+		}
+	}
+
+	return nullptr;
+}
+
+SceneGroup *GetSceneGroupByQString(const QString &name)
+{
+	return GetSceneGroupByName(name.toUtf8().constData());
+}
