@@ -40,7 +40,7 @@ static bool visibilityEnum(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 
 bool MacroActionSceneVisibility::PerformAction()
 {
-	auto s = obs_weak_source_get_source(_scene);
+	auto s = obs_weak_source_get_source(_scene.GetScene());
 	auto scene = obs_scene_from_source(s);
 	auto sourceName = GetWeakSourceName(_source);
 	VisInfo vInfo = {sourceName, _action == SceneVisibilityAction::SHOW};
@@ -65,8 +65,8 @@ void MacroActionSceneVisibility::LogAction()
 	if (it != actionTypes.end()) {
 		vblog(LOG_INFO,
 		      "performed visibility action \"%s\" for source \"%s\" on scene \"%s\"",
-		      it->second.c_str(), GetWeakSourceName(_scene).c_str(),
-		      GetWeakSourceName(_scene).c_str());
+		      it->second.c_str(), GetWeakSourceName(_source).c_str(),
+		      _scene.ToString().c_str());
 	} else {
 		blog(LOG_WARNING, "ignored unknown SceneVisibility action %d",
 		     static_cast<int>(_action));
@@ -76,7 +76,7 @@ void MacroActionSceneVisibility::LogAction()
 bool MacroActionSceneVisibility::Save(obs_data_t *obj)
 {
 	MacroAction::Save(obj);
-	obs_data_set_string(obj, "scene", GetWeakSourceName(_scene).c_str());
+	_scene.Save(obj);
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	return true;
@@ -85,8 +85,7 @@ bool MacroActionSceneVisibility::Save(obs_data_t *obj)
 bool MacroActionSceneVisibility::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	const char *sceneName = obs_data_get_string(obj, "scene");
-	_scene = GetWeakSourceByName(sceneName);
+	_scene.Load(obj);
 	const char *sourceName = obs_data_get_string(obj, "source");
 	_source = GetWeakSourceByName(sourceName);
 	_action = static_cast<SceneVisibilityAction>(
@@ -96,9 +95,8 @@ bool MacroActionSceneVisibility::Load(obs_data_t *obj)
 
 std::string MacroActionSceneVisibility::GetShortDesc()
 {
-	if (_scene && _source) {
-		return GetWeakSourceName(_scene) + " - " +
-		       GetWeakSourceName(_source);
+	if (_source) {
+		return _scene.ToString() + " - " + GetWeakSourceName(_source);
 	}
 	return "";
 }
@@ -114,17 +112,16 @@ MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSceneVisibility> entryData)
 	: QWidget(parent)
 {
-	_scenes = new QComboBox();
+	_scenes = new SceneSelectionWidget(window(), false, false, true);
 	_sources = new QComboBox();
 	_actions = new QComboBox();
 
 	populateActionSelection(_actions);
-	populateSceneSelection(_scenes);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
-	QWidget::connect(_scenes, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SceneChanged(const QString &)));
+	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
+			 this, SLOT(SceneChanged(const SceneSelection &)));
 	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(SourceChanged(const QString &)));
 
@@ -151,23 +148,25 @@ void MacroActionSceneVisibilityEdit::UpdateEntryData()
 	}
 
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
-	_scenes->setCurrentText(GetWeakSourceName(_entryData->_scene).c_str());
-	populateSceneItemSelection(_sources, _entryData->_scene);
+	_scenes->SetScene(_entryData->_scene);
+	populateSceneItemSelection(_sources,
+				   _entryData->_scene.GetScene(false));
 	_sources->setCurrentText(
 		GetWeakSourceName(_entryData->_source).c_str());
 }
 
-void MacroActionSceneVisibilityEdit::SceneChanged(const QString &text)
+void MacroActionSceneVisibilityEdit::SceneChanged(const SceneSelection &s)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
-		_entryData->_scene = GetWeakSourceByQString(text);
+		_entryData->_scene = s;
 	}
 	_sources->clear();
-	populateSceneItemSelection(_sources, _entryData->_scene);
+	populateSceneItemSelection(_sources,
+				   _entryData->_scene.GetScene(false));
 }
 
 void MacroActionSceneVisibilityEdit::SourceChanged(const QString &text)
