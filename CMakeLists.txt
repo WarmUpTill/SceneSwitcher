@@ -123,6 +123,7 @@ set(advanced-scene-switcher_HEADERS
 	src/headers/macro-selection.hpp
 	src/headers/curl-helper.hpp
 	src/headers/hotkey.hpp
+	src/headers/scene-selection.hpp
 	src/headers/screenshot-helper.hpp
 	src/headers/name-dialog.hpp
 	src/headers/duration-control.hpp
@@ -202,6 +203,7 @@ set(advanced-scene-switcher_SOURCES
 	src/macro-selection.cpp
 	src/macro-tab.cpp
 	src/curl-helper.cpp
+	src/scene-selection.cpp
 	src/screenshot-helper.cpp
 	src/name-dialog.cpp
 	src/duration-control.cpp
