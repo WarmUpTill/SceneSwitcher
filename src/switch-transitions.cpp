@@ -391,6 +391,12 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 		obs_data_get_bool(obj, "tansitionOverrideOverride");
 	adjustActiveTransitionType =
 		obs_data_get_bool(obj, "adjustActiveTransitionType");
+
+	// Check for invalid config
+	if (!transitionOverrideOverride && !adjustActiveTransitionType) {
+		adjustActiveTransitionType = true;
+	}
+
 	DefaultSceneTransition::delay =
 		obs_data_get_int(obj, "defTransitionDelay");
 }
