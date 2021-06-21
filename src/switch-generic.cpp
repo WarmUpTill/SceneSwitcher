@@ -208,8 +208,8 @@ SwitchWidget::SwitchWidget(QWidget *parent, SceneSwitcherEntry *s,
 		SIGNAL(SceneGroupRenamed(const QString &, const QString &)),
 		this, SLOT(SceneGroupRename(const QString &, const QString &)));
 
-	populateSceneSelection(scenes, usePreviousScene, addSceneGroup,
-			       &switcher->sceneGroups);
+	populateSceneSelection(scenes, usePreviousScene, false, false,
+			       addSceneGroup, &switcher->sceneGroups);
 	populateTransitionSelection(transitions, addCurrentTransition);
 
 	switchData = s;

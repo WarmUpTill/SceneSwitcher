@@ -538,8 +538,8 @@ void populateProcessSelection(QComboBox *sel, bool addSelect)
 	sel->setCurrentIndex(0);
 }
 
-void populateSceneSelection(QComboBox *sel, bool addPrevious,
-			    bool addSceneGroup,
+void populateSceneSelection(QComboBox *sel, bool addPrevious, bool addCurrent,
+			    bool addAny, bool addSceneGroup,
 			    std::deque<SceneGroup> *sceneGroups, bool addSelect,
 			    std::string selectText, bool selectable)
 {
@@ -549,11 +549,6 @@ void populateSceneSelection(QComboBox *sel, bool addPrevious,
 		const char *name = *temp;
 		sel->addItem(name);
 		temp++;
-	}
-
-	if (addPrevious) {
-		sel->addItem(obs_module_text(
-			"AdvSceneSwitcher.selectPreviousScene"));
 	}
 
 	if (addSceneGroup && sceneGroups) {
@@ -576,6 +571,21 @@ void populateSceneSelection(QComboBox *sel, bool addPrevious,
 		}
 	}
 	sel->setCurrentIndex(0);
+
+	if (addPrevious) {
+		sel->insertItem(
+			1, obs_module_text(
+				   "AdvSceneSwitcher.selectPreviousScene"));
+	}
+	if (addCurrent) {
+		sel->insertItem(
+			1,
+			obs_module_text("AdvSceneSwitcher.selectCurrentScene"));
+	}
+	if (addAny) {
+		sel->insertItem(
+			1, obs_module_text("AdvSceneSwitcher.selectAnyScene"));
+	}
 }
 
 static inline void hasFilterEnum(obs_source_t *, obs_source_t *filter,
