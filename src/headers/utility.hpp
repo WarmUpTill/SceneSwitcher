@@ -64,6 +64,7 @@ void populateMediaSelection(QComboBox *sel, bool addSelect = true);
 void populateProcessSelection(QComboBox *sel, bool addSelect = true);
 void populateSourceSelection(QComboBox *list, bool addSelect = true);
 void populateSceneSelection(QComboBox *sel, bool addPrevious = false,
+			    bool addCurrent = false, bool addAny = false,
 			    bool addSceneGroup = false,
 			    std::deque<SceneGroup> *sceneGroups = nullptr,
 			    bool addSelect = true, std::string selectText = "",

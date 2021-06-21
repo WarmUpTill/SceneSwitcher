@@ -324,7 +324,7 @@ ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
 			 SLOT(MaxYChanged(int)));
 
 	populateSceneSelection(
-		excludeScenes, false, false, nullptr, true,
+		excludeScenes, false, false, false, false, nullptr, true,
 		obs_module_text(
 			"AdvSceneSwitcher.screenRegionTab.excludeScenes.None"),
 		true);
