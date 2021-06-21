@@ -58,7 +58,6 @@ bool MacroActionPluginState::PerformAction()
 
 void MacroActionPluginState::LogAction()
 {
-	auto it = actionTypes.find(_action);
 	switch (_action) {
 	case PluginStateAction::STOP:
 		blog(LOG_INFO, "stop() called by macro");
