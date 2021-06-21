@@ -33,6 +33,17 @@ bool resolveCurl()
 
 bool loadCurl()
 {
+	loaded_curl_lib = new QLibrary(curl_library_name, nullptr);
+	if (resolveCurl()) {
+		blog(LOG_INFO, "[adv-ss] found curl library");
+		return true;
+	} else {
+		delete loaded_curl_lib;
+		loaded_curl_lib = nullptr;
+		blog(LOG_WARNING,
+		     "[adv-ss] couldn't find the curl library in PATH");
+	}
+
 	QStringList locations;
 	locations << QDir::currentPath();
 #if defined(__linux__) || defined(__APPLE__)

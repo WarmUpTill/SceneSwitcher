@@ -5,9 +5,9 @@
 #if defined(WIN32)
 constexpr auto curl_library_name = "libcurl.dll";
 #elif __APPLE__
-#define curl_library_name "libcurl.4.dylib"
+constexpr auto curl_library_name = "libcurl.4.dylib";
 #else
-#define curl_library_name "libcurl.so.4"
+constexpr auto curl_library_name = "libcurl.so.4";
 #endif
 
 typedef CURL *(*initFunction)(void);
