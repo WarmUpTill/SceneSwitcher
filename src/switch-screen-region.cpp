@@ -143,12 +143,7 @@ bool shouldIgnoreSceneSwitch(ScreenRegionSwitch &matchingRegion)
 		return false;
 	}
 
-	obs_source_t *currentScene = obs_frontend_get_current_scene();
-	OBSWeakSource ws = obs_source_get_weak_source(currentScene);
-	obs_weak_source_release(ws);
-	obs_source_release(currentScene);
-
-	return matchingRegion.excludeScene == ws;
+	return matchingRegion.excludeScene == switcher->currentScene;
 }
 
 bool SwitcherData::checkScreenRegionSwitch(OBSWeakSource &scene,

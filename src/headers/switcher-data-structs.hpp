@@ -78,8 +78,8 @@ struct SwitcherData {
 	int interval = default_interval;
 
 	obs_source_t *waitScene = nullptr;
+	OBSWeakSource currentScene = nullptr;
 	OBSWeakSource previousScene = nullptr;
-	OBSWeakSource previousSceneHelper = nullptr;
 	OBSWeakSource lastRandomScene;
 	SceneGroup *lastRandomSceneGroup;
 	OBSWeakSource nonMatchingScene;

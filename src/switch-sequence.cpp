@@ -194,9 +194,6 @@ bool SwitcherData::checkSceneSequence(OBSWeakSource &scene,
 		return false;
 	}
 
-	obs_source_t *currentSceneSource = obs_frontend_get_current_scene();
-	obs_weak_source_t *currentScene =
-		obs_source_get_weak_source(currentSceneSource);
 	bool match = false;
 
 	for (SceneSequenceSwitch &s : sceneSequenceSwitches) {
@@ -242,9 +239,6 @@ bool SwitcherData::checkSceneSequence(OBSWeakSource &scene,
 	if (!match) {
 		uninterruptibleSceneSequenceActive = false;
 	}
-
-	obs_source_release(currentSceneSource);
-	obs_weak_source_release(currentScene);
 
 	return match;
 }

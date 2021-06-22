@@ -354,7 +354,8 @@ void switchScene(const sceneSwitchInfo &sceneSwitch)
 	}
 
 	obs_source_t *source = obs_weak_source_get_source(sceneSwitch.scene);
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
+	obs_source_t *currentSource =
+		obs_weak_source_get_source(switcher->currentScene);
 
 	if (source && source != currentSource) {
 		transitionData currentTransitionData;
@@ -473,15 +474,21 @@ void handleSceneChange()
 		switcher->cv.notify_one();
 	}
 
-	// Set previous scene
+	// Set current and previous scene
 	obs_source_t *source = obs_frontend_get_current_scene();
 	obs_weak_source_t *ws = obs_source_get_weak_source(source);
+
+	if (ws && ws != switcher->currentScene) {
+		switcher->previousScene = switcher->currentScene;
+		switcher->currentScene = ws;
+		vblog(LOG_INFO, "current scene:  %s",
+		      GetWeakSourceName(switcher->currentScene).c_str());
+		vblog(LOG_INFO, "previous scene: %s",
+		      GetWeakSourceName(switcher->previousScene).c_str());
+	}
+
 	obs_source_release(source);
 	obs_weak_source_release(ws);
-	if (source && switcher->previousSceneHelper != ws) {
-		switcher->previousScene = switcher->previousSceneHelper;
-		switcher->previousSceneHelper = ws;
-	}
 
 	switcher->checkTriggers();
 	switcher->checkDefaultSceneTransitions();
