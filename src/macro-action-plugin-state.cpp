@@ -158,9 +158,14 @@ void MacroActionPluginStateEdit::ActionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_action = static_cast<PluginStateAction>(value);
-	SetWidgetVisibility(_entryData->_action, _entryData->_value);
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		_entryData->_action = static_cast<PluginStateAction>(value);
+		SetWidgetVisibility(_entryData->_action, _entryData->_value);
+	}
+
+	_values->clear();
+	populateValueSelection(_values, _entryData->_action);
 }
 
 void MacroActionPluginStateEdit::ValueChanged(int value)
