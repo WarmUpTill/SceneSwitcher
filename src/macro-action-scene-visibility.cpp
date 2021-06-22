@@ -149,8 +149,7 @@ void MacroActionSceneVisibilityEdit::UpdateEntryData()
 
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_scenes->SetScene(_entryData->_scene);
-	populateSceneItemSelection(_sources,
-				   _entryData->_scene.GetScene(false));
+	populateSceneItemSelection(_sources, _entryData->_scene);
 	_sources->setCurrentText(
 		GetWeakSourceName(_entryData->_source).c_str());
 }
@@ -165,8 +164,7 @@ void MacroActionSceneVisibilityEdit::SceneChanged(const SceneSelection &s)
 		_entryData->_scene = s;
 	}
 	_sources->clear();
-	populateSceneItemSelection(_sources,
-				   _entryData->_scene.GetScene(false));
+	populateSceneItemSelection(_sources, _entryData->_scene);
 }
 
 void MacroActionSceneVisibilityEdit::SourceChanged(const QString &text)

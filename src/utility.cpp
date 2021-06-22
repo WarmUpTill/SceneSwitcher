@@ -1,5 +1,6 @@
 #include "headers/utility.hpp"
 #include "headers/platform-funcs.hpp"
+#include "headers/scene-selection.hpp"
 
 #include <QTextStream>
 #include <QLabel>
@@ -657,6 +658,38 @@ void populateSceneItemSelection(QComboBox *list, OBSWeakSource sceneWeakSource)
 	auto scene = obs_scene_from_source(s);
 	obs_scene_enum_items(scene, enumSceneItem, &names);
 	obs_source_release(s);
+
+	for (auto &name : names) {
+		list->addItem(name);
+	}
+	list->model()->sort(0);
+	addSelectionEntry(list, obs_module_text("AdvSceneSwitcher.selectItem"));
+	list->setCurrentIndex(0);
+}
+
+void populateSceneItemSelection(QComboBox *list, SceneSelection &s)
+{
+	std::set<QString> names;
+
+	if (s.GetType() == SceneSelectionType::CURRENT) {
+		auto enumScenes = [](void *param, obs_source_t *source) {
+			if (!source) {
+				return true;
+			}
+			std::set<QString> *names =
+				reinterpret_cast<std::set<QString> *>(param);
+			auto scene = obs_scene_from_source(source);
+			obs_scene_enum_items(scene, enumSceneItem, names);
+			return true;
+		};
+
+		obs_enum_scenes(enumScenes, &names);
+	} else {
+		auto source = obs_weak_source_get_source(s.GetScene(false));
+		auto scene = obs_scene_from_source(source);
+		obs_scene_enum_items(scene, enumSceneItem, &names);
+		obs_source_release(source);
+	}
 
 	for (auto &name : names) {
 		list->addItem(name);
