@@ -158,10 +158,6 @@ void SwitcherData::checkDefaultSceneTransitions()
 		return;
 	}
 
-	obs_source_t *currentSceneSource = obs_frontend_get_current_scene();
-	obs_weak_source_t *currentScene =
-		obs_source_get_weak_source(currentSceneSource);
-
 	for (auto &t : defaultSceneTransitions) {
 		if (t.checkMatch(currentScene)) {
 			if (verbose) {
@@ -171,9 +167,6 @@ void SwitcherData::checkDefaultSceneTransitions()
 			break;
 		}
 	}
-
-	obs_weak_source_release(currentScene);
-	obs_source_release(currentSceneSource);
 }
 
 void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)

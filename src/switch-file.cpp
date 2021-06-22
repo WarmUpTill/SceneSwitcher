@@ -90,15 +90,12 @@ void SwitcherData::writeSceneInfoToFile()
 		return;
 	}
 
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
-
 	QFile file(QString::fromStdString(fileIO.writePath));
 	if (file.open(QIODevice::WriteOnly)) {
-		const char *msg = obs_source_get_name(currentSource);
+		const char *msg = GetWeakSourceName(currentScene).c_str();
 		file.write(msg, qstrlen(msg));
 		file.close();
 	}
-	obs_source_release(currentSource);
 }
 
 void SwitcherData::writeToStatusFile(const QString &msg)

@@ -150,7 +150,7 @@ void setPauseTarget(PauseTarget &target)
 bool checkPauseScene(obs_weak_source_t *currentScene, obs_weak_source_t *scene,
 		     PauseTarget &target)
 {
-	if (currentScene != scene) {
+	if (!currentScene || currentScene != scene) {
 		return false;
 	}
 
@@ -175,12 +175,10 @@ bool SwitcherData::checkPause()
 
 	resetPause();
 
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
-	obs_weak_source_t *ws = obs_source_get_weak_source(currentSource);
-
 	for (PauseEntry &s : pauseEntries) {
 		if (s.pauseType == PauseType::Scene) {
-			pauseAll = checkPauseScene(ws, s.scene, s.pauseTarget);
+			pauseAll = checkPauseScene(currentScene, s.scene,
+						   s.pauseTarget);
 		} else {
 			pauseAll = checkPauseWindow(title, s.window,
 						    s.pauseTarget);
@@ -189,10 +187,6 @@ bool SwitcherData::checkPause()
 			break;
 		}
 	}
-
-	obs_source_release(currentSource);
-	obs_weak_source_release(ws);
-
 	return pauseAll;
 }
 

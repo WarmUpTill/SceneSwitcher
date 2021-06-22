@@ -19,12 +19,7 @@ bool MacroConditionScene::CheckCondition()
 {
 	bool sceneMatch = false;
 	if (_type == SceneType::CURRENT) {
-		obs_source_t *rawScene = obs_frontend_get_current_scene();
-		OBSWeakSource currentScene =
-			obs_source_get_weak_source(rawScene);
-		sceneMatch = currentScene == _scene;
-		obs_weak_source_release(currentScene);
-		obs_source_release(rawScene);
+		sceneMatch = switcher->currentScene == _scene;
 	} else {
 		sceneMatch = switcher->previousScene == _scene;
 	}
