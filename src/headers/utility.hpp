@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include "scene-group.hpp"
 
+class SceneSelection;
+
 bool WeakSourceValid(obs_weak_source_t *ws);
 std::string GetWeakSourceName(obs_weak_source_t *weak_source);
 OBSWeakSource GetWeakSourceByName(const char *name);
@@ -74,3 +76,4 @@ void populateFilterSelection(QComboBox *list,
 			     OBSWeakSource weakSource = nullptr);
 void populateSceneItemSelection(QComboBox *list,
 				OBSWeakSource sceneWeakSource = nullptr);
+void populateSceneItemSelection(QComboBox *list, SceneSelection &s);
