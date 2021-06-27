@@ -1,6 +1,7 @@
 #pragma once
 #include <QSpinBox>
 #include "macro-action-edit.hpp"
+#include "scene-selection.hpp"
 
 enum class SceneOrderAction {
 	MOVE_UP,
@@ -23,7 +24,7 @@ public:
 		return std::make_shared<MacroActionSceneOrder>();
 	}
 
-	OBSWeakSource _scene;
+	SceneSelection _scene;
 	OBSWeakSource _source;
 	SceneOrderAction _action = SceneOrderAction::MOVE_UP;
 	int _position = 0;
@@ -51,7 +52,7 @@ public:
 	}
 
 private slots:
-	void SceneChanged(const QString &text);
+	void SceneChanged(const SceneSelection &);
 	void SourceChanged(const QString &text);
 	void ActionChanged(int value);
 	void PositionChanged(int value);
@@ -59,7 +60,7 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
-	QComboBox *_scenes;
+	SceneSelectionWidget *_scenes;
 	QComboBox *_sources;
 	QComboBox *_actions;
 	QSpinBox *_position;
