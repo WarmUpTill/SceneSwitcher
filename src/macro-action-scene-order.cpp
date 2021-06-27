@@ -24,7 +24,7 @@ const static std::map<SceneOrderAction, std::string> actionTypes = {
 
 bool MacroActionSceneOrder::PerformAction()
 {
-	auto s = obs_weak_source_get_source(_scene);
+	auto s = obs_weak_source_get_source(_scene.GetScene());
 	auto scene = obs_scene_from_source(s);
 	auto name = GetWeakSourceName(_source);
 	auto items = getSceneItemsWithName(scene, name);
@@ -62,8 +62,8 @@ void MacroActionSceneOrder::LogAction()
 	if (it != actionTypes.end()) {
 		vblog(LOG_INFO,
 		      "performed order action \"%s\" for source \"%s\" on scene \"%s\"",
-		      it->second.c_str(), GetWeakSourceName(_scene).c_str(),
-		      GetWeakSourceName(_scene).c_str());
+		      it->second.c_str(), GetWeakSourceName(_source).c_str(),
+		      _scene.ToString().c_str());
 	} else {
 		blog(LOG_WARNING, "ignored unknown scene order action %d",
 		     static_cast<int>(_action));
@@ -73,7 +73,7 @@ void MacroActionSceneOrder::LogAction()
 bool MacroActionSceneOrder::Save(obs_data_t *obj)
 {
 	MacroAction::Save(obj);
-	obs_data_set_string(obj, "scene", GetWeakSourceName(_scene).c_str());
+	_scene.Save(obj);
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	obs_data_set_int(obj, "position", _position);
@@ -83,8 +83,7 @@ bool MacroActionSceneOrder::Save(obs_data_t *obj)
 bool MacroActionSceneOrder::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	const char *sceneName = obs_data_get_string(obj, "scene");
-	_scene = GetWeakSourceByName(sceneName);
+	_scene.Load(obj);
 	const char *sourceName = obs_data_get_string(obj, "source");
 	_source = GetWeakSourceByName(sourceName);
 	_action =
@@ -95,9 +94,8 @@ bool MacroActionSceneOrder::Load(obs_data_t *obj)
 
 std::string MacroActionSceneOrder::GetShortDesc()
 {
-	if (_scene && _source) {
-		return GetWeakSourceName(_scene) + " - " +
-		       GetWeakSourceName(_source);
+	if (_source) {
+		return _scene.ToString() + " - " + GetWeakSourceName(_source);
 	}
 	return "";
 }
@@ -113,18 +111,17 @@ MacroActionSceneOrderEdit::MacroActionSceneOrderEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSceneOrder> entryData)
 	: QWidget(parent)
 {
-	_scenes = new QComboBox();
+	_scenes = new SceneSelectionWidget(window(), false, false, true);
 	_sources = new QComboBox();
 	_actions = new QComboBox();
 	_position = new QSpinBox();
 
 	populateActionSelection(_actions);
-	populateSceneSelection(_scenes);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
-	QWidget::connect(_scenes, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SceneChanged(const QString &)));
+	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
+			 this, SLOT(SceneChanged(const SceneSelection &)));
 	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(SourceChanged(const QString &)));
 	QWidget::connect(_position, SIGNAL(valueChanged(int)), this,
@@ -154,7 +151,7 @@ void MacroActionSceneOrderEdit::UpdateEntryData()
 	}
 
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
-	_scenes->setCurrentText(GetWeakSourceName(_entryData->_scene).c_str());
+	_scenes->SetScene(_entryData->_scene);
 	populateSceneItemSelection(_sources, _entryData->_scene);
 	_sources->setCurrentText(
 		GetWeakSourceName(_entryData->_source).c_str());
@@ -163,14 +160,14 @@ void MacroActionSceneOrderEdit::UpdateEntryData()
 			      SceneOrderAction::POSITION);
 }
 
-void MacroActionSceneOrderEdit::SceneChanged(const QString &text)
+void MacroActionSceneOrderEdit::SceneChanged(const SceneSelection &s)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
-		_entryData->_scene = GetWeakSourceByQString(text);
+		_entryData->_scene = s;
 	}
 	_sources->clear();
 	populateSceneItemSelection(_sources, _entryData->_scene);
