@@ -6,6 +6,9 @@
 
 #include <limits>
 #undef max
+#include <chrono>
+
+constexpr int perfLogThreshold = 300;
 
 const std::map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 	{LogicType::NONE, {"AdvSceneSwitcher.logic.none"}},
@@ -32,7 +35,17 @@ bool Macro::CeckMatch()
 {
 	_matched = false;
 	for (auto &c : _conditions) {
+		auto startTime = std::chrono::high_resolution_clock::now();
 		bool cond = c->CheckCondition();
+		auto endTime = std::chrono::high_resolution_clock::now();
+		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+			endTime - startTime);
+		if (ms.count() >= perfLogThreshold) {
+			blog(LOG_WARNING,
+			     "spent %d ms in %s condition check of macro '%s'!",
+			     ms.count(), c->GetId().c_str(), Name().c_str());
+		}
+
 		if (!cond) {
 			c->ResetDuration();
 		}
