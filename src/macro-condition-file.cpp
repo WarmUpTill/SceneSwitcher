@@ -32,6 +32,14 @@ static std::string getRemoteData(std::string &url)
 		f_curl_setopt(switcher->curl, CURLOPT_WRITEFUNCTION,
 			      WriteCallback);
 		f_curl_setopt(switcher->curl, CURLOPT_WRITEDATA, &readBuffer);
+
+		// Set timeout to at least one second
+		int timeout = switcher->interval / 1000;
+		if (timeout == 0) {
+			timeout = 1;
+		}
+		f_curl_setopt(switcher->curl, CURLOPT_TIMEOUT, 1);
+
 		f_curl_perform(switcher->curl);
 	}
 	return readBuffer;
