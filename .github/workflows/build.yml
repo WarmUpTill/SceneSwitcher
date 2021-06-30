@@ -60,13 +60,27 @@ jobs:
           curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-qt-${{ env.QT_VERSION }}-${{ matrix.arch }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
           tar -xf ./macos-qt-${{ env.QT_VERSION }}-${{ matrix.arch }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
           xattr -r -d com.apple.quarantine /tmp/obsdeps
+          if [ ${{ matrix.arch }} = "arm64" ]; then
+            curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-qt-${{ env.QT_VERSION }}-x86_64-${{ env.MACOS_DEPS_VERSION }}.tar.gz
+            mkdir /tmp/x86_64
+            tar -xf ./macos-qt-${{ env.QT_VERSION }}-x86_64-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp/x86_64"
+            xattr -r -d com.apple.quarantine /tmp/x86_64/obsdeps
+          fi
       - name: Configure
         shell: bash
         run: |
           echo "add_subdirectory(${{ env.PLUGIN_NAME }})" >> UI/frontend-plugins/CMakeLists.txt
+          if [ ${{ matrix.arch }} = "arm64" ]; then
+            echo "
+            add_executable(Qt5::moc IMPORTED)
+            set_property(TARGET Qt5::moc PROPERTY IMPORTED_LOCATION "/tmp/x86_64/obsdeps/bin/moc")
+            
+            " > CMakeLists.txt.tmp
+            cat CMakeLists.txt >> CMakeLists.txt.tmp
+            mv CMakeLists.txt.tmp CMakeLists.txt
+          fi
           mkdir ./build
           cd ./build
-          uname -m
           cmake -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DBUILD_BROWSER=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DDISABLE_PYTHON=ON -DDepsPath="/tmp/obsdeps" -DQTDIR="/tmp/obsdeps" ..
           cd -
       - name: Build
