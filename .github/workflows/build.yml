@@ -11,12 +11,15 @@ env:
   LIB_NAME: advanced-scene-switcher
 
 jobs:
-  macos64:
-    name: "macOS 64-bit"
+  macos:
+    name: "macOS"
     runs-on: [macos-latest]
+    strategy:
+      matrix:
+        arch: ["x86_64", "arm64"]
     env:
       QT_VERSION: '5.15.2'
-      MACOS_DEPS_VERSION: '2020-12-11'
+      MACOS_DEPS_VERSION: '2021-03-25'
     steps:
       - name: Checkout
         uses: actions/checkout@v2.3.4
@@ -48,14 +51,14 @@ jobs:
         if: steps.deps-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz
-          tar -xf ./macos-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-${{ matrix.arch }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
+          tar -xf ./macos-deps-${{ matrix.arch }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
       - name: 'Install prerequisite: Pre-built dependency Qt'
         if: steps.deps-qt-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-qt-${{ env.QT_VERSION }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
-          tar -xf ./macos-qt-${{ env.QT_VERSION }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-qt-${{ env.QT_VERSION }}-${{ matrix.arch }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
+          tar -xf ./macos-qt-${{ env.QT_VERSION }}-${{ matrix.arch }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
           xattr -r -d com.apple.quarantine /tmp/obsdeps
       - name: Configure
         shell: bash
@@ -63,7 +66,8 @@ jobs:
           echo "add_subdirectory(${{ env.PLUGIN_NAME }})" >> UI/frontend-plugins/CMakeLists.txt
           mkdir ./build
           cd ./build
-          cmake -DBUILD_BROWSER=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DDISABLE_PYTHON=ON -DDepsPath="/tmp/obsdeps" -DQTDIR="/tmp/obsdeps" ..
+          uname -m
+          cmake -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DBUILD_BROWSER=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DDISABLE_PYTHON=ON -DDepsPath="/tmp/obsdeps" -DQTDIR="/tmp/obsdeps" ..
           cd -
       - name: Build
         shell: bash
@@ -274,7 +278,7 @@ jobs:
           name: '${{ env.FILE_NAME }}-installer'
           path: build64/UI/frontend-plugins/SceneSwitcher/CI/windows/Output/*.exe
   release:
-    needs: [macos64, ubuntu64, windows]
+    needs: [macos, ubuntu64, windows]
     name: 'Create Release'
     runs-on: [ubuntu-18.04]
     steps:
