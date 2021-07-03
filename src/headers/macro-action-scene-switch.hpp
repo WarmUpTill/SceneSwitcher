@@ -3,6 +3,8 @@
 #include "switch-generic.hpp"
 #include "duration-control.hpp"
 
+// TODO: Switch to using SceneSelection class and widget instead
+
 class MacroActionSwitchScene : public MacroAction, public SceneSwitcherEntry {
 public:
 	bool PerformAction();
