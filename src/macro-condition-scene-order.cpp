@@ -75,7 +75,7 @@ bool MacroConditionSceneOrder::CheckCondition()
 	}
 
 	bool ret = false;
-	auto s = obs_weak_source_get_source(_scene);
+	auto s = obs_weak_source_get_source(_scene.GetScene(false));
 	auto scene = obs_scene_from_source(s);
 	auto name1 = GetWeakSourceName(_source);
 	auto name2 = GetWeakSourceName(_source2);
@@ -109,7 +109,7 @@ bool MacroConditionSceneOrder::CheckCondition()
 bool MacroConditionSceneOrder::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
-	obs_data_set_string(obj, "scene", GetWeakSourceName(_scene).c_str());
+	_scene.Save(obj);
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
 	obs_data_set_string(obj, "source2",
 			    GetWeakSourceName(_source2).c_str());
@@ -121,8 +121,7 @@ bool MacroConditionSceneOrder::Save(obs_data_t *obj)
 bool MacroConditionSceneOrder::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	const char *sceneName = obs_data_get_string(obj, "scene");
-	_scene = GetWeakSourceByName(sceneName);
+	_scene.Load(obj);
 	const char *sourceName = obs_data_get_string(obj, "source");
 	_source = GetWeakSourceByName(sourceName);
 	const char *source2Name = obs_data_get_string(obj, "source2");
@@ -135,9 +134,13 @@ bool MacroConditionSceneOrder::Load(obs_data_t *obj)
 
 std::string MacroConditionSceneOrder::GetShortDesc()
 {
-	if (_scene && _source) {
-		return GetWeakSourceName(_scene) + " - " +
-		       GetWeakSourceName(_source);
+	if (_source) {
+		std::string header =
+			_scene.ToString() + " - " + GetWeakSourceName(_source);
+		if (_source2 && _condition != SceneOrderCondition::POSITION) {
+			header += " - " + GetWeakSourceName(_source2);
+		}
+		return header;
 	}
 	return "";
 }
@@ -153,7 +156,7 @@ MacroConditionSceneOrderEdit::MacroConditionSceneOrderEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionSceneOrder> entryData)
 	: QWidget(parent)
 {
-	_scenes = new QComboBox();
+	_scenes = new SceneSelectionWidget(window(), false, false, true);
 	_sources = new QComboBox();
 	_sources2 = new QComboBox();
 	_conditions = new QComboBox();
@@ -162,10 +165,9 @@ MacroConditionSceneOrderEdit::MacroConditionSceneOrderEdit(
 		"AdvSceneSwitcher.condition.sceneOrder.positionInfo"));
 
 	populateConditionSelection(_conditions);
-	populateSceneSelection(_scenes);
 
-	QWidget::connect(_scenes, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SceneChanged(const QString &)));
+	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
+			 this, SLOT(SceneChanged(const SceneSelection &)));
 	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(SourceChanged(const QString &)));
 	QWidget::connect(_sources2, SIGNAL(currentTextChanged(const QString &)),
@@ -194,14 +196,14 @@ MacroConditionSceneOrderEdit::MacroConditionSceneOrderEdit(
 	_loading = false;
 }
 
-void MacroConditionSceneOrderEdit::SceneChanged(const QString &text)
+void MacroConditionSceneOrderEdit::SceneChanged(const SceneSelection &s)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
-		_entryData->_scene = GetWeakSourceByQString(text);
+		_entryData->_scene = s;
 	}
 	_sources->clear();
 	_sources2->clear();
@@ -229,6 +231,8 @@ void MacroConditionSceneOrderEdit::Source2Changed(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_source2 = GetWeakSourceByQString(text);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroConditionSceneOrderEdit::ConditionChanged(int index)
@@ -241,6 +245,8 @@ void MacroConditionSceneOrderEdit::ConditionChanged(int index)
 	_entryData->_condition = static_cast<SceneOrderCondition>(index);
 	SetWidgetVisibility(_entryData->_condition ==
 			    SceneOrderCondition::POSITION);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroConditionSceneOrderEdit::PositionChanged(int value)
@@ -258,6 +264,7 @@ void MacroConditionSceneOrderEdit::SetWidgetVisibility(bool showPos)
 	_sources2->setVisible(!showPos);
 	_position->setVisible(showPos);
 	_posInfo->setVisible(showPos);
+	adjustSize();
 }
 
 void MacroConditionSceneOrderEdit::UpdateEntryData()
@@ -266,7 +273,7 @@ void MacroConditionSceneOrderEdit::UpdateEntryData()
 		return;
 	}
 
-	_scenes->setCurrentText(GetWeakSourceName(_entryData->_scene).c_str());
+	_scenes->SetScene(_entryData->_scene);
 	populateSceneItemSelection(_sources, _entryData->_scene);
 	populateSceneItemSelection(_sources2, _entryData->_scene);
 	_sources->setCurrentText(
