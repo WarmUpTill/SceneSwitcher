@@ -75,6 +75,9 @@ jobs:
             add_executable(Qt5::moc IMPORTED)
             set_property(TARGET Qt5::moc PROPERTY IMPORTED_LOCATION "/tmp/x86_64/obsdeps/bin/moc")
             
+            add_executable(Qt5::uic IMPORTED)
+            set_property(TARGET Qt5::uic PROPERTY IMPORTED_LOCATION "/tmp/x86_64/obsdeps/bin/uic")
+            
             " > CMakeLists.txt.tmp
             cat CMakeLists.txt >> CMakeLists.txt.tmp
             mv CMakeLists.txt.tmp CMakeLists.txt
