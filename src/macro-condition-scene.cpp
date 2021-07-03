@@ -19,9 +19,9 @@ bool MacroConditionScene::CheckCondition()
 {
 	bool sceneMatch = false;
 	if (_type == SceneType::CURRENT) {
-		sceneMatch = switcher->currentScene == _scene;
+		sceneMatch = switcher->currentScene == _scene.GetScene(false);
 	} else {
-		sceneMatch = switcher->previousScene == _scene;
+		sceneMatch = switcher->previousScene == _scene.GetScene(false);
 	}
 
 	return sceneMatch;
@@ -30,7 +30,7 @@ bool MacroConditionScene::CheckCondition()
 bool MacroConditionScene::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
-	obs_data_set_string(obj, "scene", GetWeakSourceName(_scene).c_str());
+	_scene.Save(obj);
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
 	return true;
 }
@@ -38,17 +38,14 @@ bool MacroConditionScene::Save(obs_data_t *obj)
 bool MacroConditionScene::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	_scene = GetWeakSourceByName(obs_data_get_string(obj, "scene"));
+	_scene.Load(obj);
 	_type = static_cast<SceneType>(obs_data_get_int(obj, "type"));
 	return true;
 }
 
 std::string MacroConditionScene::GetShortDesc()
 {
-	if (_scene) {
-		return GetWeakSourceName(_scene);
-	}
-	return "";
+	return _scene.ToString();
 }
 
 static inline void populateTypeSelection(QComboBox *list)
@@ -62,21 +59,19 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionScene> entryData)
 	: QWidget(parent)
 {
-	_sceneSelection = new QComboBox();
+	_scenes = new SceneSelectionWidget(window(), false, false, false);
 	_sceneType = new QComboBox();
 
-	QWidget::connect(_sceneSelection,
-			 SIGNAL(currentTextChanged(const QString &)), this,
-			 SLOT(SceneChanged(const QString &)));
+	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
+			 this, SLOT(SceneChanged(const SceneSelection &)));
 	QWidget::connect(_sceneType, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TypeChanged(int)));
 
-	populateSceneSelection(_sceneSelection);
 	populateTypeSelection(_sceneType);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{scenes}}", _sceneSelection},
+		{"{{scenes}}", _scenes},
 		{"{{sceneType}}", _sceneType},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.scene.entry"),
@@ -88,14 +83,14 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 	_loading = false;
 }
 
-void MacroConditionSceneEdit::SceneChanged(const QString &text)
+void MacroConditionSceneEdit::SceneChanged(const SceneSelection &s)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_scene = GetWeakSourceByQString(text);
+	_entryData->_scene = s;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -116,7 +111,6 @@ void MacroConditionSceneEdit::UpdateEntryData()
 		return;
 	}
 
-	_sceneSelection->setCurrentText(
-		GetWeakSourceName(_entryData->_scene).c_str());
+	_scenes->SetScene(_entryData->_scene);
 	_sceneType->setCurrentIndex(static_cast<int>(_entryData->_type));
 }

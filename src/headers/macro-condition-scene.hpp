@@ -1,5 +1,7 @@
 #pragma once
 #include "macro.hpp"
+#include "scene-selection.hpp"
+
 #include <QWidget>
 #include <QComboBox>
 
@@ -20,7 +22,7 @@ public:
 		return std::make_shared<MacroConditionScene>();
 	}
 
-	OBSWeakSource _scene;
+	SceneSelection _scene;
 	SceneType _type;
 
 private:
@@ -45,13 +47,13 @@ public:
 	}
 
 private slots:
-	void SceneChanged(const QString &text);
+	void SceneChanged(const SceneSelection &);
 	void TypeChanged(int value);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
-	QComboBox *_sceneSelection;
+	SceneSelectionWidget *_scenes;
 	QComboBox *_sceneType;
 	std::shared_ptr<MacroConditionScene> _entryData;
 
