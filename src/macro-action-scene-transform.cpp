@@ -57,7 +57,7 @@ bool save_transform_state(obs_data_t *obj, struct obs_transform_info &info,
 
 bool MacroActionSceneTransform::PerformAction()
 {
-	auto s = obs_weak_source_get_source(_scene);
+	auto s = obs_weak_source_get_source(_scene.GetScene(false));
 	auto scene = obs_scene_from_source(s);
 	auto name = GetWeakSourceName(_source);
 	auto items = getSceneItemsWithName(scene, name);
@@ -94,14 +94,13 @@ void MacroActionSceneTransform::LogAction()
 {
 	vblog(LOG_INFO,
 	      "performed transform action for source \"%s\" on scene \"%s\"",
-	      GetWeakSourceName(_scene).c_str(),
-	      GetWeakSourceName(_scene).c_str());
+	      GetWeakSourceName(_source).c_str(), _scene.ToString().c_str());
 }
 
 bool MacroActionSceneTransform::Save(obs_data_t *obj)
 {
 	MacroAction::Save(obj);
-	obs_data_set_string(obj, "scene", GetWeakSourceName(_scene).c_str());
+	_scene.Save(obj);
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
 	save_transform_state(obj, _info, _crop);
 	return true;
@@ -110,8 +109,7 @@ bool MacroActionSceneTransform::Save(obs_data_t *obj)
 bool MacroActionSceneTransform::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	const char *sceneName = obs_data_get_string(obj, "scene");
-	_scene = GetWeakSourceByName(sceneName);
+	_scene.Load(obj);
 	const char *sourceName = obs_data_get_string(obj, "source");
 	_source = GetWeakSourceByName(sourceName);
 	load_transform_state(obj, _info, _crop);
@@ -120,9 +118,8 @@ bool MacroActionSceneTransform::Load(obs_data_t *obj)
 
 std::string MacroActionSceneTransform::GetShortDesc()
 {
-	if (_scene && _source) {
-		return GetWeakSourceName(_scene) + " - " +
-		       GetWeakSourceName(_source);
+	if (_source) {
+		return _scene.ToString() + " - " + GetWeakSourceName(_source);
 	}
 	return "";
 }
@@ -150,16 +147,14 @@ MacroActionSceneTransformEdit::MacroActionSceneTransformEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSceneTransform> entryData)
 	: QWidget(parent)
 {
-	_scenes = new QComboBox();
+	_scenes = new SceneSelectionWidget(window(), false, false, true);
 	_sources = new QComboBox();
 	_getSettings = new QPushButton(obs_module_text(
 		"AdvSceneSwitcher.action.sceneTransform.getTransform"));
 	_settings = new QPlainTextEdit();
 
-	populateSceneSelection(_scenes);
-
-	QWidget::connect(_scenes, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SceneChanged(const QString &)));
+	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
+			 this, SLOT(SceneChanged(const SceneSelection &)));
 	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(SourceChanged(const QString &)));
 	QWidget::connect(_getSettings, SIGNAL(clicked()), this,
@@ -200,24 +195,24 @@ void MacroActionSceneTransformEdit::UpdateEntryData()
 		return;
 	}
 
-	_scenes->setCurrentText(GetWeakSourceName(_entryData->_scene).c_str());
+	_scenes->SetScene(_entryData->_scene);
 	populateSceneItemSelection(_sources, _entryData->_scene);
 	_sources->setCurrentText(
 		GetWeakSourceName(_entryData->_source).c_str());
-	if (_entryData->_scene && _entryData->_source) {
+	if (_entryData->_source) {
 		_settings->setPlainText(
 			fromatJsonString(_entryData->GetSettings()));
 	}
 }
 
-void MacroActionSceneTransformEdit::SceneChanged(const QString &text)
+void MacroActionSceneTransformEdit::SceneChanged(const SceneSelection &s)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
-		_entryData->_scene = GetWeakSourceByQString(text);
+		_entryData->_scene = s;
 	}
 	_sources->clear();
 	populateSceneItemSelection(_sources, _entryData->_scene);
@@ -237,12 +232,12 @@ void MacroActionSceneTransformEdit::SourceChanged(const QString &text)
 
 void MacroActionSceneTransformEdit::GetSettingsClicked()
 {
-	if (_loading || !_entryData || !_entryData->_scene ||
+	if (_loading || !_entryData || !_entryData->_scene.GetScene(false) ||
 	    !_entryData->_source) {
 		return;
 	}
 
-	auto s = obs_weak_source_get_source(_entryData->_scene);
+	auto s = obs_weak_source_get_source(_entryData->_scene.GetScene(false));
 	auto scene = obs_scene_from_source(s);
 	auto name = GetWeakSourceName(_entryData->_source);
 	auto item = obs_scene_find_source_recursive(scene, name.c_str());
