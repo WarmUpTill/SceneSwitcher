@@ -694,13 +694,6 @@
              </widget>
             </item>
             <item>
-             <widget class="Line" name="line_4">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
              <spacer name="horizontalSpacer_65">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
