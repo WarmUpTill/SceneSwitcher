@@ -222,7 +222,7 @@ void GetCurrentWindowTitle(std::string &title)
 
 	int status = 0;
 	XTextProperty text;
-	if (xstatus == Success) {
+	if (xstatus == Success && data[0]) {
 		status = XGetTextProperty(disp(), data[0], &text,
 					  XInternAtom(disp(), "_NET_WM_NAME",
 						      true));
