@@ -34,6 +34,8 @@ elseif(MSVC)
   set(CMAKE_CXX_FLAGS
       "${CMAKE_CXX_FLAGS} /wd4127 /wd4201 /wd4456 /wd4457 /wd4458 /wd4459 /wd4595"
   )
+  add_definitions(-DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
+                  -D_CRT_NONSTDC_NO_WARNINGS)
 endif()
 
 # Generate version info
@@ -311,12 +313,6 @@ if(BUILD_OUT_OF_TREE)
   # translation files so we can copy them to the correct place later on.
   file(GLOB ASS_TRANSLATION_FILES "data/locale/*.ini")
 
-  # Windows
-  if(WIN32)
-    find_package(w32-pthreads REQUIRED)
-    target_link_libraries(advanced-scene-switcher w32-pthreads)
-  endif()
-
   # OSX
   if(APPLE)
     set_target_properties(advanced-scene-switcher PROPERTIES PREFIX "")
@@ -330,6 +326,13 @@ if(BUILD_OUT_OF_TREE)
       set(ARCH_NAME "i686")
     endif()
     set_target_properties(advanced-scene-switcher PROPERTIES PREFIX "")
+    install(TARGETS advanced-scene-switcher
+            LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/obs-plugins)
+    install(
+      FILES ${ASS_TRANSLATION_FILES}
+      DESTINATION
+        "${CMAKE_INSTALL_PREFIX}/share/obs/obs-plugins/advanced-scene-switcher/locale"
+    )
   endif()
 else()
   # In tree build
