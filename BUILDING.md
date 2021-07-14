@@ -1,3 +1,11 @@
+# Compiling the plugin
+
+You have the option to ...
+- either add the plugin to the OBS source tree directly and build the plugin while building OBS itself. (**in tree**)
+- or you can move the sources of this plugin outside of the OBS source tree and build it separately from OBS. (**out of tree**)
+
+As both methods require you to have a working [OBS Studio development environment](https://obsproject.com/wiki/install-instructions) it is recommended to build the plugin in tree as it is easier to set up.
+
 ## Compiling in tree (recommended)
 Add the "SceneSwitcher" source directory to your obs-studio source directory under obs-studio/UI/frontend-plugins/:
 ```
