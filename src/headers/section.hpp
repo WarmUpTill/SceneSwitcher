@@ -23,6 +23,8 @@ protected:
 private slots:
 	void AnimationFinished();
 	void Collapse(bool collapse);
+signals:
+	void Collapsed(bool);
 
 private:
 	void SetupAnimations();

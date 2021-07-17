@@ -51,6 +51,7 @@ void Section::Collapse(bool collapse)
 	_transitioning = true;
 	_collapsed = collapse;
 	_toggleAnimation->start();
+	emit Collapsed(collapse);
 }
 
 void Section::SetContent(QWidget *w, bool collapsed)

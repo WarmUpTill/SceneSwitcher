@@ -87,7 +87,7 @@ static inline void populateConditionSelection(QComboBox *list)
 
 MacroConditionEdit::MacroConditionEdit(
 	QWidget *parent, std::shared_ptr<MacroCondition> *entryData,
-	const std::string &id, bool root, bool startCollapsed)
+	const std::string &id, bool root)
 	: QWidget(parent), _isRoot(root), _entryData(entryData)
 {
 	_logicSelection = new QComboBox();
@@ -99,6 +99,8 @@ MacroConditionEdit::MacroConditionEdit(
 
 	QWidget::connect(_logicSelection, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(LogicSelectionChanged(int)));
+	QWidget::connect(_section, &Section::Collapsed, this,
+			 &MacroConditionEdit::Collapsed);
 	QWidget::connect(_conditionSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ConditionSelectionChanged(const QString &)));
@@ -149,7 +151,7 @@ MacroConditionEdit::MacroConditionEdit(
 	mainLayout->addWidget(_controls);
 	setLayout(mainLayout);
 
-	UpdateEntryData(id, startCollapsed);
+	UpdateEntryData(id);
 	_loading = false;
 }
 
@@ -192,7 +194,7 @@ void MacroConditionEdit::SetRootNode(bool root)
 	populateLogicSelection(_logicSelection, root);
 }
 
-void MacroConditionEdit::UpdateEntryData(const std::string &id, bool collapse)
+void MacroConditionEdit::UpdateEntryData(const std::string &id)
 {
 	_conditionSelection->setCurrentText(obs_module_text(
 		MacroConditionFactory::GetConditionName(id).c_str()));
@@ -209,7 +211,7 @@ void MacroConditionEdit::UpdateEntryData(const std::string &id, bool collapse)
 		_logicSelection->setCurrentIndex(static_cast<int>(logic) -
 						 logic_root_offset);
 	}
-	_section->SetContent(widget, collapse);
+	_section->SetContent(widget, (*_entryData)->GetCollapsed());
 
 	_dur->setVisible(MacroConditionFactory::UsesDurationConstraint(id));
 	auto constraint = (*_entryData)->GetDurationConstraint();
@@ -303,6 +305,13 @@ void MacroConditionEdit::Down()
 {
 	if (_entryData) {
 		emit DownAt((*_entryData)->GetIndex());
+	}
+}
+
+void MacroConditionEdit::Collapsed(bool collapsed)
+{
+	if (_entryData) {
+		(*_entryData)->SetCollapsed(collapsed);
 	}
 }
 
@@ -417,10 +426,10 @@ void AdvSceneSwitcher::SwapConditions(Macro *m, int pos1, int pos2)
 	auto item2 = ui->macroEditConditionLayout->takeAt(pos2 - 1);
 	deleteLayoutItem(item1);
 	deleteLayoutItem(item2);
-	auto widget1 = new MacroConditionEdit(this, &(*c1), (*c1)->GetId(),
-					      root, false);
-	auto widget2 = new MacroConditionEdit(this, &(*c2), (*c2)->GetId(),
-					      false, false);
+	auto widget1 =
+		new MacroConditionEdit(this, &(*c1), (*c1)->GetId(), root);
+	auto widget2 =
+		new MacroConditionEdit(this, &(*c2), (*c2)->GetId(), false);
 	ConnectControlSignals(widget1);
 	ConnectControlSignals(widget2);
 	ui->macroEditConditionLayout->insertWidget(pos1, widget1);

@@ -59,8 +59,8 @@ static inline void populateActionSelection(QComboBox *list)
 
 MacroActionEdit::MacroActionEdit(QWidget *parent,
 				 std::shared_ptr<MacroAction> *entryData,
-				 const std::string &id, bool startCollapsed)
-	: QWidget(parent)
+				 const std::string &id)
+	: QWidget(parent), _entryData(entryData)
 {
 	_actionSelection = new QComboBox();
 	_section = new Section(300);
@@ -70,6 +70,8 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	QWidget::connect(_actionSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ActionSelectionChanged(const QString &)));
+	QWidget::connect(_section, &Section::Collapsed, this,
+			 &MacroActionEdit::Collapsed);
 	// Macro signals
 	QWidget::connect(parent, SIGNAL(MacroAdded(const QString &)), this,
 			 SIGNAL(MacroAdded(const QString &)));
@@ -107,7 +109,7 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	setLayout(mainLayout);
 
 	_entryData = entryData;
-	UpdateEntryData(id, startCollapsed);
+	UpdateEntryData(id);
 
 	_loading = false;
 }
@@ -140,7 +142,7 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 	_section->SetContent(widget, false);
 }
 
-void MacroActionEdit::UpdateEntryData(const std::string &id, bool collapse)
+void MacroActionEdit::UpdateEntryData(const std::string &id)
 {
 	_actionSelection->setCurrentText(
 		obs_module_text(MacroActionFactory::GetActionName(id).c_str()));
@@ -149,7 +151,7 @@ void MacroActionEdit::UpdateEntryData(const std::string &id, bool collapse)
 			 this, SLOT(HeaderInfoChanged(const QString &)));
 	HeaderInfoChanged(
 		QString::fromStdString((*_entryData)->GetShortDesc()));
-	_section->SetContent(widget, collapse);
+	_section->SetContent(widget, (*_entryData)->GetCollapsed());
 }
 
 void MacroActionEdit::HeaderInfoChanged(const QString &text)
@@ -184,6 +186,13 @@ void MacroActionEdit::Down()
 {
 	if (_entryData) {
 		emit DownAt((*_entryData)->GetIndex());
+	}
+}
+
+void MacroActionEdit::Collapsed(bool collapsed)
+{
+	if (_entryData) {
+		(*_entryData)->SetCollapsed(collapsed);
 	}
 }
 
@@ -277,8 +286,8 @@ void AdvSceneSwitcher::SwapActions(Macro *m, int pos1, int pos2)
 	auto item2 = ui->macroEditActionLayout->takeAt(pos2 - 1);
 	deleteLayoutItem(item1);
 	deleteLayoutItem(item2);
-	auto widget1 = new MacroActionEdit(this, &(*a1), (*a1)->GetId(), false);
-	auto widget2 = new MacroActionEdit(this, &(*a2), (*a2)->GetId(), false);
+	auto widget1 = new MacroActionEdit(this, &(*a1), (*a1)->GetId());
+	auto widget2 = new MacroActionEdit(this, &(*a2), (*a2)->GetId());
 	ConnectControlSignals(widget1);
 	ConnectControlSignals(widget2);
 	ui->macroEditActionLayout->insertWidget(pos1, widget1);
