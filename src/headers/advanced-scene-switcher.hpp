@@ -14,6 +14,8 @@
 	}
 
 class QCloseEvent;
+class MacroActionEdit;
+class MacroConditionEdit;
 
 /*******************************************************************************
  * Advanced Scene Switcher window
@@ -47,6 +49,10 @@ public:
 	bool addNewMacro(std::string &name);
 	Macro *getSelectedMacro();
 	void SetEditMacro(Macro &m);
+	void ConnectControlSignals(MacroActionEdit *);
+	void ConnectControlSignals(MacroConditionEdit *);
+	void SwapActions(Macro *m, int pos1, int pos2);
+	void SwapConditions(Macro *m, int pos1, int pos2);
 
 	void loadUI();
 	void setupGeneralTab();
@@ -111,6 +117,14 @@ public slots:
 	void on_actionRemove_clicked();
 	void showMacroContextMenu(const QPoint &);
 	void copyMacro();
+	void AddMacroAction(int idx);
+	void RemoveMacroAction(int idx);
+	void MoveMacroActionUp(int idx);
+	void MoveMacroActionDown(int idx);
+	void AddMacroCondition(int idx);
+	void RemoveMacroCondition(int idx);
+	void MoveMacroConditionUp(int idx);
+	void MoveMacroConditionDown(int idx);
 
 	void on_screenRegionSwitches_currentRowChanged(int idx);
 	void on_showFrame_clicked();

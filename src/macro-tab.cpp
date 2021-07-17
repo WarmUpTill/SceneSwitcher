@@ -180,6 +180,7 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 	for (auto &c : m.Conditions()) {
 		auto newEntry = new MacroConditionEdit(this, &c, c->GetId(),
 						       root, collapse);
+		ConnectControlSignals(newEntry);
 		ui->macroEditConditionLayout->addWidget(newEntry);
 		ui->macroEditConditionHelp->setVisible(false);
 		root = false;
@@ -189,6 +190,7 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 	for (auto &a : m.Actions()) {
 		auto newEntry =
 			new MacroActionEdit(this, &a, a->GetId(), collapse);
+		ConnectControlSignals(newEntry);
 		ui->macroEditActionLayout->addWidget(newEntry);
 		ui->macroEditActionHelp->setVisible(false);
 	}
@@ -206,6 +208,30 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 	} else {
 		ui->macroEditActionHelp->setVisible(false);
 	}
+}
+
+void AdvSceneSwitcher::ConnectControlSignals(MacroActionEdit *c)
+{
+	connect(c, &MacroActionEdit::AddAt, this,
+		&AdvSceneSwitcher::AddMacroAction);
+	connect(c, &MacroActionEdit::RemoveAt, this,
+		&AdvSceneSwitcher::RemoveMacroAction);
+	connect(c, &MacroActionEdit::UpAt, this,
+		&AdvSceneSwitcher::MoveMacroActionUp);
+	connect(c, &MacroActionEdit::DownAt, this,
+		&AdvSceneSwitcher::MoveMacroActionDown);
+}
+
+void AdvSceneSwitcher::ConnectControlSignals(MacroConditionEdit *c)
+{
+	connect(c, &MacroConditionEdit::AddAt, this,
+		&AdvSceneSwitcher::AddMacroCondition);
+	connect(c, &MacroConditionEdit::RemoveAt, this,
+		&AdvSceneSwitcher::RemoveMacroCondition);
+	connect(c, &MacroConditionEdit::UpAt, this,
+		&AdvSceneSwitcher::MoveMacroConditionUp);
+	connect(c, &MacroConditionEdit::DownAt, this,
+		&AdvSceneSwitcher::MoveMacroConditionDown);
 }
 
 Macro *AdvSceneSwitcher::getSelectedMacro()

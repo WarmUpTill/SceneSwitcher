@@ -124,6 +124,24 @@ void Macro::SetName(const std::string &name)
 	SetHotkeysDesc();
 }
 
+void Macro::UpdateActionIndices()
+{
+	int idx = 0;
+	for (auto a : _actions) {
+		a->SetIndex(idx);
+		idx++;
+	}
+}
+
+void Macro::UpdateConditionIndices()
+{
+	int idx = 0;
+	for (auto c : _conditions) {
+		c->SetIndex(idx);
+		idx++;
+	}
+}
+
 bool Macro::Save(obs_data_t *obj)
 {
 	obs_data_set_string(obj, "name", _name.c_str());
@@ -238,6 +256,7 @@ bool Macro::Load(obs_data_t *obj)
 		root = false;
 	}
 	obs_data_array_release(conditions);
+	UpdateConditionIndices();
 
 	obs_data_array_t *actions = obs_data_get_array(obj, "actions");
 	count = obs_data_array_count(actions);
@@ -260,6 +279,7 @@ bool Macro::Load(obs_data_t *obj)
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(actions);
+	UpdateActionIndices();
 	return true;
 }
 

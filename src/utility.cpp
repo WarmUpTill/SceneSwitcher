@@ -174,6 +174,17 @@ void placeWidgets(std::string text, QBoxLayout *layout,
 	}
 }
 
+void deleteLayoutItem(QLayoutItem *item)
+{
+	if (item) {
+		auto widget = item->widget();
+		if (widget) {
+			widget->setVisible(false);
+		}
+		delete item;
+	}
+}
+
 void clearLayout(QLayout *layout)
 {
 	QLayoutItem *item;

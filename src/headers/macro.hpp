@@ -36,7 +36,16 @@ struct LogicTypeInfo {
 	std::string _name;
 };
 
-class MacroCondition {
+class MacroSegment {
+public:
+	void SetIndex(int idx) { _idx = idx; }
+	int GetIndex() { return _idx; }
+
+protected:
+	int _idx;
+};
+
+class MacroCondition : public MacroSegment {
 public:
 	virtual bool CheckCondition() = 0;
 	virtual bool Save(obs_data_t *obj) = 0;
@@ -61,7 +70,7 @@ private:
 	DurationConstraint _duration;
 };
 
-class MacroAction {
+class MacroAction : public MacroSegment {
 public:
 	virtual bool PerformAction() = 0;
 	virtual bool Save(obs_data_t *obj) = 0;
@@ -89,6 +98,8 @@ public:
 	{
 		return _conditions;
 	}
+	void UpdateActionIndices();
+	void UpdateConditionIndices();
 	std::deque<std::shared_ptr<MacroAction>> &Actions() { return _actions; }
 
 	bool Save(obs_data_t *obj);
