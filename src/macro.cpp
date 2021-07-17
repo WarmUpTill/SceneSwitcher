@@ -383,8 +383,21 @@ void Macro::SetHotkeysDesc()
 				   hotkeyDesc.toStdString().c_str());
 }
 
+bool MacroSegment::Save(obs_data_t *obj)
+{
+	obs_data_set_bool(obj, "collapsed", static_cast<int>(_collapsed));
+	return true;
+}
+
+bool MacroSegment::Load(obs_data_t *obj)
+{
+	_collapsed = obs_data_get_bool(obj, "collapsed");
+	return true;
+}
+
 bool MacroCondition::Save(obs_data_t *obj)
 {
+	MacroSegment::Save(obj);
 	obs_data_set_string(obj, "id", GetId().c_str());
 	obs_data_set_int(obj, "logic", static_cast<int>(_logic));
 	_duration.Save(obj);
@@ -393,6 +406,7 @@ bool MacroCondition::Save(obs_data_t *obj)
 
 bool MacroCondition::Load(obs_data_t *obj)
 {
+	MacroSegment::Load(obj);
 	_logic = static_cast<LogicType>(obs_data_get_int(obj, "logic"));
 	_duration.Load(obj);
 	return true;
@@ -425,13 +439,14 @@ void MacroCondition::SetDuration(double seconds)
 
 bool MacroAction::Save(obs_data_t *obj)
 {
+	MacroSegment::Save(obj);
 	obs_data_set_string(obj, "id", GetId().c_str());
 	return true;
 }
 
 bool MacroAction::Load(obs_data_t *obj)
 {
-	UNUSED_PARAMETER(obj);
+	MacroSegment::Load(obj);
 	return true;
 }
 

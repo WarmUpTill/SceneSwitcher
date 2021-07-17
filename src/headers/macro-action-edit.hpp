@@ -40,9 +40,8 @@ class MacroActionEdit : public QWidget {
 public:
 	MacroActionEdit(QWidget *parent = nullptr,
 			std::shared_ptr<MacroAction> * = nullptr,
-			const std::string &id = "scene_switch",
-			bool startCollapsed = false);
-	void UpdateEntryData(const std::string &id, bool collapse);
+			const std::string &id = "scene_switch");
+	void UpdateEntryData(const std::string &id);
 
 private slots:
 	void ActionSelectionChanged(const QString &text);
@@ -51,6 +50,7 @@ private slots:
 	void Remove();
 	void Up();
 	void Down();
+	void Collapsed(bool);
 signals:
 	void MacroAdded(const QString &name);
 	void MacroRemoved(const QString &name);
