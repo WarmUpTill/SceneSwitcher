@@ -44,6 +44,7 @@ QString fromatJsonString(const char *);
 void placeWidgets(std::string text, QBoxLayout *layout,
 		  std::unordered_map<std::string, QWidget *> placeholders,
 		  bool addStretch = true);
+void deleteLayoutItem(QLayoutItem *item);
 void clearLayout(QLayout *layout);
 QMetaObject::Connection PulseWidget(QWidget *widget, QColor endColor,
 				    QColor = QColor(0, 0, 0, 0),
