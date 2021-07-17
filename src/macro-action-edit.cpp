@@ -65,10 +65,12 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	_actionSelection = new QComboBox();
 	_section = new Section(300);
 	_headerInfo = new QLabel();
+	_controls = new MacroEntryControls();
 
 	QWidget::connect(_actionSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ActionSelectionChanged(const QString &)));
+	// Macro signals
 	QWidget::connect(parent, SIGNAL(MacroAdded(const QString &)), this,
 			 SIGNAL(MacroAdded(const QString &)));
 	QWidget::connect(parent, SIGNAL(MacroRemoved(const QString &)), this,
@@ -77,6 +79,8 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 			 SIGNAL(MacroRenamed(const QString &, const QString)),
 			 this,
 			 SIGNAL(MacroRenamed(const QString &, const QString)));
+
+	// Scene group signals
 	QWidget::connect(parent, SIGNAL(SceneGroupAdded(const QString &)), this,
 			 SIGNAL(SceneGroupAdded(const QString &)));
 	QWidget::connect(parent, SIGNAL(SceneGroupRemoved(const QString &)),
@@ -86,6 +90,12 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 		SIGNAL(SceneGroupRenamed(const QString &, const QString)), this,
 		SIGNAL(SceneGroupRenamed(const QString &, const QString)));
 
+	// Control signals
+	QWidget::connect(_controls, SIGNAL(Add()), this, SLOT(Add()));
+	QWidget::connect(_controls, SIGNAL(Remove()), this, SLOT(Remove()));
+	QWidget::connect(_controls, SIGNAL(Up()), this, SLOT(Up()));
+	QWidget::connect(_controls, SIGNAL(Down()), this, SLOT(Down()));
+
 	populateActionSelection(_actionSelection);
 
 	_section->AddHeaderWidget(_actionSelection);
@@ -93,12 +103,23 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addWidget(_section);
+	mainLayout->addWidget(_controls);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
 	UpdateEntryData(id, startCollapsed);
 
 	_loading = false;
+}
+
+void MacroActionEdit::enterEvent(QEvent *)
+{
+	_controls->Show(true);
+}
+
+void MacroActionEdit::leaveEvent(QEvent *)
+{
+	_controls->Show(false);
 }
 
 void MacroActionEdit::ActionSelectionChanged(const QString &text)
@@ -137,10 +158,43 @@ void MacroActionEdit::HeaderInfoChanged(const QString &text)
 	_headerInfo->setText(text);
 }
 
-void AdvSceneSwitcher::on_actionAdd_clicked()
+void MacroActionEdit::Add()
+{
+	if (_entryData) {
+		// Insert after current entry
+		emit AddAt((*_entryData)->GetIndex() + 1);
+	}
+}
+
+void MacroActionEdit::Remove()
+{
+	if (_entryData) {
+		emit RemoveAt((*_entryData)->GetIndex());
+	}
+}
+
+void MacroActionEdit::Up()
+{
+	if (_entryData) {
+		emit UpAt((*_entryData)->GetIndex());
+	}
+}
+
+void MacroActionEdit::Down()
+{
+	if (_entryData) {
+		emit DownAt((*_entryData)->GetIndex());
+	}
+}
+
+void AdvSceneSwitcher::AddMacroAction(int idx)
 {
 	auto macro = getSelectedMacro();
 	if (!macro) {
+		return;
+	}
+
+	if (idx < 0 || idx > macro->Actions().size()) {
 		return;
 	}
 
@@ -148,11 +202,50 @@ void AdvSceneSwitcher::on_actionAdd_clicked()
 	std::string id = temp.GetId();
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	macro->Actions().emplace_back(MacroActionFactory::Create(id));
-	auto newEntry =
-		new MacroActionEdit(this, &macro->Actions().back(), id, false);
-	ui->macroEditActionLayout->addWidget(newEntry);
+	auto action = macro->Actions().emplace(macro->Actions().begin() + idx,
+					       MacroActionFactory::Create(id));
+	macro->UpdateActionIndices();
+
+	// All entry pointers in existing edit widgets after the new entry will
+	// be invalidated by adding the new entry so we have to recreate them
+	// and because I am lazy I am recreating every widget.
+	//
+	// If performance should become a concern this has to be revisited.
+	SetEditMacro(*macro);
+}
+
+void AdvSceneSwitcher::on_actionAdd_clicked()
+{
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	AddMacroAction((int)macro->Actions().size());
 	ui->macroEditActionHelp->setVisible(false);
+}
+
+void AdvSceneSwitcher::RemoveMacroAction(int idx)
+{
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	if (idx < 0 || idx >= macro->Actions().size()) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	macro->Actions().erase(macro->Actions().begin() + idx);
+	macro->UpdateActionIndices();
+
+	// All entry pointers in existing edit widgets after the new entry will
+	// be invalidated by adding the new entry so we have to recreate them
+	// and because I am lazy I am recreating every widget.
+	//
+	// If performance should become a concern this has to be revisited.
+	SetEditMacro(*macro);
 }
 
 void AdvSceneSwitcher::on_actionRemove_clicked()
@@ -161,24 +254,61 @@ void AdvSceneSwitcher::on_actionRemove_clicked()
 	if (!macro) {
 		return;
 	}
-	std::lock_guard<std::mutex> lock(switcher->m);
-	if (macro->Actions().empty()) {
+	RemoveMacroAction((int)macro->Actions().size() - 1);
+}
+
+void AdvSceneSwitcher::SwapActions(Macro *m, int pos1, int pos2)
+{
+	if (pos1 == pos2) {
 		return;
 	}
-	macro->Actions().pop_back();
-
-	int count = ui->macroEditActionLayout->count();
-	auto item = ui->macroEditActionLayout->takeAt(count - 1);
-
-	if (item) {
-		auto widget = item->widget();
-		if (widget) {
-			widget->setVisible(false);
-		}
-		delete item;
+	if (pos1 > pos2) {
+		std::swap(pos1, pos2);
 	}
 
-	if (count == 1) {
-		ui->macroEditActionHelp->setVisible(true);
+	std::lock_guard<std::mutex> lock(switcher->m);
+	iter_swap(m->Actions().begin() + pos1, m->Actions().begin() + pos2);
+	m->UpdateActionIndices();
+
+	auto a1 = m->Actions().begin() + pos1;
+	auto a2 = m->Actions().begin() + pos2;
+
+	auto item1 = ui->macroEditActionLayout->takeAt(pos1);
+	auto item2 = ui->macroEditActionLayout->takeAt(pos2 - 1);
+	deleteLayoutItem(item1);
+	deleteLayoutItem(item2);
+	auto widget1 = new MacroActionEdit(this, &(*a1), (*a1)->GetId(), false);
+	auto widget2 = new MacroActionEdit(this, &(*a2), (*a2)->GetId(), false);
+	ConnectControlSignals(widget1);
+	ConnectControlSignals(widget2);
+	ui->macroEditActionLayout->insertWidget(pos1, widget1);
+	ui->macroEditActionLayout->insertWidget(pos2, widget2);
+}
+
+void AdvSceneSwitcher::MoveMacroActionUp(int idx)
+{
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
 	}
+
+	if (idx < 1 || idx >= macro->Actions().size()) {
+		return;
+	}
+
+	SwapActions(macro, idx, idx - 1);
+}
+
+void AdvSceneSwitcher::MoveMacroActionDown(int idx)
+{
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	if (idx < 0 || idx >= macro->Actions().size() - 1) {
+		return;
+	}
+
+	SwapActions(macro, idx, idx + 1);
 }

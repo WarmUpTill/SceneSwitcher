@@ -1,4 +1,7 @@
 #pragma once
+#include "macro.hpp"
+#include "section.hpp"
+#include "macro-entry-controls.hpp"
 
 #include <QWidget>
 #include <QComboBox>
@@ -6,8 +9,6 @@
 #include <QGroupBox>
 #include <QLabel>
 #include <deque>
-#include "macro.hpp"
-#include "section.hpp"
 
 struct MacroActionInfo {
 	using TCreateMethod = std::shared_ptr<MacroAction> (*)();
@@ -46,6 +47,10 @@ public:
 private slots:
 	void ActionSelectionChanged(const QString &text);
 	void HeaderInfoChanged(const QString &);
+	void Add();
+	void Remove();
+	void Up();
+	void Down();
 signals:
 	void MacroAdded(const QString &name);
 	void MacroRemoved(const QString &name);
@@ -53,11 +58,19 @@ signals:
 	void SceneGroupAdded(const QString &name);
 	void SceneGroupRemoved(const QString &name);
 	void SceneGroupRenamed(const QString &oldName, const QString newName);
+	void AddAt(int idx);
+	void RemoveAt(int idx);
+	void UpAt(int idx);
+	void DownAt(int idx);
 
 protected:
+	void enterEvent(QEvent *e);
+	void leaveEvent(QEvent *e);
+
 	QComboBox *_actionSelection;
 	Section *_section;
 	QLabel *_headerInfo;
+	MacroEntryControls *_controls;
 
 	std::shared_ptr<MacroAction> *_entryData;
 
