@@ -395,6 +395,11 @@ bool MacroSegment::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroSegment::GetShortDesc()
+{
+	return "";
+}
+
 bool MacroCondition::Save(obs_data_t *obj)
 {
 	MacroSegment::Save(obj);
@@ -410,11 +415,6 @@ bool MacroCondition::Load(obs_data_t *obj)
 	_logic = static_cast<LogicType>(obs_data_get_int(obj, "logic"));
 	_duration.Load(obj);
 	return true;
-}
-
-std::string MacroCondition::GetShortDesc()
-{
-	return "";
 }
 
 void MacroCondition::SetDurationConstraint(const DurationConstraint &dur)
@@ -448,11 +448,6 @@ bool MacroAction::Load(obs_data_t *obj)
 {
 	MacroSegment::Load(obj);
 	return true;
-}
-
-std::string MacroAction::GetShortDesc()
-{
-	return "";
 }
 
 void MacroAction::LogAction()
