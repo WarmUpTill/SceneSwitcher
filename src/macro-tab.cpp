@@ -8,9 +8,6 @@
 
 static QMetaObject::Connection addPulse;
 
-const auto conditionsCollapseThreshold = 4;
-const auto actionsCollapseThreshold = 4;
-
 bool macroNameExists(std::string name)
 {
 	return !!GetMacroByName(name.c_str());
@@ -175,21 +172,18 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 	clearLayout(ui->macroEditConditionLayout);
 	clearLayout(ui->macroEditActionLayout);
 
-	bool collapse = m.Conditions().size() > conditionsCollapseThreshold;
 	bool root = true;
 	for (auto &c : m.Conditions()) {
-		auto newEntry = new MacroConditionEdit(this, &c, c->GetId(),
-						       root, collapse);
+		auto newEntry =
+			new MacroConditionEdit(this, &c, c->GetId(), root);
 		ConnectControlSignals(newEntry);
 		ui->macroEditConditionLayout->addWidget(newEntry);
 		ui->macroEditConditionHelp->setVisible(false);
 		root = false;
 	}
 
-	collapse = m.Actions().size() > actionsCollapseThreshold;
 	for (auto &a : m.Actions()) {
-		auto newEntry =
-			new MacroActionEdit(this, &a, a->GetId(), collapse);
+		auto newEntry = new MacroActionEdit(this, &a, a->GetId());
 		ConnectControlSignals(newEntry);
 		ui->macroEditActionLayout->addWidget(newEntry);
 		ui->macroEditActionHelp->setVisible(false);

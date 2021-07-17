@@ -41,11 +41,10 @@ class MacroConditionEdit : public QWidget {
 public:
 	MacroConditionEdit(QWidget *parent = nullptr,
 			   std::shared_ptr<MacroCondition> * = nullptr,
-			   const std::string &id = "scene", bool root = true,
-			   bool startCollapsed = false);
+			   const std::string &id = "scene", bool root = true);
 	bool IsRootNode();
 	void SetRootNode(bool);
-	void UpdateEntryData(const std::string &id, bool collapse);
+	void UpdateEntryData(const std::string &id);
 
 private slots:
 	void LogicSelectionChanged(int idx);
@@ -58,6 +57,7 @@ private slots:
 	void Remove();
 	void Up();
 	void Down();
+	void Collapsed(bool);
 signals:
 	void MacroAdded(const QString &name);
 	void MacroRemoved(const QString &name);

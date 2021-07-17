@@ -40,9 +40,14 @@ class MacroSegment {
 public:
 	void SetIndex(int idx) { _idx = idx; }
 	int GetIndex() { return _idx; }
+	void SetCollapsed(bool collapsed) { _collapsed = collapsed; }
+	bool GetCollapsed() { return _collapsed; }
+	virtual bool Save(obs_data_t *obj) = 0;
+	virtual bool Load(obs_data_t *obj) = 0;
 
 protected:
 	int _idx;
+	bool _collapsed = false;
 };
 
 class MacroCondition : public MacroSegment {
