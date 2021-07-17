@@ -20,6 +20,7 @@
 #include <util/platform.h>
 #include <vector>
 #include <thread>
+#include <unordered_map>
 #include <QStringList>
 #include <QRegularExpression>
 #include <QLibrary>
