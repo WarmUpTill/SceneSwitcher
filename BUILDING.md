@@ -10,7 +10,7 @@ As both methods require you to have a working [OBS Studio development environmen
 Add the "SceneSwitcher" source directory to your obs-studio source directory under obs-studio/UI/frontend-plugins/:
 ```
 cd obs-studio/UI/frontend-plugins/
-git clone https://github.com/WarmUpTill/SceneSwitcher.git
+git clone --recursive https://github.com/WarmUpTill/SceneSwitcher.git
 ```
 
 Then modify the obs-studio/UI/frontend-plugins/CMakeLists.txt file and add an entry for the scene switcher:
@@ -21,7 +21,7 @@ add_subdirectory(SceneSwitcher)
 You'll need [Qt](https://download.qt.io/official_releases/qt/5.15/5.15.2/), [CMake](https://cmake.org/download/) and a working [OBS Studio development environment](https://obsproject.com/wiki/install-instructions) installed on your computer.
 Once you've set this up, do the following:
 ```
-git clone https://github.com/WarmUpTill/SceneSwitcher.git
+git clone --recursive https://github.com/WarmUpTill/SceneSwitcher.git
 cd SceneSwitcher
 mkdir build && cd build
 ```
