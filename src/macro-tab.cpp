@@ -300,22 +300,52 @@ void AdvSceneSwitcher::setupMacroTab()
 	}
 
 	ui->macros->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(ui->macros, SIGNAL(customContextMenuRequested(QPoint)), this,
-		SLOT(showMacroContextMenu(QPoint)));
+	connect(ui->macros, &QWidget::customContextMenuRequested, this,
+		&AdvSceneSwitcher::ShowMacroContextMenu);
+	ui->macroActions->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(ui->macroActions, &QWidget::customContextMenuRequested, this,
+		&AdvSceneSwitcher::ShowMacroActionsContextMenu);
+	ui->macroConditions->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(ui->macroConditions, &QWidget::customContextMenuRequested, this,
+		&AdvSceneSwitcher::ShowMacroConditionsContextMenu);
 
 	ui->macroEdit->setDisabled(true);
 }
 
-void AdvSceneSwitcher::showMacroContextMenu(const QPoint &pos)
+void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 {
 	QPoint globalPos = ui->macros->mapToGlobal(pos);
 	QMenu myMenu;
 	myMenu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.copy"),
-			 this, SLOT(copyMacro()));
+			 this, &AdvSceneSwitcher::CopyMacro);
 	myMenu.exec(globalPos);
 }
 
-void AdvSceneSwitcher::copyMacro()
+void AdvSceneSwitcher::ShowMacroActionsContextMenu(const QPoint &pos)
+{
+	QPoint globalPos = ui->macroActions->mapToGlobal(pos);
+	QMenu myMenu;
+	myMenu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.expandAll"),
+			 this, &AdvSceneSwitcher::ExpandAllActions);
+	myMenu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.collapseAll"), this,
+		&AdvSceneSwitcher::CollapseAllActions);
+	myMenu.exec(globalPos);
+}
+
+void AdvSceneSwitcher::ShowMacroConditionsContextMenu(const QPoint &pos)
+{
+	QPoint globalPos = ui->macroConditions->mapToGlobal(pos);
+	QMenu myMenu;
+	myMenu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.expandAll"),
+			 this, &AdvSceneSwitcher::ExpandAllConditions);
+	myMenu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.collapseAll"), this,
+		&AdvSceneSwitcher::CollapseAllConditions);
+	myMenu.exec(globalPos);
+}
+
+void AdvSceneSwitcher::CopyMacro()
 {
 	obs_data_t *data = obs_data_create();
 	getSelectedMacro()->Save(data);
@@ -336,4 +366,56 @@ void AdvSceneSwitcher::copyMacro()
 	item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
 	item->setCheckState(Qt::Checked);
 	ui->macros->setCurrentItem(item);
+}
+
+void AdvSceneSwitcher::ExpandAllActions()
+{
+	auto m = getSelectedMacro();
+	if (!m) {
+		return;
+	}
+
+	for (auto &a : m->Actions()) {
+		a->SetCollapsed(false);
+	}
+	SetEditMacro(*m);
+}
+
+void AdvSceneSwitcher::ExpandAllConditions()
+{
+	auto m = getSelectedMacro();
+	if (!m) {
+		return;
+	}
+
+	for (auto &c : m->Conditions()) {
+		c->SetCollapsed(false);
+	}
+	SetEditMacro(*m);
+}
+
+void AdvSceneSwitcher::CollapseAllActions()
+{
+	auto m = getSelectedMacro();
+	if (!m) {
+		return;
+	}
+
+	for (auto &a : m->Actions()) {
+		a->SetCollapsed(true);
+	}
+	SetEditMacro(*m);
+}
+
+void AdvSceneSwitcher::CollapseAllConditions()
+{
+	auto m = getSelectedMacro();
+	if (!m) {
+		return;
+	}
+
+	for (auto &c : m->Conditions()) {
+		c->SetCollapsed(true);
+	}
+	SetEditMacro(*m);
 }
