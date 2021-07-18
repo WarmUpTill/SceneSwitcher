@@ -14,18 +14,34 @@ bool MacroConditionCursor::_registered = MacroConditionFactory::Register(
 static const std::string idOld = "region";
 static bool oldRegisterd = MacroConditionFactory::Register(
 	idOld, {MacroConditionCursor::Create, MacroConditionCursorEdit::Create,
-		"AdvSceneSwitcher.condition.region"});
+		"AdvSceneSwitcher.condition.cursor"});
+
+static std::map<CursorCondition, std::string> cursorConditionTypes = {
+	{CursorCondition::REGION,
+	 "AdvSceneSwitcher.condition.cursor.type.region"},
+	{CursorCondition::MOVING,
+	 "AdvSceneSwitcher.condition.cursor.type.moving"},
+};
 
 bool MacroConditionCursor::CheckCondition()
 {
 	std::pair<int, int> cursorPos = getCursorPos();
-	return cursorPos.first >= _minX && cursorPos.second >= _minY &&
-	       cursorPos.first <= _maxX && cursorPos.second <= _maxY;
+	switch (_condition) {
+	case CursorCondition::REGION:
+		return cursorPos.first >= _minX && cursorPos.second >= _minY &&
+		       cursorPos.first <= _maxX && cursorPos.second <= _maxY;
+	case CursorCondition::MOVING:
+		return switcher->cursorPosChanged;
+	default:
+		break;
+	}
+	return false;
 }
 
 bool MacroConditionCursor::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
+	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_int(obj, "minX", _minX);
 	obs_data_set_int(obj, "minY", _minY);
 	obs_data_set_int(obj, "maxX", _maxX);
@@ -36,6 +52,8 @@ bool MacroConditionCursor::Save(obs_data_t *obj)
 bool MacroConditionCursor::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
+	_condition = static_cast<CursorCondition>(
+		obs_data_get_int(obj, "condition"));
 	_minX = obs_data_get_int(obj, "minX");
 	_minY = obs_data_get_int(obj, "minY");
 	_maxX = obs_data_get_int(obj, "maxX");
@@ -43,14 +61,24 @@ bool MacroConditionCursor::Load(obs_data_t *obj)
 	return true;
 }
 
+static inline void populateConditionSelection(QComboBox *list)
+{
+	for (auto entry : cursorConditionTypes) {
+		list->addItem(obs_module_text(entry.second.c_str()));
+	}
+}
+
 MacroConditionCursorEdit::MacroConditionCursorEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionCursor> entryData)
 	: QWidget(parent)
 {
+	_conditions = new QComboBox();
 	_minX = new QSpinBox();
 	_minY = new QSpinBox();
 	_maxX = new QSpinBox();
 	_maxY = new QSpinBox();
+
+	populateConditionSelection(_conditions);
 
 	_minX->setPrefix("Min X: ");
 	_minY->setPrefix("Min Y: ");
@@ -67,6 +95,8 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 	_maxX->setMaximum(1000000);
 	_maxY->setMaximum(1000000);
 
+	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_minX, SIGNAL(valueChanged(int)), this,
 			 SLOT(MinXChanged(int)));
 	QWidget::connect(_minY, SIGNAL(valueChanged(int)), this,
@@ -79,6 +109,7 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{conditions}}", _conditions},
 		{"{{minX}}", _minX},
 		{"{{minY}}", _minY},
 		{"{{maxX}}", _maxX},
@@ -91,6 +122,18 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 	_entryData = entryData;
 	UpdateEntryData();
 	_loading = false;
+}
+
+void MacroConditionCursorEdit::ConditionChanged(int index)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_condition = static_cast<CursorCondition>(index);
+	SetRegionSelectionVisible(_entryData->_condition ==
+				  CursorCondition::REGION);
 }
 
 void MacroConditionCursorEdit::MinXChanged(int pos)
@@ -133,14 +176,27 @@ void MacroConditionCursorEdit::MaxYChanged(int pos)
 	_entryData->_maxY = pos;
 }
 
+void MacroConditionCursorEdit::SetRegionSelectionVisible(bool visible)
+{
+	_minX->setVisible(visible);
+	_minY->setVisible(visible);
+	_maxX->setVisible(visible);
+	_maxY->setVisible(visible);
+
+	adjustSize();
+}
+
 void MacroConditionCursorEdit::UpdateEntryData()
 {
 	if (!_entryData) {
 		return;
 	}
 
+	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_minX->setValue(_entryData->_minX);
 	_minY->setValue(_entryData->_minY);
 	_maxX->setValue(_entryData->_maxX);
 	_maxY->setValue(_entryData->_maxY);
+	SetRegionSelectionVisible(_entryData->_condition ==
+				  CursorCondition::REGION);
 }
