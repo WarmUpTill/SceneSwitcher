@@ -60,7 +60,7 @@ static inline void populateActionSelection(QComboBox *list)
 MacroActionEdit::MacroActionEdit(QWidget *parent,
 				 std::shared_ptr<MacroAction> *entryData,
 				 const std::string &id)
-	: QWidget(parent), _entryData(entryData)
+	: MacroSegmentEdit(parent), _entryData(entryData)
 {
 	_actionSelection = new QComboBox();
 	_section = new Section(300);
@@ -140,6 +140,7 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
 			 this, SLOT(HeaderInfoChanged(const QString &)));
 	_section->SetContent(widget, false);
+	SetFocusPolicyOfWidgets();
 }
 
 void MacroActionEdit::UpdateEntryData(const std::string &id)
@@ -152,6 +153,7 @@ void MacroActionEdit::UpdateEntryData(const std::string &id)
 	HeaderInfoChanged(
 		QString::fromStdString((*_entryData)->GetShortDesc()));
 	_section->SetContent(widget, (*_entryData)->GetCollapsed());
+	SetFocusPolicyOfWidgets();
 }
 
 void MacroActionEdit::HeaderInfoChanged(const QString &text)

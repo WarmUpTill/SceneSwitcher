@@ -35,7 +35,7 @@ private:
 	static std::map<std::string, MacroConditionInfo> _methods;
 };
 
-class MacroConditionEdit : public QWidget {
+class MacroConditionEdit : public MacroSegmentEdit {
 	Q_OBJECT
 
 public:
