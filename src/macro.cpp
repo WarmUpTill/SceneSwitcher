@@ -124,6 +124,24 @@ void Macro::SetName(const std::string &name)
 	SetHotkeysDesc();
 }
 
+void Macro::UpdateActionIndices()
+{
+	int idx = 0;
+	for (auto a : _actions) {
+		a->SetIndex(idx);
+		idx++;
+	}
+}
+
+void Macro::UpdateConditionIndices()
+{
+	int idx = 0;
+	for (auto c : _conditions) {
+		c->SetIndex(idx);
+		idx++;
+	}
+}
+
 bool Macro::Save(obs_data_t *obj)
 {
 	obs_data_set_string(obj, "name", _name.c_str());
@@ -238,6 +256,7 @@ bool Macro::Load(obs_data_t *obj)
 		root = false;
 	}
 	obs_data_array_release(conditions);
+	UpdateConditionIndices();
 
 	obs_data_array_t *actions = obs_data_get_array(obj, "actions");
 	count = obs_data_array_count(actions);
@@ -260,6 +279,7 @@ bool Macro::Load(obs_data_t *obj)
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(actions);
+	UpdateActionIndices();
 	return true;
 }
 
@@ -363,8 +383,26 @@ void Macro::SetHotkeysDesc()
 				   hotkeyDesc.toStdString().c_str());
 }
 
+bool MacroSegment::Save(obs_data_t *obj)
+{
+	obs_data_set_bool(obj, "collapsed", static_cast<int>(_collapsed));
+	return true;
+}
+
+bool MacroSegment::Load(obs_data_t *obj)
+{
+	_collapsed = obs_data_get_bool(obj, "collapsed");
+	return true;
+}
+
+std::string MacroSegment::GetShortDesc()
+{
+	return "";
+}
+
 bool MacroCondition::Save(obs_data_t *obj)
 {
+	MacroSegment::Save(obj);
 	obs_data_set_string(obj, "id", GetId().c_str());
 	obs_data_set_int(obj, "logic", static_cast<int>(_logic));
 	_duration.Save(obj);
@@ -373,14 +411,10 @@ bool MacroCondition::Save(obs_data_t *obj)
 
 bool MacroCondition::Load(obs_data_t *obj)
 {
+	MacroSegment::Load(obj);
 	_logic = static_cast<LogicType>(obs_data_get_int(obj, "logic"));
 	_duration.Load(obj);
 	return true;
-}
-
-std::string MacroCondition::GetShortDesc()
-{
-	return "";
 }
 
 void MacroCondition::SetDurationConstraint(const DurationConstraint &dur)
@@ -405,19 +439,15 @@ void MacroCondition::SetDuration(double seconds)
 
 bool MacroAction::Save(obs_data_t *obj)
 {
+	MacroSegment::Save(obj);
 	obs_data_set_string(obj, "id", GetId().c_str());
 	return true;
 }
 
 bool MacroAction::Load(obs_data_t *obj)
 {
-	UNUSED_PARAMETER(obj);
+	MacroSegment::Load(obj);
 	return true;
-}
-
-std::string MacroAction::GetShortDesc()
-{
-	return "";
 }
 
 void MacroAction::LogAction()
@@ -618,4 +648,31 @@ void MacroRefCondition::ResolveMacroRef()
 void MacroRefAction::ResolveMacroRef()
 {
 	_macro.UpdateRef();
+}
+
+MouseWheelWidgetAdjustmentGuard::MouseWheelWidgetAdjustmentGuard(QObject *parent)
+	: QObject(parent)
+{
+}
+
+bool MouseWheelWidgetAdjustmentGuard::eventFilter(QObject *o, QEvent *e)
+{
+	const QWidget *widget = static_cast<QWidget *>(o);
+	if (e->type() == QEvent::Wheel && widget && !widget->hasFocus()) {
+		e->ignore();
+		return true;
+	}
+
+	return QObject::eventFilter(o, e);
+}
+
+MacroSegmentEdit::MacroSegmentEdit(QWidget *parent) : QWidget(parent) {}
+
+void MacroSegmentEdit::SetFocusPolicyOfWidgets()
+{
+	QList<QWidget *> widgets = this->findChildren<QWidget *>();
+	for (auto w : widgets) {
+		w->setFocusPolicy(Qt::StrongFocus);
+		w->installEventFilter(new MouseWheelWidgetAdjustmentGuard(w));
+	}
 }

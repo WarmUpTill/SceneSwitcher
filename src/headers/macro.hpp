@@ -36,14 +36,27 @@ struct LogicTypeInfo {
 	std::string _name;
 };
 
-class MacroCondition {
+class MacroSegment {
 public:
-	virtual bool CheckCondition() = 0;
+	void SetIndex(int idx) { _idx = idx; }
+	int GetIndex() { return _idx; }
+	void SetCollapsed(bool collapsed) { _collapsed = collapsed; }
+	bool GetCollapsed() { return _collapsed; }
 	virtual bool Save(obs_data_t *obj) = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
 	virtual std::string GetShortDesc();
 	virtual std::string GetId() = 0;
 
+protected:
+	int _idx;
+	bool _collapsed = false;
+};
+
+class MacroCondition : public MacroSegment {
+public:
+	virtual bool CheckCondition() = 0;
+	virtual bool Save(obs_data_t *obj) = 0;
+	virtual bool Load(obs_data_t *obj) = 0;
 	LogicType GetLogicType() { return _logic; }
 	void SetLogicType(LogicType logic) { _logic = logic; }
 	static const std::map<LogicType, LogicTypeInfo> logicTypes;
@@ -61,13 +74,11 @@ private:
 	DurationConstraint _duration;
 };
 
-class MacroAction {
+class MacroAction : public MacroSegment {
 public:
 	virtual bool PerformAction() = 0;
 	virtual bool Save(obs_data_t *obj) = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
-	virtual std::string GetShortDesc();
-	virtual std::string GetId() = 0;
 	virtual void LogAction();
 };
 
@@ -89,6 +100,8 @@ public:
 	{
 		return _conditions;
 	}
+	void UpdateActionIndices();
+	void UpdateConditionIndices();
 	std::deque<std::shared_ptr<MacroAction>> &Actions() { return _actions; }
 
 	bool Save(obs_data_t *obj);
@@ -145,4 +158,24 @@ class MacroRefAction : public MacroAction {
 public:
 	void ResolveMacroRef();
 	MacroRef _macro;
+};
+
+// TODO: Rework macro condition and action edit to allow moving control
+// handling to MacroSegmentEdit
+class MacroSegmentEdit : public QWidget {
+	Q_OBJECT
+
+public:
+	MacroSegmentEdit(QWidget *parent = nullptr);
+	// Use this function to avoid accidental edits when scrolling through
+	// list of actions and conditions
+	void SetFocusPolicyOfWidgets();
+};
+
+class MouseWheelWidgetAdjustmentGuard : public QObject {
+public:
+	explicit MouseWheelWidgetAdjustmentGuard(QObject *parent);
+
+protected:
+	bool eventFilter(QObject *o, QEvent *e) override;
 };
