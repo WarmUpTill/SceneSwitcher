@@ -1,23 +1,29 @@
 #include "headers/macro-condition-edit.hpp"
-#include "headers/macro-condition-region.hpp"
+#include "headers/macro-condition-cursor.hpp"
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-const std::string MacroConditionRegion::id = "region";
+const std::string MacroConditionCursor::id = "cursor";
 
-bool MacroConditionRegion::_registered = MacroConditionFactory::Register(
-	MacroConditionRegion::id,
-	{MacroConditionRegion::Create, MacroConditionRegionEdit::Create,
-	 "AdvSceneSwitcher.condition.region"});
+bool MacroConditionCursor::_registered = MacroConditionFactory::Register(
+	MacroConditionCursor::id,
+	{MacroConditionCursor::Create, MacroConditionCursorEdit::Create,
+	 "AdvSceneSwitcher.condition.cursor"});
 
-bool MacroConditionRegion::CheckCondition()
+// TODO: Remove in future version - just added for backwards compatibility
+static const std::string idOld = "region";
+static bool oldRegisterd = MacroConditionFactory::Register(
+	idOld, {MacroConditionCursor::Create, MacroConditionCursorEdit::Create,
+		"AdvSceneSwitcher.condition.region"});
+
+bool MacroConditionCursor::CheckCondition()
 {
 	std::pair<int, int> cursorPos = getCursorPos();
 	return cursorPos.first >= _minX && cursorPos.second >= _minY &&
 	       cursorPos.first <= _maxX && cursorPos.second <= _maxY;
 }
 
-bool MacroConditionRegion::Save(obs_data_t *obj)
+bool MacroConditionCursor::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "minX", _minX);
@@ -27,7 +33,7 @@ bool MacroConditionRegion::Save(obs_data_t *obj)
 	return true;
 }
 
-bool MacroConditionRegion::Load(obs_data_t *obj)
+bool MacroConditionCursor::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_minX = obs_data_get_int(obj, "minX");
@@ -37,8 +43,8 @@ bool MacroConditionRegion::Load(obs_data_t *obj)
 	return true;
 }
 
-MacroConditionRegionEdit::MacroConditionRegionEdit(
-	QWidget *parent, std::shared_ptr<MacroConditionRegion> entryData)
+MacroConditionCursorEdit::MacroConditionCursorEdit(
+	QWidget *parent, std::shared_ptr<MacroConditionCursor> entryData)
 	: QWidget(parent)
 {
 	_minX = new QSpinBox();
@@ -78,7 +84,7 @@ MacroConditionRegionEdit::MacroConditionRegionEdit(
 		{"{{maxX}}", _maxX},
 		{"{{maxY}}", _maxY}};
 
-	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.region.entry"),
+	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.cursor.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
@@ -87,7 +93,7 @@ MacroConditionRegionEdit::MacroConditionRegionEdit(
 	_loading = false;
 }
 
-void MacroConditionRegionEdit::MinXChanged(int pos)
+void MacroConditionCursorEdit::MinXChanged(int pos)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -97,7 +103,7 @@ void MacroConditionRegionEdit::MinXChanged(int pos)
 	_entryData->_minX = pos;
 }
 
-void MacroConditionRegionEdit::MinYChanged(int pos)
+void MacroConditionCursorEdit::MinYChanged(int pos)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -107,7 +113,7 @@ void MacroConditionRegionEdit::MinYChanged(int pos)
 	_entryData->_minY = pos;
 }
 
-void MacroConditionRegionEdit::MaxXChanged(int pos)
+void MacroConditionCursorEdit::MaxXChanged(int pos)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -117,7 +123,7 @@ void MacroConditionRegionEdit::MaxXChanged(int pos)
 	_entryData->_maxX = pos;
 }
 
-void MacroConditionRegionEdit::MaxYChanged(int pos)
+void MacroConditionCursorEdit::MaxYChanged(int pos)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -127,7 +133,7 @@ void MacroConditionRegionEdit::MaxYChanged(int pos)
 	_entryData->_maxY = pos;
 }
 
-void MacroConditionRegionEdit::UpdateEntryData()
+void MacroConditionCursorEdit::UpdateEntryData()
 {
 	if (!_entryData) {
 		return;
