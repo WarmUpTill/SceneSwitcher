@@ -101,6 +101,8 @@ struct SwitcherData {
 	std::string currentTitle;
 
 	std::deque<ScreenRegionSwitch> screenRegionSwitches;
+	std::pair<int, int> lastCursorPos = {0, 0};
+	bool cursorPosChanged = false;
 
 	std::vector<std::string> ignoreWindowsSwitches;
 

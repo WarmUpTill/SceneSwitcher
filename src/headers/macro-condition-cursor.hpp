@@ -3,6 +3,11 @@
 #include <QWidget>
 #include <QComboBox>
 
+enum class CursorCondition {
+	REGION,
+	MOVING,
+};
+
 class MacroConditionCursor : public MacroCondition {
 public:
 	bool CheckCondition();
@@ -14,6 +19,7 @@ public:
 		return std::make_shared<MacroConditionCursor>();
 	}
 
+	CursorCondition _condition = CursorCondition::REGION;
 	int _minX = 0, _minY = 0, _maxX = 0, _maxY = 0;
 
 private:
@@ -38,6 +44,7 @@ public:
 	}
 
 private slots:
+	void ConditionChanged(int cond);
 	void MinXChanged(int pos);
 	void MinYChanged(int pos);
 	void MaxXChanged(int pos);
@@ -48,8 +55,10 @@ protected:
 	QSpinBox *_minY;
 	QSpinBox *_maxX;
 	QSpinBox *_maxY;
+	QComboBox *_conditions;
 	std::shared_ptr<MacroConditionCursor> _entryData;
 
 private:
+	void SetRegionSelectionVisible(bool);
 	bool _loading = true;
 };

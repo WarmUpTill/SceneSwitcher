@@ -277,6 +277,12 @@ void SwitcherData::setPreconditions()
 		}
 	}
 	currentTitle = title;
+
+	// Cursor
+	std::pair<int, int> cursorPos = getCursorPos();
+	cursorPosChanged = cursorPos.first != switcher->lastCursorPos.first ||
+			   cursorPos.second != switcher->lastCursorPos.second;
+	lastCursorPos = getCursorPos();
 }
 
 bool SwitcherData::checkForMatch(OBSWeakSource &scene,
