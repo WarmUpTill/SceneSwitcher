@@ -50,6 +50,7 @@ private slots:
 	void MaxXChanged(int pos);
 	void MaxYChanged(int pos);
 	void UpdateCursorPos();
+	void ToggleFrame();
 
 protected:
 	QSpinBox *_minX;
@@ -57,12 +58,15 @@ protected:
 	QSpinBox *_maxX;
 	QSpinBox *_maxY;
 	QComboBox *_conditions;
+	QPushButton *_frameToggle;
 	QLabel *_xPos;
 	QLabel *_yPos;
 	std::shared_ptr<MacroConditionCursor> _entryData;
 
 private:
 	void SetRegionSelectionVisible(bool);
+	void SetupFrame();
 	QTimer _timer;
+	QFrame _frame;
 	bool _loading = true;
 };

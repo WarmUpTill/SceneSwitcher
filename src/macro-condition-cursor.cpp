@@ -77,6 +77,8 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 	_minY = new QSpinBox();
 	_maxX = new QSpinBox();
 	_maxY = new QSpinBox();
+	_frameToggle = new QPushButton(
+		obs_module_text("AdvSceneSwitcher.condition.cursor.showFrame"));
 	_xPos = new QLabel("-");
 	_yPos = new QLabel("-");
 
@@ -107,6 +109,8 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 			 SLOT(MaxXChanged(int)));
 	QWidget::connect(_maxY, SIGNAL(valueChanged(int)), this,
 			 SLOT(MaxYChanged(int)));
+	QWidget::connect(_frameToggle, SIGNAL(clicked()), this,
+			 SLOT(ToggleFrame()));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{conditions}}", _conditions},
@@ -116,6 +120,7 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 		{"{{maxY}}", _maxY},
 		{"{{xPos}}", _xPos},
 		{"{{yPos}}", _yPos},
+		{"{{toggleFrameButton}}", _frameToggle},
 	};
 	QHBoxLayout *line1 = new QHBoxLayout;
 	placeWidgets(obs_module_text(
@@ -159,6 +164,7 @@ void MacroConditionCursorEdit::MinXChanged(int pos)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_minX = pos;
+	SetupFrame();
 }
 
 void MacroConditionCursorEdit::MinYChanged(int pos)
@@ -169,6 +175,7 @@ void MacroConditionCursorEdit::MinYChanged(int pos)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_minY = pos;
+	SetupFrame();
 }
 
 void MacroConditionCursorEdit::MaxXChanged(int pos)
@@ -179,6 +186,7 @@ void MacroConditionCursorEdit::MaxXChanged(int pos)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_maxX = pos;
+	SetupFrame();
 }
 
 void MacroConditionCursorEdit::MaxYChanged(int pos)
@@ -189,6 +197,7 @@ void MacroConditionCursorEdit::MaxYChanged(int pos)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_maxY = pos;
+	SetupFrame();
 }
 
 void MacroConditionCursorEdit::UpdateCursorPos()
@@ -198,14 +207,48 @@ void MacroConditionCursorEdit::UpdateCursorPos()
 	_yPos->setText(QString::number(position.second));
 }
 
+void MacroConditionCursorEdit::ToggleFrame()
+{
+	SetupFrame();
+	if (_frame.isVisible()) {
+		_frameToggle->setText(obs_module_text(
+			"AdvSceneSwitcher.condition.cursor.showFrame"));
+		_frame.hide();
+	} else {
+		_frameToggle->setText(obs_module_text(
+			"AdvSceneSwitcher.condition.cursor.hideFrame"));
+		_frame.show();
+	}
+}
+
 void MacroConditionCursorEdit::SetRegionSelectionVisible(bool visible)
 {
 	_minX->setVisible(visible);
 	_minY->setVisible(visible);
 	_maxX->setVisible(visible);
 	_maxY->setVisible(visible);
+	_frameToggle->setVisible(visible);
+	if (_frame.isVisible()) {
+		ToggleFrame();
+	}
 
 	adjustSize();
+}
+
+void MacroConditionCursorEdit::SetupFrame()
+{
+	_frame.setFrameStyle(QFrame::Box | QFrame::Plain);
+	_frame.setWindowFlags(Qt::FramelessWindowHint | Qt::Tool |
+			      Qt::WindowTransparentForInput |
+			      Qt::WindowDoesNotAcceptFocus |
+			      Qt::WindowStaysOnTopHint);
+	_frame.setAttribute(Qt::WA_TranslucentBackground, true);
+
+	if (_entryData) {
+		_frame.setGeometry(_entryData->_minX, _entryData->_minY,
+				   _entryData->_maxX - _entryData->_minX,
+				   _entryData->_maxY - _entryData->_minY);
+	}
 }
 
 void MacroConditionCursorEdit::UpdateEntryData()
