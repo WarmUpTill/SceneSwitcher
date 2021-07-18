@@ -77,6 +77,8 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 	_minY = new QSpinBox();
 	_maxX = new QSpinBox();
 	_maxY = new QSpinBox();
+	_xPos = new QLabel("-");
+	_yPos = new QLabel("-");
 
 	populateConditionSelection(_conditions);
 
@@ -106,18 +108,31 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 	QWidget::connect(_maxY, SIGNAL(valueChanged(int)), this,
 			 SLOT(MaxYChanged(int)));
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
-
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{conditions}}", _conditions},
 		{"{{minX}}", _minX},
 		{"{{minY}}", _minY},
 		{"{{maxX}}", _maxX},
-		{"{{maxY}}", _maxY}};
-
-	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.cursor.entry"),
-		     mainLayout, widgetPlaceholders);
+		{"{{maxY}}", _maxY},
+		{"{{xPos}}", _xPos},
+		{"{{yPos}}", _yPos},
+	};
+	QHBoxLayout *line1 = new QHBoxLayout;
+	placeWidgets(obs_module_text(
+			     "AdvSceneSwitcher.condition.cursor.entry.line1"),
+		     line1, widgetPlaceholders);
+	QHBoxLayout *line2 = new QHBoxLayout;
+	placeWidgets(obs_module_text(
+			     "AdvSceneSwitcher.condition.cursor.entry.line2"),
+		     line2, widgetPlaceholders);
+	QVBoxLayout *mainLayout = new QVBoxLayout;
+	mainLayout->addLayout(line1);
+	mainLayout->addLayout(line2);
 	setLayout(mainLayout);
+
+	connect(&_timer, &QTimer::timeout, this,
+		&MacroConditionCursorEdit::UpdateCursorPos);
+	_timer.start(1000);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -174,6 +189,13 @@ void MacroConditionCursorEdit::MaxYChanged(int pos)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_maxY = pos;
+}
+
+void MacroConditionCursorEdit::UpdateCursorPos()
+{
+	std::pair<int, int> position = getCursorPos();
+	_xPos->setText(QString::number(position.first));
+	_yPos->setText(QString::number(position.second));
 }
 
 void MacroConditionCursorEdit::SetRegionSelectionVisible(bool visible)
