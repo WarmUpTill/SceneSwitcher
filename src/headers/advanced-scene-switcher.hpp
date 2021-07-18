@@ -115,8 +115,14 @@ public slots:
 	void on_conditionRemove_clicked();
 	void on_actionAdd_clicked();
 	void on_actionRemove_clicked();
-	void showMacroContextMenu(const QPoint &);
-	void copyMacro();
+	void ShowMacroContextMenu(const QPoint &);
+	void ShowMacroActionsContextMenu(const QPoint &);
+	void ShowMacroConditionsContextMenu(const QPoint &);
+	void CopyMacro();
+	void ExpandAllActions();
+	void ExpandAllConditions();
+	void CollapseAllActions();
+	void CollapseAllConditions();
 	void AddMacroAction(int idx);
 	void RemoveMacroAction(int idx);
 	void MoveMacroActionUp(int idx);
