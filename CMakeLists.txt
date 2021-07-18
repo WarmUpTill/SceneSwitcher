@@ -182,6 +182,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-action-wait.hpp
     src/headers/macro-condition-edit.hpp
     src/headers/macro-condition-audio.hpp
+    src/headers/macro-condition-cursor.hpp
     src/headers/macro-condition-date.hpp
     src/headers/macro-condition-file.hpp
     src/headers/macro-condition-filter.hpp
@@ -192,7 +193,6 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-condition-plugin-state.hpp
     src/headers/macro-condition-process.hpp
     src/headers/macro-condition-recording.hpp
-    src/headers/macro-condition-region.hpp
     src/headers/macro-condition-replay-buffer.hpp
     src/headers/macro-condition-scene-order.hpp
     src/headers/macro-condition-scene.hpp
@@ -262,6 +262,7 @@ set(advanced-scene-switcher_SOURCES
     src/macro-action-wait.cpp
     src/macro-condition-edit.cpp
     src/macro-condition-audio.cpp
+    src/macro-condition-cursor.cpp
     src/macro-condition-date.cpp
     src/macro-condition-file.cpp
     src/macro-condition-filter.cpp
@@ -272,7 +273,6 @@ set(advanced-scene-switcher_SOURCES
     src/macro-condition-plugin-state.cpp
     src/macro-condition-process.cpp
     src/macro-condition-recording.cpp
-    src/macro-condition-region.cpp
     src/macro-condition-replay-buffer.cpp
     src/macro-condition-scene-order.cpp
     src/macro-condition-scene.cpp
