@@ -34,7 +34,7 @@ private:
 	static std::map<std::string, MacroActionInfo> _methods;
 };
 
-class MacroActionEdit : public QWidget {
+class MacroActionEdit : public MacroSegmentEdit {
 	Q_OBJECT
 
 public:

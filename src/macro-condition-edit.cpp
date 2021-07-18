@@ -88,7 +88,7 @@ static inline void populateConditionSelection(QComboBox *list)
 MacroConditionEdit::MacroConditionEdit(
 	QWidget *parent, std::shared_ptr<MacroCondition> *entryData,
 	const std::string &id, bool root)
-	: QWidget(parent), _isRoot(root), _entryData(entryData)
+	: MacroSegmentEdit(parent), _isRoot(root), _entryData(entryData)
 {
 	_logicSelection = new QComboBox();
 	_conditionSelection = new QComboBox();
@@ -164,7 +164,6 @@ void MacroConditionEdit::leaveEvent(QEvent *)
 {
 	_controls->Show(false);
 }
-
 void MacroConditionEdit::LogicSelectionChanged(int idx)
 {
 	if (_loading || !_entryData) {
@@ -216,6 +215,7 @@ void MacroConditionEdit::UpdateEntryData(const std::string &id)
 	_dur->setVisible(MacroConditionFactory::UsesDurationConstraint(id));
 	auto constraint = (*_entryData)->GetDurationConstraint();
 	_dur->SetValue(constraint);
+	SetFocusPolicyOfWidgets();
 }
 
 void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
@@ -241,6 +241,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 			 this, SLOT(HeaderInfoChanged(const QString &)));
 	_section->SetContent(widget, false);
 	_dur->setVisible(MacroConditionFactory::UsesDurationConstraint(id));
+	SetFocusPolicyOfWidgets();
 }
 
 void MacroConditionEdit::DurationChanged(double seconds)

@@ -159,3 +159,23 @@ public:
 	void ResolveMacroRef();
 	MacroRef _macro;
 };
+
+// TODO: Rework macro condition and action edit to allow moving control
+// handling to MacroSegmentEdit
+class MacroSegmentEdit : public QWidget {
+	Q_OBJECT
+
+public:
+	MacroSegmentEdit(QWidget *parent = nullptr);
+	// Use this function to avoid accidental edits when scrolling through
+	// list of actions and conditions
+	void SetFocusPolicyOfWidgets();
+};
+
+class MouseWheelWidgetAdjustmentGuard : public QObject {
+public:
+	explicit MouseWheelWidgetAdjustmentGuard(QObject *parent);
+
+protected:
+	bool eventFilter(QObject *o, QEvent *e) override;
+};
