@@ -3,6 +3,7 @@
 #include "hotkey.hpp"
 
 #include <QCheckBox>
+#include <QHBoxLayout>
 
 class MacroActionHotkey : public MacroAction {
 public:

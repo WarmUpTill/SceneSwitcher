@@ -1,7 +1,11 @@
 #pragma once
 #include "macro.hpp"
-#include <QWidget>
+
+#include <QSpinBox>
 #include <QComboBox>
+#include <QPushButton>
+#include <QTimer>
+#include <QFrame>
 
 enum class CursorCondition {
 	REGION,

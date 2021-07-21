@@ -1,9 +1,10 @@
 #pragma once
 #include "macro.hpp"
-#include <QWidget>
-#include <QComboBox>
-#include <QTimer>
 #include "duration-control.hpp"
+
+#include <QCheckBox>
+#include <QPushButton>
+#include <QTimer>
 
 class MacroConditionTimer : public MacroCondition {
 public:

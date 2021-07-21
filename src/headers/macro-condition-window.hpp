@@ -1,7 +1,8 @@
 #pragma once
 #include "macro.hpp"
-#include <QWidget>
+
 #include <QComboBox>
+#include <QCheckBox>
 
 class MacroConditionWindow : public MacroCondition {
 public:

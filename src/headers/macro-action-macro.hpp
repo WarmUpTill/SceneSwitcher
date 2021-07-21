@@ -1,7 +1,8 @@
 #pragma once
-#include <QDoubleSpinBox>
 #include "macro-action-edit.hpp"
 #include "macro-selection.hpp"
+
+#include <QHBoxLayout>
 
 enum class PerformMacroAction {
 	PAUSE,

@@ -1,7 +1,8 @@
 #pragma once
-#include <QDoubleSpinBox>
-#include <QLabel>
 #include "macro-action-edit.hpp"
+
+#include <QComboBox>
+#include <QHBoxLayout>
 
 enum class RecordAction {
 	STOP,

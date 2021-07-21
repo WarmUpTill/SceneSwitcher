@@ -1,6 +1,8 @@
 #pragma once
-#include <QDoubleSpinBox>
 #include "macro-action-edit.hpp"
+
+#include <QComboBox>
+#include <QHBoxLayout>
 
 enum class VCamAction {
 	STOP,

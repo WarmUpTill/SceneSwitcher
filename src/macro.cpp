@@ -7,6 +7,7 @@
 #include <limits>
 #undef max
 #include <chrono>
+#include <unordered_map>
 
 constexpr int perfLogThreshold = 300;
 

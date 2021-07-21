@@ -1,7 +1,9 @@
 #pragma once
-#include <QDoubleSpinBox>
 #include "macro-action-edit.hpp"
 #include "duration-control.hpp"
+
+#include <QDoubleSpinBox>
+#include <QHBoxLayout>
 
 enum class WaitType {
 	FIXED,

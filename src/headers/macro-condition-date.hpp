@@ -1,9 +1,9 @@
 #pragma once
 #include "macro.hpp"
-#include <QWidget>
-#include <QComboBox>
-#include <QDateTimeEdit>
 #include "duration-control.hpp"
+
+#include <QCheckBox>
+#include <QDateTimeEdit>
 
 class MacroConditionDate : public MacroCondition {
 public:

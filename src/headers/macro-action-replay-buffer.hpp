@@ -1,7 +1,8 @@
 #pragma once
-#include <QDoubleSpinBox>
 #include "macro-action-edit.hpp"
 #include "duration-control.hpp"
+
+#include <QHBoxLayout>
 
 enum class ReplayBufferAction {
 	STOP,

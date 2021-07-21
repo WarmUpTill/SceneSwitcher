@@ -1,5 +1,6 @@
 #pragma once
 #include <QSpinBox>
+#include <QHBoxLayout>
 #include "macro-action-edit.hpp"
 
 enum class AudioAction {

@@ -1,6 +1,8 @@
 #pragma once
-#include <QDoubleSpinBox>
 #include "macro-action-edit.hpp"
+
+#include <QDoubleSpinBox>
+#include <QHBoxLayout>
 
 enum class PluginStateAction {
 	STOP,
