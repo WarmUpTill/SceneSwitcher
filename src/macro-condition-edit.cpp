@@ -1,5 +1,9 @@
+#include "headers/advanced-scene-switcher.hpp"
 #include "headers/macro-condition-edit.hpp"
 #include "headers/macro-condition-scene.hpp"
+#include "headers/section.hpp"
+#include "headers/macro-controls.hpp"
+#include "headers/utility.hpp"
 
 std::map<std::string, MacroConditionInfo> MacroConditionFactory::_methods;
 
@@ -88,19 +92,14 @@ static inline void populateConditionSelection(QComboBox *list)
 MacroConditionEdit::MacroConditionEdit(
 	QWidget *parent, std::shared_ptr<MacroCondition> *entryData,
 	const std::string &id, bool root)
-	: MacroSegmentEdit(parent), _isRoot(root), _entryData(entryData)
+	: MacroSegmentEdit(parent), _entryData(entryData), _isRoot(root)
 {
 	_logicSelection = new QComboBox();
 	_conditionSelection = new QComboBox();
-	_section = new Section(300);
-	_headerInfo = new QLabel();
 	_dur = new DurationConstraintEdit();
-	_controls = new MacroEntryControls();
 
 	QWidget::connect(_logicSelection, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(LogicSelectionChanged(int)));
-	QWidget::connect(_section, &Section::Collapsed, this,
-			 &MacroConditionEdit::Collapsed);
 	QWidget::connect(_conditionSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ConditionSelectionChanged(const QString &)));
@@ -111,32 +110,6 @@ MacroConditionEdit::MacroConditionEdit(
 	QWidget::connect(_dur, SIGNAL(ConditionChanged(DurationCondition)),
 			 this,
 			 SLOT(DurationConditionChanged(DurationCondition)));
-
-	// Macro signals
-	QWidget::connect(parent, SIGNAL(MacroAdded(const QString &)), this,
-			 SIGNAL(MacroAdded(const QString &)));
-	QWidget::connect(parent, SIGNAL(MacroRemoved(const QString &)), this,
-			 SIGNAL(MacroRemoved(const QString &)));
-	QWidget::connect(parent,
-			 SIGNAL(MacroRenamed(const QString &, const QString)),
-			 this,
-			 SIGNAL(MacroRenamed(const QString &, const QString)));
-
-	// Scene group signals
-	QWidget::connect(parent, SIGNAL(SceneGroupAdded(const QString &)), this,
-			 SIGNAL(SceneGroupAdded(const QString &)));
-	QWidget::connect(parent, SIGNAL(SceneGroupRemoved(const QString &)),
-			 this, SIGNAL(SceneGroupRemoved(const QString &)));
-	QWidget::connect(
-		parent,
-		SIGNAL(SceneGroupRenamed(const QString &, const QString)), this,
-		SIGNAL(SceneGroupRenamed(const QString &, const QString)));
-
-	// Control signals
-	QWidget::connect(_controls, SIGNAL(Add()), this, SLOT(Add()));
-	QWidget::connect(_controls, SIGNAL(Remove()), this, SLOT(Remove()));
-	QWidget::connect(_controls, SIGNAL(Up()), this, SLOT(Up()));
-	QWidget::connect(_controls, SIGNAL(Down()), this, SLOT(Down()));
 
 	populateLogicSelection(_logicSelection, root);
 	populateConditionSelection(_conditionSelection);
@@ -155,15 +128,6 @@ MacroConditionEdit::MacroConditionEdit(
 	_loading = false;
 }
 
-void MacroConditionEdit::enterEvent(QEvent *)
-{
-	_controls->Show(true);
-}
-
-void MacroConditionEdit::leaveEvent(QEvent *)
-{
-	_controls->Show(false);
-}
 void MacroConditionEdit::LogicSelectionChanged(int idx)
 {
 	if (_loading || !_entryData) {
@@ -274,46 +238,9 @@ void MacroConditionEdit::DurationUnitChanged(DurationUnit unit)
 	(*_entryData)->SetDurationUnit(unit);
 }
 
-void MacroConditionEdit::HeaderInfoChanged(const QString &text)
+MacroSegment *MacroConditionEdit::Data()
 {
-	_headerInfo->setVisible(!text.isEmpty());
-	_headerInfo->setText(text);
-}
-
-void MacroConditionEdit::Add()
-{
-	if (_entryData) {
-		// Insert after current entry
-		emit AddAt((*_entryData)->GetIndex() + 1);
-	}
-}
-
-void MacroConditionEdit::Remove()
-{
-	if (_entryData) {
-		emit RemoveAt((*_entryData)->GetIndex());
-	}
-}
-
-void MacroConditionEdit::Up()
-{
-	if (_entryData) {
-		emit UpAt((*_entryData)->GetIndex());
-	}
-}
-
-void MacroConditionEdit::Down()
-{
-	if (_entryData) {
-		emit DownAt((*_entryData)->GetIndex());
-	}
-}
-
-void MacroConditionEdit::Collapsed(bool collapsed)
-{
-	if (_entryData) {
-		(*_entryData)->SetCollapsed(collapsed);
-	}
+	return _entryData->get();
 }
 
 void AdvSceneSwitcher::AddMacroCondition(int idx)
@@ -323,7 +250,7 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 		return;
 	}
 
-	if (idx < 0 || idx > macro->Conditions().size()) {
+	if (idx < 0 || idx > (int)macro->Conditions().size()) {
 		return;
 	}
 
@@ -365,7 +292,7 @@ void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 		return;
 	}
 
-	if (idx < 0 || idx >= macro->Conditions().size()) {
+	if (idx < 0 || idx >= (int)macro->Conditions().size()) {
 		return;
 	}
 
@@ -444,7 +371,7 @@ void AdvSceneSwitcher::MoveMacroConditionUp(int idx)
 		return;
 	}
 
-	if (idx < 1 || idx >= macro->Conditions().size()) {
+	if (idx < 1 || idx >= (int)macro->Conditions().size()) {
 		return;
 	}
 
@@ -458,7 +385,7 @@ void AdvSceneSwitcher::MoveMacroConditionDown(int idx)
 		return;
 	}
 
-	if (idx < 0 || idx >= macro->Conditions().size() - 1) {
+	if (idx < 0 || idx >= (int)macro->Conditions().size() - 1) {
 		return;
 	}
 

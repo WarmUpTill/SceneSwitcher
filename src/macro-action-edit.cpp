@@ -1,7 +1,9 @@
+#include "headers/advanced-scene-switcher.hpp"
 #include "headers/macro-action-edit.hpp"
 #include "headers/macro-action-scene-switch.hpp"
+#include "headers/section.hpp"
+#include "headers/macro-controls.hpp"
 #include "headers/utility.hpp"
-#include "headers/advanced-scene-switcher.hpp"
 
 std::map<std::string, MacroActionInfo> MacroActionFactory::_methods;
 
@@ -63,40 +65,10 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	: MacroSegmentEdit(parent), _entryData(entryData)
 {
 	_actionSelection = new QComboBox();
-	_section = new Section(300);
-	_headerInfo = new QLabel();
-	_controls = new MacroEntryControls();
 
 	QWidget::connect(_actionSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ActionSelectionChanged(const QString &)));
-	QWidget::connect(_section, &Section::Collapsed, this,
-			 &MacroActionEdit::Collapsed);
-	// Macro signals
-	QWidget::connect(parent, SIGNAL(MacroAdded(const QString &)), this,
-			 SIGNAL(MacroAdded(const QString &)));
-	QWidget::connect(parent, SIGNAL(MacroRemoved(const QString &)), this,
-			 SIGNAL(MacroRemoved(const QString &)));
-	QWidget::connect(parent,
-			 SIGNAL(MacroRenamed(const QString &, const QString)),
-			 this,
-			 SIGNAL(MacroRenamed(const QString &, const QString)));
-
-	// Scene group signals
-	QWidget::connect(parent, SIGNAL(SceneGroupAdded(const QString &)), this,
-			 SIGNAL(SceneGroupAdded(const QString &)));
-	QWidget::connect(parent, SIGNAL(SceneGroupRemoved(const QString &)),
-			 this, SIGNAL(SceneGroupRemoved(const QString &)));
-	QWidget::connect(
-		parent,
-		SIGNAL(SceneGroupRenamed(const QString &, const QString)), this,
-		SIGNAL(SceneGroupRenamed(const QString &, const QString)));
-
-	// Control signals
-	QWidget::connect(_controls, SIGNAL(Add()), this, SLOT(Add()));
-	QWidget::connect(_controls, SIGNAL(Remove()), this, SLOT(Remove()));
-	QWidget::connect(_controls, SIGNAL(Up()), this, SLOT(Up()));
-	QWidget::connect(_controls, SIGNAL(Down()), this, SLOT(Down()));
 
 	populateActionSelection(_actionSelection);
 
@@ -112,16 +84,6 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	UpdateEntryData(id);
 
 	_loading = false;
-}
-
-void MacroActionEdit::enterEvent(QEvent *)
-{
-	_controls->Show(true);
-}
-
-void MacroActionEdit::leaveEvent(QEvent *)
-{
-	_controls->Show(false);
 }
 
 void MacroActionEdit::ActionSelectionChanged(const QString &text)
@@ -156,46 +118,9 @@ void MacroActionEdit::UpdateEntryData(const std::string &id)
 	SetFocusPolicyOfWidgets();
 }
 
-void MacroActionEdit::HeaderInfoChanged(const QString &text)
+MacroSegment *MacroActionEdit::Data()
 {
-	_headerInfo->setVisible(!text.isEmpty());
-	_headerInfo->setText(text);
-}
-
-void MacroActionEdit::Add()
-{
-	if (_entryData) {
-		// Insert after current entry
-		emit AddAt((*_entryData)->GetIndex() + 1);
-	}
-}
-
-void MacroActionEdit::Remove()
-{
-	if (_entryData) {
-		emit RemoveAt((*_entryData)->GetIndex());
-	}
-}
-
-void MacroActionEdit::Up()
-{
-	if (_entryData) {
-		emit UpAt((*_entryData)->GetIndex());
-	}
-}
-
-void MacroActionEdit::Down()
-{
-	if (_entryData) {
-		emit DownAt((*_entryData)->GetIndex());
-	}
-}
-
-void MacroActionEdit::Collapsed(bool collapsed)
-{
-	if (_entryData) {
-		(*_entryData)->SetCollapsed(collapsed);
-	}
+	return _entryData->get();
 }
 
 void AdvSceneSwitcher::AddMacroAction(int idx)
@@ -205,7 +130,7 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 		return;
 	}
 
-	if (idx < 0 || idx > macro->Actions().size()) {
+	if (idx < 0 || idx > (int)macro->Actions().size()) {
 		return;
 	}
 
@@ -243,7 +168,7 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 		return;
 	}
 
-	if (idx < 0 || idx >= macro->Actions().size()) {
+	if (idx < 0 || idx >= (int)macro->Actions().size()) {
 		return;
 	}
 
@@ -303,7 +228,7 @@ void AdvSceneSwitcher::MoveMacroActionUp(int idx)
 		return;
 	}
 
-	if (idx < 1 || idx >= macro->Actions().size()) {
+	if (idx < 1 || idx >= (int)macro->Actions().size()) {
 		return;
 	}
 
@@ -317,7 +242,7 @@ void AdvSceneSwitcher::MoveMacroActionDown(int idx)
 		return;
 	}
 
-	if (idx < 0 || idx >= macro->Actions().size() - 1) {
+	if (idx < 0 || idx >= (int)macro->Actions().size() - 1) {
 		return;
 	}
 

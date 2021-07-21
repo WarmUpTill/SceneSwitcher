@@ -1,4 +1,5 @@
 #pragma once
+#include "macro-segment.hpp"
 #include "duration-control.hpp"
 
 #include <string>
@@ -34,22 +35,6 @@ static inline bool isRootLogicType(LogicType l)
 
 struct LogicTypeInfo {
 	std::string _name;
-};
-
-class MacroSegment {
-public:
-	void SetIndex(int idx) { _idx = idx; }
-	int GetIndex() { return _idx; }
-	void SetCollapsed(bool collapsed) { _collapsed = collapsed; }
-	bool GetCollapsed() { return _collapsed; }
-	virtual bool Save(obs_data_t *obj) = 0;
-	virtual bool Load(obs_data_t *obj) = 0;
-	virtual std::string GetShortDesc();
-	virtual std::string GetId() = 0;
-
-protected:
-	int _idx;
-	bool _collapsed = false;
 };
 
 class MacroCondition : public MacroSegment {
@@ -158,24 +143,4 @@ class MacroRefAction : public MacroAction {
 public:
 	void ResolveMacroRef();
 	MacroRef _macro;
-};
-
-// TODO: Rework macro condition and action edit to allow moving control
-// handling to MacroSegmentEdit
-class MacroSegmentEdit : public QWidget {
-	Q_OBJECT
-
-public:
-	MacroSegmentEdit(QWidget *parent = nullptr);
-	// Use this function to avoid accidental edits when scrolling through
-	// list of actions and conditions
-	void SetFocusPolicyOfWidgets();
-};
-
-class MouseWheelWidgetAdjustmentGuard : public QObject {
-public:
-	explicit MouseWheelWidgetAdjustmentGuard(QObject *parent);
-
-protected:
-	bool eventFilter(QObject *o, QEvent *e) override;
 };
