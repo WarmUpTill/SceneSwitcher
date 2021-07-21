@@ -1,8 +1,8 @@
 #include "headers/macro.hpp"
-
 #include "headers/macro-action-edit.hpp"
 #include "headers/macro-condition-edit.hpp"
 #include "headers/macro-action-scene-switch.hpp"
+#include "headers/advanced-scene-switcher.hpp"
 
 #include <limits>
 #undef max
@@ -383,23 +383,6 @@ void Macro::SetHotkeysDesc()
 				   hotkeyDesc.toStdString().c_str());
 }
 
-bool MacroSegment::Save(obs_data_t *obj)
-{
-	obs_data_set_bool(obj, "collapsed", static_cast<int>(_collapsed));
-	return true;
-}
-
-bool MacroSegment::Load(obs_data_t *obj)
-{
-	_collapsed = obs_data_get_bool(obj, "collapsed");
-	return true;
-}
-
-std::string MacroSegment::GetShortDesc()
-{
-	return "";
-}
-
 bool MacroCondition::Save(obs_data_t *obj)
 {
 	MacroSegment::Save(obj);
@@ -648,31 +631,4 @@ void MacroRefCondition::ResolveMacroRef()
 void MacroRefAction::ResolveMacroRef()
 {
 	_macro.UpdateRef();
-}
-
-MouseWheelWidgetAdjustmentGuard::MouseWheelWidgetAdjustmentGuard(QObject *parent)
-	: QObject(parent)
-{
-}
-
-bool MouseWheelWidgetAdjustmentGuard::eventFilter(QObject *o, QEvent *e)
-{
-	const QWidget *widget = static_cast<QWidget *>(o);
-	if (e->type() == QEvent::Wheel && widget && !widget->hasFocus()) {
-		e->ignore();
-		return true;
-	}
-
-	return QObject::eventFilter(o, e);
-}
-
-MacroSegmentEdit::MacroSegmentEdit(QWidget *parent) : QWidget(parent) {}
-
-void MacroSegmentEdit::SetFocusPolicyOfWidgets()
-{
-	QList<QWidget *> widgets = this->findChildren<QWidget *>();
-	for (auto w : widgets) {
-		w->setFocusPolicy(Qt::StrongFocus);
-		w->installEventFilter(new MouseWheelWidgetAdjustmentGuard(w));
-	}
 }
