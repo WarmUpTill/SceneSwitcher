@@ -1,7 +1,10 @@
 #pragma once
 #include "macro.hpp"
-#include <QWidget>
+
 #include <QComboBox>
+#include <QPushButton>
+#include <QPlainTextEdit>
+#include <QCheckBox>
 
 enum class SourceCondition {
 	ACTIVE,

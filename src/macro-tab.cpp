@@ -3,6 +3,7 @@
 #include "headers/macro-condition-edit.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/name-dialog.hpp"
+#include "headers/utility.hpp"
 
 #include <QMenu>
 

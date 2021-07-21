@@ -1,9 +1,11 @@
 #pragma once
 #include "macro.hpp"
 #include "macro-selection.hpp"
-#include <QWidget>
+
+#include <QComboBox>
 #include <QSpinBox>
-#include <QLabel>
+#include <QPushButton>
+#include <QHBoxLayout>
 #include <QTimer>
 
 enum class MacroConditionMacroType {

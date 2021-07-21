@@ -1,7 +1,10 @@
 #pragma once
-#include <QDoubleSpinBox>
 #include "macro-action-edit.hpp"
 #include "duration-control.hpp"
+
+#include <QDoubleSpinBox>
+#include <QComboBox>
+#include <QHBoxLayout>
 
 enum class StreamAction {
 	STOP,

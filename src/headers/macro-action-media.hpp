@@ -1,6 +1,8 @@
 #pragma once
-#include <QSpinBox>
 #include "macro-action-edit.hpp"
+
+#include <QSpinBox>
+#include <QHBoxLayout>
 
 enum class MediaAction {
 	PLAY,
