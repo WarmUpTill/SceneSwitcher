@@ -203,7 +203,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-condition-virtual-cam.hpp
     src/headers/macro-condition-window.hpp
     src/headers/macro.hpp
-	src/headers/macro-entry-controls.hpp
+    src/headers/macro-controls.hpp
     src/headers/macro-segment.hpp
     src/headers/macro-selection.hpp
     src/headers/curl-helper.hpp
@@ -285,7 +285,7 @@ set(advanced-scene-switcher_SOURCES
     src/macro-condition-virtual-cam.cpp
     src/macro-condition-window.cpp
     src/macro.cpp
-	src/macro-entry-controls.cpp
+    src/macro-controls.cpp
     src/macro-segment.cpp
     src/macro-selection.cpp
     src/macro-tab.cpp
