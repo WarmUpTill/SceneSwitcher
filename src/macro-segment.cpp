@@ -1,5 +1,5 @@
 #include "headers/macro-segment.hpp"
-#include "headers/macro-entry-controls.hpp"
+#include "headers/macro-controls.hpp"
 #include "headers/section.hpp"
 
 #include <obs.hpp>

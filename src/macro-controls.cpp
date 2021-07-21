@@ -1,4 +1,4 @@
-#include "headers/macro-entry-controls.hpp"
+#include "headers/macro-controls.hpp"
 
 MacroEntryControls::MacroEntryControls(const int animationDuration,
 				       QWidget *parent)
