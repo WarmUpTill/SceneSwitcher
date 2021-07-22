@@ -4,7 +4,9 @@ You have the option to ...
 - either add the plugin to the OBS source tree directly and build the plugin while building OBS itself. (**in tree**)
 - or you can move the sources of this plugin outside of the OBS source tree and build it separately from OBS. (**out of tree**)
 
-As both methods require you to have a working [OBS Studio development environment](https://obsproject.com/wiki/install-instructions) it is recommended to build the plugin in tree as it is easier to set up.
+As both methods require you to have a working [OBS Studio development environment](https://obsproject.com/wiki/install-instructions), [Qt](https://download.qt.io/official_releases/qt/5.15/5.15.2/) and [CMake](https://cmake.org/download/) it is recommended to build the plugin in tree as it is easier to set up and will enable straightforward debugging.
+
+Note that your Qt install must include the QtConcurrent module.
 
 ## Compiling in tree (recommended)
 Add the "SceneSwitcher" source directory to your obs-studio source directory under obs-studio/UI/frontend-plugins/:
