@@ -3717,6 +3717,13 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_30">
        <item>
+        <widget class="QLabel" name="networkTabDescription">
+         <property name="text">
+          <string>AdvSceneSwitcher.networkTab.description</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="networkTabWarningLabel">
          <property name="text">
           <string>AdvSceneSwitcher.networkTab.warning</string>
