@@ -64,6 +64,7 @@ bool MacroConditionVideo::Save(obs_data_t *obj)
 
 bool MacroConditionVideo::Load(obs_data_t *obj)
 {
+	MacroCondition::Load(obj);
 	const char *videoSourceName = obs_data_get_string(obj, "videoSource");
 	_videoSource = GetWeakSourceByName(videoSourceName);
 	_condition =
