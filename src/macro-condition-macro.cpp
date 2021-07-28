@@ -10,12 +10,6 @@ bool MacroConditionMacro::_registered = MacroConditionFactory::Register(
 	{MacroConditionMacro::Create, MacroConditionMacroEdit::Create,
 	 "AdvSceneSwitcher.condition.macro"});
 
-// TODO: Remove in future version - just added for backward compatibility
-static std::string idOld = "counter";
-static bool oldRegisterd = MacroConditionFactory::Register(
-	idOld, {MacroConditionMacro::Create, MacroConditionMacroEdit::Create,
-		"AdvSceneSwitcher.condition.macro"});
-
 static std::map<MacroConditionMacroType, std::string> macroConditionTypes = {
 	{MacroConditionMacroType::COUNT,
 	 "AdvSceneSwitcher.condition.macro.type.count"},

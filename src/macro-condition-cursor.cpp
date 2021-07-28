@@ -10,12 +10,6 @@ bool MacroConditionCursor::_registered = MacroConditionFactory::Register(
 	{MacroConditionCursor::Create, MacroConditionCursorEdit::Create,
 	 "AdvSceneSwitcher.condition.cursor"});
 
-// TODO: Remove in future version - just added for backwards compatibility
-static const std::string idOld = "region";
-static bool oldRegisterd = MacroConditionFactory::Register(
-	idOld, {MacroConditionCursor::Create, MacroConditionCursorEdit::Create,
-		"AdvSceneSwitcher.condition.cursor"});
-
 static std::map<CursorCondition, std::string> cursorConditionTypes = {
 	{CursorCondition::REGION,
 	 "AdvSceneSwitcher.condition.cursor.type.region"},

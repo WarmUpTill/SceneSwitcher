@@ -10,12 +10,6 @@ bool MacroConditionTimer::_registered = MacroConditionFactory::Register(
 	{MacroConditionTimer::Create, MacroConditionTimerEdit::Create,
 	 "AdvSceneSwitcher.condition.timer", false});
 
-// TODO: Remove in future version - just added for backward compatibility
-static const std::string idOld = "interval";
-static bool oldRegisterd = MacroConditionFactory::Register(
-	idOld, {MacroConditionTimer::Create, MacroConditionTimerEdit::Create,
-		"AdvSceneSwitcher.condition.timer", false});
-
 bool MacroConditionTimer::CheckCondition()
 {
 	if (_duration.DurationReached()) {

@@ -454,71 +454,8 @@ void SwitcherData::saveMacros(obs_data_t *obj)
 	obs_data_array_release(macroArray);
 }
 
-// Temporary helper functions to convert old settings format to new one
-static std::unordered_map<int, std::string> actionIntToActionString = {
-	{2, "audio"},     {4, "recording"},    {5, "replay_buffer"}, {6, "run"},
-	{3, "streaming"}, {0, "scene_switch"}, {1, "wait"},
-};
-
-static void replaceActionIds(obs_data_t *obj)
-{
-	obs_data_array_t *actions = obs_data_get_array(obj, "actions");
-	size_t count = obs_data_array_count(actions);
-
-	for (size_t i = 0; i < count; i++) {
-		obs_data_t *array_obj = obs_data_array_item(actions, i);
-		auto oldId = obs_data_get_int(array_obj, "id");
-		obs_data_set_string(array_obj, "id",
-				    actionIntToActionString[oldId].c_str());
-		obs_data_release(array_obj);
-	}
-	obs_data_array_release(actions);
-}
-
-static std::unordered_map<int, std::string> conditionIntToConditionString = {
-	{3, "audio"},         {4, "file"},      {10, "idle"},     {5, "media"},
-	{11, "plugin_state"}, {9, "process"},   {8, "recording"}, {2, "region"},
-	{0, "scene"},         {7, "streaming"}, {6, "video"},     {1, "window"},
-};
-
-static void replaceConditionIds(obs_data_t *obj)
-{
-	obs_data_array_t *conditions = obs_data_get_array(obj, "conditions");
-	size_t count = obs_data_array_count(conditions);
-
-	for (size_t i = 0; i < count; i++) {
-		obs_data_t *array_obj = obs_data_array_item(conditions, i);
-		auto oldId = obs_data_get_int(array_obj, "id");
-		obs_data_set_string(
-			array_obj, "id",
-			conditionIntToConditionString[oldId].c_str());
-		obs_data_release(array_obj);
-	}
-	obs_data_array_release(conditions);
-}
-
-static void convertOldMacroIdsToString(obs_data_t *obj)
-{
-	obs_data_array_t *macroArray = obs_data_get_array(obj, "macros");
-	size_t count = obs_data_array_count(macroArray);
-
-	for (size_t i = 0; i < count; i++) {
-		obs_data_t *array_obj = obs_data_array_item(macroArray, i);
-		replaceActionIds(array_obj);
-		replaceConditionIds(array_obj);
-		obs_data_release(array_obj);
-	}
-	obs_data_array_release(macroArray);
-}
-
 void SwitcherData::loadMacros(obs_data_t *obj)
 {
-	// TODO: Remove conversion helper in future version
-	std::string previousVersion = obs_data_get_string(obj, "version");
-	if (previousVersion == "2ce0b35921be892c987c7dbb5fc90db38f15f0a6") {
-		convertOldMacroIdsToString(obj);
-	}
-
 	macros.clear();
 
 	obs_data_array_t *macroArray = obs_data_get_array(obj, "macros");
