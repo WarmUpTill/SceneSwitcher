@@ -5,6 +5,7 @@
 #include <obs.hpp>
 #include <QEvent>
 #include <QLabel>
+#include <QScrollBar>
 
 bool MacroSegment::Save(obs_data_t *obj)
 {
@@ -136,6 +137,11 @@ void MacroSegmentEdit::SetFocusPolicyOfWidgets()
 	QList<QWidget *> widgets = this->findChildren<QWidget *>();
 	for (auto w : widgets) {
 		w->setFocusPolicy(Qt::StrongFocus);
+		// Ignore QScrollBar as there is no danger of accidentally modifying anything
+		// and long expanded QComboBox would be difficult to interact with otherwise.
+		if (qobject_cast<QScrollBar *>(w)) {
+			continue;
+		}
 		w->installEventFilter(new MouseWheelWidgetAdjustmentGuard(w));
 	}
 }
