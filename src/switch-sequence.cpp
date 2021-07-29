@@ -203,7 +203,7 @@ bool SwitcherData::checkSceneSequence(OBSWeakSource &scene,
 			continue;
 		}
 
-		bool matched = s.checkMatch(currentScene, linger);
+		bool matched = s.checkMatch(linger);
 
 		if (!match && matched) {
 			match = matched;
@@ -395,8 +395,7 @@ SceneSequenceSwitch *SceneSequenceSwitch::extend()
 	return extendedSequence.get();
 }
 
-bool SceneSequenceSwitch::checkMatch(OBSWeakSource currentScene, int &linger,
-				     SceneSequenceSwitch *root)
+bool SceneSequenceSwitch::checkMatch(int &linger, SceneSequenceSwitch *root)
 {
 	if (!initialized()) {
 		if (root) {
@@ -407,8 +406,18 @@ bool SceneSequenceSwitch::checkMatch(OBSWeakSource currentScene, int &linger,
 
 	bool match = false;
 
+	// We cannot rely on switcher->currentScene for this information.
+	// Depending on the transition length the frontend event for the scene
+	// change of the previous element in the sequence might not yet have
+	// been received, which would lead to the sequencence being aborted.
+	// Thus we have to use obs_frontend_get_current_scene() here.
+	auto sceneSource = obs_frontend_get_current_scene();
+	auto currentScene = obs_source_get_weak_source(sceneSource);
+	obs_weak_source_release(currentScene);
+	obs_source_release(sceneSource);
+
 	if (activeSequence) {
-		return activeSequence->checkMatch(currentScene, linger, this);
+		return activeSequence->checkMatch(linger, this);
 	}
 
 	if (startScene == currentScene) {
