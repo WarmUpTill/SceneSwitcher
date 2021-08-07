@@ -107,8 +107,8 @@ bool Macro::PerformAction()
 {
 	bool ret = true;
 	for (auto &a : _actions) {
-		ret = ret && a->PerformAction();
 		a->LogAction();
+		ret = ret && a->PerformAction();
 		if (!ret) {
 			return false;
 		}
