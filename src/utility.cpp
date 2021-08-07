@@ -283,14 +283,22 @@ bool compareSourceSettings(const OBSWeakSource &source,
 {
 	bool ret = false;
 	std::string currentSettings = getSourceSettings(source);
+	// User input and source settings might be formatted differently
+	currentSettings = formatJsonString(currentSettings).toStdString();
+	std::string userSettings = formatJsonString(settings).toStdString();
+
+	if (userSettings.empty()) {
+		userSettings = settings;
+	}
+
 	if (useRegex) {
 		try {
-			std::regex expr(settings);
+			std::regex expr(userSettings);
 			ret = std::regex_match(currentSettings, expr);
 		} catch (const std::regex_error &) {
 		}
 	} else {
-		ret = currentSettings == settings;
+		ret = currentSettings == userSettings;
 	}
 	return ret;
 }
@@ -304,12 +312,12 @@ std::string getDataFilePath(const std::string &file)
 	return "";
 }
 
-QString fromatJsonString(std::string s)
+QString formatJsonString(std::string s)
 {
-	return fromatJsonString(s.c_str());
+	return formatJsonString(s.c_str());
 }
 
-QString fromatJsonString(const char *json)
+QString formatJsonString(const char *json)
 {
 	QJsonDocument doc = QJsonDocument::fromJson(json);
 	return doc.toJson(QJsonDocument::Indented);
