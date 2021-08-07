@@ -192,7 +192,7 @@ void MacroConditionFilterEdit::GetSettingsClicked()
 	}
 
 	_settings->setPlainText(
-		fromatJsonString(getSourceSettings(_entryData->_filter)));
+		formatJsonString(getSourceSettings(_entryData->_filter)));
 }
 
 void MacroConditionFilterEdit::SettingsChanged()

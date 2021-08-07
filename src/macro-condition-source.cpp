@@ -171,7 +171,7 @@ void MacroConditionSourceEdit::GetSettingsClicked()
 	}
 
 	_settings->setPlainText(
-		fromatJsonString(getSourceSettings(_entryData->_source)));
+		formatJsonString(getSourceSettings(_entryData->_source)));
 }
 
 void MacroConditionSourceEdit::SettingsChanged()

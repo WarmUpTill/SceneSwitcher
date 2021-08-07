@@ -198,7 +198,7 @@ void MacroActionFilterEdit::GetSettingsClicked()
 	}
 
 	_settings->setPlainText(
-		fromatJsonString(getSourceSettings(_entryData->_filter)));
+		formatJsonString(getSourceSettings(_entryData->_filter)));
 }
 
 void MacroActionFilterEdit::SettingsChanged()

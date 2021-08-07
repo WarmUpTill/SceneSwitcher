@@ -201,7 +201,7 @@ void MacroActionSceneTransformEdit::UpdateEntryData()
 		GetWeakSourceName(_entryData->_source).c_str());
 	if (_entryData->_source) {
 		_settings->setPlainText(
-			fromatJsonString(_entryData->GetSettings()));
+			formatJsonString(_entryData->GetSettings()));
 	}
 }
 
@@ -255,7 +255,7 @@ void MacroActionSceneTransformEdit::GetSettingsClicked()
 	auto data = obs_data_create();
 	save_transform_state(data, info, crop);
 	auto json = obs_data_get_json(data);
-	_settings->setPlainText(fromatJsonString(json));
+	_settings->setPlainText(formatJsonString(json));
 	obs_data_release(data);
 }
 
