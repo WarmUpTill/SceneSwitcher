@@ -7,14 +7,20 @@
 ******************************************************************************/
 #pragma once
 #include "switch-generic.hpp"
+#include "duration-control.hpp"
 
 struct RandomSwitch : SceneSwitcherEntry {
 	static bool pause;
 	double delay = 0.0;
+	bool waitFullDuration = true;
 
 	const char *getType() { return "random"; }
 	void save(obs_data_t *obj);
 	void load(obs_data_t *obj);
+
+	static bool waiting;
+	static OBSWeakSource waitScene;
+	static Duration waitTime;
 };
 
 class RandomSwitchWidget : public SwitchWidget {
@@ -30,9 +36,11 @@ public:
 
 private slots:
 	void DelayChanged(double d);
+	void WaitFullDurationChanged(int);
 
 private:
 	QDoubleSpinBox *delay;
+	QCheckBox *waitFullDuration;
 
 	RandomSwitch *switchData;
 };
