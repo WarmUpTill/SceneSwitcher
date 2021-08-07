@@ -424,8 +424,9 @@ void SwitcherData::Stop()
 {
 	if (th && th->isRunning()) {
 		stop = true;
-		transitionCv.notify_one();
 		cv.notify_one();
+		abortMacroWait = true;
+		macroWaitCv.notify_one();
 		th->wait();
 		delete th;
 		th = nullptr;

@@ -80,6 +80,8 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 	QString name;
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
+		switcher->abortMacroWait = true;
+		switcher->macroWaitCv.notify_one();
 		int idx = ui->macros->currentRow();
 		QString::fromStdString(switcher->macros[idx].Name());
 		switcher->macros.erase(switcher->macros.begin() + idx);
