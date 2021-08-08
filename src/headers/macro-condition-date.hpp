@@ -4,6 +4,14 @@
 
 #include <QCheckBox>
 #include <QDateTimeEdit>
+#include <QComboBox>
+
+enum class DateCondition {
+	AT,
+	AFTER,
+	BEFORE,
+	BETWEEN,
+};
 
 class MacroConditionDate : public MacroCondition {
 public:
@@ -18,10 +26,12 @@ public:
 	}
 
 	QDateTime _dateTime;
+	QDateTime _dateTime2;
 	bool _ignoreDate = false;
 	bool _ignoreTime = false;
 	bool _repeat = false;
 	Duration _duration;
+	DateCondition _condition = DateCondition::AT;
 
 private:
 	static bool _registered;
@@ -45,7 +55,9 @@ public:
 	}
 
 private slots:
+	void ConditionChanged(int cond);
 	void DateTimeChanged(const QDateTime &datetime);
+	void DateTime2Changed(const QDateTime &datetime);
 	void IgnoreDateChanged(int state);
 	void IgnoreTimeChanged(int state);
 	void RepeatChanged(int state);
@@ -55,7 +67,9 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
+	QComboBox *_condition;
 	QDateTimeEdit *_dateTime;
+	QDateTimeEdit *_dateTime2;
 	QCheckBox *_ignoreDate;
 	QCheckBox *_ignoreTime;
 	QCheckBox *_repeat;
@@ -63,5 +77,6 @@ protected:
 	std::shared_ptr<MacroConditionDate> _entryData;
 
 private:
+	void ShowSecondDateSelection(bool visible);
 	bool _loading = true;
 };
