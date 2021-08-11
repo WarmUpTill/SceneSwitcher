@@ -92,7 +92,11 @@ void SwitcherData::writeSceneInfoToFile()
 
 	QFile file(QString::fromStdString(fileIO.writePath));
 	if (file.open(QIODevice::WriteOnly)) {
-		const char *msg = GetWeakSourceName(currentScene).c_str();
+		// switcher->currentScene cannot be used here as scene might
+		// have changed already
+		obs_source_t *source = obs_frontend_get_current_scene();
+		auto msg = obs_source_get_name(source);
+		obs_source_release(source);
 		file.write(msg, qstrlen(msg));
 		file.close();
 	}
