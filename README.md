@@ -1,5 +1,5 @@
 # SceneSwitcher
-An automated scene switcher for OBS Studio
+An automated scene switcher for OBS Studio.
 
 More information can be found on https://obsproject.com/forum/resources/automatic-scene-switching.395/.
 
@@ -13,7 +13,7 @@ For the Windows and MacOS platforms, it is recommended to run the provided insta
 
 For Linux the Snap package manager offers an OBS Studio installation which is bundled with the plugin:
 ```
-sudo snap install obs-studi
+sudo snap install obs-studio
 ```
 
 If that is not an option you will have to ... 
