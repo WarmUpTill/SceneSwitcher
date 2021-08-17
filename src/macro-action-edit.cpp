@@ -138,8 +138,8 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 	std::string id = temp.GetId();
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	auto action = macro->Actions().emplace(macro->Actions().begin() + idx,
-					       MacroActionFactory::Create(id));
+	macro->Actions().emplace(macro->Actions().begin() + idx,
+				 MacroActionFactory::Create(id));
 	macro->UpdateActionIndices();
 
 	// All entry pointers in existing edit widgets after the new entry will
