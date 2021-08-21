@@ -223,6 +223,9 @@ bool compareIgnoringLineEnding(QString &s1, QString &s2)
 
 std::string getSourceSettings(OBSWeakSource ws)
 {
+	if (!ws) {
+		return "";
+	}
 	auto s = obs_weak_source_get_source(ws);
 	obs_data_t *data = obs_source_get_settings(s);
 	std::string settings = obs_data_get_json(data);
