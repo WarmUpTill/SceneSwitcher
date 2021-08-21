@@ -3,8 +3,6 @@
 #include "headers/utility.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 
-#include <regex>
-
 const std::string MacroConditionSceneOrder::id = "scene_order";
 
 bool MacroConditionSceneOrder::_registered = MacroConditionFactory::Register(
