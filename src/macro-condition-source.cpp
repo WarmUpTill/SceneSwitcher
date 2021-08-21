@@ -170,8 +170,11 @@ void MacroConditionSourceEdit::GetSettingsClicked()
 		return;
 	}
 
-	_settings->setPlainText(
-		formatJsonString(getSourceSettings(_entryData->_source)));
+	QString json = formatJsonString(getSourceSettings(_entryData->_source));
+	if (_entryData->_regex) {
+		json = escapeForRegex(json);
+	}
+	_settings->setPlainText(json);
 }
 
 void MacroConditionSourceEdit::SettingsChanged()
