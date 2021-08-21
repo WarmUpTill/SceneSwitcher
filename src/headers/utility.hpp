@@ -30,8 +30,15 @@ bool compareSourceSettings(const OBSWeakSource &source,
 std::vector<obs_scene_item *> getSceneItemsWithName(OBSScene scene,
 						    std::string &name);
 std::string getDataFilePath(const std::string &file);
+bool matchJson(const std::string &json1, const std::string &json2,
+	       bool useRegex);
 QString formatJsonString(std::string);
 QString formatJsonString(const char *);
+QString escapeForRegex(QString &s);
+void loadTransformState(obs_data_t *obj, struct obs_transform_info &info,
+			struct obs_sceneitem_crop &crop);
+bool saveTransformState(obs_data_t *obj, struct obs_transform_info &info,
+			struct obs_sceneitem_crop &crop);
 
 /**
  * Populate layout with labels and widgets based on provided text

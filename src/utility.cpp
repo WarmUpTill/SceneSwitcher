@@ -278,29 +278,40 @@ std::vector<obs_scene_item *> getSceneItemsWithName(OBSScene scene,
 	return itemInfo.items;
 }
 
+// Match json1 with pattern json2
+bool matchJson(const std::string &json1, const std::string &json2,
+	       bool useRegex)
+{
+	bool ret = false;
+	auto j1 = formatJsonString(json1).toStdString();
+	auto j2 = formatJsonString(json2).toStdString();
+
+	if (j1.empty()) {
+		j1 = json1;
+	}
+	if (j2.empty()) {
+		j2 = json2;
+	}
+
+	if (useRegex) {
+		try {
+			std::regex expr(j2);
+			ret = std::regex_match(
+				j1, expr, std::regex_constants::match_default);
+		} catch (const std::regex_error &) {
+		}
+	} else {
+		ret = j1 == j2;
+	}
+	return ret;
+}
+
 bool compareSourceSettings(const OBSWeakSource &source,
 			   const std::string &settings, bool useRegex)
 {
 	bool ret = false;
 	std::string currentSettings = getSourceSettings(source);
-	// User input and source settings might be formatted differently
-	currentSettings = formatJsonString(currentSettings).toStdString();
-	std::string userSettings = formatJsonString(settings).toStdString();
-
-	if (userSettings.empty()) {
-		userSettings = settings;
-	}
-
-	if (useRegex) {
-		try {
-			std::regex expr(userSettings);
-			ret = std::regex_match(currentSettings, expr);
-		} catch (const std::regex_error &) {
-		}
-	} else {
-		ret = currentSettings == userSettings;
-	}
-	return ret;
+	return matchJson(currentSettings, settings, useRegex);
 }
 
 std::string getDataFilePath(const std::string &file)
@@ -321,6 +332,58 @@ QString formatJsonString(const char *json)
 {
 	QJsonDocument doc = QJsonDocument::fromJson(json);
 	return doc.toJson(QJsonDocument::Indented);
+}
+
+QString escapeForRegex(QString &s)
+{
+	std::regex specialChars{R"([-[\]{}()*+?.,\^$|#\s])"};
+	std::string input = s.toStdString();
+	return QString::fromStdString(
+		std::regex_replace(input, specialChars, R"(\$&)"));
+}
+
+void loadTransformState(obs_data_t *obj, struct obs_transform_info &info,
+			struct obs_sceneitem_crop &crop)
+{
+	obs_data_get_vec2(obj, "pos", &info.pos);
+	obs_data_get_vec2(obj, "scale", &info.scale);
+	info.rot = (float)obs_data_get_double(obj, "rot");
+	info.alignment = (uint32_t)obs_data_get_int(obj, "alignment");
+	info.bounds_type =
+		(enum obs_bounds_type)obs_data_get_int(obj, "bounds_type");
+	info.bounds_alignment =
+		(uint32_t)obs_data_get_int(obj, "bounds_alignment");
+	obs_data_get_vec2(obj, "bounds", &info.bounds);
+	crop.top = (int)obs_data_get_int(obj, "top");
+	crop.bottom = (int)obs_data_get_int(obj, "bottom");
+	crop.left = (int)obs_data_get_int(obj, "left");
+	crop.right = (int)obs_data_get_int(obj, "right");
+}
+
+bool saveTransformState(obs_data_t *obj, struct obs_transform_info &info,
+			struct obs_sceneitem_crop &crop)
+{
+	struct vec2 pos = info.pos;
+	struct vec2 scale = info.scale;
+	float rot = info.rot;
+	uint32_t alignment = info.alignment;
+	uint32_t bounds_type = info.bounds_type;
+	uint32_t bounds_alignment = info.bounds_alignment;
+	struct vec2 bounds = info.bounds;
+
+	obs_data_set_vec2(obj, "pos", &pos);
+	obs_data_set_vec2(obj, "scale", &scale);
+	obs_data_set_double(obj, "rot", rot);
+	obs_data_set_int(obj, "alignment", alignment);
+	obs_data_set_int(obj, "bounds_type", bounds_type);
+	obs_data_set_vec2(obj, "bounds", &bounds);
+	obs_data_set_int(obj, "bounds_alignment", bounds_alignment);
+	obs_data_set_int(obj, "top", crop.top);
+	obs_data_set_int(obj, "bottom", crop.bottom);
+	obs_data_set_int(obj, "left", crop.left);
+	obs_data_set_int(obj, "right", crop.right);
+
+	return true;
 }
 
 bool DisplayMessage(const QString &msg, bool question)
