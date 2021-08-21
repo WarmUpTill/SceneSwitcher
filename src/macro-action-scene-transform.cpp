@@ -10,51 +10,6 @@ bool MacroActionSceneTransform::_registered = MacroActionFactory::Register(
 	 MacroActionSceneTransformEdit::Create,
 	 "AdvSceneSwitcher.action.sceneTransform"});
 
-static void load_transform_state(obs_data_t *obj,
-				 struct obs_transform_info &info,
-				 struct obs_sceneitem_crop &crop)
-{
-	obs_data_get_vec2(obj, "pos", &info.pos);
-	obs_data_get_vec2(obj, "scale", &info.scale);
-	info.rot = (float)obs_data_get_double(obj, "rot");
-	info.alignment = (uint32_t)obs_data_get_int(obj, "alignment");
-	info.bounds_type =
-		(enum obs_bounds_type)obs_data_get_int(obj, "bounds_type");
-	info.bounds_alignment =
-		(uint32_t)obs_data_get_int(obj, "bounds_alignment");
-	obs_data_get_vec2(obj, "bounds", &info.bounds);
-	crop.top = (int)obs_data_get_int(obj, "top");
-	crop.bottom = (int)obs_data_get_int(obj, "bottom");
-	crop.left = (int)obs_data_get_int(obj, "left");
-	crop.right = (int)obs_data_get_int(obj, "right");
-}
-
-bool save_transform_state(obs_data_t *obj, struct obs_transform_info &info,
-			  struct obs_sceneitem_crop &crop)
-{
-	struct vec2 pos = info.pos;
-	struct vec2 scale = info.scale;
-	float rot = info.rot;
-	uint32_t alignment = info.alignment;
-	uint32_t bounds_type = info.bounds_type;
-	uint32_t bounds_alignment = info.bounds_alignment;
-	struct vec2 bounds = info.bounds;
-
-	obs_data_set_vec2(obj, "pos", &pos);
-	obs_data_set_vec2(obj, "scale", &scale);
-	obs_data_set_double(obj, "rot", rot);
-	obs_data_set_int(obj, "alignment", alignment);
-	obs_data_set_int(obj, "bounds_type", bounds_type);
-	obs_data_set_vec2(obj, "bounds", &bounds);
-	obs_data_set_int(obj, "bounds_alignment", bounds_alignment);
-	obs_data_set_int(obj, "top", crop.top);
-	obs_data_set_int(obj, "bottom", crop.bottom);
-	obs_data_set_int(obj, "left", crop.left);
-	obs_data_set_int(obj, "right", crop.right);
-
-	return true;
-}
-
 bool MacroActionSceneTransform::PerformAction()
 {
 	auto s = obs_weak_source_get_source(_scene.GetScene(false));
@@ -69,11 +24,11 @@ bool MacroActionSceneTransform::PerformAction()
 		obs_sceneitem_get_info(item, &info);
 		obs_sceneitem_get_crop(item, &crop);
 		auto temp = obs_data_create();
-		save_transform_state(temp, info, crop);
+		saveTransformState(temp, info, crop);
 		auto temp2 = obs_data_create();
-		save_transform_state(temp, _info, _crop);
+		saveTransformState(temp, _info, _crop);
 		obs_data_apply(temp, temp2);
-		load_transform_state(temp, info, crop);
+		loadTransformState(temp, info, crop);
 		obs_data_release(temp);
 		obs_data_release(temp2);
 
@@ -102,7 +57,7 @@ bool MacroActionSceneTransform::Save(obs_data_t *obj)
 	MacroAction::Save(obj);
 	_scene.Save(obj);
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
-	save_transform_state(obj, _info, _crop);
+	saveTransformState(obj, _info, _crop);
 	return true;
 }
 
@@ -112,7 +67,7 @@ bool MacroActionSceneTransform::Load(obs_data_t *obj)
 	_scene.Load(obj);
 	const char *sourceName = obs_data_get_string(obj, "source");
 	_source = GetWeakSourceByName(sourceName);
-	load_transform_state(obj, _info, _crop);
+	loadTransformState(obj, _info, _crop);
 	return true;
 }
 
@@ -127,7 +82,7 @@ std::string MacroActionSceneTransform::GetShortDesc()
 std::string MacroActionSceneTransform::GetSettings()
 {
 	auto data = obs_data_create();
-	save_transform_state(data, _info, _crop);
+	saveTransformState(data, _info, _crop);
 	std::string json = obs_data_get_json(data);
 	obs_data_release(data);
 	return json;
@@ -139,7 +94,7 @@ void MacroActionSceneTransform::SetSettings(std::string &settings)
 	if (!data) {
 		return;
 	}
-	load_transform_state(data, _info, _crop);
+	loadTransformState(data, _info, _crop);
 	obs_data_release(data);
 }
 
@@ -253,7 +208,7 @@ void MacroActionSceneTransformEdit::GetSettingsClicked()
 	obs_sceneitem_get_crop(item, &crop);
 
 	auto data = obs_data_create();
-	save_transform_state(data, info, crop);
+	saveTransformState(data, info, crop);
 	auto json = obs_data_get_json(data);
 	_settings->setPlainText(formatJsonString(json));
 	obs_data_release(data);
