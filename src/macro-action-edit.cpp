@@ -134,12 +134,22 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 		return;
 	}
 
-	MacroActionSwitchScene temp;
-	std::string id = temp.GetId();
-
+	std::string id;
+	if (idx - 1 >= 0) {
+		id = macro->Actions().at(idx - 1)->GetId();
+	} else {
+		MacroActionSwitchScene temp;
+		id = temp.GetId();
+	}
 	std::lock_guard<std::mutex> lock(switcher->m);
 	macro->Actions().emplace(macro->Actions().begin() + idx,
 				 MacroActionFactory::Create(id));
+	if (idx - 1 >= 0) {
+		auto data = obs_data_create();
+		macro->Actions().at(idx - 1)->Save(data);
+		macro->Actions().at(idx)->Load(data);
+		obs_data_release(data);
+	}
 	macro->UpdateActionIndices();
 
 	// All entry pointers in existing edit widgets after the new entry will
