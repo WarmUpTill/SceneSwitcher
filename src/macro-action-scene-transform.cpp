@@ -18,24 +18,10 @@ bool MacroActionSceneTransform::PerformAction()
 	auto items = getSceneItemsWithName(scene, name);
 
 	for (auto &item : items) {
-		// Merge new settings with current settings
-		struct obs_transform_info info;
-		struct obs_sceneitem_crop crop;
-		obs_sceneitem_get_info(item, &info);
-		obs_sceneitem_get_crop(item, &crop);
-		auto temp = obs_data_create();
-		saveTransformState(temp, info, crop);
-		auto temp2 = obs_data_create();
-		saveTransformState(temp, _info, _crop);
-		obs_data_apply(temp, temp2);
-		loadTransformState(temp, info, crop);
-		obs_data_release(temp);
-		obs_data_release(temp2);
-
 		// Apply settings
 		obs_sceneitem_defer_update_begin(item);
-		obs_sceneitem_set_info(item, &info);
-		obs_sceneitem_set_crop(item, &crop);
+		obs_sceneitem_set_info(item, &_info);
+		obs_sceneitem_set_crop(item, &_crop);
 		obs_sceneitem_defer_update_end(item);
 
 		obs_sceneitem_release(item);
@@ -95,6 +81,21 @@ void MacroActionSceneTransform::SetSettings(std::string &settings)
 		return;
 	}
 	loadTransformState(data, _info, _crop);
+	if (obs_data_has_user_value(data, "size")) {
+		auto obj = obs_data_get_obj(data, "size");
+		auto source = obs_weak_source_get_source(_source);
+		if (double h = obs_data_get_double(obj, "height")) {
+			_info.scale.y =
+				h / double(obs_source_get_height(source));
+		}
+		if (double w = obs_data_get_double(obj, "width")) {
+			_info.scale.x =
+				w / double(obs_source_get_width(source));
+		}
+		obs_data_release(obj);
+		obs_source_release(source);
+	}
+
 	obs_data_release(data);
 }
 
@@ -202,16 +203,7 @@ void MacroActionSceneTransformEdit::GetSettingsClicked()
 		return;
 	}
 
-	struct obs_transform_info info;
-	struct obs_sceneitem_crop crop;
-	obs_sceneitem_get_info(item, &info);
-	obs_sceneitem_get_crop(item, &crop);
-
-	auto data = obs_data_create();
-	saveTransformState(data, info, crop);
-	auto json = obs_data_get_json(data);
-	_settings->setPlainText(formatJsonString(json));
-	obs_data_release(data);
+	_settings->setPlainText(formatJsonString(getSceneItemTransform(item)));
 }
 
 void MacroActionSceneTransformEdit::SettingsChanged()

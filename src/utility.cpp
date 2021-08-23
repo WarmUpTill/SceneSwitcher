@@ -140,6 +140,35 @@ getNextDelim(const std::string &text,
 	return res;
 }
 
+std::pair<double, double> getSceneItemSize(obs_scene_item *item)
+{
+	std::pair<double, double> size;
+	obs_source_t *source = obs_sceneitem_get_source(item);
+	size.first = double(obs_source_get_width(source));
+	size.second = double(obs_source_get_height(source));
+	return size;
+}
+
+std::string getSceneItemTransform(obs_scene_item *item)
+{
+	struct obs_transform_info info;
+	struct obs_sceneitem_crop crop;
+	obs_sceneitem_get_info(item, &info);
+	obs_sceneitem_get_crop(item, &crop);
+	auto size = getSceneItemSize(item);
+
+	auto data = obs_data_create();
+	saveTransformState(data, info, crop);
+	obs_data_t *obj = obs_data_create();
+	obs_data_set_double(obj, "width", size.first * info.scale.x);
+	obs_data_set_double(obj, "height", size.second * info.scale.y);
+	obs_data_set_obj(data, "size", obj);
+	obs_data_release(obj);
+	auto json = std::string(obs_data_get_json(data));
+	obs_data_release(data);
+	return json;
+}
+
 void placeWidgets(std::string text, QBoxLayout *layout,
 		  std::unordered_map<std::string, QWidget *> placeholders,
 		  bool addStretch)

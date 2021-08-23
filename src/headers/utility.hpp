@@ -39,15 +39,7 @@ void loadTransformState(obs_data_t *obj, struct obs_transform_info &info,
 			struct obs_sceneitem_crop &crop);
 bool saveTransformState(obs_data_t *obj, struct obs_transform_info &info,
 			struct obs_sceneitem_crop &crop);
-
-/**
- * Populate layout with labels and widgets based on provided text
- *
- * @param text		Text based on which labels are generated and widgets are placed.
- * @param layout	Layout in which the widgets and labels will be placed.
- * @param placeholders	Map containing a mapping of placeholder strings to widgets.
- * @param addStretch	Add addStretch() to layout.
- */
+std::string getSceneItemTransform(obs_scene_item *item);
 void placeWidgets(std::string text, QBoxLayout *layout,
 		  std::unordered_map<std::string, QWidget *> placeholders,
 		  bool addStretch = true);
