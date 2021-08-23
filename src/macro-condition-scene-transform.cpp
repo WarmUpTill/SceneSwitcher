@@ -21,20 +21,10 @@ bool MacroConditionSceneTransform::CheckCondition()
 	auto items = getSceneItemsWithName(scene, name);
 
 	for (auto &item : items) {
-		struct obs_transform_info info;
-		struct obs_sceneitem_crop crop;
-		obs_sceneitem_get_info(item, &info);
-		obs_sceneitem_get_crop(item, &crop);
-
-		auto data = obs_data_create();
-		saveTransformState(data, info, crop);
-		auto json = obs_data_get_json(data);
-
+		auto json = getSceneItemTransform(item);
 		if (matchJson(json, _settings, _regex)) {
 			ret = true;
 		}
-
-		obs_data_release(data);
 		obs_sceneitem_release(item);
 	}
 
@@ -187,21 +177,11 @@ void MacroConditionSceneTransformEdit::GetSettingsClicked()
 		return;
 	}
 
-	struct obs_transform_info info;
-	struct obs_sceneitem_crop crop;
-	obs_sceneitem_get_info(item, &info);
-	obs_sceneitem_get_crop(item, &crop);
-
-	auto data = obs_data_create();
-	saveTransformState(data, info, crop);
-
-	QString json = formatJsonString(obs_data_get_json(data));
+	QString json = formatJsonString(getSceneItemTransform(item));
 	if (_entryData->_regex) {
 		json = escapeForRegex(json);
 	}
-
 	_settings->setPlainText(json);
-	obs_data_release(data);
 }
 
 void MacroConditionSceneTransformEdit::SettingsChanged()
