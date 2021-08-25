@@ -282,6 +282,7 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 	//
 	// If performance should become a concern this has to be revisited.
 	SetEditMacro(*macro);
+	HighlightCondition(idx);
 }
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()

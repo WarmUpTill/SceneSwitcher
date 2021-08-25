@@ -49,6 +49,8 @@ public:
 	bool addNewMacro(std::string &name);
 	Macro *getSelectedMacro();
 	void SetEditMacro(Macro &m);
+	void HighlightAction(int idx);
+	void HighlightCondition(int idx);
 	void ConnectControlSignals(MacroActionEdit *);
 	void ConnectControlSignals(MacroConditionEdit *);
 	void SwapActions(Macro *m, int pos1, int pos2);
