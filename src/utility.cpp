@@ -813,8 +813,9 @@ void populateSceneItemSelection(QComboBox *list, SceneSelection &s)
 	list->setCurrentIndex(0);
 }
 
-QMetaObject::Connection PulseWidget(QWidget *widget, QColor endColor,
-				    QColor startColor, QString specifier)
+QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
+				    QColor endColor, QString specifier,
+				    bool once)
 {
 	widget->setStyleSheet(specifier + "{ \
 		border-style: outset; \
@@ -830,15 +831,17 @@ QMetaObject::Connection PulseWidget(QWidget *widget, QColor endColor,
 	paAnimation->setStartValue(startColor);
 	paAnimation->setEndValue(endColor);
 	paAnimation->setDuration(1000);
-	// Play backwards to return to original state on timer end
-	paAnimation->setDirection(QAbstractAnimation::Backward);
 
-	auto con = QWidget::connect(
-		paAnimation, &QPropertyAnimation::finished, [paAnimation]() {
-			QTimer::singleShot(1000, [paAnimation] {
-				paAnimation->start();
+	QMetaObject::Connection con;
+	if (!once) {
+		con = QWidget::connect(
+			paAnimation, &QPropertyAnimation::finished,
+			[paAnimation]() {
+				QTimer::singleShot(1000, [paAnimation] {
+					paAnimation->start();
+				});
 			});
-		});
+	}
 
 	paAnimation->start();
 

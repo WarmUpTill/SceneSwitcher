@@ -158,6 +158,7 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 	//
 	// If performance should become a concern this has to be revisited.
 	SetEditMacro(*macro);
+	HighlightAction(idx);
 }
 
 void AdvSceneSwitcher::on_actionAdd_clicked()

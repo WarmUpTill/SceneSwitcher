@@ -5,6 +5,7 @@
 #include "headers/name-dialog.hpp"
 #include "headers/utility.hpp"
 
+#include <QColor>
 #include <QMenu>
 
 static QMetaObject::Connection addPulse;
@@ -205,6 +206,34 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 	} else {
 		ui->macroEditActionHelp->setVisible(false);
 	}
+}
+
+void AdvSceneSwitcher::HighlightAction(int idx)
+{
+	auto item = ui->macroEditActionLayout->itemAt(idx);
+	if (!item) {
+		return;
+	}
+	auto widget = item->widget();
+	if (!widget) {
+		return;
+	}
+	PulseWidget(widget, QColor(Qt::green), QColor(0, 0, 0, 0), "QLabel ",
+		    true);
+}
+
+void AdvSceneSwitcher::HighlightCondition(int idx)
+{
+	auto item = ui->macroEditConditionLayout->itemAt(idx);
+	if (!item) {
+		return;
+	}
+	auto widget = item->widget();
+	if (!widget) {
+		return;
+	}
+	PulseWidget(widget, QColor(Qt::green), QColor(0, 0, 0, 0), "QLabel ",
+		    true);
 }
 
 void AdvSceneSwitcher::ConnectControlSignals(MacroActionEdit *c)

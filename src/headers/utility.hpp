@@ -45,9 +45,10 @@ void placeWidgets(std::string text, QBoxLayout *layout,
 		  bool addStretch = true);
 void deleteLayoutItem(QLayoutItem *item);
 void clearLayout(QLayout *layout);
-QMetaObject::Connection PulseWidget(QWidget *widget, QColor endColor,
+QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
 				    QColor = QColor(0, 0, 0, 0),
-				    QString specifier = "QLabel ");
+				    QString specifier = "QLabel ",
+				    bool once = false);
 void listAddClicked(QListWidget *list, QWidget *newWidget,
 		    QPushButton *addButton = nullptr,
 		    QMetaObject::Connection *addHighlight = nullptr);
