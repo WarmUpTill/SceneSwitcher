@@ -12,7 +12,12 @@ QMetaObject::Connection inactivePluse;
 
 void AdvSceneSwitcher::on_close_clicked()
 {
-	done(0);
+	close();
+}
+
+void AdvSceneSwitcher::reject()
+{
+	close();
 }
 
 void AdvSceneSwitcher::UpdateNonMatchingScene(const QString &name)
