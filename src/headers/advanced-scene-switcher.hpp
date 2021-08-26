@@ -30,6 +30,7 @@ public:
 
 	AdvSceneSwitcher(QWidget *parent);
 
+	void reject() override;
 	void closeEvent(QCloseEvent *event) override;
 
 	void SetStarted();
