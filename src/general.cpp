@@ -3,6 +3,10 @@
 #include "headers/version.h"
 
 #include <QFileDialog>
+#include <QGuiApplication>
+#if __linux__
+#include <QDesktopWidget>
+#endif
 
 QMetaObject::Connection inactivePluse;
 
@@ -377,9 +381,23 @@ void AdvSceneSwitcher::setTabOrder()
 	connect(bar, &QTabBar::tabMoved, this, &AdvSceneSwitcher::on_tabMoved);
 }
 
+bool windowPosValid(QPoint pos)
+{
+#if __linux__
+	// QDesktopWidget::availableGeometry() is deprecated.
+	// Switch to QGuiApplication::screenAt() when it is available on most Linux platforms.
+	QDesktopWidget *desktop = QApplication::desktop();
+	auto screen = desktop->availableGeometry(pos);
+	return (pos.x() > screen.x()) && (pos.y() > screen.y()) &&
+	       (pos.x() < screen.width() && (pos.y() < screen.height()));
+#else
+	return !!QGuiApplication::screenAt(pos);
+#endif
+}
+
 void AdvSceneSwitcher::restoreWindowGeo()
 {
-	if (switcher->saveWindowGeo) {
+	if (switcher->saveWindowGeo && windowPosValid(switcher->windowPos)) {
 		this->resize(switcher->windowSize);
 		this->move(switcher->windowPos);
 	}
