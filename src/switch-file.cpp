@@ -51,6 +51,7 @@ void AdvSceneSwitcher::on_readPathLineEdit_textChanged(const QString &text)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	if (text.isEmpty()) {
 		switcher->fileIO.readEnabled = false;
+		switcher->fileIO.readPath = "";
 		return;
 	}
 	switcher->fileIO.readEnabled = true;
@@ -66,6 +67,7 @@ void AdvSceneSwitcher::on_writePathLineEdit_textChanged(const QString &text)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	if (text.isEmpty()) {
 		switcher->fileIO.writeEnabled = false;
+		switcher->fileIO.writePath = "";
 		return;
 	}
 	switcher->fileIO.writeEnabled = true;
