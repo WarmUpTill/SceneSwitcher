@@ -34,7 +34,6 @@ bool MacroActionPreviewScene::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 	_scene.Load(obj);
-	const char *sourceName = obs_data_get_string(obj, "source");
 	return true;
 }
 
