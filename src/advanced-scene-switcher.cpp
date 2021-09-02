@@ -476,6 +476,9 @@ extern "C" void FreeSceneSwitcher()
 
 void handleSceneChange()
 {
+	switcher->lastSceneChangeTime =
+		std::chrono::high_resolution_clock::now();
+
 	// Stop waiting if scene was changed
 	if (switcher->sceneChangedDuringWait()) {
 		switcher->cv.notify_one();

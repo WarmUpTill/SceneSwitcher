@@ -13,18 +13,29 @@ bool MacroConditionScene::_registered = MacroConditionFactory::Register(
 static std::map<SceneType, std::string> sceneTypes = {
 	{SceneType::CURRENT, "AdvSceneSwitcher.condition.scene.type.current"},
 	{SceneType::PREVIOUS, "AdvSceneSwitcher.condition.scene.type.previous"},
+	{SceneType::CHANGED, "AdvSceneSwitcher.condition.scene.type.changed"},
 };
 
 bool MacroConditionScene::CheckCondition()
 {
-	bool sceneMatch = false;
-	if (_type == SceneType::CURRENT) {
-		sceneMatch = switcher->currentScene == _scene.GetScene(false);
-	} else {
-		sceneMatch = switcher->previousScene == _scene.GetScene(false);
+	bool sceneChanged = _lastSceneChangeTime !=
+			    switcher->lastSceneChangeTime;
+	if (sceneChanged) {
+		_lastSceneChangeTime = switcher->lastSceneChangeTime;
 	}
 
-	return sceneMatch;
+	switch (_type) {
+	case SceneType::CURRENT:
+		return switcher->currentScene == _scene.GetScene(false);
+	case SceneType::PREVIOUS:
+		return switcher->previousScene == _scene.GetScene(false);
+	case SceneType::CHANGED:
+		return sceneChanged;
+	default:
+		break;
+	}
+
+	return false;
 }
 
 bool MacroConditionScene::Save(obs_data_t *obj)
@@ -103,6 +114,12 @@ void MacroConditionSceneEdit::TypeChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_type = static_cast<SceneType>(value);
+	SetWidgetVisibility();
+}
+
+void MacroConditionSceneEdit::SetWidgetVisibility()
+{
+	_scenes->setVisible(_entryData->_type != SceneType::CHANGED);
 }
 
 void MacroConditionSceneEdit::UpdateEntryData()
@@ -113,4 +130,5 @@ void MacroConditionSceneEdit::UpdateEntryData()
 
 	_scenes->SetScene(_entryData->_scene);
 	_sceneType->setCurrentIndex(static_cast<int>(_entryData->_type));
+	SetWidgetVisibility();
 }
