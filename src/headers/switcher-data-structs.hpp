@@ -79,6 +79,7 @@ struct SwitcherData {
 	obs_source_t *waitScene = nullptr;
 	OBSWeakSource currentScene = nullptr;
 	OBSWeakSource previousScene = nullptr;
+	std::chrono::high_resolution_clock::time_point lastSceneChangeTime{};
 	OBSWeakSource lastRandomScene;
 	SceneGroup *lastRandomSceneGroup;
 	OBSWeakSource nonMatchingScene;

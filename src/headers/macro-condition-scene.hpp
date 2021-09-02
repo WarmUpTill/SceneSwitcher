@@ -8,6 +8,7 @@
 enum class SceneType {
 	CURRENT,
 	PREVIOUS,
+	CHANGED,
 };
 
 class MacroConditionScene : public MacroCondition {
@@ -26,6 +27,7 @@ public:
 	SceneType _type;
 
 private:
+	std::chrono::high_resolution_clock::time_point _lastSceneChangeTime{};
 	static bool _registered;
 	static const std::string id;
 };
@@ -58,5 +60,6 @@ protected:
 	std::shared_ptr<MacroConditionScene> _entryData;
 
 private:
+	void SetWidgetVisibility();
 	bool _loading = true;
 };
