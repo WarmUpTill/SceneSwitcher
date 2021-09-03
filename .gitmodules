@@ -4,3 +4,6 @@
 [submodule "deps/websocketpp"]
 	path = deps/websocketpp
 	url = https://github.com/zaphoyd/websocketpp.git
+[submodule "deps/opencv"]
+	path = deps/opencv
+	url = https://github.com/opencv/opencv.git
