@@ -12,6 +12,7 @@ enum class VideoCondition {
 	HAS_NOT_CHANGED,
 	HAS_CHANGED,
 	NO_IMAGE,
+	PATTERN,
 };
 
 class MacroConditionVideo : public MacroCondition {
@@ -32,14 +33,35 @@ public:
 	OBSWeakSource _videoSource;
 	VideoCondition _condition = VideoCondition::MATCH;
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
+	double _threshold = 0.8;
 
 private:
+	bool ScreenshotContainsPattern();
 	bool Compare();
 
 	std::unique_ptr<AdvSSScreenshotObj> _screenshotData = nullptr;
 	QImage _matchImage;
 	static bool _registered;
 	static const std::string id;
+};
+
+class ThresholdSlider : public QWidget {
+	Q_OBJECT
+
+public:
+	ThresholdSlider(QWidget *parent = 0);
+	void SetDoubleValue(double);
+public slots:
+	void NotifyValueChanged(int value);
+signals:
+	void DoubleValueChanged(double value);
+
+private:
+	void SetDoubleValueText(double);
+	QLabel *_value;
+	QSlider *_slider;
+	double _scale = 100.0;
+	int _precision = 2;
 };
 
 class MacroConditionVideoEdit : public QWidget {
@@ -66,6 +88,8 @@ private slots:
 	void ConditionChanged(int cond);
 	void FilePathChanged();
 	void BrowseButtonClicked();
+	void ThresholdChanged(double);
+	void ShowMatchClicked();
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -74,8 +98,11 @@ protected:
 	QComboBox *_condition;
 	QLineEdit *_filePath;
 	QPushButton *_browseButton;
+	ThresholdSlider *_threshold;
+	QPushButton *_showMatch;
 	std::shared_ptr<MacroConditionVideo> _entryData;
 
 private:
+	void SetWidgetVisibility();
 	bool _loading = true;
 };
