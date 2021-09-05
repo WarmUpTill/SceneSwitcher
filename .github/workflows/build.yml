@@ -59,6 +59,15 @@ jobs:
           curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-qt-${{ env.QT_VERSION }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
           tar -xf ./macos-qt-${{ env.QT_VERSION }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
           xattr -r -d com.apple.quarantine /tmp/obsdeps
+      - name: 'Build prerequisite: OpenCV'
+        shell: bash
+        run: |
+          cd UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/opencv
+          mkdir build
+          cd build
+          cmake -DBUILD_LIST="core,imgproc,objdetect" ..
+          make -j4
+          make install
       - name: Configure
         shell: bash
         run: |
@@ -171,7 +180,8 @@ jobs:
            qtbase5-private-dev \
            libqt5svg5-dev \
            swig \
-           libxss-dev
+           libxss-dev \
+           libopencv-dev
       - name: 'Configure'
         shell: bash
         run: |
@@ -236,18 +246,34 @@ jobs:
         run: |
           curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -f --retry 5 -C -
           7z x dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
+      - name: 'Build prerequisite: OpenCV'
+        run: |
+          cd UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/opencv
+          mkdir build
+          cd build
+          if ( ${{ matrix.arch }} -eq 32 )
+          {
+            cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DBUILD_LIST="core,imgproc,objdetect" ..
+          }
+          else
+          {
+            cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DBUILD_LIST="core,imgproc,objdetect" ..
+          }
+          msbuild /m /p:Configuration=Release OpenCV.sln
+          msbuild INSTALL.vcxproj
       - name: Configure
         run: |
           mkdir ./package
           mkdir ./build${{ matrix.arch }}
           cd ./build${{ matrix.arch }}
+          Get-Location
           if ( ${{ matrix.arch }} -eq 32 )
           {
-            cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=false -DBUILD_CAPTIONS=false -DCOMPILE_D3D12_HOOK=false -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
+            cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DOpenCV_DIR="${{ github.workspace }}/UI/frontend-plugins/SceneSwitcher/deps/opencv/build/" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=false -DBUILD_CAPTIONS=false -DCOMPILE_D3D12_HOOK=false -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
           }
           else
           {
-            cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=false -DBUILD_CAPTIONS=false -DCOMPILE_D3D12_HOOK=false -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017_64" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
+            cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DOpenCV_DIR="${{ github.workspace }}/UI/frontend-plugins/SceneSwitcher/deps/opencv/build/" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=false -DBUILD_CAPTIONS=false -DCOMPILE_D3D12_HOOK=false -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017_64" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
           }
       - name: Build
         run: |
@@ -260,6 +286,7 @@ jobs:
           echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
           robocopy .\build${{ matrix.arch }}\rundir\RelWithDebInfo\obs-plugins\${{ matrix.arch }}bit\ .\package\obs-plugins\${{ matrix.arch }}bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
           robocopy .\build${{ matrix.arch }}\rundir\RelWithDebInfo\data\obs-plugins\${{ env.LIB_NAME }}\ .\package\data\obs-plugins\${{ env.LIB_NAME }}\ /E /XF .gitignore
+          cp UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/opencv/build/bin/Release/*dll package/obs-plugins/${{ matrix.arch }}bit
           exit 0
       - name: Publish zip
         if: success()

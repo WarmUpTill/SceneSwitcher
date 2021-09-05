@@ -165,9 +165,8 @@ if(WIN32)
 endif()
 
 # opencv
-find_library(OPENCV_CORE opencv_core453d PATHS deps/opencv/build/install/x64/vc16/lib PATH_SUFFIXES lib)
-find_library(OPENCV_IMGPROC opencv_imgproc453d PATHS deps/opencv/build/install/x64/vc16/lib PATH_SUFFIXES lib)
-include_directories(deps/opencv/build/install/include)
+find_package(OpenCV REQUIRED)
+include_directories("${OpenCV_INCLUDE_DIRS}")
 
 # Setup QT tools
 set(CMAKE_AUTOMOC ON)
@@ -357,8 +356,13 @@ add_library(
 # Out of tree build
 if(BUILD_OUT_OF_TREE)
   target_link_libraries(
-    advanced-scene-switcher ${advanced-scene-switcher_PLATFORM_LIBS} ${OPENCV_CORE} ${OPENCV_IMGPROC}
-    ${LIBOBS_LIB} ${LIBOBS_FRONTEND_API_LIB} Qt5::Core Qt5::Widgets)
+    advanced-scene-switcher
+    ${advanced-scene-switcher_PLATFORM_LIBS}
+    ${OpenCV_LIBRARIES}
+    ${LIBOBS_LIB}
+    ${LIBOBS_FRONTEND_API_LIB}
+    Qt5::Core
+    Qt5::Widgets)
 
   # Additional commands to install the module in the correct place. Find all the
   # translation files so we can copy them to the correct place later on.
@@ -388,7 +392,11 @@ if(BUILD_OUT_OF_TREE)
 else()
   # In tree build
   target_link_libraries(
-    advanced-scene-switcher ${advanced-scene-switcher_PLATFORM_LIBS} ${OPENCV_CORE} ${OPENCV_IMGPROC}
-    obs-frontend-api Qt5::Widgets libobs)
+    advanced-scene-switcher
+    ${advanced-scene-switcher_PLATFORM_LIBS}
+    ${OpenCV_LIBRARIES}
+    obs-frontend-api
+    Qt5::Widgets
+    libobs)
   install_obs_plugin_with_data(advanced-scene-switcher data)
 endif()

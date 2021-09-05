@@ -8,7 +8,8 @@ Build-Depends: cmake,
                libobs-dev,
                libxtst-dev,
                qtbase5-dev,
-               libxss-dev
+               libxss-dev,
+               libopencv-dev
 Standards-Version: 4.6.0
 Homepage: https://obsproject.com/forum/resources/advanced-scene-switcher.395/
 Rules-Requires-Root: no
