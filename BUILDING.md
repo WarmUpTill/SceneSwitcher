@@ -22,12 +22,14 @@ add_subdirectory(SceneSwitcher)
 
 Now follow the [build instructions for obs-studio](https://obsproject.com/wiki/install-instructions) for your particular platform.
 
-Note that on Linux systems it might be necessary to additionally install the following packages to fulfill the dependencies to `XTest` and `XScreensaver` - exact command may differ:
+Note that on Linux systems it might be necessary to additionally install the following packages to fulfill the dependencies to `XTest`, `XScreensaver` and `OpenCV` - exact command may differ:
 ```
 sudo apt-get install \
     libxtst-dev \
-    libxss-dev
+    libxss-dev \
+    libopencv-dev
 ```
+
 
 ## Compiling out of tree
 ### Prerequisites
@@ -66,11 +68,12 @@ Assuming that you set up Qt via QT installer:
 Just keep hitting configure until all the vars are filled out. Then hit generate.
 
 ### Linux
-Install dependencies `XTest` and `XScreensaver` - exact command may differ:
+Install dependencies `XTest`, `XScreensaver` and `OpenCV` - exact command may differ:
 ```
 sudo apt-get install \
     libxtst-dev \
-    libxss-dev
+    libxss-dev \
+    libopencv-dev
 ```
 
 Most versions of Linux you can use cmake-gui or the command line.
