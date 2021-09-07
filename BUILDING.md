@@ -16,7 +16,17 @@ git clone --recursive https://github.com/WarmUpTill/SceneSwitcher.git
 ```
 
 Then modify the obs-studio/UI/frontend-plugins/CMakeLists.txt file and add an entry for the scene switcher:
+```
 add_subdirectory(SceneSwitcher)
+```
+
+Now follow the [build instructions for obs-studio](https://obsproject.com/wiki/install-instructions) for your particular platform.
+Note that on Linux systems it might be necessary to additionally install the following packages to fulfill the dependencies to `XTest` and `XScreensaver` - exact command may differ:
+```
+sudo apt-get install \
+    libxtst-dev \
+    x11proto-scrnsaver-dev
+```
 
 ## Compiling out of tree
 ### Prerequisites
@@ -41,7 +51,7 @@ code of OBS Studio, located at [source_directory]/libobs/.
 - **LIBOBS_FRONTEND_INCLUDE_DIR** (path) : location of the obs-frontend-api
 subfolder in the source code of OBS Studio, located at [source_directory]/UI/obs-frontend-api.
 
-- **CURL_LIB** (filepath) : location of the libcurl.lib file
+- **CURL_LIBRARY** (filepath) : location of the libcurl.lib file
 (part of the dependencies2019/win64/bin folder used to build OBS)
 - **CURL_INCLUDE_DIR** (path) : location of the curl
 subfolder in OBS dependencies folder: ".../dependencies2019/win64/include/"
@@ -55,6 +65,13 @@ Assuming that you set up Qt via QT installer:
 Just keep hitting configure until all the vars are filled out. Then hit generate.
 
 ### Linux
+Install dependencies `XTest` and `XScreensaver` - exact command may differ:
+```
+sudo apt-get install \
+    libxtst-dev \
+    x11proto-scrnsaver-dev
+```
+
 Most versions of Linux you can use cmake-gui or the command line.
 
 **For the command line:**  
