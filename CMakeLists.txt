@@ -50,8 +50,8 @@ if(WIN32)
   get_filename_component(ISS_PLUGIN_FILES_DIR
                          "${CMAKE_BINARY_DIR}\\..\\package" ABSOLUTE)
   file(TO_NATIVE_PATH "${ISS_PLUGIN_FILES_DIR}" ISS_PLUGIN_FILES_DIR)
-  get_filename_component(ISS_MSVC_REDIST_HELPER_DIR
-                         "${CMAKE_BINARY_DIR}\\.." ABSOLUTE)
+  get_filename_component(ISS_MSVC_REDIST_HELPER_DIR "${CMAKE_BINARY_DIR}\\.."
+                         ABSOLUTE)
   file(TO_NATIVE_PATH "${ISS_MSVC_REDIST_HELPER_DIR}"
        ISS_MSVC_REDIST_HELPER_DIR)
   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CI/windows/setup.iss.in"
@@ -62,19 +62,47 @@ endif()
 if(BUILD_OUT_OF_TREE)
   set(CMAKE_PREFIX_PATH "${QTDIR}")
   set(CMAKE_INCLUDE_CURRENT_DIR ON)
-  list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/external")
-  include(external/FindLibObs.cmake)
-  find_package(LibObs REQUIRED)
   find_package(Qt5Core REQUIRED)
   find_package(Qt5Widgets REQUIRED)
-  find_path(LIBOBS_FRONTEND_INCLUDE_DIR HINTS ${LIBOBS_INCLUDE_DIRS})
-  find_file(
-    LIBOBS_FRONTEND_API_LIB
-    NAMES libobs-frontend-api.*
-    HINTS ${LIBOBS_LIB})
+  find_package(LibObs)
+  find_package(LibObs-frontend-api)
+  if(LibObs_FOUND)
+    set(LIBOBS_LIB ${LIBOBS_LIBRARIES})
+    set(LIBOBS_INCLUDE_DIR ${LIBOBS_INCLUDE_DIRS})
+  endif()
+  if(LibObs-frontend-api_FOUND)
+    set(LIBOBS_FRONTEND_API_LIB ${LIBOBS-FRONTEND-API_LIBRARIES})
+    set(LIBOBS_FRONTEND_INCLUDE_DIR ${LIBOBS-FRONTEND-API_INCLUDE_DIR})
+  endif()
 
-  include_directories("${LIBOBS_INCLUDE_DIRS}" "${LIBOBS_FRONTEND_INCLUDE_DIR}"
+  if(NOT LIBOBS_LIB)
+    message(FATAL_ERROR "obs library not found - please set LIBOBS_LIB")
+  endif()
+  if(NOT LIBOBS_FRONTEND_API_LIB)
+    message(
+      FATAL_ERROR
+        "libobs frontend-api library not found - please set LIBOBS_FRONTEND_API_LIB"
+    )
+  endif()
+  if(NOT LIBOBS_INCLUDE_DIR)
+    message(
+      FATAL_ERROR "obs.hpp header not found - please set LIBOBS_INCLUDE_DIR")
+  endif()
+  if(NOT LIBOBS_FRONTEND_INCLUDE_DIR)
+    message(
+      FATAL_ERROR
+        " obs-frontend-api.h not found - please set LIBOBS_FRONTEND_INCLUDE_DIR"
+    )
+  endif()
+
+  include_directories("${LIBOBS_INCLUDE_DIR}" "${LIBOBS_FRONTEND_INCLUDE_DIR}"
                       ${Qt5Core_INCLUDES} ${Qt5Widgets_INCLUDES})
+
+  find_package(CURL REQUIRED)
+  include_directories("${CURL_INCLUDE_DIRS}")
+else()
+  find_package(Libcurl REQUIRED)
+  include_directories("${LIBCURL_INCLUDE_DIRS}")
 endif()
 
 # Platform specific settings
@@ -85,9 +113,6 @@ if(APPLE)
   endif()
   include_directories(${COCOA})
 endif()
-
-find_package(Libcurl REQUIRED)
-include_directories("${LIBCURL_INCLUDE_DIRS}")
 
 if(UNIX AND NOT APPLE)
   find_package(X11 REQUIRED COMPONENTS Xtst Xss)
