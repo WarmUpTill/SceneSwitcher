@@ -105,6 +105,11 @@ else()
   include_directories("${LIBCURL_INCLUDE_DIRS}")
 endif()
 
+# Backwards compatability with older OBS versions
+if(LibObs_VERSION_MAJOR GREATER_EQUAL 27 OR NOT LibObs_VERSION_MAJOR)
+  add_definitions(-DVCAM_SUPPORTED)
+endif()
+
 # Platform specific settings
 if(APPLE)
   find_library(COCOA Cocoa)
