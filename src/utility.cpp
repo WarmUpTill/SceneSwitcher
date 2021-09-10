@@ -16,7 +16,6 @@
 #include <regex>
 #include <set>
 #include <obs-module.h>
-#include <util/util.hpp>
 
 bool WeakSourceValid(obs_weak_source_t *ws)
 {
@@ -658,13 +657,14 @@ void populateSceneSelection(QComboBox *sel, bool addPrevious, bool addCurrent,
 			    std::deque<SceneGroup> *sceneGroups, bool addSelect,
 			    std::string selectText, bool selectable)
 {
-	BPtr<char *> scenes = obs_frontend_get_scene_names();
+	char **scenes = obs_frontend_get_scene_names();
 	char **temp = scenes;
 	while (*temp) {
 		const char *name = *temp;
 		sel->addItem(name);
 		temp++;
 	}
+	bfree(scenes);
 
 	if (addSceneGroup && sceneGroups) {
 		for (auto &sg : *sceneGroups) {
