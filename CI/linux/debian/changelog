@@ -1,0 +1,5 @@
+obs-scene-switcher (0.1+testonly) focal; urgency=medium
+
+  * Initial release (Closes: #123456)
+
+ -- Joao Eriberto Mota Filho <eriberto@debian.org>  Fri, 03 Sep 2021 11:39:52 -0300

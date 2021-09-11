@@ -1,0 +1,21 @@
+Source: obs-scene-switcher
+Section: video
+Priority: optional
+Maintainer: Joao Eriberto Mota Filho <eriberto@debian.org>
+Build-Depends: cmake,
+               debhelper-compat (= 12),
+               libcurl4-openssl-dev,
+               libobs-dev,
+               libxtst-dev,
+               qtbase5-dev,
+               libxss-dev
+Standards-Version: 4.6.0
+Homepage: https://obsproject.com/forum/resources/advanced-scene-switcher.395/
+Rules-Requires-Root: no
+
+Package: obs-scene-switcher
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: automated scene switcher for OBS Studio (plugin)
+ Advanced Scene Switcher is based on the built in scene switcher. It extends
+ its functionality by adding several features.

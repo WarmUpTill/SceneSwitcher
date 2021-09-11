@@ -1,0 +1,27 @@
+name: debian-build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: create_tarball
+      run: |
+           cd ..
+           tar --exclude=.git -cvzf obs-scene-switcher_0.1+testonly.orig.tar.gz SceneSwitcher
+    - name: create_debian_dir
+      run: |
+           cp -a CI/linux/debian .
+    - name: install_dependencies
+      run: |
+           sudo apt install cmake debhelper devscripts libcurl4-openssl-dev libobs-dev libxtst-dev qtbase5-dev libxss-dev
+           ls -l /usr/include/obs/
+    - name: build
+      run: |
+           debuild --no-lintian --no-sign
