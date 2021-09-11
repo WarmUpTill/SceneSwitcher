@@ -1,0 +1,33 @@
+#!/usr/bin/make -f
+#export DH_VERBOSE = 1
+
+#export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export QT_SELECT = qt5
+
+
+%:
+	dh $@
+
+
+	dh_auto_configure -- -DBUILD_OUT_OF_TREE=1 \
+                             -DLIBOBS_INCLUDE_DIR=/usr/include/obs \
+                             -DLIBOBS_LIB=/usr/lib/${DEB_TARGET_GNU_TYPE}/libobs.so \
+                             -DLIBOBS_FRONTEND_INCLUDE_DIR=/usr/include/obs \
+                             -DLIBOBS_FRONTEND_API_LIB=/usr/lib/${DEB_TARGET_GNU_TYPE}/libobs-frontend-api.so
+
+#override_dh_auto_configure:
+#	dh_auto_configure -- -DBUILD_OUT_OF_TREE=1 \
+#                             -DLIBOBS_FRONTEND_API_LIB=/usr/lib/x86_64-linux-gnu/libobs-frontend-api.so \
+#                             -DLIBOBS_FRONTEND_INCLUDE_DIR=/usr/include/obs \
+#                             -DCMAKE_INSTALL_PREFIX=/usr \
+#                             -DCMAKE_BUILD_TYPE=None \
+#                             -DCMAKE_INSTALL_SYSCONFDIR=/etc \
+#                             -DCMAKE_INSTALL_LOCALSTATEDIR=/var \
+#                             -DCMAKE_EXPORT_NO_PACKAGE_REGISTRY=ON \
+#                             -DCMAKE_FIND_USE_PACKAGE_REGISTRY=OFF \
+#                             -DCMAKE_FIND_PACKAGE_NO_PACKAGE_REGISTRY=ON \
+#                             -DCMAKE_INSTALL_RUNSTATEDIR=/run \
+#                             -DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON \
+#                             "-GUnix Makefiles" -DCMAKE_VERBOSE_MAKEFILE=ON \
+#                             -DCMAKE_INSTALL_LIBDIR=lib/x86_64-linux-gnu ..
+
