@@ -100,14 +100,29 @@ if(BUILD_OUT_OF_TREE)
 
   find_package(CURL REQUIRED)
   include_directories("${CURL_INCLUDE_DIRS}")
+
+  # Backwards compatability with older OBS versions
+  if(LibObs_VERSION_MAJOR GREATER_EQUAL 27)
+    add_definitions(-DVCAM_SUPPORTED)
+  else()
+    message(
+      WARNING
+        "OBS version ${LibObs_VERSION_MAJOR} found - disabling virtual camera functionality"
+    )
+  endif()
+  if(LibObs_VERSION_MAJOR GREATER_EQUAL 26)
+    add_definitions(-DREPLAYBUFFER_SUPPORTED)
+  else()
+    message(
+      WARNING
+        "OBS version ${LibObs_VERSION_MAJOR} found - disabling replay buffer functionality"
+    )
+  endif()
 else()
   find_package(Libcurl REQUIRED)
   include_directories("${LIBCURL_INCLUDE_DIRS}")
-endif()
-
-# Backwards compatability with older OBS versions
-if(LibObs_VERSION_MAJOR GREATER_EQUAL 27 OR NOT LibObs_VERSION_MAJOR)
   add_definitions(-DVCAM_SUPPORTED)
+  add_definitions(-DREPLAYBUFFER_SUPPORTED)
 endif()
 
 # Platform specific settings
