@@ -1,3 +1,5 @@
+#ifdef REPLAYBUFFER_SUPPORTED
+
 #pragma once
 #include "macro-action-edit.hpp"
 #include "duration-control.hpp"
@@ -65,3 +67,5 @@ private:
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
+
+#endif

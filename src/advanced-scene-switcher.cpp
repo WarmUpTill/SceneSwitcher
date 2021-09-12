@@ -579,9 +579,11 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 	case OBS_FRONTEND_EVENT_STREAMING_STOPPED:
 		resetLiveTime();
 		break;
+#ifdef REPLAYBUFFER_SUPPORTED
 	case OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
 		setReplayBufferSaved();
 		break;
+#endif
 	default:
 		break;
 	}

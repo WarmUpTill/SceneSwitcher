@@ -1,3 +1,5 @@
+#ifdef REPLAYBUFFER_SUPPORTED
+
 #include "headers/macro-action-replay-buffer.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
@@ -119,3 +121,5 @@ void MacroActionReplayBufferEdit::ActionChanged(int value)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<ReplayBufferAction>(value);
 }
+
+#endif

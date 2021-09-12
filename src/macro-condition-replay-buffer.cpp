@@ -1,3 +1,5 @@
+#ifdef REPLAYBUFFER_SUPPORTED
+
 #include "headers/macro-condition-edit.hpp"
 #include "headers/macro-condition-replay-buffer.hpp"
 #include "headers/utility.hpp"
@@ -106,3 +108,5 @@ void MacroConditionReplayBufferEdit::UpdateEntryData()
 
 	_state->setCurrentIndex(static_cast<int>(_entryData->_state));
 }
+
+#endif
