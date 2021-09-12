@@ -5,7 +5,9 @@
 
 #include <QWidget>
 #include <QComboBox>
+#include <QHBoxLayout>
 #include <chrono>
+#include <opencv2/opencv.hpp>
 
 enum class VideoCondition {
 	MATCH,
@@ -14,7 +16,11 @@ enum class VideoCondition {
 	HAS_CHANGED,
 	NO_IMAGE,
 	PATTERN,
+	OBJECT,
 };
+
+constexpr int minMinNeighbors = 3;
+constexpr int maxMinNeighbors = 6;
 
 class MacroConditionVideo : public MacroCondition {
 public:
@@ -30,14 +36,25 @@ public:
 	}
 	void GetScreenshot();
 	bool LoadImageFromFile();
+	bool LoadModelData(std::string &path);
+	std::string GetModelDataPath() { return _modelDataPath; }
+	void ResetLastMatch() { _lastMatchResult = false; }
 
 	OBSWeakSource _videoSource;
 	VideoCondition _condition = VideoCondition::MATCH;
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
-	double _threshold = 0.8;
+	double _patternThreshold = 0.8;
+	cv::CascadeClassifier _objectCascade;
+	double _scaleFactor = 1.1;
+	int _minNeighbors = minMinNeighbors;
+	int _minSizeX = 0;
+	int _minSizeY = 0;
+	int _maxSizeX = 0;
+	int _maxSizeY = 0;
 
 private:
 	bool ScreenshotContainsPattern();
+	bool ScreenshotContainsObject();
 	bool Compare();
 
 	std::unique_ptr<AdvSSScreenshotObj> _screenshotData = nullptr;
@@ -46,6 +63,8 @@ private:
 		obs_get_module_data_path(obs_current_module()) +
 		std::string(
 			"/res/cascadeClassifiers/haarcascade_frontalface_alt.xml");
+	bool _lastMatchResult = false;
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -54,7 +73,9 @@ class ThresholdSlider : public QWidget {
 	Q_OBJECT
 
 public:
-	ThresholdSlider(QWidget *parent = 0);
+	ThresholdSlider(double min = 0., double max = 1.,
+			const QString &label = "threshold",
+			const QString &description = "", QWidget *parent = 0);
 	void SetDoubleValue(double);
 public slots:
 	void NotifyValueChanged(int value);
@@ -86,14 +107,22 @@ public:
 	}
 
 	void UpdatePreviewTooltip();
-	void SetFilePath(const QString &text);
 
 private slots:
 	void SourceChanged(const QString &text);
 	void ConditionChanged(int cond);
-	void FilePathChanged();
-	void BrowseButtonClicked();
-	void ThresholdChanged(double);
+	void ImagePathChanged(const QString &text);
+	void ImageBrowseButtonClicked();
+	void PatternThresholdChanged(double);
+
+	void ModelPathChanged(const QString &text);
+	void ObjectScaleThresholdChanged(double);
+	void MinNeighborsChanged(int value);
+	void MinSizeXChanged(int value);
+	void MinSizeYChanged(int value);
+	void MaxSizeXChanged(int value);
+	void MaxSizeYChanged(int value);
+
 	void ShowMatchClicked();
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -101,10 +130,24 @@ signals:
 protected:
 	QComboBox *_videoSelection;
 	QComboBox *_condition;
-	QLineEdit *_filePath;
-	QPushButton *_browseButton;
-	ThresholdSlider *_threshold;
+
+	FileSelection *_imagePath;
+	ThresholdSlider *_patternThreshold;
+
+	FileSelection *_modelDataPath;
+	QHBoxLayout *_modelPathLayout;
+	ThresholdSlider *_objectScaleThreshold;
+	QHBoxLayout *_neighborsControlLayout;
+	QSpinBox *_minNeighbors;
+	QHBoxLayout *_minSizeControlLayout;
+	QSpinBox *_minSizeX;
+	QSpinBox *_minSizeY;
+	QHBoxLayout *_maxSizeControlLayout;
+	QSpinBox *_maxSizeX;
+	QSpinBox *_maxSizeY;
+
 	QPushButton *_showMatch;
+
 	std::shared_ptr<MacroConditionVideo> _entryData;
 
 private:

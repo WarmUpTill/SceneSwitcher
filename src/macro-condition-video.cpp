@@ -7,7 +7,6 @@
 #include <QBuffer>
 #include <QToolTip>
 #include <QMessageBox>
-#include <opencv2/opencv.hpp>
 
 const std::string MacroConditionVideo::id = "video";
 
@@ -29,7 +28,16 @@ static std::map<VideoCondition, std::string> conditionTypes = {
 	 "AdvSceneSwitcher.condition.video.condition.noImage"},
 	{VideoCondition::PATTERN,
 	 "AdvSceneSwitcher.condition.video.condition.pattern"},
+	{VideoCondition::OBJECT,
+	 "AdvSceneSwitcher.condition.video.condition.object"},
 };
+
+cv::CascadeClassifier initObjectCascade(std::string &path)
+{
+	cv::CascadeClassifier cascade;
+	cascade.load(path);
+	return cascade;
+}
 
 bool requiresFileInput(VideoCondition t)
 {
@@ -41,15 +49,16 @@ bool MacroConditionVideo::CheckCondition()
 {
 	bool match = false;
 
-	if (_screenshotData) {
-		if (_screenshotData->done) {
-			match = Compare();
+	if (_screenshotData && _screenshotData->done) {
+		match = Compare();
+		_lastMatchResult = match;
 
-			if (!requiresFileInput(_condition)) {
-				_matchImage = std::move(_screenshotData->image);
-			}
-			_screenshotData.reset(nullptr);
+		if (!requiresFileInput(_condition)) {
+			_matchImage = std::move(_screenshotData->image);
 		}
+		_screenshotData.reset(nullptr);
+	} else {
+		match = _lastMatchResult;
 	}
 
 	GetScreenshot();
@@ -63,8 +72,26 @@ bool MacroConditionVideo::Save(obs_data_t *obj)
 			    GetWeakSourceName(_videoSource).c_str());
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_string(obj, "filePath", _file.c_str());
-	obs_data_set_double(obj, "threshold", _threshold);
+	obs_data_set_double(obj, "threshold", _patternThreshold);
+	obs_data_set_string(obj, "modelDataPath", _modelDataPath.c_str());
+	obs_data_set_double(obj, "scaleFactor", _scaleFactor);
+	obs_data_set_int(obj, "minNeighbors", _minNeighbors);
+	obs_data_set_int(obj, "minSizeX", _minSizeX);
+	obs_data_set_int(obj, "minSizeY", _minSizeY);
+	obs_data_set_int(obj, "maxSizeX", _maxSizeX);
+	obs_data_set_int(obj, "maxSizeY", _maxSizeY);
 	return true;
+}
+
+bool isScaleFactorValid(double scaleFactor)
+{
+	return scaleFactor > 1.;
+}
+
+bool isMinNeighborsValid(int minNeighbors)
+{
+	return minNeighbors >= minMinNeighbors &&
+	       minNeighbors <= maxMinNeighbors;
 }
 
 bool MacroConditionVideo::Load(obs_data_t *obj)
@@ -75,11 +102,29 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 	_condition =
 		static_cast<VideoCondition>(obs_data_get_int(obj, "condition"));
 	_file = obs_data_get_string(obj, "filePath");
-	_threshold = obs_data_get_double(obj, "threshold");
+	_patternThreshold = obs_data_get_double(obj, "threshold");
+	_modelDataPath = obs_data_get_string(obj, "modelDataPath");
+	_scaleFactor = obs_data_get_double(obj, "scaleFactor");
+	if (!isScaleFactorValid(_scaleFactor)) {
+		_scaleFactor = 1.1;
+	}
+	_minNeighbors = obs_data_get_int(obj, "minNeighbors");
+	if (!isMinNeighborsValid(_scaleFactor)) {
+		_minNeighbors = minMinNeighbors;
+	}
+	_minSizeX = obs_data_get_int(obj, "minSizeX");
+	_minSizeY = obs_data_get_int(obj, "minSizeY");
+	_maxSizeX = obs_data_get_int(obj, "maxSizeX");
+	_maxSizeY = obs_data_get_int(obj, "maxSizeY");
 
 	if (requiresFileInput(_condition)) {
 		(void)LoadImageFromFile();
 	}
+
+	if (_condition == VideoCondition::OBJECT) {
+		LoadModelData(_modelDataPath);
+	}
+
 	return true;
 }
 
@@ -108,6 +153,19 @@ bool MacroConditionVideo::LoadImageFromFile()
 	_matchImage =
 		_matchImage.convertToFormat(QImage::Format::Format_RGBX8888);
 	return true;
+}
+
+bool MacroConditionVideo::LoadModelData(std::string &path)
+{
+	_modelDataPath = path;
+	try {
+		_objectCascade = initObjectCascade(path);
+	} catch (...) {
+		blog(LOG_WARNING, "failed to load model data \"%s\"",
+		     path.c_str());
+		return false;
+	}
+	return !_objectCascade.empty();
 }
 
 // Assumption is that QImage uses Format_RGBX8888.
@@ -150,8 +208,36 @@ void matchPattern(QImage &img, QImage &pattern, double threshold,
 bool MacroConditionVideo::ScreenshotContainsPattern()
 {
 	cv::Mat result;
-	matchPattern(_screenshotData->image, _matchImage, _threshold, result);
+	matchPattern(_screenshotData->image, _matchImage, _patternThreshold,
+		     result);
 	return countNonZero(result) > 0;
+}
+
+std::vector<cv::Rect> matchObject(QImage &img, cv::CascadeClassifier &cascade,
+				  double scaleFactor, int minNeighbors,
+				  cv::Size minSize, cv::Size maxSize)
+{
+	if (img.isNull() || cascade.empty()) {
+		return {};
+	}
+
+	auto i = QImageToMat(img);
+	cv::Mat frameGray;
+	cv::cvtColor(i, frameGray, cv::COLOR_BGR2GRAY);
+	equalizeHist(frameGray, frameGray);
+	std::vector<cv::Rect> objects;
+	cascade.detectMultiScale(frameGray, objects, scaleFactor, minNeighbors,
+				 0, minSize, maxSize);
+	return objects;
+}
+
+bool MacroConditionVideo::ScreenshotContainsObject()
+{
+	auto objects = matchObject(_screenshotData->image, _objectCascade,
+				   _scaleFactor, _minNeighbors,
+				   {_minSizeX, _minSizeY},
+				   {_maxSizeX, _maxSizeY});
+	return objects.size() > 0;
 }
 
 bool MacroConditionVideo::Compare()
@@ -169,6 +255,8 @@ bool MacroConditionVideo::Compare()
 		return _screenshotData->image.isNull();
 	case VideoCondition::PATTERN:
 		return ScreenshotContainsPattern();
+	case VideoCondition::OBJECT:
+		return ScreenshotContainsObject();
 	default:
 		break;
 	}
@@ -182,15 +270,15 @@ static inline void populateConditionSelection(QComboBox *list)
 	}
 }
 
-ThresholdSlider::ThresholdSlider(QWidget *parent) : QWidget(parent)
+ThresholdSlider::ThresholdSlider(double min, double max, const QString &label,
+				 const QString &description, QWidget *parent)
+	: QWidget(parent)
 {
 	_slider = new QSlider();
 	_slider->setOrientation(Qt::Horizontal);
-	_slider->setRange(0, _scale);
+	_slider->setRange(min * _scale, max * _scale);
 	_value = new QLabel();
-	QString labelText =
-		obs_module_text("AdvSceneSwitcher.condition.video.threshold") +
-		QString("0.");
+	QString labelText = label + QString("0.");
 	for (int i = 0; i < _precision; i++) {
 		labelText.append(QString("0"));
 	}
@@ -202,8 +290,9 @@ ThresholdSlider::ThresholdSlider(QWidget *parent) : QWidget(parent)
 	sliderLayout->addWidget(_value);
 	sliderLayout->addWidget(_slider);
 	mainLayout->addLayout(sliderLayout);
-	mainLayout->addWidget(new QLabel(obs_module_text(
-		"AdvSceneSwitcher.condition.video.thresholdDescription")));
+	if (!description.isEmpty()) {
+		mainLayout->addWidget(new QLabel(description));
+	}
 	mainLayout->setContentsMargins(0, 0, 0, 0);
 	setLayout(mainLayout);
 }
@@ -235,48 +324,118 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 {
 	_videoSelection = new QComboBox();
 	_condition = new QComboBox();
-	_filePath = new QLineEdit();
-	_browseButton =
-		new QPushButton(obs_module_text("AdvSceneSwitcher.browse"));
-	_threshold = new ThresholdSlider();
+
+	_imagePath = new FileSelection();
+	_imagePath->Button()->disconnect();
+	_patternThreshold = new ThresholdSlider(
+		0., 1.,
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.patternThreshold"),
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.patternThresholdDescription"));
+
+	_modelDataPath = new FileSelection();
+	_objectScaleThreshold = new ThresholdSlider(
+		1.1, 5.,
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.objectScaleThreshold"),
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.objectScaleThresholdDescription"));
+	_minNeighbors = new QSpinBox();
+	_minNeighbors->setMinimum(minMinNeighbors);
+	_minNeighbors->setMaximum(maxMinNeighbors);
+	_minSizeX = new QSpinBox();
+	_minSizeY = new QSpinBox();
+	_minSizeX->setMaximum(1024);
+	_minSizeY->setMaximum(1024);
+	_maxSizeX = new QSpinBox();
+	_maxSizeY = new QSpinBox();
+	_maxSizeX->setMaximum(4096);
+	_maxSizeY->setMaximum(4096);
+
 	_showMatch = new QPushButton(
 		obs_module_text("AdvSceneSwitcher.condition.video.showMatch"));
-
-	_filePath->setFixedWidth(100);
-	_browseButton->setStyleSheet("border:1px solid gray;");
 
 	QWidget::connect(_videoSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(SourceChanged(const QString &)));
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
-	QWidget::connect(_filePath, SIGNAL(editingFinished()), this,
-			 SLOT(FilePathChanged()));
-	QWidget::connect(_browseButton, SIGNAL(clicked()), this,
-			 SLOT(BrowseButtonClicked()));
-	QWidget::connect(_threshold, SIGNAL(DoubleValueChanged(double)), this,
-			 SLOT(ThresholdChanged(double)));
+	QWidget::connect(_imagePath, SIGNAL(PathChanged(const QString &)), this,
+			 SLOT(ImagePathChanged(const QString &)));
+	QWidget::connect(_imagePath->Button(), SIGNAL(clicked()), this,
+			 SLOT(ImageBrowseButtonClicked()));
+	QWidget::connect(_patternThreshold, SIGNAL(DoubleValueChanged(double)),
+			 this, SLOT(PatternThresholdChanged(double)));
+	QWidget::connect(_objectScaleThreshold,
+			 SIGNAL(DoubleValueChanged(double)), this,
+			 SLOT(ObjectScaleThresholdChanged(double)));
+	QWidget::connect(_minNeighbors, SIGNAL(valueChanged(int)), this,
+			 SLOT(MinNeighborsChanged(int)));
+	QWidget::connect(_minSizeX, SIGNAL(valueChanged(int)), this,
+			 SLOT(MinSizeXChanged(int)));
+	QWidget::connect(_minSizeY, SIGNAL(valueChanged(int)), this,
+			 SLOT(MinSizeYChanged(int)));
+	QWidget::connect(_maxSizeX, SIGNAL(valueChanged(int)), this,
+			 SLOT(MaxSizeXChanged(int)));
+	QWidget::connect(_maxSizeY, SIGNAL(valueChanged(int)), this,
+			 SLOT(MaxSizeYChanged(int)));
+	QWidget::connect(_modelDataPath, SIGNAL(PathChanged(const QString &)),
+			 this, SLOT(ModelPathChanged(const QString &)));
 	QWidget::connect(_showMatch, SIGNAL(clicked()), this,
 			 SLOT(ShowMatchClicked()));
 
 	populateVideoSelection(_videoSelection);
 	populateConditionSelection(_condition);
 
-	QHBoxLayout *entryLayout = new QHBoxLayout;
+	QHBoxLayout *entryLine1Layout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{videoSources}}", _videoSelection},
 		{"{{condition}}", _condition},
-		{"{{filePath}}", _filePath},
-		{"{{browseButton}}", _browseButton},
+		{"{{imagePath}}", _imagePath},
+		{"{{minNeighbors}}", _minNeighbors},
+		{"{{minSizeX}}", _minSizeX},
+		{"{{minSizeY}}", _minSizeY},
+		{"{{maxSizeX}}", _maxSizeX},
+		{"{{maxSizeY}}", _maxSizeY},
+		{"{{modelDataPath}}", _modelDataPath},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.video.entry"),
-		     entryLayout, widgetPlaceholders);
+		     entryLine1Layout, widgetPlaceholders);
+
+	_modelPathLayout = new QHBoxLayout;
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.entry.modelPath"),
+		_modelPathLayout, widgetPlaceholders);
+
+	_neighborsControlLayout = new QHBoxLayout;
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.entry.minNeighbor"),
+		_neighborsControlLayout, widgetPlaceholders);
+
+	_minSizeControlLayout = new QHBoxLayout;
+	placeWidgets(obs_module_text(
+			     "AdvSceneSwitcher.condition.video.entry.minSize"),
+		     _minSizeControlLayout, widgetPlaceholders);
+
+	_maxSizeControlLayout = new QHBoxLayout;
+	placeWidgets(obs_module_text(
+			     "AdvSceneSwitcher.condition.video.entry.maxSize"),
+		     _maxSizeControlLayout, widgetPlaceholders);
+
 	QHBoxLayout *showMatchLayout = new QHBoxLayout;
 	showMatchLayout->addWidget(_showMatch);
 	showMatchLayout->addStretch();
 	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->addLayout(entryLayout);
-	mainLayout->addWidget(_threshold);
+	mainLayout->addLayout(entryLine1Layout);
+	mainLayout->addWidget(_patternThreshold);
+	mainLayout->addLayout(_modelPathLayout);
+	mainLayout->addWidget(_objectScaleThreshold);
+	mainLayout->addLayout(_neighborsControlLayout);
+	mainLayout->addLayout(_minSizeControlLayout);
+	mainLayout->addLayout(_maxSizeControlLayout);
 	mainLayout->addLayout(showMatchLayout);
 	setLayout(mainLayout);
 
@@ -311,12 +470,6 @@ void MacroConditionVideoEdit::UpdatePreviewTooltip()
 	this->setToolTip(html);
 }
 
-void MacroConditionVideoEdit::SetFilePath(const QString &text)
-{
-	_filePath->setText(text);
-	FilePathChanged();
-}
-
 void MacroConditionVideoEdit::SourceChanged(const QString &text)
 {
 	if (_loading || !_entryData) {
@@ -325,11 +478,12 @@ void MacroConditionVideoEdit::SourceChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_videoSource = GetWeakSourceByQString(text);
+	_entryData->ResetLastMatch();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-bool needsThreshold(VideoCondition cond)
+bool needsPatternThreshold(VideoCondition cond)
 {
 	return cond == VideoCondition::PATTERN;
 }
@@ -342,6 +496,7 @@ void MacroConditionVideoEdit::ConditionChanged(int cond)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_condition = static_cast<VideoCondition>(cond);
+	_entryData->ResetLastMatch();
 	SetWidgetVisibility();
 
 	// Reload image data to avoid incorrect matches.
@@ -352,22 +507,28 @@ void MacroConditionVideoEdit::ConditionChanged(int cond)
 	if (_entryData->LoadImageFromFile()) {
 		UpdatePreviewTooltip();
 	}
+
+	if (_entryData->_condition == VideoCondition::OBJECT) {
+		auto path = _entryData->GetModelDataPath();
+		_entryData->_objectCascade = initObjectCascade(path);
+	}
 }
 
-void MacroConditionVideoEdit::FilePathChanged()
+void MacroConditionVideoEdit::ImagePathChanged(const QString &text)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_file = _filePath->text().toUtf8().constData();
+	_entryData->_file = text.toUtf8().constData();
+	_entryData->ResetLastMatch();
 	if (_entryData->LoadImageFromFile()) {
 		UpdatePreviewTooltip();
 	}
 }
 
-void MacroConditionVideoEdit::BrowseButtonClicked()
+void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 {
 	if (_loading || !_entryData) {
 		return;
@@ -427,17 +588,78 @@ void MacroConditionVideoEdit::BrowseButtonClicked()
 
 		screenshot->image.save(path);
 	}
-	SetFilePath(path);
+	_imagePath->SetPath(path);
+	ImagePathChanged(path);
 }
 
-void MacroConditionVideoEdit::ThresholdChanged(double value)
+void MacroConditionVideoEdit::PatternThresholdChanged(double value)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_threshold = value;
+	_entryData->_patternThreshold = value;
+}
+
+void MacroConditionVideoEdit::ObjectScaleThresholdChanged(double value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_scaleFactor = value;
+}
+
+void MacroConditionVideoEdit::MinNeighborsChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_minNeighbors = value;
+}
+
+void MacroConditionVideoEdit::MinSizeXChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_minSizeX = value;
+}
+
+void MacroConditionVideoEdit::MinSizeYChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_minSizeY = value;
+}
+
+void MacroConditionVideoEdit::MaxSizeXChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_maxSizeX = value;
+}
+
+void MacroConditionVideoEdit::MaxSizeYChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_maxSizeY = value;
 }
 
 QImage markPatterns(cv::Mat &matchResult, QImage &image, QImage &pattern)
@@ -456,6 +678,18 @@ QImage markPatterns(cv::Mat &matchResult, QImage &image, QImage &pattern)
 	return MatToQImage(matchImg);
 }
 
+QImage markObjects(QImage &image, std::vector<cv::Rect> &objects)
+{
+	auto frame = QImageToMat(image);
+	for (size_t i = 0; i < objects.size(); i++) {
+		rectangle(frame, cv::Point(objects[i].x, objects[i].y),
+			  cv::Point(objects[i].x + objects[i].width,
+				    objects[i].y + objects[i].height),
+			  cv::Scalar(255, 0, 0, 0), 2, 8, 0);
+	}
+	return MatToQImage(frame);
+}
+
 void MacroConditionVideoEdit::ShowMatchClicked()
 {
 	auto source = obs_weak_source_get_source(_entryData->_videoSource);
@@ -470,18 +704,31 @@ void MacroConditionVideoEdit::ShowMatchClicked()
 		return;
 	}
 
-	cv::Mat result;
+	QImage markedIamge;
 	QImage pattern = _entryData->GetMatchImage();
-	matchPattern(screenshot->image, pattern, _entryData->_threshold,
-		     result);
-
-	if (countNonZero(result) == 0) {
-		DisplayMessage(obs_module_text(
-			"AdvSceneSwitcher.condition.video.patternMatchFail"));
-		return;
+	if (_entryData->_condition == VideoCondition::PATTERN) {
+		cv::Mat result;
+		matchPattern(screenshot->image, pattern,
+			     _entryData->_patternThreshold, result);
+		if (countNonZero(result) == 0) {
+			DisplayMessage(obs_module_text(
+				"AdvSceneSwitcher.condition.video.patternMatchFail"));
+			return;
+		}
+		markedIamge = markPatterns(result, screenshot->image, pattern);
+	} else if (_entryData->_condition == VideoCondition::OBJECT) {
+		auto objects = matchObject(
+			screenshot->image, _entryData->_objectCascade,
+			_entryData->_scaleFactor, _entryData->_minNeighbors,
+			{_entryData->_minSizeX, _entryData->_minSizeY},
+			{_entryData->_maxSizeX, _entryData->_maxSizeY});
+		if (objects.empty()) {
+			DisplayMessage(obs_module_text(
+				"AdvSceneSwitcher.condition.video.objectMatchFail"));
+			return;
+		}
+		markedIamge = markObjects(screenshot->image, objects);
 	}
-
-	auto markedIamge = markPatterns(result, screenshot->image, pattern);
 
 	QLabel *label = new QLabel;
 	label->setPixmap(QPixmap::fromImage(markedIamge));
@@ -493,14 +740,57 @@ void MacroConditionVideoEdit::ShowMatchClicked()
 	dialog.exec();
 }
 
+void MacroConditionVideoEdit::ModelPathChanged(const QString &text)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	std::string path = text.toStdString();
+	if (!_entryData->LoadModelData(path)) {
+		DisplayMessage(obs_module_text(
+			"AdvSceneSwitcher.condition.video.modelLoadFail"));
+	}
+}
+
+bool needsShowMatch(VideoCondition cond)
+{
+	return cond == VideoCondition::PATTERN ||
+	       cond == VideoCondition::OBJECT;
+}
+
+bool needsObjectControls(VideoCondition cond)
+{
+	return cond == VideoCondition::OBJECT;
+}
+
+void setLayoutVisible(QLayout *layout, bool visible)
+{
+	for (int i = 0; i < layout->count(); ++i) {
+		QWidget *widget = layout->itemAt(i)->widget();
+		if (widget != NULL) {
+			widget->setVisible(visible);
+		}
+	}
+}
+
 void MacroConditionVideoEdit::SetWidgetVisibility()
 {
-	bool showFileWidgets = requiresFileInput(_entryData->_condition);
-	_browseButton->setVisible(showFileWidgets);
-	_filePath->setVisible(showFileWidgets);
-	_threshold->setVisible(needsThreshold(_entryData->_condition));
-	_showMatch->setVisible(_entryData->_condition ==
-			       VideoCondition::PATTERN);
+	_imagePath->setVisible(requiresFileInput(_entryData->_condition));
+	_patternThreshold->setVisible(
+		needsPatternThreshold(_entryData->_condition));
+	_showMatch->setVisible(needsShowMatch(_entryData->_condition));
+	_objectScaleThreshold->setVisible(
+		needsObjectControls(_entryData->_condition));
+	setLayoutVisible(_neighborsControlLayout,
+			 needsObjectControls(_entryData->_condition));
+	setLayoutVisible(_minSizeControlLayout,
+			 needsObjectControls(_entryData->_condition));
+	setLayoutVisible(_maxSizeControlLayout,
+			 needsObjectControls(_entryData->_condition));
+	setLayoutVisible(_modelPathLayout,
+			 needsObjectControls(_entryData->_condition));
 	adjustSize();
 }
 
@@ -513,7 +803,14 @@ void MacroConditionVideoEdit::UpdateEntryData()
 	_videoSelection->setCurrentText(
 		GetWeakSourceName(_entryData->_videoSource).c_str());
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
-	_filePath->setText(QString::fromStdString(_entryData->_file));
-	_threshold->SetDoubleValue(_entryData->_threshold);
+	_imagePath->SetPath(QString::fromStdString(_entryData->_file));
+	_patternThreshold->SetDoubleValue(_entryData->_patternThreshold);
+	_modelDataPath->SetPath(_entryData->GetModelDataPath().c_str());
+	_objectScaleThreshold->SetDoubleValue(_entryData->_scaleFactor);
+	_minNeighbors->setValue(_entryData->_minNeighbors);
+	_minSizeX->setValue(_entryData->_minSizeX);
+	_minSizeY->setValue(_entryData->_minSizeY);
+	_maxSizeX->setValue(_entryData->_maxSizeX);
+	_maxSizeY->setValue(_entryData->_maxSizeY);
 	SetWidgetVisibility();
 }
