@@ -79,7 +79,7 @@ bool Macro::CeckMatch()
 			break;
 		default:
 			blog(LOG_WARNING,
-			     "ignoring unkown condition check for '%s'",
+			     "ignoring unknown condition check for '%s'",
 			     _name.c_str());
 			break;
 		}
@@ -249,7 +249,7 @@ bool Macro::Load(obs_data_t *obj)
 			setValidLogic(c, root, _name);
 		} else {
 			blog(LOG_WARNING,
-			     "discarding condition entry with unkown id (%s) for macro %s",
+			     "discarding condition entry with unknown id (%s) for macro %s",
 			     id.c_str(), _name.c_str());
 		}
 
@@ -273,7 +273,7 @@ bool Macro::Load(obs_data_t *obj)
 			_actions.back()->Load(array_obj);
 		} else {
 			blog(LOG_WARNING,
-			     "discarding action entry with unkown id (%s) for macro %s",
+			     "discarding action entry with unknown id (%s) for macro %s",
 			     id.c_str(), _name.c_str());
 		}
 
