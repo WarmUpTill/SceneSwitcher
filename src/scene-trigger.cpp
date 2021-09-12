@@ -149,7 +149,7 @@ void SceneTrigger::logMatch()
 		actionName = "STOP VIRTUAL CAMERA";
 		break;
 	default:
-		actionName = "UNKOWN";
+		actionName = "UNKNOWN";
 		break;
 	}
 
@@ -273,7 +273,7 @@ void SceneTrigger::performAction()
 		bool stop = triggerAction == sceneTriggerAction::STOP_SWITCHER;
 		t = std::thread(statusThread, duration, stop);
 	} else {
-		blog(LOG_WARNING, "ignoring unkown action '%d'",
+		blog(LOG_WARNING, "ignoring unknown action '%d'",
 		     static_cast<int>(triggerAction));
 	}
 
