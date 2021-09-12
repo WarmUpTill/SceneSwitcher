@@ -21,11 +21,12 @@ add_subdirectory(SceneSwitcher)
 ```
 
 Now follow the [build instructions for obs-studio](https://obsproject.com/wiki/install-instructions) for your particular platform.
+
 Note that on Linux systems it might be necessary to additionally install the following packages to fulfill the dependencies to `XTest` and `XScreensaver` - exact command may differ:
 ```
 sudo apt-get install \
     libxtst-dev \
-    x11proto-scrnsaver-dev
+    libxss-dev
 ```
 
 ## Compiling out of tree
@@ -69,7 +70,7 @@ Install dependencies `XTest` and `XScreensaver` - exact command may differ:
 ```
 sudo apt-get install \
     libxtst-dev \
-    x11proto-scrnsaver-dev
+    libxss-dev
 ```
 
 Most versions of Linux you can use cmake-gui or the command line.
