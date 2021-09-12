@@ -11,6 +11,24 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: 'recursive'
+    - name: check_libobs_revision
+      run: |
+           sudo apt install libobs-dev
+           mkdir source
+           cd source
+           dpkg -l libobs-dev | tr -s " "| grep libobs | cut -d" " -f3 > libobs.rev
+    - name: install_frontend_header
+      run: |
+           [ -e /usr/include/obs/obs-frontend-api.h ] && { echo "ERROR: obs-frontend-api.h already in system. Maybe the package libobs-dev is installing it."; exit 1; }
+           cd source
+           LIBOBSREV=$(cat libobs.rev)
+           sudo apt install devscripts
+           dget -u http://archive.ubuntu.com/ubuntu/pool/universe/o/obs-studio/obs-studio_$LIBOBSREV.dsc
+           cd ..
+           sudo find -name obs-frontend-api.h -exec cp {} /usr/include/obs/ \;
+           egrep '#include <obs.h>' /usr/include/obs/obs-frontend-api.h || { echo "ERROR: check if the sed commands are needed from now."; exit 1; }
+           sudo sed -i 's/#include <obs.h>/#include <obs\/obs.h>/' /usr/include/obs/obs-frontend-api.h
+           sudo sed -i 's/#include <util\/darray.h>/#include <obs\/util\/darray.h>/' /usr/include/obs/obs-frontend-api.h
     - name: create_tarball
       run: |
            cd ..
@@ -20,8 +38,9 @@ jobs:
            cp -a CI/linux/debian .
     - name: install_dependencies
       run: |
-           sudo apt install cmake debhelper devscripts libcurl4-openssl-dev libobs-dev libxtst-dev qtbase5-dev libxss-dev
-           ls -l /usr/include/obs/
+           # devscripts and libobs-dev are needed but they were already installed
+           # from check_libobs_revision and install_frontend_header sections.
+           sudo apt install cmake debhelper libcurl4-openssl-dev libxss-dev libxtst-dev qtbase5-dev
     - name: build
       run: |
            debuild --no-lintian --no-sign
