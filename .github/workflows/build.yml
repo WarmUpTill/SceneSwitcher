@@ -188,6 +188,7 @@ jobs:
           FILE_NAME=${{ env.PLUGIN_NAME }}-$FILE_DATE-${{ github.sha }}-linux64.tar.gz
           echo "FILE_NAME=${FILE_NAME}" >> $GITHUB_ENV
           mkdir -p ./${{ env.LIB_NAME }}/bin/64bit/
+          strip -d ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.LIB_NAME }}.so
           mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.LIB_NAME }}.so ./${{ env.LIB_NAME }}/bin/64bit/${{ env.LIB_NAME }}.so
           mv ./UI/frontend-plugins/${{ env.PLUGIN_NAME }}/data ./${{ env.LIB_NAME }}/data
           tar -cvzf "${FILE_NAME}" ${{ env.LIB_NAME }}
