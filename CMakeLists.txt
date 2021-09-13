@@ -364,19 +364,19 @@ if(BUILD_OUT_OF_TREE)
 
   # Linux
   if(UNIX AND NOT APPLE)
-    if(ARCH EQUAL 64)
-      set(ARCH_NAME "x86_64")
-    else()
-      set(ARCH_NAME "i686")
+    if(NOT LIB_OUT_DIR)
+      set(LIB_OUT_DIR "/lib/obs-plugins")
+    endif()
+    if(NOT DATA_OUT_DIR)
+      set(DATA_OUT_DIR "/share/obs/obs-plugins/advanced-scene-switcher")
     endif()
     set_target_properties(advanced-scene-switcher PROPERTIES PREFIX "")
     install(TARGETS advanced-scene-switcher
-            LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/obs-plugins)
-    install(
-      FILES ${ASS_TRANSLATION_FILES}
-      DESTINATION
-        "${CMAKE_INSTALL_PREFIX}/share/obs/obs-plugins/advanced-scene-switcher/locale"
-    )
+            LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIB_OUT_DIR})
+    install(DIRECTORY data/locale
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/${DATA_OUT_DIR})
+    install(DIRECTORY data/res
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/${DATA_OUT_DIR})
   endif()
 else()
   # In tree build
