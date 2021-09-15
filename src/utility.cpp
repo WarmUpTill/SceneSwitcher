@@ -340,7 +340,6 @@ bool matchJson(const std::string &json1, const std::string &json2,
 bool compareSourceSettings(const OBSWeakSource &source,
 			   const std::string &settings, bool useRegex)
 {
-	bool ret = false;
 	std::string currentSettings = getSourceSettings(source);
 	return matchJson(currentSettings, settings, useRegex);
 }
