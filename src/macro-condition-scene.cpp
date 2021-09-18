@@ -14,6 +14,8 @@ static std::map<SceneType, std::string> sceneTypes = {
 	{SceneType::CURRENT, "AdvSceneSwitcher.condition.scene.type.current"},
 	{SceneType::PREVIOUS, "AdvSceneSwitcher.condition.scene.type.previous"},
 	{SceneType::CHANGED, "AdvSceneSwitcher.condition.scene.type.changed"},
+	{SceneType::NOTCHANGED,
+	 "AdvSceneSwitcher.condition.scene.type.notChanged"},
 };
 
 bool MacroConditionScene::CheckCondition()
@@ -31,6 +33,8 @@ bool MacroConditionScene::CheckCondition()
 		return switcher->previousScene == _scene.GetScene(false);
 	case SceneType::CHANGED:
 		return sceneChanged;
+	case SceneType::NOTCHANGED:
+		return !sceneChanged;
 	default:
 		break;
 	}
@@ -119,7 +123,8 @@ void MacroConditionSceneEdit::TypeChanged(int value)
 
 void MacroConditionSceneEdit::SetWidgetVisibility()
 {
-	_scenes->setVisible(_entryData->_type != SceneType::CHANGED);
+	_scenes->setVisible(_entryData->_type == SceneType::CURRENT ||
+			    _entryData->_type == SceneType::PREVIOUS);
 }
 
 void MacroConditionSceneEdit::UpdateEntryData()
