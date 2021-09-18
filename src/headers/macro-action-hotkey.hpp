@@ -3,6 +3,7 @@
 #include "hotkey.hpp"
 
 #include <QCheckBox>
+#include <QSpinBox>
 #include <QHBoxLayout>
 
 class MacroActionHotkey : public MacroAction {
@@ -27,6 +28,8 @@ public:
 	bool _rightAlt = false;
 	bool _leftMeta = false;
 	bool _rightMeta = false;
+	int _duration = 300; // in ms
+	bool _onlySendToObs = false;
 
 private:
 	static bool _registered;
@@ -59,6 +62,8 @@ private slots:
 	void RAltChanged(int state);
 	void LMetaChanged(int state);
 	void RMetaChanged(int state);
+	void DurationChanged(int ms);
+	void OnlySendToOBSChanged(int state);
 
 protected:
 	QComboBox *_keys;
@@ -70,10 +75,14 @@ protected:
 	QCheckBox *_rightAlt;
 	QCheckBox *_leftMeta;
 	QCheckBox *_rightMeta;
+	QSpinBox *_duration;
+	QCheckBox *_onlySendToOBS;
+	QLabel *_noKeyPressSimulationWarning;
 
 	std::shared_ptr<MacroActionHotkey> _entryData;
 
 private:
+	void SetWarningVisibility();
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };

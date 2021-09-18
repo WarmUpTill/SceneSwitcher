@@ -391,7 +391,7 @@ static std::unordered_map<HotkeyType, long> keyTable = {
 	{HotkeyType::Key_NumpadEnter, VK_RETURN},
 };
 
-void PressKeys(const std::vector<HotkeyType> keys)
+void PressKeys(const std::vector<HotkeyType> keys, int duration)
 {
 	INPUT ip;
 	ip.type = INPUT_KEYBOARD;
@@ -411,7 +411,7 @@ void PressKeys(const std::vector<HotkeyType> keys)
 	}
 
 	// When instantly releasing the key presses OBS might miss them
-	Sleep(300);
+	Sleep(duration);
 
 	// Release keys
 	ip.ki.dwFlags = KEYEVENTF_KEYUP;
