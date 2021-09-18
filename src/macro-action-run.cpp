@@ -65,9 +65,7 @@ MacroActionRunEdit::MacroActionRunEdit(
 	QWidget *parent, std::shared_ptr<MacroActionRun> entryData)
 	: QWidget(parent)
 {
-	_filePath = new QLineEdit();
-	_browseButton =
-		new QPushButton(obs_module_text("AdvSceneSwitcher.browse"));
+	_filePath = new FileSelection();
 	_argList = new QListWidget();
 	_addArg = new QPushButton();
 	_addArg->setMaximumSize(QSize(22, 22));
@@ -90,10 +88,8 @@ MacroActionRunEdit::MacroActionRunEdit(
 		"themeID", QVariant(QString::fromUtf8("downArrowIconSmall")));
 	_argDown->setFlat(true);
 
-	QWidget::connect(_filePath, SIGNAL(editingFinished()), this,
-			 SLOT(FilePathChanged()));
-	QWidget::connect(_browseButton, SIGNAL(clicked()), this,
-			 SLOT(BrowseButtonClicked()));
+	QWidget::connect(_filePath, SIGNAL(PathChanged(const QString &)), this,
+			 SLOT(PathChanged(const QString &)));
 	QWidget::connect(_addArg, SIGNAL(clicked()), this, SLOT(AddArg()));
 	QWidget::connect(_removeArg, SIGNAL(clicked()), this,
 			 SLOT(RemoveArg()));
@@ -103,7 +99,6 @@ MacroActionRunEdit::MacroActionRunEdit(
 	auto *entryLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{filePath}}", _filePath},
-		{"{{browseButton}}", _browseButton},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.run.entry"),
 		     entryLayout, widgetPlaceholders);
@@ -137,38 +132,23 @@ void MacroActionRunEdit::UpdateEntryData()
 	if (!_entryData) {
 		return;
 	}
-	_filePath->setText(QString::fromStdString(_entryData->_path));
+	_filePath->SetPath(QString::fromStdString(_entryData->_path));
 	for (auto &arg : _entryData->_args) {
 		QListWidgetItem *item = new QListWidgetItem(arg, _argList);
 		item->setData(Qt::UserRole, arg);
 	}
 }
 
-void MacroActionRunEdit::FilePathChanged()
+void MacroActionRunEdit::PathChanged(const QString &text)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_path = _filePath->text().toUtf8().constData();
+	_entryData->_path = text.toUtf8().constData();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
-}
-
-void MacroActionRunEdit::BrowseButtonClicked()
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	QString path = QFileDialog::getOpenFileName(this);
-	if (path.isEmpty()) {
-		return;
-	}
-
-	_filePath->setText(path);
-	FilePathChanged();
 }
 
 void MacroActionRunEdit::AddArg()

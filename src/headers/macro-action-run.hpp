@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "file-selection.hpp"
 
 #include <QLineEdit>
 #include <QPushButton>
@@ -43,8 +44,7 @@ public:
 	}
 
 private slots:
-	void FilePathChanged();
-	void BrowseButtonClicked();
+	void PathChanged(const QString &text);
 	void AddArg();
 	void RemoveArg();
 	void ArgUp();
@@ -56,8 +56,7 @@ protected:
 	std::shared_ptr<MacroActionRun> _entryData;
 
 private:
-	QLineEdit *_filePath;
-	QPushButton *_browseButton;
+	FileSelection *_filePath;
 	QListWidget *_argList;
 	QPushButton *_addArg;
 	QPushButton *_removeArg;

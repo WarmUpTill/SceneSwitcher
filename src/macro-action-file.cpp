@@ -86,9 +86,7 @@ MacroActionFileEdit::MacroActionFileEdit(
 	QWidget *parent, std::shared_ptr<MacroActionFile> entryData)
 	: QWidget(parent)
 {
-	_filePath = new QLineEdit();
-	_browseButton =
-		new QPushButton(obs_module_text("AdvSceneSwitcher.browse"));
+	_filePath = new FileSelection(FileSelection::Type::WRITE);
 	_text = new QPlainTextEdit();
 	_actions = new QComboBox();
 
@@ -96,10 +94,8 @@ MacroActionFileEdit::MacroActionFileEdit(
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
-	QWidget::connect(_filePath, SIGNAL(editingFinished()), this,
-			 SLOT(FilePathChanged()));
-	QWidget::connect(_browseButton, SIGNAL(clicked()), this,
-			 SLOT(BrowseButtonClicked()));
+	QWidget::connect(_filePath, SIGNAL(PathChanged(const QString &)), this,
+			 SLOT(PathChanged(const QString &)));
 	QWidget::connect(_text, SIGNAL(textChanged()), this,
 			 SLOT(TextChanged()));
 	;
@@ -107,7 +103,6 @@ MacroActionFileEdit::MacroActionFileEdit(
 	QHBoxLayout *entryLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{filePath}}", _filePath},
-		{"{{browseButton}}", _browseButton},
 		{"{{matchText}}", _text},
 		{"{{actions}}", _actions},
 	};
@@ -131,39 +126,20 @@ void MacroActionFileEdit::UpdateEntryData()
 	}
 
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
-	_filePath->setText(QString::fromStdString(_entryData->_file));
+	_filePath->SetPath(QString::fromStdString(_entryData->_file));
 	_text->setPlainText(QString::fromStdString(_entryData->_text));
 }
 
-void MacroActionFileEdit::FilePathChanged()
+void MacroActionFileEdit::PathChanged(const QString &text)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_file = _filePath->text().toUtf8().constData();
+	_entryData->_file = text.toUtf8().constData();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
-}
-
-void MacroActionFileEdit::BrowseButtonClicked()
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	QString path = QFileDialog::getSaveFileName(
-		this,
-		tr(obs_module_text("AdvSceneSwitcher.fileTab.selectWrite")),
-		QDir::currentPath(),
-		tr(obs_module_text("AdvSceneSwitcher.fileTab.anyFileType")));
-	if (path.isEmpty()) {
-		return;
-	}
-
-	_filePath->setText(path);
-	FilePathChanged();
 }
 
 void MacroActionFileEdit::TextChanged()

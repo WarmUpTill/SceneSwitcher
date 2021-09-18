@@ -2,6 +2,7 @@
 #include <QSpinBox>
 #include <QPlainTextEdit>
 #include "macro-action-edit.hpp"
+#include "file-selection.hpp"
 
 enum class FileAction {
 	WRITE,
@@ -47,16 +48,14 @@ public:
 	}
 
 private slots:
-	void FilePathChanged();
-	void BrowseButtonClicked();
+	void PathChanged(const QString &text);
 	void TextChanged();
 	void ActionChanged(int value);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
-	QLineEdit *_filePath;
-	QPushButton *_browseButton;
+	FileSelection *_filePath;
 	QPlainTextEdit *_text;
 	QComboBox *_actions;
 	std::shared_ptr<MacroActionFile> _entryData;

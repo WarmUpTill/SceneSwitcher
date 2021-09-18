@@ -137,10 +137,7 @@ MacroConditionFileEdit::MacroConditionFileEdit(
 	: QWidget(parent)
 {
 	_fileType = new QComboBox();
-	_filePath = new QLineEdit();
-	_browseButton =
-		new QPushButton(obs_module_text("AdvSceneSwitcher.browse"));
-	_browseButton->setStyleSheet("border:1px solid gray;");
+	_filePath = new FileSelection();
 	_matchText = new QPlainTextEdit();
 	_useRegex = new QCheckBox(
 		obs_module_text("AdvSceneSwitcher.fileTab.useRegExp"));
@@ -151,10 +148,8 @@ MacroConditionFileEdit::MacroConditionFileEdit(
 
 	QWidget::connect(_fileType, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(FileTypeChanged(int)));
-	QWidget::connect(_filePath, SIGNAL(editingFinished()), this,
-			 SLOT(FilePathChanged()));
-	QWidget::connect(_browseButton, SIGNAL(clicked()), this,
-			 SLOT(BrowseButtonClicked()));
+	QWidget::connect(_filePath, SIGNAL(PathChanged(const QString &)), this,
+			 SLOT(PathChanged(const QString &)));
 	QWidget::connect(_matchText, SIGNAL(textChanged()), this,
 			 SLOT(MatchTextChanged()));
 	QWidget::connect(_useRegex, SIGNAL(stateChanged(int)), this,
@@ -170,7 +165,6 @@ MacroConditionFileEdit::MacroConditionFileEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{fileType}}", _fileType},
 		{"{{filePath}}", _filePath},
-		{"{{browseButton}}", _browseButton},
 		{"{{matchText}}", _matchText},
 		{"{{useRegex}}", _useRegex},
 		{"{{checkModificationDate}}", _checkModificationDate},
@@ -209,7 +203,7 @@ void MacroConditionFileEdit::UpdateEntryData()
 
 	_fileType->setCurrentIndex(static_cast<int>(_entryData->_fileType));
 
-	_filePath->setText(QString::fromStdString(_entryData->_file));
+	_filePath->SetPath(QString::fromStdString(_entryData->_file));
 	_matchText->setPlainText(QString::fromStdString(_entryData->_text));
 	_useRegex->setChecked(_entryData->_useRegex);
 	_checkModificationDate->setChecked(_entryData->_useTime);
@@ -225,10 +219,10 @@ void MacroConditionFileEdit::FileTypeChanged(int index)
 	FileType type = static_cast<FileType>(index);
 
 	if (type == FileType::LOCAL) {
-		_browseButton->setDisabled(false);
+		_filePath->Button()->setDisabled(false);
 		_checkModificationDate->setDisabled(false);
 	} else {
-		_browseButton->setDisabled(true);
+		_filePath->Button()->setDisabled(true);
 		_checkModificationDate->setDisabled(true);
 	}
 
@@ -236,35 +230,16 @@ void MacroConditionFileEdit::FileTypeChanged(int index)
 	_entryData->_fileType = type;
 }
 
-void MacroConditionFileEdit::FilePathChanged()
+void MacroConditionFileEdit::PathChanged(const QString &text)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_file = _filePath->text().toUtf8().constData();
+	_entryData->_file = text.toUtf8().constData();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
-}
-
-void MacroConditionFileEdit::BrowseButtonClicked()
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	QString path = QFileDialog::getOpenFileName(
-		this,
-		tr(obs_module_text("AdvSceneSwitcher.fileTab.selectRead")),
-		QDir::currentPath(),
-		tr(obs_module_text("AdvSceneSwitcher.fileTab.anyFileType")));
-	if (path.isEmpty()) {
-		return;
-	}
-
-	_filePath->setText(path);
-	FilePathChanged();
 }
 
 void MacroConditionFileEdit::MatchTextChanged()
