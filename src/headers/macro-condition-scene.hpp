@@ -9,6 +9,7 @@ enum class SceneType {
 	CURRENT,
 	PREVIOUS,
 	CHANGED,
+	NOTCHANGED,
 };
 
 class MacroConditionScene : public MacroCondition {
