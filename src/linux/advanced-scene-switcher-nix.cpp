@@ -524,7 +524,7 @@ static std::unordered_map<HotkeyType, long> keyTable = {
 	{HotkeyType::Key_NumpadEnter, XK_KP_Enter},
 };
 
-void PressKeys(const std::vector<HotkeyType> keys)
+void PressKeys(const std::vector<HotkeyType> keys, int duration)
 {
 	if (!canSimulateKeyPresses) {
 		return;
@@ -545,7 +545,7 @@ void PressKeys(const std::vector<HotkeyType> keys)
 	}
 	XFlush(display);
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(300));
+	std::this_thread::sleep_for(std::chrono::milliseconds(duration));
 
 	// Release keys
 	for (auto &key : keys) {

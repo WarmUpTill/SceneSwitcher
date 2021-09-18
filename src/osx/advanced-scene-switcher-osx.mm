@@ -405,7 +405,7 @@ static std::map<HotkeyType, CGKeyCode> keyTable = {
 	{HotkeyType::Key_NumpadEnter, kVK_ANSI_KeypadEnter},
 };
 
-void PressKeys(const std::vector<HotkeyType> keys)
+void PressKeys(const std::vector<HotkeyType> keys, int duration)
 {
 	// TODO:
 	// I can't seem to get this to work so drop support for this functionality

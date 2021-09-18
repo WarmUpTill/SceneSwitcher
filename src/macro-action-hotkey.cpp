@@ -1,18 +1,196 @@
 #include "headers/macro-action-hotkey.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
+#include <obs-interaction.h>
 
 const std::string MacroActionHotkey::id = "hotkey";
 
-// TODO:
-// I can't seem to get this to work so drop support for this functionality
-// on MacOS
-#if !__APPLE__
 bool MacroActionHotkey::_registered = MacroActionFactory::Register(
 	MacroActionHotkey::id,
 	{MacroActionHotkey::Create, MacroActionHotkeyEdit::Create,
 	 "AdvSceneSwitcher.action.hotkey"});
-#endif
+
+static std::unordered_map<HotkeyType, long> keyTable = {
+	// Chars
+	{HotkeyType::Key_A, OBS_KEY_A},
+	{HotkeyType::Key_B, OBS_KEY_B},
+	{HotkeyType::Key_C, OBS_KEY_C},
+	{HotkeyType::Key_D, OBS_KEY_D},
+	{HotkeyType::Key_E, OBS_KEY_E},
+	{HotkeyType::Key_F, OBS_KEY_F},
+	{HotkeyType::Key_G, OBS_KEY_G},
+	{HotkeyType::Key_H, OBS_KEY_H},
+	{HotkeyType::Key_I, OBS_KEY_I},
+	{HotkeyType::Key_J, OBS_KEY_J},
+	{HotkeyType::Key_K, OBS_KEY_K},
+	{HotkeyType::Key_L, OBS_KEY_L},
+	{HotkeyType::Key_M, OBS_KEY_M},
+	{HotkeyType::Key_N, OBS_KEY_N},
+	{HotkeyType::Key_O, OBS_KEY_O},
+	{HotkeyType::Key_P, OBS_KEY_P},
+	{HotkeyType::Key_Q, OBS_KEY_Q},
+	{HotkeyType::Key_R, OBS_KEY_R},
+	{HotkeyType::Key_S, OBS_KEY_S},
+	{HotkeyType::Key_T, OBS_KEY_T},
+	{HotkeyType::Key_U, OBS_KEY_U},
+	{HotkeyType::Key_V, OBS_KEY_V},
+	{HotkeyType::Key_W, OBS_KEY_W},
+	{HotkeyType::Key_X, OBS_KEY_X},
+	{HotkeyType::Key_Y, OBS_KEY_Y},
+	{HotkeyType::Key_Z, OBS_KEY_Z},
+
+	// Numbers
+	{HotkeyType::Key_0, OBS_KEY_0},
+	{HotkeyType::Key_1, OBS_KEY_1},
+	{HotkeyType::Key_2, OBS_KEY_2},
+	{HotkeyType::Key_3, OBS_KEY_3},
+	{HotkeyType::Key_4, OBS_KEY_4},
+	{HotkeyType::Key_5, OBS_KEY_5},
+	{HotkeyType::Key_6, OBS_KEY_6},
+	{HotkeyType::Key_7, OBS_KEY_7},
+	{HotkeyType::Key_8, OBS_KEY_8},
+	{HotkeyType::Key_9, OBS_KEY_9},
+
+	{HotkeyType::Key_F1, OBS_KEY_F1},
+	{HotkeyType::Key_F2, OBS_KEY_F2},
+	{HotkeyType::Key_F3, OBS_KEY_F3},
+	{HotkeyType::Key_F4, OBS_KEY_F4},
+	{HotkeyType::Key_F5, OBS_KEY_F5},
+	{HotkeyType::Key_F6, OBS_KEY_F6},
+	{HotkeyType::Key_F7, OBS_KEY_F7},
+	{HotkeyType::Key_F8, OBS_KEY_F8},
+	{HotkeyType::Key_F9, OBS_KEY_F9},
+	{HotkeyType::Key_F10, OBS_KEY_F10},
+	{HotkeyType::Key_F11, OBS_KEY_F11},
+	{HotkeyType::Key_F12, OBS_KEY_F12},
+	{HotkeyType::Key_F13, OBS_KEY_F13},
+	{HotkeyType::Key_F14, OBS_KEY_F14},
+	{HotkeyType::Key_F15, OBS_KEY_F15},
+	{HotkeyType::Key_F16, OBS_KEY_F16},
+	{HotkeyType::Key_F17, OBS_KEY_F17},
+	{HotkeyType::Key_F18, OBS_KEY_F18},
+	{HotkeyType::Key_F19, OBS_KEY_F19},
+	{HotkeyType::Key_F20, OBS_KEY_F20},
+	{HotkeyType::Key_F21, OBS_KEY_F21},
+	{HotkeyType::Key_F22, OBS_KEY_F22},
+	{HotkeyType::Key_F23, OBS_KEY_F23},
+	{HotkeyType::Key_F24, OBS_KEY_F24},
+
+	{HotkeyType::Key_Escape, OBS_KEY_ESCAPE},
+	{HotkeyType::Key_Space, OBS_KEY_SPACE},
+	{HotkeyType::Key_Return, OBS_KEY_RETURN},
+	{HotkeyType::Key_Backspace, OBS_KEY_BACKSPACE},
+	{HotkeyType::Key_Tab, OBS_KEY_TAB},
+
+	{HotkeyType::Key_Shift_L, OBS_KEY_SHIFT},
+	{HotkeyType::Key_Shift_R, OBS_KEY_SHIFT},
+	{HotkeyType::Key_Control_L, OBS_KEY_CONTROL},
+	{HotkeyType::Key_Control_R, OBS_KEY_CONTROL},
+	{HotkeyType::Key_Alt_L, OBS_KEY_ALT},
+	{HotkeyType::Key_Alt_R, OBS_KEY_ALT},
+	{HotkeyType::Key_Win_L, OBS_KEY_META},
+	{HotkeyType::Key_Win_R, OBS_KEY_META},
+	{HotkeyType::Key_Apps, OBS_KEY_APPLICATIONLEFT},
+
+	{HotkeyType::Key_CapsLock, OBS_KEY_CAPSLOCK},
+	{HotkeyType::Key_NumLock, OBS_KEY_NUMLOCK},
+	{HotkeyType::Key_ScrollLock, OBS_KEY_SCROLLLOCK},
+
+	{HotkeyType::Key_PrintScreen, OBS_KEY_PRINT},
+	{HotkeyType::Key_Pause, OBS_KEY_PAUSE},
+
+	{HotkeyType::Key_Insert, OBS_KEY_INSERT},
+	{HotkeyType::Key_Delete, OBS_KEY_DELETE},
+	{HotkeyType::Key_PageUP, OBS_KEY_PAGEUP},
+	{HotkeyType::Key_PageDown, OBS_KEY_PAGEDOWN},
+	{HotkeyType::Key_Home, OBS_KEY_HOME},
+	{HotkeyType::Key_End, OBS_KEY_END},
+
+	{HotkeyType::Key_Left, OBS_KEY_LEFT},
+	{HotkeyType::Key_Up, OBS_KEY_UP},
+	{HotkeyType::Key_Right, OBS_KEY_RIGHT},
+	{HotkeyType::Key_Down, OBS_KEY_DOWN},
+
+	{HotkeyType::Key_Numpad0, OBS_KEY_NUM0},
+	{HotkeyType::Key_Numpad1, OBS_KEY_NUM1},
+	{HotkeyType::Key_Numpad2, OBS_KEY_NUM2},
+	{HotkeyType::Key_Numpad3, OBS_KEY_NUM3},
+	{HotkeyType::Key_Numpad4, OBS_KEY_NUM4},
+	{HotkeyType::Key_Numpad5, OBS_KEY_NUM5},
+	{HotkeyType::Key_Numpad6, OBS_KEY_NUM6},
+	{HotkeyType::Key_Numpad7, OBS_KEY_NUM7},
+	{HotkeyType::Key_Numpad8, OBS_KEY_NUM8},
+	{HotkeyType::Key_Numpad9, OBS_KEY_NUM9},
+
+	{HotkeyType::Key_NumpadAdd, OBS_KEY_NUMPLUS},
+	{HotkeyType::Key_NumpadSubtract, OBS_KEY_NUMMINUS},
+	{HotkeyType::Key_NumpadMultiply, OBS_KEY_NUMASTERISK},
+	{HotkeyType::Key_NumpadDivide, OBS_KEY_NUMSLASH},
+	{HotkeyType::Key_NumpadDecimal, OBS_KEY_NUMPERIOD},
+	//{HotkeyType::Key_NumpadEnter, ???},
+};
+
+obs_key_combination keysToOBSKeycombo(const std::vector<HotkeyType> &keys)
+{
+	obs_key_combination combo{};
+	auto it = keyTable.find(keys.back());
+	if (it != keyTable.end()) {
+		combo.key = (obs_key_t)it->second;
+	}
+	if (keys.size() == 1) {
+		return combo;
+	}
+
+	for (int i = 0; i < keys.size() - 1; i++) {
+		switch (keys[i]) {
+		case HotkeyType::Key_Shift_L:
+			combo.modifiers |= INTERACT_SHIFT_KEY;
+			break;
+		case HotkeyType::Key_Shift_R:
+			combo.modifiers |= INTERACT_SHIFT_KEY;
+			break;
+		case HotkeyType::Key_Control_L:
+			combo.modifiers |= INTERACT_CONTROL_KEY;
+			break;
+		case HotkeyType::Key_Control_R:
+			combo.modifiers |= INTERACT_CONTROL_KEY;
+			break;
+		case HotkeyType::Key_Alt_L:
+			combo.modifiers |= INTERACT_ALT_KEY;
+			break;
+		case HotkeyType::Key_Alt_R:
+			combo.modifiers |= INTERACT_ALT_KEY;
+			break;
+		case HotkeyType::Key_Win_L:
+			combo.modifiers |= INTERACT_COMMAND_KEY;
+			break;
+		case HotkeyType::Key_Win_R:
+			combo.modifiers |= INTERACT_COMMAND_KEY;
+			break;
+		case HotkeyType::Key_CapsLock:
+			combo.modifiers |= INTERACT_CAPS_KEY;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return combo;
+}
+
+void InjectKeys(const std::vector<HotkeyType> &keys, int duration)
+{
+	auto combo = keysToOBSKeycombo(keys);
+	if (obs_key_combination_is_empty(combo)) {
+		return;
+	}
+	// I am not sure why this is necessary
+	obs_hotkey_inject_event(combo, false);
+
+	obs_hotkey_inject_event(combo, true);
+	std::this_thread::sleep_for(std::chrono::milliseconds(duration));
+	obs_hotkey_inject_event(combo, false);
+}
 
 bool MacroActionHotkey::PerformAction()
 {
@@ -35,13 +213,25 @@ bool MacroActionHotkey::PerformAction()
 	if (_rightAlt) {
 		keys.push_back(HotkeyType::Key_Alt_R);
 	}
+	if (_leftMeta) {
+		keys.push_back(HotkeyType::Key_Win_L);
+	}
+	if (_rightMeta) {
+		keys.push_back(HotkeyType::Key_Win_R);
+	}
 	if (_key != HotkeyType::Key_NoKey) {
 		keys.push_back(_key);
 	}
 
 	if (!keys.empty()) {
-		std::thread t([keys]() { PressKeys(keys); });
-		t.detach();
+		int dur = _duration;
+		if (_onlySendToObs) {
+			std::thread t([keys, dur]() { InjectKeys(keys, dur); });
+			t.detach();
+		} else {
+			std::thread t([keys, dur]() { PressKeys(keys, dur); });
+			t.detach();
+		}
 	}
 
 	return true;
@@ -64,6 +254,8 @@ bool MacroActionHotkey::Save(obs_data_t *obj)
 	obs_data_set_bool(obj, "right_alt", _rightAlt);
 	obs_data_set_bool(obj, "left_meta", _leftMeta);
 	obs_data_set_bool(obj, "right_meta", _rightMeta);
+	obs_data_set_int(obj, "duration", _duration);
+	obs_data_set_bool(obj, "onlyOBS", _onlySendToObs);
 	return true;
 }
 
@@ -79,6 +271,8 @@ bool MacroActionHotkey::Load(obs_data_t *obj)
 	_rightAlt = obs_data_get_bool(obj, "right_alt");
 	_leftMeta = obs_data_get_bool(obj, "left_meta");
 	_rightMeta = obs_data_get_bool(obj, "right_meta");
+	_duration = obs_data_get_int(obj, "duration");
+	_onlySendToObs = obs_data_get_bool(obj, "onlyOBS");
 	return true;
 }
 
@@ -213,6 +407,12 @@ MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 		obs_module_text("AdvSceneSwitcher.action.hotkey.leftMeta"));
 	_rightMeta = new QCheckBox(
 		obs_module_text("AdvSceneSwitcher.action.hotkey.rightMeta"));
+	_duration = new QSpinBox();
+	_duration->setMaximum(5000);
+	_onlySendToOBS = new QCheckBox(
+		obs_module_text("AdvSceneSwitcher.action.hotkey.onlyOBS"));
+	_noKeyPressSimulationWarning = new QLabel(
+		obs_module_text("AdvSceneSwitcher.action.hotkey.disabled"));
 
 	populateKeySelection(_keys);
 
@@ -234,10 +434,15 @@ MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 			 SLOT(LMetaChanged(int)));
 	QWidget::connect(_rightMeta, SIGNAL(stateChanged(int)), this,
 			 SLOT(RMetaChanged(int)));
+	QWidget::connect(_duration, SIGNAL(valueChanged(int)), this,
+			 SLOT(DurationChanged(int)));
+	QWidget::connect(_onlySendToOBS, SIGNAL(stateChanged(int)), this,
+			 SLOT(OnlySendToOBSChanged(int)));
 
 	QHBoxLayout *line1Layout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{keys}}", _keys},
+		{"{{duration}}", _duration},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.hotkey.entry"),
 		     line1Layout, widgetPlaceholders);
@@ -256,17 +461,20 @@ MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(line1Layout);
 	mainLayout->addLayout(line2Layout);
-
-	if (!canSimulateKeyPresses) {
-		mainLayout->addWidget(new QLabel(obs_module_text(
-			"AdvSceneSwitcher.action.hotkey.disabled")));
-	}
+	mainLayout->addWidget(_onlySendToOBS);
+	mainLayout->addWidget(_noKeyPressSimulationWarning);
 
 	setLayout(mainLayout);
 
 	_entryData = entryData;
 	UpdateEntryData();
 	_loading = false;
+}
+
+void MacroActionHotkeyEdit::SetWarningVisibility()
+{
+	_noKeyPressSimulationWarning->setVisible(!_entryData->_onlySendToObs &&
+						 !canSimulateKeyPresses);
 }
 
 void MacroActionHotkeyEdit::UpdateEntryData()
@@ -284,6 +492,9 @@ void MacroActionHotkeyEdit::UpdateEntryData()
 	_rightAlt->setChecked(_entryData->_rightAlt);
 	_leftMeta->setChecked(_entryData->_leftMeta);
 	_rightMeta->setChecked(_entryData->_rightMeta);
+	_duration->setValue(_entryData->_duration);
+	_onlySendToOBS->setChecked(_entryData->_onlySendToObs);
+	SetWarningVisibility();
 }
 
 void MacroActionHotkeyEdit::LShiftChanged(int state)
@@ -364,6 +575,27 @@ void MacroActionHotkeyEdit::RMetaChanged(int state)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_rightMeta = state;
+}
+
+void MacroActionHotkeyEdit::DurationChanged(int ms)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_duration = ms;
+}
+
+void MacroActionHotkeyEdit::OnlySendToOBSChanged(int state)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_onlySendToObs = state;
+	SetWarningVisibility();
 }
 
 void MacroActionHotkeyEdit::KeyChanged(int key)
