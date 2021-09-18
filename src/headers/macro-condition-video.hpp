@@ -1,6 +1,7 @@
 #pragma once
 #include "macro.hpp"
 #include "screenshot-helper.hpp"
+#include "file-selection.hpp"
 
 #include <QWidget>
 #include <QComboBox>
@@ -41,6 +42,10 @@ private:
 
 	std::unique_ptr<AdvSSScreenshotObj> _screenshotData = nullptr;
 	QImage _matchImage;
+	std::string _modelDataPath =
+		obs_get_module_data_path(obs_current_module()) +
+		std::string(
+			"/res/cascadeClassifiers/haarcascade_frontalface_alt.xml");
 	static bool _registered;
 	static const std::string id;
 };

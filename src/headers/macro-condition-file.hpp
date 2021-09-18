@@ -1,5 +1,7 @@
 #pragma once
 #include "macro.hpp"
+#include "file-selection.hpp"
+
 #include <QWidget>
 #include <QComboBox>
 #include <QDateTime>
@@ -61,8 +63,7 @@ public:
 
 private slots:
 	void FileTypeChanged(int index);
-	void FilePathChanged();
-	void BrowseButtonClicked();
+	void PathChanged(const QString &text);
 	void MatchTextChanged();
 	void UseRegexChanged(int state);
 	void CheckModificationDateChanged(int state);
@@ -72,8 +73,7 @@ signals:
 
 protected:
 	QComboBox *_fileType;
-	QLineEdit *_filePath;
-	QPushButton *_browseButton;
+	FileSelection *_filePath;
 	QPlainTextEdit *_matchText;
 	QCheckBox *_useRegex;
 	QCheckBox *_checkModificationDate;

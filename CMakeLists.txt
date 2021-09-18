@@ -254,6 +254,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/screenshot-helper.hpp
     src/headers/name-dialog.hpp
     src/headers/duration-control.hpp
+    src/headers/file-selection.hpp
     src/headers/section.hpp
     src/headers/platform-funcs.hpp
     src/headers/utility.hpp
@@ -277,6 +278,7 @@ set(advanced-scene-switcher_SOURCES
     src/switch-window.cpp
     src/switch-media.cpp
     src/switch-network.cpp
+    src/file-selection.cpp
     src/hotkey.cpp
     src/general.cpp
     src/switch-pause.cpp
