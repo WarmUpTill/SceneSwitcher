@@ -12,7 +12,7 @@
 #include <map>
 #include <thread>
 
-bool canSimulateKeyPresses = true;
+bool canSimulateKeyPresses = false;
 
 void GetWindowList(std::vector<std::string> &windows)
 {
