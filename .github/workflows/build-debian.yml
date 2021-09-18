@@ -13,6 +13,7 @@ jobs:
         submodules: 'recursive'
     - name: check_libobs_revision
       run: |
+           sudo apt update
            sudo apt install libobs-dev
            mkdir source
            cd source
@@ -22,6 +23,7 @@ jobs:
            [ -e /usr/include/obs/obs-frontend-api.h ] && { echo "ERROR: obs-frontend-api.h already in system. Maybe the package libobs-dev is installing it."; exit 1; }
            cd source
            LIBOBSREV=$(cat libobs.rev)
+           sudo apt update
            sudo apt install devscripts
            dget -u http://archive.ubuntu.com/ubuntu/pool/universe/o/obs-studio/obs-studio_$LIBOBSREV.dsc
            cd ..
@@ -40,6 +42,7 @@ jobs:
       run: |
            # devscripts and libobs-dev are needed but they were already installed
            # from check_libobs_revision and install_frontend_header sections.
+           sudo apt update
            sudo apt install cmake debhelper libcurl4-openssl-dev libxss-dev libxtst-dev qtbase5-dev
     - name: build
       run: |
