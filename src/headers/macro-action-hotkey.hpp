@@ -29,7 +29,11 @@ public:
 	bool _leftMeta = false;
 	bool _rightMeta = false;
 	int _duration = 300; // in ms
+#ifdef __APPLE__
+	bool _onlySendToObs = true;
+#else
 	bool _onlySendToObs = false;
+#endif
 
 private:
 	static bool _registered;
