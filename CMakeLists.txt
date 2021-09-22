@@ -237,6 +237,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-condition-source.hpp
     src/headers/macro-condition-streaming.hpp
     src/headers/macro-condition-timer.hpp
+    src/headers/macro-condition-transition.hpp
     src/headers/macro-condition-video.hpp
     src/headers/macro-condition-virtual-cam.hpp
     src/headers/macro-condition-window.hpp
@@ -324,6 +325,7 @@ set(advanced-scene-switcher_SOURCES
     src/macro-condition-source.cpp
     src/macro-condition-streaming.cpp
     src/macro-condition-timer.cpp
+    src/macro-condition-transition.cpp
     src/macro-condition-video.cpp
     src/macro-condition-virtual-cam.cpp
     src/macro-condition-window.cpp

@@ -548,6 +548,12 @@ void setReplayBufferSaved()
 	switcher->replayBufferSaved = true;
 }
 
+void setTranstionEnd()
+{
+	switcher->lastTransitionEndTime =
+		std::chrono::high_resolution_clock::now();
+}
+
 // Note to future self:
 // be careful using switcher->m here as there is potential for deadlocks when using
 // frontend functions such as obs_frontend_set_current_scene()
@@ -584,6 +590,9 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 		setReplayBufferSaved();
 		break;
 #endif
+	case OBS_FRONTEND_EVENT_TRANSITION_STOPPED:
+		setTranstionEnd();
+		break;
 	default:
 		break;
 	}
