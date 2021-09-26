@@ -360,8 +360,7 @@ void switchScene(const sceneSwitchInfo &sceneSwitch)
 	}
 
 	obs_source_t *source = obs_weak_source_get_source(sceneSwitch.scene);
-	obs_source_t *currentSource =
-		obs_weak_source_get_source(switcher->currentScene);
+	obs_source_t *currentSource = obs_frontend_get_current_scene();
 
 	if (source && source != currentSource) {
 		transitionData currentTransitionData;
