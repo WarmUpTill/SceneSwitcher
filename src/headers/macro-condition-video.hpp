@@ -5,6 +5,7 @@
 
 #include <QWidget>
 #include <QComboBox>
+#include <QCheckBox>
 #include <QHBoxLayout>
 #include <chrono>
 #include <opencv2/opencv.hpp>
@@ -52,10 +53,14 @@ public:
 	int _maxSizeX = 0;
 	int _maxSizeY = 0;
 
+	bool _throttleEnabled = false;
+	int _throttleCount = 3;
+
 private:
 	bool ScreenshotContainsPattern();
 	bool ScreenshotContainsObject();
 	bool Compare();
+	bool CheckShouldBeSkipped();
 
 	std::unique_ptr<AdvSSScreenshotObj> _screenshotData = nullptr;
 	QImage _matchImage;
@@ -64,6 +69,7 @@ private:
 		std::string(
 			"/res/cascadeClassifiers/haarcascade_frontalface_alt.xml");
 	bool _lastMatchResult = false;
+	int _runCount = 0;
 
 	static bool _registered;
 	static const std::string id;
@@ -123,6 +129,8 @@ private slots:
 	void MaxSizeXChanged(int value);
 	void MaxSizeYChanged(int value);
 
+	void ThrottleEnableChanged(int value);
+	void ThrottleCountChanged(int value);
 	void ShowMatchClicked();
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -146,6 +154,9 @@ protected:
 	QSpinBox *_maxSizeX;
 	QSpinBox *_maxSizeY;
 
+	QHBoxLayout *_throttleControlLayout;
+	QCheckBox *_throttleEnable;
+	QSpinBox *_throttleCount;
 	QPushButton *_showMatch;
 
 	std::shared_ptr<MacroConditionVideo> _entryData;

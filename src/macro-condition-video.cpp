@@ -45,9 +45,31 @@ bool requiresFileInput(VideoCondition t)
 	       t == VideoCondition::PATTERN;
 }
 
+bool MacroConditionVideo::CheckShouldBeSkipped()
+{
+	if (_condition != VideoCondition::PATTERN &&
+	    _condition != VideoCondition::OBJECT) {
+		return false;
+	}
+
+	if (_throttleEnabled) {
+		if (_runCount <= _throttleCount) {
+			_runCount++;
+			return true;
+		} else {
+			_runCount = 0;
+		}
+	}
+	return false;
+}
+
 bool MacroConditionVideo::CheckCondition()
 {
 	bool match = false;
+
+	if (CheckShouldBeSkipped()) {
+		return _lastMatchResult;
+	}
 
 	if (_screenshotData && _screenshotData->done) {
 		match = Compare();
@@ -80,6 +102,8 @@ bool MacroConditionVideo::Save(obs_data_t *obj)
 	obs_data_set_int(obj, "minSizeY", _minSizeY);
 	obs_data_set_int(obj, "maxSizeX", _maxSizeX);
 	obs_data_set_int(obj, "maxSizeY", _maxSizeY);
+	obs_data_set_bool(obj, "throttleEnabled", _throttleEnabled);
+	obs_data_set_int(obj, "throttleCount", _throttleCount);
 	return true;
 }
 
@@ -116,6 +140,8 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 	_minSizeY = obs_data_get_int(obj, "minSizeY");
 	_maxSizeX = obs_data_get_int(obj, "maxSizeX");
 	_maxSizeY = obs_data_get_int(obj, "maxSizeY");
+	_throttleEnabled = obs_data_get_bool(obj, "throttleEnabled");
+	_throttleCount = obs_data_get_int(obj, "throttleCount");
 
 	if (requiresFileInput(_condition)) {
 		(void)LoadImageFromFile();
@@ -353,6 +379,11 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	_maxSizeX->setMaximum(4096);
 	_maxSizeY->setMaximum(4096);
 
+	_throttleEnable = new QCheckBox();
+	_throttleCount = new QSpinBox();
+	_throttleCount->setMinimum(1 * switcher->interval);
+	_throttleCount->setMaximum(10 * switcher->interval);
+	_throttleCount->setSingleStep(switcher->interval);
 	_showMatch = new QPushButton(
 		obs_module_text("AdvSceneSwitcher.condition.video.showMatch"));
 
@@ -382,6 +413,10 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 SLOT(MaxSizeYChanged(int)));
 	QWidget::connect(_modelDataPath, SIGNAL(PathChanged(const QString &)),
 			 this, SLOT(ModelPathChanged(const QString &)));
+	QWidget::connect(_throttleEnable, SIGNAL(stateChanged(int)), this,
+			 SLOT(ThrottleEnableChanged(int)));
+	QWidget::connect(_throttleCount, SIGNAL(valueChanged(int)), this,
+			 SLOT(ThrottleCountChanged(int)));
 	QWidget::connect(_showMatch, SIGNAL(clicked()), this,
 			 SLOT(ShowMatchClicked()));
 
@@ -399,6 +434,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 		{"{{maxSizeX}}", _maxSizeX},
 		{"{{maxSizeY}}", _maxSizeY},
 		{"{{modelDataPath}}", _modelDataPath},
+		{"{{throttleEnable}}", _throttleEnable},
+		{"{{throttleCount}}", _throttleCount},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.video.entry"),
 		     entryLine1Layout, widgetPlaceholders);
@@ -425,6 +462,11 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			     "AdvSceneSwitcher.condition.video.entry.maxSize"),
 		     _maxSizeControlLayout, widgetPlaceholders);
 
+	_throttleControlLayout = new QHBoxLayout;
+	placeWidgets(obs_module_text(
+			     "AdvSceneSwitcher.condition.video.entry.throttle"),
+		     _throttleControlLayout, widgetPlaceholders);
+
 	QHBoxLayout *showMatchLayout = new QHBoxLayout;
 	showMatchLayout->addWidget(_showMatch);
 	showMatchLayout->addStretch();
@@ -437,6 +479,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	mainLayout->addLayout(_minSizeControlLayout);
 	mainLayout->addLayout(_maxSizeControlLayout);
 	mainLayout->addLayout(showMatchLayout);
+	mainLayout->addLayout(_throttleControlLayout);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -662,6 +705,27 @@ void MacroConditionVideoEdit::MaxSizeYChanged(int value)
 	_entryData->_maxSizeY = value;
 }
 
+void MacroConditionVideoEdit::ThrottleEnableChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_throttleEnabled = value;
+	_throttleCount->setEnabled(value);
+}
+
+void MacroConditionVideoEdit::ThrottleCountChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_throttleCount = value / switcher->interval;
+}
+
 QImage markPatterns(cv::Mat &matchResult, QImage &image, QImage &pattern)
 {
 	auto matchImg = QImageToMat(image);
@@ -765,6 +829,12 @@ bool needsObjectControls(VideoCondition cond)
 	return cond == VideoCondition::OBJECT;
 }
 
+bool needsThrottleControls(VideoCondition cond)
+{
+	return cond == VideoCondition::PATTERN ||
+	       cond == VideoCondition::OBJECT;
+}
+
 void setLayoutVisible(QLayout *layout, bool visible)
 {
 	for (int i = 0; i < layout->count(); ++i) {
@@ -791,6 +861,8 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 			 needsObjectControls(_entryData->_condition));
 	setLayoutVisible(_modelPathLayout,
 			 needsObjectControls(_entryData->_condition));
+	setLayoutVisible(_throttleControlLayout,
+			 needsThrottleControls(_entryData->_condition));
 	adjustSize();
 }
 
@@ -812,5 +884,8 @@ void MacroConditionVideoEdit::UpdateEntryData()
 	_minSizeY->setValue(_entryData->_minSizeY);
 	_maxSizeX->setValue(_entryData->_maxSizeX);
 	_maxSizeY->setValue(_entryData->_maxSizeY);
+	_throttleEnable->setChecked(_entryData->_throttleEnabled);
+	_throttleCount->setValue(_entryData->_throttleCount *
+				 switcher->interval);
 	SetWidgetVisibility();
 }
