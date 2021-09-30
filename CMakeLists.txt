@@ -248,6 +248,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/hotkey.hpp
     src/headers/scene-selection.hpp
     src/headers/screenshot-helper.hpp
+    src/headers/transition-selection.hpp
     src/headers/name-dialog.hpp
     src/headers/duration-control.hpp
     src/headers/section.hpp
@@ -334,6 +335,7 @@ set(advanced-scene-switcher_SOURCES
     src/curl-helper.cpp
     src/scene-selection.cpp
     src/screenshot-helper.cpp
+    src/transition-selection.cpp
     src/name-dialog.cpp
     src/duration-control.cpp
     src/section.cpp
