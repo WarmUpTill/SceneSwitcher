@@ -9,6 +9,7 @@ on:
 env:
   PLUGIN_NAME: SceneSwitcher
   LIB_NAME: advanced-scene-switcher
+  OBS_TAG: 27.1.1
 
 jobs:
   macos64:
@@ -23,7 +24,7 @@ jobs:
         with:
           repository: obsproject/obs-studio
           submodules: 'recursive'
-          ref: 'refs/tags/27.0.1'
+          ref: 'refs/tags/${{ env.OBS_TAG }}'
       - name: "Checkout plugin"
         uses: actions/checkout@v2.3.4
         with:
@@ -112,7 +113,7 @@ jobs:
         with:
           repository: obsproject/obs-studio
           submodules: 'recursive'
-          ref: 'refs/tags/27.0.1'
+          ref: 'refs/tags/${{ env.OBS_TAG }}'
       - name: "Checkout plugin"
         uses: actions/checkout@v2.3.4
         with:
@@ -216,7 +217,7 @@ jobs:
         with:
           repository: obsproject/obs-studio
           submodules: 'recursive'
-          ref: 'refs/tags/27.0.1'
+          ref: 'refs/tags/${{ env.OBS_TAG }}'
       - name: Checkout plugin
         uses: actions/checkout@v2.3.4
         with:
