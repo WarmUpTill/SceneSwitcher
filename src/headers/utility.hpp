@@ -58,8 +58,7 @@ bool DisplayMessage(const QString &msg, bool question = false);
 void addSelectionEntry(QComboBox *sel, const char *description,
 		       bool selectable = false, const char *tooltip = "");
 void populateTransitionSelection(QComboBox *sel, bool addCurrent = true,
-				 bool addSelect = true,
-				 bool selectable = false);
+				 bool addAny = false);
 void populateWindowSelection(QComboBox *sel, bool addSelect = true);
 void populateAudioSelection(QComboBox *sel, bool addSelect = true);
 void populateVideoSelection(QComboBox *sel, bool addSelect = true);
