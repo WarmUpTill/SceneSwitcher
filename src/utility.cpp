@@ -480,8 +480,7 @@ void populateSourceSelection(QComboBox *list, bool addSelect)
 	list->setCurrentIndex(0);
 }
 
-void populateTransitionSelection(QComboBox *sel, bool addCurrent,
-				 bool addSelect, bool selectable)
+void populateTransitionSelection(QComboBox *sel, bool addCurrent, bool addAny)
 {
 
 	obs_frontend_source_list *transitions = new obs_frontend_source_list();
@@ -497,19 +496,19 @@ void populateTransitionSelection(QComboBox *sel, bool addCurrent,
 
 	sel->model()->sort(0);
 
+	addSelectionEntry(sel,
+			  obs_module_text("AdvSceneSwitcher.selectTransition"));
+	sel->setCurrentIndex(0);
+
 	if (addCurrent) {
 		sel->insertItem(
-			0,
+			1,
 			obs_module_text("AdvSceneSwitcher.currentTransition"));
 	}
-
-	if (addSelect) {
-		addSelectionEntry(
-			sel,
-			obs_module_text("AdvSceneSwitcher.selectTransition"),
-			selectable);
+	if (addAny) {
+		sel->insertItem(
+			1, obs_module_text("AdvSceneSwitcher.anyTransition"));
 	}
-	sel->setCurrentIndex(0);
 }
 
 void populateWindowSelection(QComboBox *sel, bool addSelect)
