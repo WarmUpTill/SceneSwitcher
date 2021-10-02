@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "duration-control.hpp"
+#include "transition-selection.hpp"
 
 #include <QCheckBox>
 #include <QHBoxLayout>
@@ -20,7 +21,7 @@ public:
 
 	bool _setDuration = true;
 	bool _setType = true;
-	OBSWeakSource _transition;
+	TransitionSelection _transition;
 	Duration _duration;
 
 private:
@@ -48,7 +49,7 @@ public:
 private slots:
 	void SetTypeChanged(int state);
 	void SetDurationChanged(int state);
-	void TransitionChanged(const QString &text);
+	void TransitionChanged(const TransitionSelection &);
 	void DurationChanged(double seconds);
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -56,7 +57,7 @@ signals:
 protected:
 	QCheckBox *_setType;
 	QCheckBox *_setDuration;
-	QComboBox *_transitions;
+	TransitionSelectionWidget *_transitions;
 	DurationSelection *_duration;
 	QHBoxLayout *_typeLayout;
 	QHBoxLayout *_durationLayout;
