@@ -1,4 +1,5 @@
 #include "headers/screenshot-helper.hpp"
+#include "headers/advanced-scene-switcher.hpp"
 
 static void ScreenshotTick(void *param, float);
 
@@ -33,7 +34,9 @@ void AdvSSScreenshotObj::Screenshot()
 	}
 
 	if (!cx || !cy) {
-		blog(LOG_WARNING, "Cannot screenshot, invalid target size");
+		vblog(LOG_WARNING,
+		      "Cannot screenshot \"%s\", invalid target size",
+		      obs_source_get_name(source));
 		obs_remove_tick_callback(ScreenshotTick, this);
 		done = true;
 		return;
