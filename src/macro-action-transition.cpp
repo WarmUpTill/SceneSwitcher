@@ -12,7 +12,8 @@ bool MacroActionTransition::_registered = MacroActionFactory::Register(
 bool MacroActionTransition::PerformAction()
 {
 	if (_setType) {
-		auto t = obs_weak_source_get_source(_transition);
+		auto t =
+			obs_weak_source_get_source(_transition.GetTransition());
 		obs_frontend_set_current_transition(t);
 		obs_source_release(t);
 	}
@@ -30,7 +31,7 @@ void MacroActionTransition::LogAction()
 	}
 	if (_setType) {
 		vblog(LOG_INFO, "set transition type to \"%s\"",
-		      GetWeakSourceName(_transition).c_str());
+		      _transition.ToString().c_str());
 	}
 }
 
@@ -38,8 +39,7 @@ bool MacroActionTransition::Save(obs_data_t *obj)
 {
 	MacroAction::Save(obj);
 	_duration.Save(obj);
-	obs_data_set_string(obj, "transition",
-			    GetWeakSourceName(_transition).c_str());
+	_transition.Save(obj);
 	obs_data_set_bool(obj, "setDuration", _setDuration);
 	obs_data_set_bool(obj, "setType", _setType);
 	return true;
@@ -49,8 +49,7 @@ bool MacroActionTransition::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 	_duration.Load(obj);
-	const char *transitionName = obs_data_get_string(obj, "transition");
-	_transition = GetWeakTransitionByQString(transitionName);
+	_transition.Load(obj);
 	_setDuration = obs_data_get_bool(obj, "setDuration");
 	_setType = obs_data_get_bool(obj, "setType");
 	return true;
@@ -58,26 +57,22 @@ bool MacroActionTransition::Load(obs_data_t *obj)
 
 std::string MacroActionTransition::GetShortDesc()
 {
-	if (_transition) {
-		return GetWeakSourceName(_transition);
-	}
-	return "";
+	return _transition.ToString();
 }
 
 MacroActionTransitionEdit::MacroActionTransitionEdit(
 	QWidget *parent, std::shared_ptr<MacroActionTransition> entryData)
 	: QWidget(parent)
 {
-	_transitions = new QComboBox();
+	_transitions = new TransitionSelectionWidget(this, false);
 	_duration = new DurationSelection(this, false);
 	_setType = new QCheckBox();
 	_setDuration = new QCheckBox();
 
-	populateTransitionSelection(_transitions, false);
-
 	QWidget::connect(_transitions,
-			 SIGNAL(currentTextChanged(const QString &)), this,
-			 SLOT(TransitionChanged(const QString &)));
+			 SIGNAL(TransitionChanged(const TransitionSelection &)),
+			 this,
+			 SLOT(TransitionChanged(const TransitionSelection &)));
 	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
 			 SLOT(DurationChanged(double)));
 	QWidget::connect(_setType, SIGNAL(stateChanged(int)), this,
@@ -118,20 +113,19 @@ void MacroActionTransitionEdit::UpdateEntryData()
 	_setDuration->setChecked(_entryData->_setDuration);
 	_duration->SetDuration(_entryData->_duration);
 	_setType->setChecked(_entryData->_setType);
-	_transitions->setCurrentText(
-		GetWeakSourceName(_entryData->_transition).c_str());
+	_transitions->SetTransition(_entryData->_transition);
 	_transitions->setEnabled(_entryData->_setType);
 	_duration->setEnabled(_entryData->_setDuration);
 }
 
-void MacroActionTransitionEdit::TransitionChanged(const QString &text)
+void MacroActionTransitionEdit::TransitionChanged(const TransitionSelection &t)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_transition = GetWeakTransitionByQString(text);
+	_entryData->_transition = t;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -155,6 +149,12 @@ void MacroActionTransitionEdit::SetTypeChanged(int state)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_setType = state;
 	_transitions->setEnabled(state);
+	if (state) {
+		emit HeaderInfoChanged(
+			QString::fromStdString(_entryData->GetShortDesc()));
+	} else {
+		emit HeaderInfoChanged("");
+	}
 }
 
 void MacroActionTransitionEdit::SetDurationChanged(int state)
