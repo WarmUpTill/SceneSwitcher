@@ -254,9 +254,14 @@ std::string getSourceSettings(OBSWeakSource ws)
 	if (!ws) {
 		return "";
 	}
+
+	std::string settings;
 	auto s = obs_weak_source_get_source(ws);
 	obs_data_t *data = obs_source_get_settings(s);
-	std::string settings = obs_data_get_json(data);
+	auto json = obs_data_get_json(data);
+	if (json) {
+		settings = json;
+	}
 	obs_data_release(data);
 	obs_source_release(s);
 
