@@ -140,7 +140,7 @@ void SceneSelectionWidget::SetScene(SceneSelection &s)
 	}
 }
 
-static int isFirstEntry(QComboBox *l, QString name, int idx)
+static bool isFirstEntry(QComboBox *l, QString name, int idx)
 {
 	for (auto i = l->count() - 1; i >= 0; i--) {
 		if (l->itemText(i) == name) {
