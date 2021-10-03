@@ -35,7 +35,12 @@ static std::map<VideoCondition, std::string> conditionTypes = {
 cv::CascadeClassifier initObjectCascade(std::string &path)
 {
 	cv::CascadeClassifier cascade;
-	cascade.load(path);
+	try {
+		cascade.load(path);
+	} catch (...) {
+		blog(LOG_WARNING, "failed to load model data \"%s\"",
+		     path.c_str());
+	}
 	return cascade;
 }
 
@@ -184,13 +189,7 @@ bool MacroConditionVideo::LoadImageFromFile()
 bool MacroConditionVideo::LoadModelData(std::string &path)
 {
 	_modelDataPath = path;
-	try {
-		_objectCascade = initObjectCascade(path);
-	} catch (...) {
-		blog(LOG_WARNING, "failed to load model data \"%s\"",
-		     path.c_str());
-		return false;
-	}
+	_objectCascade = initObjectCascade(path);
 	return !_objectCascade.empty();
 }
 
@@ -810,9 +809,13 @@ void MacroConditionVideoEdit::ModelPathChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
-	std::string path = text.toStdString();
-	if (!_entryData->LoadModelData(path)) {
+	bool dataLoaded = false;
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		std::string path = text.toStdString();
+		dataLoaded = _entryData->LoadModelData(path);
+	}
+	if (!dataLoaded) {
 		DisplayMessage(obs_module_text(
 			"AdvSceneSwitcher.condition.video.modelLoadFail"));
 	}
