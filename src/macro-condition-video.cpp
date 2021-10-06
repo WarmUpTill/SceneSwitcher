@@ -369,6 +369,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	_minNeighbors = new QSpinBox();
 	_minNeighbors->setMinimum(minMinNeighbors);
 	_minNeighbors->setMaximum(maxMinNeighbors);
+	_minNeighborsDescription = new QLabel(obs_module_text(
+		"AdvSceneSwitcher.condition.video.minNeighborDescription"));
 	_minSizeX = new QSpinBox();
 	_minSizeY = new QSpinBox();
 	_minSizeX->setMaximum(1024);
@@ -475,6 +477,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	mainLayout->addLayout(_modelPathLayout);
 	mainLayout->addWidget(_objectScaleThreshold);
 	mainLayout->addLayout(_neighborsControlLayout);
+	mainLayout->addWidget(_minNeighborsDescription);
 	mainLayout->addLayout(_minSizeControlLayout);
 	mainLayout->addLayout(_maxSizeControlLayout);
 	mainLayout->addLayout(showMatchLayout);
@@ -858,6 +861,8 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 		needsObjectControls(_entryData->_condition));
 	setLayoutVisible(_neighborsControlLayout,
 			 needsObjectControls(_entryData->_condition));
+	_minNeighborsDescription->setVisible(
+		needsObjectControls(_entryData->_condition));
 	setLayoutVisible(_minSizeControlLayout,
 			 needsObjectControls(_entryData->_condition));
 	setLayoutVisible(_maxSizeControlLayout,
