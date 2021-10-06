@@ -138,7 +138,7 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 		_scaleFactor = 1.1;
 	}
 	_minNeighbors = obs_data_get_int(obj, "minNeighbors");
-	if (!isMinNeighborsValid(_scaleFactor)) {
+	if (!isMinNeighborsValid(_minNeighbors)) {
 		_minNeighbors = minMinNeighbors;
 	}
 	_minSizeX = obs_data_get_int(obj, "minSizeX");
