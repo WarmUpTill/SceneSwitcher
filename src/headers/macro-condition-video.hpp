@@ -147,6 +147,7 @@ protected:
 	ThresholdSlider *_objectScaleThreshold;
 	QHBoxLayout *_neighborsControlLayout;
 	QSpinBox *_minNeighbors;
+	QLabel *_minNeighborsDescription;
 	QHBoxLayout *_minSizeControlLayout;
 	QSpinBox *_minSizeX;
 	QSpinBox *_minSizeY;
