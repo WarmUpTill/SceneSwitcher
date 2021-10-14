@@ -16,8 +16,13 @@ public:
 	{
 		return std::make_shared<MacroConditionTimer>();
 	}
+	void Pause();
+	void Continue();
+	void Reset();
 
 	Duration _duration;
+	bool _paused = false;
+	double _remaining = 0.;
 	bool _oneshot = false;
 
 private:
@@ -45,13 +50,17 @@ private slots:
 	void DurationChanged(double seconds);
 	void DurationUnitChanged(DurationUnit unit);
 	void AutoResetChanged(int state);
+	void PauseContinueClicked();
 	void ResetClicked();
 	void UpdateTimeRemaining();
 
 protected:
+	void SetPauseContinueButtonLabel();
+
 	DurationSelection *_duration;
 	QCheckBox *_autoReset;
 	QPushButton *_reset;
+	QPushButton *_pauseConinue;
 	QLabel *_remaining;
 	std::shared_ptr<MacroConditionTimer> _entryData;
 
