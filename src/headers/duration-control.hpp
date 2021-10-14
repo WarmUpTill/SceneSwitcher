@@ -22,6 +22,7 @@ public:
 
 	bool DurationReached();
 	double TimeRemaining();
+	void SetTimeRemaining(double);
 	void Reset();
 	std::string ToString();
 

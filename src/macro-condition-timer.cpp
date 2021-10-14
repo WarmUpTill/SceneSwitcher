@@ -12,6 +12,9 @@ bool MacroConditionTimer::_registered = MacroConditionFactory::Register(
 
 bool MacroConditionTimer::CheckCondition()
 {
+	if (_paused) {
+		return _remaining == 0.;
+	}
 	if (_duration.DurationReached()) {
 		if (!_oneshot) {
 			_duration.Reset();
@@ -25,6 +28,11 @@ bool MacroConditionTimer::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
 	_duration.Save(obj);
+	if (!_paused) {
+		_remaining = _duration.TimeRemaining();
+	}
+	obs_data_set_double(obj, "remaining", _remaining);
+	obs_data_set_bool(obj, "paused", _paused);
 	obs_data_set_bool(obj, "oneshot", _oneshot);
 	return true;
 }
@@ -33,12 +41,37 @@ bool MacroConditionTimer::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_duration.Load(obj);
+	_remaining = obs_data_get_double(obj, "remaining");
+	_paused = obs_data_get_bool(obj, "paused");
 	if (!obs_data_has_user_value(obj, "oneshot")) {
 		_oneshot = false;
 	} else {
 		_oneshot = obs_data_get_bool(obj, "oneshot");
 	}
+	_duration.SetTimeRemaining(_remaining);
 	return true;
+}
+
+void MacroConditionTimer::Pause()
+{
+	if (!_paused) {
+		_paused = true;
+		_remaining = _duration.TimeRemaining();
+	}
+}
+
+void MacroConditionTimer::Continue()
+{
+	if (_paused) {
+		_paused = false;
+		_duration.SetTimeRemaining(_remaining);
+	}
+}
+
+void MacroConditionTimer::Reset()
+{
+	_remaining = _duration.seconds;
+	_duration.Reset();
 }
 
 MacroConditionTimerEdit::MacroConditionTimerEdit(
@@ -47,6 +80,8 @@ MacroConditionTimerEdit::MacroConditionTimerEdit(
 {
 	_duration = new DurationSelection();
 	_autoReset = new QCheckBox();
+	_pauseConinue = new QPushButton(
+		obs_module_text("AdvSceneSwitcher.condition.timer.pause"));
 	_reset = new QPushButton(
 		obs_module_text("AdvSceneSwitcher.condition.timer.reset"));
 	_remaining = new QLabel();
@@ -55,6 +90,8 @@ MacroConditionTimerEdit::MacroConditionTimerEdit(
 			 SLOT(DurationChanged(double)));
 	QWidget::connect(_duration, SIGNAL(UnitChanged(DurationUnit)), this,
 			 SLOT(DurationUnitChanged(DurationUnit)));
+	QWidget::connect(_pauseConinue, SIGNAL(clicked()), this,
+			 SLOT(PauseContinueClicked()));
 	QWidget::connect(_reset, SIGNAL(clicked()), this, SLOT(ResetClicked()));
 	QWidget::connect(_autoReset, SIGNAL(stateChanged(int)), this,
 			 SLOT(AutoResetChanged(int)));
@@ -64,6 +101,7 @@ MacroConditionTimerEdit::MacroConditionTimerEdit(
 		{"{{duration}}", _duration},
 		{"{{autoReset}}", _autoReset},
 		{"{{remaining}}", _remaining},
+		{"{{pauseContinue}}", _pauseConinue},
 		{"{{reset}}", _reset},
 	};
 	placeWidgets(
@@ -122,6 +160,23 @@ void MacroConditionTimerEdit::AutoResetChanged(int state)
 	_entryData->_oneshot = !state;
 }
 
+void MacroConditionTimerEdit::PauseContinueClicked()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	if (_entryData->_paused) {
+		timer.start(1000);
+		_entryData->Continue();
+	} else {
+		_entryData->Pause();
+		timer.stop();
+	}
+	SetPauseContinueButtonLabel();
+}
+
 void MacroConditionTimerEdit::ResetClicked()
 {
 	if (_loading || !_entryData) {
@@ -129,7 +184,7 @@ void MacroConditionTimerEdit::ResetClicked()
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.Reset();
+	_entryData->Reset();
 }
 
 void MacroConditionTimerEdit::UpdateTimeRemaining()
@@ -138,8 +193,28 @@ void MacroConditionTimerEdit::UpdateTimeRemaining()
 		_remaining->setText("-");
 		return;
 	}
-	_remaining->setText(
-		QString::number(_entryData->_duration.TimeRemaining()));
+
+	if (_entryData->_paused) {
+		_remaining->setText(QString::number(_entryData->_remaining));
+	} else {
+		_remaining->setText(
+			QString::number(_entryData->_duration.TimeRemaining()));
+	}
+}
+
+void MacroConditionTimerEdit::SetPauseContinueButtonLabel()
+{
+	if (!_entryData) {
+		return;
+	}
+
+	if (_entryData->_paused) {
+		_pauseConinue->setText(obs_module_text(
+			"AdvSceneSwitcher.condition.timer.continue"));
+	} else {
+		_pauseConinue->setText(obs_module_text(
+			"AdvSceneSwitcher.condition.timer.pause"));
+	}
 }
 
 void MacroConditionTimerEdit::UpdateEntryData()
@@ -150,4 +225,5 @@ void MacroConditionTimerEdit::UpdateEntryData()
 
 	_duration->SetDuration(_entryData->_duration);
 	_autoReset->setChecked(!_entryData->_oneshot);
+	SetPauseContinueButtonLabel();
 }

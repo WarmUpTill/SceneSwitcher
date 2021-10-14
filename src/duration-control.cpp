@@ -46,6 +46,13 @@ double Duration::TimeRemaining()
 	return (seconds * 1000 - runTime.count()) / 1000.;
 }
 
+void Duration::SetTimeRemaining(double remaining)
+{
+	long long msPassed = (seconds - remaining) * 1000;
+	_startTime = std::chrono::high_resolution_clock::now() -
+		     std::chrono::milliseconds(msPassed);
+}
+
 void Duration::Reset()
 {
 	_startTime = {};
