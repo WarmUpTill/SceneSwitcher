@@ -219,6 +219,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-action-scene-visibility.hpp
     src/headers/macro-action-source.hpp
     src/headers/macro-action-streaming.hpp
+    src/headers/macro-action-timer.hpp
     src/headers/macro-action-transition.hpp
     src/headers/macro-action-virtual-cam.hpp
     src/headers/macro-action-wait.hpp
@@ -309,6 +310,7 @@ set(advanced-scene-switcher_SOURCES
     src/macro-action-scene-visibility.cpp
     src/macro-action-source.cpp
     src/macro-action-streaming.cpp
+    src/macro-action-timer.cpp
     src/macro-action-transition.cpp
     src/macro-action-virtual-cam.cpp
     src/macro-action-wait.cpp
