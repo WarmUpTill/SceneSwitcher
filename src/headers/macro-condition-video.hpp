@@ -44,6 +44,7 @@ public:
 	OBSWeakSource _videoSource;
 	VideoCondition _condition = VideoCondition::MATCH;
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
+	bool _useAlphaAsMask = false;
 	double _patternThreshold = 0.8;
 	cv::CascadeClassifier _objectCascade;
 	double _scaleFactor = 1.1;
@@ -120,6 +121,7 @@ private slots:
 	void ImagePathChanged(const QString &text);
 	void ImageBrowseButtonClicked();
 	void PatternThresholdChanged(double);
+	void UseAlphaAsMaskChanged(int value);
 
 	void ModelPathChanged(const QString &text);
 	void ObjectScaleThresholdChanged(double);
@@ -141,6 +143,7 @@ protected:
 
 	FileSelection *_imagePath;
 	ThresholdSlider *_patternThreshold;
+	QCheckBox *_useAlphaAsMask;
 
 	FileSelection *_modelDataPath;
 	QHBoxLayout *_modelPathLayout;

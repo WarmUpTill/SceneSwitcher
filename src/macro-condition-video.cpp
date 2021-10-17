@@ -100,6 +100,7 @@ bool MacroConditionVideo::Save(obs_data_t *obj)
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_string(obj, "filePath", _file.c_str());
 	obs_data_set_double(obj, "threshold", _patternThreshold);
+	obs_data_set_bool(obj, "useAlphaAsMask", _useAlphaAsMask);
 	obs_data_set_string(obj, "modelDataPath", _modelDataPath.c_str());
 	obs_data_set_double(obj, "scaleFactor", _scaleFactor);
 	obs_data_set_int(obj, "minNeighbors", _minNeighbors);
@@ -132,6 +133,7 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 		static_cast<VideoCondition>(obs_data_get_int(obj, "condition"));
 	_file = obs_data_get_string(obj, "filePath");
 	_patternThreshold = obs_data_get_double(obj, "threshold");
+	_useAlphaAsMask = obs_data_get_bool(obj, "useAlphaAsMask");
 	_modelDataPath = obs_data_get_string(obj, "modelDataPath");
 	_scaleFactor = obs_data_get_double(obj, "scaleFactor");
 	if (!isScaleFactorValid(_scaleFactor)) {
@@ -181,8 +183,15 @@ bool MacroConditionVideo::LoadImageFromFile()
 		     _file.c_str());
 		return false;
 	}
-	_matchImage =
-		_matchImage.convertToFormat(QImage::Format::Format_RGBX8888);
+
+	if (_condition == VideoCondition::PATTERN && _useAlphaAsMask) {
+		_matchImage = _matchImage.convertToFormat(
+			QImage::Format::Format_RGBA8888);
+	} else {
+		_matchImage = _matchImage.convertToFormat(
+			QImage::Format::Format_RGBX8888);
+	}
+
 	return true;
 }
 
@@ -193,7 +202,7 @@ bool MacroConditionVideo::LoadModelData(std::string &path)
 	return !_objectCascade.empty();
 }
 
-// Assumption is that QImage uses Format_RGBX8888.
+// Assumption is that QImage uses Format_RGBA8888.
 // Conversion from: https://github.com/dbzhang800/QtOpenCV
 cv::Mat QImageToMat(const QImage &img)
 {
@@ -210,11 +219,11 @@ QImage MatToQImage(const cv::Mat &mat)
 		return QImage();
 	}
 	return QImage(mat.data, mat.cols, mat.rows, mat.step,
-		      QImage::Format::Format_RGBX8888);
+		      QImage::Format::Format_RGBA8888);
 }
 
 void matchPattern(QImage &img, QImage &pattern, double threshold,
-		  cv::Mat &result)
+		  cv::Mat &result, bool useAlphaAsMask = true)
 {
 	if (img.isNull() || pattern.isNull()) {
 		return;
@@ -226,8 +235,36 @@ void matchPattern(QImage &img, QImage &pattern, double threshold,
 	auto i = QImageToMat(img);
 	auto p = QImageToMat(pattern);
 
-	cv::matchTemplate(i, p, result, cv::TM_CCOEFF_NORMED);
-	cv::threshold(result, result, threshold, 0, cv::THRESH_TOZERO);
+	if (useAlphaAsMask) {
+		std::vector<cv::Mat1b> rgbaChannelsPattern;
+		cv::split(p, rgbaChannelsPattern);
+		std::vector<cv::Mat1b> rgbChanlesPattern(
+			rgbaChannelsPattern.begin(),
+			rgbaChannelsPattern.begin() + 3);
+
+		cv::Mat3b rgbPattern;
+		cv::merge(rgbChanlesPattern, rgbPattern);
+		cv::Mat1b mask;
+		cv::threshold(rgbaChannelsPattern[3], mask, 0, 255,
+			      cv::THRESH_BINARY);
+
+		std::vector<cv::Mat1b> rgbaChannelsImage;
+		cv::split(i, rgbaChannelsImage);
+		std::vector<cv::Mat1b> rgbChanlesImage(
+			rgbaChannelsImage.begin(),
+			rgbaChannelsImage.begin() + 3);
+
+		cv::Mat3b rgbImage;
+		cv::merge(rgbChanlesImage, rgbImage);
+
+		cv::matchTemplate(rgbImage, rgbPattern, result,
+				  cv::TM_CCORR_NORMED, mask);
+		cv::threshold(result, result, threshold, 0, cv::THRESH_TOZERO);
+
+	} else {
+		cv::matchTemplate(i, p, result, cv::TM_CCOEFF_NORMED);
+		cv::threshold(result, result, threshold, 0, cv::THRESH_TOZERO);
+	}
 }
 
 bool MacroConditionVideo::ScreenshotContainsPattern()
@@ -358,6 +395,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			"AdvSceneSwitcher.condition.video.patternThreshold"),
 		obs_module_text(
 			"AdvSceneSwitcher.condition.video.patternThresholdDescription"));
+	_useAlphaAsMask = new QCheckBox(obs_module_text(
+		"AdvSceneSwitcher.condition.video.patternThresholdUseAlphaAsMask"));
 
 	_modelDataPath = new FileSelection();
 	_objectScaleThreshold = new ThresholdSlider(
@@ -399,6 +438,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 SLOT(ImageBrowseButtonClicked()));
 	QWidget::connect(_patternThreshold, SIGNAL(DoubleValueChanged(double)),
 			 this, SLOT(PatternThresholdChanged(double)));
+	QWidget::connect(_useAlphaAsMask, SIGNAL(stateChanged(int)), this,
+			 SLOT(UseAlphaAsMaskChanged(int)));
 	QWidget::connect(_objectScaleThreshold,
 			 SIGNAL(DoubleValueChanged(double)), this,
 			 SLOT(ObjectScaleThresholdChanged(double)));
@@ -474,6 +515,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(entryLine1Layout);
 	mainLayout->addWidget(_patternThreshold);
+	mainLayout->addWidget(_useAlphaAsMask);
 	mainLayout->addLayout(_modelPathLayout);
 	mainLayout->addWidget(_objectScaleThreshold);
 	mainLayout->addLayout(_neighborsControlLayout);
@@ -526,11 +568,6 @@ void MacroConditionVideoEdit::SourceChanged(const QString &text)
 	_entryData->ResetLastMatch();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
-}
-
-bool needsPatternThreshold(VideoCondition cond)
-{
-	return cond == VideoCondition::PATTERN;
 }
 
 void MacroConditionVideoEdit::ConditionChanged(int cond)
@@ -647,6 +684,17 @@ void MacroConditionVideoEdit::PatternThresholdChanged(double value)
 	_entryData->_patternThreshold = value;
 }
 
+void MacroConditionVideoEdit::UseAlphaAsMaskChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_useAlphaAsMask = value;
+	_entryData->LoadImageFromFile();
+}
+
 void MacroConditionVideoEdit::ObjectScaleThresholdChanged(double value)
 {
 	if (_loading || !_entryData) {
@@ -737,7 +785,7 @@ QImage markPatterns(cv::Mat &matchResult, QImage &image, QImage &pattern)
 				rectangle(matchImg, {col, row},
 					  cv::Point(col + pattern.width(),
 						    row + pattern.height()),
-					  cv::Scalar(255, 0, 0, 0), 2, 8, 0);
+					  cv::Scalar(255, 0, 0, 255), 2, 8, 0);
 			}
 		}
 	}
@@ -751,7 +799,7 @@ QImage markObjects(QImage &image, std::vector<cv::Rect> &objects)
 		rectangle(frame, cv::Point(objects[i].x, objects[i].y),
 			  cv::Point(objects[i].x + objects[i].width,
 				    objects[i].y + objects[i].height),
-			  cv::Scalar(255, 0, 0, 0), 2, 8, 0);
+			  cv::Scalar(255, 0, 0, 255), 2, 8, 0);
 	}
 	return MatToQImage(frame);
 }
@@ -854,8 +902,10 @@ void setLayoutVisible(QLayout *layout, bool visible)
 void MacroConditionVideoEdit::SetWidgetVisibility()
 {
 	_imagePath->setVisible(requiresFileInput(_entryData->_condition));
-	_patternThreshold->setVisible(
-		needsPatternThreshold(_entryData->_condition));
+	_patternThreshold->setVisible(_entryData->_condition ==
+				      VideoCondition::PATTERN);
+	_useAlphaAsMask->setVisible(_entryData->_condition ==
+				    VideoCondition::PATTERN);
 	_showMatch->setVisible(needsShowMatch(_entryData->_condition));
 	_objectScaleThreshold->setVisible(
 		needsObjectControls(_entryData->_condition));
@@ -885,6 +935,7 @@ void MacroConditionVideoEdit::UpdateEntryData()
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_imagePath->SetPath(QString::fromStdString(_entryData->_file));
 	_patternThreshold->SetDoubleValue(_entryData->_patternThreshold);
+	_useAlphaAsMask->setChecked(_entryData->_useAlphaAsMask);
 	_modelDataPath->SetPath(_entryData->GetModelDataPath().c_str());
 	_objectScaleThreshold->SetDoubleValue(_entryData->_scaleFactor);
 	_minNeighbors->setValue(_entryData->_minNeighbors);
