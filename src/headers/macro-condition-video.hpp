@@ -20,6 +20,12 @@ enum class VideoCondition {
 	OBJECT,
 };
 
+struct PatternMatchData {
+	cv::Mat4b rgbaPattern;
+	cv::Mat3b rgbPattern;
+	cv::Mat1b mask;
+};
+
 constexpr int minMinNeighbors = 3;
 constexpr int maxMinNeighbors = 6;
 
@@ -45,6 +51,7 @@ public:
 	VideoCondition _condition = VideoCondition::MATCH;
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	bool _useAlphaAsMask = false;
+	PatternMatchData _patternData;
 	double _patternThreshold = 0.8;
 	cv::CascadeClassifier _objectCascade;
 	double _scaleFactor = 1.1;
