@@ -266,7 +266,7 @@ bool VideoSwitch::loadImageFromFile()
 		return false;
 	}
 	matchImage =
-		matchImage.convertToFormat(QImage::Format::Format_RGBX8888);
+		matchImage.convertToFormat(QImage::Format::Format_RGBA8888);
 	return true;
 }
 

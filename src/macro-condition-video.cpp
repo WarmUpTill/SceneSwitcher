@@ -222,13 +222,8 @@ bool MacroConditionVideo::LoadImageFromFile()
 		return false;
 	}
 
-	if (_condition == VideoCondition::PATTERN && _useAlphaAsMask) {
-		_matchImage = _matchImage.convertToFormat(
-			QImage::Format::Format_RGBA8888);
-	} else {
-		_matchImage = _matchImage.convertToFormat(
-			QImage::Format::Format_RGBX8888);
-	}
+	_matchImage =
+		_matchImage.convertToFormat(QImage::Format::Format_RGBA8888);
 	_patternData = createPatternData(_matchImage);
 	return true;
 }

@@ -79,7 +79,7 @@ void AdvSSScreenshotObj::Copy()
 	uint8_t *videoData = nullptr;
 	uint32_t videoLinesize = 0;
 
-	image = QImage(cx, cy, QImage::Format::Format_RGBX8888);
+	image = QImage(cx, cy, QImage::Format::Format_RGBA8888);
 
 	if (gs_stagesurface_map(stagesurf, &videoData, &videoLinesize)) {
 		int linesize = image.bytesPerLine();
