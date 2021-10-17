@@ -887,4 +887,6 @@ void AdvSceneSwitcher::setupGeneralTab()
 	QTimer *statusTimer = new QTimer(this);
 	connect(statusTimer, SIGNAL(timeout()), this, SLOT(updateStatus()));
 	statusTimer->start(1000);
+
+	setWindowTitle(windowTitle() + " - " + g_GIT_TAG);
 }
