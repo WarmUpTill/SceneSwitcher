@@ -599,6 +599,7 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 
 extern "C" void InitSceneSwitcher()
 {
+	blog(LOG_INFO, "version: %s", g_GIT_TAG);
 	blog(LOG_INFO, "version: %s", g_GIT_SHA1);
 
 	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(

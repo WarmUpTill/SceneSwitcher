@@ -42,6 +42,7 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+git_describe(GIT_TAG)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cpp.in"
                "${CMAKE_CURRENT_BINARY_DIR}/src/version.cpp" @ONLY)
 
