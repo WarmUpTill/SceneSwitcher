@@ -176,32 +176,6 @@ void MacroConditionVideo::GetScreenshot()
 	obs_source_release(source);
 }
 
-bool MacroConditionVideo::LoadImageFromFile()
-{
-	if (!_matchImage.load(QString::fromStdString(_file))) {
-		blog(LOG_WARNING, "Cannot load image data from file '%s'",
-		     _file.c_str());
-		return false;
-	}
-
-	if (_condition == VideoCondition::PATTERN && _useAlphaAsMask) {
-		_matchImage = _matchImage.convertToFormat(
-			QImage::Format::Format_RGBA8888);
-	} else {
-		_matchImage = _matchImage.convertToFormat(
-			QImage::Format::Format_RGBX8888);
-	}
-
-	return true;
-}
-
-bool MacroConditionVideo::LoadModelData(std::string &path)
-{
-	_modelDataPath = path;
-	_objectCascade = initObjectCascade(path);
-	return !_objectCascade.empty();
-}
-
 // Assumption is that QImage uses Format_RGBA8888.
 // Conversion from: https://github.com/dbzhang800/QtOpenCV
 cv::Mat QImageToMat(const QImage &img)
@@ -222,32 +196,64 @@ QImage MatToQImage(const cv::Mat &mat)
 		      QImage::Format::Format_RGBA8888);
 }
 
-void matchPattern(QImage &img, QImage &pattern, double threshold,
+PatternMatchData createPatternData(QImage &pattern)
+{
+	PatternMatchData data;
+	if (pattern.isNull()) {
+		return data;
+	}
+
+	data.rgbaPattern = QImageToMat(pattern);
+	std::vector<cv::Mat1b> rgbaChannelsPattern;
+	cv::split(data.rgbaPattern, rgbaChannelsPattern);
+	std::vector<cv::Mat1b> rgbChanlesPattern(
+		rgbaChannelsPattern.begin(), rgbaChannelsPattern.begin() + 3);
+	cv::merge(rgbChanlesPattern, data.rgbPattern);
+	cv::threshold(rgbaChannelsPattern[3], data.mask, 0, 255,
+		      cv::THRESH_BINARY);
+	return data;
+}
+
+bool MacroConditionVideo::LoadImageFromFile()
+{
+	if (!_matchImage.load(QString::fromStdString(_file))) {
+		blog(LOG_WARNING, "Cannot load image data from file '%s'",
+		     _file.c_str());
+		return false;
+	}
+
+	if (_condition == VideoCondition::PATTERN && _useAlphaAsMask) {
+		_matchImage = _matchImage.convertToFormat(
+			QImage::Format::Format_RGBA8888);
+	} else {
+		_matchImage = _matchImage.convertToFormat(
+			QImage::Format::Format_RGBX8888);
+	}
+	_patternData = createPatternData(_matchImage);
+	return true;
+}
+
+bool MacroConditionVideo::LoadModelData(std::string &path)
+{
+	_modelDataPath = path;
+	_objectCascade = initObjectCascade(path);
+	return !_objectCascade.empty();
+}
+
+void matchPattern(QImage &img, PatternMatchData &patternData, double threshold,
 		  cv::Mat &result, bool useAlphaAsMask = true)
 {
-	if (img.isNull() || pattern.isNull()) {
+	if (img.isNull() || patternData.rgbaPattern.empty()) {
 		return;
 	}
-	if (img.height() < pattern.height() || img.width() < pattern.width()) {
+	if (img.height() < patternData.rgbaPattern.rows ||
+	    img.width() < patternData.rgbaPattern.cols) {
 		return;
 	}
 
 	auto i = QImageToMat(img);
-	auto p = QImageToMat(pattern);
 
 	if (useAlphaAsMask) {
-		std::vector<cv::Mat1b> rgbaChannelsPattern;
-		cv::split(p, rgbaChannelsPattern);
-		std::vector<cv::Mat1b> rgbChanlesPattern(
-			rgbaChannelsPattern.begin(),
-			rgbaChannelsPattern.begin() + 3);
-
-		cv::Mat3b rgbPattern;
-		cv::merge(rgbChanlesPattern, rgbPattern);
-		cv::Mat1b mask;
-		cv::threshold(rgbaChannelsPattern[3], mask, 0, 255,
-			      cv::THRESH_BINARY);
-
 		std::vector<cv::Mat1b> rgbaChannelsImage;
 		cv::split(i, rgbaChannelsImage);
 		std::vector<cv::Mat1b> rgbChanlesImage(
@@ -257,21 +263,29 @@ void matchPattern(QImage &img, QImage &pattern, double threshold,
 		cv::Mat3b rgbImage;
 		cv::merge(rgbChanlesImage, rgbImage);
 
-		cv::matchTemplate(rgbImage, rgbPattern, result,
-				  cv::TM_CCORR_NORMED, mask);
+		cv::matchTemplate(rgbImage, patternData.rgbPattern, result,
+				  cv::TM_CCORR_NORMED, patternData.mask);
 		cv::threshold(result, result, threshold, 0, cv::THRESH_TOZERO);
 
 	} else {
-		cv::matchTemplate(i, p, result, cv::TM_CCOEFF_NORMED);
+		cv::matchTemplate(i, patternData.rgbaPattern, result,
+				  cv::TM_CCOEFF_NORMED);
 		cv::threshold(result, result, threshold, 0, cv::THRESH_TOZERO);
 	}
+}
+
+void matchPattern(QImage &img, QImage &pattern, double threshold,
+		  cv::Mat &result, bool useAlphaAsMask)
+{
+	auto data = createPatternData(pattern);
+	matchPattern(img, data, threshold, result, useAlphaAsMask);
 }
 
 bool MacroConditionVideo::ScreenshotContainsPattern()
 {
 	cv::Mat result;
-	matchPattern(_screenshotData->image, _matchImage, _patternThreshold,
-		     result);
+	matchPattern(_screenshotData->image, _patternData, _patternThreshold,
+		     result, _useAlphaAsMask);
 	return countNonZero(result) > 0;
 }
 
@@ -823,7 +837,8 @@ void MacroConditionVideoEdit::ShowMatchClicked()
 	if (_entryData->_condition == VideoCondition::PATTERN) {
 		cv::Mat result;
 		matchPattern(screenshot->image, pattern,
-			     _entryData->_patternThreshold, result);
+			     _entryData->_patternThreshold, result,
+			     _entryData->_useAlphaAsMask);
 		if (countNonZero(result) == 0) {
 			DisplayMessage(obs_module_text(
 				"AdvSceneSwitcher.condition.video.patternMatchFail"));
