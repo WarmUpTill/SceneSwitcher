@@ -4,6 +4,7 @@
 
 #include <QWidget>
 #include <QComboBox>
+#include <QCheckBox>
 
 enum class SceneType {
 	CURRENT,
@@ -24,6 +25,7 @@ public:
 		return std::make_shared<MacroConditionScene>();
 	}
 
+	bool _waitForTransition = false;
 	SceneSelection _scene;
 	SceneType _type;
 
@@ -52,12 +54,14 @@ public:
 private slots:
 	void SceneChanged(const SceneSelection &);
 	void TypeChanged(int value);
+	void WaitForTransitionChanged(int state);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
 	SceneSelectionWidget *_scenes;
 	QComboBox *_sceneType;
+	QCheckBox *_waitForTransition;
 	std::shared_ptr<MacroConditionScene> _entryData;
 
 private:
