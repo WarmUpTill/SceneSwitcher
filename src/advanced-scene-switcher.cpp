@@ -232,12 +232,17 @@ void SwitcherData::Thread()
 			}
 		}
 
-		// After this point we will call frontend functions
+		// After this point we will call frontend functions like
 		// obs_frontend_set_current_scene() and
 		// obs_frontend_set_current_transition()
 		//
 		// During this time SaveSceneSwitcher() could be called
-		// leading to a deadlock, so we have to unlock()
+		// leading to a deadlock with the frontend function being stuck
+		// in QMetaObject::invokeMethod() holding the mutex and
+		// OBS being stuck in SaveSceneSwitcher().
+		//
+		// So we have to unlock() risking race conditions as these are
+		// less frequent than the above described deadlock
 		lock.unlock();
 
 		if (match) {

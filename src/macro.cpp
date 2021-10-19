@@ -492,7 +492,7 @@ bool SwitcherData::checkMacros()
 
 bool SwitcherData::runMacros()
 {
-	for (auto &m : macros) {
+	for (auto m : macros) {
 		if (m.Matched()) {
 			vblog(LOG_INFO, "running macro: %s", m.Name().c_str());
 			if (!m.PerformAction()) {
