@@ -113,7 +113,7 @@ bool Macro::PerformAction()
 			return false;
 		}
 	}
-	if (ret && _count != std::numeric_limits<int>::max()) {
+	if (_count != std::numeric_limits<int>::max()) {
 		_count++;
 	}
 	return ret;
