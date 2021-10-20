@@ -392,6 +392,11 @@ SceneSequenceSwitch *SceneSequenceSwitch::extend()
 	}
 	extendedSequence = std::make_unique<SceneSequenceSwitch>();
 	extendedSequence->startScene = scene;
+	if (targetType == SwitchTargetType::SceneGroup) {
+		extendedSequence->startScene = nullptr;
+		extendedSequence->startTargetType =
+			SwitchTargetType::SceneGroup;
+	}
 	return extendedSequence.get();
 }
 
