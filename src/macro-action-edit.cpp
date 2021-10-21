@@ -152,12 +152,8 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 	}
 	macro->UpdateActionIndices();
 
-	// All entry pointers in existing edit widgets after the new entry will
-	// be invalidated by adding the new entry so we have to recreate them
-	// and because I am lazy I am recreating every widget.
-	//
-	// If performance should become a concern this has to be revisited.
-	SetEditMacro(*macro);
+	clearLayout(ui->macroEditActionLayout, idx);
+	PopulateMacroActions(*macro, idx);
 	HighlightAction(idx);
 }
 
@@ -189,12 +185,8 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 	switcher->macroWaitCv.notify_one();
 	macro->UpdateActionIndices();
 
-	// All entry pointers in existing edit widgets after the new entry will
-	// be invalidated by adding the new entry so we have to recreate them
-	// and because I am lazy I am recreating every widget.
-	//
-	// If performance should become a concern this has to be revisited.
-	SetEditMacro(*macro);
+	clearLayout(ui->macroEditActionLayout, idx);
+	PopulateMacroActions(*macro, idx);
 }
 
 void AdvSceneSwitcher::on_actionRemove_clicked()
