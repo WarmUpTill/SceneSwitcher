@@ -30,6 +30,7 @@ public:
 	// Use this function to avoid accidental edits when scrolling through
 	// list of actions and conditions
 	void SetFocusPolicyOfWidgets();
+	void SetCollapsed(bool collapsed);
 
 protected slots:
 	void HeaderInfoChanged(const QString &);

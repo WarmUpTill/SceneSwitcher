@@ -93,6 +93,11 @@ void Section::AddHeaderWidget(QWidget *w)
 	_headerWidgetLayout->addWidget(w);
 }
 
+void Section::SetCollapsed(bool collapsed)
+{
+	Collapse(collapsed);
+}
+
 bool Section::eventFilter(QObject *obj, QEvent *event)
 {
 	if (event->type() == QEvent::Resize && !_transitioning && !_collapsed) {
