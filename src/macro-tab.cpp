@@ -404,17 +404,25 @@ void AdvSceneSwitcher::CopyMacro()
 	ui->macros->setCurrentItem(item);
 }
 
+void setCollapsedStateOfSegmentsIn(QLayout *layout, bool collapse)
+{
+	QLayoutItem *item = nullptr;
+	for (int i = 0; i < layout->count(); i++) {
+		item = layout->itemAt(i);
+		auto segment = dynamic_cast<MacroSegmentEdit *>(item->widget());
+		if (segment) {
+			segment->SetCollapsed(collapse);
+		}
+	}
+}
+
 void AdvSceneSwitcher::ExpandAllActions()
 {
 	auto m = getSelectedMacro();
 	if (!m) {
 		return;
 	}
-
-	for (auto &a : m->Actions()) {
-		a->SetCollapsed(false);
-	}
-	SetEditMacro(*m);
+	setCollapsedStateOfSegmentsIn(ui->macroEditActionLayout, false);
 }
 
 void AdvSceneSwitcher::ExpandAllConditions()
@@ -423,11 +431,7 @@ void AdvSceneSwitcher::ExpandAllConditions()
 	if (!m) {
 		return;
 	}
-
-	for (auto &c : m->Conditions()) {
-		c->SetCollapsed(false);
-	}
-	SetEditMacro(*m);
+	setCollapsedStateOfSegmentsIn(ui->macroEditConditionLayout, false);
 }
 
 void AdvSceneSwitcher::CollapseAllActions()
@@ -436,11 +440,7 @@ void AdvSceneSwitcher::CollapseAllActions()
 	if (!m) {
 		return;
 	}
-
-	for (auto &a : m->Actions()) {
-		a->SetCollapsed(true);
-	}
-	SetEditMacro(*m);
+	setCollapsedStateOfSegmentsIn(ui->macroEditActionLayout, true);
 }
 
 void AdvSceneSwitcher::CollapseAllConditions()
@@ -449,9 +449,5 @@ void AdvSceneSwitcher::CollapseAllConditions()
 	if (!m) {
 		return;
 	}
-
-	for (auto &c : m->Conditions()) {
-		c->SetCollapsed(true);
-	}
-	SetEditMacro(*m);
+	setCollapsedStateOfSegmentsIn(ui->macroEditConditionLayout, true);
 }

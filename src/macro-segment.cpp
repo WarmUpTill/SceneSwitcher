@@ -145,3 +145,8 @@ void MacroSegmentEdit::SetFocusPolicyOfWidgets()
 		w->installEventFilter(new MouseWheelWidgetAdjustmentGuard(w));
 	}
 }
+
+void MacroSegmentEdit::SetCollapsed(bool collapsed)
+{
+	_section->SetCollapsed(collapsed);
+}
