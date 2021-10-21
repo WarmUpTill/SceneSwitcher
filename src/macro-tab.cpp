@@ -170,42 +170,46 @@ void AdvSceneSwitcher::on_macroName_editingFinished()
 	emit MacroRenamed(oldName, newName);
 }
 
+void AdvSceneSwitcher::PopulateMacroActions(Macro &m, int afterIdx)
+{
+	bool root = afterIdx == 0;
+	auto &actions = m.Actions();
+	for (; afterIdx < actions.size(); afterIdx++) {
+		auto newEntry = new MacroActionEdit(this, &actions[afterIdx],
+						    actions[afterIdx]->GetId());
+		ConnectControlSignals(newEntry);
+		ui->macroEditActionLayout->addWidget(newEntry);
+		ui->macroEditActionHelp->setVisible(false);
+		root = false;
+	}
+	ui->macroEditActionHelp->setVisible(actions.size() == 0);
+}
+
+void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, int afterIdx)
+{
+	bool root = afterIdx == 0;
+	auto &conditions = m.Conditions();
+	for (; afterIdx < conditions.size(); afterIdx++) {
+		auto newEntry = new MacroConditionEdit(
+			this, &conditions[afterIdx],
+			conditions[afterIdx]->GetId(), root);
+		ConnectControlSignals(newEntry);
+		ui->macroEditConditionLayout->addWidget(newEntry);
+		ui->macroEditConditionHelp->setVisible(false);
+		root = false;
+	}
+	ui->macroEditConditionHelp->setVisible(conditions.size() == 0);
+}
+
 void AdvSceneSwitcher::SetEditMacro(Macro &m)
 {
 	ui->macroName->setText(m.Name().c_str());
 	clearLayout(ui->macroEditConditionLayout);
 	clearLayout(ui->macroEditActionLayout);
 
-	bool root = true;
-	for (auto &c : m.Conditions()) {
-		auto newEntry =
-			new MacroConditionEdit(this, &c, c->GetId(), root);
-		ConnectControlSignals(newEntry);
-		ui->macroEditConditionLayout->addWidget(newEntry);
-		ui->macroEditConditionHelp->setVisible(false);
-		root = false;
-	}
-
-	for (auto &a : m.Actions()) {
-		auto newEntry = new MacroActionEdit(this, &a, a->GetId());
-		ConnectControlSignals(newEntry);
-		ui->macroEditActionLayout->addWidget(newEntry);
-		ui->macroEditActionHelp->setVisible(false);
-	}
-
+	PopulateMacroConditions(m);
+	PopulateMacroActions(m);
 	ui->macroEdit->setDisabled(false);
-
-	if (m.Conditions().size() == 0) {
-		ui->macroEditConditionHelp->setVisible(true);
-	} else {
-		ui->macroEditConditionHelp->setVisible(false);
-	}
-
-	if (m.Actions().size() == 0) {
-		ui->macroEditActionHelp->setVisible(true);
-	} else {
-		ui->macroEditActionHelp->setVisible(false);
-	}
 }
 
 void AdvSceneSwitcher::HighlightAction(int idx)

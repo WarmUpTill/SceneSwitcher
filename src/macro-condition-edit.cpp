@@ -276,12 +276,8 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 	(*cond)->SetLogicType(logic);
 	macro->UpdateConditionIndices();
 
-	// All entry pointers in existing edit widgets after the new entry will
-	// be invalidated by adding the new entry so we have to recreate them
-	// and because I am lazy I am recreating every widget.
-	//
-	// If performance should become a concern this has to be revisited.
-	SetEditMacro(*macro);
+	clearLayout(ui->macroEditConditionLayout, idx);
+	PopulateMacroConditions(*macro, idx);
 	HighlightCondition(idx);
 }
 
@@ -311,21 +307,13 @@ void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 	macro->Conditions().erase(macro->Conditions().begin() + idx);
 	macro->UpdateConditionIndices();
 
-	if (macro->Conditions().size() == 0) {
-		ui->macroEditConditionHelp->setVisible(true);
-	}
-
 	if (idx == 0 && macro->Conditions().size() > 0) {
 		auto newRoot = macro->Conditions().at(0);
 		newRoot->SetLogicType(LogicType::ROOT_NONE);
 	}
 
-	// All entry pointers in existing edit widgets after the new entry will
-	// be invalidated by adding the new entry so we have to recreate them
-	// and because I am lazy I am recreating every widget.
-	//
-	// If performance should become a concern this has to be revisited.
-	SetEditMacro(*macro);
+	clearLayout(ui->macroEditConditionLayout, idx);
+	PopulateMacroConditions(*macro, idx);
 }
 
 void AdvSceneSwitcher::on_conditionRemove_clicked()
