@@ -156,7 +156,7 @@ void SceneTrigger::logMatch()
 	blog(LOG_INFO,
 	     "scene '%s' in status '%s' triggering action '%s' after %f seconds",
 	     GetWeakSourceName(scene).c_str(), statusName.c_str(),
-	     actionName.c_str(), duration);
+	     actionName.c_str(), duration.seconds);
 }
 
 void frontEndActionThread(sceneTriggerAction action, double delay)
@@ -265,13 +265,15 @@ void SceneTrigger::performAction()
 	std::thread t;
 
 	if (isFrontendAction(triggerAction)) {
-		t = std::thread(frontEndActionThread, triggerAction, duration);
+		t = std::thread(frontEndActionThread, triggerAction,
+				duration.seconds);
 	} else if (isAudioAction(triggerAction)) {
 		bool mute = triggerAction == sceneTriggerAction::MUTE_SOURCE;
-		t = std::thread(muteThread, audioSource, duration, mute);
+		t = std::thread(muteThread, audioSource, duration.seconds,
+				mute);
 	} else if (isSwitcherStatusAction(triggerAction)) {
 		bool stop = triggerAction == sceneTriggerAction::STOP_SWITCHER;
-		t = std::thread(statusThread, duration, stop);
+		t = std::thread(statusThread, duration.seconds, stop);
 	} else {
 		blog(LOG_WARNING, "ignoring unknown action '%d'",
 		     static_cast<int>(triggerAction));
@@ -374,7 +376,7 @@ void SceneTrigger::save(obs_data_t *obj)
 	obs_data_set_string(obj, "scene", GetWeakSourceName(scene).c_str());
 	obs_data_set_int(obj, "triggerType", static_cast<int>(triggerType));
 	obs_data_set_int(obj, "triggerAction", static_cast<int>(triggerAction));
-	obs_data_set_double(obj, "duration", duration);
+	duration.Save(obj, "duration");
 	obs_data_set_string(obj, "audioSource",
 			    GetWeakSourceName(audioSource).c_str());
 }
@@ -388,7 +390,7 @@ void SceneTrigger::load(obs_data_t *obj)
 		obs_data_get_int(obj, "triggerType"));
 	triggerAction = static_cast<sceneTriggerAction>(
 		obs_data_get_int(obj, "triggerAction"));
-	duration = obs_data_get_double(obj, "duration");
+	duration.Load(obj, "duration");
 
 	const char *audioSourceName = obs_data_get_string(obj, "audioSource");
 	audioSource = GetWeakSourceByName(audioSourceName);
@@ -451,19 +453,17 @@ SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
 {
 	triggers = new QComboBox();
 	actions = new QComboBox();
-	duration = new QDoubleSpinBox();
+	duration = new DurationSelection();
 	audioSources = new QComboBox();
-
-	duration->setMinimum(0.0);
-	duration->setMaximum(99.000000);
-	duration->setSuffix("s");
 
 	QWidget::connect(triggers, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TriggerTypeChanged(int)));
 	QWidget::connect(actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TriggerActionChanged(int)));
-	QWidget::connect(duration, SIGNAL(valueChanged(double)), this,
+	QWidget::connect(duration, SIGNAL(DurationChanged(double)), this,
 			 SLOT(DurationChanged(double)));
+	QWidget::connect(duration, SIGNAL(UnitChanged(DurationUnit)), this,
+			 SLOT(DurationUnitChanged(DurationUnit)));
 	QWidget::connect(audioSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(AudioSourceChanged(const QString &)));
@@ -475,7 +475,7 @@ SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
 	if (s) {
 		triggers->setCurrentIndex(static_cast<int>(s->triggerType));
 		actions->setCurrentIndex(static_cast<int>(s->triggerAction));
-		duration->setValue(s->duration);
+		duration->SetDuration(s->duration);
 
 		audioSources->setCurrentText(
 			GetWeakSourceName(s->audioSource).c_str());
@@ -552,14 +552,24 @@ void SceneTriggerWidget::TriggerActionChanged(int index)
 	}
 }
 
-void SceneTriggerWidget::DurationChanged(double dur)
+void SceneTriggerWidget::DurationChanged(double seconds)
 {
 	if (loading || !switchData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switchData->duration = dur;
+	switchData->duration.seconds = seconds;
+}
+
+void SceneTriggerWidget::DurationUnitChanged(DurationUnit unit)
+{
+	if (loading || !switchData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switchData->duration.displayUnit = unit;
 }
 
 void SceneTriggerWidget::AudioSourceChanged(const QString &text)

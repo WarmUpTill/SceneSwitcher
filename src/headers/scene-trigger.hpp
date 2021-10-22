@@ -8,6 +8,7 @@
 #pragma once
 
 #include "switch-generic.hpp"
+#include "duration-control.hpp"
 
 enum class sceneTriggerType {
 	NONE = 0,
@@ -43,7 +44,7 @@ struct SceneTrigger : SceneSwitcherEntry {
 	static bool pause;
 	sceneTriggerType triggerType = sceneTriggerType::NONE;
 	sceneTriggerAction triggerAction = sceneTriggerAction::NONE;
-	double duration = 0;
+	Duration duration;
 	OBSWeakSource audioSource = nullptr;
 
 	const char *getType() { return "trigger"; }
@@ -70,13 +71,14 @@ public:
 private slots:
 	void TriggerTypeChanged(int index);
 	void TriggerActionChanged(int index);
-	void DurationChanged(double dur);
+	void DurationChanged(double seconds);
+	void DurationUnitChanged(DurationUnit unit);
 	void AudioSourceChanged(const QString &text);
 
 private:
 	QComboBox *triggers;
 	QComboBox *actions;
-	QDoubleSpinBox *duration;
+	DurationSelection *duration;
 	QComboBox *audioSources;
 
 	SceneTrigger *switchData;
