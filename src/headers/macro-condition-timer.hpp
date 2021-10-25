@@ -22,6 +22,7 @@ public:
 
 	Duration _duration;
 	bool _paused = false;
+	bool _saveRemaining = false;
 	double _remaining = 0.;
 	bool _oneshot = false;
 
@@ -49,6 +50,7 @@ public:
 private slots:
 	void DurationChanged(double seconds);
 	void DurationUnitChanged(DurationUnit unit);
+	void SaveRemainingChanged(int state);
 	void AutoResetChanged(int state);
 	void PauseContinueClicked();
 	void ResetClicked();
@@ -59,6 +61,7 @@ protected:
 
 	DurationSelection *_duration;
 	QCheckBox *_autoReset;
+	QCheckBox *_saveRemaining;
 	QPushButton *_reset;
 	QPushButton *_pauseConinue;
 	QLabel *_remaining;
