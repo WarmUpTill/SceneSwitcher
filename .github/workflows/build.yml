@@ -179,7 +179,8 @@ jobs:
            libxss-dev \
            libx11-xcb-dev \
            libxcb-xfixes0-dev \
-           libopencv-dev
+           libopencv-dev \
+           libprocps-dev
       - name: 'Configure'
         shell: bash
         run: |

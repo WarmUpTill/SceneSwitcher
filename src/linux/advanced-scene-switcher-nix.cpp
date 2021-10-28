@@ -24,6 +24,7 @@
 #include <QStringList>
 #include <QRegularExpression>
 #include <QLibrary>
+#include <proc/readproc.h>
 
 static Display *xdisplay = 0;
 
@@ -363,11 +364,16 @@ bool isFullscreen(const std::string &title)
 void GetProcessList(QStringList &processes)
 {
 	processes.clear();
-	for (size_t i = 0; i < getTopLevelWindows().size(); ++i) {
-		std::string s = GetWindowTitle(i);
-		if (s != "")
-			processes << QString::fromStdString(s);
+	PROCTAB *proc = openproc(PROC_FILLSTAT);
+	proc_t proc_info;
+	memset(&proc_info, 0, sizeof(proc_info));
+	while (readproc(proc, &proc_info) != NULL) {
+		QString procName(proc_info.cmd);
+		if (!procName.isEmpty() && !processes.contains(proc_info.cmd)) {
+			processes << QString(proc_info.cmd);
+		}
 	}
+	closeproc(proc);
 }
 
 bool isInFocus(const QString &executable)

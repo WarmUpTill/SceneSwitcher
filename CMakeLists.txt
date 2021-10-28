@@ -137,9 +137,20 @@ endif()
 
 if(UNIX AND NOT APPLE)
   find_package(X11 REQUIRED COMPONENTS Xtst Xss)
-  link_libraries(${X11_LIBRARIES})
+  find_path(PROCPS_INCLUDE_DIR NAMES proc/procps.h)
+  if(NOT PROCPS_INCLUDE_DIR)
+    message(
+      FATAL_ERROR "procps include dir not found - please set PROCPS_INCLUDE_DIR"
+    )
+  endif()
+  find_library(PROCPS_LIBRARY NAMES procps)
+  if(NOT PROCPS_LIBRARY)
+    message(FATAL_ERROR "procps lib not found - please set PROCPS_LIBRARY")
+  endif()
+  message (STATUS "WHAT THE FUCK IS GOING ON ${PROCPS_LIBRARY}")
+  link_libraries(${X11_LIBRARIES} ${procps_LIBRARIES})
   include_directories("${X11_INCLUDE_DIR}" "${X11_Xtst_INCLUDE_PATH}"
-                      "${X11_Xss_INCLUDE_PATH}")
+                      "${X11_Xss_INCLUDE_PATH}" "${PROCPS_INCLUDE_DIR}")
 endif()
 
 if(WIN32)
@@ -154,7 +165,7 @@ elseif(APPLE)
 else()
   set(advanced-scene-switcher_PLATFORM_SOURCES
       src/linux/advanced-scene-switcher-nix.cpp)
-  set(advanced-scene-switcher_PLATFORM_LIBS Xss)
+  set(advanced-scene-switcher_PLATFORM_LIBS Xss ${PROCPS_LIBRARY})
 endif()
 
 # asio and websocketpp
@@ -401,11 +412,7 @@ if(BUILD_OUT_OF_TREE)
 else()
   # In tree build
   target_link_libraries(
-    advanced-scene-switcher
-    ${advanced-scene-switcher_PLATFORM_LIBS}
-    ${OpenCV_LIBRARIES}
-    obs-frontend-api
-    Qt5::Widgets
-    libobs)
+    advanced-scene-switcher ${advanced-scene-switcher_PLATFORM_LIBS}
+    ${OpenCV_LIBRARIES} obs-frontend-api Qt5::Widgets libobs)
   install_obs_plugin_with_data(advanced-scene-switcher data)
 endif()

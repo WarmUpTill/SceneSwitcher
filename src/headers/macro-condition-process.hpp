@@ -17,7 +17,11 @@ public:
 	}
 
 	std::string _process;
+#if defined(__linux__)
+	bool _focus = false;
+#else
 	bool _focus = true;
+#endif
 
 private:
 	static bool _registered;
