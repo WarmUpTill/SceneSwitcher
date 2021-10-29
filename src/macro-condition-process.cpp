@@ -37,11 +37,7 @@ bool MacroConditionProcess::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_process = obs_data_get_string(obj, "process");
-#if defined(__linux__)
-	_focus = false;
-#else
 	_focus = obs_data_get_bool(obj, "focus");
-#endif
 	return true;
 }
 
@@ -74,15 +70,9 @@ MacroConditionProcessEdit::MacroConditionProcessEdit(
 	};
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-#if defined(__linux__)
-	placeWidgets(obs_module_text(
-			     "AdvSceneSwitcher.condition.process.entry.linux"),
-		     mainLayout, widgetPlaceholders);
-#else
 	placeWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.process.entry"),
 		mainLayout, widgetPlaceholders);
-#endif
 	setLayout(mainLayout);
 
 	_entryData = entryData;

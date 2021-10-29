@@ -193,11 +193,6 @@ void ExecutableSwitch::load(obs_data_t *obj)
 
 	exe = obs_data_get_string(obj, "exefile");
 	inFocus = obs_data_get_bool(obj, "infocus");
-#if defined(__linux__)
-	inFocus = false;
-#else
-	inFocus = obs_data_get_bool(obj, "infocus");
-#endif
 }
 
 ExecutableSwitchWidget::ExecutableSwitchWidget(QWidget *parent,
@@ -229,14 +224,8 @@ ExecutableSwitchWidget::ExecutableSwitchWidget(QWidget *parent,
 		{"{{requiresFocus}}", requiresFocus},
 		{"{{scenes}}", scenes},
 		{"{{transitions}}", transitions}};
-#if defined(__linux__)
-	placeWidgets(
-		obs_module_text("AdvSceneSwitcher.executableTab.entry.linux"),
-		mainLayout, widgetPlaceholders);
-#else
 	placeWidgets(obs_module_text("AdvSceneSwitcher.executableTab.entry"),
 		     mainLayout, widgetPlaceholders);
-#endif
 	setLayout(mainLayout);
 
 	switchData = s;

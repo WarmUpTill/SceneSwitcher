@@ -25,6 +25,8 @@
 #include <QRegularExpression>
 #include <QLibrary>
 #include <proc/readproc.h>
+#include <fstream>
+#include <sstream>
 
 static Display *xdisplay = 0;
 
@@ -376,10 +378,66 @@ void GetProcessList(QStringList &processes)
 	closeproc(proc);
 }
 
+int getForegroundProcessPid()
+{
+	if (!ewmhIsSupported()) {
+		return -1;
+	}
+
+	auto dpy = disp();
+	Atom active = XInternAtom(dpy, "_NET_ACTIVE_WINDOW", true);
+	Atom actualType;
+	int format;
+	unsigned long num, bytes;
+	Window *window = 0;
+	int pid = -1;
+
+	Window rootWin = RootWindow(dpy, 0);
+
+	int xstatus = XGetWindowProperty(dpy, rootWin, active, 0L, ~0L, false,
+					 AnyPropertyType, &actualType, &format,
+					 &num, &bytes, (uint8_t **)&window);
+
+	if (xstatus == 0 && window == nullptr) {
+		return -1;
+	}
+
+	Atom atom, actual_type;
+	int actual_format;
+	unsigned long nitems;
+	unsigned long bytes_after;
+	unsigned char *prop;
+	atom = XInternAtom(dpy, "_NET_WM_PID", True);
+	auto status = XGetWindowProperty(dpy, *window, atom, 0, 1024, False,
+					 AnyPropertyType, &actual_type,
+					 &actual_format, &nitems, &bytes_after,
+					 &prop);
+
+	if (status != 0) {
+		return -2;
+	}
+	if (!prop) {
+		return -3;
+	}
+
+	pid = prop[1] * 256;
+	pid += prop[0];
+	return pid;
+}
+
+std::string getProcNameFromPid(int pid)
+{
+	std::string path = "/proc/" + std::to_string(pid) + "/comm";
+	std::ifstream t(path);
+	std::stringstream buffer;
+	buffer << t.rdbuf();
+	return buffer.str();
+}
+
 bool isInFocus(const QString &executable)
 {
-	std::string current;
-	GetCurrentWindowTitle(current);
+	auto pid = getForegroundProcessPid();
+	std::string current = getProcNameFromPid(pid);
 
 	// True if executable switch equals current window
 	bool equals = (executable.toStdString() == current);
