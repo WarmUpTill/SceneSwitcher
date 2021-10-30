@@ -1,4 +1,4 @@
-Note that you will have to use OBS version 26.1 or newer!
+Note that you will have to use OBS version 27 or newer!
 
 --- Windows ---
 Recommended: Run the provided installer. (You might have to click 'More info' and select 'Run anyway' if it is blocked by Windows)
@@ -8,17 +8,17 @@ It is usually located at 'C:\Program Files (x86)\obs-studio\'.
 Remember to install the Visual C++ Redistributable for Visual Studio 2019, if you have not done so already. (See plugin overview page)
 
 --- macOS ---
-Recommended: Run the provided installer. (You might have to right-click or control-click and select 'open' if it is blocked)
-
-Alternatively extract the *so file and data folder and either ...
-
-... right-click the OBS app inside your Applications folder and choose 'Show Package Contents'.
-Copy the advanced-scene-switcher.so file to 'Contents/Plugins' and the 'data' folder to 'Contents/Resources'.
-
-... or copy the advanced-scene-switcher.so file to Library/Application Support/obs-studio/plugins/advanced-scene-switcher/bin/ .
-And the 'data' folder to 'Library/Application Support/obs-studio/plugins/advanced-scene-switcher/'.
+Run the provided installer. (You might have to right-click or control-click and select 'open' if it is blocked)
 
 --- Linux ---
+Note that the plugin has dependencies to:
+ * libXss
+ * libopencv-imgproc
+ * libopencv-objdetect
+Optional:
+ * libXtst
+ * libcurl
+
 Copy the advanced-scene-switcher.so file and into the OBS Studio plugin folder.
 The location of this folder can vary, so you might have to look around a bit.
 
