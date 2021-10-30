@@ -164,6 +164,7 @@ public slots:
 
 	void on_verboseLogging_stateChanged(int state);
 	void on_saveWindowGeo_stateChanged(int state);
+	void on_showTrayNotifications_stateChanged(int state);
 	void on_uiHintsDisable_stateChanged(int state);
 
 	void on_exportSettings_clicked();

@@ -12,6 +12,7 @@
 #include <QTimer>
 #include <QMessageBox>
 #include <QJsonDocument>
+#include <QSystemTrayIcon>
 #include <unordered_map>
 #include <regex>
 #include <set>
@@ -441,6 +442,17 @@ bool DisplayMessage(const QString &msg, bool question)
 	}
 
 	return false;
+}
+
+void DisplayTrayMessage(const QString &title, const QString &msg)
+{
+	auto tray = reinterpret_cast<QSystemTrayIcon *>(
+		obs_frontend_get_system_tray());
+	if (!tray) {
+		return;
+	}
+
+	tray->showMessage(title, msg);
 }
 
 void addSelectionEntry(QComboBox *sel, const char *description, bool selectable,

@@ -55,6 +55,7 @@ void listAddClicked(QListWidget *list, QWidget *newWidget,
 bool listMoveUp(QListWidget *list);
 bool listMoveDown(QListWidget *list);
 bool DisplayMessage(const QString &msg, bool question = false);
+void DisplayTrayMessage(const QString &title, const QString &msg);
 void addSelectionEntry(QComboBox *sel, const char *description,
 		       bool selectable = false, const char *tooltip = "");
 void populateTransitionSelection(QComboBox *sel, bool addCurrent = true,

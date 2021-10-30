@@ -210,6 +210,15 @@ void AdvSceneSwitcher::on_saveWindowGeo_stateChanged(int state)
 	switcher->saveWindowGeo = state;
 }
 
+void AdvSceneSwitcher::on_showTrayNotifications_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	switcher->showSystemTrayNotifications = state;
+}
+
 void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 {
 	if (loading) {
@@ -503,6 +512,8 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 			 static_cast<int>(autoStartEvent));
 
 	obs_data_set_bool(obj, "verbose", verbose);
+	obs_data_set_bool(obj, "showSystemTrayNotifications",
+			  showSystemTrayNotifications);
 	obs_data_set_bool(obj, "disableHints", disableHints);
 
 	obs_data_set_int(obj, "priority0", functionNamesByPriority[0]);
@@ -574,6 +585,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		obs_data_get_int(obj, "autoStartEvent"));
 
 	verbose = obs_data_get_bool(obj, "verbose");
+	showSystemTrayNotifications =
+		obs_data_get_bool(obj, "showSystemTrayNotifications");
 	disableHints = obs_data_get_bool(obj, "disableHints");
 
 	obs_data_set_default_int(obj, "priority0", default_priority_0);
@@ -800,6 +813,8 @@ void AdvSceneSwitcher::setupGeneralTab()
 
 	ui->verboseLogging->setChecked(switcher->verbose);
 	ui->saveWindowGeo->setChecked(switcher->saveWindowGeo);
+	ui->showTrayNotifications->setChecked(
+		switcher->showSystemTrayNotifications);
 	ui->uiHintsDisable->setChecked(switcher->disableHints);
 
 	for (int p : switcher->functionNamesByPriority) {

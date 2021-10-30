@@ -70,6 +70,7 @@ struct SwitcherData {
 	bool stop = false;
 	bool verbose = false;
 	bool disableHints = false;
+	bool showSystemTrayNotifications = false;
 	bool showFrame = false;
 	bool transitionOverrideOverride = false;
 	bool adjustActiveTransitionType = true;
