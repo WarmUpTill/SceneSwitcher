@@ -415,6 +415,12 @@ void SwitcherData::Start()
 	if (networkConfig.ClientEnabled) {
 		client.connect(networkConfig.GetClientUri());
 	}
+
+	if (showSystemTrayNotifications) {
+		DisplayTrayMessage(
+			obs_module_text("AdvSceneSwitcher.pluginName"),
+			obs_module_text("AdvSceneSwitcher.running"));
+	}
 }
 
 void ResetMacroCounters()
@@ -441,6 +447,12 @@ void SwitcherData::Stop()
 
 	server.stop();
 	client.disconnect();
+
+	if (showSystemTrayNotifications) {
+		DisplayTrayMessage(
+			obs_module_text("AdvSceneSwitcher.pluginName"),
+			obs_module_text("AdvSceneSwitcher.stopped"));
+	}
 }
 
 void SwitcherData::setWaitScene()
