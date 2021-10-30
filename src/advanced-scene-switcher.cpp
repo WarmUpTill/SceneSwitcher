@@ -104,33 +104,23 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 {
 	if (saving) {
 		std::lock_guard<std::mutex> lock(switcher->m);
-
 		switcher->Prune();
-
 		obs_data_t *obj = obs_data_create();
-
 		switcher->saveSettings(obj);
-
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
-
 		obs_data_release(obj);
 	} else {
 		switcher->m.lock();
-
 		obs_data_t *obj =
 			obs_data_get_obj(save_data, "advanced-scene-switcher");
-
 		if (!obj) {
 			obj = obs_data_create();
 		}
 		if (switcher->versionChanged(obj, g_GIT_SHA1)) {
 			AskBackup(obj);
 		}
-
 		switcher->loadSettings(obj);
-
 		obs_data_release(obj);
-
 		switcher->m.unlock();
 
 		// Stop the scene switcher at least once to
@@ -166,9 +156,7 @@ void SwitcherData::Thread()
 		bool setPrevSceneAfterLinger = false;
 		bool macroMatch = false;
 		macroSceneSwitched = false;
-
 		endTime = std::chrono::high_resolution_clock::now();
-
 		auto runTime =
 			std::chrono::duration_cast<std::chrono::milliseconds>(
 				endTime - startTime);
