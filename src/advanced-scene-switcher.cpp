@@ -2,6 +2,7 @@
 #include <QAction>
 #include <QFileDialog>
 #include <regex>
+#include <filesystem>
 
 #include <obs-module.h>
 #include <obs-frontend-api.h>
@@ -36,9 +37,16 @@ bool translationAvailable()
 void AdvSceneSwitcher::loadUI()
 {
 	if (!translationAvailable()) {
-		(void)DisplayMessage(
-			"Failed to find plug-in's 'data' directory.\n"
-			"Please check installation instructions!");
+		QString msg = "Failed to find plug-in's 'data' directory.\n"
+			      "Please check installation instructions!\n\n"
+			      "Data most likely expected at:\n\n";
+#ifdef _WIN32
+		msg += QString::fromStdString(
+			(std::filesystem::current_path().string()));
+		msg += "/";
+#endif
+		msg += obs_get_module_data_path(obs_current_module());
+		(void)DisplayMessage(msg);
 	}
 
 #if __APPLE__
