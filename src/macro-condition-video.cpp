@@ -99,6 +99,8 @@ bool MacroConditionVideo::Save(obs_data_t *obj)
 			    GetWeakSourceName(_videoSource).c_str());
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_string(obj, "filePath", _file.c_str());
+	obs_data_set_bool(obj, "usePatternForChangedCheck",
+			  _usePatternForChangedCheck);
 	obs_data_set_double(obj, "threshold", _patternThreshold);
 	obs_data_set_bool(obj, "useAlphaAsMask", _useAlphaAsMask);
 	obs_data_set_string(obj, "modelDataPath", _modelDataPath.c_str());
@@ -132,6 +134,8 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 	_condition =
 		static_cast<VideoCondition>(obs_data_get_int(obj, "condition"));
 	_file = obs_data_get_string(obj, "filePath");
+	_usePatternForChangedCheck =
+		obs_data_get_bool(obj, "usePatternForChangedCheck");
 	_patternThreshold = obs_data_get_double(obj, "threshold");
 	_useAlphaAsMask = obs_data_get_bool(obj, "useAlphaAsMask");
 	_modelDataPath = obs_data_get_string(obj, "modelDataPath");
@@ -284,6 +288,18 @@ bool MacroConditionVideo::ScreenshotContainsPattern()
 	return countNonZero(result) > 0;
 }
 
+bool MacroConditionVideo::OutputChanged()
+{
+	if (_usePatternForChangedCheck) {
+		cv::Mat result;
+		_patternData = createPatternData(_matchImage);
+		matchPattern(_screenshotData->image, _patternData,
+			     _patternThreshold, result, _useAlphaAsMask);
+		return countNonZero(result) == 0;
+	}
+	return _screenshotData->image != _matchImage;
+}
+
 std::vector<cv::Rect> matchObject(QImage &img, cv::CascadeClassifier &cascade,
 				  double scaleFactor, int minNeighbors,
 				  cv::Size minSize, cv::Size maxSize)
@@ -319,9 +335,9 @@ bool MacroConditionVideo::Compare()
 	case VideoCondition::DIFFER:
 		return _screenshotData->image != _matchImage;
 	case VideoCondition::HAS_CHANGED:
-		return _screenshotData->image != _matchImage;
+		return OutputChanged();
 	case VideoCondition::HAS_NOT_CHANGED:
-		return _screenshotData->image == _matchImage;
+		return !OutputChanged();
 	case VideoCondition::NO_IMAGE:
 		return _screenshotData->image.isNull();
 	case VideoCondition::PATTERN:
@@ -398,6 +414,10 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 
 	_imagePath = new FileSelection();
 	_imagePath->Button()->disconnect();
+	_usePatternForChangedCheck = new QCheckBox(obs_module_text(
+		"AdvSceneSwitcher.condition.video.usePatternForChangedCheck"));
+	_usePatternForChangedCheck->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.condition.video.usePatternForChangedCheck.tooltip"));
 	_patternThreshold = new ThresholdSlider(
 		0., 1.,
 		obs_module_text(
@@ -445,6 +465,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 SLOT(ImagePathChanged(const QString &)));
 	QWidget::connect(_imagePath->Button(), SIGNAL(clicked()), this,
 			 SLOT(ImageBrowseButtonClicked()));
+	QWidget::connect(_usePatternForChangedCheck, SIGNAL(stateChanged(int)),
+			 this, SLOT(UsePatternForChangedCheckChanged(int)));
 	QWidget::connect(_patternThreshold, SIGNAL(DoubleValueChanged(double)),
 			 this, SLOT(PatternThresholdChanged(double)));
 	QWidget::connect(_useAlphaAsMask, SIGNAL(stateChanged(int)), this,
@@ -523,6 +545,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	showMatchLayout->addStretch();
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(entryLine1Layout);
+	mainLayout->addWidget(_usePatternForChangedCheck);
 	mainLayout->addWidget(_patternThreshold);
 	mainLayout->addWidget(_useAlphaAsMask);
 	mainLayout->addLayout(_modelPathLayout);
@@ -683,6 +706,18 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 	ImagePathChanged(path);
 }
 
+void MacroConditionVideoEdit::UsePatternForChangedCheckChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_usePatternForChangedCheck = value;
+	_patternThreshold->setVisible(value);
+	adjustSize();
+}
+
 void MacroConditionVideoEdit::PatternThresholdChanged(double value)
 {
 	if (_loading || !_entryData) {
@@ -828,9 +863,9 @@ void MacroConditionVideoEdit::ShowMatchClicked()
 	}
 
 	QImage markedIamge;
-	QImage pattern = _entryData->GetMatchImage();
 	if (_entryData->_condition == VideoCondition::PATTERN) {
 		cv::Mat result;
+		QImage pattern = _entryData->GetMatchImage();
 		matchPattern(screenshot->image, pattern,
 			     _entryData->_patternThreshold, result,
 			     _entryData->_useAlphaAsMask);
@@ -899,6 +934,19 @@ bool needsThrottleControls(VideoCondition cond)
 	       cond == VideoCondition::OBJECT;
 }
 
+bool needsThreshold(VideoCondition cond)
+{
+	return cond == VideoCondition::PATTERN ||
+	       cond == VideoCondition::HAS_CHANGED ||
+	       cond == VideoCondition::HAS_NOT_CHANGED;
+}
+
+bool patternControlIsOptional(VideoCondition cond)
+{
+	return cond == VideoCondition::HAS_CHANGED ||
+	       cond == VideoCondition::HAS_NOT_CHANGED;
+}
+
 void setLayoutVisible(QLayout *layout, bool visible)
 {
 	for (int i = 0; i < layout->count(); ++i) {
@@ -912,8 +960,9 @@ void setLayoutVisible(QLayout *layout, bool visible)
 void MacroConditionVideoEdit::SetWidgetVisibility()
 {
 	_imagePath->setVisible(requiresFileInput(_entryData->_condition));
-	_patternThreshold->setVisible(_entryData->_condition ==
-				      VideoCondition::PATTERN);
+	_usePatternForChangedCheck->setVisible(
+		patternControlIsOptional(_entryData->_condition));
+	_patternThreshold->setVisible(needsThreshold(_entryData->_condition));
 	_useAlphaAsMask->setVisible(_entryData->_condition ==
 				    VideoCondition::PATTERN);
 	_showMatch->setVisible(needsShowMatch(_entryData->_condition));
@@ -931,6 +980,13 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 			 needsObjectControls(_entryData->_condition));
 	setLayoutVisible(_throttleControlLayout,
 			 needsThrottleControls(_entryData->_condition));
+
+	if (_entryData->_condition == VideoCondition::HAS_CHANGED ||
+	    _entryData->_condition == VideoCondition::HAS_NOT_CHANGED) {
+		_patternThreshold->setVisible(
+			_entryData->_usePatternForChangedCheck);
+	}
+
 	adjustSize();
 }
 
@@ -944,6 +1000,8 @@ void MacroConditionVideoEdit::UpdateEntryData()
 		GetWeakSourceName(_entryData->_videoSource).c_str());
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_imagePath->SetPath(QString::fromStdString(_entryData->_file));
+	_usePatternForChangedCheck->setChecked(
+		_entryData->_usePatternForChangedCheck);
 	_patternThreshold->SetDoubleValue(_entryData->_patternThreshold);
 	_useAlphaAsMask->setChecked(_entryData->_useAlphaAsMask);
 	_modelDataPath->SetPath(_entryData->GetModelDataPath().c_str());
