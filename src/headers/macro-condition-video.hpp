@@ -51,6 +51,7 @@ public:
 	VideoCondition _condition = VideoCondition::MATCH;
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	bool _useAlphaAsMask = false;
+	bool _usePatternForChangedCheck = false;
 	PatternMatchData _patternData;
 	double _patternThreshold = 0.8;
 	cv::CascadeClassifier _objectCascade;
@@ -65,6 +66,7 @@ public:
 	int _throttleCount = 3;
 
 private:
+	bool OutputChanged();
 	bool ScreenshotContainsPattern();
 	bool ScreenshotContainsObject();
 	bool Compare();
@@ -127,6 +129,7 @@ private slots:
 	void ConditionChanged(int cond);
 	void ImagePathChanged(const QString &text);
 	void ImageBrowseButtonClicked();
+	void UsePatternForChangedCheckChanged(int value);
 	void PatternThresholdChanged(double);
 	void UseAlphaAsMaskChanged(int value);
 
@@ -148,6 +151,7 @@ protected:
 	QComboBox *_videoSelection;
 	QComboBox *_condition;
 
+	QCheckBox *_usePatternForChangedCheck;
 	FileSelection *_imagePath;
 	ThresholdSlider *_patternThreshold;
 	QCheckBox *_useAlphaAsMask;
