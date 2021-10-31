@@ -6,6 +6,8 @@
 enum class StreamState {
 	STOP,
 	START,
+	STARTING,
+	STOPPING,
 };
 
 class MacroConditionStream : public MacroCondition {
@@ -22,6 +24,9 @@ public:
 	StreamState _streamState;
 
 private:
+	std::chrono::high_resolution_clock::time_point _lastStreamStartingTime{};
+	std::chrono::high_resolution_clock::time_point _lastStreamStoppingTime{};
+
 	static bool _registered;
 	static const std::string id;
 };

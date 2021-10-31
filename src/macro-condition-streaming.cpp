@@ -13,11 +13,21 @@ bool MacroConditionStream::_registered = MacroConditionFactory::Register(
 static std::map<StreamState, std::string> streamStates = {
 	{StreamState::STOP, "AdvSceneSwitcher.condition.stream.state.stop"},
 	{StreamState::START, "AdvSceneSwitcher.condition.stream.state.start"},
+	{StreamState::STARTING,
+	 "AdvSceneSwitcher.condition.stream.state.starting"},
+	{StreamState::STOPPING,
+	 "AdvSceneSwitcher.condition.stream.state.stopping"},
 };
 
 bool MacroConditionStream::CheckCondition()
 {
 	bool stateMatch = false;
+
+	bool streamStarting = switcher->lastStreamStartingTime !=
+			      _lastStreamStartingTime;
+	bool streamStopping = switcher->lastStreamStoppingTime !=
+			      _lastStreamStoppingTime;
+
 	switch (_streamState) {
 	case StreamState::STOP:
 		stateMatch = !obs_frontend_streaming_active();
@@ -25,8 +35,21 @@ bool MacroConditionStream::CheckCondition()
 	case StreamState::START:
 		stateMatch = obs_frontend_streaming_active();
 		break;
+	case StreamState::STARTING:
+		stateMatch = streamStarting;
+		break;
+	case StreamState::STOPPING:
+		stateMatch = streamStopping;
+		break;
 	default:
 		break;
+	}
+
+	if (streamStarting) {
+		_lastStreamStartingTime = switcher->lastStreamStartingTime;
+	}
+	if (streamStopping) {
+		_lastStreamStoppingTime = switcher->lastStreamStoppingTime;
 	}
 	return stateMatch;
 }
