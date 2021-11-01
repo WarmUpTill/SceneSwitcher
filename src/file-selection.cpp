@@ -5,7 +5,7 @@
 #include <QFileDialog>
 
 FileSelection::FileSelection(FileSelection::Type type, QWidget *parent)
-	: _type(type), QWidget(parent)
+	: QWidget(parent), _type(type)
 {
 	_filePath = new QLineEdit();
 	_browseButton =

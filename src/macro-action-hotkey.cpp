@@ -141,7 +141,7 @@ obs_key_combination keysToOBSKeycombo(const std::vector<HotkeyType> &keys)
 		return combo;
 	}
 
-	for (int i = 0; i < keys.size() - 1; i++) {
+	for (uint32_t i = 0; i < keys.size() - 1; i++) {
 		switch (keys[i]) {
 		case HotkeyType::Key_Shift_L:
 			combo.modifiers |= INTERACT_SHIFT_KEY;

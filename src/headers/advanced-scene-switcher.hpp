@@ -52,8 +52,8 @@ public:
 	void SetEditMacro(Macro &m);
 	void HighlightAction(int idx);
 	void HighlightCondition(int idx);
-	void PopulateMacroActions(Macro &m, int afterIdx = 0);
-	void PopulateMacroConditions(Macro &m, int afterIdx = 0);
+	void PopulateMacroActions(Macro &m, uint32_t afterIdx = 0);
+	void PopulateMacroConditions(Macro &m, uint32_t afterIdx = 0);
 	void ConnectControlSignals(MacroActionEdit *);
 	void ConnectControlSignals(MacroConditionEdit *);
 	void SwapActions(Macro *m, int pos1, int pos2);
