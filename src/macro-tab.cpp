@@ -170,9 +170,8 @@ void AdvSceneSwitcher::on_macroName_editingFinished()
 	emit MacroRenamed(oldName, newName);
 }
 
-void AdvSceneSwitcher::PopulateMacroActions(Macro &m, int afterIdx)
+void AdvSceneSwitcher::PopulateMacroActions(Macro &m, uint32_t afterIdx)
 {
-	bool root = afterIdx == 0;
 	auto &actions = m.Actions();
 	for (; afterIdx < actions.size(); afterIdx++) {
 		auto newEntry = new MacroActionEdit(this, &actions[afterIdx],
@@ -180,12 +179,11 @@ void AdvSceneSwitcher::PopulateMacroActions(Macro &m, int afterIdx)
 		ConnectControlSignals(newEntry);
 		ui->macroEditActionLayout->addWidget(newEntry);
 		ui->macroEditActionHelp->setVisible(false);
-		root = false;
 	}
 	ui->macroEditActionHelp->setVisible(actions.size() == 0);
 }
 
-void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, int afterIdx)
+void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
 {
 	bool root = afterIdx == 0;
 	auto &conditions = m.Conditions();
