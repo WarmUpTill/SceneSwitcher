@@ -147,7 +147,6 @@ if(UNIX AND NOT APPLE)
   if(NOT PROCPS_LIBRARY)
     message(FATAL_ERROR "procps lib not found - please set PROCPS_LIBRARY")
   endif()
-  message (STATUS "WHAT THE FUCK IS GOING ON ${PROCPS_LIBRARY}")
   link_libraries(${X11_LIBRARIES} ${procps_LIBRARIES})
   include_directories("${X11_INCLUDE_DIR}" "${X11_Xtst_INCLUDE_PATH}"
                       "${X11_Xss_INCLUDE_PATH}" "${PROCPS_INCLUDE_DIR}")
@@ -175,10 +174,6 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/deps/asio/asio/include"
 if(WIN32)
   add_definitions(-D_WEBSOCKETPP_CPP11_STL_)
 endif()
-
-# opencv
-find_package(OpenCV REQUIRED)
-include_directories("${OpenCV_INCLUDE_DIRS}")
 
 # Setup QT tools
 set(CMAKE_AUTOMOC ON)
@@ -364,6 +359,25 @@ set(advanced-scene-switcher_SOURCES
     src/utility.cpp
     src/volume-control.cpp
     src/version.cpp)
+
+# opencv
+find_package(OpenCV)
+if(OpenCV_FOUND)
+  message(
+    STATUS
+      "asdlfkjasöfkjasdöfljaösdlfjaslödkjfaskljfsldjk ${OpenCV_INCLUDE_DIRS}")
+  include_directories("${OpenCV_INCLUDE_DIRS}")
+else()
+  set(OpenCV_LIBRARIES "")
+  message(
+    WARNING
+      "OpenCV not found! Functionality relying on OpenCV will be disabled!\nOpenCV sources are available under: ${CMAKE_CURRENT_SOURCE_DIR}/deps/opencv"
+  )
+  list(REMOVE_ITEM advanced-scene-switcher_SOURCES
+       src/macro-condition-video.cpp)
+  list(REMOVE_ITEM advanced-scene-switcher_HEADERS
+       src/headers/macro-condition-video.hpp)
+endif()
 
 add_library(
   advanced-scene-switcher MODULE
