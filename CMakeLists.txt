@@ -363,9 +363,6 @@ set(advanced-scene-switcher_SOURCES
 # opencv
 find_package(OpenCV)
 if(OpenCV_FOUND)
-  message(
-    STATUS
-      "asdlfkjasöfkjasdöfljaösdlfjaslödkjfaskljfsldjk ${OpenCV_INCLUDE_DIRS}")
   include_directories("${OpenCV_INCLUDE_DIRS}")
 else()
   set(OpenCV_LIBRARIES "")
