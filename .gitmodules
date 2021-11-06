@@ -7,3 +7,6 @@
 [submodule "deps/opencv"]
 	path = deps/opencv
 	url = https://github.com/opencv/opencv.git
+[submodule "deps/openvr"]
+	path = deps/openvr
+	url = https://github.com/ValveSoftware/openvr.git
