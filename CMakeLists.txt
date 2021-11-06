@@ -395,12 +395,8 @@ add_library(
 # Out of tree build
 if(BUILD_OUT_OF_TREE)
   target_link_libraries(
-    advanced-scene-switcher
-    ${advanced-scene-switcher_PLATFORM_LIBS}
-    ${LIBOBS_LIB}
-    ${LIBOBS_FRONTEND_API_LIB}
-    Qt5::Core
-    Qt5::Widgets)
+    advanced-scene-switcher ${advanced-scene-switcher_PLATFORM_LIBS}
+    ${LIBOBS_LIB} ${LIBOBS_FRONTEND_API_LIB} Qt5::Core Qt5::Widgets)
 
   # Additional commands to install the module in the correct place. Find all the
   # translation files so we can copy them to the correct place later on.
