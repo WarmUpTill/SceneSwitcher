@@ -828,6 +828,36 @@ void populateSceneItemSelection(QComboBox *list, SceneSelection &s)
 	list->setCurrentIndex(0);
 }
 
+void populateSourceTypeSelection(QComboBox *list)
+{
+	std::set<QString> sourceTypeNames;
+	auto enumSourcesTypes = [](void *param, obs_source_t *source) {
+		if (!source) {
+			return true;
+		}
+		std::set<QString> *names =
+			reinterpret_cast<std::set<QString> *>(param);
+		if (obs_source_get_type(source) != OBS_SOURCE_TYPE_INPUT) {
+			return true;
+		}
+		names->insert(
+			obs_source_get_display_name(obs_source_get_id(source)));
+		return true;
+	};
+
+	obs_enum_sources(enumSourcesTypes, &sourceTypeNames);
+
+	for (auto &name : sourceTypeNames) {
+		if (!name.isEmpty()) {
+			list->addItem(name);
+		}
+	}
+
+	list->model()->sort(0);
+	addSelectionEntry(list, obs_module_text("AdvSceneSwitcher.selectItem"));
+	list->setCurrentIndex(0);
+}
+
 QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
 				    QColor endColor, QString specifier,
 				    bool once)

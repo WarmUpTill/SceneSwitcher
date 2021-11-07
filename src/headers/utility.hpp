@@ -78,3 +78,4 @@ void populateFilterSelection(QComboBox *list,
 void populateSceneItemSelection(QComboBox *list,
 				OBSWeakSource sceneWeakSource = nullptr);
 void populateSceneItemSelection(QComboBox *list, SceneSelection &s);
+void populateSourceTypeSelection(QComboBox *list);

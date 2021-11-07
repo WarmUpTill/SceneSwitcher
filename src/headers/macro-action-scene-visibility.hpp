@@ -8,6 +8,11 @@ enum class SceneVisibilityAction {
 	HIDE,
 };
 
+enum class SceneItemSourceType {
+	SOURCE,
+	SOURCE_GROUP,
+};
+
 class MacroActionSceneVisibility : public MacroAction {
 public:
 	bool PerformAction();
@@ -22,7 +27,9 @@ public:
 	}
 
 	SceneSelection _scene;
+	SceneItemSourceType _sourceType = SceneItemSourceType::SOURCE;
 	OBSWeakSource _source;
+	std::string _sourceGroup = "";
 	SceneVisibilityAction _action = SceneVisibilityAction::SHOW;
 
 private:
@@ -49,6 +56,7 @@ public:
 
 private slots:
 	void SceneChanged(const SceneSelection &);
+	void SourceTypeChanged(int value);
 	void SourceChanged(const QString &text);
 	void ActionChanged(int value);
 signals:
@@ -56,6 +64,7 @@ signals:
 
 protected:
 	SceneSelectionWidget *_scenes;
+	QComboBox *_sourceTypes;
 	QComboBox *_sources;
 	QComboBox *_actions;
 	std::shared_ptr<MacroActionSceneVisibility> _entryData;
