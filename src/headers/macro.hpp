@@ -77,7 +77,7 @@ public:
 	bool Matched() { return _matched; }
 	std::string Name() { return _name; }
 	void SetName(const std::string &name);
-	void SetPaused(bool pause = true) { _paused = pause; }
+	void SetPaused(bool pause = true);
 	bool Paused() { return _paused; }
 	int GetCount() { return _count; };
 	void ResetCount() { _count = 0; };
@@ -102,6 +102,7 @@ private:
 	void SetupHotkeys();
 	void ClearHotkeys();
 	void SetHotkeysDesc();
+	void ResetTimers();
 
 	std::string _name = "";
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;

@@ -36,6 +36,11 @@ bool Macro::CeckMatch()
 {
 	_matched = false;
 	for (auto &c : _conditions) {
+		if (_paused) {
+			vblog(LOG_INFO, "Macro %s is paused", _name.c_str());
+			return false;
+		}
+
 		auto startTime = std::chrono::high_resolution_clock::now();
 		bool cond = c->CheckCondition();
 		auto endTime = std::chrono::high_resolution_clock::now();
@@ -88,18 +93,6 @@ bool Macro::CeckMatch()
 	}
 
 	vblog(LOG_INFO, "Macro %s returned %d", _name.c_str(), _matched);
-
-	// Condition checks shall still be run even if macro is paused.
-	// Otherwise conditions might behave in unexpected ways when resuming.
-	//
-	// For example, audio could immediately match after unpause, when it
-	// matched before it was paused due to timers not being updated.
-	if (_paused) {
-		vblog(LOG_INFO, "Macro %s is paused", _name.c_str());
-		_matched = false;
-		return false;
-	}
-
 	return _matched;
 }
 
@@ -123,6 +116,21 @@ void Macro::SetName(const std::string &name)
 {
 	_name = name;
 	SetHotkeysDesc();
+}
+
+void Macro::ResetTimers()
+{
+	for (auto &c : _conditions) {
+		c->ResetDuration();
+	}
+}
+
+void Macro::SetPaused(bool pause)
+{
+	if (_paused && !pause) {
+		ResetTimers();
+	}
+	_paused = pause;
 }
 
 void Macro::UpdateActionIndices()
