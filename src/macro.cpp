@@ -93,6 +93,14 @@ bool Macro::CeckMatch()
 	}
 
 	vblog(LOG_INFO, "Macro %s returned %d", _name.c_str(), _matched);
+
+	// TODO: Move back to PerformAction() once new scene collection frontend
+	// events are available - see:
+	// https://github.com/obsproject/obs-studio/commit/feda1aaa283e8a99f6ba1159cfe6b9c1f2934a61
+	if (_matched && _count != std::numeric_limits<int>::max()) {
+		_count++;
+	}
+
 	return _matched;
 }
 
@@ -105,9 +113,6 @@ bool Macro::PerformAction()
 		if (!ret) {
 			return false;
 		}
-	}
-	if (_count != std::numeric_limits<int>::max()) {
-		_count++;
 	}
 	return ret;
 }
@@ -500,6 +505,9 @@ bool SwitcherData::checkMacros()
 
 bool SwitcherData::runMacros()
 {
+	// TODO: Don't rely on creating a copy of each macro once new frontend
+	// events are available - see:
+	// https://github.com/obsproject/obs-studio/commit/feda1aaa283e8a99f6ba1159cfe6b9c1f2934a61
 	for (auto m : macros) {
 		if (m.Matched()) {
 			vblog(LOG_INFO, "running macro: %s", m.Name().c_str());
