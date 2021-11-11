@@ -125,6 +125,8 @@ MacroConditionMacroEdit::MacroConditionMacroEdit(
 	_currentCount = new QLabel(parent);
 	_resetCount = new QPushButton(obs_module_text(
 		"AdvSceneSwitcher.condition.macro.count.reset"));
+	_pausedWarning = new QLabel(obs_module_text(
+		"AdvSceneSwitcher.condition.macro.pausedWarning"));
 
 	_count->setMaximum(10000000);
 	populateTypeSelection(_types);
@@ -156,9 +158,18 @@ MacroConditionMacroEdit::MacroConditionMacroEdit(
 	mainLayout->addLayout(typesLayout);
 	mainLayout->addLayout(_settingsLine1);
 	mainLayout->addLayout(_settingsLine2);
+	mainLayout->addWidget(_pausedWarning);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
+
+	connect(&_countTimer, SIGNAL(timeout()), this, SLOT(UpdateCount()));
+	_countTimer.start(1000);
+
+	_pausedWarning->setVisible(false);
+	connect(&_pausedTimer, SIGNAL(timeout()), this, SLOT(UpdatePaused()));
+	_pausedTimer.start(1000);
+
 	UpdateEntryData();
 	_loading = false;
 }
@@ -237,7 +248,6 @@ void MacroConditionMacroEdit::UpdateEntryData()
 	_counterConditions->setCurrentIndex(
 		static_cast<int>(_entryData->_counterCondition));
 	_count->setValue(_entryData->_count);
-	ResetTimer();
 }
 
 void MacroConditionMacroEdit::MacroChanged(const QString &text)
@@ -248,7 +258,6 @@ void MacroConditionMacroEdit::MacroChanged(const QString &text)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_macro.UpdateRef(text);
-	ResetTimer();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -303,7 +312,6 @@ void MacroConditionMacroEdit::ResetClicked()
 	}
 
 	_entryData->_macro->ResetCount();
-	ResetTimer();
 }
 
 void MacroConditionMacroEdit::UpdateCount()
@@ -316,9 +324,9 @@ void MacroConditionMacroEdit::UpdateCount()
 	}
 }
 
-void MacroConditionMacroEdit::ResetTimer()
+void MacroConditionMacroEdit::UpdatePaused()
 {
-	_timer.reset(new QTimer(this));
-	connect(_timer.get(), SIGNAL(timeout()), this, SLOT(UpdateCount()));
-	_timer->start(1000);
+	_pausedWarning->setVisible(_entryData && _entryData->_macro.get() &&
+				   _entryData->_macro->Paused());
+	adjustSize();
 }
