@@ -67,6 +67,7 @@ private slots:
 	void ConditionChanged(int cond);
 	void ResetClicked();
 	void UpdateCount();
+	void UpdatePaused();
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -76,16 +77,17 @@ protected:
 	QComboBox *_counterConditions;
 	QSpinBox *_count;
 	QLabel *_currentCount;
+	QLabel *_pausedWarning;
 	QPushButton *_resetCount;
 	QHBoxLayout *_settingsLine1;
 	QHBoxLayout *_settingsLine2;
-	std::unique_ptr<QTimer> _timer;
+	QTimer _countTimer;
+	QTimer _pausedTimer;
 	std::shared_ptr<MacroConditionMacro> _entryData;
 
 private:
 	void ClearLayouts();
 	void SetupStateWidgets();
 	void SetupCountWidgets();
-	void ResetTimer();
 	bool _loading = true;
 };
