@@ -24,7 +24,7 @@ const static std::map<SceneItemSourceType, std::string> sourceItemSourceTypes = 
 	 "AdvSceneSwitcher.action.sceneVisibility.type.sourceGroup"},
 };
 
-struct VisInfo {
+struct VisibilityData {
 	std::string name;
 	bool visible;
 };
@@ -32,7 +32,7 @@ struct VisInfo {
 static bool visibilitySourceEnum(obs_scene_t *, obs_sceneitem_t *item,
 				 void *ptr)
 {
-	VisInfo *vInfo = reinterpret_cast<VisInfo *>(ptr);
+	VisibilityData *vInfo = reinterpret_cast<VisibilityData *>(ptr);
 	auto sourceName = obs_source_get_name(obs_sceneitem_get_source(item));
 	if (vInfo->name == sourceName) {
 		obs_sceneitem_set_visible(item, vInfo->visible);
@@ -49,7 +49,7 @@ static bool visibilitySourceEnum(obs_scene_t *, obs_sceneitem_t *item,
 static bool visibilitySourceTypeEnum(obs_scene_t *, obs_sceneitem_t *item,
 				     void *ptr)
 {
-	VisInfo *vInfo = reinterpret_cast<VisInfo *>(ptr);
+	VisibilityData *vInfo = reinterpret_cast<VisibilityData *>(ptr);
 
 	auto sourceTypeName = obs_source_get_display_name(
 		obs_source_get_id(obs_sceneitem_get_source(item)));
@@ -70,7 +70,7 @@ bool MacroActionSceneVisibility::PerformAction()
 	auto s = obs_weak_source_get_source(_scene.GetScene());
 	auto scene = obs_scene_from_source(s);
 	auto sourceName = GetWeakSourceName(_source);
-	VisInfo vInfo = {"", _action == SceneVisibilityAction::SHOW};
+	VisibilityData vInfo = {"", _action == SceneVisibilityAction::SHOW};
 
 	switch (_sourceType) {
 	case SceneItemSourceType::SOURCE:
@@ -173,7 +173,7 @@ MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSceneVisibility> entryData)
 	: QWidget(parent)
 {
-	_scenes = new SceneSelectionWidget(window(), false, false, true);
+	_scenes = new SceneSelectionWidget(window(), false, true, true);
 	_sourceTypes = new QComboBox();
 	_sources = new QComboBox();
 	_actions = new QComboBox();
@@ -198,7 +198,7 @@ MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
 		{"{{actions}}", _actions},
 	};
 	placeWidgets(obs_module_text(
-			     "AdvSceneSwitcher.action.SceneVisibility.entry"),
+			     "AdvSceneSwitcher.action.sceneVisibility.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
