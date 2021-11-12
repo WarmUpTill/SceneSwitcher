@@ -1,7 +1,10 @@
 #pragma once
-#include <QSpinBox>
-#include <QHBoxLayout>
 #include "macro-action-edit.hpp"
+#include "duration-control.hpp"
+
+#include <QSpinBox>
+#include <QCheckBox>
+#include <QHBoxLayout>
 
 enum class AudioAction {
 	MUTE,
@@ -26,6 +29,8 @@ public:
 	OBSWeakSource _audioSource;
 	AudioAction _action = AudioAction::MUTE;
 	int _volume = 0;
+	bool _fade = false;
+	Duration _duration;
 
 private:
 	static bool _registered;
@@ -53,6 +58,8 @@ private slots:
 	void SourceChanged(const QString &text);
 	void ActionChanged(int value);
 	void VolumeChanged(int value);
+	void FadeChanged(int value);
+	void DurationChanged(double seconds);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -60,9 +67,11 @@ protected:
 	QComboBox *_audioSources;
 	QComboBox *_actions;
 	QSpinBox *_volumePercent;
+	QCheckBox *_fade;
+	DurationSelection *_duration;
+	QHBoxLayout *_fadeLayout;
 	std::shared_ptr<MacroActionAudio> _entryData;
 
 private:
-	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
