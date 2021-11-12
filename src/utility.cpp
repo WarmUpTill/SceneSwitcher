@@ -800,7 +800,8 @@ void populateSceneItemSelection(QComboBox *list, SceneSelection &s)
 {
 	std::set<QString> names;
 
-	if (s.GetType() == SceneSelectionType::CURRENT) {
+	if (s.GetType() == SceneSelectionType::CURRENT ||
+	    s.GetType() == SceneSelectionType::PREVIOUS) {
 		auto enumScenes = [](void *param, obs_source_t *source) {
 			if (!source) {
 				return true;
