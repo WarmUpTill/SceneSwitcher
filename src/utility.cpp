@@ -229,6 +229,16 @@ void clearLayout(QLayout *layout, int afterIdx)
 	}
 }
 
+void setLayoutVisible(QLayout *layout, bool visible)
+{
+	for (int i = 0; i < layout->count(); ++i) {
+		QWidget *widget = layout->itemAt(i)->widget();
+		if (widget != NULL) {
+			widget->setVisible(visible);
+		}
+	}
+}
+
 bool compareIgnoringLineEnding(QString &s1, QString &s2)
 {
 	// Let QT deal with different types of lineendings
