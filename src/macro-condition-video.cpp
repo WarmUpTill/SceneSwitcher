@@ -947,16 +947,6 @@ bool patternControlIsOptional(VideoCondition cond)
 	       cond == VideoCondition::HAS_NOT_CHANGED;
 }
 
-void setLayoutVisible(QLayout *layout, bool visible)
-{
-	for (int i = 0; i < layout->count(); ++i) {
-		QWidget *widget = layout->itemAt(i)->widget();
-		if (widget != NULL) {
-			widget->setVisible(visible);
-		}
-	}
-}
-
 void MacroConditionVideoEdit::SetWidgetVisibility()
 {
 	_imagePath->setVisible(requiresFileInput(_entryData->_condition));
