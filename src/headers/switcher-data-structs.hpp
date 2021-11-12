@@ -6,6 +6,7 @@
 #include <QDateTime>
 #include <QThread>
 #include <curl/curl.h>
+#include <unordered_map>
 
 #include "scene-group.hpp"
 #include "scene-trigger.hpp"
@@ -91,6 +92,10 @@ struct SwitcherData {
 	Duration noMatchDelay;
 	StartupBehavior startupBehavior = PERSIST;
 	AutoStartEvent autoStartEvent = AutoStartEvent::NEVER;
+
+	std::vector<std::thread> audioHelperThreads;
+	std::atomic_bool masterAudioFadeActive = {false};
+	std::unordered_map<std::string, std::atomic_bool> activeAudioFades;
 
 	Duration cooldown;
 	std::chrono::high_resolution_clock::time_point lastMatchTime;
