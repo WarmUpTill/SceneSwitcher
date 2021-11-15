@@ -188,6 +188,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 		return;
 	}
 
+	auto idx = _entryData->get()->GetIndex();
 	std::string id = MacroConditionFactory::GetIdByName(text);
 
 	auto temp = DurationConstraint();
@@ -198,6 +199,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 	auto logic = (*_entryData)->GetLogicType();
 	_entryData->reset();
 	*_entryData = MacroConditionFactory::Create(id);
+	(*_entryData)->SetIndex(idx);
 	(*_entryData)->SetLogicType(logic);
 	auto widget =
 		MacroConditionFactory::CreateWidget(id, this, *_entryData);
