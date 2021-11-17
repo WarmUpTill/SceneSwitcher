@@ -422,7 +422,7 @@ void SwitcherData::Start()
 void ResetMacroCounters()
 {
 	for (auto &m : switcher->macros) {
-		m.ResetCount();
+		m->ResetCount();
 	}
 }
 

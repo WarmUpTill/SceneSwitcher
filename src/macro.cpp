@@ -458,7 +458,7 @@ void SwitcherData::saveMacros(obs_data_t *obj)
 	for (auto &m : macros) {
 		obs_data_t *array_obj = obs_data_create();
 
-		m.Save(array_obj);
+		m->Save(array_obj);
 		obs_data_array_push_back(macroArray, array_obj);
 
 		obs_data_release(array_obj);
@@ -476,14 +476,14 @@ void SwitcherData::loadMacros(obs_data_t *obj)
 
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(macroArray, i);
-		macros.emplace_back();
-		macros.back().Load(array_obj);
+		macros.emplace_back(std::make_shared<Macro>());
+		macros.back()->Load(array_obj);
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(macroArray);
 
 	for (auto &m : macros) {
-		m.ResolveMacroRef();
+		m->ResolveMacroRef();
 	}
 }
 
@@ -491,11 +491,11 @@ bool SwitcherData::checkMacros()
 {
 	bool ret = false;
 	for (auto &m : macros) {
-		if (m.CeckMatch()) {
+		if (m->CeckMatch()) {
 			ret = true;
 			// This has to be performed here for now as actions are
 			// not performed immediately after checking conditions.
-			if (m.SwitchesScene()) {
+			if (m->SwitchesScene()) {
 				switcher->macroSceneSwitched = true;
 			}
 		}
@@ -509,11 +509,11 @@ bool SwitcherData::runMacros()
 	// events are available - see:
 	// https://github.com/obsproject/obs-studio/commit/feda1aaa283e8a99f6ba1159cfe6b9c1f2934a61
 	for (auto m : macros) {
-		if (m.Matched()) {
-			vblog(LOG_INFO, "running macro: %s", m.Name().c_str());
-			if (!m.PerformAction()) {
+		if (m->Matched()) {
+			vblog(LOG_INFO, "running macro: %s", m->Name().c_str());
+			if (!m->PerformAction()) {
 				blog(LOG_WARNING, "abort macro: %s",
-				     m.Name().c_str());
+				     m->Name().c_str());
 				return false;
 			}
 		}
@@ -524,8 +524,8 @@ bool SwitcherData::runMacros()
 Macro *GetMacroByName(const char *name)
 {
 	for (auto &m : switcher->macros) {
-		if (m.Name() == name) {
-			return &m;
+		if (m->Name() == name) {
+			return m.get();
 		}
 	}
 
