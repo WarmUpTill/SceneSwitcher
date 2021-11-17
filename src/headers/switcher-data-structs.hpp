@@ -95,7 +95,7 @@ struct SwitcherData {
 	Duration cooldown;
 	std::chrono::high_resolution_clock::time_point lastMatchTime;
 
-	std::deque<Macro> macros;
+	std::deque<std::shared_ptr<Macro>> macros;
 	std::condition_variable macroWaitCv;
 	std::atomic_bool abortMacroWait = {false};
 	bool macroSceneSwitched = false;

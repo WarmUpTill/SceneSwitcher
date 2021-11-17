@@ -16,7 +16,7 @@ MacroSelection::MacroSelection(QWidget *parent) : QComboBox(parent)
 	firstItem->setEnabled(false);
 
 	for (auto &m : switcher->macros) {
-		addItem(QString::fromStdString(m.Name()));
+		addItem(QString::fromStdString(m->Name()));
 	}
 
 	QWidget::connect(parent, SIGNAL(MacroAdded(const QString &)), this,
