@@ -86,6 +86,9 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 		int idx = ui->macros->currentRow();
 		QString::fromStdString(switcher->macros[idx]->Name());
 		switcher->macros.erase(switcher->macros.begin() + idx);
+		for (auto &m : switcher->macros) {
+			m->ResolveMacroRef();
+		}
 	}
 
 	delete item;

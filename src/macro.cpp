@@ -303,13 +303,18 @@ void Macro::ResolveMacroRef()
 		MacroRefCondition *ref =
 			dynamic_cast<MacroRefCondition *>(c.get());
 		if (ref) {
-			ref->_macro.UpdateRef();
+			ref->ResolveMacroRef();
 		}
 	}
 	for (auto &a : _actions) {
 		MacroRefAction *ref = dynamic_cast<MacroRefAction *>(a.get());
 		if (ref) {
-			ref->_macro.UpdateRef();
+			ref->ResolveMacroRef();
+		}
+		MultiMacroRefAction *ref2 =
+			dynamic_cast<MultiMacroRefAction *>(a.get());
+		if (ref2) {
+			ref2->ResolveMacroRef();
 		}
 	}
 }
@@ -585,4 +590,11 @@ void MacroRefCondition::ResolveMacroRef()
 void MacroRefAction::ResolveMacroRef()
 {
 	_macro.UpdateRef();
+}
+
+void MultiMacroRefAction::ResolveMacroRef()
+{
+	for (auto &m : _macros) {
+		m.UpdateRef();
+	}
 }
