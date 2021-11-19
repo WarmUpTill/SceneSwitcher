@@ -107,6 +107,7 @@ MacroConditionSceneVisibilityEdit::MacroConditionSceneVisibilityEdit(
 {
 	_scenes = new SceneSelectionWidget(window(), false, true, true);
 	_sources = new QComboBox();
+	_sources->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 	_conditions = new QComboBox();
 
 	populateConditionSelection(_conditions);
@@ -156,6 +157,7 @@ void MacroConditionSceneVisibilityEdit::SceneChanged(const SceneSelection &s)
 	}
 	_sources->clear();
 	populateSceneItemSelection(_sources, _entryData->_scene);
+	_sources->adjustSize();
 }
 
 void MacroConditionSceneVisibilityEdit::ConditionChanged(int index)
