@@ -176,6 +176,7 @@ MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
 	_scenes = new SceneSelectionWidget(window(), false, true, true);
 	_sourceTypes = new QComboBox();
 	_sources = new QComboBox();
+	_sources->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 	_actions = new QComboBox();
 
 	populateSourceItemTypeSelection(_sourceTypes);
@@ -238,6 +239,7 @@ void MacroActionSceneVisibilityEdit::SceneChanged(const SceneSelection &s)
 	}
 	_sources->clear();
 	populateSceneItemSelection(_sources, _entryData->_scene);
+	_sources->adjustSize();
 }
 
 void MacroActionSceneVisibilityEdit::SourceTypeChanged(int value)

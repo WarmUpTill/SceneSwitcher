@@ -94,6 +94,7 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 {
 	_sources = new QComboBox();
 	_filters = new QComboBox();
+	_filters->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 	_actions = new QComboBox();
 	_getSettings = new QPushButton(
 		obs_module_text("AdvSceneSwitcher.action.filter.getSettings"));
@@ -165,6 +166,7 @@ void MacroActionFilterEdit::SourceChanged(const QString &text)
 	}
 	_filters->clear();
 	populateFilterSelection(_filters, _entryData->_source);
+	_filters->adjustSize();
 }
 
 void MacroActionFilterEdit::FilterChanged(const QString &text)

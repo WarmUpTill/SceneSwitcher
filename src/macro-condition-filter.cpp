@@ -96,6 +96,7 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 {
 	_sources = new QComboBox();
 	_filters = new QComboBox();
+	_filters->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 	_conditions = new QComboBox();
 	_getSettings = new QPushButton(obs_module_text(
 		"AdvSceneSwitcher.condition.filter.getSettings"));
@@ -159,6 +160,7 @@ void MacroConditionFilterEdit::SourceChanged(const QString &text)
 	}
 	_filters->clear();
 	populateFilterSelection(_filters, _entryData->_source);
+	_filters->adjustSize();
 }
 
 void MacroConditionFilterEdit::FilterChanged(const QString &text)
