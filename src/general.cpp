@@ -186,6 +186,9 @@ void AdvSceneSwitcher::on_toggleStartButton_clicked()
 
 void AdvSceneSwitcher::closeEvent(QCloseEvent *)
 {
+	if (!switcher) {
+		return;
+	}
 	switcher->windowPos = this->pos();
 	switcher->windowSize = this->size();
 

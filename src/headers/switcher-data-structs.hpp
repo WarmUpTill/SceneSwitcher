@@ -64,6 +64,8 @@ class SwitcherThread;
 struct SwitcherData {
 	SwitcherThread *th = nullptr;
 
+	bool settingsWindowOpened = false;
+
 	std::condition_variable cv;
 	std::mutex m;
 	bool transitionActive = false;
