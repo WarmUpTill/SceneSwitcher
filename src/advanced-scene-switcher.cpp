@@ -20,12 +20,20 @@ SwitcherData *switcher = nullptr;
 AdvSceneSwitcher::AdvSceneSwitcher(QWidget *parent)
 	: QDialog(parent), ui(new Ui_AdvSceneSwitcher)
 {
+	switcher->settingsWindowOpened = true;
 	ui->setupUi(this);
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 
 	switcher->Prune();
 	loadUI();
+}
+
+AdvSceneSwitcher::~AdvSceneSwitcher()
+{
+	if (switcher) {
+		switcher->settingsWindowOpened = false;
+	}
 }
 
 bool translationAvailable()
@@ -635,6 +643,8 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 	}
 }
 
+AdvSceneSwitcher *ssWindow;
+
 extern "C" void InitSceneSwitcher()
 {
 	blog(LOG_INFO, "version: %s", g_GIT_TAG);
@@ -652,11 +662,16 @@ extern "C" void InitSceneSwitcher()
 	PlatformInit();
 
 	auto cb = []() {
-		QMainWindow *window =
-			(QMainWindow *)obs_frontend_get_main_window();
-
-		AdvSceneSwitcher ss(window);
-		ss.exec();
+		if (switcher->settingsWindowOpened) {
+			ssWindow->show();
+			ssWindow->raise();
+			ssWindow->activateWindow();
+		} else {
+			ssWindow = new AdvSceneSwitcher(
+				(QMainWindow *)obs_frontend_get_main_window());
+			ssWindow->setAttribute(Qt::WA_DeleteOnClose);
+			ssWindow->show();
+		}
 	};
 
 	obs_frontend_add_save_callback(SaveSceneSwitcher, nullptr);

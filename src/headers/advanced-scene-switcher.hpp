@@ -29,6 +29,7 @@ public:
 	bool currentStatusActive = false;
 
 	AdvSceneSwitcher(QWidget *parent);
+	~AdvSceneSwitcher();
 
 	void reject() override;
 	void closeEvent(QCloseEvent *event) override;
