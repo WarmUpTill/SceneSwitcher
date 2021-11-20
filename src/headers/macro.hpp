@@ -145,3 +145,9 @@ public:
 	void ResolveMacroRef();
 	MacroRef _macro;
 };
+
+class MultiMacroRefAction : public MacroAction {
+public:
+	void ResolveMacroRef();
+	std::vector<MacroRef> _macros;
+};
