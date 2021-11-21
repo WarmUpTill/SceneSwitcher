@@ -155,6 +155,7 @@ void MacroActionRandomEdit::UpdateEntryData()
 		QListWidgetItem *item = new QListWidgetItem(name, _macroList);
 		item->setData(Qt::UserRole, name);
 	}
+	SetMacroListSize();
 }
 
 void MacroActionRandomEdit::MacroRemove(const QString &name)
@@ -209,6 +210,7 @@ void MacroActionRandomEdit::AddMacro()
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_macros.push_back(macro);
+	SetMacroListSize();
 }
 
 void MacroActionRandomEdit::RemoveMacro()
@@ -232,6 +234,7 @@ void MacroActionRandomEdit::RemoveMacro()
 		}
 	}
 	delete item;
+	SetMacroListSize();
 }
 
 int MacroActionRandomEdit::FindEntry(const std::string &macro)
@@ -260,4 +263,10 @@ void MacroActionRandomEdit::MacroSelectionChanged(int idx)
 	QListWidgetItem *item = _macroList->item(idx);
 	QString name = item->text();
 	_macroSelection->SetCurrentMacro(GetMacroByName(name.toUtf8().data()));
+}
+
+void MacroActionRandomEdit::SetMacroListSize()
+{
+	setHeightToContentHeight(_macroList);
+	adjustSize();
 }

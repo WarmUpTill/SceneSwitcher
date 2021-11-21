@@ -56,6 +56,8 @@ protected:
 	std::shared_ptr<MacroActionRun> _entryData;
 
 private:
+	void SetArgListSize();
+
 	FileSelection *_filePath;
 	QListWidget *_argList;
 	QPushButton *_addArg;
