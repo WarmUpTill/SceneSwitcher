@@ -3,6 +3,7 @@
 #include "headers/name-dialog.hpp"
 #include "headers/utility.hpp"
 
+#include <QDialogButtonBox>
 #include <cstdlib>
 
 const std::string MacroActionRandom::id = "random";
@@ -93,7 +94,6 @@ MacroActionRandomEdit::MacroActionRandomEdit(
 	QWidget *parent, std::shared_ptr<MacroActionRandom> entryData)
 	: QWidget(parent)
 {
-	_macroSelection = new MacroSelection(window());
 	_macroList = new QListWidget();
 	_macroList->setSortingEnabled(true);
 	_add = new QPushButton();
@@ -117,9 +117,7 @@ MacroActionRandomEdit::MacroActionRandomEdit(
 			 SLOT(MacroRename(const QString &, const QString &)));
 
 	auto *entryLayout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{macroSelection}}", _macroSelection},
-	};
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.random.entry"),
 		     entryLayout, widgetPlaceholders);
 
@@ -130,8 +128,6 @@ MacroActionRandomEdit::MacroActionRandomEdit(
 
 	auto *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(entryLayout);
-	mainLayout->addWidget(new QLabel(
-		obs_module_text("AdvSceneSwitcher.action.random.arguments")));
 	mainLayout->addWidget(_macroList);
 	mainLayout->addLayout(argButtonLayout);
 	setLayout(mainLayout);
@@ -193,8 +189,14 @@ void MacroActionRandomEdit::AddMacro()
 		return;
 	}
 
-	auto macroName = _macroSelection->currentText();
-	MacroRef macro(macroName.toStdString());
+	std::string macroName;
+	bool accepted = MacroDialog::AskForMacro(this, macroName);
+
+	if (!accepted || macroName.empty()) {
+		return;
+	}
+
+	MacroRef macro(macroName);
 
 	if (!macro.get()) {
 		return;
@@ -204,9 +206,10 @@ void MacroActionRandomEdit::AddMacro()
 		return;
 	}
 
-	QVariant v = QVariant::fromValue(macroName);
-	QListWidgetItem *item = new QListWidgetItem(macroName, _macroList);
-	item->setData(Qt::UserRole, macroName);
+	QVariant v = QVariant::fromValue(QString::fromStdString(macroName));
+	QListWidgetItem *item = new QListWidgetItem(
+		QString::fromStdString(macroName), _macroList);
+	item->setData(Qt::UserRole, QString::fromStdString(macroName));
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_macros.push_back(macro);
@@ -254,19 +257,52 @@ int MacroActionRandomEdit::FindEntry(const std::string &macro)
 	return idx;
 }
 
-void MacroActionRandomEdit::MacroSelectionChanged(int idx)
-{
-	if (_loading || !_entryData || idx == -1) {
-		return;
-	}
-
-	QListWidgetItem *item = _macroList->item(idx);
-	QString name = item->text();
-	_macroSelection->SetCurrentMacro(GetMacroByName(name.toUtf8().data()));
-}
-
 void MacroActionRandomEdit::SetMacroListSize()
 {
 	setHeightToContentHeight(_macroList);
 	adjustSize();
+}
+
+MacroDialog::MacroDialog(QWidget *)
+{
+	setModal(true);
+	setWindowModality(Qt::WindowModality::ApplicationModal);
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+	setMinimumWidth(350);
+	setMinimumHeight(70);
+
+	QDialogButtonBox *buttonbox = new QDialogButtonBox(
+		QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+
+	buttonbox->setCenterButtons(true);
+	connect(buttonbox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+	connect(buttonbox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+	_macroSelection = new MacroSelection(window());
+	auto *selectionLayout = new QHBoxLayout;
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{macroSelection}}", _macroSelection},
+	};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.askForMacro"),
+		     selectionLayout, widgetPlaceholders);
+	auto *layout = new QVBoxLayout();
+	layout->addLayout(selectionLayout);
+	layout->addWidget(buttonbox);
+	setLayout(layout);
+}
+
+bool MacroDialog::AskForMacro(QWidget *parent, std::string &macroName)
+{
+	MacroDialog dialog(parent);
+	dialog.setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
+
+	if (dialog.exec() != DialogCode::Accepted) {
+		return false;
+	}
+	macroName = dialog._macroSelection->currentText().toUtf8().constData();
+	if (macroName == obs_module_text("AdvSceneSwitcher.selectMacro")) {
+		return false;
+	}
+
+	return true;
 }
