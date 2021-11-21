@@ -5,6 +5,7 @@
 
 #include <QProcess>
 #include <QFileDialog>
+#include <QDesktopServices>
 
 const std::string MacroActionRun::id = "run";
 
@@ -14,7 +15,13 @@ bool MacroActionRun::_registered = MacroActionFactory::Register(
 
 bool MacroActionRun::PerformAction()
 {
-	QProcess::startDetached(QString::fromStdString(_path), _args);
+	if (!QProcess::startDetached(QString::fromStdString(_path), _args) &&
+	    _args.empty()) {
+		vblog(LOG_INFO, "run \"%s\" using QDesktopServices",
+		      _path.c_str());
+		QDesktopServices::openUrl(
+			QUrl::fromLocalFile(QString::fromStdString(_path)));
+	}
 	return true;
 }
 
