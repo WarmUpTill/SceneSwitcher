@@ -55,6 +55,8 @@ protected:
 	std::shared_ptr<MacroActionRandom> _entryData;
 
 private:
+	void SetMacroListSize();
+
 	MacroSelection *_macroSelection;
 	QListWidget *_macroList;
 	QPushButton *_add;

@@ -137,6 +137,7 @@ void MacroActionRunEdit::UpdateEntryData()
 		QListWidgetItem *item = new QListWidgetItem(arg, _argList);
 		item->setData(Qt::UserRole, arg);
 	}
+	SetArgListSize();
 }
 
 void MacroActionRunEdit::PathChanged(const QString &text)
@@ -175,6 +176,7 @@ void MacroActionRunEdit::AddArg()
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_args << arg;
+	SetArgListSize();
 }
 
 void MacroActionRunEdit::RemoveArg()
@@ -195,6 +197,7 @@ void MacroActionRunEdit::RemoveArg()
 		return;
 	}
 	delete item;
+	SetArgListSize();
 }
 
 void MacroActionRunEdit::ArgUp()
@@ -223,4 +226,10 @@ void MacroActionRunEdit::ArgDown()
 		std::lock_guard<std::mutex> lock(switcher->m);
 		_entryData->_args.move(idx, idx + 1);
 	}
+}
+
+void MacroActionRunEdit::SetArgListSize()
+{
+	setHeightToContentHeight(_argList);
+	adjustSize();
 }
