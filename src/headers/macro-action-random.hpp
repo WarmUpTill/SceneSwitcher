@@ -4,6 +4,7 @@
 
 #include <QPushButton>
 #include <QListWidget>
+#include <QDialog>
 #include <unordered_map>
 
 class MacroActionRandom : public MultiMacroRefAction {
@@ -27,6 +28,17 @@ private:
 	static const std::string id;
 };
 
+class MacroDialog : public QDialog {
+	Q_OBJECT
+
+public:
+	MacroDialog(QWidget *parent);
+	static bool AskForMacro(QWidget *parent, std::string &macroName);
+
+private:
+	MacroSelection *_macroSelection;
+};
+
 class MacroActionRandomEdit : public QWidget {
 	Q_OBJECT
 
@@ -48,16 +60,14 @@ private slots:
 	void MacroRename(const QString &oldName, const QString &newName);
 	void AddMacro();
 	void RemoveMacro();
-	int FindEntry(const std::string &macro);
-	void MacroSelectionChanged(int idx);
 
 protected:
 	std::shared_ptr<MacroActionRandom> _entryData;
 
 private:
+	int FindEntry(const std::string &macro);
 	void SetMacroListSize();
 
-	MacroSelection *_macroSelection;
 	QListWidget *_macroList;
 	QPushButton *_add;
 	QPushButton *_remove;
