@@ -8,6 +8,7 @@ enum class PerformMacroAction {
 	PAUSE,
 	UNPAUSE,
 	RESET_COUNTER,
+	RUN,
 };
 
 class MacroActionMacro : public MacroRefAction {
