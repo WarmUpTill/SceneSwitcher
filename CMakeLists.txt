@@ -101,24 +101,6 @@ if(BUILD_OUT_OF_TREE)
 
   find_package(CURL REQUIRED)
   include_directories("${CURL_INCLUDE_DIRS}")
-
-  # Backwards compatability with older OBS versions
-  if(LibObs_VERSION_MAJOR GREATER_EQUAL 27)
-    add_definitions(-DVCAM_SUPPORTED)
-  else()
-    message(
-      WARNING
-        "OBS version ${LibObs_VERSION_MAJOR} found - disabling virtual camera functionality"
-    )
-  endif()
-  if(LibObs_VERSION_MAJOR GREATER_EQUAL 26)
-    add_definitions(-DREPLAYBUFFER_SUPPORTED)
-  else()
-    message(
-      WARNING
-        "OBS version ${LibObs_VERSION_MAJOR} found - disabling replay buffer functionality"
-    )
-  endif()
 else()
   find_package(Libcurl REQUIRED)
   include_directories("${LIBCURL_INCLUDE_DIRS}")
@@ -382,6 +364,30 @@ else()
        src/macro-condition-video.cpp)
   list(REMOVE_ITEM advanced-scene-switcher_HEADERS
        src/headers/macro-condition-video.hpp)
+endif()
+
+# Backwards compatability checks with older OBS versions
+if(DEFINED LibObs_VERSION_MAJOR)
+  if(LibObs_VERSION_MAJOR GREATER_EQUAL 27)
+    add_definitions(-DVCAM_SUPPORTED)
+  else()
+    message(
+      WARNING
+        "OBS version ${LibObs_VERSION_MAJOR} found - disabling virtual camera functionality"
+    )
+  endif()
+  if(LibObs_VERSION_MAJOR GREATER_EQUAL 26)
+    add_definitions(-DREPLAYBUFFER_SUPPORTED)
+  else()
+    message(
+      WARNING
+        "OBS version ${LibObs_VERSION_MAJOR} found - disabling replay buffer and screenshot functionality"
+    )
+    list(REMOVE_ITEM advanced-scene-switcher_SOURCES
+         src/macro-action-screenshot.cpp)
+    list(REMOVE_ITEM advanced-scene-switcher_HEADERS
+         src/headers/macro-action-screenshot.hpp)
+  endif()
 endif()
 
 add_library(
