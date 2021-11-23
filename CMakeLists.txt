@@ -224,6 +224,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-action-scene-switch.hpp
     src/headers/macro-action-scene-transform.hpp
     src/headers/macro-action-scene-visibility.hpp
+    src/headers/macro-action-screenshot.hpp
     src/headers/macro-action-source.hpp
     src/headers/macro-action-streaming.hpp
     src/headers/macro-action-systray.hpp
@@ -318,6 +319,7 @@ set(advanced-scene-switcher_SOURCES
     src/macro-action-scene-switch.cpp
     src/macro-action-scene-transform.cpp
     src/macro-action-scene-visibility.cpp
+    src/macro-action-screenshot.cpp
     src/macro-action-source.cpp
     src/macro-action-streaming.cpp
     src/macro-action-systray.cpp
