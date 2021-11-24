@@ -2,6 +2,7 @@
 #include "macro.hpp"
 #include "duration-control.hpp"
 #include "transition-selection.hpp"
+#include "scene-selection.hpp"
 
 #include <QWidget>
 #include <QComboBox>
@@ -11,6 +12,8 @@ enum class TransitionCondition {
 	DURATION,
 	STARTED,
 	ENDED,
+	TRANSITION_SOURCE,
+	TRANSITION_TARGET,
 };
 
 class MacroConditionTransition : public MacroCondition {
@@ -29,6 +32,7 @@ public:
 
 	TransitionCondition _condition = TransitionCondition::CURRENT;
 	TransitionSelection _transition;
+	SceneSelection _scene;
 	Duration _duration;
 
 private:
@@ -62,6 +66,7 @@ public:
 private slots:
 	void ConditionChanged(int cond);
 	void TransitionChanged(const TransitionSelection &);
+	void SceneChanged(const SceneSelection &);
 	void DurationChanged(double seconds);
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -69,6 +74,7 @@ signals:
 protected:
 	QComboBox *_conditions;
 	TransitionSelectionWidget *_transitions;
+	SceneSelectionWidget *_scenes;
 	DurationSelection *_duration;
 	QLabel *_durationSuffix;
 	std::shared_ptr<MacroConditionTransition> _entryData;
