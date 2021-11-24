@@ -25,7 +25,10 @@ public:
 		return std::make_shared<MacroConditionScene>();
 	}
 
-	bool _waitForTransition = false;
+	// This option is to be removed in a future version and be replaced by
+	// transition specific conditions
+	bool _waitForTransition = true;
+
 	SceneSelection _scene;
 	SceneType _type;
 
