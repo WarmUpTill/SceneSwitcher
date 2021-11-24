@@ -158,7 +158,12 @@ void MacroConditionSceneEdit::SetWidgetVisibility()
 {
 	_scenes->setVisible(_entryData->_type == SceneType::CURRENT ||
 			    _entryData->_type == SceneType::PREVIOUS);
-	_waitForTransition->setVisible(_entryData->_type == SceneType::CURRENT);
+
+	// The waitForTransition option shall be slowly faded out over time and
+	// be replaced by the transition source and target scene checks
+	_waitForTransition->setVisible(_entryData->_type ==
+					       SceneType::CURRENT &&
+				       !_entryData->_waitForTransition);
 }
 
 void MacroConditionSceneEdit::UpdateEntryData()
