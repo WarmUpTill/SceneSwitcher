@@ -5,6 +5,7 @@
 
 enum class PluginStateCondition {
 	SCENESWITCHED,
+	RUNNING,
 };
 
 class MacroConditionPluginState : public MacroCondition {

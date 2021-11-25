@@ -9,16 +9,26 @@ bool MacroConditionPluginState::_registered = MacroConditionFactory::Register(
 	MacroConditionPluginState::id,
 	{MacroConditionPluginState::Create,
 	 MacroConditionPluginStateEdit::Create,
-	 "AdvSceneSwitcher.condition.pluginState", false});
+	 "AdvSceneSwitcher.condition.pluginState"});
 
 static std::map<PluginStateCondition, std::string> pluginStateConditionTypes = {
 	{PluginStateCondition::SCENESWITCHED,
 	 "AdvSceneSwitcher.condition.pluginState.state.sceneSwitched"},
+	{PluginStateCondition::RUNNING,
+	 "AdvSceneSwitcher.condition.pluginState.state.running"},
 };
 
 bool MacroConditionPluginState::CheckCondition()
 {
-	return switcher->macroSceneSwitched;
+	switch (_condition) {
+	case PluginStateCondition::SCENESWITCHED:
+		return switcher->macroSceneSwitched;
+	case PluginStateCondition::RUNNING:
+		return true;
+	default:
+		break;
+	}
+	return false;
 }
 
 bool MacroConditionPluginState::Save(obs_data_t *obj)
