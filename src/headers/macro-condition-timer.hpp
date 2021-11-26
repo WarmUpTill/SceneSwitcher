@@ -5,6 +5,15 @@
 #include <QCheckBox>
 #include <QPushButton>
 #include <QTimer>
+#include <QComboBox>
+#include <QHBoxLayout>
+
+#include <random>
+
+enum class TimerType {
+	FIXED,
+	RANDOM,
+};
 
 class MacroConditionTimer : public MacroCondition {
 public:
@@ -20,13 +29,17 @@ public:
 	void Continue();
 	void Reset();
 
+	TimerType _type = TimerType::FIXED;
 	Duration _duration;
+	Duration _duration2;
 	bool _paused = false;
 	bool _saveRemaining = false;
 	double _remaining = 0.;
 	bool _oneshot = false;
 
 private:
+	void SetRandomTimeRemaining();
+	std::default_random_engine _re;
 	static bool _registered;
 	static const std::string id;
 };
@@ -48,8 +61,11 @@ public:
 	}
 
 private slots:
+	void TimerTypeChanged(int type);
 	void DurationChanged(double seconds);
 	void DurationUnitChanged(DurationUnit unit);
+	void Duration2Changed(double seconds);
+	void Duration2UnitChanged(DurationUnit unit);
 	void SaveRemainingChanged(int state);
 	void AutoResetChanged(int state);
 	void PauseContinueClicked();
@@ -59,7 +75,9 @@ private slots:
 protected:
 	void SetPauseContinueButtonLabel();
 
+	QComboBox *_timerTypes;
 	DurationSelection *_duration;
+	DurationSelection *_duration2;
 	QCheckBox *_autoReset;
 	QCheckBox *_saveRemaining;
 	QPushButton *_reset;
@@ -68,6 +86,9 @@ protected:
 	std::shared_ptr<MacroConditionTimer> _entryData;
 
 private:
+	void SetWidgetVisibility();
+
+	QHBoxLayout *_timerLayout;
 	QTimer timer;
 	bool _loading = true;
 };
