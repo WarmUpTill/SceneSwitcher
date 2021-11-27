@@ -286,6 +286,11 @@ void switchScene(const sceneSwitchInfo &ssi);
 void switchPreviewScene(const OBSWeakSource &ws);
 
 /******************************************************************************
+ * Settings helper
+ ******************************************************************************/
+void AskForBackup(obs_data_t *obj);
+
+/******************************************************************************
  * Main SwitcherData
  ******************************************************************************/
 struct SwitcherData;

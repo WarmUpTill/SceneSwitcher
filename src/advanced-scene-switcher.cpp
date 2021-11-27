@@ -88,34 +88,6 @@ void AdvSceneSwitcher::loadUI()
 /******************************************************************************
  * Saving and loading
  ******************************************************************************/
-void AskBackup(obs_data_t *obj)
-{
-	bool backupSettings = DisplayMessage(
-		obs_module_text("AdvSceneSwitcher.askBackup"), true);
-
-	if (!backupSettings) {
-		return;
-	}
-
-	QString directory = QFileDialog::getSaveFileName(
-		nullptr,
-		obs_module_text(
-			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.importWindowTitle"),
-		QDir::currentPath(),
-		obs_module_text(
-			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType"));
-	if (directory.isEmpty()) {
-		return;
-	}
-
-	QFile file(directory);
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-		return;
-	}
-
-	obs_data_save_json(obj, file.fileName().toUtf8().constData());
-}
-
 static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 {
 	if (saving) {
@@ -133,7 +105,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obj = obs_data_create();
 		}
 		if (switcher->versionChanged(obj, g_GIT_SHA1)) {
-			AskBackup(obj);
+			AskForBackup(obj);
 		}
 		switcher->loadSettings(obj);
 		obs_data_release(obj);
