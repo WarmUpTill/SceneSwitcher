@@ -98,6 +98,11 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
 		obs_data_release(obj);
 	} else {
+		// Stop the scene switcher at least once to
+		// avoid scene duplication issues with scene collection changes
+		bool start = !switcher->stop;
+		switcher->Stop();
+
 		switcher->m.lock();
 		obs_data_t *obj =
 			obs_data_get_obj(save_data, "advanced-scene-switcher");
@@ -111,10 +116,6 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_release(obj);
 		switcher->m.unlock();
 
-		// Stop the scene switcher at least once to
-		// avoid scene duplication issues with scene collection changes
-		bool start = !switcher->stop;
-		switcher->Stop();
 		if (start) {
 			switcher->Start();
 		}
@@ -410,9 +411,9 @@ void SwitcherData::Stop()
 {
 	if (th && th->isRunning()) {
 		stop = true;
-		cv.notify_one();
+		cv.notify_all();
 		abortMacroWait = true;
-		macroWaitCv.notify_one();
+		macroWaitCv.notify_all();
 		th->wait();
 		delete th;
 		th = nullptr;

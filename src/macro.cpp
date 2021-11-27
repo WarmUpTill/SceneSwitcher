@@ -29,6 +29,10 @@ Macro::Macro(const std::string &name)
 
 Macro::~Macro()
 {
+	_stop = true;
+	if (_thread.joinable()) {
+		_thread.join();
+	}
 	ClearHotkeys();
 }
 
@@ -104,15 +108,22 @@ bool Macro::CeckMatch()
 	return _matched;
 }
 
-bool Macro::PerformAction()
+bool Macro::PerformAction(bool forceParallel)
 {
+	if (!_done) {
+		vblog(LOG_INFO, "macro %s already running", _name.c_str());
+		return false;
+	}
+
 	bool ret = true;
-	for (auto &a : _actions) {
-		a->LogAction();
-		ret = ret && a->PerformAction();
-		if (!ret) {
-			return false;
+	_done = false;
+	if (_runInParallel || forceParallel) {
+		if (_thread.joinable()) {
+			_thread.join();
 		}
+		_thread = std::thread([this] { RunActions(); });
+	} else {
+		RunActions(ret);
 	}
 	return ret;
 }
@@ -128,6 +139,27 @@ void Macro::ResetTimers()
 	for (auto &c : _conditions) {
 		c->ResetDuration();
 	}
+}
+
+void Macro::RunActions(bool &retVal)
+{
+	bool ret = true;
+	for (auto &a : _actions) {
+		a->LogAction();
+		ret = ret && a->PerformAction();
+		if (!ret || _stop) {
+			retVal = ret;
+			_done = true;
+			return;
+		}
+	}
+	_done = true;
+}
+
+void Macro::RunActions()
+{
+	bool unused;
+	RunActions(unused);
 }
 
 void Macro::SetPaused(bool pause)
@@ -160,6 +192,7 @@ bool Macro::Save(obs_data_t *obj)
 {
 	obs_data_set_string(obj, "name", _name.c_str());
 	obs_data_set_bool(obj, "pause", _paused);
+	obs_data_set_bool(obj, "parallel", _runInParallel);
 
 	obs_data_array_t *pauseHotkey = obs_hotkey_save(_pauseHotkey);
 	obs_data_set_array(obj, "pauseHotkey", pauseHotkey);
@@ -237,6 +270,7 @@ bool Macro::Load(obs_data_t *obj)
 {
 	_name = obs_data_get_string(obj, "name");
 	_paused = obs_data_get_bool(obj, "pause");
+	_runInParallel = obs_data_get_bool(obj, "parallel");
 
 	obs_data_array_t *pauseHotkey = obs_data_get_array(obj, "pauseHotkey");
 	obs_hotkey_load(_pauseHotkey, pauseHotkey);
@@ -541,7 +575,6 @@ bool SwitcherData::runMacros()
 			if (!m->PerformAction()) {
 				blog(LOG_WARNING, "abort macro: %s",
 				     m->Name().c_str());
-				return false;
 			}
 		}
 	}
