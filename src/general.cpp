@@ -4,6 +4,7 @@
 
 #include <QFileDialog>
 #include <QGuiApplication>
+#include <QStandardPaths>
 #if __linux__
 #include <QDesktopWidget>
 #endif
@@ -231,13 +232,53 @@ void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 	switcher->disableHints = state;
 }
 
+QString getDefaultSaveLocation()
+{
+	QString desktopPath = QStandardPaths::writableLocation(
+		QStandardPaths::DesktopLocation);
+	auto scName = obs_frontend_get_current_scene_collection();
+	QString sceneCollectionName(scName);
+	bfree(scName);
+	auto timestamp = QDateTime::currentDateTime();
+	return desktopPath + "/adv-ss-" + sceneCollectionName + "-" +
+	       timestamp.toString("yyyy.MM.dd.hh.mm.ss");
+}
+
+void AskForBackup(obs_data_t *obj)
+{
+	bool backupSettings = DisplayMessage(
+		obs_module_text("AdvSceneSwitcher.askBackup"), true);
+
+	if (!backupSettings) {
+		return;
+	}
+
+	QString path = QFileDialog::getSaveFileName(
+		nullptr,
+		obs_module_text(
+			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.importWindowTitle"),
+		getDefaultSaveLocation(),
+		obs_module_text(
+			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType"));
+	if (path.isEmpty()) {
+		return;
+	}
+
+	QFile file(path);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		return;
+	}
+
+	obs_data_save_json(obj, file.fileName().toUtf8().constData());
+}
+
 void AdvSceneSwitcher::on_exportSettings_clicked()
 {
 	QString directory = QFileDialog::getSaveFileName(
 		this,
 		tr(obs_module_text(
 			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.exportWindowTitle")),
-		QDir::currentPath(),
+		getDefaultSaveLocation(),
 		tr(obs_module_text(
 			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType")));
 	if (directory.isEmpty()) {
