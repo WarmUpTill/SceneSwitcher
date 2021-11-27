@@ -722,7 +722,7 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_34">
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="0,0,0">
+           <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="0,0,0,0">
             <item>
              <widget class="QLabel" name="label_20">
               <property name="text">
@@ -732,6 +732,13 @@
             </item>
             <item>
              <widget class="QLineEdit" name="macroName"/>
+            </item>
+            <item>
+             <widget class="QPushButton" name="runMacro">
+              <property name="text">
+               <string>AdvSceneSwitcher.macroTab.run</string>
+              </property>
+             </widget>
             </item>
             <item>
              <spacer name="horizontalSpacer_13">
@@ -763,7 +770,7 @@
                 <x>0</x>
                 <y>0</y>
                 <width>767</width>
-                <height>220</height>
+                <height>218</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_35" stretch="10,1">
@@ -862,7 +869,7 @@
                 <x>0</x>
                 <y>0</y>
                 <width>767</width>
-                <height>219</height>
+                <height>218</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_33" stretch="10,1">

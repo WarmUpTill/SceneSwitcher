@@ -173,6 +173,16 @@ void AdvSceneSwitcher::on_macroName_editingFinished()
 	emit MacroRenamed(oldName, newName);
 }
 
+void AdvSceneSwitcher::on_runMacro_clicked()
+{
+	Macro *macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	macro->PerformAction();
+}
+
 void AdvSceneSwitcher::PopulateMacroActions(Macro &m, uint32_t afterIdx)
 {
 	auto &actions = m.Actions();
