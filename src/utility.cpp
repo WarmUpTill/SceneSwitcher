@@ -594,7 +594,7 @@ void populateAudioSelection(QComboBox *sel, bool addSelect)
 	sel->setCurrentIndex(0);
 }
 
-void populateVideoSelection(QComboBox *sel, bool addSelect)
+void populateVideoSelection(QComboBox *sel, bool addScenes, bool addSelect)
 {
 
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
@@ -614,6 +614,11 @@ void populateVideoSelection(QComboBox *sel, bool addSelect)
 	sort(videoSources.begin(), videoSources.end());
 	for (std::string &source : videoSources) {
 		sel->addItem(source.c_str());
+	}
+
+	if (addScenes) {
+		populateSceneSelection(sel, false, false, false, false, nullptr,
+				       false);
 	}
 
 	sel->model()->sort(0);

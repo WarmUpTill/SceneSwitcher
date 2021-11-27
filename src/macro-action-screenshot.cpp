@@ -62,7 +62,7 @@ MacroActionScreenshotEdit::MacroActionScreenshotEdit(
 	: QWidget(parent)
 {
 	_sources = new QComboBox();
-	populateVideoSelection(_sources, false);
+	populateVideoSelection(_sources, true, false);
 	addOBSMainOutputEntry(_sources);
 
 	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
