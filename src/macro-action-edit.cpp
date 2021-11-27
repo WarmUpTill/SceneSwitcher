@@ -184,7 +184,7 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	macro->Actions().erase(macro->Actions().begin() + idx);
 	switcher->abortMacroWait = true;
-	switcher->macroWaitCv.notify_one();
+	switcher->macroWaitCv.notify_all();
 	macro->UpdateActionIndices();
 
 	clearLayout(ui->macroEditActionLayout, idx);

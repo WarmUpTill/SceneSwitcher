@@ -2,13 +2,14 @@
 #include "macro-segment.hpp"
 #include "duration-control.hpp"
 
+#include <QString>
 #include <string>
 #include <deque>
 #include <memory>
 #include <map>
+#include <thread>
 #include <obs.hpp>
 #include <obs-module.h>
-#include <QString>
 
 constexpr auto macro_func = 10;
 constexpr auto default_priority_10 = macro_func;
@@ -73,10 +74,12 @@ public:
 	virtual ~Macro();
 
 	bool CeckMatch();
-	bool PerformAction();
+	bool PerformAction(bool forceParallel = false);
 	bool Matched() { return _matched; }
 	std::string Name() { return _name; }
 	void SetName(const std::string &name);
+	void SetRunInParallel(bool parallel) { _runInParallel = parallel; }
+	bool RunInParallel() { return _runInParallel; }
 	void SetPaused(bool pause = true);
 	bool Paused() { return _paused; }
 	int GetCount() { return _count; };
@@ -103,16 +106,23 @@ private:
 	void ClearHotkeys();
 	void SetHotkeysDesc();
 	void ResetTimers();
+	void RunActions(bool &ret);
+	void RunActions();
 
 	std::string _name = "";
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;
 	std::deque<std::shared_ptr<MacroAction>> _actions;
+	bool _runInParallel = false;
 	bool _matched = false;
 	bool _paused = false;
 	int _count = 0;
 	obs_hotkey_id _pauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _unpauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _togglePauseHotkey = OBS_INVALID_HOTKEY_ID;
+
+	bool _stop = false;
+	bool _done = true;
+	std::thread _thread;
 };
 
 Macro *GetMacroByName(const char *name);

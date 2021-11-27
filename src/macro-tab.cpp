@@ -82,7 +82,7 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->abortMacroWait = true;
-		switcher->macroWaitCv.notify_one();
+		switcher->macroWaitCv.notify_all();
 		int idx = ui->macros->currentRow();
 		QString::fromStdString(switcher->macros[idx]->Name());
 		switcher->macros.erase(switcher->macros.begin() + idx);
@@ -180,7 +180,22 @@ void AdvSceneSwitcher::on_runMacro_clicked()
 		return;
 	}
 
-	macro->PerformAction();
+	bool ret = macro->PerformAction(true);
+	if (!ret) {
+		QString err =
+			obs_module_text("AdvSceneSwitcher.macroTab.runFail");
+		DisplayMessage(err.arg(QString::fromStdString(macro->Name())));
+	}
+}
+
+void AdvSceneSwitcher::on_runMacroInParallel_stateChanged(int value)
+{
+	Macro *macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+	std::lock_guard<std::mutex> lock(switcher->m);
+	macro->SetRunInParallel(value);
 }
 
 void AdvSceneSwitcher::PopulateMacroActions(Macro &m, uint32_t afterIdx)
@@ -215,6 +230,7 @@ void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
 void AdvSceneSwitcher::SetEditMacro(Macro &m)
 {
 	ui->macroName->setText(m.Name().c_str());
+	ui->runMacroInParallel->setChecked(m.RunInParallel());
 	clearLayout(ui->macroEditConditionLayout);
 	clearLayout(ui->macroEditActionLayout);
 
