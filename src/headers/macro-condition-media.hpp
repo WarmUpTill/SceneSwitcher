@@ -3,8 +3,10 @@
 #include <limits>
 #include <QWidget>
 #include <QComboBox>
+#include <QCheckBox>
 
 #include "duration-control.hpp"
+#include "scene-selection.hpp"
 
 enum class MediaTimeRestriction {
 	TIME_RESTRICTION_NONE,
@@ -33,6 +35,12 @@ enum class MediaState {
 	ANY,
 };
 
+enum class MediaSourceType {
+	SOURCE,
+	ANY,
+	ALL,
+};
+
 class MacroConditionMedia : public MacroCondition {
 public:
 	~MacroConditionMedia();
@@ -50,15 +58,23 @@ public:
 	static void MediaStopped(void *data, calldata_t *);
 	static void MediaEnded(void *data, calldata_t *);
 
+	MediaSourceType _sourceType = MediaSourceType::SOURCE;
+	SceneSelection _scene;
 	OBSWeakSource _source = nullptr;
+	std::vector<MacroConditionMedia> _sources;
 	MediaState _state = MediaState::OBS_MEDIA_STATE_NONE;
 	MediaTimeRestriction _restriction =
 		MediaTimeRestriction::TIME_RESTRICTION_NONE;
 	Duration _time;
+	bool _onlyMatchonChagne = false;
 
 private:
-	std::atomic_bool _stopped = {false};
-	std::atomic_bool _ended = {false};
+	bool CheckMediaMatch();
+
+	bool _stopped = false;
+	bool _ended = false;
+	// TODO: Remove _alreadyMatched as it does not make much sense when
+	// time restrictions for macro conditions are available.
 	// Trigger scene change only once even if media state might trigger repeatedly
 	bool _alreadyMatched = false;
 	// Workaround to enable use of "ended" to specify end of VLC playlist
@@ -87,20 +103,25 @@ public:
 
 private slots:
 	void SourceChanged(const QString &text);
+	void SceneChanged(const SceneSelection &);
 	void StateChanged(int index);
 	void TimeRestrictionChanged(int index);
 	void TimeChanged(double seconds);
 	void TimeUnitChanged(DurationUnit unit);
+	void OnChangeChanged(int);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
+	SceneSelectionWidget *_scenes;
 	QComboBox *_mediaSources;
 	QComboBox *_states;
 	QComboBox *_timeRestrictions;
 	DurationSelection *_time;
+	QCheckBox *_onChange;
 	std::shared_ptr<MacroConditionMedia> _entryData;
 
 private:
+	void SetWidgetVisibility();
 	bool _loading = true;
 };

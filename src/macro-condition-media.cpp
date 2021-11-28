@@ -80,18 +80,19 @@ bool matchTime(const int64_t currentTime, const int64_t duration,
 	       matchedTimeRemainLonger || matchedTimeRemainShorter;
 }
 
-bool MacroConditionMedia::CheckCondition()
+bool MacroConditionMedia::CheckMediaMatch()
 {
+
 	if (!_source) {
 		return false;
 	}
 	bool match = false;
 
-	obs_source_t *source = obs_weak_source_get_source(_source);
-	auto duration = obs_source_media_get_duration(source);
-	auto time = obs_source_media_get_time(source);
-	obs_media_state currentState = obs_source_media_get_state(source);
-	obs_source_release(source);
+	obs_source_t *s = obs_weak_source_get_source(_source);
+	auto duration = obs_source_media_get_duration(s);
+	auto time = obs_source_media_get_time(s);
+	obs_media_state currentState = obs_source_media_get_state(s);
+	obs_source_release(s);
 
 	// To be able to compare to obs_media_state more easily
 	int expectedState = static_cast<int>(_state);
@@ -150,12 +151,37 @@ bool MacroConditionMedia::CheckCondition()
 		matchTime(time, duration, _restriction, _time.seconds * 1000);
 	bool matched = matchedState && matchedTime;
 
-	if (matched && !_alreadyMatched) {
+	if (matched && !(_onlyMatchonChagne && _alreadyMatched)) {
 		match = true;
 	}
-
 	_alreadyMatched = matched;
 
+	return match;
+}
+
+bool MacroConditionMedia::CheckCondition()
+{
+	bool match = false;
+	switch (_sourceType) {
+	case MediaSourceType::ANY:
+		for (auto &source : _sources) {
+			match = match || source.CheckCondition();
+		}
+		break;
+	case MediaSourceType::ALL: {
+		bool res = true;
+		for (auto &source : _sources) {
+			res = res && source.CheckCondition();
+		}
+		match = res;
+		break;
+	}
+	case MediaSourceType::SOURCE:
+		match = CheckMediaMatch();
+		break;
+	default:
+		break;
+	}
 	return match;
 }
 
@@ -163,11 +189,53 @@ bool MacroConditionMedia::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
-
+	_scene.Save(obj);
+	obs_data_set_int(obj, "sourceType", static_cast<int>(_sourceType));
 	obs_data_set_int(obj, "state", static_cast<int>(_state));
 	obs_data_set_int(obj, "restriction", static_cast<int>(_restriction));
 	_time.Save(obj);
+	obs_data_set_bool(obj, "matchOnChagne", _onlyMatchonChagne);
 	return true;
+}
+
+static bool enumSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
+{
+	auto *sources = reinterpret_cast<std::vector<OBSWeakSource> *>(ptr);
+
+	if (obs_sceneitem_is_group(item)) {
+		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
+		obs_scene_enum_items(scene, enumSceneItem, ptr);
+	}
+
+	auto source = obs_sceneitem_get_source(item);
+	std::string sourceId = obs_source_get_id(source);
+
+	if (sourceId.compare("ffmpeg_source") == 0 ||
+	    sourceId.compare("vlc_source") == 0) {
+		auto ws = obs_source_get_weak_source(source);
+		obs_weak_source_release(ws);
+		sources->emplace_back(ws);
+	}
+	return true;
+}
+
+void forMediaSourceOnSceneAddMediaCondition(
+	OBSWeakSource sceneWeakSource, MacroConditionMedia *origCond,
+	std::vector<MacroConditionMedia> &conditions)
+{
+	conditions.clear();
+	std::vector<OBSWeakSource> mediaSources;
+	auto s = obs_weak_source_get_source(sceneWeakSource);
+	auto scene = obs_scene_from_source(s);
+	obs_scene_enum_items(scene, enumSceneItem, &mediaSources);
+	obs_source_release(s);
+
+	for (auto &source : mediaSources) {
+		MacroConditionMedia cond(*origCond);
+		cond._sourceType = MediaSourceType::SOURCE;
+		cond._source = source;
+		conditions.push_back(cond);
+	}
 }
 
 bool MacroConditionMedia::Load(obs_data_t *obj)
@@ -175,24 +243,54 @@ bool MacroConditionMedia::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	const char *sourceName = obs_data_get_string(obj, "source");
 	_source = GetWeakSourceByName(sourceName);
-
+	_scene.Load(obj);
+	_sourceType = static_cast<MediaSourceType>(
+		obs_data_get_int(obj, "sourceType"));
 	_state = static_cast<MediaState>(obs_data_get_int(obj, "state"));
 	_restriction = static_cast<MediaTimeRestriction>(
 		obs_data_get_int(obj, "restriction"));
 	_time.Load(obj);
+	if (!obs_data_has_user_value(obj, "matchOnChagne")) {
+		_onlyMatchonChagne = true;
+	} else {
+		_onlyMatchonChagne = obs_data_get_bool(obj, "matchOnChagne");
+	}
 
-	obs_source_t *mediasource = obs_weak_source_get_source(_source);
-	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
-	signal_handler_connect(sh, "media_stopped", MediaStopped, this);
-	signal_handler_connect(sh, "media_ended", MediaEnded, this);
-	obs_source_release(mediasource);
+	if (_sourceType == MediaSourceType::SOURCE) {
+		obs_source_t *mediasource = obs_weak_source_get_source(_source);
+		signal_handler_t *sh =
+			obs_source_get_signal_handler(mediasource);
+		signal_handler_connect(sh, "media_stopped", MediaStopped, this);
+		signal_handler_connect(sh, "media_ended", MediaEnded, this);
+		obs_source_release(mediasource);
+	}
+
+	forMediaSourceOnSceneAddMediaCondition(_scene.GetScene(), this,
+					       _sources);
 	return true;
 }
 
 std::string MacroConditionMedia::GetShortDesc()
 {
-	if (_source) {
-		return GetWeakSourceName(_source);
+	switch (_sourceType) {
+	case MediaSourceType::SOURCE:
+		if (_source) {
+			return GetWeakSourceName(_source);
+		}
+	case MediaSourceType::ANY:
+		if (_scene.GetScene()) {
+			return obs_module_text(
+				       "AdvSceneSwitcher.condition.media.anyOnScene") +
+			       std::string(" ") + _scene.ToString();
+		}
+	case MediaSourceType::ALL:
+		if (_scene.GetScene()) {
+			return obs_module_text(
+				       "AdvSceneSwitcher.condition.media.allOnScene") +
+			       std::string(" ") + _scene.ToString();
+		}
+	default:
+		break;
 	}
 	return "";
 }
@@ -243,18 +341,33 @@ static void populateMediaStates(QComboBox *list)
 	}
 }
 
+static void addAnyAndAllStates(QComboBox *list)
+{
+	list->insertItem(
+		1,
+		obs_module_text("AdvSceneSwitcher.condition.media.anyOnScene"));
+	list->insertItem(
+		1,
+		obs_module_text("AdvSceneSwitcher.condition.media.allOnScene"));
+}
+
 MacroConditionMediaEdit::MacroConditionMediaEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionMedia> entryData)
 	: QWidget(parent)
 {
 	_mediaSources = new QComboBox();
+	_scenes = new SceneSelectionWidget(window());
 	_states = new QComboBox();
 	_timeRestrictions = new QComboBox();
 	_time = new DurationSelection();
+	_onChange = new QCheckBox(obs_module_text(
+		"AdvSceneSwitcher.condition.media.matchOnChange"));
 
 	QWidget::connect(_mediaSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(SourceChanged(const QString &)));
+	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
+			 this, SLOT(SceneChanged(const SceneSelection &)));
 	QWidget::connect(_states, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(StateChanged(int)));
 	QWidget::connect(_timeRestrictions, SIGNAL(currentIndexChanged(int)),
@@ -263,20 +376,27 @@ MacroConditionMediaEdit::MacroConditionMediaEdit(
 			 SLOT(TimeChanged(double)));
 	QWidget::connect(_time, SIGNAL(UnitChanged(DurationUnit)), this,
 			 SLOT(TimeUnitChanged(DurationUnit)));
+	QWidget::connect(_onChange, SIGNAL(stateChanged(int)), this,
+			 SLOT(OnChangeChanged(int)));
 
 	populateMediaSelection(_mediaSources);
+	addAnyAndAllStates(_mediaSources);
 	populateMediaStates(_states);
 	populateMediaTimeRestrictions(_timeRestrictions);
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
+	QHBoxLayout *entryLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{mediaSources}}", _mediaSources},
+		{"{{scenes}}", _scenes},
 		{"{{states}}", _states},
 		{"{{timeRestrictions}}", _timeRestrictions},
 		{"{{time}}", _time},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.media.entry"),
-		     mainLayout, widgetPlaceholders);
+		     entryLayout, widgetPlaceholders);
+	QVBoxLayout *mainLayout = new QVBoxLayout;
+	mainLayout->addLayout(entryLayout);
+	mainLayout->addWidget(_onChange);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -291,9 +411,39 @@ void MacroConditionMediaEdit::SourceChanged(const QString &text)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
+
+	if (text ==
+	    obs_module_text("AdvSceneSwitcher.condition.media.anyOnScene")) {
+		_entryData->_sourceType = MediaSourceType::ANY;
+	} else if (text ==
+		   obs_module_text(
+			   "AdvSceneSwitcher.condition.media.allOnScene")) {
+		_entryData->_sourceType = MediaSourceType::ALL;
+	} else {
+		_entryData->_sources.clear();
+		_entryData->_sourceType = MediaSourceType::SOURCE;
+	}
+
 	_entryData->ClearSignalHandler();
 	_entryData->_source = GetWeakSourceByQString(text);
 	_entryData->ResetSignalHandler();
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
+
+	SetWidgetVisibility();
+}
+
+void MacroConditionMediaEdit::SceneChanged(const SceneSelection &s)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_scene = s;
+	forMediaSourceOnSceneAddMediaCondition(_entryData->_scene.GetScene(),
+					       _entryData.get(),
+					       _entryData->_sources);
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -318,6 +468,11 @@ void MacroConditionMediaEdit::StateChanged(int index)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_state = getMediaStateFromIdx(index);
+	if (_entryData->_sourceType != MediaSourceType::SOURCE) {
+		forMediaSourceOnSceneAddMediaCondition(
+			_entryData->_scene.GetScene(), _entryData.get(),
+			_entryData->_sources);
+	}
 }
 
 void MacroConditionMediaEdit::TimeRestrictionChanged(int index)
@@ -335,6 +490,11 @@ void MacroConditionMediaEdit::TimeRestrictionChanged(int index)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_restriction = static_cast<MediaTimeRestriction>(index);
+	if (_entryData->_sourceType != MediaSourceType::SOURCE) {
+		forMediaSourceOnSceneAddMediaCondition(
+			_entryData->_scene.GetScene(), _entryData.get(),
+			_entryData->_sources);
+	}
 }
 
 void MacroConditionMediaEdit::TimeChanged(double seconds)
@@ -345,6 +505,11 @@ void MacroConditionMediaEdit::TimeChanged(double seconds)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_time.seconds = seconds;
+	if (_entryData->_sourceType != MediaSourceType::SOURCE) {
+		forMediaSourceOnSceneAddMediaCondition(
+			_entryData->_scene.GetScene(), _entryData.get(),
+			_entryData->_sources);
+	}
 }
 
 void MacroConditionMediaEdit::TimeUnitChanged(DurationUnit unit)
@@ -355,6 +520,31 @@ void MacroConditionMediaEdit::TimeUnitChanged(DurationUnit unit)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_time.displayUnit = unit;
+	if (_entryData->_sourceType != MediaSourceType::SOURCE) {
+		forMediaSourceOnSceneAddMediaCondition(
+			_entryData->_scene.GetScene(), _entryData.get(),
+			_entryData->_sources);
+	}
+}
+
+void MacroConditionMediaEdit::OnChangeChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_onlyMatchonChagne = value;
+	if (_entryData->_sourceType != MediaSourceType::SOURCE) {
+		forMediaSourceOnSceneAddMediaCondition(
+			_entryData->_scene.GetScene(), _entryData.get(),
+			_entryData->_sources);
+	}
+}
+
+void MacroConditionMediaEdit::SetWidgetVisibility()
+{
+	_scenes->setVisible(_entryData->_sourceType != MediaSourceType::SOURCE);
 }
 
 int getIdxFromMediaState(MediaState state)
@@ -373,8 +563,24 @@ void MacroConditionMediaEdit::UpdateEntryData()
 		return;
 	}
 
-	_mediaSources->setCurrentText(
-		GetWeakSourceName(_entryData->_source).c_str());
+	switch (_entryData->_sourceType) {
+	case MediaSourceType::ANY:
+		_mediaSources->setCurrentText(obs_module_text(
+			"AdvSceneSwitcher.condition.media.anyOnScene"));
+		break;
+	case MediaSourceType::ALL:
+		_mediaSources->setCurrentText(obs_module_text(
+			"AdvSceneSwitcher.condition.media.allOnScene"));
+		break;
+	case MediaSourceType::SOURCE:
+		_mediaSources->setCurrentText(
+			GetWeakSourceName(_entryData->_source).c_str());
+		break;
+	default:
+		break;
+	}
+
+	_scenes->SetScene(_entryData->_scene);
 	_states->setCurrentIndex(getIdxFromMediaState(_entryData->_state));
 	_timeRestrictions->setCurrentIndex(
 		static_cast<int>(_entryData->_restriction));
@@ -383,4 +589,6 @@ void MacroConditionMediaEdit::UpdateEntryData()
 	    MediaTimeRestriction::TIME_RESTRICTION_NONE) {
 		_time->setDisabled(true);
 	}
+	_onChange->setChecked(_entryData->_onlyMatchonChagne);
+	SetWidgetVisibility();
 }
