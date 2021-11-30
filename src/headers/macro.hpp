@@ -112,6 +112,7 @@ private:
 	int _count = 0;
 	obs_hotkey_id _pauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _unpauseHotkey = OBS_INVALID_HOTKEY_ID;
+	obs_hotkey_id _togglePauseHotkey = OBS_INVALID_HOTKEY_ID;
 };
 
 Macro *GetMacroByName(const char *name);
