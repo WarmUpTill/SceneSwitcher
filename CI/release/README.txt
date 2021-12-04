@@ -37,9 +37,35 @@ Examples are ...
 ~/.local/share/flatpak/app/com.obsproject.Studio/x86_64/stable/active/files/lib/obs-plugins/
 /var/lib/flatpak/app/com.obsproject.Studio/x86_64/stable/active/files/lib/obs-plugins/
 
-Unfortunately the expected location of the locale, which can be found in the data folder, can vary also.
-The data folder, usually should be copied to:
-~/.config/obs-studio/plugins/advanced-scene-switcher/
+Unfortunately the expected location of the "locale" and "res" folder, which can be found in the data folder, can vary also.
+The data folder usually should be copied to "~/.config/obs-studio/plugins/advanced-scene-switcher/" and reflect the following structure:
+
+/home/user/.config/obs-studio/plugins/
+└── advanced-scene-switcher
+    ├── bin
+    │   └── 64bit
+    │       └── advanced-scene-switcher.so
+    └── data
+        ├── locale
+        │   ├── de-DE.ini
+        │   ├── en-US.ini
+        │   ├── ru-RU.ini
+        │   └── zh-CN.ini
+        └── res
+            ├── cascadeClassifiers
+            │   ├── haarcascade_eye_tree_eyeglasses.xml
+            │   ├── haarcascade_eye.xml
+            │   ├── haarcascade_frontalface_alt2.xml
+            │   ├── haarcascade_frontalface_alt_tree.xml
+            │   ├── haarcascade_frontalface_alt.xml
+            │   ├── haarcascade_frontalface_default.xml
+            │   ├── haarcascade_fullbody.xml
+            │   ├── haarcascade_lefteye_2splits.xml
+            │   ├── haarcascade_lowerbody.xml
+            │   ├── haarcascade_profileface.xml
+            │   ├── haarcascade_righteye_2splits.xml
+            │   └── haarcascade_upperbody.xml
+            └── time.svg
 
 If this does not work you can try to copy the "locale" folder found inside the data folder to:
 /usr/share/obs/obs-plugins/advanced-scene-switcher/locale
