@@ -19,7 +19,14 @@ Optional:
  * libXtst
  * libcurl
 
-Copy the advanced-scene-switcher.so file and into the OBS Studio plugin folder.
+If you are using snap you can install the following package for an OBS installation which comes bundled with the plugin:
+sudo snap install obs-studio
+
+The plugin is also available via the Flatpak package manager for users who installed OBS via Flatpak:
+flatpak install com.obsproject.Studio.Plugin.SceneSwitcher
+
+If you have installed OBS via other means, it is most likely necessary to install the plugin manually.
+To do so copy the advanced-scene-switcher.so file and into the OBS Studio plugin folder.
 The location of this folder can vary, so you might have to look around a bit.
 
 Examples are ...
@@ -31,7 +38,7 @@ Examples are ...
 /var/lib/flatpak/app/com.obsproject.Studio/x86_64/stable/active/files/lib/obs-plugins/
 
 Unfortunately the expected location of the locale, which can be found in the data folder, can vary also.
-The data folder usually should be copied to:
+The data folder, usually should be copied to:
 ~/.config/obs-studio/plugins/advanced-scene-switcher/
 
 If this does not work you can try to copy the "locale" folder found inside the data folder to:
@@ -39,4 +46,4 @@ If this does not work you can try to copy the "locale" folder found inside the d
 ~/.local/share/flatpak/app/com.obsproject.Studio/x86_64/stable/active/files/share/obs/obs-plugins/advanced-scene-switcher/locale
 /var/lib/flatpak/app/com.obsproject.Studio/x86_64/stable/active/files/share/obs/obs-plugins/advanced-scene-switcher/locale
 
-In doubt please check where other "en-US.ini" files are located on your system.
+In doubt, please check where other "en-US.ini" files are located on your system.

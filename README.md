@@ -15,6 +15,10 @@ For Linux the Snap package manager offers an OBS Studio installation which is bu
 ```
 sudo snap install obs-studio
 ```
+The plugin is also available via the Flatpak package manager for users who installed OBS via Flatpak:
+```
+flatpak install com.obsproject.Studio.Plugin.SceneSwitcher
+```
 
 If that is not an option you will have to ... 
 1. Copy the library to the plugins folder of you obs installation.
