@@ -8,6 +8,7 @@
 #include <QCheckBox>
 #include <QHBoxLayout>
 #include <chrono>
+#undef NO // MacOS macro that can conflict with OpenCV
 #include <opencv2/opencv.hpp>
 
 enum class VideoCondition {
