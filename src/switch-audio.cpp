@@ -347,7 +347,7 @@ AudioSwitch::AudioSwitch(const AudioSwitch &other)
 	volmeter = AddVolmeterToSource(this, other.audioSource);
 }
 
-AudioSwitch::AudioSwitch(AudioSwitch &&other)
+AudioSwitch::AudioSwitch(AudioSwitch &&other) noexcept
 	: SceneSwitcherEntry(other.targetType, other.group, other.scene,
 			     other.transition, other.usePreviousScene),
 	  audioSource(other.audioSource),

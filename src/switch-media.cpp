@@ -342,7 +342,7 @@ MediaSwitch::MediaSwitch(const MediaSwitch &other)
 	obs_source_release(mediasource);
 }
 
-MediaSwitch::MediaSwitch(MediaSwitch &&other)
+MediaSwitch::MediaSwitch(MediaSwitch &&other) noexcept
 	: SceneSwitcherEntry(other.targetType, other.group, other.scene,
 			     other.transition, other.usePreviousScene),
 	  source(other.source),

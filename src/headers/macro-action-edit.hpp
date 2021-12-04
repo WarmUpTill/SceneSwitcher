@@ -5,8 +5,8 @@ struct MacroActionInfo {
 	using TCreateMethod = std::shared_ptr<MacroAction> (*)();
 	using TCreateWidgetMethod = QWidget *(*)(QWidget *parent,
 						 std::shared_ptr<MacroAction>);
-	TCreateMethod _createFunc;
-	TCreateWidgetMethod _createWidgetFunc;
+	TCreateMethod _createFunc = nullptr;
+	TCreateWidgetMethod _createWidgetFunc = nullptr;
 	std::string _name;
 };
 

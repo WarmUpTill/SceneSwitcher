@@ -14,7 +14,7 @@ public:
 	virtual std::string GetId() = 0;
 
 protected:
-	int _idx;
+	int _idx = 0;
 	bool _collapsed = false;
 };
 

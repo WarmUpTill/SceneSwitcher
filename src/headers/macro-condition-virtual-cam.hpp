@@ -21,7 +21,7 @@ public:
 		return std::make_shared<MacroConditionVCam>();
 	}
 
-	VCamState _state;
+	VCamState _state = VCamState::STOP;
 
 private:
 	static bool _registered;

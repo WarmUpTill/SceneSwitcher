@@ -20,7 +20,7 @@ public:
 		return std::make_shared<MacroConditionRecord>();
 	}
 
-	RecordState _recordState;
+	RecordState _recordState = RecordState::STOP;
 
 private:
 	static bool _registered;

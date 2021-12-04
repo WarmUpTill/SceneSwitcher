@@ -56,7 +56,7 @@ public:
 	void SetDuration(double seconds);
 
 private:
-	LogicType _logic;
+	LogicType _logic = LogicType::ROOT_NONE;
 	DurationConstraint _duration;
 };
 

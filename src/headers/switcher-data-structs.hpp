@@ -88,7 +88,7 @@ struct SwitcherData {
 	std::chrono::high_resolution_clock::time_point lastStreamStartingTime{};
 	std::chrono::high_resolution_clock::time_point lastStreamStoppingTime{};
 	OBSWeakSource lastRandomScene;
-	SceneGroup *lastRandomSceneGroup;
+	SceneGroup *lastRandomSceneGroup = nullptr;
 	OBSWeakSource nonMatchingScene;
 	NoMatch switchIfNotMatching = NO_SWITCH;
 	Duration noMatchDelay;

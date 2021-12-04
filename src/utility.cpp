@@ -217,7 +217,7 @@ void deleteLayoutItem(QLayoutItem *item)
 void clearLayout(QLayout *layout, int afterIdx)
 {
 	QLayoutItem *item;
-	while (item = layout->takeAt(afterIdx)) {
+	while ((item = layout->takeAt(afterIdx))) {
 		if (item->layout()) {
 			clearLayout(item->layout());
 			delete item->layout();

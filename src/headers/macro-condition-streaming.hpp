@@ -21,7 +21,7 @@ public:
 		return std::make_shared<MacroConditionStream>();
 	}
 
-	StreamState _streamState;
+	StreamState _streamState = StreamState::STOP;
 
 private:
 	std::chrono::high_resolution_clock::time_point _lastStreamStartingTime{};

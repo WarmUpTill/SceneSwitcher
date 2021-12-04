@@ -5,8 +5,8 @@ struct MacroConditionInfo {
 	using TCreateMethod = std::shared_ptr<MacroCondition> (*)();
 	using TCreateWidgetMethod =
 		QWidget *(*)(QWidget *parent, std::shared_ptr<MacroCondition>);
-	TCreateMethod _createFunc;
-	TCreateWidgetMethod _createWidgetFunc;
+	TCreateMethod _createFunc = nullptr;
+	TCreateWidgetMethod _createWidgetFunc = nullptr;
 	std::string _name;
 	bool _useDurationConstraint = true;
 };

@@ -30,7 +30,7 @@ public:
 	bool _waitForTransition = true;
 
 	SceneSelection _scene;
-	SceneType _type;
+	SceneType _type = SceneType::CURRENT;
 
 private:
 	std::chrono::high_resolution_clock::time_point _lastSceneChangeTime{};
