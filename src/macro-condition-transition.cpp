@@ -179,8 +179,8 @@ std::string MacroConditionTransition::GetShortDesc()
 	    _condition == TransitionCondition::DURATION ||
 	    _condition == TransitionCondition::STARTED ||
 	    _condition == TransitionCondition::ENDED) {
+		return _transition.ToString();
 	}
-	return _transition.ToString();
 	return "";
 }
 

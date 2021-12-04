@@ -277,18 +277,21 @@ std::string MacroConditionMedia::GetShortDesc()
 		if (_source) {
 			return GetWeakSourceName(_source);
 		}
+		break;
 	case MediaSourceType::ANY:
 		if (_scene.GetScene()) {
 			return obs_module_text(
 				       "AdvSceneSwitcher.condition.media.anyOnScene") +
 			       std::string(" ") + _scene.ToString();
 		}
+		break;
 	case MediaSourceType::ALL:
 		if (_scene.GetScene()) {
 			return obs_module_text(
 				       "AdvSceneSwitcher.condition.media.allOnScene") +
 			       std::string(" ") + _scene.ToString();
 		}
+		break;
 	default:
 		break;
 	}
