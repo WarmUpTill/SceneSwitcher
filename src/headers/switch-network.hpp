@@ -70,8 +70,8 @@ private:
 	QString getRemoteEndpoint(connection_hdl hdl);
 
 	server _server;
-	quint16 _serverPort;
-	bool _lockToIPv4;
+	quint16 _serverPort = 55555;
+	bool _lockToIPv4 = false;
 	std::set<connection_hdl, std::owner_less<connection_hdl>> _connections;
 	QMutex _clMutex;
 	QThreadPool _threadPool;

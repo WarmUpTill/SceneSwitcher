@@ -22,7 +22,7 @@ public:
 		return std::make_shared<MacroConditionReplayBuffer>();
 	}
 
-	ReplayBufferState _state;
+	ReplayBufferState _state = ReplayBufferState::STOP;
 
 private:
 	static bool _registered;

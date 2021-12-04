@@ -21,8 +21,8 @@ public:
 
 	SceneSelection _scene;
 	OBSWeakSource _source;
-	struct obs_transform_info _info;
-	struct obs_sceneitem_crop _crop;
+	struct obs_transform_info _info = {};
+	struct obs_sceneitem_crop _crop = {};
 
 private:
 	static bool _registered;

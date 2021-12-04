@@ -44,7 +44,7 @@ struct AudioSwitch : virtual SceneSwitcherEntry {
 
 	AudioSwitch(){};
 	AudioSwitch(const AudioSwitch &other);
-	AudioSwitch(AudioSwitch &&other);
+	AudioSwitch(AudioSwitch &&other) noexcept;
 	~AudioSwitch();
 	AudioSwitch &operator=(const AudioSwitch &other);
 	AudioSwitch &operator=(AudioSwitch &&other) noexcept;

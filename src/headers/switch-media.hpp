@@ -52,7 +52,7 @@ struct MediaSwitch : SceneSwitcherEntry {
 	inline MediaSwitch(){};
 
 	MediaSwitch(const MediaSwitch &other);
-	MediaSwitch(MediaSwitch &&other);
+	MediaSwitch(MediaSwitch &&other) noexcept;
 	~MediaSwitch();
 	MediaSwitch &operator=(const MediaSwitch &other);
 	MediaSwitch &operator=(MediaSwitch &&other) noexcept;
