@@ -11,7 +11,6 @@
 #include <obs-module.h>
 
 constexpr auto read_file_func = 0;
-constexpr auto default_priority_0 = read_file_func;
 
 typedef enum {
 	LOCAL,

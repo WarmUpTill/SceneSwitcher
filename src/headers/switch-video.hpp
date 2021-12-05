@@ -12,7 +12,6 @@
 #include "screenshot-helper.hpp"
 
 constexpr auto video_func = 9;
-constexpr auto default_priority_9 = video_func;
 
 enum class videoSwitchType {
 	MATCH,

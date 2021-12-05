@@ -33,6 +33,18 @@ constexpr auto previous_scene_name = "Previous Scene";
 constexpr auto current_transition_name = "Current Transition";
 constexpr auto tab_count = 18;
 
+constexpr auto default_priority_0 = macro_func;
+constexpr auto default_priority_1 = read_file_func;
+constexpr auto default_priority_2 = idle_func;
+constexpr auto default_priority_3 = audio_func;
+constexpr auto default_priority_4 = media_func;
+constexpr auto default_priority_5 = video_func;
+constexpr auto default_priority_6 = time_func;
+constexpr auto default_priority_7 = screen_region_func;
+constexpr auto default_priority_8 = round_trip_func;
+constexpr auto default_priority_9 = window_title_func;
+constexpr auto default_priority_10 = exe_func;
+
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 typedef enum { PERSIST = 0, START = 1, STOP = 2 } StartupBehavior;
 

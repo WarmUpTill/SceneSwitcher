@@ -12,7 +12,6 @@
 #include "duration-control.hpp"
 
 constexpr auto round_trip_func = 1;
-constexpr auto default_priority_1 = round_trip_func;
 
 struct SceneSequenceSwitch : SceneSwitcherEntry {
 	static bool pause;
