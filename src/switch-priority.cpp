@@ -33,6 +33,8 @@ void AdvSceneSwitcher::on_priorityUp_clicked()
 			  switcher->functionNamesByPriority.begin() +
 				  currentIndex - 1);
 	}
+	ui->macroPriorityWarning->setVisible(
+		switcher->functionNamesByPriority[0] != macro_func);
 }
 
 void AdvSceneSwitcher::on_priorityDown_clicked()
@@ -51,6 +53,8 @@ void AdvSceneSwitcher::on_priorityDown_clicked()
 			  switcher->functionNamesByPriority.begin() +
 				  currentIndex + 1);
 	}
+	ui->macroPriorityWarning->setVisible(
+		switcher->functionNamesByPriority[0] != macro_func);
 }
 
 bool SwitcherData::prioFuncsValid()

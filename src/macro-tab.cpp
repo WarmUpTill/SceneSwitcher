@@ -373,6 +373,9 @@ void AdvSceneSwitcher::setupMacroTab()
 		&AdvSceneSwitcher::ShowMacroConditionsContextMenu);
 
 	ui->macroEdit->setDisabled(true);
+
+	ui->macroPriorityWarning->setVisible(
+		switcher->functionNamesByPriority[0] != macro_func);
 }
 
 void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
