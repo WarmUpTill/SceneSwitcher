@@ -9,7 +9,6 @@
 #include "switch-generic.hpp"
 
 constexpr auto media_func = 6;
-constexpr auto default_priority_6 = media_func;
 
 typedef enum {
 	TIME_RESTRICTION_NONE,

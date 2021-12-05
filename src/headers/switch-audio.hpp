@@ -14,7 +14,6 @@
 #include "volume-control.hpp"
 
 constexpr auto audio_func = 8;
-constexpr auto default_priority_8 = audio_func;
 
 typedef enum {
 	ABOVE,
