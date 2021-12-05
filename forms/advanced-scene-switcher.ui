@@ -546,6 +546,13 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_36">
           <item>
+           <widget class="QLabel" name="macroPriorityWarning">
+            <property name="text">
+             <string>AdvSceneSwitcher.macroTab.priorityWarning</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <layout class="QGridLayout" name="gridLayout_26">
             <item row="0" column="0">
              <widget class="QListWidget" name="macros">
