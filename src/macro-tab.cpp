@@ -229,8 +229,12 @@ void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
 
 void AdvSceneSwitcher::SetEditMacro(Macro &m)
 {
-	ui->macroName->setText(m.Name().c_str());
-	ui->runMacroInParallel->setChecked(m.RunInParallel());
+	{
+		const QSignalBlocker b1(ui->macroName);
+		const QSignalBlocker b2(ui->runMacroInParallel);
+		ui->macroName->setText(m.Name().c_str());
+		ui->runMacroInParallel->setChecked(m.RunInParallel());
+	}
 	clearLayout(ui->macroEditConditionLayout);
 	clearLayout(ui->macroEditActionLayout);
 
