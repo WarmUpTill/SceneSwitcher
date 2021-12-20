@@ -112,7 +112,7 @@ bool Macro::PerformAction(bool forceParallel)
 {
 	if (!_done) {
 		vblog(LOG_INFO, "macro %s already running", _name.c_str());
-		return false;
+		return true;
 	}
 
 	bool ret = true;
