@@ -100,7 +100,6 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 	} else {
 		// Stop the scene switcher at least once to
 		// avoid scene duplication issues with scene collection changes
-		bool start = !switcher->stop;
 		switcher->Stop();
 
 		switcher->m.lock();
@@ -116,7 +115,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		obs_data_release(obj);
 		switcher->m.unlock();
 
-		if (start) {
+		if (!switcher->stop) {
 			switcher->Start();
 		}
 	}
