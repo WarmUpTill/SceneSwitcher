@@ -117,6 +117,7 @@ struct SwitcherData {
 	std::deque<std::shared_ptr<Macro>> macros;
 	std::condition_variable macroWaitCv;
 	std::atomic_bool abortMacroWait = {false};
+	std::condition_variable macroTransitionCv;
 	bool macroSceneSwitched = false;
 	bool replayBufferSaved = false;
 
