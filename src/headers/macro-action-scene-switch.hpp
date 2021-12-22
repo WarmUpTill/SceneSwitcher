@@ -3,6 +3,8 @@
 #include "switch-generic.hpp"
 #include "duration-control.hpp"
 
+#include <QCheckBox>
+
 // TODO: Switch to using SceneSelection class and widget instead
 
 class MacroActionSwitchScene : public MacroAction, public SceneSwitcherEntry {
@@ -19,6 +21,7 @@ public:
 		return std::make_shared<MacroActionSwitchScene>();
 	}
 	Duration _duration;
+	bool _blockUntilTransitionDone = true;
 
 private:
 	const char *getType() { return "MacroActionSwitchScene"; }
@@ -45,11 +48,13 @@ public:
 
 private slots:
 	void DurationChanged(double seconds);
+	void BlockUntilTransitionDoneChanged(int state);
 	void ChangeHeaderInfo(const QString &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
 	DurationSelection *_duration;
+	QCheckBox *_blockUntilTransitionDone;
 	std::shared_ptr<MacroActionSwitchScene> _entryData;
 };

@@ -413,6 +413,7 @@ void SwitcherData::Stop()
 		cv.notify_all();
 		abortMacroWait = true;
 		macroWaitCv.notify_all();
+		macroTransitionCv.notify_all();
 		th->wait();
 		delete th;
 		th = nullptr;
@@ -551,6 +552,7 @@ void setTranstionEnd()
 {
 	switcher->lastTransitionEndTime =
 		std::chrono::high_resolution_clock::now();
+	switcher->macroTransitionCv.notify_all();
 }
 
 void setStreamStarting()
