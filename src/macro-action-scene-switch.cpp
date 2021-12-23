@@ -37,8 +37,9 @@ void waitForTransitionChange(OBSWeakSource &target)
 
 bool MacroActionSwitchScene::PerformAction()
 {
-	OBSWeakSource scene = getScene();
-	switchScene({scene, transition, (int)(_duration.seconds * 1000)});
+	auto scene = _scene.GetScene();
+	switchScene({scene, _transition.GetTransition(),
+		     (int)(_duration.seconds * 1000)});
 	if (_blockUntilTransitionDone) {
 		waitForTransitionChange(scene);
 		return !switcher->abortMacroWait;
@@ -48,15 +49,31 @@ bool MacroActionSwitchScene::PerformAction()
 
 void MacroActionSwitchScene::LogAction()
 {
-	if (switcher->verbose) {
-		logMatch();
+	auto t = _scene.GetType();
+	auto sceneName = GetWeakSourceName(_scene.GetScene(false));
+	switch (t) {
+	case SceneSelectionType::SCENE:
+		vblog(LOG_INFO, "switch to scene '%s'",
+		      _scene.ToString().c_str());
+		break;
+	case SceneSelectionType::GROUP:
+		vblog(LOG_INFO, "switch to scene '%s' (scene group '%s')",
+		      sceneName.c_str(), _scene.ToString().c_str());
+		break;
+	case SceneSelectionType::PREVIOUS:
+		vblog(LOG_INFO, "switch to previous scene '%s'",
+		      sceneName.c_str());
+		break;
+	default:
+		break;
 	}
 }
 
 bool MacroActionSwitchScene::Save(obs_data_t *obj)
 {
 	MacroAction::Save(obj);
-	SceneSwitcherEntry::save(obj);
+	_scene.Save(obj);
+	_transition.Save(obj);
 	_duration.Save(obj);
 	obs_data_set_bool(obj, "blockUntilTransitionDone",
 			  _blockUntilTransitionDone);
@@ -65,8 +82,33 @@ bool MacroActionSwitchScene::Save(obs_data_t *obj)
 
 bool MacroActionSwitchScene::Load(obs_data_t *obj)
 {
+	// Convert old data format
+	// TODO: Remove in future version
+	if (obs_data_has_user_value(obj, "targetType")) {
+		auto sceneName = obs_data_get_string(obj, "target");
+		obs_data_set_string(obj, "scene", sceneName);
+		auto transitionName = obs_data_get_string(obj, "transition");
+		bool usePreviousScene =
+			strcmp(sceneName, previous_scene_name) == 0;
+		bool useCurrentTransition =
+			strcmp(transitionName, current_transition_name) == 0;
+		obs_data_set_int(
+			obj, "sceneType",
+			(usePreviousScene)
+				? static_cast<int>(SceneSelectionType::PREVIOUS)
+				: obs_data_get_int(obj, "targetType"));
+		obs_data_set_int(
+			obj, "transitionType",
+			(useCurrentTransition)
+				? static_cast<int>(
+					  TransitionSelectionType::CURRENT)
+				: static_cast<int>(
+					  TransitionSelectionType::TRANSITION));
+	}
+
 	MacroAction::Load(obj);
-	SceneSwitcherEntry::load(obj);
+	_scene.Load(obj);
+	_transition.Load(obj);
 	_duration.Load(obj);
 	_blockUntilTransitionDone =
 		obs_data_get_bool(obj, "blockUntilTransitionDone");
@@ -75,34 +117,34 @@ bool MacroActionSwitchScene::Load(obs_data_t *obj)
 
 std::string MacroActionSwitchScene::GetShortDesc()
 {
-	if (targetType == SwitchTargetType::Scene && scene) {
-		return GetWeakSourceName(scene);
-	}
-	if (targetType == SwitchTargetType::SceneGroup && group) {
-		return group->name;
-	}
-	return "";
+	return _scene.ToString();
 }
 
 MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSwitchScene> entryData)
-	: SwitchWidget(parent, entryData.get(), true, true)
+	: QWidget(parent)
 {
+	_scenes = new SceneSelectionWidget(window(), true, true);
+	_transitions = new TransitionSelectionWidget(this);
 	_duration = new DurationSelection(parent, false);
 	_blockUntilTransitionDone = new QCheckBox(obs_module_text(
 		"AdvSceneSwitcher.action.scene.blockUntilTransitionDone"));
 
+	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
+			 this, SLOT(SceneChanged(const SceneSelection &)));
+	QWidget::connect(_transitions,
+			 SIGNAL(TransitionChanged(const TransitionSelection &)),
+			 this,
+			 SLOT(TransitionChanged(const TransitionSelection &)));
 	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
 			 SLOT(DurationChanged(double)));
 	QWidget::connect(_blockUntilTransitionDone, SIGNAL(stateChanged(int)),
 			 this, SLOT(BlockUntilTransitionDoneChanged(int)));
-	QWidget::connect(scenes, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(ChangeHeaderInfo(const QString &)));
 
 	QHBoxLayout *entryLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{scenes}}", scenes},
-		{"{{transitions}}", transitions},
+		{"{{scenes}}", _scenes},
+		{"{{transitions}}", _transitions},
 		{"{{duration}}", _duration},
 		{"{{blockUntilTransitionDone}}", _blockUntilTransitionDone},
 	};
@@ -115,15 +157,17 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	setLayout(mainLayout);
 
 	_entryData = entryData;
+	_scenes->SetScene(_entryData->_scene);
+	_transitions->SetTransition(_entryData->_transition);
 	_duration->SetDuration(_entryData->_duration);
 	_blockUntilTransitionDone->setChecked(
 		_entryData->_blockUntilTransitionDone);
-	SwitchWidget::loading = false;
+	_loading = false;
 }
 
 void MacroActionSwitchSceneEdit::DurationChanged(double seconds)
 {
-	if (SwitchWidget::loading || !_entryData) {
+	if (_loading || !_entryData) {
 		return;
 	}
 
@@ -133,7 +177,7 @@ void MacroActionSwitchSceneEdit::DurationChanged(double seconds)
 
 void MacroActionSwitchSceneEdit::BlockUntilTransitionDoneChanged(int state)
 {
-	if (SwitchWidget::loading || !_entryData) {
+	if (_loading || !_entryData) {
 		return;
 	}
 
@@ -141,8 +185,24 @@ void MacroActionSwitchSceneEdit::BlockUntilTransitionDoneChanged(int state)
 	_entryData->_blockUntilTransitionDone = state;
 }
 
-void MacroActionSwitchSceneEdit::ChangeHeaderInfo(const QString &)
+void MacroActionSwitchSceneEdit::SceneChanged(const SceneSelection &s)
 {
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_scene = s;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
+}
+
+void MacroActionSwitchSceneEdit::TransitionChanged(const TransitionSelection &t)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_transition = t;
 }

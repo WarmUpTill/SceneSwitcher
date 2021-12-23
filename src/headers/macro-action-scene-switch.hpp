@@ -1,13 +1,12 @@
 #pragma once
 #include "macro-action-edit.hpp"
-#include "switch-generic.hpp"
+#include "scene-selection.hpp"
+#include "transition-selection.hpp"
 #include "duration-control.hpp"
 
 #include <QCheckBox>
 
-// TODO: Switch to using SceneSelection class and widget instead
-
-class MacroActionSwitchScene : public MacroAction, public SceneSwitcherEntry {
+class MacroActionSwitchScene : public MacroAction {
 public:
 	bool PerformAction();
 	void LogAction();
@@ -20,6 +19,8 @@ public:
 	{
 		return std::make_shared<MacroActionSwitchScene>();
 	}
+	SceneSelection _scene;
+	TransitionSelection _transition;
 	Duration _duration;
 	bool _blockUntilTransitionDone = true;
 
@@ -30,7 +31,7 @@ private:
 	static const std::string id;
 };
 
-class MacroActionSwitchSceneEdit : public SwitchWidget {
+class MacroActionSwitchSceneEdit : public QWidget {
 	Q_OBJECT
 
 public:
@@ -47,14 +48,21 @@ public:
 	}
 
 private slots:
+	void SceneChanged(const SceneSelection &);
+	void TransitionChanged(const TransitionSelection &);
 	void DurationChanged(double seconds);
 	void BlockUntilTransitionDoneChanged(int state);
-	void ChangeHeaderInfo(const QString &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
+	SceneSelectionWidget *_scenes;
+	TransitionSelectionWidget *_transitions;
 	DurationSelection *_duration;
 	QCheckBox *_blockUntilTransitionDone;
+
 	std::shared_ptr<MacroActionSwitchScene> _entryData;
+
+private:
+	bool _loading = true;
 };
