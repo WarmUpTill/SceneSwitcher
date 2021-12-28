@@ -12,25 +12,25 @@ jobs:
     name: "macOS 64-bit"
     runs-on: [macos-latest]
     env:
-      QT_VERSION: '5.15.2'
-      MACOS_DEPS_VERSION: '2020-12-11'
+      QT_VERSION: "5.15.2"
+      MACOS_DEPS_VERSION: "2020-12-11"
     steps:
       - name: Checkout
         uses: actions/checkout@v2.3.4
         with:
           repository: obsproject/obs-studio
-          submodules: 'recursive'
-          ref: 'refs/tags/${{ env.OBS_TAG }}'
+          submodules: "recursive"
+          ref: "refs/tags/${{ env.OBS_TAG }}"
       - name: "Checkout plugin"
         uses: actions/checkout@v2.3.4
         with:
           path: UI/frontend-plugins/${{ env.PLUGIN_NAME }}
-          submodules: 'recursive'
+          submodules: "recursive"
       - name: Fetch Git Tags
         run: |
           cd UI/frontend-plugins/${{ env.PLUGIN_NAME }}
           git fetch --prune --tags --unshallow
-      - name: 'Install prerequisites (Homebrew)'
+      - name: "Install prerequisites (Homebrew)"
         shell: bash
         run: |
           if [ -d /usr/local/opt/openssl@1.0.2t ]; then
@@ -42,20 +42,20 @@ jobs:
               brew untap local/python2
           fi
           brew bundle --file ./CI/scripts/macos/Brewfile
-      - name: 'Install prerequisite: Pre-built dependencies'
+      - name: "Install prerequisite: Pre-built dependencies"
         if: steps.deps-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz
           tar -xf ./macos-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
-      - name: 'Install prerequisite: Pre-built dependency Qt'
+      - name: "Install prerequisite: Pre-built dependency Qt"
         if: steps.deps-qt-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-qt-${{ env.QT_VERSION }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
           tar -xf ./macos-qt-${{ env.QT_VERSION }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
           xattr -r -d com.apple.quarantine /tmp/obsdeps
-      - name: 'Build prerequisite: OpenCV'
+      - name: "Build prerequisite: OpenCV"
         shell: bash
         run: |
           cd UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/opencv
@@ -79,7 +79,7 @@ jobs:
           cd ./build
           make -j4
           cd -
-      - name: 'Install prerequisite: Packages app'
+      - name: "Install prerequisite: Packages app"
         if: success()
         shell: bash
         run: |
@@ -90,12 +90,16 @@ jobs:
         if: success()
         shell: bash
         run: |
+          fix_linker_paths() {
+            install_name_tool -change @rpath/libobs-frontend-api.dylib @executable_path/../Frameworks/libobs-frontend-api.dylib $1
+            install_name_tool -change @rpath/libobs.0.dylib @executable_path/../Frameworks/libobs.0.dylib $1
+            install_name_tool -change /tmp/obsdeps/lib/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets $1
+            install_name_tool -change /tmp/obsdeps/lib/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui $1
+            install_name_tool -change /tmp/obsdeps/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore $1
+          }
           cd UI/frontend-plugins/${{ env.PLUGIN_NAME }}
-          install_name_tool -change @rpath/libobs-frontend-api.dylib @executable_path/../Frameworks/libobs-frontend-api.dylib ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
-          install_name_tool -change @rpath/libobs.0.dylib @executable_path/../Frameworks/libobs.0.dylib ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
-          install_name_tool -change /tmp/obsdeps/lib/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
-          install_name_tool -change /tmp/obsdeps/lib/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
-          install_name_tool -change /tmp/obsdeps/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
+          fix_linker_paths ../../../build/UI/frontend-plugins/SceneSwitcher/advanced-scene-switcher.so
+          fix_linker_paths ../../../build/UI/frontend-plugins/SceneSwitcher/src/external-macro-modules/opencv/advanced-scene-switcher-opencv.so
           FILE_DATE=$(date +%Y-%m-%d)
           FILE_NAME=${{ env.PLUGIN_NAME }}-$FILE_DATE-${{ github.sha }}-macos.pkg
           echo "FILE_NAME=${FILE_NAME}" >> $GITHUB_ENV
@@ -107,23 +111,23 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v2.2.1
         with:
-          name: '${{ env.FILE_NAME }}'
+          name: "${{ env.FILE_NAME }}"
           path: ./nightly/*.pkg
   ubuntu64:
-    name: 'Linux/Ubuntu 64-bit'
+    name: "Linux/Ubuntu 64-bit"
     runs-on: [ubuntu-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v2.3.4
         with:
           repository: obsproject/obs-studio
-          submodules: 'recursive'
-          ref: 'refs/tags/${{ env.OBS_TAG }}'
+          submodules: "recursive"
+          ref: "refs/tags/${{ env.OBS_TAG }}"
       - name: "Checkout plugin"
         uses: actions/checkout@v2.3.4
         with:
           path: UI/frontend-plugins/${{ env.PLUGIN_NAME }}
-          submodules: 'recursive'
+          submodules: "recursive"
       - name: Add plugin to obs cmake
         shell: bash
         run: echo "add_subdirectory(${{ env.PLUGIN_NAME }})" >> UI/frontend-plugins/CMakeLists.txt
@@ -181,17 +185,17 @@ jobs:
            libxcb-xfixes0-dev \
            libopencv-dev \
            libprocps-dev
-      - name: 'Configure'
+      - name: "Configure"
         shell: bash
         run: |
           mkdir ./build
           cd ./build
           cmake -DENABLE_PIPEWIRE=OFF -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/obs-studio-portable" -DWITH_RTMPS=OFF -DBUILD_BROWSER=OFF ..
-      - name: 'Build'
+      - name: "Build"
         shell: bash
         working-directory: ${{ github.workspace }}/build
         run: make -j4
-      - name: 'Package'
+      - name: "Package"
         shell: bash
         run: |
           FILE_DATE=$(date +%Y-%m-%d)
@@ -201,12 +205,15 @@ jobs:
           strip -d ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.LIB_NAME }}.so
           mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.LIB_NAME }}.so ./${{ env.LIB_NAME }}/bin/64bit/${{ env.LIB_NAME }}.so
           mv ./UI/frontend-plugins/${{ env.PLUGIN_NAME }}/data ./${{ env.LIB_NAME }}/data
+          # Macro modules
+          strip -d ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/src/external-macro-modules/opencv/advanced-scene-switcher-opencv.so
+          mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/src/external-macro-modules/opencv/advanced-scene-switcher-opencv.so ./${{ env.LIB_NAME }}/bin/64bit/
           tar -cvzf "${FILE_NAME}" ${{ env.LIB_NAME }}
-      - name: 'Publish'
+      - name: "Publish"
         uses: actions/upload-artifact@v2.2.1
         with:
-          name: '${{ env.FILE_NAME }}'
-          path: '*.tar.gz'
+          name: "${{ env.FILE_NAME }}"
+          path: "*.tar.gz"
   windows:
     name: Windows
     runs-on: [windows-latest]
@@ -217,7 +224,7 @@ jobs:
       QT_VERSION: 5.10.1
       CMAKE_GENERATOR: "Visual Studio 16 2019"
       CMAKE_SYSTEM_VERSION: "10.0.18363.657"
-      WINDOWS_DEPS_VERSION: '2019'
+      WINDOWS_DEPS_VERSION: "2019"
     steps:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
@@ -225,27 +232,27 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           repository: obsproject/obs-studio
-          submodules: 'recursive'
-          ref: 'refs/tags/${{ env.OBS_TAG }}'
+          submodules: "recursive"
+          ref: "refs/tags/${{ env.OBS_TAG }}"
       - name: Checkout plugin
         uses: actions/checkout@v2.3.4
         with:
           path: UI/frontend-plugins/${{ env.PLUGIN_NAME}}
-          submodules: 'recursive'
+          submodules: "recursive"
       - name: Add plugin to obs cmake
         shell: cmd
         run: echo add_subdirectory(${{ env.PLUGIN_NAME }}) >> UI/frontend-plugins/CMakeLists.txt
       - name: Fetch Git Tags
         run: git fetch --prune --tags --unshallow
-      - name: 'Install prerequisite: QT'
+      - name: "Install prerequisite: QT"
         run: |
           curl -kLO https://cdn-fastly.obsproject.com/downloads/Qt_${{ env.QT_VERSION }}.7z -f --retry 5 -C -
           7z x Qt_${{ env.QT_VERSION }}.7z -o"${{ github.workspace }}/cmbuild/QT"
-      - name: 'Install prerequisite: Pre-built dependencies'
+      - name: "Install prerequisite: Pre-built dependencies"
         run: |
           curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -f --retry 5 -C -
           7z x dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
-      - name: 'Build prerequisite: OpenCV'
+      - name: "Build prerequisite: OpenCV"
         run: |
           cd UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/opencv
           mkdir build
@@ -283,7 +290,7 @@ jobs:
           $env:FILE_DATE=(Get-Date -UFormat "%F")
           $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-windows"
           echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
-          robocopy .\build${{ matrix.arch }}\rundir\RelWithDebInfo\obs-plugins\${{ matrix.arch }}bit\ .\package\obs-plugins\${{ matrix.arch }}bit ${{ env.LIB_NAME }}.* /E /XF .gitignore
+          robocopy .\build${{ matrix.arch }}\rundir\RelWithDebInfo\obs-plugins\${{ matrix.arch }}bit\ .\package\obs-plugins\${{ matrix.arch }}bit ${{ env.LIB_NAME }}* /E /XF .gitignore
           robocopy .\build${{ matrix.arch }}\rundir\RelWithDebInfo\data\obs-plugins\${{ env.LIB_NAME }}\ .\package\data\obs-plugins\${{ env.LIB_NAME }}\ /E /XF .gitignore
           cp UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/opencv/build/bin/Release/*dll package/obs-plugins/${{ matrix.arch }}bit
           exit 0
@@ -291,11 +298,11 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v2.2.1
         with:
-          name: '${{ env.FILE_NAME }}-${{ matrix.arch }}bit'
+          name: "${{ env.FILE_NAME }}-${{ matrix.arch }}bit"
           path: package/*
   windows-installer:
     needs: [windows]
-    name: 'Create Windows Installer'
+    name: "Create Windows Installer"
     runs-on: [windows-latest]
     steps:
       - name: "Checkout plugin"
@@ -332,12 +339,12 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v2.2.0
         with:
-          name: '${{ env.FILE_NAME }}-installer'
+          name: "${{ env.FILE_NAME }}-installer"
           path: build/CI/windows/Output/*.exe
   release:
     needs: [macos64, ubuntu64, windows, windows-installer]
-    name: 'Create Release'
-    runs-on: [ubuntu-18.04]
+    name: "Create Release"
+    runs-on: [ubuntu-latest]
     steps:
       - name: "Checkout plugin"
         uses: actions/checkout@v2.3.4
@@ -347,7 +354,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           path: artifacts
-      - name: 'Package'
+      - name: "Package"
         shell: bash
         run: |
           mkdir -p ${{ env.PLUGIN_NAME }}/Linux ${{ env.PLUGIN_NAME }}/MacOs ${{ env.PLUGIN_NAME }}/Windows
@@ -366,4 +373,4 @@ jobs:
         uses: actions/upload-artifact@v2.2.1
         with:
           name: "Release"
-          path: '*.zip'
+          path: "*.zip"
