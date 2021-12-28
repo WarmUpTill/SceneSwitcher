@@ -8,6 +8,7 @@ endif()
 # Compiler settings
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 if(CMAKE_COMPILER_IS_GNUCC
    OR CMAKE_COMPILER_IS_GNUCXX
@@ -110,6 +111,7 @@ endif()
 
 # Platform specific settings
 if(APPLE)
+  set(CMAKE_SHARED_LIBRARY_SUFFIX ".so")
   find_library(COCOA Cocoa)
   if(BUILD_OUT_OF_TREE)
     find_package(Qt5MacExtras REQUIRED)
@@ -239,7 +241,6 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-condition-studio-mode.hpp
     src/headers/macro-condition-timer.hpp
     src/headers/macro-condition-transition.hpp
-    src/headers/macro-condition-video.hpp
     src/headers/macro-condition-virtual-cam.hpp
     src/headers/macro-condition-window.hpp
     src/headers/macro.hpp
@@ -339,7 +340,6 @@ set(advanced-scene-switcher_SOURCES
     src/macro-condition-studio-mode.cpp
     src/macro-condition-timer.cpp
     src/macro-condition-transition.cpp
-    src/macro-condition-video.cpp
     src/macro-condition-virtual-cam.cpp
     src/macro-condition-window.cpp
     src/macro.cpp
@@ -359,22 +359,6 @@ set(advanced-scene-switcher_SOURCES
     src/utility.cpp
     src/volume-control.cpp
     src/version.cpp)
-
-# opencv
-find_package(OpenCV)
-if(OpenCV_FOUND)
-  include_directories("${OpenCV_INCLUDE_DIRS}")
-else()
-  set(OpenCV_LIBRARIES "")
-  message(
-    WARNING
-      "OpenCV not found! Functionality relying on OpenCV will be disabled!\nOpenCV sources are available under: ${CMAKE_CURRENT_SOURCE_DIR}/deps/opencv"
-  )
-  list(REMOVE_ITEM advanced-scene-switcher_SOURCES
-       src/macro-condition-video.cpp)
-  list(REMOVE_ITEM advanced-scene-switcher_HEADERS
-       src/headers/macro-condition-video.hpp)
-endif()
 
 # Backwards compatability checks with older OBS versions
 if(DEFINED LibObs_VERSION_MAJOR)
@@ -401,7 +385,7 @@ if(DEFINED LibObs_VERSION_MAJOR)
 endif()
 
 add_library(
-  advanced-scene-switcher MODULE
+  advanced-scene-switcher SHARED
   ${advanced-scene-switcher_HEADERS}
   ${advanced-scene-switcher_SOURCES}
   ${advanced-scene-switcher_UI_HEADERS}
@@ -413,7 +397,6 @@ if(BUILD_OUT_OF_TREE)
   target_link_libraries(
     advanced-scene-switcher
     ${advanced-scene-switcher_PLATFORM_LIBS}
-    ${OpenCV_LIBRARIES}
     ${LIBOBS_LIB}
     ${LIBOBS_FRONTEND_API_LIB}
     Qt5::Core
@@ -448,6 +431,8 @@ else()
   # In tree build
   target_link_libraries(
     advanced-scene-switcher ${advanced-scene-switcher_PLATFORM_LIBS}
-    ${OpenCV_LIBRARIES} obs-frontend-api Qt5::Widgets libobs)
+    obs-frontend-api Qt5::Widgets libobs)
   install_obs_plugin_with_data(advanced-scene-switcher data)
 endif()
+
+add_subdirectory(src/external-macro-modules)

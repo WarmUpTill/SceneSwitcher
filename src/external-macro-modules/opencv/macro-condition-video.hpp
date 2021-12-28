@@ -1,7 +1,7 @@
 #pragma once
-#include "macro.hpp"
-#include "screenshot-helper.hpp"
-#include "file-selection.hpp"
+#include <macro.hpp>
+#include <screenshot-helper.hpp>
+#include <file-selection.hpp>
 
 #include <QWidget>
 #include <QComboBox>

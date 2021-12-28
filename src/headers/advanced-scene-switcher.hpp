@@ -1,6 +1,8 @@
 #pragma once
 #ifdef BUILD_OUT_OF_TREE
 #include "../../forms/ui_advanced-scene-switcher.h"
+#elif defined ADVSS_MODULE
+#include "../../../ui_advanced-scene-switcher.h"
 #else
 #include "ui_advanced-scene-switcher.h"
 #endif
@@ -297,3 +299,4 @@ void AskForBackup(obs_data_t *obj);
  ******************************************************************************/
 struct SwitcherData;
 extern SwitcherData *switcher;
+SwitcherData *GetSwitcher();

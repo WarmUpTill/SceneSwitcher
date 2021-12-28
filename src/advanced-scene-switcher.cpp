@@ -1,6 +1,7 @@
 #include <QMainWindow>
 #include <QAction>
 #include <QFileDialog>
+#include <QDirIterator>
 #include <regex>
 #include <filesystem>
 
@@ -14,6 +15,10 @@
 #include "headers/version.h"
 
 SwitcherData *switcher = nullptr;
+SwitcherData *GetSwitcher()
+{
+	return switcher;
+}
 
 /******************************************************************************
  * Create the Advanced Scene Switcher settings window
@@ -618,15 +623,32 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 	}
 }
 
+void LoadPlugins()
+{
+	QFileInfo fi(obs_get_module_binary_path(obs_current_module()));
+	QDirIterator it(fi.absolutePath(), QStringList() << "*.so",
+			QDir::Files);
+	while (it.hasNext()) {
+		auto file = it.next();
+		if (it.fileName() == "advanced-scene-switcher.so") {
+			continue;
+		}
+		blog(LOG_INFO, "attempting to load \"%s\"",
+		     file.toStdString().c_str());
+		auto lib = new QLibrary(file, nullptr);
+		if (lib->load()) {
+			blog(LOG_INFO, "successfully loaded \"%s\"",
+			     file.toStdString().c_str());
+		}
+	}
+}
+
 AdvSceneSwitcher *ssWindow;
 
 extern "C" void InitSceneSwitcher()
 {
 	blog(LOG_INFO, "version: %s", g_GIT_TAG);
 	blog(LOG_INFO, "version: %s", g_GIT_SHA1);
-
-	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(
-		obs_module_text("AdvSceneSwitcher.pluginName"));
 
 	switcher = new SwitcherData;
 
@@ -635,6 +657,10 @@ extern "C" void InitSceneSwitcher()
 	}
 
 	PlatformInit();
+#if !defined(_WIN32)
+	// Windows does not require the plugins to be loaded manually
+	LoadPlugins();
+#endif
 
 	dock = new StatusDock(
 		static_cast<QMainWindow *>(obs_frontend_get_main_window()));
@@ -657,5 +683,7 @@ extern "C" void InitSceneSwitcher()
 	obs_frontend_add_save_callback(SaveSceneSwitcher, nullptr);
 	obs_frontend_add_event_callback(OBSEvent, switcher);
 
+	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(
+		obs_module_text("AdvSceneSwitcher.pluginName"));
 	action->connect(action, &QAction::triggered, cb);
 }
