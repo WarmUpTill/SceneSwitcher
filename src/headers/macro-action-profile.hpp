@@ -1,0 +1,51 @@
+#pragma once
+#include "macro-action-edit.hpp"
+
+class MacroActionProfile : public MacroAction {
+public:
+	bool PerformAction();
+	void LogAction();
+	bool Save(obs_data_t *obj);
+	bool Load(obs_data_t *obj);
+	std::string GetShortDesc();
+	std::string GetId() { return id; };
+	static std::shared_ptr<MacroAction> Create()
+	{
+		return std::make_shared<MacroActionProfile>();
+	}
+
+	std::string _profile;
+
+private:
+	static bool _registered;
+	static const std::string id;
+};
+
+class MacroActionProfileEdit : public QWidget {
+	Q_OBJECT
+
+public:
+	MacroActionProfileEdit(
+		QWidget *parent,
+		std::shared_ptr<MacroActionProfile> entryData = nullptr);
+	void UpdateEntryData();
+	static QWidget *Create(QWidget *parent,
+			       std::shared_ptr<MacroAction> action)
+	{
+		return new MacroActionProfileEdit(
+			parent,
+			std::dynamic_pointer_cast<MacroActionProfile>(action));
+	}
+
+private slots:
+	void ProfileChanged(const QString &text);
+signals:
+	void HeaderInfoChanged(const QString &);
+
+protected:
+	QComboBox *_profiles;
+	std::shared_ptr<MacroActionProfile> _entryData;
+
+private:
+	bool _loading = true;
+};
