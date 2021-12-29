@@ -16,6 +16,8 @@ const static std::map<PluginStateAction, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.pluginState.type.stop"},
 	{PluginStateAction::NO_MATCH_BEHAVIOUR,
 	 "AdvSceneSwitcher.action.pluginState.type.noMatch"},
+	{PluginStateAction::IMPORT_SETTINGS,
+	 "AdvSceneSwitcher.action.pluginState.type.import"},
 };
 
 const static std::map<NoMatch, std::string> noMatchValues = {
@@ -31,6 +33,19 @@ void stopPlugin()
 {
 	std::thread t([]() { switcher->Stop(); });
 	t.detach();
+}
+
+void importSettings(const std::string &path)
+{
+	if (switcher->settingsWindowOpened) {
+		return;
+	}
+	obs_data_t *obj = obs_data_create_from_json_file(path.c_str());
+	if (!obj) {
+		return;
+	}
+	switcher->loadSettings(obj);
+	obs_data_release(obj);
 }
 
 void setNoMatchBehaviour(int value, OBSWeakSource &scene)
@@ -50,6 +65,11 @@ bool MacroActionPluginState::PerformAction()
 	case PluginStateAction::NO_MATCH_BEHAVIOUR:
 		setNoMatchBehaviour(_value, _scene);
 		break;
+	case PluginStateAction::IMPORT_SETTINGS:
+		importSettings(_settingsPath);
+		// There is no point in continuing
+		// The settings will be invalid
+		return false;
 	default:
 		break;
 	}
@@ -61,6 +81,13 @@ void MacroActionPluginState::LogAction()
 	switch (_action) {
 	case PluginStateAction::STOP:
 		blog(LOG_INFO, "stop() called by macro");
+		break;
+	case PluginStateAction::NO_MATCH_BEHAVIOUR:
+		vblog(LOG_INFO, "setting no match to %d", _value);
+		break;
+	case PluginStateAction::IMPORT_SETTINGS:
+		vblog(LOG_INFO, "importing settings from %s",
+		      _settingsPath.c_str());
 		break;
 	default:
 		blog(LOG_WARNING, "ignored unknown pluginState action %d",
@@ -75,6 +102,7 @@ bool MacroActionPluginState::Save(obs_data_t *obj)
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	obs_data_set_int(obj, "value", _value);
 	obs_data_set_string(obj, "scene", GetWeakSourceName(_scene).c_str());
+	obs_data_set_string(obj, "settingsPath", _settingsPath.c_str());
 	return true;
 }
 
@@ -86,6 +114,7 @@ bool MacroActionPluginState::Load(obs_data_t *obj)
 	_value = obs_data_get_int(obj, "value");
 	const char *sceneName = obs_data_get_string(obj, "scene");
 	_scene = GetWeakSourceByName(sceneName);
+	_settingsPath = obs_data_get_string(obj, "settingsPath");
 	return true;
 }
 
@@ -113,6 +142,9 @@ MacroActionPluginStateEdit::MacroActionPluginStateEdit(
 	_actions = new QComboBox();
 	_values = new QComboBox();
 	_scenes = new QComboBox();
+	_settings = new FileSelection();
+	_settingsWarning = new QLabel(obs_module_text(
+		"AdvSceneSwitcher.action.pluginState.importWarning"));
 
 	populateActionSelection(_actions);
 	populateSceneSelection(_scenes);
@@ -123,12 +155,16 @@ MacroActionPluginStateEdit::MacroActionPluginStateEdit(
 			 SLOT(ValueChanged(int)));
 	QWidget::connect(_scenes, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(SceneChanged(const QString &)));
+	QWidget::connect(_settings, SIGNAL(PathChanged(const QString &)), this,
+			 SLOT(PathChanged(const QString &)));
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{actions}}", _actions},
 		{"{{values}}", _values},
 		{"{{scenes}}", _scenes},
+		{"{{settings}}", _settings},
+		{"{{settingsWarning}}", _settingsWarning},
 	};
 	placeWidgets(
 		obs_module_text("AdvSceneSwitcher.action.pluginState.entry"),
@@ -149,7 +185,8 @@ void MacroActionPluginStateEdit::UpdateEntryData()
 	populateValueSelection(_values, _entryData->_action);
 	_values->setCurrentIndex(_entryData->_value);
 	_scenes->setCurrentText(GetWeakSourceName(_entryData->_scene).c_str());
-	SetWidgetVisibility(_entryData->_action, _entryData->_value);
+	_settings->SetPath(QString::fromStdString(_entryData->_settingsPath));
+	SetWidgetVisibility();
 }
 
 void MacroActionPluginStateEdit::ActionChanged(int value)
@@ -161,7 +198,7 @@ void MacroActionPluginStateEdit::ActionChanged(int value)
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
 		_entryData->_action = static_cast<PluginStateAction>(value);
-		SetWidgetVisibility(_entryData->_action, _entryData->_value);
+		SetWidgetVisibility();
 	}
 
 	_values->clear();
@@ -176,7 +213,7 @@ void MacroActionPluginStateEdit::ValueChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_value = value;
-	SetWidgetVisibility(_entryData->_action, _entryData->_value);
+	SetWidgetVisibility();
 }
 
 void MacroActionPluginStateEdit::SceneChanged(const QString &text)
@@ -189,15 +226,40 @@ void MacroActionPluginStateEdit::SceneChanged(const QString &text)
 	_entryData->_scene = GetWeakSourceByQString(text);
 }
 
-void MacroActionPluginStateEdit::SetWidgetVisibility(PluginStateAction action,
-						     int value)
+void MacroActionPluginStateEdit::PathChanged(const QString &text)
 {
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_settingsPath = text.toStdString();
+}
+
+void MacroActionPluginStateEdit::SetWidgetVisibility()
+{
+	if (!_entryData) {
+		return;
+	}
+
 	_values->hide();
 	_scenes->hide();
-	if (action == PluginStateAction::NO_MATCH_BEHAVIOUR) {
+	_settings->hide();
+	_settingsWarning->hide();
+	switch (_entryData->_action) {
+	case PluginStateAction::STOP:
+		break;
+	case PluginStateAction::NO_MATCH_BEHAVIOUR:
 		_values->show();
-		if ((NoMatch)value == SWITCH) {
+		if ((NoMatch)_entryData->_value == SWITCH) {
 			_scenes->show();
 		}
+		break;
+	case PluginStateAction::IMPORT_SETTINGS:
+		_settings->show();
+		_settingsWarning->show();
+		break;
+	default:
+		break;
 	}
 }

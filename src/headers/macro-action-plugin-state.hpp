@@ -1,12 +1,14 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "file-selection.hpp"
 
 #include <QDoubleSpinBox>
-#include <QHBoxLayout>
+#include <QLabel>
 
 enum class PluginStateAction {
 	STOP,
 	NO_MATCH_BEHAVIOUR,
+	IMPORT_SETTINGS,
 };
 
 class MacroActionPluginState : public MacroAction {
@@ -23,6 +25,7 @@ public:
 
 	PluginStateAction _action = PluginStateAction::STOP;
 	int _value = 0;
+	std::string _settingsPath;
 	OBSWeakSource _scene;
 
 private:
@@ -51,15 +54,17 @@ private slots:
 	void ActionChanged(int value);
 	void ValueChanged(int value);
 	void SceneChanged(const QString &text);
+	void PathChanged(const QString &text);
 
 protected:
 	QComboBox *_actions;
 	QComboBox *_values;
 	QComboBox *_scenes;
+	FileSelection *_settings;
+	QLabel *_settingsWarning;
 	std::shared_ptr<MacroActionPluginState> _entryData;
 
 private:
-	void SetWidgetVisibility(PluginStateAction, int);
-	QHBoxLayout *_mainLayout;
+	void SetWidgetVisibility();
 	bool _loading = true;
 };
