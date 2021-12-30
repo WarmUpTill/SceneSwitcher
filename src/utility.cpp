@@ -317,7 +317,7 @@ static bool getSceneItems(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 	return true;
 }
 
-std::vector<obs_scene_item *> getSceneItemsWithName(OBSScene scene,
+std::vector<obs_scene_item *> getSceneItemsWithName(obs_scene_t *scene,
 						    std::string &name)
 {
 	ItemInfo itemInfo = {name};
@@ -371,13 +371,13 @@ std::string getDataFilePath(const std::string &file)
 
 QString formatJsonString(std::string s)
 {
-	return formatJsonString(s.c_str());
+	return formatJsonString(QString::fromStdString(s));
 }
 
-QString formatJsonString(const char *json)
+QString formatJsonString(QString json)
 {
-	QJsonDocument doc = QJsonDocument::fromJson(json);
-	return doc.toJson(QJsonDocument::Indented);
+	QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+	return QString::fromUtf8(doc.toJson(QJsonDocument::Indented));
 }
 
 QString escapeForRegex(QString &s)
