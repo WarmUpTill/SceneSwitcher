@@ -27,13 +27,13 @@ std::string getSourceSettings(OBSWeakSource ws);
 void setSourceSettings(obs_source_t *s, const std::string &settings);
 bool compareSourceSettings(const OBSWeakSource &source,
 			   const std::string &settings, bool regex);
-std::vector<obs_scene_item *> getSceneItemsWithName(OBSScene scene,
+std::vector<obs_scene_item *> getSceneItemsWithName(obs_scene_t *scene,
 						    std::string &name);
 std::string getDataFilePath(const std::string &file);
 bool matchJson(const std::string &json1, const std::string &json2,
 	       bool useRegex);
 QString formatJsonString(std::string);
-QString formatJsonString(const char *);
+QString formatJsonString(QString);
 QString escapeForRegex(QString &s);
 void loadTransformState(obs_data_t *obj, struct obs_transform_info &info,
 			struct obs_sceneitem_crop &crop);
