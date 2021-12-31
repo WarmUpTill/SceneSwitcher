@@ -844,7 +844,7 @@ void populateSceneItemSelection(QComboBox *list, SceneSelection &s)
 	list->setCurrentIndex(0);
 }
 
-void populateSourceTypeSelection(QComboBox *list)
+void populateSourceGroupSelection(QComboBox *list)
 {
 	std::set<QString> sourceTypeNames;
 	auto enumSourcesTypes = [](void *param, obs_source_t *source) {
