@@ -1,7 +1,9 @@
 #pragma once
-#include <QSpinBox>
 #include "macro-action-edit.hpp"
 #include "scene-selection.hpp"
+#include "scene-item-selection.hpp"
+
+#include <QSpinBox>
 
 enum class SceneVisibilityAction {
 	SHOW,
@@ -28,7 +30,7 @@ public:
 
 	SceneSelection _scene;
 	SceneItemSourceType _sourceType = SceneItemSourceType::SOURCE;
-	OBSWeakSource _source;
+	SceneItemSelection _source;
 	std::string _sourceGroup = "";
 	SceneVisibilityAction _action = SceneVisibilityAction::SHOW;
 
@@ -57,7 +59,8 @@ public:
 private slots:
 	void SceneChanged(const SceneSelection &);
 	void SourceTypeChanged(int value);
-	void SourceChanged(const QString &text);
+	void SourceChanged(const SceneItemSelection &);
+	void SourceGroupChanged(const QString &text);
 	void ActionChanged(int value);
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -65,11 +68,14 @@ signals:
 protected:
 	SceneSelectionWidget *_scenes;
 	QComboBox *_sourceTypes;
-	QComboBox *_sources;
+	SceneItemSelectionWidget *_sources;
+	QComboBox *_sourceGroups;
 	QComboBox *_actions;
 	std::shared_ptr<MacroActionSceneVisibility> _entryData;
 
 private:
+	void SetWidgetVisibility();
+
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };

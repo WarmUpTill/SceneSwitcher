@@ -22,52 +22,54 @@ static std::map<SceneVisibilityCondition, std::string>
 		 "AdvSceneSwitcher.condition.sceneVisibility.type.hidden"},
 };
 
-struct VisibilityData {
-	std::string name;
-	bool visible;
-	bool result;
-};
-
-static bool visibilityEnum(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
+bool areAllSceneItemsShown(std::vector<obs_scene_item *> &items)
 {
-	VisibilityData *vInfo = reinterpret_cast<VisibilityData *>(ptr);
-	auto sourceName = obs_source_get_name(obs_sceneitem_get_source(item));
-	if (vInfo->name == sourceName &&
-	    obs_sceneitem_visible(item) == vInfo->visible) {
-		vInfo->result = true;
-		return false;
+	bool ret = true;
+	for (auto item : items) {
+		if (!obs_sceneitem_visible(item)) {
+			ret = false;
+		}
+		obs_sceneitem_release(item);
 	}
+	return ret;
+}
 
-	if (obs_sceneitem_is_group(item)) {
-		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
-		obs_scene_enum_items(scene, visibilityEnum, ptr);
+bool areAllSceneItemsHidden(std::vector<obs_scene_item *> &items)
+{
+	bool ret = true;
+	for (auto item : items) {
+		if (obs_sceneitem_visible(item)) {
+			ret = false;
+		}
+		obs_sceneitem_release(item);
 	}
-
-	return true;
+	return ret;
 }
 
 bool MacroConditionSceneVisibility::CheckCondition()
 {
-	if (!_source) {
+	auto items = _source.GetSceneItems(_scene);
+	if (items.empty()) {
 		return false;
 	}
 
-	auto s = obs_weak_source_get_source(_scene.GetScene());
-	auto scene = obs_scene_from_source(s);
-	auto sourceName = GetWeakSourceName(_source);
-	VisibilityData data = {sourceName,
-			       _condition == SceneVisibilityCondition::SHOWN,
-			       false};
-	obs_scene_enum_items(scene, visibilityEnum, &data);
-	obs_source_release(s);
-	return data.result;
+	switch (_condition) {
+	case SceneVisibilityCondition::SHOWN:
+		return areAllSceneItemsShown(items);
+	case SceneVisibilityCondition::HIDDEN:
+		return areAllSceneItemsHidden(items);
+		break;
+	default:
+		break;
+	}
+	return false;
 }
 
 bool MacroConditionSceneVisibility::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
 	_scene.Save(obj);
-	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
+	_source.Save(obj);
 
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 
@@ -76,10 +78,16 @@ bool MacroConditionSceneVisibility::Save(obs_data_t *obj)
 
 bool MacroConditionSceneVisibility::Load(obs_data_t *obj)
 {
+	// Convert old data format
+	// TODO: Remove in future version
+	if (obs_data_has_user_value(obj, "source")) {
+		auto sourceName = obs_data_get_string(obj, "source");
+		obs_data_set_string(obj, "sceneItem", sourceName);
+	}
+
 	MacroCondition::Load(obj);
 	_scene.Load(obj);
-	const char *sourceName = obs_data_get_string(obj, "source");
-	_source = GetWeakSourceByName(sourceName);
+	_source.Load(obj);
 	_condition = static_cast<SceneVisibilityCondition>(
 		obs_data_get_int(obj, "condition"));
 	return true;
@@ -87,10 +95,10 @@ bool MacroConditionSceneVisibility::Load(obs_data_t *obj)
 
 std::string MacroConditionSceneVisibility::GetShortDesc()
 {
-	if (_source) {
-		return _scene.ToString() + " - " + GetWeakSourceName(_source);
+	if (_source.ToString().empty()) {
+		return "";
 	}
-	return "";
+	return _scene.ToString() + " - " + _source.ToString();
 }
 
 static inline void populateConditionSelection(QComboBox *list)
@@ -106,16 +114,18 @@ MacroConditionSceneVisibilityEdit::MacroConditionSceneVisibilityEdit(
 	: QWidget(parent)
 {
 	_scenes = new SceneSelectionWidget(window(), false, true, true);
-	_sources = new QComboBox();
-	_sources->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+	_sources = new SceneItemSelectionWidget(parent);
 	_conditions = new QComboBox();
 
 	populateConditionSelection(_conditions);
 
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
-	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SourceChanged(const QString &)));
+	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
+			 _sources, SLOT(SceneChanged(const SceneSelection &)));
+	QWidget::connect(_sources,
+			 SIGNAL(SceneItemChanged(const SceneItemSelection &)),
+			 this, SLOT(SourceChanged(const SceneItemSelection &)));
 	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
 
@@ -136,14 +146,17 @@ MacroConditionSceneVisibilityEdit::MacroConditionSceneVisibilityEdit(
 	_loading = false;
 }
 
-void MacroConditionSceneVisibilityEdit::SourceChanged(const QString &text)
+void MacroConditionSceneVisibilityEdit::SourceChanged(
+	const SceneItemSelection &item)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_source = GetWeakSourceByQString(text);
+	_entryData->_source = item;
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroConditionSceneVisibilityEdit::SceneChanged(const SceneSelection &s)
@@ -151,13 +164,10 @@ void MacroConditionSceneVisibilityEdit::SceneChanged(const SceneSelection &s)
 	if (_loading || !_entryData) {
 		return;
 	}
-	{
-		std::lock_guard<std::mutex> lock(switcher->m);
-		_entryData->_scene = s;
-	}
-	_sources->clear();
-	populateSceneItemSelection(_sources, _entryData->_scene);
-	_sources->adjustSize();
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_scene = s;
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroConditionSceneVisibilityEdit::ConditionChanged(int index)
@@ -178,7 +188,5 @@ void MacroConditionSceneVisibilityEdit::UpdateEntryData()
 
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_scenes->SetScene(_entryData->_scene);
-	populateSceneItemSelection(_sources, _entryData->_scene);
-	_sources->setCurrentText(
-		GetWeakSourceName(_entryData->_source).c_str());
+	_sources->SetSceneItem(_entryData->_source);
 }

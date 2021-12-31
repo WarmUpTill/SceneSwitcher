@@ -1,6 +1,7 @@
 #pragma once
 #include "macro.hpp"
 #include "scene-selection.hpp"
+#include "scene-item-selection.hpp"
 
 #include <QComboBox>
 
@@ -22,7 +23,7 @@ public:
 	}
 
 	SceneSelection _scene;
-	OBSWeakSource _source;
+	SceneItemSelection _source;
 	SceneVisibilityCondition _condition = SceneVisibilityCondition::SHOWN;
 
 private:
@@ -49,14 +50,14 @@ public:
 
 private slots:
 	void SceneChanged(const SceneSelection &);
-	void SourceChanged(const QString &text);
+	void SourceChanged(const SceneItemSelection &);
 	void ConditionChanged(int cond);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
 	SceneSelectionWidget *_scenes;
-	QComboBox *_sources;
+	SceneItemSelectionWidget *_sources;
 	QComboBox *_conditions;
 
 	std::shared_ptr<MacroConditionSceneVisibility> _entryData;

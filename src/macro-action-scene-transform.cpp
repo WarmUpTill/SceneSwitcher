@@ -12,13 +12,8 @@ bool MacroActionSceneTransform::_registered = MacroActionFactory::Register(
 
 bool MacroActionSceneTransform::PerformAction()
 {
-	auto s = obs_weak_source_get_source(_scene.GetScene(false));
-	auto scene = obs_scene_from_source(s);
-	auto name = GetWeakSourceName(_source);
-	auto items = getSceneItemsWithName(scene, name);
-
+	auto items = _source.GetSceneItems(_scene);
 	for (auto &item : items) {
-		// Apply settings
 		obs_sceneitem_defer_update_begin(item);
 		obs_sceneitem_set_info(item, &_info);
 		obs_sceneitem_set_crop(item, &_crop);
@@ -26,8 +21,6 @@ bool MacroActionSceneTransform::PerformAction()
 
 		obs_sceneitem_release(item);
 	}
-
-	obs_source_release(s);
 	return true;
 }
 
@@ -35,34 +28,40 @@ void MacroActionSceneTransform::LogAction()
 {
 	vblog(LOG_INFO,
 	      "performed transform action for source \"%s\" on scene \"%s\"",
-	      GetWeakSourceName(_source).c_str(), _scene.ToString().c_str());
+	      _source.ToString().c_str(), _scene.ToString().c_str());
 }
 
 bool MacroActionSceneTransform::Save(obs_data_t *obj)
 {
 	MacroAction::Save(obj);
 	_scene.Save(obj);
-	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
+	_source.Save(obj);
 	saveTransformState(obj, _info, _crop);
 	return true;
 }
 
 bool MacroActionSceneTransform::Load(obs_data_t *obj)
 {
+	// Convert old data format
+	// TODO: Remove in future version
+	if (obs_data_has_user_value(obj, "source")) {
+		auto sourceName = obs_data_get_string(obj, "source");
+		obs_data_set_string(obj, "sceneItem", sourceName);
+	}
+
 	MacroAction::Load(obj);
 	_scene.Load(obj);
-	const char *sourceName = obs_data_get_string(obj, "source");
-	_source = GetWeakSourceByName(sourceName);
+	_source.Load(obj);
 	loadTransformState(obj, _info, _crop);
 	return true;
 }
 
 std::string MacroActionSceneTransform::GetShortDesc()
 {
-	if (_source) {
-		return _scene.ToString() + " - " + GetWeakSourceName(_source);
+	if (_source.ToString().empty()) {
+		return "";
 	}
-	return "";
+	return _scene.ToString() + " - " + _source.ToString();
 }
 
 std::string MacroActionSceneTransform::GetSettings()
@@ -81,9 +80,13 @@ void MacroActionSceneTransform::SetSettings(std::string &settings)
 		return;
 	}
 	loadTransformState(data, _info, _crop);
+	auto items = _source.GetSceneItems(_scene);
+	if (items.empty()) {
+		return;
+	}
 	if (obs_data_has_user_value(data, "size")) {
 		auto obj = obs_data_get_obj(data, "size");
-		auto source = obs_weak_source_get_source(_source);
+		auto source = obs_sceneitem_get_source(items[0]);
 		if (double h = obs_data_get_double(obj, "height")) {
 			_info.scale.y =
 				h / double(obs_source_get_height(source));
@@ -93,9 +96,10 @@ void MacroActionSceneTransform::SetSettings(std::string &settings)
 				w / double(obs_source_get_width(source));
 		}
 		obs_data_release(obj);
-		obs_source_release(source);
 	}
-
+	for (auto item : items) {
+		obs_sceneitem_release(item);
+	}
 	obs_data_release(data);
 }
 
@@ -104,15 +108,18 @@ MacroActionSceneTransformEdit::MacroActionSceneTransformEdit(
 	: QWidget(parent)
 {
 	_scenes = new SceneSelectionWidget(window(), false, false, true);
-	_sources = new QComboBox();
+	_sources = new SceneItemSelectionWidget(parent);
 	_getSettings = new QPushButton(obs_module_text(
 		"AdvSceneSwitcher.action.sceneTransform.getTransform"));
 	_settings = new QPlainTextEdit();
 
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
-	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SourceChanged(const QString &)));
+	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
+			 _sources, SLOT(SceneChanged(const SceneSelection &)));
+	QWidget::connect(_sources,
+			 SIGNAL(SceneItemChanged(const SceneItemSelection &)),
+			 this, SLOT(SourceChanged(const SceneItemSelection &)));
 	QWidget::connect(_getSettings, SIGNAL(clicked()), this,
 			 SLOT(GetSettingsClicked()));
 	QWidget::connect(_settings, SIGNAL(textChanged()), this,
@@ -152,13 +159,8 @@ void MacroActionSceneTransformEdit::UpdateEntryData()
 	}
 
 	_scenes->SetScene(_entryData->_scene);
-	populateSceneItemSelection(_sources, _entryData->_scene);
-	_sources->setCurrentText(
-		GetWeakSourceName(_entryData->_source).c_str());
-	if (_entryData->_source) {
-		_settings->setPlainText(
-			formatJsonString(_entryData->GetSettings()));
-	}
+	_sources->SetSceneItem(_entryData->_source);
+	_settings->setPlainText(formatJsonString(_entryData->GetSettings()));
 }
 
 void MacroActionSceneTransformEdit::SceneChanged(const SceneSelection &s)
@@ -166,44 +168,39 @@ void MacroActionSceneTransformEdit::SceneChanged(const SceneSelection &s)
 	if (_loading || !_entryData) {
 		return;
 	}
-	{
-		std::lock_guard<std::mutex> lock(switcher->m);
-		_entryData->_scene = s;
-	}
-	_sources->clear();
-	populateSceneItemSelection(_sources, _entryData->_scene);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_scene = s;
 }
 
-void MacroActionSceneTransformEdit::SourceChanged(const QString &text)
+void MacroActionSceneTransformEdit::SourceChanged(const SceneItemSelection &item)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_source = GetWeakSourceByQString(text);
+	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroActionSceneTransformEdit::GetSettingsClicked()
 {
-	if (_loading || !_entryData || !_entryData->_scene.GetScene(false) ||
-	    !_entryData->_source) {
+	if (_loading || !_entryData || !_entryData->_scene.GetScene(false)) {
 		return;
 	}
 
-	auto s = obs_weak_source_get_source(_entryData->_scene.GetScene(false));
-	auto scene = obs_scene_from_source(s);
-	auto name = GetWeakSourceName(_entryData->_source);
-	auto item = obs_scene_find_source_recursive(scene, name.c_str());
-	obs_source_release(s);
-
-	if (!item) {
+	auto items = _entryData->_source.GetSceneItems(_entryData->_scene);
+	if (items.empty()) {
 		return;
 	}
 
-	_settings->setPlainText(formatJsonString(getSceneItemTransform(item)));
+	auto settings = getSceneItemTransform(items[0]);
+	_settings->setPlainText(formatJsonString(settings));
+	for (auto item : items) {
+		obs_sceneitem_release(item);
+	}
 }
 
 void MacroActionSceneTransformEdit::SettingsChanged()

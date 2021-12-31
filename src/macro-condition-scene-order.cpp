@@ -19,78 +19,110 @@ static std::map<SceneOrderCondition, std::string> sceneOrderConditionTypes = {
 	 "AdvSceneSwitcher.condition.sceneOrder.type.position"},
 };
 
-struct PosInfo {
-	std::string name;
-	std::vector<int> pos = {};
+struct PosInfo2 {
+	obs_scene_item *item;
+	int pos = -1;
 	int curPos = 0;
 };
 
-static bool getSceneItemPositions(obs_scene_t *, obs_sceneitem_t *item,
-				  void *ptr)
+static bool getSceneItemPositionHelper(obs_scene_t *, obs_sceneitem_t *item,
+				       void *ptr)
 {
-	PosInfo *posInfo = reinterpret_cast<PosInfo *>(ptr);
-	auto sourceName = obs_source_get_name(obs_sceneitem_get_source(item));
-	if (posInfo->name == sourceName) {
-		posInfo->pos.push_back(posInfo->curPos);
+	PosInfo2 *posInfo = reinterpret_cast<PosInfo2 *>(ptr);
+	if (posInfo->item == item) {
+		posInfo->pos = posInfo->curPos;
+		return false;
 	}
 
 	if (obs_sceneitem_is_group(item)) {
 		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
-		obs_scene_enum_items(scene, getSceneItemPositions, ptr);
+		obs_scene_enum_items(scene, getSceneItemPositionHelper, ptr);
 	}
 	posInfo->curPos += 1;
 	return true;
 }
 
-static bool isAbove(std::vector<int> &v1, std::vector<int> &v2)
+PosInfo2 getSceneItemPos(obs_scene_item *item, obs_scene *scene)
 {
-	for (int i : v1) {
-		for (int j : v2) {
-			if (i > j) {
-				return true;
-			}
-		}
-	}
-	return false;
+	PosInfo2 pos{item};
+	obs_scene_enum_items(scene, getSceneItemPositionHelper, &pos);
+	return pos;
 }
 
-static bool isBelow(std::vector<int> &v1, std::vector<int> &v2)
+std::vector<int> getSceneItemPositions(std::vector<obs_scene_item *> &items,
+				       obs_scene *scene)
 {
-	for (int i : v1) {
-		for (int j : v2) {
-			if (i < j) {
-				return true;
+	std::vector<int> positions;
+	for (auto item : items) {
+		auto pos = getSceneItemPos(item, scene);
+		if (pos.pos != -1) {
+			positions.emplace_back(pos.pos);
+		}
+	}
+	return positions;
+}
+
+static bool isAbove(std::vector<int> &pos1, std::vector<int> &pos2)
+{
+	if (pos1.empty() || pos2.empty()) {
+		return false;
+	}
+	for (int i : pos1) {
+		for (int j : pos2) {
+			if (i <= j) {
+				return false;
 			}
 		}
 	}
-	return false;
+	return true;
+}
+
+static bool isBelow(std::vector<int> &pos1, std::vector<int> &pos2)
+{
+	if (pos1.empty() || pos2.empty()) {
+		return false;
+	}
+	for (int i : pos1) {
+		for (int j : pos2) {
+			if (i >= j) {
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 bool MacroConditionSceneOrder::CheckCondition()
 {
-	if (!_source) {
+	auto items1 = _source.GetSceneItems(_scene);
+	if (items1.empty()) {
 		return false;
 	}
 
-	bool ret = false;
+	auto items2 = _source2.GetSceneItems(_scene);
 	auto s = obs_weak_source_get_source(_scene.GetScene(false));
 	auto scene = obs_scene_from_source(s);
-	auto name1 = GetWeakSourceName(_source);
-	auto name2 = GetWeakSourceName(_source2);
-	PosInfo pos1 = {name1};
-	PosInfo pos2 = {name2};
-	obs_scene_enum_items(scene, getSceneItemPositions, &pos1);
-	obs_scene_enum_items(scene, getSceneItemPositions, &pos2);
+	auto positions1 = getSceneItemPositions(items1, scene);
+	auto positions2 = getSceneItemPositions(items2, scene);
+
+	for (auto i : items1) {
+		obs_sceneitem_release(i);
+	}
+	for (auto i : items2) {
+		obs_sceneitem_release(i);
+	}
+
+	bool ret = false;
 
 	switch (_condition) {
 	case SceneOrderCondition::ABOVE:
-		ret = isAbove(pos1.pos, pos2.pos);
+		ret = isAbove(positions1, positions2);
 		break;
 	case SceneOrderCondition::BELOW:
-		ret = isBelow(pos1.pos, pos2.pos);
+		ret = isBelow(positions1, positions2);
 		break;
 	case SceneOrderCondition::POSITION:
-		for (int p : pos1.pos) {
+		for (int p : positions1) {
 			if (p == _position)
 				ret = true;
 		}
@@ -100,7 +132,6 @@ bool MacroConditionSceneOrder::CheckCondition()
 	}
 
 	obs_source_release(s);
-
 	return ret;
 }
 
@@ -108,9 +139,8 @@ bool MacroConditionSceneOrder::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
 	_scene.Save(obj);
-	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
-	obs_data_set_string(obj, "source2",
-			    GetWeakSourceName(_source2).c_str());
+	_source.Save(obj);
+	_source2.Save(obj, "sceneItem2", "sceneItemTarget2", "sceneItemIdx2");
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_int(obj, "position", _position);
 	return true;
@@ -118,12 +148,19 @@ bool MacroConditionSceneOrder::Save(obs_data_t *obj)
 
 bool MacroConditionSceneOrder::Load(obs_data_t *obj)
 {
+	// Convert old data format
+	// TODO: Remove in future version
+	if (obs_data_has_user_value(obj, "source")) {
+		auto sourceName = obs_data_get_string(obj, "source");
+		obs_data_set_string(obj, "sceneItem", sourceName);
+		auto sourceName2 = obs_data_get_string(obj, "source2");
+		obs_data_set_string(obj, "sceneItem2", sourceName2);
+	}
+
 	MacroCondition::Load(obj);
 	_scene.Load(obj);
-	const char *sourceName = obs_data_get_string(obj, "source");
-	_source = GetWeakSourceByName(sourceName);
-	const char *source2Name = obs_data_get_string(obj, "source2");
-	_source2 = GetWeakSourceByName(source2Name);
+	_source.Load(obj);
+	_source2.Load(obj, "sceneItem2", "sceneItemTarget2", "sceneItemIdx2");
 	_condition = static_cast<SceneOrderCondition>(
 		obs_data_get_int(obj, "condition"));
 	_position = obs_data_get_int(obj, "position");
@@ -132,15 +169,15 @@ bool MacroConditionSceneOrder::Load(obs_data_t *obj)
 
 std::string MacroConditionSceneOrder::GetShortDesc()
 {
-	if (_source) {
-		std::string header =
-			_scene.ToString() + " - " + GetWeakSourceName(_source);
-		if (_source2 && _condition != SceneOrderCondition::POSITION) {
-			header += " - " + GetWeakSourceName(_source2);
-		}
-		return header;
+	if (_source.ToString().empty()) {
+		return "";
 	}
-	return "";
+	std::string header = _scene.ToString() + " - " + _source.ToString();
+	if (!_source2.ToString().empty() &&
+	    _condition != SceneOrderCondition::POSITION) {
+		header += " - " + _source2.ToString();
+	}
+	return header;
 }
 
 static inline void populateConditionSelection(QComboBox *list)
@@ -155,21 +192,37 @@ MacroConditionSceneOrderEdit::MacroConditionSceneOrderEdit(
 	: QWidget(parent)
 {
 	_scenes = new SceneSelectionWidget(window(), false, false, true);
-	_sources = new QComboBox();
-	_sources2 = new QComboBox();
+	_sources = new SceneItemSelectionWidget(parent);
+	_sources2 = new SceneItemSelectionWidget(parent);
 	_conditions = new QComboBox();
 	_position = new QSpinBox();
 	_posInfo = new QLabel(obs_module_text(
 		"AdvSceneSwitcher.condition.sceneOrder.positionInfo"));
 
 	populateConditionSelection(_conditions);
+	if (entryData.get()) {
+		if (entryData->_condition == SceneOrderCondition::POSITION) {
+			_sources->SetShowAllSelectionType(
+				SceneItemSelectionWidget::AllSelectionType::ANY);
+		} else {
+			_sources->SetShowAllSelectionType(
+				SceneItemSelectionWidget::AllSelectionType::ALL);
+		}
+	}
 
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
-	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SourceChanged(const QString &)));
-	QWidget::connect(_sources2, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(Source2Changed(const QString &)));
+	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
+			 _sources, SLOT(SceneChanged(const SceneSelection &)));
+	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
+			 _sources2, SLOT(SceneChanged(const SceneSelection &)));
+	QWidget::connect(_sources,
+			 SIGNAL(SceneItemChanged(const SceneItemSelection &)),
+			 this, SLOT(SourceChanged(const SceneItemSelection &)));
+	QWidget::connect(_sources2,
+			 SIGNAL(SceneItemChanged(const SceneItemSelection &)),
+			 this,
+			 SLOT(Source2Changed(const SceneItemSelection &)));
 	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_position, SIGNAL(valueChanged(int)), this,
@@ -199,36 +252,31 @@ void MacroConditionSceneOrderEdit::SceneChanged(const SceneSelection &s)
 	if (_loading || !_entryData) {
 		return;
 	}
-	{
-		std::lock_guard<std::mutex> lock(switcher->m);
-		_entryData->_scene = s;
-	}
-	_sources->clear();
-	_sources2->clear();
-	populateSceneItemSelection(_sources, _entryData->_scene);
-	populateSceneItemSelection(_sources2, _entryData->_scene);
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_scene = s;
 }
 
-void MacroConditionSceneOrderEdit::SourceChanged(const QString &text)
+void MacroConditionSceneOrderEdit::SourceChanged(const SceneItemSelection &item)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_source = GetWeakSourceByQString(text);
+	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-void MacroConditionSceneOrderEdit::Source2Changed(const QString &text)
+void MacroConditionSceneOrderEdit::Source2Changed(const SceneItemSelection &item)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_source2 = GetWeakSourceByQString(text);
+	_entryData->_source2 = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -238,11 +286,21 @@ void MacroConditionSceneOrderEdit::ConditionChanged(int index)
 	if (_loading || !_entryData) {
 		return;
 	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_condition = static_cast<SceneOrderCondition>(index);
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		_entryData->_condition =
+			static_cast<SceneOrderCondition>(index);
+	}
 	SetWidgetVisibility(_entryData->_condition ==
 			    SceneOrderCondition::POSITION);
+	if (_entryData->_condition == SceneOrderCondition::POSITION) {
+		_sources->SetShowAllSelectionType(
+			SceneItemSelectionWidget::AllSelectionType::ANY);
+	} else {
+		_sources->SetShowAllSelectionType(
+			SceneItemSelectionWidget::AllSelectionType::ALL);
+	}
+
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -272,12 +330,9 @@ void MacroConditionSceneOrderEdit::UpdateEntryData()
 	}
 
 	_scenes->SetScene(_entryData->_scene);
-	populateSceneItemSelection(_sources, _entryData->_scene);
-	populateSceneItemSelection(_sources2, _entryData->_scene);
-	_sources->setCurrentText(
-		GetWeakSourceName(_entryData->_source).c_str());
-	_sources2->setCurrentText(
-		GetWeakSourceName(_entryData->_source2).c_str());
+	_sources->SetSceneItem(_entryData->_source);
+	_sources2->SetSceneItem(_entryData->_source2);
+	_position->setValue(_entryData->_position);
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	SetWidgetVisibility(_entryData->_condition ==
 			    SceneOrderCondition::POSITION);
