@@ -1,8 +1,10 @@
 #pragma once
-#include <QSpinBox>
-#include <QPlainTextEdit>
 #include "macro-action-edit.hpp"
 #include "scene-selection.hpp"
+#include "scene-item-selection.hpp"
+
+#include <QSpinBox>
+#include <QPlainTextEdit>
 
 class MacroActionSceneTransform : public MacroAction {
 public:
@@ -20,7 +22,7 @@ public:
 	void SetSettings(std::string &);
 
 	SceneSelection _scene;
-	OBSWeakSource _source;
+	SceneItemSelection _source;
 	struct obs_transform_info _info = {};
 	struct obs_sceneitem_crop _crop = {};
 
@@ -48,7 +50,7 @@ public:
 
 private slots:
 	void SceneChanged(const SceneSelection &);
-	void SourceChanged(const QString &text);
+	void SourceChanged(const SceneItemSelection &);
 	void GetSettingsClicked();
 	void SettingsChanged();
 signals:
@@ -56,7 +58,7 @@ signals:
 
 protected:
 	SceneSelectionWidget *_scenes;
-	QComboBox *_sources;
+	SceneItemSelectionWidget *_sources;
 	QPushButton *_getSettings;
 	QPlainTextEdit *_settings;
 	std::shared_ptr<MacroActionSceneTransform> _entryData;

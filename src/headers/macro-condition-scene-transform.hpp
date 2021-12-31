@@ -1,6 +1,7 @@
 #pragma once
 #include "macro.hpp"
 #include "scene-selection.hpp"
+#include "scene-item-selection.hpp"
 
 #include <QSpinBox>
 #include <QPlainTextEdit>
@@ -19,7 +20,7 @@ public:
 	}
 
 	SceneSelection _scene;
-	OBSWeakSource _source;
+	SceneItemSelection _source;
 	bool _regex = false;
 	std::string _settings = "";
 
@@ -48,7 +49,7 @@ public:
 
 private slots:
 	void SceneChanged(const SceneSelection &);
-	void SourceChanged(const QString &text);
+	void SourceChanged(const SceneItemSelection &);
 	void GetSettingsClicked();
 	void SettingsChanged();
 	void RegexChanged(int);
@@ -57,7 +58,7 @@ signals:
 
 protected:
 	SceneSelectionWidget *_scenes;
-	QComboBox *_sources;
+	SceneItemSelectionWidget *_sources;
 	QPushButton *_getSettings;
 	QPlainTextEdit *_settings;
 	QCheckBox *_regex;
