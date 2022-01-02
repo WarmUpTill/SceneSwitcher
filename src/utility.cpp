@@ -13,6 +13,7 @@
 #include <QMessageBox>
 #include <QJsonDocument>
 #include <QSystemTrayIcon>
+#include <QGuiApplication>
 #include <unordered_map>
 #include <regex>
 #include <set>
@@ -872,6 +873,11 @@ void populateSourceGroupSelection(QComboBox *list)
 	list->model()->sort(0);
 	addSelectionEntry(list, obs_module_text("AdvSceneSwitcher.selectItem"));
 	list->setCurrentIndex(0);
+}
+
+bool windowPosValid(QPoint pos)
+{
+	return !!QGuiApplication::screenAt(pos);
 }
 
 QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,

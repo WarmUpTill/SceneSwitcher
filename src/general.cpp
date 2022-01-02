@@ -1,9 +1,9 @@
 #include "headers/advanced-scene-switcher.hpp"
+#include "headers/status-dock.hpp"
 #include "headers/utility.hpp"
 #include "headers/version.h"
 
 #include <QFileDialog>
-#include <QGuiApplication>
 #include <QStandardPaths>
 
 QMetaObject::Connection inactivePluse;
@@ -436,11 +436,6 @@ void AdvSceneSwitcher::setTabOrder()
 	connect(bar, &QTabBar::tabMoved, this, &AdvSceneSwitcher::on_tabMoved);
 }
 
-bool windowPosValid(QPoint pos)
-{
-	return !!QGuiApplication::screenAt(pos);
-}
-
 void AdvSceneSwitcher::restoreWindowGeo()
 {
 	if (switcher->saveWindowGeo && windowPosValid(switcher->windowPos)) {
@@ -492,6 +487,7 @@ void SwitcherData::loadSettings(obs_data_t *obj)
 	loadSceneTriggers(obj);
 	loadGeneralSettings(obj);
 	loadHotkeys(obj);
+	loadDock(obj);
 }
 
 void SwitcherData::saveSettings(obs_data_t *obj)
@@ -522,6 +518,7 @@ void SwitcherData::saveSettings(obs_data_t *obj)
 	saveSceneTriggers(obj);
 	saveGeneralSettings(obj);
 	saveHotkeys(obj);
+	saveDock(obj);
 	saveVersion(obj, g_GIT_SHA1);
 }
 

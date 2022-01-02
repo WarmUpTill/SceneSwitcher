@@ -82,3 +82,4 @@ void populateSceneItemSelection(QComboBox *list,
 				OBSWeakSource sceneWeakSource = nullptr);
 void populateSceneItemSelection(QComboBox *list, SceneSelection &s);
 void populateSourceGroupSelection(QComboBox *list);
+bool windowPosValid(QPoint pos);
