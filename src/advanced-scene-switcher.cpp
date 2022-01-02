@@ -8,6 +8,7 @@
 #include <obs-frontend-api.h>
 
 #include "headers/advanced-scene-switcher.hpp"
+#include "headers/status-dock.hpp"
 #include "headers/curl-helper.hpp"
 #include "headers/utility.hpp"
 #include "headers/version.h"
@@ -635,14 +636,19 @@ extern "C" void InitSceneSwitcher()
 
 	PlatformInit();
 
+	dock = new StatusDock(
+		static_cast<QMainWindow *>(obs_frontend_get_main_window()));
+	obs_frontend_add_dock(dock);
+
 	auto cb = []() {
 		if (switcher->settingsWindowOpened) {
 			ssWindow->show();
 			ssWindow->raise();
 			ssWindow->activateWindow();
 		} else {
-			ssWindow = new AdvSceneSwitcher(
-				(QMainWindow *)obs_frontend_get_main_window());
+			ssWindow =
+				new AdvSceneSwitcher(static_cast<QMainWindow *>(
+					obs_frontend_get_main_window()));
 			ssWindow->setAttribute(Qt::WA_DeleteOnClose);
 			ssWindow->show();
 		}
