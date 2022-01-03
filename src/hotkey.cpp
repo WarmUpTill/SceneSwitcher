@@ -4,13 +4,8 @@
 #include <fstream>
 #include <regex>
 
-void startHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
-		     bool pressed)
+void startHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *, bool pressed)
 {
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(data);
-	UNUSED_PARAMETER(hotkey);
-
 	if (pressed) {
 		if (!(switcher->th && switcher->th->isRunning())) {
 			switcher->Start();
@@ -18,13 +13,8 @@ void startHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 	}
 }
 
-void stopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
-		    bool pressed)
+void stopHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *, bool pressed)
 {
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(data);
-	UNUSED_PARAMETER(hotkey);
-
 	if (pressed) {
 		if (switcher->th && switcher->th->isRunning()) {
 			switcher->Stop();
@@ -32,13 +22,9 @@ void stopHotkeyFunc(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 	}
 }
 
-void startStopToggleHotkeyFunc(void *data, obs_hotkey_id id,
-			       obs_hotkey_t *hotkey, bool pressed)
+void startStopToggleHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
+			       bool pressed)
 {
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(data);
-	UNUSED_PARAMETER(hotkey);
-
 	if (pressed) {
 		if (switcher->th && switcher->th->isRunning()) {
 			switcher->Stop();

@@ -259,6 +259,7 @@ void MacroActionAudioEdit::SetWidgetVisibility()
 	setLayoutVisible(_fadeLayout, hasVolumeControl(_entryData->_action));
 	adjustSize();
 }
+
 void MacroActionAudioEdit::UpdateEntryData()
 {
 	if (!_entryData) {

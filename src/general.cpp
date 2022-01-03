@@ -453,10 +453,8 @@ void AdvSceneSwitcher::on_tabMoved(int from, int to)
 	std::swap(switcher->tabOrder[from], switcher->tabOrder[to]);
 }
 
-void AdvSceneSwitcher::on_tabWidget_currentChanged(int index)
+void AdvSceneSwitcher::on_tabWidget_currentChanged(int)
 {
-	UNUSED_PARAMETER(index);
-
 	switcher->showFrame = false;
 	clearFrames(ui->screenRegionSwitches);
 	SetShowFrames();

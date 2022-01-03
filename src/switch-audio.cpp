@@ -238,13 +238,10 @@ void AdvSceneSwitcher::setupAudioTab()
 	ui->audioFallback->setChecked(switcher->audioFallback.enable);
 }
 
-void AudioSwitch::setVolumeLevel(void *data,
-				 const float magnitude[MAX_AUDIO_CHANNELS],
+void AudioSwitch::setVolumeLevel(void *data, const float *,
 				 const float peak[MAX_AUDIO_CHANNELS],
-				 const float inputPeak[MAX_AUDIO_CHANNELS])
+				 const float *)
 {
-	UNUSED_PARAMETER(magnitude);
-	UNUSED_PARAMETER(inputPeak);
 	AudioSwitch *s = static_cast<AudioSwitch *>(data);
 
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {

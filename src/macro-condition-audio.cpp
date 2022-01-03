@@ -101,13 +101,10 @@ std::string MacroConditionAudio::GetShortDesc()
 	return "";
 }
 
-void MacroConditionAudio::SetVolumeLevel(
-	void *data, const float magnitude[MAX_AUDIO_CHANNELS],
-	const float peak[MAX_AUDIO_CHANNELS],
-	const float inputPeak[MAX_AUDIO_CHANNELS])
+void MacroConditionAudio::SetVolumeLevel(void *data, const float *,
+					 const float peak[MAX_AUDIO_CHANNELS],
+					 const float *)
 {
-	UNUSED_PARAMETER(magnitude);
-	UNUSED_PARAMETER(inputPeak);
 	MacroConditionAudio *c = static_cast<MacroConditionAudio *>(data);
 
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
