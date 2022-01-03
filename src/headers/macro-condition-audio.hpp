@@ -9,6 +9,8 @@
 enum class AudioCondition {
 	ABOVE,
 	BELOW,
+	MUTE,
+	UNMUTE,
 };
 
 class MacroConditionAudio : public MacroCondition {
@@ -72,5 +74,7 @@ protected:
 	std::shared_ptr<MacroConditionAudio> _entryData;
 
 private:
+	void SetWidgetVisibility();
+
 	bool _loading = true;
 };

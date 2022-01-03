@@ -13,6 +13,9 @@ bool MacroConditionAudio::_registered = MacroConditionFactory::Register(
 static std::map<AudioCondition, std::string> audioConditionTypes = {
 	{AudioCondition::ABOVE, "AdvSceneSwitcher.condition.audio.state.above"},
 	{AudioCondition::BELOW, "AdvSceneSwitcher.condition.audio.state.below"},
+	{AudioCondition::MUTE, "AdvSceneSwitcher.condition.audio.state.mute"},
+	{AudioCondition::UNMUTE,
+	 "AdvSceneSwitcher.condition.audio.state.unmute"},
 };
 
 MacroConditionAudio::~MacroConditionAudio()
@@ -23,19 +26,32 @@ MacroConditionAudio::~MacroConditionAudio()
 
 bool MacroConditionAudio::CheckCondition()
 {
-	// peak will have a value from -60 db to 0 db
-	bool volumeThresholdreached = false;
-
-	if (_condition == AudioCondition::ABOVE) {
-		volumeThresholdreached = ((double)_peak + 60) * 1.7 > _volume;
-	} else {
-		volumeThresholdreached = ((double)_peak + 60) * 1.7 < _volume;
+	bool ret = false;
+	auto s = obs_weak_source_get_source(_audioSource);
+	switch (_condition) {
+	case AudioCondition::ABOVE:
+		// peak will have a value from -60 db to 0 db
+		ret = ((double)_peak + 60) * 1.7 > _volume;
+		break;
+	case AudioCondition::BELOW:
+		// peak will have a value from -60 db to 0 db
+		ret = ((double)_peak + 60) * 1.7 < _volume;
+		break;
+	case AudioCondition::MUTE:
+		ret = obs_source_muted(s);
+		break;
+	case AudioCondition::UNMUTE:
+		ret = !obs_source_muted(s);
+		break;
+	default:
+		break;
 	}
 
 	// Reset for next check
 	_peak = -std::numeric_limits<float>::infinity();
 
-	return volumeThresholdreached;
+	obs_source_release(s);
+	return ret;
 }
 
 bool MacroConditionAudio::Save(obs_data_t *obj)
@@ -189,6 +205,7 @@ void MacroConditionAudioEdit::SourceChanged(const QString &text)
 	_entryData->_audioSource = GetWeakSourceByQString(text);
 	_entryData->ResetVolmeter();
 	UpdateVolmeterSource();
+	SetWidgetVisibility();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -211,6 +228,7 @@ void MacroConditionAudioEdit::ConditionChanged(int cond)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_condition = static_cast<AudioCondition>(cond);
+	SetWidgetVisibility();
 }
 
 void MacroConditionAudioEdit::UpdateEntryData()
@@ -224,4 +242,18 @@ void MacroConditionAudioEdit::UpdateEntryData()
 	_volume->setValue(_entryData->_volume);
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	UpdateVolmeterSource();
+	SetWidgetVisibility();
+}
+
+void MacroConditionAudioEdit::SetWidgetVisibility()
+{
+	if (!_entryData) {
+		return;
+	}
+
+	_volume->setVisible(_entryData->_condition == AudioCondition::ABOVE ||
+			    _entryData->_condition == AudioCondition::BELOW);
+	_volMeter->setVisible(_entryData->_condition == AudioCondition::ABOVE ||
+			      _entryData->_condition == AudioCondition::BELOW);
+	adjustSize();
 }
