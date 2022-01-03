@@ -10,12 +10,8 @@ bool MacroConditionHotkey::_registered = MacroConditionFactory::Register(
 	{MacroConditionHotkey::Create, MacroConditionHotkeyEdit::Create,
 	 "AdvSceneSwitcher.condition.hotkey", false});
 
-static void hotkeyCB(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
-		     bool pressed)
+static void hotkeyCB(void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed)
 {
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(data);
-	UNUSED_PARAMETER(hotkey);
 	if (pressed) {
 		auto c = static_cast<MacroConditionHotkey *>(data);
 		c->SetPressed();

@@ -282,9 +282,8 @@ void MacroConditionMacroEdit::ConditionChanged(int cond)
 	_entryData->_counterCondition = static_cast<CounterCondition>(cond);
 }
 
-void MacroConditionMacroEdit::MacroRemove(const QString &name)
+void MacroConditionMacroEdit::MacroRemove(const QString &)
 {
-	UNUSED_PARAMETER(name);
 	if (_entryData) {
 		_entryData->_macro.UpdateRef();
 	}

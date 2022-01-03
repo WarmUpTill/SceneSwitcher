@@ -161,9 +161,8 @@ void MacroActionMacroEdit::ActionChanged(int value)
 	_entryData->_action = static_cast<PerformMacroAction>(value);
 }
 
-void MacroActionMacroEdit::MacroRemove(const QString &name)
+void MacroActionMacroEdit::MacroRemove(const QString &)
 {
-	UNUSED_PARAMETER(name);
 	if (_entryData) {
 		_entryData->_macro.UpdateRef();
 	}

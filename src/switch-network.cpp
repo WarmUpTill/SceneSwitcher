@@ -313,10 +313,8 @@ std::string processMessage(std::string payload)
 	return ret;
 }
 
-void WSServer::onMessage(connection_hdl hdl, server::message_ptr message)
+void WSServer::onMessage(connection_hdl, server::message_ptr message)
 {
-	UNUSED_PARAMETER(hdl);
-
 	auto opcode = message->get_opcode();
 	if (opcode != websocketpp::frame::opcode::text) {
 		return;
@@ -449,16 +447,14 @@ void WSClient::disconnect()
 	}
 }
 
-void WSClient::onOpen(connection_hdl hdl)
+void WSClient::onOpen(connection_hdl)
 {
-	UNUSED_PARAMETER(hdl);
 	blog(LOG_INFO, "connection to %s opened", _uri.c_str());
 	switcher->clientStatus = ClientStatus::CONNECTED;
 }
 
-void WSClient::onFail(connection_hdl hdl)
+void WSClient::onFail(connection_hdl)
 {
-	UNUSED_PARAMETER(hdl);
 	blog(LOG_INFO, "connection to %s failed", _uri.c_str());
 }
 
@@ -486,9 +482,8 @@ void WSClient::onMessage(connection_hdl hdl, client::message_ptr message)
 	}
 }
 
-void WSClient::onClose(connection_hdl hdl)
+void WSClient::onClose(connection_hdl)
 {
-	UNUSED_PARAMETER(hdl);
 	blog(LOG_INFO, "client-connection to %s closed.", _uri.c_str());
 	switcher->clientStatus = ClientStatus::DISCONNECTED;
 }
