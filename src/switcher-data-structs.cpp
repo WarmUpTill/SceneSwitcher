@@ -120,6 +120,9 @@ void SwitcherData::Prune()
 
 bool SwitcherData::versionChanged(obs_data_t *obj, std::string currentVersion)
 {
+	if (!obs_data_has_user_value(obj, "version")) {
+		return false;
+	}
 	std::string previousVersion = obs_data_get_string(obj, "version");
 	return previousVersion != currentVersion;
 }
