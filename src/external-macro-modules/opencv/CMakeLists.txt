@@ -9,9 +9,10 @@ if(OpenCV_FOUND)
 else()
   set(OpenCV_LIBRARIES "")
   message(
-    FATAL
-    "OpenCV not found! Functionality relying on OpenCV will be disabled!\nOpenCV sources are available under: ${CMAKE_CURRENT_SOURCE_DIR}/deps/opencv"
+    WARNING
+      "OpenCV not found! Functionality relying on OpenCV will be disabled!\nOpenCV sources are available under: ${CMAKE_CURRENT_SOURCE_DIR}/deps/opencv"
   )
+  return()
 endif()
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../../headers")
