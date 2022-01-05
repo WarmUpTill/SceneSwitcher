@@ -73,7 +73,8 @@ public:
 	virtual ~Macro();
 
 	bool CeckMatch();
-	bool PerformAction(bool forceParallel = false);
+	bool PerformAction(bool forceParallel = false,
+			   bool ignorePause = false);
 	bool Matched() { return _matched; }
 	std::string Name() { return _name; }
 	void SetName(const std::string &name);
@@ -105,8 +106,8 @@ private:
 	void ClearHotkeys();
 	void SetHotkeysDesc();
 	void ResetTimers();
-	void RunActions(bool &ret);
-	void RunActions();
+	void RunActions(bool &ret, bool ignorePause);
+	void RunActions(bool ignorePause);
 
 	std::string _name = "";
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;

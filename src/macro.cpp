@@ -108,11 +108,11 @@ bool Macro::CeckMatch()
 	return _matched;
 }
 
-bool Macro::PerformAction(bool forceParallel)
+bool Macro::PerformAction(bool forceParallel, bool ignorePause)
 {
 	if (!_done) {
 		vblog(LOG_INFO, "macro %s already running", _name.c_str());
-		return true;
+		return !forceParallel;
 	}
 
 	bool ret = true;
@@ -121,9 +121,10 @@ bool Macro::PerformAction(bool forceParallel)
 		if (_thread.joinable()) {
 			_thread.join();
 		}
-		_thread = std::thread([this] { RunActions(); });
+		_thread = std::thread(
+			[this, ignorePause] { RunActions(ignorePause); });
 	} else {
-		RunActions(ret);
+		RunActions(ret, ignorePause);
 	}
 	return ret;
 }
@@ -141,13 +142,13 @@ void Macro::ResetTimers()
 	}
 }
 
-void Macro::RunActions(bool &retVal)
+void Macro::RunActions(bool &retVal, bool ignorePause)
 {
 	bool ret = true;
 	for (auto &a : _actions) {
 		a->LogAction();
 		ret = ret && a->PerformAction();
-		if (!ret || _stop || _paused) {
+		if (!ret || _stop || (_paused && !ignorePause)) {
 			retVal = ret;
 			_done = true;
 			return;
@@ -156,10 +157,10 @@ void Macro::RunActions(bool &retVal)
 	_done = true;
 }
 
-void Macro::RunActions()
+void Macro::RunActions(bool ignorePause)
 {
 	bool unused;
-	RunActions(unused);
+	RunActions(unused, ignorePause);
 }
 
 void Macro::SetPaused(bool pause)
