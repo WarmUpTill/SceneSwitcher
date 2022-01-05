@@ -25,12 +25,12 @@ public:
 		return std::make_shared<MacroConditionScene>();
 	}
 
-	// This option is to be removed in a future version and be replaced by
-	// transition specific conditions
-	bool _waitForTransition = true;
-
 	SceneSelection _scene;
 	SceneType _type = SceneType::CURRENT;
+	// During a transition "current" scene could either stand for the scene
+	// being transitioned to or the scene still being transitioned away
+	// from.
+	bool _useTransitionTargetScene = false;
 
 private:
 	std::chrono::high_resolution_clock::time_point _lastSceneChangeTime{};
@@ -57,14 +57,14 @@ public:
 private slots:
 	void SceneChanged(const SceneSelection &);
 	void TypeChanged(int value);
-	void WaitForTransitionChanged(int state);
+	void UseTransitionTargetSceneChanged(int state);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
 	SceneSelectionWidget *_scenes;
 	QComboBox *_sceneType;
-	QCheckBox *_waitForTransition;
+	QCheckBox *_useTransitionTargetScene;
 	std::shared_ptr<MacroConditionScene> _entryData;
 
 private:
