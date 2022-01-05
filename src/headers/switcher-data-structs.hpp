@@ -77,6 +77,7 @@ struct SwitcherData {
 	SwitcherThread *th = nullptr;
 
 	bool settingsWindowOpened = false;
+	bool firstBoot = true;
 
 	std::condition_variable cv;
 	std::mutex m;

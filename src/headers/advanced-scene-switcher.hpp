@@ -83,6 +83,7 @@ public:
 	void setupMacroTab();
 	void setTabOrder();
 	void restoreWindowGeo();
+	void checkFirstTimeSetup();
 
 signals:
 	void MacroAdded(const QString &name);

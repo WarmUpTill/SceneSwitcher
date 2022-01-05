@@ -87,6 +87,7 @@ void AdvSceneSwitcher::loadUI()
 
 	setTabOrder();
 	restoreWindowGeo();
+	checkFirstTimeSetup();
 
 	loading = false;
 }
