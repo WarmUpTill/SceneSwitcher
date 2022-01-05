@@ -444,6 +444,14 @@ void AdvSceneSwitcher::restoreWindowGeo()
 	}
 }
 
+void AdvSceneSwitcher::checkFirstTimeSetup()
+{
+	if (switcher->firstBoot && !switcher->disableHints) {
+		DisplayMessage(
+			obs_module_text("AdvSceneSwitcher.firstBootMessage"));
+	}
+}
+
 void AdvSceneSwitcher::on_tabMoved(int from, int to)
 {
 	if (loading) {
