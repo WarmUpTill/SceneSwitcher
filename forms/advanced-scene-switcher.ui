@@ -729,7 +729,7 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_34">
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="0,0,0,0,0">
+           <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="0,0,0,0,0,0">
             <item>
              <widget class="QLabel" name="label_20">
               <property name="text">
@@ -751,6 +751,13 @@
              <widget class="QCheckBox" name="runMacroInParallel">
               <property name="text">
                <string>AdvSceneSwitcher.macroTab.runInParallel</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="runMacroOnChange">
+              <property name="text">
+               <string>AdvSceneSwitcher.macroTab.onChange</string>
               </property>
              </widget>
             </item>
@@ -783,7 +790,7 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>767</width>
+                <width>792</width>
                 <height>218</height>
                </rect>
               </property>
@@ -882,7 +889,7 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>767</width>
+                <width>792</width>
                 <height>218</height>
                </rect>
               </property>

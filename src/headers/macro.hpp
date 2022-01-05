@@ -82,6 +82,8 @@ public:
 	bool RunInParallel() { return _runInParallel; }
 	void SetPaused(bool pause = true);
 	bool Paused() { return _paused; }
+	void SetMatchOnChange(bool onChange) { _matchOnChange = onChange; }
+	bool MatchOnChange() { return _matchOnChange; }
 	int GetCount() { return _count; };
 	void ResetCount() { _count = 0; };
 	std::deque<std::shared_ptr<MacroCondition>> &Conditions()
@@ -114,6 +116,8 @@ private:
 	std::deque<std::shared_ptr<MacroAction>> _actions;
 	bool _runInParallel = false;
 	bool _matched = false;
+	bool _lastMatched = false;
+	bool _matchOnChange = false;
 	bool _paused = false;
 	int _count = 0;
 	obs_hotkey_id _pauseHotkey = OBS_INVALID_HOTKEY_ID;

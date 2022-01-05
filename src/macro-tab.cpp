@@ -198,6 +198,16 @@ void AdvSceneSwitcher::on_runMacroInParallel_stateChanged(int value)
 	macro->SetRunInParallel(value);
 }
 
+void AdvSceneSwitcher::on_runMacroOnChange_stateChanged(int value)
+{
+	Macro *macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+	std::lock_guard<std::mutex> lock(switcher->m);
+	macro->SetMatchOnChange(value);
+}
+
 void AdvSceneSwitcher::PopulateMacroActions(Macro &m, uint32_t afterIdx)
 {
 	auto &actions = m.Actions();
@@ -232,8 +242,10 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 	{
 		const QSignalBlocker b1(ui->macroName);
 		const QSignalBlocker b2(ui->runMacroInParallel);
+		const QSignalBlocker b3(ui->runMacroOnChange);
 		ui->macroName->setText(m.Name().c_str());
 		ui->runMacroInParallel->setChecked(m.RunInParallel());
+		ui->runMacroOnChange->setChecked(m.MatchOnChange());
 	}
 	clearLayout(ui->macroEditConditionLayout);
 	clearLayout(ui->macroEditActionLayout);
