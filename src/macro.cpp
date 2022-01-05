@@ -95,8 +95,15 @@ bool Macro::CeckMatch()
 		vblog(LOG_INFO, "condition %s returned %d", c->GetId().c_str(),
 		      cond);
 	}
-
 	vblog(LOG_INFO, "Macro %s returned %d", _name.c_str(), _matched);
+
+	bool newLastMatched = _matched;
+	if (_matched && _matchOnChange && _lastMatched == _matched) {
+		vblog(LOG_INFO, "ignore match for Macro %s (on change)",
+		      _name.c_str());
+		_matched = false;
+	}
+	_lastMatched = newLastMatched;
 
 	// TODO: Move back to PerformAction() once new scene collection frontend
 	// events are available - see:
@@ -194,6 +201,7 @@ bool Macro::Save(obs_data_t *obj)
 	obs_data_set_string(obj, "name", _name.c_str());
 	obs_data_set_bool(obj, "pause", _paused);
 	obs_data_set_bool(obj, "parallel", _runInParallel);
+	obs_data_set_bool(obj, "onChange", _matchOnChange);
 
 	obs_data_array_t *pauseHotkey = obs_hotkey_save(_pauseHotkey);
 	obs_data_set_array(obj, "pauseHotkey", pauseHotkey);
@@ -272,6 +280,7 @@ bool Macro::Load(obs_data_t *obj)
 	_name = obs_data_get_string(obj, "name");
 	_paused = obs_data_get_bool(obj, "pause");
 	_runInParallel = obs_data_get_bool(obj, "parallel");
+	_matchOnChange = obs_data_get_bool(obj, "onChange");
 
 	obs_data_array_t *pauseHotkey = obs_data_get_array(obj, "pauseHotkey");
 	obs_hotkey_load(_pauseHotkey, pauseHotkey);
