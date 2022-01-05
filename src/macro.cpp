@@ -147,7 +147,7 @@ void Macro::RunActions(bool &retVal)
 	for (auto &a : _actions) {
 		a->LogAction();
 		ret = ret && a->PerformAction();
-		if (!ret || _stop) {
+		if (!ret || _stop || _paused) {
 			retVal = ret;
 			_done = true;
 			return;
