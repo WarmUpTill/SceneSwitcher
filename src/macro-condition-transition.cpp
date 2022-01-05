@@ -8,7 +8,7 @@ const std::string MacroConditionTransition::id = "transition";
 bool MacroConditionTransition::_registered = MacroConditionFactory::Register(
 	MacroConditionTransition::id,
 	{MacroConditionTransition::Create, MacroConditionTransitionEdit::Create,
-	 "AdvSceneSwitcher.condition.transition", false});
+	 "AdvSceneSwitcher.condition.transition"});
 
 static std::map<TransitionCondition, std::string> filterConditionTypes = {
 	{TransitionCondition::CURRENT,
