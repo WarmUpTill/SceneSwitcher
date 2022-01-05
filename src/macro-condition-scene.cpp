@@ -28,7 +28,7 @@ bool MacroConditionScene::CheckCondition()
 
 	switch (_type) {
 	case SceneType::CURRENT:
-		if (_waitForTransition) {
+		if (!_useTransitionTargetScene) {
 			return switcher->currentScene == _scene.GetScene(false);
 		} else {
 
@@ -58,7 +58,8 @@ bool MacroConditionScene::Save(obs_data_t *obj)
 	MacroCondition::Save(obj);
 	_scene.Save(obj);
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
-	obs_data_set_bool(obj, "waitForTransition", _waitForTransition);
+	obs_data_set_bool(obj, "useTransitionTargetScene",
+			  _useTransitionTargetScene);
 	return true;
 }
 
@@ -67,11 +68,12 @@ bool MacroConditionScene::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	_scene.Load(obj);
 	_type = static_cast<SceneType>(obs_data_get_int(obj, "type"));
-	if (!obs_data_has_user_value(obj, "waitForTransition")) {
-		_waitForTransition = true;
+	if (obs_data_has_user_value(obj, "waitForTransition")) {
+		_useTransitionTargetScene =
+			!obs_data_get_bool(obj, "waitForTransition");
 	} else {
-		_waitForTransition =
-			obs_data_get_bool(obj, "waitForTransition");
+		_useTransitionTargetScene =
+			obs_data_get_bool(obj, "useTransitionTargetScene");
 	}
 	return true;
 }
@@ -94,26 +96,34 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 {
 	_scenes = new SceneSelectionWidget(window(), false, false, false);
 	_sceneType = new QComboBox();
-	_waitForTransition = new QCheckBox(obs_module_text(
-		"AdvSceneSwitcher.condition.scene.waitForTransition"));
+	_useTransitionTargetScene = new QCheckBox(obs_module_text(
+		"AdvSceneSwitcher.condition.scene.currentSceneTransitionBehaviour"));
 
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
 	QWidget::connect(_sceneType, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TypeChanged(int)));
-	QWidget::connect(_waitForTransition, SIGNAL(stateChanged(int)), this,
-			 SLOT(WaitForTransitionChanged(int)));
+	QWidget::connect(_useTransitionTargetScene, SIGNAL(stateChanged(int)),
+			 this, SLOT(UseTransitionTargetSceneChanged(int)));
 
 	populateTypeSelection(_sceneType);
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", _scenes},
 		{"{{sceneType}}", _sceneType},
-		{"{{waitForTransition}}", _waitForTransition},
+		{"{{useTransitionTargetScene}}", _useTransitionTargetScene},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.scene.entry"),
-		     mainLayout, widgetPlaceholders);
+	QHBoxLayout *line1Layout = new QHBoxLayout;
+	placeWidgets(
+		obs_module_text("AdvSceneSwitcher.condition.scene.entry.line1"),
+		line1Layout, widgetPlaceholders);
+	QHBoxLayout *line2Layout = new QHBoxLayout;
+	placeWidgets(
+		obs_module_text("AdvSceneSwitcher.condition.scene.entry.line2"),
+		line2Layout, widgetPlaceholders);
+	QVBoxLayout *mainLayout = new QVBoxLayout;
+	mainLayout->addLayout(line1Layout);
+	mainLayout->addLayout(line2Layout);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -144,26 +154,23 @@ void MacroConditionSceneEdit::TypeChanged(int value)
 	SetWidgetVisibility();
 }
 
-void MacroConditionSceneEdit::WaitForTransitionChanged(int state)
+void MacroConditionSceneEdit::UseTransitionTargetSceneChanged(int state)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_waitForTransition = state;
+	_entryData->_useTransitionTargetScene = state;
 }
 
 void MacroConditionSceneEdit::SetWidgetVisibility()
 {
 	_scenes->setVisible(_entryData->_type == SceneType::CURRENT ||
 			    _entryData->_type == SceneType::PREVIOUS);
-
-	// The waitForTransition option shall be slowly faded out over time and
-	// be replaced by the transition source and target scene checks
-	_waitForTransition->setVisible(_entryData->_type ==
-					       SceneType::CURRENT &&
-				       !_entryData->_waitForTransition);
+	_useTransitionTargetScene->setVisible(_entryData->_type ==
+					      SceneType::CURRENT);
+	adjustSize();
 }
 
 void MacroConditionSceneEdit::UpdateEntryData()
@@ -174,6 +181,7 @@ void MacroConditionSceneEdit::UpdateEntryData()
 
 	_scenes->SetScene(_entryData->_scene);
 	_sceneType->setCurrentIndex(static_cast<int>(_entryData->_type));
-	_waitForTransition->setChecked(_entryData->_waitForTransition);
+	_useTransitionTargetScene->setChecked(
+		_entryData->_useTransitionTargetScene);
 	SetWidgetVisibility();
 }
