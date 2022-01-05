@@ -117,7 +117,7 @@ bool MacroActionAudio::PerformAction()
 		obs_source_set_muted(s, false);
 		break;
 	case AudioAction::SOURCE_VOLUME:
-		if (_fade) {
+		if (_fade && _duration.seconds != 0) {
 			startSourceFade(_duration, (float)_volume / 100.0f,
 					_audioSource);
 		} else {
@@ -125,7 +125,7 @@ bool MacroActionAudio::PerformAction()
 		}
 		break;
 	case AudioAction::MASTER_VOLUME:
-		if (_fade) {
+		if (_fade && _duration.seconds != 0) {
 			startMasterFade(_duration, (float)_volume / 100.0f);
 		} else {
 			obs_set_master_volume((float)_volume / 100.0f);
