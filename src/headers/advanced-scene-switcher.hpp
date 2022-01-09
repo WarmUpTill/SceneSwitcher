@@ -28,16 +28,12 @@ class AdvSceneSwitcher : public QDialog {
 public:
 	std::unique_ptr<Ui_AdvSceneSwitcher> ui;
 	bool loading = true;
-	bool currentStatusActive = false;
 
 	AdvSceneSwitcher(QWidget *parent);
 	~AdvSceneSwitcher();
 
 	void reject() override;
 	void closeEvent(QCloseEvent *event) override;
-
-	void SetStarted();
-	void SetStopped();
 
 	void SetShowFrames();
 	void SetHideFrames();
@@ -109,7 +105,6 @@ public slots:
 	void on_autoStartEvent_currentIndexChanged(int index);
 	void on_noMatchSwitchScene_currentTextChanged(const QString &text);
 	void on_checkInterval_valueChanged(int value);
-	void on_toggleStartButton_clicked();
 	void on_tabMoved(int from, int to);
 	void on_tabWidget_currentChanged(int index);
 
@@ -272,7 +267,6 @@ public slots:
 	void on_threadPriority_currentTextChanged(const QString &text);
 
 	void updateScreenRegionCursorPos();
-	void updateStatus();
 
 	void on_close_clicked();
 

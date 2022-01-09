@@ -9,7 +9,7 @@
 #include <obs-frontend-api.h>
 
 #include "headers/advanced-scene-switcher.hpp"
-#include "headers/status-dock.hpp"
+#include "headers/status-control.hpp"
 #include "headers/curl-helper.hpp"
 #include "headers/utility.hpp"
 #include "headers/version.h"

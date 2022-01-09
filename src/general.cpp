@@ -1,12 +1,10 @@
 #include "headers/advanced-scene-switcher.hpp"
-#include "headers/status-dock.hpp"
+#include "headers/status-control.hpp"
 #include "headers/utility.hpp"
 #include "headers/version.h"
 
 #include <QFileDialog>
 #include <QStandardPaths>
-
-QMetaObject::Connection inactivePluse;
 
 void AdvSceneSwitcher::on_close_clicked()
 {
@@ -145,41 +143,6 @@ void AdvSceneSwitcher::on_checkInterval_valueChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->interval = value;
-}
-
-void AdvSceneSwitcher::SetStarted()
-{
-	ui->toggleStartButton->setText(
-		obs_module_text("AdvSceneSwitcher.generalTab.status.stop"));
-	ui->pluginRunningText->setText(
-		obs_module_text("AdvSceneSwitcher.status.active"));
-	ui->pluginRunningText->disconnect(inactivePluse);
-	currentStatusActive = true;
-}
-
-void AdvSceneSwitcher::SetStopped()
-{
-	ui->toggleStartButton->setText(
-		obs_module_text("AdvSceneSwitcher.generalTab.status.start"));
-	ui->pluginRunningText->setText(
-		obs_module_text("AdvSceneSwitcher.status.inactive"));
-	if (!switcher->disableHints) {
-		inactivePluse = PulseWidget(ui->pluginRunningText,
-					    QColor(Qt::red), QColor(0, 0, 0, 0),
-					    "QLabel ");
-	}
-	currentStatusActive = false;
-}
-
-void AdvSceneSwitcher::on_toggleStartButton_clicked()
-{
-	if (switcher->th && switcher->th->isRunning()) {
-		switcher->Stop();
-		SetStopped();
-	} else {
-		switcher->Start();
-		SetStarted();
-	}
 }
 
 void AdvSceneSwitcher::closeEvent(QCloseEvent *)
@@ -791,21 +754,6 @@ void populateAutoStartEventSelection(QComboBox *cb)
 		"AdvSceneSwitcher.generalTab.status.autoStart.recordingAndStreaming"));
 }
 
-void AdvSceneSwitcher::updateStatus()
-{
-	if (switcher->th && switcher->th->isRunning()) {
-		if (currentStatusActive) {
-			return;
-		}
-		SetStarted();
-	} else {
-		if (!currentStatusActive) {
-			return;
-		}
-		SetStopped();
-	}
-}
-
 void AdvSceneSwitcher::setupGeneralTab()
 {
 	populateSceneSelection(ui->noMatchSwitchScene, false);
@@ -926,17 +874,14 @@ void AdvSceneSwitcher::setupGeneralTab()
 	ui->autoStartEvent->setCurrentIndex(
 		static_cast<int>(switcher->autoStartEvent));
 
-	if (switcher->th && switcher->th->isRunning()) {
-		SetStarted();
-	} else {
-		SetStopped();
-	}
-
-	// Updates the UI status element if the status changed externally
-	// (e.g. via hotkeys)
-	QTimer *statusTimer = new QTimer(this);
-	connect(statusTimer, SIGNAL(timeout()), this, SLOT(updateStatus()));
-	statusTimer->start(1000);
+	// Set up status control
+	auto statusControl = new StatusControl(this, true);
+	ui->statusLayout->addWidget(statusControl->StatusPrefixLabel(), 1, 0);
+	auto tmp = new QHBoxLayout;
+	tmp->addWidget(statusControl->StatusLabel());
+	tmp->addStretch();
+	ui->statusLayout->addLayout(tmp, 1, 1);
+	ui->statusLayout->addWidget(statusControl->Button(), 2, 1);
 
 	setWindowTitle(windowTitle() + " - " + g_GIT_TAG);
 }
