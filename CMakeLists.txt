@@ -257,7 +257,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/duration-control.hpp
     src/headers/file-selection.hpp
     src/headers/section.hpp
-    src/headers/status-dock.hpp
+    src/headers/status-control.hpp
     src/headers/platform-funcs.hpp
     src/headers/utility.hpp
     src/headers/volume-control.hpp
@@ -354,7 +354,7 @@ set(advanced-scene-switcher_SOURCES
     src/transition-selection.cpp
     src/name-dialog.cpp
     src/duration-control.cpp
-    src/status-dock.cpp
+    src/status-control.cpp
     src/section.cpp
     src/utility.cpp
     src/volume-control.cpp
