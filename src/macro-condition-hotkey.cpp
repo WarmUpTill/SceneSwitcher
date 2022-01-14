@@ -76,8 +76,11 @@ MacroConditionHotkeyEdit::MacroConditionHotkeyEdit(
 	: QWidget(parent)
 {
 	_name = new QLineEdit();
+	QLabel *line1 = new QLabel(obs_module_text(
+		"AdvSceneSwitcher.condition.hotkey.entry.line1"));
 	QLabel *hint = new QLabel(
 		obs_module_text("AdvSceneSwitcher.condition.hotkey.tip"));
+
 	QWidget::connect(_name, SIGNAL(editingFinished()), this,
 			 SLOT(NameChanged()));
 
@@ -85,10 +88,12 @@ MacroConditionHotkeyEdit::MacroConditionHotkeyEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{name}}", _name},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.hotkey.entry"),
+	placeWidgets(obs_module_text(
+			     "AdvSceneSwitcher.condition.hotkey.entry.line2"),
 		     switchLayout, widgetPlaceholders);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
+	mainLayout->addWidget(line1);
 	mainLayout->addLayout(switchLayout);
 	mainLayout->addWidget(hint);
 	setLayout(mainLayout);
