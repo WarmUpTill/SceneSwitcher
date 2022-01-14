@@ -16,6 +16,7 @@ const static std::map<PerformMacroAction, std::string> actionTypes = {
 	{PerformMacroAction::RESET_COUNTER,
 	 "AdvSceneSwitcher.action.macro.type.resetCounter"},
 	{PerformMacroAction::RUN, "AdvSceneSwitcher.action.macro.type.run"},
+	{PerformMacroAction::STOP, "AdvSceneSwitcher.action.macro.type.stop"},
 };
 
 bool MacroActionMacro::PerformAction()
@@ -36,6 +37,9 @@ bool MacroActionMacro::PerformAction()
 		break;
 	case PerformMacroAction::RUN:
 		_macro->PerformAction();
+		break;
+	case PerformMacroAction::STOP:
+		_macro->Stop();
 		break;
 	default:
 		break;
@@ -62,6 +66,9 @@ void MacroActionMacro::LogAction()
 	case PerformMacroAction::RUN:
 		vblog(LOG_INFO, "run nested macro \"%s\"",
 		      _macro->Name().c_str());
+		break;
+	case PerformMacroAction::STOP:
+		vblog(LOG_INFO, "stopped macro \"%s\"", _macro->Name().c_str());
 		break;
 	default:
 		break;

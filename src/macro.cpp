@@ -29,7 +29,7 @@ Macro::Macro(const std::string &name)
 
 Macro::~Macro()
 {
-	_stop = true;
+	_die = true;
 	if (_thread.joinable()) {
 		_thread.join();
 	}
@@ -121,9 +121,9 @@ bool Macro::PerformAction(bool forceParallel, bool ignorePause)
 		vblog(LOG_INFO, "macro %s already running", _name.c_str());
 		return !forceParallel;
 	}
-
-	bool ret = true;
+	_stop = false;
 	_done = false;
+	bool ret = true;
 	if (_runInParallel || forceParallel) {
 		if (_thread.joinable()) {
 			_thread.join();
@@ -155,7 +155,7 @@ void Macro::RunActions(bool &retVal, bool ignorePause)
 	for (auto &a : _actions) {
 		a->LogAction();
 		ret = ret && a->PerformAction();
-		if (!ret || _stop || (_paused && !ignorePause)) {
+		if (!ret || (_paused && !ignorePause) || _stop || _die) {
 			retVal = ret;
 			_done = true;
 			return;

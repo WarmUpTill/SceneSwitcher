@@ -86,6 +86,7 @@ public:
 	bool MatchOnChange() { return _matchOnChange; }
 	int GetCount() { return _count; };
 	void ResetCount() { _count = 0; };
+	void Stop() { _stop = true; }
 	std::deque<std::shared_ptr<MacroCondition>> &Conditions()
 	{
 		return _conditions;
@@ -124,6 +125,7 @@ private:
 	obs_hotkey_id _unpauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _togglePauseHotkey = OBS_INVALID_HOTKEY_ID;
 
+	bool _die = false;
 	bool _stop = false;
 	bool _done = true;
 	std::thread _thread;
