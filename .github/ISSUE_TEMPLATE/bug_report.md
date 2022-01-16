@@ -21,12 +21,12 @@ Steps to reproduce the behavior:
 A clear and concise description of what you expected to happen.
 
 **Logs**
-Please provide a log of your issue with verbose logging enabled (General tab of the plugin).
-See https://obsproject.com/forum/threads/please-post-a-log-with-your-issue-heres-how.23074/ for a description where to find the log files and how to share them.
+Please provide a log of your issue with verbose logging enabled (General tab of the plugin).  
+See [here](https://obsproject.com/forum/threads/please-post-a-log-with-your-issue-heres-how.23074/) for a description where to find the log files and how to share them.  
 If applicable, add screenshots to help explain your problem.
 
 **Version information**
- - OS: [e.g. Windows]
+ - OS: [e.g. Windows 10]
  - OBS Version [e.g. 27.1.3]
  - Plugin Version [e.g. 1.17.1]
 
