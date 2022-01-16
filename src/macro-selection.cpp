@@ -43,6 +43,28 @@ void MacroSelection::SetCurrentMacro(Macro *m)
 	}
 }
 
+void MacroSelection::HideSelectedMacro()
+{
+	auto ssWindow = static_cast<AdvSceneSwitcher *>(window());
+	if (!ssWindow) {
+		return;
+	}
+	int idx = ssWindow->ui->macros->currentRow();
+	if (idx == -1) {
+		return;
+	}
+	// +1 for "select macro" entry
+	qobject_cast<QListView *>(view())->setRowHidden(idx + 1, true);
+}
+
+void MacroSelection::ShowAllMacros()
+{
+	auto v = qobject_cast<QListView *>(view());
+	for (int i = count(); i > 0; i--) {
+		v->setRowHidden(i, false);
+	}
+}
+
 void MacroSelection::MacroRemove(const QString &name)
 {
 	int idx = findText(name);

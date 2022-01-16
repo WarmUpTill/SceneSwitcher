@@ -144,6 +144,10 @@ void MacroActionMacroEdit::UpdateEntryData()
 	}
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_macros->SetCurrentMacro(_entryData->_macro.get());
+	if (_entryData->_action == PerformMacroAction::RUN ||
+	    _entryData->_action == PerformMacroAction::STOP) {
+		_macros->HideSelectedMacro();
+	}
 }
 
 void MacroActionMacroEdit::MacroChanged(const QString &text)
@@ -166,6 +170,13 @@ void MacroActionMacroEdit::ActionChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<PerformMacroAction>(value);
+
+	if (_entryData->_action == PerformMacroAction::RUN ||
+	    _entryData->_action == PerformMacroAction::STOP) {
+		_macros->HideSelectedMacro();
+	} else {
+		_macros->ShowAllMacros();
+	}
 }
 
 void MacroActionMacroEdit::MacroRemove(const QString &)
