@@ -9,6 +9,8 @@ class MacroSelection : public QComboBox {
 public:
 	MacroSelection(QWidget *parent);
 	void SetCurrentMacro(Macro *);
+	void HideSelectedMacro(); // Macro currently being edited
+	void ShowAllMacros();
 
 private slots:
 	void MacroAdd(const QString &name);
