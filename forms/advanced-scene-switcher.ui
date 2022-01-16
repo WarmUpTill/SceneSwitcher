@@ -521,6 +521,9 @@
             <property name="text">
              <string>AdvSceneSwitcher.macroTab.priorityWarning</string>
             </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
           <item>
