@@ -42,6 +42,7 @@ public:
 	void SetValue(double value);
 	void SetUnit(DurationUnit u);
 	void SetDuration(Duration d);
+	QDoubleSpinBox *SpinBox() { return _duration; }
 
 private slots:
 	void _DurationChanged(double value);
