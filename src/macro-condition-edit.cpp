@@ -87,6 +87,7 @@ static inline void populateConditionSelection(QComboBox *list)
 	for (auto entry : MacroConditionFactory::GetConditionTypes()) {
 		list->addItem(obs_module_text(entry.second._name.c_str()));
 	}
+	list->model()->sort(0);
 }
 
 MacroConditionEdit::MacroConditionEdit(
