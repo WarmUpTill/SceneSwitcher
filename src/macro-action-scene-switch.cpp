@@ -130,6 +130,8 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	_blockUntilTransitionDone = new QCheckBox(obs_module_text(
 		"AdvSceneSwitcher.action.scene.blockUntilTransitionDone"));
 
+	_duration->SpinBox()->setSpecialValueText("-");
+
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
 	QWidget::connect(_transitions,
