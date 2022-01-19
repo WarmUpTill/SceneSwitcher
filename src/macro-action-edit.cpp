@@ -57,6 +57,7 @@ static inline void populateActionSelection(QComboBox *list)
 	for (auto entry : MacroActionFactory::GetActionTypes()) {
 		list->addItem(obs_module_text(entry.second._name.c_str()));
 	}
+	list->model()->sort(0);
 }
 
 MacroActionEdit::MacroActionEdit(QWidget *parent,
