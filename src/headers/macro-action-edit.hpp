@@ -2,7 +2,7 @@
 #include "macro.hpp"
 
 struct MacroActionInfo {
-	using TCreateMethod = std::shared_ptr<MacroAction> (*)();
+	using TCreateMethod = std::shared_ptr<MacroAction> (*)(Macro *m);
 	using TCreateWidgetMethod = QWidget *(*)(QWidget *parent,
 						 std::shared_ptr<MacroAction>);
 	TCreateMethod _createFunc = nullptr;
@@ -14,7 +14,8 @@ class MacroActionFactory {
 public:
 	MacroActionFactory() = delete;
 	static bool Register(const std::string &id, MacroActionInfo);
-	static std::shared_ptr<MacroAction> Create(const std::string &id);
+	static std::shared_ptr<MacroAction> Create(const std::string &id,
+						   Macro *m);
 	static QWidget *CreateWidget(const std::string &id, QWidget *parent,
 				     std::shared_ptr<MacroAction> action);
 	static auto GetActionTypes() { return _methods; }

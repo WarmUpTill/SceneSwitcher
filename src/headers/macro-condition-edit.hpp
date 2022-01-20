@@ -2,7 +2,7 @@
 #include "macro.hpp"
 
 struct MacroConditionInfo {
-	using TCreateMethod = std::shared_ptr<MacroCondition> (*)();
+	using TCreateMethod = std::shared_ptr<MacroCondition> (*)(Macro *m);
 	using TCreateWidgetMethod =
 		QWidget *(*)(QWidget *parent, std::shared_ptr<MacroCondition>);
 	TCreateMethod _createFunc = nullptr;
@@ -15,7 +15,8 @@ class MacroConditionFactory {
 public:
 	MacroConditionFactory() = delete;
 	static bool Register(const std::string &, MacroConditionInfo);
-	static std::shared_ptr<MacroCondition> Create(const std::string &);
+	static std::shared_ptr<MacroCondition> Create(const std::string &,
+						      Macro *m);
 	static QWidget *CreateWidget(const std::string &id, QWidget *parent,
 				     std::shared_ptr<MacroCondition>);
 	static auto GetConditionTypes() { return _methods; }

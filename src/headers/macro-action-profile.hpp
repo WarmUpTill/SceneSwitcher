@@ -3,15 +3,16 @@
 
 class MacroActionProfile : public MacroAction {
 public:
+	MacroActionProfile(Macro *m) : MacroAction(m) {}
 	bool PerformAction();
 	void LogAction();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetShortDesc();
 	std::string GetId() { return id; };
-	static std::shared_ptr<MacroAction> Create()
+	static std::shared_ptr<MacroAction> Create(Macro *m)
 	{
-		return std::make_shared<MacroActionProfile>();
+		return std::make_shared<MacroActionProfile>(m);
 	}
 
 	std::string _profile;

@@ -11,15 +11,16 @@ enum class FileAction {
 
 class MacroActionFile : public MacroAction {
 public:
+	MacroActionFile(Macro *m) : MacroAction(m) {}
 	bool PerformAction();
 	void LogAction();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetShortDesc();
 	std::string GetId() { return id; };
-	static std::shared_ptr<MacroAction> Create()
+	static std::shared_ptr<MacroAction> Create(Macro *m)
 	{
-		return std::make_shared<MacroActionFile>();
+		return std::make_shared<MacroActionFile>(m);
 	}
 
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");

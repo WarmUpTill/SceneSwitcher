@@ -5,15 +5,15 @@
 
 class MacroConditionHotkey : public MacroCondition {
 public:
-	MacroConditionHotkey();
+	MacroConditionHotkey(Macro *m);
 	~MacroConditionHotkey();
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetId() { return id; };
-	static std::shared_ptr<MacroCondition> Create()
+	static std::shared_ptr<MacroCondition> Create(Macro *m)
 	{
-		return std::make_shared<MacroConditionHotkey>();
+		return std::make_shared<MacroConditionHotkey>(m);
 	}
 	void SetPressed() { _pressed = true; }
 

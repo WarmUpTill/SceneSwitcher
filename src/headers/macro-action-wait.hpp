@@ -12,13 +12,14 @@ enum class WaitType {
 
 class MacroActionWait : public MacroAction {
 public:
+	MacroActionWait(Macro *m) : MacroAction(m) {}
 	bool PerformAction();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetId() { return id; };
-	static std::shared_ptr<MacroAction> Create()
+	static std::shared_ptr<MacroAction> Create(Macro *m)
 	{
-		return std::make_shared<MacroActionWait>();
+		return std::make_shared<MacroActionWait>(m);
 	}
 	Duration _duration;
 	Duration _duration2;

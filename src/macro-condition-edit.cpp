@@ -18,10 +18,10 @@ bool MacroConditionFactory::Register(const std::string &id,
 }
 
 std::shared_ptr<MacroCondition>
-MacroConditionFactory::Create(const std::string &id)
+MacroConditionFactory::Create(const std::string &id, Macro *m)
 {
 	if (auto it = _methods.find(id); it != _methods.end()) {
-		return it->second._createFunc();
+		return it->second._createFunc(m);
 	}
 	return nullptr;
 }
@@ -189,6 +189,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 	}
 
 	auto idx = _entryData->get()->GetIndex();
+	auto macro = _entryData->get()->GetMacro();
 	std::string id = MacroConditionFactory::GetIdByName(text);
 
 	auto temp = DurationConstraint();
@@ -198,7 +199,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	auto logic = (*_entryData)->GetLogicType();
 	_entryData->reset();
-	*_entryData = MacroConditionFactory::Create(id);
+	*_entryData = MacroConditionFactory::Create(id, macro);
 	(*_entryData)->SetIndex(idx);
 	(*_entryData)->SetLogicType(logic);
 	auto widget =
@@ -260,14 +261,14 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 	if (idx - 1 >= 0) {
 		id = macro->Conditions().at(idx - 1)->GetId();
 	} else {
-		MacroConditionScene temp;
+		MacroConditionScene temp(macro);
 		id = temp.GetId();
 	}
 	std::lock_guard<std::mutex> lock(switcher->m);
 	bool root = idx == 0;
-	auto cond =
-		macro->Conditions().emplace(macro->Conditions().begin() + idx,
-					    MacroConditionFactory::Create(id));
+	auto cond = macro->Conditions().emplace(
+		macro->Conditions().begin() + idx,
+		MacroConditionFactory::Create(id, macro));
 	if (idx - 1 >= 0) {
 		auto data = obs_data_create();
 		macro->Conditions().at(idx - 1)->Save(data);

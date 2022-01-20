@@ -15,14 +15,15 @@ enum class DateCondition {
 
 class MacroConditionDate : public MacroCondition {
 public:
+	MacroConditionDate(Macro *m) : MacroCondition(m) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetShortDesc();
 	std::string GetId() { return id; };
-	static std::shared_ptr<MacroCondition> Create()
+	static std::shared_ptr<MacroCondition> Create(Macro *m)
 	{
-		return std::make_shared<MacroConditionDate>();
+		return std::make_shared<MacroConditionDate>(m);
 	}
 
 	QDateTime _dateTime;

@@ -14,13 +14,14 @@ enum class CursorCondition {
 
 class MacroConditionCursor : public MacroCondition {
 public:
+	MacroConditionCursor(Macro *m) : MacroCondition(m) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetId() { return id; };
-	static std::shared_ptr<MacroCondition> Create()
+	static std::shared_ptr<MacroCondition> Create(Macro *m)
 	{
-		return std::make_shared<MacroConditionCursor>();
+		return std::make_shared<MacroConditionCursor>(m);
 	}
 
 	CursorCondition _condition = CursorCondition::REGION;

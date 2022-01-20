@@ -20,7 +20,7 @@ static void hotkeyCB(void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed)
 
 static uint32_t count = 1;
 
-MacroConditionHotkey::MacroConditionHotkey()
+MacroConditionHotkey::MacroConditionHotkey(Macro *m) : MacroCondition(m)
 {
 	if (_hotkeyID != OBS_INVALID_HOTKEY_ID) {
 		obs_hotkey_unregister(_hotkeyID);
