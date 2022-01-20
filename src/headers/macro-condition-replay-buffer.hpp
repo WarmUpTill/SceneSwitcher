@@ -13,13 +13,14 @@ enum class ReplayBufferState {
 
 class MacroConditionReplayBuffer : public MacroCondition {
 public:
+	MacroConditionReplayBuffer(Macro *m) : MacroCondition(m) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetId() { return id; };
-	static std::shared_ptr<MacroCondition> Create()
+	static std::shared_ptr<MacroCondition> Create(Macro *m)
 	{
-		return std::make_shared<MacroConditionReplayBuffer>();
+		return std::make_shared<MacroConditionReplayBuffer>(m);
 	}
 
 	ReplayBufferState _state = ReplayBufferState::STOP;

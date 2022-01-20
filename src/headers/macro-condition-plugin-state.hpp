@@ -10,13 +10,14 @@ enum class PluginStateCondition {
 
 class MacroConditionPluginState : public MacroCondition {
 public:
+	MacroConditionPluginState(Macro *m) : MacroCondition(m) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetId() { return id; };
-	static std::shared_ptr<MacroCondition> Create()
+	static std::shared_ptr<MacroCondition> Create(Macro *m)
 	{
-		return std::make_shared<MacroConditionPluginState>();
+		return std::make_shared<MacroConditionPluginState>(m);
 	}
 
 	PluginStateCondition _condition = PluginStateCondition::SCENESWITCHED;

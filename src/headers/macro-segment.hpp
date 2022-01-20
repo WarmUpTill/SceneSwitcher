@@ -2,8 +2,12 @@
 #include <QWidget>
 #include <obs.hpp>
 
+class Macro;
+
 class MacroSegment {
 public:
+	MacroSegment(Macro *m) : _macro(m) {}
+	Macro *GetMacro() { return _macro; }
 	void SetIndex(int idx) { _idx = idx; }
 	int GetIndex() { return _idx; }
 	void SetCollapsed(bool collapsed) { _collapsed = collapsed; }
@@ -16,6 +20,9 @@ public:
 protected:
 	int _idx = 0;
 	bool _collapsed = false;
+
+private:
+	Macro *_macro = nullptr;
 };
 
 class Section;

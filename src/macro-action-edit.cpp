@@ -16,10 +16,11 @@ bool MacroActionFactory::Register(const std::string &id, MacroActionInfo info)
 	return false;
 }
 
-std::shared_ptr<MacroAction> MacroActionFactory::Create(const std::string &id)
+std::shared_ptr<MacroAction> MacroActionFactory::Create(const std::string &id,
+							Macro *m)
 {
 	if (auto it = _methods.find(id); it != _methods.end())
-		return it->second._createFunc();
+		return it->second._createFunc(m);
 
 	return nullptr;
 }
@@ -93,12 +94,13 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 	}
 
 	auto idx = _entryData->get()->GetIndex();
+	auto macro = _entryData->get()->GetMacro();
 	std::string id = MacroActionFactory::GetIdByName(text);
 	HeaderInfoChanged("");
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->reset();
-	*_entryData = MacroActionFactory::Create(id);
+	*_entryData = MacroActionFactory::Create(id, macro);
 	(*_entryData)->SetIndex(idx);
 	auto widget = MacroActionFactory::CreateWidget(id, this, *_entryData);
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
@@ -140,12 +142,12 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 	if (idx - 1 >= 0) {
 		id = macro->Actions().at(idx - 1)->GetId();
 	} else {
-		MacroActionSwitchScene temp;
+		MacroActionSwitchScene temp(nullptr);
 		id = temp.GetId();
 	}
 	std::lock_guard<std::mutex> lock(switcher->m);
 	macro->Actions().emplace(macro->Actions().begin() + idx,
-				 MacroActionFactory::Create(id));
+				 MacroActionFactory::Create(id, macro));
 	if (idx - 1 >= 0) {
 		auto data = obs_data_create();
 		macro->Actions().at(idx - 1)->Save(data);

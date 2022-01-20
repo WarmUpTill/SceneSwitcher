@@ -12,13 +12,14 @@ enum class StreamState {
 
 class MacroConditionStream : public MacroCondition {
 public:
+	MacroConditionStream(Macro *m) : MacroCondition(m) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetId() { return id; };
-	static std::shared_ptr<MacroCondition> Create()
+	static std::shared_ptr<MacroCondition> Create(Macro *m)
 	{
-		return std::make_shared<MacroConditionStream>();
+		return std::make_shared<MacroConditionStream>(m);
 	}
 
 	StreamState _streamState = StreamState::STOP;

@@ -32,15 +32,16 @@ constexpr int maxMinNeighbors = 6;
 
 class MacroConditionVideo : public MacroCondition {
 public:
+	MacroConditionVideo(Macro *m) : MacroCondition(m) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetShortDesc();
 	std::string GetId() { return id; };
 	QImage GetMatchImage() { return _matchImage; };
-	static std::shared_ptr<MacroCondition> Create()
+	static std::shared_ptr<MacroCondition> Create(Macro *m)
 	{
-		return std::make_shared<MacroConditionVideo>();
+		return std::make_shared<MacroConditionVideo>(m);
 	}
 	void GetScreenshot();
 	bool LoadImageFromFile();

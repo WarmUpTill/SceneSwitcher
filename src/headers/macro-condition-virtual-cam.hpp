@@ -12,13 +12,14 @@ enum class VCamState {
 
 class MacroConditionVCam : public MacroCondition {
 public:
+	MacroConditionVCam(Macro *m) : MacroCondition(m) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetId() { return id; };
-	static std::shared_ptr<MacroCondition> Create()
+	static std::shared_ptr<MacroCondition> Create(Macro *m)
 	{
-		return std::make_shared<MacroConditionVCam>();
+		return std::make_shared<MacroConditionVCam>(m);
 	}
 
 	VCamState _state = VCamState::STOP;

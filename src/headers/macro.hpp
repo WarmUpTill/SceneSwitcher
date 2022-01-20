@@ -39,6 +39,7 @@ struct LogicTypeInfo {
 
 class MacroCondition : public MacroSegment {
 public:
+	MacroCondition(Macro *m) : MacroSegment(m) {}
 	virtual bool CheckCondition() = 0;
 	virtual bool Save(obs_data_t *obj) = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
@@ -61,6 +62,7 @@ private:
 
 class MacroAction : public MacroSegment {
 public:
+	MacroAction(Macro *m) : MacroSegment(m) {}
 	virtual bool PerformAction() = 0;
 	virtual bool Save(obs_data_t *obj) = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
@@ -151,18 +153,21 @@ private:
 
 class MacroRefCondition : public MacroCondition {
 public:
+	MacroRefCondition(Macro *m) : MacroCondition(m) {}
 	void ResolveMacroRef();
 	MacroRef _macro;
 };
 
 class MacroRefAction : public MacroAction {
 public:
+	MacroRefAction(Macro *m) : MacroAction(m) {}
 	void ResolveMacroRef();
 	MacroRef _macro;
 };
 
 class MultiMacroRefAction : public MacroAction {
 public:
+	MultiMacroRefAction(Macro *m) : MacroAction(m) {}
 	void ResolveMacroRef();
 	std::vector<MacroRef> _macros;
 };

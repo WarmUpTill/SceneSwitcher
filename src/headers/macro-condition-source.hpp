@@ -14,14 +14,15 @@ enum class SourceCondition {
 
 class MacroConditionSource : public MacroCondition {
 public:
+	MacroConditionSource(Macro *m) : MacroCondition(m) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetShortDesc();
 	std::string GetId() { return id; };
-	static std::shared_ptr<MacroCondition> Create()
+	static std::shared_ptr<MacroCondition> Create(Macro *m)
 	{
-		return std::make_shared<MacroConditionSource>();
+		return std::make_shared<MacroConditionSource>(m);
 	}
 
 	OBSWeakSource _source = nullptr;

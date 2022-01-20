@@ -305,7 +305,7 @@ bool Macro::Load(obs_data_t *obj)
 
 		std::string id = obs_data_get_string(array_obj, "id");
 
-		auto newEntry = MacroConditionFactory::Create(id);
+		auto newEntry = MacroConditionFactory::Create(id, this);
 		if (newEntry) {
 			_conditions.emplace_back(newEntry);
 			auto c = _conditions.back().get();
@@ -331,7 +331,7 @@ bool Macro::Load(obs_data_t *obj)
 
 		std::string id = obs_data_get_string(array_obj, "id");
 
-		auto newEntry = MacroActionFactory::Create(id);
+		auto newEntry = MacroActionFactory::Create(id, this);
 		if (newEntry) {
 			_actions.emplace_back(newEntry);
 			_actions.back()->Load(array_obj);
@@ -372,7 +372,7 @@ void Macro::ResolveMacroRef()
 
 bool Macro::SwitchesScene()
 {
-	MacroActionSwitchScene temp;
+	MacroActionSwitchScene temp(nullptr);
 	auto sceneSwitchId = temp.GetId();
 	for (auto &a : _actions) {
 		if (a->GetId() == sceneSwitchId) {

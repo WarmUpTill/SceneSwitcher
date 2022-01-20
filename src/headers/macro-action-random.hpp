@@ -9,14 +9,15 @@
 
 class MacroActionRandom : public MultiMacroRefAction {
 public:
+	MacroActionRandom(Macro *m) : MultiMacroRefAction(m) {}
 	bool PerformAction();
 	void LogAction();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetId() { return id; };
-	static std::shared_ptr<MacroAction> Create()
+	static std::shared_ptr<MacroAction> Create(Macro *m)
 	{
-		return std::make_shared<MacroActionRandom>();
+		return std::make_shared<MacroActionRandom>(m);
 	}
 
 	// TODO: add weights to each macro ...

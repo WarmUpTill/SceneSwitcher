@@ -14,14 +14,15 @@ enum class SceneOrderCondition {
 
 class MacroConditionSceneOrder : public MacroCondition {
 public:
+	MacroConditionSceneOrder(Macro *m) : MacroCondition(m) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetShortDesc();
 	std::string GetId() { return id; };
-	static std::shared_ptr<MacroCondition> Create()
+	static std::shared_ptr<MacroCondition> Create(Macro *m)
 	{
-		return std::make_shared<MacroConditionSceneOrder>();
+		return std::make_shared<MacroConditionSceneOrder>(m);
 	}
 
 	SceneSelection _scene;
