@@ -14,7 +14,13 @@ static void hotkeyCB(void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed)
 {
 	if (pressed) {
 		auto c = static_cast<MacroConditionHotkey *>(data);
-		c->SetPressed();
+		auto macro = c->GetMacro();
+		if (!macro) {
+			c->SetPressed();
+		}
+		if (macro && !macro->Paused()) {
+			c->SetPressed();
+		}
 	}
 }
 
