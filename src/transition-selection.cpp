@@ -68,7 +68,6 @@ TransitionSelectionWidget::TransitionSelectionWidget(QWidget *parent,
 						     bool current, bool any)
 	: QComboBox(parent)
 {
-	// For the rare occasion of a name conflict with current / previous
 	setDuplicatesEnabled(true);
 	populateTransitionSelection(this, current, any);
 
@@ -81,7 +80,6 @@ void TransitionSelectionWidget::SetTransition(TransitionSelection &t)
 	// Order of entries
 	// 1. Any transition
 	// 2. Current transition
-	// 3. Previous transition
 	// 4. Transitions
 
 	int idx;
@@ -112,9 +110,12 @@ void TransitionSelectionWidget::SetTransition(TransitionSelection &t)
 
 void TransitionSelectionWidget::Repopulate(bool current, bool any)
 {
-	this->clear();
-	populateTransitionSelection(this, current, any);
-	setCurrentIndex(0);
+	{
+		const QSignalBlocker blocker(this);
+		clear();
+		populateTransitionSelection(this, current, any);
+		setCurrentIndex(0);
+	}
 	TransitionSelection t;
 	emit TransitionChanged(t);
 }
