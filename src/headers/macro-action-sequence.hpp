@@ -4,44 +4,46 @@
 
 #include <QPushButton>
 #include <QListWidget>
-#include <unordered_map>
+#include <QCheckBox>
+#include <QTimer>
 
-class MacroActionRandom : public MultiMacroRefAction {
+class MacroActionSequence : public MultiMacroRefAction {
 public:
-	MacroActionRandom(Macro *m) : MultiMacroRefAction(m) {}
+	MacroActionSequence(Macro *m) : MultiMacroRefAction(m) {}
 	bool PerformAction();
 	void LogAction();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
 	std::string GetId() { return id; };
+	MacroRef GetNextMacro(bool advance = true);
 	static std::shared_ptr<MacroAction> Create(Macro *m)
 	{
-		return std::make_shared<MacroActionRandom>(m);
+		return std::make_shared<MacroActionSequence>(m);
 	}
 
-	// TODO: add weights to each macro ...
-	// std::unordered_map<MacroRef, int> _weights;
+	bool _restart = true;
+	MacroRef _lastSequenceMacro;
 
 private:
-	MacroRef lastRandomMacro;
+	int _lastIdx = -1;
 	static bool _registered;
 	static const std::string id;
 };
 
-class MacroActionRandomEdit : public QWidget {
+class MacroActionSequenceEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroActionRandomEdit(
+	MacroActionSequenceEdit(
 		QWidget *parent,
-		std::shared_ptr<MacroActionRandom> entryData = nullptr);
+		std::shared_ptr<MacroActionSequence> entryData = nullptr);
 	void UpdateEntryData();
 	static QWidget *Create(QWidget *parent,
 			       std::shared_ptr<MacroAction> action)
 	{
-		return new MacroActionRandomEdit(
+		return new MacroActionSequenceEdit(
 			parent,
-			std::dynamic_pointer_cast<MacroActionRandom>(action));
+			std::dynamic_pointer_cast<MacroActionSequence>(action));
 	}
 
 private slots:
@@ -49,9 +51,11 @@ private slots:
 	void MacroRename(const QString &oldName, const QString &newName);
 	void AddMacro();
 	void RemoveMacro();
+	void RestartChanged(int state);
+	void UpdateStatusLine();
 
 protected:
-	std::shared_ptr<MacroActionRandom> _entryData;
+	std::shared_ptr<MacroActionSequence> _entryData;
 
 private:
 	int FindEntry(const std::string &macro);
@@ -60,5 +64,8 @@ private:
 	QListWidget *_macroList;
 	QPushButton *_add;
 	QPushButton *_remove;
+	QCheckBox *_restart;
+	QLabel *_statusLine;
+	QTimer _statusTimer;
 	bool _loading = true;
 };

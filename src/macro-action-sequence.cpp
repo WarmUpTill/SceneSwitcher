@@ -1,63 +1,77 @@
-#include "headers/macro-action-random.hpp"
+#include "headers/macro-action-sequence.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
 
-#include <cstdlib>
+const std::string MacroActionSequence::id = "sequence";
 
-const std::string MacroActionRandom::id = "random";
+bool MacroActionSequence::_registered = MacroActionFactory::Register(
+	MacroActionSequence::id,
+	{MacroActionSequence::Create, MacroActionSequenceEdit::Create,
+	 "AdvSceneSwitcher.action.sequence"});
 
-bool MacroActionRandom::_registered = MacroActionFactory::Register(
-	MacroActionRandom::id,
-	{MacroActionRandom::Create, MacroActionRandomEdit::Create,
-	 "AdvSceneSwitcher.action.random"});
-
-std::vector<MacroRef> getNextMacro(std::vector<MacroRef> &macros,
-				   MacroRef &lastRandomMacro)
+int getNextUnpausedMacroIdx(std::vector<MacroRef> &macros, int startIdx)
 {
-	std::vector<MacroRef> res;
-	if (macros.size() == 1) {
-		if (macros[0]->Paused()) {
-			return res;
+	for (; macros.size() > startIdx; ++startIdx) {
+		if (!macros[startIdx]->Paused()) {
+			return startIdx;
+		}
+	}
+	return -1;
+}
+
+MacroRef MacroActionSequence::GetNextMacro(bool advance)
+{
+	int idx = _lastIdx;
+	MacroRef res;
+
+	int nextUnpausedIdx = getNextUnpausedMacroIdx(_macros, idx + 1);
+	if (nextUnpausedIdx != -1) {
+		res = _macros[nextUnpausedIdx];
+		idx = nextUnpausedIdx;
+	} else {
+		if (_restart) {
+			idx = getNextUnpausedMacroIdx(_macros, 0);
+			if (idx != -1) {
+				res = _macros[idx];
+			} else {
+				// End of sequence reached, as all available
+				// macros are either paused or the macro list
+				// is empty
+				idx = _macros.size();
+			}
 		} else {
-			return macros;
+			// End of sequence reached
+			idx = _macros.size();
 		}
 	}
 
-	for (auto &m : macros) {
-		if (m.get() && !m->Paused() &&
-		    !(lastRandomMacro.get() == m.get())) {
-			res.push_back(m);
-		}
+	if (advance) {
+		_lastIdx = idx;
+		_lastSequenceMacro = res;
 	}
 	return res;
 }
 
-bool MacroActionRandom::PerformAction()
+bool MacroActionSequence::PerformAction()
 {
 	if (_macros.size() == 0) {
 		return true;
 	}
 
-	auto macros = getNextMacro(_macros, lastRandomMacro);
-	if (macros.size() == 0) {
+	auto macro = GetNextMacro();
+	if (!macro.get()) {
 		return true;
 	}
-	if (macros.size() == 1) {
-		lastRandomMacro = macros[0];
-		return macros[0]->PerformAction();
-	}
 
-	size_t idx = std::rand() % (macros.size());
-	lastRandomMacro = macros[idx];
-	return macros[idx]->PerformAction();
+	return macro->PerformAction();
 }
 
-void MacroActionRandom::LogAction()
+void MacroActionSequence::LogAction()
 {
-	vblog(LOG_INFO, "running random macro");
+	vblog(LOG_INFO, "running macro sequence");
 }
 
-bool MacroActionRandom::Save(obs_data_t *obj)
+bool MacroActionSequence::Save(obs_data_t *obj)
 {
 	MacroAction::Save(obj);
 	obs_data_array_t *args = obs_data_array_create();
@@ -69,10 +83,11 @@ bool MacroActionRandom::Save(obs_data_t *obj)
 	}
 	obs_data_set_array(obj, "macros", args);
 	obs_data_array_release(args);
+	obs_data_set_bool(obj, "restart", _restart);
 	return true;
 }
 
-bool MacroActionRandom::Load(obs_data_t *obj)
+bool MacroActionSequence::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 	obs_data_array_t *args = obs_data_get_array(obj, "macros");
@@ -85,11 +100,12 @@ bool MacroActionRandom::Load(obs_data_t *obj)
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(args);
+	_restart = obs_data_get_bool(obj, "restart");
 	return true;
 }
 
-MacroActionRandomEdit::MacroActionRandomEdit(
-	QWidget *parent, std::shared_ptr<MacroActionRandom> entryData)
+MacroActionSequenceEdit::MacroActionSequenceEdit(
+	QWidget *parent, std::shared_ptr<MacroActionSequence> entryData)
 	: QWidget(parent)
 {
 	_macroList = new QListWidget();
@@ -104,6 +120,9 @@ MacroActionRandomEdit::MacroActionRandomEdit(
 	_remove->setProperty("themeID",
 			     QVariant(QString::fromUtf8("removeIconSmall")));
 	_remove->setFlat(true);
+	_restart = new QCheckBox(
+		obs_module_text("AdvSceneSwitcher.action.sequence.restart"));
+	_statusLine = new QLabel();
 
 	QWidget::connect(_add, SIGNAL(clicked()), this, SLOT(AddMacro()));
 	QWidget::connect(_remove, SIGNAL(clicked()), this, SLOT(RemoveMacro()));
@@ -113,10 +132,12 @@ MacroActionRandomEdit::MacroActionRandomEdit(
 			 SIGNAL(MacroRenamed(const QString &, const QString &)),
 			 this,
 			 SLOT(MacroRename(const QString &, const QString &)));
+	QWidget::connect(_restart, SIGNAL(stateChanged(int)), this,
+			 SLOT(RestartChanged(int)));
 
 	auto *entryLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.random.entry"),
+	placeWidgets(obs_module_text("AdvSceneSwitcher.action.sequence.entry"),
 		     entryLayout, widgetPlaceholders);
 
 	auto *argButtonLayout = new QHBoxLayout;
@@ -128,14 +149,22 @@ MacroActionRandomEdit::MacroActionRandomEdit(
 	mainLayout->addLayout(entryLayout);
 	mainLayout->addWidget(_macroList);
 	mainLayout->addLayout(argButtonLayout);
+	mainLayout->addLayout(argButtonLayout);
+	mainLayout->addWidget(_restart);
+	mainLayout->addWidget(_statusLine);
 	setLayout(mainLayout);
+
+	UpdateStatusLine();
+	connect(&_statusTimer, SIGNAL(timeout()), this,
+		SLOT(UpdateStatusLine()));
+	_statusTimer.start(1000);
 
 	_entryData = entryData;
 	UpdateEntryData();
 	_loading = false;
 }
 
-void MacroActionRandomEdit::UpdateEntryData()
+void MacroActionSequenceEdit::UpdateEntryData()
 {
 	if (!_entryData) {
 		return;
@@ -150,9 +179,10 @@ void MacroActionRandomEdit::UpdateEntryData()
 		item->setData(Qt::UserRole, name);
 	}
 	SetMacroListSize();
+	_restart->setChecked(_entryData->_restart);
 }
 
-void MacroActionRandomEdit::MacroRemove(const QString &name)
+void MacroActionSequenceEdit::MacroRemove(const QString &name)
 {
 	if (_entryData) {
 		auto it = _entryData->_macros.begin();
@@ -166,8 +196,8 @@ void MacroActionRandomEdit::MacroRemove(const QString &name)
 	}
 }
 
-void MacroActionRandomEdit::MacroRename(const QString &oldName,
-					const QString &newName)
+void MacroActionSequenceEdit::MacroRename(const QString &oldName,
+					  const QString &newName)
 {
 	auto count = _macroList->count();
 	for (int idx = 0; idx < count; ++idx) {
@@ -181,7 +211,7 @@ void MacroActionRandomEdit::MacroRename(const QString &oldName,
 	}
 }
 
-void MacroActionRandomEdit::AddMacro()
+void MacroActionSequenceEdit::AddMacro()
 {
 	if (_loading || !_entryData) {
 		return;
@@ -200,21 +230,14 @@ void MacroActionRandomEdit::AddMacro()
 		return;
 	}
 
-	if (FindEntry(macro->Name()) != -1) {
-		return;
-	}
-
 	QVariant v = QVariant::fromValue(QString::fromStdString(macroName));
-	QListWidgetItem *item = new QListWidgetItem(
-		QString::fromStdString(macroName), _macroList);
-	item->setData(Qt::UserRole, QString::fromStdString(macroName));
-
+	new QListWidgetItem(QString::fromStdString(macroName), _macroList);
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_macros.push_back(macro);
 	SetMacroListSize();
 }
 
-void MacroActionRandomEdit::RemoveMacro()
+void MacroActionSequenceEdit::RemoveMacro()
 {
 	if (_loading || !_entryData) {
 		return;
@@ -222,23 +245,50 @@ void MacroActionRandomEdit::RemoveMacro()
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	auto item = _macroList->currentItem();
-	if (!item) {
+	int idx = _macroList->currentRow();
+	if (!item || idx == -1) {
 		return;
 	}
-	std::string name = item->data(Qt::UserRole).toString().toStdString();
-	for (auto it = _entryData->_macros.begin();
-	     it != _entryData->_macros.end(); ++it) {
-		auto m = *it;
-		if (m.get() && m->Name() == name) {
-			_entryData->_macros.erase(it);
-			break;
-		}
-	}
+
+	_entryData->_macros.erase(std::next(_entryData->_macros.begin(), idx));
+
 	delete item;
 	SetMacroListSize();
 }
 
-int MacroActionRandomEdit::FindEntry(const std::string &macro)
+void MacroActionSequenceEdit::RestartChanged(int state)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_restart = state;
+}
+
+void MacroActionSequenceEdit::UpdateStatusLine()
+{
+	QString lastMacroName =
+		obs_module_text("AdvSceneSwitcher.action.sequence.status.none");
+	QString nextMacroName =
+		obs_module_text("AdvSceneSwitcher.action.sequence.status.none");
+	if (_entryData) {
+		if (_entryData->_lastSequenceMacro.get()) {
+			lastMacroName = QString::fromStdString(
+				_entryData->_lastSequenceMacro->Name());
+		}
+		auto next = _entryData->GetNextMacro(false);
+		if (next.get()) {
+			nextMacroName = QString::fromStdString(next->Name());
+		}
+	}
+
+	QString format{
+		obs_module_text("AdvSceneSwitcher.action.sequence.status")};
+	_statusLine->setText(format.arg(lastMacroName, nextMacroName));
+}
+
+int MacroActionSequenceEdit::FindEntry(const std::string &macro)
 {
 	int count = _macroList->count();
 	int idx = -1;
@@ -255,7 +305,7 @@ int MacroActionRandomEdit::FindEntry(const std::string &macro)
 	return idx;
 }
 
-void MacroActionRandomEdit::SetMacroListSize()
+void MacroActionSequenceEdit::SetMacroListSize()
 {
 	setHeightToContentHeight(_macroList);
 	adjustSize();
