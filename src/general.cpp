@@ -456,7 +456,6 @@ void SwitcherData::loadSettings(obs_data_t *obj)
 	loadSceneTriggers(obj);
 	loadGeneralSettings(obj);
 	loadHotkeys(obj);
-	loadDock(obj);
 }
 
 void SwitcherData::saveSettings(obs_data_t *obj)
@@ -487,7 +486,6 @@ void SwitcherData::saveSettings(obs_data_t *obj)
 	saveSceneTriggers(obj);
 	saveGeneralSettings(obj);
 	saveHotkeys(obj);
-	saveDock(obj);
 	saveVersion(obj, g_GIT_SHA1);
 }
 

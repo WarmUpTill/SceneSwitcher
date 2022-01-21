@@ -38,7 +38,4 @@ public:
 	StatusDock(QWidget *parent = 0);
 };
 
-extern StatusDock *dock;
-
-void saveDock(obs_data_t *obj);
-void loadDock(obs_data_t *obj);
+void SetupDock();
