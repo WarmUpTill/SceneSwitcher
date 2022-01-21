@@ -12,6 +12,8 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 #include <QtCore/QThreadPool>
 #include <mutex>
 #include <condition_variable>
+#include <functional>
+#include <QRunnable>
 
 #include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/config/asio_no_tls.hpp>
@@ -117,3 +119,16 @@ enum class ClientStatus {
 	CONNECTED,
 	FAIL,
 };
+
+namespace Compatability {
+// Reimplement QRunnable for std::function. Retrocompatability for Qt < 5.15
+class StdFunctionRunnable : public QRunnable {
+	std::function<void()> cb;
+
+public:
+	StdFunctionRunnable(std::function<void()> func);
+	void run() override;
+};
+
+QRunnable *CreateFunctionRunnable(std::function<void()> func);
+}
