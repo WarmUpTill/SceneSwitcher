@@ -221,7 +221,7 @@ jobs:
       matrix:
         arch: [32, 64]
     env:
-      QT_VERSION: 5.10.1
+      QT_VERSION: 5.15.2
       CMAKE_GENERATOR: "Visual Studio 16 2019"
       CMAKE_SYSTEM_VERSION: "10.0.18363.657"
       WINDOWS_DEPS_VERSION: "2019"
@@ -275,11 +275,11 @@ jobs:
           Get-Location
           if ( ${{ matrix.arch }} -eq 32 )
           {
-            cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DOpenCV_DIR="${{ github.workspace }}/UI/frontend-plugins/SceneSwitcher/deps/opencv/build/" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=false -DBUILD_CAPTIONS=false -DCOMPILE_D3D12_HOOK=false -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
+            cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DOpenCV_DIR="${{ github.workspace }}/UI/frontend-plugins/SceneSwitcher/deps/opencv/build/" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=false -DBUILD_CAPTIONS=false -DCOMPILE_D3D12_HOOK=false -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2019" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
           }
           else
           {
-            cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DOpenCV_DIR="${{ github.workspace }}/UI/frontend-plugins/SceneSwitcher/deps/opencv/build/" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=false -DBUILD_CAPTIONS=false -DCOMPILE_D3D12_HOOK=false -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017_64" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
+            cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DOpenCV_DIR="${{ github.workspace }}/UI/frontend-plugins/SceneSwitcher/deps/opencv/build/" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=false -DBUILD_CAPTIONS=false -DCOMPILE_D3D12_HOOK=false -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2019_64" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
           }
       - name: Build
         run: |
