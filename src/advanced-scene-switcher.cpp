@@ -662,10 +662,7 @@ extern "C" void InitSceneSwitcher()
 	// Windows does not require the plugins to be loaded manually
 	LoadPlugins();
 #endif
-
-	dock = new StatusDock(
-		static_cast<QMainWindow *>(obs_frontend_get_main_window()));
-	obs_frontend_add_dock(dock);
+	SetupDock();
 
 	auto cb = []() {
 		if (switcher->settingsWindowOpened) {

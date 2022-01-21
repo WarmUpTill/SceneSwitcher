@@ -5,6 +5,7 @@
 #include <obs-module.h>
 #include <QMainWindow>
 #include <QLayout>
+#include <QAction>
 
 StatusDock *dock = nullptr;
 
@@ -94,6 +95,11 @@ void StatusControl::SetStopped()
 StatusDock::StatusDock(QWidget *parent)
 	: QDockWidget(obs_module_text("AdvSceneSwitcher.windowTitle"), parent)
 {
+	setFloating(true);
+	// Setting a fixed object name is crucial for OBS to be able to restore
+	// the docks position, if the dock is not floating
+	setObjectName("Adv-ss-dock");
+
 	// Not sure why an extra QWidget wrapper is necessary...
 	// without it the dock widget seems to be partially transparent.
 	QWidget *tmp = new QWidget;
@@ -103,26 +109,11 @@ StatusDock::StatusDock(QWidget *parent)
 	setWidget(tmp);
 }
 
-void saveDock(obs_data_t *obj)
+void SetupDock()
 {
-	obs_data_set_bool(obj, "statusDockVisible", dock->isVisible());
-	obs_data_set_bool(obj, "statusDockFloating", dock->isFloating());
-	obs_data_set_int(obj, "statusDockPosX", dock->pos().x());
-	obs_data_set_int(obj, "statusDockPosY", dock->pos().y());
-	obs_data_set_int(obj, "statusDockPosWidth", dock->width());
-	obs_data_set_int(obj, "statusDockPosHeight", dock->height());
-}
-
-void loadDock(obs_data_t *obj)
-{
-	dock->setVisible(obs_data_get_bool(obj, "statusDockVisible"));
-	dock->setFloating(obs_data_get_bool(obj, "statusDockFloating"));
-	QPoint pos = {
-		static_cast<int>(obs_data_get_int(obj, "statusDockPosX")),
-		static_cast<int>(obs_data_get_int(obj, "statusDockPosY"))};
-	if (windowPosValid(pos)) {
-		dock->resize(obs_data_get_int(obj, "statusDockPosWidth"),
-			     obs_data_get_int(obj, "statusDockPosHeight"));
-		dock->move(pos);
-	}
+	dock = new StatusDock(
+		static_cast<QMainWindow *>(obs_frontend_get_main_window()));
+	// Added for cosmetic reasons to avoid brief flash of dock window on startup
+	dock->setVisible(false);
+	static_cast<QAction *>(obs_frontend_add_dock(dock));
 }
