@@ -3,7 +3,6 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 */
 
 #include <QtWidgets/QMainWindow>
-#include <QtConcurrent/QtConcurrent>
 #include <QTime>
 #include <QMessageBox>
 
@@ -188,11 +187,11 @@ void WSServer::start(quint16 port, bool lockToIPv4)
 
 	_server.start_accept();
 
-	QtConcurrent::run([=]() {
+	_threadPool.start(Compatability::CreateFunctionRunnable([=]() {
 		blog(LOG_INFO, "WSServer::start: io thread started");
 		_server.run();
 		blog(LOG_INFO, "WSServer::start: io thread exited");
-	});
+	}));
 
 	switcher->serverStatus = ServerStatus::RUNNING;
 	blog(LOG_INFO,
@@ -320,12 +319,12 @@ void WSServer::onMessage(connection_hdl, server::message_ptr message)
 		return;
 	}
 
-	QtConcurrent::run(&_threadPool, [=]() {
+	_threadPool.start(Compatability::CreateFunctionRunnable([=]() {
 		if (message->get_payload() != "message ok") {
 			blog(LOG_WARNING, "received response: %s",
 			     message->get_payload().c_str());
 		}
-	});
+	}));
 }
 
 void WSServer::onClose(connection_hdl hdl)
@@ -692,4 +691,20 @@ void AdvSceneSwitcher::updateClientStatus()
 	default:
 		break;
 	}
+}
+
+void Compatability::StdFunctionRunnable::run()
+{
+	cb();
+}
+
+QRunnable *Compatability::CreateFunctionRunnable(std::function<void()> func)
+{
+	return new Compatability::StdFunctionRunnable(std::move(func));
+}
+
+Compatability::StdFunctionRunnable::StdFunctionRunnable(
+	std::function<void()> func)
+	: cb(std::move(func))
+{
 }
