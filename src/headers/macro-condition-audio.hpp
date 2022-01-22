@@ -6,8 +6,22 @@
 #include <QComboBox>
 #include <chrono>
 
-enum class AudioCondition {
+enum class AudioConditionCheckType {
+	OUTPUT_VOLUME,
+	CONFIGURED_VOLUME,
+};
+
+enum class AudioOutputCondition {
 	ABOVE,
+	BELOW,
+	// TODO: To be removed
+	MUTE,
+	UNMUTE,
+};
+
+enum class AudioVolumeCondition {
+	ABOVE,
+	EXACT,
 	BELOW,
 	MUTE,
 	UNMUTE,
@@ -34,10 +48,16 @@ public:
 
 	OBSWeakSource _audioSource;
 	int _volume = 0;
-	AudioCondition _condition = AudioCondition::ABOVE;
+	AudioConditionCheckType _checkType =
+		AudioConditionCheckType::OUTPUT_VOLUME;
+	AudioOutputCondition _outputCondition = AudioOutputCondition::ABOVE;
+	AudioVolumeCondition _volumeCondition = AudioVolumeCondition::ABOVE;
 	obs_volmeter_t *_volmeter = nullptr;
 
 private:
+	bool CheckOutputCondition();
+	bool CheckVolumeCondition();
+
 	float _peak = -std::numeric_limits<float>::infinity();
 	static bool _registered;
 	static const std::string id;
@@ -64,10 +84,13 @@ private slots:
 	void SourceChanged(const QString &text);
 	void VolumeThresholdChanged(int vol);
 	void ConditionChanged(int cond);
+	void CheckTypeChanged(int cond);
+
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
+	QComboBox *_checkTypes;
 	QComboBox *_audioSources;
 	QComboBox *_condition;
 	QSpinBox *_volume;
