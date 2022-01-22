@@ -23,9 +23,9 @@ public:
 
 	bool _restart = true;
 	MacroRef _lastSequenceMacro;
+	int _lastIdx = -1;
 
 private:
-	int _lastIdx = -1;
 	static bool _registered;
 	static const std::string id;
 };
@@ -53,6 +53,7 @@ private slots:
 	void Remove();
 	void Up();
 	void Down();
+	void ContinueFromClicked();
 	void RestartChanged(int state);
 	void UpdateStatusLine();
 
@@ -68,6 +69,7 @@ private:
 	QPushButton *_remove;
 	QPushButton *_up;
 	QPushButton *_down;
+	QPushButton *_continueFrom;
 	QCheckBox *_restart;
 	QLabel *_statusLine;
 	QTimer _statusTimer;

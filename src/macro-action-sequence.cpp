@@ -129,6 +129,8 @@ MacroActionSequenceEdit::MacroActionSequenceEdit(
 	_down->setProperty("themeID",
 			   QVariant(QString::fromUtf8("downArrowIconSmall")));
 	_down->setFlat(true);
+	_continueFrom = new QPushButton(obs_module_text(
+		"AdvSceneSwitcher.action.sequence.continueFrom"));
 	_restart = new QCheckBox(
 		obs_module_text("AdvSceneSwitcher.action.sequence.restart"));
 	_statusLine = new QLabel();
@@ -137,6 +139,8 @@ MacroActionSequenceEdit::MacroActionSequenceEdit(
 	QWidget::connect(_remove, SIGNAL(clicked()), this, SLOT(Remove()));
 	QWidget::connect(_up, SIGNAL(clicked()), this, SLOT(Up()));
 	QWidget::connect(_down, SIGNAL(clicked()), this, SLOT(Down()));
+	QWidget::connect(_continueFrom, SIGNAL(clicked()), this,
+			 SLOT(ContinueFromClicked()));
 	QWidget::connect(_macroList, SIGNAL(currentRowChanged(int)), this,
 			 SLOT(MacroSelectionChanged(int)));
 	QWidget::connect(window(),
@@ -160,6 +164,11 @@ MacroActionSequenceEdit::MacroActionSequenceEdit(
 	argButtonLayout->addWidget(line);
 	argButtonLayout->addWidget(_up);
 	argButtonLayout->addWidget(_down);
+	QFrame *line2 = new QFrame();
+	line2->setFrameShape(QFrame::VLine);
+	line2->setFrameShadow(QFrame::Sunken);
+	argButtonLayout->addWidget(line2);
+	argButtonLayout->addWidget(_continueFrom);
 	argButtonLayout->addStretch();
 
 	auto *mainLayout = new QVBoxLayout;
@@ -301,6 +310,20 @@ void MacroActionSequenceEdit::Down()
 		std::swap(_entryData->_macros[idx],
 			  _entryData->_macros[idx + 1]);
 	}
+}
+
+void MacroActionSequenceEdit::ContinueFromClicked()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	int idx = _macroList->currentRow();
+	if (idx == -1) {
+		return;
+	}
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_lastIdx = idx - 1;
 }
 
 void MacroActionSequenceEdit::RestartChanged(int state)
