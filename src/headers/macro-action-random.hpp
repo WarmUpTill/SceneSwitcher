@@ -4,7 +4,6 @@
 
 #include <QPushButton>
 #include <QListWidget>
-#include <QDialog>
 #include <unordered_map>
 
 class MacroActionRandom : public MultiMacroRefAction {
@@ -27,17 +26,6 @@ private:
 	MacroRef lastRandomMacro;
 	static bool _registered;
 	static const std::string id;
-};
-
-class MacroDialog : public QDialog {
-	Q_OBJECT
-
-public:
-	MacroDialog(QWidget *parent);
-	static bool AskForMacro(QWidget *parent, std::string &macroName);
-
-private:
-	MacroSelection *_macroSelection;
 };
 
 class MacroActionRandomEdit : public QWidget {

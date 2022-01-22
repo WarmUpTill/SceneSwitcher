@@ -1,7 +1,9 @@
 #include "headers/macro-selection.hpp"
 #include "headers/advanced-scene-switcher.hpp"
+#include "headers/utility.hpp"
 
 #include <QStandardItemModel>
+#include <QDialogButtonBox>
 
 MacroSelection::MacroSelection(QWidget *parent) : QComboBox(parent)
 {
@@ -87,4 +89,48 @@ void MacroSelection::MacroRename(const QString &oldName, const QString &newName)
 	if (renameSelected) {
 		setCurrentIndex(findText(newName));
 	}
+}
+
+MacroSelectionDialog::MacroSelectionDialog(QWidget *)
+{
+	setModal(true);
+	setWindowModality(Qt::WindowModality::ApplicationModal);
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+	setMinimumWidth(350);
+	setMinimumHeight(70);
+
+	QDialogButtonBox *buttonbox = new QDialogButtonBox(
+		QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+
+	buttonbox->setCenterButtons(true);
+	connect(buttonbox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+	connect(buttonbox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+	_macroSelection = new MacroSelection(window());
+	auto *selectionLayout = new QHBoxLayout;
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{macroSelection}}", _macroSelection},
+	};
+	placeWidgets(obs_module_text("AdvSceneSwitcher.askForMacro"),
+		     selectionLayout, widgetPlaceholders);
+	auto *layout = new QVBoxLayout();
+	layout->addLayout(selectionLayout);
+	layout->addWidget(buttonbox);
+	setLayout(layout);
+}
+
+bool MacroSelectionDialog::AskForMacro(QWidget *parent, std::string &macroName)
+{
+	MacroSelectionDialog dialog(parent);
+	dialog.setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
+
+	if (dialog.exec() != DialogCode::Accepted) {
+		return false;
+	}
+	macroName = dialog._macroSelection->currentText().toUtf8().constData();
+	if (macroName == obs_module_text("AdvSceneSwitcher.selectMacro")) {
+		return false;
+	}
+
+	return true;
 }
