@@ -49,8 +49,10 @@ public:
 private slots:
 	void MacroRemove(const QString &name);
 	void MacroRename(const QString &oldName, const QString &newName);
-	void AddMacro();
-	void RemoveMacro();
+	void Add();
+	void Remove();
+	void Up();
+	void Down();
 	void RestartChanged(int state);
 	void UpdateStatusLine();
 
@@ -64,6 +66,8 @@ private:
 	QListWidget *_macroList;
 	QPushButton *_add;
 	QPushButton *_remove;
+	QPushButton *_up;
+	QPushButton *_down;
 	QCheckBox *_restart;
 	QLabel *_statusLine;
 	QTimer _statusTimer;

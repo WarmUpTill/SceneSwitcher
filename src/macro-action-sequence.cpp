@@ -109,7 +109,6 @@ MacroActionSequenceEdit::MacroActionSequenceEdit(
 	: QWidget(parent)
 {
 	_macroList = new QListWidget();
-	_macroList->setSortingEnabled(true);
 	_add = new QPushButton();
 	_add->setMaximumSize(QSize(22, 22));
 	_add->setProperty("themeID",
@@ -120,12 +119,24 @@ MacroActionSequenceEdit::MacroActionSequenceEdit(
 	_remove->setProperty("themeID",
 			     QVariant(QString::fromUtf8("removeIconSmall")));
 	_remove->setFlat(true);
+	_up = new QPushButton();
+	_up->setMaximumSize(QSize(22, 22));
+	_up->setProperty("themeID",
+			 QVariant(QString::fromUtf8("upArrowIconSmall")));
+	_up->setFlat(true);
+	_down = new QPushButton();
+	_down->setMaximumSize(QSize(22, 22));
+	_down->setProperty("themeID",
+			   QVariant(QString::fromUtf8("downArrowIconSmall")));
+	_down->setFlat(true);
 	_restart = new QCheckBox(
 		obs_module_text("AdvSceneSwitcher.action.sequence.restart"));
 	_statusLine = new QLabel();
 
-	QWidget::connect(_add, SIGNAL(clicked()), this, SLOT(AddMacro()));
-	QWidget::connect(_remove, SIGNAL(clicked()), this, SLOT(RemoveMacro()));
+	QWidget::connect(_add, SIGNAL(clicked()), this, SLOT(Add()));
+	QWidget::connect(_remove, SIGNAL(clicked()), this, SLOT(Remove()));
+	QWidget::connect(_up, SIGNAL(clicked()), this, SLOT(Up()));
+	QWidget::connect(_down, SIGNAL(clicked()), this, SLOT(Down()));
 	QWidget::connect(_macroList, SIGNAL(currentRowChanged(int)), this,
 			 SLOT(MacroSelectionChanged(int)));
 	QWidget::connect(window(),
@@ -143,6 +154,12 @@ MacroActionSequenceEdit::MacroActionSequenceEdit(
 	auto *argButtonLayout = new QHBoxLayout;
 	argButtonLayout->addWidget(_add);
 	argButtonLayout->addWidget(_remove);
+	QFrame *line = new QFrame();
+	line->setFrameShape(QFrame::VLine);
+	line->setFrameShadow(QFrame::Sunken);
+	argButtonLayout->addWidget(line);
+	argButtonLayout->addWidget(_up);
+	argButtonLayout->addWidget(_down);
 	argButtonLayout->addStretch();
 
 	auto *mainLayout = new QVBoxLayout;
@@ -211,7 +228,7 @@ void MacroActionSequenceEdit::MacroRename(const QString &oldName,
 	}
 }
 
-void MacroActionSequenceEdit::AddMacro()
+void MacroActionSequenceEdit::Add()
 {
 	if (_loading || !_entryData) {
 		return;
@@ -237,7 +254,7 @@ void MacroActionSequenceEdit::AddMacro()
 	SetMacroListSize();
 }
 
-void MacroActionSequenceEdit::RemoveMacro()
+void MacroActionSequenceEdit::Remove()
 {
 	if (_loading || !_entryData) {
 		return;
@@ -254,6 +271,36 @@ void MacroActionSequenceEdit::RemoveMacro()
 
 	delete item;
 	SetMacroListSize();
+}
+
+void MacroActionSequenceEdit::Up()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	int idx = _macroList->currentRow();
+	if (idx != -1 && idx != 0) {
+		_macroList->insertItem(idx - 1, _macroList->takeItem(idx));
+		_macroList->setCurrentRow(idx - 1);
+
+		std::lock_guard<std::mutex> lock(switcher->m);
+		std::swap(_entryData->_macros[idx],
+			  _entryData->_macros[idx - 1]);
+	}
+}
+
+void MacroActionSequenceEdit::Down()
+{
+	int idx = _macroList->currentRow();
+	if (idx != -1 && idx != _macroList->count() - 1) {
+		_macroList->insertItem(idx + 1, _macroList->takeItem(idx));
+		_macroList->setCurrentRow(idx + 1);
+
+		std::lock_guard<std::mutex> lock(switcher->m);
+		std::swap(_entryData->_macros[idx],
+			  _entryData->_macros[idx + 1]);
+	}
 }
 
 void MacroActionSequenceEdit::RestartChanged(int state)
