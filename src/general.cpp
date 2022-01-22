@@ -882,6 +882,9 @@ void AdvSceneSwitcher::setupGeneralTab()
 	tmp->addStretch();
 	ui->statusLayout->addLayout(tmp, 1, 1);
 	ui->statusLayout->addWidget(statusControl->Button(), 2, 1);
+	// Hide the now empty invisible shell of the statusControl widget
+	// as otherwise it could block user input
+	statusControl->hide();
 
 	setWindowTitle(windowTitle() + " - " + g_GIT_TAG);
 }
