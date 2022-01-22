@@ -53,6 +53,10 @@ void StatusControl::ButtonClicked()
 
 void StatusControl::UpdateStatus()
 {
+	if (!switcher) {
+		return;
+	}
+
 	if (switcher->th && switcher->th->isRunning()) {
 		if (!_setToStopped) {
 			return;
