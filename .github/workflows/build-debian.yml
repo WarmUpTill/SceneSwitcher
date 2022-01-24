@@ -46,3 +46,10 @@ jobs:
       - name: build
         run: |
           debuild --no-lintian --no-sign
+          mv ../*.deb .
+      - name: Publish
+        if: success()
+        uses: actions/upload-artifact@v2.2.1
+        with:
+          name: "obs-scene-switcher.deb"
+          path: ${{ github.workspace }}/*.deb
