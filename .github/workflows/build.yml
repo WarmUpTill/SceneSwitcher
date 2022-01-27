@@ -206,8 +206,9 @@ jobs:
           mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.LIB_NAME }}.so ./${{ env.LIB_NAME }}/bin/64bit/${{ env.LIB_NAME }}.so
           mv ./UI/frontend-plugins/${{ env.PLUGIN_NAME }}/data ./${{ env.LIB_NAME }}/data
           # Macro modules
+          mkdir -p ./${{ env.LIB_NAME }}/bin/64bit/adv-ss-plugins
           strip -d ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/src/external-macro-modules/opencv/advanced-scene-switcher-opencv.so
-          mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/src/external-macro-modules/opencv/advanced-scene-switcher-opencv.so ./${{ env.LIB_NAME }}/bin/64bit/
+          mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/src/external-macro-modules/opencv/advanced-scene-switcher-opencv.so ./${{ env.LIB_NAME }}/bin/64bit/adv-ss-plugins
           tar -cvzf "${FILE_NAME}" ${{ env.LIB_NAME }}
       - name: "Publish"
         uses: actions/upload-artifact@v2.2.1
