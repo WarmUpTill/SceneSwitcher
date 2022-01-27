@@ -85,5 +85,5 @@ else()
     Qt5::Core
     Qt5::Widgets
     libobs)
-  install_obs_plugin(advanced-scene-switcher-openvr)
+  install_advss_plugin(advanced-scene-switcher-openvr)
 endif()
