@@ -379,6 +379,7 @@ void AdvSceneSwitcher::MoveMacroConditionUp(int idx)
 	}
 
 	SwapConditions(macro, idx, idx - 1);
+	HighlightCondition(idx - 1);
 }
 
 void AdvSceneSwitcher::MoveMacroConditionDown(int idx)
@@ -393,4 +394,5 @@ void AdvSceneSwitcher::MoveMacroConditionDown(int idx)
 	}
 
 	SwapConditions(macro, idx, idx + 1);
+	HighlightCondition(idx + 1);
 }
