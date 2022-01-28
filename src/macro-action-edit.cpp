@@ -243,6 +243,7 @@ void AdvSceneSwitcher::MoveMacroActionUp(int idx)
 	}
 
 	SwapActions(macro, idx, idx - 1);
+	HighlightAction(idx - 1);
 }
 
 void AdvSceneSwitcher::MoveMacroActionDown(int idx)
@@ -257,4 +258,5 @@ void AdvSceneSwitcher::MoveMacroActionDown(int idx)
 	}
 
 	SwapActions(macro, idx, idx + 1);
+	HighlightAction(idx + 1);
 }
