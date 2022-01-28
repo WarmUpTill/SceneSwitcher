@@ -1,10 +1,6 @@
 # Helper function to install plugins to correct location
 function(install_advss_plugin target)
-  if(MSVC)
-    install_obs_pdb(PLUGIN ${target})
-    return()
-  endif(MSVC)
-
+  set(plugin_folder "adv-ss-plugins")
   if(APPLE)
     set(_bit_suffix "")
   elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -17,14 +13,14 @@ function(install_advss_plugin target)
 
   install(
     TARGETS ${target}
-    LIBRARY DESTINATION "${OBS_PLUGIN_DESTINATION}/adv-ss-plugins"
-    RUNTIME DESTINATION "${OBS_PLUGIN_DESTINATION}/adv-ss-plugins")
+    LIBRARY DESTINATION "${OBS_PLUGIN_DESTINATION}/${plugin_folder}"
+    RUNTIME DESTINATION "${OBS_PLUGIN_DESTINATION}/${plugin_folder}")
   add_custom_command(
     TARGET ${target}
     POST_BUILD
     COMMAND
       "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:${target}>"
-      "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/obs-plugins/${_bit_suffix}/adv-ss-plugins/$<TARGET_FILE_NAME:${target}>"
+      "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/obs-plugins/${_bit_suffix}/${plugin_folder}/$<TARGET_FILE_NAME:${target}>"
     VERBATIM)
 
   if(DEFINED ENV{obsInstallerTempDir})
@@ -33,8 +29,26 @@ function(install_advss_plugin target)
       POST_BUILD
       COMMAND
         "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:${target}>"
-        "$ENV{obsInstallerTempDir}/${OBS_PLUGIN_DESTINATION}/adv-ss-plugins/$<TARGET_FILE_NAME:${target}>"
+        "$ENV{obsInstallerTempDir}/${OBS_PLUGIN_DESTINATION}/${plugin_folder}/$<TARGET_FILE_NAME:${target}>"
       VERBATIM)
+  endif()
+
+  if(MSVC)
+    obs_debug_copy_helper(
+      ${target}
+      "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/obs-plugins/${_bit_suffix}/${plugin_folder}"
+    )
+
+    if(DEFINED ENV{obsInstallerTempDir})
+      obs_debug_copy_helper(
+        ${target}
+        "$ENV{obsInstallerTempDir}/${OBS_PLUGIN_DESTINATION}/${plugin_folder}")
+    endif()
+
+    install(
+      DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pdbs/"
+      DESTINATION "${OBS_PLUGIN_DESTINATION}/${plugin_folder}"
+      CONFIGURATIONS Debug RelWithDebInfo)
   endif()
 endfunction()
 

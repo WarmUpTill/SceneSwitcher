@@ -292,6 +292,7 @@ jobs:
           $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-windows"
           echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
           robocopy .\build${{ matrix.arch }}\rundir\RelWithDebInfo\obs-plugins\${{ matrix.arch }}bit\ .\package\obs-plugins\${{ matrix.arch }}bit ${{ env.LIB_NAME }}* /E /XF .gitignore
+          robocopy .\build${{ matrix.arch }}\rundir\RelWithDebInfo\obs-plugins\${{ matrix.arch }}bit\ .\package\obs-plugins\${{ matrix.arch }}bit adv-ss-plugins /E /XF .gitignore
           robocopy .\build${{ matrix.arch }}\rundir\RelWithDebInfo\data\obs-plugins\${{ env.LIB_NAME }}\ .\package\data\obs-plugins\${{ env.LIB_NAME }}\ /E /XF .gitignore
           cp UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/opencv/build/bin/Release/*dll package/obs-plugins/${{ matrix.arch }}bit
           cp UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/openvr/bin/win${{ matrix.arch }}/*dll package/obs-plugins/${{ matrix.arch }}bit

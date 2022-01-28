@@ -629,7 +629,12 @@ void LoadPlugins()
 	QFileInfo libPath(
 		QString(obs_get_module_binary_path(obs_current_module())));
 	QString pluginDir(libPath.absolutePath() + "/adv-ss-plugins");
-	QDirIterator it(pluginDir, QStringList() << "*.so", QDir::Files);
+#ifdef _WIN32
+	QString libPattern = "*.dll";
+#else
+	QString libPattern = "*.so";
+#endif
+	QDirIterator it(pluginDir, QStringList() << "*.dll", QDir::Files);
 	while (it.hasNext()) {
 		auto file = it.next();
 		blog(LOG_INFO, "attempting to load \"%s\"",
@@ -656,10 +661,7 @@ extern "C" void InitSceneSwitcher()
 	}
 
 	PlatformInit();
-#if !defined(_WIN32)
-	// Windows does not require the plugins to be loaded manually
 	LoadPlugins();
-#endif
 	SetupDock();
 
 	auto cb = []() {
