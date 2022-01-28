@@ -130,6 +130,8 @@ public slots:
 	void ExpandAllConditions();
 	void CollapseAllActions();
 	void CollapseAllConditions();
+	void MinimizeActions();
+	void MinimizeConditions();
 	void AddMacroAction(int idx);
 	void RemoveMacroAction(int idx);
 	void MoveMacroActionUp(int idx);
