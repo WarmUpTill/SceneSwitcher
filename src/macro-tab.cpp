@@ -469,6 +469,7 @@ void AdvSceneSwitcher::ExpandAllActions()
 		return;
 	}
 	setCollapsedStateOfSegmentsIn(ui->macroEditActionLayout, false);
+	MinimizeConditions();
 }
 
 void AdvSceneSwitcher::ExpandAllConditions()
@@ -478,6 +479,7 @@ void AdvSceneSwitcher::ExpandAllConditions()
 		return;
 	}
 	setCollapsedStateOfSegmentsIn(ui->macroEditConditionLayout, false);
+	MinimizeActions();
 }
 
 void AdvSceneSwitcher::CollapseAllActions()
@@ -487,6 +489,7 @@ void AdvSceneSwitcher::CollapseAllActions()
 		return;
 	}
 	setCollapsedStateOfSegmentsIn(ui->macroEditActionLayout, true);
+	MinimizeActions();
 }
 
 void AdvSceneSwitcher::CollapseAllConditions()
@@ -496,4 +499,25 @@ void AdvSceneSwitcher::CollapseAllConditions()
 		return;
 	}
 	setCollapsedStateOfSegmentsIn(ui->macroEditConditionLayout, true);
+	MinimizeConditions();
+}
+
+void AdvSceneSwitcher::MinimizeActions()
+{
+	QList<int> sizes = ui->macroSplitter->sizes();
+	int sum = sizes[0] + sizes[1];
+	int actionsHeight = sum / 6;
+	sizes[1] = actionsHeight;
+	sizes[0] = sum - actionsHeight;
+	ui->macroSplitter->setSizes(sizes);
+}
+
+void AdvSceneSwitcher::MinimizeConditions()
+{
+	QList<int> sizes = ui->macroSplitter->sizes();
+	int sum = sizes[0] + sizes[1];
+	int conditionsHeight = sum / 6;
+	sizes[0] = conditionsHeight;
+	sizes[1] = sum - conditionsHeight;
+	ui->macroSplitter->setSizes(sizes);
 }

@@ -751,7 +751,7 @@
            </layout>
           </item>
           <item>
-           <widget class="QSplitter" name="splitter">
+           <widget class="QSplitter" name="macroSplitter">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
             </property>
