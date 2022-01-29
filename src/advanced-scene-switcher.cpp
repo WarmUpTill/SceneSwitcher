@@ -631,6 +631,7 @@ void LoadPlugins()
 	QString pluginDir(libPath.absolutePath() + "/adv-ss-plugins");
 #ifdef _WIN32
 	QString libPattern = "*.dll";
+	SetDllDirectory(pluginDir.toStdWString().c_str());
 #else
 	QString libPattern = "*.so";
 #endif
@@ -643,6 +644,10 @@ void LoadPlugins()
 		if (lib->load()) {
 			blog(LOG_INFO, "successfully loaded \"%s\"",
 			     file.toStdString().c_str());
+		} else {
+			blog(LOG_WARNING, "failed to load \"%s\": %s",
+			     file.toStdString().c_str(),
+			     lib->errorString().toStdString().c_str());
 		}
 	}
 }
