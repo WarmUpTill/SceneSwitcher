@@ -64,7 +64,11 @@ MacroEntryControls::MacroEntryControls(const int animationDuration,
 
 void MacroEntryControls::Show(bool visible)
 {
+	if (_visible == visible) {
+		return;
+	}
 	_animation->setDirection(visible ? QAbstractAnimation::Forward
 					 : QAbstractAnimation::Backward);
 	_animation->start();
+	_visible = visible;
 }

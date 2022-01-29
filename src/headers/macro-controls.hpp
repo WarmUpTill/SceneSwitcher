@@ -23,6 +23,7 @@ signals:
 	void Down();
 
 private:
+	bool _visible = false;
 	QPushButton *_add;
 	QPushButton *_remove;
 	QPushButton *_up;

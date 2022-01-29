@@ -1,5 +1,6 @@
 #pragma once
 #include <QWidget>
+#include <QTimer>
 #include <obs.hpp>
 
 class Macro;
@@ -46,6 +47,8 @@ protected slots:
 	void Up();
 	void Down();
 	void Collapsed(bool);
+	void ShowControls();
+	void HideControls();
 signals:
 	void MacroAdded(const QString &name);
 	void MacroRemoved(const QString &name);
@@ -67,6 +70,8 @@ protected:
 	MacroEntryControls *_controls;
 
 private:
+	QTimer _enterTimer;
+	QTimer _leaveTimer;
 	virtual MacroSegment *Data() = 0;
 };
 

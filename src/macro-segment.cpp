@@ -46,6 +46,11 @@ MacroSegmentEdit::MacroSegmentEdit(QWidget *parent) : QWidget(parent)
 	_headerInfo = new QLabel();
 	_controls = new MacroEntryControls();
 
+	_enterTimer.setSingleShot(true);
+	_enterTimer.setInterval(1000);
+	_leaveTimer.setSingleShot(true);
+	_leaveTimer.setInterval(1000);
+
 	QWidget::connect(_section, &Section::Collapsed, this,
 			 &MacroSegmentEdit::Collapsed);
 
@@ -78,6 +83,10 @@ MacroSegmentEdit::MacroSegmentEdit(QWidget *parent) : QWidget(parent)
 			 &MacroSegmentEdit::Up);
 	QWidget::connect(_controls, &MacroEntryControls::Down, this,
 			 &MacroSegmentEdit::Down);
+	QWidget::connect(&_enterTimer, &QTimer::timeout, this,
+			 &MacroSegmentEdit::ShowControls);
+	QWidget::connect(&_leaveTimer, &QTimer::timeout, this,
+			 &MacroSegmentEdit::HideControls);
 }
 
 void MacroSegmentEdit::HeaderInfoChanged(const QString &text)
@@ -122,14 +131,26 @@ void MacroSegmentEdit::Collapsed(bool collapsed)
 	}
 }
 
-void MacroSegmentEdit::enterEvent(QEvent *)
+void MacroSegmentEdit::ShowControls()
 {
 	_controls->Show(true);
 }
 
-void MacroSegmentEdit::leaveEvent(QEvent *)
+void MacroSegmentEdit::HideControls()
 {
 	_controls->Show(false);
+}
+
+void MacroSegmentEdit::enterEvent(QEvent *)
+{
+	_enterTimer.start();
+	_leaveTimer.stop();
+}
+
+void MacroSegmentEdit::leaveEvent(QEvent *)
+{
+	_enterTimer.stop();
+	_leaveTimer.start();
 }
 
 void MacroSegmentEdit::SetFocusPolicyOfWidgets()
