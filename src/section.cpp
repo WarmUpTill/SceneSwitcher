@@ -31,10 +31,8 @@ Section::Section(const int animationDuration, QWidget *parent)
 	_headerWidgetLayout->setSpacing(11);
 	_headerWidgetLayout->addWidget(_toggleButton);
 
-	int row = 0;
-	_mainLayout->addLayout(_headerWidgetLayout, row, 0, 1, 1,
-			       Qt::AlignLeft);
-	_mainLayout->addWidget(_headerLine, row++, 2, 1, 1);
+	_mainLayout->addLayout(_headerWidgetLayout, 0, 0, 1, 1, Qt::AlignLeft);
+	_mainLayout->addWidget(_headerLine, 0, 2, 1, 1);
 	setLayout(_mainLayout);
 
 	connect(_toggleButton, &QToolButton::toggled, this, &Section::Collapse);
