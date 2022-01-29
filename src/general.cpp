@@ -192,6 +192,16 @@ void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 	switcher->disableHints = state;
 }
 
+void AdvSceneSwitcher::on_useVerticalMacroControls_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	switcher->useVerticalMacroControls = state;
+	setupMacroTab();
+}
+
 QString getDefaultSaveLocation()
 {
 	QString desktopPath = QStandardPaths::writableLocation(
@@ -511,6 +521,8 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_bool(obj, "showSystemTrayNotifications",
 			  showSystemTrayNotifications);
 	obs_data_set_bool(obj, "disableHints", disableHints);
+	obs_data_set_bool(obj, "useVerticalMacroControls",
+			  useVerticalMacroControls);
 
 	obs_data_set_int(obj, "priority0", functionNamesByPriority[0]);
 	obs_data_set_int(obj, "priority1", functionNamesByPriority[1]);
@@ -584,6 +596,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	showSystemTrayNotifications =
 		obs_data_get_bool(obj, "showSystemTrayNotifications");
 	disableHints = obs_data_get_bool(obj, "disableHints");
+	useVerticalMacroControls =
+		obs_data_get_bool(obj, "useVerticalMacroControls");
 
 	obs_data_set_default_int(obj, "priority0", default_priority_0);
 	obs_data_set_default_int(obj, "priority1", default_priority_1);
@@ -797,6 +811,8 @@ void AdvSceneSwitcher::setupGeneralTab()
 	ui->showTrayNotifications->setChecked(
 		switcher->showSystemTrayNotifications);
 	ui->uiHintsDisable->setChecked(switcher->disableHints);
+	ui->useVerticalMacroControls->setChecked(
+		switcher->useVerticalMacroControls);
 
 	for (int p : switcher->functionNamesByPriority) {
 		std::string s = "";

@@ -120,9 +120,24 @@ MacroConditionEdit::MacroConditionEdit(
 	_section->AddHeaderWidget(_headerInfo);
 	_section->AddHeaderWidget(_dur);
 
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->addWidget(_section);
-	mainLayout->addWidget(_controls);
+	QVBoxLayout *verticalControlsLayout = new QVBoxLayout;
+	if (switcher->useVerticalMacroControls) {
+		verticalControlsLayout->addWidget(_controls->GetUp());
+		verticalControlsLayout->addWidget(_controls->GetAdd());
+		verticalControlsLayout->addWidget(_controls->GetRemove());
+		verticalControlsLayout->addWidget(_controls->GetDown());
+		verticalControlsLayout->setContentsMargins(0, 0, 0, 0);
+		verticalControlsLayout->setSpacing(0);
+		_controls->hide(); // Only useful in horizontal case
+	}
+
+	QVBoxLayout *conditionLayout = new QVBoxLayout;
+	conditionLayout->addWidget(_section);
+	conditionLayout->addWidget(_controls);
+
+	QHBoxLayout *mainLayout = new QHBoxLayout;
+	mainLayout->addLayout(verticalControlsLayout);
+	mainLayout->addLayout(conditionLayout);
 	setLayout(mainLayout);
 
 	UpdateEntryData(id);
