@@ -634,7 +634,7 @@ void LoadPlugins()
 #else
 	QString libPattern = "*.so";
 #endif
-	QDirIterator it(pluginDir, QStringList() << "*.dll", QDir::Files);
+	QDirIterator it(pluginDir, QStringList() << libPattern, QDir::Files);
 	while (it.hasNext()) {
 		auto file = it.next();
 		blog(LOG_INFO, "attempting to load \"%s\"",
