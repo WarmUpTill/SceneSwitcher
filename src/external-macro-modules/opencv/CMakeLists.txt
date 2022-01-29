@@ -34,8 +34,9 @@ if(BUILD_OUT_OF_TREE)
       set(LIB_OUT_DIR "/lib/obs-plugins")
     endif()
     set_target_properties(advanced-scene-switcher-opencv PROPERTIES PREFIX "")
-    install(TARGETS advanced-scene-switcher-opencv
-            LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIB_OUT_DIR})
+    install(
+      TARGETS advanced-scene-switcher-opencv
+      LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIB_OUT_DIR}/adv-ss-plugins)
   endif()
 else()
   target_link_libraries(
@@ -46,5 +47,5 @@ else()
     Qt5::Core
     Qt5::Widgets
     libobs)
-  install_obs_plugin(advanced-scene-switcher-opencv)
+  install_advss_plugin(advanced-scene-switcher-opencv)
 endif()

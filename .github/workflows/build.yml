@@ -206,8 +206,9 @@ jobs:
           mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/${{ env.LIB_NAME }}.so ./${{ env.LIB_NAME }}/bin/64bit/${{ env.LIB_NAME }}.so
           mv ./UI/frontend-plugins/${{ env.PLUGIN_NAME }}/data ./${{ env.LIB_NAME }}/data
           # Macro modules
+          mkdir -p ./${{ env.LIB_NAME }}/bin/64bit/adv-ss-plugins
           strip -d ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/src/external-macro-modules/opencv/advanced-scene-switcher-opencv.so
-          mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/src/external-macro-modules/opencv/advanced-scene-switcher-opencv.so ./${{ env.LIB_NAME }}/bin/64bit/
+          mv ./build/UI/frontend-plugins/${{ env.PLUGIN_NAME }}/src/external-macro-modules/opencv/advanced-scene-switcher-opencv.so ./${{ env.LIB_NAME }}/bin/64bit/adv-ss-plugins
           tar -cvzf "${FILE_NAME}" ${{ env.LIB_NAME }}
       - name: "Publish"
         uses: actions/upload-artifact@v2.2.1
@@ -291,9 +292,10 @@ jobs:
           $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${env:FILE_DATE}-${{ github.sha }}-windows"
           echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
           robocopy .\build${{ matrix.arch }}\rundir\RelWithDebInfo\obs-plugins\${{ matrix.arch }}bit\ .\package\obs-plugins\${{ matrix.arch }}bit ${{ env.LIB_NAME }}* /E /XF .gitignore
+          robocopy .\build${{ matrix.arch }}\rundir\RelWithDebInfo\obs-plugins\${{ matrix.arch }}bit\ .\package\obs-plugins\${{ matrix.arch }}bit adv-ss-plugins /E /XF .gitignore
           robocopy .\build${{ matrix.arch }}\rundir\RelWithDebInfo\data\obs-plugins\${{ env.LIB_NAME }}\ .\package\data\obs-plugins\${{ env.LIB_NAME }}\ /E /XF .gitignore
-          cp UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/opencv/build/bin/Release/*dll package/obs-plugins/${{ matrix.arch }}bit
-          cp UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/openvr/bin/win${{ matrix.arch }}/*dll package/obs-plugins/${{ matrix.arch }}bit
+          cp UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/opencv/build/bin/Release/*dll package/obs-plugins/${{ matrix.arch }}bit/adv-ss-plugins
+          cp UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/openvr/bin/win${{ matrix.arch }}/*dll package/obs-plugins/${{ matrix.arch }}bit/adv-ss-plugins
           exit 0
       - name: Publish zip
         if: success()

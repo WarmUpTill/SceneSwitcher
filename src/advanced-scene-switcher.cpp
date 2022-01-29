@@ -626,20 +626,28 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 
 void LoadPlugins()
 {
-	QFileInfo fi(obs_get_module_binary_path(obs_current_module()));
-	QDirIterator it(fi.absolutePath(), QStringList() << "*.so",
-			QDir::Files);
+	QFileInfo libPath(
+		QString(obs_get_module_binary_path(obs_current_module())));
+	QString pluginDir(libPath.absolutePath() + "/adv-ss-plugins");
+#ifdef _WIN32
+	QString libPattern = "*.dll";
+	SetDllDirectory(pluginDir.toStdWString().c_str());
+#else
+	QString libPattern = "*.so";
+#endif
+	QDirIterator it(pluginDir, QStringList() << libPattern, QDir::Files);
 	while (it.hasNext()) {
 		auto file = it.next();
-		if (it.fileName() == "advanced-scene-switcher.so") {
-			continue;
-		}
 		blog(LOG_INFO, "attempting to load \"%s\"",
 		     file.toStdString().c_str());
 		auto lib = new QLibrary(file, nullptr);
 		if (lib->load()) {
 			blog(LOG_INFO, "successfully loaded \"%s\"",
 			     file.toStdString().c_str());
+		} else {
+			blog(LOG_WARNING, "failed to load \"%s\": %s",
+			     file.toStdString().c_str(),
+			     lib->errorString().toStdString().c_str());
 		}
 	}
 }
@@ -658,10 +666,7 @@ extern "C" void InitSceneSwitcher()
 	}
 
 	PlatformInit();
-#if !defined(_WIN32)
-	// Windows does not require the plugins to be loaded manually
 	LoadPlugins();
-#endif
 	SetupDock();
 
 	auto cb = []() {
