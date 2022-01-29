@@ -294,8 +294,8 @@ jobs:
           robocopy .\build${{ matrix.arch }}\rundir\RelWithDebInfo\obs-plugins\${{ matrix.arch }}bit\ .\package\obs-plugins\${{ matrix.arch }}bit ${{ env.LIB_NAME }}* /E /XF .gitignore
           robocopy .\build${{ matrix.arch }}\rundir\RelWithDebInfo\obs-plugins\${{ matrix.arch }}bit\ .\package\obs-plugins\${{ matrix.arch }}bit adv-ss-plugins /E /XF .gitignore
           robocopy .\build${{ matrix.arch }}\rundir\RelWithDebInfo\data\obs-plugins\${{ env.LIB_NAME }}\ .\package\data\obs-plugins\${{ env.LIB_NAME }}\ /E /XF .gitignore
-          cp UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/opencv/build/bin/Release/*dll package/obs-plugins/${{ matrix.arch }}bit
-          cp UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/openvr/bin/win${{ matrix.arch }}/*dll package/obs-plugins/${{ matrix.arch }}bit
+          cp UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/opencv/build/bin/Release/*dll package/obs-plugins/${{ matrix.arch }}bit/adv-ss-plugins
+          cp UI/frontend-plugins/${{ env.PLUGIN_NAME }}/deps/openvr/bin/win${{ matrix.arch }}/*dll package/obs-plugins/${{ matrix.arch }}bit/adv-ss-plugins
           exit 0
       - name: Publish zip
         if: success()
