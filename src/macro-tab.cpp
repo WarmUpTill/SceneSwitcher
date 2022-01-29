@@ -356,6 +356,8 @@ void AdvSceneSwitcher::on_macros_itemChanged(QListWidgetItem *item)
 
 void AdvSceneSwitcher::setupMacroTab()
 {
+	const QSignalBlocker signalBlocker(ui->macros);
+	ui->macros->clear();
 	for (auto &m : switcher->macros) {
 		QString text = QString::fromStdString(m->Name());
 

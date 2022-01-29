@@ -16,6 +16,11 @@ public:
 
 	void Show(bool visible = true);
 
+	QPushButton *GetUp() { return _up; }
+	QPushButton *GetDown() { return _down; }
+	QPushButton *GetAdd() { return _add; }
+	QPushButton *GetRemove() { return _remove; }
+
 signals:
 	void Add();
 	void Remove();
