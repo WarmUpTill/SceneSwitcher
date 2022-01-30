@@ -63,7 +63,7 @@ bool MacroActionSequence::PerformAction()
 		return true;
 	}
 
-	return macro->PerformAction();
+	return macro->PerformActions();
 }
 
 void MacroActionSequence::LogAction()

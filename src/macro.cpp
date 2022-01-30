@@ -115,7 +115,7 @@ bool Macro::CeckMatch()
 	return _matched;
 }
 
-bool Macro::PerformAction(bool forceParallel, bool ignorePause)
+bool Macro::PerformActions(bool forceParallel, bool ignorePause)
 {
 	if (!_done) {
 		vblog(LOG_INFO, "macro %s already running", _name.c_str());
@@ -592,7 +592,7 @@ bool SwitcherData::runMacros()
 	for (auto m : macros) {
 		if (m->Matched()) {
 			vblog(LOG_INFO, "running macro: %s", m->Name().c_str());
-			if (!m->PerformAction()) {
+			if (!m->PerformActions()) {
 				blog(LOG_WARNING, "abort macro: %s",
 				     m->Name().c_str());
 			}

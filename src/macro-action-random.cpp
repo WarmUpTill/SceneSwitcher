@@ -44,12 +44,12 @@ bool MacroActionRandom::PerformAction()
 	}
 	if (macros.size() == 1) {
 		lastRandomMacro = macros[0];
-		return macros[0]->PerformAction();
+		return macros[0]->PerformActions();
 	}
 
 	size_t idx = std::rand() % (macros.size());
 	lastRandomMacro = macros[idx];
-	return macros[idx]->PerformAction();
+	return macros[idx]->PerformActions();
 }
 
 void MacroActionRandom::LogAction()
