@@ -59,8 +59,10 @@ void Section::SetContent(QWidget *w, bool collapsed)
 
 	// Setup contentArea
 	_contentArea = new QScrollArea(this);
+	_contentArea->setObjectName("macroSegmentContent");
 	_contentArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-	_contentArea->setStyleSheet("QScrollArea { border: none; }");
+	_contentArea->setStyleSheet(
+		"#macroSegmentContent { border: none; background-color: rgba(0,0,0,0); }");
 	_contentArea->setMaximumHeight(0);
 	_contentArea->setMinimumHeight(0);
 

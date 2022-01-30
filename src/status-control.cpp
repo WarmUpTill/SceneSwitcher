@@ -13,6 +13,12 @@ StatusControl::StatusControl(QWidget *parent, bool noLayout) : QWidget(parent)
 {
 	_button = new QPushButton("-", this);
 	_status = new QLabel("-", this);
+	_status->setStyleSheet("QLabel{ \
+		border-style: outset; \
+		border-width: 2px; \
+		border-radius: 7px; \
+		border-color: rgb(0,0,0,0) \
+		}");
 	_statusPrefix = new QLabel(
 		obs_module_text(
 			"AdvSceneSwitcher.generalTab.status.currentStatus"),
@@ -87,7 +93,7 @@ void StatusControl::SetStopped()
 	_status->setText(obs_module_text("AdvSceneSwitcher.status.inactive"));
 	if (!switcher->disableHints) {
 		_pulse = PulseWidget(_status, QColor(Qt::red),
-				     QColor(0, 0, 0, 0), "QLabel ");
+				     QColor(0, 0, 0, 0));
 	}
 	_setToStopped = true;
 }
