@@ -1,6 +1,8 @@
 #pragma once
 #include <QWidget>
 #include <QTimer>
+#include <QFrame>
+#include <QVBoxLayout>
 #include <obs.hpp>
 
 class Macro;
@@ -69,6 +71,8 @@ protected:
 	Section *_section;
 	QLabel *_headerInfo;
 	MacroEntryControls *_controls;
+	QFrame *_frame;
+	QVBoxLayout *_highLightFrameLayout;
 
 private:
 	QTimer _enterTimer;
