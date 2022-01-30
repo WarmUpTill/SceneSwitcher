@@ -11,7 +11,7 @@ bool MacroActionSequence::_registered = MacroActionFactory::Register(
 
 int getNextUnpausedMacroIdx(std::vector<MacroRef> &macros, int startIdx)
 {
-	for (; macros.size() > startIdx; ++startIdx) {
+	for (; (int)macros.size() > startIdx; ++startIdx) {
 		if (!macros[startIdx]->Paused()) {
 			return startIdx;
 		}

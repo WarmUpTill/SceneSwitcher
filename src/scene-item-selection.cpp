@@ -89,7 +89,7 @@ SceneItemSelection::GetSceneItems(SceneSelection &sceneSelection)
 		// As this might be confusing reverse that order internally
 		int idx = count - 1 - _idx;
 
-		if (idx >= 0 && idx < items.size()) {
+		if (idx >= 0 && idx < (int)items.size()) {
 			obs_sceneitem_addref(items[idx]);
 			ret.emplace_back(items[idx]);
 		}
