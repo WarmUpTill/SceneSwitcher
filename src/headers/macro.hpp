@@ -75,8 +75,8 @@ public:
 	virtual ~Macro();
 
 	bool CeckMatch();
-	bool PerformAction(bool forceParallel = false,
-			   bool ignorePause = false);
+	bool PerformActions(bool forceParallel = false,
+			    bool ignorePause = false);
 	bool Matched() { return _matched; }
 	std::string Name() { return _name; }
 	void SetName(const std::string &name);

@@ -36,7 +36,7 @@ bool MacroActionMacro::PerformAction()
 		_macro->ResetCount();
 		break;
 	case PerformMacroAction::RUN:
-		_macro->PerformAction();
+		_macro->PerformActions();
 		break;
 	case PerformMacroAction::STOP:
 		_macro->Stop();
