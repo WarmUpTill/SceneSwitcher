@@ -93,7 +93,9 @@ static inline void populateConditionSelection(QComboBox *list)
 MacroConditionEdit::MacroConditionEdit(
 	QWidget *parent, std::shared_ptr<MacroCondition> *entryData,
 	const std::string &id, bool root)
-	: MacroSegmentEdit(parent), _entryData(entryData), _isRoot(root)
+	: MacroSegmentEdit(switcher->useVerticalMacroControls, parent),
+	  _entryData(entryData),
+	  _isRoot(root)
 {
 	_logicSelection = new QComboBox();
 	_conditionSelection = new QComboBox();
@@ -120,23 +122,15 @@ MacroConditionEdit::MacroConditionEdit(
 	_section->AddHeaderWidget(_headerInfo);
 	_section->AddHeaderWidget(_dur);
 
-	QVBoxLayout *verticalControlsLayout = new QVBoxLayout;
-	if (switcher->useVerticalMacroControls) {
-		verticalControlsLayout->addWidget(_controls->GetUp());
-		verticalControlsLayout->addWidget(_controls->GetAdd());
-		verticalControlsLayout->addWidget(_controls->GetRemove());
-		verticalControlsLayout->addWidget(_controls->GetDown());
-		verticalControlsLayout->setContentsMargins(0, 0, 0, 0);
-		verticalControlsLayout->setSpacing(0);
-		_controls->hide(); // Only useful in horizontal case
-	}
-
 	QVBoxLayout *conditionLayout = new QVBoxLayout;
 	conditionLayout->addWidget(_section);
-	conditionLayout->addWidget(_controls);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-	mainLayout->addLayout(verticalControlsLayout);
+	if (switcher->useVerticalMacroControls) {
+		mainLayout->addWidget(_controls);
+	} else {
+		conditionLayout->addWidget(_controls);
+	}
 	mainLayout->addLayout(conditionLayout);
 	setLayout(mainLayout);
 
