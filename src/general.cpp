@@ -202,6 +202,15 @@ void AdvSceneSwitcher::on_useVerticalMacroControls_stateChanged(int state)
 	setupMacroTab();
 }
 
+void AdvSceneSwitcher::on_highlightExecutedMacros_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	switcher->highlightExecutedMacros = state;
+}
+
 bool isLegacyTab(const QString &name)
 {
 	return name == obs_module_text(
@@ -565,6 +574,8 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_bool(obj, "disableHints", disableHints);
 	obs_data_set_bool(obj, "useVerticalMacroControls",
 			  useVerticalMacroControls);
+	obs_data_set_bool(obj, "highlightExecutedMacros",
+			  highlightExecutedMacros);
 	obs_data_set_bool(obj, "hideLegacyTabs", hideLegacyTabs);
 
 	obs_data_set_int(obj, "priority0", functionNamesByPriority[0]);
@@ -641,6 +652,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	disableHints = obs_data_get_bool(obj, "disableHints");
 	useVerticalMacroControls =
 		obs_data_get_bool(obj, "useVerticalMacroControls");
+	highlightExecutedMacros =
+		obs_data_get_bool(obj, "highlightExecutedMacros");
 	hideLegacyTabs = obs_data_get_bool(obj, "hideLegacyTabs");
 
 	obs_data_set_default_int(obj, "priority0", default_priority_0);
@@ -857,6 +870,8 @@ void AdvSceneSwitcher::setupGeneralTab()
 	ui->uiHintsDisable->setChecked(switcher->disableHints);
 	ui->useVerticalMacroControls->setChecked(
 		switcher->useVerticalMacroControls);
+	ui->highlightExecutedMacros->setChecked(
+		switcher->highlightExecutedMacros);
 	ui->hideLegacyTabs->setChecked(switcher->hideLegacyTabs);
 
 	for (int p : switcher->functionNamesByPriority) {

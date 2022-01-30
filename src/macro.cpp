@@ -133,6 +133,7 @@ bool Macro::PerformAction(bool forceParallel, bool ignorePause)
 	} else {
 		RunActions(ret, ignorePause);
 	}
+	_wasExecutedRecently = true;
 	return ret;
 }
 
@@ -378,6 +379,15 @@ bool Macro::SwitchesScene()
 		if (a->GetId() == sceneSwitchId) {
 			return true;
 		}
+	}
+	return false;
+}
+
+bool Macro::WasExecutedRecently()
+{
+	if (_wasExecutedRecently) {
+		_wasExecutedRecently = false;
+		return true;
 	}
 	return false;
 }

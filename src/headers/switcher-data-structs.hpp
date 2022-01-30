@@ -88,6 +88,7 @@ struct SwitcherData {
 	bool disableHints = false;
 	bool useVerticalMacroControls = false;
 	bool hideLegacyTabs = false;
+	bool highlightExecutedMacros = false;
 	bool showSystemTrayNotifications = false;
 	bool showFrame = false;
 	bool transitionOverrideOverride = false;
