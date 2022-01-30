@@ -106,6 +106,9 @@ public:
 	// Helper function for plugin state condition regarding scene change
 	bool SwitchesScene();
 
+	// UI helpers for the macro tab
+	bool WasExecutedRecently();
+
 private:
 	void SetupHotkeys();
 	void ClearHotkeys();
@@ -126,6 +129,8 @@ private:
 	obs_hotkey_id _pauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _unpauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _togglePauseHotkey = OBS_INVALID_HOTKEY_ID;
+
+	bool _wasExecutedRecently = false;
 
 	bool _die = false;
 	bool _stop = false;

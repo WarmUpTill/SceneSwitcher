@@ -117,7 +117,6 @@ public slots:
 	void on_runMacroInParallel_stateChanged(int value);
 	void on_runMacroOnChange_stateChanged(int value);
 	void on_macros_currentRowChanged(int idx);
-	void on_macros_itemChanged(QListWidgetItem *);
 	void on_conditionAdd_clicked();
 	void on_conditionRemove_clicked();
 	void on_actionAdd_clicked();
@@ -140,6 +139,7 @@ public slots:
 	void RemoveMacroCondition(int idx);
 	void MoveMacroConditionUp(int idx);
 	void MoveMacroConditionDown(int idx);
+	void HighlightMatchedMacros();
 
 	void on_screenRegionSwitches_currentRowChanged(int idx);
 	void on_showFrame_clicked();
@@ -171,6 +171,7 @@ public slots:
 	void on_showTrayNotifications_stateChanged(int state);
 	void on_uiHintsDisable_stateChanged(int state);
 	void on_useVerticalMacroControls_stateChanged(int state);
+	void on_highlightExecutedMacros_stateChanged(int state);
 	void on_hideLegacyTabs_stateChanged(int state);
 
 	void on_exportSettings_clicked();

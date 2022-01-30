@@ -1,4 +1,5 @@
 #include "headers/macro.hpp"
+#include "headers/macro-list-entry-widget.hpp"
 #include "headers/macro-action-edit.hpp"
 #include "headers/macro-condition-edit.hpp"
 #include "headers/advanced-scene-switcher.hpp"
@@ -8,6 +9,7 @@
 #include <QColor>
 #include <QMenu>
 
+static QTimer highlightMatchTimer;
 static QMetaObject::Connection addPulse;
 
 bool macroNameExists(std::string name)
@@ -52,6 +54,17 @@ bool AdvSceneSwitcher::addNewMacro(std::string &name)
 	return true;
 }
 
+QListWidgetItem *AddNewMacroListEntry(QListWidget *list,
+				      std::shared_ptr<Macro> &macro)
+{
+	QListWidgetItem *item = new QListWidgetItem(list);
+	item->setData(Qt::UserRole, QString::fromStdString(macro->Name()));
+	auto listEntry = new MacroListEntryWidget(macro, list);
+	item->setSizeHint(listEntry->minimumSizeHint());
+	list->setItemWidget(item, listEntry);
+	return item;
+}
+
 void AdvSceneSwitcher::on_macroAdd_clicked()
 {
 	std::string name;
@@ -60,10 +73,7 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 	}
 	QString text = QString::fromStdString(name);
 
-	QListWidgetItem *item = new QListWidgetItem(text, ui->macros);
-	item->setData(Qt::UserRole, text);
-	item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-	item->setCheckState(Qt::Checked);
+	auto item = AddNewMacroListEntry(ui->macros, switcher->macros.back());
 	ui->macros->setCurrentItem(item);
 
 	ui->macroAdd->disconnect(addPulse);
@@ -102,34 +112,44 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 void AdvSceneSwitcher::on_macroUp_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
-	int index = ui->macros->currentRow();
-	if (index != -1 && index != 0) {
-		ui->macros->insertItem(index - 1, ui->macros->takeItem(index));
-		ui->macros->setCurrentRow(index - 1);
+	if (!listMoveUp(ui->macros)) {
+		return;
+	}
 
-		iter_swap(switcher->macros.begin() + index,
-			  switcher->macros.begin() + index - 1);
+	int index = ui->macros->currentRow() + 1;
+	auto *entry1 = static_cast<MacroListEntryWidget *>(
+		ui->macros->itemWidget(ui->macros->item(index)));
+	auto *entry2 = static_cast<MacroListEntryWidget *>(
+		ui->macros->itemWidget(ui->macros->item(index - 1)));
+	entry1->SetMacro(*(switcher->macros.begin() + index - 1));
+	entry2->SetMacro(*(switcher->macros.begin() + index));
+	iter_swap(switcher->macros.begin() + index,
+		  switcher->macros.begin() + index - 1);
 
-		for (auto &m : switcher->macros) {
-			m->ResolveMacroRef();
-		}
+	for (auto &m : switcher->macros) {
+		m->ResolveMacroRef();
 	}
 }
 
 void AdvSceneSwitcher::on_macroDown_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
-	int index = ui->macros->currentRow();
-	if (index != -1 && index != ui->macros->count() - 1) {
-		ui->macros->insertItem(index + 1, ui->macros->takeItem(index));
-		ui->macros->setCurrentRow(index + 1);
+	if (!listMoveDown(ui->macros)) {
+		return;
+	}
 
-		iter_swap(switcher->macros.begin() + index,
-			  switcher->macros.begin() + index + 1);
+	int index = ui->macros->currentRow() - 1;
+	auto *entry1 = static_cast<MacroListEntryWidget *>(
+		ui->macros->itemWidget(ui->macros->item(index)));
+	auto *entry2 = static_cast<MacroListEntryWidget *>(
+		ui->macros->itemWidget(ui->macros->item(index + 1)));
+	entry1->SetMacro(*(switcher->macros.begin() + index + 1));
+	entry2->SetMacro(*(switcher->macros.begin() + index));
+	iter_swap(switcher->macros.begin() + index,
+		  switcher->macros.begin() + index + 1);
 
-		for (auto &m : switcher->macros) {
-			m->ResolveMacroRef();
-		}
+	for (auto &m : switcher->macros) {
+		m->ResolveMacroRef();
 	}
 }
 
@@ -160,11 +180,10 @@ void AdvSceneSwitcher::on_macroName_editingFinished()
 		if (nameValid) {
 			macro->SetName(newName.toUtf8().constData());
 			QListWidgetItem *item = ui->macros->currentItem();
-			// Don't trigger itemChanged()
-			// pause state remains as is
-			ui->macros->blockSignals(true);
-			item->setText(newName);
-			ui->macros->blockSignals(false);
+			item->setData(Qt::UserRole, newName);
+			auto listEntry = static_cast<MacroListEntryWidget *>(
+				ui->macros->itemWidget(item));
+			listEntry->SetName(newName);
 		} else {
 			ui->macroName->setText(oldName);
 		}
@@ -313,7 +332,7 @@ Macro *AdvSceneSwitcher::getSelectedMacro()
 		return nullptr;
 	}
 
-	QString name = item->text();
+	QString name = item->data(Qt::UserRole).toString();
 	return GetMacroByQString(name);
 }
 
@@ -329,26 +348,11 @@ void AdvSceneSwitcher::on_macros_currentRowChanged(int idx)
 	}
 
 	QListWidgetItem *item = ui->macros->item(idx);
-	QString macroName = item->text();
+	QString macroName = item->data(Qt::UserRole).toString();
 
 	auto macro = GetMacroByQString(macroName);
 	if (macro) {
 		SetEditMacro(*macro);
-	}
-}
-
-void AdvSceneSwitcher::on_macros_itemChanged(QListWidgetItem *item)
-{
-	if (loading) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	QString name = item->text();
-
-	auto m = GetMacroByQString(name);
-	if (m) {
-		m->SetPaused(item->checkState() != Qt::Checked);
 	}
 }
 
@@ -357,16 +361,7 @@ void AdvSceneSwitcher::setupMacroTab()
 	const QSignalBlocker signalBlocker(ui->macros);
 	ui->macros->clear();
 	for (auto &m : switcher->macros) {
-		QString text = QString::fromStdString(m->Name());
-
-		QListWidgetItem *item = new QListWidgetItem(text, ui->macros);
-		item->setData(Qt::UserRole, text);
-		item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-		if (m->Paused()) {
-			item->setCheckState(Qt::Unchecked);
-		} else {
-			item->setCheckState(Qt::Checked);
-		}
+		AddNewMacroListEntry(ui->macros, m);
 	}
 
 	if (switcher->macros.size() == 0) {
@@ -392,6 +387,11 @@ void AdvSceneSwitcher::setupMacroTab()
 
 	ui->macroPriorityWarning->setVisible(
 		switcher->functionNamesByPriority[0] != macro_func);
+
+	highlightMatchTimer.setInterval(1000);
+	connect(&highlightMatchTimer, &QTimer::timeout, this,
+		&AdvSceneSwitcher::HighlightMatchedMacros);
+	highlightMatchTimer.start();
 }
 
 void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
@@ -442,11 +442,7 @@ void AdvSceneSwitcher::CopyMacro()
 	switcher->macros.back()->SetName(name);
 	obs_data_release(data);
 
-	QString text = QString::fromStdString(name);
-	QListWidgetItem *item = new QListWidgetItem(text, ui->macros);
-	item->setData(Qt::UserRole, text);
-	item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-	item->setCheckState(Qt::Checked);
+	auto item = AddNewMacroListEntry(ui->macros, switcher->macros.back());
 	ui->macros->setCurrentItem(item);
 }
 
@@ -520,4 +516,26 @@ void AdvSceneSwitcher::MinimizeConditions()
 	sizes[0] = conditionsHeight;
 	sizes[1] = sum - conditionsHeight;
 	ui->macroSplitter->setSizes(sizes);
+}
+
+void AdvSceneSwitcher::HighlightMatchedMacros()
+{
+	if (loading || !(switcher && switcher->highlightExecutedMacros)) {
+		return;
+	}
+
+	for (int idx = 0; idx < (int)switcher->macros.size(); idx++) {
+		if (switcher->macros[idx]->WasExecutedRecently()) {
+			auto item = ui->macros->item(idx);
+			if (!item) {
+				continue;
+			}
+			auto widget = ui->macros->itemWidget(item);
+			if (!widget) {
+				continue;
+			}
+			PulseWidget(widget, Qt::green, QColor(0, 0, 0, 0),
+				    true);
+		}
+	}
 }
