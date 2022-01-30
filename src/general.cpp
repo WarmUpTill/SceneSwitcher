@@ -202,6 +202,48 @@ void AdvSceneSwitcher::on_useVerticalMacroControls_stateChanged(int state)
 	setupMacroTab();
 }
 
+bool isLegacyTab(const QString &name)
+{
+	return name == obs_module_text(
+			       "AdvSceneSwitcher.transitionTab.title") ||
+	       name == obs_module_text(
+			       "AdvSceneSwitcher.windowTitleTab.title") ||
+	       name == obs_module_text(
+			       "AdvSceneSwitcher.executableTab.title") ||
+	       name == obs_module_text(
+			       "AdvSceneSwitcher.screenRegionTab.title") ||
+	       name == obs_module_text("AdvSceneSwitcher.mediaTab.title") ||
+	       name == obs_module_text("AdvSceneSwitcher.fileTab.title") ||
+	       name == obs_module_text("AdvSceneSwitcher.randomTab.title") ||
+	       name == obs_module_text("AdvSceneSwitcher.timeTab.title") ||
+	       name == obs_module_text("AdvSceneSwitcher.idleTab.title") ||
+	       name == obs_module_text(
+			       "AdvSceneSwitcher.sceneSequenceTab.title") ||
+	       name == obs_module_text("AdvSceneSwitcher.audioTab.title") ||
+	       name == obs_module_text("AdvSceneSwitcher.videoTab.title") ||
+	       name == obs_module_text("AdvSceneSwitcher.pauseTab.title") ||
+	       name == obs_module_text(
+			       "AdvSceneSwitcher.sceneTriggerTab.title");
+}
+
+void AdvSceneSwitcher::on_hideLegacyTabs_stateChanged(int state)
+{
+	switcher->hideLegacyTabs = state;
+
+	for (int idx = 0; idx < ui->tabWidget->count(); idx++) {
+		if (isLegacyTab(ui->tabWidget->tabText(idx))) {
+#if defined(_WIN32) || defined(__APPLE__)
+			ui->tabWidget->setTabVisible(idx, !state);
+#else
+			// TODO: Switch to setTabVisible() once QT 5.15 is more wide spread
+			ui->tabWidget->setTabEnabled(idx, !state);
+			ui->tabWidget->setStyleSheet(
+				"QTabBar::tab::disabled {width: 0; height: 0; margin: 0; padding: 0; border: none;} ");
+#endif
+		}
+	}
+}
+
 QString getDefaultSaveLocation()
 {
 	QString desktopPath = QStandardPaths::writableLocation(
@@ -523,6 +565,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_bool(obj, "disableHints", disableHints);
 	obs_data_set_bool(obj, "useVerticalMacroControls",
 			  useVerticalMacroControls);
+	obs_data_set_bool(obj, "hideLegacyTabs", hideLegacyTabs);
 
 	obs_data_set_int(obj, "priority0", functionNamesByPriority[0]);
 	obs_data_set_int(obj, "priority1", functionNamesByPriority[1]);
@@ -598,6 +641,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	disableHints = obs_data_get_bool(obj, "disableHints");
 	useVerticalMacroControls =
 		obs_data_get_bool(obj, "useVerticalMacroControls");
+	hideLegacyTabs = obs_data_get_bool(obj, "hideLegacyTabs");
 
 	obs_data_set_default_int(obj, "priority0", default_priority_0);
 	obs_data_set_default_int(obj, "priority1", default_priority_1);
@@ -813,6 +857,7 @@ void AdvSceneSwitcher::setupGeneralTab()
 	ui->uiHintsDisable->setChecked(switcher->disableHints);
 	ui->useVerticalMacroControls->setChecked(
 		switcher->useVerticalMacroControls);
+	ui->hideLegacyTabs->setChecked(switcher->hideLegacyTabs);
 
 	for (int p : switcher->functionNamesByPriority) {
 		std::string s = "";

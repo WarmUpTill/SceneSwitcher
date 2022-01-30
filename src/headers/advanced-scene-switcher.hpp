@@ -171,6 +171,7 @@ public slots:
 	void on_showTrayNotifications_stateChanged(int state);
 	void on_uiHintsDisable_stateChanged(int state);
 	void on_useVerticalMacroControls_stateChanged(int state);
+	void on_hideLegacyTabs_stateChanged(int state);
 
 	void on_exportSettings_clicked();
 	void on_importSettings_clicked();
