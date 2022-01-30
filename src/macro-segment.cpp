@@ -40,11 +40,12 @@ bool MouseWheelWidgetAdjustmentGuard::eventFilter(QObject *o, QEvent *e)
 	return QObject::eventFilter(o, e);
 }
 
-MacroSegmentEdit::MacroSegmentEdit(QWidget *parent) : QWidget(parent)
+MacroSegmentEdit::MacroSegmentEdit(bool verticalControls, QWidget *parent)
+	: QWidget(parent)
 {
 	_section = new Section(300);
 	_headerInfo = new QLabel();
-	_controls = new MacroEntryControls();
+	_controls = new MacroEntryControls(verticalControls);
 
 	_enterTimer.setSingleShot(true);
 	_enterTimer.setInterval(1000);

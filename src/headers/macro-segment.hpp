@@ -34,7 +34,8 @@ class MacroSegmentEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroSegmentEdit(QWidget *parent = nullptr);
+	MacroSegmentEdit(bool verticalControls = true,
+			 QWidget *parent = nullptr);
 	// Use this function to avoid accidental edits when scrolling through
 	// list of actions and conditions
 	void SetFocusPolicyOfWidgets();

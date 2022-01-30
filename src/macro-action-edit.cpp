@@ -64,7 +64,8 @@ static inline void populateActionSelection(QComboBox *list)
 MacroActionEdit::MacroActionEdit(QWidget *parent,
 				 std::shared_ptr<MacroAction> *entryData,
 				 const std::string &id)
-	: MacroSegmentEdit(parent), _entryData(entryData)
+	: MacroSegmentEdit(switcher->useVerticalMacroControls, parent),
+	  _entryData(entryData)
 {
 	_actionSelection = new QComboBox();
 
@@ -77,23 +78,25 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	_section->AddHeaderWidget(_actionSelection);
 	_section->AddHeaderWidget(_headerInfo);
 
-	QVBoxLayout *verticalControlsLayout = new QVBoxLayout;
-	if (switcher->useVerticalMacroControls) {
-		verticalControlsLayout->addWidget(_controls->GetUp());
-		verticalControlsLayout->addWidget(_controls->GetAdd());
-		verticalControlsLayout->addWidget(_controls->GetRemove());
-		verticalControlsLayout->addWidget(_controls->GetDown());
-		verticalControlsLayout->setContentsMargins(0, 0, 0, 0);
-		verticalControlsLayout->setSpacing(0);
-		_controls->hide(); // Only useful in horizontal case
-	}
+	auto frame = new QFrame;
+	frame->setObjectName("actionFrame");
+	frame->setStyleSheet(
+		"#actionFrame { border-radius: 4px; background-color: rgba(0,0,0,50); }");
+	setStyleSheet("QCheckBox { background-color: rgba(0,0,0,0); }\
+		QLabel  { background-color: rgba(0,0,0,0); }");
+	QVBoxLayout *frameLayout = new QVBoxLayout;
+	frame->setLayout(frameLayout);
+	frameLayout->addWidget(_section);
 
 	QVBoxLayout *actionLayout = new QVBoxLayout;
-	actionLayout->addWidget(_section);
-	actionLayout->addWidget(_controls);
+	actionLayout->addWidget(frame);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-	mainLayout->addLayout(verticalControlsLayout);
+	if (switcher->useVerticalMacroControls) {
+		mainLayout->addWidget(_controls);
+	} else {
+		actionLayout->addWidget(_controls);
+	}
 	mainLayout->addLayout(actionLayout);
 	setLayout(mainLayout);
 

@@ -1,8 +1,9 @@
 #include "headers/macro-controls.hpp"
 
-MacroEntryControls::MacroEntryControls(const int animationDuration,
+MacroEntryControls::MacroEntryControls(bool vertical,
+				       const int animationDuration,
 				       QWidget *parent)
-	: QWidget(parent)
+	: QWidget(parent), _vertical(vertical)
 {
 	_add = new QPushButton(this);
 	_add->setMaximumSize(QSize(22, 22));
@@ -25,35 +26,48 @@ MacroEntryControls::MacroEntryControls(const int animationDuration,
 			   QVariant(QString::fromUtf8("downArrowIconSmall")));
 	_down->setFlat(true);
 
-	auto line = new QFrame(this);
-	line->setFrameShape(QFrame::HLine);
-	line->setFrameShadow(QFrame::Sunken);
-	line->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+	if (vertical) {
+		auto mainLayout = new QVBoxLayout(this);
+		mainLayout->addWidget(_up);
+		mainLayout->addWidget(_add);
+		mainLayout->addWidget(_remove);
+		mainLayout->addWidget(_down);
+		mainLayout->setContentsMargins(0, 0, 0, 0);
+		mainLayout->setSpacing(0);
+		setLayout(mainLayout);
 
-	auto mainLayout = new QHBoxLayout(this);
+	} else {
+		auto line = new QFrame(this);
+		line->setFrameShape(QFrame::HLine);
+		line->setFrameShadow(QFrame::Sunken);
+		line->setSizePolicy(QSizePolicy::Expanding,
+				    QSizePolicy::Maximum);
 
-	mainLayout->addWidget(_add);
-	mainLayout->addWidget(_remove);
+		auto mainLayout = new QHBoxLayout(this);
 
-	auto *separator = new QFrame(this);
-	separator->setFrameShape(QFrame::VLine);
-	separator->setFrameShadow(QFrame::Sunken);
-	mainLayout->addWidget(separator);
+		mainLayout->addWidget(_add);
+		mainLayout->addWidget(_remove);
 
-	mainLayout->addWidget(_up);
-	mainLayout->addWidget(_down);
-	mainLayout->addWidget(line);
+		auto *separator = new QFrame(this);
+		separator->setFrameShape(QFrame::VLine);
+		separator->setFrameShadow(QFrame::Sunken);
+		mainLayout->addWidget(separator);
 
-	mainLayout->setContentsMargins(0, 0, 0, 0);
+		mainLayout->addWidget(_up);
+		mainLayout->addWidget(_down);
+		mainLayout->addWidget(line);
 
-	_animation = new QPropertyAnimation(this, "maximumHeight");
+		mainLayout->setContentsMargins(0, 0, 0, 0);
 
-	_animation->setDuration(animationDuration);
-	_animation->setStartValue(0);
-	_animation->setEndValue(mainLayout->sizeHint().height());
+		_animation = new QPropertyAnimation(this, "maximumHeight");
 
-	setMaximumHeight(0);
-	setLayout(mainLayout);
+		_animation->setDuration(animationDuration);
+		_animation->setStartValue(0);
+		_animation->setEndValue(mainLayout->sizeHint().height());
+
+		setMaximumHeight(0);
+		setLayout(mainLayout);
+	}
 
 	connect(_add, &QPushButton::clicked, this, &MacroEntryControls::Add);
 	connect(_remove, &QPushButton::clicked, this,
@@ -64,7 +78,7 @@ MacroEntryControls::MacroEntryControls(const int animationDuration,
 
 void MacroEntryControls::Show(bool visible)
 {
-	if (_visible == visible) {
+	if (_vertical || _visible == visible) {
 		return;
 	}
 	_animation->setDirection(visible ? QAbstractAnimation::Forward
