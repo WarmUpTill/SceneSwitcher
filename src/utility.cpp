@@ -881,16 +881,8 @@ bool windowPosValid(QPoint pos)
 }
 
 QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
-				    QColor endColor, QString specifier,
-				    bool once)
+				    QColor endColor, bool once)
 {
-	widget->setStyleSheet(specifier + "{ \
-		border-style: outset; \
-		border-width: 2px; \
-		border-radius: 10px; \
-		border-color: rgb(0,0,0,0) \
-		}");
-
 	QGraphicsColorizeEffect *eEffect = new QGraphicsColorizeEffect(widget);
 	widget->setGraphicsEffect(eEffect);
 	QPropertyAnimation *paAnimation =

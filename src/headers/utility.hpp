@@ -47,8 +47,7 @@ void deleteLayoutItem(QLayoutItem *item);
 void clearLayout(QLayout *layout, int afterIdx = 0);
 void setLayoutVisible(QLayout *layout, bool visible);
 QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
-				    QColor = QColor(0, 0, 0, 0),
-				    QString specifier = "QLabel ",
+				    QColor endColor = QColor(0, 0, 0, 0),
 				    bool once = false);
 void listAddClicked(QListWidget *list, QWidget *newWidget,
 		    QPushButton *addButton = nullptr,

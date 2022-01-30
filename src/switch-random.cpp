@@ -134,10 +134,16 @@ void AdvSceneSwitcher::setupRandomTab()
 		ui->randomHelp->setVisible(false);
 	}
 
+	ui->randomDisabledWarning->setStyleSheet("QLabel{ \
+		border-style: outset; \
+		border-width: 2px; \
+		border-radius: 7px; \
+		border-color: rgb(0,0,0,0) \
+		}");
 	if (switcher->switchIfNotMatching != RANDOM_SWITCH) {
 		if (!switcher->disableHints) {
 			PulseWidget(ui->randomDisabledWarning, QColor(Qt::red),
-				    QColor(0, 0, 0, 0), "QLabel ");
+				    QColor(0, 0, 0, 0));
 		}
 	} else {
 		ui->randomDisabledWarning->setVisible(false);

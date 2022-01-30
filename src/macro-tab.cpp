@@ -265,8 +265,7 @@ void AdvSceneSwitcher::HighlightAction(int idx)
 	if (!widget) {
 		return;
 	}
-	PulseWidget(widget, QColor(Qt::green), QColor(0, 0, 0, 0), "QLabel ",
-		    true);
+	PulseWidget(widget, QColor(Qt::green), QColor(0, 0, 0, 0), true);
 }
 
 void AdvSceneSwitcher::HighlightCondition(int idx)
@@ -279,8 +278,7 @@ void AdvSceneSwitcher::HighlightCondition(int idx)
 	if (!widget) {
 		return;
 	}
-	PulseWidget(widget, QColor(Qt::green), QColor(0, 0, 0, 0), "QLabel ",
-		    true);
+	PulseWidget(widget, QColor(Qt::green), QColor(0, 0, 0, 0), true);
 }
 
 void AdvSceneSwitcher::ConnectControlSignals(MacroActionEdit *c)
