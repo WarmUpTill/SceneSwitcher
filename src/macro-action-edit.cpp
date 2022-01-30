@@ -78,18 +78,9 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	_section->AddHeaderWidget(_actionSelection);
 	_section->AddHeaderWidget(_headerInfo);
 
-	auto frame = new QFrame;
-	frame->setObjectName("actionFrame");
-	frame->setStyleSheet(
-		"#actionFrame { border-radius: 4px; background-color: rgba(0,0,0,50); }");
-	setStyleSheet("QCheckBox { background-color: rgba(0,0,0,0); }\
-		QLabel  { background-color: rgba(0,0,0,0); }");
-	QVBoxLayout *frameLayout = new QVBoxLayout;
-	frame->setLayout(frameLayout);
-	frameLayout->addWidget(_section);
-
 	QVBoxLayout *actionLayout = new QVBoxLayout;
-	actionLayout->addWidget(frame);
+	actionLayout->addWidget(_frame);
+	_highLightFrameLayout->addWidget(_section);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	if (switcher->useVerticalMacroControls) {

@@ -12,7 +12,8 @@ Section::Section(const int animationDuration, QWidget *parent)
 	_mainLayout = new QGridLayout(this);
 	_headerWidgetLayout = new QHBoxLayout();
 
-	_toggleButton->setStyleSheet("QToolButton {border: none;}");
+	_toggleButton->setStyleSheet(
+		"QToolButton {border: none; background-color: rgba(0,0,0,0);}");
 	_toggleButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
 	_toggleButton->setArrowType(Qt::ArrowType::RightArrow);
 	_toggleButton->setCheckable(true);

@@ -52,6 +52,17 @@ MacroSegmentEdit::MacroSegmentEdit(bool verticalControls, QWidget *parent)
 	_leaveTimer.setSingleShot(true);
 	_leaveTimer.setInterval(1000);
 
+	_frame = new QFrame;
+	_frame->setObjectName("segmentFrame");
+	_highLightFrameLayout = new QVBoxLayout;
+	_frame->setStyleSheet(
+		"#segmentFrame { border-radius: 4px; background-color: rgba(0,0,0,50); }");
+	_frame->setLayout(_highLightFrameLayout);
+	// Set background transparent to avoid blocking highlight frame
+	setStyleSheet("\
+		QCheckBox { background-color: rgba(0,0,0,0); }\
+		QLabel  { background-color: rgba(0,0,0,0); }");
+
 	QWidget::connect(_section, &Section::Collapsed, this,
 			 &MacroSegmentEdit::Collapsed);
 

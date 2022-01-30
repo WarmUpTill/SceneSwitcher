@@ -123,7 +123,8 @@ MacroConditionEdit::MacroConditionEdit(
 	_section->AddHeaderWidget(_dur);
 
 	QVBoxLayout *conditionLayout = new QVBoxLayout;
-	conditionLayout->addWidget(_section);
+	conditionLayout->addWidget(_frame);
+	_highLightFrameLayout->addWidget(_section);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	if (switcher->useVerticalMacroControls) {
