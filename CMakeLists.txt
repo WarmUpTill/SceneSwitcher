@@ -246,6 +246,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-condition-window.hpp
     src/headers/macro.hpp
     src/headers/macro-controls.hpp
+    src/headers/macro-list-entry-widget.hpp
     src/headers/macro-segment.hpp
     src/headers/macro-selection.hpp
     src/headers/curl-helper.hpp
@@ -346,6 +347,7 @@ set(advanced-scene-switcher_SOURCES
     src/macro-condition-window.cpp
     src/macro.cpp
     src/macro-controls.cpp
+    src/macro-list-entry-widget.cpp
     src/macro-segment.cpp
     src/macro-selection.cpp
     src/macro-tab.cpp
