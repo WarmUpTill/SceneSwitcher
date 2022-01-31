@@ -715,10 +715,6 @@
               <property name="text">
                <string/>
               </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-              </property>
               <property name="flat">
                <bool>true</bool>
               </property>
@@ -737,10 +733,6 @@
               </property>
               <property name="text">
                <string/>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
               </property>
               <property name="flat">
                <bool>true</bool>
@@ -1195,10 +1187,6 @@
               <property name="text">
                <string/>
               </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-              </property>
               <property name="flat">
                <bool>true</bool>
               </property>
@@ -1217,10 +1205,6 @@
               </property>
               <property name="text">
                <string/>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
               </property>
               <property name="flat">
                <bool>true</bool>
@@ -1371,10 +1355,6 @@
               <property name="text">
                <string/>
               </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-              </property>
               <property name="flat">
                <bool>true</bool>
               </property>
@@ -1393,10 +1373,6 @@
               </property>
               <property name="text">
                <string/>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
               </property>
               <property name="flat">
                <bool>true</bool>
@@ -1548,10 +1524,6 @@
            <property name="text">
             <string/>
            </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-           </property>
            <property name="flat">
             <bool>true</bool>
            </property>
@@ -1570,10 +1542,6 @@
            </property>
            <property name="text">
             <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -1738,10 +1706,6 @@
            <property name="text">
             <string/>
            </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-           </property>
            <property name="flat">
             <bool>true</bool>
            </property>
@@ -1760,10 +1724,6 @@
            </property>
            <property name="text">
             <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -2048,10 +2008,6 @@
            <property name="text">
             <string/>
            </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-           </property>
            <property name="flat">
             <bool>true</bool>
            </property>
@@ -2070,10 +2026,6 @@
            </property>
            <property name="text">
             <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -2297,10 +2249,6 @@
            <property name="text">
             <string/>
            </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-           </property>
            <property name="flat">
             <bool>true</bool>
            </property>
@@ -2319,10 +2267,6 @@
            </property>
            <property name="text">
             <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -2465,10 +2409,6 @@
            <property name="text">
             <string/>
            </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-           </property>
            <property name="flat">
             <bool>true</bool>
            </property>
@@ -2487,10 +2427,6 @@
            </property>
            <property name="text">
             <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -2747,10 +2683,6 @@
               <property name="text">
                <string/>
               </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-              </property>
               <property name="flat">
                <bool>true</bool>
               </property>
@@ -2769,10 +2701,6 @@
               </property>
               <property name="text">
                <string/>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
               </property>
               <property name="flat">
                <bool>true</bool>
@@ -3011,10 +2939,6 @@
            <property name="text">
             <string/>
            </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-           </property>
            <property name="flat">
             <bool>true</bool>
            </property>
@@ -3033,10 +2957,6 @@
            </property>
            <property name="text">
             <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -3309,10 +3229,6 @@
            <property name="text">
             <string/>
            </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-           </property>
            <property name="flat">
             <bool>true</bool>
            </property>
@@ -3331,10 +3247,6 @@
            </property>
            <property name="text">
             <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -3531,10 +3443,6 @@
               <property name="text">
                <string/>
               </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-              </property>
               <property name="flat">
                <bool>true</bool>
               </property>
@@ -3553,10 +3461,6 @@
               </property>
               <property name="text">
                <string/>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
               </property>
               <property name="flat">
                <bool>true</bool>
@@ -3723,10 +3627,6 @@
            <property name="text">
             <string/>
            </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-           </property>
            <property name="flat">
             <bool>true</bool>
            </property>
@@ -3745,10 +3645,6 @@
            </property>
            <property name="text">
             <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -4103,10 +3999,6 @@
               <property name="text">
                <string/>
               </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-              </property>
               <property name="flat">
                <bool>true</bool>
               </property>
@@ -4125,10 +4017,6 @@
               </property>
               <property name="text">
                <string/>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
               </property>
               <property name="flat">
                <bool>true</bool>
@@ -4323,10 +4211,6 @@
               <property name="text">
                <string/>
               </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-              </property>
               <property name="flat">
                <bool>true</bool>
               </property>
@@ -4345,10 +4229,6 @@
               </property>
               <property name="text">
                <string/>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
               </property>
               <property name="flat">
                <bool>true</bool>
@@ -4497,10 +4377,6 @@
            <property name="text">
             <string/>
            </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/up.svg</normaloff>../../../forms/images/up.svg</iconset>
-           </property>
            <property name="flat">
             <bool>true</bool>
            </property>
@@ -4519,10 +4395,6 @@
            </property>
            <property name="text">
             <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../forms/images/down.svg</normaloff>../../../forms/images/down.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
