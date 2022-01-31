@@ -900,6 +900,10 @@ QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
 					paAnimation->start();
 				});
 			});
+	} else {
+		con = QWidget::connect(
+			paAnimation, &QPropertyAnimation::finished,
+			[widget]() { widget->setGraphicsEffect(nullptr); });
 	}
 
 	paAnimation->start();
