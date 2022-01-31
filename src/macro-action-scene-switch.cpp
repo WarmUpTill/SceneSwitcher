@@ -40,7 +40,7 @@ bool MacroActionSwitchScene::PerformAction()
 	auto scene = _scene.GetScene();
 	switchScene({scene, _transition.GetTransition(),
 		     (int)(_duration.seconds * 1000)});
-	if (_blockUntilTransitionDone) {
+	if (_blockUntilTransitionDone && scene) {
 		waitForTransitionChange(scene);
 		return !switcher->abortMacroWait;
 	}
