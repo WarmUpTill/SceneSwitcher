@@ -57,7 +57,10 @@ MacroEntryControls::MacroEntryControls(bool vertical,
 		mainLayout->addWidget(_down);
 		mainLayout->addWidget(line);
 
-		mainLayout->setContentsMargins(0, 0, 0, 0);
+		// Save as much space as possible but leave a bit of distance
+		// to the widget being controlled
+		mainLayout->setContentsMargins(0, 3, 0, 0);
+		setLayout(mainLayout);
 
 		_animation = new QPropertyAnimation(this, "maximumHeight");
 
@@ -66,7 +69,6 @@ MacroEntryControls::MacroEntryControls(bool vertical,
 		_animation->setEndValue(mainLayout->sizeHint().height());
 
 		setMaximumHeight(0);
-		setLayout(mainLayout);
 	}
 
 	connect(_add, &QPushButton::clicked, this, &MacroEntryControls::Add);
