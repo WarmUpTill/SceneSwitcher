@@ -59,9 +59,12 @@ MacroSegmentEdit::MacroSegmentEdit(bool verticalControls, QWidget *parent)
 		"#segmentFrame { border-radius: 4px; background-color: rgba(0,0,0,50); }");
 	_frame->setLayout(_highLightFrameLayout);
 	// Set background transparent to avoid blocking highlight frame
-	setStyleSheet("\
-		QCheckBox { background-color: rgba(0,0,0,0); }\
-		QLabel  { background-color: rgba(0,0,0,0); }");
+	setStyleSheet("QCheckBox { background-color: rgba(0,0,0,0); }\
+		       QLabel { background-color: rgba(0,0,0,0); }");
+
+	// Keep the size of macro segments consistent, even if there is room in
+	// the edit areas
+	setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
 	QWidget::connect(_section, &Section::Collapsed, this,
 			 &MacroSegmentEdit::Collapsed);
