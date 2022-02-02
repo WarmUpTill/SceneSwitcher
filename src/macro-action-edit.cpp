@@ -79,10 +79,13 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	_section->AddHeaderWidget(_headerInfo);
 
 	QVBoxLayout *actionLayout = new QVBoxLayout;
+	actionLayout->setContentsMargins(0, 0, 0, 0);
+	actionLayout->setSpacing(0);
 	actionLayout->addWidget(_frame);
 	_highLightFrameLayout->addWidget(_section);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
+	mainLayout->setContentsMargins(0, 0, 0, 0);
 	if (switcher->useVerticalMacroControls) {
 		mainLayout->addWidget(_controls);
 	} else {

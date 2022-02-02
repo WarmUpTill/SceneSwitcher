@@ -858,14 +858,7 @@
                   </widget>
                  </item>
                  <item row="0" column="0">
-                  <layout class="QVBoxLayout" name="macroEditConditionLayout">
-                   <property name="spacing">
-                    <number>1</number>
-                   </property>
-                   <property name="sizeConstraint">
-                    <enum>QLayout::SetFixedSize</enum>
-                   </property>
-                  </layout>
+                  <layout class="QVBoxLayout" name="macroEditConditionLayout"/>
                  </item>
                 </layout>
                </item>
@@ -970,14 +963,7 @@
                   </widget>
                  </item>
                  <item row="0" column="0">
-                  <layout class="QVBoxLayout" name="macroEditActionLayout">
-                   <property name="spacing">
-                    <number>1</number>
-                   </property>
-                   <property name="sizeConstraint">
-                    <enum>QLayout::SetMinAndMaxSize</enum>
-                   </property>
-                  </layout>
+                  <layout class="QVBoxLayout" name="macroEditActionLayout"/>
                  </item>
                 </layout>
                </item>

@@ -123,10 +123,13 @@ MacroConditionEdit::MacroConditionEdit(
 	_section->AddHeaderWidget(_dur);
 
 	QVBoxLayout *conditionLayout = new QVBoxLayout;
+	conditionLayout->setContentsMargins(0, 0, 0, 0);
+	conditionLayout->setSpacing(0);
 	conditionLayout->addWidget(_frame);
 	_highLightFrameLayout->addWidget(_section);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
+	mainLayout->setContentsMargins(0, 0, 0, 0);
 	if (switcher->useVerticalMacroControls) {
 		mainLayout->addWidget(_controls);
 	} else {
