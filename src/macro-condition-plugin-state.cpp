@@ -12,19 +12,30 @@ bool MacroConditionPluginState::_registered = MacroConditionFactory::Register(
 	 "AdvSceneSwitcher.condition.pluginState"});
 
 static std::map<PluginStateCondition, std::string> pluginStateConditionTypes = {
-	{PluginStateCondition::SCENESWITCHED,
+	{PluginStateCondition::SCENE_SWITCHED,
 	 "AdvSceneSwitcher.condition.pluginState.state.sceneSwitched"},
 	{PluginStateCondition::RUNNING,
 	 "AdvSceneSwitcher.condition.pluginState.state.running"},
+	{PluginStateCondition::SHUTDOWN,
+	 "AdvSceneSwitcher.condition.pluginState.state.shutdown"},
 };
+
+MacroConditionPluginState::~MacroConditionPluginState()
+{
+	if (_condition == PluginStateCondition::SHUTDOWN) {
+		switcher->shutdownConditionCount--;
+	}
+}
 
 bool MacroConditionPluginState::CheckCondition()
 {
 	switch (_condition) {
-	case PluginStateCondition::SCENESWITCHED:
+	case PluginStateCondition::SCENE_SWITCHED:
 		return switcher->macroSceneSwitched;
 	case PluginStateCondition::RUNNING:
 		return true;
+	case PluginStateCondition::SHUTDOWN:
+		return switcher->obsIsShuttingDown;
 	default:
 		break;
 	}
@@ -43,6 +54,9 @@ bool MacroConditionPluginState::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	_condition = static_cast<PluginStateCondition>(
 		obs_data_get_int(obj, "condition"));
+	if (_condition == PluginStateCondition::SHUTDOWN) {
+		switcher->shutdownConditionCount++;
+	}
 	return true;
 }
 
@@ -89,7 +103,13 @@ void MacroConditionPluginStateEdit::ConditionChanged(int cond)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
+	if (_entryData->_condition == PluginStateCondition::SHUTDOWN) {
+		switcher->shutdownConditionCount--;
+	}
 	_entryData->_condition = static_cast<PluginStateCondition>(cond);
+	if (_entryData->_condition == PluginStateCondition::SHUTDOWN) {
+		switcher->shutdownConditionCount++;
+	}
 }
 
 void MacroConditionPluginStateEdit::UpdateEntryData()

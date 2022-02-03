@@ -4,13 +4,15 @@
 #include <QComboBox>
 
 enum class PluginStateCondition {
-	SCENESWITCHED,
+	SCENE_SWITCHED,
 	RUNNING,
+	SHUTDOWN,
 };
 
 class MacroConditionPluginState : public MacroCondition {
 public:
 	MacroConditionPluginState(Macro *m) : MacroCondition(m) {}
+	~MacroConditionPluginState();
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
@@ -20,7 +22,7 @@ public:
 		return std::make_shared<MacroConditionPluginState>(m);
 	}
 
-	PluginStateCondition _condition = PluginStateCondition::SCENESWITCHED;
+	PluginStateCondition _condition = PluginStateCondition::SCENE_SWITCHED;
 
 private:
 	static bool _registered;

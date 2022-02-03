@@ -125,6 +125,8 @@ struct SwitcherData {
 	std::condition_variable macroTransitionCv;
 	bool macroSceneSwitched = false;
 	bool replayBufferSaved = false;
+	bool obsIsShuttingDown = false;
+	int shutdownConditionCount = 0;
 
 	std::deque<WindowSwitch> windowSwitches;
 	std::vector<std::string> ignoreIdleWindows;
