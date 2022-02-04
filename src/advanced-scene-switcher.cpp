@@ -39,6 +39,7 @@ AdvSceneSwitcher::~AdvSceneSwitcher()
 {
 	if (switcher) {
 		switcher->settingsWindowOpened = false;
+		switcher->lastOpenedTab = ui->tabWidget->currentIndex();
 	}
 }
 
@@ -86,6 +87,7 @@ void AdvSceneSwitcher::loadUI()
 	setupMacroTab();
 
 	setTabOrder();
+	setCurrentTab();
 	restoreWindowGeo();
 	checkFirstTimeSetup();
 
