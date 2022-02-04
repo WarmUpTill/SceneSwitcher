@@ -78,6 +78,7 @@ public:
 	void setupNetworkTab();
 	void setupMacroTab();
 	void setTabOrder();
+	void setCurrentTab();
 	void restoreWindowGeo();
 	void checkFirstTimeSetup();
 

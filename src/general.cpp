@@ -460,6 +460,13 @@ void AdvSceneSwitcher::setTabOrder()
 	connect(bar, &QTabBar::tabMoved, this, &AdvSceneSwitcher::on_tabMoved);
 }
 
+void AdvSceneSwitcher::setCurrentTab()
+{
+	if (switcher->lastOpenedTab >= 0) {
+		ui->tabWidget->setCurrentIndex(switcher->lastOpenedTab);
+	}
+}
+
 void AdvSceneSwitcher::restoreWindowGeo()
 {
 	if (switcher->saveWindowGeo && windowPosValid(switcher->windowPos)) {
@@ -517,6 +524,9 @@ void SwitcherData::loadSettings(obs_data_t *obj)
 	loadSceneTriggers(obj);
 	loadGeneralSettings(obj);
 	loadHotkeys(obj);
+
+	// Reset on startup and scene collection change
+	switcher->lastOpenedTab = -1;
 }
 
 void SwitcherData::saveSettings(obs_data_t *obj)
