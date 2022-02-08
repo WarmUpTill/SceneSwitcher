@@ -105,28 +105,48 @@ static inline void populateConditionSelection(QComboBox *list)
 	}
 }
 
+#include <QCalendarWidget>
+
 MacroConditionDateEdit::MacroConditionDateEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionDate> entryData)
 	: QWidget(parent)
 {
 	_condition = new QComboBox();
-	_dateTime = new QDateTimeEdit();
-	_dateTime->setCalendarPopup(true);
-	_dateTime->setDisplayFormat("yyyy.MM.dd hh:mm:ss");
-	_dateTime2 = new QDateTimeEdit();
-	_dateTime2->setCalendarPopup(true);
-	_dateTime2->setDisplayFormat("yyyy.MM.dd hh:mm:ss");
+	_date = new QDateEdit();
+	_date->setDisplayFormat("yyyy.MM.dd ");
+	_date->setCalendarPopup(true);
+	auto cal = _date->calendarWidget();
+	cal->showSelectedDate();
+	_time = new QTimeEdit();
+	_time->setDisplayFormat("hh:mm:ss");
+	_separator = new QLabel(
+		obs_module_text("AdvSceneSwitcher.condition.date.separator"));
+	_date2 = new QDateEdit();
+	_date2->setDisplayFormat("yyyy.MM.dd ");
+	_date2->setCalendarPopup(true);
+	cal = _date2->calendarWidget();
+	cal->showSelectedDate();
+	_time2 = new QTimeEdit();
+	_time2->setDisplayFormat("hh:mm:ss");
 	_ignoreDate = new QCheckBox();
+	_ignoreDate->setToolTip(
+		obs_module_text("AdvSceneSwitcher.condition.date.ignoreDate"));
 	_ignoreTime = new QCheckBox();
+	_ignoreTime->setToolTip(
+		obs_module_text("AdvSceneSwitcher.condition.date.ignoreTime"));
 	_repeat = new QCheckBox();
 	_duration = new DurationSelection();
 
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
-	QWidget::connect(_dateTime, SIGNAL(dateTimeChanged(const QDateTime &)),
-			 this, SLOT(DateTimeChanged(const QDateTime &)));
-	QWidget::connect(_dateTime2, SIGNAL(dateTimeChanged(const QDateTime &)),
-			 this, SLOT(DateTime2Changed(const QDateTime &)));
+	QWidget::connect(_date, SIGNAL(dateChanged(const QDate &)), this,
+			 SLOT(DateChanged(const QDate &)));
+	QWidget::connect(_date2, SIGNAL(dateChanged(const QDate &)), this,
+			 SLOT(Date2Changed(const QDate &)));
+	QWidget::connect(_time, SIGNAL(timeChanged(const QTime &)), this,
+			 SLOT(TimeChanged(const QTime &)));
+	QWidget::connect(_time2, SIGNAL(timeChanged(const QTime &)), this,
+			 SLOT(Time2Changed(const QTime &)));
 	QWidget::connect(_ignoreDate, SIGNAL(stateChanged(int)), this,
 			 SLOT(IgnoreDateChanged(int)));
 	QWidget::connect(_ignoreTime, SIGNAL(stateChanged(int)), this,
@@ -143,8 +163,11 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 	auto line1Layout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{condition}}", _condition},
-		{"{{dateTime}}", _dateTime},
-		{"{{dateTime2}}", _dateTime2},
+		{"{{date}}", _date},
+		{"{{time}}", _time},
+		{"{{separator}}", _separator},
+		{"{{date2}}", _date2},
+		{"{{time2}}", _time2},
 		{"{{ignoreDate}}", _ignoreDate},
 		{"{{ignoreTime}}", _ignoreTime},
 		{"{{repeat}}", _repeat},
@@ -180,27 +203,50 @@ void MacroConditionDateEdit::ConditionChanged(int cond)
 				DateCondition::BETWEEN);
 }
 
-void MacroConditionDateEdit::DateTimeChanged(const QDateTime &datetime)
+void MacroConditionDateEdit::DateChanged(const QDate &date)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_dateTime = datetime;
+	_entryData->_dateTime.setDate(date);
 
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-void MacroConditionDateEdit::DateTime2Changed(const QDateTime &datetime)
+void MacroConditionDateEdit::TimeChanged(const QTime &time)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_dateTime2 = datetime;
+	_entryData->_dateTime.setTime(time);
+
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
+}
+
+void MacroConditionDateEdit::Date2Changed(const QDate &date)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_dateTime2.setDate(date);
+}
+
+void MacroConditionDateEdit::Time2Changed(const QTime &time)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_dateTime2.setTime(time);
 }
 
 void MacroConditionDateEdit::IgnoreDateChanged(int state)
@@ -210,7 +256,8 @@ void MacroConditionDateEdit::IgnoreDateChanged(int state)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_ignoreDate = state;
+	_entryData->_ignoreDate = !state;
+	SetWidgetStatus();
 }
 
 void MacroConditionDateEdit::IgnoreTimeChanged(int state)
@@ -220,7 +267,8 @@ void MacroConditionDateEdit::IgnoreTimeChanged(int state)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_ignoreTime = state;
+	_entryData->_ignoreTime = !state;
+	SetWidgetStatus();
 }
 
 void MacroConditionDateEdit::RepeatChanged(int state)
@@ -261,19 +309,36 @@ void MacroConditionDateEdit::UpdateEntryData()
 	}
 
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
-	_dateTime->setDateTime(_entryData->_dateTime);
-	_dateTime2->setDateTime(_entryData->_dateTime2);
-	_ignoreDate->setChecked(_entryData->_ignoreDate);
-	_ignoreTime->setChecked(_entryData->_ignoreTime);
+	_date->setDate(_entryData->_dateTime.date());
+	_time->setTime(_entryData->_dateTime.time());
+	_date2->setDate(_entryData->_dateTime2.date());
+	_time2->setTime(_entryData->_dateTime2.time());
+	_ignoreDate->setChecked(!_entryData->_ignoreDate);
+	_ignoreTime->setChecked(!_entryData->_ignoreTime);
 	_repeat->setChecked(_entryData->_repeat);
 	_duration->SetDuration(_entryData->_duration);
 	_duration->setDisabled(!_entryData->_repeat);
+	SetWidgetStatus();
+}
+
+void MacroConditionDateEdit::SetWidgetStatus()
+{
+	if (!_entryData) {
+		return;
+	}
+
+	_date->setDisabled(_entryData->_ignoreDate);
+	_date2->setDisabled(_entryData->_ignoreDate);
+	_time->setDisabled(_entryData->_ignoreTime);
+	_time2->setDisabled(_entryData->_ignoreTime);
 	ShowSecondDateSelection(_entryData->_condition ==
 				DateCondition::BETWEEN);
 }
 
 void MacroConditionDateEdit::ShowSecondDateSelection(bool visible)
 {
-	_dateTime2->setVisible(visible);
+	_separator->setVisible(visible);
+	_date2->setVisible(visible);
+	_time2->setVisible(visible);
 	adjustSize();
 }

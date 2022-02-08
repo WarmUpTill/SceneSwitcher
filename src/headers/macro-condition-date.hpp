@@ -26,8 +26,8 @@ public:
 		return std::make_shared<MacroConditionDate>(m);
 	}
 
-	QDateTime _dateTime;
-	QDateTime _dateTime2;
+	QDateTime _dateTime = QDateTime::currentDateTime();
+	QDateTime _dateTime2 = QDateTime::currentDateTime();
 	bool _ignoreDate = false;
 	bool _ignoreTime = false;
 	bool _repeat = false;
@@ -57,8 +57,10 @@ public:
 
 private slots:
 	void ConditionChanged(int cond);
-	void DateTimeChanged(const QDateTime &datetime);
-	void DateTime2Changed(const QDateTime &datetime);
+	void DateChanged(const QDate &date);
+	void TimeChanged(const QTime &time);
+	void Date2Changed(const QDate &date);
+	void Time2Changed(const QTime &time);
 	void IgnoreDateChanged(int state);
 	void IgnoreTimeChanged(int state);
 	void RepeatChanged(int state);
@@ -69,8 +71,11 @@ signals:
 
 protected:
 	QComboBox *_condition;
-	QDateTimeEdit *_dateTime;
-	QDateTimeEdit *_dateTime2;
+	QDateEdit *_date;
+	QTimeEdit *_time;
+	QLabel *_separator;
+	QDateEdit *_date2;
+	QTimeEdit *_time2;
 	QCheckBox *_ignoreDate;
 	QCheckBox *_ignoreTime;
 	QCheckBox *_repeat;
@@ -78,6 +83,7 @@ protected:
 	std::shared_ptr<MacroConditionDate> _entryData;
 
 private:
+	void SetWidgetStatus();
 	void ShowSecondDateSelection(bool visible);
 	bool _loading = true;
 };
