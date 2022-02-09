@@ -13,6 +13,17 @@ enum class DateCondition {
 	BETWEEN,
 };
 
+enum class DayOfWeekSelection {
+	ANY = 0,
+	MONDAY,
+	TUESDAY,
+	WEDNESDAY,
+	THURSDAY,
+	FRIDAY,
+	SATURDAY,
+	SUNDAY,
+};
+
 class MacroConditionDate : public MacroCondition {
 public:
 	MacroConditionDate(Macro *m) : MacroCondition(m) {}
@@ -26,6 +37,7 @@ public:
 		return std::make_shared<MacroConditionDate>(m);
 	}
 
+	DayOfWeekSelection _dayOfWeek = DayOfWeekSelection::ANY;
 	QDateTime _dateTime = QDateTime::currentDateTime();
 	QDateTime _dateTime2 = QDateTime::currentDateTime();
 	bool _ignoreDate = false;
@@ -33,8 +45,12 @@ public:
 	bool _repeat = false;
 	Duration _duration;
 	DateCondition _condition = DateCondition::AT;
+	bool _dayOfWeekCheck = false;
 
 private:
+	bool checkDayOfWeek();
+	bool checkRegularDate();
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -56,6 +72,7 @@ public:
 	}
 
 private slots:
+	void DayOfWeekChanged(int day);
 	void ConditionChanged(int cond);
 	void DateChanged(const QDate &date);
 	void TimeChanged(const QTime &time);
@@ -66,10 +83,14 @@ private slots:
 	void RepeatChanged(int state);
 	void DurationChanged(double seconds);
 	void DurationUnitChanged(DurationUnit unit);
+	void AdvancedSettingsToggleClicked();
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
+	QComboBox *_dayOfWeek;
+	QTimeEdit *_weekTime;
+
 	QComboBox *_condition;
 	QDateEdit *_date;
 	QTimeEdit *_time;
@@ -80,6 +101,12 @@ protected:
 	QCheckBox *_ignoreTime;
 	QCheckBox *_repeat;
 	DurationSelection *_duration;
+
+	QPushButton *_advancedSettingsTooggle;
+	QHBoxLayout *_simpleLayout;
+	QHBoxLayout *_advancedLayout;
+	QHBoxLayout *_repeatLayout;
+
 	std::shared_ptr<MacroConditionDate> _entryData;
 
 private:
