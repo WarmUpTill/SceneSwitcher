@@ -7,6 +7,9 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QHBoxLayout>
+#include <QLabel>
+#include <QDialog>
+#include <QScrollArea>
 #include <chrono>
 #undef NO // MacOS macro that can conflict with OpenCV
 #include <opencv2/opencv.hpp>
@@ -108,6 +111,29 @@ private:
 	int _precision = 2;
 };
 
+class ShowMatchDialog : public QDialog {
+	Q_OBJECT
+
+public:
+	ShowMatchDialog(QWidget *parent, MacroConditionVideo *_conditionData);
+	virtual ~ShowMatchDialog();
+	void ShowMatch();
+
+private slots:
+	void RedrawImage(QImage img);
+
+private:
+	void CheckForMatchLoop();
+	QImage MarkMatch(QImage &screenshot);
+
+	MacroConditionVideo *_conditionData;
+	QScrollArea *_scrollArea;
+	QLabel *_statusLabel;
+	QLabel *_imageLabel;
+	std::thread _thread;
+	std::atomic_bool _stop = {false};
+};
+
 class MacroConditionVideoEdit : public QWidget {
 	Q_OBJECT
 
@@ -175,6 +201,7 @@ protected:
 	QCheckBox *_throttleEnable;
 	QSpinBox *_throttleCount;
 	QPushButton *_showMatch;
+	ShowMatchDialog _matchDialog;
 
 	std::shared_ptr<MacroConditionVideo> _entryData;
 
