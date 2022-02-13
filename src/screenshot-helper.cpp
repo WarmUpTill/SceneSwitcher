@@ -3,14 +3,14 @@
 
 static void ScreenshotTick(void *param, float);
 
-AdvSSScreenshotObj::AdvSSScreenshotObj(obs_source_t *source)
+ScreenshotHelper::ScreenshotHelper(obs_source_t *source)
 	: weakSource(OBSGetWeakRef(source))
 {
 	_initDone = true;
 	obs_add_tick_callback(ScreenshotTick, this);
 }
 
-AdvSSScreenshotObj::~AdvSSScreenshotObj()
+ScreenshotHelper::~ScreenshotHelper()
 {
 	if (_initDone) {
 		obs_enter_graphics();
@@ -22,7 +22,7 @@ AdvSSScreenshotObj::~AdvSSScreenshotObj()
 	}
 }
 
-void AdvSSScreenshotObj::Screenshot()
+void ScreenshotHelper::Screenshot()
 {
 	OBSSource source = OBSGetStrongRef(weakSource);
 
@@ -72,12 +72,12 @@ void AdvSSScreenshotObj::Screenshot()
 	}
 }
 
-void AdvSSScreenshotObj::Download()
+void ScreenshotHelper::Download()
 {
 	gs_stage_texture(stagesurf, gs_texrender_get_texture(texrender));
 }
 
-void AdvSSScreenshotObj::Copy()
+void ScreenshotHelper::Copy()
 {
 	uint8_t *videoData = nullptr;
 	uint32_t videoLinesize = 0;
@@ -94,7 +94,7 @@ void AdvSSScreenshotObj::Copy()
 	}
 }
 
-void AdvSSScreenshotObj::MarkDone()
+void ScreenshotHelper::MarkDone()
 {
 	time = std::chrono::high_resolution_clock::now();
 	done = true;
@@ -107,8 +107,7 @@ void AdvSSScreenshotObj::MarkDone()
 
 static void ScreenshotTick(void *param, float)
 {
-	AdvSSScreenshotObj *data =
-		reinterpret_cast<AdvSSScreenshotObj *>(param);
+	ScreenshotHelper *data = reinterpret_cast<ScreenshotHelper *>(param);
 
 	if (data->stage == STAGE_FINISH) {
 		return;

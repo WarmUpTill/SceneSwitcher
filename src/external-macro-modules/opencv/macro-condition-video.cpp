@@ -180,8 +180,8 @@ std::string MacroConditionVideo::GetShortDesc()
 void MacroConditionVideo::GetScreenshot()
 {
 	auto source = obs_weak_source_get_source(_videoSource);
-	_screenshotData.~AdvSSScreenshotObj();
-	new (&_screenshotData) AdvSSScreenshotObj(source);
+	_screenshotData.~ScreenshotHelper();
+	new (&_screenshotData) ScreenshotHelper(source);
 	obs_source_release(source);
 	_getNextScreenshot = false;
 }
@@ -686,7 +686,7 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 	} else {
 		auto source =
 			obs_weak_source_get_source(_entryData->_videoSource);
-		AdvSSScreenshotObj screenshot(source);
+		ScreenshotHelper screenshot(source);
 		obs_source_release(source);
 
 		path = QFileDialog::getSaveFileName(this);
@@ -1020,7 +1020,7 @@ void ShowMatchDialog::CheckForMatchLoop()
 	while (!_stop) {
 		auto source = obs_weak_source_get_source(
 			_conditionData->_videoSource);
-		AdvSSScreenshotObj screenshot(source);
+		ScreenshotHelper screenshot(source);
 		obs_source_release(source);
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 		if (!screenshot.done) {

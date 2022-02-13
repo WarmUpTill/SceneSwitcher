@@ -78,7 +78,7 @@ private:
 	bool CheckShouldBeSkipped();
 
 	bool _getNextScreenshot = true;
-	AdvSSScreenshotObj _screenshotData;
+	ScreenshotHelper _screenshotData;
 	QImage _matchImage;
 	std::string _modelDataPath =
 		obs_get_module_data_path(obs_current_module()) +

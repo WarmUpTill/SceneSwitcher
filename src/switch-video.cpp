@@ -98,7 +98,7 @@ void AdvSceneSwitcher::on_getScreenshot_clicked()
 	}
 
 	auto source = obs_weak_source_get_source(s->videoSource);
-	auto screenshotData = std::make_unique<AdvSSScreenshotObj>(source);
+	auto screenshotData = std::make_unique<ScreenshotHelper>(source);
 	obs_source_release(source);
 
 	QString filePath = QFileDialog::getSaveFileName(this);
@@ -254,7 +254,7 @@ void VideoSwitch::load(obs_data_t *obj)
 void VideoSwitch::getScreenshot()
 {
 	auto source = obs_weak_source_get_source(videoSource);
-	screenshotData = std::make_unique<AdvSSScreenshotObj>(source);
+	screenshotData = std::make_unique<ScreenshotHelper>(source);
 	obs_source_release(source);
 }
 

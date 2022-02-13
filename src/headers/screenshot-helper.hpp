@@ -4,13 +4,13 @@
 #include <QImage>
 #include <chrono>
 
-class AdvSSScreenshotObj {
+class ScreenshotHelper {
 public:
-	AdvSSScreenshotObj() = default;
-	AdvSSScreenshotObj(obs_source_t *source);
-	AdvSSScreenshotObj &operator=(const AdvSSScreenshotObj &) = delete;
-	AdvSSScreenshotObj(const AdvSSScreenshotObj &) = delete;
-	~AdvSSScreenshotObj();
+	ScreenshotHelper() = default;
+	ScreenshotHelper(obs_source_t *source);
+	ScreenshotHelper &operator=(const ScreenshotHelper &) = delete;
+	ScreenshotHelper(const ScreenshotHelper &) = delete;
+	~ScreenshotHelper();
 
 	void Screenshot();
 	void Download();
