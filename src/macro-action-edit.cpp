@@ -87,7 +87,8 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	mainLayout->setContentsMargins(0, 0, 0, 0);
 	if (switcher->useVerticalMacroControls) {
-		mainLayout->addWidget(_controls);
+
+		_controls->hide();
 	} else {
 		actionLayout->addWidget(_controls);
 	}
@@ -181,7 +182,16 @@ void AdvSceneSwitcher::on_actionAdd_clicked()
 		return;
 	}
 
-	AddMacroAction((int)macro->Actions().size());
+	if (currentActionIdx == -1) {
+		auto macro = getSelectedMacro();
+		if (!macro) {
+			return;
+		}
+		AddMacroAction((int)macro->Actions().size());
+	} else {
+		AddMacroAction(currentActionIdx + 1);
+	}
+	MacroActionSelectionChanged(currentActionIdx + 1);
 	ui->macroEditActionHelp->setVisible(false);
 }
 
@@ -208,11 +218,33 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 
 void AdvSceneSwitcher::on_actionRemove_clicked()
 {
-	auto macro = getSelectedMacro();
-	if (!macro) {
+	if (currentActionIdx == -1) {
+		auto macro = getSelectedMacro();
+		if (!macro) {
+			return;
+		}
+		RemoveMacroAction((int)macro->Actions().size() - 1);
+	} else {
+		RemoveMacroAction(currentActionIdx);
+	}
+	MacroActionSelectionChanged(-1);
+}
+
+void AdvSceneSwitcher::on_actionUp_clicked()
+{
+	if (currentActionIdx == -1) {
 		return;
 	}
-	RemoveMacroAction((int)macro->Actions().size() - 1);
+	MoveMacroActionUp(currentActionIdx);
+	MacroActionSelectionChanged(currentActionIdx - 1);
+}
+void AdvSceneSwitcher::on_actionDown_clicked()
+{
+	if (currentActionIdx == -1) {
+		return;
+	}
+	MoveMacroActionDown(currentActionIdx);
+	MacroActionSelectionChanged(currentActionIdx + 1);
 }
 
 void AdvSceneSwitcher::SwapActions(Macro *m, int pos1, int pos2)
@@ -271,4 +303,26 @@ void AdvSceneSwitcher::MoveMacroActionDown(int idx)
 
 	SwapActions(macro, idx, idx + 1);
 	HighlightAction(idx + 1);
+}
+
+void AdvSceneSwitcher::MacroActionSelectionChanged(int idx)
+{
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	for (int i = 0; i < ui->macroEditActionLayout->count(); ++i) {
+		auto widget = static_cast<MacroSegmentEdit *>(
+			ui->macroEditActionLayout->itemAt(i)->widget());
+		if (widget) {
+			widget->SetSelected(i == idx);
+		}
+	}
+
+	if (idx < 0 || idx >= macro->Actions().size()) {
+		currentActionIdx = -1;
+	} else {
+		currentActionIdx = idx;
+	}
 }
