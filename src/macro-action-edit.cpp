@@ -2,7 +2,6 @@
 #include "headers/macro-action-edit.hpp"
 #include "headers/macro-action-scene-switch.hpp"
 #include "headers/section.hpp"
-#include "headers/macro-controls.hpp"
 #include "headers/utility.hpp"
 
 std::map<std::string, MacroActionInfo> MacroActionFactory::_methods;
@@ -64,8 +63,7 @@ static inline void populateActionSelection(QComboBox *list)
 MacroActionEdit::MacroActionEdit(QWidget *parent,
 				 std::shared_ptr<MacroAction> *entryData,
 				 const std::string &id)
-	: MacroSegmentEdit(switcher->useVerticalMacroControls, parent),
-	  _entryData(entryData)
+	: MacroSegmentEdit(parent), _entryData(entryData)
 {
 	_actionSelection = new QComboBox();
 
@@ -86,12 +84,6 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	mainLayout->setContentsMargins(0, 0, 0, 0);
-	if (switcher->useVerticalMacroControls) {
-
-		_controls->hide();
-	} else {
-		actionLayout->addWidget(_controls);
-	}
 	mainLayout->addLayout(actionLayout);
 	setLayout(mainLayout);
 

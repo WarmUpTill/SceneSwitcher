@@ -2,7 +2,6 @@
 #include "headers/macro-condition-edit.hpp"
 #include "headers/macro-condition-scene.hpp"
 #include "headers/section.hpp"
-#include "headers/macro-controls.hpp"
 #include "headers/utility.hpp"
 
 std::map<std::string, MacroConditionInfo> MacroConditionFactory::_methods;
@@ -93,9 +92,7 @@ static inline void populateConditionSelection(QComboBox *list)
 MacroConditionEdit::MacroConditionEdit(
 	QWidget *parent, std::shared_ptr<MacroCondition> *entryData,
 	const std::string &id, bool root)
-	: MacroSegmentEdit(switcher->useVerticalMacroControls, parent),
-	  _entryData(entryData),
-	  _isRoot(root)
+	: MacroSegmentEdit(parent), _entryData(entryData), _isRoot(root)
 {
 	_logicSelection = new QComboBox();
 	_conditionSelection = new QComboBox();
@@ -130,11 +127,6 @@ MacroConditionEdit::MacroConditionEdit(
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	mainLayout->setContentsMargins(0, 0, 0, 0);
-	if (switcher->useVerticalMacroControls) {
-		_controls->hide();
-	} else {
-		conditionLayout->addWidget(_controls);
-	}
 	mainLayout->addLayout(conditionLayout);
 	setLayout(mainLayout);
 

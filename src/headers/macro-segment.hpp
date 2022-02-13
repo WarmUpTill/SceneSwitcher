@@ -1,6 +1,5 @@
 #pragma once
 #include <QWidget>
-#include <QTimer>
 #include <QFrame>
 #include <QVBoxLayout>
 #include <obs.hpp>
@@ -30,14 +29,12 @@ private:
 
 class Section;
 class QLabel;
-class MacroEntryControls;
 
 class MacroSegmentEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroSegmentEdit(bool verticalControls = true,
-			 QWidget *parent = nullptr);
+	MacroSegmentEdit(QWidget *parent = nullptr);
 	// Use this function to avoid accidental edits when scrolling through
 	// list of actions and conditions
 	void SetFocusPolicyOfWidgets();
@@ -46,13 +43,7 @@ public:
 
 protected slots:
 	void HeaderInfoChanged(const QString &);
-	void Add();
-	void Remove();
-	void Up();
-	void Down();
 	void Collapsed(bool);
-	void ShowControls();
-	void HideControls();
 signals:
 	void MacroAdded(const QString &name);
 	void MacroRemoved(const QString &name);
@@ -60,26 +51,17 @@ signals:
 	void SceneGroupAdded(const QString &name);
 	void SceneGroupRemoved(const QString &name);
 	void SceneGroupRenamed(const QString &oldName, const QString newName);
-	void AddAt(int idx);
-	void RemoveAt(int idx);
-	void UpAt(int idx);
-	void DownAt(int idx);
 	void SelectionChagned(int idx);
 
 protected:
-	void enterEvent(QEvent *e);
-	void leaveEvent(QEvent *e);
 	void mousePressEvent(QMouseEvent *event);
 
 	Section *_section;
 	QLabel *_headerInfo;
-	MacroEntryControls *_controls;
 	QFrame *_frame;
 	QVBoxLayout *_highLightFrameLayout;
 
 private:
-	QTimer _enterTimer;
-	QTimer _leaveTimer;
 	virtual MacroSegment *Data() = 0;
 };
 

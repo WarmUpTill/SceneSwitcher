@@ -1,5 +1,4 @@
 #include "headers/macro-segment.hpp"
-#include "headers/macro-controls.hpp"
 #include "headers/section.hpp"
 
 #include <obs.hpp>
@@ -41,17 +40,10 @@ bool MouseWheelWidgetAdjustmentGuard::eventFilter(QObject *o, QEvent *e)
 	return QObject::eventFilter(o, e);
 }
 
-MacroSegmentEdit::MacroSegmentEdit(bool verticalControls, QWidget *parent)
-	: QWidget(parent)
+MacroSegmentEdit::MacroSegmentEdit(QWidget *parent) : QWidget(parent)
 {
 	_section = new Section(300);
 	_headerInfo = new QLabel();
-	_controls = new MacroEntryControls(verticalControls);
-
-	_enterTimer.setSingleShot(true);
-	_enterTimer.setInterval(1000);
-	_leaveTimer.setSingleShot(true);
-	_leaveTimer.setInterval(1000);
 
 	_frame = new QFrame;
 	_frame->setObjectName("segmentFrame");
@@ -90,20 +82,6 @@ MacroSegmentEdit::MacroSegmentEdit(bool verticalControls, QWidget *parent)
 		parent,
 		SIGNAL(SceneGroupRenamed(const QString &, const QString)), this,
 		SIGNAL(SceneGroupRenamed(const QString &, const QString)));
-
-	// Control signals
-	QWidget::connect(_controls, &MacroEntryControls::Add, this,
-			 &MacroSegmentEdit::Add);
-	QWidget::connect(_controls, &MacroEntryControls::Remove, this,
-			 &MacroSegmentEdit::Remove);
-	QWidget::connect(_controls, &MacroEntryControls::Up, this,
-			 &MacroSegmentEdit::Up);
-	QWidget::connect(_controls, &MacroEntryControls::Down, this,
-			 &MacroSegmentEdit::Down);
-	QWidget::connect(&_enterTimer, &QTimer::timeout, this,
-			 &MacroSegmentEdit::ShowControls);
-	QWidget::connect(&_leaveTimer, &QTimer::timeout, this,
-			 &MacroSegmentEdit::HideControls);
 }
 
 void MacroSegmentEdit::HeaderInfoChanged(const QString &text)
@@ -112,62 +90,11 @@ void MacroSegmentEdit::HeaderInfoChanged(const QString &text)
 	_headerInfo->setText(text);
 }
 
-void MacroSegmentEdit::Add()
-{
-	if (Data()) {
-		// Insert after current entry
-		emit AddAt(Data()->GetIndex() + 1);
-	}
-}
-
-void MacroSegmentEdit::Remove()
-{
-	if (Data()) {
-		emit RemoveAt(Data()->GetIndex());
-	}
-}
-
-void MacroSegmentEdit::Up()
-{
-	if (Data()) {
-		emit UpAt(Data()->GetIndex());
-	}
-}
-
-void MacroSegmentEdit::Down()
-{
-	if (Data()) {
-		emit DownAt(Data()->GetIndex());
-	}
-}
-
 void MacroSegmentEdit::Collapsed(bool collapsed)
 {
 	if (Data()) {
 		Data()->SetCollapsed(collapsed);
 	}
-}
-
-void MacroSegmentEdit::ShowControls()
-{
-	_controls->Show(true);
-}
-
-void MacroSegmentEdit::HideControls()
-{
-	_controls->Show(false);
-}
-
-void MacroSegmentEdit::enterEvent(QEvent *)
-{
-	_enterTimer.start();
-	_leaveTimer.stop();
-}
-
-void MacroSegmentEdit::leaveEvent(QEvent *)
-{
-	_enterTimer.stop();
-	_leaveTimer.start();
 }
 
 void MacroSegmentEdit::mousePressEvent(QMouseEvent *event)

@@ -177,7 +177,6 @@ public slots:
 	void on_saveWindowGeo_stateChanged(int state);
 	void on_showTrayNotifications_stateChanged(int state);
 	void on_uiHintsDisable_stateChanged(int state);
-	void on_useVerticalMacroControls_stateChanged(int state);
 	void on_highlightExecutedMacros_stateChanged(int state);
 	void on_hideLegacyTabs_stateChanged(int state);
 
