@@ -409,7 +409,7 @@ void ThresholdSlider::SetDoubleValueText(double value)
 
 MacroConditionVideoEdit::MacroConditionVideoEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionVideo> entryData)
-	: QWidget(parent)
+	: QWidget(parent), _matchDialog(this, entryData.get())
 {
 	_videoSelection = new QComboBox();
 	_condition = new QComboBox();
@@ -852,53 +852,10 @@ QImage markObjects(QImage &image, std::vector<cv::Rect> &objects)
 
 void MacroConditionVideoEdit::ShowMatchClicked()
 {
-	auto source = obs_weak_source_get_source(_entryData->_videoSource);
-	auto screenshot = std::make_unique<AdvSSScreenshotObj>(source);
-	obs_source_release(source);
-	if (!screenshot->done) {
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-	}
-	if (!screenshot->done) {
-		DisplayMessage(obs_module_text(
-			"AdvSceneSwitcher.condition.video.screenshotFail"));
-		return;
-	}
-
-	QImage markedIamge;
-	if (_entryData->_condition == VideoCondition::PATTERN) {
-		cv::Mat result;
-		QImage pattern = _entryData->GetMatchImage();
-		matchPattern(screenshot->image, pattern,
-			     _entryData->_patternThreshold, result,
-			     _entryData->_useAlphaAsMask);
-		if (countNonZero(result) == 0) {
-			DisplayMessage(obs_module_text(
-				"AdvSceneSwitcher.condition.video.patternMatchFail"));
-			return;
-		}
-		markedIamge = markPatterns(result, screenshot->image, pattern);
-	} else if (_entryData->_condition == VideoCondition::OBJECT) {
-		auto objects = matchObject(
-			screenshot->image, _entryData->_objectCascade,
-			_entryData->_scaleFactor, _entryData->_minNeighbors,
-			{_entryData->_minSizeX, _entryData->_minSizeY},
-			{_entryData->_maxSizeX, _entryData->_maxSizeY});
-		if (objects.empty()) {
-			DisplayMessage(obs_module_text(
-				"AdvSceneSwitcher.condition.video.objectMatchFail"));
-			return;
-		}
-		markedIamge = markObjects(screenshot->image, objects);
-	}
-
-	QLabel *label = new QLabel;
-	label->setPixmap(QPixmap::fromImage(markedIamge));
-	QVBoxLayout *layout = new QVBoxLayout;
-	layout->addWidget(label);
-	QDialog dialog;
-	dialog.setLayout(layout);
-	dialog.setWindowTitle("Advanced Scene Switcher");
-	dialog.exec();
+	_matchDialog.show();
+	_matchDialog.raise();
+	_matchDialog.activateWindow();
+	_matchDialog.ShowMatch();
 }
 
 void MacroConditionVideoEdit::ModelPathChanged(const QString &text)
@@ -1007,4 +964,117 @@ void MacroConditionVideoEdit::UpdateEntryData()
 	_throttleCount->setValue(_entryData->_throttleCount *
 				 GetSwitcher()->interval);
 	SetWidgetVisibility();
+}
+
+ShowMatchDialog::ShowMatchDialog(QWidget *parent,
+				 MacroConditionVideo *conditionData)
+	: QDialog(parent),
+	  _conditionData(conditionData),
+	  _imageLabel(new QLabel),
+	  _scrollArea(new QScrollArea)
+{
+	setWindowTitle("Advanced Scene Switcher");
+	_statusLabel = new QLabel(obs_module_text(
+		"AdvSceneSwitcher.condition.video.showMatch.loading"));
+
+	_scrollArea->setBackgroundRole(QPalette::Dark);
+	_scrollArea->setWidget(_imageLabel);
+	QVBoxLayout *layout = new QVBoxLayout;
+	layout->addWidget(_statusLabel);
+	layout->addWidget(_scrollArea);
+	setLayout(layout);
+}
+
+ShowMatchDialog::~ShowMatchDialog()
+{
+	_stop = true;
+	if (_thread.joinable()) {
+		_thread.join();
+	}
+}
+
+void ShowMatchDialog::ShowMatch()
+{
+	if (_thread.joinable()) {
+		return;
+	}
+	if (!_conditionData) {
+		DisplayMessage(obs_module_text(
+			"AdvSceneSwitcher.condition.video.screenshotFail"));
+		return;
+	}
+	_thread = std::thread(&ShowMatchDialog::CheckForMatchLoop, this);
+}
+
+void ShowMatchDialog::RedrawImage(QImage img)
+{
+	_imageLabel->setPixmap(QPixmap::fromImage(img));
+	_imageLabel->adjustSize();
+}
+
+void ShowMatchDialog::CheckForMatchLoop()
+{
+	while (!_stop) {
+		auto source = obs_weak_source_get_source(
+			_conditionData->_videoSource);
+		AdvSSScreenshotObj screenshot(source);
+		obs_source_release(source);
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		if (!screenshot.done) {
+			_statusLabel->setText(obs_module_text(
+				"AdvSceneSwitcher.condition.video.screenshotFail"));
+			continue;
+		}
+		if (screenshot.image.width() == 0 ||
+		    screenshot.image.height() == 0) {
+			_statusLabel->setText(obs_module_text(
+				"AdvSceneSwitcher.condition.video.screenshotEmpty"));
+			continue;
+		}
+		auto image = MarkMatch(screenshot.image);
+		if (_stop) {
+			return;
+		}
+		QMetaObject::invokeMethod(this, "RedrawImage",
+					  Qt::BlockingQueuedConnection,
+					  Q_ARG(QImage, image));
+	}
+}
+
+QImage ShowMatchDialog::MarkMatch(QImage &screenshot)
+{
+	QImage resultIamge;
+	if (_conditionData->_condition == VideoCondition::PATTERN) {
+		cv::Mat result;
+		QImage pattern = _conditionData->GetMatchImage();
+		matchPattern(screenshot, pattern,
+			     _conditionData->_patternThreshold, result,
+			     _conditionData->_useAlphaAsMask);
+		if (countNonZero(result) == 0) {
+			resultIamge = screenshot;
+			_statusLabel->setText(obs_module_text(
+				"AdvSceneSwitcher.condition.video.patternMatchFail"));
+		} else {
+			_statusLabel->setText(obs_module_text(
+				"AdvSceneSwitcher.condition.video.patternMatchSuccess"));
+			resultIamge = markPatterns(result, screenshot, pattern);
+		}
+	} else if (_conditionData->_condition == VideoCondition::OBJECT) {
+		auto objects = matchObject(
+			screenshot, _conditionData->_objectCascade,
+			_conditionData->_scaleFactor,
+			_conditionData->_minNeighbors,
+			{_conditionData->_minSizeX, _conditionData->_minSizeY},
+			{_conditionData->_maxSizeX, _conditionData->_maxSizeY});
+		if (objects.empty()) {
+			resultIamge = screenshot;
+			_statusLabel->setText(obs_module_text(
+				"AdvSceneSwitcher.condition.video.objectMatchFail"));
+		} else {
+			_statusLabel->setText(obs_module_text(
+				"AdvSceneSwitcher.condition.video.objectMatchSuccess"));
+			resultIamge = markObjects(screenshot, objects);
+		}
+	}
+	return resultIamge;
 }
