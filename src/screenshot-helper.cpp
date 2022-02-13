@@ -6,17 +6,20 @@ static void ScreenshotTick(void *param, float);
 AdvSSScreenshotObj::AdvSSScreenshotObj(obs_source_t *source)
 	: weakSource(OBSGetWeakRef(source))
 {
+	_initDone = true;
 	obs_add_tick_callback(ScreenshotTick, this);
 }
 
 AdvSSScreenshotObj::~AdvSSScreenshotObj()
 {
-	obs_enter_graphics();
-	gs_stagesurface_destroy(stagesurf);
-	gs_texrender_destroy(texrender);
-	obs_leave_graphics();
+	if (_initDone) {
+		obs_enter_graphics();
+		gs_stagesurface_destroy(stagesurf);
+		gs_texrender_destroy(texrender);
+		obs_leave_graphics();
 
-	obs_remove_tick_callback(ScreenshotTick, this);
+		obs_remove_tick_callback(ScreenshotTick, this);
+	}
 }
 
 void AdvSSScreenshotObj::Screenshot()

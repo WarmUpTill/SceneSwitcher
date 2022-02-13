@@ -78,19 +78,21 @@ bool MacroConditionVideo::CheckCondition()
 		return _lastMatchResult;
 	}
 
-	if (_screenshotData && _screenshotData->done) {
+	if (_screenshotData.done) {
 		match = Compare();
 		_lastMatchResult = match;
 
 		if (!requiresFileInput(_condition)) {
-			_matchImage = std::move(_screenshotData->image);
+			_matchImage = std::move(_screenshotData.image);
 		}
-		_screenshotData.reset(nullptr);
+		_getNextScreenshot = true;
 	} else {
 		match = _lastMatchResult;
 	}
 
-	GetScreenshot();
+	if (_getNextScreenshot) {
+		GetScreenshot();
+	}
 	return match;
 }
 
@@ -178,8 +180,10 @@ std::string MacroConditionVideo::GetShortDesc()
 void MacroConditionVideo::GetScreenshot()
 {
 	auto source = obs_weak_source_get_source(_videoSource);
-	_screenshotData = std::make_unique<AdvSSScreenshotObj>(source);
+	_screenshotData.~AdvSSScreenshotObj();
+	new (&_screenshotData) AdvSSScreenshotObj(source);
 	obs_source_release(source);
+	_getNextScreenshot = false;
 }
 
 // Assumption is that QImage uses Format_RGBA8888.
@@ -285,7 +289,7 @@ void matchPattern(QImage &img, QImage &pattern, double threshold,
 bool MacroConditionVideo::ScreenshotContainsPattern()
 {
 	cv::Mat result;
-	matchPattern(_screenshotData->image, _patternData, _patternThreshold,
+	matchPattern(_screenshotData.image, _patternData, _patternThreshold,
 		     result, _useAlphaAsMask);
 	return countNonZero(result) > 0;
 }
@@ -295,11 +299,11 @@ bool MacroConditionVideo::OutputChanged()
 	if (_usePatternForChangedCheck) {
 		cv::Mat result;
 		_patternData = createPatternData(_matchImage);
-		matchPattern(_screenshotData->image, _patternData,
+		matchPattern(_screenshotData.image, _patternData,
 			     _patternThreshold, result, _useAlphaAsMask);
 		return countNonZero(result) == 0;
 	}
-	return _screenshotData->image != _matchImage;
+	return _screenshotData.image != _matchImage;
 }
 
 std::vector<cv::Rect> matchObject(QImage &img, cv::CascadeClassifier &cascade,
@@ -322,7 +326,7 @@ std::vector<cv::Rect> matchObject(QImage &img, cv::CascadeClassifier &cascade,
 
 bool MacroConditionVideo::ScreenshotContainsObject()
 {
-	auto objects = matchObject(_screenshotData->image, _objectCascade,
+	auto objects = matchObject(_screenshotData.image, _objectCascade,
 				   _scaleFactor, _minNeighbors,
 				   {_minSizeX, _minSizeY},
 				   {_maxSizeX, _maxSizeY});
@@ -333,15 +337,15 @@ bool MacroConditionVideo::Compare()
 {
 	switch (_condition) {
 	case VideoCondition::MATCH:
-		return _screenshotData->image == _matchImage;
+		return _screenshotData.image == _matchImage;
 	case VideoCondition::DIFFER:
-		return _screenshotData->image != _matchImage;
+		return _screenshotData.image != _matchImage;
 	case VideoCondition::HAS_CHANGED:
 		return OutputChanged();
 	case VideoCondition::HAS_NOT_CHANGED:
 		return !OutputChanged();
 	case VideoCondition::NO_IMAGE:
-		return _screenshotData->image.isNull();
+		return _screenshotData.image.isNull();
 	case VideoCondition::PATTERN:
 		return ScreenshotContainsPattern();
 	case VideoCondition::OBJECT:
@@ -682,7 +686,7 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 	} else {
 		auto source =
 			obs_weak_source_get_source(_entryData->_videoSource);
-		auto screenshot = std::make_unique<AdvSSScreenshotObj>(source);
+		AdvSSScreenshotObj screenshot(source);
 		obs_source_release(source);
 
 		path = QFileDialog::getSaveFileName(this);
@@ -693,16 +697,15 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 		if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 			return;
 		}
-		if (!screenshot->done) { // Screenshot usually completed by now
+		if (!screenshot.done) { // Screenshot usually completed by now
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
-		if (!screenshot->done) {
+		if (!screenshot.done) {
 			DisplayMessage(obs_module_text(
 				"AdvSceneSwitcher.condition.video.screenshotFail"));
 			return;
 		}
-
-		screenshot->image.save(path);
+		screenshot.image.save(path);
 	}
 	_imagePath->SetPath(path);
 	ImagePathChanged(path);
