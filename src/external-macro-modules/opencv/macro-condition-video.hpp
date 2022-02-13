@@ -1,18 +1,16 @@
 #pragma once
 #include <macro.hpp>
 #include <screenshot-helper.hpp>
+#include <opencv-helpers.hpp>
 #include <file-selection.hpp>
+#include <threshold-slider.hpp>
+#include <video-match-dialog.hpp>
 
 #include <QWidget>
 #include <QComboBox>
 #include <QCheckBox>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QDialog>
-#include <QScrollArea>
-#include <chrono>
-#undef NO // MacOS macro that can conflict with OpenCV
-#include <opencv2/opencv.hpp>
 
 enum class VideoCondition {
 	MATCH,
@@ -23,15 +21,6 @@ enum class VideoCondition {
 	PATTERN,
 	OBJECT,
 };
-
-struct PatternMatchData {
-	cv::Mat4b rgbaPattern;
-	cv::Mat3b rgbPattern;
-	cv::Mat1b mask;
-};
-
-constexpr int minMinNeighbors = 3;
-constexpr int maxMinNeighbors = 6;
 
 class MacroConditionVideo : public MacroCondition {
 public:
@@ -89,50 +78,6 @@ private:
 
 	static bool _registered;
 	static const std::string id;
-};
-
-class ThresholdSlider : public QWidget {
-	Q_OBJECT
-
-public:
-	ThresholdSlider(double min = 0., double max = 1.,
-			const QString &label = "threshold",
-			const QString &description = "", QWidget *parent = 0);
-	void SetDoubleValue(double);
-public slots:
-	void NotifyValueChanged(int value);
-signals:
-	void DoubleValueChanged(double value);
-
-private:
-	void SetDoubleValueText(double);
-	QLabel *_value;
-	QSlider *_slider;
-	double _scale = 100.0;
-	int _precision = 2;
-};
-
-class ShowMatchDialog : public QDialog {
-	Q_OBJECT
-
-public:
-	ShowMatchDialog(QWidget *parent, MacroConditionVideo *_conditionData);
-	virtual ~ShowMatchDialog();
-	void ShowMatch();
-
-private slots:
-	void RedrawImage(QImage img);
-
-private:
-	void CheckForMatchLoop();
-	QImage MarkMatch(QImage &screenshot);
-
-	MacroConditionVideo *_conditionData;
-	QScrollArea *_scrollArea;
-	QLabel *_statusLabel;
-	QLabel *_imageLabel;
-	std::thread _thread;
-	std::atomic_bool _stop = {false};
 };
 
 class MacroConditionVideoEdit : public QWidget {

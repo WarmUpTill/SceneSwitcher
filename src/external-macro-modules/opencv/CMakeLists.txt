@@ -16,7 +16,15 @@ else()
 endif()
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../../headers")
-set(module_SOURCES macro-condition-video.cpp macro-condition-video.hpp)
+set(module_SOURCES
+    macro-condition-video.cpp
+    macro-condition-video.hpp
+    video-match-dialog.cpp
+    video-match-dialog.hpp
+    threshold-slider.cpp
+    threshold-slider.hpp
+    opencv-helpers.cpp
+    opencv-helpers.hpp)
 add_library(advanced-scene-switcher-opencv MODULE ${module_SOURCES})
 
 if(BUILD_OUT_OF_TREE)
