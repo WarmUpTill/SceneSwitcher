@@ -192,16 +192,6 @@ void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 	switcher->disableHints = state;
 }
 
-void AdvSceneSwitcher::on_useVerticalMacroControls_stateChanged(int state)
-{
-	if (loading) {
-		return;
-	}
-
-	switcher->useVerticalMacroControls = state;
-	setupMacroTab();
-}
-
 void AdvSceneSwitcher::on_highlightExecutedMacros_stateChanged(int state)
 {
 	if (loading) {
@@ -582,8 +572,6 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_bool(obj, "showSystemTrayNotifications",
 			  showSystemTrayNotifications);
 	obs_data_set_bool(obj, "disableHints", disableHints);
-	obs_data_set_bool(obj, "useVerticalMacroControls",
-			  useVerticalMacroControls);
 	obs_data_set_bool(obj, "highlightExecutedMacros",
 			  highlightExecutedMacros);
 	obs_data_set_bool(obj, "hideLegacyTabs", hideLegacyTabs);
@@ -660,8 +648,6 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	showSystemTrayNotifications =
 		obs_data_get_bool(obj, "showSystemTrayNotifications");
 	disableHints = obs_data_get_bool(obj, "disableHints");
-	useVerticalMacroControls =
-		obs_data_get_bool(obj, "useVerticalMacroControls");
 	highlightExecutedMacros =
 		obs_data_get_bool(obj, "highlightExecutedMacros");
 	hideLegacyTabs = obs_data_get_bool(obj, "hideLegacyTabs");
@@ -878,8 +864,6 @@ void AdvSceneSwitcher::setupGeneralTab()
 	ui->showTrayNotifications->setChecked(
 		switcher->showSystemTrayNotifications);
 	ui->uiHintsDisable->setChecked(switcher->disableHints);
-	ui->useVerticalMacroControls->setChecked(
-		switcher->useVerticalMacroControls);
 	ui->highlightExecutedMacros->setChecked(
 		switcher->highlightExecutedMacros);
 	ui->hideLegacyTabs->setChecked(switcher->hideLegacyTabs);

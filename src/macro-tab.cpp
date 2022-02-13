@@ -305,28 +305,12 @@ void AdvSceneSwitcher::HighlightCondition(int idx)
 
 void AdvSceneSwitcher::ConnectControlSignals(MacroActionEdit *a)
 {
-	connect(a, &MacroActionEdit::AddAt, this,
-		&AdvSceneSwitcher::AddMacroAction);
-	connect(a, &MacroActionEdit::RemoveAt, this,
-		&AdvSceneSwitcher::RemoveMacroAction);
-	connect(a, &MacroActionEdit::UpAt, this,
-		&AdvSceneSwitcher::MoveMacroActionUp);
-	connect(a, &MacroActionEdit::DownAt, this,
-		&AdvSceneSwitcher::MoveMacroActionDown);
 	connect(a, &MacroActionEdit::SelectionChagned, this,
 		&AdvSceneSwitcher::MacroActionSelectionChanged);
 }
 
 void AdvSceneSwitcher::ConnectControlSignals(MacroConditionEdit *c)
 {
-	connect(c, &MacroConditionEdit::AddAt, this,
-		&AdvSceneSwitcher::AddMacroCondition);
-	connect(c, &MacroConditionEdit::RemoveAt, this,
-		&AdvSceneSwitcher::RemoveMacroCondition);
-	connect(c, &MacroConditionEdit::UpAt, this,
-		&AdvSceneSwitcher::MoveMacroConditionUp);
-	connect(c, &MacroConditionEdit::DownAt, this,
-		&AdvSceneSwitcher::MoveMacroConditionDown);
 	connect(c, &MacroActionEdit::SelectionChagned, this,
 		&AdvSceneSwitcher::MacroConditionSelectionChanged);
 }
