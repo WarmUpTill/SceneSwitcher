@@ -29,7 +29,7 @@ struct VideoSwitch : virtual SceneSwitcherEntry {
 	double duration = 0;
 	bool ignoreInactiveSource = false;
 
-	std::unique_ptr<AdvSSScreenshotObj> screenshotData = nullptr;
+	std::unique_ptr<ScreenshotHelper> screenshotData = nullptr;
 	std::chrono::high_resolution_clock::time_point previousTime{};
 	QImage matchImage;
 
