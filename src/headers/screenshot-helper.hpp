@@ -6,7 +6,10 @@
 
 class AdvSSScreenshotObj {
 public:
+	AdvSSScreenshotObj() = default;
 	AdvSSScreenshotObj(obs_source_t *source);
+	AdvSSScreenshotObj &operator=(const AdvSSScreenshotObj &) = delete;
+	AdvSSScreenshotObj(const AdvSSScreenshotObj &) = delete;
 	~AdvSSScreenshotObj();
 
 	void Screenshot();
@@ -17,7 +20,6 @@ public:
 	gs_texrender_t *texrender = nullptr;
 	gs_stagesurf_t *stagesurf = nullptr;
 	OBSWeakSource weakSource;
-	std::string path;
 	QImage image;
 	uint32_t cx = 0;
 	uint32_t cy = 0;
@@ -26,4 +28,7 @@ public:
 
 	bool done = false;
 	std::chrono::high_resolution_clock::time_point time;
+
+private:
+	bool _initDone = false;
 };
