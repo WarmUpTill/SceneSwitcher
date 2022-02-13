@@ -131,7 +131,7 @@ MacroConditionEdit::MacroConditionEdit(
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	mainLayout->setContentsMargins(0, 0, 0, 0);
 	if (switcher->useVerticalMacroControls) {
-		mainLayout->addWidget(_controls);
+		_controls->hide();
 	} else {
 		conditionLayout->addWidget(_controls);
 	}
@@ -305,7 +305,16 @@ void AdvSceneSwitcher::on_conditionAdd_clicked()
 		return;
 	}
 
-	AddMacroCondition((int)macro->Conditions().size());
+	if (currentConditionIdx == -1) {
+		auto macro = getSelectedMacro();
+		if (!macro) {
+			return;
+		}
+		AddMacroCondition((int)macro->Conditions().size());
+	} else {
+		AddMacroCondition(currentConditionIdx + 1);
+	}
+	MacroConditionSelectionChanged(currentConditionIdx + 1);
 	ui->macroEditConditionHelp->setVisible(false);
 }
 
@@ -335,11 +344,34 @@ void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 
 void AdvSceneSwitcher::on_conditionRemove_clicked()
 {
-	auto macro = getSelectedMacro();
-	if (!macro) {
+	if (currentConditionIdx == -1) {
+		auto macro = getSelectedMacro();
+		if (!macro) {
+			return;
+		}
+		RemoveMacroCondition((int)macro->Conditions().size() - 1);
+	} else {
+		RemoveMacroCondition(currentConditionIdx);
+	}
+	MacroConditionSelectionChanged(-1);
+}
+
+void AdvSceneSwitcher::on_conditionUp_clicked()
+{
+	if (currentConditionIdx == -1) {
 		return;
 	}
-	RemoveMacroCondition((int)macro->Conditions().size() - 1);
+	MoveMacroConditionUp(currentConditionIdx);
+	MacroConditionSelectionChanged(currentConditionIdx - 1);
+}
+
+void AdvSceneSwitcher::on_conditionDown_clicked()
+{
+	if (currentConditionIdx == -1) {
+		return;
+	}
+	MoveMacroConditionDown(currentConditionIdx);
+	MacroConditionSelectionChanged(currentConditionIdx + 1);
 }
 
 void AdvSceneSwitcher::SwapConditions(Macro *m, int pos1, int pos2)
@@ -408,4 +440,26 @@ void AdvSceneSwitcher::MoveMacroConditionDown(int idx)
 
 	SwapConditions(macro, idx, idx + 1);
 	HighlightCondition(idx + 1);
+}
+
+void AdvSceneSwitcher::MacroConditionSelectionChanged(int idx)
+{
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	for (int i = 0; i < ui->macroEditConditionLayout->count(); ++i) {
+		auto widget = static_cast<MacroSegmentEdit *>(
+			ui->macroEditConditionLayout->itemAt(i)->widget());
+		if (widget) {
+			widget->SetSelected(i == idx);
+		}
+	}
+
+	if (idx < 0 || idx >= macro->Conditions().size()) {
+		currentConditionIdx = -1;
+	} else {
+		currentConditionIdx = idx;
+	}
 }

@@ -272,6 +272,9 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 	PopulateMacroConditions(m);
 	PopulateMacroActions(m);
 	ui->macroEdit->setDisabled(false);
+
+	currentActionIdx = -1;
+	currentConditionIdx = -1;
 }
 
 void AdvSceneSwitcher::HighlightAction(int idx)
@@ -300,16 +303,18 @@ void AdvSceneSwitcher::HighlightCondition(int idx)
 	PulseWidget(widget, QColor(Qt::green), QColor(0, 0, 0, 0), true);
 }
 
-void AdvSceneSwitcher::ConnectControlSignals(MacroActionEdit *c)
+void AdvSceneSwitcher::ConnectControlSignals(MacroActionEdit *a)
 {
-	connect(c, &MacroActionEdit::AddAt, this,
+	connect(a, &MacroActionEdit::AddAt, this,
 		&AdvSceneSwitcher::AddMacroAction);
-	connect(c, &MacroActionEdit::RemoveAt, this,
+	connect(a, &MacroActionEdit::RemoveAt, this,
 		&AdvSceneSwitcher::RemoveMacroAction);
-	connect(c, &MacroActionEdit::UpAt, this,
+	connect(a, &MacroActionEdit::UpAt, this,
 		&AdvSceneSwitcher::MoveMacroActionUp);
-	connect(c, &MacroActionEdit::DownAt, this,
+	connect(a, &MacroActionEdit::DownAt, this,
 		&AdvSceneSwitcher::MoveMacroActionDown);
+	connect(a, &MacroActionEdit::SelectionChagned, this,
+		&AdvSceneSwitcher::MacroActionSelectionChanged);
 }
 
 void AdvSceneSwitcher::ConnectControlSignals(MacroConditionEdit *c)
@@ -322,6 +327,8 @@ void AdvSceneSwitcher::ConnectControlSignals(MacroConditionEdit *c)
 		&AdvSceneSwitcher::MoveMacroConditionUp);
 	connect(c, &MacroConditionEdit::DownAt, this,
 		&AdvSceneSwitcher::MoveMacroConditionDown);
+	connect(c, &MacroActionEdit::SelectionChagned, this,
+		&AdvSceneSwitcher::MacroConditionSelectionChanged);
 }
 
 Macro *AdvSceneSwitcher::getSelectedMacro()

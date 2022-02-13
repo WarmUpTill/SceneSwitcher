@@ -42,6 +42,7 @@ public:
 	// list of actions and conditions
 	void SetFocusPolicyOfWidgets();
 	void SetCollapsed(bool collapsed);
+	void SetSelected(bool);
 
 protected slots:
 	void HeaderInfoChanged(const QString &);
@@ -63,10 +64,12 @@ signals:
 	void RemoveAt(int idx);
 	void UpAt(int idx);
 	void DownAt(int idx);
+	void SelectionChagned(int idx);
 
 protected:
 	void enterEvent(QEvent *e);
 	void leaveEvent(QEvent *e);
+	void mousePressEvent(QMouseEvent *event);
 
 	Section *_section;
 	QLabel *_headerInfo;

@@ -120,8 +120,12 @@ public slots:
 	void on_macros_currentRowChanged(int idx);
 	void on_conditionAdd_clicked();
 	void on_conditionRemove_clicked();
+	void on_conditionUp_clicked();
+	void on_conditionDown_clicked();
 	void on_actionAdd_clicked();
 	void on_actionRemove_clicked();
+	void on_actionUp_clicked();
+	void on_actionDown_clicked();
 	void ShowMacroContextMenu(const QPoint &);
 	void ShowMacroActionsContextMenu(const QPoint &);
 	void ShowMacroConditionsContextMenu(const QPoint &);
@@ -132,10 +136,12 @@ public slots:
 	void CollapseAllConditions();
 	void MinimizeActions();
 	void MinimizeConditions();
+	void MacroActionSelectionChanged(int idx);
 	void AddMacroAction(int idx);
 	void RemoveMacroAction(int idx);
 	void MoveMacroActionUp(int idx);
 	void MoveMacroActionDown(int idx);
+	void MacroConditionSelectionChanged(int idx);
 	void AddMacroCondition(int idx);
 	void RemoveMacroCondition(int idx);
 	void MoveMacroConditionUp(int idx);
@@ -277,6 +283,8 @@ public slots:
 	void on_close_clicked();
 
 private:
+	int currentConditionIdx = -1;
+	int currentActionIdx = -1;
 };
 
 /******************************************************************************

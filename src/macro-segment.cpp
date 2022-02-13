@@ -4,6 +4,7 @@
 
 #include <obs.hpp>
 #include <QEvent>
+#include <QMouseEvent>
 #include <QLabel>
 #include <QScrollBar>
 
@@ -169,6 +170,13 @@ void MacroSegmentEdit::leaveEvent(QEvent *)
 	_leaveTimer.start();
 }
 
+void MacroSegmentEdit::mousePressEvent(QMouseEvent *event)
+{
+	if (event->button() == Qt::LeftButton && Data()) {
+		emit SelectionChagned(Data()->GetIndex());
+	}
+}
+
 void MacroSegmentEdit::SetFocusPolicyOfWidgets()
 {
 	QList<QWidget *> widgets = this->findChildren<QWidget *>();
@@ -186,4 +194,15 @@ void MacroSegmentEdit::SetFocusPolicyOfWidgets()
 void MacroSegmentEdit::SetCollapsed(bool collapsed)
 {
 	_section->SetCollapsed(collapsed);
+}
+
+void MacroSegmentEdit::SetSelected(bool selected)
+{
+	if (selected) {
+		_frame->setStyleSheet(
+			"#segmentFrame { border-width: 2px; border-style: dashed; border-radius: 4px; background-color: rgba(0,0,0,100); }");
+	} else {
+		_frame->setStyleSheet(
+			"#segmentFrame { border-style: none; border-radius: 4px; background-color: rgba(0,0,0,50); }");
+	}
 }
