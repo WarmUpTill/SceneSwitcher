@@ -14,7 +14,8 @@ public:
 	explicit Section(const int animationDuration = 300,
 			 QWidget *parent = 0);
 
-	void SetContent(QWidget *w, bool collapsed = true);
+	void SetContent(QWidget *w);
+	void SetContent(QWidget *w, bool collapsed);
 	void AddHeaderWidget(QWidget *);
 	void SetCollapsed(bool);
 

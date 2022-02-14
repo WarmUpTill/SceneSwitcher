@@ -42,15 +42,19 @@ Section::Section(const int animationDuration, QWidget *parent)
 void Section::Collapse(bool collapse)
 {
 	_toggleButton->setChecked(collapse);
-	_toggleButton->setArrowType(!collapse ? Qt::ArrowType::DownArrow
-					      : Qt::ArrowType::RightArrow);
-	_toggleAnimation->setDirection(!collapse
-					       ? QAbstractAnimation::Forward
-					       : QAbstractAnimation::Backward);
+	_toggleButton->setArrowType(collapse ? Qt::ArrowType::RightArrow
+					     : Qt::ArrowType::DownArrow);
+	_toggleAnimation->setDirection(collapse ? QAbstractAnimation::Backward
+						: QAbstractAnimation::Forward);
 	_transitioning = true;
 	_collapsed = collapse;
 	_toggleAnimation->start();
 	emit Collapsed(collapse);
+}
+
+void Section::SetContent(QWidget *w)
+{
+	SetContent(w, _collapsed);
 }
 
 void Section::SetContent(QWidget *w, bool collapsed)
@@ -67,8 +71,8 @@ void Section::SetContent(QWidget *w, bool collapsed)
 	_contentArea->setMaximumHeight(0);
 	_contentArea->setMinimumHeight(0);
 
-	w->installEventFilter(this);
 	_content = w;
+	_content->installEventFilter(this);
 	auto newLayout = new QVBoxLayout();
 	newLayout->setContentsMargins(0, 0, 0, 0);
 	newLayout->addWidget(w);
@@ -76,7 +80,9 @@ void Section::SetContent(QWidget *w, bool collapsed)
 	_mainLayout->addWidget(_contentArea, 1, 0, 1, 3);
 
 	_headerHeight = sizeHint().height() - _contentArea->maximumHeight();
-	_contentHeight = newLayout->sizeHint().height();
+	_contentHeight = _content->sizeHint().height();
+
+	SetupAnimations();
 
 	if (collapsed) {
 		this->setMinimumHeight(_headerHeight);
@@ -85,8 +91,11 @@ void Section::SetContent(QWidget *w, bool collapsed)
 		this->setMinimumHeight(_headerHeight + _contentHeight);
 		_contentArea->setMaximumHeight(_contentHeight);
 	}
-	SetupAnimations();
-	Collapse(collapsed);
+	const QSignalBlocker b(_toggleButton);
+	_toggleButton->setChecked(collapsed);
+	_toggleButton->setArrowType(collapsed ? Qt::ArrowType::RightArrow
+					      : Qt::ArrowType::DownArrow);
+	_collapsed = collapsed;
 }
 
 void Section::AddHeaderWidget(QWidget *w)
@@ -102,11 +111,15 @@ void Section::SetCollapsed(bool collapsed)
 bool Section::eventFilter(QObject *obj, QEvent *event)
 {
 	if (event->type() == QEvent::Resize && !_transitioning && !_collapsed) {
-		_contentHeight = _content->sizeHint().height();
-		setMaximumHeight(_headerHeight + _contentHeight);
-		setMinimumHeight(_headerHeight + _contentHeight);
-		_contentArea->setMaximumHeight(_contentHeight);
-		SetupAnimations();
+		if (_contentHeight != _content->sizeHint().height()) {
+			_contentHeight = _content->sizeHint().height();
+			setMaximumHeight(_headerHeight + _contentHeight);
+			setMinimumHeight(_headerHeight + _contentHeight);
+			_contentArea->setMaximumHeight(_contentHeight);
+			// Note: Calling this too frequently inside this event
+			// filter will cause a segfault for some reason
+			SetupAnimations();
+		}
 	}
 	return QObject::eventFilter(obj, event);
 }

@@ -111,7 +111,7 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 	auto widget = MacroActionFactory::CreateWidget(id, this, *_entryData);
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
 			 this, SLOT(HeaderInfoChanged(const QString &)));
-	_section->SetContent(widget, false);
+	_section->SetContent(widget);
 	SetFocusPolicyOfWidgets();
 }
 
