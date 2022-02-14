@@ -212,7 +212,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 		MacroConditionFactory::CreateWidget(id, this, *_entryData);
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
 			 this, SLOT(HeaderInfoChanged(const QString &)));
-	_section->SetContent(widget, false);
+	_section->SetContent(widget);
 	_dur->setVisible(MacroConditionFactory::UsesDurationConstraint(id));
 	SetFocusPolicyOfWidgets();
 }
