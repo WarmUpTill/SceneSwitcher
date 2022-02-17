@@ -264,14 +264,20 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 	}
 
 	std::string id;
-	if (idx - 1 >= 0) {
+	LogicType logic;
+	if (idx >= 1) {
 		id = macro->Conditions().at(idx - 1)->GetId();
+		if (idx == 1) {
+			logic = LogicType::NONE;
+		} else {
+			logic = macro->Conditions().at(idx - 1)->GetLogicType();
+		}
 	} else {
 		MacroConditionScene temp(macro);
 		id = temp.GetId();
+		logic = LogicType::ROOT_NONE;
 	}
 	std::lock_guard<std::mutex> lock(switcher->m);
-	bool root = idx == 0;
 	auto cond = macro->Conditions().emplace(
 		macro->Conditions().begin() + idx,
 		MacroConditionFactory::Create(id, macro));
@@ -281,7 +287,6 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 		macro->Conditions().at(idx)->Load(data);
 		obs_data_release(data);
 	}
-	auto logic = root ? LogicType::ROOT_NONE : LogicType::NONE;
 	(*cond)->SetLogicType(logic);
 	macro->UpdateConditionIndices();
 
