@@ -290,7 +290,7 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 	(*cond)->SetLogicType(logic);
 	macro->UpdateConditionIndices();
 
-	clearLayout(ui->macroEditConditionLayout, idx);
+	clearLayout(conditionsList->ContentLayout(), idx);
 	PopulateMacroConditions(*macro, idx);
 	HighlightCondition(idx);
 }
@@ -312,7 +312,7 @@ void AdvSceneSwitcher::on_conditionAdd_clicked()
 		AddMacroCondition(currentConditionIdx + 1);
 	}
 	MacroConditionSelectionChanged(currentConditionIdx + 1);
-	ui->macroEditConditionHelp->setVisible(false);
+	conditionsList->SetHelpMsgVisible(false);
 }
 
 void AdvSceneSwitcher::RemoveMacroCondition(int idx)
@@ -335,7 +335,7 @@ void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 		newRoot->SetLogicType(LogicType::ROOT_NONE);
 	}
 
-	clearLayout(ui->macroEditConditionLayout, idx);
+	clearLayout(conditionsList->ContentLayout(), idx);
 	PopulateMacroConditions(*macro, idx);
 }
 
@@ -395,8 +395,8 @@ void AdvSceneSwitcher::SwapConditions(Macro *m, int pos1, int pos2)
 		(*c2)->SetLogicType(logic1);
 	}
 
-	auto item1 = ui->macroEditConditionLayout->takeAt(pos1);
-	auto item2 = ui->macroEditConditionLayout->takeAt(pos2 - 1);
+	auto item1 = conditionsList->ContentLayout()->takeAt(pos1);
+	auto item2 = conditionsList->ContentLayout()->takeAt(pos2 - 1);
 	deleteLayoutItem(item1);
 	deleteLayoutItem(item2);
 	auto widget1 =
@@ -405,8 +405,8 @@ void AdvSceneSwitcher::SwapConditions(Macro *m, int pos1, int pos2)
 		new MacroConditionEdit(this, &(*c2), (*c2)->GetId(), false);
 	ConnectControlSignals(widget1);
 	ConnectControlSignals(widget2);
-	ui->macroEditConditionLayout->insertWidget(pos1, widget1);
-	ui->macroEditConditionLayout->insertWidget(pos2, widget2);
+	conditionsList->ContentLayout()->insertWidget(pos1, widget1);
+	conditionsList->ContentLayout()->insertWidget(pos2, widget2);
 }
 
 void AdvSceneSwitcher::MoveMacroConditionUp(int idx)
@@ -446,9 +446,9 @@ void AdvSceneSwitcher::MacroConditionSelectionChanged(int idx)
 		return;
 	}
 
-	for (int i = 0; i < ui->macroEditConditionLayout->count(); ++i) {
+	for (int i = 0; i < conditionsList->ContentLayout()->count(); ++i) {
 		auto widget = static_cast<MacroSegmentEdit *>(
-			ui->macroEditConditionLayout->itemAt(i)->widget());
+			conditionsList->ContentLayout()->itemAt(i)->widget());
 		if (widget) {
 			widget->SetSelected(i == idx);
 		}

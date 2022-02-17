@@ -6,6 +6,7 @@
 #else
 #include "ui_advanced-scene-switcher.h"
 #endif
+#include "macro-segment-list.hpp"
 #include "switcher-data-structs.hpp"
 #include "platform-funcs.hpp"
 
@@ -282,6 +283,9 @@ public slots:
 	void on_close_clicked();
 
 private:
+	MacroSegmentList *conditionsList = nullptr;
+	MacroSegmentList *actionsList = nullptr;
+
 	int currentConditionIdx = -1;
 	int currentActionIdx = -1;
 };
