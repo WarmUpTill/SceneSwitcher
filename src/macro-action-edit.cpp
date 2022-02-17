@@ -162,7 +162,7 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 	}
 	macro->UpdateActionIndices();
 
-	clearLayout(ui->macroEditActionLayout, idx);
+	clearLayout(actionsList->ContentLayout(), idx);
 	PopulateMacroActions(*macro, idx);
 	HighlightAction(idx);
 }
@@ -184,7 +184,7 @@ void AdvSceneSwitcher::on_actionAdd_clicked()
 		AddMacroAction(currentActionIdx + 1);
 	}
 	MacroActionSelectionChanged(currentActionIdx + 1);
-	ui->macroEditActionHelp->setVisible(false);
+	actionsList->SetHelpMsgVisible(false);
 }
 
 void AdvSceneSwitcher::RemoveMacroAction(int idx)
@@ -204,7 +204,7 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 	switcher->macroWaitCv.notify_all();
 	macro->UpdateActionIndices();
 
-	clearLayout(ui->macroEditActionLayout, idx);
+	clearLayout(actionsList->ContentLayout(), idx);
 	PopulateMacroActions(*macro, idx);
 }
 
@@ -255,16 +255,16 @@ void AdvSceneSwitcher::SwapActions(Macro *m, int pos1, int pos2)
 	auto a1 = m->Actions().begin() + pos1;
 	auto a2 = m->Actions().begin() + pos2;
 
-	auto item1 = ui->macroEditActionLayout->takeAt(pos1);
-	auto item2 = ui->macroEditActionLayout->takeAt(pos2 - 1);
+	auto item1 = actionsList->ContentLayout()->takeAt(pos1);
+	auto item2 = actionsList->ContentLayout()->takeAt(pos2 - 1);
 	deleteLayoutItem(item1);
 	deleteLayoutItem(item2);
 	auto widget1 = new MacroActionEdit(this, &(*a1), (*a1)->GetId());
 	auto widget2 = new MacroActionEdit(this, &(*a2), (*a2)->GetId());
 	ConnectControlSignals(widget1);
 	ConnectControlSignals(widget2);
-	ui->macroEditActionLayout->insertWidget(pos1, widget1);
-	ui->macroEditActionLayout->insertWidget(pos2, widget2);
+	actionsList->ContentLayout()->insertWidget(pos1, widget1);
+	actionsList->ContentLayout()->insertWidget(pos2, widget2);
 }
 
 void AdvSceneSwitcher::MoveMacroActionUp(int idx)
@@ -304,9 +304,9 @@ void AdvSceneSwitcher::MacroActionSelectionChanged(int idx)
 		return;
 	}
 
-	for (int i = 0; i < ui->macroEditActionLayout->count(); ++i) {
+	for (int i = 0; i < actionsList->ContentLayout()->count(); ++i) {
 		auto widget = static_cast<MacroSegmentEdit *>(
-			ui->macroEditActionLayout->itemAt(i)->widget());
+			actionsList->ContentLayout()->itemAt(i)->widget());
 		if (widget) {
 			widget->SetSelected(i == idx);
 		}
