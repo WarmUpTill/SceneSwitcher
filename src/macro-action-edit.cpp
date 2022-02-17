@@ -183,7 +183,9 @@ void AdvSceneSwitcher::on_actionAdd_clicked()
 	} else {
 		AddMacroAction(currentActionIdx + 1);
 	}
-	MacroActionSelectionChanged(currentActionIdx + 1);
+	if (currentActionIdx != -1) {
+		MacroActionSelectionChanged(currentActionIdx + 1);
+	}
 	actionsList->SetHelpMsgVisible(false);
 }
 

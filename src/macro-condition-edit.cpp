@@ -311,7 +311,9 @@ void AdvSceneSwitcher::on_conditionAdd_clicked()
 	} else {
 		AddMacroCondition(currentConditionIdx + 1);
 	}
-	MacroConditionSelectionChanged(currentConditionIdx + 1);
+	if (currentConditionIdx != -1) {
+		MacroConditionSelectionChanged(currentConditionIdx + 1);
+	}
 	conditionsList->SetHelpMsgVisible(false);
 }
 
