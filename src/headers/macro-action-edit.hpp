@@ -34,6 +34,7 @@ public:
 			std::shared_ptr<MacroAction> * = nullptr,
 			const std::string &id = "scene_switch");
 	void UpdateEntryData(const std::string &id);
+	void SetEntryData(std::shared_ptr<MacroAction> *);
 
 private slots:
 	void ActionSelectionChanged(const QString &text);

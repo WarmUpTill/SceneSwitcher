@@ -128,6 +128,11 @@ void MacroActionEdit::UpdateEntryData(const std::string &id)
 	SetFocusPolicyOfWidgets();
 }
 
+void MacroActionEdit::SetEntryData(std::shared_ptr<MacroAction> *data)
+{
+	_entryData = data;
+}
+
 MacroSegment *MacroActionEdit::Data()
 {
 	return _entryData->get();
@@ -165,6 +170,7 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 	clearLayout(actionsList->ContentLayout(), idx);
 	PopulateMacroActions(*macro, idx);
 	HighlightAction(idx);
+	SetActionData(*macro);
 }
 
 void AdvSceneSwitcher::on_actionAdd_clicked()
@@ -208,6 +214,7 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 
 	clearLayout(actionsList->ContentLayout(), idx);
 	PopulateMacroActions(*macro, idx);
+	SetActionData(*macro);
 }
 
 void AdvSceneSwitcher::on_actionRemove_clicked()

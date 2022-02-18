@@ -188,6 +188,11 @@ void MacroConditionEdit::UpdateEntryData(const std::string &id)
 	SetFocusPolicyOfWidgets();
 }
 
+void MacroConditionEdit::SetEntryData(std::shared_ptr<MacroCondition> *data)
+{
+	_entryData = data;
+}
+
 void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 {
 	if (_loading || !_entryData) {
@@ -293,6 +298,7 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 	clearLayout(conditionsList->ContentLayout(), idx);
 	PopulateMacroConditions(*macro, idx);
 	HighlightCondition(idx);
+	SetConditionData(*macro);
 }
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()
@@ -339,6 +345,7 @@ void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 
 	clearLayout(conditionsList->ContentLayout(), idx);
 	PopulateMacroConditions(*macro, idx);
+	SetConditionData(*macro);
 }
 
 void AdvSceneSwitcher::on_conditionRemove_clicked()

@@ -38,6 +38,7 @@ public:
 	bool IsRootNode();
 	void SetRootNode(bool);
 	void UpdateEntryData(const std::string &id);
+	void SetEntryData(std::shared_ptr<MacroCondition> *);
 
 private slots:
 	void LogicSelectionChanged(int idx);

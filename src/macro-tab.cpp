@@ -254,6 +254,39 @@ void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
 	conditionsList->SetHelpMsgVisible(conditions.size() == 0);
 }
 
+void AdvSceneSwitcher::SetActionData(Macro &m)
+{
+	auto &actions = m.Actions();
+	for (int idx = 0; idx < actionsList->ContentLayout()->count(); idx++) {
+		auto item = actionsList->ContentLayout()->itemAt(idx);
+		if (!item) {
+			continue;
+		}
+		auto widget = static_cast<MacroActionEdit *>(item->widget());
+		if (!widget) {
+			continue;
+		}
+		widget->SetEntryData(&*(actions.begin() + idx));
+	}
+}
+
+void AdvSceneSwitcher::SetConditionData(Macro &m)
+{
+	auto &conditions = m.Conditions();
+	for (int idx = 0; idx < conditionsList->ContentLayout()->count();
+	     idx++) {
+		auto item = conditionsList->ContentLayout()->itemAt(idx);
+		if (!item) {
+			continue;
+		}
+		auto widget = static_cast<MacroConditionEdit *>(item->widget());
+		if (!widget) {
+			continue;
+		}
+		widget->SetEntryData(&*(conditions.begin() + idx));
+	}
+}
+
 void AdvSceneSwitcher::SetEditMacro(Macro &m)
 {
 	{
