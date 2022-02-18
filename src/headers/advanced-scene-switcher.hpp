@@ -80,6 +80,7 @@ public:
 	void setupVideoTab();
 	void setupNetworkTab();
 	void setupMacroTab();
+	void setDeprecationWarnings();
 	void setTabOrder();
 	void setCurrentTab();
 	void restoreWindowGeo();

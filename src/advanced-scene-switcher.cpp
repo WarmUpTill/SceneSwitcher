@@ -86,6 +86,7 @@ void AdvSceneSwitcher::loadUI()
 	setupTriggerTab();
 	setupMacroTab();
 
+	setDeprecationWarnings();
 	setTabOrder();
 	setCurrentTab();
 	restoreWindowGeo();

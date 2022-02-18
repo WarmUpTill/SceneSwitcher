@@ -243,6 +243,20 @@ void AdvSceneSwitcher::on_hideLegacyTabs_stateChanged(int state)
 	}
 }
 
+void AdvSceneSwitcher::setDeprecationWarnings()
+{
+	QString toolTip =
+		switcher->disableHints
+			? ""
+			: obs_module_text(
+				  "AdvSceneSwitcher.deprecatedTabWarning");
+	for (int idx = 0; idx < ui->tabWidget->count(); idx++) {
+		if (isLegacyTab(ui->tabWidget->tabText(idx))) {
+			ui->tabWidget->widget(idx)->setToolTip(toolTip);
+		}
+	}
+}
+
 QString getDefaultSaveLocation()
 {
 	QString desktopPath = QStandardPaths::writableLocation(
