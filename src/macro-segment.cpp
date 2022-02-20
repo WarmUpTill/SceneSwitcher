@@ -48,13 +48,12 @@ MacroSegmentEdit::MacroSegmentEdit(QWidget *parent) : QWidget(parent)
 	_frame = new QFrame;
 	_frame->setObjectName("segmentFrame");
 	_highLightFrameLayout = new QVBoxLayout;
-	_frame->setStyleSheet(
-		"#segmentFrame { border-radius: 4px; background-color: rgba(0,0,0,50); }");
+	SetSelected(false);
 	_frame->setLayout(_highLightFrameLayout);
 	// Set background transparent to avoid blocking highlight frame
-	setStyleSheet("QCheckBox { background-color: rgba(0,0,0,0); }\
-		       QLabel { background-color: rgba(0,0,0,0); } \
-		       QSlider { background-color: rgba(0,0,0,0); }");
+	setStyleSheet("QCheckBox { background-color: rgba(0,0,0,0); }"
+		      "QLabel { background-color: rgba(0,0,0,0); }"
+		      "QSlider { background-color: rgba(0,0,0,0); }");
 
 	// Keep the size of macro segments consistent, even if there is room in
 	// the edit areas
@@ -126,10 +125,20 @@ void MacroSegmentEdit::SetCollapsed(bool collapsed)
 void MacroSegmentEdit::SetSelected(bool selected)
 {
 	if (selected) {
-		_frame->setStyleSheet(
-			"#segmentFrame { border-width: 2px; border-style: dashed; border-radius: 4px; background-color: rgba(0,0,0,100); }");
+		_frame->setStyleSheet("#segmentFrame {"
+				      "border-color: rgba(0, 0, 0, 255);"
+				      "border-width: 2px;"
+				      "border-style: dashed;"
+				      "border-radius: 4px;"
+				      "background-color: rgba(0,0,0,100);"
+				      "}");
 	} else {
-		_frame->setStyleSheet(
-			"#segmentFrame { border-style: none; border-radius: 4px; background-color: rgba(0,0,0,50); }");
+		_frame->setStyleSheet("#segmentFrame {"
+				      "border-color: rgba(0, 0, 0, 0);"
+				      "border-width: 2px;"
+				      "border-style: dashed;"
+				      "border-radius: 4px;"
+				      "background-color: rgba(0,0,0,50);"
+				      "}");
 	}
 }
