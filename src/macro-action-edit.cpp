@@ -313,17 +313,13 @@ void AdvSceneSwitcher::MacroActionSelectionChanged(int idx)
 		return;
 	}
 
-	for (int i = 0; i < actionsList->ContentLayout()->count(); ++i) {
-		auto widget = static_cast<MacroSegmentEdit *>(
-			actionsList->ContentLayout()->itemAt(i)->widget());
-		if (widget) {
-			widget->SetSelected(i == idx);
-		}
-	}
+	SetSelection(actionsList, idx);
+	SetSelection(conditionsList, -1);
 
 	if (idx < 0 || idx >= macro->Actions().size()) {
 		currentActionIdx = -1;
 	} else {
 		currentActionIdx = idx;
 	}
+	currentConditionIdx = -1;
 }
