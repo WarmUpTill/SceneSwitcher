@@ -34,6 +34,17 @@ void startStopToggleHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
 	}
 }
 
+void removeMacroSegmentHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
+				  bool pressed)
+{
+	if (pressed && switcher->settingsWindowOpened &&
+	    AdvSceneSwitcher::window) {
+		QMetaObject::invokeMethod(AdvSceneSwitcher::window,
+					  "DeleteMacroSegementHotkey",
+					  Qt::QueuedConnection);
+	}
+}
+
 void registerHotkeys()
 {
 	switcher->startHotkey = obs_hotkey_register_frontend(
@@ -49,6 +60,11 @@ void registerHotkeys()
 		obs_module_text(
 			"AdvSceneSwitcher.hotkey.startStopToggleSwitcherHotkey"),
 		startStopToggleHotkeyFunc, NULL);
+	switcher->removeMacroSegment = obs_hotkey_register_frontend(
+		"removeMacroSegmentSwitcherHotkey",
+		obs_module_text(
+			"AdvSceneSwitcher.hotkey.removeMacroSegmentHotkey"),
+		removeMacroSegmentHotkeyFunc, NULL);
 
 	switcher->hotkeysRegistered = true;
 }
@@ -67,6 +83,12 @@ void SwitcherData::saveHotkeys(obs_data_t *obj)
 	obs_data_array_t *toggleHotkeyArrray = obs_hotkey_save(toggleHotkey);
 	obs_data_set_array(obj, "toggleHotkey", toggleHotkeyArrray);
 	obs_data_array_release(toggleHotkeyArrray);
+
+	obs_data_array_t *removeSegmentArrray =
+		obs_hotkey_save(removeMacroSegment);
+	obs_data_set_array(obj, "removeMacroSegmentHotkey",
+			   removeSegmentArrray);
+	obs_data_array_release(removeSegmentArrray);
 }
 
 void SwitcherData::loadHotkeys(obs_data_t *obj)
@@ -89,4 +111,9 @@ void SwitcherData::loadHotkeys(obs_data_t *obj)
 		obs_data_get_array(obj, "toggleHotkey");
 	obs_hotkey_load(toggleHotkey, toggleHotkeyArrray);
 	obs_data_array_release(toggleHotkeyArrray);
+
+	obs_data_array_t *removeSegmentArrray =
+		obs_data_get_array(obj, "removeMacroSegmentHotkey");
+	obs_hotkey_load(removeMacroSegment, removeSegmentArrray);
+	obs_data_array_release(removeSegmentArrray);
 }
