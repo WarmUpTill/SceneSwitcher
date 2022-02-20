@@ -20,6 +20,8 @@ SwitcherData *GetSwitcher()
 	return switcher;
 }
 
+AdvSceneSwitcher *AdvSceneSwitcher::window = nullptr;
+
 /******************************************************************************
  * Create the Advanced Scene Switcher settings window
  ******************************************************************************/
@@ -667,8 +669,6 @@ void LoadPlugins()
 	}
 }
 
-AdvSceneSwitcher *ssWindow;
-
 extern "C" void InitSceneSwitcher()
 {
 	blog(LOG_INFO, "version: %s", g_GIT_TAG);
@@ -686,15 +686,16 @@ extern "C" void InitSceneSwitcher()
 
 	auto cb = []() {
 		if (switcher->settingsWindowOpened) {
-			ssWindow->show();
-			ssWindow->raise();
-			ssWindow->activateWindow();
+			AdvSceneSwitcher::window->show();
+			AdvSceneSwitcher::window->raise();
+			AdvSceneSwitcher::window->activateWindow();
 		} else {
-			ssWindow =
+			AdvSceneSwitcher::window =
 				new AdvSceneSwitcher(static_cast<QMainWindow *>(
 					obs_frontend_get_main_window()));
-			ssWindow->setAttribute(Qt::WA_DeleteOnClose);
-			ssWindow->show();
+			AdvSceneSwitcher::window->setAttribute(
+				Qt::WA_DeleteOnClose);
+			AdvSceneSwitcher::window->show();
 		}
 	};
 

@@ -33,6 +33,8 @@ public:
 	AdvSceneSwitcher(QWidget *parent);
 	~AdvSceneSwitcher();
 
+	static AdvSceneSwitcher *window;
+
 	void reject() override;
 	void closeEvent(QCloseEvent *event) override;
 
@@ -130,6 +132,7 @@ public slots:
 	void on_actionRemove_clicked();
 	void on_actionUp_clicked();
 	void on_actionDown_clicked();
+	void DeleteMacroSegementHotkey();
 	void ShowMacroContextMenu(const QPoint &);
 	void ShowMacroActionsContextMenu(const QPoint &);
 	void ShowMacroConditionsContextMenu(const QPoint &);

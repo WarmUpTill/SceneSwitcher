@@ -592,3 +592,12 @@ void AdvSceneSwitcher::SetSelection(MacroSegmentList *list, int idx)
 		}
 	}
 }
+
+void AdvSceneSwitcher::DeleteMacroSegementHotkey()
+{
+	if (currentActionIdx != -1) {
+		RemoveMacroAction(currentActionIdx);
+	} else if (currentConditionIdx != -1) {
+		RemoveMacroCondition(currentConditionIdx);
+	}
+}
