@@ -581,3 +581,14 @@ void AdvSceneSwitcher::HighlightMatchedMacros()
 		}
 	}
 }
+
+void AdvSceneSwitcher::SetSelection(MacroSegmentList *list, int idx)
+{
+	for (int i = 0; i < list->ContentLayout()->count(); ++i) {
+		auto widget = static_cast<MacroSegmentEdit *>(
+			list->ContentLayout()->itemAt(i)->widget());
+		if (widget) {
+			widget->SetSelected(i == idx);
+		}
+	}
+}

@@ -286,6 +286,8 @@ public slots:
 	void on_close_clicked();
 
 private:
+	void SetSelection(MacroSegmentList *, int);
+
 	MacroSegmentList *conditionsList = nullptr;
 	MacroSegmentList *actionsList = nullptr;
 
