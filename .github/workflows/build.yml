@@ -5,7 +5,7 @@ on: [push, pull_request, workflow_dispatch]
 env:
   PLUGIN_NAME: SceneSwitcher
   LIB_NAME: advanced-scene-switcher
-  OBS_TAG: 27.1.3
+  OBS_TAG: 27.2.0
 
 jobs:
   macos64:
@@ -184,7 +184,8 @@ jobs:
            libx11-xcb-dev \
            libxcb-xfixes0-dev \
            libopencv-dev \
-           libprocps-dev
+           libprocps-dev \
+           libpci-dev
       - name: "Configure"
         shell: bash
         run: |
