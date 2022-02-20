@@ -46,7 +46,7 @@ MacroActionPreviewSceneEdit::MacroActionPreviewSceneEdit(
 	QWidget *parent, std::shared_ptr<MacroActionPreviewScene> entryData)
 	: QWidget(parent)
 {
-	_scenes = new SceneSelectionWidget(window(), false, false, false);
+	_scenes = new SceneSelectionWidget(window(), false, true, true);
 
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
