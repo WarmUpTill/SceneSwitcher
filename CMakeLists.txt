@@ -229,6 +229,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-condition-idle.hpp
     src/headers/macro-condition-macro.hpp
     src/headers/macro-condition-media.hpp
+    src/headers/macro-condition-obs-stats.hpp
     src/headers/macro-condition-plugin-state.hpp
     src/headers/macro-condition-process.hpp
     src/headers/macro-condition-recording.hpp
@@ -330,6 +331,7 @@ set(advanced-scene-switcher_SOURCES
     src/macro-condition-idle.cpp
     src/macro-condition-macro.cpp
     src/macro-condition-media.cpp
+    src/macro-condition-obs-stats.cpp
     src/macro-condition-plugin-state.cpp
     src/macro-condition-process.cpp
     src/macro-condition-recording.cpp
