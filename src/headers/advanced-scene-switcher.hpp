@@ -302,7 +302,7 @@ void setNextTransition(const sceneSwitchInfo &ssi, obs_source_t *currentSource,
 void overwriteTransitionOverride(const sceneSwitchInfo &ssi,
 				 transitionData &td);
 void restoreTransitionOverride(obs_source_t *scene, const transitionData &td);
-void switchScene(const sceneSwitchInfo &ssi);
+void switchScene(const sceneSwitchInfo &ssi, bool force = false);
 void switchPreviewScene(const OBSWeakSource &ws);
 
 /******************************************************************************
