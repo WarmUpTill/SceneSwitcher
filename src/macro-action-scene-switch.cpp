@@ -39,7 +39,8 @@ bool MacroActionSwitchScene::PerformAction()
 {
 	auto scene = _scene.GetScene();
 	switchScene({scene, _transition.GetTransition(),
-		     (int)(_duration.seconds * 1000)});
+		     (int)(_duration.seconds * 1000)},
+		    obs_frontend_preview_program_mode_active());
 	if (_blockUntilTransitionDone && scene) {
 		waitForTransitionChange(scene);
 		return !switcher->abortMacroWait;

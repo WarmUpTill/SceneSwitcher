@@ -343,7 +343,7 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 	return match;
 }
 
-void switchScene(const sceneSwitchInfo &sceneSwitch)
+void switchScene(const sceneSwitchInfo &sceneSwitch, bool force)
 {
 	if (!sceneSwitch.scene && switcher->verbose) {
 		blog(LOG_INFO, "nothing to switch to");
@@ -353,7 +353,7 @@ void switchScene(const sceneSwitchInfo &sceneSwitch)
 	obs_source_t *source = obs_weak_source_get_source(sceneSwitch.scene);
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 
-	if (source && source != currentSource) {
+	if (source && (source != currentSource || force)) {
 		transitionData currentTransitionData;
 		setNextTransition(sceneSwitch, currentSource,
 				  currentTransitionData);
