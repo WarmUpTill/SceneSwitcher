@@ -17,15 +17,21 @@ bool macroNameExists(std::string name)
 	return !!GetMacroByName(name.c_str());
 }
 
-bool AdvSceneSwitcher::addNewMacro(std::string &name)
+bool AdvSceneSwitcher::addNewMacro(std::string &name, std::string format)
 {
-	QString format{
-		obs_module_text("AdvSceneSwitcher.macroTab.defaultname")};
-
+	QString fmt;
 	int i = 1;
-	QString placeHolderText = format.arg(i);
+	if (format.empty()) {
+		fmt = {obs_module_text(
+			"AdvSceneSwitcher.macroTab.defaultname")};
+	} else {
+		fmt = QString::fromStdString(format);
+		i = 2;
+	}
+
+	QString placeHolderText = fmt.arg(i);
 	while ((macroNameExists(placeHolderText.toUtf8().constData()))) {
-		placeHolderText = format.arg(++i);
+		placeHolderText = fmt.arg(++i);
 	}
 
 	bool accepted = AdvSSNameDialog::AskForName(
@@ -475,15 +481,19 @@ void AdvSceneSwitcher::ShowMacroConditionsContextMenu(const QPoint &pos)
 
 void AdvSceneSwitcher::CopyMacro()
 {
-	obs_data_t *data = obs_data_create();
-	getSelectedMacro()->Save(data);
-
-	std::string name;
-	if (!addNewMacro(name)) {
-		obs_data_release(data);
+	const auto macro = getSelectedMacro();
+	if (!macro) {
 		return;
 	}
 
+	std::string format = macro->Name() + " %1";
+	std::string name;
+	if (!addNewMacro(name, format)) {
+		return;
+	}
+
+	obs_data_t *data = obs_data_create();
+	macro->Save(data);
 	switcher->macros.back()->Load(data);
 	switcher->macros.back()->SetName(name);
 	obs_data_release(data);

@@ -49,7 +49,7 @@ public:
 	void OpenSequenceExtendEdit(SequenceWidget *sw);
 	void SetEditSceneGroup(SceneGroup &sg);
 
-	bool addNewMacro(std::string &name);
+	bool addNewMacro(std::string &name, std::string format = "");
 	Macro *getSelectedMacro();
 	void SetEditMacro(Macro &m);
 	void HighlightAction(int idx);
