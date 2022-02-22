@@ -105,6 +105,9 @@ void Section::AddHeaderWidget(QWidget *w)
 
 void Section::SetCollapsed(bool collapsed)
 {
+	if (_collapsed == collapsed) {
+		return;
+	}
 	Collapse(collapsed);
 }
 
