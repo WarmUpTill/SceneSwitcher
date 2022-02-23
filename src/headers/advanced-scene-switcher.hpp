@@ -154,6 +154,7 @@ public slots:
 	void MoveMacroConditionUp(int idx);
 	void MoveMacroConditionDown(int idx);
 	void HighlightMatchedMacros();
+	void MacroDragDropReorder(QModelIndex, int, int, QModelIndex, int);
 
 	void on_screenRegionSwitches_currentRowChanged(int idx);
 	void on_showFrame_clicked();
