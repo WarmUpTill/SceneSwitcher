@@ -384,6 +384,25 @@ void AdvSceneSwitcher::on_macros_currentRowChanged(int idx)
 	}
 }
 
+void AdvSceneSwitcher::MacroDragDropReorder(QModelIndex, int from, int,
+					    QModelIndex, int to)
+{
+	std::lock_guard<std::mutex> lock(switcher->m);
+	if (from > to) {
+		std::rotate(switcher->macros.rend() - from - 1,
+			    switcher->macros.rend() - from,
+			    switcher->macros.rend() - to);
+	} else {
+		std::rotate(switcher->macros.begin() + from,
+			    switcher->macros.begin() + from + 1,
+			    switcher->macros.begin() + to);
+	}
+
+	for (auto &m : switcher->macros) {
+		m->ResolveMacroRef();
+	}
+}
+
 void AdvSceneSwitcher::setupMacroTab()
 {
 	const QSignalBlocker signalBlocker(ui->macros);
@@ -400,6 +419,12 @@ void AdvSceneSwitcher::setupMacroTab()
 	} else {
 		ui->macroHelp->setVisible(false);
 	}
+
+	connect(ui->macros->model(),
+		SIGNAL(rowsMoved(QModelIndex, int, int, QModelIndex, int)),
+		this,
+		SLOT(MacroDragDropReorder(QModelIndex, int, int, QModelIndex,
+					  int)));
 
 	delete conditionsList;
 	conditionsList = new MacroSegmentList(this);
