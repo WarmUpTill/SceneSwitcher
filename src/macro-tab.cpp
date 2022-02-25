@@ -8,6 +8,8 @@
 
 #include <QColor>
 #include <QMenu>
+#include <QGraphicsOpacityEffect>
+#include <QPropertyAnimation>
 
 static QTimer highlightMatchTimer;
 static QMetaObject::Connection addPulse;
@@ -312,6 +314,7 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 
 	currentActionIdx = -1;
 	currentConditionIdx = -1;
+	HighlightControls();
 }
 
 void AdvSceneSwitcher::HighlightAction(int idx)
@@ -634,5 +637,77 @@ void AdvSceneSwitcher::DeleteMacroSegementHotkey()
 		RemoveMacroAction(currentActionIdx);
 	} else if (currentConditionIdx != -1) {
 		RemoveMacroCondition(currentConditionIdx);
+	}
+}
+
+void fade(QWidget *widget, bool fadeOut)
+{
+	auto curEffect = widget->graphicsEffect();
+	if (curEffect) {
+		auto curOpacity =
+			dynamic_cast<QGraphicsOpacityEffect *>(curEffect);
+		if (curOpacity && ((fadeOut && curOpacity->opacity() == 0.3) ||
+				   (!fadeOut && curOpacity->opacity() == 1))) {
+			return;
+		}
+	} else if (!fadeOut) {
+		return;
+	}
+
+	QGraphicsOpacityEffect *opacityEffect = new QGraphicsOpacityEffect();
+	widget->setGraphicsEffect(opacityEffect);
+	QPropertyAnimation *animation =
+		new QPropertyAnimation(opacityEffect, "opacity");
+	animation->setDuration(350);
+	animation->setStartValue(fadeOut ? 1 : 0.3);
+	animation->setEndValue(fadeOut ? .3 : 1);
+	animation->setEasingCurve(QEasingCurve::OutQuint);
+	animation->start(QPropertyAnimation::DeleteWhenStopped);
+}
+
+void AdvSceneSwitcher::FadeOutActionControls()
+{
+	fade(ui->actionAdd, true);
+	fade(ui->actionRemove, true);
+	fade(ui->actionUp, true);
+	fade(ui->actionDown, true);
+}
+
+void AdvSceneSwitcher::FadeOutConditionControls()
+{
+	fade(ui->conditionAdd, true);
+	fade(ui->conditionRemove, true);
+	fade(ui->conditionUp, true);
+	fade(ui->conditionDown, true);
+}
+
+void AdvSceneSwitcher::ResetOpacityActionControls()
+{
+	fade(ui->actionAdd, false);
+	fade(ui->actionRemove, false);
+	fade(ui->actionUp, false);
+	fade(ui->actionDown, false);
+}
+
+void AdvSceneSwitcher::ResetOpacityConditionControls()
+{
+	fade(ui->conditionAdd, false);
+	fade(ui->conditionRemove, false);
+	fade(ui->conditionUp, false);
+	fade(ui->conditionDown, false);
+}
+
+void AdvSceneSwitcher::HighlightControls()
+{
+	if ((currentActionIdx == -1 && currentConditionIdx == -1) ||
+	    (currentActionIdx != -1 && currentConditionIdx != -1)) {
+		ResetOpacityActionControls();
+		ResetOpacityConditionControls();
+	} else if (currentActionIdx != -1) {
+		FadeOutConditionControls();
+		ResetOpacityActionControls();
+	} else {
+		FadeOutActionControls();
+		ResetOpacityConditionControls();
 	}
 }

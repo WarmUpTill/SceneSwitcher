@@ -322,4 +322,5 @@ void AdvSceneSwitcher::MacroActionSelectionChanged(int idx)
 		currentActionIdx = idx;
 	}
 	currentConditionIdx = -1;
+	HighlightControls();
 }
