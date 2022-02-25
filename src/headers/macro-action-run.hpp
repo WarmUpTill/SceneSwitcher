@@ -50,6 +50,7 @@ private slots:
 	void RemoveArg();
 	void ArgUp();
 	void ArgDown();
+	void ArgItemClicked(QListWidgetItem *);
 signals:
 	void HeaderInfoChanged(const QString &);
 
