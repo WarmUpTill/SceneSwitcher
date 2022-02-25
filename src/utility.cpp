@@ -883,36 +883,39 @@ bool windowPosValid(QPoint pos)
 QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
 				    QColor endColor, bool once)
 {
-	QGraphicsColorizeEffect *eEffect = new QGraphicsColorizeEffect(widget);
-	widget->setGraphicsEffect(eEffect);
-	QPropertyAnimation *paAnimation =
-		new QPropertyAnimation(eEffect, "color");
-	paAnimation->setStartValue(startColor);
-	paAnimation->setEndValue(endColor);
-	paAnimation->setDuration(1000);
+	QGraphicsColorizeEffect *effect = new QGraphicsColorizeEffect(widget);
+	widget->setGraphicsEffect(effect);
+	QPropertyAnimation *animation =
+		new QPropertyAnimation(effect, "color", widget);
+	animation->setStartValue(startColor);
+	animation->setEndValue(endColor);
+	animation->setDuration(1000);
 
 	QMetaObject::Connection con;
 	if (once) {
 		auto widgetPtr = widget;
 		con = QWidget::connect(
-			paAnimation, &QPropertyAnimation::finished,
+			animation, &QPropertyAnimation::finished,
 			[widgetPtr]() {
 				if (widgetPtr) {
 					widgetPtr->setGraphicsEffect(nullptr);
 				}
 			});
+		animation->start(QPropertyAnimation::DeleteWhenStopped);
 	} else {
+		auto widgetPtr = widget;
 		con = QWidget::connect(
-			paAnimation, &QPropertyAnimation::finished,
-			[paAnimation]() {
-				QTimer::singleShot(1000, [paAnimation] {
-					paAnimation->start();
-				});
+			animation, &QPropertyAnimation::finished,
+			[animation, widgetPtr]() {
+				QTimer *timer = new QTimer(widgetPtr);
+				QWidget::connect(timer, &QTimer::timeout,
+						 [animation] {
+							 animation->start();
+						 });
+				timer->start(1000);
 			});
+		animation->start();
 	}
-
-	paAnimation->start();
-
 	return con;
 }
 
