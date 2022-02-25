@@ -153,6 +153,11 @@ public slots:
 	void RemoveMacroCondition(int idx);
 	void MoveMacroConditionUp(int idx);
 	void MoveMacroConditionDown(int idx);
+	void FadeOutActionControls();
+	void FadeOutConditionControls();
+	void ResetOpacityActionControls();
+	void ResetOpacityConditionControls();
+	void HighlightControls();
 	void HighlightMatchedMacros();
 	void MacroDragDropReorder(QModelIndex, int, int, QModelIndex, int);
 
