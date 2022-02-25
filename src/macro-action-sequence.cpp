@@ -141,8 +141,10 @@ MacroActionSequenceEdit::MacroActionSequenceEdit(
 	QWidget::connect(_down, SIGNAL(clicked()), this, SLOT(Down()));
 	QWidget::connect(_continueFrom, SIGNAL(clicked()), this,
 			 SLOT(ContinueFromClicked()));
-	QWidget::connect(_macroList, SIGNAL(currentRowChanged(int)), this,
-			 SLOT(MacroSelectionChanged(int)));
+	QWidget::connect(_macroList,
+			 SIGNAL(itemDoubleClicked(QListWidgetItem *)), this,
+			 SLOT(MacroItemClicked(QListWidgetItem *)));
+
 	QWidget::connect(window(),
 			 SIGNAL(MacroRenamed(const QString &, const QString &)),
 			 this,
@@ -310,6 +312,32 @@ void MacroActionSequenceEdit::Down()
 		std::swap(_entryData->_macros[idx],
 			  _entryData->_macros[idx + 1]);
 	}
+}
+
+void MacroActionSequenceEdit::MacroItemClicked(QListWidgetItem *item)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::string macroName;
+	bool accepted = MacroSelectionDialog::AskForMacro(this, macroName);
+
+	if (!accepted || macroName.empty()) {
+		return;
+	}
+
+	MacroRef macro(macroName);
+
+	if (!macro.get()) {
+		return;
+	}
+
+	item->setText(QString::fromStdString(macroName));
+	int idx = _macroList->currentRow();
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_macros[idx] = macro;
+	SetMacroListSize();
 }
 
 void MacroActionSequenceEdit::ContinueFromClicked()

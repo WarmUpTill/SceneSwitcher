@@ -107,8 +107,6 @@ MacroActionRandomEdit::MacroActionRandomEdit(
 
 	QWidget::connect(_add, SIGNAL(clicked()), this, SLOT(AddMacro()));
 	QWidget::connect(_remove, SIGNAL(clicked()), this, SLOT(RemoveMacro()));
-	QWidget::connect(_macroList, SIGNAL(currentRowChanged(int)), this,
-			 SLOT(MacroSelectionChanged(int)));
 	QWidget::connect(window(),
 			 SIGNAL(MacroRenamed(const QString &, const QString &)),
 			 this,

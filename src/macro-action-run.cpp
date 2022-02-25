@@ -102,6 +102,8 @@ MacroActionRunEdit::MacroActionRunEdit(
 			 SLOT(RemoveArg()));
 	QWidget::connect(_argUp, SIGNAL(clicked()), this, SLOT(ArgUp()));
 	QWidget::connect(_argDown, SIGNAL(clicked()), this, SLOT(ArgDown()));
+	connect(_argList, SIGNAL(itemDoubleClicked(QListWidgetItem *)), this,
+		SLOT(ArgItemClicked(QListWidgetItem *)));
 
 	auto *entryLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -233,6 +235,33 @@ void MacroActionRunEdit::ArgDown()
 		std::lock_guard<std::mutex> lock(switcher->m);
 		_entryData->_args.move(idx, idx + 1);
 	}
+}
+
+void MacroActionRunEdit::ArgItemClicked(QListWidgetItem *item)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::string name;
+	bool accepted = AdvSSNameDialog::AskForName(
+		this,
+		obs_module_text("AdvSceneSwitcher.action.run.addArgument"),
+		obs_module_text(
+			"AdvSceneSwitcher.action.run.addArgumentDescription"),
+		name, item->text(), 170, false);
+
+	if (!accepted || name.empty()) {
+		return;
+	}
+
+	auto arg = QString::fromStdString(name);
+	QVariant v = QVariant::fromValue(arg);
+	item->setText(arg);
+	item->setData(Qt::UserRole, arg);
+	int idx = _argList->currentRow();
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_args[idx] = arg;
 }
 
 void MacroActionRunEdit::SetArgListSize()

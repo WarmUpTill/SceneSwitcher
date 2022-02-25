@@ -53,6 +53,7 @@ private slots:
 	void Remove();
 	void Up();
 	void Down();
+	void MacroItemClicked(QListWidgetItem *);
 	void ContinueFromClicked();
 	void RestartChanged(int state);
 	void UpdateStatusLine();
