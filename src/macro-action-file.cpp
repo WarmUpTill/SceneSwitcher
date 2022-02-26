@@ -87,7 +87,7 @@ MacroActionFileEdit::MacroActionFileEdit(
 	: QWidget(parent)
 {
 	_filePath = new FileSelection(FileSelection::Type::WRITE);
-	_text = new QPlainTextEdit();
+	_text = new ResizingPlainTextEdit(this);
 	_actions = new QComboBox();
 
 	populateActionSelection(_actions);
@@ -150,6 +150,9 @@ void MacroActionFileEdit::TextChanged()
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_text = _text->toPlainText().toStdString();
+
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionFileEdit::ActionChanged(int value)

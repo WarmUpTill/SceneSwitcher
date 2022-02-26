@@ -1,10 +1,10 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "resizing-text-edit.hpp"
 
 #include <QSpinBox>
 #include <QLabel>
 #include <QPushButton>
-#include <QPlainTextEdit>
 
 enum class SourceAction {
 	ENABLE,
@@ -63,7 +63,7 @@ protected:
 	QComboBox *_sources;
 	QComboBox *_actions;
 	QPushButton *_getSettings;
-	QPlainTextEdit *_settings;
+	ResizingPlainTextEdit *_settings;
 	QLabel *_warning;
 	std::shared_ptr<MacroActionSource> _entryData;
 

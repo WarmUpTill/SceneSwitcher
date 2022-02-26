@@ -262,6 +262,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/section.hpp
     src/headers/status-control.hpp
     src/headers/platform-funcs.hpp
+    src/headers/resizing-text-edit.hpp
     src/headers/utility.hpp
     src/headers/volume-control.hpp
     src/headers/version.h)
@@ -359,6 +360,7 @@ set(advanced-scene-switcher_SOURCES
     src/screenshot-helper.cpp
     src/transition-selection.cpp
     src/name-dialog.cpp
+    src/resizing-text-edit.cpp
     src/duration-control.cpp
     src/status-control.cpp
     src/section.cpp

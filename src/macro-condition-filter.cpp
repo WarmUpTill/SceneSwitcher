@@ -100,7 +100,7 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 	_conditions = new QComboBox();
 	_getSettings = new QPushButton(obs_module_text(
 		"AdvSceneSwitcher.condition.filter.getSettings"));
-	_settings = new QPlainTextEdit();
+	_settings = new ResizingPlainTextEdit(this);
 	_regex = new QCheckBox(
 		obs_module_text("AdvSceneSwitcher.condition.filter.regex"));
 
@@ -208,6 +208,9 @@ void MacroConditionFilterEdit::SettingsChanged()
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_settings = _settings->toPlainText().toStdString();
+
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionFilterEdit::RegexChanged(int state)

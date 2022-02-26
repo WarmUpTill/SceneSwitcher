@@ -1,13 +1,13 @@
 #pragma once
 #include "macro.hpp"
 #include "file-selection.hpp"
+#include "resizing-text-edit.hpp"
 
 #include <QWidget>
 #include <QComboBox>
 #include <QDateTime>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QPlainTextEdit>
 #include <QCheckBox>
 
 enum class FileType {
@@ -75,7 +75,7 @@ signals:
 protected:
 	QComboBox *_fileType;
 	FileSelection *_filePath;
-	QPlainTextEdit *_matchText;
+	ResizingPlainTextEdit *_matchText;
 	QCheckBox *_useRegex;
 	QCheckBox *_checkModificationDate;
 	QCheckBox *_checkFileContent;

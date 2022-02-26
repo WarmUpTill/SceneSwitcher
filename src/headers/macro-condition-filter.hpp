@@ -1,9 +1,9 @@
 #pragma once
 #include "macro.hpp"
+#include "resizing-text-edit.hpp"
 
 #include <QComboBox>
 #include <QPushButton>
-#include <QPlainTextEdit>
 #include <QCheckBox>
 
 enum class FilterCondition {
@@ -67,7 +67,7 @@ protected:
 	QComboBox *_filters;
 	QComboBox *_conditions;
 	QPushButton *_getSettings;
-	QPlainTextEdit *_settings;
+	ResizingPlainTextEdit *_settings;
 	QCheckBox *_regex;
 
 	std::shared_ptr<MacroConditionFilter> _entryData;

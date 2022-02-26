@@ -2,9 +2,9 @@
 #include "macro.hpp"
 #include "scene-selection.hpp"
 #include "scene-item-selection.hpp"
+#include "resizing-text-edit.hpp"
 
 #include <QSpinBox>
-#include <QPlainTextEdit>
 #include <QCheckBox>
 
 class MacroConditionSceneTransform : public MacroCondition {
@@ -61,7 +61,7 @@ protected:
 	SceneSelectionWidget *_scenes;
 	SceneItemSelectionWidget *_sources;
 	QPushButton *_getSettings;
-	QPlainTextEdit *_settings;
+	ResizingPlainTextEdit *_settings;
 	QCheckBox *_regex;
 
 	std::shared_ptr<MacroConditionSceneTransform> _entryData;

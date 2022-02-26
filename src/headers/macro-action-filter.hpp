@@ -1,7 +1,8 @@
 #pragma once
-#include <QSpinBox>
-#include <QPlainTextEdit>
 #include "macro-action-edit.hpp"
+#include "resizing-text-edit.hpp"
+
+#include <QSpinBox>
 
 enum class FilterAction {
 	ENABLE,
@@ -63,7 +64,7 @@ protected:
 	QComboBox *_filters;
 	QComboBox *_actions;
 	QPushButton *_getSettings;
-	QPlainTextEdit *_settings;
+	ResizingPlainTextEdit *_settings;
 	std::shared_ptr<MacroActionFilter> _entryData;
 
 private:

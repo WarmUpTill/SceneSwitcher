@@ -1,9 +1,9 @@
 #pragma once
 #include "macro.hpp"
+#include "resizing-text-edit.hpp"
 
 #include <QComboBox>
 #include <QPushButton>
-#include <QPlainTextEdit>
 #include <QCheckBox>
 
 enum class SourceCondition {
@@ -64,7 +64,7 @@ protected:
 	QComboBox *_sources;
 	QComboBox *_conditions;
 	QPushButton *_getSettings;
-	QPlainTextEdit *_settings;
+	ResizingPlainTextEdit *_settings;
 	QCheckBox *_regex;
 
 	std::shared_ptr<MacroConditionSource> _entryData;
