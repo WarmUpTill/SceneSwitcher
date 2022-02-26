@@ -138,7 +138,7 @@ MacroConditionFileEdit::MacroConditionFileEdit(
 {
 	_fileType = new QComboBox();
 	_filePath = new FileSelection();
-	_matchText = new QPlainTextEdit();
+	_matchText = new ResizingPlainTextEdit(this);
 	_useRegex = new QCheckBox(
 		obs_module_text("AdvSceneSwitcher.fileTab.useRegExp"));
 	_checkModificationDate = new QCheckBox(obs_module_text(
@@ -250,6 +250,9 @@ void MacroConditionFileEdit::MatchTextChanged()
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_text = _matchText->toPlainText().toUtf8().constData();
+
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionFileEdit::UseRegexChanged(int state)

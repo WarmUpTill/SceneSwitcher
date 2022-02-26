@@ -90,7 +90,7 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	_actions = new QComboBox();
 	_getSettings = new QPushButton(
 		obs_module_text("AdvSceneSwitcher.action.source.getSettings"));
-	_settings = new QPlainTextEdit();
+	_settings = new ResizingPlainTextEdit(this);
 	_warning = new QLabel(
 		obs_module_text("AdvSceneSwitcher.action.source.warning"));
 
@@ -184,6 +184,9 @@ void MacroActionSourceEdit::SettingsChanged()
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_settings = _settings->toPlainText().toStdString();
+
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionSourceEdit::SetWidgetVisibility(bool showSettings)

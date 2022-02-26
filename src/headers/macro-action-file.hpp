@@ -1,8 +1,9 @@
 #pragma once
-#include <QSpinBox>
-#include <QPlainTextEdit>
 #include "macro-action-edit.hpp"
 #include "file-selection.hpp"
+#include "resizing-text-edit.hpp"
+
+#include <QSpinBox>
 
 enum class FileAction {
 	WRITE,
@@ -57,7 +58,7 @@ signals:
 
 protected:
 	FileSelection *_filePath;
-	QPlainTextEdit *_text;
+	ResizingPlainTextEdit *_text;
 	QComboBox *_actions;
 	std::shared_ptr<MacroActionFile> _entryData;
 

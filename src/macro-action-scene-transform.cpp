@@ -111,7 +111,7 @@ MacroActionSceneTransformEdit::MacroActionSceneTransformEdit(
 	_sources = new SceneItemSelectionWidget(parent);
 	_getSettings = new QPushButton(obs_module_text(
 		"AdvSceneSwitcher.action.sceneTransform.getTransform"));
-	_settings = new QPlainTextEdit();
+	_settings = new ResizingPlainTextEdit(this);
 
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
@@ -212,4 +212,7 @@ void MacroActionSceneTransformEdit::SettingsChanged()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	auto json = _settings->toPlainText().toStdString();
 	_entryData->SetSettings(json);
+
+	adjustSize();
+	updateGeometry();
 }

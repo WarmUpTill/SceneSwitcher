@@ -2,9 +2,9 @@
 #include "macro-action-edit.hpp"
 #include "scene-selection.hpp"
 #include "scene-item-selection.hpp"
+#include "resizing-text-edit.hpp"
 
 #include <QSpinBox>
-#include <QPlainTextEdit>
 
 class MacroActionSceneTransform : public MacroAction {
 public:
@@ -61,7 +61,7 @@ protected:
 	SceneSelectionWidget *_scenes;
 	SceneItemSelectionWidget *_sources;
 	QPushButton *_getSettings;
-	QPlainTextEdit *_settings;
+	ResizingPlainTextEdit *_settings;
 	std::shared_ptr<MacroActionSceneTransform> _entryData;
 
 private:
