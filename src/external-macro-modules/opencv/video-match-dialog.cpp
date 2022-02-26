@@ -71,11 +71,8 @@ void ShowMatchDialog::CheckForMatchLoop()
 			continue;
 		}
 		auto image = MarkMatch(screenshot.image);
-		if (_stop) {
-			return;
-		}
 		QMetaObject::invokeMethod(this, "RedrawImage",
-					  Qt::BlockingQueuedConnection,
+					  Qt::QueuedConnection,
 					  Q_ARG(QImage, image));
 	}
 }
