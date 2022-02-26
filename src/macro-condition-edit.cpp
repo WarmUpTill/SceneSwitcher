@@ -458,7 +458,7 @@ void AdvSceneSwitcher::MacroConditionSelectionChanged(int idx)
 	SetSelection(conditionsList, idx);
 	SetSelection(actionsList, -1);
 
-	if (idx < 0 || idx >= macro->Conditions().size()) {
+	if (idx < 0 || (unsigned)idx >= macro->Conditions().size()) {
 		currentConditionIdx = -1;
 	} else {
 		currentConditionIdx = idx;
