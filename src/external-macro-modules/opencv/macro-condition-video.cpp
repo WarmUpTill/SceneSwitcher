@@ -268,7 +268,8 @@ static inline void populateConditionSelection(QComboBox *list)
 
 MacroConditionVideoEdit::MacroConditionVideoEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionVideo> entryData)
-	: QWidget(parent), _matchDialog(this, entryData.get())
+	: QWidget(parent),
+	  _matchDialog(this, entryData.get(), &GetSwitcher()->m)
 {
 	_videoSelection = new QComboBox();
 	_condition = new QComboBox();

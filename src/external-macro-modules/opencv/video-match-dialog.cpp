@@ -3,12 +3,16 @@
 #include "opencv-helpers.hpp"
 #include "utility.hpp"
 
+#include <condition_variable>
+
 ShowMatchDialog::ShowMatchDialog(QWidget *parent,
-				 MacroConditionVideo *conditionData)
+				 MacroConditionVideo *conditionData,
+				 std::mutex *mutex)
 	: QDialog(parent),
 	  _conditionData(conditionData),
 	  _imageLabel(new QLabel),
-	  _scrollArea(new QScrollArea)
+	  _scrollArea(new QScrollArea),
+	  _mtx(mutex)
 {
 	setWindowTitle("Advanced Scene Switcher");
 	_statusLabel = new QLabel(obs_module_text(
@@ -20,6 +24,16 @@ ShowMatchDialog::ShowMatchDialog(QWidget *parent,
 	layout->addWidget(_statusLabel);
 	layout->addWidget(_scrollArea);
 	setLayout(layout);
+
+	// This is a workaround to handle random segfaults triggered when using:
+	// QMetaObject::invokeMethod(this, "RedrawImage", -Qt::QueuedConnection,
+	//			   Q_ARG(QImage, image));
+	// from within CheckForMatchLoop().
+	// Even using BlockingQueuedConnection causes deadlocks
+	_timer.setInterval(500);
+	QWidget::connect(&_timer, &QTimer::timeout, this,
+			 &ShowMatchDialog::Resize);
+	_timer.start();
 }
 
 ShowMatchDialog::~ShowMatchDialog()
@@ -43,20 +57,24 @@ void ShowMatchDialog::ShowMatch()
 	_thread = std::thread(&ShowMatchDialog::CheckForMatchLoop, this);
 }
 
-void ShowMatchDialog::RedrawImage(QImage img)
+void ShowMatchDialog::Resize()
 {
-	_imageLabel->setPixmap(QPixmap::fromImage(img));
 	_imageLabel->adjustSize();
 }
 
 void ShowMatchDialog::CheckForMatchLoop()
 {
+	std::condition_variable cv;
 	while (!_stop) {
+		std::unique_lock<std::mutex> lock(*_mtx);
 		auto source = obs_weak_source_get_source(
 			_conditionData->_videoSource);
 		ScreenshotHelper screenshot(source);
 		obs_source_release(source);
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		cv.wait_for(lock, std::chrono::seconds(1));
+		if (_stop) {
+			return;
+		}
 		if (!screenshot.done) {
 			_statusLabel->setText(obs_module_text(
 				"AdvSceneSwitcher.condition.video.screenshotFail"));
@@ -71,9 +89,7 @@ void ShowMatchDialog::CheckForMatchLoop()
 			continue;
 		}
 		auto image = MarkMatch(screenshot.image);
-		QMetaObject::invokeMethod(this, "RedrawImage",
-					  Qt::QueuedConnection,
-					  Q_ARG(QImage, image));
+		_imageLabel->setPixmap(QPixmap::fromImage(screenshot.image));
 	}
 }
 
