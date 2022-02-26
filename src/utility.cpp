@@ -912,6 +912,7 @@ QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
 						 [animation] {
 							 animation->start();
 						 });
+				timer->setSingleShot(true);
 				timer->start(1000);
 			});
 		animation->start();
