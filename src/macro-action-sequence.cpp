@@ -12,7 +12,7 @@ bool MacroActionSequence::_registered = MacroActionFactory::Register(
 int getNextUnpausedMacroIdx(std::vector<MacroRef> &macros, int startIdx)
 {
 	for (; (int)macros.size() > startIdx; ++startIdx) {
-		if (!macros[startIdx]->Paused()) {
+		if (macros[startIdx].get() && !macros[startIdx]->Paused()) {
 			return startIdx;
 		}
 	}
