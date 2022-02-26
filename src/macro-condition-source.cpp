@@ -221,4 +221,7 @@ void MacroConditionSourceEdit::UpdateEntryData()
 	_regex->setChecked(_entryData->_regex);
 	SetSettingsSelectionVisible(_entryData->_condition ==
 				    SourceCondition::SETTINGS);
+
+	adjustSize();
+	updateGeometry();
 }

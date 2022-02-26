@@ -161,6 +161,9 @@ void MacroActionSceneTransformEdit::UpdateEntryData()
 	_scenes->SetScene(_entryData->_scene);
 	_sources->SetSceneItem(_entryData->_source);
 	_settings->setPlainText(formatJsonString(_entryData->GetSettings()));
+
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionSceneTransformEdit::SceneChanged(const SceneSelection &s)
