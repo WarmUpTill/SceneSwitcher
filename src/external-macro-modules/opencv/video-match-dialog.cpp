@@ -60,12 +60,14 @@ void ShowMatchDialog::CheckForMatchLoop()
 		if (!screenshot.done) {
 			_statusLabel->setText(obs_module_text(
 				"AdvSceneSwitcher.condition.video.screenshotFail"));
+			_imageLabel->setPixmap(QPixmap());
 			continue;
 		}
 		if (screenshot.image.width() == 0 ||
 		    screenshot.image.height() == 0) {
 			_statusLabel->setText(obs_module_text(
 				"AdvSceneSwitcher.condition.video.screenshotEmpty"));
+			_imageLabel->setPixmap(QPixmap());
 			continue;
 		}
 		auto image = MarkMatch(screenshot.image);
