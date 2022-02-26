@@ -134,6 +134,9 @@ void MacroConditionSceneTransformEdit::UpdateEntryData()
 	_sources->SetSceneItem(_entryData->_source);
 	_regex->setChecked(_entryData->_regex);
 	_settings->setPlainText(QString::fromStdString(_entryData->_settings));
+
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionSceneTransformEdit::SceneChanged(const SceneSelection &s)

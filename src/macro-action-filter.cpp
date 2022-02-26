@@ -153,6 +153,9 @@ void MacroActionFilterEdit::UpdateEntryData()
 		GetWeakSourceName(_entryData->_filter).c_str());
 	_settings->setPlainText(QString::fromStdString(_entryData->_settings));
 	SetWidgetVisibility(_entryData->_action == FilterAction::SETTINGS);
+
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionFilterEdit::SourceChanged(const QString &text)

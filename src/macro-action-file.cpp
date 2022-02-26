@@ -128,6 +128,9 @@ void MacroActionFileEdit::UpdateEntryData()
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_filePath->SetPath(QString::fromStdString(_entryData->_file));
 	_text->setPlainText(QString::fromStdString(_entryData->_text));
+
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionFileEdit::PathChanged(const QString &text)

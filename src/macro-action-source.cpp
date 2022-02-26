@@ -141,6 +141,9 @@ void MacroActionSourceEdit::UpdateEntryData()
 		GetWeakSourceName(_entryData->_source).c_str());
 	_settings->setPlainText(QString::fromStdString(_entryData->_settings));
 	SetWidgetVisibility(_entryData->_action == SourceAction::SETTINGS);
+
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionSourceEdit::SourceChanged(const QString &text)

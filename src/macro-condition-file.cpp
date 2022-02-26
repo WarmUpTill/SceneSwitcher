@@ -208,6 +208,9 @@ void MacroConditionFileEdit::UpdateEntryData()
 	_useRegex->setChecked(_entryData->_useRegex);
 	_checkModificationDate->setChecked(_entryData->_useTime);
 	_checkFileContent->setChecked(_entryData->_onlyMatchIfChanged);
+
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionFileEdit::FileTypeChanged(int index)

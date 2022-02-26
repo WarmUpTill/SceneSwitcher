@@ -247,4 +247,7 @@ void MacroConditionFilterEdit::UpdateEntryData()
 	_regex->setChecked(_entryData->_regex);
 	SetSettingsSelectionVisible(_entryData->_condition ==
 				    FilterCondition::SETTINGS);
+
+	adjustSize();
+	updateGeometry();
 }
