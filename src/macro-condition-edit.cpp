@@ -282,18 +282,20 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 		id = temp.GetId();
 		logic = LogicType::ROOT_NONE;
 	}
-	std::lock_guard<std::mutex> lock(switcher->m);
-	auto cond = macro->Conditions().emplace(
-		macro->Conditions().begin() + idx,
-		MacroConditionFactory::Create(id, macro));
-	if (idx - 1 >= 0) {
-		auto data = obs_data_create();
-		macro->Conditions().at(idx - 1)->Save(data);
-		macro->Conditions().at(idx)->Load(data);
-		obs_data_release(data);
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		auto cond = macro->Conditions().emplace(
+			macro->Conditions().begin() + idx,
+			MacroConditionFactory::Create(id, macro));
+		if (idx - 1 >= 0) {
+			auto data = obs_data_create();
+			macro->Conditions().at(idx - 1)->Save(data);
+			macro->Conditions().at(idx)->Load(data);
+			obs_data_release(data);
+		}
+		(*cond)->SetLogicType(logic);
+		macro->UpdateConditionIndices();
 	}
-	(*cond)->SetLogicType(logic);
-	macro->UpdateConditionIndices();
 
 	clearLayout(conditionsList->ContentLayout(), idx);
 	PopulateMacroConditions(*macro, idx);
@@ -334,13 +336,15 @@ void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
-	macro->Conditions().erase(macro->Conditions().begin() + idx);
-	macro->UpdateConditionIndices();
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		macro->Conditions().erase(macro->Conditions().begin() + idx);
+		macro->UpdateConditionIndices();
 
-	if (idx == 0 && macro->Conditions().size() > 0) {
-		auto newRoot = macro->Conditions().at(0);
-		newRoot->SetLogicType(LogicType::ROOT_NONE);
+		if (idx == 0 && macro->Conditions().size() > 0) {
+			auto newRoot = macro->Conditions().at(0);
+			newRoot->SetLogicType(LogicType::ROOT_NONE);
+		}
 	}
 
 	clearLayout(conditionsList->ContentLayout(), idx);

@@ -156,16 +156,18 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 		MacroActionSwitchScene temp(nullptr);
 		id = temp.GetId();
 	}
-	std::lock_guard<std::mutex> lock(switcher->m);
-	macro->Actions().emplace(macro->Actions().begin() + idx,
-				 MacroActionFactory::Create(id, macro));
-	if (idx - 1 >= 0) {
-		auto data = obs_data_create();
-		macro->Actions().at(idx - 1)->Save(data);
-		macro->Actions().at(idx)->Load(data);
-		obs_data_release(data);
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		macro->Actions().emplace(macro->Actions().begin() + idx,
+					 MacroActionFactory::Create(id, macro));
+		if (idx - 1 >= 0) {
+			auto data = obs_data_create();
+			macro->Actions().at(idx - 1)->Save(data);
+			macro->Actions().at(idx)->Load(data);
+			obs_data_release(data);
+		}
+		macro->UpdateActionIndices();
 	}
-	macro->UpdateActionIndices();
 
 	clearLayout(actionsList->ContentLayout(), idx);
 	PopulateMacroActions(*macro, idx);
@@ -206,11 +208,13 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
-	macro->Actions().erase(macro->Actions().begin() + idx);
-	switcher->abortMacroWait = true;
-	switcher->macroWaitCv.notify_all();
-	macro->UpdateActionIndices();
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		macro->Actions().erase(macro->Actions().begin() + idx);
+		switcher->abortMacroWait = true;
+		switcher->macroWaitCv.notify_all();
+		macro->UpdateActionIndices();
+	}
 
 	clearLayout(actionsList->ContentLayout(), idx);
 	PopulateMacroActions(*macro, idx);
