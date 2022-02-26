@@ -316,7 +316,7 @@ void AdvSceneSwitcher::MacroActionSelectionChanged(int idx)
 	SetSelection(actionsList, idx);
 	SetSelection(conditionsList, -1);
 
-	if (idx < 0 || idx >= macro->Actions().size()) {
+	if (idx < 0 || (unsigned)idx >= macro->Actions().size()) {
 		currentActionIdx = -1;
 	} else {
 		currentActionIdx = idx;
