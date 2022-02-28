@@ -30,6 +30,7 @@ Macro::Macro(const std::string &name)
 Macro::~Macro()
 {
 	_die = true;
+	_stop = true;
 	if (_thread.joinable()) {
 		_thread.join();
 	}

@@ -111,7 +111,6 @@ struct SwitcherData {
 	StartupBehavior startupBehavior = PERSIST;
 	AutoStartEvent autoStartEvent = AutoStartEvent::NEVER;
 
-	std::vector<std::thread> audioHelperThreads;
 	std::atomic_bool masterAudioFadeActive = {false};
 	std::unordered_map<std::string, std::atomic_bool> activeAudioFades;
 

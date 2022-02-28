@@ -16,6 +16,7 @@ enum class AudioAction {
 class MacroActionAudio : public MacroAction {
 public:
 	MacroActionAudio(Macro *m) : MacroAction(m) {}
+	virtual ~MacroActionAudio();
 	bool PerformAction();
 	void LogAction();
 	bool Save(obs_data_t *obj);
@@ -32,8 +33,15 @@ public:
 	int _volume = 0;
 	bool _fade = false;
 	Duration _duration;
+	bool _wait = false;
 
 private:
+	void StartSourceFade();
+	void StartMasterFade();
+	void FadeSourceVolume();
+	void FadeMasterVolume();
+	std::thread _fadeThread;
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -61,6 +69,7 @@ private slots:
 	void VolumeChanged(int value);
 	void FadeChanged(int value);
 	void DurationChanged(double seconds);
+	void WaitChanged(int value);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -70,6 +79,7 @@ protected:
 	QSpinBox *_volumePercent;
 	QCheckBox *_fade;
 	DurationSelection *_duration;
+	QCheckBox *_wait;
 	QHBoxLayout *_fadeLayout;
 	std::shared_ptr<MacroActionAudio> _entryData;
 

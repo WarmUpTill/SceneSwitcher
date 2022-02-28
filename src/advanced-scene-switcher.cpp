@@ -437,13 +437,6 @@ void SwitcherData::Stop()
 	server.stop();
 	client.disconnect();
 
-	for (auto &t : audioHelperThreads) {
-		if (t.joinable()) {
-			t.join();
-		}
-	}
-	audioHelperThreads.clear();
-
 	if (showSystemTrayNotifications) {
 		DisplayTrayMessage(
 			obs_module_text("AdvSceneSwitcher.pluginName"),

@@ -88,6 +88,7 @@ public:
 	bool MatchOnChange() { return _matchOnChange; }
 	int GetCount() { return _count; };
 	void ResetCount() { _count = 0; };
+	bool GetStop() { return _stop; }
 	void Stop() { _stop = true; }
 	std::deque<std::shared_ptr<MacroCondition>> &Conditions()
 	{
