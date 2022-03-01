@@ -180,6 +180,15 @@ void Macro::SetPaused(bool pause)
 	_paused = pause;
 }
 
+void Macro::Stop()
+{
+	_stop = true;
+	switcher->macroWaitCv.notify_all();
+	if (_thread.joinable()) {
+		_thread.join();
+	}
+}
+
 void Macro::UpdateActionIndices()
 {
 	int idx = 0;
