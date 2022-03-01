@@ -89,7 +89,7 @@ public:
 	int GetCount() { return _count; };
 	void ResetCount() { _count = 0; };
 	bool GetStop() { return _stop; }
-	void Stop() { _stop = true; }
+	void Stop();
 	std::deque<std::shared_ptr<MacroCondition>> &Conditions()
 	{
 		return _conditions;

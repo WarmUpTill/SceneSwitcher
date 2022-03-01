@@ -21,9 +21,9 @@ static std::default_random_engine re(rd());
 
 bool MacroActionWait::PerformAction()
 {
-	double sleep_duration;
+	double sleepDuration;
 	if (_waitType == WaitType::FIXED) {
-		sleep_duration = _duration.seconds;
+		sleepDuration = _duration.seconds;
 	} else {
 		double min = (_duration.seconds < _duration2.seconds)
 				     ? _duration.seconds
@@ -32,17 +32,23 @@ bool MacroActionWait::PerformAction()
 				     ? _duration2.seconds
 				     : _duration.seconds;
 		std::uniform_real_distribution<double> unif(min, max);
-		sleep_duration = unif(re);
+		sleepDuration = unif(re);
 	}
 	vblog(LOG_INFO, "perform action wait with duration of %f",
-	      sleep_duration);
+	      sleepDuration);
 
-	std::unique_lock<std::mutex> lock(switcher->m);
+	auto time = std::chrono::high_resolution_clock::now() +
+		    std::chrono::milliseconds((int)(sleepDuration * 1000));
+	auto macro = GetMacro();
 	switcher->abortMacroWait = false;
-	switcher->macroWaitCv.wait_for(
-		lock,
-		std::chrono::milliseconds((long long)(sleep_duration * 1000)),
-		[] { return switcher->abortMacroWait.load(); });
+	std::unique_lock<std::mutex> lock(switcher->m);
+	while (!switcher->abortMacroWait && !macro->GetStop()) {
+		if (switcher->macroWaitCv.wait_until(lock, time) ==
+		    std::cv_status::timeout) {
+			break;
+		}
+	}
+
 	return !switcher->abortMacroWait;
 }
 
