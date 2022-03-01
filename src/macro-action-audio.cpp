@@ -18,13 +18,6 @@ const static std::map<AudioAction, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.audio.type.masterVolume"},
 };
 
-MacroActionAudio::~MacroActionAudio()
-{
-	if (_fadeThread.joinable()) {
-		_fadeThread.join();
-	}
-}
-
 constexpr auto fadeInterval = std::chrono::milliseconds(100);
 constexpr float minFade = 0.000001f;
 
@@ -103,12 +96,8 @@ void MacroActionAudio::StartSourceFade()
 	if (_wait) {
 		FadeSourceVolume();
 	} else {
-		if (_fadeThread.joinable()) {
-			return;
-		}
-		_fadeThread =
-			std::thread(&MacroActionAudio::FadeSourceVolume, this);
-		_fadeThread.detach();
+		GetMacro()->AddHelperThread(
+			std::thread(&MacroActionAudio::FadeSourceVolume, this));
 	}
 }
 
@@ -124,12 +113,8 @@ void MacroActionAudio::StartMasterFade()
 	if (_wait) {
 		FadeMasterVolume();
 	} else {
-		if (_fadeThread.joinable()) {
-			return;
-		}
-		_fadeThread =
-			std::thread(&MacroActionAudio::FadeMasterVolume, this);
-		_fadeThread.detach();
+		GetMacro()->AddHelperThread(
+			std::thread(&MacroActionAudio::FadeMasterVolume, this));
 	}
 }
 

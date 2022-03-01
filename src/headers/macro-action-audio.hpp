@@ -16,7 +16,6 @@ enum class AudioAction {
 class MacroActionAudio : public MacroAction {
 public:
 	MacroActionAudio(Macro *m) : MacroAction(m) {}
-	virtual ~MacroActionAudio();
 	bool PerformAction();
 	void LogAction();
 	bool Save(obs_data_t *obj);
@@ -40,7 +39,6 @@ private:
 	void StartMasterFade();
 	void FadeSourceVolume();
 	void FadeMasterVolume();
-	std::thread _fadeThread;
 
 	static bool _registered;
 	static const std::string id;
