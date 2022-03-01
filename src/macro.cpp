@@ -30,10 +30,7 @@ Macro::Macro(const std::string &name)
 Macro::~Macro()
 {
 	_die = true;
-	_stop = true;
-	if (_thread.joinable()) {
-		_thread.join();
-	}
+	Stop();
 	ClearHotkeys();
 }
 
@@ -126,10 +123,10 @@ bool Macro::PerformActions(bool forceParallel, bool ignorePause)
 	_done = false;
 	bool ret = true;
 	if (_runInParallel || forceParallel) {
-		if (_thread.joinable()) {
-			_thread.join();
+		if (_backgroundThread.joinable()) {
+			_backgroundThread.join();
 		}
-		_thread = std::thread(
+		_backgroundThread = std::thread(
 			[this, ignorePause] { RunActions(ignorePause); });
 	} else {
 		RunActions(ret, ignorePause);
@@ -159,8 +156,7 @@ void Macro::RunActions(bool &retVal, bool ignorePause)
 		ret = ret && a->PerformAction();
 		if (!ret || (_paused && !ignorePause) || _stop || _die) {
 			retVal = ret;
-			_done = true;
-			return;
+			break;
 		}
 	}
 	_done = true;
@@ -180,12 +176,28 @@ void Macro::SetPaused(bool pause)
 	_paused = pause;
 }
 
+void Macro::AddHelperThread(std::thread &&newThread)
+{
+	for (int i = 0; i < _helperThreads.size(); i++) {
+		if (!_helperThreads[i].joinable()) {
+			_helperThreads[i] = std::move(newThread);
+			return;
+		}
+	}
+	_helperThreads.push_back(std::move(newThread));
+}
+
 void Macro::Stop()
 {
 	_stop = true;
 	switcher->macroWaitCv.notify_all();
-	if (_thread.joinable()) {
-		_thread.join();
+	for (auto &t : _helperThreads) {
+		if (t.joinable()) {
+			t.join();
+		}
+	}
+	if (_backgroundThread.joinable()) {
+		_backgroundThread.join();
 	}
 }
 

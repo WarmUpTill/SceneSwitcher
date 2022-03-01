@@ -88,6 +88,7 @@ public:
 	bool MatchOnChange() { return _matchOnChange; }
 	int GetCount() { return _count; };
 	void ResetCount() { _count = 0; };
+	void AddHelperThread(std::thread &&);
 	bool GetStop() { return _stop; }
 	void Stop();
 	std::deque<std::shared_ptr<MacroCondition>> &Conditions()
@@ -136,7 +137,8 @@ private:
 	bool _die = false;
 	bool _stop = false;
 	bool _done = true;
-	std::thread _thread;
+	std::thread _backgroundThread;
+	std::vector<std::thread> _helperThreads;
 };
 
 Macro *GetMacroByName(const char *name);
