@@ -18,6 +18,12 @@ const static std::map<AudioAction, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.audio.type.masterVolume"},
 };
 
+const static std::map<FadeType, std::string> fadeTypes = {
+	{FadeType::DURATION,
+	 "AdvSceneSwitcher.action.audio.fade.type.duration"},
+	{FadeType::RATE, "AdvSceneSwitcher.action.audio.fade.type.rate"},
+};
+
 constexpr auto fadeInterval = std::chrono::milliseconds(100);
 constexpr float minFade = 0.000001f;
 
@@ -31,18 +37,29 @@ void MacroActionAudio::FadeSourceVolume()
 	float curVol = obs_source_get_volume(s);
 	obs_source_release(s);
 	bool volIncrease = curVol <= vol;
-	int nrSteps = _duration.seconds * 1000 / fadeInterval.count();
 	float volDiff = (volIncrease) ? vol - curVol : curVol - vol;
-	float volStep = volDiff / nrSteps;
+	int nrSteps = 0;
+	float volStep = 0.;
+	if (_fadeType == FadeType::DURATION) {
+		nrSteps = _duration.seconds * 1000 / fadeInterval.count();
+		volStep = volDiff / nrSteps;
+	} else {
+		volStep = _rate / 1000.0f;
+		nrSteps = volDiff / volStep;
+	}
 
-	if (volStep < minFade) {
+	if (volStep < minFade || nrSteps <= 1) {
+		auto s = obs_weak_source_get_source(_audioSource);
+		obs_source_set_volume(s, vol);
 		switcher->activeAudioFades[GetWeakSourceName(_audioSource)] =
 			false;
+		obs_source_release(s);
 		return;
 	}
 
 	auto macro = GetMacro();
-	for (int step = 0; step < nrSteps && !macro->GetStop(); ++step) {
+	int step = 0;
+	for (; step < nrSteps && !macro->GetStop(); ++step) {
 		auto s = obs_weak_source_get_source(_audioSource);
 		if (!s) {
 			return;
@@ -53,6 +70,13 @@ void MacroActionAudio::FadeSourceVolume()
 		obs_source_release(s);
 	}
 
+	// As a final step set desired volume once again in case floating-point
+	// precision errors compounded to a noticeable error
+	if (step == nrSteps) {
+		s = obs_weak_source_get_source(_audioSource);
+		obs_source_set_volume(s, vol);
+		obs_source_release(s);
+	}
 	switcher->activeAudioFades[GetWeakSourceName(_audioSource)] = false;
 }
 void MacroActionAudio::FadeMasterVolume()
@@ -60,22 +84,36 @@ void MacroActionAudio::FadeMasterVolume()
 	float vol = (float)_volume / 100.0f;
 	float curVol = obs_get_master_volume();
 	bool volIncrease = curVol <= vol;
-	int nrSteps = _duration.seconds * 1000 / fadeInterval.count();
 	float volDiff = (volIncrease) ? vol - curVol : curVol - vol;
-	float volStep = volDiff / nrSteps;
+	int nrSteps = 0;
+	float volStep = 0.;
+	if (_fadeType == FadeType::DURATION) {
+		nrSteps = _duration.seconds * 1000 / fadeInterval.count();
+		volStep = volDiff / nrSteps;
+	} else {
+		volStep = _rate / 100.0f;
+		nrSteps = volDiff / volStep;
+	}
 
-	if (volStep < minFade) {
+	if (volStep < minFade || nrSteps <= 1) {
+		obs_set_master_volume(vol);
 		switcher->masterAudioFadeActive = false;
 		return;
 	}
 
 	auto macro = GetMacro();
-	for (int step = 0; step < nrSteps && !macro->GetStop(); ++step) {
+	int step = 0;
+	for (; step < nrSteps && !macro->GetStop(); ++step) {
 		curVol = (volIncrease) ? curVol + volStep : curVol - volStep;
 		obs_set_master_volume(curVol);
 		std::this_thread::sleep_for(fadeInterval);
 	}
 
+	// As a final step set desired volume once again in case floating-point
+	// precision errors compounded to a noticeable error
+	if (step == nrSteps) {
+		obs_set_master_volume(vol);
+	}
 	switcher->masterAudioFadeActive = false;
 }
 
@@ -172,7 +210,9 @@ bool MacroActionAudio::Save(obs_data_t *obj)
 			    GetWeakSourceName(_audioSource).c_str());
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	obs_data_set_int(obj, "volume", _volume);
+	obs_data_set_double(obj, "rate", _rate);
 	obs_data_set_bool(obj, "fade", _fade);
+	obs_data_set_int(obj, "fadeType", static_cast<int>(_fadeType));
 	obs_data_set_bool(obj, "wait", _wait);
 	return true;
 }
@@ -185,11 +225,18 @@ bool MacroActionAudio::Load(obs_data_t *obj)
 	_audioSource = GetWeakSourceByName(audioSourceName);
 	_action = static_cast<AudioAction>(obs_data_get_int(obj, "action"));
 	_volume = obs_data_get_int(obj, "volume");
+	_rate = obs_data_get_double(obj, "rate");
 	_fade = obs_data_get_bool(obj, "fade");
 	if (obs_data_has_user_value(obj, "wait")) {
 		_wait = obs_data_get_bool(obj, "wait");
 	} else {
 		_wait = false;
+	}
+	if (obs_data_has_user_value(obj, "fadeType")) {
+		_fadeType = static_cast<FadeType>(
+			obs_data_get_int(obj, "fadeType"));
+	} else {
+		_fadeType = FadeType::DURATION;
 	}
 	return true;
 }
@@ -209,22 +256,36 @@ static inline void populateActionSelection(QComboBox *list)
 	}
 }
 
+static inline void populateFadeTypeSelection(QComboBox *list)
+{
+	for (auto entry : fadeTypes) {
+		list->addItem(obs_module_text(entry.second.c_str()));
+	}
+}
+
 MacroActionAudioEdit::MacroActionAudioEdit(
 	QWidget *parent, std::shared_ptr<MacroActionAudio> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _audioSources(new QComboBox),
+	  _actions(new QComboBox),
+	  _volumePercent(new QSpinBox),
+	  _fade(new QCheckBox),
+	  _wait(new QCheckBox),
+	  _duration(new DurationSelection(parent, false)),
+	  _rate(new QDoubleSpinBox),
+	  _fadeTypes(new QComboBox)
 {
-	_audioSources = new QComboBox();
-	_actions = new QComboBox();
-	_volumePercent = new QSpinBox();
 	_volumePercent->setMinimum(0);
 	_volumePercent->setMaximum(2000);
 	_volumePercent->setSuffix("%");
-	_fade = new QCheckBox();
-	_wait = new QCheckBox();
-	_duration = new DurationSelection(parent, false);
+
+	_rate->setMinimum(0.01);
+	_rate->setMaximum(999.);
+	_rate->setSuffix("%");
 
 	populateActionSelection(_actions);
 	populateAudioSelection(_audioSources);
+	populateFadeTypeSelection(_fadeTypes);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
@@ -237,20 +298,30 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 			 SLOT(FadeChanged(int)));
 	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
 			 SLOT(DurationChanged(double)));
+	QWidget::connect(_rate, SIGNAL(valueChanged(double)), this,
+			 SLOT(RateChanged(double)));
 	QWidget::connect(_wait, SIGNAL(stateChanged(int)), this,
 			 SLOT(WaitChanged(int)));
+	QWidget::connect(_fadeTypes, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(FadeTypeChanged(int)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{audioSources}}", _audioSources}, {"{{actions}}", _actions},
-		{"{{volume}}", _volumePercent},      {"{{fade}}", _fade},
-		{"{{duration}}", _duration},         {"{{wait}}", _wait},
+		{"{{audioSources}}", _audioSources},
+		{"{{actions}}", _actions},
+		{"{{volume}}", _volumePercent},
+		{"{{fade}}", _fade},
+		{"{{duration}}", _duration},
+		{"{{rate}}", _rate},
+		{"{{wait}}", _wait},
+		{"{{fadeTypes}}", _fadeTypes},
 	};
 	QHBoxLayout *entryLayout = new QHBoxLayout;
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.audio.entry"),
 		     entryLayout, widgetPlaceholders);
 	_fadeLayout = new QHBoxLayout;
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.audio.fade"),
-		     _fadeLayout, widgetPlaceholders);
+	placeWidgets(
+		obs_module_text("AdvSceneSwitcher.action.audio.fade.duration"),
+		_fadeLayout, widgetPlaceholders);
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(entryLayout);
 	mainLayout->addLayout(_fadeLayout);
@@ -276,6 +347,32 @@ void MacroActionAudioEdit::SetWidgetVisibility()
 {
 	_volumePercent->setVisible(hasVolumeControl(_entryData->_action));
 	_audioSources->setVisible(hasSourceControl(_entryData->_action));
+
+	_fadeLayout->removeWidget(_fade);
+	_fadeLayout->removeWidget(_fadeTypes);
+	_fadeLayout->removeWidget(_duration);
+	_fadeLayout->removeWidget(_rate);
+	_fadeLayout->removeWidget(_wait);
+	clearLayout(_fadeLayout);
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{fade}}", _fade},           {"{{duration}}", _duration},
+		{"{{rate}}", _rate},           {"{{wait}}", _wait},
+		{"{{fadeTypes}}", _fadeTypes},
+	};
+	if (_entryData->_fadeType == FadeType::DURATION) {
+		placeWidgets(
+			obs_module_text(
+				"AdvSceneSwitcher.action.audio.fade.duration"),
+			_fadeLayout, widgetPlaceholders);
+	} else {
+		placeWidgets(obs_module_text(
+				     "AdvSceneSwitcher.action.audio.fade.rate"),
+			     _fadeLayout, widgetPlaceholders);
+	}
+
+	_duration->setVisible(_entryData->_fadeType == FadeType::DURATION);
+	_rate->setVisible(_entryData->_fadeType == FadeType::RATE);
+
 	setLayoutVisible(_fadeLayout, hasVolumeControl(_entryData->_action));
 	adjustSize();
 }
@@ -292,7 +389,9 @@ void MacroActionAudioEdit::UpdateEntryData()
 	_volumePercent->setValue(_entryData->_volume);
 	_fade->setChecked(_entryData->_fade);
 	_duration->SetDuration(_entryData->_duration);
+	_rate->setValue(_entryData->_rate);
 	_wait->setChecked(_entryData->_wait);
+	_fadeTypes->setCurrentIndex(static_cast<int>(_entryData->_fadeType));
 	SetWidgetVisibility();
 }
 
@@ -349,6 +448,16 @@ void MacroActionAudioEdit::DurationChanged(double seconds)
 	_entryData->_duration.seconds = seconds;
 }
 
+void MacroActionAudioEdit::RateChanged(double value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_rate = value;
+}
+
 void MacroActionAudioEdit::WaitChanged(int value)
 {
 	if (_loading || !_entryData) {
@@ -357,4 +466,15 @@ void MacroActionAudioEdit::WaitChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_wait = value;
+}
+
+void MacroActionAudioEdit::FadeTypeChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_fadeType = static_cast<FadeType>(value);
+	SetWidgetVisibility();
 }
