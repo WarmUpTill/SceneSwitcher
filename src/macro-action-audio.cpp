@@ -54,6 +54,20 @@ bool MacroActionAudio::FadeActive()
 	return active;
 }
 
+std::atomic_int *MacroActionAudio::GetFadeIdPtr()
+{
+
+	if (_action == AudioAction::SOURCE_VOLUME) {
+		auto it = switcher->activeAudioFades.find(
+			GetWeakSourceName(_audioSource));
+		if (it == switcher->activeAudioFades.end()) {
+			return nullptr;
+		}
+		return &it->second.id;
+	}
+	return &switcher->masterAudioFade.id;
+}
+
 void MacroActionAudio::SetVolume(float vol)
 {
 	if (_action == AudioAction::SOURCE_VOLUME) {
@@ -105,7 +119,10 @@ void MacroActionAudio::FadeVolume()
 
 	auto macro = GetMacro();
 	int step = 0;
-	for (; step < nrSteps && !macro->GetStop(); ++step) {
+	auto fadeId = GetFadeIdPtr();
+	int expectedFadeId = ++(*fadeId);
+	for (; step < nrSteps && !macro->GetStop() && expectedFadeId == *fadeId;
+	     ++step) {
 		curVol = (volIncrease) ? curVol + volStep : curVol - volStep;
 		SetVolume(curVol);
 		std::this_thread::sleep_for(fadeInterval);
@@ -126,7 +143,7 @@ void MacroActionAudio::StartFade()
 		return;
 	}
 
-	if (FadeActive()) {
+	if (FadeActive() && !_abortActiveFade) {
 		blog(LOG_WARNING,
 		     "Audio fade for volume of %s already active! New fade request will be ignored!",
 		     (_action == AudioAction::SOURCE_VOLUME)
@@ -196,6 +213,7 @@ bool MacroActionAudio::Save(obs_data_t *obj)
 	obs_data_set_bool(obj, "fade", _fade);
 	obs_data_set_int(obj, "fadeType", static_cast<int>(_fadeType));
 	obs_data_set_bool(obj, "wait", _wait);
+	obs_data_set_bool(obj, "abortActiveFade", _abortActiveFade);
 	return true;
 }
 
@@ -219,6 +237,11 @@ bool MacroActionAudio::Load(obs_data_t *obj)
 			obs_data_get_int(obj, "fadeType"));
 	} else {
 		_fadeType = FadeType::DURATION;
+	}
+	if (obs_data_has_user_value(obj, "abortActiveFade")) {
+		_abortActiveFade = obs_data_get_bool(obj, "abortActiveFade");
+	} else {
+		_abortActiveFade = false;
 	}
 	return true;
 }
@@ -252,10 +275,15 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	  _actions(new QComboBox),
 	  _volumePercent(new QSpinBox),
 	  _fade(new QCheckBox),
-	  _wait(new QCheckBox),
+	  _wait(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.action.audio.fade.wait"))),
+	  _abortActiveFade(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.action.audio.fade.abort"))),
 	  _duration(new DurationSelection(parent, false)),
 	  _rate(new QDoubleSpinBox),
-	  _fadeTypes(new QComboBox)
+	  _fadeTypes(new QComboBox),
+	  _fadeTypeLayout(new QHBoxLayout),
+	  _fadeOptionsLayout(new QVBoxLayout)
 {
 	_volumePercent->setMinimum(0);
 	_volumePercent->setMaximum(2000);
@@ -284,6 +312,8 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 			 SLOT(RateChanged(double)));
 	QWidget::connect(_wait, SIGNAL(stateChanged(int)), this,
 			 SLOT(WaitChanged(int)));
+	QWidget::connect(_abortActiveFade, SIGNAL(stateChanged(int)), this,
+			 SLOT(AbortActiveFadeChanged(int)));
 	QWidget::connect(_fadeTypes, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(FadeTypeChanged(int)));
 
@@ -295,18 +325,24 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 		{"{{duration}}", _duration},
 		{"{{rate}}", _rate},
 		{"{{wait}}", _wait},
+		{"{{abortActiveFade}}", _abortActiveFade},
 		{"{{fadeTypes}}", _fadeTypes},
 	};
 	QHBoxLayout *entryLayout = new QHBoxLayout;
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.audio.entry"),
 		     entryLayout, widgetPlaceholders);
-	_fadeLayout = new QHBoxLayout;
+	_fadeTypeLayout = new QHBoxLayout;
 	placeWidgets(
 		obs_module_text("AdvSceneSwitcher.action.audio.fade.duration"),
-		_fadeLayout, widgetPlaceholders);
+		_fadeTypeLayout, widgetPlaceholders);
+
+	_fadeOptionsLayout->addLayout(_fadeTypeLayout);
+	_fadeOptionsLayout->addWidget(_abortActiveFade);
+	_fadeOptionsLayout->addWidget(_wait);
+
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(entryLayout);
-	mainLayout->addLayout(_fadeLayout);
+	mainLayout->addLayout(_fadeOptionsLayout);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -330,32 +366,41 @@ void MacroActionAudioEdit::SetWidgetVisibility()
 	_volumePercent->setVisible(hasVolumeControl(_entryData->_action));
 	_audioSources->setVisible(hasSourceControl(_entryData->_action));
 
-	_fadeLayout->removeWidget(_fade);
-	_fadeLayout->removeWidget(_fadeTypes);
-	_fadeLayout->removeWidget(_duration);
-	_fadeLayout->removeWidget(_rate);
-	_fadeLayout->removeWidget(_wait);
-	clearLayout(_fadeLayout);
+	_fadeTypes->setDisabled(!_entryData->_fade);
+	_wait->setDisabled(!_entryData->_fade);
+	_abortActiveFade->setDisabled(!_entryData->_fade);
+	_duration->setDisabled(!_entryData->_fade);
+	_rate->setDisabled(!_entryData->_fade);
+
+	_fadeTypeLayout->removeWidget(_fade);
+	_fadeTypeLayout->removeWidget(_fadeTypes);
+	_fadeTypeLayout->removeWidget(_duration);
+	_fadeTypeLayout->removeWidget(_rate);
+	clearLayout(_fadeTypeLayout);
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{fade}}", _fade},           {"{{duration}}", _duration},
-		{"{{rate}}", _rate},           {"{{wait}}", _wait},
+		{"{{fade}}", _fade},
+		{"{{duration}}", _duration},
+		{"{{rate}}", _rate},
 		{"{{fadeTypes}}", _fadeTypes},
 	};
 	if (_entryData->_fadeType == FadeType::DURATION) {
 		placeWidgets(
 			obs_module_text(
 				"AdvSceneSwitcher.action.audio.fade.duration"),
-			_fadeLayout, widgetPlaceholders);
+			_fadeTypeLayout, widgetPlaceholders);
 	} else {
 		placeWidgets(obs_module_text(
 				     "AdvSceneSwitcher.action.audio.fade.rate"),
-			     _fadeLayout, widgetPlaceholders);
+			     _fadeTypeLayout, widgetPlaceholders);
 	}
 
 	_duration->setVisible(_entryData->_fadeType == FadeType::DURATION);
 	_rate->setVisible(_entryData->_fadeType == FadeType::RATE);
 
-	setLayoutVisible(_fadeLayout, hasVolumeControl(_entryData->_action));
+	setLayoutVisible(_fadeTypeLayout,
+			 hasVolumeControl(_entryData->_action));
+	setLayoutVisible(_fadeOptionsLayout,
+			 hasVolumeControl(_entryData->_action));
 	adjustSize();
 }
 
@@ -373,6 +418,7 @@ void MacroActionAudioEdit::UpdateEntryData()
 	_duration->SetDuration(_entryData->_duration);
 	_rate->setValue(_entryData->_rate);
 	_wait->setChecked(_entryData->_wait);
+	_abortActiveFade->setChecked(_entryData->_abortActiveFade);
 	_fadeTypes->setCurrentIndex(static_cast<int>(_entryData->_fadeType));
 	SetWidgetVisibility();
 }
@@ -418,6 +464,7 @@ void MacroActionAudioEdit::FadeChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_fade = value;
+	SetWidgetVisibility();
 }
 
 void MacroActionAudioEdit::DurationChanged(double seconds)
@@ -448,6 +495,16 @@ void MacroActionAudioEdit::WaitChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_wait = value;
+}
+
+void MacroActionAudioEdit::AbortActiveFadeChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_abortActiveFade = value;
 }
 
 void MacroActionAudioEdit::FadeTypeChanged(int value)

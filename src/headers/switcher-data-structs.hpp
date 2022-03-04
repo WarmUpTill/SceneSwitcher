@@ -113,6 +113,7 @@ struct SwitcherData {
 
 	struct AudioFadeInfo {
 		std::atomic_bool active = {false};
+		std::atomic_int id = {0};
 	};
 	AudioFadeInfo masterAudioFade;
 	std::unordered_map<std::string, AudioFadeInfo> activeAudioFades;
