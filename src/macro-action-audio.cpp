@@ -27,15 +27,64 @@ const static std::map<FadeType, std::string> fadeTypes = {
 constexpr auto fadeInterval = std::chrono::milliseconds(100);
 constexpr float minFade = 0.000001f;
 
-void MacroActionAudio::FadeSourceVolume()
+void MacroActionAudio::SetFadeActive(bool value)
 {
-	auto s = obs_weak_source_get_source(_audioSource);
-	if (!s) {
-		return;
+	if (_action == AudioAction::SOURCE_VOLUME) {
+		switcher->activeAudioFades[GetWeakSourceName(_audioSource)]
+			.active = value;
+	} else {
+		switcher->masterAudioFade.active = value;
 	}
+}
+
+bool MacroActionAudio::FadeActive()
+{
+	bool active = true;
+	if (_action == AudioAction::SOURCE_VOLUME) {
+		auto it = switcher->activeAudioFades.find(
+			GetWeakSourceName(_audioSource));
+		if (it == switcher->activeAudioFades.end()) {
+			return false;
+		}
+		active = it->second.active;
+	} else {
+		active = switcher->masterAudioFade.active;
+	}
+
+	return active;
+}
+
+void MacroActionAudio::SetVolume(float vol)
+{
+	if (_action == AudioAction::SOURCE_VOLUME) {
+		auto s = obs_weak_source_get_source(_audioSource);
+		obs_source_set_volume(s, vol);
+		obs_source_release(s);
+	} else {
+		obs_set_master_volume(vol);
+	}
+}
+
+float MacroActionAudio::GetVolume()
+{
+	float curVol;
+	if (_action == AudioAction::SOURCE_VOLUME) {
+		auto s = obs_weak_source_get_source(_audioSource);
+		if (!s) {
+			return 0.;
+		}
+		curVol = obs_source_get_volume(s);
+		obs_source_release(s);
+	} else {
+		curVol = obs_get_master_volume();
+	}
+	return curVol;
+}
+
+void MacroActionAudio::FadeVolume()
+{
 	float vol = (float)_volume / 100.0f;
-	float curVol = obs_source_get_volume(s);
-	obs_source_release(s);
+	float curVol = GetVolume();
 	bool volIncrease = curVol <= vol;
 	float volDiff = (volIncrease) ? vol - curVol : curVol - vol;
 	int nrSteps = 0;
@@ -49,55 +98,8 @@ void MacroActionAudio::FadeSourceVolume()
 	}
 
 	if (volStep < minFade || nrSteps <= 1) {
-		auto s = obs_weak_source_get_source(_audioSource);
-		obs_source_set_volume(s, vol);
-		switcher->activeAudioFades[GetWeakSourceName(_audioSource)] =
-			false;
-		obs_source_release(s);
-		return;
-	}
-
-	auto macro = GetMacro();
-	int step = 0;
-	for (; step < nrSteps && !macro->GetStop(); ++step) {
-		auto s = obs_weak_source_get_source(_audioSource);
-		if (!s) {
-			return;
-		}
-		curVol = (volIncrease) ? curVol + volStep : curVol - volStep;
-		obs_source_set_volume(s, curVol);
-		std::this_thread::sleep_for(fadeInterval);
-		obs_source_release(s);
-	}
-
-	// As a final step set desired volume once again in case floating-point
-	// precision errors compounded to a noticeable error
-	if (step == nrSteps) {
-		s = obs_weak_source_get_source(_audioSource);
-		obs_source_set_volume(s, vol);
-		obs_source_release(s);
-	}
-	switcher->activeAudioFades[GetWeakSourceName(_audioSource)] = false;
-}
-void MacroActionAudio::FadeMasterVolume()
-{
-	float vol = (float)_volume / 100.0f;
-	float curVol = obs_get_master_volume();
-	bool volIncrease = curVol <= vol;
-	float volDiff = (volIncrease) ? vol - curVol : curVol - vol;
-	int nrSteps = 0;
-	float volStep = 0.;
-	if (_fadeType == FadeType::DURATION) {
-		nrSteps = _duration.seconds * 1000 / fadeInterval.count();
-		volStep = volDiff / nrSteps;
-	} else {
-		volStep = _rate / 100.0f;
-		nrSteps = volDiff / volStep;
-	}
-
-	if (volStep < minFade || nrSteps <= 1) {
-		obs_set_master_volume(vol);
-		switcher->masterAudioFadeActive = false;
+		SetVolume(vol);
+		SetFadeActive(false);
 		return;
 	}
 
@@ -105,54 +107,40 @@ void MacroActionAudio::FadeMasterVolume()
 	int step = 0;
 	for (; step < nrSteps && !macro->GetStop(); ++step) {
 		curVol = (volIncrease) ? curVol + volStep : curVol - volStep;
-		obs_set_master_volume(curVol);
+		SetVolume(curVol);
 		std::this_thread::sleep_for(fadeInterval);
 	}
 
 	// As a final step set desired volume once again in case floating-point
 	// precision errors compounded to a noticeable error
 	if (step == nrSteps) {
-		obs_set_master_volume(vol);
+		SetVolume(vol);
 	}
-	switcher->masterAudioFadeActive = false;
+
+	SetFadeActive(false);
 }
 
-void MacroActionAudio::StartSourceFade()
+void MacroActionAudio::StartFade()
 {
-	if (!_audioSource) {
+	if (_action == AudioAction::SOURCE_VOLUME && !_audioSource) {
 		return;
 	}
-	auto it = switcher->activeAudioFades.find(
-		GetWeakSourceName(_audioSource));
-	if (it != switcher->activeAudioFades.end() && it->second == true) {
+
+	if (FadeActive()) {
 		blog(LOG_WARNING,
 		     "Audio fade for volume of %s already active! New fade request will be ignored!",
-		     GetWeakSourceName(_audioSource).c_str());
+		     (_action == AudioAction::SOURCE_VOLUME)
+			     ? GetWeakSourceName(_audioSource).c_str()
+			     : "master volume");
 		return;
 	}
-	switcher->activeAudioFades[GetWeakSourceName(_audioSource)] = true;
+	SetFadeActive(true);
+
 	if (_wait) {
-		FadeSourceVolume();
+		FadeVolume();
 	} else {
 		GetMacro()->AddHelperThread(
-			std::thread(&MacroActionAudio::FadeSourceVolume, this));
-	}
-}
-
-void MacroActionAudio::StartMasterFade()
-{
-
-	if (switcher->masterAudioFadeActive) {
-		blog(LOG_WARNING,
-		     "Audio fade for master volume already active! New fade request will be ignored!");
-		return;
-	}
-	switcher->masterAudioFadeActive = true;
-	if (_wait) {
-		FadeMasterVolume();
-	} else {
-		GetMacro()->AddHelperThread(
-			std::thread(&MacroActionAudio::FadeMasterVolume, this));
+			std::thread(&MacroActionAudio::FadeVolume, this));
 	}
 }
 
@@ -167,17 +155,11 @@ bool MacroActionAudio::PerformAction()
 		obs_source_set_muted(s, false);
 		break;
 	case AudioAction::SOURCE_VOLUME:
-		if (_fade && _duration.seconds != 0) {
-			StartSourceFade();
-		} else {
-			obs_source_set_volume(s, (float)_volume / 100.0f);
-		}
-		break;
 	case AudioAction::MASTER_VOLUME:
-		if (_fade && _duration.seconds != 0) {
-			StartMasterFade();
+		if (_fade) {
+			StartFade();
 		} else {
-			obs_set_master_volume((float)_volume / 100.0f);
+			SetVolume((float)_volume / 100.0f);
 		}
 		break;
 	default:

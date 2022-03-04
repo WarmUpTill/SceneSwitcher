@@ -111,8 +111,11 @@ struct SwitcherData {
 	StartupBehavior startupBehavior = PERSIST;
 	AutoStartEvent autoStartEvent = AutoStartEvent::NEVER;
 
-	std::atomic_bool masterAudioFadeActive = {false};
-	std::unordered_map<std::string, std::atomic_bool> activeAudioFades;
+	struct AudioFadeInfo {
+		std::atomic_bool active = {false};
+	};
+	AudioFadeInfo masterAudioFade;
+	std::unordered_map<std::string, AudioFadeInfo> activeAudioFades;
 
 	Duration cooldown;
 	std::chrono::high_resolution_clock::time_point lastMatchTime;
