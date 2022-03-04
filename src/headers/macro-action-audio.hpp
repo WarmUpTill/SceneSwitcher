@@ -43,10 +43,12 @@ public:
 	bool _wait = false;
 
 private:
-	void StartSourceFade();
-	void StartMasterFade();
-	void FadeSourceVolume();
-	void FadeMasterVolume();
+	void StartFade();
+	void FadeVolume();
+	void SetVolume(float vol);
+	float GetVolume();
+	void SetFadeActive(bool value);
+	bool FadeActive();
 
 	static bool _registered;
 	static const std::string id;
