@@ -41,6 +41,7 @@ public:
 	Duration _duration;
 	double _rate = 100.;
 	bool _wait = false;
+	bool _abortActiveFade = false;
 
 private:
 	void StartFade();
@@ -49,6 +50,7 @@ private:
 	float GetVolume();
 	void SetFadeActive(bool value);
 	bool FadeActive();
+	std::atomic_int *GetFadeIdPtr();
 
 	static bool _registered;
 	static const std::string id;
@@ -61,7 +63,6 @@ public:
 	MacroActionAudioEdit(
 		QWidget *parent,
 		std::shared_ptr<MacroActionAudio> entryData = nullptr);
-	void SetWidgetVisibility();
 	void UpdateEntryData();
 	static QWidget *Create(QWidget *parent,
 			       std::shared_ptr<MacroAction> action)
@@ -79,6 +80,7 @@ private slots:
 	void DurationChanged(double seconds);
 	void RateChanged(double value);
 	void WaitChanged(int value);
+	void AbortActiveFadeChanged(int value);
 	void FadeTypeChanged(int value);
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -92,9 +94,13 @@ protected:
 	DurationSelection *_duration;
 	QDoubleSpinBox *_rate;
 	QCheckBox *_wait;
-	QHBoxLayout *_fadeLayout;
+	QCheckBox *_abortActiveFade;
+	QHBoxLayout *_fadeTypeLayout;
+	QVBoxLayout *_fadeOptionsLayout;
 	std::shared_ptr<MacroActionAudio> _entryData;
 
 private:
+	void SetWidgetVisibility();
+
 	bool _loading = true;
 };
