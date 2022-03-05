@@ -57,11 +57,6 @@ MacroConditionStats::~MacroConditionStats()
 	os_cpu_usage_info_destroy(_cpu_info);
 }
 
-bool doubleEquals(double left, double right, double epsilon)
-{
-	return (fabs(left - right) < epsilon);
-}
-
 bool MacroConditionStats::CheckFPS()
 {
 	switch (_condition) {

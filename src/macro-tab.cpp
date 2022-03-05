@@ -646,8 +646,11 @@ void fade(QWidget *widget, bool fadeOut)
 	if (curEffect) {
 		auto curOpacity =
 			dynamic_cast<QGraphicsOpacityEffect *>(curEffect);
-		if (curOpacity && ((fadeOut && curOpacity->opacity() == 0.3) ||
-				   (!fadeOut && curOpacity->opacity() == 1))) {
+		if (curOpacity &&
+		    ((fadeOut &&
+		      doubleEquals(curOpacity->opacity(), 0.3, 0.0001)) ||
+		     (!fadeOut &&
+		      doubleEquals(curOpacity->opacity(), 1, 0.0001)))) {
 			return;
 		}
 	} else if (!fadeOut) {

@@ -82,3 +82,4 @@ void populateSceneItemSelection(QComboBox *list,
 void populateSceneItemSelection(QComboBox *list, SceneSelection &s);
 void populateSourceGroupSelection(QComboBox *list);
 bool windowPosValid(QPoint pos);
+bool doubleEquals(double left, double right, double epsilon);
