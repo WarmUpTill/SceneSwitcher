@@ -166,6 +166,9 @@ MacroConditionOpenVREdit::MacroConditionOpenVREdit(
 	controlsLayout->addWidget(_maxY, 1, 1);
 	controlsLayout->addWidget(_maxZ, 1, 2);
 	QWidget *controls = new QWidget;
+	controls->setObjectName("openVRControls");
+	controls->setStyleSheet(
+		"#openVRControls { background-color: rgba(0,0,0,0); }");
 	controls->setLayout(controlsLayout);
 	controls->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
