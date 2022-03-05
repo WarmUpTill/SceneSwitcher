@@ -989,3 +989,8 @@ void setHeightToContentHeight(QListWidget *list)
 				       2 * list->frameWidth());
 	}
 }
+
+bool doubleEquals(double left, double right, double epsilon)
+{
+	return (fabs(left - right) < epsilon);
+}
