@@ -23,7 +23,7 @@ private slots:
 
 private:
 	void CheckForMatchLoop();
-	QImage MarkMatch(QImage &screenshot);
+	void MarkMatch(QImage &screenshot);
 
 	MacroConditionVideo *_conditionData;
 	QScrollArea *_scrollArea;

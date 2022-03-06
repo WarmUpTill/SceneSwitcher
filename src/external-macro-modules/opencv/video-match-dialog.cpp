@@ -88,12 +88,20 @@ void ShowMatchDialog::CheckForMatchLoop()
 			_imageLabel->setPixmap(QPixmap());
 			continue;
 		}
-		auto image = MarkMatch(screenshot.image);
+
+		if (_conditionData->_checkAreaEnable) {
+			screenshot.image = screenshot.image.copy(
+				_conditionData->_checkArea.x,
+				_conditionData->_checkArea.y,
+				_conditionData->_checkArea.width,
+				_conditionData->_checkArea.height);
+		}
+		MarkMatch(screenshot.image);
 		_imageLabel->setPixmap(QPixmap::fromImage(screenshot.image));
 	}
 }
 
-QImage markPatterns(cv::Mat &matchResult, QImage &image, QImage &pattern)
+void markPatterns(cv::Mat &matchResult, QImage &image, QImage &pattern)
 {
 	auto matchImg = QImageToMat(image);
 	for (int row = 0; row < matchResult.rows - 1; row++) {
@@ -106,10 +114,9 @@ QImage markPatterns(cv::Mat &matchResult, QImage &image, QImage &pattern)
 			}
 		}
 	}
-	return MatToQImage(matchImg);
 }
 
-QImage markObjects(QImage &image, std::vector<cv::Rect> &objects)
+void markObjects(QImage &image, std::vector<cv::Rect> &objects)
 {
 	auto frame = QImageToMat(image);
 	for (size_t i = 0; i < objects.size(); i++) {
@@ -118,12 +125,10 @@ QImage markObjects(QImage &image, std::vector<cv::Rect> &objects)
 				    objects[i].y + objects[i].height),
 			  cv::Scalar(255, 0, 0, 255), 2, 8, 0);
 	}
-	return MatToQImage(frame);
 }
 
-QImage ShowMatchDialog::MarkMatch(QImage &screenshot)
+void ShowMatchDialog::MarkMatch(QImage &screenshot)
 {
-	QImage resultIamge;
 	if (_conditionData->_condition == VideoCondition::PATTERN) {
 		cv::Mat result;
 		QImage pattern = _conditionData->GetMatchImage();
@@ -131,30 +136,27 @@ QImage ShowMatchDialog::MarkMatch(QImage &screenshot)
 			     _conditionData->_patternThreshold, result,
 			     _conditionData->_useAlphaAsMask);
 		if (countNonZero(result) == 0) {
-			resultIamge = screenshot;
 			_statusLabel->setText(obs_module_text(
 				"AdvSceneSwitcher.condition.video.patternMatchFail"));
 		} else {
 			_statusLabel->setText(obs_module_text(
 				"AdvSceneSwitcher.condition.video.patternMatchSuccess"));
-			resultIamge = markPatterns(result, screenshot, pattern);
+			markPatterns(result, screenshot, pattern);
 		}
 	} else if (_conditionData->_condition == VideoCondition::OBJECT) {
-		auto objects = matchObject(
-			screenshot, _conditionData->_objectCascade,
-			_conditionData->_scaleFactor,
-			_conditionData->_minNeighbors,
-			{_conditionData->_minSizeX, _conditionData->_minSizeY},
-			{_conditionData->_maxSizeX, _conditionData->_maxSizeY});
+		auto objects = matchObject(screenshot,
+					   _conditionData->_objectCascade,
+					   _conditionData->_scaleFactor,
+					   _conditionData->_minNeighbors,
+					   _conditionData->_minSize.CV(),
+					   _conditionData->_maxSize.CV());
 		if (objects.empty()) {
-			resultIamge = screenshot;
 			_statusLabel->setText(obs_module_text(
 				"AdvSceneSwitcher.condition.video.objectMatchFail"));
 		} else {
 			_statusLabel->setText(obs_module_text(
 				"AdvSceneSwitcher.condition.video.objectMatchSuccess"));
-			resultIamge = markObjects(screenshot, objects);
+			markObjects(screenshot, objects);
 		}
 	}
-	return resultIamge;
 }

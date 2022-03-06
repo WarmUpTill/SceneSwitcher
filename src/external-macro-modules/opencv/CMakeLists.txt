@@ -17,6 +17,8 @@ endif()
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../../headers")
 set(module_SOURCES
+    area-selection.cpp
+    area-selection.hpp
     macro-condition-video.cpp
     macro-condition-video.hpp
     video-match-dialog.cpp

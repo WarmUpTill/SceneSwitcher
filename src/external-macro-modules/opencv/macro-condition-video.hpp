@@ -1,15 +1,18 @@
 #pragma once
+#include "opencv-helpers.hpp"
+#include "threshold-slider.hpp"
+#include "video-match-dialog.hpp"
+#include "area-selection.hpp"
+
 #include <macro.hpp>
-#include <screenshot-helper.hpp>
-#include <opencv-helpers.hpp>
 #include <file-selection.hpp>
-#include <threshold-slider.hpp>
-#include <video-match-dialog.hpp>
+#include <screenshot-helper.hpp>
 
 #include <QWidget>
 #include <QComboBox>
 #include <QCheckBox>
 #include <QHBoxLayout>
+#include <QGridLayout>
 #include <QLabel>
 
 enum class VideoCondition {
@@ -51,10 +54,11 @@ public:
 	cv::CascadeClassifier _objectCascade;
 	double _scaleFactor = 1.1;
 	int _minNeighbors = minMinNeighbors;
-	int _minSizeX = 0;
-	int _minSizeY = 0;
-	int _maxSizeX = 0;
-	int _maxSizeY = 0;
+	advss::Size _minSize{0, 0};
+	advss::Size _maxSize{0, 0};
+
+	bool _checkAreaEnable = false;
+	advss::Area _checkArea{0, 0, 0, 0};
 
 	bool _throttleEnabled = false;
 	int _throttleCount = 3;
@@ -110,10 +114,11 @@ private slots:
 	void ModelPathChanged(const QString &text);
 	void ObjectScaleThresholdChanged(double);
 	void MinNeighborsChanged(int value);
-	void MinSizeXChanged(int value);
-	void MinSizeYChanged(int value);
-	void MaxSizeXChanged(int value);
-	void MaxSizeYChanged(int value);
+	void MinSizeChanged(advss::Size value);
+	void MaxSizeChanged(advss::Size value);
+
+	void CheckAreaEnableChanged(int value);
+	void CheckAreaChanged(advss::Area);
 
 	void ThrottleEnableChanged(int value);
 	void ThrottleCountChanged(int value);
@@ -136,16 +141,18 @@ protected:
 	QHBoxLayout *_neighborsControlLayout;
 	QSpinBox *_minNeighbors;
 	QLabel *_minNeighborsDescription;
-	QHBoxLayout *_minSizeControlLayout;
-	QSpinBox *_minSizeX;
-	QSpinBox *_minSizeY;
-	QHBoxLayout *_maxSizeControlLayout;
-	QSpinBox *_maxSizeX;
-	QSpinBox *_maxSizeY;
+	QHBoxLayout *_sizeLayout;
+	SizeSelection *_minSize;
+	SizeSelection *_maxSize;
+
+	QHBoxLayout *_checkAreaControlLayout;
+	QCheckBox *_checkAreaEnable;
+	AreaSelection *_checkArea;
 
 	QHBoxLayout *_throttleControlLayout;
 	QCheckBox *_throttleEnable;
 	QSpinBox *_throttleCount;
+
 	QPushButton *_showMatch;
 	ShowMatchDialog _matchDialog;
 
