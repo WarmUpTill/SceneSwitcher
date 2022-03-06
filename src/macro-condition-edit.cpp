@@ -92,7 +92,9 @@ static inline void populateConditionSelection(QComboBox *list)
 MacroConditionEdit::MacroConditionEdit(
 	QWidget *parent, std::shared_ptr<MacroCondition> *entryData,
 	const std::string &id, bool root)
-	: MacroSegmentEdit(parent), _entryData(entryData), _isRoot(root)
+	: MacroSegmentEdit(switcher->highlightExecutedMacros, parent),
+	  _entryData(entryData),
+	  _isRoot(root)
 {
 	_logicSelection = new QComboBox();
 	_conditionSelection = new QComboBox();
@@ -123,7 +125,7 @@ MacroConditionEdit::MacroConditionEdit(
 	conditionLayout->setContentsMargins(0, 0, 0, 0);
 	conditionLayout->setSpacing(0);
 	conditionLayout->addWidget(_frame);
-	_highLightFrameLayout->addWidget(_section);
+	_selectionFrameLayout->addWidget(_section);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	mainLayout->setContentsMargins(0, 0, 0, 0);

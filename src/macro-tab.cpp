@@ -308,6 +308,8 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 	clearLayout(conditionsList->ContentLayout());
 	clearLayout(actionsList->ContentLayout());
 
+	m.ResetUIHelpers();
+
 	PopulateMacroConditions(m);
 	PopulateMacroActions(m);
 	ui->macroEdit->setDisabled(false);

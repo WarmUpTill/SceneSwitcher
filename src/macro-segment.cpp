@@ -1,5 +1,6 @@
 #include "headers/macro-segment.hpp"
 #include "headers/section.hpp"
+#include "headers/utility.hpp"
 
 #include <obs.hpp>
 #include <QEvent>
@@ -24,6 +25,20 @@ std::string MacroSegment::GetShortDesc()
 	return "";
 }
 
+void MacroSegment::SetHighlight()
+{
+	_highlight = true;
+}
+
+bool MacroSegment::Highlight()
+{
+	if (_highlight) {
+		_highlight = false;
+		return true;
+	}
+	return false;
+}
+
 MouseWheelWidgetAdjustmentGuard::MouseWheelWidgetAdjustmentGuard(QObject *parent)
 	: QObject(parent)
 {
@@ -40,16 +55,17 @@ bool MouseWheelWidgetAdjustmentGuard::eventFilter(QObject *o, QEvent *e)
 	return QObject::eventFilter(o, e);
 }
 
-MacroSegmentEdit::MacroSegmentEdit(QWidget *parent) : QWidget(parent)
+MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
+	: QWidget(parent), _showHighlight(highlight)
 {
 	_section = new Section(300);
 	_headerInfo = new QLabel();
 
 	_frame = new QFrame;
 	_frame->setObjectName("segmentFrame");
-	_highLightFrameLayout = new QVBoxLayout;
+	_selectionFrameLayout = new QVBoxLayout;
 	SetSelected(false);
-	_frame->setLayout(_highLightFrameLayout);
+	_frame->setLayout(_selectionFrameLayout);
 	// Set background transparent to avoid blocking highlight frame
 	setStyleSheet("QCheckBox { background-color: rgba(0,0,0,0); }"
 		      "QLabel { background-color: rgba(0,0,0,0); }"
@@ -81,6 +97,13 @@ MacroSegmentEdit::MacroSegmentEdit(QWidget *parent) : QWidget(parent)
 		parent,
 		SIGNAL(SceneGroupRenamed(const QString &, const QString)), this,
 		SIGNAL(SceneGroupRenamed(const QString &, const QString)));
+
+	QWidget::connect(parent, SIGNAL(HighlightMacrosChanged(bool)), this,
+			 SLOT(EnableHighlight(bool)));
+
+	_timer.setInterval(1500);
+	connect(&_timer, SIGNAL(timeout()), this, SLOT(Highlight()));
+	_timer.start();
 }
 
 void MacroSegmentEdit::HeaderInfoChanged(const QString &text)
@@ -94,6 +117,22 @@ void MacroSegmentEdit::Collapsed(bool collapsed)
 	if (Data()) {
 		Data()->SetCollapsed(collapsed);
 	}
+}
+
+void MacroSegmentEdit::Highlight()
+{
+	if (!Data()) {
+		return;
+	}
+
+	if (_showHighlight && Data()->Highlight()) {
+		PulseWidget(this, Qt::green, QColor(0, 0, 0, 0), true);
+	}
+}
+
+void MacroSegmentEdit::EnableHighlight(bool value)
+{
+	_showHighlight = value;
 }
 
 void MacroSegmentEdit::mousePressEvent(QMouseEvent *event)
