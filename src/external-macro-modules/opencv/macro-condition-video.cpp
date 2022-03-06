@@ -110,12 +110,12 @@ bool MacroConditionVideo::Save(obs_data_t *obj)
 	obs_data_set_string(obj, "modelDataPath", _modelDataPath.c_str());
 	obs_data_set_double(obj, "scaleFactor", _scaleFactor);
 	obs_data_set_int(obj, "minNeighbors", _minNeighbors);
-	obs_data_set_int(obj, "minSizeX", _minSizeX);
-	obs_data_set_int(obj, "minSizeY", _minSizeY);
-	obs_data_set_int(obj, "maxSizeX", _maxSizeX);
-	obs_data_set_int(obj, "maxSizeY", _maxSizeY);
+	_minSize.Save(obj, "minSize");
+	_maxSize.Save(obj, "maxSize");
 	obs_data_set_bool(obj, "throttleEnabled", _throttleEnabled);
 	obs_data_set_int(obj, "throttleCount", _throttleCount);
+	obs_data_set_bool(obj, "checkAreaEnabled", _checkAreaEnable);
+	_checkArea.Save(obj, "checkArea");
 	return true;
 }
 
@@ -151,13 +151,20 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 	if (!isMinNeighborsValid(_minNeighbors)) {
 		_minNeighbors = minMinNeighbors;
 	}
-	_minSizeX = obs_data_get_int(obj, "minSizeX");
-	_minSizeY = obs_data_get_int(obj, "minSizeY");
-	_maxSizeX = obs_data_get_int(obj, "maxSizeX");
-	_maxSizeY = obs_data_get_int(obj, "maxSizeY");
+	// TODO: Remove this fallback in future version
+	if (obs_data_has_user_value(obj, "minSizeX")) {
+		_minSize.width = obs_data_get_int(obj, "minSizeX");
+		_minSize.height = obs_data_get_int(obj, "minSizeY");
+		_maxSize.width = obs_data_get_int(obj, "maxSizeX");
+		_maxSize.height = obs_data_get_int(obj, "maxSizeY");
+	} else {
+		_minSize.Load(obj, "minSize");
+		_maxSize.Load(obj, "maxSize");
+	}
 	_throttleEnabled = obs_data_get_bool(obj, "throttleEnabled");
 	_throttleCount = obs_data_get_int(obj, "throttleCount");
-
+	_checkAreaEnable = obs_data_get_bool(obj, "checkAreaEnabled");
+	_checkArea.Load(obj, "checkArea");
 	if (requiresFileInput(_condition)) {
 		(void)LoadImageFromFile();
 	}
@@ -230,14 +237,19 @@ bool MacroConditionVideo::OutputChanged()
 bool MacroConditionVideo::ScreenshotContainsObject()
 {
 	auto objects = matchObject(_screenshotData.image, _objectCascade,
-				   _scaleFactor, _minNeighbors,
-				   {_minSizeX, _minSizeY},
-				   {_maxSizeX, _maxSizeY});
+				   _scaleFactor, _minNeighbors, _minSize.CV(),
+				   _maxSize.CV());
 	return objects.size() > 0;
 }
 
 bool MacroConditionVideo::Compare()
 {
+	if (_checkAreaEnable && _condition != VideoCondition::NO_IMAGE) {
+		_screenshotData.image = _screenshotData.image.copy(
+			_checkArea.x, _checkArea.y, _checkArea.width,
+			_checkArea.height);
+	}
+
 	switch (_condition) {
 	case VideoCondition::MATCH:
 		return _screenshotData.image == _matchImage;
@@ -269,54 +281,52 @@ static inline void populateConditionSelection(QComboBox *list)
 MacroConditionVideoEdit::MacroConditionVideoEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionVideo> entryData)
 	: QWidget(parent),
-	  _matchDialog(this, entryData.get(), &GetSwitcher()->m)
+	  _videoSelection(new QComboBox()),
+	  _condition(new QComboBox()),
+	  _imagePath(new FileSelection()),
+	  _usePatternForChangedCheck(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.condition.video.usePatternForChangedCheck"))),
+	  _patternThreshold(new ThresholdSlider(
+		  0., 1.,
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.patternThreshold"),
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.patternThresholdDescription"))),
+	  _useAlphaAsMask(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.condition.video.patternThresholdUseAlphaAsMask"))),
+	  _modelDataPath(new FileSelection()),
+	  _objectScaleThreshold(new ThresholdSlider(
+		  1.1, 5.,
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.objectScaleThreshold"),
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.objectScaleThresholdDescription"))),
+	  _minNeighbors(new QSpinBox()),
+	  _minNeighborsDescription(new QLabel(obs_module_text(
+		  "AdvSceneSwitcher.condition.video.minNeighborDescription"))),
+	  _minSize(new SizeSelection(0, 1024)),
+	  _maxSize(new SizeSelection(0, 4096)),
+	  _checkAreaEnable(new QCheckBox()),
+	  _checkArea(new AreaSelection(0, 99999)),
+	  _throttleEnable(new QCheckBox()),
+	  _throttleCount(new QSpinBox()),
+	  _showMatch(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.condition.video.showMatch"))),
+	  _matchDialog(this, entryData.get(), &GetSwitcher()->m),
+	  _modelPathLayout(new QHBoxLayout),
+	  _neighborsControlLayout(new QHBoxLayout),
+	  _checkAreaControlLayout(new QHBoxLayout),
+	  _throttleControlLayout(new QHBoxLayout),
+	  _sizeLayout(new QHBoxLayout())
 {
-	_videoSelection = new QComboBox();
-	_condition = new QComboBox();
-
-	_imagePath = new FileSelection();
 	_imagePath->Button()->disconnect();
-	_usePatternForChangedCheck = new QCheckBox(obs_module_text(
-		"AdvSceneSwitcher.condition.video.usePatternForChangedCheck"));
 	_usePatternForChangedCheck->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.video.usePatternForChangedCheck.tooltip"));
-	_patternThreshold = new ThresholdSlider(
-		0., 1.,
-		obs_module_text(
-			"AdvSceneSwitcher.condition.video.patternThreshold"),
-		obs_module_text(
-			"AdvSceneSwitcher.condition.video.patternThresholdDescription"));
-	_useAlphaAsMask = new QCheckBox(obs_module_text(
-		"AdvSceneSwitcher.condition.video.patternThresholdUseAlphaAsMask"));
-
-	_modelDataPath = new FileSelection();
-	_objectScaleThreshold = new ThresholdSlider(
-		1.1, 5.,
-		obs_module_text(
-			"AdvSceneSwitcher.condition.video.objectScaleThreshold"),
-		obs_module_text(
-			"AdvSceneSwitcher.condition.video.objectScaleThresholdDescription"));
-	_minNeighbors = new QSpinBox();
 	_minNeighbors->setMinimum(minMinNeighbors);
 	_minNeighbors->setMaximum(maxMinNeighbors);
-	_minNeighborsDescription = new QLabel(obs_module_text(
-		"AdvSceneSwitcher.condition.video.minNeighborDescription"));
-	_minSizeX = new QSpinBox();
-	_minSizeY = new QSpinBox();
-	_minSizeX->setMaximum(1024);
-	_minSizeY->setMaximum(1024);
-	_maxSizeX = new QSpinBox();
-	_maxSizeY = new QSpinBox();
-	_maxSizeX->setMaximum(4096);
-	_maxSizeY->setMaximum(4096);
-
-	_throttleEnable = new QCheckBox();
-	_throttleCount = new QSpinBox();
 	_throttleCount->setMinimum(1 * GetSwitcher()->interval);
 	_throttleCount->setMaximum(10 * GetSwitcher()->interval);
 	_throttleCount->setSingleStep(GetSwitcher()->interval);
-	_showMatch = new QPushButton(
-		obs_module_text("AdvSceneSwitcher.condition.video.showMatch"));
 
 	QWidget::connect(_videoSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
@@ -338,14 +348,14 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 SLOT(ObjectScaleThresholdChanged(double)));
 	QWidget::connect(_minNeighbors, SIGNAL(valueChanged(int)), this,
 			 SLOT(MinNeighborsChanged(int)));
-	QWidget::connect(_minSizeX, SIGNAL(valueChanged(int)), this,
-			 SLOT(MinSizeXChanged(int)));
-	QWidget::connect(_minSizeY, SIGNAL(valueChanged(int)), this,
-			 SLOT(MinSizeYChanged(int)));
-	QWidget::connect(_maxSizeX, SIGNAL(valueChanged(int)), this,
-			 SLOT(MaxSizeXChanged(int)));
-	QWidget::connect(_maxSizeY, SIGNAL(valueChanged(int)), this,
-			 SLOT(MaxSizeYChanged(int)));
+	QWidget::connect(_minSize, SIGNAL(SizeChanged(advss::Size)), this,
+			 SLOT(MinSizeChanged(advss::Size)));
+	QWidget::connect(_maxSize, SIGNAL(SizeChanged(advss::Size)), this,
+			 SLOT(MaxSizeChanged(advss::Size)));
+	QWidget::connect(_checkAreaEnable, SIGNAL(stateChanged(int)), this,
+			 SLOT(CheckAreaEnableChanged(int)));
+	QWidget::connect(_checkArea, SIGNAL(AreaChanged(advss::Area)), this,
+			 SLOT(CheckAreaChanged(advss::Area)));
 	QWidget::connect(_modelDataPath, SIGNAL(PathChanged(const QString &)),
 			 this, SLOT(ModelPathChanged(const QString &)));
 	QWidget::connect(_throttleEnable, SIGNAL(stateChanged(int)), this,
@@ -364,43 +374,46 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 		{"{{condition}}", _condition},
 		{"{{imagePath}}", _imagePath},
 		{"{{minNeighbors}}", _minNeighbors},
-		{"{{minSizeX}}", _minSizeX},
-		{"{{minSizeY}}", _minSizeY},
-		{"{{maxSizeX}}", _maxSizeX},
-		{"{{maxSizeY}}", _maxSizeY},
+		{"{{minSize}}", _minSize},
+		{"{{maxSize}}", _maxSize},
 		{"{{modelDataPath}}", _modelDataPath},
 		{"{{throttleEnable}}", _throttleEnable},
 		{"{{throttleCount}}", _throttleCount},
+		{"{{checkAreaEnable}}", _checkAreaEnable},
+		{"{{checkArea}}", _checkArea},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.video.entry"),
 		     entryLine1Layout, widgetPlaceholders);
-
-	_modelPathLayout = new QHBoxLayout;
 	placeWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.video.entry.modelPath"),
 		_modelPathLayout, widgetPlaceholders);
-
-	_neighborsControlLayout = new QHBoxLayout;
 	placeWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.video.entry.minNeighbor"),
 		_neighborsControlLayout, widgetPlaceholders);
-
-	_minSizeControlLayout = new QHBoxLayout;
-	placeWidgets(obs_module_text(
-			     "AdvSceneSwitcher.condition.video.entry.minSize"),
-		     _minSizeControlLayout, widgetPlaceholders);
-
-	_maxSizeControlLayout = new QHBoxLayout;
-	placeWidgets(obs_module_text(
-			     "AdvSceneSwitcher.condition.video.entry.maxSize"),
-		     _maxSizeControlLayout, widgetPlaceholders);
-
-	_throttleControlLayout = new QHBoxLayout;
 	placeWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.video.entry.throttle"),
 		     _throttleControlLayout, widgetPlaceholders);
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.entry.checkArea"),
+		_checkAreaControlLayout, widgetPlaceholders);
+
+	QGridLayout *sizeGrid = new QGridLayout;
+	sizeGrid->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.condition.video.minSize")),
+		0, 0);
+	sizeGrid->addWidget(_minSize, 0, 1);
+	sizeGrid->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.condition.video.maxSize")),
+		1, 0);
+	sizeGrid->addWidget(_maxSize, 1, 1);
+	_sizeLayout->addLayout(sizeGrid);
+	_sizeLayout->addStretch();
+	_sizeLayout->setContentsMargins(0, 0, 0, 0);
 
 	QHBoxLayout *showMatchLayout = new QHBoxLayout;
 	showMatchLayout->addWidget(_showMatch);
@@ -414,10 +427,10 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	mainLayout->addWidget(_objectScaleThreshold);
 	mainLayout->addLayout(_neighborsControlLayout);
 	mainLayout->addWidget(_minNeighborsDescription);
-	mainLayout->addLayout(_minSizeControlLayout);
-	mainLayout->addLayout(_maxSizeControlLayout);
+	mainLayout->addLayout(_sizeLayout);
 	mainLayout->addLayout(showMatchLayout);
 	mainLayout->addLayout(_throttleControlLayout);
+	mainLayout->addLayout(_checkAreaControlLayout);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -620,44 +633,45 @@ void MacroConditionVideoEdit::MinNeighborsChanged(int value)
 	_entryData->_minNeighbors = value;
 }
 
-void MacroConditionVideoEdit::MinSizeXChanged(int value)
+void MacroConditionVideoEdit::MinSizeChanged(advss::Size value)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_minSizeX = value;
+	_entryData->_minSize = value;
 }
 
-void MacroConditionVideoEdit::MinSizeYChanged(int value)
+void MacroConditionVideoEdit::MaxSizeChanged(advss::Size value)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_minSizeY = value;
+	_entryData->_maxSize = value;
 }
 
-void MacroConditionVideoEdit::MaxSizeXChanged(int value)
+void MacroConditionVideoEdit::CheckAreaEnableChanged(int value)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_maxSizeX = value;
+	_entryData->_checkAreaEnable = value;
+	_checkArea->setEnabled(value);
 }
 
-void MacroConditionVideoEdit::MaxSizeYChanged(int value)
+void MacroConditionVideoEdit::CheckAreaChanged(advss::Area value)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_maxSizeY = value;
+	_entryData->_checkArea = value;
 }
 
 void MacroConditionVideoEdit::ThrottleEnableChanged(int value)
@@ -737,6 +751,11 @@ bool patternControlIsOptional(VideoCondition cond)
 	       cond == VideoCondition::HAS_NOT_CHANGED;
 }
 
+bool needsAreaControls(VideoCondition cond)
+{
+	return cond != VideoCondition::NO_IMAGE;
+}
+
 void MacroConditionVideoEdit::SetWidgetVisibility()
 {
 	_imagePath->setVisible(requiresFileInput(_entryData->_condition));
@@ -752,14 +771,14 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 			 needsObjectControls(_entryData->_condition));
 	_minNeighborsDescription->setVisible(
 		needsObjectControls(_entryData->_condition));
-	setLayoutVisible(_minSizeControlLayout,
-			 needsObjectControls(_entryData->_condition));
-	setLayoutVisible(_maxSizeControlLayout,
+	setLayoutVisible(_sizeLayout,
 			 needsObjectControls(_entryData->_condition));
 	setLayoutVisible(_modelPathLayout,
 			 needsObjectControls(_entryData->_condition));
 	setLayoutVisible(_throttleControlLayout,
 			 needsThrottleControls(_entryData->_condition));
+	setLayoutVisible(_checkAreaControlLayout,
+			 needsAreaControls(_entryData->_condition));
 
 	if (_entryData->_condition == VideoCondition::HAS_CHANGED ||
 	    _entryData->_condition == VideoCondition::HAS_NOT_CHANGED) {
@@ -787,12 +806,13 @@ void MacroConditionVideoEdit::UpdateEntryData()
 	_modelDataPath->SetPath(_entryData->GetModelDataPath().c_str());
 	_objectScaleThreshold->SetDoubleValue(_entryData->_scaleFactor);
 	_minNeighbors->setValue(_entryData->_minNeighbors);
-	_minSizeX->setValue(_entryData->_minSizeX);
-	_minSizeY->setValue(_entryData->_minSizeY);
-	_maxSizeX->setValue(_entryData->_maxSizeX);
-	_maxSizeY->setValue(_entryData->_maxSizeY);
+	_minSize->SetSize(_entryData->_minSize);
+	_maxSize->SetSize(_entryData->_maxSize);
 	_throttleEnable->setChecked(_entryData->_throttleEnabled);
 	_throttleCount->setValue(_entryData->_throttleCount *
 				 GetSwitcher()->interval);
+	_checkAreaEnable->setChecked(_entryData->_checkAreaEnable);
+	_checkArea->SetArea(_entryData->_checkArea);
+	UpdatePreviewTooltip();
 	SetWidgetVisibility();
 }
