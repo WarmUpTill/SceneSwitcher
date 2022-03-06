@@ -110,6 +110,7 @@ public:
 
 	// UI helpers for the macro tab
 	bool WasExecutedRecently();
+	void ResetUIHelpers();
 
 private:
 	void SetupHotkeys();

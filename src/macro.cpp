@@ -65,24 +65,40 @@ bool Macro::CeckMatch()
 			      "ignoring condition check 'none' for '%s'",
 			      _name.c_str());
 			continue;
-			break;
 		case LogicType::AND:
 			_matched = _matched && cond;
+			if (cond) {
+				c->SetHighlight();
+			}
 			break;
 		case LogicType::OR:
 			_matched = _matched || cond;
+			if (cond) {
+				c->SetHighlight();
+			}
 			break;
 		case LogicType::AND_NOT:
 			_matched = _matched && !cond;
+			if (!cond) {
+				c->SetHighlight();
+			}
 			break;
 		case LogicType::OR_NOT:
-			_matched = _matched || !cond;
+			if (!cond) {
+				c->SetHighlight();
+			}
 			break;
 		case LogicType::ROOT_NONE:
 			_matched = cond;
+			if (cond) {
+				c->SetHighlight();
+			}
 			break;
 		case LogicType::ROOT_NOT:
 			_matched = !cond;
+			if (!cond) {
+				c->SetHighlight();
+			}
 			break;
 		default:
 			blog(LOG_WARNING,
@@ -158,6 +174,7 @@ void Macro::RunActions(bool &retVal, bool ignorePause)
 			retVal = ret;
 			break;
 		}
+		a->SetHighlight();
 	}
 	_done = true;
 }
@@ -412,6 +429,16 @@ bool Macro::WasExecutedRecently()
 		return true;
 	}
 	return false;
+}
+
+void Macro::ResetUIHelpers()
+{
+	for (auto c : _conditions) {
+		c->Highlight();
+	}
+	for (auto a : _actions) {
+		a->Highlight();
+	}
 }
 
 static void pauseCB(void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed)
