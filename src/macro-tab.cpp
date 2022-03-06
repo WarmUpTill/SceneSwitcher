@@ -12,6 +12,7 @@
 #include <QPropertyAnimation>
 
 static QMetaObject::Connection addPulse;
+static QTimer onChangeHighlightTimer;
 
 bool macroNameExists(std::string name)
 {
@@ -408,6 +409,20 @@ void AdvSceneSwitcher::MacroDragDropReorder(QModelIndex, int from, int,
 	}
 }
 
+void AdvSceneSwitcher::HighlightOnChange()
+{
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	if (switcher->highlightExecutedMacros &&
+	    macro->OnChangePreventedActionsRecently()) {
+		PulseWidget(ui->runMacroOnChange, Qt::yellow, Qt::transparent,
+			    true);
+	}
+}
+
 void AdvSceneSwitcher::setupMacroTab()
 {
 	const QSignalBlocker signalBlocker(ui->macros);
@@ -461,6 +476,11 @@ void AdvSceneSwitcher::setupMacroTab()
 
 	ui->macroPriorityWarning->setVisible(
 		switcher->functionNamesByPriority[0] != macro_func);
+
+	onChangeHighlightTimer.setInterval(1500);
+	connect(&onChangeHighlightTimer, SIGNAL(timeout()), this,
+		SLOT(HighlightOnChange()));
+	onChangeHighlightTimer.start();
 }
 
 void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
