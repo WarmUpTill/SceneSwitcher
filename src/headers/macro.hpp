@@ -110,6 +110,7 @@ public:
 
 	// UI helpers for the macro tab
 	bool WasExecutedRecently();
+	bool OnChangePreventedActionsRecently();
 	void ResetUIHelpers();
 
 private:
@@ -119,6 +120,7 @@ private:
 	void ResetTimers();
 	void RunActions(bool &ret, bool ignorePause);
 	void RunActions(bool ignorePause);
+	void SetOnChangeHighlight();
 
 	std::string _name = "";
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;
@@ -133,7 +135,9 @@ private:
 	obs_hotkey_id _unpauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _togglePauseHotkey = OBS_INVALID_HOTKEY_ID;
 
+	// UI helpers for the macro tab
 	bool _wasExecutedRecently = false;
+	bool _onChangeTriggered = false;
 
 	bool _die = false;
 	bool _stop = false;

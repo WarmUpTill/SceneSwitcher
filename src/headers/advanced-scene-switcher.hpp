@@ -160,6 +160,7 @@ public slots:
 	void ResetOpacityConditionControls();
 	void HighlightControls();
 	void MacroDragDropReorder(QModelIndex, int, int, QModelIndex, int);
+	void HighlightOnChange();
 
 	void on_screenRegionSwitches_currentRowChanged(int idx);
 	void on_showFrame_clicked();

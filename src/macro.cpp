@@ -116,6 +116,7 @@ bool Macro::CeckMatch()
 		vblog(LOG_INFO, "ignore match for Macro %s (on change)",
 		      _name.c_str());
 		_matched = false;
+		SetOnChangeHighlight();
 	}
 	_lastMatched = newLastMatched;
 
@@ -183,6 +184,11 @@ void Macro::RunActions(bool ignorePause)
 {
 	bool unused;
 	RunActions(unused, ignorePause);
+}
+
+void Macro::SetOnChangeHighlight()
+{
+	_onChangeTriggered = true;
 }
 
 void Macro::SetPaused(bool pause)
@@ -431,8 +437,18 @@ bool Macro::WasExecutedRecently()
 	return false;
 }
 
+bool Macro::OnChangePreventedActionsRecently()
+{
+	if (_onChangeTriggered) {
+		_onChangeTriggered = false;
+		return true;
+	}
+	return false;
+}
+
 void Macro::ResetUIHelpers()
 {
+	_onChangeTriggered = false;
 	for (auto c : _conditions) {
 		c->Highlight();
 	}
