@@ -464,6 +464,14 @@ void AdvSceneSwitcher::setupMacroTab()
 	connect(&highlightMatchTimer, &QTimer::timeout, this,
 		&AdvSceneSwitcher::HighlightMatchedMacros);
 	highlightMatchTimer.start();
+
+	// TODO: clean this up - just for demo purposes
+	auto handle = ui->macroSplitter->handle(1);
+	auto item = ui->macroConditionsLayout->takeAt(1);
+	auto layout = item->layout();
+	layout->setContentsMargins(7, 7, 7, 7);
+	handle->setLayout(layout);
+	ui->macroSplitter->setHandleWidth(38);
 }
 
 void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
