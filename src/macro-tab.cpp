@@ -11,7 +11,6 @@
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
 
-static QTimer highlightMatchTimer;
 static QMetaObject::Connection addPulse;
 
 bool macroNameExists(std::string name)
@@ -67,7 +66,8 @@ QListWidgetItem *AddNewMacroListEntry(QListWidget *list,
 {
 	QListWidgetItem *item = new QListWidgetItem(list);
 	item->setData(Qt::UserRole, QString::fromStdString(macro->Name()));
-	auto listEntry = new MacroListEntryWidget(macro, list);
+	auto listEntry = new MacroListEntryWidget(
+		macro, switcher->highlightExecutedMacros, list);
 	item->setSizeHint(listEntry->minimumSizeHint());
 	list->setItemWidget(item, listEntry);
 	return item;
@@ -459,11 +459,6 @@ void AdvSceneSwitcher::setupMacroTab()
 
 	ui->macroPriorityWarning->setVisible(
 		switcher->functionNamesByPriority[0] != macro_func);
-
-	highlightMatchTimer.setInterval(1000);
-	connect(&highlightMatchTimer, &QTimer::timeout, this,
-		&AdvSceneSwitcher::HighlightMatchedMacros);
-	highlightMatchTimer.start();
 }
 
 void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
@@ -596,28 +591,6 @@ void AdvSceneSwitcher::MinimizeConditions()
 	sizes[0] = conditionsHeight;
 	sizes[1] = sum - conditionsHeight;
 	ui->macroSplitter->setSizes(sizes);
-}
-
-void AdvSceneSwitcher::HighlightMatchedMacros()
-{
-	if (loading || !(switcher && switcher->highlightExecutedMacros)) {
-		return;
-	}
-
-	for (int idx = 0; idx < (int)switcher->macros.size(); idx++) {
-		if (switcher->macros[idx]->WasExecutedRecently()) {
-			auto item = ui->macros->item(idx);
-			if (!item) {
-				continue;
-			}
-			auto widget = ui->macros->itemWidget(item);
-			if (!widget) {
-				continue;
-			}
-			PulseWidget(widget, Qt::green, QColor(0, 0, 0, 0),
-				    true);
-		}
-	}
 }
 
 void AdvSceneSwitcher::SetSelection(MacroSegmentList *list, int idx)

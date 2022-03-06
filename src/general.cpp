@@ -199,6 +199,7 @@ void AdvSceneSwitcher::on_highlightExecutedMacros_stateChanged(int state)
 	}
 
 	switcher->highlightExecutedMacros = state;
+	emit HighlightMacrosChanged(switcher->highlightExecutedMacros);
 }
 
 bool isLegacyTab(const QString &name)

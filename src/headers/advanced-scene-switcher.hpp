@@ -92,6 +92,7 @@ signals:
 	void MacroAdded(const QString &name);
 	void MacroRemoved(const QString &name);
 	void MacroRenamed(const QString &oldName, const QString newName);
+	void HighlightMacrosChanged(bool value);
 	void SceneGroupAdded(const QString &name);
 	void SceneGroupRemoved(const QString &name);
 	void SceneGroupRenamed(const QString &oldName, const QString newName);
@@ -158,7 +159,6 @@ public slots:
 	void ResetOpacityActionControls();
 	void ResetOpacityConditionControls();
 	void HighlightControls();
-	void HighlightMatchedMacros();
 	void MacroDragDropReorder(QModelIndex, int, int, QModelIndex, int);
 
 	void on_screenRegionSwitches_currentRowChanged(int idx);
