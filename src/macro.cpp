@@ -600,6 +600,8 @@ void MacroAction::LogAction()
 
 void SwitcherData::saveMacros(obs_data_t *obj)
 {
+	switcher->macroProperties.Save(obj);
+
 	obs_data_array_t *macroArray = obs_data_array_create();
 	for (auto &m : macros) {
 		obs_data_t *array_obj = obs_data_create();
@@ -615,8 +617,9 @@ void SwitcherData::saveMacros(obs_data_t *obj)
 
 void SwitcherData::loadMacros(obs_data_t *obj)
 {
-	macros.clear();
+	switcher->macroProperties.Load(obj);
 
+	macros.clear();
 	obs_data_array_t *macroArray = obs_data_get_array(obj, "macros");
 	size_t count = obs_data_array_count(macroArray);
 

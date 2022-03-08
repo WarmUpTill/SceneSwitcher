@@ -98,9 +98,6 @@ MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
 		SIGNAL(SceneGroupRenamed(const QString &, const QString)), this,
 		SIGNAL(SceneGroupRenamed(const QString &, const QString)));
 
-	QWidget::connect(parent, SIGNAL(HighlightMacrosChanged(bool)), this,
-			 SLOT(EnableHighlight(bool)));
-
 	_timer.setInterval(1500);
 	connect(&_timer, SIGNAL(timeout()), this, SLOT(Highlight()));
 	_timer.start();

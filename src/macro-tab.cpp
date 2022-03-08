@@ -4,6 +4,7 @@
 #include "headers/macro-condition-edit.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/name-dialog.hpp"
+#include "headers/macro-properties.hpp"
 #include "headers/utility.hpp"
 
 #include <QColor>
@@ -68,7 +69,7 @@ QListWidgetItem *AddNewMacroListEntry(QListWidget *list,
 	QListWidgetItem *item = new QListWidgetItem(list);
 	item->setData(Qt::UserRole, QString::fromStdString(macro->Name()));
 	auto listEntry = new MacroListEntryWidget(
-		macro, switcher->highlightExecutedMacros, list);
+		macro, switcher->macroProperties._highlightExecuted, list);
 	item->setSizeHint(listEntry->minimumSizeHint());
 	list->setItemWidget(item, listEntry);
 	return item;
@@ -416,11 +417,24 @@ void AdvSceneSwitcher::HighlightOnChange()
 		return;
 	}
 
-	if (switcher->highlightExecutedMacros &&
+	if (switcher->macroProperties._highlightExecuted &&
 	    macro->OnChangePreventedActionsRecently()) {
 		PulseWidget(ui->runMacroOnChange, Qt::yellow, Qt::transparent,
 			    true);
 	}
+}
+
+void AdvSceneSwitcher::on_macroProperties_clicked()
+{
+	MacroProperties prop = switcher->macroProperties;
+	bool accepted = MacroPropertiesDialog::AskForSettings(this, prop);
+	if (!accepted) {
+		return;
+	}
+	switcher->macroProperties = prop;
+	emit HighlightMacrosChanged(prop._highlightExecuted);
+	emit HighlightActionsChanged(prop._highlightActions);
+	emit HighlightConditionsChanged(prop._highlightConditions);
 }
 
 void AdvSceneSwitcher::setupMacroTab()

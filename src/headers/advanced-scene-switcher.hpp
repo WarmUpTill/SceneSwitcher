@@ -93,6 +93,8 @@ signals:
 	void MacroRemoved(const QString &name);
 	void MacroRenamed(const QString &oldName, const QString newName);
 	void HighlightMacrosChanged(bool value);
+	void HighlightActionsChanged(bool value);
+	void HighlightConditionsChanged(bool value);
 	void SceneGroupAdded(const QString &name);
 	void SceneGroupRemoved(const QString &name);
 	void SceneGroupRenamed(const QString &oldName, const QString newName);
@@ -161,6 +163,7 @@ public slots:
 	void HighlightControls();
 	void MacroDragDropReorder(QModelIndex, int, int, QModelIndex, int);
 	void HighlightOnChange();
+	void on_macroProperties_clicked();
 
 	void on_screenRegionSwitches_currentRowChanged(int idx);
 	void on_showFrame_clicked();
@@ -191,7 +194,6 @@ public slots:
 	void on_saveWindowGeo_stateChanged(int state);
 	void on_showTrayNotifications_stateChanged(int state);
 	void on_uiHintsDisable_stateChanged(int state);
-	void on_highlightExecutedMacros_stateChanged(int state);
 	void on_hideLegacyTabs_stateChanged(int state);
 
 	void on_exportSettings_clicked();

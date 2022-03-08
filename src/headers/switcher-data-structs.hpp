@@ -26,6 +26,7 @@
 #include "switch-network.hpp"
 
 #include "macro.hpp"
+#include "macro-properties.hpp"
 #include "duration-control.hpp"
 
 constexpr auto default_interval = 300;
@@ -88,7 +89,6 @@ struct SwitcherData {
 	bool verbose = false;
 	bool disableHints = false;
 	bool hideLegacyTabs = false;
-	bool highlightExecutedMacros = false;
 	bool showSystemTrayNotifications = false;
 	bool showFrame = false;
 	bool transitionOverrideOverride = false;
@@ -121,6 +121,7 @@ struct SwitcherData {
 	Duration cooldown;
 	std::chrono::high_resolution_clock::time_point lastMatchTime;
 
+	MacroProperties macroProperties;
 	std::deque<std::shared_ptr<Macro>> macros;
 	std::condition_variable macroWaitCv;
 	std::atomic_bool abortMacroWait = {false};
