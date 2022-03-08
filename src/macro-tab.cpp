@@ -481,6 +481,16 @@ void AdvSceneSwitcher::setupMacroTab()
 	connect(&onChangeHighlightTimer, SIGNAL(timeout()), this,
 		SLOT(HighlightOnChange()));
 	onChangeHighlightTimer.start();
+
+	// Move condition controls into splitter handle layout
+	auto handle = ui->macroSplitter->handle(1);
+	auto item = ui->macroConditionsLayout->takeAt(1);
+	if (item) {
+		auto layout = item->layout();
+		layout->setContentsMargins(7, 7, 7, 7);
+		handle->setLayout(layout);
+		ui->macroSplitter->setHandleWidth(38);
+	}
 }
 
 void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
