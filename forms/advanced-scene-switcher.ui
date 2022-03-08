@@ -326,30 +326,6 @@
                </layout>
               </item>
               <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_26">
-                <item>
-                 <widget class="QCheckBox" name="highlightExecutedMacros">
-                  <property name="text">
-                   <string>AdvSceneSwitcher.generalTab.generalBehavior.highlightExecutedMacros</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_19">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-              <item>
                <layout class="QHBoxLayout" name="horizontalLayout_24">
                 <item>
                  <widget class="QCheckBox" name="hideLegacyTabs">
@@ -750,9 +726,9 @@
          <property name="title">
           <string>AdvSceneSwitcher.macroTab.edit</string>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_38">
+         <layout class="QVBoxLayout" name="verticalLayout_33">
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="0,0,0,0,0,0">
+           <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="0,0,0,0,0,0,0">
             <item>
              <widget class="QLabel" name="label_20">
               <property name="text">
@@ -785,7 +761,7 @@
              </widget>
             </item>
             <item>
-             <spacer name="horizontalSpacer_13">
+             <spacer name="horizontalSpacer">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
@@ -796,6 +772,25 @@
                </size>
               </property>
              </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="macroProperties">
+              <property name="maximumSize">
+               <size>
+                <width>22</width>
+                <height>22</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+              <property name="themeID" stdset="0">
+               <string notr="true">propertiesIconSmall</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
