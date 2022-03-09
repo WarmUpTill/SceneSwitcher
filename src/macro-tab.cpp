@@ -661,28 +661,33 @@ void AdvSceneSwitcher::DeleteMacroSegementHotkey()
 
 void fade(QWidget *widget, bool fadeOut)
 {
+	const double fadeOutOpacity = 0.3;
+	// Don't use exactly 1.0 as for some reason this causes buttons in
+	// macroSplitter handle layout to not be redrawn unless mousing over
+	// them
+	const double fadeInOpacity = 0.99;
 	auto curEffect = widget->graphicsEffect();
 	if (curEffect) {
 		auto curOpacity =
 			dynamic_cast<QGraphicsOpacityEffect *>(curEffect);
 		if (curOpacity &&
-		    ((fadeOut &&
-		      doubleEquals(curOpacity->opacity(), 0.3, 0.0001)) ||
-		     (!fadeOut &&
-		      doubleEquals(curOpacity->opacity(), 1, 0.0001)))) {
+		    ((fadeOut && doubleEquals(curOpacity->opacity(),
+					      fadeOutOpacity, 0.0001)) ||
+		     (!fadeOut && doubleEquals(curOpacity->opacity(),
+					       fadeInOpacity, 0.0001)))) {
 			return;
 		}
 	} else if (!fadeOut) {
 		return;
 	}
-
+	delete curEffect;
 	QGraphicsOpacityEffect *opacityEffect = new QGraphicsOpacityEffect();
 	widget->setGraphicsEffect(opacityEffect);
 	QPropertyAnimation *animation =
 		new QPropertyAnimation(opacityEffect, "opacity");
 	animation->setDuration(350);
-	animation->setStartValue(fadeOut ? 1 : 0.3);
-	animation->setEndValue(fadeOut ? .3 : 1);
+	animation->setStartValue(fadeOut ? fadeInOpacity : fadeOutOpacity);
+	animation->setEndValue(fadeOut ? fadeOutOpacity : fadeInOpacity);
 	animation->setEasingCurve(QEasingCurve::OutQuint);
 	animation->start(QPropertyAnimation::DeleteWhenStopped);
 }
