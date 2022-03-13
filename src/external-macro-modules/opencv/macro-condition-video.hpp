@@ -1,7 +1,7 @@
 #pragma once
 #include "opencv-helpers.hpp"
 #include "threshold-slider.hpp"
-#include "video-match-dialog.hpp"
+#include "preview-dialog.hpp"
 #include "area-selection.hpp"
 
 #include <macro.hpp>
@@ -14,6 +14,7 @@
 #include <QHBoxLayout>
 #include <QGridLayout>
 #include <QLabel>
+#include <QRect>
 
 enum class VideoCondition {
 	MATCH,
@@ -119,6 +120,8 @@ private slots:
 
 	void CheckAreaEnableChanged(int value);
 	void CheckAreaChanged(advss::Area);
+	void CheckAreaChanged(QRect area);
+	void SelectAreaClicked();
 
 	void ThrottleEnableChanged(int value);
 	void ThrottleCountChanged(int value);
@@ -148,13 +151,14 @@ protected:
 	QHBoxLayout *_checkAreaControlLayout;
 	QCheckBox *_checkAreaEnable;
 	AreaSelection *_checkArea;
+	QPushButton *_selectArea;
 
 	QHBoxLayout *_throttleControlLayout;
 	QCheckBox *_throttleEnable;
 	QSpinBox *_throttleCount;
 
 	QPushButton *_showMatch;
-	ShowMatchDialog _matchDialog;
+	PreviewDialog _previewDialog;
 
 	std::shared_ptr<MacroConditionVideo> _entryData;
 

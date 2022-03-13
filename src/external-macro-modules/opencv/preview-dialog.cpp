@@ -1,22 +1,24 @@
-#include "video-match-dialog.hpp"
+#include "preview-dialog.hpp"
 #include "macro-condition-video.hpp"
 #include "opencv-helpers.hpp"
 #include "utility.hpp"
 
 #include <condition_variable>
 
-ShowMatchDialog::ShowMatchDialog(QWidget *parent,
-				 MacroConditionVideo *conditionData,
-				 std::mutex *mutex)
+PreviewDialog::PreviewDialog(QWidget *parent,
+			     MacroConditionVideo *conditionData,
+			     std::mutex *mutex)
 	: QDialog(parent),
 	  _conditionData(conditionData),
-	  _imageLabel(new QLabel),
+	  _imageLabel(new QLabel(this)),
 	  _scrollArea(new QScrollArea),
+	  _rubberBand(new QRubberBand(QRubberBand::Rectangle, this)),
 	  _mtx(mutex)
 {
 	setWindowTitle("Advanced Scene Switcher");
 	_statusLabel = new QLabel(obs_module_text(
 		"AdvSceneSwitcher.condition.video.showMatch.loading"));
+	resize(640, 480);
 
 	_scrollArea->setBackgroundRole(QPalette::Dark);
 	_scrollArea->setWidget(_imageLabel);
@@ -26,17 +28,53 @@ ShowMatchDialog::ShowMatchDialog(QWidget *parent,
 	setLayout(layout);
 
 	// This is a workaround to handle random segfaults triggered when using:
-	// QMetaObject::invokeMethod(this, "RedrawImage", -Qt::QueuedConnection,
-	//			   Q_ARG(QImage, image));
+	// QMetaObject::invokeMethod(this, "RedrawImage", Qt::QueuedConnection,
+	//			     Q_ARG(QImage, image));
 	// from within CheckForMatchLoop().
 	// Even using BlockingQueuedConnection causes deadlocks
 	_timer.setInterval(500);
 	QWidget::connect(&_timer, &QTimer::timeout, this,
-			 &ShowMatchDialog::Resize);
+			 &PreviewDialog::Resize);
 	_timer.start();
 }
 
-ShowMatchDialog::~ShowMatchDialog()
+void PreviewDialog::mousePressEvent(QMouseEvent *event)
+{
+	_selectingArea = true;
+	if (_type == Type::SHOW_MATCH) {
+		return;
+	}
+	_origin = event->pos();
+	_rubberBand->setGeometry(QRect(_origin, QSize()));
+	_rubberBand->show();
+}
+
+void PreviewDialog::mouseMoveEvent(QMouseEvent *event)
+{
+	_rubberBand->setGeometry(QRect(_origin, event->pos()).normalized());
+}
+
+void PreviewDialog::mouseReleaseEvent(QMouseEvent *)
+{
+	auto selectionStart =
+		_rubberBand->mapToGlobal(_rubberBand->rect().topLeft());
+	QRect selectionArea(selectionStart, _rubberBand->size());
+
+	auto imageStart =
+		_imageLabel->mapToGlobal(_imageLabel->rect().topLeft());
+	QRect imageArea(imageStart, _imageLabel->size());
+
+	auto intersected = imageArea.intersected(selectionArea);
+	QRect checksize(QPoint(intersected.topLeft() - imageStart),
+			intersected.size());
+	if (checksize.x() >= 0 && checksize.y() >= 0 && checksize.width() > 0 &&
+	    checksize.height() > 0) {
+		emit SelectionAreaChanged(checksize);
+	}
+	_selectingArea = false;
+}
+
+PreviewDialog::~PreviewDialog()
 {
 	_stop = true;
 	if (_thread.joinable()) {
@@ -44,7 +82,32 @@ ShowMatchDialog::~ShowMatchDialog()
 	}
 }
 
-void ShowMatchDialog::ShowMatch()
+void PreviewDialog::ShowMatch()
+{
+	Start();
+	_rubberBand->hide();
+	_type = Type::SHOW_MATCH;
+}
+
+void PreviewDialog::SelectArea()
+{
+	_selectingArea = false;
+	Start();
+	_type = Type::SELECT_AREA;
+	DrawFrame();
+	_statusLabel->setText(obs_module_text(
+		"AdvSceneSwitcher.condition.video.selectArea.status"));
+}
+
+void PreviewDialog::Resize()
+{
+	_imageLabel->adjustSize();
+	if (_type == Type::SELECT_AREA && !_selectingArea) {
+		DrawFrame();
+	}
+}
+
+void PreviewDialog::Start()
 {
 	if (_thread.joinable()) {
 		return;
@@ -54,15 +117,10 @@ void ShowMatchDialog::ShowMatch()
 			"AdvSceneSwitcher.condition.video.screenshotFail"));
 		return;
 	}
-	_thread = std::thread(&ShowMatchDialog::CheckForMatchLoop, this);
+	_thread = std::thread(&PreviewDialog::CheckForMatchLoop, this);
 }
 
-void ShowMatchDialog::Resize()
-{
-	_imageLabel->adjustSize();
-}
-
-void ShowMatchDialog::CheckForMatchLoop()
+void PreviewDialog::CheckForMatchLoop()
 {
 	std::condition_variable cv;
 	while (!_stop) {
@@ -74,6 +132,9 @@ void ShowMatchDialog::CheckForMatchLoop()
 		cv.wait_for(lock, std::chrono::seconds(1));
 		if (_stop) {
 			return;
+		}
+		if (isHidden()) {
+			continue;
 		}
 		if (!screenshot.done) {
 			_statusLabel->setText(obs_module_text(
@@ -89,14 +150,16 @@ void ShowMatchDialog::CheckForMatchLoop()
 			continue;
 		}
 
-		if (_conditionData->_checkAreaEnable) {
-			screenshot.image = screenshot.image.copy(
-				_conditionData->_checkArea.x,
-				_conditionData->_checkArea.y,
-				_conditionData->_checkArea.width,
-				_conditionData->_checkArea.height);
+		if (_type == Type::SHOW_MATCH) {
+			if (_conditionData->_checkAreaEnable) {
+				screenshot.image = screenshot.image.copy(
+					_conditionData->_checkArea.x,
+					_conditionData->_checkArea.y,
+					_conditionData->_checkArea.width,
+					_conditionData->_checkArea.height);
+			}
+			MarkMatch(screenshot.image);
 		}
-		MarkMatch(screenshot.image);
 		_imageLabel->setPixmap(QPixmap::fromImage(screenshot.image));
 	}
 }
@@ -127,7 +190,7 @@ void markObjects(QImage &image, std::vector<cv::Rect> &objects)
 	}
 }
 
-void ShowMatchDialog::MarkMatch(QImage &screenshot)
+void PreviewDialog::MarkMatch(QImage &screenshot)
 {
 	if (_conditionData->_condition == VideoCondition::PATTERN) {
 		cv::Mat result;
@@ -159,4 +222,21 @@ void ShowMatchDialog::MarkMatch(QImage &screenshot)
 			markObjects(screenshot, objects);
 		}
 	}
+}
+
+void PreviewDialog::DrawFrame()
+{
+	if (!_conditionData) {
+		return;
+	}
+	auto imageStart =
+		_imageLabel->mapToGlobal(_imageLabel->rect().topLeft());
+	auto windowStart = mapToGlobal(rect().topLeft());
+	_rubberBand->resize(_conditionData->_checkArea.width,
+			    _conditionData->_checkArea.height);
+	_rubberBand->move(_conditionData->_checkArea.x +
+				  (imageStart.x() - windowStart.x()),
+			  _conditionData->_checkArea.y +
+				  (imageStart.y() - windowStart.y()));
+	_rubberBand->show();
 }
