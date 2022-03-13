@@ -232,10 +232,17 @@ void clearLayout(QLayout *layout, int afterIdx)
 
 void setLayoutVisible(QLayout *layout, bool visible)
 {
+	if (!layout) {
+		return;
+	}
 	for (int i = 0; i < layout->count(); ++i) {
 		QWidget *widget = layout->itemAt(i)->widget();
-		if (widget != NULL) {
+		QLayout *nestedLayout = layout->itemAt(i)->layout();
+		if (widget) {
 			widget->setVisible(visible);
+		}
+		if (nestedLayout) {
+			setLayoutVisible(nestedLayout, visible);
 		}
 	}
 }
