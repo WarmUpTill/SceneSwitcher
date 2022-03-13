@@ -312,7 +312,9 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	  _throttleCount(new QSpinBox()),
 	  _showMatch(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.showMatch"))),
-	  _matchDialog(this, entryData.get(), &GetSwitcher()->m),
+	  _selectArea(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.condition.video.selectArea"))),
+	  _previewDialog(this, entryData.get(), &GetSwitcher()->m),
 	  _modelPathLayout(new QHBoxLayout),
 	  _neighborsControlLayout(new QHBoxLayout),
 	  _checkAreaControlLayout(new QHBoxLayout),
@@ -364,6 +366,10 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 SLOT(ThrottleCountChanged(int)));
 	QWidget::connect(_showMatch, SIGNAL(clicked()), this,
 			 SLOT(ShowMatchClicked()));
+	QWidget::connect(&_previewDialog, SIGNAL(SelectionAreaChanged(QRect)),
+			 this, SLOT(CheckAreaChanged(QRect)));
+	QWidget::connect(_selectArea, SIGNAL(clicked()), this,
+			 SLOT(SelectAreaClicked()));
 
 	populateVideoSelection(_videoSelection);
 	populateConditionSelection(_condition);
@@ -381,6 +387,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 		{"{{throttleCount}}", _throttleCount},
 		{"{{checkAreaEnable}}", _checkAreaEnable},
 		{"{{checkArea}}", _checkArea},
+		{"{{selectArea}}", _selectArea},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.video.entry"),
 		     entryLine1Layout, widgetPlaceholders);
@@ -662,6 +669,7 @@ void MacroConditionVideoEdit::CheckAreaEnableChanged(int value)
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
 	_entryData->_checkAreaEnable = value;
 	_checkArea->setEnabled(value);
+	_selectArea->setEnabled(value);
 }
 
 void MacroConditionVideoEdit::CheckAreaChanged(advss::Area value)
@@ -672,6 +680,13 @@ void MacroConditionVideoEdit::CheckAreaChanged(advss::Area value)
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
 	_entryData->_checkArea = value;
+}
+
+void MacroConditionVideoEdit::CheckAreaChanged(QRect rect)
+{
+	advss::Area area{rect.topLeft().x(), rect.y(), rect.width(),
+			 rect.height()};
+	_checkArea->SetArea(area);
 }
 
 void MacroConditionVideoEdit::ThrottleEnableChanged(int value)
@@ -697,10 +712,18 @@ void MacroConditionVideoEdit::ThrottleCountChanged(int value)
 
 void MacroConditionVideoEdit::ShowMatchClicked()
 {
-	_matchDialog.show();
-	_matchDialog.raise();
-	_matchDialog.activateWindow();
-	_matchDialog.ShowMatch();
+	_previewDialog.show();
+	_previewDialog.raise();
+	_previewDialog.activateWindow();
+	_previewDialog.ShowMatch();
+}
+
+void MacroConditionVideoEdit::SelectAreaClicked()
+{
+	_previewDialog.show();
+	_previewDialog.raise();
+	_previewDialog.activateWindow();
+	_previewDialog.SelectArea();
 }
 
 void MacroConditionVideoEdit::ModelPathChanged(const QString &text)

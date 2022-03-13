@@ -21,8 +21,8 @@ set(module_SOURCES
     area-selection.hpp
     macro-condition-video.cpp
     macro-condition-video.hpp
-    video-match-dialog.cpp
-    video-match-dialog.hpp
+    preview-dialog.cpp
+    preview-dialog.hpp
     threshold-slider.cpp
     threshold-slider.hpp
     opencv-helpers.cpp
