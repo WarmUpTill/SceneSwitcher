@@ -40,8 +40,8 @@ static std::map<MediaState, std::string> mediaStates = {
 	 "AdvSceneSwitcher.mediaTab.states.ended"},
 	{MediaState::OBS_MEDIA_STATE_ERROR,
 	 "AdvSceneSwitcher.mediaTab.states.error"},
-	{MediaState::PLAYED_TO_END,
-	 "AdvSceneSwitcher.mediaTab.states.playedToEnd"},
+	{MediaState::PLAYLIST_ENDED,
+	 "AdvSceneSwitcher.mediaTab.states.playlistEnd"},
 	{MediaState::ANY, "AdvSceneSwitcher.mediaTab.states.any"},
 };
 
@@ -51,110 +51,112 @@ MacroConditionMedia::~MacroConditionMedia()
 	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
 	signal_handler_disconnect(sh, "media_stopped", MediaStopped, this);
 	signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
+	signal_handler_disconnect(sh, "media_next", MediaNext, this);
 	obs_source_release(mediasource);
 }
 
-bool matchTime(const int64_t currentTime, const int64_t duration,
-	       const MediaTimeRestriction restriction, const int64_t time)
+bool MacroConditionMedia::CheckTime()
 {
-	bool matchedTimeNone =
-		(restriction == MediaTimeRestriction::TIME_RESTRICTION_NONE);
-	bool matchedTimeLonger =
-		(restriction ==
-		 MediaTimeRestriction::TIME_RESTRICTION_LONGER) &&
-		(currentTime > time);
-	bool matchedTimeShorter =
-		(restriction ==
-		 MediaTimeRestriction::TIME_RESTRICTION_SHORTER) &&
-		(currentTime < time);
-	bool matchedTimeRemainLonger =
-		(restriction ==
-		 MediaTimeRestriction::TIME_RESTRICTION_REMAINING_LONGER) &&
-		(duration > currentTime && duration - currentTime > time);
-	bool matchedTimeRemainShorter =
-		(restriction ==
-		 MediaTimeRestriction::TIME_RESTRICTION_REMAINING_SHORTER) &&
-		(duration > currentTime && duration - currentTime < time);
+	obs_source_t *s = obs_weak_source_get_source(_source);
+	auto duration = obs_source_media_get_duration(s);
+	auto currentTime = obs_source_media_get_time(s);
+	obs_source_release(s);
 
-	return matchedTimeNone || matchedTimeLonger || matchedTimeShorter ||
-	       matchedTimeRemainLonger || matchedTimeRemainShorter;
+	bool match = false;
+
+	switch (_restriction) {
+	case MediaTimeRestriction::TIME_RESTRICTION_NONE:
+		match = true;
+		break;
+	case MediaTimeRestriction::TIME_RESTRICTION_SHORTER:
+		match = currentTime < _time.seconds * 1000;
+		break;
+	case MediaTimeRestriction::TIME_RESTRICTION_LONGER:
+		match = currentTime > _time.seconds * 1000;
+		break;
+	case MediaTimeRestriction::TIME_RESTRICTION_REMAINING_SHORTER:
+		match = duration > currentTime &&
+			duration - currentTime < _time.seconds * 1000;
+		break;
+	case MediaTimeRestriction::TIME_RESTRICTION_REMAINING_LONGER:
+		match = duration > currentTime &&
+			duration - currentTime > _time.seconds * 1000;
+		break;
+	default:
+		break;
+	}
+
+	return match;
+}
+
+bool MacroConditionMedia::CheckState()
+{
+	obs_source_t *s = obs_weak_source_get_source(_source);
+	obs_media_state currentState = obs_source_media_get_state(s);
+	obs_source_release(s);
+
+	bool match = false;
+	// To be able to compare to obs_media_state more easily
+	int expectedState = static_cast<int>(_state);
+
+	switch (_state) {
+	case MediaState::OBS_MEDIA_STATE_STOPPED:
+		match = _stopped || currentState == OBS_MEDIA_STATE_STOPPED;
+		break;
+	case MediaState::OBS_MEDIA_STATE_ENDED:
+		match = _ended || currentState == OBS_MEDIA_STATE_ENDED;
+		break;
+	case MediaState::PLAYLIST_ENDED:
+		match = CheckPlaylistEnd(currentState);
+		break;
+	case MediaState::ANY:
+		match = true;
+		break;
+	case MediaState::OBS_MEDIA_STATE_NONE:
+	case MediaState::OBS_MEDIA_STATE_PLAYING:
+	case MediaState::OBS_MEDIA_STATE_OPENING:
+	case MediaState::OBS_MEDIA_STATE_BUFFERING:
+	case MediaState::OBS_MEDIA_STATE_PAUSED:
+	case MediaState::OBS_MEDIA_STATE_ERROR:
+		match = currentState == expectedState;
+		break;
+	default:
+		break;
+	}
+
+	return match;
+}
+
+bool MacroConditionMedia::CheckPlaylistEnd(const obs_media_state currentState)
+{
+	bool consecutiveEndedStates = false;
+	if (_next || currentState != OBS_MEDIA_STATE_ENDED) {
+		_previousStateEnded = false;
+	}
+	if (currentState == OBS_MEDIA_STATE_ENDED && _previousStateEnded) {
+		consecutiveEndedStates = true;
+	}
+	_previousStateEnded = _ended || currentState == OBS_MEDIA_STATE_ENDED;
+	return consecutiveEndedStates;
 }
 
 bool MacroConditionMedia::CheckMediaMatch()
 {
-
 	if (!_source) {
 		return false;
 	}
 	bool match = false;
-
-	obs_source_t *s = obs_weak_source_get_source(_source);
-	auto duration = obs_source_media_get_duration(s);
-	auto time = obs_source_media_get_time(s);
-	obs_media_state currentState = obs_source_media_get_state(s);
-	obs_source_release(s);
-
-	// To be able to compare to obs_media_state more easily
-	int expectedState = static_cast<int>(_state);
-
-	bool matchedStopped = expectedState == OBS_MEDIA_STATE_STOPPED &&
-			      _stopped;
-
-	// The signal for the state ended is intentionally not used here
-	// so matchedEnded can be used to specify the end of a VLC playlist
-	// by two consequtive matches of OBS_MEDIA_STATE_ENDED
-	//
-	// This was done to reduce the likelyhood of interpreting a single
-	// OBS_MEDIA_STATE_ENDED caught by obs_source_media_get_state()
-	// as the end of the playlist of the VLC source, while actually being
-	// in the middle of switching to the next item of the playlist
-	//
-	// If there is a separate obs_media_sate in the future for the
-	// "end of playlist reached" signal the line below can be used
-	// and an additional check for this new singal can be introduced
-	//
-	// bool matchedEnded = _state == OBS_MEDIA_STATE_ENDED && _ended;
-
-	bool ended = false;
-
-	if (currentState == OBS_MEDIA_STATE_ENDED) {
-		ended = _previousStateEnded;
-		_previousStateEnded = true;
-	} else {
-		_previousStateEnded = false;
-	}
-
-	bool matchedEnded = ended && (expectedState == OBS_MEDIA_STATE_ENDED);
-
-	// match if playedToEnd was true in last interval
-	// and playback is currently ended
-	bool matchedPlayedToEnd = _state == MediaState::PLAYED_TO_END &&
-				  _playedToEnd && ended;
-
-	// interval * 2 to make sure not to miss any state changes
-	// which happened during check of the conditions
-	_playedToEnd = _playedToEnd ||
-		       (duration - time <= switcher->interval * 2);
-
-	// reset for next check
-	if (ended) {
-		_playedToEnd = false;
-	}
-	_stopped = false;
-	_ended = false;
-
-	bool matchedState =
-		(currentState == expectedState || _state == MediaState::ANY) ||
-		matchedStopped || matchedEnded || matchedPlayedToEnd;
-
-	bool matchedTime =
-		matchTime(time, duration, _restriction, _time.seconds * 1000);
-	bool matched = matchedState && matchedTime;
+	bool matched = CheckState() && CheckTime();
 
 	if (matched && !(_onlyMatchonChagne && _alreadyMatched)) {
 		match = true;
 	}
 	_alreadyMatched = matched;
+
+	// reset for next check
+	_stopped = false;
+	_ended = false;
+	_next = false;
 
 	return match;
 }
@@ -195,6 +197,7 @@ bool MacroConditionMedia::Save(obs_data_t *obj)
 	obs_data_set_int(obj, "restriction", static_cast<int>(_restriction));
 	_time.Save(obj);
 	obs_data_set_bool(obj, "matchOnChagne", _onlyMatchonChagne);
+	obs_data_set_int(obj, "version", 0);
 	return true;
 }
 
@@ -250,11 +253,7 @@ bool MacroConditionMedia::Load(obs_data_t *obj)
 	_restriction = static_cast<MediaTimeRestriction>(
 		obs_data_get_int(obj, "restriction"));
 	_time.Load(obj);
-	if (!obs_data_has_user_value(obj, "matchOnChagne")) {
-		_onlyMatchonChagne = true;
-	} else {
-		_onlyMatchonChagne = obs_data_get_bool(obj, "matchOnChagne");
-	}
+	_onlyMatchonChagne = obs_data_get_bool(obj, "matchOnChagne");
 
 	if (_sourceType == MediaSourceType::SOURCE) {
 		obs_source_t *mediasource = obs_weak_source_get_source(_source);
@@ -262,11 +261,17 @@ bool MacroConditionMedia::Load(obs_data_t *obj)
 			obs_source_get_signal_handler(mediasource);
 		signal_handler_connect(sh, "media_stopped", MediaStopped, this);
 		signal_handler_connect(sh, "media_ended", MediaEnded, this);
+		signal_handler_connect(sh, "media_next", MediaNext, this);
 		obs_source_release(mediasource);
 	}
 
 	forMediaSourceOnSceneAddMediaCondition(_scene.GetScene(), this,
 					       _sources);
+	if (!obs_data_has_user_value(obj, "version")) {
+		if (_state == MediaState::OBS_MEDIA_STATE_ENDED) {
+			_state = MediaState::PLAYLIST_ENDED;
+		}
+	}
 	return true;
 }
 
@@ -304,6 +309,7 @@ void MacroConditionMedia::ClearSignalHandler()
 	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
 	signal_handler_disconnect(sh, "media_stopped", MediaStopped, this);
 	signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
+	signal_handler_disconnect(sh, "media_next", MediaNext, this);
 	obs_source_release(mediasource);
 }
 
@@ -313,8 +319,10 @@ void MacroConditionMedia::ResetSignalHandler()
 	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
 	signal_handler_disconnect(sh, "media_stopped", MediaStopped, this);
 	signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
+	signal_handler_disconnect(sh, "media_next", MediaNext, this);
 	signal_handler_connect(sh, "media_stopped", MediaStopped, this);
 	signal_handler_connect(sh, "media_ended", MediaEnded, this);
+	signal_handler_connect(sh, "media_next", MediaNext, this);
 	obs_source_release(mediasource);
 }
 
@@ -328,6 +336,12 @@ void MacroConditionMedia::MediaEnded(void *data, calldata_t *)
 {
 	MacroConditionMedia *media = static_cast<MacroConditionMedia *>(data);
 	media->_ended = true;
+}
+
+void MacroConditionMedia::MediaNext(void *data, calldata_t *)
+{
+	MacroConditionMedia *media = static_cast<MacroConditionMedia *>(data);
+	media->_next = true;
 }
 
 static void populateMediaTimeRestrictions(QComboBox *list)
@@ -356,15 +370,18 @@ static void addAnyAndAllStates(QComboBox *list)
 
 MacroConditionMediaEdit::MacroConditionMediaEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionMedia> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _mediaSources(new QComboBox()),
+	  _scenes(new SceneSelectionWidget(window())),
+	  _states(new QComboBox()),
+	  _timeRestrictions(new QComboBox()),
+	  _time(new DurationSelection()),
+	  _onChange(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.condition.media.matchOnChange")))
+
 {
-	_mediaSources = new QComboBox();
-	_scenes = new SceneSelectionWidget(window());
-	_states = new QComboBox();
-	_timeRestrictions = new QComboBox();
-	_time = new DurationSelection();
-	_onChange = new QCheckBox(obs_module_text(
-		"AdvSceneSwitcher.condition.media.matchOnChange"));
+	_states->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.condition.media.inconsistencyInfo"));
 
 	QWidget::connect(_mediaSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
@@ -548,6 +565,9 @@ void MacroConditionMediaEdit::OnChangeChanged(int value)
 void MacroConditionMediaEdit::SetWidgetVisibility()
 {
 	_scenes->setVisible(_entryData->_sourceType != MediaSourceType::SOURCE);
+	if (!_onChange->isChecked()) {
+		_onChange->hide();
+	}
 }
 
 int getIdxFromMediaState(MediaState state)
