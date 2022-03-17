@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "duration-control.hpp"
 
 #include <QSpinBox>
 #include <QHBoxLayout>
@@ -11,6 +12,7 @@ enum class MediaAction {
 	RESTART,
 	NEXT,
 	PREVIOUS,
+	SEEK,
 };
 
 class MacroActionMedia : public MacroAction {
@@ -29,6 +31,7 @@ public:
 
 	OBSWeakSource _mediaSource;
 	MediaAction _action = MediaAction::PLAY;
+	Duration _seek;
 
 private:
 	static bool _registered;
@@ -54,15 +57,20 @@ public:
 private slots:
 	void SourceChanged(const QString &text);
 	void ActionChanged(int value);
+	void DurationChanged(double value);
+	void DurationUnitChanged(DurationUnit unit);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
 	QComboBox *_mediaSources;
 	QComboBox *_actions;
+	DurationSelection *_seek;
 	std::shared_ptr<MacroActionMedia> _entryData;
 
 private:
+	void SetWidgetVisibility();
+
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };

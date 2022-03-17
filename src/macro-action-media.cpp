@@ -16,6 +16,7 @@ const static std::map<MediaAction, std::string> actionTypes = {
 	{MediaAction::RESTART, "AdvSceneSwitcher.action.media.type.restart"},
 	{MediaAction::NEXT, "AdvSceneSwitcher.action.media.type.next"},
 	{MediaAction::PREVIOUS, "AdvSceneSwitcher.action.media.type.previous"},
+	{MediaAction::SEEK, "AdvSceneSwitcher.action.media.type.seek"},
 };
 
 bool MacroActionMedia::PerformAction()
@@ -46,6 +47,9 @@ bool MacroActionMedia::PerformAction()
 	case MediaAction::PREVIOUS:
 		obs_source_media_previous(source);
 		break;
+	case MediaAction::SEEK:
+		obs_source_media_set_time(source, _seek.seconds * 1000);
+		break;
 	default:
 		break;
 	}
@@ -72,6 +76,7 @@ bool MacroActionMedia::Save(obs_data_t *obj)
 	obs_data_set_string(obj, "mediaSource",
 			    GetWeakSourceName(_mediaSource).c_str());
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
+	_seek.Save(obj);
 	return true;
 }
 
@@ -81,6 +86,7 @@ bool MacroActionMedia::Load(obs_data_t *obj)
 	const char *MediaSourceName = obs_data_get_string(obj, "mediaSource");
 	_mediaSource = GetWeakSourceByName(MediaSourceName);
 	_action = static_cast<MediaAction>(obs_data_get_int(obj, "action"));
+	_seek.Load(obj);
 	return true;
 }
 
@@ -101,11 +107,11 @@ static inline void populateActionSelection(QComboBox *list)
 
 MacroActionMediaEdit::MacroActionMediaEdit(
 	QWidget *parent, std::shared_ptr<MacroActionMedia> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _mediaSources(new QComboBox()),
+	  _actions(new QComboBox()),
+	  _seek(new DurationSelection())
 {
-	_mediaSources = new QComboBox();
-	_actions = new QComboBox();
-
 	populateActionSelection(_actions);
 	populateMediaSelection(_mediaSources);
 
@@ -114,11 +120,16 @@ MacroActionMediaEdit::MacroActionMediaEdit(
 	QWidget::connect(_mediaSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(SourceChanged(const QString &)));
+	QWidget::connect(_seek, SIGNAL(DurationChanged(double)), this,
+			 SLOT(DurationChanged(double)));
+	QWidget::connect(_seek, SIGNAL(UnitChanged(DurationUnit)), this,
+			 SLOT(DurationUnitChanged(DurationUnit)));
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{mediaSources}}", _mediaSources},
 		{"{{actions}}", _actions},
+		{"{{duration}}", _seek},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.media.entry"),
 		     mainLayout, widgetPlaceholders);
@@ -138,6 +149,8 @@ void MacroActionMediaEdit::UpdateEntryData()
 	_mediaSources->setCurrentText(
 		GetWeakSourceName(_entryData->_mediaSource).c_str());
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_seek->SetDuration(_entryData->_seek);
+	SetWidgetVisibility();
 }
 
 void MacroActionMediaEdit::SourceChanged(const QString &text)
@@ -160,4 +173,34 @@ void MacroActionMediaEdit::ActionChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<MediaAction>(value);
+	SetWidgetVisibility();
+}
+
+void MacroActionMediaEdit::DurationChanged(double seconds)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_seek.seconds = seconds;
+}
+
+void MacroActionMediaEdit::DurationUnitChanged(DurationUnit unit)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_seek.displayUnit = unit;
+}
+
+void MacroActionMediaEdit::SetWidgetVisibility()
+{
+	if (!_entryData) {
+		return;
+	}
+	_seek->setVisible(_entryData->_action == MediaAction::SEEK);
+	adjustSize();
 }
