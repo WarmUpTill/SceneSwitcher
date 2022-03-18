@@ -14,6 +14,17 @@ const static std::map<StreamAction, std::string> actionTypes = {
 	{StreamAction::START, "AdvSceneSwitcher.action.streaming.type.start"},
 };
 
+constexpr int streamStartCooldown = 5;
+std::chrono::high_resolution_clock::time_point MacroActionStream::s_lastAttempt =
+	std::chrono::high_resolution_clock::now();
+
+bool MacroActionStream::CooldownDurationReached()
+{
+	auto timePassed = std::chrono::duration_cast<std::chrono::seconds>(
+		std::chrono::high_resolution_clock::now() - s_lastAttempt);
+	return timePassed.count() >= streamStartCooldown;
+}
+
 bool MacroActionStream::PerformAction()
 {
 	switch (_action) {
@@ -24,10 +35,10 @@ bool MacroActionStream::PerformAction()
 		break;
 	case StreamAction::START:
 		if (!obs_frontend_streaming_active() &&
-		    _retryCooldown.DurationReached()) {
+		    CooldownDurationReached()) {
 			obs_frontend_streaming_start();
-			_retryCooldown.seconds++;
-			_retryCooldown.Reset();
+			s_lastAttempt =
+				std::chrono::high_resolution_clock::now();
 		}
 		break;
 	default:

@@ -1,10 +1,10 @@
 #pragma once
 #include "macro-action-edit.hpp"
-#include "duration-control.hpp"
 
 #include <QDoubleSpinBox>
 #include <QComboBox>
 #include <QHBoxLayout>
+#include <chrono>
 
 enum class StreamAction {
 	STOP,
@@ -27,9 +27,8 @@ public:
 	StreamAction _action = StreamAction::STOP;
 
 private:
-	// Acts as a safeguard for misconfigured streaming setups leading to an
-	// endless error spam.
-	Duration _retryCooldown;
+	bool CooldownDurationReached();
+	static std::chrono::high_resolution_clock::time_point s_lastAttempt;
 
 	static bool _registered;
 	static const std::string id;
