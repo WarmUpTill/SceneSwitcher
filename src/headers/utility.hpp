@@ -43,7 +43,7 @@ std::string getSceneItemTransform(obs_scene_item *item);
 void placeWidgets(std::string text, QBoxLayout *layout,
 		  std::unordered_map<std::string, QWidget *> placeholders,
 		  bool addStretch = true);
-void deleteLayoutItem(QLayoutItem *item);
+void deleteLayoutItemWidget(QLayoutItem *item);
 void clearLayout(QLayout *layout, int afterIdx = 0);
 void setLayoutVisible(QLayout *layout, bool visible);
 QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
