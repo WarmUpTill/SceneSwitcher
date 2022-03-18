@@ -244,7 +244,7 @@ void AdvSceneSwitcher::PopulateMacroActions(Macro &m, uint32_t afterIdx)
 		auto newEntry = new MacroActionEdit(this, &actions[afterIdx],
 						    actions[afterIdx]->GetId());
 		ConnectControlSignals(newEntry);
-		actionsList->ContentLayout()->addWidget(newEntry);
+		actionsList->Add(newEntry);
 	}
 	actionsList->SetHelpMsgVisible(actions.size() == 0);
 }
@@ -258,7 +258,7 @@ void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
 			this, &conditions[afterIdx],
 			conditions[afterIdx]->GetId(), root);
 		ConnectControlSignals(newEntry);
-		conditionsList->ContentLayout()->addWidget(newEntry);
+		conditionsList->Add(newEntry);
 		root = false;
 	}
 	conditionsList->SetHelpMsgVisible(conditions.size() == 0);
@@ -307,8 +307,8 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 		ui->runMacroInParallel->setChecked(m.RunInParallel());
 		ui->runMacroOnChange->setChecked(m.MatchOnChange());
 	}
-	clearLayout(conditionsList->ContentLayout());
-	clearLayout(actionsList->ContentLayout());
+	conditionsList->Clear();
+	actionsList->Clear();
 
 	m.ResetUIHelpers();
 
@@ -323,28 +323,12 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 
 void AdvSceneSwitcher::HighlightAction(int idx)
 {
-	auto item = actionsList->ContentLayout()->itemAt(idx);
-	if (!item) {
-		return;
-	}
-	auto widget = item->widget();
-	if (!widget) {
-		return;
-	}
-	PulseWidget(widget, QColor(Qt::green), QColor(0, 0, 0, 0), true);
+	actionsList->Highlight(idx);
 }
 
 void AdvSceneSwitcher::HighlightCondition(int idx)
 {
-	auto item = conditionsList->ContentLayout()->itemAt(idx);
-	if (!item) {
-		return;
-	}
-	auto widget = item->widget();
-	if (!widget) {
-		return;
-	}
-	PulseWidget(widget, QColor(Qt::green), QColor(0, 0, 0, 0), true);
+	conditionsList->Highlight(idx);
 }
 
 void AdvSceneSwitcher::ConnectControlSignals(MacroActionEdit *a)
@@ -466,6 +450,8 @@ void AdvSceneSwitcher::setupMacroTab()
 		obs_module_text("AdvSceneSwitcher.macroTab.editConditionHelp"));
 	connect(conditionsList, &MacroSegmentList::SelectionChagned, this,
 		&AdvSceneSwitcher::MacroConditionSelectionChanged);
+	connect(conditionsList, &MacroSegmentList::Reorder, this,
+		&AdvSceneSwitcher::MacroConditionReorder);
 	ui->macroConditionsLayout->insertWidget(0, conditionsList);
 
 	delete actionsList;
@@ -474,6 +460,8 @@ void AdvSceneSwitcher::setupMacroTab()
 		obs_module_text("AdvSceneSwitcher.macroTab.editActionHelp"));
 	connect(actionsList, &MacroSegmentList::SelectionChagned, this,
 		&AdvSceneSwitcher::MacroActionSelectionChanged);
+	connect(actionsList, &MacroSegmentList::Reorder, this,
+		&AdvSceneSwitcher::MacroActionReorder);
 	ui->macroActionsLayout->insertWidget(0, actionsList);
 
 	ui->macros->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -571,25 +559,13 @@ void AdvSceneSwitcher::CopyMacro()
 	ui->macros->setCurrentItem(item);
 }
 
-void setCollapsedStateOfSegmentsIn(QLayout *layout, bool collapse)
-{
-	QLayoutItem *item = nullptr;
-	for (int i = 0; i < layout->count(); i++) {
-		item = layout->itemAt(i);
-		auto segment = dynamic_cast<MacroSegmentEdit *>(item->widget());
-		if (segment) {
-			segment->SetCollapsed(collapse);
-		}
-	}
-}
-
 void AdvSceneSwitcher::ExpandAllActions()
 {
 	auto m = getSelectedMacro();
 	if (!m) {
 		return;
 	}
-	setCollapsedStateOfSegmentsIn(actionsList->ContentLayout(), false);
+	actionsList->SetCollapsed(false);
 }
 
 void AdvSceneSwitcher::ExpandAllConditions()
@@ -598,7 +574,7 @@ void AdvSceneSwitcher::ExpandAllConditions()
 	if (!m) {
 		return;
 	}
-	setCollapsedStateOfSegmentsIn(conditionsList->ContentLayout(), false);
+	conditionsList->SetCollapsed(false);
 }
 
 void AdvSceneSwitcher::CollapseAllActions()
@@ -607,7 +583,7 @@ void AdvSceneSwitcher::CollapseAllActions()
 	if (!m) {
 		return;
 	}
-	setCollapsedStateOfSegmentsIn(actionsList->ContentLayout(), true);
+	actionsList->SetCollapsed(true);
 }
 
 void AdvSceneSwitcher::CollapseAllConditions()
@@ -616,7 +592,7 @@ void AdvSceneSwitcher::CollapseAllConditions()
 	if (!m) {
 		return;
 	}
-	setCollapsedStateOfSegmentsIn(conditionsList->ContentLayout(), true);
+	conditionsList->SetCollapsed(true);
 }
 
 void AdvSceneSwitcher::MinimizeActions()
@@ -641,13 +617,7 @@ void AdvSceneSwitcher::MinimizeConditions()
 
 void AdvSceneSwitcher::SetSelection(MacroSegmentList *list, int idx)
 {
-	for (int i = 0; i < list->ContentLayout()->count(); ++i) {
-		auto widget = static_cast<MacroSegmentEdit *>(
-			list->ContentLayout()->itemAt(i)->widget());
-		if (widget) {
-			widget->SetSelected(i == idx);
-		}
-	}
+	list->SetSelection(idx);
 }
 
 void AdvSceneSwitcher::DeleteMacroSegementHotkey()
