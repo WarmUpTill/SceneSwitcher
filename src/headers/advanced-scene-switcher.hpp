@@ -147,11 +147,13 @@ public slots:
 	void MinimizeActions();
 	void MinimizeConditions();
 	void MacroActionSelectionChanged(int idx);
+	void MacroActionReorder(int to, int target);
 	void AddMacroAction(int idx);
 	void RemoveMacroAction(int idx);
 	void MoveMacroActionUp(int idx);
 	void MoveMacroActionDown(int idx);
 	void MacroConditionSelectionChanged(int idx);
+	void MacroConditionReorder(int to, int target);
 	void AddMacroCondition(int idx);
 	void RemoveMacroCondition(int idx);
 	void MoveMacroConditionUp(int idx);

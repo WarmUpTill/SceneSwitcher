@@ -172,7 +172,7 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 		macro->UpdateActionIndices();
 	}
 
-	clearLayout(actionsList->ContentLayout(), idx);
+	actionsList->Clear(idx);
 	PopulateMacroActions(*macro, idx);
 	HighlightAction(idx);
 	SetActionData(*macro);
@@ -219,7 +219,7 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 		macro->UpdateActionIndices();
 	}
 
-	clearLayout(actionsList->ContentLayout(), idx);
+	actionsList->Clear(idx);
 	PopulateMacroActions(*macro, idx);
 	SetActionData(*macro);
 }
@@ -271,16 +271,14 @@ void AdvSceneSwitcher::SwapActions(Macro *m, int pos1, int pos2)
 	auto a1 = m->Actions().begin() + pos1;
 	auto a2 = m->Actions().begin() + pos2;
 
-	auto item1 = actionsList->ContentLayout()->takeAt(pos1);
-	auto item2 = actionsList->ContentLayout()->takeAt(pos2 - 1);
-	deleteLayoutItem(item1);
-	deleteLayoutItem(item2);
+	actionsList->Remove(pos1);
+	actionsList->Remove(pos2 - 1);
 	auto widget1 = new MacroActionEdit(this, &(*a1), (*a1)->GetId());
 	auto widget2 = new MacroActionEdit(this, &(*a2), (*a2)->GetId());
 	ConnectControlSignals(widget1);
 	ConnectControlSignals(widget2);
-	actionsList->ContentLayout()->insertWidget(pos1, widget1);
-	actionsList->ContentLayout()->insertWidget(pos2, widget2);
+	actionsList->Insert(pos1, widget1);
+	actionsList->Insert(pos2, widget2);
 }
 
 void AdvSceneSwitcher::MoveMacroActionUp(int idx)
@@ -330,4 +328,30 @@ void AdvSceneSwitcher::MacroActionSelectionChanged(int idx)
 	}
 	currentConditionIdx = -1;
 	HighlightControls();
+}
+
+void AdvSceneSwitcher::MacroActionReorder(int to, int from)
+{
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	if (from < 0 || from > (int)macro->Actions().size() || to < 0 ||
+	    to > (int)macro->Actions().size()) {
+		return;
+	}
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		auto action = macro->Actions().at(from);
+		macro->Actions().erase(macro->Actions().begin() + from);
+		macro->Actions().insert(macro->Actions().begin() + to, action);
+	}
+
+	int idx = to > from ? from : to;
+	macro->UpdateActionIndices();
+	actionsList->Clear(idx);
+	PopulateMacroActions(*macro, idx);
+	HighlightAction(to);
+	SetActionData(*macro);
 }

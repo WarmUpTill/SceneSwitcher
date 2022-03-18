@@ -302,7 +302,7 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 		macro->UpdateConditionIndices();
 	}
 
-	clearLayout(conditionsList->ContentLayout(), idx);
+	conditionsList->Clear(idx);
 	PopulateMacroConditions(*macro, idx);
 	HighlightCondition(idx);
 	SetConditionData(*macro);
@@ -352,7 +352,7 @@ void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 		}
 	}
 
-	clearLayout(conditionsList->ContentLayout(), idx);
+	conditionsList->Clear(idx);
 	PopulateMacroConditions(*macro, idx);
 	SetConditionData(*macro);
 }
@@ -413,18 +413,16 @@ void AdvSceneSwitcher::SwapConditions(Macro *m, int pos1, int pos2)
 		(*c2)->SetLogicType(logic1);
 	}
 
-	auto item1 = conditionsList->ContentLayout()->takeAt(pos1);
-	auto item2 = conditionsList->ContentLayout()->takeAt(pos2 - 1);
-	deleteLayoutItem(item1);
-	deleteLayoutItem(item2);
+	conditionsList->Remove(pos1);
+	conditionsList->Remove(pos2 - 1);
 	auto widget1 =
 		new MacroConditionEdit(this, &(*c1), (*c1)->GetId(), root);
 	auto widget2 =
 		new MacroConditionEdit(this, &(*c2), (*c2)->GetId(), false);
 	ConnectControlSignals(widget1);
 	ConnectControlSignals(widget2);
-	conditionsList->ContentLayout()->insertWidget(pos1, widget1);
-	conditionsList->ContentLayout()->insertWidget(pos2, widget2);
+	conditionsList->Insert(pos1, widget1);
+	conditionsList->Insert(pos2, widget2);
 }
 
 void AdvSceneSwitcher::MoveMacroConditionUp(int idx)
@@ -474,4 +472,40 @@ void AdvSceneSwitcher::MacroConditionSelectionChanged(int idx)
 	}
 	currentActionIdx = -1;
 	HighlightControls();
+}
+
+void AdvSceneSwitcher::MacroConditionReorder(int to, int from)
+{
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	if (from < 0 || from > (int)macro->Conditions().size() || to < 0 ||
+	    to > (int)macro->Conditions().size()) {
+		return;
+	}
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		auto condition = macro->Conditions().at(from);
+		if (to == 0) {
+			condition->SetLogicType(LogicType::ROOT_NONE);
+			macro->Conditions().at(0)->SetLogicType(LogicType::AND);
+		}
+		if (from == 0) {
+			condition->SetLogicType(LogicType::AND);
+			macro->Conditions().at(1)->SetLogicType(
+				LogicType::ROOT_NONE);
+		}
+		macro->Conditions().erase(macro->Conditions().begin() + from);
+		macro->Conditions().insert(macro->Conditions().begin() + to,
+					   condition);
+	}
+
+	int idx = to > from ? from : to;
+	macro->UpdateConditionIndices();
+	conditionsList->Clear(idx);
+	PopulateMacroConditions(*macro, idx);
+	HighlightCondition(to);
+	SetConditionData(*macro);
 }
