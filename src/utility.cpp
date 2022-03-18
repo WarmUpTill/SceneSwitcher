@@ -204,12 +204,13 @@ void placeWidgets(std::string text, QBoxLayout *layout,
 	}
 }
 
-void deleteLayoutItem(QLayoutItem *item)
+void deleteLayoutItemWidget(QLayoutItem *item)
 {
 	if (item) {
 		auto widget = item->widget();
 		if (widget) {
 			widget->setVisible(false);
+			widget->deleteLater();
 		}
 		delete item;
 	}
@@ -223,10 +224,7 @@ void clearLayout(QLayout *layout, int afterIdx)
 			clearLayout(item->layout());
 			delete item->layout();
 		}
-		if (item->widget()) {
-			delete item->widget();
-		}
-		delete item;
+		deleteLayoutItemWidget(item);
 	}
 }
 
