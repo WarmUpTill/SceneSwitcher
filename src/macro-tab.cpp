@@ -243,7 +243,6 @@ void AdvSceneSwitcher::PopulateMacroActions(Macro &m, uint32_t afterIdx)
 	for (; afterIdx < actions.size(); afterIdx++) {
 		auto newEntry = new MacroActionEdit(this, &actions[afterIdx],
 						    actions[afterIdx]->GetId());
-		ConnectControlSignals(newEntry);
 		actionsList->Add(newEntry);
 	}
 	actionsList->SetHelpMsgVisible(actions.size() == 0);
@@ -257,7 +256,6 @@ void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
 		auto newEntry = new MacroConditionEdit(
 			this, &conditions[afterIdx],
 			conditions[afterIdx]->GetId(), root);
-		ConnectControlSignals(newEntry);
 		conditionsList->Add(newEntry);
 		root = false;
 	}
@@ -329,18 +327,6 @@ void AdvSceneSwitcher::HighlightAction(int idx)
 void AdvSceneSwitcher::HighlightCondition(int idx)
 {
 	conditionsList->Highlight(idx);
-}
-
-void AdvSceneSwitcher::ConnectControlSignals(MacroActionEdit *a)
-{
-	connect(a, &MacroActionEdit::SelectionChagned, this,
-		&AdvSceneSwitcher::MacroActionSelectionChanged);
-}
-
-void AdvSceneSwitcher::ConnectControlSignals(MacroConditionEdit *c)
-{
-	connect(c, &MacroActionEdit::SelectionChagned, this,
-		&AdvSceneSwitcher::MacroConditionSelectionChanged);
 }
 
 Macro *AdvSceneSwitcher::getSelectedMacro()

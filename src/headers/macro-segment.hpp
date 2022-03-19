@@ -58,11 +58,8 @@ signals:
 	void SceneGroupAdded(const QString &name);
 	void SceneGroupRemoved(const QString &name);
 	void SceneGroupRenamed(const QString &oldName, const QString newName);
-	void SelectionChagned(int idx);
 
 protected:
-	void mousePressEvent(QMouseEvent *event);
-
 	Section *_section;
 	QLabel *_headerInfo;
 	QFrame *_frame;
