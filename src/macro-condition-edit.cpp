@@ -419,8 +419,6 @@ void AdvSceneSwitcher::SwapConditions(Macro *m, int pos1, int pos2)
 		new MacroConditionEdit(this, &(*c1), (*c1)->GetId(), root);
 	auto widget2 =
 		new MacroConditionEdit(this, &(*c2), (*c2)->GetId(), false);
-	ConnectControlSignals(widget1);
-	ConnectControlSignals(widget2);
 	conditionsList->Insert(pos1, widget1);
 	conditionsList->Insert(pos2, widget2);
 }

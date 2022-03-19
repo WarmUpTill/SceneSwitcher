@@ -58,8 +58,6 @@ public:
 	void PopulateMacroConditions(Macro &m, uint32_t afterIdx = 0);
 	void SetActionData(Macro &m);
 	void SetConditionData(Macro &m);
-	void ConnectControlSignals(MacroActionEdit *);
-	void ConnectControlSignals(MacroConditionEdit *);
 	void SwapActions(Macro *m, int pos1, int pos2);
 	void SwapConditions(Macro *m, int pos1, int pos2);
 

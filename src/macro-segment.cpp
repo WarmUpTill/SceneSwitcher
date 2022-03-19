@@ -132,13 +132,6 @@ void MacroSegmentEdit::EnableHighlight(bool value)
 	_showHighlight = value;
 }
 
-void MacroSegmentEdit::mousePressEvent(QMouseEvent *event)
-{
-	if (event->button() == Qt::LeftButton && Data()) {
-		emit SelectionChagned(Data()->GetIndex());
-	}
-}
-
 void MacroSegmentEdit::SetFocusPolicyOfWidgets()
 {
 	QList<QWidget *> widgets = this->findChildren<QWidget *>();

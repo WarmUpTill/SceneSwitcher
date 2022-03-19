@@ -275,8 +275,6 @@ void AdvSceneSwitcher::SwapActions(Macro *m, int pos1, int pos2)
 	actionsList->Remove(pos2 - 1);
 	auto widget1 = new MacroActionEdit(this, &(*a1), (*a1)->GetId());
 	auto widget2 = new MacroActionEdit(this, &(*a2), (*a2)->GetId());
-	ConnectControlSignals(widget1);
-	ConnectControlSignals(widget2);
 	actionsList->Insert(pos1, widget1);
 	actionsList->Insert(pos2, widget2);
 }
