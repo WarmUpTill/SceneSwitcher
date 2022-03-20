@@ -31,15 +31,22 @@ protected:
 	void mousePressEvent(QMouseEvent *event);
 	void mouseMoveEvent(QMouseEvent *event);
 	void mouseReleaseEvent(QMouseEvent *event);
+	void dragLeaveEvent(QDragLeaveEvent *event);
 	void dragEnterEvent(QDragEnterEvent *event);
+	void dragMoveEvent(QDragMoveEvent *event);
 	void dropEvent(QDropEvent *event);
 
 private:
-	int GetIndex(QPoint);
-	int GetDropIndex(QPoint);
+	int GetDragIndex(const QPoint &);
+	int GetDropIndex(const QPoint &);
+	int GetWidgetIdx(const QPoint &);
+	bool IsInListArea(const QPoint &);
 	QRect GetContentItemRectWithPadding(int idx);
+	void HideLastDropLine();
+	MacroSegmentEdit *WidgetAt(int idx);
 
 	int _dragPosition = -1;
+	int _dropLineIdx = -1;
 
 	QVBoxLayout *_layout;
 	QVBoxLayout *_contentLayout;
