@@ -125,14 +125,14 @@ MacroConditionEdit::MacroConditionEdit(
 	_section->AddHeaderWidget(_dur);
 
 	QVBoxLayout *conditionLayout = new QVBoxLayout;
-	conditionLayout->setContentsMargins(0, 0, 0, 0);
-	conditionLayout->setSpacing(0);
-	conditionLayout->addWidget(_frame);
-	_selectionFrameLayout->addWidget(_section);
+	conditionLayout->setContentsMargins({7, 7, 7, 7});
+	conditionLayout->addWidget(_section);
+	_contentLayout->addLayout(conditionLayout);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	mainLayout->setContentsMargins(0, 0, 0, 0);
-	mainLayout->addLayout(conditionLayout);
+	mainLayout->setSpacing(0);
+	mainLayout->addWidget(_frame);
 	setLayout(mainLayout);
 
 	UpdateEntryData(id);
@@ -460,8 +460,8 @@ void AdvSceneSwitcher::MacroConditionSelectionChanged(int idx)
 		return;
 	}
 
-	SetSelection(conditionsList, idx);
-	SetSelection(actionsList, -1);
+	conditionsList->SetSelection(idx);
+	actionsList->SetSelection(-1);
 
 	if (idx < 0 || (unsigned)idx >= macro->Conditions().size()) {
 		currentConditionIdx = -1;
@@ -500,10 +500,7 @@ void AdvSceneSwitcher::MacroConditionReorder(int to, int from)
 					   condition);
 	}
 
-	int idx = to > from ? from : to;
 	macro->UpdateConditionIndices();
-	conditionsList->Clear(idx);
-	PopulateMacroConditions(*macro, idx);
 	HighlightCondition(to);
 	SetConditionData(*macro);
 }

@@ -62,8 +62,10 @@ signals:
 protected:
 	Section *_section;
 	QLabel *_headerInfo;
-	QFrame *_frame;
-	QVBoxLayout *_selectionFrameLayout;
+	QWidget *_frame;
+	QFrame *_noBorderframe;
+	QFrame *_borderFrame;
+	QVBoxLayout *_contentLayout;
 
 private:
 	virtual MacroSegment *Data() = 0;

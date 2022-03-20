@@ -157,11 +157,11 @@ void MacroSegmentList::mousePressEvent(QMouseEvent *event)
 void MacroSegmentList::mouseMoveEvent(QMouseEvent *event)
 {
 	if (event->buttons() & Qt::LeftButton && _dragPosition != -1) {
-		QWidget *widget = nullptr;
-		if (_contentLayout->itemAt(_dragPosition)) {
-			widget =
-				_contentLayout->itemAt(_dragPosition)->widget();
+		auto item = _contentLayout->itemAt(_dragPosition);
+		if (!item) {
+			return;
 		}
+		auto widget = item->widget();
 		if (!widget) {
 			return;
 		}
@@ -256,6 +256,8 @@ void MacroSegmentList::dropEvent(QDropEvent *event)
 		if (dropPosition == -1) {
 			return;
 		}
+		_contentLayout->insertItem(
+			dropPosition, _contentLayout->takeAt(_dragPosition));
 		emit Reorder(dropPosition, _dragPosition);
 	}
 	_dragPosition = -1;
