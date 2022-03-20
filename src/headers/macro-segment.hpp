@@ -63,15 +63,38 @@ protected:
 	Section *_section;
 	QLabel *_headerInfo;
 	QWidget *_frame;
-	QFrame *_noBorderframe;
-	QFrame *_borderFrame;
 	QVBoxLayout *_contentLayout;
 
 private:
+	enum class DropLineState {
+		NONE,
+		ABOVE,
+		BELOW,
+	};
+
 	virtual MacroSegment *Data() = 0;
+	void ShowDropLine(DropLineState);
+
+	// The reason for using two separate frame widget each with their own
+	// stylesheet and changing their visibility vs. using a single frame
+	// and changing the stylesheet at runtime is that the operation of
+	// adjusting the stylesheet is very expensive and can take multiple
+	// hundred milliseconds per widget.
+	// This performance impact would hurt in areas like drag and drop or
+	// emitting the "SelectionChanged" signal.
+	QFrame *_noBorderframe;
+	QFrame *_borderFrame;
+
+	// In most cases the line above the widget will be used.
+	// The lower one will only be used if the segment is the last one in
+	// the list.
+	QFrame *_dropLineAbove;
+	QFrame *_dropLineBelow;
 
 	bool _showHighlight;
 	QTimer _timer;
+
+	friend class MacroSegmentList;
 };
 
 class MouseWheelWidgetAdjustmentGuard : public QObject {

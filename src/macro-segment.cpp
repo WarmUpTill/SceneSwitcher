@@ -63,15 +63,15 @@ MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
 	  _contentLayout(new QVBoxLayout),
 	  _frame(new QWidget),
 	  _borderFrame(new QFrame),
-	  _noBorderframe(new QFrame)
+	  _noBorderframe(new QFrame),
+	  _dropLineAbove(new QFrame),
+	  _dropLineBelow(new QFrame)
 {
-	// The reason for using two separate frame widget each with their own
-	// stylesheet and changing their visibility vs. using a single frame
-	// and changing the stylesheet at runtime is that the operation of
-	// adjusting the stylesheet is very expensive and can take multiple
-	// hundred milliseconds per widget.
-	// This performance impact would hurt in areas like drag and drop or
-	// emitting the "SelectionChanged" signal.
+	_dropLineAbove->setLineWidth(3);
+	_dropLineAbove->setFixedHeight(11);
+	_dropLineBelow->setLineWidth(3);
+	_dropLineBelow->setFixedHeight(11);
+
 	_borderFrame->setObjectName("border");
 	_borderFrame->setStyleSheet("#border {"
 				    "border-color: rgba(0, 0, 0, 255);"
@@ -105,7 +105,6 @@ MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
 	// the edit areas
 	setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-	// Signal handling
 	QWidget::connect(_section, &Section::Collapsed, this,
 			 &MacroSegmentEdit::Collapsed);
 	// Macro signals
@@ -127,14 +126,21 @@ MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
 		SIGNAL(SceneGroupRenamed(const QString &, const QString)), this,
 		SIGNAL(SceneGroupRenamed(const QString &, const QString)));
 
-	// Frame layout
-	auto layout = new QGridLayout;
+	auto frameLayout = new QGridLayout;
+	frameLayout->setContentsMargins(0, 0, 0, 0);
+	frameLayout->addLayout(_contentLayout, 0, 0);
+	frameLayout->addWidget(_noBorderframe, 0, 0);
+	frameLayout->addWidget(_borderFrame, 0, 0);
+	auto layout = new QVBoxLayout;
 	layout->setContentsMargins(0, 0, 0, 0);
-	layout->addLayout(_contentLayout, 0, 0);
-	layout->addWidget(_noBorderframe, 0, 0);
-	layout->addWidget(_borderFrame, 0, 0);
+	layout->setSpacing(0);
+	layout->addWidget(_dropLineAbove);
+	layout->addLayout(frameLayout);
+	layout->addWidget(_dropLineBelow);
 	_frame->setLayout(layout);
+
 	SetSelected(false);
+	ShowDropLine(DropLineState::NONE);
 
 	_timer.setInterval(1500);
 	connect(&_timer, SIGNAL(timeout()), this, SLOT(Highlight()));
@@ -193,4 +199,29 @@ void MacroSegmentEdit::SetSelected(bool selected)
 {
 	_borderFrame->setVisible(selected);
 	_noBorderframe->setVisible(!selected);
+}
+
+void MacroSegmentEdit::ShowDropLine(DropLineState state)
+{
+	switch (state) {
+	case MacroSegmentEdit::DropLineState::NONE:
+		_dropLineAbove->setFrameShadow(QFrame::Plain);
+		_dropLineAbove->setFrameShape(QFrame::NoFrame);
+		_dropLineBelow->hide();
+		break;
+	case MacroSegmentEdit::DropLineState::ABOVE:
+		_dropLineAbove->setFrameShadow(QFrame::Sunken);
+		_dropLineAbove->setFrameShape(QFrame::Panel);
+		_dropLineBelow->hide();
+		break;
+	case MacroSegmentEdit::DropLineState::BELOW:
+		_dropLineAbove->setFrameShadow(QFrame::Plain);
+		_dropLineAbove->setFrameShape(QFrame::NoFrame);
+		_dropLineBelow->setFrameShadow(QFrame::Sunken);
+		_dropLineBelow->setFrameShape(QFrame::Panel);
+		_dropLineBelow->show();
+		break;
+	default:
+		break;
+	}
 }
