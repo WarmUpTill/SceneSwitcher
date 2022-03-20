@@ -80,14 +80,14 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	_section->AddHeaderWidget(_headerInfo);
 
 	QVBoxLayout *actionLayout = new QVBoxLayout;
-	actionLayout->setContentsMargins(0, 0, 0, 0);
-	actionLayout->setSpacing(0);
-	actionLayout->addWidget(_frame);
-	_selectionFrameLayout->addWidget(_section);
+	actionLayout->setContentsMargins({7, 7, 7, 7});
+	actionLayout->addWidget(_section);
+	_contentLayout->addLayout(actionLayout);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	mainLayout->setContentsMargins(0, 0, 0, 0);
-	mainLayout->addLayout(actionLayout);
+	mainLayout->setSpacing(0);
+	mainLayout->addWidget(_frame);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -316,8 +316,8 @@ void AdvSceneSwitcher::MacroActionSelectionChanged(int idx)
 		return;
 	}
 
-	SetSelection(actionsList, idx);
-	SetSelection(conditionsList, -1);
+	actionsList->SetSelection(idx);
+	conditionsList->SetSelection(-1);
 
 	if (idx < 0 || (unsigned)idx >= macro->Actions().size()) {
 		currentActionIdx = -1;
@@ -346,10 +346,7 @@ void AdvSceneSwitcher::MacroActionReorder(int to, int from)
 		macro->Actions().insert(macro->Actions().begin() + to, action);
 	}
 
-	int idx = to > from ? from : to;
 	macro->UpdateActionIndices();
-	actionsList->Clear(idx);
-	PopulateMacroActions(*macro, idx);
 	HighlightAction(to);
 	SetActionData(*macro);
 }

@@ -56,17 +56,47 @@ bool MouseWheelWidgetAdjustmentGuard::eventFilter(QObject *o, QEvent *e)
 }
 
 MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
-	: QWidget(parent), _showHighlight(highlight)
+	: QWidget(parent),
+	  _showHighlight(highlight),
+	  _section(new Section(300)),
+	  _headerInfo(new QLabel()),
+	  _contentLayout(new QVBoxLayout),
+	  _frame(new QWidget),
+	  _borderFrame(new QFrame),
+	  _noBorderframe(new QFrame)
 {
-	_section = new Section(300);
-	_headerInfo = new QLabel();
+	// The reason for using two separate frame widget each with their own
+	// stylesheet and changing their visibility vs. using a single frame
+	// and changing the stylesheet at runtime is that the operation of
+	// adjusting the stylesheet is very expensive and can take multiple
+	// hundred milliseconds per widget.
+	// This performance impact would hurt in areas like drag and drop or
+	// emitting the "SelectionChanged" signal.
+	_borderFrame->setObjectName("border");
+	_borderFrame->setStyleSheet("#border {"
+				    "border-color: rgba(0, 0, 0, 255);"
+				    "border-width: 2px;"
+				    "border-style: dashed;"
+				    "border-radius: 4px;"
+				    "background-color: rgba(0,0,0,100);"
+				    "}");
+	_noBorderframe->setObjectName("noBorder");
+	_noBorderframe->setStyleSheet("#noBorder {"
+				      "border-color: rgba(0, 0, 0, 0);"
+				      "border-width: 2px;"
+				      "border-style: dashed;"
+				      "border-radius: 4px;"
+				      "background-color: rgba(0,0,0,50);"
+				      "}");
+	_frame->setObjectName("frameWrapper");
+	_frame->setStyleSheet("#frameWrapper {"
+			      "border-width: 2px;"
+			      "border-radius: 4px;"
+			      "background-color: rgba(0,0,0,0);"
+			      "}");
 
-	_frame = new QFrame;
-	_frame->setObjectName("segmentFrame");
-	_selectionFrameLayout = new QVBoxLayout;
-	SetSelected(false);
-	_frame->setLayout(_selectionFrameLayout);
-	// Set background transparent to avoid blocking highlight frame
+	// Set background of these widget types to be transparent to avoid
+	// blocking highlight frame background
 	setStyleSheet("QCheckBox { background-color: rgba(0,0,0,0); }"
 		      "QLabel { background-color: rgba(0,0,0,0); }"
 		      "QSlider { background-color: rgba(0,0,0,0); }");
@@ -75,9 +105,9 @@ MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
 	// the edit areas
 	setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
+	// Signal handling
 	QWidget::connect(_section, &Section::Collapsed, this,
 			 &MacroSegmentEdit::Collapsed);
-
 	// Macro signals
 	QWidget::connect(parent, SIGNAL(MacroAdded(const QString &)), this,
 			 SIGNAL(MacroAdded(const QString &)));
@@ -87,7 +117,6 @@ MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
 			 SIGNAL(MacroRenamed(const QString &, const QString)),
 			 this,
 			 SIGNAL(MacroRenamed(const QString &, const QString)));
-
 	// Scene group signals
 	QWidget::connect(parent, SIGNAL(SceneGroupAdded(const QString &)), this,
 			 SIGNAL(SceneGroupAdded(const QString &)));
@@ -97,6 +126,15 @@ MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
 		parent,
 		SIGNAL(SceneGroupRenamed(const QString &, const QString)), this,
 		SIGNAL(SceneGroupRenamed(const QString &, const QString)));
+
+	// Frame layout
+	auto layout = new QGridLayout;
+	layout->setContentsMargins(0, 0, 0, 0);
+	layout->addLayout(_contentLayout, 0, 0);
+	layout->addWidget(_noBorderframe, 0, 0);
+	layout->addWidget(_borderFrame, 0, 0);
+	_frame->setLayout(layout);
+	SetSelected(false);
 
 	_timer.setInterval(1500);
 	connect(&_timer, SIGNAL(timeout()), this, SLOT(Highlight()));
@@ -153,21 +191,6 @@ void MacroSegmentEdit::SetCollapsed(bool collapsed)
 
 void MacroSegmentEdit::SetSelected(bool selected)
 {
-	if (selected) {
-		_frame->setStyleSheet("#segmentFrame {"
-				      "border-color: rgba(0, 0, 0, 255);"
-				      "border-width: 2px;"
-				      "border-style: dashed;"
-				      "border-radius: 4px;"
-				      "background-color: rgba(0,0,0,100);"
-				      "}");
-	} else {
-		_frame->setStyleSheet("#segmentFrame {"
-				      "border-color: rgba(0, 0, 0, 0);"
-				      "border-width: 2px;"
-				      "border-style: dashed;"
-				      "border-radius: 4px;"
-				      "background-color: rgba(0,0,0,50);"
-				      "}");
-	}
+	_borderFrame->setVisible(selected);
+	_noBorderframe->setVisible(!selected);
 }

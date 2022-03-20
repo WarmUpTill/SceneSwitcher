@@ -601,11 +601,6 @@ void AdvSceneSwitcher::MinimizeConditions()
 	ui->macroSplitter->setSizes(sizes);
 }
 
-void AdvSceneSwitcher::SetSelection(MacroSegmentList *list, int idx)
-{
-	list->SetSelection(idx);
-}
-
 void AdvSceneSwitcher::DeleteMacroSegementHotkey()
 {
 	if (currentActionIdx != -1) {
