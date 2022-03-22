@@ -33,6 +33,14 @@ MacroSegmentList::MacroSegmentList(QWidget *parent)
 	setAcceptDrops(true);
 }
 
+MacroSegmentList::~MacroSegmentList()
+{
+	if (_autoScrollThread.joinable()) {
+		_autoScroll = false;
+		_autoScrollThread.join();
+	}
+}
+
 int MacroSegmentList::GetDragIndex(const QPoint &pos)
 {
 	for (int idx = 0; idx < _contentLayout->count(); ++idx) {
@@ -172,7 +180,12 @@ void MacroSegmentList::mouseMoveEvent(QMouseEvent *event)
 		drag->setMimeData(mimedata);
 		drag->setPixmap(img);
 		drag->setHotSpot(event->pos());
+		_autoScroll = true;
+		_autoScrollThread =
+			std::thread(&MacroSegmentList::CheckScroll, this);
 		drag->exec();
+		_autoScroll = false;
+		_autoScrollThread.join();
 	}
 }
 
@@ -249,7 +262,73 @@ void MacroSegmentList::dragMoveEvent(QDragMoveEvent *event)
 	if (!widgetIsInLayout(widget, _contentLayout)) {
 		return;
 	}
-	const QPoint pos(mapToGlobal(event->pos()));
+
+	_dragCursorPos = (mapToGlobal(event->pos()));
+	CheckDropLine(_dragCursorPos);
+}
+
+QRect MacroSegmentList::GetContentItemRectWithPadding(int idx)
+{
+	auto item = _contentLayout->itemAt(idx);
+	if (!item) {
+		return {};
+	}
+	int scrollOffset = 0;
+	if (verticalScrollBar()) {
+		scrollOffset = verticalScrollBar()->value();
+	}
+	const QRect itemRect = item->geometry().marginsAdded(
+		_contentLayout->contentsMargins());
+	const QRect rect(
+		mapToGlobal(QPoint(itemRect.topLeft().x(),
+				   itemRect.topLeft().y() -
+					   _contentLayout->spacing() -
+					   scrollOffset)),
+		QSize(itemRect.size().width(),
+		      itemRect.size().height() + _contentLayout->spacing()));
+	return rect;
+}
+
+int MacroSegmentList::GetWidgetIdx(const QPoint &pos)
+{
+	int idx = -1;
+	for (int i = 0; i < _contentLayout->count(); ++i) {
+		if (GetContentItemRectWithPadding(i).contains(pos)) {
+			idx = i;
+			break;
+		}
+	}
+	return idx;
+}
+
+void MacroSegmentList::CheckScroll()
+{
+	while (_autoScroll) {
+		const int scrollTrigger = 15;
+		const int scrollAmount = 1;
+		const QRect rect(mapToGlobal(QPoint(0, 0)), size());
+		const QRect upperScrollTrigger(
+			QPoint(rect.topLeft().x(),
+			       rect.topLeft().y() - scrollTrigger),
+			QSize(rect.width(), scrollTrigger * 2));
+		if (upperScrollTrigger.contains(_dragCursorPos)) {
+			verticalScrollBar()->setValue(
+				verticalScrollBar()->value() - scrollAmount);
+		}
+		const QRect lowerScrollTrigger(
+			QPoint(rect.bottomLeft().x(),
+			       rect.bottomLeft().y() - scrollTrigger),
+			QSize(rect.width(), scrollTrigger * 2));
+		if (lowerScrollTrigger.contains(_dragCursorPos)) {
+			verticalScrollBar()->setValue(
+				verticalScrollBar()->value() + scrollAmount);
+		}
+		std::this_thread::sleep_for(std::chrono::microseconds(50));
+	}
+}
+
+void MacroSegmentList::CheckDropLine(const QPoint &pos)
+{
 	int idx = GetWidgetIdx(pos);
 	if (idx == _dragPosition) {
 		return;
@@ -290,40 +369,6 @@ void MacroSegmentList::dragMoveEvent(QDragMoveEvent *event)
 		HideLastDropLine();
 		_dropLineIdx = idx;
 	}
-}
-
-QRect MacroSegmentList::GetContentItemRectWithPadding(int idx)
-{
-	auto item = _contentLayout->itemAt(idx);
-	if (!item) {
-		return {};
-	}
-	int scrollOffset = 0;
-	if (verticalScrollBar()) {
-		scrollOffset = verticalScrollBar()->value();
-	}
-	const QRect itemRect = item->geometry().marginsAdded(
-		_contentLayout->contentsMargins());
-	const QRect rect(
-		mapToGlobal(QPoint(itemRect.topLeft().x(),
-				   itemRect.topLeft().y() -
-					   _contentLayout->spacing() -
-					   scrollOffset)),
-		QSize(itemRect.size().width(),
-		      itemRect.size().height() + _contentLayout->spacing()));
-	return rect;
-}
-
-int MacroSegmentList::GetWidgetIdx(const QPoint &pos)
-{
-	int idx = -1;
-	for (int i = 0; i < _contentLayout->count(); ++i) {
-		if (GetContentItemRectWithPadding(i).contains(pos)) {
-			idx = i;
-			break;
-		}
-	}
-	return idx;
 }
 
 bool MacroSegmentList::IsInListArea(const QPoint &pos)
