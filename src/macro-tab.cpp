@@ -603,6 +603,11 @@ void AdvSceneSwitcher::MinimizeConditions()
 
 void AdvSceneSwitcher::DeleteMacroSegementHotkey()
 {
+	if (!isActiveWindow() || !isAncestorOf(focusWidget()) ||
+	    !(ui->tabWidget->currentWidget()->objectName() == "macroTab")) {
+		return;
+	}
+
 	if (currentActionIdx != -1) {
 		RemoveMacroAction(currentActionIdx);
 	} else if (currentConditionIdx != -1) {
