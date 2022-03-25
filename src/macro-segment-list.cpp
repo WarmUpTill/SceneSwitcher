@@ -415,8 +415,6 @@ void MacroSegmentList::dropEvent(QDropEvent *event)
 		if (dropPosition == -1) {
 			return;
 		}
-		_contentLayout->insertItem(
-			dropPosition, _contentLayout->takeAt(_dragPosition));
 		emit Reorder(dropPosition, _dragPosition);
 	}
 	_dragPosition = -1;

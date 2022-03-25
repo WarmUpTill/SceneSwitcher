@@ -161,11 +161,24 @@ bool MacroConditionEdit::IsRootNode()
 	return _isRoot;
 }
 
+void MacroConditionEdit::SetLogicSelection()
+{
+	auto logic = (*_entryData)->GetLogicType();
+	if (IsRootNode()) {
+		_logicSelection->setCurrentIndex(static_cast<int>(logic));
+	} else {
+		_logicSelection->setCurrentIndex(static_cast<int>(logic) -
+						 logic_root_offset);
+	}
+}
+
 void MacroConditionEdit::SetRootNode(bool root)
 {
+	_isRoot = root;
 	const QSignalBlocker blocker(_logicSelection);
 	_logicSelection->clear();
 	populateLogicSelection(_logicSelection, root);
+	SetLogicSelection();
 }
 
 void MacroConditionEdit::UpdateEntryData(const std::string &id)
@@ -178,13 +191,7 @@ void MacroConditionEdit::UpdateEntryData(const std::string &id)
 			 this, SLOT(HeaderInfoChanged(const QString &)));
 	HeaderInfoChanged(
 		QString::fromStdString((*_entryData)->GetShortDesc()));
-	auto logic = (*_entryData)->GetLogicType();
-	if (IsRootNode()) {
-		_logicSelection->setCurrentIndex(static_cast<int>(logic));
-	} else {
-		_logicSelection->setCurrentIndex(static_cast<int>(logic) -
-						 logic_root_offset);
-	}
+	SetLogicSelection();
 	_section->SetContent(widget, (*_entryData)->GetCollapsed());
 
 	_dur->setVisible(MacroConditionFactory::UsesDurationConstraint(id));
@@ -300,12 +307,13 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 		}
 		(*cond)->SetLogicType(logic);
 		macro->UpdateConditionIndices();
+		conditionsList->Insert(
+			idx,
+			new MacroConditionEdit(this, &macro->Conditions()[idx],
+					       id, idx == 0));
+		SetConditionData(*macro);
 	}
-
-	conditionsList->Clear(idx);
-	PopulateMacroConditions(*macro, idx);
 	HighlightCondition(idx);
-	SetConditionData(*macro);
 }
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()
@@ -345,16 +353,14 @@ void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 		std::lock_guard<std::mutex> lock(switcher->m);
 		macro->Conditions().erase(macro->Conditions().begin() + idx);
 		macro->UpdateConditionIndices();
-
 		if (idx == 0 && macro->Conditions().size() > 0) {
 			auto newRoot = macro->Conditions().at(0);
 			newRoot->SetLogicType(LogicType::ROOT_NONE);
 		}
+		conditionsList->Remove(idx);
+		SetConditionData(*macro);
 	}
-
-	conditionsList->Clear(idx);
-	PopulateMacroConditions(*macro, idx);
-	SetConditionData(*macro);
+	MacroConditionSelectionChanged(-1);
 }
 
 void AdvSceneSwitcher::on_conditionRemove_clicked()
@@ -413,14 +419,15 @@ void AdvSceneSwitcher::SwapConditions(Macro *m, int pos1, int pos2)
 		(*c2)->SetLogicType(logic1);
 	}
 
-	conditionsList->Remove(pos1);
-	conditionsList->Remove(pos2 - 1);
-	auto widget1 =
-		new MacroConditionEdit(this, &(*c1), (*c1)->GetId(), root);
-	auto widget2 =
-		new MacroConditionEdit(this, &(*c2), (*c2)->GetId(), false);
-	conditionsList->Insert(pos1, widget1);
-	conditionsList->Insert(pos2, widget2);
+	auto widget1 = static_cast<MacroConditionEdit *>(
+		conditionsList->ContentLayout()->takeAt(pos1)->widget());
+	auto widget2 = static_cast<MacroConditionEdit *>(
+		conditionsList->ContentLayout()->takeAt(pos2 - 1)->widget());
+	conditionsList->Insert(pos1, widget2);
+	conditionsList->Insert(pos2, widget1);
+	SetConditionData(*m);
+	widget2->SetRootNode(root);
+	widget1->SetRootNode(false);
 }
 
 void AdvSceneSwitcher::MoveMacroConditionUp(int idx)
@@ -488,19 +495,32 @@ void AdvSceneSwitcher::MacroConditionReorder(int to, int from)
 		auto condition = macro->Conditions().at(from);
 		if (to == 0) {
 			condition->SetLogicType(LogicType::ROOT_NONE);
+			static_cast<MacroConditionEdit *>(
+				conditionsList->WidgetAt(from))
+				->SetRootNode(true);
 			macro->Conditions().at(0)->SetLogicType(LogicType::AND);
+			static_cast<MacroConditionEdit *>(
+				conditionsList->WidgetAt(0))
+				->SetRootNode(false);
 		}
 		if (from == 0) {
 			condition->SetLogicType(LogicType::AND);
+			static_cast<MacroConditionEdit *>(
+				conditionsList->WidgetAt(from))
+				->SetRootNode(false);
 			macro->Conditions().at(1)->SetLogicType(
 				LogicType::ROOT_NONE);
+			static_cast<MacroConditionEdit *>(
+				conditionsList->WidgetAt(1))
+				->SetRootNode(true);
 		}
 		macro->Conditions().erase(macro->Conditions().begin() + from);
 		macro->Conditions().insert(macro->Conditions().begin() + to,
 					   condition);
+		macro->UpdateConditionIndices();
+		conditionsList->ContentLayout()->insertItem(
+			to, conditionsList->ContentLayout()->takeAt(from));
+		SetConditionData(*macro);
 	}
-
-	macro->UpdateConditionIndices();
 	HighlightCondition(to);
-	SetConditionData(*macro);
 }

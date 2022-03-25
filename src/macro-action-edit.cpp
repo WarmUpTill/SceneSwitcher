@@ -170,12 +170,12 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 			obs_data_release(data);
 		}
 		macro->UpdateActionIndices();
+		actionsList->Insert(
+			idx,
+			new MacroActionEdit(this, &macro->Actions()[idx], id));
+		SetActionData(*macro);
 	}
-
-	actionsList->Clear(idx);
-	PopulateMacroActions(*macro, idx);
 	HighlightAction(idx);
-	SetActionData(*macro);
 }
 
 void AdvSceneSwitcher::on_actionAdd_clicked()
@@ -217,11 +217,10 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 		switcher->abortMacroWait = true;
 		switcher->macroWaitCv.notify_all();
 		macro->UpdateActionIndices();
+		actionsList->Remove(idx);
+		SetActionData(*macro);
 	}
-
-	actionsList->Clear(idx);
-	PopulateMacroActions(*macro, idx);
-	SetActionData(*macro);
+	MacroActionSelectionChanged(-1);
 }
 
 void AdvSceneSwitcher::on_actionRemove_clicked()
@@ -271,12 +270,13 @@ void AdvSceneSwitcher::SwapActions(Macro *m, int pos1, int pos2)
 	auto a1 = m->Actions().begin() + pos1;
 	auto a2 = m->Actions().begin() + pos2;
 
-	actionsList->Remove(pos1);
-	actionsList->Remove(pos2 - 1);
-	auto widget1 = new MacroActionEdit(this, &(*a1), (*a1)->GetId());
-	auto widget2 = new MacroActionEdit(this, &(*a2), (*a2)->GetId());
-	actionsList->Insert(pos1, widget1);
-	actionsList->Insert(pos2, widget2);
+	auto widget1 = static_cast<MacroActionEdit *>(
+		actionsList->ContentLayout()->takeAt(pos1)->widget());
+	auto widget2 = static_cast<MacroActionEdit *>(
+		actionsList->ContentLayout()->takeAt(pos2 - 1)->widget());
+	actionsList->Insert(pos1, widget2);
+	actionsList->Insert(pos2, widget1);
+	SetActionData(*m);
 }
 
 void AdvSceneSwitcher::MoveMacroActionUp(int idx)
@@ -344,9 +344,8 @@ void AdvSceneSwitcher::MacroActionReorder(int to, int from)
 		auto action = macro->Actions().at(from);
 		macro->Actions().erase(macro->Actions().begin() + from);
 		macro->Actions().insert(macro->Actions().begin() + to, action);
+		macro->UpdateActionIndices();
+		SetActionData(*macro);
 	}
-
-	macro->UpdateActionIndices();
 	HighlightAction(to);
-	SetActionData(*macro);
 }

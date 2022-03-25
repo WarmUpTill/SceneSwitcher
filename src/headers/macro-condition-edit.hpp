@@ -48,6 +48,7 @@ private slots:
 	void DurationUnitChanged(DurationUnit unit);
 
 private:
+	void SetLogicSelection();
 	MacroSegment *Data();
 
 	QComboBox *_logicSelection;
