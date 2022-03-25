@@ -15,6 +15,7 @@ public:
 	virtual ~MacroSegmentList();
 	void SetHelpMsg(const QString &msg);
 	void SetHelpMsgVisible(bool visible);
+	MacroSegmentEdit *WidgetAt(int idx);
 	void Insert(int idx, QWidget *widget);
 	void Add(QWidget *widget);
 	void Remove(int idx);
@@ -47,7 +48,6 @@ private:
 	bool IsInListArea(const QPoint &);
 	QRect GetContentItemRectWithPadding(int idx);
 	void HideLastDropLine();
-	MacroSegmentEdit *WidgetAt(int idx);
 
 	int _dragPosition = -1;
 	int _dropLineIdx = -1;
