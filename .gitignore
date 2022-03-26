@@ -92,6 +92,15 @@ Thumbs.db
 *.iml
 *.ipr
 *.sublime*
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+.history/
+*.vsix
+forms/advanced-scene-switcher.ui.autosave
 
 # Directories #
 ###############

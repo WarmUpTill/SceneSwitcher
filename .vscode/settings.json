@@ -1,8 +1,0 @@
-{
-    "files.associations": {
-        "new": "cpp",
-        "*.ipp": "cpp",
-        "*.inc": "cpp",
-        "string": "cpp"
-    }
-}
