@@ -34,6 +34,28 @@ void startStopToggleHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
 	}
 }
 
+void upMacroSegmentHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
+			      bool pressed)
+{
+	if (pressed && switcher->settingsWindowOpened &&
+	    AdvSceneSwitcher::window) {
+		QMetaObject::invokeMethod(AdvSceneSwitcher::window,
+					  "UpMacroSegementHotkey",
+					  Qt::QueuedConnection);
+	}
+}
+
+void downMacroSegmentHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
+				bool pressed)
+{
+	if (pressed && switcher->settingsWindowOpened &&
+	    AdvSceneSwitcher::window) {
+		QMetaObject::invokeMethod(AdvSceneSwitcher::window,
+					  "DownMacroSegementHotkey",
+					  Qt::QueuedConnection);
+	}
+}
+
 void removeMacroSegmentHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
 				  bool pressed)
 {
@@ -60,6 +82,15 @@ void registerHotkeys()
 		obs_module_text(
 			"AdvSceneSwitcher.hotkey.startStopToggleSwitcherHotkey"),
 		startStopToggleHotkeyFunc, NULL);
+	switcher->upMacroSegment = obs_hotkey_register_frontend(
+		"upMacroSegmentSwitcherHotkey",
+		obs_module_text("AdvSceneSwitcher.hotkey.upMacroSegmentHotkey"),
+		upMacroSegmentHotkeyFunc, NULL);
+	switcher->downMacroSegment = obs_hotkey_register_frontend(
+		"downMacroSegmentSwitcherHotkey",
+		obs_module_text(
+			"AdvSceneSwitcher.hotkey.downMacroSegmentHotkey"),
+		downMacroSegmentHotkeyFunc, NULL);
 	switcher->removeMacroSegment = obs_hotkey_register_frontend(
 		"removeMacroSegmentSwitcherHotkey",
 		obs_module_text(
@@ -69,26 +100,28 @@ void registerHotkeys()
 	switcher->hotkeysRegistered = true;
 }
 
+void saveHotkey(obs_data_t *obj, obs_hotkey_id id, const char *name)
+{
+	obs_data_array_t *a = obs_hotkey_save(id);
+	obs_data_set_array(obj, name, a);
+	obs_data_array_release(a);
+}
+
 void SwitcherData::saveHotkeys(obs_data_t *obj)
 {
-	obs_data_array_t *startHotkeyArrray = obs_hotkey_save(startHotkey);
-	obs_data_set_array(obj, "startHotkey", startHotkeyArrray);
-	obs_data_array_release(startHotkeyArrray);
+	saveHotkey(obj, startHotkey, "startHotkey");
+	saveHotkey(obj, stopHotkey, "stopHotkey");
+	saveHotkey(obj, toggleHotkey, "toggleHotkey");
+	saveHotkey(obj, upMacroSegment, "upMacroSegmentHotkey");
+	saveHotkey(obj, downMacroSegment, "downMacroSegmentHotkey");
+	saveHotkey(obj, removeMacroSegment, "removeMacroSegmentHotkey");
+}
 
-	obs_data_array_t *stopHotkeyArrray = obs_hotkey_save(stopHotkey);
-
-	obs_data_set_array(obj, "stopHotkey", stopHotkeyArrray);
-	obs_data_array_release(stopHotkeyArrray);
-
-	obs_data_array_t *toggleHotkeyArrray = obs_hotkey_save(toggleHotkey);
-	obs_data_set_array(obj, "toggleHotkey", toggleHotkeyArrray);
-	obs_data_array_release(toggleHotkeyArrray);
-
-	obs_data_array_t *removeSegmentArrray =
-		obs_hotkey_save(removeMacroSegment);
-	obs_data_set_array(obj, "removeMacroSegmentHotkey",
-			   removeSegmentArrray);
-	obs_data_array_release(removeSegmentArrray);
+void loadHotkey(obs_data_t *obj, obs_hotkey_id id, const char *name)
+{
+	obs_data_array_t *a = obs_data_get_array(obj, name);
+	obs_hotkey_load(id, a);
+	obs_data_array_release(a);
 }
 
 void SwitcherData::loadHotkeys(obs_data_t *obj)
@@ -96,24 +129,10 @@ void SwitcherData::loadHotkeys(obs_data_t *obj)
 	if (!hotkeysRegistered) {
 		registerHotkeys();
 	}
-
-	obs_data_array_t *startHotkeyArrray =
-		obs_data_get_array(obj, "startHotkey");
-	obs_hotkey_load(startHotkey, startHotkeyArrray);
-	obs_data_array_release(startHotkeyArrray);
-
-	obs_data_array_t *stopHotkeyArrray =
-		obs_data_get_array(obj, "stopHotkey");
-	obs_hotkey_load(stopHotkey, stopHotkeyArrray);
-	obs_data_array_release(stopHotkeyArrray);
-
-	obs_data_array_t *toggleHotkeyArrray =
-		obs_data_get_array(obj, "toggleHotkey");
-	obs_hotkey_load(toggleHotkey, toggleHotkeyArrray);
-	obs_data_array_release(toggleHotkeyArrray);
-
-	obs_data_array_t *removeSegmentArrray =
-		obs_data_get_array(obj, "removeMacroSegmentHotkey");
-	obs_hotkey_load(removeMacroSegment, removeSegmentArrray);
-	obs_data_array_release(removeSegmentArrray);
+	loadHotkey(obj, startHotkey, "startHotkey");
+	loadHotkey(obj, stopHotkey, "stopHotkey");
+	loadHotkey(obj, toggleHotkey, "toggleHotkey");
+	loadHotkey(obj, upMacroSegment, "upMacroSegmentHotkey");
+	loadHotkey(obj, downMacroSegment, "downMacroSegmentHotkey");
+	loadHotkey(obj, removeMacroSegment, "removeMacroSegmentHotkey");
 }

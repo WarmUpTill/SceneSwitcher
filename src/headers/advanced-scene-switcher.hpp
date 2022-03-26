@@ -133,6 +133,8 @@ public slots:
 	void on_actionRemove_clicked();
 	void on_actionUp_clicked();
 	void on_actionDown_clicked();
+	void UpMacroSegementHotkey();
+	void DownMacroSegementHotkey();
 	void DeleteMacroSegementHotkey();
 	void ShowMacroContextMenu(const QPoint &);
 	void ShowMacroActionsContextMenu(const QPoint &);
@@ -298,9 +300,16 @@ public slots:
 	void on_close_clicked();
 
 private:
+	bool MacroTabIsInFocus();
+
 	MacroSegmentList *conditionsList = nullptr;
 	MacroSegmentList *actionsList = nullptr;
 
+	enum class MacroSection {
+		CONDITIONS,
+		ACTIONS,
+	};
+	MacroSection lastInteracted = MacroSection::CONDITIONS;
 	int currentConditionIdx = -1;
 	int currentActionIdx = -1;
 };
