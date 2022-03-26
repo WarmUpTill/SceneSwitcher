@@ -221,6 +221,7 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 		SetActionData(*macro);
 	}
 	MacroActionSelectionChanged(-1);
+	lastInteracted = MacroSection::ACTIONS;
 }
 
 void AdvSceneSwitcher::on_actionRemove_clicked()
@@ -323,6 +324,7 @@ void AdvSceneSwitcher::MacroActionSelectionChanged(int idx)
 		currentActionIdx = -1;
 	} else {
 		currentActionIdx = idx;
+		lastInteracted = MacroSection::ACTIONS;
 	}
 	currentConditionIdx = -1;
 	HighlightControls();

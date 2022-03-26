@@ -601,10 +601,127 @@ void AdvSceneSwitcher::MinimizeConditions()
 	ui->macroSplitter->setSizes(sizes);
 }
 
+bool AdvSceneSwitcher::MacroTabIsInFocus()
+{
+	return isActiveWindow() && isAncestorOf(focusWidget()) &&
+	       (ui->tabWidget->currentWidget()->objectName() == "macroTab");
+}
+
+void AdvSceneSwitcher::UpMacroSegementHotkey()
+{
+	if (!MacroTabIsInFocus()) {
+		return;
+	}
+
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+	size_t actionSize = macro->Actions().size();
+	size_t conditionSize = macro->Conditions().size();
+
+	if (currentActionIdx == -1 && currentConditionIdx == -1) {
+		if (lastInteracted == MacroSection::CONDITIONS) {
+			if (conditionSize == 0) {
+				MacroActionSelectionChanged(0);
+			} else {
+				MacroConditionSelectionChanged(0);
+			}
+		} else {
+			if (actionSize == 0) {
+				MacroConditionSelectionChanged(0);
+			} else {
+				MacroActionSelectionChanged(0);
+			}
+		}
+		return;
+	}
+
+	if (currentActionIdx > 0) {
+		MacroActionSelectionChanged(currentActionIdx - 1);
+		return;
+	}
+	if (currentConditionIdx > 0) {
+		MacroConditionSelectionChanged(currentConditionIdx - 1);
+		return;
+	}
+	if (currentActionIdx == 0) {
+		if (conditionSize == 0) {
+			MacroActionSelectionChanged(actionSize - 1);
+		} else {
+			MacroConditionSelectionChanged(conditionSize - 1);
+		}
+		return;
+	}
+	if (currentConditionIdx == 0) {
+		if (actionSize == 0) {
+			MacroConditionSelectionChanged(conditionSize - 1);
+		} else {
+			MacroActionSelectionChanged(actionSize - 1);
+		}
+		return;
+	}
+}
+
+void AdvSceneSwitcher::DownMacroSegementHotkey()
+{
+	if (!MacroTabIsInFocus()) {
+		return;
+	}
+
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+	size_t actionSize = macro->Actions().size();
+	size_t conditionSize = macro->Conditions().size();
+
+	if (currentActionIdx == -1 && currentConditionIdx == -1) {
+		if (lastInteracted == MacroSection::CONDITIONS) {
+			if (conditionSize == 0) {
+				MacroActionSelectionChanged(0);
+			} else {
+				MacroConditionSelectionChanged(0);
+			}
+		} else {
+			if (actionSize == 0) {
+				MacroConditionSelectionChanged(0);
+			} else {
+				MacroActionSelectionChanged(0);
+			}
+		}
+		return;
+	}
+
+	if (currentActionIdx < actionSize - 1) {
+		MacroActionSelectionChanged(currentActionIdx + 1);
+		return;
+	}
+	if (currentConditionIdx < conditionSize - 1) {
+		MacroConditionSelectionChanged(currentConditionIdx + 1);
+		return;
+	}
+	if (currentActionIdx == actionSize - 1) {
+		if (conditionSize == 0) {
+			MacroActionSelectionChanged(0);
+		} else {
+			MacroConditionSelectionChanged(0);
+		}
+		return;
+	}
+	if (currentConditionIdx == conditionSize - 1) {
+		if (actionSize == 0) {
+			MacroConditionSelectionChanged(0);
+		} else {
+			MacroActionSelectionChanged(0);
+		}
+		return;
+	}
+}
+
 void AdvSceneSwitcher::DeleteMacroSegementHotkey()
 {
-	if (!isActiveWindow() || !isAncestorOf(focusWidget()) ||
-	    !(ui->tabWidget->currentWidget()->objectName() == "macroTab")) {
+	if (!MacroTabIsInFocus()) {
 		return;
 	}
 
