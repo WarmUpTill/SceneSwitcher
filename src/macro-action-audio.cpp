@@ -273,15 +273,15 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	: QWidget(parent),
 	  _audioSources(new QComboBox),
 	  _actions(new QComboBox),
+	  _fadeTypes(new QComboBox),
 	  _volumePercent(new QSpinBox),
 	  _fade(new QCheckBox),
+	  _duration(new DurationSelection(parent, false)),
+	  _rate(new QDoubleSpinBox),
 	  _wait(new QCheckBox(
 		  obs_module_text("AdvSceneSwitcher.action.audio.fade.wait"))),
 	  _abortActiveFade(new QCheckBox(
 		  obs_module_text("AdvSceneSwitcher.action.audio.fade.abort"))),
-	  _duration(new DurationSelection(parent, false)),
-	  _rate(new QDoubleSpinBox),
-	  _fadeTypes(new QComboBox),
 	  _fadeTypeLayout(new QHBoxLayout),
 	  _fadeOptionsLayout(new QVBoxLayout)
 {

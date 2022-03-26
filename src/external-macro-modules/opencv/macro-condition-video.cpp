@@ -283,9 +283,9 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	: QWidget(parent),
 	  _videoSelection(new QComboBox()),
 	  _condition(new QComboBox()),
-	  _imagePath(new FileSelection()),
 	  _usePatternForChangedCheck(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.usePatternForChangedCheck"))),
+	  _imagePath(new FileSelection()),
 	  _patternThreshold(new ThresholdSlider(
 		  0., 1.,
 		  obs_module_text(
@@ -295,31 +295,31 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	  _useAlphaAsMask(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.patternThresholdUseAlphaAsMask"))),
 	  _modelDataPath(new FileSelection()),
+	  _modelPathLayout(new QHBoxLayout),
 	  _objectScaleThreshold(new ThresholdSlider(
 		  1.1, 5.,
 		  obs_module_text(
 			  "AdvSceneSwitcher.condition.video.objectScaleThreshold"),
 		  obs_module_text(
 			  "AdvSceneSwitcher.condition.video.objectScaleThresholdDescription"))),
+	  _neighborsControlLayout(new QHBoxLayout),
 	  _minNeighbors(new QSpinBox()),
 	  _minNeighborsDescription(new QLabel(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.minNeighborDescription"))),
+	  _sizeLayout(new QHBoxLayout()),
 	  _minSize(new SizeSelection(0, 1024)),
 	  _maxSize(new SizeSelection(0, 4096)),
+	  _checkAreaControlLayout(new QHBoxLayout),
 	  _checkAreaEnable(new QCheckBox()),
 	  _checkArea(new AreaSelection(0, 99999)),
+	  _selectArea(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.condition.video.selectArea"))),
+	  _throttleControlLayout(new QHBoxLayout),
 	  _throttleEnable(new QCheckBox()),
 	  _throttleCount(new QSpinBox()),
 	  _showMatch(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.showMatch"))),
-	  _selectArea(new QPushButton(obs_module_text(
-		  "AdvSceneSwitcher.condition.video.selectArea"))),
-	  _previewDialog(this, entryData.get(), &GetSwitcher()->m),
-	  _modelPathLayout(new QHBoxLayout),
-	  _neighborsControlLayout(new QHBoxLayout),
-	  _checkAreaControlLayout(new QHBoxLayout),
-	  _throttleControlLayout(new QHBoxLayout),
-	  _sizeLayout(new QHBoxLayout())
+	  _previewDialog(this, entryData.get(), &GetSwitcher()->m)
 {
 	_imagePath->Button()->disconnect();
 	_usePatternForChangedCheck->setToolTip(obs_module_text(

@@ -371,8 +371,8 @@ static void addAnyAndAllStates(QComboBox *list)
 MacroConditionMediaEdit::MacroConditionMediaEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionMedia> entryData)
 	: QWidget(parent),
-	  _mediaSources(new QComboBox()),
 	  _scenes(new SceneSelectionWidget(window())),
+	  _mediaSources(new QComboBox()),
 	  _states(new QComboBox()),
 	  _timeRestrictions(new QComboBox()),
 	  _time(new DurationSelection()),

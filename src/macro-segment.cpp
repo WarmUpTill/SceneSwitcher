@@ -57,15 +57,15 @@ bool MouseWheelWidgetAdjustmentGuard::eventFilter(QObject *o, QEvent *e)
 
 MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
 	: QWidget(parent),
-	  _showHighlight(highlight),
 	  _section(new Section(300)),
 	  _headerInfo(new QLabel()),
-	  _contentLayout(new QVBoxLayout),
 	  _frame(new QWidget),
-	  _borderFrame(new QFrame),
+	  _contentLayout(new QVBoxLayout),
 	  _noBorderframe(new QFrame),
+	  _borderFrame(new QFrame),
 	  _dropLineAbove(new QFrame),
-	  _dropLineBelow(new QFrame)
+	  _dropLineBelow(new QFrame),
+	  _showHighlight(highlight)
 {
 	_dropLineAbove->setLineWidth(3);
 	_dropLineAbove->setFixedHeight(11);

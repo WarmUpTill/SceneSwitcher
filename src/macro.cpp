@@ -201,7 +201,7 @@ void Macro::SetPaused(bool pause)
 
 void Macro::AddHelperThread(std::thread &&newThread)
 {
-	for (int i = 0; i < _helperThreads.size(); i++) {
+	for (unsigned int i = 0; i < _helperThreads.size(); i++) {
 		if (!_helperThreads[i].joinable()) {
 			_helperThreads[i] = std::move(newThread);
 			return;
