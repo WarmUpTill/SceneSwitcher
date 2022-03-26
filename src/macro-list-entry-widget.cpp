@@ -5,10 +5,10 @@
 MacroListEntryWidget::MacroListEntryWidget(std::shared_ptr<Macro> macro,
 					   bool highlight, QWidget *parent)
 	: QWidget(parent),
-	  _highlightExecutedMacros(highlight),
-	  _macro(macro),
 	  _name(new QLabel(QString::fromStdString(macro->Name()))),
-	  _running(new QCheckBox)
+	  _running(new QCheckBox),
+	  _macro(macro),
+	  _highlightExecutedMacros(highlight)
 {
 	_running->setChecked(!macro->Paused());
 

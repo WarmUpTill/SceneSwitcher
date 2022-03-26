@@ -48,7 +48,7 @@ void advss::Area::Load(obs_data_t *obj, const char *name)
 }
 
 SizeSelection::SizeSelection(int min, int max, QWidget *parent)
-	: _x(new QSpinBox), _y(new QSpinBox), QWidget(parent)
+	: QWidget(parent), _x(new QSpinBox), _y(new QSpinBox)
 {
 	_x->setMinimum(min);
 	_y->setMinimum(min);
@@ -88,9 +88,9 @@ void SizeSelection::YChanged(int value)
 }
 
 AreaSelection::AreaSelection(int min, int max, QWidget *parent)
-	: _x(new SizeSelection(min, max)),
-	  _y(new SizeSelection(min, max)),
-	  QWidget(parent)
+	: QWidget(parent),
+	  _x(new SizeSelection(min, max)),
+	  _y(new SizeSelection(min, max))
 {
 	_x->_x->setToolTip("X");
 	_x->_y->setToolTip("Y");

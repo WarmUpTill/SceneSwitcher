@@ -267,10 +267,6 @@ void AdvSceneSwitcher::SwapActions(Macro *m, int pos1, int pos2)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	iter_swap(m->Actions().begin() + pos1, m->Actions().begin() + pos2);
 	m->UpdateActionIndices();
-
-	auto a1 = m->Actions().begin() + pos1;
-	auto a2 = m->Actions().begin() + pos2;
-
 	auto widget1 = static_cast<MacroActionEdit *>(
 		actionsList->ContentLayout()->takeAt(pos1)->widget());
 	auto widget2 = static_cast<MacroActionEdit *>(

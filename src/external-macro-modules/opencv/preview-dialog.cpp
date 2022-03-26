@@ -10,8 +10,8 @@ PreviewDialog::PreviewDialog(QWidget *parent,
 			     std::mutex *mutex)
 	: QDialog(parent),
 	  _conditionData(conditionData),
-	  _imageLabel(new QLabel(this)),
 	  _scrollArea(new QScrollArea),
+	  _imageLabel(new QLabel(this)),
 	  _rubberBand(new QRubberBand(QRubberBand::Rectangle, this)),
 	  _mtx(mutex)
 {

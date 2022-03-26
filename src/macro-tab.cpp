@@ -617,8 +617,8 @@ void AdvSceneSwitcher::UpMacroSegementHotkey()
 	if (!macro) {
 		return;
 	}
-	size_t actionSize = macro->Actions().size();
-	size_t conditionSize = macro->Conditions().size();
+	int actionSize = macro->Actions().size();
+	int conditionSize = macro->Conditions().size();
 
 	if (currentActionIdx == -1 && currentConditionIdx == -1) {
 		if (lastInteracted == MacroSection::CONDITIONS) {
@@ -673,8 +673,8 @@ void AdvSceneSwitcher::DownMacroSegementHotkey()
 	if (!macro) {
 		return;
 	}
-	size_t actionSize = macro->Actions().size();
-	size_t conditionSize = macro->Conditions().size();
+	int actionSize = macro->Actions().size();
+	int conditionSize = macro->Conditions().size();
 
 	if (currentActionIdx == -1 && currentConditionIdx == -1) {
 		if (lastInteracted == MacroSection::CONDITIONS) {
