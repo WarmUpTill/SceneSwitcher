@@ -347,6 +347,8 @@ void AdvSceneSwitcher::MacroActionReorder(int to, int from)
 		macro->Actions().erase(macro->Actions().begin() + from);
 		macro->Actions().insert(macro->Actions().begin() + to, action);
 		macro->UpdateActionIndices();
+		actionsList->ContentLayout()->insertItem(
+			to, actionsList->ContentLayout()->takeAt(from));
 		SetActionData(*macro);
 	}
 	HighlightAction(to);
