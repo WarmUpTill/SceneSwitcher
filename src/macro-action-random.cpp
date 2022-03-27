@@ -46,7 +46,7 @@ bool MacroActionRandom::PerformAction()
 		lastRandomMacro = macros[0];
 		return macros[0]->PerformActions();
 	}
-
+	srand((unsigned int)time(0));
 	size_t idx = std::rand() % (macros.size());
 	lastRandomMacro = macros[idx];
 	return macros[idx]->PerformActions();
