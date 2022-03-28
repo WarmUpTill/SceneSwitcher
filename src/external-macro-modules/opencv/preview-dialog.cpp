@@ -126,7 +126,7 @@ void PreviewDialog::CheckForMatchLoop()
 	while (!_stop) {
 		std::unique_lock<std::mutex> lock(*_mtx);
 		auto source = obs_weak_source_get_source(
-			_conditionData->_videoSource);
+			_conditionData->_video.GetVideo());
 		ScreenshotHelper screenshot(source);
 		obs_source_release(source);
 		cv.wait_for(lock, std::chrono::seconds(1));
@@ -136,7 +136,8 @@ void PreviewDialog::CheckForMatchLoop()
 		if (isHidden()) {
 			continue;
 		}
-		if (!screenshot.done) {
+		if (!screenshot.done ||
+		    !_conditionData->_video.ValidSelection()) {
 			_statusLabel->setText(obs_module_text(
 				"AdvSceneSwitcher.condition.video.screenshotFail"));
 			_imageLabel->setPixmap(QPixmap());

@@ -63,8 +63,8 @@ void populateTransitionSelection(QComboBox *sel, bool addCurrent = true,
 				 bool addAny = false);
 void populateWindowSelection(QComboBox *sel, bool addSelect = true);
 void populateAudioSelection(QComboBox *sel, bool addSelect = true);
-void populateVideoSelection(QComboBox *sel, bool addScenes = false,
-			    bool addSelect = true);
+void populateVideoSelection(QComboBox *sel, bool addMainOutput = false,
+			    bool addScenes = false, bool addSelect = true);
 void populateMediaSelection(QComboBox *sel, bool addSelect = true);
 void populateProcessSelection(QComboBox *sel, bool addSelect = true);
 void populateSourceSelection(QComboBox *list, bool addSelect = true);
