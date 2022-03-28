@@ -106,11 +106,12 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 	auto macro = _entryData->get()->GetMacro();
 	std::string id = MacroActionFactory::GetIdByName(text);
 	HeaderInfoChanged("");
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->reset();
-	*_entryData = MacroActionFactory::Create(id, macro);
-	(*_entryData)->SetIndex(idx);
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		_entryData->reset();
+		*_entryData = MacroActionFactory::Create(id, macro);
+		(*_entryData)->SetIndex(idx);
+	}
 	auto widget = MacroActionFactory::CreateWidget(id, this, *_entryData);
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
 			 this, SLOT(HeaderInfoChanged(const QString &)));
