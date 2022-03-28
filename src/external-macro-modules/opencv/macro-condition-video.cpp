@@ -72,8 +72,11 @@ bool MacroConditionVideo::CheckShouldBeSkipped()
 
 bool MacroConditionVideo::CheckCondition()
 {
-	bool match = false;
+	if (!_video.ValidSelection()) {
+		return false;
+	}
 
+	bool match = false;
 	if (CheckShouldBeSkipped()) {
 		return _lastMatchResult;
 	}
@@ -99,8 +102,7 @@ bool MacroConditionVideo::CheckCondition()
 bool MacroConditionVideo::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
-	obs_data_set_string(obj, "videoSource",
-			    GetWeakSourceName(_videoSource).c_str());
+	_video.Save(obj);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_string(obj, "filePath", _file.c_str());
 	obs_data_set_bool(obj, "usePatternForChangedCheck",
@@ -133,8 +135,10 @@ bool isMinNeighborsValid(int minNeighbors)
 bool MacroConditionVideo::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	const char *videoSourceName = obs_data_get_string(obj, "videoSource");
-	_videoSource = GetWeakSourceByName(videoSourceName);
+	_video.Load(obj);
+	if (obs_data_has_user_value(obj, "videoSource")) {
+		_video.Load(obj, "videoSource");
+	}
 	_condition =
 		static_cast<VideoCondition>(obs_data_get_int(obj, "condition"));
 	_file = obs_data_get_string(obj, "filePath");
@@ -178,15 +182,12 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 
 std::string MacroConditionVideo::GetShortDesc()
 {
-	if (_videoSource) {
-		return GetWeakSourceName(_videoSource);
-	}
-	return "";
+	return _video.ToString();
 }
 
 void MacroConditionVideo::GetScreenshot()
 {
-	auto source = obs_weak_source_get_source(_videoSource);
+	auto source = obs_weak_source_get_source(_video.GetVideo());
 	_screenshotData.~ScreenshotHelper();
 	new (&_screenshotData) ScreenshotHelper(source);
 	obs_source_release(source);
@@ -281,7 +282,7 @@ static inline void populateConditionSelection(QComboBox *list)
 MacroConditionVideoEdit::MacroConditionVideoEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionVideo> entryData)
 	: QWidget(parent),
-	  _videoSelection(new QComboBox()),
+	  _videoSelection(new VideoSelectionWidget(this)),
 	  _condition(new QComboBox()),
 	  _usePatternForChangedCheck(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.usePatternForChangedCheck"))),
@@ -331,8 +332,9 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	_throttleCount->setSingleStep(GetSwitcher()->interval);
 
 	QWidget::connect(_videoSelection,
-			 SIGNAL(currentTextChanged(const QString &)), this,
-			 SLOT(SourceChanged(const QString &)));
+			 SIGNAL(VideoSelectionChange(const VideoSelection &)),
+			 this,
+			 SLOT(VideoSelectionChanged(const VideoSelection &)));
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_imagePath, SIGNAL(PathChanged(const QString &)), this,
@@ -371,7 +373,6 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	QWidget::connect(_selectArea, SIGNAL(clicked()), this,
 			 SLOT(SelectAreaClicked()));
 
-	populateVideoSelection(_videoSelection);
 	populateConditionSelection(_condition);
 
 	QHBoxLayout *entryLine1Layout = new QHBoxLayout;
@@ -471,14 +472,14 @@ void MacroConditionVideoEdit::UpdatePreviewTooltip()
 	this->setToolTip(html);
 }
 
-void MacroConditionVideoEdit::SourceChanged(const QString &text)
+void MacroConditionVideoEdit::VideoSelectionChanged(const VideoSelection &v)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_videoSource = GetWeakSourceByQString(text);
+	_entryData->_video = v;
 	_entryData->ResetLastMatch();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -533,7 +534,7 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 	QString path;
 	bool useExistingFile = false;
 	// Ask whether to create screenshot or to select existing file
-	if (_entryData->_videoSource) {
+	if (_entryData->_video.ValidSelection()) {
 		QMessageBox msgBox(
 			QMessageBox::Question,
 			obs_module_text("AdvSceneSwitcher.windowTitle"),
@@ -560,8 +561,8 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 		}
 
 	} else {
-		auto source =
-			obs_weak_source_get_source(_entryData->_videoSource);
+		auto source = obs_weak_source_get_source(
+			_entryData->_video.GetVideo());
 		ScreenshotHelper screenshot(source);
 		obs_source_release(source);
 
@@ -818,8 +819,7 @@ void MacroConditionVideoEdit::UpdateEntryData()
 		return;
 	}
 
-	_videoSelection->setCurrentText(
-		GetWeakSourceName(_entryData->_videoSource).c_str());
+	_videoSelection->SetVideoSelection(_entryData->_video);
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_imagePath->SetPath(QString::fromStdString(_entryData->_file));
 	_usePatternForChangedCheck->setChecked(

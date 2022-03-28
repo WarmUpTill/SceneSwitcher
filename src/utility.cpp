@@ -600,7 +600,8 @@ void populateAudioSelection(QComboBox *sel, bool addSelect)
 	sel->setCurrentIndex(0);
 }
 
-void populateVideoSelection(QComboBox *sel, bool addScenes, bool addSelect)
+void populateVideoSelection(QComboBox *sel, bool addMainOutput, bool addScenes,
+			    bool addSelect)
 {
 
 	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
@@ -628,6 +629,10 @@ void populateVideoSelection(QComboBox *sel, bool addScenes, bool addSelect)
 	}
 
 	sel->model()->sort(0);
+	if (addMainOutput) {
+		sel->insertItem(
+			0, obs_module_text("AdvSceneSwitcher.OBSVideoOutput"));
+	}
 	if (addSelect) {
 		addSelectionEntry(
 			sel,

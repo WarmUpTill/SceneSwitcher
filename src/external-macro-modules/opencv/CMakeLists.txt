@@ -21,12 +21,14 @@ set(module_SOURCES
     area-selection.hpp
     macro-condition-video.cpp
     macro-condition-video.hpp
+    opencv-helpers.cpp
+    opencv-helpers.hpp
     preview-dialog.cpp
     preview-dialog.hpp
     threshold-slider.cpp
     threshold-slider.hpp
-    opencv-helpers.cpp
-    opencv-helpers.hpp)
+    video-selection.cpp
+    video-selection.hpp)
 add_library(advanced-scene-switcher-opencv MODULE ${module_SOURCES})
 
 if(BUILD_OUT_OF_TREE)

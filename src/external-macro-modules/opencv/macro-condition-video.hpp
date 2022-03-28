@@ -3,6 +3,7 @@
 #include "threshold-slider.hpp"
 #include "preview-dialog.hpp"
 #include "area-selection.hpp"
+#include "video-selection.hpp"
 
 #include <macro.hpp>
 #include <file-selection.hpp>
@@ -45,7 +46,7 @@ public:
 	std::string GetModelDataPath() { return _modelDataPath; }
 	void ResetLastMatch() { _lastMatchResult = false; }
 
-	OBSWeakSource _videoSource;
+	VideoSelection _video;
 	VideoCondition _condition = VideoCondition::MATCH;
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	bool _useAlphaAsMask = false;
@@ -104,7 +105,7 @@ public:
 	void UpdatePreviewTooltip();
 
 private slots:
-	void SourceChanged(const QString &text);
+	void VideoSelectionChanged(const VideoSelection &);
 	void ConditionChanged(int cond);
 	void ImagePathChanged(const QString &text);
 	void ImageBrowseButtonClicked();
@@ -130,7 +131,7 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
-	QComboBox *_videoSelection;
+	VideoSelectionWidget *_videoSelection;
 	QComboBox *_condition;
 
 	QCheckBox *_usePatternForChangedCheck;
