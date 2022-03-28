@@ -218,13 +218,14 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 	auto temp = DurationConstraint();
 	_dur->SetValue(temp);
 	HeaderInfoChanged("");
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	auto logic = (*_entryData)->GetLogicType();
-	_entryData->reset();
-	*_entryData = MacroConditionFactory::Create(id, macro);
-	(*_entryData)->SetIndex(idx);
-	(*_entryData)->SetLogicType(logic);
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		auto logic = (*_entryData)->GetLogicType();
+		_entryData->reset();
+		*_entryData = MacroConditionFactory::Create(id, macro);
+		(*_entryData)->SetIndex(idx);
+		(*_entryData)->SetLogicType(logic);
+	}
 	auto widget =
 		MacroConditionFactory::CreateWidget(id, this, *_entryData);
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
