@@ -582,6 +582,13 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 				"AdvSceneSwitcher.condition.video.screenshotFail"));
 			return;
 		}
+		if (_entryData->_checkAreaEnable) {
+			screenshot.image = screenshot.image.copy(
+				_entryData->_checkArea.x,
+				_entryData->_checkArea.y,
+				_entryData->_checkArea.width,
+				_entryData->_checkArea.height);
+		}
 		screenshot.image.save(path);
 	}
 	_imagePath->SetPath(path);
