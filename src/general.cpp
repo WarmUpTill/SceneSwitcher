@@ -473,6 +473,7 @@ void AdvSceneSwitcher::restoreWindowGeo()
 void AdvSceneSwitcher::checkFirstTimeSetup()
 {
 	if (switcher->firstBoot && !switcher->disableHints) {
+		switcher->firstBoot = false;
 		DisplayMessage(
 			obs_module_text("AdvSceneSwitcher.firstBootMessage"));
 	}
