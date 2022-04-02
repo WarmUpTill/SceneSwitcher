@@ -35,7 +35,7 @@ static std::map<DayOfWeekSelection, std::string> dayOfWeekNames = {
 	{DayOfWeekSelection::SUNDAY, "AdvSceneSwitcher.condition.date.sunday"},
 };
 
-bool MacroConditionDate::checkDayOfWeek()
+bool MacroConditionDate::CheckDayOfWeek(int64_t msSinceLastCheck)
 {
 	QDateTime cur = QDateTime::currentDateTime();
 	if (_dayOfWeek != DayOfWeekSelection::ANY &&
@@ -43,11 +43,10 @@ bool MacroConditionDate::checkDayOfWeek()
 		return false;
 	}
 	_dateTime.setDate(cur.date());
-	return _dateTime >= cur &&
-	       _dateTime <= cur.addMSecs(switcher->interval);
+	return _dateTime <= cur && _dateTime >= cur.addMSecs(-msSinceLastCheck);
 }
 
-bool MacroConditionDate::checkRegularDate()
+bool MacroConditionDate::CheckRegularDate(int64_t msSinceLastCheck)
 {
 	bool match = false;
 	QDateTime cur = QDateTime::currentDateTime();
@@ -62,8 +61,8 @@ bool MacroConditionDate::checkRegularDate()
 
 	switch (_condition) {
 	case DateCondition::AT:
-		match = _dateTime >= cur &&
-			_dateTime <= cur.addMSecs(switcher->interval);
+		match = _dateTime <= cur &&
+			_dateTime >= cur.addMSecs(-msSinceLastCheck);
 		break;
 	case DateCondition::AFTER:
 		match = cur >= _dateTime;
@@ -92,10 +91,15 @@ bool MacroConditionDate::checkRegularDate()
 
 bool MacroConditionDate::CheckCondition()
 {
-	if (_dayOfWeekCheck) {
-		return checkDayOfWeek();
+	auto m = GetMacro();
+	if (!m) {
+		return false;
 	}
-	return checkRegularDate();
+	auto msSinceLastCheck = m->MsSinceLastCheck();
+	if (_dayOfWeekCheck) {
+		return CheckDayOfWeek(msSinceLastCheck);
+	}
+	return CheckRegularDate(msSinceLastCheck);
 }
 
 bool MacroConditionDate::Save(obs_data_t *obj)

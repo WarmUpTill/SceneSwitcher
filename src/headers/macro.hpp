@@ -78,6 +78,7 @@ public:
 	bool PerformActions(bool forceParallel = false,
 			    bool ignorePause = false);
 	bool Matched() { return _matched; }
+	int64_t MsSinceLastCheck();
 	std::string Name() { return _name; }
 	void SetName(const std::string &name);
 	void SetRunInParallel(bool parallel) { _runInParallel = parallel; }
@@ -138,6 +139,8 @@ private:
 	// UI helpers for the macro tab
 	bool _wasExecutedRecently = false;
 	bool _onChangeTriggered = false;
+
+	std::chrono::high_resolution_clock::time_point _lastCheckTime{};
 
 	bool _die = false;
 	bool _stop = false;
