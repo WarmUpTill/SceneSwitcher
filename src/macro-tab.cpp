@@ -312,11 +312,22 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 
 	PopulateMacroConditions(m);
 	PopulateMacroActions(m);
-	ui->macroEdit->setDisabled(false);
+	SetMacroEditAreaDisabled(false);
 
 	currentActionIdx = -1;
 	currentConditionIdx = -1;
 	HighlightControls();
+}
+
+void AdvSceneSwitcher::SetMacroEditAreaDisabled(bool disable)
+{
+	ui->macroName->setDisabled(disable);
+	ui->runMacro->setDisabled(disable);
+	ui->runMacroInParallel->setDisabled(disable);
+	ui->runMacroOnChange->setDisabled(disable);
+	ui->macroActions->setDisabled(disable);
+	ui->macroConditions->setDisabled(disable);
+	ui->macroSplitter->setDisabled(disable);
 }
 
 void AdvSceneSwitcher::HighlightAction(int idx)
@@ -348,7 +359,7 @@ void AdvSceneSwitcher::on_macros_currentRowChanged(int idx)
 	}
 
 	if (idx == -1) {
-		ui->macroEdit->setDisabled(true);
+		SetMacroEditAreaDisabled(true);
 		return;
 	}
 
@@ -460,8 +471,7 @@ void AdvSceneSwitcher::setupMacroTab()
 	connect(conditionsList, &QWidget::customContextMenuRequested, this,
 		&AdvSceneSwitcher::ShowMacroConditionsContextMenu);
 
-	ui->macroEdit->setDisabled(true);
-
+	SetMacroEditAreaDisabled(true);
 	ui->macroPriorityWarning->setVisible(
 		switcher->functionNamesByPriority[0] != macro_func);
 
