@@ -126,7 +126,7 @@ bool Macro::CeckMatch()
 	if (_matched && _count != std::numeric_limits<int>::max()) {
 		_count++;
 	}
-
+	_lastCheckTime = std::chrono::high_resolution_clock::now();
 	return _matched;
 }
 
@@ -152,6 +152,18 @@ bool Macro::PerformActions(bool forceParallel, bool ignorePause)
 	return ret;
 }
 
+int64_t Macro::MsSinceLastCheck()
+{
+	if (_lastCheckTime.time_since_epoch().count() == 0) {
+		return 0;
+	}
+	const auto timePassed =
+		std::chrono::high_resolution_clock::now() - _lastCheckTime;
+	return std::chrono::duration_cast<std::chrono::milliseconds>(timePassed)
+		       .count() +
+	       1;
+}
+
 void Macro::SetName(const std::string &name)
 {
 	_name = name;
@@ -163,6 +175,7 @@ void Macro::ResetTimers()
 	for (auto &c : _conditions) {
 		c->ResetDuration();
 	}
+	_lastCheckTime = {};
 }
 
 void Macro::RunActions(bool &retVal, bool ignorePause)

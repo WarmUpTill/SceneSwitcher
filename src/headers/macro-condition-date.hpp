@@ -48,8 +48,8 @@ public:
 	bool _dayOfWeekCheck = false;
 
 private:
-	bool checkDayOfWeek();
-	bool checkRegularDate();
+	bool CheckDayOfWeek(int64_t);
+	bool CheckRegularDate(int64_t);
 
 	static bool _registered;
 	static const std::string id;
