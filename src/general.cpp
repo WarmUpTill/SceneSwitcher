@@ -651,6 +651,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	showSystemTrayNotifications =
 		obs_data_get_bool(obj, "showSystemTrayNotifications");
 	disableHints = obs_data_get_bool(obj, "disableHints");
+	obs_data_set_default_bool(obj, "hideLegacyTabs", true);
 	hideLegacyTabs = obs_data_get_bool(obj, "hideLegacyTabs");
 
 	obs_data_set_default_int(obj, "priority0", default_priority_0);
@@ -694,21 +695,21 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 
 	obs_data_set_default_int(obj, "generalTabPos", 0);
 	obs_data_set_default_int(obj, "macroTabPos", 1);
-	obs_data_set_default_int(obj, "transitionTabPos", 2);
-	obs_data_set_default_int(obj, "pauseTabPos", 3);
-	obs_data_set_default_int(obj, "titleTabPos", 4);
-	obs_data_set_default_int(obj, "exeTabPos", 5);
-	obs_data_set_default_int(obj, "regionTabPos", 6);
-	obs_data_set_default_int(obj, "mediaTabPos", 7);
-	obs_data_set_default_int(obj, "fileTabPos", 8);
-	obs_data_set_default_int(obj, "randomTabPos", 9);
-	obs_data_set_default_int(obj, "timeTabPos", 10);
-	obs_data_set_default_int(obj, "idleTabPos", 11);
-	obs_data_set_default_int(obj, "sequenceTabPos", 12);
-	obs_data_set_default_int(obj, "audioTabPos", 13);
-	obs_data_set_default_int(obj, "videoTabPos", 14);
-	obs_data_set_default_int(obj, "networkTabPos", 15);
-	obs_data_set_default_int(obj, "sceneGroupTabPos", 16);
+	obs_data_set_default_int(obj, "networkTabPos", 13);
+	obs_data_set_default_int(obj, "sceneGroupTabPos", 14);
+	obs_data_set_default_int(obj, "transitionTabPos", 15);
+	obs_data_set_default_int(obj, "pauseTabPos", 16);
+	obs_data_set_default_int(obj, "titleTabPos", 2);
+	obs_data_set_default_int(obj, "exeTabPos", 3);
+	obs_data_set_default_int(obj, "regionTabPos", 4);
+	obs_data_set_default_int(obj, "mediaTabPos", 5);
+	obs_data_set_default_int(obj, "fileTabPos", 6);
+	obs_data_set_default_int(obj, "randomTabPos", 7);
+	obs_data_set_default_int(obj, "timeTabPos", 8);
+	obs_data_set_default_int(obj, "idleTabPos", 9);
+	obs_data_set_default_int(obj, "sequenceTabPos", 10);
+	obs_data_set_default_int(obj, "audioTabPos", 11);
+	obs_data_set_default_int(obj, "videoTabPos", 12);
 	obs_data_set_default_int(obj, "triggerTabPos", 17);
 
 	tabOrder.clear();
