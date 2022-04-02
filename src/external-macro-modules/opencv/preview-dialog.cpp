@@ -51,11 +51,17 @@ void PreviewDialog::mousePressEvent(QMouseEvent *event)
 
 void PreviewDialog::mouseMoveEvent(QMouseEvent *event)
 {
+	if (_type == Type::SHOW_MATCH) {
+		return;
+	}
 	_rubberBand->setGeometry(QRect(_origin, event->pos()).normalized());
 }
 
 void PreviewDialog::mouseReleaseEvent(QMouseEvent *)
 {
+	if (_type == Type::SHOW_MATCH) {
+		return;
+	}
 	auto selectionStart =
 		_rubberBand->mapToGlobal(_rubberBand->rect().topLeft());
 	QRect selectionArea(selectionStart, _rubberBand->size());
