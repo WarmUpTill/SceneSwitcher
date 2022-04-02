@@ -52,6 +52,7 @@ public:
 	bool addNewMacro(std::string &name, std::string format = "");
 	Macro *getSelectedMacro();
 	void SetEditMacro(Macro &m);
+	void SetMacroEditAreaDisabled(bool);
 	void HighlightAction(int idx);
 	void HighlightCondition(int idx);
 	void PopulateMacroActions(Macro &m, uint32_t afterIdx = 0);
