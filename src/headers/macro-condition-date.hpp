@@ -37,12 +37,18 @@ public:
 		return std::make_shared<MacroConditionDate>(m);
 	}
 
+	void SetDate1(const QDate &date);
+	void SetDate2(const QDate &date);
+	void SetTime1(const QTime &time);
+	void SetTime2(const QTime &time);
+	QDateTime GetDateTime1();
+	QDateTime GetDateTime2();
+
 	DayOfWeekSelection _dayOfWeek = DayOfWeekSelection::ANY;
-	QDateTime _dateTime = QDateTime::currentDateTime();
-	QDateTime _dateTime2 = QDateTime::currentDateTime();
 	bool _ignoreDate = false;
 	bool _ignoreTime = false;
 	bool _repeat = false;
+	bool _updateOnRepeat = true;
 	Duration _duration;
 	DateCondition _condition = DateCondition::AT;
 	bool _dayOfWeekCheck = false;
@@ -50,6 +56,12 @@ public:
 private:
 	bool CheckDayOfWeek(int64_t);
 	bool CheckRegularDate(int64_t);
+
+	QDateTime _dateTime = QDateTime::currentDateTime();
+	QDateTime _dateTime2 = QDateTime::currentDateTime();
+	// Used depending whether or not _updateOnRepeat is set
+	QDateTime _origDateTime = QDateTime::currentDateTime();
+	QDateTime _origDateTime2 = QDateTime::currentDateTime();
 
 	static bool _registered;
 	static const std::string id;
@@ -81,6 +93,7 @@ private slots:
 	void IgnoreDateChanged(int state);
 	void IgnoreTimeChanged(int state);
 	void RepeatChanged(int state);
+	void UpdateOnRepeatChanged(int state);
 	void DurationChanged(double seconds);
 	void DurationUnitChanged(DurationUnit unit);
 	void AdvancedSettingsToggleClicked();
@@ -100,12 +113,13 @@ protected:
 	QCheckBox *_ignoreDate;
 	QCheckBox *_ignoreTime;
 	QCheckBox *_repeat;
+	QCheckBox *_updateOnRepeat;
 	DurationSelection *_duration;
 
 	QPushButton *_advancedSettingsTooggle;
 	QHBoxLayout *_simpleLayout;
 	QHBoxLayout *_advancedLayout;
-	QHBoxLayout *_repeatLayout;
+	QVBoxLayout *_repeatLayout;
 
 	std::shared_ptr<MacroConditionDate> _entryData;
 
