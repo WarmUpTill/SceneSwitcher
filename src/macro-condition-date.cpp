@@ -211,6 +211,11 @@ QDateTime MacroConditionDate::GetDateTime2()
 	return _updateOnRepeat ? _dateTime2 : _origDateTime2;
 }
 
+QDateTime MacroConditionDate::GetNextMatchDateTime()
+{
+	return _dateTime;
+}
+
 static inline void populateDaySelection(QComboBox *list)
 {
 	for (auto entry : dayOfWeekNames) {
@@ -240,6 +245,7 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 	  _ignoreDate(new QCheckBox()),
 	  _ignoreTime(new QCheckBox()),
 	  _repeat(new QCheckBox()),
+	  _nextMatchDate(new QLabel()),
 	  _updateOnRepeat(new QCheckBox()),
 	  _duration(new DurationSelection()),
 	  _advancedSettingsTooggle(new QPushButton(obs_module_text(
@@ -327,6 +333,7 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 			"AdvSceneSwitcher.condition.date.entry.updateOnRepeat"),
 		_repeatUpdateLayout, widgetPlaceholders);
 	_repeatLayout->addLayout(repeatLayout);
+	_repeatLayout->addWidget(_nextMatchDate);
 	_repeatLayout->addLayout(_repeatUpdateLayout);
 
 	auto *mainLayout = new QVBoxLayout;
@@ -338,6 +345,11 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 	_advancedToggleLayout->addStretch();
 	mainLayout->addLayout(_advancedToggleLayout);
 	setLayout(mainLayout);
+
+	_timer.setInterval(3000);
+	QWidget::connect(&_timer, SIGNAL(timeout()), this,
+			 SLOT(ShowNextMatch()));
+	_timer.start();
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -491,6 +503,18 @@ void MacroConditionDateEdit::AdvancedSettingsToggleClicked()
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
+void MacroConditionDateEdit::ShowNextMatch()
+{
+	if (!_entryData || _entryData->_dayOfWeekCheck ||
+	    !_entryData->_repeat) {
+		return;
+	}
+	QString format(obs_module_text(
+		"AdvSceneSwitcher.condition.date.entry.nextMatchDate"));
+	_nextMatchDate->setText(
+		format.arg(_entryData->GetNextMatchDateTime().toString()));
+}
+
 void MacroConditionDateEdit::UpdateEntryData()
 {
 	if (!_entryData) {
@@ -511,6 +535,7 @@ void MacroConditionDateEdit::UpdateEntryData()
 	_updateOnRepeat->setChecked(_entryData->_updateOnRepeat);
 	_duration->SetDuration(_entryData->_duration);
 	_duration->setDisabled(!_entryData->_repeat);
+	ShowNextMatch();
 	SetWidgetStatus();
 }
 
@@ -523,6 +548,8 @@ void MacroConditionDateEdit::SetWidgetStatus()
 	setLayoutVisible(_simpleLayout, _entryData->_dayOfWeekCheck);
 	setLayoutVisible(_advancedLayout, !_entryData->_dayOfWeekCheck);
 	setLayoutVisible(_repeatLayout, !_entryData->_dayOfWeekCheck);
+	_nextMatchDate->setVisible(!_entryData->_dayOfWeekCheck &&
+				   _entryData->_repeat);
 	setLayoutVisible(_repeatUpdateLayout,
 			 !_entryData->_dayOfWeekCheck && _entryData->_repeat);
 	if (_entryData->_dayOfWeekCheck) {
