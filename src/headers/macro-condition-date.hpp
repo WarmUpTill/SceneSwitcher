@@ -120,6 +120,7 @@ protected:
 	QHBoxLayout *_simpleLayout;
 	QHBoxLayout *_advancedLayout;
 	QVBoxLayout *_repeatLayout;
+	QHBoxLayout *_repeatUpdateLayout;
 
 	std::shared_ptr<MacroConditionDate> _entryData;
 
