@@ -246,7 +246,8 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 		  "AdvSceneSwitcher.condition.date.showAdvancedSettings"))),
 	  _simpleLayout(new QHBoxLayout()),
 	  _advancedLayout(new QHBoxLayout()),
-	  _repeatLayout(new QVBoxLayout())
+	  _repeatLayout(new QVBoxLayout()),
+	  _repeatUpdateLayout(new QHBoxLayout())
 {
 	_weekTime->setDisplayFormat("hh:mm:ss");
 	_date->setDisplayFormat("yyyy.MM.dd ");
@@ -321,13 +322,12 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 	placeWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.date.entry.repeat"),
 		repeatLayout, widgetPlaceholders);
-	auto repeatUpdateLayout = new QHBoxLayout;
 	placeWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.date.entry.updateOnRepeat"),
-		repeatUpdateLayout, widgetPlaceholders);
+		_repeatUpdateLayout, widgetPlaceholders);
 	_repeatLayout->addLayout(repeatLayout);
-	_repeatLayout->addLayout(repeatUpdateLayout);
+	_repeatLayout->addLayout(_repeatUpdateLayout);
 
 	auto *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(_simpleLayout);
@@ -445,6 +445,7 @@ void MacroConditionDateEdit::RepeatChanged(int state)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_repeat = state;
 	_duration->setDisabled(!state);
+	SetWidgetStatus();
 }
 
 void MacroConditionDateEdit::UpdateOnRepeatChanged(int state)
@@ -522,6 +523,8 @@ void MacroConditionDateEdit::SetWidgetStatus()
 	setLayoutVisible(_simpleLayout, _entryData->_dayOfWeekCheck);
 	setLayoutVisible(_advancedLayout, !_entryData->_dayOfWeekCheck);
 	setLayoutVisible(_repeatLayout, !_entryData->_dayOfWeekCheck);
+	setLayoutVisible(_repeatUpdateLayout,
+			 !_entryData->_dayOfWeekCheck && _entryData->_repeat);
 	if (_entryData->_dayOfWeekCheck) {
 		_advancedSettingsTooggle->setText(obs_module_text(
 			"AdvSceneSwitcher.condition.date.showAdvancedSettings"));
