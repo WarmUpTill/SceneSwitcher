@@ -5,6 +5,7 @@
 #include <QCheckBox>
 #include <QDateTimeEdit>
 #include <QComboBox>
+#include <QTimer>
 
 enum class DateCondition {
 	AT,
@@ -43,6 +44,7 @@ public:
 	void SetTime2(const QTime &time);
 	QDateTime GetDateTime1();
 	QDateTime GetDateTime2();
+	QDateTime GetNextMatchDateTime();
 
 	DayOfWeekSelection _dayOfWeek = DayOfWeekSelection::ANY;
 	bool _ignoreDate = false;
@@ -97,6 +99,7 @@ private slots:
 	void DurationChanged(double seconds);
 	void DurationUnitChanged(DurationUnit unit);
 	void AdvancedSettingsToggleClicked();
+	void ShowNextMatch();
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -113,6 +116,7 @@ protected:
 	QCheckBox *_ignoreDate;
 	QCheckBox *_ignoreTime;
 	QCheckBox *_repeat;
+	QLabel *_nextMatchDate;
 	QCheckBox *_updateOnRepeat;
 	DurationSelection *_duration;
 
@@ -127,5 +131,6 @@ protected:
 private:
 	void SetWidgetStatus();
 	void ShowSecondDateSelection(bool visible);
+	QTimer _timer;
 	bool _loading = true;
 };
