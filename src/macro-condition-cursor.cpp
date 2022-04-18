@@ -64,17 +64,18 @@ static inline void populateConditionSelection(QComboBox *list)
 
 MacroConditionCursorEdit::MacroConditionCursorEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionCursor> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _minX(new QSpinBox()),
+	  _minY(new QSpinBox()),
+	  _maxX(new QSpinBox()),
+	  _maxY(new QSpinBox()),
+	  _conditions(new QComboBox()),
+	  _frameToggle(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.condition.cursor.showFrame"))),
+	  _xPos(new QLabel("-")),
+	  _yPos(new QLabel("-"))
 {
-	_conditions = new QComboBox();
-	_minX = new QSpinBox();
-	_minY = new QSpinBox();
-	_maxX = new QSpinBox();
-	_maxY = new QSpinBox();
-	_frameToggle = new QPushButton(
-		obs_module_text("AdvSceneSwitcher.condition.cursor.showFrame"));
-	_xPos = new QLabel("-");
-	_yPos = new QLabel("-");
+	_frame.setAttribute(Qt::WA_TransparentForMouseEvents);
 
 	populateConditionSelection(_conditions);
 
