@@ -3,22 +3,26 @@
 
 ThresholdSlider::ThresholdSlider(double min, double max, const QString &label,
 				 const QString &description, QWidget *parent)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _spinBox(new QDoubleSpinBox()),
+	  _slider(new QSlider())
 {
-	_slider = new QSlider();
 	_slider->setOrientation(Qt::Horizontal);
 	_slider->setRange(min * _scale, max * _scale);
-	_value = new QLabel();
-	QString labelText = label + QString("0.");
-	for (int i = 0; i < _precision; i++) {
-		labelText.append(QString("0"));
-	}
-	_value->setText(labelText);
+	_spinBox->setMinimum(min);
+	_spinBox->setMaximum(max);
+	_spinBox->setDecimals(5);
+
 	connect(_slider, SIGNAL(valueChanged(int)), this,
-		SLOT(NotifyValueChanged(int)));
+		SLOT(SliderValueChanged(int)));
+	connect(_spinBox, SIGNAL(valueChanged(double)), this,
+		SLOT(SpinBoxValueChanged(double)));
 	QVBoxLayout *mainLayout = new QVBoxLayout();
 	QHBoxLayout *sliderLayout = new QHBoxLayout();
-	sliderLayout->addWidget(_value);
+	if (!label.isEmpty()) {
+		sliderLayout->addWidget(new QLabel(label));
+	}
+	sliderLayout->addWidget(_spinBox);
 	sliderLayout->addWidget(_slider);
 	mainLayout->addLayout(sliderLayout);
 	if (!description.isEmpty()) {
@@ -30,21 +34,21 @@ ThresholdSlider::ThresholdSlider(double min, double max, const QString &label,
 
 void ThresholdSlider::SetDoubleValue(double value)
 {
+	const QSignalBlocker b1(_slider);
+	const QSignalBlocker b2(_spinBox);
 	_slider->setValue(value * _scale);
-	SetDoubleValueText(value);
+	_spinBox->setValue(value);
 }
 
-void ThresholdSlider::NotifyValueChanged(int value)
+void ThresholdSlider::SpinBoxValueChanged(double value)
+{
+	int sliderPos = value * _scale;
+	_slider->setValue(sliderPos);
+	emit DoubleValueChanged(value);
+}
+
+void ThresholdSlider::SliderValueChanged(int value)
 {
 	double doubleValue = value / _scale;
-	SetDoubleValueText(doubleValue);
-	emit DoubleValueChanged(doubleValue);
-}
-
-void ThresholdSlider::SetDoubleValueText(double value)
-{
-	QString labelText = _value->text();
-	labelText.chop(_precision + 2); // 2 for the part left of the "."
-	labelText.append(QString::number(value, 'f', _precision));
-	_value->setText(labelText);
+	_spinBox->setValue(doubleValue);
 }

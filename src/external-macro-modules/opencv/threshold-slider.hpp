@@ -2,6 +2,7 @@
 #include <QWidget>
 #include <QSlider>
 #include <QLabel>
+#include <QDoubleSpinBox>
 
 class ThresholdSlider : public QWidget {
 	Q_OBJECT
@@ -12,14 +13,13 @@ public:
 			const QString &description = "", QWidget *parent = 0);
 	void SetDoubleValue(double);
 public slots:
-	void NotifyValueChanged(int value);
+	void SliderValueChanged(int value);
+	void SpinBoxValueChanged(double value);
 signals:
 	void DoubleValueChanged(double value);
 
 private:
-	void SetDoubleValueText(double);
-	QLabel *_value;
+	QDoubleSpinBox *_spinBox;
 	QSlider *_slider;
 	double _scale = 100.0;
-	int _precision = 2;
 };
