@@ -114,6 +114,9 @@ public:
 	bool OnChangePreventedActionsRecently();
 	void ResetUIHelpers();
 
+	void EnablePauseHotkeys(bool);
+	bool PauseHotkeysEnabled();
+
 private:
 	void SetupHotkeys();
 	void ClearHotkeys();
@@ -132,6 +135,7 @@ private:
 	bool _matchOnChange = false;
 	bool _paused = false;
 	int _count = 0;
+	bool _registerHotkeys = true;
 	obs_hotkey_id _pauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _unpauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _togglePauseHotkey = OBS_INVALID_HOTKEY_ID;
