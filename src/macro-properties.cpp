@@ -31,14 +31,17 @@ void MacroProperties::Load(obs_data_t *obj)
 }
 
 MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
-					     const MacroProperties &prop)
+					     const MacroProperties &prop,
+					     Macro *macro)
 	: QDialog(parent),
 	  _executed(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.highlightExecutedMacros"))),
 	  _conditions(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.highlightTrueConditions"))),
 	  _actions(new QCheckBox(obs_module_text(
-		  "AdvSceneSwitcher.macroTab.highlightPerformedActions")))
+		  "AdvSceneSwitcher.macroTab.highlightPerformedActions"))),
+	  _hotkeys(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.macroTab.disableHotkeys")))
 {
 	setModal(true);
 	setWindowModality(Qt::WindowModality::WindowModal);
@@ -49,11 +52,17 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	_executed->setChecked(prop._highlightExecuted);
 	_conditions->setChecked(prop._highlightConditions);
 	_actions->setChecked(prop._highlightActions);
+	if (macro) {
+		_hotkeys->setChecked(macro->PauseHotkeysEnabled());
+	} else {
+		_hotkeys->hide();
+	}
 
 	QVBoxLayout *layout = new QVBoxLayout;
 	layout->addWidget(_executed);
 	layout->addWidget(_conditions);
 	layout->addWidget(_actions);
+	layout->addWidget(_hotkeys);
 	setLayout(layout);
 
 	QDialogButtonBox *buttonbox = new QDialogButtonBox(
@@ -65,9 +74,10 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 }
 
 bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
-					   MacroProperties &userInput)
+					   MacroProperties &userInput,
+					   Macro *macro)
 {
-	MacroPropertiesDialog dialog(parent, userInput);
+	MacroPropertiesDialog dialog(parent, userInput, macro);
 	dialog.setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
 	if (dialog.exec() != DialogCode::Accepted) {
 		return false;
@@ -75,5 +85,8 @@ bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
 	userInput._highlightExecuted = dialog._executed->isChecked();
 	userInput._highlightConditions = dialog._conditions->isChecked();
 	userInput._highlightActions = dialog._actions->isChecked();
+	if (macro) {
+		macro->EnablePauseHotkeys(dialog._hotkeys->isChecked());
+	}
 	return true;
 }

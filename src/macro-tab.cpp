@@ -408,7 +408,8 @@ void AdvSceneSwitcher::HighlightOnChange()
 void AdvSceneSwitcher::on_macroProperties_clicked()
 {
 	MacroProperties prop = switcher->macroProperties;
-	bool accepted = MacroPropertiesDialog::AskForSettings(this, prop);
+	bool accepted = MacroPropertiesDialog::AskForSettings(
+		this, prop, getSelectedMacro());
 	if (!accepted) {
 		return;
 	}

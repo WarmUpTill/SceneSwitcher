@@ -23,7 +23,6 @@ const std::map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 
 Macro::Macro(const std::string &name)
 {
-	SetupHotkeys();
 	SetName(name);
 }
 
@@ -262,6 +261,7 @@ bool Macro::Save(obs_data_t *obj)
 	obs_data_set_bool(obj, "parallel", _runInParallel);
 	obs_data_set_bool(obj, "onChange", _matchOnChange);
 
+	obs_data_set_bool(obj, "registerHotkeys", _registerHotkeys);
 	obs_data_array_t *pauseHotkey = obs_hotkey_save(_pauseHotkey);
 	obs_data_set_array(obj, "pauseHotkey", pauseHotkey);
 	obs_data_array_release(pauseHotkey);
@@ -341,6 +341,11 @@ bool Macro::Load(obs_data_t *obj)
 	_runInParallel = obs_data_get_bool(obj, "parallel");
 	_matchOnChange = obs_data_get_bool(obj, "onChange");
 
+	obs_data_set_default_bool(obj, "registerHotkeys", true);
+	_registerHotkeys = obs_data_get_bool(obj, "registerHotkeys");
+	if (_registerHotkeys) {
+		SetupHotkeys();
+	}
 	obs_data_array_t *pauseHotkey = obs_data_get_array(obj, "pauseHotkey");
 	obs_hotkey_load(_pauseHotkey, pauseHotkey);
 	obs_data_array_release(pauseHotkey);
@@ -352,7 +357,6 @@ bool Macro::Load(obs_data_t *obj)
 		obs_data_get_array(obj, "togglePauseHotkey");
 	obs_hotkey_load(_togglePauseHotkey, togglePauseHotkey);
 	obs_data_array_release(togglePauseHotkey);
-
 	SetHotkeysDesc();
 
 	bool root = true;
@@ -468,6 +472,25 @@ void Macro::ResetUIHelpers()
 	for (auto a : _actions) {
 		a->Highlight();
 	}
+}
+
+void Macro::EnablePauseHotkeys(bool value)
+{
+	if (_registerHotkeys == value) {
+		return;
+	}
+
+	if (_registerHotkeys) {
+		ClearHotkeys();
+	} else {
+		SetupHotkeys();
+	}
+	_registerHotkeys = value;
+}
+
+bool Macro::PauseHotkeysEnabled()
+{
+	return _registerHotkeys;
 }
 
 static void pauseCB(void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed)
