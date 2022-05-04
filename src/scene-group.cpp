@@ -58,6 +58,7 @@ OBSWeakSource SceneGroup::getNextSceneRandom()
 	}
 
 	int rIdx = lastRandomScene;
+	std::srand(std::time(0));
 	do {
 		rIdx = rand() % scenes.size();
 	} while (rIdx == lastRandomScene);
