@@ -28,19 +28,20 @@ bool MacroConditionScene::CheckCondition()
 
 	switch (_type) {
 	case SceneType::CURRENT:
-		if (!_useTransitionTargetScene) {
-			return switcher->currentScene == _scene.GetScene(false);
-		} else {
-
-			bool match = false;
+		if (_useTransitionTargetScene) {
 			auto current = obs_frontend_get_current_scene();
 			auto weak = obs_source_get_weak_source(current);
-			match = weak == _scene.GetScene(false);
+			bool match = weak == _scene.GetScene(false);
 			obs_weak_source_release(weak);
 			obs_source_release(current);
 			return match;
 		}
+		return switcher->currentScene == _scene.GetScene(false);
 	case SceneType::PREVIOUS:
+		if (switcher->anySceneTransitionStarted() &&
+		    _useTransitionTargetScene) {
+			return switcher->currentScene == _scene.GetScene(false);
+		}
 		return switcher->previousScene == _scene.GetScene(false);
 	case SceneType::CHANGED:
 		return sceneChanged;
@@ -168,8 +169,18 @@ void MacroConditionSceneEdit::SetWidgetVisibility()
 {
 	_scenes->setVisible(_entryData->_type == SceneType::CURRENT ||
 			    _entryData->_type == SceneType::PREVIOUS);
-	_useTransitionTargetScene->setVisible(_entryData->_type ==
-					      SceneType::CURRENT);
+	_useTransitionTargetScene->setVisible(
+		_entryData->_type == SceneType::CURRENT ||
+		_entryData->_type == SceneType::PREVIOUS);
+
+	if (_entryData->_type == SceneType::PREVIOUS) {
+		_useTransitionTargetScene->setText(obs_module_text(
+			"AdvSceneSwitcher.condition.scene.previousSceneTransitionBehaviour"));
+	}
+	if (_entryData->_type == SceneType::CURRENT) {
+		_useTransitionTargetScene->setText(obs_module_text(
+			"AdvSceneSwitcher.condition.scene.currentSceneTransitionBehaviour"));
+	}
 	adjustSize();
 }
 
