@@ -235,6 +235,7 @@ struct SwitcherData {
 
 	void setWaitScene();
 	bool sceneChangedDuringWait();
+	bool anySceneTransitionStarted();
 
 	bool prioFuncsValid();
 

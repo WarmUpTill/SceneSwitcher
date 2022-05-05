@@ -460,6 +460,19 @@ bool SwitcherData::sceneChangedDuringWait()
 	return (waitScene && currentSource != waitScene);
 }
 
+// Relies on the fact that switcher->currentScene will only be updated on event
+// OBS_FRONTEND_EVENT_SCENE_CHANGED but obs_frontend_get_current_scene() will
+// already return the scene to be transitioned to.
+bool SwitcherData::anySceneTransitionStarted()
+{
+	auto currentSceneSrouce = obs_frontend_get_current_scene();
+	auto currentScene = obs_source_get_weak_source(currentSceneSrouce);
+	bool ret = switcher->currentScene != currentScene;
+	obs_weak_source_release(currentScene);
+	obs_source_release(currentSceneSrouce);
+	return ret;
+}
+
 /******************************************************************************
  * OBS module setup
  ******************************************************************************/
