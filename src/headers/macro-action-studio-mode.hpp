@@ -2,9 +2,16 @@
 #include "macro-action-edit.hpp"
 #include "scene-selection.hpp"
 
-class MacroActionPreviewScene : public MacroAction {
+enum class StudioModeAction {
+	SWAP_SCENE,
+	SET_SCENE,
+	ENABLE_STUDIO_MODE,
+	DISABLE_STUDIO_MODE,
+};
+
+class MacroActionSudioMode : public MacroAction {
 public:
-	MacroActionPreviewScene(Macro *m) : MacroAction(m) {}
+	MacroActionSudioMode(Macro *m) : MacroAction(m) {}
 	bool PerformAction();
 	void LogAction();
 	bool Save(obs_data_t *obj);
@@ -13,9 +20,10 @@ public:
 	std::string GetId() { return id; };
 	static std::shared_ptr<MacroAction> Create(Macro *m)
 	{
-		return std::make_shared<MacroActionPreviewScene>(m);
+		return std::make_shared<MacroActionSudioMode>(m);
 	}
 
+	StudioModeAction _action = StudioModeAction::SWAP_SCENE;
 	SceneSelection _scene;
 
 private:
@@ -23,33 +31,33 @@ private:
 	static const std::string id;
 };
 
-class MacroActionPreviewSceneEdit : public QWidget {
+class MacroActionSudioModeEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroActionPreviewSceneEdit(
+	MacroActionSudioModeEdit(
 		QWidget *parent,
-		std::shared_ptr<MacroActionPreviewScene> entryData = nullptr);
+		std::shared_ptr<MacroActionSudioMode> entryData = nullptr);
 	void UpdateEntryData();
 	static QWidget *Create(QWidget *parent,
 			       std::shared_ptr<MacroAction> action)
 	{
-		return new MacroActionPreviewSceneEdit(
-			parent,
-			std::dynamic_pointer_cast<MacroActionPreviewScene>(
-				action));
+		return new MacroActionSudioModeEdit(
+			parent, std::dynamic_pointer_cast<MacroActionSudioMode>(
+					action));
 	}
 
 private slots:
+	void ActionChanged(int value);
 	void SceneChanged(const SceneSelection &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
+	QComboBox *_actions;
 	SceneSelectionWidget *_scenes;
-	std::shared_ptr<MacroActionPreviewScene> _entryData;
+	std::shared_ptr<MacroActionSudioMode> _entryData;
 
 private:
-	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
