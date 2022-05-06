@@ -198,7 +198,6 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-action-macro.hpp
     src/headers/macro-action-media.hpp
     src/headers/macro-action-plugin-state.hpp
-    src/headers/macro-action-preview-scene.hpp
     src/headers/macro-action-profile.hpp
     src/headers/macro-action-random.hpp
     src/headers/macro-action-recording.hpp
@@ -206,7 +205,6 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-action-run.hpp
     src/headers/macro-action-scene-collection.hpp
     src/headers/macro-action-scene-order.hpp
-    src/headers/macro-action-scene-swap.hpp
     src/headers/macro-action-scene-switch.hpp
     src/headers/macro-action-scene-transform.hpp
     src/headers/macro-action-scene-visibility.hpp
@@ -214,6 +212,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-action-sequence.hpp
     src/headers/macro-action-source.hpp
     src/headers/macro-action-streaming.hpp
+    src/headers/macro-action-studio-mode.hpp
     src/headers/macro-action-systray.hpp
     src/headers/macro-action-timer.hpp
     src/headers/macro-action-transition.hpp
@@ -302,7 +301,6 @@ set(advanced-scene-switcher_SOURCES
     src/macro-action-macro.cpp
     src/macro-action-media.cpp
     src/macro-action-plugin-state.cpp
-    src/macro-action-preview-scene.cpp
     src/macro-action-profile.cpp
     src/macro-action-random.cpp
     src/macro-action-recording.cpp
@@ -310,7 +308,6 @@ set(advanced-scene-switcher_SOURCES
     src/macro-action-run.cpp
     src/macro-action-scene-collection.cpp
     src/macro-action-scene-order.cpp
-    src/macro-action-scene-swap.cpp
     src/macro-action-scene-switch.cpp
     src/macro-action-scene-transform.cpp
     src/macro-action-scene-visibility.cpp
@@ -318,6 +315,7 @@ set(advanced-scene-switcher_SOURCES
     src/macro-action-sequence.cpp
     src/macro-action-source.cpp
     src/macro-action-streaming.cpp
+    src/macro-action-studio-mode.cpp
     src/macro-action-systray.cpp
     src/macro-action-timer.cpp
     src/macro-action-transition.cpp
