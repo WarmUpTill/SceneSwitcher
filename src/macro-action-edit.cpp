@@ -54,8 +54,15 @@ std::string MacroActionFactory::GetIdByName(const QString &name)
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (auto entry : MacroActionFactory::GetActionTypes()) {
-		list->addItem(obs_module_text(entry.second._name.c_str()));
+	for (auto &[_, action] : MacroActionFactory::GetActionTypes()) {
+		QString entry(obs_module_text(action._name.c_str()));
+		if (list->findText(entry) == -1) {
+			list->addItem(entry);
+		} else {
+			blog(LOG_WARNING,
+			     "did not insert duplicate action entry with name \"%s\"",
+			     entry.toStdString().c_str());
+		}
 	}
 	list->model()->sort(0);
 }
@@ -64,10 +71,9 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 				 std::shared_ptr<MacroAction> *entryData,
 				 const std::string &id)
 	: MacroSegmentEdit(switcher->macroProperties._highlightActions, parent),
+	  _actionSelection(new QComboBox()),
 	  _entryData(entryData)
 {
-	_actionSelection = new QComboBox();
-
 	QWidget::connect(_actionSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ActionSelectionChanged(const QString &)));

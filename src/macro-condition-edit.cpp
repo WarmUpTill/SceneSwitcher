@@ -83,8 +83,16 @@ static inline void populateLogicSelection(QComboBox *list, bool root = false)
 
 static inline void populateConditionSelection(QComboBox *list)
 {
-	for (auto entry : MacroConditionFactory::GetConditionTypes()) {
-		list->addItem(obs_module_text(entry.second._name.c_str()));
+	for (auto &[_, condition] :
+	     MacroConditionFactory::GetConditionTypes()) {
+		QString entry(obs_module_text(condition._name.c_str()));
+		if (list->findText(entry) == -1) {
+			list->addItem(entry);
+		} else {
+			blog(LOG_WARNING,
+			     "did not insert duplicate condition entry with name \"%s\"",
+			     entry.toStdString().c_str());
+		}
 	}
 	list->model()->sort(0);
 }
@@ -94,13 +102,12 @@ MacroConditionEdit::MacroConditionEdit(
 	const std::string &id, bool root)
 	: MacroSegmentEdit(switcher->macroProperties._highlightConditions,
 			   parent),
+	  _logicSelection(new QComboBox()),
+	  _conditionSelection(new QComboBox()),
+	  _dur(new DurationConstraintEdit()),
 	  _entryData(entryData),
 	  _isRoot(root)
 {
-	_logicSelection = new QComboBox();
-	_conditionSelection = new QComboBox();
-	_dur = new DurationConstraintEdit();
-
 	QWidget::connect(_logicSelection, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(LogicSelectionChanged(int)));
 	QWidget::connect(_conditionSelection,
