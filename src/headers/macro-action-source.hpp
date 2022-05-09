@@ -5,6 +5,7 @@
 #include <QSpinBox>
 #include <QLabel>
 #include <QPushButton>
+#include <QComboBox>
 
 enum class SourceAction {
 	ENABLE,

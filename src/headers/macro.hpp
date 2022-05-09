@@ -1,6 +1,7 @@
 #pragma once
-#include "macro-segment.hpp"
-#include "duration-control.hpp"
+#include "macro-action.hpp"
+#include "macro-condition.hpp"
+#include "macro-ref.hpp"
 
 #include <QString>
 #include <string>
@@ -12,62 +13,6 @@
 #include <obs-module.h>
 
 constexpr auto macro_func = 10;
-
-constexpr auto logic_root_offset = 100;
-
-enum class LogicType {
-	ROOT_NONE = 0,
-	ROOT_NOT,
-	ROOT_LAST,
-	// leave some space for potential expansion
-	NONE = 100,
-	AND,
-	OR,
-	AND_NOT,
-	OR_NOT,
-	LAST,
-};
-
-static inline bool isRootLogicType(LogicType l)
-{
-	return static_cast<int>(l) < logic_root_offset;
-}
-
-struct LogicTypeInfo {
-	std::string _name;
-};
-
-class MacroCondition : public MacroSegment {
-public:
-	MacroCondition(Macro *m) : MacroSegment(m) {}
-	virtual bool CheckCondition() = 0;
-	virtual bool Save(obs_data_t *obj) = 0;
-	virtual bool Load(obs_data_t *obj) = 0;
-	LogicType GetLogicType() { return _logic; }
-	void SetLogicType(LogicType logic) { _logic = logic; }
-	static const std::map<LogicType, LogicTypeInfo> logicTypes;
-
-	bool DurationReached() { return _duration.DurationReached(); }
-	void ResetDuration() { _duration.Reset(); }
-	DurationConstraint GetDurationConstraint() { return _duration; }
-	void SetDurationConstraint(const DurationConstraint &dur);
-	void SetDurationCondition(DurationCondition cond);
-	void SetDurationUnit(DurationUnit u);
-	void SetDuration(double seconds);
-
-private:
-	LogicType _logic = LogicType::ROOT_NONE;
-	DurationConstraint _duration;
-};
-
-class MacroAction : public MacroSegment {
-public:
-	MacroAction(Macro *m) : MacroSegment(m) {}
-	virtual bool PerformAction() = 0;
-	virtual bool Save(obs_data_t *obj) = 0;
-	virtual bool Load(obs_data_t *obj) = 0;
-	virtual void LogAction();
-};
 
 class Macro {
 public:
@@ -155,41 +100,3 @@ private:
 
 Macro *GetMacroByName(const char *name);
 Macro *GetMacroByQString(const QString &name);
-
-class MacroRef {
-public:
-	MacroRef(){};
-	MacroRef(std::string name);
-	void UpdateRef();
-	void UpdateRef(std::string name);
-	void UpdateRef(QString name);
-	void Save(obs_data_t *obj);
-	void Load(obs_data_t *obj);
-	Macro *get();
-	Macro *operator->();
-
-private:
-	std::string _name = "";
-	Macro *_ref = nullptr;
-};
-
-class MacroRefCondition : public MacroCondition {
-public:
-	MacroRefCondition(Macro *m) : MacroCondition(m) {}
-	void ResolveMacroRef();
-	MacroRef _macro;
-};
-
-class MacroRefAction : public MacroAction {
-public:
-	MacroRefAction(Macro *m) : MacroAction(m) {}
-	void ResolveMacroRef();
-	MacroRef _macro;
-};
-
-class MultiMacroRefAction : public MacroAction {
-public:
-	MultiMacroRefAction(Macro *m) : MacroAction(m) {}
-	void ResolveMacroRef();
-	std::vector<MacroRef> _macros;
-};

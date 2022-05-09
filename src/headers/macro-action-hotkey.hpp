@@ -2,6 +2,7 @@
 #include "macro-action-edit.hpp"
 #include "hotkey.hpp"
 
+#include <QComboBox>
 #include <QCheckBox>
 #include <QSpinBox>
 #include <QHBoxLayout>

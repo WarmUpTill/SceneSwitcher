@@ -97,6 +97,82 @@ static inline void populateConditionSelection(QComboBox *list)
 	list->model()->sort(0);
 }
 
+static void populateDurationConstraintTypes(QComboBox *list)
+{
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.duration.condition.none"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.duration.condition.more"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.duration.condition.equal"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.duration.condition.less"));
+}
+
+DurationConstraintEdit::DurationConstraintEdit(QWidget *parent)
+{
+	_condition = new QComboBox(parent);
+	_duration = new DurationSelection(parent);
+	_toggle = new QPushButton(parent);
+	_toggle->setMaximumSize(22, 22);
+	_toggle->setIcon(
+		QIcon(QString::fromStdString(getDataFilePath("res/time.svg"))));
+	populateDurationConstraintTypes(_condition);
+	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(_ConditionChanged(int)));
+	QObject::connect(_duration, &DurationSelection::DurationChanged, this,
+			 &DurationConstraintEdit::DurationChanged);
+	QObject::connect(_duration, &DurationSelection::UnitChanged, this,
+			 &DurationConstraintEdit::UnitChanged);
+	QWidget::connect(_toggle, SIGNAL(clicked()), this,
+			 SLOT(ToggleClicked()));
+
+	QHBoxLayout *layout = new QHBoxLayout;
+	layout->setContentsMargins(0, 0, 0, 0);
+	layout->setSpacing(11);
+	layout->addWidget(_toggle);
+	layout->addWidget(_condition);
+	layout->addWidget(_duration);
+	setLayout(layout);
+	Collapse(true);
+}
+
+void DurationConstraintEdit::SetValue(DurationConstraint &value)
+{
+	_duration->SetDuration(value.GetDuration());
+	_condition->setCurrentIndex(static_cast<int>(value.GetCondition()));
+	_duration->setVisible(value.GetCondition() != DurationCondition::NONE);
+}
+
+void DurationConstraintEdit::SetUnit(DurationUnit u)
+{
+	_duration->SetUnit(u);
+}
+
+void DurationConstraintEdit::SetDuration(const Duration &d)
+{
+	_duration->SetDuration(d);
+}
+
+void DurationConstraintEdit::_ConditionChanged(int value)
+{
+	auto cond = static_cast<DurationCondition>(value);
+	Collapse(cond == DurationCondition::NONE);
+	emit ConditionChanged(cond);
+}
+
+void DurationConstraintEdit::ToggleClicked()
+{
+	Collapse(false);
+}
+
+void DurationConstraintEdit::Collapse(bool collapse)
+{
+	_toggle->setVisible(collapse);
+	_duration->setVisible(!collapse);
+	_condition->setVisible(!collapse);
+}
+
 MacroConditionEdit::MacroConditionEdit(
 	QWidget *parent, std::shared_ptr<MacroCondition> *entryData,
 	const std::string &id, bool root)
