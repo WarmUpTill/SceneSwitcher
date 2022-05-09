@@ -1,5 +1,7 @@
 #pragma once
-#include "macro.hpp"
+#include "macro-condition.hpp"
+
+#include <memory>
 
 struct MacroConditionInfo {
 	using TCreateMethod = std::shared_ptr<MacroCondition> (*)(Macro *m);
@@ -26,6 +28,30 @@ public:
 
 private:
 	static std::map<std::string, MacroConditionInfo> _methods;
+};
+
+class DurationConstraintEdit : public QWidget {
+	Q_OBJECT
+public:
+	DurationConstraintEdit(QWidget *parent = nullptr);
+	void SetValue(DurationConstraint &value);
+	void SetUnit(DurationUnit u);
+	void SetDuration(const Duration &d);
+
+private slots:
+	void _ConditionChanged(int value);
+	void ToggleClicked();
+signals:
+	void DurationChanged(double value);
+	void UnitChanged(DurationUnit u);
+	void ConditionChanged(DurationCondition value);
+
+private:
+	void Collapse(bool collapse);
+
+	DurationSelection *_duration;
+	QComboBox *_condition;
+	QPushButton *_toggle;
 };
 
 class MacroConditionEdit : public MacroSegmentEdit {

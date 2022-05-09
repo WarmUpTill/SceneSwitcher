@@ -11,16 +11,6 @@
 
 constexpr int perfLogThreshold = 300;
 
-const std::map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
-	{LogicType::NONE, {"AdvSceneSwitcher.logic.none"}},
-	{LogicType::AND, {"AdvSceneSwitcher.logic.and"}},
-	{LogicType::OR, {"AdvSceneSwitcher.logic.or"}},
-	{LogicType::AND_NOT, {"AdvSceneSwitcher.logic.andNot"}},
-	{LogicType::OR_NOT, {"AdvSceneSwitcher.logic.orNot"}},
-	{LogicType::ROOT_NONE, {"AdvSceneSwitcher.logic.rootNone"}},
-	{LogicType::ROOT_NOT, {"AdvSceneSwitcher.logic.not"}},
-};
-
 Macro::Macro(const std::string &name)
 {
 	SetName(name);
@@ -579,61 +569,6 @@ void Macro::SetHotkeysDesc()
 				   _name, _togglePauseHotkey);
 }
 
-bool MacroCondition::Save(obs_data_t *obj)
-{
-	MacroSegment::Save(obj);
-	obs_data_set_string(obj, "id", GetId().c_str());
-	obs_data_set_int(obj, "logic", static_cast<int>(_logic));
-	_duration.Save(obj);
-	return true;
-}
-
-bool MacroCondition::Load(obs_data_t *obj)
-{
-	MacroSegment::Load(obj);
-	_logic = static_cast<LogicType>(obs_data_get_int(obj, "logic"));
-	_duration.Load(obj);
-	return true;
-}
-
-void MacroCondition::SetDurationConstraint(const DurationConstraint &dur)
-{
-	_duration = dur;
-}
-
-void MacroCondition::SetDurationCondition(DurationCondition cond)
-{
-	_duration.SetCondition(cond);
-}
-
-void MacroCondition::SetDurationUnit(DurationUnit u)
-{
-	_duration.SetUnit(u);
-}
-
-void MacroCondition::SetDuration(double seconds)
-{
-	_duration.SetValue(seconds);
-}
-
-bool MacroAction::Save(obs_data_t *obj)
-{
-	MacroSegment::Save(obj);
-	obs_data_set_string(obj, "id", GetId().c_str());
-	return true;
-}
-
-bool MacroAction::Load(obs_data_t *obj)
-{
-	MacroSegment::Load(obj);
-	return true;
-}
-
-void MacroAction::LogAction()
-{
-	vblog(LOG_INFO, "performed action %s", GetId().c_str());
-}
-
 void SwitcherData::saveMacros(obs_data_t *obj)
 {
 	switcher->macroProperties.Save(obj);
@@ -719,61 +654,4 @@ Macro *GetMacroByName(const char *name)
 Macro *GetMacroByQString(const QString &name)
 {
 	return GetMacroByName(name.toUtf8().constData());
-}
-
-MacroRef::MacroRef(std::string name) : _name(name)
-{
-	UpdateRef();
-}
-void MacroRef::UpdateRef()
-{
-	_ref = GetMacroByName(_name.c_str());
-}
-void MacroRef::UpdateRef(std::string newName)
-{
-	_name = newName;
-	UpdateRef();
-}
-void MacroRef::UpdateRef(QString newName)
-{
-	_name = newName.toStdString();
-	UpdateRef();
-}
-void MacroRef::Save(obs_data_t *obj)
-{
-	if (_ref) {
-		obs_data_set_string(obj, "macro", _ref->Name().c_str());
-	}
-}
-void MacroRef::Load(obs_data_t *obj)
-{
-	_name = obs_data_get_string(obj, "macro");
-	UpdateRef();
-}
-
-Macro *MacroRef::get()
-{
-	return _ref;
-}
-
-Macro *MacroRef::operator->()
-{
-	return _ref;
-}
-
-void MacroRefCondition::ResolveMacroRef()
-{
-	_macro.UpdateRef();
-}
-
-void MacroRefAction::ResolveMacroRef()
-{
-	_macro.UpdateRef();
-}
-
-void MultiMacroRefAction::ResolveMacroRef()
-{
-	for (auto &m : _macros) {
-		m.UpdateRef();
-	}
 }

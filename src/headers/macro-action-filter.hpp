@@ -2,7 +2,9 @@
 #include "macro-action-edit.hpp"
 #include "resizing-text-edit.hpp"
 
+#include <QComboBox>
 #include <QSpinBox>
+#include <QPushButton>
 
 enum class FilterAction {
 	ENABLE,

@@ -1,6 +1,8 @@
 #pragma once
 #include "macro-action-edit.hpp"
 
+#include <QComboBox>
+
 class MacroActionScreenshot : public MacroAction {
 public:
 	MacroActionScreenshot(Macro *m) : MacroAction(m) {}

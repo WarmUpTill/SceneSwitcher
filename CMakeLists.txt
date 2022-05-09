@@ -190,6 +190,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/switch-sequence.hpp
     src/headers/switch-video.hpp
     src/headers/switch-generic.hpp
+    src/headers/macro-action.hpp
     src/headers/macro-action-edit.hpp
     src/headers/macro-action-audio.hpp
     src/headers/macro-action-file.hpp
@@ -218,6 +219,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-action-transition.hpp
     src/headers/macro-action-virtual-cam.hpp
     src/headers/macro-action-wait.hpp
+    src/headers/macro-condition.hpp
     src/headers/macro-condition-edit.hpp
     src/headers/macro-condition-audio.hpp
     src/headers/macro-condition-cursor.hpp
@@ -245,6 +247,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-condition-virtual-cam.hpp
     src/headers/macro-condition-window.hpp
     src/headers/macro.hpp
+    src/headers/macro-ref.hpp
     src/headers/macro-list-entry-widget.hpp
     src/headers/macro-properties.hpp
     src/headers/macro-segment.hpp
@@ -293,6 +296,7 @@ set(advanced-scene-switcher_SOURCES
     src/switch-audio.cpp
     src/switch-video.cpp
     src/switch-generic.cpp
+    src/macro-action.cpp
     src/macro-action-edit.cpp
     src/macro-action-audio.cpp
     src/macro-action-file.cpp
@@ -321,6 +325,7 @@ set(advanced-scene-switcher_SOURCES
     src/macro-action-transition.cpp
     src/macro-action-virtual-cam.cpp
     src/macro-action-wait.cpp
+    src/macro-condition.cpp
     src/macro-condition-edit.cpp
     src/macro-condition-audio.cpp
     src/macro-condition-cursor.cpp
@@ -348,6 +353,7 @@ set(advanced-scene-switcher_SOURCES
     src/macro-condition-virtual-cam.cpp
     src/macro-condition-window.cpp
     src/macro.cpp
+    src/macro-ref.cpp
     src/macro-list-entry-widget.cpp
     src/macro-properties.cpp
     src/macro-segment.cpp

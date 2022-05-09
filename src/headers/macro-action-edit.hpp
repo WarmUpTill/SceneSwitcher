@@ -1,5 +1,8 @@
 #pragma once
-#include "macro.hpp"
+#include "macro-action.hpp"
+
+#include <QComboBox>
+#include <memory>
 
 struct MacroActionInfo {
 	using TCreateMethod = std::shared_ptr<MacroAction> (*)(Macro *m);
