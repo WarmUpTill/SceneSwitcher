@@ -53,10 +53,10 @@ std::string MacroConditionFactory::GetIdByName(const QString &name)
 	return "";
 }
 
-bool MacroConditionFactory::UsesDurationConstraint(const std::string &id)
+bool MacroConditionFactory::UsesDurationModifier(const std::string &id)
 {
 	if (auto it = _methods.find(id); it != _methods.end()) {
-		return it->second._useDurationConstraint;
+		return it->second._useDurationModifier;
 	}
 	return false;
 }
@@ -97,7 +97,7 @@ static inline void populateConditionSelection(QComboBox *list)
 	list->model()->sort(0);
 }
 
-static void populateDurationConstraintTypes(QComboBox *list)
+static void populateDurationModifierTypes(QComboBox *list)
 {
 	list->addItem(
 		obs_module_text("AdvSceneSwitcher.duration.condition.none"));
@@ -107,9 +107,11 @@ static void populateDurationConstraintTypes(QComboBox *list)
 		obs_module_text("AdvSceneSwitcher.duration.condition.equal"));
 	list->addItem(
 		obs_module_text("AdvSceneSwitcher.duration.condition.less"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.duration.condition.within"));
 }
 
-DurationConstraintEdit::DurationConstraintEdit(QWidget *parent)
+DurationModifierEdit::DurationModifierEdit(QWidget *parent)
 {
 	_condition = new QComboBox(parent);
 	_duration = new DurationSelection(parent);
@@ -117,13 +119,13 @@ DurationConstraintEdit::DurationConstraintEdit(QWidget *parent)
 	_toggle->setMaximumSize(22, 22);
 	_toggle->setIcon(
 		QIcon(QString::fromStdString(getDataFilePath("res/time.svg"))));
-	populateDurationConstraintTypes(_condition);
+	populateDurationModifierTypes(_condition);
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(_ConditionChanged(int)));
+			 SLOT(_ModifierChanged(int)));
 	QObject::connect(_duration, &DurationSelection::DurationChanged, this,
-			 &DurationConstraintEdit::DurationChanged);
+			 &DurationModifierEdit::DurationChanged);
 	QObject::connect(_duration, &DurationSelection::UnitChanged, this,
-			 &DurationConstraintEdit::UnitChanged);
+			 &DurationModifierEdit::UnitChanged);
 	QWidget::connect(_toggle, SIGNAL(clicked()), this,
 			 SLOT(ToggleClicked()));
 
@@ -137,36 +139,36 @@ DurationConstraintEdit::DurationConstraintEdit(QWidget *parent)
 	Collapse(true);
 }
 
-void DurationConstraintEdit::SetValue(DurationConstraint &value)
+void DurationModifierEdit::SetValue(DurationModifier &value)
 {
 	_duration->SetDuration(value.GetDuration());
-	_condition->setCurrentIndex(static_cast<int>(value.GetCondition()));
-	_duration->setVisible(value.GetCondition() != DurationCondition::NONE);
+	_condition->setCurrentIndex(static_cast<int>(value.GetType()));
+	_duration->setVisible(value.GetType() != DurationModifier::Type::NONE);
 }
 
-void DurationConstraintEdit::SetUnit(DurationUnit u)
+void DurationModifierEdit::SetUnit(DurationUnit u)
 {
 	_duration->SetUnit(u);
 }
 
-void DurationConstraintEdit::SetDuration(const Duration &d)
+void DurationModifierEdit::SetDuration(const Duration &d)
 {
 	_duration->SetDuration(d);
 }
 
-void DurationConstraintEdit::_ConditionChanged(int value)
+void DurationModifierEdit::_ModifierChanged(int value)
 {
-	auto cond = static_cast<DurationCondition>(value);
-	Collapse(cond == DurationCondition::NONE);
-	emit ConditionChanged(cond);
+	auto m = static_cast<DurationModifier::Type>(value);
+	Collapse(m == DurationModifier::Type::NONE);
+	emit ModifierChanged(m);
 }
 
-void DurationConstraintEdit::ToggleClicked()
+void DurationModifierEdit::ToggleClicked()
 {
 	Collapse(false);
 }
 
-void DurationConstraintEdit::Collapse(bool collapse)
+void DurationModifierEdit::Collapse(bool collapse)
 {
 	_toggle->setVisible(collapse);
 	_duration->setVisible(!collapse);
@@ -180,7 +182,7 @@ MacroConditionEdit::MacroConditionEdit(
 			   parent),
 	  _logicSelection(new QComboBox()),
 	  _conditionSelection(new QComboBox()),
-	  _dur(new DurationConstraintEdit()),
+	  _dur(new DurationModifierEdit()),
 	  _entryData(entryData),
 	  _isRoot(root)
 {
@@ -193,9 +195,9 @@ MacroConditionEdit::MacroConditionEdit(
 			 SLOT(DurationChanged(double)));
 	QWidget::connect(_dur, SIGNAL(UnitChanged(DurationUnit)), this,
 			 SLOT(DurationUnitChanged(DurationUnit)));
-	QWidget::connect(_dur, SIGNAL(ConditionChanged(DurationCondition)),
+	QWidget::connect(_dur, SIGNAL(ModifierChanged(DurationModifier::Type)),
 			 this,
-			 SLOT(DurationConditionChanged(DurationCondition)));
+			 SLOT(DurationModifierChanged(DurationModifier::Type)));
 	QWidget::connect(window(), SIGNAL(HighlightConditionsChanged(bool)),
 			 this, SLOT(EnableHighlight(bool)));
 
@@ -277,9 +279,9 @@ void MacroConditionEdit::UpdateEntryData(const std::string &id)
 	SetLogicSelection();
 	_section->SetContent(widget, (*_entryData)->GetCollapsed());
 
-	_dur->setVisible(MacroConditionFactory::UsesDurationConstraint(id));
-	auto constraint = (*_entryData)->GetDurationConstraint();
-	_dur->SetValue(constraint);
+	_dur->setVisible(MacroConditionFactory::UsesDurationModifier(id));
+	auto modifier = (*_entryData)->GetDurationModifier();
+	_dur->SetValue(modifier);
 	SetFocusPolicyOfWidgets();
 }
 
@@ -298,7 +300,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 	auto macro = _entryData->get()->GetMacro();
 	std::string id = MacroConditionFactory::GetIdByName(text);
 
-	auto temp = DurationConstraint();
+	auto temp = DurationModifier();
 	_dur->SetValue(temp);
 	HeaderInfoChanged("");
 	{
@@ -314,7 +316,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
 			 this, SLOT(HeaderInfoChanged(const QString &)));
 	_section->SetContent(widget);
-	_dur->setVisible(MacroConditionFactory::UsesDurationConstraint(id));
+	_dur->setVisible(MacroConditionFactory::UsesDurationModifier(id));
 	SetFocusPolicyOfWidgets();
 }
 
@@ -328,14 +330,14 @@ void MacroConditionEdit::DurationChanged(double seconds)
 	(*_entryData)->SetDuration(seconds);
 }
 
-void MacroConditionEdit::DurationConditionChanged(DurationCondition cond)
+void MacroConditionEdit::DurationModifierChanged(DurationModifier::Type m)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	(*_entryData)->SetDurationCondition(cond);
+	(*_entryData)->SetDurationModifier(m);
 }
 
 void MacroConditionEdit::DurationUnitChanged(DurationUnit unit)

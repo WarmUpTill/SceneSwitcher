@@ -43,10 +43,7 @@ bool Macro::CeckMatch()
 			     ms.count(), c->GetId().c_str(), Name().c_str());
 		}
 
-		if (!cond) {
-			c->ResetDuration();
-		}
-		cond = cond && c->DurationReached();
+		c->CheckDurationModifier(cond);
 
 		switch (c->GetLogicType()) {
 		case LogicType::NONE:

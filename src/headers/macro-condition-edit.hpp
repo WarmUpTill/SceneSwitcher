@@ -10,7 +10,7 @@ struct MacroConditionInfo {
 	TCreateMethod _createFunc = nullptr;
 	TCreateWidgetMethod _createWidgetFunc = nullptr;
 	std::string _name;
-	bool _useDurationConstraint = true;
+	bool _useDurationModifier = true;
 };
 
 class MacroConditionFactory {
@@ -24,27 +24,27 @@ public:
 	static auto GetConditionTypes() { return _methods; }
 	static std::string GetConditionName(const std::string &);
 	static std::string GetIdByName(const QString &name);
-	static bool UsesDurationConstraint(const std::string &id);
+	static bool UsesDurationModifier(const std::string &id);
 
 private:
 	static std::map<std::string, MacroConditionInfo> _methods;
 };
 
-class DurationConstraintEdit : public QWidget {
+class DurationModifierEdit : public QWidget {
 	Q_OBJECT
 public:
-	DurationConstraintEdit(QWidget *parent = nullptr);
-	void SetValue(DurationConstraint &value);
+	DurationModifierEdit(QWidget *parent = nullptr);
+	void SetValue(DurationModifier &value);
 	void SetUnit(DurationUnit u);
 	void SetDuration(const Duration &d);
 
 private slots:
-	void _ConditionChanged(int value);
+	void _ModifierChanged(int value);
 	void ToggleClicked();
 signals:
 	void DurationChanged(double value);
 	void UnitChanged(DurationUnit u);
-	void ConditionChanged(DurationCondition value);
+	void ModifierChanged(DurationModifier::Type value);
 
 private:
 	void Collapse(bool collapse);
@@ -70,7 +70,7 @@ private slots:
 	void LogicSelectionChanged(int idx);
 	void ConditionSelectionChanged(const QString &text);
 	void DurationChanged(double seconds);
-	void DurationConditionChanged(DurationCondition cond);
+	void DurationModifierChanged(DurationModifier::Type m);
 	void DurationUnitChanged(DurationUnit unit);
 
 private:
@@ -79,7 +79,7 @@ private:
 
 	QComboBox *_logicSelection;
 	QComboBox *_conditionSelection;
-	DurationConstraintEdit *_dur;
+	DurationModifierEdit *_dur;
 
 	std::shared_ptr<MacroCondition> *_entryData;
 	bool _isRoot = true;

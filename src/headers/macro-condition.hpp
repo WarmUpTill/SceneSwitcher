@@ -27,32 +27,34 @@ struct LogicTypeInfo {
 	std::string _name;
 };
 
-enum class DurationCondition {
-	NONE,
-	MORE,
-	EQUAL,
-	LESS,
-};
-
-class DurationConstraint {
+class DurationModifier {
 public:
+	enum class Type {
+		NONE,
+		MORE,
+		EQUAL,
+		LESS,
+		WITHIN, // Condition will remain true for a set a amount of time
+			// regardless of current state
+	};
+
 	void Save(obs_data_t *obj, const char *condName = "time_constraint",
 		  const char *secondsName = "seconds",
 		  const char *unitName = "displayUnit");
 	void Load(obs_data_t *obj, const char *condName = "time_constraint",
 		  const char *secondsName = "seconds",
 		  const char *unitName = "displayUnit");
-	void SetCondition(DurationCondition cond) { _type = cond; }
-	void SetDuration(const Duration &dur) { _dur = dur; }
+	void SetModifier(Type cond) { _type = cond; }
+	void SetTimeRemaining(const double &val) { _dur.SetTimeRemaining(val); }
 	void SetValue(double value) { _dur.seconds = value; }
 	void SetUnit(DurationUnit u) { _dur.displayUnit = u; }
-	DurationCondition GetCondition() { return _type; }
+	Type GetType() { return _type; }
 	Duration GetDuration() { return _dur; }
 	bool DurationReached();
 	void Reset();
 
 private:
-	DurationCondition _type = DurationCondition::NONE;
+	Type _type = Type::NONE;
 	Duration _dur;
 	bool _timeReached = false;
 };
@@ -66,18 +68,16 @@ public:
 	LogicType GetLogicType() { return _logic; }
 	void SetLogicType(LogicType logic) { _logic = logic; }
 	static const std::map<LogicType, LogicTypeInfo> logicTypes;
-
-	bool DurationReached() { return _duration.DurationReached(); }
-	void ResetDuration() { _duration.Reset(); }
-	DurationConstraint GetDurationConstraint() { return _duration; }
-	void SetDurationConstraint(const DurationConstraint &dur);
-	void SetDurationCondition(DurationCondition cond);
+	void ResetDuration();
+	void CheckDurationModifier(bool &val);
+	DurationModifier GetDurationModifier() { return _duration; }
+	void SetDurationModifier(DurationModifier::Type m);
 	void SetDurationUnit(DurationUnit u);
 	void SetDuration(double seconds);
 
 private:
 	LogicType _logic = LogicType::ROOT_NONE;
-	DurationConstraint _duration;
+	DurationModifier _duration;
 };
 
 class MacroRefCondition : public MacroCondition {
