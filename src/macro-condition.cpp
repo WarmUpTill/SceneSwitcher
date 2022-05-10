@@ -11,44 +11,49 @@ const std::map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 	{LogicType::ROOT_NOT, {"AdvSceneSwitcher.logic.not"}},
 };
 
-void DurationConstraint::Save(obs_data_t *obj, const char *condName,
-			      const char *secondsName, const char *unitName)
+void DurationModifier::Save(obs_data_t *obj, const char *condName,
+			    const char *secondsName, const char *unitName)
 {
 	obs_data_set_int(obj, condName, static_cast<int>(_type));
 	_dur.Save(obj, secondsName, unitName);
 }
 
-void DurationConstraint::Load(obs_data_t *obj, const char *condName,
-			      const char *secondsName, const char *unitName)
+void DurationModifier::Load(obs_data_t *obj, const char *condName,
+			    const char *secondsName, const char *unitName)
 {
 	// For backwards compatability check if duration value exist without
 	// time constraint condition - if so assume DurationCondition::MORE
 	if (!obs_data_has_user_value(obj, condName) &&
 	    obs_data_has_user_value(obj, secondsName)) {
-		obs_data_set_int(obj, condName,
-				 static_cast<int>(DurationCondition::MORE));
+		obs_data_set_int(obj, condName, static_cast<int>(Type::MORE));
 	}
 
-	_type = static_cast<DurationCondition>(obs_data_get_int(obj, condName));
+	_type = static_cast<Type>(obs_data_get_int(obj, condName));
 	_dur.Load(obj, secondsName, unitName);
 }
 
-bool DurationConstraint::DurationReached()
+bool DurationModifier::DurationReached()
 {
 	switch (_type) {
-	case DurationCondition::NONE:
+	case DurationModifier::Type::NONE:
 		return true;
 		break;
-	case DurationCondition::MORE:
+	case DurationModifier::Type::MORE:
 		return _dur.DurationReached();
 		break;
-	case DurationCondition::EQUAL:
+	case DurationModifier::Type::EQUAL:
 		if (_dur.DurationReached() && !_timeReached) {
 			_timeReached = true;
 			return true;
 		}
 		break;
-	case DurationCondition::LESS:
+	case DurationModifier::Type::LESS:
+		return !_dur.DurationReached();
+		break;
+	case DurationModifier::Type::WITHIN:
+		if (_dur.IsReset()) {
+			return false;
+		}
 		return !_dur.DurationReached();
 		break;
 	default:
@@ -57,7 +62,7 @@ bool DurationConstraint::DurationReached()
 	return false;
 }
 
-void DurationConstraint::Reset()
+void DurationModifier::Reset()
 {
 	_timeReached = false;
 	_dur.Reset();
@@ -80,14 +85,44 @@ bool MacroCondition::Load(obs_data_t *obj)
 	return true;
 }
 
-void MacroCondition::SetDurationConstraint(const DurationConstraint &dur)
+void MacroCondition::ResetDuration()
 {
-	_duration = dur;
+	_duration.Reset();
 }
 
-void MacroCondition::SetDurationCondition(DurationCondition cond)
+void MacroCondition::CheckDurationModifier(bool &val)
 {
-	_duration.SetCondition(cond);
+	if (_duration.GetType() != DurationModifier::Type::WITHIN && !val) {
+		_duration.Reset();
+	}
+	if (_duration.GetType() == DurationModifier::Type::WITHIN && val) {
+		_duration.Reset();
+	}
+	switch (_duration.GetType()) {
+	case DurationModifier::Type::NONE:
+	case DurationModifier::Type::MORE:
+	case DurationModifier::Type::EQUAL:
+	case DurationModifier::Type::LESS:
+		if (!val) {
+			_duration.Reset();
+		}
+		val = val && _duration.DurationReached();
+		return;
+	case DurationModifier::Type::WITHIN:
+		if (val) {
+			_duration.SetTimeRemaining(
+				_duration.GetDuration().seconds);
+		}
+		val = val || _duration.DurationReached();
+		break;
+	default:
+		break;
+	}
+}
+
+void MacroCondition::SetDurationModifier(DurationModifier::Type m)
+{
+	_duration.SetModifier(m);
 }
 
 void MacroCondition::SetDurationUnit(DurationUnit u)

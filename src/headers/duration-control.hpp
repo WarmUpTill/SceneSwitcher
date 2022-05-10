@@ -21,6 +21,7 @@ public:
 		  const char *unitName = "displayUnit");
 
 	bool DurationReached();
+	bool IsReset();
 	double TimeRemaining();
 	void SetTimeRemaining(double);
 	void Reset();

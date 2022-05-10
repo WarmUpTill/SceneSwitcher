@@ -23,7 +23,7 @@ void Duration::Load(obs_data_t *obj, const char *secondsName,
 
 bool Duration::DurationReached()
 {
-	if (_startTime.time_since_epoch().count() == 0) {
+	if (IsReset()) {
 		_startTime = std::chrono::high_resolution_clock::now();
 	}
 
@@ -32,9 +32,14 @@ bool Duration::DurationReached()
 	return runTime.count() >= seconds * 1000;
 }
 
+bool Duration::IsReset()
+{
+	return _startTime.time_since_epoch().count() == 0;
+}
+
 double Duration::TimeRemaining()
 {
-	if (_startTime.time_since_epoch().count() == 0) {
+	if (IsReset()) {
 		return seconds;
 	}
 	auto runTime = std::chrono::duration_cast<std::chrono::milliseconds>(
