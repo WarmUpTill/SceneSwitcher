@@ -212,6 +212,10 @@ void MacroConditionAudio::SetVolumeLevel(void *data, const float *,
 					 const float *)
 {
 	MacroConditionAudio *c = static_cast<MacroConditionAudio *>(data);
+	const auto macro = c->GetMacro();
+	if (macro && macro->Paused()) {
+		return;
+	}
 
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
 		if (peak[i] > c->_peak) {

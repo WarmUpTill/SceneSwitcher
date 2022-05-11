@@ -329,18 +329,30 @@ void MacroConditionMedia::ResetSignalHandler()
 void MacroConditionMedia::MediaStopped(void *data, calldata_t *)
 {
 	MacroConditionMedia *media = static_cast<MacroConditionMedia *>(data);
+	const auto macro = media->GetMacro();
+	if (macro && macro->Paused()) {
+		return;
+	}
 	media->_stopped = true;
 }
 
 void MacroConditionMedia::MediaEnded(void *data, calldata_t *)
 {
 	MacroConditionMedia *media = static_cast<MacroConditionMedia *>(data);
+	const auto macro = media->GetMacro();
+	if (macro && macro->Paused()) {
+		return;
+	}
 	media->_ended = true;
 }
 
 void MacroConditionMedia::MediaNext(void *data, calldata_t *)
 {
 	MacroConditionMedia *media = static_cast<MacroConditionMedia *>(data);
+	const auto macro = media->GetMacro();
+	if (macro && macro->Paused()) {
+		return;
+	}
 	media->_next = true;
 }
 
