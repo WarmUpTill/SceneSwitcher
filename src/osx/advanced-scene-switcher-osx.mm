@@ -19,9 +19,9 @@ void GetWindowList(std::vector<std::string> &windows)
 	windows.resize(0);
 
 	@autoreleasepool {
-		NSMutableArray *apps =
-			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
-				kCGWindowListOptionAll, kCGNullWindowID);
+		CFArrayRef cfApps = CGWindowListCopyWindowInfo(
+			kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+		NSMutableArray *apps = (__bridge NSMutableArray *)cfApps;
 		for (NSDictionary *app in apps) {
 			std::string name([[app objectForKey:@"kCGWindowName"]
 						 UTF8String],
@@ -37,14 +37,17 @@ void GetWindowList(std::vector<std::string> &windows)
 
 			if (!name.empty() &&
 			    find(windows.begin(), windows.end(), name) ==
-				    windows.end())
+				    windows.end()) {
 				windows.emplace_back(name);
-
+			}
 			if (!owner.empty() &&
 			    find(windows.begin(), windows.end(), owner) ==
-				    windows.end())
+				    windows.end()) {
 				windows.emplace_back(owner);
+			}
 		}
+		apps = nil;
+		CFRelease(cfApps);
 	}
 }
 
@@ -61,12 +64,10 @@ void GetWindowList(QStringList &windows)
 void GetCurrentWindowTitle(std::string &title)
 {
 	title.resize(0);
-
 	@autoreleasepool {
-		NSMutableArray *apps =
-			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
-				kCGWindowListOptionOnScreenOnly,
-				kCGNullWindowID);
+		CFArrayRef cfApps = CGWindowListCopyWindowInfo(
+			kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+		NSMutableArray *apps = (__bridge NSMutableArray *)cfApps;
 		for (NSDictionary *app in apps) {
 			int layer =
 				[[app objectForKey:@"kCGWindowLayer"] intValue];
@@ -85,14 +86,16 @@ void GetCurrentWindowTitle(std::string &title)
 						lengthOfBytesUsingEncoding:
 							NSUTF8StringEncoding]);
 
-				if (!name.empty())
+				if (!name.empty()) {
 					title = name;
-				else if (!owner.empty())
+				} else if (!owner.empty()) {
 					title = owner;
-
+				}
 				break;
 			}
 		}
+		apps = nil;
+		CFRelease(cfApps);
 	}
 }
 
@@ -165,9 +168,9 @@ bool isMaximized(const std::string &title)
 {
 	@autoreleasepool {
 		NSArray *screens = [NSScreen screens];
-		NSMutableArray *apps =
-			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
-				kCGWindowListOptionAll, kCGNullWindowID);
+		CFArrayRef cfApps = CGWindowListCopyWindowInfo(
+			kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+		NSMutableArray *apps = (__bridge NSMutableArray *)cfApps;
 		for (NSDictionary *app in apps) {
 			std::string name([[app objectForKey:@"kCGWindowName"]
 						 UTF8String],
@@ -190,11 +193,15 @@ bool isMaximized(const std::string &title)
 								   screen) &&
 					    isWindowMaximizedOnScreen(app,
 								      screen)) {
+						apps = nil;
+						CFRelease(cfApps);
 						return true;
 					}
 				}
 			}
 		}
+		apps = nil;
+		CFRelease(cfApps);
 	}
 	return false;
 }
@@ -214,9 +221,9 @@ bool isFullscreen(const std::string &title)
 {
 	@autoreleasepool {
 		NSArray *screens = [NSScreen screens];
-		NSMutableArray *apps =
-			(__bridge NSMutableArray *)CGWindowListCopyWindowInfo(
-				kCGWindowListOptionAll, kCGNullWindowID);
+		CFArrayRef cfApps = CGWindowListCopyWindowInfo(
+			kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+		NSMutableArray *apps = (__bridge NSMutableArray *)cfApps;
 		for (NSDictionary *app in apps) {
 			std::string name([[app objectForKey:@"kCGWindowName"]
 						 UTF8String],
@@ -237,12 +244,17 @@ bool isFullscreen(const std::string &title)
 				for (NSScreen *screen in screens) {
 					if (isWindowOriginOnScreen(app, screen,
 								   true) &&
-					    isWindowFullscreenOnScreen(app,
-								       screen))
+					    isWindowFullscreenOnScreen(
+						    app, screen)) {
+						apps = nil;
+						CFRelease(cfApps);
 						return true;
+					}
 				}
 			}
 		}
+		apps = nil;
+		CFRelease(cfApps);
 	}
 	return false;
 }
@@ -264,12 +276,14 @@ void GetProcessList(QStringList &list)
 		NSArray *array = [ws runningApplications];
 		for (NSRunningApplication *app in array) {
 			NSString *name = app.localizedName;
-			if (!name)
+			if (!name) {
 				continue;
+			}
 
 			const char *str = name.UTF8String;
-			if (str && *str)
+			if (str && *str) {
 				list << (str);
+			}
 		}
 	}
 }
@@ -412,89 +426,6 @@ void PressKeys(const std::vector<HotkeyType> keys, int duration)
 	// on MacOS
 	canSimulateKeyPresses = false;
 	return;
-
-	// Check premissions
-	NSDictionary *options =
-		@{(__bridge id)kAXTrustedCheckOptionPrompt: @NO};
-	if (!AXIsProcessTrustedWithOptions((CFDictionaryRef)options)) {
-		NSString *urlString =
-			@"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility";
-		[[NSWorkspace sharedWorkspace]
-			openURL:[NSURL URLWithString:urlString]];
-		canSimulateKeyPresses = false;
-		return;
-	}
-
-	long modifierFlags = 0;
-	auto source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
-	if (!source) {
-		canSimulateKeyPresses = false;
-		return;
-	}
-
-	// Press keys
-	for (auto &key : keys) {
-		auto it = keyTable.find(key);
-		if (it == keyTable.end()) {
-			continue;
-		}
-
-		CGKeyCode inputKeyCode = it->second;
-		CGEventRef keyPress =
-			CGEventCreateKeyboardEvent(source, inputKeyCode, true);
-		if (!keyPress) {
-			canSimulateKeyPresses = false;
-			CFRelease(source);
-			return;
-		}
-		CGEventSetFlags(keyPress, modifierFlags);
-		CGEventPost(kCGAnnotatedSessionEventTap, keyPress);
-		CFRelease(keyPress);
-
-		switch (it->first) {
-		case HotkeyType::Key_Shift_L:
-		case HotkeyType::Key_Shift_R:
-			modifierFlags |= NX_SHIFTMASK;
-			break;
-		case HotkeyType::Key_Control_L:
-		case HotkeyType::Key_Control_R:
-			modifierFlags |= NX_CONTROLMASK;
-			break;
-		case HotkeyType::Key_Alt_L:
-		case HotkeyType::Key_Alt_R:
-			modifierFlags |= NX_ALTERNATEMASK;
-			break;
-		case HotkeyType::Key_Win_L:
-		case HotkeyType::Key_Win_R:
-			modifierFlags |= NX_COMMANDMASK;
-			break;
-		default:
-			break;
-		}
-	}
-
-	// When instantly releasing the key presses OBS might miss them
-	std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-	// Release keys
-	for (auto &key : keys) {
-		auto it = keyTable.find(key);
-		if (it == keyTable.end()) {
-			continue;
-		}
-		CGKeyCode inputKeyCode = it->second;
-		CGEventRef keyRelease =
-			CGEventCreateKeyboardEvent(source, inputKeyCode, false);
-		if (!keyRelease) {
-			canSimulateKeyPresses = false;
-			CFRelease(source);
-			return;
-		}
-		CGEventPost(kCGAnnotatedSessionEventTap, keyRelease);
-		CFRelease(keyRelease);
-	}
-
-	CFRelease(source);
 }
 
 void PlatformCleanup() {}
