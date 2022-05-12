@@ -42,6 +42,9 @@ bool MacroConditionDate::CheckDayOfWeek(int64_t msSinceLastCheck)
 	    cur.date().dayOfWeek() != static_cast<int>(_dayOfWeek)) {
 		return false;
 	}
+	if (_ignoreTime) {
+		return true;
+	}
 	_dateTime.setDate(cur.date());
 	return _dateTime <= cur && _dateTime >= cur.addMSecs(-msSinceLastCheck);
 }
@@ -163,6 +166,9 @@ std::string MacroConditionDate::GetShortDesc()
 			return "";
 		}
 		std::string dayName = obs_module_text(it->second.c_str());
+		if (_ignoreTime) {
+			return dayName;
+		}
 		return dayName + " " +
 		       _dateTime.time().toString().toStdString();
 	} else {
@@ -234,6 +240,7 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionDate> entryData)
 	: QWidget(parent),
 	  _dayOfWeek(new QComboBox()),
+	  _ignoreWeekTime(new QCheckBox()),
 	  _weekTime(new QTimeEdit()),
 	  _condition(new QComboBox()),
 	  _date(new QDateEdit()),
@@ -255,6 +262,8 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 	  _repeatLayout(new QVBoxLayout()),
 	  _repeatUpdateLayout(new QHBoxLayout())
 {
+	_ignoreWeekTime->setToolTip(
+		obs_module_text("AdvSceneSwitcher.condition.date.ignoreTime"));
 	_weekTime->setDisplayFormat("hh:mm:ss");
 	_date->setDisplayFormat("yyyy.MM.dd ");
 	_date->setCalendarPopup(true);
@@ -273,6 +282,8 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 
 	QWidget::connect(_dayOfWeek, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(DayOfWeekChanged(int)));
+	QWidget::connect(_ignoreWeekTime, SIGNAL(stateChanged(int)), this,
+			 SLOT(IgnoreTimeChanged(int)));
 	QWidget::connect(_weekTime, SIGNAL(timeChanged(const QTime &)), this,
 			 SLOT(TimeChanged(const QTime &)));
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
@@ -305,6 +316,7 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{dayOfWeek}}", _dayOfWeek},
+		{"{{ignoreWeekTime}}", _ignoreWeekTime},
 		{"{{weekTime}}", _weekTime},
 		{"{{condition}}", _condition},
 		{"{{date}}", _date},
@@ -523,6 +535,7 @@ void MacroConditionDateEdit::UpdateEntryData()
 
 	_dayOfWeek->setCurrentIndex(
 		static_cast<int>(static_cast<int>(_entryData->_dayOfWeek)));
+	_ignoreWeekTime->setChecked(!_entryData->_ignoreTime);
 	_weekTime->setDateTime(_entryData->GetDateTime1());
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_date->setDateTime(_entryData->GetDateTime1());
@@ -555,6 +568,7 @@ void MacroConditionDateEdit::SetWidgetStatus()
 	if (_entryData->_dayOfWeekCheck) {
 		_advancedSettingsTooggle->setText(obs_module_text(
 			"AdvSceneSwitcher.condition.date.showAdvancedSettings"));
+		_weekTime->setDisabled(_entryData->_ignoreTime);
 	} else {
 		_advancedSettingsTooggle->setText(obs_module_text(
 			"AdvSceneSwitcher.condition.date.showSimpleSettings"));
