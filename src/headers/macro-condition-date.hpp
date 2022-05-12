@@ -105,6 +105,7 @@ signals:
 
 protected:
 	QComboBox *_dayOfWeek;
+	QCheckBox *_ignoreWeekTime;
 	QTimeEdit *_weekTime;
 
 	QComboBox *_condition;
