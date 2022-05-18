@@ -28,14 +28,6 @@ public:
 	ReplayBufferAction _action = ReplayBufferAction::STOP;
 
 private:
-	// Add artifical delay before trying to save the replay buffer again.
-	//
-	// Continiously calling obs_frontend_replay_buffer_save() does not
-	// result in any output actually being written.
-	// OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED also seems to be sent before
-	// any data is written.
-	Duration _duration;
-
 	static bool _registered;
 	static const std::string id;
 };
@@ -62,10 +54,10 @@ private slots:
 
 protected:
 	QComboBox *_actions;
+	QLabel *_saveWarning;
 	std::shared_ptr<MacroActionReplayBuffer> _entryData;
 
 private:
-	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
 
