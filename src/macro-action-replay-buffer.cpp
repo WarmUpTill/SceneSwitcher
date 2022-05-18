@@ -32,13 +32,8 @@ bool MacroActionReplayBuffer::PerformAction()
 		}
 		break;
 	case ReplayBufferAction::SAVE:
-		if (obs_frontend_replay_buffer_active() &&
-		    _duration.DurationReached()) {
+		if (obs_frontend_replay_buffer_active()) {
 			obs_frontend_replay_buffer_save();
-			// Default buffer size is 20s so waiting for 10s before
-			// trying to save again seems reasonable
-			_duration.seconds = 10;
-			_duration.Reset();
 		}
 		break;
 	default:
@@ -82,21 +77,25 @@ static inline void populateActionSelection(QComboBox *list)
 
 MacroActionReplayBufferEdit::MacroActionReplayBufferEdit(
 	QWidget *parent, std::shared_ptr<MacroActionReplayBuffer> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _actions(new QComboBox()),
+	  _saveWarning(new QLabel(
+		  obs_module_text("AdvSceneSwitcher.action.replay.saveWarn")))
 {
-	_actions = new QComboBox();
-
 	populateActionSelection(_actions);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
+	QHBoxLayout *layout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{actions}}", _actions},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.replay.entry"),
-		     mainLayout, widgetPlaceholders);
+		     layout, widgetPlaceholders);
+	QVBoxLayout *mainLayout = new QVBoxLayout;
+	mainLayout->addLayout(layout);
+	mainLayout->addWidget(_saveWarning);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -110,6 +109,8 @@ void MacroActionReplayBufferEdit::UpdateEntryData()
 		return;
 	}
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_saveWarning->setVisible(_entryData->_action ==
+				 ReplayBufferAction::SAVE);
 }
 
 void MacroActionReplayBufferEdit::ActionChanged(int value)
@@ -120,6 +121,9 @@ void MacroActionReplayBufferEdit::ActionChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<ReplayBufferAction>(value);
+	_saveWarning->setVisible(_entryData->_action ==
+				 ReplayBufferAction::SAVE);
+	adjustSize();
 }
 
 #endif
