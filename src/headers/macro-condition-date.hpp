@@ -104,6 +104,7 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
+	QComboBox *_weekCondition;
 	QComboBox *_dayOfWeek;
 	QCheckBox *_ignoreWeekTime;
 	QTimeEdit *_weekTime;
