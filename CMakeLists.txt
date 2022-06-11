@@ -107,6 +107,7 @@ else()
   include_directories("${LIBCURL_INCLUDE_DIRS}")
   add_definitions(-DVCAM_SUPPORTED)
   add_definitions(-DREPLAYBUFFER_SUPPORTED)
+  add_definitions(-DVISIBILITY_TRANSITIONS_SUPPORTED)
 endif()
 
 # Platform specific settings
@@ -378,10 +379,11 @@ set(advanced-scene-switcher_SOURCES
 if(DEFINED LibObs_VERSION_MAJOR)
   if(LibObs_VERSION_MAJOR GREATER_EQUAL 27)
     add_definitions(-DVCAM_SUPPORTED)
+    add_definitions(-DVISIBILITY_TRANSITIONS_SUPPORTED)
   else()
     message(
       WARNING
-        "OBS version ${LibObs_VERSION_MAJOR} found - disabling virtual camera functionality"
+        "OBS version ${LibObs_VERSION_MAJOR} found - disabling virtual camera and hide/show transition functionality"
     )
   endif()
   if(LibObs_VERSION_MAJOR GREATER_EQUAL 26)
