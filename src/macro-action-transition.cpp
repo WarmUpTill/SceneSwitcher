@@ -60,9 +60,11 @@ void MacroActionTransition::SetSourceTransition(bool show)
 
 	auto transition =
 		obs_weak_source_get_source(_transition.GetTransition());
+	obs_data_t *settings = obs_source_get_settings(transition);
 	obs_source_t *t = obs_source_create_private(
 		obs_source_get_id(transition), obs_source_get_name(transition),
-		nullptr);
+		settings);
+	obs_data_release(settings);
 	obs_source_release(transition);
 
 	const auto items = _source.GetSceneItems(_scene);
