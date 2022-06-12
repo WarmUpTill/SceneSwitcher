@@ -330,6 +330,7 @@ void MacroActionTransitionEdit::SetWidgetVisibility()
 		_entryData->_type == MacroActionTransition::Type::SOURCE_SHOW);
 	_scenes->setVisible(_entryData->_type !=
 			    MacroActionTransition::Type::SCENE);
+	adjustSize();
 }
 
 void MacroActionTransitionEdit::SetTransitionChanged(int state)
