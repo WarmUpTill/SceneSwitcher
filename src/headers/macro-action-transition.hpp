@@ -2,6 +2,8 @@
 #include "macro-action-edit.hpp"
 #include "duration-control.hpp"
 #include "transition-selection.hpp"
+#include "scene-selection.hpp"
+#include "scene-item-selection.hpp"
 
 #include <QCheckBox>
 #include <QHBoxLayout>
@@ -20,12 +22,26 @@ public:
 		return std::make_shared<MacroActionTransition>(m);
 	}
 
+	enum class Type {
+		SCENE,
+		SCENE_OVERRIDE,
+		SOURCE_SHOW,
+		SOURCE_HIDE,
+	};
+
+	Type _type = Type::SCENE;
+	SceneItemSelection _source;
+	SceneSelection _scene;
 	bool _setDuration = true;
-	bool _setType = true;
+	bool _setTransitionType = true;
 	TransitionSelection _transition;
 	Duration _duration;
 
 private:
+	void SetSceneTransition();
+	void SetTransitionOverride();
+	void SetSourceTransition(bool);
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -48,7 +64,10 @@ public:
 	}
 
 private slots:
-	void SetTypeChanged(int state);
+	void ActionChanged(int value);
+	void SourceChanged(const SceneItemSelection &);
+	void SceneChanged(const SceneSelection &);
+	void SetTransitionChanged(int state);
 	void SetDurationChanged(int state);
 	void TransitionChanged(const TransitionSelection &);
 	void DurationChanged(double seconds);
@@ -56,14 +75,19 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
-	QCheckBox *_setType;
+	QComboBox *_actions;
+	SceneItemSelectionWidget *_sources;
+	SceneSelectionWidget *_scenes;
+	QCheckBox *_setTransition;
 	QCheckBox *_setDuration;
 	TransitionSelectionWidget *_transitions;
 	DurationSelection *_duration;
-	QHBoxLayout *_typeLayout;
+	QHBoxLayout *_transitionLayout;
 	QHBoxLayout *_durationLayout;
 	std::shared_ptr<MacroActionTransition> _entryData;
 
 private:
+	void SetWidgetVisibility();
+
 	bool _loading = true;
 };
