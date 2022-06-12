@@ -437,13 +437,13 @@ void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
+		conditionsList->Remove(idx);
 		macro->Conditions().erase(macro->Conditions().begin() + idx);
 		macro->UpdateConditionIndices();
 		if (idx == 0 && macro->Conditions().size() > 0) {
 			auto newRoot = macro->Conditions().at(0);
 			newRoot->SetLogicType(LogicType::ROOT_NONE);
 		}
-		conditionsList->Remove(idx);
 		SetConditionData(*macro);
 	}
 	MacroConditionSelectionChanged(-1);

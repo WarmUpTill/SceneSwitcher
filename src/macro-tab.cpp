@@ -98,20 +98,19 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 	if (!item) {
 		return;
 	}
+	int idx = ui->macros->currentRow();
+	delete item;
 	QString name;
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->abortMacroWait = true;
 		switcher->macroWaitCv.notify_all();
-		int idx = ui->macros->currentRow();
 		QString::fromStdString(switcher->macros[idx]->Name());
 		switcher->macros.erase(switcher->macros.begin() + idx);
 		for (auto &m : switcher->macros) {
 			m->ResolveMacroRef();
 		}
 	}
-
-	delete item;
 
 	if (ui->macros->count() == 0) {
 		ui->macroHelp->setVisible(true);
@@ -360,6 +359,10 @@ void AdvSceneSwitcher::on_macros_currentRowChanged(int idx)
 
 	if (idx == -1) {
 		SetMacroEditAreaDisabled(true);
+		conditionsList->Clear();
+		actionsList->Clear();
+		conditionsList->SetHelpMsgVisible(true);
+		actionsList->SetHelpMsgVisible(true);
 		return;
 	}
 

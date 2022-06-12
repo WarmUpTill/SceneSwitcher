@@ -220,11 +220,11 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
+		actionsList->Remove(idx);
 		macro->Actions().erase(macro->Actions().begin() + idx);
 		switcher->abortMacroWait = true;
 		switcher->macroWaitCv.notify_all();
 		macro->UpdateActionIndices();
-		actionsList->Remove(idx);
 		SetActionData(*macro);
 	}
 	MacroActionSelectionChanged(-1);
