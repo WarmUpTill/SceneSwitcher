@@ -125,6 +125,7 @@ SceneItemSelectionWidget::SceneItemSelectionWidget(QWidget *parent,
 	QWidget::connect(_idx, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(IdxChanged(int)));
 	auto layout = new QHBoxLayout;
+	layout->setContentsMargins(0, 0, 0, 0);
 	layout->addWidget(_idx);
 	layout->addWidget(_sceneItems);
 	setLayout(layout);
