@@ -58,14 +58,17 @@ void MacroActionTransition::SetSourceTransition(bool show)
 		show ? obs_sceneitem_set_show_transition_duration
 		     : obs_sceneitem_set_hide_transition_duration;
 
-	obs_source_t *transition =
+	auto transition =
 		obs_weak_source_get_source(_transition.GetTransition());
+	obs_source_t *t = obs_source_create_private(
+		obs_source_get_id(transition), obs_source_get_name(transition),
+		nullptr);
+	obs_source_release(transition);
 
 	const auto items = _source.GetSceneItems(_scene);
 	for (auto &item : items) {
-
 		if (_setTransitionType) {
-			setTransitionFunc(item, transition);
+			setTransitionFunc(item, t);
 		}
 		if (_setDuration) {
 			setDurationFunc(item, _duration.seconds * 1000);
@@ -73,7 +76,7 @@ void MacroActionTransition::SetSourceTransition(bool show)
 		obs_sceneitem_release(item);
 	}
 
-	obs_source_release(transition);
+	obs_source_release(t);
 #else
 	blog(LOG_WARNING, "Setting hide / show transition not supported!");
 #endif
