@@ -11,9 +11,12 @@
 
 constexpr int perfLogThreshold = 300;
 
-Macro::Macro(const std::string &name)
+Macro::Macro(const std::string &name, const bool addHotkey)
 {
 	SetName(name);
+	if (addHotkey) {
+		SetupHotkeys();
+	}
 }
 
 Macro::~Macro()

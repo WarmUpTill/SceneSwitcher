@@ -16,7 +16,7 @@ constexpr auto macro_func = 10;
 
 class Macro {
 public:
-	Macro(const std::string &name = "");
+	Macro(const std::string &name = "", const bool addHotkey = false);
 	virtual ~Macro();
 
 	bool CeckMatch();

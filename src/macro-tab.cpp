@@ -58,7 +58,8 @@ bool AdvSceneSwitcher::addNewMacro(std::string &name, std::string format)
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
-		switcher->macros.emplace_back(std::make_shared<Macro>(name));
+		switcher->macros.emplace_back(
+			std::make_shared<Macro>(name, true));
 	}
 	return true;
 }
