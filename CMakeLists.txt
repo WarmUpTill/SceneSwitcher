@@ -234,6 +234,7 @@ set(advanced-scene-switcher_HEADERS
     src/headers/macro-condition-obs-stats.hpp
     src/headers/macro-condition-plugin-state.hpp
     src/headers/macro-condition-process.hpp
+    src/headers/macro-condition-profile.hpp
     src/headers/macro-condition-recording.hpp
     src/headers/macro-condition-replay-buffer.hpp
     src/headers/macro-condition-scene-order.hpp
@@ -340,6 +341,7 @@ set(advanced-scene-switcher_SOURCES
     src/macro-condition-obs-stats.cpp
     src/macro-condition-plugin-state.cpp
     src/macro-condition-process.cpp
+    src/macro-condition-profile.cpp
     src/macro-condition-recording.cpp
     src/macro-condition-replay-buffer.cpp
     src/macro-condition-scene-order.cpp
