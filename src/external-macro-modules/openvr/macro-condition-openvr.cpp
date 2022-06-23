@@ -280,7 +280,7 @@ void MacroConditionOpenVREdit::UpdateOpenVRPos()
 		_zPos->setText("-");
 		_errLabel->setText(
 			QString(obs_module_text(
-				"AdvSceneSwitcher.condition.errorStatus")) +
+				"AdvSceneSwitcher.condition.openvr.errorStatus")) +
 			QString(vr::VR_GetVRInitErrorAsEnglishDescription(err)));
 	}
 	_errLabel->setVisible(!data.valid);
