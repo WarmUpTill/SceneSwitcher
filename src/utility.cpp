@@ -885,6 +885,22 @@ void populateSourceGroupSelection(QComboBox *list)
 	list->setCurrentIndex(0);
 }
 
+void populateProfileSelection(QComboBox *box)
+{
+	auto profiles = obs_frontend_get_profiles();
+	char **temp = profiles;
+	while (*temp) {
+		const char *name = *temp;
+		box->addItem(name);
+		temp++;
+	}
+	bfree(profiles);
+	box->model()->sort(0);
+	addSelectionEntry(
+		box, obs_module_text("AdvSceneSwitcher.selectProfile"), false);
+	box->setCurrentIndex(0);
+}
+
 bool windowPosValid(QPoint pos)
 {
 	return !!QGuiApplication::screenAt(pos);

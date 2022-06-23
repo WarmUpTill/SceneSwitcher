@@ -39,22 +39,6 @@ std::string MacroActionProfile::GetShortDesc()
 	return _profile;
 }
 
-void populateProfileSelection(QComboBox *box)
-{
-	auto profiles = obs_frontend_get_profiles();
-	char **temp = profiles;
-	while (*temp) {
-		const char *name = *temp;
-		box->addItem(name);
-		temp++;
-	}
-	bfree(profiles);
-	box->model()->sort(0);
-	addSelectionEntry(
-		box, obs_module_text("AdvSceneSwitcher.selectProfile"), false);
-	box->setCurrentIndex(0);
-}
-
 MacroActionProfileEdit::MacroActionProfileEdit(
 	QWidget *parent, std::shared_ptr<MacroActionProfile> entryData)
 	: QWidget(parent)
