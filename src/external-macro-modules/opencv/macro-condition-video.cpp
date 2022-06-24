@@ -566,7 +566,7 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 		ScreenshotHelper screenshot(source);
 		obs_source_release(source);
 
-		path = QFileDialog::getSaveFileName(this);
+		path = QFileDialog::getSaveFileName(this, "", "", "*.png");
 		if (path.isEmpty()) {
 			return;
 		}
