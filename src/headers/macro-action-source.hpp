@@ -11,6 +11,7 @@ enum class SourceAction {
 	ENABLE,
 	DISABLE,
 	SETTINGS,
+	REFRESH_SETTINGS,
 };
 
 class MacroActionSource : public MacroAction {
@@ -69,6 +70,6 @@ protected:
 	std::shared_ptr<MacroActionSource> _entryData;
 
 private:
-	void SetWidgetVisibility(bool);
+	void SetWidgetVisibility();
 	bool _loading = true;
 };
