@@ -14,7 +14,30 @@ const static std::map<SourceAction, std::string> actionTypes = {
 	{SourceAction::DISABLE, "AdvSceneSwitcher.action.source.type.disable"},
 	{SourceAction::SETTINGS,
 	 "AdvSceneSwitcher.action.source.type.settings"},
+	{SourceAction::REFRESH_SETTINGS,
+	 "AdvSceneSwitcher.action.source.type.refreshSettings"},
 };
+
+void refreshSourceSettings(obs_source_t *s)
+{
+	if (!s) {
+		return;
+	}
+
+	obs_data_t *data = obs_source_get_settings(s);
+	obs_source_update(s, data);
+	obs_data_release(data);
+
+	// Refresh of browser sources based on:
+	// https://github.com/obsproject/obs-websocket/pull/666/files
+	if (strcmp(obs_source_get_id(s), "browser_source") == 0) {
+		obs_properties_t *sourceProperties = obs_source_properties(s);
+		obs_property_t *property =
+			obs_properties_get(sourceProperties, "refreshnocache");
+		obs_property_button_clicked(property, s);
+		obs_properties_destroy(sourceProperties);
+	}
+}
 
 bool MacroActionSource::PerformAction()
 {
@@ -28,6 +51,9 @@ bool MacroActionSource::PerformAction()
 		break;
 	case SourceAction::SETTINGS:
 		setSourceSettings(s, _settings);
+		break;
+	case SourceAction::REFRESH_SETTINGS:
+		refreshSourceSettings(s);
 		break;
 	default:
 		break;
@@ -77,8 +103,15 @@ std::string MacroActionSource::GetShortDesc()
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (auto entry : actionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (auto &[actionType, name] : actionTypes) {
+		list->addItem(obs_module_text(name.c_str()));
+		if (actionType == SourceAction::REFRESH_SETTINGS) {
+			list->setItemData(
+				list->count() - 1,
+				obs_module_text(
+					"AdvSceneSwitcher.action.source.type.refreshSettings.tooltip"),
+				Qt::ToolTipRole);
+		}
 	}
 }
 
@@ -140,7 +173,7 @@ void MacroActionSourceEdit::UpdateEntryData()
 	_sources->setCurrentText(
 		GetWeakSourceName(_entryData->_source).c_str());
 	_settings->setPlainText(QString::fromStdString(_entryData->_settings));
-	SetWidgetVisibility(_entryData->_action == SourceAction::SETTINGS);
+	SetWidgetVisibility();
 
 	adjustSize();
 	updateGeometry();
@@ -166,7 +199,7 @@ void MacroActionSourceEdit::ActionChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<SourceAction>(value);
-	SetWidgetVisibility(_entryData->_action == SourceAction::SETTINGS);
+	SetWidgetVisibility();
 }
 
 void MacroActionSourceEdit::GetSettingsClicked()
@@ -192,10 +225,13 @@ void MacroActionSourceEdit::SettingsChanged()
 	updateGeometry();
 }
 
-void MacroActionSourceEdit::SetWidgetVisibility(bool showSettings)
+void MacroActionSourceEdit::SetWidgetVisibility()
 {
+	const bool showSettings = _entryData->_action == SourceAction::SETTINGS;
+	const bool showWarning = _entryData->_action == SourceAction::ENABLE ||
+				 _entryData->_action == SourceAction::DISABLE;
 	_settings->setVisible(showSettings);
 	_getSettings->setVisible(showSettings);
-	_warning->setVisible(!showSettings);
+	_warning->setVisible(showWarning);
 	adjustSize();
 }
