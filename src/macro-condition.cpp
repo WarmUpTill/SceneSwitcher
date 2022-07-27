@@ -73,7 +73,14 @@ bool MacroCondition::Save(obs_data_t *obj)
 	MacroSegment::Save(obj);
 	obs_data_set_string(obj, "id", GetId().c_str());
 	obs_data_set_int(obj, "logic", static_cast<int>(_logic));
-	_duration.Save(obj);
+
+	// To avoid conflicts with conditions which also use the Duration class
+	// save the duration modifier in a separate obj
+	auto durObj = obs_data_create();
+	_duration.Save(durObj);
+	obs_data_set_obj(obj, "durationModifier", durObj);
+	obs_data_release(durObj);
+
 	return true;
 }
 
@@ -81,7 +88,14 @@ bool MacroCondition::Load(obs_data_t *obj)
 {
 	MacroSegment::Load(obj);
 	_logic = static_cast<LogicType>(obs_data_get_int(obj, "logic"));
-	_duration.Load(obj);
+	if (obs_data_has_user_value(obj, "durationModifier")) {
+		auto durObj = obs_data_get_obj(obj, "durationModifier");
+		_duration.Load(durObj);
+		obs_data_release(durObj);
+	} else {
+		// For backwards compatability
+		_duration.Load(obj);
+	}
 	return true;
 }
 
