@@ -1,15 +1,25 @@
 cmake_minimum_required(VERSION 3.14)
 project(advanced-scene-switcher-openvr)
 
+# --- Check OpenCV requirements ---
+
 if(NOT WIN32)
   message(
     WARNING "OpenVR condition is only supported on Windows builds for now.")
   return()
 endif(NOT WIN32)
 
-add_definitions(-DADVSS_MODULE)
+# --- End of section ---
 
-# openvr
+add_library(${PROJECT_NAME} MODULE)
+target_sources(${PROJECT_NAME} PRIVATE macro-condition-openvr.cpp
+                                       macro-condition-openvr.hpp)
+
+setup_advss_plugin(${PROJECT_NAME})
+set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
+
+# --- OpenVR build settings ---
+
 if(NOT OpenVR_DIR)
   set(OpenVR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../deps/openvr)
 endif()
@@ -44,7 +54,7 @@ if(EXISTS ${OpenVR_DIR})
 endif()
 
 if(OpenVR_FOUND)
-  include_directories("${OpenVR_INCLUDE_DIRS}")
+  target_include_directories(${PROJECT_NAME} PRIVATE "${OpenVR_INCLUDE_DIRS}")
 else()
   set(OpenVR_LIBRARIES "")
   message(
@@ -54,37 +64,10 @@ else()
       ())
 endif()
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../../headers")
-set(module_SOURCES macro-condition-openvr.cpp macro-condition-openvr.hpp)
-add_library(advanced-scene-switcher-openvr MODULE ${module_SOURCES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenVR_LIBRARIES})
 
-if(BUILD_OUT_OF_TREE)
-  target_link_libraries(
-    advanced-scene-switcher-openvr
-    advanced-scene-switcher
-    ${LIBOBS_LIB}
-    ${LIBOBS_FRONTEND_API_LIB}
-    ${OpenVR_LIBRARIES}
-    Qt5::Core
-    Qt5::Widgets)
+# --- End of section ---
 
-  if(UNIX AND NOT APPLE)
-    if(NOT LIB_OUT_DIR)
-      set(LIB_OUT_DIR "/lib/obs-plugins")
-    endif()
-    set_target_properties(advanced-scene-switcher-openvr PROPERTIES PREFIX "")
-    install(
-      TARGETS advanced-scene-switcher-openvr
-      LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIB_OUT_DIR}/adv-ss-plugins)
-  endif()
-else()
-  target_link_libraries(
-    advanced-scene-switcher-openvr
-    advanced-scene-switcher
-    obs-frontend-api
-    ${OpenVR_LIBRARIES}
-    Qt5::Core
-    Qt5::Widgets
-    libobs)
-  install_advss_plugin(advanced-scene-switcher-openvr)
-endif()
+install_advss_plugin(${PROJECT_NAME})
+install_advss_plugin_dependency(TARGET ${PROJECT_NAME} DEPENDENCIES
+                                ${OpenVR_BINARIES})
