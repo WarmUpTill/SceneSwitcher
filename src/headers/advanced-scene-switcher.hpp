@@ -1,14 +1,9 @@
 #pragma once
-#ifdef BUILD_OUT_OF_TREE
-#include "../../forms/ui_advanced-scene-switcher.h"
-#elif defined ADVSS_MODULE
-#include "../../../ui_advanced-scene-switcher.h"
-#else
-#include "ui_advanced-scene-switcher.h"
-#endif
 #include "macro-segment-list.hpp"
 #include "switcher-data-structs.hpp"
 #include "platform-funcs.hpp"
+
+#include <ui_advanced-scene-switcher.h>
 
 #define blog(level, msg, ...) blog(level, "[adv-ss] " msg, ##__VA_ARGS__)
 #define vblog(level, msg, ...)                   \

@@ -1,45 +1,24 @@
-cmake_minimum_required(VERSION 3.14)
-project(advanced-scene-switcher)
+cmake_minimum_required(VERSION 3.21)
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE RELWITHDEBINFO)
+project(advanced-scene-switcher VERSION 1.0.0)
+set(LIB_NAME "${PROJECT_NAME}-lib")
+add_library(${PROJECT_NAME} MODULE)
+add_library(${LIB_NAME} SHARED)
+
+set(PLUGIN_AUTHOR "WarmUpTill")
+set(MACOS_BUNDLEID "com.warmuptill.${PROJECT_NAME}")
+set(LINUX_MAINTAINER_EMAIL "noone@nothing.com")
+
+message(STATUS "CMAKE_PROJECT_NAME is ${CMAKE_PROJECT_NAME}")
+if(${CMAKE_PROJECT_NAME} STREQUAL "obs-studio")
+  if(NOT DEFINED BUILD_OUT_OF_TREE)
+    message(STATUS "${PROJECT_NAME} configured for in-tree build")
+  endif()
+else()
+  set(BUILD_OUT_OF_TREE ON)
+  message(STATUS "${PROJECT_NAME} configured for out-of-tree build")
 endif()
 
-# Compiler settings
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED YES)
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-
-if(CMAKE_COMPILER_IS_GNUCC
-   OR CMAKE_COMPILER_IS_GNUCXX
-   OR CMAKE_COMPILER_IS_CLANG)
-  set(CMAKE_CXX_FLAGS
-      "-Wall -Wextra -Wvla -Wno-unused-function -Wno-missing-field-initializers ${CMAKE_CXX_FLAGS} -fno-strict-aliasing"
-  )
-  set(CMAKE_C_FLAGS
-      "-Wall -Wextra -Wvla -Wno-unused-function -Werror-implicit-function-declaration -Wno-missing-braces -Wno-missing-field-initializers ${CMAKE_C_FLAGS} -std=gnu99 -fno-strict-aliasing"
-  )
-
-  option(USE_LIBC++ "Use libc++ instead of libstdc++" ${APPLE})
-  if(USE_LIBC++)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-  endif()
-elseif(MSVC)
-  if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-    string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-  else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-  endif()
-
-  # Disable pointless constant condition warnings
-  set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} /wd4127 /wd4201 /wd4456 /wd4457 /wd4458 /wd4459 /wd4595"
-  )
-  add_definitions(-DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-                  -D_CRT_NONSTDC_NO_WARNINGS)
-endif()
-
-# Generate version info
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
@@ -47,80 +26,300 @@ git_describe(GIT_TAG)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cpp.in"
                "${CMAKE_CURRENT_BINARY_DIR}/src/version.cpp" @ONLY)
 
-# Windows installer
-if(WIN32)
-  get_filename_component(ISS_PLUGIN_FILES_DIR
-                         "${CMAKE_BINARY_DIR}\\..\\package" ABSOLUTE)
-  file(TO_NATIVE_PATH "${ISS_PLUGIN_FILES_DIR}" ISS_PLUGIN_FILES_DIR)
-  get_filename_component(ISS_MSVC_REDIST_HELPER_DIR "${CMAKE_BINARY_DIR}\\.."
-                         ABSOLUTE)
-  file(TO_NATIVE_PATH "${ISS_MSVC_REDIST_HELPER_DIR}"
-       ISS_MSVC_REDIST_HELPER_DIR)
-  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CI/windows/setup.iss.in"
-                 "${CMAKE_CURRENT_BINARY_DIR}/CI/windows/setup.iss" @ONLY)
-endif()
+target_sources(${PROJECT_NAME} PRIVATE src/advanced-scene-switcher-module.c)
 
-# Out of tree specific settings
+target_sources(
+  ${LIB_NAME}
+  PRIVATE src/headers/advanced-scene-switcher.hpp
+          src/headers/switcher-data-structs.hpp
+          src/headers/scene-group.hpp
+          src/headers/scene-trigger.hpp
+          src/headers/switch-audio.hpp
+          src/headers/switch-executable.hpp
+          src/headers/switch-file.hpp
+          src/headers/switch-idle.hpp
+          src/headers/switch-media.hpp
+          src/headers/switch-network.hpp
+          src/headers/switch-pause.hpp
+          src/headers/switch-random.hpp
+          src/headers/switch-screen-region.hpp
+          src/headers/switch-time.hpp
+          src/headers/switch-transitions.hpp
+          src/headers/switch-window.hpp
+          src/headers/switch-sequence.hpp
+          src/headers/switch-video.hpp
+          src/headers/switch-generic.hpp
+          src/headers/macro-action.hpp
+          src/headers/macro-action-edit.hpp
+          src/headers/macro-action-audio.hpp
+          src/headers/macro-action-file.hpp
+          src/headers/macro-action-filter.hpp
+          src/headers/macro-action-hotkey.hpp
+          src/headers/macro-action-macro.hpp
+          src/headers/macro-action-media.hpp
+          src/headers/macro-action-plugin-state.hpp
+          src/headers/macro-action-profile.hpp
+          src/headers/macro-action-random.hpp
+          src/headers/macro-action-recording.hpp
+          src/headers/macro-action-replay-buffer.hpp
+          src/headers/macro-action-run.hpp
+          src/headers/macro-action-scene-collection.hpp
+          src/headers/macro-action-scene-order.hpp
+          src/headers/macro-action-scene-switch.hpp
+          src/headers/macro-action-scene-transform.hpp
+          src/headers/macro-action-scene-visibility.hpp
+          src/headers/macro-action-screenshot.hpp
+          src/headers/macro-action-sequence.hpp
+          src/headers/macro-action-source.hpp
+          src/headers/macro-action-streaming.hpp
+          src/headers/macro-action-studio-mode.hpp
+          src/headers/macro-action-systray.hpp
+          src/headers/macro-action-timer.hpp
+          src/headers/macro-action-transition.hpp
+          src/headers/macro-action-virtual-cam.hpp
+          src/headers/macro-action-wait.hpp
+          src/headers/macro-condition.hpp
+          src/headers/macro-condition-edit.hpp
+          src/headers/macro-condition-audio.hpp
+          src/headers/macro-condition-cursor.hpp
+          src/headers/macro-condition-date.hpp
+          src/headers/macro-condition-file.hpp
+          src/headers/macro-condition-filter.hpp
+          src/headers/macro-condition-hotkey.hpp
+          src/headers/macro-condition-idle.hpp
+          src/headers/macro-condition-macro.hpp
+          src/headers/macro-condition-media.hpp
+          src/headers/macro-condition-obs-stats.hpp
+          src/headers/macro-condition-plugin-state.hpp
+          src/headers/macro-condition-process.hpp
+          src/headers/macro-condition-profile.hpp
+          src/headers/macro-condition-recording.hpp
+          src/headers/macro-condition-replay-buffer.hpp
+          src/headers/macro-condition-scene-order.hpp
+          src/headers/macro-condition-scene-transform.hpp
+          src/headers/macro-condition-scene-visibility.hpp
+          src/headers/macro-condition-scene.hpp
+          src/headers/macro-condition-source.hpp
+          src/headers/macro-condition-streaming.hpp
+          src/headers/macro-condition-studio-mode.hpp
+          src/headers/macro-condition-timer.hpp
+          src/headers/macro-condition-transition.hpp
+          src/headers/macro-condition-virtual-cam.hpp
+          src/headers/macro-condition-window.hpp
+          src/headers/macro.hpp
+          src/headers/macro-ref.hpp
+          src/headers/macro-list-entry-widget.hpp
+          src/headers/macro-properties.hpp
+          src/headers/macro-segment.hpp
+          src/headers/macro-segment-list.hpp
+          src/headers/macro-selection.hpp
+          src/headers/curl-helper.hpp
+          src/headers/hotkey.hpp
+          src/headers/scene-item-selection.hpp
+          src/headers/scene-selection.hpp
+          src/headers/screenshot-helper.hpp
+          src/headers/transition-selection.hpp
+          src/headers/name-dialog.hpp
+          src/headers/duration-control.hpp
+          src/headers/file-selection.hpp
+          src/headers/section.hpp
+          src/headers/status-control.hpp
+          src/headers/platform-funcs.hpp
+          src/headers/resizing-text-edit.hpp
+          src/headers/utility.hpp
+          src/headers/volume-control.hpp
+          src/headers/version.h
+          src/advanced-scene-switcher.cpp
+          src/switcher-data-structs.cpp
+          src/scene-group.cpp
+          src/scene-trigger.cpp
+          src/switch-transitions.cpp
+          src/switch-screen-region.cpp
+          src/switch-priority.cpp
+          src/switch-executable.cpp
+          src/switch-idle.cpp
+          src/switch-sequence.cpp
+          src/switch-file.cpp
+          src/switch-window.cpp
+          src/switch-media.cpp
+          src/switch-network.cpp
+          src/file-selection.cpp
+          src/hotkey.cpp
+          src/general.cpp
+          src/switch-pause.cpp
+          src/switch-random.cpp
+          src/switch-time.cpp
+          src/switch-audio.cpp
+          src/switch-video.cpp
+          src/switch-generic.cpp
+          src/macro-action.cpp
+          src/macro-action-edit.cpp
+          src/macro-action-audio.cpp
+          src/macro-action-file.cpp
+          src/macro-action-filter.cpp
+          src/macro-action-hotkey.cpp
+          src/macro-action-macro.cpp
+          src/macro-action-media.cpp
+          src/macro-action-plugin-state.cpp
+          src/macro-action-profile.cpp
+          src/macro-action-random.cpp
+          src/macro-action-recording.cpp
+          src/macro-action-replay-buffer.cpp
+          src/macro-action-run.cpp
+          src/macro-action-scene-collection.cpp
+          src/macro-action-scene-order.cpp
+          src/macro-action-scene-switch.cpp
+          src/macro-action-scene-transform.cpp
+          src/macro-action-scene-visibility.cpp
+          src/macro-action-screenshot.cpp
+          src/macro-action-sequence.cpp
+          src/macro-action-source.cpp
+          src/macro-action-streaming.cpp
+          src/macro-action-studio-mode.cpp
+          src/macro-action-systray.cpp
+          src/macro-action-timer.cpp
+          src/macro-action-transition.cpp
+          src/macro-action-virtual-cam.cpp
+          src/macro-action-wait.cpp
+          src/macro-condition.cpp
+          src/macro-condition-edit.cpp
+          src/macro-condition-audio.cpp
+          src/macro-condition-cursor.cpp
+          src/macro-condition-date.cpp
+          src/macro-condition-file.cpp
+          src/macro-condition-filter.cpp
+          src/macro-condition-hotkey.cpp
+          src/macro-condition-idle.cpp
+          src/macro-condition-macro.cpp
+          src/macro-condition-media.cpp
+          src/macro-condition-obs-stats.cpp
+          src/macro-condition-plugin-state.cpp
+          src/macro-condition-process.cpp
+          src/macro-condition-profile.cpp
+          src/macro-condition-recording.cpp
+          src/macro-condition-replay-buffer.cpp
+          src/macro-condition-scene-order.cpp
+          src/macro-condition-scene-transform.cpp
+          src/macro-condition-scene-visibility.cpp
+          src/macro-condition-scene.cpp
+          src/macro-condition-source.cpp
+          src/macro-condition-streaming.cpp
+          src/macro-condition-studio-mode.cpp
+          src/macro-condition-timer.cpp
+          src/macro-condition-transition.cpp
+          src/macro-condition-virtual-cam.cpp
+          src/macro-condition-window.cpp
+          src/macro.cpp
+          src/macro-ref.cpp
+          src/macro-list-entry-widget.cpp
+          src/macro-properties.cpp
+          src/macro-segment.cpp
+          src/macro-segment-list.cpp
+          src/macro-selection.cpp
+          src/macro-tab.cpp
+          src/curl-helper.cpp
+          src/scene-item-selection.cpp
+          src/scene-selection.cpp
+          src/screenshot-helper.cpp
+          src/transition-selection.cpp
+          src/name-dialog.cpp
+          src/resizing-text-edit.cpp
+          src/duration-control.cpp
+          src/status-control.cpp
+          src/section.cpp
+          src/utility.cpp
+          src/volume-control.cpp
+          src/version.cpp)
+
 if(BUILD_OUT_OF_TREE)
-  set(CMAKE_PREFIX_PATH "${QTDIR}")
-  set(CMAKE_INCLUDE_CURRENT_DIR ON)
-  find_package(Qt5Core REQUIRED)
-  find_package(Qt5Widgets REQUIRED)
-  find_package(LibObs)
-  find_package(LibObs-frontend-api)
-  if(LibObs_FOUND)
-    set(LIBOBS_LIB ${LIBOBS_LIBRARIES})
-    set(LIBOBS_INCLUDE_DIR ${LIBOBS_INCLUDE_DIRS})
-  endif()
-  if(LibObs-frontend-api_FOUND)
-    set(LIBOBS_FRONTEND_API_LIB ${LIBOBS-FRONTEND-API_LIBRARIES})
-    set(LIBOBS_FRONTEND_INCLUDE_DIR ${LIBOBS-FRONTEND-API_INCLUDE_DIR})
-  endif()
-
-  if(NOT LIBOBS_LIB)
-    message(FATAL_ERROR "obs library not found - please set LIBOBS_LIB")
-  endif()
-  if(NOT LIBOBS_FRONTEND_API_LIB)
-    message(
-      FATAL_ERROR
-        "libobs frontend-api library not found - please set LIBOBS_FRONTEND_API_LIB"
-    )
-  endif()
-  if(NOT LIBOBS_INCLUDE_DIR)
-    message(
-      FATAL_ERROR "obs.hpp header not found - please set LIBOBS_INCLUDE_DIR")
-  endif()
-  if(NOT LIBOBS_FRONTEND_INCLUDE_DIR)
-    message(
-      FATAL_ERROR
-        " obs-frontend-api.h not found - please set LIBOBS_FRONTEND_INCLUDE_DIR"
-    )
-  endif()
-
-  include_directories("${LIBOBS_INCLUDE_DIR}" "${LIBOBS_FRONTEND_INCLUDE_DIR}"
-                      ${Qt5Core_INCLUDES} ${Qt5Widgets_INCLUDES})
-
-  find_package(CURL REQUIRED)
-  include_directories("${CURL_INCLUDE_DIRS}")
+  find_package(libobs REQUIRED)
+  find_package(obs-frontend-api REQUIRED)
+  include(cmake/ObsPluginHelpers.cmake)
+  target_link_libraries(${LIB_NAME} PUBLIC OBS::libobs OBS::obs-frontend-api)
+  target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_NAME})
 else()
-  find_package(Libcurl REQUIRED)
-  include_directories("${LIBCURL_INCLUDE_DIRS}")
-  add_definitions(-DVCAM_SUPPORTED)
-  add_definitions(-DREPLAYBUFFER_SUPPORTED)
-  add_definitions(-DVISIBILITY_TRANSITIONS_SUPPORTED)
+  target_link_libraries(${LIB_NAME} PUBLIC OBS::libobs OBS::frontend-api)
+  target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_NAME})
 endif()
 
-# Platform specific settings
-if(APPLE)
-  set(CMAKE_SHARED_LIBRARY_SUFFIX ".so")
-  find_library(COCOA Cocoa)
-  if(BUILD_OUT_OF_TREE)
-    find_package(Qt5MacExtras REQUIRED)
+find_qt(COMPONENTS Widgets Core)
+target_link_libraries(${LIB_NAME} PUBLIC Qt::Core Qt::Widgets)
+
+include(cmake/AdvSSHelpers.cmake)
+
+# --- Platform-independent build settings ---
+
+target_include_directories(
+  ${LIB_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src"
+                      "${CMAKE_CURRENT_BINARY_DIR}/forms")
+
+set_target_properties(
+  ${LIB_NAME}
+  PROPERTIES AUTOMOC ON
+             AUTOUIC ON
+             AUTORCC ON
+             AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/forms")
+
+target_compile_features(${LIB_NAME} PUBLIC cxx_std_17)
+
+add_definitions(-DASIO_STANDALONE)
+target_include_directories(
+  ${LIB_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/deps/asio/asio/include"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/deps/websocketpp")
+
+# --- End of section ---
+
+# --- Windows-specific build settings and tasks ---
+if(OS_WINDOWS)
+  configure_file(cmake/bundle/windows/installer-Windows.iss.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/installer-Windows.generated.iss)
+
+  if(MSVC)
+    target_compile_options(${LIB_NAME} PUBLIC /MP /d2FH4- /wd4267 /wd4267)
   endif()
-  include_directories(${COCOA})
-endif()
+  target_sources(${LIB_NAME} PRIVATE src/win/advanced-scene-switcher-win.cpp)
+  add_definitions(-D_WEBSOCKETPP_CPP11_STL_)
+  set_property(TARGET ${LIB_NAME} PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS true)
+  # --- End of section ---
 
-if(UNIX AND NOT APPLE)
+  # -- macOS specific build settings and tasks --
+elseif(OS_MACOS)
+  configure_file(cmake/bundle/macos/installer-macos.pkgproj.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/installer-macos.generated.pkgproj)
+
+  set(MACOSX_PLUGIN_GUI_IDENTIFIER "${MACOS_BUNDLEID}")
+  set(MACOSX_PLUGIN_BUNDLE_VERSION "${PROJECT_VERSION}")
+  set(MACOSX_PLUGIN_SHORT_VERSION_STRING "1")
+
+  target_compile_options(
+    ${LIB_NAME} PRIVATE -Wall -Wextra -Werror-implicit-function-declaration
+                        -stdlib=libc++ -fvisibility=default)
+
+  set_target_properties(${LIB_NAME} PROPERTIES PREFIX "" SUFFIX ".so")
+
+  find_library(COCOA Cocoa)
+  target_include_directories(${LIB_NAME} PRIVATE ${COCOA})
+  target_sources(${LIB_NAME} PRIVATE src/osx/advanced-scene-switcher-osx.mm)
+  set_source_files_properties(advanced-scene-switcher-osx.mm
+                              PROPERTIES COMPILE_FLAGS "-fobjc-arc")
+  set("${PROJECT_NAME}_PLATFORM_LIBS" ${COCOA})
+  find_package(CURL)
+  find_package(Libcurl)
+  if(CURL_FOUND)
+    target_include_directories(${LIB_NAME} PRIVATE "${CURL_INCLUDE_DIRS}")
+  elseif(Libcurl_FOUND)
+    target_include_directories(${LIB_NAME} PRIVATE "${LIBCURL_INCLUDE_DIRS}")
+  else()
+    message(FATAL_ERROR "Couldn't find CURL or Libcurl - abort")
+  endif()
+  # --- End of section ---
+
+  # --- Linux-specific build settings and tasks ---
+else()
+  target_compile_options(${LIB_NAME} PRIVATE -Wall -Wextra)
+
+  set_target_properties(${LIB_NAME} PROPERTIES PREFIX "")
+
   find_package(X11 REQUIRED COMPONENTS Xtst Xss)
   find_path(PROCPS_INCLUDE_DIR NAMES proc/procps.h)
   if(NOT PROCPS_INCLUDE_DIR)
@@ -132,298 +331,35 @@ if(UNIX AND NOT APPLE)
   if(NOT PROCPS_LIBRARY)
     message(FATAL_ERROR "procps lib not found - please set PROCPS_LIBRARY")
   endif()
-  link_libraries(${X11_LIBRARIES} ${procps_LIBRARIES})
-  include_directories("${X11_INCLUDE_DIR}" "${X11_Xtst_INCLUDE_PATH}"
-                      "${X11_Xss_INCLUDE_PATH}" "${PROCPS_INCLUDE_DIR}")
-endif()
-
-if(WIN32)
-  set(advanced-scene-switcher_PLATFORM_SOURCES
-      src/win/advanced-scene-switcher-win.cpp)
-elseif(APPLE)
-  set(advanced-scene-switcher_PLATFORM_SOURCES
-      src/osx/advanced-scene-switcher-osx.mm)
-  set_source_files_properties(advanced-scene-switcher-osx.mm
-                              PROPERTIES COMPILE_FLAGS "-fobjc-arc")
-  set(advanced-scene-switcher_PLATFORM_LIBS ${COCOA})
-else()
-  set(advanced-scene-switcher_PLATFORM_SOURCES
-      src/linux/advanced-scene-switcher-nix.cpp)
-  set(advanced-scene-switcher_PLATFORM_LIBS Xss ${PROCPS_LIBRARY})
-endif()
-
-# asio and websocketpp
-add_definitions(-DASIO_STANDALONE)
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/deps/asio/asio/include"
-                    "${CMAKE_CURRENT_SOURCE_DIR}/deps/websocketpp")
-if(WIN32)
-  add_definitions(-D_WEBSOCKETPP_CPP11_STL_)
-endif()
-
-# Setup QT tools
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/forms")
-set(advanced-scene-switcher_UI ${advanced-scene-switcher_UI}
-                               forms/advanced-scene-switcher.ui)
-qt5_wrap_ui(advanced-scene-switcher_UI_HEADERS ${advanced-scene-switcher_UI}
-            ${advanced-scene-switcher_PLATFORM_UI})
-
-# The plugin sources
-set(advanced-scene-switcher_HEADERS
-    ${advanced-scene-switcher_HEADERS}
-    src/headers/advanced-scene-switcher.hpp
-    src/headers/switcher-data-structs.hpp
-    src/headers/scene-group.hpp
-    src/headers/scene-trigger.hpp
-    src/headers/switch-audio.hpp
-    src/headers/switch-executable.hpp
-    src/headers/switch-file.hpp
-    src/headers/switch-idle.hpp
-    src/headers/switch-media.hpp
-    src/headers/switch-network.hpp
-    src/headers/switch-pause.hpp
-    src/headers/switch-random.hpp
-    src/headers/switch-screen-region.hpp
-    src/headers/switch-time.hpp
-    src/headers/switch-transitions.hpp
-    src/headers/switch-window.hpp
-    src/headers/switch-sequence.hpp
-    src/headers/switch-video.hpp
-    src/headers/switch-generic.hpp
-    src/headers/macro-action.hpp
-    src/headers/macro-action-edit.hpp
-    src/headers/macro-action-audio.hpp
-    src/headers/macro-action-file.hpp
-    src/headers/macro-action-filter.hpp
-    src/headers/macro-action-hotkey.hpp
-    src/headers/macro-action-macro.hpp
-    src/headers/macro-action-media.hpp
-    src/headers/macro-action-plugin-state.hpp
-    src/headers/macro-action-profile.hpp
-    src/headers/macro-action-random.hpp
-    src/headers/macro-action-recording.hpp
-    src/headers/macro-action-replay-buffer.hpp
-    src/headers/macro-action-run.hpp
-    src/headers/macro-action-scene-collection.hpp
-    src/headers/macro-action-scene-order.hpp
-    src/headers/macro-action-scene-switch.hpp
-    src/headers/macro-action-scene-transform.hpp
-    src/headers/macro-action-scene-visibility.hpp
-    src/headers/macro-action-screenshot.hpp
-    src/headers/macro-action-sequence.hpp
-    src/headers/macro-action-source.hpp
-    src/headers/macro-action-streaming.hpp
-    src/headers/macro-action-studio-mode.hpp
-    src/headers/macro-action-systray.hpp
-    src/headers/macro-action-timer.hpp
-    src/headers/macro-action-transition.hpp
-    src/headers/macro-action-virtual-cam.hpp
-    src/headers/macro-action-wait.hpp
-    src/headers/macro-condition.hpp
-    src/headers/macro-condition-edit.hpp
-    src/headers/macro-condition-audio.hpp
-    src/headers/macro-condition-cursor.hpp
-    src/headers/macro-condition-date.hpp
-    src/headers/macro-condition-file.hpp
-    src/headers/macro-condition-filter.hpp
-    src/headers/macro-condition-hotkey.hpp
-    src/headers/macro-condition-idle.hpp
-    src/headers/macro-condition-macro.hpp
-    src/headers/macro-condition-media.hpp
-    src/headers/macro-condition-obs-stats.hpp
-    src/headers/macro-condition-plugin-state.hpp
-    src/headers/macro-condition-process.hpp
-    src/headers/macro-condition-profile.hpp
-    src/headers/macro-condition-recording.hpp
-    src/headers/macro-condition-replay-buffer.hpp
-    src/headers/macro-condition-scene-order.hpp
-    src/headers/macro-condition-scene-transform.hpp
-    src/headers/macro-condition-scene-visibility.hpp
-    src/headers/macro-condition-scene.hpp
-    src/headers/macro-condition-source.hpp
-    src/headers/macro-condition-streaming.hpp
-    src/headers/macro-condition-studio-mode.hpp
-    src/headers/macro-condition-timer.hpp
-    src/headers/macro-condition-transition.hpp
-    src/headers/macro-condition-virtual-cam.hpp
-    src/headers/macro-condition-window.hpp
-    src/headers/macro.hpp
-    src/headers/macro-ref.hpp
-    src/headers/macro-list-entry-widget.hpp
-    src/headers/macro-properties.hpp
-    src/headers/macro-segment.hpp
-    src/headers/macro-segment-list.hpp
-    src/headers/macro-selection.hpp
-    src/headers/curl-helper.hpp
-    src/headers/hotkey.hpp
-    src/headers/scene-item-selection.hpp
-    src/headers/scene-selection.hpp
-    src/headers/screenshot-helper.hpp
-    src/headers/transition-selection.hpp
-    src/headers/name-dialog.hpp
-    src/headers/duration-control.hpp
-    src/headers/file-selection.hpp
-    src/headers/section.hpp
-    src/headers/status-control.hpp
-    src/headers/platform-funcs.hpp
-    src/headers/resizing-text-edit.hpp
-    src/headers/utility.hpp
-    src/headers/volume-control.hpp
-    src/headers/version.h)
-
-set(advanced-scene-switcher_SOURCES
-    ${advanced-scene-switcher_SOURCES}
-    src/advanced-scene-switcher.cpp
-    src/advanced-scene-switcher-module.c
-    src/switcher-data-structs.cpp
-    src/scene-group.cpp
-    src/scene-trigger.cpp
-    src/switch-transitions.cpp
-    src/switch-screen-region.cpp
-    src/switch-priority.cpp
-    src/switch-executable.cpp
-    src/switch-idle.cpp
-    src/switch-sequence.cpp
-    src/switch-file.cpp
-    src/switch-window.cpp
-    src/switch-media.cpp
-    src/switch-network.cpp
-    src/file-selection.cpp
-    src/hotkey.cpp
-    src/general.cpp
-    src/switch-pause.cpp
-    src/switch-random.cpp
-    src/switch-time.cpp
-    src/switch-audio.cpp
-    src/switch-video.cpp
-    src/switch-generic.cpp
-    src/macro-action.cpp
-    src/macro-action-edit.cpp
-    src/macro-action-audio.cpp
-    src/macro-action-file.cpp
-    src/macro-action-filter.cpp
-    src/macro-action-hotkey.cpp
-    src/macro-action-macro.cpp
-    src/macro-action-media.cpp
-    src/macro-action-plugin-state.cpp
-    src/macro-action-profile.cpp
-    src/macro-action-random.cpp
-    src/macro-action-recording.cpp
-    src/macro-action-replay-buffer.cpp
-    src/macro-action-run.cpp
-    src/macro-action-scene-collection.cpp
-    src/macro-action-scene-order.cpp
-    src/macro-action-scene-switch.cpp
-    src/macro-action-scene-transform.cpp
-    src/macro-action-scene-visibility.cpp
-    src/macro-action-screenshot.cpp
-    src/macro-action-sequence.cpp
-    src/macro-action-source.cpp
-    src/macro-action-streaming.cpp
-    src/macro-action-studio-mode.cpp
-    src/macro-action-systray.cpp
-    src/macro-action-timer.cpp
-    src/macro-action-transition.cpp
-    src/macro-action-virtual-cam.cpp
-    src/macro-action-wait.cpp
-    src/macro-condition.cpp
-    src/macro-condition-edit.cpp
-    src/macro-condition-audio.cpp
-    src/macro-condition-cursor.cpp
-    src/macro-condition-date.cpp
-    src/macro-condition-file.cpp
-    src/macro-condition-filter.cpp
-    src/macro-condition-hotkey.cpp
-    src/macro-condition-idle.cpp
-    src/macro-condition-macro.cpp
-    src/macro-condition-media.cpp
-    src/macro-condition-obs-stats.cpp
-    src/macro-condition-plugin-state.cpp
-    src/macro-condition-process.cpp
-    src/macro-condition-profile.cpp
-    src/macro-condition-recording.cpp
-    src/macro-condition-replay-buffer.cpp
-    src/macro-condition-scene-order.cpp
-    src/macro-condition-scene-transform.cpp
-    src/macro-condition-scene-visibility.cpp
-    src/macro-condition-scene.cpp
-    src/macro-condition-source.cpp
-    src/macro-condition-streaming.cpp
-    src/macro-condition-studio-mode.cpp
-    src/macro-condition-timer.cpp
-    src/macro-condition-transition.cpp
-    src/macro-condition-virtual-cam.cpp
-    src/macro-condition-window.cpp
-    src/macro.cpp
-    src/macro-ref.cpp
-    src/macro-list-entry-widget.cpp
-    src/macro-properties.cpp
-    src/macro-segment.cpp
-    src/macro-segment-list.cpp
-    src/macro-selection.cpp
-    src/macro-tab.cpp
-    src/curl-helper.cpp
-    src/scene-item-selection.cpp
-    src/scene-selection.cpp
-    src/screenshot-helper.cpp
-    src/transition-selection.cpp
-    src/name-dialog.cpp
-    src/resizing-text-edit.cpp
-    src/duration-control.cpp
-    src/status-control.cpp
-    src/section.cpp
-    src/utility.cpp
-    src/volume-control.cpp
-    src/version.cpp)
-
-# Backwards compatability checks with older OBS versions
-if(DEFINED LibObs_VERSION_MAJOR)
-  if(LibObs_VERSION_MAJOR GREATER_EQUAL 27)
-    add_definitions(-DVCAM_SUPPORTED)
-    add_definitions(-DVISIBILITY_TRANSITIONS_SUPPORTED)
+  target_link_libraries(${LIB_NAME} PRIVATE ${X11_LIBRARIES}
+                                            ${procps_LIBRARIES})
+  target_include_directories(
+    ${LIB_NAME} PRIVATE "${X11_INCLUDE_DIR}" "${X11_Xtst_INCLUDE_PATH}"
+                        "${X11_Xss_INCLUDE_PATH}" "${PROCPS_INCLUDE_DIR}")
+  target_sources(${LIB_NAME} PRIVATE src/linux/advanced-scene-switcher-nix.cpp)
+  set("${PROJECT_NAME}_PLATFORM_LIBS" Xss ${PROCPS_LIBRARY})
+  find_package(CURL)
+  find_package(Libcurl)
+  if(CURL_FOUND)
+    target_include_directories(${LIB_NAME} PRIVATE "${CURL_INCLUDE_DIRS}")
+  elseif(Libcurl_FOUND)
+    target_include_directories(${LIB_NAME} PRIVATE "${LIBCURL_INCLUDE_DIRS}")
   else()
-    message(
-      WARNING
-        "OBS version ${LibObs_VERSION_MAJOR} found - disabling virtual camera and hide/show transition functionality"
-    )
-  endif()
-  if(LibObs_VERSION_MAJOR GREATER_EQUAL 26)
-    add_definitions(-DREPLAYBUFFER_SUPPORTED)
-  else()
-    message(
-      WARNING
-        "OBS version ${LibObs_VERSION_MAJOR} found - disabling replay buffer and screenshot functionality"
-    )
-    list(REMOVE_ITEM advanced-scene-switcher_SOURCES
-         src/macro-action-screenshot.cpp)
-    list(REMOVE_ITEM advanced-scene-switcher_HEADERS
-         src/headers/macro-action-screenshot.hpp)
+    message(FATAL_ERROR "Couldn't find CURL or Libcurl - abort")
   endif()
 endif()
+# --- End of section ---
 
-add_library(
-  advanced-scene-switcher SHARED
-  ${advanced-scene-switcher_HEADERS}
-  ${advanced-scene-switcher_SOURCES}
-  ${advanced-scene-switcher_UI_HEADERS}
-  ${advanced-scene-switcher_PLATFORM_SOURCES}
-  ${advanced-scene-switcher_PLATFORM_HEADERS})
+target_link_libraries(${LIB_NAME} PUBLIC ${${PROJECT_NAME}_PLATFORM_LIBS})
+setup_plugin_target(${PROJECT_NAME})
+install_advss_lib(${LIB_NAME})
 
-# Out of tree build
-if(BUILD_OUT_OF_TREE)
-  target_link_libraries(
-    advanced-scene-switcher ${advanced-scene-switcher_PLATFORM_LIBS}
-    ${LIBOBS_LIB} ${LIBOBS_FRONTEND_API_LIB} Qt5::Core Qt5::Widgets)
+# --- Helpers for debian package creation ---
 
+if(DEB_INSTALL)
   # Additional commands to install the module in the correct place. Find all the
   # translation files so we can copy them to the correct place later on.
   file(GLOB ASS_TRANSLATION_FILES "data/locale/*.ini")
-
-  # OSX
-  if(APPLE)
-    set_target_properties(advanced-scene-switcher PROPERTIES PREFIX "")
-  endif()
 
   # Linux
   if(UNIX AND NOT APPLE)
@@ -431,22 +367,17 @@ if(BUILD_OUT_OF_TREE)
       set(LIB_OUT_DIR "/lib/obs-plugins")
     endif()
     if(NOT DATA_OUT_DIR)
-      set(DATA_OUT_DIR "/share/obs/obs-plugins/advanced-scene-switcher")
+      set(DATA_OUT_DIR "/share/obs/obs-plugins/${PROJECT_NAME}")
     endif()
-    set_target_properties(advanced-scene-switcher PROPERTIES PREFIX "")
-    install(TARGETS advanced-scene-switcher
+    install(TARGETS ${PROJECT_NAME}
             LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIB_OUT_DIR})
     install(DIRECTORY data/locale
             DESTINATION ${CMAKE_INSTALL_PREFIX}/${DATA_OUT_DIR})
     install(DIRECTORY data/res
             DESTINATION ${CMAKE_INSTALL_PREFIX}/${DATA_OUT_DIR})
   endif()
-else()
-  # In tree build
-  target_link_libraries(
-    advanced-scene-switcher ${advanced-scene-switcher_PLATFORM_LIBS}
-    obs-frontend-api Qt5::Widgets libobs)
-  install_obs_plugin_with_data(advanced-scene-switcher data)
 endif()
+
+# --- End of section ---
 
 add_subdirectory(src/external-macro-modules)
