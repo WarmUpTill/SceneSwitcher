@@ -1,5 +1,3 @@
-#ifdef VCAM_SUPPORTED
-
 #include "headers/macro-condition-edit.hpp"
 #include "headers/macro-condition-virtual-cam.hpp"
 #include "headers/utility.hpp"
@@ -101,5 +99,3 @@ void MacroConditionVCamEdit::UpdateEntryData()
 
 	_states->setCurrentIndex(static_cast<int>(_entryData->_state));
 }
-
-#endif

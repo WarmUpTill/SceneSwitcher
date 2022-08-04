@@ -1,5 +1,3 @@
-#ifdef VCAM_SUPPORTED
-
 #pragma once
 #include "macro-action-edit.hpp"
 
@@ -58,5 +56,3 @@ private:
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
-
-#endif

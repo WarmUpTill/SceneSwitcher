@@ -2,6 +2,7 @@
 #include <QTextStream>
 #include <QDateTime>
 #include <functional>
+#include <regex>
 #include <curl/curl.h>
 
 #include "headers/advanced-scene-switcher.hpp"
@@ -113,7 +114,7 @@ void SwitcherData::writeToStatusFile(const QString &msg)
 	QFile file(QString::fromStdString(fileIO.writePath));
 	if (file.open(QIODevice::ReadWrite)) {
 		QTextStream stream(&file);
-		stream << msg << endl;
+		stream << msg << Qt::endl;
 	}
 	file.close();
 }
@@ -197,8 +198,12 @@ bool matchFileContent(QString &filedata, FileSwitch &s)
 	}
 
 	if (s.useRegex) {
-		QRegExp rx(QString::fromStdString(s.text));
-		return rx.exactMatch(filedata);
+		try {
+			std::regex expr(s.text);
+			return std::regex_match(filedata.toStdString(), expr);
+		} catch (const std::regex_error &) {
+			return false;
+		}
 	}
 
 	QString text = QString::fromStdString(s.text);

@@ -155,7 +155,7 @@ bool MacroSegmentList::eventFilter(QObject *object, QEvent *event)
 void MacroSegmentList::mousePressEvent(QMouseEvent *event)
 {
 	if (event->button() == Qt::LeftButton) {
-		_dragPosition = GetDragIndex(event->globalPos());
+		_dragPosition = GetDragIndex(event->globalPosition().toPoint());
 		emit SelectionChagned(_dragPosition);
 	} else {
 		_dragPosition = -1;
@@ -263,7 +263,7 @@ void MacroSegmentList::dragMoveEvent(QDragMoveEvent *event)
 		return;
 	}
 
-	_dragCursorPos = (mapToGlobal(event->pos()));
+	_dragCursorPos = (mapToGlobal(event->position().toPoint()));
 	CheckDropLine(_dragCursorPos);
 }
 
@@ -409,9 +409,11 @@ void MacroSegmentList::dropEvent(QDropEvent *event)
 {
 	HideLastDropLine();
 	auto widget = qobject_cast<QWidget *>(event->source());
-	if (widget && !widget->geometry().contains(event->pos()) &&
+	if (widget &&
+	    !widget->geometry().contains(event->position().toPoint()) &&
 	    widgetIsInLayout(widget, _contentLayout)) {
-		int dropPosition = GetDropIndex(mapToGlobal(event->pos()));
+		int dropPosition =
+			GetDropIndex(mapToGlobal(event->position().toPoint()));
 		if (dropPosition == -1) {
 			return;
 		}
