@@ -6,7 +6,6 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 
 #include <set>
 #include <QtCore/QObject>
-#include <QtCore/QMutex>
 #include <QtCore/QSharedPointer>
 #include <QtCore/QVariantHash>
 #include <QtCore/QThreadPool>
@@ -75,7 +74,7 @@ private:
 	quint16 _serverPort = 55555;
 	bool _lockToIPv4 = false;
 	std::set<connection_hdl, std::owner_less<connection_hdl>> _connections;
-	QMutex _clMutex;
+	std::recursive_mutex _clMutex;
 	QThreadPool _threadPool;
 };
 

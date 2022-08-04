@@ -1,5 +1,3 @@
-#ifdef REPLAYBUFFER_SUPPORTED
-
 #pragma once
 #include "macro-action-edit.hpp"
 #include "duration-control.hpp"
@@ -60,5 +58,3 @@ protected:
 private:
 	bool _loading = true;
 };
-
-#endif

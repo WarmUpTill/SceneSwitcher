@@ -540,18 +540,21 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 			obs_module_text("AdvSceneSwitcher.windowTitle"),
 			obs_module_text(
 				"AdvSceneSwitcher.condition.video.askFileAction"),
-			QMessageBox::Yes | QMessageBox::No);
+			QMessageBox::Yes | QMessageBox::No |
+				QMessageBox::Cancel);
+		auto yes = msgBox.button(QMessageBox::StandardButton::Yes);
+		yes->setText(obs_module_text(
+			"AdvSceneSwitcher.condition.video.askFileAction.file"));
+		auto no = msgBox.button(QMessageBox::StandardButton::No);
+		no->setText(obs_module_text(
+			"AdvSceneSwitcher.condition.video.askFileAction.screenshot"));
 		msgBox.setWindowFlags(Qt::Window | Qt::WindowTitleHint |
 				      Qt::CustomizeWindowHint);
-		msgBox.setButtonText(
-			QMessageBox::Yes,
-			obs_module_text(
-				"AdvSceneSwitcher.condition.video.askFileAction.file"));
-		msgBox.setButtonText(
-			QMessageBox::No,
-			obs_module_text(
-				"AdvSceneSwitcher.condition.video.askFileAction.screenshot"));
-		useExistingFile = msgBox.exec() == QMessageBox::Yes;
+		const auto result = msgBox.exec();
+		if (result == QMessageBox::Cancel) {
+			return;
+		}
+		useExistingFile = result == QMessageBox::Yes;
 	}
 
 	if (useExistingFile) {

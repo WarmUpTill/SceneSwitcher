@@ -6,6 +6,7 @@
 
 #include <QTextStream>
 #include <QFileDialog>
+#include <regex>
 
 const std::string MacroConditionFile::id = "file";
 
@@ -56,8 +57,12 @@ bool MacroConditionFile::matchFileContent(QString &filedata)
 	}
 
 	if (_useRegex) {
-		QRegExp rx(QString::fromStdString(_text));
-		return rx.exactMatch(filedata);
+		try {
+			std::regex expr(_text);
+			return std::regex_match(filedata.toStdString(), expr);
+		} catch (const std::regex_error &) {
+			return false;
+		}
 	}
 
 	QString text = QString::fromStdString(_text);

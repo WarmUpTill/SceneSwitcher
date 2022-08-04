@@ -1,5 +1,3 @@
-#ifdef VCAM_SUPPORTED
-
 #pragma once
 #include "macro.hpp"
 #include <QWidget>
@@ -55,5 +53,3 @@ protected:
 private:
 	bool _loading = true;
 };
-
-#endif

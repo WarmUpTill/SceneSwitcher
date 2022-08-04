@@ -1,5 +1,3 @@
-#ifdef VCAM_SUPPORTED
-
 #include "headers/macro-action-virtual-cam.hpp"
 #include "headers/advanced-scene-switcher.hpp"
 #include "headers/utility.hpp"
@@ -109,5 +107,3 @@ void MacroActionVCamEdit::ActionChanged(int value)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<VCamAction>(value);
 }
-
-#endif

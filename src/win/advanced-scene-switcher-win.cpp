@@ -139,11 +139,9 @@ std::pair<int, int> getCursorPos()
 HWND getHWNDfromTitle(std::string title)
 {
 	HWND hwnd = NULL;
-
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-	std::wstring wTitle = converter.from_bytes(title);
-
-	hwnd = FindWindowEx(NULL, NULL, NULL, wTitle.c_str());
+	wchar_t wTitle[512];
+	os_utf8_to_wcs(title.c_str(), 0, wTitle, 512);
+	hwnd = FindWindowEx(NULL, NULL, NULL, wTitle);
 	return hwnd;
 }
 

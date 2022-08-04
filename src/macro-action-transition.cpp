@@ -51,13 +51,6 @@ void MacroActionTransition::SetTransitionOverride()
 
 void MacroActionTransition::SetSourceTransition(bool show)
 {
-#ifdef VISIBILITY_TRANSITIONS_SUPPORTED
-	const auto setTransitionFunc = show ? obs_sceneitem_set_show_transition
-					    : obs_sceneitem_set_hide_transition;
-	const auto setDurationFunc =
-		show ? obs_sceneitem_set_show_transition_duration
-		     : obs_sceneitem_set_hide_transition_duration;
-
 	auto transition =
 		obs_weak_source_get_source(_transition.GetTransition());
 	obs_data_t *settings = obs_source_get_settings(transition);
@@ -70,18 +63,16 @@ void MacroActionTransition::SetSourceTransition(bool show)
 	const auto items = _source.GetSceneItems(_scene);
 	for (auto &item : items) {
 		if (_setTransitionType) {
-			setTransitionFunc(item, t);
+			obs_sceneitem_set_transition(item, show, t);
 		}
 		if (_setDuration) {
-			setDurationFunc(item, _duration.seconds * 1000);
+			obs_sceneitem_set_transition_duration(
+				item, show, _duration.seconds * 1000);
 		}
 		obs_sceneitem_release(item);
 	}
 
 	obs_source_release(t);
-#else
-	blog(LOG_WARNING, "Setting hide / show transition not supported!");
-#endif
 }
 
 bool MacroActionTransition::PerformAction()

@@ -113,8 +113,7 @@ bool NetworkConfig::ShouldSendPrviewSceneChange()
 	return ServerEnabled && SendPreview;
 }
 
-WSServer::WSServer()
-	: QObject(nullptr), _connections(), _clMutex(QMutex::Recursive)
+WSServer::WSServer() : QObject(nullptr), _connections(), _clMutex()
 {
 	_server.get_alog().clear_channels(
 		websocketpp::log::alevel::frame_header |
@@ -169,13 +168,13 @@ void WSServer::start(quint16 port, bool lockToIPv4)
 		blog(LOG_INFO, "server: listen failed: %s",
 		     errorCodeMessage.c_str());
 
-		obs_frontend_push_ui_translation(obs_module_get_string);
-		QString errorTitle = tr("AdvSceneSwitcher.windowTitle");
+		QString errorTitle =
+			obs_module_text("AdvSceneSwitcher.windowTitle");
 		QString errorMessage =
-			tr("AdvSceneSwitcher.networkTab.startFailed.message")
+			QString(obs_module_text(
+					"AdvSceneSwitcher.networkTab.startFailed.message"))
 				.arg(_serverPort)
 				.arg(errorCodeMessage.c_str());
-		obs_frontend_pop_ui_translation();
 
 		QMainWindow *mainWindow = reinterpret_cast<QMainWindow *>(
 			obs_frontend_get_main_window());
@@ -256,9 +255,10 @@ void WSServer::sendMessage(sceneSwitchInfo sceneSwitch, bool preview)
 
 void WSServer::onOpen(connection_hdl hdl)
 {
-	QMutexLocker locker(&_clMutex);
-	_connections.insert(hdl);
-	locker.unlock();
+	{
+		std::lock_guard<std::recursive_mutex> lock(_clMutex);
+		_connections.insert(hdl);
+	}
 
 	QString clientIp = getRemoteEndpoint(hdl);
 	blog(LOG_INFO, "new client connection from %s",
@@ -329,9 +329,10 @@ void WSServer::onMessage(connection_hdl, server::message_ptr message)
 
 void WSServer::onClose(connection_hdl hdl)
 {
-	QMutexLocker locker(&_clMutex);
-	_connections.erase(hdl);
-	locker.unlock();
+	{
+		std::lock_guard<std::recursive_mutex> lock(_clMutex);
+		_connections.erase(hdl);
+	}
 
 	auto conn = _server.get_con_from_hdl(hdl);
 	auto localCloseCode = conn->get_local_close_code();
