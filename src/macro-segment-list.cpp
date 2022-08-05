@@ -8,6 +8,7 @@
 #include <QDrag>
 #include <QMimeData>
 #include <QScrollBar>
+#include <QtGlobal>
 
 MacroSegmentList::MacroSegmentList(QWidget *parent)
 	: QScrollArea(parent),
@@ -155,7 +156,11 @@ bool MacroSegmentList::eventFilter(QObject *object, QEvent *event)
 void MacroSegmentList::mousePressEvent(QMouseEvent *event)
 {
 	if (event->button() == Qt::LeftButton) {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+		_dragPosition = GetDragIndex(event->globalPos());
+#else
 		_dragPosition = GetDragIndex(event->globalPosition().toPoint());
+#endif
 		emit SelectionChagned(_dragPosition);
 	} else {
 		_dragPosition = -1;
@@ -263,7 +268,11 @@ void MacroSegmentList::dragMoveEvent(QDragMoveEvent *event)
 		return;
 	}
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+	_dragCursorPos = (mapToGlobal(event->pos()));
+#else
 	_dragCursorPos = (mapToGlobal(event->position().toPoint()));
+#endif
 	CheckDropLine(_dragCursorPos);
 }
 
@@ -409,6 +418,16 @@ void MacroSegmentList::dropEvent(QDropEvent *event)
 {
 	HideLastDropLine();
 	auto widget = qobject_cast<QWidget *>(event->source());
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+	if (widget && !widget->geometry().contains(event->pos()) &&
+	    widgetIsInLayout(widget, _contentLayout)) {
+		int dropPosition = GetDropIndex(mapToGlobal(event->pos()));
+		if (dropPosition == -1) {
+			return;
+		}
+		emit Reorder(dropPosition, _dragPosition);
+	}
+#else
 	if (widget &&
 	    !widget->geometry().contains(event->position().toPoint()) &&
 	    widgetIsInLayout(widget, _contentLayout)) {
@@ -419,5 +438,6 @@ void MacroSegmentList::dropEvent(QDropEvent *event)
 		}
 		emit Reorder(dropPosition, _dragPosition);
 	}
+#endif
 	_dragPosition = -1;
 }

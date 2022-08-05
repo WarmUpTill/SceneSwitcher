@@ -9,6 +9,7 @@
 #include <QBuffer>
 #include <QToolTip>
 #include <QMessageBox>
+#include <QtGlobal>
 
 const std::string MacroConditionVideo::id = "video";
 
@@ -542,12 +543,23 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 				"AdvSceneSwitcher.condition.video.askFileAction"),
 			QMessageBox::Yes | QMessageBox::No |
 				QMessageBox::Cancel);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+		msgBox.setButtonText(
+			QMessageBox::Yes,
+			obs_module_text(
+				"AdvSceneSwitcher.condition.video.askFileAction.file"));
+		msgBox.setButtonText(
+			QMessageBox::No,
+			obs_module_text(
+				"AdvSceneSwitcher.condition.video.askFileAction.screenshot"));
+#else
 		auto yes = msgBox.button(QMessageBox::StandardButton::Yes);
 		yes->setText(obs_module_text(
 			"AdvSceneSwitcher.condition.video.askFileAction.file"));
 		auto no = msgBox.button(QMessageBox::StandardButton::No);
 		no->setText(obs_module_text(
 			"AdvSceneSwitcher.condition.video.askFileAction.screenshot"));
+#endif
 		msgBox.setWindowFlags(Qt::Window | Qt::WindowTitleHint |
 				      Qt::CustomizeWindowHint);
 		const auto result = msgBox.exec();
