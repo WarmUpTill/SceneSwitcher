@@ -236,6 +236,13 @@ jobs:
           target: ${{ matrix.arch }}
           config: RelWithDebInfo
 
+      - name: Upload Build Artifact
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.PLUGIN_NAME }}-linux-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
+          path: ${{ github.workspace }}/plugin/release/*
+
       - name: Package Plugin
         uses: ./plugin/.github/actions/package-plugin
         with:
@@ -243,7 +250,7 @@ jobs:
           target: ${{ matrix.arch }}
           config: RelWithDebInfo
 
-      - name: Upload Build Artifact
+      - name: Upload Package Artifact
         if: ${{ success() }}
         uses: actions/upload-artifact@v3
         with:
