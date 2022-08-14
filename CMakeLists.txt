@@ -26,210 +26,229 @@ git_describe(GIT_TAG)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cpp.in"
                "${CMAKE_CURRENT_BINARY_DIR}/src/version.cpp" @ONLY)
 
+# --- Set target sources ---
+
+# Module sources
 target_sources(${PROJECT_NAME} PRIVATE src/advanced-scene-switcher-module.c)
 
+# Generic sources
 target_sources(
   ${LIB_NAME}
-  PRIVATE src/headers/advanced-scene-switcher.hpp
-          src/headers/switcher-data-structs.hpp
-          src/headers/scene-group.hpp
-          src/headers/scene-trigger.hpp
-          src/headers/switch-audio.hpp
-          src/headers/switch-executable.hpp
-          src/headers/switch-file.hpp
-          src/headers/switch-idle.hpp
-          src/headers/switch-media.hpp
-          src/headers/switch-network.hpp
-          src/headers/switch-pause.hpp
-          src/headers/switch-random.hpp
-          src/headers/switch-screen-region.hpp
-          src/headers/switch-time.hpp
-          src/headers/switch-transitions.hpp
-          src/headers/switch-window.hpp
-          src/headers/switch-sequence.hpp
-          src/headers/switch-video.hpp
-          src/headers/switch-generic.hpp
-          src/headers/macro-action.hpp
-          src/headers/macro-action-edit.hpp
-          src/headers/macro-action-audio.hpp
-          src/headers/macro-action-file.hpp
-          src/headers/macro-action-filter.hpp
-          src/headers/macro-action-hotkey.hpp
-          src/headers/macro-action-macro.hpp
-          src/headers/macro-action-media.hpp
-          src/headers/macro-action-plugin-state.hpp
-          src/headers/macro-action-profile.hpp
-          src/headers/macro-action-random.hpp
-          src/headers/macro-action-recording.hpp
-          src/headers/macro-action-replay-buffer.hpp
-          src/headers/macro-action-run.hpp
-          src/headers/macro-action-scene-collection.hpp
-          src/headers/macro-action-scene-order.hpp
-          src/headers/macro-action-scene-switch.hpp
-          src/headers/macro-action-scene-transform.hpp
-          src/headers/macro-action-scene-visibility.hpp
-          src/headers/macro-action-screenshot.hpp
-          src/headers/macro-action-sequence.hpp
-          src/headers/macro-action-source.hpp
-          src/headers/macro-action-streaming.hpp
-          src/headers/macro-action-studio-mode.hpp
-          src/headers/macro-action-systray.hpp
-          src/headers/macro-action-timer.hpp
-          src/headers/macro-action-transition.hpp
-          src/headers/macro-action-virtual-cam.hpp
-          src/headers/macro-action-wait.hpp
-          src/headers/macro-condition.hpp
-          src/headers/macro-condition-edit.hpp
-          src/headers/macro-condition-audio.hpp
-          src/headers/macro-condition-cursor.hpp
-          src/headers/macro-condition-date.hpp
-          src/headers/macro-condition-file.hpp
-          src/headers/macro-condition-filter.hpp
-          src/headers/macro-condition-hotkey.hpp
-          src/headers/macro-condition-idle.hpp
-          src/headers/macro-condition-macro.hpp
-          src/headers/macro-condition-media.hpp
-          src/headers/macro-condition-obs-stats.hpp
-          src/headers/macro-condition-plugin-state.hpp
-          src/headers/macro-condition-process.hpp
-          src/headers/macro-condition-profile.hpp
-          src/headers/macro-condition-recording.hpp
-          src/headers/macro-condition-replay-buffer.hpp
-          src/headers/macro-condition-scene-order.hpp
-          src/headers/macro-condition-scene-transform.hpp
-          src/headers/macro-condition-scene-visibility.hpp
-          src/headers/macro-condition-scene.hpp
-          src/headers/macro-condition-source.hpp
-          src/headers/macro-condition-streaming.hpp
-          src/headers/macro-condition-studio-mode.hpp
-          src/headers/macro-condition-timer.hpp
-          src/headers/macro-condition-transition.hpp
-          src/headers/macro-condition-virtual-cam.hpp
-          src/headers/macro-condition-window.hpp
-          src/headers/macro.hpp
-          src/headers/macro-ref.hpp
-          src/headers/macro-list-entry-widget.hpp
-          src/headers/macro-properties.hpp
-          src/headers/macro-segment.hpp
-          src/headers/macro-segment-list.hpp
-          src/headers/macro-selection.hpp
-          src/headers/curl-helper.hpp
-          src/headers/hotkey.hpp
-          src/headers/scene-item-selection.hpp
-          src/headers/scene-selection.hpp
-          src/headers/screenshot-helper.hpp
-          src/headers/transition-selection.hpp
-          src/headers/name-dialog.hpp
-          src/headers/duration-control.hpp
-          src/headers/file-selection.hpp
-          src/headers/section.hpp
-          src/headers/status-control.hpp
-          src/headers/platform-funcs.hpp
-          src/headers/resizing-text-edit.hpp
-          src/headers/utility.hpp
-          src/headers/volume-control.hpp
-          src/headers/version.h
-          src/advanced-scene-switcher.cpp
-          src/switcher-data-structs.cpp
-          src/scene-group.cpp
-          src/scene-trigger.cpp
-          src/switch-transitions.cpp
-          src/switch-screen-region.cpp
-          src/switch-priority.cpp
-          src/switch-executable.cpp
-          src/switch-idle.cpp
-          src/switch-sequence.cpp
-          src/switch-file.cpp
-          src/switch-window.cpp
-          src/switch-media.cpp
-          src/switch-network.cpp
-          src/file-selection.cpp
-          src/hotkey.cpp
+  PRIVATE src/advanced-scene-switcher.cpp
+          src/advanced-scene-switcher.hpp
           src/general.cpp
-          src/switch-pause.cpp
-          src/switch-random.cpp
-          src/switch-time.cpp
-          src/switch-audio.cpp
-          src/switch-video.cpp
-          src/switch-generic.cpp
-          src/macro-action.cpp
-          src/macro-action-edit.cpp
-          src/macro-action-audio.cpp
-          src/macro-action-file.cpp
-          src/macro-action-filter.cpp
-          src/macro-action-hotkey.cpp
-          src/macro-action-macro.cpp
-          src/macro-action-media.cpp
-          src/macro-action-plugin-state.cpp
-          src/macro-action-profile.cpp
-          src/macro-action-random.cpp
-          src/macro-action-recording.cpp
-          src/macro-action-replay-buffer.cpp
-          src/macro-action-run.cpp
-          src/macro-action-scene-collection.cpp
-          src/macro-action-scene-order.cpp
-          src/macro-action-scene-switch.cpp
-          src/macro-action-scene-transform.cpp
-          src/macro-action-scene-visibility.cpp
-          src/macro-action-screenshot.cpp
-          src/macro-action-sequence.cpp
-          src/macro-action-source.cpp
-          src/macro-action-streaming.cpp
-          src/macro-action-studio-mode.cpp
-          src/macro-action-systray.cpp
-          src/macro-action-timer.cpp
-          src/macro-action-transition.cpp
-          src/macro-action-virtual-cam.cpp
-          src/macro-action-wait.cpp
-          src/macro-condition.cpp
-          src/macro-condition-edit.cpp
-          src/macro-condition-audio.cpp
-          src/macro-condition-cursor.cpp
-          src/macro-condition-date.cpp
-          src/macro-condition-file.cpp
-          src/macro-condition-filter.cpp
-          src/macro-condition-hotkey.cpp
-          src/macro-condition-idle.cpp
-          src/macro-condition-macro.cpp
-          src/macro-condition-media.cpp
-          src/macro-condition-obs-stats.cpp
-          src/macro-condition-plugin-state.cpp
-          src/macro-condition-process.cpp
-          src/macro-condition-profile.cpp
-          src/macro-condition-recording.cpp
-          src/macro-condition-replay-buffer.cpp
-          src/macro-condition-scene-order.cpp
-          src/macro-condition-scene-transform.cpp
-          src/macro-condition-scene-visibility.cpp
-          src/macro-condition-scene.cpp
-          src/macro-condition-source.cpp
-          src/macro-condition-streaming.cpp
-          src/macro-condition-studio-mode.cpp
-          src/macro-condition-timer.cpp
-          src/macro-condition-transition.cpp
-          src/macro-condition-virtual-cam.cpp
-          src/macro-condition-window.cpp
-          src/macro.cpp
-          src/macro-ref.cpp
-          src/macro-list-entry-widget.cpp
-          src/macro-properties.cpp
-          src/macro-segment.cpp
-          src/macro-segment-list.cpp
-          src/macro-selection.cpp
-          src/macro-tab.cpp
-          src/curl-helper.cpp
-          src/scene-item-selection.cpp
-          src/scene-selection.cpp
-          src/screenshot-helper.cpp
-          src/transition-selection.cpp
-          src/name-dialog.cpp
-          src/resizing-text-edit.cpp
-          src/duration-control.cpp
+          src/hotkey.cpp
+          src/hotkey.hpp
+          src/hotkey.hpp
+          src/platform-funcs.hpp
+          src/scene-group.cpp
+          src/scene-group.hpp
           src/status-control.cpp
-          src/section.cpp
-          src/utility.cpp
-          src/volume-control.cpp
-          src/version.cpp)
+          src/status-control.hpp
+          src/switcher-data-structs.cpp
+          src/switcher-data-structs.hpp
+          src/version.cpp
+          src/version.h)
+
+# Legacy function sources
+target_sources(
+  ${LIB_NAME}
+  PRIVATE src/legacy/scene-trigger.cpp
+          src/legacy/scene-trigger.hpp
+          src/legacy/switch-audio.cpp
+          src/legacy/switch-audio.hpp
+          src/legacy/switch-executable.cpp
+          src/legacy/switch-executable.hpp
+          src/legacy/switch-file.cpp
+          src/legacy/switch-file.hpp
+          src/legacy/switch-generic.cpp
+          src/legacy/switch-generic.hpp
+          src/legacy/switch-idle.cpp
+          src/legacy/switch-idle.hpp
+          src/legacy/switch-media.cpp
+          src/legacy/switch-media.hpp
+          src/legacy/switch-network.cpp
+          src/legacy/switch-network.hpp
+          src/legacy/switch-pause.cpp
+          src/legacy/switch-pause.hpp
+          src/legacy/switch-priority.cpp
+          src/legacy/switch-random.cpp
+          src/legacy/switch-random.hpp
+          src/legacy/switch-screen-region.cpp
+          src/legacy/switch-screen-region.hpp
+          src/legacy/switch-sequence.cpp
+          src/legacy/switch-sequence.hpp
+          src/legacy/switch-time.cpp
+          src/legacy/switch-time.hpp
+          src/legacy/switch-transitions.cpp
+          src/legacy/switch-transitions.hpp
+          src/legacy/switch-video.cpp
+          src/legacy/switch-video.hpp
+          src/legacy/switch-window.cpp
+          src/legacy/switch-window.hpp)
+
+# Maro sources
+target_sources(
+  ${LIB_NAME}
+  PRIVATE src/macro-core/macro-action-audio.cpp
+          src/macro-core/macro-action-audio.hpp
+          src/macro-core/macro-action-edit.cpp
+          src/macro-core/macro-action-edit.hpp
+          src/macro-core/macro-action-file.cpp
+          src/macro-core/macro-action-file.hpp
+          src/macro-core/macro-action-filter.cpp
+          src/macro-core/macro-action-filter.hpp
+          src/macro-core/macro-action-hotkey.cpp
+          src/macro-core/macro-action-hotkey.hpp
+          src/macro-core/macro-action-macro.cpp
+          src/macro-core/macro-action-macro.hpp
+          src/macro-core/macro-action-media.cpp
+          src/macro-core/macro-action-media.hpp
+          src/macro-core/macro-action-plugin-state.cpp
+          src/macro-core/macro-action-plugin-state.hpp
+          src/macro-core/macro-action-profile.cpp
+          src/macro-core/macro-action-profile.hpp
+          src/macro-core/macro-action-random.cpp
+          src/macro-core/macro-action-random.hpp
+          src/macro-core/macro-action-recording.cpp
+          src/macro-core/macro-action-recording.hpp
+          src/macro-core/macro-action-replay-buffer.cpp
+          src/macro-core/macro-action-replay-buffer.hpp
+          src/macro-core/macro-action-run.cpp
+          src/macro-core/macro-action-run.hpp
+          src/macro-core/macro-action-scene-collection.cpp
+          src/macro-core/macro-action-scene-collection.hpp
+          src/macro-core/macro-action-scene-order.cpp
+          src/macro-core/macro-action-scene-order.hpp
+          src/macro-core/macro-action-scene-switch.cpp
+          src/macro-core/macro-action-scene-switch.hpp
+          src/macro-core/macro-action-scene-transform.cpp
+          src/macro-core/macro-action-scene-transform.hpp
+          src/macro-core/macro-action-scene-visibility.cpp
+          src/macro-core/macro-action-scene-visibility.hpp
+          src/macro-core/macro-action-screenshot.cpp
+          src/macro-core/macro-action-screenshot.hpp
+          src/macro-core/macro-action-sequence.cpp
+          src/macro-core/macro-action-sequence.hpp
+          src/macro-core/macro-action-source.cpp
+          src/macro-core/macro-action-source.hpp
+          src/macro-core/macro-action-streaming.cpp
+          src/macro-core/macro-action-streaming.hpp
+          src/macro-core/macro-action-studio-mode.cpp
+          src/macro-core/macro-action-studio-mode.hpp
+          src/macro-core/macro-action-systray.cpp
+          src/macro-core/macro-action-systray.hpp
+          src/macro-core/macro-action-timer.cpp
+          src/macro-core/macro-action-timer.hpp
+          src/macro-core/macro-action-transition.cpp
+          src/macro-core/macro-action-transition.hpp
+          src/macro-core/macro-action-virtual-cam.cpp
+          src/macro-core/macro-action-virtual-cam.hpp
+          src/macro-core/macro-action-wait.cpp
+          src/macro-core/macro-action-wait.hpp
+          src/macro-core/macro-action.cpp
+          src/macro-core/macro-action.hpp
+          src/macro-core/macro-condition-audio.cpp
+          src/macro-core/macro-condition-audio.hpp
+          src/macro-core/macro-condition-cursor.cpp
+          src/macro-core/macro-condition-cursor.hpp
+          src/macro-core/macro-condition-date.cpp
+          src/macro-core/macro-condition-date.hpp
+          src/macro-core/macro-condition-edit.cpp
+          src/macro-core/macro-condition-edit.hpp
+          src/macro-core/macro-condition-file.cpp
+          src/macro-core/macro-condition-file.hpp
+          src/macro-core/macro-condition-filter.cpp
+          src/macro-core/macro-condition-filter.hpp
+          src/macro-core/macro-condition-hotkey.cpp
+          src/macro-core/macro-condition-hotkey.hpp
+          src/macro-core/macro-condition-idle.cpp
+          src/macro-core/macro-condition-idle.hpp
+          src/macro-core/macro-condition-macro.cpp
+          src/macro-core/macro-condition-macro.hpp
+          src/macro-core/macro-condition-media.cpp
+          src/macro-core/macro-condition-media.hpp
+          src/macro-core/macro-condition-obs-stats.cpp
+          src/macro-core/macro-condition-obs-stats.hpp
+          src/macro-core/macro-condition-plugin-state.cpp
+          src/macro-core/macro-condition-plugin-state.hpp
+          src/macro-core/macro-condition-process.cpp
+          src/macro-core/macro-condition-process.hpp
+          src/macro-core/macro-condition-profile.cpp
+          src/macro-core/macro-condition-profile.hpp
+          src/macro-core/macro-condition-recording.cpp
+          src/macro-core/macro-condition-recording.hpp
+          src/macro-core/macro-condition-replay-buffer.cpp
+          src/macro-core/macro-condition-replay-buffer.hpp
+          src/macro-core/macro-condition-scene-order.cpp
+          src/macro-core/macro-condition-scene-order.hpp
+          src/macro-core/macro-condition-scene-transform.cpp
+          src/macro-core/macro-condition-scene-transform.hpp
+          src/macro-core/macro-condition-scene-visibility.cpp
+          src/macro-core/macro-condition-scene-visibility.hpp
+          src/macro-core/macro-condition-scene.cpp
+          src/macro-core/macro-condition-scene.hpp
+          src/macro-core/macro-condition-source.cpp
+          src/macro-core/macro-condition-source.hpp
+          src/macro-core/macro-condition-streaming.cpp
+          src/macro-core/macro-condition-streaming.hpp
+          src/macro-core/macro-condition-studio-mode.cpp
+          src/macro-core/macro-condition-studio-mode.hpp
+          src/macro-core/macro-condition-timer.cpp
+          src/macro-core/macro-condition-timer.hpp
+          src/macro-core/macro-condition-transition.cpp
+          src/macro-core/macro-condition-transition.hpp
+          src/macro-core/macro-condition-virtual-cam.cpp
+          src/macro-core/macro-condition-virtual-cam.hpp
+          src/macro-core/macro-condition-window.cpp
+          src/macro-core/macro-condition-window.hpp
+          src/macro-core/macro-condition.cpp
+          src/macro-core/macro-condition.hpp
+          src/macro-core/macro-list-entry-widget.cpp
+          src/macro-core/macro-list-entry-widget.hpp
+          src/macro-core/macro-properties.cpp
+          src/macro-core/macro-properties.hpp
+          src/macro-core/macro-ref.cpp
+          src/macro-core/macro-ref.hpp
+          src/macro-core/macro-segment-list.cpp
+          src/macro-core/macro-segment-list.hpp
+          src/macro-core/macro-segment.cpp
+          src/macro-core/macro-segment.hpp
+          src/macro-core/macro-selection.cpp
+          src/macro-core/macro-selection.hpp
+          src/macro-core/macro-tab.cpp
+          src/macro-core/macro.cpp
+          src/macro-core/macro.hpp)
+
+# Utility function sources
+target_sources(
+  ${LIB_NAME}
+  PRIVATE src/utils/curl-helper.cpp
+          src/utils/curl-helper.hpp
+          src/utils/duration-control.cpp
+          src/utils/duration-control.hpp
+          src/utils/file-selection.cpp
+          src/utils/file-selection.hpp
+          src/utils/name-dialog.cpp
+          src/utils/name-dialog.hpp
+          src/utils/resizing-text-edit.cpp
+          src/utils/resizing-text-edit.hpp
+          src/utils/scene-item-selection.cpp
+          src/utils/scene-item-selection.hpp
+          src/utils/scene-selection.cpp
+          src/utils/scene-selection.hpp
+          src/utils/screenshot-helper.cpp
+          src/utils/screenshot-helper.hpp
+          src/utils/section.cpp
+          src/utils/section.hpp
+          src/utils/transition-selection.cpp
+          src/utils/transition-selection.hpp
+          src/utils/utility.cpp
+          src/utils/utility.hpp
+          src/utils/volume-control.cpp
+          src/utils/volume-control.hpp)
+
+# --- End of section ---
 
 if(BUILD_OUT_OF_TREE)
   find_package(libobs REQUIRED)
@@ -250,8 +269,12 @@ include(cmake/AdvSSHelpers.cmake)
 # --- Platform-independent build settings ---
 
 target_include_directories(
-  ${LIB_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src"
-                      "${CMAKE_CURRENT_BINARY_DIR}/forms")
+  ${LIB_NAME}
+  PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src"
+          "${CMAKE_CURRENT_SOURCE_DIR}/src/legacy"
+          "${CMAKE_CURRENT_SOURCE_DIR}/src/macro-core"
+          "${CMAKE_CURRENT_SOURCE_DIR}/src/utils"
+          "${CMAKE_CURRENT_BINARY_DIR}/forms")
 
 set_target_properties(
   ${LIB_NAME}
@@ -381,4 +404,4 @@ endif()
 
 # --- End of section ---
 
-add_subdirectory(src/external-macro-modules)
+add_subdirectory(src/macro-external)

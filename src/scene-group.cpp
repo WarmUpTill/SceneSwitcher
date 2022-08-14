@@ -2,9 +2,9 @@
 #include <QDialogButtonBox>
 #include <random>
 
-#include "headers/advanced-scene-switcher.hpp"
-#include "headers/name-dialog.hpp"
-#include "headers/utility.hpp"
+#include "advanced-scene-switcher.hpp"
+#include "name-dialog.hpp"
+#include "utility.hpp"
 
 static QMetaObject::Connection addPulse;
 SceneGroupEditWidget *typeEdit = nullptr;
