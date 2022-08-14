@@ -4,13 +4,15 @@
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("advanced-scene-switcher", "en-US")
 
-void InitSceneSwitcher();
+typedef const char *(*translateFunc)(const char *);
+
+void InitSceneSwitcher(obs_module_t *, translateFunc);
 void FreeSceneSwitcher();
 
 bool obs_module_load(void)
 {
 	obs_frontend_push_ui_translation(obs_module_get_string);
-	InitSceneSwitcher();
+	InitSceneSwitcher(obs_current_module(), obs_module_text);
 	return true;
 }
 

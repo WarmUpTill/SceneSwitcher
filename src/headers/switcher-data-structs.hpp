@@ -48,6 +48,7 @@ constexpr auto default_priority_10 = exe_func;
 
 typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
 typedef enum { PERSIST = 0, START = 1, STOP = 2 } StartupBehavior;
+typedef const char *(*translateFunc)(const char *);
 
 enum class AutoStartEvent {
 	NEVER,
@@ -76,6 +77,8 @@ class SwitcherThread;
  ********************************************************************************/
 struct SwitcherData {
 	SwitcherThread *th = nullptr;
+	obs_module_t *modulePtr = nullptr;
+	translateFunc translate = nullptr;
 
 	bool settingsWindowOpened = false;
 	int lastOpenedTab = -1;
