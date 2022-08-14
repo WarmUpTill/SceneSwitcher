@@ -14,6 +14,16 @@
 #include "headers/utility.hpp"
 #include "headers/version.h"
 
+const char *obs_module_text(const char *text)
+{
+	return switcher->translate(text);
+}
+
+obs_module_t *obs_current_module()
+{
+	return switcher->modulePtr;
+}
+
 SwitcherData *switcher = nullptr;
 SwitcherData *GetSwitcher()
 {
@@ -673,12 +683,14 @@ void LoadPlugins()
 	}
 }
 
-extern "C" void InitSceneSwitcher()
+extern "C" void InitSceneSwitcher(obs_module_t *m, translateFunc t)
 {
 	blog(LOG_INFO, "version: %s", g_GIT_TAG);
 	blog(LOG_INFO, "version: %s", g_GIT_SHA1);
 
 	switcher = new SwitcherData;
+	switcher->modulePtr = m;
+	switcher->translate = t;
 
 	if (loadCurl() && f_curl_init) {
 		switcher->curl = f_curl_init();

@@ -260,6 +260,7 @@ set_target_properties(
              AUTORCC ON
              AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/forms")
 
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_compile_features(${LIB_NAME} PUBLIC cxx_std_17)
 
 add_definitions(-DASIO_STANDALONE)
