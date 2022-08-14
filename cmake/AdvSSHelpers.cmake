@@ -246,8 +246,11 @@ function(setup_advss_plugin target)
   endforeach()
 
   # General includes
-  target_include_directories(${target}
-                             PRIVATE "${ADVSS_SOURCE_DIR}/src/headers")
+  target_include_directories(
+    ${target}
+    PRIVATE "${ADVSS_SOURCE_DIR}/src" "${ADVSS_SOURCE_DIR}/src/legacy"
+            "${ADVSS_SOURCE_DIR}/src/macro-core"
+            "${ADVSS_SOURCE_DIR}/src/utils" "${ADVSS_SOURCE_DIR}/forms")
 endfunction()
 
 function(install_advss_plugin_dependency)

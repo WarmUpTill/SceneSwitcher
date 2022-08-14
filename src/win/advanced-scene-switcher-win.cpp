@@ -1,4 +1,4 @@
-#include "../headers/hotkey.hpp"
+#include "platform-funcs.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -11,7 +11,6 @@
 #include <vector>
 #include <QStringList>
 #include <QRegularExpression>
-#include "..\headers\platform-funcs.hpp"
 
 #define MAX_SEARCH 1000
 

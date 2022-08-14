@@ -1,4 +1,4 @@
-#include "../headers/hotkey.hpp"
+#include "platform-funcs.hpp"
 
 #import <AppKit/AppKit.h>
 #import <CoreFoundation/CoreFoundation.h>

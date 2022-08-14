@@ -1,4 +1,4 @@
-#include "../headers/hotkey.hpp"
+#include "platform-funcs.hpp"
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>

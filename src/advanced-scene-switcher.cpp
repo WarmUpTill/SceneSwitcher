@@ -8,11 +8,11 @@
 #include <obs-module.h>
 #include <obs-frontend-api.h>
 
-#include "headers/advanced-scene-switcher.hpp"
-#include "headers/status-control.hpp"
-#include "headers/curl-helper.hpp"
-#include "headers/utility.hpp"
-#include "headers/version.h"
+#include "advanced-scene-switcher.hpp"
+#include "status-control.hpp"
+#include "curl-helper.hpp"
+#include "utility.hpp"
+#include "version.h"
 
 const char *obs_module_text(const char *text)
 {

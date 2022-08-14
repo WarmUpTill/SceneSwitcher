@@ -1,6 +1,6 @@
-#include "headers/status-control.hpp"
-#include "headers/advanced-scene-switcher.hpp"
-#include "headers/utility.hpp"
+#include "status-control.hpp"
+#include "advanced-scene-switcher.hpp"
+#include "utility.hpp"
 
 #include <obs-module.h>
 #include <QMainWindow>
