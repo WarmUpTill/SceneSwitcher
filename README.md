@@ -1,5 +1,5 @@
 # SceneSwitcher
-An automated scene switcher for OBS Studio.
+An automation plugin for OBS Studio.
 
 More information can be found on https://obsproject.com/forum/resources/automatic-scene-switching.395/.
 
@@ -9,23 +9,28 @@ Binaries for Windows, MacOS, and Linux are available in the [Releases](https://g
 
 ## Installing the plugin
 
-For the Windows and MacOS platforms, it is recommended to run the provided installers.
+For the **Windows** and **MacOS** platforms, it is recommended to run the provided installers.
 
-For Linux the Snap package manager offers an OBS Studio installation which is bundled with the plugin:
+For **Linux** the **Snap** package manager offers an OBS Studio installation which is bundled with the plugin:
 ```
 sudo snap install obs-studio
 ```
-The plugin is also available via the Flatpak package manager for users who installed OBS via Flatpak:
+The plugin is also available via the **Flatpak** package manager for users who installed OBS via Flatpak:
 ```
 flatpak install com.obsproject.Studio.Plugin.SceneSwitcher
 ```
 
-If that is not an option you will have to ... 
-1. Copy the library to the plugins folder of you obs installation.
-2. Copy the contents of the data directory to its respective folders of your obs installation.
+Also note that the Linux version of this plugin has the following dependencies to `XTest`, `XScreensaver` and optionally `OpenCV`.  
+If `apt` is supported on your system they can be installed using:
+```
+sudo apt-get install \
+    libxtst-dev \
+    libxss-dev \
+    libopencv-dev
+```
 
-Unfortunately the exact location of these folders may vary from system to system.
+## Contributing
 
-## Compiling the plugin
+- If you wish to contribute code to the project, have a look at this [section](BUILDING.md) describing how to compile the plugin.
+- If you wish to contribute translations, feel free to submit pull requests for the corresponding files under `data/locale`.
 
-See the [build instructions](BUILDING.md).
