@@ -92,6 +92,9 @@ signals:
 	void SceneGroupAdded(const QString &name);
 	void SceneGroupRemoved(const QString &name);
 	void SceneGroupRenamed(const QString &oldName, const QString newName);
+	void ConnectionAdded(const QString &);
+	void ConnectionRenamed(const QString &oldName, const QString &newName);
+	void ConnectionRemoved(const QString &);
 
 public slots:
 	void on_windowUp_clicked();
