@@ -146,6 +146,8 @@ target_sources(
           src/macro-core/macro-action-virtual-cam.hpp
           src/macro-core/macro-action-wait.cpp
           src/macro-core/macro-action-wait.hpp
+          src/macro-core/macro-action-websocket.cpp
+          src/macro-core/macro-action-websocket.hpp
           src/macro-core/macro-action.cpp
           src/macro-core/macro-action.hpp
           src/macro-core/macro-condition-audio.cpp
@@ -200,6 +202,8 @@ target_sources(
           src/macro-core/macro-condition-transition.hpp
           src/macro-core/macro-condition-virtual-cam.cpp
           src/macro-core/macro-condition-virtual-cam.hpp
+          src/macro-core/macro-condition-websocket.cpp
+          src/macro-core/macro-condition-websocket.hpp
           src/macro-core/macro-condition-window.cpp
           src/macro-core/macro-condition-window.hpp
           src/macro-core/macro-condition.cpp
@@ -223,7 +227,9 @@ target_sources(
 # Utility function sources
 target_sources(
   ${LIB_NAME}
-  PRIVATE src/utils/curl-helper.cpp
+  PRIVATE src/utils/connection-manager.cpp
+          src/utils/connection-manager.hpp
+          src/utils/curl-helper.cpp
           src/utils/curl-helper.hpp
           src/utils/duration-control.cpp
           src/utils/duration-control.hpp
@@ -246,6 +252,8 @@ target_sources(
           src/utils/utility.cpp
           src/utils/utility.hpp
           src/utils/volume-control.cpp
+          src/utils/websocket-helpers.cpp
+          src/utils/websocket-helpers.hpp
           src/utils/volume-control.hpp)
 
 # --- End of section ---
@@ -288,8 +296,10 @@ target_compile_features(${LIB_NAME} PUBLIC cxx_std_17)
 
 add_definitions(-DASIO_STANDALONE)
 target_include_directories(
-  ${LIB_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/deps/asio/asio/include"
-                     "${CMAKE_CURRENT_SOURCE_DIR}/deps/websocketpp")
+  ${LIB_NAME}
+  PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/deps/asio/asio/include"
+         "${CMAKE_CURRENT_SOURCE_DIR}/deps/websocketpp"
+         "${CMAKE_CURRENT_SOURCE_DIR}/deps/obs-websocket/lib")
 
 # --- End of section ---
 
