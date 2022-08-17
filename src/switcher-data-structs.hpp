@@ -28,6 +28,7 @@
 #include <macro.hpp>
 #include <macro-properties.hpp>
 #include <duration-control.hpp>
+#include <connection-manager.hpp>
 
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
@@ -133,6 +134,9 @@ struct SwitcherData {
 	bool replayBufferSaved = false;
 	bool obsIsShuttingDown = false;
 	int shutdownConditionCount = 0;
+
+	std::deque<Connection> connections;
+	std::vector<std::string> websocketMessages;
 
 	std::deque<WindowSwitch> windowSwitches;
 	std::vector<std::string> ignoreIdleWindows;
@@ -282,6 +286,7 @@ struct SwitcherData {
 
 	void saveSettings(obs_data_t *obj);
 	void saveMacros(obs_data_t *obj);
+	void saveConnections(obs_data_t *obj);
 	void saveWindowTitleSwitches(obs_data_t *obj);
 	void saveScreenRegionSwitches(obs_data_t *obj);
 	void savePauseSwitches(obs_data_t *obj);
@@ -304,6 +309,7 @@ struct SwitcherData {
 
 	void loadSettings(obs_data_t *obj);
 	void loadMacros(obs_data_t *obj);
+	void loadConnections(obs_data_t *obj);
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
 	void loadPauseSwitches(obs_data_t *obj);
