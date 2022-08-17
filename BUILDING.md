@@ -70,13 +70,13 @@ The key functions to add conditions or are the Register() functions.
 
 ```
 MacroActionFactory::Register(
-	MacroActionExample::id,                 // Unique string identifying this action type
-	{
+    MacroActionExample::id,                 // Unique string identifying this action type
+    {
         MacroActionExample::Create,         // Function called to create the object performing the action
         MacroActionExampleEdit::Create,     // Function called to create the widget configure the action
-	    "AdvSceneSwitcher.action.example"   // User facing name of the action type
+        "AdvSceneSwitcher.action.example"   // User facing name of the action type
     }
-    );
+);
 ```
 
 If your intention is to add macro functionality which depends on external libraries, which is likely not to exist on all user setups, try to follow the examples under `src\macro-external`.
