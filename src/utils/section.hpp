@@ -23,9 +23,10 @@ protected:
 	bool eventFilter(QObject *obj, QEvent *event) override;
 
 private slots:
-	void AnimationFinished();
+	void AnimationFinish();
 	void Collapse(bool collapse);
 signals:
+	void AnimationFinished();
 	void Collapsed(bool);
 
 private:

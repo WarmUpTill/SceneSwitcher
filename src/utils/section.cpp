@@ -156,7 +156,7 @@ void Section::SetupAnimations()
 	contentAnimation->setEndValue(_contentHeight);
 
 	QWidget::connect(_toggleAnimation, SIGNAL(finished()), this,
-			 SLOT(AnimationFinished()));
+			 SLOT(AnimationFinish()));
 }
 
 void Section::CleanUpPreviousContent()
@@ -170,7 +170,8 @@ void Section::CleanUpPreviousContent()
 	}
 }
 
-void Section::AnimationFinished()
+void Section::AnimationFinish()
 {
 	_transitioning = false;
+	emit AnimationFinished();
 }
