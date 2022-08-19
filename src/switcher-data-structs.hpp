@@ -29,6 +29,7 @@
 #include <macro-properties.hpp>
 #include <duration-control.hpp>
 #include <connection-manager.hpp>
+#include <curl-helper.hpp>
 
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
@@ -135,6 +136,8 @@ struct SwitcherData {
 	bool obsIsShuttingDown = false;
 	int shutdownConditionCount = 0;
 
+	Curlhelper curl;
+
 	std::deque<Connection> connections;
 	std::vector<std::string> websocketMessages;
 
@@ -158,7 +161,6 @@ struct SwitcherData {
 
 	FileIOData fileIO;
 	std::deque<FileSwitch> fileSwitches;
-	CURL *curl = nullptr;
 
 	std::deque<ExecutableSwitch> executableSwitches;
 

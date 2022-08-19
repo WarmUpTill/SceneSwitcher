@@ -24,31 +24,28 @@ size_t WriteCB(void *, size_t size, size_t nmemb, std::string *)
 
 void MacroActionHttp::Get()
 {
-
-	f_curl_setopt(switcher->curl, CURLOPT_URL, _url.c_str());
-	f_curl_setopt(switcher->curl, CURLOPT_HTTPGET, 1L);
-	f_curl_setopt(switcher->curl, CURLOPT_TIMEOUT_MS,
-		      _timeout.seconds * 1000);
+	switcher->curl.SetOpt(CURLOPT_URL, _url.c_str());
+	switcher->curl.SetOpt(CURLOPT_HTTPGET, 1L);
+	switcher->curl.SetOpt(CURLOPT_TIMEOUT_MS, _timeout.seconds * 1000);
 
 	std::string response;
-	f_curl_setopt(switcher->curl, CURLOPT_WRITEFUNCTION, WriteCB);
-	f_curl_setopt(switcher->curl, CURLOPT_WRITEDATA, &response);
+	switcher->curl.SetOpt(CURLOPT_WRITEFUNCTION, WriteCB);
+	switcher->curl.SetOpt(CURLOPT_WRITEDATA, &response);
 
-	f_curl_perform(switcher->curl);
+	switcher->curl.Perform();
 }
 
 void MacroActionHttp::Post()
 {
-	f_curl_setopt(switcher->curl, CURLOPT_URL, _url.c_str());
-	f_curl_setopt(switcher->curl, CURLOPT_POSTFIELDS, _data.c_str());
-	f_curl_setopt(switcher->curl, CURLOPT_TIMEOUT_MS,
-		      _timeout.seconds * 1000);
-	f_curl_perform(switcher->curl);
+	switcher->curl.SetOpt(CURLOPT_URL, _url.c_str());
+	switcher->curl.SetOpt(CURLOPT_POSTFIELDS, _data.c_str());
+	switcher->curl.SetOpt(CURLOPT_TIMEOUT_MS, _timeout.seconds * 1000);
+	switcher->curl.Perform();
 }
 
 bool MacroActionHttp::PerformAction()
 {
-	if (!switcher->curl) {
+	if (!switcher->curl.Initialized()) {
 		blog(LOG_WARNING,
 		     "cannot perform http action (curl not found)");
 		return true;
