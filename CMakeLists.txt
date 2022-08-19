@@ -100,6 +100,8 @@ target_sources(
           src/macro-core/macro-action-filter.hpp
           src/macro-core/macro-action-hotkey.cpp
           src/macro-core/macro-action-hotkey.hpp
+          src/macro-core/macro-action-http.cpp
+          src/macro-core/macro-action-http.hpp
           src/macro-core/macro-action-macro.cpp
           src/macro-core/macro-action-macro.hpp
           src/macro-core/macro-action-media.cpp
