@@ -27,22 +27,16 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb,
 static std::string getRemoteData(std::string &url)
 {
 	std::string readBuffer;
-
-	if (switcher->curl && f_curl_setopt && f_curl_perform) {
-		f_curl_setopt(switcher->curl, CURLOPT_URL, url.c_str());
-		f_curl_setopt(switcher->curl, CURLOPT_WRITEFUNCTION,
-			      WriteCallback);
-		f_curl_setopt(switcher->curl, CURLOPT_WRITEDATA, &readBuffer);
-
-		// Set timeout to at least one second
-		int timeout = switcher->interval / 1000;
-		if (timeout == 0) {
-			timeout = 1;
-		}
-		f_curl_setopt(switcher->curl, CURLOPT_TIMEOUT, 1);
-
-		f_curl_perform(switcher->curl);
+	switcher->curl.SetOpt(CURLOPT_URL, url.c_str());
+	switcher->curl.SetOpt(CURLOPT_WRITEFUNCTION, WriteCallback);
+	switcher->curl.SetOpt(CURLOPT_WRITEDATA, &readBuffer);
+	// Set timeout to at least one second
+	int timeout = switcher->interval / 1000;
+	if (timeout == 0) {
+		timeout = 1;
 	}
+	switcher->curl.SetOpt(CURLOPT_TIMEOUT, 1);
+	switcher->curl.Perform();
 	return readBuffer;
 }
 

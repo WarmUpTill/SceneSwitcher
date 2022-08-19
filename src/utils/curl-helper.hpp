@@ -2,25 +2,38 @@
 #include <curl/curl.h>
 #include <QLibrary>
 
-#if defined(WIN32)
-constexpr auto curl_library_name = "libcurl.dll";
-#elif __APPLE__
-constexpr auto curl_library_name = "libcurl.4.dylib";
-#else
-constexpr auto curl_library_name = "libcurl.so.4";
-#endif
-
 typedef CURL *(*initFunction)(void);
+typedef void (*cleanupFunction)(CURL *);
 typedef CURLcode (*setOptFunction)(CURL *, CURLoption, ...);
 typedef CURLcode (*performFunction)(CURL *);
-typedef void (*cleanupFunction)(CURL *);
 
-extern initFunction f_curl_init;
-extern setOptFunction f_curl_setopt;
-extern performFunction f_curl_perform;
-extern cleanupFunction f_curl_cleanup;
+class Curlhelper {
+public:
+	Curlhelper();
+	~Curlhelper();
 
-extern QLibrary *loaded_curl_lib;
+	template<typename... Args> CURLcode SetOpt(CURLoption, Args...);
+	CURLcode Perform();
+	bool Initialized() { return _initialized; }
 
-bool resolveCurl();
-bool loadCurl();
+private:
+	bool LoadLib();
+	bool Resolve();
+
+	initFunction _init = nullptr;
+	setOptFunction _setopt = nullptr;
+	performFunction _perform = nullptr;
+	cleanupFunction _cleanup = nullptr;
+	CURL *_curl = nullptr;
+	QLibrary *_lib;
+	bool _initialized = false;
+};
+
+template<typename... Args>
+inline CURLcode Curlhelper::SetOpt(CURLoption option, Args... args)
+{
+	if (!_initialized) {
+		return CURLE_FAILED_INIT;
+	}
+	return _setopt(_curl, option, args...);
+}

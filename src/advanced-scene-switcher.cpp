@@ -487,14 +487,6 @@ bool SwitcherData::anySceneTransitionStarted()
  ******************************************************************************/
 extern "C" void FreeSceneSwitcher()
 {
-	if (loaded_curl_lib) {
-		if (switcher->curl && f_curl_cleanup) {
-			f_curl_cleanup(switcher->curl);
-		}
-		delete loaded_curl_lib;
-		loaded_curl_lib = nullptr;
-	}
-
 	PlatformCleanup();
 
 	delete switcher;
@@ -690,10 +682,6 @@ extern "C" void InitSceneSwitcher(obs_module_t *m, translateFunc t)
 	switcher = new SwitcherData;
 	switcher->modulePtr = m;
 	switcher->translate = t;
-
-	if (loadCurl() && f_curl_init) {
-		switcher->curl = f_curl_init();
-	}
 
 	PlatformInit();
 	LoadPlugins();
