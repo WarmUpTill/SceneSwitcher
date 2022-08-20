@@ -76,9 +76,6 @@ void AdvSceneSwitcher::loadUI()
 		(void)DisplayMessage(msg);
 	}
 
-#if __APPLE__
-	setMinimumHeight(700);
-#endif
 	setupGeneralTab();
 	setupTitleTab();
 	setupExecutableTab();
