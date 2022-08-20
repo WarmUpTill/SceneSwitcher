@@ -194,7 +194,8 @@ void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 
 bool isLegacyTab(const QString &name)
 {
-	return name == obs_module_text(
+	return name == obs_module_text("AdvSceneSwitcher.networkTab.title") ||
+	       name == obs_module_text(
 			       "AdvSceneSwitcher.transitionTab.title") ||
 	       name == obs_module_text(
 			       "AdvSceneSwitcher.windowTitleTab.title") ||
