@@ -60,31 +60,14 @@ void MacroActionRandom::LogAction()
 bool MacroActionRandom::Save(obs_data_t *obj)
 {
 	MacroAction::Save(obj);
-	obs_data_array_t *args = obs_data_array_create();
-	for (auto &m : _macros) {
-		obs_data_t *array_obj = obs_data_create();
-		m.Save(array_obj);
-		obs_data_array_push_back(args, array_obj);
-		obs_data_release(array_obj);
-	}
-	obs_data_set_array(obj, "macros", args);
-	obs_data_array_release(args);
+	SaveMacroList(obj, _macros);
 	return true;
 }
 
 bool MacroActionRandom::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	obs_data_array_t *args = obs_data_get_array(obj, "macros");
-	size_t count = obs_data_array_count(args);
-	for (size_t i = 0; i < count; i++) {
-		obs_data_t *array_obj = obs_data_array_item(args, i);
-		MacroRef ref;
-		ref.Load(array_obj);
-		_macros.push_back(ref);
-		obs_data_release(array_obj);
-	}
-	obs_data_array_release(args);
+	LoadMacroList(obj, _macros);
 	return true;
 }
 
