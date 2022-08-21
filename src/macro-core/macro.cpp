@@ -409,6 +409,11 @@ void Macro::ResolveMacroRef()
 		if (ref) {
 			ref->ResolveMacroRef();
 		}
+		MultiMacroRefCondtition *ref2 =
+			dynamic_cast<MultiMacroRefCondtition *>(c.get());
+		if (ref2) {
+			ref2->ResolveMacroRef();
+		}
 	}
 	for (auto &a : _actions) {
 		MacroRefAction *ref = dynamic_cast<MacroRefAction *>(a.get());

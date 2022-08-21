@@ -86,3 +86,10 @@ public:
 	void ResolveMacroRef();
 	MacroRef _macro;
 };
+
+class MultiMacroRefCondtition : public MacroCondition {
+public:
+	MultiMacroRefCondtition(Macro *m) : MacroCondition(m) {}
+	void ResolveMacroRef();
+	std::vector<MacroRef> _macros;
+};
