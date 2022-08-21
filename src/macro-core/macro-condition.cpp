@@ -153,3 +153,10 @@ void MacroRefCondition::ResolveMacroRef()
 {
 	_macro.UpdateRef();
 }
+
+void MultiMacroRefCondtition::ResolveMacroRef()
+{
+	for (auto &m : _macros) {
+		m.UpdateRef();
+	}
+}
