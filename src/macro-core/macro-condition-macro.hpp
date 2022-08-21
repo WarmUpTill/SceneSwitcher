@@ -1,27 +1,24 @@
 #pragma once
 #include "macro.hpp"
 #include "macro-selection.hpp"
+#include "macro-list.hpp"
 
 #include <QComboBox>
 #include <QSpinBox>
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QTimer>
+#include <QListWidget>
 
-enum class MacroConditionMacroType {
-	COUNT,
-	STATE,
-};
-
-enum class CounterCondition {
-	BELOW,
-	ABOVE,
-	EQUAL,
-};
-
-class MacroConditionMacro : public MacroRefCondition {
+class MacroConditionMacro : public MultiMacroRefCondtition,
+			    public MacroRefCondition {
 public:
-	MacroConditionMacro(Macro *m) : MacroRefCondition(m) {}
+	MacroConditionMacro(Macro *m)
+		: MacroCondition(m),
+		  MultiMacroRefCondtition(m),
+		  MacroRefCondition(m)
+	{
+	}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
@@ -32,13 +29,33 @@ public:
 		return std::make_shared<MacroConditionMacro>(m);
 	}
 
-	MacroConditionMacroType _type = MacroConditionMacroType::STATE;
+	enum class Type {
+		COUNT,
+		STATE,
+		MULTI_STATE,
+	};
+	Type _type = Type::STATE;
+
+	enum class CounterCondition {
+		BELOW,
+		ABOVE,
+		EQUAL,
+	};
 	CounterCondition _counterCondition = CounterCondition::BELOW;
 	int _count = 0;
+
+	enum class MultiStateCondition {
+		BELOW,
+		EQUAL,
+		ABOVE,
+	};
+	MultiStateCondition _multiSateCondition = MultiStateCondition::ABOVE;
+	int _multiSateCount = 0;
 
 private:
 	bool CheckCountCondition();
 	bool CheckStateCondition();
+	bool CheckMultiStateCondition();
 
 	static bool _registered;
 	static const std::string id;
@@ -65,10 +82,15 @@ private slots:
 	void MacroRemove(const QString &name);
 	void TypeChanged(int type);
 	void CountChanged(int value);
-	void ConditionChanged(int cond);
+	void CountConditionChanged(int cond);
 	void ResetClicked();
 	void UpdateCount();
 	void UpdatePaused();
+	void MultiStateConditionChanged(int cond);
+	void MultiStateCountChanged(int value);
+	void Add(const std::string &);
+	void Remove(int);
+	void Replace(int, const std::string &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -82,6 +104,9 @@ protected:
 	QPushButton *_resetCount;
 	QHBoxLayout *_settingsLine1;
 	QHBoxLayout *_settingsLine2;
+	MacroList *_macroList;
+	QComboBox *_multiStateConditions;
+	QSpinBox *_multiStateCount;
 	QTimer _countTimer;
 	QTimer _pausedTimer;
 	std::shared_ptr<MacroConditionMacro> _entryData;
@@ -89,6 +114,8 @@ protected:
 private:
 	void ClearLayouts();
 	void SetupStateWidgets();
+	void SetupMultiStateWidgets();
 	void SetupCountWidgets();
+	void SetWidgetVisibility();
 	bool _loading = true;
 };
