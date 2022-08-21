@@ -229,6 +229,8 @@ target_sources(
           src/utils/duration-control.hpp
           src/utils/file-selection.cpp
           src/utils/file-selection.hpp
+          src/utils/macro-list.cpp
+          src/utils/macro-list.hpp
           src/utils/name-dialog.cpp
           src/utils/name-dialog.hpp
           src/utils/resizing-text-edit.cpp
