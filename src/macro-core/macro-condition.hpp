@@ -80,14 +80,14 @@ private:
 	DurationModifier _duration;
 };
 
-class MacroRefCondition : public MacroCondition {
+class MacroRefCondition : virtual public MacroCondition {
 public:
 	MacroRefCondition(Macro *m) : MacroCondition(m) {}
 	void ResolveMacroRef();
 	MacroRef _macro;
 };
 
-class MultiMacroRefCondtition : public MacroCondition {
+class MultiMacroRefCondtition : virtual public MacroCondition {
 public:
 	MultiMacroRefCondtition(Macro *m) : MacroCondition(m) {}
 	void ResolveMacroRef();

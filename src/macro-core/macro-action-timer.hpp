@@ -15,7 +15,7 @@ enum class TimerAction {
 
 class MacroActionTimer : public MacroRefAction {
 public:
-	MacroActionTimer(Macro *m) : MacroRefAction(m) {}
+	MacroActionTimer(Macro *m) : MacroAction(m), MacroRefAction(m) {}
 	bool PerformAction();
 	void LogAction();
 	bool Save(obs_data_t *obj);

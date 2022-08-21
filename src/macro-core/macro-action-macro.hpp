@@ -14,7 +14,7 @@ enum class PerformMacroAction {
 
 class MacroActionMacro : public MacroRefAction {
 public:
-	MacroActionMacro(Macro *m) : MacroRefAction(m) {}
+	MacroActionMacro(Macro *m) : MacroAction(m), MacroRefAction(m) {}
 	bool PerformAction();
 	void LogAction();
 	bool Save(obs_data_t *obj);

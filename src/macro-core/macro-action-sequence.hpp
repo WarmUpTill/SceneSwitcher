@@ -9,7 +9,9 @@
 
 class MacroActionSequence : public MultiMacroRefAction {
 public:
-	MacroActionSequence(Macro *m) : MultiMacroRefAction(m) {}
+	MacroActionSequence(Macro *m) : MacroAction(m), MultiMacroRefAction(m)
+	{
+	}
 	bool PerformAction();
 	void LogAction();
 	bool Save(obs_data_t *obj);
