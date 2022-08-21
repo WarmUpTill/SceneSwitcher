@@ -11,14 +11,14 @@ public:
 	virtual void LogAction();
 };
 
-class MacroRefAction : public MacroAction {
+class MacroRefAction : virtual public MacroAction {
 public:
 	MacroRefAction(Macro *m) : MacroAction(m) {}
 	void ResolveMacroRef();
 	MacroRef _macro;
 };
 
-class MultiMacroRefAction : public MacroAction {
+class MultiMacroRefAction : virtual public MacroAction {
 public:
 	MultiMacroRefAction(Macro *m) : MacroAction(m) {}
 	void ResolveMacroRef();

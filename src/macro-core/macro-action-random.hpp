@@ -8,7 +8,7 @@
 
 class MacroActionRandom : public MultiMacroRefAction {
 public:
-	MacroActionRandom(Macro *m) : MultiMacroRefAction(m) {}
+	MacroActionRandom(Macro *m) : MacroAction(m), MultiMacroRefAction(m) {}
 	bool PerformAction();
 	void LogAction();
 	bool Save(obs_data_t *obj);
