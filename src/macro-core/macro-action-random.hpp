@@ -1,6 +1,6 @@
 #pragma once
 #include "macro-action-edit.hpp"
-#include "macro-selection.hpp"
+#include "macro-list.hpp"
 
 #include <QPushButton>
 #include <QListWidget>
@@ -46,19 +46,14 @@ public:
 
 private slots:
 	void MacroRemove(const QString &name);
-	void MacroRename(const QString &oldName, const QString &newName);
-	void AddMacro();
-	void RemoveMacro();
+	void Add(const std::string &);
+	void Remove(int);
+	void Replace(int, const std::string &);
 
 protected:
 	std::shared_ptr<MacroActionRandom> _entryData;
 
 private:
-	int FindEntry(const std::string &macro);
-	void SetMacroListSize();
-
-	QListWidget *_macroList;
-	QPushButton *_add;
-	QPushButton *_remove;
+	MacroList *_list;
 	bool _loading = true;
 };
