@@ -32,14 +32,19 @@ void MacroRef::Load(obs_data_t *obj)
 	UpdateRef();
 }
 
-Macro *MacroRef::get()
+Macro *MacroRef::get() const
 {
 	return _ref;
 }
 
-Macro *MacroRef::operator->()
+Macro *MacroRef::operator->() const
 {
 	return _ref;
+}
+
+std::string MacroRef::RefName() const
+{
+	return _name;
 }
 
 void SaveMacroList(obs_data_t *obj, const std::vector<MacroRef> &macros,
