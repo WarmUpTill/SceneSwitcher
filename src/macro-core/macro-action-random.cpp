@@ -16,7 +16,7 @@ std::vector<MacroRef> getNextMacro(std::vector<MacroRef> &macros,
 {
 	std::vector<MacroRef> res;
 	if (macros.size() == 1) {
-		if (macros[0]->Paused()) {
+		if (!macros[0].get() || macros[0]->Paused()) {
 			return res;
 		} else {
 			return macros;
@@ -42,7 +42,7 @@ bool MacroActionRandom::PerformAction()
 	if (macros.size() == 0) {
 		return true;
 	}
-	if (macros.size() == 1) {
+	if (macros.size() == 1 && macros[0].get()) {
 		lastRandomMacro = macros[0];
 		return macros[0]->PerformActions();
 	}
@@ -73,42 +73,24 @@ bool MacroActionRandom::Load(obs_data_t *obj)
 
 MacroActionRandomEdit::MacroActionRandomEdit(
 	QWidget *parent, std::shared_ptr<MacroActionRandom> entryData)
-	: QWidget(parent)
+	: QWidget(parent), _list(new MacroList(this, false, false))
 {
-	_macroList = new QListWidget();
-	_macroList->setSortingEnabled(true);
-	_add = new QPushButton();
-	_add->setMaximumSize(QSize(22, 22));
-	_add->setProperty("themeID",
-			  QVariant(QString::fromUtf8("addIconSmall")));
-	_add->setFlat(true);
-	_remove = new QPushButton();
-	_remove->setMaximumSize(QSize(22, 22));
-	_remove->setProperty("themeID",
-			     QVariant(QString::fromUtf8("removeIconSmall")));
-	_remove->setFlat(true);
-
-	QWidget::connect(_add, SIGNAL(clicked()), this, SLOT(AddMacro()));
-	QWidget::connect(_remove, SIGNAL(clicked()), this, SLOT(RemoveMacro()));
-	QWidget::connect(window(),
-			 SIGNAL(MacroRenamed(const QString &, const QString &)),
-			 this,
-			 SLOT(MacroRename(const QString &, const QString &)));
+	QWidget::connect(_list, SIGNAL(Added(const std::string &)), this,
+			 SLOT(Add(const std::string &)));
+	QWidget::connect(_list, SIGNAL(Removed(int)), this, SLOT(Remove(int)));
+	QWidget::connect(_list, SIGNAL(Replaced(int, const std::string &)),
+			 this, SLOT(Replace(int, const std::string &)));
+	QWidget::connect(window(), SIGNAL(MacroRemoved(const QString &)), this,
+			 SLOT(MacroRemove(const QString &)));
 
 	auto *entryLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.random.entry"),
 		     entryLayout, widgetPlaceholders);
 
-	auto *argButtonLayout = new QHBoxLayout;
-	argButtonLayout->addWidget(_add);
-	argButtonLayout->addWidget(_remove);
-	argButtonLayout->addStretch();
-
 	auto *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(entryLayout);
-	mainLayout->addWidget(_macroList);
-	mainLayout->addLayout(argButtonLayout);
+	mainLayout->addWidget(_list);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -122,122 +104,59 @@ void MacroActionRandomEdit::UpdateEntryData()
 		return;
 	}
 
-	for (auto &m : _entryData->_macros) {
-		if (!m.get()) {
-			continue;
-		}
-		auto name = QString::fromStdString(m->Name());
-		QListWidgetItem *item = new QListWidgetItem(name, _macroList);
-		item->setData(Qt::UserRole, name);
-	}
-	SetMacroListSize();
+	_list->SetContent(_entryData->_macros);
+	adjustSize();
 }
 
-void MacroActionRandomEdit::MacroRemove(const QString &name)
+void MacroActionRandomEdit::MacroRemove(const QString &)
 {
-	if (_entryData) {
-		auto it = _entryData->_macros.begin();
-		while (it != _entryData->_macros.end()) {
-			if (it->get()->Name() == name.toStdString()) {
-				it = _entryData->_macros.erase(it);
-			} else {
-				++it;
-			}
+	if (!_entryData) {
+		return;
+	}
+
+	auto it = _entryData->_macros.begin();
+	while (it != _entryData->_macros.end()) {
+		it->UpdateRef();
+		if (it->get() == nullptr) {
+			it = _entryData->_macros.erase(it);
+		} else {
+			++it;
 		}
 	}
+	adjustSize();
 }
 
-void MacroActionRandomEdit::MacroRename(const QString &oldName,
-					const QString &newName)
-{
-	auto count = _macroList->count();
-	for (int idx = 0; idx < count; ++idx) {
-		QListWidgetItem *item = _macroList->item(idx);
-		QString itemString = item->data(Qt::UserRole).toString();
-		if (oldName == itemString) {
-			item->setData(Qt::UserRole, newName);
-			item->setText(newName);
-			break;
-		}
-	}
-}
-
-void MacroActionRandomEdit::AddMacro()
+void MacroActionRandomEdit::Add(const std::string &name)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
-	std::string macroName;
-	bool accepted = MacroSelectionDialog::AskForMacro(this, macroName);
-
-	if (!accepted || macroName.empty()) {
-		return;
-	}
-
-	MacroRef macro(macroName);
-
-	if (!macro.get()) {
-		return;
-	}
-
-	if (FindEntry(macro->Name()) != -1) {
-		return;
-	}
-
-	QVariant v = QVariant::fromValue(QString::fromStdString(macroName));
-	QListWidgetItem *item = new QListWidgetItem(
-		QString::fromStdString(macroName), _macroList);
-	item->setData(Qt::UserRole, QString::fromStdString(macroName));
-
 	std::lock_guard<std::mutex> lock(switcher->m);
+	MacroRef macro(name);
 	_entryData->_macros.push_back(macro);
-	SetMacroListSize();
+	adjustSize();
 }
 
-void MacroActionRandomEdit::RemoveMacro()
+void MacroActionRandomEdit::Remove(int idx)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	auto item = _macroList->currentItem();
-	if (!item) {
+	_entryData->_macros.erase(std::next(_entryData->_macros.begin(), idx));
+	adjustSize();
+}
+
+void MacroActionRandomEdit::Replace(int idx, const std::string &name)
+{
+	if (_loading || !_entryData) {
 		return;
 	}
-	std::string name = item->data(Qt::UserRole).toString().toStdString();
-	for (auto it = _entryData->_macros.begin();
-	     it != _entryData->_macros.end(); ++it) {
-		auto m = *it;
-		if (m.get() && m->Name() == name) {
-			_entryData->_macros.erase(it);
-			break;
-		}
-	}
-	delete item;
-	SetMacroListSize();
-}
 
-int MacroActionRandomEdit::FindEntry(const std::string &macro)
-{
-	int count = _macroList->count();
-	int idx = -1;
-
-	for (int i = 0; i < count; i++) {
-		QListWidgetItem *item = _macroList->item(i);
-		QString itemString = item->data(Qt::UserRole).toString();
-		if (QString::fromStdString(macro) == itemString) {
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-void MacroActionRandomEdit::SetMacroListSize()
-{
-	setHeightToContentHeight(_macroList);
+	MacroRef macro(name);
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_macros[idx] = macro;
 	adjustSize();
 }
