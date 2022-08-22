@@ -14,8 +14,9 @@ public:
 	void UpdateRef(QString name);
 	void Save(obs_data_t *obj) const;
 	void Load(obs_data_t *obj);
-	Macro *get();
-	Macro *operator->();
+	Macro *get() const;
+	Macro *operator->() const;
+	std::string RefName() const;
 
 private:
 	std::string _name = "";
