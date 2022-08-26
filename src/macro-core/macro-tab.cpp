@@ -327,7 +327,7 @@ void AdvSceneSwitcher::SetMacroEditAreaDisabled(bool disable)
 	ui->runMacroOnChange->setDisabled(disable);
 	ui->macroActions->setDisabled(disable);
 	ui->macroConditions->setDisabled(disable);
-	ui->macroSplitter->setDisabled(disable);
+	ui->macroActionConditionSplitter->setDisabled(disable);
 }
 
 void AdvSceneSwitcher::HighlightAction(int idx)
@@ -486,14 +486,18 @@ void AdvSceneSwitcher::setupMacroTab()
 	onChangeHighlightTimer.start();
 
 	// Move condition controls into splitter handle layout
-	auto handle = ui->macroSplitter->handle(1);
+	auto handle = ui->macroActionConditionSplitter->handle(1);
 	auto item = ui->macroConditionsLayout->takeAt(1);
 	if (item) {
 		auto layout = item->layout();
 		layout->setContentsMargins(7, 7, 7, 7);
 		handle->setLayout(layout);
-		ui->macroSplitter->setHandleWidth(38);
+		ui->macroActionConditionSplitter->setHandleWidth(38);
 	}
+
+	// Reserve more space for macro edit area than for the macro list
+	ui->macroListMacroEditSplitter->setStretchFactor(0, 1);
+	ui->macroListMacroEditSplitter->setStretchFactor(1, 4);
 }
 
 void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
@@ -598,22 +602,22 @@ void AdvSceneSwitcher::CollapseAllConditions()
 
 void AdvSceneSwitcher::MinimizeActions()
 {
-	QList<int> sizes = ui->macroSplitter->sizes();
+	QList<int> sizes = ui->macroActionConditionSplitter->sizes();
 	int sum = sizes[0] + sizes[1];
 	int actionsHeight = sum / 10;
 	sizes[1] = actionsHeight;
 	sizes[0] = sum - actionsHeight;
-	ui->macroSplitter->setSizes(sizes);
+	ui->macroActionConditionSplitter->setSizes(sizes);
 }
 
 void AdvSceneSwitcher::MinimizeConditions()
 {
-	QList<int> sizes = ui->macroSplitter->sizes();
+	QList<int> sizes = ui->macroActionConditionSplitter->sizes();
 	int sum = sizes[0] + sizes[1];
 	int conditionsHeight = sum / 10;
 	sizes[0] = conditionsHeight;
 	sizes[1] = sum - conditionsHeight;
-	ui->macroSplitter->setSizes(sizes);
+	ui->macroActionConditionSplitter->setSizes(sizes);
 }
 
 bool AdvSceneSwitcher::MacroTabIsInFocus()

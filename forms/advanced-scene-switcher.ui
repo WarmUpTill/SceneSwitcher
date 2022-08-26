@@ -56,7 +56,7 @@
             <x>0</x>
             <y>0</y>
             <width>1024</width>
-            <height>817</height>
+            <height>800</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -548,556 +548,559 @@
       <attribute name="title">
        <string>AdvSceneSwitcher.macroTab.title</string>
       </attribute>
-      <layout class="QHBoxLayout" name="horizontalLayout_11" stretch="1,3">
+      <layout class="QVBoxLayout" name="verticalLayout_34">
        <item>
-        <widget class="QGroupBox" name="groupBox_5">
-         <property name="title">
-          <string>AdvSceneSwitcher.macroTab.macros</string>
+        <widget class="QSplitter" name="macroListMacroEditSplitter">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_36">
-          <item>
-           <widget class="QLabel" name="macroPriorityWarning">
-            <property name="text">
-             <string>AdvSceneSwitcher.macroTab.priorityWarning</string>
-            </property>
-            <property name="wordWrap">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QGridLayout" name="gridLayout_26">
-            <item row="0" column="0">
-             <widget class="QListWidget" name="macros">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="dragEnabled">
-               <bool>true</bool>
-              </property>
-              <property name="dragDropMode">
-               <enum>QAbstractItemView::InternalMove</enum>
-              </property>
-              <property name="defaultDropAction">
-               <enum>Qt::MoveAction</enum>
-              </property>
-              <property name="sortingEnabled">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0">
-             <widget class="QLabel" name="macroHelp">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>AdvSceneSwitcher.macroTab.help</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignCenter</set>
-              </property>
-              <property name="wordWrap">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_61">
-            <item>
-             <widget class="QPushButton" name="macroAdd">
-              <property name="maximumSize">
-               <size>
-                <width>22</width>
-                <height>22</height>
-               </size>
-              </property>
-              <property name="flat">
-               <bool>true</bool>
-              </property>
-              <property name="themeID" stdset="0">
-               <string notr="true">addIconSmall</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="macroRemove">
-              <property name="maximumSize">
-               <size>
-                <width>22</width>
-                <height>22</height>
-               </size>
-              </property>
-              <property name="flat">
-               <bool>true</bool>
-              </property>
-              <property name="themeID" stdset="0">
-               <string notr="true">removeIconSmall</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer_130">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeType">
-               <enum>QSizePolicy::Fixed</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>5</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="Line" name="line_46">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer_131">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeType">
-               <enum>QSizePolicy::Fixed</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>5</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QPushButton" name="macroUp">
-              <property name="maximumSize">
-               <size>
-                <width>22</width>
-                <height>22</height>
-               </size>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-              <property name="flat">
-               <bool>true</bool>
-              </property>
-              <property name="themeID" stdset="0">
-               <string>upArrowIconSmall</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="macroDown">
-              <property name="maximumSize">
-               <size>
-                <width>22</width>
-                <height>22</height>
-               </size>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-              <property name="flat">
-               <bool>true</bool>
-              </property>
-              <property name="themeID" stdset="0">
-               <string>downArrowIconSmall</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer_65">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="macroEdit">
-         <property name="title">
-          <string>AdvSceneSwitcher.macroTab.edit</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_33">
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="0,0,0,0,0,0,0">
-            <item>
-             <widget class="QLabel" name="label_20">
-              <property name="text">
-               <string>AdvSceneSwitcher.macroTab.name</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLineEdit" name="macroName"/>
-            </item>
-            <item>
-             <widget class="QPushButton" name="runMacro">
-              <property name="text">
-               <string>AdvSceneSwitcher.macroTab.run</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="runMacroInParallel">
-              <property name="text">
-               <string>AdvSceneSwitcher.macroTab.runInParallel</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="runMacroOnChange">
-              <property name="text">
-               <string>AdvSceneSwitcher.macroTab.onChange</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QPushButton" name="macroProperties">
-              <property name="maximumSize">
-               <size>
-                <width>22</width>
-                <height>22</height>
-               </size>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-              <property name="flat">
-               <bool>true</bool>
-              </property>
-              <property name="themeID" stdset="0">
-               <string notr="true">propertiesIconSmall</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QSplitter" name="macroSplitter">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <widget class="QWidget" name="macroConditions" native="true">
-             <layout class="QVBoxLayout" name="macroConditionsLayout">
-              <property name="leftMargin">
-               <number>0</number>
-              </property>
-              <property name="topMargin">
-               <number>0</number>
-              </property>
-              <property name="rightMargin">
-               <number>0</number>
-              </property>
-              <property name="bottomMargin">
-               <number>0</number>
-              </property>
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_12">
-                <property name="leftMargin">
-                 <number>9</number>
-                </property>
-                <item>
-                 <widget class="QPushButton" name="conditionAdd">
-                  <property name="maximumSize">
-                   <size>
-                    <width>22</width>
-                    <height>22</height>
-                   </size>
-                  </property>
-                  <property name="flat">
-                   <bool>true</bool>
-                  </property>
-                  <property name="themeID" stdset="0">
-                   <string notr="true">addIconSmall</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="conditionRemove">
-                  <property name="maximumSize">
-                   <size>
-                    <width>22</width>
-                    <height>22</height>
-                   </size>
-                  </property>
-                  <property name="flat">
-                   <bool>true</bool>
-                  </property>
-                  <property name="themeID" stdset="0">
-                   <string notr="true">removeIconSmall</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_135">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Fixed</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>5</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="Line" name="line_48">
-                  <property name="orientation">
-                   <enum>Qt::Vertical</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_134">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Fixed</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>5</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="conditionUp">
-                  <property name="maximumSize">
-                   <size>
-                    <width>22</width>
-                    <height>22</height>
-                   </size>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                  <property name="flat">
-                   <bool>true</bool>
-                  </property>
-                  <property name="themeID" stdset="0">
-                   <string notr="true">upArrowIconSmall</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="conditionDown">
-                  <property name="maximumSize">
-                   <size>
-                    <width>22</width>
-                    <height>22</height>
-                   </size>
-                  </property>
-                  <property name="flat">
-                   <bool>true</bool>
-                  </property>
-                  <property name="themeID" stdset="0">
-                   <string notr="true">downArrowIconSmall</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_15">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-             </layout>
+         <widget class="QGroupBox" name="groupBox_5">
+          <property name="title">
+           <string>AdvSceneSwitcher.macroTab.macros</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_36">
+           <item>
+            <widget class="QLabel" name="macroPriorityWarning">
+             <property name="text">
+              <string>AdvSceneSwitcher.macroTab.priorityWarning</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
             </widget>
-            <widget class="QWidget" name="macroActions" native="true">
-             <layout class="QVBoxLayout" name="macroActionsLayout">
-              <property name="leftMargin">
-               <number>0</number>
-              </property>
-              <property name="topMargin">
-               <number>0</number>
-              </property>
-              <property name="rightMargin">
-               <number>0</number>
-              </property>
-              <property name="bottomMargin">
-               <number>0</number>
-              </property>
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_21">
-                <property name="leftMargin">
-                 <number>9</number>
-                </property>
-                <item>
-                 <widget class="QPushButton" name="actionAdd">
-                  <property name="maximumSize">
-                   <size>
-                    <width>22</width>
-                    <height>22</height>
-                   </size>
-                  </property>
-                  <property name="flat">
-                   <bool>true</bool>
-                  </property>
-                  <property name="themeID" stdset="0">
-                   <string notr="true">addIconSmall</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="actionRemove">
-                  <property name="maximumSize">
-                   <size>
-                    <width>22</width>
-                    <height>22</height>
-                   </size>
-                  </property>
-                  <property name="flat">
-                   <bool>true</bool>
-                  </property>
-                  <property name="themeID" stdset="0">
-                   <string notr="true">removeIconSmall</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_133">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Fixed</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>5</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="Line" name="line_47">
-                  <property name="orientation">
-                   <enum>Qt::Vertical</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_132">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Fixed</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>5</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="actionUp">
-                  <property name="maximumSize">
-                   <size>
-                    <width>22</width>
-                    <height>22</height>
-                   </size>
-                  </property>
-                  <property name="flat">
-                   <bool>true</bool>
-                  </property>
-                  <property name="themeID" stdset="0">
-                   <string notr="true">upArrowIconSmall</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="actionDown">
-                  <property name="maximumSize">
-                   <size>
-                    <width>22</width>
-                    <height>22</height>
-                   </size>
-                  </property>
-                  <property name="flat">
-                   <bool>true</bool>
-                  </property>
-                  <property name="themeID" stdset="0">
-                   <string notr="true">downArrowIconSmall</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_14">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-             </layout>
+           </item>
+           <item>
+            <layout class="QGridLayout" name="gridLayout_26">
+             <item row="0" column="0">
+              <widget class="QListWidget" name="macros">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="dragEnabled">
+                <bool>true</bool>
+               </property>
+               <property name="dragDropMode">
+                <enum>QAbstractItemView::InternalMove</enum>
+               </property>
+               <property name="defaultDropAction">
+                <enum>Qt::MoveAction</enum>
+               </property>
+               <property name="sortingEnabled">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="macroHelp">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="text">
+                <string>AdvSceneSwitcher.macroTab.help</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_61">
+             <item>
+              <widget class="QPushButton" name="macroAdd">
+               <property name="maximumSize">
+                <size>
+                 <width>22</width>
+                 <height>22</height>
+                </size>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+               <property name="themeID" stdset="0">
+                <string notr="true">addIconSmall</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="macroRemove">
+               <property name="maximumSize">
+                <size>
+                 <width>22</width>
+                 <height>22</height>
+                </size>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+               <property name="themeID" stdset="0">
+                <string notr="true">removeIconSmall</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_130">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Fixed</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>5</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="Line" name="line_46">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_131">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Fixed</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>5</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="macroUp">
+               <property name="maximumSize">
+                <size>
+                 <width>22</width>
+                 <height>22</height>
+                </size>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+               <property name="themeID" stdset="0">
+                <string>upArrowIconSmall</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="macroDown">
+               <property name="maximumSize">
+                <size>
+                 <width>22</width>
+                 <height>22</height>
+                </size>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+               <property name="themeID" stdset="0">
+                <string>downArrowIconSmall</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_65">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QGroupBox" name="macroEdit">
+          <property name="title">
+           <string>AdvSceneSwitcher.macroTab.edit</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_33">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="0,0,0,0,0,0,0">
+             <item>
+              <widget class="QLabel" name="label_20">
+               <property name="text">
+                <string>AdvSceneSwitcher.macroTab.name</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="macroName"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="runMacro">
+               <property name="text">
+                <string>AdvSceneSwitcher.macroTab.run</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="runMacroInParallel">
+               <property name="text">
+                <string>AdvSceneSwitcher.macroTab.runInParallel</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="runMacroOnChange">
+               <property name="text">
+                <string>AdvSceneSwitcher.macroTab.onChange</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="macroProperties">
+               <property name="maximumSize">
+                <size>
+                 <width>22</width>
+                 <height>22</height>
+                </size>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+               <property name="themeID" stdset="0">
+                <string notr="true">propertiesIconSmall</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QSplitter" name="macroActionConditionSplitter">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <widget class="QWidget" name="macroConditions" native="true">
+              <layout class="QVBoxLayout" name="macroConditionsLayout">
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_12">
+                 <property name="leftMargin">
+                  <number>9</number>
+                 </property>
+                 <item>
+                  <widget class="QPushButton" name="conditionAdd">
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>22</height>
+                    </size>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
+                   </property>
+                   <property name="themeID" stdset="0">
+                    <string notr="true">addIconSmall</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="conditionRemove">
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>22</height>
+                    </size>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
+                   </property>
+                   <property name="themeID" stdset="0">
+                    <string notr="true">removeIconSmall</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_135">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Fixed</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>5</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="Line" name="line_48">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_134">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Fixed</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>5</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="conditionUp">
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>22</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
+                   </property>
+                   <property name="themeID" stdset="0">
+                    <string notr="true">upArrowIconSmall</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="conditionDown">
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>22</height>
+                    </size>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
+                   </property>
+                   <property name="themeID" stdset="0">
+                    <string notr="true">downArrowIconSmall</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_15">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="macroActions" native="true">
+              <layout class="QVBoxLayout" name="macroActionsLayout">
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_21">
+                 <property name="leftMargin">
+                  <number>9</number>
+                 </property>
+                 <item>
+                  <widget class="QPushButton" name="actionAdd">
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>22</height>
+                    </size>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
+                   </property>
+                   <property name="themeID" stdset="0">
+                    <string notr="true">addIconSmall</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="actionRemove">
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>22</height>
+                    </size>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
+                   </property>
+                   <property name="themeID" stdset="0">
+                    <string notr="true">removeIconSmall</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_133">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Fixed</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>5</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="Line" name="line_47">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_132">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Fixed</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>5</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="actionUp">
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>22</height>
+                    </size>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
+                   </property>
+                   <property name="themeID" stdset="0">
+                    <string notr="true">upArrowIconSmall</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="actionDown">
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>22</height>
+                    </size>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
+                   </property>
+                   <property name="themeID" stdset="0">
+                    <string notr="true">downArrowIconSmall</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_14">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </widget>
             </widget>
-           </widget>
-          </item>
-         </layout>
+           </item>
+          </layout>
+         </widget>
         </widget>
        </item>
       </layout>
