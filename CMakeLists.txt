@@ -265,15 +265,15 @@ target_sources(
 
 # --- End of section ---
 
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_NAME})
+
 if(BUILD_OUT_OF_TREE)
   find_package(libobs REQUIRED)
   find_package(obs-frontend-api REQUIRED)
   include(cmake/ObsPluginHelpers.cmake)
   target_link_libraries(${LIB_NAME} PUBLIC OBS::libobs OBS::obs-frontend-api)
-  target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_NAME})
 else()
   target_link_libraries(${LIB_NAME} PUBLIC OBS::libobs OBS::frontend-api)
-  target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_NAME})
 endif()
 
 find_qt(COMPONENTS Widgets Core)
