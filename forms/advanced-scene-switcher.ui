@@ -45,6 +45,18 @@
        <string>AdvSceneSwitcher.generalTab.title</string>
       </attribute>
       <layout class="QHBoxLayout" name="horizontalLayout_23">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item>
         <widget class="QScrollArea" name="scrollArea">
          <property name="widgetResizable">
@@ -55,8 +67,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>1024</width>
-            <height>800</height>
+            <width>957</width>
+            <height>817</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -549,6 +561,15 @@
        <string>AdvSceneSwitcher.macroTab.title</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_34">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item>
         <widget class="QSplitter" name="macroListMacroEditSplitter">
          <property name="orientation">
@@ -1309,6 +1330,15 @@
        <string>AdvSceneSwitcher.sceneGroupTab.title</string>
       </attribute>
       <layout class="QHBoxLayout" name="horizontalLayout_6">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item>
         <widget class="QGroupBox" name="groupBox_3">
          <property name="title">
@@ -3217,7 +3247,6 @@
             </property>
             <property name="font">
              <font>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -4505,13 +4534,6 @@
        </item>
       </layout>
      </widget>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="close">
-     <property name="text">
-      <string>AdvSceneSwitcher.close</string>
-     </property>
     </widget>
    </item>
   </layout>

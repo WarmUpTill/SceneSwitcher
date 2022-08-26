@@ -6,11 +6,6 @@
 #include <QFileDialog>
 #include <QStandardPaths>
 
-void AdvSceneSwitcher::on_close_clicked()
-{
-	close();
-}
-
 void AdvSceneSwitcher::reject()
 {
 	close();

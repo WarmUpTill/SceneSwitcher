@@ -296,8 +296,6 @@ public slots:
 
 	void updateScreenRegionCursorPos();
 
-	void on_close_clicked();
-
 private:
 	bool MacroTabIsInFocus();
 
