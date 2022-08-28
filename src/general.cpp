@@ -147,7 +147,10 @@ void AdvSceneSwitcher::closeEvent(QCloseEvent *)
 	}
 	switcher->windowPos = this->pos();
 	switcher->windowSize = this->size();
-
+	switcher->macroActionConditionSplitterPosition =
+		ui->macroActionConditionSplitter->sizes();
+	switcher->macroListMacroEditSplitterPosition =
+		ui->macroListMacroEditSplitter->sizes();
 	obs_frontend_save();
 }
 
@@ -519,6 +522,7 @@ void SwitcherData::loadSettings(obs_data_t *obj)
 	loadSceneTriggers(obj);
 	loadGeneralSettings(obj);
 	loadHotkeys(obj);
+	loadUISettings(obj);
 
 	// Reset on startup and scene collection change
 	switcher->lastOpenedTab = -1;
@@ -550,6 +554,7 @@ void SwitcherData::saveSettings(obs_data_t *obj)
 	saveSceneTriggers(obj);
 	saveGeneralSettings(obj);
 	saveHotkeys(obj);
+	saveUISettings(obj);
 	saveVersion(obj, g_GIT_SHA1);
 }
 
@@ -590,31 +595,6 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "priority10", functionNamesByPriority[10]);
 
 	obs_data_set_int(obj, "threadPriority", threadPriority);
-
-	obs_data_set_int(obj, "generalTabPos", tabOrder[0]);
-	obs_data_set_int(obj, "macroTabPos", tabOrder[1]);
-	obs_data_set_int(obj, "transitionTabPos", tabOrder[2]);
-	obs_data_set_int(obj, "pauseTabPos", tabOrder[3]);
-	obs_data_set_int(obj, "titleTabPos", tabOrder[4]);
-	obs_data_set_int(obj, "exeTabPos", tabOrder[5]);
-	obs_data_set_int(obj, "regionTabPos", tabOrder[6]);
-	obs_data_set_int(obj, "mediaTabPos", tabOrder[7]);
-	obs_data_set_int(obj, "fileTabPos", tabOrder[8]);
-	obs_data_set_int(obj, "randomTabPos", tabOrder[9]);
-	obs_data_set_int(obj, "timeTabPos", tabOrder[10]);
-	obs_data_set_int(obj, "idleTabPos", tabOrder[11]);
-	obs_data_set_int(obj, "sequenceTabPos", tabOrder[12]);
-	obs_data_set_int(obj, "audioTabPos", tabOrder[13]);
-	obs_data_set_int(obj, "videoTabPos", tabOrder[14]);
-	obs_data_set_int(obj, "networkTabPos", tabOrder[15]);
-	obs_data_set_int(obj, "sceneGroupTabPos", tabOrder[16]);
-	obs_data_set_int(obj, "triggerTabPos", tabOrder[17]);
-
-	obs_data_set_bool(obj, "saveWindowGeo", saveWindowGeo);
-	obs_data_set_int(obj, "windowPosX", windowPos.x());
-	obs_data_set_int(obj, "windowPosY", windowPos.y());
-	obs_data_set_int(obj, "windowWidth", windowSize.width());
-	obs_data_set_int(obj, "windowHeight", windowSize.height());
 }
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
@@ -690,7 +670,68 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "threadPriority",
 				 QThread::NormalPriority);
 	threadPriority = obs_data_get_int(obj, "threadPriority");
+}
 
+void saveSplitterPos(QList<int> &sizes, obs_data_t *obj, const std::string name)
+{
+	auto array = obs_data_array_create();
+	for (int i = 0; i < sizes.count(); ++i) {
+		obs_data_t *array_obj = obs_data_create();
+		obs_data_set_int(array_obj, "pos", sizes[i]);
+		obs_data_array_push_back(array, array_obj);
+		obs_data_release(array_obj);
+	}
+	obs_data_set_array(obj, name.c_str(), array);
+	obs_data_array_release(array);
+}
+
+void loadSplitterPos(QList<int> &sizes, obs_data_t *obj, const std::string name)
+{
+	obs_data_array_t *array = obs_data_get_array(obj, name.c_str());
+	size_t count = obs_data_array_count(array);
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *item = obs_data_array_item(array, i);
+		sizes << obs_data_get_int(item, "pos");
+		obs_data_release(item);
+	}
+	obs_data_array_release(array);
+}
+
+void SwitcherData::saveUISettings(obs_data_t *obj)
+{
+	obs_data_set_int(obj, "generalTabPos", tabOrder[0]);
+	obs_data_set_int(obj, "macroTabPos", tabOrder[1]);
+	obs_data_set_int(obj, "transitionTabPos", tabOrder[2]);
+	obs_data_set_int(obj, "pauseTabPos", tabOrder[3]);
+	obs_data_set_int(obj, "titleTabPos", tabOrder[4]);
+	obs_data_set_int(obj, "exeTabPos", tabOrder[5]);
+	obs_data_set_int(obj, "regionTabPos", tabOrder[6]);
+	obs_data_set_int(obj, "mediaTabPos", tabOrder[7]);
+	obs_data_set_int(obj, "fileTabPos", tabOrder[8]);
+	obs_data_set_int(obj, "randomTabPos", tabOrder[9]);
+	obs_data_set_int(obj, "timeTabPos", tabOrder[10]);
+	obs_data_set_int(obj, "idleTabPos", tabOrder[11]);
+	obs_data_set_int(obj, "sequenceTabPos", tabOrder[12]);
+	obs_data_set_int(obj, "audioTabPos", tabOrder[13]);
+	obs_data_set_int(obj, "videoTabPos", tabOrder[14]);
+	obs_data_set_int(obj, "networkTabPos", tabOrder[15]);
+	obs_data_set_int(obj, "sceneGroupTabPos", tabOrder[16]);
+	obs_data_set_int(obj, "triggerTabPos", tabOrder[17]);
+
+	obs_data_set_bool(obj, "saveWindowGeo", saveWindowGeo);
+	obs_data_set_int(obj, "windowPosX", windowPos.x());
+	obs_data_set_int(obj, "windowPosY", windowPos.y());
+	obs_data_set_int(obj, "windowWidth", windowSize.width());
+	obs_data_set_int(obj, "windowHeight", windowSize.height());
+
+	saveSplitterPos(macroActionConditionSplitterPosition, obj,
+			"macroActionConditionSplitterPosition");
+	saveSplitterPos(macroListMacroEditSplitterPosition, obj,
+			"macroListMacroEditSplitterPosition");
+}
+
+void SwitcherData::loadUISettings(obs_data_t *obj)
+{
 	obs_data_set_default_int(obj, "generalTabPos", 0);
 	obs_data_set_default_int(obj, "macroTabPos", 1);
 	obs_data_set_default_int(obj, "networkTabPos", 13);
@@ -739,6 +780,10 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		     (int)obs_data_get_int(obj, "windowPosY")};
 	windowSize = {(int)obs_data_get_int(obj, "windowWidth"),
 		      (int)obs_data_get_int(obj, "windowHeight")};
+	loadSplitterPos(macroActionConditionSplitterPosition, obj,
+			"macroActionConditionSplitterPosition");
+	loadSplitterPos(macroListMacroEditSplitterPosition, obj,
+			"macroListMacroEditSplitterPosition");
 }
 
 bool SwitcherData::tabOrderValid()

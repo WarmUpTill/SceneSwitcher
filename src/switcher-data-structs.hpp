@@ -235,6 +235,8 @@ struct SwitcherData {
 	bool saveWindowGeo = false;
 	QPoint windowPos = {};
 	QSize windowSize = {};
+	QList<int> macroActionConditionSplitterPosition;
+	QList<int> macroListMacroEditSplitterPosition;
 
 	bool versionChanged(obs_data_t *obj, std::string currentVersion);
 
@@ -307,6 +309,7 @@ struct SwitcherData {
 	void saveNetworkSwitches(obs_data_t *obj);
 	void saveGeneralSettings(obs_data_t *obj);
 	void saveHotkeys(obs_data_t *obj);
+	void saveUISettings(obs_data_t *obj);
 	void saveVersion(obs_data_t *obj, const std::string &currentVersion);
 
 	void loadSettings(obs_data_t *obj);
@@ -330,6 +333,7 @@ struct SwitcherData {
 	void loadNetworkSettings(obs_data_t *obj);
 	void loadGeneralSettings(obs_data_t *obj);
 	void loadHotkeys(obs_data_t *obj);
+	void loadUISettings(obs_data_t *obj);
 
 	void Prune();
 

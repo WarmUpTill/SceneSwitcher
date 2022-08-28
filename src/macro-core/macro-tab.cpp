@@ -423,6 +423,21 @@ void AdvSceneSwitcher::on_macroProperties_clicked()
 	emit HighlightConditionsChanged(prop._highlightConditions);
 }
 
+// Don't restore splitter pos if an element is not visible at all
+bool shouldResotreSplitterPos(const QList<int> &pos)
+{
+	if (pos.size() == 0) {
+		return false;
+	}
+
+	for (int i = 0; i < pos.size(); ++i) {
+		if (pos[i] == 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
 void AdvSceneSwitcher::setupMacroTab()
 {
 	const QSignalBlocker signalBlocker(ui->macros);
@@ -498,6 +513,19 @@ void AdvSceneSwitcher::setupMacroTab()
 	// Reserve more space for macro edit area than for the macro list
 	ui->macroListMacroEditSplitter->setStretchFactor(0, 1);
 	ui->macroListMacroEditSplitter->setStretchFactor(1, 4);
+
+	if (switcher->saveWindowGeo) {
+		if (shouldResotreSplitterPos(
+			    switcher->macroActionConditionSplitterPosition)) {
+			ui->macroActionConditionSplitter->setSizes(
+				switcher->macroActionConditionSplitterPosition);
+		}
+		if (shouldResotreSplitterPos(
+			    switcher->macroListMacroEditSplitterPosition)) {
+			ui->macroListMacroEditSplitter->setSizes(
+				switcher->macroListMacroEditSplitterPosition);
+		}
+	}
 }
 
 void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
