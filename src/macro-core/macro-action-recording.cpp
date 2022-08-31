@@ -15,6 +15,7 @@ const static std::map<RecordAction, std::string> actionTypes = {
 	{RecordAction::PAUSE, "AdvSceneSwitcher.action.recording.type.pause"},
 	{RecordAction::UNPAUSE,
 	 "AdvSceneSwitcher.action.recording.type.unpause"},
+	{RecordAction::SPLIT, "AdvSceneSwitcher.action.recording.type.split"},
 };
 
 bool MacroActionRecord::PerformAction()
@@ -41,6 +42,9 @@ bool MacroActionRecord::PerformAction()
 		    obs_frontend_recording_paused()) {
 			obs_frontend_recording_pause(false);
 		}
+		break;
+	case RecordAction::SPLIT:
+		obs_frontend_recording_split_file();
 		break;
 	default:
 		break;
@@ -82,12 +86,13 @@ static inline void populateActionSelection(QComboBox *list)
 
 MacroActionRecordEdit::MacroActionRecordEdit(
 	QWidget *parent, std::shared_ptr<MacroActionRecord> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _actions(new QComboBox()),
+	  _pauseHint(new QLabel(obs_module_text(
+		  "AdvSceneSwitcher.action.recording.pause.hint"))),
+	  _splitHint(new QLabel(obs_module_text(
+		  "AdvSceneSwitcher.action.recording.split.hint")))
 {
-	_actions = new QComboBox();
-	_pauseHint = new QLabel(obs_module_text(
-		"AdvSceneSwitcher.action.recording.pause.hint"));
-
 	populateActionSelection(_actions);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
@@ -97,6 +102,7 @@ MacroActionRecordEdit::MacroActionRecordEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{actions}}", _actions},
 		{"{{pauseHint}}", _pauseHint},
+		{"{{splitHint}}", _splitHint},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.recording.entry"),
 		     mainLayout, widgetPlaceholders);
@@ -107,18 +113,24 @@ MacroActionRecordEdit::MacroActionRecordEdit(
 	_loading = false;
 }
 
-bool isPauseAction(RecordAction a)
-{
-	return a == RecordAction::PAUSE || a == RecordAction::UNPAUSE;
-}
-
 void MacroActionRecordEdit::UpdateEntryData()
 {
 	if (!_entryData) {
 		return;
 	}
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	SetLabelVisibility();
+}
+
+bool isPauseAction(RecordAction a)
+{
+	return a == RecordAction::PAUSE || a == RecordAction::UNPAUSE;
+}
+
+void MacroActionRecordEdit::SetLabelVisibility()
+{
 	_pauseHint->setVisible(isPauseAction(_entryData->_action));
+	_splitHint->setVisible(_entryData->_action == RecordAction::SPLIT);
 }
 
 void MacroActionRecordEdit::ActionChanged(int value)
@@ -129,5 +141,5 @@ void MacroActionRecordEdit::ActionChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<RecordAction>(value);
-	_pauseHint->setVisible(isPauseAction(_entryData->_action));
+	SetLabelVisibility();
 }

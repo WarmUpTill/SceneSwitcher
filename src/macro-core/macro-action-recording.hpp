@@ -9,6 +9,7 @@ enum class RecordAction {
 	START,
 	PAUSE,
 	UNPAUSE,
+	SPLIT,
 };
 
 class MacroActionRecord : public MacroAction {
@@ -53,9 +54,12 @@ private slots:
 protected:
 	QComboBox *_actions;
 	QLabel *_pauseHint;
+	QLabel *_splitHint;
 	std::shared_ptr<MacroActionRecord> _entryData;
 
 private:
+	void SetLabelVisibility();
+
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
