@@ -2,8 +2,6 @@ name: Check locale
 
 on:
   push:
-    paths-ignore:
-      - '**.md'
     branches:
       - master
     tags:
@@ -11,8 +9,6 @@ on:
     paths:
       - 'data/locale/**'
   pull_request:
-    paths-ignore:
-      - '**.md'
     branches:
       - master
     paths:
