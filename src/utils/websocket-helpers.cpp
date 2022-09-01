@@ -13,8 +13,7 @@ using websocketpp::lib::bind;
 
 obs_websocket_vendor vendor;
 
-void ReceiveWebsocketMessage(obs_data_t *request_data,
-			     obs_data_t *response_data, void *priv_data)
+void ReceiveWebsocketMessage(obs_data_t *request_data, obs_data_t *, void *)
 {
 	if (!obs_data_has_user_value(request_data, "message")) {
 		vblog(LOG_INFO, "received unexpected m '%s'",
@@ -247,7 +246,7 @@ void WSConnection::HandleResponse(obs_data_t *response)
 	obs_data_release(data);
 }
 
-void WSConnection::OnMessage(connection_hdl hdl, client::message_ptr message)
+void WSConnection::OnMessage(connection_hdl, client::message_ptr message)
 {
 	if (!message) {
 		return;
