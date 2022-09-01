@@ -17,10 +17,11 @@ MacroListEntryWidget::MacroListEntryWidget(std::shared_ptr<Macro> macro,
 		QLabel  { background-color: rgba(0,0,0,0); }");
 
 	auto layout = new QHBoxLayout;
-	layout->setContentsMargins(3, 3, 3, 3);
+	layout->setContentsMargins(0, 0, 0, 0);
 	layout->addWidget(_running);
 	layout->addWidget(_name);
 	layout->addStretch();
+	layout->setSizeConstraint(QLayout::SetFixedSize);
 	setLayout(layout);
 
 	connect(_running, SIGNAL(stateChanged(int)), this,

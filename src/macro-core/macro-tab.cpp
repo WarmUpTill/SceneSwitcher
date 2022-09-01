@@ -71,7 +71,6 @@ QListWidgetItem *AddNewMacroListEntry(QListWidget *list,
 	item->setData(Qt::UserRole, QString::fromStdString(macro->Name()));
 	auto listEntry = new MacroListEntryWidget(
 		macro, switcher->macroProperties._highlightExecuted, list);
-	item->setSizeHint(listEntry->minimumSizeHint());
 	list->setItemWidget(item, listEntry);
 	return item;
 }
