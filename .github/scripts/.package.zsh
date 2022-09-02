@@ -61,6 +61,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
   %B-c | --config%b                     Build configuration - default: %B%F{green}RelWithDebInfo%f%b
   %B-s | --codesign%b                   Enable codesigning (macOS only)
   %B-n | --notarize%b                   Enable notarization (macOS only)
+  %B-z | --zip%b                        Zip only (Linux only)
 
 %F{yellow} Output options%f
  -----------------------------------------------------------------------------
@@ -110,6 +111,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         ;;
       -s|--codesign) typeset -g CODESIGN=1; shift ;;
       -n|--notarize) typeset -g NOTARIZE=1; typeset -g CODESIGN=1; shift ;;
+      -z|--zip) typeset -g ZIP=1; shift ;;
       -q|--quiet) (( _verbosity -= 1 )) || true; shift ;;
       -v|--verbose) (( _verbosity += 1 )); shift ;;
       -h|--help) log_output ${_usage}; exit 0 ;;
@@ -180,12 +182,19 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
     }
     popd
   } elif [[ ${host_os} == 'linux' ]] {
-    local -a cmake_args=()
-    if (( _loglevel > 1 )) cmake_args+=(--verbose)
+    if (( ${+ZIP} )) {
+      local output_name="${product_name}-${product_version}-${host_os}-${target##*-}.zip"
+      pushd ${project_root}/release
+      zip -r "${output_name}" *
+      popd
+    } else {
+      local -a cmake_args=()
+      if (( _loglevel > 1 )) cmake_args+=(--verbose)
 
-    pushd ${project_root}
-    cmake --build build_${target##*-} --config ${BUILD_CONFIG:-RelWithDebInfo} -t package ${cmake_args}
-    popd
+      pushd ${project_root}
+      cmake --build build_${target##*-} --config ${BUILD_CONFIG:-RelWithDebInfo} -t package ${cmake_args}
+      popd
+    }
   }
 }
 

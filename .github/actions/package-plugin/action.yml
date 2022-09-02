@@ -36,6 +36,10 @@ inputs:
     description: 'Create InnoSetup installer (Windows only)'
     required: false
     default: 'false'
+  portable:
+    description: 'Create deb package / portable archive (Linux only)'
+    required: false
+    default: 'false'
   workingDirectory:
     description: 'Working directory for packaging'
     required: false
@@ -73,6 +77,10 @@ runs:
         )
         if [[ -n "${CI}" && -n "${RUNNER_DEBUG}" ]]; then
           build_args+=(--debug)
+        fi
+
+        if [[ '${{ inputs.portable }}' == 'true' ]]; then
+          package_args+=(-z)
         fi
 
         ${{ inputs.workingDirectory }}/.github/scripts/package-linux.sh "${package_args[@]}"

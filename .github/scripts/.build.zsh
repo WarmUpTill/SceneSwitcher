@@ -76,6 +76,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
   %B-t | --target%b                     Specify target - default: %B%F{green}${host_os}-${CPUTYPE}%f%b
   %B-c | --config%b                     Build configuration - default: %B%F{green}RelWithDebInfo%f%b
   %B-s | --codesign%b                   Enable codesigning (macOS only)
+  %B-p | --portable%b                   Enable portable mode (Linux only)
   %B--generator%b                       Specify build system to generate - default: %B%F{green}Ninja%f%b
                                     Available generators:
                                       - Ninja
@@ -130,6 +131,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         shift 2
         ;;
       -s|--codesign) CODESIGN=1; shift ;;
+      -p|--portable) typeset -g PORTABLE=1; shift ;;
       -q|--quiet) (( _verbosity -= 1 )) || true; shift ;;
       -v|--verbose) (( _verbosity += 1 )); shift ;;
       -h|--help) log_output ${_usage}; exit 0 ;;
@@ -245,7 +247,11 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
         ;;
       linux-*)
-        if (( ${+CI} )) {
+        if (( ${+PORTABLE} )) {
+          cmake_args+=(
+            -DLINUX_PORTABLE=ON
+          )
+        } else {
           cmake_args+=(
             -DCMAKE_INSTALL_PREFIX=/usr
             -DLINUX_PORTABLE=OFF

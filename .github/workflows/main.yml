@@ -169,7 +169,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.PLUGIN_NAME }}-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
-          path: ${{ github.workspace }}/plugin/release/${{ env.LIB_NAME }}-*-macos-${{ matrix.arch }}.pkg
+          path: ${{ github.workspace }}/plugin/release/${{ env.LIB_NAME }}*-macos-${{ matrix.arch }}.pkg
 
   linux_build:
     name: 02 - Linux
@@ -178,6 +178,7 @@ jobs:
       fail-fast: true
       matrix:
         arch: [x86_64]
+        portable: [true, false]
     if: always()
     needs: [clang_check]
     outputs:
@@ -235,13 +236,7 @@ jobs:
           workingDirectory: ${{ github.workspace }}/plugin
           target: ${{ matrix.arch }}
           config: RelWithDebInfo
-
-      - name: Upload Build Artifact
-        if: ${{ success() }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ env.PLUGIN_NAME }}-linux-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
-          path: ${{ github.workspace }}/plugin/release/*
+          portable: ${{ matrix.portable }}
 
       - name: Package Plugin
         uses: ./plugin/.github/actions/package-plugin
@@ -249,13 +244,21 @@ jobs:
           workingDirectory: ${{ github.workspace }}/plugin
           target: ${{ matrix.arch }}
           config: RelWithDebInfo
+          portable: ${{ matrix.portable }}
 
       - name: Upload Package Artifact
-        if: ${{ success() }}
+        if: ${{ matrix.portable }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.PLUGIN_NAME }}-linux-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}-portable
+          path: ${{ github.workspace }}/plugin/release/${{ env.LIB_NAME }}*-linux-${{ matrix.arch }}.*
+
+      - name: Upload Build Artifact
+        if: ${{ ! matrix.portable }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.PLUGIN_NAME }}-linux-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
-          path: ${{ github.workspace }}/plugin/release/${{ env.LIB_NAME }}-*-linux-${{ matrix.arch }}.*
+          path: ${{ github.workspace }}/plugin/release/${{ env.LIB_NAME }}*-linux-${{ matrix.arch }}.*
 
   windows_build:
     name: 02 - Windows
