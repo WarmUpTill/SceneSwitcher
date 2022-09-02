@@ -38,9 +38,8 @@ function Package {
 
     $BuildSpec = Get-Content -Path ${BuildSpecFile} -Raw | ConvertFrom-Json
     $ProductName = $BuildSpec.name
-    $ProductVersion = $BuildSpec.version
 
-    $OutputName = "${ProductName}-${ProductVersion}-windows-${Target}"
+    $OutputName = "${ProductName}-windows-${Target}"
 
     Install-BuildDependencies -WingetFile "${ScriptHome}/.Wingetfile"
 
