@@ -134,7 +134,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
   if [[ ${host_os} == 'macos' ]] {
     autoload -Uz check_packages read_codesign read_codesign_installer read_codesign_pass
 
-    local output_name="${product_name}-${product_version}-${host_os}-${target##*-}.pkg"
+    local output_name="${product_name}-${host_os}-${target##*-}.pkg"
 
     if [[ ! -d ${project_root}/release/${product_name}.plugin ]] {
       log_error 'No release artifact found. Run the build script or the CMake install procedure first.'
@@ -183,7 +183,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
     popd
   } elif [[ ${host_os} == 'linux' ]] {
     if (( ${+ZIP} )) {
-      local output_name="${product_name}-${product_version}-${host_os}-${target##*-}.zip"
+      local output_name="${product_name}-${host_os}-${target##*-}.zip"
       pushd ${project_root}/release
       zip -r "${output_name}" *
       popd
