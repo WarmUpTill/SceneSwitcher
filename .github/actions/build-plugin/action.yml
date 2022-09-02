@@ -20,6 +20,10 @@ inputs:
     description: 'Visual Studio version (Windows only)'
     required: false
     default: 'Visual Studio 16 2019'
+  portable:
+    description: 'Set portable mode (Linux only)'
+    required: false
+    default: 'false'
   workingDirectory:
     description: 'Working directory for packaging'
     required: false
@@ -54,6 +58,10 @@ runs:
 
         if [[ -n "${CI}" && -n "${RUNNER_DEBUG}" ]]; then
           build_args+=(--debug)
+        fi
+
+        if [[ '${{ inputs.portable }}' == 'true' ]]; then
+          build_args+=(-p)
         fi
 
         ${{ inputs.workingDirectory }}/.github/scripts/build-linux.sh "${build_args[@]}"
