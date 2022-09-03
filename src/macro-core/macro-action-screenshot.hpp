@@ -1,5 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "file-selection.hpp"
+#include "screenshot-helper.hpp"
 
 #include <QComboBox>
 
@@ -17,8 +19,18 @@ public:
 		return std::make_shared<MacroActionScreenshot>(m);
 	}
 	OBSWeakSource _source;
+	enum class SaveType {
+		OBS_DEFAULT,
+		CUSTOM,
+	};
+	SaveType _saveType = SaveType::OBS_DEFAULT;
+	std::string _path = obs_module_text("AdvSceneSwitcher.enterPath");
 
 private:
+	void FrontendScreenshot();
+	void CustomScreenshot();
+
+	ScreenshotHelper _screenshot;
 	static bool _registered;
 	static const std::string id;
 };
@@ -41,13 +53,19 @@ public:
 	}
 private slots:
 	void SourceChanged(const QString &text);
+	void SaveTypeChanged(int index);
+	void PathChanged(const QString &text);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
 	QComboBox *_sources;
+	QComboBox *_saveType;
+	FileSelection *_savePath;
 	std::shared_ptr<MacroActionScreenshot> _entryData;
 
 private:
+	void SetWidgetVisibility();
+
 	bool _loading = true;
 };
