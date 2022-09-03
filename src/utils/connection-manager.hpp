@@ -63,6 +63,8 @@ public:
 private slots:
 	void NameChanged(const QString &);
 	void ReconnectChanged(int);
+	void ShowPassword();
+	void HidePassword();
 	void SetStatus();
 	void TestConnection();
 
@@ -74,6 +76,7 @@ private:
 	QLineEdit *_address;
 	QSpinBox *_port;
 	QLineEdit *_password;
+	QPushButton *_showPassword;
 	QCheckBox *_connectOnStart;
 	QCheckBox *_reconnect;
 	QSpinBox *_reconnectDelay;

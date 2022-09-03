@@ -142,15 +142,19 @@ bool ConnectionNameAvailable(const std::string &name)
 	return ConnectionNameAvailable(QString::fromStdString(name));
 }
 
+void setButtonIcon(QPushButton *button, const char *path)
+{
+	QIcon icon;
+	icon.addFile(QString::fromUtf8(path), QSize(), QIcon::Normal,
+		     QIcon::Off);
+	button->setIcon(icon);
+}
+
 ConnectionSelection::ConnectionSelection(QWidget *parent)
 	: QWidget(parent), _selection(new QComboBox), _modify(new QPushButton)
 {
 	_modify->setMaximumSize(22, 22);
-	QIcon icon;
-	icon.addFile(
-		QString::fromUtf8(":/settings/images/settings/general.svg"),
-		QSize(), QIcon::Normal, QIcon::Off);
-	_modify->setIcon(icon);
+	setButtonIcon(_modify, ":/settings/images/settings/general.svg");
 	_modify->setFlat(true);
 
 	// Connect to slots
@@ -369,6 +373,7 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 	  _address(new QLineEdit()),
 	  _port(new QSpinBox()),
 	  _password(new QLineEdit()),
+	  _showPassword(new QPushButton()),
 	  _connectOnStart(new QCheckBox()),
 	  _reconnect(new QCheckBox()),
 	  _reconnectDelay(new QSpinBox()),
@@ -385,6 +390,10 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 	setMinimumHeight(100);
 
 	_port->setMaximum(65535);
+	_showPassword->setMaximumWidth(22);
+	_showPassword->setFlat(true);
+	_showPassword->setStyleSheet(
+		"QPushButton { background-color: transparent; border: 0px }");
 	_reconnectDelay->setMaximum(9999);
 	_reconnectDelay->setSuffix("s");
 	_buttonbox->setCenterButtons(true);
@@ -402,6 +411,10 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 			 SLOT(NameChanged(const QString &)));
 	QWidget::connect(_reconnect, SIGNAL(stateChanged(int)), this,
 			 SLOT(ReconnectChanged(int)));
+	QWidget::connect(_showPassword, SIGNAL(pressed()), this,
+			 SLOT(ShowPassword()));
+	QWidget::connect(_showPassword, SIGNAL(released()), this,
+			 SLOT(HidePassword()));
 	QWidget::connect(_test, SIGNAL(clicked()), this,
 			 SLOT(TestConnection()));
 
@@ -433,7 +446,10 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 	layout->addWidget(new QLabel(obs_module_text(
 				  "AdvSceneSwitcher.connection.password")),
 			  row, 0);
-	layout->addWidget(_password, row, 1);
+	QHBoxLayout *passLayout = new QHBoxLayout;
+	passLayout->addWidget(_password);
+	passLayout->addWidget(_showPassword);
+	layout->addLayout(passLayout, row, 1);
 	++row;
 	layout->addWidget(
 		new QLabel(obs_module_text(
@@ -460,6 +476,7 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 
 	NameChanged(_name->text());
 	ReconnectChanged(_reconnect->isChecked());
+	HidePassword();
 }
 
 void ConnectionSettingsDialog::NameChanged(const QString &text)
@@ -511,6 +528,18 @@ void ConnectionSettingsDialog::SetStatus()
 	default:
 		break;
 	}
+}
+
+void ConnectionSettingsDialog::ShowPassword()
+{
+	setButtonIcon(_showPassword, ":res/images/visible.svg");
+	_password->setEchoMode(QLineEdit::Normal);
+}
+
+void ConnectionSettingsDialog::HidePassword()
+{
+	setButtonIcon(_showPassword, ":res/images/invisible.svg");
+	_password->setEchoMode(QLineEdit::PasswordEchoOnEdit);
 }
 
 void ConnectionSettingsDialog::TestConnection()
