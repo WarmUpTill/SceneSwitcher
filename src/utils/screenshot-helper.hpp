@@ -3,11 +3,13 @@
 #include <string>
 #include <QImage>
 #include <chrono>
+#include <thread>
 
 class ScreenshotHelper {
 public:
 	ScreenshotHelper() = default;
-	ScreenshotHelper(obs_source_t *source);
+	ScreenshotHelper(obs_source_t *source, bool saveToFile = false,
+			 std::string path = "");
 	ScreenshotHelper &operator=(const ScreenshotHelper &) = delete;
 	ScreenshotHelper(const ScreenshotHelper &) = delete;
 	~ScreenshotHelper();
@@ -16,6 +18,7 @@ public:
 	void Download();
 	void Copy();
 	void MarkDone();
+	void WriteToFile();
 
 	gs_texrender_t *texrender = nullptr;
 	gs_stagesurf_t *stagesurf = nullptr;
@@ -31,4 +34,7 @@ public:
 
 private:
 	bool _initDone = false;
+	std::thread _saveThread;
+	bool _saveToFile = false;
+	std::string _path = "";
 };

@@ -3,8 +3,11 @@
 
 static void ScreenshotTick(void *param, float);
 
-ScreenshotHelper::ScreenshotHelper(obs_source_t *source)
-	: weakSource(OBSGetWeakRef(source))
+ScreenshotHelper::ScreenshotHelper(obs_source_t *source, bool saveToFile,
+				   std::string path)
+	: weakSource(OBSGetWeakRef(source)),
+	  _saveToFile(saveToFile),
+	  _path(path)
 {
 	_initDone = true;
 	obs_add_tick_callback(ScreenshotTick, this);
@@ -19,6 +22,9 @@ ScreenshotHelper::~ScreenshotHelper()
 		obs_leave_graphics();
 
 		obs_remove_tick_callback(ScreenshotTick, this);
+	}
+	if (_saveThread.joinable()) {
+		_saveThread.join();
 	}
 }
 
@@ -100,6 +106,24 @@ void ScreenshotHelper::MarkDone()
 	done = true;
 }
 
+void ScreenshotHelper::WriteToFile()
+{
+	if (!_saveToFile) {
+		return;
+	}
+
+	_saveThread = std::thread([this]() {
+		if (image.save(QString::fromStdString(_path))) {
+			vblog(LOG_INFO, "Wrote screenshot to \"%s\"",
+			      _path.c_str());
+		} else {
+			blog(LOG_WARNING,
+			     "Failed to save screenshot to to \"%s\"!\nMaybe unkown format?",
+			     _path.c_str());
+		}
+	});
+}
+
 #define STAGE_SCREENSHOT 0
 #define STAGE_DOWNLOAD 1
 #define STAGE_COPY_AND_SAVE 2
@@ -125,6 +149,7 @@ static void ScreenshotTick(void *param, float)
 	case STAGE_COPY_AND_SAVE:
 		data->Copy();
 		data->MarkDone();
+		data->WriteToFile();
 
 		obs_remove_tick_callback(ScreenshotTick, data);
 		break;
