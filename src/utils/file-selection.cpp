@@ -3,6 +3,8 @@
 #include <obs-module.h>
 #include <QLayout>
 #include <QFileDialog>
+#include <QStandardPaths>
+#include <filesystem>
 
 FileSelection::FileSelection(FileSelection::Type type, QWidget *parent)
 	: QWidget(parent), _type(type)
@@ -29,12 +31,22 @@ void FileSelection::SetPath(const QString &path)
 
 void FileSelection::BrowseButtonClicked()
 {
+	QString defaultPath;
+	if (std::filesystem::exists(
+		    std::filesystem::path(_filePath->text().toStdString()))) {
+		defaultPath = _filePath->text();
+	} else {
+		defaultPath = QStandardPaths::writableLocation(
+			QStandardPaths::DesktopLocation);
+	}
+
 	QString path;
 	if (_type == FileSelection::Type::WRITE) {
-		path = QFileDialog::getSaveFileName(this);
+		path = QFileDialog::getSaveFileName(this, "", defaultPath);
 	} else {
-		path = QFileDialog::getOpenFileName(this);
+		path = QFileDialog::getOpenFileName(this, "", defaultPath);
 	}
+
 	if (path.isEmpty()) {
 		return;
 	}
