@@ -819,7 +819,7 @@
                <property name="maximumSize">
                 <size>
                  <width>22</width>
-                 <height>22</height>
+                 <height>16777215</height>
                 </size>
                </property>
                <property name="text">
@@ -864,7 +864,7 @@
                    <property name="maximumSize">
                     <size>
                      <width>22</width>
-                     <height>22</height>
+                     <height>16777215</height>
                     </size>
                    </property>
                    <property name="flat">
@@ -880,7 +880,7 @@
                    <property name="maximumSize">
                     <size>
                      <width>22</width>
-                     <height>22</height>
+                     <height>16777215</height>
                     </size>
                    </property>
                    <property name="flat">
@@ -935,7 +935,7 @@
                    <property name="maximumSize">
                     <size>
                      <width>22</width>
-                     <height>22</height>
+                     <height>16777215</height>
                     </size>
                    </property>
                    <property name="text">
@@ -954,7 +954,7 @@
                    <property name="maximumSize">
                     <size>
                      <width>22</width>
-                     <height>22</height>
+                     <height>16777215</height>
                     </size>
                    </property>
                    <property name="flat">
@@ -1006,7 +1006,7 @@
                    <property name="maximumSize">
                     <size>
                      <width>22</width>
-                     <height>22</height>
+                     <height>16777215</height>
                     </size>
                    </property>
                    <property name="flat">
@@ -1022,7 +1022,7 @@
                    <property name="maximumSize">
                     <size>
                      <width>22</width>
-                     <height>22</height>
+                     <height>16777215</height>
                     </size>
                    </property>
                    <property name="flat">
@@ -1077,7 +1077,7 @@
                    <property name="maximumSize">
                     <size>
                      <width>22</width>
-                     <height>22</height>
+                     <height>16777215</height>
                     </size>
                    </property>
                    <property name="flat">
@@ -1093,7 +1093,7 @@
                    <property name="maximumSize">
                     <size>
                      <width>22</width>
-                     <height>22</height>
+                     <height>16777215</height>
                     </size>
                    </property>
                    <property name="flat">

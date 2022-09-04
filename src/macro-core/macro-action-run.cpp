@@ -75,22 +75,22 @@ MacroActionRunEdit::MacroActionRunEdit(
 	_filePath = new FileSelection();
 	_argList = new QListWidget();
 	_addArg = new QPushButton();
-	_addArg->setMaximumSize(QSize(22, 22));
+	_addArg->setMaximumWidth(22);
 	_addArg->setProperty("themeID",
 			     QVariant(QString::fromUtf8("addIconSmall")));
 	_addArg->setFlat(true);
 	_removeArg = new QPushButton();
-	_removeArg->setMaximumSize(QSize(22, 22));
+	_removeArg->setMaximumWidth(22);
 	_removeArg->setProperty("themeID",
 				QVariant(QString::fromUtf8("removeIconSmall")));
 	_removeArg->setFlat(true);
 	_argUp = new QPushButton();
-	_argUp->setMaximumSize(QSize(22, 22));
+	_argUp->setMaximumWidth(22);
 	_argUp->setProperty("themeID",
 			    QVariant(QString::fromUtf8("upArrowIconSmall")));
 	_argUp->setFlat(true);
 	_argDown = new QPushButton();
-	_argDown->setMaximumSize(QSize(22, 22));
+	_argDown->setMaximumWidth(22);
 	_argDown->setProperty(
 		"themeID", QVariant(QString::fromUtf8("downArrowIconSmall")));
 	_argDown->setFlat(true);
