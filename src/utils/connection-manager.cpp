@@ -153,7 +153,7 @@ void setButtonIcon(QPushButton *button, const char *path)
 ConnectionSelection::ConnectionSelection(QWidget *parent)
 	: QWidget(parent), _selection(new QComboBox), _modify(new QPushButton)
 {
-	_modify->setMaximumSize(22, 22);
+	_modify->setMaximumWidth(22);
 	setButtonIcon(_modify, ":/settings/images/settings/general.svg");
 	_modify->setFlat(true);
 

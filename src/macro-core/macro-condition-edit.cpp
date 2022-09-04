@@ -120,7 +120,7 @@ DurationModifierEdit::DurationModifierEdit(QWidget *parent)
 	_condition = new QComboBox(parent);
 	_duration = new DurationSelection(parent);
 	_toggle = new QPushButton(parent);
-	_toggle->setMaximumSize(22, 22);
+	_toggle->setMaximumWidth(22);
 	_toggle->setIcon(
 		QIcon(QString::fromStdString(getDataFilePath("res/time.svg"))));
 	populateDurationModifierTypes(_condition);

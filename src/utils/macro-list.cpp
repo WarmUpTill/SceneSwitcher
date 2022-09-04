@@ -17,19 +17,19 @@ MacroList::MacroList(QWidget *parent, bool allowDuplicates, bool reorder)
 	_up->setVisible(reorder);
 	_down->setVisible(reorder);
 
-	_add->setMaximumSize(QSize(22, 22));
+	_add->setMaximumWidth(22);
 	_add->setProperty("themeID",
 			  QVariant(QString::fromUtf8("addIconSmall")));
 	_add->setFlat(true);
-	_remove->setMaximumSize(QSize(22, 22));
+	_remove->setMaximumWidth(22);
 	_remove->setProperty("themeID",
 			     QVariant(QString::fromUtf8("removeIconSmall")));
 	_remove->setFlat(true);
-	_up->setMaximumSize(QSize(22, 22));
+	_up->setMaximumWidth(22);
 	_up->setProperty("themeID",
 			 QVariant(QString::fromUtf8("upArrowIconSmall")));
 	_up->setFlat(true);
-	_down->setMaximumSize(QSize(22, 22));
+	_down->setMaximumWidth(22);
 	_down->setProperty("themeID",
 			   QVariant(QString::fromUtf8("downArrowIconSmall")));
 	_down->setFlat(true);
