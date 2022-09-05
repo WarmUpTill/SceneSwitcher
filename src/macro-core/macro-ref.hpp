@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 #include <QString>
 #include <obs-module.h>
 

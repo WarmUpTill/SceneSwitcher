@@ -43,9 +43,11 @@ bool MacroActionRecord::PerformAction()
 			obs_frontend_recording_pause(false);
 		}
 		break;
+#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(28, 0, 0)
 	case RecordAction::SPLIT:
 		obs_frontend_recording_split_file();
 		break;
+#endif
 	default:
 		break;
 	}

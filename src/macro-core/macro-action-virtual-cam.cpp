@@ -16,6 +16,7 @@ const static std::map<VCamAction, std::string> actionTypes = {
 
 bool MacroActionVCam::PerformAction()
 {
+#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(27, 0, 0)
 	switch (_action) {
 	case VCamAction::STOP:
 		if (obs_frontend_virtualcam_active()) {
@@ -30,6 +31,7 @@ bool MacroActionVCam::PerformAction()
 	default:
 		break;
 	}
+#endif
 	return true;
 }
 

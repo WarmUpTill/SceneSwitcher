@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.16.3)
 
 project(advanced-scene-switcher VERSION 1.0.0)
 set(LIB_NAME "${PROJECT_NAME}-lib")
@@ -267,21 +267,17 @@ target_sources(
 
 # --- End of section ---
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_NAME})
-
 if(BUILD_OUT_OF_TREE)
-  find_package(libobs REQUIRED)
-  find_package(obs-frontend-api REQUIRED)
   include(cmake/ObsPluginHelpers.cmake)
-  target_link_libraries(${LIB_NAME} PUBLIC OBS::libobs OBS::obs-frontend-api)
-else()
-  target_link_libraries(${LIB_NAME} PUBLIC OBS::libobs OBS::frontend-api)
 endif()
+include(cmake/AdvSSHelpers.cmake)
+setup_obs_lib_dependency(${LIB_NAME})
+setup_obs_lib_dependency(${PROJECT_NAME})
+
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_NAME})
 
 find_qt(COMPONENTS Widgets Core)
 target_link_libraries(${LIB_NAME} PUBLIC Qt::Core Qt::Widgets)
-
-include(cmake/AdvSSHelpers.cmake)
 
 # --- Platform-independent build settings ---
 

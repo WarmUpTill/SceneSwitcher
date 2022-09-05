@@ -185,18 +185,22 @@ void frontEndActionThread(sceneTriggerAction action, double delay)
 	case sceneTriggerAction::STOP_STREAMING:
 		obs_frontend_streaming_stop();
 		break;
+#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(26, 0, 0)
 	case sceneTriggerAction::START_REPLAY_BUFFER:
 		obs_frontend_replay_buffer_start();
 		break;
 	case sceneTriggerAction::STOP_REPLAY_BUFFER:
 		obs_frontend_replay_buffer_stop();
 		break;
+#endif
+#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(27, 0, 0)
 	case sceneTriggerAction::START_VCAM:
 		obs_frontend_start_virtualcam();
 		break;
 	case sceneTriggerAction::STOP_VCAM:
 		obs_frontend_stop_virtualcam();
 		break;
+#endif
 	default:
 		blog(LOG_WARNING, "ignoring unexpected frontend action '%d'",
 		     static_cast<int>(action));

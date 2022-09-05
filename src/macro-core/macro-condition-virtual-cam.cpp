@@ -20,6 +20,7 @@ static std::map<VCamState, std::string> VCamStates = {
 bool MacroConditionVCam::CheckCondition()
 {
 	bool stateMatch = false;
+#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(27, 0, 0)
 	switch (_state) {
 	case VCamState::STOP:
 		stateMatch = !obs_frontend_virtualcam_active();
@@ -30,6 +31,7 @@ bool MacroConditionVCam::CheckCondition()
 	default:
 		break;
 	}
+#endif
 	return stateMatch;
 }
 
