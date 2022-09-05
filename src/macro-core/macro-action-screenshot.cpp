@@ -11,6 +11,7 @@ bool MacroActionScreenshot::_registered = MacroActionFactory::Register(
 
 void MacroActionScreenshot::FrontendScreenshot()
 {
+#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(26, 0, 0)
 	if (_source) {
 		auto s = obs_weak_source_get_source(_source);
 		obs_frontend_take_source_screenshot(s);
@@ -18,6 +19,7 @@ void MacroActionScreenshot::FrontendScreenshot()
 	} else {
 		obs_frontend_take_screenshot();
 	}
+#endif
 }
 
 void MacroActionScreenshot::CustomScreenshot()

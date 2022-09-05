@@ -205,14 +205,50 @@ else()
 endif()
 
 # --- End of section ---
-
-function(setup_advss_plugin target)
+function(setup_obs_lib_dependency target)
   if(BUILD_OUT_OF_TREE)
-    target_link_libraries(${target} PUBLIC OBS::libobs OBS::obs-frontend-api)
+    find_package(libobs)
+    if(libobs_FOUND)
+      target_link_libraries(${target} PUBLIC OBS::libobs)
+    else()
+      if(NOT LIBOBS_LIB)
+        message(FATAL_ERROR "obs library not found - please set LIBOBS_LIB")
+      endif()
+      target_link_libraries(${target} PUBLIC ${LIBOBS_LIB})
+      if(NOT LIBOBS_INCLUDE_DIR)
+        message(
+          FATAL_ERROR "obs.hpp header not found - please set LIBOBS_INCLUDE_DIR"
+        )
+      endif()
+      target_include_directories(${target} PRIVATE ${LIBOBS_INCLUDE_DIR})
+    endif()
+    find_package(obs-frontend-api)
+    if(obs-frontend-api_FOUND)
+      target_link_libraries(${target} PUBLIC OBS::obs-frontend-api)
+    else()
+      if(NOT LIBOBS_FRONTEND_API_LIB)
+        message(
+          FATAL_ERROR
+            "libobs frontend-api library not found - please set LIBOBS_FRONTEND_API_LIB"
+        )
+      endif()
+      target_link_libraries(${target} PUBLIC ${LIBOBS_FRONTEND_API_LIB})
+      if(NOT LIBOBS_FRONTEND_INCLUDE_DIR)
+        message(
+          FATAL_ERROR
+            " obs-frontend-api.h not found - please set LIBOBS_FRONTEND_INCLUDE_DIR"
+        )
+      endif()
+      target_include_directories(${target}
+                                 PRIVATE ${LIBOBS_FRONTEND_INCLUDE_DIR})
+    endif()
   else()
     target_link_libraries(${target} PUBLIC OBS::libobs OBS::frontend-api)
   endif()
+endfunction()
 
+function(setup_advss_plugin target)
+  setup_obs_lib_dependency(${target})
   find_qt(COMPONENTS Widgets Core)
   target_link_libraries(${target} PRIVATE Qt::Core Qt::Widgets)
 

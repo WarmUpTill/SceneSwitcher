@@ -49,8 +49,32 @@ void MacroActionTransition::SetTransitionOverride()
 	obs_source_release(scene);
 }
 
+#if (LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(27, 0, 0)) && \
+	(LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(28, 0, 0))
+void obs_sceneitem_set_transition(obs_sceneitem_t *item, bool show,
+				  obs_source_t *transition)
+{
+	if (show) {
+		obs_sceneitem_set_show_transition(item, transition);
+	} else {
+		obs_sceneitem_set_hide_transition(item, transition);
+	}
+}
+
+void obs_sceneitem_set_transition_duration(obs_sceneitem_t *item, bool show,
+					   uint32_t duration_ms)
+{
+	if (show) {
+		obs_sceneitem_set_show_transition_duration(item, duration_ms);
+	} else {
+		obs_sceneitem_set_hide_transition_duration(item, duration_ms);
+	}
+}
+#endif
+
 void MacroActionTransition::SetSourceTransition(bool show)
 {
+#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(27, 0, 0)
 	auto transition =
 		obs_weak_source_get_source(_transition.GetTransition());
 	obs_data_t *settings = obs_source_get_settings(transition);
@@ -73,6 +97,7 @@ void MacroActionTransition::SetSourceTransition(bool show)
 	}
 
 	obs_source_release(t);
+#endif
 }
 
 bool MacroActionTransition::PerformAction()
