@@ -642,7 +642,7 @@
                <property name="maximumSize">
                 <size>
                  <width>22</width>
-                 <height>22</height>
+                 <height>16777215</height>
                 </size>
                </property>
                <property name="flat">
@@ -658,7 +658,7 @@
                <property name="maximumSize">
                 <size>
                  <width>22</width>
-                 <height>22</height>
+                 <height>16777215</height>
                 </size>
                </property>
                <property name="flat">
@@ -713,17 +713,14 @@
                <property name="maximumSize">
                 <size>
                  <width>22</width>
-                 <height>22</height>
+                 <height>16777215</height>
                 </size>
-               </property>
-               <property name="text">
-                <string/>
                </property>
                <property name="flat">
                 <bool>true</bool>
                </property>
                <property name="themeID" stdset="0">
-                <string>upArrowIconSmall</string>
+                <string notr="true">upArrowIconSmall</string>
                </property>
               </widget>
              </item>
@@ -732,17 +729,14 @@
                <property name="maximumSize">
                 <size>
                  <width>22</width>
-                 <height>22</height>
+                 <height>16777215</height>
                 </size>
-               </property>
-               <property name="text">
-                <string/>
                </property>
                <property name="flat">
                 <bool>true</bool>
                </property>
                <property name="themeID" stdset="0">
-                <string>downArrowIconSmall</string>
+                <string notr="true">downArrowIconSmall</string>
                </property>
               </widget>
              </item>
