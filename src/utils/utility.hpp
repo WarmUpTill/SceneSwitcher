@@ -84,3 +84,4 @@ void populateSourceGroupSelection(QComboBox *list);
 void populateProfileSelection(QComboBox *list);
 bool windowPosValid(QPoint pos);
 bool doubleEquals(double left, double right, double epsilon);
+void setButtonIcon(QPushButton *button, const char *path);

@@ -1020,3 +1020,11 @@ bool doubleEquals(double left, double right, double epsilon)
 {
 	return (fabs(left - right) < epsilon);
 }
+
+void setButtonIcon(QPushButton *button, const char *path)
+{
+	QIcon icon;
+	icon.addFile(QString::fromUtf8(path), QSize(), QIcon::Normal,
+		     QIcon::Off);
+	button->setIcon(icon);
+}

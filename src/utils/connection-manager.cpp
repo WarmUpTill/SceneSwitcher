@@ -142,14 +142,6 @@ bool ConnectionNameAvailable(const std::string &name)
 	return ConnectionNameAvailable(QString::fromStdString(name));
 }
 
-void setButtonIcon(QPushButton *button, const char *path)
-{
-	QIcon icon;
-	icon.addFile(QString::fromUtf8(path), QSize(), QIcon::Normal,
-		     QIcon::Off);
-	button->setIcon(icon);
-}
-
 ConnectionSelection::ConnectionSelection(QWidget *parent)
 	: QWidget(parent), _selection(new QComboBox), _modify(new QPushButton)
 {
