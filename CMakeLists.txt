@@ -238,6 +238,8 @@ target_sources(
           src/utils/curl-helper.hpp
           src/utils/duration-control.cpp
           src/utils/duration-control.hpp
+          src/utils/item-selection-helpers.cpp
+          src/utils/item-selection-helpers.hpp
           src/utils/file-selection.cpp
           src/utils/file-selection.hpp
           src/utils/macro-list.cpp
