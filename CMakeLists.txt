@@ -147,6 +147,8 @@ target_sources(
           src/macro-core/macro-action-timer.hpp
           src/macro-core/macro-action-transition.cpp
           src/macro-core/macro-action-transition.hpp
+          src/macro-core/macro-action-variable.cpp
+          src/macro-core/macro-action-variable.hpp
           src/macro-core/macro-action-virtual-cam.cpp
           src/macro-core/macro-action-virtual-cam.hpp
           src/macro-core/macro-action-wait.cpp

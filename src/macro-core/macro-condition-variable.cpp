@@ -26,25 +26,23 @@ const static std::map<MacroConditionVariable::Type, std::string>
 		 "AdvSceneSwitcher.condition.variable.type.greaterThan"},
 };
 
-static bool isNumber(const std::string &str)
+static bool isNumber(const Variable &var)
 {
-	char *end = nullptr;
-	double val = strtod(str.c_str(), &end);
-	return end != str.c_str() && *end == '\0' && val != HUGE_VAL;
+	double _;
+	return var.DoubleValue(_);
 }
 
-static bool compareNumber(const std::string &var, double value, bool less)
+static bool compareNumber(const Variable &var, double value, bool less)
 {
-	char *end = nullptr;
-	double varVal = strtod(var.c_str(), &end);
-	if (end != var.c_str() && *end == '\0' && varVal != HUGE_VAL) {
-		if (less) {
-			return varVal < value;
-		} else {
-			return varVal > value;
-		}
+	double varValue;
+
+	if (!var.DoubleValue(varValue)) {
+		return false;
 	}
-	return false;
+	if (less) {
+		return varValue < value;
+	}
+	return varValue > value;
 }
 
 bool MacroConditionVariable::Compare(const Variable &var) const
@@ -74,11 +72,11 @@ bool MacroConditionVariable::CheckCondition()
 	case MacroConditionVariable::Type::IS_EMPTY:
 		return var->Value().empty();
 	case MacroConditionVariable::Type::IS_NUMBER:
-		return isNumber(var->Value());
+		return isNumber(*var);
 	case MacroConditionVariable::Type::LESS_THAN:
-		return compareNumber(var->Value(), _numValue, true);
+		return compareNumber(*var, _numValue, true);
 	case MacroConditionVariable::Type::GREATER_THAN:
-		return compareNumber(var->Value(), _numValue, false);
+		return compareNumber(*var, _numValue, false);
 	}
 
 	return false;
