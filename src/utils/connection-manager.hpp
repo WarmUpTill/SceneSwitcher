@@ -1,4 +1,5 @@
 #pragma once
+#include "item-selection-helpers.hpp"
 
 #include <QComboBox>
 #include <QPushButton>
@@ -7,7 +8,6 @@
 #include <QCheckBox>
 #include <QSpinBox>
 #include <QLabel>
-#include <QDialogButtonBox>
 #include <QSpinBox>
 #include <QTimer>
 #include <QWidget>
@@ -18,7 +18,7 @@
 class ConnectionSelection;
 class ConnectionSettingsDialog;
 
-class Connection {
+class Connection : public Item {
 public:
 	Connection(std::string name, std::string address, uint64_t port,
 		   std::string pass, bool connectOnStart, bool reconnect,
@@ -27,16 +27,19 @@ public:
 	Connection(const Connection &);
 	Connection &operator=(const Connection &);
 	~Connection();
+	static std::shared_ptr<Item> Create()
+	{
+		return std::make_shared<Connection>();
+	}
 
 	void Reconnect();
 	void SendMsg(const std::string &msg);
 	void Load(obs_data_t *obj);
-	void Save(obs_data_t *obj);
+	void Save(obs_data_t *obj) const;
 	std::string GetName() { return _name; }
 	std::vector<std::string> &Events() { return _client.Events(); }
 
 private:
-	std::string _name = "";
 	std::string _address = "localhost";
 	uint64_t _port = 4455;
 	std::string _password = "password";
@@ -54,7 +57,7 @@ private:
 Connection *GetConnectionByName(const QString &);
 Connection *GetConnectionByName(const std::string &);
 
-class ConnectionSettingsDialog : public QDialog {
+class ConnectionSettingsDialog : public ItemSettingsDialog {
 	Q_OBJECT
 
 public:
@@ -62,7 +65,6 @@ public:
 	static bool AskForSettings(QWidget *parent, Connection &settings);
 
 private slots:
-	void NameChanged(const QString &);
 	void ReconnectChanged(int);
 	void ShowPassword();
 	void HidePassword();
@@ -70,10 +72,6 @@ private slots:
 	void TestConnection();
 
 private:
-	void SetNameWarning(const QString);
-
-	QLineEdit *_name;
-	QLabel *_nameHint;
 	QLineEdit *_address;
 	QSpinBox *_port;
 	QLineEdit *_password;
@@ -83,36 +81,15 @@ private:
 	QSpinBox *_reconnectDelay;
 	QPushButton *_test;
 	QLabel *_status;
-	QDialogButtonBox *_buttonbox;
 
 	QTimer _statusTimer;
 	WSConnection _testConnection;
 };
 
-class ConnectionSelection : public QWidget {
+class ConnectionSelection : public ItemSelection {
 	Q_OBJECT
 
 public:
 	ConnectionSelection(QWidget *parent = 0);
 	void SetConnection(const std::string &);
-
-private slots:
-	void ModifyButtonClicked();
-	void ChangeSelection(const QString &);
-	void RenameConnection();
-	void RenameConnection(const QString &oldName, const QString &name);
-	void AddConnection(const QString &);
-	void RemoveConnection();
-	void RemoveConnection(const QString &);
-signals:
-	void SelectionChanged(const QString &);
-	void ConnectionAdded(const QString &);
-	void ConnectionRemoved(const QString &);
-	void ConnectionRenamed(const QString &oldName, const QString &name);
-
-private:
-	Connection *GetCurrentConnection();
-
-	QComboBox *_selection;
-	QPushButton *_modify;
 };

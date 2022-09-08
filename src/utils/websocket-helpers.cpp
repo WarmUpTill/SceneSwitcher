@@ -17,7 +17,10 @@ void ClearWebsocketMessages()
 {
 	switcher->websocketMessages.clear();
 	for (auto &connection : switcher->connections) {
-		connection.Events().clear();
+		Connection *c = dynamic_cast<Connection *>(connection.get());
+		if (c) {
+			c->Events().clear();
+		}
 	}
 }
 
