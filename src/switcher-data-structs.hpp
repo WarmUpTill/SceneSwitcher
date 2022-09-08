@@ -139,7 +139,7 @@ struct SwitcherData {
 
 	Curlhelper curl;
 
-	std::deque<Connection> connections;
+	std::deque<std::shared_ptr<Item>> connections;
 	std::vector<std::string> websocketMessages;
 
 	std::deque<std::shared_ptr<Item>> variables;

@@ -14,9 +14,9 @@ Q_DECLARE_METATYPE(Connection *);
 void SwitcherData::saveConnections(obs_data_t *obj)
 {
 	obs_data_array_t *connectionArray = obs_data_array_create();
-	for (Connection &c : connections) {
+	for (const auto &c : connections) {
 		obs_data_t *array_obj = obs_data_create();
-		c.Save(array_obj);
+		c->Save(array_obj);
 		obs_data_array_push_back(connectionArray, array_obj);
 		obs_data_release(array_obj);
 	}
@@ -34,8 +34,9 @@ void SwitcherData::loadConnections(obs_data_t *obj)
 
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(connectionArray, i);
-		connections.emplace_back();
-		connections.back().Load(array_obj);
+		auto con = Connection::Create();
+		connections.emplace_back(con);
+		connections.back()->Load(array_obj);
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(connectionArray);
@@ -44,7 +45,7 @@ void SwitcherData::loadConnections(obs_data_t *obj)
 Connection::Connection(std::string name, std::string address, uint64_t port,
 		       std::string pass, bool connectOnStart, bool reconnect,
 		       int reconnectDelay)
-	: _name(name),
+	: Item(name),
 	  _address(address),
 	  _port(port),
 	  _password(pass),
@@ -125,8 +126,8 @@ Connection *GetConnectionByName(const QString &name)
 Connection *GetConnectionByName(const std::string &name)
 {
 	for (auto &con : switcher->connections) {
-		if (con.GetName() == name) {
-			return &con;
+		if (con->Name() == name) {
+			return dynamic_cast<Connection *>(con.get());
 		}
 	}
 	return nullptr;
@@ -142,54 +143,38 @@ bool ConnectionNameAvailable(const std::string &name)
 	return ConnectionNameAvailable(QString::fromStdString(name));
 }
 
-ConnectionSelection::ConnectionSelection(QWidget *parent)
-	: QWidget(parent), _selection(new QComboBox), _modify(new QPushButton)
+static bool AskForSettingsWrapper(QWidget *parent, Item &settings)
 {
-	_modify->setMaximumWidth(22);
-	setButtonIcon(_modify, ":/settings/images/settings/general.svg");
-	_modify->setFlat(true);
+	Connection &ConnectionSettings = dynamic_cast<Connection &>(settings);
+	return ConnectionSettingsDialog::AskForSettings(parent,
+							ConnectionSettings);
+}
 
+ConnectionSelection::ConnectionSelection(QWidget *parent)
+	: ItemSelection(switcher->connections, Connection::Create,
+			AskForSettingsWrapper,
+			"AdvSceneSwitcher.connection.select",
+			"AdvSceneSwitcher.connection.add", parent)
+{
 	// Connect to slots
-	QWidget::connect(_selection,
-			 SIGNAL(currentTextChanged(const QString &)), this,
-			 SLOT(ChangeSelection(const QString &)));
-	QWidget::connect(_modify, SIGNAL(clicked()), this,
-			 SLOT(ModifyButtonClicked()));
 	QWidget::connect(
 		window(),
 		SIGNAL(ConnectionRenamed(const QString &, const QString &)),
-		this, SLOT(RenameConnection(const QString &, const QString &)));
+		this, SLOT(RenameItem(const QString &, const QString &)));
 	QWidget::connect(window(), SIGNAL(ConnectionAdded(const QString &)),
-			 this, SLOT(AddConnection(const QString &)));
+			 this, SLOT(AddItem(const QString &)));
 	QWidget::connect(window(), SIGNAL(ConnectionRemoved(const QString &)),
-			 this, SLOT(RemoveConnection(const QString &)));
+			 this, SLOT(RemoveItem(const QString &)));
 
 	// Forward signals
 	QWidget::connect(
-		this,
-		SIGNAL(ConnectionRenamed(const QString &, const QString &)),
+		this, SIGNAL(ItemRenamed(const QString &, const QString &)),
 		window(),
 		SIGNAL(ConnectionRenamed(const QString &, const QString &)));
-	QWidget::connect(this, SIGNAL(ConnectionAdded(const QString &)),
-			 window(), SIGNAL(ConnectionAdded(const QString &)));
-	QWidget::connect(this, SIGNAL(ConnectionRemoved(const QString &)),
-			 window(), SIGNAL(ConnectionRemoved(const QString &)));
-
-	QHBoxLayout *layout = new QHBoxLayout;
-	layout->addWidget(_selection);
-	layout->addWidget(_modify);
-	layout->setContentsMargins(0, 0, 0, 0);
-	setLayout(layout);
-
-	for (const auto &c : switcher->connections) {
-		_selection->addItem(QString::fromStdString(c._name));
-	}
-	_selection->model()->sort(0);
-	addSelectionEntry(
-		_selection,
-		obs_module_text("AdvSceneSwitcher.connection.select"));
-	_selection->insertSeparator(_selection->count());
-	_selection->addItem(obs_module_text("AdvSceneSwitcher.connection.add"));
+	QWidget::connect(this, SIGNAL(ItemAdded(const QString &)), window(),
+			 SIGNAL(ConnectionAdded(const QString &)));
+	QWidget::connect(this, SIGNAL(ItemRemoved(const QString &)), window(),
+			 SIGNAL(ConnectionRemoved(const QString &)));
 }
 
 void ConnectionSelection::SetConnection(const std::string &con)
@@ -202,166 +187,11 @@ void ConnectionSelection::SetConnection(const std::string &con)
 	}
 }
 
-void ConnectionSelection::ChangeSelection(const QString &sel)
-{
-	if (sel == obs_module_text("AdvSceneSwitcher.connection.add")) {
-		Connection connection;
-		bool accepted = ConnectionSettingsDialog::AskForSettings(
-			this, connection);
-		if (!accepted) {
-			_selection->setCurrentIndex(0);
-			return;
-		}
-		switcher->connections.emplace_back(connection);
-		const QSignalBlocker b(_selection);
-		const QString name = QString::fromStdString(connection._name);
-		AddConnection(name);
-		_selection->setCurrentText(name);
-		emit ConnectionAdded(name);
-		emit SelectionChanged(name);
-		return;
-	}
-	auto connection = GetCurrentConnection();
-	if (connection) {
-		emit SelectionChanged(
-			QString::fromStdString(connection->_name));
-	} else {
-		emit SelectionChanged("");
-	}
-}
-
-void ConnectionSelection::ModifyButtonClicked()
-{
-	auto connection = GetCurrentConnection();
-	if (!connection) {
-		return;
-	}
-	auto properties = [&]() {
-		const auto oldName = connection->_name;
-		bool accepted = ConnectionSettingsDialog::AskForSettings(
-			this, *connection);
-		if (!accepted) {
-			return;
-		}
-		if (oldName != connection->_name) {
-			emit ConnectionRenamed(
-				QString::fromStdString(oldName),
-				QString::fromStdString(connection->_name));
-		}
-	};
-
-	QMenu menu(this);
-
-	QAction *action = new QAction(
-		obs_module_text("AdvSceneSwitcher.connection.rename"), &menu);
-	connect(action, SIGNAL(triggered()), this, SLOT(RenameConnection()));
-	action->setProperty("connetion", QVariant::fromValue(connection));
-	menu.addAction(action);
-
-	action = new QAction(
-		obs_module_text("AdvSceneSwitcher.connection.remove"), &menu);
-	connect(action, SIGNAL(triggered()), this, SLOT(RemoveConnection()));
-	menu.addAction(action);
-
-	action = new QAction(
-		obs_module_text("AdvSceneSwitcher.connection.properties"),
-		&menu);
-	connect(action, &QAction::triggered, properties);
-	menu.addAction(action);
-
-	menu.exec(QCursor::pos());
-}
-
-void ConnectionSelection::RenameConnection()
-{
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	QVariant variant = action->property("connetion");
-	Connection *connection = variant.value<Connection *>();
-
-	std::string name;
-	bool accepted = AdvSSNameDialog::AskForName(
-		this, obs_module_text("AdvSceneSwitcher.windowTitle"),
-		obs_module_text("AdvSceneSwitcher.connection.newName"), name,
-		QString::fromStdString(name));
-	if (!accepted) {
-		return;
-	}
-	if (name.empty()) {
-		DisplayMessage("AdvSceneSwitcher.connection.emptyName");
-		return;
-	}
-	if (_selection->currentText().toStdString() != name &&
-	    !ConnectionNameAvailable(name)) {
-		DisplayMessage("AdvSceneSwitcher.connection.nameNotAvailable");
-		return;
-	}
-
-	const auto oldName = connection->_name;
-	connection->_name = name;
-	emit ConnectionRenamed(QString::fromStdString(oldName),
-			       QString::fromStdString(name));
-}
-
-void ConnectionSelection::RenameConnection(const QString &oldName,
-					   const QString &name)
-{
-	int idx = _selection->findText(oldName);
-	if (idx == -1) {
-		return;
-	}
-	_selection->setItemText(idx, name);
-}
-
-void ConnectionSelection::AddConnection(const QString &name)
-{
-	if (_selection->findText(name) == -1) {
-		_selection->insertItem(1, name);
-	}
-}
-
-void ConnectionSelection::RemoveConnection()
-{
-	auto connection = GetCurrentConnection();
-	if (!connection) {
-		return;
-	}
-
-	int idx =
-		_selection->findText(QString::fromStdString(connection->_name));
-	if (idx == -1 || idx == _selection->count()) {
-		return;
-	}
-
-	emit ConnectionRemoved(QString::fromStdString(connection->_name));
-
-	for (auto it = switcher->connections.begin();
-	     it != switcher->connections.end(); ++it) {
-		if (it->_name == connection->_name) {
-			switcher->connections.erase(it);
-			break;
-		}
-	}
-}
-
-void ConnectionSelection::RemoveConnection(const QString &name)
-{
-	const int idx = _selection->findText(name);
-	if (idx == _selection->currentIndex()) {
-		_selection->setCurrentIndex(0);
-	}
-	_selection->removeItem(idx);
-}
-
-Connection *ConnectionSelection::GetCurrentConnection()
-{
-	return GetConnectionByName(_selection->currentText());
-}
-
 ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 						   const Connection &settings)
-	: QDialog(parent),
-	  _name(new QLineEdit()),
-	  _nameHint(new QLabel),
+	: ItemSettingsDialog(settings, switcher->connections,
+			     "AdvSceneSwitcher.connection.select",
+			     "AdvSceneSwitcher.connection.add", parent),
 	  _address(new QLineEdit()),
 	  _port(new QSpinBox()),
 	  _password(new QLineEdit()),
@@ -371,16 +201,8 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 	  _reconnectDelay(new QSpinBox()),
 	  _test(new QPushButton(
 		  obs_module_text("AdvSceneSwitcher.connection.test"))),
-	  _status(new QLabel()),
-	  _buttonbox(new QDialogButtonBox(QDialogButtonBox::Ok |
-					  QDialogButtonBox::Cancel))
+	  _status(new QLabel())
 {
-	setModal(true);
-	setWindowModality(Qt::WindowModality::WindowModal);
-	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-	setFixedWidth(555);
-	setMinimumHeight(100);
-
 	_port->setMaximum(65535);
 	_showPassword->setMaximumWidth(22);
 	_showPassword->setFlat(true);
@@ -388,10 +210,7 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 		"QPushButton { background-color: transparent; border: 0px }");
 	_reconnectDelay->setMaximum(9999);
 	_reconnectDelay->setSuffix("s");
-	_buttonbox->setCenterButtons(true);
-	_buttonbox->button(QDialogButtonBox::Ok)->setDisabled(true);
 
-	_name->setText(QString::fromStdString(settings._name));
 	_address->setText(QString::fromStdString(settings._address));
 	_port->setValue(settings._port);
 	_password->setText(QString::fromStdString(settings._password));
@@ -399,8 +218,6 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 	_reconnect->setChecked(settings._reconnect);
 	_reconnectDelay->setValue(settings._reconnectDelay);
 
-	QWidget::connect(_name, SIGNAL(textEdited(const QString &)), this,
-			 SLOT(NameChanged(const QString &)));
 	QWidget::connect(_reconnect, SIGNAL(stateChanged(int)), this,
 			 SLOT(ReconnectChanged(int)));
 	QWidget::connect(_showPassword, SIGNAL(pressed()), this,
@@ -409,11 +226,6 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 			 SLOT(HidePassword()));
 	QWidget::connect(_test, SIGNAL(clicked()), this,
 			 SLOT(TestConnection()));
-
-	QWidget::connect(_buttonbox, &QDialogButtonBox::accepted, this,
-			 &QDialog::accept);
-	QWidget::connect(_buttonbox, &QDialogButtonBox::rejected, this,
-			 &QDialog::reject);
 
 	QGridLayout *layout = new QGridLayout;
 	int row = 0;
@@ -466,31 +278,8 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 	layout->addWidget(_buttonbox, row, 0, 1, -1);
 	setLayout(layout);
 
-	NameChanged(_name->text());
 	ReconnectChanged(_reconnect->isChecked());
 	HidePassword();
-}
-
-void ConnectionSettingsDialog::NameChanged(const QString &text)
-{
-
-	if (text != _name->text() && !ConnectionNameAvailable(text)) {
-		SetNameWarning(obs_module_text(
-			"AdvSceneSwitcher.connection.nameNotAvailable"));
-		return;
-	}
-	if (text.isEmpty()) {
-		SetNameWarning(obs_module_text(
-			"AdvSceneSwitcher.connection.emptyName"));
-		return;
-	}
-	if (text == obs_module_text("AdvSceneSwitcher.connection.select") ||
-	    text == obs_module_text("AdvSceneSwitcher.connection.add")) {
-		SetNameWarning(obs_module_text(
-			"AdvSceneSwitcher.connection.nameReserved"));
-		return;
-	}
-	SetNameWarning("");
 }
 
 void ConnectionSettingsDialog::ReconnectChanged(int state)
@@ -566,21 +355,9 @@ bool ConnectionSettingsDialog::AskForSettings(QWidget *parent,
 	return true;
 }
 
-void ConnectionSettingsDialog::SetNameWarning(const QString warn)
-{
-	if (warn.isEmpty()) {
-		_nameHint->hide();
-		_buttonbox->button(QDialogButtonBox::Ok)->setDisabled(false);
-		return;
-	}
-	_nameHint->setText(warn);
-	_nameHint->show();
-	_buttonbox->button(QDialogButtonBox::Ok)->setDisabled(true);
-}
-
 void Connection::Load(obs_data_t *obj)
 {
-	_name = obs_data_get_string(obj, "name");
+	Item::Load(obj);
 	_address = obs_data_get_string(obj, "address");
 	_port = obs_data_get_int(obj, "port");
 	_password = obs_data_get_string(obj, "password");
@@ -594,9 +371,9 @@ void Connection::Load(obs_data_t *obj)
 	}
 }
 
-void Connection::Save(obs_data_t *obj)
+void Connection::Save(obs_data_t *obj) const
 {
-	obs_data_set_string(obj, "name", _name.c_str());
+	Item::Save(obj);
 	obs_data_set_string(obj, "address", _address.c_str());
 	obs_data_set_int(obj, "port", _port);
 	obs_data_set_string(obj, "password", _password.c_str());
