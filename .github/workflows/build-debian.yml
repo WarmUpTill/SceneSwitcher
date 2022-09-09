@@ -1,0 +1,69 @@
+name: debian-build
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+      - 'data/locale/**'
+    branches:
+      - master
+    tags:
+      - '*'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'data/locale/**'
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: "recursive"
+      - name: check_libobs_revision
+        run: |
+          sudo apt update
+          sudo apt install libobs-dev
+          mkdir source
+          cd source
+          dpkg -l libobs-dev | tr -s " "| grep libobs | cut -d" " -f3 > libobs.rev
+      - name: install_frontend_header
+        run: |
+          [ -e /usr/include/obs/obs-frontend-api.h ] && { echo "ERROR: obs-frontend-api.h already in system. Maybe the package libobs-dev is installing it."; exit 1; }
+          cd source
+          LIBOBSREV=$(cat libobs.rev)
+          sudo apt update
+          sudo apt install devscripts
+          dget -u http://archive.ubuntu.com/ubuntu/pool/universe/o/obs-studio/obs-studio_$LIBOBSREV.dsc
+          cd ..
+          sudo find -name obs-frontend-api.h -exec cp {} /usr/include/obs/ \;
+          egrep '#include <obs.h>' /usr/include/obs/obs-frontend-api.h || { echo "ERROR: check if the sed commands are needed from now."; exit 1; }
+          sudo sed -i 's/#include <obs.h>/#include <obs\/obs.h>/' /usr/include/obs/obs-frontend-api.h
+          sudo sed -i 's/#include <util\/darray.h>/#include <obs\/util\/darray.h>/' /usr/include/obs/obs-frontend-api.h
+      - name: create_tarball
+        run: |
+          cd ..
+          tar --exclude=.git -cvzf obs-scene-switcher_0.1+testonly.orig.tar.gz SceneSwitcher
+      - name: create_debian_dir
+        run: |
+          cp -a CI/linux/debian .
+      - name: install_dependencies
+        run: |
+          # devscripts and libobs-dev are needed but they were already installed
+          # from check_libobs_revision and install_frontend_header sections.
+          sudo apt update
+          sudo apt install cmake debhelper libcurl4-openssl-dev libxss-dev libxtst-dev qtbase5-dev libopencv-dev libprocps-dev
+      - name: build
+        run: |
+          debuild --no-lintian --no-sign
+          mv ../*.deb .
+      - name: Publish
+        if: success()
+        uses: actions/upload-artifact@v2.2.1
+        with:
+          name: "obs-scene-switcher.deb"
+          path: ${{ github.workspace }}/*.deb
