@@ -244,6 +244,8 @@ target_sources(
           src/utils/macro-list.hpp
           src/utils/name-dialog.cpp
           src/utils/name-dialog.hpp
+          src/utils/regex-config.cpp
+          src/utils/regex-config.hpp
           src/utils/resizing-text-edit.cpp
           src/utils/resizing-text-edit.hpp
           src/utils/scene-item-selection.cpp
