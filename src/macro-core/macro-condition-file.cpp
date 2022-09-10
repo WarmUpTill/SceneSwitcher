@@ -51,12 +51,12 @@ bool MacroConditionFile::matchFileContent(QString &filedata)
 	}
 
 	if (_useRegex) {
-		try {
-			std::regex expr(_text);
-			return std::regex_match(filedata.toStdString(), expr);
-		} catch (const std::regex_error &) {
+		QRegularExpression expr(QString::fromStdString(_text));
+		if (!expr.isValid()) {
 			return false;
 		}
+		auto match = expr.match(filedata);
+		return match.hasMatch();
 	}
 
 	QString text = QString::fromStdString(_text);
