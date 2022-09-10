@@ -82,6 +82,10 @@ bool MacroConditionVideo::CheckCondition()
 		return _lastMatchResult;
 	}
 
+	if (_blockUntilScreenshotDone) {
+		GetScreenshot(true);
+	}
+
 	if (_screenshotData.done) {
 		match = Compare();
 		_lastMatchResult = match;
@@ -94,7 +98,7 @@ bool MacroConditionVideo::CheckCondition()
 		match = _lastMatchResult;
 	}
 
-	if (_getNextScreenshot) {
+	if (!_blockUntilScreenshotDone && _getNextScreenshot) {
 		GetScreenshot();
 	}
 	return match;
@@ -106,6 +110,8 @@ bool MacroConditionVideo::Save(obs_data_t *obj)
 	_video.Save(obj);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_string(obj, "filePath", _file.c_str());
+	obs_data_set_bool(obj, "blockUntilScreenshotDone",
+			  _blockUntilScreenshotDone);
 	obs_data_set_bool(obj, "usePatternForChangedCheck",
 			  _usePatternForChangedCheck);
 	obs_data_set_double(obj, "threshold", _patternThreshold);
@@ -143,6 +149,8 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 	_condition =
 		static_cast<VideoCondition>(obs_data_get_int(obj, "condition"));
 	_file = obs_data_get_string(obj, "filePath");
+	_blockUntilScreenshotDone =
+		obs_data_get_bool(obj, "blockUntilScreenshotDone");
 	_usePatternForChangedCheck =
 		obs_data_get_bool(obj, "usePatternForChangedCheck");
 	_patternThreshold = obs_data_get_double(obj, "threshold");
@@ -186,11 +194,12 @@ std::string MacroConditionVideo::GetShortDesc()
 	return _video.ToString();
 }
 
-void MacroConditionVideo::GetScreenshot()
+void MacroConditionVideo::GetScreenshot(bool blocking)
 {
 	auto source = obs_weak_source_get_source(_video.GetVideo());
 	_screenshotData.~ScreenshotHelper();
-	new (&_screenshotData) ScreenshotHelper(source);
+	new (&_screenshotData)
+		ScreenshotHelper(source, blocking, GetSwitcher()->interval);
 	obs_source_release(source);
 	_getNextScreenshot = false;
 }
@@ -287,6 +296,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	: QWidget(parent),
 	  _videoSelection(new VideoSelectionWidget(this)),
 	  _condition(new QComboBox()),
+	  _reduceLatency(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.condition.video.reduceLatency"))),
 	  _usePatternForChangedCheck(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.usePatternForChangedCheck"))),
 	  _imagePath(new FileSelection()),
@@ -326,6 +337,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 		  "AdvSceneSwitcher.condition.video.showMatch"))),
 	  _previewDialog(this, entryData.get(), &GetSwitcher()->m)
 {
+	_reduceLatency->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.condition.video.reduceLatency.tooltip"));
 	_imagePath->Button()->disconnect();
 	_usePatternForChangedCheck->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.video.usePatternForChangedCheck.tooltip"));
@@ -341,6 +354,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 SLOT(VideoSelectionChanged(const VideoSelection &)));
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
+	QWidget::connect(_reduceLatency, SIGNAL(stateChanged(int)), this,
+			 SLOT(ReduceLatencyChanged(int)));
 	QWidget::connect(_imagePath, SIGNAL(PathChanged(const QString &)), this,
 			 SLOT(ImagePathChanged(const QString &)));
 	QWidget::connect(_imagePath->Button(), SIGNAL(clicked()), this,
@@ -383,6 +398,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{videoSources}}", _videoSelection},
 		{"{{condition}}", _condition},
+		{"{{reduceLatency}}", _reduceLatency},
 		{"{{imagePath}}", _imagePath},
 		{"{{minNeighbors}}", _minNeighbors},
 		{"{{minSize}}", _minSize},
@@ -442,6 +458,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	mainLayout->addLayout(_sizeLayout);
 	mainLayout->addLayout(_throttleControlLayout);
 	mainLayout->addLayout(_checkAreaControlLayout);
+	mainLayout->addWidget(_reduceLatency);
 	mainLayout->addLayout(showMatchLayout);
 	setLayout(mainLayout);
 
@@ -633,6 +650,16 @@ void MacroConditionVideoEdit::PatternThresholdChanged(double value)
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
 	_entryData->_patternThreshold = value;
+}
+
+void MacroConditionVideoEdit::ReduceLatencyChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	_entryData->_blockUntilScreenshotDone = value;
 }
 
 void MacroConditionVideoEdit::UseAlphaAsMaskChanged(int value)
@@ -851,6 +878,7 @@ void MacroConditionVideoEdit::UpdateEntryData()
 
 	_videoSelection->SetVideoSelection(_entryData->_video);
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
+	_reduceLatency->setChecked(_entryData->_blockUntilScreenshotDone);
 	_imagePath->SetPath(QString::fromStdString(_entryData->_file));
 	_usePatternForChangedCheck->setChecked(
 		_entryData->_usePatternForChangedCheck);

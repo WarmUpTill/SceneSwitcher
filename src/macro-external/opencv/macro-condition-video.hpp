@@ -40,7 +40,7 @@ public:
 	{
 		return std::make_shared<MacroConditionVideo>(m);
 	}
-	void GetScreenshot();
+	void GetScreenshot(bool blocking = false);
 	bool LoadImageFromFile();
 	bool LoadModelData(std::string &path);
 	std::string GetModelDataPath() { return _modelDataPath; }
@@ -49,6 +49,13 @@ public:
 	VideoSelection _video;
 	VideoCondition _condition = VideoCondition::MATCH;
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
+	// Enabling this will reduce matching latency, but slow down the
+	// the condition checks of all macros overall.
+	//
+	// If not set the screenshot will be gathered in one interval and
+	// checked in the next one.
+	// If set both operations will happen in the same interval.
+	bool _blockUntilScreenshotDone = false;
 	bool _useAlphaAsMask = false;
 	bool _usePatternForChangedCheck = false;
 	PatternMatchData _patternData;
@@ -107,8 +114,11 @@ public:
 private slots:
 	void VideoSelectionChanged(const VideoSelection &);
 	void ConditionChanged(int cond);
+	void ReduceLatencyChanged(int value);
+
 	void ImagePathChanged(const QString &text);
 	void ImageBrowseButtonClicked();
+
 	void UsePatternForChangedCheckChanged(int value);
 	void PatternThresholdChanged(double);
 	void UseAlphaAsMaskChanged(int value);
@@ -134,8 +144,11 @@ protected:
 	VideoSelectionWidget *_videoSelection;
 	QComboBox *_condition;
 
+	QCheckBox *_reduceLatency;
+
 	QCheckBox *_usePatternForChangedCheck;
 	FileSelection *_imagePath;
+
 	ThresholdSlider *_patternThreshold;
 	QCheckBox *_useAlphaAsMask;
 

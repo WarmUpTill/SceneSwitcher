@@ -1,16 +1,35 @@
 #include "screenshot-helper.hpp"
 #include "advanced-scene-switcher.hpp"
 
+#include <chrono>
+
 static void ScreenshotTick(void *param, float);
 
-ScreenshotHelper::ScreenshotHelper(obs_source_t *source, bool saveToFile,
+ScreenshotHelper::ScreenshotHelper(obs_source_t *source, bool blocking,
+				   int timeout, bool saveToFile,
 				   std::string path)
 	: weakSource(OBSGetWeakRef(source)),
+	  _blocking(blocking),
 	  _saveToFile(saveToFile),
 	  _path(path)
 {
+	std::unique_lock<std::mutex> lock(_mutex);
 	_initDone = true;
 	obs_add_tick_callback(ScreenshotTick, this);
+	if (_blocking) {
+		auto res =
+			_cv.wait_for(lock, std::chrono::milliseconds(timeout));
+		if (res == std::cv_status::timeout) {
+			if (source) {
+				blog(LOG_WARNING,
+				     "Failed to get screenshot in time for source %s",
+				     obs_source_get_name(source));
+			} else {
+				blog(LOG_WARNING,
+				     "Failed to get screenshot in time");
+			}
+		}
+	}
 }
 
 ScreenshotHelper::~ScreenshotHelper()
@@ -104,6 +123,8 @@ void ScreenshotHelper::MarkDone()
 {
 	time = std::chrono::high_resolution_clock::now();
 	done = true;
+	std::unique_lock<std::mutex> lock(_mutex);
+	_cv.notify_all();
 }
 
 void ScreenshotHelper::WriteToFile()
@@ -148,8 +169,8 @@ static void ScreenshotTick(void *param, float)
 		break;
 	case STAGE_COPY_AND_SAVE:
 		data->Copy();
-		data->MarkDone();
 		data->WriteToFile();
+		data->MarkDone();
 
 		obs_remove_tick_callback(ScreenshotTick, data);
 		break;
