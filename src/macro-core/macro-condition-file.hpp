@@ -29,10 +29,19 @@ public:
 		REMOTE,
 	};
 
+	enum class ConditionType {
+		MATCH,
+		CONTENT_CHANGE,
+		DATE_CHANGE,
+	};
+
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	std::string _text = obs_module_text("AdvSceneSwitcher.enterText");
 	FileType _fileType = FileType::LOCAL;
+	ConditionType _condition = ConditionType::MATCH;
 	RegexConfig _regex;
+
+	// TODO: Remove in future version
 	bool _useTime = false;
 	bool _onlyMatchIfChanged = false;
 
@@ -40,6 +49,8 @@ private:
 	bool MatchFileContent(QString &filedata);
 	bool CheckRemoteFileContent();
 	bool CheckLocalFileContent();
+	bool CheckChangeContent();
+	bool CheckChangeDate();
 
 	QDateTime _lastMod;
 	size_t _lastHash = 0;
@@ -65,6 +76,7 @@ public:
 
 private slots:
 	void FileTypeChanged(int index);
+	void ConditionChanged(int index);
 	void PathChanged(const QString &text);
 	void MatchTextChanged();
 	void RegexChanged(RegexConfig);
@@ -74,7 +86,8 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
-	QComboBox *_fileType;
+	QComboBox *_fileTypes;
+	QComboBox *_conditions;
 	FileSelection *_filePath;
 	ResizingPlainTextEdit *_matchText;
 	RegexConfigWidget *_regex;
@@ -83,5 +96,7 @@ protected:
 	std::shared_ptr<MacroConditionFile> _entryData;
 
 private:
+	void SetWidgetVisibility();
+
 	bool _loading = true;
 };
