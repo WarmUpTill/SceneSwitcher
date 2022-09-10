@@ -11,11 +11,6 @@
 #include <QPushButton>
 #include <QCheckBox>
 
-enum class FileType {
-	LOCAL,
-	REMOTE,
-};
-
 class MacroConditionFile : public MacroCondition {
 public:
 	MacroConditionFile(Macro *m) : MacroCondition(m) {}
@@ -29,6 +24,11 @@ public:
 		return std::make_shared<MacroConditionFile>(m);
 	}
 
+	enum class FileType {
+		LOCAL,
+		REMOTE,
+	};
+
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	std::string _text = obs_module_text("AdvSceneSwitcher.enterText");
 	FileType _fileType = FileType::LOCAL;
@@ -37,9 +37,9 @@ public:
 	bool _onlyMatchIfChanged = false;
 
 private:
-	bool matchFileContent(QString &filedata);
-	bool checkRemoteFileContent();
-	bool checkLocalFileContent();
+	bool MatchFileContent(QString &filedata);
+	bool CheckRemoteFileContent();
+	bool CheckLocalFileContent();
 
 	QDateTime _lastMod;
 	size_t _lastHash = 0;
