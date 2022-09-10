@@ -13,6 +13,7 @@
 #include "scene-group.hpp"
 
 class SceneSelection;
+class RegexConfig;
 
 bool WeakSourceValid(obs_weak_source_t *ws);
 std::string GetWeakSourceName(obs_weak_source_t *weak_source);
@@ -26,12 +27,13 @@ bool compareIgnoringLineEnding(QString &s1, QString &s2);
 std::string getSourceSettings(OBSWeakSource ws);
 void setSourceSettings(obs_source_t *s, const std::string &settings);
 bool compareSourceSettings(const OBSWeakSource &source,
-			   const std::string &settings, bool regex);
+			   const std::string &settings,
+			   const RegexConfig &regex);
 std::vector<obs_scene_item *> getSceneItemsWithName(obs_scene_t *scene,
 						    std::string &name);
 std::string getDataFilePath(const std::string &file);
 bool matchJson(const std::string &json1, const std::string &json2,
-	       bool useRegex);
+	       const RegexConfig &regex);
 QString formatJsonString(std::string);
 QString formatJsonString(QString);
 QString escapeForRegex(QString &s);

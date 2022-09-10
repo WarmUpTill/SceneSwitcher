@@ -50,8 +50,8 @@ bool MacroConditionFile::matchFileContent(QString &filedata)
 		_lastHash = newHash;
 	}
 
-	if (_useRegex) {
-		QRegularExpression expr(QString::fromStdString(_text));
+	if (_regex.Enabled()) {
+		auto expr = _regex.GetRegularExpression(_text);
 		if (!expr.isValid()) {
 			return false;
 		}
@@ -105,10 +105,10 @@ bool MacroConditionFile::CheckCondition()
 bool MacroConditionFile::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
+	_regex.Save(obj);
 	obs_data_set_string(obj, "file", _file.c_str());
 	obs_data_set_string(obj, "text", _text.c_str());
 	obs_data_set_int(obj, "fileType", static_cast<int>(_fileType));
-	obs_data_set_bool(obj, "useRegex", _useRegex);
 	obs_data_set_bool(obj, "useTime", _useTime);
 	obs_data_set_bool(obj, "onlyMatchIfChanged", _onlyMatchIfChanged);
 	return true;
@@ -117,10 +117,15 @@ bool MacroConditionFile::Save(obs_data_t *obj)
 bool MacroConditionFile::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
+	_regex.Load(obj);
+	// TODO: remove in future version
+	if (obs_data_has_user_value(obj, "useRegex")) {
+		_regex.CreateBackwardsCompatibleRegex(
+			obs_data_get_bool(obj, "useRegex"));
+	}
 	_file = obs_data_get_string(obj, "file");
 	_text = obs_data_get_string(obj, "text");
 	_fileType = static_cast<FileType>(obs_data_get_int(obj, "fileType"));
-	_useRegex = obs_data_get_bool(obj, "useRegex");
 	_useTime = obs_data_get_bool(obj, "useTime");
 	_onlyMatchIfChanged = obs_data_get_bool(obj, "onlyMatchIfChanged");
 	return true;
@@ -138,8 +143,7 @@ MacroConditionFileEdit::MacroConditionFileEdit(
 	_fileType = new QComboBox();
 	_filePath = new FileSelection();
 	_matchText = new ResizingPlainTextEdit(this);
-	_useRegex = new QCheckBox(
-		obs_module_text("AdvSceneSwitcher.fileTab.useRegExp"));
+	_regex = new RegexConfigWidget(parent);
 	_checkModificationDate = new QCheckBox(obs_module_text(
 		"AdvSceneSwitcher.fileTab.checkfileContentTime"));
 	_checkFileContent = new QCheckBox(
@@ -151,8 +155,8 @@ MacroConditionFileEdit::MacroConditionFileEdit(
 			 SLOT(PathChanged(const QString &)));
 	QWidget::connect(_matchText, SIGNAL(textChanged()), this,
 			 SLOT(MatchTextChanged()));
-	QWidget::connect(_useRegex, SIGNAL(stateChanged(int)), this,
-			 SLOT(UseRegexChanged(int)));
+	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
+			 SLOT(RegexChanged(RegexConfig)));
 	QWidget::connect(_checkModificationDate, SIGNAL(stateChanged(int)),
 			 this, SLOT(CheckModificationDateChanged(int)));
 	QWidget::connect(_checkFileContent, SIGNAL(stateChanged(int)), this,
@@ -165,7 +169,7 @@ MacroConditionFileEdit::MacroConditionFileEdit(
 		{"{{fileType}}", _fileType},
 		{"{{filePath}}", _filePath},
 		{"{{matchText}}", _matchText},
-		{"{{useRegex}}", _useRegex},
+		{"{{useRegex}}", _regex},
 		{"{{checkModificationDate}}", _checkModificationDate},
 		{"{{checkFileContent}}", _checkFileContent},
 	};
@@ -204,7 +208,7 @@ void MacroConditionFileEdit::UpdateEntryData()
 
 	_filePath->SetPath(QString::fromStdString(_entryData->_file));
 	_matchText->setPlainText(QString::fromStdString(_entryData->_text));
-	_useRegex->setChecked(_entryData->_useRegex);
+	_regex->SetRegexConfig(_entryData->_regex);
 	_checkModificationDate->setChecked(_entryData->_useTime);
 	_checkFileContent->setChecked(_entryData->_onlyMatchIfChanged);
 
@@ -257,14 +261,16 @@ void MacroConditionFileEdit::MatchTextChanged()
 	updateGeometry();
 }
 
-void MacroConditionFileEdit::UseRegexChanged(int state)
+void MacroConditionFileEdit::RegexChanged(RegexConfig conf)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_useRegex = state;
+	_entryData->_regex = conf;
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionFileEdit::CheckModificationDateChanged(int state)

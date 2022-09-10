@@ -2,6 +2,7 @@
 #include "macro.hpp"
 #include "file-selection.hpp"
 #include "resizing-text-edit.hpp"
+#include "regex-config.hpp"
 
 #include <QWidget>
 #include <QComboBox>
@@ -31,7 +32,7 @@ public:
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	std::string _text = obs_module_text("AdvSceneSwitcher.enterText");
 	FileType _fileType = FileType::LOCAL;
-	bool _useRegex = false;
+	RegexConfig _regex;
 	bool _useTime = false;
 	bool _onlyMatchIfChanged = false;
 
@@ -66,7 +67,7 @@ private slots:
 	void FileTypeChanged(int index);
 	void PathChanged(const QString &text);
 	void MatchTextChanged();
-	void UseRegexChanged(int state);
+	void RegexChanged(RegexConfig);
 	void CheckModificationDateChanged(int state);
 	void OnlyMatchIfChangedChanged(int state);
 signals:
@@ -76,7 +77,7 @@ protected:
 	QComboBox *_fileType;
 	FileSelection *_filePath;
 	ResizingPlainTextEdit *_matchText;
-	QCheckBox *_useRegex;
+	RegexConfigWidget *_regex;
 	QCheckBox *_checkModificationDate;
 	QCheckBox *_checkFileContent;
 	std::shared_ptr<MacroConditionFile> _entryData;

@@ -1,6 +1,7 @@
 #include "utility.hpp"
 #include "platform-funcs.hpp"
 #include "scene-selection.hpp"
+#include "regex-config.hpp"
 
 #include <QTextStream>
 #include <QLabel>
@@ -333,9 +334,8 @@ std::vector<obs_scene_item *> getSceneItemsWithName(obs_scene_t *scene,
 
 // Match json1 with pattern json2
 bool matchJson(const std::string &json1, const std::string &json2,
-	       bool useRegex)
+	       const RegexConfig &regex)
 {
-	bool ret = false;
 	auto j1 = formatJsonString(json1).toStdString();
 	auto j2 = formatJsonString(json2).toStdString();
 
@@ -346,24 +346,23 @@ bool matchJson(const std::string &json1, const std::string &json2,
 		j2 = json2;
 	}
 
-	if (useRegex) {
-		try {
-			std::regex expr(j2);
-			ret = std::regex_match(
-				j1, expr, std::regex_constants::match_default);
-		} catch (const std::regex_error &) {
+	if (regex.Enabled()) {
+		auto expr = regex.GetRegularExpression(j2);
+		if (!expr.isValid()) {
+			return false;
 		}
-	} else {
-		ret = j1 == j2;
+		auto match = expr.match(QString::fromStdString(j1));
+		return match.hasMatch();
 	}
-	return ret;
+	return j1 == j2;
 }
 
 bool compareSourceSettings(const OBSWeakSource &source,
-			   const std::string &settings, bool useRegex)
+			   const std::string &settings,
+			   const RegexConfig &regex)
 {
 	std::string currentSettings = getSourceSettings(source);
-	return matchJson(currentSettings, settings, useRegex);
+	return matchJson(currentSettings, settings, regex);
 }
 
 std::string getDataFilePath(const std::string &file)
