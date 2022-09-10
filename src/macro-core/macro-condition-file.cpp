@@ -40,7 +40,7 @@ static std::string getRemoteData(std::string &url)
 	return readBuffer;
 }
 
-bool MacroConditionFile::matchFileContent(QString &filedata)
+bool MacroConditionFile::MatchFileContent(QString &filedata)
 {
 	if (_onlyMatchIfChanged) {
 		size_t newHash = strHash(filedata.toUtf8().constData());
@@ -63,14 +63,14 @@ bool MacroConditionFile::matchFileContent(QString &filedata)
 	return compareIgnoringLineEnding(text, filedata);
 }
 
-bool MacroConditionFile::checkRemoteFileContent()
+bool MacroConditionFile::CheckRemoteFileContent()
 {
 	std::string data = getRemoteData(_file);
 	QString qdata = QString::fromStdString(data);
-	return matchFileContent(qdata);
+	return MatchFileContent(qdata);
 }
 
-bool MacroConditionFile::checkLocalFileContent()
+bool MacroConditionFile::CheckLocalFileContent()
 {
 	QString t = QString::fromStdString(_text);
 	QFile file(QString::fromStdString(_file));
@@ -87,7 +87,7 @@ bool MacroConditionFile::checkLocalFileContent()
 	}
 
 	QString filedata = QTextStream(&file).readAll();
-	bool match = matchFileContent(filedata);
+	bool match = MatchFileContent(filedata);
 
 	file.close();
 	return match;
@@ -96,9 +96,9 @@ bool MacroConditionFile::checkLocalFileContent()
 bool MacroConditionFile::CheckCondition()
 {
 	if (_fileType == FileType::REMOTE) {
-		return checkRemoteFileContent();
+		return CheckRemoteFileContent();
 	} else {
-		return checkLocalFileContent();
+		return CheckLocalFileContent();
 	}
 }
 
@@ -222,9 +222,10 @@ void MacroConditionFileEdit::FileTypeChanged(int index)
 		return;
 	}
 
-	FileType type = static_cast<FileType>(index);
+	MacroConditionFile::FileType type =
+		static_cast<MacroConditionFile::FileType>(index);
 
-	if (type == FileType::LOCAL) {
+	if (type == MacroConditionFile::FileType::LOCAL) {
 		_filePath->Button()->setDisabled(false);
 		_checkModificationDate->setDisabled(false);
 	} else {
