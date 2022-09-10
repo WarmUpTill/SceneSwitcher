@@ -74,7 +74,7 @@ bool MacroConditionFile::checkLocalFileContent()
 {
 	QString t = QString::fromStdString(_text);
 	QFile file(QString::fromStdString(_file));
-	if (!file.open(QIODevice::ReadOnly)) {
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 		return false;
 	}
 
