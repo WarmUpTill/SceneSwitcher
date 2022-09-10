@@ -2,7 +2,7 @@
 
 PatternMatchData createPatternData(QImage &pattern)
 {
-	PatternMatchData data;
+	PatternMatchData data{};
 	if (pattern.isNull()) {
 		return data;
 	}
