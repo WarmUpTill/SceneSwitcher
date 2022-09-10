@@ -4,11 +4,14 @@
 #include <QImage>
 #include <chrono>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 
 class ScreenshotHelper {
 public:
 	ScreenshotHelper() = default;
-	ScreenshotHelper(obs_source_t *source, bool saveToFile = false,
+	ScreenshotHelper(obs_source_t *source, bool blocking = false,
+			 int timeout = 1000, bool saveToFile = false,
 			 std::string path = "");
 	ScreenshotHelper &operator=(const ScreenshotHelper &) = delete;
 	ScreenshotHelper(const ScreenshotHelper &) = delete;
@@ -34,7 +37,10 @@ public:
 
 private:
 	bool _initDone = false;
+	bool _blocking = false;
 	std::thread _saveThread;
 	bool _saveToFile = false;
 	std::string _path = "";
+	std::mutex _mutex;
+	std::condition_variable _cv;
 };

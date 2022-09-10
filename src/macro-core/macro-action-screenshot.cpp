@@ -24,7 +24,7 @@ void MacroActionScreenshot::CustomScreenshot()
 {
 	auto s = obs_weak_source_get_source(_source);
 	_screenshot.~ScreenshotHelper();
-	new (&_screenshot) ScreenshotHelper(s, true, _path);
+	new (&_screenshot) ScreenshotHelper(s, false, 0, true, _path);
 	obs_source_release(s);
 }
 
