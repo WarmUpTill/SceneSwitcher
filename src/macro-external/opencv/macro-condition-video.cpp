@@ -312,7 +312,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	  _minSize(new SizeSelection(0, 1024)),
 	  _maxSize(new SizeSelection(0, 4096)),
 	  _checkAreaControlLayout(new QHBoxLayout),
-	  _checkAreaEnable(new QCheckBox()),
+	  _checkAreaEnable(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.condition.video.entry.checkAreaEnable"))),
 	  _checkArea(new AreaSelection(0, 99999)),
 	  _selectArea(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.selectArea"))),
@@ -437,9 +438,9 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	mainLayout->addLayout(_neighborsControlLayout);
 	mainLayout->addWidget(_minNeighborsDescription);
 	mainLayout->addLayout(_sizeLayout);
-	mainLayout->addLayout(showMatchLayout);
 	mainLayout->addLayout(_throttleControlLayout);
 	mainLayout->addLayout(_checkAreaControlLayout);
+	mainLayout->addLayout(showMatchLayout);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -693,6 +694,9 @@ void MacroConditionVideoEdit::CheckAreaEnableChanged(int value)
 	_entryData->_checkAreaEnable = value;
 	_checkArea->setEnabled(value);
 	_selectArea->setEnabled(value);
+	_checkArea->setVisible(value);
+	_selectArea->setVisible(value);
+	adjustSize();
 }
 
 void MacroConditionVideoEdit::CheckAreaChanged(advss::Area value)
@@ -825,6 +829,8 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 			 needsThrottleControls(_entryData->_condition));
 	setLayoutVisible(_checkAreaControlLayout,
 			 needsAreaControls(_entryData->_condition));
+	_checkArea->setVisible(_entryData->_checkAreaEnable);
+	_selectArea->setVisible(_entryData->_checkAreaEnable);
 
 	if (_entryData->_condition == VideoCondition::HAS_CHANGED ||
 	    _entryData->_condition == VideoCondition::HAS_NOT_CHANGED) {
