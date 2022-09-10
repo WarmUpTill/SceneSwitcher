@@ -200,6 +200,8 @@ bool MacroConditionVideo::LoadImageFromFile()
 	if (!_matchImage.load(QString::fromStdString(_file))) {
 		blog(LOG_WARNING, "Cannot load image data from file '%s'",
 		     _file.c_str());
+		(&_matchImage)->~QImage();
+		new (&_matchImage) QImage();
 		return false;
 	}
 
