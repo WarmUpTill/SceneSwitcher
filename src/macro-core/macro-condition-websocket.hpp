@@ -1,6 +1,7 @@
 #pragma once
 #include "macro.hpp"
 #include "resizing-text-edit.hpp"
+#include "regex-config.hpp"
 
 #include <QCheckBox>
 
@@ -18,7 +19,7 @@ public:
 	}
 
 	std::string _message = obs_module_text("AdvSceneSwitcher.enterText");
-	bool _useRegex = false;
+	RegexConfig _regex;
 
 private:
 	static bool _registered;
@@ -44,13 +45,13 @@ public:
 
 private slots:
 	void MessageChanged();
-	void UseRegexChanged(int state);
+	void RegexChanged(RegexConfig);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
 	ResizingPlainTextEdit *_message;
-	QCheckBox *_useRegex;
+	RegexConfigWidget *_regex;
 	std::shared_ptr<MacroConditionWebsocket> _entryData;
 
 private:

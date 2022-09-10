@@ -56,7 +56,7 @@ bool MacroConditionFilter::Save(obs_data_t *obj)
 	obs_data_set_string(obj, "filter", GetWeakSourceName(_filter).c_str());
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_string(obj, "settings", _settings.c_str());
-	obs_data_set_bool(obj, "regex", _regex);
+	_regex.Save(obj);
 	return true;
 }
 
@@ -70,7 +70,12 @@ bool MacroConditionFilter::Load(obs_data_t *obj)
 	_condition = static_cast<FilterCondition>(
 		obs_data_get_int(obj, "condition"));
 	_settings = obs_data_get_string(obj, "settings");
-	_regex = obs_data_get_bool(obj, "regex");
+	_regex.Load(obj);
+	// TOOD: remove in future version
+	if (obs_data_has_user_value(obj, "regex")) {
+		_regex.CreateBackwardsCompatibleRegex(
+			obs_data_get_bool(obj, "regex"));
+	}
 	return true;
 }
 
@@ -92,18 +97,16 @@ static inline void populateConditionSelection(QComboBox *list)
 
 MacroConditionFilterEdit::MacroConditionFilterEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionFilter> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _sources(new QComboBox()),
+	  _filters(new QComboBox()),
+	  _conditions(new QComboBox()),
+	  _getSettings(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.condition.filter.getSettings"))),
+	  _settings(new ResizingPlainTextEdit(this)),
+	  _regex(new RegexConfigWidget(parent))
 {
-	_sources = new QComboBox();
-	_filters = new QComboBox();
 	_filters->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-	_conditions = new QComboBox();
-	_getSettings = new QPushButton(obs_module_text(
-		"AdvSceneSwitcher.condition.filter.getSettings"));
-	_settings = new ResizingPlainTextEdit(this);
-	_regex = new QCheckBox(
-		obs_module_text("AdvSceneSwitcher.condition.filter.regex"));
-
 	populateConditionSelection(_conditions);
 	populateSourcesWithFilterSelection(_sources);
 
@@ -117,8 +120,8 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 			 SLOT(GetSettingsClicked()));
 	QWidget::connect(_settings, SIGNAL(textChanged()), this,
 			 SLOT(SettingsChanged()));
-	QWidget::connect(_regex, SIGNAL(stateChanged(int)), this,
-			 SLOT(RegexChanged(int)));
+	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
+			 SLOT(RegexChanged(RegexConfig)));
 
 	QHBoxLayout *line1Layout = new QHBoxLayout;
 	QHBoxLayout *line2Layout = new QHBoxLayout;
@@ -194,7 +197,7 @@ void MacroConditionFilterEdit::GetSettingsClicked()
 	}
 
 	QString json = formatJsonString(getSourceSettings(_entryData->_filter));
-	if (_entryData->_regex) {
+	if (_entryData->_regex.Enabled()) {
 		json = escapeForRegex(json);
 	}
 	_settings->setPlainText(json);
@@ -213,14 +216,17 @@ void MacroConditionFilterEdit::SettingsChanged()
 	updateGeometry();
 }
 
-void MacroConditionFilterEdit::RegexChanged(int state)
+void MacroConditionFilterEdit::RegexChanged(RegexConfig conf)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_regex = state;
+	_entryData->_regex = conf;
+
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionFilterEdit::SetSettingsSelectionVisible(bool visible)
@@ -244,7 +250,7 @@ void MacroConditionFilterEdit::UpdateEntryData()
 		GetWeakSourceName(_entryData->_filter).c_str());
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_settings->setPlainText(QString::fromStdString(_entryData->_settings));
-	_regex->setChecked(_entryData->_regex);
+	_regex->SetRegexConfig(_entryData->_regex);
 	SetSettingsSelectionVisible(_entryData->_condition ==
 				    FilterCondition::SETTINGS);
 

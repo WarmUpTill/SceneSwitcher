@@ -3,6 +3,7 @@
 #include "scene-selection.hpp"
 #include "scene-item-selection.hpp"
 #include "resizing-text-edit.hpp"
+#include "regex-config.hpp"
 
 #include <QSpinBox>
 #include <QCheckBox>
@@ -22,7 +23,7 @@ public:
 
 	SceneSelection _scene;
 	SceneItemSelection _source;
-	bool _regex = false;
+	RegexConfig _regex;
 	std::string _settings = "";
 
 private:
@@ -53,7 +54,7 @@ private slots:
 	void SourceChanged(const SceneItemSelection &);
 	void GetSettingsClicked();
 	void SettingsChanged();
-	void RegexChanged(int);
+	void RegexChanged(RegexConfig);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -62,7 +63,7 @@ protected:
 	SceneItemSelectionWidget *_sources;
 	QPushButton *_getSettings;
 	ResizingPlainTextEdit *_settings;
-	QCheckBox *_regex;
+	RegexConfigWidget *_regex;
 
 	std::shared_ptr<MacroConditionSceneTransform> _entryData;
 

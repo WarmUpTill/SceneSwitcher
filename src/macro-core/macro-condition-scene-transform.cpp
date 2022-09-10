@@ -33,7 +33,7 @@ bool MacroConditionSceneTransform::Save(obs_data_t *obj)
 	_scene.Save(obj);
 	_source.Save(obj);
 	obs_data_set_string(obj, "settings", _settings.c_str());
-	obs_data_set_bool(obj, "regex", _regex);
+	_regex.Save(obj);
 	return true;
 }
 
@@ -50,7 +50,12 @@ bool MacroConditionSceneTransform::Load(obs_data_t *obj)
 	_scene.Load(obj);
 	_source.Load(obj);
 	_settings = obs_data_get_string(obj, "settings");
-	_regex = obs_data_get_bool(obj, "regex");
+	_regex.Load(obj);
+	// TOOD: remove in future version
+	if (obs_data_has_user_value(obj, "regex")) {
+		_regex.CreateBackwardsCompatibleRegex(
+			obs_data_get_bool(obj, "regex"));
+	}
 	return true;
 }
 
@@ -66,17 +71,16 @@ std::string MacroConditionSceneTransform::GetShortDesc()
 MacroConditionSceneTransformEdit::MacroConditionSceneTransformEdit(
 	QWidget *parent,
 	std::shared_ptr<MacroConditionSceneTransform> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _scenes(new SceneSelectionWidget(window(), false, false, true)),
+	  _sources(new SceneItemSelectionWidget(
+		  parent, true,
+		  SceneItemSelectionWidget::AllSelectionType::ANY)),
+	  _getSettings(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.condition.sceneTransform.getTransform"))),
+	  _settings(new ResizingPlainTextEdit(this)),
+	  _regex(new RegexConfigWidget(parent))
 {
-	_scenes = new SceneSelectionWidget(window(), false, false, true);
-	_sources = new SceneItemSelectionWidget(
-		parent, true, SceneItemSelectionWidget::AllSelectionType::ANY);
-	_getSettings = new QPushButton(obs_module_text(
-		"AdvSceneSwitcher.condition.sceneTransform.getTransform"));
-	_settings = new ResizingPlainTextEdit(this);
-	_regex = new QCheckBox(obs_module_text(
-		"AdvSceneSwitcher.condition.sceneTransform.regex"));
-
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
@@ -88,8 +92,8 @@ MacroConditionSceneTransformEdit::MacroConditionSceneTransformEdit(
 			 SLOT(GetSettingsClicked()));
 	QWidget::connect(_settings, SIGNAL(textChanged()), this,
 			 SLOT(SettingsChanged()));
-	QWidget::connect(_regex, SIGNAL(stateChanged(int)), this,
-			 SLOT(RegexChanged(int)));
+	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
+			 SLOT(RegexChanged(RegexConfig)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", _scenes},     {"{{sources}}", _sources},
@@ -132,7 +136,7 @@ void MacroConditionSceneTransformEdit::UpdateEntryData()
 
 	_scenes->SetScene(_entryData->_scene);
 	_sources->SetSceneItem(_entryData->_source);
-	_regex->setChecked(_entryData->_regex);
+	_regex->SetRegexConfig(_entryData->_regex);
 	_settings->setPlainText(QString::fromStdString(_entryData->_settings));
 
 	adjustSize();
@@ -175,7 +179,7 @@ void MacroConditionSceneTransformEdit::GetSettingsClicked()
 	}
 
 	auto settings = formatJsonString(getSceneItemTransform(items[0]));
-	if (_entryData->_regex) {
+	if (_entryData->_regex.Enabled()) {
 		settings = escapeForRegex(settings);
 	}
 	_settings->setPlainText(settings);
@@ -198,12 +202,15 @@ void MacroConditionSceneTransformEdit::SettingsChanged()
 	updateGeometry();
 }
 
-void MacroConditionSceneTransformEdit::RegexChanged(int state)
+void MacroConditionSceneTransformEdit::RegexChanged(RegexConfig conf)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_regex = state;
+	_entryData->_regex = conf;
+
+	adjustSize();
+	updateGeometry();
 }
