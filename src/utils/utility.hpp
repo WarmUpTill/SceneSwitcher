@@ -87,3 +87,7 @@ void populateProfileSelection(QComboBox *list);
 bool windowPosValid(QPoint pos);
 bool doubleEquals(double left, double right, double epsilon);
 void setButtonIcon(QPushButton *button, const char *path);
+void addSelectionGroup(QComboBox *selection, const QStringList &group,
+		       bool addSeparator = true);
+int findIdxInRagne(QComboBox *list, int start, int stop,
+		   const std::string &value);

@@ -207,7 +207,7 @@ MacroActionTransitionEdit::MacroActionTransitionEdit(
 	: QWidget(parent),
 	  _actions(new QComboBox),
 	  _sources(new SceneItemSelectionWidget(parent, false)),
-	  _scenes(new SceneSelectionWidget(this, false, false, true)),
+	  _scenes(new SceneSelectionWidget(this, true, false, false, true)),
 	  _setTransition(new QCheckBox),
 	  _setDuration(new QCheckBox),
 	  _transitions(new TransitionSelectionWidget(this, false)),

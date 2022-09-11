@@ -1027,3 +1027,33 @@ void setButtonIcon(QPushButton *button, const char *path)
 		     QIcon::Off);
 	button->setIcon(icon);
 }
+
+void addSelectionGroup(QComboBox *selection, const QStringList &group,
+		       bool addSeparator)
+{
+	selection->addItems(group);
+	if (addSeparator) {
+		selection->insertSeparator(selection->count());
+	}
+}
+
+int findIdxInRagne(QComboBox *list, int start, int stop,
+		   const std::string &value)
+{
+	if (value.empty()) {
+		return 0;
+	}
+	auto model = list->model();
+	auto startIdx = model->index(start, 0);
+	auto match = model->match(startIdx, Qt::DisplayRole,
+				  QString::fromStdString(value), 1,
+				  Qt::MatchExactly | Qt::MatchCaseSensitive);
+	if (match.isEmpty()) {
+		return 0;
+	}
+	int foundIdx = match.first().row();
+	if (foundIdx > stop) {
+		return 0;
+	}
+	return foundIdx;
+}

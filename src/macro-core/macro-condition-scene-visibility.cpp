@@ -113,7 +113,7 @@ MacroConditionSceneVisibilityEdit::MacroConditionSceneVisibilityEdit(
 	std::shared_ptr<MacroConditionSceneVisibility> entryData)
 	: QWidget(parent)
 {
-	_scenes = new SceneSelectionWidget(window(), false, true, true);
+	_scenes = new SceneSelectionWidget(window(), true, false, true, true);
 	_sources = new SceneItemSelectionWidget(parent);
 	_conditions = new QComboBox();
 

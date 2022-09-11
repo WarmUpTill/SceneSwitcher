@@ -183,7 +183,7 @@ MacroConditionTransitionEdit::MacroConditionTransitionEdit(
 {
 	_conditions = new QComboBox();
 	_transitions = new TransitionSelectionWidget(this, true, true);
-	_scenes = new SceneSelectionWidget(this, false, true, true);
+	_scenes = new SceneSelectionWidget(this, true, false, true, true);
 	_duration = new DurationSelection(this, false);
 	_durationSuffix = new QLabel(obs_module_text(
 		"AdvSceneSwitcher.condition.transition.durationSuffix"));

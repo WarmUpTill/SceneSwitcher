@@ -1,11 +1,12 @@
 #include "scene-selection.hpp"
 #include "advanced-scene-switcher.hpp"
+#include "utility.hpp"
 
 constexpr std::string_view typeSaveName = "type";
 constexpr std::string_view nameSaveName = "name";
 constexpr std::string_view selectionSaveName = "sceneSelection";
 
-void SceneSelection::Save(obs_data_t *obj)
+void SceneSelection::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
 	obs_data_set_int(data, typeSaveName.data(), static_cast<int>(_type));
@@ -18,6 +19,15 @@ void SceneSelection::Save(obs_data_t *obj)
 		obs_data_set_string(data, nameSaveName.data(),
 				    _group->name.c_str());
 		break;
+	case Type::VARIABLE: {
+		auto var = _variable.lock();
+		if (!var) {
+			break;
+		}
+		obs_data_set_string(data, nameSaveName.data(),
+				    var->Name().c_str());
+		break;
+	}
 	default:
 		break;
 	}
@@ -63,13 +73,16 @@ void SceneSelection::Load(obs_data_t *obj, const char *name,
 		break;
 	case Type::CURRENT:
 		break;
+	case Type::VARIABLE:
+		_variable = GetWeakVariableByName(targetName);
+		break;
 	default:
 		break;
 	}
 	obs_data_release(data);
 }
 
-OBSWeakSource SceneSelection::GetScene(bool advance)
+OBSWeakSource SceneSelection::GetScene(bool advance) const
 {
 	switch (_type) {
 	case Type::SCENE:
@@ -86,13 +99,20 @@ OBSWeakSource SceneSelection::GetScene(bool advance)
 		return switcher->previousScene;
 	case Type::CURRENT:
 		return switcher->currentScene;
+	case Type::VARIABLE: {
+		auto var = _variable.lock();
+		if (!var) {
+			return nullptr;
+		}
+		return GetWeakSourceByName(var->Value().c_str());
+	}
 	default:
 		break;
 	}
 	return nullptr;
 }
 
-std::string SceneSelection::ToString()
+std::string SceneSelection::ToString() const
 {
 	switch (_type) {
 	case Type::SCENE:
@@ -106,175 +126,275 @@ std::string SceneSelection::ToString()
 		return obs_module_text("AdvSceneSwitcher.selectPreviousScene");
 	case Type::CURRENT:
 		return obs_module_text("AdvSceneSwitcher.selectCurrentScene");
+	case Type::VARIABLE: {
+		auto var = _variable.lock();
+		if (!var) {
+			return "";
+		}
+		return var->Name();
+	}
 	default:
 		break;
 	}
 	return "";
 }
 
-SceneSelectionWidget::SceneSelectionWidget(QWidget *parent, bool sceneGroups,
-					   bool previous, bool current)
-	: QComboBox(parent)
-{
-	// For the rare occasion of a name conflict with current / previous
-	setDuplicatesEnabled(true);
-	populateSceneSelection(this, previous, current, false, sceneGroups,
-			       &switcher->sceneGroups);
-
-	QWidget::connect(this, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SelectionChanged(const QString &)));
-	QWidget::connect(parent, SIGNAL(SceneGroupAdded(const QString &)), this,
-			 SLOT(SceneGroupAdd(const QString &)));
-	QWidget::connect(parent, SIGNAL(SceneGroupRemoved(const QString &)),
-			 this, SLOT(SceneGroupRemove(const QString &)));
-	QWidget::connect(
-		parent,
-		SIGNAL(SceneGroupRenamed(const QString &, const QString &)),
-		this, SLOT(SceneGroupRename(const QString &, const QString &)));
-}
-
-void SceneSelectionWidget::SetScene(SceneSelection &s)
-{
-	// Order of entries
-	// 1. Any Scene (current not used)
-	// 2. Current Scene
-	// 3. Previous Scene
-	// 4. Scenes / Scene Groups
-
-	int idx;
-
-	switch (s.GetType()) {
-	case SceneSelection::Type::SCENE:
-	case SceneSelection::Type::GROUP:
-		setCurrentText(QString::fromStdString(s.ToString()));
-		break;
-	case SceneSelection::Type::PREVIOUS:
-		idx = findText(QString::fromStdString(obs_module_text(
-			"AdvSceneSwitcher.selectPreviousScene")));
-		if (idx != -1) {
-			setCurrentIndex(idx);
-		}
-		break;
-	case SceneSelection::Type::CURRENT:
-		idx = findText(QString::fromStdString(obs_module_text(
-			"AdvSceneSwitcher.selectCurrentScene")));
-		if (idx != -1) {
-			setCurrentIndex(idx);
-		}
-		break;
-	default:
-		setCurrentIndex(0);
-		break;
-	}
-}
-
-static bool isFirstEntry(QComboBox *l, QString name, int idx)
-{
-	for (auto i = l->count() - 1; i >= 0; i--) {
-		if (l->itemText(i) == name) {
-			return idx == i;
-		}
-	}
-
-	// If entry cannot be found we dont want the selection to be empty
-	return false;
-}
-
-bool SceneSelectionWidget::IsCurrentSceneSelected(const QString &name)
-{
-	if (name == QString::fromStdString((obs_module_text(
-			    "AdvSceneSwitcher.selectCurrentScene")))) {
-		return isFirstEntry(this, name, currentIndex());
-	}
-	return false;
-}
-
-bool SceneSelectionWidget::IsPreviousSceneSelected(const QString &name)
-{
-	if (name == QString::fromStdString((obs_module_text(
-			    "AdvSceneSwitcher.selectPreviousScene")))) {
-		return isFirstEntry(this, name, currentIndex());
-	}
-	return false;
-}
-
-void SceneSelectionWidget::SelectionChanged(const QString &name)
+SceneSelection SceneSelectionWidget::CurrentSelection()
 {
 	SceneSelection s;
-	auto scene = GetWeakSourceByQString(name);
-	if (scene) {
-		s._type = SceneSelection::Type::SCENE;
-		s._scene = scene;
-	}
+	const int idx = currentIndex();
+	const auto name = currentText();
 
-	auto group = GetSceneGroupByQString(name);
-	if (group) {
-		s._type = SceneSelection::Type::GROUP;
-		s._scene = nullptr;
-		s._group = group;
-	}
-
-	if (!scene && !group) {
+	if (idx < _orderEndIdx) {
 		if (IsCurrentSceneSelected(name)) {
 			s._type = SceneSelection::Type::CURRENT;
 		}
 		if (IsPreviousSceneSelected(name)) {
 			s._type = SceneSelection::Type::PREVIOUS;
 		}
+	} else if (idx < _variablesEndIdx) {
+		s._type = SceneSelection::Type::VARIABLE;
+		s._variable = GetWeakVariableByQString(name);
+	} else if (idx < _groupsEndIdx) {
+		s._type = SceneSelection::Type::GROUP;
+		s._group = GetSceneGroupByQString(name);
+	} else if (idx < _scenesEndIdx) {
+		s._type = SceneSelection::Type::SCENE;
+		s._scene = GetWeakSourceByQString(name);
 	}
-
-	emit SceneChanged(s);
+	return s;
 }
 
-void SceneSelectionWidget::SceneGroupAdd(const QString &name)
+static QStringList getOrderList(bool current, bool previous)
 {
-	addItem(name);
+	QStringList list;
+	if (current) {
+		list << obs_module_text("AdvSceneSwitcher.selectCurrentScene");
+	}
+	if (previous) {
+		list << obs_module_text("AdvSceneSwitcher.selectPreviousScene");
+	}
+	return list;
 }
 
-void SceneSelectionWidget::SceneGroupRemove(const QString &name)
+static QStringList getScenesList()
 {
-	int idx = findText(name);
-
-	if (idx == -1) {
-		return;
+	QStringList list;
+	char **scenes = obs_frontend_get_scene_names();
+	char **temp = scenes;
+	while (*temp) {
+		const char *name = *temp;
+		list << name;
+		temp++;
 	}
+	bfree(scenes);
+	return list;
+}
 
-	int curIdx = currentIndex();
-	removeItem(idx);
-
-	if (curIdx == idx) {
-		SceneSelection s;
-		emit SceneChanged(s);
+static QStringList getSceneGroupsList()
+{
+	QStringList list;
+	for (const auto &sg : switcher->sceneGroups) {
+		list << QString::fromStdString(sg.name);
 	}
+	list.sort();
+	return list;
+}
 
+void SceneSelectionWidget::Reset()
+{
+	auto previousSel = _currentSelection;
+	PopulateSelection();
+	SetScene(previousSel);
+}
+
+void SceneSelectionWidget::PopulateSelection()
+{
+	clear();
+	addSelectionEntry(this,
+			  obs_module_text("AdvSceneSwitcher.selectScene"));
+	insertSeparator(count());
+
+	if (_current || _previous) {
+		const QStringList order = getOrderList(_current, _previous);
+		addSelectionGroup(this, order);
+	}
+	_orderEndIdx = count();
+
+	if (_variables) {
+		const QStringList variables = GetVariablesNameList();
+		addSelectionGroup(this, variables);
+	}
+	_variablesEndIdx = count();
+
+	if (_sceneGroups) {
+		const QStringList sceneGroups = getSceneGroupsList();
+		addSelectionGroup(this, sceneGroups);
+	}
+	_groupsEndIdx = count();
+
+	const QStringList scenes = getScenesList();
+	addSelectionGroup(this, scenes);
+	_scenesEndIdx = count();
+
+	// Remove last separator
+	removeItem(count() - 1);
 	setCurrentIndex(0);
 }
 
-static int findLastOf(QComboBox *l, QString name)
+SceneSelectionWidget::SceneSelectionWidget(QWidget *parent, bool variables,
+					   bool sceneGroups, bool previous,
+					   bool current)
+	: QComboBox(parent),
+	  _current(current),
+	  _previous(previous),
+	  _variables(variables),
+	  _sceneGroups(sceneGroups)
 {
-	int idx = 0;
-	for (auto i = l->count() - 1; i >= 0; i--) {
-		if (l->itemText(i) == name) {
-			return idx;
-		}
-	}
-	return idx;
+	setDuplicatesEnabled(true);
+	PopulateSelection();
+
+	QWidget::connect(this, SIGNAL(currentTextChanged(const QString &)),
+			 this, SLOT(SelectionChanged(const QString &)));
+
+	// Scene groups
+	QWidget::connect(window(), SIGNAL(SceneGroupAdded(const QString &)),
+			 this, SLOT(ItemAdd(const QString &)));
+	QWidget::connect(window(), SIGNAL(SceneGroupRemoved(const QString &)),
+			 this, SLOT(ItemRemove(const QString &)));
+	QWidget::connect(
+		window(),
+		SIGNAL(SceneGroupRenamed(const QString &, const QString &)),
+		this, SLOT(ItemRename(const QString &, const QString &)));
+
+	// Variables
+	QWidget::connect(window(), SIGNAL(VariableAdded(const QString &)), this,
+			 SLOT(ItemAdd(const QString &)));
+	QWidget::connect(window(), SIGNAL(VariableRemoved(const QString &)),
+			 this, SLOT(ItemRemove(const QString &)));
+	QWidget::connect(
+		window(),
+		SIGNAL(VariableRenamed(const QString &, const QString &)), this,
+		SLOT(ItemRename(const QString &, const QString &)));
 }
 
-void SceneSelectionWidget::SceneGroupRename(const QString &oldName,
-					    const QString &newName)
+void SceneSelectionWidget::SetScene(const SceneSelection &s)
 {
-	bool renameSelected = currentText() == oldName;
-	int idx = findText(oldName);
+	int idx = 0;
 
-	if (idx == -1) {
-		return;
+	switch (s.GetType()) {
+	case SceneSelection::Type::SCENE: {
+		if (_scenesEndIdx == -1) {
+			idx = 0;
+			break;
+		}
+		idx = findIdxInRagne(this, _groupsEndIdx, _scenesEndIdx,
+				     s.ToString());
+		break;
 	}
-
-	removeItem(idx);
-	insertItem(idx, newName);
-
-	if (renameSelected) {
-		setCurrentIndex(findLastOf(this, newName));
+	case SceneSelection::Type::GROUP: {
+		if (_groupsEndIdx == -1) {
+			idx = 0;
+			break;
+		}
+		idx = findIdxInRagne(this, _variablesEndIdx, _groupsEndIdx,
+				     s.ToString());
+		break;
 	}
+	case SceneSelection::Type::PREVIOUS: {
+		if (_orderEndIdx == -1) {
+			idx = 0;
+			break;
+		}
+
+		idx = findIdxInRagne(
+			this, _selectIdx, _orderEndIdx,
+			obs_module_text(
+				"AdvSceneSwitcher.selectPreviousScene"));
+		break;
+	}
+	case SceneSelection::Type::CURRENT: {
+		if (_orderEndIdx == -1) {
+			idx = 0;
+			break;
+		}
+
+		idx = findIdxInRagne(
+			this, _selectIdx, _orderEndIdx,
+			obs_module_text("AdvSceneSwitcher.selectCurrentScene"));
+		break;
+	}
+	case SceneSelection::Type::VARIABLE: {
+		if (_variablesEndIdx == -1) {
+			idx = 0;
+			break;
+		}
+		idx = findIdxInRagne(this, _orderEndIdx, _variablesEndIdx,
+				     s.ToString());
+		break;
+	default:
+		idx = 0;
+		break;
+	}
+	}
+	setCurrentIndex(idx);
+	_currentSelection = s;
+}
+
+bool SceneSelectionWidget::IsCurrentSceneSelected(const QString &name)
+{
+	return name == QString::fromStdString((obs_module_text(
+			       "AdvSceneSwitcher.selectCurrentScene")));
+}
+
+bool SceneSelectionWidget::IsPreviousSceneSelected(const QString &name)
+{
+	return name == QString::fromStdString((obs_module_text(
+			       "AdvSceneSwitcher.selectPreviousScene")));
+}
+
+void SceneSelectionWidget::SelectionChanged(const QString &name)
+{
+	_currentSelection = CurrentSelection();
+	emit SceneChanged(_currentSelection);
+}
+
+void SceneSelectionWidget::ItemAdd(const QString &name)
+{
+	blockSignals(true);
+	Reset();
+	blockSignals(false);
+}
+
+bool SceneSelectionWidget::NameUsed(const QString &name)
+{
+	if (_currentSelection._type == SceneSelection::Type::GROUP &&
+	    _currentSelection._group &&
+	    _currentSelection._group->name == name.toStdString()) {
+		return true;
+	}
+	if (_currentSelection._type == SceneSelection::Type::VARIABLE) {
+		auto var = _currentSelection._variable.lock();
+		if (var && var->Name() == name.toStdString()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void SceneSelectionWidget::ItemRemove(const QString &name)
+{
+	if (!NameUsed(name)) {
+		blockSignals(true);
+	}
+	Reset();
+	blockSignals(false);
+}
+
+void SceneSelectionWidget::ItemRename(const QString &oldName,
+				      const QString &newName)
+{
+	blockSignals(true);
+	Reset();
+	blockSignals(false);
 }
