@@ -262,10 +262,12 @@ target_sources(
           src/utils/transition-selection.hpp
           src/utils/utility.cpp
           src/utils/utility.hpp
+          src/utils/variable.cpp
+          src/utils/variable.hpp
           src/utils/volume-control.cpp
+          src/utils/volume-control.hpp
           src/utils/websocket-helpers.cpp
-          src/utils/websocket-helpers.hpp
-          src/utils/volume-control.hpp)
+          src/utils/websocket-helpers.hpp)
 
 # --- End of section ---
 

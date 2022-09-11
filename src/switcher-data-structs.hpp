@@ -72,6 +72,7 @@ typedef struct transitionData {
 
 } transitionData;
 
+class Item;
 class SwitcherThread;
 
 /********************************************************************************
@@ -140,6 +141,8 @@ struct SwitcherData {
 
 	std::deque<Connection> connections;
 	std::vector<std::string> websocketMessages;
+
+	std::deque<std::shared_ptr<Item>> variables;
 
 	std::deque<WindowSwitch> windowSwitches;
 	std::vector<std::string> ignoreIdleWindows;
@@ -291,6 +294,7 @@ struct SwitcherData {
 	void saveSettings(obs_data_t *obj);
 	void saveMacros(obs_data_t *obj);
 	void saveConnections(obs_data_t *obj);
+	void saveVariables(obs_data_t *obj);
 	void saveWindowTitleSwitches(obs_data_t *obj);
 	void saveScreenRegionSwitches(obs_data_t *obj);
 	void savePauseSwitches(obs_data_t *obj);
@@ -315,6 +319,7 @@ struct SwitcherData {
 	void loadSettings(obs_data_t *obj);
 	void loadMacros(obs_data_t *obj);
 	void loadConnections(obs_data_t *obj);
+	void loadVariables(obs_data_t *obj);
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
 	void loadPauseSwitches(obs_data_t *obj);
