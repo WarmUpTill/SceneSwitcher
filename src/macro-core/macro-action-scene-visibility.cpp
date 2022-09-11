@@ -166,7 +166,7 @@ MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSceneVisibility> entryData)
 	: QWidget(parent)
 {
-	_scenes = new SceneSelectionWidget(window(), false, true, true);
+	_scenes = new SceneSelectionWidget(window(), true, false, true, true);
 	_sourceTypes = new QComboBox();
 	_sources = new SceneItemSelectionWidget(parent);
 	_sourceGroups = new QComboBox();

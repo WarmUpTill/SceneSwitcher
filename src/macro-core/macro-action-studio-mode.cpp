@@ -124,7 +124,7 @@ MacroActionSudioModeEdit::MacroActionSudioModeEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSudioMode> entryData)
 	: QWidget(parent),
 	  _actions(new QComboBox()),
-	  _scenes(new SceneSelectionWidget(window(), true, true, true))
+	  _scenes(new SceneSelectionWidget(window(), true, true, true, true))
 {
 	populateActionSelection(_actions);
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,

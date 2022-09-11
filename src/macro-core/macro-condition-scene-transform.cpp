@@ -72,7 +72,7 @@ MacroConditionSceneTransformEdit::MacroConditionSceneTransformEdit(
 	QWidget *parent,
 	std::shared_ptr<MacroConditionSceneTransform> entryData)
 	: QWidget(parent),
-	  _scenes(new SceneSelectionWidget(window(), false, false, true)),
+	  _scenes(new SceneSelectionWidget(window(), true, false, false, true)),
 	  _sources(new SceneItemSelectionWidget(
 		  parent, true,
 		  SceneItemSelectionWidget::AllSelectionType::ANY)),

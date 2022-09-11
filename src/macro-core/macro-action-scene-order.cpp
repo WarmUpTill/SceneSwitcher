@@ -157,7 +157,7 @@ MacroActionSceneOrderEdit::MacroActionSceneOrderEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSceneOrder> entryData)
 	: QWidget(parent)
 {
-	_scenes = new SceneSelectionWidget(window(), false, false, true);
+	_scenes = new SceneSelectionWidget(window(), true, false, false, true);
 	_sources = new SceneItemSelectionWidget(parent);
 	_actions = new QComboBox();
 	_position = new QSpinBox();

@@ -95,7 +95,7 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionScene> entryData)
 	: QWidget(parent)
 {
-	_scenes = new SceneSelectionWidget(window(), false, false, false);
+	_scenes = new SceneSelectionWidget(window(), true, false, false, false);
 	_sceneType = new QComboBox();
 	_useTransitionTargetScene = new QCheckBox(obs_module_text(
 		"AdvSceneSwitcher.condition.scene.currentSceneTransitionBehaviour"));
