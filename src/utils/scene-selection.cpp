@@ -1,52 +1,80 @@
 #include "scene-selection.hpp"
 #include "advanced-scene-switcher.hpp"
 
-void SceneSelection::Save(obs_data_t *obj, const char *name,
-			  const char *typeName)
-{
-	obs_data_set_int(obj, typeName, static_cast<int>(_type));
+constexpr std::string_view typeSaveName = "type";
+constexpr std::string_view nameSaveName = "name";
+constexpr std::string_view selectionSaveName = "sceneSelection";
 
+void SceneSelection::Save(obs_data_t *obj)
+{
+	auto data = obs_data_create();
+	obs_data_set_int(data, typeSaveName.data(), static_cast<int>(_type));
 	switch (_type) {
-	case SceneSelectionType::SCENE:
-		obs_data_set_string(obj, name,
+	case Type::SCENE:
+		obs_data_set_string(data, nameSaveName.data(),
 				    GetWeakSourceName(_scene).c_str());
 		break;
-	case SceneSelectionType::GROUP:
-		obs_data_set_string(obj, name, _group->name.c_str());
+	case Type::GROUP:
+		obs_data_set_string(data, nameSaveName.data(),
+				    _group->name.c_str());
 		break;
 	default:
 		break;
 	}
+	obs_data_set_obj(obj, selectionSaveName.data(), data);
+	obs_data_release(data);
 }
 
 void SceneSelection::Load(obs_data_t *obj, const char *name,
 			  const char *typeName)
 {
-	_type = static_cast<SceneSelectionType>(
-		obs_data_get_int(obj, typeName));
-	auto target = obs_data_get_string(obj, name);
+	// TODO: Remove in future version
+	if (!obs_data_has_user_value(obj, selectionSaveName.data())) {
+		_type = static_cast<Type>(obs_data_get_int(obj, typeName));
+		auto targetName = obs_data_get_string(obj, name);
+		switch (_type) {
+		case Type::SCENE:
+			_scene = GetWeakSourceByName(targetName);
+			break;
+		case Type::GROUP:
+			_group = GetSceneGroupByName(targetName);
+			break;
+		case Type::PREVIOUS:
+			break;
+		case Type::CURRENT:
+			break;
+		default:
+			break;
+		}
+		return;
+	}
+
+	auto data = obs_data_get_obj(obj, selectionSaveName.data());
+	_type = static_cast<Type>(obs_data_get_int(data, typeSaveName.data()));
+	auto targetName = obs_data_get_string(data, nameSaveName.data());
 	switch (_type) {
-	case SceneSelectionType::SCENE:
-		_scene = GetWeakSourceByName(target);
+	case Type::SCENE:
+		_scene = GetWeakSourceByName(targetName);
 		break;
-	case SceneSelectionType::GROUP:
-		_group = GetSceneGroupByName(target);
+	case Type::GROUP:
+		_group = GetSceneGroupByName(targetName);
 		break;
-	case SceneSelectionType::PREVIOUS:
+	case Type::PREVIOUS:
 		break;
-	case SceneSelectionType::CURRENT:
+	case Type::CURRENT:
 		break;
 	default:
 		break;
 	}
+	obs_data_release(data);
 }
 
 OBSWeakSource SceneSelection::GetScene(bool advance)
 {
 	switch (_type) {
-	case SceneSelectionType::SCENE:
+	case Type::SCENE:
 		return _scene;
-	case SceneSelectionType::GROUP:
+	case Type::GROUP:
 		if (!_group) {
 			return nullptr;
 		}
@@ -54,9 +82,9 @@ OBSWeakSource SceneSelection::GetScene(bool advance)
 			return _group->getNextScene();
 		}
 		return _group->getCurrentScene();
-	case SceneSelectionType::PREVIOUS:
+	case Type::PREVIOUS:
 		return switcher->previousScene;
-	case SceneSelectionType::CURRENT:
+	case Type::CURRENT:
 		return switcher->currentScene;
 	default:
 		break;
@@ -67,16 +95,16 @@ OBSWeakSource SceneSelection::GetScene(bool advance)
 std::string SceneSelection::ToString()
 {
 	switch (_type) {
-	case SceneSelectionType::SCENE:
+	case Type::SCENE:
 		return GetWeakSourceName(_scene);
-	case SceneSelectionType::GROUP:
+	case Type::GROUP:
 		if (_group) {
 			return _group->name;
 		}
 		break;
-	case SceneSelectionType::PREVIOUS:
+	case Type::PREVIOUS:
 		return obs_module_text("AdvSceneSwitcher.selectPreviousScene");
-	case SceneSelectionType::CURRENT:
+	case Type::CURRENT:
 		return obs_module_text("AdvSceneSwitcher.selectCurrentScene");
 	default:
 		break;
@@ -116,18 +144,18 @@ void SceneSelectionWidget::SetScene(SceneSelection &s)
 	int idx;
 
 	switch (s.GetType()) {
-	case SceneSelectionType::SCENE:
-	case SceneSelectionType::GROUP:
+	case SceneSelection::Type::SCENE:
+	case SceneSelection::Type::GROUP:
 		setCurrentText(QString::fromStdString(s.ToString()));
 		break;
-	case SceneSelectionType::PREVIOUS:
+	case SceneSelection::Type::PREVIOUS:
 		idx = findText(QString::fromStdString(obs_module_text(
 			"AdvSceneSwitcher.selectPreviousScene")));
 		if (idx != -1) {
 			setCurrentIndex(idx);
 		}
 		break;
-	case SceneSelectionType::CURRENT:
+	case SceneSelection::Type::CURRENT:
 		idx = findText(QString::fromStdString(obs_module_text(
 			"AdvSceneSwitcher.selectCurrentScene")));
 		if (idx != -1) {
@@ -175,23 +203,23 @@ void SceneSelectionWidget::SelectionChanged(const QString &name)
 	SceneSelection s;
 	auto scene = GetWeakSourceByQString(name);
 	if (scene) {
-		s._type = SceneSelectionType::SCENE;
+		s._type = SceneSelection::Type::SCENE;
 		s._scene = scene;
 	}
 
 	auto group = GetSceneGroupByQString(name);
 	if (group) {
-		s._type = SceneSelectionType::GROUP;
+		s._type = SceneSelection::Type::GROUP;
 		s._scene = nullptr;
 		s._group = group;
 	}
 
 	if (!scene && !group) {
 		if (IsCurrentSceneSelected(name)) {
-			s._type = SceneSelectionType::CURRENT;
+			s._type = SceneSelection::Type::CURRENT;
 		}
 		if (IsPreviousSceneSelected(name)) {
-			s._type = SceneSelectionType::PREVIOUS;
+			s._type = SceneSelection::Type::PREVIOUS;
 		}
 	}
 
