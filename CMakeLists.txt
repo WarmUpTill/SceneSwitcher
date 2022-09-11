@@ -205,6 +205,8 @@ target_sources(
           src/macro-core/macro-condition-timer.hpp
           src/macro-core/macro-condition-transition.cpp
           src/macro-core/macro-condition-transition.hpp
+          src/macro-core/macro-condition-variable.cpp
+          src/macro-core/macro-condition-variable.hpp
           src/macro-core/macro-condition-virtual-cam.cpp
           src/macro-core/macro-condition-virtual-cam.hpp
           src/macro-core/macro-condition-websocket.cpp
