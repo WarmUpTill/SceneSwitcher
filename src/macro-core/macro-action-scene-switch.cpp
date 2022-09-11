@@ -123,15 +123,15 @@ void MacroActionSwitchScene::LogAction()
 	auto t = _scene.GetType();
 	auto sceneName = GetWeakSourceName(_scene.GetScene(false));
 	switch (t) {
-	case SceneSelectionType::SCENE:
+	case SceneSelection::Type::SCENE:
 		vblog(LOG_INFO, "switch to scene '%s'",
 		      _scene.ToString().c_str());
 		break;
-	case SceneSelectionType::GROUP:
+	case SceneSelection::Type::GROUP:
 		vblog(LOG_INFO, "switch to scene '%s' (scene group '%s')",
 		      sceneName.c_str(), _scene.ToString().c_str());
 		break;
-	case SceneSelectionType::PREVIOUS:
+	case SceneSelection::Type::PREVIOUS:
 		vblog(LOG_INFO, "switch to previous scene '%s'",
 		      sceneName.c_str());
 		break;
@@ -153,30 +153,6 @@ bool MacroActionSwitchScene::Save(obs_data_t *obj)
 
 bool MacroActionSwitchScene::Load(obs_data_t *obj)
 {
-	// Convert old data format
-	// TODO: Remove in future version
-	if (obs_data_has_user_value(obj, "targetType")) {
-		auto sceneName = obs_data_get_string(obj, "target");
-		obs_data_set_string(obj, "scene", sceneName);
-		auto transitionName = obs_data_get_string(obj, "transition");
-		bool usePreviousScene =
-			strcmp(sceneName, previous_scene_name) == 0;
-		bool useCurrentTransition =
-			strcmp(transitionName, current_transition_name) == 0;
-		obs_data_set_int(
-			obj, "sceneType",
-			(usePreviousScene)
-				? static_cast<int>(SceneSelectionType::PREVIOUS)
-				: obs_data_get_int(obj, "targetType"));
-		obs_data_set_int(
-			obj, "transitionType",
-			(useCurrentTransition)
-				? static_cast<int>(
-					  TransitionSelectionType::CURRENT)
-				: static_cast<int>(
-					  TransitionSelectionType::TRANSITION));
-	}
-
 	MacroAction::Load(obj);
 	_scene.Load(obj);
 	_transition.Load(obj);

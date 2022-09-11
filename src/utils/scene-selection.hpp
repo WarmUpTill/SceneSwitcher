@@ -4,13 +4,6 @@
 
 #include <QComboBox>
 
-enum class SceneSelectionType {
-	SCENE,
-	GROUP,
-	PREVIOUS,
-	CURRENT,
-};
-
 class SceneSelection {
 public:
 	void Save(obs_data_t *obj, const char *name = "scene",
@@ -18,14 +11,21 @@ public:
 	void Load(obs_data_t *obj, const char *name = "scene",
 		  const char *typeName = "sceneType");
 
-	SceneSelectionType GetType() { return _type; }
+	enum class Type {
+		SCENE,
+		GROUP,
+		PREVIOUS,
+		CURRENT,
+	};
+
+	Type GetType() { return _type; }
 	OBSWeakSource GetScene(bool advance = true);
 	std::string ToString();
 
 private:
 	OBSWeakSource _scene;
 	SceneGroup *_group = nullptr;
-	SceneSelectionType _type = SceneSelectionType::SCENE;
+	Type _type = Type::SCENE;
 	friend class SceneSelectionWidget;
 };
 

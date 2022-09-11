@@ -48,8 +48,7 @@ int getCountOfSceneItemOccurance(SceneSelection &s, std::string &name,
 				 bool enumAllScenes = true)
 {
 	ItemCountData data{name};
-	if (enumAllScenes && (s.GetType() == SceneSelectionType::CURRENT ||
-			      s.GetType() == SceneSelectionType::PREVIOUS)) {
+	if (enumAllScenes && (s.GetType() != SceneSelection::Type::SCENE)) {
 		auto enumScenes = [](void *param, obs_source_t *source) {
 			if (!source) {
 				return true;
