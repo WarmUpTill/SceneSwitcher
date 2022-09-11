@@ -503,6 +503,7 @@ void SwitcherData::loadSettings(obs_data_t *obj)
 	// Needs to be loaded before any entries which might rely on scene group
 	// selections to be available.
 	loadSceneGroups(obj);
+	loadVariables(obj);
 	loadMacros(obj);
 	loadConnections(obj);
 	loadWindowTitleSwitches(obj);
@@ -537,6 +538,7 @@ void SwitcherData::saveSettings(obs_data_t *obj)
 	saveSceneGroups(obj);
 	saveMacros(obj);
 	saveConnections(obj);
+	saveVariables(obj);
 	saveWindowTitleSwitches(obj);
 	saveScreenRegionSwitches(obj);
 	savePauseSwitches(obj);

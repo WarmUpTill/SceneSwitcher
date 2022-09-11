@@ -95,6 +95,9 @@ signals:
 	void ConnectionAdded(const QString &);
 	void ConnectionRenamed(const QString &oldName, const QString &newName);
 	void ConnectionRemoved(const QString &);
+	void VariableAdded(const QString &);
+	void VariableRenamed(const QString &oldName, const QString &newName);
+	void VariableRemoved(const QString &);
 
 public slots:
 	void on_windowUp_clicked();
