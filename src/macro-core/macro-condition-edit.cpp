@@ -447,6 +447,9 @@ void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 		if (idx == 0 && macro->Conditions().size() > 0) {
 			auto newRoot = macro->Conditions().at(0);
 			newRoot->SetLogicType(LogicType::ROOT_NONE);
+			static_cast<MacroConditionEdit *>(
+				conditionsList->WidgetAt(0))
+				->SetRootNode(true);
 		}
 		SetConditionData(*macro);
 	}
