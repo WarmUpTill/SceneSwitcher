@@ -22,10 +22,18 @@ public:
 		return std::make_shared<MacroActionWebsocket>(m);
 	}
 
+	enum class Type {
+		REQUEST,
+		EVENT,
+	};
+
+	Type _type = Type::REQUEST;
 	std::string _message = obs_module_text("AdvSceneSwitcher.enterText");
 	std::string _connection;
 
 private:
+	void SendRequest();
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -47,6 +55,7 @@ public:
 	}
 
 private slots:
+	void ActionChanged(int);
 	void MessageChanged();
 	void ConnectionSelectionChanged(const QString &);
 signals:
@@ -56,7 +65,12 @@ protected:
 	std::shared_ptr<MacroActionWebsocket> _entryData;
 
 private:
+	void SetupRequestEdit();
+	void SetupEventEdit();
+
+	QComboBox *_actions;
 	ResizingPlainTextEdit *_message;
 	ConnectionSelection *_connection;
+	QHBoxLayout *_editLayout;
 	bool _loading = true;
 };

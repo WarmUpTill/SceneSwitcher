@@ -13,6 +13,22 @@ using websocketpp::lib::bind;
 
 obs_websocket_vendor vendor;
 
+void ClearWebsocketMessages()
+{
+	switcher->websocketMessages.clear();
+	for (auto &connection : switcher->connections) {
+		connection.Events().clear();
+	}
+}
+
+void SendWebsocketEvent(const std::string &eventMsg)
+{
+	auto data = obs_data_create();
+	obs_data_set_string(data, "message", eventMsg.c_str());
+	obs_websocket_vendor_emit_event(vendor, VendorEvent, data);
+	obs_data_release(data);
+}
+
 void ReceiveWebsocketMessage(obs_data_t *request_data, obs_data_t *, void *)
 {
 	if (!obs_data_has_user_value(request_data, "message")) {
@@ -232,6 +248,31 @@ void WSConnection::HandleHello(obs_data_t *helloMsg)
 	Send(response);
 }
 
+void WSConnection::HandleEvent(obs_data_t *msg)
+{
+	auto d = obs_data_get_obj(msg, "d");
+	auto eventData = obs_data_get_obj(d, "eventData");
+	if (strcmp(obs_data_get_string(eventData, "vendorName"), VendorName) !=
+	    0) {
+		vblog(LOG_INFO, "ignoring vendor event from \"%s\"",
+		      obs_data_get_string(eventData, "vendorName"));
+		return;
+	}
+	if (strcmp(obs_data_get_string(eventData, "eventType"), VendorEvent) !=
+	    0) {
+		vblog(LOG_INFO, "ignoring event type\"%s\"",
+		      obs_data_get_string(eventData, "eventType"));
+		return;
+	}
+	auto eventDataNested = obs_data_get_obj(eventData, "eventData");
+	_messages.emplace_back(obs_data_get_string(eventDataNested, "message"));
+	vblog(LOG_INFO, "received event msg \"%s\"",
+	      obs_data_get_string(eventDataNested, "message"));
+	obs_data_release(eventDataNested);
+	obs_data_release(eventData);
+	obs_data_release(d);
+}
+
 void WSConnection::HandleResponse(obs_data_t *response)
 {
 	auto data = obs_data_get_obj(response, "d");
@@ -277,6 +318,9 @@ void WSConnection::OnMessage(connection_hdl, client::message_ptr message)
 		break;
 	case 2: // Identified
 		_status = Status::AUTHENTICATED;
+		break;
+	case 5: // Event (Vendor)
+		HandleEvent(json);
 		break;
 	case 7: // RequestResponse
 		HandleResponse(json);

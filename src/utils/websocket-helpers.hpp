@@ -24,6 +24,10 @@ typedef websocketpp::client<websocketpp::config::asio_client> client;
 
 constexpr char VendorName[] = "AdvancedSceneSwitcher";
 constexpr char VendorRequest[] = "AdvancedSceneSwitcherMessage";
+constexpr char VendorEvent[] = "AdvancedSceneSwitcherEvent";
+
+void ClearWebsocketMessages();
+void SendWebsocketEvent(const std::string &);
 
 class WSConnection : public QObject {
 public:
@@ -34,6 +38,7 @@ public:
 		     bool _reconnect, int reconnectDelay = 10);
 	void Disconnect();
 	void SendRequest(const std::string &msg);
+	std::vector<std::string> &Events() { return _messages; }
 	std::string GetFail() { return _failMsg; }
 
 	enum class Status {
@@ -51,6 +56,7 @@ private:
 	void Send(const std::string &);
 	void ConnectThread();
 	void HandleHello(obs_data_t *helloMsg);
+	void HandleEvent(obs_data_t *event);
 	void HandleResponse(obs_data_t *response);
 
 	client _client;
@@ -66,4 +72,6 @@ private:
 	std::string _failMsg = "";
 	std::atomic<Status> _status = {Status::DISCONNECTED};
 	std::atomic_bool _disconnect{false};
+
+	std::vector<std::string> _messages;
 };

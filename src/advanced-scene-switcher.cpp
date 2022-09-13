@@ -227,7 +227,7 @@ void SwitcherData::Thread()
 			}
 		}
 
-		websocketMessages.clear();
+		ClearWebsocketMessages();
 
 		// After this point we will call frontend functions like
 		// obs_frontend_set_current_scene() and
