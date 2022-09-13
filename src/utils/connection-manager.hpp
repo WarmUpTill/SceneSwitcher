@@ -33,6 +33,7 @@ public:
 	void Load(obs_data_t *obj);
 	void Save(obs_data_t *obj);
 	std::string GetName() { return _name; }
+	std::vector<std::string> &Events() { return _client.Events(); }
 
 private:
 	std::string _name = "";

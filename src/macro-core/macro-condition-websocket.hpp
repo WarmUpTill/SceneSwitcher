@@ -1,5 +1,6 @@
 #pragma once
 #include "macro.hpp"
+#include "connection-manager.hpp"
 #include "resizing-text-edit.hpp"
 #include "regex-config.hpp"
 
@@ -18,8 +19,15 @@ public:
 		return std::make_shared<MacroConditionWebsocket>(m);
 	}
 
+	enum class Type {
+		REQUEST,
+		EVENT,
+	};
+
+	Type _type = Type::REQUEST;
 	std::string _message = obs_module_text("AdvSceneSwitcher.enterText");
 	RegexConfig _regex;
+	std::string _connection;
 
 private:
 	static bool _registered;
@@ -44,16 +52,24 @@ public:
 	}
 
 private slots:
+	void ConditionChanged(int);
 	void MessageChanged();
 	void RegexChanged(RegexConfig);
+	void ConnectionSelectionChanged(const QString &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
-	ResizingPlainTextEdit *_message;
-	RegexConfigWidget *_regex;
 	std::shared_ptr<MacroConditionWebsocket> _entryData;
 
 private:
+	void SetupRequestEdit();
+	void SetupEventEdit();
+
+	QComboBox *_conditions;
+	ResizingPlainTextEdit *_message;
+	RegexConfigWidget *_regex;
+	ConnectionSelection *_connection;
+	QHBoxLayout *_editLayout;
 	bool _loading = true;
 };
