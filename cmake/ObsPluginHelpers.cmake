@@ -350,9 +350,15 @@ else()
           "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-linux-x86_64")
 
       set(CPACK_GENERATOR "DEB")
-      set(CPACK_DEBIAN_PACKAGE_DEPENDS
-          "obs-studio (>= 27.0.0), libqt5core5a (>= 5.9.0~beta), libqt5gui5 (>= 5.3.0), libqt5widgets5 (>= 5.7.0)"
-      )
+      if(${QT_VERSION} STREQUAL "6")
+        set(CPACK_DEBIAN_PACKAGE_DEPENDS
+            "obs-studio (>= 28.0.0), libqt6core6 (>= 6.2.0), libqt6gui6 (>= 6.1.2), libqt6widgets6 (>= 6.1.2)"
+        )
+      else()
+        set(CPACK_DEBIAN_PACKAGE_DEPENDS
+            "obs-studio (>= 28.0.0), libqt5core5a (>= 5.9.0~beta), libqt5gui5 (>= 5.3.0), libqt5widgets5 (>= 5.7.0)"
+        )
+      endif()
 
       set(CPACK_OUTPUT_FILE_PREFIX ${CMAKE_SOURCE_DIR}/release)
 
