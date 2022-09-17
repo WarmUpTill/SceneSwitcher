@@ -302,36 +302,6 @@ void setSourceSettings(obs_source_t *s, const std::string &settings)
 	obs_data_release(data);
 }
 
-struct ItemInfo {
-	std::string name;
-	std::vector<obs_sceneitem_t *> items = {};
-};
-
-static bool getSceneItems(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
-{
-	ItemInfo *moveInfo = reinterpret_cast<ItemInfo *>(ptr);
-	auto sourceName = obs_source_get_name(obs_sceneitem_get_source(item));
-	if (moveInfo->name == sourceName) {
-		obs_sceneitem_addref(item);
-		moveInfo->items.push_back(item);
-	}
-
-	if (obs_sceneitem_is_group(item)) {
-		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
-		obs_scene_enum_items(scene, getSceneItems, ptr);
-	}
-
-	return true;
-}
-
-std::vector<obs_scene_item *> getSceneItemsWithName(obs_scene_t *scene,
-						    std::string &name)
-{
-	ItemInfo itemInfo = {name};
-	obs_scene_enum_items(scene, getSceneItems, &itemInfo);
-	return itemInfo.items;
-}
-
 // Match json1 with pattern json2
 bool matchJson(const std::string &json1, const std::string &json2,
 	       const RegexConfig &regex)
@@ -790,67 +760,6 @@ void populateFilterSelection(QComboBox *list, OBSWeakSource weakSource)
 	addSelectionEntry(list,
 			  obs_module_text("AdvSceneSwitcher.selectFilter"));
 	obs_source_release(s);
-	list->setCurrentIndex(0);
-}
-
-static bool enumSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
-{
-	std::set<QString> *names = reinterpret_cast<std::set<QString> *>(ptr);
-
-	if (obs_sceneitem_is_group(item)) {
-		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
-		obs_scene_enum_items(scene, enumSceneItem, ptr);
-	}
-	auto name = obs_source_get_name(obs_sceneitem_get_source(item));
-	names->emplace(name);
-	return true;
-}
-
-void populateSceneItemSelection(QComboBox *list, OBSWeakSource sceneWeakSource)
-{
-	std::set<QString> names;
-	auto s = obs_weak_source_get_source(sceneWeakSource);
-	auto scene = obs_scene_from_source(s);
-	obs_scene_enum_items(scene, enumSceneItem, &names);
-	obs_source_release(s);
-
-	for (auto &name : names) {
-		list->addItem(name);
-	}
-	list->model()->sort(0);
-	addSelectionEntry(list, obs_module_text("AdvSceneSwitcher.selectItem"));
-	list->setCurrentIndex(0);
-}
-
-void populateSceneItemSelection(QComboBox *list, SceneSelection &s)
-{
-	std::set<QString> names;
-
-	if (s.GetType() != SceneSelection::Type::SCENE) {
-		auto enumScenes = [](void *param, obs_source_t *source) {
-			if (!source) {
-				return true;
-			}
-			std::set<QString> *names =
-				reinterpret_cast<std::set<QString> *>(param);
-			auto scene = obs_scene_from_source(source);
-			obs_scene_enum_items(scene, enumSceneItem, names);
-			return true;
-		};
-
-		obs_enum_scenes(enumScenes, &names);
-	} else {
-		auto source = obs_weak_source_get_source(s.GetScene(false));
-		auto scene = obs_scene_from_source(source);
-		obs_scene_enum_items(scene, enumSceneItem, &names);
-		obs_source_release(source);
-	}
-
-	for (auto &name : names) {
-		list->addItem(name);
-	}
-	list->model()->sort(0);
-	addSelectionEntry(list, obs_module_text("AdvSceneSwitcher.selectItem"));
 	list->setCurrentIndex(0);
 }
 

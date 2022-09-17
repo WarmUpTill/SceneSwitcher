@@ -140,7 +140,7 @@ bool MacroConditionSceneOrder::Save(obs_data_t *obj)
 	MacroCondition::Save(obj);
 	_scene.Save(obj);
 	_source.Save(obj);
-	_source2.Save(obj, "sceneItem2", "sceneItemTarget2", "sceneItemIdx2");
+	_source2.Save(obj, "sceneItemSelection2");
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_int(obj, "position", _position);
 	return true;
@@ -160,7 +160,14 @@ bool MacroConditionSceneOrder::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	_scene.Load(obj);
 	_source.Load(obj);
-	_source2.Load(obj, "sceneItem2", "sceneItemTarget2", "sceneItemIdx2");
+	// Convert old data format
+	// TODO: Remove in future version
+	if (obs_data_has_user_value(obj, "sceneItem2")) {
+		_source2.Load(obj, "sceneItem2", "sceneItemTarget2",
+			      "sceneItemIdx2");
+	} else {
+		_source2.Load(obj, "sceneItemSelection2");
+	}
 	_condition = static_cast<SceneOrderCondition>(
 		obs_data_get_int(obj, "condition"));
 	_position = obs_data_get_int(obj, "position");
