@@ -79,9 +79,6 @@ void populateSceneSelection(QComboBox *sel, bool addPrevious = false,
 void populateSourcesWithFilterSelection(QComboBox *list);
 void populateFilterSelection(QComboBox *list,
 			     OBSWeakSource weakSource = nullptr);
-void populateSceneItemSelection(QComboBox *list,
-				OBSWeakSource sceneWeakSource = nullptr);
-void populateSceneItemSelection(QComboBox *list, SceneSelection &s);
 void populateSourceGroupSelection(QComboBox *list);
 void populateProfileSelection(QComboBox *list);
 bool windowPosValid(QPoint pos);
