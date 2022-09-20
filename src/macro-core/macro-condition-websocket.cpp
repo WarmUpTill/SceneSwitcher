@@ -131,7 +131,11 @@ MacroConditionWebsocketEdit::MacroConditionWebsocketEdit(
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(_editLayout);
 	mainLayout->addWidget(_message);
-	mainLayout->addWidget(_regex);
+	auto regexLayout = new QHBoxLayout;
+	regexLayout->addWidget(_regex);
+	regexLayout->addStretch();
+	regexLayout->setContentsMargins(0, 0, 0, 0);
+	mainLayout->addLayout(regexLayout);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
