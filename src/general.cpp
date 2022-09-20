@@ -687,6 +687,7 @@ void saveSplitterPos(QList<int> &sizes, obs_data_t *obj, const std::string name)
 
 void loadSplitterPos(QList<int> &sizes, obs_data_t *obj, const std::string name)
 {
+	sizes.clear();
 	obs_data_array_t *array = obs_data_get_array(obj, name.c_str());
 	size_t count = obs_data_array_count(array);
 	for (size_t i = 0; i < count; i++) {
