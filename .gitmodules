@@ -10,6 +10,3 @@
 [submodule "deps/openvr"]
 	path = deps/openvr
 	url = https://github.com/ValveSoftware/openvr.git
-[submodule "deps/obs-websocket"]
-	path = deps/obs-websocket
-	url = https://github.com/obsproject/obs-websocket.git
