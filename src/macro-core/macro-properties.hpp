@@ -15,6 +15,7 @@ public:
 	bool _highlightExecuted = false;
 	bool _highlightConditions = false;
 	bool _highlightActions = false;
+	bool _newMacroRegisterHotkeys = true;
 };
 
 // Dialog for configuring global and macro specific settings
@@ -31,5 +32,7 @@ private:
 	QCheckBox *_executed;
 	QCheckBox *_conditions;
 	QCheckBox *_actions;
-	QCheckBox *_hotkeys;
+	QCheckBox *_newMacroRegisterHotkeys;
+	// Current macro specific settings
+	QCheckBox *_currentMacroRegisterHotkeys;
 };
