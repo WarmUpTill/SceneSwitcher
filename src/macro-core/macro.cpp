@@ -17,6 +17,7 @@ Macro::Macro(const std::string &name, const bool addHotkey)
 	if (addHotkey) {
 		SetupHotkeys();
 	}
+	_registerHotkeys = addHotkey;
 }
 
 Macro::~Macro()

@@ -10,6 +10,8 @@ void MacroProperties::Save(obs_data_t *obj)
 	obs_data_set_bool(data, "highlightExecuted", _highlightExecuted);
 	obs_data_set_bool(data, "highlightConditions", _highlightConditions);
 	obs_data_set_bool(data, "highlightActions", _highlightActions);
+	obs_data_set_bool(data, "newMacroRegisterHotkey",
+			  _newMacroRegisterHotkeys);
 	obs_data_set_obj(obj, "macroProperties", data);
 	obs_data_release(data);
 }
@@ -17,16 +19,11 @@ void MacroProperties::Save(obs_data_t *obj)
 void MacroProperties::Load(obs_data_t *obj)
 {
 	auto data = obs_data_get_obj(obj, "macroProperties");
-	// TODO: Remove in future version
-	if (obs_data_has_user_value(obj, "highlightExecutedMacros")) {
-		_highlightExecuted =
-			obs_data_get_bool(obj, "highlightExecutedMacros");
-	} else {
-		_highlightExecuted =
-			obs_data_get_bool(data, "highlightExecuted");
-	}
+	_highlightExecuted = obs_data_get_bool(data, "highlightExecuted");
 	_highlightConditions = obs_data_get_bool(data, "highlightConditions");
 	_highlightActions = obs_data_get_bool(data, "highlightActions");
+	_newMacroRegisterHotkeys =
+		obs_data_get_bool(data, "newMacroRegisterHotkey");
 	obs_data_release(data);
 }
 
@@ -40,8 +37,10 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 		  "AdvSceneSwitcher.macroTab.highlightTrueConditions"))),
 	  _actions(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.highlightPerformedActions"))),
-	  _hotkeys(new QCheckBox(
-		  obs_module_text("AdvSceneSwitcher.macroTab.disableHotkeys")))
+	  _newMacroRegisterHotkeys(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.newMacroRegisterHotkey"))),
+	  _currentMacroRegisterHotkeys(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.currentDisableHotkeys")))
 {
 	setModal(true);
 	setWindowModality(Qt::WindowModality::WindowModal);
@@ -52,17 +51,26 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	_executed->setChecked(prop._highlightExecuted);
 	_conditions->setChecked(prop._highlightConditions);
 	_actions->setChecked(prop._highlightActions);
+	_newMacroRegisterHotkeys->setChecked(prop._newMacroRegisterHotkeys);
 	if (macro) {
-		_hotkeys->setChecked(macro->PauseHotkeysEnabled());
+		_currentMacroRegisterHotkeys->setChecked(
+			macro->PauseHotkeysEnabled());
 	} else {
-		_hotkeys->hide();
+		_currentMacroRegisterHotkeys->hide();
 	}
 
 	QVBoxLayout *layout = new QVBoxLayout;
 	layout->addWidget(_executed);
 	layout->addWidget(_conditions);
 	layout->addWidget(_actions);
-	layout->addWidget(_hotkeys);
+	layout->addWidget(_newMacroRegisterHotkeys);
+	if (macro) {
+		QFrame *line = new QFrame();
+		line->setFrameShape(QFrame::HLine);
+		line->setFrameShadow(QFrame::Sunken);
+		layout->addWidget(line);
+	}
+	layout->addWidget(_currentMacroRegisterHotkeys);
 	setLayout(layout);
 
 	QDialogButtonBox *buttonbox = new QDialogButtonBox(
@@ -85,8 +93,11 @@ bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
 	userInput._highlightExecuted = dialog._executed->isChecked();
 	userInput._highlightConditions = dialog._conditions->isChecked();
 	userInput._highlightActions = dialog._actions->isChecked();
+	userInput._newMacroRegisterHotkeys =
+		dialog._newMacroRegisterHotkeys->isChecked();
 	if (macro) {
-		macro->EnablePauseHotkeys(dialog._hotkeys->isChecked());
+		macro->EnablePauseHotkeys(
+			dialog._currentMacroRegisterHotkeys->isChecked());
 	}
 	return true;
 }
