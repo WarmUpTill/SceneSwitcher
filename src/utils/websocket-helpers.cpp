@@ -40,7 +40,7 @@ void ReceiveWebsocketMessage(obs_data_t *request_data, obs_data_t *, void *)
 	auto msg = obs_data_get_string(request_data, "message");
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->websocketMessages.emplace_back(msg);
-	vblog(LOG_INFO, "received messsage: %s", msg);
+	vblog(LOG_INFO, "received message: %s", msg);
 }
 
 extern "C" void RegisterWebsocketVendor()
@@ -326,7 +326,7 @@ void WSConnection::OnMessage(connection_hdl, client::message_ptr message)
 		HandleResponse(json);
 		break;
 	default:
-		vblog(LOG_INFO, "ignoring unkown opcode %d", opcode);
+		vblog(LOG_INFO, "ignoring unknown opcode %d", opcode);
 		break;
 	}
 	obs_data_release(json);
