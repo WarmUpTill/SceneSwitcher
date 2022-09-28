@@ -192,7 +192,9 @@ void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 
 bool isLegacyTab(const QString &name)
 {
-	return name == obs_module_text("AdvSceneSwitcher.networkTab.title") ||
+	return name == obs_module_text(
+			       "AdvSceneSwitcher.sceneGroupTab.title") ||
+	       name == obs_module_text("AdvSceneSwitcher.networkTab.title") ||
 	       name == obs_module_text(
 			       "AdvSceneSwitcher.transitionTab.title") ||
 	       name == obs_module_text(
@@ -221,13 +223,13 @@ void AdvSceneSwitcher::on_hideLegacyTabs_stateChanged(int state)
 
 	for (int idx = 0; idx < ui->tabWidget->count(); idx++) {
 		if (isLegacyTab(ui->tabWidget->tabText(idx))) {
-#if defined(_WIN32) || defined(__APPLE__)
-			ui->tabWidget->setTabVisible(idx, !state);
-#else
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 			// TODO: Switch to setTabVisible() once QT 5.15 is more wide spread
 			ui->tabWidget->setTabEnabled(idx, !state);
 			ui->tabWidget->setStyleSheet(
 				"QTabBar::tab::disabled {width: 0; height: 0; margin: 0; padding: 0; border: none;} ");
+#else
+			ui->tabWidget->setTabVisible(idx, !state);
 #endif
 		}
 	}
