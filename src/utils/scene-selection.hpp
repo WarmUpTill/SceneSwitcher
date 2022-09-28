@@ -16,6 +16,7 @@ public:
 		GROUP,
 		PREVIOUS,
 		CURRENT,
+		PREVIEW,
 		VARIABLE,
 	};
 
@@ -37,7 +38,7 @@ class SceneSelectionWidget : public QComboBox {
 public:
 	SceneSelectionWidget(QWidget *parent, bool variables = false,
 			     bool sceneGroups = false, bool previous = false,
-			     bool current = false);
+			     bool current = false, bool preview = false);
 	void SetScene(const SceneSelection &);
 signals:
 	void SceneChanged(const SceneSelection &);
@@ -54,10 +55,12 @@ private:
 	void PopulateSelection();
 	bool IsCurrentSceneSelected(const QString &name);
 	bool IsPreviousSceneSelected(const QString &name);
+	bool IsPreviewSceneSelected(const QString &name);
 	bool NameUsed(const QString &name);
 
 	bool _current;
 	bool _previous;
+	bool _preview;
 	bool _variables;
 	bool _sceneGroups;
 
@@ -65,12 +68,12 @@ private:
 
 	// Order of entries
 	// 1. "select entry" entry
-	// 2. Current / previous scene
+	// 2. Current / previous / preview scene
 	// 3. Variables
 	// 4. Scene groups
 	// 5. Regular scenes
 	const int _selectIdx = 0;
-	int _orderEndIdx = -1;
+	int _placeholderEndIdx = -1;
 	int _variablesEndIdx = -1;
 	int _groupsEndIdx = -1;
 	int _scenesEndIdx = -1;

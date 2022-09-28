@@ -73,6 +73,8 @@ void SceneSelection::Load(obs_data_t *obj, const char *name,
 		break;
 	case Type::CURRENT:
 		break;
+	case Type::PREVIEW:
+		break;
 	case Type::VARIABLE:
 		_variable = GetWeakVariableByName(targetName);
 		break;
@@ -99,6 +101,13 @@ OBSWeakSource SceneSelection::GetScene(bool advance) const
 		return switcher->previousScene;
 	case Type::CURRENT:
 		return switcher->currentScene;
+	case Type::PREVIEW: {
+		auto s = obs_frontend_get_current_preview_scene();
+		auto scene = obs_source_get_weak_source(s);
+		obs_weak_source_release(scene);
+		obs_source_release(s);
+		return scene;
+	}
 	case Type::VARIABLE: {
 		auto var = _variable.lock();
 		if (!var) {
@@ -126,6 +135,8 @@ std::string SceneSelection::ToString() const
 		return obs_module_text("AdvSceneSwitcher.selectPreviousScene");
 	case Type::CURRENT:
 		return obs_module_text("AdvSceneSwitcher.selectCurrentScene");
+	case Type::PREVIEW:
+		return obs_module_text("AdvSceneSwitcher.selectPreviewScene");
 	case Type::VARIABLE: {
 		auto var = _variable.lock();
 		if (!var) {
@@ -145,12 +156,15 @@ SceneSelection SceneSelectionWidget::CurrentSelection()
 	const int idx = currentIndex();
 	const auto name = currentText();
 
-	if (idx < _orderEndIdx) {
+	if (idx < _placeholderEndIdx) {
 		if (IsCurrentSceneSelected(name)) {
 			s._type = SceneSelection::Type::CURRENT;
 		}
 		if (IsPreviousSceneSelected(name)) {
 			s._type = SceneSelection::Type::PREVIOUS;
+		}
+		if (IsPreviewSceneSelected(name)) {
+			s._type = SceneSelection::Type::PREVIEW;
 		}
 	} else if (idx < _variablesEndIdx) {
 		s._type = SceneSelection::Type::VARIABLE;
@@ -165,7 +179,7 @@ SceneSelection SceneSelectionWidget::CurrentSelection()
 	return s;
 }
 
-static QStringList getOrderList(bool current, bool previous)
+static QStringList getOrderList(bool current, bool previous, bool preview)
 {
 	QStringList list;
 	if (current) {
@@ -173,6 +187,9 @@ static QStringList getOrderList(bool current, bool previous)
 	}
 	if (previous) {
 		list << obs_module_text("AdvSceneSwitcher.selectPreviousScene");
+	}
+	if (preview) {
+		list << obs_module_text("AdvSceneSwitcher.selectPreviewScene");
 	}
 	return list;
 }
@@ -216,10 +233,11 @@ void SceneSelectionWidget::PopulateSelection()
 	insertSeparator(count());
 
 	if (_current || _previous) {
-		const QStringList order = getOrderList(_current, _previous);
+		const QStringList order =
+			getOrderList(_current, _previous, _preview);
 		addSelectionGroup(this, order);
 	}
-	_orderEndIdx = count();
+	_placeholderEndIdx = count();
 
 	if (_variables) {
 		const QStringList variables = GetVariablesNameList();
@@ -244,10 +262,11 @@ void SceneSelectionWidget::PopulateSelection()
 
 SceneSelectionWidget::SceneSelectionWidget(QWidget *parent, bool variables,
 					   bool sceneGroups, bool previous,
-					   bool current)
+					   bool current, bool preview)
 	: QComboBox(parent),
 	  _current(current),
 	  _previous(previous),
+	  _preview(preview),
 	  _variables(variables),
 	  _sceneGroups(sceneGroups)
 {
@@ -302,26 +321,37 @@ void SceneSelectionWidget::SetScene(const SceneSelection &s)
 		break;
 	}
 	case SceneSelection::Type::PREVIOUS: {
-		if (_orderEndIdx == -1) {
+		if (_placeholderEndIdx == -1) {
 			idx = 0;
 			break;
 		}
 
 		idx = findIdxInRagne(
-			this, _selectIdx, _orderEndIdx,
+			this, _selectIdx, _placeholderEndIdx,
 			obs_module_text(
 				"AdvSceneSwitcher.selectPreviousScene"));
 		break;
 	}
 	case SceneSelection::Type::CURRENT: {
-		if (_orderEndIdx == -1) {
+		if (_placeholderEndIdx == -1) {
 			idx = 0;
 			break;
 		}
 
 		idx = findIdxInRagne(
-			this, _selectIdx, _orderEndIdx,
+			this, _selectIdx, _placeholderEndIdx,
 			obs_module_text("AdvSceneSwitcher.selectCurrentScene"));
+		break;
+	}
+	case SceneSelection::Type::PREVIEW: {
+		if (_placeholderEndIdx == -1) {
+			idx = 0;
+			break;
+		}
+
+		idx = findIdxInRagne(
+			this, _selectIdx, _placeholderEndIdx,
+			obs_module_text("AdvSceneSwitcher.selectPreviewScene"));
 		break;
 	}
 	case SceneSelection::Type::VARIABLE: {
@@ -329,7 +359,7 @@ void SceneSelectionWidget::SetScene(const SceneSelection &s)
 			idx = 0;
 			break;
 		}
-		idx = findIdxInRagne(this, _orderEndIdx, _variablesEndIdx,
+		idx = findIdxInRagne(this, _placeholderEndIdx, _variablesEndIdx,
 				     s.ToString());
 		break;
 	default:
@@ -351,6 +381,12 @@ bool SceneSelectionWidget::IsPreviousSceneSelected(const QString &name)
 {
 	return name == QString::fromStdString((obs_module_text(
 			       "AdvSceneSwitcher.selectPreviousScene")));
+}
+
+bool SceneSelectionWidget::IsPreviewSceneSelected(const QString &name)
+{
+	return name == QString::fromStdString((obs_module_text(
+			       "AdvSceneSwitcher.selectPreviewScene")));
 }
 
 void SceneSelectionWidget::SelectionChanged(const QString &)
