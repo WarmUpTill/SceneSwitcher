@@ -398,31 +398,26 @@ endif()
 # --- End of section ---
 
 target_link_libraries(${LIB_NAME} PUBLIC ${${PROJECT_NAME}_PLATFORM_LIBS})
-setup_plugin_target(${PROJECT_NAME})
-install_advss_lib(${LIB_NAME})
-
-# --- Helpers for debian package creation ---
 
 if(DEB_INSTALL)
-  # Additional commands to install the module in the correct place. Find all the
-  # translation files so we can copy them to the correct place later on.
   file(GLOB ASS_TRANSLATION_FILES "data/locale/*.ini")
-
-  # Linux
-  if(UNIX AND NOT APPLE)
-    if(NOT LIB_OUT_DIR)
-      set(LIB_OUT_DIR "/lib/obs-plugins")
-    endif()
-    if(NOT DATA_OUT_DIR)
-      set(DATA_OUT_DIR "/share/obs/obs-plugins/${PROJECT_NAME}")
-    endif()
-    install(TARGETS ${PROJECT_NAME}
-            LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIB_OUT_DIR})
-    install(DIRECTORY data/locale
-            DESTINATION ${CMAKE_INSTALL_PREFIX}/${DATA_OUT_DIR})
-    install(DIRECTORY data/res
-            DESTINATION ${CMAKE_INSTALL_PREFIX}/${DATA_OUT_DIR})
+  if(NOT LIB_OUT_DIR)
+    set(LIB_OUT_DIR "/lib/obs-plugins")
   endif()
+  if(NOT DATA_OUT_DIR)
+    set(DATA_OUT_DIR "/share/obs/obs-plugins/${PROJECT_NAME}")
+  endif()
+  install(TARGETS ${PROJECT_NAME}
+          LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIB_OUT_DIR})
+  install(TARGETS ${LIB_NAME}
+          LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIB_OUT_DIR})
+  install(DIRECTORY data/locale
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/${DATA_OUT_DIR})
+  install(DIRECTORY data/res
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/${DATA_OUT_DIR})
+else()
+  setup_plugin_target(${PROJECT_NAME})
+  install_advss_lib(${LIB_NAME})
 endif()
 
 # --- End of section ---
