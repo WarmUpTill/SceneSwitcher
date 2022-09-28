@@ -67,18 +67,27 @@ if(OS_MACOS)
 else()
   # --- Windows / Linux section ---
   function(plugin_install_helper what where where_deb)
-    install(
-      TARGETS ${what}
-      RUNTIME DESTINATION "${where}" COMPONENT ${what}_Runtime
-      LIBRARY DESTINATION "${where}"
-              COMPONENT ${what}_Runtime
-              NAMELINK_COMPONENT ${what}_Development)
-    install(
-      FILES $<TARGET_FILE:${what}>
-      DESTINATION $<CONFIG>/${where}
-      COMPONENT ${what}_rundir
-      EXCLUDE_FROM_ALL)
+    if(DEB_INSTALL)
+      if(NOT LIB_OUT_DIR)
+        set(LIB_OUT_DIR "/lib/obs-plugins")
+      endif()
+      install(
+        TARGETS ${what}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIB_OUT_DIR}/${where_deb})
+    else()
+      install(
+        TARGETS ${what}
+        RUNTIME DESTINATION "${where}" COMPONENT ${what}_Runtime
+        LIBRARY DESTINATION "${where}"
+                COMPONENT ${what}_Runtime
+                NAMELINK_COMPONENT ${what}_Development)
 
+      install(
+        FILES $<TARGET_FILE:${what}>
+        DESTINATION $<CONFIG>/${where}
+        COMPONENT ${what}_rundir
+        EXCLUDE_FROM_ALL)
+    endif()
     if(OS_WINDOWS)
       install(
         FILES $<TARGET_PDB_FILE:${what}>
@@ -93,7 +102,6 @@ else()
         COMPONENT ${what}_rundir
         OPTIONAL EXCLUDE_FROM_ALL)
     endif()
-
     add_custom_command(
       TARGET ${what}
       POST_BUILD
@@ -104,15 +112,6 @@ else()
         ${CMAKE_CURRENT_BINARY_DIR}/cmake_install.cmake
       COMMENT "Installing ${what} to plugin rundir ${OBS_OUTPUT_DIR}/${where}\n"
       VERBATIM)
-
-    if(OS_POSIX AND DEB_INSTALL)
-      if(NOT LIB_OUT_DIR)
-        set(LIB_OUT_DIR "/lib/obs-plugins")
-      endif()
-      install(
-        TARGETS ${what}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIB_OUT_DIR}/${where_deb})
-    endif()
   endfunction()
 
   function(install_advss_lib target)
