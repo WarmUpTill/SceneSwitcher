@@ -409,7 +409,6 @@ void SceneItemSelectionWidget::SelectionChanged(const QString &name)
 		s._type = SceneItemSelection::Type::VARIABLE;
 		s._variable = GetWeakVariableByQString(name);
 	} else if (idx < _itemsEndIdx) {
-		auto group = GetSceneGroupByQString(name);
 		s._type = SceneItemSelection::Type::SOURCE;
 		s._sceneItem = GetWeakSourceByQString(name);
 	}
@@ -445,20 +444,19 @@ void SceneItemSelectionWidget::IdxChanged(int idx)
 	emit SceneItemChanged(_currentSelection);
 }
 
-void SceneItemSelectionWidget::ItemAdd(const QString &name)
+void SceneItemSelectionWidget::ItemAdd(const QString &)
 {
 	blockSignals(true);
 	Reset();
 	blockSignals(false);
 }
 
-void SceneItemSelectionWidget::ItemRemove(const QString &name)
+void SceneItemSelectionWidget::ItemRemove(const QString &)
 {
 	Reset();
 }
 
-void SceneItemSelectionWidget::ItemRename(const QString &oldName,
-					  const QString &newName)
+void SceneItemSelectionWidget::ItemRename(const QString &, const QString &)
 {
 	blockSignals(true);
 	Reset();

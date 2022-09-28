@@ -353,13 +353,13 @@ bool SceneSelectionWidget::IsPreviousSceneSelected(const QString &name)
 			       "AdvSceneSwitcher.selectPreviousScene")));
 }
 
-void SceneSelectionWidget::SelectionChanged(const QString &name)
+void SceneSelectionWidget::SelectionChanged(const QString &)
 {
 	_currentSelection = CurrentSelection();
 	emit SceneChanged(_currentSelection);
 }
 
-void SceneSelectionWidget::ItemAdd(const QString &name)
+void SceneSelectionWidget::ItemAdd(const QString &)
 {
 	blockSignals(true);
 	Reset();
@@ -391,8 +391,7 @@ void SceneSelectionWidget::ItemRemove(const QString &name)
 	blockSignals(false);
 }
 
-void SceneSelectionWidget::ItemRename(const QString &oldName,
-				      const QString &newName)
+void SceneSelectionWidget::ItemRename(const QString &, const QString &)
 {
 	blockSignals(true);
 	Reset();

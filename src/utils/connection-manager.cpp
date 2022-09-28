@@ -55,7 +55,7 @@ Connection::Connection(std::string name, std::string address, uint64_t port,
 {
 }
 
-Connection::Connection(const Connection &other)
+Connection::Connection(const Connection &other) : Item(other)
 {
 	_name = other._name;
 	_address = other._address;

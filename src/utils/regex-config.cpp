@@ -49,9 +49,9 @@ RegexConfig::GetRegularExpression(const std::string &expr) const
 
 RegexConfigWidget::RegexConfigWidget(QWidget *parent)
 	: QWidget(parent),
+	  _openSettings(new QPushButton()),
 	  _enable(new QCheckBox(
-		  obs_module_text("AdvSceneSwitcher.regex.enable"))),
-	  _openSettings(new QPushButton())
+		  obs_module_text("AdvSceneSwitcher.regex.enable")))
 {
 	_openSettings->setMaximumWidth(22);
 	setButtonIcon(_openSettings, ":/settings/images/settings/general.svg");
