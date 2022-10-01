@@ -55,7 +55,7 @@ int getTransitionOverrideDuration(OBSWeakSource &scene)
 	return duration;
 }
 
-bool isUsingFixedLengthTransition(OBSWeakSource &transition)
+bool isUsingFixedLengthTransition(const OBSWeakSource &transition)
 {
 	obs_source_t *source = obs_weak_source_get_source(transition);
 	bool ret = obs_transition_fixed(source);
@@ -169,14 +169,14 @@ std::string MacroActionSwitchScene::GetShortDesc()
 
 MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSwitchScene> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _scenes(new SceneSelectionWidget(window(), true, true, true)),
+	  _transitions(new TransitionSelectionWidget(this)),
+	  _duration(new DurationSelection(parent, false)),
+	  _blockUntilTransitionDone(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.action.scene.blockUntilTransitionDone"))),
+	  _entryLayout(new QHBoxLayout())
 {
-	_scenes = new SceneSelectionWidget(window(), true, true, true);
-	_transitions = new TransitionSelectionWidget(this);
-	_duration = new DurationSelection(parent, false);
-	_blockUntilTransitionDone = new QCheckBox(obs_module_text(
-		"AdvSceneSwitcher.action.scene.blockUntilTransitionDone"));
-
 	_duration->SpinBox()->setSpecialValueText("-");
 
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
@@ -190,7 +190,6 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	QWidget::connect(_blockUntilTransitionDone, SIGNAL(stateChanged(int)),
 			 this, SLOT(BlockUntilTransitionDoneChanged(int)));
 
-	QHBoxLayout *entryLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", _scenes},
 		{"{{transitions}}", _transitions},
@@ -198,10 +197,10 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 		{"{{blockUntilTransitionDone}}", _blockUntilTransitionDone},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.scene.entry"),
-		     entryLayout, widgetPlaceholders);
+		     _entryLayout, widgetPlaceholders);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->addLayout(entryLayout);
+	mainLayout->addLayout(_entryLayout);
 	mainLayout->addWidget(_blockUntilTransitionDone);
 	setLayout(mainLayout);
 
@@ -211,6 +210,7 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	_duration->SetDuration(_entryData->_duration);
 	_blockUntilTransitionDone->setChecked(
 		_entryData->_blockUntilTransitionDone);
+	SetDurationVisibility();
 	_loading = false;
 }
 
@@ -234,6 +234,37 @@ void MacroActionSwitchSceneEdit::BlockUntilTransitionDoneChanged(int state)
 	_entryData->_blockUntilTransitionDone = state;
 }
 
+void MacroActionSwitchSceneEdit::SetDurationVisibility()
+{
+	if (_entryData->_transition.GetType() !=
+	    TransitionSelection::Type::TRANSITION) {
+		_duration->show();
+	}
+	const bool fixedDuration = isUsingFixedLengthTransition(
+		_entryData->_transition.GetTransition());
+	_duration->setVisible(!fixedDuration);
+
+	_entryLayout->removeWidget(_scenes);
+	_entryLayout->removeWidget(_transitions);
+	_entryLayout->removeWidget(_duration);
+	clearLayout(_entryLayout);
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{scenes}}", _scenes},
+		{"{{transitions}}", _transitions},
+		{"{{duration}}", _duration},
+	};
+	if (fixedDuration) {
+		placeWidgets(
+			obs_module_text(
+				"AdvSceneSwitcher.action.scene.entry.noDuration"),
+			_entryLayout, widgetPlaceholders);
+	} else {
+		placeWidgets(
+			obs_module_text("AdvSceneSwitcher.action.scene.entry"),
+			_entryLayout, widgetPlaceholders);
+	}
+}
+
 void MacroActionSwitchSceneEdit::SceneChanged(const SceneSelection &s)
 {
 	if (_loading || !_entryData) {
@@ -254,4 +285,5 @@ void MacroActionSwitchSceneEdit::TransitionChanged(const TransitionSelection &t)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_transition = t;
+	SetDurationVisibility();
 }

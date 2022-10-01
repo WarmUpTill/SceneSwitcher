@@ -61,9 +61,11 @@ protected:
 	TransitionSelectionWidget *_transitions;
 	DurationSelection *_duration;
 	QCheckBox *_blockUntilTransitionDone;
+	QHBoxLayout *_entryLayout;
 
 	std::shared_ptr<MacroActionSwitchScene> _entryData;
 
 private:
+	void SetDurationVisibility();
 	bool _loading = true;
 };
