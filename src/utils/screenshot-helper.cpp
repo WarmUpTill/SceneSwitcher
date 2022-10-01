@@ -139,7 +139,7 @@ void ScreenshotHelper::WriteToFile()
 			      _path.c_str());
 		} else {
 			blog(LOG_WARNING,
-			     "Failed to save screenshot to to \"%s\"!\nMaybe unkown format?",
+			     "Failed to save screenshot to \"%s\"!\nMaybe unknown format?",
 			     _path.c_str());
 		}
 	});
