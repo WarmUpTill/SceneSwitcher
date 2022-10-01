@@ -54,7 +54,7 @@ bool MacroConditionTransition::CheckCondition()
 	bool transitionStarted = false;
 	bool transitionEnded = false;
 
-	if (_transition.GetType() == TransitionSelectionType::ANY) {
+	if (_transition.GetType() == TransitionSelection::Type::ANY) {
 		transitionStarted = anyTransitionStarted;
 		transitionEnded = anyTransitionEnded;
 	} else {
