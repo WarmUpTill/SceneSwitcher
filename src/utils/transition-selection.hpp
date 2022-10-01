@@ -3,12 +3,6 @@
 
 #include <QComboBox>
 
-enum class TransitionSelectionType {
-	TRANSITION,
-	CURRENT,
-	ANY,
-};
-
 class TransitionSelection {
 public:
 	void Save(obs_data_t *obj, const char *name = "transition",
@@ -16,13 +10,19 @@ public:
 	void Load(obs_data_t *obj, const char *name = "transition",
 		  const char *typeName = "transitionType");
 
-	TransitionSelectionType GetType() { return _type; }
+	enum class Type {
+		TRANSITION,
+		CURRENT,
+		ANY,
+	};
+
+	Type GetType() { return _type; }
 	OBSWeakSource GetTransition();
 	std::string ToString();
 
 private:
 	OBSWeakSource _transition;
-	TransitionSelectionType _type = TransitionSelectionType::TRANSITION;
+	Type _type = Type::TRANSITION;
 	friend class TransitionSelectionWidget;
 };
 

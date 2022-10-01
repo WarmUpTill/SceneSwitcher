@@ -7,7 +7,7 @@ void TransitionSelection::Save(obs_data_t *obj, const char *name,
 	obs_data_set_int(obj, typeName, static_cast<int>(_type));
 
 	switch (_type) {
-	case TransitionSelectionType::TRANSITION:
+	case Type::TRANSITION:
 		obs_data_set_string(obj, name,
 				    GetWeakSourceName(_transition).c_str());
 		break;
@@ -19,11 +19,10 @@ void TransitionSelection::Save(obs_data_t *obj, const char *name,
 void TransitionSelection::Load(obs_data_t *obj, const char *name,
 			       const char *typeName)
 {
-	_type = static_cast<TransitionSelectionType>(
-		obs_data_get_int(obj, typeName));
+	_type = static_cast<Type>(obs_data_get_int(obj, typeName));
 	auto target = obs_data_get_string(obj, name);
 	switch (_type) {
-	case TransitionSelectionType::TRANSITION:
+	case Type::TRANSITION:
 		_transition = GetWeakTransitionByName(target);
 		break;
 	default:
@@ -34,9 +33,9 @@ void TransitionSelection::Load(obs_data_t *obj, const char *name,
 OBSWeakSource TransitionSelection::GetTransition()
 {
 	switch (_type) {
-	case TransitionSelectionType::TRANSITION:
+	case Type::TRANSITION:
 		return _transition;
-	case TransitionSelectionType::CURRENT: {
+	case Type::CURRENT: {
 		auto source = obs_frontend_get_current_transition();
 		auto weakSource = obs_source_get_weak_source(source);
 		obs_weak_source_release(weakSource);
@@ -52,11 +51,11 @@ OBSWeakSource TransitionSelection::GetTransition()
 std::string TransitionSelection::ToString()
 {
 	switch (_type) {
-	case TransitionSelectionType::TRANSITION:
+	case Type::TRANSITION:
 		return GetWeakSourceName(_transition);
-	case TransitionSelectionType::CURRENT:
+	case Type::CURRENT:
 		return obs_module_text("AdvSceneSwitcher.currentTransition");
-	case TransitionSelectionType::ANY:
+	case Type::ANY:
 		return obs_module_text("AdvSceneSwitcher.anyTransition");
 	default:
 		break;
@@ -85,17 +84,17 @@ void TransitionSelectionWidget::SetTransition(TransitionSelection &t)
 	int idx;
 
 	switch (t.GetType()) {
-	case TransitionSelectionType::TRANSITION:
+	case TransitionSelection::Type::TRANSITION:
 		setCurrentText(QString::fromStdString(t.ToString()));
 		break;
-	case TransitionSelectionType::CURRENT:
+	case TransitionSelection::Type::CURRENT:
 		idx = findText(QString::fromStdString(
 			obs_module_text("AdvSceneSwitcher.currentTransition")));
 		if (idx != -1) {
 			setCurrentIndex(idx);
 		}
 		break;
-	case TransitionSelectionType::ANY:
+	case TransitionSelection::Type::ANY:
 		idx = findText(QString::fromStdString(
 			obs_module_text("AdvSceneSwitcher.anyTransition")));
 		if (idx != -1) {
@@ -155,16 +154,16 @@ void TransitionSelectionWidget::SelectionChanged(const QString &name)
 	TransitionSelection t;
 	auto transition = GetWeakTransitionByQString(name);
 	if (transition) {
-		t._type = TransitionSelectionType::TRANSITION;
+		t._type = TransitionSelection::Type::TRANSITION;
 		t._transition = transition;
 	}
 
 	if (!transition) {
 		if (IsCurrentTransitionSelected(name)) {
-			t._type = TransitionSelectionType::CURRENT;
+			t._type = TransitionSelection::Type::CURRENT;
 		}
 		if (IsAnyTransitionSelected(name)) {
-			t._type = TransitionSelectionType::ANY;
+			t._type = TransitionSelection::Type::ANY;
 		}
 	}
 
