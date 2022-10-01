@@ -6,6 +6,8 @@ You have the option to ...
 
 As both methods require you to have a working [OBS Studio development environment](https://obsproject.com/wiki/Building-OBS-Studio) and [CMake](https://cmake.org/download/) it is recommended to build the plugin in tree as it is easier to set up and will enable straightforward debugging.
 
+The plugin can be compiled for OBS 25 and above, although using the latest version of OBS is recommended to support all features.
+
 ## Compiling in tree (recommended for development)
 Add the "SceneSwitcher" source directory to your obs-studio source directory under obs-studio/UI/frontend-plugins/:
 ```
