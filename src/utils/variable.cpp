@@ -7,19 +7,24 @@ Variable::Variable() : Item() {}
 void Variable::Load(obs_data_t *obj)
 {
 	Item::Load(obj);
-	_persist = obs_data_get_bool(obj, "persist");
-	if (_persist) {
+	_saveAction =
+		static_cast<SaveAction>(obs_data_get_int(obj, "saveAction"));
+	_defaultValue = obs_data_get_string(obj, "defaultValue");
+	if (_saveAction == SaveAction::SAVE) {
 		_value = obs_data_get_string(obj, "value");
+	} else if (_saveAction == SaveAction::SET_DEFAULT) {
+		_value = _defaultValue;
 	}
 }
 
 void Variable::Save(obs_data_t *obj) const
 {
 	Item::Save(obj);
-	obs_data_set_bool(obj, "persist", _persist);
-	if (_persist) {
+	obs_data_set_int(obj, "saveAction", static_cast<int>(_saveAction));
+	if (_saveAction == SaveAction::SAVE) {
 		obs_data_set_string(obj, "value", _value.c_str());
 	}
+	obs_data_set_string(obj, "defaultValue", _defaultValue.c_str());
 }
 
 bool Variable::DoubleValue(double &value) const
@@ -106,16 +111,31 @@ void SwitcherData::loadVariables(obs_data_t *obj)
 	obs_data_array_release(variablesArray);
 }
 
+static void populateSaveActionSelection(QComboBox *list)
+{
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.variable.save.dontSave"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.variable.save.save"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.variable.save.default"));
+}
+
 VariableSettingsDialog::VariableSettingsDialog(QWidget *parent,
 					       const Variable &settings)
 	: ItemSettingsDialog(settings, switcher->variables,
 			     "AdvSceneSwitcher.variable.select",
 			     "AdvSceneSwitcher.variable.add", parent),
 	  _value(new QLineEdit()),
-	  _persist(new QCheckBox())
+	  _defaultValue(new QLineEdit()),
+	  _save(new QComboBox())
 {
+	QWidget::connect(_save, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(SaveActionChanged(int)));
+
 	_value->setText(QString::fromStdString(settings._value));
-	_persist->setChecked(settings._persist);
+	_defaultValue->setText(QString::fromStdString(settings._defaultValue));
+	populateSaveActionSelection(_save);
+	_save->setCurrentIndex(static_cast<int>(settings._saveAction));
 
 	QGridLayout *layout = new QGridLayout;
 	int row = 0;
@@ -132,13 +152,27 @@ VariableSettingsDialog::VariableSettingsDialog(QWidget *parent,
 		row, 0);
 	layout->addWidget(_value, row, 1);
 	++row;
-	layout->addWidget(new QLabel(obs_module_text(
-				  "AdvSceneSwitcher.variable.persist")),
-			  row, 0);
-	layout->addWidget(_persist, row, 1);
+	layout->addWidget(
+		new QLabel(obs_module_text("AdvSceneSwitcher.variable.save")),
+		row, 0);
+	auto saveLayout = new QVBoxLayout;
+	saveLayout->addWidget(_save);
+	saveLayout->addWidget(_defaultValue);
+	saveLayout->addStretch();
+	layout->addLayout(saveLayout, row, 1);
 	++row;
 	layout->addWidget(_buttonbox, row, 0, 1, -1);
+	layout->setSizeConstraint(QLayout::SetFixedSize);
 	setLayout(layout);
+}
+
+void VariableSettingsDialog::SaveActionChanged(int idx)
+{
+	const Variable::SaveAction action =
+		static_cast<Variable::SaveAction>(idx);
+	_defaultValue->setVisible(action == Variable::SaveAction::SET_DEFAULT);
+	adjustSize();
+	updateGeometry();
 }
 
 bool VariableSettingsDialog::AskForSettings(QWidget *parent, Variable &settings)
@@ -151,7 +185,9 @@ bool VariableSettingsDialog::AskForSettings(QWidget *parent, Variable &settings)
 
 	settings._name = dialog._name->text().toStdString();
 	settings._value = dialog._value->text().toStdString();
-	settings._persist = dialog._persist->isChecked();
+	settings._defaultValue = dialog._defaultValue->text().toStdString();
+	settings._saveAction =
+		static_cast<Variable::SaveAction>(dialog._save->currentIndex());
 	return true;
 }
 

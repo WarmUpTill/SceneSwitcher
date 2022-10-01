@@ -22,9 +22,16 @@ public:
 		return std::make_shared<Variable>();
 	}
 
+	enum class SaveAction {
+		DONT_SAVE,
+		SAVE,
+		SET_DEFAULT,
+	};
+
 private:
-	bool _persist = false;
+	SaveAction _saveAction = SaveAction::DONT_SAVE;
 	std::string _value = "";
+	std::string _defaultValue = "";
 
 	friend VariableSelection;
 	friend VariableSettingsDialog;
@@ -43,9 +50,13 @@ public:
 	VariableSettingsDialog(QWidget *parent, const Variable &);
 	static bool AskForSettings(QWidget *parent, Variable &settings);
 
+private slots:
+	void SaveActionChanged(int);
+
 private:
 	QLineEdit *_value;
-	QCheckBox *_persist;
+	QLineEdit *_defaultValue;
+	QComboBox *_save;
 };
 
 class VariableSelection : public ItemSelection {
