@@ -116,12 +116,19 @@ else()
 
   function(install_advss_lib target)
     plugin_install_helper("${target}" "${OBS_PLUGIN_DESTINATION}" "")
+    if(OS_POSIX)
+      set_target_properties(${target} PROPERTIES INSTALL_RPATH "$ORIGIN")
+    endif()
   endfunction()
 
   function(install_advss_plugin target)
     plugin_install_helper(
       "${target}" "${OBS_PLUGIN_DESTINATION}/${_PLUGIN_FOLDER}"
       "${_PLUGIN_FOLDER}")
+    if(OS_POSIX)
+      set_target_properties(${target} PROPERTIES INSTALL_RPATH
+                                                 "$ORIGIN:$ORIGIN/..")
+    endif()
     message(STATUS "ADVSS: ENABLED PLUGIN     ${target}")
   endfunction()
 
