@@ -26,6 +26,7 @@ public:
 		IS_NUMBER,
 		LESS_THAN,
 		GREATER_THAN,
+		VALUE_CHANGED,
 		//...
 	};
 
@@ -37,6 +38,9 @@ public:
 
 private:
 	bool Compare(const Variable &) const;
+	bool ValueChanged(const Variable &);
+
+	std::string _lastValue = "";
 
 	static bool _registered;
 	static const std::string id;

@@ -24,6 +24,8 @@ const static std::map<MacroConditionVariable::Type, std::string>
 		 "AdvSceneSwitcher.condition.variable.type.lessThan"},
 		{MacroConditionVariable::Type::GREATER_THAN,
 		 "AdvSceneSwitcher.condition.variable.type.greaterThan"},
+		{MacroConditionVariable::Type::VALUE_CHANGED,
+		 "AdvSceneSwitcher.condition.variable.type.valueChanged"},
 };
 
 static bool isNumber(const Variable &var)
@@ -59,6 +61,15 @@ bool MacroConditionVariable::Compare(const Variable &var) const
 	}
 }
 
+bool MacroConditionVariable::ValueChanged(const Variable &var)
+{
+	bool changed = var.Value() != _lastValue;
+	if (changed) {
+		_lastValue = var.Value();
+	}
+	return changed;
+}
+
 bool MacroConditionVariable::CheckCondition()
 {
 	auto var = GetVariableByName(_variableName);
@@ -77,6 +88,8 @@ bool MacroConditionVariable::CheckCondition()
 		return compareNumber(*var, _numValue, true);
 	case MacroConditionVariable::Type::GREATER_THAN:
 		return compareNumber(*var, _numValue, false);
+	case MacroConditionVariable::Type::VALUE_CHANGED:
+		return ValueChanged(*var);
 	}
 
 	return false;
@@ -257,6 +270,11 @@ void MacroConditionVariableEdit::SetWidgetVisibility()
 		_regex->hide();
 		_strValue->hide();
 		_numValue->show();
+		break;
+	case MacroConditionVariable::Type::VALUE_CHANGED:
+		_regex->hide();
+		_strValue->hide();
+		_numValue->hide();
 		break;
 	}
 
