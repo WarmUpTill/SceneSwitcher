@@ -124,6 +124,7 @@ bool MacroConditionMacro::Save(obs_data_t *obj)
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
 	obs_data_set_int(obj, "condition", static_cast<int>(_counterCondition));
 	obs_data_set_int(obj, "count", _count);
+	obs_data_set_int(obj, "multiStateCount", _multiSateCount);
 	return true;
 }
 
@@ -136,6 +137,7 @@ bool MacroConditionMacro::Load(obs_data_t *obj)
 	_counterCondition = static_cast<CounterCondition>(
 		obs_data_get_int(obj, "condition"));
 	_count = obs_data_get_int(obj, "count");
+	_multiSateCount = obs_data_get_int(obj, "multiStateCount");
 	return true;
 }
 
