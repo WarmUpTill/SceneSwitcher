@@ -366,6 +366,7 @@ else()
   set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
   target_compile_options(${LIB_NAME} PRIVATE -Wall -Wextra)
   set_target_properties(${LIB_NAME} PROPERTIES PREFIX "")
+  set_target_properties(${LIB_NAME} PROPERTIES SOVERSION 1)
 
   find_package(X11 REQUIRED COMPONENTS Xtst Xss)
   find_path(PROCPS_INCLUDE_DIR NAMES proc/procps.h)
