@@ -27,6 +27,7 @@ Note that on Linux systems it might be necessary to additionally install the fol
 sudo apt-get install \
     libxtst-dev \
     libxss-dev \
+    libprocps-dev \
     libopencv-dev
 ```
 

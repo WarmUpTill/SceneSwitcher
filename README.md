@@ -26,6 +26,7 @@ If `apt` is supported on your system they can be installed using:
 sudo apt-get install \
     libxtst-dev \
     libxss-dev \
+    libprocps-dev \
     libopencv-dev
 ```
 
