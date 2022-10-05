@@ -160,7 +160,7 @@ SceneItemSelection::GetSceneItems(SceneSelection &sceneSelection)
 		}
 		name = var->Value();
 	} else {
-		auto name = GetWeakSourceName(_sceneItem);
+		name = GetWeakSourceName(_sceneItem);
 	}
 	int count = getCountOfSceneItemOccurance(sceneSelection, name, false);
 	auto items = getSceneItemsWithName(scene, name);
