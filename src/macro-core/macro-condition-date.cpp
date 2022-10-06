@@ -232,12 +232,12 @@ void MacroConditionDate::SetTime2(const QTime &time)
 
 QDateTime MacroConditionDate::GetDateTime1()
 {
-	return _updateOnRepeat ? _dateTime : _origDateTime;
+	return _repeat && _updateOnRepeat ? _dateTime : _origDateTime;
 }
 
 QDateTime MacroConditionDate::GetDateTime2()
 {
-	return _updateOnRepeat ? _dateTime2 : _origDateTime2;
+	return _repeat && _updateOnRepeat ? _dateTime2 : _origDateTime2;
 }
 
 QDateTime MacroConditionDate::GetNextMatchDateTime()
@@ -576,12 +576,12 @@ void MacroConditionDateEdit::UpdateEntryData()
 	_dayOfWeek->setCurrentIndex(
 		static_cast<int>(static_cast<int>(_entryData->_dayOfWeek)));
 	_ignoreWeekTime->setChecked(!_entryData->_ignoreTime);
-	_weekTime->setDateTime(_entryData->GetDateTime1());
+	_weekTime->setTime(_entryData->GetDateTime1().time());
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
-	_date->setDateTime(_entryData->GetDateTime1());
-	_time->setDateTime(_entryData->GetDateTime1());
-	_date2->setDateTime(_entryData->GetDateTime2());
-	_time2->setDateTime(_entryData->GetDateTime2());
+	_date->setDate(_entryData->GetDateTime1().date());
+	_time->setTime(_entryData->GetDateTime1().time());
+	_date2->setDate(_entryData->GetDateTime2().date());
+	_time2->setTime(_entryData->GetDateTime2().time());
 	_ignoreDate->setChecked(!_entryData->_ignoreDate);
 	_ignoreTime->setChecked(!_entryData->_ignoreTime);
 	_repeat->setChecked(_entryData->_repeat);
