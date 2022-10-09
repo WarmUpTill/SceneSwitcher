@@ -610,7 +610,7 @@
                 <enum>Qt::MoveAction</enum>
                </property>
                <property name="spacing">
-                <number>1</number>
+                <number>0</number>
                </property>
                <property name="sortingEnabled">
                 <bool>false</bool>
