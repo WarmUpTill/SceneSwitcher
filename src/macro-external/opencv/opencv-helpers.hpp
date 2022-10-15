@@ -20,5 +20,6 @@ void matchPattern(QImage &img, QImage &pattern, double threshold,
 std::vector<cv::Rect> matchObject(QImage &img, cv::CascadeClassifier &cascade,
 				  double scaleFactor, int minNeighbors,
 				  cv::Size minSize, cv::Size maxSize);
+uchar getAvgBrightness(QImage &img);
 cv::Mat QImageToMat(const QImage &img);
 QImage MatToQImage(const cv::Mat &mat);
