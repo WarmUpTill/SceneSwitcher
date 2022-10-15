@@ -33,6 +33,8 @@ static std::map<VideoCondition, std::string> conditionTypes = {
 	 "AdvSceneSwitcher.condition.video.condition.pattern"},
 	{VideoCondition::OBJECT,
 	 "AdvSceneSwitcher.condition.video.condition.object"},
+	{VideoCondition::BRIGHTNESS,
+	 "AdvSceneSwitcher.condition.video.condition.brightness"},
 };
 
 cv::CascadeClassifier initObjectCascade(std::string &path)
@@ -116,6 +118,7 @@ bool MacroConditionVideo::Save(obs_data_t *obj)
 			  _usePatternForChangedCheck);
 	obs_data_set_double(obj, "threshold", _patternThreshold);
 	obs_data_set_bool(obj, "useAlphaAsMask", _useAlphaAsMask);
+	obs_data_set_double(obj, "brightness", _brightnessThreshold);
 	obs_data_set_string(obj, "modelDataPath", _modelDataPath.c_str());
 	obs_data_set_double(obj, "scaleFactor", _scaleFactor);
 	obs_data_set_int(obj, "minNeighbors", _minNeighbors);
@@ -155,6 +158,7 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 		obs_data_get_bool(obj, "usePatternForChangedCheck");
 	_patternThreshold = obs_data_get_double(obj, "threshold");
 	_useAlphaAsMask = obs_data_get_bool(obj, "useAlphaAsMask");
+	_brightnessThreshold = obs_data_get_double(obj, "brightness");
 	_modelDataPath = obs_data_get_string(obj, "modelDataPath");
 	_scaleFactor = obs_data_get_double(obj, "scaleFactor");
 	if (!isScaleFactorValid(_scaleFactor)) {
@@ -255,6 +259,12 @@ bool MacroConditionVideo::ScreenshotContainsObject()
 	return objects.size() > 0;
 }
 
+bool MacroConditionVideo::CheckBrightnessThreshold()
+{
+	_currentBrigthness = getAvgBrightness(_screenshotData.image) / 255.;
+	return _currentBrigthness > _brightnessThreshold;
+}
+
 bool MacroConditionVideo::Compare()
 {
 	if (_checkAreaEnable && _condition != VideoCondition::NO_IMAGE) {
@@ -278,6 +288,8 @@ bool MacroConditionVideo::Compare()
 		return ScreenshotContainsPattern();
 	case VideoCondition::OBJECT:
 		return ScreenshotContainsObject();
+	case VideoCondition::BRIGHTNESS:
+		return CheckBrightnessThreshold();
 	default:
 		break;
 	}
@@ -309,6 +321,13 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			  "AdvSceneSwitcher.condition.video.patternThresholdDescription"))),
 	  _useAlphaAsMask(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.patternThresholdUseAlphaAsMask"))),
+	  _brightnessThreshold(new ThresholdSlider(
+		  0., 1.,
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.brightnessThreshold"),
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.brightnessThresholdDescription"))),
+	  _currentBrightness(new QLabel),
 	  _modelDataPath(new FileSelection()),
 	  _modelPathLayout(new QHBoxLayout),
 	  _objectScaleThreshold(new ThresholdSlider(
@@ -366,6 +385,9 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 this, SLOT(PatternThresholdChanged(double)));
 	QWidget::connect(_useAlphaAsMask, SIGNAL(stateChanged(int)), this,
 			 SLOT(UseAlphaAsMaskChanged(int)));
+	QWidget::connect(_brightnessThreshold,
+			 SIGNAL(DoubleValueChanged(double)), this,
+			 SLOT(BrightnessThresholdChanged(double)));
 	QWidget::connect(_objectScaleThreshold,
 			 SIGNAL(DoubleValueChanged(double)), this,
 			 SLOT(ObjectScaleThresholdChanged(double)));
@@ -451,6 +473,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	mainLayout->addWidget(_usePatternForChangedCheck);
 	mainLayout->addWidget(_patternThreshold);
 	mainLayout->addWidget(_useAlphaAsMask);
+	mainLayout->addWidget(_brightnessThreshold);
+	mainLayout->addWidget(_currentBrightness);
 	mainLayout->addLayout(_modelPathLayout);
 	mainLayout->addWidget(_objectScaleThreshold);
 	mainLayout->addLayout(_neighborsControlLayout);
@@ -465,6 +489,10 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	_entryData = entryData;
 	UpdateEntryData();
 	_loading = false;
+
+	connect(&_updateBrightnessTimer, &QTimer::timeout, this,
+		&MacroConditionVideoEdit::UpdateCurrentBrightness);
+	_updateBrightnessTimer.start(1000);
 }
 
 void MacroConditionVideoEdit::UpdatePreviewTooltip()
@@ -673,6 +701,16 @@ void MacroConditionVideoEdit::UseAlphaAsMaskChanged(int value)
 	_entryData->LoadImageFromFile();
 }
 
+void MacroConditionVideoEdit::BrightnessThresholdChanged(double value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	_entryData->_brightnessThreshold = value;
+}
+
 void MacroConditionVideoEdit::ObjectScaleThresholdChanged(double value)
 {
 	if (_loading || !_entryData) {
@@ -774,6 +812,14 @@ void MacroConditionVideoEdit::ShowMatchClicked()
 	_previewDialog.ShowMatch();
 }
 
+void MacroConditionVideoEdit::UpdateCurrentBrightness()
+{
+	QString text = obs_module_text(
+		"AdvSceneSwitcher.condition.video.currentBrightness");
+	_currentBrightness->setText(
+		text.arg(_entryData->GetCurrentBrightness()));
+}
+
 void MacroConditionVideoEdit::SelectAreaClicked()
 {
 	_previewDialog.show();
@@ -843,6 +889,10 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 	_patternThreshold->setVisible(needsThreshold(_entryData->_condition));
 	_useAlphaAsMask->setVisible(_entryData->_condition ==
 				    VideoCondition::PATTERN);
+	_brightnessThreshold->setVisible(_entryData->_condition ==
+					 VideoCondition::BRIGHTNESS);
+	_currentBrightness->setVisible(_entryData->_condition ==
+				       VideoCondition::BRIGHTNESS);
 	_showMatch->setVisible(needsShowMatch(_entryData->_condition));
 	_objectScaleThreshold->setVisible(
 		needsObjectControls(_entryData->_condition));
@@ -884,6 +934,7 @@ void MacroConditionVideoEdit::UpdateEntryData()
 		_entryData->_usePatternForChangedCheck);
 	_patternThreshold->SetDoubleValue(_entryData->_patternThreshold);
 	_useAlphaAsMask->setChecked(_entryData->_useAlphaAsMask);
+	_brightnessThreshold->SetDoubleValue(_entryData->_brightnessThreshold);
 	_modelDataPath->SetPath(_entryData->GetModelDataPath().c_str());
 	_objectScaleThreshold->SetDoubleValue(_entryData->_scaleFactor);
 	_minNeighbors->setValue(_entryData->_minNeighbors);

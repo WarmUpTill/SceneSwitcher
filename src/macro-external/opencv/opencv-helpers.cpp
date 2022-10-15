@@ -77,6 +77,21 @@ std::vector<cv::Rect> matchObject(QImage &img, cv::CascadeClassifier &cascade,
 	return objects;
 }
 
+uchar getAvgBrightness(QImage &img)
+{
+	auto i = QImageToMat(img);
+	cv::Mat hsvImage, rgbImage;
+	cv::cvtColor(i, rgbImage, cv::COLOR_RGBA2RGB);
+	cv::cvtColor(rgbImage, hsvImage, cv::COLOR_RGB2HSV);
+	long long brightnessSum = 0;
+	for (int i = 0; i < hsvImage.rows; ++i) {
+		for (int j = 0; j < hsvImage.cols; ++j) {
+			brightnessSum += hsvImage.at<cv::Vec3b>(i, j)[2];
+		}
+	}
+	return brightnessSum / (hsvImage.rows * hsvImage.cols);
+}
+
 // Assumption is that QImage uses Format_RGBA8888.
 // Conversion from: https://github.com/dbzhang800/QtOpenCV
 cv::Mat QImageToMat(const QImage &img)

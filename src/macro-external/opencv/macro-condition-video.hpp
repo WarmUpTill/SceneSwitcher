@@ -25,6 +25,7 @@ enum class VideoCondition {
 	NO_IMAGE,
 	PATTERN,
 	OBJECT,
+	BRIGHTNESS,
 };
 
 class MacroConditionVideo : public MacroCondition {
@@ -45,6 +46,7 @@ public:
 	bool LoadModelData(std::string &path);
 	std::string GetModelDataPath() { return _modelDataPath; }
 	void ResetLastMatch() { _lastMatchResult = false; }
+	double GetCurrentBrightness() { return _currentBrigthness; }
 
 	VideoSelection _video;
 	VideoCondition _condition = VideoCondition::MATCH;
@@ -60,6 +62,7 @@ public:
 	bool _usePatternForChangedCheck = false;
 	PatternMatchData _patternData;
 	double _patternThreshold = 0.8;
+	double _brightnessThreshold = 0.5;
 	cv::CascadeClassifier _objectCascade;
 	double _scaleFactor = 1.1;
 	int _minNeighbors = minMinNeighbors;
@@ -76,6 +79,7 @@ private:
 	bool OutputChanged();
 	bool ScreenshotContainsPattern();
 	bool ScreenshotContainsObject();
+	bool CheckBrightnessThreshold();
 	bool Compare();
 	bool CheckShouldBeSkipped();
 
@@ -88,6 +92,7 @@ private:
 			"/res/cascadeClassifiers/haarcascade_frontalface_alt.xml");
 	bool _lastMatchResult = false;
 	int _runCount = 0;
+	double _currentBrigthness = 0.;
 
 	static bool _registered;
 	static const std::string id;
@@ -123,6 +128,8 @@ private slots:
 	void PatternThresholdChanged(double);
 	void UseAlphaAsMaskChanged(int value);
 
+	void BrightnessThresholdChanged(double);
+
 	void ModelPathChanged(const QString &text);
 	void ObjectScaleThresholdChanged(double);
 	void MinNeighborsChanged(int value);
@@ -137,6 +144,8 @@ private slots:
 	void ThrottleEnableChanged(int value);
 	void ThrottleCountChanged(int value);
 	void ShowMatchClicked();
+
+	void UpdateCurrentBrightness();
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -151,6 +160,9 @@ protected:
 
 	ThresholdSlider *_patternThreshold;
 	QCheckBox *_useAlphaAsMask;
+
+	ThresholdSlider *_brightnessThreshold;
+	QLabel *_currentBrightness;
 
 	FileSelection *_modelDataPath;
 	QHBoxLayout *_modelPathLayout;
@@ -177,6 +189,8 @@ protected:
 	std::shared_ptr<MacroConditionVideo> _entryData;
 
 private:
+	QTimer _updateBrightnessTimer;
+
 	void SetWidgetVisibility();
 	bool _loading = true;
 };
