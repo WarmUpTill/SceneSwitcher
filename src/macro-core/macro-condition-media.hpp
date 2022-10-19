@@ -8,38 +8,7 @@
 #include "duration-control.hpp"
 #include "scene-selection.hpp"
 
-enum class MediaTimeRestriction {
-	TIME_RESTRICTION_NONE,
-	TIME_RESTRICTION_SHORTER,
-	TIME_RESTRICTION_LONGER,
-	TIME_RESTRICTION_REMAINING_SHORTER,
-	TIME_RESTRICTION_REMAINING_LONGER,
-};
-
 constexpr auto custom_media_states_offset = 100;
-
-enum class MediaState {
-	// OBS's internal states
-	OBS_MEDIA_STATE_NONE,
-	OBS_MEDIA_STATE_PLAYING,
-	OBS_MEDIA_STATE_OPENING,
-	OBS_MEDIA_STATE_BUFFERING,
-	OBS_MEDIA_STATE_PAUSED,
-	OBS_MEDIA_STATE_STOPPED,
-	OBS_MEDIA_STATE_ENDED,
-	OBS_MEDIA_STATE_ERROR,
-	// Just a marker
-	LAST_OBS_MEDIA_STATE,
-	// states added for use in the plugin
-	PLAYLIST_ENDED = custom_media_states_offset,
-	ANY,
-};
-
-enum class MediaSourceType {
-	SOURCE,
-	ANY,
-	ALL,
-};
 
 class MacroConditionMedia : public MacroCondition {
 public:
@@ -56,25 +25,57 @@ public:
 	}
 	void ClearSignalHandler();
 	void ResetSignalHandler();
+	void UpdateMediaSourcesOfSceneList();
 	static void MediaStopped(void *data, calldata_t *);
 	static void MediaEnded(void *data, calldata_t *);
 	static void MediaNext(void *data, calldata_t *);
 
-	MediaSourceType _sourceType = MediaSourceType::SOURCE;
+	enum class Type {
+		SOURCE,
+		ANY,
+		ALL,
+	};
+	Type _sourceType = Type::SOURCE;
+
+	enum class State {
+		// OBS's internal states
+		OBS_MEDIA_STATE_NONE,
+		OBS_MEDIA_STATE_PLAYING,
+		OBS_MEDIA_STATE_OPENING,
+		OBS_MEDIA_STATE_BUFFERING,
+		OBS_MEDIA_STATE_PAUSED,
+		OBS_MEDIA_STATE_STOPPED,
+		OBS_MEDIA_STATE_ENDED,
+		OBS_MEDIA_STATE_ERROR,
+		// Just a marker
+		LAST_OBS_MEDIA_STATE,
+		// states added for use in the plugin
+		PLAYLIST_ENDED = custom_media_states_offset,
+		ANY,
+	};
+	State _state = State::OBS_MEDIA_STATE_NONE;
+
+	enum class Time {
+		TIME_RESTRICTION_NONE,
+		TIME_RESTRICTION_SHORTER,
+		TIME_RESTRICTION_LONGER,
+		TIME_RESTRICTION_REMAINING_SHORTER,
+		TIME_RESTRICTION_REMAINING_LONGER,
+	};
+	Time _restriction = Time::TIME_RESTRICTION_NONE;
+
 	SceneSelection _scene;
 	OBSWeakSource _source = nullptr;
 	std::vector<MacroConditionMedia> _sources;
-	MediaState _state = MediaState::OBS_MEDIA_STATE_NONE;
-	MediaTimeRestriction _restriction =
-		MediaTimeRestriction::TIME_RESTRICTION_NONE;
 	Duration _time;
-	bool _onlyMatchonChagne = false;
+	bool _onlyMatchOnChagne = false;
 
 private:
 	bool CheckTime();
 	bool CheckState();
 	bool CheckPlaylistEnd(const obs_media_state);
 	bool CheckMediaMatch();
+	void HandleSceneChange();
 
 	bool _stopped = false;
 	bool _ended = false;
@@ -84,6 +85,8 @@ private:
 	bool _alreadyMatched = false;
 	// Workaround to enable use of "ended" to specify end of VLC playlist
 	bool _previousStateEnded = false;
+	// Used to keep track of scene changes
+	OBSWeakSource _lastConfigureScene;
 
 	static bool _registered;
 	static const std::string id;
