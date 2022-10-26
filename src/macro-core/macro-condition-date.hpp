@@ -58,6 +58,7 @@ public:
 private:
 	bool CheckDayOfWeek(int64_t);
 	bool CheckRegularDate(int64_t);
+	bool CheckBetween(QDateTime &now);
 
 	QDateTime _dateTime = QDateTime::currentDateTime();
 	QDateTime _dateTime2 = QDateTime::currentDateTime();
