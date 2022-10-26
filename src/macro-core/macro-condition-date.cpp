@@ -67,6 +67,26 @@ bool MacroConditionDate::CheckDayOfWeek(int64_t msSinceLastCheck)
 	return false;
 }
 
+bool MacroConditionDate::CheckBetween(QDateTime &now)
+{
+	// In the case of ignoring the date component treat the "left" value as
+	// the start of the time range and the "right" value as the end
+	if (_ignoreDate) {
+		if (_dateTime2 >= _dateTime) {
+			return now >= _dateTime && now <= _dateTime2;
+		}
+		// Assume that the end / start value should be shifted by 24h
+		// as otherwise the condition would never be true
+		return (now >= _dateTime && now <= _dateTime2.addDays(1)) ||
+		       (now >= _dateTime.addDays(-1) && now <= _dateTime2);
+	}
+
+	if (_dateTime2 >= _dateTime) {
+		return now >= _dateTime && now <= _dateTime2;
+	}
+	return now >= _dateTime2 && now <= _dateTime;
+}
+
 bool MacroConditionDate::CheckRegularDate(int64_t msSinceLastCheck)
 {
 	bool match = false;
@@ -92,11 +112,7 @@ bool MacroConditionDate::CheckRegularDate(int64_t msSinceLastCheck)
 		match = cur <= _dateTime;
 		break;
 	case DateCondition::BETWEEN:
-		if (_dateTime2 > _dateTime) {
-			match = cur >= _dateTime && cur <= _dateTime2;
-		} else {
-			match = cur >= _dateTime2 && cur <= _dateTime;
-		}
+		match = CheckBetween(cur);
 		break;
 	default:
 		break;
