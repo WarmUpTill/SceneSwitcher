@@ -13,7 +13,7 @@ void SceneItemSelection::Save(obs_data_t *obj, const char *name) const
 	obs_data_set_int(data, typeSaveName.data(), static_cast<int>(_type));
 	obs_data_set_int(data, idxTypeSaveName.data(),
 			 static_cast<int>(_idxType));
-	if (_idxType != IdxType::INDIVIDUAL) {
+	if (_idxType == IdxType::INDIVIDUAL) {
 		obs_data_set_int(data, idxSaveName.data(), _idx);
 	} else {
 		obs_data_set_int(data, idxSaveName.data(), 0);
