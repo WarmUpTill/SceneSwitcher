@@ -48,36 +48,48 @@ std::string MacroConditionProcess::GetShortDesc()
 
 MacroConditionProcessEdit::MacroConditionProcessEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionProcess> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _processSelection(new QComboBox()),
+	  _focused(new QCheckBox()),
+	  _focusProcess(new QLabel()),
+	  _focusLayout(new QHBoxLayout())
 {
-	_processSelection = new QComboBox();
 	_processSelection->setEditable(true);
 	_processSelection->setMaxVisibleItems(20);
-
-	_focused = new QCheckBox();
 
 	QWidget::connect(_processSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ProcessChanged(const QString &)));
 	QWidget::connect(_focused, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
+	QWidget::connect(&_timer, SIGNAL(timeout()), this,
+			 SLOT(UpdateFocusProcess()));
 
 	populateProcessSelection(_processSelection);
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{processes}}", _processSelection},
 		{"{{focused}}", _focused},
+		{"{{focusProcess}}", _focusProcess},
 	};
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
+	auto entryLayout = new QHBoxLayout;
 	placeWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.process.entry"),
-		mainLayout, widgetPlaceholders);
+		entryLayout, widgetPlaceholders);
+	placeWidgets(obs_module_text(
+			     "AdvSceneSwitcher.condition.process.entry.focus"),
+		     _focusLayout, widgetPlaceholders);
+	auto mainLayout = new QVBoxLayout;
+	mainLayout->addLayout(entryLayout);
+	mainLayout->addLayout(_focusLayout);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
 	UpdateEntryData();
 	_loading = false;
+
+	_timer.start(1000);
 }
 
 void MacroConditionProcessEdit::ProcessChanged(const QString &text)
@@ -100,6 +112,22 @@ void MacroConditionProcessEdit::FocusChanged(int state)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_focus = state;
+	SetWidgetVisibility();
+}
+
+void MacroConditionProcessEdit::UpdateFocusProcess()
+{
+	_focusProcess->setText(
+		QString::fromStdString(switcher->currentForegroundProcess));
+}
+
+void MacroConditionProcessEdit::SetWidgetVisibility()
+{
+	if (!_entryData) {
+		return;
+	}
+	setLayoutVisible(_focusLayout, _entryData->_focus);
+	adjustSize();
 }
 
 void MacroConditionProcessEdit::UpdateEntryData()
@@ -110,4 +138,5 @@ void MacroConditionProcessEdit::UpdateEntryData()
 
 	_processSelection->setCurrentText(_entryData->_process.c_str());
 	_focused->setChecked(_entryData->_focus);
+	SetWidgetVisibility();
 }

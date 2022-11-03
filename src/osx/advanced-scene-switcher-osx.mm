@@ -288,10 +288,38 @@ void GetProcessList(QStringList &list)
 	}
 }
 
+void GetForegroundProcessName(std::string &proc)
+{
+	proc.resize(0);
+	@autoreleasepool {
+		NSWorkspace *ws = [NSWorkspace sharedWorkspace];
+		NSArray *array = [ws runningApplications];
+		for (NSRunningApplication *app in array) {
+			if (!app.isActive) {
+				continue;
+			}
+			NSString *name = app.localizedName;
+			if (!name) {
+				break;
+			}
+			const char *str = name.UTF8String;
+			proc = std::string(str);
+			break;
+		}
+	}
+}
+
+void GetForegroundProcessName(QString &proc)
+{
+	std::string temp;
+	GetForegroundProcessName(temp);
+	proc = QString::fromStdString(temp);
+}
+
 bool isInFocus(const QString &executable)
 {
 	std::string current;
-	GetCurrentWindowTitle(current);
+	GetForegroundProcessName(current);
 
 	// True if executable switch equals current window
 	bool equals = (executable.toStdString() == current);

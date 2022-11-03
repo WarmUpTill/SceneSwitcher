@@ -13,6 +13,7 @@ bool isMaximized(const std::string &title);
 std::pair<int, int> getCursorPos();
 int secondsSinceLastInput();
 void GetProcessList(QStringList &processes);
+void GetForegroundProcessName(std::string &name);
 bool isInFocus(const QString &executable);
 void PressKeys(const std::vector<HotkeyType> keys, int duration);
 void PlatformInit();

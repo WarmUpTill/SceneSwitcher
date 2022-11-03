@@ -18,9 +18,11 @@ public:
 	}
 
 private:
-	bool CheckWindowTitleSwitchDirect(std::string &currentWindowTitle);
-	bool CheckWindowTitleSwitchRegex(std::string &currentWindowTitle,
-					 std::vector<std::string> &windowList);
+	bool
+	CheckWindowTitleSwitchDirect(const std::string &currentWindowTitle);
+	bool
+	CheckWindowTitleSwitchRegex(const std::string &currentWindowTitle,
+				    const std::vector<std::string> &windowList);
 
 public:
 	std::string _window;
@@ -56,6 +58,7 @@ private slots:
 	void MaximizedChanged(int state);
 	void FocusedChanged(int state);
 	void WindowFocusChanged(int state);
+	void UpdateFocusWindow();
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -65,8 +68,13 @@ protected:
 	QCheckBox *_maximized;
 	QCheckBox *_focused;
 	QCheckBox *_windowFocusChanged;
+	QLabel *_focusWindow;
+	QHBoxLayout *_focusLayout;
+	QTimer _timer;
 	std::shared_ptr<MacroConditionWindow> _entryData;
 
 private:
+	void SetWidgetVisibility();
+
 	bool _loading = true;
 };

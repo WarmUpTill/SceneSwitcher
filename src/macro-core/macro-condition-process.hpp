@@ -44,14 +44,20 @@ public:
 private slots:
 	void ProcessChanged(const QString &text);
 	void FocusChanged(int state);
+	void UpdateFocusProcess();
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
 	QComboBox *_processSelection;
 	QCheckBox *_focused;
+	QLabel *_focusProcess;
+	QHBoxLayout *_focusLayout;
+	QTimer _timer;
 	std::shared_ptr<MacroConditionProcess> _entryData;
 
 private:
+	void SetWidgetVisibility();
+
 	bool _loading = true;
 };
