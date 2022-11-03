@@ -280,6 +280,9 @@ void SwitcherData::setPreconditions()
 	}
 	currentTitle = title;
 
+	// Process name
+	GetForegroundProcessName(currentForegroundProcess);
+
 	// Cursor
 	std::pair<int, int> cursorPos = getCursorPos();
 	cursorPosChanged = cursorPos.first != switcher->lastCursorPos.first ||

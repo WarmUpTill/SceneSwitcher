@@ -238,7 +238,7 @@ void GetProcessList(QStringList &processes)
 	CloseHandle(procSnapshot);
 }
 
-bool isInFocus(const QString &executable)
+void GetForegroundProcessName(QString &proc)
 {
 	// only checks if the current foreground window is from the same executable,
 	// may return true for any window from a program
@@ -249,21 +249,36 @@ bool isInFocus(const QString &executable)
 	HANDLE process = OpenProcess(
 		PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
 	if (process == NULL) {
-		return false;
+		return;
 	}
 
 	WCHAR executablePath[600];
 	GetModuleFileNameEx(process, 0, executablePath, 600);
 	CloseHandle(process);
 
-	QString file = QString::fromWCharArray(executablePath)
-			       .split(QRegularExpression("(/|\\\\)"))
-			       .back();
+	proc = QString::fromWCharArray(executablePath)
+		       .split(QRegularExpression("(/|\\\\)"))
+		       .back();
+}
+
+void GetForegroundProcessName(std::string &proc)
+{
+	QString temp;
+	GetForegroundProcessName(temp);
+	proc = temp.toStdString();
+}
+
+bool isInFocus(const QString &executable)
+{
+	// only checks if the current foreground window is from the same executable,
+	// may return true for any window from a program
+	QString foregroundProc;
+	GetForegroundProcessName(foregroundProc);
 
 	// True if executable switch equals current window
-	bool equals = (executable == file);
+	bool equals = (executable == foregroundProc);
 	// True if executable switch matches current window
-	bool matches = file.contains(QRegularExpression(executable));
+	bool matches = foregroundProc.contains(QRegularExpression(executable));
 
 	return (equals || matches);
 }

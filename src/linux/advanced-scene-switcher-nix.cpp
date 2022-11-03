@@ -434,10 +434,24 @@ std::string getProcNameFromPid(int pid)
 	return buffer.str();
 }
 
-bool isInFocus(const QString &executable)
+void GetForegroundProcessName(QString &proc)
 {
+	std::string temp;
+	GetForegroundProcessName(temp);
+	proc = QString::fromStdString(temp);
+}
+
+void GetForegroundProcessName(std::string &proc)
+{
+	proc.resize(0);
 	auto pid = getForegroundProcessPid();
 	std::string current = getProcNameFromPid(pid);
+}
+
+bool isInFocus(const QString &executable)
+{
+	std::string current;
+	GetForegroundProcessName(current);
 
 	// True if executable switch equals current window
 	bool equals = (executable.toStdString() == current);

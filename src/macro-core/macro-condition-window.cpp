@@ -13,7 +13,7 @@ bool MacroConditionWindow::_registered = MacroConditionFactory::Register(
 	 "AdvSceneSwitcher.condition.window"});
 
 bool MacroConditionWindow::CheckWindowTitleSwitchDirect(
-	std::string &currentWindowTitle)
+	const std::string &currentWindowTitle)
 {
 	bool focus = (!_focus || _window == currentWindowTitle);
 	bool fullscreen = (!_fullscreen || isFullscreen(_window));
@@ -23,7 +23,8 @@ bool MacroConditionWindow::CheckWindowTitleSwitchDirect(
 }
 
 bool MacroConditionWindow::CheckWindowTitleSwitchRegex(
-	std::string &currentWindowTitle, std::vector<std::string> &windowList)
+	const std::string &currentWindowTitle,
+	const std::vector<std::string> &windowList)
 {
 	bool match = false;
 	for (auto &window : windowList) {
@@ -54,7 +55,7 @@ bool foregroundWindowChanged()
 
 bool MacroConditionWindow::CheckCondition()
 {
-	std::string currentWindowTitle = switcher->currentTitle;
+	const std::string &currentWindowTitle = switcher->currentTitle;
 	std::vector<std::string> windowList;
 	GetWindowList(windowList);
 
@@ -101,16 +102,17 @@ std::string MacroConditionWindow::GetShortDesc()
 
 MacroConditionWindowEdit::MacroConditionWindowEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionWindow> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _windowSelection(new QComboBox()),
+	  _fullscreen(new QCheckBox()),
+	  _maximized(new QCheckBox()),
+	  _focused(new QCheckBox()),
+	  _windowFocusChanged(new QCheckBox()),
+	  _focusWindow(new QLabel()),
+	  _focusLayout(new QHBoxLayout())
 {
-	_windowSelection = new QComboBox();
 	_windowSelection->setEditable(true);
 	_windowSelection->setMaxVisibleItems(20);
-
-	_fullscreen = new QCheckBox();
-	_maximized = new QCheckBox();
-	_focused = new QCheckBox();
-	_windowFocusChanged = new QCheckBox();
 
 	QWidget::connect(_windowSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
@@ -123,6 +125,8 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 			 SLOT(FocusedChanged(int)));
 	QWidget::connect(_windowFocusChanged, SIGNAL(stateChanged(int)), this,
 			 SLOT(WindowFocusChanged(int)));
+	QWidget::connect(&_timer, SIGNAL(timeout()), this,
+			 SLOT(UpdateFocusWindow()));
 
 	populateWindowSelection(_windowSelection);
 
@@ -132,24 +136,31 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 		{"{{maximized}}", _maximized},
 		{"{{focused}}", _focused},
 		{"{{windowFocusChanged}}", _windowFocusChanged},
+		{"{{focusWindow}}", _focusWindow},
 	};
 
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	QHBoxLayout *line1Layout = new QHBoxLayout;
-	QHBoxLayout *line2Layout = new QHBoxLayout;
+	auto *line1Layout = new QHBoxLayout;
 	placeWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.window.entry.line1"),
 		     line1Layout, widgetPlaceholders);
+	auto *line2Layout = new QHBoxLayout;
 	placeWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.window.entry.line2"),
 		     line2Layout, widgetPlaceholders);
+	placeWidgets(obs_module_text(
+			     "AdvSceneSwitcher.condition.window.entry.line3"),
+		     _focusLayout, widgetPlaceholders);
+	auto *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(line1Layout);
 	mainLayout->addLayout(line2Layout);
+	mainLayout->addLayout(_focusLayout);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
 	UpdateEntryData();
 	_loading = false;
+
+	_timer.start(1000);
 }
 
 void MacroConditionWindowEdit::WindowChanged(const QString &text)
@@ -192,6 +203,7 @@ void MacroConditionWindowEdit::FocusedChanged(int state)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_focus = state;
+	SetWidgetVisibility();
 }
 
 void MacroConditionWindowEdit::WindowFocusChanged(int state)
@@ -202,6 +214,22 @@ void MacroConditionWindowEdit::WindowFocusChanged(int state)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_windowFocusChanged = state;
+	SetWidgetVisibility();
+}
+
+void MacroConditionWindowEdit::UpdateFocusWindow()
+{
+	_focusWindow->setText(QString::fromStdString(switcher->currentTitle));
+}
+
+void MacroConditionWindowEdit::SetWidgetVisibility()
+{
+	if (!_entryData) {
+		return;
+	}
+	setLayoutVisible(_focusLayout,
+			 _entryData->_focus || _entryData->_windowFocusChanged);
+	adjustSize();
 }
 
 void MacroConditionWindowEdit::UpdateEntryData()
@@ -215,4 +243,5 @@ void MacroConditionWindowEdit::UpdateEntryData()
 	_maximized->setChecked(_entryData->_maximized);
 	_focused->setChecked(_entryData->_focus);
 	_windowFocusChanged->setChecked(_entryData->_windowFocusChanged);
+	SetWidgetVisibility();
 }

@@ -148,6 +148,7 @@ struct SwitcherData {
 	std::vector<std::string> ignoreIdleWindows;
 	std::string lastTitle;
 	std::string currentTitle;
+	std::string currentForegroundProcess;
 
 	std::deque<ScreenRegionSwitch> screenRegionSwitches;
 	std::pair<int, int> lastCursorPos = {0, 0};
