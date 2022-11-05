@@ -1,5 +1,5 @@
 #define MyAppName "@CMAKE_PROJECT_NAME@"
-#define MyAppVersion "@CMAKE_PROJECT_VERSION@"
+#define MyAppVersion "@GIT_TAG@"
 #define MyAppPublisher "@PLUGIN_AUTHOR@"
 #define MyAppURL "http://www.mywebsite.com"
 
