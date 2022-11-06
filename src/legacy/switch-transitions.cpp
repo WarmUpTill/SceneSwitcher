@@ -169,39 +169,6 @@ void SwitcherData::checkDefaultSceneTransitions()
 	}
 }
 
-void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
-{
-	if (loading) {
-		return;
-	}
-
-	if (!state && !switcher->adjustActiveTransitionType) {
-		DisplayMessage(obs_module_text(
-			"AdvSceneSwitcher.transitionTab.transitionBehaviorSelectionError"));
-		ui->adjustActiveTransitionType->setChecked(true);
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->transitionOverrideOverride = state;
-}
-
-void AdvSceneSwitcher::on_adjustActiveTransitionType_stateChanged(int state)
-{
-	if (loading) {
-		return;
-	}
-
-	// This option only makes sense if we are allowed to use transition overrides
-	if (!state && !switcher->transitionOverrideOverride) {
-		DisplayMessage(obs_module_text(
-			"AdvSceneSwitcher.transitionTab.transitionBehaviorSelectionError"));
-		ui->transitionOverridecheckBox->setChecked(true);
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->adjustActiveTransitionType = state;
-}
-
 void AdvSceneSwitcher::defTransitionDelayValueChanged(int value)
 {
 	if (loading) {
@@ -335,13 +302,6 @@ void SwitcherData::saveSceneTransitions(obs_data_t *obj)
 	}
 	obs_data_set_array(obj, "defaultTransitions", defaultTransitionsArray);
 	obs_data_array_release(defaultTransitionsArray);
-
-	obs_data_set_bool(obj, "tansitionOverrideOverride",
-			  transitionOverrideOverride);
-	obs_data_set_default_bool(obj, "adjustActiveTransitionType",
-				  adjustActiveTransitionType);
-	obs_data_set_bool(obj, "adjustActiveTransitionType",
-			  adjustActiveTransitionType);
 	obs_data_set_default_int(obj, "defTransitionDelay",
 				 default_def_transition_dealy);
 	obs_data_set_int(obj, "defTransitionDelay",
@@ -379,11 +339,6 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(defaultTransitionsArray);
-
-	transitionOverrideOverride =
-		obs_data_get_bool(obj, "tansitionOverrideOverride");
-	adjustActiveTransitionType =
-		obs_data_get_bool(obj, "adjustActiveTransitionType");
 
 	// Check for invalid config
 	if (!transitionOverrideOverride && !adjustActiveTransitionType) {
