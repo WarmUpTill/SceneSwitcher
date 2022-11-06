@@ -496,6 +496,39 @@ void AdvSceneSwitcher::on_tabWidget_currentChanged(int)
 	SetShowFrames();
 }
 
+void AdvSceneSwitcher::on_transitionOverridecheckBox_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	if (!state && !switcher->adjustActiveTransitionType) {
+		DisplayMessage(obs_module_text(
+			"AdvSceneSwitcher.generalTab.transitionBehaviorSelectionError"));
+		ui->adjustActiveTransitionType->setChecked(true);
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->transitionOverrideOverride = state;
+}
+
+void AdvSceneSwitcher::on_adjustActiveTransitionType_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	// This option only makes sense if we are allowed to use transition overrides
+	if (!state && !switcher->transitionOverrideOverride) {
+		DisplayMessage(obs_module_text(
+			"AdvSceneSwitcher.generalTab.transitionBehaviorSelectionError"));
+		ui->transitionOverridecheckBox->setChecked(true);
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->adjustActiveTransitionType = state;
+}
+
 void SwitcherData::loadSettings(obs_data_t *obj)
 {
 	if (!obj) {
@@ -599,6 +632,13 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "priority10", functionNamesByPriority[10]);
 
 	obs_data_set_int(obj, "threadPriority", threadPriority);
+
+	obs_data_set_bool(obj, "tansitionOverrideOverride",
+			  transitionOverrideOverride);
+	obs_data_set_default_bool(obj, "adjustActiveTransitionType",
+				  adjustActiveTransitionType);
+	obs_data_set_bool(obj, "adjustActiveTransitionType",
+			  adjustActiveTransitionType);
 }
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
@@ -674,6 +714,11 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "threadPriority",
 				 QThread::NormalPriority);
 	threadPriority = obs_data_get_int(obj, "threadPriority");
+
+	transitionOverrideOverride =
+		obs_data_get_bool(obj, "tansitionOverrideOverride");
+	adjustActiveTransitionType =
+		obs_data_get_bool(obj, "adjustActiveTransitionType");
 }
 
 void saveSplitterPos(QList<int> &sizes, obs_data_t *obj, const std::string name)
