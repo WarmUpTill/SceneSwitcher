@@ -6,27 +6,6 @@
 #include <QComboBox>
 #include <chrono>
 
-enum class AudioConditionCheckType {
-	OUTPUT_VOLUME,
-	CONFIGURED_VOLUME,
-};
-
-enum class AudioOutputCondition {
-	ABOVE,
-	BELOW,
-	// TODO: To be removed
-	MUTE,
-	UNMUTE,
-};
-
-enum class AudioVolumeCondition {
-	ABOVE,
-	EXACT,
-	BELOW,
-	MUTE,
-	UNMUTE,
-};
-
 class MacroConditionAudio : public MacroCondition {
 public:
 	MacroConditionAudio(Macro *m) : MacroCondition(m) {}
@@ -46,17 +25,37 @@ public:
 				   const float inputPeak[MAX_AUDIO_CHANNELS]);
 	void ResetVolmeter();
 
+	enum class Type {
+		OUTPUT_VOLUME,
+		CONFIGURED_VOLUME,
+		SYNC_OFFSET,
+	};
+
+	enum class OutputCondition {
+		ABOVE,
+		BELOW,
+	};
+
+	enum class VolumeCondition {
+		ABOVE,
+		EXACT,
+		BELOW,
+		MUTE,
+		UNMUTE,
+	};
+
 	OBSWeakSource _audioSource;
 	int _volume = 0;
-	AudioConditionCheckType _checkType =
-		AudioConditionCheckType::OUTPUT_VOLUME;
-	AudioOutputCondition _outputCondition = AudioOutputCondition::ABOVE;
-	AudioVolumeCondition _volumeCondition = AudioVolumeCondition::ABOVE;
+	int64_t _syncOffset = 0;
+	Type _checkType = Type::OUTPUT_VOLUME;
+	OutputCondition _outputCondition = OutputCondition::ABOVE;
+	VolumeCondition _volumeCondition = VolumeCondition::ABOVE;
 	obs_volmeter_t *_volmeter = nullptr;
 
 private:
 	bool CheckOutputCondition();
 	bool CheckVolumeCondition();
+	bool CheckSyncOffset();
 
 	float _peak = -std::numeric_limits<float>::infinity();
 	static bool _registered;
@@ -85,6 +84,7 @@ private slots:
 	void VolumeThresholdChanged(int vol);
 	void ConditionChanged(int cond);
 	void CheckTypeChanged(int cond);
+	void SyncOffsetChanged(int value);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -94,6 +94,7 @@ protected:
 	QComboBox *_audioSources;
 	QComboBox *_condition;
 	QSpinBox *_volume;
+	QSpinBox *_syncOffset;
 	VolControl *_volMeter = nullptr;
 	std::shared_ptr<MacroConditionAudio> _entryData;
 

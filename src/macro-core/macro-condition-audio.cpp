@@ -3,6 +3,7 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+constexpr int64_t nsPerMs = 1000000;
 const std::string MacroConditionAudio::id = "audio";
 
 bool MacroConditionAudio::_registered = MacroConditionFactory::Register(
@@ -10,24 +11,35 @@ bool MacroConditionAudio::_registered = MacroConditionFactory::Register(
 	{MacroConditionAudio::Create, MacroConditionAudioEdit::Create,
 	 "AdvSceneSwitcher.condition.audio"});
 
-static std::map<AudioOutputCondition, std::string> audioOutputConditionTypes = {
-	{AudioOutputCondition::ABOVE,
-	 "AdvSceneSwitcher.condition.audio.state.above"},
-	{AudioOutputCondition::BELOW,
-	 "AdvSceneSwitcher.condition.audio.state.below"},
+static std::map<MacroConditionAudio::Type, std::string> checkTypes = {
+	{MacroConditionAudio::Type::OUTPUT_VOLUME,
+	 "AdvSceneSwitcher.condition.audio.type.output"},
+	{MacroConditionAudio::Type::CONFIGURED_VOLUME,
+	 "AdvSceneSwitcher.condition.audio.type.volume"},
+	{MacroConditionAudio::Type::SYNC_OFFSET,
+	 "AdvSceneSwitcher.condition.audio.type.syncOffset"},
 };
 
-static std::map<AudioVolumeCondition, std::string> audioVolumeConditionTypes = {
-	{AudioVolumeCondition::ABOVE,
-	 "AdvSceneSwitcher.condition.audio.state.above"},
-	{AudioVolumeCondition::EXACT,
-	 "AdvSceneSwitcher.condition.audio.state.exact"},
-	{AudioVolumeCondition::BELOW,
-	 "AdvSceneSwitcher.condition.audio.state.below"},
-	{AudioVolumeCondition::MUTE,
-	 "AdvSceneSwitcher.condition.audio.state.mute"},
-	{AudioVolumeCondition::UNMUTE,
-	 "AdvSceneSwitcher.condition.audio.state.unmute"},
+static std::map<MacroConditionAudio::OutputCondition, std::string>
+	audioOutputConditionTypes = {
+		{MacroConditionAudio::OutputCondition::ABOVE,
+		 "AdvSceneSwitcher.condition.audio.state.above"},
+		{MacroConditionAudio::OutputCondition::BELOW,
+		 "AdvSceneSwitcher.condition.audio.state.below"},
+};
+
+static std::map<MacroConditionAudio::VolumeCondition, std::string>
+	audioVolumeConditionTypes = {
+		{MacroConditionAudio::VolumeCondition::ABOVE,
+		 "AdvSceneSwitcher.condition.audio.state.above"},
+		{MacroConditionAudio::VolumeCondition::EXACT,
+		 "AdvSceneSwitcher.condition.audio.state.exact"},
+		{MacroConditionAudio::VolumeCondition::BELOW,
+		 "AdvSceneSwitcher.condition.audio.state.below"},
+		{MacroConditionAudio::VolumeCondition::MUTE,
+		 "AdvSceneSwitcher.condition.audio.state.mute"},
+		{MacroConditionAudio::VolumeCondition::UNMUTE,
+		 "AdvSceneSwitcher.condition.audio.state.unmute"},
 };
 
 MacroConditionAudio::~MacroConditionAudio()
@@ -42,11 +54,11 @@ bool MacroConditionAudio::CheckOutputCondition()
 	auto s = obs_weak_source_get_source(_audioSource);
 
 	switch (_outputCondition) {
-	case AudioOutputCondition::ABOVE:
+	case MacroConditionAudio::OutputCondition::ABOVE:
 		// peak will have a value from -60 db to 0 db
 		ret = ((double)_peak + 60) * 1.7 > _volume;
 		break;
-	case AudioOutputCondition::BELOW:
+	case MacroConditionAudio::OutputCondition::BELOW:
 		// peak will have a value from -60 db to 0 db
 		ret = ((double)_peak + 60) * 1.7 < _volume;
 		break;
@@ -63,24 +75,23 @@ bool MacroConditionAudio::CheckOutputCondition()
 
 bool MacroConditionAudio::CheckVolumeCondition()
 {
-
 	bool ret = false;
 	auto s = obs_weak_source_get_source(_audioSource);
 
 	switch (_volumeCondition) {
-	case AudioVolumeCondition::ABOVE:
+	case MacroConditionAudio::VolumeCondition::ABOVE:
 		ret = obs_source_get_volume(s) > _volume / 100.f;
 		break;
-	case AudioVolumeCondition::EXACT:
+	case MacroConditionAudio::VolumeCondition::EXACT:
 		ret = obs_source_get_volume(s) == _volume / 100.f;
 		break;
-	case AudioVolumeCondition::BELOW:
+	case MacroConditionAudio::VolumeCondition::BELOW:
 		ret = obs_source_get_volume(s) < _volume / 100.f;
 		break;
-	case AudioVolumeCondition::MUTE:
+	case MacroConditionAudio::VolumeCondition::MUTE:
 		ret = obs_source_muted(s);
 		break;
-	case AudioVolumeCondition::UNMUTE:
+	case MacroConditionAudio::VolumeCondition::UNMUTE:
 		ret = !obs_source_muted(s);
 		break;
 	default:
@@ -91,13 +102,28 @@ bool MacroConditionAudio::CheckVolumeCondition()
 	return ret;
 }
 
+bool MacroConditionAudio::CheckSyncOffset()
+{
+	if (!_audioSource) {
+		return false;
+	}
+
+	bool ret = false;
+	auto s = obs_weak_source_get_source(_audioSource);
+	ret = (obs_source_get_sync_offset(s) / nsPerMs) == _syncOffset;
+	obs_source_release(s);
+	return ret;
+}
+
 bool MacroConditionAudio::CheckCondition()
 {
 	switch (_checkType) {
-	case AudioConditionCheckType::OUTPUT_VOLUME:
+	case MacroConditionAudio::Type::OUTPUT_VOLUME:
 		return CheckOutputCondition();
-	case AudioConditionCheckType::CONFIGURED_VOLUME:
+	case MacroConditionAudio::Type::CONFIGURED_VOLUME:
 		return CheckVolumeCondition();
+	case MacroConditionAudio::Type::SYNC_OFFSET:
+		return CheckSyncOffset();
 	default:
 		break;
 	}
@@ -110,6 +136,7 @@ bool MacroConditionAudio::Save(obs_data_t *obj)
 	obs_data_set_string(obj, "audioSource",
 			    GetWeakSourceName(_audioSource).c_str());
 	obs_data_set_int(obj, "volume", _volume);
+	obs_data_set_int(obj, "syncOffset", _syncOffset);
 	obs_data_set_int(obj, "checkType", static_cast<int>(_checkType));
 	obs_data_set_int(obj, "outputCondition",
 			 static_cast<int>(_outputCondition));
@@ -135,65 +162,18 @@ obs_volmeter_t *AddVolmeterToSource(MacroConditionAudio *entry,
 	return volmeter;
 }
 
-// TODO: Remove in future version
-static void convertOldSettingsFormat(obs_data_t *obj)
-{
-	auto oldCond = static_cast<AudioOutputCondition>(
-		obs_data_get_int(obj, "condition"));
-	switch (oldCond) {
-	case AudioOutputCondition::ABOVE:
-		obs_data_set_int(
-			obj, "checkType",
-			static_cast<int>(
-				AudioConditionCheckType::OUTPUT_VOLUME));
-		obs_data_set_int(obj, "outputCondition",
-				 static_cast<int>(AudioOutputCondition::ABOVE));
-		break;
-	case AudioOutputCondition::BELOW:
-		obs_data_set_int(
-			obj, "checkType",
-			static_cast<int>(
-				AudioConditionCheckType::OUTPUT_VOLUME));
-		obs_data_set_int(obj, "outputCondition",
-				 static_cast<int>(AudioOutputCondition::BELOW));
-		break;
-	case AudioOutputCondition::MUTE:
-		obs_data_set_int(
-			obj, "checkType",
-			static_cast<int>(
-				AudioConditionCheckType::CONFIGURED_VOLUME));
-		obs_data_set_int(obj, "volumeCondition",
-				 static_cast<int>(AudioVolumeCondition::MUTE));
-		break;
-	case AudioOutputCondition::UNMUTE:
-		obs_data_set_int(
-			obj, "checkType",
-			static_cast<int>(
-				AudioConditionCheckType::CONFIGURED_VOLUME));
-		obs_data_set_int(
-			obj, "volumeCondition",
-			static_cast<int>(AudioVolumeCondition::UNMUTE));
-		break;
-	default:
-		break;
-	}
-}
-
 bool MacroConditionAudio::Load(obs_data_t *obj)
 {
-	if (!obs_data_has_user_value(obj, "checkType")) {
-		convertOldSettingsFormat(obj);
-	}
-
 	MacroCondition::Load(obj);
 	const char *audioSourceName = obs_data_get_string(obj, "audioSource");
 	_audioSource = GetWeakSourceByName(audioSourceName);
 	_volume = obs_data_get_int(obj, "volume");
-	_checkType = static_cast<AudioConditionCheckType>(
+	_syncOffset = obs_data_get_int(obj, "syncOffset");
+	_checkType = static_cast<MacroConditionAudio::Type>(
 		obs_data_get_int(obj, "checkType"));
-	_outputCondition = static_cast<AudioOutputCondition>(
+	_outputCondition = static_cast<MacroConditionAudio::OutputCondition>(
 		obs_data_get_int(obj, "outputCondition"));
-	_volumeCondition = static_cast<AudioVolumeCondition>(
+	_volumeCondition = static_cast<MacroConditionAudio::VolumeCondition>(
 		obs_data_get_int(obj, "volumeCondition"));
 	_volmeter = AddVolmeterToSource(this, _audioSource);
 	return true;
@@ -234,10 +214,10 @@ void MacroConditionAudio::ResetVolmeter()
 
 static inline void populateCheckTypes(QComboBox *list)
 {
-	list->addItem(obs_module_text(
-		"AdvSceneSwitcher.condition.audio.type.output"));
-	list->addItem(obs_module_text(
-		"AdvSceneSwitcher.condition.audio.type.volume"));
+	list->clear();
+	for (auto entry : checkTypes) {
+		list->addItem(obs_module_text(entry.second.c_str()));
+	}
 }
 
 static inline void populateOutputConditionSelection(QComboBox *list)
@@ -258,21 +238,27 @@ static inline void populateVolumeConditionSelection(QComboBox *list)
 
 MacroConditionAudioEdit::MacroConditionAudioEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionAudio> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _checkTypes(new QComboBox()),
+	  _audioSources(new QComboBox()),
+	  _condition(new QComboBox()),
+	  _volume(new QSpinBox()),
+	  _syncOffset(new QSpinBox())
 {
-	_checkTypes = new QComboBox();
-	_audioSources = new QComboBox();
-	_condition = new QComboBox();
-	_volume = new QSpinBox();
-
 	_volume->setSuffix("%");
 	_volume->setMaximum(100);
 	_volume->setMinimum(0);
+
+	_syncOffset->setMinimum(-950);
+	_syncOffset->setMaximum(20000);
+	_syncOffset->setSuffix("ms");
 
 	QWidget::connect(_checkTypes, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(CheckTypeChanged(int)));
 	QWidget::connect(_volume, SIGNAL(valueChanged(int)), this,
 			 SLOT(VolumeThresholdChanged(int)));
+	QWidget::connect(_syncOffset, SIGNAL(valueChanged(int)), this,
+			 SLOT(SyncOffsetChanged(int)));
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_audioSources,
@@ -287,6 +273,7 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 		{"{{checkType}}", _checkTypes},
 		{"{{audioSources}}", _audioSources},
 		{"{{volume}}", _volume},
+		{"{{syncOffset}}", _syncOffset},
 		{"{{condition}}", _condition},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.audio.entry"),
@@ -348,6 +335,16 @@ void MacroConditionAudioEdit::VolumeThresholdChanged(int vol)
 	_entryData->_volume = vol;
 }
 
+void MacroConditionAudioEdit::SyncOffsetChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_syncOffset = value;
+}
+
 void MacroConditionAudioEdit::ConditionChanged(int cond)
 {
 	if (_loading || !_entryData) {
@@ -355,12 +352,13 @@ void MacroConditionAudioEdit::ConditionChanged(int cond)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	if (_entryData->_checkType == AudioConditionCheckType::OUTPUT_VOLUME) {
+	if (_entryData->_checkType ==
+	    MacroConditionAudio::Type::OUTPUT_VOLUME) {
 		_entryData->_outputCondition =
-			static_cast<AudioOutputCondition>(cond);
+			static_cast<MacroConditionAudio::OutputCondition>(cond);
 	} else {
 		_entryData->_volumeCondition =
-			static_cast<AudioVolumeCondition>(cond);
+			static_cast<MacroConditionAudio::VolumeCondition>(cond);
 	}
 	SetWidgetVisibility();
 }
@@ -372,12 +370,14 @@ void MacroConditionAudioEdit::CheckTypeChanged(int cond)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_checkType = static_cast<AudioConditionCheckType>(cond);
+	_entryData->_checkType = static_cast<MacroConditionAudio::Type>(cond);
 
 	const QSignalBlocker b(_condition);
-	if (_entryData->_checkType == AudioConditionCheckType::OUTPUT_VOLUME) {
+	if (_entryData->_checkType ==
+	    MacroConditionAudio::Type::OUTPUT_VOLUME) {
 		populateOutputConditionSelection(_condition);
-	} else {
+	} else if (_entryData->_checkType ==
+		   MacroConditionAudio::Type::CONFIGURED_VOLUME) {
 		populateVolumeConditionSelection(_condition);
 	}
 	SetWidgetVisibility();
@@ -392,12 +392,15 @@ void MacroConditionAudioEdit::UpdateEntryData()
 	_audioSources->setCurrentText(
 		GetWeakSourceName(_entryData->_audioSource).c_str());
 	_volume->setValue(_entryData->_volume);
+	_syncOffset->setValue(_entryData->_syncOffset);
 	_checkTypes->setCurrentIndex(static_cast<int>(_entryData->_checkType));
-	if (_entryData->_checkType == AudioConditionCheckType::OUTPUT_VOLUME) {
+	if (_entryData->_checkType ==
+	    MacroConditionAudio::Type::OUTPUT_VOLUME) {
 		populateOutputConditionSelection(_condition);
 		_condition->setCurrentIndex(
 			static_cast<int>(_entryData->_outputCondition));
-	} else {
+	} else if (_entryData->_checkType ==
+		   MacroConditionAudio::Type::CONFIGURED_VOLUME) {
 		populateVolumeConditionSelection(_condition);
 		_condition->setCurrentIndex(
 			static_cast<int>(_entryData->_volumeCondition));
@@ -414,13 +417,23 @@ void MacroConditionAudioEdit::SetWidgetVisibility()
 
 	_volume->setVisible(
 		_entryData->_checkType ==
-			AudioConditionCheckType::OUTPUT_VOLUME ||
+			MacroConditionAudio::Type::OUTPUT_VOLUME ||
 		(_entryData->_checkType ==
-			 AudioConditionCheckType::CONFIGURED_VOLUME &&
-		 (_entryData->_volumeCondition == AudioVolumeCondition::ABOVE ||
-		  _entryData->_volumeCondition == AudioVolumeCondition::EXACT ||
-		  _entryData->_volumeCondition == AudioVolumeCondition::BELOW)));
+			 MacroConditionAudio::Type::CONFIGURED_VOLUME &&
+		 (_entryData->_volumeCondition ==
+			  MacroConditionAudio::VolumeCondition::ABOVE ||
+		  _entryData->_volumeCondition ==
+			  MacroConditionAudio::VolumeCondition::EXACT ||
+		  _entryData->_volumeCondition ==
+			  MacroConditionAudio::VolumeCondition::BELOW)));
+	_condition->setVisible(
+		_entryData->_checkType ==
+			MacroConditionAudio::Type::OUTPUT_VOLUME ||
+		_entryData->_checkType ==
+			MacroConditionAudio::Type::CONFIGURED_VOLUME);
+	_syncOffset->setVisible(_entryData->_checkType ==
+				MacroConditionAudio::Type::SYNC_OFFSET);
 	_volMeter->setVisible(_entryData->_checkType ==
-			      AudioConditionCheckType::OUTPUT_VOLUME);
+			      MacroConditionAudio::Type::OUTPUT_VOLUME);
 	adjustSize();
 }
