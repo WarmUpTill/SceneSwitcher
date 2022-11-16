@@ -607,7 +607,8 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 
 	cooldown.Save(obj, "cooldown", "cooldownUnit");
 
-	obs_data_set_bool(obj, "active", !stop);
+	obs_data_set_bool(obj, "active", sceneColletionStop ? true : !stop);
+	sceneColletionStop = false;
 	obs_data_set_int(obj, "startup_behavior", startupBehavior);
 
 	obs_data_set_int(obj, "autoStartEvent",
