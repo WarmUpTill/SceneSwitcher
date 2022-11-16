@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "variable-text-edit.hpp"
+#include "source-interact.hpp"
 #include "source-properties-button.hpp"
 #include "source-selection.hpp"
 #include "source-setting.hpp"
@@ -34,6 +35,7 @@ public:
 		OBS_DEINTERLACE_FIELD_ORDER_TOP;
 	TempVariableRef _tempVar;
 	SourceSetting _setting;
+	SourceInteraction _interaction;
 
 	enum class Action {
 		ENABLE,
@@ -46,6 +48,7 @@ public:
 		OPEN_INTERACTION_DIALOG,
 		OPEN_FILTER_DIALOG,
 		OPEN_PROPERTIES_DIALOG,
+		INTERACT,
 	};
 	Action _action = Action::SETTINGS;
 
@@ -92,6 +95,8 @@ private slots:
 	void ManualSettingsValueChanged();
 	void RefreshVariableSourceSelectionValue();
 
+	void InteractionTypeChanged(SourceInteraction::Type value);
+	void InteractionSettingsChanged(SourceInteractionInstance *value);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -112,6 +117,7 @@ private:
 	QComboBox *_deinterlaceOrder;
 	QLabel *_warning;
 	QPushButton *_refreshSettingSelection;
+	SourceInteractionWidget *_interaction;
 
 	std::shared_ptr<MacroActionSource> _entryData;
 	bool _loading = true;
