@@ -22,6 +22,7 @@ public:
 	}
 
 	std::string _path = obs_module_text("AdvSceneSwitcher.enterPath");
+	std::string _workingDirectory = "";
 	QStringList _args;
 
 private:
@@ -51,6 +52,7 @@ private slots:
 	void ArgUp();
 	void ArgDown();
 	void ArgItemClicked(QListWidgetItem *);
+	void WorkingDirectoryChanged(const QString &text);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -66,5 +68,6 @@ private:
 	QPushButton *_removeArg;
 	QPushButton *_argUp;
 	QPushButton *_argDown;
+	FileSelection *_workingDirectory;
 	bool _loading = true;
 };

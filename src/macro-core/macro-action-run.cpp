@@ -15,7 +15,9 @@ bool MacroActionRun::_registered = MacroActionFactory::Register(
 
 bool MacroActionRun::PerformAction()
 {
-	if (!QProcess::startDetached(QString::fromStdString(_path), _args) &&
+	if (!QProcess::startDetached(
+		    QString::fromStdString(_path), _args,
+		    QString::fromStdString(_workingDirectory)) &&
 	    _args.empty()) {
 		vblog(LOG_INFO, "run \"%s\" using QDesktopServices",
 		      _path.c_str());
@@ -34,6 +36,7 @@ bool MacroActionRun::Save(obs_data_t *obj)
 {
 	MacroAction::Save(obj);
 	obs_data_set_string(obj, "path", _path.c_str());
+	obs_data_set_string(obj, "workingDirectory", _workingDirectory.c_str());
 	obs_data_array_t *args = obs_data_array_create();
 	for (auto &arg : _args) {
 		obs_data_t *array_obj = obs_data_create();
@@ -51,6 +54,7 @@ bool MacroActionRun::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 	_path = obs_data_get_string(obj, "path");
+	_workingDirectory = obs_data_get_string(obj, "workingDirectory");
 	obs_data_array_t *args = obs_data_get_array(obj, "args");
 	size_t count = obs_data_array_count(args);
 	for (size_t i = 0; i < count; i++) {
@@ -70,26 +74,27 @@ std::string MacroActionRun::GetShortDesc()
 
 MacroActionRunEdit::MacroActionRunEdit(
 	QWidget *parent, std::shared_ptr<MacroActionRun> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _filePath(new FileSelection()),
+	  _argList(new QListWidget()),
+	  _addArg(new QPushButton()),
+	  _removeArg(new QPushButton()),
+	  _argUp(new QPushButton()),
+	  _argDown(new QPushButton()),
+	  _workingDirectory(new FileSelection(FileSelection::Type::FOLDER))
 {
-	_filePath = new FileSelection();
-	_argList = new QListWidget();
-	_addArg = new QPushButton();
 	_addArg->setMaximumWidth(22);
 	_addArg->setProperty("themeID",
 			     QVariant(QString::fromUtf8("addIconSmall")));
 	_addArg->setFlat(true);
-	_removeArg = new QPushButton();
 	_removeArg->setMaximumWidth(22);
 	_removeArg->setProperty("themeID",
 				QVariant(QString::fromUtf8("removeIconSmall")));
 	_removeArg->setFlat(true);
-	_argUp = new QPushButton();
 	_argUp->setMaximumWidth(22);
 	_argUp->setProperty("themeID",
 			    QVariant(QString::fromUtf8("upArrowIconSmall")));
 	_argUp->setFlat(true);
-	_argDown = new QPushButton();
 	_argDown->setMaximumWidth(22);
 	_argDown->setProperty(
 		"themeID", QVariant(QString::fromUtf8("downArrowIconSmall")));
@@ -102,17 +107,21 @@ MacroActionRunEdit::MacroActionRunEdit(
 			 SLOT(RemoveArg()));
 	QWidget::connect(_argUp, SIGNAL(clicked()), this, SLOT(ArgUp()));
 	QWidget::connect(_argDown, SIGNAL(clicked()), this, SLOT(ArgDown()));
-	connect(_argList, SIGNAL(itemDoubleClicked(QListWidgetItem *)), this,
-		SLOT(ArgItemClicked(QListWidgetItem *)));
+	QWidget::connect(_argList, SIGNAL(itemDoubleClicked(QListWidgetItem *)),
+			 this, SLOT(ArgItemClicked(QListWidgetItem *)));
+	QWidget::connect(_workingDirectory,
+			 SIGNAL(PathChanged(const QString &)), this,
+			 SLOT(WorkingDirectoryChanged(const QString &)));
 
 	auto *entryLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{filePath}}", _filePath},
+		{"{{workingDirectory}}", _workingDirectory},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.run.entry"),
-		     entryLayout, widgetPlaceholders);
+		     entryLayout, widgetPlaceholders, false);
 
-	auto *argButtonLayout = new QHBoxLayout;
+	auto argButtonLayout = new QHBoxLayout;
 	argButtonLayout->addWidget(_addArg);
 	argButtonLayout->addWidget(_removeArg);
 	QFrame *line = new QFrame();
@@ -123,12 +132,19 @@ MacroActionRunEdit::MacroActionRunEdit(
 	argButtonLayout->addWidget(_argDown);
 	argButtonLayout->addStretch();
 
+	auto workingDirectoryLayout = new QHBoxLayout;
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.action.run.entry.workingDirectory"),
+		workingDirectoryLayout, widgetPlaceholders, false);
+
 	auto *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(entryLayout);
 	mainLayout->addWidget(new QLabel(
 		obs_module_text("AdvSceneSwitcher.action.run.arguments")));
 	mainLayout->addWidget(_argList);
 	mainLayout->addLayout(argButtonLayout);
+	mainLayout->addLayout(workingDirectoryLayout);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -146,6 +162,8 @@ void MacroActionRunEdit::UpdateEntryData()
 		QListWidgetItem *item = new QListWidgetItem(arg, _argList);
 		item->setData(Qt::UserRole, arg);
 	}
+	_workingDirectory->SetPath(
+		QString::fromStdString(_entryData->_workingDirectory));
 	SetArgListSize();
 }
 
@@ -262,6 +280,15 @@ void MacroActionRunEdit::ArgItemClicked(QListWidgetItem *item)
 	int idx = _argList->currentRow();
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_args[idx] = arg;
+}
+
+void MacroActionRunEdit::WorkingDirectoryChanged(const QString &path)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	_entryData->_workingDirectory = path.toStdString();
 }
 
 void MacroActionRunEdit::SetArgListSize()
