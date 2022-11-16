@@ -43,8 +43,10 @@ void FileSelection::BrowseButtonClicked()
 	QString path;
 	if (_type == FileSelection::Type::WRITE) {
 		path = QFileDialog::getSaveFileName(this, "", defaultPath);
-	} else {
+	} else if (_type == FileSelection::Type::READ) {
 		path = QFileDialog::getOpenFileName(this, "", defaultPath);
+	} else {
+		path = QFileDialog::getExistingDirectory(this, "", defaultPath);
 	}
 
 	if (path.isEmpty()) {

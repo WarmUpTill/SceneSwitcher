@@ -10,6 +10,7 @@ public:
 	enum class Type {
 		READ,
 		WRITE,
+		FOLDER,
 	};
 
 	FileSelection(FileSelection::Type type = FileSelection::Type::READ,
