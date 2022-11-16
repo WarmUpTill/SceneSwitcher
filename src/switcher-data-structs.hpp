@@ -92,6 +92,7 @@ struct SwitcherData {
 	bool transitionActive = false;
 	bool waitForTransition = false;
 	bool stop = false;
+	bool sceneColletionStop = false;
 	bool verbose = false;
 	bool disableHints = false;
 	bool hideLegacyTabs = true;

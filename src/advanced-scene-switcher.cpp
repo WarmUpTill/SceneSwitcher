@@ -601,6 +601,17 @@ void handleExit()
 	FreeSceneSwitcher();
 }
 
+void handleSceneCollectionChanging()
+{
+	if (switcher->settingsWindowOpened) {
+		AdvSceneSwitcher::window->close();
+	}
+	if (!switcher->stop) {
+		switcher->sceneColletionStop = true;
+		switcher->Stop();
+	}
+}
+
 // Note to future self:
 // be careful using switcher->m here as there is potential for deadlocks when using
 // frontend functions such as obs_frontend_set_current_scene()
@@ -646,6 +657,11 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 	case OBS_FRONTEND_EVENT_STREAMING_STOPPING:
 		setStreamStopping();
 		break;
+#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(27, 2, 0)
+	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING:
+		handleSceneCollectionChanging();
+		break;
+#endif
 	default:
 		break;
 	}
