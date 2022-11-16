@@ -7,18 +7,6 @@
 #include <QCheckBox>
 #include <QHBoxLayout>
 
-enum class AudioAction {
-	MUTE,
-	UNMUTE,
-	SOURCE_VOLUME,
-	MASTER_VOLUME,
-};
-
-enum class FadeType {
-	DURATION,
-	RATE,
-};
-
 class MacroActionAudio : public MacroAction {
 public:
 	MacroActionAudio(Macro *m) : MacroAction(m) {}
@@ -34,8 +22,23 @@ public:
 	}
 
 	OBSWeakSource _audioSource;
-	AudioAction _action = AudioAction::MUTE;
+
+	enum class Action {
+		MUTE,
+		UNMUTE,
+		SOURCE_VOLUME,
+		MASTER_VOLUME,
+		SYNC_OFFSET,
+	};
+
+	enum class FadeType {
+		DURATION,
+		RATE,
+	};
+
+	Action _action = Action::MUTE;
 	FadeType _fadeType = FadeType::DURATION;
+	int64_t _syncOffset = 0;
 	int _volume = 0;
 	bool _fade = false;
 	Duration _duration;
@@ -75,6 +78,7 @@ public:
 private slots:
 	void SourceChanged(const QString &text);
 	void ActionChanged(int value);
+	void SyncOffsetChanged(int value);
 	void VolumeChanged(int value);
 	void FadeChanged(int value);
 	void DurationChanged(double seconds);
@@ -89,6 +93,7 @@ protected:
 	QComboBox *_audioSources;
 	QComboBox *_actions;
 	QComboBox *_fadeTypes;
+	QSpinBox *_syncOffset;
 	QSpinBox *_volumePercent;
 	QCheckBox *_fade;
 	DurationSelection *_duration;
