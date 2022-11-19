@@ -346,10 +346,8 @@ elseif(OS_MACOS)
 
   find_library(COCOA Cocoa)
   target_include_directories(${LIB_NAME} PRIVATE ${COCOA})
-  target_sources(${LIB_NAME} PRIVATE src/osx/advanced-scene-switcher-osx.mm)
-  set_source_files_properties(advanced-scene-switcher-osx.mm
-                              PROPERTIES COMPILE_FLAGS "-fobjc-arc")
-  set("${PROJECT_NAME}_PLATFORM_LIBS" ${COCOA})
+  target_link_libraries(${LIB_NAME} PRIVATE ${COCOA})
+
   find_package(CURL)
   find_package(Libcurl)
   if(CURL_FOUND)
@@ -359,6 +357,10 @@ elseif(OS_MACOS)
   else()
     message(FATAL_ERROR "Couldn't find CURL or Libcurl - abort")
   endif()
+
+  target_sources(${LIB_NAME} PRIVATE src/osx/advanced-scene-switcher-osx.mm)
+  set_source_files_properties(advanced-scene-switcher-osx.mm
+                              PROPERTIES COMPILE_FLAGS "-fobjc-arc")
   # --- End of section ---
 
   # --- Linux-specific build settings and tasks ---
@@ -369,23 +371,36 @@ else()
   set_target_properties(${LIB_NAME} PROPERTIES SOVERSION 1)
 
   find_package(X11 REQUIRED COMPONENTS Xtst Xss)
-  find_path(PROCPS_INCLUDE_DIR NAMES proc/procps.h)
-  if(NOT PROCPS_INCLUDE_DIR)
-    message(
-      FATAL_ERROR "procps include dir not found - please set PROCPS_INCLUDE_DIR"
-    )
-  endif()
-  find_library(PROCPS_LIBRARY NAMES procps)
-  if(NOT PROCPS_LIBRARY)
-    message(FATAL_ERROR "procps lib not found - please set PROCPS_LIBRARY")
-  endif()
-  target_link_libraries(${LIB_NAME} PRIVATE ${X11_LIBRARIES}
-                                            ${procps_LIBRARIES})
   target_include_directories(
     ${LIB_NAME} PRIVATE "${X11_INCLUDE_DIR}" "${X11_Xtst_INCLUDE_PATH}"
-                        "${X11_Xss_INCLUDE_PATH}" "${PROCPS_INCLUDE_DIR}")
-  target_sources(${LIB_NAME} PRIVATE src/linux/advanced-scene-switcher-nix.cpp)
-  set("${PROJECT_NAME}_PLATFORM_LIBS" Xss ${PROCPS_LIBRARY})
+                        "${X11_Xss_INCLUDE_PATH}")
+  target_link_libraries(${LIB_NAME} PRIVATE ${X11_LIBRARIES})
+
+  find_path(PROCPS_INCLUDE_DIR NAMES proc/procps.h)
+  find_path(PROCPS2_INCLUDE_DIR NAMES libproc2/pids.h)
+  find_library(PROCPS_LIBRARY NAMES procps)
+  find_library(PROCPS2_LIBRARY NAMES proc2)
+  if(PROCPS_INCLUDE_DIR AND PROCPS_LIBRARY)
+    message(STATUS "${PROJECT_NAME} using procps")
+    set(PROC_INCLUDE_DIR "${PROCPS_INCLUDE_DIR}")
+    set(PROC_LIBRARY "${PROCPS_LIBRARY}")
+    target_compile_definitions(${LIB_NAME} PRIVATE USE_PROCPS)
+  elseif(PROCPS2_INCLUDE_DIR AND PROCPS2_LIBRARY)
+    message(STATUS "${PROJECT_NAME} using libproc2")
+    set(PROC_INCLUDE_DIR "${PROCPS2_INCLUDE_DIR}")
+    set(PROC_LIBRARY "${PROCPS2_LIBRARY}")
+  else()
+    message(
+      FATAL_ERROR
+        "found neither procps nor libproc2!
+      please either set ...
+      PROCPS_INCLUDE_DIR and PROCPS_LIBRARY
+      ... or ...
+      PROCPS2_INCLUDE_DIR and PROCPS2_LIBRARY")
+  endif()
+  target_link_libraries(${LIB_NAME} PRIVATE "${PROC_LIBRARY}")
+  target_include_directories(${LIB_NAME} PRIVATE "${PROC_INCLUDE_DIR}")
+
   find_package(CURL)
   find_package(Libcurl)
   if(CURL_FOUND)
@@ -395,10 +410,10 @@ else()
   else()
     message(FATAL_ERROR "Couldn't find CURL or Libcurl - abort")
   endif()
+
+  target_sources(${LIB_NAME} PRIVATE src/linux/advanced-scene-switcher-nix.cpp)
 endif()
 # --- End of section ---
-
-target_link_libraries(${LIB_NAME} PUBLIC ${${PROJECT_NAME}_PLATFORM_LIBS})
 
 if(DEB_INSTALL)
   file(GLOB ASS_TRANSLATION_FILES "data/locale/*.ini")
