@@ -41,16 +41,18 @@ bool canSimulateKeyPresses = false;
 
 Display *disp()
 {
-	if (!xdisplay)
+	if (!xdisplay) {
 		xdisplay = XOpenDisplay(NULL);
+	}
 
 	return xdisplay;
 }
 
 void cleanupDisplay()
 {
-	if (!xdisplay)
+	if (!xdisplay) {
 		return;
+	}
 
 	XCloseDisplay(xdisplay);
 	xdisplay = 0;
@@ -103,8 +105,9 @@ static QStringList getStates(Window window)
 {
 	QStringList states;
 
-	if (!ewmhIsSupported())
+	if (!ewmhIsSupported()) {
 		return states;
+	}
 
 	Atom wmState = XInternAtom(disp(), "_NET_WM_STATE", true), type;
 	int format;
@@ -115,10 +118,13 @@ static QStringList getStates(Window window)
 					AnyPropertyType, &type, &format, &num,
 					&bytes, &data);
 
-	if (status == Success)
-		for (unsigned long i = 0; i < num; i++)
+	if (status == Success) {
+		for (unsigned long i = 0; i < num; i++) {
 			states.append(QString(
 				XGetAtomName(disp(), ((Atom *)data)[i])));
+		}
+		XFree(data);
+	}
 
 	return states;
 }
@@ -126,9 +132,6 @@ static QStringList getStates(Window window)
 static std::vector<Window> getTopLevelWindows()
 {
 	std::vector<Window> res;
-
-	res.resize(0);
-
 	if (!ewmhIsSupported()) {
 		return res;
 	}
@@ -151,8 +154,9 @@ static std::vector<Window> getTopLevelWindows()
 			continue;
 		}
 
-		for (unsigned long i = 0; i < num; ++i)
+		for (unsigned long i = 0; i < num; ++i) {
 			res.emplace_back(data[i]);
+		}
 
 		XFree(data);
 	}
@@ -160,24 +164,23 @@ static std::vector<Window> getTopLevelWindows()
 	return res;
 }
 
-static std::string GetWindowTitle(size_t i)
+std::string getWindowName(Window w)
 {
-	Window w = getTopLevelWindows().at(i);
 	std::string windowTitle;
 	char *name;
-
-	XTextProperty text;
-	int status = XGetTextProperty(
-		disp(), w, &text, XInternAtom(disp(), "_NET_WM_NAME", true));
-	if (status == 0)
-		status = XGetTextProperty(disp(), w, &text,
-					  XInternAtom(disp(), "WM_NAME", true));
-	name = reinterpret_cast<char *>(text.value);
-
-	if (status != 0 && name != nullptr) {
+	int status = XFetchName(disp(), w, &name);
+	if (status >= Success && name != nullptr) {
 		std::string str(name);
 		windowTitle = str;
 		XFree(name);
+	} else {
+		XTextProperty xtp_new_name;
+		if (XGetWMName(disp(), w, &xtp_new_name) != 0 &&
+		    xtp_new_name.value != nullptr) {
+			std::string str((const char *)xtp_new_name.value);
+			windowTitle = str;
+			XFree(xtp_new_name.value);
+		}
 	}
 
 	return windowTitle;
@@ -186,66 +189,59 @@ static std::string GetWindowTitle(size_t i)
 void GetWindowList(std::vector<std::string> &windows)
 {
 	windows.resize(0);
-
-	for (size_t i = 0; i < getTopLevelWindows().size(); ++i) {
-		if (GetWindowTitle(i) != "")
-			windows.emplace_back(GetWindowTitle(i));
+	for (auto window : getTopLevelWindows()) {
+		auto name = getWindowName(window);
+		if (name.empty()) {
+			continue;
+		}
+		windows.emplace_back(name);
 	}
 }
 
-// Overloaded
 void GetWindowList(QStringList &windows)
 {
 	windows.clear();
-
-	for (size_t i = 0; i < getTopLevelWindows().size(); ++i) {
-		if (GetWindowTitle(i) != "")
-			windows << QString::fromStdString(GetWindowTitle(i));
+	for (auto window : getTopLevelWindows()) {
+		auto name = getWindowName(window);
+		if (name.empty()) {
+			continue;
+		}
+		windows << QString::fromStdString(name);
 	}
 }
 
-void GetCurrentWindowTitle(std::string &title)
+int getActiveWindow(Window *&window)
 {
 	if (!ewmhIsSupported()) {
-		return;
+		return -1;
 	}
-
 	Atom active = XInternAtom(disp(), "_NET_ACTIVE_WINDOW", true);
 	Atom actualType;
 	int format;
 	unsigned long num, bytes;
+
+	return XGetWindowProperty(disp(), RootWindow(disp(), 0), active, 0L,
+				  ~0L, false, AnyPropertyType, &actualType,
+				  &format, &num, &bytes, (uint8_t **)&window);
+}
+
+void GetCurrentWindowTitle(std::string &title)
+{
 	Window *data = 0;
-	char *name;
-
-	Window rootWin = RootWindow(disp(), 0);
-
-	int xstatus = XGetWindowProperty(disp(), rootWin, active, 0L, ~0L,
-					 false, AnyPropertyType, &actualType,
-					 &format, &num, &bytes,
-					 (uint8_t **)&data);
-
-	if (data == nullptr) {
+	if (getActiveWindow(data) != Success || !data) {
+		return;
+	}
+	if (!data[0]) {
+		XFree(data);
 		return;
 	}
 
-	int status = 0;
-	XTextProperty text;
-	if (xstatus == Success && data[0]) {
-		status = XGetTextProperty(disp(), data[0], &text,
-					  XInternAtom(disp(), "_NET_WM_NAME",
-						      true));
-		if (status == 0)
-			status = XGetTextProperty(disp(), data[0], &text,
-						  XInternAtom(disp(), "WM_NAME",
-							      true));
+	auto name = getWindowName(data[0]);
+	XFree(data);
+	if (name.empty()) {
+		return;
 	}
-	name = reinterpret_cast<char *>(text.value);
-
-	if (status != 0 && name != nullptr) {
-		std::string str(name);
-		title = str;
-		XFree(name);
-	}
+	title = name;
 }
 
 std::pair<int, int> getCursorPos()
@@ -273,24 +269,17 @@ std::pair<int, int> getCursorPos()
 
 bool isMaximized(const std::string &title)
 {
-	if (!ewmhIsSupported())
+	if (!ewmhIsSupported()) {
 		return false;
+	}
 
 	// Find switch in top level windows
 	std::vector<Window> windows = getTopLevelWindows();
 	for (auto &window : windows) {
-		XTextProperty text;
-		int status = XGetTextProperty(
-			disp(), window, &text,
-			XInternAtom(disp(), "_NET_WM_NAME", true));
-		if (status == 0)
-			status = XGetTextProperty(disp(), window, &text,
-						  XInternAtom(disp(), "WM_NAME",
-							      true));
-		char *name = reinterpret_cast<char *>(text.value);
-
-		if (status == 0 || name == nullptr)
+		auto name = getWindowName(window);
+		if (name.empty()) {
 			continue;
+		}
 
 		// True if switch equals window
 		bool equals = (title == name);
@@ -312,7 +301,6 @@ bool isMaximized(const std::string &title)
 
 				return (vertical && horizontal);
 			}
-
 			break;
 		}
 	}
@@ -328,18 +316,10 @@ bool isFullscreen(const std::string &title)
 	// Find switch in top level windows
 	std::vector<Window> windows = getTopLevelWindows();
 	for (auto &window : windows) {
-		XTextProperty text;
-		int status = XGetTextProperty(
-			disp(), window, &text,
-			XInternAtom(disp(), "_NET_WM_NAME", true));
-		if (status == 0)
-			status = XGetTextProperty(disp(), window, &text,
-						  XInternAtom(disp(), "WM_NAME",
-							      true));
-		char *name = reinterpret_cast<char *>(text.value);
-
-		if (status == 0 || name == nullptr)
+		auto name = getWindowName(window);
+		if (name.empty()) {
 			continue;
+		}
 
 		// True if switch equals window
 		bool equals = (title == name);
@@ -358,7 +338,6 @@ bool isFullscreen(const std::string &title)
 
 				return (fullscreen);
 			}
-
 			break;
 		}
 	}
@@ -407,41 +386,24 @@ void GetProcessList(QStringList &processes)
 }
 #endif
 
-int getForegroundProcessPid()
+long getForegroundProcessPid()
 {
-	if (!ewmhIsSupported()) {
+	Window *window;
+	if (getActiveWindow(window) != Success || !window) {
 		return -1;
 	}
-
-	auto dpy = disp();
-	Atom active = XInternAtom(dpy, "_NET_ACTIVE_WINDOW", true);
-	Atom actualType;
-	int format;
-	unsigned long num, bytes;
-	Window *window = 0;
-	int pid = -1;
-
-	Window rootWin = RootWindow(dpy, 0);
-
-	int xstatus = XGetWindowProperty(dpy, rootWin, active, 0L, ~0L, false,
-					 AnyPropertyType, &actualType, &format,
-					 &num, &bytes, (uint8_t **)&window);
-
-	if (xstatus == 0 && window == nullptr) {
-		return -1;
-	}
-
 	Atom atom, actual_type;
 	int actual_format;
 	unsigned long nitems;
 	unsigned long bytes_after;
 	unsigned char *prop;
-	atom = XInternAtom(dpy, "_NET_WM_PID", True);
-	auto status = XGetWindowProperty(dpy, *window, atom, 0, 1024, False,
-					 AnyPropertyType, &actual_type,
+	long long pid;
+	atom = XInternAtom(disp(), "_NET_WM_PID", True);
+	auto status = XGetWindowProperty(disp(), window[0], atom, 0, 1024,
+					 False, XA_CARDINAL, &actual_type,
 					 &actual_format, &nitems, &bytes_after,
 					 &prop);
-
+	XFree(window);
 	if (status != 0) {
 		return -2;
 	}
@@ -449,18 +411,22 @@ int getForegroundProcessPid()
 		return -3;
 	}
 
-	pid = prop[1] * 256;
-	pid += prop[0];
+	pid = *((long *)prop);
+	XFree(prop);
 	return pid;
 }
 
-std::string getProcNameFromPid(int pid)
+std::string getProcNameFromPid(long pid)
 {
 	std::string path = "/proc/" + std::to_string(pid) + "/comm";
 	std::ifstream t(path);
 	std::stringstream buffer;
 	buffer << t.rdbuf();
-	return buffer.str();
+	std::string name = buffer.str();
+	if (!name.empty() && name[name.length() - 1] == '\n') {
+		name.erase(name.length() - 1);
+	}
+	return name;
 }
 
 void GetForegroundProcessName(QString &proc)
@@ -474,7 +440,7 @@ void GetForegroundProcessName(std::string &proc)
 {
 	proc.resize(0);
 	auto pid = getForegroundProcessPid();
-	std::string current = getProcNameFromPid(pid);
+	proc = getProcNameFromPid(pid);
 }
 
 bool isInFocus(const QString &executable)
@@ -638,8 +604,9 @@ void PressKeys(const std::vector<HotkeyType> keys, int duration)
 	}
 
 	Display *display = disp();
-	if (display == NULL)
+	if (display == NULL) {
 		return;
+	}
 
 	// Press keys
 	for (auto &key : keys) {
