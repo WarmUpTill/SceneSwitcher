@@ -8,6 +8,7 @@
 enum class SceneVisibilityAction {
 	SHOW,
 	HIDE,
+	TOGGLE,
 };
 
 enum class SceneItemSourceType {

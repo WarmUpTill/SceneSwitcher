@@ -15,6 +15,8 @@ const static std::map<SceneVisibilityAction, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.sceneVisibility.type.show"},
 	{SceneVisibilityAction::HIDE,
 	 "AdvSceneSwitcher.action.sceneVisibility.type.hide"},
+	{SceneVisibilityAction::TOGGLE,
+	 "AdvSceneSwitcher.action.sceneVisibility.type.toggle"},
 };
 
 const static std::map<SceneItemSourceType, std::string> sourceItemSourceTypes = {
@@ -26,8 +28,24 @@ const static std::map<SceneItemSourceType, std::string> sourceItemSourceTypes = 
 
 struct VisibilityData {
 	std::string name;
-	bool visible;
+	SceneVisibilityAction action;
 };
+
+static void setSceneItemVisiblity(obs_sceneitem_t *item,
+				  SceneVisibilityAction action)
+{
+	switch (action) {
+	case SceneVisibilityAction::SHOW:
+		obs_sceneitem_set_visible(item, true);
+		break;
+	case SceneVisibilityAction::HIDE:
+		obs_sceneitem_set_visible(item, false);
+		break;
+	case SceneVisibilityAction::TOGGLE:
+		obs_sceneitem_set_visible(item, !obs_sceneitem_visible(item));
+		break;
+	}
+}
 
 static bool visibilitySourceTypeEnum(obs_scene_t *, obs_sceneitem_t *item,
 				     void *ptr)
@@ -37,7 +55,7 @@ static bool visibilitySourceTypeEnum(obs_scene_t *, obs_sceneitem_t *item,
 	auto sourceTypeName = obs_source_get_display_name(
 		obs_source_get_id(obs_sceneitem_get_source(item)));
 	if (sourceTypeName && vInfo->name == sourceTypeName) {
-		obs_sceneitem_set_visible(item, vInfo->visible);
+		setSceneItemVisiblity(item, vInfo->action);
 	}
 
 	if (obs_sceneitem_is_group(item)) {
@@ -54,8 +72,7 @@ bool MacroActionSceneVisibility::PerformAction()
 	case SceneItemSourceType::SOURCE: {
 		auto items = _source.GetSceneItems(_scene);
 		for (auto item : items) {
-			obs_sceneitem_set_visible(
-				item, _action == SceneVisibilityAction::SHOW);
+			setSceneItemVisiblity(item, _action);
 			obs_sceneitem_release(item);
 		}
 		break;
@@ -63,8 +80,7 @@ bool MacroActionSceneVisibility::PerformAction()
 	case SceneItemSourceType::SOURCE_GROUP: {
 		auto s = obs_weak_source_get_source(_scene.GetScene());
 		auto scene = obs_scene_from_source(s);
-		VisibilityData vInfo = {_sourceGroup,
-					_action == SceneVisibilityAction::SHOW};
+		VisibilityData vInfo = {_sourceGroup, _action};
 		obs_scene_enum_items(scene, visibilitySourceTypeEnum, &vInfo);
 		obs_source_release(s);
 		break;
