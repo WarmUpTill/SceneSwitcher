@@ -763,27 +763,41 @@ void populateFilterSelection(QComboBox *list, OBSWeakSource weakSource)
 	list->setCurrentIndex(0);
 }
 
+void populateTypeList(std::set<QString> &list,
+		      std::function<bool(size_t idx, const char **id)> enumFunc)
+{
+	size_t idx = 0;
+	char buffer[512] = {};
+	const char **idPtr = (const char **)(&buffer);
+	while (enumFunc(idx++, idPtr)) {
+		// The audio_line source type is only used OBS internally
+		if (strcmp(*idPtr, "audio_line") == 0) {
+			continue;
+		}
+		QString name = obs_source_get_display_name(*idPtr);
+		if (name.isEmpty()) {
+			list.insert(*idPtr);
+		} else {
+			list.insert(name);
+		}
+	}
+}
+
 void populateSourceGroupSelection(QComboBox *list)
 {
-	std::set<QString> sourceTypeNames;
-	auto enumSourcesTypes = [](void *param, obs_source_t *source) {
-		if (!source) {
-			return true;
-		}
-		std::set<QString> *names =
-			reinterpret_cast<std::set<QString> *>(param);
-		if (obs_source_get_type(source) != OBS_SOURCE_TYPE_INPUT) {
-			return true;
-		}
-		names->insert(
-			obs_source_get_display_name(obs_source_get_id(source)));
-		return true;
-	};
+	std::set<QString> sourceTypes;
+	populateTypeList(sourceTypes, obs_enum_source_types);
+	std::set<QString> filterTypes;
+	populateTypeList(filterTypes, obs_enum_filter_types);
+	std::set<QString> transitionTypes;
+	populateTypeList(transitionTypes, obs_enum_transition_types);
 
-	obs_enum_sources(enumSourcesTypes, &sourceTypeNames);
-
-	for (auto &name : sourceTypeNames) {
-		if (!name.isEmpty()) {
+	for (const auto &name : sourceTypes) {
+		if (name.isEmpty()) {
+			continue;
+		}
+		if (filterTypes.find(name) == filterTypes.end() &&
+		    transitionTypes.find(name) == transitionTypes.end()) {
 			list->addItem(name);
 		}
 	}
