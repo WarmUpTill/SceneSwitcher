@@ -36,7 +36,7 @@ static bool visibilitySourceTypeEnum(obs_scene_t *, obs_sceneitem_t *item,
 
 	auto sourceTypeName = obs_source_get_display_name(
 		obs_source_get_id(obs_sceneitem_get_source(item)));
-	if (vInfo->name == sourceTypeName) {
+	if (sourceTypeName && vInfo->name == sourceTypeName) {
 		obs_sceneitem_set_visible(item, vInfo->visible);
 	}
 
