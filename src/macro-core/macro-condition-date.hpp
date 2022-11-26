@@ -7,24 +7,6 @@
 #include <QComboBox>
 #include <QTimer>
 
-enum class DateCondition {
-	AT,
-	AFTER,
-	BEFORE,
-	BETWEEN,
-};
-
-enum class DayOfWeekSelection {
-	ANY = 0,
-	MONDAY,
-	TUESDAY,
-	WEDNESDAY,
-	THURSDAY,
-	FRIDAY,
-	SATURDAY,
-	SUNDAY,
-};
-
 class MacroConditionDate : public MacroCondition {
 public:
 	MacroConditionDate(Macro *m) : MacroCondition(m) {}
@@ -46,19 +28,40 @@ public:
 	QDateTime GetDateTime2();
 	QDateTime GetNextMatchDateTime();
 
-	DayOfWeekSelection _dayOfWeek = DayOfWeekSelection::ANY;
+	enum class Day {
+		ANY = 0,
+		MONDAY,
+		TUESDAY,
+		WEDNESDAY,
+		THURSDAY,
+		FRIDAY,
+		SATURDAY,
+		SUNDAY,
+	};
+
+	enum class Condition {
+		AT,
+		AFTER,
+		BEFORE,
+		BETWEEN,
+		PATTERN,
+	};
+
+	Day _dayOfWeek = Day::ANY;
 	bool _ignoreDate = false;
 	bool _ignoreTime = false;
 	bool _repeat = false;
 	bool _updateOnRepeat = true;
 	Duration _duration;
-	DateCondition _condition = DateCondition::AT;
+	Condition _condition = Condition::AT;
 	bool _dayOfWeekCheck = true;
+	std::string _pattern = ".... .. .. .. .. ..";
 
 private:
 	bool CheckDayOfWeek(int64_t);
 	bool CheckRegularDate(int64_t);
-	bool CheckBetween(QDateTime &now);
+	bool CheckBetween(const QDateTime &now);
+	bool CheckPattern(QDateTime now, int64_t secondsSinceLastCheck);
 
 	QDateTime _dateTime = QDateTime::currentDateTime();
 	QDateTime _dateTime2 = QDateTime::currentDateTime();
@@ -101,6 +104,8 @@ private slots:
 	void DurationUnitChanged(DurationUnit unit);
 	void AdvancedSettingsToggleClicked();
 	void ShowNextMatch();
+	void UpdateCurrentTime();
+	void PatternChanged();
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -122,17 +127,24 @@ protected:
 	QLabel *_nextMatchDate;
 	QCheckBox *_updateOnRepeat;
 	DurationSelection *_duration;
+	QLineEdit *_pattern;
+	QLabel *_currentDate;
 
 	QPushButton *_advancedSettingsTooggle;
 	QHBoxLayout *_simpleLayout;
 	QHBoxLayout *_advancedLayout;
 	QVBoxLayout *_repeatLayout;
 	QHBoxLayout *_repeatUpdateLayout;
+	QHBoxLayout *_patternLayout;
 
 	std::shared_ptr<MacroConditionDate> _entryData;
 
 private:
+	void SetupSimpleView();
+	void SetupAdvancedView();
+	void SetupPatternView();
 	void SetWidgetStatus();
+	void ShowFirstDateSelection(bool visible);
 	void ShowSecondDateSelection(bool visible);
 	QTimer _timer;
 	bool _loading = true;
