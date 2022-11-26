@@ -31,6 +31,10 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Setup cmake
+      uses: jwlawson/actions-setup-cmake@v1.13
+      with:
+        cmake-version: '3.24.x'
     - name: Run macOS Build
       if: ${{ runner.os == 'macOS' }}
       shell: zsh {0}
