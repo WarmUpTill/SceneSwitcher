@@ -53,7 +53,7 @@ public:
 	bool _updateOnRepeat = true;
 	Duration _duration;
 	DateCondition _condition = DateCondition::AT;
-	bool _dayOfWeekCheck = false;
+	bool _dayOfWeekCheck = true;
 
 private:
 	bool CheckDayOfWeek(int64_t);
