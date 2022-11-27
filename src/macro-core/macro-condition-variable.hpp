@@ -1,5 +1,6 @@
 #pragma once
 #include "macro.hpp"
+#include "resizing-text-edit.hpp"
 #include "variable.hpp"
 
 #include <QWidget>
@@ -76,7 +77,7 @@ signals:
 protected:
 	VariableSelection *_variables;
 	QComboBox *_conditions;
-	QLineEdit *_strValue;
+	ResizingPlainTextEdit *_strValue;
 	QDoubleSpinBox *_numValue;
 	QCheckBox *_regex;
 	std::shared_ptr<MacroConditionVariable> _entryData;

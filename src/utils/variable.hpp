@@ -1,5 +1,6 @@
 #pragma once
 #include "item-selection-helpers.hpp"
+#include "resizing-text-edit.hpp"
 
 #include <string>
 #include <QStringList>
@@ -82,8 +83,8 @@ private slots:
 	void SaveActionChanged(int);
 
 private:
-	QLineEdit *_value;
-	QLineEdit *_defaultValue;
+	ResizingPlainTextEdit *_value;
+	ResizingPlainTextEdit *_defaultValue;
 	QComboBox *_save;
 };
 
