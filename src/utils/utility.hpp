@@ -88,3 +88,4 @@ void addSelectionGroup(QComboBox *selection, const QStringList &group,
 		       bool addSeparator = true);
 int findIdxInRagne(QComboBox *list, int start, int stop,
 		   const std::string &value);
+std::pair<int, int> getCursorPos();

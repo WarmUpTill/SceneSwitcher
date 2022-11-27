@@ -251,29 +251,6 @@ void GetCurrentWindowTitle(std::string &title)
 	title = name;
 }
 
-std::pair<int, int> getCursorPos()
-{
-	std::pair<int, int> pos(0, 0);
-	Display *dpy;
-	Window root;
-	Window ret_root;
-	Window ret_child;
-	int root_x;
-	int root_y;
-	int win_x;
-	int win_y;
-	unsigned int mask;
-
-	dpy = disp();
-	root = XDefaultRootWindow(dpy);
-
-	if (XQueryPointer(dpy, root, &ret_root, &ret_child, &root_x, &root_y,
-			  &win_x, &win_y, &mask)) {
-		pos = std::pair<int, int>(root_x, root_y);
-	}
-	return pos;
-}
-
 bool isMaximized(const std::string &title)
 {
 	if (!ewmhIsSupported()) {
