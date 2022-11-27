@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "resizing-text-edit.hpp"
 #include "variable.hpp"
 
 class MacroActionVariable : public MacroAction {
@@ -65,7 +66,7 @@ protected:
 	VariableSelection *_variables;
 	VariableSelection *_variables2;
 	QComboBox *_actions;
-	QLineEdit *_strValue;
+	ResizingPlainTextEdit *_strValue;
 	QDoubleSpinBox *_numValue;
 	std::shared_ptr<MacroActionVariable> _entryData;
 

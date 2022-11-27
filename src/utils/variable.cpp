@@ -217,15 +217,16 @@ VariableSettingsDialog::VariableSettingsDialog(QWidget *parent,
 	: ItemSettingsDialog(settings, switcher->variables,
 			     "AdvSceneSwitcher.variable.select",
 			     "AdvSceneSwitcher.variable.add", parent),
-	  _value(new QLineEdit()),
-	  _defaultValue(new QLineEdit()),
+	  _value(new ResizingPlainTextEdit(this)),
+	  _defaultValue(new ResizingPlainTextEdit(this)),
 	  _save(new QComboBox())
 {
 	QWidget::connect(_save, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(SaveActionChanged(int)));
 
-	_value->setText(QString::fromStdString(settings._value));
-	_defaultValue->setText(QString::fromStdString(settings._defaultValue));
+	_value->setPlainText(QString::fromStdString(settings._value));
+	_defaultValue->setPlainText(
+		QString::fromStdString(settings._defaultValue));
 	populateSaveActionSelection(_save);
 	_save->setCurrentIndex(static_cast<int>(settings._saveAction));
 
@@ -276,8 +277,9 @@ bool VariableSettingsDialog::AskForSettings(QWidget *parent, Variable &settings)
 	}
 
 	settings._name = dialog._name->text().toStdString();
-	settings._value = dialog._value->text().toStdString();
-	settings._defaultValue = dialog._defaultValue->text().toStdString();
+	settings._value = dialog._value->toPlainText().toStdString();
+	settings._defaultValue =
+		dialog._defaultValue->toPlainText().toStdString();
 	settings._saveAction =
 		static_cast<Variable::SaveAction>(dialog._save->currentIndex());
 	return true;

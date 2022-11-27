@@ -134,7 +134,7 @@ MacroConditionVariableEdit::MacroConditionVariableEdit(
 	: QWidget(parent),
 	  _variables(new VariableSelection(this)),
 	  _conditions(new QComboBox()),
-	  _strValue(new QLineEdit()),
+	  _strValue(new ResizingPlainTextEdit(this, 5, 1, 1)),
 	  _numValue(new QDoubleSpinBox()),
 	  _regex(new QCheckBox(
 		  obs_module_text("AdvSceneSwitcher.condition.variable.regex")))
@@ -147,7 +147,7 @@ MacroConditionVariableEdit::MacroConditionVariableEdit(
 			 this, SLOT(VariableChanged(const QString &)));
 	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
-	QWidget::connect(_strValue, SIGNAL(editingFinished()), this,
+	QWidget::connect(_strValue, SIGNAL(textChanged()), this,
 			 SLOT(StrValueChanged()));
 	QWidget::connect(_numValue, SIGNAL(valueChanged(double)), this,
 			 SLOT(NumValueChanged(double)));
@@ -182,7 +182,7 @@ void MacroConditionVariableEdit::UpdateEntryData()
 
 	_variables->SetVariable(_entryData->_variableName);
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_type));
-	_strValue->setText(QString::fromStdString(_entryData->_strValue));
+	_strValue->setPlainText(QString::fromStdString(_entryData->_strValue));
 	_numValue->setValue(_entryData->_numValue);
 	_regex->setChecked(_entryData->_regex);
 	SetWidgetVisibility();
@@ -216,7 +216,8 @@ void MacroConditionVariableEdit::StrValueChanged()
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_strValue = _strValue->text().toStdString();
+	_entryData->_strValue = _strValue->toPlainText().toStdString();
+	adjustSize();
 }
 
 void MacroConditionVariableEdit::NumValueChanged(double val)

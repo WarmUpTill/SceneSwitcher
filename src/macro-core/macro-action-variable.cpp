@@ -114,7 +114,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _variables(new VariableSelection(this)),
 	  _variables2(new VariableSelection(this)),
 	  _actions(new QComboBox()),
-	  _strValue(new QLineEdit()),
+	  _strValue(new ResizingPlainTextEdit(this, 5, 1, 1)),
 	  _numValue(new QDoubleSpinBox())
 {
 	_numValue->setMinimum(-9999999999);
@@ -127,7 +127,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 this, SLOT(Variable2Changed(const QString &)));
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
-	QWidget::connect(_strValue, SIGNAL(editingFinished()), this,
+	QWidget::connect(_strValue, SIGNAL(textChanged()), this,
 			 SLOT(StrValueChanged()));
 	QWidget::connect(_numValue, SIGNAL(valueChanged(double)), this,
 			 SLOT(NumValueChanged(double)));
@@ -157,7 +157,7 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_variables->SetVariable(_entryData->_variableName);
 	_variables2->SetVariable(_entryData->_variable2Name);
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_type));
-	_strValue->setText(QString::fromStdString(_entryData->_strValue));
+	_strValue->setPlainText(QString::fromStdString(_entryData->_strValue));
 	_numValue->setValue(_entryData->_numValue);
 	SetWidgetVisibility();
 }
@@ -200,7 +200,8 @@ void MacroActionVariableEdit::StrValueChanged()
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_strValue = _strValue->text().toStdString();
+	_entryData->_strValue = _strValue->toPlainText().toStdString();
+	adjustSize();
 }
 
 void MacroActionVariableEdit::NumValueChanged(double val)
