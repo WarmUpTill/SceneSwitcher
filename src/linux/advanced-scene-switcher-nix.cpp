@@ -39,6 +39,13 @@ typedef int (*keyPressFunc)(Display *, unsigned int, bool, unsigned long);
 static keyPressFunc pressFunc = nullptr;
 bool canSimulateKeyPresses = false;
 
+static QLibrary *libXssHandle = nullptr;
+typedef XScreenSaverInfo *(*XScreenSaverAllocInfoFunc)();
+typedef int (*XScreenSaverQueryInfoFunc)(Display *, Window, XScreenSaverInfo *);
+static XScreenSaverAllocInfoFunc allocSSFunc = nullptr;
+static XScreenSaverQueryInfoFunc querySSFunc = nullptr;
+bool canGetIdleTime = false;
+
 Display *disp()
 {
 	if (!xdisplay) {
@@ -459,18 +466,22 @@ bool isInFocus(const QString &executable)
 
 int secondsSinceLastInput()
 {
+	if (!canGetIdleTime) {
+		return 0;
+	}
+
 	time_t idle_time;
 	static XScreenSaverInfo *mit_info;
 	Display *display;
 	int screen;
 
-	mit_info = XScreenSaverAllocInfo();
+	mit_info = allocSSFunc();
 
 	if ((display = disp()) == NULL) {
 		return -1;
 	}
 	screen = DefaultScreen(display);
-	XScreenSaverQueryInfo(display, RootWindow(display, screen), mit_info);
+	querySSFunc(display, RootWindow(display, screen), mit_info);
 	idle_time = (mit_info->idle) / 1000;
 	XFree(mit_info);
 
@@ -636,17 +647,26 @@ void PressKeys(const std::vector<HotkeyType> keys, int duration)
 
 void PlatformInit()
 {
-	libXtstHandle = new QLibrary("libXtst.so", nullptr);
+	libXtstHandle = new QLibrary("libXtst", nullptr);
 	pressFunc = (keyPressFunc)libXtstHandle->resolve("XTestFakeKeyEvent");
 	int _;
 	canSimulateKeyPresses = pressFunc &&
-				!XQueryExtension(disp(), "XTEST", &_, &_, &_);
+				XQueryExtension(disp(), "XTEST", &_, &_, &_);
+
+	libXssHandle = new QLibrary("libXss", nullptr);
+	allocSSFunc = (XScreenSaverAllocInfoFunc)libXssHandle->resolve(
+		"XScreenSaverAllocInfo");
+	querySSFunc = (XScreenSaverQueryInfoFunc)libXssHandle->resolve(
+		"XScreenSaverQueryInfo");
+	canGetIdleTime = allocSSFunc && querySSFunc &&
+			 XQueryExtension(disp(), ScreenSaverName, &_, &_, &_);
 }
 
 void PlatformCleanup()
 {
 	delete libXtstHandle;
 	libXtstHandle = nullptr;
-
+	delete libXssHandle;
+	libXssHandle = nullptr;
 	cleanupDisplay();
 }
