@@ -99,17 +99,6 @@ void GetCurrentWindowTitle(std::string &title)
 	}
 }
 
-std::pair<int, int> getCursorPos()
-{
-	std::pair<int, int> pos(0, 0);
-	CGEventRef event = CGEventCreate(NULL);
-	CGPoint cursorPos = CGEventGetLocation(event);
-	CFRelease(event);
-	pos.first = cursorPos.x;
-	pos.second = cursorPos.y;
-	return pos;
-}
-
 bool isWindowOriginOnScreen(NSDictionary *app, NSScreen *screen,
 			    bool fullscreen = false)
 {

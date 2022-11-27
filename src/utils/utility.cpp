@@ -15,6 +15,7 @@
 #include <QJsonDocument>
 #include <QSystemTrayIcon>
 #include <QGuiApplication>
+#include <QCursor>
 #include <unordered_map>
 #include <regex>
 #include <set>
@@ -979,4 +980,10 @@ int findIdxInRagne(QComboBox *list, int start, int stop,
 		return 0;
 	}
 	return foundIdx;
+}
+
+std::pair<int, int> getCursorPos()
+{
+	auto cursorPos = QCursor::pos();
+	return {cursorPos.x(), cursorPos.y()};
 }
