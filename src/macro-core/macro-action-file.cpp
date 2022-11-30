@@ -56,7 +56,7 @@ bool MacroActionFile::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_string(obj, "file", _file.c_str());
-	obs_data_set_string(obj, "text", _text.c_str());
+	_text.Save(obj, "text");
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	return true;
 }
@@ -65,7 +65,7 @@ bool MacroActionFile::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 	_file = obs_data_get_string(obj, "file");
-	_text = obs_data_get_string(obj, "text");
+	_text.Load(obj, "text");
 	_action = static_cast<FileAction>(obs_data_get_int(obj, "action"));
 	return true;
 }
@@ -87,7 +87,7 @@ MacroActionFileEdit::MacroActionFileEdit(
 	: QWidget(parent)
 {
 	_filePath = new FileSelection(FileSelection::Type::WRITE);
-	_text = new ResizingPlainTextEdit(this);
+	_text = new VariableTextEdit(this);
 	_actions = new QComboBox();
 
 	populateActionSelection(_actions);
@@ -127,7 +127,7 @@ void MacroActionFileEdit::UpdateEntryData()
 
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_filePath->SetPath(QString::fromStdString(_entryData->_file));
-	_text->setPlainText(QString::fromStdString(_entryData->_text));
+	_text->setPlainText(_entryData->_text);
 
 	adjustSize();
 	updateGeometry();

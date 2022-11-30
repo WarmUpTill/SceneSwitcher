@@ -117,8 +117,8 @@ bool MacroActionSource::Save(obs_data_t *obj) const
 	MacroAction::Save(obj);
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
-	obs_data_set_string(obj, "settings", _settings.c_str());
 	_button.Save(obj);
+	_settings.Save(obj, "settings");
 	return true;
 }
 
@@ -128,8 +128,8 @@ bool MacroActionSource::Load(obs_data_t *obj)
 	const char *sourceName = obs_data_get_string(obj, "source");
 	_source = GetWeakSourceByName(sourceName);
 	_action = static_cast<SourceAction>(obs_data_get_int(obj, "action"));
-	_settings = obs_data_get_string(obj, "settings");
 	_button.Load(obj);
+	_settings.Load(obj, "settings");
 	return true;
 }
 
@@ -181,7 +181,7 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	_settingsButtons = new QComboBox();
 	_getSettings = new QPushButton(
 		obs_module_text("AdvSceneSwitcher.action.source.getSettings"));
-	_settings = new ResizingPlainTextEdit(this);
+	_settings = new VariableTextEdit(this);
 	_warning = new QLabel(
 		obs_module_text("AdvSceneSwitcher.action.source.warning"));
 
@@ -235,9 +235,9 @@ void MacroActionSourceEdit::UpdateEntryData()
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_sources->setCurrentText(
 		GetWeakSourceName(_entryData->_source).c_str());
-	_settings->setPlainText(QString::fromStdString(_entryData->_settings));
 	_settingsButtons->setCurrentText(
 		QString::fromStdString(_entryData->_button.ToString()));
+	_settings->setPlainText(_entryData->_settings);
 	SetWidgetVisibility();
 
 	adjustSize();

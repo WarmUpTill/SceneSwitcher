@@ -1,7 +1,7 @@
 #pragma once
 #include "macro.hpp"
 #include "file-selection.hpp"
-#include "resizing-text-edit.hpp"
+#include "variable-text-edit.hpp"
 #include "regex-config.hpp"
 
 #include <QWidget>
@@ -36,7 +36,8 @@ public:
 	};
 
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
-	std::string _text = obs_module_text("AdvSceneSwitcher.enterText");
+	VariableResolvingString _text =
+		obs_module_text("AdvSceneSwitcher.enterText");
 	FileType _fileType = FileType::LOCAL;
 	ConditionType _condition = ConditionType::MATCH;
 	RegexConfig _regex;
@@ -89,7 +90,7 @@ protected:
 	QComboBox *_fileTypes;
 	QComboBox *_conditions;
 	FileSelection *_filePath;
-	ResizingPlainTextEdit *_matchText;
+	VariableTextEdit *_matchText;
 	RegexConfigWidget *_regex;
 	QCheckBox *_checkModificationDate;
 	QCheckBox *_checkFileContent;

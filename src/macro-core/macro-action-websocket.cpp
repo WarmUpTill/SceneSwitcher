@@ -61,7 +61,7 @@ bool MacroActionWebsocket::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
-	obs_data_set_string(obj, "message", _message.c_str());
+	_message.Save(obj, "message");
 	obs_data_set_string(obj, "connection", _connection.c_str());
 	return true;
 }
@@ -70,7 +70,7 @@ bool MacroActionWebsocket::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 	_type = static_cast<Type>(obs_data_get_int(obj, "type"));
-	_message = obs_data_get_string(obj, "message");
+	_message.Load(obj, "message");
 	_connection = obs_data_get_string(obj, "connection");
 	return true;
 }
@@ -94,7 +94,7 @@ MacroActionWebsocketEdit::MacroActionWebsocketEdit(
 	QWidget *parent, std::shared_ptr<MacroActionWebsocket> entryData)
 	: QWidget(parent),
 	  _actions(new QComboBox(this)),
-	  _message(new ResizingPlainTextEdit(this)),
+	  _message(new VariableTextEdit(this)),
 	  _connection(new ConnectionSelection(this)),
 	  _editLayout(new QHBoxLayout())
 {
@@ -155,7 +155,7 @@ void MacroActionWebsocketEdit::UpdateEntryData()
 	}
 
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_type));
-	_message->setPlainText(QString::fromStdString(_entryData->_message));
+	_message->setPlainText(_entryData->_message);
 	_connection->SetConnection(_entryData->_connection);
 
 	if (_entryData->_type == MacroActionWebsocket::Type::REQUEST) {

@@ -1,6 +1,6 @@
 #pragma once
 #include "macro.hpp"
-#include "resizing-text-edit.hpp"
+#include "variable-text-edit.hpp"
 #include "regex-config.hpp"
 
 #include <QComboBox>
@@ -29,7 +29,7 @@ public:
 	OBSWeakSource _source;
 	OBSWeakSource _filter;
 	FilterCondition _condition = FilterCondition::ENABLED;
-	std::string _settings = "";
+	VariableResolvingString _settings = "";
 	RegexConfig _regex;
 
 private:
@@ -68,7 +68,7 @@ protected:
 	QComboBox *_filters;
 	QComboBox *_conditions;
 	QPushButton *_getSettings;
-	ResizingPlainTextEdit *_settings;
+	VariableTextEdit *_settings;
 	RegexConfigWidget *_regex;
 
 	std::shared_ptr<MacroConditionFilter> _entryData;

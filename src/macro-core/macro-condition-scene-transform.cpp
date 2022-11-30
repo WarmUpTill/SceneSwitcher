@@ -32,7 +32,7 @@ bool MacroConditionSceneTransform::Save(obs_data_t *obj) const
 	MacroCondition::Save(obj);
 	_scene.Save(obj);
 	_source.Save(obj);
-	obs_data_set_string(obj, "settings", _settings.c_str());
+	_settings.Save(obj, "settings");
 	_regex.Save(obj);
 	return true;
 }
@@ -49,7 +49,7 @@ bool MacroConditionSceneTransform::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	_scene.Load(obj);
 	_source.Load(obj);
-	_settings = obs_data_get_string(obj, "settings");
+	_settings.Load(obj, "settings");
 	_regex.Load(obj);
 	// TOOD: remove in future version
 	if (obs_data_has_user_value(obj, "regex")) {
@@ -77,7 +77,7 @@ MacroConditionSceneTransformEdit::MacroConditionSceneTransformEdit(
 		  parent, true, SceneItemSelectionWidget::Placeholder::ANY)),
 	  _getSettings(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.sceneTransform.getTransform"))),
-	  _settings(new ResizingPlainTextEdit(this)),
+	  _settings(new VariableTextEdit(this)),
 	  _regex(new RegexConfigWidget(parent))
 {
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
@@ -136,7 +136,7 @@ void MacroConditionSceneTransformEdit::UpdateEntryData()
 	_scenes->SetScene(_entryData->_scene);
 	_sources->SetSceneItem(_entryData->_source);
 	_regex->SetRegexConfig(_entryData->_regex);
-	_settings->setPlainText(QString::fromStdString(_entryData->_settings));
+	_settings->setPlainText(_entryData->_settings);
 
 	adjustSize();
 	updateGeometry();

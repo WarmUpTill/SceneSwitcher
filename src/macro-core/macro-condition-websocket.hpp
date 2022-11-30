@@ -1,7 +1,7 @@
 #pragma once
 #include "macro.hpp"
 #include "connection-manager.hpp"
-#include "resizing-text-edit.hpp"
+#include "variable-text-edit.hpp"
 #include "regex-config.hpp"
 
 #include <QCheckBox>
@@ -25,7 +25,8 @@ public:
 	};
 
 	Type _type = Type::REQUEST;
-	std::string _message = obs_module_text("AdvSceneSwitcher.enterText");
+	VariableResolvingString _message =
+		obs_module_text("AdvSceneSwitcher.enterText");
 	RegexConfig _regex;
 	std::string _connection;
 
@@ -67,7 +68,7 @@ private:
 	void SetupEventEdit();
 
 	QComboBox *_conditions;
-	ResizingPlainTextEdit *_message;
+	VariableTextEdit *_message;
 	RegexConfigWidget *_regex;
 	ConnectionSelection *_connection;
 	QHBoxLayout *_editLayout;

@@ -1,7 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "file-selection.hpp"
-#include "resizing-text-edit.hpp"
+#include "variable-text-edit.hpp"
 
 #include <QSpinBox>
 
@@ -25,7 +25,8 @@ public:
 	}
 
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
-	std::string _text = obs_module_text("AdvSceneSwitcher.enterText");
+	VariableResolvingString _text =
+		obs_module_text("AdvSceneSwitcher.enterText");
 	FileAction _action = FileAction::WRITE;
 
 private:
@@ -58,7 +59,7 @@ signals:
 
 protected:
 	FileSelection *_filePath;
-	ResizingPlainTextEdit *_text;
+	VariableTextEdit *_text;
 	QComboBox *_actions;
 	std::shared_ptr<MacroActionFile> _entryData;
 

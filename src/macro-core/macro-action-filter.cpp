@@ -56,7 +56,7 @@ bool MacroActionFilter::Save(obs_data_t *obj) const
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
 	obs_data_set_string(obj, "filter", GetWeakSourceName(_filter).c_str());
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
-	obs_data_set_string(obj, "settings", _settings.c_str());
+	_settings.Save(obj, "settings");
 	return true;
 }
 
@@ -68,7 +68,7 @@ bool MacroActionFilter::Load(obs_data_t *obj)
 	const char *filterName = obs_data_get_string(obj, "filter");
 	_filter = GetWeakFilterByQString(_source, filterName);
 	_action = static_cast<FilterAction>(obs_data_get_int(obj, "action"));
-	_settings = obs_data_get_string(obj, "settings");
+	_settings.Load(obj, "settings");
 	return true;
 }
 
@@ -98,7 +98,7 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 	_actions = new QComboBox();
 	_getSettings = new QPushButton(
 		obs_module_text("AdvSceneSwitcher.action.filter.getSettings"));
-	_settings = new ResizingPlainTextEdit(this);
+	_settings = new VariableTextEdit(this);
 
 	populateActionSelection(_actions);
 	populateSourcesWithFilterSelection(_sources);
@@ -151,7 +151,7 @@ void MacroActionFilterEdit::UpdateEntryData()
 	populateFilterSelection(_filters, _entryData->_source);
 	_filters->setCurrentText(
 		GetWeakSourceName(_entryData->_filter).c_str());
-	_settings->setPlainText(QString::fromStdString(_entryData->_settings));
+	_settings->setPlainText(_entryData->_settings);
 	SetWidgetVisibility(_entryData->_action == FilterAction::SETTINGS);
 
 	adjustSize();
