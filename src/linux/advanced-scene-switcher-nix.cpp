@@ -68,22 +68,29 @@ void cleanupDisplay()
 static bool ewmhIsSupported()
 {
 	Display *display = disp();
+	if (!display) {
+		return false;
+	}
+	auto window = DefaultRootWindow(display);
+	if (!window) {
+		return false;
+	}
+
 	Atom netSupportingWmCheck =
 		XInternAtom(display, "_NET_SUPPORTING_WM_CHECK", true);
 	Atom actualType;
 	int format = 0;
 	unsigned long num = 0, bytes = 0;
 	unsigned char *data = NULL;
-	Window ewmh_window = 0;
+	Window ewmhWindow = 0;
 
-	int status = XGetWindowProperty(display, DefaultRootWindow(display),
-					netSupportingWmCheck, 0L, 1L, false,
-					XA_WINDOW, &actualType, &format, &num,
-					&bytes, &data);
+	int status = XGetWindowProperty(display, window, netSupportingWmCheck,
+					0L, 1L, false, XA_WINDOW, &actualType,
+					&format, &num, &bytes, &data);
 
 	if (status == Success) {
 		if (num > 0) {
-			ewmh_window = ((Window *)data)[0];
+			ewmhWindow = ((Window *)data)[0];
 		}
 		if (data) {
 			XFree(data);
@@ -91,28 +98,26 @@ static bool ewmhIsSupported()
 		}
 	}
 
-	if (ewmh_window) {
-		status = XGetWindowProperty(display, ewmh_window,
+	if (ewmhWindow) {
+		status = XGetWindowProperty(display, ewmhWindow,
 					    netSupportingWmCheck, 0L, 1L, false,
 					    XA_WINDOW, &actualType, &format,
 					    &num, &bytes, &data);
 		if (status != Success || num == 0 ||
-		    ewmh_window != ((Window *)data)[0]) {
-			ewmh_window = 0;
+		    ewmhWindow != ((Window *)data)[0]) {
+			ewmhWindow = 0;
 		}
 		if (status == Success && data) {
 			XFree(data);
 		}
 	}
-
-	return ewmh_window != 0;
+	return ewmhWindow != 0;
 }
 
 static QStringList getStates(Window window)
 {
 	QStringList states;
-
-	if (!ewmhIsSupported()) {
+	if (!window || !ewmhIsSupported()) {
 		return states;
 	}
 
@@ -150,10 +155,13 @@ static std::vector<Window> getTopLevelWindows()
 	Window *data = 0;
 
 	for (int i = 0; i < ScreenCount(disp()); ++i) {
-		Window rootWin = RootWindow(disp(), i);
+		Window rootWindow = RootWindow(disp(), i);
+		if (!rootWindow) {
+			continue;
+		}
 
-		int status = XGetWindowProperty(disp(), rootWin, netClList, 0L,
-						~0L, false, AnyPropertyType,
+		int status = XGetWindowProperty(disp(), rootWindow, netClList,
+						0L, ~0L, false, AnyPropertyType,
 						&actualType, &format, &num,
 						&bytes, (uint8_t **)&data);
 
@@ -171,18 +179,22 @@ static std::vector<Window> getTopLevelWindows()
 	return res;
 }
 
-std::string getWindowName(Window w)
+std::string getWindowName(Window window)
 {
+	auto display = disp();
+	if (!display || !window) {
+		return "";
+	}
 	std::string windowTitle;
 	char *name;
-	int status = XFetchName(disp(), w, &name);
+	int status = XFetchName(display, window, &name);
 	if (status >= Success && name != nullptr) {
 		std::string str(name);
 		windowTitle = str;
 		XFree(name);
 	} else {
 		XTextProperty xtp_new_name;
-		if (XGetWMName(disp(), w, &xtp_new_name) != 0 &&
+		if (XGetWMName(display, window, &xtp_new_name) != 0 &&
 		    xtp_new_name.value != nullptr) {
 			std::string str((const char *)xtp_new_name.value);
 			windowTitle = str;
@@ -222,14 +234,20 @@ int getActiveWindow(Window *&window)
 	if (!ewmhIsSupported()) {
 		return -1;
 	}
+
 	Atom active = XInternAtom(disp(), "_NET_ACTIVE_WINDOW", true);
 	Atom actualType;
 	int format;
 	unsigned long num, bytes;
 
-	return XGetWindowProperty(disp(), RootWindow(disp(), 0), active, 0L,
-				  ~0L, false, AnyPropertyType, &actualType,
-				  &format, &num, &bytes, (uint8_t **)&window);
+	auto rootWindow = DefaultRootWindow(disp());
+	if (!rootWindow) {
+		return -2;
+	}
+
+	return XGetWindowProperty(disp(), rootWindow, active, 0L, ~0L, false,
+				  AnyPropertyType, &actualType, &format, &num,
+				  &bytes, (uint8_t **)&window);
 }
 
 void GetCurrentWindowTitle(std::string &title)
@@ -251,13 +269,13 @@ void GetCurrentWindowTitle(std::string &title)
 	title = name;
 }
 
-bool isMaximized(const std::string &title)
+bool windowStatesAreSet(const std::string &windowTitle,
+			std::vector<QString> &expectedStates)
 {
 	if (!ewmhIsSupported()) {
 		return false;
 	}
 
-	// Find switch in top level windows
 	std::vector<Window> windows = getTopLevelWindows();
 	for (auto &window : windows) {
 		auto name = getWindowName(window);
@@ -265,68 +283,46 @@ bool isMaximized(const std::string &title)
 			continue;
 		}
 
-		// True if switch equals window
-		bool equals = (title == name);
-		// True if switch matches window
+		bool equals = windowTitle == name;
 		bool matches = QString::fromStdString(name).contains(
-			QRegularExpression(QString::fromStdString(title)));
+			QRegularExpression(
+				QString::fromStdString(windowTitle)));
 
-		// If found, check if switch is maximized
-		if (equals || matches) {
-			QStringList states = getStates(window);
-
-			if (!states.isEmpty()) {
-				// True if window is maximized vertically
-				bool vertical = states.contains(
-					"_NET_WM_STATE_MAXIMIZED_VERT");
-				// True if window is maximized horizontally
-				bool horizontal = states.contains(
-					"_NET_WM_STATE_MAXIMIZED_HORZ");
-
-				return (vertical && horizontal);
-			}
-			break;
+		if (!(equals || matches)) {
+			continue;
 		}
-	}
 
+		QStringList states = getStates(window);
+		if (states.isEmpty()) {
+			if (expectedStates.empty()) {
+				return true;
+			}
+			return false;
+		}
+
+		for (const auto &state : expectedStates) {
+			if (!states.contains(state)) {
+				return false;
+			}
+		}
+		return true;
+	}
 	return false;
+}
+
+bool isMaximized(const std::string &title)
+{
+	std::vector<QString> states;
+	states.emplace_back("_NET_WM_STATE_MAXIMIZED_VERT");
+	states.emplace_back("_NET_WM_STATE_MAXIMIZED_HORZ");
+	return windowStatesAreSet(title, states);
 }
 
 bool isFullscreen(const std::string &title)
 {
-	if (!ewmhIsSupported())
-		return false;
-
-	// Find switch in top level windows
-	std::vector<Window> windows = getTopLevelWindows();
-	for (auto &window : windows) {
-		auto name = getWindowName(window);
-		if (name.empty()) {
-			continue;
-		}
-
-		// True if switch equals window
-		bool equals = (title == name);
-		// True if switch matches window
-		bool matches = QString::fromStdString(name).contains(
-			QRegularExpression(QString::fromStdString(title)));
-
-		// If found, check if switch is fullscreen
-		if (equals || matches) {
-			QStringList states = getStates(window);
-
-			if (!states.isEmpty()) {
-				// True if window is fullscreen
-				bool fullscreen = states.contains(
-					"_NET_WM_STATE_FULLSCREEN");
-
-				return (fullscreen);
-			}
-			break;
-		}
-	}
-
-	return false;
+	std::vector<QString> states;
+	states.emplace_back("_NET_WM_STATE_FULLSCREEN");
+	return windowStatesAreSet(title, states);
 }
 
 #ifdef USE_PROCPS
@@ -373,7 +369,7 @@ void GetProcessList(QStringList &processes)
 long getForegroundProcessPid()
 {
 	Window *window;
-	if (getActiveWindow(window) != Success || !window) {
+	if (getActiveWindow(window) != Success || !window || !*window) {
 		return -1;
 	}
 	Atom atom, actual_type;
@@ -383,8 +379,8 @@ long getForegroundProcessPid()
 	unsigned char *prop;
 	long long pid;
 	atom = XInternAtom(disp(), "_NET_WM_PID", True);
-	auto status = XGetWindowProperty(disp(), window[0], atom, 0, 1024,
-					 False, XA_CARDINAL, &actual_type,
+	auto status = XGetWindowProperty(disp(), *window, atom, 0, 1024, False,
+					 XA_CARDINAL, &actual_type,
 					 &actual_format, &nitems, &bytes_after,
 					 &prop);
 	XFree(window);
@@ -447,22 +443,24 @@ int secondsSinceLastInput()
 		return 0;
 	}
 
-	time_t idle_time;
-	static XScreenSaverInfo *mit_info;
-	Display *display;
-	int screen;
-
-	mit_info = allocSSFunc();
-
-	if ((display = disp()) == NULL) {
-		return -1;
+	auto display = disp();
+	if (!display) {
+		return 0;
 	}
-	screen = DefaultScreen(display);
-	querySSFunc(display, RootWindow(display, screen), mit_info);
+
+	auto window = DefaultRootWindow(display);
+	if (!window) {
+		return 0;
+	}
+
+	time_t idle_time;
+	auto mit_info = allocSSFunc();
+
+	auto status = querySSFunc(display, window, mit_info);
 	idle_time = (mit_info->idle) / 1000;
 	XFree(mit_info);
 
-	return idle_time;
+	return status != 0 ? idle_time : 0;
 }
 
 static std::unordered_map<HotkeyType, long> keyTable = {
@@ -592,7 +590,7 @@ void PressKeys(const std::vector<HotkeyType> keys, int duration)
 	}
 
 	Display *display = disp();
-	if (display == NULL) {
+	if (!display) {
 		return;
 	}
 
@@ -624,6 +622,11 @@ void PressKeys(const std::vector<HotkeyType> keys, int duration)
 
 void PlatformInit()
 {
+	auto display = disp();
+	if (!display) {
+		return;
+	}
+
 	libXtstHandle = new QLibrary("libXtst", nullptr);
 	pressFunc = (keyPressFunc)libXtstHandle->resolve("XTestFakeKeyEvent");
 	int _;
@@ -641,9 +644,13 @@ void PlatformInit()
 
 void PlatformCleanup()
 {
-	delete libXtstHandle;
-	libXtstHandle = nullptr;
-	delete libXssHandle;
-	libXssHandle = nullptr;
+	if (libXtstHandle) {
+		delete libXtstHandle;
+		libXtstHandle = nullptr;
+	}
+	if (libXssHandle) {
+		delete libXssHandle;
+		libXssHandle = nullptr;
+	}
 	cleanupDisplay();
 }
