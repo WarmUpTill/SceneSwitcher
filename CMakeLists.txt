@@ -270,6 +270,8 @@ target_sources(
           src/utils/utility.hpp
           src/utils/variable.cpp
           src/utils/variable.hpp
+          src/utils/variable-text-edit.cpp
+          src/utils/variable-text-edit.hpp
           src/utils/volume-control.cpp
           src/utils/volume-control.hpp
           src/utils/websocket-helpers.cpp
