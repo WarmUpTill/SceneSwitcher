@@ -2,7 +2,19 @@
 
 #include <switcher-data-structs.hpp>
 
-Variable::Variable() : Item() {}
+// Keep track of the last time a variable was changed to save some work when
+// when resolving strings containing variables
+static std::chrono::high_resolution_clock::time_point lastVariableChange{};
+
+Variable::Variable() : Item()
+{
+	lastVariableChange = std::chrono::high_resolution_clock::now();
+}
+
+Variable::~Variable()
+{
+	lastVariableChange = std::chrono::high_resolution_clock::now();
+}
 
 void Variable::Load(obs_data_t *obj)
 {
@@ -15,6 +27,7 @@ void Variable::Load(obs_data_t *obj)
 	} else if (_saveAction == SaveAction::SET_DEFAULT) {
 		_value = _defaultValue;
 	}
+	lastVariableChange = std::chrono::high_resolution_clock::now();
 }
 
 void Variable::Save(obs_data_t *obj) const
@@ -34,9 +47,16 @@ bool Variable::DoubleValue(double &value) const
 	return end != _value.c_str() && *end == '\0' && value != HUGE_VAL;
 }
 
+void Variable::SetValue(const std::string &val)
+{
+	_value = val;
+	lastVariableChange = std::chrono::high_resolution_clock::now();
+}
+
 void Variable::SetValue(double value)
 {
 	_value = std::to_string(value);
+	lastVariableChange = std::chrono::high_resolution_clock::now();
 }
 
 Variable *GetVariableByName(const std::string &name)
@@ -79,6 +99,78 @@ QStringList GetVariablesNameList()
 	}
 	list.sort();
 	return list;
+}
+
+void VariableResolvingString::Resolve()
+{
+	if (_lastResolve == lastVariableChange) {
+		return;
+	}
+	_resolvedValue = SubstitueVariables(_value);
+	_lastResolve = lastVariableChange;
+}
+
+VariableResolvingString::operator std::string()
+{
+	Resolve();
+	return _resolvedValue;
+}
+
+void VariableResolvingString::operator=(std::string value)
+{
+	_value = value;
+	_lastResolve = {};
+}
+
+void VariableResolvingString::operator=(const char *value)
+{
+	_value = value;
+	_lastResolve = {};
+}
+
+void VariableResolvingString::Load(obs_data_t *obj, const char *name)
+{
+	_value = obs_data_get_string(obj, name);
+}
+
+void VariableResolvingString::Save(obs_data_t *obj, const char *name) const
+{
+	obs_data_set_string(obj, name, _value.c_str());
+}
+
+const char *VariableResolvingString::c_str()
+{
+	Resolve();
+	return _resolvedValue.c_str();
+}
+
+const char *VariableResolvingString::c_str() const
+{
+	// Just assume that the value was previously resolved already
+	return _resolvedValue.c_str();
+}
+
+static void replaceAll(std::string &str, const std::string &from,
+		       const std::string &to)
+{
+	if (from.empty()) {
+		return;
+	}
+	size_t start_pos = 0;
+	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+		str.replace(start_pos, from.length(), to);
+		start_pos += to.length();
+	}
+}
+
+std::string SubstitueVariables(std::string str)
+{
+	for (const auto &v : switcher->variables) {
+		const auto &variable = std::dynamic_pointer_cast<Variable>(v);
+		const std::string pattern = "${" + variable->Name() + "}";
+		replaceAll(str, pattern, variable->Value());
+	}
+	return str;
 }
 
 void SwitcherData::saveVariables(obs_data_t *obj)
@@ -194,7 +286,11 @@ bool VariableSettingsDialog::AskForSettings(QWidget *parent, Variable &settings)
 static bool AskForSettingsWrapper(QWidget *parent, Item &settings)
 {
 	Variable &VariableSettings = dynamic_cast<Variable &>(settings);
-	return VariableSettingsDialog::AskForSettings(parent, VariableSettings);
+	if (VariableSettingsDialog::AskForSettings(parent, VariableSettings)) {
+		lastVariableChange = std::chrono::high_resolution_clock::now();
+		return true;
+	}
+	return false;
 }
 
 VariableSelection::VariableSelection(QWidget *parent)
