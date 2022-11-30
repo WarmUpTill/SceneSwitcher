@@ -2,7 +2,7 @@
 #include "macro.hpp"
 #include "scene-selection.hpp"
 #include "scene-item-selection.hpp"
-#include "resizing-text-edit.hpp"
+#include "variable-text-edit.hpp"
 #include "regex-config.hpp"
 
 #include <QSpinBox>
@@ -24,7 +24,7 @@ public:
 	SceneSelection _scene;
 	SceneItemSelection _source;
 	RegexConfig _regex;
-	std::string _settings = "";
+	VariableResolvingString _settings = "";
 
 private:
 	static bool _registered;
@@ -62,7 +62,7 @@ protected:
 	SceneSelectionWidget *_scenes;
 	SceneItemSelectionWidget *_sources;
 	QPushButton *_getSettings;
-	ResizingPlainTextEdit *_settings;
+	VariableTextEdit *_settings;
 	RegexConfigWidget *_regex;
 
 	std::shared_ptr<MacroConditionSceneTransform> _entryData;

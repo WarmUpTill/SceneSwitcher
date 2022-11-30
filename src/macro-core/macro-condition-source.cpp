@@ -52,7 +52,7 @@ bool MacroConditionSource::Save(obs_data_t *obj) const
 	MacroCondition::Save(obj);
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
-	obs_data_set_string(obj, "settings", _settings.c_str());
+	_settings.Save(obj, "settings");
 	_regex.Save(obj);
 	return true;
 }
@@ -64,7 +64,7 @@ bool MacroConditionSource::Load(obs_data_t *obj)
 	_source = GetWeakSourceByName(sourceName);
 	_condition = static_cast<SourceCondition>(
 		obs_data_get_int(obj, "condition"));
-	_settings = obs_data_get_string(obj, "settings");
+	_settings.Load(obj, "settings");
 	_regex.Load(obj);
 	// TOOD: remove in future version
 	if (obs_data_has_user_value(obj, "regex")) {
@@ -96,7 +96,7 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 	  _conditions(new QComboBox()),
 	  _getSettings(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.filter.getSettings"))),
-	  _settings(new ResizingPlainTextEdit(this)),
+	  _settings(new VariableTextEdit(this)),
 	  _regex(new RegexConfigWidget(parent))
 {
 	populateConditionSelection(_conditions);
@@ -221,7 +221,7 @@ void MacroConditionSourceEdit::UpdateEntryData()
 	_sources->setCurrentText(
 		GetWeakSourceName(_entryData->_source).c_str());
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
-	_settings->setPlainText(QString::fromStdString(_entryData->_settings));
+	_settings->setPlainText(_entryData->_settings);
 	_regex->SetRegexConfig(_entryData->_regex);
 	SetSettingsSelectionVisible(_entryData->_condition ==
 				    SourceCondition::SETTINGS);

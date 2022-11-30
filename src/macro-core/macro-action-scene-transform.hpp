@@ -2,7 +2,7 @@
 #include "macro-action-edit.hpp"
 #include "scene-selection.hpp"
 #include "scene-item-selection.hpp"
-#include "resizing-text-edit.hpp"
+#include "variable-text-edit.hpp"
 
 #include <QSpinBox>
 
@@ -19,15 +19,18 @@ public:
 	{
 		return std::make_shared<MacroActionSceneTransform>(m);
 	}
-	std::string GetSettings();
-	void SetSettings(std::string &);
 
 	SceneSelection _scene;
 	SceneItemSelection _source;
+	VariableResolvingString _settings = "";
+
+private:
+	void ApplySettings(const std::string &);
+	std::string ConvertSettings();
+
 	struct obs_transform_info _info = {};
 	struct obs_sceneitem_crop _crop = {};
 
-private:
 	static bool _registered;
 	static const std::string id;
 };
@@ -61,7 +64,7 @@ protected:
 	SceneSelectionWidget *_scenes;
 	SceneItemSelectionWidget *_sources;
 	QPushButton *_getSettings;
-	ResizingPlainTextEdit *_settings;
+	VariableTextEdit *_settings;
 	std::shared_ptr<MacroActionSceneTransform> _entryData;
 
 private:

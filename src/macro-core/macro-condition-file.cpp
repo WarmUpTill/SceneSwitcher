@@ -155,7 +155,7 @@ bool MacroConditionFile::Save(obs_data_t *obj) const
 	MacroCondition::Save(obj);
 	_regex.Save(obj);
 	obs_data_set_string(obj, "file", _file.c_str());
-	obs_data_set_string(obj, "text", _text.c_str());
+	_text.Save(obj, "text");
 	obs_data_set_int(obj, "fileType", static_cast<int>(_fileType));
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_bool(obj, "useTime", _useTime);
@@ -173,7 +173,7 @@ bool MacroConditionFile::Load(obs_data_t *obj)
 			obs_data_get_bool(obj, "useRegex"));
 	}
 	_file = obs_data_get_string(obj, "file");
-	_text = obs_data_get_string(obj, "text");
+	_text.Load(obj, "text");
 	_fileType = static_cast<FileType>(obs_data_get_int(obj, "fileType"));
 	_condition =
 		static_cast<ConditionType>(obs_data_get_int(obj, "condition"));
@@ -210,7 +210,7 @@ MacroConditionFileEdit::MacroConditionFileEdit(
 	  _fileTypes(new QComboBox()),
 	  _conditions(new QComboBox()),
 	  _filePath(new FileSelection()),
-	  _matchText(new ResizingPlainTextEdit(this)),
+	  _matchText(new VariableTextEdit(this)),
 	  _regex(new RegexConfigWidget(parent)),
 	  _checkModificationDate(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.fileTab.checkfileContentTime"))),
@@ -281,7 +281,7 @@ void MacroConditionFileEdit::UpdateEntryData()
 	_fileTypes->setCurrentIndex(static_cast<int>(_entryData->_fileType));
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_filePath->SetPath(QString::fromStdString(_entryData->_file));
-	_matchText->setPlainText(QString::fromStdString(_entryData->_text));
+	_matchText->setPlainText(_entryData->_text);
 	_regex->SetRegexConfig(_entryData->_regex);
 	_checkModificationDate->setChecked(_entryData->_useTime);
 	_checkFileContent->setChecked(_entryData->_onlyMatchIfChanged);

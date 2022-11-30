@@ -1,7 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "connection-manager.hpp"
-#include "resizing-text-edit.hpp"
+#include "variable-text-edit.hpp"
 
 #include <QLineEdit>
 #include <QPushButton>
@@ -28,7 +28,8 @@ public:
 	};
 
 	Type _type = Type::REQUEST;
-	std::string _message = obs_module_text("AdvSceneSwitcher.enterText");
+	VariableResolvingString _message =
+		obs_module_text("AdvSceneSwitcher.enterText");
 	std::string _connection;
 
 private:
@@ -69,7 +70,7 @@ private:
 	void SetupEventEdit();
 
 	QComboBox *_actions;
-	ResizingPlainTextEdit *_message;
+	VariableTextEdit *_message;
 	ConnectionSelection *_connection;
 	QHBoxLayout *_editLayout;
 	bool _loading = true;

@@ -12,6 +12,8 @@ bool MacroActionSceneTransform::_registered = MacroActionFactory::Register(
 
 bool MacroActionSceneTransform::PerformAction()
 {
+	ApplySettings(_settings); // Resolves variables
+
 	auto items = _source.GetSceneItems(_scene);
 	for (auto &item : items) {
 		obs_sceneitem_defer_update_begin(item);
@@ -36,7 +38,7 @@ bool MacroActionSceneTransform::Save(obs_data_t *obj) const
 	MacroAction::Save(obj);
 	_scene.Save(obj);
 	_source.Save(obj);
-	saveTransformState(obj, _info, _crop);
+	_settings.Save(obj, "settings");
 	return true;
 }
 
@@ -52,7 +54,14 @@ bool MacroActionSceneTransform::Load(obs_data_t *obj)
 	MacroAction::Load(obj);
 	_scene.Load(obj);
 	_source.Load(obj);
-	loadTransformState(obj, _info, _crop);
+	_settings.Load(obj, "settings");
+
+	// Convert old data format
+	// TODO: Remove in future version
+	if (!obs_data_has_user_value(obj, "settings")) {
+		loadTransformState(obj, _info, _crop);
+		_settings = ConvertSettings();
+	}
 	return true;
 }
 
@@ -64,7 +73,7 @@ std::string MacroActionSceneTransform::GetShortDesc() const
 	return _scene.ToString() + " - " + _source.ToString();
 }
 
-std::string MacroActionSceneTransform::GetSettings()
+std::string MacroActionSceneTransform::ConvertSettings()
 {
 	auto data = obs_data_create();
 	saveTransformState(data, _info, _crop);
@@ -73,7 +82,7 @@ std::string MacroActionSceneTransform::GetSettings()
 	return json;
 }
 
-void MacroActionSceneTransform::SetSettings(std::string &settings)
+void MacroActionSceneTransform::ApplySettings(const std::string &settings)
 {
 	auto data = obs_data_create_from_json(settings.c_str());
 	if (!data) {
@@ -111,7 +120,7 @@ MacroActionSceneTransformEdit::MacroActionSceneTransformEdit(
 	_sources = new SceneItemSelectionWidget(parent);
 	_getSettings = new QPushButton(obs_module_text(
 		"AdvSceneSwitcher.action.sceneTransform.getTransform"));
-	_settings = new ResizingPlainTextEdit(this);
+	_settings = new VariableTextEdit(this);
 
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
@@ -160,7 +169,7 @@ void MacroActionSceneTransformEdit::UpdateEntryData()
 
 	_scenes->SetScene(_entryData->_scene);
 	_sources->SetSceneItem(_entryData->_source);
-	_settings->setPlainText(formatJsonString(_entryData->GetSettings()));
+	_settings->setPlainText(_entryData->_settings);
 
 	adjustSize();
 	updateGeometry();
@@ -213,8 +222,7 @@ void MacroActionSceneTransformEdit::SettingsChanged()
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	auto json = _settings->toPlainText().toStdString();
-	_entryData->SetSettings(json);
+	_entryData->_settings = _settings->toPlainText().toStdString();
 
 	adjustSize();
 	updateGeometry();

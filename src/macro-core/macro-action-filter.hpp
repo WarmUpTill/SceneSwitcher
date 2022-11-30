@@ -1,6 +1,6 @@
 #pragma once
 #include "macro-action-edit.hpp"
-#include "resizing-text-edit.hpp"
+#include "variable-text-edit.hpp"
 
 #include <QComboBox>
 #include <QSpinBox>
@@ -29,7 +29,7 @@ public:
 	OBSWeakSource _source;
 	OBSWeakSource _filter;
 	FilterAction _action = FilterAction::ENABLE;
-	std::string _settings = "";
+	VariableResolvingString _settings = "";
 
 private:
 	static bool _registered;
@@ -66,7 +66,7 @@ protected:
 	QComboBox *_filters;
 	QComboBox *_actions;
 	QPushButton *_getSettings;
-	ResizingPlainTextEdit *_settings;
+	VariableTextEdit *_settings;
 	std::shared_ptr<MacroActionFilter> _entryData;
 
 private:

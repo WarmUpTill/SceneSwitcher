@@ -59,7 +59,7 @@ bool MacroConditionWebsocket::CheckCondition()
 				return true;
 			}
 		} else {
-			if (msg == _message) {
+			if (msg == std::string(_message)) {
 				return true;
 			}
 		}
@@ -71,7 +71,7 @@ bool MacroConditionWebsocket::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
-	obs_data_set_string(obj, "message", _message.c_str());
+	_message.Save(obj, "message");
 	_regex.Save(obj);
 	obs_data_set_string(obj, "connection", _connection.c_str());
 	return true;
@@ -81,7 +81,7 @@ bool MacroConditionWebsocket::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_type = static_cast<Type>(obs_data_get_int(obj, "type"));
-	_message = obs_data_get_string(obj, "message");
+	_message.Load(obj, "message");
 	_regex.Load(obj);
 	// TOOD: remove in future version
 	if (obs_data_has_user_value(obj, "useRegex")) {
@@ -111,7 +111,7 @@ MacroConditionWebsocketEdit::MacroConditionWebsocketEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionWebsocket> entryData)
 	: QWidget(parent),
 	  _conditions(new QComboBox(this)),
-	  _message(new ResizingPlainTextEdit(this)),
+	  _message(new VariableTextEdit(this)),
 	  _regex(new RegexConfigWidget(parent)),
 	  _connection(new ConnectionSelection(this)),
 	  _editLayout(new QHBoxLayout())
@@ -182,7 +182,7 @@ void MacroConditionWebsocketEdit::UpdateEntryData()
 	}
 
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_type));
-	_message->setPlainText(QString::fromStdString(_entryData->_message));
+	_message->setPlainText(_entryData->_message);
 	_regex->SetRegexConfig(_entryData->_regex);
 	_connection->SetConnection(_entryData->_connection);
 

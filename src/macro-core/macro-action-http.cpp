@@ -81,7 +81,7 @@ bool MacroActionHttp::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_string(obj, "url", _url.c_str());
-	obs_data_set_string(obj, "data", _data.c_str());
+	_data.Save(obj, "data");
 	obs_data_set_int(obj, "method", static_cast<int>(_method));
 	_timeout.Save(obj);
 	return true;
@@ -91,7 +91,7 @@ bool MacroActionHttp::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 	_url = obs_data_get_string(obj, "url");
-	_data = obs_data_get_string(obj, "data");
+	_data.Load(obj, "data");
 	_method = static_cast<Method>(obs_data_get_int(obj, "method"));
 	_timeout.Load(obj);
 	return true;
@@ -114,7 +114,7 @@ MacroActionHttpEdit::MacroActionHttpEdit(
 	: QWidget(parent),
 	  _url(new QLineEdit()),
 	  _methods(new QComboBox()),
-	  _data(new ResizingPlainTextEdit(this)),
+	  _data(new VariableTextEdit(this)),
 	  _timeout(new DurationSelection(this, false))
 {
 	populateMethodSelection(_methods);
@@ -161,7 +161,7 @@ void MacroActionHttpEdit::UpdateEntryData()
 	}
 
 	_url->setText(QString::fromStdString(_entryData->_url));
-	_data->setPlainText(QString::fromStdString(_entryData->_data));
+	_data->setPlainText(_entryData->_data);
 	_methods->setCurrentIndex(static_cast<int>(_entryData->_method));
 	_timeout->SetDuration(_entryData->_timeout);
 	SetWidgetVisibility();

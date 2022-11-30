@@ -1,6 +1,6 @@
 #pragma once
 #include "macro-action-edit.hpp"
-#include "resizing-text-edit.hpp"
+#include "variable-text-edit.hpp"
 
 #include <QSpinBox>
 #include <QLabel>
@@ -39,8 +39,8 @@ public:
 	}
 
 	OBSWeakSource _source;
-	std::string _settings = "";
 	SourceSettingButton _button;
+	VariableResolvingString _settings = "";
 	SourceAction _action = SourceAction::ENABLE;
 
 private:
@@ -78,7 +78,7 @@ protected:
 	QComboBox *_actions;
 	QComboBox *_settingsButtons;
 	QPushButton *_getSettings;
-	ResizingPlainTextEdit *_settings;
+	VariableTextEdit *_settings;
 	QLabel *_warning;
 	std::shared_ptr<MacroActionSource> _entryData;
 
