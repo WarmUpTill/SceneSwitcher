@@ -62,11 +62,12 @@ public:
 	void EnablePauseHotkeys(bool);
 	bool PauseHotkeysEnabled();
 
+	void ResetTimers();
+
 private:
 	void SetupHotkeys();
 	void ClearHotkeys();
 	void SetHotkeysDesc();
-	void ResetTimers();
 	void RunActions(bool &ret, bool ignorePause);
 	void RunActions(bool ignorePause);
 	void SetOnChangeHighlight();
