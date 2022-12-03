@@ -5,13 +5,7 @@
 #include <QWidget>
 #include <QComboBox>
 #include <QCheckBox>
-
-enum class SceneType {
-	CURRENT,
-	PREVIOUS,
-	CHANGED,
-	NOTCHANGED,
-};
+#include <QLineEdit>
 
 class MacroConditionScene : public MacroCondition {
 public:
@@ -26,8 +20,18 @@ public:
 		return std::make_shared<MacroConditionScene>(m);
 	}
 
+	enum class Type {
+		CURRENT,
+		PREVIOUS,
+		CHANGED,
+		NOT_CHANGED,
+		CURRENT_PATTERN,
+		PREVIOUS_PATTERN,
+	};
+
 	SceneSelection _scene;
-	SceneType _type = SceneType::CURRENT;
+	Type _type = Type::CURRENT;
+	std::string _pattern = ".*Scene.*";
 	// During a transition "current" scene could either stand for the scene
 	// being transitioned to or the scene still being transitioned away
 	// from.
@@ -58,6 +62,7 @@ public:
 private slots:
 	void SceneChanged(const SceneSelection &);
 	void TypeChanged(int value);
+	void PatternChanged();
 	void UseTransitionTargetSceneChanged(int state);
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -65,6 +70,7 @@ signals:
 protected:
 	SceneSelectionWidget *_scenes;
 	QComboBox *_sceneType;
+	QLineEdit *_pattern;
 	QCheckBox *_useTransitionTargetScene;
 	std::shared_ptr<MacroConditionScene> _entryData;
 

@@ -10,13 +10,34 @@ bool MacroConditionScene::_registered = MacroConditionFactory::Register(
 	{MacroConditionScene::Create, MacroConditionSceneEdit::Create,
 	 "AdvSceneSwitcher.condition.scene"});
 
-static std::map<SceneType, std::string> sceneTypes = {
-	{SceneType::CURRENT, "AdvSceneSwitcher.condition.scene.type.current"},
-	{SceneType::PREVIOUS, "AdvSceneSwitcher.condition.scene.type.previous"},
-	{SceneType::CHANGED, "AdvSceneSwitcher.condition.scene.type.changed"},
-	{SceneType::NOTCHANGED,
+static std::map<MacroConditionScene::Type, std::string> sceneTypes = {
+	{MacroConditionScene::Type::CURRENT,
+	 "AdvSceneSwitcher.condition.scene.type.current"},
+	{MacroConditionScene::Type::PREVIOUS,
+	 "AdvSceneSwitcher.condition.scene.type.previous"},
+	{MacroConditionScene::Type::CHANGED,
+	 "AdvSceneSwitcher.condition.scene.type.changed"},
+	{MacroConditionScene::Type::NOT_CHANGED,
 	 "AdvSceneSwitcher.condition.scene.type.notChanged"},
+	{MacroConditionScene::Type::CURRENT_PATTERN,
+	 "AdvSceneSwitcher.condition.scene.type.currentPattern"},
+	{MacroConditionScene::Type::PREVIOUS_PATTERN,
+	 "AdvSceneSwitcher.condition.scene.type.previousPattern"},
 };
+
+static bool sceneNameMatchesRegex(const OBSWeakSource &scene,
+				  const std::string &pattern)
+{
+	auto regex = QRegularExpression(QRegularExpression::anchoredPattern(
+		QString::fromStdString(pattern)));
+	if (!regex.isValid()) {
+		return false;
+	}
+
+	auto match =
+		regex.match(QString::fromStdString(GetWeakSourceName(scene)));
+	return match.hasMatch();
+}
 
 bool MacroConditionScene::CheckCondition()
 {
@@ -27,7 +48,7 @@ bool MacroConditionScene::CheckCondition()
 	}
 
 	switch (_type) {
-	case SceneType::CURRENT:
+	case Type::CURRENT:
 		if (_useTransitionTargetScene) {
 			auto current = obs_frontend_get_current_scene();
 			auto weak = obs_source_get_weak_source(current);
@@ -37,18 +58,20 @@ bool MacroConditionScene::CheckCondition()
 			return match;
 		}
 		return switcher->currentScene == _scene.GetScene(false);
-	case SceneType::PREVIOUS:
+	case Type::PREVIOUS:
 		if (switcher->anySceneTransitionStarted() &&
 		    _useTransitionTargetScene) {
 			return switcher->currentScene == _scene.GetScene(false);
 		}
 		return switcher->previousScene == _scene.GetScene(false);
-	case SceneType::CHANGED:
+	case Type::CHANGED:
 		return sceneChanged;
-	case SceneType::NOTCHANGED:
+	case Type::NOT_CHANGED:
 		return !sceneChanged;
-	default:
-		break;
+	case Type::CURRENT_PATTERN:
+		return sceneNameMatchesRegex(switcher->currentScene, _pattern);
+	case Type::PREVIOUS_PATTERN:
+		return sceneNameMatchesRegex(switcher->previousScene, _pattern);
 	}
 
 	return false;
@@ -59,6 +82,7 @@ bool MacroConditionScene::Save(obs_data_t *obj)
 	MacroCondition::Save(obj);
 	_scene.Save(obj);
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
+	obs_data_set_string(obj, "pattern", _pattern.c_str());
 	obs_data_set_bool(obj, "useTransitionTargetScene",
 			  _useTransitionTargetScene);
 	return true;
@@ -68,7 +92,8 @@ bool MacroConditionScene::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_scene.Load(obj);
-	_type = static_cast<SceneType>(obs_data_get_int(obj, "type"));
+	_type = static_cast<Type>(obs_data_get_int(obj, "type"));
+	_pattern = obs_data_get_string(obj, "pattern");
 	if (obs_data_has_user_value(obj, "waitForTransition")) {
 		_useTransitionTargetScene =
 			!obs_data_get_bool(obj, "waitForTransition");
@@ -81,7 +106,10 @@ bool MacroConditionScene::Load(obs_data_t *obj)
 
 std::string MacroConditionScene::GetShortDesc()
 {
-	return _scene.ToString();
+	if (_type == Type::CURRENT || _type == Type::PREVIOUS) {
+		return _scene.ToString();
+	}
+	return "";
 }
 
 static inline void populateTypeSelection(QComboBox *list)
@@ -93,17 +121,20 @@ static inline void populateTypeSelection(QComboBox *list)
 
 MacroConditionSceneEdit::MacroConditionSceneEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionScene> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _scenes(new SceneSelectionWidget(window(), true, false, false,
+					   false)),
+	  _sceneType(new QComboBox()),
+	  _pattern(new QLineEdit()),
+	  _useTransitionTargetScene(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.condition.scene.currentSceneTransitionBehaviour")))
 {
-	_scenes = new SceneSelectionWidget(window(), true, false, false, false);
-	_sceneType = new QComboBox();
-	_useTransitionTargetScene = new QCheckBox(obs_module_text(
-		"AdvSceneSwitcher.condition.scene.currentSceneTransitionBehaviour"));
-
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
 	QWidget::connect(_sceneType, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TypeChanged(int)));
+	QWidget::connect(_pattern, SIGNAL(editingFinished()), this,
+			 SLOT(PatternChanged()));
 	QWidget::connect(_useTransitionTargetScene, SIGNAL(stateChanged(int)),
 			 this, SLOT(UseTransitionTargetSceneChanged(int)));
 
@@ -112,6 +143,7 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", _scenes},
 		{"{{sceneType}}", _sceneType},
+		{"{{pattern}}", _pattern},
 		{"{{useTransitionTargetScene}}", _useTransitionTargetScene},
 	};
 	QHBoxLayout *line1Layout = new QHBoxLayout;
@@ -151,8 +183,18 @@ void MacroConditionSceneEdit::TypeChanged(int value)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_type = static_cast<SceneType>(value);
+	_entryData->_type = static_cast<MacroConditionScene::Type>(value);
 	SetWidgetVisibility();
+}
+
+void MacroConditionSceneEdit::PatternChanged()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_pattern = _pattern->text().toStdString();
 }
 
 void MacroConditionSceneEdit::UseTransitionTargetSceneChanged(int state)
@@ -167,17 +209,23 @@ void MacroConditionSceneEdit::UseTransitionTargetSceneChanged(int state)
 
 void MacroConditionSceneEdit::SetWidgetVisibility()
 {
-	_scenes->setVisible(_entryData->_type == SceneType::CURRENT ||
-			    _entryData->_type == SceneType::PREVIOUS);
+	_scenes->setVisible(
+		_entryData->_type == MacroConditionScene::Type::CURRENT ||
+		_entryData->_type == MacroConditionScene::Type::PREVIOUS);
 	_useTransitionTargetScene->setVisible(
-		_entryData->_type == SceneType::CURRENT ||
-		_entryData->_type == SceneType::PREVIOUS);
+		_entryData->_type == MacroConditionScene::Type::CURRENT ||
+		_entryData->_type == MacroConditionScene::Type::PREVIOUS);
+	_pattern->setVisible(
+		_entryData->_type ==
+			MacroConditionScene::Type::CURRENT_PATTERN ||
+		_entryData->_type ==
+			MacroConditionScene::Type::PREVIOUS_PATTERN);
 
-	if (_entryData->_type == SceneType::PREVIOUS) {
+	if (_entryData->_type == MacroConditionScene::Type::PREVIOUS) {
 		_useTransitionTargetScene->setText(obs_module_text(
 			"AdvSceneSwitcher.condition.scene.previousSceneTransitionBehaviour"));
 	}
-	if (_entryData->_type == SceneType::CURRENT) {
+	if (_entryData->_type == MacroConditionScene::Type::CURRENT) {
 		_useTransitionTargetScene->setText(obs_module_text(
 			"AdvSceneSwitcher.condition.scene.currentSceneTransitionBehaviour"));
 	}
@@ -192,6 +240,7 @@ void MacroConditionSceneEdit::UpdateEntryData()
 
 	_scenes->SetScene(_entryData->_scene);
 	_sceneType->setCurrentIndex(static_cast<int>(_entryData->_type));
+	_pattern->setText(QString::fromStdString(_entryData->_pattern));
 	_useTransitionTargetScene->setChecked(
 		_entryData->_useTransitionTargetScene);
 	SetWidgetVisibility();
