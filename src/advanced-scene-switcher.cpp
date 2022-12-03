@@ -423,10 +423,11 @@ void SwitcherData::Start()
 	}
 }
 
-void ResetMacroCounters()
+void ResetMacros()
 {
 	for (auto &m : switcher->macros) {
 		m->ResetCount();
+		m->ResetTimers();
 	}
 }
 
@@ -443,7 +444,7 @@ void SwitcherData::Stop()
 		th = nullptr;
 
 		writeToStatusFile("Advanced Scene Switcher stopped");
-		ResetMacroCounters();
+		ResetMacros();
 	}
 
 	server.stop();
