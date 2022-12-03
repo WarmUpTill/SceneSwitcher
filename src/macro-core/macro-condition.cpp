@@ -117,9 +117,6 @@ void MacroCondition::CheckDurationModifier(bool &val)
 	case DurationModifier::Type::MORE:
 	case DurationModifier::Type::EQUAL:
 	case DurationModifier::Type::LESS:
-		if (!val) {
-			_duration.Reset();
-		}
 		val = val && _duration.DurationReached();
 		return;
 	case DurationModifier::Type::WITHIN:
