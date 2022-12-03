@@ -12,15 +12,12 @@ bool MacroConditionHotkey::_registered = MacroConditionFactory::Register(
 
 static void hotkeyCB(void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed)
 {
-	if (pressed) {
-		auto c = static_cast<MacroConditionHotkey *>(data);
-		auto macro = c->GetMacro();
-		if (!macro) {
-			c->SetPressed();
-		}
-		if (macro && !macro->Paused()) {
-			c->SetPressed();
-		}
+	auto hotkeyCondition = static_cast<MacroConditionHotkey *>(data);
+	auto macro = hotkeyCondition->GetMacro();
+	if (macro) {
+		hotkeyCondition->SetPressed(pressed && !macro->Paused());
+	} else {
+		hotkeyCondition->SetPressed(pressed);
 	}
 }
 
@@ -49,11 +46,7 @@ MacroConditionHotkey::~MacroConditionHotkey()
 
 bool MacroConditionHotkey::CheckCondition()
 {
-	if (_pressed) {
-		_pressed = false;
-		return true;
-	}
-	return false;
+	return _pressed;
 }
 
 bool MacroConditionHotkey::Save(obs_data_t *obj)

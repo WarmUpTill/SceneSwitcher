@@ -15,7 +15,7 @@ public:
 	{
 		return std::make_shared<MacroConditionHotkey>(m);
 	}
-	void SetPressed() { _pressed = true; }
+	void SetPressed(bool value) { _pressed = value; }
 
 	std::string _name;
 	obs_hotkey_id _hotkeyID = OBS_INVALID_HOTKEY_ID;
