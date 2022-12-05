@@ -29,6 +29,7 @@ public:
 		OUTPUT_VOLUME,
 		CONFIGURED_VOLUME,
 		SYNC_OFFSET,
+		MONITOR,
 	};
 
 	enum class OutputCondition {
@@ -47,6 +48,7 @@ public:
 	OBSWeakSource _audioSource;
 	int _volume = 0;
 	int64_t _syncOffset = 0;
+	obs_monitoring_type _monitorType = OBS_MONITORING_TYPE_NONE;
 	Type _checkType = Type::OUTPUT_VOLUME;
 	OutputCondition _outputCondition = OutputCondition::ABOVE;
 	VolumeCondition _volumeCondition = VolumeCondition::ABOVE;
@@ -56,6 +58,7 @@ private:
 	bool CheckOutputCondition();
 	bool CheckVolumeCondition();
 	bool CheckSyncOffset();
+	bool CheckMonitor();
 
 	float _peak = -std::numeric_limits<float>::infinity();
 	static bool _registered;
@@ -85,6 +88,7 @@ private slots:
 	void ConditionChanged(int cond);
 	void CheckTypeChanged(int cond);
 	void SyncOffsetChanged(int value);
+	void MonitorTypeChanged(int value);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -95,6 +99,7 @@ protected:
 	QComboBox *_condition;
 	QSpinBox *_volume;
 	QSpinBox *_syncOffset;
+	QComboBox *_monitorTypes;
 	VolControl *_volMeter = nullptr;
 	std::shared_ptr<MacroConditionAudio> _entryData;
 

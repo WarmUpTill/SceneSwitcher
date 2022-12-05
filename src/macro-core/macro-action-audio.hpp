@@ -29,6 +29,7 @@ public:
 		SOURCE_VOLUME,
 		MASTER_VOLUME,
 		SYNC_OFFSET,
+		MONITOR,
 	};
 
 	enum class FadeType {
@@ -39,6 +40,7 @@ public:
 	Action _action = Action::MUTE;
 	FadeType _fadeType = FadeType::DURATION;
 	int64_t _syncOffset = 0;
+	obs_monitoring_type _monitorType = OBS_MONITORING_TYPE_NONE;
 	int _volume = 0;
 	bool _fade = false;
 	Duration _duration;
@@ -79,6 +81,7 @@ private slots:
 	void SourceChanged(const QString &text);
 	void ActionChanged(int value);
 	void SyncOffsetChanged(int value);
+	void MonitorTypeChanged(int value);
 	void VolumeChanged(int value);
 	void FadeChanged(int value);
 	void DurationChanged(double seconds);
@@ -94,6 +97,7 @@ protected:
 	QComboBox *_actions;
 	QComboBox *_fadeTypes;
 	QSpinBox *_syncOffset;
+	QComboBox *_monitorTypes;
 	QSpinBox *_volumePercent;
 	QCheckBox *_fade;
 	DurationSelection *_duration;
