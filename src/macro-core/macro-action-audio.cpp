@@ -21,6 +21,8 @@ const static std::map<MacroActionAudio::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.audio.type.masterVolume"},
 	{MacroActionAudio::Action::SYNC_OFFSET,
 	 "AdvSceneSwitcher.action.audio.type.syncOffset"},
+	{MacroActionAudio::Action::MONITOR,
+	 "AdvSceneSwitcher.action.audio.type.monitor"},
 };
 
 const static std::map<MacroActionAudio::FadeType, std::string> fadeTypes = {
@@ -189,6 +191,9 @@ bool MacroActionAudio::PerformAction()
 	case MacroActionAudio::Action::SYNC_OFFSET:
 		obs_source_set_sync_offset(s, _syncOffset * nsPerMs);
 		break;
+	case MacroActionAudio::Action::MONITOR:
+		obs_source_set_monitoring_type(s, _monitorType);
+		break;
 	default:
 		break;
 	}
@@ -219,6 +224,7 @@ bool MacroActionAudio::Save(obs_data_t *obj)
 			    GetWeakSourceName(_audioSource).c_str());
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	obs_data_set_int(obj, "syncOffset", _syncOffset);
+	obs_data_set_int(obj, "monitor", _monitorType);
 	obs_data_set_int(obj, "volume", _volume);
 	obs_data_set_double(obj, "rate", _rate);
 	obs_data_set_bool(obj, "fade", _fade);
@@ -237,6 +243,8 @@ bool MacroActionAudio::Load(obs_data_t *obj)
 	_action = static_cast<MacroActionAudio::Action>(
 		obs_data_get_int(obj, "action"));
 	_syncOffset = obs_data_get_int(obj, "syncOffset");
+	_monitorType = static_cast<obs_monitoring_type>(
+		obs_data_get_int(obj, "monitor"));
 	_volume = obs_data_get_int(obj, "volume");
 	_rate = obs_data_get_double(obj, "rate");
 	_fade = obs_data_get_bool(obj, "fade");
@@ -288,6 +296,7 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	  _actions(new QComboBox),
 	  _fadeTypes(new QComboBox),
 	  _syncOffset(new QSpinBox),
+	  _monitorTypes(new QComboBox),
 	  _volumePercent(new QSpinBox),
 	  _fade(new QCheckBox),
 	  _duration(new DurationSelection(parent, false)),
@@ -314,6 +323,7 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	populateActionSelection(_actions);
 	populateAudioSelection(_audioSources);
 	populateFadeTypeSelection(_fadeTypes);
+	populateMonitorTypeSelection(_monitorTypes);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
@@ -322,6 +332,8 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 			 SLOT(SourceChanged(const QString &)));
 	QWidget::connect(_syncOffset, SIGNAL(valueChanged(int)), this,
 			 SLOT(SyncOffsetChanged(int)));
+	QWidget::connect(_monitorTypes, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(MonitorTypeChanged(int)));
 	QWidget::connect(_volumePercent, SIGNAL(valueChanged(int)), this,
 			 SLOT(VolumeChanged(int)));
 	QWidget::connect(_fade, SIGNAL(stateChanged(int)), this,
@@ -341,6 +353,7 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 		{"{{audioSources}}", _audioSources},
 		{"{{actions}}", _actions},
 		{"{{syncOffset}}", _syncOffset},
+		{"{{monitorTypes}}", _monitorTypes},
 		{"{{volume}}", _volumePercent},
 		{"{{fade}}", _fade},
 		{"{{duration}}", _duration},
@@ -384,6 +397,8 @@ void MacroActionAudioEdit::SetWidgetVisibility()
 				  MacroActionAudio::Action::MASTER_VOLUME);
 	_syncOffset->setVisible(_entryData->_action ==
 				MacroActionAudio::Action::SYNC_OFFSET);
+	_monitorTypes->setVisible(_entryData->_action ==
+				  MacroActionAudio::Action::MONITOR);
 
 	_fadeTypes->setDisabled(!_entryData->_fade);
 	_wait->setDisabled(!_entryData->_fade);
@@ -435,6 +450,7 @@ void MacroActionAudioEdit::UpdateEntryData()
 		GetWeakSourceName(_entryData->_audioSource).c_str());
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_syncOffset->setValue(_entryData->_syncOffset);
+	_monitorTypes->setCurrentIndex(_entryData->_monitorType);
 	_volumePercent->setValue(_entryData->_volume);
 	_fade->setChecked(_entryData->_fade);
 	_duration->SetDuration(_entryData->_duration);
@@ -476,6 +492,16 @@ void MacroActionAudioEdit::SyncOffsetChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_syncOffset = value;
+}
+
+void MacroActionAudioEdit::MonitorTypeChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_monitorType = static_cast<obs_monitoring_type>(value);
 }
 
 void MacroActionAudioEdit::VolumeChanged(int value)

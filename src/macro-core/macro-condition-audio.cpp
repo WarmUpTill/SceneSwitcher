@@ -18,6 +18,8 @@ static std::map<MacroConditionAudio::Type, std::string> checkTypes = {
 	 "AdvSceneSwitcher.condition.audio.type.volume"},
 	{MacroConditionAudio::Type::SYNC_OFFSET,
 	 "AdvSceneSwitcher.condition.audio.type.syncOffset"},
+	{MacroConditionAudio::Type::MONITOR,
+	 "AdvSceneSwitcher.condition.audio.type.monitor"},
 };
 
 static std::map<MacroConditionAudio::OutputCondition, std::string>
@@ -115,6 +117,19 @@ bool MacroConditionAudio::CheckSyncOffset()
 	return ret;
 }
 
+bool MacroConditionAudio::CheckMonitor()
+{
+	if (!_audioSource) {
+		return false;
+	}
+
+	bool ret = false;
+	auto s = obs_weak_source_get_source(_audioSource);
+	ret = obs_source_get_monitoring_type(s) == _monitorType;
+	obs_source_release(s);
+	return ret;
+}
+
 bool MacroConditionAudio::CheckCondition()
 {
 	switch (_checkType) {
@@ -124,6 +139,8 @@ bool MacroConditionAudio::CheckCondition()
 		return CheckVolumeCondition();
 	case MacroConditionAudio::Type::SYNC_OFFSET:
 		return CheckSyncOffset();
+	case MacroConditionAudio::Type::MONITOR:
+		return CheckMonitor();
 	default:
 		break;
 	}
@@ -137,6 +154,7 @@ bool MacroConditionAudio::Save(obs_data_t *obj)
 			    GetWeakSourceName(_audioSource).c_str());
 	obs_data_set_int(obj, "volume", _volume);
 	obs_data_set_int(obj, "syncOffset", _syncOffset);
+	obs_data_set_int(obj, "monitor", _monitorType);
 	obs_data_set_int(obj, "checkType", static_cast<int>(_checkType));
 	obs_data_set_int(obj, "outputCondition",
 			 static_cast<int>(_outputCondition));
@@ -169,6 +187,8 @@ bool MacroConditionAudio::Load(obs_data_t *obj)
 	_audioSource = GetWeakSourceByName(audioSourceName);
 	_volume = obs_data_get_int(obj, "volume");
 	_syncOffset = obs_data_get_int(obj, "syncOffset");
+	_monitorType = static_cast<obs_monitoring_type>(
+		obs_data_get_int(obj, "monitor"));
 	_checkType = static_cast<MacroConditionAudio::Type>(
 		obs_data_get_int(obj, "checkType"));
 	_outputCondition = static_cast<MacroConditionAudio::OutputCondition>(
@@ -243,7 +263,8 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 	  _audioSources(new QComboBox()),
 	  _condition(new QComboBox()),
 	  _volume(new QSpinBox()),
-	  _syncOffset(new QSpinBox())
+	  _syncOffset(new QSpinBox()),
+	  _monitorTypes(new QComboBox)
 {
 	_volume->setSuffix("%");
 	_volume->setMaximum(100);
@@ -259,6 +280,8 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 			 SLOT(VolumeThresholdChanged(int)));
 	QWidget::connect(_syncOffset, SIGNAL(valueChanged(int)), this,
 			 SLOT(SyncOffsetChanged(int)));
+	QWidget::connect(_monitorTypes, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(MonitorTypeChanged(int)));
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_audioSources,
@@ -267,6 +290,7 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 
 	populateCheckTypes(_checkTypes);
 	populateAudioSelection(_audioSources);
+	populateMonitorTypeSelection(_monitorTypes);
 
 	QHBoxLayout *switchLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -274,6 +298,7 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 		{"{{audioSources}}", _audioSources},
 		{"{{volume}}", _volume},
 		{"{{syncOffset}}", _syncOffset},
+		{"{{monitorTypes}}", _monitorTypes},
 		{"{{condition}}", _condition},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.audio.entry"),
@@ -345,6 +370,16 @@ void MacroConditionAudioEdit::SyncOffsetChanged(int value)
 	_entryData->_syncOffset = value;
 }
 
+void MacroConditionAudioEdit::MonitorTypeChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_monitorType = static_cast<obs_monitoring_type>(value);
+}
+
 void MacroConditionAudioEdit::ConditionChanged(int cond)
 {
 	if (_loading || !_entryData) {
@@ -393,6 +428,7 @@ void MacroConditionAudioEdit::UpdateEntryData()
 		GetWeakSourceName(_entryData->_audioSource).c_str());
 	_volume->setValue(_entryData->_volume);
 	_syncOffset->setValue(_entryData->_syncOffset);
+	_monitorTypes->setCurrentIndex(_entryData->_monitorType);
 	_checkTypes->setCurrentIndex(static_cast<int>(_entryData->_checkType));
 	if (_entryData->_checkType ==
 	    MacroConditionAudio::Type::OUTPUT_VOLUME) {
@@ -433,6 +469,8 @@ void MacroConditionAudioEdit::SetWidgetVisibility()
 			MacroConditionAudio::Type::CONFIGURED_VOLUME);
 	_syncOffset->setVisible(_entryData->_checkType ==
 				MacroConditionAudio::Type::SYNC_OFFSET);
+	_monitorTypes->setVisible(_entryData->_checkType ==
+				  MacroConditionAudio::Type::MONITOR);
 	_volMeter->setVisible(_entryData->_checkType ==
 			      MacroConditionAudio::Type::OUTPUT_VOLUME);
 	adjustSize();

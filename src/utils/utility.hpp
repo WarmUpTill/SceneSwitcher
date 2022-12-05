@@ -81,6 +81,7 @@ void populateFilterSelection(QComboBox *list,
 			     OBSWeakSource weakSource = nullptr);
 void populateSourceGroupSelection(QComboBox *list);
 void populateProfileSelection(QComboBox *list);
+void populateMonitorTypeSelection(QComboBox *list);
 bool windowPosValid(QPoint pos);
 bool doubleEquals(double left, double right, double epsilon);
 void setButtonIcon(QPushButton *button, const char *path);

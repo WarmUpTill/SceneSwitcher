@@ -824,6 +824,14 @@ void populateProfileSelection(QComboBox *box)
 	box->setCurrentIndex(0);
 }
 
+void populateMonitorTypeSelection(QComboBox *list)
+{
+	list->addItem(obs_module_text("AdvSceneSwitcher.audio.monitor.none"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.audio.monitor.monitorOnly"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.audio.monitor.both"));
+}
+
 bool windowPosValid(QPoint pos)
 {
 	return !!QGuiApplication::screenAt(pos);
