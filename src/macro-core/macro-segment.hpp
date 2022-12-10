@@ -10,6 +10,7 @@ class Macro;
 class MacroSegment {
 public:
 	MacroSegment(Macro *m) : _macro(m) {}
+	virtual ~MacroSegment() = default;
 	Macro *GetMacro() { return _macro; }
 	void SetIndex(int idx) { _idx = idx; }
 	int GetIndex() { return _idx; }
