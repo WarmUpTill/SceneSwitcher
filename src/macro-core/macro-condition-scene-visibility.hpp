@@ -5,11 +5,6 @@
 
 #include <QComboBox>
 
-enum class SceneVisibilityCondition {
-	SHOWN,
-	HIDDEN,
-};
-
 class MacroConditionSceneVisibility : public MacroCondition {
 public:
 	MacroConditionSceneVisibility(Macro *m) : MacroCondition(m) {}
@@ -23,11 +18,19 @@ public:
 		return std::make_shared<MacroConditionSceneVisibility>(m);
 	}
 
+	enum class Condition {
+		SHOWN,
+		HIDDEN,
+		CHANGED,
+	};
+
 	SceneSelection _scene;
 	SceneItemSelection _source;
-	SceneVisibilityCondition _condition = SceneVisibilityCondition::SHOWN;
+	Condition _condition = Condition::SHOWN;
 
 private:
+	std::vector<bool> _previousVisibilty;
+
 	static bool _registered;
 	static const std::string id;
 };

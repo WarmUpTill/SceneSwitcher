@@ -14,15 +14,17 @@ bool MacroConditionSceneVisibility::_registered =
 		 MacroConditionSceneVisibilityEdit::Create,
 		 "AdvSceneSwitcher.condition.sceneVisibility"});
 
-static std::map<SceneVisibilityCondition, std::string>
-	SceneVisibilityConditionTypes = {
-		{SceneVisibilityCondition::SHOWN,
+static std::map<MacroConditionSceneVisibility::Condition, std::string>
+	conditionTypes = {
+		{MacroConditionSceneVisibility::Condition::SHOWN,
 		 "AdvSceneSwitcher.condition.sceneVisibility.type.shown"},
-		{SceneVisibilityCondition::HIDDEN,
+		{MacroConditionSceneVisibility::Condition::HIDDEN,
 		 "AdvSceneSwitcher.condition.sceneVisibility.type.hidden"},
+		{MacroConditionSceneVisibility::Condition::CHANGED,
+		 "AdvSceneSwitcher.condition.sceneVisibility.type.changed"},
 };
 
-bool areAllSceneItemsShown(std::vector<obs_scene_item *> &items)
+bool areAllSceneItemsShown(const std::vector<obs_scene_item *> &items)
 {
 	bool ret = true;
 	for (auto item : items) {
@@ -34,13 +36,36 @@ bool areAllSceneItemsShown(std::vector<obs_scene_item *> &items)
 	return ret;
 }
 
-bool areAllSceneItemsHidden(std::vector<obs_scene_item *> &items)
+bool areAllSceneItemsHidden(const std::vector<obs_scene_item *> &items)
 {
 	bool ret = true;
 	for (auto item : items) {
 		if (obs_sceneitem_visible(item)) {
 			ret = false;
 		}
+		obs_sceneitem_release(item);
+	}
+	return ret;
+}
+
+bool didVisibilityOfAnySceneItemsChange(
+	const std::vector<obs_scene_item *> &items,
+	std::vector<bool> &previousVisibility)
+{
+	std::vector<bool> currentVisibility;
+	for (const auto &item : items) {
+		currentVisibility.emplace_back(obs_sceneitem_visible(item));
+	}
+
+	bool ret = true;
+	if (previousVisibility.size() != currentVisibility.size()) {
+		ret = false;
+	} else {
+		ret = previousVisibility != currentVisibility;
+	}
+	previousVisibility = currentVisibility;
+
+	for (const auto &item : items) {
 		obs_sceneitem_release(item);
 	}
 	return ret;
@@ -54,10 +79,13 @@ bool MacroConditionSceneVisibility::CheckCondition()
 	}
 
 	switch (_condition) {
-	case SceneVisibilityCondition::SHOWN:
+	case Condition::SHOWN:
 		return areAllSceneItemsShown(items);
-	case SceneVisibilityCondition::HIDDEN:
+	case Condition::HIDDEN:
 		return areAllSceneItemsHidden(items);
+	case Condition::CHANGED:
+		return didVisibilityOfAnySceneItemsChange(items,
+							  _previousVisibilty);
 		break;
 	default:
 		break;
@@ -70,7 +98,6 @@ bool MacroConditionSceneVisibility::Save(obs_data_t *obj) const
 	MacroCondition::Save(obj);
 	_scene.Save(obj);
 	_source.Save(obj);
-
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 
 	return true;
@@ -88,8 +115,7 @@ bool MacroConditionSceneVisibility::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	_scene.Load(obj);
 	_source.Load(obj);
-	_condition = static_cast<SceneVisibilityCondition>(
-		obs_data_get_int(obj, "condition"));
+	_condition = static_cast<Condition>(obs_data_get_int(obj, "condition"));
 	return true;
 }
 
@@ -103,7 +129,7 @@ std::string MacroConditionSceneVisibility::GetShortDesc() const
 
 static inline void populateConditionSelection(QComboBox *list)
 {
-	for (auto entry : SceneVisibilityConditionTypes) {
+	for (auto entry : conditionTypes) {
 		list->addItem(obs_module_text(entry.second.c_str()));
 	}
 }
@@ -164,6 +190,7 @@ void MacroConditionSceneVisibilityEdit::SceneChanged(const SceneSelection &s)
 	if (_loading || !_entryData) {
 		return;
 	}
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_scene = s;
 	emit HeaderInfoChanged(
@@ -177,7 +204,16 @@ void MacroConditionSceneVisibilityEdit::ConditionChanged(int index)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_condition = static_cast<SceneVisibilityCondition>(index);
+	_entryData->_condition =
+		static_cast<MacroConditionSceneVisibility::Condition>(index);
+	if (_entryData->_condition ==
+	    MacroConditionSceneVisibility::Condition::CHANGED) {
+		_sources->SetShowAllSelectionType(
+			SceneItemSelectionWidget::AllSelectionType::ANY, false);
+	} else {
+		_sources->SetShowAllSelectionType(
+			SceneItemSelectionWidget::AllSelectionType::ALL, false);
+	}
 }
 
 void MacroConditionSceneVisibilityEdit::UpdateEntryData()
@@ -188,5 +224,13 @@ void MacroConditionSceneVisibilityEdit::UpdateEntryData()
 
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_scenes->SetScene(_entryData->_scene);
+	if (_entryData->_condition ==
+	    MacroConditionSceneVisibility::Condition::CHANGED) {
+		_sources->SetShowAllSelectionType(
+			SceneItemSelectionWidget::AllSelectionType::ANY, false);
+	} else {
+		_sources->SetShowAllSelectionType(
+			SceneItemSelectionWidget::AllSelectionType::ALL, false);
+	}
 	_sources->SetSceneItem(_entryData->_source);
 }
