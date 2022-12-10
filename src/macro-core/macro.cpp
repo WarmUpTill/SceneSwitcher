@@ -594,6 +594,7 @@ void SwitcherData::saveMacros(obs_data_t *obj)
 
 void SwitcherData::loadMacros(obs_data_t *obj)
 {
+	Hotkey::ClearAllHotkeys();
 	switcher->macroProperties.Load(obj);
 
 	macros.clear();

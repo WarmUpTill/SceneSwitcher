@@ -10,63 +10,41 @@ bool MacroConditionHotkey::_registered = MacroConditionFactory::Register(
 	{MacroConditionHotkey::Create, MacroConditionHotkeyEdit::Create,
 	 "AdvSceneSwitcher.condition.hotkey", false});
 
-static void hotkeyCB(void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed)
-{
-	auto hotkeyCondition = static_cast<MacroConditionHotkey *>(data);
-	auto macro = hotkeyCondition->GetMacro();
-	if (macro) {
-		hotkeyCondition->SetPressed(pressed && !macro->Paused());
-	} else {
-		hotkeyCondition->SetPressed(pressed);
-	}
-}
-
 static uint32_t count = 1;
 
 MacroConditionHotkey::MacroConditionHotkey(Macro *m) : MacroCondition(m)
 {
-	if (_hotkeyID != OBS_INVALID_HOTKEY_ID) {
-		obs_hotkey_unregister(_hotkeyID);
-	}
-
-	std::string hotkeyName =
-		"macro_condition_hotkey_" + std::to_string(count);
-
-	_name = obs_module_text("AdvSceneSwitcher.condition.hotkey.name") +
-		std::string(" ") + std::to_string(count);
-	_hotkeyID = obs_hotkey_register_frontend(hotkeyName.c_str(),
-						 _name.c_str(), hotkeyCB, this);
+	auto name = obs_module_text("AdvSceneSwitcher.condition.hotkey.name") +
+		    std::string(" ") + std::to_string(count);
+	_hotkey = Hotkey::GetHotkey(name, true);
 	count++;
-}
-
-MacroConditionHotkey::~MacroConditionHotkey()
-{
-	obs_hotkey_unregister(_hotkeyID);
 }
 
 bool MacroConditionHotkey::CheckCondition()
 {
-	return _pressed;
+	bool ret = _hotkey->GetPressed() ||
+		   _hotkey->GetLastPressed() > _lastCheck;
+	_lastCheck = std::chrono::high_resolution_clock::now();
+	return ret;
 }
 
 bool MacroConditionHotkey::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
-	obs_data_set_string(obj, "desc", _name.c_str());
-	obs_data_array_t *pauseHotkey = obs_hotkey_save(_hotkeyID);
-	obs_data_set_array(obj, "keyBind", pauseHotkey);
-	obs_data_array_release(pauseHotkey);
+	_hotkey->Save(obj);
 	return true;
 }
 
 bool MacroConditionHotkey::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	_name = obs_data_get_string(obj, "desc");
-	obs_data_array_t *pauseHotkey = obs_data_get_array(obj, "keyBind");
-	obs_hotkey_load(_hotkeyID, pauseHotkey);
-	obs_data_array_release(pauseHotkey);
-	obs_hotkey_set_description(_hotkeyID, _name.c_str());
+	if (!_hotkey->Load(obj)) {
+		auto description = obs_data_get_string(obj, "desc");
+		_hotkey = Hotkey::GetHotkey(description);
+		vblog(LOG_WARNING,
+		      "hotkey name conflict for \"%s\" - using previous key bind",
+		      description);
+	}
 	return true;
 }
 
@@ -109,9 +87,18 @@ void MacroConditionHotkeyEdit::NameChanged()
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_name = _name->text().toStdString();
-	obs_hotkey_set_description(_entryData->_hotkeyID,
-				   _entryData->_name.c_str());
+	const auto name = _name->text().toStdString();
+	// In case a hotkey is used by multiple conditions create a new hotkey
+	// with the new description or get an existing hotkey matching this
+	// description.
+	// If the hotkey is only used by this single condition instance try to
+	// update the description.
+	// If updating the description runs into a conflict with an existing
+	// hotkey use its settings instead.
+	if (_entryData->_hotkey.use_count() > 1 ||
+	    !_entryData->_hotkey->UpdateDescription(name)) {
+		_entryData->_hotkey = Hotkey::GetHotkey(name);
+	}
 }
 
 void MacroConditionHotkeyEdit::UpdateEntryData()
@@ -120,5 +107,6 @@ void MacroConditionHotkeyEdit::UpdateEntryData()
 		return;
 	}
 
-	_name->setText(QString::fromStdString(_entryData->_name));
+	_name->setText(
+		QString::fromStdString(_entryData->_hotkey->GetDescription()));
 }

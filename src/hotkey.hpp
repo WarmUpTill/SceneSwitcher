@@ -1,6 +1,45 @@
 #pragma once
+#include <obs.hpp>
+#include <string>
+#include <memory>
+#include <vector>
+#include <chrono>
 
 extern bool canSimulateKeyPresses;
+
+class Hotkey {
+public:
+	Hotkey(const std::string &description);
+	~Hotkey();
+
+	static std::shared_ptr<Hotkey>
+	GetHotkey(const std::string &description,
+		  bool ignoreExistingHotkeys = false);
+	static void ClearAllHotkeys();
+
+	bool Save(obs_data_t *obj) const;
+	bool Load(obs_data_t *obj);
+
+	bool GetPressed() const { return _pressed; }
+	auto GetLastPressed() const { return _lastPressed; }
+	std::string GetDescription() const { return _description; }
+	bool UpdateDescription(const std::string &);
+
+private:
+	static bool DescriptionAvailable(const std::string &);
+	static void Callback(void *data, obs_hotkey_id, obs_hotkey_t *,
+			     bool pressed);
+
+	static std::vector<std::weak_ptr<Hotkey>> _registeredHotkeys;
+	static uint32_t _hotkeyCounter;
+
+	std::string _description;
+	obs_hotkey_id _hotkeyID = OBS_INVALID_HOTKEY_ID;
+	bool _pressed = false;
+	std::chrono::high_resolution_clock::time_point _lastPressed{};
+	// When set will not attempt to share settings with existing hotkey
+	bool _ignoreExistingHotkeys = false;
+};
 
 enum class HotkeyType {
 	Key_NoKey = 0,
