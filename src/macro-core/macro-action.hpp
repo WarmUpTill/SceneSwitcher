@@ -5,6 +5,7 @@
 class MacroAction : public MacroSegment {
 public:
 	MacroAction(Macro *m) : MacroSegment(m) {}
+	virtual ~MacroAction() = default;
 	virtual bool PerformAction() = 0;
 	virtual bool Save(obs_data_t *obj) = 0;
 	virtual bool Load(obs_data_t *obj) = 0;

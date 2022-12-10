@@ -62,6 +62,7 @@ private:
 class MacroCondition : public MacroSegment {
 public:
 	MacroCondition(Macro *m) : MacroSegment(m) {}
+	virtual ~MacroCondition() = default;
 	virtual bool CheckCondition() = 0;
 	virtual bool Save(obs_data_t *obj) = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
