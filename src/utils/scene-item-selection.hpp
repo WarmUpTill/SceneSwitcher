@@ -51,7 +51,7 @@ public:
 	void SetSceneItem(const SceneItemSelection &);
 	void SetScene(const SceneSelection &);
 	void SetShowAll(bool);
-	void SetShowAllSelectionType(AllSelectionType t);
+	void SetShowAllSelectionType(AllSelectionType t, bool resetSelection = true);
 signals:
 	void SceneItemChanged(const SceneItemSelection &);
 

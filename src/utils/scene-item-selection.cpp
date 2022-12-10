@@ -369,10 +369,17 @@ void SceneItemSelectionWidget::SetShowAll(bool value)
 	_hasAllEntry = value;
 }
 
-void SceneItemSelectionWidget::SetShowAllSelectionType(AllSelectionType t)
+void SceneItemSelectionWidget::SetShowAllSelectionType(AllSelectionType t,
+						       bool resetSelection)
 {
 	_allType = t;
-	_sceneItems->setCurrentIndex(0);
+	if (resetSelection) {
+		_sceneItems->setCurrentIndex(0);
+	} else {
+		auto count = _idx->count() - 1;
+		const QSignalBlocker b(_idx);
+		SetupIdxSelection(count > 0 ? count : 1);
+	}
 }
 
 void SceneItemSelectionWidget::SceneChanged(const SceneSelection &s)
