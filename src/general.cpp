@@ -151,6 +151,7 @@ void AdvSceneSwitcher::closeEvent(QCloseEvent *)
 		ui->macroActionConditionSplitter->sizes();
 	switcher->macroListMacroEditSplitterPosition =
 		ui->macroListMacroEditSplitter->sizes();
+
 	obs_frontend_save();
 }
 
@@ -308,11 +309,8 @@ void AdvSceneSwitcher::on_exportSettings_clicked()
 	}
 
 	obs_data_t *obj = obs_data_create();
-
 	switcher->saveSettings(obj);
-
 	obs_data_save_json(obj, file.fileName().toUtf8().constData());
-
 	obs_data_release(obj);
 }
 
@@ -323,13 +321,13 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 	bool start = !switcher->stop;
 	switcher->Stop();
 
-	std::lock_guard<std::mutex> lock(switcher->m);
-
+	QString desktopPath = QStandardPaths::writableLocation(
+		QStandardPaths::DesktopLocation);
 	QString directory = QFileDialog::getOpenFileName(
 		this,
 		tr(obs_module_text(
 			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.importWindowTitle")),
-		QDir::currentPath(),
+		desktopPath,
 		tr(obs_module_text(
 			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType")));
 	if (directory.isEmpty()) {
@@ -350,12 +348,14 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 		return;
 	}
 
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->loadSettings(obj);
-
 	obs_data_release(obj);
 
 	(void)DisplayMessage(obs_module_text(
 		"AdvSceneSwitcher.generalTab.saveOrLoadsettings.loadSuccess"));
+	// Just close the UI and let the user reopen it to not have to
+	// implement updating each setting
 	close();
 
 	// Restart scene switcher if it was active
