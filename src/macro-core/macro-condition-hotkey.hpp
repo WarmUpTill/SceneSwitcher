@@ -1,12 +1,13 @@
 #pragma once
 #include "macro.hpp"
+#include "hotkey.hpp"
+
 #include <QWidget>
 #include <QLineEdit>
 
 class MacroConditionHotkey : public MacroCondition {
 public:
 	MacroConditionHotkey(Macro *m);
-	~MacroConditionHotkey();
 	bool CheckCondition();
 	bool Save(obs_data_t *obj);
 	bool Load(obs_data_t *obj);
@@ -15,13 +16,12 @@ public:
 	{
 		return std::make_shared<MacroConditionHotkey>(m);
 	}
-	void SetPressed(bool value) { _pressed = value; }
 
-	std::string _name;
-	obs_hotkey_id _hotkeyID = OBS_INVALID_HOTKEY_ID;
+	std::shared_ptr<Hotkey> _hotkey;
 
 private:
-	bool _pressed = false;
+	std::chrono::high_resolution_clock::time_point _lastCheck{};
+
 	static bool _registered;
 	static const std::string id;
 };
