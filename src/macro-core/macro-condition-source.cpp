@@ -47,7 +47,7 @@ bool MacroConditionSource::CheckCondition()
 	return ret;
 }
 
-bool MacroConditionSource::Save(obs_data_t *obj)
+bool MacroConditionSource::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
@@ -74,7 +74,7 @@ bool MacroConditionSource::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionSource::GetShortDesc()
+std::string MacroConditionSource::GetShortDesc() const
 {
 	if (_source) {
 		return GetWeakSourceName(_source);

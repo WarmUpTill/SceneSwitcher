@@ -12,7 +12,7 @@ const std::map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 };
 
 void DurationModifier::Save(obs_data_t *obj, const char *condName,
-			    const char *secondsName, const char *unitName)
+			    const char *secondsName, const char *unitName) const
 {
 	obs_data_set_int(obj, condName, static_cast<int>(_type));
 	_dur.Save(obj, secondsName, unitName);
@@ -68,7 +68,7 @@ void DurationModifier::Reset()
 	_dur.Reset();
 }
 
-bool MacroCondition::Save(obs_data_t *obj)
+bool MacroCondition::Save(obs_data_t *obj) const
 {
 	MacroSegment::Save(obj);
 	obs_data_set_string(obj, "id", GetId().c_str());

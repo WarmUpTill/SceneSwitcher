@@ -65,7 +65,7 @@ bool MacroConditionSceneVisibility::CheckCondition()
 	return false;
 }
 
-bool MacroConditionSceneVisibility::Save(obs_data_t *obj)
+bool MacroConditionSceneVisibility::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	_scene.Save(obj);
@@ -93,7 +93,7 @@ bool MacroConditionSceneVisibility::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionSceneVisibility::GetShortDesc()
+std::string MacroConditionSceneVisibility::GetShortDesc() const
 {
 	if (_source.ToString().empty()) {
 		return "";

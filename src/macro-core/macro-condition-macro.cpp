@@ -116,7 +116,7 @@ bool MacroConditionMacro::CheckCondition()
 	return false;
 }
 
-bool MacroConditionMacro::Save(obs_data_t *obj)
+bool MacroConditionMacro::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	SaveMacroList(obj, _macros);
@@ -150,7 +150,7 @@ bool MacroConditionMacro::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionMacro::GetShortDesc()
+std::string MacroConditionMacro::GetShortDesc() const
 {
 	if (_macro.get()) {
 		return _macro->Name();

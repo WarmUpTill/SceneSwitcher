@@ -96,7 +96,7 @@ bool MacroActionSceneOrder::PerformAction()
 	return true;
 }
 
-void MacroActionSceneOrder::LogAction()
+void MacroActionSceneOrder::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
@@ -110,7 +110,7 @@ void MacroActionSceneOrder::LogAction()
 	}
 }
 
-bool MacroActionSceneOrder::Save(obs_data_t *obj)
+bool MacroActionSceneOrder::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	_scene.Save(obj);
@@ -138,7 +138,7 @@ bool MacroActionSceneOrder::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionSceneOrder::GetShortDesc()
+std::string MacroActionSceneOrder::GetShortDesc() const
 {
 	if (_source.ToString().empty()) {
 		return "";

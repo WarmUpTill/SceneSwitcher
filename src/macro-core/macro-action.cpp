@@ -1,7 +1,7 @@
 #include "macro-action.hpp"
 #include "advanced-scene-switcher.hpp"
 
-bool MacroAction::Save(obs_data_t *obj)
+bool MacroAction::Save(obs_data_t *obj) const
 {
 	MacroSegment::Save(obj);
 	obs_data_set_string(obj, "id", GetId().c_str());
@@ -14,7 +14,7 @@ bool MacroAction::Load(obs_data_t *obj)
 	return true;
 }
 
-void MacroAction::LogAction()
+void MacroAction::LogAction() const
 {
 	vblog(LOG_INFO, "performed action %s", GetId().c_str());
 }

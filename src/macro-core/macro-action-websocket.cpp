@@ -41,7 +41,7 @@ bool MacroActionWebsocket::PerformAction()
 	return true;
 }
 
-void MacroActionWebsocket::LogAction()
+void MacroActionWebsocket::LogAction() const
 {
 	switch (_type) {
 	case MacroActionWebsocket::Type::REQUEST:
@@ -57,7 +57,7 @@ void MacroActionWebsocket::LogAction()
 	}
 }
 
-bool MacroActionWebsocket::Save(obs_data_t *obj)
+bool MacroActionWebsocket::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
@@ -75,7 +75,7 @@ bool MacroActionWebsocket::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionWebsocket::GetShortDesc()
+std::string MacroActionWebsocket::GetShortDesc() const
 {
 	if (_type == Type::REQUEST) {
 		return _connection;

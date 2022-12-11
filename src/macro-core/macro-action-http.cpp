@@ -64,7 +64,7 @@ bool MacroActionHttp::PerformAction()
 	return true;
 }
 
-void MacroActionHttp::LogAction()
+void MacroActionHttp::LogAction() const
 {
 	auto it = methods.find(_method);
 	if (it != methods.end()) {
@@ -77,7 +77,7 @@ void MacroActionHttp::LogAction()
 	}
 }
 
-bool MacroActionHttp::Save(obs_data_t *obj)
+bool MacroActionHttp::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_string(obj, "url", _url.c_str());
@@ -97,7 +97,7 @@ bool MacroActionHttp::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionHttp::GetShortDesc()
+std::string MacroActionHttp::GetShortDesc() const
 {
 	return _url;
 }

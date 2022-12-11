@@ -4,7 +4,7 @@
 #include <QDialogButtonBox>
 #include <obs-module.h>
 
-void MacroProperties::Save(obs_data_t *obj)
+void MacroProperties::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
 	obs_data_set_bool(data, "highlightExecuted", _highlightExecuted);

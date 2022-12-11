@@ -43,7 +43,7 @@ bool MacroConditionStudioMode::CheckCondition()
 	return ret;
 }
 
-bool MacroConditionStudioMode::Save(obs_data_t *obj)
+bool MacroConditionStudioMode::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
@@ -60,7 +60,7 @@ bool MacroConditionStudioMode::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionStudioMode::GetShortDesc()
+std::string MacroConditionStudioMode::GetShortDesc() const
 {
 	if (_condition == StudioModeCondition::PREVIEW_SCENE) {
 		return _scene.ToString();

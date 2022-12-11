@@ -64,7 +64,7 @@ bool MacroConditionCursor::CheckCondition()
 	return ret;
 }
 
-bool MacroConditionCursor::Save(obs_data_t *obj)
+bool MacroConditionCursor::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));

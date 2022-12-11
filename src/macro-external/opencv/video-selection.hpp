@@ -11,14 +11,14 @@ enum class VideoSelectionType {
 class VideoSelection {
 public:
 	void Save(obs_data_t *obj, const char *name = "video",
-		  const char *typeName = "videoType");
+		  const char *typeName = "videoType") const;
 	void Load(obs_data_t *obj, const char *name = "video",
 		  const char *typeName = "videoType");
 
-	VideoSelectionType GetType() { return _type; }
-	OBSWeakSource GetVideo();
-	std::string ToString();
-	bool ValidSelection();
+	VideoSelectionType GetType() const { return _type; }
+	OBSWeakSource GetVideo() const;
+	std::string ToString() const;
+	bool ValidSelection() const;
 
 private:
 	OBSWeakSource _source;

@@ -48,17 +48,16 @@ void MacroConditionTimer::SetRandomTimeRemaining()
 	_duration.SetTimeRemaining(remainingTime);
 }
 
-bool MacroConditionTimer::Save(obs_data_t *obj)
+bool MacroConditionTimer::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
 	_duration.Save(obj);
 	_duration2.Save(obj, "seconds2", "displayUnit2");
-	if (!_paused) {
-		_remaining = _duration.TimeRemaining();
-	}
 	if (_saveRemaining) {
-		obs_data_set_double(obj, "remaining", _remaining);
+		obs_data_set_double(obj, "remaining",
+				    _paused ? _remaining
+					    : _duration.TimeRemaining());
 	} else {
 		obs_data_set_double(obj, "remaining", _duration.seconds);
 	}

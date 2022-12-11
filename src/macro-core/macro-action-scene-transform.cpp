@@ -24,14 +24,14 @@ bool MacroActionSceneTransform::PerformAction()
 	return true;
 }
 
-void MacroActionSceneTransform::LogAction()
+void MacroActionSceneTransform::LogAction() const
 {
 	vblog(LOG_INFO,
 	      "performed transform action for source \"%s\" on scene \"%s\"",
 	      _source.ToString().c_str(), _scene.ToString().c_str());
 }
 
-bool MacroActionSceneTransform::Save(obs_data_t *obj)
+bool MacroActionSceneTransform::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	_scene.Save(obj);
@@ -56,7 +56,7 @@ bool MacroActionSceneTransform::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionSceneTransform::GetShortDesc()
+std::string MacroActionSceneTransform::GetShortDesc() const
 {
 	if (_source.ToString().empty()) {
 		return "";

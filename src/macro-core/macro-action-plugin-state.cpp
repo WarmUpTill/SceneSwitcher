@@ -76,7 +76,7 @@ bool MacroActionPluginState::PerformAction()
 	return true;
 }
 
-void MacroActionPluginState::LogAction()
+void MacroActionPluginState::LogAction() const
 {
 	switch (_action) {
 	case PluginStateAction::STOP:
@@ -96,7 +96,7 @@ void MacroActionPluginState::LogAction()
 	}
 }
 
-bool MacroActionPluginState::Save(obs_data_t *obj)
+bool MacroActionPluginState::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "action", static_cast<int>(_action));

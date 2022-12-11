@@ -147,7 +147,7 @@ bool MacroConditionAudio::CheckCondition()
 	return false;
 }
 
-bool MacroConditionAudio::Save(obs_data_t *obj)
+bool MacroConditionAudio::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_string(obj, "audioSource",
@@ -199,7 +199,7 @@ bool MacroConditionAudio::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionAudio::GetShortDesc()
+std::string MacroConditionAudio::GetShortDesc() const
 {
 	if (_audioSource) {
 		return GetWeakSourceName(_audioSource);

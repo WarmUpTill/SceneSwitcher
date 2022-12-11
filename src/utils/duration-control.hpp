@@ -16,16 +16,16 @@ enum class DurationUnit {
 class Duration {
 public:
 	void Save(obs_data_t *obj, const char *secondsName = "seconds",
-		  const char *unitName = "displayUnit");
+		  const char *unitName = "displayUnit") const;
 	void Load(obs_data_t *obj, const char *secondsName = "seconds",
 		  const char *unitName = "displayUnit");
 
 	bool DurationReached();
-	bool IsReset();
-	double TimeRemaining();
+	bool IsReset() const;
+	double TimeRemaining() const;
 	void SetTimeRemaining(double);
 	void Reset();
-	std::string ToString();
+	std::string ToString() const;
 
 	double seconds = 0.;
 	// only used for UI

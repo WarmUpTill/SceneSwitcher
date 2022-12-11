@@ -11,15 +11,15 @@ class MacroSegment {
 public:
 	MacroSegment(Macro *m) : _macro(m) {}
 	virtual ~MacroSegment() = default;
-	Macro *GetMacro() { return _macro; }
+	Macro *GetMacro() const { return _macro; }
 	void SetIndex(int idx) { _idx = idx; }
-	int GetIndex() { return _idx; }
+	int GetIndex() const { return _idx; }
 	void SetCollapsed(bool collapsed) { _collapsed = collapsed; }
-	bool GetCollapsed() { return _collapsed; }
-	virtual bool Save(obs_data_t *obj) = 0;
+	bool GetCollapsed() const { return _collapsed; }
+	virtual bool Save(obs_data_t *obj) const = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
-	virtual std::string GetShortDesc();
-	virtual std::string GetId() = 0;
+	virtual std::string GetShortDesc() const;
+	virtual std::string GetId() const = 0;
 	void SetHighlight();
 	bool Highlight();
 

@@ -7,7 +7,7 @@
 namespace advss {
 
 struct Size {
-	void Save(obs_data_t *obj, const char *name);
+	void Save(obs_data_t *obj, const char *name) const;
 	void Load(obs_data_t *obj, const char *name);
 	cv::Size CV();
 
@@ -16,7 +16,7 @@ struct Size {
 };
 
 struct Area {
-	void Save(obs_data_t *obj, const char *name);
+	void Save(obs_data_t *obj, const char *name) const;
 	void Load(obs_data_t *obj, const char *name);
 
 	int x;

@@ -72,7 +72,7 @@ bool MacroActionSudioMode::PerformAction()
 	return true;
 }
 
-void MacroActionSudioMode::LogAction()
+void MacroActionSudioMode::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
@@ -84,7 +84,7 @@ void MacroActionSudioMode::LogAction()
 	}
 }
 
-bool MacroActionSudioMode::Save(obs_data_t *obj)
+bool MacroActionSudioMode::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
@@ -105,7 +105,7 @@ bool MacroActionSudioMode::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionSudioMode::GetShortDesc()
+std::string MacroActionSudioMode::GetShortDesc() const
 {
 	if (_action == StudioModeAction::SET_SCENE) {
 		return _scene.ToString();

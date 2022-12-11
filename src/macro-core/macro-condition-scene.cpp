@@ -77,7 +77,7 @@ bool MacroConditionScene::CheckCondition()
 	return false;
 }
 
-bool MacroConditionScene::Save(obs_data_t *obj)
+bool MacroConditionScene::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	_scene.Save(obj);
@@ -104,7 +104,7 @@ bool MacroConditionScene::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionScene::GetShortDesc()
+std::string MacroConditionScene::GetShortDesc() const
 {
 	if (_type == Type::CURRENT || _type == Type::PREVIOUS) {
 		return _scene.ToString();

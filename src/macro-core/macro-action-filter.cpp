@@ -36,7 +36,7 @@ bool MacroActionFilter::PerformAction()
 	return true;
 }
 
-void MacroActionFilter::LogAction()
+void MacroActionFilter::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
@@ -50,7 +50,7 @@ void MacroActionFilter::LogAction()
 	}
 }
 
-bool MacroActionFilter::Save(obs_data_t *obj)
+bool MacroActionFilter::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
@@ -72,7 +72,7 @@ bool MacroActionFilter::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionFilter::GetShortDesc()
+std::string MacroActionFilter::GetShortDesc() const
 {
 	if (_filter && _source) {
 		return GetWeakSourceName(_source) + " - " +

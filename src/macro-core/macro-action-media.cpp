@@ -57,7 +57,7 @@ bool MacroActionMedia::PerformAction()
 	return true;
 }
 
-void MacroActionMedia::LogAction()
+void MacroActionMedia::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
@@ -70,7 +70,7 @@ void MacroActionMedia::LogAction()
 	}
 }
 
-bool MacroActionMedia::Save(obs_data_t *obj)
+bool MacroActionMedia::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_string(obj, "mediaSource",
@@ -90,7 +90,7 @@ bool MacroActionMedia::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionMedia::GetShortDesc()
+std::string MacroActionMedia::GetShortDesc() const
 {
 	if (_mediaSource) {
 		return GetWeakSourceName(_mediaSource);

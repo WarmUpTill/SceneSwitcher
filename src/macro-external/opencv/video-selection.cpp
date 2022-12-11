@@ -2,7 +2,7 @@
 #include "utility.hpp"
 
 void VideoSelection::Save(obs_data_t *obj, const char *name,
-			  const char *typeName)
+			  const char *typeName) const
 {
 	obs_data_set_int(obj, typeName, static_cast<int>(_type));
 
@@ -34,7 +34,7 @@ void VideoSelection::Load(obs_data_t *obj, const char *name,
 	}
 }
 
-OBSWeakSource VideoSelection::GetVideo()
+OBSWeakSource VideoSelection::GetVideo() const
 {
 	if (_type == VideoSelectionType::SOURCE) {
 		return _source;
@@ -42,7 +42,7 @@ OBSWeakSource VideoSelection::GetVideo()
 	return nullptr;
 }
 
-std::string VideoSelection::ToString()
+std::string VideoSelection::ToString() const
 {
 	switch (_type) {
 	case VideoSelectionType::SOURCE:
@@ -55,7 +55,7 @@ std::string VideoSelection::ToString()
 	return "";
 }
 
-bool VideoSelection::ValidSelection()
+bool VideoSelection::ValidSelection() const
 {
 	return _type == VideoSelectionType::OBS_MAIN || !!_source;
 }

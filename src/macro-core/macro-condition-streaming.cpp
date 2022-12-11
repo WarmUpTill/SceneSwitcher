@@ -54,7 +54,7 @@ bool MacroConditionStream::CheckCondition()
 	return stateMatch;
 }
 
-bool MacroConditionStream::Save(obs_data_t *obj)
+bool MacroConditionStream::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "state", static_cast<int>(_streamState));

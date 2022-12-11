@@ -42,7 +42,7 @@ bool MacroConditionPluginState::CheckCondition()
 	return false;
 }
 
-bool MacroConditionPluginState::Save(obs_data_t *obj)
+bool MacroConditionPluginState::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));

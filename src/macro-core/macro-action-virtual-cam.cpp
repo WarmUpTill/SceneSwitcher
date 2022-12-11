@@ -35,7 +35,7 @@ bool MacroActionVCam::PerformAction()
 	return true;
 }
 
-void MacroActionVCam::LogAction()
+void MacroActionVCam::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
@@ -46,7 +46,7 @@ void MacroActionVCam::LogAction()
 	}
 }
 
-bool MacroActionVCam::Save(obs_data_t *obj)
+bool MacroActionVCam::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "action", static_cast<int>(_action));

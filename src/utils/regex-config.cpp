@@ -4,7 +4,7 @@
 #include <QLayout>
 #include <obs-module.h>
 
-void RegexConfig::Save(obs_data_t *obj)
+void RegexConfig::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
 	obs_data_set_bool(data, "enable", _enable);

@@ -54,7 +54,7 @@ bool MacroActionRecord::PerformAction()
 	return true;
 }
 
-void MacroActionRecord::LogAction()
+void MacroActionRecord::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
@@ -65,7 +65,7 @@ void MacroActionRecord::LogAction()
 	}
 }
 
-bool MacroActionRecord::Save(obs_data_t *obj)
+bool MacroActionRecord::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "action", static_cast<int>(_action));

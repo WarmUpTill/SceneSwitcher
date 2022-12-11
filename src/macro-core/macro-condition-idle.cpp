@@ -15,7 +15,7 @@ bool MacroConditionIdle::CheckCondition()
 	return secondsSinceLastInput() >= _duration.seconds;
 }
 
-bool MacroConditionIdle::Save(obs_data_t *obj)
+bool MacroConditionIdle::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	_duration.Save(obj);

@@ -74,7 +74,7 @@ bool MacroActionVariable::PerformAction()
 	return true;
 }
 
-bool MacroActionVariable::Save(obs_data_t *obj)
+bool MacroActionVariable::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_string(obj, "variableName", _variableName.c_str());
@@ -96,7 +96,7 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionVariable::GetShortDesc()
+std::string MacroActionVariable::GetShortDesc() const
 {
 	return _variableName;
 }

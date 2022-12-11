@@ -13,7 +13,7 @@ class RegexConfigDialog;
 
 class RegexConfig {
 public:
-	void Save(obs_data_t *obj);
+	void Save(obs_data_t *obj) const;
 	void Load(obs_data_t *obj);
 
 	bool Enabled() const { return _enable; }

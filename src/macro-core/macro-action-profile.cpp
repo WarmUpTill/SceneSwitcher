@@ -15,12 +15,12 @@ bool MacroActionProfile::PerformAction()
 	return true;
 }
 
-void MacroActionProfile::LogAction()
+void MacroActionProfile::LogAction() const
 {
 	vblog(LOG_INFO, "set profile type to \"%s\"", _profile.c_str());
 }
 
-bool MacroActionProfile::Save(obs_data_t *obj)
+bool MacroActionProfile::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_string(obj, "profile", _profile.c_str());
@@ -34,7 +34,7 @@ bool MacroActionProfile::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionProfile::GetShortDesc()
+std::string MacroActionProfile::GetShortDesc() const
 {
 	return _profile;
 }
