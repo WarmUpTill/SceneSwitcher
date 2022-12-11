@@ -28,7 +28,7 @@ bool MacroConditionHotkey::CheckCondition()
 	return ret;
 }
 
-bool MacroConditionHotkey::Save(obs_data_t *obj)
+bool MacroConditionHotkey::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	_hotkey->Save(obj);

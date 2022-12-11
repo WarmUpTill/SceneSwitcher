@@ -119,7 +119,7 @@ bool MacroActionTransition::PerformAction()
 	return true;
 }
 
-void MacroActionTransition::LogAction()
+void MacroActionTransition::LogAction() const
 {
 	std::string msgBegin;
 	switch (_type) {
@@ -151,7 +151,7 @@ void MacroActionTransition::LogAction()
 	}
 }
 
-bool MacroActionTransition::Save(obs_data_t *obj)
+bool MacroActionTransition::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "actionType", static_cast<int>(_type));
@@ -177,7 +177,7 @@ bool MacroActionTransition::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionTransition::GetShortDesc()
+std::string MacroActionTransition::GetShortDesc() const
 {
 	std::string msgBegin;
 	switch (_type) {

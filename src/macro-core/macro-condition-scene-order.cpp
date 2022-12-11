@@ -135,7 +135,7 @@ bool MacroConditionSceneOrder::CheckCondition()
 	return ret;
 }
 
-bool MacroConditionSceneOrder::Save(obs_data_t *obj)
+bool MacroConditionSceneOrder::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	_scene.Save(obj);
@@ -174,7 +174,7 @@ bool MacroConditionSceneOrder::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionSceneOrder::GetShortDesc()
+std::string MacroConditionSceneOrder::GetShortDesc() const
 {
 	if (_source.ToString().empty()) {
 		return "";

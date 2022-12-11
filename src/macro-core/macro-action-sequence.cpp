@@ -66,12 +66,12 @@ bool MacroActionSequence::PerformAction()
 	return macro->PerformActions();
 }
 
-void MacroActionSequence::LogAction()
+void MacroActionSequence::LogAction() const
 {
 	vblog(LOG_INFO, "running macro sequence");
 }
 
-bool MacroActionSequence::Save(obs_data_t *obj)
+bool MacroActionSequence::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	SaveMacroList(obj, _macros);

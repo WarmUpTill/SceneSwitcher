@@ -40,7 +40,7 @@ public:
 
 	void Save(obs_data_t *obj, const char *condName = "time_constraint",
 		  const char *secondsName = "seconds",
-		  const char *unitName = "displayUnit");
+		  const char *unitName = "displayUnit") const;
 	void Load(obs_data_t *obj, const char *condName = "time_constraint",
 		  const char *secondsName = "seconds",
 		  const char *unitName = "displayUnit");
@@ -64,7 +64,7 @@ public:
 	MacroCondition(Macro *m) : MacroSegment(m) {}
 	virtual ~MacroCondition() = default;
 	virtual bool CheckCondition() = 0;
-	virtual bool Save(obs_data_t *obj) = 0;
+	virtual bool Save(obs_data_t *obj) const = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
 	LogicType GetLogicType() { return _logic; }
 	void SetLogicType(LogicType logic) { _logic = logic; }

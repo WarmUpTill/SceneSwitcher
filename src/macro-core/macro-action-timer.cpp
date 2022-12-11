@@ -56,7 +56,7 @@ bool MacroActionTimer::PerformAction()
 	return true;
 }
 
-void MacroActionTimer::LogAction()
+void MacroActionTimer::LogAction() const
 {
 	if (!_macro.get()) {
 		return;
@@ -84,7 +84,7 @@ void MacroActionTimer::LogAction()
 	}
 }
 
-bool MacroActionTimer::Save(obs_data_t *obj)
+bool MacroActionTimer::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	_macro.Save(obj);
@@ -103,7 +103,7 @@ bool MacroActionTimer::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionTimer::GetShortDesc()
+std::string MacroActionTimer::GetShortDesc() const
 {
 	if (_macro.get()) {
 		return _macro->Name();

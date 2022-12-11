@@ -27,12 +27,12 @@ bool MacroActionRun::PerformAction()
 	return true;
 }
 
-void MacroActionRun::LogAction()
+void MacroActionRun::LogAction() const
 {
 	vblog(LOG_INFO, "run \"%s\"", _path.c_str());
 }
 
-bool MacroActionRun::Save(obs_data_t *obj)
+bool MacroActionRun::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_string(obj, "path", _path.c_str());
@@ -67,7 +67,7 @@ bool MacroActionRun::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionRun::GetShortDesc()
+std::string MacroActionRun::GetShortDesc() const
 {
 	return _path;
 }

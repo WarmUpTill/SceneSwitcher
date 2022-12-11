@@ -39,8 +39,8 @@ QString formatJsonString(QString);
 QString escapeForRegex(QString &s);
 void loadTransformState(obs_data_t *obj, struct obs_transform_info &info,
 			struct obs_sceneitem_crop &crop);
-bool saveTransformState(obs_data_t *obj, struct obs_transform_info &info,
-			struct obs_sceneitem_crop &crop);
+bool saveTransformState(obs_data_t *obj, const struct obs_transform_info &info,
+			const struct obs_sceneitem_crop &crop);
 std::string getSceneItemTransform(obs_scene_item *item);
 void placeWidgets(std::string text, QBoxLayout *layout,
 		  std::unordered_map<std::string, QWidget *> placeholders,

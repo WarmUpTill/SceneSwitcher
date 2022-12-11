@@ -137,7 +137,7 @@ void MacroConditionTransition::TransitionEnded(void *data, calldata_t *)
 	transitionCond->_ended = true;
 }
 
-bool MacroConditionTransition::Save(obs_data_t *obj)
+bool MacroConditionTransition::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
@@ -159,7 +159,7 @@ bool MacroConditionTransition::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionTransition::GetShortDesc()
+std::string MacroConditionTransition::GetShortDesc() const
 {
 	if (_condition == TransitionCondition::CURRENT ||
 	    _condition == TransitionCondition::DURATION ||

@@ -8,7 +8,7 @@
 #include <QLabel>
 #include <QScrollBar>
 
-bool MacroSegment::Save(obs_data_t *obj)
+bool MacroSegment::Save(obs_data_t *obj) const
 {
 	obs_data_set_bool(obj, "collapsed", static_cast<int>(_collapsed));
 	return true;
@@ -20,7 +20,7 @@ bool MacroSegment::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroSegment::GetShortDesc()
+std::string MacroSegment::GetShortDesc() const
 {
 	return "";
 }

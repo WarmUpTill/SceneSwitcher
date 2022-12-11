@@ -47,7 +47,7 @@ bool MacroActionStream::PerformAction()
 	return true;
 }
 
-void MacroActionStream::LogAction()
+void MacroActionStream::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
@@ -58,7 +58,7 @@ void MacroActionStream::LogAction()
 	}
 }
 
-bool MacroActionStream::Save(obs_data_t *obj)
+bool MacroActionStream::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "action", static_cast<int>(_action));

@@ -201,7 +201,7 @@ bool MacroActionAudio::PerformAction()
 	return true;
 }
 
-void MacroActionAudio::LogAction()
+void MacroActionAudio::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
@@ -216,7 +216,7 @@ void MacroActionAudio::LogAction()
 	}
 }
 
-bool MacroActionAudio::Save(obs_data_t *obj)
+bool MacroActionAudio::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	_duration.Save(obj);
@@ -267,7 +267,7 @@ bool MacroActionAudio::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionAudio::GetShortDesc()
+std::string MacroActionAudio::GetShortDesc() const
 {
 	if (_audioSource) {
 		return GetWeakSourceName(_audioSource);

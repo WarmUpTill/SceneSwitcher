@@ -59,7 +59,7 @@ bool MacroActionScreenshot::PerformAction()
 	return true;
 }
 
-void MacroActionScreenshot::LogAction()
+void MacroActionScreenshot::LogAction() const
 {
 	vblog(LOG_INFO, "trigger screenshot for \"%s\"",
 	      _targetType == TargetType::SOURCE
@@ -67,7 +67,7 @@ void MacroActionScreenshot::LogAction()
 		      : _scene.ToString().c_str());
 }
 
-bool MacroActionScreenshot::Save(obs_data_t *obj)
+bool MacroActionScreenshot::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	_scene.Save(obj);
@@ -91,7 +91,7 @@ bool MacroActionScreenshot::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionScreenshot::GetShortDesc()
+std::string MacroActionScreenshot::GetShortDesc() const
 {
 	if (_targetType == TargetType::SCENE) {
 		return _scene.ToString();

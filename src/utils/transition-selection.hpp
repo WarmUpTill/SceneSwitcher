@@ -6,7 +6,7 @@
 class TransitionSelection {
 public:
 	void Save(obs_data_t *obj, const char *name = "transition",
-		  const char *typeName = "transitionType");
+		  const char *typeName = "transitionType") const;
 	void Load(obs_data_t *obj, const char *name = "transition",
 		  const char *typeName = "transitionType");
 
@@ -16,9 +16,9 @@ public:
 		ANY,
 	};
 
-	Type GetType() { return _type; }
-	OBSWeakSource GetTransition();
-	std::string ToString();
+	Type GetType() const { return _type; }
+	OBSWeakSource GetTransition() const;
+	std::string ToString() const;
 
 private:
 	OBSWeakSource _transition;

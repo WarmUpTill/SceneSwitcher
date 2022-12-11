@@ -52,12 +52,12 @@ bool MacroActionRandom::PerformAction()
 	return macros[idx]->PerformActions();
 }
 
-void MacroActionRandom::LogAction()
+void MacroActionRandom::LogAction() const
 {
 	vblog(LOG_INFO, "running random macro");
 }
 
-bool MacroActionRandom::Save(obs_data_t *obj)
+bool MacroActionRandom::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	SaveMacroList(obj, _macros);

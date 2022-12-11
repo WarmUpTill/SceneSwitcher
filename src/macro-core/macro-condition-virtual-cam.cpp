@@ -35,7 +35,7 @@ bool MacroConditionVCam::CheckCondition()
 	return stateMatch;
 }
 
-bool MacroConditionVCam::Save(obs_data_t *obj)
+bool MacroConditionVCam::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "state", static_cast<int>(_state));

@@ -49,7 +49,7 @@ bool MacroConditionFilter::CheckCondition()
 	return ret;
 }
 
-bool MacroConditionFilter::Save(obs_data_t *obj)
+bool MacroConditionFilter::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
@@ -79,7 +79,7 @@ bool MacroConditionFilter::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionFilter::GetShortDesc()
+std::string MacroConditionFilter::GetShortDesc() const
 {
 	if (_filter && _source) {
 		return GetWeakSourceName(_source) + " - " +

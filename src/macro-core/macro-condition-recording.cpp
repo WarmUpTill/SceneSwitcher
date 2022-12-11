@@ -35,7 +35,7 @@ bool MacroConditionRecord::CheckCondition()
 	return stateMatch;
 }
 
-bool MacroConditionRecord::Save(obs_data_t *obj)
+bool MacroConditionRecord::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "state", static_cast<int>(_recordState));

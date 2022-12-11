@@ -147,7 +147,7 @@ int getCountOfSceneItemOccurance(const SceneSelection &s,
 }
 
 std::vector<obs_scene_item *>
-SceneItemSelection::GetSceneItems(SceneSelection &sceneSelection)
+SceneItemSelection::GetSceneItems(SceneSelection &sceneSelection) const
 {
 	std::vector<obs_scene_item *> ret;
 	auto s = obs_weak_source_get_source(sceneSelection.GetScene(false));
@@ -186,7 +186,7 @@ SceneItemSelection::GetSceneItems(SceneSelection &sceneSelection)
 	return ret;
 }
 
-std::string SceneItemSelection::ToString()
+std::string SceneItemSelection::ToString() const
 {
 	if (_type == Type::VARIABLE) {
 		auto var = _variable.lock();

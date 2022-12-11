@@ -2,7 +2,7 @@
 #include "advanced-scene-switcher.hpp"
 
 void TransitionSelection::Save(obs_data_t *obj, const char *name,
-			       const char *typeName)
+			       const char *typeName) const
 {
 	obs_data_set_int(obj, typeName, static_cast<int>(_type));
 
@@ -30,7 +30,7 @@ void TransitionSelection::Load(obs_data_t *obj, const char *name,
 	}
 }
 
-OBSWeakSource TransitionSelection::GetTransition()
+OBSWeakSource TransitionSelection::GetTransition() const
 {
 	switch (_type) {
 	case Type::TRANSITION:
@@ -48,7 +48,7 @@ OBSWeakSource TransitionSelection::GetTransition()
 	return nullptr;
 }
 
-std::string TransitionSelection::ToString()
+std::string TransitionSelection::ToString() const
 {
 	switch (_type) {
 	case Type::TRANSITION:

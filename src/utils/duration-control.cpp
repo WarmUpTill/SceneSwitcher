@@ -7,7 +7,7 @@
 #include <QHBoxLayout>
 
 void Duration::Save(obs_data_t *obj, const char *secondsName,
-		    const char *unitName)
+		    const char *unitName) const
 {
 	obs_data_set_double(obj, secondsName, seconds);
 	obs_data_set_int(obj, unitName, static_cast<int>(displayUnit));
@@ -32,12 +32,12 @@ bool Duration::DurationReached()
 	return runTime.count() >= seconds * 1000;
 }
 
-bool Duration::IsReset()
+bool Duration::IsReset() const
 {
 	return _startTime.time_since_epoch().count() == 0;
 }
 
-double Duration::TimeRemaining()
+double Duration::TimeRemaining() const
 {
 	if (IsReset()) {
 		return seconds;
@@ -95,7 +95,7 @@ std::string durationUnitToString(DurationUnit u)
 	return "";
 }
 
-std::string Duration::ToString()
+std::string Duration::ToString() const
 {
 	std::ostringstream ss;
 	ss << std::fixed << std::setprecision(2)

@@ -377,7 +377,7 @@ bool MacroConditionStats::CheckCondition()
 	return false;
 }
 
-bool MacroConditionStats::Save(obs_data_t *obj)
+bool MacroConditionStats::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_double(obj, "value", _value);
@@ -397,7 +397,7 @@ bool MacroConditionStats::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionStats::GetShortDesc()
+std::string MacroConditionStats::GetShortDesc() const
 {
 	auto it = statsTypes.find(_type);
 	if (it != statsTypes.end()) {

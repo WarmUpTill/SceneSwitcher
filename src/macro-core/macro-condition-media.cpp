@@ -199,7 +199,7 @@ bool MacroConditionMedia::CheckCondition()
 	return match;
 }
 
-bool MacroConditionMedia::Save(obs_data_t *obj)
+bool MacroConditionMedia::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
@@ -289,7 +289,7 @@ bool MacroConditionMedia::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionMedia::GetShortDesc()
+std::string MacroConditionMedia::GetShortDesc() const
 {
 	switch (_sourceType) {
 	case Type::SOURCE:

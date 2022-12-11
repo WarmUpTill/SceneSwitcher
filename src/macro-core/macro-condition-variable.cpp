@@ -95,7 +95,7 @@ bool MacroConditionVariable::CheckCondition()
 	return false;
 }
 
-bool MacroConditionVariable::Save(obs_data_t *obj)
+bool MacroConditionVariable::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_string(obj, "variableName", _variableName.c_str());
@@ -117,7 +117,7 @@ bool MacroConditionVariable::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionVariable::GetShortDesc()
+std::string MacroConditionVariable::GetShortDesc() const
 {
 	return _variableName;
 }

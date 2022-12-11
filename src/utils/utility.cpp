@@ -382,8 +382,8 @@ void loadTransformState(obs_data_t *obj, struct obs_transform_info &info,
 	crop.right = (int)obs_data_get_int(obj, "right");
 }
 
-bool saveTransformState(obs_data_t *obj, struct obs_transform_info &info,
-			struct obs_sceneitem_crop &crop)
+bool saveTransformState(obs_data_t *obj, const struct obs_transform_info &info,
+			const struct obs_sceneitem_crop &crop)
 {
 	struct vec2 pos = info.pos;
 	struct vec2 scale = info.scale;

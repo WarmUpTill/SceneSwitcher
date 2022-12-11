@@ -150,7 +150,7 @@ bool MacroConditionFile::CheckCondition()
 	return false;
 }
 
-bool MacroConditionFile::Save(obs_data_t *obj)
+bool MacroConditionFile::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	_regex.Save(obj);
@@ -182,7 +182,7 @@ bool MacroConditionFile::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionFile::GetShortDesc()
+std::string MacroConditionFile::GetShortDesc() const
 {
 	return _file;
 }

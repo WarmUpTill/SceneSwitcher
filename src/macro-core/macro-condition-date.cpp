@@ -182,7 +182,7 @@ bool MacroConditionDate::CheckCondition()
 	return CheckRegularDate(msSinceLastCheck);
 }
 
-bool MacroConditionDate::Save(obs_data_t *obj)
+bool MacroConditionDate::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "dayOfWeek", static_cast<int>(_dayOfWeek));
@@ -232,7 +232,7 @@ bool MacroConditionDate::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionDate::GetShortDesc()
+std::string MacroConditionDate::GetShortDesc() const
 {
 	if (_dayOfWeekCheck) {
 		auto it = dayOfWeekNames.find(_dayOfWeek);
@@ -285,17 +285,17 @@ void MacroConditionDate::SetTime2(const QTime &time)
 	_origDateTime2.setTime(time);
 }
 
-QDateTime MacroConditionDate::GetDateTime1()
+QDateTime MacroConditionDate::GetDateTime1() const
 {
 	return _repeat && _updateOnRepeat ? _dateTime : _origDateTime;
 }
 
-QDateTime MacroConditionDate::GetDateTime2()
+QDateTime MacroConditionDate::GetDateTime2() const
 {
 	return _repeat && _updateOnRepeat ? _dateTime2 : _origDateTime2;
 }
 
-QDateTime MacroConditionDate::GetNextMatchDateTime()
+QDateTime MacroConditionDate::GetNextMatchDateTime() const
 {
 	return _dateTime;
 }

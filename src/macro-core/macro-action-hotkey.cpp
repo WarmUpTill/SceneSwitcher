@@ -237,12 +237,12 @@ bool MacroActionHotkey::PerformAction()
 	return true;
 }
 
-void MacroActionHotkey::LogAction()
+void MacroActionHotkey::LogAction() const
 {
 	vblog(LOG_INFO, "sent hotkey");
 }
 
-bool MacroActionHotkey::Save(obs_data_t *obj)
+bool MacroActionHotkey::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "key", static_cast<int>(_key));

@@ -18,7 +18,7 @@ bool MacroConditionProfile::CheckCondition()
 	return match;
 }
 
-bool MacroConditionProfile::Save(obs_data_t *obj)
+bool MacroConditionProfile::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_string(obj, "profile", _profile.c_str());
@@ -32,7 +32,7 @@ bool MacroConditionProfile::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionProfile::GetShortDesc()
+std::string MacroConditionProfile::GetShortDesc() const
 {
 	return _profile;
 }

@@ -9,7 +9,7 @@
 // Global macro properties
 class MacroProperties {
 public:
-	void Save(obs_data_t *obj);
+	void Save(obs_data_t *obj) const;
 	void Load(obs_data_t *obj);
 
 	bool _highlightExecuted = false;

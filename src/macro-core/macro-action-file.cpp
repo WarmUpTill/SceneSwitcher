@@ -40,7 +40,7 @@ bool MacroActionFile::PerformAction()
 	return true;
 }
 
-void MacroActionFile::LogAction()
+void MacroActionFile::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
@@ -52,7 +52,7 @@ void MacroActionFile::LogAction()
 	}
 }
 
-bool MacroActionFile::Save(obs_data_t *obj)
+bool MacroActionFile::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_string(obj, "file", _file.c_str());
@@ -70,7 +70,7 @@ bool MacroActionFile::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionFile::GetShortDesc()
+std::string MacroActionFile::GetShortDesc() const
 {
 	return _file;
 }

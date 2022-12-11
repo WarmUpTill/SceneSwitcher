@@ -118,7 +118,7 @@ bool MacroActionSwitchScene::PerformAction()
 	return true;
 }
 
-void MacroActionSwitchScene::LogAction()
+void MacroActionSwitchScene::LogAction() const
 {
 	auto t = _scene.GetType();
 	auto sceneName = GetWeakSourceName(_scene.GetScene(false));
@@ -140,7 +140,7 @@ void MacroActionSwitchScene::LogAction()
 	}
 }
 
-bool MacroActionSwitchScene::Save(obs_data_t *obj)
+bool MacroActionSwitchScene::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	_scene.Save(obj);
@@ -162,7 +162,7 @@ bool MacroActionSwitchScene::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionSwitchScene::GetShortDesc()
+std::string MacroActionSwitchScene::GetShortDesc() const
 {
 	return _scene.ToString();
 }

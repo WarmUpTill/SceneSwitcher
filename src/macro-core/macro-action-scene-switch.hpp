@@ -10,11 +10,11 @@ class MacroActionSwitchScene : public MacroAction {
 public:
 	MacroActionSwitchScene(Macro *m) : MacroAction(m) {}
 	bool PerformAction();
-	void LogAction();
-	bool Save(obs_data_t *obj);
+	void LogAction() const;
+	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
-	std::string GetShortDesc();
-	std::string GetId() { return id; };
+	std::string GetShortDesc() const;
+	std::string GetId() const { return id; };
 
 	static std::shared_ptr<MacroAction> Create(Macro *m)
 	{

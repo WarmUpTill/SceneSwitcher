@@ -25,7 +25,7 @@ bool MacroConditionProcess::CheckCondition()
 	return (equals || matches) && focus;
 }
 
-bool MacroConditionProcess::Save(obs_data_t *obj)
+bool MacroConditionProcess::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_string(obj, "process", _process.c_str());
@@ -41,7 +41,7 @@ bool MacroConditionProcess::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionProcess::GetShortDesc()
+std::string MacroConditionProcess::GetShortDesc() const
 {
 	return _process;
 }

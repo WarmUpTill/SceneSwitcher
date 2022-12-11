@@ -246,7 +246,7 @@ void Macro::UpdateConditionIndices()
 	}
 }
 
-bool Macro::Save(obs_data_t *obj)
+bool Macro::Save(obs_data_t *obj) const
 {
 	obs_data_set_string(obj, "name", _name.c_str());
 	obs_data_set_bool(obj, "pause", _paused);

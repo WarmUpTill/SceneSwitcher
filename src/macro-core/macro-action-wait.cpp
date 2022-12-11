@@ -52,7 +52,7 @@ bool MacroActionWait::PerformAction()
 	return !switcher->abortMacroWait;
 }
 
-bool MacroActionWait::Save(obs_data_t *obj)
+bool MacroActionWait::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	_duration.Save(obj);

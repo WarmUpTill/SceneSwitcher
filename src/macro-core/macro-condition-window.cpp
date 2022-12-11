@@ -73,7 +73,7 @@ bool MacroConditionWindow::CheckCondition()
 	return match;
 }
 
-bool MacroConditionWindow::Save(obs_data_t *obj)
+bool MacroConditionWindow::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_string(obj, "window", _window.c_str());
@@ -95,7 +95,7 @@ bool MacroConditionWindow::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionWindow::GetShortDesc()
+std::string MacroConditionWindow::GetShortDesc() const
 {
 	return _window;
 }

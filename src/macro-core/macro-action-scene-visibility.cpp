@@ -92,7 +92,7 @@ bool MacroActionSceneVisibility::PerformAction()
 	return true;
 }
 
-void MacroActionSceneVisibility::LogAction()
+void MacroActionSceneVisibility::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
@@ -113,7 +113,7 @@ void MacroActionSceneVisibility::LogAction()
 	}
 }
 
-bool MacroActionSceneVisibility::Save(obs_data_t *obj)
+bool MacroActionSceneVisibility::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	_scene.Save(obj);
@@ -148,7 +148,7 @@ bool MacroActionSceneVisibility::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionSceneVisibility::GetShortDesc()
+std::string MacroActionSceneVisibility::GetShortDesc() const
 {
 	if (_sourceType == SceneItemSourceType::SOURCE &&
 	    !_source.ToString().empty()) {

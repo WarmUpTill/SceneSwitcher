@@ -24,13 +24,13 @@ bool MacroActionSceneCollection::PerformAction()
 	return false;
 }
 
-void MacroActionSceneCollection::LogAction()
+void MacroActionSceneCollection::LogAction() const
 {
 	vblog(LOG_INFO, "set scene collection type to \"%s\"",
 	      _sceneCollection.c_str());
 }
 
-bool MacroActionSceneCollection::Save(obs_data_t *obj)
+bool MacroActionSceneCollection::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_string(obj, "sceneCollection", _sceneCollection.c_str());
@@ -44,7 +44,7 @@ bool MacroActionSceneCollection::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionSceneCollection::GetShortDesc()
+std::string MacroActionSceneCollection::GetShortDesc() const
 {
 	return _sceneCollection;
 }

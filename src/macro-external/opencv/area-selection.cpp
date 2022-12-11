@@ -4,7 +4,7 @@
 #include <QLabel>
 #include <obs-module.h>
 
-void advss::Size::Save(obs_data_t *obj, const char *name)
+void advss::Size::Save(obs_data_t *obj, const char *name) const
 {
 	auto data = obs_data_create();
 	obs_data_set_int(data, "width", width);
@@ -26,7 +26,7 @@ cv::Size advss::Size::CV()
 	return {width, height};
 }
 
-void advss::Area::Save(obs_data_t *obj, const char *name)
+void advss::Area::Save(obs_data_t *obj, const char *name) const
 {
 	auto data = obs_data_create();
 	obs_data_set_int(data, "x", x);

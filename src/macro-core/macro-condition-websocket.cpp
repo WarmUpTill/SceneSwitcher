@@ -67,7 +67,7 @@ bool MacroConditionWebsocket::CheckCondition()
 	return false;
 }
 
-bool MacroConditionWebsocket::Save(obs_data_t *obj)
+bool MacroConditionWebsocket::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
@@ -92,7 +92,7 @@ bool MacroConditionWebsocket::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroConditionWebsocket::GetShortDesc()
+std::string MacroConditionWebsocket::GetShortDesc() const
 {
 	if (_type == Type::REQUEST) {
 		return "";

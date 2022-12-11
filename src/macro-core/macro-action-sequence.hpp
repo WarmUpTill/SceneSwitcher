@@ -13,10 +13,10 @@ public:
 	{
 	}
 	bool PerformAction();
-	void LogAction();
-	bool Save(obs_data_t *obj);
+	void LogAction() const;
+	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
-	std::string GetId() { return id; };
+	std::string GetId() const { return id; };
 	MacroRef GetNextMacro(bool advance = true);
 	static std::shared_ptr<MacroAction> Create(Macro *m)
 	{

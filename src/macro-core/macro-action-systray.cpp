@@ -19,12 +19,12 @@ bool MacroActionSystray::PerformAction()
 	return true;
 }
 
-void MacroActionSystray::LogAction()
+void MacroActionSystray::LogAction() const
 {
 	vblog(LOG_INFO, "display systray message \"%s\"", _msg.c_str());
 }
 
-bool MacroActionSystray::Save(obs_data_t *obj)
+bool MacroActionSystray::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_string(obj, "message", _msg.c_str());

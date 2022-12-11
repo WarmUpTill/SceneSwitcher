@@ -17,11 +17,11 @@ class MacroActionTimer : public MacroRefAction {
 public:
 	MacroActionTimer(Macro *m) : MacroAction(m), MacroRefAction(m) {}
 	bool PerformAction();
-	void LogAction();
-	bool Save(obs_data_t *obj);
+	void LogAction() const;
+	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
-	std::string GetShortDesc();
-	std::string GetId() { return id; };
+	std::string GetShortDesc() const;
+	std::string GetId() const { return id; };
 	static std::shared_ptr<MacroAction> Create(Macro *m)
 	{
 		return std::make_shared<MacroActionTimer>(m);

@@ -25,10 +25,10 @@ public:
 		INDIVIDUAL,
 	};
 
-	Type GetType() { return _type; }
-	IdxType GetIndexType() { return _idxType; }
-	std::vector<obs_scene_item *> GetSceneItems(SceneSelection &s);
-	std::string ToString();
+	Type GetType() const { return _type; }
+	IdxType GetIndexType() const { return _idxType; }
+	std::vector<obs_scene_item *> GetSceneItems(SceneSelection &s) const;
+	std::string ToString() const;
 
 private:
 	OBSWeakSource _sceneItem;

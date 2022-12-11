@@ -40,7 +40,7 @@ bool MacroActionReplayBuffer::PerformAction()
 	return true;
 }
 
-void MacroActionReplayBuffer::LogAction()
+void MacroActionReplayBuffer::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
@@ -51,7 +51,7 @@ void MacroActionReplayBuffer::LogAction()
 	}
 }
 
-bool MacroActionReplayBuffer::Save(obs_data_t *obj)
+bool MacroActionReplayBuffer::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "action", static_cast<int>(_action));

@@ -45,7 +45,7 @@ public:
 	void UpdateConditionIndices();
 	std::deque<std::shared_ptr<MacroAction>> &Actions() { return _actions; }
 
-	bool Save(obs_data_t *obj);
+	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
 	// Some macros can refer to other macros, which are not yet loaded.
 	// Use this function to set these references after loading is complete.

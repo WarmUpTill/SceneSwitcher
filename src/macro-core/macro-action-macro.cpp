@@ -49,7 +49,7 @@ bool MacroActionMacro::PerformAction()
 	return true;
 }
 
-void MacroActionMacro::LogAction()
+void MacroActionMacro::LogAction() const
 {
 	if (!_macro.get()) {
 		return;
@@ -77,7 +77,7 @@ void MacroActionMacro::LogAction()
 	}
 }
 
-bool MacroActionMacro::Save(obs_data_t *obj)
+bool MacroActionMacro::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	_macro.Save(obj);
@@ -94,7 +94,7 @@ bool MacroActionMacro::Load(obs_data_t *obj)
 	return true;
 }
 
-std::string MacroActionMacro::GetShortDesc()
+std::string MacroActionMacro::GetShortDesc() const
 {
 	if (_macro.get()) {
 		return _macro->Name();

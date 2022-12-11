@@ -84,7 +84,7 @@ bool MacroConditionOpenVR::CheckCondition()
 	       data.x <= _maxX && data.y <= _maxY && data.z <= _maxZ;
 }
 
-bool MacroConditionOpenVR::Save(obs_data_t *obj)
+bool MacroConditionOpenVR::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_double(obj, "minX", _minX);
