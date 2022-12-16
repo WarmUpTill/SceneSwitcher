@@ -29,17 +29,19 @@ void FileSelection::SetPath(const QString &path)
 	_filePath->setText(path);
 }
 
+QString FileSelection::ValidPathOrDesktop(const QString &path)
+{
+	if (std::filesystem::exists(
+		    std::filesystem::path(path.toStdString()))) {
+		return path;
+	}
+	return QStandardPaths::writableLocation(
+		QStandardPaths::DesktopLocation);
+}
+
 void FileSelection::BrowseButtonClicked()
 {
-	QString defaultPath;
-	if (std::filesystem::exists(
-		    std::filesystem::path(_filePath->text().toStdString()))) {
-		defaultPath = _filePath->text();
-	} else {
-		defaultPath = QStandardPaths::writableLocation(
-			QStandardPaths::DesktopLocation);
-	}
-
+	QString defaultPath = ValidPathOrDesktop(_filePath->text());
 	QString path;
 	if (_type == FileSelection::Type::WRITE) {
 		path = QFileDialog::getSaveFileName(this, "", defaultPath);
