@@ -23,6 +23,8 @@ target_sources(
           macro-condition-video.hpp
           opencv-helpers.cpp
           opencv-helpers.hpp
+          paramerter-wrappers.cpp
+          paramerter-wrappers.hpp
           preview-dialog.cpp
           preview-dialog.hpp
           threshold-slider.cpp
