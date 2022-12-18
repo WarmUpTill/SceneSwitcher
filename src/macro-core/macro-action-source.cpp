@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+Q_DECLARE_METATYPE(SourceSettingButton);
+
 const std::string MacroActionSource::id = "source";
 
 bool MacroActionSource::_registered = MacroActionFactory::Register(
@@ -16,9 +18,42 @@ const static std::map<SourceAction, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.source.type.settings"},
 	{SourceAction::REFRESH_SETTINGS,
 	 "AdvSceneSwitcher.action.source.type.refreshSettings"},
+	{SourceAction::SETTINGS_BUTTON,
+	 "AdvSceneSwitcher.action.source.type.pressSettingsButton"},
 };
 
-void refreshSourceSettings(obs_source_t *s)
+static std::vector<SourceSettingButton> getSourceButtons(OBSWeakSource source)
+{
+	auto s = obs_weak_source_get_source(source);
+	std::vector<SourceSettingButton> buttons;
+	obs_properties_t *sourceProperties = obs_source_properties(s);
+	auto it = obs_properties_first(sourceProperties);
+	do {
+		if (!it || obs_property_get_type(it) != OBS_PROPERTY_BUTTON) {
+			continue;
+		}
+		SourceSettingButton button = {obs_property_name(it),
+					      obs_property_description(it)};
+		buttons.emplace_back(button);
+	} while (obs_property_next(&it));
+	obs_source_release(s);
+	return buttons;
+}
+
+static void pressSourceButton(const SourceSettingButton &button,
+			      obs_source_t *source)
+{
+	obs_properties_t *sourceProperties = obs_source_properties(source);
+	obs_property_t *property =
+		obs_properties_get(sourceProperties, button.id.c_str());
+	if (!obs_property_button_clicked(property, source)) {
+		blog(LOG_WARNING, "Failed to press settings button '%s' for %s",
+		     button.id.c_str(), obs_source_get_name(source));
+	}
+	obs_properties_destroy(sourceProperties);
+}
+
+static void refreshSourceSettings(obs_source_t *s)
 {
 	if (!s) {
 		return;
@@ -55,6 +90,9 @@ bool MacroActionSource::PerformAction()
 	case SourceAction::REFRESH_SETTINGS:
 		refreshSourceSettings(s);
 		break;
+	case SourceAction::SETTINGS_BUTTON:
+		pressSourceButton(_button, s);
+		break;
 	default:
 		break;
 	}
@@ -80,6 +118,7 @@ bool MacroActionSource::Save(obs_data_t *obj)
 	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	obs_data_set_string(obj, "settings", _settings.c_str());
+	_button.Save(obj);
 	return true;
 }
 
@@ -90,6 +129,7 @@ bool MacroActionSource::Load(obs_data_t *obj)
 	_source = GetWeakSourceByName(sourceName);
 	_action = static_cast<SourceAction>(obs_data_get_int(obj, "action"));
 	_settings = obs_data_get_string(obj, "settings");
+	_button.Load(obj);
 	return true;
 }
 
@@ -115,12 +155,30 @@ static inline void populateActionSelection(QComboBox *list)
 	}
 }
 
+static inline void populateSourceButtonSelection(QComboBox *list,
+						 OBSWeakSource source)
+{
+	list->clear();
+	auto buttons = getSourceButtons(source);
+	if (buttons.empty()) {
+		list->addItem(obs_module_text(
+			"AdvSceneSwitcher.action.source.noSettingsButtons"));
+	}
+
+	for (const auto &button : buttons) {
+		QVariant value;
+		value.setValue(button);
+		list->addItem(QString::fromStdString(button.ToString()), value);
+	}
+}
+
 MacroActionSourceEdit::MacroActionSourceEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSource> entryData)
 	: QWidget(parent)
 {
 	_sources = new QComboBox();
 	_actions = new QComboBox();
+	_settingsButtons = new QComboBox();
 	_getSettings = new QPushButton(
 		obs_module_text("AdvSceneSwitcher.action.source.getSettings"));
 	_settings = new ResizingPlainTextEdit(this);
@@ -132,6 +190,8 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
+	QWidget::connect(_settingsButtons, SIGNAL(currentIndexChanged(int)),
+			 this, SLOT(ButtonChanged(int)));
 	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(SourceChanged(const QString &)));
 	QWidget::connect(_getSettings, SIGNAL(clicked()), this,
@@ -147,6 +207,7 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 		{"{{actions}}", _actions},
 		{"{{settings}}", _settings},
 		{"{{getSettings}}", _getSettings},
+		{"{{settingsButtons}}", _settingsButtons},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.source.entry"),
 		     entryLayout, widgetPlaceholders);
@@ -169,10 +230,14 @@ void MacroActionSourceEdit::UpdateEntryData()
 		return;
 	}
 
+	populateSourceButtonSelection(_settingsButtons, _entryData->_source);
+
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_sources->setCurrentText(
 		GetWeakSourceName(_entryData->_source).c_str());
 	_settings->setPlainText(QString::fromStdString(_entryData->_settings));
+	_settingsButtons->setCurrentText(
+		QString::fromStdString(_entryData->_button.ToString()));
 	SetWidgetVisibility();
 
 	adjustSize();
@@ -185,8 +250,11 @@ void MacroActionSourceEdit::SourceChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_source = GetWeakSourceByQString(text);
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		_entryData->_source = GetWeakSourceByQString(text);
+	}
+	populateSourceButtonSelection(_settingsButtons, _entryData->_source);
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -200,6 +268,17 @@ void MacroActionSourceEdit::ActionChanged(int value)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<SourceAction>(value);
 	SetWidgetVisibility();
+}
+
+void MacroActionSourceEdit::ButtonChanged(int idx)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_button = qvariant_cast<SourceSettingButton>(
+		_settingsButtons->itemData(idx));
 }
 
 void MacroActionSourceEdit::GetSettingsClicked()
@@ -233,5 +312,34 @@ void MacroActionSourceEdit::SetWidgetVisibility()
 	_settings->setVisible(showSettings);
 	_getSettings->setVisible(showSettings);
 	_warning->setVisible(showWarning);
+	_settingsButtons->setVisible(_entryData->_action ==
+				     SourceAction::SETTINGS_BUTTON);
 	adjustSize();
+}
+
+bool SourceSettingButton::Save(obs_data_t *obj) const
+{
+	auto data = obs_data_create();
+	obs_data_set_string(data, "id", id.c_str());
+	obs_data_set_string(data, "description", description.c_str());
+	obs_data_set_obj(obj, "sourceSettingButton", data);
+	obs_data_release(data);
+	return true;
+}
+
+bool SourceSettingButton::Load(obs_data_t *obj)
+{
+	auto data = obs_data_get_obj(obj, "sourceSettingButton");
+	id = obs_data_get_string(data, "id");
+	description = obs_data_get_string(data, "description");
+	obs_data_release(data);
+	return true;
+}
+
+std::string SourceSettingButton::ToString() const
+{
+	if (id.empty()) {
+		return "";
+	}
+	return "[" + id + "] " + description;
 }
