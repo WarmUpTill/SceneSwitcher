@@ -31,8 +31,8 @@ struct VisibilityData {
 	SceneVisibilityAction action;
 };
 
-static void setSceneItemVisiblity(obs_sceneitem_t *item,
-				  SceneVisibilityAction action)
+static void setSceneItemVisibility(obs_sceneitem_t *item,
+				   SceneVisibilityAction action)
 {
 	switch (action) {
 	case SceneVisibilityAction::SHOW:
@@ -55,7 +55,7 @@ static bool visibilitySourceTypeEnum(obs_scene_t *, obs_sceneitem_t *item,
 	auto sourceTypeName = obs_source_get_display_name(
 		obs_source_get_id(obs_sceneitem_get_source(item)));
 	if (sourceTypeName && vInfo->name == sourceTypeName) {
-		setSceneItemVisiblity(item, vInfo->action);
+		setSceneItemVisibility(item, vInfo->action);
 	}
 
 	if (obs_sceneitem_is_group(item)) {
@@ -72,7 +72,7 @@ bool MacroActionSceneVisibility::PerformAction()
 	case SceneItemSourceType::SOURCE: {
 		auto items = _source.GetSceneItems(_scene);
 		for (auto item : items) {
-			setSceneItemVisiblity(item, _action);
+			setSceneItemVisibility(item, _action);
 			obs_sceneitem_release(item);
 		}
 		break;

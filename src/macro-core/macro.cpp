@@ -3,6 +3,7 @@
 #include "macro-condition-edit.hpp"
 #include "macro-action-scene-switch.hpp"
 #include "advanced-scene-switcher.hpp"
+#include "hotkey.hpp"
 
 #include <limits>
 #undef max
