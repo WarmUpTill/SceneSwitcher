@@ -1,4 +1,5 @@
 #include "platform-funcs.hpp"
+#include "hotkey.hpp"
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -45,6 +46,10 @@ typedef int (*XScreenSaverQueryInfoFunc)(Display *, Window, XScreenSaverInfo *);
 static XScreenSaverAllocInfoFunc allocSSFunc = nullptr;
 static XScreenSaverQueryInfoFunc querySSFunc = nullptr;
 bool canGetIdleTime = false;
+
+std::chrono::high_resolution_clock::time_point lastMouseLeftClickTime{};
+std::chrono::high_resolution_clock::time_point lastMouseMiddleClickTime{};
+std::chrono::high_resolution_clock::time_point lastMouseRightClickTime{};
 
 Display *disp()
 {

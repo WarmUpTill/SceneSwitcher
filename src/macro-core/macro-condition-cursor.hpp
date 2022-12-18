@@ -7,11 +7,6 @@
 #include <QTimer>
 #include <QFrame>
 
-enum class CursorCondition {
-	REGION,
-	MOVING,
-};
-
 class MacroConditionCursor : public MacroCondition {
 public:
 	MacroConditionCursor(Macro *m) : MacroCondition(m) {}
@@ -24,10 +19,26 @@ public:
 		return std::make_shared<MacroConditionCursor>(m);
 	}
 
-	CursorCondition _condition = CursorCondition::REGION;
+	enum class Condition {
+		REGION,
+		MOVING,
+		CLICK,
+	};
+
+	enum class Button {
+		LEFT,
+		MIDDLE,
+		RIGHT,
+	};
+
+	Condition _condition = Condition::REGION;
+	Button _button = Button::LEFT;
 	int _minX = 0, _minY = 0, _maxX = 0, _maxY = 0;
 
 private:
+	bool CheckClick();
+	std::chrono::high_resolution_clock::time_point _lastCheckTime{};
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -49,7 +60,8 @@ public:
 	}
 
 private slots:
-	void ConditionChanged(int cond);
+	void ConditionChanged(int idx);
+	void ButtonChanged(int idx);
 	void MinXChanged(int pos);
 	void MinYChanged(int pos);
 	void MaxXChanged(int pos);
@@ -63,13 +75,15 @@ protected:
 	QSpinBox *_maxX;
 	QSpinBox *_maxY;
 	QComboBox *_conditions;
+	QComboBox *_buttons;
 	QPushButton *_frameToggle;
 	QLabel *_xPos;
 	QLabel *_yPos;
+	QHBoxLayout *_curentPosLayout;
 	std::shared_ptr<MacroConditionCursor> _entryData;
 
 private:
-	void SetRegionSelectionVisible(bool);
+	void SetWidgetVisibility();
 	void SetupFrame();
 	QTimer _timer;
 	QFrame _frame;

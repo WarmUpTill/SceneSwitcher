@@ -1,9 +1,15 @@
 #pragma once
-#include "hotkey.hpp"
-
 #include <vector>
 #include <string>
 #include <QStringList>
+#include <chrono>
+
+enum class HotkeyType;
+
+// TODO: Implement for MacOS and Linux
+extern std::chrono::high_resolution_clock::time_point lastMouseLeftClickTime;
+extern std::chrono::high_resolution_clock::time_point lastMouseMiddleClickTime;
+extern std::chrono::high_resolution_clock::time_point lastMouseRightClickTime;
 
 void GetWindowList(std::vector<std::string> &windows);
 void GetWindowList(QStringList &windows);

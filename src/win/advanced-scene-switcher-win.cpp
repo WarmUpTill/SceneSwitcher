@@ -1,4 +1,5 @@
 #include "platform-funcs.hpp"
+#include "hotkey.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -11,10 +12,21 @@
 #include <vector>
 #include <QStringList>
 #include <QRegularExpression>
+#include <obs-frontend-api.h>
+#include <QAbstractEventDispatcher>
+#include <QAbstractNativeEventFilter>
 
 #define MAX_SEARCH 1000
 
+// Hotkeys
 bool canSimulateKeyPresses = true;
+
+// Mouse click
+class RawMouseInputFilter;
+RawMouseInputFilter *mouseInputFilter;
+std::chrono::high_resolution_clock::time_point lastMouseLeftClickTime{};
+std::chrono::high_resolution_clock::time_point lastMouseMiddleClickTime{};
+std::chrono::high_resolution_clock::time_point lastMouseRightClickTime{};
 
 static bool GetWindowTitle(HWND window, std::string &title)
 {
@@ -446,6 +458,87 @@ int secondsSinceLastInput()
 	return (getTime() - getLastInputTime()) / 1000;
 }
 
-void PlatformInit() {}
+static void handleRawMouseInput(LPARAM lParam)
+{
+	UINT dwSize;
+	GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize,
+			sizeof(RAWINPUTHEADER));
+	LPBYTE lpb = new BYTE[dwSize];
+	if (lpb == NULL) {
+		return;
+	}
 
-void PlatformCleanup() {}
+	if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize,
+			    sizeof(RAWINPUTHEADER)) != dwSize)
+		OutputDebugString(TEXT(
+			"GetRawInputData does not return correct size !\n"));
+
+	RAWINPUT *raw = (RAWINPUT *)lpb;
+	if (raw->header.dwType == RIM_TYPEMOUSE) {
+		switch (raw->data.mouse.usButtonFlags) {
+		case RI_MOUSE_BUTTON_1_DOWN:
+			lastMouseLeftClickTime =
+				std::chrono::high_resolution_clock::now();
+			break;
+		case RI_MOUSE_BUTTON_3_DOWN:
+			lastMouseMiddleClickTime =
+				std::chrono::high_resolution_clock::now();
+			break;
+		case RI_MOUSE_BUTTON_2_DOWN:
+			lastMouseRightClickTime =
+				std::chrono::high_resolution_clock::now();
+			break;
+		default:
+			break;
+		}
+	}
+	delete[] lpb;
+}
+
+class RawMouseInputFilter : public QAbstractNativeEventFilter {
+public:
+	virtual bool nativeEventFilter(const QByteArray &eventType,
+				       void *message, qintptr *) Q_DECL_OVERRIDE
+	{
+		if (eventType != "windows_generic_MSG") {
+			return false;
+		}
+		MSG *msg = reinterpret_cast<MSG *>(message);
+
+		if (msg->message != WM_INPUT) {
+			return false;
+		}
+		handleRawMouseInput(msg->lParam);
+		return false;
+	}
+};
+
+static void SetupMouseEeventFilter()
+{
+	mouseInputFilter = new RawMouseInputFilter;
+	QAbstractEventDispatcher::instance()->installNativeEventFilter(
+		mouseInputFilter);
+
+	RAWINPUTDEVICE rid;
+	rid.dwFlags = RIDEV_INPUTSINK;
+	rid.usUsagePage = 1;
+	rid.usUsage = 2;
+	rid.hwndTarget = (HWND)obs_frontend_get_main_window_handle();
+	if (!RegisterRawInputDevices(&rid, 1, sizeof(rid))) {
+		blog(LOG_WARNING, "Registering for raw mouse input failed!\n"
+				  "Mouse click detection not functional!");
+	}
+}
+
+void PlatformInit()
+{
+	SetupMouseEeventFilter();
+}
+
+void PlatformCleanup()
+{
+	if (mouseInputFilter) {
+		delete mouseInputFilter;
+		mouseInputFilter = nullptr;
+	}
+}
