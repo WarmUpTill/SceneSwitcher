@@ -1,4 +1,5 @@
 #include "platform-funcs.hpp"
+#include "hotkey.hpp"
 
 #import <AppKit/AppKit.h>
 #import <CoreFoundation/CoreFoundation.h>
@@ -13,6 +14,10 @@
 #include <thread>
 
 bool canSimulateKeyPresses = false;
+
+std::chrono::high_resolution_clock::time_point lastMouseLeftClickTime{};
+std::chrono::high_resolution_clock::time_point lastMouseMiddleClickTime{};
+std::chrono::high_resolution_clock::time_point lastMouseRightClickTime{};
 
 void GetWindowList(std::vector<std::string> &windows)
 {

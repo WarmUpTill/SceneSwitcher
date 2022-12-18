@@ -10,32 +10,65 @@ bool MacroConditionCursor::_registered = MacroConditionFactory::Register(
 	{MacroConditionCursor::Create, MacroConditionCursorEdit::Create,
 	 "AdvSceneSwitcher.condition.cursor"});
 
-static std::map<CursorCondition, std::string> cursorConditionTypes = {
-	{CursorCondition::REGION,
-	 "AdvSceneSwitcher.condition.cursor.type.region"},
-	{CursorCondition::MOVING,
-	 "AdvSceneSwitcher.condition.cursor.type.moving"},
+static std::map<MacroConditionCursor::Condition, std::string>
+	cursorConditionTypes = {
+		{MacroConditionCursor::Condition::REGION,
+		 "AdvSceneSwitcher.condition.cursor.type.region"},
+		{MacroConditionCursor::Condition::MOVING,
+		 "AdvSceneSwitcher.condition.cursor.type.moving"},
+#ifdef _WIN32 // Not implemented for MacOS and Linux
+		{MacroConditionCursor::Condition::CLICK,
+		 "AdvSceneSwitcher.condition.cursor.type.click"},
+#endif
 };
+
+static std::map<MacroConditionCursor::Button, std::string> buttonTypes = {
+	{MacroConditionCursor::Button::LEFT,
+	 "AdvSceneSwitcher.condition.cursor.button.left"},
+	{MacroConditionCursor::Button::MIDDLE,
+	 "AdvSceneSwitcher.condition.cursor.button.middle"},
+	{MacroConditionCursor::Button::RIGHT,
+	 "AdvSceneSwitcher.condition.cursor.button.right"},
+};
+
+bool MacroConditionCursor::CheckClick()
+{
+	switch (_button) {
+	case MacroConditionCursor::Button::LEFT:
+		return _lastCheckTime < lastMouseLeftClickTime;
+	case MacroConditionCursor::Button::MIDDLE:
+		return _lastCheckTime < lastMouseMiddleClickTime;
+	case MacroConditionCursor::Button::RIGHT:
+		return _lastCheckTime < lastMouseRightClickTime;
+	}
+	return false;
+}
 
 bool MacroConditionCursor::CheckCondition()
 {
+	bool ret = false;
 	std::pair<int, int> cursorPos = getCursorPos();
 	switch (_condition) {
-	case CursorCondition::REGION:
-		return cursorPos.first >= _minX && cursorPos.second >= _minY &&
-		       cursorPos.first <= _maxX && cursorPos.second <= _maxY;
-	case CursorCondition::MOVING:
-		return switcher->cursorPosChanged;
-	default:
+	case Condition::REGION:
+		ret = cursorPos.first >= _minX && cursorPos.second >= _minY &&
+		      cursorPos.first <= _maxX && cursorPos.second <= _maxY;
+		break;
+	case Condition::MOVING:
+		ret = switcher->cursorPosChanged;
+		break;
+	case Condition::CLICK:
+		ret = CheckClick();
 		break;
 	}
-	return false;
+	_lastCheckTime = std::chrono::high_resolution_clock::now();
+	return ret;
 }
 
 bool MacroConditionCursor::Save(obs_data_t *obj)
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
+	obs_data_set_int(obj, "button", static_cast<int>(_button));
 	obs_data_set_int(obj, "minX", _minX);
 	obs_data_set_int(obj, "minY", _minY);
 	obs_data_set_int(obj, "maxX", _maxX);
@@ -46,8 +79,8 @@ bool MacroConditionCursor::Save(obs_data_t *obj)
 bool MacroConditionCursor::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	_condition = static_cast<CursorCondition>(
-		obs_data_get_int(obj, "condition"));
+	_condition = static_cast<Condition>(obs_data_get_int(obj, "condition"));
+	_button = static_cast<Button>(obs_data_get_int(obj, "button"));
 	_minX = obs_data_get_int(obj, "minX");
 	_minY = obs_data_get_int(obj, "minY");
 	_maxX = obs_data_get_int(obj, "maxX");
@@ -57,8 +90,17 @@ bool MacroConditionCursor::Load(obs_data_t *obj)
 
 static inline void populateConditionSelection(QComboBox *list)
 {
-	for (auto entry : cursorConditionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[condition, name] : cursorConditionTypes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(condition));
+	}
+}
+
+static inline void populateButtonSelection(QComboBox *list)
+{
+	for (const auto &[button, name] : buttonTypes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(button));
 	}
 }
 
@@ -70,14 +112,17 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 	  _maxX(new QSpinBox()),
 	  _maxY(new QSpinBox()),
 	  _conditions(new QComboBox()),
+	  _buttons(new QComboBox()),
 	  _frameToggle(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.cursor.showFrame"))),
 	  _xPos(new QLabel("-")),
-	  _yPos(new QLabel("-"))
+	  _yPos(new QLabel("-")),
+	  _curentPosLayout(new QHBoxLayout())
 {
 	_frame.setAttribute(Qt::WA_TransparentForMouseEvents);
 
 	populateConditionSelection(_conditions);
+	populateButtonSelection(_buttons);
 
 	_minX->setPrefix("Min X: ");
 	_minY->setPrefix("Min Y: ");
@@ -96,6 +141,8 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 
 	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
+	QWidget::connect(_buttons, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(ButtonChanged(int)));
 	QWidget::connect(_minX, SIGNAL(valueChanged(int)), this,
 			 SLOT(MinXChanged(int)));
 	QWidget::connect(_minY, SIGNAL(valueChanged(int)), this,
@@ -109,6 +156,7 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{conditions}}", _conditions},
+		{"{{buttons}}", _buttons},
 		{"{{minX}}", _minX},
 		{"{{minY}}", _minY},
 		{"{{maxX}}", _maxX},
@@ -121,13 +169,12 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 	placeWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.cursor.entry.line1"),
 		     line1, widgetPlaceholders);
-	QHBoxLayout *line2 = new QHBoxLayout;
 	placeWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.cursor.entry.line2"),
-		     line2, widgetPlaceholders);
+		     _curentPosLayout, widgetPlaceholders);
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(line1);
-	mainLayout->addLayout(line2);
+	mainLayout->addLayout(_curentPosLayout);
 	setLayout(mainLayout);
 
 	connect(&_timer, &QTimer::timeout, this,
@@ -146,9 +193,20 @@ void MacroConditionCursorEdit::ConditionChanged(int index)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_condition = static_cast<CursorCondition>(index);
-	SetRegionSelectionVisible(_entryData->_condition ==
-				  CursorCondition::REGION);
+	_entryData->_condition = static_cast<MacroConditionCursor::Condition>(
+		_conditions->itemData(index).toInt());
+	SetWidgetVisibility();
+}
+
+void MacroConditionCursorEdit::ButtonChanged(int index)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_button = static_cast<MacroConditionCursor::Button>(
+		_buttons->itemData(index).toInt());
 }
 
 void MacroConditionCursorEdit::MinXChanged(int pos)
@@ -216,16 +274,22 @@ void MacroConditionCursorEdit::ToggleFrame()
 	}
 }
 
-void MacroConditionCursorEdit::SetRegionSelectionVisible(bool visible)
+void MacroConditionCursorEdit::SetWidgetVisibility()
 {
-	_minX->setVisible(visible);
-	_minY->setVisible(visible);
-	_maxX->setVisible(visible);
-	_maxY->setVisible(visible);
-	_frameToggle->setVisible(visible);
+	const bool isRegionCondition = _entryData->_condition ==
+				       MacroConditionCursor::Condition::REGION;
+	_minX->setVisible(isRegionCondition);
+	_minY->setVisible(isRegionCondition);
+	_maxX->setVisible(isRegionCondition);
+	_maxY->setVisible(isRegionCondition);
+	_frameToggle->setVisible(isRegionCondition);
+	setLayoutVisible(_curentPosLayout, isRegionCondition);
 	if (_frame.isVisible()) {
 		ToggleFrame();
 	}
+
+	_buttons->setVisible(_entryData->_condition ==
+			     MacroConditionCursor::Condition::CLICK);
 
 	adjustSize();
 }
@@ -253,10 +317,10 @@ void MacroConditionCursorEdit::UpdateEntryData()
 	}
 
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
+	_buttons->setCurrentIndex(static_cast<int>(_entryData->_button));
 	_minX->setValue(_entryData->_minX);
 	_minY->setValue(_entryData->_minY);
 	_maxX->setValue(_entryData->_maxX);
 	_maxY->setValue(_entryData->_maxY);
-	SetRegionSelectionVisible(_entryData->_condition ==
-				  CursorCondition::REGION);
+	SetWidgetVisibility();
 }
