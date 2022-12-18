@@ -12,6 +12,16 @@ enum class SourceAction {
 	DISABLE,
 	SETTINGS,
 	REFRESH_SETTINGS,
+	SETTINGS_BUTTON,
+};
+
+struct SourceSettingButton {
+	bool Save(obs_data_t *obj) const;
+	bool Load(obs_data_t *obj);
+	std::string ToString() const;
+
+	std::string id = "";
+	std::string description = "";
 };
 
 class MacroActionSource : public MacroAction {
@@ -30,6 +40,7 @@ public:
 
 	OBSWeakSource _source;
 	std::string _settings = "";
+	SourceSettingButton _button;
 	SourceAction _action = SourceAction::ENABLE;
 
 private:
@@ -56,6 +67,7 @@ public:
 private slots:
 	void SourceChanged(const QString &text);
 	void ActionChanged(int value);
+	void ButtonChanged(int idx);
 	void GetSettingsClicked();
 	void SettingsChanged();
 signals:
@@ -64,6 +76,7 @@ signals:
 protected:
 	QComboBox *_sources;
 	QComboBox *_actions;
+	QComboBox *_settingsButtons;
 	QPushButton *_getSettings;
 	ResizingPlainTextEdit *_settings;
 	QLabel *_warning;
