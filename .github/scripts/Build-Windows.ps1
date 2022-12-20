@@ -111,6 +111,10 @@ function Build {
             "-DCMAKE_PREFIX_PATH:PATH=$(Resolve-Path -Path "${ProjectRoot}/../obs-build-dependencies/${DepsPath}")"
             "-DQT_VERSION=${script:QtVersion}"
             "-DOpenCV_DIR=${OpenCVBuildPath}"
+            "-DLIBOBS_LIB=$(Resolve-Path -Path "${ProjectRoot}/../obs-studio/plugin_build_${script:Target}/libobs/${Configuration}/obs.lib")"
+            "-DLIBOBS_INCLUDE_DIR=$(Resolve-Path -Path "${ProjectRoot}/../obs-studio/libobs/")"
+            "-DLIBOBS_FRONTEND_API_LIB=$(Resolve-Path -Path "${ProjectRoot}/../obs-studio/plugin_build_${script:Target}/UI/obs-frontend-api/${Configuration}/obs-frontend-api.lib")"
+            "-DLIBOBS_FRONTEND_INCLUDE_DIR=$(Resolve-Path -Path "${ProjectRoot}/../obs-studio/UI/obs-frontend-api/")"
         )
 
         Log-Debug "Attempting to configure OBS with CMake arguments: $($CmakeArgs | Out-String)"

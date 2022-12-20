@@ -78,6 +78,11 @@ if (( ! (${skips[(Ie)all]} + ${skips[(Ie)build]}) )) {
     -DENABLE_SCRIPTING=OFF
     -DCMAKE_INSTALL_PREFIX="${project_root:h}/obs-build-dependencies/plugin-deps-${OBS_DEPS_VERSION}-qt${QT_VERSION}-${target##*-}"
     -DCMAKE_PREFIX_PATH="${project_root:h}/obs-build-dependencies/plugin-deps-${OBS_DEPS_VERSION}-qt${QT_VERSION}-${target##*-}"
+    -DBUILD_BROWSER=OFF
+    -DDISABLE_PYTHON=ON
+    -DENABLE_PIPEWIRE=OFF
+    -DWITH_RTMPS=OFF
+    -DDepsPath="${project_root:h}/obs-build-dependencies/plugin-deps-${OBS_DEPS_VERSION}-qt${QT_VERSION}-${target##*-}"
   )
 
   if (( _loglevel == 0 )) cmake_args+=(-Wno_deprecated -Wno-dev --log-level=ERROR)

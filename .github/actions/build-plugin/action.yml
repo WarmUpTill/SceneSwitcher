@@ -74,6 +74,11 @@ runs:
       if: ${{ runner.os == 'Windows' }}
       shell: pwsh
       run: |
+        curl -kLO https://cdn-fastly.obsproject.com/downloads/Qt_5.15.2.7z -f --retry 5 -C -
+        7z x Qt_5.15.2.7z -o"${{ github.workspace }}/cmbuild/QT"
+        curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies2019.zip -f --retry 5 -C -
+        7z x dependencies2019.zip -o"${{ github.workspace }}/cmbuild/deps"
+
         $BuildArgs = @{
           Target = '${{ inputs.target }}'
           Configuration = '${{ inputs.config }}'

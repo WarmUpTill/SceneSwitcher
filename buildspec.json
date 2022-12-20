@@ -1,10 +1,10 @@
 {
     "dependencies": {
         "obs-studio": {
-            "version": "28.0.1",
+            "version": "27.2.4",
             "repository": "https://github.com/obsproject/obs-studio.git",
             "branch": "master",
-            "hash": "e8dc70d0eef4503378d6ac300e680215eb5c9379"
+            "hash": "aab14ba29a759037e42610f127ba844f17dbd416"
         },
         "prebuilt": {
             "version": "2022-08-02",
@@ -53,29 +53,29 @@
     },
     "platformConfig": {
         "macos-x86_64": {
-            "qtVersion": 6,
+            "qtVersion": 5,
             "deploymentTarget": "10.15"
         },
         "macos-arm64": {
-            "qtVersion": 6,
+            "qtVersion": 5,
             "deploymentTarget": "11.0"
         },
         "macos-universal": {
-            "qtVersion": 6,
+            "qtVersion": 5,
             "deploymentTarget": "10.15"
         },
         "windows-x64": {
-            "qtVersion": 6,
+            "qtVersion": 5,
             "visualStudio": "Visual Studio 17 2022",
             "platformSDK": "10.0.20348.0"
         },
         "windows-x86": {
-            "qtVersion": 6,
+            "qtVersion": 5,
             "visualStudio": "Visual Studio 17 2022",
             "platformSDK": "10.0.20348.0"
         },
         "linux-x86_64": {
-            "qtVersion": 6
+            "qtVersion": 5
         }
     },
     "name": "advanced-scene-switcher",

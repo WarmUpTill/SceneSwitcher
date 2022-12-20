@@ -62,6 +62,12 @@ function Setup-Obs {
             '-DENABLE_SCRIPTING=OFF'
             "-DCMAKE_INSTALL_PREFIX:PATH=$(Resolve-Path -Path "${ProjectRoot}/../obs-build-dependencies/${DepsPath}")"
             "-DCMAKE_PREFIX_PATH:PATH=$(Resolve-Path -Path "${ProjectRoot}/../obs-build-dependencies/${DepsPath}")"
+            "-DBUILD_BROWSER=OFF"
+            "-DBUILD_CAPTIONS=OFF"
+            "-DCOMPILE_D3D12_HOOK=OFF"
+            "-DCOPIED_DEPENDENCIES=FALSE"
+            "-DCOPY_DEPENDENCIES=TRUE"
+            "-DDepsPath=$(Resolve-Path -Path "${ProjectRoot}/../cmbuild/deps/win64")"
         )
 
         Log-Debug "Attempting to configure OBS with CMake arguments: $($CmakeArgs | Out-String)"

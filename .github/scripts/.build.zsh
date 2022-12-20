@@ -215,18 +215,31 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
   if (( ! (${skips[(Ie)all]} + ${skips[(Ie)build]}) )) {
     log_info "Configuring ${product_name}..."
 
+    local _lib_suffix=".so"
+    case ${target} {
+      macos-*)
+        _lib_suffix=".dylib"
+        ;;
+      linux-*)
+        _lib_suffix=".so"
+        ;;
+    }
+
     local _plugin_deps="${project_root:h}/obs-build-dependencies/plugin-deps-${OBS_DEPS_VERSION}-qt${QT_VERSION}-${target##*-}"
     local -a cmake_args=(
       -DCMAKE_BUILD_TYPE=${BUILD_CONFIG:-RelWithDebInfo}
       -DQT_VERSION=${QT_VERSION}
       -DCMAKE_PREFIX_PATH="${_plugin_deps}"
+      -DLIBOBS_LIB=${project_root:h}/obs-studio/plugin_build_${target##*-}/libobs/libobs${_lib_suffix}
+      -DLIBOBS_INCLUDE_DIR=${project_root:h}/obs-studio/libobs/
+      -DLIBOBS_FRONTEND_API_LIB=${project_root:h}/obs-studio/plugin_build_${target##*-}/UI/obs-frontend-api/libobs-frontend-api${_lib_suffix}
+      -DLIBOBS_FRONTEND_INCLUDE_DIR=${project_root:h}/obs-studio/UI/obs-frontend-api/
     )
 
     if (( _loglevel == 0 )) cmake_args+=(-Wno_deprecated -Wno-dev --log-level=ERROR)
     if (( _loglevel  > 2 )) cmake_args+=(--debug-output)
 
     local num_procs
-
     case ${target} {
       macos-*)
         autoload -Uz read_codesign
