@@ -225,7 +225,7 @@ bool MacroActionHotkey::PerformAction()
 
 	if (!keys.empty()) {
 		int dur = _duration;
-		if (_onlySendToObs) {
+		if (_onlySendToObs || !canSimulateKeyPresses) {
 			std::thread t([keys, dur]() { InjectKeys(keys, dur); });
 			t.detach();
 		} else {
@@ -463,8 +463,9 @@ MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 	mainLayout->addLayout(line2Layout);
 	mainLayout->addWidget(_onlySendToOBS);
 	mainLayout->addWidget(_noKeyPressSimulationWarning);
-
 	setLayout(mainLayout);
+
+	_onlySendToOBS->setEnabled(canSimulateKeyPresses);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -493,7 +494,8 @@ void MacroActionHotkeyEdit::UpdateEntryData()
 	_leftMeta->setChecked(_entryData->_leftMeta);
 	_rightMeta->setChecked(_entryData->_rightMeta);
 	_duration->setValue(_entryData->_duration);
-	_onlySendToOBS->setChecked(_entryData->_onlySendToObs);
+	_onlySendToOBS->setChecked(_entryData->_onlySendToObs ||
+				   !canSimulateKeyPresses);
 	SetWarningVisibility();
 }
 
