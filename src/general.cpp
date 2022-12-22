@@ -1,5 +1,6 @@
 #include "advanced-scene-switcher.hpp"
 #include "status-control.hpp"
+#include "file-selection.hpp"
 #include "utility.hpp"
 #include "version.h"
 
@@ -321,20 +322,20 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 	bool start = !switcher->stop;
 	switcher->Stop();
 
-	QString desktopPath = QStandardPaths::writableLocation(
-		QStandardPaths::DesktopLocation);
-	QString directory = QFileDialog::getOpenFileName(
+	auto basePath = FileSelection::ValidPathOrDesktop(
+		QString::fromStdString(switcher->lastImportPath));
+	QString path = QFileDialog::getOpenFileName(
 		this,
 		tr(obs_module_text(
 			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.importWindowTitle")),
-		desktopPath,
+		basePath,
 		tr(obs_module_text(
 			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType")));
-	if (directory.isEmpty()) {
+	if (path.isEmpty()) {
 		return;
 	}
 
-	QFile file(directory);
+	QFile file(path);
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 		return;
 	}
@@ -351,6 +352,7 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->loadSettings(obj);
 	obs_data_release(obj);
+	switcher->lastImportPath = path.toStdString();
 
 	(void)DisplayMessage(obs_module_text(
 		"AdvSceneSwitcher.generalTab.saveOrLoadsettings.loadSuccess"));
@@ -640,6 +642,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 				  adjustActiveTransitionType);
 	obs_data_set_bool(obj, "adjustActiveTransitionType",
 			  adjustActiveTransitionType);
+	obs_data_set_string(obj, "lastImportPath", lastImportPath.c_str());
 }
 
 void SwitcherData::loadGeneralSettings(obs_data_t *obj)
@@ -720,6 +723,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		obs_data_get_bool(obj, "tansitionOverrideOverride");
 	adjustActiveTransitionType =
 		obs_data_get_bool(obj, "adjustActiveTransitionType");
+
+	lastImportPath = obs_data_get_string(obj, "lastImportPath");
 }
 
 void saveSplitterPos(QList<int> &sizes, obs_data_t *obj, const std::string name)
