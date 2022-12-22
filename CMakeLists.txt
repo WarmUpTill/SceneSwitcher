@@ -321,6 +321,7 @@ if(OS_WINDOWS)
   configure_file(cmake/bundle/windows/installer-Windows.iss.in
                  ${CMAKE_CURRENT_BINARY_DIR}/installer-Windows.generated.iss)
 
+  target_compile_definitions(${LIB_NAME} PRIVATE UNICODE _UNICODE)
   if(MSVC)
     target_compile_options(${LIB_NAME} PUBLIC /MP /d2FH4- /wd4267 /wd4267)
   endif()
