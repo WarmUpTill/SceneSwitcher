@@ -1,27 +1,41 @@
 #include "preview-dialog.hpp"
-#include "macro-condition-video.hpp"
+
 #include "opencv-helpers.hpp"
 #include "utility.hpp"
 
+#include <screenshot-helper.hpp>
 #include <condition_variable>
 
-PreviewDialog::PreviewDialog(QWidget *parent,
-			     MacroConditionVideo *conditionData,
-			     std::mutex *mutex)
+PreviewDialog::PreviewDialog(QWidget *parent, int delay)
 	: QDialog(parent),
-	  _conditionData(conditionData),
 	  _scrollArea(new QScrollArea),
 	  _imageLabel(new QLabel(this)),
 	  _rubberBand(new QRubberBand(QRubberBand::Rectangle, this)),
-	  _mtx(mutex)
+	  _delay(delay)
 {
 	setWindowTitle("Advanced Scene Switcher");
+	setWindowFlags(windowFlags() | Qt::WindowMaximizeButtonHint |
+		       Qt::WindowCloseButtonHint);
+
 	_statusLabel = new QLabel(obs_module_text(
 		"AdvSceneSwitcher.condition.video.showMatch.loading"));
-	resize(640, 480);
+	resize(parent->window()->size());
+
+	// Center image
+	auto wrapper = new QWidget();
+	auto wrapperHLayout = new QHBoxLayout();
+	wrapperHLayout->addStretch();
+	wrapperHLayout->addWidget(_imageLabel);
+	wrapperHLayout->addStretch();
+	auto wrapperVLayout = new QVBoxLayout();
+	wrapperVLayout->addStretch();
+	wrapperVLayout->addLayout(wrapperHLayout);
+	wrapperVLayout->addStretch();
+	wrapper->setLayout(wrapperVLayout);
 
 	_scrollArea->setBackgroundRole(QPalette::Dark);
-	_scrollArea->setWidget(_imageLabel);
+	_scrollArea->setWidget(wrapper);
+	_scrollArea->setWidgetResizable(true);
 	QVBoxLayout *layout = new QVBoxLayout;
 	layout->addWidget(_statusLabel);
 	layout->addWidget(_scrollArea);
@@ -32,9 +46,9 @@ PreviewDialog::PreviewDialog(QWidget *parent,
 	//			     Q_ARG(QImage, image));
 	// from within CheckForMatchLoop().
 	// Even using BlockingQueuedConnection causes deadlocks
-	_timer.setInterval(500);
+	_timer.setInterval(300);
 	QWidget::connect(&_timer, &QTimer::timeout, this,
-			 &PreviewDialog::Resize);
+			 &PreviewDialog::ResizeImageLabel);
 	_timer.start();
 }
 
@@ -82,10 +96,7 @@ void PreviewDialog::mouseReleaseEvent(QMouseEvent *)
 
 PreviewDialog::~PreviewDialog()
 {
-	_stop = true;
-	if (_thread.joinable()) {
-		_thread.join();
-	}
+	Stop();
 }
 
 void PreviewDialog::ShowMatch()
@@ -105,7 +116,55 @@ void PreviewDialog::SelectArea()
 		"AdvSceneSwitcher.condition.video.selectArea.status"));
 }
 
-void PreviewDialog::Resize()
+void PreviewDialog::Stop()
+{
+	_stop = true;
+	if (_thread.joinable()) {
+		_thread.join();
+	}
+}
+
+void PreviewDialog::closeEvent(QCloseEvent *event)
+{
+	Stop();
+}
+
+void PreviewDialog::PatternMatchParamtersChanged(
+	const PatternMatchParameters &params)
+{
+	std::unique_lock<std::mutex> lock(_mtx);
+	_patternMatchParams = params;
+	_patternImageData = createPatternData(_patternMatchParams.image);
+}
+
+void PreviewDialog::ObjDetectParamtersChanged(const ObjDetectParamerts &params)
+{
+	std::unique_lock<std::mutex> lock(_mtx);
+	_objDetectParams = params;
+}
+
+void PreviewDialog::VideoSelectionChanged(const VideoSelection &video)
+{
+	std::unique_lock<std::mutex> lock(_mtx);
+	_video = video;
+}
+
+void PreviewDialog::AreaParamtersChanged(const AreaParamters &params)
+{
+	std::unique_lock<std::mutex> lock(_mtx);
+	_areaParams = params;
+}
+
+void PreviewDialog::ConditionChanged(int cond)
+{
+	Stop();
+	close();
+
+	std::unique_lock<std::mutex> lock(_mtx);
+	_condition = static_cast<VideoCondition>(cond);
+}
+
+void PreviewDialog::ResizeImageLabel()
 {
 	_imageLabel->adjustSize();
 	if (_type == Type::SELECT_AREA && !_selectingArea) {
@@ -118,11 +177,13 @@ void PreviewDialog::Start()
 	if (_thread.joinable()) {
 		return;
 	}
-	if (!_conditionData) {
+	if (!_video.ValidSelection()) {
 		DisplayMessage(obs_module_text(
 			"AdvSceneSwitcher.condition.video.screenshotFail"));
+		close();
 		return;
 	}
+	_stop = false;
 	_thread = std::thread(&PreviewDialog::CheckForMatchLoop, this);
 }
 
@@ -130,20 +191,15 @@ void PreviewDialog::CheckForMatchLoop()
 {
 	std::condition_variable cv;
 	while (!_stop) {
-		std::unique_lock<std::mutex> lock(*_mtx);
-		auto source = obs_weak_source_get_source(
-			_conditionData->_video.GetVideo());
+		std::unique_lock<std::mutex> lock(_mtx);
+		auto source = obs_weak_source_get_source(_video.GetVideo());
 		ScreenshotHelper screenshot(source);
 		obs_source_release(source);
-		cv.wait_for(lock, std::chrono::seconds(1));
-		if (_stop) {
+		cv.wait_for(lock, std::chrono::milliseconds(_delay));
+		if (_stop || isHidden()) {
 			return;
 		}
-		if (isHidden()) {
-			continue;
-		}
-		if (!screenshot.done ||
-		    !_conditionData->_video.ValidSelection()) {
+		if (!screenshot.done || !_video.ValidSelection()) {
 			_statusLabel->setText(obs_module_text(
 				"AdvSceneSwitcher.condition.video.screenshotFail"));
 			_imageLabel->setPixmap(QPixmap());
@@ -158,12 +214,11 @@ void PreviewDialog::CheckForMatchLoop()
 		}
 
 		if (_type == Type::SHOW_MATCH) {
-			if (_conditionData->_checkAreaEnable) {
+			if (_areaParams.enable) {
 				screenshot.image = screenshot.image.copy(
-					_conditionData->_checkArea.x,
-					_conditionData->_checkArea.y,
-					_conditionData->_checkArea.width,
-					_conditionData->_checkArea.height);
+					_areaParams.area.x, _areaParams.area.y,
+					_areaParams.area.width,
+					_areaParams.area.height);
 			}
 			MarkMatch(screenshot.image);
 		}
@@ -171,15 +226,15 @@ void PreviewDialog::CheckForMatchLoop()
 	}
 }
 
-void markPatterns(cv::Mat &matchResult, QImage &image, QImage &pattern)
+void markPatterns(cv::Mat &matchResult, QImage &image, cv::Mat &pattern)
 {
 	auto matchImg = QImageToMat(image);
 	for (int row = 0; row < matchResult.rows - 1; row++) {
 		for (int col = 0; col < matchResult.cols - 1; col++) {
 			if (matchResult.at<float>(row, col) != 0.0) {
 				rectangle(matchImg, {col, row},
-					  cv::Point(col + pattern.width(),
-						    row + pattern.height()),
+					  cv::Point(col + pattern.cols,
+						    row + pattern.rows),
 					  cv::Scalar(255, 0, 0, 255), 2, 8, 0);
 			}
 		}
@@ -199,27 +254,26 @@ void markObjects(QImage &image, std::vector<cv::Rect> &objects)
 
 void PreviewDialog::MarkMatch(QImage &screenshot)
 {
-	if (_conditionData->_condition == VideoCondition::PATTERN) {
+	if (_condition == VideoCondition::PATTERN) {
 		cv::Mat result;
-		QImage pattern = _conditionData->GetMatchImage();
-		matchPattern(screenshot, pattern,
-			     _conditionData->_patternThreshold, result,
-			     _conditionData->_useAlphaAsMask);
+		matchPattern(screenshot, _patternImageData,
+			     _patternMatchParams.threshold, result,
+			     _patternMatchParams.useAlphaAsMask);
 		if (countNonZero(result) == 0) {
 			_statusLabel->setText(obs_module_text(
 				"AdvSceneSwitcher.condition.video.patternMatchFail"));
 		} else {
 			_statusLabel->setText(obs_module_text(
 				"AdvSceneSwitcher.condition.video.patternMatchSuccess"));
-			markPatterns(result, screenshot, pattern);
+			markPatterns(result, screenshot,
+				     _patternImageData.rgbaPattern);
 		}
-	} else if (_conditionData->_condition == VideoCondition::OBJECT) {
-		auto objects = matchObject(screenshot,
-					   _conditionData->_objectCascade,
-					   _conditionData->_scaleFactor,
-					   _conditionData->_minNeighbors,
-					   _conditionData->_minSize.CV(),
-					   _conditionData->_maxSize.CV());
+	} else if (_condition == VideoCondition::OBJECT) {
+		auto objects = matchObject(screenshot, _objDetectParams.cascade,
+					   _objDetectParams.scaleFactor,
+					   _objDetectParams.minNeighbors,
+					   _objDetectParams.minSize.CV(),
+					   _objDetectParams.maxSize.CV());
 		if (objects.empty()) {
 			_statusLabel->setText(obs_module_text(
 				"AdvSceneSwitcher.condition.video.objectMatchFail"));
@@ -233,17 +287,15 @@ void PreviewDialog::MarkMatch(QImage &screenshot)
 
 void PreviewDialog::DrawFrame()
 {
-	if (!_conditionData) {
+	if (!_video.ValidSelection()) {
 		return;
 	}
 	auto imageStart =
 		_imageLabel->mapToGlobal(_imageLabel->rect().topLeft());
 	auto windowStart = mapToGlobal(rect().topLeft());
-	_rubberBand->resize(_conditionData->_checkArea.width,
-			    _conditionData->_checkArea.height);
-	_rubberBand->move(_conditionData->_checkArea.x +
-				  (imageStart.x() - windowStart.x()),
-			  _conditionData->_checkArea.y +
-				  (imageStart.y() - windowStart.y()));
+	_rubberBand->resize(_areaParams.area.width, _areaParams.area.height);
+	_rubberBand->move(
+		_areaParams.area.x + (imageStart.x() - windowStart.x()),
+		_areaParams.area.y + (imageStart.y() - windowStart.y()));
 	_rubberBand->show();
 }

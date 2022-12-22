@@ -1,8 +1,8 @@
 #include "opencv-helpers.hpp"
 
-PatternMatchData createPatternData(QImage &pattern)
+PatternImageData createPatternData(QImage &pattern)
 {
-	PatternMatchData data{};
+	PatternImageData data{};
 	if (pattern.isNull()) {
 		return data;
 	}
@@ -18,7 +18,7 @@ PatternMatchData createPatternData(QImage &pattern)
 	return data;
 }
 
-void matchPattern(QImage &img, PatternMatchData &patternData, double threshold,
+void matchPattern(QImage &img, PatternImageData &patternData, double threshold,
 		  cv::Mat &result, bool useAlphaAsMask)
 {
 	if (img.isNull() || patternData.rgbaPattern.empty()) {

@@ -5,15 +5,16 @@
 
 constexpr int minMinNeighbors = 3;
 constexpr int maxMinNeighbors = 6;
+constexpr double defaultScaleFactor = 1.1;
 
-struct PatternMatchData {
+struct PatternImageData {
 	cv::Mat4b rgbaPattern;
 	cv::Mat3b rgbPattern;
 	cv::Mat1b mask;
 };
 
-PatternMatchData createPatternData(QImage &pattern);
-void matchPattern(QImage &img, PatternMatchData &patternData, double threshold,
+PatternImageData createPatternData(QImage &pattern);
+void matchPattern(QImage &img, PatternImageData &patternData, double threshold,
 		  cv::Mat &result, bool useAlphaAsMask = true);
 void matchPattern(QImage &img, QImage &pattern, double threshold,
 		  cv::Mat &result, bool useAlphaAsMask);
