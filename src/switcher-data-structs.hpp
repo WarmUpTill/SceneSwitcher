@@ -85,6 +85,7 @@ struct SwitcherData {
 
 	bool settingsWindowOpened = false;
 	int lastOpenedTab = -1;
+	std::string lastImportPath;
 	bool firstBoot = true;
 
 	std::condition_variable cv;
