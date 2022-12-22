@@ -1,4 +1,6 @@
 #pragma once
+#include "video-selection.hpp"
+#include "paramerter-wrappers.hpp"
 
 #include <QDialog>
 #include <QLabel>
@@ -12,20 +14,25 @@
 #include <thread>
 #include <mutex>
 
-class MacroConditionVideo;
-
 class PreviewDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	PreviewDialog(QWidget *parent, MacroConditionVideo *_conditionData,
-		      std::mutex *mutex);
+	PreviewDialog(QWidget *parent, int delay);
 	virtual ~PreviewDialog();
 	void ShowMatch();
 	void SelectArea();
+	void Stop();
+	void closeEvent(QCloseEvent *event) override;
 
+public slots:
+	void PatternMatchParamtersChanged(const PatternMatchParameters &);
+	void ObjDetectParamtersChanged(const ObjDetectParamerts &);
+	void VideoSelectionChanged(const VideoSelection &);
+	void AreaParamtersChanged(const AreaParamters &);
+	void ConditionChanged(int cond);
 private slots:
-	void Resize();
+	void ResizeImageLabel();
 signals:
 	void SelectionAreaChanged(QRect area);
 
@@ -39,7 +46,13 @@ private:
 	void mouseMoveEvent(QMouseEvent *event);
 	void mouseReleaseEvent(QMouseEvent *event);
 
-	MacroConditionVideo *_conditionData;
+	VideoSelection _video;
+	PatternMatchParameters _patternMatchParams;
+	PatternImageData _patternImageData;
+	ObjDetectParamerts _objDetectParams;
+	AreaParamters _areaParams;
+
+	VideoCondition _condition = VideoCondition::PATTERN;
 	QScrollArea *_scrollArea;
 	QLabel *_statusLabel;
 	QLabel *_imageLabel;
@@ -49,13 +62,14 @@ private:
 	QRubberBand *_rubberBand = nullptr;
 	std::atomic_bool _selectingArea = {false};
 
-	std::mutex *_mtx;
+	std::mutex _mtx;
 	std::thread _thread;
-	std::atomic_bool _stop = {false};
+	std::atomic_bool _stop = {true};
 
 	enum class Type {
 		SHOW_MATCH,
 		SELECT_AREA,
 	};
 	Type _type = Type::SHOW_MATCH;
+	int _delay = 300;
 };

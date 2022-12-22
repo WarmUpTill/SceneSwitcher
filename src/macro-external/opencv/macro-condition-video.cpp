@@ -106,7 +106,7 @@ bool MacroConditionVideo::CheckCondition()
 	return match;
 }
 
-bool MacroConditionVideo::Save(obs_data_t *obj)
+bool MacroConditionVideo::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	_video.Save(obj);
@@ -114,32 +114,13 @@ bool MacroConditionVideo::Save(obs_data_t *obj)
 	obs_data_set_string(obj, "filePath", _file.c_str());
 	obs_data_set_bool(obj, "blockUntilScreenshotDone",
 			  _blockUntilScreenshotDone);
-	obs_data_set_bool(obj, "usePatternForChangedCheck",
-			  _usePatternForChangedCheck);
-	obs_data_set_double(obj, "threshold", _patternThreshold);
-	obs_data_set_bool(obj, "useAlphaAsMask", _useAlphaAsMask);
 	obs_data_set_double(obj, "brightness", _brightnessThreshold);
-	obs_data_set_string(obj, "modelDataPath", _modelDataPath.c_str());
-	obs_data_set_double(obj, "scaleFactor", _scaleFactor);
-	obs_data_set_int(obj, "minNeighbors", _minNeighbors);
-	_minSize.Save(obj, "minSize");
-	_maxSize.Save(obj, "maxSize");
+	_patternMatchParameters.Save(obj);
+	_objMatchParameters.Save(obj);
 	obs_data_set_bool(obj, "throttleEnabled", _throttleEnabled);
 	obs_data_set_int(obj, "throttleCount", _throttleCount);
-	obs_data_set_bool(obj, "checkAreaEnabled", _checkAreaEnable);
-	_checkArea.Save(obj, "checkArea");
+	_areaParameters.Save(obj);
 	return true;
-}
-
-bool isScaleFactorValid(double scaleFactor)
-{
-	return scaleFactor > 1.;
-}
-
-bool isMinNeighborsValid(int minNeighbors)
-{
-	return minNeighbors >= minMinNeighbors &&
-	       minNeighbors <= maxMinNeighbors;
 }
 
 bool MacroConditionVideo::Load(obs_data_t *obj)
@@ -154,46 +135,24 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 	_file = obs_data_get_string(obj, "filePath");
 	_blockUntilScreenshotDone =
 		obs_data_get_bool(obj, "blockUntilScreenshotDone");
-	_usePatternForChangedCheck =
-		obs_data_get_bool(obj, "usePatternForChangedCheck");
-	_patternThreshold = obs_data_get_double(obj, "threshold");
-	_useAlphaAsMask = obs_data_get_bool(obj, "useAlphaAsMask");
 	_brightnessThreshold = obs_data_get_double(obj, "brightness");
-	_modelDataPath = obs_data_get_string(obj, "modelDataPath");
-	_scaleFactor = obs_data_get_double(obj, "scaleFactor");
-	if (!isScaleFactorValid(_scaleFactor)) {
-		_scaleFactor = 1.1;
-	}
-	_minNeighbors = obs_data_get_int(obj, "minNeighbors");
-	if (!isMinNeighborsValid(_minNeighbors)) {
-		_minNeighbors = minMinNeighbors;
-	}
-	// TODO: Remove this fallback in future version
-	if (obs_data_has_user_value(obj, "minSizeX")) {
-		_minSize.width = obs_data_get_int(obj, "minSizeX");
-		_minSize.height = obs_data_get_int(obj, "minSizeY");
-		_maxSize.width = obs_data_get_int(obj, "maxSizeX");
-		_maxSize.height = obs_data_get_int(obj, "maxSizeY");
-	} else {
-		_minSize.Load(obj, "minSize");
-		_maxSize.Load(obj, "maxSize");
-	}
+	_patternMatchParameters.Load(obj);
+	_objMatchParameters.Load(obj);
 	_throttleEnabled = obs_data_get_bool(obj, "throttleEnabled");
 	_throttleCount = obs_data_get_int(obj, "throttleCount");
-	_checkAreaEnable = obs_data_get_bool(obj, "checkAreaEnabled");
-	_checkArea.Load(obj, "checkArea");
+	_areaParameters.Load(obj);
 	if (requiresFileInput(_condition)) {
 		(void)LoadImageFromFile();
 	}
 
 	if (_condition == VideoCondition::OBJECT) {
-		LoadModelData(_modelDataPath);
+		LoadModelData(_objMatchParameters.modelPath);
 	}
 
 	return true;
 }
 
-std::string MacroConditionVideo::GetShortDesc()
+std::string MacroConditionVideo::GetShortDesc() const
 {
 	return _video.ToString();
 }
@@ -215,37 +174,46 @@ bool MacroConditionVideo::LoadImageFromFile()
 		     _file.c_str());
 		(&_matchImage)->~QImage();
 		new (&_matchImage) QImage();
+		_patternImageData = {};
 		return false;
 	}
 
 	_matchImage =
 		_matchImage.convertToFormat(QImage::Format::Format_RGBA8888);
-	_patternData = createPatternData(_matchImage);
+	_patternMatchParameters.image = _matchImage;
+	_patternImageData = createPatternData(_matchImage);
 	return true;
 }
 
 bool MacroConditionVideo::LoadModelData(std::string &path)
 {
-	_modelDataPath = path;
-	_objectCascade = initObjectCascade(path);
-	return !_objectCascade.empty();
+	_objMatchParameters.modelPath = path;
+	_objMatchParameters.cascade = initObjectCascade(path);
+	return !_objMatchParameters.cascade.empty();
+}
+
+std::string MacroConditionVideo::GetModelDataPath() const
+{
+	return _objMatchParameters.modelPath;
 }
 
 bool MacroConditionVideo::ScreenshotContainsPattern()
 {
 	cv::Mat result;
-	matchPattern(_screenshotData.image, _patternData, _patternThreshold,
-		     result, _useAlphaAsMask);
+	matchPattern(_screenshotData.image, _patternImageData,
+		     _patternMatchParameters.threshold, result,
+		     _patternMatchParameters.useAlphaAsMask);
 	return countNonZero(result) > 0;
 }
 
 bool MacroConditionVideo::OutputChanged()
 {
-	if (_usePatternForChangedCheck) {
+	if (_patternMatchParameters.useForChangedCheck) {
 		cv::Mat result;
-		_patternData = createPatternData(_matchImage);
-		matchPattern(_screenshotData.image, _patternData,
-			     _patternThreshold, result, _useAlphaAsMask);
+		_patternImageData = createPatternData(_matchImage);
+		matchPattern(_screenshotData.image, _patternImageData,
+			     _patternMatchParameters.threshold, result,
+			     _patternMatchParameters.useAlphaAsMask);
 		return countNonZero(result) == 0;
 	}
 	return _screenshotData.image != _matchImage;
@@ -253,9 +221,12 @@ bool MacroConditionVideo::OutputChanged()
 
 bool MacroConditionVideo::ScreenshotContainsObject()
 {
-	auto objects = matchObject(_screenshotData.image, _objectCascade,
-				   _scaleFactor, _minNeighbors, _minSize.CV(),
-				   _maxSize.CV());
+	auto objects = matchObject(_screenshotData.image,
+				   _objMatchParameters.cascade,
+				   _objMatchParameters.scaleFactor,
+				   _objMatchParameters.minNeighbors,
+				   _objMatchParameters.minSize.CV(),
+				   _objMatchParameters.maxSize.CV());
 	return objects.size() > 0;
 }
 
@@ -267,10 +238,11 @@ bool MacroConditionVideo::CheckBrightnessThreshold()
 
 bool MacroConditionVideo::Compare()
 {
-	if (_checkAreaEnable && _condition != VideoCondition::NO_IMAGE) {
+	if (_areaParameters.enable && _condition != VideoCondition::NO_IMAGE) {
 		_screenshotData.image = _screenshotData.image.copy(
-			_checkArea.x, _checkArea.y, _checkArea.width,
-			_checkArea.height);
+			_areaParameters.area.x, _areaParameters.area.y,
+			_areaParameters.area.width,
+			_areaParameters.area.height);
 	}
 
 	switch (_condition) {
@@ -354,7 +326,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	  _throttleCount(new QSpinBox()),
 	  _showMatch(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.showMatch"))),
-	  _previewDialog(this, entryData.get(), &GetSwitcher()->m)
+	  _previewDialog(this, GetSwitcher()->interval)
 {
 	_reduceLatency->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.video.reduceLatency.tooltip"));
@@ -411,6 +383,12 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 SLOT(ShowMatchClicked()));
 	QWidget::connect(&_previewDialog, SIGNAL(SelectionAreaChanged(QRect)),
 			 this, SLOT(CheckAreaChanged(QRect)));
+	QWidget::connect(_videoSelection,
+			 SIGNAL(VideoSelectionChange(const VideoSelection &)),
+			 &_previewDialog,
+			 SLOT(VideoSelectionChanged(const VideoSelection &)));
+	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)),
+			 &_previewDialog, SLOT(ConditionChanged(int)));
 	QWidget::connect(_selectArea, SIGNAL(clicked()), this,
 			 SLOT(SelectAreaClicked()));
 
@@ -553,10 +531,13 @@ void MacroConditionVideoEdit::ConditionChanged(int cond)
 	if (_entryData->LoadImageFromFile()) {
 		UpdatePreviewTooltip();
 	}
+	_previewDialog.PatternMatchParamtersChanged(
+		_entryData->_patternMatchParameters);
 
 	if (_entryData->_condition == VideoCondition::OBJECT) {
 		auto path = _entryData->GetModelDataPath();
-		_entryData->_objectCascade = initObjectCascade(path);
+		_entryData->_objMatchParameters.cascade =
+			initObjectCascade(path);
 	}
 }
 
@@ -572,6 +553,8 @@ void MacroConditionVideoEdit::ImagePathChanged(const QString &text)
 	if (_entryData->LoadImageFromFile()) {
 		UpdatePreviewTooltip();
 	}
+	_previewDialog.PatternMatchParamtersChanged(
+		_entryData->_patternMatchParameters);
 }
 
 void MacroConditionVideoEdit::ImageBrowseButtonClicked()
@@ -618,7 +601,10 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 	}
 
 	if (useExistingFile) {
-		path = QFileDialog::getOpenFileName(this);
+		path = QFileDialog::getOpenFileName(
+			this, "",
+			FileSelection::ValidPathOrDesktop(
+				QString::fromStdString(_entryData->_file)));
 		if (path.isEmpty()) {
 			return;
 		}
@@ -629,7 +615,11 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 		ScreenshotHelper screenshot(source);
 		obs_source_release(source);
 
-		path = QFileDialog::getSaveFileName(this, "", "", "*.png");
+		path = QFileDialog::getSaveFileName(
+			this, "",
+			FileSelection::ValidPathOrDesktop(
+				QString::fromStdString(_entryData->_file)),
+			"*.png");
 		if (path.isEmpty()) {
 			return;
 		}
@@ -645,12 +635,12 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 				"AdvSceneSwitcher.condition.video.screenshotFail"));
 			return;
 		}
-		if (_entryData->_checkAreaEnable) {
+		if (_entryData->_areaParameters.enable) {
 			screenshot.image = screenshot.image.copy(
-				_entryData->_checkArea.x,
-				_entryData->_checkArea.y,
-				_entryData->_checkArea.width,
-				_entryData->_checkArea.height);
+				_entryData->_areaParameters.area.x,
+				_entryData->_areaParameters.area.y,
+				_entryData->_areaParameters.area.width,
+				_entryData->_areaParameters.area.height);
 		}
 		screenshot.image.save(path);
 	}
@@ -665,7 +655,7 @@ void MacroConditionVideoEdit::UsePatternForChangedCheckChanged(int value)
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_usePatternForChangedCheck = value;
+	_entryData->_patternMatchParameters.useForChangedCheck = value;
 	_patternThreshold->setVisible(value);
 	adjustSize();
 }
@@ -677,7 +667,9 @@ void MacroConditionVideoEdit::PatternThresholdChanged(double value)
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_patternThreshold = value;
+	_entryData->_patternMatchParameters.threshold = value;
+	_previewDialog.PatternMatchParamtersChanged(
+		_entryData->_patternMatchParameters);
 }
 
 void MacroConditionVideoEdit::ReduceLatencyChanged(int value)
@@ -697,8 +689,10 @@ void MacroConditionVideoEdit::UseAlphaAsMaskChanged(int value)
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_useAlphaAsMask = value;
+	_entryData->_patternMatchParameters.useAlphaAsMask = value;
 	_entryData->LoadImageFromFile();
+	_previewDialog.PatternMatchParamtersChanged(
+		_entryData->_patternMatchParameters);
 }
 
 void MacroConditionVideoEdit::BrightnessThresholdChanged(double value)
@@ -718,7 +712,9 @@ void MacroConditionVideoEdit::ObjectScaleThresholdChanged(double value)
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_scaleFactor = value;
+	_entryData->_objMatchParameters.scaleFactor = value;
+	_previewDialog.ObjDetectParamtersChanged(
+		_entryData->_objMatchParameters);
 }
 
 void MacroConditionVideoEdit::MinNeighborsChanged(int value)
@@ -728,7 +724,9 @@ void MacroConditionVideoEdit::MinNeighborsChanged(int value)
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_minNeighbors = value;
+	_entryData->_objMatchParameters.minNeighbors = value;
+	_previewDialog.ObjDetectParamtersChanged(
+		_entryData->_objMatchParameters);
 }
 
 void MacroConditionVideoEdit::MinSizeChanged(advss::Size value)
@@ -738,7 +736,9 @@ void MacroConditionVideoEdit::MinSizeChanged(advss::Size value)
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_minSize = value;
+	_entryData->_objMatchParameters.minSize = value;
+	_previewDialog.ObjDetectParamtersChanged(
+		_entryData->_objMatchParameters);
 }
 
 void MacroConditionVideoEdit::MaxSizeChanged(advss::Size value)
@@ -748,7 +748,9 @@ void MacroConditionVideoEdit::MaxSizeChanged(advss::Size value)
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_maxSize = value;
+	_entryData->_objMatchParameters.maxSize = value;
+	_previewDialog.ObjDetectParamtersChanged(
+		_entryData->_objMatchParameters);
 }
 
 void MacroConditionVideoEdit::CheckAreaEnableChanged(int value)
@@ -758,12 +760,13 @@ void MacroConditionVideoEdit::CheckAreaEnableChanged(int value)
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_checkAreaEnable = value;
+	_entryData->_areaParameters.enable = value;
 	_checkArea->setEnabled(value);
 	_selectArea->setEnabled(value);
 	_checkArea->setVisible(value);
 	_selectArea->setVisible(value);
 	adjustSize();
+	_previewDialog.AreaParamtersChanged(_entryData->_areaParameters);
 }
 
 void MacroConditionVideoEdit::CheckAreaChanged(advss::Area value)
@@ -773,7 +776,8 @@ void MacroConditionVideoEdit::CheckAreaChanged(advss::Area value)
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_checkArea = value;
+	_entryData->_areaParameters.area = value;
+	_previewDialog.AreaParamtersChanged(_entryData->_areaParameters);
 }
 
 void MacroConditionVideoEdit::CheckAreaChanged(QRect rect)
@@ -908,13 +912,13 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 			 needsThrottleControls(_entryData->_condition));
 	setLayoutVisible(_checkAreaControlLayout,
 			 needsAreaControls(_entryData->_condition));
-	_checkArea->setVisible(_entryData->_checkAreaEnable);
-	_selectArea->setVisible(_entryData->_checkAreaEnable);
+	_checkArea->setVisible(_entryData->_areaParameters.enable);
+	_selectArea->setVisible(_entryData->_areaParameters.enable);
 
 	if (_entryData->_condition == VideoCondition::HAS_CHANGED ||
 	    _entryData->_condition == VideoCondition::HAS_NOT_CHANGED) {
 		_patternThreshold->setVisible(
-			_entryData->_usePatternForChangedCheck);
+			_entryData->_patternMatchParameters.useForChangedCheck);
 	}
 
 	adjustSize();
@@ -931,20 +935,33 @@ void MacroConditionVideoEdit::UpdateEntryData()
 	_reduceLatency->setChecked(_entryData->_blockUntilScreenshotDone);
 	_imagePath->SetPath(QString::fromStdString(_entryData->_file));
 	_usePatternForChangedCheck->setChecked(
-		_entryData->_usePatternForChangedCheck);
-	_patternThreshold->SetDoubleValue(_entryData->_patternThreshold);
-	_useAlphaAsMask->setChecked(_entryData->_useAlphaAsMask);
+		_entryData->_patternMatchParameters.useForChangedCheck);
+	_patternThreshold->SetDoubleValue(
+		_entryData->_patternMatchParameters.threshold);
+	_useAlphaAsMask->setChecked(
+		_entryData->_patternMatchParameters.useAlphaAsMask);
 	_brightnessThreshold->SetDoubleValue(_entryData->_brightnessThreshold);
 	_modelDataPath->SetPath(_entryData->GetModelDataPath().c_str());
-	_objectScaleThreshold->SetDoubleValue(_entryData->_scaleFactor);
-	_minNeighbors->setValue(_entryData->_minNeighbors);
-	_minSize->SetSize(_entryData->_minSize);
-	_maxSize->SetSize(_entryData->_maxSize);
+	_objectScaleThreshold->SetDoubleValue(
+		_entryData->_objMatchParameters.scaleFactor);
+	_minNeighbors->setValue(_entryData->_objMatchParameters.minNeighbors);
+	_minSize->SetSize(_entryData->_objMatchParameters.minSize);
+	_maxSize->SetSize(_entryData->_objMatchParameters.maxSize);
 	_throttleEnable->setChecked(_entryData->_throttleEnabled);
 	_throttleCount->setValue(_entryData->_throttleCount *
 				 GetSwitcher()->interval);
-	_checkAreaEnable->setChecked(_entryData->_checkAreaEnable);
-	_checkArea->SetArea(_entryData->_checkArea);
+	_checkAreaEnable->setChecked(_entryData->_areaParameters.enable);
+	_checkArea->SetArea(_entryData->_areaParameters.area);
 	UpdatePreviewTooltip();
 	SetWidgetVisibility();
+
+	// Prepare previewDialog
+	_previewDialog.PatternMatchParamtersChanged(
+		_entryData->_patternMatchParameters);
+	_previewDialog.ObjDetectParamtersChanged(
+		_entryData->_objMatchParameters);
+	_previewDialog.VideoSelectionChanged(_entryData->_video);
+	_previewDialog.AreaParamtersChanged(_entryData->_areaParameters);
+	_previewDialog.ConditionChanged(
+		static_cast<int>(_entryData->_condition));
 }

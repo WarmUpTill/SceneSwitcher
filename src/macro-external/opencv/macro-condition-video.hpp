@@ -1,9 +1,10 @@
 #pragma once
 #include "opencv-helpers.hpp"
 #include "threshold-slider.hpp"
-#include "preview-dialog.hpp"
 #include "area-selection.hpp"
 #include "video-selection.hpp"
+#include "preview-dialog.hpp"
+#include "paramerter-wrappers.hpp"
 
 #include <macro.hpp>
 #include <file-selection.hpp>
@@ -17,36 +18,27 @@
 #include <QLabel>
 #include <QRect>
 
-enum class VideoCondition {
-	MATCH,
-	DIFFER,
-	HAS_NOT_CHANGED,
-	HAS_CHANGED,
-	NO_IMAGE,
-	PATTERN,
-	OBJECT,
-	BRIGHTNESS,
-};
+class PreviewDialog;
 
 class MacroConditionVideo : public MacroCondition {
 public:
 	MacroConditionVideo(Macro *m) : MacroCondition(m) {}
 	bool CheckCondition();
-	bool Save(obs_data_t *obj);
+	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
-	std::string GetShortDesc();
-	std::string GetId() { return id; };
-	QImage GetMatchImage() { return _matchImage; };
+	std::string GetShortDesc() const;
+	std::string GetId() const { return id; };
 	static std::shared_ptr<MacroCondition> Create(Macro *m)
 	{
 		return std::make_shared<MacroConditionVideo>(m);
 	}
+	QImage GetMatchImage() const { return _matchImage; };
 	void GetScreenshot(bool blocking = false);
 	bool LoadImageFromFile();
 	bool LoadModelData(std::string &path);
-	std::string GetModelDataPath() { return _modelDataPath; }
+	std::string GetModelDataPath() const;
 	void ResetLastMatch() { _lastMatchResult = false; }
-	double GetCurrentBrightness() { return _currentBrigthness; }
+	double GetCurrentBrightness() const { return _currentBrigthness; }
 
 	VideoSelection _video;
 	VideoCondition _condition = VideoCondition::MATCH;
@@ -58,20 +50,10 @@ public:
 	// checked in the next one.
 	// If set both operations will happen in the same interval.
 	bool _blockUntilScreenshotDone = false;
-	bool _useAlphaAsMask = false;
-	bool _usePatternForChangedCheck = false;
-	PatternMatchData _patternData;
-	double _patternThreshold = 0.8;
 	double _brightnessThreshold = 0.5;
-	cv::CascadeClassifier _objectCascade;
-	double _scaleFactor = 1.1;
-	int _minNeighbors = minMinNeighbors;
-	advss::Size _minSize{0, 0};
-	advss::Size _maxSize{0, 0};
-
-	bool _checkAreaEnable = false;
-	advss::Area _checkArea{0, 0, 0, 0};
-
+	PatternMatchParameters _patternMatchParameters;
+	ObjDetectParamerts _objMatchParameters;
+	AreaParamters _areaParameters;
 	bool _throttleEnabled = false;
 	int _throttleCount = 3;
 
@@ -86,10 +68,8 @@ private:
 	bool _getNextScreenshot = true;
 	ScreenshotHelper _screenshotData;
 	QImage _matchImage;
-	std::string _modelDataPath =
-		obs_get_module_data_path(obs_current_module()) +
-		std::string(
-			"/res/cascadeClassifiers/haarcascade_frontalface_alt.xml");
+	PatternImageData _patternImageData;
+
 	bool _lastMatchResult = false;
 	int _runCount = 0;
 	double _currentBrigthness = 0.;
