@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "duration-control.hpp"
+#include "slider-spinbox.hpp"
 
 #include <QSpinBox>
 #include <QDoubleSpinBox>
@@ -30,6 +31,7 @@ public:
 		MASTER_VOLUME,
 		SYNC_OFFSET,
 		MONITOR,
+		BALANCE,
 	};
 
 	enum class FadeType {
@@ -41,6 +43,7 @@ public:
 	FadeType _fadeType = FadeType::DURATION;
 	int64_t _syncOffset = 0;
 	obs_monitoring_type _monitorType = OBS_MONITORING_TYPE_NONE;
+	double _balance = 0.5;
 	int _volume = 0;
 	bool _fade = false;
 	Duration _duration;
@@ -82,6 +85,7 @@ private slots:
 	void ActionChanged(int value);
 	void SyncOffsetChanged(int value);
 	void MonitorTypeChanged(int value);
+	void BalanceChanged(double value);
 	void VolumeChanged(int value);
 	void FadeChanged(int value);
 	void DurationChanged(double seconds);
@@ -98,6 +102,7 @@ protected:
 	QComboBox *_fadeTypes;
 	QSpinBox *_syncOffset;
 	QComboBox *_monitorTypes;
+	SliderSpinBox *_balance;
 	QSpinBox *_volumePercent;
 	QCheckBox *_fade;
 	DurationSelection *_duration;
