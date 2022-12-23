@@ -235,8 +235,16 @@ void MacroConditionAudio::ResetVolmeter()
 static inline void populateCheckTypes(QComboBox *list)
 {
 	list->clear();
-	for (auto entry : checkTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[type, name] : checkTypes) {
+		if (type == MacroConditionAudio::Type::MONITOR) {
+			if (obs_audio_monitoring_available()) {
+				list->addItem(obs_module_text(name.c_str()),
+					      static_cast<int>(type));
+			}
+		} else {
+			list->addItem(obs_module_text(name.c_str()),
+				      static_cast<int>(type));
+		}
 	}
 }
 
@@ -398,14 +406,15 @@ void MacroConditionAudioEdit::ConditionChanged(int cond)
 	SetWidgetVisibility();
 }
 
-void MacroConditionAudioEdit::CheckTypeChanged(int cond)
+void MacroConditionAudioEdit::CheckTypeChanged(int idx)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_checkType = static_cast<MacroConditionAudio::Type>(cond);
+	_entryData->_checkType = static_cast<MacroConditionAudio::Type>(
+		_checkTypes->itemData(idx).toInt());
 
 	const QSignalBlocker b(_condition);
 	if (_entryData->_checkType ==
@@ -429,7 +438,8 @@ void MacroConditionAudioEdit::UpdateEntryData()
 	_volume->setValue(_entryData->_volume);
 	_syncOffset->setValue(_entryData->_syncOffset);
 	_monitorTypes->setCurrentIndex(_entryData->_monitorType);
-	_checkTypes->setCurrentIndex(static_cast<int>(_entryData->_checkType));
+	_checkTypes->setCurrentIndex(_checkTypes->findData(
+		static_cast<int>(_entryData->_checkType)));
 	if (_entryData->_checkType ==
 	    MacroConditionAudio::Type::OUTPUT_VOLUME) {
 		populateOutputConditionSelection(_condition);

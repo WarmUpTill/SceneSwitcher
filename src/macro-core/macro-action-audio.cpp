@@ -277,8 +277,16 @@ std::string MacroActionAudio::GetShortDesc() const
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (auto entry : actionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto [action, name] : actionTypes) {
+		if (action == MacroActionAudio::Action::MONITOR) {
+			if (obs_audio_monitoring_available()) {
+				list->addItem(obs_module_text(name.c_str()),
+					      static_cast<int>(action));
+			}
+		} else {
+			list->addItem(obs_module_text(name.c_str()),
+				      static_cast<int>(action));
+		}
 	}
 }
 
@@ -448,7 +456,8 @@ void MacroActionAudioEdit::UpdateEntryData()
 
 	_audioSources->setCurrentText(
 		GetWeakSourceName(_entryData->_audioSource).c_str());
-	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_actions->setCurrentIndex(
+		_actions->findData(static_cast<int>(_entryData->_action)));
 	_syncOffset->setValue(_entryData->_syncOffset);
 	_monitorTypes->setCurrentIndex(_entryData->_monitorType);
 	_volumePercent->setValue(_entryData->_volume);
@@ -473,14 +482,15 @@ void MacroActionAudioEdit::SourceChanged(const QString &text)
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-void MacroActionAudioEdit::ActionChanged(int value)
+void MacroActionAudioEdit::ActionChanged(int idx)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_action = static_cast<MacroActionAudio::Action>(value);
+	_entryData->_action = static_cast<MacroActionAudio::Action>(
+		_actions->itemData(idx).toInt());
 	SetWidgetVisibility();
 }
 
