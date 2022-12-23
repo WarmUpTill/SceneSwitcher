@@ -208,11 +208,11 @@ void MacroConditionSceneVisibilityEdit::ConditionChanged(int index)
 		static_cast<MacroConditionSceneVisibility::Condition>(index);
 	if (_entryData->_condition ==
 	    MacroConditionSceneVisibility::Condition::CHANGED) {
-		_sources->SetShowAllSelectionType(
-			SceneItemSelectionWidget::AllSelectionType::ANY, false);
+		_sources->SetPlaceholderType(
+			SceneItemSelectionWidget::Placeholder::ANY, false);
 	} else {
-		_sources->SetShowAllSelectionType(
-			SceneItemSelectionWidget::AllSelectionType::ALL, false);
+		_sources->SetPlaceholderType(
+			SceneItemSelectionWidget::Placeholder::ALL, false);
 	}
 }
 
@@ -226,11 +226,11 @@ void MacroConditionSceneVisibilityEdit::UpdateEntryData()
 	_scenes->SetScene(_entryData->_scene);
 	if (_entryData->_condition ==
 	    MacroConditionSceneVisibility::Condition::CHANGED) {
-		_sources->SetShowAllSelectionType(
-			SceneItemSelectionWidget::AllSelectionType::ANY, false);
+		_sources->SetPlaceholderType(
+			SceneItemSelectionWidget::Placeholder::ANY, false);
 	} else {
-		_sources->SetShowAllSelectionType(
-			SceneItemSelectionWidget::AllSelectionType::ALL, false);
+		_sources->SetPlaceholderType(
+			SceneItemSelectionWidget::Placeholder::ALL, false);
 	}
 	_sources->SetSceneItem(_entryData->_source);
 }

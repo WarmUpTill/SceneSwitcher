@@ -43,16 +43,13 @@ class SceneItemSelectionWidget : public QWidget {
 	Q_OBJECT
 
 public:
-	// Influences what is being displaye for the "all" entry
-	enum class AllSelectionType { ALL, ANY };
-	SceneItemSelectionWidget(
-		QWidget *parent, bool addAllSelection = true,
-		AllSelectionType allType = AllSelectionType::ALL);
+	enum class Placeholder { ALL, ANY };
+	SceneItemSelectionWidget(QWidget *parent, bool addPlaceholder = true,
+				 Placeholder placeholderType = Placeholder::ALL);
 	void SetSceneItem(const SceneItemSelection &);
 	void SetScene(const SceneSelection &);
-	void SetShowAll(bool);
-	void SetShowAllSelectionType(AllSelectionType t,
-				     bool resetSelection = true);
+	void ShowPlaceholder(bool);
+	void SetPlaceholderType(Placeholder t, bool resetSelection = true);
 signals:
 	void SceneItemChanged(const SceneItemSelection &);
 
@@ -74,8 +71,8 @@ private:
 
 	SceneSelection _scene;
 	SceneItemSelection _currentSelection;
-	bool _hasAllEntry = false;
-	AllSelectionType _allType = AllSelectionType::ALL;
+	bool _hasPlaceholderEntry = false;
+	Placeholder _placeholder = Placeholder::ALL;
 
 	// Order of entries
 	// 1. "select entry" entry
