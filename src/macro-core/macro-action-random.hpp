@@ -4,7 +4,7 @@
 
 #include <QPushButton>
 #include <QListWidget>
-#include <unordered_map>
+#include <QCheckBox>
 
 class MacroActionRandom : public MultiMacroRefAction {
 public:
@@ -19,8 +19,7 @@ public:
 		return std::make_shared<MacroActionRandom>(m);
 	}
 
-	// TODO: add weights to each macro ...
-	// std::unordered_map<MacroRef, int> _weights;
+	bool _allowRepeat = false;
 
 private:
 	MacroRef lastRandomMacro;
@@ -49,11 +48,15 @@ private slots:
 	void Add(const std::string &);
 	void Remove(int);
 	void Replace(int, const std::string &);
+	void AllowRepeatChanged(int);
 
 protected:
 	std::shared_ptr<MacroActionRandom> _entryData;
 
 private:
+	bool ShouldShowAllowRepeat();
+
 	MacroList *_list;
+	QCheckBox *_allowRepeat;
 	bool _loading = true;
 };

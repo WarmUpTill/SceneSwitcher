@@ -11,8 +11,8 @@ bool MacroActionRandom::_registered = MacroActionFactory::Register(
 	{MacroActionRandom::Create, MacroActionRandomEdit::Create,
 	 "AdvSceneSwitcher.action.random"});
 
-std::vector<MacroRef> getNextMacro(std::vector<MacroRef> &macros,
-				   MacroRef &lastRandomMacro)
+std::vector<MacroRef> getNextMacros(std::vector<MacroRef> &macros,
+				    MacroRef &lastRandomMacro, bool allowRepeat)
 {
 	std::vector<MacroRef> res;
 	if (macros.size() == 1) {
@@ -25,7 +25,7 @@ std::vector<MacroRef> getNextMacro(std::vector<MacroRef> &macros,
 
 	for (auto &m : macros) {
 		if (m.get() && !m->Paused() &&
-		    !(lastRandomMacro.get() == m.get())) {
+		    (allowRepeat || (lastRandomMacro.get() != m.get()))) {
 			res.push_back(m);
 		}
 	}
@@ -38,7 +38,7 @@ bool MacroActionRandom::PerformAction()
 		return true;
 	}
 
-	auto macros = getNextMacro(_macros, lastRandomMacro);
+	auto macros = getNextMacros(_macros, lastRandomMacro, _allowRepeat);
 	if (macros.size() == 0) {
 		return true;
 	}
@@ -61,6 +61,7 @@ bool MacroActionRandom::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	SaveMacroList(obj, _macros);
+	obs_data_set_bool(obj, "allowRepeat", _allowRepeat);
 	return true;
 }
 
@@ -68,12 +69,16 @@ bool MacroActionRandom::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 	LoadMacroList(obj, _macros);
+	_allowRepeat = obs_data_get_bool(obj, "allowRepeat");
 	return true;
 }
 
 MacroActionRandomEdit::MacroActionRandomEdit(
 	QWidget *parent, std::shared_ptr<MacroActionRandom> entryData)
-	: QWidget(parent), _list(new MacroList(this, false, false))
+	: QWidget(parent),
+	  _list(new MacroList(this, true, false)),
+	  _allowRepeat(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.action.random.allowRepeat")))
 {
 	QWidget::connect(_list, SIGNAL(Added(const std::string &)), this,
 			 SLOT(Add(const std::string &)));
@@ -82,6 +87,8 @@ MacroActionRandomEdit::MacroActionRandomEdit(
 			 this, SLOT(Replace(int, const std::string &)));
 	QWidget::connect(window(), SIGNAL(MacroRemoved(const QString &)), this,
 			 SLOT(MacroRemove(const QString &)));
+	QWidget::connect(_allowRepeat, SIGNAL(stateChanged(int)), this,
+			 SLOT(AllowRepeatChanged(int)));
 
 	auto *entryLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {};
@@ -91,6 +98,7 @@ MacroActionRandomEdit::MacroActionRandomEdit(
 	auto *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(entryLayout);
 	mainLayout->addWidget(_list);
+	mainLayout->addWidget(_allowRepeat);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -105,6 +113,8 @@ void MacroActionRandomEdit::UpdateEntryData()
 	}
 
 	_list->SetContent(_entryData->_macros);
+	_allowRepeat->setChecked(_entryData->_allowRepeat);
+	_allowRepeat->setVisible(ShouldShowAllowRepeat());
 	adjustSize();
 }
 
@@ -135,6 +145,7 @@ void MacroActionRandomEdit::Add(const std::string &name)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	MacroRef macro(name);
 	_entryData->_macros.push_back(macro);
+	_allowRepeat->setVisible(ShouldShowAllowRepeat());
 	adjustSize();
 }
 
@@ -146,6 +157,7 @@ void MacroActionRandomEdit::Remove(int idx)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_macros.erase(std::next(_entryData->_macros.begin(), idx));
+	_allowRepeat->setVisible(ShouldShowAllowRepeat());
 	adjustSize();
 }
 
@@ -159,4 +171,28 @@ void MacroActionRandomEdit::Replace(int idx, const std::string &name)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_macros[idx] = macro;
 	adjustSize();
+}
+
+void MacroActionRandomEdit::AllowRepeatChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_allowRepeat = value;
+}
+
+bool MacroActionRandomEdit::ShouldShowAllowRepeat()
+{
+	if (_entryData->_macros.size() <= 1) {
+		return false;
+	}
+	const auto macro = _entryData->_macros[0];
+	for (const auto m : _entryData->_macros) {
+		if (macro.get() != m.get()) {
+			return true;
+		}
+	}
+	return false;
 }
