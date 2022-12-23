@@ -209,11 +209,11 @@ MacroConditionSceneOrderEdit::MacroConditionSceneOrderEdit(
 	populateConditionSelection(_conditions);
 	if (entryData.get()) {
 		if (entryData->_condition == SceneOrderCondition::POSITION) {
-			_sources->SetShowAllSelectionType(
-				SceneItemSelectionWidget::AllSelectionType::ANY);
+			_sources->SetPlaceholderType(
+				SceneItemSelectionWidget::Placeholder::ANY);
 		} else {
-			_sources->SetShowAllSelectionType(
-				SceneItemSelectionWidget::AllSelectionType::ALL);
+			_sources->SetPlaceholderType(
+				SceneItemSelectionWidget::Placeholder::ALL);
 		}
 	}
 
@@ -301,11 +301,11 @@ void MacroConditionSceneOrderEdit::ConditionChanged(int index)
 	SetWidgetVisibility(_entryData->_condition ==
 			    SceneOrderCondition::POSITION);
 	if (_entryData->_condition == SceneOrderCondition::POSITION) {
-		_sources->SetShowAllSelectionType(
-			SceneItemSelectionWidget::AllSelectionType::ANY);
+		_sources->SetPlaceholderType(
+			SceneItemSelectionWidget::Placeholder::ANY);
 	} else {
-		_sources->SetShowAllSelectionType(
-			SceneItemSelectionWidget::AllSelectionType::ALL);
+		_sources->SetPlaceholderType(
+			SceneItemSelectionWidget::Placeholder::ALL);
 	}
 
 	emit HeaderInfoChanged(

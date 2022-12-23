@@ -74,8 +74,7 @@ MacroConditionSceneTransformEdit::MacroConditionSceneTransformEdit(
 	: QWidget(parent),
 	  _scenes(new SceneSelectionWidget(window(), true, false, false, true)),
 	  _sources(new SceneItemSelectionWidget(
-		  parent, true,
-		  SceneItemSelectionWidget::AllSelectionType::ANY)),
+		  parent, true, SceneItemSelectionWidget::Placeholder::ANY)),
 	  _getSettings(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.sceneTransform.getTransform"))),
 	  _settings(new ResizingPlainTextEdit(this)),

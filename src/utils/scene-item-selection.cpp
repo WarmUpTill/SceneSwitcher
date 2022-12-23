@@ -276,8 +276,8 @@ void SceneItemSelectionWidget::PopulateItemSelection()
 
 SceneItemSelectionWidget::SceneItemSelectionWidget(QWidget *parent,
 						   bool showAll,
-						   AllSelectionType type)
-	: QWidget(parent), _hasAllEntry(showAll), _allType(type)
+						   Placeholder type)
+	: QWidget(parent), _hasPlaceholderEntry(showAll), _placeholder(type)
 {
 	_sceneItems = new QComboBox();
 	_idx = new QComboBox();
@@ -316,7 +316,7 @@ void SceneItemSelectionWidget::SetSceneItem(const SceneItemSelection &item)
 	switch (item._type) {
 	case SceneItemSelection::Type::SOURCE: {
 		int idx = item._idx;
-		if (_hasAllEntry) {
+		if (_hasPlaceholderEntry) {
 			idx += 1;
 		}
 		_idx->setCurrentIndex(idx);
@@ -342,12 +342,12 @@ void SceneItemSelectionWidget::SetSceneItem(const SceneItemSelection &item)
 	switch (item._idxType) {
 	case SceneItemSelection::IdxType::ALL:
 	case SceneItemSelection::IdxType::ANY:
-		_allType = AllSelectionType::ALL;
+		_placeholder = Placeholder::ALL;
 		_idx->setCurrentIndex(0);
 		break;
 	case SceneItemSelection::IdxType::INDIVIDUAL:
 		int idx = item._idx;
-		if (_hasAllEntry) {
+		if (_hasPlaceholderEntry) {
 			idx += 1;
 		}
 		_idx->setCurrentIndex(idx);
@@ -364,15 +364,15 @@ void SceneItemSelectionWidget::SetScene(const SceneSelection &s)
 	PopulateItemSelection();
 }
 
-void SceneItemSelectionWidget::SetShowAll(bool value)
+void SceneItemSelectionWidget::ShowPlaceholder(bool value)
 {
-	_hasAllEntry = value;
+	_hasPlaceholderEntry = value;
 }
 
-void SceneItemSelectionWidget::SetShowAllSelectionType(AllSelectionType t,
-						       bool resetSelection)
+void SceneItemSelectionWidget::SetPlaceholderType(Placeholder t,
+						  bool resetSelection)
 {
-	_allType = t;
+	_placeholder = t;
 	if (resetSelection) {
 		_sceneItems->setCurrentIndex(0);
 	} else {
@@ -400,12 +400,12 @@ void SceneItemSelectionWidget::SelectionChanged(const QString &name)
 		_idx->hide();
 	}
 
-	if (_hasAllEntry) {
-		switch (_allType) {
-		case SceneItemSelectionWidget::AllSelectionType::ALL:
+	if (_hasPlaceholderEntry) {
+		switch (_placeholder) {
+		case SceneItemSelectionWidget::Placeholder::ALL:
 			s._idxType = SceneItemSelection::IdxType::ALL;
 			break;
-		case SceneItemSelectionWidget::AllSelectionType::ANY:
+		case SceneItemSelectionWidget::Placeholder::ANY:
 			s._idxType = SceneItemSelection::IdxType::ANY;
 			break;
 		}
@@ -431,19 +431,19 @@ void SceneItemSelectionWidget::IdxChanged(int idx)
 	}
 
 	_currentSelection._idx = idx;
-	if (_hasAllEntry && idx == 0) {
-		switch (_allType) {
-		case SceneItemSelectionWidget::AllSelectionType::ALL:
+	if (_hasPlaceholderEntry && idx == 0) {
+		switch (_placeholder) {
+		case SceneItemSelectionWidget::Placeholder::ALL:
 			_currentSelection._idxType =
 				SceneItemSelection::IdxType::ALL;
 			break;
-		case SceneItemSelectionWidget::AllSelectionType::ANY:
+		case SceneItemSelectionWidget::Placeholder::ANY:
 			_currentSelection._idxType =
 				SceneItemSelection::IdxType::ANY;
 			break;
 		}
 	}
-	if (_hasAllEntry && idx > 0) {
+	if (_hasPlaceholderEntry && idx > 0) {
 		_currentSelection._idx -= 1;
 		_currentSelection._idxType =
 			SceneItemSelection::IdxType::INDIVIDUAL;
@@ -473,8 +473,8 @@ void SceneItemSelectionWidget::ItemRename(const QString &, const QString &)
 void SceneItemSelectionWidget::SetupIdxSelection(int sceneItemCount)
 {
 	_idx->clear();
-	if (_hasAllEntry) {
-		if (_allType == AllSelectionType::ALL) {
+	if (_hasPlaceholderEntry) {
+		if (_placeholder == Placeholder::ALL) {
 			_idx->addItem(obs_module_text(
 				"AdvSceneSwitcher.sceneItemSelection.all"));
 		} else {
