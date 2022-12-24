@@ -137,6 +137,8 @@ struct SwitcherData {
 	bool macroSceneSwitched = false;
 	bool replayBufferSaved = false;
 	bool obsIsShuttingDown = false;
+	bool firstInterval = true;
+	bool firstIntervalAfterStop = true;
 	int shutdownConditionCount = 0;
 
 	Curlhelper curl;

@@ -3,12 +3,6 @@
 #include <QWidget>
 #include <QComboBox>
 
-enum class PluginStateCondition {
-	SCENE_SWITCHED,
-	RUNNING,
-	SHUTDOWN,
-};
-
 class MacroConditionPluginState : public MacroCondition {
 public:
 	MacroConditionPluginState(Macro *m) : MacroCondition(m) {}
@@ -22,9 +16,21 @@ public:
 		return std::make_shared<MacroConditionPluginState>(m);
 	}
 
-	PluginStateCondition _condition = PluginStateCondition::SCENE_SWITCHED;
+	enum class Condition {
+		PLUGIN_START,
+		PLUGIN_RESTART,
+		PLUGIN_RUNNING,
+		OBS_SHUTDOWN,
+		SCENE_COLLECTION_CHANGE,
+		PLUGIN_SCENE_CHANGE,
+	};
+
+	Condition _condition = Condition::PLUGIN_SCENE_CHANGE;
 
 private:
+	bool _firstCheckAfterSceneCollectionChange = true;
+
+	const static uint32_t _version;
 	static bool _registered;
 	static const std::string id;
 };
@@ -47,7 +53,7 @@ public:
 	}
 
 private slots:
-	void ConditionChanged(int cond);
+	void ConditionChanged(int idx);
 
 protected:
 	QComboBox *_condition;

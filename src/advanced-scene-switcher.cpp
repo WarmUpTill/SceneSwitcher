@@ -151,6 +151,7 @@ void SwitcherData::Thread()
 	std::chrono::milliseconds duration;
 	auto startTime = std::chrono::high_resolution_clock::now();
 	auto endTime = std::chrono::high_resolution_clock::now();
+	switcher->firstIntervalAfterStop = true;
 
 	while (true) {
 		std::unique_lock<std::mutex> lock(m);
@@ -251,6 +252,8 @@ void SwitcherData::Thread()
 		}
 
 		writeSceneInfoToFile();
+		switcher->firstInterval = false;
+		switcher->firstIntervalAfterStop = false;
 	}
 
 	blog(LOG_INFO, "stopped");
