@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+const uint32_t MacroConditionPluginState::_version = 1;
+
 const std::string MacroConditionPluginState::id = "plugin_state";
 
 bool MacroConditionPluginState::_registered = MacroConditionFactory::Register(
@@ -11,18 +13,25 @@ bool MacroConditionPluginState::_registered = MacroConditionFactory::Register(
 	 MacroConditionPluginStateEdit::Create,
 	 "AdvSceneSwitcher.condition.pluginState"});
 
-static std::map<PluginStateCondition, std::string> pluginStateConditionTypes = {
-	{PluginStateCondition::SCENE_SWITCHED,
-	 "AdvSceneSwitcher.condition.pluginState.state.sceneSwitched"},
-	{PluginStateCondition::RUNNING,
-	 "AdvSceneSwitcher.condition.pluginState.state.running"},
-	{PluginStateCondition::SHUTDOWN,
-	 "AdvSceneSwitcher.condition.pluginState.state.shutdown"},
+static std::map<MacroConditionPluginState::Condition, std::string>
+	pluginStateConditionTypes = {
+		{MacroConditionPluginState::Condition::PLUGIN_START,
+		 "AdvSceneSwitcher.condition.pluginState.state.start"},
+		{MacroConditionPluginState::Condition::PLUGIN_RESTART,
+		 "AdvSceneSwitcher.condition.pluginState.state.restart"},
+		{MacroConditionPluginState::Condition::PLUGIN_RUNNING,
+		 "AdvSceneSwitcher.condition.pluginState.state.running"},
+		{MacroConditionPluginState::Condition::OBS_SHUTDOWN,
+		 "AdvSceneSwitcher.condition.pluginState.state.shutdown"},
+		{MacroConditionPluginState::Condition::SCENE_COLLECTION_CHANGE,
+		 "AdvSceneSwitcher.condition.pluginState.state.sceneCollection"},
+		{MacroConditionPluginState::Condition::PLUGIN_SCENE_CHANGE,
+		 "AdvSceneSwitcher.condition.pluginState.state.sceneSwitched"},
 };
 
 MacroConditionPluginState::~MacroConditionPluginState()
 {
-	if (_condition == PluginStateCondition::SHUTDOWN) {
+	if (_condition == Condition::OBS_SHUTDOWN) {
 		switcher->shutdownConditionCount--;
 	}
 }
@@ -30,14 +39,22 @@ MacroConditionPluginState::~MacroConditionPluginState()
 bool MacroConditionPluginState::CheckCondition()
 {
 	switch (_condition) {
-	case PluginStateCondition::SCENE_SWITCHED:
+	case Condition::PLUGIN_SCENE_CHANGE:
 		return switcher->macroSceneSwitched;
-	case PluginStateCondition::RUNNING:
+	case Condition::PLUGIN_RUNNING:
 		return true;
-	case PluginStateCondition::SHUTDOWN:
+	case Condition::OBS_SHUTDOWN:
 		return switcher->obsIsShuttingDown;
-	default:
-		break;
+	case Condition::PLUGIN_START:
+		return switcher->firstInterval;
+	case Condition::PLUGIN_RESTART:
+		return switcher->firstIntervalAfterStop;
+	case Condition::SCENE_COLLECTION_CHANGE:
+		if (_firstCheckAfterSceneCollectionChange) {
+			_firstCheckAfterSceneCollectionChange = false;
+			return true;
+		}
+		return false;
 	}
 	return false;
 }
@@ -46,15 +63,39 @@ bool MacroConditionPluginState::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
+	obs_data_set_int(obj, "version", _version);
 	return true;
 }
 
 bool MacroConditionPluginState::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	_condition = static_cast<PluginStateCondition>(
-		obs_data_get_int(obj, "condition"));
-	if (_condition == PluginStateCondition::SHUTDOWN) {
+
+	// TODO: Remove fallback for older version
+	if (!obs_data_has_user_value(obj, "version")) {
+		enum class PluginStateCondition {
+			SCENE_SWITCHED,
+			RUNNING,
+			SHUTDOWN,
+		};
+		auto oldValue = static_cast<PluginStateCondition>(
+			obs_data_get_int(obj, "condition"));
+		switch (oldValue) {
+		case PluginStateCondition::SCENE_SWITCHED:
+			_condition = Condition::PLUGIN_SCENE_CHANGE;
+			break;
+		case PluginStateCondition::RUNNING:
+			_condition = Condition::PLUGIN_RUNNING;
+			break;
+		case PluginStateCondition::SHUTDOWN:
+			_condition = Condition::OBS_SHUTDOWN;
+			break;
+		}
+	} else {
+		_condition = static_cast<Condition>(
+			obs_data_get_int(obj, "condition"));
+	}
+	if (_condition == Condition::OBS_SHUTDOWN) {
 		switcher->shutdownConditionCount++;
 	}
 	return true;
@@ -62,8 +103,9 @@ bool MacroConditionPluginState::Load(obs_data_t *obj)
 
 static inline void populateConditionSelection(QComboBox *list)
 {
-	for (auto entry : pluginStateConditionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[action, name] : pluginStateConditionTypes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(action));
 	}
 }
 
@@ -86,9 +128,7 @@ MacroConditionPluginStateEdit::MacroConditionPluginStateEdit(
 		switchLayout, widgetPlaceholders);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
-
 	mainLayout->addLayout(switchLayout);
-
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -96,18 +136,22 @@ MacroConditionPluginStateEdit::MacroConditionPluginStateEdit(
 	_loading = false;
 }
 
-void MacroConditionPluginStateEdit::ConditionChanged(int cond)
+void MacroConditionPluginStateEdit::ConditionChanged(int idx)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	if (_entryData->_condition == PluginStateCondition::SHUTDOWN) {
+	if (_entryData->_condition ==
+	    MacroConditionPluginState::Condition::OBS_SHUTDOWN) {
 		switcher->shutdownConditionCount--;
 	}
-	_entryData->_condition = static_cast<PluginStateCondition>(cond);
-	if (_entryData->_condition == PluginStateCondition::SHUTDOWN) {
+	_entryData->_condition =
+		static_cast<MacroConditionPluginState::Condition>(
+			_condition->itemData(idx).toInt());
+	if (_entryData->_condition ==
+	    MacroConditionPluginState::Condition::OBS_SHUTDOWN) {
 		switcher->shutdownConditionCount++;
 	}
 }
@@ -118,5 +162,6 @@ void MacroConditionPluginStateEdit::UpdateEntryData()
 		return;
 	}
 
-	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
+	_condition->setCurrentIndex(
+		_condition->findData(static_cast<int>(_entryData->_condition)));
 }
