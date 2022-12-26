@@ -1,6 +1,7 @@
 #pragma once
 #include "macro.hpp"
 #include "volume-control.hpp"
+#include "slider-spinbox.hpp"
 #include <limits>
 #include <QWidget>
 #include <QComboBox>
@@ -30,6 +31,7 @@ public:
 		CONFIGURED_VOLUME,
 		SYNC_OFFSET,
 		MONITOR,
+		BALANCE,
 	};
 
 	enum class OutputCondition {
@@ -49,6 +51,7 @@ public:
 	int _volume = 0;
 	int64_t _syncOffset = 0;
 	obs_monitoring_type _monitorType = OBS_MONITORING_TYPE_NONE;
+	double _balance = 0.5;
 	Type _checkType = Type::OUTPUT_VOLUME;
 	OutputCondition _outputCondition = OutputCondition::ABOVE;
 	VolumeCondition _volumeCondition = VolumeCondition::ABOVE;
@@ -59,6 +62,7 @@ private:
 	bool CheckVolumeCondition();
 	bool CheckSyncOffset();
 	bool CheckMonitor();
+	bool CheckBalance();
 
 	float _peak = -std::numeric_limits<float>::infinity();
 	static bool _registered;
@@ -89,6 +93,7 @@ private slots:
 	void CheckTypeChanged(int cond);
 	void SyncOffsetChanged(int value);
 	void MonitorTypeChanged(int value);
+	void BalanceChanged(double value);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -100,6 +105,7 @@ protected:
 	QSpinBox *_volume;
 	QSpinBox *_syncOffset;
 	QComboBox *_monitorTypes;
+	SliderSpinBox *_balance;
 	VolControl *_volMeter = nullptr;
 	std::shared_ptr<MacroConditionAudio> _entryData;
 
