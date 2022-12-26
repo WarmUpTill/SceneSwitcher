@@ -27,8 +27,6 @@ target_sources(
           paramerter-wrappers.hpp
           preview-dialog.cpp
           preview-dialog.hpp
-          threshold-slider.cpp
-          threshold-slider.hpp
           video-selection.cpp
           video-selection.hpp)
 

@@ -4,13 +4,13 @@
 #include <QLabel>
 #include <QDoubleSpinBox>
 
-class ThresholdSlider : public QWidget {
+class SliderSpinBox : public QWidget {
 	Q_OBJECT
 
 public:
-	ThresholdSlider(double min = 0., double max = 1.,
-			const QString &label = "threshold",
-			const QString &description = "", QWidget *parent = 0);
+	SliderSpinBox(double min = 0., double max = 1.,
+		      const QString &label = "threshold",
+		      const QString &description = "", QWidget *parent = 0);
 	void SetDoubleValue(double);
 public slots:
 	void SliderValueChanged(int value);
