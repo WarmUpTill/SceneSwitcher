@@ -285,7 +285,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	  _usePatternForChangedCheck(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.usePatternForChangedCheck"))),
 	  _imagePath(new FileSelection()),
-	  _patternThreshold(new ThresholdSlider(
+	  _patternThreshold(new SliderSpinBox(
 		  0., 1.,
 		  obs_module_text(
 			  "AdvSceneSwitcher.condition.video.patternThreshold"),
@@ -293,7 +293,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			  "AdvSceneSwitcher.condition.video.patternThresholdDescription"))),
 	  _useAlphaAsMask(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.patternThresholdUseAlphaAsMask"))),
-	  _brightnessThreshold(new ThresholdSlider(
+	  _brightnessThreshold(new SliderSpinBox(
 		  0., 1.,
 		  obs_module_text(
 			  "AdvSceneSwitcher.condition.video.brightnessThreshold"),
@@ -302,7 +302,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	  _currentBrightness(new QLabel),
 	  _modelDataPath(new FileSelection()),
 	  _modelPathLayout(new QHBoxLayout),
-	  _objectScaleThreshold(new ThresholdSlider(
+	  _objectScaleThreshold(new SliderSpinBox(
 		  1.1, 5.,
 		  obs_module_text(
 			  "AdvSceneSwitcher.condition.video.objectScaleThreshold"),

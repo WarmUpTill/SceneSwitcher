@@ -1,8 +1,8 @@
-#include "threshold-slider.hpp"
+#include "slider-spinbox.hpp"
 #include <QHBoxLayout>
 
-ThresholdSlider::ThresholdSlider(double min, double max, const QString &label,
-				 const QString &description, QWidget *parent)
+SliderSpinBox::SliderSpinBox(double min, double max, const QString &label,
+			     const QString &description, QWidget *parent)
 	: QWidget(parent),
 	  _spinBox(new QDoubleSpinBox()),
 	  _slider(new QSlider())
@@ -32,7 +32,7 @@ ThresholdSlider::ThresholdSlider(double min, double max, const QString &label,
 	setLayout(mainLayout);
 }
 
-void ThresholdSlider::SetDoubleValue(double value)
+void SliderSpinBox::SetDoubleValue(double value)
 {
 	const QSignalBlocker b1(_slider);
 	const QSignalBlocker b2(_spinBox);
@@ -40,14 +40,14 @@ void ThresholdSlider::SetDoubleValue(double value)
 	_spinBox->setValue(value);
 }
 
-void ThresholdSlider::SpinBoxValueChanged(double value)
+void SliderSpinBox::SpinBoxValueChanged(double value)
 {
 	int sliderPos = value * _scale;
 	_slider->setValue(sliderPos);
 	emit DoubleValueChanged(value);
 }
 
-void ThresholdSlider::SliderValueChanged(int value)
+void SliderSpinBox::SliderValueChanged(int value)
 {
 	double doubleValue = value / _scale;
 	_spinBox->setValue(doubleValue);

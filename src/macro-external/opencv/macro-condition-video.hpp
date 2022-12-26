@@ -1,6 +1,5 @@
 #pragma once
 #include "opencv-helpers.hpp"
-#include "threshold-slider.hpp"
 #include "area-selection.hpp"
 #include "video-selection.hpp"
 #include "preview-dialog.hpp"
@@ -9,6 +8,7 @@
 #include <macro.hpp>
 #include <file-selection.hpp>
 #include <screenshot-helper.hpp>
+#include <slider-spinbox.hpp>
 
 #include <QWidget>
 #include <QComboBox>
@@ -138,15 +138,15 @@ protected:
 	QCheckBox *_usePatternForChangedCheck;
 	FileSelection *_imagePath;
 
-	ThresholdSlider *_patternThreshold;
+	SliderSpinBox *_patternThreshold;
 	QCheckBox *_useAlphaAsMask;
 
-	ThresholdSlider *_brightnessThreshold;
+	SliderSpinBox *_brightnessThreshold;
 	QLabel *_currentBrightness;
 
 	FileSelection *_modelDataPath;
 	QHBoxLayout *_modelPathLayout;
-	ThresholdSlider *_objectScaleThreshold;
+	SliderSpinBox *_objectScaleThreshold;
 	QHBoxLayout *_neighborsControlLayout;
 	QSpinBox *_minNeighbors;
 	QLabel *_minNeighborsDescription;

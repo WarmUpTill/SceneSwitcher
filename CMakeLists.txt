@@ -262,6 +262,8 @@ target_sources(
           src/utils/screenshot-helper.hpp
           src/utils/section.cpp
           src/utils/section.hpp
+          src/utils/slider-spinbox.cpp
+          src/utils/slider-spinbox.hpp
           src/utils/transition-selection.cpp
           src/utils/transition-selection.hpp
           src/utils/utility.cpp
