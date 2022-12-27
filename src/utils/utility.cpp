@@ -461,20 +461,26 @@ void addSelectionEntry(QComboBox *sel, const char *description, bool selectable,
 	}
 }
 
-void populateSourceSelection(QComboBox *list, bool addSelect)
+QStringList GetSourceNames()
 {
-	auto enumSourcesWithSources = [](void *param, obs_source_t *source) {
-		if (!source) {
-			return true;
-		}
-		QComboBox *list = reinterpret_cast<QComboBox *>(param);
-		list->addItem(obs_source_get_name(source));
+	auto sourceEnum = [](void *param, obs_source_t *source) -> bool /* -- */
+	{
+		QStringList *list = reinterpret_cast<QStringList *>(param);
+		*list << obs_source_get_name(source);
 		return true;
 	};
 
-	obs_enum_sources(enumSourcesWithSources, list);
+	QStringList list;
+	obs_enum_sources(sourceEnum, &list);
+	return list;
+}
 
-	list->model()->sort(0);
+void populateSourceSelection(QComboBox *list, bool addSelect)
+{
+	auto sources = GetSourceNames();
+	sources.sort();
+	list->addItems(sources);
+
 	if (addSelect) {
 		addSelectionEntry(
 			list, obs_module_text("AdvSceneSwitcher.selectSource"),
@@ -536,29 +542,30 @@ void populateWindowSelection(QComboBox *sel, bool addSelect)
 #endif
 }
 
-void populateAudioSelection(QComboBox *sel, bool addSelect)
+QStringList GetAudioSourceNames()
 {
-
-	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
+	auto sourceEnum = [](void *param, obs_source_t *source) -> bool /* -- */
 	{
-		std::vector<std::string> *list =
-			reinterpret_cast<std::vector<std::string> *>(data);
+		QStringList *list = reinterpret_cast<QStringList *>(param);
 		uint32_t flags = obs_source_get_output_flags(source);
 
 		if ((flags & OBS_SOURCE_AUDIO) != 0) {
-			list->push_back(obs_source_get_name(source));
+			*list << obs_source_get_name(source);
 		}
 		return true;
 	};
 
-	std::vector<std::string> audioSources;
-	obs_enum_sources(sourceEnum, &audioSources);
+	QStringList list;
+	obs_enum_sources(sourceEnum, &list);
+	return list;
+}
 
-	for (std::string &source : audioSources) {
-		sel->addItem(source.c_str());
-	}
+void populateAudioSelection(QComboBox *sel, bool addSelect)
+{
+	auto sources = GetAudioSourceNames();
+	sources.sort();
+	sel->addItems(sources);
 
-	sel->model()->sort(0);
 	if (addSelect) {
 		addSelectionEntry(
 			sel,
@@ -570,32 +577,35 @@ void populateAudioSelection(QComboBox *sel, bool addSelect)
 	sel->setCurrentIndex(0);
 }
 
-void populateVideoSelection(QComboBox *sel, bool addMainOutput, bool addScenes,
-			    bool addSelect)
+QStringList GetVideoSourceNames()
 {
-
-	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
+	auto sourceEnum = [](void *param, obs_source_t *source) -> bool /* -- */
 	{
-		std::vector<std::string> *list =
-			reinterpret_cast<std::vector<std::string> *>(data);
+		QStringList *list = reinterpret_cast<QStringList *>(param);
 		uint32_t flags = obs_source_get_output_flags(source);
 		std::string test = obs_source_get_name(source);
 		if ((flags & (OBS_SOURCE_VIDEO | OBS_SOURCE_ASYNC)) != 0) {
-			list->push_back(obs_source_get_name(source));
+			*list << obs_source_get_name(source);
 		}
 		return true;
 	};
 
-	std::vector<std::string> videoSources;
-	obs_enum_sources(sourceEnum, &videoSources);
-	sort(videoSources.begin(), videoSources.end());
-	for (std::string &source : videoSources) {
-		sel->addItem(source.c_str());
-	}
+	QStringList list;
+	obs_enum_sources(sourceEnum, &list);
+	return list;
+}
 
+void populateVideoSelection(QComboBox *sel, bool addMainOutput, bool addScenes,
+			    bool addSelect)
+{
+
+	auto sources = GetVideoSourceNames();
+	sources.sort();
+	sel->addItems(sources);
 	if (addScenes) {
-		populateSceneSelection(sel, false, false, false, false, nullptr,
-				       false);
+		auto scenes = GetSceneNames();
+		scenes.sort();
+		sel->addItems(scenes);
 	}
 
 	sel->model()->sort(0);
@@ -614,28 +624,31 @@ void populateVideoSelection(QComboBox *sel, bool addMainOutput, bool addScenes,
 	sel->setCurrentIndex(0);
 }
 
-void populateMediaSelection(QComboBox *sel, bool addSelect)
+QStringList GetMediaSourceNames()
 {
-	auto sourceEnum = [](void *data, obs_source_t *source) -> bool /* -- */
+	auto sourceEnum = [](void *param, obs_source_t *source) -> bool /* -- */
 	{
-		std::vector<std::string> *list =
-			reinterpret_cast<std::vector<std::string> *>(data);
+		QStringList *list = reinterpret_cast<QStringList *>(param);
 		std::string sourceId = obs_source_get_id(source);
 		if (sourceId.compare("ffmpeg_source") == 0 ||
 		    sourceId.compare("vlc_source") == 0 ||
 		    sourceId.compare("slideshow") == 0) {
-			list->push_back(obs_source_get_name(source));
+			*list << obs_source_get_name(source);
 		}
 		return true;
 	};
 
-	std::vector<std::string> mediaSources;
-	obs_enum_sources(sourceEnum, &mediaSources);
-	for (std::string &source : mediaSources) {
-		sel->addItem(source.c_str());
-	}
+	QStringList list;
+	obs_enum_sources(sourceEnum, &list);
+	return list;
+}
 
-	sel->model()->sort(0);
+void populateMediaSelection(QComboBox *sel, bool addSelect)
+{
+	auto sources = GetMediaSourceNames();
+	sources.sort();
+	sel->addItems(sources);
+
 	if (addSelect) {
 		addSelectionEntry(
 			sel,
@@ -664,19 +677,27 @@ void populateProcessSelection(QComboBox *sel, bool addSelect)
 	sel->setCurrentIndex(0);
 }
 
+QStringList GetSceneNames()
+{
+	QStringList list;
+	char **scenes = obs_frontend_get_scene_names();
+	char **temp = scenes;
+	while (*temp) {
+		const char *name = *temp;
+		list << name;
+		temp++;
+	}
+	bfree(scenes);
+	return list;
+}
+
 void populateSceneSelection(QComboBox *sel, bool addPrevious, bool addCurrent,
 			    bool addAny, bool addSceneGroup,
 			    std::deque<SceneGroup> *sceneGroups, bool addSelect,
 			    std::string selectText, bool selectable)
 {
-	char **scenes = obs_frontend_get_scene_names();
-	char **temp = scenes;
-	while (*temp) {
-		const char *name = *temp;
-		sel->addItem(name);
-		temp++;
-	}
-	bfree(scenes);
+	auto sceneNames = GetSceneNames();
+	sel->addItems(sceneNames);
 
 	if (addSceneGroup && sceneGroups) {
 		for (auto &sg : *sceneGroups) {
@@ -725,23 +746,32 @@ static inline void hasFilterEnum(obs_source_t *, obs_source_t *filter,
 	*hasFilter = true;
 }
 
-void populateSourcesWithFilterSelection(QComboBox *list)
+QStringList GetSourcesWithFilterNames()
 {
 	auto enumSourcesWithFilters = [](void *param, obs_source_t *source) {
 		if (!source) {
 			return true;
 		}
-		QComboBox *list = reinterpret_cast<QComboBox *>(param);
+		QStringList *list = reinterpret_cast<QStringList *>(param);
 		bool hasFilter = false;
 		obs_source_enum_filters(source, hasFilterEnum, &hasFilter);
 		if (hasFilter) {
-			list->addItem(obs_source_get_name(source));
+			*list << obs_source_get_name(source);
 		}
 		return true;
 	};
-	obs_enum_sources(enumSourcesWithFilters, list);
-	obs_enum_scenes(enumSourcesWithFilters, list);
-	list->model()->sort(0);
+
+	QStringList list;
+	obs_enum_sources(enumSourcesWithFilters, &list);
+	obs_enum_scenes(enumSourcesWithFilters, &list);
+	return list;
+}
+
+void populateSourcesWithFilterSelection(QComboBox *list)
+{
+	auto sources = GetSourcesWithFilterNames();
+	sources.sort();
+	list->addItems(sources);
 	addSelectionEntry(list,
 			  obs_module_text("AdvSceneSwitcher.selectSource"));
 	list->setCurrentIndex(0);
