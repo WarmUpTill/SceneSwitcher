@@ -64,7 +64,7 @@ void MacroActionScreenshot::LogAction() const
 	vblog(LOG_INFO, "trigger screenshot for \"%s\"",
 	      _targetType == TargetType::SOURCE
 		      ? GetWeakSourceName(_source).c_str()
-		      : _scene.ToString().c_str());
+		      : _scene.ToString(true).c_str());
 }
 
 bool MacroActionScreenshot::Save(obs_data_t *obj) const

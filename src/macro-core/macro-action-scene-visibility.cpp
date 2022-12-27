@@ -99,13 +99,14 @@ void MacroActionSceneVisibility::LogAction() const
 		if (_sourceType == SceneItemSourceType::SOURCE) {
 			vblog(LOG_INFO,
 			      "performed visibility action \"%s\" for source \"%s\" on scene \"%s\"",
-			      it->second.c_str(), _source.ToString().c_str(),
-			      _scene.ToString().c_str());
+			      it->second.c_str(),
+			      _source.ToString(true).c_str(),
+			      _scene.ToString(true).c_str());
 		} else {
 			vblog(LOG_INFO,
 			      "performed visibility action \"%s\" for any source type \"%s\" on scene \"%s\"",
 			      it->second.c_str(), _sourceGroup.c_str(),
-			      _scene.ToString().c_str());
+			      _scene.ToString(true).c_str());
 		}
 	} else {
 		blog(LOG_WARNING, "ignored unknown SceneVisibility action %d",

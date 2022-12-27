@@ -102,8 +102,8 @@ void MacroActionSceneOrder::LogAction() const
 	if (it != actionTypes.end()) {
 		vblog(LOG_INFO,
 		      "performed order action \"%s\" for source \"%s\" on scene \"%s\"",
-		      it->second.c_str(), _source.ToString().c_str(),
-		      _scene.ToString().c_str());
+		      it->second.c_str(), _source.ToString(true).c_str(),
+		      _scene.ToString(true).c_str());
 	} else {
 		blog(LOG_WARNING, "ignored unknown scene order action %d",
 		     static_cast<int>(_action));
