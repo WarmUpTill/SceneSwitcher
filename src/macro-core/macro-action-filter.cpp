@@ -9,24 +9,41 @@ bool MacroActionFilter::_registered = MacroActionFactory::Register(
 	{MacroActionFilter::Create, MacroActionFilterEdit::Create,
 	 "AdvSceneSwitcher.action.filter"});
 
-const static std::map<FilterAction, std::string> actionTypes = {
-	{FilterAction::ENABLE, "AdvSceneSwitcher.action.filter.type.enable"},
-	{FilterAction::DISABLE, "AdvSceneSwitcher.action.filter.type.disable"},
-	{FilterAction::SETTINGS,
+const static std::map<MacroActionFilter::Action, std::string> actionTypes = {
+	{MacroActionFilter::Action::ENABLE,
+	 "AdvSceneSwitcher.action.filter.type.enable"},
+	{MacroActionFilter::Action::DISABLE,
+	 "AdvSceneSwitcher.action.filter.type.disable"},
+	{MacroActionFilter::Action::SETTINGS,
 	 "AdvSceneSwitcher.action.filter.type.settings"},
 };
 
+void MacroActionFilter::ResolveVariables()
+{
+	if (_source.GetType() == SourceSelection::Type::SOURCE) {
+		return;
+	}
+
+	std::string name = GetWeakSourceName(_filter);
+	if (!name.empty()) {
+		_filterName = name;
+	}
+	_filter = GetWeakFilterByName(_source.GetSource(), _filterName.c_str());
+}
+
 bool MacroActionFilter::PerformAction()
 {
+	ResolveVariables();
+
 	auto s = obs_weak_source_get_source(_filter);
 	switch (_action) {
-	case FilterAction::ENABLE:
+	case Action::ENABLE:
 		obs_source_set_enabled(s, true);
 		break;
-	case FilterAction::DISABLE:
+	case Action::DISABLE:
 		obs_source_set_enabled(s, false);
 		break;
-	case FilterAction::SETTINGS:
+	case Action::SETTINGS:
 		setSourceSettings(s, _settings);
 		break;
 	default:
@@ -43,7 +60,7 @@ void MacroActionFilter::LogAction() const
 		vblog(LOG_INFO,
 		      "performed action \"%s\" for filter \"%s\" on source \"%s\"",
 		      it->second.c_str(), GetWeakSourceName(_filter).c_str(),
-		      GetWeakSourceName(_source).c_str());
+		      _source.ToString(true).c_str());
 	} else {
 		blog(LOG_WARNING, "ignored unknown filter action %d",
 		     static_cast<int>(_action));
@@ -53,8 +70,8 @@ void MacroActionFilter::LogAction() const
 bool MacroActionFilter::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
-	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
-	obs_data_set_string(obj, "filter", GetWeakSourceName(_filter).c_str());
+	_source.Save(obj);
+	obs_data_set_string(obj, "filter", _filterName.c_str());
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	_settings.Save(obj, "settings");
 	return true;
@@ -63,20 +80,19 @@ bool MacroActionFilter::Save(obs_data_t *obj) const
 bool MacroActionFilter::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	const char *sourceName = obs_data_get_string(obj, "source");
-	_source = GetWeakSourceByName(sourceName);
-	const char *filterName = obs_data_get_string(obj, "filter");
-	_filter = GetWeakFilterByQString(_source, filterName);
-	_action = static_cast<FilterAction>(obs_data_get_int(obj, "action"));
+	_source.Load(obj);
+	_filterName = obs_data_get_string(obj, "filter");
+	_filter = GetWeakFilterByQString(_source.GetSource(),
+					 _filterName.c_str());
+	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
 	_settings.Load(obj, "settings");
 	return true;
 }
 
 std::string MacroActionFilter::GetShortDesc() const
 {
-	if (_filter && _source) {
-		return GetWeakSourceName(_source) + " - " +
-		       GetWeakSourceName(_filter);
+	if (_filter && !_source.ToString().empty()) {
+		return _source.ToString() + " - " + GetWeakSourceName(_filter);
 	}
 	return "";
 }
@@ -90,23 +106,26 @@ static inline void populateActionSelection(QComboBox *list)
 
 MacroActionFilterEdit::MacroActionFilterEdit(
 	QWidget *parent, std::shared_ptr<MacroActionFilter> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
+	  _filters(new QComboBox()),
+	  _actions(new QComboBox()),
+	  _getSettings(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.action.filter.getSettings"))),
+	  _settings(new VariableTextEdit(this))
 {
-	_sources = new QComboBox();
-	_filters = new QComboBox();
 	_filters->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-	_actions = new QComboBox();
-	_getSettings = new QPushButton(
-		obs_module_text("AdvSceneSwitcher.action.filter.getSettings"));
-	_settings = new VariableTextEdit(this);
 
 	populateActionSelection(_actions);
-	populateSourcesWithFilterSelection(_sources);
+	auto sources = GetSourcesWithFilterNames();
+	sources.sort();
+	_sources->SetSourceNameList(sources);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
-	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SourceChanged(const QString &)));
+	QWidget::connect(_sources,
+			 SIGNAL(SourceChanged(const SourceSelection &)), this,
+			 SLOT(SourceChanged(const SourceSelection &)));
 	QWidget::connect(_filters, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(FilterChanged(const QString &)));
 	QWidget::connect(_getSettings, SIGNAL(clicked()), this,
@@ -146,29 +165,29 @@ void MacroActionFilterEdit::UpdateEntryData()
 	}
 
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
-	_sources->setCurrentText(
-		GetWeakSourceName(_entryData->_source).c_str());
-	populateFilterSelection(_filters, _entryData->_source);
+	_sources->SetSource(_entryData->_source);
+	populateFilterSelection(_filters, _entryData->_source.GetSource());
 	_filters->setCurrentText(
 		GetWeakSourceName(_entryData->_filter).c_str());
 	_settings->setPlainText(_entryData->_settings);
-	SetWidgetVisibility(_entryData->_action == FilterAction::SETTINGS);
+	SetWidgetVisibility(_entryData->_action ==
+			    MacroActionFilter::Action::SETTINGS);
 
 	adjustSize();
 	updateGeometry();
 }
 
-void MacroActionFilterEdit::SourceChanged(const QString &text)
+void MacroActionFilterEdit::SourceChanged(const SourceSelection &source)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
-		_entryData->_source = GetWeakSourceByQString(text);
+		_entryData->_source = source;
 	}
 	_filters->clear();
-	populateFilterSelection(_filters, _entryData->_source);
+	populateFilterSelection(_filters, _entryData->_source.GetSource());
 	_filters->adjustSize();
 }
 
@@ -179,7 +198,9 @@ void MacroActionFilterEdit::FilterChanged(const QString &text)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_filter = GetWeakFilterByQString(_entryData->_source, text);
+	_entryData->_filterName = text.toStdString();
+	_entryData->_filter =
+		GetWeakFilterByQString(_entryData->_source.GetSource(), text);
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -191,13 +212,14 @@ void MacroActionFilterEdit::ActionChanged(int value)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_action = static_cast<FilterAction>(value);
-	SetWidgetVisibility(_entryData->_action == FilterAction::SETTINGS);
+	_entryData->_action = static_cast<MacroActionFilter::Action>(value);
+	SetWidgetVisibility(_entryData->_action ==
+			    MacroActionFilter::Action::SETTINGS);
 }
 
 void MacroActionFilterEdit::GetSettingsClicked()
 {
-	if (_loading || !_entryData || !_entryData->_source ||
+	if (_loading || !_entryData || !_entryData->_source.GetSource() ||
 	    !_entryData->_filter) {
 		return;
 	}
