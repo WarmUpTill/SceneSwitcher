@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+const uint32_t MacroActionScreenshot::_version = 1;
+
 const std::string MacroActionScreenshot::id = "screenshot";
 
 bool MacroActionScreenshot::_registered = MacroActionFactory::Register(
@@ -38,7 +40,7 @@ bool MacroActionScreenshot::PerformAction()
 	OBSWeakSource source = nullptr;
 	switch (_targetType) {
 	case MacroActionScreenshot::TargetType::SOURCE:
-		source = _source;
+		source = _source.GetSource();
 		break;
 	case MacroActionScreenshot::TargetType::SCENE:
 		source = _scene.GetScene(false);
@@ -61,20 +63,31 @@ bool MacroActionScreenshot::PerformAction()
 
 void MacroActionScreenshot::LogAction() const
 {
-	vblog(LOG_INFO, "trigger screenshot for \"%s\"",
-	      _targetType == TargetType::SOURCE
-		      ? GetWeakSourceName(_source).c_str()
-		      : _scene.ToString(true).c_str());
+	switch (_targetType) {
+	case MacroActionScreenshot::TargetType::SOURCE:
+		vblog(LOG_INFO, "trigger screenshot of \"%s\"",
+		      _source.ToString(true).c_str());
+		break;
+	case MacroActionScreenshot::TargetType::SCENE:
+		vblog(LOG_INFO, "trigger screenshot of \"%s\"",
+		      _scene.ToString(true).c_str());
+		break;
+	case MacroActionScreenshot::TargetType::MAIN_OUTPUT:
+		vblog(LOG_INFO, "trigger screenshot of main output",
+		      _scene.ToString(true).c_str());
+		break;
+	}
 }
 
 bool MacroActionScreenshot::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	_scene.Save(obj);
-	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
+	_source.Save(obj);
 	obs_data_set_int(obj, "saveType", static_cast<int>(_saveType));
 	obs_data_set_int(obj, "targetType", static_cast<int>(_targetType));
 	obs_data_set_string(obj, "savePath", _path.c_str());
+	obs_data_set_int(obj, "version", _version);
 	return true;
 }
 
@@ -82,12 +95,18 @@ bool MacroActionScreenshot::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 	_scene.Load(obj);
-	const char *sourceName = obs_data_get_string(obj, "source");
-	_source = GetWeakSourceByName(sourceName);
+	_source.Load(obj);
 	_saveType = static_cast<SaveType>(obs_data_get_int(obj, "saveType"));
 	_targetType =
 		static_cast<TargetType>(obs_data_get_int(obj, "targetType"));
 	_path = obs_data_get_string(obj, "savePath");
+
+	// TODO: Remove fallback for older versions
+	if (!obs_data_has_user_value(obj, "version")) {
+		if (!_source.GetSource() && !_scene.GetScene(false)) {
+			_targetType = TargetType::MAIN_OUTPUT;
+		}
+	}
 	return true;
 }
 
@@ -96,7 +115,7 @@ std::string MacroActionScreenshot::GetShortDesc() const
 	if (_targetType == TargetType::SCENE) {
 		return _scene.ToString();
 	} else {
-		return GetWeakSourceName(_source);
+		return _source.ToString();
 	}
 	return "";
 }
@@ -115,6 +134,7 @@ static void populateTargetTypeSelection(QComboBox *list)
 		"AdvSceneSwitcher.action.screenshot.type.source"));
 	list->addItem(obs_module_text(
 		"AdvSceneSwitcher.action.screenshot.type.scene"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.OBSVideoOutput"));
 }
 
 MacroActionScreenshotEdit::MacroActionScreenshotEdit(
@@ -122,21 +142,25 @@ MacroActionScreenshotEdit::MacroActionScreenshotEdit(
 	: QWidget(parent),
 	  _scenes(new SceneSelectionWidget(this, true, false, true, true,
 					   true)),
-	  _sources(new QComboBox()),
+	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _saveType(new QComboBox()),
 	  _targetType(new QComboBox()),
 	  _savePath(new FileSelection(FileSelection::Type::WRITE, this))
 {
 	setToolTip(obs_module_text(
 		"AdvSceneSwitcher.action.screenshot.blackscreenNote"));
-	populateVideoSelection(_sources, true);
+	auto sources = GetVideoSourceNames();
+	sources.sort();
+	_sources->SetSourceNameList(sources);
+
 	populateSaveTypeSelection(_saveType);
 	populateTargetTypeSelection(_targetType);
 
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
-	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SourceChanged(const QString &)));
+	QWidget::connect(_sources,
+			 SIGNAL(SourceChanged(const SourceSelection &)), this,
+			 SLOT(SourceChanged(const SourceSelection &)));
 	QWidget::connect(_saveType, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(SaveTypeChanged(int)));
 	QWidget::connect(_targetType, SIGNAL(currentIndexChanged(int)), this,
@@ -171,12 +195,7 @@ void MacroActionScreenshotEdit::UpdateEntryData()
 		return;
 	}
 
-	if (_entryData->_source) {
-		_sources->setCurrentText(
-			GetWeakSourceName(_entryData->_source).c_str());
-	} else {
-		_sources->setCurrentIndex(1);
-	}
+	_sources->SetSource(_entryData->_source);
 	_scenes->SetScene(_entryData->_scene);
 	_saveType->setCurrentIndex(static_cast<int>(_entryData->_saveType));
 	_targetType->setCurrentIndex(static_cast<int>(_entryData->_targetType));
@@ -226,14 +245,14 @@ void MacroActionScreenshotEdit::PathChanged(const QString &text)
 	_entryData->_path = text.toUtf8().constData();
 }
 
-void MacroActionScreenshotEdit::SourceChanged(const QString &text)
+void MacroActionScreenshotEdit::SourceChanged(const SourceSelection &source)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_source = GetWeakSourceByQString(text);
+	_entryData->_source = source;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }

@@ -3,6 +3,7 @@
 #include "file-selection.hpp"
 #include "scene-selection.hpp"
 #include "screenshot-helper.hpp"
+#include "source-selection.hpp"
 
 #include <QComboBox>
 
@@ -27,10 +28,11 @@ public:
 	enum class TargetType {
 		SOURCE,
 		SCENE,
+		MAIN_OUTPUT,
 	};
 	TargetType _targetType = TargetType::SOURCE;
 	SceneSelection _scene;
-	OBSWeakSource _source;
+	SourceSelection _source;
 	std::string _path = obs_module_text("AdvSceneSwitcher.enterPath");
 
 private:
@@ -38,6 +40,8 @@ private:
 	void CustomScreenshot(OBSWeakSource &);
 
 	ScreenshotHelper _screenshot;
+
+	const static uint32_t _version;
 	static bool _registered;
 	static const std::string id;
 };
@@ -60,7 +64,7 @@ public:
 	}
 private slots:
 	void SceneChanged(const SceneSelection &);
-	void SourceChanged(const QString &text);
+	void SourceChanged(const SourceSelection &);
 	void SaveTypeChanged(int index);
 	void TargetTypeChanged(int index);
 	void PathChanged(const QString &text);
@@ -69,7 +73,7 @@ signals:
 
 protected:
 	SceneSelectionWidget *_scenes;
-	QComboBox *_sources;
+	SourceSelectionWidget *_sources;
 	QComboBox *_saveType;
 	QComboBox *_targetType;
 	FileSelection *_savePath;
