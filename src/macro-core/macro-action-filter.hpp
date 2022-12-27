@@ -1,16 +1,11 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "variable-text-edit.hpp"
+#include "source-selection.hpp"
 
 #include <QComboBox>
 #include <QSpinBox>
 #include <QPushButton>
-
-enum class FilterAction {
-	ENABLE,
-	DISABLE,
-	SETTINGS,
-};
 
 class MacroActionFilter : public MacroAction {
 public:
@@ -26,14 +21,25 @@ public:
 		return std::make_shared<MacroActionFilter>(m);
 	}
 
-	OBSWeakSource _source;
+	enum class Action {
+		ENABLE,
+		DISABLE,
+		SETTINGS,
+	};
+
+	SourceSelection _source;
 	OBSWeakSource _filter;
-	FilterAction _action = FilterAction::ENABLE;
+	Action _action = Action::ENABLE;
 	VariableResolvingString _settings = "";
 
 private:
+	void ResolveVariables();
+	std::string _filterName = "";
+
 	static bool _registered;
 	static const std::string id;
+
+	friend class MacroActionFilterEdit;
 };
 
 class MacroActionFilterEdit : public QWidget {
@@ -53,8 +59,8 @@ public:
 	}
 
 private slots:
-	void SourceChanged(const QString &text);
-	void FilterChanged(const QString &text);
+	void SourceChanged(const SourceSelection &);
+	void FilterChanged(const QString &);
 	void ActionChanged(int value);
 	void GetSettingsClicked();
 	void SettingsChanged();
@@ -62,7 +68,7 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
-	QComboBox *_sources;
+	SourceSelectionWidget *_sources;
 	QComboBox *_filters;
 	QComboBox *_actions;
 	QPushButton *_getSettings;
