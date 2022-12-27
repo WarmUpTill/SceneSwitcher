@@ -1,12 +1,13 @@
 #pragma once
 #include "macro.hpp"
+#include "duration-control.hpp"
+#include "scene-selection.hpp"
+#include "source-selection.hpp"
+
 #include <limits>
 #include <QWidget>
 #include <QComboBox>
 #include <QCheckBox>
-
-#include "duration-control.hpp"
-#include "scene-selection.hpp"
 
 constexpr auto custom_media_states_offset = 100;
 
@@ -65,8 +66,9 @@ public:
 	Time _restriction = Time::TIME_RESTRICTION_NONE;
 
 	SceneSelection _scene;
-	OBSWeakSource _source = nullptr;
-	std::vector<MacroConditionMedia> _sources;
+	SourceSelection _source;
+	OBSWeakSource _rawSource = nullptr;
+	std::vector<MacroConditionMedia> _sourceGroup;
 	Duration _time;
 	bool _onlyMatchOnChagne = false;
 
@@ -109,7 +111,8 @@ public:
 	}
 
 private slots:
-	void SourceChanged(const QString &text);
+	void SourceTypeChanged(int);
+	void SourceChanged(const SourceSelection &);
 	void SceneChanged(const SceneSelection &);
 	void StateChanged(int index);
 	void TimeRestrictionChanged(int index);
@@ -120,8 +123,9 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
+	QComboBox *_sourceTypes;
 	SceneSelectionWidget *_scenes;
-	QComboBox *_mediaSources;
+	SourceSelectionWidget *_sources;
 	QComboBox *_states;
 	QComboBox *_timeRestrictions;
 	DurationSelection *_time;
