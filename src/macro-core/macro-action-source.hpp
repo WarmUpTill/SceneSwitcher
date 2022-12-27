@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "variable-text-edit.hpp"
+#include "source-selection.hpp"
 
 #include <QSpinBox>
 #include <QLabel>
@@ -38,7 +39,7 @@ public:
 		return std::make_shared<MacroActionSource>(m);
 	}
 
-	OBSWeakSource _source;
+	SourceSelection _source;
 	SourceSettingButton _button;
 	VariableResolvingString _settings = "";
 	SourceAction _action = SourceAction::ENABLE;
@@ -65,7 +66,7 @@ public:
 	}
 
 private slots:
-	void SourceChanged(const QString &text);
+	void SourceChanged(const SourceSelection &);
 	void ActionChanged(int value);
 	void ButtonChanged(int idx);
 	void GetSettingsClicked();
@@ -74,7 +75,7 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
-	QComboBox *_sources;
+	SourceSelectionWidget *_sources;
 	QComboBox *_actions;
 	QComboBox *_settingsButtons;
 	QPushButton *_getSettings;

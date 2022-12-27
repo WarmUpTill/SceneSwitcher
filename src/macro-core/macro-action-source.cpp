@@ -76,7 +76,7 @@ static void refreshSourceSettings(obs_source_t *s)
 
 bool MacroActionSource::PerformAction()
 {
-	auto s = obs_weak_source_get_source(_source);
+	auto s = obs_weak_source_get_source(_source.GetSource());
 	switch (_action) {
 	case SourceAction::ENABLE:
 		obs_source_set_enabled(s, true);
@@ -105,7 +105,7 @@ void MacroActionSource::LogAction() const
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
 		vblog(LOG_INFO, "performed action \"%s\" for Source \"%s\"",
-		      it->second.c_str(), GetWeakSourceName(_source).c_str());
+		      it->second.c_str(), _source.ToString(true).c_str());
 	} else {
 		blog(LOG_WARNING, "ignored unknown source action %d",
 		     static_cast<int>(_action));
@@ -115,7 +115,7 @@ void MacroActionSource::LogAction() const
 bool MacroActionSource::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
-	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
+	_source.Save(obj);
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	_button.Save(obj);
 	_settings.Save(obj, "settings");
@@ -125,8 +125,7 @@ bool MacroActionSource::Save(obs_data_t *obj) const
 bool MacroActionSource::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	const char *sourceName = obs_data_get_string(obj, "source");
-	_source = GetWeakSourceByName(sourceName);
+	_source.Load(obj);
 	_action = static_cast<SourceAction>(obs_data_get_int(obj, "action"));
 	_button.Load(obj);
 	_settings.Load(obj, "settings");
@@ -135,9 +134,7 @@ bool MacroActionSource::Load(obs_data_t *obj)
 
 std::string MacroActionSource::GetShortDesc() const
 {
-	if (_source) {
-		return GetWeakSourceName(_source);
-	}
+	_source.ToString();
 	return "";
 }
 
@@ -176,7 +173,7 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSource> entryData)
 	: QWidget(parent)
 {
-	_sources = new QComboBox();
+	_sources = new SourceSelectionWidget(this, QStringList(), true);
 	_actions = new QComboBox();
 	_settingsButtons = new QComboBox();
 	_getSettings = new QPushButton(
@@ -186,14 +183,17 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 		obs_module_text("AdvSceneSwitcher.action.source.warning"));
 
 	populateActionSelection(_actions);
-	populateSourceSelection(_sources);
+	auto sources = GetSourceNames();
+	sources.sort();
+	_sources->SetSourceNameList(sources);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
 	QWidget::connect(_settingsButtons, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(ButtonChanged(int)));
-	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SourceChanged(const QString &)));
+	QWidget::connect(_sources,
+			 SIGNAL(SourceChanged(const SourceSelection &)), this,
+			 SLOT(SourceChanged(const SourceSelection &)));
 	QWidget::connect(_getSettings, SIGNAL(clicked()), this,
 			 SLOT(GetSettingsClicked()));
 	QWidget::connect(_settings, SIGNAL(textChanged()), this,
@@ -230,11 +230,10 @@ void MacroActionSourceEdit::UpdateEntryData()
 		return;
 	}
 
-	populateSourceButtonSelection(_settingsButtons, _entryData->_source);
-
+	populateSourceButtonSelection(_settingsButtons,
+				      _entryData->_source.GetSource());
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
-	_sources->setCurrentText(
-		GetWeakSourceName(_entryData->_source).c_str());
+	_sources->SetSource(_entryData->_source);
 	_settingsButtons->setCurrentText(
 		QString::fromStdString(_entryData->_button.ToString()));
 	_settings->setPlainText(_entryData->_settings);
@@ -244,7 +243,7 @@ void MacroActionSourceEdit::UpdateEntryData()
 	updateGeometry();
 }
 
-void MacroActionSourceEdit::SourceChanged(const QString &text)
+void MacroActionSourceEdit::SourceChanged(const SourceSelection &source)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -252,9 +251,10 @@ void MacroActionSourceEdit::SourceChanged(const QString &text)
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
-		_entryData->_source = GetWeakSourceByQString(text);
+		_entryData->_source = source;
 	}
-	populateSourceButtonSelection(_settingsButtons, _entryData->_source);
+	populateSourceButtonSelection(_settingsButtons,
+				      _entryData->_source.GetSource());
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -283,12 +283,12 @@ void MacroActionSourceEdit::ButtonChanged(int idx)
 
 void MacroActionSourceEdit::GetSettingsClicked()
 {
-	if (_loading || !_entryData || !_entryData->_source) {
+	if (_loading || !_entryData || !_entryData->_source.GetSource()) {
 		return;
 	}
 
-	_settings->setPlainText(
-		formatJsonString(getSourceSettings(_entryData->_source)));
+	_settings->setPlainText(formatJsonString(
+		getSourceSettings(_entryData->_source.GetSource())));
 }
 
 void MacroActionSourceEdit::SettingsChanged()
