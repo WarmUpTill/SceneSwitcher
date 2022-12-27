@@ -2,6 +2,7 @@
 #include "macro-action-edit.hpp"
 #include "duration-control.hpp"
 #include "slider-spinbox.hpp"
+#include "source-selection.hpp"
 
 #include <QSpinBox>
 #include <QDoubleSpinBox>
@@ -22,7 +23,7 @@ public:
 		return std::make_shared<MacroActionAudio>(m);
 	}
 
-	OBSWeakSource _audioSource;
+	SourceSelection _audioSource;
 
 	enum class Action {
 		MUTE,
@@ -81,7 +82,7 @@ public:
 	}
 
 private slots:
-	void SourceChanged(const QString &text);
+	void SourceChanged(const SourceSelection &);
 	void ActionChanged(int value);
 	void SyncOffsetChanged(int value);
 	void MonitorTypeChanged(int value);
@@ -97,7 +98,7 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
-	QComboBox *_audioSources;
+	SourceSelectionWidget *_sources;
 	QComboBox *_actions;
 	QComboBox *_fadeTypes;
 	QSpinBox *_syncOffset;

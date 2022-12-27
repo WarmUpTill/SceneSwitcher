@@ -40,8 +40,8 @@ constexpr float minFade = 0.000001f;
 void MacroActionAudio::SetFadeActive(bool value)
 {
 	if (_action == Action::SOURCE_VOLUME) {
-		switcher->activeAudioFades[GetWeakSourceName(_audioSource)]
-			.active = value;
+		switcher->activeAudioFades[_audioSource.ToString()].active =
+			value;
 	} else {
 		switcher->masterAudioFade.active = value;
 	}
@@ -52,7 +52,7 @@ bool MacroActionAudio::FadeActive()
 	bool active = true;
 	if (_action == Action::SOURCE_VOLUME) {
 		auto it = switcher->activeAudioFades.find(
-			GetWeakSourceName(_audioSource));
+			_audioSource.ToString());
 		if (it == switcher->activeAudioFades.end()) {
 			return false;
 		}
@@ -69,7 +69,7 @@ std::atomic_int *MacroActionAudio::GetFadeIdPtr()
 
 	if (_action == Action::SOURCE_VOLUME) {
 		auto it = switcher->activeAudioFades.find(
-			GetWeakSourceName(_audioSource));
+			_audioSource.ToString());
 		if (it == switcher->activeAudioFades.end()) {
 			return nullptr;
 		}
@@ -81,7 +81,7 @@ std::atomic_int *MacroActionAudio::GetFadeIdPtr()
 void MacroActionAudio::SetVolume(float vol)
 {
 	if (_action == Action::SOURCE_VOLUME) {
-		auto s = obs_weak_source_get_source(_audioSource);
+		auto s = obs_weak_source_get_source(_audioSource.GetSource());
 		obs_source_set_volume(s, vol);
 		obs_source_release(s);
 	} else {
@@ -93,7 +93,7 @@ float MacroActionAudio::GetVolume()
 {
 	float curVol;
 	if (_action == Action::SOURCE_VOLUME) {
-		auto s = obs_weak_source_get_source(_audioSource);
+		auto s = obs_weak_source_get_source(_audioSource.GetSource());
 		if (!s) {
 			return 0.;
 		}
@@ -149,7 +149,7 @@ void MacroActionAudio::FadeVolume()
 
 void MacroActionAudio::StartFade()
 {
-	if (_action == Action::SOURCE_VOLUME && !_audioSource) {
+	if (_action == Action::SOURCE_VOLUME && !_audioSource.GetSource()) {
 		return;
 	}
 
@@ -157,7 +157,7 @@ void MacroActionAudio::StartFade()
 		blog(LOG_WARNING,
 		     "Audio fade for volume of %s already active! New fade request will be ignored!",
 		     (_action == Action::SOURCE_VOLUME)
-			     ? GetWeakSourceName(_audioSource).c_str()
+			     ? _audioSource.ToString(true).c_str()
 			     : "master volume");
 		return;
 	}
@@ -173,7 +173,7 @@ void MacroActionAudio::StartFade()
 
 bool MacroActionAudio::PerformAction()
 {
-	auto s = obs_weak_source_get_source(_audioSource);
+	auto s = obs_weak_source_get_source(_audioSource.GetSource());
 	switch (_action) {
 	case Action::MUTE:
 		obs_source_set_muted(s, true);
@@ -211,9 +211,8 @@ void MacroActionAudio::LogAction() const
 	if (it != actionTypes.end()) {
 		vblog(LOG_INFO,
 		      "performed action \"%s\" for source \"%s\" with volume %d with fade %d %f",
-		      it->second.c_str(),
-		      GetWeakSourceName(_audioSource).c_str(), _volume, _fade,
-		      _duration.seconds);
+		      it->second.c_str(), _audioSource.ToString(true).c_str(),
+		      _volume, _fade, _duration.seconds);
 	} else {
 		blog(LOG_WARNING, "ignored unknown audio action %d",
 		     static_cast<int>(_action));
@@ -224,8 +223,7 @@ bool MacroActionAudio::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	_duration.Save(obj);
-	obs_data_set_string(obj, "audioSource",
-			    GetWeakSourceName(_audioSource).c_str());
+	_audioSource.Save(obj, "audioSource");
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	obs_data_set_int(obj, "syncOffset", _syncOffset);
 	obs_data_set_int(obj, "monitor", _monitorType);
@@ -243,8 +241,7 @@ bool MacroActionAudio::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 	_duration.Load(obj);
-	const char *audioSourceName = obs_data_get_string(obj, "audioSource");
-	_audioSource = GetWeakSourceByName(audioSourceName);
+	_audioSource.Load(obj, "audioSource");
 	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
 	_syncOffset = obs_data_get_int(obj, "syncOffset");
 	_monitorType = static_cast<obs_monitoring_type>(
@@ -274,10 +271,7 @@ bool MacroActionAudio::Load(obs_data_t *obj)
 
 std::string MacroActionAudio::GetShortDesc() const
 {
-	if (_audioSource) {
-		return GetWeakSourceName(_audioSource);
-	}
-	return "";
+	return _audioSource.ToString();
 }
 
 static inline void populateActionSelection(QComboBox *list)
@@ -305,7 +299,7 @@ static inline void populateFadeTypeSelection(QComboBox *list)
 MacroActionAudioEdit::MacroActionAudioEdit(
 	QWidget *parent, std::shared_ptr<MacroActionAudio> entryData)
 	: QWidget(parent),
-	  _audioSources(new QComboBox),
+	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _actions(new QComboBox),
 	  _fadeTypes(new QComboBox),
 	  _syncOffset(new QSpinBox),
@@ -338,15 +332,17 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	_rate->setSuffix("%");
 
 	populateActionSelection(_actions);
-	populateAudioSelection(_audioSources);
+	auto sources = GetAudioSourceNames();
+	sources.sort();
+	_sources->SetSourceNameList(sources);
 	populateFadeTypeSelection(_fadeTypes);
 	populateMonitorTypeSelection(_monitorTypes);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
-	QWidget::connect(_audioSources,
-			 SIGNAL(currentTextChanged(const QString &)), this,
-			 SLOT(SourceChanged(const QString &)));
+	QWidget::connect(_sources,
+			 SIGNAL(SourceChanged(const SourceSelection &)), this,
+			 SLOT(SourceChanged(const SourceSelection &)));
 	QWidget::connect(_syncOffset, SIGNAL(valueChanged(int)), this,
 			 SLOT(SyncOffsetChanged(int)));
 	QWidget::connect(_balance, SIGNAL(DoubleValueChanged(double)), this,
@@ -369,7 +365,7 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 			 SLOT(FadeTypeChanged(int)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{audioSources}}", _audioSources},
+		{"{{audioSources}}", _sources},
 		{"{{actions}}", _actions},
 		{"{{syncOffset}}", _syncOffset},
 		{"{{monitorTypes}}", _monitorTypes},
@@ -414,8 +410,8 @@ bool hasVolumeControl(MacroActionAudio::Action action)
 void MacroActionAudioEdit::SetWidgetVisibility()
 {
 	_volumePercent->setVisible(hasVolumeControl(_entryData->_action));
-	_audioSources->setVisible(_entryData->_action !=
-				  MacroActionAudio::Action::MASTER_VOLUME);
+	_sources->setVisible(_entryData->_action !=
+			     MacroActionAudio::Action::MASTER_VOLUME);
 	_syncOffset->setVisible(_entryData->_action ==
 				MacroActionAudio::Action::SYNC_OFFSET);
 	_monitorTypes->setVisible(_entryData->_action ==
@@ -469,8 +465,7 @@ void MacroActionAudioEdit::UpdateEntryData()
 		return;
 	}
 
-	_audioSources->setCurrentText(
-		GetWeakSourceName(_entryData->_audioSource).c_str());
+	_sources->SetSource(_entryData->_audioSource);
 	_actions->setCurrentIndex(
 		_actions->findData(static_cast<int>(_entryData->_action)));
 	_syncOffset->setValue(_entryData->_syncOffset);
@@ -486,14 +481,14 @@ void MacroActionAudioEdit::UpdateEntryData()
 	SetWidgetVisibility();
 }
 
-void MacroActionAudioEdit::SourceChanged(const QString &text)
+void MacroActionAudioEdit::SourceChanged(const SourceSelection &source)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_audioSource = GetWeakSourceByQString(text);
+	_entryData->_audioSource = source;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
