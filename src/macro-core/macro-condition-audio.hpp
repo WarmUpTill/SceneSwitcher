@@ -2,6 +2,8 @@
 #include "macro.hpp"
 #include "volume-control.hpp"
 #include "slider-spinbox.hpp"
+#include "source-selection.hpp"
+
 #include <limits>
 #include <QWidget>
 #include <QComboBox>
@@ -47,7 +49,7 @@ public:
 		UNMUTE,
 	};
 
-	OBSWeakSource _audioSource;
+	SourceSelection _audioSource;
 	int _volume = 0;
 	int64_t _syncOffset = 0;
 	obs_monitoring_type _monitorType = OBS_MONITORING_TYPE_NONE;
@@ -87,7 +89,7 @@ public:
 	void UpdateVolmeterSource();
 
 private slots:
-	void SourceChanged(const QString &text);
+	void SourceChanged(const SourceSelection &);
 	void VolumeThresholdChanged(int vol);
 	void ConditionChanged(int cond);
 	void CheckTypeChanged(int cond);
@@ -100,7 +102,7 @@ signals:
 
 protected:
 	QComboBox *_checkTypes;
-	QComboBox *_audioSources;
+	SourceSelectionWidget *_sources;
 	QComboBox *_condition;
 	QSpinBox *_volume;
 	QSpinBox *_syncOffset;
