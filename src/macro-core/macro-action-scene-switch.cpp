@@ -125,11 +125,11 @@ void MacroActionSwitchScene::LogAction() const
 	switch (t) {
 	case SceneSelection::Type::SCENE:
 		vblog(LOG_INFO, "switch to scene '%s'",
-		      _scene.ToString().c_str());
+		      _scene.ToString(true).c_str());
 		break;
 	case SceneSelection::Type::GROUP:
 		vblog(LOG_INFO, "switch to scene '%s' (scene group '%s')",
-		      sceneName.c_str(), _scene.ToString().c_str());
+		      sceneName.c_str(), _scene.ToString(true).c_str());
 		break;
 	case SceneSelection::Type::PREVIOUS:
 		vblog(LOG_INFO, "switch to previous scene '%s'",

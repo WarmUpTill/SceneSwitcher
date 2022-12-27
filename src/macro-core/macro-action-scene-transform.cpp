@@ -30,7 +30,7 @@ void MacroActionSceneTransform::LogAction() const
 {
 	vblog(LOG_INFO,
 	      "performed transform action for source \"%s\" on scene \"%s\"",
-	      _source.ToString().c_str(), _scene.ToString().c_str());
+	      _source.ToString(true).c_str(), _scene.ToString(true).c_str());
 }
 
 bool MacroActionSceneTransform::Save(obs_data_t *obj) const

@@ -77,7 +77,7 @@ void MacroActionSudioMode::LogAction() const
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
 		vblog(LOG_INFO, "performed action \"%s\" with scene \"%s\"",
-		      it->second.c_str(), _scene.ToString().c_str());
+		      it->second.c_str(), _scene.ToString(true).c_str());
 	} else {
 		blog(LOG_WARNING, "ignored unknown studio mode action %d",
 		     static_cast<int>(_action));

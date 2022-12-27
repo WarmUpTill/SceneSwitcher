@@ -127,18 +127,18 @@ void MacroActionTransition::LogAction() const
 		msgBegin += "set scene transition";
 		break;
 	case Type::SCENE_OVERRIDE:
-		msgBegin +=
-			"set scene override transition of " + _scene.ToString();
+		msgBegin += "set scene override transition of " +
+			    _scene.ToString(true);
 		break;
 	case Type::SOURCE_SHOW:
 		msgBegin += "set source show transition of " +
-			    _source.ToString() + " on scene " +
-			    _scene.ToString();
+			    _source.ToString(true) + " on scene " +
+			    _scene.ToString(true);
 		break;
 	case Type::SOURCE_HIDE:
 		msgBegin += "set source hide transition of " +
-			    _source.ToString() + " on scene " +
-			    _scene.ToString();
+			    _source.ToString(true) + " on scene " +
+			    _scene.ToString(true);
 		break;
 	}
 	if (_setDuration) {
