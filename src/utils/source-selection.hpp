@@ -5,7 +5,6 @@
 
 #include <QComboBox>
 
-
 class SourceSelection {
 public:
 	void Save(obs_data_t *obj, const char *name = "source") const;
@@ -19,7 +18,7 @@ public:
 	Type GetType() const { return _type; }
 	OBSWeakSource GetSource() const;
 	void SetSource(OBSWeakSource);
-	std::string ToString() const;
+	std::string ToString(bool resolve = false) const;
 
 private:
 	// TODO: Remove in future version
