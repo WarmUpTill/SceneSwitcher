@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "duration-control.hpp"
+#include "source-selection.hpp"
 
 #include <QSpinBox>
 #include <QHBoxLayout>
@@ -29,7 +30,7 @@ public:
 		return std::make_shared<MacroActionMedia>(m);
 	}
 
-	OBSWeakSource _mediaSource;
+	SourceSelection _mediaSource;
 	MediaAction _action = MediaAction::PLAY;
 	Duration _seek;
 
@@ -55,7 +56,7 @@ public:
 	}
 
 private slots:
-	void SourceChanged(const QString &text);
+	void SourceChanged(const SourceSelection &);
 	void ActionChanged(int value);
 	void DurationChanged(double value);
 	void DurationUnitChanged(DurationUnit unit);
@@ -63,7 +64,7 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
-	QComboBox *_mediaSources;
+	SourceSelectionWidget *_sources;
 	QComboBox *_actions;
 	DurationSelection *_seek;
 	std::shared_ptr<MacroActionMedia> _entryData;
