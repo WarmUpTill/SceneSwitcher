@@ -21,7 +21,7 @@ const static std::map<MediaAction, std::string> actionTypes = {
 
 bool MacroActionMedia::PerformAction()
 {
-	auto source = obs_weak_source_get_source(_mediaSource);
+	auto source = obs_weak_source_get_source(_mediaSource.GetSource());
 	obs_media_state state = obs_source_media_get_state(source);
 	switch (_action) {
 	case MediaAction::PLAY:
@@ -62,8 +62,7 @@ void MacroActionMedia::LogAction() const
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
 		vblog(LOG_INFO, "performed action \"%s\" for source \"%s\"",
-		      it->second.c_str(),
-		      GetWeakSourceName(_mediaSource).c_str());
+		      it->second.c_str(), _mediaSource.ToString(true).c_str());
 	} else {
 		blog(LOG_WARNING, "ignored unknown media action %d",
 		     static_cast<int>(_action));
@@ -73,8 +72,7 @@ void MacroActionMedia::LogAction() const
 bool MacroActionMedia::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
-	obs_data_set_string(obj, "mediaSource",
-			    GetWeakSourceName(_mediaSource).c_str());
+	_mediaSource.Save(obj, "mediaSource");
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	_seek.Save(obj);
 	return true;
@@ -83,8 +81,7 @@ bool MacroActionMedia::Save(obs_data_t *obj) const
 bool MacroActionMedia::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	const char *MediaSourceName = obs_data_get_string(obj, "mediaSource");
-	_mediaSource = GetWeakSourceByName(MediaSourceName);
+	_mediaSource.Load(obj, "mediaSource");
 	_action = static_cast<MediaAction>(obs_data_get_int(obj, "action"));
 	_seek.Load(obj);
 	return true;
@@ -92,10 +89,7 @@ bool MacroActionMedia::Load(obs_data_t *obj)
 
 std::string MacroActionMedia::GetShortDesc() const
 {
-	if (_mediaSource) {
-		return GetWeakSourceName(_mediaSource);
-	}
-	return "";
+	return _mediaSource.ToString();
 }
 
 static inline void populateActionSelection(QComboBox *list)
@@ -108,18 +102,20 @@ static inline void populateActionSelection(QComboBox *list)
 MacroActionMediaEdit::MacroActionMediaEdit(
 	QWidget *parent, std::shared_ptr<MacroActionMedia> entryData)
 	: QWidget(parent),
-	  _mediaSources(new QComboBox()),
+	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _actions(new QComboBox()),
 	  _seek(new DurationSelection())
 {
 	populateActionSelection(_actions);
-	populateMediaSelection(_mediaSources);
+	auto sources = GetMediaSourceNames();
+	sources.sort();
+	_sources->SetSourceNameList(sources);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
-	QWidget::connect(_mediaSources,
-			 SIGNAL(currentTextChanged(const QString &)), this,
-			 SLOT(SourceChanged(const QString &)));
+	QWidget::connect(_sources,
+			 SIGNAL(SourceChanged(const SourceSelection &)), this,
+			 SLOT(SourceChanged(const SourceSelection &)));
 	QWidget::connect(_seek, SIGNAL(DurationChanged(double)), this,
 			 SLOT(DurationChanged(double)));
 	QWidget::connect(_seek, SIGNAL(UnitChanged(DurationUnit)), this,
@@ -127,7 +123,7 @@ MacroActionMediaEdit::MacroActionMediaEdit(
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{mediaSources}}", _mediaSources},
+		{"{{mediaSources}}", _sources},
 		{"{{actions}}", _actions},
 		{"{{duration}}", _seek},
 	};
@@ -146,21 +142,20 @@ void MacroActionMediaEdit::UpdateEntryData()
 		return;
 	}
 
-	_mediaSources->setCurrentText(
-		GetWeakSourceName(_entryData->_mediaSource).c_str());
+	_sources->SetSource(_entryData->_mediaSource);
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_seek->SetDuration(_entryData->_seek);
 	SetWidgetVisibility();
 }
 
-void MacroActionMediaEdit::SourceChanged(const QString &text)
+void MacroActionMediaEdit::SourceChanged(const SourceSelection &source)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_mediaSource = GetWeakSourceByQString(text);
+	_entryData->_mediaSource = source;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
