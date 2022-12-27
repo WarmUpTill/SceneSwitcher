@@ -2,6 +2,7 @@
 #include "macro.hpp"
 #include "variable-text-edit.hpp"
 #include "regex-config.hpp"
+#include "source-selection.hpp"
 
 #include <QComboBox>
 #include <QPushButton>
@@ -26,7 +27,7 @@ public:
 		return std::make_shared<MacroConditionSource>(m);
 	}
 
-	OBSWeakSource _source = nullptr;
+	SourceSelection _source;
 	SourceCondition _condition = SourceCondition::ACTIVE;
 	VariableResolvingString _settings = "";
 	RegexConfig _regex;
@@ -53,7 +54,7 @@ public:
 	}
 
 private slots:
-	void SourceChanged(const QString &text);
+	void SourceChanged(const SourceSelection &);
 	void ConditionChanged(int cond);
 	void GetSettingsClicked();
 	void SettingsChanged();
@@ -62,7 +63,7 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
-	QComboBox *_sources;
+	SourceSelectionWidget *_sources;
 	QComboBox *_conditions;
 	QPushButton *_getSettings;
 	VariableTextEdit *_settings;

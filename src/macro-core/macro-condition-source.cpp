@@ -21,12 +21,12 @@ static std::map<SourceCondition, std::string> sourceConditionTypes = {
 
 bool MacroConditionSource::CheckCondition()
 {
-	if (!_source) {
+	if (!_source.GetSource()) {
 		return false;
 	}
 
 	bool ret = false;
-	auto s = obs_weak_source_get_source(_source);
+	auto s = obs_weak_source_get_source(_source.GetSource());
 
 	switch (_condition) {
 	case SourceCondition::ACTIVE:
@@ -36,7 +36,8 @@ bool MacroConditionSource::CheckCondition()
 		ret = obs_source_showing(s);
 		break;
 	case SourceCondition::SETTINGS:
-		ret = compareSourceSettings(_source, _settings, _regex);
+		ret = compareSourceSettings(_source.GetSource(), _settings,
+					    _regex);
 		break;
 	default:
 		break;
@@ -50,7 +51,7 @@ bool MacroConditionSource::CheckCondition()
 bool MacroConditionSource::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
-	obs_data_set_string(obj, "source", GetWeakSourceName(_source).c_str());
+	_source.Save(obj);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	_settings.Save(obj, "settings");
 	_regex.Save(obj);
@@ -60,8 +61,7 @@ bool MacroConditionSource::Save(obs_data_t *obj) const
 bool MacroConditionSource::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	const char *sourceName = obs_data_get_string(obj, "source");
-	_source = GetWeakSourceByName(sourceName);
+	_source.Load(obj);
 	_condition = static_cast<SourceCondition>(
 		obs_data_get_int(obj, "condition"));
 	_settings.Load(obj, "settings");
@@ -76,10 +76,7 @@ bool MacroConditionSource::Load(obs_data_t *obj)
 
 std::string MacroConditionSource::GetShortDesc() const
 {
-	if (_source) {
-		return GetWeakSourceName(_source);
-	}
-	return "";
+	return _source.ToString();
 }
 
 static inline void populateConditionSelection(QComboBox *list)
@@ -92,7 +89,7 @@ static inline void populateConditionSelection(QComboBox *list)
 MacroConditionSourceEdit::MacroConditionSourceEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionSource> entryData)
 	: QWidget(parent),
-	  _sources(new QComboBox()),
+	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _conditions(new QComboBox()),
 	  _getSettings(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.filter.getSettings"))),
@@ -100,10 +97,13 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 	  _regex(new RegexConfigWidget(parent))
 {
 	populateConditionSelection(_conditions);
-	populateSourceSelection(_sources);
+	auto sources = GetSourceNames();
+	sources.sort();
+	_sources->SetSourceNameList(sources);
 
-	QWidget::connect(_sources, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SourceChanged(const QString &)));
+	QWidget::connect(_sources,
+			 SIGNAL(SourceChanged(const SourceSelection &)), this,
+			 SLOT(SourceChanged(const SourceSelection &)));
 	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_getSettings, SIGNAL(clicked()), this,
@@ -141,14 +141,14 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 	_loading = false;
 }
 
-void MacroConditionSourceEdit::SourceChanged(const QString &text)
+void MacroConditionSourceEdit::SourceChanged(const SourceSelection &source)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_source = GetWeakSourceByQString(text);
+	_entryData->_source = source;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -167,11 +167,12 @@ void MacroConditionSourceEdit::ConditionChanged(int index)
 
 void MacroConditionSourceEdit::GetSettingsClicked()
 {
-	if (_loading || !_entryData || !_entryData->_source) {
+	if (_loading || !_entryData || !_entryData->_source.GetSource()) {
 		return;
 	}
 
-	QString json = formatJsonString(getSourceSettings(_entryData->_source));
+	QString json = formatJsonString(
+		getSourceSettings(_entryData->_source.GetSource()));
 	if (_entryData->_regex.Enabled()) {
 		json = escapeForRegex(json);
 	}
@@ -218,8 +219,7 @@ void MacroConditionSourceEdit::UpdateEntryData()
 		return;
 	}
 
-	_sources->setCurrentText(
-		GetWeakSourceName(_entryData->_source).c_str());
+	_sources->SetSource(_entryData->_source);
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_settings->setPlainText(_entryData->_settings);
 	_regex->SetRegexConfig(_entryData->_regex);
