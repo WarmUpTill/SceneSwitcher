@@ -82,7 +82,7 @@ void SourceSelection::SetSource(OBSWeakSource source)
 	_source = source;
 }
 
-std::string SourceSelection::ToString() const
+std::string SourceSelection::ToString(bool resolve) const
 {
 	switch (_type) {
 	case Type::SOURCE:
@@ -91,6 +91,9 @@ std::string SourceSelection::ToString() const
 		auto var = _variable.lock();
 		if (!var) {
 			return "";
+		}
+		if (resolve) {
+			return var->Name() + "[" + var->Value() + "]";
 		}
 		return var->Name();
 	}

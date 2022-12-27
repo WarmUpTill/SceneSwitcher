@@ -186,12 +186,15 @@ SceneItemSelection::GetSceneItems(SceneSelection &sceneSelection) const
 	return ret;
 }
 
-std::string SceneItemSelection::ToString() const
+std::string SceneItemSelection::ToString(bool resolve) const
 {
 	if (_type == Type::VARIABLE) {
 		auto var = _variable.lock();
 		if (!var) {
 			return "";
+		}
+		if (resolve) {
+			return var->Name() + "[" + var->Value() + "]";
 		}
 		return var->Name();
 	}

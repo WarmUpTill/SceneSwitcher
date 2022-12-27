@@ -22,7 +22,7 @@ public:
 
 	Type GetType() const { return _type; }
 	OBSWeakSource GetScene(bool advance = true) const;
-	std::string ToString() const;
+	std::string ToString(bool resolve = false) const;
 
 private:
 	OBSWeakSource _scene;

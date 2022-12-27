@@ -121,13 +121,19 @@ OBSWeakSource SceneSelection::GetScene(bool advance) const
 	return nullptr;
 }
 
-std::string SceneSelection::ToString() const
+std::string SceneSelection::ToString(bool resolve) const
 {
 	switch (_type) {
 	case Type::SCENE:
 		return GetWeakSourceName(_scene);
 	case Type::GROUP:
 		if (_group) {
+			if (resolve) {
+				return _group->name + "[" +
+				       GetWeakSourceName(
+					       _group->getCurrentScene()) +
+				       "]";
+			}
 			return _group->name;
 		}
 		break;
@@ -141,6 +147,9 @@ std::string SceneSelection::ToString() const
 		auto var = _variable.lock();
 		if (!var) {
 			return "";
+		}
+		if (resolve) {
+			return var->Name() + "[" + var->Value() + "]";
 		}
 		return var->Name();
 	}
