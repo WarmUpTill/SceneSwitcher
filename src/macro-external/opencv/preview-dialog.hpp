@@ -1,5 +1,4 @@
 #pragma once
-#include "video-selection.hpp"
 #include "paramerter-wrappers.hpp"
 
 #include <QDialog>
@@ -28,7 +27,7 @@ public:
 public slots:
 	void PatternMatchParamtersChanged(const PatternMatchParameters &);
 	void ObjDetectParamtersChanged(const ObjDetectParamerts &);
-	void VideoSelectionChanged(const VideoSelection &);
+	void VideoSelectionChanged(const VideoInput &);
 	void AreaParamtersChanged(const AreaParamters &);
 	void ConditionChanged(int cond);
 private slots:
@@ -46,7 +45,7 @@ private:
 	void mouseMoveEvent(QMouseEvent *event);
 	void mouseReleaseEvent(QMouseEvent *event);
 
-	VideoSelection _video;
+	VideoInput _video;
 	PatternMatchParameters _patternMatchParams;
 	PatternImageData _patternImageData;
 	ObjDetectParamerts _objDetectParams;

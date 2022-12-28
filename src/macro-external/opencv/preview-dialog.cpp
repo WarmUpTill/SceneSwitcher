@@ -143,7 +143,7 @@ void PreviewDialog::ObjDetectParamtersChanged(const ObjDetectParamerts &params)
 	_objDetectParams = params;
 }
 
-void PreviewDialog::VideoSelectionChanged(const VideoSelection &video)
+void PreviewDialog::VideoSelectionChanged(const VideoInput &video)
 {
 	std::unique_lock<std::mutex> lock(_mtx);
 	_video = video;

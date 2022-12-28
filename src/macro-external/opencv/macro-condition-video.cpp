@@ -18,7 +18,7 @@ bool MacroConditionVideo::_registered = MacroConditionFactory::Register(
 	{MacroConditionVideo::Create, MacroConditionVideoEdit::Create,
 	 "AdvSceneSwitcher.condition.video"});
 
-static std::map<VideoCondition, std::string> conditionTypes = {
+const static std::map<VideoCondition, std::string> conditionTypes = {
 	{VideoCondition::MATCH,
 	 "AdvSceneSwitcher.condition.video.condition.match"},
 	{VideoCondition::DIFFER,
@@ -35,6 +35,15 @@ static std::map<VideoCondition, std::string> conditionTypes = {
 	 "AdvSceneSwitcher.condition.video.condition.object"},
 	{VideoCondition::BRIGHTNESS,
 	 "AdvSceneSwitcher.condition.video.condition.brightness"},
+};
+
+const static std::map<VideoInput::Type, std::string> videoInputTypes = {
+	{VideoInput::Type::OBS_MAIN_OUTPUT,
+	 "AdvSceneSwitcher.condition.video.type.main"},
+	{VideoInput::Type::SOURCE,
+	 "AdvSceneSwitcher.condition.video.type.source"},
+	{VideoInput::Type::SCENE,
+	 "AdvSceneSwitcher.condition.video.type.scene"},
 };
 
 cv::CascadeClassifier initObjectCascade(std::string &path)
@@ -127,9 +136,6 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_video.Load(obj);
-	if (obs_data_has_user_value(obj, "videoSource")) {
-		_video.Load(obj, "videoSource");
-	}
 	_condition =
 		static_cast<VideoCondition>(obs_data_get_int(obj, "condition"));
 	_file = obs_data_get_string(obj, "filePath");
@@ -268,6 +274,13 @@ bool MacroConditionVideo::Compare()
 	return false;
 }
 
+static inline void populateVideoInputSelection(QComboBox *list)
+{
+	for (const auto &[_, name] : videoInputTypes) {
+		list->addItem(obs_module_text(name.c_str()));
+	}
+}
+
 static inline void populateConditionSelection(QComboBox *list)
 {
 	for (auto entry : conditionTypes) {
@@ -278,7 +291,10 @@ static inline void populateConditionSelection(QComboBox *list)
 MacroConditionVideoEdit::MacroConditionVideoEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionVideo> entryData)
 	: QWidget(parent),
-	  _videoSelection(new VideoSelectionWidget(this)),
+	  _videoInputTypes(new QComboBox()),
+	  _scenes(new SceneSelectionWidget(this, true, false, true, true,
+					   true)),
+	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _condition(new QComboBox()),
 	  _reduceLatency(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.reduceLatency"))),
@@ -339,10 +355,17 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	_throttleCount->setMaximum(10 * GetSwitcher()->interval);
 	_throttleCount->setSingleStep(GetSwitcher()->interval);
 
-	QWidget::connect(_videoSelection,
-			 SIGNAL(VideoSelectionChange(const VideoSelection &)),
-			 this,
-			 SLOT(VideoSelectionChanged(const VideoSelection &)));
+	auto sources = GetVideoSourceNames();
+	sources.sort();
+	_sources->SetSourceNameList(sources);
+
+	QWidget::connect(_videoInputTypes, SIGNAL(currentIndexChanged(int)),
+			 this, SLOT(VideoInputTypeChanged(int)));
+	QWidget::connect(_sources,
+			 SIGNAL(SourceChanged(const SourceSelection &)), this,
+			 SLOT(SourceChanged(const SourceSelection &)));
+	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
+			 this, SLOT(SceneChanged(const SceneSelection &)));
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_reduceLatency, SIGNAL(stateChanged(int)), this,
@@ -383,20 +406,23 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 SLOT(ShowMatchClicked()));
 	QWidget::connect(&_previewDialog, SIGNAL(SelectionAreaChanged(QRect)),
 			 this, SLOT(CheckAreaChanged(QRect)));
-	QWidget::connect(_videoSelection,
-			 SIGNAL(VideoSelectionChange(const VideoSelection &)),
+	QWidget::connect(this,
+			 SIGNAL(VideoSelectionChanged(const VideoInput &)),
 			 &_previewDialog,
-			 SLOT(VideoSelectionChanged(const VideoSelection &)));
+			 SLOT(VideoSelectionChanged(const VideoInput &)));
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)),
 			 &_previewDialog, SLOT(ConditionChanged(int)));
 	QWidget::connect(_selectArea, SIGNAL(clicked()), this,
 			 SLOT(SelectAreaClicked()));
 
+	populateVideoInputSelection(_videoInputTypes);
 	populateConditionSelection(_condition);
 
 	QHBoxLayout *entryLine1Layout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{videoSources}}", _videoSelection},
+		{"{{videoInputTypes}}", _videoInputTypes},
+		{"{{sources}}", _sources},
+		{"{{scenes}}", _scenes},
 		{"{{condition}}", _condition},
 		{"{{reduceLatency}}", _reduceLatency},
 		{"{{imagePath}}", _imagePath},
@@ -499,17 +525,38 @@ void MacroConditionVideoEdit::UpdatePreviewTooltip()
 	this->setToolTip(html);
 }
 
-void MacroConditionVideoEdit::VideoSelectionChanged(const VideoSelection &v)
+void MacroConditionVideoEdit::SourceChanged(const SourceSelection &source)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
-	_entryData->_video = v;
-	_entryData->ResetLastMatch();
-	emit HeaderInfoChanged(
-		QString::fromStdString(_entryData->GetShortDesc()));
+	_entryData->_video.source = source;
+	HandleVideoInputUpdate();
+}
+
+void MacroConditionVideoEdit::SceneChanged(const SceneSelection &scene)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	_entryData->_video.scene = scene;
+	HandleVideoInputUpdate();
+}
+
+void MacroConditionVideoEdit::VideoInputTypeChanged(int type)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	_entryData->_video.type = static_cast<VideoInput::Type>(type);
+	HandleVideoInputUpdate();
+	SetWidgetVisibility();
 }
 
 void MacroConditionVideoEdit::ConditionChanged(int cond)
@@ -741,6 +788,14 @@ void MacroConditionVideoEdit::MinSizeChanged(advss::Size value)
 		_entryData->_objMatchParameters);
 }
 
+void MacroConditionVideoEdit::HandleVideoInputUpdate()
+{
+	_entryData->ResetLastMatch();
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
+	emit VideoSelectionChanged(_entryData->_video);
+}
+
 void MacroConditionVideoEdit::MaxSizeChanged(advss::Size value)
 {
 	if (_loading || !_entryData) {
@@ -887,6 +942,9 @@ bool needsAreaControls(VideoCondition cond)
 
 void MacroConditionVideoEdit::SetWidgetVisibility()
 {
+	_sources->setVisible(_entryData->_video.type ==
+			     VideoInput::Type::SOURCE);
+	_scenes->setVisible(_entryData->_video.type == VideoInput::Type::SCENE);
 	_imagePath->setVisible(requiresFileInput(_entryData->_condition));
 	_usePatternForChangedCheck->setVisible(
 		patternControlIsOptional(_entryData->_condition));
@@ -930,7 +988,10 @@ void MacroConditionVideoEdit::UpdateEntryData()
 		return;
 	}
 
-	_videoSelection->SetVideoSelection(_entryData->_video);
+	_videoInputTypes->setCurrentIndex(
+		static_cast<int>(_entryData->_video.type));
+	_scenes->SetScene(_entryData->_video.scene);
+	_sources->SetSource(_entryData->_video.source);
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_reduceLatency->setChecked(_entryData->_blockUntilScreenshotDone);
 	_imagePath->SetPath(QString::fromStdString(_entryData->_file));
