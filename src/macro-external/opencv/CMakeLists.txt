@@ -26,9 +26,7 @@ target_sources(
           paramerter-wrappers.cpp
           paramerter-wrappers.hpp
           preview-dialog.cpp
-          preview-dialog.hpp
-          video-selection.cpp
-          video-selection.hpp)
+          preview-dialog.hpp)
 
 setup_advss_plugin(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")

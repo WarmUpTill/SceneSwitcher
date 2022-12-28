@@ -1,7 +1,6 @@
 #pragma once
 #include "opencv-helpers.hpp"
 #include "area-selection.hpp"
-#include "video-selection.hpp"
 #include "preview-dialog.hpp"
 #include "paramerter-wrappers.hpp"
 
@@ -40,7 +39,7 @@ public:
 	void ResetLastMatch() { _lastMatchResult = false; }
 	double GetCurrentBrightness() const { return _currentBrigthness; }
 
-	VideoSelection _video;
+	VideoInput _video;
 	VideoCondition _condition = VideoCondition::MATCH;
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	// Enabling this will reduce matching latency, but slow down the
@@ -97,7 +96,9 @@ public:
 	void UpdatePreviewTooltip();
 
 private slots:
-	void VideoSelectionChanged(const VideoSelection &);
+	void VideoInputTypeChanged(int);
+	void SourceChanged(const SourceSelection &);
+	void SceneChanged(const SceneSelection &);
 	void ConditionChanged(int cond);
 	void ReduceLatencyChanged(int value);
 
@@ -127,10 +128,16 @@ private slots:
 
 	void UpdateCurrentBrightness();
 signals:
+	void VideoSelectionChanged(const VideoInput &);
 	void HeaderInfoChanged(const QString &);
 
-protected:
-	VideoSelectionWidget *_videoSelection;
+private:
+	void SetWidgetVisibility();
+	void HandleVideoInputUpdate();
+
+	QComboBox *_videoInputTypes;
+	SceneSelectionWidget *_scenes;
+	SourceSelectionWidget *_sources;
 	QComboBox *_condition;
 
 	QCheckBox *_reduceLatency;
@@ -166,11 +173,8 @@ protected:
 	QPushButton *_showMatch;
 	PreviewDialog _previewDialog;
 
-	std::shared_ptr<MacroConditionVideo> _entryData;
-
-private:
 	QTimer _updateBrightnessTimer;
 
-	void SetWidgetVisibility();
+	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;
 };

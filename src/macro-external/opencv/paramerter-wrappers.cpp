@@ -110,3 +110,81 @@ bool AreaParamters::Load(obs_data_t *obj)
 	obs_data_release(data);
 	return true;
 }
+
+bool VideoInput::Save(obs_data_t *obj) const
+{
+	auto data = obs_data_create();
+	obs_data_set_int(data, "type", static_cast<int>(type));
+	source.Save(data);
+	scene.Save(data);
+	obs_data_set_obj(obj, "videoInputData", data);
+	obs_data_release(data);
+	return true;
+}
+
+bool VideoInput::Load(obs_data_t *obj)
+{
+	// TODO: Remove this fallback in a future version
+	if (obs_data_has_user_value(obj, "videoType")) {
+		enum class VideoSelectionType {
+			SOURCE,
+			OBS_MAIN,
+		};
+		auto oldType = static_cast<VideoSelectionType>(
+			obs_data_get_int(obj, "videoType"));
+		if (oldType == VideoSelectionType::SOURCE) {
+			type = Type::SOURCE;
+			auto name = obs_data_get_string(obj, "video");
+			source.SetSource(GetWeakSourceByName(name));
+		} else {
+			type = Type::OBS_MAIN_OUTPUT;
+		}
+		return true;
+	}
+
+	auto data = obs_data_get_obj(obj, "videoInputData");
+	type = static_cast<Type>(obs_data_get_int(data, "type"));
+	source.Load(data);
+	scene.Load(data);
+	obs_data_release(data);
+	return true;
+}
+
+std::string VideoInput::ToString(bool resolve) const
+{
+	switch (type) {
+	case VideoInput::Type::OBS_MAIN_OUTPUT:
+		return obs_module_text("AdvSceneSwitcher.OBSVideoOutput");
+	case VideoInput::Type::SOURCE:
+		return source.ToString(resolve);
+	case VideoInput::Type::SCENE:
+		return scene.ToString(resolve);
+	}
+	return "";
+}
+
+bool VideoInput::ValidSelection() const
+{
+	switch (type) {
+	case VideoInput::Type::OBS_MAIN_OUTPUT:
+		return true;
+	case VideoInput::Type::SOURCE:
+		return !!source.GetSource();
+	case VideoInput::Type::SCENE:
+		return !!scene.GetScene();
+	}
+	return false;
+}
+
+OBSWeakSource VideoInput::GetVideo() const
+{
+	switch (type) {
+	case VideoInput::Type::OBS_MAIN_OUTPUT:
+		return nullptr;
+	case VideoInput::Type::SOURCE:
+		return source.GetSource();
+	case VideoInput::Type::SCENE:
+		return scene.GetScene();
+	}
+	return nullptr;
+}
