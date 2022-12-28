@@ -84,6 +84,14 @@ void SceneSelection::Load(obs_data_t *obj, const char *name,
 	obs_data_release(data);
 }
 
+bool IsScene(const OBSWeakSource &source)
+{
+	auto s = obs_weak_source_get_source(source);
+	bool ret = !!obs_scene_from_source(s);
+	obs_source_release(s);
+	return ret;
+}
+
 OBSWeakSource SceneSelection::GetScene(bool advance) const
 {
 	switch (_type) {
@@ -113,7 +121,11 @@ OBSWeakSource SceneSelection::GetScene(bool advance) const
 		if (!var) {
 			return nullptr;
 		}
-		return GetWeakSourceByName(var->Value().c_str());
+		auto scene = GetWeakSourceByName(var->Value().c_str());
+		if (IsScene(scene)) {
+			return scene;
+		}
+		return nullptr;
 	}
 	default:
 		break;
