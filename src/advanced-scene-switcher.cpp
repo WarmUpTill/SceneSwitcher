@@ -699,6 +699,21 @@ void LoadPlugins()
 	}
 }
 
+void OpenSettingsWindow()
+{
+	if (switcher->settingsWindowOpened) {
+		AdvSceneSwitcher::window->show();
+		AdvSceneSwitcher::window->raise();
+		AdvSceneSwitcher::window->activateWindow();
+	} else {
+		AdvSceneSwitcher::window =
+			new AdvSceneSwitcher(static_cast<QMainWindow *>(
+				obs_frontend_get_main_window()));
+		AdvSceneSwitcher::window->setAttribute(Qt::WA_DeleteOnClose);
+		AdvSceneSwitcher::window->show();
+	}
+}
+
 extern "C" void InitSceneSwitcher(obs_module_t *m, translateFunc t)
 {
 	blog(LOG_INFO, "version: %s", g_GIT_TAG);
@@ -712,25 +727,10 @@ extern "C" void InitSceneSwitcher(obs_module_t *m, translateFunc t)
 	LoadPlugins();
 	SetupDock();
 
-	auto cb = []() {
-		if (switcher->settingsWindowOpened) {
-			AdvSceneSwitcher::window->show();
-			AdvSceneSwitcher::window->raise();
-			AdvSceneSwitcher::window->activateWindow();
-		} else {
-			AdvSceneSwitcher::window =
-				new AdvSceneSwitcher(static_cast<QMainWindow *>(
-					obs_frontend_get_main_window()));
-			AdvSceneSwitcher::window->setAttribute(
-				Qt::WA_DeleteOnClose);
-			AdvSceneSwitcher::window->show();
-		}
-	};
-
 	obs_frontend_add_save_callback(SaveSceneSwitcher, nullptr);
 	obs_frontend_add_event_callback(OBSEvent, switcher);
 
 	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(
 		obs_module_text("AdvSceneSwitcher.pluginName"));
-	action->connect(action, &QAction::triggered, cb);
+	action->connect(action, &QAction::triggered, OpenSettingsWindow);
 }

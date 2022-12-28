@@ -31,7 +31,15 @@ private:
 	bool _setToStopped = true;
 };
 
-class StatusDock : public QDockWidget {
+// Only used to enable applying "OBSDock" stylesheet
+class OBSDock : public QDockWidget {
+	Q_OBJECT
+
+public:
+	inline OBSDock(QWidget *parent = nullptr) : QDockWidget(parent) {}
+};
+
+class StatusDock : public OBSDock {
 	Q_OBJECT
 
 public:

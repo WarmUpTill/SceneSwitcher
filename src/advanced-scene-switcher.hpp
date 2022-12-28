@@ -314,10 +314,11 @@ private:
 	int currentActionIdx = -1;
 };
 
+void OpenSettingsWindow();
+
 /******************************************************************************
  * Sceneswitch helper
  ******************************************************************************/
-
 void setNextTransition(const sceneSwitchInfo &ssi, obs_source_t *currentSource,
 		       transitionData &td);
 void overwriteTransitionOverride(const sceneSwitchInfo &ssi,

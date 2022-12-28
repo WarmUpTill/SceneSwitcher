@@ -98,21 +98,46 @@ void StatusControl::SetStopped()
 	_setToStopped = true;
 }
 
-StatusDock::StatusDock(QWidget *parent)
-	: QDockWidget(obs_module_text("AdvSceneSwitcher.windowTitle"), parent)
+#include <QToolBar>
+
+StatusDock::StatusDock(QWidget *parent) : OBSDock(parent)
 {
-	setFloating(true);
+	setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
+	setFeatures(DockWidgetClosable | DockWidgetMovable |
+		    DockWidgetFloatable);
 	// Setting a fixed object name is crucial for OBS to be able to restore
 	// the docks position, if the dock is not floating
 	setObjectName("Adv-ss-dock");
 
-	// Not sure why an extra QWidget wrapper is necessary...
-	// without it the dock widget seems to be partially transparent.
-	QWidget *tmp = new QWidget;
-	QHBoxLayout *layout = new QHBoxLayout;
+	QAction *action = new QAction;
+	action->setProperty("themeID", QVariant(QString::fromUtf8("cogsIcon")));
+	action->connect(action, &QAction::triggered, OpenSettingsWindow);
+	QIcon icon;
+	icon.addFile(
+		QString::fromUtf8(":/settings/images/settings/advanced.svg"),
+		QSize(), QIcon::Normal, QIcon::Off);
+	action->setIcon(icon);
+
+	auto toolLayout = new QBoxLayout(QBoxLayout::TopToBottom, this);
+	toolLayout->setContentsMargins(0, 0, 0, 0);
+	auto toolbar = new QToolBar;
+	toolbar->setIconSize({16, 16});
+	toolbar->setFloatable(false);
+	toolbar->addAction(action);
+	toolLayout->addWidget(toolbar);
+
+	QVBoxLayout *layout = new QVBoxLayout;
 	layout->addWidget(new StatusControl(this));
-	tmp->setLayout(layout);
-	setWidget(tmp);
+	layout->setContentsMargins(0, 0, 0, 0);
+	layout->addLayout(toolLayout);
+
+	// QFrame wrapper is necessary to avoid dock being partially
+	// transparent
+	QFrame *wrapper = new QFrame;
+	wrapper->setFrameShape(QFrame::StyledPanel);
+	wrapper->setFrameShadow(QFrame::Sunken);
+	wrapper->setLayout(layout);
+	setWidget(wrapper);
 }
 
 void SetupDock()
