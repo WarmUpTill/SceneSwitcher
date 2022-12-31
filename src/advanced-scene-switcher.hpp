@@ -44,8 +44,9 @@ public:
 	void OpenSequenceExtendEdit(SequenceWidget *sw);
 	void SetEditSceneGroup(SceneGroup &sg);
 
-	bool addNewMacro(std::string &name, std::string format = "");
-	Macro *getSelectedMacro();
+	bool addNewMacro(std::shared_ptr<Macro> &res, std::string &name,
+			 std::string format = "");
+	std::shared_ptr<Macro> getSelectedMacro();
 	void SetEditMacro(Macro &m);
 	void SetMacroEditAreaDisabled(bool);
 	void HighlightAction(int idx);
@@ -126,7 +127,6 @@ public slots:
 	void on_runMacro_clicked();
 	void on_runMacroInParallel_stateChanged(int value);
 	void on_runMacroOnChange_stateChanged(int value);
-	void on_macros_currentRowChanged(int idx);
 	void on_conditionAdd_clicked();
 	void on_conditionRemove_clicked();
 	void on_conditionUp_clicked();
@@ -135,6 +135,8 @@ public slots:
 	void on_actionRemove_clicked();
 	void on_actionUp_clicked();
 	void on_actionDown_clicked();
+	void MacroSelectionChanged(const QItemSelection &,
+				   const QItemSelection &);
 	void UpMacroSegementHotkey();
 	void DownMacroSegementHotkey();
 	void DeleteMacroSegementHotkey();
@@ -165,7 +167,6 @@ public slots:
 	void ResetOpacityActionControls();
 	void ResetOpacityConditionControls();
 	void HighlightControls();
-	void MacroDragDropReorder(QModelIndex, int, int, QModelIndex, int);
 	void HighlightOnChange();
 	void on_macroProperties_clicked();
 

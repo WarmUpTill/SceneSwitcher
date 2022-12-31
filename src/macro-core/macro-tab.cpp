@@ -1,5 +1,5 @@
 #include "macro.hpp"
-#include "macro-list-entry-widget.hpp"
+#include "macro-tree.hpp"
 #include "macro-action-edit.hpp"
 #include "macro-condition-edit.hpp"
 #include "advanced-scene-switcher.hpp"
@@ -20,7 +20,8 @@ bool macroNameExists(std::string name)
 	return !!GetMacroByName(name.c_str());
 }
 
-bool AdvSceneSwitcher::addNewMacro(std::string &name, std::string format)
+bool AdvSceneSwitcher::addNewMacro(std::shared_ptr<Macro> &res,
+				   std::string &name, std::string format)
 {
 	QString fmt;
 	int i = 1;
@@ -58,116 +59,78 @@ bool AdvSceneSwitcher::addNewMacro(std::string &name, std::string format)
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
-		switcher->macros.emplace_back(std::make_shared<Macro>(
+		res = std::make_shared<Macro>(
 			name,
-			switcher->macroProperties._newMacroRegisterHotkeys));
+			switcher->macroProperties._newMacroRegisterHotkeys);
 	}
 	return true;
-}
-
-QListWidgetItem *AddNewMacroListEntry(QListWidget *list,
-				      std::shared_ptr<Macro> &macro)
-{
-	QListWidgetItem *item = new QListWidgetItem(list);
-	item->setData(Qt::UserRole, QString::fromStdString(macro->Name()));
-	auto listEntry = new MacroListEntryWidget(
-		macro, switcher->macroProperties._highlightExecuted, list);
-	list->setItemWidget(item, listEntry);
-	return item;
 }
 
 void AdvSceneSwitcher::on_macroAdd_clicked()
 {
 	std::string name;
-	if (!addNewMacro(name)) {
+	std::shared_ptr<Macro> newMacro;
+	if (!addNewMacro(newMacro, name)) {
 		return;
 	}
-	QString text = QString::fromStdString(name);
 
-	auto item = AddNewMacroListEntry(ui->macros, switcher->macros.back());
-	ui->macros->setCurrentItem(item);
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		ui->macros->Add(newMacro);
+	}
 
 	ui->macroAdd->disconnect(addPulse);
-	ui->macroHelp->setVisible(false);
-
 	emit MacroAdded(QString::fromStdString(name));
 }
 
 void AdvSceneSwitcher::on_macroRemove_clicked()
 {
-	QListWidgetItem *item = ui->macros->currentItem();
-	if (!item) {
+	auto macro = getSelectedMacro();
+	if (!macro) {
 		return;
 	}
-	int idx = ui->macros->currentRow();
-	delete item;
-	QString name;
-	{
-		std::lock_guard<std::mutex> lock(switcher->m);
-		switcher->abortMacroWait = true;
-		switcher->macroWaitCv.notify_all();
-		name = QString::fromStdString(switcher->macros[idx]->Name());
-		switcher->macros.erase(switcher->macros.begin() + idx);
-		for (auto &m : switcher->macros) {
-			m->ResolveMacroRef();
+	auto name = QString::fromStdString(macro->Name());
+	if (macro->IsGroup()) {
+		QString deleteWarning = obs_module_text(
+			"AdvSceneSwitcher.macroTab.groupDeleteConfirm");
+		if (!DisplayMessage(deleteWarning.arg(name), true)) {
+			return;
 		}
 	}
 
-	if (ui->macros->count() == 0) {
-		ui->macroHelp->setVisible(true);
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		ui->macros->Remove(macro);
 	}
+
 	emit MacroRemoved(name);
 }
 
 void AdvSceneSwitcher::on_macroUp_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
-	if (!listMoveUp(ui->macros)) {
+	auto macro = getSelectedMacro();
+	if (!macro) {
 		return;
 	}
-
-	int index = ui->macros->currentRow() + 1;
-	auto *entry1 = static_cast<MacroListEntryWidget *>(
-		ui->macros->itemWidget(ui->macros->item(index)));
-	auto *entry2 = static_cast<MacroListEntryWidget *>(
-		ui->macros->itemWidget(ui->macros->item(index - 1)));
-	entry1->SetMacro(*(switcher->macros.begin() + index - 1));
-	entry2->SetMacro(*(switcher->macros.begin() + index));
-	iter_swap(switcher->macros.begin() + index,
-		  switcher->macros.begin() + index - 1);
-
-	for (auto &m : switcher->macros) {
-		m->ResolveMacroRef();
-	}
+	ui->macros->Up(macro);
 }
 
 void AdvSceneSwitcher::on_macroDown_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
-	if (!listMoveDown(ui->macros)) {
+	auto macro = getSelectedMacro();
+	if (!macro) {
 		return;
 	}
-
-	int index = ui->macros->currentRow() - 1;
-	auto *entry1 = static_cast<MacroListEntryWidget *>(
-		ui->macros->itemWidget(ui->macros->item(index)));
-	auto *entry2 = static_cast<MacroListEntryWidget *>(
-		ui->macros->itemWidget(ui->macros->item(index + 1)));
-	entry1->SetMacro(*(switcher->macros.begin() + index + 1));
-	entry2->SetMacro(*(switcher->macros.begin() + index));
-	iter_swap(switcher->macros.begin() + index,
-		  switcher->macros.begin() + index + 1);
-
-	for (auto &m : switcher->macros) {
-		m->ResolveMacroRef();
-	}
+	ui->macros->Down(macro);
 }
 
 void AdvSceneSwitcher::on_macroName_editingFinished()
 {
 	bool nameValid = true;
 
-	Macro *macro = getSelectedMacro();
+	auto macro = getSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -189,22 +152,24 @@ void AdvSceneSwitcher::on_macroName_editingFinished()
 		std::lock_guard<std::mutex> lock(switcher->m);
 		if (nameValid) {
 			macro->SetName(newName.toUtf8().constData());
-			QListWidgetItem *item = ui->macros->currentItem();
-			item->setData(Qt::UserRole, newName);
-			auto listEntry = static_cast<MacroListEntryWidget *>(
-				ui->macros->itemWidget(item));
-			listEntry->SetName(newName);
+			auto macro = getSelectedMacro();
+			if (!macro) {
+				return;
+			}
+			macro->SetName(newName.toStdString());
 		} else {
 			ui->macroName->setText(oldName);
 		}
 	}
 
-	emit MacroRenamed(oldName, newName);
+	if (nameValid) {
+		emit MacroRenamed(oldName, newName);
+	}
 }
 
 void AdvSceneSwitcher::on_runMacro_clicked()
 {
-	Macro *macro = getSelectedMacro();
+	auto macro = getSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -219,7 +184,7 @@ void AdvSceneSwitcher::on_runMacro_clicked()
 
 void AdvSceneSwitcher::on_runMacroInParallel_stateChanged(int value)
 {
-	Macro *macro = getSelectedMacro();
+	auto macro = getSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -229,7 +194,7 @@ void AdvSceneSwitcher::on_runMacroInParallel_stateChanged(int value)
 
 void AdvSceneSwitcher::on_runMacroOnChange_stateChanged(int value)
 {
-	Macro *macro = getSelectedMacro();
+	auto macro = getSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -313,6 +278,10 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 	PopulateMacroConditions(m);
 	PopulateMacroActions(m);
 	SetMacroEditAreaDisabled(false);
+	if (m.IsGroup()) {
+		SetMacroEditAreaDisabled(true);
+		ui->macroName->setEnabled(true);
+	}
 
 	currentActionIdx = -1;
 	currentConditionIdx = -1;
@@ -340,25 +309,20 @@ void AdvSceneSwitcher::HighlightCondition(int idx)
 	conditionsList->Highlight(idx);
 }
 
-Macro *AdvSceneSwitcher::getSelectedMacro()
+std::shared_ptr<Macro> AdvSceneSwitcher::getSelectedMacro()
 {
-	QListWidgetItem *item = ui->macros->currentItem();
-
-	if (!item) {
-		return nullptr;
-	}
-
-	QString name = item->data(Qt::UserRole).toString();
-	return GetMacroByQString(name);
+	return ui->macros->GetCurrentMacro();
 }
 
-void AdvSceneSwitcher::on_macros_currentRowChanged(int idx)
+void AdvSceneSwitcher::MacroSelectionChanged(const QItemSelection &,
+					     const QItemSelection &)
 {
 	if (loading) {
 		return;
 	}
 
-	if (idx == -1) {
+	auto macro = getSelectedMacro();
+	if (!macro) {
 		SetMacroEditAreaDisabled(true);
 		conditionsList->Clear();
 		actionsList->Clear();
@@ -366,44 +330,21 @@ void AdvSceneSwitcher::on_macros_currentRowChanged(int idx)
 		actionsList->SetHelpMsgVisible(true);
 		return;
 	}
-
-	QListWidgetItem *item = ui->macros->item(idx);
-	QString macroName = item->data(Qt::UserRole).toString();
-
-	auto macro = GetMacroByQString(macroName);
-	if (macro) {
-		SetEditMacro(*macro);
-	}
-}
-
-void AdvSceneSwitcher::MacroDragDropReorder(QModelIndex, int from, int,
-					    QModelIndex, int to)
-{
-	std::lock_guard<std::mutex> lock(switcher->m);
-	if (from > to) {
-		std::rotate(switcher->macros.rend() - from - 1,
-			    switcher->macros.rend() - from,
-			    switcher->macros.rend() - to);
-	} else {
-		std::rotate(switcher->macros.begin() + from,
-			    switcher->macros.begin() + from + 1,
-			    switcher->macros.begin() + to);
-	}
-
-	for (auto &m : switcher->macros) {
-		m->ResolveMacroRef();
-	}
+	SetEditMacro(*macro);
 }
 
 void AdvSceneSwitcher::HighlightOnChange()
 {
+	if (!switcher->macroProperties._highlightExecuted) {
+		return;
+	}
+
 	auto macro = getSelectedMacro();
 	if (!macro) {
 		return;
 	}
 
-	if (switcher->macroProperties._highlightExecuted &&
-	    macro->OnChangePreventedActionsRecently()) {
+	if (macro->OnChangePreventedActionsRecently()) {
 		PulseWidget(ui->runMacroOnChange, Qt::yellow, Qt::transparent,
 			    true);
 	}
@@ -413,7 +354,7 @@ void AdvSceneSwitcher::on_macroProperties_clicked()
 {
 	MacroProperties prop = switcher->macroProperties;
 	bool accepted = MacroPropertiesDialog::AskForSettings(
-		this, prop, getSelectedMacro());
+		this, prop, getSelectedMacro().get());
 	if (!accepted) {
 		return;
 	}
@@ -440,26 +381,17 @@ bool shouldResotreSplitterPos(const QList<int> &pos)
 
 void AdvSceneSwitcher::setupMacroTab()
 {
-	const QSignalBlocker signalBlocker(ui->macros);
-	ui->macros->clear();
-	for (auto &m : switcher->macros) {
-		AddNewMacroListEntry(ui->macros, m);
+	if (switcher->macros.size() == 0 && !switcher->disableHints) {
+		addPulse = PulseWidget(ui->macroAdd, QColor(Qt::green));
 	}
-
-	if (switcher->macros.size() == 0) {
-		if (!switcher->disableHints) {
-			addPulse = PulseWidget(ui->macroAdd, QColor(Qt::green));
-		}
-		ui->macroHelp->setVisible(true);
-	} else {
-		ui->macroHelp->setVisible(false);
-	}
-
-	connect(ui->macros->model(),
-		SIGNAL(rowsMoved(QModelIndex, int, int, QModelIndex, int)),
+	ui->macros->Reset(switcher->macros,
+			  switcher->macroProperties._highlightExecuted);
+	connect(ui->macros->selectionModel(),
+		SIGNAL(selectionChanged(const QItemSelection &,
+					const QItemSelection &)),
 		this,
-		SLOT(MacroDragDropReorder(QModelIndex, int, int, QModelIndex,
-					  int)));
+		SLOT(MacroSelectionChanged(const QItemSelection &,
+					   const QItemSelection &)));
 
 	delete conditionsList;
 	conditionsList = new MacroSegmentList(this);
@@ -531,42 +463,56 @@ void AdvSceneSwitcher::setupMacroTab()
 void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 {
 	QPoint globalPos = ui->macros->mapToGlobal(pos);
-	QMenu myMenu;
-	myMenu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.copy"),
-			 this, &AdvSceneSwitcher::CopyMacro);
-	myMenu.exec(globalPos);
+	QMenu menu;
+	auto copy = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.copy"), this,
+		&AdvSceneSwitcher::CopyMacro);
+	copy->setDisabled(ui->macros->GroupsSelected());
+
+	auto group = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.group"), ui->macros,
+		&MacroTree::GroupSelectedItems);
+	// Nested groups are not supported
+	group->setDisabled(ui->macros->GroupedItemsSelected() ||
+			   ui->macros->GroupsSelected() ||
+			   ui->macros->SelectionEmpty());
+
+	auto ungroup = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.ungroup"),
+		ui->macros, &MacroTree::UngroupSelectedGroups);
+	ungroup->setEnabled(ui->macros->GroupsSelected());
+
+	menu.exec(globalPos);
 }
 
 void AdvSceneSwitcher::ShowMacroActionsContextMenu(const QPoint &pos)
 {
 	QPoint globalPos = actionsList->mapToGlobal(pos);
-	QMenu myMenu;
-	myMenu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.expandAll"),
-			 this, &AdvSceneSwitcher::ExpandAllActions);
-	myMenu.addAction(
-		obs_module_text("AdvSceneSwitcher.macroTab.collapseAll"), this,
-		&AdvSceneSwitcher::CollapseAllActions);
-	myMenu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.maximize"),
-			 this, &AdvSceneSwitcher::MinimizeConditions);
-	myMenu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.minimize"),
-			 this, &AdvSceneSwitcher::MinimizeActions);
-	myMenu.exec(globalPos);
+	QMenu menu;
+	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.expandAll"),
+		       this, &AdvSceneSwitcher::ExpandAllActions);
+	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.collapseAll"),
+		       this, &AdvSceneSwitcher::CollapseAllActions);
+	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.maximize"),
+		       this, &AdvSceneSwitcher::MinimizeConditions);
+	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.minimize"),
+		       this, &AdvSceneSwitcher::MinimizeActions);
+	menu.exec(globalPos);
 }
 
 void AdvSceneSwitcher::ShowMacroConditionsContextMenu(const QPoint &pos)
 {
 	QPoint globalPos = conditionsList->mapToGlobal(pos);
-	QMenu myMenu;
-	myMenu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.expandAll"),
-			 this, &AdvSceneSwitcher::ExpandAllConditions);
-	myMenu.addAction(
-		obs_module_text("AdvSceneSwitcher.macroTab.collapseAll"), this,
-		&AdvSceneSwitcher::CollapseAllConditions);
-	myMenu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.maximize"),
-			 this, &AdvSceneSwitcher::MinimizeActions);
-	myMenu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.minimize"),
-			 this, &AdvSceneSwitcher::MinimizeConditions);
-	myMenu.exec(globalPos);
+	QMenu menu;
+	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.expandAll"),
+		       this, &AdvSceneSwitcher::ExpandAllConditions);
+	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.collapseAll"),
+		       this, &AdvSceneSwitcher::CollapseAllConditions);
+	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.maximize"),
+		       this, &AdvSceneSwitcher::MinimizeActions);
+	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.minimize"),
+		       this, &AdvSceneSwitcher::MinimizeConditions);
+	menu.exec(globalPos);
 }
 
 void AdvSceneSwitcher::CopyMacro()
@@ -578,18 +524,20 @@ void AdvSceneSwitcher::CopyMacro()
 
 	std::string format = macro->Name() + " %1";
 	std::string name;
-	if (!addNewMacro(name, format)) {
+	std::shared_ptr<Macro> newMacro;
+	if (!addNewMacro(newMacro, name, format)) {
 		return;
 	}
 
 	obs_data_t *data = obs_data_create();
 	macro->Save(data);
-	switcher->macros.back()->Load(data);
-	switcher->macros.back()->SetName(name);
+	newMacro->Load(data);
+	newMacro->SetName(name);
 	obs_data_release(data);
 
-	auto item = AddNewMacroListEntry(ui->macros, switcher->macros.back());
-	ui->macros->setCurrentItem(item);
+	ui->macros->Add(newMacro);
+	ui->macroAdd->disconnect(addPulse);
+	emit MacroAdded(QString::fromStdString(name));
 }
 
 void AdvSceneSwitcher::ExpandAllActions()
