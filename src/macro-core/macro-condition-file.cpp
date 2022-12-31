@@ -189,8 +189,9 @@ std::string MacroConditionFile::GetShortDesc() const
 
 static void populateFileTypes(QComboBox *list)
 {
-	list->addItem(obs_module_text("AdvSceneSwitcher.fileTab.local"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.fileTab.remote"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.condition.file.local"));
+	list->addItem(
+		obs_module_text("AdvSceneSwitcher.condition.file.remote"));
 }
 
 static void populateConditions(QComboBox *list)
@@ -248,6 +249,9 @@ MacroConditionFileEdit::MacroConditionFileEdit(
 	QHBoxLayout *line1Layout = new QHBoxLayout;
 	QHBoxLayout *line2Layout = new QHBoxLayout;
 	QHBoxLayout *line3Layout = new QHBoxLayout;
+	line1Layout->setContentsMargins(0, 0, 0, 0);
+	line2Layout->setContentsMargins(0, 0, 0, 0);
+	line3Layout->setContentsMargins(0, 0, 0, 0);
 	placeWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.file.entry.line1"),
 		line1Layout, widgetPlaceholders);
