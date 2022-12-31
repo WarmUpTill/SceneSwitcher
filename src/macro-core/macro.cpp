@@ -28,8 +28,72 @@ Macro::~Macro()
 	ClearHotkeys();
 }
 
+std::shared_ptr<Macro>
+Macro::CreateGroup(const std::string &name,
+		   std::vector<std::shared_ptr<Macro>> &children)
+{
+	auto group = std::make_shared<Macro>(name, false);
+	for (auto &c : children) {
+		c->SetParent(group.get());
+	}
+	group->_isGroup = true;
+	group->_groupSize = children.size();
+	return group;
+}
+
+void Macro::RemoveGroup(std::shared_ptr<Macro> group)
+{
+	auto it = std::find(switcher->macros.begin(), switcher->macros.end(),
+			    group);
+	if (it == switcher->macros.end()) {
+		return;
+	}
+
+	auto size = group->GroupSize();
+	for (uint32_t i = 1; i <= size; i++) {
+		auto m = std::next(it, i);
+		(*m)->SetParent(nullptr);
+	}
+
+	switcher->macros.erase(it);
+}
+
+void Macro::PrepareMoveToGroup(Macro *group, std::shared_ptr<Macro> item)
+{
+	for (auto &m : switcher->macros) {
+		if (m.get() == group) {
+			PrepareMoveToGroup(m, item);
+			return;
+		}
+	}
+	PrepareMoveToGroup(std::shared_ptr<Macro>(), item);
+}
+
+void Macro::PrepareMoveToGroup(std::shared_ptr<Macro> group,
+			       std::shared_ptr<Macro> item)
+{
+	if (!item) {
+		return;
+	}
+
+	// Potentially remove from old group
+	auto oldGroup = item->Parent();
+	if (oldGroup) {
+		oldGroup->_groupSize--;
+	}
+
+	item->SetParent(group.get());
+	if (group) {
+		group->_groupSize++;
+	}
+}
+
 bool Macro::CeckMatch()
 {
+	if (_isGroup) {
+		return false;
+	}
+
 	_matched = false;
 	for (auto &c : _conditions) {
 		if (_paused) {
@@ -140,6 +204,9 @@ bool Macro::PerformActions(bool forceParallel, bool ignorePause)
 		RunActions(ret, ignorePause);
 	}
 	_wasExecutedRecently = true;
+	if (_parent) {
+		_parent->_wasExecutedRecently = true;
+	}
 	return ret;
 }
 
@@ -253,6 +320,16 @@ bool Macro::Save(obs_data_t *obj) const
 	obs_data_set_bool(obj, "parallel", _runInParallel);
 	obs_data_set_bool(obj, "onChange", _matchOnChange);
 
+	obs_data_set_bool(obj, "group", _isGroup);
+	if (_isGroup) {
+		auto groupData = obs_data_create();
+		obs_data_set_bool(groupData, "collapsed", _isCollapsed);
+		obs_data_set_int(groupData, "size", _groupSize);
+		obs_data_set_obj(obj, "groupData", groupData);
+		obs_data_release(groupData);
+		return true;
+	}
+
 	obs_data_set_bool(obj, "registerHotkeys", _registerHotkeys);
 	obs_data_array_t *pauseHotkey = obs_hotkey_save(_pauseHotkey);
 	obs_data_set_array(obj, "pauseHotkey", pauseHotkey);
@@ -332,6 +409,15 @@ bool Macro::Load(obs_data_t *obj)
 	_paused = obs_data_get_bool(obj, "pause");
 	_runInParallel = obs_data_get_bool(obj, "parallel");
 	_matchOnChange = obs_data_get_bool(obj, "onChange");
+
+	_isGroup = obs_data_get_bool(obj, "group");
+	if (_isGroup) {
+		auto groupData = obs_data_get_obj(obj, "groupData");
+		_isCollapsed = obs_data_get_bool(groupData, "collapsed");
+		_groupSize = obs_data_get_int(groupData, "size");
+		obs_data_release(groupData);
+		return true;
+	}
 
 	obs_data_set_default_bool(obj, "registerHotkeys", true);
 	_registerHotkeys = obs_data_get_bool(obj, "registerHotkeys");
@@ -610,8 +696,18 @@ void SwitcherData::loadMacros(obs_data_t *obj)
 	}
 	obs_data_array_release(macroArray);
 
+	int groupCount = 0;
+	Macro *group = nullptr;
 	for (auto &m : macros) {
 		m->ResolveMacroRef();
+		if (groupCount) {
+			m->SetParent(group);
+			groupCount--;
+		}
+		if (m->IsGroup()) {
+			groupCount = m->GroupSize();
+			group = m.get();
+		}
 	}
 }
 

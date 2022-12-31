@@ -17,7 +17,10 @@ MacroSelection::MacroSelection(QWidget *parent) : QComboBox(parent)
 	firstItem->setSelectable(false);
 	firstItem->setEnabled(false);
 
-	for (auto &m : switcher->macros) {
+	for (const auto &m : switcher->macros) {
+		if (m->IsGroup()) {
+			continue;
+		}
 		addItem(QString::fromStdString(m->Name()));
 	}
 
@@ -51,7 +54,12 @@ void MacroSelection::HideSelectedMacro()
 	if (!ssWindow) {
 		return;
 	}
-	int idx = ssWindow->ui->macros->currentRow();
+
+	const auto m = ssWindow->ui->macros->GetCurrentMacro();
+	if (!m) {
+		return;
+	}
+	int idx = findText(QString::fromStdString(m->Name()));
 	if (idx == -1) {
 		return;
 	}

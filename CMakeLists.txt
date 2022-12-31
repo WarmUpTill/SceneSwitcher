@@ -217,8 +217,6 @@ target_sources(
           src/macro-core/macro-condition-window.hpp
           src/macro-core/macro-condition.cpp
           src/macro-core/macro-condition.hpp
-          src/macro-core/macro-list-entry-widget.cpp
-          src/macro-core/macro-list-entry-widget.hpp
           src/macro-core/macro-properties.cpp
           src/macro-core/macro-properties.hpp
           src/macro-core/macro-ref.cpp
@@ -230,6 +228,8 @@ target_sources(
           src/macro-core/macro-selection.cpp
           src/macro-core/macro-selection.hpp
           src/macro-core/macro-tab.cpp
+          src/macro-core/macro-tree.cpp
+          src/macro-core/macro-tree.hpp
           src/macro-core/macro.cpp
           src/macro-core/macro.hpp)
 

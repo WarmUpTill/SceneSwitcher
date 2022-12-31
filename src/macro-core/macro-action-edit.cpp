@@ -172,8 +172,9 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 	}
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
-		macro->Actions().emplace(macro->Actions().begin() + idx,
-					 MacroActionFactory::Create(id, macro));
+		macro->Actions().emplace(
+			macro->Actions().begin() + idx,
+			MacroActionFactory::Create(id, macro.get()));
 		if (idx - 1 >= 0) {
 			auto data = obs_data_create();
 			macro->Actions().at(idx - 1)->Save(data);
@@ -298,7 +299,7 @@ void AdvSceneSwitcher::MoveMacroActionUp(int idx)
 		return;
 	}
 
-	SwapActions(macro, idx, idx - 1);
+	SwapActions(macro.get(), idx, idx - 1);
 	HighlightAction(idx - 1);
 }
 
@@ -313,7 +314,7 @@ void AdvSceneSwitcher::MoveMacroActionDown(int idx)
 		return;
 	}
 
-	SwapActions(macro, idx, idx + 1);
+	SwapActions(macro.get(), idx, idx + 1);
 	HighlightAction(idx + 1);
 }
 

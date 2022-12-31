@@ -18,7 +18,6 @@ class Macro {
 public:
 	Macro(const std::string &name = "", const bool addHotkey = false);
 	virtual ~Macro();
-
 	bool CeckMatch();
 	bool PerformActions(bool forceParallel = false,
 			    bool ignorePause = false);
@@ -41,9 +40,26 @@ public:
 	{
 		return _conditions;
 	}
+	std::deque<std::shared_ptr<MacroAction>> &Actions() { return _actions; }
 	void UpdateActionIndices();
 	void UpdateConditionIndices();
-	std::deque<std::shared_ptr<MacroAction>> &Actions() { return _actions; }
+
+	// Group controls
+	static std::shared_ptr<Macro>
+	CreateGroup(const std::string &name,
+		    std::vector<std::shared_ptr<Macro>> &children);
+	static void RemoveGroup(std::shared_ptr<Macro>);
+	static void PrepareMoveToGroup(Macro *group,
+				       std::shared_ptr<Macro> item);
+	static void PrepareMoveToGroup(std::shared_ptr<Macro> group,
+				       std::shared_ptr<Macro> item);
+	bool IsGroup() { return _isGroup; }
+	uint32_t GroupSize() { return _groupSize; }
+	bool IsSubitem() { return !!_parent; }
+	void SetCollapsed(bool val) { _isCollapsed = val; }
+	bool IsCollapsed() { return _isCollapsed; }
+	void SetParent(Macro *m) { _parent = m; }
+	Macro *Parent() { return _parent; }
 
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
@@ -75,6 +91,10 @@ private:
 	std::string _name = "";
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;
 	std::deque<std::shared_ptr<MacroAction>> _actions;
+
+	Macro *_parent = nullptr;
+	uint32_t _groupSize = 0;
+
 	bool _runInParallel = false;
 	bool _matched = false;
 	bool _lastMatched = false;
@@ -87,6 +107,8 @@ private:
 	obs_hotkey_id _togglePauseHotkey = OBS_INVALID_HOTKEY_ID;
 
 	// UI helpers for the macro tab
+	bool _isGroup = false;
+	bool _isCollapsed = false;
 	bool _wasExecutedRecently = false;
 	bool _onChangeTriggered = false;
 
