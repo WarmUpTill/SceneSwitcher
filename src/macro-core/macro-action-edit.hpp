@@ -44,7 +44,7 @@ private slots:
 	void ActionSelectionChanged(const QString &text);
 
 private:
-	MacroSegment *Data();
+	std::shared_ptr<MacroSegment> Data();
 
 	QComboBox *_actionSelection;
 

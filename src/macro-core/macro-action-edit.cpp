@@ -147,9 +147,9 @@ void MacroActionEdit::SetEntryData(std::shared_ptr<MacroAction> *data)
 	_entryData = data;
 }
 
-MacroSegment *MacroActionEdit::Data()
+std::shared_ptr<MacroSegment> MacroActionEdit::Data()
 {
-	return _entryData->get();
+	return *_entryData;
 }
 
 void AdvSceneSwitcher::AddMacroAction(int idx)

@@ -73,7 +73,7 @@ private:
 		BELOW,
 	};
 
-	virtual MacroSegment *Data() = 0;
+	virtual std::shared_ptr<MacroSegment> Data() = 0;
 	void ShowDropLine(DropLineState);
 
 	// The reason for using two separate frame widget each with their own
