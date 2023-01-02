@@ -354,9 +354,9 @@ void MacroConditionEdit::DurationUnitChanged(DurationUnit unit)
 	(*_entryData)->SetDurationUnit(unit);
 }
 
-MacroSegment *MacroConditionEdit::Data()
+std::shared_ptr<MacroSegment> MacroConditionEdit::Data()
 {
-	return _entryData->get();
+	return *_entryData;
 }
 
 void AdvSceneSwitcher::AddMacroCondition(int idx)
