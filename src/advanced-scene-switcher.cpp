@@ -429,7 +429,7 @@ void SwitcherData::Start()
 void ResetMacros()
 {
 	for (auto &m : switcher->macros) {
-		m->ResetCount();
+		m->ResetRunCount();
 		m->ResetTimers();
 	}
 }
