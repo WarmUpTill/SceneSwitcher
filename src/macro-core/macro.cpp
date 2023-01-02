@@ -114,8 +114,8 @@ bool Macro::CeckMatch()
 	// TODO: Move back to PerformAction() once new scene collection frontend
 	// events are available - see:
 	// https://github.com/obsproject/obs-studio/commit/feda1aaa283e8a99f6ba1159cfe6b9c1f2934a61
-	if (_matched && _count != std::numeric_limits<int>::max()) {
-		_count++;
+	if (_matched && _runCount != std::numeric_limits<int>::max()) {
+		_runCount++;
 	}
 	_lastCheckTime = std::chrono::high_resolution_clock::now();
 	return _matched;

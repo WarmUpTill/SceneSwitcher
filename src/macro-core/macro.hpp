@@ -32,8 +32,8 @@ public:
 	bool Paused() { return _paused; }
 	void SetMatchOnChange(bool onChange) { _matchOnChange = onChange; }
 	bool MatchOnChange() { return _matchOnChange; }
-	int GetCount() { return _count; };
-	void ResetCount() { _count = 0; };
+	int RunCount() { return _runCount; };
+	void ResetRunCount() { _runCount = 0; };
 	void AddHelperThread(std::thread &&);
 	bool GetStop() { return _stop; }
 	void Stop();
@@ -80,7 +80,7 @@ private:
 	bool _lastMatched = false;
 	bool _matchOnChange = false;
 	bool _paused = false;
-	int _count = 0;
+	int _runCount = 0;
 	bool _registerHotkeys = true;
 	obs_hotkey_id _pauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _unpauseHotkey = OBS_INVALID_HOTKEY_ID;

@@ -88,11 +88,11 @@ bool MacroConditionMacro::CheckCountCondition()
 
 	switch (_counterCondition) {
 	case CounterCondition::BELOW:
-		return _macro->GetCount() < _count;
+		return _macro->RunCount() < _count;
 	case CounterCondition::ABOVE:
-		return _macro->GetCount() > _count;
+		return _macro->RunCount() > _count;
 	case CounterCondition::EQUAL:
-		return _macro->GetCount() == _count;
+		return _macro->RunCount() == _count;
 	default:
 		break;
 	}
@@ -477,14 +477,14 @@ void MacroConditionMacroEdit::ResetClicked()
 		return;
 	}
 
-	_entryData->_macro->ResetCount();
+	_entryData->_macro->ResetRunCount();
 }
 
 void MacroConditionMacroEdit::UpdateCount()
 {
 	if (_entryData && _entryData->_macro.get()) {
 		_currentCount->setText(
-			QString::number(_entryData->_macro->GetCount()));
+			QString::number(_entryData->_macro->RunCount()));
 	} else {
 		_currentCount->setText("-");
 	}
