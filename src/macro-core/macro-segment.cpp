@@ -112,10 +112,9 @@ MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
 			 SIGNAL(MacroAdded(const QString &)));
 	QWidget::connect(parent, SIGNAL(MacroRemoved(const QString &)), this,
 			 SIGNAL(MacroRemoved(const QString &)));
-	QWidget::connect(parent,
-			 SIGNAL(MacroRenamed(const QString &, const QString)),
-			 this,
-			 SIGNAL(MacroRenamed(const QString &, const QString)));
+	QWidget::connect(
+		parent, SIGNAL(MacroRenamed(const QString &, const QString &)),
+		this, SIGNAL(MacroRenamed(const QString &, const QString &)));
 	// Scene group signals
 	QWidget::connect(parent, SIGNAL(SceneGroupAdded(const QString &)), this,
 			 SIGNAL(SceneGroupAdded(const QString &)));
