@@ -55,7 +55,7 @@ protected slots:
 signals:
 	void MacroAdded(const QString &name);
 	void MacroRemoved(const QString &name);
-	void MacroRenamed(const QString &oldName, const QString newName);
+	void MacroRenamed(const QString &oldName, const QString &newName);
 	void SceneGroupAdded(const QString &name);
 	void SceneGroupRemoved(const QString &name);
 	void SceneGroupRenamed(const QString &oldName, const QString newName);
