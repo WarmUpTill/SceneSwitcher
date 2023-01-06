@@ -441,6 +441,8 @@ void AdvSceneSwitcher::setupMacroTab()
 		handle->setLayout(layout);
 		ui->macroActionConditionSplitter->setHandleWidth(38);
 	}
+	ui->macroActionConditionSplitter->setStyleSheet(
+		"QSplitter::handle {background: transparent;}");
 
 	// Reserve more space for macro edit area than for the macro list
 	ui->macroListMacroEditSplitter->setStretchFactor(0, 1);
