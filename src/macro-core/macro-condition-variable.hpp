@@ -28,11 +28,14 @@ public:
 		LESS_THAN,
 		GREATER_THAN,
 		VALUE_CHANGED,
-		//...
+		EQUALS_VARIABLE,
+		LESS_THAN_VARIABLE,
+		GREATER_THAN_VARIABLE,
 	};
 
 	Type _type = Type::EQUALS;
 	std::string _variableName = "";
+	std::string _variable2Name = "";
 	std::string _strValue = "";
 	double _numValue = 0;
 	bool _regex = false;
@@ -40,6 +43,7 @@ public:
 private:
 	bool Compare(const Variable &) const;
 	bool ValueChanged(const Variable &);
+	bool CompareVariables();
 
 	std::string _lastValue = "";
 
@@ -66,6 +70,7 @@ public:
 
 private slots:
 	void VariableChanged(const QString &);
+	void Variable2Changed(const QString &);
 	void ConditionChanged(int);
 	void StrValueChanged();
 	void NumValueChanged(double);
@@ -76,6 +81,7 @@ signals:
 
 protected:
 	VariableSelection *_variables;
+	VariableSelection *_variables2;
 	QComboBox *_conditions;
 	ResizingPlainTextEdit *_strValue;
 	QDoubleSpinBox *_numValue;
