@@ -164,12 +164,19 @@ jobs:
           codesignUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
           codesignPass: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
 
+      - name: Upload Installer Artifact
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.PLUGIN_NAME }}-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}-installer
+          path: ${{ github.workspace }}/plugin/release/${{ env.LIB_NAME }}*-macos-${{ matrix.arch }}.pkg
+
       - name: Upload Build Artifact
         if: ${{ success() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.PLUGIN_NAME }}-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
-          path: ${{ github.workspace }}/plugin/release/${{ env.LIB_NAME }}*-macos-${{ matrix.arch }}.pkg
+          path: ${{ github.workspace }}/plugin/release/${{ env.LIB_NAME }}-*.zip
 
   linux_build:
     name: 02 - Linux
