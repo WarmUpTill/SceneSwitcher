@@ -65,6 +65,8 @@ runs:
         if [[ '${{ inputs.notarize }}' == 'true' ]] package_args+=(-n)
         if (( ${+CI} && ${+RUNNER_DEBUG} )) build_args+=(--debug)
 
+        package_args+=(-z)
+
         ${{ inputs.workingDirectory }}/.github/scripts/package-macos.zsh ${package_args}
 
     - name: Run Linux packaging

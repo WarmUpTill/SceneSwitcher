@@ -180,6 +180,12 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         --keychain-profile "OBS-Codesign-Password" --wait
       xcrun stapler staple "${project_root}/release/${output_name}"
     }
+    if (( ${+ZIP} )) {
+      local output_name="${product_name}-${host_os}-${target##*-}.zip"
+      pushd ${project_root}/release
+      zip -r "${output_name}" *~*.pkg
+      popd
+    }
     popd
   } elif [[ ${host_os} == 'linux' ]] {
     if (( ${+ZIP} )) {
