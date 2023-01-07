@@ -282,7 +282,7 @@ std::string MacroActionAudio::GetShortDesc() const
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (const auto [action, name] : actionTypes) {
+	for (const auto &[action, name] : actionTypes) {
 		if (action == MacroActionAudio::Action::MONITOR) {
 			if (obs_audio_monitoring_available()) {
 				list->addItem(obs_module_text(name.c_str()),

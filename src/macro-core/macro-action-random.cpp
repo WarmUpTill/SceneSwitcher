@@ -189,7 +189,7 @@ bool MacroActionRandomEdit::ShouldShowAllowRepeat()
 		return false;
 	}
 	const auto macro = _entryData->_macros[0];
-	for (const auto m : _entryData->_macros) {
+	for (const auto &m : _entryData->_macros) {
 		if (macro.get() != m.get()) {
 			return true;
 		}
