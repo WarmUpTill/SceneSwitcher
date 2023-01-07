@@ -46,7 +46,6 @@ void VolControl::VolumeChanged()
 
 void VolControl::SliderChanged(int)
 {
-	float prev = obs_source_get_volume(source);
 	updateText();
 }
 

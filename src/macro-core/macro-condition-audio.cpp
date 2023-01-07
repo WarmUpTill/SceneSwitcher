@@ -479,18 +479,17 @@ void MacroConditionAudioEdit::UpdateEntryData()
 	_checkTypes->setCurrentIndex(_checkTypes->findData(
 		static_cast<int>(_entryData->_checkType)));
 
-	switch (_entryData->_checkType) {
-	case MacroConditionAudio::Type::OUTPUT_VOLUME:
-	case MacroConditionAudio::Type::BALANCE:
+	if (_entryData->_checkType ==
+		    MacroConditionAudio::Type::OUTPUT_VOLUME ||
+	    _entryData->_checkType == MacroConditionAudio::Type::BALANCE) {
 		populateOutputConditionSelection(_condition);
 		_condition->setCurrentIndex(
 			static_cast<int>(_entryData->_outputCondition));
-		break;
-	case MacroConditionAudio::Type::CONFIGURED_VOLUME:
+	} else if (_entryData->_checkType ==
+		   MacroConditionAudio::Type::CONFIGURED_VOLUME) {
 		populateVolumeConditionSelection(_condition);
 		_condition->setCurrentIndex(
 			static_cast<int>(_entryData->_volumeCondition));
-		break;
 	}
 
 	UpdateVolmeterSource();
