@@ -11,7 +11,7 @@
 
 class MacroConditionAudio : public MacroCondition {
 public:
-	MacroConditionAudio(Macro *m) : MacroCondition(m) {}
+	MacroConditionAudio(Macro *m) : MacroCondition(m, true) {}
 	~MacroConditionAudio();
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
