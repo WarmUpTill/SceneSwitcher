@@ -53,24 +53,33 @@ bool MacroConditionScene::CheckCondition()
 			auto current = obs_frontend_get_current_scene();
 			auto weak = obs_source_get_weak_source(current);
 			bool match = weak == _scene.GetScene(false);
+			SetVariableValue(obs_source_get_name(current));
 			obs_weak_source_release(weak);
 			obs_source_release(current);
 			return match;
 		}
+		SetVariableValue(GetWeakSourceName(switcher->currentScene));
 		return switcher->currentScene == _scene.GetScene(false);
 	case Type::PREVIOUS:
 		if (switcher->anySceneTransitionStarted() &&
 		    _useTransitionTargetScene) {
+			SetVariableValue(
+				GetWeakSourceName(switcher->currentScene));
 			return switcher->currentScene == _scene.GetScene(false);
 		}
+		SetVariableValue(GetWeakSourceName(switcher->previousScene));
 		return switcher->previousScene == _scene.GetScene(false);
 	case Type::CHANGED:
+		SetVariableValue(GetWeakSourceName(switcher->currentScene));
 		return sceneChanged;
 	case Type::NOT_CHANGED:
+		SetVariableValue(GetWeakSourceName(switcher->currentScene));
 		return !sceneChanged;
 	case Type::CURRENT_PATTERN:
+		SetVariableValue(GetWeakSourceName(switcher->currentScene));
 		return sceneNameMatchesRegex(switcher->currentScene, _pattern);
 	case Type::PREVIOUS_PATTERN:
+		SetVariableValue(GetWeakSourceName(switcher->previousScene));
 		return sceneNameMatchesRegex(switcher->previousScene, _pattern);
 	}
 
