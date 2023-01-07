@@ -1,6 +1,7 @@
 #include "macro-properties.hpp"
 
 #include <QVBoxLayout>
+#include <QGroupBox>
 #include <QDialogButtonBox>
 #include <obs-module.h>
 
@@ -45,40 +46,46 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	setModal(true);
 	setWindowModality(Qt::WindowModality::WindowModal);
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-	setFixedWidth(555);
-	setMinimumHeight(100);
+	setMinimumWidth(500);
+	setMinimumHeight(300);
+
+	auto highlightOptions = new QGroupBox(
+		obs_module_text("AdvSceneSwitcher.macroTab.highlightSettings"));
+	QVBoxLayout *highlightLayout = new QVBoxLayout;
+	highlightLayout->addWidget(_executed);
+	highlightLayout->addWidget(_conditions);
+	highlightLayout->addWidget(_actions);
+	highlightOptions->setLayout(highlightLayout);
+
+	auto hotkeyOptions = new QGroupBox(
+		obs_module_text("AdvSceneSwitcher.macroTab.hotkeySettings"));
+	QVBoxLayout *hotkeyLayout = new QVBoxLayout;
+	hotkeyLayout->addWidget(_newMacroRegisterHotkeys);
+	hotkeyLayout->addWidget(_currentMacroRegisterHotkeys);
+	hotkeyOptions->setLayout(hotkeyLayout);
+
+	QDialogButtonBox *buttonbox = new QDialogButtonBox(
+		QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+	buttonbox->setCenterButtons(true);
+	connect(buttonbox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+	connect(buttonbox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+	QVBoxLayout *layout = new QVBoxLayout;
+	layout->addWidget(highlightOptions);
+	layout->addWidget(hotkeyOptions);
+	layout->addWidget(buttonbox);
+	setLayout(layout);
 
 	_executed->setChecked(prop._highlightExecuted);
 	_conditions->setChecked(prop._highlightConditions);
 	_actions->setChecked(prop._highlightActions);
 	_newMacroRegisterHotkeys->setChecked(prop._newMacroRegisterHotkeys);
-	if (macro) {
+	if (macro && !macro->IsGroup()) {
 		_currentMacroRegisterHotkeys->setChecked(
 			macro->PauseHotkeysEnabled());
 	} else {
-		_currentMacroRegisterHotkeys->hide();
+		hotkeyOptions->hide();
 	}
-
-	QVBoxLayout *layout = new QVBoxLayout;
-	layout->addWidget(_executed);
-	layout->addWidget(_conditions);
-	layout->addWidget(_actions);
-	layout->addWidget(_newMacroRegisterHotkeys);
-	if (macro) {
-		QFrame *line = new QFrame();
-		line->setFrameShape(QFrame::HLine);
-		line->setFrameShadow(QFrame::Sunken);
-		layout->addWidget(line);
-	}
-	layout->addWidget(_currentMacroRegisterHotkeys);
-	setLayout(layout);
-
-	QDialogButtonBox *buttonbox = new QDialogButtonBox(
-		QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-	layout->addWidget(buttonbox);
-	buttonbox->setCenterButtons(true);
-	connect(buttonbox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-	connect(buttonbox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
 
 bool MacroPropertiesDialog::AskForSettings(QWidget *parent,

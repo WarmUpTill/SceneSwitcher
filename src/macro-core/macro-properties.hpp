@@ -6,7 +6,6 @@
 #include <QCheckBox>
 #include <obs-data.h>
 
-// Global macro properties
 class MacroProperties {
 public:
 	void Save(obs_data_t *obj) const;
@@ -18,7 +17,7 @@ public:
 	bool _newMacroRegisterHotkeys = true;
 };
 
-// Dialog for configuring global and macro specific settings
+// Dialog for configuring global and individual macro specific settings
 class MacroPropertiesDialog : public QDialog {
 	Q_OBJECT
 
