@@ -61,7 +61,7 @@ private:
 
 class MacroCondition : public MacroSegment {
 public:
-	MacroCondition(Macro *m) : MacroSegment(m) {}
+	MacroCondition(Macro *m, bool supportsVariableValue = false);
 	virtual ~MacroCondition() = default;
 	virtual bool CheckCondition() = 0;
 	virtual bool Save(obs_data_t *obj) const = 0;
@@ -83,14 +83,14 @@ private:
 
 class MacroRefCondition : virtual public MacroCondition {
 public:
-	MacroRefCondition(Macro *m) : MacroCondition(m) {}
+	MacroRefCondition(Macro *m, bool supportsVariableValue = false);
 	void ResolveMacroRef();
 	MacroRef _macro;
 };
 
 class MultiMacroRefCondtition : virtual public MacroCondition {
 public:
-	MultiMacroRefCondtition(Macro *m) : MacroCondition(m) {}
+	MultiMacroRefCondtition(Macro *m, bool supportsVariableValue = false);
 	void ResolveMacroRef();
 	std::vector<MacroRef> _macros;
 };

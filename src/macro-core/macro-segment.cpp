@@ -8,6 +8,11 @@
 #include <QLabel>
 #include <QScrollBar>
 
+MacroSegment::MacroSegment(Macro *m, bool supportsVariableValue)
+	: _supportsVariableValue(supportsVariableValue), _macro(m)
+{
+}
+
 bool MacroSegment::Save(obs_data_t *obj) const
 {
 	obs_data_set_bool(obj, "collapsed", static_cast<int>(_collapsed));
@@ -37,6 +42,37 @@ bool MacroSegment::Highlight()
 		return true;
 	}
 	return false;
+}
+
+std::string MacroSegment::GetVariableValue() const
+{
+	if (_supportsVariableValue) {
+		return _variableValue;
+	}
+	return "";
+}
+
+void MacroSegment::SetVariableValue(const std::string &value)
+{
+	if (_variableRefs > 0) {
+		_variableValue = value;
+	}
+}
+
+void MacroSegment::IncrementVariableRef()
+{
+	if (!_supportsVariableValue) {
+		return;
+	}
+	_variableRefs++;
+}
+
+void MacroSegment::DecrementVariableRef()
+{
+	if (!_supportsVariableValue || _variableRefs == 0) {
+		return;
+	}
+	_variableRefs--;
 }
 
 MouseWheelWidgetAdjustmentGuard::MouseWheelWidgetAdjustmentGuard(QObject *parent)
