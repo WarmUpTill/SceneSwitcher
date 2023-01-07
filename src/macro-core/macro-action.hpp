@@ -4,7 +4,7 @@
 
 class MacroAction : public MacroSegment {
 public:
-	MacroAction(Macro *m) : MacroSegment(m) {}
+	MacroAction(Macro *m, bool supportsVariableValue = false);
 	virtual ~MacroAction() = default;
 	virtual bool PerformAction() = 0;
 	virtual bool Save(obs_data_t *obj) const = 0;
@@ -14,14 +14,14 @@ public:
 
 class MacroRefAction : virtual public MacroAction {
 public:
-	MacroRefAction(Macro *m) : MacroAction(m) {}
+	MacroRefAction(Macro *m, bool supportsVariableValue = false);
 	void ResolveMacroRef();
 	MacroRef _macro;
 };
 
 class MultiMacroRefAction : virtual public MacroAction {
 public:
-	MultiMacroRefAction(Macro *m) : MacroAction(m) {}
+	MultiMacroRefAction(Macro *m, bool supportsVariableValue = false);
 	void ResolveMacroRef();
 	std::vector<MacroRef> _macros;
 };

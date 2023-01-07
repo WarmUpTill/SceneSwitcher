@@ -68,6 +68,11 @@ void DurationModifier::Reset()
 	_dur.Reset();
 }
 
+MacroCondition::MacroCondition(Macro *m, bool supportsVariableValue)
+	: MacroSegment(m, supportsVariableValue)
+{
+}
+
 bool MacroCondition::Save(obs_data_t *obj) const
 {
 	MacroSegment::Save(obj);
@@ -146,9 +151,20 @@ void MacroCondition::SetDuration(double seconds)
 	_duration.SetValue(seconds);
 }
 
+MacroRefCondition::MacroRefCondition(Macro *m, bool supportsVariableValue)
+	: MacroCondition(m, supportsVariableValue)
+{
+}
+
 void MacroRefCondition::ResolveMacroRef()
 {
 	_macro.UpdateRef();
+}
+
+MultiMacroRefCondtition::MultiMacroRefCondtition(Macro *m,
+						 bool supportsVariableValue)
+	: MacroCondition(m, supportsVariableValue)
+{
 }
 
 void MultiMacroRefCondtition::ResolveMacroRef()

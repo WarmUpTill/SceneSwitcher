@@ -9,7 +9,7 @@ class Macro;
 
 class MacroSegment {
 public:
-	MacroSegment(Macro *m) : _macro(m) {}
+	MacroSegment(Macro *m, bool supportsVariableValue);
 	virtual ~MacroSegment() = default;
 	Macro *GetMacro() const { return _macro; }
 	void SetIndex(int idx) { _idx = idx; }
@@ -22,15 +22,28 @@ public:
 	virtual std::string GetId() const = 0;
 	void SetHighlight();
 	bool Highlight();
+	bool SupportsVariableValue() const { return _supportsVariableValue; }
+	virtual std::string GetVariableValue() const;
+	void IncrementVariableRef();
+	void DecrementVariableRef();
 
 protected:
-	int _idx = 0;
-	bool _collapsed = false;
-	// UI helper
-	bool _highlight = false;
+	void SetVariableValue(const std::string &value);
+	bool IsReferencedInVars() { return _variableRefs != 0; }
 
 private:
+	// Macro helpers
 	Macro *_macro = nullptr;
+	int _idx = 0;
+
+	// UI helper
+	bool _highlight = false;
+	bool _collapsed = false;
+
+	// Variable helpers
+	const bool _supportsVariableValue = false;
+	int _variableRefs = 0;
+	std::string _variableValue;
 };
 
 class Section;
