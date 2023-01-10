@@ -55,16 +55,16 @@ static bool compareNumber(const Variable &var, double value, bool less)
 
 bool MacroConditionVariable::Compare(const Variable &var) const
 {
-	if (_regex) {
-		try {
-			std::regex expr(_strValue);
-			return std::regex_match(var.Value(), expr);
-		} catch (const std::regex_error &) {
+	if (_regex.Enabled()) {
+		auto expr = _regex.GetRegularExpression(_strValue);
+		if (!expr.isValid()) {
 			return false;
 		}
-	} else {
-		return _strValue == var.Value();
+		auto match = expr.match(QString::fromStdString(var.Value()));
+		return match.hasMatch();
 	}
+
+	return _strValue == var.Value();
 }
 
 bool MacroConditionVariable::ValueChanged(const Variable &var)
@@ -140,7 +140,7 @@ bool MacroConditionVariable::Save(obs_data_t *obj) const
 	obs_data_set_string(obj, "strValue", _strValue.c_str());
 	obs_data_set_double(obj, "numValue", _numValue);
 	obs_data_set_int(obj, "condition", static_cast<int>(_type));
-	obs_data_set_bool(obj, "regex", _regex);
+	_regex.Save(obj);
 	return true;
 }
 
@@ -152,7 +152,12 @@ bool MacroConditionVariable::Load(obs_data_t *obj)
 	_strValue = obs_data_get_string(obj, "strValue");
 	_numValue = obs_data_get_double(obj, "numValue");
 	_type = static_cast<Type>(obs_data_get_int(obj, "condition"));
-	_regex = obs_data_get_bool(obj, "regex");
+	_regex.Load(obj);
+	// TODO: remove in future version
+	if (obs_data_has_user_value(obj, "regex")) {
+		_regex.CreateBackwardsCompatibleRegex(
+			obs_data_get_bool(obj, "regex"));
+	}
 	return true;
 }
 
@@ -176,8 +181,7 @@ MacroConditionVariableEdit::MacroConditionVariableEdit(
 	  _conditions(new QComboBox()),
 	  _strValue(new ResizingPlainTextEdit(this, 5, 1, 1)),
 	  _numValue(new QDoubleSpinBox()),
-	  _regex(new QCheckBox(
-		  obs_module_text("AdvSceneSwitcher.condition.variable.regex")))
+	  _regex(new RegexConfigWidget(parent))
 {
 	_numValue->setMinimum(-9999999999);
 	_numValue->setMaximum(9999999999);
@@ -193,8 +197,8 @@ MacroConditionVariableEdit::MacroConditionVariableEdit(
 			 SLOT(StrValueChanged()));
 	QWidget::connect(_numValue, SIGNAL(valueChanged(double)), this,
 			 SLOT(NumValueChanged(double)));
-	QWidget::connect(_regex, SIGNAL(stateChanged(int)), this,
-			 SLOT(RegexChanged(int)));
+	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
+			 SLOT(RegexChanged(RegexConfig)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -209,9 +213,14 @@ MacroConditionVariableEdit::MacroConditionVariableEdit(
 	placeWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.variable.entry"),
 		layout, widgetPlaceholders);
+
+	auto *regexLayout = new QHBoxLayout;
+	regexLayout->addWidget(_regex);
+	regexLayout->addStretch();
+
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(layout);
-	mainLayout->addWidget(_regex);
+	mainLayout->addLayout(regexLayout);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -230,7 +239,7 @@ void MacroConditionVariableEdit::UpdateEntryData()
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_type));
 	_strValue->setPlainText(QString::fromStdString(_entryData->_strValue));
 	_numValue->setValue(_entryData->_numValue);
-	_regex->setChecked(_entryData->_regex);
+	_regex->SetRegexConfig(_entryData->_regex);
 	SetWidgetVisibility();
 }
 
@@ -287,14 +296,16 @@ void MacroConditionVariableEdit::NumValueChanged(double val)
 	_entryData->_numValue = val;
 }
 
-void MacroConditionVariableEdit::RegexChanged(int state)
+void MacroConditionVariableEdit::RegexChanged(RegexConfig conf)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_regex = state;
+	_entryData->_regex = conf;
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionVariableEdit::SetWidgetVisibility()
@@ -303,62 +314,25 @@ void MacroConditionVariableEdit::SetWidgetVisibility()
 		return;
 	}
 
-	switch (_entryData->_type) {
-	case MacroConditionVariable::Type::EQUALS:
-		_regex->show();
-		_strValue->show();
-		_numValue->hide();
-		_variables2->hide();
-		break;
-	case MacroConditionVariable::Type::IS_EMPTY:
-		_regex->hide();
-		_strValue->hide();
-		_numValue->hide();
-		_variables2->hide();
-		break;
-	case MacroConditionVariable::Type::IS_NUMBER:
-		_regex->hide();
-		_strValue->hide();
-		_numValue->hide();
-		_variables2->hide();
-		break;
-	case MacroConditionVariable::Type::LESS_THAN:
-		_regex->hide();
-		_strValue->hide();
-		_numValue->show();
-		_variables2->hide();
-		break;
-	case MacroConditionVariable::Type::GREATER_THAN:
-		_regex->hide();
-		_strValue->hide();
-		_numValue->show();
-		_variables2->hide();
-		break;
-	case MacroConditionVariable::Type::VALUE_CHANGED:
-		_regex->hide();
-		_strValue->hide();
-		_numValue->hide();
-		_variables2->hide();
-		break;
-	case MacroConditionVariable::Type::EQUALS_VARIABLE:
-		_regex->hide();
-		_strValue->hide();
-		_numValue->hide();
-		_variables2->show();
-		break;
-	case MacroConditionVariable::Type::LESS_THAN_VARIABLE:
-		_regex->hide();
-		_strValue->hide();
-		_numValue->hide();
-		_variables2->show();
-		break;
-	case MacroConditionVariable::Type::GREATER_THAN_VARIABLE:
-		_regex->hide();
-		_strValue->hide();
-		_numValue->hide();
-		_variables2->show();
-		break;
-	}
+	_regex->setVisible(_entryData->_type ==
+			   MacroConditionVariable::Type::EQUALS);
+	_strValue->setVisible(_entryData->_type ==
+			      MacroConditionVariable::Type::EQUALS);
+	_numValue->setVisible(
+		_entryData->_type == MacroConditionVariable::Type::LESS_THAN ||
+		_entryData->_type ==
+			MacroConditionVariable::Type::GREATER_THAN);
+	_numValue->setVisible(
+		_entryData->_type == MacroConditionVariable::Type::LESS_THAN ||
+		_entryData->_type ==
+			MacroConditionVariable::Type::GREATER_THAN);
+	_variables2->setVisible(
+		_entryData->_type ==
+			MacroConditionVariable::Type::EQUALS_VARIABLE ||
+		_entryData->_type ==
+			MacroConditionVariable::Type::LESS_THAN_VARIABLE ||
+		_entryData->_type ==
+			MacroConditionVariable::Type::GREATER_THAN_VARIABLE);
 
 	adjustSize();
 	updateGeometry();

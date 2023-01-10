@@ -2,6 +2,7 @@
 #include "macro.hpp"
 #include "resizing-text-edit.hpp"
 #include "variable.hpp"
+#include "regex-config.hpp"
 
 #include <QWidget>
 #include <QComboBox>
@@ -38,7 +39,7 @@ public:
 	std::string _variable2Name = "";
 	std::string _strValue = "";
 	double _numValue = 0;
-	bool _regex = false;
+	RegexConfig _regex;
 
 private:
 	bool Compare(const Variable &) const;
@@ -74,7 +75,7 @@ private slots:
 	void ConditionChanged(int);
 	void StrValueChanged();
 	void NumValueChanged(double);
-	void RegexChanged(int state);
+	void RegexChanged(RegexConfig);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -85,7 +86,7 @@ protected:
 	QComboBox *_conditions;
 	ResizingPlainTextEdit *_strValue;
 	QDoubleSpinBox *_numValue;
-	QCheckBox *_regex;
+	RegexConfigWidget *_regex;
 	std::shared_ptr<MacroConditionVariable> _entryData;
 
 private:
