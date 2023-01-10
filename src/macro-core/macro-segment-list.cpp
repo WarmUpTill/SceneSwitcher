@@ -97,7 +97,7 @@ void MacroSegmentList::Clear(int idx)
 	clearLayout(_contentLayout, idx);
 }
 
-void MacroSegmentList::Highlight(int idx)
+void MacroSegmentList::Highlight(int idx, QColor color)
 {
 	auto item = _contentLayout->itemAt(idx);
 	if (!item) {
@@ -107,7 +107,7 @@ void MacroSegmentList::Highlight(int idx)
 	if (!widget) {
 		return;
 	}
-	PulseWidget(widget, QColor(Qt::green), QColor(0, 0, 0, 0), true);
+	PulseWidget(widget, color, QColor(0, 0, 0, 0), true);
 }
 
 void MacroSegmentList::SetCollapsed(bool collapse)

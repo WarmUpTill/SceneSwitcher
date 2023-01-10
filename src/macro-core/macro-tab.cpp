@@ -299,14 +299,14 @@ void AdvSceneSwitcher::SetMacroEditAreaDisabled(bool disable)
 	ui->macroActionConditionSplitter->setDisabled(disable);
 }
 
-void AdvSceneSwitcher::HighlightAction(int idx)
+void AdvSceneSwitcher::HighlightAction(int idx, QColor color)
 {
-	actionsList->Highlight(idx);
+	actionsList->Highlight(idx, color);
 }
 
-void AdvSceneSwitcher::HighlightCondition(int idx)
+void AdvSceneSwitcher::HighlightCondition(int idx, QColor color)
 {
-	conditionsList->Highlight(idx);
+	conditionsList->Highlight(idx, color);
 }
 
 std::shared_ptr<Macro> AdvSceneSwitcher::getSelectedMacro()
