@@ -49,8 +49,8 @@ public:
 	std::shared_ptr<Macro> getSelectedMacro();
 	void SetEditMacro(Macro &m);
 	void SetMacroEditAreaDisabled(bool);
-	void HighlightAction(int idx);
-	void HighlightCondition(int idx);
+	void HighlightAction(int idx, QColor color = QColor(Qt::green));
+	void HighlightCondition(int idx, QColor color = QColor(Qt::green));
 	void PopulateMacroActions(Macro &m, uint32_t afterIdx = 0);
 	void PopulateMacroConditions(Macro &m, uint32_t afterIdx = 0);
 	void SetActionData(Macro &m);

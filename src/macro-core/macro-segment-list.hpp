@@ -20,7 +20,7 @@ public:
 	void Add(QWidget *widget);
 	void Remove(int idx);
 	void Clear(int idx = 0); // Clear all elements >= idx
-	void Highlight(int idx);
+	void Highlight(int idx, QColor color = QColor(Qt::green));
 	void SetCollapsed(bool);
 	void SetSelection(int idx);
 	QVBoxLayout *ContentLayout() { return _contentLayout; }
