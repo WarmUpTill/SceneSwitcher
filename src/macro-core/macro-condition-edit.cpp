@@ -404,6 +404,7 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 		SetConditionData(*macro);
 	}
 	HighlightCondition(idx);
+	emit(MacroSegmentOrderChanged());
 }
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()
@@ -414,10 +415,6 @@ void AdvSceneSwitcher::on_conditionAdd_clicked()
 	}
 
 	if (currentConditionIdx == -1) {
-		auto macro = getSelectedMacro();
-		if (!macro) {
-			return;
-		}
 		AddMacroCondition((int)macro->Conditions().size());
 	} else {
 		AddMacroCondition(currentConditionIdx + 1);
@@ -455,6 +452,7 @@ void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 	}
 	MacroConditionSelectionChanged(-1);
 	lastInteracted = MacroSection::CONDITIONS;
+	emit(MacroSegmentOrderChanged());
 }
 
 void AdvSceneSwitcher::on_conditionRemove_clicked()
@@ -522,6 +520,7 @@ void AdvSceneSwitcher::SwapConditions(Macro *m, int pos1, int pos2)
 	SetConditionData(*m);
 	widget2->SetRootNode(root);
 	widget1->SetRootNode(false);
+	emit(MacroSegmentOrderChanged());
 }
 
 void AdvSceneSwitcher::MoveMacroConditionUp(int idx)
@@ -618,4 +617,5 @@ void AdvSceneSwitcher::MacroConditionReorder(int to, int from)
 		SetConditionData(*macro);
 	}
 	HighlightCondition(to);
+	emit(MacroSegmentOrderChanged());
 }
