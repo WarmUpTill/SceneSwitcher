@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+#include <QScreen>
+
 const std::string MacroConditionCursor::id = "cursor";
 
 bool MacroConditionCursor::_registered = MacroConditionFactory::Register(
@@ -294,6 +296,29 @@ void MacroConditionCursorEdit::SetWidgetVisibility()
 	adjustSize();
 }
 
+static QRect getScreenUnionRect()
+{
+	QPoint screenTopLeft(0, 0);
+	QPoint screenBottomRight(0, 0);
+	auto screens = QGuiApplication::screens();
+	for (const auto &screen : screens) {
+		const auto geo = screen->geometry();
+		if (geo.topLeft().x() < screenTopLeft.x()) {
+			screenTopLeft.setX(geo.topLeft().x());
+		}
+		if (geo.topLeft().y() < screenTopLeft.y()) {
+			screenTopLeft.setY(geo.topLeft().y());
+		}
+		if (geo.bottomRight().x() > screenBottomRight.x()) {
+			screenBottomRight.setX(geo.bottomRight().x());
+		}
+		if (geo.bottomRight().y() > screenBottomRight.y()) {
+			screenBottomRight.setY(geo.bottomRight().y());
+		}
+	}
+	return QRect(screenTopLeft, screenBottomRight);
+}
+
 void MacroConditionCursorEdit::SetupFrame()
 {
 	_frame.setFrameStyle(QFrame::Box | QFrame::Plain);
@@ -304,9 +329,16 @@ void MacroConditionCursorEdit::SetupFrame()
 	_frame.setAttribute(Qt::WA_TranslucentBackground, true);
 
 	if (_entryData) {
-		_frame.setGeometry(_entryData->_minX, _entryData->_minY,
-				   _entryData->_maxX - _entryData->_minX,
-				   _entryData->_maxY - _entryData->_minY);
+		QRect rect(_entryData->_minX, _entryData->_minY,
+			   _entryData->_maxX - _entryData->_minX,
+			   _entryData->_maxY - _entryData->_minY);
+
+		if (rect.size().height() == 0 || rect.size().width() == 0) {
+			_frame.setGeometry(0, 0, 1, 1);
+			return;
+		}
+
+		_frame.setGeometry(getScreenUnionRect().intersected(rect));
 	}
 }
 
