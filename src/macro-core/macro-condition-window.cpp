@@ -45,6 +45,7 @@ bool MacroConditionWindow::CheckWindowTitleSwitchRegex(
 			break;
 		}
 	}
+
 	return match;
 }
 
@@ -56,11 +57,12 @@ bool foregroundWindowChanged()
 bool MacroConditionWindow::CheckCondition()
 {
 	const std::string &currentWindowTitle = switcher->currentTitle;
+	SetVariableValue(currentWindowTitle);
+
 	std::vector<std::string> windowList;
 	GetWindowList(windowList);
 
 	bool match = false;
-
 	if (std::find(windowList.begin(), windowList.end(), _window) !=
 	    windowList.end()) {
 		match = CheckWindowTitleSwitchDirect(currentWindowTitle);
@@ -69,7 +71,6 @@ bool MacroConditionWindow::CheckCondition()
 						    windowList);
 	}
 	match = match && (!_windowFocusChanged || foregroundWindowChanged());
-
 	return match;
 }
 
