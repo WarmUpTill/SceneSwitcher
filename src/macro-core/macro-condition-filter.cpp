@@ -54,12 +54,20 @@ bool MacroConditionFilter::CheckCondition()
 		break;
 	case Condition::SETTINGS:
 		ret = compareSourceSettings(_filter, _settings, _regex);
+		if (IsReferencedInVars()) {
+			SetVariableValue(getSourceSettings(_filter));
+		}
 		break;
 	default:
 		break;
 	}
 
 	obs_source_release(s);
+
+	if (GetVariableValue().empty()) {
+		SetVariableValue(ret ? "true" : "false");
+	}
+
 	return ret;
 }
 

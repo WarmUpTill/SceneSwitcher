@@ -10,7 +10,7 @@
 
 class MacroConditionFilter : public MacroCondition {
 public:
-	MacroConditionFilter(Macro *m) : MacroCondition(m) {}
+	MacroConditionFilter(Macro *m) : MacroCondition(m, true) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
