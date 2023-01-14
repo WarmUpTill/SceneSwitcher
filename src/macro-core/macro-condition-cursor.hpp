@@ -9,7 +9,7 @@
 
 class MacroConditionCursor : public MacroCondition {
 public:
-	MacroConditionCursor(Macro *m) : MacroCondition(m) {}
+	MacroConditionCursor(Macro *m) : MacroCondition(m, true) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
