@@ -66,6 +66,7 @@ bool MacroConditionFile::MatchFileContent(QString &filedata)
 bool MacroConditionFile::CheckRemoteFileContent()
 {
 	std::string data = getRemoteData(_file);
+	SetVariableValue(data);
 	QString qdata = QString::fromStdString(data);
 	return MatchFileContent(qdata);
 }
@@ -86,6 +87,7 @@ bool MacroConditionFile::CheckLocalFileContent()
 	}
 
 	QString filedata = QTextStream(&file).readAll();
+	SetVariableValue(filedata.toStdString());
 	bool match = MatchFileContent(filedata);
 
 	file.close();
@@ -126,6 +128,7 @@ bool MacroConditionFile::CheckChangeDate()
 
 	QFile file(QString::fromStdString(_file));
 	QDateTime newLastMod = QFileInfo(file).lastModified();
+	SetVariableValue(newLastMod.toString().toStdString());
 	const bool dateChanged = _lastMod != newLastMod;
 	_lastMod = newLastMod;
 	return dateChanged;
@@ -133,18 +136,27 @@ bool MacroConditionFile::CheckChangeDate()
 
 bool MacroConditionFile::CheckCondition()
 {
+	bool ret = false;
 	switch (_condition) {
 	case MacroConditionFile::ConditionType::MATCH:
 		if (_fileType == FileType::REMOTE) {
-			return CheckRemoteFileContent();
+			ret = CheckRemoteFileContent();
+			break;
 		}
-		return CheckLocalFileContent();
+		ret = CheckLocalFileContent();
+		break;
 	case MacroConditionFile::ConditionType::CONTENT_CHANGE:
-		return CheckChangeContent();
+		ret = CheckChangeContent();
+		break;
 	case MacroConditionFile::ConditionType::DATE_CHANGE:
-		return CheckChangeDate();
+		ret = CheckChangeDate();
+		break;
 	default:
 		break;
+	}
+
+	if (GetVariableValue().empty()) {
+		SetVariableValue(ret ? "true" : "false");
 	}
 
 	return false;
