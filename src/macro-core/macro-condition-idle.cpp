@@ -12,7 +12,9 @@ bool MacroConditionIdle::_registered = MacroConditionFactory::Register(
 
 bool MacroConditionIdle::CheckCondition()
 {
-	return secondsSinceLastInput() >= _duration.seconds;
+	auto seconds = secondsSinceLastInput();
+	SetVariableValue(std::to_string(seconds));
+	return seconds >= _duration.seconds;
 }
 
 bool MacroConditionIdle::Save(obs_data_t *obj) const

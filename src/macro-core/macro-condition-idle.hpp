@@ -7,7 +7,7 @@
 
 class MacroConditionIdle : public MacroCondition {
 public:
-	MacroConditionIdle(Macro *m) : MacroCondition(m) {}
+	MacroConditionIdle(Macro *m) : MacroCondition(m, true) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
