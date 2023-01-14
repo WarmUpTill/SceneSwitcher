@@ -38,12 +38,20 @@ bool MacroConditionSource::CheckCondition()
 	case SourceCondition::SETTINGS:
 		ret = compareSourceSettings(_source.GetSource(), _settings,
 					    _regex);
+		if (IsReferencedInVars()) {
+			SetVariableValue(
+				getSourceSettings(_source.GetSource()));
+		}
 		break;
 	default:
 		break;
 	}
 
 	obs_source_release(s);
+
+	if (GetVariableValue().empty()) {
+		SetVariableValue(ret ? "true" : "false");
+	}
 
 	return ret;
 }

@@ -16,7 +16,7 @@ enum class SourceCondition {
 
 class MacroConditionSource : public MacroCondition {
 public:
-	MacroConditionSource(Macro *m) : MacroCondition(m) {}
+	MacroConditionSource(Macro *m) : MacroCondition(m, true) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
