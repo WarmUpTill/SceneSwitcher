@@ -87,6 +87,7 @@ signals:
 	void MacroAdded(const QString &name);
 	void MacroRemoved(const QString &name);
 	void MacroRenamed(const QString &oldName, const QString &newName);
+	void MacroSegmentOrderChanged();
 	void HighlightMacrosChanged(bool value);
 	void HighlightActionsChanged(bool value);
 	void HighlightConditionsChanged(bool value);

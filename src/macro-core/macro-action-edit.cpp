@@ -188,6 +188,7 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 		SetActionData(*macro);
 	}
 	HighlightAction(idx);
+	emit(MacroSegmentOrderChanged());
 }
 
 void AdvSceneSwitcher::on_actionAdd_clicked()
@@ -198,10 +199,6 @@ void AdvSceneSwitcher::on_actionAdd_clicked()
 	}
 
 	if (currentActionIdx == -1) {
-		auto macro = getSelectedMacro();
-		if (!macro) {
-			return;
-		}
 		AddMacroAction((int)macro->Actions().size());
 	} else {
 		AddMacroAction(currentActionIdx + 1);
@@ -234,6 +231,7 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 	}
 	MacroActionSelectionChanged(-1);
 	lastInteracted = MacroSection::ACTIONS;
+	emit(MacroSegmentOrderChanged());
 }
 
 void AdvSceneSwitcher::on_actionRemove_clicked()
@@ -286,6 +284,7 @@ void AdvSceneSwitcher::SwapActions(Macro *m, int pos1, int pos2)
 	actionsList->Insert(pos1, widget2);
 	actionsList->Insert(pos2, widget1);
 	SetActionData(*m);
+	emit(MacroSegmentOrderChanged());
 }
 
 void AdvSceneSwitcher::MoveMacroActionUp(int idx)
@@ -360,4 +359,5 @@ void AdvSceneSwitcher::MacroActionReorder(int to, int from)
 		SetActionData(*macro);
 	}
 	HighlightAction(to);
+	emit(MacroSegmentOrderChanged());
 }
