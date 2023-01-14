@@ -6,7 +6,7 @@
 
 class MacroConditionWindow : public MacroCondition {
 public:
-	MacroConditionWindow(Macro *m) : MacroCondition(m) {}
+	MacroConditionWindow(Macro *m) : MacroCondition(m, true) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
