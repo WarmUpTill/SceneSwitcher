@@ -59,6 +59,7 @@ static std::map<MacroConditionDate::Day, std::string> dayOfWeekNames = {
 bool MacroConditionDate::CheckDayOfWeek(int64_t msSinceLastCheck)
 {
 	QDateTime cur = QDateTime::currentDateTime();
+	SetVariableValue(cur.toString().toStdString());
 	if (_dayOfWeek != Day::ANY &&
 	    cur.date().dayOfWeek() != static_cast<int>(_dayOfWeek)) {
 		return false;
@@ -131,6 +132,8 @@ bool MacroConditionDate::CheckRegularDate(int64_t msSinceLastCheck)
 {
 	bool match = false;
 	QDateTime cur = QDateTime::currentDateTime();
+	SetVariableValue(cur.toString().toStdString());
+
 	if (_ignoreDate) {
 		_dateTime.setDate(cur.date());
 		_dateTime2.setDate(cur.date());
