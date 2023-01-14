@@ -52,6 +52,8 @@ bool MacroConditionCursor::CheckCondition()
 	case Condition::REGION:
 		ret = cursorPos.first >= _minX && cursorPos.second >= _minY &&
 		      cursorPos.first <= _maxX && cursorPos.second <= _maxY;
+		SetVariableValue(std::to_string(cursorPos.first) + " " +
+				 std::to_string(cursorPos.second));
 		break;
 	case Condition::MOVING:
 		ret = switcher->cursorPosChanged;
@@ -61,6 +63,10 @@ bool MacroConditionCursor::CheckCondition()
 		break;
 	}
 	_lastCheckTime = std::chrono::high_resolution_clock::now();
+
+	if (GetVariableValue().empty()) {
+		SetVariableValue(ret ? "true" : "false");
+	}
 	return ret;
 }
 
