@@ -13,7 +13,7 @@ enum class StudioModeCondition {
 
 class MacroConditionStudioMode : public MacroCondition {
 public:
-	MacroConditionStudioMode(Macro *m) : MacroCondition(m) {}
+	MacroConditionStudioMode(Macro *m) : MacroCondition(m, true) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);

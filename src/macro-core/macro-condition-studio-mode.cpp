@@ -33,6 +33,7 @@ bool MacroConditionStudioMode::CheckCondition()
 		auto s = obs_frontend_get_current_preview_scene();
 		auto scene = obs_source_get_weak_source(s);
 		ret = _scene.GetScene() == scene;
+		SetVariableValue(GetWeakSourceName(scene));
 		obs_weak_source_release(scene);
 		obs_source_release(s);
 		break;
@@ -40,6 +41,11 @@ bool MacroConditionStudioMode::CheckCondition()
 	default:
 		break;
 	}
+
+	if (GetVariableValue().empty()) {
+		SetVariableValue(ret ? "true" : "false");
+	}
+
 	return ret;
 }
 
