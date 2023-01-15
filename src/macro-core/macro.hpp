@@ -63,6 +63,7 @@ public:
 
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
+	bool PostLoad();
 	// Some macros can refer to other macros, which are not yet loaded.
 	// Use this function to set these references after loading is complete.
 	void ResolveMacroRef();

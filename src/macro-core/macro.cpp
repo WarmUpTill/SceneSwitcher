@@ -489,6 +489,18 @@ bool Macro::Load(obs_data_t *obj)
 	return true;
 }
 
+bool Macro::PostLoad()
+{
+	ResolveMacroRef();
+	for (auto &c : _conditions) {
+		c->PostLoad();
+	}
+	for (auto &a : _actions) {
+		a->PostLoad();
+	}
+	return true;
+}
+
 void Macro::ResolveMacroRef()
 {
 	for (auto &c : _conditions) {
@@ -699,7 +711,6 @@ void SwitcherData::loadMacros(obs_data_t *obj)
 	int groupCount = 0;
 	Macro *group = nullptr;
 	for (auto &m : macros) {
-		m->ResolveMacroRef();
 		if (groupCount) {
 			m->SetParent(group);
 			groupCount--;
@@ -708,6 +719,7 @@ void SwitcherData::loadMacros(obs_data_t *obj)
 			groupCount = m->GroupSize();
 			group = m.get();
 		}
+		m->PostLoad();
 	}
 }
 

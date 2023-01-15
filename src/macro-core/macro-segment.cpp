@@ -25,6 +25,11 @@ bool MacroSegment::Load(obs_data_t *obj)
 	return true;
 }
 
+bool MacroSegment::PostLoad()
+{
+	return true;
+}
+
 std::string MacroSegment::GetShortDesc() const
 {
 	return "";
