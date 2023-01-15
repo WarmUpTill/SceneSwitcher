@@ -3,6 +3,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QTimer>
+#include <QLayout>
 #include <obs-data.h>
 
 class StatusControl : public QWidget {
@@ -11,6 +12,7 @@ class StatusControl : public QWidget {
 public:
 	StatusControl(QWidget *parent = 0, bool noLayout = false);
 	QPushButton *Button() { return _button; }
+	QHBoxLayout *ButtonLayout() { return _buttonLayout; }
 	QLabel *StatusLabel() { return _status; }
 	QLabel *StatusPrefixLabel() { return _statusPrefix; }
 
@@ -23,6 +25,7 @@ private:
 	void SetStarted();
 
 	QPushButton *_button;
+	QHBoxLayout *_buttonLayout;
 	QLabel *_status;
 	QLabel *_statusPrefix;
 	QTimer _timer;
