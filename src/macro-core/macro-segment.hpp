@@ -18,6 +18,7 @@ public:
 	bool GetCollapsed() const { return _collapsed; }
 	virtual bool Save(obs_data_t *obj) const = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
+	virtual bool PostLoad();
 	virtual std::string GetShortDesc() const;
 	virtual std::string GetId() const = 0;
 	void SetHighlight();
