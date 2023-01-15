@@ -8,7 +8,7 @@
 
 class MacroActionHttp : public MacroAction {
 public:
-	MacroActionHttp(Macro *m) : MacroAction(m) {}
+	MacroActionHttp(Macro *m) : MacroAction(m, true) {}
 	bool PerformAction();
 	void LogAction() const;
 	bool Save(obs_data_t *obj) const;
