@@ -16,9 +16,14 @@ const static std::map<MacroActionHttp::Method, std::string> methods = {
 	 "AdvSceneSwitcher.action.http.type.post"},
 };
 
-size_t WriteCB(void *, size_t size, size_t nmemb, std::string *)
+size_t DropCB(void *, size_t size, size_t nmemb, std::string *)
 {
-	// Just drop the data
+	return size * nmemb;
+}
+
+size_t WriteCB(void *ptr, size_t size, size_t nmemb, std::string *buffer)
+{
+	buffer->append((char *)ptr, nmemb);
 	return size * nmemb;
 }
 
@@ -29,10 +34,15 @@ void MacroActionHttp::Get()
 	switcher->curl.SetOpt(CURLOPT_TIMEOUT_MS, _timeout.seconds * 1000);
 
 	std::string response;
-	switcher->curl.SetOpt(CURLOPT_WRITEFUNCTION, WriteCB);
+	if (IsReferencedInVars()) {
+		switcher->curl.SetOpt(CURLOPT_WRITEFUNCTION, WriteCB);
+	} else {
+		switcher->curl.SetOpt(CURLOPT_WRITEFUNCTION, DropCB);
+	}
 	switcher->curl.SetOpt(CURLOPT_WRITEDATA, &response);
-
 	switcher->curl.Perform();
+
+	SetVariableValue(response);
 }
 
 void MacroActionHttp::Post()
