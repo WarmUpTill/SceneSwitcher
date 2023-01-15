@@ -4,25 +4,27 @@
 
 #include <obs-module.h>
 #include <QMainWindow>
-#include <QLayout>
 #include <QAction>
+#include <QToolBar>
 
 StatusDock *dock = nullptr;
 
-StatusControl::StatusControl(QWidget *parent, bool noLayout) : QWidget(parent)
+StatusControl::StatusControl(QWidget *parent, bool noLayout)
+	: QWidget(parent),
+	  _button(new QPushButton("-", this)),
+	  _buttonLayout(new QHBoxLayout()),
+	  _status(new QLabel("-", this)),
+	  _statusPrefix(new QLabel(
+		  obs_module_text(
+			  "AdvSceneSwitcher.generalTab.status.currentStatus"),
+		  this))
 {
-	_button = new QPushButton("-", this);
-	_status = new QLabel("-", this);
 	_status->setStyleSheet("QLabel{ \
 		border-style: outset; \
 		border-width: 2px; \
 		border-radius: 7px; \
 		border-color: rgb(0,0,0,0) \
 		}");
-	_statusPrefix = new QLabel(
-		obs_module_text(
-			"AdvSceneSwitcher.generalTab.status.currentStatus"),
-		this);
 
 	QWidget::connect(_button, SIGNAL(clicked()), this,
 			 SLOT(ButtonClicked()));
@@ -32,9 +34,11 @@ StatusControl::StatusControl(QWidget *parent, bool noLayout) : QWidget(parent)
 		statusLayout->addWidget(_statusPrefix);
 		statusLayout->addWidget(_status);
 		statusLayout->addStretch();
+		_buttonLayout->setContentsMargins(0, 0, 0, 0);
+		_buttonLayout->addWidget(_button);
 		QVBoxLayout *layout = new QVBoxLayout();
 		layout->addLayout(statusLayout);
-		layout->addWidget(_button);
+		layout->addLayout(_buttonLayout);
 		setLayout(layout);
 	}
 
@@ -98,8 +102,6 @@ void StatusControl::SetStopped()
 	_setToStopped = true;
 }
 
-#include <QToolBar>
-
 StatusDock::StatusDock(QWidget *parent) : OBSDock(parent)
 {
 	setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
@@ -118,18 +120,19 @@ StatusDock::StatusDock(QWidget *parent) : OBSDock(parent)
 		QSize(), QIcon::Normal, QIcon::Off);
 	action->setIcon(icon);
 
-	auto toolLayout = new QBoxLayout(QBoxLayout::TopToBottom, this);
-	toolLayout->setContentsMargins(0, 0, 0, 0);
 	auto toolbar = new QToolBar;
 	toolbar->setIconSize({16, 16});
 	toolbar->setFloatable(false);
 	toolbar->addAction(action);
-	toolLayout->addWidget(toolbar);
+
+	auto statusControl = new StatusControl(this);
+	statusControl->ButtonLayout()->addWidget(toolbar);
+	statusControl->ButtonLayout()->setStretchFactor(statusControl->Button(),
+							100);
 
 	QVBoxLayout *layout = new QVBoxLayout;
-	layout->addWidget(new StatusControl(this));
+	layout->addWidget(statusControl);
 	layout->setContentsMargins(0, 0, 0, 0);
-	layout->addLayout(toolLayout);
 
 	// QFrame wrapper is necessary to avoid dock being partially
 	// transparent
