@@ -225,7 +225,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _numValue(new QDoubleSpinBox()),
 	  _segmentIdx(new QSpinBox()),
 	  _segmentValueStatus(new QLabel()),
-	  _segmentValue(new ResizingPlainTextEdit(this))
+	  _segmentValue(new ResizingPlainTextEdit(this, 10, 1, 1))
 {
 	_numValue->setMinimum(-9999999999);
 	_numValue->setMaximum(9999999999);
@@ -272,6 +272,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	UpdateEntryData();
 	_loading = false;
 
+	UpdateSegmentVariableValue();
 	connect(&_timer, SIGNAL(timeout()), this,
 		SLOT(UpdateSegmentVariableValue()));
 	_timer.start(1500);
