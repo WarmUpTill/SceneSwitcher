@@ -8,7 +8,7 @@
 
 class MacroConditionWebsocket : public MacroCondition {
 public:
-	MacroConditionWebsocket(Macro *m) : MacroCondition(m) {}
+	MacroConditionWebsocket(Macro *m) : MacroCondition(m, true) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);

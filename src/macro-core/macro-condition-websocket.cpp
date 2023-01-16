@@ -56,14 +56,17 @@ bool MacroConditionWebsocket::CheckCondition()
 	for (const auto &msg : *messages) {
 		if (_regex.Enabled()) {
 			if (matchRegex(_regex, msg, _message)) {
+				SetVariableValue(msg);
 				return true;
 			}
 		} else {
 			if (msg == std::string(_message)) {
+				SetVariableValue(msg);
 				return true;
 			}
 		}
 	}
+	SetVariableValue("");
 	return false;
 }
 
