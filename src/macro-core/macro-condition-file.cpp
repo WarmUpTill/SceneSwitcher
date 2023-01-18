@@ -159,7 +159,7 @@ bool MacroConditionFile::CheckCondition()
 		SetVariableValue(ret ? "true" : "false");
 	}
 
-	return false;
+	return ret;
 }
 
 bool MacroConditionFile::Save(obs_data_t *obj) const
