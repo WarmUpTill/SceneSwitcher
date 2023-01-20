@@ -4,7 +4,6 @@
 #include "utility.hpp"
 
 #include <screenshot-helper.hpp>
-#include <condition_variable>
 
 PreviewDialog::PreviewDialog(QWidget *parent, int delay)
 	: QDialog(parent),
@@ -119,6 +118,7 @@ void PreviewDialog::SelectArea()
 void PreviewDialog::Stop()
 {
 	_stop = true;
+	_cv.notify_all();
 	if (_thread.joinable()) {
 		_thread.join();
 	}
@@ -189,13 +189,12 @@ void PreviewDialog::Start()
 
 void PreviewDialog::CheckForMatchLoop()
 {
-	std::condition_variable cv;
 	while (!_stop) {
 		std::unique_lock<std::mutex> lock(_mtx);
 		auto source = obs_weak_source_get_source(_video.GetVideo());
 		ScreenshotHelper screenshot(source);
 		obs_source_release(source);
-		cv.wait_for(lock, std::chrono::milliseconds(_delay));
+		_cv.wait_for(lock, std::chrono::milliseconds(_delay));
 		if (_stop || isHidden()) {
 			return;
 		}
