@@ -103,6 +103,10 @@ QStringList GetVariablesNameList()
 
 void VariableResolvingString::Resolve()
 {
+	if (switcher->variables.empty()) {
+		_resolvedValue = _value;
+		return;
+	}
 	if (_lastResolve == lastVariableChange) {
 		return;
 	}
@@ -131,6 +135,7 @@ void VariableResolvingString::operator=(const char *value)
 void VariableResolvingString::Load(obs_data_t *obj, const char *name)
 {
 	_value = obs_data_get_string(obj, name);
+	Resolve();
 }
 
 void VariableResolvingString::Save(obs_data_t *obj, const char *name) const
