@@ -12,6 +12,7 @@
 
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 
 class PreviewDialog : public QDialog {
 	Q_OBJECT
@@ -62,6 +63,7 @@ private:
 	std::atomic_bool _selectingArea = {false};
 
 	std::mutex _mtx;
+	std::condition_variable _cv;
 	std::thread _thread;
 	std::atomic_bool _stop = {true};
 
