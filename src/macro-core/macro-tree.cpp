@@ -501,10 +501,13 @@ Qt::ItemFlags MacroTreeModel::flags(const QModelIndex &index) const
 		return QAbstractListModel::flags(index) | Qt::ItemIsDropEnabled;
 	}
 
-	std::shared_ptr<Macro> item =
-		_macros[ModelIndexToMacroIndex(index.row(), _macros)];
+	std::shared_ptr<Macro> item;
+	try {
+		item = _macros.at(ModelIndexToMacroIndex(index.row(), _macros));
+	} catch (const std::out_of_range &) {
+		return QAbstractListModel::flags(index) | Qt::ItemIsDropEnabled;
+	}
 	bool isGroup = item->IsGroup();
-
 	return QAbstractListModel::flags(index) | Qt::ItemIsEditable |
 	       Qt::ItemIsDragEnabled |
 	       (isGroup ? Qt::ItemIsDropEnabled : Qt::NoItemFlags);
