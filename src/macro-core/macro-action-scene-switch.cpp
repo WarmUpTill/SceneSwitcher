@@ -31,7 +31,6 @@ void waitForTransitionChangeFixedDuration(int duration)
 	auto time = std::chrono::high_resolution_clock::now() +
 		    std::chrono::milliseconds(duration);
 
-	switcher->abortMacroWait = false;
 	std::unique_lock<std::mutex> lock(switcher->m);
 	while (!switcher->abortMacroWait) {
 		if (switcher->macroTransitionCv.wait_until(lock, time) ==
@@ -107,6 +106,7 @@ bool MacroActionSwitchScene::PerformAction()
 		const int expectedTransitionDuration =
 			getExpectedTransitionDuration(scene, transition,
 						      _duration.seconds);
+		switcher->abortMacroWait = false;
 		if (expectedTransitionDuration < 0) {
 			waitForTransitionChange(transition);
 		} else {
