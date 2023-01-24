@@ -18,6 +18,8 @@ MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 	: _tree(tree), _highlight(highlight), _macro(macroItem)
 {
 	setAttribute(Qt::WA_TranslucentBackground);
+	// This is necessary for some theses to display active selections properly
+	setStyleSheet("background: none");
 
 	auto name = _macro->Name();
 	bool macroPaused = _macro->Paused();
