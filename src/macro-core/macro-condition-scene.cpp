@@ -53,7 +53,7 @@ bool MacroConditionScene::CheckCondition()
 			auto current = obs_frontend_get_current_scene();
 			auto weak = obs_source_get_weak_source(current);
 			bool match = weak == _scene.GetScene(false);
-			SetVariableValue(obs_source_get_name(current));
+			SetVariableValue(GetWeakSourceName(weak));
 			obs_weak_source_release(weak);
 			obs_source_release(current);
 			return match;
