@@ -90,6 +90,8 @@ struct SwitcherData {
 
 	std::condition_variable cv;
 	std::mutex m;
+	std::unique_lock<std::mutex> *mainLoopLock;
+
 	bool transitionActive = false;
 	bool waitForTransition = false;
 	bool stop = false;
@@ -251,6 +253,7 @@ struct SwitcherData {
 	void Thread();
 	void Start();
 	void Stop();
+	std::unique_lock<std::mutex> *GetLock() { return mainLoopLock; }
 
 	void setWaitScene();
 	bool sceneChangedDuringWait();
