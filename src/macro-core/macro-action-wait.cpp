@@ -19,6 +19,17 @@ static std::map<WaitType, std::string> waitTypes = {
 static std::random_device rd;
 static std::default_random_engine re(rd());
 
+static void waitHelper(std::unique_lock<std::mutex> *lock, Macro *macro,
+		       std::chrono::high_resolution_clock::time_point &time)
+{
+	while (!switcher->abortMacroWait && !macro->GetStop()) {
+		if (switcher->macroWaitCv.wait_until(*lock, time) ==
+		    std::cv_status::timeout) {
+			break;
+		}
+	}
+}
+
 bool MacroActionWait::PerformAction()
 {
 	double sleepDuration;
@@ -39,14 +50,15 @@ bool MacroActionWait::PerformAction()
 
 	auto time = std::chrono::high_resolution_clock::now() +
 		    std::chrono::milliseconds((int)(sleepDuration * 1000));
-	auto macro = GetMacro();
+
 	switcher->abortMacroWait = false;
-	std::unique_lock<std::mutex> lock(switcher->m);
-	while (!switcher->abortMacroWait && !macro->GetStop()) {
-		if (switcher->macroWaitCv.wait_until(lock, time) ==
-		    std::cv_status::timeout) {
-			break;
-		}
+	bool isInMainLoop = QThread::currentThread() == switcher->th;
+	if (isInMainLoop) {
+		waitHelper(switcher->GetLock(), GetMacro(), time);
+	} else {
+		std::mutex temp;
+		std::unique_lock<std::mutex> lock(temp);
+		waitHelper(&lock, GetMacro(), time);
 	}
 
 	return !switcher->abortMacroWait;

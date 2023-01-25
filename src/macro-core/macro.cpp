@@ -741,9 +741,6 @@ bool SwitcherData::checkMacros()
 
 bool SwitcherData::runMacros()
 {
-	// TODO: Don't rely on creating a copy of each macro once new frontend
-	// events are available - see:
-	// https://github.com/obsproject/obs-studio/commit/feda1aaa283e8a99f6ba1159cfe6b9c1f2934a61
 	for (auto m : macros) {
 		if (m->Matched()) {
 			vblog(LOG_INFO, "running macro: %s", m->Name().c_str());

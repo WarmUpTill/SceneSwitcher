@@ -11,36 +11,39 @@ bool MacroActionSwitchScene::_registered = MacroActionFactory::Register(
 	{MacroActionSwitchScene::Create, MacroActionSwitchSceneEdit::Create,
 	 "AdvSceneSwitcher.action.switchScene"});
 
-void waitForTransitionChange(OBSWeakSource &transition)
+static void waitForTransitionChange(OBSWeakSource &transition,
+				    std::unique_lock<std::mutex> *lock,
+				    Macro *macro)
 {
 	const auto time = 100ms;
 	obs_source_t *source = obs_weak_source_get_source(transition);
-	std::unique_lock<std::mutex> lock(switcher->m);
+
 	bool stillTransitioning = true;
-	while (stillTransitioning && !switcher->abortMacroWait) {
-		switcher->macroTransitionCv.wait_for(lock, time);
+	while (stillTransitioning && !switcher->abortMacroWait &&
+	       !macro->GetStop()) {
+		switcher->macroTransitionCv.wait_for(*lock, time);
 		float t = obs_transition_get_time(source);
 		stillTransitioning = t < 1.0f && t > 0.0f;
 	}
 	obs_source_release(source);
 }
 
-void waitForTransitionChangeFixedDuration(int duration)
+static void waitForTransitionChangeFixedDuration(
+	int duration, std::unique_lock<std::mutex> *lock, Macro *macro)
 {
 	duration += 200; // It seems to be necessary to add a small buffer
 	auto time = std::chrono::high_resolution_clock::now() +
 		    std::chrono::milliseconds(duration);
 
-	std::unique_lock<std::mutex> lock(switcher->m);
-	while (!switcher->abortMacroWait) {
-		if (switcher->macroTransitionCv.wait_until(lock, time) ==
+	while (!switcher->abortMacroWait && !macro->GetStop()) {
+		if (switcher->macroTransitionCv.wait_until(*lock, time) ==
 		    std::cv_status::timeout) {
 			break;
 		}
 	}
 }
 
-int getTransitionOverrideDuration(OBSWeakSource &scene)
+static int getTransitionOverrideDuration(OBSWeakSource &scene)
 {
 	int duration = 0;
 	obs_source_t *source = obs_weak_source_get_source(scene);
@@ -54,7 +57,7 @@ int getTransitionOverrideDuration(OBSWeakSource &scene)
 	return duration;
 }
 
-bool isUsingFixedLengthTransition(const OBSWeakSource &transition)
+static bool isUsingFixedLengthTransition(const OBSWeakSource &transition)
 {
 	obs_source_t *source = obs_weak_source_get_source(transition);
 	bool ret = obs_transition_fixed(source);
@@ -62,7 +65,7 @@ bool isUsingFixedLengthTransition(const OBSWeakSource &transition)
 	return ret;
 }
 
-OBSWeakSource getOverrideTransition(OBSWeakSource &scene)
+static OBSWeakSource getOverrideTransition(OBSWeakSource &scene)
 {
 	OBSWeakSource transition;
 	obs_source_t *source = obs_weak_source_get_source(scene);
@@ -74,8 +77,8 @@ OBSWeakSource getOverrideTransition(OBSWeakSource &scene)
 	return transition;
 }
 
-int getExpectedTransitionDuration(OBSWeakSource &scene, OBSWeakSource &t,
-				  double duration)
+static int getExpectedTransitionDuration(OBSWeakSource &scene, OBSWeakSource &t,
+					 double duration)
 {
 	OBSWeakSource transition = t;
 	if (!switcher->transitionOverrideOverride) {
@@ -96,6 +99,37 @@ int getExpectedTransitionDuration(OBSWeakSource &scene, OBSWeakSource &t,
 	return obs_frontend_get_transition_duration();
 }
 
+bool MacroActionSwitchScene::WaitForTransition(OBSWeakSource &scene,
+					       OBSWeakSource &transition)
+{
+	const int expectedTransitionDuration = getExpectedTransitionDuration(
+		scene, transition, _duration.seconds);
+	switcher->abortMacroWait = false;
+
+	bool isInMainLoop = QThread::currentThread() == switcher->th;
+	if (isInMainLoop) {
+		if (expectedTransitionDuration < 0) {
+			waitForTransitionChange(transition, switcher->GetLock(),
+						GetMacro());
+		} else {
+			waitForTransitionChangeFixedDuration(
+				expectedTransitionDuration, switcher->GetLock(),
+				GetMacro());
+		}
+	} else {
+		std::mutex temp;
+		std::unique_lock<std::mutex> lock(temp);
+		if (expectedTransitionDuration < 0) {
+			waitForTransitionChange(transition, &lock, GetMacro());
+		} else {
+			waitForTransitionChangeFixedDuration(
+				expectedTransitionDuration, &lock, GetMacro());
+		}
+	}
+
+	return !switcher->abortMacroWait;
+}
+
 bool MacroActionSwitchScene::PerformAction()
 {
 	auto scene = _scene.GetScene();
@@ -103,17 +137,7 @@ bool MacroActionSwitchScene::PerformAction()
 	switchScene({scene, transition, (int)(_duration.seconds * 1000)},
 		    obs_frontend_preview_program_mode_active());
 	if (_blockUntilTransitionDone && scene) {
-		const int expectedTransitionDuration =
-			getExpectedTransitionDuration(scene, transition,
-						      _duration.seconds);
-		switcher->abortMacroWait = false;
-		if (expectedTransitionDuration < 0) {
-			waitForTransitionChange(transition);
-		} else {
-			waitForTransitionChangeFixedDuration(
-				expectedTransitionDuration);
-		}
-		return !switcher->abortMacroWait;
+		return WaitForTransition(scene, transition);
 	}
 	return true;
 }

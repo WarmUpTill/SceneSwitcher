@@ -26,7 +26,7 @@ public:
 	bool _blockUntilTransitionDone = true;
 
 private:
-	const char *getType() { return "MacroActionSwitchScene"; }
+	bool WaitForTransition(OBSWeakSource &scene, OBSWeakSource &transition);
 
 	static bool _registered;
 	static const std::string id;
