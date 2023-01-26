@@ -152,11 +152,11 @@ void MacroActionVariable::SetSegmentIndexValue(int value)
 
 	std::shared_ptr<MacroSegment> segment;
 	if (_type == Type::SET_CONDITION_VALUE) {
-		if (value < m->Conditions().size()) {
+		if (value < (int)m->Conditions().size()) {
 			segment = m->Conditions().at(value);
 		}
 	} else if (_type == Type::SET_ACTION_VALUE) {
-		if (value < m->Actions().size()) {
+		if (value < (int)m->Actions().size()) {
 			segment = m->Actions().at(value);
 		}
 	}
@@ -399,13 +399,13 @@ void MacroActionVariableEdit::UpdateSegmentVariableValue()
 	std::shared_ptr<MacroSegment> segment;
 	if (_entryData->_type == MacroActionVariable::Type::SET_ACTION_VALUE) {
 		const auto &actions = m->Actions();
-		if (index < actions.size()) {
+		if (index < (int)actions.size()) {
 			segment = actions.at(index);
 		}
 	} else if (_entryData->_type ==
 		   MacroActionVariable::Type::SET_CONDITION_VALUE) {
 		const auto &conditions = m->Conditions();
-		if (index < conditions.size()) {
+		if (index < (int)conditions.size()) {
 			segment = conditions.at(index);
 		}
 	}
@@ -472,14 +472,14 @@ void MacroActionVariableEdit::MarkSelectedSegment()
 
 	if (_entryData->_type == MacroActionVariable::Type::SET_ACTION_VALUE) {
 		const auto &actions = m->Actions();
-		if (index >= actions.size()) {
+		if (index >= (int)actions.size()) {
 			return;
 		}
 		AdvSceneSwitcher::window->HighlightAction(
 			index, QColor(Qt::lightGray));
 	} else {
 		const auto &conditions = m->Conditions();
-		if (index >= conditions.size()) {
+		if (index >= (int)conditions.size()) {
 			return;
 		}
 		AdvSceneSwitcher::window->HighlightCondition(

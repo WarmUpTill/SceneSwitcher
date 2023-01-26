@@ -96,6 +96,10 @@ bool MacroConditionVariable::CompareVariables()
 		return validNumbers && val1 < val2;
 	case MacroConditionVariable::Type::GREATER_THAN_VARIABLE:
 		return validNumbers && val1 > val2;
+	default:
+		blog(LOG_WARNING,
+		     "Unexpected call of %s with condition type %d", __func__,
+		     static_cast<int>(_type));
 	}
 
 	return false;
