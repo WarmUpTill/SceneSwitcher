@@ -401,9 +401,9 @@ static void populateSourceTypes(QComboBox *list)
 MacroConditionMediaEdit::MacroConditionMediaEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionMedia> entryData)
 	: QWidget(parent),
+	  _sourceTypes(new QComboBox()),
 	  _scenes(new SceneSelectionWidget(window(), true, true, true, true,
 					   true)),
-	  _sourceTypes(new QComboBox()),
 	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _states(new QComboBox()),
 	  _timeRestrictions(new QComboBox()),

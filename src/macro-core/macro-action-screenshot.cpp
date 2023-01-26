@@ -45,6 +45,8 @@ bool MacroActionScreenshot::PerformAction()
 	case MacroActionScreenshot::TargetType::SCENE:
 		source = _scene.GetScene(false);
 		break;
+	case MacroActionScreenshot::TargetType::MAIN_OUTPUT:
+		break;
 	}
 
 	switch (_saveType) {
@@ -73,8 +75,7 @@ void MacroActionScreenshot::LogAction() const
 		      _scene.ToString(true).c_str());
 		break;
 	case MacroActionScreenshot::TargetType::MAIN_OUTPUT:
-		vblog(LOG_INFO, "trigger screenshot of main output",
-		      _scene.ToString(true).c_str());
+		vblog(LOG_INFO, "trigger screenshot of main output");
 		break;
 	}
 }

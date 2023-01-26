@@ -79,8 +79,8 @@ protected:
 	VariableSelection *_variables2;
 	QComboBox *_actions;
 	ResizingPlainTextEdit *_strValue;
-	QSpinBox *_segmentIdx;
 	QDoubleSpinBox *_numValue;
+	QSpinBox *_segmentIdx;
 	QLabel *_segmentValueStatus;
 	ResizingPlainTextEdit *_segmentValue;
 	std::shared_ptr<MacroActionVariable> _entryData;
