@@ -28,6 +28,7 @@ public:
 		DECREMENT,
 		SET_CONDITION_VALUE,
 		SET_ACTION_VALUE,
+		ROUND_TO_INT,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
