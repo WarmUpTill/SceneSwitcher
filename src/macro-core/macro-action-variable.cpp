@@ -25,6 +25,8 @@ static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.setConditionValue"},
 	{MacroActionVariable::Type::SET_ACTION_VALUE,
 	 "AdvSceneSwitcher.action.variable.type.setActionValue"},
+	{MacroActionVariable::Type::ROUND_TO_INT,
+	 "AdvSceneSwitcher.action.variable.type.roundToInt"},
 };
 
 static void apppend(Variable &var, const std::string &value)
@@ -94,6 +96,13 @@ bool MacroActionVariable::PerformAction()
 		}
 		var->SetValue(segment->GetVariableValue());
 		break;
+	}
+	case Type::ROUND_TO_INT: {
+		double curValue;
+		if (!var->DoubleValue(curValue)) {
+			return true;
+		}
+		var->SetValue(std::to_string(int(std::round(curValue))));
 	}
 	}
 
