@@ -25,6 +25,8 @@ public:
 	QRegularExpression GetRegularExpression(const QString &) const;
 	QRegularExpression GetRegularExpression(const std::string &) const;
 
+	static RegexConfig PartialMatchRegexConfig();
+
 private:
 	bool _enable = false;
 	bool _partialMatch = false;

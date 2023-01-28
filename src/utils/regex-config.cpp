@@ -47,6 +47,13 @@ RegexConfig::GetRegularExpression(const std::string &expr) const
 	return GetRegularExpression(QString::fromStdString(expr));
 }
 
+RegexConfig RegexConfig::PartialMatchRegexConfig()
+{
+	RegexConfig conf;
+	conf._partialMatch = true;
+	return conf;
+}
+
 RegexConfigWidget::RegexConfigWidget(QWidget *parent)
 	: QWidget(parent),
 	  _openSettings(new QPushButton()),
