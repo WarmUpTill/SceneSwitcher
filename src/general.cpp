@@ -655,10 +655,9 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 
 	obs_data_set_bool(obj, "tansitionOverrideOverride",
 			  transitionOverrideOverride);
-	obs_data_set_default_bool(obj, "adjustActiveTransitionType",
-				  adjustActiveTransitionType);
 	obs_data_set_bool(obj, "adjustActiveTransitionType",
 			  adjustActiveTransitionType);
+
 	obs_data_set_string(obj, "lastImportPath", lastImportPath.c_str());
 }
 
@@ -740,6 +739,12 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 		obs_data_get_bool(obj, "tansitionOverrideOverride");
 	adjustActiveTransitionType =
 		obs_data_get_bool(obj, "adjustActiveTransitionType");
+
+	if (!transitionOverrideOverride && !adjustActiveTransitionType) {
+		blog(LOG_INFO,
+		     "reset transition behaviour to adjust active transition type");
+		adjustActiveTransitionType = true;
+	}
 
 	lastImportPath = obs_data_get_string(obj, "lastImportPath");
 }
