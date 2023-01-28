@@ -29,6 +29,7 @@ public:
 		SET_CONDITION_VALUE,
 		SET_ACTION_VALUE,
 		ROUND_TO_INT,
+		SUBSTRING,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
@@ -36,6 +37,8 @@ public:
 	std::string _variable2Name = "";
 	std::string _strValue = "";
 	double _numValue = 0;
+	int _subStringStart = 0;
+	int _subStringSize = 0;
 
 private:
 	void DecrementCurrentSegmentVariableRef();
@@ -71,6 +74,8 @@ private slots:
 	void SegmentIndexChanged(int val);
 	void UpdateSegmentVariableValue();
 	void MacroSegmentOrderChanged();
+	void SubStringStartChanged(int val);
+	void SubStringSizeChanged(int val);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -84,6 +89,9 @@ protected:
 	QSpinBox *_segmentIdx;
 	QLabel *_segmentValueStatus;
 	ResizingPlainTextEdit *_segmentValue;
+	QHBoxLayout *_substringLayout;
+	QSpinBox *_subStringStart;
+	QSpinBox *_subStringSize;
 	std::shared_ptr<MacroActionVariable> _entryData;
 
 private:
