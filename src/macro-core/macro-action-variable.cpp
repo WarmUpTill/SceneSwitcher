@@ -27,6 +27,8 @@ static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.setActionValue"},
 	{MacroActionVariable::Type::ROUND_TO_INT,
 	 "AdvSceneSwitcher.action.variable.type.roundToInt"},
+	{MacroActionVariable::Type::SUBSTRING,
+	 "AdvSceneSwitcher.action.variable.type.subString"},
 };
 
 static void apppend(Variable &var, const std::string &value)
@@ -103,6 +105,24 @@ bool MacroActionVariable::PerformAction()
 			return true;
 		}
 		var->SetValue(std::to_string(int(std::round(curValue))));
+		return true;
+	}
+	case Type::SUBSTRING: {
+		auto curValue = var->Value();
+		try {
+			if (_subStringSize == 0) {
+				var->SetValue(curValue.substr(_subStringStart));
+				return true;
+			}
+			var->SetValue(curValue.substr(_subStringStart,
+						      _subStringSize));
+		} catch (const std::out_of_range &) {
+			vblog(LOG_WARNING,
+			      "invalid start index \"%d\" selected for substring of \"%s\" of variable \"%s\"",
+			      _subStringStart, curValue.c_str(),
+			      var->Name().c_str());
+		}
+		return true;
 	}
 	}
 
@@ -118,6 +138,8 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	obs_data_set_double(obj, "numValue", _numValue);
 	obs_data_set_int(obj, "condition", static_cast<int>(_type));
 	obs_data_set_int(obj, "segmentIdx", GetSegmentIndexValue());
+	obs_data_set_int(obj, "subStringStart", _subStringStart);
+	obs_data_set_int(obj, "subStringSize", _subStringSize);
 	return true;
 }
 
@@ -130,6 +152,8 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_numValue = obs_data_get_double(obj, "numValue");
 	_type = static_cast<Type>(obs_data_get_int(obj, "condition"));
 	_segmentIdxLoadValue = obs_data_get_int(obj, "segmentIdx");
+	_subStringStart = obs_data_get_int(obj, "subStringStart");
+	_subStringSize = obs_data_get_int(obj, "subStringSize");
 	return true;
 }
 
@@ -234,7 +258,10 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _numValue(new QDoubleSpinBox()),
 	  _segmentIdx(new QSpinBox()),
 	  _segmentValueStatus(new QLabel()),
-	  _segmentValue(new ResizingPlainTextEdit(this, 10, 1, 1))
+	  _segmentValue(new ResizingPlainTextEdit(this, 10, 1, 1)),
+	  _substringLayout(new QHBoxLayout()),
+	  _subStringStart(new QSpinBox()),
+	  _subStringSize(new QSpinBox())
 {
 	_numValue->setMinimum(-9999999999);
 	_numValue->setMaximum(9999999999);
@@ -242,6 +269,14 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_segmentIdx->setMaximum(99);
 	_segmentIdx->setSpecialValueText("-");
 	_segmentValue->setReadOnly(true);
+	_subStringStart->setMinimum(1);
+	_subStringStart->setMaximum(99999);
+	_subStringStart->setSpecialValueText(obs_module_text(
+		"AdvSceneSwitcher.action.variable.subString.begin"));
+	_subStringSize->setMinimum(0);
+	_subStringSize->setMaximum(99999);
+	_subStringSize->setSpecialValueText(obs_module_text(
+		"AdvSceneSwitcher.action.variable.subString.all"));
 	populateTypeSelection(_actions);
 
 	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),
@@ -258,6 +293,10 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 SLOT(SegmentIndexChanged(int)));
 	QWidget::connect(window(), SIGNAL(MacroSegmentOrderChanged()), this,
 			 SLOT(MacroSegmentOrderChanged()));
+	QWidget::connect(_subStringStart, SIGNAL(valueChanged(int)), this,
+			 SLOT(SubStringStartChanged(int)));
+	QWidget::connect(_subStringSize, SIGNAL(valueChanged(int)), this,
+			 SLOT(SubStringSizeChanged(int)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -266,13 +305,21 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{strValue}}", _strValue},
 		{"{{numValue}}", _numValue},
 		{"{{segmentIndex}}", _segmentIdx},
+		{"{{subStringStart}}", _subStringStart},
+		{"{{subStringSize}}", _subStringSize},
 	};
 	auto entryLayout = new QHBoxLayout;
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.variable.entry"),
 		     entryLayout, widgetPlaceholders);
 
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.action.variable.entry.substring"),
+		_substringLayout, widgetPlaceholders);
+
 	auto layout = new QVBoxLayout;
 	layout->addLayout(entryLayout);
+	layout->addLayout(_substringLayout);
 	layout->addWidget(_segmentValueStatus);
 	layout->addWidget(_segmentValue);
 	setLayout(layout);
@@ -299,6 +346,8 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_strValue->setPlainText(QString::fromStdString(_entryData->_strValue));
 	_numValue->setValue(_entryData->_numValue);
 	_segmentIdx->setValue(_entryData->GetSegmentIndexValue() + 1);
+	_subStringStart->setValue(_entryData->_subStringStart + 1);
+	_subStringSize->setValue(_entryData->_subStringSize);
 	SetWidgetVisibility();
 }
 
@@ -463,6 +512,26 @@ void MacroActionVariableEdit::MacroSegmentOrderChanged()
 	_segmentIdx->setValue(_entryData->GetSegmentIndexValue() + 1);
 }
 
+void MacroActionVariableEdit::SubStringStartChanged(int val)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_subStringStart = val - 1;
+}
+
+void MacroActionVariableEdit::SubStringSizeChanged(int val)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_subStringSize = val;
+}
+
 void MacroActionVariableEdit::MarkSelectedSegment()
 {
 	if (switcher->disableHints) {
@@ -529,6 +598,9 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 			MacroActionVariable::Type::SET_ACTION_VALUE ||
 		_entryData->_type ==
 			MacroActionVariable::Type::SET_CONDITION_VALUE);
+	setLayoutVisible(_substringLayout,
+			 _entryData->_type ==
+				 MacroActionVariable::Type::SUBSTRING);
 
 	adjustSize();
 	updateGeometry();
