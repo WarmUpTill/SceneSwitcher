@@ -55,6 +55,46 @@ MacroActionVariable::~MacroActionVariable()
 	DecrementCurrentSegmentVariableRef();
 }
 
+void MacroActionVariable::HandleIndexSubString(Variable *var)
+{
+	const auto curValue = var->Value();
+	try {
+		if (_subStringSize == 0) {
+			var->SetValue(curValue.substr(_subStringStart));
+			return;
+		}
+		var->SetValue(curValue.substr(_subStringStart, _subStringSize));
+	} catch (const std::out_of_range &) {
+		vblog(LOG_WARNING,
+		      "invalid start index \"%d\" selected for substring of \"%s\" of variable \"%s\"",
+		      _subStringStart, curValue.c_str(), var->Name().c_str());
+	}
+}
+
+void MacroActionVariable::HandleRegexSubString(Variable *var)
+{
+	const auto curValue = var->Value();
+	auto regex = _regex.GetRegularExpression(_regexPattern);
+	if (!regex.isValid()) {
+		return;
+	}
+
+	auto it = regex.globalMatch(QString::fromStdString(curValue));
+	for (int idx = 0; idx < _regexMatchIdx; idx++) {
+		if (!it.hasNext()) {
+			return;
+		}
+		it.next();
+	}
+
+	if (!it.hasNext()) {
+		return;
+	}
+
+	auto match = it.next();
+	var->SetValue(match.captured(0).toStdString());
+}
+
 bool MacroActionVariable::PerformAction()
 {
 	auto var = GetVariableByName(_variableName);
@@ -108,20 +148,11 @@ bool MacroActionVariable::PerformAction()
 		return true;
 	}
 	case Type::SUBSTRING: {
-		auto curValue = var->Value();
-		try {
-			if (_subStringSize == 0) {
-				var->SetValue(curValue.substr(_subStringStart));
-				return true;
-			}
-			var->SetValue(curValue.substr(_subStringStart,
-						      _subStringSize));
-		} catch (const std::out_of_range &) {
-			vblog(LOG_WARNING,
-			      "invalid start index \"%d\" selected for substring of \"%s\" of variable \"%s\"",
-			      _subStringStart, curValue.c_str(),
-			      var->Name().c_str());
+		if (_regex.Enabled()) {
+			HandleRegexSubString(var);
+			return true;
 		}
+		HandleIndexSubString(var);
 		return true;
 	}
 	}
@@ -140,6 +171,9 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "segmentIdx", GetSegmentIndexValue());
 	obs_data_set_int(obj, "subStringStart", _subStringStart);
 	obs_data_set_int(obj, "subStringSize", _subStringSize);
+	obs_data_set_string(obj, "regexPattern", _regexPattern.c_str());
+	obs_data_set_int(obj, "regexMatchIdx", _regexMatchIdx);
+	_regex.Save(obj);
 	return true;
 }
 
@@ -154,6 +188,9 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_segmentIdxLoadValue = obs_data_get_int(obj, "segmentIdx");
 	_subStringStart = obs_data_get_int(obj, "subStringStart");
 	_subStringSize = obs_data_get_int(obj, "subStringSize");
+	_regex.Load(obj);
+	_regexPattern = obs_data_get_string(obj, "regexPattern");
+	_regexMatchIdx = obs_data_get_int(obj, "regexMatchIdx");
 	return true;
 }
 
@@ -259,9 +296,14 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _segmentIdx(new QSpinBox()),
 	  _segmentValueStatus(new QLabel()),
 	  _segmentValue(new ResizingPlainTextEdit(this, 10, 1, 1)),
-	  _substringLayout(new QHBoxLayout()),
+	  _substringLayout(new QVBoxLayout()),
+	  _subStringIndexEntryLayout(new QHBoxLayout()),
+	  _subStringRegexEntryLayout(new QHBoxLayout()),
 	  _subStringStart(new QSpinBox()),
-	  _subStringSize(new QSpinBox())
+	  _subStringSize(new QSpinBox()),
+	  _regex(new RegexConfigWidget(parent)),
+	  _regexPattern(new ResizingPlainTextEdit(this, 10, 1, 1)),
+	  _regexMatchIdx(new QSpinBox())
 {
 	_numValue->setMinimum(-9999999999);
 	_numValue->setMaximum(9999999999);
@@ -277,6 +319,9 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_subStringSize->setMaximum(99999);
 	_subStringSize->setSpecialValueText(obs_module_text(
 		"AdvSceneSwitcher.action.variable.subString.all"));
+	_regexMatchIdx->setMinimum(1);
+	_regexMatchIdx->setMaximum(999);
+	_regexMatchIdx->setSuffix(".");
 	populateTypeSelection(_actions);
 
 	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),
@@ -297,6 +342,12 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 SLOT(SubStringStartChanged(int)));
 	QWidget::connect(_subStringSize, SIGNAL(valueChanged(int)), this,
 			 SLOT(SubStringSizeChanged(int)));
+	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
+			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_regexPattern, SIGNAL(textChanged()), this,
+			 SLOT(RegexPatternChanged()));
+	QWidget::connect(_regexMatchIdx, SIGNAL(valueChanged(int)), this,
+			 SLOT(RegexMatchIdxChanged(int)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -307,6 +358,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{segmentIndex}}", _segmentIdx},
 		{"{{subStringStart}}", _subStringStart},
 		{"{{subStringSize}}", _subStringSize},
+		{"{{regexMatchIdx}}", _regexMatchIdx},
 	};
 	auto entryLayout = new QHBoxLayout;
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.variable.entry"),
@@ -314,8 +366,22 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 
 	placeWidgets(
 		obs_module_text(
-			"AdvSceneSwitcher.action.variable.entry.substring"),
-		_substringLayout, widgetPlaceholders);
+			"AdvSceneSwitcher.action.variable.entry.substringIndex"),
+		_subStringIndexEntryLayout, widgetPlaceholders);
+
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.action.variable.entry.substringRegex"),
+		_subStringRegexEntryLayout, widgetPlaceholders);
+
+	auto regexConfigLayout = new QHBoxLayout;
+	regexConfigLayout->addWidget(_regex);
+	regexConfigLayout->addStretch();
+
+	_substringLayout->addLayout(_subStringIndexEntryLayout);
+	_substringLayout->addLayout(_subStringRegexEntryLayout);
+	_substringLayout->addWidget(_regexPattern);
+	_substringLayout->addLayout(regexConfigLayout);
 
 	auto layout = new QVBoxLayout;
 	layout->addLayout(entryLayout);
@@ -348,6 +414,10 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_segmentIdx->setValue(_entryData->GetSegmentIndexValue() + 1);
 	_subStringStart->setValue(_entryData->_subStringStart + 1);
 	_subStringSize->setValue(_entryData->_subStringSize);
+	_regex->SetRegexConfig(_entryData->_regex);
+	_regexPattern->setPlainText(
+		QString::fromStdString(_entryData->_regexPattern));
+	_regexMatchIdx->setValue(_entryData->_regexMatchIdx + 1);
 	SetWidgetVisibility();
 }
 
@@ -532,6 +602,39 @@ void MacroActionVariableEdit::SubStringSizeChanged(int val)
 	_entryData->_subStringSize = val;
 }
 
+void MacroActionVariableEdit::RegexChanged(RegexConfig conf)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_regex = conf;
+
+	SetWidgetVisibility();
+}
+
+void MacroActionVariableEdit::RegexPatternChanged()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_regexPattern = _regexPattern->toPlainText().toStdString();
+	adjustSize();
+}
+
+void MacroActionVariableEdit::RegexMatchIdxChanged(int val)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_regexMatchIdx = val - 1;
+}
+
 void MacroActionVariableEdit::MarkSelectedSegment()
 {
 	if (switcher->disableHints) {
@@ -601,6 +704,12 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 	setLayoutVisible(_substringLayout,
 			 _entryData->_type ==
 				 MacroActionVariable::Type::SUBSTRING);
+	if (_entryData->_type == MacroActionVariable::Type::SUBSTRING) {
+		bool showRegex = _entryData->_regex.Enabled();
+		setLayoutVisible(_subStringIndexEntryLayout, !showRegex);
+		setLayoutVisible(_subStringRegexEntryLayout, showRegex);
+		_regexPattern->setVisible(showRegex);
+	}
 
 	adjustSize();
 	updateGeometry();
