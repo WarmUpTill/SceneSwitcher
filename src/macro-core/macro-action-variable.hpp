@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "resizing-text-edit.hpp"
+#include "regex-config.hpp"
 #include "variable.hpp"
 
 class MacroActionVariable : public MacroAction {
@@ -39,9 +40,14 @@ public:
 	double _numValue = 0;
 	int _subStringStart = 0;
 	int _subStringSize = 0;
+	RegexConfig _regex = RegexConfig::PartialMatchRegexConfig();
+	std::string _regexPattern = ".*";
+	int _regexMatchIdx = 0;
 
 private:
 	void DecrementCurrentSegmentVariableRef();
+	void HandleIndexSubString(Variable *);
+	void HandleRegexSubString(Variable *);
 
 	std::weak_ptr<MacroSegment> _macroSegment;
 	int _segmentIdxLoadValue = -1;
@@ -76,6 +82,9 @@ private slots:
 	void MacroSegmentOrderChanged();
 	void SubStringStartChanged(int val);
 	void SubStringSizeChanged(int val);
+	void RegexChanged(RegexConfig conf);
+	void RegexPatternChanged();
+	void RegexMatchIdxChanged(int val);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -89,9 +98,14 @@ protected:
 	QSpinBox *_segmentIdx;
 	QLabel *_segmentValueStatus;
 	ResizingPlainTextEdit *_segmentValue;
-	QHBoxLayout *_substringLayout;
+	QVBoxLayout *_substringLayout;
+	QHBoxLayout *_subStringIndexEntryLayout;
+	QHBoxLayout *_subStringRegexEntryLayout;
 	QSpinBox *_subStringStart;
 	QSpinBox *_subStringSize;
+	RegexConfigWidget *_regex;
+	ResizingPlainTextEdit *_regexPattern;
+	QSpinBox *_regexMatchIdx;
 	std::shared_ptr<MacroActionVariable> _entryData;
 
 private:
