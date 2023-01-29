@@ -709,17 +709,40 @@ void SwitcherData::loadMacros(obs_data_t *obj)
 	obs_data_array_release(macroArray);
 
 	int groupCount = 0;
-	Macro *group = nullptr;
+	std::shared_ptr<Macro> group;
+	std::vector<std::shared_ptr<Macro>> invalidGroups;
 	for (auto &m : macros) {
+		if (groupCount && m->IsGroup()) {
+			blog(LOG_ERROR,
+			     "nested group detected - will delete \"%s\"",
+			     m->Name().c_str());
+			invalidGroups.emplace_back(m);
+			continue;
+		}
 		if (groupCount) {
-			m->SetParent(group);
+			m->SetParent(group.get());
 			groupCount--;
 		}
 		if (m->IsGroup()) {
 			groupCount = m->GroupSize();
-			group = m.get();
+			group = m;
 		}
 		m->PostLoad();
+	}
+
+	if (groupCount) {
+		blog(LOG_ERROR,
+		     "invalid group size detected - will delete \"%s\"",
+		     group->Name().c_str());
+		invalidGroups.emplace_back(group);
+	}
+
+	for (auto &m : invalidGroups) {
+		auto it = std::find(macros.begin(), macros.end(), m);
+		if (it == macros.end()) {
+			continue;
+		}
+		macros.erase(it);
 	}
 }
 
