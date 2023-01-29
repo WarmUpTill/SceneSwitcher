@@ -1,6 +1,7 @@
 #include "macro-tree.hpp"
 #include "macro.hpp"
 #include "utility.hpp"
+#include "switcher-data-structs.hpp"
 
 #include <obs.h>
 #include <string>
@@ -563,6 +564,7 @@ void MacroTreeModel::GroupSelectedItems(QModelIndexList &indices)
 		return;
 	}
 
+	std::lock_guard<std::mutex> lock(switcher->m);
 	QString name = GetNewGroupName();
 	std::vector<std::shared_ptr<Macro>> items;
 	items.reserve(indices.size());
@@ -606,6 +608,7 @@ void MacroTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
 		return;
 	}
 
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (int i = indices.count() - 1; i >= 0; i--) {
 		std::shared_ptr<Macro> item = _macros[ModelIndexToMacroIndex(
 			indices[i].row(), _macros)];
@@ -966,6 +969,7 @@ void MacroTree::dropEvent(QDropEvent *event)
 	}
 
 	// Move items in backend
+	std::lock_guard<std::mutex> lock(switcher->m);
 	int to = row;
 	try {
 		to = ModelIndexToMacroIndex(row, items);

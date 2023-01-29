@@ -55,11 +55,11 @@ public:
 				       std::shared_ptr<Macro> item);
 	bool IsGroup() { return _isGroup; }
 	uint32_t GroupSize() { return _groupSize; }
-	bool IsSubitem() { return !!_parent; }
+	bool IsSubitem() { return !_parent.expired(); }
 	void SetCollapsed(bool val) { _isCollapsed = val; }
 	bool IsCollapsed() { return _isCollapsed; }
-	void SetParent(Macro *m) { _parent = m; }
-	Macro *Parent() { return _parent; }
+	void SetParent(std::shared_ptr<Macro> m) { _parent = m; }
+	Macro *Parent();
 
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
@@ -93,7 +93,7 @@ private:
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;
 	std::deque<std::shared_ptr<MacroAction>> _actions;
 
-	Macro *_parent = nullptr;
+	std::weak_ptr<Macro> _parent;
 	uint32_t _groupSize = 0;
 
 	bool _runInParallel = false;

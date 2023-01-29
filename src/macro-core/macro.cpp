@@ -34,7 +34,7 @@ Macro::CreateGroup(const std::string &name,
 {
 	auto group = std::make_shared<Macro>(name, false);
 	for (auto &c : children) {
-		c->SetParent(group.get());
+		c->SetParent(group);
 	}
 	group->_isGroup = true;
 	group->_groupSize = children.size();
@@ -82,7 +82,7 @@ void Macro::PrepareMoveToGroup(std::shared_ptr<Macro> group,
 		oldGroup->_groupSize--;
 	}
 
-	item->SetParent(group.get());
+	item->SetParent(group);
 	if (group) {
 		group->_groupSize++;
 	}
@@ -204,8 +204,9 @@ bool Macro::PerformActions(bool forceParallel, bool ignorePause)
 		RunActions(ret, ignorePause);
 	}
 	_wasExecutedRecently = true;
-	if (_parent) {
-		_parent->_wasExecutedRecently = true;
+	auto group = _parent.lock();
+	if (group) {
+		group->_wasExecutedRecently = true;
 	}
 	return ret;
 }
@@ -311,6 +312,12 @@ void Macro::UpdateConditionIndices()
 		c->SetIndex(idx);
 		idx++;
 	}
+}
+
+Macro *Macro::Parent()
+{
+	auto p = _parent.lock();
+	return p.get();
 }
 
 bool Macro::Save(obs_data_t *obj) const
@@ -720,7 +727,7 @@ void SwitcherData::loadMacros(obs_data_t *obj)
 			continue;
 		}
 		if (groupCount) {
-			m->SetParent(group.get());
+			m->SetParent(group);
 			groupCount--;
 		}
 		if (m->IsGroup()) {
@@ -764,8 +771,14 @@ bool SwitcherData::checkMacros()
 
 bool SwitcherData::runMacros()
 {
-	for (auto m : macros) {
-		if (m->Matched()) {
+	// Create copy of macor list as elements might be removed, inserted, or
+	// reordered while macros are currently being executed.
+	// For example, this can happen if a macro is performing a wait action,
+	// as the main lock will be unlocked during this time.
+	auto runPhaseMacros = macros;
+
+	for (auto m : runPhaseMacros) {
+		if (m && m->Matched()) {
 			vblog(LOG_INFO, "running macro: %s", m->Name().c_str());
 			if (!m->PerformActions()) {
 				blog(LOG_WARNING, "abort macro: %s",
