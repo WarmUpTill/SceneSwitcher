@@ -39,9 +39,8 @@ ScreenshotHelper::~ScreenshotHelper()
 		gs_stagesurface_destroy(stagesurf);
 		gs_texrender_destroy(texrender);
 		obs_leave_graphics();
-
-		obs_remove_tick_callback(ScreenshotTick, this);
 	}
+	obs_remove_tick_callback(ScreenshotTick, this);
 	if (_saveThread.joinable()) {
 		_saveThread.join();
 	}

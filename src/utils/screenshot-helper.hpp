@@ -36,7 +36,7 @@ public:
 	std::chrono::high_resolution_clock::time_point time;
 
 private:
-	bool _initDone = false;
+	std::atomic_bool _initDone = false;
 	bool _blocking = false;
 	std::thread _saveThread;
 	bool _saveToFile = false;
