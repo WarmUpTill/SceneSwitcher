@@ -198,10 +198,19 @@ void PreviewDialog::CheckForMatchLoop()
 		if (_stop || isHidden()) {
 			return;
 		}
-		if (!screenshot.done || !_video.ValidSelection()) {
+		if (!_video.ValidSelection()) {
 			_statusLabel->setText(obs_module_text(
 				"AdvSceneSwitcher.condition.video.screenshotFail"));
 			_imageLabel->setPixmap(QPixmap());
+			continue;
+		}
+		if (!screenshot.done) {
+			_statusLabel->setText(obs_module_text(
+				"AdvSceneSwitcher.condition.video.screenshotFail"));
+			_imageLabel->setPixmap(QPixmap());
+			if (_delay < 1000) {
+				_delay += 50;
+			}
 			continue;
 		}
 		if (screenshot.image.width() == 0 ||
@@ -220,6 +229,8 @@ void PreviewDialog::CheckForMatchLoop()
 					_areaParams.area.height);
 			}
 			MarkMatch(screenshot.image);
+		} else {
+			_statusLabel->setText("");
 		}
 		_imageLabel->setPixmap(QPixmap::fromImage(screenshot.image));
 	}
