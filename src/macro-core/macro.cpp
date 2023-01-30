@@ -777,7 +777,21 @@ bool SwitcherData::runMacros()
 	// as the main lock will be unlocked during this time.
 	auto runPhaseMacros = macros;
 
-	for (auto m : runPhaseMacros) {
+	// Avoid deadlocks when opening settings window and calling frontend
+	// API functions at the same time.
+	//
+	// If the timing is just right, the frontend API call will call
+	// QMetaObject::invokeMethod(...) with  Qt::BlockingQueuedConnection
+	// while holding the main switcher mutex.
+	// But this invokeMethod call itself will be blocked as it is waiting
+	// the constructor of AdvSceneSwitcher() to complete.
+	// The constructor of AdvSceneSwitcher() cannot continue however as it
+	// cannot lock the main switcher mutex.
+	if (GetLock()) {
+		GetLock()->unlock();
+	}
+
+	for (auto &m : runPhaseMacros) {
 		if (m && m->Matched()) {
 			vblog(LOG_INFO, "running macro: %s", m->Name().c_str());
 			if (!m->PerformActions()) {
@@ -785,6 +799,9 @@ bool SwitcherData::runMacros()
 				     m->Name().c_str());
 			}
 		}
+	}
+	if (GetLock()) {
+		GetLock()->lock();
 	}
 	return true;
 }

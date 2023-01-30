@@ -106,25 +106,12 @@ bool MacroActionSwitchScene::WaitForTransition(OBSWeakSource &scene,
 		scene, transition, _duration.seconds);
 	switcher->abortMacroWait = false;
 
-	bool isInMainLoop = QThread::currentThread() == switcher->th;
-	if (isInMainLoop) {
-		if (expectedTransitionDuration < 0) {
-			waitForTransitionChange(transition, switcher->GetLock(),
-						GetMacro());
-		} else {
-			waitForTransitionChangeFixedDuration(
-				expectedTransitionDuration, switcher->GetLock(),
-				GetMacro());
-		}
+	std::unique_lock<std::mutex> lock(switcher->m);
+	if (expectedTransitionDuration < 0) {
+		waitForTransitionChange(transition, &lock, GetMacro());
 	} else {
-		std::mutex temp;
-		std::unique_lock<std::mutex> lock(temp);
-		if (expectedTransitionDuration < 0) {
-			waitForTransitionChange(transition, &lock, GetMacro());
-		} else {
-			waitForTransitionChangeFixedDuration(
-				expectedTransitionDuration, &lock, GetMacro());
-		}
+		waitForTransitionChangeFixedDuration(expectedTransitionDuration,
+						     &lock, GetMacro());
 	}
 
 	return !switcher->abortMacroWait;

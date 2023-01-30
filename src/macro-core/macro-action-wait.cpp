@@ -52,14 +52,8 @@ bool MacroActionWait::PerformAction()
 		    std::chrono::milliseconds((int)(sleepDuration * 1000));
 
 	switcher->abortMacroWait = false;
-	bool isInMainLoop = QThread::currentThread() == switcher->th;
-	if (isInMainLoop) {
-		waitHelper(switcher->GetLock(), GetMacro(), time);
-	} else {
-		std::mutex temp;
-		std::unique_lock<std::mutex> lock(temp);
-		waitHelper(&lock, GetMacro(), time);
-	}
+	std::unique_lock<std::mutex> lock(switcher->m);
+	waitHelper(&lock, GetMacro(), time);
 
 	return !switcher->abortMacroWait;
 }

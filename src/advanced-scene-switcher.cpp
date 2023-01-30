@@ -244,6 +244,7 @@ void SwitcherData::Thread()
 		switcher->firstIntervalAfterStop = false;
 	}
 
+	mainLoopLock = nullptr;
 	blog(LOG_INFO, "stopped");
 }
 

@@ -90,7 +90,7 @@ struct SwitcherData {
 
 	std::condition_variable cv;
 	std::mutex m;
-	std::unique_lock<std::mutex> *mainLoopLock;
+	std::unique_lock<std::mutex> *mainLoopLock = nullptr;
 
 	bool transitionActive = false;
 	bool waitForTransition = false;
