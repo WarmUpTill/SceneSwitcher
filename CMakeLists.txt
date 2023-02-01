@@ -113,6 +113,8 @@ target_sources(
           src/macro-core/macro-action-plugin-state.hpp
           src/macro-core/macro-action-profile.cpp
           src/macro-core/macro-action-profile.hpp
+          src/macro-core/macro-action-projector.cpp
+          src/macro-core/macro-action-projector.hpp
           src/macro-core/macro-action-random.cpp
           src/macro-core/macro-action-random.hpp
           src/macro-core/macro-action-recording.cpp
