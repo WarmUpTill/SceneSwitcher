@@ -342,7 +342,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	  _throttleCount(new QSpinBox()),
 	  _showMatch(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.showMatch"))),
-	  _previewDialog(this, GetSwitcher()->interval)
+	  _previewDialog(this)
 {
 	_reduceLatency->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.video.reduceLatency.tooltip"));

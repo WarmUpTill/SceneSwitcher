@@ -5,12 +5,11 @@
 
 #include <screenshot-helper.hpp>
 
-PreviewDialog::PreviewDialog(QWidget *parent, int delay)
+PreviewDialog::PreviewDialog(QWidget *parent)
 	: QDialog(parent),
 	  _scrollArea(new QScrollArea),
 	  _imageLabel(new QLabel(this)),
-	  _rubberBand(new QRubberBand(QRubberBand::Rectangle, this)),
-	  _delay(delay)
+	  _rubberBand(new QRubberBand(QRubberBand::Rectangle, this))
 {
 	setWindowTitle("Advanced Scene Switcher");
 	setWindowFlags(windowFlags() | Qt::WindowMaximizeButtonHint |
@@ -39,22 +38,12 @@ PreviewDialog::PreviewDialog(QWidget *parent, int delay)
 	layout->addWidget(_statusLabel);
 	layout->addWidget(_scrollArea);
 	setLayout(layout);
-
-	// This is a workaround to handle random segfaults triggered when using:
-	// QMetaObject::invokeMethod(this, "RedrawImage", Qt::QueuedConnection,
-	//			     Q_ARG(QImage, image));
-	// from within CheckForMatchLoop().
-	// Even using BlockingQueuedConnection causes deadlocks
-	_timer.setInterval(300);
-	QWidget::connect(&_timer, &QTimer::timeout, this,
-			 &PreviewDialog::ResizeImageLabel);
-	_timer.start();
 }
 
 void PreviewDialog::mousePressEvent(QMouseEvent *event)
 {
 	_selectingArea = true;
-	if (_type == Type::SHOW_MATCH) {
+	if (_type == PreviewType::SHOW_MATCH) {
 		return;
 	}
 	_origin = event->pos();
@@ -64,7 +53,7 @@ void PreviewDialog::mousePressEvent(QMouseEvent *event)
 
 void PreviewDialog::mouseMoveEvent(QMouseEvent *event)
 {
-	if (_type == Type::SHOW_MATCH) {
+	if (_type == PreviewType::SHOW_MATCH) {
 		return;
 	}
 	_rubberBand->setGeometry(QRect(_origin, event->pos()).normalized());
@@ -72,7 +61,7 @@ void PreviewDialog::mouseMoveEvent(QMouseEvent *event)
 
 void PreviewDialog::mouseReleaseEvent(QMouseEvent *)
 {
-	if (_type == Type::SHOW_MATCH) {
+	if (_type == PreviewType::SHOW_MATCH) {
 		return;
 	}
 	auto selectionStart =
@@ -102,14 +91,14 @@ void PreviewDialog::ShowMatch()
 {
 	Start();
 	_rubberBand->hide();
-	_type = Type::SHOW_MATCH;
+	_type = PreviewType::SHOW_MATCH;
 }
 
 void PreviewDialog::SelectArea()
 {
 	_selectingArea = false;
 	Start();
-	_type = Type::SELECT_AREA;
+	_type = PreviewType::SELECT_AREA;
 	DrawFrame();
 	_statusLabel->setText(obs_module_text(
 		"AdvSceneSwitcher.condition.video.selectArea.status"));
@@ -117,11 +106,8 @@ void PreviewDialog::SelectArea()
 
 void PreviewDialog::Stop()
 {
-	_stop = true;
-	_cv.notify_all();
-	if (_thread.joinable()) {
-		_thread.join();
-	}
+	_thread.quit();
+	_thread.wait();
 }
 
 void PreviewDialog::closeEvent(QCloseEvent *event)
@@ -164,79 +150,66 @@ void PreviewDialog::ConditionChanged(int cond)
 	_condition = static_cast<VideoCondition>(cond);
 }
 
-void PreviewDialog::ResizeImageLabel()
+void PreviewDialog::UpdateStatus(const QString &status)
 {
+	_statusLabel->setText(status);
+}
+
+void PreviewDialog::UpdateImage(const QPixmap &image)
+{
+	_imageLabel->setPixmap(image);
 	_imageLabel->adjustSize();
-	if (_type == Type::SELECT_AREA && !_selectingArea) {
+	if (_type == PreviewType::SELECT_AREA && !_selectingArea) {
 		DrawFrame();
 	}
+	emit NeedImage(_video, _type, _patternMatchParams, _patternImageData,
+		       _objDetectParams, _areaParams, _condition);
 }
 
 void PreviewDialog::Start()
 {
-	if (_thread.joinable()) {
-		return;
-	}
 	if (!_video.ValidSelection()) {
 		DisplayMessage(obs_module_text(
 			"AdvSceneSwitcher.condition.video.screenshotFail"));
 		close();
 		return;
 	}
-	_stop = false;
-	_thread = std::thread(&PreviewDialog::CheckForMatchLoop, this);
-}
 
-void PreviewDialog::CheckForMatchLoop()
-{
-	while (!_stop) {
-		std::unique_lock<std::mutex> lock(_mtx);
-		auto source = obs_weak_source_get_source(_video.GetVideo());
-		ScreenshotHelper screenshot(source);
-		obs_source_release(source);
-		_cv.wait_for(lock, std::chrono::milliseconds(_delay));
-		if (_stop || isHidden()) {
-			return;
-		}
-		if (!_video.ValidSelection()) {
-			_statusLabel->setText(obs_module_text(
-				"AdvSceneSwitcher.condition.video.screenshotFail"));
-			_imageLabel->setPixmap(QPixmap());
-			continue;
-		}
-		if (!screenshot.done) {
-			_statusLabel->setText(obs_module_text(
-				"AdvSceneSwitcher.condition.video.screenshotFail"));
-			_imageLabel->setPixmap(QPixmap());
-			if (_delay < 1000) {
-				_delay += 50;
-			}
-			continue;
-		}
-		if (screenshot.image.width() == 0 ||
-		    screenshot.image.height() == 0) {
-			_statusLabel->setText(obs_module_text(
-				"AdvSceneSwitcher.condition.video.screenshotEmpty"));
-			_imageLabel->setPixmap(QPixmap());
-			continue;
-		}
-
-		if (_type == Type::SHOW_MATCH) {
-			if (_areaParams.enable) {
-				screenshot.image = screenshot.image.copy(
-					_areaParams.area.x, _areaParams.area.y,
-					_areaParams.area.width,
-					_areaParams.area.height);
-			}
-			MarkMatch(screenshot.image);
-		} else {
-			_statusLabel->setText("");
-		}
-		_imageLabel->setPixmap(QPixmap::fromImage(screenshot.image));
+	if (_thread.isRunning()) {
+		return;
 	}
+
+	PreviewImage *worker = new PreviewImage();
+	worker->moveToThread(&_thread);
+	connect(&_thread, &QThread::finished, worker, &QObject::deleteLater);
+	connect(worker, &PreviewImage::ImageReady, this,
+		&PreviewDialog::UpdateImage);
+	connect(worker, &PreviewImage::StatusUpdate, this,
+		&PreviewDialog::UpdateStatus);
+	connect(this, &PreviewDialog::NeedImage, worker,
+		&PreviewImage::CreateImage);
+	_thread.start();
+
+	emit NeedImage(_video, _type, _patternMatchParams, _patternImageData,
+		       _objDetectParams, _areaParams, _condition);
 }
 
-void markPatterns(cv::Mat &matchResult, QImage &image, cv::Mat &pattern)
+void PreviewDialog::DrawFrame()
+{
+	if (!_video.ValidSelection()) {
+		return;
+	}
+	auto imageStart =
+		_imageLabel->mapToGlobal(_imageLabel->rect().topLeft());
+	auto windowStart = mapToGlobal(rect().topLeft());
+	_rubberBand->resize(_areaParams.area.width, _areaParams.area.height);
+	_rubberBand->move(
+		_areaParams.area.x + (imageStart.x() - windowStart.x()),
+		_areaParams.area.y + (imageStart.y() - windowStart.y()));
+	_rubberBand->show();
+}
+
+void markPatterns(cv::Mat &matchResult, QImage &image, const cv::Mat &pattern)
 {
 	auto matchImg = QImageToMat(image);
 	for (int row = 0; row < matchResult.rows - 1; row++) {
@@ -262,50 +235,79 @@ void markObjects(QImage &image, std::vector<cv::Rect> &objects)
 	}
 }
 
-void PreviewDialog::MarkMatch(QImage &screenshot)
+void PreviewImage::CreateImage(const VideoInput &video, PreviewType type,
+			       const PatternMatchParameters &patternMatchParams,
+			       const PatternImageData &patternImageData,
+			       ObjDetectParamerts objDetectParams,
+			       const AreaParamters &areaParams,
+			       VideoCondition condition)
 {
-	if (_condition == VideoCondition::PATTERN) {
+	auto source = obs_weak_source_get_source(video.GetVideo());
+	ScreenshotHelper screenshot(source, true);
+	obs_source_release(source);
+
+	if (!video.ValidSelection() || !screenshot.done) {
+		emit StatusUpdate(obs_module_text(
+			"AdvSceneSwitcher.condition.video.screenshotFail"));
+		emit ImageReady(QPixmap());
+		return;
+	}
+
+	if (screenshot.image.width() == 0 || screenshot.image.height() == 0) {
+		emit StatusUpdate(obs_module_text(
+			"AdvSceneSwitcher.condition.video.screenshotEmpty"));
+		emit ImageReady(QPixmap());
+		return;
+	}
+
+	if (type == PreviewType::SHOW_MATCH) {
+		if (areaParams.enable) {
+			screenshot.image = screenshot.image.copy(
+				areaParams.area.x, areaParams.area.y,
+				areaParams.area.width, areaParams.area.height);
+		}
+		// Will emit status label update
+		MarkMatch(screenshot.image, patternMatchParams,
+			  patternImageData, objDetectParams, condition);
+	} else {
+		emit StatusUpdate("");
+	}
+	emit ImageReady(QPixmap::fromImage(screenshot.image));
+}
+
+void PreviewImage::MarkMatch(QImage &screenshot,
+			     const PatternMatchParameters &patternMatchParams,
+			     const PatternImageData &patternImageData,
+			     ObjDetectParamerts &objDetectParams,
+			     VideoCondition condition)
+{
+	if (condition == VideoCondition::PATTERN) {
 		cv::Mat result;
-		matchPattern(screenshot, _patternImageData,
-			     _patternMatchParams.threshold, result,
-			     _patternMatchParams.useAlphaAsMask);
+		matchPattern(screenshot, patternImageData,
+			     patternMatchParams.threshold, result,
+			     patternMatchParams.useAlphaAsMask);
 		if (countNonZero(result) == 0) {
-			_statusLabel->setText(obs_module_text(
+			emit StatusUpdate(obs_module_text(
 				"AdvSceneSwitcher.condition.video.patternMatchFail"));
 		} else {
-			_statusLabel->setText(obs_module_text(
+			emit StatusUpdate(obs_module_text(
 				"AdvSceneSwitcher.condition.video.patternMatchSuccess"));
 			markPatterns(result, screenshot,
-				     _patternImageData.rgbaPattern);
+				     patternImageData.rgbaPattern);
 		}
-	} else if (_condition == VideoCondition::OBJECT) {
-		auto objects = matchObject(screenshot, _objDetectParams.cascade,
-					   _objDetectParams.scaleFactor,
-					   _objDetectParams.minNeighbors,
-					   _objDetectParams.minSize.CV(),
-					   _objDetectParams.maxSize.CV());
+	} else if (condition == VideoCondition::OBJECT) {
+		auto objects = matchObject(screenshot, objDetectParams.cascade,
+					   objDetectParams.scaleFactor,
+					   objDetectParams.minNeighbors,
+					   objDetectParams.minSize.CV(),
+					   objDetectParams.maxSize.CV());
 		if (objects.empty()) {
-			_statusLabel->setText(obs_module_text(
+			emit StatusUpdate(obs_module_text(
 				"AdvSceneSwitcher.condition.video.objectMatchFail"));
 		} else {
-			_statusLabel->setText(obs_module_text(
+			emit StatusUpdate(obs_module_text(
 				"AdvSceneSwitcher.condition.video.objectMatchSuccess"));
 			markObjects(screenshot, objects);
 		}
 	}
-}
-
-void PreviewDialog::DrawFrame()
-{
-	if (!_video.ValidSelection()) {
-		return;
-	}
-	auto imageStart =
-		_imageLabel->mapToGlobal(_imageLabel->rect().topLeft());
-	auto windowStart = mapToGlobal(rect().topLeft());
-	_rubberBand->resize(_areaParams.area.width, _areaParams.area.height);
-	_rubberBand->move(
-		_areaParams.area.x + (imageStart.x() - windowStart.x()),
-		_areaParams.area.y + (imageStart.y() - windowStart.y()));
-	_rubberBand->show();
 }

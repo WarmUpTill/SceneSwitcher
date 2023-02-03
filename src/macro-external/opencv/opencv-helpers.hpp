@@ -14,8 +14,9 @@ struct PatternImageData {
 };
 
 PatternImageData createPatternData(QImage &pattern);
-void matchPattern(QImage &img, PatternImageData &patternData, double threshold,
-		  cv::Mat &result, bool useAlphaAsMask = true);
+void matchPattern(QImage &img, const PatternImageData &patternData,
+		  double threshold, cv::Mat &result,
+		  bool useAlphaAsMask = true);
 void matchPattern(QImage &img, QImage &pattern, double threshold,
 		  cv::Mat &result, bool useAlphaAsMask);
 std::vector<cv::Rect> matchObject(QImage &img, cv::CascadeClassifier &cascade,
