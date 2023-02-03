@@ -18,8 +18,8 @@ PatternImageData createPatternData(QImage &pattern)
 	return data;
 }
 
-void matchPattern(QImage &img, PatternImageData &patternData, double threshold,
-		  cv::Mat &result, bool useAlphaAsMask)
+void matchPattern(QImage &img, const PatternImageData &patternData,
+		  double threshold, cv::Mat &result, bool useAlphaAsMask)
 {
 	if (img.isNull() || patternData.rgbaPattern.empty()) {
 		return;

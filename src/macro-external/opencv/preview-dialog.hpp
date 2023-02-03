@@ -4,21 +4,40 @@
 #include <QDialog>
 #include <QLabel>
 #include <QScrollArea>
-#include <QTimer>
-
+#include <QThread>
 #include <QMouseEvent>
 #include <QRubberBand>
 #include <QPoint>
-
-#include <thread>
 #include <mutex>
-#include <condition_variable>
+
+enum class PreviewType {
+	SHOW_MATCH,
+	SELECT_AREA,
+};
+
+class PreviewImage : public QObject {
+	Q_OBJECT
+
+public slots:
+	void CreateImage(const VideoInput &, PreviewType,
+			 const PatternMatchParameters &,
+			 const PatternImageData &, ObjDetectParamerts,
+			 const AreaParamters &, VideoCondition);
+signals:
+	void ImageReady(const QPixmap &);
+	void StatusUpdate(const QString &);
+
+private:
+	void MarkMatch(QImage &screenshot, const PatternMatchParameters &,
+		       const PatternImageData &, ObjDetectParamerts &,
+		       VideoCondition);
+};
 
 class PreviewDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	PreviewDialog(QWidget *parent, int delay);
+	PreviewDialog(QWidget *parent);
 	virtual ~PreviewDialog();
 	void ShowMatch();
 	void SelectArea();
@@ -32,14 +51,17 @@ public slots:
 	void AreaParamtersChanged(const AreaParamters &);
 	void ConditionChanged(int cond);
 private slots:
-	void ResizeImageLabel();
+	void UpdateImage(const QPixmap &);
+	void UpdateStatus(const QString &);
 signals:
 	void SelectionAreaChanged(QRect area);
+	void NeedImage(const VideoInput &, PreviewType,
+		       const PatternMatchParameters &, const PatternImageData &,
+		       ObjDetectParamerts, const AreaParamters &,
+		       VideoCondition);
 
 private:
 	void Start();
-	void CheckForMatchLoop();
-	void MarkMatch(QImage &screenshot);
 	void DrawFrame();
 
 	void mousePressEvent(QMouseEvent *event);
@@ -56,21 +78,13 @@ private:
 	QScrollArea *_scrollArea;
 	QLabel *_statusLabel;
 	QLabel *_imageLabel;
-	QTimer _timer;
 
 	QPoint _origin;
 	QRubberBand *_rubberBand = nullptr;
 	std::atomic_bool _selectingArea = {false};
 
-	std::mutex _mtx;
-	std::condition_variable _cv;
-	std::thread _thread;
-	std::atomic_bool _stop = {true};
+	PreviewType _type = PreviewType::SHOW_MATCH;
 
-	enum class Type {
-		SHOW_MATCH,
-		SELECT_AREA,
-	};
-	Type _type = Type::SHOW_MATCH;
-	int _delay = 300;
+	std::mutex _mtx;
+	QThread _thread;
 };
