@@ -335,7 +335,8 @@ void AdvSceneSwitcher::MacroSelectionChanged(const QItemSelection &,
 
 void AdvSceneSwitcher::HighlightOnChange()
 {
-	if (!switcher->macroProperties._highlightExecuted) {
+	if (!switcher->macroProperties._highlightActions &&
+	    !switcher->macroProperties._highlightExecuted) {
 		return;
 	}
 
