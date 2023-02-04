@@ -17,5 +17,5 @@ install_advss_plugin_dependency(...)
 ... to install the plugin and its dependencies.
 #]]
 
-add_subdirectory(opencv)
 add_subdirectory(openvr)
+add_subdirectory(video)
