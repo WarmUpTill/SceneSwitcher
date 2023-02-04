@@ -69,7 +69,7 @@ std::vector<cv::Rect> matchObject(QImage &img, cv::CascadeClassifier &cascade,
 
 	auto i = QImageToMat(img);
 	cv::Mat frameGray;
-	cv::cvtColor(i, frameGray, cv::COLOR_BGR2GRAY);
+	cv::cvtColor(i, frameGray, cv::COLOR_RGBA2GRAY);
 	equalizeHist(frameGray, frameGray);
 	std::vector<cv::Rect> objects;
 	cascade.detectMultiScale(frameGray, objects, scaleFactor, minNeighbors,
