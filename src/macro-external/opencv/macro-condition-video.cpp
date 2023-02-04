@@ -586,6 +586,8 @@ void MacroConditionVideoEdit::ConditionChanged(int cond)
 		_entryData->_objMatchParameters.cascade =
 			initObjectCascade(path);
 	}
+
+	SetupPreviewDialogParams();
 }
 
 void MacroConditionVideoEdit::ImagePathChanged(const QString &text)
@@ -982,6 +984,18 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 	adjustSize();
 }
 
+void MacroConditionVideoEdit::SetupPreviewDialogParams()
+{
+	_previewDialog.PatternMatchParamtersChanged(
+		_entryData->_patternMatchParameters);
+	_previewDialog.ObjDetectParamtersChanged(
+		_entryData->_objMatchParameters);
+	_previewDialog.VideoSelectionChanged(_entryData->_video);
+	_previewDialog.AreaParamtersChanged(_entryData->_areaParameters);
+	_previewDialog.ConditionChanged(
+		static_cast<int>(_entryData->_condition));
+}
+
 void MacroConditionVideoEdit::UpdateEntryData()
 {
 	if (!_entryData) {
@@ -1015,14 +1029,4 @@ void MacroConditionVideoEdit::UpdateEntryData()
 	_checkArea->SetArea(_entryData->_areaParameters.area);
 	UpdatePreviewTooltip();
 	SetWidgetVisibility();
-
-	// Prepare previewDialog
-	_previewDialog.PatternMatchParamtersChanged(
-		_entryData->_patternMatchParameters);
-	_previewDialog.ObjDetectParamtersChanged(
-		_entryData->_objMatchParameters);
-	_previewDialog.VideoSelectionChanged(_entryData->_video);
-	_previewDialog.AreaParamtersChanged(_entryData->_areaParameters);
-	_previewDialog.ConditionChanged(
-		static_cast<int>(_entryData->_condition));
 }
