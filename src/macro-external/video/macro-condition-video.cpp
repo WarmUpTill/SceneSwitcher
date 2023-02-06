@@ -293,6 +293,7 @@ bool MacroConditionVideo::CheckOCR()
 		return match.hasMatch();
 	}
 
+	SetVariableValue(text);
 	return text == std::string(_ocrParamters.text);
 }
 
@@ -303,6 +304,10 @@ bool MacroConditionVideo::Compare()
 			_areaParameters.area.x, _areaParameters.area.y,
 			_areaParameters.area.width,
 			_areaParameters.area.height);
+	}
+
+	if (_condition != VideoCondition::OCR) {
+		SetVariableValue("");
 	}
 
 	switch (_condition) {

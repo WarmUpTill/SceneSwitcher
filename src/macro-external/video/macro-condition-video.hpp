@@ -22,7 +22,7 @@ class PreviewDialog;
 
 class MacroConditionVideo : public MacroCondition {
 public:
-	MacroConditionVideo(Macro *m) : MacroCondition(m){};
+	MacroConditionVideo(Macro *m) : MacroCondition(m, true){};
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
