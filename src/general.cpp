@@ -653,7 +653,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 
 	obs_data_set_int(obj, "threadPriority", threadPriority);
 
-	obs_data_set_bool(obj, "tansitionOverrideOverride",
+	obs_data_set_bool(obj, "transitionOverrideOverride",
 			  transitionOverrideOverride);
 	obs_data_set_bool(obj, "adjustActiveTransitionType",
 			  adjustActiveTransitionType);
@@ -735,8 +735,14 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 				 QThread::NormalPriority);
 	threadPriority = obs_data_get_int(obj, "threadPriority");
 
-	transitionOverrideOverride =
-		obs_data_get_bool(obj, "tansitionOverrideOverride");
+	// TODO: Remove this fallback in future version
+	if (obs_data_has_user_value(obj, "tansitionOverrideOverride")) {
+		transitionOverrideOverride =
+			obs_data_get_bool(obj, "tansitionOverrideOverride");
+	} else {
+		transitionOverrideOverride =
+			obs_data_get_bool(obj, "transitionOverrideOverride");
+	}
 	adjustActiveTransitionType =
 		obs_data_get_bool(obj, "adjustActiveTransitionType");
 
