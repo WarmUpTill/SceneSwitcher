@@ -10,3 +10,9 @@
 [submodule "deps/openvr"]
 	path = deps/openvr
 	url = https://github.com/ValveSoftware/openvr.git
+[submodule "deps/leptonica"]
+	path = deps/leptonica
+	url = https://github.com/DanBloomberg/leptonica.git
+[submodule "deps/tesseract"]
+	path = deps/tesseract
+	url = https://github.com/tesseract-ocr/tesseract.git
