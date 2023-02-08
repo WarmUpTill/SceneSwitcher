@@ -375,24 +375,24 @@ void MacroTreeModel::Add(std::shared_ptr<Macro> item)
 
 void MacroTreeModel::Remove(std::shared_ptr<Macro> item)
 {
-	auto startIdx = GetItemModelIndex(item);
-	if (startIdx == -1) {
+	auto uiStartIdx = GetItemModelIndex(item);
+	if (uiStartIdx == -1) {
 		return;
 	}
-	auto macroStartIdx = ModelIndexToMacroIndex(startIdx, _macros);
+	auto macroStartIdx = ModelIndexToMacroIndex(uiStartIdx, _macros);
 
-	auto endIdx = startIdx;
+	auto uiEndIdx = uiStartIdx;
 	auto macroEndIdx = macroStartIdx;
 
 	bool isGroup = item->IsGroup();
 	if (isGroup) {
 		macroEndIdx += item->GroupSize();
 		if (!item->IsCollapsed()) {
-			endIdx = item->GroupSize();
+			uiEndIdx += item->GroupSize();
 		}
 	}
 
-	beginRemoveRows(QModelIndex(), startIdx, endIdx);
+	beginRemoveRows(QModelIndex(), uiStartIdx, uiEndIdx);
 	_macros.erase(std::next(_macros.begin(), macroStartIdx),
 		      std::next(_macros.begin(), macroEndIdx + 1));
 	endRemoveRows();
