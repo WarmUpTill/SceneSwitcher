@@ -173,22 +173,28 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
   read -r product_name product_version <<< \
     "$(jq -r '. | {name, version} | join(" ")' ${buildspec_file})"
 
-  local opencv_dir="${project_root}/deps/opencv"
-  local opencv_build_dir="${opencv_dir}/build_${target##*-}"
+
+
+
   case ${host_os} {
     macos)
       sed -i '' \
         "s/project(\(.*\) VERSION \(.*\))/project(${product_name} VERSION ${product_version})/" \
         "${project_root}/CMakeLists.txt"
 
-        # Note: IPP must be set to OFF to avoid build failures on ARM architectures
+        local opencv_dir="${project_root}/deps/opencv"
+        local opencv_build_dir="${opencv_dir}/build_${target##*-}"
+
         local -a opencv_cmake_args=(
           -DCMAKE_BUILD_TYPE=Release
           -DBUILD_LIST=core,imgproc,objdetect
           -DCMAKE_OSX_ARCHITECTURES=${${target##*-}//universal/x86_64;arm64}
           -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
-          -DWITH_IPP=OFF
         )
+
+        if [ "${target}" != "macos-x86_64" ]; then
+          opencv_cmake_args+=(-DWITH_IPP=OFF)
+        fi
 
         pushd ${opencv_dir}
         log_info "Configure OpenCV ..."
@@ -198,9 +204,73 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         cmake --build ${opencv_build_dir} --config Release
 
         log_info "Installing OpenCV..."
-        cmake --install ${opencv_build_dir} --config Release --prefix ${opencv_build_dir}
+        cmake --install ${opencv_build_dir} --config Release || true
         popd
 
+        local leptonica_dir="${project_root}/deps/leptonica"
+        local leptonica_build_dir="${leptonica_dir}/build_${target##*-}"
+
+        local -a leptonica_cmake_args=(
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_OSX_ARCHITECTURES=${${target##*-}//universal/x86_64;arm64}
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
+          -DSW_BUILD=OFF
+          -DOPENJPEG_SUPPORT=OFF
+          -DLIBWEBP_SUPPORT=OFF
+          -DCMAKE_DISABLE_FIND_PACKAGE_GIF=TRUE
+          -DCMAKE_DISABLE_FIND_PACKAGE_JPEG=TRUE
+          -DCMAKE_DISABLE_FIND_PACKAGE_TIFF=TRUE
+          -DCMAKE_DISABLE_FIND_PACKAGE_PNG=TRUE
+        )
+
+        pushd ${leptonica_dir}
+        log_info "Configure Leptonica ..."
+        cmake -S . -B ${leptonica_build_dir} -G ${generator} ${leptonica_cmake_args}
+
+        log_info "Building Leptonica ..."
+        cmake --build ${leptonica_build_dir} --config Release
+
+        log_info "Installing Leptonica..."
+        # Workaround for "unknown file attribute: H" errors when running install
+        cmake --install ${leptonica_build_dir} --config Release || :
+        popd
+
+        local tesseract_dir="${project_root}/deps/tesseract"
+        local tesseract_build_dir="${tesseract_dir}/build_${target##*-}"
+
+        local -a tesseract_cmake_args=(
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_OSX_ARCHITECTURES=${${target##*-}//universal/x86_64;arm64}
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
+          -DSW_BUILD=OFF
+          -DBUILD_TRAINING_TOOLS=OFF
+        )
+
+        if [ "${target}" != "macos-x86_64" ]; then
+          tesseract_cmake_args+=(
+            -DCMAKE_SYSTEM_PROCESSOR=aarch64
+            -DHAVE_AVX=FALSE
+            -DHAVE_AVX2=FALSE
+            -DHAVE_AVX512F=FALSE
+            -DHAVE_FMA=FALSE
+            -DHAVE_SSE4_1=FALSE
+            -DHAVE_NEON=TRUE
+          )
+          sed -i'.original' 's/HAVE_NEON FALSE/HAVE_NEON TRUE/g' "${tesseract_dir}/CMakeLists.txt"
+        fi
+
+        pushd ${tesseract_dir}
+        log_info "Configure Tesseract ..."
+        cmake -S . -B ${tesseract_build_dir} -G ${generator} ${tesseract_cmake_args}
+
+        log_info "Building Tesseract ..."
+        #cmake --build ${tesseract_build_dir} --config Release --target libtesseract
+        cmake --build ${tesseract_build_dir} --config Release
+
+        log_info "Installing Tesseract..."
+        #cmake --install ${tesseract_build_dir} --config Release --component libtesseract
+        cmake --install ${tesseract_build_dir} --config Release
+        popd
       ;;
     linux)
       sed -i'' \
@@ -242,7 +312,6 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
           -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
           -DOBS_CODESIGN_LINKER=ON
           -DOBS_BUNDLE_CODESIGN_IDENTITY="${CODESIGN_IDENT:--}"
-          -DOpenCV_DIR="${opencv_build_dir}"
         )
 
         ;;
