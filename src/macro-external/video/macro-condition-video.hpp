@@ -113,6 +113,7 @@ private slots:
 	void UsePatternForChangedCheckChanged(int value);
 	void PatternThresholdChanged(double);
 	void UseAlphaAsMaskChanged(int value);
+	void PatternMatchModeChanged(int value);
 
 	void BrightnessThresholdChanged(double);
 
@@ -159,6 +160,8 @@ private:
 
 	SliderSpinBox *_patternThreshold;
 	QCheckBox *_useAlphaAsMask;
+	QHBoxLayout *_patternMatchModeLayout;
+	QComboBox *_patternMatchMode;
 
 	SliderSpinBox *_brightnessThreshold;
 	QLabel *_currentBrightness;

@@ -54,6 +54,7 @@ public:
 	QImage image;
 	bool useForChangedCheck = false;
 	bool useAlphaAsMask = false;
+	cv::TemplateMatchModes matchMode = cv::TM_CCORR_NORMED;
 	double threshold = 0.8;
 };
 

@@ -50,6 +50,15 @@ const static std::map<VideoInput::Type, std::string> videoInputTypes = {
 	 "AdvSceneSwitcher.condition.video.type.scene"},
 };
 
+const static std::map<cv::TemplateMatchModes, std::string> patternMatchModes = {
+	{cv::TemplateMatchModes::TM_CCOEFF_NORMED,
+	 "AdvSceneSwitcher.condition.video.patternMatchMode.correlationCoefficient"},
+	{cv::TemplateMatchModes::TM_CCORR_NORMED,
+	 "AdvSceneSwitcher.condition.video.patternMatchMode.crossCorrelation"},
+	{cv::TemplateMatchModes::TM_SQDIFF_NORMED,
+	 "AdvSceneSwitcher.condition.video.patternMatchMode.squaredDifference"},
+};
+
 const static std::map<tesseract::PageSegMode, std::string> pageSegModes = {
 	{tesseract::PageSegMode::PSM_SINGLE_COLUMN,
 	 "AdvSceneSwitcher.condition.video.ocrMode.singleColumn"},
@@ -240,7 +249,8 @@ bool MacroConditionVideo::ScreenshotContainsPattern()
 	cv::Mat result;
 	matchPattern(_screenshotData.image, _patternImageData,
 		     _patternMatchParameters.threshold, result,
-		     _patternMatchParameters.useAlphaAsMask);
+		     _patternMatchParameters.useAlphaAsMask,
+		     _patternMatchParameters.matchMode);
 	return countNonZero(result) > 0;
 }
 
@@ -251,7 +261,8 @@ bool MacroConditionVideo::OutputChanged()
 		_patternImageData = createPatternData(_matchImage);
 		matchPattern(_screenshotData.image, _patternImageData,
 			     _patternMatchParameters.threshold, result,
-			     _patternMatchParameters.useAlphaAsMask);
+			     _patternMatchParameters.useAlphaAsMask,
+			     _patternMatchParameters.matchMode);
 		return countNonZero(result) == 0;
 	}
 	return _screenshotData.image != _matchImage;
@@ -357,6 +368,14 @@ static inline void populatePageSegModeSelection(QComboBox *list)
 	}
 }
 
+static inline void populatePatternMatchModeSelection(QComboBox *list)
+{
+	for (const auto &[mode, name] : patternMatchModes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(mode));
+	}
+}
+
 MacroConditionVideoEdit::MacroConditionVideoEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionVideo> entryData)
 	: QWidget(parent),
@@ -378,6 +397,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			  "AdvSceneSwitcher.condition.video.patternThresholdDescription"))),
 	  _useAlphaAsMask(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.patternThresholdUseAlphaAsMask"))),
+	  _patternMatchModeLayout(new QHBoxLayout()),
+	  _patternMatchMode(new QComboBox()),
 	  _brightnessThreshold(new SliderSpinBox(
 		  0., 1.,
 		  obs_module_text(
@@ -425,6 +446,9 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	_imagePath->Button()->disconnect();
 	_usePatternForChangedCheck->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.video.usePatternForChangedCheck.tooltip"));
+	_patternMatchMode->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.condition.video.patternMatchMode.tip"));
+	populatePatternMatchModeSelection(_patternMatchMode);
 	_minNeighbors->setMinimum(minMinNeighbors);
 	_minNeighbors->setMaximum(maxMinNeighbors);
 	populatePageSegModeSelection(_pageSegMode);
@@ -457,6 +481,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 this, SLOT(PatternThresholdChanged(double)));
 	QWidget::connect(_useAlphaAsMask, SIGNAL(stateChanged(int)), this,
 			 SLOT(UseAlphaAsMaskChanged(int)));
+	QWidget::connect(_patternMatchMode, SIGNAL(currentIndexChanged(int)),
+			 this, SLOT(PatternMatchModeChanged(int)));
 	QWidget::connect(_brightnessThreshold,
 			 SIGNAL(DoubleValueChanged(double)), this,
 			 SLOT(BrightnessThresholdChanged(double)));
@@ -523,9 +549,14 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 		{"{{textColor}}", _textColor},
 		{"{{selectColor}}", _selectColor},
 		{"{{textType}}", _pageSegMode},
+		{"{{patternMatchingModes}}", _patternMatchMode},
 	};
 	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.video.entry"),
 		     entryLine1Layout, widgetPlaceholders);
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.patternMatchMode"),
+		_patternMatchModeLayout, widgetPlaceholders);
 	placeWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.video.entry.modelPath"),
@@ -583,6 +614,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	mainLayout->addWidget(_usePatternForChangedCheck);
 	mainLayout->addWidget(_patternThreshold);
 	mainLayout->addWidget(_useAlphaAsMask);
+	mainLayout->addLayout(_patternMatchModeLayout);
 	mainLayout->addWidget(_brightnessThreshold);
 	mainLayout->addWidget(_currentBrightness);
 	mainLayout->addLayout(_ocrLayout);
@@ -812,8 +844,7 @@ void MacroConditionVideoEdit::UsePatternForChangedCheckChanged(int value)
 
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
 	_entryData->_patternMatchParameters.useForChangedCheck = value;
-	_patternThreshold->setVisible(value);
-	adjustSize();
+	SetWidgetVisibility();
 }
 
 void MacroConditionVideoEdit::PatternThresholdChanged(double value)
@@ -847,6 +878,20 @@ void MacroConditionVideoEdit::UseAlphaAsMaskChanged(int value)
 	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
 	_entryData->_patternMatchParameters.useAlphaAsMask = value;
 	_entryData->LoadImageFromFile();
+	_previewDialog.PatternMatchParamtersChanged(
+		_entryData->_patternMatchParameters);
+}
+
+void MacroConditionVideoEdit::PatternMatchModeChanged(int idx)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	_entryData->_patternMatchParameters.matchMode =
+		static_cast<cv::TemplateMatchModes>(
+			_patternMatchMode->itemData(idx).toInt());
 	_previewDialog.PatternMatchParamtersChanged(
 		_entryData->_patternMatchParameters);
 }
@@ -1132,6 +1177,8 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 	_patternThreshold->setVisible(needsThreshold(_entryData->_condition));
 	_useAlphaAsMask->setVisible(_entryData->_condition ==
 				    VideoCondition::PATTERN);
+	setLayoutVisible(_patternMatchModeLayout,
+			 _entryData->_condition == VideoCondition::PATTERN);
 	_brightnessThreshold->setVisible(_entryData->_condition ==
 					 VideoCondition::BRIGHTNESS);
 	_currentBrightness->setVisible(_entryData->_condition ==
@@ -1159,6 +1206,9 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 	if (_entryData->_condition == VideoCondition::HAS_CHANGED ||
 	    _entryData->_condition == VideoCondition::HAS_NOT_CHANGED) {
 		_patternThreshold->setVisible(
+			_entryData->_patternMatchParameters.useForChangedCheck);
+		setLayoutVisible(
+			_patternMatchModeLayout,
 			_entryData->_patternMatchParameters.useForChangedCheck);
 	}
 
@@ -1197,6 +1247,8 @@ void MacroConditionVideoEdit::UpdateEntryData()
 		_entryData->_patternMatchParameters.threshold);
 	_useAlphaAsMask->setChecked(
 		_entryData->_patternMatchParameters.useAlphaAsMask);
+	_patternMatchMode->setCurrentIndex(_patternMatchMode->findData(
+		_entryData->_patternMatchParameters.matchMode));
 	_brightnessThreshold->SetDoubleValue(_entryData->_brightnessThreshold);
 	_modelDataPath->SetPath(_entryData->GetModelDataPath().c_str());
 	_objectScaleThreshold->SetDoubleValue(
