@@ -37,7 +37,7 @@ function Build {
 
     $UtilityFunctions = Get-ChildItem -Path $PSScriptRoot/utils.pwsh/*.ps1 -Recurse
 
-    foreach($Utility in $UtilityFunctions) {
+    foreach ($Utility in $UtilityFunctions) {
         Write-Debug "Loading $($Utility.FullName)"
         . $Utility.FullName
     }
@@ -57,18 +57,22 @@ function Build {
         $CmakeGenerator = $script:VisualStudioVersion
     }
 
+    $DepsPath = "plugin-deps-${script:DepsVersion}-qt${script:QtVersion}-${script:Target}"
+    $DepInstallPath = "$(Resolve-Path -Path ${ProjectRoot}/../obs-build-dependencies/${DepsPath})"
+
+    $OpenCVPath = "${ProjectRoot}/deps/opencv"
+    $OpenCVBuildPath = "${OpenCVPath}/build"
+
     Push-Location -Stack BuildOpenCVTemp
     if ( ! ( ( $SkipAll ) -or ( $SkipBuild ) ) ) {
         Ensure-Location $ProjectRoot
 
-        $OpenCVPath = "${ProjectRoot}/deps/opencv"
-        $OpenCVBuildPath = "${OpenCVPath}/build"
         $OpenCVCmakeArgs = @(
             '-G', $CmakeGenerator
             "-DCMAKE_SYSTEM_VERSION=${script:PlatformSDK}"
             "-DCMAKE_GENERATOR_PLATFORM=$(if (${script:Target} -eq "x86") { "Win32" } else { "x64" })"
             "-DCMAKE_BUILD_TYPE=Release"
-            "-DCMAKE_PREFIX_PATH:PATH=$(Resolve-Path -Path ${ProjectRoot}/../obs-build-dependencies/${DepsPath})"
+            "-DCMAKE_PREFIX_PATH:PATH=${DepInstallPath}"
             "-DBUILD_LIST=core,imgproc,objdetect"
         )
 
@@ -80,18 +84,92 @@ function Build {
         )
 
         if ( $VerbosePreference -eq 'Continue' ) {
-            $OpenCVCmakeArgs+=('--verbose')
+            $OpenCVCmakeArgs += ('--verbose')
         }
 
         Log-Information "Building OpenCV..."
         Invoke-External cmake --build "${OpenCVBuildPath}" @OpenCVCmakeArgs
     }
     Log-Information "Install OpenCV}..."
-    Invoke-External cmake --install "${OpenCVBuildPath}" --prefix "${OpenCVBuildPath}" @OpenCVCmakeArgs
+    Invoke-External cmake --install "${OpenCVBuildPath}" --prefix "${DepInstallPath}" @OpenCVCmakeArgs
+
+    $LeptonicaPath = "${ProjectRoot}/deps/leptonica"
+    $LeptonicaBuildPath = "${LeptonicaPath}/build"
+
+    Push-Location -Stack BuildLeptonicaTemp
+    if ( ! ( ( $SkipAll ) -or ( $SkipBuild ) ) ) {
+        Ensure-Location $ProjectRoot
+
+        $LeptonicaCmakeArgs = @(
+            '-G', $CmakeGenerator
+            "-DCMAKE_SYSTEM_VERSION=${script:PlatformSDK}"
+            "-DCMAKE_GENERATOR_PLATFORM=$(if (${script:Target} -eq "x86") { "Win32" } else { "x64" })"
+            "-DCMAKE_BUILD_TYPE=Release"
+            "-DCMAKE_PREFIX_PATH:PATH=${DepInstallPath}"
+            "-DCMAKE_INSTALL_PREFIX:PATH=${DepInstallPath}"
+            "-DSW_BUILD=OFF"
+            "-DLIBWEBP_SUPPORT=OFF"
+        )
+
+        Log-Information "Configuring leptonica..."
+        Invoke-External cmake -S ${LeptonicaPath} -B ${LeptonicaBuildPath} @LeptonicaCmakeArgs
+
+        $LeptonicaCmakeArgs = @(
+            '--config', "Release"
+        )
+
+        if ( $VerbosePreference -eq 'Continue' ) {
+            $LeptonicaCmakeArgs += ('--verbose')
+        }
+
+        Log-Information "Building leptonica..."
+        Invoke-External cmake --build "${LeptonicaBuildPath}" @LeptonicaCmakeArgs
+    }
+    Log-Information "Install leptonica..."
+    Invoke-External cmake --install "${LeptonicaBuildPath}" --prefix "${DepInstallPath}" @LeptonicaCmakeArgs
+
+    Push-Location -Stack BuildTesseractTemp
+    if ( ! ( ( $SkipAll ) -or ( $SkipBuild ) ) ) {
+        Ensure-Location $ProjectRoot
+
+        $TesseractPath = "${ProjectRoot}/deps/tesseract"
+        $TesseractBuildPath = "${TesseractPath}/build"
+
+        # Explicitly disable PkgConfig and tiff as it will lead build errors
+        $TesseractCmakeArgs = @(
+            '-G', $CmakeGenerator
+            "-DCMAKE_SYSTEM_VERSION=${script:PlatformSDK}"
+            "-DCMAKE_GENERATOR_PLATFORM=$(if (${script:Target} -eq "x86") { "Win32" } else { "x64" })"
+            "-DCMAKE_BUILD_TYPE=Release"
+            "-DCMAKE_PREFIX_PATH:PATH=${DepInstallPath}"
+            "-DCMAKE_INSTALL_PREFIX:PATH=${DepInstallPath}"
+            "-DSW_BUILD=OFF"
+            "-DDISABLE_CURL=ON"
+            "-DBUILD_TRAINING_TOOLS=OFF"
+            "-DCMAKE_DISABLE_FIND_PACKAGE_TIFF=TRUE"
+            "-DCMAKE_DISABLE_FIND_PACKAGE_PkgConfig=TRUE"
+        )
+
+        Log-Information "Configuring tesseract..."
+        Invoke-External cmake -S ${TesseractPath} -B ${TesseractBuildPath} @TesseractCmakeArgs
+
+        $TesseractCmakeArgs = @(
+            '--config', "Release"
+        )
+
+        if ( $VerbosePreference -eq 'Continue' ) {
+            $TesseractCmakeArgs += ('--verbose')
+        }
+
+        Log-Information "Building tesseract..."
+        Invoke-External cmake --build "${TesseractBuildPath}" @TesseractCmakeArgs
+    }
+    Log-Information "Install tesseract..."
+    Invoke-External cmake --install "${TesseractBuildPath}" --prefix "${DepInstallPath}" @TesseractCmakeArgs
 
     (Get-Content -Path ${ProjectRoot}/CMakeLists.txt -Raw) `
         -replace "project\((.*) VERSION (.*)\)", "project(${ProductName} VERSION ${ProductVersion})" `
-        | Out-File -Path ${ProjectRoot}/CMakeLists.txt
+    | Out-File -Path ${ProjectRoot}/CMakeLists.txt
 
     Setup-Obs
 
@@ -99,18 +177,13 @@ function Build {
     if ( ! ( ( $SkipAll ) -or ( $SkipBuild ) ) ) {
         Ensure-Location $ProjectRoot
 
-        $OpenCVPath = "${ProjectRoot}/deps/opencv"
-        $OpenCVBuildPath = "${OpenCVPath}/build"
-
-        $DepsPath = "plugin-deps-${script:DepsVersion}-qt${script:QtVersion}-${script:Target}"
         $CmakeArgs = @(
             '-G', $CmakeGenerator
             "-DCMAKE_SYSTEM_VERSION=${script:PlatformSDK}"
             "-DCMAKE_GENERATOR_PLATFORM=$(if (${script:Target} -eq "x86") { "Win32" } else { "x64" })"
             "-DCMAKE_BUILD_TYPE=${Configuration}"
-            "-DCMAKE_PREFIX_PATH:PATH=$(Resolve-Path -Path "${ProjectRoot}/../obs-build-dependencies/${DepsPath}")"
+            "-DCMAKE_PREFIX_PATH:PATH=${DepInstallPath}"
             "-DQT_VERSION=${script:QtVersion}"
-            "-DOpenCV_DIR=${OpenCVBuildPath}"
         )
 
         Log-Debug "Attempting to configure OBS with CMake arguments: $($CmakeArgs | Out-String)"
@@ -122,7 +195,7 @@ function Build {
         )
 
         if ( $VerbosePreference -eq 'Continue' ) {
-            $CmakeArgs+=('--verbose')
+            $CmakeArgs += ('--verbose')
         }
 
         Log-Information "Building ${ProductName}..."

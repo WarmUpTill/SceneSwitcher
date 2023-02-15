@@ -38,6 +38,7 @@ if (( ! (${skips[(Ie)all]} + ${skips[(Ie)deps]}) )) {
     libxtst-dev \
     libxss-dev \
     libopencv-dev \
+    libtesseract-dev \
     libprocps-dev
 
   local -a _qt_packages=()
