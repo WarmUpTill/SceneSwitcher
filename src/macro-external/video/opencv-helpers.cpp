@@ -18,8 +18,19 @@ PatternImageData createPatternData(QImage &pattern)
 	return data;
 }
 
+static void invertPatternMatchResult(cv::Mat &mat)
+{
+	for (int r = 0; r < mat.rows; r++) {
+		for (int c = 0; c < mat.cols; c++) {
+			float value = mat.at<float>(r, c) =
+				1.0 - mat.at<float>(r, c);
+		}
+	}
+}
+
 void matchPattern(QImage &img, const PatternImageData &patternData,
-		  double threshold, cv::Mat &result, bool useAlphaAsMask)
+		  double threshold, cv::Mat &result, bool useAlphaAsMask,
+		  cv::TemplateMatchModes matchMode)
 {
 	if (img.isNull() || patternData.rgbaPattern.empty()) {
 		return;
@@ -29,34 +40,44 @@ void matchPattern(QImage &img, const PatternImageData &patternData,
 		return;
 	}
 
-	auto i = QImageToMat(img);
+	auto input = QImageToMat(img);
 
 	if (useAlphaAsMask) {
-		std::vector<cv::Mat1b> rgbaChannelsImage;
-		cv::split(i, rgbaChannelsImage);
+		// Remove alpha channel of input image as the alpha channel
+		// information is used as a stencil for the pattern instead and
+		// thus should not be used while matching the pattern as well
+		//
+		// Input format is Format_RGBA8888 so discard the 4th channel
+		std::vector<cv::Mat1b> inputChannels;
+		cv::split(input, inputChannels);
 		std::vector<cv::Mat1b> rgbChanlesImage(
-			rgbaChannelsImage.begin(),
-			rgbaChannelsImage.begin() + 3);
+			inputChannels.begin(), inputChannels.begin() + 3);
+		cv::Mat3b rgbInput;
+		cv::merge(rgbChanlesImage, rgbInput);
 
-		cv::Mat3b rgbImage;
-		cv::merge(rgbChanlesImage, rgbImage);
-
-		cv::matchTemplate(rgbImage, patternData.rgbPattern, result,
-				  cv::TM_CCORR_NORMED, patternData.mask);
-		cv::threshold(result, result, threshold, 0, cv::THRESH_TOZERO);
-
+		cv::matchTemplate(rgbInput, patternData.rgbPattern, result,
+				  matchMode, patternData.mask);
 	} else {
-		cv::matchTemplate(i, patternData.rgbaPattern, result,
-				  cv::TM_CCOEFF_NORMED);
-		cv::threshold(result, result, threshold, 0, cv::THRESH_TOZERO);
+		cv::matchTemplate(input, patternData.rgbaPattern, result,
+				  matchMode);
 	}
+
+	// A perfect match is represented as "0" for TM_SQDIFF_NORMED
+	//
+	// For TM_CCOEFF_NORMED and TM_CCORR_NORMED a perfect match is
+	// represented as "1"
+	if (matchMode == cv::TM_SQDIFF_NORMED) {
+		invertPatternMatchResult(result);
+	}
+	cv::threshold(result, result, threshold, 0.0, cv::THRESH_TOZERO);
 }
 
 void matchPattern(QImage &img, QImage &pattern, double threshold,
-		  cv::Mat &result, bool useAlphaAsMask)
+		  cv::Mat &result, bool useAlphaAsMask,
+		  cv::TemplateMatchModes matchColor)
 {
 	auto data = createPatternData(pattern);
-	matchPattern(img, data, threshold, result, useAlphaAsMask);
+	matchPattern(img, data, threshold, result, useAlphaAsMask, matchColor);
 }
 
 std::vector<cv::Rect> matchObject(QImage &img, cv::CascadeClassifier &cascade,

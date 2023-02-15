@@ -294,7 +294,8 @@ void PreviewImage::MarkMatch(QImage &screenshot,
 		cv::Mat result;
 		matchPattern(screenshot, patternImageData,
 			     patternMatchParams.threshold, result,
-			     patternMatchParams.useAlphaAsMask);
+			     patternMatchParams.useAlphaAsMask,
+			     patternMatchParams.matchMode);
 		if (countNonZero(result) == 0) {
 			emit StatusUpdate(obs_module_text(
 				"AdvSceneSwitcher.condition.video.patternMatchFail"));

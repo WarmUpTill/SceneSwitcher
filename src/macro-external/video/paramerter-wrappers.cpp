@@ -6,6 +6,7 @@ bool PatternMatchParameters::Save(obs_data_t *obj) const
 	obs_data_set_bool(data, "useForChangedCheck", useForChangedCheck);
 	obs_data_set_double(data, "threshold", threshold);
 	obs_data_set_bool(data, "useAlphaAsMask", useAlphaAsMask);
+	obs_data_set_int(data, "matchMode", matchMode);
 	obs_data_set_obj(obj, "patternMatchData", data);
 	obs_data_release(data);
 	return true;
@@ -25,6 +26,13 @@ bool PatternMatchParameters::Load(obs_data_t *obj)
 	useForChangedCheck = obs_data_get_bool(data, "useForChangedCheck");
 	threshold = obs_data_get_double(data, "threshold");
 	useAlphaAsMask = obs_data_get_bool(data, "useAlphaAsMask");
+	// TODO: Remove this fallback in a future version
+	if (!obs_data_has_user_value(obj, "matchMode")) {
+		matchMode = cv::TM_CCORR_NORMED;
+	} else {
+		matchMode = static_cast<cv::TemplateMatchModes>(
+			obs_data_get_int(data, "matchMode"));
+	}
 	obs_data_release(data);
 	return true;
 }

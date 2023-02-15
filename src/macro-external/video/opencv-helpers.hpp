@@ -47,10 +47,11 @@ struct PatternImageData {
 
 PatternImageData createPatternData(QImage &pattern);
 void matchPattern(QImage &img, const PatternImageData &patternData,
-		  double threshold, cv::Mat &result,
-		  bool useAlphaAsMask = true);
+		  double threshold, cv::Mat &result, bool useAlphaAsMask,
+		  cv::TemplateMatchModes matchMode);
 void matchPattern(QImage &img, QImage &pattern, double threshold,
-		  cv::Mat &result, bool useAlphaAsMask);
+		  cv::Mat &result, bool useAlphaAsMask,
+		  cv::TemplateMatchModes matchMode);
 std::vector<cv::Rect> matchObject(QImage &img, cv::CascadeClassifier &cascade,
 				  double scaleFactor, int minNeighbors,
 				  cv::Size minSize, cv::Size maxSize);
