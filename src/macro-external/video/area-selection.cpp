@@ -61,7 +61,6 @@ SizeSelection::SizeSelection(int min, int max, QWidget *parent)
 	auto layout = new QHBoxLayout();
 	layout->setContentsMargins(0, 0, 0, 0);
 	layout->addWidget(_x);
-	layout->addWidget(new QLabel(" x "));
 	layout->addWidget(_y);
 	setLayout(layout);
 }
@@ -92,12 +91,14 @@ AreaSelection::AreaSelection(int min, int max, QWidget *parent)
 	  _x(new SizeSelection(min, max)),
 	  _y(new SizeSelection(min, max))
 {
-	_x->_x->setToolTip("X");
-	_x->_y->setToolTip("Y");
-	_y->_x->setToolTip(
-		obs_module_text("AdvSceneSwitcher.condition.video.width"));
-	_y->_y->setToolTip(
-		obs_module_text("AdvSceneSwitcher.condition.video.height"));
+	_x->_x->setPrefix("X:");
+	_x->_y->setPrefix("Y:");
+	_y->_x->setPrefix(QString(obs_module_text(
+				  "AdvSceneSwitcher.condition.video.width")) +
+			  ":");
+	_y->_y->setPrefix(QString(obs_module_text(
+				  "AdvSceneSwitcher.condition.video.height")) +
+			  ":");
 
 	connect(_x, SIGNAL(SizeChanged(advss::Size)), this,
 		SLOT(XSizeChanged(advss::Size)));
