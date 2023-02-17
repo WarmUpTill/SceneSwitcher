@@ -566,37 +566,42 @@ void MacroTreeModel::GroupSelectedItems(QModelIndexList &indices)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	QString name = GetNewGroupName();
-	std::vector<std::shared_ptr<Macro>> items;
-	items.reserve(indices.size());
+	std::vector<std::shared_ptr<Macro>> itemsToGroup;
+	itemsToGroup.reserve(indices.size());
+	int insertGroupAt = indices[0].row();
 	for (int i = 0; i < indices.count(); i++) {
-		std::shared_ptr<Macro> item = _macros[ModelIndexToMacroIndex(
-			indices[i].row(), _macros)];
-		items.emplace_back(item);
+		int selectedIdx = indices[i].row();
+		if (selectedIdx < insertGroupAt) {
+			insertGroupAt = selectedIdx;
+		}
+
+		std::shared_ptr<Macro> item =
+			_macros[ModelIndexToMacroIndex(selectedIdx, _macros)];
+		itemsToGroup.emplace_back(item);
 	}
+
 	std::shared_ptr<Macro> item =
-		Macro::CreateGroup(name.toStdString(), items);
+		Macro::CreateGroup(name.toStdString(), itemsToGroup);
 	if (!item) {
 		return;
 	}
 
 	// A new list entry for group
-	Add(item);
+	_macros.insert(_macros.begin() + insertGroupAt, item);
 
 	// Move all selected items after new group entry
-	for (const auto &item : items) {
+	int offset = 1;
+	for (const auto &item : itemsToGroup) {
 		auto it = _macros.begin() + GetItemMacroIndex(item);
-		std::rotate(it, std::next(it, 1), _macros.end());
+		_macros.erase(it);
+		_macros.insert(_macros.begin() + insertGroupAt + offset, item);
+		offset++;
 	}
 
 	_hasGroups = true;
 	_mt->selectionModel()->clear();
 
-	for (auto &m : _macros) {
-		m->ResolveMacroRef();
-	}
-
 	Reset(_macros);
-
 	for (auto &m : _macros) {
 		m->ResolveMacroRef();
 	}
