@@ -529,6 +529,14 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	populateVideoInputSelection(_videoInputTypes);
 	populateConditionSelection(_condition);
 
+	_patternMatchModeLayout->setContentsMargins(0, 0, 0, 0);
+	_ocrLayout->setContentsMargins(0, 0, 0, 0);
+	_modelPathLayout->setContentsMargins(0, 0, 0, 0);
+	_neighborsControlLayout->setContentsMargins(0, 0, 0, 0);
+	_sizeLayout->setContentsMargins(0, 0, 0, 0);
+	_checkAreaControlLayout->setContentsMargins(0, 0, 0, 0);
+	_throttleControlLayout->setContentsMargins(0, 0, 0, 0);
+
 	QHBoxLayout *entryLine1Layout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{videoInputTypes}}", _videoInputTypes},
@@ -604,7 +612,6 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	sizeGrid->addWidget(_maxSize, 1, 1);
 	_sizeLayout->addLayout(sizeGrid);
 	_sizeLayout->addStretch();
-	_sizeLayout->setContentsMargins(0, 0, 0, 0);
 
 	QHBoxLayout *showMatchLayout = new QHBoxLayout;
 	showMatchLayout->addWidget(_showMatch);
