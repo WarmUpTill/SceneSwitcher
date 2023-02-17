@@ -75,6 +75,8 @@ signals:
 	void SceneGroupRenamed(const QString &oldName, const QString newName);
 
 protected:
+	bool eventFilter(QObject *obj, QEvent *ev) override;
+
 	Section *_section;
 	QLabel *_headerInfo;
 	QWidget *_frame;
