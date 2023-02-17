@@ -375,7 +375,7 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 	if (idx >= 1) {
 		id = macro->Conditions().at(idx - 1)->GetId();
 		if (idx == 1) {
-			logic = LogicType::NONE;
+			logic = LogicType::OR;
 		} else {
 			logic = macro->Conditions().at(idx - 1)->GetLogicType();
 		}
