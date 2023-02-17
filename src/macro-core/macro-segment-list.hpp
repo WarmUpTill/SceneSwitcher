@@ -16,7 +16,7 @@ public:
 	void SetHelpMsg(const QString &msg);
 	void SetHelpMsgVisible(bool visible);
 	MacroSegmentEdit *WidgetAt(int idx);
-	void Insert(int idx, QWidget *widget);
+	void Insert(int idx, MacroSegmentEdit *widget);
 	void Add(QWidget *widget);
 	void Remove(int idx);
 	void Clear(int idx = 0); // Clear all elements >= idx

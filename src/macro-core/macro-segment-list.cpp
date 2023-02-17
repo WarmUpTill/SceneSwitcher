@@ -75,7 +75,7 @@ void MacroSegmentList::SetHelpMsgVisible(bool visible)
 	_helpMsg->setVisible(visible);
 }
 
-void MacroSegmentList::Insert(int idx, QWidget *widget)
+void MacroSegmentList::Insert(int idx, MacroSegmentEdit *widget)
 {
 	widget->installEventFilter(this);
 	_contentLayout->insertWidget(idx, widget);
@@ -135,8 +135,6 @@ void MacroSegmentList::SetSelection(int idx)
 
 bool MacroSegmentList::eventFilter(QObject *object, QEvent *event)
 {
-	if (event->type() == QEvent::MouseButtonPress) {
-	}
 	switch (event->type()) {
 	case QEvent::MouseButtonPress:
 		mousePressEvent(static_cast<QMouseEvent *>(event));
