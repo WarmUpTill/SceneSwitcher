@@ -7,6 +7,7 @@
 #include <QMouseEvent>
 #include <QLabel>
 #include <QScrollBar>
+#include <QApplication>
 
 MacroSegment::MacroSegment(Macro *m, bool supportsVariableValue)
 	: _macro(m), _supportsVariableValue(supportsVariableValue)
@@ -182,9 +183,35 @@ MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
 	SetSelected(false);
 	ShowDropLine(DropLineState::NONE);
 
+	// Enable dragging while clicking on the header text
+	_headerInfo->installEventFilter(this);
+
 	_timer.setInterval(1500);
 	connect(&_timer, SIGNAL(timeout()), this, SLOT(Highlight()));
 	_timer.start();
+}
+
+bool MacroSegmentEdit::eventFilter(QObject *obj, QEvent *ev)
+{
+	if (obj == _headerInfo && ev->type() == QEvent::MouseMove) {
+		if (!parentWidget()) {
+			return QWidget::eventFilter(obj, ev);
+		}
+		// Generate a mouse move event for the MacroSegmentList
+		QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(ev);
+		QMouseEvent *newEvent = new QMouseEvent(
+			mouseEvent->type(),
+			_headerInfo->mapTo(this, mouseEvent->pos()),
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+			mouseEvent->globalPos(),
+#else
+			mouseEvent->globalPosition(),
+#endif
+			mouseEvent->button(), mouseEvent->buttons(),
+			mouseEvent->modifiers());
+		QApplication::sendEvent(parentWidget(), newEvent);
+	}
+	return QWidget::eventFilter(obj, ev);
 }
 
 void MacroSegmentEdit::HeaderInfoChanged(const QString &text)
