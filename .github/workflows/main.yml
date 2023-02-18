@@ -113,7 +113,11 @@ jobs:
         id: ccache-cache
         uses: actions/cache@v3
         with:
-          path: ${{ github.workspace }}/.ccache
+          path: |
+            ${{ github.workspace }}/.ccache
+            ${{ github.workspace }}/plugin/deps/opencv/build_*
+            ${{ github.workspace }}/plugin/deps/leptonica/build_*
+            ${{ github.workspace }}/plugin/deps/tesseract/build*
           key: macos-${{ matrix.arch }}-ccache-plugin-${{ steps.setup.outputs.ccacheDate }}
           restore-keys: |
             macos-${{ matrix.arch }}-ccache-plugin-
@@ -221,7 +225,8 @@ jobs:
         id: ccache-cache
         uses: actions/cache@v3
         with:
-          path: ${{ github.workspace }}/.ccache
+          path: |
+            ${{ github.workspace }}/.ccache
           key: linux-${{ matrix.arch }}-ccache-plugin-${{ steps.setup.outputs.ccacheDate }}
           restore-keys: |
             linux-${{ matrix.arch }}-ccache-plugin-
@@ -301,8 +306,23 @@ jobs:
         id: setup
         run: |
           ## SETUP ENVIRONMENT SCRIPT
+          $CcacheDate = (Get-Date -Format "yyyy-M-d")
+          "ccacheDate=${CcacheDate}" >> $env:GITHUB_OUTPUT
           $CommitHash = (git rev-parse HEAD)[0..8] -join ''
           "commitHash=${CommitHash}" >> $env:GITHUB_OUTPUT
+
+      - name: Restore Compilation Cache
+        id: ccache-cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ github.workspace }}/.ccache
+            ${{ github.workspace }}/plugin/deps/opencv/build_*
+            ${{ github.workspace }}/plugin/deps/leptonica/build_*
+            ${{ github.workspace }}/plugin/deps/tesseract/build*
+          key: windows-${{ matrix.arch }}-ccache-plugin-${{ steps.setup.outputs.ccacheDate }}
+          restore-keys: |
+            windows-${{ matrix.arch }}-ccache-plugin-
 
       - name: Check for GitHub Labels
         id: seekingTesters
