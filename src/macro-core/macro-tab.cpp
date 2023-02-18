@@ -90,7 +90,7 @@ void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 	}
 
 	auto name = QString::fromStdString(macro->Name());
-	if (macro->IsGroup()) {
+	if (macro->IsGroup() && macro->GroupSize() > 0) {
 		QString deleteWarning = obs_module_text(
 			"AdvSceneSwitcher.macroTab.groupDeleteConfirm");
 		if (!DisplayMessage(deleteWarning.arg(name), true)) {
