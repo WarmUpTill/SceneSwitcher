@@ -390,6 +390,8 @@ void MacroTreeModel::Remove(std::shared_ptr<Macro> item)
 		if (!item->IsCollapsed()) {
 			uiEndIdx += item->GroupSize();
 		}
+	} else if (item->IsSubitem()) {
+		Macro::PrepareMoveToGroup(nullptr, item);
 	}
 
 	beginRemoveRows(QModelIndex(), uiStartIdx, uiEndIdx);
@@ -470,6 +472,21 @@ std::shared_ptr<Macro> MacroTreeModel::GetCurrentMacro() const
 		return std::shared_ptr<Macro>();
 	}
 	return _macros[ModelIndexToMacroIndex(idx, _macros)];
+}
+
+std::vector<std::shared_ptr<Macro>>
+MacroTreeModel::GetCurrentMacros(const QModelIndexList &selection) const
+{
+	std::vector<std::shared_ptr<Macro>> result;
+	result.reserve(selection.size());
+	for (const auto &sel : selection) {
+		try {
+			result.emplace_back(_macros.at(
+				ModelIndexToMacroIndex(sel.row(), _macros)));
+		} catch (const std::out_of_range &) {
+		}
+	}
+	return result;
 }
 
 MacroTreeModel::MacroTreeModel(MacroTree *st_,
@@ -706,6 +723,12 @@ void MacroTree::Add(std::shared_ptr<Macro> item) const
 std::shared_ptr<Macro> MacroTree::GetCurrentMacro() const
 {
 	return GetModel()->GetCurrentMacro();
+}
+
+std::vector<std::shared_ptr<Macro>> MacroTree::GetCurrentMacros() const
+{
+	QModelIndexList indices = selectedIndexes();
+	return GetModel()->GetCurrentMacros(indices);
 }
 
 MacroTree::MacroTree(QWidget *parent_) : QListView(parent_)

@@ -46,7 +46,9 @@ public:
 
 	bool addNewMacro(std::shared_ptr<Macro> &res, std::string &name,
 			 std::string format = "");
+	void RemoveMacro(std::shared_ptr<Macro> &);
 	std::shared_ptr<Macro> getSelectedMacro();
+	std::vector<std::shared_ptr<Macro>> getSelectedMacros();
 	void SetEditMacro(Macro &m);
 	void SetMacroEditAreaDisabled(bool);
 	void HighlightAction(int idx, QColor color = QColor(Qt::green));
