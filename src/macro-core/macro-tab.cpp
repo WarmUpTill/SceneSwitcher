@@ -83,12 +83,12 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 	emit MacroAdded(QString::fromStdString(name));
 }
 
-void AdvSceneSwitcher::on_macroRemove_clicked()
+void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 {
-	auto macro = getSelectedMacro();
 	if (!macro) {
 		return;
 	}
+
 	auto name = QString::fromStdString(macro->Name());
 	if (macro->IsGroup()) {
 		QString deleteWarning = obs_module_text(
@@ -104,6 +104,29 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 	}
 
 	emit MacroRemoved(name);
+}
+
+void AdvSceneSwitcher::on_macroRemove_clicked()
+{
+	auto macros = getSelectedMacros();
+	if (macros.empty()) {
+		return;
+	}
+
+	if (macros.size() == 1) {
+		RemoveMacro(macros.at(0));
+		return;
+	}
+
+	QString deleteWarning = obs_module_text(
+		"AdvSceneSwitcher.macroTab.deleteMultipleMacrosConfirmation");
+	if (!DisplayMessage(deleteWarning.arg(macros.size()), true)) {
+		return;
+	}
+
+	for (auto &macro : macros) {
+		RemoveMacro(macro);
+	}
 }
 
 void AdvSceneSwitcher::on_macroUp_clicked()
@@ -312,6 +335,11 @@ void AdvSceneSwitcher::HighlightCondition(int idx, QColor color)
 std::shared_ptr<Macro> AdvSceneSwitcher::getSelectedMacro()
 {
 	return ui->macros->GetCurrentMacro();
+}
+
+std::vector<std::shared_ptr<Macro>> AdvSceneSwitcher::getSelectedMacros()
+{
+	return ui->macros->GetCurrentMacros();
 }
 
 void AdvSceneSwitcher::MacroSelectionChanged(const QItemSelection &,

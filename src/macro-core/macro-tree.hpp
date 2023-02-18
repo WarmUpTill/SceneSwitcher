@@ -92,6 +92,8 @@ private:
 	std::shared_ptr<Macro> FindEndOfGroup(const std::shared_ptr<Macro> &m,
 					      bool above) const;
 	std::shared_ptr<Macro> GetCurrentMacro() const;
+	std::vector<std::shared_ptr<Macro>>
+	GetCurrentMacros(const QModelIndexList &) const;
 	QString GetNewGroupName();
 	void GroupSelectedItems(QModelIndexList &indices);
 	void UngroupSelectedGroups(QModelIndexList &indices);
@@ -121,6 +123,7 @@ public:
 	void Up(std::shared_ptr<Macro> item) const;
 	void Down(std::shared_ptr<Macro> item) const;
 	std::shared_ptr<Macro> GetCurrentMacro() const;
+	std::vector<std::shared_ptr<Macro>> GetCurrentMacros() const;
 	bool GroupsSelected() const;
 	bool GroupedItemsSelected() const;
 	bool SelectionEmpty() const;
