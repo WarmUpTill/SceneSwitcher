@@ -47,6 +47,7 @@ public:
 	bool addNewMacro(std::shared_ptr<Macro> &res, std::string &name,
 			 std::string format = "");
 	void RemoveMacro(std::shared_ptr<Macro> &);
+	void RenameMacro(std::shared_ptr<Macro> &, const QString &name);
 	std::shared_ptr<Macro> getSelectedMacro();
 	std::vector<std::shared_ptr<Macro>> getSelectedMacros();
 	void SetEditMacro(Macro &m);
@@ -147,6 +148,7 @@ public slots:
 	void ShowMacroActionsContextMenu(const QPoint &);
 	void ShowMacroConditionsContextMenu(const QPoint &);
 	void CopyMacro();
+	void RenameCurrentMacro();
 	void ExpandAllActions();
 	void ExpandAllConditions();
 	void CollapseAllActions();
