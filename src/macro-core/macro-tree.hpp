@@ -126,6 +126,7 @@ public:
 	std::vector<std::shared_ptr<Macro>> GetCurrentMacros() const;
 	bool GroupsSelected() const;
 	bool GroupedItemsSelected() const;
+	bool SingleItemSelected() const;
 	bool SelectionEmpty() const;
 
 public slots:

@@ -106,6 +106,17 @@ void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 	emit MacroRemoved(name);
 }
 
+void AdvSceneSwitcher::RenameMacro(std::shared_ptr<Macro> &macro,
+				   const QString &name)
+{
+	auto oldName = QString::fromStdString(macro->Name());
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		macro->SetName(name.toStdString());
+	}
+	emit MacroRenamed(oldName, name);
+}
+
 void AdvSceneSwitcher::on_macroRemove_clicked()
 {
 	auto macros = getSelectedMacros();
@@ -149,10 +160,37 @@ void AdvSceneSwitcher::on_macroDown_clicked()
 	ui->macros->Down(macro);
 }
 
+static bool newMacroNameValid(const std::string &name)
+{
+	if (!macroNameExists(name)) {
+		return true;
+	}
+	DisplayMessage(obs_module_text("AdvSceneSwitcher.macroTab.exists"));
+	return false;
+}
+
+void AdvSceneSwitcher::RenameCurrentMacro()
+{
+	auto macro = getSelectedMacro();
+	if (!macro) {
+		return;
+	}
+	std::string oldName = macro->Name();
+	std::string name;
+	if (!AdvSSNameDialog::AskForName(
+		    this, obs_module_text("AdvSceneSwitcher.windowTitle"),
+		    obs_module_text("AdvSceneSwitcher.item.newName"), name,
+		    QString::fromStdString(oldName))) {
+		return;
+	}
+	if (name.empty() || name == oldName || !newMacroNameValid(name)) {
+		return;
+	}
+	RenameMacro(macro, QString::fromStdString(name));
+}
+
 void AdvSceneSwitcher::on_macroName_editingFinished()
 {
-	bool nameValid = true;
-
 	auto macro = getSelectedMacro();
 	if (!macro) {
 		return;
@@ -161,33 +199,12 @@ void AdvSceneSwitcher::on_macroName_editingFinished()
 	QString newName = ui->macroName->text();
 	QString oldName = QString::fromStdString(macro->Name());
 
-	if (newName.isEmpty() || newName == oldName) {
-		nameValid = false;
+	if (newName.isEmpty() || newName == oldName ||
+	    !newMacroNameValid(newName.toStdString())) {
+		ui->macroName->setText(oldName);
+		return;
 	}
-
-	if (nameValid && macroNameExists(newName.toUtf8().constData())) {
-		DisplayMessage(
-			obs_module_text("AdvSceneSwitcher.macroTab.exists"));
-		nameValid = false;
-	}
-
-	{
-		std::lock_guard<std::mutex> lock(switcher->m);
-		if (nameValid) {
-			macro->SetName(newName.toUtf8().constData());
-			auto macro = getSelectedMacro();
-			if (!macro) {
-				return;
-			}
-			macro->SetName(newName.toStdString());
-		} else {
-			ui->macroName->setText(oldName);
-		}
-	}
-
-	if (nameValid) {
-		emit MacroRenamed(oldName, newName);
-	}
+	RenameMacro(macro, newName);
 }
 
 void AdvSceneSwitcher::on_runMacro_clicked()
@@ -495,15 +512,20 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 {
 	QPoint globalPos = ui->macros->mapToGlobal(pos);
 	QMenu menu;
+
+	auto add = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.contextMenuAdd"),
+		this, &AdvSceneSwitcher::on_macroAdd_clicked);
+
 	auto copy = menu.addAction(
 		obs_module_text("AdvSceneSwitcher.macroTab.copy"), this,
 		&AdvSceneSwitcher::CopyMacro);
-	copy->setDisabled(ui->macros->GroupsSelected());
+	copy->setEnabled(ui->macros->SingleItemSelected());
+	menu.addSeparator();
 
 	auto group = menu.addAction(
 		obs_module_text("AdvSceneSwitcher.macroTab.group"), ui->macros,
 		&MacroTree::GroupSelectedItems);
-	// Nested groups are not supported
 	group->setDisabled(ui->macros->GroupedItemsSelected() ||
 			   ui->macros->GroupsSelected() ||
 			   ui->macros->SelectionEmpty());
@@ -512,6 +534,17 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 		obs_module_text("AdvSceneSwitcher.macroTab.ungroup"),
 		ui->macros, &MacroTree::UngroupSelectedGroups);
 	ungroup->setEnabled(ui->macros->GroupsSelected());
+	menu.addSeparator();
+
+	auto rename = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.rename"), this,
+		&AdvSceneSwitcher::RenameCurrentMacro);
+	rename->setEnabled(ui->macros->SingleItemSelected());
+
+	auto remove = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.remove"), this,
+		&AdvSceneSwitcher::on_macroRemove_clicked);
+	remove->setDisabled(ui->macros->SelectionEmpty());
 
 	menu.exec(globalPos);
 }

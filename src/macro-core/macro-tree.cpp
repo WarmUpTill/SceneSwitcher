@@ -1057,14 +1057,12 @@ void MacroTree::dropEvent(QDropEvent *event)
 
 bool MacroTree::GroupsSelected() const
 {
-	MacroTreeModel *mtm = GetModel();
-	QModelIndexList selectedIndices = selectedIndexes();
-
 	if (SelectionEmpty()) {
 		return false;
 	}
 
-	for (auto &idx : selectedIndices) {
+	MacroTreeModel *mtm = GetModel();
+	for (auto &idx : selectedIndexes()) {
 		std::shared_ptr<Macro> item =
 			mtm->_macros[ModelIndexToMacroIndex(idx.row(),
 							    mtm->_macros)];
@@ -1077,14 +1075,12 @@ bool MacroTree::GroupsSelected() const
 
 bool MacroTree::GroupedItemsSelected() const
 {
-	MacroTreeModel *mtm = GetModel();
-	QModelIndexList selectedIndices = selectedIndexes();
-
 	if (SelectionEmpty()) {
 		return false;
 	}
 
-	for (auto &idx : selectedIndices) {
+	auto *mtm = GetModel();
+	for (auto &idx : selectedIndexes()) {
 		std::shared_ptr<Macro> item =
 			mtm->_macros[ModelIndexToMacroIndex(idx.row(),
 							    mtm->_macros)];
@@ -1094,6 +1090,11 @@ bool MacroTree::GroupedItemsSelected() const
 		}
 	}
 	return false;
+}
+
+bool MacroTree::SingleItemSelected() const
+{
+	return selectedIndexes().size() == 1;
 }
 
 bool MacroTree::SelectionEmpty() const
