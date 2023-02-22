@@ -90,7 +90,7 @@ void MacroActionHttp::LogAction() const
 bool MacroActionHttp::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
-	obs_data_set_string(obj, "url", _url.c_str());
+	_url.Save(obj, "url");
 	_data.Save(obj, "data");
 	obs_data_set_int(obj, "method", static_cast<int>(_method));
 	_timeout.Save(obj);
@@ -100,7 +100,7 @@ bool MacroActionHttp::Save(obs_data_t *obj) const
 bool MacroActionHttp::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	_url = obs_data_get_string(obj, "url");
+	_url.Load(obj, "url");
 	_data.Load(obj, "data");
 	_method = static_cast<Method>(obs_data_get_int(obj, "method"));
 	_timeout.Load(obj);
@@ -109,7 +109,7 @@ bool MacroActionHttp::Load(obs_data_t *obj)
 
 std::string MacroActionHttp::GetShortDesc() const
 {
-	return _url;
+	return _url.UnresolvedValue();
 }
 
 static inline void populateMethodSelection(QComboBox *list)
@@ -122,7 +122,7 @@ static inline void populateMethodSelection(QComboBox *list)
 MacroActionHttpEdit::MacroActionHttpEdit(
 	QWidget *parent, std::shared_ptr<MacroActionHttp> entryData)
 	: QWidget(parent),
-	  _url(new QLineEdit()),
+	  _url(new VariableLineEdit(this)),
 	  _methods(new QComboBox()),
 	  _data(new VariableTextEdit(this)),
 	  _timeout(new DurationSelection(this, false))
@@ -170,7 +170,7 @@ void MacroActionHttpEdit::UpdateEntryData()
 		return;
 	}
 
-	_url->setText(QString::fromStdString(_entryData->_url));
+	_url->setText(_entryData->_url);
 	_data->setPlainText(_entryData->_data);
 	_methods->setCurrentIndex(static_cast<int>(_entryData->_method));
 	_timeout->SetDuration(_entryData->_timeout);
