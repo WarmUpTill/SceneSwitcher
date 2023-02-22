@@ -29,6 +29,8 @@ static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.roundToInt"},
 	{MacroActionVariable::Type::SUBSTRING,
 	 "AdvSceneSwitcher.action.variable.type.subString"},
+	{MacroActionVariable::Type::FIND_AND_REPLACE,
+	 "AdvSceneSwitcher.action.variable.type.findAndReplace"},
 };
 
 static void apppend(Variable &var, const std::string &value)
@@ -95,6 +97,13 @@ void MacroActionVariable::HandleRegexSubString(Variable *var)
 	var->SetValue(match.captured(0).toStdString());
 }
 
+void MacroActionVariable::HandleFindAndReplace(Variable *var)
+{
+	auto value = var->Value();
+	replaceAll(value, _findStr, _replaceStr);
+	var->SetValue(value);
+}
+
 bool MacroActionVariable::PerformAction()
 {
 	auto var = GetVariableByName(_variableName);
@@ -155,6 +164,10 @@ bool MacroActionVariable::PerformAction()
 		HandleIndexSubString(var);
 		return true;
 	}
+	case Type::FIND_AND_REPLACE: {
+		HandleFindAndReplace(var);
+		return true;
+	}
 	}
 
 	return true;
@@ -173,6 +186,8 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "subStringSize", _subStringSize);
 	obs_data_set_string(obj, "regexPattern", _regexPattern.c_str());
 	obs_data_set_int(obj, "regexMatchIdx", _regexMatchIdx);
+	obs_data_set_string(obj, "findStr", _findStr.c_str());
+	obs_data_set_string(obj, "replaceStr", _replaceStr.c_str());
 	_regex.Save(obj);
 	return true;
 }
@@ -191,6 +206,8 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_regex.Load(obj);
 	_regexPattern = obs_data_get_string(obj, "regexPattern");
 	_regexMatchIdx = obs_data_get_int(obj, "regexMatchIdx");
+	_findStr = obs_data_get_string(obj, "findStr");
+	_replaceStr = obs_data_get_string(obj, "replaceStr");
 	return true;
 }
 
@@ -303,7 +320,10 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _subStringSize(new QSpinBox()),
 	  _regex(new RegexConfigWidget(parent)),
 	  _regexPattern(new ResizingPlainTextEdit(this, 10, 1, 1)),
-	  _regexMatchIdx(new QSpinBox())
+	  _regexMatchIdx(new QSpinBox()),
+	  _findReplaceLayout(new QHBoxLayout()),
+	  _findStr(new ResizingPlainTextEdit(this, 10, 1, 1)),
+	  _replaceStr(new ResizingPlainTextEdit(this, 10, 1, 1))
 {
 	_numValue->setMinimum(-9999999999);
 	_numValue->setMaximum(9999999999);
@@ -348,6 +368,10 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 SLOT(RegexPatternChanged()));
 	QWidget::connect(_regexMatchIdx, SIGNAL(valueChanged(int)), this,
 			 SLOT(RegexMatchIdxChanged(int)));
+	QWidget::connect(_findStr, SIGNAL(textChanged()), this,
+			 SLOT(FindStrValueChanged()));
+	QWidget::connect(_replaceStr, SIGNAL(textChanged()), this,
+			 SLOT(ReplaceStrValueChanged()));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -359,6 +383,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{subStringStart}}", _subStringStart},
 		{"{{subStringSize}}", _subStringSize},
 		{"{{regexMatchIdx}}", _regexMatchIdx},
+		{"{{findStr}}", _findStr},
+		{"{{replaceStr}}", _replaceStr},
 	};
 	auto entryLayout = new QHBoxLayout;
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.variable.entry"),
@@ -374,6 +400,11 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			"AdvSceneSwitcher.action.variable.entry.substringRegex"),
 		_subStringRegexEntryLayout, widgetPlaceholders);
 
+	placeWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.action.variable.entry.findAndReplace"),
+		_findReplaceLayout, widgetPlaceholders, false);
+
 	auto regexConfigLayout = new QHBoxLayout;
 	regexConfigLayout->addWidget(_regex);
 	regexConfigLayout->addStretch();
@@ -388,6 +419,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	layout->addLayout(_substringLayout);
 	layout->addWidget(_segmentValueStatus);
 	layout->addWidget(_segmentValue);
+	layout->addLayout(_findReplaceLayout);
 	setLayout(layout);
 
 	_entryData = entryData;
@@ -418,6 +450,9 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_regexPattern->setPlainText(
 		QString::fromStdString(_entryData->_regexPattern));
 	_regexMatchIdx->setValue(_entryData->_regexMatchIdx + 1);
+	_findStr->setPlainText(QString::fromStdString(_entryData->_findStr));
+	_replaceStr->setPlainText(
+		QString::fromStdString(_entryData->_replaceStr));
 	SetWidgetVisibility();
 }
 
@@ -635,6 +670,28 @@ void MacroActionVariableEdit::RegexMatchIdxChanged(int val)
 	_entryData->_regexMatchIdx = val - 1;
 }
 
+void MacroActionVariableEdit::FindStrValueChanged()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_findStr = _findStr->toPlainText().toStdString();
+	adjustSize();
+}
+
+void MacroActionVariableEdit::ReplaceStrValueChanged()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_replaceStr = _replaceStr->toPlainText().toStdString();
+	adjustSize();
+}
+
 void MacroActionVariableEdit::MarkSelectedSegment()
 {
 	if (switcher->disableHints) {
@@ -710,6 +767,9 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 		setLayoutVisible(_subStringRegexEntryLayout, showRegex);
 		_regexPattern->setVisible(showRegex);
 	}
+	setLayoutVisible(_findReplaceLayout,
+			 _entryData->_type ==
+				 MacroActionVariable::Type::FIND_AND_REPLACE);
 
 	adjustSize();
 	updateGeometry();
