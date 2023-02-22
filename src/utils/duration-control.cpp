@@ -6,6 +6,11 @@
 #include <iomanip>
 #include <QHBoxLayout>
 
+Duration::Duration(double initialValueInSeconds)
+	: seconds(initialValueInSeconds)
+{
+}
+
 void Duration::Save(obs_data_t *obj, const char *secondsName,
 		    const char *unitName) const
 {
@@ -111,13 +116,16 @@ static void populateUnits(QComboBox *list)
 	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
 }
 
-DurationSelection::DurationSelection(QWidget *parent, bool showUnitSelection)
-	: QWidget(parent), _unitMultiplier(1)
+DurationSelection::DurationSelection(QWidget *parent, bool showUnitSelection,
+				     double minValue)
+	: QWidget(parent),
+	  _duration(new QDoubleSpinBox(parent)),
+	  _unitSelection(new QComboBox()),
+	  _unitMultiplier(1)
 {
-	_duration = new QDoubleSpinBox(parent);
+	_duration->setMinimum(minValue);
 	_duration->setMaximum(86400); // 24 hours
 
-	_unitSelection = new QComboBox();
 	populateUnits(_unitSelection);
 
 	QWidget::connect(_duration, SIGNAL(valueChanged(double)), this,
