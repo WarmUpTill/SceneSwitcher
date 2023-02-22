@@ -118,4 +118,5 @@ QString formatJsonString(QString);
 QString escapeForRegex(QString &s);
 bool doubleEquals(double left, double right, double epsilon);
 std::pair<int, int> getCursorPos();
-void replaceAll(std::string &str, const std::string &from, const std::string &to);
+void replaceAll(std::string &str, const std::string &from,
+		const std::string &to);

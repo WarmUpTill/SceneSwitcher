@@ -31,6 +31,7 @@ public:
 		SET_ACTION_VALUE,
 		ROUND_TO_INT,
 		SUBSTRING,
+		FIND_AND_REPLACE,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
@@ -43,11 +44,16 @@ public:
 	RegexConfig _regex = RegexConfig::PartialMatchRegexConfig();
 	std::string _regexPattern = ".*";
 	int _regexMatchIdx = 0;
+	std::string _findStr = obs_module_text(
+		"AdvSceneSwitcher.action.variable.findAndReplace.find");
+	std::string _replaceStr = obs_module_text(
+		"AdvSceneSwitcher.action.variable.findAndReplace.replace");
 
 private:
 	void DecrementCurrentSegmentVariableRef();
 	void HandleIndexSubString(Variable *);
 	void HandleRegexSubString(Variable *);
+	void HandleFindAndReplace(Variable *);
 
 	std::weak_ptr<MacroSegment> _macroSegment;
 	int _segmentIdxLoadValue = -1;
@@ -85,6 +91,8 @@ private slots:
 	void RegexChanged(RegexConfig conf);
 	void RegexPatternChanged();
 	void RegexMatchIdxChanged(int val);
+	void FindStrValueChanged();
+	void ReplaceStrValueChanged();
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -106,6 +114,9 @@ protected:
 	RegexConfigWidget *_regex;
 	ResizingPlainTextEdit *_regexPattern;
 	QSpinBox *_regexMatchIdx;
+	QHBoxLayout *_findReplaceLayout;
+	ResizingPlainTextEdit *_findStr;
+	ResizingPlainTextEdit *_replaceStr;
 	std::shared_ptr<MacroActionVariable> _entryData;
 
 private:
