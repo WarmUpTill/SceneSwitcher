@@ -87,7 +87,7 @@ bool MacroActionScreenshot::Save(obs_data_t *obj) const
 	_source.Save(obj);
 	obs_data_set_int(obj, "saveType", static_cast<int>(_saveType));
 	obs_data_set_int(obj, "targetType", static_cast<int>(_targetType));
-	obs_data_set_string(obj, "savePath", _path.c_str());
+	_path.Save(obj, "savePath");
 	obs_data_set_int(obj, "version", _version);
 	return true;
 }
@@ -100,7 +100,7 @@ bool MacroActionScreenshot::Load(obs_data_t *obj)
 	_saveType = static_cast<SaveType>(obs_data_get_int(obj, "saveType"));
 	_targetType =
 		static_cast<TargetType>(obs_data_get_int(obj, "targetType"));
-	_path = obs_data_get_string(obj, "savePath");
+	_path.Load(obj, "savePath");
 
 	// TODO: Remove fallback for older versions
 	if (!obs_data_has_user_value(obj, "version")) {
@@ -200,7 +200,7 @@ void MacroActionScreenshotEdit::UpdateEntryData()
 	_scenes->SetScene(_entryData->_scene);
 	_saveType->setCurrentIndex(static_cast<int>(_entryData->_saveType));
 	_targetType->setCurrentIndex(static_cast<int>(_entryData->_targetType));
-	_savePath->SetPath(QString::fromStdString(_entryData->_path));
+	_savePath->SetPath(_entryData->_path);
 	SetWidgetVisibility();
 }
 
@@ -243,7 +243,7 @@ void MacroActionScreenshotEdit::PathChanged(const QString &text)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_path = text.toUtf8().constData();
+	_entryData->_path = text.toStdString();
 }
 
 void MacroActionScreenshotEdit::SourceChanged(const SourceSelection &source)
