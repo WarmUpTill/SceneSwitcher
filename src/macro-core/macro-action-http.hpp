@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "variable-text-edit.hpp"
+#include "variable-line-edit.hpp"
 #include "duration-control.hpp"
 
 #include <QLineEdit>
@@ -25,7 +26,8 @@ public:
 		POST,
 	};
 
-	std::string _url = obs_module_text("AdvSceneSwitcher.enterURL");
+	VariableResolvingString _url =
+		obs_module_text("AdvSceneSwitcher.enterURL");
 	VariableResolvingString _data =
 		obs_module_text("AdvSceneSwitcher.enterText");
 	Method _method = Method::GET;
@@ -69,7 +71,7 @@ protected:
 private:
 	void SetWidgetVisibility();
 
-	QLineEdit *_url;
+	VariableLineEdit *_url;
 	QComboBox *_methods;
 	VariableTextEdit *_data;
 	DurationSelection *_timeout;
