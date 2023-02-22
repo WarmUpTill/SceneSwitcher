@@ -1,11 +1,6 @@
 #pragma once
 #include "macro-action-edit.hpp"
-#include "file-selection.hpp"
-
-#include <QLineEdit>
-#include <QPushButton>
-#include <QListWidget>
-#include <QStringList>
+#include "process-config.hpp"
 
 class MacroActionRun : public MacroAction {
 public:
@@ -21,9 +16,7 @@ public:
 		return std::make_shared<MacroActionRun>(m);
 	}
 
-	std::string _path = obs_module_text("AdvSceneSwitcher.enterPath");
-	std::string _workingDirectory = "";
-	QStringList _args;
+	ProcessConfig _procConfig;
 
 private:
 	static bool _registered;
@@ -46,13 +39,7 @@ public:
 	}
 
 private slots:
-	void PathChanged(const QString &text);
-	void AddArg();
-	void RemoveArg();
-	void ArgUp();
-	void ArgDown();
-	void ArgItemClicked(QListWidgetItem *);
-	void WorkingDirectoryChanged(const QString &text);
+	void ProcessConfigChanged(const ProcessConfig &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -60,14 +47,6 @@ protected:
 	std::shared_ptr<MacroActionRun> _entryData;
 
 private:
-	void SetArgListSize();
-
-	FileSelection *_filePath;
-	QListWidget *_argList;
-	QPushButton *_addArg;
-	QPushButton *_removeArg;
-	QPushButton *_argUp;
-	QPushButton *_argDown;
-	FileSelection *_workingDirectory;
+	ProcessConfigEdit *_procConfig;
 	bool _loading = true;
 };

@@ -1,10 +1,8 @@
 #include "macro-action-run.hpp"
 #include "advanced-scene-switcher.hpp"
-#include "name-dialog.hpp"
 #include "utility.hpp"
 
 #include <QProcess>
-#include <QFileDialog>
 #include <QDesktopServices>
 
 const std::string MacroActionRun::id = "run";
@@ -15,137 +13,53 @@ bool MacroActionRun::_registered = MacroActionFactory::Register(
 
 bool MacroActionRun::PerformAction()
 {
-	if (!QProcess::startDetached(
-		    QString::fromStdString(_path), _args,
-		    QString::fromStdString(_workingDirectory)) &&
-	    _args.empty()) {
+	bool procStarted = QProcess::startDetached(
+		QString::fromStdString(_procConfig.Path()), _procConfig.Args(),
+		QString::fromStdString(_procConfig.WorkingDir()));
+	if (!procStarted && _procConfig.Args().empty()) {
 		vblog(LOG_INFO, "run \"%s\" using QDesktopServices",
-		      _path.c_str());
-		QDesktopServices::openUrl(
-			QUrl::fromLocalFile(QString::fromStdString(_path)));
+		      _procConfig.Path().c_str());
+		QDesktopServices::openUrl(QUrl::fromLocalFile(
+			QString::fromStdString(_procConfig.Path())));
 	}
 	return true;
 }
 
 void MacroActionRun::LogAction() const
 {
-	vblog(LOG_INFO, "run \"%s\"", _path.c_str());
+	vblog(LOG_INFO, "run \"%s\"", _procConfig.Path().c_str());
 }
 
 bool MacroActionRun::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
-	obs_data_set_string(obj, "path", _path.c_str());
-	obs_data_set_string(obj, "workingDirectory", _workingDirectory.c_str());
-	obs_data_array_t *args = obs_data_array_create();
-	for (auto &arg : _args) {
-		obs_data_t *array_obj = obs_data_create();
-		obs_data_set_string(array_obj, "arg",
-				    arg.toStdString().c_str());
-		obs_data_array_push_back(args, array_obj);
-		obs_data_release(array_obj);
-	}
-	obs_data_set_array(obj, "args", args);
-	obs_data_array_release(args);
+	_procConfig.Save(obj);
 	return true;
 }
 
 bool MacroActionRun::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	_path = obs_data_get_string(obj, "path");
-	_workingDirectory = obs_data_get_string(obj, "workingDirectory");
-	obs_data_array_t *args = obs_data_get_array(obj, "args");
-	size_t count = obs_data_array_count(args);
-	for (size_t i = 0; i < count; i++) {
-		obs_data_t *array_obj = obs_data_array_item(args, i);
-		_args << QString::fromStdString(
-			obs_data_get_string(array_obj, "arg"));
-		obs_data_release(array_obj);
-	}
-	obs_data_array_release(args);
+	_procConfig.Load(obj);
 	return true;
 }
 
 std::string MacroActionRun::GetShortDesc() const
 {
-	return _path;
+	return _procConfig.Path();
 }
 
 MacroActionRunEdit::MacroActionRunEdit(
 	QWidget *parent, std::shared_ptr<MacroActionRun> entryData)
-	: QWidget(parent),
-	  _filePath(new FileSelection()),
-	  _argList(new QListWidget()),
-	  _addArg(new QPushButton()),
-	  _removeArg(new QPushButton()),
-	  _argUp(new QPushButton()),
-	  _argDown(new QPushButton()),
-	  _workingDirectory(new FileSelection(FileSelection::Type::FOLDER))
+	: QWidget(parent), _procConfig(new ProcessConfigEdit(this))
 {
-	_addArg->setMaximumWidth(22);
-	_addArg->setProperty("themeID",
-			     QVariant(QString::fromUtf8("addIconSmall")));
-	_addArg->setFlat(true);
-	_removeArg->setMaximumWidth(22);
-	_removeArg->setProperty("themeID",
-				QVariant(QString::fromUtf8("removeIconSmall")));
-	_removeArg->setFlat(true);
-	_argUp->setMaximumWidth(22);
-	_argUp->setProperty("themeID",
-			    QVariant(QString::fromUtf8("upArrowIconSmall")));
-	_argUp->setFlat(true);
-	_argDown->setMaximumWidth(22);
-	_argDown->setProperty(
-		"themeID", QVariant(QString::fromUtf8("downArrowIconSmall")));
-	_argDown->setFlat(true);
+	QWidget::connect(_procConfig,
+			 SIGNAL(ConfigChanged(const ProcessConfig &)), this,
+			 SLOT(ProcessConfigChanged(const ProcessConfig &)));
 
-	QWidget::connect(_filePath, SIGNAL(PathChanged(const QString &)), this,
-			 SLOT(PathChanged(const QString &)));
-	QWidget::connect(_addArg, SIGNAL(clicked()), this, SLOT(AddArg()));
-	QWidget::connect(_removeArg, SIGNAL(clicked()), this,
-			 SLOT(RemoveArg()));
-	QWidget::connect(_argUp, SIGNAL(clicked()), this, SLOT(ArgUp()));
-	QWidget::connect(_argDown, SIGNAL(clicked()), this, SLOT(ArgDown()));
-	QWidget::connect(_argList, SIGNAL(itemDoubleClicked(QListWidgetItem *)),
-			 this, SLOT(ArgItemClicked(QListWidgetItem *)));
-	QWidget::connect(_workingDirectory,
-			 SIGNAL(PathChanged(const QString &)), this,
-			 SLOT(WorkingDirectoryChanged(const QString &)));
-
-	auto *entryLayout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{filePath}}", _filePath},
-		{"{{workingDirectory}}", _workingDirectory},
-	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.run.entry"),
-		     entryLayout, widgetPlaceholders, false);
-
-	auto argButtonLayout = new QHBoxLayout;
-	argButtonLayout->addWidget(_addArg);
-	argButtonLayout->addWidget(_removeArg);
-	QFrame *line = new QFrame();
-	line->setFrameShape(QFrame::VLine);
-	line->setFrameShadow(QFrame::Sunken);
-	argButtonLayout->addWidget(line);
-	argButtonLayout->addWidget(_argUp);
-	argButtonLayout->addWidget(_argDown);
-	argButtonLayout->addStretch();
-
-	auto workingDirectoryLayout = new QHBoxLayout;
-	placeWidgets(
-		obs_module_text(
-			"AdvSceneSwitcher.action.run.entry.workingDirectory"),
-		workingDirectoryLayout, widgetPlaceholders, false);
-
-	auto *mainLayout = new QVBoxLayout;
-	mainLayout->addLayout(entryLayout);
-	mainLayout->addWidget(new QLabel(
-		obs_module_text("AdvSceneSwitcher.action.run.arguments")));
-	mainLayout->addWidget(_argList);
-	mainLayout->addLayout(argButtonLayout);
-	mainLayout->addLayout(workingDirectoryLayout);
-	setLayout(mainLayout);
+	auto *layout = new QVBoxLayout;
+	layout->addWidget(_procConfig);
+	setLayout(layout);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -157,142 +71,19 @@ void MacroActionRunEdit::UpdateEntryData()
 	if (!_entryData) {
 		return;
 	}
-	_filePath->SetPath(QString::fromStdString(_entryData->_path));
-	for (auto &arg : _entryData->_args) {
-		QListWidgetItem *item = new QListWidgetItem(arg, _argList);
-		item->setData(Qt::UserRole, arg);
-	}
-	_workingDirectory->SetPath(
-		QString::fromStdString(_entryData->_workingDirectory));
-	SetArgListSize();
+	_procConfig->SetProcessConfig(_entryData->_procConfig);
 }
 
-void MacroActionRunEdit::PathChanged(const QString &text)
+void MacroActionRunEdit::ProcessConfigChanged(const ProcessConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_path = text.toUtf8().constData();
+	_entryData->_procConfig = conf;
+	adjustSize();
+	updateGeometry();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
-}
-
-void MacroActionRunEdit::AddArg()
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::string name;
-	bool accepted = AdvSSNameDialog::AskForName(
-		this,
-		obs_module_text("AdvSceneSwitcher.action.run.addArgument"),
-		obs_module_text(
-			"AdvSceneSwitcher.action.run.addArgumentDescription"),
-		name, "", 170, false);
-
-	if (!accepted || name.empty()) {
-		return;
-	}
-	auto arg = QString::fromStdString(name);
-	QVariant v = QVariant::fromValue(arg);
-	QListWidgetItem *item = new QListWidgetItem(arg, _argList);
-	item->setData(Qt::UserRole, arg);
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_args << arg;
-	SetArgListSize();
-}
-
-void MacroActionRunEdit::RemoveArg()
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	int idx = _argList->currentRow();
-	if (idx == -1) {
-		return;
-	}
-	_entryData->_args.removeAt(idx);
-
-	QListWidgetItem *item = _argList->currentItem();
-	if (!item) {
-		return;
-	}
-	delete item;
-	SetArgListSize();
-}
-
-void MacroActionRunEdit::ArgUp()
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	int idx = _argList->currentRow();
-	if (idx != -1 && idx != 0) {
-		_argList->insertItem(idx - 1, _argList->takeItem(idx));
-		_argList->setCurrentRow(idx - 1);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-		_entryData->_args.move(idx, idx - 1);
-	}
-}
-
-void MacroActionRunEdit::ArgDown()
-{
-	int idx = _argList->currentRow();
-	if (idx != -1 && idx != _argList->count() - 1) {
-		_argList->insertItem(idx + 1, _argList->takeItem(idx));
-		_argList->setCurrentRow(idx + 1);
-
-		std::lock_guard<std::mutex> lock(switcher->m);
-		_entryData->_args.move(idx, idx + 1);
-	}
-}
-
-void MacroActionRunEdit::ArgItemClicked(QListWidgetItem *item)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::string name;
-	bool accepted = AdvSSNameDialog::AskForName(
-		this,
-		obs_module_text("AdvSceneSwitcher.action.run.addArgument"),
-		obs_module_text(
-			"AdvSceneSwitcher.action.run.addArgumentDescription"),
-		name, item->text(), 170, false);
-
-	if (!accepted || name.empty()) {
-		return;
-	}
-
-	auto arg = QString::fromStdString(name);
-	QVariant v = QVariant::fromValue(arg);
-	item->setText(arg);
-	item->setData(Qt::UserRole, arg);
-	int idx = _argList->currentRow();
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_args[idx] = arg;
-}
-
-void MacroActionRunEdit::WorkingDirectoryChanged(const QString &path)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	_entryData->_workingDirectory = path.toStdString();
-}
-
-void MacroActionRunEdit::SetArgListSize()
-{
-	setHeightToContentHeight(_argList);
-	adjustSize();
 }
