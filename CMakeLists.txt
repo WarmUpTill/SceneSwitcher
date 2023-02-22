@@ -191,6 +191,8 @@ target_sources(
           src/macro-core/macro-condition-recording.hpp
           src/macro-core/macro-condition-replay-buffer.cpp
           src/macro-core/macro-condition-replay-buffer.hpp
+          src/macro-core/macro-condition-run.cpp
+          src/macro-core/macro-condition-run.hpp
           src/macro-core/macro-condition-scene-order.cpp
           src/macro-core/macro-condition-scene-order.hpp
           src/macro-core/macro-condition-scene-transform.cpp
@@ -252,6 +254,8 @@ target_sources(
           src/utils/macro-list.hpp
           src/utils/name-dialog.cpp
           src/utils/name-dialog.hpp
+          src/utils/process-config.cpp
+          src/utils/process-config.hpp
           src/utils/regex-config.cpp
           src/utils/regex-config.hpp
           src/utils/resizing-text-edit.cpp
