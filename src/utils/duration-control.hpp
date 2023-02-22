@@ -15,6 +15,9 @@ enum class DurationUnit {
 
 class Duration {
 public:
+	Duration() = default;
+	Duration(double initialValueInSeconds);
+
 	void Save(obs_data_t *obj, const char *secondsName = "seconds",
 		  const char *unitName = "displayUnit") const;
 	void Load(obs_data_t *obj, const char *secondsName = "seconds",
@@ -39,7 +42,7 @@ class DurationSelection : public QWidget {
 	Q_OBJECT
 public:
 	DurationSelection(QWidget *parent = nullptr,
-			  bool showUnitSelection = true);
+			  bool showUnitSelection = true, double minValue = 0.0);
 	void SetValue(double value);
 	void SetUnit(DurationUnit u);
 	void SetDuration(Duration d);
