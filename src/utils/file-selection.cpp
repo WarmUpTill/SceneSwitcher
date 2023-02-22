@@ -7,12 +7,12 @@
 #include <filesystem>
 
 FileSelection::FileSelection(FileSelection::Type type, QWidget *parent)
-	: QWidget(parent), _type(type)
+	: QWidget(parent),
+	  _type(type),
+	  _filePath(new VariableLineEdit(this)),
+	  _browseButton(
+		  new QPushButton(obs_module_text("AdvSceneSwitcher.browse")))
 {
-	_filePath = new QLineEdit();
-	_browseButton =
-		new QPushButton(obs_module_text("AdvSceneSwitcher.browse"));
-
 	QWidget::connect(_filePath, SIGNAL(editingFinished()), this,
 			 SLOT(PathChange()));
 	QWidget::connect(_browseButton, SIGNAL(clicked()), this,
@@ -22,6 +22,11 @@ FileSelection::FileSelection(FileSelection::Type type, QWidget *parent)
 	layout->addWidget(_browseButton);
 	layout->setContentsMargins(0, 0, 0, 0);
 	setLayout(layout);
+}
+
+void FileSelection::SetPath(const VariableResolvingString &path)
+{
+	_filePath->setText(path);
 }
 
 void FileSelection::SetPath(const QString &path)

@@ -1257,7 +1257,7 @@ void MacroConditionVideoEdit::UpdateEntryData()
 	_patternMatchMode->setCurrentIndex(_patternMatchMode->findData(
 		_entryData->_patternMatchParameters.matchMode));
 	_brightnessThreshold->SetDoubleValue(_entryData->_brightnessThreshold);
-	_modelDataPath->SetPath(_entryData->GetModelDataPath().c_str());
+	_modelDataPath->SetPath(_entryData->GetModelDataPath());
 	_objectScaleThreshold->SetDoubleValue(
 		_entryData->_objMatchParameters.scaleFactor);
 	_matchText->setPlainText(_entryData->_ocrParamters.text);
