@@ -27,11 +27,26 @@ size_t WriteCB(void *ptr, size_t size, size_t nmemb, std::string *buffer)
 	return size * nmemb;
 }
 
+void MacroActionHttp::SetupHeaders()
+{
+	if (!_setHeaders) {
+		return;
+	}
+	struct curl_slist *headers = nullptr;
+	for (auto &header : _headers) {
+		headers = switcher->curl.SlistAppend(headers, header.c_str());
+	}
+	if (!_headers.empty()) {
+		switcher->curl.SetOpt(CURLOPT_HTTPHEADER, headers);
+	}
+}
+
 void MacroActionHttp::Get()
 {
 	switcher->curl.SetOpt(CURLOPT_URL, _url.c_str());
 	switcher->curl.SetOpt(CURLOPT_HTTPGET, 1L);
 	switcher->curl.SetOpt(CURLOPT_TIMEOUT_MS, _timeout.seconds * 1000);
+	SetupHeaders();
 
 	std::string response;
 	if (IsReferencedInVars()) {
@@ -50,6 +65,7 @@ void MacroActionHttp::Post()
 	switcher->curl.SetOpt(CURLOPT_URL, _url.c_str());
 	switcher->curl.SetOpt(CURLOPT_POSTFIELDS, _data.c_str());
 	switcher->curl.SetOpt(CURLOPT_TIMEOUT_MS, _timeout.seconds * 1000);
+	SetupHeaders();
 	switcher->curl.Perform();
 }
 
@@ -92,6 +108,8 @@ bool MacroActionHttp::Save(obs_data_t *obj) const
 	MacroAction::Save(obj);
 	_url.Save(obj, "url");
 	_data.Save(obj, "data");
+	obs_data_set_bool(obj, "setHeaders", _setHeaders);
+	_headers.Save(obj, "headers", "header");
 	obs_data_set_int(obj, "method", static_cast<int>(_method));
 	_timeout.Save(obj);
 	return true;
@@ -102,6 +120,8 @@ bool MacroActionHttp::Load(obs_data_t *obj)
 	MacroAction::Load(obj);
 	_url.Load(obj, "url");
 	_data.Load(obj, "data");
+	_setHeaders = obs_data_get_bool(obj, "setHeaders");
+	_headers.Load(obj, "headers", "header");
 	_method = static_cast<Method>(obs_data_get_int(obj, "method"));
 	_timeout.Load(obj);
 	return true;
@@ -125,6 +145,12 @@ MacroActionHttpEdit::MacroActionHttpEdit(
 	  _url(new VariableLineEdit(this)),
 	  _methods(new QComboBox()),
 	  _data(new VariableTextEdit(this)),
+	  _setHeaders(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.action.http.setHeaders"))),
+	  _headerListLayout(new QVBoxLayout()),
+	  _headerList(new StringListEdit(
+		  this, obs_module_text("AdvSceneSwitcher.action.http.headers"),
+		  obs_module_text("AdvSceneSwitcher.action.http.addHeader"))),
 	  _timeout(new DurationSelection(this, false))
 {
 	populateMethodSelection(_methods);
@@ -137,6 +163,11 @@ MacroActionHttpEdit::MacroActionHttpEdit(
 			 SLOT(MethodChanged(int)));
 	QWidget::connect(_timeout, SIGNAL(DurationChanged(double)), this,
 			 SLOT(TimeoutChanged(double)));
+	QWidget::connect(_setHeaders, SIGNAL(stateChanged(int)), this,
+			 SLOT(SetHeadersChanged(int)));
+	QWidget::connect(_headerList,
+			 SIGNAL(StringListChanged(const StringList &)), this,
+			 SLOT(HeadersChanged(const StringList &)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{url}}", _url},
@@ -153,8 +184,14 @@ MacroActionHttpEdit::MacroActionHttpEdit(
 		obs_module_text("AdvSceneSwitcher.action.http.entry.line2"),
 		timeoutLayout, widgetPlaceholders);
 
+	_headerListLayout->addWidget(new QLabel(
+		obs_module_text("AdvSceneSwitcher.action.http.headers")));
+	_headerListLayout->addWidget(_headerList);
+
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(actionLayout);
+	mainLayout->addWidget(_setHeaders);
+	mainLayout->addLayout(_headerListLayout);
 	mainLayout->addWidget(_data);
 	mainLayout->addLayout(timeoutLayout);
 	setLayout(mainLayout);
@@ -172,6 +209,8 @@ void MacroActionHttpEdit::UpdateEntryData()
 
 	_url->setText(_entryData->_url);
 	_data->setPlainText(_entryData->_data);
+	_setHeaders->setChecked(_entryData->_setHeaders);
+	_headerList->SetStringList(_entryData->_headers);
 	_methods->setCurrentIndex(static_cast<int>(_entryData->_method));
 	_timeout->SetDuration(_entryData->_timeout);
 	SetWidgetVisibility();
@@ -209,18 +248,33 @@ void MacroActionHttpEdit::TimeoutChanged(double seconds)
 	_entryData->_timeout.seconds = seconds;
 }
 
+void MacroActionHttpEdit::SetHeadersChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_setHeaders = value;
+	SetWidgetVisibility();
+}
+
+void MacroActionHttpEdit::HeadersChanged(const StringList &headers)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_headers = headers;
+	adjustSize();
+	updateGeometry();
+}
+
 void MacroActionHttpEdit::SetWidgetVisibility()
 {
-	switch (_entryData->_method) {
-	case MacroActionHttp::Method::GET:
-		_data->hide();
-		break;
-	case MacroActionHttp::Method::POST:
-		_data->show();
-		break;
-	default:
-		break;
-	}
+	_data->setVisible(_entryData->_method == MacroActionHttp::Method::POST);
+	setLayoutVisible(_headerListLayout, _entryData->_setHeaders);
 
 	adjustSize();
 	updateGeometry();

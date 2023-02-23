@@ -3,9 +3,11 @@
 #include "variable-text-edit.hpp"
 #include "variable-line-edit.hpp"
 #include "duration-control.hpp"
+#include "string-list.hpp"
 
 #include <QLineEdit>
 #include <QComboBox>
+#include <QCheckBox>
 
 class MacroActionHttp : public MacroAction {
 public:
@@ -30,10 +32,13 @@ public:
 		obs_module_text("AdvSceneSwitcher.enterURL");
 	VariableResolvingString _data =
 		obs_module_text("AdvSceneSwitcher.enterText");
+	bool _setHeaders = false;
+	StringList _headers;
 	Method _method = Method::GET;
-	Duration _timeout;
+	Duration _timeout = Duration(1.0);
 
 private:
+	void SetupHeaders();
 	void Get();
 	void Post();
 
@@ -62,6 +67,8 @@ private slots:
 	void URLChanged();
 	void MethodChanged(int);
 	void TimeoutChanged(double seconds);
+	void SetHeadersChanged(int);
+	void HeadersChanged(const StringList &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -74,6 +81,9 @@ private:
 	VariableLineEdit *_url;
 	QComboBox *_methods;
 	VariableTextEdit *_data;
+	QCheckBox *_setHeaders;
+	QVBoxLayout *_headerListLayout;
+	StringListEdit *_headerList;
 	DurationSelection *_timeout;
 	bool _loading = true;
 };

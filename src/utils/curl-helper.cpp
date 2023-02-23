@@ -32,6 +32,14 @@ Curlhelper::~Curlhelper()
 	}
 }
 
+curl_slist *Curlhelper::SlistAppend(curl_slist *list, const char *string)
+{
+	if (!_initialized) {
+		return nullptr;
+	}
+	return _slistAppend(list, string);
+}
+
 CURLcode Curlhelper::Perform()
 {
 	if (!_initialized) {
@@ -88,10 +96,11 @@ bool Curlhelper::Resolve()
 {
 	_init = (initFunction)_lib->resolve("curl_easy_init");
 	_setopt = (setOptFunction)_lib->resolve("curl_easy_setopt");
+	_slistAppend = (slistAppendFunction)_lib->resolve("curl_slist_append");
 	_perform = (performFunction)_lib->resolve("curl_easy_perform");
 	_cleanup = (cleanupFunction)_lib->resolve("curl_easy_cleanup");
 
-	if (_init && _setopt && _perform && _cleanup) {
+	if (_init && _setopt && _slistAppend && _perform && _cleanup) {
 		blog(LOG_INFO, "[adv-ss] curl loaded successfully");
 		return true;
 	}
