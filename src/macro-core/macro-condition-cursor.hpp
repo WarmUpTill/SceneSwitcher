@@ -1,11 +1,11 @@
 #pragma once
 #include "macro.hpp"
+#include "striped-frame.hpp"
 
 #include <QSpinBox>
 #include <QComboBox>
 #include <QPushButton>
 #include <QTimer>
-#include <QFrame>
 
 class MacroConditionCursor : public MacroCondition {
 public:
@@ -86,6 +86,6 @@ private:
 	void SetWidgetVisibility();
 	void SetupFrame();
 	QTimer _timer;
-	QFrame _frame;
+	StripedFrame _frame;
 	bool _loading = true;
 };

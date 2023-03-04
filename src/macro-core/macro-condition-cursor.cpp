@@ -334,18 +334,20 @@ void MacroConditionCursorEdit::SetupFrame()
 			      Qt::WindowStaysOnTopHint);
 	_frame.setAttribute(Qt::WA_TranslucentBackground, true);
 
-	if (_entryData) {
-		QRect rect(_entryData->_minX, _entryData->_minY,
-			   _entryData->_maxX - _entryData->_minX,
-			   _entryData->_maxY - _entryData->_minY);
-
-		if (rect.size().height() == 0 || rect.size().width() == 0) {
-			_frame.setGeometry(0, 0, 1, 1);
-			return;
-		}
-
-		_frame.setGeometry(getScreenUnionRect().intersected(rect));
+	if (!_entryData) {
+		return;
 	}
+
+	QRect rect(_entryData->_minX, _entryData->_minY,
+		   _entryData->_maxX - _entryData->_minX,
+		   _entryData->_maxY - _entryData->_minY);
+
+	if (rect.size().height() <= 0 || rect.size().width() <= 0) {
+		_frame.setGeometry(0, 0, 1, 1);
+		return;
+	}
+
+	_frame.setGeometry(getScreenUnionRect().intersected(rect));
 }
 
 void MacroConditionCursorEdit::UpdateEntryData()
