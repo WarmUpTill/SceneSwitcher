@@ -1,4 +1,6 @@
 #pragma once
+#include "variable.hpp"
+
 #include <obs-data.h>
 #include <obs-module.h>
 
@@ -6,7 +8,7 @@
 #include <QListWidget>
 #include <QStringList>
 
-class StringList : public QStringList {
+class StringList : public QList<VariableResolvingString> {
 public:
 	bool Save(obs_data_t *obj, const char *name,
 		  const char *elementName = "string") const;

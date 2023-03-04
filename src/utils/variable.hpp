@@ -47,6 +47,7 @@ public:
 	VariableResolvingString(std::string str) : _value(std::move(str)){};
 	VariableResolvingString(const char *str) : _value(str){};
 	operator std::string();
+	operator QVariant() const;
 	void operator=(std::string);
 	void operator=(const char *value);
 	const char *c_str();
@@ -64,6 +65,8 @@ private:
 	std::string _resolvedValue = "";
 	std::chrono::high_resolution_clock::time_point _lastResolve{};
 };
+
+Q_DECLARE_METATYPE(VariableResolvingString);
 
 Variable *GetVariableByName(const std::string &name);
 Variable *GetVariableByQString(const QString &name);
