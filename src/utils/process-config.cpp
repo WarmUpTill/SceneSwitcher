@@ -36,6 +36,15 @@ bool ProcessConfig::Load(obs_data_t *obj)
 	return true;
 }
 
+QStringList ProcessConfig::Args()
+{
+	QStringList result;
+	for (auto &arg : _args) {
+		result << QString::fromStdString(arg);
+	}
+	return result;
+}
+
 ProcessConfigEdit::ProcessConfigEdit(QWidget *parent)
 	: QWidget(parent),
 	  _filePath(new FileSelection()),

@@ -17,7 +17,7 @@ public:
 
 	std::string Path() const { return _path; }
 	std::string WorkingDir() const { return _workingDirectory; }
-	StringList Args() const { return _args; }
+	QStringList Args(); // Resolves variables
 
 private:
 	std::string _path = obs_module_text("AdvSceneSwitcher.enterPath");

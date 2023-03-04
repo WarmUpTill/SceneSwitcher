@@ -120,6 +120,11 @@ VariableResolvingString::operator std::string()
 	return _resolvedValue;
 }
 
+VariableResolvingString::operator QVariant() const
+{
+	return QVariant::fromValue<VariableResolvingString>(*this);
+}
+
 void VariableResolvingString::operator=(std::string value)
 {
 	_value = value;

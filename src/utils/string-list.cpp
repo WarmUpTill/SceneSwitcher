@@ -10,8 +10,7 @@ bool StringList::Save(obs_data_t *obj, const char *name,
 	obs_data_array_t *strings = obs_data_array_create();
 	for (auto &string : *this) {
 		obs_data_t *array_obj = obs_data_create();
-		obs_data_set_string(array_obj, elementName,
-				    string.toStdString().c_str());
+		string.Save(array_obj, elementName);
 		obs_data_array_push_back(strings, array_obj);
 		obs_data_release(array_obj);
 	}
@@ -28,8 +27,9 @@ bool StringList::Load(obs_data_t *obj, const char *name,
 	size_t count = obs_data_array_count(strings);
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(strings, i);
-		*this << QString::fromStdString(
-			obs_data_get_string(array_obj, elementName));
+		VariableResolvingString string;
+		string.Load(array_obj, elementName);
+		*this << string;
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(strings);
@@ -97,7 +97,9 @@ void StringListEdit::SetStringList(const StringList &list)
 	_stringList = list;
 	_list->clear();
 	for (const auto &string : list) {
-		QListWidgetItem *item = new QListWidgetItem(string, _list);
+		QListWidgetItem *item = new QListWidgetItem(
+			QString::fromStdString(string.UnresolvedValue()),
+			_list);
 		item->setData(Qt::UserRole, string);
 	}
 	SetListSize();
@@ -112,9 +114,10 @@ void StringListEdit::Add()
 	if (!accepted || name.empty()) {
 		return;
 	}
-	auto string = QString::fromStdString(name);
+	VariableResolvingString string = name;
 	QVariant v = QVariant::fromValue(string);
-	QListWidgetItem *item = new QListWidgetItem(string, _list);
+	QListWidgetItem *item = new QListWidgetItem(
+		QString::fromStdString(string.UnresolvedValue()), _list);
 	item->setData(Qt::UserRole, string);
 
 	_stringList << string;
@@ -176,9 +179,9 @@ void StringListEdit::Clicked(QListWidgetItem *item)
 		return;
 	}
 
-	auto string = QString::fromStdString(name);
+	VariableResolvingString string = name;
 	QVariant v = QVariant::fromValue(string);
-	item->setText(string);
+	item->setText(QString::fromStdString(string.UnresolvedValue()));
 	item->setData(Qt::UserRole, string);
 	int idx = _list->currentRow();
 	_stringList[idx] = string;
