@@ -19,12 +19,17 @@ StatusControl::StatusControl(QWidget *parent, bool noLayout)
 			  "AdvSceneSwitcher.generalTab.status.currentStatus"),
 		  this))
 {
+	_statusPrefix->setWordWrap(true);
+	_statusPrefix->setSizePolicy(QSizePolicy::Expanding,
+				     QSizePolicy::Expanding);
 	_status->setStyleSheet("QLabel{ \
 		border-style: outset; \
 		border-width: 2px; \
 		border-radius: 7px; \
 		border-color: rgb(0,0,0,0) \
 		}");
+	_status->setSizePolicy(QSizePolicy::Maximum,
+			       QSizePolicy::MinimumExpanding);
 
 	QWidget::connect(_button, SIGNAL(clicked()), this,
 			 SLOT(ButtonClicked()));
@@ -32,8 +37,9 @@ StatusControl::StatusControl(QWidget *parent, bool noLayout)
 	if (!noLayout) {
 		QHBoxLayout *statusLayout = new QHBoxLayout();
 		statusLayout->addWidget(_statusPrefix);
-		statusLayout->addWidget(_status);
 		statusLayout->addStretch();
+		statusLayout->addWidget(_status);
+		statusLayout->setStretch(0, 10);
 		_buttonLayout->setContentsMargins(0, 0, 0, 0);
 		_buttonLayout->addWidget(_button);
 		QVBoxLayout *layout = new QVBoxLayout();
