@@ -268,6 +268,8 @@ target_sources(
           src/utils/slider-spinbox.hpp
           src/utils/source-selection.cpp
           src/utils/source-selection.hpp
+          src/utils/striped-frame.cpp
+          src/utils/striped-frame.hpp
           src/utils/transition-selection.cpp
           src/utils/transition-selection.hpp
           src/utils/utility.cpp
