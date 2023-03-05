@@ -252,6 +252,8 @@ target_sources(
           src/utils/file-selection.hpp
           src/utils/macro-list.cpp
           src/utils/macro-list.hpp
+          src/utils/mouse-wheel-guard.cpp
+          src/utils/mouse-wheel-guard.hpp
           src/utils/name-dialog.cpp
           src/utils/name-dialog.hpp
           src/utils/process-config.cpp

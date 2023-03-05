@@ -113,11 +113,3 @@ private:
 
 	friend class MacroSegmentList;
 };
-
-class MouseWheelWidgetAdjustmentGuard : public QObject {
-public:
-	explicit MouseWheelWidgetAdjustmentGuard(QObject *parent);
-
-protected:
-	bool eventFilter(QObject *o, QEvent *e) override;
-};
