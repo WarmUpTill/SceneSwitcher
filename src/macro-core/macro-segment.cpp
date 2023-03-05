@@ -1,6 +1,7 @@
 #include "macro-segment.hpp"
 #include "section.hpp"
 #include "utility.hpp"
+#include "mouse-wheel-guard.hpp"
 
 #include <obs.hpp>
 #include <QEvent>
@@ -79,22 +80,6 @@ void MacroSegment::DecrementVariableRef()
 		return;
 	}
 	_variableRefs--;
-}
-
-MouseWheelWidgetAdjustmentGuard::MouseWheelWidgetAdjustmentGuard(QObject *parent)
-	: QObject(parent)
-{
-}
-
-bool MouseWheelWidgetAdjustmentGuard::eventFilter(QObject *o, QEvent *e)
-{
-	const QWidget *widget = static_cast<QWidget *>(o);
-	if (e->type() == QEvent::Wheel && widget && !widget->hasFocus()) {
-		e->ignore();
-		return true;
-	}
-
-	return QObject::eventFilter(o, e);
 }
 
 MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
@@ -247,13 +232,7 @@ void MacroSegmentEdit::SetFocusPolicyOfWidgets()
 {
 	QList<QWidget *> widgets = this->findChildren<QWidget *>();
 	for (auto w : widgets) {
-		w->setFocusPolicy(Qt::StrongFocus);
-		// Ignore QScrollBar as there is no danger of accidentally modifying anything
-		// and long expanded QComboBox would be difficult to interact with otherwise.
-		if (qobject_cast<QScrollBar *>(w)) {
-			continue;
-		}
-		w->installEventFilter(new MouseWheelWidgetAdjustmentGuard(w));
+		PreventMouseWheelAdjustWithoutFocus(w);
 	}
 }
 
