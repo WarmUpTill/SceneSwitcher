@@ -1,6 +1,7 @@
 #include "duration-control.hpp"
-#include "utility.hpp"
+#include "mouse-wheel-guard.hpp"
 #include "obs-module.h"
+#include "utility.hpp"
 
 #include <sstream>
 #include <iomanip>
@@ -116,6 +117,7 @@ DurationSelection::DurationSelection(QWidget *parent, bool showUnitSelection)
 {
 	_duration = new QDoubleSpinBox(parent);
 	_duration->setMaximum(86400); // 24 hours
+	PreventMouseWheelAdjustWithoutFocus(_duration);
 
 	_unitSelection = new QComboBox();
 	populateUnits(_unitSelection);
