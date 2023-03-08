@@ -286,6 +286,8 @@ target_sources(
           src/utils/variable.hpp
           src/utils/variable-line-edit.cpp
           src/utils/variable-line-edit.hpp
+          src/utils/variable-spinbox.cpp
+          src/utils/variable-spinbox.hpp
           src/utils/variable-text-edit.cpp
           src/utils/variable-text-edit.hpp
           src/utils/volume-control.cpp
