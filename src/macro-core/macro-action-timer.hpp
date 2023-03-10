@@ -52,8 +52,7 @@ public:
 
 private slots:
 	void MacroChanged(const QString &text);
-	void DurationChanged(double value);
-	void DurationUnitChanged(DurationUnit unit);
+	void DurationChanged(const Duration &value);
 	void ActionTypeChanged(int value);
 signals:
 	void HeaderInfoChanged(const QString &);

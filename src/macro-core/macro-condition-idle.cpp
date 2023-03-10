@@ -14,7 +14,7 @@ bool MacroConditionIdle::CheckCondition()
 {
 	auto seconds = secondsSinceLastInput();
 	SetVariableValue(std::to_string(seconds));
-	return seconds >= _duration.seconds;
+	return seconds >= _duration.Seconds();
 }
 
 bool MacroConditionIdle::Save(obs_data_t *obj) const
@@ -37,10 +37,8 @@ MacroConditionIdleEdit::MacroConditionIdleEdit(
 {
 	_duration = new DurationSelection();
 
-	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
-	QWidget::connect(_duration, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(DurationUnitChanged(DurationUnit)));
+	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -55,24 +53,14 @@ MacroConditionIdleEdit::MacroConditionIdleEdit(
 	_loading = false;
 }
 
-void MacroConditionIdleEdit::DurationChanged(double seconds)
+void MacroConditionIdleEdit::DurationChanged(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.seconds = seconds;
-}
-
-void MacroConditionIdleEdit::DurationUnitChanged(DurationUnit unit)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.displayUnit = unit;
+	_entryData->_duration = dur;
 }
 
 void MacroConditionIdleEdit::UpdateEntryData()

@@ -438,8 +438,8 @@ AudioSwitchWidget::AudioSwitchWidget(QWidget *parent, AudioSwitch *s)
 			 SLOT(VolumeThresholdChanged(int)));
 	QWidget::connect(condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
-	QWidget::connect(duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
+	QWidget::connect(duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
 	QWidget::connect(audioSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(SourceChanged(const QString &)));
@@ -554,14 +554,14 @@ void AudioSwitchWidget::ConditionChanged(int cond)
 	switchData->condition = (audioCondition)cond;
 }
 
-void AudioSwitchWidget::DurationChanged(double sec)
+void AudioSwitchWidget::DurationChanged(const Duration &dur)
 {
 	if (loading || !switchData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switchData->duration.seconds = sec;
+	switchData->duration = dur;
 }
 
 void AudioSwitchWidget::IgnoreInactiveChanged(int state)
@@ -580,8 +580,8 @@ AudioSwitchFallbackWidget::AudioSwitchFallbackWidget(QWidget *parent,
 {
 	duration = new DurationSelection(this, false);
 
-	QWidget::connect(duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
+	QWidget::connect(duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
 
 	if (s) {
 		duration->SetDuration(s->duration);
@@ -602,12 +602,12 @@ AudioSwitchFallbackWidget::AudioSwitchFallbackWidget(QWidget *parent,
 	loading = false;
 }
 
-void AudioSwitchFallbackWidget::DurationChanged(double sec)
+void AudioSwitchFallbackWidget::DurationChanged(const Duration &dur)
 {
 	if (loading || !switchData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switchData->duration.seconds = sec;
+	switchData->duration = dur;
 }

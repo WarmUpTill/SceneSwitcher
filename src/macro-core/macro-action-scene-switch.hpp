@@ -51,7 +51,7 @@ public:
 private slots:
 	void SceneChanged(const SceneSelection &);
 	void TransitionChanged(const TransitionSelection &);
-	void DurationChanged(double seconds);
+	void DurationChanged(const Duration &seconds);
 	void BlockUntilTransitionDoneChanged(int state);
 signals:
 	void HeaderInfoChanged(const QString &);

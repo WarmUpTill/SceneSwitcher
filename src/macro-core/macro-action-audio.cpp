@@ -114,7 +114,7 @@ void MacroActionAudio::FadeVolume()
 	int nrSteps = 0;
 	float volStep = 0.;
 	if (_fadeType == FadeType::DURATION) {
-		nrSteps = _duration.seconds * 1000 / fadeInterval.count();
+		nrSteps = _duration.Milliseconds() / fadeInterval.count();
 		volStep = volDiff / nrSteps;
 	} else {
 		volStep = _rate / 1000.0f;
@@ -212,7 +212,7 @@ void MacroActionAudio::LogAction() const
 		vblog(LOG_INFO,
 		      "performed action \"%s\" for source \"%s\" with volume %d with fade %d %f",
 		      it->second.c_str(), _audioSource.ToString(true).c_str(),
-		      _volume, _fade, _duration.seconds);
+		      _volume, _fade, _duration.Seconds());
 	} else {
 		blog(LOG_WARNING, "ignored unknown audio action %d",
 		     static_cast<int>(_action));
@@ -353,8 +353,8 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 			 SLOT(VolumeChanged(int)));
 	QWidget::connect(_fade, SIGNAL(stateChanged(int)), this,
 			 SLOT(FadeChanged(int)));
-	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
+	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
 	QWidget::connect(_rate, SIGNAL(valueChanged(double)), this,
 			 SLOT(RateChanged(double)));
 	QWidget::connect(_wait, SIGNAL(stateChanged(int)), this,
@@ -556,14 +556,14 @@ void MacroActionAudioEdit::FadeChanged(int value)
 	SetWidgetVisibility();
 }
 
-void MacroActionAudioEdit::DurationChanged(double seconds)
+void MacroActionAudioEdit::DurationChanged(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.seconds = seconds;
+	_entryData->_duration = dur;
 }
 
 void MacroActionAudioEdit::RateChanged(double value)

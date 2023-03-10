@@ -39,15 +39,12 @@ public:
 	};
 
 	void Save(obs_data_t *obj, const char *condName = "time_constraint",
-		  const char *secondsName = "seconds",
-		  const char *unitName = "displayUnit") const;
+		  const char *duration = "seconds") const;
 	void Load(obs_data_t *obj, const char *condName = "time_constraint",
-		  const char *secondsName = "seconds",
-		  const char *unitName = "displayUnit");
+		  const char *duration = "seconds");
 	void SetModifier(Type cond) { _type = cond; }
 	void SetTimeRemaining(const double &val) { _dur.SetTimeRemaining(val); }
-	void SetValue(double value) { _dur.seconds = value; }
-	void SetUnit(DurationUnit u) { _dur.displayUnit = u; }
+	void SetValue(const Duration &value) { _dur = value; }
 	Type GetType() { return _type; }
 	Duration GetDuration() { return _dur; }
 	bool DurationReached();
@@ -73,8 +70,7 @@ public:
 	void CheckDurationModifier(bool &val);
 	DurationModifier GetDurationModifier() { return _duration; }
 	void SetDurationModifier(DurationModifier::Type m);
-	void SetDurationUnit(DurationUnit u);
-	void SetDuration(double seconds);
+	void SetDuration(const Duration &duration);
 
 private:
 	LogicType _logic = LogicType::ROOT_NONE;

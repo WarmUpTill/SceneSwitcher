@@ -45,7 +45,7 @@ void MacroActionHttp::Get()
 {
 	switcher->curl.SetOpt(CURLOPT_URL, _url.c_str());
 	switcher->curl.SetOpt(CURLOPT_HTTPGET, 1L);
-	switcher->curl.SetOpt(CURLOPT_TIMEOUT_MS, _timeout.seconds * 1000);
+	switcher->curl.SetOpt(CURLOPT_TIMEOUT_MS, _timeout.Milliseconds());
 	SetupHeaders();
 
 	std::string response;
@@ -64,7 +64,7 @@ void MacroActionHttp::Post()
 {
 	switcher->curl.SetOpt(CURLOPT_URL, _url.c_str());
 	switcher->curl.SetOpt(CURLOPT_POSTFIELDS, _data.c_str());
-	switcher->curl.SetOpt(CURLOPT_TIMEOUT_MS, _timeout.seconds * 1000);
+	switcher->curl.SetOpt(CURLOPT_TIMEOUT_MS, _timeout.Milliseconds());
 	SetupHeaders();
 	switcher->curl.Perform();
 }
@@ -161,13 +161,13 @@ MacroActionHttpEdit::MacroActionHttpEdit(
 			 SLOT(DataChanged()));
 	QWidget::connect(_methods, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(MethodChanged(int)));
-	QWidget::connect(_timeout, SIGNAL(DurationChanged(double)), this,
-			 SLOT(TimeoutChanged(double)));
 	QWidget::connect(_setHeaders, SIGNAL(stateChanged(int)), this,
 			 SLOT(SetHeadersChanged(int)));
 	QWidget::connect(_headerList,
 			 SIGNAL(StringListChanged(const StringList &)), this,
 			 SLOT(HeadersChanged(const StringList &)));
+	QWidget::connect(_timeout, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(TimeoutChanged(const Duration &)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{url}}", _url},
@@ -238,14 +238,14 @@ void MacroActionHttpEdit::MethodChanged(int value)
 	SetWidgetVisibility();
 }
 
-void MacroActionHttpEdit::TimeoutChanged(double seconds)
+void MacroActionHttpEdit::TimeoutChanged(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_timeout.seconds = seconds;
+	_entryData->_timeout = dur;
 }
 
 void MacroActionHttpEdit::SetHeadersChanged(int value)

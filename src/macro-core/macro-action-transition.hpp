@@ -70,7 +70,7 @@ private slots:
 	void SetTransitionChanged(int state);
 	void SetDurationChanged(int state);
 	void TransitionChanged(const TransitionSelection &);
-	void DurationChanged(double seconds);
+	void DurationChanged(const Duration &seconds);
 signals:
 	void HeaderInfoChanged(const QString &);
 

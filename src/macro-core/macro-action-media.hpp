@@ -58,8 +58,7 @@ public:
 private slots:
 	void SourceChanged(const SourceSelection &);
 	void ActionChanged(int value);
-	void DurationChanged(double value);
-	void DurationUnitChanged(DurationUnit unit);
+	void DurationChanged(const Duration &value);
 signals:
 	void HeaderInfoChanged(const QString &);
 

@@ -29,7 +29,8 @@ void MacroActionTransition::SetSceneTransition()
 		obs_source_release(t);
 	}
 	if (_setDuration) {
-		obs_frontend_set_transition_duration(_duration.seconds * 1000);
+		obs_frontend_set_transition_duration(_duration.Seconds() *
+						     1000);
 	}
 }
 
@@ -43,7 +44,7 @@ void MacroActionTransition::SetTransitionOverride()
 	}
 	if (_setDuration) {
 		obs_data_set_int(data, "transition_duration",
-				 _duration.seconds * 1000);
+				 _duration.Milliseconds());
 	}
 	obs_data_release(data);
 	obs_source_release(scene);
@@ -91,7 +92,7 @@ void MacroActionTransition::SetSourceTransition(bool show)
 		}
 		if (_setDuration) {
 			obs_sceneitem_set_transition_duration(
-				item, show, _duration.seconds * 1000);
+				item, show, _duration.Milliseconds());
 		}
 		obs_sceneitem_release(item);
 	}
@@ -230,8 +231,8 @@ MacroActionTransitionEdit::MacroActionTransitionEdit(
 			 SIGNAL(TransitionChanged(const TransitionSelection &)),
 			 this,
 			 SLOT(TransitionChanged(const TransitionSelection &)));
-	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
+	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
 	QWidget::connect(_setTransition, SIGNAL(stateChanged(int)), this,
 			 SLOT(SetTransitionChanged(int)));
 	QWidget::connect(_setDuration, SIGNAL(stateChanged(int)), this,
@@ -334,14 +335,14 @@ void MacroActionTransitionEdit::TransitionChanged(const TransitionSelection &t)
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-void MacroActionTransitionEdit::DurationChanged(double seconds)
+void MacroActionTransitionEdit::DurationChanged(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.seconds = seconds;
+	_entryData->_duration = dur;
 }
 
 void MacroActionTransitionEdit::SetWidgetVisibility()

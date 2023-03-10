@@ -103,7 +103,7 @@ bool MacroActionSwitchScene::WaitForTransition(OBSWeakSource &scene,
 					       OBSWeakSource &transition)
 {
 	const int expectedTransitionDuration = getExpectedTransitionDuration(
-		scene, transition, _duration.seconds);
+		scene, transition, _duration.Seconds());
 	switcher->abortMacroWait = false;
 
 	std::unique_lock<std::mutex> lock(switcher->m);
@@ -121,7 +121,7 @@ bool MacroActionSwitchScene::PerformAction()
 {
 	auto scene = _scene.GetScene();
 	auto transition = _transition.GetTransition();
-	switchScene({scene, transition, (int)(_duration.seconds * 1000)},
+	switchScene({scene, transition, (int)(_duration.Milliseconds())},
 		    obs_frontend_preview_program_mode_active());
 	if (_blockUntilTransitionDone && scene) {
 		return WaitForTransition(scene, transition);
@@ -196,8 +196,8 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 			 SIGNAL(TransitionChanged(const TransitionSelection &)),
 			 this,
 			 SLOT(TransitionChanged(const TransitionSelection &)));
-	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
+	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
 	QWidget::connect(_blockUntilTransitionDone, SIGNAL(stateChanged(int)),
 			 this, SLOT(BlockUntilTransitionDoneChanged(int)));
 
@@ -225,14 +225,14 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	_loading = false;
 }
 
-void MacroActionSwitchSceneEdit::DurationChanged(double seconds)
+void MacroActionSwitchSceneEdit::DurationChanged(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.seconds = seconds;
+	_entryData->_duration = dur;
 }
 
 void MacroActionSwitchSceneEdit::BlockUntilTransitionDoneChanged(int state)

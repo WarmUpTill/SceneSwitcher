@@ -34,14 +34,14 @@ bool MacroActionWait::PerformAction()
 {
 	double sleepDuration;
 	if (_waitType == WaitType::FIXED) {
-		sleepDuration = _duration.seconds;
+		sleepDuration = _duration.Seconds();
 	} else {
-		double min = (_duration.seconds < _duration2.seconds)
-				     ? _duration.seconds
-				     : _duration2.seconds;
-		double max = (_duration.seconds < _duration2.seconds)
-				     ? _duration2.seconds
-				     : _duration.seconds;
+		double min = (_duration.Seconds() < _duration2.Seconds())
+				     ? _duration.Seconds()
+				     : _duration2.Seconds();
+		double max = (_duration.Seconds() < _duration2.Seconds())
+				     ? _duration2.Seconds()
+				     : _duration.Seconds();
 		std::uniform_real_distribution<double> unif(min, max);
 		sleepDuration = unif(re);
 	}
@@ -62,8 +62,9 @@ bool MacroActionWait::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	_duration.Save(obj);
-	_duration2.Save(obj, "seconds2", "displayUnit2");
+	_duration2.Save(obj, "duration2");
 	obs_data_set_int(obj, "waitType", static_cast<int>(_waitType));
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
@@ -71,7 +72,14 @@ bool MacroActionWait::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 	_duration.Load(obj);
-	_duration2.Load(obj, "seconds2", "displayUnit2");
+	// TODO: remove this fallback
+	if (obs_data_get_int(obj, "version") == 1) {
+		_duration2.Load(obj, "duration2");
+	} else {
+		_duration2.Load(obj, "seconds2");
+		_duration2.SetUnit(static_cast<Duration::Unit>(
+			obs_data_get_int(obj, "displayUnit2")));
+	}
 	_waitType = static_cast<WaitType>(obs_data_get_int(obj, "waitType"));
 	return true;
 }
@@ -93,14 +101,10 @@ MacroActionWaitEdit::MacroActionWaitEdit(
 
 	populateTypeSelection(_waitType);
 
-	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
-	QWidget::connect(_duration, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(DurationUnitChanged(DurationUnit)));
-	QWidget::connect(_duration2, SIGNAL(DurationChanged(double)), this,
-			 SLOT(Duration2Changed(double)));
-	QWidget::connect(_duration2, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(Duration2UnitChanged(DurationUnit)));
+	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
+	QWidget::connect(_duration2, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(Duration2Changed(const Duration &)));
 	QWidget::connect(_waitType, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TypeChanged(int)));
 
@@ -180,42 +184,22 @@ void MacroActionWaitEdit::TypeChanged(int value)
 	_entryData->_waitType = type;
 }
 
-void MacroActionWaitEdit::DurationChanged(double seconds)
+void MacroActionWaitEdit::DurationChanged(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.seconds = seconds;
+	_entryData->_duration = dur;
 }
 
-void MacroActionWaitEdit::DurationUnitChanged(DurationUnit unit)
+void MacroActionWaitEdit::Duration2Changed(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.displayUnit = unit;
-}
-
-void MacroActionWaitEdit::Duration2Changed(double seconds)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration2.seconds = seconds;
-}
-
-void MacroActionWaitEdit::Duration2UnitChanged(DurationUnit unit)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration2.displayUnit = unit;
+	_entryData->_duration2 = dur;
 }

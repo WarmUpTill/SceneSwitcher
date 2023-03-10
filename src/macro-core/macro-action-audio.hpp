@@ -89,7 +89,7 @@ private slots:
 	void BalanceChanged(double value);
 	void VolumeChanged(int value);
 	void FadeChanged(int value);
-	void DurationChanged(double seconds);
+	void DurationChanged(const Duration &seconds);
 	void RateChanged(double value);
 	void WaitChanged(int value);
 	void AbortActiveFadeChanged(int value);

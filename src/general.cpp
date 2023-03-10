@@ -60,44 +60,24 @@ void AdvSceneSwitcher::on_noMatchRandomSwitch_clicked()
 	ui->randomDisabledWarning->setVisible(false);
 }
 
-void AdvSceneSwitcher::NoMatchDelayDurationChanged(double sec)
+void AdvSceneSwitcher::NoMatchDelayDurationChanged(const Duration &dur)
 {
 	if (loading) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->noMatchDelay.seconds = sec;
+	switcher->noMatchDelay = dur;
 }
 
-void AdvSceneSwitcher::NoMatchDelayUnitChanged(DurationUnit unit)
+void AdvSceneSwitcher::CooldownDurationChanged(const Duration &dur)
 {
 	if (loading) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->noMatchDelay.displayUnit = unit;
-}
-
-void AdvSceneSwitcher::CooldownDurationChanged(double sec)
-{
-	if (loading) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->cooldown.seconds = sec;
-}
-
-void AdvSceneSwitcher::CooldownUnitChanged(DurationUnit unit)
-{
-	if (loading) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->cooldown.displayUnit = unit;
+	switcher->cooldown = dur;
 }
 
 void AdvSceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
@@ -622,9 +602,9 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_string(obj, "non_matching_scene",
 			    nonMatchingSceneName.c_str());
 	obs_data_set_int(obj, "switch_if_not_matching", switchIfNotMatching);
-	noMatchDelay.Save(obj, "noMatchDelay", "noMatchDelayUnit");
+	noMatchDelay.Save(obj, "noMatchDelay");
 
-	cooldown.Save(obj, "cooldown", "cooldownUnit");
+	cooldown.Save(obj, "cooldown");
 
 	obs_data_set_bool(obj, "active", sceneColletionStop ? true : !stop);
 	sceneColletionStop = false;
@@ -672,9 +652,9 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	std::string nonMatchingSceneName =
 		obs_data_get_string(obj, "non_matching_scene");
 	nonMatchingScene = GetWeakSourceByName(nonMatchingSceneName.c_str());
-	noMatchDelay.Load(obj, "noMatchDelay", "noMatchDelayUnit");
+	noMatchDelay.Load(obj, "noMatchDelay");
 
-	cooldown.Load(obj, "cooldown", "cooldownUnit");
+	cooldown.Load(obj, "cooldown");
 
 	stop = !obs_data_get_bool(obj, "active");
 	startupBehavior =
@@ -970,10 +950,9 @@ void AdvSceneSwitcher::setupGeneralTab()
 	noMatchDelay->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.generalTab.generalBehavior.onNoMetDelayTooltip"));
 	ui->noMatchLayout->addWidget(noMatchDelay);
-	QWidget::connect(noMatchDelay, SIGNAL(DurationChanged(double)), this,
-			 SLOT(NoMatchDelayDurationChanged(double)));
-	QWidget::connect(noMatchDelay, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(NoMatchDelayUnitChanged(DurationUnit)));
+	QWidget::connect(noMatchDelay,
+			 SIGNAL(DurationChanged(const Duration &)), this,
+			 SLOT(NoMatchDelayDurationChanged(const Duration &)));
 
 	ui->checkInterval->setValue(switcher->interval);
 
@@ -983,10 +962,9 @@ void AdvSceneSwitcher::setupGeneralTab()
 		"AdvSceneSwitcher.generalTab.generalBehavior.cooldownHint"));
 	ui->cooldownLayout->addWidget(cooldownTime);
 	ui->cooldownLayout->addStretch();
-	QWidget::connect(cooldownTime, SIGNAL(DurationChanged(double)), this,
-			 SLOT(CooldownDurationChanged(double)));
-	QWidget::connect(cooldownTime, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(CooldownUnitChanged(DurationUnit)));
+	QWidget::connect(cooldownTime,
+			 SIGNAL(DurationChanged(const Duration &)), this,
+			 SLOT(CooldownDurationChanged(const Duration &)));
 
 	ui->verboseLogging->setChecked(switcher->verbose);
 	ui->saveWindowGeo->setChecked(switcher->saveWindowGeo);

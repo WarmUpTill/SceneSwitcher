@@ -75,7 +75,7 @@ private slots:
 	void SourceChanged(const QString &text);
 	void VolumeThresholdChanged(int vol);
 	void ConditionChanged(int cond);
-	void DurationChanged(double dur);
+	void DurationChanged(const Duration &);
 	void IgnoreInactiveChanged(int state);
 
 private:
@@ -96,7 +96,7 @@ public:
 	AudioSwitchFallbackWidget(QWidget *parent, AudioSwitchFallback *s);
 
 private slots:
-	void DurationChanged(double dur);
+	void DurationChanged(const Duration &dur);
 
 private:
 	DurationSelection *duration;

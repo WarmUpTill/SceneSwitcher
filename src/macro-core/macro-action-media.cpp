@@ -48,7 +48,7 @@ bool MacroActionMedia::PerformAction()
 		obs_source_media_previous(source);
 		break;
 	case MediaAction::SEEK:
-		obs_source_media_set_time(source, _seek.seconds * 1000);
+		obs_source_media_set_time(source, _seek.Milliseconds());
 		break;
 	default:
 		break;
@@ -116,10 +116,8 @@ MacroActionMediaEdit::MacroActionMediaEdit(
 	QWidget::connect(_sources,
 			 SIGNAL(SourceChanged(const SourceSelection &)), this,
 			 SLOT(SourceChanged(const SourceSelection &)));
-	QWidget::connect(_seek, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
-	QWidget::connect(_seek, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(DurationUnitChanged(DurationUnit)));
+	QWidget::connect(_seek, SIGNAL(DurationChanged(const Duration &)), this,
+			 SLOT(DurationChanged(const Duration &)));
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -171,24 +169,14 @@ void MacroActionMediaEdit::ActionChanged(int value)
 	SetWidgetVisibility();
 }
 
-void MacroActionMediaEdit::DurationChanged(double seconds)
+void MacroActionMediaEdit::DurationChanged(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_seek.seconds = seconds;
-}
-
-void MacroActionMediaEdit::DurationUnitChanged(DurationUnit unit)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_seek.displayUnit = unit;
+	_entryData->_seek = dur;
 }
 
 void MacroActionMediaEdit::SetWidgetVisibility()

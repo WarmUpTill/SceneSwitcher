@@ -61,7 +61,7 @@ public:
 
 private slots:
 	void ProcessConfigChanged(const ProcessConfig &);
-	void TimeoutChanged(double);
+	void TimeoutChanged(const Duration &);
 	void CheckExitCodeChanged(int);
 	void ExitCodeChanged(int);
 signals:

@@ -129,8 +129,6 @@ DurationModifierEdit::DurationModifierEdit(QWidget *parent)
 			 SLOT(_ModifierChanged(int)));
 	QObject::connect(_duration, &DurationSelection::DurationChanged, this,
 			 &DurationModifierEdit::DurationChanged);
-	QObject::connect(_duration, &DurationSelection::UnitChanged, this,
-			 &DurationModifierEdit::UnitChanged);
 	QWidget::connect(_toggle, SIGNAL(clicked()), this,
 			 SLOT(ToggleClicked()));
 
@@ -149,11 +147,6 @@ void DurationModifierEdit::SetValue(DurationModifier &value)
 	_duration->SetDuration(value.GetDuration());
 	_condition->setCurrentIndex(static_cast<int>(value.GetType()));
 	_duration->setVisible(value.GetType() != DurationModifier::Type::NONE);
-}
-
-void DurationModifierEdit::SetUnit(DurationUnit u)
-{
-	_duration->SetUnit(u);
 }
 
 void DurationModifierEdit::SetDuration(const Duration &d)
@@ -196,10 +189,8 @@ MacroConditionEdit::MacroConditionEdit(
 	QWidget::connect(_conditionSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ConditionSelectionChanged(const QString &)));
-	QWidget::connect(_dur, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
-	QWidget::connect(_dur, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(DurationUnitChanged(DurationUnit)));
+	QWidget::connect(_dur, SIGNAL(DurationChanged(const Duration &)), this,
+			 SLOT(DurationChanged(const Duration &)));
 	QWidget::connect(_dur, SIGNAL(ModifierChanged(DurationModifier::Type)),
 			 this,
 			 SLOT(DurationModifierChanged(DurationModifier::Type)));
@@ -325,7 +316,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 	SetFocusPolicyOfWidgets();
 }
 
-void MacroConditionEdit::DurationChanged(double seconds)
+void MacroConditionEdit::DurationChanged(const Duration &seconds)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -343,16 +334,6 @@ void MacroConditionEdit::DurationModifierChanged(DurationModifier::Type m)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	(*_entryData)->SetDurationModifier(m);
-}
-
-void MacroConditionEdit::DurationUnitChanged(DurationUnit unit)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	(*_entryData)->SetDurationUnit(unit);
 }
 
 std::shared_ptr<MacroSegment> MacroConditionEdit::Data()

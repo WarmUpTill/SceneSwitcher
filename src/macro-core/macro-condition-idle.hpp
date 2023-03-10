@@ -41,8 +41,7 @@ public:
 	}
 
 private slots:
-	void DurationChanged(double seconds);
-	void DurationUnitChanged(DurationUnit unit);
+	void DurationChanged(const Duration &seconds);
 
 protected:
 	DurationSelection *_duration;
