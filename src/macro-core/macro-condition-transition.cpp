@@ -70,7 +70,7 @@ bool MacroConditionTransition::CheckCondition()
 		break;
 	}
 	case TransitionCondition::DURATION:
-		ret = _duration.seconds * 1000 ==
+		ret = _duration.Milliseconds() ==
 		      obs_frontend_get_transition_duration();
 		break;
 	case TransitionCondition::STARTED:
@@ -198,8 +198,8 @@ MacroConditionTransitionEdit::MacroConditionTransitionEdit(
 			 SLOT(TransitionChanged(const TransitionSelection &)));
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
-	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
+	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -260,14 +260,14 @@ void MacroConditionTransitionEdit::SceneChanged(const SceneSelection &s)
 	_entryData->_scene = s;
 }
 
-void MacroConditionTransitionEdit::DurationChanged(double seconds)
+void MacroConditionTransitionEdit::DurationChanged(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.seconds = seconds;
+	_entryData->_duration = dur;
 }
 
 void MacroConditionTransitionEdit::SetWidgetVisibility()

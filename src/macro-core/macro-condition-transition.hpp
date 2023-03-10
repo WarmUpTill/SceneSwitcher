@@ -68,7 +68,7 @@ private slots:
 	void ConditionChanged(int cond);
 	void TransitionChanged(const TransitionSelection &);
 	void SceneChanged(const SceneSelection &);
-	void DurationChanged(double seconds);
+	void DurationChanged(const Duration &seconds);
 signals:
 	void HeaderInfoChanged(const QString &);
 

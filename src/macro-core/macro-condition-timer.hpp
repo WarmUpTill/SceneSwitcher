@@ -63,10 +63,8 @@ public:
 
 private slots:
 	void TimerTypeChanged(int type);
-	void DurationChanged(double seconds);
-	void DurationUnitChanged(DurationUnit unit);
-	void Duration2Changed(double seconds);
-	void Duration2UnitChanged(DurationUnit unit);
+	void DurationChanged(const Duration &seconds);
+	void Duration2Changed(const Duration &seconds);
 	void SaveRemainingChanged(int state);
 	void AutoResetChanged(int state);
 	void PauseContinueClicked();

@@ -116,8 +116,7 @@ private slots:
 	void SceneChanged(const SceneSelection &);
 	void StateChanged(int index);
 	void TimeRestrictionChanged(int index);
-	void TimeChanged(double seconds);
-	void TimeUnitChanged(DurationUnit unit);
+	void TimeChanged(const Duration &seconds);
 	void OnChangeChanged(int);
 signals:
 	void HeaderInfoChanged(const QString &);

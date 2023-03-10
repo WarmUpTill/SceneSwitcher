@@ -49,10 +49,8 @@ public:
 	}
 
 private slots:
-	void DurationChanged(double value);
-	void DurationUnitChanged(DurationUnit unit);
-	void Duration2Changed(double value);
-	void Duration2UnitChanged(DurationUnit unit);
+	void DurationChanged(const Duration &value);
+	void Duration2Changed(const Duration &value);
 	void TypeChanged(int value);
 
 protected:

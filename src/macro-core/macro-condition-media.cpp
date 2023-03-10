@@ -71,18 +71,18 @@ bool MacroConditionMedia::CheckTime()
 		match = true;
 		break;
 	case Time::TIME_RESTRICTION_SHORTER:
-		match = currentTime < _time.seconds * 1000;
+		match = currentTime < _time.Milliseconds();
 		break;
 	case Time::TIME_RESTRICTION_LONGER:
-		match = currentTime > _time.seconds * 1000;
+		match = currentTime > _time.Milliseconds();
 		break;
 	case Time::TIME_RESTRICTION_REMAINING_SHORTER:
 		match = duration > currentTime &&
-			duration - currentTime < _time.seconds * 1000;
+			duration - currentTime < _time.Milliseconds();
 		break;
 	case Time::TIME_RESTRICTION_REMAINING_LONGER:
 		match = duration > currentTime &&
-			duration - currentTime > _time.seconds * 1000;
+			duration - currentTime > _time.Milliseconds();
 		break;
 	default:
 		break;
@@ -429,10 +429,8 @@ MacroConditionMediaEdit::MacroConditionMediaEdit(
 			 SLOT(StateChanged(int)));
 	QWidget::connect(_timeRestrictions, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(TimeRestrictionChanged(int)));
-	QWidget::connect(_time, SIGNAL(DurationChanged(double)), this,
-			 SLOT(TimeChanged(double)));
-	QWidget::connect(_time, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(TimeUnitChanged(DurationUnit)));
+	QWidget::connect(_time, SIGNAL(DurationChanged(const Duration &)), this,
+			 SLOT(TimeChanged(const Duration &)));
 	QWidget::connect(_onChange, SIGNAL(stateChanged(int)), this,
 			 SLOT(OnChangeChanged(int)));
 
@@ -560,27 +558,14 @@ void MacroConditionMediaEdit::TimeRestrictionChanged(int index)
 	}
 }
 
-void MacroConditionMediaEdit::TimeChanged(double seconds)
+void MacroConditionMediaEdit::TimeChanged(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_time.seconds = seconds;
-	if (_entryData->_sourceType != MacroConditionMedia::Type::SOURCE) {
-		_entryData->UpdateMediaSourcesOfSceneList();
-	}
-}
-
-void MacroConditionMediaEdit::TimeUnitChanged(DurationUnit unit)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_time.displayUnit = unit;
+	_entryData->_time = dur;
 	if (_entryData->_sourceType != MacroConditionMedia::Type::SOURCE) {
 		_entryData->UpdateMediaSourcesOfSceneList();
 	}

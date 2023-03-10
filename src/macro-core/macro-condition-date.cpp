@@ -165,8 +165,8 @@ bool MacroConditionDate::CheckRegularDate(int64_t msSinceLastCheck)
 	}
 
 	if (match && _repeat) {
-		_dateTime = _dateTime.addSecs(_duration.seconds);
-		_dateTime2 = _dateTime2.addSecs(_duration.seconds);
+		_dateTime = _dateTime.addSecs(_duration.Seconds());
+		_dateTime2 = _dateTime2.addSecs(_duration.Seconds());
 	}
 
 	return match;
@@ -398,10 +398,8 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 			 SLOT(RepeatChanged(int)));
 	QWidget::connect(_updateOnRepeat, SIGNAL(stateChanged(int)), this,
 			 SLOT(UpdateOnRepeatChanged(int)));
-	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
-	QWidget::connect(_duration, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(DurationUnitChanged(DurationUnit)));
+	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
 	QWidget::connect(_advancedSettingsTooggle, SIGNAL(clicked()), this,
 			 SLOT(AdvancedSettingsToggleClicked()));
 	QWidget::connect(_pattern, SIGNAL(editingFinished()), this,
@@ -589,24 +587,14 @@ void MacroConditionDateEdit::UpdateOnRepeatChanged(int state)
 	_entryData->_updateOnRepeat = state;
 }
 
-void MacroConditionDateEdit::DurationChanged(double seconds)
+void MacroConditionDateEdit::DurationChanged(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.seconds = seconds;
-}
-
-void MacroConditionDateEdit::DurationUnitChanged(DurationUnit unit)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.displayUnit = unit;
+	_entryData->_duration = dur;
 }
 
 void MacroConditionDateEdit::AdvancedSettingsToggleClicked()

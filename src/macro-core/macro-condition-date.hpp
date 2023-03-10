@@ -100,8 +100,7 @@ private slots:
 	void IgnoreTimeChanged(int state);
 	void RepeatChanged(int state);
 	void UpdateOnRepeatChanged(int state);
-	void DurationChanged(double seconds);
-	void DurationUnitChanged(DurationUnit unit);
+	void DurationChanged(const Duration &seconds);
 	void AdvancedSettingsToggleClicked();
 	void ShowNextMatch();
 	void UpdateCurrentTime();

@@ -64,7 +64,7 @@ private slots:
 	void DataChanged();
 	void URLChanged();
 	void MethodChanged(int);
-	void TimeoutChanged(double seconds);
+	void TimeoutChanged(const Duration &seconds);
 	void SetHeadersChanged(int);
 	void HeadersChanged(const StringList &);
 signals:

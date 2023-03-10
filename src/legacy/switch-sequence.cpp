@@ -455,7 +455,7 @@ bool SceneSequenceSwitch::checkDurationMatchInterruptible()
 
 void SceneSequenceSwitch::prepareUninterruptibleMatch(int &linger)
 {
-	int dur = delay.seconds * 1000;
+	int dur = delay.Milliseconds();
 	if (dur > 0) {
 		linger = dur;
 	}
@@ -588,10 +588,8 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 	QWidget::connect(scenes, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(SceneChanged(const QString &)));
 
-	QWidget::connect(delay, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DelayChanged(double)));
-	QWidget::connect(delay, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(DelayUnitsChanged(DurationUnit)));
+	QWidget::connect(delay, SIGNAL(DurationChanged(const Duration &)), this,
+			 SLOT(DelayChanged(const Duration &)));
 	QWidget::connect(startScenes,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(StartSceneChanged(const QString &)));
@@ -689,24 +687,14 @@ void SequenceWidget::swapSwitchData(SequenceWidget *s1, SequenceWidget *s2)
 	s2->setSwitchData(t);
 }
 
-void SequenceWidget::DelayChanged(double sec)
+void SequenceWidget::DelayChanged(const Duration &delay)
 {
 	if (loading || !switchData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switchData->delay.seconds = sec;
-}
-
-void SequenceWidget::DelayUnitsChanged(DurationUnit unit)
-{
-	if (loading || !switchData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switchData->delay.displayUnit = unit;
+	switchData->delay = delay;
 }
 
 void SequenceWidget::setExtendedSequenceStartScene()

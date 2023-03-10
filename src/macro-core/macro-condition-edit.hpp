@@ -35,15 +35,13 @@ class DurationModifierEdit : public QWidget {
 public:
 	DurationModifierEdit(QWidget *parent = nullptr);
 	void SetValue(DurationModifier &value);
-	void SetUnit(DurationUnit u);
 	void SetDuration(const Duration &d);
 
 private slots:
 	void _ModifierChanged(int value);
 	void ToggleClicked();
 signals:
-	void DurationChanged(double value);
-	void UnitChanged(DurationUnit u);
+	void DurationChanged(const Duration &value);
 	void ModifierChanged(DurationModifier::Type value);
 
 private:
@@ -69,9 +67,8 @@ public:
 private slots:
 	void LogicSelectionChanged(int idx);
 	void ConditionSelectionChanged(const QString &text);
-	void DurationChanged(double seconds);
+	void DurationChanged(const Duration &value);
 	void DurationModifierChanged(DurationModifier::Type m);
-	void DurationUnitChanged(DurationUnit unit);
 
 private:
 	void SetLogicSelection();

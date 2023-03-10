@@ -59,8 +59,7 @@ public:
 
 private slots:
 	void SceneChanged(const QString &text);
-	void DelayChanged(double delay);
-	void DelayUnitsChanged(DurationUnit);
+	void DelayChanged(const Duration &delay);
 	void StartSceneChanged(const QString &text);
 	void InterruptibleChanged(int state);
 	void ExtendClicked();

@@ -48,7 +48,7 @@ bool MacroActionTimer::PerformAction()
 			break;
 		case TimerAction::SET_TIME_REMAINING:
 			timerCondition->_duration.SetTimeRemaining(
-				_duration.seconds);
+				_duration.Seconds());
 			break;
 		default:
 			break;
@@ -129,10 +129,8 @@ MacroActionTimerEdit::MacroActionTimerEdit(
 
 	QWidget::connect(_macros, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(MacroChanged(const QString &)));
-	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
-	QWidget::connect(_duration, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(DurationUnitChanged(DurationUnit)));
+	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
 	QWidget::connect(_timerAction, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionTypeChanged(int)));
 
@@ -185,24 +183,14 @@ void MacroActionTimerEdit::SetWidgetVisibility()
 	adjustSize();
 }
 
-void MacroActionTimerEdit::DurationChanged(double seconds)
+void MacroActionTimerEdit::DurationChanged(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.seconds = seconds;
-}
-
-void MacroActionTimerEdit::DurationUnitChanged(DurationUnit unit)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.displayUnit = unit;
+	_entryData->_duration = dur;
 }
 
 void MacroActionTimerEdit::MacroChanged(const QString &text)

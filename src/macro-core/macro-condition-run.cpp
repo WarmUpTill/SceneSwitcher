@@ -61,7 +61,7 @@ void MacroConditionRun::RunProcess()
 		QString::fromStdString(_procConfig.WorkingDir()));
 	process.start(QString::fromStdString(_procConfig.Path()),
 		      _procConfig.Args());
-	int timeout = _timeout.seconds * 1000;
+	int timeout = _timeout.Milliseconds();
 
 	vblog(LOG_INFO, "run \"%s\" with a timeout of %d ms",
 	      _procConfig.Path().c_str(), timeout);
@@ -134,8 +134,8 @@ MacroConditionRunEdit::MacroConditionRunEdit(
 	QWidget::connect(_procConfig,
 			 SIGNAL(ConfigChanged(const ProcessConfig &)), this,
 			 SLOT(ProcessConfigChanged(const ProcessConfig &)));
-	QWidget::connect(_timeout, SIGNAL(DurationChanged(double)), this,
-			 SLOT(TimeoutChanged(double)));
+	QWidget::connect(_timeout, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(TimeoutChanged(const Duration &)));
 	QWidget::connect(_checkExitCode, SIGNAL(stateChanged(int)), this,
 			 SLOT(CheckExitCodeChanged(int)));
 	QWidget::connect(_exitCode, SIGNAL(valueChanged(int)), this,
@@ -177,14 +177,14 @@ void MacroConditionRunEdit::UpdateEntryData()
 	_exitCode->setValue(_entryData->_exitCode);
 }
 
-void MacroConditionRunEdit::TimeoutChanged(double seconds)
+void MacroConditionRunEdit::TimeoutChanged(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_timeout.seconds = seconds;
+	_entryData->_timeout = dur;
 }
 
 void MacroConditionRunEdit::CheckExitCodeChanged(int state)

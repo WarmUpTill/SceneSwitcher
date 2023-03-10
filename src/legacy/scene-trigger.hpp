@@ -71,8 +71,7 @@ public:
 private slots:
 	void TriggerTypeChanged(int index);
 	void TriggerActionChanged(int index);
-	void DurationChanged(double seconds);
-	void DurationUnitChanged(DurationUnit unit);
+	void DurationChanged(const Duration &);
 	void AudioSourceChanged(const QString &text);
 
 private:

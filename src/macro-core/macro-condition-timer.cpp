@@ -35,12 +35,12 @@ bool MacroConditionTimer::CheckCondition()
 void MacroConditionTimer::SetRandomTimeRemaining()
 {
 	double min, max;
-	if (_duration.seconds <= _duration2.seconds) {
-		min = _duration.seconds;
-		max = _duration2.seconds;
+	if (_duration.Seconds() <= _duration2.Seconds()) {
+		min = _duration.Seconds();
+		max = _duration2.Seconds();
 	} else {
-		min = _duration2.seconds;
-		max = _duration.seconds;
+		min = _duration2.Seconds();
+		max = _duration.Seconds();
 	}
 	std::uniform_real_distribution<double> unif(min, max);
 
@@ -53,17 +53,18 @@ bool MacroConditionTimer::Save(obs_data_t *obj) const
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
 	_duration.Save(obj);
-	_duration2.Save(obj, "seconds2", "displayUnit2");
+	_duration2.Save(obj, "duration2");
 	if (_saveRemaining) {
 		obs_data_set_double(obj, "remaining",
 				    _paused ? _remaining
 					    : _duration.TimeRemaining());
 	} else {
-		obs_data_set_double(obj, "remaining", _duration.seconds);
+		obs_data_set_double(obj, "remaining", _duration.Seconds());
 	}
 	obs_data_set_bool(obj, "saveRemaining", _saveRemaining);
 	obs_data_set_bool(obj, "paused", _paused);
 	obs_data_set_bool(obj, "oneshot", _oneshot);
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
@@ -72,7 +73,14 @@ bool MacroConditionTimer::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	_type = static_cast<TimerType>(obs_data_get_int(obj, "type"));
 	_duration.Load(obj);
-	_duration2.Load(obj, "seconds2", "displayUnit2");
+	// TODO: remove this fallback
+	if (obs_data_get_int(obj, "version") == 1) {
+		_duration2.Load(obj, "duration2");
+	} else {
+		_duration2.Load(obj, "seconds2");
+		_duration2.SetUnit(static_cast<Duration::Unit>(
+			obs_data_get_int(obj, "displayUnit2")));
+	}
 	_remaining = obs_data_get_double(obj, "remaining");
 	_paused = obs_data_get_bool(obj, "paused");
 	_saveRemaining = obs_data_get_bool(obj, "saveRemaining");
@@ -103,7 +111,7 @@ void MacroConditionTimer::Continue()
 
 void MacroConditionTimer::Reset()
 {
-	_remaining = _duration.seconds;
+	_remaining = _duration.Seconds();
 	_duration.Reset();
 	if (_type == TimerType::RANDOM) {
 		SetRandomTimeRemaining();
@@ -136,14 +144,10 @@ MacroConditionTimerEdit::MacroConditionTimerEdit(
 
 	QWidget::connect(_timerTypes, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TimerTypeChanged(int)));
-	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
-	QWidget::connect(_duration, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(DurationUnitChanged(DurationUnit)));
-	QWidget::connect(_duration2, SIGNAL(DurationChanged(double)), this,
-			 SLOT(Duration2Changed(double)));
-	QWidget::connect(_duration2, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(Duration2UnitChanged(DurationUnit)));
+	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
+	QWidget::connect(_duration2, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(Duration2Changed(const Duration &)));
 	QWidget::connect(_pauseConinue, SIGNAL(clicked()), this,
 			 SLOT(PauseContinueClicked()));
 	QWidget::connect(_reset, SIGNAL(clicked()), this, SLOT(ResetClicked()));
@@ -201,44 +205,24 @@ void MacroConditionTimerEdit::TimerTypeChanged(int type)
 	SetWidgetVisibility();
 }
 
-void MacroConditionTimerEdit::DurationChanged(double seconds)
+void MacroConditionTimerEdit::DurationChanged(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.seconds = seconds;
+	_entryData->_duration = dur;
 }
 
-void MacroConditionTimerEdit::DurationUnitChanged(DurationUnit unit)
+void MacroConditionTimerEdit::Duration2Changed(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration.displayUnit = unit;
-}
-
-void MacroConditionTimerEdit::Duration2Changed(double seconds)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration2.seconds = seconds;
-}
-
-void MacroConditionTimerEdit::Duration2UnitChanged(DurationUnit unit)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration2.displayUnit = unit;
+	_entryData->_duration2 = dur;
 }
 
 void MacroConditionTimerEdit::SaveRemainingChanged(int state)

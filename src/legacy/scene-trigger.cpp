@@ -156,7 +156,7 @@ void SceneTrigger::logMatch()
 	blog(LOG_INFO,
 	     "scene '%s' in status '%s' triggering action '%s' after %f seconds",
 	     GetWeakSourceName(scene).c_str(), statusName.c_str(),
-	     actionName.c_str(), duration.seconds);
+	     actionName.c_str(), duration.Seconds());
 }
 
 void frontEndActionThread(sceneTriggerAction action, double delay)
@@ -266,14 +266,14 @@ void SceneTrigger::performAction()
 
 	if (isFrontendAction(triggerAction)) {
 		t = std::thread(frontEndActionThread, triggerAction,
-				duration.seconds);
+				duration.Seconds());
 	} else if (isAudioAction(triggerAction)) {
 		bool mute = triggerAction == sceneTriggerAction::MUTE_SOURCE;
-		t = std::thread(muteThread, audioSource, duration.seconds,
+		t = std::thread(muteThread, audioSource, duration.Seconds(),
 				mute);
 	} else if (isSwitcherStatusAction(triggerAction)) {
 		bool stop = triggerAction == sceneTriggerAction::STOP_SWITCHER;
-		t = std::thread(statusThread, duration.seconds, stop);
+		t = std::thread(statusThread, duration.Seconds(), stop);
 	} else {
 		blog(LOG_WARNING, "ignoring unknown action '%d'",
 		     static_cast<int>(triggerAction));
@@ -460,10 +460,8 @@ SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
 			 SLOT(TriggerTypeChanged(int)));
 	QWidget::connect(actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TriggerActionChanged(int)));
-	QWidget::connect(duration, SIGNAL(DurationChanged(double)), this,
-			 SLOT(DurationChanged(double)));
-	QWidget::connect(duration, SIGNAL(UnitChanged(DurationUnit)), this,
-			 SLOT(DurationUnitChanged(DurationUnit)));
+	QWidget::connect(duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
 	QWidget::connect(audioSources,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(AudioSourceChanged(const QString &)));
@@ -552,24 +550,14 @@ void SceneTriggerWidget::TriggerActionChanged(int index)
 	}
 }
 
-void SceneTriggerWidget::DurationChanged(double seconds)
+void SceneTriggerWidget::DurationChanged(const Duration &duration)
 {
 	if (loading || !switchData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switchData->duration.seconds = seconds;
-}
-
-void SceneTriggerWidget::DurationUnitChanged(DurationUnit unit)
-{
-	if (loading || !switchData) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switchData->duration.displayUnit = unit;
+	switchData->duration = duration;
 }
 
 void SceneTriggerWidget::AudioSourceChanged(const QString &text)

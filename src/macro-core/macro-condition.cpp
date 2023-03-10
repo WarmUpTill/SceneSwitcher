@@ -12,24 +12,30 @@ const std::map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 };
 
 void DurationModifier::Save(obs_data_t *obj, const char *condName,
-			    const char *secondsName, const char *unitName) const
+			    const char *duration) const
 {
 	obs_data_set_int(obj, condName, static_cast<int>(_type));
-	_dur.Save(obj, secondsName, unitName);
+	_dur.Save(obj, duration);
 }
 
 void DurationModifier::Load(obs_data_t *obj, const char *condName,
-			    const char *secondsName, const char *unitName)
+			    const char *duration)
 {
 	// For backwards compatability check if duration value exist without
 	// time constraint condition - if so assume DurationCondition::MORE
 	if (!obs_data_has_user_value(obj, condName) &&
-	    obs_data_has_user_value(obj, secondsName)) {
+	    obs_data_has_user_value(obj, duration)) {
 		obs_data_set_int(obj, condName, static_cast<int>(Type::MORE));
 	}
 
 	_type = static_cast<Type>(obs_data_get_int(obj, condName));
-	_dur.Load(obj, secondsName, unitName);
+	_dur.Load(obj, duration);
+
+	// TODO: remove this fallback
+	if (obs_data_has_user_value(obj, "displayUnit")) {
+		_dur.SetUnit(static_cast<Duration::Unit>(
+			obs_data_get_int(obj, "displayUnit")));
+	}
 }
 
 bool DurationModifier::DurationReached()
@@ -127,7 +133,7 @@ void MacroCondition::CheckDurationModifier(bool &val)
 	case DurationModifier::Type::WITHIN:
 		if (val) {
 			_duration.SetTimeRemaining(
-				_duration.GetDuration().seconds);
+				_duration.GetDuration().Seconds());
 		}
 		val = val || _duration.DurationReached();
 		break;
@@ -141,14 +147,9 @@ void MacroCondition::SetDurationModifier(DurationModifier::Type m)
 	_duration.SetModifier(m);
 }
 
-void MacroCondition::SetDurationUnit(DurationUnit u)
+void MacroCondition::SetDuration(const Duration &duration)
 {
-	_duration.SetUnit(u);
-}
-
-void MacroCondition::SetDuration(double seconds)
-{
-	_duration.SetValue(seconds);
+	_duration.SetValue(duration);
 }
 
 MacroRefCondition::MacroRefCondition(Macro *m, bool supportsVariableValue)
