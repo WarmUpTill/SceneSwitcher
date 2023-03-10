@@ -17,13 +17,15 @@ bool MacroConditionSceneTransform::CheckCondition()
 	bool ret = false;
 	auto items = _source.GetSceneItems(_scene);
 
+	std::string json;
 	for (auto &item : items) {
-		auto json = getSceneItemTransform(item);
+		json = getSceneItemTransform(item);
 		if (matchJson(json, _settings, _regex)) {
 			ret = true;
 		}
 		obs_sceneitem_release(item);
 	}
+	SetVariableValue(json);
 	return ret;
 }
 
