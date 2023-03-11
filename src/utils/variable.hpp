@@ -39,41 +39,13 @@ private:
 	friend VariableSettingsDialog;
 };
 
-// Helper class which automatically resovles variables contained in strings
-// when reading its value as a std::string
-class VariableResolvingString {
-public:
-	VariableResolvingString() : _value(""){};
-	VariableResolvingString(std::string str) : _value(std::move(str)){};
-	VariableResolvingString(const char *str) : _value(str){};
-	operator std::string();
-	operator QVariant() const;
-	void operator=(std::string);
-	void operator=(const char *value);
-	const char *c_str();
-	const char *c_str() const;
-
-	const std::string &UnresolvedValue() const { return _value; }
-
-	void Load(obs_data_t *obj, const char *name);
-	void Save(obs_data_t *obj, const char *name) const;
-
-private:
-	void Resolve();
-
-	std::string _value = "";
-	std::string _resolvedValue = "";
-	std::chrono::high_resolution_clock::time_point _lastResolve{};
-};
-
-Q_DECLARE_METATYPE(VariableResolvingString);
-
 Variable *GetVariableByName(const std::string &name);
 Variable *GetVariableByQString(const QString &name);
 std::weak_ptr<Variable> GetWeakVariableByName(const std::string &name);
 std::weak_ptr<Variable> GetWeakVariableByQString(const QString &name);
 QStringList GetVariablesNameList();
-std::string SubstitueVariables(std::string str);
+std::string GetWeakVariableName(std::weak_ptr<Variable>);
+std::chrono::high_resolution_clock::time_point GetLastVariableChangeTime();
 
 class VariableSettingsDialog : public ItemSettingsDialog {
 	Q_OBJECT
@@ -97,4 +69,5 @@ class VariableSelection : public ItemSelection {
 public:
 	VariableSelection(QWidget *parent = 0);
 	void SetVariable(const std::string &);
+	void SetVariable(const std::weak_ptr<Variable> &);
 };

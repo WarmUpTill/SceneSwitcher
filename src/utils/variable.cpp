@@ -4,8 +4,13 @@
 #include <switcher-data-structs.hpp>
 
 // Keep track of the last time a variable was changed to save some work when
-// when resolving strings containing variables
+// when resolving strings containing variables, etc.
 static std::chrono::high_resolution_clock::time_point lastVariableChange{};
+
+std::chrono::high_resolution_clock::time_point GetLastVariableChangeTime()
+{
+	return lastVariableChange;
+}
 
 Variable::Variable() : Item()
 {
@@ -102,73 +107,13 @@ QStringList GetVariablesNameList()
 	return list;
 }
 
-void VariableResolvingString::Resolve()
+std::string GetWeakVariableName(std::weak_ptr<Variable> var_)
 {
-	if (switcher->variables.empty()) {
-		_resolvedValue = _value;
-		return;
+	auto var = var_.lock();
+	if (!var) {
+		return "invalid variable selection";
 	}
-	if (_lastResolve == lastVariableChange) {
-		return;
-	}
-	_resolvedValue = SubstitueVariables(_value);
-	_lastResolve = lastVariableChange;
-}
-
-VariableResolvingString::operator std::string()
-{
-	Resolve();
-	return _resolvedValue;
-}
-
-VariableResolvingString::operator QVariant() const
-{
-	return QVariant::fromValue<VariableResolvingString>(*this);
-}
-
-void VariableResolvingString::operator=(std::string value)
-{
-	_value = value;
-	_lastResolve = {};
-}
-
-void VariableResolvingString::operator=(const char *value)
-{
-	_value = value;
-	_lastResolve = {};
-}
-
-void VariableResolvingString::Load(obs_data_t *obj, const char *name)
-{
-	_value = obs_data_get_string(obj, name);
-	Resolve();
-}
-
-void VariableResolvingString::Save(obs_data_t *obj, const char *name) const
-{
-	obs_data_set_string(obj, name, _value.c_str());
-}
-
-const char *VariableResolvingString::c_str()
-{
-	Resolve();
-	return _resolvedValue.c_str();
-}
-
-const char *VariableResolvingString::c_str() const
-{
-	// Just assume that the value was previously resolved already
-	return _resolvedValue.c_str();
-}
-
-std::string SubstitueVariables(std::string str)
-{
-	for (const auto &v : switcher->variables) {
-		const auto &variable = std::dynamic_pointer_cast<Variable>(v);
-		const std::string pattern = "${" + variable->Name() + "}";
-		replaceAll(str, pattern, variable->Value());
-	}
-	return str;
+	return var->Name();
 }
 
 void SwitcherData::saveVariables(obs_data_t *obj)
@@ -325,6 +270,17 @@ void VariableSelection::SetVariable(const std::string &variable)
 	const QSignalBlocker blocker(_selection);
 	if (!!GetVariableByName(variable)) {
 		_selection->setCurrentText(QString::fromStdString(variable));
+	} else {
+		_selection->setCurrentIndex(0);
+	}
+}
+
+void VariableSelection::SetVariable(const std::weak_ptr<Variable> &variable_)
+{
+	const QSignalBlocker blocker(_selection);
+	auto var = variable_.lock();
+	if (var) {
+		SetVariable(var->Name());
 	} else {
 		_selection->setCurrentIndex(0);
 	}
