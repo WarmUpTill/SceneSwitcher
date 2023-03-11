@@ -21,27 +21,28 @@ const static std::map<PerformMacroAction, std::string> actionTypes = {
 
 bool MacroActionMacro::PerformAction()
 {
-	if (!_macro.get()) {
+	auto macro = _macro.GetMacro();
+	if (!macro) {
 		return true;
 	}
 
 	switch (_action) {
 	case PerformMacroAction::PAUSE:
-		_macro->SetPaused();
+		macro->SetPaused();
 		break;
 	case PerformMacroAction::UNPAUSE:
-		_macro->SetPaused(false);
+		macro->SetPaused(false);
 		break;
 	case PerformMacroAction::RESET_COUNTER:
-		_macro->ResetRunCount();
+		macro->ResetRunCount();
 		break;
 	case PerformMacroAction::RUN:
-		if (!_macro->Paused()) {
-			_macro->PerformActions();
+		if (!macro->Paused()) {
+			macro->PerformActions();
 		}
 		break;
 	case PerformMacroAction::STOP:
-		_macro->Stop();
+		macro->Stop();
 		break;
 	default:
 		break;
@@ -51,26 +52,27 @@ bool MacroActionMacro::PerformAction()
 
 void MacroActionMacro::LogAction() const
 {
-	if (!_macro.get()) {
+	auto macro = _macro.GetMacro();
+	if (!macro) {
 		return;
 	}
 	switch (_action) {
 	case PerformMacroAction::PAUSE:
-		vblog(LOG_INFO, "paused \"%s\"", _macro->Name().c_str());
+		vblog(LOG_INFO, "paused \"%s\"", macro->Name().c_str());
 		break;
 	case PerformMacroAction::UNPAUSE:
-		vblog(LOG_INFO, "unpaused \"%s\"", _macro->Name().c_str());
+		vblog(LOG_INFO, "unpaused \"%s\"", macro->Name().c_str());
 		break;
 	case PerformMacroAction::RESET_COUNTER:
 		vblog(LOG_INFO, "reset counter for \"%s\"",
-		      _macro->Name().c_str());
+		      macro->Name().c_str());
 		break;
 	case PerformMacroAction::RUN:
 		vblog(LOG_INFO, "run nested macro \"%s\"",
-		      _macro->Name().c_str());
+		      macro->Name().c_str());
 		break;
 	case PerformMacroAction::STOP:
-		vblog(LOG_INFO, "stopped macro \"%s\"", _macro->Name().c_str());
+		vblog(LOG_INFO, "stopped macro \"%s\"", macro->Name().c_str());
 		break;
 	default:
 		break;
@@ -96,10 +98,7 @@ bool MacroActionMacro::Load(obs_data_t *obj)
 
 std::string MacroActionMacro::GetShortDesc() const
 {
-	if (_macro.get()) {
-		return _macro->Name();
-	}
-	return "";
+	return _macro.Name();
 }
 
 static inline void populateActionSelection(QComboBox *list)
@@ -120,8 +119,6 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 
 	QWidget::connect(_macros, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(MacroChanged(const QString &)));
-	QWidget::connect(parent, SIGNAL(MacroRemoved(const QString &)), this,
-			 SLOT(MacroRemove(const QString &)));
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
 
@@ -145,7 +142,7 @@ void MacroActionMacroEdit::UpdateEntryData()
 		return;
 	}
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
-	_macros->SetCurrentMacro(_entryData->_macro.get());
+	_macros->SetCurrentMacro(_entryData->_macro);
 	if (_entryData->_action == PerformMacroAction::RUN ||
 	    _entryData->_action == PerformMacroAction::STOP) {
 		_macros->HideSelectedMacro();
@@ -159,7 +156,7 @@ void MacroActionMacroEdit::MacroChanged(const QString &text)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_macro.UpdateRef(text);
+	_entryData->_macro = text;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -178,12 +175,5 @@ void MacroActionMacroEdit::ActionChanged(int value)
 		_macros->HideSelectedMacro();
 	} else {
 		_macros->ShowAllMacros();
-	}
-}
-
-void MacroActionMacroEdit::MacroRemove(const QString &)
-{
-	if (_entryData) {
-		_entryData->_macro.UpdateRef();
 	}
 }

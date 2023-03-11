@@ -52,7 +52,6 @@ public:
 
 private slots:
 	void MacroChanged(const QString &text);
-	void MacroRemove(const QString &name);
 	void DurationChanged(double value);
 	void DurationUnitChanged(DurationUnit unit);
 	void ActionTypeChanged(int value);

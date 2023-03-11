@@ -44,11 +44,12 @@ bool MacroConditionMacro::CheckStateCondition()
 	// Note:
 	// Depending on the order the macro conditions are checked Matched() might
 	// still return the state of the previous interval
-	if (!_macro.get()) {
+	auto macro = _macro.GetMacro();
+	if (!macro) {
 		return false;
 	}
 
-	return _macro->Matched();
+	return macro->Matched();
 }
 
 bool MacroConditionMacro::CheckMultiStateCondition()
@@ -57,8 +58,9 @@ bool MacroConditionMacro::CheckMultiStateCondition()
 	// Depending on the order the macro conditions are checked Matched() might
 	// still return the state of the previous interval
 	int matchedCount = 0;
-	for (const auto &macro : _macros) {
-		if (!macro.get()) {
+	for (const auto &m : _macros) {
+		auto macro = m.GetMacro();
+		if (!macro) {
 			continue;
 		}
 		if (macro->Matched()) {
@@ -82,17 +84,18 @@ bool MacroConditionMacro::CheckMultiStateCondition()
 
 bool MacroConditionMacro::CheckCountCondition()
 {
-	if (!_macro.get()) {
+	auto macro = _macro.GetMacro();
+	if (!macro) {
 		return false;
 	}
 
 	switch (_counterCondition) {
 	case CounterCondition::BELOW:
-		return _macro->RunCount() < _count;
+		return macro->RunCount() < _count;
 	case CounterCondition::ABOVE:
-		return _macro->RunCount() > _count;
+		return macro->RunCount() > _count;
 	case CounterCondition::EQUAL:
-		return _macro->RunCount() == _count;
+		return macro->RunCount() == _count;
 	default:
 		break;
 	}
@@ -150,12 +153,15 @@ bool MacroConditionMacro::Load(obs_data_t *obj)
 	return true;
 }
 
+bool MacroConditionMacro::PostLoad()
+{
+	return MacroRefCondition::PostLoad() &&
+	       MultiMacroRefCondtition::PostLoad();
+}
+
 std::string MacroConditionMacro::GetShortDesc() const
 {
-	if (_macro.get()) {
-		return _macro->Name();
-	}
-	return "";
+	return _macro.Name();
 }
 
 static inline void populateTypeSelection(QComboBox *list)
@@ -383,7 +389,7 @@ void MacroConditionMacroEdit::UpdateEntryData()
 		break;
 	}
 
-	_macros->SetCurrentMacro(_entryData->_macro.get());
+	_macros->SetCurrentMacro(_entryData->_macro);
 	_types->setCurrentIndex(static_cast<int>(_entryData->_type));
 	_counterConditions->setCurrentIndex(
 		static_cast<int>(_entryData->_counterCondition));
@@ -401,7 +407,7 @@ void MacroConditionMacroEdit::MacroChanged(const QString &text)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_macro.UpdateRef(text);
+	_entryData->_macro = text;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -433,12 +439,9 @@ void MacroConditionMacroEdit::MacroRemove(const QString &)
 		return;
 	}
 
-	_entryData->_macro.UpdateRef();
-
 	auto it = _entryData->_macros.begin();
 	while (it != _entryData->_macros.end()) {
-		it->UpdateRef();
-		if (it->get() == nullptr) {
+		if (!it->GetMacro()) {
 			it = _entryData->_macros.erase(it);
 		} else {
 			++it;
@@ -473,18 +476,26 @@ void MacroConditionMacroEdit::TypeChanged(int type)
 
 void MacroConditionMacroEdit::ResetClicked()
 {
-	if (_loading || !_entryData || !_entryData->_macro.get()) {
+	if (_loading || !_entryData) {
 		return;
 	}
 
-	_entryData->_macro->ResetRunCount();
+	auto macro = _entryData->_macro.GetMacro();
+	if (!macro) {
+		return;
+	}
+	macro->ResetRunCount();
 }
 
 void MacroConditionMacroEdit::UpdateCount()
 {
-	if (_entryData && _entryData->_macro.get()) {
-		_currentCount->setText(
-			QString::number(_entryData->_macro->RunCount()));
+	if (!_entryData) {
+		return;
+	}
+
+	auto macro = _entryData->_macro.GetMacro();
+	if (macro) {
+		_currentCount->setText(QString::number(macro->RunCount()));
 	} else {
 		_currentCount->setText("-");
 	}
@@ -492,10 +503,11 @@ void MacroConditionMacroEdit::UpdateCount()
 
 void MacroConditionMacroEdit::UpdatePaused()
 {
+	auto macro = _entryData->_macro.GetMacro();
 	_pausedWarning->setVisible(
 		_entryData &&
 		_entryData->_type != MacroConditionMacro::Type::MULTI_STATE &&
-		_entryData->_macro.get() && _entryData->_macro->Paused());
+		macro && macro->Paused());
 	adjustSize();
 }
 

@@ -29,9 +29,10 @@ MacroRefAction::MacroRefAction(Macro *m, bool supportsVariableValue)
 {
 }
 
-void MacroRefAction::ResolveMacroRef()
+bool MacroRefAction::PostLoad()
 {
-	_macro.UpdateRef();
+	_macro.PostLoad();
+	return true;
 }
 
 MultiMacroRefAction::MultiMacroRefAction(Macro *m, bool supportsVariableValue)
@@ -39,9 +40,10 @@ MultiMacroRefAction::MultiMacroRefAction(Macro *m, bool supportsVariableValue)
 {
 }
 
-void MultiMacroRefAction::ResolveMacroRef()
+bool MultiMacroRefAction::PostLoad()
 {
-	for (auto &m : _macros) {
-		m.UpdateRef();
+	for (auto &macro : _macros) {
+		macro.PostLoad();
 	}
+	return true;
 }

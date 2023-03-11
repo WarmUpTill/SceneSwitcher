@@ -12,7 +12,8 @@ bool MacroActionSequence::_registered = MacroActionFactory::Register(
 int getNextUnpausedMacroIdx(std::vector<MacroRef> &macros, int startIdx)
 {
 	for (; (int)macros.size() > startIdx; ++startIdx) {
-		if (macros[startIdx].get() && !macros[startIdx]->Paused()) {
+		auto macro = macros[startIdx].GetMacro();
+		if (macro && !macro->Paused()) {
 			return startIdx;
 		}
 	}
@@ -58,7 +59,7 @@ bool MacroActionSequence::PerformAction()
 		return true;
 	}
 
-	auto macro = GetNextMacro();
+	auto macro = GetNextMacro().GetMacro();
 	if (!macro.get()) {
 		return true;
 	}
@@ -158,8 +159,8 @@ void MacroActionSequenceEdit::MacroRemove(const QString &)
 
 	auto it = _entryData->_macros.begin();
 	while (it != _entryData->_macros.end()) {
-		it->UpdateRef();
-		if (it->get() == nullptr) {
+
+		if (!it->GetMacro()) {
 			it = _entryData->_macros.erase(it);
 		} else {
 			++it;
@@ -250,12 +251,11 @@ void MacroActionSequenceEdit::UpdateStatusLine()
 	QString nextMacroName =
 		obs_module_text("AdvSceneSwitcher.action.sequence.status.none");
 	if (_entryData) {
-		if (_entryData->_lastSequenceMacro.get()) {
-			lastMacroName = QString::fromStdString(
-				_entryData->_lastSequenceMacro->Name());
+		if (auto macro = _entryData->_lastSequenceMacro.GetMacro()) {
+			lastMacroName = QString::fromStdString(macro->Name());
 		}
-		auto next = _entryData->GetNextMacro(false);
-		if (next.get()) {
+		auto next = _entryData->GetNextMacro(false).GetMacro();
+		if (next) {
 			nextMacroName = QString::fromStdString(next->Name());
 		}
 	}

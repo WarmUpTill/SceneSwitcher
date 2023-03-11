@@ -84,13 +84,15 @@ private:
 class MacroRefCondition : virtual public MacroCondition {
 public:
 	MacroRefCondition(Macro *m, bool supportsVariableValue = false);
-	void ResolveMacroRef();
+	bool PostLoad() override;
+
 	MacroRef _macro;
 };
 
 class MultiMacroRefCondtition : virtual public MacroCondition {
 public:
 	MultiMacroRefCondtition(Macro *m, bool supportsVariableValue = false);
-	void ResolveMacroRef();
+	bool PostLoad() override;
+
 	std::vector<MacroRef> _macros;
 };

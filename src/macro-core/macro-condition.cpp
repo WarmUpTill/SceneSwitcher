@@ -156,9 +156,10 @@ MacroRefCondition::MacroRefCondition(Macro *m, bool supportsVariableValue)
 {
 }
 
-void MacroRefCondition::ResolveMacroRef()
+bool MacroRefCondition::PostLoad()
 {
-	_macro.UpdateRef();
+	_macro.PostLoad();
+	return true;
 }
 
 MultiMacroRefCondtition::MultiMacroRefCondtition(Macro *m,
@@ -167,9 +168,10 @@ MultiMacroRefCondtition::MultiMacroRefCondtition(Macro *m,
 {
 }
 
-void MultiMacroRefCondtition::ResolveMacroRef()
+bool MultiMacroRefCondtition::PostLoad()
 {
-	for (auto &m : _macros) {
-		m.UpdateRef();
+	for (auto &macro : _macros) {
+		macro.PostLoad();
 	}
+	return true;
 }

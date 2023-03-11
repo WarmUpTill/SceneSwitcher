@@ -498,7 +498,6 @@ bool Macro::Load(obs_data_t *obj)
 
 bool Macro::PostLoad()
 {
-	ResolveMacroRef();
 	for (auto &c : _conditions) {
 		c->PostLoad();
 	}
@@ -506,33 +505,6 @@ bool Macro::PostLoad()
 		a->PostLoad();
 	}
 	return true;
-}
-
-void Macro::ResolveMacroRef()
-{
-	for (auto &c : _conditions) {
-		MacroRefCondition *ref =
-			dynamic_cast<MacroRefCondition *>(c.get());
-		if (ref) {
-			ref->ResolveMacroRef();
-		}
-		MultiMacroRefCondtition *ref2 =
-			dynamic_cast<MultiMacroRefCondtition *>(c.get());
-		if (ref2) {
-			ref2->ResolveMacroRef();
-		}
-	}
-	for (auto &a : _actions) {
-		MacroRefAction *ref = dynamic_cast<MacroRefAction *>(a.get());
-		if (ref) {
-			ref->ResolveMacroRef();
-		}
-		MultiMacroRefAction *ref2 =
-			dynamic_cast<MultiMacroRefAction *>(a.get());
-		if (ref2) {
-			ref2->ResolveMacroRef();
-		}
-	}
 }
 
 bool Macro::SwitchesScene()
@@ -820,4 +792,15 @@ Macro *GetMacroByName(const char *name)
 Macro *GetMacroByQString(const QString &name)
 {
 	return GetMacroByName(name.toUtf8().constData());
+}
+
+std::weak_ptr<Macro> GetWeakMacroByName(const char *name)
+{
+	for (auto &m : switcher->macros) {
+		if (m->Name() == name) {
+			return m;
+		}
+	}
+
+	return {};
 }

@@ -51,7 +51,6 @@ public:
 
 private slots:
 	void MacroChanged(const QString &text);
-	void MacroRemove(const QString &name);
 	void ActionChanged(int value);
 signals:
 	void HeaderInfoChanged(const QString &);

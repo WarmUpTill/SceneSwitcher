@@ -292,10 +292,6 @@ void MacroTreeModel::MoveItemBefore(const std::shared_ptr<Macro> &item,
 		_macros.insert(std::next(_macros.begin(), macroTo + i), tmp);
 	}
 	endMoveRows();
-
-	for (auto &m : _macros) {
-		m->ResolveMacroRef();
-	}
 }
 
 void MacroTreeModel::MoveItemAfter(const std::shared_ptr<Macro> &item,
@@ -340,10 +336,6 @@ void MacroTreeModel::MoveItemAfter(const std::shared_ptr<Macro> &item,
 		_macros.insert(std::next(_macros.begin(), macroTo), tmp);
 	}
 	endMoveRows();
-
-	for (auto &m : _macros) {
-		m->ResolveMacroRef();
-	}
 }
 
 static inline int
@@ -368,9 +360,6 @@ void MacroTreeModel::Add(std::shared_ptr<Macro> item)
 	_mt->selectionModel()->clear();
 	_mt->selectionModel()->select(createIndex(idx, 0, nullptr),
 				      QItemSelectionModel::Select);
-	for (auto &m : _macros) {
-		m->ResolveMacroRef();
-	}
 }
 
 void MacroTreeModel::Remove(std::shared_ptr<Macro> item)
@@ -403,10 +392,6 @@ void MacroTreeModel::Remove(std::shared_ptr<Macro> item)
 
 	if (isGroup) {
 		UpdateGroupState(true);
-	}
-
-	for (auto &m : _macros) {
-		m->ResolveMacroRef();
 	}
 }
 
@@ -619,9 +604,6 @@ void MacroTreeModel::GroupSelectedItems(QModelIndexList &indices)
 	_mt->selectionModel()->clear();
 
 	Reset(_macros);
-	for (auto &m : _macros) {
-		m->ResolveMacroRef();
-	}
 }
 
 void MacroTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
@@ -641,15 +623,7 @@ void MacroTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
 
 	_mt->selectionModel()->clear();
 
-	for (auto &m : _macros) {
-		m->ResolveMacroRef();
-	}
-
 	Reset(_macros);
-
-	for (auto &m : _macros) {
-		m->ResolveMacroRef();
-	}
 }
 
 void MacroTreeModel::ExpandGroup(std::shared_ptr<Macro> item)
@@ -664,10 +638,6 @@ void MacroTreeModel::ExpandGroup(std::shared_ptr<Macro> item)
 	Reset(_macros);
 
 	_mt->selectionModel()->clear();
-
-	for (auto &m : _macros) {
-		m->ResolveMacroRef();
-	}
 }
 
 void MacroTreeModel::CollapseGroup(std::shared_ptr<Macro> item)
@@ -682,10 +652,6 @@ void MacroTreeModel::CollapseGroup(std::shared_ptr<Macro> item)
 	Reset(_macros);
 
 	_mt->selectionModel()->clear();
-
-	for (auto &m : _macros) {
-		m->ResolveMacroRef();
-	}
 }
 
 void MacroTreeModel::UpdateGroupState(bool update)
@@ -1041,10 +1007,6 @@ void MacroTree::dropEvent(QDropEvent *event)
 		auto it = std::find_if(items.begin(), items.end(),
 				       GroupNameMatches);
 		items.insert(std::next(it, 1), i);
-	}
-
-	for (auto &m : items) {
-		m->ResolveMacroRef();
 	}
 
 	// Update widgets and accept event

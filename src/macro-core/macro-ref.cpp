@@ -1,50 +1,50 @@
 #include "macro-ref.hpp"
 #include "macro.hpp"
 
-MacroRef::MacroRef(std::string name) : _name(name)
+MacroRef::MacroRef(std::string name)
 {
-	UpdateRef();
-}
-void MacroRef::UpdateRef()
-{
-	_ref = GetMacroByName(_name.c_str());
-}
-void MacroRef::UpdateRef(std::string newName)
-{
-	_name = newName;
-	UpdateRef();
-}
-void MacroRef::UpdateRef(QString newName)
-{
-	_name = newName.toStdString();
-	UpdateRef();
+	_macro = GetWeakMacroByName(name.c_str());
 }
 
 void MacroRef::Save(obs_data_t *obj) const
 {
-	if (_ref) {
-		obs_data_set_string(obj, "macro", _ref->Name().c_str());
+	if (auto macro = _macro.lock()) {
+		obs_data_set_string(obj, "macro", macro->Name().c_str());
 	}
 }
 void MacroRef::Load(obs_data_t *obj)
 {
-	_name = obs_data_get_string(obj, "macro");
-	UpdateRef();
+	auto name = obs_data_get_string(obj, "macro");
+	_postLoadName = name;
+	_macro = GetWeakMacroByName(name);
 }
 
-Macro *MacroRef::get() const
+void MacroRef::PostLoad()
 {
-	return _ref;
+	_macro = GetWeakMacroByName(_postLoadName.c_str());
 }
 
-Macro *MacroRef::operator->() const
+void MacroRef::operator=(const QString &name)
 {
-	return _ref;
+	_macro = GetWeakMacroByName(name.toStdString().c_str());
 }
 
-std::string MacroRef::RefName() const
+void MacroRef::operator=(const std::shared_ptr<Macro> &macro)
 {
-	return _name;
+	_macro = macro;
+}
+
+std::shared_ptr<Macro> MacroRef::GetMacro() const
+{
+	return _macro.lock();
+}
+
+std::string MacroRef::Name() const
+{
+	if (auto macro = GetMacro()) {
+		return macro->Name();
+	}
+	return "";
 }
 
 void SaveMacroList(obs_data_t *obj, const std::vector<MacroRef> &macros,
@@ -52,7 +52,7 @@ void SaveMacroList(obs_data_t *obj, const std::vector<MacroRef> &macros,
 {
 	obs_data_array_t *array = obs_data_array_create();
 	for (auto &m : macros) {
-		if (!m.get()) {
+		if (!m.GetMacro()) {
 			continue;
 		}
 		obs_data_t *array_obj = obs_data_create();
