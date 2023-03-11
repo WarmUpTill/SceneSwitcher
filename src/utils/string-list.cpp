@@ -27,7 +27,7 @@ bool StringList::Load(obs_data_t *obj, const char *name,
 	size_t count = obs_data_array_count(strings);
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(strings, i);
-		VariableResolvingString string;
+		StringVariable string;
 		string.Load(array_obj, elementName);
 		*this << string;
 		obs_data_release(array_obj);
@@ -114,7 +114,7 @@ void StringListEdit::Add()
 	if (!accepted || name.empty()) {
 		return;
 	}
-	VariableResolvingString string = name;
+	StringVariable string = name;
 	QVariant v = QVariant::fromValue(string);
 	QListWidgetItem *item = new QListWidgetItem(
 		QString::fromStdString(string.UnresolvedValue()), _list);
@@ -179,7 +179,7 @@ void StringListEdit::Clicked(QListWidgetItem *item)
 		return;
 	}
 
-	VariableResolvingString string = name;
+	StringVariable string = name;
 	QVariant v = QVariant::fromValue(string);
 	item->setText(QString::fromStdString(string.UnresolvedValue()));
 	item->setData(Qt::UserRole, string);

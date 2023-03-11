@@ -29,7 +29,7 @@ public:
 
 	SourceSelection _source;
 	SourceCondition _condition = SourceCondition::ACTIVE;
-	VariableResolvingString _settings = "";
+	StringVariable _settings = "";
 	RegexConfig _regex;
 
 private:

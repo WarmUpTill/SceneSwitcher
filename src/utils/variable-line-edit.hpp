@@ -1,5 +1,5 @@
 #pragma once
-#include "variable.hpp"
+#include "variable-string.hpp"
 
 #include <QLineEdit>
 
@@ -8,7 +8,7 @@ class VariableLineEdit : public QLineEdit {
 public:
 	VariableLineEdit(QWidget *parent);
 	void setText(const QString &);
-	void setText(const VariableResolvingString &);
+	void setText(const StringVariable &);
 
 private:
 };

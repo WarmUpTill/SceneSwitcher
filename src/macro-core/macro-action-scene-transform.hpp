@@ -22,7 +22,7 @@ public:
 
 	SceneSelection _scene;
 	SceneItemSelection _source;
-	VariableResolvingString _settings = "";
+	StringVariable _settings = "";
 
 private:
 	void ApplySettings(const std::string &);

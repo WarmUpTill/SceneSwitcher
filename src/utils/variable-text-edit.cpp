@@ -11,7 +11,7 @@ void VariableTextEdit::setPlainText(const QString &string)
 	QPlainTextEdit::setPlainText(string);
 }
 
-void VariableTextEdit::setPlainText(const VariableResolvingString &string)
+void VariableTextEdit::setPlainText(const StringVariable &string)
 {
 	QPlainTextEdit::setPlainText(
 		QString::fromStdString(string.UnresolvedValue()));

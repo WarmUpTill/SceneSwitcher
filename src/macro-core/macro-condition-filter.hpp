@@ -30,7 +30,7 @@ public:
 	SourceSelection _source;
 	OBSWeakSource _filter;
 	Condition _condition = Condition::ENABLED;
-	VariableResolvingString _settings = "";
+	StringVariable _settings = "";
 	RegexConfig _regex;
 
 private:

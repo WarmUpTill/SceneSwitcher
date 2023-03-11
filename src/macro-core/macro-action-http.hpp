@@ -28,10 +28,8 @@ public:
 		POST,
 	};
 
-	VariableResolvingString _url =
-		obs_module_text("AdvSceneSwitcher.enterURL");
-	VariableResolvingString _data =
-		obs_module_text("AdvSceneSwitcher.enterText");
+	StringVariable _url = obs_module_text("AdvSceneSwitcher.enterURL");
+	StringVariable _data = obs_module_text("AdvSceneSwitcher.enterText");
 	bool _setHeaders = false;
 	StringList _headers;
 	Method _method = Method::GET;

@@ -24,7 +24,7 @@ FileSelection::FileSelection(FileSelection::Type type, QWidget *parent)
 	setLayout(layout);
 }
 
-void FileSelection::SetPath(const VariableResolvingString &path)
+void FileSelection::SetPath(const StringVariable &path)
 {
 	_filePath->setText(path);
 }

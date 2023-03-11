@@ -30,7 +30,7 @@ public:
 	SourceSelection _source;
 	OBSWeakSource _filter;
 	Action _action = Action::ENABLE;
-	VariableResolvingString _settings = "";
+	StringVariable _settings = "";
 
 private:
 	void ResolveVariables();

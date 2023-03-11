@@ -41,7 +41,7 @@ public:
 
 	SourceSelection _source;
 	SourceSettingButton _button;
-	VariableResolvingString _settings = "";
+	StringVariable _settings = "";
 	SourceAction _action = SourceAction::ENABLE;
 
 private:
