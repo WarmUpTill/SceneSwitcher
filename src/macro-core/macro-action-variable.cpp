@@ -1,6 +1,7 @@
 #include "macro-action-variable.hpp"
 #include "advanced-scene-switcher.hpp"
 #include "macro-condition-edit.hpp"
+#include "math-helpers.hpp"
 #include "utility.hpp"
 
 const std::string MacroActionVariable::id = "variable";
@@ -31,6 +32,8 @@ static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.subString"},
 	{MacroActionVariable::Type::FIND_AND_REPLACE,
 	 "AdvSceneSwitcher.action.variable.type.findAndReplace"},
+	{MacroActionVariable::Type::MATH_EXPRESSION,
+	 "AdvSceneSwitcher.action.variable.type.mathExpression"},
 };
 
 static void apppend(Variable &var, const std::string &value)
@@ -41,14 +44,14 @@ static void apppend(Variable &var, const std::string &value)
 
 static void modifyNumValue(Variable &var, double val, const bool increment)
 {
-	double current;
-	if (!var.DoubleValue(current)) {
+	auto current = var.DoubleValue();
+	if (!current.has_value()) {
 		return;
 	}
 	if (increment) {
-		var.SetValue(current + val);
+		var.SetValue(*current + val);
 	} else {
-		var.SetValue(current - val);
+		var.SetValue(*current - val);
 	}
 }
 
@@ -104,6 +107,16 @@ void MacroActionVariable::HandleFindAndReplace(Variable *var)
 	var->SetValue(value);
 }
 
+void MacroActionVariable::HandleMathExpression(Variable *var)
+{
+	auto result = EvalMathExpression(_mathExpression);
+	if (std::holds_alternative<std::string>(result)) {
+		blog(LOG_WARNING, "%s", std::get<std::string>(result).c_str());
+		return;
+	}
+	var->SetValue(std::get<double>(result));
+}
+
 bool MacroActionVariable::PerformAction()
 {
 	auto var = GetVariableByName(_variableName);
@@ -149,11 +162,11 @@ bool MacroActionVariable::PerformAction()
 		break;
 	}
 	case Type::ROUND_TO_INT: {
-		double curValue;
-		if (!var->DoubleValue(curValue)) {
+		auto curValue = var->DoubleValue();
+		if (!curValue.has_value()) {
 			return true;
 		}
-		var->SetValue(std::to_string(int(std::round(curValue))));
+		var->SetValue(std::to_string(int(std::round(*curValue))));
 		return true;
 	}
 	case Type::SUBSTRING: {
@@ -166,6 +179,10 @@ bool MacroActionVariable::PerformAction()
 	}
 	case Type::FIND_AND_REPLACE: {
 		HandleFindAndReplace(var);
+		return true;
+	}
+	case Type::MATH_EXPRESSION: {
+		HandleMathExpression(var);
 		return true;
 	}
 	}
@@ -189,6 +206,7 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	obs_data_set_string(obj, "findStr", _findStr.c_str());
 	obs_data_set_string(obj, "replaceStr", _replaceStr.c_str());
 	_regex.Save(obj);
+	_mathExpression.Save(obj, "mathExpression");
 	return true;
 }
 
@@ -208,6 +226,7 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_regexMatchIdx = obs_data_get_int(obj, "regexMatchIdx");
 	_findStr = obs_data_get_string(obj, "findStr");
 	_replaceStr = obs_data_get_string(obj, "replaceStr");
+	_mathExpression.Load(obj, "mathExpression");
 	return true;
 }
 
@@ -323,7 +342,9 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _regexMatchIdx(new QSpinBox()),
 	  _findReplaceLayout(new QHBoxLayout()),
 	  _findStr(new ResizingPlainTextEdit(this, 10, 1, 1)),
-	  _replaceStr(new ResizingPlainTextEdit(this, 10, 1, 1))
+	  _replaceStr(new ResizingPlainTextEdit(this, 10, 1, 1)),
+	  _mathExpression(new VariableLineEdit(this)),
+	  _mathExpressionResult(new QLabel())
 {
 	_numValue->setMinimum(-9999999999);
 	_numValue->setMaximum(9999999999);
@@ -372,6 +393,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 SLOT(FindStrValueChanged()));
 	QWidget::connect(_replaceStr, SIGNAL(textChanged()), this,
 			 SLOT(ReplaceStrValueChanged()));
+	QWidget::connect(_mathExpression, SIGNAL(editingFinished()), this,
+			 SLOT(MathExpressionChanged()));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -385,6 +408,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{regexMatchIdx}}", _regexMatchIdx},
 		{"{{findStr}}", _findStr},
 		{"{{replaceStr}}", _replaceStr},
+		{"{{mathExpression}}", _mathExpression},
 	};
 	auto entryLayout = new QHBoxLayout;
 	placeWidgets(obs_module_text("AdvSceneSwitcher.action.variable.entry"),
@@ -420,6 +444,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	layout->addWidget(_segmentValueStatus);
 	layout->addWidget(_segmentValue);
 	layout->addLayout(_findReplaceLayout);
+	layout->addWidget(_mathExpressionResult);
 	setLayout(layout);
 
 	_entryData = entryData;
@@ -453,6 +478,7 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_findStr->setPlainText(QString::fromStdString(_entryData->_findStr));
 	_replaceStr->setPlainText(
 		QString::fromStdString(_entryData->_replaceStr));
+	_mathExpression->setText(_entryData->_mathExpression);
 	SetWidgetVisibility();
 }
 
@@ -502,6 +528,7 @@ void MacroActionVariableEdit::StrValueChanged()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_strValue = _strValue->toPlainText().toStdString();
 	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionVariableEdit::NumValueChanged(double val)
@@ -658,6 +685,7 @@ void MacroActionVariableEdit::RegexPatternChanged()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_regexPattern = _regexPattern->toPlainText().toStdString();
 	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionVariableEdit::RegexMatchIdxChanged(int val)
@@ -679,6 +707,7 @@ void MacroActionVariableEdit::FindStrValueChanged()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_findStr = _findStr->toPlainText().toStdString();
 	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionVariableEdit::ReplaceStrValueChanged()
@@ -690,6 +719,29 @@ void MacroActionVariableEdit::ReplaceStrValueChanged()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_replaceStr = _replaceStr->toPlainText().toStdString();
 	adjustSize();
+	updateGeometry();
+}
+
+void MacroActionVariableEdit::MathExpressionChanged()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	_entryData->_mathExpression = _mathExpression->text().toStdString();
+
+	// In case of invalid expression display an error
+	auto result = EvalMathExpression(_entryData->_mathExpression);
+	auto hasError = std::holds_alternative<std::string>(result);
+	if (hasError) {
+		_mathExpressionResult->setText(
+			QString::fromStdString(std::get<std::string>(result)));
+	}
+	_mathExpressionResult->setVisible(hasError);
+
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionVariableEdit::MarkSelectedSegment()
@@ -770,6 +822,9 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 	setLayoutVisible(_findReplaceLayout,
 			 _entryData->_type ==
 				 MacroActionVariable::Type::FIND_AND_REPLACE);
+	_mathExpression->setVisible(_entryData->_type ==
+				    MacroActionVariable::Type::MATH_EXPRESSION);
+	_mathExpressionResult->hide();
 
 	adjustSize();
 	updateGeometry();
