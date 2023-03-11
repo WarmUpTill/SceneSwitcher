@@ -17,7 +17,7 @@ public:
 
 	FileSelection(FileSelection::Type type = FileSelection::Type::READ,
 		      QWidget *parent = 0);
-	void SetPath(const VariableResolvingString &);
+	void SetPath(const StringVariable &);
 	void SetPath(const QString &);
 	QPushButton *Button() { return _browseButton; }
 	static QString ValidPathOrDesktop(const QString &path);

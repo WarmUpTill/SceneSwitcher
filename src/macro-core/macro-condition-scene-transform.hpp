@@ -24,7 +24,7 @@ public:
 	SceneSelection _scene;
 	SceneItemSelection _source;
 	RegexConfig _regex;
-	VariableResolvingString _settings = "";
+	StringVariable _settings = "";
 
 private:
 	static bool _registered;

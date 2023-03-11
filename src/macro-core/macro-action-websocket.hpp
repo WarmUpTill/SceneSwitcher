@@ -28,8 +28,7 @@ public:
 	};
 
 	Type _type = Type::REQUEST;
-	VariableResolvingString _message =
-		obs_module_text("AdvSceneSwitcher.enterText");
+	StringVariable _message = obs_module_text("AdvSceneSwitcher.enterText");
 	std::string _connection;
 
 private:

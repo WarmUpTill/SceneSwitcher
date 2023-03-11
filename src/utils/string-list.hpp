@@ -1,5 +1,5 @@
 #pragma once
-#include "variable.hpp"
+#include "variable-string.hpp"
 
 #include <obs-data.h>
 #include <obs-module.h>
@@ -8,7 +8,7 @@
 #include <QListWidget>
 #include <QStringList>
 
-class StringList : public QList<VariableResolvingString> {
+class StringList : public QList<StringVariable> {
 public:
 	bool Save(obs_data_t *obj, const char *name,
 		  const char *elementName = "string") const;

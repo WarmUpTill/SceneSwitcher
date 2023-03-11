@@ -25,8 +25,7 @@ public:
 	}
 
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
-	VariableResolvingString _text =
-		obs_module_text("AdvSceneSwitcher.enterText");
+	StringVariable _text = obs_module_text("AdvSceneSwitcher.enterText");
 	FileAction _action = FileAction::WRITE;
 
 private:

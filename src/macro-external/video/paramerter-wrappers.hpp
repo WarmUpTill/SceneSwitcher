@@ -5,7 +5,7 @@
 #include <source-selection.hpp>
 #include <scene-selection.hpp>
 #include <regex-config.hpp>
-#include <variable.hpp>
+#include <variable-string.hpp>
 #include <obs.hpp>
 #include <obs-module.h>
 
@@ -89,8 +89,7 @@ public:
 	tesseract::PageSegMode GetPageMode() const { return pageSegMode; }
 	tesseract::TessBaseAPI *GetOCR() const { return ocr.get(); }
 
-	VariableResolvingString text =
-		obs_module_text("AdvSceneSwitcher.enterText");
+	VariableString text = obs_module_text("AdvSceneSwitcher.enterText");
 	RegexConfig regex = RegexConfig::PartialMatchRegexConfig();
 	QColor color = Qt::black;
 

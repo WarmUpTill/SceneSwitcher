@@ -33,8 +33,7 @@ public:
 	TargetType _targetType = TargetType::SOURCE;
 	SceneSelection _scene;
 	SourceSelection _source;
-	VariableResolvingString _path =
-		obs_module_text("AdvSceneSwitcher.enterPath");
+	StringVariable _path = obs_module_text("AdvSceneSwitcher.enterPath");
 
 private:
 	void FrontendScreenshot(OBSWeakSource &);

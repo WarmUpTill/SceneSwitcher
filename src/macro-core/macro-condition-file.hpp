@@ -36,8 +36,7 @@ public:
 	};
 
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
-	VariableResolvingString _text =
-		obs_module_text("AdvSceneSwitcher.enterText");
+	StringVariable _text = obs_module_text("AdvSceneSwitcher.enterText");
 	FileType _fileType = FileType::LOCAL;
 	ConditionType _condition = ConditionType::MATCH;
 	RegexConfig _regex;
