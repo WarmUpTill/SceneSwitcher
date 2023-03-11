@@ -249,7 +249,7 @@ void MacroActionProjectorEdit::MonitorChanged(int value)
 	_entryData->_monitor = value;
 }
 
-void MacroActionProjectorEdit::WindowTypeChanged(int value)
+void MacroActionProjectorEdit::WindowTypeChanged(int)
 {
 	if (_loading || !_entryData) {
 		return;

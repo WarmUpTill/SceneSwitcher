@@ -513,7 +513,7 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 	QPoint globalPos = ui->macros->mapToGlobal(pos);
 	QMenu menu;
 
-	auto add = menu.addAction(
+	menu.addAction(
 		obs_module_text("AdvSceneSwitcher.macroTab.contextMenuAdd"),
 		this, &AdvSceneSwitcher::on_macroAdd_clicked);
 
