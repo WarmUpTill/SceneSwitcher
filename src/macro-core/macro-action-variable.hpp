@@ -1,8 +1,8 @@
 #pragma once
 #include "macro-action-edit.hpp"
-#include "resizing-text-edit.hpp"
 #include "regex-config.hpp"
-#include "variable.hpp"
+#include "resizing-text-edit.hpp"
+#include "variable-line-edit.hpp"
 
 class MacroActionVariable : public MacroAction {
 public:
@@ -32,6 +32,7 @@ public:
 		ROUND_TO_INT,
 		SUBSTRING,
 		FIND_AND_REPLACE,
+		MATH_EXPRESSION,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
@@ -48,12 +49,15 @@ public:
 		"AdvSceneSwitcher.action.variable.findAndReplace.find");
 	std::string _replaceStr = obs_module_text(
 		"AdvSceneSwitcher.action.variable.findAndReplace.replace");
+	StringVariable _mathExpression = obs_module_text(
+		"AdvSceneSwitcher.action.variable.mathExpression.example");
 
 private:
 	void DecrementCurrentSegmentVariableRef();
 	void HandleIndexSubString(Variable *);
 	void HandleRegexSubString(Variable *);
 	void HandleFindAndReplace(Variable *);
+	void HandleMathExpression(Variable *);
 
 	std::weak_ptr<MacroSegment> _macroSegment;
 	int _segmentIdxLoadValue = -1;
@@ -93,6 +97,7 @@ private slots:
 	void RegexMatchIdxChanged(int val);
 	void FindStrValueChanged();
 	void ReplaceStrValueChanged();
+	void MathExpressionChanged();
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -117,6 +122,8 @@ protected:
 	QHBoxLayout *_findReplaceLayout;
 	ResizingPlainTextEdit *_findStr;
 	ResizingPlainTextEdit *_replaceStr;
+	VariableLineEdit *_mathExpression;
+	QLabel *_mathExpressionResult;
 	std::shared_ptr<MacroActionVariable> _entryData;
 
 private:
