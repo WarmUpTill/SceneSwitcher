@@ -36,15 +36,13 @@ const static std::map<MacroConditionVariable::Type, std::string>
 
 static bool isNumber(const Variable &var)
 {
-	double _;
-	return var.DoubleValue(_);
+	return var.DoubleValue().has_value();
 }
 
 static bool compareNumber(const Variable &var, double value, bool less)
 {
-	double varValue;
-
-	if (!var.DoubleValue(varValue)) {
+	auto varValue = var.DoubleValue();
+	if (!varValue.has_value()) {
 		return false;
 	}
 	if (less) {
@@ -84,9 +82,9 @@ bool MacroConditionVariable::CompareVariables()
 		return false;
 	}
 
-	double val1, val2;
-	bool validNumbers = var1->DoubleValue(val1);
-	validNumbers = validNumbers && var2->DoubleValue(val2);
+	auto val1 = var1->DoubleValue();
+	auto val2 = var2->DoubleValue();
+	bool validNumbers = val1.has_value() && val2.has_value();
 
 	switch (_type) {
 	case MacroConditionVariable::Type::EQUALS_VARIABLE:

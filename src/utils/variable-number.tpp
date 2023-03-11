@@ -51,11 +51,8 @@ template<typename T> T NumberVariable<T>::GetValue() const
 		if (!var) {
 			return {};
 		}
-		double value;
-		if (!var->DoubleValue(value)) {
-			return 0.0;
-		}
-		return value;
+		auto value = var->DoubleValue();
+		return value.value_or(0.0);
 	}
 	return _value;
 }

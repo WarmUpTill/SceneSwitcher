@@ -3,6 +3,7 @@
 #include "resizing-text-edit.hpp"
 
 #include <string>
+#include <optional>
 #include <QStringList>
 #include <obs.hpp>
 
@@ -16,7 +17,7 @@ public:
 	void Load(obs_data_t *obj);
 	void Save(obs_data_t *obj) const;
 	std::string Value() const { return _value; }
-	bool DoubleValue(double &) const;
+	std::optional<double> DoubleValue() const;
 	void SetValue(const std::string &val);
 	void SetValue(double);
 	static std::shared_ptr<Item> Create()

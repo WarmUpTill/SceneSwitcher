@@ -1,4 +1,5 @@
 #include "variable.hpp"
+#include "math-helpers.hpp"
 #include "utility.hpp"
 
 #include <switcher-data-structs.hpp>
@@ -46,11 +47,9 @@ void Variable::Save(obs_data_t *obj) const
 	obs_data_set_string(obj, "defaultValue", _defaultValue.c_str());
 }
 
-bool Variable::DoubleValue(double &value) const
+std::optional<double> Variable::DoubleValue() const
 {
-	char *end = nullptr;
-	value = strtod(_value.c_str(), &end);
-	return end != _value.c_str() && *end == '\0' && value != HUGE_VAL;
+	return GetDouble(_value);
 }
 
 void Variable::SetValue(const std::string &val)
