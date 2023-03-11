@@ -1,41 +1,44 @@
 #pragma once
+#include "variable-spinbox.hpp"
+#include "obs-data.h"
+
 #include <QWidget>
 #include <QDoubleSpinBox>
 #include <QComboBox>
 #include <QPushButton>
 #include <chrono>
 
-#include "obs-data.h"
-
-enum class DurationUnit {
-	SECONDS,
-	MINUTES,
-	HOURS,
-};
-
 class Duration {
 public:
 	Duration() = default;
 	Duration(double initialValueInSeconds);
 
-	void Save(obs_data_t *obj, const char *secondsName = "seconds",
-		  const char *unitName = "displayUnit") const;
-	void Load(obs_data_t *obj, const char *secondsName = "seconds",
-		  const char *unitName = "displayUnit");
+	void Save(obs_data_t *obj, const char *name = "duration") const;
+	void Load(obs_data_t *obj, const char *name = "duration");
 
 	bool DurationReached();
 	bool IsReset() const;
+	double Seconds() const;
+	double Milliseconds() const;
 	double TimeRemaining() const;
 	void SetTimeRemaining(double);
 	void Reset();
 	std::string ToString() const;
 
-	double seconds = 0.;
-	// only used for UI
-	DurationUnit displayUnit = DurationUnit::SECONDS;
+	enum class Unit {
+		SECONDS,
+		MINUTES,
+		HOURS,
+	};
+	Unit GetUnit() const { return _unit; }
+	void SetUnit(Unit u);
 
 private:
+	NumberVariable<double> _value = 0.;
+	Unit _unit = Unit::SECONDS;
 	std::chrono::high_resolution_clock::time_point _startTime;
+
+	friend class DurationSelection;
 };
 
 class DurationSelection : public QWidget {
@@ -43,21 +46,18 @@ class DurationSelection : public QWidget {
 public:
 	DurationSelection(QWidget *parent = nullptr,
 			  bool showUnitSelection = true, double minValue = 0.0);
-	void SetValue(double value);
-	void SetUnit(DurationUnit u);
-	void SetDuration(Duration d);
-	QDoubleSpinBox *SpinBox() { return _duration; }
+	void SetDuration(const Duration &);
+	QDoubleSpinBox *SpinBox() { return _duration->SpinBox(); }
 
 private slots:
-	void _DurationChanged(double value);
+	void _DurationChanged(const NumberVariable<double> &value);
 	void _UnitChanged(int idx);
 signals:
-	void DurationChanged(double value); // always reutrn value in seconds
-	void UnitChanged(DurationUnit u);
+	void DurationChanged(const Duration &value);
 
 private:
-	QDoubleSpinBox *_duration;
+	VariableDoubleSpinBox *_duration;
 	QComboBox *_unitSelection;
 
-	double _unitMultiplier;
+	Duration _current;
 };
