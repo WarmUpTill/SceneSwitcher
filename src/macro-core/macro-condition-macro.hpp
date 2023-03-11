@@ -22,6 +22,7 @@ public:
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
+	bool PostLoad() override;
 	std::string GetShortDesc() const;
 	std::string GetId() const { return id; };
 	static std::shared_ptr<MacroCondition> Create(Macro *m)

@@ -22,10 +22,11 @@ static std::map<TimerAction, std::string> timerActions = {
 
 bool MacroActionTimer::PerformAction()
 {
-	if (!_macro.get()) {
+	auto macro = _macro.GetMacro();
+	if (!macro) {
 		return true;
 	}
-	for (auto c : _macro->Conditions()) {
+	for (auto c : macro->Conditions()) {
 		if (c->GetId() != "timer") {
 			continue;
 		}
@@ -58,26 +59,27 @@ bool MacroActionTimer::PerformAction()
 
 void MacroActionTimer::LogAction() const
 {
-	if (!_macro.get()) {
+	auto macro = _macro.GetMacro();
+	if (!macro) {
 		return;
 	}
 	switch (_actionType) {
 	case TimerAction::PAUSE:
 		vblog(LOG_INFO, "paused timers on \"%s\"",
-		      _macro->Name().c_str());
+		      macro->Name().c_str());
 		break;
 	case TimerAction::CONTINUE:
 		vblog(LOG_INFO, "continued timers on \"%s\"",
-		      _macro->Name().c_str());
+		      macro->Name().c_str());
 		break;
 	case TimerAction::RESET:
 		vblog(LOG_INFO, "reset timers on \"%s\"",
-		      _macro->Name().c_str());
+		      macro->Name().c_str());
 		break;
 	case TimerAction::SET_TIME_REMAINING:
 		vblog(LOG_INFO,
 		      "set time remaining of timers on \"%s\" to \"%s\"",
-		      _macro->Name().c_str(), _duration.ToString().c_str());
+		      macro->Name().c_str(), _duration.ToString().c_str());
 		break;
 	default:
 		break;
@@ -105,10 +107,7 @@ bool MacroActionTimer::Load(obs_data_t *obj)
 
 std::string MacroActionTimer::GetShortDesc() const
 {
-	if (_macro.get()) {
-		return _macro->Name();
-	}
-	return "";
+	return _macro.Name();
 }
 
 static inline void populateTypeSelection(QComboBox *list)
@@ -130,8 +129,6 @@ MacroActionTimerEdit::MacroActionTimerEdit(
 
 	QWidget::connect(_macros, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(MacroChanged(const QString &)));
-	QWidget::connect(parent, SIGNAL(MacroRemoved(const QString &)), this,
-			 SLOT(MacroRemove(const QString &)));
 	QWidget::connect(_duration, SIGNAL(DurationChanged(double)), this,
 			 SLOT(DurationChanged(double)));
 	QWidget::connect(_duration, SIGNAL(UnitChanged(DurationUnit)), this,
@@ -160,7 +157,7 @@ void MacroActionTimerEdit::UpdateEntryData()
 		return;
 	}
 
-	_macros->SetCurrentMacro(_entryData->_macro.get());
+	_macros->SetCurrentMacro(_entryData->_macro);
 	_duration->SetDuration(_entryData->_duration);
 	_timerAction->setCurrentIndex(
 		static_cast<int>(_entryData->_actionType));
@@ -215,14 +212,7 @@ void MacroActionTimerEdit::MacroChanged(const QString &text)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_macro.UpdateRef(text);
+	_entryData->_macro = text;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
-}
-
-void MacroActionTimerEdit::MacroRemove(const QString &)
-{
-	if (_entryData) {
-		_entryData->_macro.UpdateRef();
-	}
 }

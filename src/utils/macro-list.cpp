@@ -69,17 +69,20 @@ MacroList::MacroList(QWidget *parent, bool allowDuplicates, bool reorder)
 void MacroList::SetContent(const std::vector<MacroRef> &macros)
 {
 	for (auto &m : macros) {
-		QString name;
-		if (!m.get()) {
-			name = QString::fromStdString(m.RefName()) + "<" +
-			       obs_module_text(
-				       "AdvSceneSwitcher.macroList.deleted") +
-			       ">";
+		QString listEntryName;
+		auto macroName = m.Name();
+		if (macroName.empty()) {
+			listEntryName = QString::fromStdString(
+				std::string("<") +
+				obs_module_text(
+					"AdvSceneSwitcher.macroList.deleted") +
+				">");
 		} else {
-			name = QString::fromStdString(m->Name());
+			listEntryName = QString::fromStdString(macroName);
 		}
-		QListWidgetItem *item = new QListWidgetItem(name, _list);
-		item->setData(Qt::UserRole, name);
+		QListWidgetItem *item =
+			new QListWidgetItem(listEntryName, _list);
+		item->setData(Qt::UserRole, listEntryName);
 	}
 	SetMacroListSize();
 }

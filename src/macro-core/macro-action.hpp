@@ -15,13 +15,15 @@ public:
 class MacroRefAction : virtual public MacroAction {
 public:
 	MacroRefAction(Macro *m, bool supportsVariableValue = false);
-	void ResolveMacroRef();
+	bool PostLoad() override;
+
 	MacroRef _macro;
 };
 
 class MultiMacroRefAction : virtual public MacroAction {
 public:
 	MultiMacroRefAction(Macro *m, bool supportsVariableValue = false);
-	void ResolveMacroRef();
+	bool PostLoad() override;
+
 	std::vector<MacroRef> _macros;
 };

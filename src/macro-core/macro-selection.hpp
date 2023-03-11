@@ -3,13 +3,14 @@
 #include <QDialog>
 
 class Macro;
+class MacroRef;
 
 class MacroSelection : public QComboBox {
 	Q_OBJECT
 
 public:
 	MacroSelection(QWidget *parent);
-	void SetCurrentMacro(Macro *);
+	void SetCurrentMacro(const MacroRef &);
 	void HideSelectedMacro(); // Macro currently being edited
 	void ShowAllMacros();
 

@@ -39,8 +39,9 @@ void MacroSelection::MacroAdd(const QString &name)
 	addItem(name);
 }
 
-void MacroSelection::SetCurrentMacro(Macro *m)
+void MacroSelection::SetCurrentMacro(const MacroRef &macro)
 {
+	auto m = macro.GetMacro();
 	if (!m) {
 		this->setCurrentIndex(0);
 	} else {

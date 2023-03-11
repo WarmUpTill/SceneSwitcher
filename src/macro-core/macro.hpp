@@ -63,10 +63,9 @@ public:
 
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
-	bool PostLoad();
 	// Some macros can refer to other macros, which are not yet loaded.
 	// Use this function to set these references after loading is complete.
-	void ResolveMacroRef();
+	bool PostLoad();
 
 	// Helper function for plugin state condition regarding scene change
 	bool SwitchesScene();
@@ -124,3 +123,4 @@ private:
 
 Macro *GetMacroByName(const char *name);
 Macro *GetMacroByQString(const QString &name);
+std::weak_ptr<Macro> GetWeakMacroByName(const char *name);

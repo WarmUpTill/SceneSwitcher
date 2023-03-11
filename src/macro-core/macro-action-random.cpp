@@ -11,22 +11,30 @@ bool MacroActionRandom::_registered = MacroActionFactory::Register(
 	{MacroActionRandom::Create, MacroActionRandomEdit::Create,
 	 "AdvSceneSwitcher.action.random"});
 
-std::vector<MacroRef> getNextMacros(std::vector<MacroRef> &macros,
-				    MacroRef &lastRandomMacro, bool allowRepeat)
+static bool validNextMacro(const std::shared_ptr<Macro> &macro)
 {
-	std::vector<MacroRef> res;
+	return macro && !macro->Paused();
+}
+
+static std::vector<std::shared_ptr<Macro>>
+getNextMacros(std::vector<MacroRef> &macros, MacroRef &lastRandomMacroRef,
+	      bool allowRepeat)
+{
+	std::vector<std::shared_ptr<Macro>> res;
 	if (macros.size() == 1) {
-		if (!macros[0].get() || macros[0]->Paused()) {
-			return res;
-		} else {
-			return macros;
+		auto macro = macros[0].GetMacro();
+		if (validNextMacro(macro)) {
+			res.push_back(macro);
 		}
+		return res;
 	}
 
+	auto lastRandomMacro = lastRandomMacroRef.GetMacro();
 	for (auto &m : macros) {
-		if (m.get() && !m->Paused() &&
-		    (allowRepeat || (lastRandomMacro.get() != m.get()))) {
-			res.push_back(m);
+		auto macro = m.GetMacro();
+		if (validNextMacro(macro) &&
+		    (allowRepeat || (lastRandomMacro != macro))) {
+			res.push_back(macro);
 		}
 	}
 	return res;
@@ -42,7 +50,7 @@ bool MacroActionRandom::PerformAction()
 	if (macros.size() == 0) {
 		return true;
 	}
-	if (macros.size() == 1 && macros[0].get()) {
+	if (macros.size() == 1) {
 		lastRandomMacro = macros[0];
 		return macros[0]->PerformActions();
 	}
@@ -126,8 +134,7 @@ void MacroActionRandomEdit::MacroRemove(const QString &)
 
 	auto it = _entryData->_macros.begin();
 	while (it != _entryData->_macros.end()) {
-		it->UpdateRef();
-		if (it->get() == nullptr) {
+		if (!it->GetMacro()) {
 			it = _entryData->_macros.erase(it);
 		} else {
 			++it;
@@ -188,9 +195,9 @@ bool MacroActionRandomEdit::ShouldShowAllowRepeat()
 	if (_entryData->_macros.size() <= 1) {
 		return false;
 	}
-	const auto macro = _entryData->_macros[0];
+	const auto macro = _entryData->_macros[0].GetMacro();
 	for (const auto &m : _entryData->_macros) {
-		if (macro.get() != m.get()) {
+		if (macro != m.GetMacro()) {
 			return true;
 		}
 	}

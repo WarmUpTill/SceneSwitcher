@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <string>
 #include <vector>
 #include <QString>
@@ -10,18 +11,17 @@ class MacroRef {
 public:
 	MacroRef(){};
 	MacroRef(std::string name);
-	void UpdateRef();
-	void UpdateRef(std::string name);
-	void UpdateRef(QString name);
+	void operator=(const QString &);
+	void operator=(const std::shared_ptr<Macro> &);
 	void Save(obs_data_t *obj) const;
 	void Load(obs_data_t *obj);
-	Macro *get() const;
-	Macro *operator->() const;
-	std::string RefName() const;
+	void PostLoad();
+	std::shared_ptr<Macro> GetMacro() const;
+	std::string Name() const;
 
 private:
-	std::string _name = "";
-	Macro *_ref = nullptr;
+	std::string _postLoadName;
+	std::weak_ptr<Macro> _macro;
 };
 
 void SaveMacroList(obs_data_t *obj, const std::vector<MacroRef> &macros,
