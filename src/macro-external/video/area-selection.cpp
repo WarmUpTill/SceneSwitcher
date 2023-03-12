@@ -7,8 +7,9 @@
 void advss::Size::Save(obs_data_t *obj, const char *name) const
 {
 	auto data = obs_data_create();
-	obs_data_set_int(data, "width", width);
-	obs_data_set_int(data, "height", height);
+	width.Save(data, "width");
+	height.Save(data, "height");
+	obs_data_set_int(data, "version", 1);
 	obs_data_set_obj(obj, name, data);
 	obs_data_release(data);
 }
@@ -16,8 +17,13 @@ void advss::Size::Save(obs_data_t *obj, const char *name) const
 void advss::Size::Load(obs_data_t *obj, const char *name)
 {
 	auto data = obs_data_get_obj(obj, name);
-	width = obs_data_get_int(data, "width");
-	height = obs_data_get_int(data, "height");
+	if (!obs_data_has_user_value(data, "version")) {
+		width = obs_data_get_int(data, "width");
+		height = obs_data_get_int(data, "height");
+	} else {
+		width.Load(data, "width");
+		height.Load(data, "height");
+	}
 	obs_data_release(data);
 }
 
@@ -29,10 +35,11 @@ cv::Size advss::Size::CV()
 void advss::Area::Save(obs_data_t *obj, const char *name) const
 {
 	auto data = obs_data_create();
-	obs_data_set_int(data, "x", x);
-	obs_data_set_int(data, "y", y);
-	obs_data_set_int(data, "width", width);
-	obs_data_set_int(data, "height", height);
+	x.Save(data, "x");
+	y.Save(data, "y");
+	width.Save(data, "width");
+	height.Save(data, "height");
+	obs_data_set_int(data, "version", 1);
 	obs_data_set_obj(obj, name, data);
 	obs_data_release(data);
 }
@@ -40,23 +47,32 @@ void advss::Area::Save(obs_data_t *obj, const char *name) const
 void advss::Area::Load(obs_data_t *obj, const char *name)
 {
 	auto data = obs_data_get_obj(obj, name);
-	x = obs_data_get_int(data, "x");
-	y = obs_data_get_int(data, "y");
-	width = obs_data_get_int(data, "width");
-	height = obs_data_get_int(data, "height");
+	if (!obs_data_has_user_value(data, "version")) {
+		x = obs_data_get_int(data, "x");
+		y = obs_data_get_int(data, "y");
+		width = obs_data_get_int(data, "width");
+		height = obs_data_get_int(data, "height");
+	} else {
+		x.Load(data, "x");
+		y.Load(data, "y");
+		width.Load(data, "width");
+		height.Load(data, "height");
+	}
 	obs_data_release(data);
 }
 
 SizeSelection::SizeSelection(int min, int max, QWidget *parent)
-	: QWidget(parent), _x(new QSpinBox), _y(new QSpinBox)
+	: QWidget(parent), _x(new VariableSpinBox()), _y(new VariableSpinBox())
 {
 	_x->setMinimum(min);
 	_y->setMinimum(min);
 	_x->setMaximum(max);
 	_y->setMaximum(max);
 
-	connect(_x, SIGNAL(valueChanged(int)), this, SLOT(XChanged(int)));
-	connect(_y, SIGNAL(valueChanged(int)), this, SLOT(YChanged(int)));
+	connect(_x, SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(XChanged(const NumberVariable<int> &)));
+	connect(_y, SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(YChanged(const NumberVariable<int> &)));
 
 	auto layout = new QHBoxLayout();
 	layout->setContentsMargins(0, 0, 0, 0);
@@ -67,23 +83,23 @@ SizeSelection::SizeSelection(int min, int max, QWidget *parent)
 
 void SizeSelection::SetSize(const advss::Size &s)
 {
-	_x->setValue(s.width);
-	_y->setValue(s.height);
+	_x->SetValue(s.width);
+	_y->SetValue(s.height);
 }
 
 advss::Size SizeSelection::Size()
 {
-	return advss::Size{_x->value(), _y->value()};
+	return advss::Size{_x->Value(), _y->Value()};
 }
 
-void SizeSelection::XChanged(int value)
+void SizeSelection::XChanged(const NumberVariable<int> &value)
 {
-	emit SizeChanged(advss::Size{value, _y->value()});
+	emit SizeChanged(advss::Size{value, _y->Value()});
 }
 
-void SizeSelection::YChanged(int value)
+void SizeSelection::YChanged(const NumberVariable<int> &value)
 {
-	emit SizeChanged(advss::Size{_x->value(), value});
+	emit SizeChanged(advss::Size{_x->Value(), value});
 }
 
 AreaSelection::AreaSelection(int min, int max, QWidget *parent)

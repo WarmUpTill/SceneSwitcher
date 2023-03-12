@@ -1,4 +1,6 @@
 #pragma once
+#include <variable-spinbox.hpp>
+
 #include <QWidget>
 #include <QSpinBox>
 #include <obs-data.h>
@@ -11,18 +13,18 @@ struct Size {
 	void Load(obs_data_t *obj, const char *name);
 	cv::Size CV();
 
-	int width;
-	int height;
+	NumberVariable<int> width;
+	NumberVariable<int> height;
 };
 
 struct Area {
 	void Save(obs_data_t *obj, const char *name) const;
 	void Load(obs_data_t *obj, const char *name);
 
-	int x;
-	int y;
-	int width;
-	int height;
+	NumberVariable<int> x;
+	NumberVariable<int> y;
+	NumberVariable<int> width;
+	NumberVariable<int> height;
 };
 
 }
@@ -36,14 +38,14 @@ public:
 	advss::Size Size();
 
 private slots:
-	void XChanged(int);
-	void YChanged(int);
+	void XChanged(const NumberVariable<int> &);
+	void YChanged(const NumberVariable<int> &);
 signals:
 	void SizeChanged(advss::Size value);
 
 private:
-	QSpinBox *_x;
-	QSpinBox *_y;
+	VariableSpinBox *_x;
+	VariableSpinBox *_y;
 
 	friend class AreaSelection;
 };
