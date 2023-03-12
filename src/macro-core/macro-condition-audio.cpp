@@ -205,15 +205,16 @@ bool MacroConditionAudio::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	_audioSource.Save(obj, "audioSource");
-	obs_data_set_int(obj, "volume", _volume);
-	obs_data_set_int(obj, "syncOffset", _syncOffset);
 	obs_data_set_int(obj, "monitor", _monitorType);
-	obs_data_set_double(obj, "balance", _balance);
+	_volume.Save(obj, "volume");
+	_syncOffset.Save(obj, "syncOffset");
+	_balance.Save(obj, "balance");
 	obs_data_set_int(obj, "checkType", static_cast<int>(_checkType));
 	obs_data_set_int(obj, "outputCondition",
 			 static_cast<int>(_outputCondition));
 	obs_data_set_int(obj, "volumeCondition",
 			 static_cast<int>(_volumeCondition));
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
@@ -238,11 +239,17 @@ bool MacroConditionAudio::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_audioSource.Load(obj, "audioSource");
-	_volume = obs_data_get_int(obj, "volume");
-	_syncOffset = obs_data_get_int(obj, "syncOffset");
 	_monitorType = static_cast<obs_monitoring_type>(
 		obs_data_get_int(obj, "monitor"));
-	_balance = obs_data_get_double(obj, "balance");
+	if (!obs_data_has_user_value(obj, "version")) {
+		_volume = obs_data_get_int(obj, "volume");
+		_syncOffset = obs_data_get_int(obj, "syncOffset");
+		_balance = obs_data_get_double(obj, "balance");
+	} else {
+		_volume.Load(obj, "volume");
+		_syncOffset.Load(obj, "syncOffset");
+		_balance.Load(obj, "balance");
+	}
 	_checkType = static_cast<Type>(obs_data_get_int(obj, "checkType"));
 	_outputCondition = static_cast<OutputCondition>(
 		obs_data_get_int(obj, "outputCondition"));
@@ -320,8 +327,8 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 	  _checkTypes(new QComboBox()),
 	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _condition(new QComboBox()),
-	  _volume(new QSpinBox()),
-	  _syncOffset(new QSpinBox()),
+	  _volume(new VariableSpinBox()),
+	  _syncOffset(new VariableSpinBox()),
 	  _monitorTypes(new QComboBox),
 	  _balance(new SliderSpinBox(0., 1., ""))
 {
@@ -339,14 +346,21 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 
 	QWidget::connect(_checkTypes, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(CheckTypeChanged(int)));
-	QWidget::connect(_volume, SIGNAL(valueChanged(int)), this,
-			 SLOT(VolumeThresholdChanged(int)));
-	QWidget::connect(_syncOffset, SIGNAL(valueChanged(int)), this,
-			 SLOT(SyncOffsetChanged(int)));
+	QWidget::connect(
+		_volume,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this,
+		SLOT(VolumeThresholdChanged(const NumberVariable<int> &)));
+	QWidget::connect(
+		_syncOffset,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(SyncOffsetChanged(const NumberVariable<int> &)));
 	QWidget::connect(_monitorTypes, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(MonitorTypeChanged(int)));
-	QWidget::connect(_balance, SIGNAL(DoubleValueChanged(double)), this,
-			 SLOT(BalanceChanged(double)));
+	QWidget::connect(
+		_balance,
+		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
+		this, SLOT(BalanceChanged(const NumberVariable<double> &)));
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_sources,
@@ -391,8 +405,8 @@ void MacroConditionAudioEdit::UpdateVolmeterSource()
 	layout->addWidget(_volMeter);
 
 	QWidget::connect(_volMeter->GetSlider(), SIGNAL(valueChanged(int)),
-			 _volume, SLOT(setValue(int)));
-	QWidget::connect(_volume, SIGNAL(valueChanged(int)),
+			 _volume, SLOT(SetFixedValue(int)));
+	QWidget::connect(_volume, SIGNAL(FixedValueChanged(int)),
 			 _volMeter->GetSlider(), SLOT(setValue(int)));
 
 	// Slider will default to 0 so set it manually once
@@ -414,7 +428,8 @@ void MacroConditionAudioEdit::SourceChanged(const SourceSelection &source)
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-void MacroConditionAudioEdit::VolumeThresholdChanged(int vol)
+void MacroConditionAudioEdit::VolumeThresholdChanged(
+	const NumberVariable<int> &vol)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -424,7 +439,7 @@ void MacroConditionAudioEdit::VolumeThresholdChanged(int vol)
 	_entryData->_volume = vol;
 }
 
-void MacroConditionAudioEdit::SyncOffsetChanged(int value)
+void MacroConditionAudioEdit::SyncOffsetChanged(const NumberVariable<int> &value)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -444,7 +459,7 @@ void MacroConditionAudioEdit::MonitorTypeChanged(int value)
 	_entryData->_monitorType = static_cast<obs_monitoring_type>(value);
 }
 
-void MacroConditionAudioEdit::BalanceChanged(double value)
+void MacroConditionAudioEdit::BalanceChanged(const NumberVariable<double> &value)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -504,8 +519,8 @@ void MacroConditionAudioEdit::UpdateEntryData()
 	}
 
 	_sources->SetSource(_entryData->_audioSource);
-	_volume->setValue(_entryData->_volume);
-	_syncOffset->setValue(_entryData->_syncOffset);
+	_volume->SetValue(_entryData->_volume);
+	_syncOffset->SetValue(_entryData->_syncOffset);
 	_monitorTypes->setCurrentIndex(_entryData->_monitorType);
 	_balance->SetDoubleValue(_entryData->_balance);
 	_checkTypes->setCurrentIndex(_checkTypes->findData(

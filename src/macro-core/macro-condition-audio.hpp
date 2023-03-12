@@ -50,10 +50,10 @@ public:
 	};
 
 	SourceSelection _audioSource;
-	int _volume = 0;
-	int64_t _syncOffset = 0;
+	NumberVariable<int> _volume = 0;
+	NumberVariable<int> _syncOffset = 0;
 	obs_monitoring_type _monitorType = OBS_MONITORING_TYPE_NONE;
-	double _balance = 0.5;
+	NumberVariable<double> _balance = 0.5;
 	Type _checkType = Type::OUTPUT_VOLUME;
 	OutputCondition _outputCondition = OutputCondition::ABOVE;
 	VolumeCondition _volumeCondition = VolumeCondition::ABOVE;
@@ -90,12 +90,12 @@ public:
 
 private slots:
 	void SourceChanged(const SourceSelection &);
-	void VolumeThresholdChanged(int vol);
+	void VolumeThresholdChanged(const NumberVariable<int> &vol);
 	void ConditionChanged(int cond);
 	void CheckTypeChanged(int cond);
-	void SyncOffsetChanged(int value);
+	void SyncOffsetChanged(const NumberVariable<int> &value);
 	void MonitorTypeChanged(int value);
-	void BalanceChanged(double value);
+	void BalanceChanged(const NumberVariable<double> &value);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -104,8 +104,8 @@ protected:
 	QComboBox *_checkTypes;
 	SourceSelectionWidget *_sources;
 	QComboBox *_condition;
-	QSpinBox *_volume;
-	QSpinBox *_syncOffset;
+	VariableSpinBox *_volume;
+	VariableSpinBox *_syncOffset;
 	QComboBox *_monitorTypes;
 	SliderSpinBox *_balance;
 	VolControl *_volMeter = nullptr;
