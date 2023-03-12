@@ -157,7 +157,7 @@ bool MacroConditionVideo::Save(obs_data_t *obj) const
 	obs_data_set_string(obj, "filePath", _file.c_str());
 	obs_data_set_bool(obj, "blockUntilScreenshotDone",
 			  _blockUntilScreenshotDone);
-	obs_data_set_double(obj, "brightness", _brightnessThreshold);
+	_brightnessThreshold.Save(obj, "brightnessThreshold");
 	_patternMatchParameters.Save(obj);
 	_objMatchParameters.Save(obj);
 	_ocrParamters.Save(obj);
@@ -176,7 +176,12 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 	_file = obs_data_get_string(obj, "filePath");
 	_blockUntilScreenshotDone =
 		obs_data_get_bool(obj, "blockUntilScreenshotDone");
-	_brightnessThreshold = obs_data_get_double(obj, "brightness");
+	// TODO: Remove this fallback in a future version
+	if (obs_data_has_user_value(obj, "brightness")) {
+		_brightnessThreshold = obs_data_get_double(obj, "brightness");
+	} else {
+		_brightnessThreshold.Load(obj, "brightnessThreshold");
+	}
 	_patternMatchParameters.Load(obj);
 	_objMatchParameters.Load(obj);
 	_ocrParamters.Load(obj);
@@ -477,18 +482,27 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 SLOT(ImageBrowseButtonClicked()));
 	QWidget::connect(_usePatternForChangedCheck, SIGNAL(stateChanged(int)),
 			 this, SLOT(UsePatternForChangedCheckChanged(int)));
-	QWidget::connect(_patternThreshold, SIGNAL(DoubleValueChanged(double)),
-			 this, SLOT(PatternThresholdChanged(double)));
+	QWidget::connect(
+		_patternThreshold,
+		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
+		this,
+		SLOT(PatternThresholdChanged(const NumberVariable<double> &)));
 	QWidget::connect(_useAlphaAsMask, SIGNAL(stateChanged(int)), this,
 			 SLOT(UseAlphaAsMaskChanged(int)));
 	QWidget::connect(_patternMatchMode, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(PatternMatchModeChanged(int)));
-	QWidget::connect(_brightnessThreshold,
-			 SIGNAL(DoubleValueChanged(double)), this,
-			 SLOT(BrightnessThresholdChanged(double)));
-	QWidget::connect(_objectScaleThreshold,
-			 SIGNAL(DoubleValueChanged(double)), this,
-			 SLOT(ObjectScaleThresholdChanged(double)));
+	QWidget::connect(
+		_brightnessThreshold,
+		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
+		this,
+		SLOT(BrightnessThresholdChanged(
+			const NumberVariable<double> &)));
+	QWidget::connect(
+		_objectScaleThreshold,
+		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
+		this,
+		SLOT(ObjectScaleThresholdChanged(
+			const NumberVariable<double> &)));
 	QWidget::connect(_minNeighbors, SIGNAL(valueChanged(int)), this,
 			 SLOT(MinNeighborsChanged(int)));
 	QWidget::connect(_minSize, SIGNAL(SizeChanged(advss::Size)), this,
@@ -854,7 +868,8 @@ void MacroConditionVideoEdit::UsePatternForChangedCheckChanged(int value)
 	SetWidgetVisibility();
 }
 
-void MacroConditionVideoEdit::PatternThresholdChanged(double value)
+void MacroConditionVideoEdit::PatternThresholdChanged(
+	const NumberVariable<double> &value)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -903,7 +918,8 @@ void MacroConditionVideoEdit::PatternMatchModeChanged(int idx)
 		_entryData->_patternMatchParameters);
 }
 
-void MacroConditionVideoEdit::BrightnessThresholdChanged(double value)
+void MacroConditionVideoEdit::BrightnessThresholdChanged(
+	const NumberVariable<double> &value)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -913,7 +929,8 @@ void MacroConditionVideoEdit::BrightnessThresholdChanged(double value)
 	_entryData->_brightnessThreshold = value;
 }
 
-void MacroConditionVideoEdit::ObjectScaleThresholdChanged(double value)
+void MacroConditionVideoEdit::ObjectScaleThresholdChanged(
+	const NumberVariable<double> &value)
 {
 	if (_loading || !_entryData) {
 		return;

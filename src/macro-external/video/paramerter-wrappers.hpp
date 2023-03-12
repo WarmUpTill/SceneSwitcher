@@ -6,6 +6,7 @@
 #include <scene-selection.hpp>
 #include <regex-config.hpp>
 #include <variable-string.hpp>
+#include <variable-number.hpp>
 #include <obs.hpp>
 #include <obs-module.h>
 
@@ -55,7 +56,7 @@ public:
 	bool useForChangedCheck = false;
 	bool useAlphaAsMask = false;
 	cv::TemplateMatchModes matchMode = cv::TM_CCORR_NORMED;
-	double threshold = 0.8;
+	NumberVariable<double> threshold = 0.8;
 };
 
 class ObjDetectParameters {
@@ -68,7 +69,7 @@ public:
 		std::string(
 			"/res/cascadeClassifiers/haarcascade_frontalface_alt.xml");
 	cv::CascadeClassifier cascade;
-	double scaleFactor = defaultScaleFactor;
+	NumberVariable<double> scaleFactor = defaultScaleFactor;
 	int minNeighbors = minMinNeighbors;
 	advss::Size minSize{0, 0};
 	advss::Size maxSize{0, 0};
@@ -89,7 +90,7 @@ public:
 	tesseract::PageSegMode GetPageMode() const { return pageSegMode; }
 	tesseract::TessBaseAPI *GetOCR() const { return ocr.get(); }
 
-	VariableString text = obs_module_text("AdvSceneSwitcher.enterText");
+	StringVariable text = obs_module_text("AdvSceneSwitcher.enterText");
 	RegexConfig regex = RegexConfig::PartialMatchRegexConfig();
 	QColor color = Qt::black;
 

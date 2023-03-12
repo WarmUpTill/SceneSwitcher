@@ -51,7 +51,7 @@ public:
 	// checked in the next one.
 	// If set both operations will happen in the same interval.
 	bool _blockUntilScreenshotDone = false;
-	double _brightnessThreshold = 0.5;
+	NumberVariable<double> _brightnessThreshold = 0.5;
 	PatternMatchParameters _patternMatchParameters;
 	ObjDetectParameters _objMatchParameters;
 	OCRParameters _ocrParamters;
@@ -111,14 +111,14 @@ private slots:
 	void ImageBrowseButtonClicked();
 
 	void UsePatternForChangedCheckChanged(int value);
-	void PatternThresholdChanged(double);
+	void PatternThresholdChanged(const NumberVariable<double> &);
 	void UseAlphaAsMaskChanged(int value);
 	void PatternMatchModeChanged(int value);
 
-	void BrightnessThresholdChanged(double);
+	void BrightnessThresholdChanged(const NumberVariable<double> &);
 
 	void ModelPathChanged(const QString &text);
-	void ObjectScaleThresholdChanged(double);
+	void ObjectScaleThresholdChanged(const NumberVariable<double> &);
 	void MinNeighborsChanged(int value);
 	void MinSizeChanged(advss::Size value);
 	void MaxSizeChanged(advss::Size value);
