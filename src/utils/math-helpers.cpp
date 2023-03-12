@@ -6,7 +6,14 @@
 #include <stack>
 #include <cmath>
 
+#ifdef UNIT_TEST
+const char *obs_module_text(const char *text)
+{
+	return text;
+}
+#else
 #include <obs-module.h>
+#endif
 
 static std::vector<std::string_view> nonOperatorSeparators = {
 	" ",
