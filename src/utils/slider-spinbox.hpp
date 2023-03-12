@@ -1,4 +1,6 @@
 #pragma once
+#include "variable-spinbox.hpp"
+
 #include <QWidget>
 #include <QSlider>
 #include <QLabel>
@@ -12,14 +14,17 @@ public:
 		      const QString &label = "threshold",
 		      const QString &description = "", QWidget *parent = 0);
 	void SetDoubleValue(double);
+	void SetDoubleValue(const NumberVariable<double> &);
 public slots:
 	void SliderValueChanged(int value);
-	void SpinBoxValueChanged(double value);
+	void SpinBoxValueChanged(const NumberVariable<double> &value);
 signals:
-	void DoubleValueChanged(double value);
+	void DoubleValueChanged(const NumberVariable<double> &value);
 
 private:
-	QDoubleSpinBox *_spinBox;
+	void SetVisibility(const NumberVariable<double> &);
+
+	VariableDoubleSpinBox *_spinBox;
 	QSlider *_slider;
 	double _scale = 100.0;
 };

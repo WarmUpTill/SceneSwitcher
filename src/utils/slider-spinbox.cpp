@@ -4,7 +4,7 @@
 SliderSpinBox::SliderSpinBox(double min, double max, const QString &label,
 			     const QString &description, QWidget *parent)
 	: QWidget(parent),
-	  _spinBox(new QDoubleSpinBox()),
+	  _spinBox(new VariableDoubleSpinBox()),
 	  _slider(new QSlider())
 {
 	_slider->setOrientation(Qt::Horizontal);
@@ -15,8 +15,12 @@ SliderSpinBox::SliderSpinBox(double min, double max, const QString &label,
 
 	connect(_slider, SIGNAL(valueChanged(int)), this,
 		SLOT(SliderValueChanged(int)));
-	connect(_spinBox, SIGNAL(valueChanged(double)), this,
-		SLOT(SpinBoxValueChanged(double)));
+	QWidget::connect(
+		_spinBox,
+		SIGNAL(NumberVariableChanged(const NumberVariable<double> &)),
+		this,
+		SLOT(SpinBoxValueChanged(const NumberVariable<double> &)));
+
 	QVBoxLayout *mainLayout = new QVBoxLayout();
 	QHBoxLayout *sliderLayout = new QHBoxLayout();
 	if (!label.isEmpty()) {
@@ -34,21 +38,36 @@ SliderSpinBox::SliderSpinBox(double min, double max, const QString &label,
 
 void SliderSpinBox::SetDoubleValue(double value)
 {
+	NumberVariable<double> temp = value;
+	SetDoubleValue(temp);
+}
+
+void SliderSpinBox::SetDoubleValue(const NumberVariable<double> &value)
+{
 	const QSignalBlocker b1(_slider);
 	const QSignalBlocker b2(_spinBox);
 	_slider->setValue(value * _scale);
-	_spinBox->setValue(value);
+	_spinBox->SetValue(value);
+	SetVisibility(value);
 }
 
-void SliderSpinBox::SpinBoxValueChanged(double value)
+void SliderSpinBox::SpinBoxValueChanged(const NumberVariable<double> &value)
 {
-	int sliderPos = value * _scale;
-	_slider->setValue(sliderPos);
+	if (value.IsFixedType()) {
+		int sliderPos = value * _scale;
+		_slider->setValue(sliderPos);
+	}
+	SetVisibility(value);
 	emit DoubleValueChanged(value);
 }
 
 void SliderSpinBox::SliderValueChanged(int value)
 {
-	double doubleValue = value / _scale;
-	_spinBox->setValue(doubleValue);
+	NumberVariable<double> doubleValue = value / _scale;
+	_spinBox->SetValue(doubleValue);
+}
+
+void SliderSpinBox::SetVisibility(const NumberVariable<double> &value)
+{
+	_slider->setVisible(value.IsFixedType());
 }
