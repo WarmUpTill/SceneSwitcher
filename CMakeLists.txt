@@ -468,3 +468,4 @@ endif()
 # --- End of section ---
 
 add_subdirectory(src/macro-external)
+add_subdirectory(tests)
