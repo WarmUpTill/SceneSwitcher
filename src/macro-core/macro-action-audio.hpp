@@ -42,13 +42,13 @@ public:
 
 	Action _action = Action::MUTE;
 	FadeType _fadeType = FadeType::DURATION;
-	int64_t _syncOffset = 0;
+	NumberVariable<int> _syncOffset = 0;
 	obs_monitoring_type _monitorType = OBS_MONITORING_TYPE_NONE;
-	double _balance = 0.5;
-	int _volume = 0;
+	NumberVariable<double> _balance = 0.5;
+	NumberVariable<int> _volume = 0;
 	bool _fade = false;
 	Duration _duration;
-	double _rate = 100.;
+	NumberVariable<double> _rate = 100.;
 	bool _wait = false;
 	bool _abortActiveFade = false;
 
@@ -84,13 +84,13 @@ public:
 private slots:
 	void SourceChanged(const SourceSelection &);
 	void ActionChanged(int value);
-	void SyncOffsetChanged(int value);
+	void SyncOffsetChanged(const NumberVariable<int> &value);
 	void MonitorTypeChanged(int value);
-	void BalanceChanged(double value);
-	void VolumeChanged(int value);
+	void BalanceChanged(const NumberVariable<double> &value);
+	void VolumeChanged(const NumberVariable<int> &value);
 	void FadeChanged(int value);
 	void DurationChanged(const Duration &seconds);
-	void RateChanged(double value);
+	void RateChanged(const NumberVariable<double> &value);
 	void WaitChanged(int value);
 	void AbortActiveFadeChanged(int value);
 	void FadeTypeChanged(int value);
@@ -101,13 +101,13 @@ protected:
 	SourceSelectionWidget *_sources;
 	QComboBox *_actions;
 	QComboBox *_fadeTypes;
-	QSpinBox *_syncOffset;
+	VariableSpinBox *_syncOffset;
 	QComboBox *_monitorTypes;
 	SliderSpinBox *_balance;
-	QSpinBox *_volumePercent;
+	VariableSpinBox *_volumePercent;
 	QCheckBox *_fade;
 	DurationSelection *_duration;
-	QDoubleSpinBox *_rate;
+	VariableDoubleSpinBox *_rate;
 	QCheckBox *_wait;
 	QCheckBox *_abortActiveFade;
 	QHBoxLayout *_fadeTypeLayout;

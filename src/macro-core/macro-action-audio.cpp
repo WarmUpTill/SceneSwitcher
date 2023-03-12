@@ -212,7 +212,7 @@ void MacroActionAudio::LogAction() const
 		vblog(LOG_INFO,
 		      "performed action \"%s\" for source \"%s\" with volume %d with fade %d %f",
 		      it->second.c_str(), _audioSource.ToString(true).c_str(),
-		      _volume, _fade, _duration.Seconds());
+		      _volume.GetValue(), _fade, _duration.Seconds());
 	} else {
 		blog(LOG_WARNING, "ignored unknown audio action %d",
 		     static_cast<int>(_action));
@@ -225,15 +225,16 @@ bool MacroActionAudio::Save(obs_data_t *obj) const
 	_duration.Save(obj);
 	_audioSource.Save(obj, "audioSource");
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
-	obs_data_set_int(obj, "syncOffset", _syncOffset);
 	obs_data_set_int(obj, "monitor", _monitorType);
-	obs_data_set_double(obj, "balance", _balance);
-	obs_data_set_int(obj, "volume", _volume);
-	obs_data_set_double(obj, "rate", _rate);
+	_syncOffset.Save(obj, "syncOffset");
+	_balance.Save(obj, "balance");
+	_volume.Save(obj, "volume");
+	_rate.Save(obj, "rate");
 	obs_data_set_bool(obj, "fade", _fade);
 	obs_data_set_int(obj, "fadeType", static_cast<int>(_fadeType));
 	obs_data_set_bool(obj, "wait", _wait);
 	obs_data_set_bool(obj, "abortActiveFade", _abortActiveFade);
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
@@ -243,12 +244,19 @@ bool MacroActionAudio::Load(obs_data_t *obj)
 	_duration.Load(obj);
 	_audioSource.Load(obj, "audioSource");
 	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
-	_syncOffset = obs_data_get_int(obj, "syncOffset");
 	_monitorType = static_cast<obs_monitoring_type>(
 		obs_data_get_int(obj, "monitor"));
-	_balance = obs_data_get_double(obj, "balance");
-	_volume = obs_data_get_int(obj, "volume");
-	_rate = obs_data_get_double(obj, "rate");
+	if (!obs_data_has_user_value(obj, "version")) {
+		_syncOffset = obs_data_get_int(obj, "syncOffset");
+		_balance = obs_data_get_double(obj, "balance");
+		_volume = obs_data_get_int(obj, "volume");
+		_rate = obs_data_get_double(obj, "rate");
+	} else {
+		_syncOffset.Load(obj, "syncOffset");
+		_balance.Load(obj, "balance");
+		_volume.Load(obj, "volume");
+		_rate.Load(obj, "rate");
+	}
 	_fade = obs_data_get_bool(obj, "fade");
 	if (obs_data_has_user_value(obj, "wait")) {
 		_wait = obs_data_get_bool(obj, "wait");
@@ -302,16 +310,16 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _actions(new QComboBox),
 	  _fadeTypes(new QComboBox),
-	  _syncOffset(new QSpinBox),
+	  _syncOffset(new VariableSpinBox),
 	  _monitorTypes(new QComboBox),
 	  _balance(new SliderSpinBox(
 		  0., 1., "",
 		  obs_module_text(
 			  "AdvSceneSwitcher.action.audio.balance.description"))),
-	  _volumePercent(new QSpinBox),
+	  _volumePercent(new VariableSpinBox),
 	  _fade(new QCheckBox),
 	  _duration(new DurationSelection(parent, false)),
-	  _rate(new QDoubleSpinBox),
+	  _rate(new VariableDoubleSpinBox),
 	  _wait(new QCheckBox(
 		  obs_module_text("AdvSceneSwitcher.action.audio.fade.wait"))),
 	  _abortActiveFade(new QCheckBox(
@@ -343,20 +351,28 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	QWidget::connect(_sources,
 			 SIGNAL(SourceChanged(const SourceSelection &)), this,
 			 SLOT(SourceChanged(const SourceSelection &)));
-	QWidget::connect(_syncOffset, SIGNAL(valueChanged(int)), this,
-			 SLOT(SyncOffsetChanged(int)));
-	QWidget::connect(_balance, SIGNAL(DoubleValueChanged(double)), this,
-			 SLOT(BalanceChanged(double)));
+	QWidget::connect(
+		_syncOffset,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(SyncOffsetChanged(const NumberVariable<int> &)));
+	QWidget::connect(
+		_balance,
+		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
+		this, SLOT(BalanceChanged(const NumberVariable<double> &)));
 	QWidget::connect(_monitorTypes, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(MonitorTypeChanged(int)));
-	QWidget::connect(_volumePercent, SIGNAL(valueChanged(int)), this,
-			 SLOT(VolumeChanged(int)));
+	QWidget::connect(
+		_volumePercent,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(VolumeChanged(const NumberVariable<int> &)));
 	QWidget::connect(_fade, SIGNAL(stateChanged(int)), this,
 			 SLOT(FadeChanged(int)));
 	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
 			 this, SLOT(DurationChanged(const Duration &)));
-	QWidget::connect(_rate, SIGNAL(valueChanged(double)), this,
-			 SLOT(RateChanged(double)));
+	QWidget::connect(
+		_rate,
+		SIGNAL(NumberVariableChanged(const NumberVariable<double> &)),
+		this, SLOT(RateChanged(const NumberVariable<double> &)));
 	QWidget::connect(_wait, SIGNAL(stateChanged(int)), this,
 			 SLOT(WaitChanged(int)));
 	QWidget::connect(_abortActiveFade, SIGNAL(stateChanged(int)), this,
@@ -468,13 +484,13 @@ void MacroActionAudioEdit::UpdateEntryData()
 	_sources->SetSource(_entryData->_audioSource);
 	_actions->setCurrentIndex(
 		_actions->findData(static_cast<int>(_entryData->_action)));
-	_syncOffset->setValue(_entryData->_syncOffset);
+	_syncOffset->SetValue(_entryData->_syncOffset);
 	_monitorTypes->setCurrentIndex(_entryData->_monitorType);
 	_balance->SetDoubleValue(_entryData->_balance);
-	_volumePercent->setValue(_entryData->_volume);
+	_volumePercent->SetValue(_entryData->_volume);
 	_fade->setChecked(_entryData->_fade);
 	_duration->SetDuration(_entryData->_duration);
-	_rate->setValue(_entryData->_rate);
+	_rate->SetValue(_entryData->_rate);
 	_wait->setChecked(_entryData->_wait);
 	_abortActiveFade->setChecked(_entryData->_abortActiveFade);
 	_fadeTypes->setCurrentIndex(static_cast<int>(_entryData->_fadeType));
@@ -505,7 +521,7 @@ void MacroActionAudioEdit::ActionChanged(int idx)
 	SetWidgetVisibility();
 }
 
-void MacroActionAudioEdit::SyncOffsetChanged(int value)
+void MacroActionAudioEdit::SyncOffsetChanged(const NumberVariable<int> &value)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -525,7 +541,7 @@ void MacroActionAudioEdit::MonitorTypeChanged(int value)
 	_entryData->_monitorType = static_cast<obs_monitoring_type>(value);
 }
 
-void MacroActionAudioEdit::BalanceChanged(double value)
+void MacroActionAudioEdit::BalanceChanged(const NumberVariable<double> &value)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -535,7 +551,7 @@ void MacroActionAudioEdit::BalanceChanged(double value)
 	_entryData->_balance = value;
 }
 
-void MacroActionAudioEdit::VolumeChanged(int value)
+void MacroActionAudioEdit::VolumeChanged(const NumberVariable<int> &value)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -566,7 +582,7 @@ void MacroActionAudioEdit::DurationChanged(const Duration &dur)
 	_entryData->_duration = dur;
 }
 
-void MacroActionAudioEdit::RateChanged(double value)
+void MacroActionAudioEdit::RateChanged(const NumberVariable<double> &value)
 {
 	if (_loading || !_entryData) {
 		return;
