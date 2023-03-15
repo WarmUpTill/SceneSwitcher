@@ -10,13 +10,14 @@ bool MacroConditionSceneOrder::_registered = MacroConditionFactory::Register(
 	{MacroConditionSceneOrder::Create, MacroConditionSceneOrderEdit::Create,
 	 "AdvSceneSwitcher.condition.sceneOrder"});
 
-static std::map<SceneOrderCondition, std::string> sceneOrderConditionTypes = {
-	{SceneOrderCondition::ABOVE,
-	 "AdvSceneSwitcher.condition.sceneOrder.type.above"},
-	{SceneOrderCondition::BELOW,
-	 "AdvSceneSwitcher.condition.sceneOrder.type.below"},
-	{SceneOrderCondition::POSITION,
-	 "AdvSceneSwitcher.condition.sceneOrder.type.position"},
+static std::map<MacroConditionSceneOrder::Condition, std::string>
+	sceneOrderConditionTypes = {
+		{MacroConditionSceneOrder::Condition::ABOVE,
+		 "AdvSceneSwitcher.condition.sceneOrder.type.above"},
+		{MacroConditionSceneOrder::Condition::BELOW,
+		 "AdvSceneSwitcher.condition.sceneOrder.type.below"},
+		{MacroConditionSceneOrder::Condition::POSITION,
+		 "AdvSceneSwitcher.condition.sceneOrder.type.position"},
 };
 
 struct PosInfo2 {
@@ -115,13 +116,13 @@ bool MacroConditionSceneOrder::CheckCondition()
 	bool ret = false;
 
 	switch (_condition) {
-	case SceneOrderCondition::ABOVE:
+	case Condition::ABOVE:
 		ret = isAbove(positions1, positions2);
 		break;
-	case SceneOrderCondition::BELOW:
+	case Condition::BELOW:
 		ret = isBelow(positions1, positions2);
 		break;
-	case SceneOrderCondition::POSITION:
+	case Condition::POSITION:
 		for (int p : positions1) {
 			if (p == _position)
 				ret = true;
@@ -143,6 +144,8 @@ bool MacroConditionSceneOrder::Save(obs_data_t *obj) const
 	_source2.Save(obj, "sceneItemSelection2");
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_int(obj, "position", _position);
+	_position.Save(obj, "position");
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
@@ -168,9 +171,12 @@ bool MacroConditionSceneOrder::Load(obs_data_t *obj)
 	} else {
 		_source2.Load(obj, "sceneItemSelection2");
 	}
-	_condition = static_cast<SceneOrderCondition>(
-		obs_data_get_int(obj, "condition"));
-	_position = obs_data_get_int(obj, "position");
+	_condition = static_cast<Condition>(obs_data_get_int(obj, "condition"));
+	if (!obs_data_has_user_value(obj, "version")) {
+		_position = obs_data_get_int(obj, "position");
+	} else {
+		_position.Load(obj, "position");
+	}
 	return true;
 }
 
@@ -181,7 +187,7 @@ std::string MacroConditionSceneOrder::GetShortDesc() const
 	}
 	std::string header = _scene.ToString() + " - " + _source.ToString();
 	if (!_source2.ToString().empty() &&
-	    _condition != SceneOrderCondition::POSITION) {
+	    _condition != MacroConditionSceneOrder::Condition::POSITION) {
 		header += " - " + _source2.ToString();
 	}
 	return header;
@@ -196,19 +202,19 @@ static inline void populateConditionSelection(QComboBox *list)
 
 MacroConditionSceneOrderEdit::MacroConditionSceneOrderEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionSceneOrder> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _scenes(new SceneSelectionWidget(window(), true, false, false, true)),
+	  _sources(new SceneItemSelectionWidget(parent)),
+	  _sources2(new SceneItemSelectionWidget(parent)),
+	  _conditions(new QComboBox()),
+	  _position(new VariableSpinBox()),
+	  _posInfo(new QLabel(obs_module_text(
+		  "AdvSceneSwitcher.condition.sceneOrder.positionInfo")))
 {
-	_scenes = new SceneSelectionWidget(window(), true, false, false, true);
-	_sources = new SceneItemSelectionWidget(parent);
-	_sources2 = new SceneItemSelectionWidget(parent);
-	_conditions = new QComboBox();
-	_position = new QSpinBox();
-	_posInfo = new QLabel(obs_module_text(
-		"AdvSceneSwitcher.condition.sceneOrder.positionInfo"));
-
 	populateConditionSelection(_conditions);
 	if (entryData.get()) {
-		if (entryData->_condition == SceneOrderCondition::POSITION) {
+		if (entryData->_condition ==
+		    MacroConditionSceneOrder::Condition::POSITION) {
 			_sources->SetPlaceholderType(
 				SceneItemSelectionWidget::Placeholder::ANY);
 		} else {
@@ -232,8 +238,10 @@ MacroConditionSceneOrderEdit::MacroConditionSceneOrderEdit(
 			 SLOT(Source2Changed(const SceneItemSelection &)));
 	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
-	QWidget::connect(_position, SIGNAL(valueChanged(int)), this,
-			 SLOT(PositionChanged(int)));
+	QWidget::connect(
+		_position,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(PositionChanged(const NumberVariable<int> &)));
 
 	auto entryLayout = new QHBoxLayout();
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -296,11 +304,12 @@ void MacroConditionSceneOrderEdit::ConditionChanged(int index)
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
 		_entryData->_condition =
-			static_cast<SceneOrderCondition>(index);
+			static_cast<MacroConditionSceneOrder::Condition>(index);
 	}
 	SetWidgetVisibility(_entryData->_condition ==
-			    SceneOrderCondition::POSITION);
-	if (_entryData->_condition == SceneOrderCondition::POSITION) {
+			    MacroConditionSceneOrder::Condition::POSITION);
+	if (_entryData->_condition ==
+	    MacroConditionSceneOrder::Condition::POSITION) {
 		_sources->SetPlaceholderType(
 			SceneItemSelectionWidget::Placeholder::ANY);
 	} else {
@@ -312,7 +321,8 @@ void MacroConditionSceneOrderEdit::ConditionChanged(int index)
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-void MacroConditionSceneOrderEdit::PositionChanged(int value)
+void MacroConditionSceneOrderEdit::PositionChanged(
+	const NumberVariable<int> &value)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -339,8 +349,8 @@ void MacroConditionSceneOrderEdit::UpdateEntryData()
 	_scenes->SetScene(_entryData->_scene);
 	_sources->SetSceneItem(_entryData->_source);
 	_sources2->SetSceneItem(_entryData->_source2);
-	_position->setValue(_entryData->_position);
+	_position->SetValue(_entryData->_position);
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	SetWidgetVisibility(_entryData->_condition ==
-			    SceneOrderCondition::POSITION);
+			    MacroConditionSceneOrder::Condition::POSITION);
 }

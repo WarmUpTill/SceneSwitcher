@@ -2,15 +2,10 @@
 #include "macro.hpp"
 #include "scene-selection.hpp"
 #include "scene-item-selection.hpp"
+#include "variable-spinbox.hpp"
 
 #include <QWidget>
 #include <QComboBox>
-
-enum class SceneOrderCondition {
-	ABOVE,
-	BELOW,
-	POSITION,
-};
 
 class MacroConditionSceneOrder : public MacroCondition {
 public:
@@ -28,8 +23,14 @@ public:
 	SceneSelection _scene;
 	SceneItemSelection _source;
 	SceneItemSelection _source2;
-	int _position = 0;
-	SceneOrderCondition _condition = SceneOrderCondition::ABOVE;
+	NumberVariable<int> _position = 0;
+
+	enum class Condition {
+		ABOVE,
+		BELOW,
+		POSITION,
+	};
+	Condition _condition = Condition::ABOVE;
 
 private:
 	static bool _registered;
@@ -58,7 +59,7 @@ private slots:
 	void SourceChanged(const SceneItemSelection &);
 	void Source2Changed(const SceneItemSelection &);
 	void ConditionChanged(int cond);
-	void PositionChanged(int cond);
+	void PositionChanged(const NumberVariable<int> &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -67,7 +68,7 @@ protected:
 	QComboBox *_conditions;
 	SceneItemSelectionWidget *_sources;
 	SceneItemSelectionWidget *_sources2;
-	QSpinBox *_position;
+	VariableSpinBox *_position;
 	QLabel *_posInfo;
 
 	std::shared_ptr<MacroConditionSceneOrder> _entryData;
