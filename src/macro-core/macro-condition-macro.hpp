@@ -2,6 +2,7 @@
 #include "macro.hpp"
 #include "macro-selection.hpp"
 #include "macro-list.hpp"
+#include "variable-spinbox.hpp"
 
 #include <QComboBox>
 #include <QSpinBox>
@@ -43,7 +44,7 @@ public:
 		EQUAL,
 	};
 	CounterCondition _counterCondition = CounterCondition::BELOW;
-	int _count = 0;
+	NumberVariable<int> _count = 0;
 
 	enum class MultiStateCondition {
 		BELOW,
@@ -51,7 +52,7 @@ public:
 		ABOVE,
 	};
 	MultiStateCondition _multiSateCondition = MultiStateCondition::ABOVE;
-	int _multiSateCount = 0;
+	NumberVariable<int> _multiSateCount = 0;
 
 private:
 	bool CheckCountCondition();
@@ -82,13 +83,13 @@ private slots:
 	void MacroChanged(const QString &text);
 	void MacroRemove(const QString &name);
 	void TypeChanged(int type);
-	void CountChanged(int value);
+	void CountChanged(const NumberVariable<int> &value);
 	void CountConditionChanged(int cond);
 	void ResetClicked();
 	void UpdateCount();
 	void UpdatePaused();
 	void MultiStateConditionChanged(int cond);
-	void MultiStateCountChanged(int value);
+	void MultiStateCountChanged(const NumberVariable<int> &value);
 	void Add(const std::string &);
 	void Remove(int);
 	void Replace(int, const std::string &);
@@ -99,7 +100,7 @@ protected:
 	MacroSelection *_macros;
 	QComboBox *_types;
 	QComboBox *_counterConditions;
-	QSpinBox *_count;
+	VariableSpinBox *_count;
 	QLabel *_currentCount;
 	QLabel *_pausedWarning;
 	QPushButton *_resetCount;
@@ -107,7 +108,7 @@ protected:
 	QHBoxLayout *_settingsLine2;
 	MacroList *_macroList;
 	QComboBox *_multiStateConditions;
-	QSpinBox *_multiStateCount;
+	VariableSpinBox *_multiStateCount;
 	QTimer _countTimer;
 	QTimer _pausedTimer;
 	std::shared_ptr<MacroConditionMacro> _entryData;

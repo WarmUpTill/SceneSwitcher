@@ -126,10 +126,11 @@ bool MacroConditionMacro::Save(obs_data_t *obj) const
 	_macro.Save(obj);
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
 	obs_data_set_int(obj, "condition", static_cast<int>(_counterCondition));
-	obs_data_set_int(obj, "count", _count);
-	obs_data_set_int(obj, "multiStateCount", _multiSateCount);
+	_count.Save(obj, "count");
+	_multiSateCount.Save(obj, "multiStateCount");
 	obs_data_set_int(obj, "multiStateCondition",
 			 static_cast<int>(_multiSateCondition));
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
@@ -141,8 +142,6 @@ bool MacroConditionMacro::Load(obs_data_t *obj)
 	_type = static_cast<Type>(obs_data_get_int(obj, "type"));
 	_counterCondition = static_cast<CounterCondition>(
 		obs_data_get_int(obj, "condition"));
-	_count = obs_data_get_int(obj, "count");
-	_multiSateCount = obs_data_get_int(obj, "multiStateCount");
 	// TODO: Remove this fallback in future version
 	if (!obs_data_has_user_value(obj, "multiStateCondition")) {
 		_multiSateCondition = MultiStateCondition::ABOVE;
@@ -150,6 +149,15 @@ bool MacroConditionMacro::Load(obs_data_t *obj)
 		_multiSateCondition = static_cast<MultiStateCondition>(
 			obs_data_get_int(obj, "multiStateCondition"));
 	}
+
+	if (!obs_data_has_user_value(obj, "version")) {
+		_count = obs_data_get_int(obj, "count");
+		_multiSateCount = obs_data_get_int(obj, "multiStateCount");
+	} else {
+		_count.Load(obj, "count");
+		_multiSateCount.Load(obj, "multiStateCount");
+	}
+
 	return true;
 }
 
@@ -189,19 +197,19 @@ MacroConditionMacroEdit::MacroConditionMacroEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionMacro> entryData)
 	: QWidget(parent),
 	  _macros(new MacroSelection(parent)),
-	  _types(new QComboBox(parent)),
-	  _counterConditions(new QComboBox(parent)),
-	  _count(new QSpinBox(parent)),
-	  _currentCount(new QLabel(parent)),
+	  _types(new QComboBox()),
+	  _counterConditions(new QComboBox()),
+	  _count(new VariableSpinBox()),
+	  _currentCount(new QLabel()),
 	  _pausedWarning(new QLabel(obs_module_text(
 		  "AdvSceneSwitcher.condition.macro.pausedWarning"))),
 	  _resetCount(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.macro.count.reset"))),
-	  _settingsLine1(new QHBoxLayout),
-	  _settingsLine2(new QHBoxLayout),
+	  _settingsLine1(new QHBoxLayout()),
+	  _settingsLine2(new QHBoxLayout()),
 	  _macroList(new MacroList(this, false, false)),
-	  _multiStateConditions(new QComboBox(parent)),
-	  _multiStateCount(new QSpinBox(parent))
+	  _multiStateConditions(new QComboBox()),
+	  _multiStateCount(new VariableSpinBox())
 {
 	_count->setMaximum(10000000);
 	populateTypeSelection(_types);
@@ -216,8 +224,10 @@ MacroConditionMacroEdit::MacroConditionMacroEdit(
 			 SLOT(TypeChanged(int)));
 	QWidget::connect(_counterConditions, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(CountConditionChanged(int)));
-	QWidget::connect(_count, SIGNAL(valueChanged(int)), this,
-			 SLOT(CountChanged(int)));
+	QWidget::connect(
+		_count,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(CountChanged(const NumberVariable<int> &)));
 	QWidget::connect(_resetCount, SIGNAL(clicked()), this,
 			 SLOT(ResetClicked()));
 	QWidget::connect(_macroList, SIGNAL(Added(const std::string &)), this,
@@ -229,10 +239,13 @@ MacroConditionMacroEdit::MacroConditionMacroEdit(
 	QWidget::connect(_multiStateConditions,
 			 SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(MultiStateConditionChanged(int)));
-	QWidget::connect(_multiStateCount, SIGNAL(valueChanged(int)), this,
-			 SLOT(MultiStateCountChanged(int)));
+	QWidget::connect(
+		_multiStateCount,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this,
+		SLOT(MultiStateCountChanged(const NumberVariable<int> &)));
 
-	auto typesLayout = new QHBoxLayout;
+	auto typesLayout = new QHBoxLayout();
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{types}}", _types},
 	};
@@ -240,7 +253,7 @@ MacroConditionMacroEdit::MacroConditionMacroEdit(
 			     "AdvSceneSwitcher.condition.macro.type.selection"),
 		     typesLayout, widgetPlaceholders);
 
-	auto mainLayout = new QVBoxLayout;
+	auto mainLayout = new QVBoxLayout(this);
 	mainLayout->addLayout(typesLayout);
 	mainLayout->addLayout(_settingsLine1);
 	mainLayout->addLayout(_settingsLine2);
@@ -250,11 +263,13 @@ MacroConditionMacroEdit::MacroConditionMacroEdit(
 
 	_entryData = entryData;
 
-	connect(&_countTimer, SIGNAL(timeout()), this, SLOT(UpdateCount()));
+	QWidget::connect(&_countTimer, SIGNAL(timeout()), this,
+			 SLOT(UpdateCount()));
 	_countTimer.start(1000);
 
 	_pausedWarning->setVisible(false);
-	connect(&_pausedTimer, SIGNAL(timeout()), this, SLOT(UpdatePaused()));
+	QWidget::connect(&_pausedTimer, SIGNAL(timeout()), this,
+			 SLOT(UpdatePaused()));
 	_pausedTimer.start(1000);
 
 	UpdateEntryData();
@@ -276,6 +291,7 @@ void MacroConditionMacroEdit::ClearLayouts()
 
 void MacroConditionMacroEdit::SetupStateWidgets()
 {
+	SetWidgetVisibility();
 	ClearLayouts();
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -284,12 +300,11 @@ void MacroConditionMacroEdit::SetupStateWidgets()
 	placeWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.macro.state.entry"),
 		_settingsLine1, widgetPlaceholders);
-	SetWidgetVisibility();
-	adjustSize();
 }
 
 void MacroConditionMacroEdit::SetupMultiStateWidgets()
 {
+	SetWidgetVisibility();
 	ClearLayouts();
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -300,12 +315,11 @@ void MacroConditionMacroEdit::SetupMultiStateWidgets()
 		obs_module_text(
 			"AdvSceneSwitcher.condition.macro.multistate.entry"),
 		_settingsLine1, widgetPlaceholders);
-	SetWidgetVisibility();
-	adjustSize();
 }
 
 void MacroConditionMacroEdit::SetupCountWidgets()
 {
+	SetWidgetVisibility();
 	ClearLayouts();
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -323,8 +337,6 @@ void MacroConditionMacroEdit::SetupCountWidgets()
 		obs_module_text(
 			"AdvSceneSwitcher.condition.macro.count.entry.line2"),
 		_settingsLine2, widgetPlaceholders);
-	SetWidgetVisibility();
-	adjustSize();
 }
 
 void MacroConditionMacroEdit::SetWidgetVisibility()
@@ -335,7 +347,6 @@ void MacroConditionMacroEdit::SetWidgetVisibility()
 		_counterConditions->show();
 		_count->show();
 		_currentCount->show();
-		_pausedWarning->show();
 		_resetCount->show();
 		_macroList->hide();
 		_multiStateConditions->hide();
@@ -346,7 +357,6 @@ void MacroConditionMacroEdit::SetWidgetVisibility()
 		_counterConditions->hide();
 		_count->hide();
 		_currentCount->hide();
-		_pausedWarning->show();
 		_resetCount->hide();
 		_macroList->hide();
 		_multiStateConditions->hide();
@@ -366,6 +376,8 @@ void MacroConditionMacroEdit::SetWidgetVisibility()
 	default:
 		break;
 	}
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionMacroEdit::UpdateEntryData()
@@ -374,8 +386,7 @@ void MacroConditionMacroEdit::UpdateEntryData()
 		return;
 	}
 
-	auto test = _entryData->_type;
-	switch (test) {
+	switch (_entryData->_type) {
 	case MacroConditionMacro::Type::COUNT:
 		SetupCountWidgets();
 		break;
@@ -393,11 +404,11 @@ void MacroConditionMacroEdit::UpdateEntryData()
 	_types->setCurrentIndex(static_cast<int>(_entryData->_type));
 	_counterConditions->setCurrentIndex(
 		static_cast<int>(_entryData->_counterCondition));
-	_count->setValue(_entryData->_count);
+	_count->SetValue(_entryData->_count);
 	_macroList->SetContent(_entryData->_macros);
 	_multiStateConditions->setCurrentIndex(
 		static_cast<int>(_entryData->_multiSateCondition));
-	_multiStateCount->setValue(_entryData->_multiSateCount);
+	_multiStateCount->SetValue(_entryData->_multiSateCount);
 }
 
 void MacroConditionMacroEdit::MacroChanged(const QString &text)
@@ -412,7 +423,7 @@ void MacroConditionMacroEdit::MacroChanged(const QString &text)
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-void MacroConditionMacroEdit::CountChanged(int value)
+void MacroConditionMacroEdit::CountChanged(const NumberVariable<int> &value)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -522,7 +533,8 @@ void MacroConditionMacroEdit::MultiStateConditionChanged(int cond)
 		static_cast<MacroConditionMacro::MultiStateCondition>(cond);
 }
 
-void MacroConditionMacroEdit::MultiStateCountChanged(int value)
+void MacroConditionMacroEdit::MultiStateCountChanged(
+	const NumberVariable<int> &value)
 {
 	if (_loading || !_entryData) {
 		return;
