@@ -59,7 +59,8 @@ MacroList::MacroList(QWidget *parent, bool allowDuplicates, bool reorder)
 	_controlsLayout->addWidget(_down);
 	_controlsLayout->addStretch();
 
-	auto *mainLayout = new QVBoxLayout;
+	auto mainLayout = new QVBoxLayout;
+	mainLayout->setContentsMargins(0, 0, 0, 0);
 	mainLayout->addWidget(_list);
 	mainLayout->addLayout(_controlsLayout);
 	setLayout(mainLayout);
