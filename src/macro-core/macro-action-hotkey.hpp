@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "hotkey.hpp"
+#include "duration-control.hpp"
 
 #include <QComboBox>
 #include <QCheckBox>
@@ -30,7 +31,7 @@ public:
 	bool _rightAlt = false;
 	bool _leftMeta = false;
 	bool _rightMeta = false;
-	int _duration = 300; // in ms
+	Duration _duration = 0.3;
 #ifdef __APPLE__
 	bool _onlySendToObs = true;
 #else
@@ -68,7 +69,7 @@ private slots:
 	void RAltChanged(int state);
 	void LMetaChanged(int state);
 	void RMetaChanged(int state);
-	void DurationChanged(int ms);
+	void DurationChanged(const Duration &);
 	void OnlySendToOBSChanged(int state);
 
 protected:
@@ -81,7 +82,7 @@ protected:
 	QCheckBox *_rightAlt;
 	QCheckBox *_leftMeta;
 	QCheckBox *_rightMeta;
-	QSpinBox *_duration;
+	DurationSelection *_duration;
 	QCheckBox *_onlySendToOBS;
 	QLabel *_noKeyPressSimulationWarning;
 

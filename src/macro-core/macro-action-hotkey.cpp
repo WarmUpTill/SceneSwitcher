@@ -224,7 +224,7 @@ bool MacroActionHotkey::PerformAction()
 	}
 
 	if (!keys.empty()) {
-		int dur = _duration;
+		int dur = _duration.Milliseconds();
 		if (_onlySendToObs || !canSimulateKeyPresses) {
 			std::thread t([keys, dur]() { InjectKeys(keys, dur); });
 			t.detach();
@@ -254,8 +254,9 @@ bool MacroActionHotkey::Save(obs_data_t *obj) const
 	obs_data_set_bool(obj, "right_alt", _rightAlt);
 	obs_data_set_bool(obj, "left_meta", _leftMeta);
 	obs_data_set_bool(obj, "right_meta", _rightMeta);
-	obs_data_set_int(obj, "duration", _duration);
+	_duration.Save(obj);
 	obs_data_set_bool(obj, "onlyOBS", _onlySendToObs);
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
@@ -271,7 +272,11 @@ bool MacroActionHotkey::Load(obs_data_t *obj)
 	_rightAlt = obs_data_get_bool(obj, "right_alt");
 	_leftMeta = obs_data_get_bool(obj, "left_meta");
 	_rightMeta = obs_data_get_bool(obj, "right_meta");
-	_duration = obs_data_get_int(obj, "duration");
+	if (!obs_data_has_user_value(obj, "version")) {
+		_duration = obs_data_get_int(obj, "duration") / 1000.0;
+	} else {
+		_duration.Load(obj);
+	}
 	_onlySendToObs = obs_data_get_bool(obj, "onlyOBS");
 	return true;
 }
@@ -388,32 +393,30 @@ static inline void populateKeySelection(QComboBox *list)
 
 MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 	QWidget *parent, std::shared_ptr<MacroActionHotkey> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _keys(new QComboBox()),
+	  _leftShift(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.action.hotkey.leftShift"))),
+	  _rightShift(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.action.hotkey.rightShift"))),
+	  _leftCtrl(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.action.hotkey.leftCtrl"))),
+	  _rightCtrl(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.action.hotkey.rightCtrl"))),
+	  _leftAlt(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.action.hotkey.leftAlt"))),
+	  _rightAlt(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.action.hotkey.rightAlt"))),
+	  _leftMeta(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.action.hotkey.leftMeta"))),
+	  _rightMeta(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.action.hotkey.rightMeta"))),
+	  _duration(new DurationSelection(this, false)),
+	  _onlySendToOBS(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.action.hotkey.onlyOBS"))),
+	  _noKeyPressSimulationWarning(new QLabel(
+		  obs_module_text("AdvSceneSwitcher.action.hotkey.disabled")))
 {
-	_keys = new QComboBox();
-	_leftShift = new QCheckBox(
-		obs_module_text("AdvSceneSwitcher.action.hotkey.leftShift"));
-	_rightShift = new QCheckBox(
-		obs_module_text("AdvSceneSwitcher.action.hotkey.rightShift"));
-	_leftCtrl = new QCheckBox(
-		obs_module_text("AdvSceneSwitcher.action.hotkey.leftCtrl"));
-	_rightCtrl = new QCheckBox(
-		obs_module_text("AdvSceneSwitcher.action.hotkey.rightCtrl"));
-	_leftAlt = new QCheckBox(
-		obs_module_text("AdvSceneSwitcher.action.hotkey.leftAlt"));
-	_rightAlt = new QCheckBox(
-		obs_module_text("AdvSceneSwitcher.action.hotkey.rightAlt"));
-	_leftMeta = new QCheckBox(
-		obs_module_text("AdvSceneSwitcher.action.hotkey.leftMeta"));
-	_rightMeta = new QCheckBox(
-		obs_module_text("AdvSceneSwitcher.action.hotkey.rightMeta"));
-	_duration = new QSpinBox();
-	_duration->setMaximum(5000);
-	_onlySendToOBS = new QCheckBox(
-		obs_module_text("AdvSceneSwitcher.action.hotkey.onlyOBS"));
-	_noKeyPressSimulationWarning = new QLabel(
-		obs_module_text("AdvSceneSwitcher.action.hotkey.disabled"));
-
 	populateKeySelection(_keys);
 
 	QWidget::connect(_keys, SIGNAL(currentIndexChanged(int)), this,
@@ -434,8 +437,8 @@ MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 			 SLOT(LMetaChanged(int)));
 	QWidget::connect(_rightMeta, SIGNAL(stateChanged(int)), this,
 			 SLOT(RMetaChanged(int)));
-	QWidget::connect(_duration, SIGNAL(valueChanged(int)), this,
-			 SLOT(DurationChanged(int)));
+	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
 	QWidget::connect(_onlySendToOBS, SIGNAL(stateChanged(int)), this,
 			 SLOT(OnlySendToOBSChanged(int)));
 
@@ -493,7 +496,7 @@ void MacroActionHotkeyEdit::UpdateEntryData()
 	_rightAlt->setChecked(_entryData->_rightAlt);
 	_leftMeta->setChecked(_entryData->_leftMeta);
 	_rightMeta->setChecked(_entryData->_rightMeta);
-	_duration->setValue(_entryData->_duration);
+	_duration->SetDuration(_entryData->_duration);
 	_onlySendToOBS->setChecked(_entryData->_onlySendToObs ||
 				   !canSimulateKeyPresses);
 	SetWarningVisibility();
@@ -579,14 +582,14 @@ void MacroActionHotkeyEdit::RMetaChanged(int state)
 	_entryData->_rightMeta = state;
 }
 
-void MacroActionHotkeyEdit::DurationChanged(int ms)
+void MacroActionHotkeyEdit::DurationChanged(const Duration &dur)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_duration = ms;
+	_entryData->_duration = dur;
 }
 
 void MacroActionHotkeyEdit::OnlySendToOBSChanged(int state)
