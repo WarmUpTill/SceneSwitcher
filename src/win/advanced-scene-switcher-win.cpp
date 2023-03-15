@@ -406,25 +406,28 @@ static std::unordered_map<HotkeyType, long> keyTable = {
 
 void PressKeys(const std::vector<HotkeyType> keys, int duration)
 {
+	const int repeatInterval = 100;
+
 	INPUT ip;
 	ip.type = INPUT_KEYBOARD;
 	ip.ki.wScan = 0;
 	ip.ki.time = 0;
 	ip.ki.dwExtraInfo = 0;
 
-	// Press keys
-	ip.ki.dwFlags = 0;
-	for (auto &key : keys) {
-		auto it = keyTable.find(key);
-		if (it == keyTable.end()) {
-			continue;
+	for (int cur = 0; cur < duration; cur += repeatInterval) {
+		// Press keys
+		ip.ki.dwFlags = 0;
+		for (auto &key : keys) {
+			auto it = keyTable.find(key);
+			if (it == keyTable.end()) {
+				continue;
+			}
+			ip.ki.wVk = it->second;
+			SendInput(1, &ip, sizeof(INPUT));
 		}
-		ip.ki.wVk = it->second;
-		SendInput(1, &ip, sizeof(INPUT));
+		// When instantly releasing the key presses OBS might miss them
+		Sleep(repeatInterval);
 	}
-
-	// When instantly releasing the key presses OBS might miss them
-	Sleep(duration);
 
 	// Release keys
 	ip.ki.dwFlags = KEYEVENTF_KEYUP;
