@@ -77,10 +77,11 @@ bool MacroConditionCursor::Save(obs_data_t *obj) const
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_int(obj, "button", static_cast<int>(_button));
-	obs_data_set_int(obj, "minX", _minX);
-	obs_data_set_int(obj, "minY", _minY);
-	obs_data_set_int(obj, "maxX", _maxX);
-	obs_data_set_int(obj, "maxY", _maxY);
+	_minX.Save(obj, "minX");
+	_minY.Save(obj, "minY");
+	_maxX.Save(obj, "maxX");
+	_maxY.Save(obj, "maxY");
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
@@ -89,10 +90,17 @@ bool MacroConditionCursor::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	_condition = static_cast<Condition>(obs_data_get_int(obj, "condition"));
 	_button = static_cast<Button>(obs_data_get_int(obj, "button"));
-	_minX = obs_data_get_int(obj, "minX");
-	_minY = obs_data_get_int(obj, "minY");
-	_maxX = obs_data_get_int(obj, "maxX");
-	_maxY = obs_data_get_int(obj, "maxY");
+	if (!obs_data_has_user_value(obj, "version")) {
+		_minX = obs_data_get_int(obj, "minX");
+		_minY = obs_data_get_int(obj, "minY");
+		_maxX = obs_data_get_int(obj, "maxX");
+		_maxY = obs_data_get_int(obj, "maxY");
+	} else {
+		_minX.Load(obj, "minX");
+		_minY.Load(obj, "minY");
+		_maxX.Load(obj, "maxX");
+		_maxY.Load(obj, "maxY");
+	}
 	return true;
 }
 
@@ -115,10 +123,10 @@ static inline void populateButtonSelection(QComboBox *list)
 MacroConditionCursorEdit::MacroConditionCursorEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionCursor> entryData)
 	: QWidget(parent),
-	  _minX(new QSpinBox()),
-	  _minY(new QSpinBox()),
-	  _maxX(new QSpinBox()),
-	  _maxY(new QSpinBox()),
+	  _minX(new VariableSpinBox()),
+	  _minY(new VariableSpinBox()),
+	  _maxX(new VariableSpinBox()),
+	  _maxY(new VariableSpinBox()),
 	  _conditions(new QComboBox()),
 	  _buttons(new QComboBox()),
 	  _frameToggle(new QPushButton(obs_module_text(
@@ -151,14 +159,22 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_buttons, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ButtonChanged(int)));
-	QWidget::connect(_minX, SIGNAL(valueChanged(int)), this,
-			 SLOT(MinXChanged(int)));
-	QWidget::connect(_minY, SIGNAL(valueChanged(int)), this,
-			 SLOT(MinYChanged(int)));
-	QWidget::connect(_maxX, SIGNAL(valueChanged(int)), this,
-			 SLOT(MaxXChanged(int)));
-	QWidget::connect(_maxY, SIGNAL(valueChanged(int)), this,
-			 SLOT(MaxYChanged(int)));
+	QWidget::connect(
+		_minX,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(MinXChanged(const NumberVariable<int> &)));
+	QWidget::connect(
+		_minY,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(MinYChanged(const NumberVariable<int> &)));
+	QWidget::connect(
+		_maxX,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(MaxXChanged(const NumberVariable<int> &)));
+	QWidget::connect(
+		_maxY,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(MaxYChanged(const NumberVariable<int> &)));
 	QWidget::connect(_frameToggle, SIGNAL(clicked()), this,
 			 SLOT(ToggleFrame()));
 
@@ -217,7 +233,7 @@ void MacroConditionCursorEdit::ButtonChanged(int index)
 		_buttons->itemData(index).toInt());
 }
 
-void MacroConditionCursorEdit::MinXChanged(int pos)
+void MacroConditionCursorEdit::MinXChanged(const NumberVariable<int> &pos)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -228,7 +244,7 @@ void MacroConditionCursorEdit::MinXChanged(int pos)
 	SetupFrame();
 }
 
-void MacroConditionCursorEdit::MinYChanged(int pos)
+void MacroConditionCursorEdit::MinYChanged(const NumberVariable<int> &pos)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -239,7 +255,7 @@ void MacroConditionCursorEdit::MinYChanged(int pos)
 	SetupFrame();
 }
 
-void MacroConditionCursorEdit::MaxXChanged(int pos)
+void MacroConditionCursorEdit::MaxXChanged(const NumberVariable<int> &pos)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -250,7 +266,7 @@ void MacroConditionCursorEdit::MaxXChanged(int pos)
 	SetupFrame();
 }
 
-void MacroConditionCursorEdit::MaxYChanged(int pos)
+void MacroConditionCursorEdit::MaxYChanged(const NumberVariable<int> &pos)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -358,9 +374,9 @@ void MacroConditionCursorEdit::UpdateEntryData()
 
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_buttons->setCurrentIndex(static_cast<int>(_entryData->_button));
-	_minX->setValue(_entryData->_minX);
-	_minY->setValue(_entryData->_minY);
-	_maxX->setValue(_entryData->_maxX);
-	_maxY->setValue(_entryData->_maxY);
+	_minX->SetValue(_entryData->_minX);
+	_minY->SetValue(_entryData->_minY);
+	_maxX->SetValue(_entryData->_maxX);
+	_maxY->SetValue(_entryData->_maxY);
 	SetWidgetVisibility();
 }

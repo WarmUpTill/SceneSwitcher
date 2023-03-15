@@ -1,6 +1,7 @@
 #pragma once
 #include "macro.hpp"
 #include "striped-frame.hpp"
+#include "variable-spinbox.hpp"
 
 #include <QSpinBox>
 #include <QComboBox>
@@ -33,7 +34,7 @@ public:
 
 	Condition _condition = Condition::REGION;
 	Button _button = Button::LEFT;
-	int _minX = 0, _minY = 0, _maxX = 0, _maxY = 0;
+	NumberVariable<int> _minX = 0, _minY = 0, _maxX = 0, _maxY = 0;
 
 private:
 	bool CheckClick();
@@ -62,18 +63,18 @@ public:
 private slots:
 	void ConditionChanged(int idx);
 	void ButtonChanged(int idx);
-	void MinXChanged(int pos);
-	void MinYChanged(int pos);
-	void MaxXChanged(int pos);
-	void MaxYChanged(int pos);
+	void MinXChanged(const NumberVariable<int> &pos);
+	void MinYChanged(const NumberVariable<int> &pos);
+	void MaxXChanged(const NumberVariable<int> &pos);
+	void MaxYChanged(const NumberVariable<int> &pos);
 	void UpdateCursorPos();
 	void ToggleFrame();
 
 protected:
-	QSpinBox *_minX;
-	QSpinBox *_minY;
-	QSpinBox *_maxX;
-	QSpinBox *_maxY;
+	VariableSpinBox *_minX;
+	VariableSpinBox *_minY;
+	VariableSpinBox *_maxX;
+	VariableSpinBox *_maxY;
 	QComboBox *_conditions;
 	QComboBox *_buttons;
 	QPushButton *_frameToggle;
