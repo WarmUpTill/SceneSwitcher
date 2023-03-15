@@ -10,41 +10,43 @@ bool MacroConditionStats::_registered = MacroConditionFactory::Register(
 	{MacroConditionStats::Create, MacroConditionStatsEdit::Create,
 	 "AdvSceneSwitcher.condition.stats"});
 
-static std::map<StatsType, std::string> statsTypes = {
-	{StatsType::FPS, "AdvSceneSwitcher.condition.stats.type.fps"},
-	{StatsType::CPU_USAGE,
+static std::map<MacroConditionStats::Type, std::string> statsTypes = {
+	{MacroConditionStats::Type::FPS,
+	 "AdvSceneSwitcher.condition.stats.type.fps"},
+	{MacroConditionStats::Type::CPU_USAGE,
 	 "AdvSceneSwitcher.condition.stats.type.CPUUsage"},
-	{StatsType::DISK_USAGE,
+	{MacroConditionStats::Type::DISK_USAGE,
 	 "AdvSceneSwitcher.condition.stats.type.HDDSpaceAvailable"},
-	{StatsType::MEM_USAGE,
+	{MacroConditionStats::Type::MEM_USAGE,
 	 "AdvSceneSwitcher.condition.stats.type.memoryUsage"},
-	{StatsType::AVG_FRAMETIME,
+	{MacroConditionStats::Type::AVG_FRAMETIME,
 	 "AdvSceneSwitcher.condition.stats.type.averageTimeToRender"},
-	{StatsType::RENDER_LAG,
+	{MacroConditionStats::Type::RENDER_LAG,
 	 "AdvSceneSwitcher.condition.stats.type.missedFrames"},
-	{StatsType::ENCODE_LAG,
+	{MacroConditionStats::Type::ENCODE_LAG,
 	 "AdvSceneSwitcher.condition.stats.type.skippedFrames"},
-	{StatsType::STREAM_DROPPED_FRAMES,
+	{MacroConditionStats::Type::STREAM_DROPPED_FRAMES,
 	 "AdvSceneSwitcher.condition.stats.type.droppedFrames.stream"},
-	{StatsType::STREAM_BITRATE,
+	{MacroConditionStats::Type::STREAM_BITRATE,
 	 "AdvSceneSwitcher.condition.stats.type.bitrate.stream"},
-	{StatsType::STREAM_MB_SENT,
+	{MacroConditionStats::Type::STREAM_MB_SENT,
 	 "AdvSceneSwitcher.condition.stats.type.megabytesSent.stream"},
-	{StatsType::RECORDING_DROPPED_FRAMES,
+	{MacroConditionStats::Type::RECORDING_DROPPED_FRAMES,
 	 "AdvSceneSwitcher.condition.stats.type.droppedFrames.recording"},
-	{StatsType::RECORDING_BITRATE,
+	{MacroConditionStats::Type::RECORDING_BITRATE,
 	 "AdvSceneSwitcher.condition.stats.type.bitrate.recording"},
-	{StatsType::RECORDING_MB_SENT,
+	{MacroConditionStats::Type::RECORDING_MB_SENT,
 	 "AdvSceneSwitcher.condition.stats.type.megabytesSent.recording"},
 };
 
-static std::map<StatsCondition, std::string> statsConditionTypes = {
-	{StatsCondition::ABOVE,
-	 "AdvSceneSwitcher.condition.stats.condition.above"},
-	{StatsCondition::EQUALS,
-	 "AdvSceneSwitcher.condition.stats.condition.equals"},
-	{StatsCondition::BELOW,
-	 "AdvSceneSwitcher.condition.stats.condition.below"},
+static std::map<MacroConditionStats::Condition, std::string>
+	statsConditionTypes = {
+		{MacroConditionStats::Condition::ABOVE,
+		 "AdvSceneSwitcher.condition.stats.condition.above"},
+		{MacroConditionStats::Condition::EQUALS,
+		 "AdvSceneSwitcher.condition.stats.condition.equals"},
+		{MacroConditionStats::Condition::BELOW,
+		 "AdvSceneSwitcher.condition.stats.condition.below"},
 };
 
 MacroConditionStats::MacroConditionStats(Macro *m)
@@ -60,11 +62,11 @@ MacroConditionStats::~MacroConditionStats()
 bool MacroConditionStats::CheckFPS()
 {
 	switch (_condition) {
-	case StatsCondition::ABOVE:
+	case Condition::ABOVE:
 		return obs_get_active_fps() > _value;
-	case StatsCondition::EQUALS:
+	case Condition::EQUALS:
 		return doubleEquals(obs_get_active_fps(), _value, 0.01);
-	case StatsCondition::BELOW:
+	case Condition::BELOW:
 		return obs_get_active_fps() < _value;
 	default:
 		break;
@@ -77,11 +79,11 @@ bool MacroConditionStats::CheckCPU()
 	double usage = os_cpu_usage_info_query(_cpu_info);
 
 	switch (_condition) {
-	case StatsCondition::ABOVE:
+	case Condition::ABOVE:
 		return usage > _value;
-	case StatsCondition::EQUALS:
+	case Condition::EQUALS:
 		return doubleEquals(usage, _value, 0.1);
-	case StatsCondition::BELOW:
+	case Condition::BELOW:
 		return usage < _value;
 	default:
 		break;
@@ -95,11 +97,11 @@ bool MacroConditionStats::CheckMemory()
 		(long double)os_get_proc_resident_size() / (1024.0l * 1024.0l);
 
 	switch (_condition) {
-	case StatsCondition::ABOVE:
+	case Condition::ABOVE:
 		return rss > _value;
-	case StatsCondition::EQUALS:
+	case Condition::EQUALS:
 		return doubleEquals(rss, _value, 0.1);
-	case StatsCondition::BELOW:
+	case Condition::BELOW:
 		return rss < _value;
 	default:
 		break;
@@ -112,11 +114,11 @@ bool MacroConditionStats::CheckAvgFrametime()
 	auto num = (long double)obs_get_average_frame_time_ns() / 1000000.0l;
 
 	switch (_condition) {
-	case StatsCondition::ABOVE:
+	case Condition::ABOVE:
 		return num > _value;
-	case StatsCondition::EQUALS:
+	case Condition::EQUALS:
 		return doubleEquals(num, _value, 0.1);
-	case StatsCondition::BELOW:
+	case Condition::BELOW:
 		return num < _value;
 	default:
 		break;
@@ -142,11 +144,11 @@ bool MacroConditionStats::CheckRenderLag()
 	num *= 100.0l;
 
 	switch (_condition) {
-	case StatsCondition::ABOVE:
+	case Condition::ABOVE:
 		return num > _value;
-	case StatsCondition::EQUALS:
+	case Condition::EQUALS:
 		return doubleEquals(num, _value, 0.1);
-	case StatsCondition::BELOW:
+	case Condition::BELOW:
 		return num < _value;
 	default:
 		break;
@@ -173,11 +175,11 @@ bool MacroConditionStats::CheckEncodeLag()
 	num *= 100.0l;
 
 	switch (_condition) {
-	case StatsCondition::ABOVE:
+	case Condition::ABOVE:
 		return num > _value;
-	case StatsCondition::EQUALS:
+	case Condition::EQUALS:
 		return doubleEquals(num, _value, 0.1);
-	case StatsCondition::BELOW:
+	case Condition::BELOW:
 		return num < _value;
 	default:
 		break;
@@ -230,11 +232,11 @@ bool MacroConditionStats::CheckStreamDroppedFrames()
 	obs_output_release(output);
 
 	switch (_condition) {
-	case StatsCondition::ABOVE:
+	case Condition::ABOVE:
 		return _streamInfo.dropped_relative > _value;
-	case StatsCondition::EQUALS:
+	case Condition::EQUALS:
 		return doubleEquals(_streamInfo.dropped_relative, _value, 0.1);
-	case StatsCondition::BELOW:
+	case Condition::BELOW:
 		return _streamInfo.dropped_relative < _value;
 	default:
 		break;
@@ -249,11 +251,11 @@ bool MacroConditionStats::CheckStreamBitrate()
 	obs_output_release(output);
 
 	switch (_condition) {
-	case StatsCondition::ABOVE:
+	case Condition::ABOVE:
 		return _streamInfo.kbps > _value;
-	case StatsCondition::EQUALS:
+	case Condition::EQUALS:
 		return doubleEquals(_streamInfo.kbps, _value, 1.0);
-	case StatsCondition::BELOW:
+	case Condition::BELOW:
 		return _streamInfo.kbps < _value;
 	default:
 		break;
@@ -269,11 +271,11 @@ bool MacroConditionStats::CheckStreamMBSent()
 	long double num = (long double)totalBytes / (1024.0l * 1024.0l);
 
 	switch (_condition) {
-	case StatsCondition::ABOVE:
+	case Condition::ABOVE:
 		return num > _value;
-	case StatsCondition::EQUALS:
+	case Condition::EQUALS:
 		return doubleEquals(num, _value, 0.1);
-	case StatsCondition::BELOW:
+	case Condition::BELOW:
 		return num < _value;
 	default:
 		break;
@@ -288,12 +290,12 @@ bool MacroConditionStats::CheckRecordingDroppedFrames()
 	obs_output_release(output);
 
 	switch (_condition) {
-	case StatsCondition::ABOVE:
+	case Condition::ABOVE:
 		return _recordingInfo.dropped_relative > _value;
-	case StatsCondition::EQUALS:
+	case Condition::EQUALS:
 		return doubleEquals(_recordingInfo.dropped_relative, _value,
 				    0.1);
-	case StatsCondition::BELOW:
+	case Condition::BELOW:
 		return _recordingInfo.dropped_relative < _value;
 	default:
 		break;
@@ -308,11 +310,11 @@ bool MacroConditionStats::CheckRecordingBitrate()
 	obs_output_release(output);
 
 	switch (_condition) {
-	case StatsCondition::ABOVE:
+	case Condition::ABOVE:
 		return _recordingInfo.kbps > _value;
-	case StatsCondition::EQUALS:
+	case Condition::EQUALS:
 		return doubleEquals(_recordingInfo.kbps, _value, 1.0);
-	case StatsCondition::BELOW:
+	case Condition::BELOW:
 		return _recordingInfo.kbps < _value;
 	default:
 		break;
@@ -328,11 +330,11 @@ bool MacroConditionStats::CheckRecordingMBSent()
 	long double num = (long double)totalBytes / (1024.0l * 1024.0l);
 
 	switch (_condition) {
-	case StatsCondition::ABOVE:
+	case Condition::ABOVE:
 		return num > _value;
-	case StatsCondition::EQUALS:
+	case Condition::EQUALS:
 		return doubleEquals(num, _value, 0.1);
-	case StatsCondition::BELOW:
+	case Condition::BELOW:
 		return num < _value;
 	default:
 		break;
@@ -343,32 +345,32 @@ bool MacroConditionStats::CheckRecordingMBSent()
 bool MacroConditionStats::CheckCondition()
 {
 	switch (_type) {
-	case StatsType::FPS:
+	case Type::FPS:
 		return CheckFPS();
-	case StatsType::CPU_USAGE:
+	case Type::CPU_USAGE:
 		return CheckCPU();
-	case StatsType::DISK_USAGE:
+	case Type::DISK_USAGE:
 		// TODO: not implemented
 		break;
-	case StatsType::MEM_USAGE:
+	case Type::MEM_USAGE:
 		return CheckMemory();
-	case StatsType::AVG_FRAMETIME:
+	case Type::AVG_FRAMETIME:
 		return CheckAvgFrametime();
-	case StatsType::RENDER_LAG:
+	case Type::RENDER_LAG:
 		return CheckRenderLag();
-	case StatsType::ENCODE_LAG:
+	case Type::ENCODE_LAG:
 		return CheckEncodeLag();
-	case StatsType::STREAM_DROPPED_FRAMES:
+	case Type::STREAM_DROPPED_FRAMES:
 		return CheckStreamDroppedFrames();
-	case StatsType::STREAM_BITRATE:
+	case Type::STREAM_BITRATE:
 		return CheckStreamBitrate();
-	case StatsType::STREAM_MB_SENT:
+	case Type::STREAM_MB_SENT:
 		return CheckStreamMBSent();
-	case StatsType::RECORDING_DROPPED_FRAMES:
+	case Type::RECORDING_DROPPED_FRAMES:
 		return CheckRecordingDroppedFrames();
-	case StatsType::RECORDING_BITRATE:
+	case Type::RECORDING_BITRATE:
 		return CheckRecordingBitrate();
-	case StatsType::RECORDING_MB_SENT:
+	case Type::RECORDING_MB_SENT:
 		return CheckRecordingMBSent();
 	default:
 		break;
@@ -380,9 +382,10 @@ bool MacroConditionStats::CheckCondition()
 bool MacroConditionStats::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
-	obs_data_set_double(obj, "value", _value);
+	_value.Save(obj, "value");
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
@@ -390,10 +393,14 @@ bool MacroConditionStats::Load(obs_data_t *obj)
 {
 
 	MacroCondition::Load(obj);
-	_value = obs_data_get_double(obj, "value");
-	_type = static_cast<StatsType>(obs_data_get_int(obj, "type"));
-	_condition =
-		static_cast<StatsCondition>(obs_data_get_int(obj, "condition"));
+	if (!obs_data_has_user_value(obj, "version")) {
+		_value = obs_data_get_double(obj, "value");
+	} else {
+		_value.Load(obj, "value");
+	}
+	_type = static_cast<MacroConditionStats::Type>(
+		obs_data_get_int(obj, "type"));
+	_condition = static_cast<Condition>(obs_data_get_int(obj, "condition"));
 	return true;
 }
 
@@ -412,7 +419,7 @@ static inline void populateStatsTypes(QComboBox *list)
 	for (auto entry : statsTypes) {
 		list->addItem(obs_module_text(entry.second.c_str()));
 		// TODO: not implemented
-		if (entry.first == StatsType::DISK_USAGE) {
+		if (entry.first == MacroConditionStats::Type::DISK_USAGE) {
 			qobject_cast<QListView *>(list->view())
 				->setRowHidden(list->count() - 1, true);
 		}
@@ -430,9 +437,9 @@ static inline void populateConditionSelection(QComboBox *list)
 MacroConditionStatsEdit::MacroConditionStatsEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionStats> entryData)
 	: QWidget(parent),
-	  _stats(new QComboBox),
-	  _condition(new QComboBox),
-	  _value(new QDoubleSpinBox)
+	  _stats(new QComboBox()),
+	  _condition(new QComboBox()),
+	  _value(new VariableDoubleSpinBox())
 {
 	_value->setMaximum(999999999999);
 
@@ -442,8 +449,10 @@ MacroConditionStatsEdit::MacroConditionStatsEdit(
 	setToolTip(
 		obs_module_text("AdvSceneSwitcher.condition.stats.dockHint"));
 
-	QWidget::connect(_value, SIGNAL(valueChanged(double)), this,
-			 SLOT(ValueChanged(double)));
+	QWidget::connect(
+		_value,
+		SIGNAL(NumberVariableChanged(const NumberVariable<double> &)),
+		this, SLOT(ValueChanged(const NumberVariable<double> &)));
 	QWidget::connect(_stats, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(StatsTypeChanged(int)));
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
@@ -464,7 +473,7 @@ MacroConditionStatsEdit::MacroConditionStatsEdit(
 	_loading = false;
 }
 
-void MacroConditionStatsEdit::ValueChanged(double value)
+void MacroConditionStatsEdit::ValueChanged(const NumberVariable<double> &value)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -482,10 +491,11 @@ void MacroConditionStatsEdit::StatsTypeChanged(int type)
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
-		_entryData->_type = static_cast<StatsType>(type);
+		_entryData->_type =
+			static_cast<MacroConditionStats::Type>(type);
 		SetWidgetVisibility();
 	}
-	_value->setValue(0);
+	_value->SetFixedValue(0);
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -497,7 +507,8 @@ void MacroConditionStatsEdit::ConditionChanged(int cond)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_condition = static_cast<StatsCondition>(cond);
+	_entryData->_condition =
+		static_cast<MacroConditionStats::Condition>(cond);
 }
 
 void MacroConditionStatsEdit::UpdateEntryData()
@@ -506,7 +517,7 @@ void MacroConditionStatsEdit::UpdateEntryData()
 		return;
 	}
 
-	_value->setValue(_entryData->_value);
+	_value->SetValue(_entryData->_value);
 	_stats->setCurrentIndex(static_cast<int>(_entryData->_type));
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	SetWidgetVisibility();
@@ -519,55 +530,55 @@ void MacroConditionStatsEdit::SetWidgetVisibility()
 	}
 
 	switch (_entryData->_type) {
-	case StatsType::FPS:
+	case MacroConditionStats::Type::FPS:
 		_value->setMaximum(1000);
 		_value->setSuffix("");
 		break;
-	case StatsType::CPU_USAGE:
+	case MacroConditionStats::Type::CPU_USAGE:
 		_value->setMaximum(100);
 		_value->setSuffix("%");
 		break;
-	case StatsType::DISK_USAGE:
+	case MacroConditionStats::Type::DISK_USAGE:
 		_value->setMaximum(999999999999);
 		_value->setSuffix("MB");
 		break;
-	case StatsType::MEM_USAGE:
+	case MacroConditionStats::Type::MEM_USAGE:
 		_value->setMaximum(999999999999);
 		_value->setSuffix("MB");
 		break;
-	case StatsType::AVG_FRAMETIME:
+	case MacroConditionStats::Type::AVG_FRAMETIME:
 		_value->setMaximum(999999999999);
 		_value->setSuffix("ms");
 		break;
-	case StatsType::RENDER_LAG:
+	case MacroConditionStats::Type::RENDER_LAG:
 		_value->setMaximum(100);
 		_value->setSuffix("%");
 		break;
-	case StatsType::ENCODE_LAG:
+	case MacroConditionStats::Type::ENCODE_LAG:
 		_value->setMaximum(100);
 		_value->setSuffix("%");
 		break;
-	case StatsType::STREAM_DROPPED_FRAMES:
+	case MacroConditionStats::Type::STREAM_DROPPED_FRAMES:
 		_value->setMaximum(100);
 		_value->setSuffix("%");
 		break;
-	case StatsType::STREAM_BITRATE:
+	case MacroConditionStats::Type::STREAM_BITRATE:
 		_value->setMaximum(999999999999);
 		_value->setSuffix("kb/s");
 		break;
-	case StatsType::STREAM_MB_SENT:
+	case MacroConditionStats::Type::STREAM_MB_SENT:
 		_value->setMaximum(999999999999);
 		_value->setSuffix("MB");
 		break;
-	case StatsType::RECORDING_DROPPED_FRAMES:
+	case MacroConditionStats::Type::RECORDING_DROPPED_FRAMES:
 		_value->setMaximum(100);
 		_value->setSuffix("%");
 		break;
-	case StatsType::RECORDING_BITRATE:
+	case MacroConditionStats::Type::RECORDING_BITRATE:
 		_value->setMaximum(999999999999);
 		_value->setSuffix("kb/s");
 		break;
-	case StatsType::RECORDING_MB_SENT:
+	case MacroConditionStats::Type::RECORDING_MB_SENT:
 		_value->setMaximum(999999999999);
 		_value->setSuffix("MB");
 		break;

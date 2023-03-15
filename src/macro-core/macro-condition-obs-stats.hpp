@@ -2,30 +2,8 @@
 #include "macro.hpp"
 #include <QWidget>
 #include <QComboBox>
-#include <QDoubleSpinBox>
+#include <variable-spinbox.hpp>
 #include <util/platform.h>
-
-enum class StatsType {
-	FPS,
-	CPU_USAGE,
-	DISK_USAGE, // not implemented
-	MEM_USAGE,
-	AVG_FRAMETIME,
-	RENDER_LAG,
-	ENCODE_LAG,
-	STREAM_DROPPED_FRAMES,
-	STREAM_BITRATE,
-	STREAM_MB_SENT,
-	RECORDING_DROPPED_FRAMES, // not sure if this makes sense
-	RECORDING_BITRATE,
-	RECORDING_MB_SENT,
-};
-
-enum class StatsCondition {
-	ABOVE,
-	EQUALS,
-	BELOW,
-};
 
 class MacroConditionStats : public MacroCondition {
 public:
@@ -41,9 +19,31 @@ public:
 		return std::make_shared<MacroConditionStats>(m);
 	}
 
-	double _value = 0;
-	StatsType _type = StatsType::FPS;
-	StatsCondition _condition = StatsCondition::ABOVE;
+	NumberVariable<double> _value = 0.0;
+
+	enum class Type {
+		FPS,
+		CPU_USAGE,
+		DISK_USAGE, // not implemented
+		MEM_USAGE,
+		AVG_FRAMETIME,
+		RENDER_LAG,
+		ENCODE_LAG,
+		STREAM_DROPPED_FRAMES,
+		STREAM_BITRATE,
+		STREAM_MB_SENT,
+		RECORDING_DROPPED_FRAMES, // not sure if this makes sense
+		RECORDING_BITRATE,
+		RECORDING_MB_SENT,
+	};
+	Type _type = Type::FPS;
+
+	enum class Condition {
+		ABOVE,
+		EQUALS,
+		BELOW,
+	};
+	Condition _condition = Condition::ABOVE;
 
 private:
 	bool CheckFPS();
@@ -98,7 +98,7 @@ public:
 	}
 
 private slots:
-	void ValueChanged(double value);
+	void ValueChanged(const NumberVariable<double> &value);
 	void StatsTypeChanged(int type);
 	void ConditionChanged(int cond);
 
@@ -108,7 +108,7 @@ signals:
 protected:
 	QComboBox *_stats;
 	QComboBox *_condition;
-	QDoubleSpinBox *_value;
+	VariableDoubleSpinBox *_value;
 	std::shared_ptr<MacroConditionStats> _entryData;
 
 private:
