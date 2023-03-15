@@ -1,7 +1,7 @@
 #pragma once
 #include <macro.hpp>
+#include <variable-spinbox.hpp>
 
-#include <QDoubleSpinBox>
 #include <QComboBox>
 #include <QPushButton>
 #include <QTimer>
@@ -18,7 +18,8 @@ public:
 		return std::make_shared<MacroConditionOpenVR>(m);
 	}
 
-	double _minX = 0, _minY = 0, _minZ = 0, _maxX = 0, _maxY = 0, _maxZ = 0;
+	NumberVariable<double> _minX = 0.0, _minY = 0.0, _minZ = 0.0,
+			       _maxX = 0.0, _maxY = 0.0, _maxZ = 0.0;
 
 private:
 	static bool _registered;
@@ -42,21 +43,21 @@ public:
 	}
 
 private slots:
-	void MinXChanged(double pos);
-	void MinYChanged(double pos);
-	void MinZChanged(double pos);
-	void MaxXChanged(double pos);
-	void MaxYChanged(double pos);
-	void MaxZChanged(double pos);
+	void MinXChanged(const NumberVariable<double> &pos);
+	void MinYChanged(const NumberVariable<double> &pos);
+	void MinZChanged(const NumberVariable<double> &pos);
+	void MaxXChanged(const NumberVariable<double> &pos);
+	void MaxYChanged(const NumberVariable<double> &pos);
+	void MaxZChanged(const NumberVariable<double> &pos);
 	void UpdateOpenVRPos();
 
 protected:
-	QDoubleSpinBox *_minX;
-	QDoubleSpinBox *_minY;
-	QDoubleSpinBox *_minZ;
-	QDoubleSpinBox *_maxX;
-	QDoubleSpinBox *_maxY;
-	QDoubleSpinBox *_maxZ;
+	VariableDoubleSpinBox *_minX;
+	VariableDoubleSpinBox *_minY;
+	VariableDoubleSpinBox *_minZ;
+	VariableDoubleSpinBox *_maxX;
+	VariableDoubleSpinBox *_maxY;
+	VariableDoubleSpinBox *_maxZ;
 	QLabel *_xPos;
 	QLabel *_yPos;
 	QLabel *_zPos;
