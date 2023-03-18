@@ -8,9 +8,8 @@
 bool ProcessConfig::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
-	obs_data_set_string(data, "path", _path.c_str());
-	obs_data_set_string(data, "workingDirectory",
-			    _workingDirectory.c_str());
+	_path.Save(data, "path");
+	_workingDirectory.Save(data, "workingDirectory");
 	_args.Save(data, "args", "arg");
 	obs_data_set_obj(obj, "processConfig", data);
 	obs_data_release(data);
@@ -29,8 +28,8 @@ bool ProcessConfig::Load(obs_data_t *obj)
 	}
 
 	auto data = obs_data_get_obj(obj, "processConfig");
-	_path = obs_data_get_string(data, "path");
-	_workingDirectory = obs_data_get_string(data, "workingDirectory");
+	_path.Load(data, "path");
+	_workingDirectory.Load(data, "workingDirectory");
 	_args.Load(data, "args", "arg");
 	obs_data_release(data);
 	return true;
@@ -101,12 +100,12 @@ ProcessConfigEdit::ProcessConfigEdit(QWidget *parent)
 void ProcessConfigEdit::SetProcessConfig(const ProcessConfig &conf)
 {
 	_conf = conf;
-	_filePath->SetPath(QString::fromStdString(conf._path));
+	_filePath->SetPath(conf._path);
 	_argList->SetStringList(conf._args);
-	_workingDirectory->SetPath(
-		QString::fromStdString(conf._workingDirectory));
-	ShowAdvancedSettings(!_conf._args.empty() ||
-			     !_conf._workingDirectory.empty());
+	_workingDirectory->SetPath(conf._workingDirectory);
+	ShowAdvancedSettings(
+		!_conf._args.empty() ||
+		!_conf._workingDirectory.UnresolvedValue().empty());
 }
 
 void ProcessConfigEdit::PathChanged(const QString &text)

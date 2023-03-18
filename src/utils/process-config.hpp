@@ -15,13 +15,14 @@ public:
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
 
-	std::string Path() const { return _path; }
-	std::string WorkingDir() const { return _workingDirectory; }
+	std::string Path() { return _path; }
+	std::string UnresolvedPath() const { return _path.UnresolvedValue(); }
+	std::string WorkingDir() { return _workingDirectory; }
 	QStringList Args(); // Resolves variables
 
 private:
-	std::string _path = obs_module_text("AdvSceneSwitcher.enterPath");
-	std::string _workingDirectory = "";
+	StringVariable _path = obs_module_text("AdvSceneSwitcher.enterPath");
+	StringVariable _workingDirectory = "";
 	StringList _args;
 
 	friend class ProcessConfigEdit;

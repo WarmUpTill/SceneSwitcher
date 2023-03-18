@@ -27,7 +27,7 @@ bool MacroActionRun::PerformAction()
 
 void MacroActionRun::LogAction() const
 {
-	vblog(LOG_INFO, "run \"%s\"", _procConfig.Path().c_str());
+	vblog(LOG_INFO, "run \"%s\"", _procConfig.UnresolvedPath().c_str());
 }
 
 bool MacroActionRun::Save(obs_data_t *obj) const
@@ -46,7 +46,7 @@ bool MacroActionRun::Load(obs_data_t *obj)
 
 std::string MacroActionRun::GetShortDesc() const
 {
-	return _procConfig.Path();
+	return _procConfig.UnresolvedPath();
 }
 
 MacroActionRunEdit::MacroActionRunEdit(

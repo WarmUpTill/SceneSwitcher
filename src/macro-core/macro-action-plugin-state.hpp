@@ -26,7 +26,7 @@ public:
 
 	PluginStateAction _action = PluginStateAction::STOP;
 	int _value = 0;
-	std::string _settingsPath;
+	StringVariable _settingsPath;
 	OBSWeakSource _scene;
 
 private:
