@@ -105,6 +105,7 @@ int findIdxInRagne(QComboBox *list, int start, int stop,
 bool DisplayMessage(const QString &msg, bool question = false);
 void DisplayTrayMessage(const QString &title, const QString &msg);
 bool windowPosValid(QPoint pos);
+std::string GetThemeTypeName();
 
 /* Generic helpers */
 

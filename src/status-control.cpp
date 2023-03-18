@@ -120,10 +120,9 @@ StatusDock::StatusDock(QWidget *parent) : OBSDock(parent)
 	QAction *action = new QAction;
 	action->setProperty("themeID", QVariant(QString::fromUtf8("cogsIcon")));
 	action->connect(action, &QAction::triggered, OpenSettingsWindow);
-	QIcon icon;
-	icon.addFile(
-		QString::fromUtf8(":/settings/images/settings/advanced.svg"),
-		QSize(), QIcon::Normal, QIcon::Off);
+	const auto path = QString::fromStdString(getDataFilePath(
+		"res/images/" + GetThemeTypeName() + "advanced.svg"));
+	QIcon icon(path);
 	action->setIcon(icon);
 
 	auto toolbar = new QToolBar;

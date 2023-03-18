@@ -16,6 +16,7 @@
 #include <QSystemTrayIcon>
 #include <QGuiApplication>
 #include <QCursor>
+#include <QMainWindow>
 #include <unordered_map>
 #include <regex>
 #include <set>
@@ -865,6 +866,22 @@ void populateMonitorTypeSelection(QComboBox *list)
 bool windowPosValid(QPoint pos)
 {
 	return !!QGuiApplication::screenAt(pos);
+}
+
+std::string GetThemeTypeName()
+{
+#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(29, 0, 0)
+	return obs_frontend_is_theme_dark() ? "Dark" : "Light";
+#else
+	auto mainWindow =
+		static_cast<QMainWindow *>(obs_frontend_get_main_window());
+	if (!mainWindow) {
+		return "Dark";
+	}
+	QColor color = mainWindow->palette().text().color();
+	const bool themeDarkMode = !(color.redF() < 0.5);
+	return themeDarkMode ? "Dark" : "Light";
+#endif
 }
 
 QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
