@@ -27,10 +27,9 @@ MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 	bool isGroup = _macro->IsGroup();
 
 	if (isGroup) {
-		QIcon icon;
-		icon.addFile(
-			QString::fromUtf8(":/res/images/sources/group.svg"),
-			QSize(), QIcon::Normal, QIcon::Off);
+		const auto path = QString::fromStdString(getDataFilePath(
+			"res/images/" + GetThemeTypeName() + "group.svg"));
+		QIcon icon(path);
 		QPixmap pixmap = icon.pixmap(QSize(16, 16));
 		_iconLabel = new QLabel();
 		_iconLabel->setPixmap(pixmap);

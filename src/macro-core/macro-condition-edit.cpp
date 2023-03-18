@@ -121,8 +121,9 @@ DurationModifierEdit::DurationModifierEdit(QWidget *parent)
 	_duration = new DurationSelection(parent);
 	_toggle = new QPushButton(parent);
 	_toggle->setMaximumWidth(22);
-	_toggle->setIcon(
-		QIcon(QString::fromStdString(getDataFilePath("res/time.svg"))));
+	const auto path = QString::fromStdString(getDataFilePath(
+		"res/images/" + GetThemeTypeName() + "time.svg"));
+	_toggle->setIcon(QIcon(path));
 	populateDurationModifierTypes(_condition);
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(_ModifierChanged(int)));
