@@ -102,7 +102,7 @@ bool MacroActionPluginState::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	obs_data_set_int(obj, "value", _value);
 	obs_data_set_string(obj, "scene", GetWeakSourceName(_scene).c_str());
-	obs_data_set_string(obj, "settingsPath", _settingsPath.c_str());
+	_settingsPath.Save(obj, "settingsPath");
 	return true;
 }
 
@@ -114,7 +114,7 @@ bool MacroActionPluginState::Load(obs_data_t *obj)
 	_value = obs_data_get_int(obj, "value");
 	const char *sceneName = obs_data_get_string(obj, "scene");
 	_scene = GetWeakSourceByName(sceneName);
-	_settingsPath = obs_data_get_string(obj, "settingsPath");
+	_settingsPath.Load(obj, "settingsPath");
 	return true;
 }
 
@@ -185,7 +185,7 @@ void MacroActionPluginStateEdit::UpdateEntryData()
 	populateValueSelection(_values, _entryData->_action);
 	_values->setCurrentIndex(_entryData->_value);
 	_scenes->setCurrentText(GetWeakSourceName(_entryData->_scene).c_str());
-	_settings->SetPath(QString::fromStdString(_entryData->_settingsPath));
+	_settings->SetPath(_entryData->_settingsPath);
 	SetWidgetVisibility();
 }
 

@@ -65,7 +65,8 @@ bool MacroConditionFile::MatchFileContent(QString &filedata)
 
 bool MacroConditionFile::CheckRemoteFileContent()
 {
-	std::string data = getRemoteData(_file);
+	std::string path = _file;
+	std::string data = getRemoteData(path);
 	SetVariableValue(data);
 	QString qdata = QString::fromStdString(data);
 	return MatchFileContent(qdata);
@@ -99,7 +100,8 @@ bool MacroConditionFile::CheckChangeContent()
 	QString filedata;
 	switch (_fileType) {
 	case FileType::LOCAL: {
-		QFile file(QString::fromStdString(_file));
+		std::string path = _file;
+		QFile file(QString::fromStdString(path));
 		if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 			return false;
 		}
@@ -107,7 +109,8 @@ bool MacroConditionFile::CheckChangeContent()
 		file.close();
 	} break;
 	case FileType::REMOTE: {
-		std::string data = getRemoteData(_file);
+		std::string path = _file;
+		std::string data = getRemoteData(path);
 		QString filedata = QString::fromStdString(data);
 	} break;
 	default:
@@ -166,7 +169,7 @@ bool MacroConditionFile::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	_regex.Save(obj);
-	obs_data_set_string(obj, "file", _file.c_str());
+	_file.Save(obj, "file");
 	_text.Save(obj, "text");
 	obs_data_set_int(obj, "fileType", static_cast<int>(_fileType));
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
@@ -184,7 +187,7 @@ bool MacroConditionFile::Load(obs_data_t *obj)
 		_regex.CreateBackwardsCompatibleRegex(
 			obs_data_get_bool(obj, "useRegex"));
 	}
-	_file = obs_data_get_string(obj, "file");
+	_file.Load(obj, "file");
 	_text.Load(obj, "text");
 	_fileType = static_cast<FileType>(obs_data_get_int(obj, "fileType"));
 	_condition =
@@ -196,7 +199,7 @@ bool MacroConditionFile::Load(obs_data_t *obj)
 
 std::string MacroConditionFile::GetShortDesc() const
 {
-	return _file;
+	return _file.UnresolvedValue();
 }
 
 static void populateFileTypes(QComboBox *list)
@@ -292,7 +295,7 @@ void MacroConditionFileEdit::UpdateEntryData()
 
 	_fileTypes->setCurrentIndex(static_cast<int>(_entryData->_fileType));
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
-	_filePath->SetPath(QString::fromStdString(_entryData->_file));
+	_filePath->SetPath(_entryData->_file);
 	_matchText->setPlainText(_entryData->_text);
 	_regex->SetRegexConfig(_entryData->_regex);
 	_checkModificationDate->setChecked(_entryData->_useTime);

@@ -117,7 +117,7 @@ bool MacroConditionRun::Load(obs_data_t *obj)
 
 std::string MacroConditionRun::GetShortDesc() const
 {
-	return _procConfig.Path();
+	return _procConfig.UnresolvedPath();
 }
 
 MacroConditionRunEdit::MacroConditionRunEdit(

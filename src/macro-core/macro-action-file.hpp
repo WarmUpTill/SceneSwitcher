@@ -24,7 +24,7 @@ public:
 		return std::make_shared<MacroActionFile>(m);
 	}
 
-	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
+	StringVariable _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	StringVariable _text = obs_module_text("AdvSceneSwitcher.enterText");
 	FileAction _action = FileAction::WRITE;
 

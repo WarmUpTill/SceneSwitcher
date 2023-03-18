@@ -35,7 +35,7 @@ public:
 		DATE_CHANGE,
 	};
 
-	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
+	StringVariable _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	StringVariable _text = obs_module_text("AdvSceneSwitcher.enterText");
 	FileType _fileType = FileType::LOCAL;
 	ConditionType _condition = ConditionType::MATCH;

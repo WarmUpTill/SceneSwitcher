@@ -55,7 +55,7 @@ void MacroActionFile::LogAction() const
 bool MacroActionFile::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
-	obs_data_set_string(obj, "file", _file.c_str());
+	_file.Save(obj, "file");
 	_text.Save(obj, "text");
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	return true;
@@ -64,7 +64,7 @@ bool MacroActionFile::Save(obs_data_t *obj) const
 bool MacroActionFile::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	_file = obs_data_get_string(obj, "file");
+	_file.Load(obj, "file");
 	_text.Load(obj, "text");
 	_action = static_cast<FileAction>(obs_data_get_int(obj, "action"));
 	return true;
@@ -72,7 +72,7 @@ bool MacroActionFile::Load(obs_data_t *obj)
 
 std::string MacroActionFile::GetShortDesc() const
 {
-	return _file;
+	return _file.UnresolvedValue();
 }
 
 static inline void populateActionSelection(QComboBox *list)
