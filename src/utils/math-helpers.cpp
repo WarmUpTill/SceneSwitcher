@@ -13,14 +13,65 @@ static std::vector<std::string_view> nonOperatorSeparators = {
 	"\t",
 };
 
-static std::vector<std::string_view> operators = {
-	"+", "-", "*", "/", "(", ")",
+static std::vector<std::string_view> brackets = {
+	"(",
+	")",
 };
+
+static std::vector<std::string_view> unaryOperators = {
+	"abs(", "sin(", "cos(", "tan(", "sqrt(",
+};
+
+static std::vector<std::string_view> binaryOperators = {
+	"+",
+	"-",
+	"*",
+	"/",
+};
+
+static bool isBracket(const std::string &token)
+{
+	return std::find(brackets.begin(), brackets.end(), token) !=
+	       brackets.end();
+}
+
+static bool isUnaryOperator(const std::string &token)
+{
+	return std::find(unaryOperators.begin(), unaryOperators.end(), token) !=
+	       unaryOperators.end();
+}
+
+static bool isBinaryOperator(const std::string &token)
+{
+	return std::find(binaryOperators.begin(), binaryOperators.end(),
+			 token) != binaryOperators.end();
+}
+
+static bool isOperator(const std::string &token)
+{
+	return isUnaryOperator(token) || isBinaryOperator(token);
+}
+
+static void addOperatorToken(std::vector<std::string> &tokens,
+			     const std::string &separator)
+{
+	if (separator.back() != '(') {
+		tokens.push_back(separator);
+		return;
+	}
+	tokens.push_back("(");
+	tokens.push_back(separator);
+}
 
 static std::vector<std::string> splitStringIntoTokens(const std::string &input)
 {
 	auto separators = nonOperatorSeparators;
-	separators.insert(separators.end(), operators.begin(), operators.end());
+	separators.insert(separators.end(), brackets.begin(), brackets.end());
+	separators.insert(separators.end(), unaryOperators.begin(),
+			  unaryOperators.end());
+	separators.insert(separators.end(), binaryOperators.begin(),
+			  binaryOperators.end());
+
 	std::vector<std::string> tokens;
 	std::string::size_type start = 0;
 
@@ -39,13 +90,19 @@ static std::vector<std::string> splitStringIntoTokens(const std::string &input)
 
 		// If a separator was found, add the token before it to the vector
 		if (min_pos != std::string::npos) {
-			tokens.push_back(input.substr(start, min_pos - start));
+			const auto token = input.substr(start, min_pos - start);
 			start = min_pos + separator.length();
+
+			if (!std::all_of(token.begin(), token.end(), isspace)) {
+				tokens.push_back(token);
+			}
 
 			// If the separator itself was an operator, add it as a
 			// token to the vector
-			if (std::find(operators.begin(), operators.end(),
-				      separator) != operators.end()) {
+			if (isOperator(separator)) {
+				addOperatorToken(tokens, separator);
+			}
+			if (isBracket(separator)) {
 				tokens.push_back(separator);
 			}
 		}
@@ -79,7 +136,7 @@ static std::string getErrorMsg(const std::string &expr, const std::string &msg)
 }
 
 static std::string getErrorMsg(const std::string &expr,
-			       std::stack<std::string> operators,
+			       std::stack<std::string> binaryOperators,
 			       std::stack<double> operands,
 			       const std::string &msg)
 {
@@ -88,9 +145,9 @@ static std::string getErrorMsg(const std::string &expr,
 		  std::string(
 			  obs_module_text("AdvSceneSwitcher.math.operators")) +
 		  " ---\n";
-	while (!operators.empty()) {
-		errMsg += operators.top() + "\n";
-		operators.pop();
+	while (!binaryOperators.empty()) {
+		errMsg += binaryOperators.top() + "\n";
+		binaryOperators.pop();
 	}
 
 	errMsg +=
@@ -105,16 +162,44 @@ static std::string getErrorMsg(const std::string &expr,
 	return errMsg;
 }
 
-static void evalHelper(std::stack<std::string> &operators,
+static bool evalHelper(std::stack<std::string> &operators,
 		       std::stack<double> &operands)
 {
 	std::string op = operators.top();
 	operators.pop();
+
+	if (isUnaryOperator(op)) {
+		if (operands.size() < 1) {
+			return false;
+		}
+
+		double value = operands.top();
+		operands.pop();
+		double result;
+		if (op == "abs(") {
+			result = abs(value);
+		} else if (op == "sin(") {
+			result = sin(value);
+		} else if (op == "cos(") {
+			result = cos(value);
+		} else if (op == "tan(") {
+			result = cos(value);
+		} else if (op == "sqrt(") {
+			result = sqrt(value);
+		}
+		operands.push(result);
+		return true;
+	}
+
+	if (operands.size() < 2) {
+		return false;
+	}
 	double op2 = operands.top();
 	operands.pop();
 	double op1 = operands.top();
 	operands.pop();
 	double result;
+
 	if (op == "+") {
 		result = op1 + op2;
 	} else if (op == "-") {
@@ -125,6 +210,7 @@ static void evalHelper(std::stack<std::string> &operators,
 		result = op1 / op2;
 	}
 	operands.push(result);
+	return true;
 }
 
 std::variant<double, std::string>
@@ -152,17 +238,20 @@ EvalMathExpression(const std::string &expression)
 		}
 		// If the token is an operator, evaluate higher-precedence
 		// operators first
-		else if (token == "+" || token == "-" || token == "*" ||
-			 token == "/") {
+		else if (isBinaryOperator(token)) {
 			while (!operators.empty() &&
 			       precedence(operators.top()) >=
 				       precedence(token)) {
-				if (operators.empty() || operands.size() < 2) {
+				if (operators.empty() || operands.empty()) {
 					return getErrorMsg(expression,
 							   operators, operands,
 							   "");
 				}
-				evalHelper(operators, operands);
+				if (!evalHelper(operators, operands)) {
+					return getErrorMsg(expression,
+							   operators, operands,
+							   "");
+				}
 			}
 			operators.push(token);
 		}
@@ -174,14 +263,20 @@ EvalMathExpression(const std::string &expression)
 		// If the token is a closing bracket, evaluate the expression
 		// inside the brackets
 		else if (token == ")") {
+			if (operators.empty()) {
+				return getErrorMsg(
+					expression, operators, operands,
+					obs_module_text(
+						"AdvSceneSwitcher.math.expressionFailParentheses"));
+			}
 			while (operators.top() != "(") {
-				if (operators.empty() || operands.size() < 2) {
+				if (operators.empty() || operands.empty()) {
 					return getErrorMsg(expression,
 							   operators, operands,
 							   "");
 				}
-				evalHelper(operators, operands);
-				if (operators.empty()) {
+				if (!evalHelper(operators, operands) ||
+				    operators.empty()) {
 					return getErrorMsg(
 						expression, operators, operands,
 						obs_module_text(
@@ -192,26 +287,9 @@ EvalMathExpression(const std::string &expression)
 
 		}
 
-		// TODO: Add function "operators"
-		//
-		// If the token is a function, pop the top operand and apply
-		// the function
-		// else if (token == "sin" || token == "cos" || token == "tan" ||
-		// 	 token == "sqrt") {
-		// 	double op = operands.top();
-		// 	operands.pop();
-		// 	double result;
-		// 	if (token == "sin") {
-		// 		result = sin(op);
-		// 	} else if (token == "cos") {
-		// 		result = cos(op);
-		// 	} else if (token == "tan") {
-		// 		result = tan(op);
-		// 	} else if (token == "sqrt") {
-		// 		result = sqrt(op);
-		// 	}
-		// 	operands.push(result);
-		// }
+		else if (isUnaryOperator(token)) {
+			operators.push(token);
+		}
 
 		else if (!token.empty()) {
 			return getErrorMsg(
@@ -224,10 +302,9 @@ EvalMathExpression(const std::string &expression)
 
 	// Evaluate any remaining operators in the stack
 	while (!operators.empty()) {
-		if (operators.empty() || operands.size() < 2) {
+		if (!evalHelper(operators, operands) || operands.empty()) {
 			return getErrorMsg(expression, operators, operands, "");
 		}
-		evalHelper(operators, operands);
 	}
 
 	// The result is the top operand on the stack
