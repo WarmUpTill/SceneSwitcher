@@ -596,6 +596,7 @@ void AdvSceneSwitcher::CopyMacro()
 	obs_data_t *data = obs_data_create();
 	macro->Save(data);
 	newMacro->Load(data);
+	newMacro->PostLoad();
 	newMacro->SetName(name);
 	obs_data_release(data);
 
