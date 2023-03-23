@@ -1,5 +1,6 @@
 #pragma once
-#include <QDockWidget>
+#include "obs-dock.hpp"
+
 #include <QPushButton>
 #include <QLabel>
 #include <QTimer>
@@ -32,14 +33,6 @@ private:
 	QMetaObject::Connection _pulse;
 
 	bool _setToStopped = true;
-};
-
-// Only used to enable applying "OBSDock" stylesheet
-class OBSDock : public QDockWidget {
-	Q_OBJECT
-
-public:
-	inline OBSDock(QWidget *parent = nullptr) : QDockWidget(parent) {}
 };
 
 class StatusDock : public OBSDock {
