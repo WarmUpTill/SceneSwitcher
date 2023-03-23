@@ -419,9 +419,11 @@ void MacroConditionAudioEdit::SourceChanged(const SourceSelection &source)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_audioSource = source;
-	_entryData->ResetVolmeter();
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		_entryData->_audioSource = source;
+		_entryData->ResetVolmeter();
+	}
 	UpdateVolmeterSource();
 	SetWidgetVisibility();
 	emit HeaderInfoChanged(
