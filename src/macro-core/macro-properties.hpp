@@ -34,4 +34,5 @@ private:
 	QCheckBox *_newMacroRegisterHotkeys;
 	// Current macro specific settings
 	QCheckBox *_currentMacroRegisterHotkeys;
+	QCheckBox *_currentMacroRegisterDock;
 };

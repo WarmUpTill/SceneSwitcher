@@ -14,6 +14,8 @@
 
 constexpr auto macro_func = 10;
 
+class MacroDock;
+
 class Macro {
 public:
 	Macro(const std::string &name = "", const bool addHotkey = false);
@@ -78,6 +80,9 @@ public:
 	void EnablePauseHotkeys(bool);
 	bool PauseHotkeysEnabled();
 
+	void EnableDock(bool);
+	bool DockEnabled() { return _registerDock; }
+
 	void ResetTimers();
 
 private:
@@ -87,6 +92,8 @@ private:
 	void RunActions(bool &ret, bool ignorePause);
 	void RunActions(bool ignorePause);
 	void SetOnChangeHighlight();
+	void SetDockWidgetName() const;
+	void RemoveDock();
 
 	std::string _name = "";
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;
@@ -111,6 +118,9 @@ private:
 	bool _isCollapsed = false;
 	bool _wasExecutedRecently = false;
 	bool _onChangeTriggered = false;
+	bool _registerDock = false;
+	MacroDock *_dock = nullptr;
+	QAction *_dockAction = nullptr;
 
 	std::chrono::high_resolution_clock::time_point _lastCheckTime{};
 
