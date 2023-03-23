@@ -154,5 +154,5 @@ void SetupDock()
 		static_cast<QMainWindow *>(obs_frontend_get_main_window()));
 	// Added for cosmetic reasons to avoid brief flash of dock window on startup
 	dock->setVisible(false);
-	static_cast<QAction *>(obs_frontend_add_dock(dock));
+	obs_frontend_add_dock(dock);
 }
