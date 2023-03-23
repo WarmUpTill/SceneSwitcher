@@ -520,7 +520,8 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 	auto copy = menu.addAction(
 		obs_module_text("AdvSceneSwitcher.macroTab.copy"), this,
 		&AdvSceneSwitcher::CopyMacro);
-	copy->setEnabled(ui->macros->SingleItemSelected());
+	copy->setEnabled(ui->macros->SingleItemSelected() &&
+			 !ui->macros->GroupsSelected());
 	menu.addSeparator();
 
 	auto group = menu.addAction(
