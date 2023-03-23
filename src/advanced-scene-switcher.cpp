@@ -16,6 +16,9 @@
 
 const char *obs_module_text(const char *text)
 {
+	if (!switcher) {
+		return "";
+	}
 	return switcher->translate(text);
 }
 
