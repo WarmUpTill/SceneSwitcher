@@ -41,7 +41,9 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	  _newMacroRegisterHotkeys(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.newMacroRegisterHotkey"))),
 	  _currentMacroRegisterHotkeys(new QCheckBox(obs_module_text(
-		  "AdvSceneSwitcher.macroTab.currentDisableHotkeys")))
+		  "AdvSceneSwitcher.macroTab.currentDisableHotkeys"))),
+	  _currentMacroRegisterDock(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.currentRegisterDock")))
 {
 	setModal(true);
 	setWindowModality(Qt::WindowModality::WindowModal);
@@ -64,6 +66,12 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	hotkeyLayout->addWidget(_currentMacroRegisterHotkeys);
 	hotkeyOptions->setLayout(hotkeyLayout);
 
+	auto dockOptions = new QGroupBox(
+		obs_module_text("AdvSceneSwitcher.macroTab.dockSettings"));
+	QVBoxLayout *dockLayout = new QVBoxLayout;
+	dockLayout->addWidget(_currentMacroRegisterDock);
+	dockOptions->setLayout(dockLayout);
+
 	QDialogButtonBox *buttonbox = new QDialogButtonBox(
 		QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
 	buttonbox->setCenterButtons(true);
@@ -73,6 +81,7 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	QVBoxLayout *layout = new QVBoxLayout;
 	layout->addWidget(highlightOptions);
 	layout->addWidget(hotkeyOptions);
+	layout->addWidget(dockOptions);
 	layout->addWidget(buttonbox);
 	setLayout(layout);
 
@@ -83,8 +92,10 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	if (macro && !macro->IsGroup()) {
 		_currentMacroRegisterHotkeys->setChecked(
 			macro->PauseHotkeysEnabled());
+		_currentMacroRegisterDock->setChecked(macro->DockEnabled());
 	} else {
 		hotkeyOptions->hide();
+		dockOptions->hide();
 	}
 }
 
@@ -102,9 +113,12 @@ bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
 	userInput._highlightActions = dialog._actions->isChecked();
 	userInput._newMacroRegisterHotkeys =
 		dialog._newMacroRegisterHotkeys->isChecked();
-	if (macro) {
-		macro->EnablePauseHotkeys(
-			dialog._currentMacroRegisterHotkeys->isChecked());
+	if (!macro) {
+		return true;
 	}
+
+	macro->EnablePauseHotkeys(
+		dialog._currentMacroRegisterHotkeys->isChecked());
+	macro->EnableDock(dialog._currentMacroRegisterDock->isChecked());
 	return true;
 }

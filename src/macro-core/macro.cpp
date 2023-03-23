@@ -1,6 +1,7 @@
 #include "macro.hpp"
 #include "macro-action-edit.hpp"
 #include "macro-condition-edit.hpp"
+#include "macro-dock.hpp"
 #include "macro-action-scene-switch.hpp"
 #include "advanced-scene-switcher.hpp"
 #include "hotkey.hpp"
@@ -9,6 +10,7 @@
 #undef max
 #include <chrono>
 #include <unordered_map>
+#include <QMainWindow>
 
 constexpr int perfLogThreshold = 300;
 
@@ -26,6 +28,7 @@ Macro::~Macro()
 	_die = true;
 	Stop();
 	ClearHotkeys();
+	RemoveDock();
 }
 
 std::shared_ptr<Macro>
@@ -227,6 +230,7 @@ void Macro::SetName(const std::string &name)
 {
 	_name = name;
 	SetHotkeysDesc();
+	SetDockWidgetName();
 }
 
 void Macro::ResetTimers()
@@ -337,6 +341,12 @@ bool Macro::Save(obs_data_t *obj) const
 		return true;
 	}
 
+	obs_data_set_bool(obj, "registerDock", _registerDock);
+	// The object name is used to restore the position of the dock
+	if (_registerDock) {
+		SetDockWidgetName();
+	}
+
 	obs_data_set_bool(obj, "registerHotkeys", _registerHotkeys);
 	obs_data_array_t *pauseHotkey = obs_hotkey_save(_pauseHotkey);
 	obs_data_set_array(obj, "pauseHotkey", pauseHotkey);
@@ -425,6 +435,8 @@ bool Macro::Load(obs_data_t *obj)
 		obs_data_release(groupData);
 		return true;
 	}
+
+	EnableDock(obs_data_get_bool(obj, "registerDock"));
 
 	obs_data_set_default_bool(obj, "registerHotkeys", true);
 	_registerHotkeys = obs_data_get_bool(obj, "registerHotkeys");
@@ -565,6 +577,51 @@ void Macro::EnablePauseHotkeys(bool value)
 bool Macro::PauseHotkeysEnabled()
 {
 	return _registerHotkeys;
+}
+
+void Macro::EnableDock(bool value)
+{
+	if (_registerDock == value) {
+		return;
+	}
+
+	RemoveDock();
+	if (!_registerDock) {
+		_dock = new MacroDock(this,
+				      static_cast<QMainWindow *>(
+					      obs_frontend_get_main_window()));
+		_dockAction =
+			static_cast<QAction *>(obs_frontend_add_dock(_dock));
+		SetDockWidgetName();
+	}
+
+	_registerDock = value;
+}
+
+void Macro::RemoveDock()
+{
+	if (_dock) {
+		_dock->close();
+		_dock->deleteLater();
+		_dockAction->deleteLater();
+		_dock = nullptr;
+		_dockAction = nullptr;
+	}
+}
+
+void Macro::SetDockWidgetName() const
+{
+	if (!_dock) {
+		return;
+	}
+	// Set prefix to avoid dock name conflict
+	_dock->setObjectName("ADVSS-" + QString::fromStdString(_name));
+	_dock->SetName(QString::fromStdString(_name));
+
+	if (!_dockAction) {
+		return;
+	}
+	_dockAction->setText(QString::fromStdString(_name));
 }
 
 static void pauseCB(void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed)
