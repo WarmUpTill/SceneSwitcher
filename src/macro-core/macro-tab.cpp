@@ -187,6 +187,9 @@ void AdvSceneSwitcher::RenameCurrentMacro()
 		return;
 	}
 	RenameMacro(macro, QString::fromStdString(name));
+
+	const QSignalBlocker b(ui->macroName);
+	ui->macroName->setText(QString::fromStdString(name));
 }
 
 void AdvSceneSwitcher::on_macroName_editingFinished()
