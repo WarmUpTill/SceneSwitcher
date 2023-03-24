@@ -82,6 +82,10 @@ public:
 
 	void EnableDock(bool);
 	bool DockEnabled() { return _registerDock; }
+	void SetDockHasRunButton(bool value);
+	bool DockHasRunButton() { return _dockHasRunButton; }
+	void SetDockHasPauseButton(bool value);
+	bool DockHasPauseButton() { return _dockHasPauseButton; }
 
 	void ResetTimers();
 
@@ -119,6 +123,8 @@ private:
 	bool _wasExecutedRecently = false;
 	bool _onChangeTriggered = false;
 	bool _registerDock = false;
+	bool _dockHasRunButton = true;
+	bool _dockHasPauseButton = true;
 	MacroDock *_dock = nullptr;
 	QAction *_dockAction = nullptr;
 

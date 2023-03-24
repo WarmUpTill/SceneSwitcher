@@ -14,6 +14,8 @@ MacroDock::MacroDock(Macro *m, QWidget *parent)
 {
 	if (_macro) {
 		setWindowTitle(QString::fromStdString(_macro->Name()));
+		_run->setVisible(_macro->DockHasRunButton());
+		_pauseToggle->setVisible(_macro->DockHasPauseButton());
 	} else {
 		setWindowTitle("<deleted macro>");
 	}
@@ -47,6 +49,16 @@ MacroDock::MacroDock(Macro *m, QWidget *parent)
 void MacroDock::SetName(const QString &name)
 {
 	setWindowTitle(name);
+}
+
+void MacroDock::ShowRunButton(bool value)
+{
+	_run->setVisible(value);
+}
+
+void MacroDock::ShowPauseButton(bool value)
+{
+	_pauseToggle->setVisible(value);
 }
 
 void MacroDock::RunClicked()
