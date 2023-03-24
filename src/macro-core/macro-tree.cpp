@@ -231,6 +231,10 @@ static inline int
 MacroIndexToModelIndex(int realIdx,
 		       const std::deque<std::shared_ptr<Macro>> &macros)
 {
+	if (realIdx == -1) {
+		return -1;
+	}
+
 	int modelIdx = 0;
 	bool inCollapsedGroup = false;
 	uint32_t groupSize = 0;
