@@ -13,6 +13,8 @@ class MacroDock : public OBSDock {
 public:
 	MacroDock(Macro *, QWidget *parent);
 	void SetName(const QString &);
+	void ShowRunButton(bool);
+	void ShowPauseButton(bool);
 
 private slots:
 	void RunClicked();

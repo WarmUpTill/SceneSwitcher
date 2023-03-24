@@ -346,6 +346,8 @@ bool Macro::Save(obs_data_t *obj) const
 	if (_registerDock) {
 		SetDockWidgetName();
 	}
+	obs_data_set_bool(obj, "dockHasRunButton", _dockHasRunButton);
+	obs_data_set_bool(obj, "dockHasPauseButton", _dockHasPauseButton);
 
 	obs_data_set_bool(obj, "registerHotkeys", _registerHotkeys);
 	obs_data_array_t *pauseHotkey = obs_hotkey_save(_pauseHotkey);
@@ -436,6 +438,8 @@ bool Macro::Load(obs_data_t *obj)
 		return true;
 	}
 
+	_dockHasRunButton = obs_data_get_bool(obj, "dockHasRunButton");
+	_dockHasPauseButton = obs_data_get_bool(obj, "dockHasPauseButton");
 	EnableDock(obs_data_get_bool(obj, "registerDock"));
 
 	obs_data_set_default_bool(obj, "registerHotkeys", true);
@@ -596,6 +600,24 @@ void Macro::EnableDock(bool value)
 	}
 
 	_registerDock = value;
+}
+
+void Macro::SetDockHasRunButton(bool value)
+{
+	_dockHasRunButton = value;
+	if (!_dock) {
+		return;
+	}
+	_dock->ShowRunButton(value);
+}
+
+void Macro::SetDockHasPauseButton(bool value)
+{
+	_dockHasPauseButton = value;
+	if (!_dock) {
+		return;
+	}
+	_dock->ShowPauseButton(value);
 }
 
 void Macro::RemoveDock()

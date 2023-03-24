@@ -26,6 +26,8 @@ public:
 			      Macro *macro);
 	static bool AskForSettings(QWidget *parent, MacroProperties &userInput,
 				   Macro *macro);
+private slots:
+	void DockEnableChanged(int);
 
 private:
 	QCheckBox *_executed;
@@ -35,4 +37,6 @@ private:
 	// Current macro specific settings
 	QCheckBox *_currentMacroRegisterHotkeys;
 	QCheckBox *_currentMacroRegisterDock;
+	QCheckBox *_currentMacroDockAddRunButton;
+	QCheckBox *_currentMacroDockAddPauseButton;
 };

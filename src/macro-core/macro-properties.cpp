@@ -43,7 +43,11 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	  _currentMacroRegisterHotkeys(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentDisableHotkeys"))),
 	  _currentMacroRegisterDock(new QCheckBox(obs_module_text(
-		  "AdvSceneSwitcher.macroTab.currentRegisterDock")))
+		  "AdvSceneSwitcher.macroTab.currentRegisterDock"))),
+	  _currentMacroDockAddRunButton(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.currentDockAddRunButton"))),
+	  _currentMacroDockAddPauseButton(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.currentDockAddPauseButton")))
 {
 	setModal(true);
 	setWindowModality(Qt::WindowModality::WindowModal);
@@ -70,6 +74,8 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 		obs_module_text("AdvSceneSwitcher.macroTab.dockSettings"));
 	QVBoxLayout *dockLayout = new QVBoxLayout;
 	dockLayout->addWidget(_currentMacroRegisterDock);
+	dockLayout->addWidget(_currentMacroDockAddRunButton);
+	dockLayout->addWidget(_currentMacroDockAddPauseButton);
 	dockOptions->setLayout(dockLayout);
 
 	QDialogButtonBox *buttonbox = new QDialogButtonBox(
@@ -77,6 +83,9 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	buttonbox->setCenterButtons(true);
 	connect(buttonbox, &QDialogButtonBox::accepted, this, &QDialog::accept);
 	connect(buttonbox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+	connect(_currentMacroRegisterDock, &QCheckBox::stateChanged, this,
+		&MacroPropertiesDialog::DockEnableChanged);
 
 	QVBoxLayout *layout = new QVBoxLayout;
 	layout->addWidget(highlightOptions);
@@ -89,14 +98,25 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	_conditions->setChecked(prop._highlightConditions);
 	_actions->setChecked(prop._highlightActions);
 	_newMacroRegisterHotkeys->setChecked(prop._newMacroRegisterHotkeys);
-	if (macro && !macro->IsGroup()) {
-		_currentMacroRegisterHotkeys->setChecked(
-			macro->PauseHotkeysEnabled());
-		_currentMacroRegisterDock->setChecked(macro->DockEnabled());
-	} else {
+	if (!macro || macro->IsGroup()) {
 		hotkeyOptions->hide();
 		dockOptions->hide();
+		return;
 	}
+	_currentMacroRegisterHotkeys->setChecked(macro->PauseHotkeysEnabled());
+	const bool dockEnabled = macro->DockEnabled();
+	_currentMacroRegisterDock->setChecked(dockEnabled);
+	_currentMacroDockAddRunButton->setChecked(macro->DockHasRunButton());
+	_currentMacroDockAddPauseButton->setChecked(
+		macro->DockHasPauseButton());
+	_currentMacroDockAddRunButton->setVisible(dockEnabled);
+	_currentMacroDockAddPauseButton->setVisible(dockEnabled);
+}
+
+void MacroPropertiesDialog::DockEnableChanged(int enabled)
+{
+	_currentMacroDockAddRunButton->setVisible(enabled);
+	_currentMacroDockAddPauseButton->setVisible(enabled);
 }
 
 bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
@@ -120,5 +140,9 @@ bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
 	macro->EnablePauseHotkeys(
 		dialog._currentMacroRegisterHotkeys->isChecked());
 	macro->EnableDock(dialog._currentMacroRegisterDock->isChecked());
+	macro->SetDockHasRunButton(
+		dialog._currentMacroDockAddRunButton->isChecked());
+	macro->SetDockHasPauseButton(
+		dialog._currentMacroDockAddPauseButton->isChecked());
 	return true;
 }
