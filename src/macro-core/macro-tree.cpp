@@ -28,7 +28,7 @@ MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 
 	if (isGroup) {
 		const auto path = QString::fromStdString(getDataFilePath(
-			"res/images/" + GetThemeTypeName() + "group.svg"));
+			"res/images/" + GetThemeTypeName() + "Group.svg"));
 		QIcon icon(path);
 		QPixmap pixmap = icon.pixmap(QSize(16, 16));
 		_iconLabel = new QLabel();

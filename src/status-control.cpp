@@ -121,7 +121,7 @@ StatusDock::StatusDock(QWidget *parent) : OBSDock(parent)
 	action->setProperty("themeID", QVariant(QString::fromUtf8("cogsIcon")));
 	action->connect(action, &QAction::triggered, OpenSettingsWindow);
 	const auto path = QString::fromStdString(getDataFilePath(
-		"res/images/" + GetThemeTypeName() + "advanced.svg"));
+		"res/images/" + GetThemeTypeName() + "Advanced.svg"));
 	QIcon icon(path);
 	action->setIcon(icon);
 
