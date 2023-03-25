@@ -64,8 +64,8 @@ void MacroSelection::HideSelectedMacro()
 	if (idx == -1) {
 		return;
 	}
-	// +1 for "select macro" entry
-	qobject_cast<QListView *>(view())->setRowHidden(idx + 1, true);
+
+	qobject_cast<QListView *>(view())->setRowHidden(idx, true);
 }
 
 void MacroSelection::ShowAllMacros()
