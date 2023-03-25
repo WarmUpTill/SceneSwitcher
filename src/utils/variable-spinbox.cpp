@@ -7,9 +7,9 @@
 GenericVaraiableSpinbox::GenericVaraiableSpinbox(QWidget *parent,
 						 bool wholeNumber)
 	: QWidget(parent),
-	  _toggleType(new QPushButton()),
 	  _fixedValueInt(new QSpinBox()),
 	  _fixedValueDouble(new QDoubleSpinBox()),
+	  _toggleType(new QPushButton()),
 	  _variable(new VariableSelection(this)),
 	  _wholeNumber(wholeNumber)
 {

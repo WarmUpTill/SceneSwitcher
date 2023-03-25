@@ -204,9 +204,9 @@ MacroConditionSceneOrderEdit::MacroConditionSceneOrderEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionSceneOrder> entryData)
 	: QWidget(parent),
 	  _scenes(new SceneSelectionWidget(window(), true, false, false, true)),
+	  _conditions(new QComboBox()),
 	  _sources(new SceneItemSelectionWidget(parent)),
 	  _sources2(new SceneItemSelectionWidget(parent)),
-	  _conditions(new QComboBox()),
 	  _position(new VariableSpinBox()),
 	  _posInfo(new QLabel(obs_module_text(
 		  "AdvSceneSwitcher.condition.sceneOrder.positionInfo")))
