@@ -16,6 +16,7 @@ runs:
       shell: zsh {0}
       run: |
         if [[ '${{ inputs.target }}' != 'x86_64' ]]; then
+          echo tests skipped!
           exit 0
         fi
         ${{ inputs.workingDirectory }}/build_x86_64/tests/advanced-scene-switcher-tests

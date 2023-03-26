@@ -425,10 +425,11 @@ jobs:
           for file in ${{ github.workspace }}/**/@(*.pkg|*.exe|*.deb|*.zip); do
             echo "    ${file##*/}: $(sha256sum "${file}" | cut -d " " -f 1)" >> ${{ github.workspace }}/CHECKSUMS.txt
           done
+          cat ${{ github.workspace }}/CHECKSUMS.txt
 
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
+        uses: softprops/action-gh-release@v1
         with:
           draft: true
           prerelease: true
