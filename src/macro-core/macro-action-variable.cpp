@@ -119,7 +119,7 @@ void MacroActionVariable::HandleMathExpression(Variable *var)
 
 bool MacroActionVariable::PerformAction()
 {
-	auto var = GetVariableByName(_variableName);
+	auto var = _variable.lock();
 	if (!var) {
 		return true;
 	}
@@ -132,7 +132,7 @@ bool MacroActionVariable::PerformAction()
 		apppend(*var, _strValue);
 		break;
 	case Type::APPEND_VAR: {
-		auto var2 = GetVariableByName(_variable2Name);
+		auto var2 = _variable2.lock();
 		if (!var2) {
 			return true;
 		}
@@ -171,18 +171,18 @@ bool MacroActionVariable::PerformAction()
 	}
 	case Type::SUBSTRING: {
 		if (_regex.Enabled()) {
-			HandleRegexSubString(var);
+			HandleRegexSubString(var.get());
 			return true;
 		}
-		HandleIndexSubString(var);
+		HandleIndexSubString(var.get());
 		return true;
 	}
 	case Type::FIND_AND_REPLACE: {
-		HandleFindAndReplace(var);
+		HandleFindAndReplace(var.get());
 		return true;
 	}
 	case Type::MATH_EXPRESSION: {
-		HandleMathExpression(var);
+		HandleMathExpression(var.get());
 		return true;
 	}
 	}
@@ -193,8 +193,10 @@ bool MacroActionVariable::PerformAction()
 bool MacroActionVariable::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
-	obs_data_set_string(obj, "variableName", _variableName.c_str());
-	obs_data_set_string(obj, "variable2Name", _variable2Name.c_str());
+	obs_data_set_string(obj, "variableName",
+			    GetWeakVariableName(_variable).c_str());
+	obs_data_set_string(obj, "variable2Name",
+			    GetWeakVariableName(_variable2).c_str());
 	obs_data_set_string(obj, "strValue", _strValue.c_str());
 	obs_data_set_double(obj, "numValue", _numValue);
 	obs_data_set_int(obj, "condition", static_cast<int>(_type));
@@ -213,8 +215,10 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 bool MacroActionVariable::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	_variableName = obs_data_get_string(obj, "variableName");
-	_variable2Name = obs_data_get_string(obj, "variable2Name");
+	_variable =
+		GetWeakVariableByName(obs_data_get_string(obj, "variableName"));
+	_variable2 = GetWeakVariableByName(
+		obs_data_get_string(obj, "variable2Name"));
 	_strValue = obs_data_get_string(obj, "strValue");
 	_numValue = obs_data_get_double(obj, "numValue");
 	_type = static_cast<Type>(obs_data_get_int(obj, "condition"));
@@ -238,7 +242,7 @@ bool MacroActionVariable::PostLoad()
 
 std::string MacroActionVariable::GetShortDesc() const
 {
-	return _variableName;
+	return GetWeakVariableName(_variable);
 }
 
 void MacroActionVariable::SetSegmentIndexValue(int value)
@@ -463,8 +467,8 @@ void MacroActionVariableEdit::UpdateEntryData()
 		return;
 	}
 
-	_variables->SetVariable(_entryData->_variableName);
-	_variables2->SetVariable(_entryData->_variable2Name);
+	_variables->SetVariable(_entryData->_variable);
+	_variables2->SetVariable(_entryData->_variable2);
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_type));
 	_strValue->setPlainText(QString::fromStdString(_entryData->_strValue));
 	_numValue->setValue(_entryData->_numValue);
@@ -489,7 +493,7 @@ void MacroActionVariableEdit::VariableChanged(const QString &text)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_variableName = text.toStdString();
+	_entryData->_variable = GetWeakVariableByQString(text);
 }
 
 void MacroActionVariableEdit::Variable2Changed(const QString &text)
@@ -499,7 +503,7 @@ void MacroActionVariableEdit::Variable2Changed(const QString &text)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_variable2Name = text.toStdString();
+	_entryData->_variable2 = GetWeakVariableByQString(text);
 }
 
 void MacroActionVariableEdit::ActionChanged(int value)

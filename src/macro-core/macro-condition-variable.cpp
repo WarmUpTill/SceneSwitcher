@@ -76,8 +76,8 @@ bool MacroConditionVariable::ValueChanged(const Variable &var)
 
 bool MacroConditionVariable::CompareVariables()
 {
-	auto var1 = GetVariableByName(_variableName);
-	auto var2 = GetVariableByName(_variable2Name);
+	auto var1 = _variable.lock();
+	auto var2 = _variable2.lock();
 	if (!var1 || !var2) {
 		return false;
 	}
@@ -105,7 +105,7 @@ bool MacroConditionVariable::CompareVariables()
 
 bool MacroConditionVariable::CheckCondition()
 {
-	auto var = GetVariableByName(_variableName);
+	auto var = _variable.lock();
 	if (!var) {
 		return false;
 	}
@@ -137,8 +137,10 @@ bool MacroConditionVariable::CheckCondition()
 bool MacroConditionVariable::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
-	obs_data_set_string(obj, "variableName", _variableName.c_str());
-	obs_data_set_string(obj, "variable2Name", _variable2Name.c_str());
+	obs_data_set_string(obj, "variableName",
+			    GetWeakVariableName(_variable).c_str());
+	obs_data_set_string(obj, "variable2Name",
+			    GetWeakVariableName(_variable2).c_str());
 	obs_data_set_string(obj, "strValue", _strValue.c_str());
 	obs_data_set_double(obj, "numValue", _numValue);
 	obs_data_set_int(obj, "condition", static_cast<int>(_type));
@@ -149,8 +151,10 @@ bool MacroConditionVariable::Save(obs_data_t *obj) const
 bool MacroConditionVariable::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	_variableName = obs_data_get_string(obj, "variableName");
-	_variable2Name = obs_data_get_string(obj, "variable2Name");
+	_variable =
+		GetWeakVariableByName(obs_data_get_string(obj, "variableName"));
+	_variable2 = GetWeakVariableByName(
+		obs_data_get_string(obj, "variable2Name"));
 	_strValue = obs_data_get_string(obj, "strValue");
 	_numValue = obs_data_get_double(obj, "numValue");
 	_type = static_cast<Type>(obs_data_get_int(obj, "condition"));
@@ -165,7 +169,7 @@ bool MacroConditionVariable::Load(obs_data_t *obj)
 
 std::string MacroConditionVariable::GetShortDesc() const
 {
-	return _variableName;
+	return GetWeakVariableName(_variable);
 }
 
 static inline void populateConditionSelection(QComboBox *list)
@@ -236,8 +240,8 @@ void MacroConditionVariableEdit::UpdateEntryData()
 		return;
 	}
 
-	_variables->SetVariable(_entryData->_variableName);
-	_variables2->SetVariable(_entryData->_variable2Name);
+	_variables->SetVariable(_entryData->_variable);
+	_variables2->SetVariable(_entryData->_variable2);
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_type));
 	_strValue->setPlainText(QString::fromStdString(_entryData->_strValue));
 	_numValue->setValue(_entryData->_numValue);
@@ -252,7 +256,7 @@ void MacroConditionVariableEdit::VariableChanged(const QString &text)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_variableName = text.toStdString();
+	_entryData->_variable = GetWeakVariableByQString(text);
 }
 
 void MacroConditionVariableEdit::Variable2Changed(const QString &text)
@@ -263,7 +267,7 @@ void MacroConditionVariableEdit::Variable2Changed(const QString &text)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_variable2Name = text.toStdString();
+	_entryData->_variable2 = GetWeakVariableByQString(text);
 }
 
 void MacroConditionVariableEdit::ConditionChanged(int value)
