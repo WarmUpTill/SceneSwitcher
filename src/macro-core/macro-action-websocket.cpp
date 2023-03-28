@@ -18,7 +18,7 @@ static std::map<MacroActionWebsocket::Type, std::string> actionTypes = {
 
 void MacroActionWebsocket::SendRequest()
 {
-	auto connection = GetConnectionByName(_connection);
+	auto connection = _connection.lock();
 	if (!connection) {
 		return;
 	}
@@ -46,7 +46,7 @@ void MacroActionWebsocket::LogAction() const
 	switch (_type) {
 	case MacroActionWebsocket::Type::REQUEST:
 		vblog(LOG_INFO, "sent msg \"%s\" via \"%s\"", _message.c_str(),
-		      _connection.c_str());
+		      GetWeakConnectionName(_connection).c_str());
 		break;
 	case MacroActionWebsocket::Type::EVENT:
 		vblog(LOG_INFO, "sent event \"%s\" to connected clients",
@@ -62,7 +62,8 @@ bool MacroActionWebsocket::Save(obs_data_t *obj) const
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
 	_message.Save(obj, "message");
-	obs_data_set_string(obj, "connection", _connection.c_str());
+	obs_data_set_string(obj, "connection",
+			    GetWeakConnectionName(_connection).c_str());
 	return true;
 }
 
@@ -71,14 +72,15 @@ bool MacroActionWebsocket::Load(obs_data_t *obj)
 	MacroAction::Load(obj);
 	_type = static_cast<Type>(obs_data_get_int(obj, "type"));
 	_message.Load(obj, "message");
-	_connection = obs_data_get_string(obj, "connection");
+	_connection =
+		GetWeakConnectionByName(obs_data_get_string(obj, "connection"));
 	return true;
 }
 
 std::string MacroActionWebsocket::GetShortDesc() const
 {
 	if (_type == Type::REQUEST) {
-		return _connection;
+		return GetWeakConnectionName(_connection);
 	}
 	return "";
 }
@@ -206,6 +208,6 @@ void MacroActionWebsocketEdit::ConnectionSelectionChanged(
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_connection = connection.toStdString();
+	_entryData->_connection = GetWeakConnectionByQString(connection);
 	emit(HeaderInfoChanged(connection));
 }

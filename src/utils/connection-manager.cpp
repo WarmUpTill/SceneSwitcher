@@ -133,6 +133,32 @@ Connection *GetConnectionByName(const std::string &name)
 	return nullptr;
 }
 
+std::weak_ptr<Connection> GetWeakConnectionByName(const std::string &name)
+{
+	for (const auto &c : switcher->connections) {
+		if (c->Name() == name) {
+			std::weak_ptr<Connection> wp =
+				std::dynamic_pointer_cast<Connection>(c);
+			return wp;
+		}
+	}
+	return std::weak_ptr<Connection>();
+}
+
+std::weak_ptr<Connection> GetWeakConnectionByQString(const QString &name)
+{
+	return GetWeakConnectionByName(name.toStdString());
+}
+
+std::string GetWeakConnectionName(std::weak_ptr<Connection> connection)
+{
+	auto con = connection.lock();
+	if (!con) {
+		return "invalid connection selection";
+	}
+	return con->Name();
+}
+
 bool ConnectionNameAvailable(const QString &name)
 {
 	return !GetConnectionByName(name);
@@ -182,6 +208,18 @@ void ConnectionSelection::SetConnection(const std::string &con)
 	const QSignalBlocker blocker(_selection);
 	if (!!GetConnectionByName(con)) {
 		_selection->setCurrentText(QString::fromStdString(con));
+	} else {
+		_selection->setCurrentIndex(0);
+	}
+}
+
+void ConnectionSelection::SetConnection(
+	const std::weak_ptr<Connection> &connection_)
+{
+	const QSignalBlocker blocker(_selection);
+	auto connection = connection_.lock();
+	if (connection) {
+		SetConnection(connection->Name());
 	} else {
 		_selection->setCurrentIndex(0);
 	}

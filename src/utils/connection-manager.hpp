@@ -56,6 +56,9 @@ private:
 
 Connection *GetConnectionByName(const QString &);
 Connection *GetConnectionByName(const std::string &);
+std::weak_ptr<Connection> GetWeakConnectionByName(const std::string &name);
+std::weak_ptr<Connection> GetWeakConnectionByQString(const QString &name);
+std::string GetWeakConnectionName(std::weak_ptr<Connection>);
 
 class ConnectionSettingsDialog : public ItemSettingsDialog {
 	Q_OBJECT
@@ -92,4 +95,5 @@ class ConnectionSelection : public ItemSelection {
 public:
 	ConnectionSelection(QWidget *parent = 0);
 	void SetConnection(const std::string &);
+	void SetConnection(const std::weak_ptr<Connection> &);
 };
