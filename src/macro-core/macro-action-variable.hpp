@@ -36,8 +36,8 @@ public:
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
-	std::string _variableName = "";
-	std::string _variable2Name = "";
+	std::weak_ptr<Variable> _variable;
+	std::weak_ptr<Variable> _variable2;
 	std::string _strValue = "";
 	double _numValue = 0;
 	int _subStringStart = 0;

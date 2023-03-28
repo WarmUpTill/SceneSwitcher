@@ -35,8 +35,8 @@ public:
 	};
 
 	Type _type = Type::EQUALS;
-	std::string _variableName = "";
-	std::string _variable2Name = "";
+	std::weak_ptr<Variable> _variable;
+	std::weak_ptr<Variable> _variable2;
 	std::string _strValue = "";
 	double _numValue = 0;
 	RegexConfig _regex;
