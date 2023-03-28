@@ -27,7 +27,7 @@ public:
 	Type _type = Type::REQUEST;
 	StringVariable _message = obs_module_text("AdvSceneSwitcher.enterText");
 	RegexConfig _regex;
-	std::string _connection;
+	std::weak_ptr<Connection> _connection;
 
 private:
 	static bool _registered;

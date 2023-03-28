@@ -538,8 +538,8 @@ void SwitcherData::loadSettings(obs_data_t *obj)
 	// selections to be available.
 	loadSceneGroups(obj);
 	loadVariables(obj);
-	loadMacros(obj);
 	loadConnections(obj);
+	loadMacros(obj);
 	loadWindowTitleSwitches(obj);
 	loadScreenRegionSwitches(obj);
 	loadPauseSwitches(obj);

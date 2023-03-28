@@ -38,7 +38,7 @@ bool MacroConditionWebsocket::CheckCondition()
 		messages = &switcher->websocketMessages;
 		break;
 	case MacroConditionWebsocket::Type::EVENT: {
-		auto connection = GetConnectionByName(_connection);
+		auto connection = _connection.lock();
 		if (!connection) {
 			return false;
 		}
@@ -76,7 +76,8 @@ bool MacroConditionWebsocket::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
 	_message.Save(obj, "message");
 	_regex.Save(obj);
-	obs_data_set_string(obj, "connection", _connection.c_str());
+	obs_data_set_string(obj, "connection",
+			    GetWeakConnectionName(_connection).c_str());
 	return true;
 }
 
@@ -91,7 +92,8 @@ bool MacroConditionWebsocket::Load(obs_data_t *obj)
 		_regex.CreateBackwardsCompatibleRegex(
 			obs_data_get_bool(obj, "useRegex"), false);
 	}
-	_connection = obs_data_get_string(obj, "connection");
+	_connection =
+		GetWeakConnectionByName(obs_data_get_string(obj, "connection"));
 	return true;
 }
 
@@ -100,7 +102,7 @@ std::string MacroConditionWebsocket::GetShortDesc() const
 	if (_type == Type::REQUEST) {
 		return "";
 	}
-	return _connection;
+	return GetWeakConnectionName(_connection);
 }
 
 static inline void populateConditionSelection(QComboBox *list)
@@ -237,7 +239,7 @@ void MacroConditionWebsocketEdit::ConnectionSelectionChanged(
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	_entryData->_connection = connection.toStdString();
+	_entryData->_connection = GetWeakConnectionByQString(connection);
 	emit(HeaderInfoChanged(connection));
 }
 
