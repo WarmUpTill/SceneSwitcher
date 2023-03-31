@@ -11,8 +11,10 @@ target_include_directories(
   ${PROJECT_NAME}
   PRIVATE "${ADVSS_SOURCE_DIR}/src" "${ADVSS_SOURCE_DIR}/src/legacy"
           "${ADVSS_SOURCE_DIR}/src/macro-core" "${ADVSS_SOURCE_DIR}/src/utils"
-          "${ADVSS_SOURCE_DIR}/forms")
-install(TARGETS advanced-scene-switcher-lib
-        DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+          "${ADVSS_SOURCE_DIR}/forms" "${ADVSS_SOURCE_DIR}/deps/exprtk")
+if(MSVC)
+  target_compile_options(${PROJECT_NAME} PUBLIC /MP /d2FH4- /wd4267 /wd4267
+                                                /bigobj)
+endif()
 
 enable_testing()

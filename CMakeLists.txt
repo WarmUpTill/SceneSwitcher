@@ -343,7 +343,8 @@ target_include_directories(
   ${LIB_NAME}
   PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/deps/asio/asio/include"
          "${CMAKE_CURRENT_SOURCE_DIR}/deps/websocketpp"
-         "${CMAKE_CURRENT_SOURCE_DIR}/deps/obs-websocket/lib")
+         "${CMAKE_CURRENT_SOURCE_DIR}/deps/obs-websocket/lib"
+         "${CMAKE_CURRENT_SOURCE_DIR}/deps/exprtk")
 
 # --- End of section ---
 
@@ -354,7 +355,8 @@ if(OS_WINDOWS)
 
   target_compile_definitions(${LIB_NAME} PRIVATE UNICODE _UNICODE)
   if(MSVC)
-    target_compile_options(${LIB_NAME} PUBLIC /MP /d2FH4- /wd4267 /wd4267)
+    target_compile_options(${LIB_NAME} PUBLIC /MP /d2FH4- /wd4267 /wd4267
+                                              /bigobj)
   endif()
   target_sources(${LIB_NAME} PRIVATE src/win/advanced-scene-switcher-win.cpp)
   add_definitions(-D_WEBSOCKETPP_CPP11_STL_)
