@@ -125,6 +125,13 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 	}
 
 	if (macros.size() == 1) {
+		QString deleteWarning = obs_module_text(
+			"AdvSceneSwitcher.macroTab.deleteSingleMacroConfirmation");
+		if (!DisplayMessage(deleteWarning.arg(QString::fromStdString(
+					    macros.at(0)->Name())),
+				    true)) {
+			return;
+		}
 		RemoveMacro(macros.at(0));
 		return;
 	}
