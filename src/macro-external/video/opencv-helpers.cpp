@@ -147,6 +147,10 @@ cv::Mat preprocessForOCR(const QImage &image, const QColor &color)
 std::string runOCR(tesseract::TessBaseAPI *ocr, const QImage &image,
 		   const QColor &color)
 {
+	if (image.isNull()) {
+		return "";
+	}
+
 #ifdef OCR_SUPPORT
 	auto mat = preprocessForOCR(image, color);
 	ocr->SetImage(mat.data, mat.cols, mat.rows, 1, mat.step);
