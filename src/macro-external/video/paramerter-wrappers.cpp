@@ -32,7 +32,7 @@ bool PatternMatchParameters::Load(obs_data_t *obj)
 	}
 	useAlphaAsMask = obs_data_get_bool(data, "useAlphaAsMask");
 	// TODO: Remove this fallback in a future version
-	if (!obs_data_has_user_value(obj, "matchMode")) {
+	if (!obs_data_has_user_value(data, "matchMode")) {
 		matchMode = cv::TM_CCORR_NORMED;
 	} else {
 		matchMode = static_cast<cv::TemplateMatchModes>(
