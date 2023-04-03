@@ -128,8 +128,17 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
   local product_name
   local product_version
+  local git_tag="$(git describe --tags)"
+
   read -r product_name product_version <<< \
     "$(jq -r '. | {name, version} | join(" ")' ${project_root}/buildspec.json)"
+
+  if [[ "${git_tag}" =~ '^([0-9]+\.){0,2}(\*|[0-9]+)$' ]] {
+    log_info "Using git tag as version identifier '${git_tag}'"
+    product_version="${git_tag}"
+  } else {
+    log_info "Using buildspec.json version identifier '${product_version}'"
+  }
 
   if [[ ${host_os} == 'macos' ]] {
     autoload -Uz check_packages read_codesign read_codesign_installer read_codesign_pass
