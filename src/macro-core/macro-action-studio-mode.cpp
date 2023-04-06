@@ -9,16 +9,6 @@ bool MacroActionSudioMode::_registered = MacroActionFactory::Register(
 	{MacroActionSudioMode::Create, MacroActionSudioModeEdit::Create,
 	 "AdvSceneSwitcher.action.studioMode"});
 
-// TODO: Remove in future version (backwards compatibility)
-static const std::string idOld1 = "scene_swap";
-static const std::string idOld2 = "preview_scene";
-static bool oldRegisterd1 = MacroActionFactory::Register(
-	idOld1, {MacroActionSudioMode::Create, MacroActionSudioModeEdit::Create,
-		 "AdvSceneSwitcher.action.studioMode"});
-static bool oldRegisterd2 = MacroActionFactory::Register(
-	idOld2, {MacroActionSudioMode::Create, MacroActionSudioModeEdit::Create,
-		 "AdvSceneSwitcher.action.studioMode"});
-
 const static std::map<StudioModeAction, std::string> actionTypes = {
 	{StudioModeAction::SWAP_SCENE,
 	 "AdvSceneSwitcher.action.studioMode.type.swap"},
@@ -98,10 +88,6 @@ bool MacroActionSudioMode::Load(obs_data_t *obj)
 	_action =
 		static_cast<StudioModeAction>(obs_data_get_int(obj, "action"));
 	_scene.Load(obj);
-	// TODO: Remove in future version (backwards compatibility)
-	if (obs_data_get_string(obj, "id") == idOld2) {
-		_action = StudioModeAction::SET_SCENE;
-	}
 	return true;
 }
 
