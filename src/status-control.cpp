@@ -146,6 +146,9 @@ StatusDock::StatusDock(QWidget *parent) : OBSDock(parent)
 	wrapper->setFrameShadow(QFrame::Sunken);
 	wrapper->setLayout(layout);
 	setWidget(wrapper);
+
+	setFloating(true);
+	hide();
 }
 
 void SetupDock()

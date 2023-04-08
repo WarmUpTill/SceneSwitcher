@@ -44,6 +44,9 @@ MacroDock::MacroDock(Macro *m, QWidget *parent)
 	wrapper->setFrameShadow(QFrame::Sunken);
 	wrapper->setLayout(layout);
 	setWidget(wrapper);
+
+	setFloating(true);
+	hide();
 }
 
 void MacroDock::SetName(const QString &name)

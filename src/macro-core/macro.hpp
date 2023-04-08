@@ -4,6 +4,7 @@
 #include "macro-ref.hpp"
 
 #include <QString>
+#include <QByteArray>
 #include <string>
 #include <deque>
 #include <memory>
@@ -96,7 +97,10 @@ private:
 	void RunActions(bool &ret, bool ignorePause);
 	void RunActions(bool ignorePause);
 	void SetOnChangeHighlight();
+	bool DockIsVisible() const;
 	void SetDockWidgetName() const;
+	void SaveDockSettings(obs_data_t *obj) const;
+	void LoadDockSettings(obs_data_t *obj);
 	void RemoveDock();
 
 	std::string _name = "";
@@ -125,6 +129,10 @@ private:
 	bool _registerDock = false;
 	bool _dockHasRunButton = true;
 	bool _dockHasPauseButton = true;
+	bool _dockIsFloating = true;
+	bool _dockIsVisible = false;
+	Qt::DockWidgetArea _dockArea;
+	QByteArray _dockGeo;
 	MacroDock *_dock = nullptr;
 	QAction *_dockAction = nullptr;
 
