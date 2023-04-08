@@ -245,7 +245,7 @@ MacroIndexToModelIndex(int realIdx,
 			inCollapsedGroup = false;
 			continue;
 		}
-		const auto &m = macros[i];
+		const auto &m = macros.at(i);
 		inCollapsedGroup = m->IsGroup() && m->IsCollapsed();
 		groupSize = m->GroupSize();
 		modelIdx++;
@@ -256,15 +256,24 @@ MacroIndexToModelIndex(int realIdx,
 void MacroTreeModel::MoveItemBefore(const std::shared_ptr<Macro> &item,
 				    const std::shared_ptr<Macro> &before)
 {
-	if (item == before) {
+	if (!item || !before || item == before) {
 		return;
 	}
 
-	auto modelFromEndIdx = GetItemModelIndex(item);
-	auto modelFromIdx = modelFromEndIdx;
-	auto modelTo = GetItemModelIndex(before);
-	auto macroFrom = GetItemMacroIndex(item);
-	auto macroTo = GetItemMacroIndex(before);
+	int modelFromIdx = 0, modelFromEndIdx = 0, modelTo = 0, macroFrom = 0,
+	    macroTo = 0;
+	try {
+		modelFromEndIdx = GetItemModelIndex(item);
+		modelFromIdx = modelFromEndIdx;
+		modelTo = GetItemModelIndex(before);
+		macroFrom = GetItemMacroIndex(item);
+		macroTo = GetItemMacroIndex(before);
+	} catch (const std::out_of_range &) {
+		blog(LOG_WARNING,
+		     "error while trying to move item \"%s\" before \"%s\"",
+		     item->Name().c_str(), before->Name().c_str());
+		return;
+	}
 
 	if (before->IsSubitem()) {
 		modelTo -= before->IsCollapsed() ? 0 : before->GroupSize();
@@ -300,15 +309,24 @@ void MacroTreeModel::MoveItemBefore(const std::shared_ptr<Macro> &item,
 void MacroTreeModel::MoveItemAfter(const std::shared_ptr<Macro> &item,
 				   const std::shared_ptr<Macro> &after)
 {
-	if (item == after) {
+	if (!item || !after || item == after) {
 		return;
 	}
 
-	auto modelFromIdx = GetItemModelIndex(item);
-	auto modelFromEndIdx = modelFromIdx;
-	auto modelTo = GetItemModelIndex(after);
-	auto macroFrom = GetItemMacroIndex(item);
-	auto macroTo = GetItemMacroIndex(after);
+	int modelFromIdx = 0, modelFromEndIdx = 0, modelTo = 0, macroFrom = 0,
+	    macroTo = 0;
+	try {
+		modelFromIdx = GetItemModelIndex(item);
+		modelFromEndIdx = modelFromIdx;
+		modelTo = GetItemModelIndex(after);
+		macroFrom = GetItemMacroIndex(item);
+		macroTo = GetItemMacroIndex(after);
+	} catch (const std::out_of_range &) {
+		blog(LOG_WARNING,
+		     "error while trying to move item \"%s\" after \"%s\"",
+		     item->Name().c_str(), after->Name().c_str());
+		return;
+	}
 
 	if (after->IsGroup()) {
 		modelTo += after->IsCollapsed() ? 0 : after->GroupSize();
