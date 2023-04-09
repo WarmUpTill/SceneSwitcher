@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QDialog>
 #include <QCheckBox>
+#include <QGroupBox>
 #include <obs-data.h>
 
 class MacroProperties {
@@ -39,4 +40,5 @@ private:
 	QCheckBox *_currentMacroRegisterDock;
 	QCheckBox *_currentMacroDockAddRunButton;
 	QCheckBox *_currentMacroDockAddPauseButton;
+	QGroupBox *_dockOptions;
 };

@@ -1,7 +1,6 @@
 #include "macro-properties.hpp"
 
 #include <QVBoxLayout>
-#include <QGroupBox>
 #include <QDialogButtonBox>
 #include <obs-module.h>
 
@@ -52,8 +51,6 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	setModal(true);
 	setWindowModality(Qt::WindowModality::WindowModal);
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-	setMinimumWidth(500);
-	setMinimumHeight(300);
 
 	auto highlightOptions = new QGroupBox(
 		obs_module_text("AdvSceneSwitcher.macroTab.highlightSettings"));
@@ -70,13 +67,13 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	hotkeyLayout->addWidget(_currentMacroRegisterHotkeys);
 	hotkeyOptions->setLayout(hotkeyLayout);
 
-	auto dockOptions = new QGroupBox(
+	_dockOptions = new QGroupBox(
 		obs_module_text("AdvSceneSwitcher.macroTab.dockSettings"));
 	QVBoxLayout *dockLayout = new QVBoxLayout;
 	dockLayout->addWidget(_currentMacroRegisterDock);
 	dockLayout->addWidget(_currentMacroDockAddRunButton);
 	dockLayout->addWidget(_currentMacroDockAddPauseButton);
-	dockOptions->setLayout(dockLayout);
+	_dockOptions->setLayout(dockLayout);
 
 	QDialogButtonBox *buttonbox = new QDialogButtonBox(
 		QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -90,7 +87,7 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	QVBoxLayout *layout = new QVBoxLayout;
 	layout->addWidget(highlightOptions);
 	layout->addWidget(hotkeyOptions);
-	layout->addWidget(dockOptions);
+	layout->addWidget(_dockOptions);
 	layout->addWidget(buttonbox);
 	setLayout(layout);
 
@@ -100,7 +97,7 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	_newMacroRegisterHotkeys->setChecked(prop._newMacroRegisterHotkeys);
 	if (!macro || macro->IsGroup()) {
 		hotkeyOptions->hide();
-		dockOptions->hide();
+		_dockOptions->hide();
 		return;
 	}
 	_currentMacroRegisterHotkeys->setChecked(macro->PauseHotkeysEnabled());
@@ -117,6 +114,10 @@ void MacroPropertiesDialog::DockEnableChanged(int enabled)
 {
 	_currentMacroDockAddRunButton->setVisible(enabled);
 	_currentMacroDockAddPauseButton->setVisible(enabled);
+	_dockOptions->adjustSize();
+	_dockOptions->updateGeometry();
+	adjustSize();
+	updateGeometry();
 }
 
 bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
