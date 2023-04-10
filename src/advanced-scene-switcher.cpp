@@ -255,7 +255,7 @@ void SwitcherData::Thread()
 			}
 		}
 
-		ClearWebsocketMessages();
+		resetForNextInterval();
 
 		if (match) {
 			if (macroMatch) {
@@ -306,6 +306,16 @@ void SwitcherData::setPreconditions()
 	cursorPosChanged = cursorPos.first != switcher->lastCursorPos.first ||
 			   cursorPos.second != switcher->lastCursorPos.second;
 	lastCursorPos = getCursorPos();
+}
+
+void SwitcherData::resetForNextInterval()
+{
+	// Core reset functions
+	ClearWebsocketMessages();
+	// Plugin reset functions
+	for (const auto &func : resetForNextIntervalFuncs) {
+		func();
+	}
 }
 
 bool SwitcherData::checkForMatch(OBSWeakSource &scene,
@@ -414,9 +424,20 @@ void switchPreviewScene(const OBSWeakSource &ws)
 	obs_source_release(source);
 }
 
+static void ResetMacros()
+{
+	for (auto &m : switcher->macros) {
+		m->ResetRunCount();
+		m->ResetTimers();
+	}
+}
+
 void SwitcherData::Start()
 {
 	if (!(th && th->isRunning())) {
+		resetForNextInterval();
+		ResetMacros();
+
 		stop = false;
 		th = new SwitcherThread();
 		th->start((QThread::Priority)threadPriority);
@@ -441,14 +462,6 @@ void SwitcherData::Start()
 	}
 }
 
-void ResetMacros()
-{
-	for (auto &m : switcher->macros) {
-		m->ResetRunCount();
-		m->ResetTimers();
-	}
-}
-
 void SwitcherData::Stop()
 {
 	if (th && th->isRunning()) {
@@ -462,7 +475,6 @@ void SwitcherData::Stop()
 		th = nullptr;
 
 		writeToStatusFile("Advanced Scene Switcher stopped");
-		ResetMacros();
 	}
 
 	server.stop();

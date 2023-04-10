@@ -271,6 +271,9 @@ struct SwitcherData {
 	void writeToStatusFile(const QString &msg);
 
 	void setPreconditions();
+	void resetForNextInterval();
+	void addResetForNextIntervalFunction(std::function<void()>);
+	std::vector<std::function<void()>> resetForNextIntervalFuncs;
 	bool checkForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
 			   int &linger, bool &setPreviousSceneAsMatch,
 			   bool &macroMatch);

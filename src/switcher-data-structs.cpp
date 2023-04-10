@@ -133,3 +133,10 @@ void SwitcherData::saveVersion(obs_data_t *obj,
 {
 	obs_data_set_string(obj, "version", currentVersion.c_str());
 }
+
+void SwitcherData::addResetForNextIntervalFunction(
+	std::function<void()> function)
+{
+	std::lock_guard<std::mutex> lock(switcher->m);
+	resetForNextIntervalFuncs.emplace_back(function);
+}
