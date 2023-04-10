@@ -43,9 +43,7 @@ AdvSceneSwitcher::AdvSceneSwitcher(QWidget *parent)
 {
 	switcher->settingsWindowOpened = true;
 	ui->setupUi(this);
-
 	std::lock_guard<std::mutex> lock(switcher->m);
-
 	switcher->Prune();
 	loadUI();
 }
@@ -58,26 +56,51 @@ AdvSceneSwitcher::~AdvSceneSwitcher()
 	}
 }
 
-bool translationAvailable()
+static bool translationAvailable()
 {
 	return !!strcmp(obs_module_text("AdvSceneSwitcher.pluginName"),
 			"AdvSceneSwitcher.pluginName");
 }
 
+static void DisplayMissingDependencyWarning()
+{
+	if (!switcher->warnPluginLoadFailure ||
+	    switcher->loadFailureLibs.isEmpty()) {
+		return;
+	}
+
+	QString failedLibsString = "<ul>";
+	for (const auto &lib : switcher->loadFailureLibs) {
+		failedLibsString += "<li>" + lib + "</li>";
+	}
+	failedLibsString += "</ul>";
+	QString warning(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.warnPluginLoadFailureMessage"));
+	DisplayMessage(warning.arg(failedLibsString));
+}
+
+static void DisplayMissingDataDirWarning()
+{
+	if (translationAvailable()) {
+		return;
+	}
+
+	QString msg = "Failed to find plug-in's 'data' directory.\n"
+		      "Please check installation instructions!\n\n"
+		      "Data most likely expected at:\n\n";
+#ifdef _WIN32
+	msg += QString::fromStdString(
+		(std::filesystem::current_path().string()));
+	msg += "/";
+#endif
+	msg += obs_get_module_data_path(obs_current_module());
+	DisplayMessage(msg);
+}
+
 void AdvSceneSwitcher::loadUI()
 {
-	if (!translationAvailable()) {
-		QString msg = "Failed to find plug-in's 'data' directory.\n"
-			      "Please check installation instructions!\n\n"
-			      "Data most likely expected at:\n\n";
-#ifdef _WIN32
-		msg += QString::fromStdString(
-			(std::filesystem::current_path().string()));
-		msg += "/";
-#endif
-		msg += obs_get_module_data_path(obs_current_module());
-		(void)DisplayMessage(msg);
-	}
+	DisplayMissingDataDirWarning();
+	DisplayMissingDependencyWarning();
 
 	setupGeneralTab();
 	setupTitleTab();
@@ -687,6 +710,7 @@ void LoadPlugins()
 			blog(LOG_WARNING, "failed to load \"%s\": %s",
 			     file.toStdString().c_str(),
 			     lib->errorString().toStdString().c_str());
+			switcher->loadFailureLibs << file;
 		}
 	}
 }

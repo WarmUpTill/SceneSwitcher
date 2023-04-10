@@ -106,6 +106,9 @@ struct SwitcherData {
 
 	int interval = default_interval;
 
+	QStringList loadFailureLibs;
+	bool warnPluginLoadFailure = true;
+
 	obs_source_t *waitScene = nullptr;
 	OBSWeakSource currentScene = nullptr;
 	OBSWeakSource previousScene = nullptr;

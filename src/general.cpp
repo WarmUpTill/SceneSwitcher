@@ -172,6 +172,15 @@ void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 	switcher->disableHints = state;
 }
 
+void AdvSceneSwitcher::on_warnPluginLoadFailure_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	switcher->warnPluginLoadFailure = state;
+}
+
 bool isLegacyTab(const QString &name)
 {
 	return name == obs_module_text(
@@ -617,6 +626,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_bool(obj, "showSystemTrayNotifications",
 			  showSystemTrayNotifications);
 	obs_data_set_bool(obj, "disableHints", disableHints);
+	obs_data_set_bool(obj, "warnPluginLoadFailure", warnPluginLoadFailure);
 	obs_data_set_bool(obj, "hideLegacyTabs", hideLegacyTabs);
 
 	obs_data_set_int(obj, "priority0", functionNamesByPriority[0]);
@@ -673,6 +683,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	showSystemTrayNotifications =
 		obs_data_get_bool(obj, "showSystemTrayNotifications");
 	disableHints = obs_data_get_bool(obj, "disableHints");
+	obs_data_set_default_bool(obj, "warnPluginLoadFailure", true);
+	warnPluginLoadFailure = obs_data_get_bool(obj, "warnPluginLoadFailure");
 	obs_data_set_default_bool(obj, "hideLegacyTabs", true);
 	hideLegacyTabs = obs_data_get_bool(obj, "hideLegacyTabs");
 
@@ -971,6 +983,7 @@ void AdvSceneSwitcher::setupGeneralTab()
 	ui->showTrayNotifications->setChecked(
 		switcher->showSystemTrayNotifications);
 	ui->uiHintsDisable->setChecked(switcher->disableHints);
+	ui->warnPluginLoadFailure->setChecked(switcher->warnPluginLoadFailure);
 	ui->hideLegacyTabs->setChecked(switcher->hideLegacyTabs);
 
 	for (int p : switcher->functionNamesByPriority) {
