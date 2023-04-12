@@ -7,6 +7,8 @@
 #include <QFileDialog>
 #include <QStandardPaths>
 
+namespace advss {
+
 void AdvSceneSwitcher::reject()
 {
 	close();
@@ -1074,3 +1076,5 @@ void AdvSceneSwitcher::setupGeneralTab()
 
 	setWindowTitle(windowTitle() + " - " + g_GIT_TAG);
 }
+
+} // namespace advss

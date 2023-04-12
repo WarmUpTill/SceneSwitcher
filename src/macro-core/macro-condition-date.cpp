@@ -5,6 +5,8 @@
 
 #include <QCalendarWidget>
 
+namespace advss {
+
 const std::string MacroConditionDate::id = "date";
 constexpr const char dateFormat[] = "yyyy MM dd hh mm ss";
 
@@ -743,3 +745,5 @@ void MacroConditionDateEdit::ShowSecondDateSelection(bool visible)
 	_date2->setVisible(visible);
 	_time2->setVisible(visible);
 }
+
+} // namespace advss

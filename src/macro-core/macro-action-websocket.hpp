@@ -8,6 +8,8 @@
 #include <QListWidget>
 #include <QStringList>
 
+namespace advss {
+
 class MacroActionWebsocket : public MacroAction {
 public:
 	MacroActionWebsocket(Macro *m) : MacroAction(m) {}
@@ -74,3 +76,5 @@ private:
 	QHBoxLayout *_editLayout;
 	bool _loading = true;
 };
+
+} // namespace advss

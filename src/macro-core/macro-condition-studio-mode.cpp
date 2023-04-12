@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionStudioMode::id = "studio_mode";
 
 bool MacroConditionStudioMode::_registered = MacroConditionFactory::Register(
@@ -155,3 +157,5 @@ void MacroConditionStudioModeEdit::SetWidgetVisibility()
 	_scenes->setVisible(_entryData->_condition ==
 			    StudioModeCondition::PREVIEW_SCENE);
 }
+
+} // namespace advss

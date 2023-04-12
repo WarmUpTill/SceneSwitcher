@@ -35,6 +35,8 @@ public:
 }
 #endif
 
+namespace advss {
+
 constexpr int minMinNeighbors = 3;
 constexpr int maxMinNeighbors = 6;
 constexpr double defaultScaleFactor = 1.1;
@@ -60,3 +62,5 @@ cv::Mat preprocessForOCR(const QImage &image, const QColor &color);
 std::string runOCR(tesseract::TessBaseAPI *, const QImage &, const QColor &);
 cv::Mat QImageToMat(const QImage &img);
 QImage MatToQImage(const cv::Mat &mat);
+
+} // namespace advss

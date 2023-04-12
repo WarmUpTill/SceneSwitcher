@@ -1,6 +1,8 @@
 #include "transition-selection.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 void TransitionSelection::Save(obs_data_t *obj, const char *name,
 			       const char *typeName) const
 {
@@ -169,3 +171,5 @@ void TransitionSelectionWidget::SelectionChanged(const QString &name)
 
 	emit TransitionChanged(t);
 }
+
+} // namespace advss

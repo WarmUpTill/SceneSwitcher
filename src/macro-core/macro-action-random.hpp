@@ -6,6 +6,8 @@
 #include <QListWidget>
 #include <QCheckBox>
 
+namespace advss {
+
 class MacroActionRandom : public MultiMacroRefAction {
 public:
 	MacroActionRandom(Macro *m) : MacroAction(m), MultiMacroRefAction(m) {}
@@ -60,3 +62,5 @@ private:
 	QCheckBox *_allowRepeat;
 	bool _loading = true;
 };
+
+} // namespace advss

@@ -5,6 +5,8 @@
 #include <variable-spinbox.hpp>
 #include <util/platform.h>
 
+namespace advss {
+
 class MacroConditionStats : public MacroCondition {
 public:
 	MacroConditionStats(Macro *m);
@@ -116,3 +118,5 @@ private:
 
 	bool _loading = true;
 };
+
+} // namespace advss

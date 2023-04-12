@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 constexpr int64_t nsPerMs = 1000000;
 const std::string MacroActionAudio::id = "audio";
 
@@ -622,3 +624,5 @@ void MacroActionAudioEdit::FadeTypeChanged(int value)
 	_entryData->_fadeType = static_cast<MacroActionAudio::FadeType>(value);
 	SetWidgetVisibility();
 }
+
+} // namespace advss

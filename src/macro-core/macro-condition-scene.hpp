@@ -7,6 +7,8 @@
 #include <QCheckBox>
 #include <QLineEdit>
 
+namespace advss {
+
 class MacroConditionScene : public MacroCondition {
 public:
 	MacroConditionScene(Macro *m) : MacroCondition(m, true) {}
@@ -78,3 +80,5 @@ private:
 	void SetWidgetVisibility();
 	bool _loading = true;
 };
+
+} // namespace advss

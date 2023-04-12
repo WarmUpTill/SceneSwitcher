@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionMacro::id = "macro";
 
 bool MacroConditionMacro::_registered = MacroConditionFactory::Register(
@@ -578,3 +580,5 @@ void MacroConditionMacroEdit::Replace(int idx, const std::string &name)
 	_entryData->_macros[idx] = macro;
 	adjustSize();
 }
+
+} // namespace advss

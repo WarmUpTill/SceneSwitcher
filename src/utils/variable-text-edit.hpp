@@ -2,6 +2,8 @@
 #include "resizing-text-edit.hpp"
 #include "variable-string.hpp"
 
+namespace advss {
+
 class VariableTextEdit : public ResizingPlainTextEdit {
 	Q_OBJECT
 public:
@@ -11,3 +13,5 @@ public:
 
 private:
 };
+
+} // namespace advss

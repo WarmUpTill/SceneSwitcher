@@ -3,6 +3,8 @@
 #include <QWidget>
 #include <QComboBox>
 
+namespace advss {
+
 class MacroConditionPluginState : public MacroCondition {
 public:
 	MacroConditionPluginState(Macro *m) : MacroCondition(m) {}
@@ -62,3 +64,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

@@ -3,6 +3,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 bool IdleData::pause = false;
 IdleWidget *idleWidget = nullptr;
 
@@ -285,3 +287,5 @@ void IdleWidget::DurationChanged(int dur)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->idleData.time = dur;
 }
+
+} // namespace advss

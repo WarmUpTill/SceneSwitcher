@@ -13,6 +13,8 @@
 #include <map>
 #include <thread>
 
+namespace advss {
+
 bool canSimulateKeyPresses = false;
 
 std::chrono::high_resolution_clock::time_point lastMouseLeftClickTime{};
@@ -453,3 +455,5 @@ void PressKeys(const std::vector<HotkeyType> keys, int duration)
 void PlatformCleanup() {}
 
 void PlatformInit() {}
+
+} // namespace advss

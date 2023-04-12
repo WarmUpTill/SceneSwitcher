@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionProfile::id = "profile";
 
 bool MacroActionProfile::_registered = MacroActionFactory::Register(
@@ -81,3 +83,5 @@ void MacroActionProfileEdit::ProfileChanged(const QString &text)
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
+
+} // namespace advss

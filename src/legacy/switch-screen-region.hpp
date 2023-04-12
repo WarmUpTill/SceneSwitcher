@@ -9,6 +9,8 @@
 #include <QSpinBox>
 #include "switch-generic.hpp"
 
+namespace advss {
+
 constexpr auto screen_region_func = 4;
 
 struct ScreenRegionSwitch : SceneSwitcherEntry {
@@ -55,3 +57,5 @@ private:
 
 	void drawFrame();
 };
+
+} // namespace advss

@@ -1,6 +1,8 @@
 #include "macro-action.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 MacroAction::MacroAction(Macro *m, bool supportsVariableValue)
 	: MacroSegment(m, supportsVariableValue)
 {
@@ -47,3 +49,5 @@ bool MultiMacroRefAction::PostLoad()
 	}
 	return true;
 }
+
+} // namespace advss

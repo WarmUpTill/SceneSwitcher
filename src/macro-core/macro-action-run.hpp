@@ -2,6 +2,8 @@
 #include "macro-action-edit.hpp"
 #include "process-config.hpp"
 
+namespace advss {
+
 class MacroActionRun : public MacroAction {
 public:
 	MacroActionRun(Macro *m) : MacroAction(m) {}
@@ -50,3 +52,5 @@ private:
 	ProcessConfigEdit *_procConfig;
 	bool _loading = true;
 };
+
+} // namespace advss

@@ -1,5 +1,7 @@
 #include "paramerter-wrappers.hpp"
 
+namespace advss {
+
 bool PatternMatchParameters::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
@@ -312,3 +314,5 @@ void OCRParameters::Setup()
 	}
 	initDone = true;
 }
+
+} // namespace advss

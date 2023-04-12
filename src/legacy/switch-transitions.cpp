@@ -3,6 +3,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 constexpr auto default_def_transition_dealy = 300;
 bool DefaultSceneTransition::pause = false;
 unsigned int DefaultSceneTransition::delay = default_def_transition_dealy;
@@ -592,3 +594,5 @@ void DefaultSceneTransition::setTransition()
 	t = std::thread(setTransitionDelayed, transition, delay);
 	t.detach();
 }
+
+} // namespace advss

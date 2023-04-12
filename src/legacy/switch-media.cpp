@@ -1,6 +1,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 bool MediaSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
@@ -560,3 +562,5 @@ void MediaSwitchWidget::TimeChanged(int time)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->time = time;
 }
+
+} // namespace advss

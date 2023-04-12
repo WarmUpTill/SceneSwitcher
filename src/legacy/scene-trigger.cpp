@@ -3,6 +3,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 bool SceneTrigger::pause = false;
 static QMetaObject::Connection addPulse;
 
@@ -569,3 +571,5 @@ void SceneTriggerWidget::AudioSourceChanged(const QString &text)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->audioSource = GetWeakSourceByQString(text);
 }
+
+} // namespace advss

@@ -2,6 +2,8 @@
 
 #include <obs-module.h>
 
+namespace advss {
+
 constexpr std::string_view typeSaveName = "type";
 constexpr std::string_view itemSaveName = "item";
 constexpr std::string_view idxSaveName = "idx";
@@ -490,3 +492,5 @@ void SceneItemSelectionWidget::SetupIdxSelection(int sceneItemCount)
 	}
 	adjustSize();
 }
+
+} // namespace advss

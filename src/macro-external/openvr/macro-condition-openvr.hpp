@@ -6,6 +6,8 @@
 #include <QPushButton>
 #include <QTimer>
 
+namespace advss {
+
 class MacroConditionOpenVR : public MacroCondition {
 public:
 	MacroConditionOpenVR(Macro *m) : MacroCondition(m) {}
@@ -68,3 +70,5 @@ private:
 	QTimer _timer;
 	bool _loading = true;
 };
+
+} // namespace advss

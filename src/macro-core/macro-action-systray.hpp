@@ -3,6 +3,8 @@
 
 #include <QLineEdit>
 
+namespace advss {
+
 class MacroActionSystray : public MacroAction {
 public:
 	MacroActionSystray(Macro *m) : MacroAction(m) {}
@@ -48,3 +50,5 @@ private:
 	QLineEdit *_msg;
 	bool _loading = true;
 };
+
+} // namespace advss

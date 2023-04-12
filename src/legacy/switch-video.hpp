@@ -11,6 +11,8 @@
 #include "switch-generic.hpp"
 #include "screenshot-helper.hpp"
 
+namespace advss {
+
 constexpr auto video_func = 9;
 
 enum class videoSwitchType {
@@ -80,3 +82,5 @@ private:
 
 	VideoSwitch *switchData;
 };
+
+} // namespace advss

@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 constexpr std::string_view typeSaveName = "type";
 constexpr std::string_view nameSaveName = "name";
 constexpr std::string_view selectionSaveName = "sceneSelection";
@@ -454,3 +456,5 @@ void SceneSelectionWidget::ItemRename(const QString &, const QString &)
 	Reset();
 	blockSignals(false);
 }
+
+} // namespace advss

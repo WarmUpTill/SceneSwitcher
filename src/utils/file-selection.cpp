@@ -6,6 +6,8 @@
 #include <QStandardPaths>
 #include <filesystem>
 
+namespace advss {
+
 FileSelection::FileSelection(FileSelection::Type type, QWidget *parent)
 	: QWidget(parent),
 	  _type(type),
@@ -68,3 +70,5 @@ void FileSelection::PathChange()
 {
 	emit PathChanged(_filePath->text());
 }
+
+} // namespace advss

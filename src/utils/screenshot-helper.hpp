@@ -7,6 +7,8 @@
 #include <mutex>
 #include <condition_variable>
 
+namespace advss {
+
 class ScreenshotHelper {
 public:
 	ScreenshotHelper() = default;
@@ -44,3 +46,5 @@ private:
 	std::mutex _mutex;
 	std::condition_variable _cv;
 };
+
+} // namespace advss

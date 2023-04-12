@@ -10,6 +10,8 @@
 
 #include <random>
 
+namespace advss {
+
 enum class TimerType {
 	FIXED,
 	RANDOM,
@@ -91,3 +93,5 @@ private:
 	QTimer timer;
 	bool _loading = true;
 };
+
+} // namespace advss

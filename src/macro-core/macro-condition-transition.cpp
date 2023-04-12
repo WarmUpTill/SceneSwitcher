@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionTransition::id = "transition";
 
 bool MacroConditionTransition::_registered = MacroConditionFactory::Register(
@@ -307,3 +309,5 @@ void MacroConditionTransitionEdit::UpdateEntryData()
 	_scenes->SetScene(_entryData->_scene);
 	_duration->SetDuration(_entryData->_duration);
 }
+
+} // namespace advss

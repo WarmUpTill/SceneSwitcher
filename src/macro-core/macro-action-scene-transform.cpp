@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionSceneTransform::id = "scene_transform";
 
 bool MacroActionSceneTransform::_registered = MacroActionFactory::Register(
@@ -227,3 +229,5 @@ void MacroActionSceneTransformEdit::SettingsChanged()
 	adjustSize();
 	updateGeometry();
 }
+
+} // namespace advss

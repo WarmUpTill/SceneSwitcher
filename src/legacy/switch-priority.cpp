@@ -2,6 +2,8 @@
 
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 void AdvSceneSwitcher::on_threadPriority_currentTextChanged(const QString &text)
 {
 	if (loading || ui->threadPriority->count() !=
@@ -76,3 +78,5 @@ bool SwitcherData::prioFuncsValid()
 	}
 	return true;
 }
+
+} // namespace advss

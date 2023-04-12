@@ -4,6 +4,8 @@
 #include <QStringList>
 #include <chrono>
 
+namespace advss {
+
 enum class HotkeyType;
 
 // TODO: Implement for MacOS and Linux
@@ -23,3 +25,5 @@ bool isInFocus(const QString &executable);
 void PressKeys(const std::vector<HotkeyType> keys, int duration);
 void PlatformInit();
 void PlatformCleanup();
+
+} // namespace advss

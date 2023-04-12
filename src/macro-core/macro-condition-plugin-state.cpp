@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const uint32_t MacroConditionPluginState::_version = 1;
 
 const std::string MacroConditionPluginState::id = "plugin_state";
@@ -165,3 +167,5 @@ void MacroConditionPluginStateEdit::UpdateEntryData()
 	_condition->setCurrentIndex(
 		_condition->findData(static_cast<int>(_entryData->_condition)));
 }
+
+} // namespace advss

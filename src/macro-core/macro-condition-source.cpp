@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionSource::id = "source";
 
 bool MacroConditionSource::_registered = MacroConditionFactory::Register(
@@ -237,3 +239,5 @@ void MacroConditionSourceEdit::UpdateEntryData()
 	adjustSize();
 	updateGeometry();
 }
+
+} // namespace advss

@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionStream::id = "streaming";
 
 bool MacroActionStream::_registered = MacroActionFactory::Register(
@@ -120,3 +122,5 @@ void MacroActionStreamEdit::ActionChanged(int value)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<StreamAction>(value);
 }
+
+} // namespace advss

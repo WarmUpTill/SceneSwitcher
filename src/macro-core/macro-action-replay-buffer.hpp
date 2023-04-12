@@ -4,6 +4,8 @@
 
 #include <QHBoxLayout>
 
+namespace advss {
+
 enum class ReplayBufferAction {
 	STOP,
 	START,
@@ -58,3 +60,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

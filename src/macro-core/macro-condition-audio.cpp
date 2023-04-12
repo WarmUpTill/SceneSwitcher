@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 constexpr int64_t nsPerMs = 1000000;
 const std::string MacroConditionAudio::id = "audio";
 
@@ -581,3 +583,5 @@ void MacroConditionAudioEdit::SetWidgetVisibility()
 			      MacroConditionAudio::Type::OUTPUT_VOLUME);
 	adjustSize();
 }
+
+} // namespace advss

@@ -10,6 +10,8 @@
 #include <QScrollBar>
 #include <QApplication>
 
+namespace advss {
+
 MacroSegment::MacroSegment(Macro *m, bool supportsVariableValue)
 	: _macro(m), _supportsVariableValue(supportsVariableValue)
 {
@@ -271,3 +273,5 @@ void MacroSegmentEdit::ShowDropLine(DropLineState state)
 		break;
 	}
 }
+
+} // namespace advss

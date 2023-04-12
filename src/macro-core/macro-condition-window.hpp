@@ -4,6 +4,8 @@
 #include <QComboBox>
 #include <QCheckBox>
 
+namespace advss {
+
 class MacroConditionWindow : public MacroCondition {
 public:
 	MacroConditionWindow(Macro *m) : MacroCondition(m, true) {}
@@ -78,3 +80,5 @@ private:
 
 	bool _loading = true;
 };
+
+} // namespace advss

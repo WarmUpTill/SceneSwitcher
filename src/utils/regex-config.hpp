@@ -8,6 +8,8 @@
 #include <QDialogButtonBox>
 #include <QRegularExpression>
 
+namespace advss {
+
 class RegexConfigWidget;
 class RegexConfigDialog;
 
@@ -74,3 +76,5 @@ private:
 	QCheckBox *_extendedPattern;
 	QDialogButtonBox *_buttonbox;
 };
+
+} // namespace advss

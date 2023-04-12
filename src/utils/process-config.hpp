@@ -10,6 +10,8 @@
 #include <QStringList>
 #include <QVBoxLayout>
 
+namespace advss {
+
 class ProcessConfig {
 public:
 	bool Save(obs_data_t *obj) const;
@@ -54,3 +56,5 @@ private:
 	StringListEdit *_argList;
 	FileSelection *_workingDirectory;
 };
+
+} // namespace advss

@@ -5,6 +5,8 @@
 #include <QPushButton>
 #include <QWidget>
 
+namespace advss {
+
 class FileSelection : public QWidget {
 	Q_OBJECT
 
@@ -33,3 +35,5 @@ private:
 	VariableLineEdit *_filePath;
 	QPushButton *_browseButton;
 };
+
+} // namespace advss

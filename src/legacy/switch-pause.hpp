@@ -8,6 +8,8 @@
 #pragma once
 #include "switch-generic.hpp"
 
+namespace advss {
+
 enum class PauseType {
 	Scene,
 	Window,
@@ -70,3 +72,5 @@ private:
 
 	PauseEntry *switchData;
 };
+
+} // namespace advss

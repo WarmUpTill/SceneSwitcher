@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionStream::id = "streaming";
 
 bool MacroConditionStream::_registered = MacroConditionFactory::Register(
@@ -120,3 +122,5 @@ void MacroConditionStreamEdit::UpdateEntryData()
 	_streamState->setCurrentIndex(
 		static_cast<int>(_entryData->_streamState));
 }
+
+} // namespace advss

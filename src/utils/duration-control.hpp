@@ -8,6 +8,8 @@
 #include <QPushButton>
 #include <chrono>
 
+namespace advss {
+
 class Duration {
 public:
 	Duration() = default;
@@ -61,3 +63,5 @@ private:
 
 	Duration _current;
 };
+
+} // namespace advss

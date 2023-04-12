@@ -11,6 +11,8 @@
 #include <QTimer>
 #include <QListWidget>
 
+namespace advss {
+
 class MacroConditionMacro : public MultiMacroRefCondtition,
 			    public MacroRefCondition {
 public:
@@ -121,3 +123,5 @@ private:
 	void SetWidgetVisibility();
 	bool _loading = true;
 };
+
+} // namespace advss

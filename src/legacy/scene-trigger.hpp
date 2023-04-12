@@ -10,6 +10,8 @@
 #include "switch-generic.hpp"
 #include "duration-control.hpp"
 
+namespace advss {
+
 enum class sceneTriggerType {
 	NONE = 0,
 	SCENE_ACTIVE = 1,
@@ -82,3 +84,5 @@ private:
 
 	SceneTrigger *switchData;
 };
+
+} // namespace advss

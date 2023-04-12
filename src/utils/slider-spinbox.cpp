@@ -1,6 +1,8 @@
 #include "slider-spinbox.hpp"
 #include <QHBoxLayout>
 
+namespace advss {
+
 SliderSpinBox::SliderSpinBox(double min, double max, const QString &label,
 			     const QString &description, QWidget *parent)
 	: QWidget(parent),
@@ -71,3 +73,5 @@ void SliderSpinBox::SetVisibility(const NumberVariable<double> &value)
 {
 	_slider->setVisible(value.IsFixedType());
 }
+
+} // namespace advss

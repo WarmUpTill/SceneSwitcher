@@ -4,6 +4,8 @@
 #include <QDialogButtonBox>
 #include <obs-module.h>
 
+namespace advss {
+
 void MacroProperties::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
@@ -147,3 +149,5 @@ bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
 		dialog._currentMacroDockAddPauseButton->isChecked());
 	return true;
 }
+
+} // namespace advss

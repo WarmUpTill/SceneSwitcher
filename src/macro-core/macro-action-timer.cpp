@@ -5,6 +5,8 @@
 
 #include <random>
 
+namespace advss {
+
 const std::string MacroActionTimer::id = "timer";
 
 bool MacroActionTimer::_registered = MacroActionFactory::Register(
@@ -204,3 +206,5 @@ void MacroActionTimerEdit::MacroChanged(const QString &text)
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
+
+} // namespace advss

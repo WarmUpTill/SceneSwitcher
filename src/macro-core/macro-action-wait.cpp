@@ -4,6 +4,8 @@
 
 #include <random>
 
+namespace advss {
+
 const std::string MacroActionWait::id = "wait";
 
 bool MacroActionWait::_registered = MacroActionFactory::Register(
@@ -203,3 +205,5 @@ void MacroActionWaitEdit::Duration2Changed(const Duration &dur)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_duration2 = dur;
 }
+
+} // namespace advss

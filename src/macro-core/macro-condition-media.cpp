@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionMedia::id = "media";
 
 bool MacroConditionMedia::_registered = MacroConditionFactory::Register(
@@ -627,3 +629,5 @@ void MacroConditionMediaEdit::UpdateEntryData()
 	_onChange->setChecked(_entryData->_onlyMatchOnChagne);
 	SetWidgetVisibility();
 }
+
+} // namespace advss

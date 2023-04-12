@@ -3,6 +3,8 @@
 #include <QWidget>
 #include <QComboBox>
 
+namespace advss {
+
 enum class StreamState {
 	STOP,
 	START,
@@ -58,3 +60,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

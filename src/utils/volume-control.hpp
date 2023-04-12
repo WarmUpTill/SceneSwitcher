@@ -11,6 +11,11 @@
 #include <QMenu>
 
 class QPushButton;
+class QLabel;
+class QSlider;
+
+namespace advss {
+
 class VolumeMeterTimer;
 
 class VolumeMeter : public QWidget {
@@ -271,9 +276,6 @@ protected:
 	QList<VolumeMeter *> volumeMeters;
 };
 
-class QLabel;
-class QSlider;
-
 class VolControl : public QWidget {
 	Q_OBJECT
 
@@ -338,3 +340,5 @@ public:
 	VolumeSlider(obs_fader_t *fader, Qt::Orientation orientation,
 		     QWidget *parent = nullptr);
 };
+
+} // namespace advss

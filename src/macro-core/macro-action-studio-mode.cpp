@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionSudioMode::id = "studio_mode";
 
 bool MacroActionSudioMode::_registered = MacroActionFactory::Register(
@@ -167,3 +169,5 @@ void MacroActionSudioModeEdit::ActionChanged(int value)
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
+
+} // namespace advss

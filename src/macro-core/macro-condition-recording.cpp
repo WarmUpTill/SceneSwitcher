@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionRecord::id = "recording";
 
 bool MacroConditionRecord::_registered = MacroConditionFactory::Register(
@@ -101,3 +103,5 @@ void MacroConditionRecordEdit::UpdateEntryData()
 	_recordState->setCurrentIndex(
 		static_cast<int>(_entryData->_recordState));
 }
+
+} // namespace advss

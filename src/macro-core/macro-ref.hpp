@@ -5,6 +5,8 @@
 #include <QString>
 #include <obs-module.h>
 
+namespace advss {
+
 class Macro;
 
 class MacroRef {
@@ -28,3 +30,5 @@ void SaveMacroList(obs_data_t *obj, const std::vector<MacroRef> &macros,
 		   const std::string &name = "macros");
 void LoadMacroList(obs_data_t *obj, std::vector<MacroRef> &macros,
 		   const std::string &name = "macros");
+
+} // namespace advss

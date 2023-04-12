@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionVCam::id = "virtual_cam";
 
 bool MacroActionVCam::_registered = MacroActionFactory::Register(
@@ -109,3 +111,5 @@ void MacroActionVCamEdit::ActionChanged(int value)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<VCamAction>(value);
 }
+
+} // namespace advss

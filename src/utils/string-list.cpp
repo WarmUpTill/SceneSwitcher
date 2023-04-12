@@ -4,6 +4,8 @@
 
 #include <QLayout>
 
+namespace advss {
+
 bool StringList::Save(obs_data_t *obj, const char *name,
 		      const char *elementName) const
 {
@@ -195,3 +197,5 @@ void StringListEdit::SetListSize()
 	adjustSize();
 	updateGeometry();
 }
+
+} // namespace advss

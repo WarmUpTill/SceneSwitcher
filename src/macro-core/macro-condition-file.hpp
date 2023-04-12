@@ -11,6 +11,8 @@
 #include <QPushButton>
 #include <QCheckBox>
 
+namespace advss {
+
 class MacroConditionFile : public MacroCondition {
 public:
 	MacroConditionFile(Macro *m) : MacroCondition(m, true) {}
@@ -100,3 +102,5 @@ private:
 
 	bool _loading = true;
 };
+
+} // namespace advss

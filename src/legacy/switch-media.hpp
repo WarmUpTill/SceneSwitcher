@@ -8,6 +8,8 @@
 #pragma once
 #include "switch-generic.hpp"
 
+namespace advss {
+
 constexpr auto media_func = 6;
 
 typedef enum {
@@ -83,3 +85,5 @@ private:
 
 	MediaSwitch *switchData;
 };
+
+} // namespace advss

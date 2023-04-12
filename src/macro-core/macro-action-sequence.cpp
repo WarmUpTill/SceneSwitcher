@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionSequence::id = "sequence";
 
 bool MacroActionSequence::_registered = MacroActionFactory::Register(
@@ -264,3 +266,5 @@ void MacroActionSequenceEdit::UpdateStatusLine()
 		obs_module_text("AdvSceneSwitcher.action.sequence.status")};
 	_statusLine->setText(format.arg(lastMacroName, nextMacroName));
 }
+
+} // namespace advss

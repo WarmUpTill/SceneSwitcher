@@ -3,6 +3,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 static QMetaObject::Connection addPulse;
 
 void AdvSceneSwitcher::on_pauseAdd_clicked()
@@ -410,3 +412,5 @@ bool PauseEntry::valid()
 {
 	return true;
 }
+
+} // namespace advss

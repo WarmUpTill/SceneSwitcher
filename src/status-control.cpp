@@ -7,6 +7,8 @@
 #include <QAction>
 #include <QToolBar>
 
+namespace advss {
+
 StatusDock *dock = nullptr;
 
 StatusControl::StatusControl(QWidget *parent, bool noLayout)
@@ -159,3 +161,5 @@ void SetupDock()
 	dock->setVisible(false);
 	obs_frontend_add_dock(dock);
 }
+
+} // namespace advss

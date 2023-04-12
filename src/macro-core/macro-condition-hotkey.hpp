@@ -5,6 +5,8 @@
 #include <QWidget>
 #include <QLineEdit>
 
+namespace advss {
+
 class MacroConditionHotkey : public MacroCondition {
 public:
 	MacroConditionHotkey(Macro *m);
@@ -52,3 +54,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

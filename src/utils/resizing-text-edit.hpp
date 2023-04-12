@@ -1,6 +1,8 @@
 #pragma once
 #include <QPlainTextEdit>
 
+namespace advss {
+
 class ResizingPlainTextEdit : public QPlainTextEdit {
 	Q_OBJECT
 public:
@@ -16,3 +18,5 @@ private:
 	const int _minLines;
 	const int _paddingLines;
 };
+
+} // namespace advss

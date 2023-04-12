@@ -4,6 +4,8 @@
 
 #include <QLayout>
 
+namespace advss {
+
 GenericVaraiableSpinbox::GenericVaraiableSpinbox(QWidget *parent,
 						 bool wholeNumber)
 	: QWidget(parent),
@@ -194,3 +196,5 @@ VariableDoubleSpinBox::VariableDoubleSpinBox(QWidget *parent)
 	: GenericVaraiableSpinbox(parent, false)
 {
 }
+
+} // namespace advss

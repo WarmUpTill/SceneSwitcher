@@ -7,6 +7,8 @@
 #include <QStringList>
 #include <obs.hpp>
 
+namespace advss {
+
 class VariableSelection;
 class VariableSettingsDialog;
 
@@ -72,3 +74,5 @@ public:
 	void SetVariable(const std::string &);
 	void SetVariable(const std::weak_ptr<Variable> &);
 };
+
+} // namespace advss

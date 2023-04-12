@@ -9,6 +9,8 @@
 #include <QCheckBox>
 #include "switch-generic.hpp"
 
+namespace advss {
+
 constexpr auto exe_func = 3;
 
 struct ExecutableSwitch : SceneSwitcherEntry {
@@ -42,3 +44,5 @@ private:
 
 	ExecutableSwitch *switchData;
 };
+
+} // namespace advss

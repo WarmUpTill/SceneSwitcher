@@ -8,6 +8,8 @@
 #pragma once
 #include "switch-generic.hpp"
 
+namespace advss {
+
 constexpr auto window_title_func = 5;
 
 struct WindowSwitch : SceneSwitcherEntry {
@@ -47,3 +49,5 @@ private:
 
 	WindowSwitch *switchData;
 };
+
+} // namespace advss

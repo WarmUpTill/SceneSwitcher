@@ -9,6 +9,8 @@
 #include <QLineEdit>
 #include <QCheckBox>
 
+namespace advss {
+
 class MacroConditionVariable : public MacroCondition {
 public:
 	MacroConditionVariable(Macro *m) : MacroCondition(m) {}
@@ -94,3 +96,5 @@ private:
 
 	bool _loading = true;
 };
+
+} // namespace advss

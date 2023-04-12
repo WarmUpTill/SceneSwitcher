@@ -5,6 +5,8 @@
 #include <QTimer>
 #include <memory>
 
+namespace advss {
+
 class Macro;
 
 class MacroDock : public OBSDock {
@@ -28,3 +30,5 @@ private:
 
 	Macro *_macro;
 };
+
+} // namespace advss

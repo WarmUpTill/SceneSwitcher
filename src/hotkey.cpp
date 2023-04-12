@@ -4,6 +4,8 @@
 #include <fstream>
 #include <regex>
 
+namespace advss {
+
 std::vector<std::weak_ptr<Hotkey>> Hotkey::_registeredHotkeys = {};
 uint32_t Hotkey::_hotkeyCounter = 1;
 
@@ -249,3 +251,5 @@ void SwitcherData::loadHotkeys(obs_data_t *obj)
 	loadHotkey(obj, downMacroSegment, "downMacroSegmentHotkey");
 	loadHotkey(obj, removeMacroSegment, "removeMacroSegmentHotkey");
 }
+
+} // namespace advss

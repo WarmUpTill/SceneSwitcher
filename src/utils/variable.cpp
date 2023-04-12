@@ -4,6 +4,8 @@
 
 #include <switcher-data-structs.hpp>
 
+namespace advss {
+
 // Keep track of the last time a variable was changed to save some work when
 // when resolving strings containing variables, etc.
 static std::chrono::high_resolution_clock::time_point lastVariableChange{};
@@ -284,3 +286,5 @@ void VariableSelection::SetVariable(const std::weak_ptr<Variable> &variable_)
 		_selection->setCurrentIndex(0);
 	}
 }
+
+} // namespace advss

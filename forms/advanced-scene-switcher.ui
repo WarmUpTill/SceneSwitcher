@@ -658,7 +658,7 @@
             </widget>
            </item>
            <item>
-            <widget class="MacroTree" name="macros">
+            <widget class="advss::MacroTree" name="macros">
              <property name="showDropIndicator" stdset="0">
               <bool>true</bool>
              </property>
@@ -4563,7 +4563,7 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>MacroTree</class>
+   <class>advss::MacroTree</class>
    <extends>QListView</extends>
    <header>macro-tree.hpp</header>
   </customwidget>

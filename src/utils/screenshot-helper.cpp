@@ -3,6 +3,8 @@
 
 #include <chrono>
 
+namespace advss {
+
 static void ScreenshotTick(void *param, float);
 
 ScreenshotHelper::ScreenshotHelper(obs_source_t *source, bool blocking,
@@ -179,3 +181,5 @@ static void ScreenshotTick(void *param, float)
 
 	data->stage++;
 }
+
+} // namespace advss

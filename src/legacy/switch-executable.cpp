@@ -1,6 +1,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 bool ExecutableSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
@@ -272,3 +274,5 @@ void ExecutableSwitchWidget::FocusChanged(int state)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->inFocus = state;
 }
+
+} // namespace advss

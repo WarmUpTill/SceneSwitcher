@@ -5,6 +5,8 @@
 
 #include <QSpinBox>
 
+namespace advss {
+
 enum class FileAction {
 	WRITE,
 	APPEND,
@@ -65,3 +67,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

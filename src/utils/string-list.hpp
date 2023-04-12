@@ -8,6 +8,8 @@
 #include <QListWidget>
 #include <QStringList>
 
+namespace advss {
+
 class StringList : public QList<StringVariable> {
 public:
 	bool Save(obs_data_t *obj, const char *name,
@@ -49,3 +51,5 @@ private:
 	QString _addString;
 	QString _addStringDescription;
 };
+
+} // namespace advss

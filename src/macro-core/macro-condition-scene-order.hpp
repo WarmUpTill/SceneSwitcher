@@ -7,6 +7,8 @@
 #include <QWidget>
 #include <QComboBox>
 
+namespace advss {
+
 class MacroConditionSceneOrder : public MacroCondition {
 public:
 	MacroConditionSceneOrder(Macro *m) : MacroCondition(m) {}
@@ -77,3 +79,5 @@ private:
 	void SetWidgetVisibility(bool showPos);
 	bool _loading = true;
 };
+
+} // namespace advss

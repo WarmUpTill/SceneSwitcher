@@ -5,6 +5,8 @@
 
 #include <screenshot-helper.hpp>
 
+namespace advss {
+
 PreviewDialog::PreviewDialog(QWidget *parent)
 	: QDialog(parent),
 	  _scrollArea(new QScrollArea),
@@ -329,3 +331,5 @@ void PreviewImage::MarkMatch(QImage &screenshot,
 		// TODO: show preprocessed image
 	}
 }
+
+} // namespace advss

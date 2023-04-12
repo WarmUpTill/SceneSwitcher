@@ -8,6 +8,8 @@
 #include <QPushButton>
 #include <QCheckBox>
 
+namespace advss {
+
 class MacroConditionFilter : public MacroCondition {
 public:
 	MacroConditionFilter(Macro *m) : MacroCondition(m, true) {}
@@ -83,3 +85,5 @@ private:
 	void SetSettingsSelectionVisible(bool visible);
 	bool _loading = true;
 };
+
+} // namespace advss

@@ -5,6 +5,8 @@
 #include <curl/curl.h>
 #include <obs.hpp>
 
+namespace advss {
+
 #if defined(WIN32)
 constexpr auto curl_library_name = "libcurl.dll";
 #elif __APPLE__
@@ -108,3 +110,5 @@ bool Curlhelper::Resolve()
 	blog(LOG_INFO, "[adv-ss] curl symbols not resolved");
 	return false;
 }
+
+} // namespace advss

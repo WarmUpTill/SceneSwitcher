@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionFilter::id = "filter";
 
 bool MacroActionFilter::_registered = MacroActionFactory::Register(
@@ -247,3 +249,5 @@ void MacroActionFilterEdit::SetWidgetVisibility(bool showSettings)
 	_getSettings->setVisible(showSettings);
 	adjustSize();
 }
+
+} // namespace advss

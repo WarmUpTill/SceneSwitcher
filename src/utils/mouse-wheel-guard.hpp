@@ -1,6 +1,8 @@
 #pragma once
 #include <QWidget>
 
+namespace advss {
+
 class MouseWheelWidgetAdjustmentGuard : public QObject {
 public:
 	explicit MouseWheelWidgetAdjustmentGuard(QObject *parent);
@@ -10,3 +12,5 @@ protected:
 };
 
 void PreventMouseWheelAdjustWithoutFocus(QWidget *);
+
+} // namespace advss

@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionSceneOrder::id = "scene_order";
 
 bool MacroActionSceneOrder::_registered = MacroActionFactory::Register(
@@ -250,3 +252,5 @@ void MacroActionSceneOrderEdit::PositionChanged(int value)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_position = value;
 }
+
+} // namespace advss

@@ -4,6 +4,8 @@
 
 #include "scene-group.hpp"
 
+namespace advss {
+
 enum class SwitchTargetType {
 	Scene,
 	SceneGroup,
@@ -95,3 +97,5 @@ protected:
 
 	SceneSwitcherEntry *switchData;
 };
+
+} // namespace advss

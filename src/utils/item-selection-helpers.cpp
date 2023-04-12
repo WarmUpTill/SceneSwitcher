@@ -8,7 +8,9 @@
 #include <QLayout>
 #include <obs-module.h>
 
-Q_DECLARE_METATYPE(Item *);
+Q_DECLARE_METATYPE(advss::Item *);
+
+namespace advss {
 
 Item::Item(std::string name) : _name(name) {}
 
@@ -315,3 +317,5 @@ void Item::Save(obs_data_t *obj) const
 {
 	obs_data_set_string(obj, "name", _name.c_str());
 }
+
+} // namespace advss

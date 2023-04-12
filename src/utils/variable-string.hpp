@@ -4,6 +4,8 @@
 #include <string>
 #include <obs.hpp>
 
+namespace advss {
+
 // Helper class which automatically resovles variables contained in strings
 // when reading its value as a std::string
 
@@ -32,6 +34,8 @@ private:
 	std::chrono::high_resolution_clock::time_point _lastResolve{};
 };
 
-Q_DECLARE_METATYPE(StringVariable);
-
 std::string SubstitueVariables(std::string str);
+
+} // namespace advss
+
+Q_DECLARE_METATYPE(advss::StringVariable);

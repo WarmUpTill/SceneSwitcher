@@ -8,6 +8,8 @@
 #include <QSpinBox>
 #include <QHBoxLayout>
 
+namespace advss {
+
 class MacroActionHotkey : public MacroAction {
 public:
 	MacroActionHotkey(Macro *m) : MacroAction(m) {}
@@ -93,3 +95,5 @@ private:
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
+
+} // namespace advss

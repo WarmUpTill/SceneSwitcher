@@ -14,18 +14,7 @@
 #include "utility.hpp"
 #include "version.h"
 
-const char *obs_module_text(const char *text)
-{
-	if (!switcher) {
-		return "";
-	}
-	return switcher->translate(text);
-}
-
-obs_module_t *obs_current_module()
-{
-	return switcher->modulePtr;
-}
+namespace advss {
 
 SwitcherData *switcher = nullptr;
 SwitcherData *GetSwitcher()
@@ -761,4 +750,19 @@ extern "C" void InitSceneSwitcher(obs_module_t *m, translateFunc t)
 	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(
 		obs_module_text("AdvSceneSwitcher.pluginName"));
 	action->connect(action, &QAction::triggered, OpenSettingsWindow);
+}
+
+} // namespace advss
+
+const char *obs_module_text(const char *text)
+{
+	if (!advss::switcher) {
+		return "";
+	}
+	return advss::switcher->translate(text);
+}
+
+obs_module_t *obs_current_module()
+{
+	return advss::switcher->modulePtr;
 }

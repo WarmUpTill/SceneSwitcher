@@ -10,6 +10,8 @@
 #include <QScrollBar>
 #include <QtGlobal>
 
+namespace advss {
+
 MacroSegmentList::MacroSegmentList(QWidget *parent)
 	: QScrollArea(parent),
 	  _layout(new QVBoxLayout),
@@ -439,3 +441,5 @@ void MacroSegmentList::dropEvent(QDropEvent *event)
 #endif
 	_dragPosition = -1;
 }
+
+} // namespace advss

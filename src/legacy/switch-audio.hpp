@@ -13,6 +13,8 @@
 #include "duration-control.hpp"
 #include "volume-control.hpp"
 
+namespace advss {
+
 constexpr auto audio_func = 8;
 
 typedef enum {
@@ -103,3 +105,5 @@ private:
 
 	AudioSwitchFallback *switchData;
 };
+
+} // namespace advss

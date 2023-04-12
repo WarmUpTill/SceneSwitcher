@@ -5,6 +5,8 @@
 #include <QPushButton>
 #include <QHBoxLayout>
 
+namespace advss {
+
 class MacroList : public QWidget {
 	Q_OBJECT
 public:
@@ -42,3 +44,5 @@ private:
 	const bool _allowDuplicates;
 	const bool _reorder;
 };
+
+} // namespace advss

@@ -1,6 +1,8 @@
 #include "macro-condition.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
 	{LogicType::NONE, {"AdvSceneSwitcher.logic.none"}},
 	{LogicType::AND, {"AdvSceneSwitcher.logic.and"}},
@@ -176,3 +178,5 @@ bool MultiMacroRefCondtition::PostLoad()
 	}
 	return true;
 }
+
+} // namespace advss

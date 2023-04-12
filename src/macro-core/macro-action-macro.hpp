@@ -4,6 +4,8 @@
 
 #include <QHBoxLayout>
 
+namespace advss {
+
 enum class PerformMacroAction {
 	PAUSE,
 	UNPAUSE,
@@ -64,3 +66,5 @@ private:
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
+
+} // namespace advss

@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+namespace advss {
+
 constexpr QColor stripeColor = QColor(255, 255, 255, 50);
 constexpr int stripeWidth = 30;
 constexpr int stripeSpacing = 30;
@@ -35,3 +37,5 @@ void StripedFrame::paintEvent(QPaintEvent *event)
 		painter.translate(horizontalMoveStep, verticalMoveStep);
 	}
 }
+
+} // namespace advss

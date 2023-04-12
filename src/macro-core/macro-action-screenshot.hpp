@@ -7,6 +7,8 @@
 
 #include <QComboBox>
 
+namespace advss {
+
 class MacroActionScreenshot : public MacroAction {
 public:
 	MacroActionScreenshot(Macro *m) : MacroAction(m) {}
@@ -84,3 +86,5 @@ private:
 
 	bool _loading = true;
 };
+
+} // namespace advss

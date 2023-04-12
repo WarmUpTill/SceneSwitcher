@@ -5,6 +5,10 @@
 #include <QTimer>
 #include <obs.hpp>
 
+class QLabel;
+
+namespace advss {
+
 class Macro;
 
 class MacroSegment {
@@ -48,7 +52,6 @@ private:
 };
 
 class Section;
-class QLabel;
 
 class MacroSegmentEdit : public QWidget {
 	Q_OBJECT
@@ -113,3 +116,5 @@ private:
 
 	friend class MacroSegmentList;
 };
+
+} // namespace advss

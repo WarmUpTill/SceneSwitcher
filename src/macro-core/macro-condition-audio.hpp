@@ -9,6 +9,8 @@
 #include <QComboBox>
 #include <chrono>
 
+namespace advss {
+
 class MacroConditionAudio : public MacroCondition {
 public:
 	MacroConditionAudio(Macro *m) : MacroCondition(m, true) {}
@@ -116,3 +118,5 @@ private:
 
 	bool _loading = true;
 };
+
+} // namespace advss

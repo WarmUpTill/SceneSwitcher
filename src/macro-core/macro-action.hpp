@@ -2,6 +2,8 @@
 #include "macro-segment.hpp"
 #include "macro-ref.hpp"
 
+namespace advss {
+
 class MacroAction : public MacroSegment {
 public:
 	MacroAction(Macro *m, bool supportsVariableValue = false);
@@ -27,3 +29,5 @@ public:
 
 	std::vector<MacroRef> _macros;
 };
+
+} // namespace advss

@@ -18,6 +18,8 @@
 
 #include <obs.hpp>
 
+namespace advss {
+
 using websocketpp::connection_hdl;
 typedef websocketpp::server<websocketpp::config::asio> server;
 typedef websocketpp::client<websocketpp::config::asio_client> client;
@@ -75,3 +77,5 @@ private:
 
 	std::vector<std::string> _messages;
 };
+
+} // namespace advss

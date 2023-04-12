@@ -4,6 +4,8 @@
 #include "section.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 std::map<std::string, MacroConditionInfo> &MacroConditionFactory::GetMap()
 {
 	static std::map<std::string, MacroConditionInfo> _methods;
@@ -601,3 +603,5 @@ void AdvSceneSwitcher::MacroConditionReorder(int to, int from)
 	HighlightCondition(to);
 	emit(MacroSegmentOrderChanged());
 }
+
+} // namespace advss

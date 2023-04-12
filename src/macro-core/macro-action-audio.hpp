@@ -9,6 +9,8 @@
 #include <QCheckBox>
 #include <QHBoxLayout>
 
+namespace advss {
+
 class MacroActionAudio : public MacroAction {
 public:
 	MacroActionAudio(Macro *m) : MacroAction(m) {}
@@ -119,3 +121,5 @@ private:
 
 	bool _loading = true;
 };
+
+} // namespace advss

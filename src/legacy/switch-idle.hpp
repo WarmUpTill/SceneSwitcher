@@ -8,6 +8,8 @@
 #pragma once
 #include "switch-generic.hpp"
 
+namespace advss {
+
 constexpr auto default_idle_time = 60;
 constexpr auto idle_func = 2;
 
@@ -36,3 +38,5 @@ private:
 
 	IdleData *switchData;
 };
+
+} // namespace advss

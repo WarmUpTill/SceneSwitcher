@@ -6,6 +6,8 @@
 #include <QDoubleSpinBox>
 #include <QHBoxLayout>
 
+namespace advss {
+
 enum class TimerAction {
 	PAUSE,
 	CONTINUE,
@@ -69,3 +71,5 @@ private:
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
+
+} // namespace advss

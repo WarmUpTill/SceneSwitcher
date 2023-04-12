@@ -6,6 +6,8 @@
 #include <QLabel>
 #include <QDoubleSpinBox>
 
+namespace advss {
+
 class SliderSpinBox : public QWidget {
 	Q_OBJECT
 
@@ -28,3 +30,5 @@ private:
 	QSlider *_slider;
 	double _scale = 100.0;
 };
+
+} // namespace advss

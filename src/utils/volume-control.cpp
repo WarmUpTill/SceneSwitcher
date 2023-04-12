@@ -9,6 +9,8 @@
 #include <QStyleFactory>
 #include <util/platform.h>
 
+namespace advss {
+
 using namespace std;
 
 #define CLAMP(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
@@ -1249,3 +1251,5 @@ void VolumeMeterTimer::timerEvent(QTimerEvent *)
 		}
 	}
 }
+
+} // namespace advss

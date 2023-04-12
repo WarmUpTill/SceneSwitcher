@@ -31,6 +31,8 @@
 #include <connection-manager.hpp>
 #include <curl-helper.hpp>
 
+namespace advss {
+
 constexpr auto default_interval = 300;
 constexpr auto previous_scene_name = "Previous Scene";
 constexpr auto current_transition_name = "Current Transition";
@@ -365,3 +367,5 @@ public:
 	explicit SwitcherThread(){};
 	void run() { switcher->Thread(); };
 };
+
+} // namespace advss

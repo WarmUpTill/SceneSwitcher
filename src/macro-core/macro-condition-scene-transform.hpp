@@ -8,6 +8,8 @@
 #include <QSpinBox>
 #include <QCheckBox>
 
+namespace advss {
+
 class MacroConditionSceneTransform : public MacroCondition {
 public:
 	MacroConditionSceneTransform(Macro *m) : MacroCondition(m, true) {}
@@ -70,3 +72,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

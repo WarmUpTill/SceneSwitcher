@@ -15,6 +15,8 @@
 #include <obs.hpp>
 #include <websocket-helpers.hpp>
 
+namespace advss {
+
 class ConnectionSelection;
 class ConnectionSettingsDialog;
 
@@ -97,3 +99,5 @@ public:
 	void SetConnection(const std::string &);
 	void SetConnection(const std::weak_ptr<Connection> &);
 };
+
+} // namespace advss

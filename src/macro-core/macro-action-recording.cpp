@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionRecord::id = "recording";
 
 bool MacroActionRecord::_registered = MacroActionFactory::Register(
@@ -145,3 +147,5 @@ void MacroActionRecordEdit::ActionChanged(int value)
 	_entryData->_action = static_cast<RecordAction>(value);
 	SetLabelVisibility();
 }
+
+} // namespace advss

@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionReplayBuffer::id = "replay_buffer";
 
 bool MacroConditionReplayBuffer::_registered = MacroConditionFactory::Register(
@@ -106,3 +108,5 @@ void MacroConditionReplayBufferEdit::UpdateEntryData()
 
 	_state->setCurrentIndex(static_cast<int>(_entryData->_state));
 }
+
+} // namespace advss

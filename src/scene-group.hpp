@@ -10,6 +10,8 @@
 #include <QCheckBox>
 #include <obs.hpp>
 
+namespace advss {
+
 auto constexpr invalid_scene_group_name = "invalid-scene-group";
 
 enum class AdvanceCondition {
@@ -85,3 +87,5 @@ private:
 
 SceneGroup *GetSceneGroupByName(const char *name);
 SceneGroup *GetSceneGroupByQString(const QString &name);
+
+} // namespace advss

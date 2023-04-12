@@ -2,6 +2,8 @@
 #include <QDialogButtonBox>
 #include "name-dialog.hpp"
 
+namespace advss {
+
 AdvSSNameDialog::AdvSSNameDialog(QWidget *parent) : QDialog(parent)
 {
 	setModal(true);
@@ -67,3 +69,5 @@ bool AdvSSNameDialog::AskForName(QWidget *parent, const QString &title,
 	}
 	return true;
 }
+
+} // namespace advss

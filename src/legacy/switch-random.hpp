@@ -8,6 +8,8 @@
 #pragma once
 #include "switch-generic.hpp"
 
+namespace advss {
+
 struct RandomSwitch : SceneSwitcherEntry {
 	static bool pause;
 	double delay = 0.0;
@@ -36,3 +38,5 @@ private:
 
 	RandomSwitch *switchData;
 };
+
+} // namespace advss

@@ -6,6 +6,8 @@
 #include <QHBoxLayout>
 #include <chrono>
 
+namespace advss {
+
 enum class StreamAction {
 	STOP,
 	START,
@@ -61,3 +63,5 @@ private:
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
+
+} // namespace advss

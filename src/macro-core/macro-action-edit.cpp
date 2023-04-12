@@ -4,6 +4,8 @@
 #include "section.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 std::map<std::string, MacroActionInfo> &MacroActionFactory::GetMap()
 {
 	static std::map<std::string, MacroActionInfo> _methods;
@@ -361,3 +363,5 @@ void AdvSceneSwitcher::MacroActionReorder(int to, int from)
 	HighlightAction(to);
 	emit(MacroSegmentOrderChanged());
 }
+
+} // namespace advss

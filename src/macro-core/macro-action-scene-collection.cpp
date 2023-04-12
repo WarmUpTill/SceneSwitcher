@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionSceneCollection::id = "scene_collection";
 
 bool MacroActionSceneCollection::_registered = MacroActionFactory::Register(
@@ -115,3 +117,5 @@ void MacroActionSceneCollectionEdit::SceneCollectionChanged(const QString &text)
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
+
+} // namespace advss

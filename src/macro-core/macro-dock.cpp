@@ -5,6 +5,8 @@
 #include <QLayout>
 #include <obs-module.h>
 
+namespace advss {
+
 MacroDock::MacroDock(Macro *m, QWidget *parent)
 	: OBSDock(parent),
 	  _run(new QPushButton(
@@ -99,3 +101,5 @@ void MacroDock::UpdatePauseText()
 			? obs_module_text("AdvSceneSwitcher.macroDock.unpause")
 			: obs_module_text("AdvSceneSwitcher.macroDock.pause"));
 }
+
+} // namespace advss

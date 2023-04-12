@@ -5,6 +5,8 @@
 
 #include <regex>
 
+namespace advss {
+
 const std::string MacroConditionWebsocket::id = "websocket";
 
 bool MacroConditionWebsocket::_registered = MacroConditionFactory::Register(
@@ -255,3 +257,5 @@ void MacroConditionWebsocketEdit::RegexChanged(RegexConfig conf)
 	adjustSize();
 	updateGeometry();
 }
+
+} // namespace advss

@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionProfile::id = "profile";
 
 bool MacroConditionProfile::_registered = MacroConditionFactory::Register(
@@ -81,3 +83,5 @@ void MacroConditionProfileEdit::UpdateEntryData()
 
 	_profiles->setCurrentText(QString::fromStdString(_entryData->_profile));
 }
+
+} // namespace advss

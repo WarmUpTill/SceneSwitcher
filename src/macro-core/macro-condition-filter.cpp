@@ -5,6 +5,8 @@
 
 #include <regex>
 
+namespace advss {
+
 const std::string MacroConditionFilter::id = "filter";
 
 bool MacroConditionFilter::_registered = MacroConditionFactory::Register(
@@ -282,3 +284,5 @@ void MacroConditionFilterEdit::UpdateEntryData()
 	adjustSize();
 	updateGeometry();
 }
+
+} // namespace advss
