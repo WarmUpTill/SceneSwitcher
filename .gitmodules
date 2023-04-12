@@ -16,3 +16,6 @@
 [submodule "deps/tesseract"]
 	path = deps/tesseract
 	url = https://github.com/tesseract-ocr/tesseract.git
+[submodule "deps/libremidi"]
+	path = deps/libremidi
+	url = https://github.com/jcelerier/libremidi.git
