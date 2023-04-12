@@ -6,6 +6,8 @@
 #include <QCheckBox>
 #include <QSpinBox>
 
+namespace advss {
+
 class MacroConditionRun : public MacroCondition {
 public:
 	MacroConditionRun(Macro *m) : MacroCondition(m, true) {}
@@ -77,3 +79,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

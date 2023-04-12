@@ -2,7 +2,9 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
-Q_DECLARE_METATYPE(SourceSettingButton);
+Q_DECLARE_METATYPE(advss::SourceSettingButton);
+
+namespace advss {
 
 const std::string MacroActionSource::id = "source";
 
@@ -343,3 +345,5 @@ std::string SourceSettingButton::ToString() const
 	}
 	return "[" + id + "] " + description;
 }
+
+} // namespace advss

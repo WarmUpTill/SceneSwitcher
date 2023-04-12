@@ -5,6 +5,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 constexpr auto max_extend_text_size = 150;
 
 bool SceneSequenceSwitch::pause = false;
@@ -793,3 +795,5 @@ void SequenceWidget::ReduceClicked()
 		delete item;
 	}
 }
+
+} // namespace advss

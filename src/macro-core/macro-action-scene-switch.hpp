@@ -6,6 +6,8 @@
 
 #include <QCheckBox>
 
+namespace advss {
+
 class MacroActionSwitchScene : public MacroAction {
 public:
 	MacroActionSwitchScene(Macro *m) : MacroAction(m) {}
@@ -69,3 +71,5 @@ private:
 	void SetDurationVisibility();
 	bool _loading = true;
 };
+
+} // namespace advss

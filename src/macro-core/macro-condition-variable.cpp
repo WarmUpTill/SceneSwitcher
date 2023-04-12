@@ -5,6 +5,8 @@
 
 #include <regex>
 
+namespace advss {
+
 const std::string MacroConditionVariable::id = "variable";
 
 bool MacroConditionVariable::_registered = MacroConditionFactory::Register(
@@ -343,3 +345,5 @@ void MacroConditionVariableEdit::SetWidgetVisibility()
 	adjustSize();
 	updateGeometry();
 }
+
+} // namespace advss

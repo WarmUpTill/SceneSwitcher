@@ -6,6 +6,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 bool VideoSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
@@ -577,3 +579,5 @@ void VideoSwitchWidget::IgnoreInactiveChanged(int state)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->ignoreInactiveSource = state;
 }
+
+} // namespace advss

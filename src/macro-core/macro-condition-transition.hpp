@@ -7,6 +7,8 @@
 #include <QWidget>
 #include <QComboBox>
 
+namespace advss {
+
 enum class TransitionCondition {
 	CURRENT,
 	DURATION,
@@ -84,3 +86,5 @@ private:
 	void SetWidgetVisibility();
 	bool _loading = true;
 };
+
+} // namespace advss

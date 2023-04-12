@@ -3,6 +3,8 @@
 #include "macro-selection.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 MacroList::MacroList(QWidget *parent, bool allowDuplicates, bool reorder)
 	: QWidget(parent),
 	  _list(new QListWidget()),
@@ -217,3 +219,5 @@ void MacroList::SetMacroListSize()
 	setHeightToContentHeight(_list);
 	adjustSize();
 }
+
+} // namespace advss

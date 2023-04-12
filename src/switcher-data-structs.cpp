@@ -1,6 +1,8 @@
 #include "switcher-data-structs.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 void SwitcherData::Prune()
 {
 	for (size_t i = 0; i < windowSwitches.size(); i++) {
@@ -140,3 +142,5 @@ void SwitcherData::addResetForNextIntervalFunction(
 	std::lock_guard<std::mutex> lock(switcher->m);
 	resetForNextIntervalFuncs.emplace_back(function);
 }
+
+} // namespace advss

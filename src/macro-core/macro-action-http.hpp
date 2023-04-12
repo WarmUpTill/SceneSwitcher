@@ -9,6 +9,8 @@
 #include <QComboBox>
 #include <QCheckBox>
 
+namespace advss {
+
 class MacroActionHttp : public MacroAction {
 public:
 	MacroActionHttp(Macro *m) : MacroAction(m, true) {}
@@ -85,3 +87,5 @@ private:
 	DurationSelection *_timeout;
 	bool _loading = true;
 };
+
+} // namespace advss

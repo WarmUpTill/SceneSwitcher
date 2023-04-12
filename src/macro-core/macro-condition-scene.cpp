@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionScene::id = "scene";
 
 bool MacroConditionScene::_registered = MacroConditionFactory::Register(
@@ -254,3 +256,5 @@ void MacroConditionSceneEdit::UpdateEntryData()
 		_entryData->_useTransitionTargetScene);
 	SetWidgetVisibility();
 }
+
+} // namespace advss

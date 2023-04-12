@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionSceneVisibility::id = "scene_visibility";
 
 bool MacroActionSceneVisibility::_registered = MacroActionFactory::Register(
@@ -311,3 +313,5 @@ void MacroActionSceneVisibilityEdit::SetWidgetVisibility()
 				  SceneItemSourceType::SOURCE_GROUP);
 	adjustSize();
 }
+
+} // namespace advss

@@ -10,6 +10,8 @@
 #include "curl-helper.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 bool FileSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 static std::hash<std::string> strHash;
@@ -665,3 +667,5 @@ void FileSwitchWidget::CheckFileContentChanged(int state)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->onlyMatchIfChanged = state;
 }
+
+} // namespace advss

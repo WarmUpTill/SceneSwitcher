@@ -3,6 +3,8 @@
 #include <QWidget>
 #include <QComboBox>
 
+namespace advss {
+
 enum class VCamState {
 	STOP,
 	START,
@@ -53,3 +55,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

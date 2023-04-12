@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionSystray::id = "systray_notification";
 
 bool MacroActionSystray::_registered = MacroActionFactory::Register(
@@ -68,3 +70,5 @@ void MacroActionSystrayEdit::MessageChanged()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_msg = _msg->text().toStdString();
 }
+
+} // namespace advss

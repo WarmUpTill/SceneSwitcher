@@ -1,5 +1,7 @@
 #include "resizing-text-edit.hpp"
 
+namespace advss {
+
 ResizingPlainTextEdit::ResizingPlainTextEdit(QWidget *parent,
 					     const int scrollAt,
 					     const int minLines,
@@ -29,3 +31,5 @@ void ResizingPlainTextEdit::ResizeTexteditArea()
 	adjustSize();
 	updateGeometry();
 }
+
+} // namespace advss

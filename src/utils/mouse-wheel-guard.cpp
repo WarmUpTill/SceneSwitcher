@@ -3,6 +3,8 @@
 #include <QEvent>
 #include <QScrollBar>
 
+namespace advss {
+
 MouseWheelWidgetAdjustmentGuard::MouseWheelWidgetAdjustmentGuard(QObject *parent)
 	: QObject(parent)
 {
@@ -29,3 +31,5 @@ void PreventMouseWheelAdjustWithoutFocus(QWidget *w)
 	}
 	w->installEventFilter(new MouseWheelWidgetAdjustmentGuard(w));
 }
+
+} // namespace advss

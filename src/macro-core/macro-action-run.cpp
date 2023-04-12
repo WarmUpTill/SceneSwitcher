@@ -5,6 +5,8 @@
 #include <QProcess>
 #include <QDesktopServices>
 
+namespace advss {
+
 const std::string MacroActionRun::id = "run";
 
 bool MacroActionRun::_registered = MacroActionFactory::Register(
@@ -87,3 +89,5 @@ void MacroActionRunEdit::ProcessConfigChanged(const ProcessConfig &conf)
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
+
+} // namespace advss

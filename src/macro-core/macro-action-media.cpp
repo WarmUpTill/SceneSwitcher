@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionMedia::id = "media";
 
 bool MacroActionMedia::_registered = MacroActionFactory::Register(
@@ -187,3 +189,5 @@ void MacroActionMediaEdit::SetWidgetVisibility()
 	_seek->setVisible(_entryData->_action == MediaAction::SEEK);
 	adjustSize();
 }
+
+} // namespace advss

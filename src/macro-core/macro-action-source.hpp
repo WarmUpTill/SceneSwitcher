@@ -8,6 +8,8 @@
 #include <QPushButton>
 #include <QComboBox>
 
+namespace advss {
+
 enum class SourceAction {
 	ENABLE,
 	DISABLE,
@@ -87,3 +89,5 @@ private:
 	void SetWidgetVisibility();
 	bool _loading = true;
 };
+
+} // namespace advss

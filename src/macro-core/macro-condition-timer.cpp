@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionTimer::id = "timer";
 
 bool MacroConditionTimer::_registered = MacroConditionFactory::Register(
@@ -349,3 +351,5 @@ void MacroConditionTimerEdit::SetWidgetVisibility()
 		_duration2->hide();
 	}
 }
+
+} // namespace advss

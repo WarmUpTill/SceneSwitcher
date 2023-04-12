@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionWebsocket::id = "websocket";
 
 bool MacroActionWebsocket::_registered = MacroActionFactory::Register(
@@ -211,3 +213,5 @@ void MacroActionWebsocketEdit::ConnectionSelectionChanged(
 	_entryData->_connection = GetWeakConnectionByQString(connection);
 	emit(HeaderInfoChanged(connection));
 }
+
+} // namespace advss

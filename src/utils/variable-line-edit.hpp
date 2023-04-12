@@ -3,6 +3,8 @@
 
 #include <QLineEdit>
 
+namespace advss {
+
 class VariableLineEdit : public QLineEdit {
 	Q_OBJECT
 public:
@@ -12,3 +14,5 @@ public:
 
 private:
 };
+
+} // namespace advss

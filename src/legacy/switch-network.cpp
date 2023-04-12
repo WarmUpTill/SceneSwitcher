@@ -9,6 +9,8 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 #define PARAM_SERVER_ENABLE "ServerEnabled"
 #define PARAM_SERVER_PORT "ServerPort"
 #define PARAM_LOCKTOIPV4 "LockToIPv4"
@@ -124,10 +126,9 @@ WSServer::WSServer() : QObject(nullptr), _connections(), _clMutex()
 	_server.set_reuse_addr(true);
 #endif
 
-	_server.set_open_handler(bind(&WSServer::onOpen, this, ::_1));
-	_server.set_close_handler(bind(&WSServer::onClose, this, ::_1));
-	_server.set_message_handler(
-		bind(&WSServer::onMessage, this, ::_1, ::_2));
+	_server.set_open_handler(bind(&WSServer::onOpen, this, _1));
+	_server.set_close_handler(bind(&WSServer::onClose, this, _1));
+	_server.set_message_handler(bind(&WSServer::onMessage, this, _1, _2));
 }
 
 WSServer::~WSServer()
@@ -361,11 +362,10 @@ WSClient::WSClient() : QObject(nullptr)
 	_client.set_reuse_addr(true);
 #endif
 
-	_client.set_open_handler(bind(&WSClient::onOpen, this, ::_1));
-	_client.set_fail_handler(bind(&WSClient::onFail, this, ::_1));
-	_client.set_message_handler(
-		bind(&WSClient::onMessage, this, ::_1, ::_2));
-	_client.set_close_handler(bind(&WSClient::onClose, this, ::_1));
+	_client.set_open_handler(bind(&WSClient::onOpen, this, _1));
+	_client.set_fail_handler(bind(&WSClient::onFail, this, _1));
+	_client.set_message_handler(bind(&WSClient::onMessage, this, _1, _2));
+	_client.set_close_handler(bind(&WSClient::onClose, this, _1));
 }
 
 WSClient::~WSClient()
@@ -709,3 +709,5 @@ Compatability::StdFunctionRunnable::StdFunctionRunnable(
 	: cb(std::move(func))
 {
 }
+
+} // namespace advss

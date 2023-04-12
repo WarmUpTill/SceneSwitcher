@@ -9,7 +9,9 @@
 #include <QLayout>
 #include <obs-module.h>
 
-Q_DECLARE_METATYPE(Connection *);
+Q_DECLARE_METATYPE(advss::Connection *);
+
+namespace advss {
 
 void SwitcherData::saveConnections(obs_data_t *obj)
 {
@@ -419,3 +421,5 @@ void Connection::Save(obs_data_t *obj) const
 	obs_data_set_bool(obj, "reconnect", _reconnect);
 	obs_data_set_int(obj, "reconnectDelay", _reconnectDelay);
 }
+
+} // namespace advss

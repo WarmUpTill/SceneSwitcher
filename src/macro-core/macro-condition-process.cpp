@@ -5,6 +5,8 @@
 
 #include <regex>
 
+namespace advss {
+
 const std::string MacroConditionProcess::id = "process";
 
 bool MacroConditionProcess::_registered = MacroConditionFactory::Register(
@@ -146,3 +148,5 @@ void MacroConditionProcessEdit::UpdateEntryData()
 	_focused->setChecked(_entryData->_focus);
 	SetWidgetVisibility();
 }
+
+} // namespace advss

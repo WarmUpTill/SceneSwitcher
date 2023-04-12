@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include <obs-interaction.h>
 
+namespace advss {
+
 const std::string MacroActionHotkey::id = "hotkey";
 
 bool MacroActionHotkey::_registered = MacroActionFactory::Register(
@@ -612,3 +614,5 @@ void MacroActionHotkeyEdit::KeyChanged(int key)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_key = static_cast<HotkeyType>(key);
 }
+
+} // namespace advss

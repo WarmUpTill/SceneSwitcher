@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionStats::id = "obs_stats";
 
 bool MacroConditionStats::_registered = MacroConditionFactory::Register(
@@ -588,3 +590,5 @@ void MacroConditionStatsEdit::SetWidgetVisibility()
 
 	adjustSize();
 }
+
+} // namespace advss

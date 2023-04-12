@@ -5,6 +5,8 @@
 
 #include <regex>
 
+namespace advss {
+
 const std::string MacroConditionSceneVisibility::id = "scene_visibility";
 
 bool MacroConditionSceneVisibility::_registered =
@@ -234,3 +236,5 @@ void MacroConditionSceneVisibilityEdit::UpdateEntryData()
 	}
 	_sources->SetSceneItem(_entryData->_source);
 }
+
+} // namespace advss

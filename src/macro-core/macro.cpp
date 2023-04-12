@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include <QMainWindow>
 
+namespace advss {
+
 constexpr int perfLogThreshold = 300;
 
 Macro::Macro(const std::string &name, const bool addHotkey)
@@ -961,3 +963,5 @@ std::weak_ptr<Macro> GetWeakMacroByName(const char *name)
 
 	return {};
 }
+
+} // namespace advss

@@ -5,6 +5,8 @@
 
 #include <QScreen>
 
+namespace advss {
+
 const std::string MacroConditionCursor::id = "cursor";
 
 bool MacroConditionCursor::_registered = MacroConditionFactory::Register(
@@ -380,3 +382,5 @@ void MacroConditionCursorEdit::UpdateEntryData()
 	_maxY->SetValue(_entryData->_maxY);
 	SetWidgetVisibility();
 }
+
+} // namespace advss

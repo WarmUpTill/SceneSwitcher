@@ -10,6 +10,8 @@
 #include <QPlainTextEdit>
 #include <obs-module.h>
 
+namespace advss {
+
 constexpr auto read_file_func = 0;
 
 typedef enum {
@@ -77,3 +79,5 @@ static inline QString MakeFileSwitchName(const QString &scene,
 					 const QString &fileName,
 					 const QString &text, bool useRegex,
 					 bool useTime, bool onlyMatchIfChanged);
+
+} // namespace advss

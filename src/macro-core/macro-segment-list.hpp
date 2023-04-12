@@ -7,6 +7,8 @@
 #include <QLabel>
 #include <thread>
 
+namespace advss {
+
 class MacroSegmentList : public QScrollArea {
 	Q_OBJECT
 
@@ -59,3 +61,5 @@ private:
 	QVBoxLayout *_contentLayout;
 	QLabel *_helpMsg;
 };
+
+} // namespace advss

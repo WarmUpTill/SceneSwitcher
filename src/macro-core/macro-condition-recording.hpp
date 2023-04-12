@@ -3,6 +3,8 @@
 #include <QWidget>
 #include <QComboBox>
 
+namespace advss {
+
 enum class RecordState {
 	STOP,
 	PAUSE,
@@ -54,3 +56,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

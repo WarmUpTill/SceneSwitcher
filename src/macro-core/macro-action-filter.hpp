@@ -7,6 +7,8 @@
 #include <QSpinBox>
 #include <QPushButton>
 
+namespace advss {
+
 class MacroActionFilter : public MacroAction {
 public:
 	MacroActionFilter(Macro *m) : MacroAction(m) {}
@@ -79,3 +81,5 @@ private:
 	void SetWidgetVisibility(bool);
 	bool _loading = true;
 };
+
+} // namespace advss

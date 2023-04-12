@@ -4,6 +4,8 @@
 #include <QComboBox>
 #include <QHBoxLayout>
 
+namespace advss {
+
 enum class RecordAction {
 	STOP,
 	START,
@@ -63,3 +65,5 @@ private:
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
+
+} // namespace advss

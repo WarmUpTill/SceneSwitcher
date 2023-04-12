@@ -5,6 +5,8 @@
 #include <QProcess>
 #include <QFileDialog>
 
+namespace advss {
+
 bool ProcessConfig::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
@@ -141,3 +143,5 @@ void ProcessConfigEdit::ShowAdvancedSettings(bool showAdvancedSettings)
 	adjustSize();
 	updateGeometry();
 }
+
+} // namespace advss

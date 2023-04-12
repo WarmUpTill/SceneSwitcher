@@ -8,6 +8,8 @@
 #include <QFileDialog>
 #include <regex>
 
+namespace advss {
+
 const std::string MacroConditionFile::id = "file";
 
 bool MacroConditionFile::_registered = MacroConditionFactory::Register(
@@ -423,3 +425,5 @@ void MacroConditionFileEdit::SetWidgetVisibility()
 	adjustSize();
 	updateGeometry();
 }
+
+} // namespace advss

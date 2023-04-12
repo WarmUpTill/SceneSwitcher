@@ -5,6 +5,8 @@
 #include <QDoubleSpinBox>
 #include <QHBoxLayout>
 
+namespace advss {
+
 enum class WaitType {
 	FIXED,
 	RANDOM,
@@ -63,3 +65,5 @@ private:
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
+
+} // namespace advss

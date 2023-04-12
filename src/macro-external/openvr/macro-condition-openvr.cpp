@@ -5,6 +5,8 @@
 #include <advanced-scene-switcher.hpp>
 #include <openvr.h>
 
+namespace advss {
+
 const std::string MacroConditionOpenVR::id = "openvr";
 
 bool MacroConditionOpenVR::_registered = MacroConditionFactory::Register(
@@ -322,3 +324,5 @@ void MacroConditionOpenVREdit::UpdateEntryData()
 	_maxY->SetValue(_entryData->_maxY);
 	_maxZ->SetValue(_entryData->_maxZ);
 }
+
+} // namespace advss

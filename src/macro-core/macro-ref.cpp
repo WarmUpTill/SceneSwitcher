@@ -1,6 +1,8 @@
 #include "macro-ref.hpp"
 #include "macro.hpp"
 
+namespace advss {
+
 MacroRef::MacroRef(std::string name)
 {
 	_macro = GetWeakMacroByName(name.c_str());
@@ -78,3 +80,5 @@ void LoadMacroList(obs_data_t *obj, std::vector<MacroRef> &macros,
 	}
 	obs_data_array_release(array);
 }
+
+} // namespace advss

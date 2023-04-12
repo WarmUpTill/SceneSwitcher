@@ -7,6 +7,8 @@
 #include <QComboBox>
 #include <QTimer>
 
+namespace advss {
+
 class MacroConditionDate : public MacroCondition {
 public:
 	MacroConditionDate(Macro *m) : MacroCondition(m, true) {}
@@ -148,3 +150,5 @@ private:
 	QTimer _timer;
 	bool _loading = true;
 };
+
+} // namespace advss

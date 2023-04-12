@@ -16,6 +16,8 @@
 #include <tesseract/baseapi.h>
 #endif
 
+namespace advss {
+
 enum class VideoCondition {
 	MATCH,
 	DIFFER,
@@ -102,8 +104,6 @@ private:
 	bool initDone = false;
 };
 
-Q_DECLARE_METATYPE(OCRParameters)
-
 class AreaParamters {
 public:
 	bool Save(obs_data_t *obj) const;
@@ -112,3 +112,7 @@ public:
 	bool enable = false;
 	advss::Area area{0, 0, 0, 0};
 };
+
+} // namespace advss
+
+Q_DECLARE_METATYPE(advss::OCRParameters)

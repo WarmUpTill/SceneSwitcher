@@ -1,6 +1,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 bool TimeSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
@@ -306,3 +308,5 @@ void TimeSwitchWidget::TimeChanged(const QTime &time)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->time = time;
 }
+
+} // namespace advss

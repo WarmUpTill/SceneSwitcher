@@ -1,5 +1,7 @@
 #include "opencv-helpers.hpp"
 
+namespace advss {
+
 PatternImageData createPatternData(QImage &pattern)
 {
 	PatternImageData data{};
@@ -186,3 +188,5 @@ QImage MatToQImage(const cv::Mat &mat)
 	return QImage(mat.data, mat.cols, mat.rows,
 		      QImage::Format::Format_RGBA8888);
 }
+
+} // namespace advss

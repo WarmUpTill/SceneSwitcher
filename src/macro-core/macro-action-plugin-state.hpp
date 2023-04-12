@@ -5,6 +5,8 @@
 #include <QDoubleSpinBox>
 #include <QLabel>
 
+namespace advss {
+
 enum class PluginStateAction {
 	STOP,
 	NO_MATCH_BEHAVIOUR,
@@ -69,3 +71,5 @@ private:
 	void SetWidgetVisibility();
 	bool _loading = true;
 };
+
+} // namespace advss

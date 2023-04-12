@@ -7,6 +7,8 @@
 #include <iomanip>
 #include <QHBoxLayout>
 
+namespace advss {
+
 Duration::Duration(double initialValueInSeconds) : _value(initialValueInSeconds)
 {
 }
@@ -223,3 +225,5 @@ void DurationSelection::_UnitChanged(int idx)
 				 (prevMultiplier / newMultiplier));
 	emit DurationChanged(_current);
 }
+
+} // namespace advss

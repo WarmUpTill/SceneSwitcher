@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionVCam::id = "virtual_cam";
 
 bool MacroConditionVCam::_registered = MacroConditionFactory::Register(
@@ -101,3 +103,5 @@ void MacroConditionVCamEdit::UpdateEntryData()
 
 	_states->setCurrentIndex(static_cast<int>(_entryData->_state));
 }
+
+} // namespace advss

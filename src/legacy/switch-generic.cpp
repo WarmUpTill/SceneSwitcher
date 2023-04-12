@@ -1,6 +1,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 static inline bool SceneGroupValid(SceneGroup *group)
 {
 	if (group) {
@@ -300,3 +302,5 @@ void SwitchWidget::TransitionChanged(const QString &text)
 	switchData->transition = GetWeakTransitionByQString(text);
 	switchData->useCurrentTransition = switchData->transition == nullptr;
 }
+
+} // namespace advss

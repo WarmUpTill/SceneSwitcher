@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "curl-helper.hpp"
 
+namespace advss {
+
 const std::string MacroActionHttp::id = "http";
 
 bool MacroActionHttp::_registered = MacroActionFactory::Register(
@@ -292,3 +294,5 @@ void MacroActionHttpEdit::DataChanged()
 	adjustSize();
 	updateGeometry();
 }
+
+} // namespace advss

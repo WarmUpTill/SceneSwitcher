@@ -6,6 +6,8 @@
 #include <QTextStream>
 #include <QFileDialog>
 
+namespace advss {
+
 const std::string MacroActionFile::id = "file";
 
 bool MacroActionFile::_registered = MacroActionFactory::Register(
@@ -167,3 +169,5 @@ void MacroActionFileEdit::ActionChanged(int value)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	_entryData->_action = static_cast<FileAction>(value);
 }
+
+} // namespace advss

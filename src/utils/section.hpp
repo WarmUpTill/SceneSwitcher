@@ -7,6 +7,8 @@
 #include <QToolButton>
 #include <QWidget>
 
+namespace advss {
+
 class Section : public QWidget {
 	Q_OBJECT
 
@@ -47,3 +49,5 @@ private:
 	int _headerHeight = 0;
 	int _contentHeight = 0;
 };
+
+} // namespace advss

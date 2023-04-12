@@ -13,6 +13,8 @@
 #include <unordered_map>
 #include "scene-group.hpp"
 
+namespace advss {
+
 class SceneSelection;
 class RegexConfig;
 
@@ -120,3 +122,5 @@ bool doubleEquals(double left, double right, double epsilon);
 std::pair<int, int> getCursorPos();
 void replaceAll(std::string &str, const std::string &from,
 		const std::string &to);
+
+} // namespace advss

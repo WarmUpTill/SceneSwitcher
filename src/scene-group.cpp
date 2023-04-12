@@ -6,6 +6,8 @@
 #include "name-dialog.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 static QMetaObject::Connection addPulse;
 SceneGroupEditWidget *typeEdit = nullptr;
 
@@ -705,3 +707,5 @@ SceneGroup *GetSceneGroupByQString(const QString &name)
 {
 	return GetSceneGroupByName(name.toUtf8().constData());
 }
+
+} // namespace advss

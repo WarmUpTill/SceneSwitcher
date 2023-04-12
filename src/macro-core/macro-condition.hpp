@@ -3,6 +3,8 @@
 #include "macro-ref.hpp"
 #include <duration-control.hpp>
 
+namespace advss {
+
 constexpr auto logic_root_offset = 100;
 
 enum class LogicType {
@@ -92,3 +94,5 @@ public:
 
 	std::vector<MacroRef> _macros;
 };
+
+} // namespace advss

@@ -5,6 +5,8 @@
 #include <QCryptographicHash>
 #include <obs-websocket-api.h>
 
+namespace advss {
+
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
@@ -83,10 +85,10 @@ WSConnection::WSConnection() : QObject(nullptr)
 	_client.set_reuse_addr(true);
 #endif
 
-	_client.set_open_handler(bind(&WSConnection::OnOpen, this, ::_1));
+	_client.set_open_handler(bind(&WSConnection::OnOpen, this, _1));
 	_client.set_message_handler(
-		bind(&WSConnection::OnMessage, this, ::_1, ::_2));
-	_client.set_close_handler(bind(&WSConnection::OnClose, this, ::_1));
+		bind(&WSConnection::OnMessage, this, _1, _2));
+	_client.set_close_handler(bind(&WSConnection::OnClose, this, _1));
 }
 
 WSConnection::~WSConnection()
@@ -356,3 +358,5 @@ void WSConnection::OnClose(connection_hdl)
 	blog(LOG_INFO, "client-connection to %s closed.", _uri.c_str());
 	_status = Status::DISCONNECTED;
 }
+
+} // namespace advss

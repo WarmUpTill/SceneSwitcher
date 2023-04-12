@@ -16,6 +16,8 @@
 #include <QAbstractEventDispatcher>
 #include <QAbstractNativeEventFilter>
 
+namespace advss {
+
 #define MAX_SEARCH 1000
 
 // Hotkeys
@@ -545,3 +547,5 @@ void PlatformCleanup()
 		mouseInputFilter = nullptr;
 	}
 }
+
+} // namespace advss

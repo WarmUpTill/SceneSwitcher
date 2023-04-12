@@ -3,6 +3,8 @@
 
 #include <QComboBox>
 
+namespace advss {
+
 class MacroActionSceneCollection : public MacroAction {
 public:
 	MacroActionSceneCollection(Macro *m) : MacroAction(m) {}
@@ -53,3 +55,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

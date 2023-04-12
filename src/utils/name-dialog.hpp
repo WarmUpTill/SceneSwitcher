@@ -4,6 +4,8 @@
 #include <QLabel>
 #include <QLineEdit>
 
+namespace advss {
+
 // Based on OBS's NameDialog
 class AdvSSNameDialog : public QDialog {
 	Q_OBJECT
@@ -22,3 +24,5 @@ private:
 	QLabel *label;
 	QLineEdit *userText;
 };
+
+} // namespace advss

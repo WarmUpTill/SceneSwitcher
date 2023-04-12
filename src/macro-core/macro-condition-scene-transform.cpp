@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionSceneTransform::id = "scene_transform";
 
 bool MacroConditionSceneTransform::_registered =
@@ -215,3 +217,5 @@ void MacroConditionSceneTransformEdit::RegexChanged(RegexConfig conf)
 	adjustSize();
 	updateGeometry();
 }
+
+} // namespace advss

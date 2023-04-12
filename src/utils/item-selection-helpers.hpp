@@ -15,6 +15,8 @@
 #include <obs.hpp>
 #include <websocket-helpers.hpp>
 
+namespace advss {
+
 class ItemSelection;
 class ItemSettingsDialog;
 
@@ -99,3 +101,5 @@ protected:
 	std::string_view _selectStr;
 	std::string_view _addStr;
 };
+
+} // namespace advss

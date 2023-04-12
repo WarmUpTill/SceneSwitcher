@@ -5,6 +5,8 @@
 
 #include <QSpinBox>
 
+namespace advss {
+
 enum class SceneOrderAction {
 	MOVE_UP,
 	MOVE_DOWN,
@@ -73,3 +75,5 @@ private:
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
+
+} // namespace advss

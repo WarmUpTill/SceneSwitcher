@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionHotkey::id = "hotkey";
 
 bool MacroConditionHotkey::_registered = MacroConditionFactory::Register(
@@ -110,3 +112,5 @@ void MacroConditionHotkeyEdit::UpdateEntryData()
 	_name->setText(
 		QString::fromStdString(_entryData->_hotkey->GetDescription()));
 }
+
+} // namespace advss

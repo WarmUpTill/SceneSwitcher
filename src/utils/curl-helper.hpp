@@ -2,6 +2,8 @@
 #include <curl/curl.h>
 #include <QLibrary>
 
+namespace advss {
+
 typedef CURL *(*initFunction)(void);
 typedef void (*cleanupFunction)(CURL *);
 typedef CURLcode (*setOptFunction)(CURL *, CURLoption, ...);
@@ -42,3 +44,5 @@ inline CURLcode Curlhelper::SetOpt(CURLoption option, Args... args)
 	}
 	return _setopt(_curl, option, args...);
 }
+
+} // namespace advss

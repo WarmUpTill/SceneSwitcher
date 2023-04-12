@@ -7,6 +7,8 @@
 #include <QGroupBox>
 #include <obs-data.h>
 
+namespace advss {
+
 class MacroProperties {
 public:
 	void Save(obs_data_t *obj) const;
@@ -42,3 +44,5 @@ private:
 	QCheckBox *_currentMacroDockAddPauseButton;
 	QGroupBox *_dockOptions;
 };
+
+} // namespace advss

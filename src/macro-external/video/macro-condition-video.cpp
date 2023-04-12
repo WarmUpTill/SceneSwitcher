@@ -12,6 +12,8 @@
 #include <QtGlobal>
 #include <QColorDialog>
 
+namespace advss {
+
 const std::string MacroConditionVideo::id = "video";
 
 bool MacroConditionVideo::_registered = MacroConditionFactory::Register(
@@ -1294,3 +1296,5 @@ void MacroConditionVideoEdit::UpdateEntryData()
 	SetupPreviewDialogParams();
 	SetWidgetVisibility();
 }
+
+} // namespace advss

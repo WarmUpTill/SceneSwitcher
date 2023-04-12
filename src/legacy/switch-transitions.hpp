@@ -3,6 +3,8 @@
 
 #include "switch-generic.hpp"
 
+namespace advss {
+
 struct SceneTransition : SceneSwitcherEntry {
 	OBSWeakSource scene2 = nullptr;
 	double duration = 0.3;
@@ -77,3 +79,5 @@ public:
 private:
 	DefaultSceneTransition *switchData;
 };
+
+} // namespace advss

@@ -11,12 +11,19 @@
 #include <memory>
 #include <deque>
 
-class Macro;
-
 class QLabel;
-class MacroTree;
 class QSpacerItem;
 class QHBoxLayout;
+
+// Only used to enable applying "SourceTreeSubItemCheckBox" stylesheet
+class SourceTreeSubItemCheckBox : public QCheckBox {
+	Q_OBJECT
+};
+
+namespace advss {
+
+class Macro;
+class MacroTree;
 
 class MacroTreeItem : public QFrame {
 	Q_OBJECT
@@ -59,11 +66,6 @@ private:
 
 	friend class MacroTree;
 	friend class MacroTreeModel;
-};
-
-// Only used to enable applying "SourceTreeSubItemCheckBox" stylesheet
-class SourceTreeSubItemCheckBox : public QCheckBox {
-	Q_OBJECT
 };
 
 class MacroTreeModel : public QAbstractListModel {
@@ -162,3 +164,5 @@ public:
 	virtual QSize sizeHint(const QStyleOptionViewItem &option,
 			       const QModelIndex &index) const override;
 };
+
+} // namespace advss

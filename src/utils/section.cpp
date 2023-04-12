@@ -4,6 +4,8 @@
 #include <QPropertyAnimation>
 #include <QEvent>
 
+namespace advss {
+
 Section::Section(const int animationDuration, QWidget *parent)
 	: QWidget(parent), _animationDuration(animationDuration)
 {
@@ -175,3 +177,5 @@ void Section::AnimationFinish()
 	_transitioning = false;
 	emit AnimationFinished();
 }
+
+} // namespace advss

@@ -4,6 +4,8 @@
 #include <QComboBox>
 #include <memory>
 
+namespace advss {
+
 struct MacroActionInfo {
 	using TCreateMethod = std::shared_ptr<MacroAction> (*)(Macro *m);
 	using TCreateWidgetMethod = QWidget *(*)(QWidget *parent,
@@ -51,3 +53,5 @@ private:
 	std::shared_ptr<MacroAction> *_entryData;
 	bool _loading = true;
 };
+
+} // namespace advss

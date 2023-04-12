@@ -2,6 +2,8 @@
 #include "macro-action-edit.hpp"
 #include "scene-selection.hpp"
 
+namespace advss {
+
 enum class StudioModeAction {
 	SWAP_SCENE,
 	SET_SCENE,
@@ -61,3 +63,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

@@ -3,6 +3,8 @@
 
 #include <memory>
 
+namespace advss {
+
 struct MacroConditionInfo {
 	using TCreateMethod = std::shared_ptr<MacroCondition> (*)(Macro *m);
 	using TCreateWidgetMethod =
@@ -82,3 +84,5 @@ private:
 	bool _isRoot = true;
 	bool _loading = true;
 };
+
+} // namespace advss

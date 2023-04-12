@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionIdle::id = "idle";
 
 bool MacroConditionIdle::_registered = MacroConditionFactory::Register(
@@ -71,3 +73,5 @@ void MacroConditionIdleEdit::UpdateEntryData()
 
 	_duration->SetDuration(_entryData->_duration);
 }
+
+} // namespace advss

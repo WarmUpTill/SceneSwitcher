@@ -3,6 +3,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 bool RandomSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
@@ -220,3 +222,5 @@ void RandomSwitchWidget::DelayChanged(double d)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->delay = d;
 }
+
+} // namespace advss

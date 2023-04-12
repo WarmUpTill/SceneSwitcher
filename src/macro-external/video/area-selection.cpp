@@ -4,7 +4,9 @@
 #include <QLabel>
 #include <obs-module.h>
 
-void advss::Size::Save(obs_data_t *obj, const char *name) const
+namespace advss {
+
+void Size::Save(obs_data_t *obj, const char *name) const
 {
 	auto data = obs_data_create();
 	width.Save(data, "width");
@@ -14,7 +16,7 @@ void advss::Size::Save(obs_data_t *obj, const char *name) const
 	obs_data_release(data);
 }
 
-void advss::Size::Load(obs_data_t *obj, const char *name)
+void Size::Load(obs_data_t *obj, const char *name)
 {
 	auto data = obs_data_get_obj(obj, name);
 	if (!obs_data_has_user_value(data, "version")) {
@@ -27,12 +29,12 @@ void advss::Size::Load(obs_data_t *obj, const char *name)
 	obs_data_release(data);
 }
 
-cv::Size advss::Size::CV()
+cv::Size Size::CV()
 {
 	return {width, height};
 }
 
-void advss::Area::Save(obs_data_t *obj, const char *name) const
+void Area::Save(obs_data_t *obj, const char *name) const
 {
 	auto data = obs_data_create();
 	x.Save(data, "x");
@@ -44,7 +46,7 @@ void advss::Area::Save(obs_data_t *obj, const char *name) const
 	obs_data_release(data);
 }
 
-void advss::Area::Load(obs_data_t *obj, const char *name)
+void Area::Load(obs_data_t *obj, const char *name)
 {
 	auto data = obs_data_get_obj(obj, name);
 	if (!obs_data_has_user_value(data, "version")) {
@@ -81,25 +83,25 @@ SizeSelection::SizeSelection(int min, int max, QWidget *parent)
 	setLayout(layout);
 }
 
-void SizeSelection::SetSize(const advss::Size &s)
+void SizeSelection::SetSize(const Size &s)
 {
 	_x->SetValue(s.width);
 	_y->SetValue(s.height);
 }
 
-advss::Size SizeSelection::Size()
+Size SizeSelection::GetSize()
 {
-	return advss::Size{_x->Value(), _y->Value()};
+	return Size{_x->Value(), _y->Value()};
 }
 
 void SizeSelection::XChanged(const NumberVariable<int> &value)
 {
-	emit SizeChanged(advss::Size{value, _y->Value()});
+	emit SizeChanged(Size{value, _y->Value()});
 }
 
 void SizeSelection::YChanged(const NumberVariable<int> &value)
 {
-	emit SizeChanged(advss::Size{_x->Value(), value});
+	emit SizeChanged(Size{_x->Value(), value});
 }
 
 AreaSelection::AreaSelection(int min, int max, QWidget *parent)
@@ -116,10 +118,8 @@ AreaSelection::AreaSelection(int min, int max, QWidget *parent)
 				  "AdvSceneSwitcher.condition.video.height")) +
 			  ":");
 
-	connect(_x, SIGNAL(SizeChanged(advss::Size)), this,
-		SLOT(XSizeChanged(advss::Size)));
-	connect(_y, SIGNAL(SizeChanged(advss::Size)), this,
-		SLOT(YSizeChanged(advss::Size)));
+	connect(_x, SIGNAL(SizeChanged(Size)), this, SLOT(XSizeChanged(Size)));
+	connect(_y, SIGNAL(SizeChanged(Size)), this, SLOT(YSizeChanged(Size)));
 
 	auto layout = new QVBoxLayout();
 	layout->setContentsMargins(0, 0, 0, 0);
@@ -128,20 +128,22 @@ AreaSelection::AreaSelection(int min, int max, QWidget *parent)
 	setLayout(layout);
 }
 
-void AreaSelection::SetArea(const advss::Area &value)
+void AreaSelection::SetArea(const Area &value)
 {
 	_x->SetSize({value.x, value.y});
 	_y->SetSize({value.width, value.height});
 }
 
-void AreaSelection::XSizeChanged(advss::Size value)
+void AreaSelection::XSizeChanged(Size value)
 {
-	emit AreaChanged(advss::Area{value.width, value.height,
-				     _y->Size().width, _y->Size().height});
+	emit AreaChanged(Area{value.width, value.height, _y->GetSize().width,
+			      _y->GetSize().height});
 }
 
-void AreaSelection::YSizeChanged(advss::Size value)
+void AreaSelection::YSizeChanged(Size value)
 {
-	emit AreaChanged(advss::Area{_x->Size().width, _x->Size().height,
-				     value.width, value.height});
+	emit AreaChanged(Area{_x->GetSize().width, _x->GetSize().height,
+			      value.width, value.height});
 }
+
+} // namespace advss

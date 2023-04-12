@@ -18,6 +18,8 @@
 #include <QLabel>
 #include <QRect>
 
+namespace advss {
+
 class PreviewDialog;
 
 class MacroConditionVideo : public MacroCondition {
@@ -200,3 +202,5 @@ private:
 	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;
 };
+
+} // namespace advss

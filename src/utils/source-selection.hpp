@@ -5,6 +5,8 @@
 
 #include <QComboBox>
 
+namespace advss {
+
 class SourceSelection {
 public:
 	void Save(obs_data_t *obj, const char *name = "source") const;
@@ -66,3 +68,5 @@ private:
 	int _variablesEndIdx = -1;
 	int _sourcesEndIdx = -1;
 };
+
+} // namespace advss

@@ -14,6 +14,10 @@
 #include <QMouseEvent>
 #include <QStylePainter>
 
+Q_DECLARE_METATYPE(std::shared_ptr<advss::Macro>);
+
+namespace advss {
+
 MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 			     bool highlight)
 	: _tree(tree), _highlight(highlight), _macro(macroItem)
@@ -778,8 +782,6 @@ void MacroTree::UpdateWidgets(bool force)
 	}
 }
 
-Q_DECLARE_METATYPE(std::shared_ptr<Macro>);
-
 static inline void MoveItem(std::deque<std::shared_ptr<Macro>> &items,
 			    std::shared_ptr<Macro> &item, int to)
 {
@@ -1220,3 +1222,5 @@ QSize MacroTreeDelegate::sizeHint(const QStyleOptionViewItem &option,
 
 	return (QSize(option.widget->minimumWidth(), item->height()));
 }
+
+} // namespace advss

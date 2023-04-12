@@ -12,6 +12,8 @@
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
 
+namespace advss {
+
 static QMetaObject::Connection addPulse;
 static QTimer onChangeHighlightTimer;
 
@@ -882,3 +884,5 @@ void AdvSceneSwitcher::HighlightControls()
 		ResetOpacityConditionControls();
 	}
 }
+
+} // namespace advss

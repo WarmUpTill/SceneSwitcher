@@ -3,6 +3,8 @@
 #include <QWidget>
 #include <QComboBox>
 
+namespace advss {
+
 enum class ReplayBufferState {
 	STOP,
 	START,
@@ -55,3 +57,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

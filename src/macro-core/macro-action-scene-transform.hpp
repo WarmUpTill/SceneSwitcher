@@ -6,6 +6,8 @@
 
 #include <QSpinBox>
 
+namespace advss {
+
 class MacroActionSceneTransform : public MacroAction {
 public:
 	MacroActionSceneTransform(Macro *m) : MacroAction(m) {}
@@ -70,3 +72,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

@@ -5,6 +5,8 @@
 #include <QStandardItemModel>
 #include <QDialogButtonBox>
 
+namespace advss {
+
 MacroSelection::MacroSelection(QWidget *parent) : QComboBox(parent)
 {
 	addItem(obs_module_text("AdvSceneSwitcher.selectMacro"));
@@ -143,3 +145,5 @@ bool MacroSelectionDialog::AskForMacro(QWidget *parent, std::string &macroName)
 
 	return true;
 }
+
+} // namespace advss

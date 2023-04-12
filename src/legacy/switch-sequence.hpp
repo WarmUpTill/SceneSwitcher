@@ -11,6 +11,8 @@
 #include "switch-generic.hpp"
 #include "duration-control.hpp"
 
+namespace advss {
+
 constexpr auto round_trip_func = 1;
 
 struct SceneSequenceSwitch : SceneSwitcherEntry {
@@ -82,3 +84,5 @@ protected:
 
 	SceneSequenceSwitch *switchData;
 };
+
+} // namespace advss

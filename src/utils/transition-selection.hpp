@@ -3,6 +3,8 @@
 
 #include <QComboBox>
 
+namespace advss {
+
 class TransitionSelection {
 public:
 	void Save(obs_data_t *obj, const char *name = "transition",
@@ -44,3 +46,5 @@ private:
 	bool IsCurrentTransitionSelected(const QString &name);
 	bool IsAnyTransitionSelected(const QString &name);
 };
+
+} // namespace advss

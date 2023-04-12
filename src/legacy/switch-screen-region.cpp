@@ -3,6 +3,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 bool ScreenRegionSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
@@ -455,3 +457,5 @@ void ScreenRegionWidget::drawFrame()
 					switchData->maxY - switchData->minY);
 	}
 }
+
+} // namespace advss

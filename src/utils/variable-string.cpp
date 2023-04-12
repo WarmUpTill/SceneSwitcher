@@ -3,6 +3,8 @@
 #include <switcher-data-structs.hpp>
 #include <utility.hpp>
 
+namespace advss {
+
 void StringVariable::Resolve()
 {
 	if (switcher->variables.empty()) {
@@ -71,3 +73,5 @@ std::string SubstitueVariables(std::string str)
 	}
 	return str;
 }
+
+} // namespace advss

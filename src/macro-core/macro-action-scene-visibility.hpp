@@ -5,6 +5,8 @@
 
 #include <QSpinBox>
 
+namespace advss {
+
 enum class SceneVisibilityAction {
 	SHOW,
 	HIDE,
@@ -81,3 +83,5 @@ private:
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
+
+} // namespace advss

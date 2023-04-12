@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionTransition::id = "transition";
 
 bool MacroActionTransition::_registered = MacroActionFactory::Register(
@@ -382,3 +384,5 @@ void MacroActionTransitionEdit::SetDurationChanged(int state)
 	_entryData->_setDuration = state;
 	_duration->setEnabled(state);
 }
+
+} // namespace advss

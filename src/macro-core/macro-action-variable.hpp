@@ -4,6 +4,8 @@
 #include "resizing-text-edit.hpp"
 #include "variable-line-edit.hpp"
 
+namespace advss {
+
 class MacroActionVariable : public MacroAction {
 public:
 	MacroActionVariable(Macro *m) : MacroAction(m) {}
@@ -134,3 +136,5 @@ private:
 	QTimer _timer;
 	bool _loading = true;
 };
+
+} // namespace advss

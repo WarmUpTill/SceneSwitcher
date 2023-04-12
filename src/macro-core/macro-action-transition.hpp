@@ -8,6 +8,8 @@
 #include <QCheckBox>
 #include <QHBoxLayout>
 
+namespace advss {
+
 class MacroActionTransition : public MacroAction {
 public:
 	MacroActionTransition(Macro *m) : MacroAction(m) {}
@@ -91,3 +93,5 @@ private:
 
 	bool _loading = true;
 };
+
+} // namespace advss

@@ -3,6 +3,8 @@
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 const std::string MacroConditionSceneOrder::id = "scene_order";
 
 bool MacroConditionSceneOrder::_registered = MacroConditionFactory::Register(
@@ -354,3 +356,5 @@ void MacroConditionSceneOrderEdit::UpdateEntryData()
 	SetWidgetVisibility(_entryData->_condition ==
 			    MacroConditionSceneOrder::Condition::POSITION);
 }
+
+} // namespace advss

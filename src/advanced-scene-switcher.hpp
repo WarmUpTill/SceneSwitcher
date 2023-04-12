@@ -12,6 +12,9 @@
 	}
 
 class QCloseEvent;
+
+namespace advss {
+
 class MacroActionEdit;
 class MacroConditionEdit;
 
@@ -343,3 +346,5 @@ void AskForBackup(obs_data_t *obj);
 struct SwitcherData;
 extern SwitcherData *switcher;
 SwitcherData *GetSwitcher();
+
+} // namespace advss

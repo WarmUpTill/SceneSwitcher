@@ -13,6 +13,8 @@ const char *obs_module_text(const char *text)
 typedef exprtk::expression<double> expression_t;
 typedef exprtk::parser<double> parser_t;
 
+namespace advss {
+
 std::variant<double, std::string> EvalMathExpression(const std::string &expr)
 {
 	expression_t expression;
@@ -41,3 +43,5 @@ std::optional<double> GetDouble(const std::string &str)
 	}
 	return {};
 }
+
+} // namespace advss

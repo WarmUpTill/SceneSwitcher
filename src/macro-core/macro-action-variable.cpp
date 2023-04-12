@@ -4,6 +4,8 @@
 #include "math-helpers.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionVariable::id = "variable";
 
 bool MacroActionVariable::_registered = MacroActionFactory::Register(
@@ -833,3 +835,5 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 	adjustSize();
 	updateGeometry();
 }
+
+} // namespace advss

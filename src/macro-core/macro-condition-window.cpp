@@ -5,6 +5,8 @@
 
 #include <regex>
 
+namespace advss {
+
 const std::string MacroConditionWindow::id = "window";
 
 bool MacroConditionWindow::_registered = MacroConditionFactory::Register(
@@ -246,3 +248,5 @@ void MacroConditionWindowEdit::UpdateEntryData()
 	_windowFocusChanged->setChecked(_entryData->_windowFocusChanged);
 	SetWidgetVisibility();
 }
+
+} // namespace advss

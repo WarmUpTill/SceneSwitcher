@@ -6,6 +6,8 @@
 
 #include <QCheckBox>
 
+namespace advss {
+
 class MacroConditionWebsocket : public MacroCondition {
 public:
 	MacroConditionWebsocket(Macro *m) : MacroCondition(m, true) {}
@@ -73,3 +75,5 @@ private:
 	QHBoxLayout *_editLayout;
 	bool _loading = true;
 };
+
+} // namespace advss

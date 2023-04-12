@@ -5,6 +5,8 @@
 #include <QWidget>
 #include <QComboBox>
 
+namespace advss {
+
 enum class StudioModeCondition {
 	STUDIO_MODE_ACTIVE,
 	STUDIO_MODE_NOT_ACTIVE,
@@ -64,3 +66,5 @@ private:
 	void SetWidgetVisibility();
 	bool _loading = true;
 };
+
+} // namespace advss

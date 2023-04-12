@@ -5,6 +5,8 @@
 #include <vector>
 #include <chrono>
 
+namespace advss {
+
 extern bool canSimulateKeyPresses;
 
 class Hotkey {
@@ -162,3 +164,5 @@ enum class HotkeyType {
 };
 
 void registerHotkeys();
+
+} // namespace advss

@@ -7,6 +7,8 @@
 #include <QLayout>
 #include <obs-data.h>
 
+namespace advss {
+
 class StatusControl : public QWidget {
 	Q_OBJECT
 
@@ -43,3 +45,5 @@ public:
 };
 
 void SetupDock();
+
+} // namespace advss

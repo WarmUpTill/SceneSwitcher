@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionReplayBuffer::id = "replay_buffer";
 
 bool MacroActionReplayBuffer::_registered = MacroActionFactory::Register(
@@ -123,3 +125,5 @@ void MacroActionReplayBufferEdit::ActionChanged(int value)
 				 ReplayBufferAction::SAVE);
 	adjustSize();
 }
+
+} // namespace advss

@@ -4,6 +4,8 @@
 #include <QLayout>
 #include <obs-module.h>
 
+namespace advss {
+
 void RegexConfig::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
@@ -180,3 +182,5 @@ bool RegexConfigDialog::AskForSettings(QWidget *parent, RegexConfig &settings)
 		  dialog._extendedPattern);
 	return true;
 }
+
+} // namespace advss

@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 using namespace std::chrono_literals;
 
 const std::string MacroActionSwitchScene::id = "scene_switch";
@@ -298,3 +300,5 @@ void MacroActionSwitchSceneEdit::TransitionChanged(const TransitionSelection &t)
 	_entryData->_transition = t;
 	SetDurationVisibility();
 }
+
+} // namespace advss

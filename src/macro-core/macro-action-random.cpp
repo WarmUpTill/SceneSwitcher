@@ -4,6 +4,8 @@
 
 #include <cstdlib>
 
+namespace advss {
+
 const std::string MacroActionRandom::id = "random";
 
 bool MacroActionRandom::_registered = MacroActionFactory::Register(
@@ -203,3 +205,5 @@ bool MacroActionRandomEdit::ShouldShowAllowRepeat()
 	}
 	return false;
 }
+
+} // namespace advss

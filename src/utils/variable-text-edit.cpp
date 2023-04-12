@@ -1,6 +1,8 @@
 #include "variable-text-edit.hpp"
 #include "switcher-data-structs.hpp"
 
+namespace advss {
+
 VariableTextEdit::VariableTextEdit(QWidget *parent)
 	: ResizingPlainTextEdit(parent)
 {
@@ -16,3 +18,5 @@ void VariableTextEdit::setPlainText(const StringVariable &string)
 	QPlainTextEdit::setPlainText(
 		QString::fromStdString(string.UnresolvedValue()));
 }
+
+} // namespace advss

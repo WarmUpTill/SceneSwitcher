@@ -3,6 +3,8 @@
 #include "scene-selection.hpp"
 #include "source-selection.hpp"
 
+namespace advss {
+
 class MacroActionProjector : public MacroAction {
 public:
 	MacroActionProjector(Macro *m) : MacroAction(m) {}
@@ -71,3 +73,5 @@ private:
 	void SetWidgetVisibility();
 	bool _loading = true;
 };
+
+} // namespace advss

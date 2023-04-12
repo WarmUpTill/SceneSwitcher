@@ -5,6 +5,8 @@
 #include <QWidget>
 #include <QComboBox>
 
+namespace advss {
+
 class MacroConditionIdle : public MacroCondition {
 public:
 	MacroConditionIdle(Macro *m) : MacroCondition(m, true) {}
@@ -50,3 +52,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

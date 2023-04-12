@@ -4,6 +4,8 @@
 
 #include <thread>
 
+namespace advss {
+
 const std::string MacroActionPluginState::id = "plugin_state";
 
 bool MacroActionPluginState::_registered = MacroActionFactory::Register(
@@ -263,3 +265,5 @@ void MacroActionPluginStateEdit::SetWidgetVisibility()
 		break;
 	}
 }
+
+} // namespace advss

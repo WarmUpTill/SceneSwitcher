@@ -7,6 +7,8 @@
 #include <QCheckBox>
 #include <QTimer>
 
+namespace advss {
+
 class MacroActionSequence : public MultiMacroRefAction {
 public:
 	MacroActionSequence(Macro *m) : MacroAction(m), MultiMacroRefAction(m)
@@ -70,3 +72,5 @@ private:
 	QTimer _statusTimer;
 	bool _loading = true;
 };
+
+} // namespace advss

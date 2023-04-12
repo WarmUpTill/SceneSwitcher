@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const std::string MacroActionMacro::id = "macro";
 
 bool MacroActionMacro::_registered = MacroActionFactory::Register(
@@ -177,3 +179,5 @@ void MacroActionMacroEdit::ActionChanged(int value)
 		_macros->ShowAllMacros();
 	}
 }
+
+} // namespace advss

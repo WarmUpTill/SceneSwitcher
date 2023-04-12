@@ -13,6 +13,8 @@
 #include <obs.hpp>
 #include <obs-module.h>
 
+namespace advss {
+
 constexpr auto macro_func = 10;
 
 class MacroDock;
@@ -148,3 +150,5 @@ private:
 Macro *GetMacroByName(const char *name);
 Macro *GetMacroByQString(const QString &name);
 std::weak_ptr<Macro> GetWeakMacroByName(const char *name);
+
+} // namespace advss

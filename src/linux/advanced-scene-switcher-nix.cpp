@@ -33,6 +33,8 @@
 #include <fstream>
 #include <sstream>
 
+namespace advss {
+
 static Display *xdisplay = 0;
 
 static QLibrary *libXtstHandle = nullptr;
@@ -659,3 +661,5 @@ void PlatformCleanup()
 	}
 	cleanupDisplay();
 }
+
+} // namespace advss

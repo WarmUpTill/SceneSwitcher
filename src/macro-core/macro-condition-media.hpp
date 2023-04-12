@@ -9,6 +9,8 @@
 #include <QComboBox>
 #include <QCheckBox>
 
+namespace advss {
+
 constexpr auto custom_media_states_offset = 100;
 
 class MacroConditionMedia : public MacroCondition {
@@ -135,3 +137,5 @@ private:
 	void SetWidgetVisibility();
 	bool _loading = true;
 };
+
+} // namespace advss

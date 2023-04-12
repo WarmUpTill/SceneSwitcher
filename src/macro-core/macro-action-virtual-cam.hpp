@@ -4,6 +4,8 @@
 #include <QComboBox>
 #include <QHBoxLayout>
 
+namespace advss {
+
 enum class VCamAction {
 	STOP,
 	START,
@@ -56,3 +58,5 @@ private:
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
+
+} // namespace advss

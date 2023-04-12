@@ -5,6 +5,8 @@
 
 #include <QComboBox>
 
+namespace advss {
+
 class SceneSelection {
 public:
 	void Save(obs_data_t *obj) const;
@@ -78,3 +80,5 @@ private:
 	int _groupsEndIdx = -1;
 	int _scenesEndIdx = -1;
 };
+
+} // namespace advss

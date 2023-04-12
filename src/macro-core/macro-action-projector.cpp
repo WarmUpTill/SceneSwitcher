@@ -4,6 +4,8 @@
 
 #include <QScreen>
 
+namespace advss {
+
 const std::string MacroActionProjector::id = "projector";
 
 bool MacroActionProjector::_registered = MacroActionFactory::Register(
@@ -288,3 +290,5 @@ void MacroActionProjectorEdit::SetWidgetVisibility()
 	adjustSize();
 	updateGeometry();
 }
+
+} // namespace advss

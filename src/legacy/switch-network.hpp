@@ -19,6 +19,8 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 #include <websocketpp/server.hpp>
 #include <websocketpp/client.hpp>
 
+namespace advss {
+
 using websocketpp::connection_hdl;
 typedef websocketpp::server<websocketpp::config::asio> server;
 typedef websocketpp::client<websocketpp::config::asio_client> client;
@@ -131,3 +133,5 @@ public:
 
 QRunnable *CreateFunctionRunnable(std::function<void()> func);
 }
+
+} // namespace advss

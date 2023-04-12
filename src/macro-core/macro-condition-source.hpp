@@ -8,6 +8,8 @@
 #include <QPushButton>
 #include <QCheckBox>
 
+namespace advss {
+
 enum class SourceCondition {
 	ACTIVE,
 	SHOWING,
@@ -75,3 +77,5 @@ private:
 	void SetSettingsSelectionVisible(bool visible);
 	bool _loading = true;
 };
+
+} // namespace advss

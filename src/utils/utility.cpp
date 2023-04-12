@@ -22,6 +22,8 @@
 #include <set>
 #include <obs-module.h>
 
+namespace advss {
+
 bool WeakSourceValid(obs_weak_source_t *ws)
 {
 	obs_source_t *source = obs_weak_source_get_source(ws);
@@ -1055,3 +1057,5 @@ void replaceAll(std::string &str, const std::string &from,
 		start_pos += to.length();
 	}
 }
+
+} // namespace advss

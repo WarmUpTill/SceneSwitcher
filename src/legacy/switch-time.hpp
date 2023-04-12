@@ -10,6 +10,8 @@
 
 #include "switch-generic.hpp"
 
+namespace advss {
+
 constexpr auto time_func = 7;
 
 typedef enum {
@@ -54,3 +56,5 @@ private:
 
 	TimeSwitch *switchData;
 };
+
+} // namespace advss

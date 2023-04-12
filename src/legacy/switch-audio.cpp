@@ -4,6 +4,8 @@
 #include "volume-control.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 bool AudioSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
@@ -611,3 +613,5 @@ void AudioSwitchFallbackWidget::DurationChanged(const Duration &dur)
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switchData->duration = dur;
 }
+
+} // namespace advss

@@ -6,6 +6,8 @@
 #include <QSpinBox>
 #include <QHBoxLayout>
 
+namespace advss {
+
 enum class MediaAction {
 	PLAY,
 	PAUSE,
@@ -74,3 +76,5 @@ private:
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
+
+} // namespace advss

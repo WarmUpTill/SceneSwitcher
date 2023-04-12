@@ -8,6 +8,8 @@
 #include <QPushButton>
 #include <QTimer>
 
+namespace advss {
+
 class MacroConditionCursor : public MacroCondition {
 public:
 	MacroConditionCursor(Macro *m) : MacroCondition(m, true) {}
@@ -90,3 +92,5 @@ private:
 	StripedFrame _frame;
 	bool _loading = true;
 };
+
+} // namespace advss

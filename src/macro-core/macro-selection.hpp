@@ -2,6 +2,8 @@
 #include <QComboBox>
 #include <QDialog>
 
+namespace advss {
+
 class Macro;
 class MacroRef;
 
@@ -30,3 +32,5 @@ public:
 private:
 	MacroSelection *_macroSelection;
 };
+
+} // namespace advss

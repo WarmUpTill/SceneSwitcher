@@ -6,6 +6,8 @@
 #include <QComboBox>
 #include <obs-data.h>
 
+namespace advss {
+
 class SceneItemSelection {
 public:
 	void Save(obs_data_t *obj,
@@ -82,3 +84,5 @@ private:
 	int _variablesEndIdx = -1;
 	int _itemsEndIdx = -1;
 };
+
+} // namespace advss

@@ -10,6 +10,8 @@
 #include <QPoint>
 #include <mutex>
 
+namespace advss {
+
 enum class PreviewType {
 	SHOW_MATCH,
 	SELECT_AREA,
@@ -90,3 +92,5 @@ private:
 	std::mutex _mtx;
 	QThread _thread;
 };
+
+} // namespace advss

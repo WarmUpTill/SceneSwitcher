@@ -1,6 +1,8 @@
 #include "source-selection.hpp"
 #include "advanced-scene-switcher.hpp"
 
+namespace advss {
+
 constexpr std::string_view typeSaveName = "type";
 constexpr std::string_view nameSaveName = "name";
 
@@ -247,3 +249,5 @@ void SourceSelectionWidget::ItemRename(const QString &, const QString &)
 	Reset();
 	blockSignals(false);
 }
+
+} // namespace advss

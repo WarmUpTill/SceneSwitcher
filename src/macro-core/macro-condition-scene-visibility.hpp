@@ -5,6 +5,8 @@
 
 #include <QComboBox>
 
+namespace advss {
+
 class MacroConditionSceneVisibility : public MacroCondition {
 public:
 	MacroConditionSceneVisibility(Macro *m) : MacroCondition(m) {}
@@ -69,3 +71,5 @@ protected:
 private:
 	bool _loading = true;
 };
+
+} // namespace advss

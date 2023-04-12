@@ -6,6 +6,8 @@
 #include <QDoubleSpinBox>
 #include <QPushButton>
 
+namespace advss {
+
 class GenericVaraiableSpinbox : public QWidget {
 	Q_OBJECT
 public:
@@ -66,3 +68,5 @@ public:
 	QDoubleSpinBox *SpinBox() { return _fixedValueDouble; }
 	void setDecimals(int prec) { _fixedValueDouble->setDecimals(prec); }
 };
+
+} // namespace advss

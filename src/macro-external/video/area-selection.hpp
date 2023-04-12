@@ -27,21 +27,19 @@ struct Area {
 	NumberVariable<int> height;
 };
 
-}
-
 class SizeSelection : public QWidget {
 	Q_OBJECT
 
 public:
 	SizeSelection(int min, int max, QWidget *parent = 0);
-	void SetSize(const advss::Size &);
-	advss::Size Size();
+	void SetSize(const Size &);
+	Size GetSize();
 
 private slots:
 	void XChanged(const NumberVariable<int> &);
 	void YChanged(const NumberVariable<int> &);
 signals:
-	void SizeChanged(advss::Size value);
+	void SizeChanged(Size value);
 
 private:
 	VariableSpinBox *_x;
@@ -55,15 +53,17 @@ class AreaSelection : public QWidget {
 
 public:
 	AreaSelection(int min, int max, QWidget *parent = 0);
-	void SetArea(const advss::Area &);
+	void SetArea(const Area &);
 
 private slots:
-	void XSizeChanged(advss::Size value);
-	void YSizeChanged(advss::Size value);
+	void XSizeChanged(Size value);
+	void YSizeChanged(Size value);
 signals:
-	void AreaChanged(advss::Area value);
+	void AreaChanged(Area value);
 
 private:
 	SizeSelection *_x;
 	SizeSelection *_y;
 };
+
+} // namespace advss

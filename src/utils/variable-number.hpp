@@ -3,6 +3,8 @@
 
 #include <obs.hpp>
 
+namespace advss {
+
 template<typename T> class NumberVariable {
 public:
 	NumberVariable() = default;
@@ -33,3 +35,5 @@ private:
 };
 
 #include "variable-number.tpp"
+
+} // namespace advss

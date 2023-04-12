@@ -2,6 +2,8 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+namespace advss {
+
 const uint32_t MacroActionScreenshot::_version = 1;
 
 const std::string MacroActionScreenshot::id = "screenshot";
@@ -272,3 +274,5 @@ void MacroActionScreenshotEdit::SetWidgetVisibility()
 
 	adjustSize();
 }
+
+} // namespace advss

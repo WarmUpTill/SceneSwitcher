@@ -6,6 +6,8 @@
 #include <QProcess>
 #include <QDesktopServices>
 
+namespace advss {
+
 const std::string MacroConditionRun::id = "run";
 
 bool MacroConditionRun::_registered = MacroConditionFactory::Register(
@@ -220,3 +222,5 @@ void MacroConditionRunEdit::ProcessConfigChanged(const ProcessConfig &conf)
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
+
+} // namespace advss
