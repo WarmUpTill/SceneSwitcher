@@ -250,6 +250,36 @@ void setLayoutVisible(QLayout *layout, bool visible)
 	}
 }
 
+void MinimizeSizeOfColumn(QGridLayout *layout, int idx)
+{
+	if (idx >= layout->columnCount()) {
+		return;
+	}
+
+	for (int i = 0; i < layout->columnCount(); i++) {
+		if (i == idx) {
+			layout->setColumnStretch(i, 0);
+		} else {
+			layout->setColumnStretch(i, 1);
+		}
+	}
+
+	int columnWidth = 0;
+	for (int row = 0; row < layout->rowCount(); row++) {
+		auto item = layout->itemAtPosition(row, idx);
+		if (!item) {
+			continue;
+		}
+		auto widget = item->widget();
+		if (!widget) {
+			continue;
+		}
+		columnWidth = std::max(columnWidth,
+				       widget->minimumSizeHint().width());
+	}
+	layout->setColumnMinimumWidth(idx, columnWidth);
+}
+
 bool compareIgnoringLineEnding(QString &s1, QString &s2)
 {
 	// Let QT deal with different types of lineendings
