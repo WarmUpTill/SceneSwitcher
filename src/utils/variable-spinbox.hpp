@@ -17,9 +17,11 @@ public:
 
 	void setMinimum(double value);
 	void setMaximum(double value);
-	//void setValue(double value);
+
 	void setPrefix(const QString &prefix);
 	void setSuffix(const QString &suffix);
+
+	void specialValueText(const QString &text);
 
 public slots:
 	void SetFixedValue(int);
