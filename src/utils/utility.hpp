@@ -89,6 +89,7 @@ void placeWidgets(std::string text, QBoxLayout *layout,
 void deleteLayoutItemWidget(QLayoutItem *item);
 void clearLayout(QLayout *layout, int afterIdx = 0);
 void setLayoutVisible(QLayout *layout, bool visible);
+void MinimizeSizeOfColumn(QGridLayout *layout, int idx);
 QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
 				    QColor endColor = QColor(0, 0, 0, 0),
 				    bool once = false);

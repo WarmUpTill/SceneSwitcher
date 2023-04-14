@@ -1074,6 +1074,7 @@ void AdvSceneSwitcher::setupGeneralTab()
 	// as otherwise it could block user input
 	statusControl->hide();
 
+	MinimizeSizeOfColumn(ui->statusLayout, 0);
 	setWindowTitle(windowTitle() + " - " + g_GIT_TAG);
 }
 
