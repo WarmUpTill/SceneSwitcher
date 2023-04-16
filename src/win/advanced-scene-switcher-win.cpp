@@ -1,8 +1,8 @@
 #include "platform-funcs.hpp"
 #include "hotkey.hpp"
 
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <UIAutomation.h>
 #include <util/platform.h>
 #include <TlHelp32.h>
 #include <Psapi.h>
@@ -176,6 +176,91 @@ bool IsMaximized(const std::string &title)
 		}
 	}
 	return false;
+}
+
+static std::wstring GetControlText(HWND hwnd, IUIAutomationElement *element)
+{
+	VARIANT var;
+	std::wstring text = L"";
+	HRESULT hr = element->GetCurrentPropertyValue(UIA_NamePropertyId, &var);
+	if (SUCCEEDED(hr)) {
+		if (var.vt == VT_BSTR && var.bstrVal) {
+			text = var.bstrVal;
+		}
+		VariantClear(&var);
+	}
+
+	hr = element->GetCurrentPropertyValue(UIA_ValueValuePropertyId, &var);
+	if (SUCCEEDED(hr)) {
+		if (var.vt == VT_BSTR && var.bstrVal) {
+			if (!text.empty()) {
+				text += L"\n";
+			}
+			text += +var.bstrVal;
+		}
+		VariantClear(&var);
+	}
+
+	return text;
+}
+
+std::optional<std::string> GetTextInWindow(const std::string &window)
+{
+	HWND hwnd = getHWNDfromTitle(window);
+	if (!hwnd) {
+		return {};
+	}
+
+	IUIAutomation *automation = nullptr;
+	auto hr = CoCreateInstance(__uuidof(CUIAutomation), nullptr,
+				   CLSCTX_INPROC_SERVER,
+				   __uuidof(IUIAutomation),
+				   reinterpret_cast<void **>(&automation));
+	if (FAILED(hr)) {
+		return {};
+	}
+
+	IUIAutomationElement *rootElement = nullptr;
+	hr = automation->ElementFromHandle(hwnd, &rootElement);
+	if (FAILED(hr)) {
+		automation->Release();
+		return {};
+	}
+
+	IUIAutomationTreeWalker *walker = nullptr;
+	hr = automation->get_ControlViewWalker(&walker);
+	if (FAILED(hr)) {
+		rootElement->Release();
+		automation->Release();
+		return {};
+	}
+
+	IUIAutomationElement *element = nullptr;
+	std::wstring result;
+
+	hr = walker->GetFirstChildElement(rootElement, &element);
+	while (SUCCEEDED(hr) && element != nullptr) {
+		auto text = GetControlText(hwnd, element);
+		if (!text.empty()) {
+			result += text + L"\n";
+		}
+
+		IUIAutomationElement *nextElement = nullptr;
+		hr = walker->GetNextSiblingElement(element, &nextElement);
+		element->Release();
+		element = nextElement;
+	}
+
+	walker->Release();
+	rootElement->Release();
+	automation->Release();
+
+	// Convert to std::string
+	int len = os_wcs_to_utf8(result.c_str(), 0, nullptr, 0);
+	std::string tmp;
+	tmp.resize(len);
+	os_wcs_to_utf8(result.c_str(), 0, &tmp[0], len + 1);
+	return tmp;
 }
 
 bool IsFullscreen(const std::string &title)
@@ -539,6 +624,8 @@ static void SetupMouseEeventFilter()
 void PlatformInit()
 {
 	SetupMouseEeventFilter();
+
+	CoInitialize(NULL);
 }
 
 void PlatformCleanup()
@@ -547,6 +634,8 @@ void PlatformCleanup()
 		delete mouseInputFilter;
 		mouseInputFilter = nullptr;
 	}
+
+	CoUninitialize();
 }
 
 } // namespace advss

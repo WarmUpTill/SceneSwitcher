@@ -3,6 +3,7 @@
 #include <string>
 #include <QStringList>
 #include <chrono>
+#include <optional>
 
 namespace advss {
 
@@ -18,6 +19,7 @@ void GetWindowList(QStringList &windows);
 void GetCurrentWindowTitle(std::string &title);
 bool IsFullscreen(const std::string &title);
 bool IsMaximized(const std::string &title);
+std::optional<std::string> GetTextInWindow(const std::string &window);
 int SecondsSinceLastInput();
 void GetProcessList(QStringList &processes);
 void GetForegroundProcessName(std::string &name);

@@ -332,6 +332,12 @@ bool IsFullscreen(const std::string &title)
 	return windowStatesAreSet(title, states);
 }
 
+std::optional<std::string> GetTextInWindow(const std::string &window)
+{
+	// Not implemented
+	return {};
+}
+
 #ifdef USE_PROCPS
 void GetProcessList(QStringList &processes)
 {
