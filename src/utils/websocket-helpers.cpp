@@ -270,6 +270,7 @@ void WSConnection::HandleEvent(obs_data_t *msg)
 		return;
 	}
 	auto eventDataNested = obs_data_get_obj(eventData, "eventData");
+	std::lock_guard<std::mutex> lock(switcher->m);
 	_messages.emplace_back(obs_data_get_string(eventDataNested, "message"));
 	vblog(LOG_INFO, "received event msg \"%s\"",
 	      obs_data_get_string(eventDataNested, "message"));
