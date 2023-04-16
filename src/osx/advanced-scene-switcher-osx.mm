@@ -255,6 +255,12 @@ bool IsFullscreen(const std::string &title)
 	return false;
 }
 
+std::optional<std::string> GetTextInWindow(const std::string &window)
+{
+	// Not implemented
+	return {};
+}
+
 int SecondsSinceLastInput()
 {
 	double time = CGEventSourceSecondsSinceLastEventType(
