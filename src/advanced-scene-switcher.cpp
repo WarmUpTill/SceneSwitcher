@@ -603,9 +603,11 @@ void setStreamStopping()
 
 void handleExit()
 {
+	if (!switcher) {
+		return;
+	}
 	switcher->obsIsShuttingDown = true;
-	if (switcher && switcher->obsIsShuttingDown &&
-	    switcher->shutdownConditionCount) {
+	if (switcher->shutdownConditionCount) {
 		switcher->Stop();
 		switcher->checkMacros();
 		switcher->runMacros();
