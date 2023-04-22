@@ -1,18 +1,13 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "file-selection.hpp"
+#include "variable-line-edit.hpp"
 
+#include <QDir>
 #include <QComboBox>
 #include <QHBoxLayout>
 
 namespace advss {
-
-enum class RecordAction {
-	STOP,
-	START,
-	PAUSE,
-	UNPAUSE,
-	SPLIT,
-};
 
 class MacroActionRecord : public MacroAction {
 public:
@@ -27,7 +22,19 @@ public:
 		return std::make_shared<MacroActionRecord>(m);
 	}
 
-	RecordAction _action = RecordAction::STOP;
+	enum class Action {
+		STOP,
+		START,
+		PAUSE,
+		UNPAUSE,
+		SPLIT,
+		FOLDER,
+		FILE_FORMAT,
+	};
+	Action _action = Action::STOP;
+
+	StringVariable _folder = QDir::homePath().toStdString() + "/Videos";
+	StringVariable _fileFormat = "%CCYY-%MM-%DD %hh-%mm-%ss";
 
 private:
 	static bool _registered;
@@ -52,15 +59,19 @@ public:
 
 private slots:
 	void ActionChanged(int value);
+	void FolderChanged(const QString &);
+	void FormatStringChanged();
 
 protected:
 	QComboBox *_actions;
 	QLabel *_pauseHint;
 	QLabel *_splitHint;
+	FileSelection *_recordFolder;
+	VariableLineEdit *_recordFileFormat;
 	std::shared_ptr<MacroActionRecord> _entryData;
 
 private:
-	void SetLabelVisibility();
+	void SetWidgetVisibility();
 
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
