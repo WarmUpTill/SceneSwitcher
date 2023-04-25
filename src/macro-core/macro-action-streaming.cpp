@@ -1,6 +1,8 @@
 #include "macro-action-streaming.hpp"
 #include "utility.hpp"
 
+#include <util/config-file.h>
+
 namespace advss {
 
 const std::string MacroActionStream::id = "streaming";
@@ -10,14 +12,31 @@ bool MacroActionStream::_registered = MacroActionFactory::Register(
 	{MacroActionStream::Create, MacroActionStreamEdit::Create,
 	 "AdvSceneSwitcher.action.streaming"});
 
-const static std::map<StreamAction, std::string> actionTypes = {
-	{StreamAction::STOP, "AdvSceneSwitcher.action.streaming.type.stop"},
-	{StreamAction::START, "AdvSceneSwitcher.action.streaming.type.start"},
+const static std::map<MacroActionStream::Action, std::string> actionTypes = {
+	{MacroActionStream::Action::STOP,
+	 "AdvSceneSwitcher.action.streaming.type.stop"},
+	{MacroActionStream::Action::START,
+	 "AdvSceneSwitcher.action.streaming.type.start"},
+	{MacroActionStream::Action::KEYFRAME_INTERVAL,
+	 "AdvSceneSwitcher.action.streaming.type.keyFrameInterval"},
 };
 
 constexpr int streamStartCooldown = 5;
 std::chrono::high_resolution_clock::time_point MacroActionStream::s_lastAttempt =
 	std::chrono::high_resolution_clock::now();
+
+void MacroActionStream::SetKeyFrameInterval()
+{
+	const auto configPath = GetPathInProfileDir("streamEncoder.json");
+	obs_data_t *settings =
+		obs_data_create_from_json_file_safe(configPath.c_str(), "bak");
+	obs_data_set_int(settings, "keyint_sec", _keyFrameInterval);
+	if (settings) {
+		obs_data_save_json_safe(settings, configPath.c_str(), "tmp",
+					"bak");
+		obs_data_release(settings);
+	}
+}
 
 bool MacroActionStream::CooldownDurationReached()
 {
@@ -29,18 +48,21 @@ bool MacroActionStream::CooldownDurationReached()
 bool MacroActionStream::PerformAction()
 {
 	switch (_action) {
-	case StreamAction::STOP:
+	case Action::STOP:
 		if (obs_frontend_streaming_active()) {
 			obs_frontend_streaming_stop();
 		}
 		break;
-	case StreamAction::START:
+	case Action::START:
 		if (!obs_frontend_streaming_active() &&
 		    CooldownDurationReached()) {
 			obs_frontend_streaming_start();
 			s_lastAttempt =
 				std::chrono::high_resolution_clock::now();
 		}
+		break;
+	case Action::KEYFRAME_INTERVAL:
+		SetKeyFrameInterval();
 		break;
 	default:
 		break;
@@ -63,13 +85,15 @@ bool MacroActionStream::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
+	_keyFrameInterval.Save(obj, "keyFrameInterval");
 	return true;
 }
 
 bool MacroActionStream::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	_action = static_cast<StreamAction>(obs_data_get_int(obj, "action"));
+	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
+	_keyFrameInterval.Load(obj, "keyFrameInterval");
 	return true;
 }
 
@@ -82,21 +106,28 @@ static inline void populateActionSelection(QComboBox *list)
 
 MacroActionStreamEdit::MacroActionStreamEdit(
 	QWidget *parent, std::shared_ptr<MacroActionStream> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _actions(new QComboBox()),
+	  _keyFrameInterval(new VariableSpinBox())
 {
-	_actions = new QComboBox();
+	_keyFrameInterval->setMinimum(0);
+	_keyFrameInterval->setMaximum(25);
 
 	populateActionSelection(_actions);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
+	QWidget::connect(
+		_keyFrameInterval,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this,
+		SLOT(KeyFrameIntervalChanged(const NumberVariable<int> &)));
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{actions}}", _actions},
-	};
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.streaming.entry"),
-		     mainLayout, widgetPlaceholders);
+		     mainLayout,
+		     {{"{{actions}}", _actions},
+		      {"{{keyFrameInterval}}", _keyFrameInterval}});
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -110,6 +141,30 @@ void MacroActionStreamEdit::UpdateEntryData()
 		return;
 	}
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_keyFrameInterval->SetValue(_entryData->_keyFrameInterval);
+	SetWidgetVisiblity();
+}
+
+void MacroActionStreamEdit::KeyFrameIntervalChanged(
+	const NumberVariable<int> &value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_keyFrameInterval = value;
+}
+
+void MacroActionStreamEdit::SetWidgetVisiblity()
+{
+	if (!_entryData) {
+		return;
+	}
+
+	_keyFrameInterval->setVisible(
+		_entryData->_action ==
+		MacroActionStream::Action::KEYFRAME_INTERVAL);
 }
 
 void MacroActionStreamEdit::ActionChanged(int value)
@@ -119,7 +174,8 @@ void MacroActionStreamEdit::ActionChanged(int value)
 	}
 
 	auto lock = LockContext();
-	_entryData->_action = static_cast<StreamAction>(value);
+	_entryData->_action = static_cast<MacroActionStream::Action>(value);
+	SetWidgetVisiblity();
 }
 
 } // namespace advss

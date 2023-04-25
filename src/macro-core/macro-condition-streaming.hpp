@@ -1,17 +1,11 @@
 #pragma once
 #include "macro-condition-edit.hpp"
+#include "variable-spinbox.hpp"
 
 #include <QWidget>
 #include <QComboBox>
 
 namespace advss {
-
-enum class StreamState {
-	STOP,
-	START,
-	STARTING,
-	STOPPING,
-};
 
 class MacroConditionStream : public MacroCondition {
 public:
@@ -25,9 +19,19 @@ public:
 		return std::make_shared<MacroConditionStream>(m);
 	}
 
-	StreamState _streamState = StreamState::STOP;
+	enum class Condition {
+		STOP,
+		START,
+		STARTING,
+		STOPPING,
+		KEYFRAME_INTERVAL,
+	};
+	Condition _condition = Condition::STOP;
+	NumberVariable<int> _keyFrameInterval = 0;
 
 private:
+	int GetKeyFrameInterval();
+
 	std::chrono::high_resolution_clock::time_point _lastStreamStartingTime{};
 	std::chrono::high_resolution_clock::time_point _lastStreamStoppingTime{};
 
@@ -53,12 +57,16 @@ public:
 
 private slots:
 	void StateChanged(int value);
+	void KeyFrameIntervalChanged(const NumberVariable<int> &);
 
 protected:
 	QComboBox *_streamState;
+	VariableSpinBox *_keyFrameInterval;
 	std::shared_ptr<MacroConditionStream> _entryData;
 
 private:
+	void SetWidgetVisiblity();
+
 	bool _loading = true;
 };
 

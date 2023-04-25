@@ -1120,4 +1120,12 @@ QString GetDefaultSettingsSaveLocation()
 	       timestamp.toString("yyyy.MM.dd.hh.mm.ss");
 }
 
+std::string GetPathInProfileDir(const char *filePath)
+{
+	auto path = obs_frontend_get_current_profile_path();
+	std::string result(path);
+	bfree(path);
+	return result + "/" + filePath;
+}
+
 } // namespace advss
