@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "variable-spinbox.hpp"
 
 #include <QDoubleSpinBox>
 #include <QComboBox>
@@ -7,11 +8,6 @@
 #include <chrono>
 
 namespace advss {
-
-enum class StreamAction {
-	STOP,
-	START,
-};
 
 class MacroActionStream : public MacroAction {
 public:
@@ -26,9 +22,16 @@ public:
 		return std::make_shared<MacroActionStream>(m);
 	}
 
-	StreamAction _action = StreamAction::STOP;
+	enum class Action {
+		STOP,
+		START,
+		KEYFRAME_INTERVAL,
+	};
+	Action _action = Action::STOP;
+	NumberVariable<int> _keyFrameInterval = 0;
 
 private:
+	void SetKeyFrameInterval();
 	bool CooldownDurationReached();
 	static std::chrono::high_resolution_clock::time_point s_lastAttempt;
 
@@ -54,12 +57,16 @@ public:
 
 private slots:
 	void ActionChanged(int value);
+	void KeyFrameIntervalChanged(const NumberVariable<int> &);
 
 protected:
 	QComboBox *_actions;
+	VariableSpinBox *_keyFrameInterval;
 	std::shared_ptr<MacroActionStream> _entryData;
 
 private:
+	void SetWidgetVisiblity();
+
 	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };

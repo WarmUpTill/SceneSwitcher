@@ -117,6 +117,7 @@ std::pair<int, int> GetCursorPos();
 void ReplaceAll(std::string &str, const std::string &from,
 		const std::string &to);
 QString GetDefaultSettingsSaveLocation();
+std::string GetPathInProfileDir(const char *filePath);
 
 /* Legacy helpers */
 
