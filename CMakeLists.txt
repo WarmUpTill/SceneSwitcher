@@ -44,8 +44,6 @@ target_sources(
           src/hotkey.hpp
           src/hotkey.hpp
           src/platform-funcs.hpp
-          src/scene-group.cpp
-          src/scene-group.hpp
           src/status-control.cpp
           src/status-control.hpp
           src/switcher-data-structs.cpp
@@ -56,7 +54,9 @@ target_sources(
 # Legacy function sources
 target_sources(
   ${LIB_NAME}
-  PRIVATE src/legacy/scene-trigger.cpp
+  PRIVATE src/legacy/scene-group.cpp
+          src/legacy/scene-group.hpp
+          src/legacy/scene-trigger.cpp
           src/legacy/scene-trigger.hpp
           src/legacy/switch-audio.cpp
           src/legacy/switch-audio.hpp
