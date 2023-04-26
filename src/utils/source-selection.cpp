@@ -105,6 +105,21 @@ std::string SourceSelection::ToString(bool resolve) const
 	return "";
 }
 
+bool SourceSelection::operator==(const SourceSelection &other) const
+{
+	if (_type != other._type) {
+		return false;
+	}
+
+	if (_type == Type::SOURCE) {
+		return _source == other._source;
+	}
+
+	auto v1 = _variable.lock();
+	auto v2 = other._variable.lock();
+	return v1 == v2;
+}
+
 SourceSelection SourceSelectionWidget::CurrentSelection()
 {
 	SourceSelection s;

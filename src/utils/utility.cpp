@@ -511,6 +511,25 @@ QStringList GetSourceNames()
 	return list;
 }
 
+QStringList GetFilterNames(OBSWeakSource weakSource)
+{
+	if (!weakSource) {
+		return {};
+	}
+
+	QStringList list;
+	auto enumFilters = [](obs_source_t *, obs_source_t *filter, void *ptr) {
+		auto name = obs_source_get_name(filter);
+		QStringList *list = reinterpret_cast<QStringList *>(ptr);
+		*list << QString(name);
+	};
+
+	auto s = obs_weak_source_get_source(weakSource);
+	obs_source_enum_filters(s, enumFilters, &list);
+	obs_source_release(s);
+	return list;
+}
+
 void PopulateSourceSelection(QComboBox *list, bool addSelect)
 {
 	auto sources = GetSourceNames();
@@ -815,18 +834,11 @@ void PopulateSourcesWithFilterSelection(QComboBox *list)
 
 void PopulateFilterSelection(QComboBox *list, OBSWeakSource weakSource)
 {
-	auto enumFilters = [](obs_source_t *, obs_source_t *filter, void *ptr) {
-		QComboBox *list = reinterpret_cast<QComboBox *>(ptr);
-		auto name = obs_source_get_name(filter);
-		list->addItem(name);
-	};
-
-	auto s = obs_weak_source_get_source(weakSource);
-	obs_source_enum_filters(s, enumFilters, list);
-	list->model()->sort(0);
+	auto filters = GetFilterNames(weakSource);
+	filters.sort();
+	list->addItems(filters);
 	AddSelectionEntry(list,
 			  obs_module_text("AdvSceneSwitcher.selectFilter"));
-	obs_source_release(s);
 	list->setCurrentIndex(0);
 }
 

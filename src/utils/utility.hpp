@@ -50,6 +50,7 @@ QStringList GetMediaSourceNames();
 QStringList GetVideoSourceNames();
 QStringList GetSceneNames();
 QStringList GetSourceNames();
+QStringList GetFilterNames(OBSWeakSource weakSource);
 
 /* Populate list helpers */
 
