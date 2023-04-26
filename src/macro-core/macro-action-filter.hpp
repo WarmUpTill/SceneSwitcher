@@ -2,6 +2,7 @@
 #include "macro-action-edit.hpp"
 #include "variable-text-edit.hpp"
 #include "source-selection.hpp"
+#include "filter-selection.hpp"
 
 #include <QComboBox>
 #include <QSpinBox>
@@ -30,18 +31,13 @@ public:
 	};
 
 	SourceSelection _source;
-	OBSWeakSource _filter;
+	FilterSelection _filter;
 	Action _action = Action::ENABLE;
 	StringVariable _settings = "";
 
 private:
-	void ResolveVariables();
-	std::string _filterName = "";
-
 	static bool _registered;
 	static const std::string id;
-
-	friend class MacroActionFilterEdit;
 };
 
 class MacroActionFilterEdit : public QWidget {
@@ -62,7 +58,7 @@ public:
 
 private slots:
 	void SourceChanged(const SourceSelection &);
-	void FilterChanged(const QString &);
+	void FilterChanged(const FilterSelection &);
 	void ActionChanged(int value);
 	void GetSettingsClicked();
 	void SettingsChanged();
@@ -71,7 +67,7 @@ signals:
 
 protected:
 	SourceSelectionWidget *_sources;
-	QComboBox *_filters;
+	FilterSelectionWidget *_filters;
 	QComboBox *_actions;
 	QPushButton *_getSettings;
 	VariableTextEdit *_settings;

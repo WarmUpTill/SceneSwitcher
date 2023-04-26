@@ -22,6 +22,8 @@ public:
 	void SetSource(OBSWeakSource);
 	std::string ToString(bool resolve = false) const;
 
+	bool operator==(const SourceSelection &) const;
+
 private:
 	// TODO: Remove in future version
 	// Used for backwards compatability to older settings versions

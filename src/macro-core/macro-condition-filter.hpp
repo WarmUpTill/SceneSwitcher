@@ -3,6 +3,7 @@
 #include "variable-text-edit.hpp"
 #include "regex-config.hpp"
 #include "source-selection.hpp"
+#include "filter-selection.hpp"
 
 #include <QComboBox>
 #include <QPushButton>
@@ -30,19 +31,14 @@ public:
 	};
 
 	SourceSelection _source;
-	OBSWeakSource _filter;
+	FilterSelection _filter;
 	Condition _condition = Condition::ENABLED;
 	StringVariable _settings = "";
 	RegexConfig _regex;
 
 private:
-	void ResolveVariables();
-	std::string _filterName = "";
-
 	static bool _registered;
 	static const std::string id;
-
-	friend class MacroConditionFilterEdit;
 };
 
 class MacroConditionFilterEdit : public QWidget {
@@ -63,7 +59,7 @@ public:
 
 private slots:
 	void SourceChanged(const SourceSelection &);
-	void FilterChanged(const QString &text);
+	void FilterChanged(const FilterSelection &);
 	void ConditionChanged(int cond);
 	void GetSettingsClicked();
 	void SettingsChanged();
@@ -73,7 +69,7 @@ signals:
 
 protected:
 	SourceSelectionWidget *_sources;
-	QComboBox *_filters;
+	FilterSelectionWidget *_filters;
 	QComboBox *_conditions;
 	QPushButton *_getSettings;
 	VariableTextEdit *_settings;
