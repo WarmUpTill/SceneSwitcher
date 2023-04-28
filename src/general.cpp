@@ -228,7 +228,7 @@ void AdvSceneSwitcher::on_hideLegacyTabs_stateChanged(int state)
 	}
 }
 
-void AdvSceneSwitcher::setDeprecationWarnings()
+void AdvSceneSwitcher::SetDeprecationWarnings()
 {
 	QString toolTip =
 		switcher->disableHints
@@ -448,7 +448,7 @@ int findTabIndex(QTabWidget *tabWidget, int pos)
 	return at;
 }
 
-void AdvSceneSwitcher::setTabOrder()
+void AdvSceneSwitcher::SetTabOrder()
 {
 	if (!switcher->tabOrderValid()) {
 		switcher->resetTabOrder();
@@ -466,14 +466,14 @@ void AdvSceneSwitcher::setTabOrder()
 	connect(bar, &QTabBar::tabMoved, this, &AdvSceneSwitcher::on_tabMoved);
 }
 
-void AdvSceneSwitcher::setCurrentTab()
+void AdvSceneSwitcher::SetCurrentTab()
 {
 	if (switcher->lastOpenedTab >= 0) {
 		ui->tabWidget->setCurrentIndex(switcher->lastOpenedTab);
 	}
 }
 
-void AdvSceneSwitcher::restoreWindowGeo()
+void AdvSceneSwitcher::RestoreWindowGeo()
 {
 	if (switcher->saveWindowGeo && windowPosValid(switcher->windowPos)) {
 		this->resize(switcher->windowSize);
@@ -481,7 +481,7 @@ void AdvSceneSwitcher::restoreWindowGeo()
 	}
 }
 
-void AdvSceneSwitcher::checkFirstTimeSetup()
+void AdvSceneSwitcher::CheckFirstTimeSetup()
 {
 	if (switcher->firstBoot && !switcher->disableHints) {
 		switcher->firstBoot = false;
@@ -502,7 +502,7 @@ void AdvSceneSwitcher::on_tabMoved(int from, int to)
 void AdvSceneSwitcher::on_tabWidget_currentChanged(int)
 {
 	switcher->showFrame = false;
-	clearFrames(ui->screenRegionSwitches);
+	ClearFrames(ui->screenRegionSwitches);
 	SetShowFrames();
 }
 
@@ -942,7 +942,7 @@ void populateAutoStartEventSelection(QComboBox *cb)
 		"AdvSceneSwitcher.generalTab.status.autoStart.recordingAndStreaming"));
 }
 
-void AdvSceneSwitcher::setupGeneralTab()
+void AdvSceneSwitcher::SetupGeneralTab()
 {
 	populateSceneSelection(ui->noMatchSwitchScene, false);
 

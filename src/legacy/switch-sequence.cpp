@@ -280,7 +280,7 @@ void SwitcherData::loadSceneSequenceSwitches(obs_data_t *obj)
 	obs_data_array_release(sceneSequenceArray);
 }
 
-void AdvSceneSwitcher::setupSequenceTab()
+void AdvSceneSwitcher::SetupSequenceTab()
 {
 	for (auto &s : switcher->sceneSequenceSwitches) {
 		QListWidgetItem *item;

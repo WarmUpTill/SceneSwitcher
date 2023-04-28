@@ -156,7 +156,7 @@ std::shared_ptr<MacroSegment> MacroActionEdit::Data()
 
 void AdvSceneSwitcher::AddMacroAction(int idx)
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -195,7 +195,7 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 
 void AdvSceneSwitcher::on_actionAdd_clicked()
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -213,7 +213,7 @@ void AdvSceneSwitcher::on_actionAdd_clicked()
 
 void AdvSceneSwitcher::RemoveMacroAction(int idx)
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -239,7 +239,7 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 void AdvSceneSwitcher::on_actionRemove_clicked()
 {
 	if (currentActionIdx == -1) {
-		auto macro = getSelectedMacro();
+		auto macro = GetSelectedMacro();
 		if (!macro) {
 			return;
 		}
@@ -291,7 +291,7 @@ void AdvSceneSwitcher::SwapActions(Macro *m, int pos1, int pos2)
 
 void AdvSceneSwitcher::MoveMacroActionUp(int idx)
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -306,7 +306,7 @@ void AdvSceneSwitcher::MoveMacroActionUp(int idx)
 
 void AdvSceneSwitcher::MoveMacroActionDown(int idx)
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -321,7 +321,7 @@ void AdvSceneSwitcher::MoveMacroActionDown(int idx)
 
 void AdvSceneSwitcher::MacroActionSelectionChanged(int idx)
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -341,7 +341,7 @@ void AdvSceneSwitcher::MacroActionSelectionChanged(int idx)
 
 void AdvSceneSwitcher::MacroActionReorder(int to, int from)
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}

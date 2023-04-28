@@ -317,7 +317,7 @@ void SwitcherData::loadWindowTitleSwitches(obs_data_t *obj)
 	obs_data_array_release(ignoreWindowsArray);
 }
 
-void AdvSceneSwitcher::setupTitleTab()
+void AdvSceneSwitcher::SetupTitleTab()
 {
 	for (auto &s : switcher->windowSwitches) {
 		QListWidgetItem *item;

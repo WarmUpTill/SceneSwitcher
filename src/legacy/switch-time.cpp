@@ -181,7 +181,7 @@ void SwitcherData::loadTimeSwitches(obs_data_t *obj)
 	obs_data_array_release(timeArray);
 }
 
-void AdvSceneSwitcher::setupTimeTab()
+void AdvSceneSwitcher::SetupTimeTab()
 {
 	for (auto &s : switcher->timeSwitches) {
 		QListWidgetItem *item;

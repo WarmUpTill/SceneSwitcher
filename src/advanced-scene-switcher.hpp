@@ -36,17 +36,18 @@ public:
 	void reject() override;
 	void closeEvent(QCloseEvent *event) override;
 
-	void loadUI();
+	void LoadUI();
 
-	void setTabOrder();
-	void setCurrentTab();
-	void restoreWindowGeo();
-	void checkFirstTimeSetup();
+	void SetTabOrder();
+	void SetCurrentTab();
+	void RestoreWindowGeo();
+	void CheckFirstTimeSetup();
 
 	/* --- Begin of general tab section --- */
 public:
-	void setupGeneralTab();
+	void SetupGeneralTab();
 	void UpdateNonMatchingScene(const QString &name);
+	void SetDeprecationWarnings();
 
 public slots:
 	void on_noMatchDontSwitch_clicked();
@@ -76,13 +77,13 @@ public slots:
 
 	/* --- Begin of macro tab section --- */
 public:
-	void setupMacroTab();
-	bool addNewMacro(std::shared_ptr<Macro> &res, std::string &name,
+	void SetupMacroTab();
+	bool AddNewMacro(std::shared_ptr<Macro> &res, std::string &name,
 			 std::string format = "");
 	void RemoveMacro(std::shared_ptr<Macro> &);
 	void RenameMacro(std::shared_ptr<Macro> &, const QString &name);
-	std::shared_ptr<Macro> getSelectedMacro();
-	std::vector<std::shared_ptr<Macro>> getSelectedMacros();
+	std::shared_ptr<Macro> GetSelectedMacro();
+	std::vector<std::shared_ptr<Macro>> GetSelectedMacros();
 	void SetEditMacro(Macro &m);
 	void SetMacroEditAreaDisabled(bool);
 	void HighlightAction(int idx, QColor color = QColor(Qt::green));
@@ -181,16 +182,14 @@ private:
 
 	/* --- Begin of legacy tab section --- */
 public:
-	void clearFrames(QListWidget *list);
+	void ClearFrames(QListWidget *list);
 	int IgnoreWindowsFindByData(const QString &window);
 	int IgnoreIdleWindowsFindByData(const QString &window);
 	void OpenSequenceExtendEdit(SequenceWidget *sw);
 
-	void setDeprecationWarnings();
-
 	// Window tab
 public:
-	void setupTitleTab();
+	void SetupTitleTab();
 public slots:
 	void on_windowUp_clicked();
 	void on_windowDown_clicked();
@@ -202,7 +201,7 @@ public slots:
 
 	// Screen region tab
 public:
-	void setupRegionTab();
+	void SetupRegionTab();
 public slots:
 	void SetShowFrames();
 	void SetHideFrames();
@@ -216,7 +215,7 @@ public slots:
 
 	// Pause tab
 public:
-	void setupPauseTab();
+	void SetupPauseTab();
 public slots:
 	void on_pauseUp_clicked();
 	void on_pauseDown_clicked();
@@ -225,7 +224,7 @@ public slots:
 
 	// Sequence tab
 public:
-	void setupSequenceTab();
+	void SetupSequenceTab();
 public slots:
 	void on_sceneSequenceAdd_clicked();
 	void on_sceneSequenceRemove_clicked();
@@ -238,7 +237,7 @@ public slots:
 
 	// Transition tab
 public:
-	void setupTransitionsTab();
+	void SetupTransitionsTab();
 public slots:
 	void on_transitionsAdd_clicked();
 	void on_transitionsRemove_clicked();
@@ -250,11 +249,11 @@ public slots:
 	void on_defaultTransitionsDown_clicked();
 	void on_transitionOverridecheckBox_stateChanged(int state);
 	void on_adjustActiveTransitionType_stateChanged(int state);
-	void defTransitionDelayValueChanged(int value);
+	void DefTransitionDelayValueChanged(int value);
 
 	// Executable tab
 public:
-	void setupExecutableTab();
+	void SetupExecutableTab();
 public slots:
 	void on_executableUp_clicked();
 	void on_executableDown_clicked();
@@ -263,7 +262,7 @@ public slots:
 
 	// Idle tab
 public:
-	void setupIdleTab();
+	void SetupIdleTab();
 public slots:
 	void on_idleCheckBox_stateChanged(int state);
 	void on_ignoreIdleWindows_currentRowChanged(int idx);
@@ -272,14 +271,14 @@ public slots:
 
 	// Random tab
 public:
-	void setupRandomTab();
+	void SetupRandomTab();
 public slots:
 	void on_randomAdd_clicked();
 	void on_randomRemove_clicked();
 
 	// File tab
 public:
-	void setupFileTab();
+	void SetupFileTab();
 public slots:
 	void on_fileAdd_clicked();
 	void on_fileRemove_clicked();
@@ -294,7 +293,7 @@ public slots:
 
 	// Media tab
 public:
-	void setupMediaTab();
+	void SetupMediaTab();
 public slots:
 	void on_mediaAdd_clicked();
 	void on_mediaRemove_clicked();
@@ -303,7 +302,7 @@ public slots:
 
 	// Time tab
 public:
-	void setupTimeTab();
+	void SetupTimeTab();
 public slots:
 	void on_timeAdd_clicked();
 	void on_timeRemove_clicked();
@@ -312,7 +311,7 @@ public slots:
 
 	// Video tab
 public:
-	void setupAudioTab();
+	void SetupAudioTab();
 public slots:
 	void on_audioAdd_clicked();
 	void on_audioRemove_clicked();
@@ -322,7 +321,7 @@ public slots:
 
 	// Video tab
 public:
-	void setupVideoTab();
+	void SetupVideoTab();
 public slots:
 	void on_videoAdd_clicked();
 	void on_videoRemove_clicked();
@@ -332,13 +331,13 @@ public slots:
 
 	// Scene group tab
 public:
-	void setupNetworkTab();
+	void SetupNetworkTab();
 public slots:
 	void on_serverSettings_toggled(bool on);
 	void on_serverPort_valueChanged(int value);
 	void on_lockToIPv4_stateChanged(int state);
 	void on_serverRestart_clicked();
-	void updateServerStatus();
+	void UpdateServerStatus();
 	void on_clientSettings_toggled(bool on);
 	void on_clientHostname_textChanged(const QString &text);
 	void on_clientPort_valueChanged(int value);
@@ -346,12 +345,12 @@ public slots:
 	void on_restrictSend_stateChanged(int state);
 	void on_sendPreview_stateChanged(int state);
 	void on_clientReconnect_clicked();
-	void updateClientStatus();
+	void UpdateClientStatus();
 
 	// Scene group tab
 public:
+	void SetupSceneGroupTab();
 	void SetEditSceneGroup(SceneGroup &sg);
-	void setupSceneGroupTab();
 public slots:
 	void on_sceneGroupAdd_clicked();
 	void on_sceneGroupRemove_clicked();
@@ -371,7 +370,7 @@ signals:
 
 	// Trigger tab
 public:
-	void setupTriggerTab();
+	void SetupTriggerTab();
 public slots:
 	void on_triggerAdd_clicked();
 	void on_triggerRemove_clicked();

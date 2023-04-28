@@ -345,7 +345,7 @@ std::shared_ptr<MacroSegment> MacroConditionEdit::Data()
 
 void AdvSceneSwitcher::AddMacroCondition(int idx)
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -393,7 +393,7 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 
 void AdvSceneSwitcher::on_conditionAdd_clicked()
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -411,7 +411,7 @@ void AdvSceneSwitcher::on_conditionAdd_clicked()
 
 void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -442,7 +442,7 @@ void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 void AdvSceneSwitcher::on_conditionRemove_clicked()
 {
 	if (currentConditionIdx == -1) {
-		auto macro = getSelectedMacro();
+		auto macro = GetSelectedMacro();
 		if (!macro) {
 			return;
 		}
@@ -509,7 +509,7 @@ void AdvSceneSwitcher::SwapConditions(Macro *m, int pos1, int pos2)
 
 void AdvSceneSwitcher::MoveMacroConditionUp(int idx)
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -524,7 +524,7 @@ void AdvSceneSwitcher::MoveMacroConditionUp(int idx)
 
 void AdvSceneSwitcher::MoveMacroConditionDown(int idx)
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -539,7 +539,7 @@ void AdvSceneSwitcher::MoveMacroConditionDown(int idx)
 
 void AdvSceneSwitcher::MacroConditionSelectionChanged(int idx)
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -559,7 +559,7 @@ void AdvSceneSwitcher::MacroConditionSelectionChanged(int idx)
 
 void AdvSceneSwitcher::MacroConditionReorder(int to, int from)
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}

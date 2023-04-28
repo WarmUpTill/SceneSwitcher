@@ -489,7 +489,7 @@ void SwitcherData::loadSceneGroups(obs_data_t *obj)
 	obs_data_array_release(sceneGroupArray);
 }
 
-void AdvSceneSwitcher::setupSceneGroupTab()
+void AdvSceneSwitcher::SetupSceneGroupTab()
 {
 	populateSceneSelection(ui->sceneGroupSceneSelection);
 

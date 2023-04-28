@@ -214,7 +214,7 @@ void SwitcherData::loadAudioSwitches(obs_data_t *obj)
 	audioFallback.load(obj);
 }
 
-void AdvSceneSwitcher::setupAudioTab()
+void AdvSceneSwitcher::SetupAudioTab()
 {
 	for (auto &s : switcher->audioSwitches) {
 		QListWidgetItem *item;

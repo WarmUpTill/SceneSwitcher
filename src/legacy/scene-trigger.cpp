@@ -351,7 +351,7 @@ void SwitcherData::loadSceneTriggers(obs_data_t *obj)
 	obs_data_array_release(triggerArray);
 }
 
-void AdvSceneSwitcher::setupTriggerTab()
+void AdvSceneSwitcher::SetupTriggerTab()
 {
 	for (auto &s : switcher->sceneTriggers) {
 		QListWidgetItem *item;

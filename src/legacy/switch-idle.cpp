@@ -207,7 +207,7 @@ void SwitcherData::loadIdleSwitches(obs_data_t *obj)
 	idleData.load(obj);
 }
 
-void AdvSceneSwitcher::setupIdleTab()
+void AdvSceneSwitcher::SetupIdleTab()
 {
 	populateWindowSelection(ui->ignoreIdleWindowsWindows);
 

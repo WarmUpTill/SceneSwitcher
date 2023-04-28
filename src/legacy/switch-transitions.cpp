@@ -171,7 +171,7 @@ void SwitcherData::checkDefaultSceneTransitions()
 	}
 }
 
-void AdvSceneSwitcher::defTransitionDelayValueChanged(int value)
+void AdvSceneSwitcher::DefTransitionDelayValueChanged(int value)
 {
 	if (loading) {
 		return;
@@ -351,7 +351,7 @@ void SwitcherData::loadSceneTransitions(obs_data_t *obj)
 		obs_data_get_int(obj, "defTransitionDelay");
 }
 
-void AdvSceneSwitcher::setupTransitionsTab()
+void AdvSceneSwitcher::SetupTransitionsTab()
 {
 	for (auto &s : switcher->sceneTransitions) {
 		QListWidgetItem *item;
@@ -399,7 +399,7 @@ void AdvSceneSwitcher::setupTransitionsTab()
 		"AdvSceneSwitcher.transitionTab.defaultTransition.delay.help"));
 
 	QWidget::connect(defTransitionDelay, SIGNAL(valueChanged(int)), this,
-			 SLOT(defTransitionDelayValueChanged(int)));
+			 SLOT(DefTransitionDelayValueChanged(int)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{defTransitionDelay}}", defTransitionDelay}};

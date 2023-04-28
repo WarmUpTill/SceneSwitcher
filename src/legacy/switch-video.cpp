@@ -184,7 +184,7 @@ void SwitcherData::loadVideoSwitches(obs_data_t *obj)
 	obs_data_array_release(videoArray);
 }
 
-void AdvSceneSwitcher::setupVideoTab()
+void AdvSceneSwitcher::SetupVideoTab()
 {
 	for (auto &s : switcher->videoSwitches) {
 		QListWidgetItem *item;

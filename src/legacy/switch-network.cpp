@@ -501,7 +501,7 @@ void SwitcherData::saveNetworkSwitches(obs_data_t *obj)
 	}
 }
 
-void AdvSceneSwitcher::setupNetworkTab()
+void AdvSceneSwitcher::SetupNetworkTab()
 {
 	ui->serverSettings->setChecked(switcher->networkConfig.ServerEnabled);
 	ui->serverPort->setValue(switcher->networkConfig.ServerPort);
@@ -519,9 +519,9 @@ void AdvSceneSwitcher::setupNetworkTab()
 
 	QTimer *statusTimer = new QTimer(this);
 	connect(statusTimer, SIGNAL(timeout()), this,
-		SLOT(updateClientStatus()));
+		SLOT(UpdateClientStatus()));
 	connect(statusTimer, SIGNAL(timeout()), this,
-		SLOT(updateServerStatus()));
+		SLOT(UpdateServerStatus()));
 	statusTimer->start(500);
 }
 
@@ -572,7 +572,7 @@ void AdvSceneSwitcher::on_serverRestart_clicked()
 			       switcher->networkConfig.LockToIPv4);
 }
 
-void AdvSceneSwitcher::updateServerStatus()
+void AdvSceneSwitcher::UpdateServerStatus()
 {
 	switch (switcher->serverStatus) {
 	case ServerStatus::NOT_RUNNING:
@@ -670,7 +670,7 @@ void AdvSceneSwitcher::on_clientReconnect_clicked()
 	switcher->client.connect(switcher->networkConfig.GetClientUri());
 }
 
-void AdvSceneSwitcher::updateClientStatus()
+void AdvSceneSwitcher::UpdateClientStatus()
 {
 	switch (switcher->clientStatus) {
 	case ClientStatus::DISCONNECTED:
