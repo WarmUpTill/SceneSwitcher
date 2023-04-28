@@ -3,6 +3,8 @@
 #include "scene-selection.hpp"
 #include "regex-config.hpp"
 
+#include <QStandardPaths>
+#include <QFile>
 #include <QTextStream>
 #include <QLabel>
 #include <QMessageBox>
@@ -1086,6 +1088,35 @@ void replaceAll(std::string &str, const std::string &from,
 		str.replace(start_pos, from.length(), to);
 		start_pos += to.length();
 	}
+}
+
+QString GetDefaultSettingsSaveLocation()
+{
+	QString desktopPath = QStandardPaths::writableLocation(
+		QStandardPaths::DesktopLocation);
+
+	auto scName = obs_frontend_get_current_scene_collection();
+	QString sceneCollectionName(scName);
+	bfree(scName);
+
+	auto timestamp = QDateTime::currentDateTime();
+	auto path = desktopPath + "/adv-ss-" + sceneCollectionName + "-" +
+		    timestamp.toString("yyyy.MM.dd.hh.mm.ss");
+
+	// Check if scene collection name contains invalid path characters
+	QFile file(path);
+	if (file.exists()) {
+		return path;
+	}
+
+	bool validPath = file.open(QIODevice::WriteOnly);
+	if (validPath) {
+		file.remove();
+		return path;
+	}
+
+	return desktopPath + "/adv-ss-" +
+	       timestamp.toString("yyyy.MM.dd.hh.mm.ss");
 }
 
 } // namespace advss
