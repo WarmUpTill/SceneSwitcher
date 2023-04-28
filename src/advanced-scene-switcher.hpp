@@ -36,17 +36,47 @@ public:
 	void reject() override;
 	void closeEvent(QCloseEvent *event) override;
 
-	void SetShowFrames();
-	void SetHideFrames();
-	void clearFrames(QListWidget *list);
+	void loadUI();
 
-	int IgnoreWindowsFindByData(const QString &window);
-	int IgnoreIdleWindowsFindByData(const QString &window);
+	void setTabOrder();
+	void setCurrentTab();
+	void restoreWindowGeo();
+	void checkFirstTimeSetup();
 
+	/* --- Begin of general tab section --- */
+public:
+	void setupGeneralTab();
 	void UpdateNonMatchingScene(const QString &name);
-	void OpenSequenceExtendEdit(SequenceWidget *sw);
-	void SetEditSceneGroup(SceneGroup &sg);
 
+public slots:
+	void on_noMatchDontSwitch_clicked();
+	void on_noMatchSwitch_clicked();
+	void on_noMatchRandomSwitch_clicked();
+	void NoMatchDelayDurationChanged(const Duration &);
+	void CooldownDurationChanged(const Duration &);
+	void on_startupBehavior_currentIndexChanged(int index);
+	void on_autoStartEvent_currentIndexChanged(int index);
+	void on_noMatchSwitchScene_currentTextChanged(const QString &text);
+	void on_checkInterval_valueChanged(int value);
+	void on_tabMoved(int from, int to);
+	void on_tabWidget_currentChanged(int index);
+	void on_exportSettings_clicked();
+	void on_importSettings_clicked();
+	void on_verboseLogging_stateChanged(int state);
+	void on_saveWindowGeo_stateChanged(int state);
+	void on_showTrayNotifications_stateChanged(int state);
+	void on_uiHintsDisable_stateChanged(int state);
+	void on_warnPluginLoadFailure_stateChanged(int state);
+	void on_hideLegacyTabs_stateChanged(int state);
+	void on_priorityUp_clicked();
+	void on_priorityDown_clicked();
+	void on_threadPriority_currentTextChanged(const QString &text);
+
+	/* --- End of legacy tab section --- */
+
+	/* --- Begin of macro tab section --- */
+public:
+	void setupMacroTab();
 	bool addNewMacro(std::shared_ptr<Macro> &res, std::string &name,
 			 std::string format = "");
 	void RemoveMacro(std::shared_ptr<Macro> &);
@@ -64,66 +94,7 @@ public:
 	void SwapActions(Macro *m, int pos1, int pos2);
 	void SwapConditions(Macro *m, int pos1, int pos2);
 
-	void loadUI();
-	void setupGeneralTab();
-	void setupTitleTab();
-	void setupExecutableTab();
-	void setupRegionTab();
-	void setupPauseTab();
-	void setupSequenceTab();
-	void setupTransitionsTab();
-	void setupIdleTab();
-	void setupRandomTab();
-	void setupMediaTab();
-	void setupFileTab();
-	void setupTimeTab();
-	void setupAudioTab();
-	void setupSceneGroupTab();
-	void setupTriggerTab();
-	void setupVideoTab();
-	void setupNetworkTab();
-	void setupMacroTab();
-	void setDeprecationWarnings();
-	void setTabOrder();
-	void setCurrentTab();
-	void restoreWindowGeo();
-	void checkFirstTimeSetup();
-
-signals:
-	void MacroAdded(const QString &name);
-	void MacroRemoved(const QString &name);
-	void MacroRenamed(const QString &oldName, const QString &newName);
-	void MacroSegmentOrderChanged();
-	void HighlightMacrosChanged(bool value);
-	void HighlightActionsChanged(bool value);
-	void HighlightConditionsChanged(bool value);
-	void SceneGroupAdded(const QString &name);
-	void SceneGroupRemoved(const QString &name);
-	void SceneGroupRenamed(const QString &oldName, const QString newName);
-	void ConnectionAdded(const QString &);
-	void ConnectionRenamed(const QString &oldName, const QString &newName);
-	void ConnectionRemoved(const QString &);
-	void VariableAdded(const QString &);
-	void VariableRenamed(const QString &oldName, const QString &newName);
-	void VariableRemoved(const QString &);
-
 public slots:
-	void on_windowUp_clicked();
-	void on_windowDown_clicked();
-	void on_windowAdd_clicked();
-	void on_windowRemove_clicked();
-	void on_noMatchDontSwitch_clicked();
-	void on_noMatchSwitch_clicked();
-	void on_noMatchRandomSwitch_clicked();
-	void NoMatchDelayDurationChanged(const Duration &);
-	void CooldownDurationChanged(const Duration &);
-	void on_startupBehavior_currentIndexChanged(int index);
-	void on_autoStartEvent_currentIndexChanged(int index);
-	void on_noMatchSwitchScene_currentTextChanged(const QString &text);
-	void on_checkInterval_valueChanged(int value);
-	void on_tabMoved(int from, int to);
-	void on_tabWidget_currentChanged(int index);
-
 	void on_macroAdd_clicked();
 	void on_macroRemove_clicked();
 	void on_macroUp_clicked();
@@ -176,136 +147,21 @@ public slots:
 	void HighlightOnChange();
 	void on_macroProperties_clicked();
 
-	void on_screenRegionSwitches_currentRowChanged(int idx);
-	void on_showFrame_clicked();
-	void on_screenRegionAdd_clicked();
-	void on_screenRegionRemove_clicked();
-	void on_screenRegionUp_clicked();
-	void on_screenRegionDown_clicked();
+signals:
+	void MacroAdded(const QString &name);
+	void MacroRemoved(const QString &name);
+	void MacroRenamed(const QString &oldName, const QString &newName);
+	void MacroSegmentOrderChanged();
+	void HighlightMacrosChanged(bool value);
+	void HighlightActionsChanged(bool value);
+	void HighlightConditionsChanged(bool value);
 
-	void on_pauseUp_clicked();
-	void on_pauseDown_clicked();
-	void on_pauseAdd_clicked();
-	void on_pauseRemove_clicked();
-
-	void on_ignoreWindows_currentRowChanged(int idx);
-	void on_ignoreWindowsAdd_clicked();
-	void on_ignoreWindowsRemove_clicked();
-
-	void on_sceneSequenceAdd_clicked();
-	void on_sceneSequenceRemove_clicked();
-	void on_sceneSequenceUp_clicked();
-	void on_sceneSequenceDown_clicked();
-	void on_sceneSequenceSave_clicked();
-	void on_sceneSequenceLoad_clicked();
-	void on_sequenceEdit_clicked();
-	void on_sceneSequenceSwitches_itemDoubleClicked(QListWidgetItem *item);
-
-	void on_verboseLogging_stateChanged(int state);
-	void on_saveWindowGeo_stateChanged(int state);
-	void on_showTrayNotifications_stateChanged(int state);
-	void on_uiHintsDisable_stateChanged(int state);
-	void on_warnPluginLoadFailure_stateChanged(int state);
-	void on_hideLegacyTabs_stateChanged(int state);
-
-	void on_exportSettings_clicked();
-	void on_importSettings_clicked();
-
-	void on_transitionsAdd_clicked();
-	void on_transitionsRemove_clicked();
-	void on_transitionsUp_clicked();
-	void on_transitionsDown_clicked();
-	void on_defaultTransitionsAdd_clicked();
-	void on_defaultTransitionsRemove_clicked();
-	void on_defaultTransitionsUp_clicked();
-	void on_defaultTransitionsDown_clicked();
-	void on_transitionOverridecheckBox_stateChanged(int state);
-	void on_adjustActiveTransitionType_stateChanged(int state);
-	void defTransitionDelayValueChanged(int value);
-
-	void on_browseButton_clicked();
-	void on_readFileCheckBox_stateChanged(int state);
-	void on_readPathLineEdit_textChanged(const QString &text);
-	void on_writePathLineEdit_textChanged(const QString &text);
-	void on_browseButton_2_clicked();
-
-	void on_executableUp_clicked();
-	void on_executableDown_clicked();
-	void on_executableAdd_clicked();
-	void on_executableRemove_clicked();
-
-	void on_idleCheckBox_stateChanged(int state);
-	void on_ignoreIdleWindows_currentRowChanged(int idx);
-	void on_ignoreIdleAdd_clicked();
-	void on_ignoreIdleRemove_clicked();
-
-	void on_randomAdd_clicked();
-	void on_randomRemove_clicked();
-
-	void on_fileAdd_clicked();
-	void on_fileRemove_clicked();
-	void on_fileSwitches_currentRowChanged(int idx);
-	void on_fileUp_clicked();
-	void on_fileDown_clicked();
-
-	void on_mediaAdd_clicked();
-	void on_mediaRemove_clicked();
-	void on_mediaUp_clicked();
-	void on_mediaDown_clicked();
-
-	void on_timeAdd_clicked();
-	void on_timeRemove_clicked();
-	void on_timeUp_clicked();
-	void on_timeDown_clicked();
-
-	void on_audioAdd_clicked();
-	void on_audioRemove_clicked();
-	void on_audioUp_clicked();
-	void on_audioDown_clicked();
-	void on_audioFallback_toggled(bool on);
-
-	void on_videoAdd_clicked();
-	void on_videoRemove_clicked();
-	void on_videoUp_clicked();
-	void on_videoDown_clicked();
-	void on_getScreenshot_clicked();
-
-	void on_serverSettings_toggled(bool on);
-	void on_serverPort_valueChanged(int value);
-	void on_lockToIPv4_stateChanged(int state);
-	void on_serverRestart_clicked();
-	void updateServerStatus();
-	void on_clientSettings_toggled(bool on);
-	void on_clientHostname_textChanged(const QString &text);
-	void on_clientPort_valueChanged(int value);
-	void on_sendSceneChange_stateChanged(int state);
-	void on_restrictSend_stateChanged(int state);
-	void on_sendPreview_stateChanged(int state);
-	void on_clientReconnect_clicked();
-	void updateClientStatus();
-
-	void on_sceneGroupAdd_clicked();
-	void on_sceneGroupRemove_clicked();
-	void on_sceneGroupUp_clicked();
-	void on_sceneGroupDown_clicked();
-	void on_sceneGroupName_editingFinished();
-	void on_sceneGroups_currentRowChanged(int idx);
-
-	void on_sceneGroupSceneAdd_clicked();
-	void on_sceneGroupSceneRemove_clicked();
-	void on_sceneGroupSceneUp_clicked();
-	void on_sceneGroupSceneDown_clicked();
-
-	void on_triggerAdd_clicked();
-	void on_triggerRemove_clicked();
-	void on_triggerUp_clicked();
-	void on_triggerDown_clicked();
-
-	void on_priorityUp_clicked();
-	void on_priorityDown_clicked();
-	void on_threadPriority_currentTextChanged(const QString &text);
-
-	void updateScreenRegionCursorPos();
+	void ConnectionAdded(const QString &);
+	void ConnectionRenamed(const QString &oldName, const QString &newName);
+	void ConnectionRemoved(const QString &);
+	void VariableAdded(const QString &);
+	void VariableRenamed(const QString &oldName, const QString &newName);
+	void VariableRemoved(const QString &);
 
 private:
 	bool MacroTabIsInFocus();
@@ -320,6 +176,209 @@ private:
 	MacroSection lastInteracted = MacroSection::CONDITIONS;
 	int currentConditionIdx = -1;
 	int currentActionIdx = -1;
+
+	/* --- End of macro tab section --- */
+
+	/* --- Begin of legacy tab section --- */
+public:
+	void clearFrames(QListWidget *list);
+	int IgnoreWindowsFindByData(const QString &window);
+	int IgnoreIdleWindowsFindByData(const QString &window);
+	void OpenSequenceExtendEdit(SequenceWidget *sw);
+
+	void setDeprecationWarnings();
+
+	// Window tab
+public:
+	void setupTitleTab();
+public slots:
+	void on_windowUp_clicked();
+	void on_windowDown_clicked();
+	void on_windowAdd_clicked();
+	void on_windowRemove_clicked();
+	void on_ignoreWindows_currentRowChanged(int idx);
+	void on_ignoreWindowsAdd_clicked();
+	void on_ignoreWindowsRemove_clicked();
+
+	// Screen region tab
+public:
+	void setupRegionTab();
+public slots:
+	void SetShowFrames();
+	void SetHideFrames();
+	void on_screenRegionSwitches_currentRowChanged(int idx);
+	void on_showFrame_clicked();
+	void on_screenRegionAdd_clicked();
+	void on_screenRegionRemove_clicked();
+	void on_screenRegionUp_clicked();
+	void on_screenRegionDown_clicked();
+	void updateScreenRegionCursorPos();
+
+	// Pause tab
+public:
+	void setupPauseTab();
+public slots:
+	void on_pauseUp_clicked();
+	void on_pauseDown_clicked();
+	void on_pauseAdd_clicked();
+	void on_pauseRemove_clicked();
+
+	// Sequence tab
+public:
+	void setupSequenceTab();
+public slots:
+	void on_sceneSequenceAdd_clicked();
+	void on_sceneSequenceRemove_clicked();
+	void on_sceneSequenceUp_clicked();
+	void on_sceneSequenceDown_clicked();
+	void on_sceneSequenceSave_clicked();
+	void on_sceneSequenceLoad_clicked();
+	void on_sequenceEdit_clicked();
+	void on_sceneSequenceSwitches_itemDoubleClicked(QListWidgetItem *item);
+
+	// Transition tab
+public:
+	void setupTransitionsTab();
+public slots:
+	void on_transitionsAdd_clicked();
+	void on_transitionsRemove_clicked();
+	void on_transitionsUp_clicked();
+	void on_transitionsDown_clicked();
+	void on_defaultTransitionsAdd_clicked();
+	void on_defaultTransitionsRemove_clicked();
+	void on_defaultTransitionsUp_clicked();
+	void on_defaultTransitionsDown_clicked();
+	void on_transitionOverridecheckBox_stateChanged(int state);
+	void on_adjustActiveTransitionType_stateChanged(int state);
+	void defTransitionDelayValueChanged(int value);
+
+	// Executable tab
+public:
+	void setupExecutableTab();
+public slots:
+	void on_executableUp_clicked();
+	void on_executableDown_clicked();
+	void on_executableAdd_clicked();
+	void on_executableRemove_clicked();
+
+	// Idle tab
+public:
+	void setupIdleTab();
+public slots:
+	void on_idleCheckBox_stateChanged(int state);
+	void on_ignoreIdleWindows_currentRowChanged(int idx);
+	void on_ignoreIdleAdd_clicked();
+	void on_ignoreIdleRemove_clicked();
+
+	// Random tab
+public:
+	void setupRandomTab();
+public slots:
+	void on_randomAdd_clicked();
+	void on_randomRemove_clicked();
+
+	// File tab
+public:
+	void setupFileTab();
+public slots:
+	void on_fileAdd_clicked();
+	void on_fileRemove_clicked();
+	void on_fileSwitches_currentRowChanged(int idx);
+	void on_fileUp_clicked();
+	void on_fileDown_clicked();
+	void on_browseButton_clicked();
+	void on_readFileCheckBox_stateChanged(int state);
+	void on_readPathLineEdit_textChanged(const QString &text);
+	void on_writePathLineEdit_textChanged(const QString &text);
+	void on_browseButton_2_clicked();
+
+	// Media tab
+public:
+	void setupMediaTab();
+public slots:
+	void on_mediaAdd_clicked();
+	void on_mediaRemove_clicked();
+	void on_mediaUp_clicked();
+	void on_mediaDown_clicked();
+
+	// Time tab
+public:
+	void setupTimeTab();
+public slots:
+	void on_timeAdd_clicked();
+	void on_timeRemove_clicked();
+	void on_timeUp_clicked();
+	void on_timeDown_clicked();
+
+	// Video tab
+public:
+	void setupAudioTab();
+public slots:
+	void on_audioAdd_clicked();
+	void on_audioRemove_clicked();
+	void on_audioUp_clicked();
+	void on_audioDown_clicked();
+	void on_audioFallback_toggled(bool on);
+
+	// Video tab
+public:
+	void setupVideoTab();
+public slots:
+	void on_videoAdd_clicked();
+	void on_videoRemove_clicked();
+	void on_videoUp_clicked();
+	void on_videoDown_clicked();
+	void on_getScreenshot_clicked();
+
+	// Scene group tab
+public:
+	void setupNetworkTab();
+public slots:
+	void on_serverSettings_toggled(bool on);
+	void on_serverPort_valueChanged(int value);
+	void on_lockToIPv4_stateChanged(int state);
+	void on_serverRestart_clicked();
+	void updateServerStatus();
+	void on_clientSettings_toggled(bool on);
+	void on_clientHostname_textChanged(const QString &text);
+	void on_clientPort_valueChanged(int value);
+	void on_sendSceneChange_stateChanged(int state);
+	void on_restrictSend_stateChanged(int state);
+	void on_sendPreview_stateChanged(int state);
+	void on_clientReconnect_clicked();
+	void updateClientStatus();
+
+	// Scene group tab
+public:
+	void SetEditSceneGroup(SceneGroup &sg);
+	void setupSceneGroupTab();
+public slots:
+	void on_sceneGroupAdd_clicked();
+	void on_sceneGroupRemove_clicked();
+	void on_sceneGroupUp_clicked();
+	void on_sceneGroupDown_clicked();
+	void on_sceneGroupName_editingFinished();
+	void on_sceneGroups_currentRowChanged(int idx);
+	void on_sceneGroupSceneAdd_clicked();
+	void on_sceneGroupSceneRemove_clicked();
+	void on_sceneGroupSceneUp_clicked();
+	void on_sceneGroupSceneDown_clicked();
+
+signals:
+	void SceneGroupAdded(const QString &name);
+	void SceneGroupRemoved(const QString &name);
+	void SceneGroupRenamed(const QString &oldName, const QString newName);
+
+	// Trigger tab
+public:
+	void setupTriggerTab();
+public slots:
+	void on_triggerAdd_clicked();
+	void on_triggerRemove_clicked();
+	void on_triggerUp_clicked();
+	void on_triggerDown_clicked();
+
+	/* --- End of legacy tab section --- */
 };
 
 void OpenSettingsWindow();
