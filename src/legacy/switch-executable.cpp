@@ -1,4 +1,5 @@
 #include "advanced-scene-switcher.hpp"
+#include "platform-funcs.hpp"
 #include "utility.hpp"
 
 namespace advss {
