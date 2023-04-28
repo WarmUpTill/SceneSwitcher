@@ -7,6 +7,7 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 #include <QMessageBox>
 
 #include "advanced-scene-switcher.hpp"
+#include "scene-switch-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -222,7 +223,7 @@ void WSServer::stop()
 	blog(LOG_INFO, "server stopped successfully");
 }
 
-void WSServer::sendMessage(sceneSwitchInfo sceneSwitch, bool preview)
+void WSServer::sendMessage(SceneSwitchInfo sceneSwitch, bool preview)
 {
 	if (!sceneSwitch.scene) {
 		return;
@@ -306,9 +307,9 @@ std::string processMessage(std::string payload)
 		       "'";
 	}
 	if (preview) {
-		switchPreviewScene(scene);
+		SwitchPreviewScene(scene);
 	} else {
-		switchScene({scene, transition, duration});
+		SwitchScene({scene, transition, duration});
 	}
 	return ret;
 }

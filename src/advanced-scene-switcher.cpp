@@ -10,6 +10,7 @@
 
 #include "advanced-scene-switcher.hpp"
 #include "status-control.hpp"
+#include "scene-switch-helpers.hpp"
 #include "curl-helper.hpp"
 #include "utility.hpp"
 #include "version.h"
@@ -250,7 +251,7 @@ void SwitcherData::Thread()
 			if (macroMatch) {
 				runMacros();
 			} else {
-				switchScene({scene, transition, 0});
+				SwitchScene({scene, transition, 0});
 			}
 		}
 
@@ -372,45 +373,6 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 		}
 	}
 	return match;
-}
-
-void switchScene(const sceneSwitchInfo &sceneSwitch, bool force)
-{
-	if (!sceneSwitch.scene && switcher->verbose) {
-		blog(LOG_INFO, "nothing to switch to");
-		return;
-	}
-
-	obs_source_t *source = obs_weak_source_get_source(sceneSwitch.scene);
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
-
-	if (source && (source != currentSource || force)) {
-		transitionData currentTransitionData;
-		setNextTransition(sceneSwitch, currentSource,
-				  currentTransitionData);
-		obs_frontend_set_current_scene(source);
-		if (switcher->transitionOverrideOverride) {
-			restoreTransitionOverride(source,
-						  currentTransitionData);
-		}
-
-		if (switcher->verbose) {
-			blog(LOG_INFO, "switched scene");
-		}
-
-		if (switcher->networkConfig.ShouldSendSceneChange()) {
-			switcher->server.sendMessage(sceneSwitch);
-		}
-	}
-	obs_source_release(currentSource);
-	obs_source_release(source);
-}
-
-void switchPreviewScene(const OBSWeakSource &ws)
-{
-	auto source = obs_weak_source_get_source(ws);
-	obs_frontend_set_current_preview_scene(source);
-	obs_source_release(source);
 }
 
 static void ResetMacros()

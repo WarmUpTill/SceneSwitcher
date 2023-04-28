@@ -271,6 +271,8 @@ target_sources(
           src/utils/scene-item-selection.hpp
           src/utils/scene-selection.cpp
           src/utils/scene-selection.hpp
+          src/utils/scene-switch-helpers.cpp
+          src/utils/scene-switch-helpers.hpp
           src/utils/screenshot-helper.cpp
           src/utils/screenshot-helper.hpp
           src/utils/section.cpp

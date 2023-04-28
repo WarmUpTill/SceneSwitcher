@@ -383,17 +383,6 @@ public slots:
 void OpenSettingsWindow();
 
 /******************************************************************************
- * Sceneswitch helper
- ******************************************************************************/
-void setNextTransition(const sceneSwitchInfo &ssi, obs_source_t *currentSource,
-		       transitionData &td);
-void overwriteTransitionOverride(const sceneSwitchInfo &ssi,
-				 transitionData &td);
-void restoreTransitionOverride(obs_source_t *scene, const transitionData &td);
-void switchScene(const sceneSwitchInfo &ssi, bool force = false);
-void switchPreviewScene(const OBSWeakSource &ws);
-
-/******************************************************************************
  * Settings helper
  ******************************************************************************/
 void AskForBackup(obs_data_t *obj);
