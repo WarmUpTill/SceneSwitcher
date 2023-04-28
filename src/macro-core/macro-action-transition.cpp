@@ -250,13 +250,13 @@ MacroActionTransitionEdit::MacroActionTransitionEdit(
 		{"{{setDuration}}", _setDuration},
 	};
 	QHBoxLayout *typeLayout = new QHBoxLayout;
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.action.transition.entry.line1"),
 		     typeLayout, widgetPlaceholders);
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.action.transition.entry.line2"),
 		     _transitionLayout, widgetPlaceholders);
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.action.transition.entry.line3"),
 		     _durationLayout, widgetPlaceholders);
 	QVBoxLayout *mainLayout = new QVBoxLayout;

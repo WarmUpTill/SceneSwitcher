@@ -169,16 +169,16 @@ MacroConditionTimerEdit::MacroConditionTimerEdit(
 		{"{{reset}}", _reset},
 		{"{{saveRemaining}}", _saveRemaining},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.timer.entry.line1.fixed"),
 		_timerLayout, widgetPlaceholders);
 	auto line2Layout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.timer.entry.line2"),
 		line2Layout, widgetPlaceholders);
 	auto line3Layout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.timer.entry.line3"),
 		line3Layout, widgetPlaceholders);
 
@@ -329,7 +329,7 @@ void MacroConditionTimerEdit::SetWidgetVisibility()
 	_timerLayout->removeWidget(_duration);
 	_timerLayout->removeWidget(_duration2);
 
-	clearLayout(_timerLayout);
+	ClearLayout(_timerLayout);
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{type}}", _timerTypes},
@@ -338,13 +338,13 @@ void MacroConditionTimerEdit::SetWidgetVisibility()
 	};
 
 	if (_entryData->_type == TimerType::RANDOM) {
-		placeWidgets(
+		PlaceWidgets(
 			obs_module_text(
 				"AdvSceneSwitcher.condition.timer.entry.line1.random"),
 			_timerLayout, widgetPlaceholders);
 		_duration2->show();
 	} else {
-		placeWidgets(
+		PlaceWidgets(
 			obs_module_text(
 				"AdvSceneSwitcher.condition.timer.entry.line1.fixed"),
 			_timerLayout, widgetPlaceholders);

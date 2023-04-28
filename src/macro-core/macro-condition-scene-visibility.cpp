@@ -163,7 +163,7 @@ MacroConditionSceneVisibilityEdit::MacroConditionSceneVisibilityEdit(
 		{"{{conditions}}", _conditions},
 	};
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.sceneVisibility.entry"),
 		mainLayout, widgetPlaceholders);

@@ -38,11 +38,11 @@ bool MacroConditionSource::CheckCondition()
 		ret = obs_source_showing(s);
 		break;
 	case SourceCondition::SETTINGS:
-		ret = compareSourceSettings(_source.GetSource(), _settings,
+		ret = CompareSourceSettings(_source.GetSource(), _settings,
 					    _regex);
 		if (IsReferencedInVars()) {
 			SetVariableValue(
-				getSourceSettings(_source.GetSource()));
+				GetSourceSettings(_source.GetSource()));
 		}
 		break;
 	default:
@@ -132,13 +132,13 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 		{"{{settings}}", _settings}, {"{{getSettings}}", _getSettings},
 		{"{{regex}}", _regex},
 	};
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.source.entry.line1"),
 		     line1Layout, widgetPlaceholders);
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.source.entry.line2"),
 		     line2Layout, widgetPlaceholders, false);
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.source.entry.line3"),
 		     line3Layout, widgetPlaceholders);
 	mainLayout->addLayout(line1Layout);
@@ -181,10 +181,10 @@ void MacroConditionSourceEdit::GetSettingsClicked()
 		return;
 	}
 
-	QString json = formatJsonString(
-		getSourceSettings(_entryData->_source.GetSource()));
+	QString json = FormatJsonString(
+		GetSourceSettings(_entryData->_source.GetSource()));
 	if (_entryData->_regex.Enabled()) {
-		json = escapeForRegex(json);
+		json = EscapeForRegex(json);
 	}
 	_settings->setPlainText(json);
 }

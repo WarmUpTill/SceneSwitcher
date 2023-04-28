@@ -448,7 +448,7 @@ AudioSwitchWidget::AudioSwitchWidget(QWidget *parent, AudioSwitch *s)
 	QWidget::connect(ignoreInactiveSource, SIGNAL(stateChanged(int)), this,
 			 SLOT(IgnoreInactiveChanged(int)));
 
-	populateAudioSelection(audioSources);
+	PopulateAudioSelection(audioSources);
 	populateConditionSelection(condition);
 
 	if (s) {
@@ -469,7 +469,7 @@ AudioSwitchWidget::AudioSwitchWidget(QWidget *parent, AudioSwitch *s)
 		{"{{ignoreInactiveSource}}", ignoreInactiveSource},
 		{"{{scenes}}", scenes},
 		{"{{transitions}}", transitions}};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.audioTab.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.audioTab.entry"),
 		     switchLayout, widgetPlaceholders);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
@@ -594,7 +594,7 @@ AudioSwitchFallbackWidget::AudioSwitchFallbackWidget(QWidget *parent,
 		{"{{scenes}}", scenes},
 		{"{{duration}}", duration},
 		{"{{transitions}}", transitions}};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.audioTab.multiMatchfallback"),
 		mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);

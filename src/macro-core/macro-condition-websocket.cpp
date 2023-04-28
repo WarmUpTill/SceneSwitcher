@@ -154,12 +154,12 @@ void MacroConditionWebsocketEdit::SetupRequestEdit()
 {
 	_editLayout->removeWidget(_conditions);
 	_editLayout->removeWidget(_connection);
-	clearLayout(_editLayout);
+	ClearLayout(_editLayout);
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{type}}", _conditions},
 		{"{{connection}}", _connection},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.websocket.entry.request"),
 		_editLayout, widgetPlaceholders);
@@ -170,12 +170,12 @@ void MacroConditionWebsocketEdit::SetupEventEdit()
 {
 	_editLayout->removeWidget(_conditions);
 	_editLayout->removeWidget(_connection);
-	clearLayout(_editLayout);
+	ClearLayout(_editLayout);
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{type}}", _conditions},
 		{"{{connection}}", _connection},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.websocket.entry.event"),
 		_editLayout, widgetPlaceholders);

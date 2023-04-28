@@ -155,7 +155,7 @@ bool SwitcherData::checkScreenRegionSwitch(OBSWeakSource &scene,
 		return false;
 	}
 
-	std::pair<int, int> cursorPos = getCursorPos();
+	std::pair<int, int> cursorPos = GetCursorPos();
 	int minRegionSize = 99999;
 	bool match = false;
 
@@ -190,7 +190,7 @@ bool SwitcherData::checkScreenRegionSwitch(OBSWeakSource &scene,
 
 void AdvSceneSwitcher::updateScreenRegionCursorPos()
 {
-	std::pair<int, int> position = getCursorPos();
+	std::pair<int, int> position = GetCursorPos();
 	ui->cursorXPosition->setText(QString::number(position.first));
 	ui->cursorYPosition->setText(QString::number(position.second));
 }
@@ -320,7 +320,7 @@ ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
 	QWidget::connect(maxY, SIGNAL(valueChanged(int)), this,
 			 SLOT(MaxYChanged(int)));
 
-	populateSceneSelection(
+	PopulateSceneSelection(
 		excludeScenes, false, false, false, false, nullptr, true,
 		obs_module_text(
 			"AdvSceneSwitcher.screenRegionTab.excludeScenes.None"),
@@ -344,7 +344,7 @@ ScreenRegionWidget::ScreenRegionWidget(QWidget *parent, ScreenRegionSwitch *s)
 		{"{{scenes}}", scenes},
 		{"{{transitions}}", transitions},
 		{"{{excludeScenes}}", excludeScenes}};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.screenRegionTab.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.screenRegionTab.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

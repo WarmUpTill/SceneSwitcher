@@ -575,24 +575,24 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 		{"{{textType}}", _pageSegMode},
 		{"{{patternMatchingModes}}", _patternMatchMode},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.video.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.video.entry"),
 		     entryLine1Layout, widgetPlaceholders);
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.video.patternMatchMode"),
 		_patternMatchModeLayout, widgetPlaceholders);
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.video.entry.modelPath"),
 		_modelPathLayout, widgetPlaceholders);
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.video.entry.minNeighbor"),
 		_neighborsControlLayout, widgetPlaceholders);
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.video.entry.throttle"),
 		     _throttleControlLayout, widgetPlaceholders);
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.video.entry.checkArea"),
 		_checkAreaControlLayout, widgetPlaceholders);
@@ -603,13 +603,13 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	regexLayout->addStretch();
 	_ocrLayout->addLayout(regexLayout);
 	auto pageModeSegLayout = new QHBoxLayout();
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.video.entry.orcTextType"),
 		pageModeSegLayout, widgetPlaceholders);
 	_ocrLayout->addLayout(pageModeSegLayout);
 	auto colorPickLayout = new QHBoxLayout();
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.video.entry.orcColorPick"),
 		colorPickLayout, widgetPlaceholders);
@@ -1203,7 +1203,7 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 	_patternThreshold->setVisible(needsThreshold(_entryData->_condition));
 	_useAlphaAsMask->setVisible(_entryData->_condition ==
 				    VideoCondition::PATTERN);
-	setLayoutVisible(_patternMatchModeLayout,
+	SetLayoutVisible(_patternMatchModeLayout,
 			 _entryData->_condition == VideoCondition::PATTERN);
 	_brightnessThreshold->setVisible(_entryData->_condition ==
 					 VideoCondition::BRIGHTNESS);
@@ -1212,19 +1212,19 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 	_showMatch->setVisible(needsShowMatch(_entryData->_condition));
 	_objectScaleThreshold->setVisible(
 		needsObjectControls(_entryData->_condition));
-	setLayoutVisible(_neighborsControlLayout,
+	SetLayoutVisible(_neighborsControlLayout,
 			 needsObjectControls(_entryData->_condition));
 	_minNeighborsDescription->setVisible(
 		needsObjectControls(_entryData->_condition));
-	setLayoutVisible(_ocrLayout,
+	SetLayoutVisible(_ocrLayout,
 			 _entryData->_condition == VideoCondition::OCR);
-	setLayoutVisible(_sizeLayout,
+	SetLayoutVisible(_sizeLayout,
 			 needsObjectControls(_entryData->_condition));
-	setLayoutVisible(_modelPathLayout,
+	SetLayoutVisible(_modelPathLayout,
 			 needsObjectControls(_entryData->_condition));
-	setLayoutVisible(_throttleControlLayout,
+	SetLayoutVisible(_throttleControlLayout,
 			 needsThrottleControls(_entryData->_condition));
-	setLayoutVisible(_checkAreaControlLayout,
+	SetLayoutVisible(_checkAreaControlLayout,
 			 needsAreaControls(_entryData->_condition));
 	_checkArea->setVisible(_entryData->_areaParameters.enable);
 	_selectArea->setVisible(_entryData->_areaParameters.enable);
@@ -1233,7 +1233,7 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 	    _entryData->_condition == VideoCondition::HAS_NOT_CHANGED) {
 		_patternThreshold->setVisible(
 			_entryData->_patternMatchParameters.useForChangedCheck);
-		setLayoutVisible(
+		SetLayoutVisible(
 			_patternMatchModeLayout,
 			_entryData->_patternMatchParameters.useForChangedCheck);
 	}

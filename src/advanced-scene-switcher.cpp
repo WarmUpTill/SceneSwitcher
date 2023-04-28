@@ -323,10 +323,10 @@ void SwitcherData::setPreconditions()
 	GetForegroundProcessName(currentForegroundProcess);
 
 	// Cursor
-	std::pair<int, int> cursorPos = getCursorPos();
+	std::pair<int, int> cursorPos = GetCursorPos();
 	cursorPosChanged = cursorPos.first != switcher->lastCursorPos.first ||
 			   cursorPos.second != switcher->lastCursorPos.second;
-	lastCursorPos = getCursorPos();
+	lastCursorPos = GetCursorPos();
 }
 
 void SwitcherData::resetForNextInterval()

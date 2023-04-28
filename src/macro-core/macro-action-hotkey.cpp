@@ -451,7 +451,7 @@ MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 		{"{{keys}}", _keys},
 		{"{{duration}}", _duration},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.hotkey.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.hotkey.entry"),
 		     line1Layout, widgetPlaceholders);
 
 	QHBoxLayout *line2Layout = new QHBoxLayout;

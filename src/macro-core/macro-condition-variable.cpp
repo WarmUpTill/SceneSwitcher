@@ -218,7 +218,7 @@ MacroConditionVariableEdit::MacroConditionVariableEdit(
 	};
 
 	QHBoxLayout *layout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.variable.entry"),
 		layout, widgetPlaceholders);
 

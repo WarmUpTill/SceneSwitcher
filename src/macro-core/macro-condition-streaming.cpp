@@ -94,7 +94,7 @@ MacroConditionStreamEdit::MacroConditionStreamEdit(
 		{"{{streamState}}", _streamState},
 	};
 
-	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.stream.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.stream.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

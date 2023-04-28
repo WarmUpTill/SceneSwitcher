@@ -46,7 +46,7 @@ bool MacroActionFilter::PerformAction()
 		obs_source_set_enabled(s, false);
 		break;
 	case Action::SETTINGS:
-		setSourceSettings(s, _settings);
+		SetSourceSettings(s, _settings);
 		break;
 	default:
 		break;
@@ -142,7 +142,7 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 		{"{{actions}}", _actions},         {"{{settings}}", _settings},
 		{"{{getSettings}}", _getSettings},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.filter.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.filter.entry"),
 		     entryLayout, widgetPlaceholders);
 
 	QHBoxLayout *buttonLayout = new QHBoxLayout;
@@ -168,7 +168,7 @@ void MacroActionFilterEdit::UpdateEntryData()
 
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_sources->SetSource(_entryData->_source);
-	populateFilterSelection(_filters, _entryData->_source.GetSource());
+	PopulateFilterSelection(_filters, _entryData->_source.GetSource());
 	_filters->setCurrentText(
 		GetWeakSourceName(_entryData->_filter).c_str());
 	_settings->setPlainText(_entryData->_settings);
@@ -189,7 +189,7 @@ void MacroActionFilterEdit::SourceChanged(const SourceSelection &source)
 		_entryData->_source = source;
 	}
 	_filters->clear();
-	populateFilterSelection(_filters, _entryData->_source.GetSource());
+	PopulateFilterSelection(_filters, _entryData->_source.GetSource());
 	_filters->adjustSize();
 }
 
@@ -227,7 +227,7 @@ void MacroActionFilterEdit::GetSettingsClicked()
 	}
 
 	_settings->setPlainText(
-		formatJsonString(getSourceSettings(_entryData->_filter)));
+		FormatJsonString(GetSourceSettings(_entryData->_filter)));
 }
 
 void MacroActionFilterEdit::SettingsChanged()

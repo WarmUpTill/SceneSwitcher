@@ -178,11 +178,11 @@ MacroActionHttpEdit::MacroActionHttpEdit(
 		{"{{timeout}}", _timeout},
 	};
 	auto *actionLayout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.http.entry.line1"),
 		actionLayout, widgetPlaceholders);
 	auto *timeoutLayout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.http.entry.line2"),
 		timeoutLayout, widgetPlaceholders);
 
@@ -276,7 +276,7 @@ void MacroActionHttpEdit::HeadersChanged(const StringList &headers)
 void MacroActionHttpEdit::SetWidgetVisibility()
 {
 	_data->setVisible(_entryData->_method == MacroActionHttp::Method::POST);
-	setLayoutVisible(_headerListLayout, _entryData->_setHeaders);
+	SetLayoutVisible(_headerListLayout, _entryData->_setHeaders);
 
 	adjustSize();
 	updateGeometry();

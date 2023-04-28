@@ -125,7 +125,7 @@ MacroActionSudioModeEdit::MacroActionSudioModeEdit(
 		{"{{scenes}}", _scenes},
 	};
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.studioMode.entry"),
 		mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);

@@ -184,7 +184,7 @@ RandomSwitchWidget::RandomSwitchWidget(QWidget *parent, RandomSwitch *s)
 		{"{{scenes}}", scenes},
 		{"{{transitions}}", transitions},
 		{"{{delay}}", delay}};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.randomTab.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.randomTab.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

@@ -430,7 +430,7 @@ VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
 		{"{{ignoreInactiveSource}}", ignoreInactiveSource},
 		{"{{scenes}}", scenes},
 		{"{{transitions}}", transitions}};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.videoTab.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.videoTab.entry"),
 		     switchLayout, widgetPlaceholders);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;

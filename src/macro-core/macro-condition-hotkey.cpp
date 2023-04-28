@@ -67,7 +67,7 @@ MacroConditionHotkeyEdit::MacroConditionHotkeyEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{name}}", _name},
 	};
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.hotkey.entry.line2"),
 		     switchLayout, widgetPlaceholders);
 

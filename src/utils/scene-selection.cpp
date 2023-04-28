@@ -251,31 +251,31 @@ void SceneSelectionWidget::Reset()
 void SceneSelectionWidget::PopulateSelection()
 {
 	clear();
-	addSelectionEntry(this,
+	AddSelectionEntry(this,
 			  obs_module_text("AdvSceneSwitcher.selectScene"));
 	insertSeparator(count());
 
 	if (_current || _previous) {
 		const QStringList order =
 			getOrderList(_current, _previous, _preview);
-		addSelectionGroup(this, order);
+		AddSelectionGroup(this, order);
 	}
 	_placeholderEndIdx = count();
 
 	if (_variables) {
 		const QStringList variables = GetVariablesNameList();
-		addSelectionGroup(this, variables);
+		AddSelectionGroup(this, variables);
 	}
 	_variablesEndIdx = count();
 
 	if (_sceneGroups) {
 		const QStringList sceneGroups = getSceneGroupsList();
-		addSelectionGroup(this, sceneGroups);
+		AddSelectionGroup(this, sceneGroups);
 	}
 	_groupsEndIdx = count();
 
 	const QStringList scenes = getScenesList();
-	addSelectionGroup(this, scenes);
+	AddSelectionGroup(this, scenes);
 	_scenesEndIdx = count();
 
 	// Remove last separator
@@ -330,7 +330,7 @@ void SceneSelectionWidget::SetScene(const SceneSelection &s)
 			idx = 0;
 			break;
 		}
-		idx = findIdxInRagne(this, _groupsEndIdx, _scenesEndIdx,
+		idx = FindIdxInRagne(this, _groupsEndIdx, _scenesEndIdx,
 				     s.ToString());
 		break;
 	}
@@ -339,7 +339,7 @@ void SceneSelectionWidget::SetScene(const SceneSelection &s)
 			idx = 0;
 			break;
 		}
-		idx = findIdxInRagne(this, _variablesEndIdx, _groupsEndIdx,
+		idx = FindIdxInRagne(this, _variablesEndIdx, _groupsEndIdx,
 				     s.ToString());
 		break;
 	}
@@ -349,7 +349,7 @@ void SceneSelectionWidget::SetScene(const SceneSelection &s)
 			break;
 		}
 
-		idx = findIdxInRagne(
+		idx = FindIdxInRagne(
 			this, _selectIdx, _placeholderEndIdx,
 			obs_module_text(
 				"AdvSceneSwitcher.selectPreviousScene"));
@@ -361,7 +361,7 @@ void SceneSelectionWidget::SetScene(const SceneSelection &s)
 			break;
 		}
 
-		idx = findIdxInRagne(
+		idx = FindIdxInRagne(
 			this, _selectIdx, _placeholderEndIdx,
 			obs_module_text("AdvSceneSwitcher.selectCurrentScene"));
 		break;
@@ -372,7 +372,7 @@ void SceneSelectionWidget::SetScene(const SceneSelection &s)
 			break;
 		}
 
-		idx = findIdxInRagne(
+		idx = FindIdxInRagne(
 			this, _selectIdx, _placeholderEndIdx,
 			obs_module_text("AdvSceneSwitcher.selectPreviewScene"));
 		break;
@@ -382,7 +382,7 @@ void SceneSelectionWidget::SetScene(const SceneSelection &s)
 			idx = 0;
 			break;
 		}
-		idx = findIdxInRagne(this, _placeholderEndIdx, _variablesEndIdx,
+		idx = FindIdxInRagne(this, _placeholderEndIdx, _variablesEndIdx,
 				     s.ToString());
 		break;
 	default:

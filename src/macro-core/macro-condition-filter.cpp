@@ -55,9 +55,9 @@ bool MacroConditionFilter::CheckCondition()
 		ret = !obs_source_enabled(s);
 		break;
 	case Condition::SETTINGS:
-		ret = compareSourceSettings(_filter, _settings, _regex);
+		ret = CompareSourceSettings(_filter, _settings, _regex);
 		if (IsReferencedInVars()) {
-			SetVariableValue(getSourceSettings(_filter));
+			SetVariableValue(GetSourceSettings(_filter));
 		}
 		break;
 	default:
@@ -156,13 +156,13 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 		{"{{conditions}}", _conditions},   {"{{settings}}", _settings},
 		{"{{getSettings}}", _getSettings}, {"{{regex}}", _regex},
 	};
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.filter.entry.line1"),
 		     line1Layout, widgetPlaceholders);
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.filter.entry.line2"),
 		     line2Layout, widgetPlaceholders, false);
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.filter.entry.line3"),
 		     line3Layout, widgetPlaceholders);
 
@@ -187,7 +187,7 @@ void MacroConditionFilterEdit::SourceChanged(const SourceSelection &source)
 		_entryData->_source = source;
 	}
 	_filters->clear();
-	populateFilterSelection(_filters, _entryData->_source.GetSource());
+	PopulateFilterSelection(_filters, _entryData->_source.GetSource());
 	_filters->adjustSize();
 }
 
@@ -224,9 +224,9 @@ void MacroConditionFilterEdit::GetSettingsClicked()
 		return;
 	}
 
-	QString json = formatJsonString(getSourceSettings(_entryData->_filter));
+	QString json = FormatJsonString(GetSourceSettings(_entryData->_filter));
 	if (_entryData->_regex.Enabled()) {
-		json = escapeForRegex(json);
+		json = EscapeForRegex(json);
 	}
 	_settings->setPlainText(json);
 }
@@ -272,7 +272,7 @@ void MacroConditionFilterEdit::UpdateEntryData()
 	}
 
 	_sources->SetSource(_entryData->_source);
-	populateFilterSelection(_filters, _entryData->_source.GetSource());
+	PopulateFilterSelection(_filters, _entryData->_source.GetSource());
 	_filters->setCurrentText(
 		GetWeakSourceName(_entryData->_filter).c_str());
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));

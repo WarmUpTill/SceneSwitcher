@@ -346,7 +346,7 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	sources.sort();
 	_sources->SetSourceNameList(sources);
 	populateFadeTypeSelection(_fadeTypes);
-	populateMonitorTypeSelection(_monitorTypes);
+	PopulateMonitorTypeSelection(_monitorTypes);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
@@ -397,10 +397,10 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 		{"{{fadeTypes}}", _fadeTypes},
 	};
 	QHBoxLayout *entryLayout = new QHBoxLayout;
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.audio.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.audio.entry"),
 		     entryLayout, widgetPlaceholders);
 	_fadeTypeLayout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.audio.fade.duration"),
 		_fadeTypeLayout, widgetPlaceholders);
 
@@ -447,7 +447,7 @@ void MacroActionAudioEdit::SetWidgetVisibility()
 	_fadeTypeLayout->removeWidget(_fadeTypes);
 	_fadeTypeLayout->removeWidget(_duration);
 	_fadeTypeLayout->removeWidget(_rate);
-	clearLayout(_fadeTypeLayout);
+	ClearLayout(_fadeTypeLayout);
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{fade}}", _fade},
 		{"{{duration}}", _duration},
@@ -455,12 +455,12 @@ void MacroActionAudioEdit::SetWidgetVisibility()
 		{"{{fadeTypes}}", _fadeTypes},
 	};
 	if (_entryData->_fadeType == MacroActionAudio::FadeType::DURATION) {
-		placeWidgets(
+		PlaceWidgets(
 			obs_module_text(
 				"AdvSceneSwitcher.action.audio.fade.duration"),
 			_fadeTypeLayout, widgetPlaceholders);
 	} else {
-		placeWidgets(obs_module_text(
+		PlaceWidgets(obs_module_text(
 				     "AdvSceneSwitcher.action.audio.fade.rate"),
 			     _fadeTypeLayout, widgetPlaceholders);
 	}
@@ -470,9 +470,9 @@ void MacroActionAudioEdit::SetWidgetVisibility()
 	_rate->setVisible(_entryData->_fadeType ==
 			  MacroActionAudio::FadeType::RATE);
 
-	setLayoutVisible(_fadeTypeLayout,
+	SetLayoutVisible(_fadeTypeLayout,
 			 hasVolumeControl(_entryData->_action));
-	setLayoutVisible(_fadeOptionsLayout,
+	SetLayoutVisible(_fadeOptionsLayout,
 			 hasVolumeControl(_entryData->_action));
 	adjustSize();
 }

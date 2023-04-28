@@ -251,7 +251,7 @@ MacroConditionSceneOrderEdit::MacroConditionSceneOrderEdit(
 		{"{{sources2}}", _sources2}, {"{{conditions}}", _conditions},
 		{"{{position}}", _position},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.sceneOrder.entry"),
 		entryLayout, widgetPlaceholders);
 	QVBoxLayout *mainLayout = new QVBoxLayout;

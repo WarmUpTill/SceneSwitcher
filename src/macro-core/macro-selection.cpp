@@ -122,7 +122,7 @@ MacroSelectionDialog::MacroSelectionDialog(QWidget *)
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{macroSelection}}", _macroSelection},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.askForMacro"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.askForMacro"),
 		     selectionLayout, widgetPlaceholders);
 	auto *layout = new QVBoxLayout();
 	layout->addLayout(selectionLayout);

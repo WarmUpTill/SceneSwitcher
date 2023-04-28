@@ -17,7 +17,7 @@ GenericVaraiableSpinbox::GenericVaraiableSpinbox(QWidget *parent,
 {
 	_toggleType->setCheckable(true);
 	_toggleType->setMaximumWidth(11);
-	setButtonIcon(_toggleType, ":/res/images/dots-vert.svg");
+	SetButtonIcon(_toggleType, ":/res/images/dots-vert.svg");
 
 	QWidget::connect(_fixedValueInt, SIGNAL(valueChanged(int)), this,
 			 SLOT(SetFixedValue(int)));

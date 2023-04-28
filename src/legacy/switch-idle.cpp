@@ -210,7 +210,7 @@ void SwitcherData::loadIdleSwitches(obs_data_t *obj)
 
 void AdvSceneSwitcher::SetupIdleTab()
 {
-	populateWindowSelection(ui->ignoreIdleWindowsWindows);
+	PopulateWindowSelection(ui->ignoreIdleWindowsWindows);
 
 	for (auto &window : switcher->ignoreIdleWindows) {
 		QString text = QString::fromStdString(window);
@@ -270,7 +270,7 @@ IdleWidget::IdleWidget(QWidget *parent, IdleData *s)
 		{"{{duration}}", duration},
 		{"{{scenes}}", scenes},
 		{"{{transitions}}", transitions}};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.idleTab.idleswitch"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.idleTab.idleswitch"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

@@ -178,7 +178,7 @@ MacroActionScreenshotEdit::MacroActionScreenshotEdit(
 		{"{{saveType}}", _saveType},
 		{"{{targetType}}", _targetType},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.screenshot.entry"),
 		layout, widgetPlaceholders);
 

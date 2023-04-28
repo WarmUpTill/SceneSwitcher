@@ -129,7 +129,7 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 		{"{{actions}}", _actions},
 		{"{{macros}}", _macros},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.macro.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.macro.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

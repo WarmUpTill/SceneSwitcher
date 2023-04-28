@@ -74,7 +74,7 @@ MacroConditionProcessEdit::MacroConditionProcessEdit(
 	QWidget::connect(&_timer, SIGNAL(timeout()), this,
 			 SLOT(UpdateFocusProcess()));
 
-	populateProcessSelection(_processSelection);
+	PopulateProcessSelection(_processSelection);
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{processes}}", _processSelection},
@@ -83,10 +83,10 @@ MacroConditionProcessEdit::MacroConditionProcessEdit(
 	};
 
 	auto entryLayout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.process.entry"),
 		entryLayout, widgetPlaceholders);
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.process.entry.focus"),
 		     _focusLayout, widgetPlaceholders);
 	auto mainLayout = new QVBoxLayout;
@@ -135,7 +135,7 @@ void MacroConditionProcessEdit::SetWidgetVisibility()
 	if (!_entryData) {
 		return;
 	}
-	setLayoutVisible(_focusLayout, _entryData->_focus);
+	SetLayoutVisible(_focusLayout, _entryData->_focus);
 	adjustSize();
 }
 

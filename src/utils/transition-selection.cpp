@@ -70,7 +70,7 @@ TransitionSelectionWidget::TransitionSelectionWidget(QWidget *parent,
 	: QComboBox(parent)
 {
 	setDuplicatesEnabled(true);
-	populateTransitionSelection(this, current, any);
+	PopulateTransitionSelection(this, current, any);
 
 	QWidget::connect(this, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(SelectionChanged(const QString &)));
@@ -114,7 +114,7 @@ void TransitionSelectionWidget::Repopulate(bool current, bool any)
 	{
 		const QSignalBlocker blocker(this);
 		clear();
-		populateTransitionSelection(this, current, any);
+		PopulateTransitionSelection(this, current, any);
 		setCurrentIndex(0);
 	}
 	TransitionSelection t;

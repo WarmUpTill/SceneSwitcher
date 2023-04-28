@@ -400,7 +400,7 @@ void SceneTrigger::load(obs_data_t *obj)
 
 static inline void populateTriggers(QComboBox *list)
 {
-	addSelectionEntry(
+	AddSelectionEntry(
 		list,
 		obs_module_text(
 			"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerType.none"));
@@ -415,7 +415,7 @@ static inline void populateTriggers(QComboBox *list)
 
 inline void populateActions(QComboBox *list)
 {
-	addSelectionEntry(
+	AddSelectionEntry(
 		list,
 		obs_module_text(
 			"AdvSceneSwitcher.sceneTriggerTab.sceneTriggerAction.none"));
@@ -470,7 +470,7 @@ SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
 
 	populateTriggers(triggers);
 	populateActions(actions);
-	populateAudioSelection(audioSources);
+	PopulateAudioSelection(audioSources);
 
 	if (s) {
 		triggers->setCurrentIndex(static_cast<int>(s->triggerType));
@@ -494,7 +494,7 @@ SceneTriggerWidget::SceneTriggerWidget(QWidget *parent, SceneTrigger *s)
 		{"{{audioSources}}", audioSources},
 		{"{{duration}}", duration},
 		{"{{scenes}}", scenes}};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.sceneTriggerTab.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.sceneTriggerTab.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

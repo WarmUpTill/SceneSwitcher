@@ -62,7 +62,7 @@ void populateSceneCollectionSelection(QComboBox *box)
 	}
 	bfree(sceneCollections);
 	box->model()->sort(0);
-	addSelectionEntry(
+	AddSelectionEntry(
 		box, obs_module_text("AdvSceneSwitcher.selectSceneCollection"),
 		false);
 	box->setCurrentIndex(0);
@@ -82,7 +82,7 @@ MacroActionSceneCollectionEdit::MacroActionSceneCollectionEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{sceneCollections}}", _sceneCollections},
 	};
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.action.sceneCollection.entry"),
 		     entryLayout, widgetPlaceholders);
 	QVBoxLayout *mainLayout = new QVBoxLayout;

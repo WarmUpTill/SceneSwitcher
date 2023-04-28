@@ -166,7 +166,7 @@ void Section::CleanUpPreviousContent()
 	if (_contentArea) {
 		auto oldLayout = _contentArea->layout();
 		if (oldLayout) {
-			clearLayout(oldLayout);
+			ClearLayout(oldLayout);
 			delete oldLayout;
 		}
 	}

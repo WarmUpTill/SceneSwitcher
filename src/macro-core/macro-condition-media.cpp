@@ -449,7 +449,7 @@ MacroConditionMediaEdit::MacroConditionMediaEdit(
 		{"{{timeRestrictions}}", _timeRestrictions},
 		{"{{time}}", _time},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.media.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.media.entry"),
 		     entryLayout, widgetPlaceholders);
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(entryLayout);

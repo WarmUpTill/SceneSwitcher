@@ -311,7 +311,7 @@ PauseEntryWidget::PauseEntryWidget(QWidget *parent, PauseEntry *s)
 
 	populatePauseTypes(pauseTypes);
 	populatePauseTargets(pauseTargets);
-	populateWindowSelection(windows);
+	PopulateWindowSelection(windows);
 
 	windows->setEditable(true);
 	windows->setMaxVisibleItems(20);
@@ -337,7 +337,7 @@ PauseEntryWidget::PauseEntryWidget(QWidget *parent, PauseEntry *s)
 		{"{{pauseTargets}}", pauseTargets},
 		{"{{windows}}", windows}};
 
-	placeWidgets(obs_module_text("AdvSceneSwitcher.pauseTab.pauseEntry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.pauseTab.pauseEntry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

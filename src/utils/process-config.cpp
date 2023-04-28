@@ -77,11 +77,11 @@ ProcessConfigEdit::ProcessConfigEdit(QWidget *parent)
 		{"{{workingDirectory}}", _workingDirectory},
 		{"{{advancedSettings}}", _showAdvancedSettings},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.process.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.process.entry"),
 		     entryLayout, widgetPlaceholders, false);
 
 	auto workingDirectoryLayout = new QHBoxLayout;
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.process.entry.workingDirectory"),
 		     workingDirectoryLayout, widgetPlaceholders, false);
 
@@ -138,7 +138,7 @@ void ProcessConfigEdit::ArgsChanged(const StringList &args)
 
 void ProcessConfigEdit::ShowAdvancedSettings(bool showAdvancedSettings)
 {
-	setLayoutVisible(_advancedSettingsLayout, showAdvancedSettings);
+	SetLayoutVisible(_advancedSettingsLayout, showAdvancedSettings);
 	_showAdvancedSettings->setVisible(!showAdvancedSettings);
 	adjustSize();
 	updateGeometry();

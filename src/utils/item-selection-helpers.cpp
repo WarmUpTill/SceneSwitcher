@@ -57,7 +57,7 @@ ItemSelection::ItemSelection(std::deque<std::shared_ptr<Item>> &items,
 	  _addStr(add)
 {
 	_modify->setMaximumWidth(22);
-	setButtonIcon(_modify, ":/settings/images/settings/general.svg");
+	SetButtonIcon(_modify, ":/settings/images/settings/general.svg");
 	_modify->setFlat(true);
 
 	// Connect to slots
@@ -77,7 +77,7 @@ ItemSelection::ItemSelection(std::deque<std::shared_ptr<Item>> &items,
 		_selection->addItem(QString::fromStdString(i->_name));
 	}
 	_selection->model()->sort(0);
-	addSelectionEntry(_selection, obs_module_text(_selectStr.data()));
+	AddSelectionEntry(_selection, obs_module_text(_selectStr.data()));
 	_selection->insertSeparator(_selection->count());
 	_selection->addItem(obs_module_text(_addStr.data()));
 }
