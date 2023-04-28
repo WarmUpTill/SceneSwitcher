@@ -108,7 +108,7 @@ MacroActionFileEdit::MacroActionFileEdit(
 		{"{{matchText}}", _text},
 		{"{{actions}}", _actions},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.file.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.file.entry"),
 		     entryLayout, widgetPlaceholders);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;

@@ -91,12 +91,12 @@ void MacroSegmentList::Add(QWidget *widget)
 
 void MacroSegmentList::Remove(int idx)
 {
-	deleteLayoutItemWidget(_contentLayout->takeAt(idx));
+	DeleteLayoutItemWidget(_contentLayout->takeAt(idx));
 }
 
 void MacroSegmentList::Clear(int idx)
 {
-	clearLayout(_contentLayout, idx);
+	ClearLayout(_contentLayout, idx);
 }
 
 void MacroSegmentList::Highlight(int idx, QColor color)

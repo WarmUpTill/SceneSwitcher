@@ -102,7 +102,7 @@ MacroActionRandomEdit::MacroActionRandomEdit(
 
 	auto *entryLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.random.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.random.entry"),
 		     entryLayout, widgetPlaceholders);
 
 	auto *mainLayout = new QVBoxLayout;

@@ -430,21 +430,21 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 		{"{{pattern}}", _pattern},
 		{"{{currentDate}}", _currentDate},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.date.entry.simple"),
 		_simpleLayout, widgetPlaceholders);
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.date.entry.advanced"),
 		     _advancedLayout, widgetPlaceholders);
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.date.entry.updateOnRepeat"),
 		_repeatUpdateLayout, widgetPlaceholders);
 	auto repeatLayout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.date.entry.repeat"),
 		repeatLayout, widgetPlaceholders);
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.date.entry.pattern"),
 		     _patternLayout, widgetPlaceholders);
 	_repeatLayout->addLayout(repeatLayout);
@@ -671,11 +671,11 @@ void MacroConditionDateEdit::UpdateEntryData()
 
 void MacroConditionDateEdit::SetupSimpleView()
 {
-	setLayoutVisible(_simpleLayout, true);
-	setLayoutVisible(_advancedLayout, false);
-	setLayoutVisible(_patternLayout, false);
-	setLayoutVisible(_repeatLayout, false);
-	setLayoutVisible(_repeatUpdateLayout, false);
+	SetLayoutVisible(_simpleLayout, true);
+	SetLayoutVisible(_advancedLayout, false);
+	SetLayoutVisible(_patternLayout, false);
+	SetLayoutVisible(_repeatLayout, false);
+	SetLayoutVisible(_repeatUpdateLayout, false);
 	_weekTime->setDisabled(_entryData->_ignoreTime);
 	_weekCondition->setDisabled(_entryData->_ignoreTime);
 	const QSignalBlocker b(_weekTime);
@@ -686,11 +686,11 @@ void MacroConditionDateEdit::SetupSimpleView()
 
 void MacroConditionDateEdit::SetupAdvancedView()
 {
-	setLayoutVisible(_simpleLayout, false);
-	setLayoutVisible(_advancedLayout, true);
-	setLayoutVisible(_patternLayout, false);
-	setLayoutVisible(_repeatLayout, true);
-	setLayoutVisible(_repeatUpdateLayout, _entryData->_repeat);
+	SetLayoutVisible(_simpleLayout, false);
+	SetLayoutVisible(_advancedLayout, true);
+	SetLayoutVisible(_patternLayout, false);
+	SetLayoutVisible(_repeatLayout, true);
+	SetLayoutVisible(_repeatUpdateLayout, _entryData->_repeat);
 	_nextMatchDate->setVisible(_entryData->_repeat);
 	_date->setDisabled(_entryData->_ignoreDate);
 	_date2->setDisabled(_entryData->_ignoreDate);
@@ -705,11 +705,11 @@ void MacroConditionDateEdit::SetupAdvancedView()
 
 void MacroConditionDateEdit::SetupPatternView()
 {
-	setLayoutVisible(_simpleLayout, false);
-	setLayoutVisible(_advancedLayout, true);
-	setLayoutVisible(_patternLayout, true);
-	setLayoutVisible(_repeatLayout, false);
-	setLayoutVisible(_repeatUpdateLayout, false);
+	SetLayoutVisible(_simpleLayout, false);
+	SetLayoutVisible(_advancedLayout, true);
+	SetLayoutVisible(_patternLayout, true);
+	SetLayoutVisible(_repeatLayout, false);
+	SetLayoutVisible(_repeatUpdateLayout, false);
 	ShowFirstDateSelection(false);
 	ShowSecondDateSelection(false);
 }

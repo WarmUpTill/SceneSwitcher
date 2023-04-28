@@ -203,15 +203,15 @@ MacroConditionOpenVREdit::MacroConditionOpenVREdit(
 		{"{{zPos}}", _zPos},
 	};
 	QHBoxLayout *line1 = new QHBoxLayout;
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.openvr.entry.line1"),
 		     line1, widgetPlaceholders);
 	QHBoxLayout *line2 = new QHBoxLayout;
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.openvr.entry.line2"),
 		     line2, widgetPlaceholders);
 	QHBoxLayout *line3 = new QHBoxLayout;
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.openvr.entry.line3"),
 		     line3, widgetPlaceholders);
 	QVBoxLayout *mainLayout = new QVBoxLayout;

@@ -185,7 +185,7 @@ MacroActionSceneOrderEdit::MacroActionSceneOrderEdit(
 		{"{{actions}}", _actions},
 		{"{{position}}", _position},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.sceneOrder.entry"),
 		mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);

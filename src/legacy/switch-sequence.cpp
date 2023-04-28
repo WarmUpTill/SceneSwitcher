@@ -603,7 +603,7 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 	QWidget::connect(reduce, SIGNAL(clicked()), this,
 			 SLOT(ReduceClicked()));
 
-	populateSceneSelection(startScenes);
+	PopulateSceneSelection(startScenes);
 	interruptible->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.sceneSequenceTab.interruptibleHint"));
 
@@ -615,7 +615,7 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 			{"{{scenes}}", scenes},
 			{"{{delay}}", delay},
 			{"{{transitions}}", transitions}};
-		placeWidgets(
+		PlaceWidgets(
 			obs_module_text(
 				"AdvSceneSwitcher.sceneSequenceTab.extendEntry"),
 			mainLayout, widgetPlaceholders);
@@ -628,7 +628,7 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 			{"{{delay}}", delay},
 			{"{{transitions}}", transitions},
 			{"{{interruptible}}", interruptible}};
-		placeWidgets(obs_module_text(
+		PlaceWidgets(obs_module_text(
 				     "AdvSceneSwitcher.sceneSequenceTab.entry"),
 			     startSequence, widgetPlaceholders);
 

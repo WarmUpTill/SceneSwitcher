@@ -43,7 +43,7 @@ MacroConditionProfileEdit::MacroConditionProfileEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionProfile> entryData)
 	: QWidget(parent), _profiles(new QComboBox())
 {
-	populateProfileSelection(_profiles);
+	PopulateProfileSelection(_profiles);
 	QWidget::connect(_profiles, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(ProfileChanged(const QString &)));
 
@@ -53,7 +53,7 @@ MacroConditionProfileEdit::MacroConditionProfileEdit(
 		{"{{profiles}}", _profiles},
 	};
 
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.profile.entry"),
 		mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);

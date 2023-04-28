@@ -251,7 +251,7 @@ MacroConditionMacroEdit::MacroConditionMacroEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{types}}", _types},
 	};
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.macro.type.selection"),
 		     typesLayout, widgetPlaceholders);
 
@@ -287,8 +287,8 @@ void MacroConditionMacroEdit::ClearLayouts()
 	_settingsLine2->removeWidget(_resetCount);
 	_settingsLine1->removeWidget(_multiStateConditions);
 	_settingsLine1->removeWidget(_multiStateCount);
-	clearLayout(_settingsLine1);
-	clearLayout(_settingsLine2);
+	ClearLayout(_settingsLine1);
+	ClearLayout(_settingsLine2);
 }
 
 void MacroConditionMacroEdit::SetupStateWidgets()
@@ -299,7 +299,7 @@ void MacroConditionMacroEdit::SetupStateWidgets()
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{macros}}", _macros},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.macro.state.entry"),
 		_settingsLine1, widgetPlaceholders);
 }
@@ -313,7 +313,7 @@ void MacroConditionMacroEdit::SetupMultiStateWidgets()
 		{"{{multiStateConditions}}", _multiStateConditions},
 		{"{{multiStateCount}}", _multiStateCount},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.macro.multistate.entry"),
 		_settingsLine1, widgetPlaceholders);
@@ -331,11 +331,11 @@ void MacroConditionMacroEdit::SetupCountWidgets()
 		{"{{currentCount}}", _currentCount},
 		{"{{resetCount}}", _resetCount},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.macro.count.entry.line1"),
 		_settingsLine1, widgetPlaceholders);
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.macro.count.entry.line2"),
 		_settingsLine2, widgetPlaceholders);

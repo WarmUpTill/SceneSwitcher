@@ -46,7 +46,7 @@ MacroActionProfileEdit::MacroActionProfileEdit(
 	: QWidget(parent)
 {
 	_profiles = new QComboBox();
-	populateProfileSelection(_profiles);
+	PopulateProfileSelection(_profiles);
 	QWidget::connect(_profiles, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(ProfileChanged(const QString &)));
 
@@ -54,7 +54,7 @@ MacroActionProfileEdit::MacroActionProfileEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{profiles}}", _profiles},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.profile.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.profile.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

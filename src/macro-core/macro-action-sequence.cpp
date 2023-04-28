@@ -122,7 +122,7 @@ MacroActionSequenceEdit::MacroActionSequenceEdit(
 
 	auto *entryLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.sequence.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.sequence.entry"),
 		     entryLayout, widgetPlaceholders);
 
 	auto *mainLayout = new QVBoxLayout;

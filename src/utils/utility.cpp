@@ -157,7 +157,7 @@ std::pair<double, double> getSceneItemSize(obs_scene_item *item)
 	return size;
 }
 
-std::string getSceneItemTransform(obs_scene_item *item)
+std::string GetSceneItemTransform(obs_scene_item *item)
 {
 	struct obs_transform_info info;
 	struct obs_sceneitem_crop crop;
@@ -166,7 +166,7 @@ std::string getSceneItemTransform(obs_scene_item *item)
 	auto size = getSceneItemSize(item);
 
 	auto data = obs_data_create();
-	saveTransformState(data, info, crop);
+	SaveTransformState(data, info, crop);
 	obs_data_t *obj = obs_data_create();
 	obs_data_set_double(obj, "width", size.first * info.scale.x);
 	obs_data_set_double(obj, "height", size.second * info.scale.y);
@@ -177,7 +177,7 @@ std::string getSceneItemTransform(obs_scene_item *item)
 	return json;
 }
 
-void placeWidgets(std::string text, QBoxLayout *layout,
+void PlaceWidgets(std::string text, QBoxLayout *layout,
 		  std::unordered_map<std::string, QWidget *> placeholders,
 		  bool addStretch)
 {
@@ -211,7 +211,7 @@ void placeWidgets(std::string text, QBoxLayout *layout,
 	}
 }
 
-void deleteLayoutItemWidget(QLayoutItem *item)
+void DeleteLayoutItemWidget(QLayoutItem *item)
 {
 	if (item) {
 		auto widget = item->widget();
@@ -223,19 +223,19 @@ void deleteLayoutItemWidget(QLayoutItem *item)
 	}
 }
 
-void clearLayout(QLayout *layout, int afterIdx)
+void ClearLayout(QLayout *layout, int afterIdx)
 {
 	QLayoutItem *item;
 	while ((item = layout->takeAt(afterIdx))) {
 		if (item->layout()) {
-			clearLayout(item->layout());
+			ClearLayout(item->layout());
 			delete item->layout();
 		}
-		deleteLayoutItemWidget(item);
+		DeleteLayoutItemWidget(item);
 	}
 }
 
-void setLayoutVisible(QLayout *layout, bool visible)
+void SetLayoutVisible(QLayout *layout, bool visible)
 {
 	if (!layout) {
 		return;
@@ -247,7 +247,7 @@ void setLayoutVisible(QLayout *layout, bool visible)
 			widget->setVisible(visible);
 		}
 		if (nestedLayout) {
-			setLayoutVisible(nestedLayout, visible);
+			SetLayoutVisible(nestedLayout, visible);
 		}
 	}
 }
@@ -282,7 +282,7 @@ void MinimizeSizeOfColumn(QGridLayout *layout, int idx)
 	layout->setColumnMinimumWidth(idx, columnWidth);
 }
 
-bool compareIgnoringLineEnding(QString &s1, QString &s2)
+bool CompareIgnoringLineEnding(QString &s1, QString &s2)
 {
 	// Let QT deal with different types of lineendings
 	QTextStream s1stream(&s1);
@@ -303,7 +303,7 @@ bool compareIgnoringLineEnding(QString &s1, QString &s2)
 	return true;
 }
 
-std::string getSourceSettings(OBSWeakSource ws)
+std::string GetSourceSettings(OBSWeakSource ws)
 {
 	if (!ws) {
 		return "";
@@ -322,7 +322,7 @@ std::string getSourceSettings(OBSWeakSource ws)
 	return settings;
 }
 
-void setSourceSettings(obs_source_t *s, const std::string &settings)
+void SetSourceSettings(obs_source_t *s, const std::string &settings)
 {
 	if (settings.empty()) {
 		return;
@@ -339,11 +339,11 @@ void setSourceSettings(obs_source_t *s, const std::string &settings)
 }
 
 // Match json1 with pattern json2
-bool matchJson(const std::string &json1, const std::string &json2,
+bool MatchJson(const std::string &json1, const std::string &json2,
 	       const RegexConfig &regex)
 {
-	auto j1 = formatJsonString(json1).toStdString();
-	auto j2 = formatJsonString(json2).toStdString();
+	auto j1 = FormatJsonString(json1).toStdString();
+	auto j2 = FormatJsonString(json2).toStdString();
 
 	if (j1.empty()) {
 		j1 = json1;
@@ -363,15 +363,15 @@ bool matchJson(const std::string &json1, const std::string &json2,
 	return j1 == j2;
 }
 
-bool compareSourceSettings(const OBSWeakSource &source,
+bool CompareSourceSettings(const OBSWeakSource &source,
 			   const std::string &settings,
 			   const RegexConfig &regex)
 {
-	std::string currentSettings = getSourceSettings(source);
-	return matchJson(currentSettings, settings, regex);
+	std::string currentSettings = GetSourceSettings(source);
+	return MatchJson(currentSettings, settings, regex);
 }
 
-std::string getDataFilePath(const std::string &file)
+std::string GetDataFilePath(const std::string &file)
 {
 	std::string root_path = obs_get_module_data_path(obs_current_module());
 	if (!root_path.empty()) {
@@ -380,18 +380,18 @@ std::string getDataFilePath(const std::string &file)
 	return "";
 }
 
-QString formatJsonString(std::string s)
+QString FormatJsonString(std::string s)
 {
-	return formatJsonString(QString::fromStdString(s));
+	return FormatJsonString(QString::fromStdString(s));
 }
 
-QString formatJsonString(QString json)
+QString FormatJsonString(QString json)
 {
 	QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
 	return QString::fromUtf8(doc.toJson(QJsonDocument::Indented));
 }
 
-QString escapeForRegex(QString &s)
+QString EscapeForRegex(QString &s)
 {
 	std::regex specialChars{R"([-[\]{}()*+?.,\^$|#\s])"};
 	std::string input = s.toStdString();
@@ -399,7 +399,7 @@ QString escapeForRegex(QString &s)
 		std::regex_replace(input, specialChars, R"(\$&)"));
 }
 
-void loadTransformState(obs_data_t *obj, struct obs_transform_info &info,
+void LoadTransformState(obs_data_t *obj, struct obs_transform_info &info,
 			struct obs_sceneitem_crop &crop)
 {
 	obs_data_get_vec2(obj, "pos", &info.pos);
@@ -417,7 +417,7 @@ void loadTransformState(obs_data_t *obj, struct obs_transform_info &info,
 	crop.right = (int)obs_data_get_int(obj, "right");
 }
 
-bool saveTransformState(obs_data_t *obj, const struct obs_transform_info &info,
+bool SaveTransformState(obs_data_t *obj, const struct obs_transform_info &info,
 			const struct obs_sceneitem_crop &crop)
 {
 	struct vec2 pos = info.pos;
@@ -476,7 +476,7 @@ void DisplayTrayMessage(const QString &title, const QString &msg)
 	tray->showMessage(title, msg);
 }
 
-void addSelectionEntry(QComboBox *sel, const char *description, bool selectable,
+void AddSelectionEntry(QComboBox *sel, const char *description, bool selectable,
 		       const char *tooltip)
 {
 	sel->insertItem(0, description);
@@ -510,21 +510,21 @@ QStringList GetSourceNames()
 	return list;
 }
 
-void populateSourceSelection(QComboBox *list, bool addSelect)
+void PopulateSourceSelection(QComboBox *list, bool addSelect)
 {
 	auto sources = GetSourceNames();
 	sources.sort();
 	list->addItems(sources);
 
 	if (addSelect) {
-		addSelectionEntry(
+		AddSelectionEntry(
 			list, obs_module_text("AdvSceneSwitcher.selectSource"),
 			false);
 	}
 	list->setCurrentIndex(0);
 }
 
-void populateTransitionSelection(QComboBox *sel, bool addCurrent, bool addAny)
+void PopulateTransitionSelection(QComboBox *sel, bool addCurrent, bool addAny)
 {
 
 	obs_frontend_source_list *transitions = new obs_frontend_source_list();
@@ -540,7 +540,7 @@ void populateTransitionSelection(QComboBox *sel, bool addCurrent, bool addAny)
 
 	sel->model()->sort(0);
 
-	addSelectionEntry(sel,
+	AddSelectionEntry(sel,
 			  obs_module_text("AdvSceneSwitcher.selectTransition"));
 	sel->setCurrentIndex(0);
 
@@ -555,7 +555,7 @@ void populateTransitionSelection(QComboBox *sel, bool addCurrent, bool addAny)
 	}
 }
 
-void populateWindowSelection(QComboBox *sel, bool addSelect)
+void PopulateWindowSelection(QComboBox *sel, bool addSelect)
 {
 
 	std::vector<std::string> windows;
@@ -567,7 +567,7 @@ void populateWindowSelection(QComboBox *sel, bool addSelect)
 
 	sel->model()->sort(0);
 	if (addSelect) {
-		addSelectionEntry(
+		AddSelectionEntry(
 			sel, obs_module_text("AdvSceneSwitcher.selectWindow"));
 	}
 	sel->setCurrentIndex(0);
@@ -595,14 +595,14 @@ QStringList GetAudioSourceNames()
 	return list;
 }
 
-void populateAudioSelection(QComboBox *sel, bool addSelect)
+void PopulateAudioSelection(QComboBox *sel, bool addSelect)
 {
 	auto sources = GetAudioSourceNames();
 	sources.sort();
 	sel->addItems(sources);
 
 	if (addSelect) {
-		addSelectionEntry(
+		AddSelectionEntry(
 			sel,
 			obs_module_text("AdvSceneSwitcher.selectAudioSource"),
 			false,
@@ -649,7 +649,7 @@ void populateVideoSelection(QComboBox *sel, bool addMainOutput, bool addScenes,
 			0, obs_module_text("AdvSceneSwitcher.OBSVideoOutput"));
 	}
 	if (addSelect) {
-		addSelectionEntry(
+		AddSelectionEntry(
 			sel,
 			obs_module_text("AdvSceneSwitcher.selectVideoSource"),
 			false,
@@ -678,14 +678,14 @@ QStringList GetMediaSourceNames()
 	return list;
 }
 
-void populateMediaSelection(QComboBox *sel, bool addSelect)
+void PopulateMediaSelection(QComboBox *sel, bool addSelect)
 {
 	auto sources = GetMediaSourceNames();
 	sources.sort();
 	sel->addItems(sources);
 
 	if (addSelect) {
-		addSelectionEntry(
+		AddSelectionEntry(
 			sel,
 			obs_module_text("AdvSceneSwitcher.selectMediaSource"),
 			false,
@@ -695,7 +695,7 @@ void populateMediaSelection(QComboBox *sel, bool addSelect)
 	sel->setCurrentIndex(0);
 }
 
-void populateProcessSelection(QComboBox *sel, bool addSelect)
+void PopulateProcessSelection(QComboBox *sel, bool addSelect)
 {
 	QStringList processes;
 	GetProcessList(processes);
@@ -706,7 +706,7 @@ void populateProcessSelection(QComboBox *sel, bool addSelect)
 
 	sel->model()->sort(0);
 	if (addSelect) {
-		addSelectionEntry(
+		AddSelectionEntry(
 			sel, obs_module_text("AdvSceneSwitcher.selectProcess"));
 	}
 	sel->setCurrentIndex(0);
@@ -726,7 +726,7 @@ QStringList GetSceneNames()
 	return list;
 }
 
-void populateSceneSelection(QComboBox *sel, bool addPrevious, bool addCurrent,
+void PopulateSceneSelection(QComboBox *sel, bool addPrevious, bool addCurrent,
 			    bool addAny, bool addSceneGroup,
 			    std::deque<SceneGroup> *sceneGroups, bool addSelect,
 			    std::string selectText, bool selectable)
@@ -743,14 +743,14 @@ void populateSceneSelection(QComboBox *sel, bool addPrevious, bool addCurrent,
 	sel->model()->sort(0);
 	if (addSelect) {
 		if (selectText.empty()) {
-			addSelectionEntry(
+			AddSelectionEntry(
 				sel,
 				obs_module_text("AdvSceneSwitcher.selectScene"),
 				selectable,
 				obs_module_text(
 					"AdvSceneSwitcher.invaildEntriesWillNotBeSaved"));
 		} else {
-			addSelectionEntry(sel, selectText.c_str(), selectable);
+			AddSelectionEntry(sel, selectText.c_str(), selectable);
 		}
 	}
 	sel->setCurrentIndex(0);
@@ -802,17 +802,17 @@ QStringList GetSourcesWithFilterNames()
 	return list;
 }
 
-void populateSourcesWithFilterSelection(QComboBox *list)
+void PopulateSourcesWithFilterSelection(QComboBox *list)
 {
 	auto sources = GetSourcesWithFilterNames();
 	sources.sort();
 	list->addItems(sources);
-	addSelectionEntry(list,
+	AddSelectionEntry(list,
 			  obs_module_text("AdvSceneSwitcher.selectSource"));
 	list->setCurrentIndex(0);
 }
 
-void populateFilterSelection(QComboBox *list, OBSWeakSource weakSource)
+void PopulateFilterSelection(QComboBox *list, OBSWeakSource weakSource)
 {
 	auto enumFilters = [](obs_source_t *, obs_source_t *filter, void *ptr) {
 		QComboBox *list = reinterpret_cast<QComboBox *>(ptr);
@@ -823,7 +823,7 @@ void populateFilterSelection(QComboBox *list, OBSWeakSource weakSource)
 	auto s = obs_weak_source_get_source(weakSource);
 	obs_source_enum_filters(s, enumFilters, list);
 	list->model()->sort(0);
-	addSelectionEntry(list,
+	AddSelectionEntry(list,
 			  obs_module_text("AdvSceneSwitcher.selectFilter"));
 	obs_source_release(s);
 	list->setCurrentIndex(0);
@@ -849,7 +849,7 @@ void populateTypeList(std::set<QString> &list,
 	}
 }
 
-void populateSourceGroupSelection(QComboBox *list)
+void PopulateSourceGroupSelection(QComboBox *list)
 {
 	std::set<QString> sourceTypes;
 	populateTypeList(sourceTypes, obs_enum_source_types);
@@ -869,11 +869,11 @@ void populateSourceGroupSelection(QComboBox *list)
 	}
 
 	list->model()->sort(0);
-	addSelectionEntry(list, obs_module_text("AdvSceneSwitcher.selectItem"));
+	AddSelectionEntry(list, obs_module_text("AdvSceneSwitcher.selectItem"));
 	list->setCurrentIndex(0);
 }
 
-void populateProfileSelection(QComboBox *box)
+void PopulateProfileSelection(QComboBox *box)
 {
 	auto profiles = obs_frontend_get_profiles();
 	char **temp = profiles;
@@ -884,12 +884,12 @@ void populateProfileSelection(QComboBox *box)
 	}
 	bfree(profiles);
 	box->model()->sort(0);
-	addSelectionEntry(
+	AddSelectionEntry(
 		box, obs_module_text("AdvSceneSwitcher.selectProfile"), false);
 	box->setCurrentIndex(0);
 }
 
-void populateMonitorTypeSelection(QComboBox *list)
+void PopulateMonitorTypeSelection(QComboBox *list)
 {
 	list->addItem(obs_module_text("AdvSceneSwitcher.audio.monitor.none"));
 	list->addItem(
@@ -897,7 +897,7 @@ void populateMonitorTypeSelection(QComboBox *list)
 	list->addItem(obs_module_text("AdvSceneSwitcher.audio.monitor.both"));
 }
 
-bool windowPosValid(QPoint pos)
+bool WindowPosValid(QPoint pos)
 {
 	return !!QGuiApplication::screenAt(pos);
 }
@@ -1017,7 +1017,7 @@ bool listMoveDown(QListWidget *list)
 	return true;
 }
 
-void setHeightToContentHeight(QListWidget *list)
+void SetHeightToContentHeight(QListWidget *list)
 {
 	auto nrItems = list->count();
 	if (nrItems == 0) {
@@ -1028,12 +1028,12 @@ void setHeightToContentHeight(QListWidget *list)
 	}
 }
 
-bool doubleEquals(double left, double right, double epsilon)
+bool DoubleEquals(double left, double right, double epsilon)
 {
 	return (fabs(left - right) < epsilon);
 }
 
-void setButtonIcon(QPushButton *button, const char *path)
+void SetButtonIcon(QPushButton *button, const char *path)
 {
 	QIcon icon;
 	icon.addFile(QString::fromUtf8(path), QSize(), QIcon::Normal,
@@ -1041,7 +1041,7 @@ void setButtonIcon(QPushButton *button, const char *path)
 	button->setIcon(icon);
 }
 
-void addSelectionGroup(QComboBox *selection, const QStringList &group,
+void AddSelectionGroup(QComboBox *selection, const QStringList &group,
 		       bool addSeparator)
 {
 	selection->addItems(group);
@@ -1050,7 +1050,7 @@ void addSelectionGroup(QComboBox *selection, const QStringList &group,
 	}
 }
 
-int findIdxInRagne(QComboBox *list, int start, int stop,
+int FindIdxInRagne(QComboBox *list, int start, int stop,
 		   const std::string &value)
 {
 	if (value.empty()) {
@@ -1071,13 +1071,13 @@ int findIdxInRagne(QComboBox *list, int start, int stop,
 	return foundIdx;
 }
 
-std::pair<int, int> getCursorPos()
+std::pair<int, int> GetCursorPos()
 {
 	auto cursorPos = QCursor::pos();
 	return {cursorPos.x(), cursorPos.y()};
 }
 
-void replaceAll(std::string &str, const std::string &from,
+void ReplaceAll(std::string &str, const std::string &from,
 		const std::string &to)
 {
 	if (from.empty()) {

@@ -47,7 +47,7 @@ MacroConditionIdleEdit::MacroConditionIdleEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{duration}}", _duration},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.idle.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.idle.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

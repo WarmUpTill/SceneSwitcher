@@ -21,8 +21,8 @@ bool MacroConditionSceneTransform::CheckCondition()
 
 	std::string json;
 	for (auto &item : items) {
-		json = getSceneItemTransform(item);
-		if (matchJson(json, _settings, _regex)) {
+		json = GetSceneItemTransform(item);
+		if (MatchJson(json, _settings, _regex)) {
 			ret = true;
 		}
 		obs_sceneitem_release(item);
@@ -105,17 +105,17 @@ MacroConditionSceneTransformEdit::MacroConditionSceneTransformEdit(
 	};
 
 	QHBoxLayout *line1Layout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.sceneTransform.entry.line1"),
 		line1Layout, widgetPlaceholders);
 	QHBoxLayout *line2Layout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.sceneTransform.entry.line2"),
 		line2Layout, widgetPlaceholders, false);
 	QHBoxLayout *line3Layout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.sceneTransform.entry.line3"),
 		line3Layout, widgetPlaceholders);
@@ -181,9 +181,9 @@ void MacroConditionSceneTransformEdit::GetSettingsClicked()
 		return;
 	}
 
-	auto settings = formatJsonString(getSceneItemTransform(items[0]));
+	auto settings = FormatJsonString(GetSceneItemTransform(items[0]));
 	if (_entryData->_regex.Enabled()) {
-		settings = escapeForRegex(settings);
+		settings = EscapeForRegex(settings);
 	}
 	_settings->setPlainText(settings);
 

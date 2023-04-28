@@ -216,7 +216,7 @@ int MacroList::FindEntry(const std::string &macro)
 
 void MacroList::SetMacroListSize()
 {
-	setHeightToContentHeight(_list);
+	SetHeightToContentHeight(_list);
 	adjustSize();
 }
 

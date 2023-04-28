@@ -462,7 +462,7 @@ MediaSwitchWidget::MediaSwitchWidget(QWidget *parent, MediaSwitch *s)
 	QWidget::connect(time, SIGNAL(valueChanged(int)), this,
 			 SLOT(TimeChanged(int)));
 
-	populateMediaSelection(mediaSources);
+	PopulateMediaSelection(mediaSources);
 	populateMediaStates(states);
 	populateTimeRestrictions(timeRestrictions);
 
@@ -485,7 +485,7 @@ MediaSwitchWidget::MediaSwitchWidget(QWidget *parent, MediaSwitch *s)
 		{"{{time}}", time},
 		{"{{scenes}}", scenes},
 		{"{{transitions}}", transitions}};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.mediaTab.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.mediaTab.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

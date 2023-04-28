@@ -52,7 +52,7 @@ bool MacroConditionCursor::CheckClick()
 bool MacroConditionCursor::CheckCondition()
 {
 	bool ret = false;
-	std::pair<int, int> cursorPos = getCursorPos();
+	std::pair<int, int> cursorPos = GetCursorPos();
 	switch (_condition) {
 	case Condition::REGION:
 		ret = cursorPos.first >= _minX && cursorPos.second >= _minY &&
@@ -193,10 +193,10 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 		{"{{toggleFrameButton}}", _frameToggle},
 	};
 	QHBoxLayout *line1 = new QHBoxLayout;
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.cursor.entry.line1"),
 		     line1, widgetPlaceholders);
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.cursor.entry.line2"),
 		     _curentPosLayout, widgetPlaceholders);
 	QVBoxLayout *mainLayout = new QVBoxLayout;
@@ -282,7 +282,7 @@ void MacroConditionCursorEdit::MaxYChanged(const NumberVariable<int> &pos)
 
 void MacroConditionCursorEdit::UpdateCursorPos()
 {
-	std::pair<int, int> position = getCursorPos();
+	std::pair<int, int> position = GetCursorPos();
 	_xPos->setText(QString::number(position.first));
 	_yPos->setText(QString::number(position.second));
 }
@@ -310,7 +310,7 @@ void MacroConditionCursorEdit::SetWidgetVisibility()
 	_maxX->setVisible(isRegionCondition);
 	_maxY->setVisible(isRegionCondition);
 	_frameToggle->setVisible(isRegionCondition);
-	setLayoutVisible(_curentPosLayout, isRegionCondition);
+	SetLayoutVisible(_curentPosLayout, isRegionCondition);
 	if (_frame.isVisible()) {
 		ToggleFrame();
 	}

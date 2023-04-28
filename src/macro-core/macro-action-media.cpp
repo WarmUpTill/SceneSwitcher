@@ -127,7 +127,7 @@ MacroActionMediaEdit::MacroActionMediaEdit(
 		{"{{actions}}", _actions},
 		{"{{duration}}", _seek},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.media.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.media.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

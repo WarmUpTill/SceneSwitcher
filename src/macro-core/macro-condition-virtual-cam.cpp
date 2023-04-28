@@ -75,7 +75,7 @@ MacroConditionVCamEdit::MacroConditionVCamEdit(
 		{"{{states}}", _states},
 	};
 
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.virtualCamera.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);

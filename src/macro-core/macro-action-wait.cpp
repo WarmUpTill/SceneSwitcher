@@ -140,12 +140,12 @@ void MacroActionWaitEdit::SetupFixedDurationEdit()
 	_mainLayout->removeWidget(_duration);
 	_mainLayout->removeWidget(_duration2);
 	_mainLayout->removeWidget(_waitType);
-	clearLayout(_mainLayout);
+	ClearLayout(_mainLayout);
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{duration}}", _duration},
 		{"{{waitType}}", _waitType},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.wait.entry.fixed"),
 		_mainLayout, widgetPlaceholders);
 	_duration2->hide();
@@ -156,13 +156,13 @@ void MacroActionWaitEdit::SetupRandomDurationEdit()
 	_mainLayout->removeWidget(_duration);
 	_mainLayout->removeWidget(_duration2);
 	_mainLayout->removeWidget(_waitType);
-	clearLayout(_mainLayout);
+	ClearLayout(_mainLayout);
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{duration}}", _duration},
 		{"{{duration2}}", _duration2},
 		{"{{waitType}}", _waitType},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.wait.entry.random"),
 		_mainLayout, widgetPlaceholders);
 	_duration2->show();

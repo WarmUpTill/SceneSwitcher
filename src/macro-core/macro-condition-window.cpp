@@ -132,7 +132,7 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 	QWidget::connect(&_timer, SIGNAL(timeout()), this,
 			 SLOT(UpdateFocusWindow()));
 
-	populateWindowSelection(_windowSelection);
+	PopulateWindowSelection(_windowSelection);
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{windows}}", _windowSelection},
@@ -144,14 +144,14 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 	};
 
 	auto *line1Layout = new QHBoxLayout;
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.window.entry.line1"),
 		     line1Layout, widgetPlaceholders);
 	auto *line2Layout = new QHBoxLayout;
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.window.entry.line2"),
 		     line2Layout, widgetPlaceholders);
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.window.entry.line3"),
 		     _focusLayout, widgetPlaceholders);
 	auto *mainLayout = new QVBoxLayout;
@@ -231,7 +231,7 @@ void MacroConditionWindowEdit::SetWidgetVisibility()
 	if (!_entryData) {
 		return;
 	}
-	setLayoutVisible(_focusLayout,
+	SetLayoutVisible(_focusLayout,
 			 _entryData->_focus || _entryData->_windowFocusChanged);
 	adjustSize();
 }

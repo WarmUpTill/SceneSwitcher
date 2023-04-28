@@ -339,7 +339,7 @@ void AdvSceneSwitcher::SetupTitleTab()
 		ui->windowHelp->setVisible(false);
 	}
 
-	populateWindowSelection(ui->ignoreWindowsWindows);
+	PopulateWindowSelection(ui->ignoreWindowsWindows);
 
 	for (auto &window : switcher->ignoreWindowsSwitches) {
 		QString text = QString::fromStdString(window);
@@ -397,7 +397,7 @@ WindowSwitchWidget::WindowSwitchWidget(QWidget *parent, WindowSwitch *s)
 	QWidget::connect(focused, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
 
-	populateWindowSelection(windows);
+	PopulateWindowSelection(windows);
 
 	windows->setEditable(true);
 	windows->setMaxVisibleItems(20);
@@ -417,7 +417,7 @@ WindowSwitchWidget::WindowSwitchWidget(QWidget *parent, WindowSwitch *s)
 		{"{{fullscreen}}", fullscreen},
 		{"{{maximized}}", maximized},
 		{"{{focused}}", focused}};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.windowTitleTab.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.windowTitleTab.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

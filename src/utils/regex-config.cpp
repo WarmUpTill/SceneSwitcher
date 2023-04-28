@@ -63,7 +63,7 @@ RegexConfigWidget::RegexConfigWidget(QWidget *parent)
 		  obs_module_text("AdvSceneSwitcher.regex.enable")))
 {
 	_openSettings->setMaximumWidth(22);
-	setButtonIcon(_openSettings, ":/settings/images/settings/general.svg");
+	SetButtonIcon(_openSettings, ":/settings/images/settings/general.svg");
 	_openSettings->setFlat(true);
 
 	QWidget::connect(_enable, SIGNAL(stateChanged(int)), this,

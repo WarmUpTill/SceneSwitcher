@@ -370,7 +370,7 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 			 SLOT(SourceChanged(const SourceSelection &)));
 
 	populateCheckTypes(_checkTypes);
-	populateMonitorTypeSelection(_monitorTypes);
+	PopulateMonitorTypeSelection(_monitorTypes);
 
 	QHBoxLayout *switchLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
@@ -382,7 +382,7 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 		{"{{balance}}", _balance},
 		{"{{condition}}", _condition},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.audio.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.audio.entry"),
 		     switchLayout, widgetPlaceholders);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;

@@ -67,7 +67,7 @@ bool MacroConditionStats::CheckFPS()
 	case Condition::ABOVE:
 		return obs_get_active_fps() > _value;
 	case Condition::EQUALS:
-		return doubleEquals(obs_get_active_fps(), _value, 0.01);
+		return DoubleEquals(obs_get_active_fps(), _value, 0.01);
 	case Condition::BELOW:
 		return obs_get_active_fps() < _value;
 	default:
@@ -84,7 +84,7 @@ bool MacroConditionStats::CheckCPU()
 	case Condition::ABOVE:
 		return usage > _value;
 	case Condition::EQUALS:
-		return doubleEquals(usage, _value, 0.1);
+		return DoubleEquals(usage, _value, 0.1);
 	case Condition::BELOW:
 		return usage < _value;
 	default:
@@ -102,7 +102,7 @@ bool MacroConditionStats::CheckMemory()
 	case Condition::ABOVE:
 		return rss > _value;
 	case Condition::EQUALS:
-		return doubleEquals(rss, _value, 0.1);
+		return DoubleEquals(rss, _value, 0.1);
 	case Condition::BELOW:
 		return rss < _value;
 	default:
@@ -119,7 +119,7 @@ bool MacroConditionStats::CheckAvgFrametime()
 	case Condition::ABOVE:
 		return num > _value;
 	case Condition::EQUALS:
-		return doubleEquals(num, _value, 0.1);
+		return DoubleEquals(num, _value, 0.1);
 	case Condition::BELOW:
 		return num < _value;
 	default:
@@ -149,7 +149,7 @@ bool MacroConditionStats::CheckRenderLag()
 	case Condition::ABOVE:
 		return num > _value;
 	case Condition::EQUALS:
-		return doubleEquals(num, _value, 0.1);
+		return DoubleEquals(num, _value, 0.1);
 	case Condition::BELOW:
 		return num < _value;
 	default:
@@ -180,7 +180,7 @@ bool MacroConditionStats::CheckEncodeLag()
 	case Condition::ABOVE:
 		return num > _value;
 	case Condition::EQUALS:
-		return doubleEquals(num, _value, 0.1);
+		return DoubleEquals(num, _value, 0.1);
 	case Condition::BELOW:
 		return num < _value;
 	default:
@@ -237,7 +237,7 @@ bool MacroConditionStats::CheckStreamDroppedFrames()
 	case Condition::ABOVE:
 		return _streamInfo.dropped_relative > _value;
 	case Condition::EQUALS:
-		return doubleEquals(_streamInfo.dropped_relative, _value, 0.1);
+		return DoubleEquals(_streamInfo.dropped_relative, _value, 0.1);
 	case Condition::BELOW:
 		return _streamInfo.dropped_relative < _value;
 	default:
@@ -256,7 +256,7 @@ bool MacroConditionStats::CheckStreamBitrate()
 	case Condition::ABOVE:
 		return _streamInfo.kbps > _value;
 	case Condition::EQUALS:
-		return doubleEquals(_streamInfo.kbps, _value, 1.0);
+		return DoubleEquals(_streamInfo.kbps, _value, 1.0);
 	case Condition::BELOW:
 		return _streamInfo.kbps < _value;
 	default:
@@ -276,7 +276,7 @@ bool MacroConditionStats::CheckStreamMBSent()
 	case Condition::ABOVE:
 		return num > _value;
 	case Condition::EQUALS:
-		return doubleEquals(num, _value, 0.1);
+		return DoubleEquals(num, _value, 0.1);
 	case Condition::BELOW:
 		return num < _value;
 	default:
@@ -295,7 +295,7 @@ bool MacroConditionStats::CheckRecordingDroppedFrames()
 	case Condition::ABOVE:
 		return _recordingInfo.dropped_relative > _value;
 	case Condition::EQUALS:
-		return doubleEquals(_recordingInfo.dropped_relative, _value,
+		return DoubleEquals(_recordingInfo.dropped_relative, _value,
 				    0.1);
 	case Condition::BELOW:
 		return _recordingInfo.dropped_relative < _value;
@@ -315,7 +315,7 @@ bool MacroConditionStats::CheckRecordingBitrate()
 	case Condition::ABOVE:
 		return _recordingInfo.kbps > _value;
 	case Condition::EQUALS:
-		return doubleEquals(_recordingInfo.kbps, _value, 1.0);
+		return DoubleEquals(_recordingInfo.kbps, _value, 1.0);
 	case Condition::BELOW:
 		return _recordingInfo.kbps < _value;
 	default:
@@ -335,7 +335,7 @@ bool MacroConditionStats::CheckRecordingMBSent()
 	case Condition::ABOVE:
 		return num > _value;
 	case Condition::EQUALS:
-		return doubleEquals(num, _value, 0.1);
+		return DoubleEquals(num, _value, 0.1);
 	case Condition::BELOW:
 		return num < _value;
 	default:
@@ -466,7 +466,7 @@ MacroConditionStatsEdit::MacroConditionStatsEdit(
 		{"{{stats}}", _stats},
 		{"{{condition}}", _condition},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.stats.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.stats.entry"),
 		     layout, widgetPlaceholders);
 	setLayout(layout);
 

@@ -81,7 +81,7 @@ MacroConditionReplayBufferEdit::MacroConditionReplayBufferEdit(
 		{"{{state}}", _state},
 	};
 
-	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.replay.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.replay.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

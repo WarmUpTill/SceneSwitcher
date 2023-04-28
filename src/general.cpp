@@ -417,7 +417,7 @@ void AdvSceneSwitcher::SetCurrentTab()
 
 void AdvSceneSwitcher::RestoreWindowGeo()
 {
-	if (switcher->saveWindowGeo && windowPosValid(switcher->windowPos)) {
+	if (switcher->saveWindowGeo && WindowPosValid(switcher->windowPos)) {
 		this->resize(switcher->windowSize);
 		this->move(switcher->windowPos);
 	}
@@ -886,7 +886,7 @@ void populateAutoStartEventSelection(QComboBox *cb)
 
 void AdvSceneSwitcher::SetupGeneralTab()
 {
-	populateSceneSelection(ui->noMatchSwitchScene, false);
+	PopulateSceneSelection(ui->noMatchSwitchScene, false);
 
 	if (switcher->switchIfNotMatching == SWITCH) {
 		ui->noMatchSwitch->setChecked(true);

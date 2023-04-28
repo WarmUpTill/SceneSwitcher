@@ -210,7 +210,7 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 		{"{{duration}}", _duration},
 		{"{{blockUntilTransitionDone}}", _blockUntilTransitionDone},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.scene.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.scene.entry"),
 		     _entryLayout, widgetPlaceholders);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
@@ -261,19 +261,19 @@ void MacroActionSwitchSceneEdit::SetDurationVisibility()
 	_entryLayout->removeWidget(_scenes);
 	_entryLayout->removeWidget(_transitions);
 	_entryLayout->removeWidget(_duration);
-	clearLayout(_entryLayout);
+	ClearLayout(_entryLayout);
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", _scenes},
 		{"{{transitions}}", _transitions},
 		{"{{duration}}", _duration},
 	};
 	if (fixedDuration) {
-		placeWidgets(
+		PlaceWidgets(
 			obs_module_text(
 				"AdvSceneSwitcher.action.scene.entry.noDuration"),
 			_entryLayout, widgetPlaceholders);
 	} else {
-		placeWidgets(
+		PlaceWidgets(
 			obs_module_text("AdvSceneSwitcher.action.scene.entry"),
 			_entryLayout, widgetPlaceholders);
 	}

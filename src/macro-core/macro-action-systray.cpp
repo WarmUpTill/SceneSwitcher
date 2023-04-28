@@ -52,7 +52,7 @@ MacroActionSystrayEdit::MacroActionSystrayEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{message}}", _msg},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.systray.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.systray.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

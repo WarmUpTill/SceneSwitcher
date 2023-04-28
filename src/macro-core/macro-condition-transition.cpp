@@ -211,7 +211,7 @@ MacroConditionTransitionEdit::MacroConditionTransitionEdit(
 		{"{{duration}}", _duration},
 		{"{{durationSuffix}}", _durationSuffix},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.transition.entry"),
 		mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);

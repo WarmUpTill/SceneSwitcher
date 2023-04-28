@@ -193,7 +193,7 @@ void StringListEdit::Clicked(QListWidgetItem *item)
 
 void StringListEdit::SetListSize()
 {
-	setHeightToContentHeight(_list);
+	SetHeightToContentHeight(_list);
 	adjustSize();
 	updateGeometry();
 }

@@ -260,7 +260,7 @@ TimeSwitchWidget::TimeSwitchWidget(QWidget *parent, TimeSwitch *s)
 		{"{{time}}", time},
 		{"{{scenes}}", scenes},
 		{"{{transitions}}", transitions}};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.timeTab.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.timeTab.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

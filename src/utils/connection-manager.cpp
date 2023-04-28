@@ -353,13 +353,13 @@ void ConnectionSettingsDialog::SetStatus()
 
 void ConnectionSettingsDialog::ShowPassword()
 {
-	setButtonIcon(_showPassword, ":res/images/visible.svg");
+	SetButtonIcon(_showPassword, ":res/images/visible.svg");
 	_password->setEchoMode(QLineEdit::Normal);
 }
 
 void ConnectionSettingsDialog::HidePassword()
 {
-	setButtonIcon(_showPassword, ":res/images/invisible.svg");
+	SetButtonIcon(_showPassword, ":res/images/invisible.svg");
 	_password->setEchoMode(QLineEdit::PasswordEchoOnEdit);
 }
 

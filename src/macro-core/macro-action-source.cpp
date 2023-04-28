@@ -87,7 +87,7 @@ bool MacroActionSource::PerformAction()
 		obs_source_set_enabled(s, false);
 		break;
 	case SourceAction::SETTINGS:
-		setSourceSettings(s, _settings);
+		SetSourceSettings(s, _settings);
 		break;
 	case SourceAction::REFRESH_SETTINGS:
 		refreshSourceSettings(s);
@@ -211,7 +211,7 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 		{"{{getSettings}}", _getSettings},
 		{"{{settingsButtons}}", _settingsButtons},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.source.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.source.entry"),
 		     entryLayout, widgetPlaceholders);
 	mainLayout->addLayout(entryLayout);
 	mainLayout->addWidget(_warning);
@@ -289,8 +289,8 @@ void MacroActionSourceEdit::GetSettingsClicked()
 		return;
 	}
 
-	_settings->setPlainText(formatJsonString(
-		getSourceSettings(_entryData->_source.GetSource())));
+	_settings->setPlainText(FormatJsonString(
+		GetSourceSettings(_entryData->_source.GetSource())));
 }
 
 void MacroActionSourceEdit::SettingsChanged()

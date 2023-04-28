@@ -491,7 +491,7 @@ void SwitcherData::loadSceneGroups(obs_data_t *obj)
 
 void AdvSceneSwitcher::SetupSceneGroupTab()
 {
-	populateSceneSelection(ui->sceneGroupSceneSelection);
+	PopulateSceneSelection(ui->sceneGroupSceneSelection);
 
 	for (auto &sg : switcher->sceneGroups) {
 		QString text = QString::fromStdString(sg.name);
@@ -540,7 +540,7 @@ SceneGroupEditWidget::SceneGroupEditWidget()
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{type}}", type}};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.sceneGroupTab.edit.type"),
 		typeLayout, widgetPlaceholders);
 
@@ -557,7 +557,7 @@ SceneGroupEditWidget::SceneGroupEditWidget()
 	countLayout->setContentsMargins(0, 0, 0, 0);
 
 	widgetPlaceholders = {{"{{count}}", count}};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.sceneGroupTab.edit.count"),
 		countLayout, widgetPlaceholders);
 
@@ -575,7 +575,7 @@ SceneGroupEditWidget::SceneGroupEditWidget()
 	timeLayout->setContentsMargins(0, 0, 0, 0);
 
 	widgetPlaceholders = {{"{{time}}", time}};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.sceneGroupTab.edit.time"),
 		timeLayout, widgetPlaceholders);
 

@@ -84,7 +84,7 @@ MacroActionVCamEdit::MacroActionVCamEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{actions}}", _actions},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.virtualCamera.entry"),
 		mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);

@@ -150,7 +150,7 @@ MacroActionRecordEdit::MacroActionRecordEdit(
 			 SLOT(FormatStringChanged()));
 
 	auto mainLayout = new QHBoxLayout;
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.recording.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.recording.entry"),
 		     mainLayout,
 		     {{"{{actions}}", _actions},
 		      {"{{pauseHint}}", _pauseHint},

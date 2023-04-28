@@ -211,7 +211,7 @@ ExecutableSwitchWidget::ExecutableSwitchWidget(QWidget *parent,
 	QWidget::connect(requiresFocus, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
 
-	populateProcessSelection(processes);
+	PopulateProcessSelection(processes);
 
 	processes->setEditable(true);
 	processes->setMaxVisibleItems(20);
@@ -227,7 +227,7 @@ ExecutableSwitchWidget::ExecutableSwitchWidget(QWidget *parent,
 		{"{{requiresFocus}}", requiresFocus},
 		{"{{scenes}}", scenes},
 		{"{{transitions}}", transitions}};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.executableTab.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.executableTab.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 

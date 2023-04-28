@@ -126,12 +126,12 @@ void MacroActionWebsocketEdit::SetupRequestEdit()
 {
 	_editLayout->removeWidget(_actions);
 	_editLayout->removeWidget(_connection);
-	clearLayout(_editLayout);
+	ClearLayout(_editLayout);
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{type}}", _actions},
 		{"{{connection}}", _connection},
 	};
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.action.websocket.entry.request"),
 		     _editLayout, widgetPlaceholders);
 	_connection->show();
@@ -141,12 +141,12 @@ void MacroActionWebsocketEdit::SetupEventEdit()
 {
 	_editLayout->removeWidget(_actions);
 	_editLayout->removeWidget(_connection);
-	clearLayout(_editLayout);
+	ClearLayout(_editLayout);
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{type}}", _actions},
 		{"{{connection}}", _connection},
 	};
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.action.websocket.entry.event"),
 		     _editLayout, widgetPlaceholders);
 	_connection->hide();

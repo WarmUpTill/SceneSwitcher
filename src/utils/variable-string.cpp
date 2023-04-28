@@ -69,7 +69,7 @@ std::string SubstitueVariables(std::string str)
 	for (const auto &v : switcher->variables) {
 		const auto &variable = std::dynamic_pointer_cast<Variable>(v);
 		const std::string pattern = "${" + variable->Name() + "}";
-		replaceAll(str, pattern, variable->Value());
+		ReplaceAll(str, pattern, variable->Value());
 	}
 	return str;
 }

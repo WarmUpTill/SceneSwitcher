@@ -149,7 +149,7 @@ MacroActionPluginStateEdit::MacroActionPluginStateEdit(
 		"AdvSceneSwitcher.action.pluginState.importWarning"));
 
 	populateActionSelection(_actions);
-	populateSceneSelection(_scenes);
+	PopulateSceneSelection(_scenes);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
@@ -168,7 +168,7 @@ MacroActionPluginStateEdit::MacroActionPluginStateEdit(
 		{"{{settings}}", _settings},
 		{"{{settingsWarning}}", _settingsWarning},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.pluginState.entry"),
 		mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);

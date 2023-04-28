@@ -131,17 +131,17 @@ void SourceSelectionWidget::Reset()
 void SourceSelectionWidget::PopulateSelection()
 {
 	clear();
-	addSelectionEntry(this,
+	AddSelectionEntry(this,
 			  obs_module_text("AdvSceneSwitcher.selectSource"));
 	insertSeparator(count());
 
 	if (_addVariables) {
 		const QStringList variables = GetVariablesNameList();
-		addSelectionGroup(this, variables);
+		AddSelectionGroup(this, variables);
 	}
 	_variablesEndIdx = count();
 
-	addSelectionGroup(this, _sourceNames);
+	AddSelectionGroup(this, _sourceNames);
 	_sourcesEndIdx = count();
 
 	// Remove last separator
@@ -183,7 +183,7 @@ void SourceSelectionWidget::SetSource(const SourceSelection &s)
 			idx = 0;
 			break;
 		}
-		idx = findIdxInRagne(this, _variablesEndIdx, _sourcesEndIdx,
+		idx = FindIdxInRagne(this, _variablesEndIdx, _sourcesEndIdx,
 				     s.ToString());
 		break;
 	}
@@ -192,7 +192,7 @@ void SourceSelectionWidget::SetSource(const SourceSelection &s)
 			idx = 0;
 			break;
 		}
-		idx = findIdxInRagne(this, _selectIdx, _variablesEndIdx,
+		idx = FindIdxInRagne(this, _selectIdx, _variablesEndIdx,
 				     s.ToString());
 		break;
 	default:

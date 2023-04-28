@@ -62,7 +62,7 @@ bool MacroConditionFile::MatchFileContent(QString &filedata)
 	}
 
 	QString text = QString::fromStdString(_text);
-	return compareIgnoringLineEnding(text, filedata);
+	return CompareIgnoringLineEnding(text, filedata);
 }
 
 bool MacroConditionFile::CheckRemoteFileContent()
@@ -269,13 +269,13 @@ MacroConditionFileEdit::MacroConditionFileEdit(
 	line1Layout->setContentsMargins(0, 0, 0, 0);
 	line2Layout->setContentsMargins(0, 0, 0, 0);
 	line3Layout->setContentsMargins(0, 0, 0, 0);
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.file.entry.line1"),
 		line1Layout, widgetPlaceholders);
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.file.entry.line2"),
 		line2Layout, widgetPlaceholders, false);
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.file.entry.line3"),
 		line3Layout, widgetPlaceholders);
 	mainLayout->addLayout(line1Layout);

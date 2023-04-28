@@ -192,7 +192,7 @@ MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
 	_actions = new QComboBox();
 
 	populateSourceItemTypeSelection(_sourceTypes);
-	populateSourceGroupSelection(_sourceGroups);
+	PopulateSourceGroupSelection(_sourceGroups);
 	populateActionSelection(_actions);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
@@ -216,7 +216,7 @@ MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
 		{"{{sources}}", _sources}, {"{{sourceGroups}}", _sourceGroups},
 		{"{{actions}}", _actions},
 	};
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.action.sceneVisibility.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);

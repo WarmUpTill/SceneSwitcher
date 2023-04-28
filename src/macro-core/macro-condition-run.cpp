@@ -150,11 +150,11 @@ MacroConditionRunEdit::MacroConditionRunEdit(
 	};
 
 	auto exitLayout = new QHBoxLayout();
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.run.entry.exit"),
 		exitLayout, widgetPlaceholders);
 	auto timeoutLayout = new QHBoxLayout();
-	placeWidgets(obs_module_text("AdvSceneSwitcher.condition.run.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.run.entry"),
 		     timeoutLayout, widgetPlaceholders);
 
 	auto *layout = new QVBoxLayout;

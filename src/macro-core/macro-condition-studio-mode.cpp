@@ -102,7 +102,7 @@ MacroConditionStudioModeEdit::MacroConditionStudioModeEdit(
 		{"{{conditions}}", _condition},
 		{"{{scenes}}", _scenes},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.studioMode.entry"),
 		layout, widgetPlaceholders);
 	setLayout(layout);

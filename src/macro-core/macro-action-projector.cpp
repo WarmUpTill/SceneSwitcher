@@ -193,12 +193,12 @@ MacroActionProjectorEdit::MacroActionProjectorEdit(
 		{"{{monitors}}", _monitors},
 	};
 
-	placeWidgets(obs_module_text(
+	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.action.projector.entry.monitor"),
 		     _monitorSelection, widgetPlaceholders);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.projector.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.projector.entry"),
 		     mainLayout, widgetPlaceholders);
 	mainLayout->insertLayout(mainLayout->count() - 1, _monitorSelection);
 	setLayout(mainLayout);
@@ -285,7 +285,7 @@ void MacroActionProjectorEdit::SetWidgetVisibility()
 			    MacroActionProjector::Type::SCENE);
 	_sources->setVisible(_entryData->_type ==
 			     MacroActionProjector::Type::SOURCE);
-	setLayoutVisible(_monitorSelection, _entryData->_fullscreen);
+	SetLayoutVisible(_monitorSelection, _entryData->_fullscreen);
 
 	adjustSize();
 	updateGeometry();

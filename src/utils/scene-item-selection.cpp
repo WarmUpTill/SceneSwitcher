@@ -223,7 +223,7 @@ void populateSceneItemSelection(QComboBox *list)
 	names.removeDuplicates();
 	names.sort();
 	list->addItems(names);
-	addSelectionEntry(list, obs_module_text("AdvSceneSwitcher.selectItem"));
+	AddSelectionEntry(list, obs_module_text("AdvSceneSwitcher.selectItem"));
 	list->setCurrentIndex(0);
 }
 
@@ -265,16 +265,16 @@ void SceneItemSelectionWidget::Reset()
 void SceneItemSelectionWidget::PopulateItemSelection()
 {
 	_sceneItems->clear();
-	addSelectionEntry(_sceneItems,
+	AddSelectionEntry(_sceneItems,
 			  obs_module_text("AdvSceneSwitcher.selectItem"));
 	_sceneItems->insertSeparator(_sceneItems->count());
 
 	const QStringList variables = GetVariablesNameList();
-	addSelectionGroup(_sceneItems, variables);
+	AddSelectionGroup(_sceneItems, variables);
 	_variablesEndIdx = _sceneItems->count();
 
 	const QStringList sceneItmes = GetSceneItemsList(_scene);
-	addSelectionGroup(_sceneItems, sceneItmes, false);
+	AddSelectionGroup(_sceneItems, sceneItmes, false);
 	_itemsEndIdx = _sceneItems->count();
 	_sceneItems->setCurrentIndex(0);
 }
@@ -325,7 +325,7 @@ void SceneItemSelectionWidget::SetSceneItem(const SceneItemSelection &item)
 			idx += 1;
 		}
 		_idx->setCurrentIndex(idx);
-		itemIdx = findIdxInRagne(_sceneItems, _variablesEndIdx,
+		itemIdx = FindIdxInRagne(_sceneItems, _variablesEndIdx,
 					 _itemsEndIdx,
 					 GetWeakSourceName(item._sceneItem));
 		_sceneItems->setCurrentIndex(itemIdx);
@@ -337,7 +337,7 @@ void SceneItemSelectionWidget::SetSceneItem(const SceneItemSelection &item)
 		if (!var) {
 			break;
 		}
-		itemIdx = findIdxInRagne(_sceneItems, _selectIdx,
+		itemIdx = FindIdxInRagne(_sceneItems, _selectIdx,
 					 _variablesEndIdx, var->Name());
 		_sceneItems->setCurrentIndex(itemIdx);
 		break;

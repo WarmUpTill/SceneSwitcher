@@ -105,7 +105,7 @@ void MacroActionVariable::HandleRegexSubString(Variable *var)
 void MacroActionVariable::HandleFindAndReplace(Variable *var)
 {
 	auto value = var->Value();
-	replaceAll(value, _findStr, _replaceStr);
+	ReplaceAll(value, _findStr, _replaceStr);
 	var->SetValue(value);
 }
 
@@ -417,20 +417,20 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{mathExpression}}", _mathExpression},
 	};
 	auto entryLayout = new QHBoxLayout;
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.variable.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.variable.entry"),
 		     entryLayout, widgetPlaceholders);
 
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.action.variable.entry.substringIndex"),
 		_subStringIndexEntryLayout, widgetPlaceholders);
 
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.action.variable.entry.substringRegex"),
 		_subStringRegexEntryLayout, widgetPlaceholders);
 
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.action.variable.entry.findAndReplace"),
 		_findReplaceLayout, widgetPlaceholders, false);
@@ -816,16 +816,16 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 			MacroActionVariable::Type::SET_ACTION_VALUE ||
 		_entryData->_type ==
 			MacroActionVariable::Type::SET_CONDITION_VALUE);
-	setLayoutVisible(_substringLayout,
+	SetLayoutVisible(_substringLayout,
 			 _entryData->_type ==
 				 MacroActionVariable::Type::SUBSTRING);
 	if (_entryData->_type == MacroActionVariable::Type::SUBSTRING) {
 		bool showRegex = _entryData->_regex.Enabled();
-		setLayoutVisible(_subStringIndexEntryLayout, !showRegex);
-		setLayoutVisible(_subStringRegexEntryLayout, showRegex);
+		SetLayoutVisible(_subStringIndexEntryLayout, !showRegex);
+		SetLayoutVisible(_subStringRegexEntryLayout, showRegex);
 		_regexPattern->setVisible(showRegex);
 	}
-	setLayoutVisible(_findReplaceLayout,
+	SetLayoutVisible(_findReplaceLayout,
 			 _entryData->_type ==
 				 MacroActionVariable::Type::FIND_AND_REPLACE);
 	_mathExpression->setVisible(_entryData->_type ==

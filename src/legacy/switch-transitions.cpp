@@ -305,7 +305,7 @@ void AdvSceneSwitcher::SetupTransitionsTab()
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{defTransitionDelay}}", defTransitionDelay}};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.transitionTab.defaultTransition.delay"),
 		ui->defTransitionDelayLayout, widgetPlaceholders);
@@ -353,7 +353,7 @@ TransitionSwitchWidget::TransitionSwitchWidget(QWidget *parent,
 	QWidget::connect(duration, SIGNAL(valueChanged(double)), this,
 			 SLOT(DurationChanged(double)));
 
-	populateSceneSelection(scenes2);
+	PopulateSceneSelection(scenes2);
 
 	if (s) {
 		scenes2->setCurrentText(GetWeakSourceName(s->scene2).c_str());
@@ -366,7 +366,7 @@ TransitionSwitchWidget::TransitionSwitchWidget(QWidget *parent,
 		{"{{scenes2}}", scenes2},
 		{"{{duration}}", duration},
 		{"{{transitions}}", transitions}};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.transitionTab.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.transitionTab.entry"),
 		     mainLayout, widgetPlaceholders);
 	setLayout(mainLayout);
 
@@ -422,7 +422,7 @@ DefTransitionSwitchWidget::DefTransitionSwitchWidget(QWidget *parent,
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", scenes}, {"{{transitions}}", transitions}};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.transitionTab.defaultTransitionEntry"),
 		mainLayout, widgetPlaceholders);

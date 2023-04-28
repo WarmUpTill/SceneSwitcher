@@ -61,7 +61,7 @@ bool MacroActionSceneTransform::Load(obs_data_t *obj)
 	// Convert old data format
 	// TODO: Remove in future version
 	if (!obs_data_has_user_value(obj, "settings")) {
-		loadTransformState(obj, _info, _crop);
+		LoadTransformState(obj, _info, _crop);
 		_settings = ConvertSettings();
 	}
 	return true;
@@ -78,7 +78,7 @@ std::string MacroActionSceneTransform::GetShortDesc() const
 std::string MacroActionSceneTransform::ConvertSettings()
 {
 	auto data = obs_data_create();
-	saveTransformState(data, _info, _crop);
+	SaveTransformState(data, _info, _crop);
 	std::string json = obs_data_get_json(data);
 	obs_data_release(data);
 	return json;
@@ -90,7 +90,7 @@ void MacroActionSceneTransform::ApplySettings(const std::string &settings)
 	if (!data) {
 		return;
 	}
-	loadTransformState(data, _info, _crop);
+	LoadTransformState(data, _info, _crop);
 	auto items = _source.GetSceneItems(_scene);
 	if (items.empty()) {
 		return;
@@ -144,7 +144,7 @@ MacroActionSceneTransformEdit::MacroActionSceneTransformEdit(
 		{"{{settings}}", _settings},
 		{"{{getSettings}}", _getSettings},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.sceneTransform.entry"),
 		entryLayout, widgetPlaceholders);
 
@@ -210,8 +210,8 @@ void MacroActionSceneTransformEdit::GetSettingsClicked()
 		return;
 	}
 
-	auto settings = getSceneItemTransform(items[0]);
-	_settings->setPlainText(formatJsonString(settings));
+	auto settings = GetSceneItemTransform(items[0]);
+	_settings->setPlainText(FormatJsonString(settings));
 	for (auto item : items) {
 		obs_sceneitem_release(item);
 	}

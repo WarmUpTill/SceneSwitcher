@@ -158,11 +158,11 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 		{"{{useTransitionTargetScene}}", _useTransitionTargetScene},
 	};
 	QHBoxLayout *line1Layout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.scene.entry.line1"),
 		line1Layout, widgetPlaceholders);
 	QHBoxLayout *line2Layout = new QHBoxLayout;
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.scene.entry.line2"),
 		line2Layout, widgetPlaceholders);
 	QVBoxLayout *mainLayout = new QVBoxLayout;

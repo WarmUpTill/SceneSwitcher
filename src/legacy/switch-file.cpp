@@ -211,7 +211,7 @@ bool matchFileContent(QString &filedata, FileSwitch &s)
 	}
 
 	QString text = QString::fromStdString(s.text);
-	return compareIgnoringLineEnding(text, filedata);
+	return CompareIgnoringLineEnding(text, filedata);
 }
 
 bool checkRemoteFileContent(FileSwitch &s)
@@ -544,11 +544,11 @@ FileSwitchWidget::FileSwitchWidget(QWidget *parent, FileSwitch *s)
 	QHBoxLayout *line1Layout = new QHBoxLayout;
 	QHBoxLayout *line2Layout = new QHBoxLayout;
 	QHBoxLayout *line3Layout = new QHBoxLayout;
-	placeWidgets(obs_module_text("AdvSceneSwitcher.fileTab.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.fileTab.entry"),
 		     line1Layout, widgetPlaceholders);
-	placeWidgets(obs_module_text("AdvSceneSwitcher.fileTab.entry2"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.fileTab.entry2"),
 		     line2Layout, widgetPlaceholders, false);
-	placeWidgets(obs_module_text("AdvSceneSwitcher.fileTab.entry3"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.fileTab.entry3"),
 		     line3Layout, widgetPlaceholders);
 	mainLayout->addLayout(line1Layout);
 	mainLayout->addLayout(line2Layout);

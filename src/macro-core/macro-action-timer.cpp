@@ -142,7 +142,7 @@ MacroActionTimerEdit::MacroActionTimerEdit(
 		{"{{duration}}", _duration},
 		{"{{timerAction}}", _timerAction},
 	};
-	placeWidgets(obs_module_text("AdvSceneSwitcher.action.timer.entry"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.timer.entry"),
 		     _mainLayout, widgetPlaceholders);
 	setLayout(_mainLayout);
 

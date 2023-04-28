@@ -125,7 +125,7 @@ MacroConditionPluginStateEdit::MacroConditionPluginStateEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{condition}}", _condition},
 	};
-	placeWidgets(
+	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.pluginState.entry"),
 		switchLayout, widgetPlaceholders);
 
