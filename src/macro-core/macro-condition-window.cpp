@@ -1,5 +1,6 @@
 #include "macro-condition-edit.hpp"
 #include "macro-condition-window.hpp"
+#include "platform-funcs.hpp"
 #include "utility.hpp"
 #include "advanced-scene-switcher.hpp"
 

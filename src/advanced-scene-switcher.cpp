@@ -12,6 +12,7 @@
 #include "status-control.hpp"
 #include "scene-switch-helpers.hpp"
 #include "curl-helper.hpp"
+#include "platform-funcs.hpp"
 #include "utility.hpp"
 #include "version.h"
 

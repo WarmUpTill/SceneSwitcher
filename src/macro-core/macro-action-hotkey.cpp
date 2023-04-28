@@ -1,6 +1,8 @@
 #include "macro-action-hotkey.hpp"
 #include "advanced-scene-switcher.hpp"
+#include "platform-funcs.hpp"
 #include "utility.hpp"
+
 #include <obs-interaction.h>
 
 namespace advss {
