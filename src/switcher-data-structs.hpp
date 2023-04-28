@@ -61,19 +61,6 @@ enum class AutoStartEvent {
 	RECORINDG_OR_STREAMING,
 };
 
-typedef struct sceneSwitchInfo {
-	OBSWeakSource scene;
-	OBSWeakSource transition;
-	int duration = 0;
-
-} sceneSwitchInfo;
-
-typedef struct transitionData {
-	std::string name = "";
-	int duration = 0;
-
-} transitionData;
-
 class Item;
 class SwitcherThread;
 

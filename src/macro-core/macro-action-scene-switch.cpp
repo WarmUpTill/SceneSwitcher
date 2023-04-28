@@ -1,5 +1,6 @@
 #include "macro-action-scene-switch.hpp"
 #include "advanced-scene-switcher.hpp"
+#include "scene-switch-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -123,7 +124,7 @@ bool MacroActionSwitchScene::PerformAction()
 {
 	auto scene = _scene.GetScene();
 	auto transition = _transition.GetTransition();
-	switchScene({scene, transition, (int)(_duration.Milliseconds())},
+	SwitchScene({scene, transition, (int)(_duration.Milliseconds())},
 		    obs_frontend_preview_program_mode_active());
 	if (_blockUntilTransitionDone && scene) {
 		return WaitForTransition(scene, transition);
