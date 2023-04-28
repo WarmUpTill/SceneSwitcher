@@ -123,6 +123,8 @@ void AdvSceneSwitcher::LoadUI()
 /******************************************************************************
  * Saving and loading
  ******************************************************************************/
+static void AskForBackup(obs_data_t *obj);
+
 static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 {
 	if (saving) {
@@ -154,6 +156,34 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			switcher->Start();
 		}
 	}
+}
+
+static void AskForBackup(obs_data_t *obj)
+{
+	bool backupSettings = DisplayMessage(
+		obs_module_text("AdvSceneSwitcher.askBackup"), true);
+
+	if (!backupSettings) {
+		return;
+	}
+
+	QString path = QFileDialog::getSaveFileName(
+		nullptr,
+		obs_module_text(
+			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.exportWindowTitle"),
+		GetDefaultSettingsSaveLocation(),
+		obs_module_text(
+			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType"));
+	if (path.isEmpty()) {
+		return;
+	}
+
+	QFile file(path);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		return;
+	}
+
+	obs_data_save_json(obj, file.fileName().toUtf8().constData());
 }
 
 /******************************************************************************
