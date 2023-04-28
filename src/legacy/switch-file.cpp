@@ -413,7 +413,7 @@ void SwitcherData::loadFileSwitches(obs_data_t *obj)
 	fileIO.writePath = obs_data_get_string(obj, "writePath");
 }
 
-void AdvSceneSwitcher::setupFileTab()
+void AdvSceneSwitcher::SetupFileTab()
 {
 	ui->remoteFileWarningLabel->setText(
 		obs_module_text("AdvSceneSwitcher.fileTab.remoteFileWarning1") +

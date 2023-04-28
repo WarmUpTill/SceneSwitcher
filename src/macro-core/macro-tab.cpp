@@ -22,7 +22,7 @@ bool macroNameExists(std::string name)
 	return !!GetMacroByName(name.c_str());
 }
 
-bool AdvSceneSwitcher::addNewMacro(std::shared_ptr<Macro> &res,
+bool AdvSceneSwitcher::AddNewMacro(std::shared_ptr<Macro> &res,
 				   std::string &name, std::string format)
 {
 	QString fmt;
@@ -72,7 +72,7 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 {
 	std::string name;
 	std::shared_ptr<Macro> newMacro;
-	if (!addNewMacro(newMacro, name)) {
+	if (!AddNewMacro(newMacro, name)) {
 		return;
 	}
 
@@ -121,7 +121,7 @@ void AdvSceneSwitcher::RenameMacro(std::shared_ptr<Macro> &macro,
 
 void AdvSceneSwitcher::on_macroRemove_clicked()
 {
-	auto macros = getSelectedMacros();
+	auto macros = GetSelectedMacros();
 	if (macros.empty()) {
 		return;
 	}
@@ -152,7 +152,7 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 void AdvSceneSwitcher::on_macroUp_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -162,7 +162,7 @@ void AdvSceneSwitcher::on_macroUp_clicked()
 void AdvSceneSwitcher::on_macroDown_clicked()
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -180,7 +180,7 @@ static bool newMacroNameValid(const std::string &name)
 
 void AdvSceneSwitcher::RenameCurrentMacro()
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -203,7 +203,7 @@ void AdvSceneSwitcher::RenameCurrentMacro()
 
 void AdvSceneSwitcher::on_macroName_editingFinished()
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -221,7 +221,7 @@ void AdvSceneSwitcher::on_macroName_editingFinished()
 
 void AdvSceneSwitcher::on_runMacro_clicked()
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -236,7 +236,7 @@ void AdvSceneSwitcher::on_runMacro_clicked()
 
 void AdvSceneSwitcher::on_runMacroInParallel_stateChanged(int value)
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -246,7 +246,7 @@ void AdvSceneSwitcher::on_runMacroInParallel_stateChanged(int value)
 
 void AdvSceneSwitcher::on_runMacroOnChange_stateChanged(int value)
 {
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -361,12 +361,12 @@ void AdvSceneSwitcher::HighlightCondition(int idx, QColor color)
 	conditionsList->Highlight(idx, color);
 }
 
-std::shared_ptr<Macro> AdvSceneSwitcher::getSelectedMacro()
+std::shared_ptr<Macro> AdvSceneSwitcher::GetSelectedMacro()
 {
 	return ui->macros->GetCurrentMacro();
 }
 
-std::vector<std::shared_ptr<Macro>> AdvSceneSwitcher::getSelectedMacros()
+std::vector<std::shared_ptr<Macro>> AdvSceneSwitcher::GetSelectedMacros()
 {
 	return ui->macros->GetCurrentMacros();
 }
@@ -378,7 +378,7 @@ void AdvSceneSwitcher::MacroSelectionChanged(const QItemSelection &,
 		return;
 	}
 
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		SetMacroEditAreaDisabled(true);
 		conditionsList->Clear();
@@ -397,7 +397,7 @@ void AdvSceneSwitcher::HighlightOnChange()
 		return;
 	}
 
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -412,7 +412,7 @@ void AdvSceneSwitcher::on_macroProperties_clicked()
 {
 	MacroProperties prop = switcher->macroProperties;
 	bool accepted = MacroPropertiesDialog::AskForSettings(
-		this, prop, getSelectedMacro().get());
+		this, prop, GetSelectedMacro().get());
 	if (!accepted) {
 		return;
 	}
@@ -437,7 +437,7 @@ bool shouldResotreSplitterPos(const QList<int> &pos)
 	return true;
 }
 
-void AdvSceneSwitcher::setupMacroTab()
+void AdvSceneSwitcher::SetupMacroTab()
 {
 	if (switcher->macros.size() == 0 && !switcher->disableHints) {
 		addPulse = PulseWidget(ui->macroAdd, QColor(Qt::green));
@@ -594,7 +594,7 @@ void AdvSceneSwitcher::ShowMacroConditionsContextMenu(const QPoint &pos)
 
 void AdvSceneSwitcher::CopyMacro()
 {
-	const auto macro = getSelectedMacro();
+	const auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -602,7 +602,7 @@ void AdvSceneSwitcher::CopyMacro()
 	std::string format = macro->Name() + " %1";
 	std::string name;
 	std::shared_ptr<Macro> newMacro;
-	if (!addNewMacro(newMacro, name, format)) {
+	if (!AddNewMacro(newMacro, name, format)) {
 		return;
 	}
 
@@ -620,7 +620,7 @@ void AdvSceneSwitcher::CopyMacro()
 
 void AdvSceneSwitcher::ExpandAllActions()
 {
-	auto m = getSelectedMacro();
+	auto m = GetSelectedMacro();
 	if (!m) {
 		return;
 	}
@@ -629,7 +629,7 @@ void AdvSceneSwitcher::ExpandAllActions()
 
 void AdvSceneSwitcher::ExpandAllConditions()
 {
-	auto m = getSelectedMacro();
+	auto m = GetSelectedMacro();
 	if (!m) {
 		return;
 	}
@@ -638,7 +638,7 @@ void AdvSceneSwitcher::ExpandAllConditions()
 
 void AdvSceneSwitcher::CollapseAllActions()
 {
-	auto m = getSelectedMacro();
+	auto m = GetSelectedMacro();
 	if (!m) {
 		return;
 	}
@@ -647,7 +647,7 @@ void AdvSceneSwitcher::CollapseAllActions()
 
 void AdvSceneSwitcher::CollapseAllConditions()
 {
-	auto m = getSelectedMacro();
+	auto m = GetSelectedMacro();
 	if (!m) {
 		return;
 	}
@@ -686,7 +686,7 @@ void AdvSceneSwitcher::UpMacroSegementHotkey()
 		return;
 	}
 
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
@@ -742,7 +742,7 @@ void AdvSceneSwitcher::DownMacroSegementHotkey()
 		return;
 	}
 
-	auto macro = getSelectedMacro();
+	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}

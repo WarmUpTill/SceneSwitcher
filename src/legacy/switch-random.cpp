@@ -115,7 +115,7 @@ void SwitcherData::loadRandomSwitches(obs_data_t *obj)
 	obs_data_array_release(randomArray);
 }
 
-void AdvSceneSwitcher::setupRandomTab()
+void AdvSceneSwitcher::SetupRandomTab()
 {
 	for (auto &s : switcher->randomSwitches) {
 		QListWidgetItem *item;

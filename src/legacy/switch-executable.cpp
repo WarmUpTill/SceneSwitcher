@@ -158,7 +158,7 @@ void SwitcherData::loadExecutableSwitches(obs_data_t *obj)
 	obs_data_array_release(executableArray);
 }
 
-void AdvSceneSwitcher::setupExecutableTab()
+void AdvSceneSwitcher::SetupExecutableTab()
 {
 	for (auto &s : switcher->executableSwitches) {
 		QListWidgetItem *item;

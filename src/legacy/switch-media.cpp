@@ -234,7 +234,7 @@ void SwitcherData::loadMediaSwitches(obs_data_t *obj)
 	obs_data_array_release(mediaArray);
 }
 
-void AdvSceneSwitcher::setupMediaTab()
+void AdvSceneSwitcher::SetupMediaTab()
 {
 	for (auto &s : switcher->mediaSwitches) {
 		QListWidgetItem *item;

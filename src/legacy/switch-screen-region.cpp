@@ -8,7 +8,7 @@ namespace advss {
 bool ScreenRegionSwitch::pause = false;
 static QMetaObject::Connection addPulse;
 
-void AdvSceneSwitcher::clearFrames(QListWidget *list)
+void AdvSceneSwitcher::ClearFrames(QListWidget *list)
 {
 	for (int i = 0; i < list->count(); ++i) {
 		ScreenRegionWidget *sw =
@@ -50,7 +50,7 @@ void AdvSceneSwitcher::on_showFrame_clicked()
 		showCurrentFrame(ui->screenRegionSwitches);
 	} else {
 		SetShowFrames();
-		clearFrames(ui->screenRegionSwitches);
+		ClearFrames(ui->screenRegionSwitches);
 	}
 }
 
@@ -61,7 +61,7 @@ void AdvSceneSwitcher::on_screenRegionSwitches_currentRowChanged(int idx)
 	}
 
 	if (switcher->showFrame) {
-		clearFrames(ui->screenRegionSwitches);
+		ClearFrames(ui->screenRegionSwitches);
 		showCurrentFrame(ui->screenRegionSwitches);
 	}
 }
@@ -230,7 +230,7 @@ void SwitcherData::loadScreenRegionSwitches(obs_data_t *obj)
 	obs_data_array_release(screenRegionArray);
 }
 
-void AdvSceneSwitcher::setupRegionTab()
+void AdvSceneSwitcher::SetupRegionTab()
 {
 	for (auto &s : switcher->screenRegionSwitches) {
 		QListWidgetItem *item;

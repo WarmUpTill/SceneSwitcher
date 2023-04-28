@@ -246,7 +246,7 @@ void SwitcherData::loadPauseSwitches(obs_data_t *obj)
 	obs_data_array_release(pauseArray);
 }
 
-void AdvSceneSwitcher::setupPauseTab()
+void AdvSceneSwitcher::SetupPauseTab()
 {
 	for (auto &s : switcher->pauseEntries) {
 		QListWidgetItem *item;

@@ -34,7 +34,7 @@ AdvSceneSwitcher::AdvSceneSwitcher(QWidget *parent)
 	ui->setupUi(this);
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->Prune();
-	loadUI();
+	LoadUI();
 }
 
 AdvSceneSwitcher::~AdvSceneSwitcher()
@@ -86,35 +86,35 @@ static void DisplayMissingDataDirWarning()
 	DisplayMessage(msg);
 }
 
-void AdvSceneSwitcher::loadUI()
+void AdvSceneSwitcher::LoadUI()
 {
 	DisplayMissingDataDirWarning();
 	DisplayMissingDependencyWarning();
 
-	setupGeneralTab();
-	setupTitleTab();
-	setupExecutableTab();
-	setupRegionTab();
-	setupPauseTab();
-	setupSequenceTab();
-	setupTransitionsTab();
-	setupIdleTab();
-	setupRandomTab();
-	setupMediaTab();
-	setupFileTab();
-	setupTimeTab();
-	setupAudioTab();
-	setupVideoTab();
-	setupNetworkTab();
-	setupSceneGroupTab();
-	setupTriggerTab();
-	setupMacroTab();
+	SetupGeneralTab();
+	SetupTitleTab();
+	SetupExecutableTab();
+	SetupRegionTab();
+	SetupPauseTab();
+	SetupSequenceTab();
+	SetupTransitionsTab();
+	SetupIdleTab();
+	SetupRandomTab();
+	SetupMediaTab();
+	SetupFileTab();
+	SetupTimeTab();
+	SetupAudioTab();
+	SetupVideoTab();
+	SetupNetworkTab();
+	SetupSceneGroupTab();
+	SetupTriggerTab();
+	SetupMacroTab();
 
-	setDeprecationWarnings();
-	setTabOrder();
-	setCurrentTab();
-	restoreWindowGeo();
-	checkFirstTimeSetup();
+	SetDeprecationWarnings();
+	SetTabOrder();
+	SetCurrentTab();
+	RestoreWindowGeo();
+	CheckFirstTimeSetup();
 
 	loading = false;
 }
