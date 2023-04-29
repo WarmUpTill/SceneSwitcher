@@ -1,8 +1,7 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-process.hpp"
+#include "switcher-data.hpp"
 #include "platform-funcs.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 #include <regex>
 
@@ -107,7 +106,7 @@ void MacroConditionProcessEdit::ProcessChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_process = text.toStdString();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -119,7 +118,7 @@ void MacroConditionProcessEdit::FocusChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_focus = state;
 	SetWidgetVisibility();
 }

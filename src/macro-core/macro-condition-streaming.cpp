@@ -1,7 +1,6 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-streaming.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -109,7 +108,7 @@ void MacroConditionStreamEdit::StateChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_streamState = static_cast<StreamState>(value);
 }
 

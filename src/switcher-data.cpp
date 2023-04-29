@@ -9,6 +9,16 @@ SwitcherData *GetSwitcher()
 	return switcher;
 }
 
+std::mutex *GetSwitcherMutex()
+{
+	return switcher ? &switcher->m : nullptr;
+}
+
+bool VerboseLoggingEnabled()
+{
+	return switcher ? switcher->verbose : false;
+}
+
 SwitcherData::SwitcherData(obs_module_t *m, translateFunc t)
 {
 	_modulePtr = m;

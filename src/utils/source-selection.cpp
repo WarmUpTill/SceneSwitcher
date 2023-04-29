@@ -1,5 +1,5 @@
 #include "source-selection.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "obs-module-helper.hpp"
 
 namespace advss {
 

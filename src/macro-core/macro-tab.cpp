@@ -3,6 +3,7 @@
 #include "macro-action-edit.hpp"
 #include "macro-condition-edit.hpp"
 #include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "name-dialog.hpp"
 #include "macro-properties.hpp"
 #include "utility.hpp"
@@ -60,7 +61,7 @@ bool AdvSceneSwitcher::AddNewMacro(std::shared_ptr<Macro> &res,
 	}
 
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		res = std::make_shared<Macro>(
 			name,
 			switcher->macroProperties._newMacroRegisterHotkeys);
@@ -77,7 +78,7 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 	}
 
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		ui->macros->Add(newMacro);
 	}
 
@@ -101,7 +102,7 @@ void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 	}
 
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		ui->macros->Remove(macro);
 	}
 
@@ -113,7 +114,7 @@ void AdvSceneSwitcher::RenameMacro(std::shared_ptr<Macro> &macro,
 {
 	auto oldName = QString::fromStdString(macro->Name());
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		macro->SetName(name.toStdString());
 	}
 	emit MacroRenamed(oldName, name);
@@ -151,7 +152,7 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 
 void AdvSceneSwitcher::on_macroUp_clicked()
 {
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
@@ -161,7 +162,7 @@ void AdvSceneSwitcher::on_macroUp_clicked()
 
 void AdvSceneSwitcher::on_macroDown_clicked()
 {
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
@@ -240,7 +241,7 @@ void AdvSceneSwitcher::on_runMacroInParallel_stateChanged(int value)
 	if (!macro) {
 		return;
 	}
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	macro->SetRunInParallel(value);
 }
 
@@ -250,7 +251,7 @@ void AdvSceneSwitcher::on_runMacroOnChange_stateChanged(int value)
 	if (!macro) {
 		return;
 	}
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	macro->SetMatchOnChange(value);
 }
 

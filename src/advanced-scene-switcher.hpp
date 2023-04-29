@@ -1,6 +1,6 @@
 #pragma once
 #include "macro-segment-list.hpp"
-#include "switcher-data.hpp"
+#include "log-helper.hpp"
 
 #include <ui_advanced-scene-switcher.h>
 
@@ -10,6 +10,9 @@ namespace advss {
 
 class MacroActionEdit;
 class MacroConditionEdit;
+class Duration;
+class SequenceWidget;
+struct SceneGroup;
 
 /*******************************************************************************
  * Advanced Scene Switcher window

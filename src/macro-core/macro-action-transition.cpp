@@ -1,5 +1,4 @@
 #include "macro-action-transition.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -294,7 +293,7 @@ void MacroActionTransitionEdit::SourceChanged(const SceneItemSelection &item)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -306,7 +305,7 @@ void MacroActionTransitionEdit::ActionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_type = static_cast<MacroActionTransition::Type>(value);
 	SetWidgetVisibility();
 	emit HeaderInfoChanged(
@@ -319,7 +318,7 @@ void MacroActionTransitionEdit::SceneChanged(const SceneSelection &s)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_scene = s;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -331,7 +330,7 @@ void MacroActionTransitionEdit::TransitionChanged(const TransitionSelection &t)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_transition = t;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -343,7 +342,7 @@ void MacroActionTransitionEdit::DurationChanged(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_duration = dur;
 }
 
@@ -363,7 +362,7 @@ void MacroActionTransitionEdit::SetTransitionChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_setTransitionType = state;
 	_transitions->setEnabled(state);
 	if (state) {
@@ -380,7 +379,7 @@ void MacroActionTransitionEdit::SetDurationChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_setDuration = state;
 	_duration->setEnabled(state);
 }

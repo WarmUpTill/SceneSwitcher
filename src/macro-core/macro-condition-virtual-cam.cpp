@@ -1,7 +1,5 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-virtual-cam.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -91,7 +89,7 @@ void MacroConditionVCamEdit::StateChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_state = static_cast<VCamState>(value);
 }
 

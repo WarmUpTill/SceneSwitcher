@@ -1,10 +1,11 @@
+#include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
+#include "utility.hpp"
+
 #include <QFileDialog>
 #include <QBuffer>
 #include <QToolTip>
 #include <thread>
-
-#include "advanced-scene-switcher.hpp"
-#include "utility.hpp"
 
 namespace advss {
 

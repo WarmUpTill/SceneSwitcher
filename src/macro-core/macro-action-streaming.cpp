@@ -1,5 +1,4 @@
 #include "macro-action-streaming.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -119,7 +118,7 @@ void MacroActionStreamEdit::ActionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_action = static_cast<StreamAction>(value);
 }
 

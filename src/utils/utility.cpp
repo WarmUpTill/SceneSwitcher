@@ -2,6 +2,7 @@
 #include "platform-funcs.hpp"
 #include "scene-selection.hpp"
 #include "regex-config.hpp"
+#include "scene-group.hpp"
 
 #include <QStandardPaths>
 #include <QFile>

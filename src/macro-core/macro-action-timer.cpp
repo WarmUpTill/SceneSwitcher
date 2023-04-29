@@ -1,6 +1,6 @@
 #include "macro-action-timer.hpp"
 #include "macro-condition-timer.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "macro.hpp"
 #include "utility.hpp"
 
 #include <random>
@@ -170,7 +170,7 @@ void MacroActionTimerEdit::ActionTypeChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_actionType = static_cast<TimerAction>(value);
 	SetWidgetVisibility();
 }
@@ -191,7 +191,7 @@ void MacroActionTimerEdit::DurationChanged(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_duration = dur;
 }
 
@@ -201,7 +201,7 @@ void MacroActionTimerEdit::MacroChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_macro = text;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));

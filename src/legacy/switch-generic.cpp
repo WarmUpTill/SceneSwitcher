@@ -1,4 +1,5 @@
 #include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
 
 constexpr auto previous_scene_name = "Previous Scene";

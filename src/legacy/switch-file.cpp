@@ -1,3 +1,8 @@
+#include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
+#include "curl-helper.hpp"
+#include "utility.hpp"
+
 #include <QtGlobal>
 #include <QFileDialog>
 #include <QTextStream>
@@ -5,10 +10,6 @@
 #include <functional>
 #include <regex>
 #include <curl/curl.h>
-
-#include "advanced-scene-switcher.hpp"
-#include "curl-helper.hpp"
-#include "utility.hpp"
 
 namespace advss {
 

@@ -1,5 +1,5 @@
 #include "macro-action-audio.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -505,7 +505,7 @@ void MacroActionAudioEdit::SourceChanged(const SourceSelection &source)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_audioSource = source;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -517,7 +517,7 @@ void MacroActionAudioEdit::ActionChanged(int idx)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_action = static_cast<MacroActionAudio::Action>(
 		_actions->itemData(idx).toInt());
 	SetWidgetVisibility();
@@ -529,7 +529,7 @@ void MacroActionAudioEdit::SyncOffsetChanged(const NumberVariable<int> &value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_syncOffset = value;
 }
 
@@ -539,7 +539,7 @@ void MacroActionAudioEdit::MonitorTypeChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_monitorType = static_cast<obs_monitoring_type>(value);
 }
 
@@ -549,7 +549,7 @@ void MacroActionAudioEdit::BalanceChanged(const NumberVariable<double> &value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_balance = value;
 }
 
@@ -559,7 +559,7 @@ void MacroActionAudioEdit::VolumeChanged(const NumberVariable<int> &value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_volume = value;
 }
 
@@ -569,7 +569,7 @@ void MacroActionAudioEdit::FadeChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_fade = value;
 	SetWidgetVisibility();
 }
@@ -580,7 +580,7 @@ void MacroActionAudioEdit::DurationChanged(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_duration = dur;
 }
 
@@ -590,7 +590,7 @@ void MacroActionAudioEdit::RateChanged(const NumberVariable<double> &value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_rate = value;
 }
 
@@ -600,7 +600,7 @@ void MacroActionAudioEdit::WaitChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_wait = value;
 }
 
@@ -610,7 +610,7 @@ void MacroActionAudioEdit::AbortActiveFadeChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_abortActiveFade = value;
 }
 
@@ -620,7 +620,7 @@ void MacroActionAudioEdit::FadeTypeChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_fadeType = static_cast<MacroActionAudio::FadeType>(value);
 	SetWidgetVisibility();
 }

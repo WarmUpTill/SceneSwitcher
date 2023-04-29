@@ -1,5 +1,5 @@
 #include "macro-action-wait.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
 
 #include <random>
@@ -174,7 +174,7 @@ void MacroActionWaitEdit::TypeChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	WaitType type = static_cast<WaitType>(value);
 
 	if (type == WaitType::FIXED) {
@@ -192,7 +192,7 @@ void MacroActionWaitEdit::DurationChanged(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_duration = dur;
 }
 
@@ -202,7 +202,7 @@ void MacroActionWaitEdit::Duration2Changed(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_duration2 = dur;
 }
 

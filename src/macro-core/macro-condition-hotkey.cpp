@@ -1,7 +1,5 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-hotkey.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -88,7 +86,7 @@ void MacroConditionHotkeyEdit::NameChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	const auto name = _name->text().toStdString();
 	// In case a hotkey is used by multiple conditions create a new hotkey
 	// with the new description or get an existing hotkey matching this

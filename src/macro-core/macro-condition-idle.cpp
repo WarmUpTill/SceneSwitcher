@@ -1,8 +1,6 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-idle.hpp"
 #include "platform-funcs.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -62,7 +60,7 @@ void MacroConditionIdleEdit::DurationChanged(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_duration = dur;
 }
 

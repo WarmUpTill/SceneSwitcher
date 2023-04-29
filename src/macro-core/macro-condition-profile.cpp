@@ -1,7 +1,5 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-profile.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -69,7 +67,7 @@ void MacroConditionProfileEdit::ProfileChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_profile = text.toStdString();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));

@@ -1,13 +1,4 @@
 #pragma once
-#include <condition_variable>
-#include <vector>
-#include <deque>
-#include <mutex>
-#include <QDateTime>
-#include <QThread>
-#include <curl/curl.h>
-#include <unordered_map>
-
 #include "scene-group.hpp"
 #include "scene-trigger.hpp"
 #include "switch-audio.hpp"
@@ -31,11 +22,16 @@
 #include "curl-helper.hpp"
 #include "priority-helper.hpp"
 
-#define blog(level, msg, ...) blog(level, "[adv-ss] " msg, ##__VA_ARGS__)
-#define vblog(level, msg, ...)                   \
-	if (GetSwitcher()->verbose) {            \
-		blog(level, msg, ##__VA_ARGS__); \
-	}
+#include "log-helper.hpp"
+
+#include <condition_variable>
+#include <vector>
+#include <deque>
+#include <mutex>
+#include <QDateTime>
+#include <QThread>
+#include <curl/curl.h>
+#include <unordered_map>
 
 namespace advss {
 
@@ -51,6 +47,8 @@ class SwitcherThread;
 class SwitcherData;
 extern SwitcherData *switcher;
 SwitcherData *GetSwitcher();
+std::mutex *GetSwitcherMutex();
+bool VerboseLoggingEnabled();
 
 class SwitcherData {
 public:

@@ -1,5 +1,5 @@
 #include "macro-action-http.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
 #include "curl-helper.hpp"
 
@@ -224,7 +224,7 @@ void MacroActionHttpEdit::URLChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_url = _url->text().toStdString();
 	emit(HeaderInfoChanged(_url->text()));
 }
@@ -235,7 +235,7 @@ void MacroActionHttpEdit::MethodChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_method = static_cast<MacroActionHttp::Method>(value);
 	SetWidgetVisibility();
 }
@@ -246,7 +246,7 @@ void MacroActionHttpEdit::TimeoutChanged(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_timeout = dur;
 }
 
@@ -256,7 +256,7 @@ void MacroActionHttpEdit::SetHeadersChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_setHeaders = value;
 	SetWidgetVisibility();
 }
@@ -267,7 +267,7 @@ void MacroActionHttpEdit::HeadersChanged(const StringList &headers)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_headers = headers;
 	adjustSize();
 	updateGeometry();
@@ -288,7 +288,7 @@ void MacroActionHttpEdit::DataChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_data = _data->toPlainText().toUtf8().constData();
 
 	adjustSize();

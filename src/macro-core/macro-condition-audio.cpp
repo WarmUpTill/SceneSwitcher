@@ -1,7 +1,6 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-audio.hpp"
+#include "macro.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -422,7 +421,7 @@ void MacroConditionAudioEdit::SourceChanged(const SourceSelection &source)
 	}
 
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		_entryData->_audioSource = source;
 		_entryData->ResetVolmeter();
 	}
@@ -439,7 +438,7 @@ void MacroConditionAudioEdit::VolumeThresholdChanged(
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_volume = vol;
 }
 
@@ -449,7 +448,7 @@ void MacroConditionAudioEdit::SyncOffsetChanged(const NumberVariable<int> &value
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_syncOffset = value;
 }
 
@@ -459,7 +458,7 @@ void MacroConditionAudioEdit::MonitorTypeChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_monitorType = static_cast<obs_monitoring_type>(value);
 }
 
@@ -469,7 +468,7 @@ void MacroConditionAudioEdit::BalanceChanged(const NumberVariable<double> &value
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_balance = value;
 }
 
@@ -479,7 +478,7 @@ void MacroConditionAudioEdit::ConditionChanged(int cond)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	if (_entryData->_checkType ==
 		    MacroConditionAudio::Type::OUTPUT_VOLUME ||
 	    _entryData->_checkType == MacroConditionAudio::Type::BALANCE ||
@@ -499,7 +498,7 @@ void MacroConditionAudioEdit::CheckTypeChanged(int idx)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_checkType = static_cast<MacroConditionAudio::Type>(
 		_checkTypes->itemData(idx).toInt());
 

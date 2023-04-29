@@ -1,8 +1,9 @@
-#include <float.h>
-
 #include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "volume-control.hpp"
 #include "utility.hpp"
+
+#include <float.h>
 
 namespace advss {
 

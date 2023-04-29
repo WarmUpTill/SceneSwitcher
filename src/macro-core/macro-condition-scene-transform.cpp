@@ -1,7 +1,5 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-scene-transform.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -152,7 +150,7 @@ void MacroConditionSceneTransformEdit::SceneChanged(const SceneSelection &s)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_scene = s;
 }
 
@@ -163,7 +161,7 @@ void MacroConditionSceneTransformEdit::SourceChanged(
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -198,7 +196,7 @@ void MacroConditionSceneTransformEdit::SettingsChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_settings = _settings->toPlainText().toStdString();
 
 	adjustSize();
@@ -211,7 +209,7 @@ void MacroConditionSceneTransformEdit::RegexChanged(RegexConfig conf)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_regex = conf;
 
 	adjustSize();

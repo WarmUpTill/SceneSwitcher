@@ -1,7 +1,8 @@
-#include <random>
-
 #include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
+
+#include <random>
 
 namespace advss {
 

@@ -7,6 +7,7 @@ Most of this code is based on https://github.com/Palakis/obs-websocket
 #include <QMessageBox>
 
 #include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "scene-switch-helpers.hpp"
 #include "utility.hpp"
 

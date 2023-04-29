@@ -1,5 +1,5 @@
 #include "macro-action-scene-collection.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -112,7 +112,7 @@ void MacroActionSceneCollectionEdit::SceneCollectionChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_sceneCollection = text.toStdString();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));

@@ -1,7 +1,5 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-recording.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -90,7 +88,7 @@ void MacroConditionRecordEdit::StateChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_recordState = static_cast<RecordState>(value);
 }
 

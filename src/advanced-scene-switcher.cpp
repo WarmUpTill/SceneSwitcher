@@ -9,6 +9,7 @@
 #include <obs-frontend-api.h>
 
 #include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "status-control.hpp"
 #include "scene-switch-helpers.hpp"
 #include "curl-helper.hpp"
@@ -742,19 +743,3 @@ extern "C" void InitSceneSwitcher(obs_module_t *module, translateFunc translate)
 }
 
 } // namespace advss
-
-const char *obs_module_text(const char *text)
-{
-	if (!advss::switcher) {
-		return "";
-	}
-	return advss::switcher->Translate(text);
-}
-
-obs_module_t *obs_current_module()
-{
-	if (!advss::switcher) {
-		return nullptr;
-	}
-	return advss::switcher->GetModule();
-}

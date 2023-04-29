@@ -1,4 +1,5 @@
 #include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "macro-action-edit.hpp"
 #include "macro-action-scene-switch.hpp"
 #include "section.hpp"

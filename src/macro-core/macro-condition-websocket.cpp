@@ -1,7 +1,6 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-websocket.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 #include <regex>
 
@@ -209,7 +208,7 @@ void MacroConditionWebsocketEdit::ConditionChanged(int index)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_type = static_cast<MacroConditionWebsocket::Type>(index);
 	if (_entryData->_type == MacroConditionWebsocket::Type::REQUEST) {
 		SetupRequestEdit();
@@ -226,7 +225,7 @@ void MacroConditionWebsocketEdit::MessageChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_message = _message->toPlainText().toUtf8().constData();
 
 	adjustSize();
@@ -240,7 +239,7 @@ void MacroConditionWebsocketEdit::ConnectionSelectionChanged(
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_connection = GetWeakConnectionByQString(connection);
 	emit(HeaderInfoChanged(connection));
 }
@@ -251,7 +250,7 @@ void MacroConditionWebsocketEdit::RegexChanged(RegexConfig conf)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_regex = conf;
 
 	adjustSize();

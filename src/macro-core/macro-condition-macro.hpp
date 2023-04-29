@@ -1,5 +1,5 @@
 #pragma once
-#include "macro.hpp"
+#include "macro-condition-edit.hpp"
 #include "macro-selection.hpp"
 #include "macro-list.hpp"
 #include "variable-spinbox.hpp"

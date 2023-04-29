@@ -1,7 +1,6 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-macro.hpp"
+#include "macro.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -419,7 +418,7 @@ void MacroConditionMacroEdit::MacroChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_macro = text;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -431,7 +430,7 @@ void MacroConditionMacroEdit::CountChanged(const NumberVariable<int> &value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_count = value;
 }
 
@@ -441,7 +440,7 @@ void MacroConditionMacroEdit::CountConditionChanged(int cond)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_counterCondition =
 		static_cast<MacroConditionMacro::CounterCondition>(cond);
 }
@@ -469,7 +468,7 @@ void MacroConditionMacroEdit::TypeChanged(int type)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_type = static_cast<MacroConditionMacro::Type>(type);
 
 	switch (_entryData->_type) {
@@ -530,7 +529,7 @@ void MacroConditionMacroEdit::MultiStateConditionChanged(int cond)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_multiSateCondition =
 		static_cast<MacroConditionMacro::MultiStateCondition>(cond);
 }
@@ -542,7 +541,7 @@ void MacroConditionMacroEdit::MultiStateCountChanged(
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_multiSateCount = value;
 }
 
@@ -552,7 +551,7 @@ void MacroConditionMacroEdit::Add(const std::string &name)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	MacroRef macro(name);
 	_entryData->_macros.push_back(macro);
 	adjustSize();
@@ -564,7 +563,7 @@ void MacroConditionMacroEdit::Remove(int idx)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_macros.erase(std::next(_entryData->_macros.begin(), idx));
 	adjustSize();
 }
@@ -576,7 +575,7 @@ void MacroConditionMacroEdit::Replace(int idx, const std::string &name)
 	}
 
 	MacroRef macro(name);
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_macros[idx] = macro;
 	adjustSize();
 }

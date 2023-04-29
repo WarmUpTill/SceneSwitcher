@@ -1,5 +1,4 @@
 #include "macro-action-studio-mode.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -151,7 +150,7 @@ void MacroActionSudioModeEdit::SceneChanged(const SceneSelection &s)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_scene = s;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -163,7 +162,7 @@ void MacroActionSudioModeEdit::ActionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_action = static_cast<StudioModeAction>(value);
 	_scenes->setVisible(_entryData->_action == StudioModeAction::SET_SCENE);
 	emit HeaderInfoChanged(

@@ -1,5 +1,4 @@
 #include "macro-action-scene-order.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -215,7 +214,7 @@ void MacroActionSceneOrderEdit::SceneChanged(const SceneSelection &s)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_scene = s;
 }
 
@@ -225,7 +224,7 @@ void MacroActionSceneOrderEdit::SourceChanged(const SceneItemSelection &item)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -237,7 +236,7 @@ void MacroActionSceneOrderEdit::ActionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_action = static_cast<SceneOrderAction>(value);
 	_position->setVisible(_entryData->_action ==
 			      SceneOrderAction::POSITION);
@@ -249,7 +248,7 @@ void MacroActionSceneOrderEdit::PositionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_position = value;
 }
 

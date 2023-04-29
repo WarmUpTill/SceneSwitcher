@@ -1,5 +1,4 @@
 #include "macro-action-source.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 Q_DECLARE_METATYPE(advss::SourceSettingButton);
@@ -252,7 +251,7 @@ void MacroActionSourceEdit::SourceChanged(const SourceSelection &source)
 	}
 
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		_entryData->_source = source;
 	}
 	populateSourceButtonSelection(_settingsButtons,
@@ -267,7 +266,7 @@ void MacroActionSourceEdit::ActionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_action = static_cast<SourceAction>(value);
 	SetWidgetVisibility();
 }
@@ -278,7 +277,7 @@ void MacroActionSourceEdit::ButtonChanged(int idx)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_button = qvariant_cast<SourceSettingButton>(
 		_settingsButtons->itemData(idx));
 }
@@ -299,7 +298,7 @@ void MacroActionSourceEdit::SettingsChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_settings = _settings->toPlainText().toStdString();
 
 	adjustSize();

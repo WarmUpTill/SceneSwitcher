@@ -1,5 +1,4 @@
 #include "macro-action-replay-buffer.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -119,7 +118,7 @@ void MacroActionReplayBufferEdit::ActionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_action = static_cast<ReplayBufferAction>(value);
 	_saveWarning->setVisible(_entryData->_action ==
 				 ReplayBufferAction::SAVE);

@@ -1,5 +1,4 @@
 #include "macro-action-run.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 #include <QProcess>
@@ -82,7 +81,7 @@ void MacroActionRunEdit::ProcessConfigChanged(const ProcessConfig &conf)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_procConfig = conf;
 	adjustSize();
 	updateGeometry();

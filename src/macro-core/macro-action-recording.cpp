@@ -1,5 +1,4 @@
 #include "macro-action-recording.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 #include <util/config-file.h>
@@ -187,7 +186,7 @@ void MacroActionRecordEdit::FolderChanged(const QString &folder)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_folder = folder.toStdString();
 }
 
@@ -197,7 +196,7 @@ void MacroActionRecordEdit::FormatStringChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_fileFormat = _recordFileFormat->text().toStdString();
 }
 
@@ -218,7 +217,7 @@ void MacroActionRecordEdit::ActionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_action = static_cast<MacroActionRecord::Action>(value);
 	SetWidgetVisibility();
 }

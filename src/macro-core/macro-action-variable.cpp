@@ -1,6 +1,8 @@
 #include "macro-action-variable.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "macro-condition-edit.hpp"
+#include "switcher-data.hpp"
+#include "advanced-scene-switcher.hpp"
+#include "macro.hpp"
 #include "math-helpers.hpp"
 #include "utility.hpp"
 
@@ -494,7 +496,7 @@ void MacroActionVariableEdit::VariableChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_variable = GetWeakVariableByQString(text);
 }
 
@@ -504,7 +506,7 @@ void MacroActionVariableEdit::Variable2Changed(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_variable2 = GetWeakVariableByQString(text);
 }
 
@@ -514,7 +516,7 @@ void MacroActionVariableEdit::ActionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_type = static_cast<MacroActionVariable::Type>(value);
 	SetWidgetVisibility();
 
@@ -531,7 +533,7 @@ void MacroActionVariableEdit::StrValueChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_strValue = _strValue->toPlainText().toStdString();
 	adjustSize();
 	updateGeometry();
@@ -543,7 +545,7 @@ void MacroActionVariableEdit::NumValueChanged(double val)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_numValue = val;
 }
 
@@ -553,7 +555,7 @@ void MacroActionVariableEdit::SegmentIndexChanged(int val)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->SetSegmentIndexValue(val - 1);
 	MarkSelectedSegment();
 }
@@ -656,7 +658,7 @@ void MacroActionVariableEdit::SubStringStartChanged(int val)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_subStringStart = val - 1;
 }
 
@@ -666,7 +668,7 @@ void MacroActionVariableEdit::SubStringSizeChanged(int val)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_subStringSize = val;
 }
 
@@ -676,7 +678,7 @@ void MacroActionVariableEdit::RegexChanged(RegexConfig conf)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_regex = conf;
 
 	SetWidgetVisibility();
@@ -688,7 +690,7 @@ void MacroActionVariableEdit::RegexPatternChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_regexPattern = _regexPattern->toPlainText().toStdString();
 	adjustSize();
 	updateGeometry();
@@ -700,7 +702,7 @@ void MacroActionVariableEdit::RegexMatchIdxChanged(int val)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_regexMatchIdx = val - 1;
 }
 
@@ -710,7 +712,7 @@ void MacroActionVariableEdit::FindStrValueChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_findStr = _findStr->toPlainText().toStdString();
 	adjustSize();
 	updateGeometry();
@@ -722,7 +724,7 @@ void MacroActionVariableEdit::ReplaceStrValueChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_replaceStr = _replaceStr->toPlainText().toStdString();
 	adjustSize();
 	updateGeometry();
@@ -734,7 +736,7 @@ void MacroActionVariableEdit::MathExpressionChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_mathExpression = _mathExpression->text().toStdString();
 
 	// In case of invalid expression display an error

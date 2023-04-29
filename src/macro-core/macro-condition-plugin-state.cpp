@@ -1,7 +1,6 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-plugin-state.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -144,7 +143,7 @@ void MacroConditionPluginStateEdit::ConditionChanged(int idx)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	if (_entryData->_condition ==
 	    MacroConditionPluginState::Condition::OBS_SHUTDOWN) {
 		switcher->shutdownConditionCount--;

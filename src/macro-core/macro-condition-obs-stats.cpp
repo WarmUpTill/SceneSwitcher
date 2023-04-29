@@ -1,7 +1,5 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-obs-stats.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -481,7 +479,7 @@ void MacroConditionStatsEdit::ValueChanged(const NumberVariable<double> &value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_value = value;
 }
 
@@ -492,7 +490,7 @@ void MacroConditionStatsEdit::StatsTypeChanged(int type)
 	}
 
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		_entryData->_type =
 			static_cast<MacroConditionStats::Type>(type);
 		SetWidgetVisibility();
@@ -508,7 +506,7 @@ void MacroConditionStatsEdit::ConditionChanged(int cond)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_condition =
 		static_cast<MacroConditionStats::Condition>(cond);
 }

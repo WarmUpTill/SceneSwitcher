@@ -1,7 +1,5 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-scene-visibility.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 #include <regex>
 
@@ -181,7 +179,7 @@ void MacroConditionSceneVisibilityEdit::SourceChanged(
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -193,7 +191,7 @@ void MacroConditionSceneVisibilityEdit::SceneChanged(const SceneSelection &s)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_scene = s;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -205,7 +203,7 @@ void MacroConditionSceneVisibilityEdit::ConditionChanged(int index)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_condition =
 		static_cast<MacroConditionSceneVisibility::Condition>(index);
 	if (_entryData->_condition ==

@@ -1,5 +1,5 @@
 #include "transition-selection.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 
 namespace advss {
 

@@ -1,7 +1,5 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-variable.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 #include <regex>
 
@@ -257,7 +255,7 @@ void MacroConditionVariableEdit::VariableChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_variable = GetWeakVariableByQString(text);
 }
 
@@ -268,7 +266,7 @@ void MacroConditionVariableEdit::Variable2Changed(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_variable2 = GetWeakVariableByQString(text);
 }
 
@@ -278,7 +276,7 @@ void MacroConditionVariableEdit::ConditionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_type = static_cast<MacroConditionVariable::Type>(value);
 	SetWidgetVisibility();
 }
@@ -289,7 +287,7 @@ void MacroConditionVariableEdit::StrValueChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_strValue = _strValue->toPlainText().toStdString();
 	adjustSize();
 }
@@ -300,7 +298,7 @@ void MacroConditionVariableEdit::NumValueChanged(double val)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_numValue = val;
 }
 
@@ -310,7 +308,7 @@ void MacroConditionVariableEdit::RegexChanged(RegexConfig conf)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_regex = conf;
 	adjustSize();
 	updateGeometry();

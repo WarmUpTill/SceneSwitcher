@@ -1,5 +1,4 @@
 #include "macro-action-screenshot.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -212,7 +211,7 @@ void MacroActionScreenshotEdit::SceneChanged(const SceneSelection &s)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_scene = s;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -244,7 +243,7 @@ void MacroActionScreenshotEdit::PathChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_path = text.toStdString();
 }
 
@@ -254,7 +253,7 @@ void MacroActionScreenshotEdit::SourceChanged(const SourceSelection &source)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_source = source;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));

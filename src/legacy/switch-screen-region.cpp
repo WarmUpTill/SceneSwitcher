@@ -1,7 +1,8 @@
-#include <QTimer>
-
 #include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
+
+#include <QTimer>
 
 namespace advss {
 

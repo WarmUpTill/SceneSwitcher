@@ -1,7 +1,6 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-transition.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -228,7 +227,7 @@ void MacroConditionTransitionEdit::ConditionChanged(int index)
 	}
 
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		_entryData->_condition =
 			static_cast<TransitionCondition>(index);
 	}
@@ -244,7 +243,7 @@ void MacroConditionTransitionEdit::TransitionChanged(
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->DisconnectTransitionSignals();
 	_entryData->_transition = t;
 	_entryData->ConnectToTransitionSignals();
@@ -258,7 +257,7 @@ void MacroConditionTransitionEdit::SceneChanged(const SceneSelection &s)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_scene = s;
 }
 
@@ -268,7 +267,7 @@ void MacroConditionTransitionEdit::DurationChanged(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_duration = dur;
 }
 

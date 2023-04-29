@@ -1,5 +1,4 @@
 #include "macro-action-scene-transform.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -183,7 +182,7 @@ void MacroActionSceneTransformEdit::SceneChanged(const SceneSelection &s)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_scene = s;
 }
 
@@ -193,7 +192,7 @@ void MacroActionSceneTransformEdit::SourceChanged(const SceneItemSelection &item
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -223,7 +222,7 @@ void MacroActionSceneTransformEdit::SettingsChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_settings = _settings->toPlainText().toStdString();
 
 	adjustSize();

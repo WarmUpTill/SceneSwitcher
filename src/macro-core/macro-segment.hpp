@@ -1,4 +1,11 @@
 #pragma once
+
+// The following helpers are used by all macro seements,
+// so it makes sense to include them here:
+#include "log-helper.hpp"
+#include "obs-module-helper.hpp"
+#include "sync-helper.hpp"
+
 #include <QWidget>
 #include <QFrame>
 #include <QVBoxLayout>

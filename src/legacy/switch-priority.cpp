@@ -1,6 +1,7 @@
-#include <algorithm>
-
 #include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
+
+#include <algorithm>
 
 namespace advss {
 
