@@ -249,6 +249,7 @@ target_sources(
           src/utils/duration-control.hpp
           src/utils/item-selection-helpers.cpp
           src/utils/item-selection-helpers.hpp
+          src/utils/log-helper.hpp
           src/utils/file-selection.cpp
           src/utils/file-selection.hpp
           src/utils/macro-list.cpp
@@ -260,6 +261,8 @@ target_sources(
           src/utils/name-dialog.cpp
           src/utils/name-dialog.hpp
           src/utils/obs-dock.hpp
+          src/utils/obs-module-helper.cpp
+          src/utils/obs-module-helper.hpp
           src/utils/priority-helper.cpp
           src/utils/priority-helper.hpp
           src/utils/process-config.cpp
@@ -286,6 +289,8 @@ target_sources(
           src/utils/string-list.hpp
           src/utils/striped-frame.cpp
           src/utils/striped-frame.hpp
+          src/utils/sync-helper.cpp
+          src/utils/sync-helper.hpp
           src/utils/transition-selection.cpp
           src/utils/transition-selection.hpp
           src/utils/utility.cpp
