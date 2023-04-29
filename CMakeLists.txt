@@ -73,7 +73,6 @@ target_sources(
           src/legacy/switch-network.hpp
           src/legacy/switch-pause.cpp
           src/legacy/switch-pause.hpp
-          src/legacy/switch-priority.cpp
           src/legacy/switch-random.cpp
           src/legacy/switch-random.hpp
           src/legacy/switch-screen-region.cpp
