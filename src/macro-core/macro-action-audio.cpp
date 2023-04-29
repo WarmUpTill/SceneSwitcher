@@ -419,7 +419,7 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	_loading = false;
 }
 
-bool hasVolumeControl(MacroActionAudio::Action action)
+static bool hasVolumeControl(MacroActionAudio::Action action)
 {
 	return action == MacroActionAudio::Action::SOURCE_VOLUME ||
 	       action == MacroActionAudio::Action::MASTER_VOLUME;

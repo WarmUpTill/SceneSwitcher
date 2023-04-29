@@ -753,9 +753,9 @@ static void togglePauseCB(void *data, obs_hotkey_id, obs_hotkey_t *,
 
 static int macroHotkeyID = 0;
 
-obs_hotkey_id registerHotkeyHelper(const std::string prefix,
-				   const char *formatModuleText, Macro *macro,
-				   obs_hotkey_func func)
+static obs_hotkey_id registerHotkeyHelper(const std::string prefix,
+					  const char *formatModuleText,
+					  Macro *macro, obs_hotkey_func func)
 {
 	macroHotkeyID++;
 

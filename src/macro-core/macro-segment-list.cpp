@@ -237,14 +237,14 @@ void MacroSegmentList::HideLastDropLine()
 	_dropLineIdx = -1;
 }
 
-bool isInUpperHalfOf(const QPoint &pos, const QRect &rect)
+static bool isInUpperHalfOf(const QPoint &pos, const QRect &rect)
 {
 	return QRect(rect.topLeft(),
 		     QSize(rect.size().width(), rect.size().height() / 2))
 		.contains(pos);
 }
 
-bool widgetIsInLayout(QWidget *w, QLayout *l)
+static bool widgetIsInLayout(QWidget *w, QLayout *l)
 {
 	if (w == nullptr) {
 		return false;

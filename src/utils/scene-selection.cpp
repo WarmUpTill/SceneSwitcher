@@ -86,7 +86,7 @@ void SceneSelection::Load(obs_data_t *obj, const char *name,
 	obs_data_release(data);
 }
 
-bool IsScene(const OBSWeakSource &source)
+static bool IsScene(const OBSWeakSource &source)
 {
 	auto s = obs_weak_source_get_source(source);
 	bool ret = !!obs_scene_from_source(s);

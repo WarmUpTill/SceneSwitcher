@@ -31,14 +31,14 @@ static Item *GetItemByName(const QString &name,
 	return GetItemByName(name.toStdString(), items);
 }
 
-bool ItemNameAvailable(const QString &name,
-		       std::deque<std::shared_ptr<Item>> &items)
+static bool ItemNameAvailable(const QString &name,
+			      std::deque<std::shared_ptr<Item>> &items)
 {
 	return !GetItemByName(name, items);
 }
 
-bool ItemNameAvailable(const std::string &name,
-		       std::deque<std::shared_ptr<Item>> &items)
+static bool ItemNameAvailable(const std::string &name,
+			      std::deque<std::shared_ptr<Item>> &items)
 {
 	return ItemNameAvailable(QString::fromStdString(name), items);
 }

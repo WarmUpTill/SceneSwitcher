@@ -58,12 +58,12 @@ bool ObjDetectParameters::Save(obs_data_t *obj) const
 	return true;
 }
 
-bool isScaleFactorValid(double scaleFactor)
+static bool isScaleFactorValid(double scaleFactor)
 {
 	return scaleFactor > 1.;
 }
 
-bool isMinNeighborsValid(int minNeighbors)
+static bool isMinNeighborsValid(int minNeighbors)
 {
 	return minNeighbors >= minMinNeighbors &&
 	       minNeighbors <= maxMinNeighbors;

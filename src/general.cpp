@@ -318,7 +318,7 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 	}
 }
 
-int findTabIndex(QTabWidget *tabWidget, int pos)
+static int findTabIndex(QTabWidget *tabWidget, int pos)
 {
 	int at = -1;
 
@@ -660,7 +660,8 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 	lastImportPath = obs_data_get_string(obj, "lastImportPath");
 }
 
-void saveSplitterPos(QList<int> &sizes, obs_data_t *obj, const std::string name)
+static void saveSplitterPos(QList<int> &sizes, obs_data_t *obj,
+			    const std::string name)
 {
 	auto array = obs_data_array_create();
 	for (int i = 0; i < sizes.count(); ++i) {
@@ -673,7 +674,8 @@ void saveSplitterPos(QList<int> &sizes, obs_data_t *obj, const std::string name)
 	obs_data_array_release(array);
 }
 
-void loadSplitterPos(QList<int> &sizes, obs_data_t *obj, const std::string name)
+static void loadSplitterPos(QList<int> &sizes, obs_data_t *obj,
+			    const std::string name)
 {
 	sizes.clear();
 	obs_data_array_t *array = obs_data_get_array(obj, name.c_str());
@@ -831,7 +833,7 @@ void SwitcherData::checkSwitchCooldown(bool &match)
 	}
 }
 
-void populateStartupBehavior(QComboBox *cb)
+static void populateStartupBehavior(QComboBox *cb)
 {
 	cb->addItem(obs_module_text(
 		"AdvSceneSwitcher.generalTab.status.onStartup.asLastRun"));
@@ -841,7 +843,7 @@ void populateStartupBehavior(QComboBox *cb)
 		"AdvSceneSwitcher.generalTab.status.onStartup.doNotStart"));
 }
 
-void populateAutoStartEventSelection(QComboBox *cb)
+static void populateAutoStartEventSelection(QComboBox *cb)
 {
 	cb->addItem(obs_module_text(
 		"AdvSceneSwitcher.generalTab.status.autoStart.never"));

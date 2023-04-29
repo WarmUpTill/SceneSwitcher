@@ -95,8 +95,8 @@ static bool getSceneItems(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 	return true;
 }
 
-std::vector<obs_scene_item *> getSceneItemsWithName(obs_scene_t *scene,
-						    std::string &name)
+static std::vector<obs_scene_item *>
+getSceneItemsWithName(obs_scene_t *scene, const std::string &name)
 {
 	ItemInfo itemInfo = {name};
 	obs_scene_enum_items(scene, getSceneItems, &itemInfo);
@@ -123,9 +123,9 @@ static bool countSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 	return true;
 }
 
-int getCountOfSceneItemOccurance(const SceneSelection &s,
-				 const std::string &name,
-				 bool enumAllScenes = true)
+static int getCountOfSceneItemOccurance(const SceneSelection &s,
+					const std::string &name,
+					bool enumAllScenes = true)
 {
 	ItemCountData data{name};
 	if (enumAllScenes && (s.GetType() != SceneSelection::Type::SCENE)) {
@@ -216,7 +216,7 @@ static bool enumSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 	return true;
 }
 
-void populateSceneItemSelection(QComboBox *list)
+static void populateSceneItemSelection(QComboBox *list)
 {
 	QStringList names;
 	obs_scene_enum_items(nullptr, enumSceneItem, &names);
