@@ -18,8 +18,8 @@ bool MacroConditionWindow::CheckWindowTitleSwitchDirect(
 	const std::string &currentWindowTitle)
 {
 	bool focus = (!_focus || _window == currentWindowTitle);
-	bool fullscreen = (!_fullscreen || isFullscreen(_window));
-	bool max = (!_maximized || isMaximized(_window));
+	bool fullscreen = (!_fullscreen || IsFullscreen(_window));
+	bool max = (!_maximized || IsMaximized(_window));
 
 	return focus && fullscreen && max;
 }
@@ -39,8 +39,8 @@ bool MacroConditionWindow::CheckWindowTitleSwitchRegex(
 		}
 
 		bool focus = (!_focus || window == currentWindowTitle);
-		bool fullscreen = (!_fullscreen || isFullscreen(window));
-		bool max = (!_maximized || isMaximized(window));
+		bool fullscreen = (!_fullscreen || IsFullscreen(window));
+		bool max = (!_maximized || IsMaximized(window));
 
 		if (focus && fullscreen && max) {
 			match = true;

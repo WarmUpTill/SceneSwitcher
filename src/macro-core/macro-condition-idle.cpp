@@ -13,7 +13,7 @@ bool MacroConditionIdle::_registered = MacroConditionFactory::Register(
 
 bool MacroConditionIdle::CheckCondition()
 {
-	auto seconds = secondsSinceLastInput();
+	auto seconds = SecondsSinceLastInput();
 	SetVariableValue(std::to_string(seconds));
 	return seconds >= _duration.Seconds();
 }

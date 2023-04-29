@@ -148,7 +148,7 @@ static HWND getHWNDfromTitle(std::string title)
 	return hwnd;
 }
 
-bool isMaximized(const std::string &title)
+bool IsMaximized(const std::string &title)
 {
 	RECT appBounds;
 	MONITORINFO monitorInfo = {0};
@@ -178,7 +178,7 @@ bool isMaximized(const std::string &title)
 	return false;
 }
 
-bool isFullscreen(const std::string &title)
+bool IsFullscreen(const std::string &title)
 {
 	RECT appBounds;
 	MONITORINFO monitorInfo = {0};
@@ -272,7 +272,7 @@ void GetForegroundProcessName(std::string &proc)
 	proc = temp.toStdString();
 }
 
-bool isInFocus(const QString &executable)
+bool IsInFocus(const QString &executable)
 {
 	// only checks if the current foreground window is from the same executable,
 	// may return true for any window from a program
@@ -459,7 +459,7 @@ static int getTime()
 	return GetTickCount();
 }
 
-int secondsSinceLastInput()
+int SecondsSinceLastInput()
 {
 	return (getTime() - getLastInputTime()) / 1000;
 }

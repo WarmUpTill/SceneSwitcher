@@ -103,7 +103,7 @@ bool SwitcherData::checkExeSwitch(OBSWeakSource &scene,
 		bool equals = runningProcesses.contains(s.exe);
 		bool matches = (runningProcesses.indexOf(
 					QRegularExpression(s.exe)) != -1);
-		bool focus = (!s.inFocus || isInFocus(s.exe));
+		bool focus = (!s.inFocus || IsInFocus(s.exe));
 
 		// True if current window is ignored AND switch equals OR matches last window
 		bool ignore =

@@ -22,7 +22,7 @@ bool MacroConditionProcess::CheckCondition()
 
 	bool equals = runningProcesses.contains(proc);
 	bool matches = runningProcesses.indexOf(QRegularExpression(proc)) != -1;
-	bool focus = !_focus || isInFocus(proc);
+	bool focus = !_focus || IsInFocus(proc);
 
 	if (IsReferencedInVars()) {
 		std::string name;

@@ -42,7 +42,7 @@ bool SwitcherData::checkIdleSwitch(OBSWeakSource &scene,
 		}
 	}
 
-	if (!ignoreIdle && secondsSinceLastInput() > idleData.time) {
+	if (!ignoreIdle && SecondsSinceLastInput() > idleData.time) {
 		if (idleData.alreadySwitched) {
 			return false;
 		}

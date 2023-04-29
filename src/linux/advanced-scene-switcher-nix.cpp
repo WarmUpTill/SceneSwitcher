@@ -317,7 +317,7 @@ bool windowStatesAreSet(const std::string &windowTitle,
 	return false;
 }
 
-bool isMaximized(const std::string &title)
+bool IsMaximized(const std::string &title)
 {
 	std::vector<QString> states;
 	states.emplace_back("_NET_WM_STATE_MAXIMIZED_VERT");
@@ -325,7 +325,7 @@ bool isMaximized(const std::string &title)
 	return windowStatesAreSet(title, states);
 }
 
-bool isFullscreen(const std::string &title)
+bool IsFullscreen(const std::string &title)
 {
 	std::vector<QString> states;
 	states.emplace_back("_NET_WM_STATE_FULLSCREEN");
@@ -430,7 +430,7 @@ void GetForegroundProcessName(std::string &proc)
 	proc = getProcNameFromPid(pid);
 }
 
-bool isInFocus(const QString &executable)
+bool IsInFocus(const QString &executable)
 {
 	std::string current;
 	GetForegroundProcessName(current);
@@ -444,7 +444,7 @@ bool isInFocus(const QString &executable)
 	return (equals || matches);
 }
 
-int secondsSinceLastInput()
+int SecondsSinceLastInput()
 {
 	if (!canGetIdleTime) {
 		return 0;

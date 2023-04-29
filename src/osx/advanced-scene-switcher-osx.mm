@@ -160,7 +160,7 @@ bool nameMachesPattern(std::string windowName, std::string pattern)
 		.contains(QRegularExpression(QString::fromStdString(pattern)));
 }
 
-bool isMaximized(const std::string &title)
+bool IsMaximized(const std::string &title)
 {
 	@autoreleasepool {
 		NSArray *screens = [NSScreen screens];
@@ -213,7 +213,7 @@ bool isWindowFullscreenOnScreen(NSDictionary *app, NSScreen *screen)
 	return NSEqualSizes(windowBounds.size, screenFrame.size);
 }
 
-bool isFullscreen(const std::string &title)
+bool IsFullscreen(const std::string &title)
 {
 	@autoreleasepool {
 		NSArray *screens = [NSScreen screens];
@@ -255,7 +255,7 @@ bool isFullscreen(const std::string &title)
 	return false;
 }
 
-int secondsSinceLastInput()
+int SecondsSinceLastInput()
 {
 	double time = CGEventSourceSecondsSinceLastEventType(
 			      kCGEventSourceStateCombinedSessionState,
@@ -312,7 +312,7 @@ void GetForegroundProcessName(QString &proc)
 	proc = QString::fromStdString(temp);
 }
 
-bool isInFocus(const QString &executable)
+bool IsInFocus(const QString &executable)
 {
 	std::string current;
 	GetForegroundProcessName(current);
