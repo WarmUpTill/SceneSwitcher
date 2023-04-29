@@ -2,7 +2,7 @@
 
 #include <advanced-scene-switcher.hpp>
 #include <macro-condition-edit.hpp>
-#include <switcher-data-structs.hpp>
+#include <switcher-data.hpp>
 #include <utility.hpp>
 
 #include <QFileDialog>

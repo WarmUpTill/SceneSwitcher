@@ -1,7 +1,7 @@
 #include "macro-tree.hpp"
 #include "macro.hpp"
 #include "utility.hpp"
-#include "switcher-data-structs.hpp"
+#include "switcher-data.hpp"
 
 #include <obs.h>
 #include <string>

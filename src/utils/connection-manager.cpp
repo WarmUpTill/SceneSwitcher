@@ -1,7 +1,7 @@
 #include "connection-manager.hpp"
 #include "utility.hpp"
 #include "name-dialog.hpp"
-#include "switcher-data-structs.hpp"
+#include "switcher-data.hpp"
 
 #include <algorithm>
 #include <QAction>
