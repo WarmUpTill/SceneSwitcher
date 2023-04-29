@@ -122,8 +122,8 @@ private slots:
 	void ModelPathChanged(const QString &text);
 	void ObjectScaleThresholdChanged(const NumberVariable<double> &);
 	void MinNeighborsChanged(int value);
-	void MinSizeChanged(advss::Size value);
-	void MaxSizeChanged(advss::Size value);
+	void MinSizeChanged(Size value);
+	void MaxSizeChanged(Size value);
 
 	void SelectColorClicked();
 	void MatchTextChanged();
@@ -131,7 +131,7 @@ private slots:
 	void PageSegModeChanged(int);
 
 	void CheckAreaEnableChanged(int value);
-	void CheckAreaChanged(advss::Area);
+	void CheckAreaChanged(Area);
 	void CheckAreaChanged(QRect area);
 	void SelectAreaClicked();
 
