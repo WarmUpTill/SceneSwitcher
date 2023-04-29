@@ -1,4 +1,6 @@
 #include "priority-helper.hpp"
+#include "switcher-data.hpp"
+#include "advanced-scene-switcher.hpp"
 #include "scene-group.hpp"
 #include "scene-trigger.hpp"
 #include "switch-audio.hpp"
@@ -17,6 +19,7 @@
 #include "switch-network.hpp"
 #include "macro.hpp"
 
+#include <algorithm>
 #include <QThread>
 
 namespace advss {
@@ -76,6 +79,81 @@ std::vector<ThreadPrio> GetThreadPrioMapping()
 		 "scheduled as often as possible (highest CPU load)",
 		 QThread::TimeCriticalPriority},
 	};
+}
+
+bool SwitcherData::PrioFuncsValid()
+{
+	auto fNBPCopy = functionNamesByPriority;
+
+	std::sort(fNBPCopy.begin(), fNBPCopy.end());
+	auto it = std::unique(fNBPCopy.begin(), fNBPCopy.end());
+	bool wasUnique = (it == fNBPCopy.end());
+
+	if (!wasUnique) {
+		return false;
+	}
+
+	for (int p : functionNamesByPriority) {
+		if (p < 0 || p > 10) {
+			return false;
+		}
+	}
+	return true;
+}
+
+void AdvSceneSwitcher::on_threadPriority_currentTextChanged(const QString &text)
+{
+	if (loading || ui->threadPriority->count() !=
+			       (int)switcher->threadPriorities.size())
+		return;
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+
+	for (auto p : switcher->threadPriorities) {
+		if (p.name == text.toUtf8().constData()) {
+			switcher->threadPriority = p.value;
+			break;
+		}
+	}
+}
+
+void AdvSceneSwitcher::on_priorityUp_clicked()
+{
+	int currentIndex = ui->priorityList->currentRow();
+	if (currentIndex != -1 && currentIndex != 0) {
+		ui->priorityList->insertItem(
+			currentIndex - 1,
+			ui->priorityList->takeItem(currentIndex));
+		ui->priorityList->setCurrentRow(currentIndex - 1);
+		std::lock_guard<std::mutex> lock(switcher->m);
+
+		iter_swap(switcher->functionNamesByPriority.begin() +
+				  currentIndex,
+			  switcher->functionNamesByPriority.begin() +
+				  currentIndex - 1);
+	}
+	ui->macroPriorityWarning->setVisible(
+		switcher->functionNamesByPriority[0] != macro_func);
+}
+
+void AdvSceneSwitcher::on_priorityDown_clicked()
+{
+	int currentIndex = ui->priorityList->currentRow();
+	if (currentIndex != -1 &&
+	    currentIndex != ui->priorityList->count() - 1) {
+		ui->priorityList->insertItem(
+			currentIndex + 1,
+			ui->priorityList->takeItem(currentIndex));
+		ui->priorityList->setCurrentRow(currentIndex + 1);
+		std::lock_guard<std::mutex> lock(switcher->m);
+
+		iter_swap(switcher->functionNamesByPriority.begin() +
+				  currentIndex,
+			  switcher->functionNamesByPriority.begin() +
+				  currentIndex + 1);
+	}
+	ui->macroPriorityWarning->setVisible(
+		switcher->functionNamesByPriority[0] != macro_func);
 }
 
 } // namespace advss
