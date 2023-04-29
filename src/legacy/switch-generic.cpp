@@ -1,6 +1,9 @@
 #include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+constexpr auto previous_scene_name = "Previous Scene";
+constexpr auto current_transition_name = "Current Transition";
+
 namespace advss {
 
 static inline bool SceneGroupValid(SceneGroup *group)

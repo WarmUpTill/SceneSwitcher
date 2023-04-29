@@ -18,12 +18,6 @@
 
 namespace advss {
 
-SwitcherData *switcher = nullptr;
-SwitcherData *GetSwitcher()
-{
-	return switcher;
-}
-
 AdvSceneSwitcher *AdvSceneSwitcher::window = nullptr;
 
 /******************************************************************************
@@ -555,15 +549,17 @@ void resetLiveTime()
 
 void checkAutoStartRecording()
 {
-	if (switcher->autoStartEvent == AutoStartEvent::RECORDING ||
-	    switcher->autoStartEvent == AutoStartEvent::RECORINDG_OR_STREAMING)
+	if (switcher->autoStartEvent == SwitcherData::AutoStart::RECORDING ||
+	    switcher->autoStartEvent ==
+		    SwitcherData::AutoStart::RECORINDG_OR_STREAMING)
 		switcher->Start();
 }
 
 void checkAutoStartStreaming()
 {
-	if (switcher->autoStartEvent == AutoStartEvent::STREAMING ||
-	    switcher->autoStartEvent == AutoStartEvent::RECORINDG_OR_STREAMING)
+	if (switcher->autoStartEvent == SwitcherData::AutoStart::STREAMING ||
+	    switcher->autoStartEvent ==
+		    SwitcherData::AutoStart::RECORINDG_OR_STREAMING)
 		switcher->Start();
 }
 
@@ -726,14 +722,12 @@ void OpenSettingsWindow()
 	}
 }
 
-extern "C" void InitSceneSwitcher(obs_module_t *m, translateFunc t)
+extern "C" void InitSceneSwitcher(obs_module_t *module, translateFunc translate)
 {
 	blog(LOG_INFO, "version: %s", g_GIT_TAG);
 	blog(LOG_INFO, "version: %s", g_GIT_SHA1);
 
-	switcher = new SwitcherData;
-	switcher->modulePtr = m;
-	switcher->translate = t;
+	switcher = new SwitcherData(module, translate);
 
 	PlatformInit();
 	LoadPlugins();
@@ -754,10 +748,13 @@ const char *obs_module_text(const char *text)
 	if (!advss::switcher) {
 		return "";
 	}
-	return advss::switcher->translate(text);
+	return advss::switcher->Translate(text);
 }
 
 obs_module_t *obs_current_module()
 {
-	return advss::switcher->modulePtr;
+	if (!advss::switcher) {
+		return nullptr;
+	}
+	return advss::switcher->GetModule();
 }

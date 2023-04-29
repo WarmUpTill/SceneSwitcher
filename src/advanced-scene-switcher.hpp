@@ -4,12 +4,6 @@
 
 #include <ui_advanced-scene-switcher.h>
 
-#define blog(level, msg, ...) blog(level, "[adv-ss] " msg, ##__VA_ARGS__)
-#define vblog(level, msg, ...)                   \
-	if (GetSwitcher()->verbose) {            \
-		blog(level, msg, ##__VA_ARGS__); \
-	}
-
 class QCloseEvent;
 
 namespace advss {
@@ -380,12 +374,5 @@ public slots:
 };
 
 void OpenSettingsWindow();
-
-/******************************************************************************
- * Main SwitcherData
- ******************************************************************************/
-struct SwitcherData;
-extern SwitcherData *switcher;
-SwitcherData *GetSwitcher();
 
 } // namespace advss

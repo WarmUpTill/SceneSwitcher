@@ -3,6 +3,28 @@
 
 namespace advss {
 
+SwitcherData *switcher = nullptr;
+SwitcherData *GetSwitcher()
+{
+	return switcher;
+}
+
+SwitcherData::SwitcherData(obs_module_t *m, translateFunc t)
+{
+	_modulePtr = m;
+	_translate = t;
+}
+
+const char *SwitcherData::Translate(const char *text)
+{
+	return _translate(text);
+}
+
+obs_module_t *SwitcherData::GetModule()
+{
+	return _modulePtr;
+}
+
 void SwitcherData::Prune()
 {
 	for (size_t i = 0; i < windowSwitches.size(); i++) {
@@ -13,7 +35,7 @@ void SwitcherData::Prune()
 	}
 
 	if (nonMatchingScene && !WeakSourceValid(nonMatchingScene)) {
-		switchIfNotMatching = NO_SWITCH;
+		switchIfNotMatching = NoMatch::NO_SWITCH;
 		nonMatchingScene = nullptr;
 	}
 

@@ -261,6 +261,8 @@ target_sources(
           src/utils/name-dialog.cpp
           src/utils/name-dialog.hpp
           src/utils/obs-dock.hpp
+          src/utils/priority-helper.cpp
+          src/utils/priority-helper.hpp
           src/utils/process-config.cpp
           src/utils/process-config.hpp
           src/utils/regex-config.cpp
