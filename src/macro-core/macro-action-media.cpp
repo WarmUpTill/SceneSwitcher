@@ -1,5 +1,4 @@
 #include "macro-action-media.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -154,7 +153,7 @@ void MacroActionMediaEdit::SourceChanged(const SourceSelection &source)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_mediaSource = source;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -166,7 +165,7 @@ void MacroActionMediaEdit::ActionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_action = static_cast<MediaAction>(value);
 	SetWidgetVisibility();
 }
@@ -177,7 +176,7 @@ void MacroActionMediaEdit::DurationChanged(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_seek = dur;
 }
 

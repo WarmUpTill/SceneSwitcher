@@ -1,7 +1,6 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-file.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "curl-helper.hpp"
 
 #include <QTextStream>
@@ -331,7 +330,7 @@ void MacroConditionFileEdit::FileTypeChanged(int index)
 		_checkModificationDate->setDisabled(true);
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_fileType = type;
 }
 
@@ -341,7 +340,7 @@ void MacroConditionFileEdit::ConditionChanged(int index)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_condition =
 		static_cast<MacroConditionFile::ConditionType>(index);
 	SetWidgetVisibility();
@@ -353,7 +352,7 @@ void MacroConditionFileEdit::PathChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_file = text.toUtf8().constData();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -365,7 +364,7 @@ void MacroConditionFileEdit::MatchTextChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_text = _matchText->toPlainText().toUtf8().constData();
 
 	adjustSize();
@@ -378,7 +377,7 @@ void MacroConditionFileEdit::RegexChanged(RegexConfig conf)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_regex = conf;
 	adjustSize();
 	updateGeometry();
@@ -390,7 +389,7 @@ void MacroConditionFileEdit::CheckModificationDateChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_useTime = state;
 }
 
@@ -400,7 +399,7 @@ void MacroConditionFileEdit::OnlyMatchIfChangedChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_onlyMatchIfChanged = state;
 }
 

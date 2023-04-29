@@ -1,4 +1,5 @@
 #include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "macro-condition-edit.hpp"
 #include "macro-condition-scene.hpp"
 #include "section.hpp"
@@ -235,7 +236,7 @@ void MacroConditionEdit::LogicSelectionChanged(int idx)
 		type = static_cast<LogicType>(idx + logic_root_offset);
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	(*_entryData)->SetLogicType(type);
 }
 
@@ -302,7 +303,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 	_dur->SetValue(temp);
 	HeaderInfoChanged("");
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		auto logic = (*_entryData)->GetLogicType();
 		_entryData->reset();
 		*_entryData = MacroConditionFactory::Create(id, macro);
@@ -324,7 +325,7 @@ void MacroConditionEdit::DurationChanged(const Duration &seconds)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	(*_entryData)->SetDuration(seconds);
 }
 
@@ -334,7 +335,7 @@ void MacroConditionEdit::DurationModifierChanged(DurationModifier::Type m)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	(*_entryData)->SetDurationModifier(m);
 }
 
@@ -369,7 +370,7 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 		logic = LogicType::ROOT_NONE;
 	}
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		auto cond = macro->Conditions().emplace(
 			macro->Conditions().begin() + idx,
 			MacroConditionFactory::Create(id, macro.get()));
@@ -421,7 +422,7 @@ void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 	}
 
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		conditionsList->Remove(idx);
 		macro->Conditions().erase(macro->Conditions().begin() + idx);
 		macro->UpdateConditionIndices();
@@ -481,7 +482,7 @@ void AdvSceneSwitcher::SwapConditions(Macro *m, int pos1, int pos2)
 	}
 
 	bool root = pos1 == 0;
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	iter_swap(m->Conditions().begin() + pos1,
 		  m->Conditions().begin() + pos2);
 	m->UpdateConditionIndices();
@@ -569,7 +570,7 @@ void AdvSceneSwitcher::MacroConditionReorder(int to, int from)
 		return;
 	}
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		auto condition = macro->Conditions().at(from);
 		if (to == 0) {
 			condition->SetLogicType(LogicType::ROOT_NONE);

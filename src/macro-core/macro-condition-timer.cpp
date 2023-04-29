@@ -1,7 +1,5 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-timer.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -202,7 +200,7 @@ void MacroConditionTimerEdit::TimerTypeChanged(int type)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_type = static_cast<TimerType>(type);
 	SetWidgetVisibility();
 }
@@ -213,7 +211,7 @@ void MacroConditionTimerEdit::DurationChanged(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_duration = dur;
 }
 
@@ -223,7 +221,7 @@ void MacroConditionTimerEdit::Duration2Changed(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_duration2 = dur;
 }
 
@@ -233,7 +231,7 @@ void MacroConditionTimerEdit::SaveRemainingChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_saveRemaining = state;
 }
 
@@ -243,7 +241,7 @@ void MacroConditionTimerEdit::AutoResetChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_oneshot = !state;
 }
 
@@ -253,7 +251,7 @@ void MacroConditionTimerEdit::PauseContinueClicked()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	if (_entryData->_paused) {
 		timer.start(1000);
 		_entryData->Continue();
@@ -270,7 +268,7 @@ void MacroConditionTimerEdit::ResetClicked()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->Reset();
 }
 

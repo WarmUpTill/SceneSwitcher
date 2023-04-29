@@ -1,5 +1,5 @@
 #pragma once
-#include "macro.hpp"
+#include "macro-condition-edit.hpp"
 #include "resizing-text-edit.hpp"
 #include "variable.hpp"
 #include "regex-config.hpp"

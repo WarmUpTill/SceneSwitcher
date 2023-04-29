@@ -1,7 +1,5 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-scene-order.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -270,7 +268,7 @@ void MacroConditionSceneOrderEdit::SceneChanged(const SceneSelection &s)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_scene = s;
 }
 
@@ -280,7 +278,7 @@ void MacroConditionSceneOrderEdit::SourceChanged(const SceneItemSelection &item)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -292,7 +290,7 @@ void MacroConditionSceneOrderEdit::Source2Changed(const SceneItemSelection &item
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_source2 = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -304,7 +302,7 @@ void MacroConditionSceneOrderEdit::ConditionChanged(int index)
 		return;
 	}
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		_entryData->_condition =
 			static_cast<MacroConditionSceneOrder::Condition>(index);
 	}
@@ -330,7 +328,7 @@ void MacroConditionSceneOrderEdit::PositionChanged(
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_position = value;
 }
 

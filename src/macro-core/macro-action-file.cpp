@@ -1,5 +1,4 @@
 #include "macro-action-file.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 #include <QFile>
@@ -141,7 +140,7 @@ void MacroActionFileEdit::PathChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_file = text.toUtf8().constData();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -153,7 +152,7 @@ void MacroActionFileEdit::TextChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_text = _text->toPlainText().toStdString();
 
 	adjustSize();
@@ -166,7 +165,7 @@ void MacroActionFileEdit::ActionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_action = static_cast<FileAction>(value);
 }
 

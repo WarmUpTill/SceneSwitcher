@@ -1,4 +1,5 @@
 #include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "status-control.hpp"
 #include "file-selection.hpp"
 #include "utility.hpp"

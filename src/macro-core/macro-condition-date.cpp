@@ -1,7 +1,6 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-date.hpp"
+#include "macro.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 #include <QCalendarWidget>
 
@@ -479,7 +478,7 @@ void MacroConditionDateEdit::DayOfWeekChanged(int day)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_dayOfWeek = static_cast<MacroConditionDate::Day>(day);
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -491,7 +490,7 @@ void MacroConditionDateEdit::ConditionChanged(int cond)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_condition =
 		static_cast<MacroConditionDate::Condition>(cond);
 	SetWidgetStatus();
@@ -505,7 +504,7 @@ void MacroConditionDateEdit::DateChanged(const QDate &date)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->SetDate1(date);
 
 	emit HeaderInfoChanged(
@@ -518,7 +517,7 @@ void MacroConditionDateEdit::TimeChanged(const QTime &time)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->SetTime1(time);
 
 	emit HeaderInfoChanged(
@@ -531,7 +530,7 @@ void MacroConditionDateEdit::Date2Changed(const QDate &date)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->SetDate2(date);
 }
 
@@ -541,7 +540,7 @@ void MacroConditionDateEdit::Time2Changed(const QTime &time)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->SetTime2(time);
 }
 
@@ -551,7 +550,7 @@ void MacroConditionDateEdit::IgnoreDateChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_ignoreDate = !state;
 	SetWidgetStatus();
 }
@@ -562,7 +561,7 @@ void MacroConditionDateEdit::IgnoreTimeChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_ignoreTime = !state;
 	SetWidgetStatus();
 }
@@ -573,7 +572,7 @@ void MacroConditionDateEdit::RepeatChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_repeat = state;
 	_duration->setDisabled(!state);
 	SetWidgetStatus();
@@ -585,7 +584,7 @@ void MacroConditionDateEdit::UpdateOnRepeatChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_updateOnRepeat = state;
 }
 
@@ -595,7 +594,7 @@ void MacroConditionDateEdit::DurationChanged(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_duration = dur;
 }
 
@@ -605,7 +604,7 @@ void MacroConditionDateEdit::AdvancedSettingsToggleClicked()
 		return;
 	}
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		_entryData->_dayOfWeekCheck = !_entryData->_dayOfWeekCheck;
 		_entryData->_condition = MacroConditionDate::Condition::AT;
 	}

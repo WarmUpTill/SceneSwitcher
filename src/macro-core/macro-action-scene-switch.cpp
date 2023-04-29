@@ -1,5 +1,5 @@
 #include "macro-action-scene-switch.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "scene-switch-helpers.hpp"
 #include "utility.hpp"
 
@@ -234,7 +234,7 @@ void MacroActionSwitchSceneEdit::DurationChanged(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_duration = dur;
 }
 
@@ -244,7 +244,7 @@ void MacroActionSwitchSceneEdit::BlockUntilTransitionDoneChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_blockUntilTransitionDone = state;
 }
 
@@ -285,7 +285,7 @@ void MacroActionSwitchSceneEdit::SceneChanged(const SceneSelection &s)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_scene = s;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -297,7 +297,7 @@ void MacroActionSwitchSceneEdit::TransitionChanged(const TransitionSelection &t)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_transition = t;
 	SetDurationVisibility();
 }

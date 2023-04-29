@@ -1,5 +1,4 @@
 #include "macro-action-scene-visibility.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -248,7 +247,7 @@ void MacroActionSceneVisibilityEdit::SceneChanged(const SceneSelection &s)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_scene = s;
 }
 
@@ -258,7 +257,7 @@ void MacroActionSceneVisibilityEdit::SourceTypeChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_sourceType = static_cast<SceneItemSourceType>(value);
 	SetWidgetVisibility();
 }
@@ -270,7 +269,7 @@ void MacroActionSceneVisibilityEdit::SourceChanged(
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -282,7 +281,7 @@ void MacroActionSceneVisibilityEdit::SourceGroupChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	if (text == obs_module_text("AdvSceneSwitcher.selectItem")) {
 		_entryData->_sourceGroup = "";
 	} else {
@@ -298,7 +297,7 @@ void MacroActionSceneVisibilityEdit::ActionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_action = static_cast<SceneVisibilityAction>(value);
 }
 

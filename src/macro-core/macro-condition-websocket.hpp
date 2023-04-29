@@ -1,5 +1,5 @@
 #pragma once
-#include "macro.hpp"
+#include "macro-condition-edit.hpp"
 #include "connection-manager.hpp"
 #include "variable-text-edit.hpp"
 #include "regex-config.hpp"

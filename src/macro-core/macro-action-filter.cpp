@@ -1,5 +1,4 @@
 #include "macro-action-filter.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -185,7 +184,7 @@ void MacroActionFilterEdit::SourceChanged(const SourceSelection &source)
 		return;
 	}
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		_entryData->_source = source;
 	}
 	_filters->clear();
@@ -199,7 +198,7 @@ void MacroActionFilterEdit::FilterChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_filterName = text.toStdString();
 	_entryData->_filter =
 		GetWeakFilterByQString(_entryData->_source.GetSource(), text);
@@ -213,7 +212,7 @@ void MacroActionFilterEdit::ActionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_action = static_cast<MacroActionFilter::Action>(value);
 	SetWidgetVisibility(_entryData->_action ==
 			    MacroActionFilter::Action::SETTINGS);
@@ -236,7 +235,7 @@ void MacroActionFilterEdit::SettingsChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_settings = _settings->toPlainText().toStdString();
 
 	adjustSize();

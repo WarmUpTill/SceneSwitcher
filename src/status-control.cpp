@@ -1,5 +1,5 @@
 #include "status-control.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
 
 #include <obs-module.h>
@@ -9,6 +9,7 @@
 
 namespace advss {
 
+void OpenSettingsWindow();
 StatusDock *dock = nullptr;
 
 StatusControl::StatusControl(QWidget *parent, bool noLayout)

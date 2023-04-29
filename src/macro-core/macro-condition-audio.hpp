@@ -1,5 +1,5 @@
 #pragma once
-#include "macro.hpp"
+#include "macro-condition-edit.hpp"
 #include "volume-control.hpp"
 #include "slider-spinbox.hpp"
 #include "source-selection.hpp"

@@ -1,7 +1,5 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-run.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 #include <QProcess>
 #include <QDesktopServices>
@@ -185,7 +183,7 @@ void MacroConditionRunEdit::TimeoutChanged(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_timeout = dur;
 }
 
@@ -195,7 +193,7 @@ void MacroConditionRunEdit::CheckExitCodeChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_checkExitCode = state;
 }
 
@@ -205,7 +203,7 @@ void MacroConditionRunEdit::ExitCodeChanged(int exitCode)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_exitCode = exitCode;
 }
 
@@ -215,7 +213,7 @@ void MacroConditionRunEdit::ProcessConfigChanged(const ProcessConfig &conf)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_procConfig = conf;
 	adjustSize();
 	updateGeometry();

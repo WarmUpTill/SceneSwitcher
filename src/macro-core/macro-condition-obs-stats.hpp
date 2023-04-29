@@ -1,8 +1,9 @@
 #pragma once
-#include "macro.hpp"
+#include "macro-condition-edit.hpp"
+#include "variable-spinbox.hpp"
+
 #include <QWidget>
 #include <QComboBox>
-#include <variable-spinbox.hpp>
 #include <util/platform.h>
 
 namespace advss {

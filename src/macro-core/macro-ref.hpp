@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <QString>
-#include <obs-module.h>
+#include <obs-data.h>
 
 namespace advss {
 

@@ -1,5 +1,5 @@
 #include "macro-action-plugin-state.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
 
 #include <thread>
@@ -22,12 +22,12 @@ const static std::map<PluginStateAction, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.pluginState.type.import"},
 };
 
-const static std::map<NoMatch, std::string> noMatchValues = {
-	{NO_SWITCH,
+const static std::map<SwitcherData::NoMatch, std::string> noMatchValues = {
+	{SwitcherData::NoMatch::NO_SWITCH,
 	 "AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.dontSwitch"},
-	{SWITCH,
+	{SwitcherData::NoMatch::SWITCH,
 	 "AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.switchTo"},
-	{RANDOM_SWITCH,
+	{SwitcherData::NoMatch::RANDOM_SWITCH,
 	 "AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.switchToRandom"},
 };
 
@@ -52,8 +52,9 @@ void importSettings(const std::string &path)
 
 void setNoMatchBehaviour(int value, OBSWeakSource &scene)
 {
-	switcher->switchIfNotMatching = static_cast<NoMatch>(value);
-	if (switcher->switchIfNotMatching == SWITCH) {
+	switcher->switchIfNotMatching =
+		static_cast<SwitcherData::NoMatch>(value);
+	if (switcher->switchIfNotMatching == SwitcherData::NoMatch::SWITCH) {
 		switcher->nonMatchingScene = scene;
 	}
 }
@@ -198,7 +199,7 @@ void MacroActionPluginStateEdit::ActionChanged(int value)
 	}
 
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		_entryData->_action = static_cast<PluginStateAction>(value);
 		SetWidgetVisibility();
 	}
@@ -213,7 +214,7 @@ void MacroActionPluginStateEdit::ValueChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_value = value;
 	SetWidgetVisibility();
 }
@@ -224,7 +225,7 @@ void MacroActionPluginStateEdit::SceneChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_scene = GetWeakSourceByQString(text);
 }
 
@@ -234,7 +235,7 @@ void MacroActionPluginStateEdit::PathChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_settingsPath = text.toStdString();
 }
 
@@ -253,7 +254,8 @@ void MacroActionPluginStateEdit::SetWidgetVisibility()
 		break;
 	case PluginStateAction::NO_MATCH_BEHAVIOUR:
 		_values->show();
-		if ((NoMatch)_entryData->_value == SWITCH) {
+		if (static_cast<SwitcherData::NoMatch>(_entryData->_value) ==
+		    SwitcherData::NoMatch::SWITCH) {
 			_scenes->show();
 		}
 		break;

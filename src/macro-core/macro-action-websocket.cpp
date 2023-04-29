@@ -1,5 +1,4 @@
 #include "macro-action-websocket.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -178,7 +177,7 @@ void MacroActionWebsocketEdit::ActionChanged(int index)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_type = static_cast<MacroActionWebsocket::Type>(index);
 	if (_entryData->_type == MacroActionWebsocket::Type::REQUEST) {
 		SetupRequestEdit();
@@ -195,7 +194,7 @@ void MacroActionWebsocketEdit::MessageChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_message = _message->toPlainText().toUtf8().constData();
 
 	adjustSize();
@@ -209,7 +208,7 @@ void MacroActionWebsocketEdit::ConnectionSelectionChanged(
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_connection = GetWeakConnectionByQString(connection);
 	emit(HeaderInfoChanged(connection));
 }

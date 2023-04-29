@@ -1,5 +1,5 @@
 #include "macro-action-sequence.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "macro.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -177,7 +177,7 @@ void MacroActionSequenceEdit::Add(const std::string &name)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	MacroRef macro(name);
 	_entryData->_macros.push_back(macro);
 	adjustSize();
@@ -189,7 +189,7 @@ void MacroActionSequenceEdit::Remove(int idx)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_macros.erase(std::next(_entryData->_macros.begin(), idx));
 	adjustSize();
 }
@@ -200,13 +200,13 @@ void MacroActionSequenceEdit::Up(int idx)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	std::swap(_entryData->_macros[idx], _entryData->_macros[idx - 1]);
 }
 
 void MacroActionSequenceEdit::Down(int idx)
 {
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	std::swap(_entryData->_macros[idx], _entryData->_macros[idx + 1]);
 }
 
@@ -217,7 +217,7 @@ void MacroActionSequenceEdit::Replace(int idx, const std::string &name)
 	}
 
 	MacroRef macro(name);
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_macros[idx] = macro;
 	adjustSize();
 }
@@ -232,7 +232,7 @@ void MacroActionSequenceEdit::ContinueFromClicked()
 	if (idx == -1) {
 		return;
 	}
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_lastIdx = idx - 1;
 }
 
@@ -242,7 +242,7 @@ void MacroActionSequenceEdit::RestartChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_restart = state;
 }
 

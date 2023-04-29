@@ -2,7 +2,6 @@
 
 #include <macro-condition-edit.hpp>
 #include <utility.hpp>
-#include <advanced-scene-switcher.hpp>
 #include <openvr.h>
 
 namespace advss {
@@ -236,7 +235,7 @@ void MacroConditionOpenVREdit::MinXChanged(const NumberVariable<double> &pos)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_minX = pos;
 }
 
@@ -246,7 +245,7 @@ void MacroConditionOpenVREdit::MinYChanged(const NumberVariable<double> &pos)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_minY = pos;
 }
 
@@ -256,7 +255,7 @@ void MacroConditionOpenVREdit::MinZChanged(const NumberVariable<double> &pos)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_minZ = pos;
 }
 
@@ -266,7 +265,7 @@ void MacroConditionOpenVREdit::MaxXChanged(const NumberVariable<double> &pos)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_maxX = pos;
 }
 
@@ -276,7 +275,7 @@ void MacroConditionOpenVREdit::MaxYChanged(const NumberVariable<double> &pos)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_maxY = pos;
 }
 
@@ -286,7 +285,7 @@ void MacroConditionOpenVREdit::MaxZChanged(const NumberVariable<double> &pos)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_maxZ = pos;
 }
 

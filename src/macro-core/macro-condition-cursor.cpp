@@ -1,10 +1,10 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-cursor.hpp"
+#include "switcher-data.hpp"
 #include "platform-funcs.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 #include <QScreen>
+#include <QGuiApplication>
 
 namespace advss {
 
@@ -219,7 +219,7 @@ void MacroConditionCursorEdit::ConditionChanged(int index)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_condition = static_cast<MacroConditionCursor::Condition>(
 		_conditions->itemData(index).toInt());
 	SetWidgetVisibility();
@@ -231,7 +231,7 @@ void MacroConditionCursorEdit::ButtonChanged(int index)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_button = static_cast<MacroConditionCursor::Button>(
 		_buttons->itemData(index).toInt());
 }
@@ -242,7 +242,7 @@ void MacroConditionCursorEdit::MinXChanged(const NumberVariable<int> &pos)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_minX = pos;
 	SetupFrame();
 }
@@ -253,7 +253,7 @@ void MacroConditionCursorEdit::MinYChanged(const NumberVariable<int> &pos)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_minY = pos;
 	SetupFrame();
 }
@@ -264,7 +264,7 @@ void MacroConditionCursorEdit::MaxXChanged(const NumberVariable<int> &pos)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_maxX = pos;
 	SetupFrame();
 }
@@ -275,7 +275,7 @@ void MacroConditionCursorEdit::MaxYChanged(const NumberVariable<int> &pos)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_maxY = pos;
 	SetupFrame();
 }

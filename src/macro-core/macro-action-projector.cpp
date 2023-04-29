@@ -1,7 +1,7 @@
 #include "macro-action-projector.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "utility.hpp"
 
+#include <QGuiApplication>
 #include <QScreen>
 
 namespace advss {
@@ -227,7 +227,7 @@ void MacroActionProjectorEdit::SceneChanged(const SceneSelection &s)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_scene = s;
 }
 
@@ -237,7 +237,7 @@ void MacroActionProjectorEdit::SourceChanged(const SourceSelection &source)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_source = source;
 }
 
@@ -247,7 +247,7 @@ void MacroActionProjectorEdit::MonitorChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_monitor = value;
 }
 
@@ -257,7 +257,7 @@ void MacroActionProjectorEdit::WindowTypeChanged(int)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_fullscreen =
 		_windowTypes->currentText() ==
 		obs_module_text("AdvSceneSwitcher.action.projector.fullscreen");
@@ -270,7 +270,7 @@ void MacroActionProjectorEdit::TypeChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_type = static_cast<MacroActionProjector::Type>(value);
 	SetWidgetVisibility();
 }

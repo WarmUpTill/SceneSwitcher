@@ -1,7 +1,6 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-media.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 
@@ -467,7 +466,7 @@ void MacroConditionMediaEdit::SourceTypeChanged(int idx)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_sourceType = static_cast<MacroConditionMedia::Type>(
 		_sourceTypes->itemData(idx).toInt());
 
@@ -488,7 +487,7 @@ void MacroConditionMediaEdit::SourceChanged(const SourceSelection &source)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_sourceGroup.clear();
 	_entryData->_sourceType = MacroConditionMedia::Type::SOURCE;
 	_entryData->ClearSignalHandler();
@@ -505,7 +504,7 @@ void MacroConditionMediaEdit::SceneChanged(const SceneSelection &s)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_scene = s;
 	_entryData->UpdateMediaSourcesOfSceneList();
 	emit HeaderInfoChanged(
@@ -532,7 +531,7 @@ void MacroConditionMediaEdit::StateChanged(int index)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_state = getMediaStateFromIdx(index);
 	if (_entryData->_sourceType != MacroConditionMedia::Type::SOURCE) {
 		_entryData->UpdateMediaSourcesOfSceneList();
@@ -552,7 +551,7 @@ void MacroConditionMediaEdit::TimeRestrictionChanged(int index)
 		_time->setDisabled(false);
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_restriction =
 		static_cast<MacroConditionMedia::Time>(index);
 	if (_entryData->_sourceType != MacroConditionMedia::Type::SOURCE) {
@@ -566,7 +565,7 @@ void MacroConditionMediaEdit::TimeChanged(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_time = dur;
 	if (_entryData->_sourceType != MacroConditionMedia::Type::SOURCE) {
 		_entryData->UpdateMediaSourcesOfSceneList();
@@ -579,7 +578,7 @@ void MacroConditionMediaEdit::OnChangeChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_onlyMatchOnChagne = value;
 	if (_entryData->_sourceType != MacroConditionMedia::Type::SOURCE) {
 		_entryData->UpdateMediaSourcesOfSceneList();

@@ -1,7 +1,5 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-filter.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 #include <regex>
 
@@ -183,7 +181,7 @@ void MacroConditionFilterEdit::SourceChanged(const SourceSelection &source)
 		return;
 	}
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		_entryData->_source = source;
 	}
 	_filters->clear();
@@ -197,7 +195,7 @@ void MacroConditionFilterEdit::FilterChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_filterName = text.toStdString();
 	_entryData->_filter =
 		GetWeakFilterByQString(_entryData->_source.GetSource(), text);
@@ -211,7 +209,7 @@ void MacroConditionFilterEdit::ConditionChanged(int index)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_condition =
 		static_cast<MacroConditionFilter::Condition>(index);
 	SetSettingsSelectionVisible(_entryData->_condition ==
@@ -237,7 +235,7 @@ void MacroConditionFilterEdit::SettingsChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_settings = _settings->toPlainText().toStdString();
 
 	adjustSize();
@@ -250,7 +248,7 @@ void MacroConditionFilterEdit::RegexChanged(RegexConfig conf)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_regex = conf;
 
 	adjustSize();

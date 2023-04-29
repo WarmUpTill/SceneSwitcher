@@ -1,6 +1,6 @@
 #include "websocket-helpers.hpp"
 #include "connection-manager.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 
 #include <QCryptographicHash>
 #include <obs-websocket-api.h>

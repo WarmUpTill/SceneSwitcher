@@ -1,5 +1,4 @@
 #include "macro-action-hotkey.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "platform-funcs.hpp"
 #include "utility.hpp"
 
@@ -512,7 +511,7 @@ void MacroActionHotkeyEdit::LShiftChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_leftShift = state;
 }
 
@@ -522,7 +521,7 @@ void MacroActionHotkeyEdit::RShiftChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_rightShift = state;
 }
 
@@ -532,7 +531,7 @@ void MacroActionHotkeyEdit::LCtrlChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_leftCtrl = state;
 }
 
@@ -542,7 +541,7 @@ void MacroActionHotkeyEdit::RCtrlChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_rightCtrl = state;
 }
 
@@ -552,7 +551,7 @@ void MacroActionHotkeyEdit::LAltChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_leftAlt = state;
 }
 
@@ -562,7 +561,7 @@ void MacroActionHotkeyEdit::RAltChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_rightAlt = state;
 }
 
@@ -572,7 +571,7 @@ void MacroActionHotkeyEdit::LMetaChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_leftMeta = state;
 }
 
@@ -582,7 +581,7 @@ void MacroActionHotkeyEdit::RMetaChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_rightMeta = state;
 }
 
@@ -592,7 +591,7 @@ void MacroActionHotkeyEdit::DurationChanged(const Duration &dur)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_duration = dur;
 }
 
@@ -602,7 +601,7 @@ void MacroActionHotkeyEdit::OnlySendToOBSChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_onlySendToObs = state;
 	SetWarningVisibility();
 }
@@ -613,7 +612,7 @@ void MacroActionHotkeyEdit::KeyChanged(int key)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_key = static_cast<HotkeyType>(key);
 }
 

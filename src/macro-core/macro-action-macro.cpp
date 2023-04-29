@@ -1,5 +1,5 @@
 #include "macro-action-macro.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "macro.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -157,7 +157,7 @@ void MacroActionMacroEdit::MacroChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_macro = text;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -169,7 +169,7 @@ void MacroActionMacroEdit::ActionChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_action = static_cast<PerformMacroAction>(value);
 
 	if (_entryData->_action == PerformMacroAction::RUN ||

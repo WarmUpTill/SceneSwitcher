@@ -1,5 +1,5 @@
 #include "macro-action-random.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "macro.hpp"
 #include "utility.hpp"
 
 #include <cstdlib>
@@ -151,7 +151,7 @@ void MacroActionRandomEdit::Add(const std::string &name)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	MacroRef macro(name);
 	_entryData->_macros.push_back(macro);
 	_allowRepeat->setVisible(ShouldShowAllowRepeat());
@@ -164,7 +164,7 @@ void MacroActionRandomEdit::Remove(int idx)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_macros.erase(std::next(_entryData->_macros.begin(), idx));
 	_allowRepeat->setVisible(ShouldShowAllowRepeat());
 	adjustSize();
@@ -177,7 +177,7 @@ void MacroActionRandomEdit::Replace(int idx, const std::string &name)
 	}
 
 	MacroRef macro(name);
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_macros[idx] = macro;
 	adjustSize();
 }
@@ -188,7 +188,7 @@ void MacroActionRandomEdit::AllowRepeatChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_allowRepeat = value;
 }
 

@@ -1,5 +1,6 @@
 #include "hotkey.hpp"
 #include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include <obs-module.h>
 #include <fstream>
 #include <regex>

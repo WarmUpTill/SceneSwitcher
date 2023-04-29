@@ -11,12 +11,12 @@
 #include <obs-frontend-api.h>
 #include <deque>
 #include <unordered_map>
-#include "scene-group.hpp"
 
 namespace advss {
 
 class SceneSelection;
 class RegexConfig;
+struct SceneGroup;
 
 /* Source helpers */
 

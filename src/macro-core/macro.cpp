@@ -3,7 +3,7 @@
 #include "macro-condition-edit.hpp"
 #include "macro-dock.hpp"
 #include "macro-action-scene-switch.hpp"
-#include "advanced-scene-switcher.hpp"
+#include "switcher-data.hpp"
 #include "hotkey.hpp"
 
 #include <limits>

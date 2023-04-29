@@ -1,5 +1,4 @@
 #include "macro-condition.hpp"
-#include "advanced-scene-switcher.hpp"
 
 namespace advss {
 

@@ -1,8 +1,7 @@
-#include "macro-condition-edit.hpp"
 #include "macro-condition-window.hpp"
+#include "switcher-data.hpp"
 #include "platform-funcs.hpp"
 #include "utility.hpp"
-#include "advanced-scene-switcher.hpp"
 
 #include <regex>
 
@@ -173,7 +172,7 @@ void MacroConditionWindowEdit::WindowChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_window = text.toStdString();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -185,7 +184,7 @@ void MacroConditionWindowEdit::FullscreenChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_fullscreen = state;
 }
 
@@ -195,7 +194,7 @@ void MacroConditionWindowEdit::MaximizedChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_maximized = state;
 }
 
@@ -205,7 +204,7 @@ void MacroConditionWindowEdit::FocusedChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_focus = state;
 	SetWidgetVisibility();
 }
@@ -216,7 +215,7 @@ void MacroConditionWindowEdit::WindowFocusChanged(int state)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_entryData->_windowFocusChanged = state;
 	SetWidgetVisibility();
 }

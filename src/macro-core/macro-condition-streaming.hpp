@@ -1,5 +1,6 @@
 #pragma once
-#include "macro.hpp"
+#include "macro-condition-edit.hpp"
+
 #include <QWidget>
 #include <QComboBox>
 

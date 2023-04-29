@@ -1,6 +1,5 @@
 #include "macro-condition-video.hpp"
 
-#include <advanced-scene-switcher.hpp>
 #include <macro-condition-edit.hpp>
 #include <switcher-data.hpp>
 #include <utility.hpp>
@@ -693,7 +692,7 @@ void MacroConditionVideoEdit::SourceChanged(const SourceSelection &source)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_video.source = source;
 	HandleVideoInputUpdate();
 }
@@ -704,7 +703,7 @@ void MacroConditionVideoEdit::SceneChanged(const SceneSelection &scene)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_video.scene = scene;
 	HandleVideoInputUpdate();
 }
@@ -715,7 +714,7 @@ void MacroConditionVideoEdit::VideoInputTypeChanged(int type)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_video.type = static_cast<VideoInput::Type>(type);
 	HandleVideoInputUpdate();
 	SetWidgetVisibility();
@@ -727,7 +726,7 @@ void MacroConditionVideoEdit::ConditionChanged(int cond)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_condition = static_cast<VideoCondition>(cond);
 	_entryData->ResetLastMatch();
 	SetWidgetVisibility();
@@ -758,7 +757,7 @@ void MacroConditionVideoEdit::ImagePathChanged(const QString &text)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_file = text.toUtf8().constData();
 	_entryData->ResetLastMatch();
 	if (_entryData->LoadImageFromFile()) {
@@ -865,7 +864,7 @@ void MacroConditionVideoEdit::UsePatternForChangedCheckChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_patternMatchParameters.useForChangedCheck = value;
 	SetWidgetVisibility();
 }
@@ -877,7 +876,7 @@ void MacroConditionVideoEdit::PatternThresholdChanged(
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_patternMatchParameters.threshold = value;
 	_previewDialog.PatternMatchParamtersChanged(
 		_entryData->_patternMatchParameters);
@@ -889,7 +888,7 @@ void MacroConditionVideoEdit::ReduceLatencyChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_blockUntilScreenshotDone = value;
 }
 
@@ -899,7 +898,7 @@ void MacroConditionVideoEdit::UseAlphaAsMaskChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_patternMatchParameters.useAlphaAsMask = value;
 	_entryData->LoadImageFromFile();
 	_previewDialog.PatternMatchParamtersChanged(
@@ -912,7 +911,7 @@ void MacroConditionVideoEdit::PatternMatchModeChanged(int idx)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_patternMatchParameters.matchMode =
 		static_cast<cv::TemplateMatchModes>(
 			_patternMatchMode->itemData(idx).toInt());
@@ -927,7 +926,7 @@ void MacroConditionVideoEdit::BrightnessThresholdChanged(
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_brightnessThreshold = value;
 }
 
@@ -938,7 +937,7 @@ void MacroConditionVideoEdit::ObjectScaleThresholdChanged(
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_objMatchParameters.scaleFactor = value;
 	_previewDialog.ObjDetectParamtersChanged(
 		_entryData->_objMatchParameters);
@@ -950,7 +949,7 @@ void MacroConditionVideoEdit::MinNeighborsChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_objMatchParameters.minNeighbors = value;
 	_previewDialog.ObjDetectParamtersChanged(
 		_entryData->_objMatchParameters);
@@ -962,7 +961,7 @@ void MacroConditionVideoEdit::MinSizeChanged(advss::Size value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_objMatchParameters.minSize = value;
 	_previewDialog.ObjDetectParamtersChanged(
 		_entryData->_objMatchParameters);
@@ -982,7 +981,7 @@ void MacroConditionVideoEdit::MaxSizeChanged(advss::Size value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_objMatchParameters.maxSize = value;
 	_previewDialog.ObjDetectParamtersChanged(
 		_entryData->_objMatchParameters);
@@ -1011,7 +1010,7 @@ void MacroConditionVideoEdit::SelectColorClicked()
 	}
 
 	SetupColorLabel(color);
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_ocrParamters.color = color;
 
 	_previewDialog.OCRParamtersChanged(_entryData->_ocrParamters);
@@ -1023,7 +1022,7 @@ void MacroConditionVideoEdit::MatchTextChanged()
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_ocrParamters.text =
 		_matchText->toPlainText().toUtf8().constData();
 
@@ -1039,7 +1038,7 @@ void MacroConditionVideoEdit::RegexChanged(RegexConfig conf)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_ocrParamters.regex = conf;
 	adjustSize();
 	updateGeometry();
@@ -1053,7 +1052,7 @@ void MacroConditionVideoEdit::PageSegModeChanged(int idx)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->SetPageSegMode(static_cast<tesseract::PageSegMode>(
 		_pageSegMode->itemData(idx).toInt()));
 
@@ -1066,7 +1065,7 @@ void MacroConditionVideoEdit::CheckAreaEnableChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_areaParameters.enable = value;
 	_checkArea->setEnabled(value);
 	_selectArea->setEnabled(value);
@@ -1082,7 +1081,7 @@ void MacroConditionVideoEdit::CheckAreaChanged(advss::Area value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_areaParameters.area = value;
 	_previewDialog.AreaParamtersChanged(_entryData->_areaParameters);
 }
@@ -1100,7 +1099,7 @@ void MacroConditionVideoEdit::ThrottleEnableChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_throttleEnabled = value;
 	_throttleCount->setEnabled(value);
 }
@@ -1111,7 +1110,7 @@ void MacroConditionVideoEdit::ThrottleCountChanged(int value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+	auto lock = LockContext();
 	_entryData->_throttleCount = value / GetSwitcher()->interval;
 }
 
@@ -1147,7 +1146,7 @@ void MacroConditionVideoEdit::ModelPathChanged(const QString &text)
 
 	bool dataLoaded = false;
 	{
-		std::lock_guard<std::mutex> lock(GetSwitcher()->m);
+		auto lock = LockContext();
 		std::string path = text.toStdString();
 		dataLoaded = _entryData->LoadModelData(path);
 	}
