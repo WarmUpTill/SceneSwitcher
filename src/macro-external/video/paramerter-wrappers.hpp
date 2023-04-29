@@ -73,8 +73,8 @@ public:
 	cv::CascadeClassifier cascade;
 	NumberVariable<double> scaleFactor = defaultScaleFactor;
 	int minNeighbors = minMinNeighbors;
-	advss::Size minSize{0, 0};
-	advss::Size maxSize{0, 0};
+	Size minSize{0, 0};
+	Size maxSize{0, 0};
 };
 
 class OCRParameters {

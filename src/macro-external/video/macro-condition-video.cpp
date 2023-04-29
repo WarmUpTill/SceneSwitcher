@@ -506,14 +506,14 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			const NumberVariable<double> &)));
 	QWidget::connect(_minNeighbors, SIGNAL(valueChanged(int)), this,
 			 SLOT(MinNeighborsChanged(int)));
-	QWidget::connect(_minSize, SIGNAL(SizeChanged(advss::Size)), this,
-			 SLOT(MinSizeChanged(advss::Size)));
-	QWidget::connect(_maxSize, SIGNAL(SizeChanged(advss::Size)), this,
-			 SLOT(MaxSizeChanged(advss::Size)));
+	QWidget::connect(_minSize, SIGNAL(SizeChanged(Size)), this,
+			 SLOT(MinSizeChanged(Size)));
+	QWidget::connect(_maxSize, SIGNAL(SizeChanged(Size)), this,
+			 SLOT(MaxSizeChanged(Size)));
 	QWidget::connect(_checkAreaEnable, SIGNAL(stateChanged(int)), this,
 			 SLOT(CheckAreaEnableChanged(int)));
-	QWidget::connect(_checkArea, SIGNAL(AreaChanged(advss::Area)), this,
-			 SLOT(CheckAreaChanged(advss::Area)));
+	QWidget::connect(_checkArea, SIGNAL(AreaChanged(Area)), this,
+			 SLOT(CheckAreaChanged(Area)));
 	QWidget::connect(_modelDataPath, SIGNAL(PathChanged(const QString &)),
 			 this, SLOT(ModelPathChanged(const QString &)));
 	QWidget::connect(_throttleEnable, SIGNAL(stateChanged(int)), this,
