@@ -62,7 +62,7 @@ bool MacroConditionScene::CheckCondition()
 		SetVariableValue(GetWeakSourceName(switcher->currentScene));
 		return switcher->currentScene == _scene.GetScene(false);
 	case Type::PREVIOUS:
-		if (switcher->anySceneTransitionStarted() &&
+		if (switcher->AnySceneTransitionStarted() &&
 		    _useTransitionTargetScene) {
 			SetVariableValue(
 				GetWeakSourceName(switcher->currentScene));

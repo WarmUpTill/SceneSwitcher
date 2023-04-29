@@ -223,7 +223,7 @@ void saveHotkey(obs_data_t *obj, obs_hotkey_id id, const char *name)
 	obs_data_array_release(a);
 }
 
-void SwitcherData::saveHotkeys(obs_data_t *obj)
+void SwitcherData::SaveHotkeys(obs_data_t *obj)
 {
 	saveHotkey(obj, startHotkey, "startHotkey");
 	saveHotkey(obj, stopHotkey, "stopHotkey");
@@ -240,7 +240,7 @@ void loadHotkey(obs_data_t *obj, obs_hotkey_id id, const char *name)
 	obs_data_array_release(a);
 }
 
-void SwitcherData::loadHotkeys(obs_data_t *obj)
+void SwitcherData::LoadHotkeys(obs_data_t *obj)
 {
 	if (!hotkeysRegistered) {
 		registerHotkeys();

@@ -60,7 +60,7 @@ void AdvSceneSwitcher::on_priorityDown_clicked()
 		switcher->functionNamesByPriority[0] != macro_func);
 }
 
-bool SwitcherData::prioFuncsValid()
+bool SwitcherData::PrioFuncsValid()
 {
 	auto fNBPCopy = functionNamesByPriority;
 

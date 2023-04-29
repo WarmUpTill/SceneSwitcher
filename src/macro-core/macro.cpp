@@ -812,7 +812,7 @@ void Macro::SetHotkeysDesc()
 				   _name, _togglePauseHotkey);
 }
 
-void SwitcherData::saveMacros(obs_data_t *obj)
+void SwitcherData::SaveMacros(obs_data_t *obj)
 {
 	switcher->macroProperties.Save(obj);
 
@@ -829,7 +829,7 @@ void SwitcherData::saveMacros(obs_data_t *obj)
 	obs_data_array_release(macroArray);
 }
 
-void SwitcherData::loadMacros(obs_data_t *obj)
+void SwitcherData::LoadMacros(obs_data_t *obj)
 {
 	Hotkey::ClearAllHotkeys();
 	switcher->macroProperties.Load(obj);
@@ -884,7 +884,7 @@ void SwitcherData::loadMacros(obs_data_t *obj)
 	}
 }
 
-bool SwitcherData::checkMacros()
+bool SwitcherData::CheckMacros()
 {
 	bool ret = false;
 	for (auto &m : macros) {
@@ -900,7 +900,7 @@ bool SwitcherData::checkMacros()
 	return ret;
 }
 
-bool SwitcherData::runMacros()
+bool SwitcherData::RunMacros()
 {
 	// Create copy of macor list as elements might be removed, inserted, or
 	// reordered while macros are currently being executed.

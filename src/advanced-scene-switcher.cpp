@@ -127,7 +127,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->Prune();
 		obs_data_t *obj = obs_data_create();
-		switcher->saveSettings(obj);
+		switcher->SaveSettings(obj);
 		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
 		obs_data_release(obj);
 	} else {
@@ -141,10 +141,10 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		if (!obj) {
 			obj = obs_data_create();
 		}
-		if (switcher->versionChanged(obj, g_GIT_SHA1)) {
+		if (switcher->VersionChanged(obj, g_GIT_SHA1)) {
 			AskForBackup(obj);
 		}
-		switcher->loadSettings(obj);
+		switcher->LoadSettings(obj);
 		obs_data_release(obj);
 		switcher->m.unlock();
 
@@ -225,7 +225,7 @@ void SwitcherData::Thread()
 		}
 
 		vblog(LOG_INFO, "try to sleep for %ld", duration.count());
-		setWaitScene();
+		SetWaitScene();
 		cv.wait_for(lock, duration);
 
 		startTime = std::chrono::high_resolution_clock::now();
@@ -239,13 +239,13 @@ void SwitcherData::Thread()
 		if (checkPause()) {
 			continue;
 		}
-		setPreconditions();
-		match = checkForMatch(scene, transition, linger,
+		SetPreconditions();
+		match = CheckForMatch(scene, transition, linger,
 				      setPrevSceneAfterLinger, macroMatch);
 		if (stop) {
 			break;
 		}
-		checkNoMatchSwitch(match, scene, transition, sleep);
+		CheckNoMatchSwitch(match, scene, transition, sleep);
 		checkSwitchCooldown(match);
 
 		if (linger) {
@@ -253,14 +253,14 @@ void SwitcherData::Thread()
 			vblog(LOG_INFO, "sleep for %ld before switching scene",
 			      duration.count());
 
-			setWaitScene();
+			SetWaitScene();
 			cv.wait_for(lock, duration);
 
 			if (stop) {
 				break;
 			}
 
-			if (sceneChangedDuringWait()) {
+			if (SceneChangedDuringWait()) {
 				vblog(LOG_INFO,
 				      "scene was changed manually - ignoring match");
 
@@ -271,11 +271,11 @@ void SwitcherData::Thread()
 			}
 		}
 
-		resetForNextInterval();
+		ResetForNextInterval();
 
 		if (match) {
 			if (macroMatch) {
-				runMacros();
+				RunMacros();
 			} else {
 				SwitchScene({scene, transition, 0});
 			}
@@ -290,7 +290,7 @@ void SwitcherData::Thread()
 	blog(LOG_INFO, "stopped");
 }
 
-void SwitcherData::setPreconditions()
+void SwitcherData::SetPreconditions()
 {
 	// Window title
 	lastTitle = currentTitle;
@@ -324,7 +324,7 @@ void SwitcherData::setPreconditions()
 	lastCursorPos = GetCursorPos();
 }
 
-void SwitcherData::resetForNextInterval()
+void SwitcherData::ResetForNextInterval()
 {
 	// Core reset functions
 	ClearWebsocketMessages();
@@ -334,7 +334,7 @@ void SwitcherData::resetForNextInterval()
 	}
 }
 
-bool SwitcherData::checkForMatch(OBSWeakSource &scene,
+bool SwitcherData::CheckForMatch(OBSWeakSource &scene,
 				 OBSWeakSource &transition, int &linger,
 				 bool &setPrevSceneAfterLinger,
 				 bool &macroMatch)
@@ -384,7 +384,7 @@ bool SwitcherData::checkForMatch(OBSWeakSource &scene,
 			match = checkVideoSwitch(scene, transition);
 			break;
 		case macro_func:
-			if (checkMacros()) {
+			if (CheckMacros()) {
 				match = true;
 				macroMatch = true;
 			}
@@ -412,7 +412,7 @@ static void ResetMacros()
 void SwitcherData::Start()
 {
 	if (!(th && th->isRunning())) {
-		resetForNextInterval();
+		ResetForNextInterval();
 		ResetMacros();
 
 		stop = false;
@@ -464,13 +464,13 @@ void SwitcherData::Stop()
 	}
 }
 
-void SwitcherData::setWaitScene()
+void SwitcherData::SetWaitScene()
 {
 	waitScene = obs_frontend_get_current_scene();
 	obs_source_release(waitScene);
 }
 
-bool SwitcherData::sceneChangedDuringWait()
+bool SwitcherData::SceneChangedDuringWait()
 {
 	obs_source_t *currentSource = obs_frontend_get_current_scene();
 	if (!currentSource) {
@@ -483,7 +483,7 @@ bool SwitcherData::sceneChangedDuringWait()
 // Relies on the fact that switcher->currentScene will only be updated on event
 // OBS_FRONTEND_EVENT_SCENE_CHANGED but obs_frontend_get_current_scene() will
 // already return the scene to be transitioned to.
-bool SwitcherData::anySceneTransitionStarted()
+bool SwitcherData::AnySceneTransitionStarted()
 {
 	auto currentSceneSrouce = obs_frontend_get_current_scene();
 	auto currentScene = obs_source_get_weak_source(currentSceneSrouce);
@@ -510,7 +510,7 @@ void handleSceneChange()
 		std::chrono::high_resolution_clock::now();
 
 	// Stop waiting if scene was changed
-	if (switcher->sceneChangedDuringWait()) {
+	if (switcher->SceneChangedDuringWait()) {
 		switcher->cv.notify_one();
 	}
 
@@ -607,8 +607,8 @@ void handleExit()
 	switcher->obsIsShuttingDown = true;
 	if (switcher->shutdownConditionCount) {
 		switcher->Stop();
-		switcher->checkMacros();
-		switcher->runMacros();
+		switcher->CheckMacros();
+		switcher->RunMacros();
 	}
 	FreeSceneSwitcher();
 }

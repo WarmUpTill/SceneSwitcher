@@ -46,7 +46,7 @@ void importSettings(const std::string &path)
 	if (!obj) {
 		return;
 	}
-	switcher->loadSettings(obj);
+	switcher->LoadSettings(obj);
 	obs_data_release(obj);
 }
 

@@ -60,44 +60,44 @@ public:
 	const char *Translate(const char *);
 	obs_module_t *GetModule();
 
-	void setWaitScene();
-	bool sceneChangedDuringWait();
-	bool anySceneTransitionStarted();
+	void SetWaitScene();
+	bool SceneChangedDuringWait();
+	bool AnySceneTransitionStarted();
 
-	void setPreconditions();
-	void resetForNextInterval();
-	void addResetForNextIntervalFunction(std::function<void()>);
-	bool checkForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
+	void SetPreconditions();
+	void ResetForNextInterval();
+	void AddResetForNextIntervalFunction(std::function<void()>);
+	bool CheckForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
 			   int &linger, bool &setPreviousSceneAsMatch,
 			   bool &macroMatch);
-	bool checkMacros();
-	bool runMacros();
-	void checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
+	bool CheckMacros();
+	bool RunMacros();
+	void CheckNoMatchSwitch(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition, int &sleep);
 
 	/* --- Start of saving / loading section --- */
 
-	void saveSettings(obs_data_t *obj);
-	void saveMacros(obs_data_t *obj);
-	void saveConnections(obs_data_t *obj);
-	void saveVariables(obs_data_t *obj);
-	void saveGeneralSettings(obs_data_t *obj);
-	void saveHotkeys(obs_data_t *obj);
-	void saveUISettings(obs_data_t *obj);
-	void saveVersion(obs_data_t *obj, const std::string &currentVersion);
+	void SaveSettings(obs_data_t *obj);
+	void SaveMacros(obs_data_t *obj);
+	void SaveConnections(obs_data_t *obj);
+	void SaveVariables(obs_data_t *obj);
+	void SaveGeneralSettings(obs_data_t *obj);
+	void SaveHotkeys(obs_data_t *obj);
+	void SaveUISettings(obs_data_t *obj);
+	void SaveVersion(obs_data_t *obj, const std::string &currentVersion);
 
-	void loadSettings(obs_data_t *obj);
-	void loadMacros(obs_data_t *obj);
-	void loadConnections(obs_data_t *obj);
-	void loadVariables(obs_data_t *obj);
-	void loadGeneralSettings(obs_data_t *obj);
-	void loadHotkeys(obs_data_t *obj);
-	void loadUISettings(obs_data_t *obj);
+	void LoadSettings(obs_data_t *obj);
+	void LoadMacros(obs_data_t *obj);
+	void LoadConnections(obs_data_t *obj);
+	void LoadVariables(obs_data_t *obj);
+	void LoadGeneralSettings(obs_data_t *obj);
+	void LoadHotkeys(obs_data_t *obj);
+	void LoadUISettings(obs_data_t *obj);
 
-	bool versionChanged(obs_data_t *obj, std::string currentVersion);
-	bool tabOrderValid();
-	void resetTabOrder();
-	bool prioFuncsValid();
+	bool VersionChanged(obs_data_t *obj, std::string currentVersion);
+	bool TabOrderValid();
+	void ResetTabOrder();
+	bool PrioFuncsValid();
 
 	/* --- End of saving / loading section --- */
 
