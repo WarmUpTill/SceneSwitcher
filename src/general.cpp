@@ -262,7 +262,7 @@ void AdvSceneSwitcher::on_exportSettings_clicked()
 	}
 
 	obs_data_t *obj = obs_data_create();
-	switcher->saveSettings(obj);
+	switcher->SaveSettings(obj);
 	obs_data_save_json(obj, file.fileName().toUtf8().constData());
 	obs_data_release(obj);
 }
@@ -302,7 +302,7 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->loadSettings(obj);
+	switcher->LoadSettings(obj);
 	obs_data_release(obj);
 	switcher->lastImportPath = path.toStdString();
 
@@ -394,8 +394,8 @@ int findTabIndex(QTabWidget *tabWidget, int pos)
 
 void AdvSceneSwitcher::SetTabOrder()
 {
-	if (!switcher->tabOrderValid()) {
-		switcher->resetTabOrder();
+	if (!switcher->TabOrderValid()) {
+		switcher->ResetTabOrder();
 	}
 
 	QTabBar *bar = ui->tabWidget->tabBar();
@@ -483,7 +483,7 @@ void AdvSceneSwitcher::on_adjustActiveTransitionType_stateChanged(int state)
 	switcher->adjustActiveTransitionType = state;
 }
 
-void SwitcherData::loadSettings(obs_data_t *obj)
+void SwitcherData::LoadSettings(obs_data_t *obj)
 {
 	if (!obj) {
 		return;
@@ -492,9 +492,9 @@ void SwitcherData::loadSettings(obs_data_t *obj)
 	// Needs to be loaded before any entries which might rely on scene group
 	// selections to be available.
 	loadSceneGroups(obj);
-	loadVariables(obj);
-	loadConnections(obj);
-	loadMacros(obj);
+	LoadVariables(obj);
+	LoadConnections(obj);
+	LoadMacros(obj);
 	loadWindowTitleSwitches(obj);
 	loadScreenRegionSwitches(obj);
 	loadPauseSwitches(obj);
@@ -510,24 +510,24 @@ void SwitcherData::loadSettings(obs_data_t *obj)
 	loadVideoSwitches(obj);
 	loadNetworkSettings(obj);
 	loadSceneTriggers(obj);
-	loadGeneralSettings(obj);
-	loadHotkeys(obj);
-	loadUISettings(obj);
+	LoadGeneralSettings(obj);
+	LoadHotkeys(obj);
+	LoadUISettings(obj);
 
 	// Reset on startup and scene collection change
 	switcher->lastOpenedTab = -1;
 }
 
-void SwitcherData::saveSettings(obs_data_t *obj)
+void SwitcherData::SaveSettings(obs_data_t *obj)
 {
 	if (!obj) {
 		return;
 	}
 
 	saveSceneGroups(obj);
-	saveMacros(obj);
-	saveConnections(obj);
-	saveVariables(obj);
+	SaveMacros(obj);
+	SaveConnections(obj);
+	SaveVariables(obj);
 	saveWindowTitleSwitches(obj);
 	saveScreenRegionSwitches(obj);
 	savePauseSwitches(obj);
@@ -543,13 +543,13 @@ void SwitcherData::saveSettings(obs_data_t *obj)
 	saveVideoSwitches(obj);
 	saveNetworkSwitches(obj);
 	saveSceneTriggers(obj);
-	saveGeneralSettings(obj);
-	saveHotkeys(obj);
-	saveUISettings(obj);
-	saveVersion(obj, g_GIT_SHA1);
+	SaveGeneralSettings(obj);
+	SaveHotkeys(obj);
+	SaveUISettings(obj);
+	SaveVersion(obj, g_GIT_SHA1);
 }
 
-void SwitcherData::saveGeneralSettings(obs_data_t *obj)
+void SwitcherData::SaveGeneralSettings(obs_data_t *obj)
 {
 	obs_data_set_int(obj, "interval", interval);
 
@@ -599,7 +599,7 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	obs_data_set_string(obj, "lastImportPath", lastImportPath.c_str());
 }
 
-void SwitcherData::loadGeneralSettings(obs_data_t *obj)
+void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 {
 	obs_data_set_default_int(obj, "interval", default_interval);
 	interval = obs_data_get_int(obj, "interval");
@@ -638,7 +638,7 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	hideLegacyTabs = obs_data_get_bool(obj, "hideLegacyTabs");
 
 	SetDefaultFunctionPriorities(obj);
-	if (!prioFuncsValid()) {
+	if (!PrioFuncsValid()) {
 		functionNamesByPriority = GetDefaultFunctionPriorityList();
 	}
 
@@ -686,7 +686,7 @@ void loadSplitterPos(QList<int> &sizes, obs_data_t *obj, const std::string name)
 	obs_data_array_release(array);
 }
 
-void SwitcherData::saveUISettings(obs_data_t *obj)
+void SwitcherData::SaveUISettings(obs_data_t *obj)
 {
 	obs_data_set_int(obj, "generalTabPos", tabOrder[0]);
 	obs_data_set_int(obj, "macroTabPos", tabOrder[1]);
@@ -719,7 +719,7 @@ void SwitcherData::saveUISettings(obs_data_t *obj)
 			"macroListMacroEditSplitterPosition");
 }
 
-void SwitcherData::loadUISettings(obs_data_t *obj)
+void SwitcherData::LoadUISettings(obs_data_t *obj)
 {
 	obs_data_set_default_int(obj, "generalTabPos", 0);
 	obs_data_set_default_int(obj, "macroTabPos", 1);
@@ -760,8 +760,8 @@ void SwitcherData::loadUISettings(obs_data_t *obj)
 	tabOrder.emplace_back((int)(obs_data_get_int(obj, "sceneGroupTabPos")));
 	tabOrder.emplace_back((int)(obs_data_get_int(obj, "triggerTabPos")));
 
-	if (!tabOrderValid()) {
-		resetTabOrder();
+	if (!TabOrderValid()) {
+		ResetTabOrder();
 	}
 
 	saveWindowGeo = obs_data_get_bool(obj, "saveWindowGeo");
@@ -775,7 +775,7 @@ void SwitcherData::loadUISettings(obs_data_t *obj)
 			"macroListMacroEditSplitterPosition");
 }
 
-bool SwitcherData::tabOrderValid()
+bool SwitcherData::TabOrderValid()
 {
 	auto tmp = std::vector<int>(tab_count);
 	std::iota(tmp.begin(), tmp.end(), 0);
@@ -789,13 +789,13 @@ bool SwitcherData::tabOrderValid()
 	return true;
 }
 
-void SwitcherData::resetTabOrder()
+void SwitcherData::ResetTabOrder()
 {
 	tabOrder = std::vector<int>(tab_count);
 	std::iota(tabOrder.begin(), tabOrder.end(), 0);
 }
 
-void SwitcherData::checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
+void SwitcherData::CheckNoMatchSwitch(bool &match, OBSWeakSource &scene,
 				      OBSWeakSource &transition, int &sleep)
 {
 	if (match) {

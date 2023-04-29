@@ -51,7 +51,7 @@ bool MacroConditionTransition::CheckCondition()
 {
 	bool anyTransitionEnded = _lastTransitionEndTime !=
 				  switcher->lastTransitionEndTime;
-	bool anyTransitionStarted = switcher->anySceneTransitionStarted();
+	bool anyTransitionStarted = switcher->AnySceneTransitionStarted();
 	bool transitionStarted = false;
 	bool transitionEnded = false;
 

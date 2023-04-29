@@ -116,7 +116,7 @@ std::string GetWeakVariableName(std::weak_ptr<Variable> var_)
 	return var->Name();
 }
 
-void SwitcherData::saveVariables(obs_data_t *obj)
+void SwitcherData::SaveVariables(obs_data_t *obj)
 {
 	obs_data_array_t *variablesArray = obs_data_array_create();
 	for (const auto &v : variables) {
@@ -129,7 +129,7 @@ void SwitcherData::saveVariables(obs_data_t *obj)
 	obs_data_array_release(variablesArray);
 }
 
-void SwitcherData::loadVariables(obs_data_t *obj)
+void SwitcherData::LoadVariables(obs_data_t *obj)
 {
 	variables.clear();
 

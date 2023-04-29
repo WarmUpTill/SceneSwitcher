@@ -13,7 +13,7 @@ Q_DECLARE_METATYPE(advss::Connection *);
 
 namespace advss {
 
-void SwitcherData::saveConnections(obs_data_t *obj)
+void SwitcherData::SaveConnections(obs_data_t *obj)
 {
 	obs_data_array_t *connectionArray = obs_data_array_create();
 	for (const auto &c : connections) {
@@ -26,7 +26,7 @@ void SwitcherData::saveConnections(obs_data_t *obj)
 	obs_data_array_release(connectionArray);
 }
 
-void SwitcherData::loadConnections(obs_data_t *obj)
+void SwitcherData::LoadConnections(obs_data_t *obj)
 {
 	connections.clear();
 

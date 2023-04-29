@@ -152,7 +152,7 @@ void SwitcherData::Prune()
 	}
 }
 
-bool SwitcherData::versionChanged(obs_data_t *obj, std::string currentVersion)
+bool SwitcherData::VersionChanged(obs_data_t *obj, std::string currentVersion)
 {
 	if (!obs_data_has_user_value(obj, "version")) {
 		return false;
@@ -162,13 +162,13 @@ bool SwitcherData::versionChanged(obs_data_t *obj, std::string currentVersion)
 	return previousVersion != currentVersion;
 }
 
-void SwitcherData::saveVersion(obs_data_t *obj,
+void SwitcherData::SaveVersion(obs_data_t *obj,
 			       const std::string &currentVersion)
 {
 	obs_data_set_string(obj, "version", currentVersion.c_str());
 }
 
-void SwitcherData::addResetForNextIntervalFunction(
+void SwitcherData::AddResetForNextIntervalFunction(
 	std::function<void()> function)
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
