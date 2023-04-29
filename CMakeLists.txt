@@ -42,12 +42,11 @@ target_sources(
           src/general.cpp
           src/hotkey.cpp
           src/hotkey.hpp
-          src/hotkey.hpp
           src/platform-funcs.hpp
           src/status-control.cpp
           src/status-control.hpp
-          src/switcher-data-structs.cpp
-          src/switcher-data-structs.hpp
+          src/switcher-data.cpp
+          src/switcher-data.hpp
           src/version.cpp
           src/version.h)
 

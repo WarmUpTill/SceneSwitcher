@@ -1,6 +1,6 @@
 #pragma once
 #include "macro-segment-list.hpp"
-#include "switcher-data-structs.hpp"
+#include "switcher-data.hpp"
 
 #include <ui_advanced-scene-switcher.h>
 

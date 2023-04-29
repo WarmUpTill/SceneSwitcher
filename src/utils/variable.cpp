@@ -1,8 +1,7 @@
 #include "variable.hpp"
+#include "switcher-data.hpp"
 #include "math-helpers.hpp"
 #include "utility.hpp"
-
-#include <switcher-data-structs.hpp>
 
 namespace advss {
 

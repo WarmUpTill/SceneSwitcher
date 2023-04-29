@@ -1,7 +1,6 @@
 #include "variable-string.hpp"
-
-#include <switcher-data-structs.hpp>
-#include <utility.hpp>
+#include "switcher-data.hpp"
+#include "utility.hpp"
 
 namespace advss {
 

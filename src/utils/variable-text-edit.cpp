@@ -1,5 +1,5 @@
 #include "variable-text-edit.hpp"
-#include "switcher-data-structs.hpp"
+#include "switcher-data.hpp"
 
 namespace advss {
 

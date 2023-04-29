@@ -1,5 +1,5 @@
 #include "scene-switch-helpers.hpp"
-#include "switcher-data-structs.hpp"
+#include "switcher-data.hpp"
 #include "obs-frontend-api.h"
 #include "utility.hpp"
 

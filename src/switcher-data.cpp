@@ -1,4 +1,4 @@
-#include "switcher-data-structs.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
 
 namespace advss {
