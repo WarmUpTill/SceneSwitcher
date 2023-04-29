@@ -31,7 +31,7 @@ void AdvSceneSwitcher::on_noMatchDontSwitch_clicked()
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->switchIfNotMatching = NO_SWITCH;
+	switcher->switchIfNotMatching = SwitcherData::NoMatch::NO_SWITCH;
 	ui->noMatchSwitchScene->setEnabled(false);
 	ui->randomDisabledWarning->setVisible(true);
 }
@@ -43,7 +43,7 @@ void AdvSceneSwitcher::on_noMatchSwitch_clicked()
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->switchIfNotMatching = SWITCH;
+	switcher->switchIfNotMatching = SwitcherData::NoMatch::SWITCH;
 	ui->noMatchSwitchScene->setEnabled(true);
 	UpdateNonMatchingScene(ui->noMatchSwitchScene->currentText());
 	ui->randomDisabledWarning->setVisible(true);
@@ -56,7 +56,7 @@ void AdvSceneSwitcher::on_noMatchRandomSwitch_clicked()
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->switchIfNotMatching = RANDOM_SWITCH;
+	switcher->switchIfNotMatching = SwitcherData::NoMatch::RANDOM_SWITCH;
 	ui->noMatchSwitchScene->setEnabled(false);
 	ui->randomDisabledWarning->setVisible(false);
 }
@@ -88,7 +88,8 @@ void AdvSceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->startupBehavior = (StartupBehavior)index;
+	switcher->startupBehavior =
+		static_cast<SwitcherData::StartupBehavior>(index);
 }
 
 void AdvSceneSwitcher::on_autoStartEvent_currentIndexChanged(int index)
@@ -98,7 +99,7 @@ void AdvSceneSwitcher::on_autoStartEvent_currentIndexChanged(int index)
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->autoStartEvent = static_cast<AutoStartEvent>(index);
+	switcher->autoStartEvent = static_cast<SwitcherData::AutoStart>(index);
 }
 
 void AdvSceneSwitcher::on_noMatchSwitchScene_currentTextChanged(
@@ -554,14 +555,16 @@ void SwitcherData::saveGeneralSettings(obs_data_t *obj)
 	std::string nonMatchingSceneName = GetWeakSourceName(nonMatchingScene);
 	obs_data_set_string(obj, "non_matching_scene",
 			    nonMatchingSceneName.c_str());
-	obs_data_set_int(obj, "switch_if_not_matching", switchIfNotMatching);
+	obs_data_set_int(obj, "switch_if_not_matching",
+			 static_cast<int>(switchIfNotMatching));
 	noMatchDelay.Save(obj, "noMatchDelay");
 
 	cooldown.Save(obj, "cooldown");
 
 	obs_data_set_bool(obj, "active", sceneColletionStop ? true : !stop);
 	sceneColletionStop = false;
-	obs_data_set_int(obj, "startup_behavior", startupBehavior);
+	obs_data_set_int(obj, "startup_behavior",
+			 static_cast<int>(startupBehavior));
 
 	obs_data_set_int(obj, "autoStartEvent",
 			 static_cast<int>(autoStartEvent));
@@ -600,7 +603,8 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_int(obj, "interval", default_interval);
 	interval = obs_data_get_int(obj, "interval");
 
-	obs_data_set_default_int(obj, "switch_if_not_matching", NO_SWITCH);
+	obs_data_set_default_int(obj, "switch_if_not_matching",
+				 static_cast<int>(NoMatch::NO_SWITCH));
 	switchIfNotMatching =
 		(NoMatch)obs_data_get_int(obj, "switch_if_not_matching");
 	std::string nonMatchingSceneName =
@@ -613,15 +617,15 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	stop = !obs_data_get_bool(obj, "active");
 	startupBehavior =
 		(StartupBehavior)obs_data_get_int(obj, "startup_behavior");
-	if (startupBehavior == START) {
+	if (startupBehavior == StartupBehavior::START) {
 		stop = false;
 	}
-	if (startupBehavior == STOP) {
+	if (startupBehavior == StartupBehavior::STOP) {
 		stop = true;
 	}
 
-	autoStartEvent = static_cast<AutoStartEvent>(
-		obs_data_get_int(obj, "autoStartEvent"));
+	autoStartEvent =
+		static_cast<AutoStart>(obs_data_get_int(obj, "autoStartEvent"));
 
 	verbose = obs_data_get_bool(obj, "verbose");
 	showSystemTrayNotifications =
@@ -632,53 +636,17 @@ void SwitcherData::loadGeneralSettings(obs_data_t *obj)
 	obs_data_set_default_bool(obj, "hideLegacyTabs", true);
 	hideLegacyTabs = obs_data_get_bool(obj, "hideLegacyTabs");
 
-	obs_data_set_default_int(obj, "priority0", default_priority_0);
-	obs_data_set_default_int(obj, "priority1", default_priority_1);
-	obs_data_set_default_int(obj, "priority2", default_priority_2);
-	obs_data_set_default_int(obj, "priority3", default_priority_3);
-	obs_data_set_default_int(obj, "priority4", default_priority_4);
-	obs_data_set_default_int(obj, "priority5", default_priority_5);
-	obs_data_set_default_int(obj, "priority6", default_priority_6);
-	obs_data_set_default_int(obj, "priority7", default_priority_7);
-	obs_data_set_default_int(obj, "priority8", default_priority_8);
-
-	functionNamesByPriority[0] = (obs_data_get_int(obj, "priority0"));
-	functionNamesByPriority[1] = (obs_data_get_int(obj, "priority1"));
-	functionNamesByPriority[2] = (obs_data_get_int(obj, "priority2"));
-	functionNamesByPriority[3] = (obs_data_get_int(obj, "priority3"));
-	functionNamesByPriority[4] = (obs_data_get_int(obj, "priority4"));
-	functionNamesByPriority[5] = (obs_data_get_int(obj, "priority5"));
-	functionNamesByPriority[6] = (obs_data_get_int(obj, "priority6"));
-	functionNamesByPriority[7] = (obs_data_get_int(obj, "priority7"));
-	functionNamesByPriority[8] = (obs_data_get_int(obj, "priority8"));
-	functionNamesByPriority[9] = (obs_data_get_int(obj, "priority9"));
-	functionNamesByPriority[10] = (obs_data_get_int(obj, "priority10"));
+	SetDefaultFunctionPriorities(obj);
 	if (!prioFuncsValid()) {
-		functionNamesByPriority[0] = (default_priority_0);
-		functionNamesByPriority[1] = (default_priority_1);
-		functionNamesByPriority[2] = (default_priority_2);
-		functionNamesByPriority[3] = (default_priority_3);
-		functionNamesByPriority[4] = (default_priority_4);
-		functionNamesByPriority[5] = (default_priority_5);
-		functionNamesByPriority[6] = (default_priority_6);
-		functionNamesByPriority[7] = (default_priority_7);
-		functionNamesByPriority[8] = (default_priority_8);
-		functionNamesByPriority[9] = (default_priority_9);
-		functionNamesByPriority[10] = (default_priority_10);
+		functionNamesByPriority = GetDefaultFunctionPriorityList();
 	}
 
 	obs_data_set_default_int(obj, "threadPriority",
 				 QThread::NormalPriority);
 	threadPriority = obs_data_get_int(obj, "threadPriority");
 
-	// TODO: Remove this fallback in future version
-	if (obs_data_has_user_value(obj, "tansitionOverrideOverride")) {
-		transitionOverrideOverride =
-			obs_data_get_bool(obj, "tansitionOverrideOverride");
-	} else {
-		transitionOverrideOverride =
-			obs_data_get_bool(obj, "transitionOverrideOverride");
-	}
+	transitionOverrideOverride =
+		obs_data_get_bool(obj, "transitionOverrideOverride");
 	adjustActiveTransitionType =
 		obs_data_get_bool(obj, "adjustActiveTransitionType");
 
@@ -838,12 +806,12 @@ void SwitcherData::checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
 		return;
 	}
 
-	if (switchIfNotMatching == SWITCH && nonMatchingScene) {
+	if (switchIfNotMatching == NoMatch::SWITCH && nonMatchingScene) {
 		match = true;
 		scene = nonMatchingScene;
 		transition = nullptr;
 	}
-	if (switchIfNotMatching == RANDOM_SWITCH) {
+	if (switchIfNotMatching == NoMatch::RANDOM_SWITCH) {
 		match = checkRandom(scene, transition, sleep);
 	}
 }
@@ -888,10 +856,11 @@ void AdvSceneSwitcher::SetupGeneralTab()
 {
 	PopulateSceneSelection(ui->noMatchSwitchScene, false);
 
-	if (switcher->switchIfNotMatching == SWITCH) {
+	if (switcher->switchIfNotMatching == SwitcherData::NoMatch::SWITCH) {
 		ui->noMatchSwitch->setChecked(true);
 		ui->noMatchSwitchScene->setEnabled(true);
-	} else if (switcher->switchIfNotMatching == NO_SWITCH) {
+	} else if (switcher->switchIfNotMatching ==
+		   SwitcherData::NoMatch::NO_SWITCH) {
 		ui->noMatchDontSwitch->setChecked(true);
 		ui->noMatchSwitchScene->setEnabled(false);
 	} else {
@@ -998,7 +967,8 @@ void AdvSceneSwitcher::SetupGeneralTab()
 	}
 
 	populateStartupBehavior(ui->startupBehavior);
-	ui->startupBehavior->setCurrentIndex(switcher->startupBehavior);
+	ui->startupBehavior->setCurrentIndex(
+		static_cast<int>(switcher->startupBehavior));
 
 	populateAutoStartEventSelection(ui->autoStartEvent);
 	ui->autoStartEvent->setCurrentIndex(

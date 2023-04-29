@@ -8,95 +8,124 @@
 #include <curl/curl.h>
 #include <unordered_map>
 
-#include <scene-group.hpp>
-#include <scene-trigger.hpp>
-#include <switch-audio.hpp>
-#include <switch-executable.hpp>
-#include <switch-file.hpp>
-#include <switch-idle.hpp>
-#include <switch-media.hpp>
-#include <switch-pause.hpp>
-#include <switch-random.hpp>
-#include <switch-screen-region.hpp>
-#include <switch-time.hpp>
-#include <switch-transitions.hpp>
-#include <switch-window.hpp>
-#include <switch-sequence.hpp>
-#include <switch-video.hpp>
-#include <switch-network.hpp>
+#include "scene-group.hpp"
+#include "scene-trigger.hpp"
+#include "switch-audio.hpp"
+#include "switch-executable.hpp"
+#include "switch-file.hpp"
+#include "switch-idle.hpp"
+#include "switch-media.hpp"
+#include "switch-pause.hpp"
+#include "switch-random.hpp"
+#include "switch-screen-region.hpp"
+#include "switch-time.hpp"
+#include "switch-transitions.hpp"
+#include "switch-window.hpp"
+#include "switch-sequence.hpp"
+#include "switch-video.hpp"
+#include "switch-network.hpp"
 
-#include <macro.hpp>
-#include <macro-properties.hpp>
-#include <duration-control.hpp>
-#include <connection-manager.hpp>
-#include <curl-helper.hpp>
+#include "macro-properties.hpp"
+#include "duration-control.hpp"
+#include "connection-manager.hpp"
+#include "curl-helper.hpp"
+#include "priority-helper.hpp"
+
+#define blog(level, msg, ...) blog(level, "[adv-ss] " msg, ##__VA_ARGS__)
+#define vblog(level, msg, ...)                   \
+	if (GetSwitcher()->verbose) {            \
+		blog(level, msg, ##__VA_ARGS__); \
+	}
 
 namespace advss {
 
 constexpr auto default_interval = 300;
-constexpr auto previous_scene_name = "Previous Scene";
-constexpr auto current_transition_name = "Current Transition";
 constexpr auto tab_count = 18;
 
-constexpr auto default_priority_0 = macro_func;
-constexpr auto default_priority_1 = read_file_func;
-constexpr auto default_priority_2 = idle_func;
-constexpr auto default_priority_3 = audio_func;
-constexpr auto default_priority_4 = media_func;
-constexpr auto default_priority_5 = video_func;
-constexpr auto default_priority_6 = time_func;
-constexpr auto default_priority_7 = screen_region_func;
-constexpr auto default_priority_8 = round_trip_func;
-constexpr auto default_priority_9 = window_title_func;
-constexpr auto default_priority_10 = exe_func;
-
-typedef enum { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 } NoMatch;
-typedef enum { PERSIST = 0, START = 1, STOP = 2 } StartupBehavior;
 typedef const char *(*translateFunc)(const char *);
 
-enum class AutoStartEvent {
-	NEVER,
-	RECORDING,
-	STREAMING,
-	RECORINDG_OR_STREAMING,
-};
-
 class Item;
+class Macro;
 class SwitcherThread;
 
-/********************************************************************************
- * SwitcherData
- ********************************************************************************/
-struct SwitcherData {
+class SwitcherData;
+extern SwitcherData *switcher;
+SwitcherData *GetSwitcher();
+
+class SwitcherData {
+public:
+	void Thread();
+	void Start();
+	void Stop();
+	std::unique_lock<std::mutex> *GetLock() { return mainLoopLock; }
+
+	const char *Translate(const char *);
+	obs_module_t *GetModule();
+
+	void setWaitScene();
+	bool sceneChangedDuringWait();
+	bool anySceneTransitionStarted();
+
+	void setPreconditions();
+	void resetForNextInterval();
+	void addResetForNextIntervalFunction(std::function<void()>);
+	bool checkForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
+			   int &linger, bool &setPreviousSceneAsMatch,
+			   bool &macroMatch);
+	bool checkMacros();
+	bool runMacros();
+	void checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
+				OBSWeakSource &transition, int &sleep);
+
+	/* --- Start of saving / loading section --- */
+
+	void saveSettings(obs_data_t *obj);
+	void saveMacros(obs_data_t *obj);
+	void saveConnections(obs_data_t *obj);
+	void saveVariables(obs_data_t *obj);
+	void saveGeneralSettings(obs_data_t *obj);
+	void saveHotkeys(obs_data_t *obj);
+	void saveUISettings(obs_data_t *obj);
+	void saveVersion(obs_data_t *obj, const std::string &currentVersion);
+
+	void loadSettings(obs_data_t *obj);
+	void loadMacros(obs_data_t *obj);
+	void loadConnections(obs_data_t *obj);
+	void loadVariables(obs_data_t *obj);
+	void loadGeneralSettings(obs_data_t *obj);
+	void loadHotkeys(obs_data_t *obj);
+	void loadUISettings(obs_data_t *obj);
+
+	bool versionChanged(obs_data_t *obj, std::string currentVersion);
+	bool tabOrderValid();
+	void resetTabOrder();
+	bool prioFuncsValid();
+
+	/* --- End of saving / loading section --- */
+
+	SwitcherData(obs_module_t *m, translateFunc t);
+	inline ~SwitcherData() { Stop(); }
+
+public:
 	SwitcherThread *th = nullptr;
-	obs_module_t *modulePtr = nullptr;
-	translateFunc translate = nullptr;
-
-	bool settingsWindowOpened = false;
-	int lastOpenedTab = -1;
-	std::string lastImportPath;
-	bool firstBoot = true;
-
-	std::condition_variable cv;
 	std::mutex m;
 	std::unique_lock<std::mutex> *mainLoopLock = nullptr;
-
-	bool transitionActive = false;
-	bool waitForTransition = false;
 	bool stop = false;
+	std::condition_variable cv;
+	std::condition_variable macroWaitCv;
+	std::atomic_bool abortMacroWait = {false};
+	std::condition_variable macroTransitionCv;
+
+	std::vector<std::function<void()>> resetForNextIntervalFuncs;
+
+	bool firstBoot = true;
+	bool transitionActive = false;
 	bool sceneColletionStop = false;
-	bool verbose = false;
-	bool disableHints = false;
-	bool hideLegacyTabs = true;
-	bool showSystemTrayNotifications = false;
-	bool showFrame = false;
-	bool transitionOverrideOverride = false;
-	bool adjustActiveTransitionType = true;
-
-	int interval = default_interval;
-
-	QStringList loadFailureLibs;
-	bool warnPluginLoadFailure = true;
+	bool replayBufferSaved = false;
+	bool obsIsShuttingDown = false;
+	bool firstInterval = true;
+	bool firstIntervalAfterStop = true;
+	int shutdownConditionCount = 0;
 
 	obs_source_t *waitScene = nullptr;
 	OBSWeakSource currentScene = nullptr;
@@ -105,13 +134,31 @@ struct SwitcherData {
 	std::chrono::high_resolution_clock::time_point lastTransitionEndTime{};
 	std::chrono::high_resolution_clock::time_point lastStreamStartingTime{};
 	std::chrono::high_resolution_clock::time_point lastStreamStoppingTime{};
-	OBSWeakSource lastRandomScene;
-	SceneGroup *lastRandomSceneGroup = nullptr;
+	std::chrono::high_resolution_clock::time_point lastMatchTime;
+
+	/* --- Start of General tab section --- */
+
+	int interval = default_interval;
 	OBSWeakSource nonMatchingScene;
-	NoMatch switchIfNotMatching = NO_SWITCH;
+	enum class NoMatch { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 };
+	NoMatch switchIfNotMatching = NoMatch::NO_SWITCH;
 	Duration noMatchDelay;
-	StartupBehavior startupBehavior = PERSIST;
-	AutoStartEvent autoStartEvent = AutoStartEvent::NEVER;
+	enum class StartupBehavior { PERSIST = 0, START = 1, STOP = 2 };
+	StartupBehavior startupBehavior = StartupBehavior::PERSIST;
+	enum class AutoStart {
+		NEVER,
+		RECORDING,
+		STREAMING,
+		RECORINDG_OR_STREAMING
+	};
+	AutoStart autoStartEvent = AutoStart::NEVER;
+	Duration cooldown;
+	bool showSystemTrayNotifications = false;
+	bool transitionOverrideOverride = false;
+	bool adjustActiveTransitionType = true;
+	bool verbose = false;
+
+	/* --- End of General tab section --- */
 
 	struct AudioFadeInfo {
 		std::atomic_bool active = {false};
@@ -120,111 +167,27 @@ struct SwitcherData {
 	AudioFadeInfo masterAudioFade;
 	std::unordered_map<std::string, AudioFadeInfo> activeAudioFades;
 
-	Duration cooldown;
-	std::chrono::high_resolution_clock::time_point lastMatchTime;
-
 	MacroProperties macroProperties;
 	std::deque<std::shared_ptr<Macro>> macros;
-	std::condition_variable macroWaitCv;
-	std::atomic_bool abortMacroWait = {false};
-	std::condition_variable macroTransitionCv;
 	bool macroSceneSwitched = false;
-	bool replayBufferSaved = false;
-	bool obsIsShuttingDown = false;
-	bool firstInterval = true;
-	bool firstIntervalAfterStop = true;
-	int shutdownConditionCount = 0;
 
 	Curlhelper curl;
-
 	std::deque<std::shared_ptr<Item>> connections;
 	std::vector<std::string> websocketMessages;
-
 	std::deque<std::shared_ptr<Item>> variables;
 
-	std::deque<WindowSwitch> windowSwitches;
-	std::vector<std::string> ignoreIdleWindows;
 	std::string lastTitle;
 	std::string currentTitle;
 	std::string currentForegroundProcess;
-
-	std::deque<ScreenRegionSwitch> screenRegionSwitches;
 	std::pair<int, int> lastCursorPos = {0, 0};
 	bool cursorPosChanged = false;
 
-	std::vector<std::string> ignoreWindowsSwitches;
-
-	bool uninterruptibleSceneSequenceActive = false;
-	std::deque<SceneSequenceSwitch> sceneSequenceSwitches;
-
-	std::deque<RandomSwitch> randomSwitches;
-
-	IdleData idleData;
-
-	FileIOData fileIO;
-	std::deque<FileSwitch> fileSwitches;
-
-	std::deque<ExecutableSwitch> executableSwitches;
-
-	std::deque<SceneTrigger> sceneTriggers;
-
-	std::deque<SceneTransition> sceneTransitions;
-	std::deque<DefaultSceneTransition> defaultSceneTransitions;
-
-	std::deque<MediaSwitch> mediaSwitches;
-
-	std::deque<PauseEntry> pauseEntries;
-
-	std::deque<TimeSwitch> timeSwitches;
-	QDateTime liveTime;
-
-	std::deque<AudioSwitch> audioSwitches;
-	AudioSwitchFallback audioFallback;
-
-	WSServer server;
-	ServerStatus serverStatus = ServerStatus::NOT_RUNNING;
-	WSClient client;
-	ClientStatus clientStatus = ClientStatus::DISCONNECTED;
-	NetworkConfig networkConfig;
-
-	std::deque<VideoSwitch> videoSwitches;
-
-	std::deque<SceneGroup> sceneGroups;
-
-	std::vector<int> functionNamesByPriority = std::vector<int>{
-		default_priority_0, default_priority_1, default_priority_2,
-		default_priority_3, default_priority_4, default_priority_5,
-		default_priority_6, default_priority_7, default_priority_8,
-		default_priority_9, default_priority_10};
-
-	struct ThreadPrio {
-		std::string name;
-		std::string description;
-		uint32_t value;
-	};
-
-	std::vector<ThreadPrio> threadPriorities{
-		{"Idle",
-		 "scheduled only when no other threads are running (lowest CPU load)",
-		 QThread::IdlePriority},
-		{"Lowest", "scheduled less often than LowPriority",
-		 QThread::LowestPriority},
-		{"Low", "scheduled less often than NormalPriority",
-		 QThread::LowPriority},
-		{"Normal", "the default priority of the operating system",
-		 QThread::NormalPriority},
-		{"High", "scheduled more often than NormalPriority",
-		 QThread::HighPriority},
-		{"Highest", "scheduled more often than HighPriority",
-		 QThread::HighestPriority},
-		{"Time critical",
-		 "scheduled as often as possible (highest CPU load)",
-		 QThread::TimeCriticalPriority},
-	};
-
+	std::vector<int> functionNamesByPriority =
+		GetDefaultFunctionPriorityList();
+	const std::vector<ThreadPrio> threadPriorities = GetThreadPrioMapping();
 	uint32_t threadPriority = QThread::NormalPriority;
 
-	std::vector<int> tabOrder = std::vector<int>(tab_count);
+	/* --- Start of hotkey section --- */
 
 	bool hotkeysRegistered = false;
 	obs_hotkey_id startHotkey = OBS_INVALID_HOTKEY_ID;
@@ -234,40 +197,64 @@ struct SwitcherData {
 	obs_hotkey_id downMacroSegment = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id removeMacroSegment = OBS_INVALID_HOTKEY_ID;
 
+	/* --- End of hotkey section --- */
+
+	/* --- Start of UI section --- */
+
+	bool settingsWindowOpened = false;
+	int lastOpenedTab = -1;
+	std::string lastImportPath;
+	QStringList loadFailureLibs;
+	bool warnPluginLoadFailure = true;
+	bool disableHints = false;
+	bool hideLegacyTabs = true;
+	std::vector<int> tabOrder = std::vector<int>(tab_count);
 	bool saveWindowGeo = false;
 	QPoint windowPos = {};
 	QSize windowSize = {};
 	QList<int> macroActionConditionSplitterPosition;
 	QList<int> macroListMacroEditSplitterPosition;
 
-	bool versionChanged(obs_data_t *obj, std::string currentVersion);
+	/* --- End of UI section --- */
 
-	void Thread();
-	void Start();
-	void Stop();
-	std::unique_lock<std::mutex> *GetLock() { return mainLoopLock; }
+	/* --- Start of legacy tab section --- */
 
-	void setWaitScene();
-	bool sceneChangedDuringWait();
-	bool anySceneTransitionStarted();
+	void saveWindowTitleSwitches(obs_data_t *obj);
+	void saveScreenRegionSwitches(obs_data_t *obj);
+	void savePauseSwitches(obs_data_t *obj);
+	void saveSceneSequenceSwitches(obs_data_t *obj);
+	void saveSceneTransitions(obs_data_t *obj);
+	void saveIdleSwitches(obs_data_t *obj);
+	void saveExecutableSwitches(obs_data_t *obj);
+	void saveRandomSwitches(obs_data_t *obj);
+	void saveFileSwitches(obs_data_t *obj);
+	void saveMediaSwitches(obs_data_t *obj);
+	void saveTimeSwitches(obs_data_t *obj);
+	void saveAudioSwitches(obs_data_t *obj);
+	void saveSceneGroups(obs_data_t *obj);
+	void saveSceneTriggers(obs_data_t *obj);
+	void saveVideoSwitches(obs_data_t *obj);
+	void saveNetworkSwitches(obs_data_t *obj);
 
-	bool prioFuncsValid();
+	void loadWindowTitleSwitches(obs_data_t *obj);
+	void loadScreenRegionSwitches(obs_data_t *obj);
+	void loadPauseSwitches(obs_data_t *obj);
+	void loadSceneSequenceSwitches(obs_data_t *obj);
+	void loadSceneTransitions(obs_data_t *obj);
+	void loadIdleSwitches(obs_data_t *obj);
+	void loadExecutableSwitches(obs_data_t *obj);
+	void loadRandomSwitches(obs_data_t *obj);
+	void loadFileSwitches(obs_data_t *obj);
+	void loadMediaSwitches(obs_data_t *obj);
+	void loadTimeSwitches(obs_data_t *obj);
+	void loadAudioSwitches(obs_data_t *obj);
+	void loadSceneGroups(obs_data_t *obj);
+	void loadSceneTriggers(obs_data_t *obj);
+	void loadVideoSwitches(obs_data_t *obj);
+	void loadNetworkSettings(obs_data_t *obj);
 
-	bool tabOrderValid();
-	void resetTabOrder();
+	void Prune();
 
-	void writeSceneInfoToFile();
-	void writeToStatusFile(const QString &msg);
-
-	void setPreconditions();
-	void resetForNextInterval();
-	void addResetForNextIntervalFunction(std::function<void()>);
-	std::vector<std::function<void()>> resetForNextIntervalFuncs;
-	bool checkForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
-			   int &linger, bool &setPreviousSceneAsMatch,
-			   bool &macroMatch);
-	bool checkMacros();
-	bool runMacros();
 	bool checkSceneSequence(OBSWeakSource &scene, OBSWeakSource &transition,
 				int &linger, bool &setPrevSceneAfterLinger);
 	bool checkIdleSwitch(OBSWeakSource &scene, OBSWeakSource &transition);
@@ -287,68 +274,50 @@ struct SwitcherData {
 	void checkAudioSwitchFallback(OBSWeakSource &scene,
 				      OBSWeakSource &transition);
 	bool checkVideoSwitch(OBSWeakSource &scene, OBSWeakSource &transition);
-	void checkNoMatchSwitch(bool &match, OBSWeakSource &scene,
-				OBSWeakSource &transition, int &sleep);
-	void checkSwitchCooldown(bool &match);
 	void checkTriggers();
 	bool checkPause();
 	void checkDefaultSceneTransitions();
+	void writeSceneInfoToFile();
+	void writeToStatusFile(const QString &msg);
+	void checkSwitchCooldown(bool &match);
 
-	void saveSettings(obs_data_t *obj);
-	void saveMacros(obs_data_t *obj);
-	void saveConnections(obs_data_t *obj);
-	void saveVariables(obs_data_t *obj);
-	void saveWindowTitleSwitches(obs_data_t *obj);
-	void saveScreenRegionSwitches(obs_data_t *obj);
-	void savePauseSwitches(obs_data_t *obj);
-	void saveSceneSequenceSwitches(obs_data_t *obj);
-	void saveSceneTransitions(obs_data_t *obj);
-	void saveIdleSwitches(obs_data_t *obj);
-	void saveExecutableSwitches(obs_data_t *obj);
-	void saveRandomSwitches(obs_data_t *obj);
-	void saveFileSwitches(obs_data_t *obj);
-	void saveMediaSwitches(obs_data_t *obj);
-	void saveTimeSwitches(obs_data_t *obj);
-	void saveAudioSwitches(obs_data_t *obj);
-	void saveSceneGroups(obs_data_t *obj);
-	void saveSceneTriggers(obs_data_t *obj);
-	void saveVideoSwitches(obs_data_t *obj);
-	void saveNetworkSwitches(obs_data_t *obj);
-	void saveGeneralSettings(obs_data_t *obj);
-	void saveHotkeys(obs_data_t *obj);
-	void saveUISettings(obs_data_t *obj);
-	void saveVersion(obs_data_t *obj, const std::string &currentVersion);
+	std::deque<WindowSwitch> windowSwitches;
+	std::vector<std::string> ignoreWindowsSwitches;
+	IdleData idleData;
+	std::vector<std::string> ignoreIdleWindows;
+	bool showFrame = false;
+	std::deque<ScreenRegionSwitch> screenRegionSwitches;
+	bool uninterruptibleSceneSequenceActive = false;
+	std::deque<SceneSequenceSwitch> sceneSequenceSwitches;
+	std::deque<RandomSwitch> randomSwitches;
+	OBSWeakSource lastRandomScene;
+	FileIOData fileIO;
+	std::deque<FileSwitch> fileSwitches;
+	std::deque<ExecutableSwitch> executableSwitches;
+	std::deque<SceneTrigger> sceneTriggers;
+	std::deque<SceneTransition> sceneTransitions;
+	std::deque<DefaultSceneTransition> defaultSceneTransitions;
+	std::deque<MediaSwitch> mediaSwitches;
+	std::deque<PauseEntry> pauseEntries;
+	std::deque<TimeSwitch> timeSwitches;
+	QDateTime liveTime;
+	std::deque<AudioSwitch> audioSwitches;
+	AudioSwitchFallback audioFallback;
+	WSServer server;
+	ServerStatus serverStatus = ServerStatus::NOT_RUNNING;
+	WSClient client;
+	ClientStatus clientStatus = ClientStatus::DISCONNECTED;
+	NetworkConfig networkConfig;
+	std::deque<VideoSwitch> videoSwitches;
+	std::deque<SceneGroup> sceneGroups;
+	SceneGroup *lastRandomSceneGroup = nullptr;
 
-	void loadSettings(obs_data_t *obj);
-	void loadMacros(obs_data_t *obj);
-	void loadConnections(obs_data_t *obj);
-	void loadVariables(obs_data_t *obj);
-	void loadWindowTitleSwitches(obs_data_t *obj);
-	void loadScreenRegionSwitches(obs_data_t *obj);
-	void loadPauseSwitches(obs_data_t *obj);
-	void loadSceneSequenceSwitches(obs_data_t *obj);
-	void loadSceneTransitions(obs_data_t *obj);
-	void loadIdleSwitches(obs_data_t *obj);
-	void loadExecutableSwitches(obs_data_t *obj);
-	void loadRandomSwitches(obs_data_t *obj);
-	void loadFileSwitches(obs_data_t *obj);
-	void loadMediaSwitches(obs_data_t *obj);
-	void loadTimeSwitches(obs_data_t *obj);
-	void loadAudioSwitches(obs_data_t *obj);
-	void loadSceneGroups(obs_data_t *obj);
-	void loadSceneTriggers(obs_data_t *obj);
-	void loadVideoSwitches(obs_data_t *obj);
-	void loadNetworkSettings(obs_data_t *obj);
-	void loadGeneralSettings(obs_data_t *obj);
-	void loadHotkeys(obs_data_t *obj);
-	void loadUISettings(obs_data_t *obj);
-
-	void Prune();
-
-	inline ~SwitcherData() { Stop(); }
+	/* --- End of legacy tab section --- */
+private:
+	obs_module_t *_modulePtr = nullptr;
+	translateFunc _translate = nullptr;
 };
 
-extern SwitcherData *switcher;
 class SwitcherThread : public QThread {
 public:
 	explicit SwitcherThread(){};

@@ -8,6 +8,7 @@
 #pragma once
 #include "switch-generic.hpp"
 #include <QPlainTextEdit>
+#include <QDateTime>
 #include <obs-module.h>
 
 namespace advss {
