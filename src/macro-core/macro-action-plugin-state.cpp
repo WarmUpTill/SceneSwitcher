@@ -31,13 +31,13 @@ const static std::map<SwitcherData::NoMatch, std::string> noMatchValues = {
 	 "AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.switchToRandom"},
 };
 
-void stopPlugin()
+static void stopPlugin()
 {
 	std::thread t([]() { switcher->Stop(); });
 	t.detach();
 }
 
-void importSettings(const std::string &path)
+static void importSettings(const std::string &path)
 {
 	if (switcher->settingsWindowOpened) {
 		return;
@@ -50,7 +50,7 @@ void importSettings(const std::string &path)
 	obs_data_release(obj);
 }
 
-void setNoMatchBehaviour(int value, OBSWeakSource &scene)
+static void setNoMatchBehaviour(int value, OBSWeakSource &scene)
 {
 	switcher->switchIfNotMatching =
 		static_cast<SwitcherData::NoMatch>(value);

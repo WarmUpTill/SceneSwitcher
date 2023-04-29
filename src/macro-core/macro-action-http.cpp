@@ -18,12 +18,12 @@ const static std::map<MacroActionHttp::Method, std::string> methods = {
 	 "AdvSceneSwitcher.action.http.type.post"},
 };
 
-size_t DropCB(void *, size_t size, size_t nmemb, std::string *)
+static size_t DropCB(void *, size_t size, size_t nmemb, std::string *)
 {
 	return size * nmemb;
 }
 
-size_t WriteCB(void *ptr, size_t size, size_t nmemb, std::string *buffer)
+static size_t WriteCB(void *ptr, size_t size, size_t nmemb, std::string *buffer)
 {
 	buffer->append((char *)ptr, nmemb);
 	return size * nmemb;

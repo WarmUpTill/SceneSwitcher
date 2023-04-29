@@ -217,7 +217,8 @@ void PreviewDialog::DrawFrame()
 	_rubberBand->show();
 }
 
-void markPatterns(cv::Mat &matchResult, QImage &image, const cv::Mat &pattern)
+static void markPatterns(cv::Mat &matchResult, QImage &image,
+			 const cv::Mat &pattern)
 {
 	auto matchImg = QImageToMat(image);
 	for (int row = 0; row < matchResult.rows - 1; row++) {
@@ -232,7 +233,7 @@ void markPatterns(cv::Mat &matchResult, QImage &image, const cv::Mat &pattern)
 	}
 }
 
-void markObjects(QImage &image, std::vector<cv::Rect> &objects)
+static void markObjects(QImage &image, std::vector<cv::Rect> &objects)
 {
 	auto frame = QImageToMat(image);
 	for (size_t i = 0; i < objects.size(); i++) {

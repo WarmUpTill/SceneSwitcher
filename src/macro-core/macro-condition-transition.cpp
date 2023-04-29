@@ -26,7 +26,7 @@ static std::map<TransitionCondition, std::string> filterConditionTypes = {
 	 "AdvSceneSwitcher.condition.transition.type.transitionTarget"},
 };
 
-bool isCurrentTransition(OBSWeakSource &t)
+static bool isCurrentTransition(OBSWeakSource &t)
 {
 	bool match;
 	auto tSource = obs_frontend_get_current_transition();
@@ -37,7 +37,7 @@ bool isCurrentTransition(OBSWeakSource &t)
 	return match;
 }
 
-bool isTargetScene(OBSWeakSource &target)
+static bool isTargetScene(OBSWeakSource &target)
 {
 	auto source = obs_frontend_get_current_scene();
 	auto targetScene = obs_source_get_weak_source(source);

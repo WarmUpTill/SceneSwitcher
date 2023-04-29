@@ -53,8 +53,8 @@ void MacroActionTransition::SetTransitionOverride()
 
 #if (LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(27, 0, 0)) && \
 	(LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(28, 0, 0))
-void obs_sceneitem_set_transition(obs_sceneitem_t *item, bool show,
-				  obs_source_t *transition)
+static void obs_sceneitem_set_transition(obs_sceneitem_t *item, bool show,
+					 obs_source_t *transition)
 {
 	if (show) {
 		obs_sceneitem_set_show_transition(item, transition);
@@ -63,8 +63,9 @@ void obs_sceneitem_set_transition(obs_sceneitem_t *item, bool show,
 	}
 }
 
-void obs_sceneitem_set_transition_duration(obs_sceneitem_t *item, bool show,
-					   uint32_t duration_ms)
+static void obs_sceneitem_set_transition_duration(obs_sceneitem_t *item,
+						  bool show,
+						  uint32_t duration_ms)
 {
 	if (show) {
 		obs_sceneitem_set_show_transition_duration(item, duration_ms);

@@ -24,7 +24,7 @@ static std::map<MacroConditionSceneVisibility::Condition, std::string>
 		 "AdvSceneSwitcher.condition.sceneVisibility.type.changed"},
 };
 
-bool areAllSceneItemsShown(const std::vector<obs_scene_item *> &items)
+static bool areAllSceneItemsShown(const std::vector<obs_scene_item *> &items)
 {
 	bool ret = true;
 	for (auto item : items) {
@@ -36,7 +36,7 @@ bool areAllSceneItemsShown(const std::vector<obs_scene_item *> &items)
 	return ret;
 }
 
-bool areAllSceneItemsHidden(const std::vector<obs_scene_item *> &items)
+static bool areAllSceneItemsHidden(const std::vector<obs_scene_item *> &items)
 {
 	bool ret = true;
 	for (auto item : items) {
@@ -48,9 +48,9 @@ bool areAllSceneItemsHidden(const std::vector<obs_scene_item *> &items)
 	return ret;
 }
 
-bool didVisibilityOfAnySceneItemsChange(
-	const std::vector<obs_scene_item *> &items,
-	std::vector<bool> &previousVisibility)
+static bool
+didVisibilityOfAnySceneItemsChange(const std::vector<obs_scene_item *> &items,
+				   std::vector<bool> &previousVisibility)
 {
 	std::vector<bool> currentVisibility;
 	for (const auto &item : items) {

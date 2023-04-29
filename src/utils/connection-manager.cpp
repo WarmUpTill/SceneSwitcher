@@ -88,7 +88,7 @@ Connection::~Connection()
 	_client.Disconnect();
 }
 
-std::string GetUri(std::string addr, int port)
+static std::string GetUri(std::string addr, int port)
 {
 	return "ws://" + addr + ":" + std::to_string(port);
 }
@@ -161,12 +161,12 @@ std::string GetWeakConnectionName(std::weak_ptr<Connection> connection)
 	return con->Name();
 }
 
-bool ConnectionNameAvailable(const QString &name)
+static bool ConnectionNameAvailable(const QString &name)
 {
 	return !GetConnectionByName(name);
 }
 
-bool ConnectionNameAvailable(const std::string &name)
+static bool ConnectionNameAvailable(const std::string &name)
 {
 	return ConnectionNameAvailable(QString::fromStdString(name));
 }

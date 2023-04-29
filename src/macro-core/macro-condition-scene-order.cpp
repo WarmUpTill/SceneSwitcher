@@ -43,7 +43,7 @@ static bool getSceneItemPositionHelper(obs_scene_t *, obs_sceneitem_t *item,
 	return true;
 }
 
-PosInfo2 getSceneItemPos(obs_scene_item *item, obs_scene *scene)
+static PosInfo2 getSceneItemPos(obs_scene_item *item, obs_scene *scene)
 {
 	PosInfo2 pos{item};
 	obs_scene_enum_items(scene, getSceneItemPositionHelper, &pos);

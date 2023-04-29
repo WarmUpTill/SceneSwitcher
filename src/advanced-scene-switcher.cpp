@@ -504,7 +504,7 @@ extern "C" void FreeSceneSwitcher()
 	switcher = nullptr;
 }
 
-void handleSceneChange()
+static void handleSceneChange()
 {
 	switcher->lastSceneChangeTime =
 		std::chrono::high_resolution_clock::now();
@@ -538,17 +538,17 @@ void handleSceneChange()
 	}
 }
 
-void setLiveTime()
+static void setLiveTime()
 {
 	switcher->liveTime = QDateTime::currentDateTime();
 }
 
-void resetLiveTime()
+static void resetLiveTime()
 {
 	switcher->liveTime = QDateTime();
 }
 
-void checkAutoStartRecording()
+static void checkAutoStartRecording()
 {
 	if (switcher->autoStartEvent == SwitcherData::AutoStart::RECORDING ||
 	    switcher->autoStartEvent ==
@@ -556,7 +556,7 @@ void checkAutoStartRecording()
 		switcher->Start();
 }
 
-void checkAutoStartStreaming()
+static void checkAutoStartStreaming()
 {
 	if (switcher->autoStartEvent == SwitcherData::AutoStart::STREAMING ||
 	    switcher->autoStartEvent ==
@@ -564,7 +564,7 @@ void checkAutoStartStreaming()
 		switcher->Start();
 }
 
-void handlePeviewSceneChange()
+static void handlePeviewSceneChange()
 {
 	if (switcher->networkConfig.ShouldSendPrviewSceneChange()) {
 		auto source = obs_frontend_get_current_preview_scene();
@@ -575,31 +575,31 @@ void handlePeviewSceneChange()
 	}
 }
 
-void setReplayBufferSaved()
+static void setReplayBufferSaved()
 {
 	switcher->replayBufferSaved = true;
 }
 
-void setTranstionEnd()
+static void setTranstionEnd()
 {
 	switcher->lastTransitionEndTime =
 		std::chrono::high_resolution_clock::now();
 	switcher->macroTransitionCv.notify_all();
 }
 
-void setStreamStarting()
+static void setStreamStarting()
 {
 	switcher->lastStreamStartingTime =
 		std::chrono::high_resolution_clock::now();
 }
 
-void setStreamStopping()
+static void setStreamStopping()
 {
 	switcher->lastStreamStoppingTime =
 		std::chrono::high_resolution_clock::now();
 }
 
-void handleExit()
+static void handleExit()
 {
 	if (!switcher) {
 		return;
@@ -613,7 +613,7 @@ void handleExit()
 	FreeSceneSwitcher();
 }
 
-void handleSceneCollectionChanging()
+static void handleSceneCollectionChanging()
 {
 	if (switcher->settingsWindowOpened) {
 		AdvSceneSwitcher::window->close();
@@ -679,7 +679,7 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 	}
 }
 
-void LoadPlugins()
+static void LoadPlugins()
 {
 	QFileInfo libPath(
 		QString(obs_get_module_binary_path(obs_current_module())));

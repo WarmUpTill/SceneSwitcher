@@ -68,7 +68,7 @@ static bool WindowValid(HWND window)
 	return true;
 }
 
-BOOL CALLBACK GetTitleCB(HWND hwnd, LPARAM lParam)
+static BOOL CALLBACK GetTitleCB(HWND hwnd, LPARAM lParam)
 {
 	if (!WindowValid(hwnd)) {
 		return TRUE;
@@ -87,7 +87,8 @@ BOOL CALLBACK GetTitleCB(HWND hwnd, LPARAM lParam)
 	return TRUE;
 }
 
-VOID EnumWindowsWithMetro(__in WNDENUMPROC lpEnumFunc, __in LPARAM lParam)
+static VOID EnumWindowsWithMetro(__in WNDENUMPROC lpEnumFunc,
+				 __in LPARAM lParam)
 {
 	HWND childWindow = NULL;
 	int i = 0;
@@ -138,7 +139,7 @@ void GetCurrentWindowTitle(std::string &title)
 	GetWindowTitle(window, title);
 }
 
-HWND getHWNDfromTitle(std::string title)
+static HWND getHWNDfromTitle(std::string title)
 {
 	HWND hwnd = NULL;
 	wchar_t wTitle[512];
@@ -241,7 +242,7 @@ void GetProcessList(QStringList &processes)
 	CloseHandle(procSnapshot);
 }
 
-void GetForegroundProcessName(QString &proc)
+static void GetForegroundProcessName(QString &proc)
 {
 	// only checks if the current foreground window is from the same executable,
 	// may return true for any window from a program
@@ -443,7 +444,7 @@ void PressKeys(const std::vector<HotkeyType> keys, int duration)
 	}
 }
 
-int getLastInputTime()
+static int getLastInputTime()
 {
 	LASTINPUTINFO lastInputInfo;
 	lastInputInfo.cbSize = sizeof(LASTINPUTINFO);
@@ -453,7 +454,7 @@ int getLastInputTime()
 	return 0;
 }
 
-int getTime()
+static int getTime()
 {
 	return GetTickCount();
 }

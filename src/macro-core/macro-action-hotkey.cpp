@@ -133,7 +133,8 @@ static std::unordered_map<HotkeyType, long> keyTable = {
 	//{HotkeyType::Key_NumpadEnter, ???},
 };
 
-obs_key_combination keysToOBSKeycombo(const std::vector<HotkeyType> &keys)
+static obs_key_combination
+keysToOBSKeycombo(const std::vector<HotkeyType> &keys)
 {
 	obs_key_combination combo{};
 	auto it = keyTable.find(keys.back());
@@ -181,7 +182,7 @@ obs_key_combination keysToOBSKeycombo(const std::vector<HotkeyType> &keys)
 	return combo;
 }
 
-void InjectKeys(const std::vector<HotkeyType> &keys, int duration)
+static void InjectKeys(const std::vector<HotkeyType> &keys, int duration)
 {
 	auto combo = keysToOBSKeycombo(keys);
 	if (obs_key_combination_is_empty(combo)) {

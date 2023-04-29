@@ -34,7 +34,8 @@ void SendWebsocketEvent(const std::string &eventMsg)
 	obs_data_release(data);
 }
 
-void ReceiveWebsocketMessage(obs_data_t *request_data, obs_data_t *, void *)
+static void receiveWebsocketMessage(obs_data_t *request_data, obs_data_t *,
+				    void *)
 {
 	if (!obs_data_has_user_value(request_data, "message")) {
 		vblog(LOG_INFO, "received unexpected m '%s'",
@@ -58,7 +59,7 @@ extern "C" void RegisterWebsocketVendor()
 	}
 
 	if (!obs_websocket_vendor_register_request(
-		    vendor, VendorRequest, ReceiveWebsocketMessage, NULL))
+		    vendor, VendorRequest, receiveWebsocketMessage, NULL))
 		blog(LOG_ERROR,
 		     "Failed to register `AdvancedSceneSwitcherMessage` request with obs-websocket.");
 

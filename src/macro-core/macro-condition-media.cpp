@@ -596,7 +596,7 @@ void MacroConditionMediaEdit::SetWidgetVisibility()
 	}
 }
 
-int getIdxFromMediaState(MacroConditionMedia::State state)
+static int getIdxFromMediaState(MacroConditionMedia::State state)
 {
 	if (state < MacroConditionMedia::State::LAST_OBS_MEDIA_STATE) {
 		return static_cast<int>(state);

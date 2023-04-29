@@ -120,7 +120,7 @@ void Hotkey::ClearAllHotkeys()
 	_registeredHotkeys.clear();
 }
 
-void startHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *, bool pressed)
+static void startHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *, bool pressed)
 {
 	if (pressed) {
 		if (!(switcher->th && switcher->th->isRunning())) {
@@ -129,7 +129,7 @@ void startHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *, bool pressed)
 	}
 }
 
-void stopHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *, bool pressed)
+static void stopHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *, bool pressed)
 {
 	if (pressed) {
 		if (switcher->th && switcher->th->isRunning()) {
@@ -138,8 +138,8 @@ void stopHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *, bool pressed)
 	}
 }
 
-void startStopToggleHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
-			       bool pressed)
+static void startStopToggleHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
+				      bool pressed)
 {
 	if (pressed) {
 		if (switcher->th && switcher->th->isRunning()) {
@@ -150,8 +150,8 @@ void startStopToggleHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
 	}
 }
 
-void upMacroSegmentHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
-			      bool pressed)
+static void upMacroSegmentHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
+				     bool pressed)
 {
 	if (pressed && switcher->settingsWindowOpened &&
 	    AdvSceneSwitcher::window) {
@@ -161,8 +161,8 @@ void upMacroSegmentHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
 	}
 }
 
-void downMacroSegmentHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
-				bool pressed)
+static void downMacroSegmentHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
+				       bool pressed)
 {
 	if (pressed && switcher->settingsWindowOpened &&
 	    AdvSceneSwitcher::window) {
@@ -172,8 +172,8 @@ void downMacroSegmentHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
 	}
 }
 
-void removeMacroSegmentHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
-				  bool pressed)
+static void removeMacroSegmentHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
+					 bool pressed)
 {
 	if (pressed && switcher->settingsWindowOpened &&
 	    AdvSceneSwitcher::window) {
@@ -183,7 +183,7 @@ void removeMacroSegmentHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
 	}
 }
 
-void registerHotkeys()
+static void registerHotkeys()
 {
 	switcher->startHotkey = obs_hotkey_register_frontend(
 		"startSwitcherHotkey",
@@ -216,7 +216,7 @@ void registerHotkeys()
 	switcher->hotkeysRegistered = true;
 }
 
-void saveHotkey(obs_data_t *obj, obs_hotkey_id id, const char *name)
+static void saveHotkey(obs_data_t *obj, obs_hotkey_id id, const char *name)
 {
 	obs_data_array_t *a = obs_hotkey_save(id);
 	obs_data_set_array(obj, name, a);
@@ -233,7 +233,7 @@ void SwitcherData::SaveHotkeys(obs_data_t *obj)
 	saveHotkey(obj, removeMacroSegment, "removeMacroSegmentHotkey");
 }
 
-void loadHotkey(obs_data_t *obj, obs_hotkey_id id, const char *name)
+static void loadHotkey(obs_data_t *obj, obs_hotkey_id id, const char *name)
 {
 	obs_data_array_t *a = obs_data_get_array(obj, name);
 	obs_hotkey_load(id, a);

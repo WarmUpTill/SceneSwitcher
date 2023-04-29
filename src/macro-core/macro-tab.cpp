@@ -18,7 +18,7 @@ namespace advss {
 static QMetaObject::Connection addPulse;
 static QTimer onChangeHighlightTimer;
 
-bool macroNameExists(std::string name)
+static bool macroNameExists(std::string name)
 {
 	return !!GetMacroByName(name.c_str());
 }
@@ -806,7 +806,7 @@ void AdvSceneSwitcher::DeleteMacroSegementHotkey()
 	}
 }
 
-void fade(QWidget *widget, bool fadeOut)
+static void fade(QWidget *widget, bool fadeOut)
 {
 	const double fadeOutOpacity = 0.3;
 	// Don't use exactly 1.0 as for some reason this causes buttons in

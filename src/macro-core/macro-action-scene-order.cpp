@@ -23,7 +23,7 @@ const static std::map<SceneOrderAction, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.sceneOrder.type.movePosition"},
 };
 
-void moveSceneItemsUp(std::vector<obs_scene_item *> &items)
+static void moveSceneItemsUp(std::vector<obs_scene_item *> &items)
 {
 	// In the case of the same source being in two sequential positions
 	// moving the sources up will cause the sources to swap positions due to
@@ -39,7 +39,7 @@ void moveSceneItemsUp(std::vector<obs_scene_item *> &items)
 	}
 }
 
-void moveSceneItemsDown(std::vector<obs_scene_item *> &items)
+static void moveSceneItemsDown(std::vector<obs_scene_item *> &items)
 {
 	for (auto &i : items) {
 		obs_sceneitem_set_order(i, OBS_ORDER_MOVE_DOWN);
@@ -47,7 +47,7 @@ void moveSceneItemsDown(std::vector<obs_scene_item *> &items)
 	}
 }
 
-void moveSceneItemsTop(std::vector<obs_scene_item *> &items)
+static void moveSceneItemsTop(std::vector<obs_scene_item *> &items)
 {
 	for (auto &i : items) {
 		obs_sceneitem_set_order(i, OBS_ORDER_MOVE_TOP);
@@ -55,7 +55,7 @@ void moveSceneItemsTop(std::vector<obs_scene_item *> &items)
 	}
 }
 
-void moveSceneItemsBottom(std::vector<obs_scene_item *> &items)
+static void moveSceneItemsBottom(std::vector<obs_scene_item *> &items)
 {
 	for (auto &i : items) {
 		obs_sceneitem_set_order(i, OBS_ORDER_MOVE_BOTTOM);
@@ -63,7 +63,7 @@ void moveSceneItemsBottom(std::vector<obs_scene_item *> &items)
 	}
 }
 
-void moveSceneItemsPos(std::vector<obs_scene_item *> &items, int pos)
+static void moveSceneItemsPos(std::vector<obs_scene_item *> &items, int pos)
 {
 	for (auto &i : items) {
 		obs_sceneitem_set_order_position(i, pos);

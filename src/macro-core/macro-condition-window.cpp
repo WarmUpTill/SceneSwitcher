@@ -51,7 +51,7 @@ bool MacroConditionWindow::CheckWindowTitleSwitchRegex(
 	return match;
 }
 
-bool foregroundWindowChanged()
+static bool foregroundWindowChanged()
 {
 	return switcher->currentTitle != switcher->lastTitle;
 }

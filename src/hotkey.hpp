@@ -163,6 +163,4 @@ enum class HotkeyType {
 	Key_NumpadEnter
 };
 
-void registerHotkeys();
-
 } // namespace advss

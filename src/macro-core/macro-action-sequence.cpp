@@ -11,7 +11,7 @@ bool MacroActionSequence::_registered = MacroActionFactory::Register(
 	{MacroActionSequence::Create, MacroActionSequenceEdit::Create,
 	 "AdvSceneSwitcher.action.sequence"});
 
-int getNextUnpausedMacroIdx(std::vector<MacroRef> &macros, int startIdx)
+static int getNextUnpausedMacroIdx(std::vector<MacroRef> &macros, int startIdx)
 {
 	for (; (int)macros.size() > startIdx; ++startIdx) {
 		auto macro = macros[startIdx].GetMacro();
