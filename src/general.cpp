@@ -855,53 +855,8 @@ static void populateAutoStartEventSelection(QComboBox *cb)
 		"AdvSceneSwitcher.generalTab.status.autoStart.recordingAndStreaming"));
 }
 
-void AdvSceneSwitcher::SetupGeneralTab()
+static void populatePriorityFunctionList(QListWidget *list)
 {
-	PopulateSceneSelection(ui->noMatchSwitchScene, false);
-
-	if (switcher->switchIfNotMatching == SwitcherData::NoMatch::SWITCH) {
-		ui->noMatchSwitch->setChecked(true);
-		ui->noMatchSwitchScene->setEnabled(true);
-	} else if (switcher->switchIfNotMatching ==
-		   SwitcherData::NoMatch::NO_SWITCH) {
-		ui->noMatchDontSwitch->setChecked(true);
-		ui->noMatchSwitchScene->setEnabled(false);
-	} else {
-		ui->noMatchRandomSwitch->setChecked(true);
-		ui->noMatchSwitchScene->setEnabled(false);
-	}
-	ui->noMatchSwitchScene->setCurrentText(
-		GetWeakSourceName(switcher->nonMatchingScene).c_str());
-
-	DurationSelection *noMatchDelay = new DurationSelection();
-	noMatchDelay->SetDuration(switcher->noMatchDelay);
-	noMatchDelay->setToolTip(obs_module_text(
-		"AdvSceneSwitcher.generalTab.generalBehavior.onNoMetDelayTooltip"));
-	ui->noMatchLayout->addWidget(noMatchDelay);
-	QWidget::connect(noMatchDelay,
-			 SIGNAL(DurationChanged(const Duration &)), this,
-			 SLOT(NoMatchDelayDurationChanged(const Duration &)));
-
-	ui->checkInterval->setValue(switcher->interval);
-
-	DurationSelection *cooldownTime = new DurationSelection();
-	cooldownTime->SetDuration(switcher->cooldown);
-	cooldownTime->setToolTip(obs_module_text(
-		"AdvSceneSwitcher.generalTab.generalBehavior.cooldownHint"));
-	ui->cooldownLayout->addWidget(cooldownTime);
-	ui->cooldownLayout->addStretch();
-	QWidget::connect(cooldownTime,
-			 SIGNAL(DurationChanged(const Duration &)), this,
-			 SLOT(CooldownDurationChanged(const Duration &)));
-
-	ui->verboseLogging->setChecked(switcher->verbose);
-	ui->saveWindowGeo->setChecked(switcher->saveWindowGeo);
-	ui->showTrayNotifications->setChecked(
-		switcher->showSystemTrayNotifications);
-	ui->uiHintsDisable->setChecked(switcher->disableHints);
-	ui->warnPluginLoadFailure->setChecked(switcher->warnPluginLoadFailure);
-	ui->hideLegacyTabs->setChecked(switcher->hideLegacyTabs);
-
 	for (int p : switcher->functionNamesByPriority) {
 		std::string s = "";
 		switch (p) {
@@ -951,23 +906,75 @@ void AdvSceneSwitcher::SetupGeneralTab()
 			break;
 		}
 		QString text(s.c_str());
-		QListWidgetItem *item =
-			new QListWidgetItem(text, ui->priorityList);
+		QListWidgetItem *item = new QListWidgetItem(text, list);
 		item->setData(Qt::UserRole, text);
 	}
+}
 
+static void populateThreadPriorityList(QComboBox *list)
+{
 	for (int i = 0; i < (int)switcher->threadPriorities.size(); ++i) {
-		ui->threadPriority->addItem(
-			switcher->threadPriorities[i].name.c_str());
-		ui->threadPriority->setItemData(
+		list->addItem(switcher->threadPriorities[i].name.c_str());
+		list->setItemData(
 			i, switcher->threadPriorities[i].description.c_str(),
 			Qt::ToolTipRole);
 		if (switcher->threadPriority ==
 		    switcher->threadPriorities[i].value) {
-			ui->threadPriority->setCurrentText(
+			list->setCurrentText(
 				switcher->threadPriorities[i].name.c_str());
 		}
 	}
+}
+
+void AdvSceneSwitcher::SetupGeneralTab()
+{
+	PopulateSceneSelection(ui->noMatchSwitchScene, false);
+
+	if (switcher->switchIfNotMatching == SwitcherData::NoMatch::SWITCH) {
+		ui->noMatchSwitch->setChecked(true);
+		ui->noMatchSwitchScene->setEnabled(true);
+	} else if (switcher->switchIfNotMatching ==
+		   SwitcherData::NoMatch::NO_SWITCH) {
+		ui->noMatchDontSwitch->setChecked(true);
+		ui->noMatchSwitchScene->setEnabled(false);
+	} else {
+		ui->noMatchRandomSwitch->setChecked(true);
+		ui->noMatchSwitchScene->setEnabled(false);
+	}
+	ui->noMatchSwitchScene->setCurrentText(
+		GetWeakSourceName(switcher->nonMatchingScene).c_str());
+
+	DurationSelection *noMatchDelay = new DurationSelection();
+	noMatchDelay->SetDuration(switcher->noMatchDelay);
+	noMatchDelay->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.onNoMetDelayTooltip"));
+	ui->noMatchLayout->addWidget(noMatchDelay);
+	QWidget::connect(noMatchDelay,
+			 SIGNAL(DurationChanged(const Duration &)), this,
+			 SLOT(NoMatchDelayDurationChanged(const Duration &)));
+
+	ui->checkInterval->setValue(switcher->interval);
+
+	DurationSelection *cooldownTime = new DurationSelection();
+	cooldownTime->SetDuration(switcher->cooldown);
+	cooldownTime->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.cooldownHint"));
+	ui->cooldownLayout->addWidget(cooldownTime);
+	ui->cooldownLayout->addStretch();
+	QWidget::connect(cooldownTime,
+			 SIGNAL(DurationChanged(const Duration &)), this,
+			 SLOT(CooldownDurationChanged(const Duration &)));
+
+	ui->verboseLogging->setChecked(switcher->verbose);
+	ui->saveWindowGeo->setChecked(switcher->saveWindowGeo);
+	ui->showTrayNotifications->setChecked(
+		switcher->showSystemTrayNotifications);
+	ui->uiHintsDisable->setChecked(switcher->disableHints);
+	ui->warnPluginLoadFailure->setChecked(switcher->warnPluginLoadFailure);
+	ui->hideLegacyTabs->setChecked(switcher->hideLegacyTabs);
+
+	populatePriorityFunctionList(ui->priorityList);
+	populateThreadPriorityList(ui->threadPriority);
 
 	populateStartupBehavior(ui->startupBehavior);
 	ui->startupBehavior->setCurrentIndex(
