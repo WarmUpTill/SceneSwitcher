@@ -78,28 +78,38 @@ void GetCurrentWindowTitle(std::string &title)
 		for (NSDictionary *app in apps) {
 			int layer =
 				[[app objectForKey:@"kCGWindowLayer"] intValue];
-			// True if window is frontmost
-			if (layer == 0) {
-				std::string name(
-					[[app objectForKey:@"kCGWindowName"]
-						UTF8String],
-					[[app objectForKey:@"kCGWindowName"]
-						lengthOfBytesUsingEncoding:
-							NSUTF8StringEncoding]);
-				std::string owner(
-					[[app objectForKey:@"kCGWindowOwnerName"]
-						UTF8String],
-					[[app objectForKey:@"kCGWindowOwnerName"]
-						lengthOfBytesUsingEncoding:
-							NSUTF8StringEncoding]);
 
-				if (!name.empty()) {
-					title = name;
-				} else if (!owner.empty()) {
-					title = owner;
-				}
-				break;
+			if (layer != 0) {
+				continue;
 			}
+
+			std::string name([[app objectForKey:@"kCGWindowName"]
+						 UTF8String],
+					 [[app objectForKey:@"kCGWindowName"]
+						 lengthOfBytesUsingEncoding:
+							 NSUTF8StringEncoding]);
+			std::string owner(
+				[[app objectForKey:@"kCGWindowOwnerName"]
+					UTF8String],
+				[[app objectForKey:@"kCGWindowOwnerName"]
+					lengthOfBytesUsingEncoding:
+						NSUTF8StringEncoding]);
+
+			if (!name.empty()) {
+				title = name;
+			} else if (!owner.empty()) {
+				title = owner;
+			}
+
+			// Ignore the "StatusIndicator" application window
+			//
+			// It is used to display the microphone status and if active is
+			// always the top most window
+			if (title == "StatusIndicator") {
+				continue;
+			}
+
+			break;
 		}
 		apps = nil;
 		CFRelease(cfApps);
