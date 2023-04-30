@@ -184,7 +184,7 @@ void AdvSceneSwitcher::on_warnPluginLoadFailure_stateChanged(int state)
 	switcher->warnPluginLoadFailure = state;
 }
 
-bool isLegacyTab(const QString &name)
+static bool isLegacyTab(const QString &name)
 {
 	return name == obs_module_text(
 			       "AdvSceneSwitcher.sceneGroupTab.title") ||
@@ -926,6 +926,41 @@ static void populateThreadPriorityList(QComboBox *list)
 	}
 }
 
+static bool isGeneralTab(const QString &name)
+{
+	return name == obs_module_text("AdvSceneSwitcher.generalTab.title");
+}
+
+static int getGeneralTabIdx(QTabWidget *tabWidget)
+{
+	for (int idx = 0; idx < tabWidget->count(); idx++) {
+		if (isGeneralTab(tabWidget->tabText(idx))) {
+			return idx;
+		}
+	}
+	return -1;
+}
+
+static void setupGeneralTabInactiveWarning(QTabWidget *tabs)
+{
+	auto callback = [tabs]() {
+		const bool isRunning = switcher && switcher->th &&
+				       switcher->th->isRunning();
+		auto idx = getGeneralTabIdx(tabs);
+		tabs->setTabIcon(
+			idx,
+			isRunning ? QIcon()
+				  : QIcon::fromTheme(
+					    "obs",
+					    QIcon(":/res/images/warning.svg")));
+	};
+
+	auto inactiveTimer = new QTimer(tabs);
+	inactiveTimer->setInterval(1000);
+	QObject::connect(inactiveTimer, &QTimer::timeout, callback);
+	inactiveTimer->start();
+}
+
 void AdvSceneSwitcher::SetupGeneralTab()
 {
 	PopulateSceneSelection(ui->noMatchSwitchScene, false);
@@ -995,6 +1030,7 @@ void AdvSceneSwitcher::SetupGeneralTab()
 	// Hide the now empty invisible shell of the statusControl widget
 	// as otherwise it could block user input
 	statusControl->hide();
+	setupGeneralTabInactiveWarning(ui->tabWidget);
 
 	MinimizeSizeOfColumn(ui->statusLayout, 0);
 	setWindowTitle(windowTitle() + " - " + g_GIT_TAG);
