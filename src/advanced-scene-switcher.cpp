@@ -297,19 +297,21 @@ void SwitcherData::SetPreconditions()
 	std::string title;
 	GetCurrentWindowTitle(title);
 	for (auto &window : ignoreWindowsSwitches) {
-		bool equals = (title == window);
-		bool matches = false;
-		if (!equals) {
-			try {
-				std::regex expr(window);
-				matches = std::regex_match(title, expr);
+		if (window != "StatusIndicator") {
+			bool equals = (title == window);
+			bool matches = false;
+			if (!equals) {
+				try {
+					std::regex expr(window);
+					matches = std::regex_match(title, expr);
 
-			} catch (const std::regex_error &) {
+				} catch (const std::regex_error &) {
+				}
 			}
-		}
-		if (equals || matches) {
-			title = lastTitle;
-			break;
+			if (equals || matches) {
+				title = lastTitle;
+				break;
+			}
 		}
 	}
 	currentTitle = title;
