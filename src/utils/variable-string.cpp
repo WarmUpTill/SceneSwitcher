@@ -4,7 +4,7 @@
 
 namespace advss {
 
-void StringVariable::Resolve()
+void StringVariable::Resolve() const
 {
 	if (switcher->variables.empty()) {
 		_resolvedValue = _value;
@@ -17,7 +17,7 @@ void StringVariable::Resolve()
 	_lastResolve = GetLastVariableChangeTime();
 }
 
-StringVariable::operator std::string()
+StringVariable::operator std::string() const
 {
 	Resolve();
 	return _resolvedValue;
@@ -59,7 +59,7 @@ const char *StringVariable::c_str()
 
 const char *StringVariable::c_str() const
 {
-	// Just assume that the value was previously resolved already
+	Resolve();
 	return _resolvedValue.c_str();
 }
 

@@ -14,7 +14,7 @@ public:
 	StringVariable() : _value(""){};
 	StringVariable(std::string str) : _value(std::move(str)){};
 	StringVariable(const char *str) : _value(str){};
-	operator std::string();
+	operator std::string() const;
 	operator QVariant() const;
 	void operator=(std::string);
 	void operator=(const char *value);
@@ -27,11 +27,11 @@ public:
 	void Save(obs_data_t *obj, const char *name) const;
 
 private:
-	void Resolve();
+	void Resolve() const;
 
 	std::string _value = "";
-	std::string _resolvedValue = "";
-	std::chrono::high_resolution_clock::time_point _lastResolve{};
+	mutable std::string _resolvedValue = "";
+	mutable std::chrono::high_resolution_clock::time_point _lastResolve{};
 };
 
 std::string SubstitueVariables(std::string str);
