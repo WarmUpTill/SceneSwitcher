@@ -466,15 +466,19 @@ bool DisplayMessage(const QString &msg, bool question)
 	return false;
 }
 
-void DisplayTrayMessage(const QString &title, const QString &msg)
+void DisplayTrayMessage(const QString &title, const QString &msg,
+			const QIcon &icon)
 {
 	auto tray = reinterpret_cast<QSystemTrayIcon *>(
 		obs_frontend_get_system_tray());
 	if (!tray) {
 		return;
 	}
-
-	tray->showMessage(title, msg);
+	if (icon.isNull()) {
+		tray->showMessage(title, msg);
+	} else {
+		tray->showMessage(title, msg, icon);
+	}
 }
 
 void AddSelectionEntry(QComboBox *sel, const char *description, bool selectable,

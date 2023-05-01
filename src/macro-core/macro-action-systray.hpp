@@ -1,5 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "variable-string.hpp"
+#include "file-selection.hpp"
 
 #include <QLineEdit>
 
@@ -18,9 +20,14 @@ public:
 		return std::make_shared<MacroActionSystray>(m);
 	}
 
-	std::string _msg = "";
+	StringVariable _message = "";
+	StringVariable _title = obs_module_text("AdvSceneSwitcher.pluginName");
+	StringVariable _iconPath = "";
 
 private:
+	QIcon _icon;
+	std::string _lastPath;
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -42,12 +49,16 @@ public:
 
 private slots:
 	void MessageChanged();
+	void TitleChanged();
+	void IconPathChanged(const QString &text);
 
 protected:
 	std::shared_ptr<MacroActionSystray> _entryData;
 
 private:
-	QLineEdit *_msg;
+	VariableLineEdit *_message;
+	VariableLineEdit *_title;
+	FileSelection *_iconPath;
 	bool _loading = true;
 };
 
