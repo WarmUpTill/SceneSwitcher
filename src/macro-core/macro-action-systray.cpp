@@ -12,52 +12,100 @@ bool MacroActionSystray::_registered = MacroActionFactory::Register(
 
 bool MacroActionSystray::PerformAction()
 {
-	if (_msg.empty()) {
-		return true;
+	if (_lastPath != std::string(_iconPath)) {
+		_lastPath = _iconPath;
+		_icon = QIcon(QString::fromStdString(_iconPath));
 	}
-	DisplayTrayMessage(obs_module_text("AdvSceneSwitcher.pluginName"),
-			   QString::fromStdString(_msg));
+	DisplayTrayMessage(QString::fromStdString(_title),
+			   QString::fromStdString(_message), _icon);
 	return true;
 }
 
 void MacroActionSystray::LogAction() const
 {
-	vblog(LOG_INFO, "display systray message \"%s\"", _msg.c_str());
+	vblog(LOG_INFO, "display systray message \"%s\":\n%s", _title.c_str(),
+	      _message.c_str());
 }
 
 bool MacroActionSystray::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
-	obs_data_set_string(obj, "message", _msg.c_str());
+	_message.Save(obj, "message");
+	_title.Save(obj, "title");
+	_iconPath.Save(obj, "icon");
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
 bool MacroActionSystray::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	_msg = obs_data_get_string(obj, "message");
+	_message.Load(obj, "message");
+	_title.Load(obj, "title");
+	_iconPath.Load(obj, "icon");
+	if (!obs_data_has_user_value(obj, "version")) {
+		_title = obs_module_text("AdvSceneSwitcher.pluginName");
+	}
 	return true;
 }
 
 MacroActionSystrayEdit::MacroActionSystrayEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSystray> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _message(new VariableLineEdit(this)),
+	  _title(new VariableLineEdit(this)),
+	  _iconPath(new FileSelection())
 {
-	_msg = new QLineEdit();
-	QWidget::connect(_msg, SIGNAL(editingFinished()), this,
-			 SLOT(MessageChanged()));
+	_iconPath->setToolTip(
+		obs_module_text("AdvSceneSwitcher.action.systray.iconHint"));
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{message}}", _msg},
-	};
-	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.systray.entry"),
-		     mainLayout, widgetPlaceholders);
-	setLayout(mainLayout);
+	QWidget::connect(_message, SIGNAL(editingFinished()), this,
+			 SLOT(MessageChanged()));
+	QWidget::connect(_title, SIGNAL(editingFinished()), this,
+			 SLOT(TitleChanged()));
+	QWidget::connect(_iconPath, SIGNAL(PathChanged(const QString &)), this,
+			 SLOT(IconPathChanged(const QString &)));
+
+	auto layout = new QGridLayout();
+	layout->addWidget(new QLabel(obs_module_text(
+				  "AdvSceneSwitcher.action.systray.title")),
+			  0, 0);
+	layout->addWidget(_title, 0, 1);
+	layout->addWidget(new QLabel(obs_module_text(
+				  "AdvSceneSwitcher.action.systray.message")),
+			  1, 0);
+	layout->addWidget(_message, 1, 1);
+	layout->addWidget(new QLabel(obs_module_text(
+				  "AdvSceneSwitcher.action.systray.icon")),
+			  2, 0);
+	layout->addWidget(_iconPath, 2, 1);
+	setLayout(layout);
 
 	_entryData = entryData;
-	_msg->setText(QString::fromStdString(_entryData->_msg));
+	_message->setText(_entryData->_message);
+	_title->setText(_entryData->_title);
+	_iconPath->SetPath(_entryData->_iconPath);
 	_loading = false;
+}
+
+void MacroActionSystrayEdit::TitleChanged()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_title = _title->text().toStdString();
+}
+
+void MacroActionSystrayEdit::IconPathChanged(const QString &text)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_iconPath = text.toStdString();
 }
 
 void MacroActionSystrayEdit::MessageChanged()
@@ -67,7 +115,7 @@ void MacroActionSystrayEdit::MessageChanged()
 	}
 
 	auto lock = LockContext();
-	_entryData->_msg = _msg->text().toStdString();
+	_entryData->_message = _message->text().toStdString();
 }
 
 } // namespace advss
