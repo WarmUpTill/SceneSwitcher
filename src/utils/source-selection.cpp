@@ -240,13 +240,8 @@ void SourceSelectionWidget::ItemAdd(const QString &)
 
 bool SourceSelectionWidget::NameUsed(const QString &name)
 {
-	if (_currentSelection._type == SourceSelection::Type::VARIABLE) {
-		auto var = _currentSelection._variable.lock();
-		if (var && var->Name() == name.toStdString()) {
-			return true;
-		}
-	}
-	return false;
+	return _currentSelection._type == SourceSelection::Type::VARIABLE &&
+	       currentText() == name;
 }
 
 void SourceSelectionWidget::ItemRemove(const QString &name)

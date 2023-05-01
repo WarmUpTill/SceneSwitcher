@@ -432,13 +432,8 @@ bool SceneSelectionWidget::NameUsed(const QString &name)
 	    _currentSelection._group->name == name.toStdString()) {
 		return true;
 	}
-	if (_currentSelection._type == SceneSelection::Type::VARIABLE) {
-		auto var = _currentSelection._variable.lock();
-		if (var && var->Name() == name.toStdString()) {
-			return true;
-		}
-	}
-	return false;
+	return _currentSelection._type == SceneSelection::Type::VARIABLE &&
+	       currentText() == name;
 }
 
 void SceneSelectionWidget::ItemRemove(const QString &name)
