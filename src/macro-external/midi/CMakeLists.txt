@@ -4,8 +4,13 @@ project(advanced-scene-switcher-midi)
 # --- Check libremidi requirements ---
 
 get_target_property(ADVSS_SOURCE_DIR advanced-scene-switcher-lib SOURCE_DIR)
-add_subdirectory("${ADVSS_SOURCE_DIR}/deps/libremidi"
-                 "${ADVSS_SOURCE_DIR}/deps/libremidi/build")
+set(LIBREMIDI_DIR "${ADVSS_SOURCE_DIR}/deps/libremidi")
+if(NOT EXISTS "${LIBREMIDI_DIR}")
+  message(WARNING "libremidi directory \"${LIBREMIDI_DIR}\" not found!\n"
+                  "MIDI support will be disabled!")
+  return()
+endif()
+add_subdirectory("${LIBREMIDI_DIR}" "${LIBREMIDI_DIR}/build")
 
 # --- End of section ---
 
@@ -19,7 +24,6 @@ target_sources(
 
 setup_advss_plugin(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
-target_include_directories(${PROJECT_NAME}
-                           PRIVATE "${ADVSS_SOURCE_DIR}/deps/libremidi/include")
+target_include_directories(${PROJECT_NAME} PRIVATE "${LIBREMIDI_DIR}/include")
 target_link_libraries(${PROJECT_NAME} PRIVATE libremidi)
 install_advss_plugin(${PROJECT_NAME})
