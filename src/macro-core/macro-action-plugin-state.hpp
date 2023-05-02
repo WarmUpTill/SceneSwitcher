@@ -11,6 +11,7 @@ enum class PluginStateAction {
 	STOP,
 	NO_MATCH_BEHAVIOUR,
 	IMPORT_SETTINGS,
+	TERMINATE,
 };
 
 class MacroActionPluginState : public MacroAction {
