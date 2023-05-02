@@ -3,6 +3,9 @@
 #include "utility.hpp"
 
 #include <thread>
+#include <QMainWindow>
+
+using namespace std::chrono_literals;
 
 namespace advss {
 
@@ -20,6 +23,8 @@ const static std::map<PluginStateAction, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.pluginState.type.noMatch"},
 	{PluginStateAction::IMPORT_SETTINGS,
 	 "AdvSceneSwitcher.action.pluginState.type.import"},
+	{PluginStateAction::TERMINATE,
+	 "AdvSceneSwitcher.action.pluginState.type.terminate"},
 };
 
 const static std::map<SwitcherData::NoMatch, std::string> noMatchValues = {
@@ -59,6 +64,78 @@ static void setNoMatchBehaviour(int value, OBSWeakSource &scene)
 	}
 }
 
+static void closeOBSWindow()
+{
+	blog(LOG_WARNING, "closing OBS window now!");
+	auto obsWindow =
+		static_cast<QMainWindow *>(obs_frontend_get_main_window());
+	if (obsWindow) {
+		obsWindow->close();
+	} else {
+		blog(LOG_WARNING,
+		     "OBS shutdown was aborted - failed to get QMainWindow");
+	}
+}
+
+static void terminateOBS(void *)
+{
+	static std::mutex mtx;
+	static std::mutex waitMutex;
+	static std::condition_variable cv;
+	static bool abortTerminate;
+	static bool stopWaiting;
+	static std::chrono::high_resolution_clock::time_point
+		lastShutdownAttempt{};
+
+	// Don't allow multiple simultaneous instances of the shutdown dialog
+	std::unique_lock<std::mutex> lock(mtx, std::try_to_lock);
+	if (!lock.owns_lock()) {
+		blog(LOG_INFO,
+		     "OBS shutdown dialog already triggered - ignoring additional request");
+		return;
+	}
+
+	// Prevent the user from locking himself out of controlling OBS by
+	// continuously opening the shutdown dialog
+	auto now = std::chrono::high_resolution_clock::now();
+	if (lastShutdownAttempt + 5s > now) {
+		blog(LOG_INFO,
+		     "OBS shutdown dialog already triggered recently - ignoring request");
+		return;
+	}
+	lastShutdownAttempt = now;
+
+	abortTerminate = false;
+	stopWaiting = false;
+
+	// Give the user a 10s grace period during which the shutdown can be aborted
+	std::thread thread([]() {
+		std::unique_lock<std::mutex> lock(waitMutex);
+		if (cv.wait_for(lock, 10s, [] { return stopWaiting; })) {
+			if (abortTerminate) {
+				blog(LOG_INFO, "OBS shutdown was aborted");
+			} else {
+				closeOBSWindow();
+			}
+		} else {
+			closeOBSWindow();
+		}
+	});
+	thread.detach();
+
+	// Ask the user how to proceed
+	abortTerminate = !DisplayMessage(
+		obs_module_text(
+			"AdvSceneSwitcher.action.pluginState.terminateConfirm"),
+		true, false);
+	stopWaiting = true;
+
+	// This closes OBS immediately if shutdown was confirmed
+	cv.notify_all();
+
+	lock.unlock();
+}
+
 bool MacroActionPluginState::PerformAction()
 {
 	switch (_action) {
@@ -73,6 +150,14 @@ bool MacroActionPluginState::PerformAction()
 		// There is no point in continuing
 		// The settings will be invalid
 		return false;
+	case PluginStateAction::TERMINATE: {
+		std::thread thread([]() {
+			obs_queue_task(OBS_TASK_UI, terminateOBS, nullptr,
+				       false);
+		});
+		thread.detach();
+		break;
+	}
 	default:
 		break;
 	}
@@ -91,6 +176,9 @@ void MacroActionPluginState::LogAction() const
 	case PluginStateAction::IMPORT_SETTINGS:
 		vblog(LOG_INFO, "importing settings from %s",
 		      _settingsPath.c_str());
+		break;
+	case PluginStateAction::TERMINATE:
+		vblog(LOG_INFO, "sending terminate signal to OBS in 10s");
 		break;
 	default:
 		blog(LOG_WARNING, "ignored unknown pluginState action %d",
