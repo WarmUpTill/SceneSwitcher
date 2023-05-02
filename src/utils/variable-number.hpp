@@ -36,4 +36,7 @@ private:
 
 #include "variable-number.tpp"
 
+using IntVariable = NumberVariable<int>;
+using DoubleVariable = NumberVariable<double>;
+
 } // namespace advss
