@@ -1,4 +1,5 @@
 #include "mouse-wheel-guard.hpp"
+#include "osc-helpers.hpp"
 
 #include <QEvent>
 #include <QScrollBar>
@@ -23,12 +24,15 @@ bool MouseWheelWidgetAdjustmentGuard::eventFilter(QObject *o, QEvent *e)
 
 void PreventMouseWheelAdjustWithoutFocus(QWidget *w)
 {
-	w->setFocusPolicy(Qt::StrongFocus);
 	// Ignore QScrollBar as there is no danger of accidentally modifying anything
 	// and long expanded QComboBox would be difficult to interact with otherwise.
-	if (qobject_cast<QScrollBar *>(w)) {
+	// Ignore OSCMessageElementEdit to allow OSCMessageEdit list to up update
+	// current index correctly.
+	if (qobject_cast<QScrollBar *>(w) ||
+	    qobject_cast<OSCMessageElementEdit *>(w)) {
 		return;
 	}
+	w->setFocusPolicy(Qt::StrongFocus);
 	w->installEventFilter(new MouseWheelWidgetAdjustmentGuard(w));
 }
 

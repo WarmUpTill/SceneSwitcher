@@ -1138,9 +1138,13 @@ void SetHeightToContentHeight(QListWidget *list)
 	auto nrItems = list->count();
 	if (nrItems == 0) {
 		list->setMaximumHeight(0);
+		list->setMinimumHeight(0);
 	} else {
-		list->setMaximumHeight(list->sizeHintForRow(0) * nrItems +
-				       2 * list->frameWidth());
+		int height =
+			(list->sizeHintForRow(0) + list->spacing()) * nrItems +
+			2 * list->frameWidth();
+		list->setMinimumHeight(height);
+		list->setMaximumHeight(height);
 	}
 }
 

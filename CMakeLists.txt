@@ -107,6 +107,8 @@ target_sources(
           src/macro-core/macro-action-macro.hpp
           src/macro-core/macro-action-media.cpp
           src/macro-core/macro-action-media.hpp
+          src/macro-core/macro-action-osc.cpp
+          src/macro-core/macro-action-osc.hpp
           src/macro-core/macro-action-plugin-state.cpp
           src/macro-core/macro-action-plugin-state.hpp
           src/macro-core/macro-action-profile.cpp
@@ -266,6 +268,8 @@ target_sources(
           src/utils/obs-dock.hpp
           src/utils/obs-module-helper.cpp
           src/utils/obs-module-helper.hpp
+          src/utils/osc-helpers.cpp
+          src/utils/osc-helpers.hpp
           src/utils/priority-helper.cpp
           src/utils/priority-helper.hpp
           src/utils/process-config.cpp
