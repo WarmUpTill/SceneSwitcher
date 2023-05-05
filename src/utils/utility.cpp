@@ -444,25 +444,83 @@ bool SaveTransformState(obs_data_t *obj, const struct obs_transform_info &info,
 	return true;
 }
 
-bool DisplayMessage(const QString &msg, bool question)
-{
-	if (question) {
-		QMessageBox::StandardButton reply;
-		reply = QMessageBox::question(
-			nullptr, "Advanced Scene Switcher", msg,
-			QMessageBox::Yes | QMessageBox::No);
-		if (reply == QMessageBox::Yes) {
-			return true;
+class NonModalMessageDialog : public QDialog {
+public:
+	NonModalMessageDialog(const QString &message, bool question)
+		: QDialog(static_cast<QMainWindow *>(
+			  obs_frontend_get_main_window())),
+		  _answer(QMessageBox::No)
+	{
+		setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
+		setWindowFlags(windowFlags() &
+			       ~Qt::WindowContextHelpButtonHint);
+		setAttribute(Qt::WA_DeleteOnClose);
+
+		auto layout = new QVBoxLayout(this);
+		layout->addWidget(new QLabel(message, this));
+
+		if (question) {
+			auto buttonbox = new QDialogButtonBox(
+				QDialogButtonBox::Yes | QDialogButtonBox::No);
+			connect(buttonbox, &QDialogButtonBox::accepted, this,
+				&NonModalMessageDialog::YesClicked);
+			connect(buttonbox, &QDialogButtonBox::rejected, this,
+				&NonModalMessageDialog::NoClicked);
+			layout->addWidget(buttonbox);
 		} else {
-			return false;
+			auto buttonbox =
+				new QDialogButtonBox(QDialogButtonBox::Ok);
+			connect(buttonbox, &QDialogButtonBox::accepted, this,
+				&NonModalMessageDialog::YesClicked);
+			layout->addWidget(buttonbox);
 		}
-	} else {
-		QMessageBox Msgbox;
-		Msgbox.setWindowTitle("Advanced Scene Switcher");
-		Msgbox.setText(msg);
-		Msgbox.exec();
 	}
 
+	QMessageBox::StandardButton ShowMessage()
+	{
+		// Use separate QEventLoop to not block rest of the UI
+		show();
+		QEventLoop loop;
+		connect(this, &NonModalMessageDialog::finished, &loop,
+			&QEventLoop::quit);
+		loop.exec();
+		return _answer;
+	}
+
+private slots:
+	void YesClicked()
+	{
+		_answer = QMessageBox::Yes;
+		accept();
+	}
+	void NoClicked()
+	{
+		_answer = QMessageBox::No;
+		accept();
+	}
+
+private:
+	QMessageBox::StandardButton _answer;
+};
+
+bool DisplayMessage(const QString &msg, bool question, bool modal)
+{
+	if (!modal) {
+		auto dialog = new NonModalMessageDialog(msg, question);
+		QMessageBox::StandardButton answer = dialog->ShowMessage();
+		return (answer == QMessageBox::Yes);
+	} else if (question && modal) {
+		auto answer = QMessageBox::question(
+			nullptr,
+			obs_module_text("AdvSceneSwitcher.windowTitle"), msg,
+			QMessageBox::Yes | QMessageBox::No);
+		return answer == QMessageBox::Yes;
+	}
+
+	QMessageBox Msgbox;
+	Msgbox.setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
+	Msgbox.setText(msg);
+	Msgbox.exec();
 	return false;
 }
 
