@@ -10,7 +10,7 @@ if(NOT EXISTS "${LIBREMIDI_DIR}")
                   "MIDI support will be disabled!")
   return()
 endif()
-add_subdirectory("${LIBREMIDI_DIR}" "${LIBREMIDI_DIR}/build")
+add_subdirectory("${LIBREMIDI_DIR}" "${LIBREMIDI_DIR}/build" EXCLUDE_FROM_ALL)
 
 # --- End of section ---
 
