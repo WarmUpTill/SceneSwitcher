@@ -19,6 +19,8 @@ bool MacroConditionMidi::CheckCondition()
 
 	for (const auto &m : *messages) {
 		if (m.Matches(_message)) {
+			SetVariableValue(std::to_string(m.Note()) + " " +
+					 std::to_string(m.Value()));
 			return true;
 		}
 	}
