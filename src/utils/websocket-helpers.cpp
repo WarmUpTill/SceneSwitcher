@@ -75,7 +75,8 @@ extern "C" void RegisterWebsocketVendor()
 	}
 }
 
-WSConnection::WSConnection() : QObject(nullptr)
+WSConnection::WSConnection(bool useOBSProtocol)
+	: QObject(nullptr), _useOBSProtocol(useOBSProtocol)
 {
 	_client.get_alog().clear_channels(
 		websocketpp::log::alevel::frame_header |
@@ -86,9 +87,7 @@ WSConnection::WSConnection() : QObject(nullptr)
 	_client.set_reuse_addr(true);
 #endif
 
-	_client.set_open_handler(bind(&WSConnection::OnOpen, this, _1));
-	_client.set_message_handler(
-		bind(&WSConnection::OnMessage, this, _1, _2));
+	UseOBSWebsocketProtocol(useOBSProtocol);
 	_client.set_close_handler(bind(&WSConnection::OnClose, this, _1));
 }
 
@@ -180,31 +179,43 @@ void WSConnection::Disconnect()
 	_status = Status::DISCONNECTED;
 }
 
-void WSConnection::SendRequest(const std::string &msg)
+static std::string constructVendorRequestMessage(const std::string &message,
+						 const std::string &uri)
 {
 	auto request = obs_data_create();
 	obs_data_set_int(request, "op", 6);
 	auto *data = obs_data_create();
 	obs_data_set_string(data, "requestType", "CallVendorRequest");
-	obs_data_set_string(data, "requestId", (msg + " - " + _uri).c_str());
+	obs_data_set_string(data, "requestId", (message + " - " + uri).c_str());
 
 	auto vendorData = obs_data_create();
 	obs_data_set_string(vendorData, "vendorName", VendorName);
 	obs_data_set_string(vendorData, "requestType", VendorRequest);
 
 	auto msgObj = obs_data_create();
-	obs_data_set_string(msgObj, "message", msg.c_str());
+	obs_data_set_string(msgObj, "message", message.c_str());
 	obs_data_set_obj(vendorData, "requestData", msgObj);
 	obs_data_set_obj(data, "requestData", vendorData);
 
 	obs_data_set_obj(request, "d", data);
-	const std::string response(obs_data_get_json(request));
+
+	const std::string result(obs_data_get_json(request));
+
 	obs_data_release(msgObj);
 	obs_data_release(vendorData);
 	obs_data_release(data);
 	obs_data_release(request);
 
-	Send(response);
+	return result;
+}
+
+void WSConnection::SendRequest(const std::string &msg)
+{
+	if (_useOBSProtocol) {
+		Send(constructVendorRequestMessage(msg, _uri));
+	} else {
+		Send(msg);
+	}
 }
 
 WSConnection::Status WSConnection::GetStatus() const
@@ -212,7 +223,26 @@ WSConnection::Status WSConnection::GetStatus() const
 	return _status;
 }
 
-void WSConnection::OnOpen(connection_hdl)
+void WSConnection::UseOBSWebsocketProtocol(bool useOBSProtocol)
+{
+	_useOBSProtocol = useOBSProtocol;
+	_client.set_open_handler(bind(useOBSProtocol
+					      ? &WSConnection::OnOBSOpen
+					      : &WSConnection::OnGenericOpen,
+				      this, _1));
+	_client.set_message_handler(
+		bind(useOBSProtocol ? &WSConnection::OnOBSMessage
+				    : &WSConnection::OnGenericMessage,
+		     this, _1, _2));
+}
+
+void WSConnection::OnGenericOpen(connection_hdl hdl)
+{
+	blog(LOG_INFO, "connection to %s opened", _uri.c_str());
+	_status = Status::AUTHENTICATED;
+}
+
+void WSConnection::OnOBSOpen(connection_hdl)
 {
 	blog(LOG_INFO, "connection to %s opened", _uri.c_str());
 	_status = Status::CONNECTING;
@@ -294,7 +324,23 @@ void WSConnection::HandleResponse(obs_data_t *response)
 	obs_data_release(data);
 }
 
-void WSConnection::OnMessage(connection_hdl, client::message_ptr message)
+void WSConnection::OnGenericMessage(connection_hdl hdl,
+				    client::message_ptr message)
+{
+	if (!message) {
+		return;
+	}
+	if (message->get_opcode() != websocketpp::frame::opcode::text) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	const auto payload = message->get_payload();
+	_messages.emplace_back(payload);
+	vblog(LOG_INFO, "received event msg \"%s\"", payload.c_str());
+}
+
+void WSConnection::OnOBSMessage(connection_hdl, client::message_ptr message)
 {
 	if (!message) {
 		return;
@@ -305,7 +351,7 @@ void WSConnection::OnMessage(connection_hdl, client::message_ptr message)
 
 	std::string payload = message->get_payload();
 	const char *msg = payload.c_str();
-	obs_data_t *json = obs_data_create_from_json(msg);
+	auto json = obs_data_create_from_json(msg);
 	if (!json) {
 		blog(LOG_ERROR, "invalid JSON payload received for '%s'", msg);
 		obs_data_release(json);

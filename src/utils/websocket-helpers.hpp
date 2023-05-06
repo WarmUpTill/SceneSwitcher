@@ -33,7 +33,7 @@ void SendWebsocketEvent(const std::string &);
 
 class WSConnection : public QObject {
 public:
-	explicit WSConnection();
+	explicit WSConnection(bool useOBSProtocol = true);
 	virtual ~WSConnection();
 
 	void Connect(const std::string &uri, const std::string &pass,
@@ -50,10 +50,13 @@ public:
 		AUTHENTICATED,
 	};
 	Status GetStatus() const;
+	void UseOBSWebsocketProtocol(bool);
 
 private:
-	void OnOpen(connection_hdl hdl);
-	void OnMessage(connection_hdl hdl, client::message_ptr message);
+	void OnGenericOpen(connection_hdl hdl);
+	void OnOBSOpen(connection_hdl hdl);
+	void OnGenericMessage(connection_hdl hdl, client::message_ptr message);
+	void OnOBSMessage(connection_hdl hdl, client::message_ptr message);
 	void OnClose(connection_hdl hdl);
 	void Send(const std::string &);
 	void ConnectThread();
@@ -76,6 +79,7 @@ private:
 	std::atomic_bool _disconnect{false};
 
 	std::vector<std::string> _messages;
+	bool _useOBSProtocol = true;
 };
 
 } // namespace advss
