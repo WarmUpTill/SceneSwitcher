@@ -46,14 +46,16 @@ void SwitcherData::LoadConnections(obs_data_t *obj)
 
 Connection::Connection(std::string name, std::string address, uint64_t port,
 		       std::string pass, bool connectOnStart, bool reconnect,
-		       int reconnectDelay)
+		       int reconnectDelay, bool useOBSWebsocketProtocol)
 	: Item(name),
 	  _address(address),
 	  _port(port),
 	  _password(pass),
 	  _connectOnStart(connectOnStart),
 	  _reconnect(reconnect),
-	  _reconnectDelay(reconnectDelay)
+	  _reconnectDelay(reconnectDelay),
+	  _useOBSWSProtocol(useOBSWebsocketProtocol),
+	  _client(useOBSWebsocketProtocol)
 {
 }
 
@@ -66,6 +68,8 @@ Connection::Connection(const Connection &other) : Item(other)
 	_connectOnStart = other._connectOnStart;
 	_reconnect = other._reconnect;
 	_reconnectDelay = other._reconnectDelay;
+	_useOBSWSProtocol = other._useOBSWSProtocol;
+	_client.UseOBSWebsocketProtocol(_useOBSWSProtocol);
 }
 
 Connection &Connection::operator=(const Connection &other)
@@ -78,6 +82,8 @@ Connection &Connection::operator=(const Connection &other)
 		_connectOnStart = other._connectOnStart;
 		_reconnect = other._reconnect;
 		_reconnectDelay = other._reconnectDelay;
+		_client.UseOBSWebsocketProtocol(_useOBSWSProtocol);
+		_useOBSWSProtocol = other._useOBSWSProtocol;
 		_client.Disconnect();
 	}
 	return *this;
@@ -234,6 +240,7 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 			     "AdvSceneSwitcher.connection.add", parent),
 	  _address(new QLineEdit()),
 	  _port(new QSpinBox()),
+	  _useOBSWSProtocol(new QCheckBox()),
 	  _password(new QLineEdit()),
 	  _showPassword(new QPushButton()),
 	  _connectOnStart(new QCheckBox()),
@@ -257,7 +264,10 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 	_connectOnStart->setChecked(settings._connectOnStart);
 	_reconnect->setChecked(settings._reconnect);
 	_reconnectDelay->setValue(settings._reconnectDelay);
+	_useOBSWSProtocol->setChecked(settings._useOBSWSProtocol);
 
+	QWidget::connect(_useOBSWSProtocol, SIGNAL(stateChanged(int)), this,
+			 SLOT(ProtocolChanged(int)));
 	QWidget::connect(_reconnect, SIGNAL(stateChanged(int)), this,
 			 SLOT(ReconnectChanged(int)));
 	QWidget::connect(_showPassword, SIGNAL(pressed()), this,
@@ -312,6 +322,12 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 		row, 0);
 	layout->addWidget(_reconnectDelay, row, 1);
 	++row;
+	layout->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.connection.useOBSWebsocketProtocol")),
+		row, 0);
+	layout->addWidget(_useOBSWSProtocol, row, 1);
+	++row;
 	layout->addWidget(_test, row, 0);
 	layout->addWidget(_status, row, 1);
 	++row;
@@ -319,7 +335,14 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 	setLayout(layout);
 
 	ReconnectChanged(_reconnect->isChecked());
+	ProtocolChanged(_useOBSWSProtocol->isChecked());
 	HidePassword();
+}
+
+void ConnectionSettingsDialog::ProtocolChanged(int state)
+{
+	_password->setEnabled(state);
+	_showPassword->setEnabled(state);
 }
 
 void ConnectionSettingsDialog::ReconnectChanged(int state)
@@ -365,6 +388,7 @@ void ConnectionSettingsDialog::HidePassword()
 
 void ConnectionSettingsDialog::TestConnection()
 {
+	_testConnection.UseOBSWebsocketProtocol(_useOBSWSProtocol->isChecked());
 	_testConnection.Disconnect();
 	_testConnection.Connect(GetUri(_address->text().toStdString(),
 				       _port->value()),
@@ -391,6 +415,7 @@ bool ConnectionSettingsDialog::AskForSettings(QWidget *parent,
 	settings._connectOnStart = dialog._connectOnStart->isChecked();
 	settings._reconnect = dialog._reconnect->isChecked();
 	settings._reconnectDelay = dialog._reconnectDelay->value();
+	settings.UseOBSWebsocketProtocol(dialog._useOBSWSProtocol->isChecked());
 	settings.Reconnect();
 	return true;
 }
@@ -398,6 +423,16 @@ bool ConnectionSettingsDialog::AskForSettings(QWidget *parent,
 void Connection::Load(obs_data_t *obj)
 {
 	Item::Load(obj);
+
+	if (obs_data_has_user_value(obj, "version")) {
+		UseOBSWebsocketProtocol(
+			obs_data_get_bool(obj, "useOBSWSProtocol"));
+	} else {
+		// TODO: Remove this fallback in future version
+		_useOBSWSProtocol = true;
+	}
+	_client.UseOBSWebsocketProtocol(_useOBSWSProtocol);
+
 	_address = obs_data_get_string(obj, "address");
 	_port = obs_data_get_int(obj, "port");
 	_password = obs_data_get_string(obj, "password");
@@ -414,12 +449,20 @@ void Connection::Load(obs_data_t *obj)
 void Connection::Save(obs_data_t *obj) const
 {
 	Item::Save(obj);
+	obs_data_set_bool(obj, "useOBSWSProtocol", _useOBSWSProtocol);
 	obs_data_set_string(obj, "address", _address.c_str());
 	obs_data_set_int(obj, "port", _port);
 	obs_data_set_string(obj, "password", _password.c_str());
 	obs_data_set_bool(obj, "connectOnStart", _connectOnStart);
 	obs_data_set_bool(obj, "reconnect", _reconnect);
 	obs_data_set_int(obj, "reconnectDelay", _reconnectDelay);
+	obs_data_set_int(obj, "version", 1);
+}
+
+void Connection::UseOBSWebsocketProtocol(bool useOBSWSProtocol)
+{
+	_useOBSWSProtocol = useOBSWSProtocol;
+	_client.UseOBSWebsocketProtocol(useOBSWSProtocol);
 }
 
 } // namespace advss

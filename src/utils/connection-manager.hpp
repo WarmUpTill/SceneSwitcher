@@ -24,7 +24,7 @@ class Connection : public Item {
 public:
 	Connection(std::string name, std::string address, uint64_t port,
 		   std::string pass, bool connectOnStart, bool reconnect,
-		   int reconnectDelay);
+		   int reconnectDelay, bool useOBSWebsocketProtocol);
 	Connection() = default;
 	Connection(const Connection &);
 	Connection &operator=(const Connection &);
@@ -42,6 +42,9 @@ public:
 	std::vector<std::string> &Events() { return _client.Events(); }
 
 private:
+	void UseOBSWebsocketProtocol(bool);
+
+	bool _useOBSWSProtocol = true;
 	std::string _address = "localhost";
 	uint64_t _port = 4455;
 	std::string _password = "password";
@@ -70,6 +73,7 @@ public:
 	static bool AskForSettings(QWidget *parent, Connection &settings);
 
 private slots:
+	void ProtocolChanged(int);
 	void ReconnectChanged(int);
 	void ShowPassword();
 	void HidePassword();
@@ -79,6 +83,7 @@ private slots:
 private:
 	QLineEdit *_address;
 	QSpinBox *_port;
+	QCheckBox *_useOBSWSProtocol;
 	QLineEdit *_password;
 	QPushButton *_showPassword;
 	QCheckBox *_connectOnStart;
