@@ -100,6 +100,10 @@ std::vector<cv::Rect> matchObject(QImage &img, cv::CascadeClassifier &cascade,
 
 uchar getAvgBrightness(QImage &img)
 {
+	if (img.isNull()) {
+		return 0;
+	}
+
 	auto i = QImageToMat(img);
 	cv::Mat hsvImage, rgbImage;
 	cv::cvtColor(i, rgbImage, cv::COLOR_RGBA2RGB);
