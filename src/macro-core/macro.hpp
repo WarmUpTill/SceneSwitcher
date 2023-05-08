@@ -64,7 +64,7 @@ public:
 	void SetCollapsed(bool val) { _isCollapsed = val; }
 	bool IsCollapsed() { return _isCollapsed; }
 	void SetParent(std::shared_ptr<Macro> m) { _parent = m; }
-	Macro *Parent();
+	std::shared_ptr<Macro> Parent();
 
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);

@@ -612,9 +612,10 @@ void AdvSceneSwitcher::CopyMacro()
 	newMacro->Load(data);
 	newMacro->PostLoad();
 	newMacro->SetName(name);
+	Macro::PrepareMoveToGroup(macro->Parent(), newMacro);
 	obs_data_release(data);
 
-	ui->macros->Add(newMacro);
+	ui->macros->Add(newMacro, macro);
 	ui->macroAdd->disconnect(addPulse);
 	emit MacroAdded(QString::fromStdString(name));
 }
