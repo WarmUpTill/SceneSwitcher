@@ -260,7 +260,8 @@ MacroIndexToModelIndex(int realIdx,
 void MacroTreeModel::MoveItemBefore(const std::shared_ptr<Macro> &item,
 				    const std::shared_ptr<Macro> &before)
 {
-	if (!item || !before || item == before) {
+	if (!item || !before || item == before ||
+	    Neighbor(item, false) == before) {
 		return;
 	}
 
@@ -313,7 +314,7 @@ void MacroTreeModel::MoveItemBefore(const std::shared_ptr<Macro> &item,
 void MacroTreeModel::MoveItemAfter(const std::shared_ptr<Macro> &item,
 				   const std::shared_ptr<Macro> &after)
 {
-	if (!item || !after || item == after) {
+	if (!item || !after || item == after || Neighbor(item, true) == after) {
 		return;
 	}
 
@@ -706,9 +707,13 @@ void MacroTree::Reset(std::deque<std::shared_ptr<Macro>> &macros,
 	GetModel()->Reset(macros);
 }
 
-void MacroTree::Add(std::shared_ptr<Macro> item) const
+void MacroTree::Add(std::shared_ptr<Macro> item,
+		    std::shared_ptr<Macro> after) const
 {
 	GetModel()->Add(item);
+	if (after) {
+		MoveItemAfter(item, after);
+	}
 }
 
 std::shared_ptr<Macro> MacroTree::GetCurrentMacro() const
@@ -834,7 +839,7 @@ void MacroTree::dropEvent(QDropEvent *event)
 	Macro *dropItem = items[ModelIndexToMacroIndex(row, items)]
 				  .get(); // Item being dropped on
 	bool itemIsGroup = dropItem->IsGroup();
-	Macro *dropGroup = itemIsGroup ? dropItem : dropItem->Parent();
+	Macro *dropGroup = itemIsGroup ? dropItem : dropItem->Parent().get();
 
 	// Not a group if moving above the group
 	if (indicator == QAbstractItemView::AboveItem && itemIsGroup) {
@@ -880,7 +885,7 @@ void MacroTree::dropEvent(QDropEvent *event)
 	}
 
 	if (hasGroups) {
-		if (!itemBelow || itemBelow->Parent() != dropGroup) {
+		if (!itemBelow || itemBelow->Parent().get() != dropGroup) {
 			dropGroup = nullptr;
 			dropOnCollapsed = false;
 		}
@@ -923,7 +928,7 @@ void MacroTree::dropEvent(QDropEvent *event)
 			bool collapsed = item->IsCollapsed();
 			for (int j = items.size() - 1; j >= 0; j--) {
 				std::shared_ptr<Macro> subitem = items[j];
-				auto subitemGroup = subitem->Parent();
+				auto subitemGroup = subitem->Parent().get();
 
 				if (subitemGroup == item.get()) {
 					if (!collapsed) {

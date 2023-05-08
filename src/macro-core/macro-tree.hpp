@@ -120,7 +120,8 @@ class MacroTree : public QListView {
 public:
 	explicit MacroTree(QWidget *parent = nullptr);
 	void Reset(std::deque<std::shared_ptr<Macro>> &, bool highlight);
-	void Add(std::shared_ptr<Macro> item) const;
+	void Add(std::shared_ptr<Macro> item,
+		 std::shared_ptr<Macro> after = {}) const;
 	void Remove(std::shared_ptr<Macro> item) const;
 	void Up(std::shared_ptr<Macro> item) const;
 	void Down(std::shared_ptr<Macro> item) const;

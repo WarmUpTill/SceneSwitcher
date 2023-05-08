@@ -325,10 +325,9 @@ void Macro::UpdateConditionIndices()
 	}
 }
 
-Macro *Macro::Parent()
+std::shared_ptr<Macro> Macro::Parent()
 {
-	auto p = _parent.lock();
-	return p.get();
+	return _parent.lock();
 }
 
 bool Macro::Save(obs_data_t *obj) const
