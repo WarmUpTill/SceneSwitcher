@@ -601,6 +601,12 @@ void Macro::SaveDockSettings(obs_data_t *obj) const
 	}
 	obs_data_set_bool(dockSettings, "hasRunButton", _dockHasRunButton);
 	obs_data_set_bool(dockSettings, "hasPauseButton", _dockHasPauseButton);
+	obs_data_set_string(dockSettings, "runButtonText",
+			    _runButtonText.c_str());
+	obs_data_set_string(dockSettings, "pauseButtonText",
+			    _pauseButtonText.c_str());
+	obs_data_set_string(dockSettings, "unpauseButtonText",
+			    _unpauseButtonText.c_str());
 	if (_dock) {
 		auto window = static_cast<QMainWindow *>(
 			obs_frontend_get_main_window());
@@ -631,6 +637,22 @@ void Macro::LoadDockSettings(obs_data_t *obj)
 
 	const bool dockEnabled = obs_data_get_bool(dockSettings, "register");
 	_dockIsVisible = obs_data_get_bool(dockSettings, "isVisible");
+
+	// TODO: remove these default settings in a future version
+	obs_data_set_default_string(
+		dockSettings, "runButtonText",
+		obs_module_text("AdvSceneSwitcher.macroDock.run"));
+	obs_data_set_default_string(
+		dockSettings, "pauseButtonText",
+		obs_module_text("AdvSceneSwitcher.macroDock.pause"));
+	obs_data_set_default_string(
+		dockSettings, "unpauseButtonText",
+		obs_module_text("AdvSceneSwitcher.macroDock.unpause"));
+
+	_runButtonText = obs_data_get_string(dockSettings, "runButtonText");
+	_pauseButtonText = obs_data_get_string(dockSettings, "pauseButtonText");
+	_unpauseButtonText =
+		obs_data_get_string(dockSettings, "unpauseButtonText");
 	if (dockEnabled) {
 		_dockHasRunButton =
 			obs_data_get_bool(dockSettings, "hasRunButton");
@@ -670,7 +692,10 @@ void Macro::EnableDock(bool value)
 	// Create new dock widget
 	auto window =
 		static_cast<QMainWindow *>(obs_frontend_get_main_window());
-	_dock = new MacroDock(this, window);
+	_dock = new MacroDock(this, window,
+			      QString::fromStdString(_runButtonText),
+			      QString::fromStdString(_pauseButtonText),
+			      QString::fromStdString(_unpauseButtonText));
 	SetDockWidgetName(); // Used by OBS to restore position
 
 	// Register new dock
@@ -707,6 +732,33 @@ void Macro::SetDockHasPauseButton(bool value)
 		return;
 	}
 	_dock->ShowPauseButton(value);
+}
+
+void Macro::SetRunButtonText(const std::string &text)
+{
+	_runButtonText = text;
+	if (!_dock) {
+		return;
+	}
+	_dock->SetRunButtonText(QString::fromStdString(text));
+}
+
+void Macro::SetPauseButtonText(const std::string &text)
+{
+	_pauseButtonText = text;
+	if (!_dock) {
+		return;
+	}
+	_dock->SetPauseButtonText(QString::fromStdString(text));
+}
+
+void Macro::SetUnpauseButtonText(const std::string &text)
+{
+	_unpauseButtonText = text;
+	if (!_dock) {
+		return;
+	}
+	_dock->SetUnpauseButtonText(QString::fromStdString(text));
 }
 
 void Macro::RemoveDock()

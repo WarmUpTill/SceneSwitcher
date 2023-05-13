@@ -89,6 +89,12 @@ public:
 	bool DockHasRunButton() const { return _dockHasRunButton; }
 	void SetDockHasPauseButton(bool value);
 	bool DockHasPauseButton() const { return _dockHasPauseButton; }
+	std::string RunButtonText() const { return _runButtonText; }
+	void SetRunButtonText(const std::string &text);
+	std::string PauseButtonText() const { return _pauseButtonText; }
+	void SetPauseButtonText(const std::string &text);
+	std::string UnpauseButtonText() const { return _unpauseButtonText; }
+	void SetUnpauseButtonText(const std::string &text);
 
 private:
 	void SetupHotkeys();
@@ -137,6 +143,12 @@ private:
 	bool _registerDock = false;
 	bool _dockHasRunButton = true;
 	bool _dockHasPauseButton = true;
+	std::string _runButtonText =
+		obs_module_text("AdvSceneSwitcher.macroDock.run");
+	std::string _pauseButtonText =
+		obs_module_text("AdvSceneSwitcher.macroDock.pause");
+	std::string _unpauseButtonText =
+		obs_module_text("AdvSceneSwitcher.macroDock.unpause");
 	bool _dockIsFloating = true;
 	bool _dockIsVisible = false;
 	Qt::DockWidgetArea _dockArea;

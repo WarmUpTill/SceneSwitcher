@@ -5,6 +5,8 @@
 #include <QDialog>
 #include <QCheckBox>
 #include <QGroupBox>
+#include <QLineEdit>
+#include <QGridLayout>
 #include <obs-data.h>
 
 namespace advss {
@@ -31,8 +33,12 @@ public:
 				   Macro *macro);
 private slots:
 	void DockEnableChanged(int);
+	void RunButtonEnableChanged(int);
+	void PauseButtonEnableChanged(int);
 
 private:
+	void Resize();
+
 	QCheckBox *_executed;
 	QCheckBox *_conditions;
 	QCheckBox *_actions;
@@ -42,7 +48,15 @@ private:
 	QCheckBox *_currentMacroRegisterDock;
 	QCheckBox *_currentMacroDockAddRunButton;
 	QCheckBox *_currentMacroDockAddPauseButton;
+	QLineEdit *_runButtonText;
+	QLineEdit *_pauseButtonText;
+	QLineEdit *_unpauseButtonText;
 	QGroupBox *_dockOptions;
+	QGridLayout *_dockLayout;
+
+	int _runButtonTextRow = -1;
+	int _pauseButtonTextRow = -1;
+	int _unpauseButtonTextRow = -1;
 };
 
 } // namespace advss
