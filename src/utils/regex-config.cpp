@@ -6,19 +6,19 @@
 
 namespace advss {
 
-void RegexConfig::Save(obs_data_t *obj) const
+void RegexConfig::Save(obs_data_t *obj, const char *name) const
 {
 	auto data = obs_data_create();
 	obs_data_set_bool(data, "enable", _enable);
 	obs_data_set_bool(data, "partial", _partialMatch);
 	obs_data_set_int(data, "options", _options);
-	obs_data_set_obj(obj, "regexConfig", data);
+	obs_data_set_obj(obj, name, data);
 	obs_data_release(data);
 }
 
-void RegexConfig::Load(obs_data_t *obj)
+void RegexConfig::Load(obs_data_t *obj, const char *name)
 {
-	auto data = obs_data_get_obj(obj, "regexConfig");
+	auto data = obs_data_get_obj(obj, name);
 	_enable = obs_data_get_bool(data, "enable");
 	_partialMatch = obs_data_get_bool(data, "partial");
 	_options = static_cast<QRegularExpression::PatternOption>(
@@ -59,15 +59,21 @@ RegexConfig RegexConfig::PartialMatchRegexConfig()
 RegexConfigWidget::RegexConfigWidget(QWidget *parent)
 	: QWidget(parent),
 	  _openSettings(new QPushButton()),
-	  _enable(new QCheckBox(
-		  obs_module_text("AdvSceneSwitcher.regex.enable")))
+	  _enable(new QPushButton())
 {
 	_openSettings->setMaximumWidth(22);
 	SetButtonIcon(_openSettings, ":/settings/images/settings/general.svg");
 	_openSettings->setFlat(true);
 
-	QWidget::connect(_enable, SIGNAL(stateChanged(int)), this,
-			 SLOT(EnableChanged(int)));
+	_enable->setToolTip(obs_module_text("AdvSceneSwitcher.regex.enable"));
+	_enable->setMaximumWidth(22);
+	_enable->setCheckable(true);
+	const auto path = GetDataFilePath("res/images/" + GetThemeTypeName() +
+					  "Regex.svg");
+	SetButtonIcon(_enable, path.c_str());
+
+	QWidget::connect(_enable, SIGNAL(clicked(bool)), this,
+			 SLOT(EnableChanged(bool)));
 	QWidget::connect(_openSettings, SIGNAL(clicked()), this,
 			 SLOT(OpenSettingsClicked()));
 
@@ -101,7 +107,7 @@ void RegexConfigWidget::SetVisibility()
 	updateGeometry();
 }
 
-void RegexConfigWidget::EnableChanged(int value)
+void RegexConfigWidget::EnableChanged(bool value)
 {
 	_config._enable = value;
 	SetVisibility();
