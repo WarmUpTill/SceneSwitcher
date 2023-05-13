@@ -15,10 +15,11 @@ class RegexConfigDialog;
 
 class RegexConfig {
 public:
-	void Save(obs_data_t *obj) const;
-	void Load(obs_data_t *obj);
+	void Save(obs_data_t *obj, const char *name = "regexConfig") const;
+	void Load(obs_data_t *obj, const char *name = "regexConfig");
 
 	bool Enabled() const { return _enable; }
+	void SetEnabled(bool enable) { _enable = enable; }
 	void CreateBackwardsCompatibleRegex(bool, bool = true);
 	QRegularExpression::PatternOptions GetPatternOptions() const
 	{
@@ -44,8 +45,8 @@ public:
 	RegexConfigWidget(QWidget *parent = nullptr);
 	void SetRegexConfig(const RegexConfig &);
 
-private slots:
-	void EnableChanged(int);
+public slots:
+	void EnableChanged(bool);
 	void OpenSettingsClicked();
 signals:
 	void RegexConfigChanged(RegexConfig);
@@ -54,7 +55,7 @@ private:
 	void SetVisibility();
 
 	QPushButton *_openSettings;
-	QCheckBox *_enable;
+	QPushButton *_enable;
 	RegexConfig _config;
 };
 
