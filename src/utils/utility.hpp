@@ -7,6 +7,7 @@
 #include <QListWidget>
 #include <QPushButton>
 #include <QColor>
+#include <QScreen>
 #include <obs.hpp>
 #include <obs-frontend-api.h>
 #include <deque>
@@ -121,6 +122,7 @@ void ReplaceAll(std::string &str, const std::string &from,
 		const std::string &to);
 QString GetDefaultSettingsSaveLocation();
 std::string GetPathInProfileDir(const char *filePath);
+QStringList GetMonitorNames();
 
 /* Legacy helpers */
 
