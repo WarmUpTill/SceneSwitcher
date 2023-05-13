@@ -3,14 +3,16 @@
 #include "utility.hpp"
 
 #include <QLayout>
-#include <obs-module.h>
 
 namespace advss {
 
-MacroDock::MacroDock(Macro *m, QWidget *parent)
+MacroDock::MacroDock(Macro *m, QWidget *parent, const QString &runButtonText,
+		     const QString &pauseButtonText,
+		     const QString &unpauseButtonText)
 	: OBSDock(parent),
-	  _run(new QPushButton(
-		  obs_module_text("AdvSceneSwitcher.macroDock.run"))),
+	  _pauseButtonText(pauseButtonText),
+	  _unpauseButtonText(unpauseButtonText),
+	  _run(new QPushButton(runButtonText)),
 	  _pauseToggle(new QPushButton()),
 	  _macro(m)
 {
@@ -61,9 +63,26 @@ void MacroDock::ShowRunButton(bool value)
 	_run->setVisible(value);
 }
 
+void MacroDock::SetRunButtonText(const QString &text)
+{
+	_run->setText(text);
+}
+
 void MacroDock::ShowPauseButton(bool value)
 {
 	_pauseToggle->setVisible(value);
+}
+
+void MacroDock::SetPauseButtonText(const QString &text)
+{
+	_pauseButtonText = text;
+	UpdatePauseText();
+}
+
+void MacroDock::SetUnpauseButtonText(const QString &text)
+{
+	_unpauseButtonText = text;
+	UpdatePauseText();
 }
 
 void MacroDock::RunClicked()
@@ -96,10 +115,8 @@ void MacroDock::UpdatePauseText()
 		return;
 	}
 
-	_pauseToggle->setText(
-		_macro->Paused()
-			? obs_module_text("AdvSceneSwitcher.macroDock.unpause")
-			: obs_module_text("AdvSceneSwitcher.macroDock.pause"));
+	_pauseToggle->setText(_macro->Paused() ? _unpauseButtonText
+					       : _pauseButtonText);
 }
 
 } // namespace advss

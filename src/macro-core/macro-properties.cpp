@@ -1,8 +1,9 @@
 #include "macro-properties.hpp"
+#include "obs-module-helper.hpp"
+#include "utility.hpp"
 
 #include <QVBoxLayout>
 #include <QDialogButtonBox>
-#include <obs-module.h>
 
 namespace advss {
 
@@ -29,6 +30,30 @@ void MacroProperties::Load(obs_data_t *obj)
 	obs_data_release(data);
 }
 
+static void setGridLayoutRowVisible(QGridLayout *layout, int row, bool visible)
+{
+	for (int col = 0; col < layout->columnCount(); col++) {
+		auto item = layout->itemAtPosition(row, col);
+		if (!item) {
+			continue;
+		}
+
+		auto rowLayout = item->layout();
+		if (rowLayout) {
+			SetLayoutVisible(rowLayout, visible);
+		}
+
+		auto widget = item->widget();
+		if (widget) {
+			widget->setVisible(visible);
+		}
+	}
+
+	if (!visible) {
+		layout->setRowMinimumHeight(row, 0);
+	}
+}
+
 MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 					     const MacroProperties &prop,
 					     Macro *macro)
@@ -48,7 +73,13 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	  _currentMacroDockAddRunButton(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentDockAddRunButton"))),
 	  _currentMacroDockAddPauseButton(new QCheckBox(obs_module_text(
-		  "AdvSceneSwitcher.macroTab.currentDockAddPauseButton")))
+		  "AdvSceneSwitcher.macroTab.currentDockAddPauseButton"))),
+	  _runButtonText(new QLineEdit()),
+	  _pauseButtonText(new QLineEdit()),
+	  _unpauseButtonText(new QLineEdit()),
+	  _dockOptions(new QGroupBox(
+		  obs_module_text("AdvSceneSwitcher.macroTab.dockSettings"))),
+	  _dockLayout(new QGridLayout())
 {
 	setModal(true);
 	setWindowModality(Qt::WindowModality::WindowModal);
@@ -56,7 +87,7 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 
 	auto highlightOptions = new QGroupBox(
 		obs_module_text("AdvSceneSwitcher.macroTab.highlightSettings"));
-	QVBoxLayout *highlightLayout = new QVBoxLayout;
+	auto highlightLayout = new QVBoxLayout;
 	highlightLayout->addWidget(_executed);
 	highlightLayout->addWidget(_conditions);
 	highlightLayout->addWidget(_actions);
@@ -64,18 +95,39 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 
 	auto hotkeyOptions = new QGroupBox(
 		obs_module_text("AdvSceneSwitcher.macroTab.hotkeySettings"));
-	QVBoxLayout *hotkeyLayout = new QVBoxLayout;
+	auto hotkeyLayout = new QVBoxLayout;
 	hotkeyLayout->addWidget(_newMacroRegisterHotkeys);
 	hotkeyLayout->addWidget(_currentMacroRegisterHotkeys);
 	hotkeyOptions->setLayout(hotkeyLayout);
 
-	_dockOptions = new QGroupBox(
-		obs_module_text("AdvSceneSwitcher.macroTab.dockSettings"));
-	QVBoxLayout *dockLayout = new QVBoxLayout;
-	dockLayout->addWidget(_currentMacroRegisterDock);
-	dockLayout->addWidget(_currentMacroDockAddRunButton);
-	dockLayout->addWidget(_currentMacroDockAddPauseButton);
-	_dockOptions->setLayout(dockLayout);
+	int row = 0;
+	_dockLayout->addWidget(_currentMacroRegisterDock, row, 1, 1, 2);
+	row++;
+	_dockLayout->addWidget(_currentMacroDockAddRunButton, row, 1, 1, 2);
+	row++;
+	_dockLayout->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.macroTab.currentDockButtonText.run")),
+		row, 1);
+	_dockLayout->addWidget(_runButtonText, row, 2);
+	_runButtonTextRow = row;
+	row++;
+	_dockLayout->addWidget(_currentMacroDockAddPauseButton, row, 1, 1, 2);
+	row++;
+	_dockLayout->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.macroTab.currentDockButtonText.pause")),
+		row, 1);
+	_dockLayout->addWidget(_pauseButtonText, row, 2);
+	_pauseButtonTextRow = row;
+	row++;
+	_dockLayout->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.macroTab.currentDockButtonText.unpause")),
+		row, 1);
+	_dockLayout->addWidget(_unpauseButtonText, row, 2);
+	_unpauseButtonTextRow = row;
+	_dockOptions->setLayout(_dockLayout);
 
 	QDialogButtonBox *buttonbox = new QDialogButtonBox(
 		QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -85,8 +137,12 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 
 	connect(_currentMacroRegisterDock, &QCheckBox::stateChanged, this,
 		&MacroPropertiesDialog::DockEnableChanged);
+	connect(_currentMacroDockAddRunButton, &QCheckBox::stateChanged, this,
+		&MacroPropertiesDialog::RunButtonEnableChanged);
+	connect(_currentMacroDockAddPauseButton, &QCheckBox::stateChanged, this,
+		&MacroPropertiesDialog::PauseButtonEnableChanged);
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto layout = new QVBoxLayout;
 	layout->addWidget(highlightOptions);
 	layout->addWidget(hotkeyOptions);
 	layout->addWidget(_dockOptions);
@@ -108,14 +164,49 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	_currentMacroDockAddRunButton->setChecked(macro->DockHasRunButton());
 	_currentMacroDockAddPauseButton->setChecked(
 		macro->DockHasPauseButton());
+	_runButtonText->setText(QString::fromStdString(macro->RunButtonText()));
+	_pauseButtonText->setText(
+		QString::fromStdString(macro->PauseButtonText()));
+	_unpauseButtonText->setText(
+		QString::fromStdString(macro->UnpauseButtonText()));
+
 	_currentMacroDockAddRunButton->setVisible(dockEnabled);
 	_currentMacroDockAddPauseButton->setVisible(dockEnabled);
+	setGridLayoutRowVisible(_dockLayout, _runButtonTextRow,
+				dockEnabled && macro->DockHasRunButton());
+	setGridLayoutRowVisible(_dockLayout, _pauseButtonTextRow,
+				dockEnabled && macro->DockHasPauseButton());
+	setGridLayoutRowVisible(_dockLayout, _unpauseButtonTextRow,
+				dockEnabled && macro->DockHasPauseButton());
+	MinimizeSizeOfColumn(_dockLayout, 0);
+	Resize();
 }
 
 void MacroPropertiesDialog::DockEnableChanged(int enabled)
 {
 	_currentMacroDockAddRunButton->setVisible(enabled);
 	_currentMacroDockAddPauseButton->setVisible(enabled);
+	setGridLayoutRowVisible(_dockLayout, _runButtonTextRow, enabled);
+	setGridLayoutRowVisible(_dockLayout, _pauseButtonTextRow, enabled);
+	setGridLayoutRowVisible(_dockLayout, _unpauseButtonTextRow, enabled);
+	Resize();
+}
+
+void MacroPropertiesDialog::RunButtonEnableChanged(int enabled)
+{
+	setGridLayoutRowVisible(_dockLayout, _runButtonTextRow, enabled);
+	Resize();
+}
+
+void MacroPropertiesDialog::PauseButtonEnableChanged(int enabled)
+{
+	setGridLayoutRowVisible(_dockLayout, _pauseButtonTextRow, enabled);
+	setGridLayoutRowVisible(_dockLayout, _unpauseButtonTextRow, enabled);
+	Resize();
+}
+
+void MacroPropertiesDialog::Resize()
+{
 	_dockOptions->adjustSize();
 	_dockOptions->updateGeometry();
 	adjustSize();
@@ -147,6 +238,11 @@ bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
 		dialog._currentMacroDockAddRunButton->isChecked());
 	macro->SetDockHasPauseButton(
 		dialog._currentMacroDockAddPauseButton->isChecked());
+	macro->SetRunButtonText(dialog._runButtonText->text().toStdString());
+	macro->SetPauseButtonText(
+		dialog._pauseButtonText->text().toStdString());
+	macro->SetUnpauseButtonText(
+		dialog._unpauseButtonText->text().toStdString());
 	return true;
 }
 
