@@ -7,7 +7,6 @@
 #include <QListWidget>
 #include <QPushButton>
 #include <QColor>
-#include <QScreen>
 #include <obs.hpp>
 #include <obs-frontend-api.h>
 #include <deque>
