@@ -163,6 +163,8 @@ target_sources(
           src/macro-core/macro-condition-cursor.hpp
           src/macro-core/macro-condition-date.cpp
           src/macro-core/macro-condition-date.hpp
+          src/macro-core/macro-condition-display.cpp
+          src/macro-core/macro-condition-display.hpp
           src/macro-core/macro-condition-edit.cpp
           src/macro-core/macro-condition-edit.hpp
           src/macro-core/macro-condition-file.cpp
