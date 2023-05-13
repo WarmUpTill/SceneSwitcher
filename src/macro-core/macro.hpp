@@ -26,26 +26,25 @@ public:
 	bool CeckMatch();
 	bool PerformActions(bool forceParallel = false,
 			    bool ignorePause = false);
-	bool Matched() { return _matched; }
-	int64_t MsSinceLastCheck();
-	std::string Name() { return _name; }
+	bool Matched() const { return _matched; }
+	int64_t MsSinceLastCheck() const;
+	std::string Name() const { return _name; }
 	void SetName(const std::string &name);
 	void SetRunInParallel(bool parallel) { _runInParallel = parallel; }
-	bool RunInParallel() { return _runInParallel; }
+	bool RunInParallel() const { return _runInParallel; }
 	void SetPaused(bool pause = true);
-	bool Paused() { return _paused; }
+	bool Paused() const { return _paused; }
 	void SetMatchOnChange(bool onChange) { _matchOnChange = onChange; }
-	bool MatchOnChange() { return _matchOnChange; }
-	int RunCount() { return _runCount; };
+	bool MatchOnChange() const { return _matchOnChange; }
+	int RunCount() const { return _runCount; };
 	void ResetRunCount() { _runCount = 0; };
+	void ResetTimers();
 	void AddHelperThread(std::thread &&);
-	bool GetStop() { return _stop; }
+	bool GetStop() const { return _stop; }
 	void Stop();
-	std::deque<std::shared_ptr<MacroCondition>> &Conditions()
-	{
-		return _conditions;
-	}
-	std::deque<std::shared_ptr<MacroAction>> &Actions() { return _actions; }
+
+	std::deque<std::shared_ptr<MacroCondition>> &Conditions();
+	std::deque<std::shared_ptr<MacroAction>> &Actions();
 	void UpdateActionIndices();
 	void UpdateConditionIndices();
 
@@ -58,14 +57,15 @@ public:
 				       std::shared_ptr<Macro> item);
 	static void PrepareMoveToGroup(std::shared_ptr<Macro> group,
 				       std::shared_ptr<Macro> item);
-	bool IsGroup() { return _isGroup; }
-	uint32_t GroupSize() { return _groupSize; }
-	bool IsSubitem() { return !_parent.expired(); }
+	bool IsGroup() const { return _isGroup; }
+	uint32_t GroupSize() const { return _groupSize; }
+	bool IsSubitem() const { return !_parent.expired(); }
 	void SetCollapsed(bool val) { _isCollapsed = val; }
-	bool IsCollapsed() { return _isCollapsed; }
+	bool IsCollapsed() const { return _isCollapsed; }
 	void SetParent(std::shared_ptr<Macro> m) { _parent = m; }
-	std::shared_ptr<Macro> Parent();
+	std::shared_ptr<Macro> Parent() const;
 
+	// Saving and loading
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
 	// Some macros can refer to other macros, which are not yet loaded.
@@ -73,29 +73,27 @@ public:
 	bool PostLoad();
 
 	// Helper function for plugin state condition regarding scene change
-	bool SwitchesScene();
+	bool SwitchesScene() const;
 
-	// UI helpers for the macro tab
+	// UI helpers
 	bool WasExecutedRecently();
 	bool OnChangePreventedActionsRecently();
 	void ResetUIHelpers();
 
 	void EnablePauseHotkeys(bool);
-	bool PauseHotkeysEnabled();
+	bool PauseHotkeysEnabled() const;
 
 	void EnableDock(bool);
-	bool DockEnabled() { return _registerDock; }
+	bool DockEnabled() const { return _registerDock; }
 	void SetDockHasRunButton(bool value);
-	bool DockHasRunButton() { return _dockHasRunButton; }
+	bool DockHasRunButton() const { return _dockHasRunButton; }
 	void SetDockHasPauseButton(bool value);
-	bool DockHasPauseButton() { return _dockHasPauseButton; }
-
-	void ResetTimers();
+	bool DockHasPauseButton() const { return _dockHasPauseButton; }
 
 private:
 	void SetupHotkeys();
-	void ClearHotkeys();
-	void SetHotkeysDesc();
+	void ClearHotkeys() const;
+	void SetHotkeysDesc() const;
 	void RunActions(bool &ret, bool ignorePause);
 	void RunActions(bool ignorePause);
 	void SetOnChangeHighlight();
@@ -106,11 +104,20 @@ private:
 	void RemoveDock();
 
 	std::string _name = "";
+	bool _die = false;
+	bool _stop = false;
+	bool _done = true;
+	std::chrono::high_resolution_clock::time_point _lastCheckTime{};
+	std::thread _backgroundThread;
+	std::vector<std::thread> _helperThreads;
+
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;
 	std::deque<std::shared_ptr<MacroAction>> _actions;
 
 	std::weak_ptr<Macro> _parent;
 	uint32_t _groupSize = 0;
+	bool _isGroup = false;
+	bool _isCollapsed = false;
 
 	bool _runInParallel = false;
 	bool _matched = false;
@@ -124,10 +131,9 @@ private:
 	obs_hotkey_id _togglePauseHotkey = OBS_INVALID_HOTKEY_ID;
 
 	// UI helpers for the macro tab
-	bool _isGroup = false;
-	bool _isCollapsed = false;
 	bool _wasExecutedRecently = false;
 	bool _onChangeTriggered = false;
+
 	bool _registerDock = false;
 	bool _dockHasRunButton = true;
 	bool _dockHasPauseButton = true;
@@ -137,14 +143,6 @@ private:
 	QByteArray _dockGeo;
 	MacroDock *_dock = nullptr;
 	QAction *_dockAction = nullptr;
-
-	std::chrono::high_resolution_clock::time_point _lastCheckTime{};
-
-	bool _die = false;
-	bool _stop = false;
-	bool _done = true;
-	std::thread _backgroundThread;
-	std::vector<std::thread> _helperThreads;
 };
 
 Macro *GetMacroByName(const char *name);

@@ -216,7 +216,7 @@ bool Macro::PerformActions(bool forceParallel, bool ignorePause)
 	return ret;
 }
 
-int64_t Macro::MsSinceLastCheck()
+int64_t Macro::MsSinceLastCheck() const
 {
 	if (_lastCheckTime.time_since_epoch().count() == 0) {
 		return 0;
@@ -307,6 +307,16 @@ void Macro::Stop()
 	}
 }
 
+std::deque<std::shared_ptr<MacroCondition>> &Macro::Conditions()
+{
+	return _conditions;
+}
+
+std::deque<std::shared_ptr<MacroAction>> &Macro::Actions()
+{
+	return _actions;
+}
+
 void Macro::UpdateActionIndices()
 {
 	int idx = 0;
@@ -325,7 +335,7 @@ void Macro::UpdateConditionIndices()
 	}
 }
 
-std::shared_ptr<Macro> Macro::Parent()
+std::shared_ptr<Macro> Macro::Parent() const
 {
 	return _parent.lock();
 }
@@ -521,7 +531,7 @@ bool Macro::PostLoad()
 	return true;
 }
 
-bool Macro::SwitchesScene()
+bool Macro::SwitchesScene() const
 {
 	MacroActionSwitchScene temp(nullptr);
 	auto sceneSwitchId = temp.GetId();
@@ -576,7 +586,7 @@ void Macro::EnablePauseHotkeys(bool value)
 	_registerHotkeys = value;
 }
 
-bool Macro::PauseHotkeysEnabled()
+bool Macro::PauseHotkeysEnabled() const
 {
 	return _registerHotkeys;
 }
@@ -786,7 +796,7 @@ void Macro::SetupHotkeys()
 		togglePauseCB);
 }
 
-void Macro::ClearHotkeys()
+void Macro::ClearHotkeys() const
 {
 	obs_hotkey_unregister(_pauseHotkey);
 	obs_hotkey_unregister(_unpauseHotkey);
@@ -801,7 +811,7 @@ void setHotkeyDescriptionHelper(const char *formatModuleText,
 	obs_hotkey_set_description(id, hotkeyDesc.toStdString().c_str());
 }
 
-void Macro::SetHotkeysDesc()
+void Macro::SetHotkeysDesc() const
 {
 	setHotkeyDescriptionHelper("AdvSceneSwitcher.hotkey.macro.pause", _name,
 				   _pauseHotkey);
