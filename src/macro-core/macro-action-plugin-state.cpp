@@ -14,7 +14,7 @@ const std::string MacroActionPluginState::id = "plugin_state";
 bool MacroActionPluginState::_registered = MacroActionFactory::Register(
 	MacroActionPluginState::id,
 	{MacroActionPluginState::Create, MacroActionPluginStateEdit::Create,
-	 "AdvSceneSwitcher.action.PluginState"});
+	 "AdvSceneSwitcher.action.pluginState"});
 
 const static std::map<PluginStateAction, std::string> actionTypes = {
 	{PluginStateAction::STOP,
