@@ -61,6 +61,9 @@ std::vector<cv::Rect> MatchObject(QImage &img, cv::CascadeClassifier &cascade,
 uchar GetAvgBrightness(QImage &img);
 cv::Mat PreprocessForOCR(const QImage &image, const QColor &color);
 std::string RunOCR(tesseract::TessBaseAPI *, const QImage &, const QColor &);
+bool ContainsPixelsInColorRange(const QImage &image, const QColor &color,
+				double colorDeviationThreshold,
+				double totalPixelMatchThreshold);
 cv::Mat QImageToMat(const QImage &img);
 QImage MatToQImage(const cv::Mat &mat);
 

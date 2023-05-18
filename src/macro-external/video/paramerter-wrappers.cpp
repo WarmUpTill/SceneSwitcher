@@ -315,4 +315,25 @@ void OCRParameters::Setup()
 	initDone = true;
 }
 
+bool ColorParameters::Save(obs_data_t *obj) const
+{
+	auto data = obs_data_create();
+	SaveColor(data, "color", color);
+	colorThreshold.Save(data, "colorThreshold");
+	matchThreshold.Save(data, "matchThreshold");
+	obs_data_set_obj(obj, "colorData", data);
+	obs_data_release(data);
+	return true;
+}
+
+bool ColorParameters::Load(obs_data_t *obj)
+{
+	auto data = obs_data_get_obj(obj, "colorData");
+	color = LoadColor(data, "color");
+	colorThreshold.Load(data, "colorThreshold");
+	matchThreshold.Load(data, "matchThreshold");
+	obs_data_release(data);
+	return true;
+}
+
 } // namespace advss

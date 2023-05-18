@@ -28,6 +28,7 @@ enum class VideoCondition {
 	OBJECT,
 	BRIGHTNESS,
 	OCR,
+	COLOR,
 };
 
 class VideoInput {
@@ -102,6 +103,16 @@ private:
 	tesseract::PageSegMode pageSegMode = tesseract::PSM_SINGLE_BLOCK;
 	std::unique_ptr<tesseract::TessBaseAPI> ocr;
 	bool initDone = false;
+};
+
+class ColorParameters {
+public:
+	bool Save(obs_data_t *obj) const;
+	bool Load(obs_data_t *obj);
+
+	QColor color = Qt::black;
+	DoubleVariable colorThreshold = 0.1;
+	DoubleVariable matchThreshold = 0.8;
 };
 
 class AreaParameters {
