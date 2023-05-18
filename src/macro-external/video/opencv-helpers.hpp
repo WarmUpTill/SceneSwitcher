@@ -47,19 +47,20 @@ struct PatternImageData {
 	cv::Mat1b mask;
 };
 
-PatternImageData createPatternData(QImage &pattern);
-void matchPattern(QImage &img, const PatternImageData &patternData,
+PatternImageData CreatePatternData(QImage &pattern);
+void MatchPattern(QImage &img, const PatternImageData &patternData,
 		  double threshold, cv::Mat &result, bool useAlphaAsMask,
 		  cv::TemplateMatchModes matchMode);
-void matchPattern(QImage &img, QImage &pattern, double threshold,
+void MatchPattern(QImage &img, QImage &pattern, double threshold,
 		  cv::Mat &result, bool useAlphaAsMask,
 		  cv::TemplateMatchModes matchMode);
-std::vector<cv::Rect> matchObject(QImage &img, cv::CascadeClassifier &cascade,
+std::vector<cv::Rect> MatchObject(QImage &img, cv::CascadeClassifier &cascade,
 				  double scaleFactor, int minNeighbors,
-				  cv::Size minSize, cv::Size maxSize);
-uchar getAvgBrightness(QImage &img);
-cv::Mat preprocessForOCR(const QImage &image, const QColor &color);
-std::string runOCR(tesseract::TessBaseAPI *, const QImage &, const QColor &);
+				  const cv::Size &minSize,
+				  const cv::Size &maxSize);
+uchar GetAvgBrightness(QImage &img);
+cv::Mat PreprocessForOCR(const QImage &image, const QColor &color);
+std::string RunOCR(tesseract::TessBaseAPI *, const QImage &, const QColor &);
 cv::Mat QImageToMat(const QImage &img);
 QImage MatToQImage(const cv::Mat &mat);
 

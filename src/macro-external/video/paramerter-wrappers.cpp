@@ -106,7 +106,7 @@ bool ObjDetectParameters::Load(obs_data_t *obj)
 	return true;
 }
 
-bool AreaParamters::Save(obs_data_t *obj) const
+bool AreaParameters::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
 	obs_data_set_bool(data, "enabled", enable);
@@ -116,7 +116,7 @@ bool AreaParamters::Save(obs_data_t *obj) const
 	return true;
 }
 
-bool AreaParamters::Load(obs_data_t *obj)
+bool AreaParameters::Load(obs_data_t *obj)
 {
 	// TODO: Remove this fallback in a future version
 	if (!obs_data_has_user_value(obj, "areaData")) {

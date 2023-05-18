@@ -2,7 +2,7 @@
 
 namespace advss {
 
-PatternImageData createPatternData(QImage &pattern)
+PatternImageData CreatePatternData(QImage &pattern)
 {
 	PatternImageData data{};
 	if (pattern.isNull()) {
@@ -30,7 +30,7 @@ static void invertPatternMatchResult(cv::Mat &mat)
 	}
 }
 
-void matchPattern(QImage &img, const PatternImageData &patternData,
+void MatchPattern(QImage &img, const PatternImageData &patternData,
 		  double threshold, cv::Mat &result, bool useAlphaAsMask,
 		  cv::TemplateMatchModes matchMode)
 {
@@ -74,17 +74,18 @@ void matchPattern(QImage &img, const PatternImageData &patternData,
 	cv::threshold(result, result, threshold, 0.0, cv::THRESH_TOZERO);
 }
 
-void matchPattern(QImage &img, QImage &pattern, double threshold,
+void MatchPattern(QImage &img, QImage &pattern, double threshold,
 		  cv::Mat &result, bool useAlphaAsMask,
 		  cv::TemplateMatchModes matchColor)
 {
-	auto data = createPatternData(pattern);
-	matchPattern(img, data, threshold, result, useAlphaAsMask, matchColor);
+	auto data = CreatePatternData(pattern);
+	MatchPattern(img, data, threshold, result, useAlphaAsMask, matchColor);
 }
 
-std::vector<cv::Rect> matchObject(QImage &img, cv::CascadeClassifier &cascade,
+std::vector<cv::Rect> MatchObject(QImage &img, cv::CascadeClassifier &cascade,
 				  double scaleFactor, int minNeighbors,
-				  cv::Size minSize, cv::Size maxSize)
+				  const cv::Size &minSize,
+				  const cv::Size &maxSize)
 {
 	if (img.isNull() || cascade.empty()) {
 		return {};
@@ -93,14 +94,14 @@ std::vector<cv::Rect> matchObject(QImage &img, cv::CascadeClassifier &cascade,
 	auto i = QImageToMat(img);
 	cv::Mat frameGray;
 	cv::cvtColor(i, frameGray, cv::COLOR_RGBA2GRAY);
-	equalizeHist(frameGray, frameGray);
+	cv::equalizeHist(frameGray, frameGray);
 	std::vector<cv::Rect> objects;
 	cascade.detectMultiScale(frameGray, objects, scaleFactor, minNeighbors,
 				 0, minSize, maxSize);
 	return objects;
 }
 
-uchar getAvgBrightness(QImage &img)
+uchar GetAvgBrightness(QImage &img)
 {
 	if (img.isNull()) {
 		return 0;
@@ -119,7 +120,7 @@ uchar getAvgBrightness(QImage &img)
 	return brightnessSum / (hsvImage.rows * hsvImage.cols);
 }
 
-cv::Mat preprocessForOCR(const QImage &image, const QColor &color)
+cv::Mat PreprocessForOCR(const QImage &image, const QColor &color)
 {
 	auto mat = QImageToMat(image);
 
@@ -150,7 +151,7 @@ cv::Mat preprocessForOCR(const QImage &image, const QColor &color)
 	return mat;
 }
 
-std::string runOCR(tesseract::TessBaseAPI *ocr, const QImage &image,
+std::string RunOCR(tesseract::TessBaseAPI *ocr, const QImage &image,
 		   const QColor &color)
 {
 	if (image.isNull()) {
@@ -158,7 +159,7 @@ std::string runOCR(tesseract::TessBaseAPI *ocr, const QImage &image,
 	}
 
 #ifdef OCR_SUPPORT
-	auto mat = preprocessForOCR(image, color);
+	auto mat = PreprocessForOCR(image, color);
 	ocr->SetImage(mat.data, mat.cols, mat.rows, 1, mat.step);
 	ocr->Recognize(0);
 	std::unique_ptr<char[]> detectedText(ocr->GetUTF8Text());

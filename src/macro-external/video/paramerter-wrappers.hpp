@@ -104,7 +104,7 @@ private:
 	bool initDone = false;
 };
 
-class AreaParamters {
+class AreaParameters {
 public:
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
