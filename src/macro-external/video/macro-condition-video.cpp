@@ -161,7 +161,7 @@ bool MacroConditionVideo::Save(obs_data_t *obj) const
 	_brightnessThreshold.Save(obj, "brightnessThreshold");
 	_patternMatchParameters.Save(obj);
 	_objMatchParameters.Save(obj);
-	_ocrParamters.Save(obj);
+	_ocrParameters.Save(obj);
 	obs_data_set_bool(obj, "throttleEnabled", _throttleEnabled);
 	obs_data_set_int(obj, "throttleCount", _throttleCount);
 	_areaParameters.Save(obj);
@@ -185,7 +185,7 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 	}
 	_patternMatchParameters.Load(obj);
 	_objMatchParameters.Load(obj);
-	_ocrParamters.Load(obj);
+	_ocrParameters.Load(obj);
 	_throttleEnabled = obs_data_get_bool(obj, "throttleEnabled");
 	_throttleCount = obs_data_get_int(obj, "throttleCount");
 	_areaParameters.Load(obj);
@@ -229,7 +229,7 @@ bool MacroConditionVideo::LoadImageFromFile()
 	_matchImage =
 		_matchImage.convertToFormat(QImage::Format::Format_RGBA8888);
 	_patternMatchParameters.image = _matchImage;
-	_patternImageData = createPatternData(_matchImage);
+	_patternImageData = CreatePatternData(_matchImage);
 	return true;
 }
 
@@ -247,13 +247,13 @@ std::string MacroConditionVideo::GetModelDataPath() const
 
 void MacroConditionVideo::SetPageSegMode(tesseract::PageSegMode mode)
 {
-	_ocrParamters.SetPageMode(mode);
+	_ocrParameters.SetPageMode(mode);
 }
 
 bool MacroConditionVideo::ScreenshotContainsPattern()
 {
 	cv::Mat result;
-	matchPattern(_screenshotData.image, _patternImageData,
+	MatchPattern(_screenshotData.image, _patternImageData,
 		     _patternMatchParameters.threshold, result,
 		     _patternMatchParameters.useAlphaAsMask,
 		     _patternMatchParameters.matchMode);
@@ -264,8 +264,8 @@ bool MacroConditionVideo::OutputChanged()
 {
 	if (_patternMatchParameters.useForChangedCheck) {
 		cv::Mat result;
-		_patternImageData = createPatternData(_matchImage);
-		matchPattern(_screenshotData.image, _patternImageData,
+		_patternImageData = CreatePatternData(_matchImage);
+		MatchPattern(_screenshotData.image, _patternImageData,
 			     _patternMatchParameters.threshold, result,
 			     _patternMatchParameters.useAlphaAsMask,
 			     _patternMatchParameters.matchMode);
@@ -276,7 +276,7 @@ bool MacroConditionVideo::OutputChanged()
 
 bool MacroConditionVideo::ScreenshotContainsObject()
 {
-	auto objects = matchObject(_screenshotData.image,
+	auto objects = MatchObject(_screenshotData.image,
 				   _objMatchParameters.cascade,
 				   _objMatchParameters.scaleFactor,
 				   _objMatchParameters.minNeighbors,
@@ -287,22 +287,22 @@ bool MacroConditionVideo::ScreenshotContainsObject()
 
 bool MacroConditionVideo::CheckBrightnessThreshold()
 {
-	_currentBrightness = getAvgBrightness(_screenshotData.image) / 255.;
+	_currentBrightness = GetAvgBrightness(_screenshotData.image) / 255.;
 	return _currentBrightness > _brightnessThreshold;
 }
 
 bool MacroConditionVideo::CheckOCR()
 {
-	if (!_ocrParamters.Initialized()) {
+	if (!_ocrParameters.Initialized()) {
 		return false;
 	}
 
-	auto text = runOCR(_ocrParamters.GetOCR(), _screenshotData.image,
-			   _ocrParamters.color);
+	auto text = RunOCR(_ocrParameters.GetOCR(), _screenshotData.image,
+			   _ocrParameters.color);
 
-	if (_ocrParamters.regex.Enabled()) {
-		auto expr = _ocrParamters.regex.GetRegularExpression(
-			_ocrParamters.text);
+	if (_ocrParameters.regex.Enabled()) {
+		auto expr = _ocrParameters.regex.GetRegularExpression(
+			_ocrParameters.text);
 		if (!expr.isValid()) {
 			return false;
 		}
@@ -311,7 +311,7 @@ bool MacroConditionVideo::CheckOCR()
 	}
 
 	SetVariableValue(text);
-	return text == std::string(_ocrParamters.text);
+	return text == std::string(_ocrParameters.text);
 }
 
 bool MacroConditionVideo::Compare()
@@ -382,6 +382,426 @@ static inline void populatePatternMatchModeSelection(QComboBox *list)
 	}
 }
 
+BrightnessEdit::BrightnessEdit(QWidget *parent,
+			       const std::shared_ptr<MacroConditionVideo> &data)
+	: QWidget(parent),
+	  _threshold(new SliderSpinBox(
+		  0., 1.,
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.brightnessThreshold"),
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.brightnessThresholdDescription"))),
+	  _current(new QLabel),
+	  _data(data)
+{
+	auto layout = new QVBoxLayout;
+	layout->setContentsMargins(0, 0, 0, 0);
+	layout->addWidget(_threshold);
+	layout->addWidget(_current);
+	setLayout(layout);
+
+	QWidget::connect(
+		_threshold,
+		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
+		this,
+		SLOT(BrightnessThresholdChanged(
+			const NumberVariable<double> &)));
+	QWidget::connect(&_timer, &QTimer::timeout, this,
+			 &BrightnessEdit::UpdateCurrentBrightness);
+	_timer.start(1000);
+
+	_threshold->SetDoubleValue(_data->_brightnessThreshold);
+	_loading = false;
+}
+
+void BrightnessEdit::UpdateCurrentBrightness()
+{
+	QString text = obs_module_text(
+		"AdvSceneSwitcher.condition.video.currentBrightness");
+	_current->setText(text.arg(_data->GetCurrentBrightness()));
+}
+
+void BrightnessEdit::BrightnessThresholdChanged(const DoubleVariable &value)
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_data->_brightnessThreshold = value;
+}
+
+OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
+		 const std::shared_ptr<MacroConditionVideo> &data)
+	: QWidget(parent),
+	  _matchText(new VariableTextEdit(this)),
+	  _regex(new RegexConfigWidget(this)),
+	  _textColor(new QLabel),
+	  _selectColor(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.condition.video.selectColor"))),
+	  _pageSegMode(new QComboBox()),
+	  _previewDialog(previewDialog),
+	  _data(data)
+{
+	populatePageSegModeSelection(_pageSegMode);
+
+	QWidget::connect(_selectColor, SIGNAL(clicked()), this,
+			 SLOT(SelectColorClicked()));
+	QWidget::connect(_matchText, SIGNAL(textChanged()), this,
+			 SLOT(MatchTextChanged()));
+	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
+			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_pageSegMode, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(PageSegModeChanged(int)));
+
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{textColor}}", _textColor},
+		{"{{selectColor}}", _selectColor},
+		{"{{textType}}", _pageSegMode},
+	};
+
+	auto layout = new QVBoxLayout();
+	layout->setContentsMargins(0, 0, 0, 0);
+	auto textLayout = new QHBoxLayout();
+	textLayout->setContentsMargins(0, 0, 0, 0);
+	textLayout->addWidget(_matchText);
+	textLayout->addWidget(_regex);
+	layout->addLayout(textLayout);
+	auto pageModeSegLayout = new QHBoxLayout();
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.entry.orcTextType"),
+		pageModeSegLayout, widgetPlaceholders);
+	layout->addLayout(pageModeSegLayout);
+	auto colorPickLayout = new QHBoxLayout();
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.entry.orcColorPick"),
+		colorPickLayout, widgetPlaceholders);
+	layout->addLayout(colorPickLayout);
+	setLayout(layout);
+
+	_matchText->setPlainText(_data->_ocrParameters.text);
+	_regex->SetRegexConfig(_data->_ocrParameters.regex);
+	SetupColorLabel(_data->_ocrParameters.color);
+	_pageSegMode->setCurrentIndex(_pageSegMode->findData(
+		static_cast<int>(_data->_ocrParameters.GetPageMode())));
+	_loading = false;
+}
+
+void OCREdit::SetupColorLabel(const QColor &color)
+{
+	_textColor->setText(color.name());
+	_textColor->setPalette(QPalette(color));
+	_textColor->setAutoFillBackground(true);
+}
+
+void OCREdit::SelectColorClicked()
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	const QColor color = QColorDialog::getColor(
+		_data->_ocrParameters.color, this,
+		obs_module_text("AdvSceneSwitcher.condition.video.selectColor"),
+		QColorDialog::ColorDialogOption());
+
+	if (!color.isValid()) {
+		return;
+	}
+
+	SetupColorLabel(color);
+	auto lock = LockContext();
+	_data->_ocrParameters.color = color;
+
+	_previewDialog->OCRParametersChanged(_data->_ocrParameters);
+}
+
+void OCREdit::MatchTextChanged()
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_data->_ocrParameters.text =
+		_matchText->toPlainText().toUtf8().constData();
+
+	adjustSize();
+	updateGeometry();
+
+	_previewDialog->OCRParametersChanged(_data->_ocrParameters);
+}
+
+void OCREdit::RegexChanged(RegexConfig conf)
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_data->_ocrParameters.regex = conf;
+	adjustSize();
+	updateGeometry();
+
+	_previewDialog->OCRParametersChanged(_data->_ocrParameters);
+}
+
+void OCREdit::PageSegModeChanged(int idx)
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_data->SetPageSegMode(static_cast<tesseract::PageSegMode>(
+		_pageSegMode->itemData(idx).toInt()));
+
+	_previewDialog->OCRParametersChanged(_data->_ocrParameters);
+}
+
+ObjectDetectEdit::ObjectDetectEdit(
+	QWidget *parent, PreviewDialog *previewDialog,
+	const std::shared_ptr<MacroConditionVideo> &data)
+	: QWidget(parent),
+	  _modelDataPath(new FileSelection()),
+	  _objectScaleThreshold(new SliderSpinBox(
+		  1.1, 5.,
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.objectScaleThreshold"),
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.objectScaleThresholdDescription"))),
+	  _minNeighbors(new QSpinBox()),
+	  _minNeighborsDescription(new QLabel(obs_module_text(
+		  "AdvSceneSwitcher.condition.video.minNeighborDescription"))),
+	  _minSize(new SizeSelection(0, 1024)),
+	  _maxSize(new SizeSelection(0, 4096)),
+	  _previewDialog(previewDialog),
+	  _data(data)
+{
+	_minNeighbors->setMinimum(minMinNeighbors);
+	_minNeighbors->setMaximum(maxMinNeighbors);
+
+	QWidget::connect(
+		_objectScaleThreshold,
+		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
+		this,
+		SLOT(ObjectScaleThresholdChanged(
+			const NumberVariable<double> &)));
+	QWidget::connect(_minNeighbors, SIGNAL(valueChanged(int)), this,
+			 SLOT(MinNeighborsChanged(int)));
+	QWidget::connect(_minSize, SIGNAL(SizeChanged(Size)), this,
+			 SLOT(MinSizeChanged(Size)));
+	QWidget::connect(_maxSize, SIGNAL(SizeChanged(Size)), this,
+			 SLOT(MaxSizeChanged(Size)));
+	QWidget::connect(_modelDataPath, SIGNAL(PathChanged(const QString &)),
+			 this, SLOT(ModelPathChanged(const QString &)));
+
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{minNeighbors}}", _minNeighbors},
+		{"{{minSize}}", _minSize},
+		{"{{maxSize}}", _maxSize},
+		{"{{modelDataPath}}", _modelDataPath},
+	};
+
+	auto pathLayout = new QHBoxLayout;
+	pathLayout->setContentsMargins(0, 0, 0, 0);
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.entry.modelPath"),
+		pathLayout, widgetPlaceholders);
+
+	auto neighborsLayout = new QHBoxLayout;
+	neighborsLayout->setContentsMargins(0, 0, 0, 0);
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.entry.minNeighbor"),
+		neighborsLayout, widgetPlaceholders);
+
+	auto sizeGrid = new QGridLayout;
+	sizeGrid->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.condition.video.minSize")),
+		0, 0);
+	sizeGrid->addWidget(_minSize, 0, 1);
+	sizeGrid->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.condition.video.maxSize")),
+		1, 0);
+	sizeGrid->addWidget(_maxSize, 1, 1);
+	auto sizeLayout = new QHBoxLayout;
+	sizeLayout->setContentsMargins(0, 0, 0, 0);
+	sizeLayout->addLayout(sizeGrid);
+	sizeLayout->addStretch();
+
+	auto layout = new QVBoxLayout();
+	layout->setContentsMargins(0, 0, 0, 0);
+	layout->addLayout(pathLayout);
+	layout->addLayout(neighborsLayout);
+	layout->addLayout(sizeLayout);
+	setLayout(layout);
+
+	_modelDataPath->SetPath(_data->GetModelDataPath());
+	_objectScaleThreshold->SetDoubleValue(
+		_data->_objMatchParameters.scaleFactor);
+	_minNeighbors->setValue(_data->_objMatchParameters.minNeighbors);
+	_minSize->SetSize(_data->_objMatchParameters.minSize);
+	_maxSize->SetSize(_data->_objMatchParameters.maxSize);
+	_loading = false;
+}
+
+void ObjectDetectEdit::ObjectScaleThresholdChanged(const DoubleVariable &value)
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_data->_objMatchParameters.scaleFactor = value;
+	_previewDialog->ObjDetectParametersChanged(_data->_objMatchParameters);
+}
+
+void ObjectDetectEdit::MinNeighborsChanged(int value)
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_data->_objMatchParameters.minNeighbors = value;
+	_previewDialog->ObjDetectParametersChanged(_data->_objMatchParameters);
+}
+
+void ObjectDetectEdit::MinSizeChanged(advss::Size value)
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_data->_objMatchParameters.minSize = value;
+	_previewDialog->ObjDetectParametersChanged(_data->_objMatchParameters);
+}
+
+void ObjectDetectEdit::MaxSizeChanged(advss::Size value)
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_data->_objMatchParameters.maxSize = value;
+	_previewDialog->ObjDetectParametersChanged(_data->_objMatchParameters);
+}
+
+void ObjectDetectEdit::ModelPathChanged(const QString &text)
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	bool dataLoaded = false;
+	{
+		auto lock = LockContext();
+		std::string path = text.toStdString();
+		dataLoaded = _data->LoadModelData(path);
+	}
+	if (!dataLoaded) {
+		DisplayMessage(obs_module_text(
+			"AdvSceneSwitcher.condition.video.modelLoadFail"));
+	}
+	_previewDialog->ObjDetectParametersChanged(_data->_objMatchParameters);
+}
+
+AreaEdit::AreaEdit(QWidget *parent, PreviewDialog *previewDialog,
+		   const std::shared_ptr<MacroConditionVideo> &data)
+	: QWidget(parent),
+	  _checkAreaEnable(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.condition.video.entry.checkAreaEnable"))),
+	  _checkArea(new AreaSelection(0, 99999)),
+	  _selectArea(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.condition.video.selectArea"))),
+	  _previewDialog(previewDialog),
+	  _data(data)
+{
+	QWidget::connect(_checkAreaEnable, SIGNAL(stateChanged(int)), this,
+			 SLOT(CheckAreaEnableChanged(int)));
+	QWidget::connect(_checkArea, SIGNAL(AreaChanged(Area)), this,
+			 SLOT(CheckAreaChanged(Area)));
+	QWidget::connect(_selectArea, SIGNAL(clicked()), this,
+			 SLOT(SelectAreaClicked()));
+	QWidget::connect(_previewDialog, SIGNAL(SelectionAreaChanged(QRect)),
+			 this, SLOT(CheckAreaChanged(QRect)));
+
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{checkAreaEnable}}", _checkAreaEnable},
+		{"{{checkArea}}", _checkArea},
+		{"{{selectArea}}", _selectArea},
+	};
+
+	auto layout = new QHBoxLayout;
+	layout->setContentsMargins(0, 0, 0, 0);
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.entry.checkArea"),
+		layout, widgetPlaceholders);
+	setLayout(layout);
+
+	_checkAreaEnable->setChecked(_data->_areaParameters.enable);
+	_checkArea->SetArea(_data->_areaParameters.area);
+	SetWidgetVisibility();
+	_loading = false;
+}
+
+void AreaEdit::SetWidgetVisibility()
+{
+	_checkArea->setVisible(_data->_areaParameters.enable);
+	_selectArea->setVisible(_data->_areaParameters.enable);
+	adjustSize();
+	updateGeometry();
+}
+
+void AreaEdit::SelectAreaClicked()
+{
+	_previewDialog->show();
+	_previewDialog->raise();
+	_previewDialog->activateWindow();
+	_previewDialog->SelectArea();
+}
+
+void AreaEdit::CheckAreaEnableChanged(int value)
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_data->_areaParameters.enable = value;
+	SetWidgetVisibility();
+	_previewDialog->AreaParametersChanged(_data->_areaParameters);
+	emit Resized();
+}
+
+void AreaEdit::CheckAreaChanged(Area value)
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_data->_areaParameters.area = value;
+	_previewDialog->AreaParametersChanged(_data->_areaParameters);
+}
+
+void AreaEdit::CheckAreaChanged(QRect rect)
+{
+	const QSignalBlocker b(_checkArea);
+	Area area{rect.topLeft().x(), rect.y(), rect.width(), rect.height()};
+	_checkArea->SetArea(area);
+	CheckAreaChanged(area);
+}
+
 MacroConditionVideoEdit::MacroConditionVideoEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionVideo> entryData)
 	: QWidget(parent),
@@ -405,47 +825,16 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 		  "AdvSceneSwitcher.condition.video.patternThresholdUseAlphaAsMask"))),
 	  _patternMatchModeLayout(new QHBoxLayout()),
 	  _patternMatchMode(new QComboBox()),
-	  _brightnessThreshold(new SliderSpinBox(
-		  0., 1.,
-		  obs_module_text(
-			  "AdvSceneSwitcher.condition.video.brightnessThreshold"),
-		  obs_module_text(
-			  "AdvSceneSwitcher.condition.video.brightnessThresholdDescription"))),
-	  _currentBrightness(new QLabel),
-	  _ocrLayout(new QVBoxLayout),
-	  _matchText(new VariableTextEdit(this)),
-	  _regex(new RegexConfigWidget(this)),
-	  _textColor(new QLabel),
-	  _selectColor(new QPushButton(obs_module_text(
-		  "AdvSceneSwitcher.condition.video.selectColor"))),
-	  _pageSegMode(new QComboBox()),
-	  _modelDataPath(new FileSelection()),
-	  _modelPathLayout(new QHBoxLayout),
-	  _objectScaleThreshold(new SliderSpinBox(
-		  1.1, 5.,
-		  obs_module_text(
-			  "AdvSceneSwitcher.condition.video.objectScaleThreshold"),
-		  obs_module_text(
-			  "AdvSceneSwitcher.condition.video.objectScaleThresholdDescription"))),
-	  _neighborsControlLayout(new QHBoxLayout),
-	  _minNeighbors(new QSpinBox()),
-	  _minNeighborsDescription(new QLabel(obs_module_text(
-		  "AdvSceneSwitcher.condition.video.minNeighborDescription"))),
-	  _sizeLayout(new QHBoxLayout()),
-	  _minSize(new SizeSelection(0, 1024)),
-	  _maxSize(new SizeSelection(0, 4096)),
-	  _checkAreaControlLayout(new QHBoxLayout),
-	  _checkAreaEnable(new QCheckBox(obs_module_text(
-		  "AdvSceneSwitcher.condition.video.entry.checkAreaEnable"))),
-	  _checkArea(new AreaSelection(0, 99999)),
-	  _selectArea(new QPushButton(obs_module_text(
-		  "AdvSceneSwitcher.condition.video.selectArea"))),
-	  _throttleControlLayout(new QHBoxLayout),
-	  _throttleEnable(new QCheckBox()),
-	  _throttleCount(new QSpinBox()),
 	  _showMatch(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.showMatch"))),
-	  _previewDialog(this)
+	  _previewDialog(this),
+	  _brightness(new BrightnessEdit(this, entryData)),
+	  _ocr(new OCREdit(this, &_previewDialog, entryData)),
+	  _objectDetect(new ObjectDetectEdit(this, &_previewDialog, entryData)),
+	  _area(new AreaEdit(this, &_previewDialog, entryData)),
+	  _throttleControlLayout(new QHBoxLayout),
+	  _throttleEnable(new QCheckBox()),
+	  _throttleCount(new QSpinBox())
 {
 	_reduceLatency->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.video.reduceLatency.tooltip"));
@@ -455,12 +844,19 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	_patternMatchMode->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.video.patternMatchMode.tip"));
 	populatePatternMatchModeSelection(_patternMatchMode);
-	_minNeighbors->setMinimum(minMinNeighbors);
-	_minNeighbors->setMaximum(maxMinNeighbors);
-	populatePageSegModeSelection(_pageSegMode);
+
 	_throttleCount->setMinimum(1 * GetSwitcher()->interval);
 	_throttleCount->setMaximum(10 * GetSwitcher()->interval);
 	_throttleCount->setSingleStep(GetSwitcher()->interval);
+
+	_brightness->setSizePolicy(QSizePolicy::MinimumExpanding,
+				   QSizePolicy::Preferred);
+	_ocr->setSizePolicy(QSizePolicy::MinimumExpanding,
+			    QSizePolicy::Preferred);
+	_objectDetect->setSizePolicy(QSizePolicy::MinimumExpanding,
+				     QSizePolicy::Preferred);
+	_area->setSizePolicy(QSizePolicy::MinimumExpanding,
+			     QSizePolicy::Preferred);
 
 	auto sources = GetVideoSourceNames();
 	sources.sort();
@@ -492,64 +888,25 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 SLOT(UseAlphaAsMaskChanged(int)));
 	QWidget::connect(_patternMatchMode, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(PatternMatchModeChanged(int)));
-	QWidget::connect(
-		_brightnessThreshold,
-		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
-		this,
-		SLOT(BrightnessThresholdChanged(
-			const NumberVariable<double> &)));
-	QWidget::connect(
-		_objectScaleThreshold,
-		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
-		this,
-		SLOT(ObjectScaleThresholdChanged(
-			const NumberVariable<double> &)));
-	QWidget::connect(_minNeighbors, SIGNAL(valueChanged(int)), this,
-			 SLOT(MinNeighborsChanged(int)));
-	QWidget::connect(_minSize, SIGNAL(SizeChanged(Size)), this,
-			 SLOT(MinSizeChanged(Size)));
-	QWidget::connect(_maxSize, SIGNAL(SizeChanged(Size)), this,
-			 SLOT(MaxSizeChanged(Size)));
-	QWidget::connect(_checkAreaEnable, SIGNAL(stateChanged(int)), this,
-			 SLOT(CheckAreaEnableChanged(int)));
-	QWidget::connect(_checkArea, SIGNAL(AreaChanged(Area)), this,
-			 SLOT(CheckAreaChanged(Area)));
-	QWidget::connect(_modelDataPath, SIGNAL(PathChanged(const QString &)),
-			 this, SLOT(ModelPathChanged(const QString &)));
+
 	QWidget::connect(_throttleEnable, SIGNAL(stateChanged(int)), this,
 			 SLOT(ThrottleEnableChanged(int)));
 	QWidget::connect(_throttleCount, SIGNAL(valueChanged(int)), this,
 			 SLOT(ThrottleCountChanged(int)));
 	QWidget::connect(_showMatch, SIGNAL(clicked()), this,
 			 SLOT(ShowMatchClicked()));
-	QWidget::connect(&_previewDialog, SIGNAL(SelectionAreaChanged(QRect)),
-			 this, SLOT(CheckAreaChanged(QRect)));
 	QWidget::connect(this,
 			 SIGNAL(VideoSelectionChanged(const VideoInput &)),
 			 &_previewDialog,
 			 SLOT(VideoSelectionChanged(const VideoInput &)));
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)),
 			 &_previewDialog, SLOT(ConditionChanged(int)));
-	QWidget::connect(_selectArea, SIGNAL(clicked()), this,
-			 SLOT(SelectAreaClicked()));
-	QWidget::connect(_selectColor, SIGNAL(clicked()), this,
-			 SLOT(SelectColorClicked()));
-	QWidget::connect(_matchText, SIGNAL(textChanged()), this,
-			 SLOT(MatchTextChanged()));
-	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
-			 SLOT(RegexChanged(RegexConfig)));
-	QWidget::connect(_pageSegMode, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(PageSegModeChanged(int)));
+	QWidget::connect(_area, SIGNAL(Resized()), this, SLOT(Resize()));
 
 	populateVideoInputSelection(_videoInputTypes);
 	populateConditionSelection(_condition);
 
 	_patternMatchModeLayout->setContentsMargins(0, 0, 0, 0);
-	_ocrLayout->setContentsMargins(0, 0, 0, 0);
-	_modelPathLayout->setContentsMargins(0, 0, 0, 0);
-	_neighborsControlLayout->setContentsMargins(0, 0, 0, 0);
-	_sizeLayout->setContentsMargins(0, 0, 0, 0);
-	_checkAreaControlLayout->setContentsMargins(0, 0, 0, 0);
 	_throttleControlLayout->setContentsMargins(0, 0, 0, 0);
 
 	QHBoxLayout *entryLine1Layout = new QHBoxLayout;
@@ -560,18 +917,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 		{"{{condition}}", _condition},
 		{"{{reduceLatency}}", _reduceLatency},
 		{"{{imagePath}}", _imagePath},
-		{"{{minNeighbors}}", _minNeighbors},
-		{"{{minSize}}", _minSize},
-		{"{{maxSize}}", _maxSize},
-		{"{{modelDataPath}}", _modelDataPath},
 		{"{{throttleEnable}}", _throttleEnable},
 		{"{{throttleCount}}", _throttleCount},
-		{"{{checkAreaEnable}}", _checkAreaEnable},
-		{"{{checkArea}}", _checkArea},
-		{"{{selectArea}}", _selectArea},
-		{"{{textColor}}", _textColor},
-		{"{{selectColor}}", _selectColor},
-		{"{{textType}}", _pageSegMode},
 		{"{{patternMatchingModes}}", _patternMatchMode},
 	};
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.video.entry"),
@@ -580,73 +927,24 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.video.patternMatchMode"),
 		_patternMatchModeLayout, widgetPlaceholders);
-	PlaceWidgets(
-		obs_module_text(
-			"AdvSceneSwitcher.condition.video.entry.modelPath"),
-		_modelPathLayout, widgetPlaceholders);
-	PlaceWidgets(
-		obs_module_text(
-			"AdvSceneSwitcher.condition.video.entry.minNeighbor"),
-		_neighborsControlLayout, widgetPlaceholders);
 	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.video.entry.throttle"),
 		     _throttleControlLayout, widgetPlaceholders);
-	PlaceWidgets(
-		obs_module_text(
-			"AdvSceneSwitcher.condition.video.entry.checkArea"),
-		_checkAreaControlLayout, widgetPlaceholders);
-
-	_ocrLayout->addWidget(_matchText);
-	auto regexLayout = new QHBoxLayout;
-	regexLayout->addWidget(_regex);
-	regexLayout->addStretch();
-	_ocrLayout->addLayout(regexLayout);
-	auto pageModeSegLayout = new QHBoxLayout();
-	PlaceWidgets(
-		obs_module_text(
-			"AdvSceneSwitcher.condition.video.entry.orcTextType"),
-		pageModeSegLayout, widgetPlaceholders);
-	_ocrLayout->addLayout(pageModeSegLayout);
-	auto colorPickLayout = new QHBoxLayout();
-	PlaceWidgets(
-		obs_module_text(
-			"AdvSceneSwitcher.condition.video.entry.orcColorPick"),
-		colorPickLayout, widgetPlaceholders);
-	_ocrLayout->addLayout(colorPickLayout);
-
-	QGridLayout *sizeGrid = new QGridLayout;
-	sizeGrid->addWidget(
-		new QLabel(obs_module_text(
-			"AdvSceneSwitcher.condition.video.minSize")),
-		0, 0);
-	sizeGrid->addWidget(_minSize, 0, 1);
-	sizeGrid->addWidget(
-		new QLabel(obs_module_text(
-			"AdvSceneSwitcher.condition.video.maxSize")),
-		1, 0);
-	sizeGrid->addWidget(_maxSize, 1, 1);
-	_sizeLayout->addLayout(sizeGrid);
-	_sizeLayout->addStretch();
 
 	QHBoxLayout *showMatchLayout = new QHBoxLayout;
 	showMatchLayout->addWidget(_showMatch);
 	showMatchLayout->addStretch();
-	QVBoxLayout *mainLayout = new QVBoxLayout;
+	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(entryLine1Layout);
 	mainLayout->addWidget(_usePatternForChangedCheck);
 	mainLayout->addWidget(_patternThreshold);
 	mainLayout->addWidget(_useAlphaAsMask);
 	mainLayout->addLayout(_patternMatchModeLayout);
-	mainLayout->addWidget(_brightnessThreshold);
-	mainLayout->addWidget(_currentBrightness);
-	mainLayout->addLayout(_ocrLayout);
-	mainLayout->addLayout(_modelPathLayout);
-	mainLayout->addWidget(_objectScaleThreshold);
-	mainLayout->addLayout(_neighborsControlLayout);
-	mainLayout->addWidget(_minNeighborsDescription);
-	mainLayout->addLayout(_sizeLayout);
+	mainLayout->addWidget(_brightness);
+	mainLayout->addWidget(_ocr);
+	mainLayout->addWidget(_objectDetect);
 	mainLayout->addLayout(_throttleControlLayout);
-	mainLayout->addLayout(_checkAreaControlLayout);
+	mainLayout->addWidget(_area);
 	mainLayout->addWidget(_reduceLatency);
 	mainLayout->addLayout(showMatchLayout);
 	setLayout(mainLayout);
@@ -654,10 +952,6 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	_entryData = entryData;
 	UpdateEntryData();
 	_loading = false;
-
-	connect(&_updateBrightnessTimer, &QTimer::timeout, this,
-		&MacroConditionVideoEdit::UpdateCurrentBrightness);
-	_updateBrightnessTimer.start(1000);
 }
 
 void MacroConditionVideoEdit::UpdatePreviewTooltip()
@@ -720,6 +1014,14 @@ void MacroConditionVideoEdit::VideoInputTypeChanged(int type)
 	SetWidgetVisibility();
 }
 
+void MacroConditionVideoEdit::HandleVideoInputUpdate()
+{
+	_entryData->ResetLastMatch();
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
+	emit VideoSelectionChanged(_entryData->_video);
+}
+
 void MacroConditionVideoEdit::ConditionChanged(int cond)
 {
 	if (_loading || !_entryData) {
@@ -739,7 +1041,7 @@ void MacroConditionVideoEdit::ConditionChanged(int cond)
 	if (_entryData->LoadImageFromFile()) {
 		UpdatePreviewTooltip();
 	}
-	_previewDialog.PatternMatchParamtersChanged(
+	_previewDialog.PatternMatchParametersChanged(
 		_entryData->_patternMatchParameters);
 
 	if (_entryData->_condition == VideoCondition::OBJECT) {
@@ -763,7 +1065,7 @@ void MacroConditionVideoEdit::ImagePathChanged(const QString &text)
 	if (_entryData->LoadImageFromFile()) {
 		UpdatePreviewTooltip();
 	}
-	_previewDialog.PatternMatchParamtersChanged(
+	_previewDialog.PatternMatchParametersChanged(
 		_entryData->_patternMatchParameters);
 }
 
@@ -870,7 +1172,7 @@ void MacroConditionVideoEdit::UsePatternForChangedCheckChanged(int value)
 }
 
 void MacroConditionVideoEdit::PatternThresholdChanged(
-	const NumberVariable<double> &value)
+	const DoubleVariable &value)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -878,7 +1180,7 @@ void MacroConditionVideoEdit::PatternThresholdChanged(
 
 	auto lock = LockContext();
 	_entryData->_patternMatchParameters.threshold = value;
-	_previewDialog.PatternMatchParamtersChanged(
+	_previewDialog.PatternMatchParametersChanged(
 		_entryData->_patternMatchParameters);
 }
 
@@ -901,7 +1203,7 @@ void MacroConditionVideoEdit::UseAlphaAsMaskChanged(int value)
 	auto lock = LockContext();
 	_entryData->_patternMatchParameters.useAlphaAsMask = value;
 	_entryData->LoadImageFromFile();
-	_previewDialog.PatternMatchParamtersChanged(
+	_previewDialog.PatternMatchParametersChanged(
 		_entryData->_patternMatchParameters);
 }
 
@@ -915,182 +1217,8 @@ void MacroConditionVideoEdit::PatternMatchModeChanged(int idx)
 	_entryData->_patternMatchParameters.matchMode =
 		static_cast<cv::TemplateMatchModes>(
 			_patternMatchMode->itemData(idx).toInt());
-	_previewDialog.PatternMatchParamtersChanged(
+	_previewDialog.PatternMatchParametersChanged(
 		_entryData->_patternMatchParameters);
-}
-
-void MacroConditionVideoEdit::BrightnessThresholdChanged(
-	const NumberVariable<double> &value)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_brightnessThreshold = value;
-}
-
-void MacroConditionVideoEdit::ObjectScaleThresholdChanged(
-	const NumberVariable<double> &value)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_objMatchParameters.scaleFactor = value;
-	_previewDialog.ObjDetectParamtersChanged(
-		_entryData->_objMatchParameters);
-}
-
-void MacroConditionVideoEdit::MinNeighborsChanged(int value)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_objMatchParameters.minNeighbors = value;
-	_previewDialog.ObjDetectParamtersChanged(
-		_entryData->_objMatchParameters);
-}
-
-void MacroConditionVideoEdit::MinSizeChanged(advss::Size value)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_objMatchParameters.minSize = value;
-	_previewDialog.ObjDetectParamtersChanged(
-		_entryData->_objMatchParameters);
-}
-
-void MacroConditionVideoEdit::HandleVideoInputUpdate()
-{
-	_entryData->ResetLastMatch();
-	emit HeaderInfoChanged(
-		QString::fromStdString(_entryData->GetShortDesc()));
-	emit VideoSelectionChanged(_entryData->_video);
-}
-
-void MacroConditionVideoEdit::MaxSizeChanged(advss::Size value)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_objMatchParameters.maxSize = value;
-	_previewDialog.ObjDetectParamtersChanged(
-		_entryData->_objMatchParameters);
-}
-
-void MacroConditionVideoEdit::SetupColorLabel(const QColor &color)
-{
-	_textColor->setText(color.name());
-	_textColor->setPalette(QPalette(color));
-	_textColor->setAutoFillBackground(true);
-}
-
-void MacroConditionVideoEdit::SelectColorClicked()
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	const QColor color = QColorDialog::getColor(
-		_entryData->_ocrParamters.color, this,
-		obs_module_text("AdvSceneSwitcher.condition.video.selectColor"),
-		QColorDialog::ColorDialogOption());
-
-	if (!color.isValid()) {
-		return;
-	}
-
-	SetupColorLabel(color);
-	auto lock = LockContext();
-	_entryData->_ocrParamters.color = color;
-
-	_previewDialog.OCRParamtersChanged(_entryData->_ocrParamters);
-}
-
-void MacroConditionVideoEdit::MatchTextChanged()
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_ocrParamters.text =
-		_matchText->toPlainText().toUtf8().constData();
-
-	adjustSize();
-	updateGeometry();
-
-	_previewDialog.OCRParamtersChanged(_entryData->_ocrParamters);
-}
-
-void MacroConditionVideoEdit::RegexChanged(RegexConfig conf)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_ocrParamters.regex = conf;
-	adjustSize();
-	updateGeometry();
-
-	_previewDialog.OCRParamtersChanged(_entryData->_ocrParamters);
-}
-
-void MacroConditionVideoEdit::PageSegModeChanged(int idx)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->SetPageSegMode(static_cast<tesseract::PageSegMode>(
-		_pageSegMode->itemData(idx).toInt()));
-
-	_previewDialog.OCRParamtersChanged(_entryData->_ocrParamters);
-}
-
-void MacroConditionVideoEdit::CheckAreaEnableChanged(int value)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_areaParameters.enable = value;
-	_checkArea->setEnabled(value);
-	_selectArea->setEnabled(value);
-	_checkArea->setVisible(value);
-	_selectArea->setVisible(value);
-	adjustSize();
-	_previewDialog.AreaParamtersChanged(_entryData->_areaParameters);
-}
-
-void MacroConditionVideoEdit::CheckAreaChanged(advss::Area value)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_areaParameters.area = value;
-	_previewDialog.AreaParamtersChanged(_entryData->_areaParameters);
-}
-
-void MacroConditionVideoEdit::CheckAreaChanged(QRect rect)
-{
-	advss::Area area{rect.topLeft().x(), rect.y(), rect.width(),
-			 rect.height()};
-	_checkArea->SetArea(area);
 }
 
 void MacroConditionVideoEdit::ThrottleEnableChanged(int value)
@@ -1122,49 +1250,10 @@ void MacroConditionVideoEdit::ShowMatchClicked()
 	_previewDialog.ShowMatch();
 }
 
-void MacroConditionVideoEdit::UpdateCurrentBrightness()
-{
-	QString text = obs_module_text(
-		"AdvSceneSwitcher.condition.video.currentBrightness");
-	_currentBrightness->setText(
-		text.arg(_entryData->GetCurrentBrightness()));
-}
-
-void MacroConditionVideoEdit::SelectAreaClicked()
-{
-	_previewDialog.show();
-	_previewDialog.raise();
-	_previewDialog.activateWindow();
-	_previewDialog.SelectArea();
-}
-
-void MacroConditionVideoEdit::ModelPathChanged(const QString &text)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	bool dataLoaded = false;
-	{
-		auto lock = LockContext();
-		std::string path = text.toStdString();
-		dataLoaded = _entryData->LoadModelData(path);
-	}
-	if (!dataLoaded) {
-		DisplayMessage(obs_module_text(
-			"AdvSceneSwitcher.condition.video.modelLoadFail"));
-	}
-}
-
 static bool needsShowMatch(VideoCondition cond)
 {
 	return cond == VideoCondition::PATTERN ||
 	       cond == VideoCondition::OBJECT || cond == VideoCondition::OCR;
-}
-
-static bool needsObjectControls(VideoCondition cond)
-{
-	return cond == VideoCondition::OBJECT;
 }
 
 static bool needsThrottleControls(VideoCondition cond)
@@ -1204,29 +1293,15 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 				    VideoCondition::PATTERN);
 	SetLayoutVisible(_patternMatchModeLayout,
 			 _entryData->_condition == VideoCondition::PATTERN);
-	_brightnessThreshold->setVisible(_entryData->_condition ==
-					 VideoCondition::BRIGHTNESS);
-	_currentBrightness->setVisible(_entryData->_condition ==
-				       VideoCondition::BRIGHTNESS);
+	_brightness->setVisible(_entryData->_condition ==
+				VideoCondition::BRIGHTNESS);
 	_showMatch->setVisible(needsShowMatch(_entryData->_condition));
-	_objectScaleThreshold->setVisible(
-		needsObjectControls(_entryData->_condition));
-	SetLayoutVisible(_neighborsControlLayout,
-			 needsObjectControls(_entryData->_condition));
-	_minNeighborsDescription->setVisible(
-		needsObjectControls(_entryData->_condition));
-	SetLayoutVisible(_ocrLayout,
-			 _entryData->_condition == VideoCondition::OCR);
-	SetLayoutVisible(_sizeLayout,
-			 needsObjectControls(_entryData->_condition));
-	SetLayoutVisible(_modelPathLayout,
-			 needsObjectControls(_entryData->_condition));
+	_ocr->setVisible(_entryData->_condition == VideoCondition::OCR);
+	_objectDetect->setVisible(_entryData->_condition ==
+				  VideoCondition::OBJECT);
 	SetLayoutVisible(_throttleControlLayout,
 			 needsThrottleControls(_entryData->_condition));
-	SetLayoutVisible(_checkAreaControlLayout,
-			 needsAreaControls(_entryData->_condition));
-	_checkArea->setVisible(_entryData->_areaParameters.enable);
-	_selectArea->setVisible(_entryData->_areaParameters.enable);
+	_area->setVisible(needsAreaControls(_entryData->_condition));
 
 	if (_entryData->_condition == VideoCondition::HAS_CHANGED ||
 	    _entryData->_condition == VideoCondition::HAS_NOT_CHANGED) {
@@ -1236,19 +1311,24 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 			_patternMatchModeLayout,
 			_entryData->_patternMatchParameters.useForChangedCheck);
 	}
+	Resize();
+}
 
+void MacroConditionVideoEdit::Resize()
+{
 	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionVideoEdit::SetupPreviewDialogParams()
 {
-	_previewDialog.PatternMatchParamtersChanged(
+	_previewDialog.PatternMatchParametersChanged(
 		_entryData->_patternMatchParameters);
-	_previewDialog.ObjDetectParamtersChanged(
+	_previewDialog.ObjDetectParametersChanged(
 		_entryData->_objMatchParameters);
-	_previewDialog.OCRParamtersChanged(_entryData->_ocrParamters);
+	_previewDialog.OCRParametersChanged(_entryData->_ocrParameters);
 	_previewDialog.VideoSelectionChanged(_entryData->_video);
-	_previewDialog.AreaParamtersChanged(_entryData->_areaParameters);
+	_previewDialog.AreaParametersChanged(_entryData->_areaParameters);
 	_previewDialog.ConditionChanged(
 		static_cast<int>(_entryData->_condition));
 }
@@ -1274,23 +1354,9 @@ void MacroConditionVideoEdit::UpdateEntryData()
 		_entryData->_patternMatchParameters.useAlphaAsMask);
 	_patternMatchMode->setCurrentIndex(_patternMatchMode->findData(
 		_entryData->_patternMatchParameters.matchMode));
-	_brightnessThreshold->SetDoubleValue(_entryData->_brightnessThreshold);
-	_modelDataPath->SetPath(_entryData->GetModelDataPath());
-	_objectScaleThreshold->SetDoubleValue(
-		_entryData->_objMatchParameters.scaleFactor);
-	_matchText->setPlainText(_entryData->_ocrParamters.text);
-	_regex->SetRegexConfig(_entryData->_ocrParamters.regex);
-	SetupColorLabel(_entryData->_ocrParamters.color);
-	_pageSegMode->setCurrentIndex(_pageSegMode->findData(
-		static_cast<int>(_entryData->_ocrParamters.GetPageMode())));
-	_minNeighbors->setValue(_entryData->_objMatchParameters.minNeighbors);
-	_minSize->SetSize(_entryData->_objMatchParameters.minSize);
-	_maxSize->SetSize(_entryData->_objMatchParameters.maxSize);
 	_throttleEnable->setChecked(_entryData->_throttleEnabled);
 	_throttleCount->setValue(_entryData->_throttleCount *
 				 GetSwitcher()->interval);
-	_checkAreaEnable->setChecked(_entryData->_areaParameters.enable);
-	_checkArea->SetArea(_entryData->_areaParameters.area);
 	UpdatePreviewTooltip();
 	SetupPreviewDialogParams();
 	SetWidgetVisibility();

@@ -56,8 +56,8 @@ public:
 	NumberVariable<double> _brightnessThreshold = 0.5;
 	PatternMatchParameters _patternMatchParameters;
 	ObjDetectParameters _objMatchParameters;
-	OCRParameters _ocrParamters;
-	AreaParamters _areaParameters;
+	OCRParameters _ocrParameters;
+	AreaParameters _areaParameters;
 	bool _throttleEnabled = false;
 	int _throttleCount = 3;
 
@@ -82,6 +82,111 @@ private:
 
 	static bool _registered;
 	static const std::string id;
+};
+
+class BrightnessEdit : public QWidget {
+	Q_OBJECT
+
+public:
+	BrightnessEdit(QWidget *parent,
+		       const std::shared_ptr<MacroConditionVideo> &);
+
+private slots:
+	void BrightnessThresholdChanged(const NumberVariable<double> &);
+	void UpdateCurrentBrightness();
+
+private:
+	SliderSpinBox *_threshold;
+	QLabel *_current;
+	QTimer _timer;
+
+	std::shared_ptr<MacroConditionVideo> _data;
+	bool _loading = true;
+};
+
+class OCREdit : public QWidget {
+	Q_OBJECT
+
+public:
+	OCREdit(QWidget *parent, PreviewDialog *,
+		const std::shared_ptr<MacroConditionVideo> &);
+
+private slots:
+	void SelectColorClicked();
+	void MatchTextChanged();
+	void RegexChanged(RegexConfig conf);
+	void PageSegModeChanged(int);
+
+private:
+	void SetupColorLabel(const QColor &);
+
+	VariableTextEdit *_matchText;
+	RegexConfigWidget *_regex;
+	QLabel *_textColor;
+	QPushButton *_selectColor;
+	QComboBox *_pageSegMode;
+
+	PreviewDialog *_previewDialog;
+
+	std::shared_ptr<MacroConditionVideo> _data;
+	bool _loading = true;
+};
+
+class ObjectDetectEdit : public QWidget {
+	Q_OBJECT
+
+public:
+	ObjectDetectEdit(QWidget *parent, PreviewDialog *,
+			 const std::shared_ptr<MacroConditionVideo> &);
+
+private slots:
+	void ModelPathChanged(const QString &text);
+	void ObjectScaleThresholdChanged(const NumberVariable<double> &);
+	void MinNeighborsChanged(int value);
+	void MinSizeChanged(Size value);
+	void MaxSizeChanged(Size value);
+
+private:
+	FileSelection *_modelDataPath;
+	SliderSpinBox *_objectScaleThreshold;
+	QSpinBox *_minNeighbors;
+	QLabel *_minNeighborsDescription;
+	SizeSelection *_minSize;
+	SizeSelection *_maxSize;
+
+	PreviewDialog *_previewDialog;
+
+	std::shared_ptr<MacroConditionVideo> _data;
+	bool _loading = true;
+};
+
+class AreaEdit : public QWidget {
+	Q_OBJECT
+
+public:
+	AreaEdit(QWidget *parent, PreviewDialog *,
+		 const std::shared_ptr<MacroConditionVideo> &);
+
+private slots:
+	void CheckAreaEnableChanged(int value);
+	void CheckAreaChanged(Area);
+	void CheckAreaChanged(QRect area);
+	void SelectAreaClicked();
+
+signals:
+	void Resized();
+
+private:
+	void SetWidgetVisibility();
+
+	QCheckBox *_checkAreaEnable;
+	AreaSelection *_checkArea;
+	QPushButton *_selectArea;
+
+	PreviewDialog *_previewDialog;
+
+	std::shared_ptr<MacroConditionVideo> _data;
+	bool _loading = true;
 };
 
 class MacroConditionVideoEdit : public QWidget {
@@ -117,38 +222,20 @@ private slots:
 	void UseAlphaAsMaskChanged(int value);
 	void PatternMatchModeChanged(int value);
 
-	void BrightnessThresholdChanged(const NumberVariable<double> &);
-
-	void ModelPathChanged(const QString &text);
-	void ObjectScaleThresholdChanged(const NumberVariable<double> &);
-	void MinNeighborsChanged(int value);
-	void MinSizeChanged(Size value);
-	void MaxSizeChanged(Size value);
-
-	void SelectColorClicked();
-	void MatchTextChanged();
-	void RegexChanged(RegexConfig conf);
-	void PageSegModeChanged(int);
-
-	void CheckAreaEnableChanged(int value);
-	void CheckAreaChanged(Area);
-	void CheckAreaChanged(QRect area);
-	void SelectAreaClicked();
-
 	void ThrottleEnableChanged(int value);
 	void ThrottleCountChanged(int value);
 	void ShowMatchClicked();
 
-	void UpdateCurrentBrightness();
+	void SetWidgetVisibility();
+	void Resize();
+
 signals:
 	void VideoSelectionChanged(const VideoInput &);
 	void HeaderInfoChanged(const QString &);
 
 private:
-	void SetWidgetVisibility();
 	void HandleVideoInputUpdate();
 	void SetupPreviewDialogParams();
-	void SetupColorLabel(const QColor &);
 
 	QComboBox *_videoInputTypes;
 	SceneSelectionWidget *_scenes;
@@ -165,39 +252,17 @@ private:
 	QHBoxLayout *_patternMatchModeLayout;
 	QComboBox *_patternMatchMode;
 
-	SliderSpinBox *_brightnessThreshold;
-	QLabel *_currentBrightness;
+	QPushButton *_showMatch;
+	PreviewDialog _previewDialog;
 
-	QVBoxLayout *_ocrLayout;
-	VariableTextEdit *_matchText;
-	RegexConfigWidget *_regex;
-	QLabel *_textColor;
-	QPushButton *_selectColor;
-	QComboBox *_pageSegMode;
-
-	FileSelection *_modelDataPath;
-	QHBoxLayout *_modelPathLayout;
-	SliderSpinBox *_objectScaleThreshold;
-	QHBoxLayout *_neighborsControlLayout;
-	QSpinBox *_minNeighbors;
-	QLabel *_minNeighborsDescription;
-	QHBoxLayout *_sizeLayout;
-	SizeSelection *_minSize;
-	SizeSelection *_maxSize;
-
-	QHBoxLayout *_checkAreaControlLayout;
-	QCheckBox *_checkAreaEnable;
-	AreaSelection *_checkArea;
-	QPushButton *_selectArea;
+	BrightnessEdit *_brightness;
+	OCREdit *_ocr;
+	ObjectDetectEdit *_objectDetect;
+	AreaEdit *_area;
 
 	QHBoxLayout *_throttleControlLayout;
 	QCheckBox *_throttleEnable;
 	QSpinBox *_throttleCount;
-
-	QPushButton *_showMatch;
-	PreviewDialog _previewDialog;
-
-	QTimer _updateBrightnessTimer;
 
 	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;

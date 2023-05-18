@@ -24,7 +24,7 @@ public slots:
 	void CreateImage(const VideoInput &, PreviewType,
 			 const PatternMatchParameters &,
 			 const PatternImageData &, ObjDetectParameters,
-			 OCRParameters, const AreaParamters &, VideoCondition);
+			 OCRParameters, const AreaParameters &, VideoCondition);
 signals:
 	void ImageReady(const QPixmap &);
 	void StatusUpdate(const QString &);
@@ -47,11 +47,11 @@ public:
 	void closeEvent(QCloseEvent *event) override;
 
 public slots:
-	void PatternMatchParamtersChanged(const PatternMatchParameters &);
-	void ObjDetectParamtersChanged(const ObjDetectParameters &);
-	void OCRParamtersChanged(const OCRParameters &);
+	void PatternMatchParametersChanged(const PatternMatchParameters &);
+	void ObjDetectParametersChanged(const ObjDetectParameters &);
+	void OCRParametersChanged(const OCRParameters &);
 	void VideoSelectionChanged(const VideoInput &);
-	void AreaParamtersChanged(const AreaParamters &);
+	void AreaParametersChanged(const AreaParameters &);
 	void ConditionChanged(int cond);
 private slots:
 	void UpdateImage(const QPixmap &);
@@ -61,7 +61,7 @@ signals:
 	void NeedImage(const VideoInput &, PreviewType,
 		       const PatternMatchParameters &, const PatternImageData &,
 		       ObjDetectParameters, OCRParameters,
-		       const AreaParamters &, VideoCondition);
+		       const AreaParameters &, VideoCondition);
 
 private:
 	void Start();
@@ -76,7 +76,7 @@ private:
 	PatternImageData _patternImageData;
 	ObjDetectParameters _objDetectParams;
 	OCRParameters _ocrParams;
-	AreaParamters _areaParams;
+	AreaParameters _areaParams;
 
 	VideoCondition _condition = VideoCondition::PATTERN;
 	QScrollArea *_scrollArea;

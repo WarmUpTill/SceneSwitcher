@@ -117,21 +117,21 @@ void PreviewDialog::closeEvent(QCloseEvent *event)
 	Stop();
 }
 
-void PreviewDialog::PatternMatchParamtersChanged(
+void PreviewDialog::PatternMatchParametersChanged(
 	const PatternMatchParameters &params)
 {
 	std::unique_lock<std::mutex> lock(_mtx);
 	_patternMatchParams = params;
-	_patternImageData = createPatternData(_patternMatchParams.image);
+	_patternImageData = CreatePatternData(_patternMatchParams.image);
 }
 
-void PreviewDialog::ObjDetectParamtersChanged(const ObjDetectParameters &params)
+void PreviewDialog::ObjDetectParametersChanged(const ObjDetectParameters &params)
 {
 	std::unique_lock<std::mutex> lock(_mtx);
 	_objDetectParams = params;
 }
 
-void PreviewDialog::OCRParamtersChanged(const OCRParameters &params)
+void PreviewDialog::OCRParametersChanged(const OCRParameters &params)
 {
 	std::unique_lock<std::mutex> lock(_mtx);
 	_ocrParams = params;
@@ -143,7 +143,7 @@ void PreviewDialog::VideoSelectionChanged(const VideoInput &video)
 	_video = video;
 }
 
-void PreviewDialog::AreaParamtersChanged(const AreaParamters &params)
+void PreviewDialog::AreaParametersChanged(const AreaParameters &params)
 {
 	std::unique_lock<std::mutex> lock(_mtx);
 	_areaParams = params;
@@ -249,7 +249,7 @@ void PreviewImage::CreateImage(const VideoInput &video, PreviewType type,
 			       const PatternImageData &patternImageData,
 			       ObjDetectParameters objDetectParams,
 			       OCRParameters ocrParams,
-			       const AreaParamters &areaParams,
+			       const AreaParameters &areaParams,
 			       VideoCondition condition)
 {
 	auto source = obs_weak_source_get_source(video.GetVideo());
@@ -295,7 +295,7 @@ void PreviewImage::MarkMatch(QImage &screenshot,
 {
 	if (condition == VideoCondition::PATTERN) {
 		cv::Mat result;
-		matchPattern(screenshot, patternImageData,
+		MatchPattern(screenshot, patternImageData,
 			     patternMatchParams.threshold, result,
 			     patternMatchParams.useAlphaAsMask,
 			     patternMatchParams.matchMode);
@@ -309,7 +309,7 @@ void PreviewImage::MarkMatch(QImage &screenshot,
 				     patternImageData.rgbaPattern);
 		}
 	} else if (condition == VideoCondition::OBJECT) {
-		auto objects = matchObject(screenshot, objDetectParams.cascade,
+		auto objects = MatchObject(screenshot, objDetectParams.cascade,
 					   objDetectParams.scaleFactor,
 					   objDetectParams.minNeighbors,
 					   objDetectParams.minSize.CV(),
@@ -324,7 +324,7 @@ void PreviewImage::MarkMatch(QImage &screenshot,
 		}
 	} else if (condition == VideoCondition::OCR) {
 		auto text =
-			runOCR(ocrParams.GetOCR(), screenshot, ocrParams.color);
+			RunOCR(ocrParams.GetOCR(), screenshot, ocrParams.color);
 		QString status(obs_module_text(
 			"AdvSceneSwitcher.condition.video.ocrMatchSuccess"));
 		emit StatusUpdate(status.arg(QString::fromStdString(text)));
