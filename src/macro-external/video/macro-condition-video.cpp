@@ -40,6 +40,8 @@ const static std::map<VideoCondition, std::string> conditionTypes = {
 #ifdef OCR_SUPPORT
 	{VideoCondition::OCR, "AdvSceneSwitcher.condition.video.condition.ocr"},
 #endif
+	{VideoCondition::COLOR,
+	 "AdvSceneSwitcher.condition.video.condition.color"},
 };
 
 const static std::map<VideoInput::Type, std::string> videoInputTypes = {
@@ -162,6 +164,7 @@ bool MacroConditionVideo::Save(obs_data_t *obj) const
 	_patternMatchParameters.Save(obj);
 	_objMatchParameters.Save(obj);
 	_ocrParameters.Save(obj);
+	_colorParameters.Save(obj);
 	obs_data_set_bool(obj, "throttleEnabled", _throttleEnabled);
 	obs_data_set_int(obj, "throttleCount", _throttleCount);
 	_areaParameters.Save(obj);
@@ -186,6 +189,7 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 	_patternMatchParameters.Load(obj);
 	_objMatchParameters.Load(obj);
 	_ocrParameters.Load(obj);
+	_colorParameters.Load(obj);
 	_throttleEnabled = obs_data_get_bool(obj, "throttleEnabled");
 	_throttleCount = obs_data_get_int(obj, "throttleCount");
 	_areaParameters.Load(obj);
@@ -314,6 +318,14 @@ bool MacroConditionVideo::CheckOCR()
 	return text == std::string(_ocrParameters.text);
 }
 
+bool MacroConditionVideo::CheckColor()
+{
+	return ContainsPixelsInColorRange(_screenshotData.image,
+					  _colorParameters.color,
+					  _colorParameters.colorThreshold,
+					  _colorParameters.matchThreshold);
+}
+
 bool MacroConditionVideo::Compare()
 {
 	if (_areaParameters.enable && _condition != VideoCondition::NO_IMAGE) {
@@ -346,6 +358,8 @@ bool MacroConditionVideo::Compare()
 		return CheckBrightnessThreshold();
 	case VideoCondition::OCR:
 		return CheckOCR();
+	case VideoCondition::COLOR:
+		return CheckColor();
 	default:
 		break;
 	}
@@ -714,6 +728,111 @@ void ObjectDetectEdit::ModelPathChanged(const QString &text)
 	_previewDialog->ObjDetectParametersChanged(_data->_objMatchParameters);
 }
 
+ColorEdit::ColorEdit(QWidget *parent,
+		     const std::shared_ptr<MacroConditionVideo> &data)
+	: QWidget(parent),
+	  _matchThreshold(new SliderSpinBox(
+		  0., 1.,
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.colorMatchThreshold"),
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.colorMatchThresholdDescription"),
+		  true)),
+	  _colorThreshold(new SliderSpinBox(
+		  0., 1.,
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.colorDeviationThreshold"),
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.colorDeviationThresholdDescription"),
+		  true)),
+	  _color(new QLabel),
+	  _selectColor(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.condition.video.selectColor"))),
+	  _data(data)
+{
+	QWidget::connect(_selectColor, SIGNAL(clicked()), this,
+			 SLOT(SelectColorClicked()));
+	QWidget::connect(
+		_matchThreshold,
+		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
+		this,
+		SLOT(MatchThresholdChanged(const NumberVariable<double> &)));
+	QWidget::connect(
+		_colorThreshold,
+		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
+		this,
+		SLOT(ColorThresholdChanged(const NumberVariable<double> &)));
+
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{color}}", _color},
+		{"{{selectColor}}", _selectColor},
+	};
+
+	auto colorLayout = new QHBoxLayout;
+	PlaceWidgets(
+		obs_module_text("AdvSceneSwitcher.condition.video.entry.color"),
+		colorLayout, widgetPlaceholders);
+
+	auto layout = new QVBoxLayout;
+	layout->setContentsMargins(0, 0, 0, 0);
+	layout->addLayout(colorLayout);
+	layout->addWidget(_colorThreshold);
+	layout->addWidget(_matchThreshold);
+	setLayout(layout);
+
+	_matchThreshold->SetDoubleValue(_data->_colorParameters.matchThreshold);
+	_colorThreshold->SetDoubleValue(_data->_colorParameters.colorThreshold);
+	SetupColorLabel(_data->_colorParameters.color);
+	_loading = false;
+}
+
+void ColorEdit::SetupColorLabel(const QColor &color)
+{
+	_color->setText(color.name());
+	_color->setPalette(QPalette(color));
+	_color->setAutoFillBackground(true);
+}
+
+void ColorEdit::MatchThresholdChanged(const DoubleVariable &value)
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_data->_colorParameters.matchThreshold = value;
+}
+
+void ColorEdit::ColorThresholdChanged(const DoubleVariable &value)
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_data->_colorParameters.colorThreshold = value;
+}
+
+void ColorEdit::SelectColorClicked()
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	const QColor color = QColorDialog::getColor(
+		_data->_colorParameters.color, this,
+		obs_module_text("AdvSceneSwitcher.condition.video.selectColor"),
+		QColorDialog::ColorDialogOption());
+
+	if (!color.isValid()) {
+		return;
+	}
+
+	SetupColorLabel(color);
+	auto lock = LockContext();
+	_data->_colorParameters.color = color;
+}
+
 AreaEdit::AreaEdit(QWidget *parent, PreviewDialog *previewDialog,
 		   const std::shared_ptr<MacroConditionVideo> &data)
 	: QWidget(parent),
@@ -831,6 +950,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	  _brightness(new BrightnessEdit(this, entryData)),
 	  _ocr(new OCREdit(this, &_previewDialog, entryData)),
 	  _objectDetect(new ObjectDetectEdit(this, &_previewDialog, entryData)),
+	  _color(new ColorEdit(this, entryData)),
 	  _area(new AreaEdit(this, &_previewDialog, entryData)),
 	  _throttleControlLayout(new QHBoxLayout),
 	  _throttleEnable(new QCheckBox()),
@@ -855,6 +975,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			    QSizePolicy::Preferred);
 	_objectDetect->setSizePolicy(QSizePolicy::MinimumExpanding,
 				     QSizePolicy::Preferred);
+	_color->setSizePolicy(QSizePolicy::MinimumExpanding,
+			      QSizePolicy::Preferred);
 	_area->setSizePolicy(QSizePolicy::MinimumExpanding,
 			     QSizePolicy::Preferred);
 
@@ -943,6 +1065,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	mainLayout->addWidget(_brightness);
 	mainLayout->addWidget(_ocr);
 	mainLayout->addWidget(_objectDetect);
+	mainLayout->addWidget(_color);
 	mainLayout->addLayout(_throttleControlLayout);
 	mainLayout->addWidget(_area);
 	mainLayout->addWidget(_reduceLatency);
@@ -1299,6 +1422,7 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 	_ocr->setVisible(_entryData->_condition == VideoCondition::OCR);
 	_objectDetect->setVisible(_entryData->_condition ==
 				  VideoCondition::OBJECT);
+	_color->setVisible(_entryData->_condition == VideoCondition::COLOR);
 	SetLayoutVisible(_throttleControlLayout,
 			 needsThrottleControls(_entryData->_condition));
 	_area->setVisible(needsAreaControls(_entryData->_condition));

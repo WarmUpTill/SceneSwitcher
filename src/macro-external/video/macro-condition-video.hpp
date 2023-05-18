@@ -57,6 +57,7 @@ public:
 	PatternMatchParameters _patternMatchParameters;
 	ObjDetectParameters _objMatchParameters;
 	OCRParameters _ocrParameters;
+	ColorParameters _colorParameters;
 	AreaParameters _areaParameters;
 	bool _throttleEnabled = false;
 	int _throttleCount = 3;
@@ -67,6 +68,7 @@ private:
 	bool ScreenshotContainsObject();
 	bool CheckBrightnessThreshold();
 	bool CheckOCR();
+	bool CheckColor();
 	bool Compare();
 	bool CheckShouldBeSkipped();
 
@@ -155,6 +157,30 @@ private:
 	SizeSelection *_maxSize;
 
 	PreviewDialog *_previewDialog;
+
+	std::shared_ptr<MacroConditionVideo> _data;
+	bool _loading = true;
+};
+
+class ColorEdit : public QWidget {
+	Q_OBJECT
+
+public:
+	ColorEdit(QWidget *parent,
+		  const std::shared_ptr<MacroConditionVideo> &);
+
+private slots:
+	void SelectColorClicked();
+	void MatchThresholdChanged(const NumberVariable<double> &);
+	void ColorThresholdChanged(const NumberVariable<double> &);
+
+private:
+	void SetupColorLabel(const QColor &);
+
+	SliderSpinBox *_matchThreshold;
+	SliderSpinBox *_colorThreshold;
+	QLabel *_color;
+	QPushButton *_selectColor;
 
 	std::shared_ptr<MacroConditionVideo> _data;
 	bool _loading = true;
@@ -258,6 +284,7 @@ private:
 	BrightnessEdit *_brightness;
 	OCREdit *_ocr;
 	ObjectDetectEdit *_objectDetect;
+	ColorEdit *_color;
 	AreaEdit *_area;
 
 	QHBoxLayout *_throttleControlLayout;

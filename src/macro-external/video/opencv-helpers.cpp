@@ -174,6 +174,37 @@ std::string RunOCR(tesseract::TessBaseAPI *ocr, const QImage &image,
 #endif
 }
 
+bool ContainsPixelsInColorRange(const QImage &image, const QColor &color,
+				double colorDeviationThreshold,
+				double totalPixelMatchThreshold)
+{
+	int totalPixels = image.width() * image.height();
+	int matchingPixels = 0;
+	int maxColorDiff = static_cast<int>(colorDeviationThreshold * 255.0);
+
+	for (int y = 0; y < image.height(); y++) {
+		for (int x = 0; x < image.width(); x++) {
+			const auto pixelColor = image.pixelColor(x, y);
+			const int diffRed =
+				std::abs(pixelColor.red() - color.red());
+			const int diffGreen =
+				std::abs(pixelColor.green() - color.green());
+			const int diffBlue =
+				std::abs(pixelColor.blue() - color.blue());
+
+			if (diffRed <= maxColorDiff &&
+			    diffGreen <= maxColorDiff &&
+			    diffBlue <= maxColorDiff) {
+				matchingPixels++;
+			}
+		}
+	}
+
+	double matchPercentage =
+		static_cast<double>(matchingPixels) / totalPixels;
+	return matchPercentage >= totalPixelMatchThreshold;
+}
+
 // Assumption is that QImage uses Format_RGBA8888.
 // Conversion from: https://github.com/dbzhang800/QtOpenCV
 cv::Mat QImageToMat(const QImage &img)
