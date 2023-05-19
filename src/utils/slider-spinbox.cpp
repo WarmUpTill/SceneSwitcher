@@ -4,7 +4,8 @@
 namespace advss {
 
 SliderSpinBox::SliderSpinBox(double min, double max, const QString &label,
-			     const QString &description, QWidget *parent)
+			     const QString &description,
+			     bool descriptionAsTooltip, QWidget *parent)
 	: QWidget(parent),
 	  _spinBox(new VariableDoubleSpinBox()),
 	  _slider(new QSlider())
@@ -23,8 +24,8 @@ SliderSpinBox::SliderSpinBox(double min, double max, const QString &label,
 		this,
 		SLOT(SpinBoxValueChanged(const NumberVariable<double> &)));
 
-	QVBoxLayout *mainLayout = new QVBoxLayout();
-	QHBoxLayout *sliderLayout = new QHBoxLayout();
+	auto mainLayout = new QVBoxLayout();
+	auto sliderLayout = new QHBoxLayout();
 	if (!label.isEmpty()) {
 		sliderLayout->addWidget(new QLabel(label));
 	}
@@ -32,7 +33,11 @@ SliderSpinBox::SliderSpinBox(double min, double max, const QString &label,
 	sliderLayout->addWidget(_slider);
 	mainLayout->addLayout(sliderLayout);
 	if (!description.isEmpty()) {
-		mainLayout->addWidget(new QLabel(description));
+		if (descriptionAsTooltip) {
+			setToolTip(description);
+		} else {
+			mainLayout->addWidget(new QLabel(description));
+		}
 	}
 	mainLayout->setContentsMargins(0, 0, 0, 0);
 	setLayout(mainLayout);
