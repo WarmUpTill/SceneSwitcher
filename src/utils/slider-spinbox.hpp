@@ -14,7 +14,9 @@ class SliderSpinBox : public QWidget {
 public:
 	SliderSpinBox(double min = 0., double max = 1.,
 		      const QString &label = "threshold",
-		      const QString &description = "", QWidget *parent = 0);
+		      const QString &description = "",
+		      bool descriptionAsTooltip = false,
+		      QWidget *parent = nullptr);
 	void SetDoubleValue(double);
 	void SetDoubleValue(const NumberVariable<double> &);
 public slots:
