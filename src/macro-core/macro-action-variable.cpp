@@ -4,6 +4,7 @@
 #include "advanced-scene-switcher.hpp"
 #include "macro.hpp"
 #include "math-helpers.hpp"
+#include "non-modal-dialog.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -38,6 +39,8 @@ static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.findAndReplace"},
 	{MacroActionVariable::Type::MATH_EXPRESSION,
 	 "AdvSceneSwitcher.action.variable.type.mathExpression"},
+	{MacroActionVariable::Type::USER_INPUT,
+	 "AdvSceneSwitcher.action.variable.type.askForValue"},
 };
 
 static void apppend(Variable &var, const std::string &value)
@@ -121,6 +124,23 @@ void MacroActionVariable::HandleMathExpression(Variable *var)
 	var->SetValue(std::get<double>(result));
 }
 
+struct AskForInputParams {
+	const std::string varName;
+	std::optional<std::string> result;
+};
+
+static void askForInput(void *param)
+{
+	auto parameters = static_cast<AskForInputParams *>(param);
+
+	QString prompt(obs_module_text(
+		"AdvSceneSwitcher.action.variable.askForValuePrompt"));
+	auto dialog = new NonModalMessageDialog(
+		prompt.arg(QString::fromStdString(parameters->varName)),
+		NonModalMessageDialog::Type::INPUT);
+	parameters->result = dialog->GetInput();
+}
+
 bool MacroActionVariable::PerformAction()
 {
 	auto var = _variable.lock();
@@ -187,6 +207,15 @@ bool MacroActionVariable::PerformAction()
 	}
 	case Type::MATH_EXPRESSION: {
 		HandleMathExpression(var.get());
+		return true;
+	}
+	case Type::USER_INPUT: {
+		AskForInputParams params{var->Name(), {}};
+		obs_queue_task(OBS_TASK_UI, askForInput, &params, true);
+		if (!params.result.has_value()) {
+			return false;
+		}
+		var->SetValue(*params.result);
 		return true;
 	}
 	}

@@ -35,6 +35,7 @@ public:
 		SUBSTRING,
 		FIND_AND_REPLACE,
 		MATH_EXPRESSION,
+		USER_INPUT,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
