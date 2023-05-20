@@ -21,6 +21,7 @@
 #include <QSystemTrayIcon>
 #include <QGuiApplication>
 #include <QCursor>
+#include <QMainWindow>
 #include <QScreen>
 #include <unordered_map>
 #include <regex>
