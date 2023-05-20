@@ -51,6 +51,36 @@ void SetDefaultFunctionPriorities(obs_data_t *obj)
 	obs_data_set_default_int(obj, "priority10", default_priority_10);
 }
 
+void SaveFunctionPriorities(obs_data_t *obj, std::vector<int> &funcs)
+{
+	obs_data_set_int(obj, "priority0", funcs[0]);
+	obs_data_set_int(obj, "priority1", funcs[1]);
+	obs_data_set_int(obj, "priority2", funcs[2]);
+	obs_data_set_int(obj, "priority3", funcs[3]);
+	obs_data_set_int(obj, "priority4", funcs[4]);
+	obs_data_set_int(obj, "priority5", funcs[5]);
+	obs_data_set_int(obj, "priority6", funcs[6]);
+	obs_data_set_int(obj, "priority7", funcs[7]);
+	obs_data_set_int(obj, "priority8", funcs[8]);
+	obs_data_set_int(obj, "priority9", funcs[9]);
+	obs_data_set_int(obj, "priority10", funcs[10]);
+}
+
+void LoadFunctionPriorities(obs_data_t *obj, std::vector<int> &funcs)
+{
+	funcs[0] = (obs_data_get_int(obj, "priority0"));
+	funcs[1] = (obs_data_get_int(obj, "priority1"));
+	funcs[2] = (obs_data_get_int(obj, "priority2"));
+	funcs[3] = (obs_data_get_int(obj, "priority3"));
+	funcs[4] = (obs_data_get_int(obj, "priority4"));
+	funcs[5] = (obs_data_get_int(obj, "priority5"));
+	funcs[6] = (obs_data_get_int(obj, "priority6"));
+	funcs[7] = (obs_data_get_int(obj, "priority7"));
+	funcs[8] = (obs_data_get_int(obj, "priority8"));
+	funcs[9] = (obs_data_get_int(obj, "priority9"));
+	funcs[10] = (obs_data_get_int(obj, "priority10"));
+}
+
 std::vector<int> GetDefaultFunctionPriorityList()
 {
 	return {default_priority_0, default_priority_1, default_priority_2,

@@ -14,6 +14,8 @@ struct ThreadPrio {
 
 std::vector<int> GetDefaultFunctionPriorityList();
 void SetDefaultFunctionPriorities(obs_data_t *);
+void SaveFunctionPriorities(obs_data_t *, std::vector<int> &);
+void LoadFunctionPriorities(obs_data_t *, std::vector<int> &);
 std::vector<ThreadPrio> GetThreadPrioMapping();
 
 } // namespace advss
