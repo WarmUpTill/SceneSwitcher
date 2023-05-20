@@ -3,6 +3,8 @@
 #include "scene-selection.hpp"
 #include "regex-config.hpp"
 #include "scene-group.hpp"
+#include "non-modal-dialog.hpp"
+#include "obs-module-helper.hpp"
 
 #include <QStandardPaths>
 #include <QFile>
@@ -19,12 +21,10 @@
 #include <QSystemTrayIcon>
 #include <QGuiApplication>
 #include <QCursor>
-#include <QMainWindow>
 #include <QScreen>
 #include <unordered_map>
 #include <regex>
 #include <set>
-#include <obs-module.h>
 
 namespace advss {
 
@@ -444,65 +444,6 @@ bool SaveTransformState(obs_data_t *obj, const struct obs_transform_info &info,
 
 	return true;
 }
-
-class NonModalMessageDialog : public QDialog {
-public:
-	NonModalMessageDialog(const QString &message, bool question)
-		: QDialog(static_cast<QMainWindow *>(
-			  obs_frontend_get_main_window())),
-		  _answer(QMessageBox::No)
-	{
-		setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
-		setWindowFlags(windowFlags() &
-			       ~Qt::WindowContextHelpButtonHint);
-		setAttribute(Qt::WA_DeleteOnClose);
-
-		auto layout = new QVBoxLayout(this);
-		layout->addWidget(new QLabel(message, this));
-
-		if (question) {
-			auto buttonbox = new QDialogButtonBox(
-				QDialogButtonBox::Yes | QDialogButtonBox::No);
-			connect(buttonbox, &QDialogButtonBox::accepted, this,
-				&NonModalMessageDialog::YesClicked);
-			connect(buttonbox, &QDialogButtonBox::rejected, this,
-				&NonModalMessageDialog::NoClicked);
-			layout->addWidget(buttonbox);
-		} else {
-			auto buttonbox =
-				new QDialogButtonBox(QDialogButtonBox::Ok);
-			connect(buttonbox, &QDialogButtonBox::accepted, this,
-				&NonModalMessageDialog::YesClicked);
-			layout->addWidget(buttonbox);
-		}
-	}
-
-	QMessageBox::StandardButton ShowMessage()
-	{
-		// Use separate QEventLoop to not block rest of the UI
-		show();
-		QEventLoop loop;
-		connect(this, &NonModalMessageDialog::finished, &loop,
-			&QEventLoop::quit);
-		loop.exec();
-		return _answer;
-	}
-
-private slots:
-	void YesClicked()
-	{
-		_answer = QMessageBox::Yes;
-		accept();
-	}
-	void NoClicked()
-	{
-		_answer = QMessageBox::No;
-		accept();
-	}
-
-private:
-	QMessageBox::StandardButton _answer;
-};
 
 bool DisplayMessage(const QString &msg, bool question, bool modal)
 {
