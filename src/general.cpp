@@ -577,17 +577,7 @@ void SwitcherData::SaveGeneralSettings(obs_data_t *obj)
 	obs_data_set_bool(obj, "warnPluginLoadFailure", warnPluginLoadFailure);
 	obs_data_set_bool(obj, "hideLegacyTabs", hideLegacyTabs);
 
-	obs_data_set_int(obj, "priority0", functionNamesByPriority[0]);
-	obs_data_set_int(obj, "priority1", functionNamesByPriority[1]);
-	obs_data_set_int(obj, "priority2", functionNamesByPriority[2]);
-	obs_data_set_int(obj, "priority3", functionNamesByPriority[3]);
-	obs_data_set_int(obj, "priority4", functionNamesByPriority[4]);
-	obs_data_set_int(obj, "priority5", functionNamesByPriority[5]);
-	obs_data_set_int(obj, "priority6", functionNamesByPriority[6]);
-	obs_data_set_int(obj, "priority7", functionNamesByPriority[7]);
-	obs_data_set_int(obj, "priority8", functionNamesByPriority[8]);
-	obs_data_set_int(obj, "priority9", functionNamesByPriority[9]);
-	obs_data_set_int(obj, "priority10", functionNamesByPriority[10]);
+	SaveFunctionPriorities(obj, functionNamesByPriority);
 
 	obs_data_set_int(obj, "threadPriority", threadPriority);
 
@@ -638,6 +628,7 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 	hideLegacyTabs = obs_data_get_bool(obj, "hideLegacyTabs");
 
 	SetDefaultFunctionPriorities(obj);
+	LoadFunctionPriorities(obj, functionNamesByPriority);
 	if (!PrioFuncsValid()) {
 		functionNamesByPriority = GetDefaultFunctionPriorityList();
 	}
