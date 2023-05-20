@@ -265,6 +265,8 @@ target_sources(
           src/utils/mouse-wheel-guard.hpp
           src/utils/name-dialog.cpp
           src/utils/name-dialog.hpp
+          src/utils/non-modal-dialog.cpp
+          src/utils/non-modal-dialog.hpp
           src/utils/obs-dock.hpp
           src/utils/obs-module-helper.cpp
           src/utils/obs-module-helper.hpp
