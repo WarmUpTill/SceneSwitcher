@@ -20,10 +20,12 @@ enum class PreviewType {
 class PreviewImage : public QObject {
 	Q_OBJECT
 
+public:
+	PreviewImage(std::mutex &);
+
 public slots:
 	void CreateImage(const VideoInput &, PreviewType,
-			 const PatternMatchParameters &,
-			 const PatternImageData &, ObjDetectParameters,
+			 const PatternMatchParameters &, ObjDetectParameters,
 			 OCRParameters, const AreaParameters &, VideoCondition);
 signals:
 	void ImageReady(const QPixmap &);
@@ -33,6 +35,8 @@ private:
 	void MarkMatch(QImage &screenshot, const PatternMatchParameters &,
 		       const PatternImageData &, ObjDetectParameters &,
 		       const OCRParameters &, VideoCondition);
+
+	std::mutex &_mtx;
 };
 
 class PreviewDialog : public QDialog {
@@ -59,9 +63,8 @@ private slots:
 signals:
 	void SelectionAreaChanged(QRect area);
 	void NeedImage(const VideoInput &, PreviewType,
-		       const PatternMatchParameters &, const PatternImageData &,
-		       ObjDetectParameters, OCRParameters,
-		       const AreaParameters &, VideoCondition);
+		       const PatternMatchParameters &, ObjDetectParameters,
+		       OCRParameters, const AreaParameters &, VideoCondition);
 
 private:
 	void Start();
@@ -73,7 +76,6 @@ private:
 
 	VideoInput _video;
 	PatternMatchParameters _patternMatchParams;
-	PatternImageData _patternImageData;
 	ObjDetectParameters _objDetectParams;
 	OCRParameters _ocrParams;
 	AreaParameters _areaParams;

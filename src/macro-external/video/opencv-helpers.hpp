@@ -42,29 +42,30 @@ constexpr int maxMinNeighbors = 6;
 constexpr double defaultScaleFactor = 1.1;
 
 struct PatternImageData {
-	cv::Mat4b rgbaPattern;
-	cv::Mat3b rgbPattern;
-	cv::Mat1b mask;
+	cv::UMat rgbaPattern;
+	cv::UMat rgbPattern;
+	cv::UMat mask;
 };
 
-PatternImageData CreatePatternData(QImage &pattern);
+PatternImageData CreatePatternData(const QImage &pattern);
 void MatchPattern(QImage &img, const PatternImageData &patternData,
-		  double threshold, cv::Mat &result, bool useAlphaAsMask,
+		  double threshold, cv::UMat &result, bool useAlphaAsMask,
 		  cv::TemplateMatchModes matchMode);
 void MatchPattern(QImage &img, QImage &pattern, double threshold,
-		  cv::Mat &result, bool useAlphaAsMask,
+		  cv::UMat &result, bool useAlphaAsMask,
 		  cv::TemplateMatchModes matchMode);
 std::vector<cv::Rect> MatchObject(QImage &img, cv::CascadeClassifier &cascade,
 				  double scaleFactor, int minNeighbors,
 				  const cv::Size &minSize,
 				  const cv::Size &maxSize);
 uchar GetAvgBrightness(QImage &img);
-cv::Mat PreprocessForOCR(const QImage &image, const QColor &color);
+cv::UMat PreprocessForOCR(const QImage &image, const QColor &color);
 std::string RunOCR(tesseract::TessBaseAPI *, const QImage &, const QColor &);
 bool ContainsPixelsInColorRange(const QImage &image, const QColor &color,
 				double colorDeviationThreshold,
 				double totalPixelMatchThreshold);
-cv::Mat QImageToMat(const QImage &img);
+cv::UMat QImageToMat(const QImage &img);
 QImage MatToQImage(const cv::Mat &mat);
+void SetupOpenCL();
 
 } // namespace advss
