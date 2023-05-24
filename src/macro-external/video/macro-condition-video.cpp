@@ -83,6 +83,11 @@ const static std::map<tesseract::PageSegMode, std::string> pageSegModes = {
 	 "AdvSceneSwitcher.condition.video.ocrMode.sparseTextOSD"},
 };
 
+MacroConditionVideo::MacroConditionVideo(Macro *m) : MacroCondition(m, true)
+{
+	SetupOpenCL();
+}
+
 cv::CascadeClassifier initObjectCascade(std::string &path)
 {
 	cv::CascadeClassifier cascade;
@@ -261,18 +266,21 @@ bool MacroConditionVideo::SetLanguage(const std::string &language)
 
 bool MacroConditionVideo::ScreenshotContainsPattern()
 {
-	cv::Mat result;
+	cv::UMat result;
 	MatchPattern(_screenshotData.image, _patternImageData,
 		     _patternMatchParameters.threshold, result,
 		     _patternMatchParameters.useAlphaAsMask,
 		     _patternMatchParameters.matchMode);
+	if (result.total() == 0) {
+		return false;
+	}
 	return countNonZero(result) > 0;
 }
 
 bool MacroConditionVideo::OutputChanged()
 {
 	if (_patternMatchParameters.useForChangedCheck) {
-		cv::Mat result;
+		cv::UMat result;
 		_patternImageData = CreatePatternData(_matchImage);
 		MatchPattern(_screenshotData.image, _patternImageData,
 			     _patternMatchParameters.threshold, result,

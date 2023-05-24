@@ -1,8 +1,12 @@
 #include "opencv-helpers.hpp"
+#include "log-helper.hpp"
+
+#include <opencv2/core/ocl.hpp>
+#include <opencv2/core/mat.hpp>
 
 namespace advss {
 
-PatternImageData CreatePatternData(QImage &pattern)
+PatternImageData CreatePatternData(const QImage &pattern)
 {
 	PatternImageData data{};
 	if (pattern.isNull()) {
@@ -20,18 +24,20 @@ PatternImageData CreatePatternData(QImage &pattern)
 	return data;
 }
 
-static void invertPatternMatchResult(cv::Mat &mat)
+static void invertPatternMatchResult(cv::UMat &mat)
 {
-	for (int r = 0; r < mat.rows; r++) {
-		for (int c = 0; c < mat.cols; c++) {
-			float value = mat.at<float>(r, c) =
-				1.0 - mat.at<float>(r, c);
+	auto temp = mat.getMat(cv::ACCESS_RW);
+	for (int r = 0; r < temp.rows; r++) {
+		for (int c = 0; c < temp.cols; c++) {
+			float value = temp.at<float>(r, c) =
+				1.0 - temp.at<float>(r, c);
 		}
 	}
+	mat = temp.getUMat(cv::ACCESS_RW);
 }
 
 void MatchPattern(QImage &img, const PatternImageData &patternData,
-		  double threshold, cv::Mat &result, bool useAlphaAsMask,
+		  double threshold, cv::UMat &result, bool useAlphaAsMask,
 		  cv::TemplateMatchModes matchMode)
 {
 	if (img.isNull() || patternData.rgbaPattern.empty()) {
@@ -50,13 +56,12 @@ void MatchPattern(QImage &img, const PatternImageData &patternData,
 		// thus should not be used while matching the pattern as well
 		//
 		// Input format is Format_RGBA8888 so discard the 4th channel
-		std::vector<cv::Mat1b> inputChannels;
+		std::vector<cv::UMat> inputChannels;
 		cv::split(input, inputChannels);
-		std::vector<cv::Mat1b> rgbChanlesImage(
+		std::vector<cv::UMat> rgbChanlesImage(
 			inputChannels.begin(), inputChannels.begin() + 3);
-		cv::Mat3b rgbInput;
+		cv::UMat rgbInput;
 		cv::merge(rgbChanlesImage, rgbInput);
-
 		cv::matchTemplate(rgbInput, patternData.rgbPattern, result,
 				  matchMode, patternData.mask);
 	} else {
@@ -75,7 +80,7 @@ void MatchPattern(QImage &img, const PatternImageData &patternData,
 }
 
 void MatchPattern(QImage &img, QImage &pattern, double threshold,
-		  cv::Mat &result, bool useAlphaAsMask,
+		  cv::UMat &result, bool useAlphaAsMask,
 		  cv::TemplateMatchModes matchColor)
 {
 	auto data = CreatePatternData(pattern);
@@ -91,9 +96,9 @@ std::vector<cv::Rect> MatchObject(QImage &img, cv::CascadeClassifier &cascade,
 		return {};
 	}
 
-	auto i = QImageToMat(img);
-	cv::Mat frameGray;
-	cv::cvtColor(i, frameGray, cv::COLOR_RGBA2GRAY);
+	auto image = QImageToMat(img);
+	cv::UMat frameGray;
+	cv::cvtColor(image, frameGray, cv::COLOR_RGBA2GRAY);
 	cv::equalizeHist(frameGray, frameGray);
 	std::vector<cv::Rect> objects;
 	cascade.detectMultiScale(frameGray, objects, scaleFactor, minNeighbors,
@@ -120,7 +125,7 @@ uchar GetAvgBrightness(QImage &img)
 	return brightnessSum / (hsvImage.rows * hsvImage.cols);
 }
 
-cv::Mat PreprocessForOCR(const QImage &image, const QColor &color)
+cv::UMat PreprocessForOCR(const QImage &image, const QColor &color)
 {
 	auto mat = QImageToMat(image);
 
@@ -160,7 +165,8 @@ std::string RunOCR(tesseract::TessBaseAPI *ocr, const QImage &image,
 
 #ifdef OCR_SUPPORT
 	auto mat = PreprocessForOCR(image, color);
-	ocr->SetImage(mat.data, mat.cols, mat.rows, 1, mat.step);
+	ocr->SetImage(mat.getMat(cv::ACCESS_READ).data, mat.cols, mat.rows, 1,
+		      mat.step);
 	ocr->Recognize(0);
 	std::unique_ptr<char[]> detectedText(ocr->GetUTF8Text());
 
@@ -207,13 +213,14 @@ bool ContainsPixelsInColorRange(const QImage &image, const QColor &color,
 
 // Assumption is that QImage uses Format_RGBA8888.
 // Conversion from: https://github.com/dbzhang800/QtOpenCV
-cv::Mat QImageToMat(const QImage &img)
+cv::UMat QImageToMat(const QImage &img)
 {
 	if (img.isNull()) {
-		return cv::Mat();
+		return cv::UMat();
 	}
-	return cv::Mat(img.height(), img.width(), CV_8UC(img.depth() / 8),
-		       (uchar *)img.bits(), img.bytesPerLine());
+	auto temp = cv::Mat(img.height(), img.width(), CV_8UC(img.depth() / 8),
+			    (uchar *)img.bits(), img.bytesPerLine());
+	return temp.getUMat(cv::ACCESS_RW);
 }
 
 QImage MatToQImage(const cv::Mat &mat)
@@ -223,6 +230,14 @@ QImage MatToQImage(const cv::Mat &mat)
 	}
 	return QImage(mat.data, mat.cols, mat.rows,
 		      QImage::Format::Format_RGBA8888);
+}
+
+void SetupOpenCL()
+{
+	if (cv::ocl::haveOpenCL() && !cv::ocl::useOpenCL()) {
+		blog(LOG_INFO, "enabled OpenCL support for OpenCV");
+		cv::ocl::setUseOpenCL(true);
+	}
 }
 
 } // namespace advss
