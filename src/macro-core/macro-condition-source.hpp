@@ -74,7 +74,7 @@ protected:
 	std::shared_ptr<MacroConditionSource> _entryData;
 
 private:
-	void SetSettingsSelectionVisible(bool visible);
+	void SetWidgetVisibility();
 	bool _loading = true;
 };
 
