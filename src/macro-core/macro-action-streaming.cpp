@@ -19,6 +19,14 @@ const static std::map<MacroActionStream::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.streaming.type.start"},
 	{MacroActionStream::Action::KEYFRAME_INTERVAL,
 	 "AdvSceneSwitcher.action.streaming.type.keyFrameInterval"},
+	{MacroActionStream::Action::SERVER,
+	 "AdvSceneSwitcher.action.streaming.type.server"},
+	{MacroActionStream::Action::STREAM_KEY,
+	 "AdvSceneSwitcher.action.streaming.type.streamKey"},
+	{MacroActionStream::Action::USERNAME,
+	 "AdvSceneSwitcher.action.streaming.type.username"},
+	{MacroActionStream::Action::PASSWORD,
+	 "AdvSceneSwitcher.action.streaming.type.password"},
 };
 
 constexpr int streamStartCooldown = 5;
@@ -28,14 +36,45 @@ std::chrono::high_resolution_clock::time_point MacroActionStream::s_lastAttempt 
 void MacroActionStream::SetKeyFrameInterval()
 {
 	const auto configPath = GetPathInProfileDir("streamEncoder.json");
-	obs_data_t *settings =
+	auto settings =
 		obs_data_create_from_json_file_safe(configPath.c_str(), "bak");
-	obs_data_set_int(settings, "keyint_sec", _keyFrameInterval);
-	if (settings) {
-		obs_data_save_json_safe(settings, configPath.c_str(), "tmp",
-					"bak");
-		obs_data_release(settings);
+	if (!settings) {
+		blog(LOG_WARNING, "failed to set key frame interval");
+		return;
 	}
+	obs_data_set_int(settings, "keyint_sec", _keyFrameInterval);
+	obs_data_save_json_safe(settings, configPath.c_str(), "tmp", "bak");
+	obs_data_release(settings);
+}
+
+void MacroActionStream::SetStreamSettingsValue(const char *name,
+					       const std::string &value,
+					       bool enableAuth)
+{
+	const auto configPath = GetPathInProfileDir("service.json");
+	auto data =
+		obs_data_create_from_json_file_safe(configPath.c_str(), "bak");
+	if (!data) {
+		blog(LOG_WARNING, "failed to set %s", name);
+		return;
+	}
+	auto settings = obs_data_get_obj(data, "settings");
+	if (!settings) {
+		blog(LOG_WARNING, "failed to set %s", name);
+		obs_data_release(data);
+		return;
+	}
+	obs_data_set_string(settings, name, value.c_str());
+	if (enableAuth) {
+		obs_data_set_bool(settings, "use_auth", true);
+	}
+	obs_data_set_obj(data, "settings", settings);
+	auto service = obs_frontend_get_streaming_service();
+	obs_service_update(service, settings);
+	obs_frontend_save_streaming_service();
+	obs_frontend_set_streaming_service(service);
+	obs_data_release(settings);
+	obs_data_release(data);
 }
 
 bool MacroActionStream::CooldownDurationReached()
@@ -64,6 +103,18 @@ bool MacroActionStream::PerformAction()
 	case Action::KEYFRAME_INTERVAL:
 		SetKeyFrameInterval();
 		break;
+	case Action::SERVER:
+		SetStreamSettingsValue("server", _stringValue);
+		break;
+	case Action::STREAM_KEY:
+		SetStreamSettingsValue("key", _stringValue);
+		break;
+	case Action::USERNAME:
+		SetStreamSettingsValue("username", _stringValue, true);
+		break;
+	case Action::PASSWORD:
+		SetStreamSettingsValue("password", _stringValue, true);
+		break;
 	default:
 		break;
 	}
@@ -86,6 +137,7 @@ bool MacroActionStream::Save(obs_data_t *obj) const
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	_keyFrameInterval.Save(obj, "keyFrameInterval");
+	_stringValue.Save(obj, "stringValue");
 	return true;
 }
 
@@ -94,6 +146,7 @@ bool MacroActionStream::Load(obs_data_t *obj)
 	MacroAction::Load(obj);
 	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
 	_keyFrameInterval.Load(obj, "keyFrameInterval");
+	_stringValue.Load(obj, "stringValue");
 	return true;
 }
 
@@ -108,10 +161,17 @@ MacroActionStreamEdit::MacroActionStreamEdit(
 	QWidget *parent, std::shared_ptr<MacroActionStream> entryData)
 	: QWidget(parent),
 	  _actions(new QComboBox()),
-	  _keyFrameInterval(new VariableSpinBox())
+	  _keyFrameInterval(new VariableSpinBox()),
+	  _stringValue(new VariableLineEdit(this)),
+	  _showPassword(new QPushButton())
 {
 	_keyFrameInterval->setMinimum(0);
 	_keyFrameInterval->setMaximum(25);
+
+	_showPassword->setMaximumWidth(22);
+	_showPassword->setFlat(true);
+	_showPassword->setStyleSheet(
+		"QPushButton { background-color: transparent; border: 0px }");
 
 	populateActionSelection(_actions);
 
@@ -122,12 +182,21 @@ MacroActionStreamEdit::MacroActionStreamEdit(
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
 		this,
 		SLOT(KeyFrameIntervalChanged(const NumberVariable<int> &)));
+	QWidget::connect(_stringValue, SIGNAL(editingFinished()), this,
+			 SLOT(StringValueChanged()));
+	QWidget::connect(_showPassword, SIGNAL(pressed()), this,
+			 SLOT(ShowPassword()));
+	QWidget::connect(_showPassword, SIGNAL(released()), this,
+			 SLOT(HidePassword()));
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.streaming.entry"),
 		     mainLayout,
 		     {{"{{actions}}", _actions},
-		      {"{{keyFrameInterval}}", _keyFrameInterval}});
+		      {"{{keyFrameInterval}}", _keyFrameInterval},
+		      {"{{stringValue}}", _stringValue},
+		      {"{{showPassword}}", _showPassword}},
+		     false);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -142,6 +211,7 @@ void MacroActionStreamEdit::UpdateEntryData()
 	}
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_keyFrameInterval->SetValue(_entryData->_keyFrameInterval);
+	_stringValue->setText(_entryData->_stringValue);
 	SetWidgetVisiblity();
 }
 
@@ -156,15 +226,52 @@ void MacroActionStreamEdit::KeyFrameIntervalChanged(
 	_entryData->_keyFrameInterval = value;
 }
 
+void MacroActionStreamEdit::StringValueChanged()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_stringValue = _stringValue->text().toStdString();
+	SetWidgetVisiblity();
+}
+
+void MacroActionStreamEdit::ShowPassword()
+{
+	SetButtonIcon(_showPassword, ":res/images/visible.svg");
+	_stringValue->setEchoMode(QLineEdit::Normal);
+}
+
+void MacroActionStreamEdit::HidePassword()
+{
+	SetButtonIcon(_showPassword, ":res/images/invisible.svg");
+	_stringValue->setEchoMode(QLineEdit::PasswordEchoOnEdit);
+}
+
 void MacroActionStreamEdit::SetWidgetVisiblity()
 {
 	if (!_entryData) {
 		return;
 	}
 
+	const auto action = _entryData->_action;
 	_keyFrameInterval->setVisible(
-		_entryData->_action ==
-		MacroActionStream::Action::KEYFRAME_INTERVAL);
+		action == MacroActionStream::Action::KEYFRAME_INTERVAL);
+	_stringValue->setVisible(
+		action == MacroActionStream::Action::SERVER ||
+		action == MacroActionStream::Action::STREAM_KEY ||
+		action == MacroActionStream::Action::USERNAME ||
+		action == MacroActionStream::Action::PASSWORD);
+	if (action == MacroActionStream::Action::PASSWORD ||
+	    action == MacroActionStream::Action::STREAM_KEY) {
+		_stringValue->setEchoMode(QLineEdit::PasswordEchoOnEdit);
+		_showPassword->show();
+		HidePassword();
+	} else {
+		_stringValue->setEchoMode(QLineEdit::Normal);
+		_showPassword->hide();
+	}
 }
 
 void MacroActionStreamEdit::ActionChanged(int value)
@@ -172,9 +279,12 @@ void MacroActionStreamEdit::ActionChanged(int value)
 	if (_loading || !_entryData) {
 		return;
 	}
-
-	auto lock = LockContext();
-	_entryData->_action = static_cast<MacroActionStream::Action>(value);
+	{
+		auto lock = LockContext();
+		_entryData->_action =
+			static_cast<MacroActionStream::Action>(value);
+	}
+	_stringValue->setText(QString(""));
 	SetWidgetVisiblity();
 }
 

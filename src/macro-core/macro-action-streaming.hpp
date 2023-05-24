@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "variable-spinbox.hpp"
+#include "variable-line-edit.hpp"
 
 #include <QDoubleSpinBox>
 #include <QComboBox>
@@ -26,12 +27,19 @@ public:
 		STOP,
 		START,
 		KEYFRAME_INTERVAL,
+		SERVER,
+		STREAM_KEY,
+		USERNAME,
+		PASSWORD,
 	};
 	Action _action = Action::STOP;
-	NumberVariable<int> _keyFrameInterval = 0;
+	IntVariable _keyFrameInterval = 0;
+	StringVariable _stringValue;
 
 private:
 	void SetKeyFrameInterval();
+	void SetStreamSettingsValue(const char *name, const std::string &value,
+				    bool enableAuth = false);
 	bool CooldownDurationReached();
 	static std::chrono::high_resolution_clock::time_point s_lastAttempt;
 
@@ -58,10 +66,15 @@ public:
 private slots:
 	void ActionChanged(int value);
 	void KeyFrameIntervalChanged(const NumberVariable<int> &);
+	void StringValueChanged();
+	void ShowPassword();
+	void HidePassword();
 
 protected:
 	QComboBox *_actions;
 	VariableSpinBox *_keyFrameInterval;
+	VariableLineEdit *_stringValue;
+	QPushButton *_showPassword;
 	std::shared_ptr<MacroActionStream> _entryData;
 
 private:
