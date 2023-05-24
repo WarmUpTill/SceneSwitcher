@@ -121,24 +121,27 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
 			 SLOT(RegexChanged(RegexConfig)));
 
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	QHBoxLayout *line1Layout = new QHBoxLayout;
-	QHBoxLayout *line2Layout = new QHBoxLayout;
-	QHBoxLayout *line3Layout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{sources}}", _sources},   {"{{conditions}}", _conditions},
 		{"{{settings}}", _settings}, {"{{getSettings}}", _getSettings},
 		{"{{regex}}", _regex},
 	};
+	auto line1Layout = new QHBoxLayout;
+	line1Layout->setContentsMargins(0, 0, 0, 0);
 	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.source.entry.line1"),
 		     line1Layout, widgetPlaceholders);
+	auto line2Layout = new QHBoxLayout;
+	line2Layout->setContentsMargins(0, 0, 0, 0);
 	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.source.entry.line2"),
 		     line2Layout, widgetPlaceholders, false);
+	auto line3Layout = new QHBoxLayout;
+	line3Layout->setContentsMargins(0, 0, 0, 0);
 	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.source.entry.line3"),
 		     line3Layout, widgetPlaceholders);
+	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(line1Layout);
 	mainLayout->addLayout(line2Layout);
 	mainLayout->addLayout(line3Layout);
@@ -169,8 +172,7 @@ void MacroConditionSourceEdit::ConditionChanged(int index)
 
 	auto lock = LockContext();
 	_entryData->_condition = static_cast<SourceCondition>(index);
-	SetSettingsSelectionVisible(_entryData->_condition ==
-				    SourceCondition::SETTINGS);
+	SetWidgetVisibility();
 }
 
 void MacroConditionSourceEdit::GetSettingsClicked()
@@ -213,12 +215,23 @@ void MacroConditionSourceEdit::RegexChanged(RegexConfig conf)
 	updateGeometry();
 }
 
-void MacroConditionSourceEdit::SetSettingsSelectionVisible(bool visible)
+void MacroConditionSourceEdit::SetWidgetVisibility()
 {
-	_settings->setVisible(visible);
-	_getSettings->setVisible(visible);
-	_regex->setVisible(visible);
+	_settings->setVisible(_entryData->_condition ==
+			      SourceCondition::SETTINGS);
+	_getSettings->setVisible(_entryData->_condition ==
+				 SourceCondition::SETTINGS);
+	_regex->setVisible(_entryData->_condition == SourceCondition::SETTINGS);
+
+	setToolTip(
+		(_entryData->_condition == SourceCondition::ACTIVE ||
+		 _entryData->_condition == SourceCondition::SHOWING)
+			? obs_module_text(
+				  "AdvSceneSwitcher.condition.source.sceneVisibilityHint")
+			: "");
+
 	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionSourceEdit::UpdateEntryData()
@@ -231,11 +244,7 @@ void MacroConditionSourceEdit::UpdateEntryData()
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_settings->setPlainText(_entryData->_settings);
 	_regex->SetRegexConfig(_entryData->_regex);
-	SetSettingsSelectionVisible(_entryData->_condition ==
-				    SourceCondition::SETTINGS);
-
-	adjustSize();
-	updateGeometry();
+	SetWidgetVisibility();
 }
 
 } // namespace advss
