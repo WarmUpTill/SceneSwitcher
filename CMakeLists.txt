@@ -425,31 +425,6 @@ else()
                         "${X11_Xss_INCLUDE_PATH}")
   target_link_libraries(${LIB_NAME} PRIVATE ${X11_LIBRARIES})
 
-  find_path(PROCPS_INCLUDE_DIR NAMES proc/procps.h)
-  find_path(PROCPS2_INCLUDE_DIR NAMES libproc2/pids.h)
-  find_library(PROCPS_LIBRARY NAMES procps)
-  find_library(PROCPS2_LIBRARY NAMES proc2)
-  if(PROCPS_INCLUDE_DIR AND PROCPS_LIBRARY)
-    message(STATUS "${PROJECT_NAME} using procps")
-    set(PROC_INCLUDE_DIR "${PROCPS_INCLUDE_DIR}")
-    set(PROC_LIBRARY "${PROCPS_LIBRARY}")
-    target_compile_definitions(${LIB_NAME} PRIVATE USE_PROCPS)
-  elseif(PROCPS2_INCLUDE_DIR AND PROCPS2_LIBRARY)
-    message(STATUS "${PROJECT_NAME} using libproc2")
-    set(PROC_INCLUDE_DIR "${PROCPS2_INCLUDE_DIR}")
-    set(PROC_LIBRARY "${PROCPS2_LIBRARY}")
-  else()
-    message(
-      FATAL_ERROR
-        "found neither procps nor libproc2!
-      please either set ...
-      PROCPS_INCLUDE_DIR and PROCPS_LIBRARY
-      ... or ...
-      PROCPS2_INCLUDE_DIR and PROCPS2_LIBRARY")
-  endif()
-  target_link_libraries(${LIB_NAME} PRIVATE "${PROC_LIBRARY}")
-  target_include_directories(${LIB_NAME} PRIVATE "${PROC_INCLUDE_DIR}")
-
   find_package(CURL)
   find_package(Libcurl)
   if(CURL_FOUND)

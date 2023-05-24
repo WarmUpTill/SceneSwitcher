@@ -25,11 +25,6 @@
 #include <QStringList>
 #include <QRegularExpression>
 #include <QLibrary>
-#ifdef USE_PROCPS
-#include <proc/readproc.h>
-#else
-#include <libproc2/pids.h>
-#endif
 #include <fstream>
 #include <sstream>
 
@@ -338,46 +333,10 @@ std::optional<std::string> GetTextInWindow(const std::string &window)
 	return {};
 }
 
-#ifdef USE_PROCPS
 void GetProcessList(QStringList &processes)
 {
 	processes.clear();
-	PROCTAB *proc = openproc(PROC_FILLSTAT);
-	proc_t proc_info;
-	memset(&proc_info, 0, sizeof(proc_info));
-	while (readproc(proc, &proc_info) != NULL) {
-		QString procName(proc_info.cmd);
-		if (!procName.isEmpty() && !processes.contains(procName)) {
-			processes << procName;
-		}
-	}
-	closeproc(proc);
 }
-#else
-void GetProcessList(QStringList &processes)
-{
-	processes.clear();
-	struct pids_info *info = NULL;
-	struct pids_stack *stack;
-	enum pids_item Items[] = {
-		PIDS_CMD,
-	};
-
-	if (procps_pids_new(&info, Items, sizeof(Items) / sizeof(Items[0])) <
-	    0) {
-		return;
-	}
-
-	while ((stack = procps_pids_get(info, PIDS_FETCH_TASKS_ONLY))) {
-		auto cmd = PIDS_VAL(0, str, stack, info);
-		QString procName(cmd);
-		if (!procName.isEmpty() && !processes.contains(procName)) {
-			processes << procName;
-		}
-	}
-	procps_pids_unref(&info);
-}
-#endif
 
 long getForegroundProcessPid()
 {
