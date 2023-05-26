@@ -37,10 +37,10 @@ public:
 	StringVariable _stringValue;
 
 private:
-	void SetKeyFrameInterval();
+	void SetKeyFrameInterval() const;
 	void SetStreamSettingsValue(const char *name, const std::string &value,
-				    bool enableAuth = false);
-	bool CooldownDurationReached();
+				    bool enableAuth = false) const;
+	bool CooldownDurationReached() const;
 	static std::chrono::high_resolution_clock::time_point s_lastAttempt;
 
 	static bool _registered;

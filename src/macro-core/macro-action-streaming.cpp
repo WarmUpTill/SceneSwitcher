@@ -33,7 +33,7 @@ constexpr int streamStartCooldown = 5;
 std::chrono::high_resolution_clock::time_point MacroActionStream::s_lastAttempt =
 	std::chrono::high_resolution_clock::now();
 
-void MacroActionStream::SetKeyFrameInterval()
+void MacroActionStream::SetKeyFrameInterval() const
 {
 	const auto configPath = GetPathInProfileDir("streamEncoder.json");
 	auto settings =
@@ -49,7 +49,7 @@ void MacroActionStream::SetKeyFrameInterval()
 
 void MacroActionStream::SetStreamSettingsValue(const char *name,
 					       const std::string &value,
-					       bool enableAuth)
+					       bool enableAuth) const
 {
 	const auto configPath = GetPathInProfileDir("service.json");
 	auto data =
@@ -77,7 +77,7 @@ void MacroActionStream::SetStreamSettingsValue(const char *name,
 	obs_data_release(data);
 }
 
-bool MacroActionStream::CooldownDurationReached()
+bool MacroActionStream::CooldownDurationReached() const
 {
 	auto timePassed = std::chrono::duration_cast<std::chrono::seconds>(
 		std::chrono::high_resolution_clock::now() - s_lastAttempt);
