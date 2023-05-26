@@ -107,7 +107,9 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 	populateConditionSelection(_conditions);
 	auto sources = GetSourceNames();
 	sources.sort();
-	_sources->SetSourceNameList(sources);
+	auto scenes = GetSceneNames();
+	scenes.sort();
+	_sources->SetSourceNameList(sources + scenes);
 
 	QWidget::connect(_sources,
 			 SIGNAL(SourceChanged(const SourceSelection &)), this,
