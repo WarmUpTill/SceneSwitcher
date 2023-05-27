@@ -20,6 +20,9 @@ static void waitForTransitionChange(OBSWeakSource &transition,
 {
 	const auto time = 100ms;
 	obs_source_t *source = obs_weak_source_get_source(transition);
+	if (!source) {
+		return;
+	}
 
 	bool stillTransitioning = true;
 	while (stillTransitioning && !switcher->abortMacroWait &&
