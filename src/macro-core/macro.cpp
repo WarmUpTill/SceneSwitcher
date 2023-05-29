@@ -30,7 +30,12 @@ Macro::~Macro()
 	_die = true;
 	Stop();
 	ClearHotkeys();
-	RemoveDock();
+
+	// Keep the dock widgets in case of shutdown so they can be rostored by
+	// OBS on startup
+	if (!switcher->obsIsShuttingDown) {
+		RemoveDock();
+	}
 }
 
 std::shared_ptr<Macro>
@@ -705,14 +710,16 @@ void Macro::EnableDock(bool value)
 	// geometry set here.
 	// The function calls here are only intended to attempt to restore the
 	// dock status when switching scene collections.
-	_dock->setVisible(_dockIsVisible);
-	if (window->dockWidgetArea(_dock) != _dockArea) {
-		window->addDockWidget(_dockArea, _dock);
+	if (switcher->startupLoadDone) {
+		_dock->setVisible(_dockIsVisible);
+		if (window->dockWidgetArea(_dock) != _dockArea) {
+			window->addDockWidget(_dockArea, _dock);
+		}
+		if (_dock->isFloating() != _dockIsFloating) {
+			_dock->setFloating(_dockIsFloating);
+		}
+		_dock->restoreGeometry(_dockGeo);
 	}
-	if (_dock->isFloating() != _dockIsFloating) {
-		_dock->setFloating(_dockIsFloating);
-	}
-	_dock->restoreGeometry(_dockGeo);
 	_registerDock = value;
 }
 

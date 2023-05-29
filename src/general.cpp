@@ -516,6 +516,7 @@ void SwitcherData::LoadSettings(obs_data_t *obj)
 
 	// Reset on startup and scene collection change
 	switcher->lastOpenedTab = -1;
+	startupLoadDone = true;
 }
 
 void SwitcherData::SaveSettings(obs_data_t *obj)
