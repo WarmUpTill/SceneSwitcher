@@ -1,5 +1,7 @@
 #include "paramerter-wrappers.hpp"
 
+#include <filesystem>
+
 namespace advss {
 
 bool PatternMatchParameters::Save(obs_data_t *obj) const
@@ -259,8 +261,10 @@ bool OCRParameters::Save(obs_data_t *obj) const
 	auto data = obs_data_create();
 	text.Save(data, "pattern");
 	regex.Save(data);
+	languageCode.Save(data, "language");
 	SaveColor(data, "textColor", color);
 	obs_data_set_int(data, "pageSegMode", static_cast<int>(pageSegMode));
+	obs_data_set_int(data, "version", 1);
 	obs_data_set_obj(obj, "ocrData", data);
 	obs_data_release(data);
 	return true;
@@ -282,6 +286,8 @@ bool OCRParameters::Load(obs_data_t *obj)
 	auto data = obs_data_get_obj(obj, "ocrData");
 	text.Load(data, "pattern");
 	regex.Load(data);
+	obs_data_set_default_string(data, "language", "eng");
+	languageCode.Load(data, "language");
 	color = LoadColor(data, "textColor");
 	pageSegMode = static_cast<tesseract::PageSegMode>(
 		obs_data_get_int(data, "pageSegMode"));
@@ -299,6 +305,24 @@ void OCRParameters::SetPageMode(tesseract::PageSegMode mode)
 	ocr->SetPageSegMode(mode);
 }
 
+bool OCRParameters::SetLanguageCode(const std::string &value)
+{
+	std::string dataPath = obs_get_module_data_path(obs_current_module()) +
+			       std::string("/res/ocr") + "/" + value +
+			       ".traineddata";
+	if (!std::filesystem::exists(dataPath)) {
+		return false;
+	}
+	Setup();
+	ocr->SetPageSegMode(pageSegMode);
+	return true;
+}
+
+std::string OCRParameters::GetLanguageCode() const
+{
+	return languageCode;
+}
+
 void OCRParameters::Setup()
 {
 	ocr = std::make_unique<tesseract::TessBaseAPI>();
@@ -308,7 +332,7 @@ void OCRParameters::Setup()
 	}
 	std::string dataPath = obs_get_module_data_path(obs_current_module()) +
 			       std::string("/res/ocr");
-	if (ocr->Init(dataPath.c_str(), "eng") != 0) {
+	if (ocr->Init(dataPath.c_str(), languageCode.c_str()) != 0) {
 		initDone = false;
 		return;
 	}
