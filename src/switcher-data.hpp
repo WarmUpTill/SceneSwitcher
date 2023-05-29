@@ -124,6 +124,7 @@ public:
 	bool firstInterval = true;
 	bool firstIntervalAfterStop = true;
 	int shutdownConditionCount = 0;
+	bool startupLoadDone = false;
 
 	obs_source_t *waitScene = nullptr;
 	OBSWeakSource currentScene = nullptr;
