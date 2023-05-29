@@ -254,6 +254,11 @@ void MacroConditionVideo::SetPageSegMode(tesseract::PageSegMode mode)
 	_ocrParameters.SetPageMode(mode);
 }
 
+bool MacroConditionVideo::SetLanguage(const std::string &language)
+{
+	return _ocrParameters.SetLanguageCode(language);
+}
+
 bool MacroConditionVideo::ScreenshotContainsPattern()
 {
 	cv::Mat result;
@@ -454,6 +459,7 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 	  _selectColor(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.selectColor"))),
 	  _pageSegMode(new QComboBox()),
+	  _languageCode(new VariableLineEdit(this)),
 	  _previewDialog(previewDialog),
 	  _data(data)
 {
@@ -467,11 +473,14 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 			 SLOT(RegexChanged(RegexConfig)));
 	QWidget::connect(_pageSegMode, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(PageSegModeChanged(int)));
+	QWidget::connect(_languageCode, SIGNAL(editingFinished()), this,
+			 SLOT(LanguageChanged()));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{textColor}}", _textColor},
 		{"{{selectColor}}", _selectColor},
 		{"{{textType}}", _pageSegMode},
+		{"{{languageCode}}", _languageCode},
 	};
 
 	auto layout = new QVBoxLayout();
@@ -487,6 +496,12 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 			"AdvSceneSwitcher.condition.video.entry.orcTextType"),
 		pageModeSegLayout, widgetPlaceholders);
 	layout->addLayout(pageModeSegLayout);
+	auto languageLayout = new QHBoxLayout();
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.entry.orcLanguage"),
+		languageLayout, widgetPlaceholders);
+	layout->addLayout(languageLayout);
 	auto colorPickLayout = new QHBoxLayout();
 	PlaceWidgets(
 		obs_module_text(
@@ -500,6 +515,7 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 	SetupColorLabel(_data->_ocrParameters.color);
 	_pageSegMode->setCurrentIndex(_pageSegMode->findData(
 		static_cast<int>(_data->_ocrParameters.GetPageMode())));
+	_languageCode->setText(_data->_ocrParameters.GetLanguageCode());
 	_loading = false;
 }
 
@@ -572,6 +588,29 @@ void OCREdit::PageSegModeChanged(int idx)
 	_data->SetPageSegMode(static_cast<tesseract::PageSegMode>(
 		_pageSegMode->itemData(idx).toInt()));
 
+	_previewDialog->OCRParametersChanged(_data->_ocrParameters);
+}
+
+void OCREdit::LanguageChanged()
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	if (!_data->SetLanguage(_languageCode->text().toStdString())) {
+		const QString message(obs_module_text(
+			"AdvSceneSwitcher.condition.video.ocrLanguageNotFound"));
+		const QDir dataDir(
+			obs_get_module_data_path(obs_current_module()));
+		const QString fileName(_languageCode->text() + ".traineddata");
+		DisplayMessage(message.arg(fileName, dataDir.absolutePath()));
+
+		// Reset to previous value
+		const QSignalBlocker b(this);
+		_languageCode->setText(_data->_ocrParameters.GetLanguageCode());
+		return;
+	}
 	_previewDialog->OCRParametersChanged(_data->_ocrParameters);
 }
 

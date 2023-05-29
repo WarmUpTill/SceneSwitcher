@@ -90,12 +90,15 @@ public:
 
 	bool Initialized() const { return initDone; }
 	void SetPageMode(tesseract::PageSegMode);
+	bool SetLanguageCode(const std::string &);
+	std::string GetLanguageCode() const;
 	tesseract::PageSegMode GetPageMode() const { return pageSegMode; }
 	tesseract::TessBaseAPI *GetOCR() const { return ocr.get(); }
 
 	StringVariable text = obs_module_text("AdvSceneSwitcher.enterText");
 	RegexConfig regex = RegexConfig::PartialMatchRegexConfig();
 	QColor color = Qt::black;
+	StringVariable languageCode = "eng";
 
 private:
 	void Setup();

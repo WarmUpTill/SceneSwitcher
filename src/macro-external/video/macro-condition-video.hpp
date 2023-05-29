@@ -9,6 +9,7 @@
 #include <screenshot-helper.hpp>
 #include <slider-spinbox.hpp>
 #include <variable-text-edit.hpp>
+#include <variable-line-edit.hpp>
 
 #include <QWidget>
 #include <QComboBox>
@@ -42,6 +43,7 @@ public:
 	void ResetLastMatch() { _lastMatchResult = false; }
 	double GetCurrentBrightness() const { return _currentBrightness; }
 	void SetPageSegMode(tesseract::PageSegMode);
+	bool SetLanguage(const std::string &);
 
 	VideoInput _video;
 	VideoCondition _condition = VideoCondition::MATCH;
@@ -118,6 +120,7 @@ private slots:
 	void MatchTextChanged();
 	void RegexChanged(RegexConfig conf);
 	void PageSegModeChanged(int);
+	void LanguageChanged();
 
 private:
 	void SetupColorLabel(const QColor &);
@@ -127,6 +130,7 @@ private:
 	QLabel *_textColor;
 	QPushButton *_selectColor;
 	QComboBox *_pageSegMode;
+	VariableLineEdit *_languageCode;
 
 	PreviewDialog *_previewDialog;
 
