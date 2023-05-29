@@ -22,7 +22,6 @@ NonModalMessageDialog::NonModalMessageDialog(const QString &message, Type type)
 {
 	setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-	setAttribute(Qt::WA_DeleteOnClose);
 
 	auto layout = new QVBoxLayout(this);
 	layout->addWidget(new QLabel(message, this));
@@ -67,6 +66,7 @@ QMessageBox::StandardButton NonModalMessageDialog::ShowMessage()
 {
 	show();
 	exec();
+	this->deleteLater();
 	return _answer;
 }
 
@@ -78,6 +78,7 @@ std::optional<std::string> NonModalMessageDialog::GetInput()
 	_inputEdit->setPlainText("");
 
 	exec();
+	this->deleteLater();
 	if (_answer == QMessageBox::Yes) {
 		return _input.toStdString();
 	}
