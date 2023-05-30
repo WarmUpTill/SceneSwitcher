@@ -13,6 +13,26 @@ bool MacroActionHotkey::_registered = MacroActionFactory::Register(
 	{MacroActionHotkey::Create, MacroActionHotkeyEdit::Create,
 	 "AdvSceneSwitcher.action.hotkey"});
 
+const static std::map<MacroActionHotkey::Action, std::string> actionTypes = {
+	{MacroActionHotkey::Action::OBS_HOTKEY,
+	 "AdvSceneSwitcher.action.hotkey.type.obs"},
+	{MacroActionHotkey::Action::CUSTOM,
+	 "AdvSceneSwitcher.action.hotkey.type.custom"},
+};
+
+const static std::map<obs_hotkey_registerer_type, std::string> hotkeyTypes = {
+	{OBS_HOTKEY_REGISTERER_FRONTEND,
+	 "AdvSceneSwitcher.action.hotkey.type.obs.type.frontend"},
+	{OBS_HOTKEY_REGISTERER_SOURCE,
+	 "AdvSceneSwitcher.action.hotkey.type.obs.type.soruce"},
+	{OBS_HOTKEY_REGISTERER_OUTPUT,
+	 "AdvSceneSwitcher.action.hotkey.type.obs.type.output"},
+	{OBS_HOTKEY_REGISTERER_ENCODER,
+	 "AdvSceneSwitcher.action.hotkey.type.obs.type.encoder"},
+	{OBS_HOTKEY_REGISTERER_SERVICE,
+	 "AdvSceneSwitcher.action.hotkey.type.obs.type.service"},
+};
+
 static std::unordered_map<HotkeyType, long> keyTable = {
 	// Chars
 	{HotkeyType::Key_A, OBS_KEY_A},
@@ -196,7 +216,92 @@ static void InjectKeys(const std::vector<HotkeyType> &keys, int duration)
 	obs_hotkey_inject_event(combo, false);
 }
 
-bool MacroActionHotkey::PerformAction()
+static void addNamePrefix(std::string &name, obs_hotkey_t *hotkey)
+{
+	const auto type = obs_hotkey_get_registerer_type(hotkey);
+	std::string prefix;
+	if (type == OBS_HOTKEY_REGISTERER_SOURCE) {
+		auto source = reinterpret_cast<obs_weak_source_t *>(
+			obs_hotkey_get_registerer(hotkey));
+		prefix = "[" + GetWeakSourceName(source) + "] ";
+	} else if (type == OBS_HOTKEY_REGISTERER_OUTPUT) {
+		auto weakOutput = reinterpret_cast<obs_weak_output_t *>(
+			obs_hotkey_get_registerer(hotkey));
+		std::string name;
+		auto output = obs_weak_output_get_output(weakOutput);
+		if (output) {
+			name = obs_output_get_name(output);
+			obs_output_release(output);
+		}
+		prefix = "[" + name + "] ";
+	} else if (type == OBS_HOTKEY_REGISTERER_ENCODER) {
+		auto weakEncoder = reinterpret_cast<obs_weak_encoder_t *>(
+			obs_hotkey_get_registerer(hotkey));
+		std::string name;
+		auto encoder = obs_weak_encoder_get_encoder(weakEncoder);
+		if (encoder) {
+			name = obs_encoder_get_name(encoder);
+			obs_encoder_release(encoder);
+		}
+		prefix = "[" + name + "] ";
+	} else if (type == OBS_HOTKEY_REGISTERER_SERVICE) {
+		auto weakService = reinterpret_cast<obs_weak_service_t *>(
+			obs_hotkey_get_registerer(hotkey));
+		std::string name;
+		auto service = obs_weak_service_get_service(weakService);
+		if (service) {
+			name = obs_service_get_name(service);
+			obs_service_release(service);
+		}
+		prefix = "[" + name + "] ";
+	}
+	name = prefix + name;
+}
+
+static obs_hotkey_id getHotkeyIdByName(const std::string &name)
+{
+	struct Parameters {
+		std::string name;
+		obs_hotkey_id id = OBS_INVALID_HOTKEY_ID;
+	} params;
+
+	auto func = [](void *param, obs_hotkey_id id, obs_hotkey_t *hotkey) {
+		auto params = static_cast<Parameters *>(param);
+		std::string name = obs_hotkey_get_name(hotkey);
+		addNamePrefix(name, hotkey);
+		if (name == params->name) {
+			params->id = id;
+			return false;
+		}
+		return true;
+	};
+
+	params.name = name;
+	obs_enum_hotkeys(func, &params);
+	return params.id;
+}
+
+void MacroActionHotkey::SendOBSHotkey()
+{
+	auto id = getHotkeyIdByName(_hotkeyName);
+	if (id == OBS_INVALID_HOTKEY_ID) {
+		blog(LOG_WARNING,
+		     "failed to get hotkey id for \"%s\" - key will not be pressed",
+		     _hotkeyName.c_str());
+		return;
+	}
+	obs_queue_task(
+		OBS_TASK_UI,
+		[](void *param) {
+			auto id = (size_t *)param;
+			obs_hotkey_trigger_routed_callback(*id, false);
+			obs_hotkey_trigger_routed_callback(*id, true);
+			obs_hotkey_trigger_routed_callback(*id, false);
+		},
+		&id, true);
+}
+
+void MacroActionHotkey::SendCustomHotkey()
 {
 	std::vector<HotkeyType> keys;
 	if (_leftShift) {
@@ -237,18 +342,35 @@ bool MacroActionHotkey::PerformAction()
 			t.detach();
 		}
 	}
+}
+
+bool MacroActionHotkey::PerformAction()
+{
+	switch (_action) {
+	case advss::MacroActionHotkey::Action::OBS_HOTKEY:
+		SendOBSHotkey();
+		break;
+	case advss::MacroActionHotkey::Action::CUSTOM:
+		SendCustomHotkey();
+		break;
+	default:
+		break;
+	}
 
 	return true;
 }
 
 void MacroActionHotkey::LogAction() const
 {
-	vblog(LOG_INFO, "sent hotkey");
+	vblog(LOG_INFO, "sent hotkey type %d", static_cast<int>(_action));
 }
 
 bool MacroActionHotkey::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
+	obs_data_set_int(obj, "action", static_cast<int>(_action));
+	obs_data_set_int(obj, "hotkeyType", _hotkeyType);
+	obs_data_set_string(obj, "hotkeyName", _hotkeyName.c_str());
 	obs_data_set_int(obj, "key", static_cast<int>(_key));
 	obs_data_set_bool(obj, "left_shift", _leftShift);
 	obs_data_set_bool(obj, "right_shift", _rightShift);
@@ -260,13 +382,22 @@ bool MacroActionHotkey::Save(obs_data_t *obj) const
 	obs_data_set_bool(obj, "right_meta", _rightMeta);
 	_duration.Save(obj);
 	obs_data_set_bool(obj, "onlyOBS", _onlySendToObs);
-	obs_data_set_int(obj, "version", 1);
+	obs_data_set_int(obj, "version", 2);
 	return true;
 }
 
 bool MacroActionHotkey::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
+	int version = obs_data_get_int(obj, "version");
+	if (version != 2) {
+		_action = Action::CUSTOM;
+	} else {
+		_action = static_cast<Action>(obs_data_get_int(obj, "action"));
+	}
+	_hotkeyType = static_cast<obs_hotkey_registerer_type>(
+		obs_data_get_int(obj, "hotkeyType"));
+	_hotkeyName = obs_data_get_string(obj, "hotkeyName");
 	_key = static_cast<HotkeyType>(obs_data_get_int(obj, "key"));
 	_leftShift = obs_data_get_bool(obj, "left_shift");
 	_rightShift = obs_data_get_bool(obj, "right_shift");
@@ -276,7 +407,7 @@ bool MacroActionHotkey::Load(obs_data_t *obj)
 	_rightAlt = obs_data_get_bool(obj, "right_alt");
 	_leftMeta = obs_data_get_bool(obj, "left_meta");
 	_rightMeta = obs_data_get_bool(obj, "right_meta");
-	if (!obs_data_has_user_value(obj, "version")) {
+	if (version == 0) {
 		_duration = obs_data_get_int(obj, "duration") / 1000.0;
 	} else {
 		_duration.Load(obj);
@@ -395,9 +526,65 @@ static inline void populateKeySelection(QComboBox *list)
 	list->addItem("NumpadEnter");
 }
 
+static void populateActionSelection(QComboBox *list)
+{
+	for (const auto &[_, value] : actionTypes) {
+		list->addItem(obs_module_text(value.c_str()));
+	}
+}
+static void populateHotkeyTypeSelection(QComboBox *list)
+{
+	for (const auto &[_, value] : hotkeyTypes) {
+		list->addItem(obs_module_text(value.c_str()));
+	}
+}
+
+static void addNamePrefix(QString &name, obs_hotkey_t *hotkey)
+{
+	auto temp = name.toStdString();
+	addNamePrefix(temp, hotkey);
+	name = QString::fromStdString(temp);
+}
+
+static void populateHotkeyNames(QComboBox *list,
+				obs_hotkey_registerer_type type)
+{
+	struct Parameters {
+		QStringList names;
+		QStringList descriptions;
+		obs_hotkey_registerer_type type;
+	} params;
+
+	auto func = [](void *param, obs_hotkey_id, obs_hotkey_t *hotkey) {
+		auto params = static_cast<Parameters *>(param);
+		if (obs_hotkey_get_registerer_type(hotkey) == params->type) {
+			QString description(obs_hotkey_get_description(hotkey));
+			addNamePrefix(description, hotkey);
+			params->descriptions.append(description);
+			QString name(obs_hotkey_get_name(hotkey));
+			addNamePrefix(name, hotkey);
+			params->names.append(name);
+		}
+		return true;
+	};
+
+	params.type = type;
+	obs_enum_hotkeys(func, &params);
+
+	list->clear();
+	for (int i = 0; i < params.names.size(); i++) {
+		list->addItem(params.descriptions.at(i), params.names.at(i));
+	}
+	AddSelectionEntry(list,
+			  obs_module_text("AdvSceneSwitcher.selectHotkey"));
+}
+
 MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 	QWidget *parent, std::shared_ptr<MacroActionHotkey> entryData)
 	: QWidget(parent),
+	  _actionType(new QComboBox()),
+	  _hotkeyType(new QComboBox()),
+	  _obsHotkeys(new QComboBox()),
 	  _keys(new QComboBox()),
 	  _leftShift(new QCheckBox(
 		  obs_module_text("AdvSceneSwitcher.action.hotkey.leftShift"))),
@@ -419,10 +606,20 @@ MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 	  _onlySendToOBS(new QCheckBox(
 		  obs_module_text("AdvSceneSwitcher.action.hotkey.onlyOBS"))),
 	  _noKeyPressSimulationWarning(new QLabel(
-		  obs_module_text("AdvSceneSwitcher.action.hotkey.disabled")))
+		  obs_module_text("AdvSceneSwitcher.action.hotkey.disabled"))),
+	  _entryLayout(new QHBoxLayout()),
+	  _keyConfigLayout(new QHBoxLayout())
 {
 	populateKeySelection(_keys);
+	populateActionSelection(_actionType);
+	populateHotkeyTypeSelection(_hotkeyType);
 
+	QWidget::connect(_actionType, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(ActionChanged(int)));
+	QWidget::connect(_hotkeyType, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(HotkeyTypeChanged(int)));
+	QWidget::connect(_obsHotkeys, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(OBSHotkeyChanged(int)));
 	QWidget::connect(_keys, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(KeyChanged(int)));
 	QWidget::connect(_leftShift, SIGNAL(stateChanged(int)), this,
@@ -446,28 +643,21 @@ MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 	QWidget::connect(_onlySendToOBS, SIGNAL(stateChanged(int)), this,
 			 SLOT(OnlySendToOBSChanged(int)));
 
-	QHBoxLayout *line1Layout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{keys}}", _keys},
-		{"{{duration}}", _duration},
-	};
-	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.hotkey.entry"),
-		     line1Layout, widgetPlaceholders);
+	_entryLayout->setContentsMargins(0, 0, 0, 0);
+	_keyConfigLayout->setContentsMargins(0, 0, 0, 0);
+	_keyConfigLayout->addWidget(_leftShift);
+	_keyConfigLayout->addWidget(_rightShift);
+	_keyConfigLayout->addWidget(_leftCtrl);
+	_keyConfigLayout->addWidget(_rightCtrl);
+	_keyConfigLayout->addWidget(_leftAlt);
+	_keyConfigLayout->addWidget(_rightAlt);
+	_keyConfigLayout->addWidget(_leftMeta);
+	_keyConfigLayout->addWidget(_rightMeta);
+	_keyConfigLayout->addStretch();
 
-	QHBoxLayout *line2Layout = new QHBoxLayout;
-	line2Layout->addWidget(_leftShift);
-	line2Layout->addWidget(_rightShift);
-	line2Layout->addWidget(_leftCtrl);
-	line2Layout->addWidget(_rightCtrl);
-	line2Layout->addWidget(_leftAlt);
-	line2Layout->addWidget(_rightAlt);
-	line2Layout->addWidget(_leftMeta);
-	line2Layout->addWidget(_rightMeta);
-	line2Layout->addStretch();
-
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->addLayout(line1Layout);
-	mainLayout->addLayout(line2Layout);
+	auto mainLayout = new QVBoxLayout;
+	mainLayout->addLayout(_entryLayout);
+	mainLayout->addLayout(_keyConfigLayout);
 	mainLayout->addWidget(_onlySendToOBS);
 	mainLayout->addWidget(_noKeyPressSimulationWarning);
 	setLayout(mainLayout);
@@ -479,10 +669,76 @@ MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 	_loading = false;
 }
 
-void MacroActionHotkeyEdit::SetWarningVisibility()
+void MacroActionHotkeyEdit::RepopulateOBSHotkeySelection()
 {
+	populateHotkeyNames(_obsHotkeys, _entryData->_hotkeyType);
+}
+
+void MacroActionHotkeyEdit::SetWidgetVisibility()
+{
+	_entryLayout->removeWidget(_actionType);
+	_entryLayout->removeWidget(_hotkeyType);
+	_entryLayout->removeWidget(_obsHotkeys);
+	_entryLayout->removeWidget(_keys);
+	_entryLayout->removeWidget(_duration);
+	ClearLayout(_entryLayout);
+	PlaceWidgets(
+		obs_module_text(
+			_entryData->_action ==
+					MacroActionHotkey::Action::OBS_HOTKEY
+				? "AdvSceneSwitcher.action.hotkey.entry.obs"
+				: "AdvSceneSwitcher.action.hotkey.entry.custom"),
+		_entryLayout,
+		{
+			{"{{actionType}}", _actionType},
+			{"{{hotkeyType}}", _hotkeyType},
+			{"{{obsHotkeys}}", _obsHotkeys},
+			{"{{keys}}", _keys},
+			{"{{duration}}", _duration},
+		});
+
 	_noKeyPressSimulationWarning->setVisible(!_entryData->_onlySendToObs &&
 						 !canSimulateKeyPresses);
+	SetLayoutVisible(_keyConfigLayout,
+			 _entryData->_action ==
+				 MacroActionHotkey::Action::CUSTOM);
+	_duration->setVisible(_entryData->_action ==
+			      MacroActionHotkey::Action::CUSTOM);
+	_keys->setVisible(_entryData->_action ==
+			  MacroActionHotkey::Action::CUSTOM);
+	_onlySendToOBS->setVisible(_entryData->_action ==
+				   MacroActionHotkey::Action::CUSTOM);
+	_hotkeyType->setVisible(_entryData->_action ==
+				MacroActionHotkey::Action::OBS_HOTKEY);
+	_obsHotkeys->setVisible(_entryData->_action ==
+				MacroActionHotkey::Action::OBS_HOTKEY);
+	adjustSize();
+	updateGeometry();
+}
+
+static QString getHotkeyDescriptionByName(const std::string &name)
+{
+	struct Parameters {
+		std::string name;
+		QString description = "";
+	} params;
+
+	auto func = [](void *param, obs_hotkey_id id, obs_hotkey_t *hotkey) {
+		auto params = static_cast<Parameters *>(param);
+		std::string name = obs_hotkey_get_name(hotkey);
+		addNamePrefix(name, hotkey);
+		if (name == params->name) {
+			params->description =
+				obs_hotkey_get_description(hotkey);
+			addNamePrefix(params->description, hotkey);
+			return false;
+		}
+		return true;
+	};
+
+	params.name = name;
+	obs_enum_hotkeys(func, &params);
+	return params.description;
 }
 
 void MacroActionHotkeyEdit::UpdateEntryData()
@@ -491,6 +747,11 @@ void MacroActionHotkeyEdit::UpdateEntryData()
 		return;
 	}
 
+	_actionType->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_hotkeyType->setCurrentIndex(static_cast<int>(_entryData->_hotkeyType));
+	RepopulateOBSHotkeySelection();
+	_obsHotkeys->setCurrentText(
+		getHotkeyDescriptionByName(_entryData->_hotkeyName));
 	_keys->setCurrentIndex(static_cast<int>(_entryData->_key));
 	_leftShift->setChecked(_entryData->_leftShift);
 	_rightShift->setChecked(_entryData->_rightShift);
@@ -503,7 +764,7 @@ void MacroActionHotkeyEdit::UpdateEntryData()
 	_duration->SetDuration(_entryData->_duration);
 	_onlySendToOBS->setChecked(_entryData->_onlySendToObs ||
 				   !canSimulateKeyPresses);
-	SetWarningVisibility();
+	SetWidgetVisibility();
 }
 
 void MacroActionHotkeyEdit::LShiftChanged(int state)
@@ -604,7 +865,7 @@ void MacroActionHotkeyEdit::OnlySendToOBSChanged(int state)
 
 	auto lock = LockContext();
 	_entryData->_onlySendToObs = state;
-	SetWarningVisibility();
+	SetWidgetVisibility();
 }
 
 void MacroActionHotkeyEdit::KeyChanged(int key)
@@ -615,6 +876,45 @@ void MacroActionHotkeyEdit::KeyChanged(int key)
 
 	auto lock = LockContext();
 	_entryData->_key = static_cast<HotkeyType>(key);
+}
+
+void MacroActionHotkeyEdit::ActionChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_action = static_cast<MacroActionHotkey::Action>(value);
+	SetWidgetVisibility();
+}
+
+void MacroActionHotkeyEdit::HotkeyTypeChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+	{
+		auto lock = LockContext();
+		_entryData->_hotkeyType =
+			static_cast<obs_hotkey_registerer_type>(value);
+	}
+	RepopulateOBSHotkeySelection();
+}
+
+void MacroActionHotkeyEdit::OBSHotkeyChanged(int idx)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	if (idx == -1) {
+		_entryData->_hotkeyName = "";
+		return;
+	}
+	_entryData->_hotkeyName =
+		_obsHotkeys->itemData(idx).toString().toStdString();
 }
 
 } // namespace advss
