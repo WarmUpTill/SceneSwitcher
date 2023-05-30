@@ -23,7 +23,15 @@ public:
 		return std::make_shared<MacroActionHotkey>(m);
 	}
 
-	OBSWeakSource _HotkeySource;
+	enum class Action {
+		OBS_HOTKEY,
+		CUSTOM,
+	};
+	Action _action = Action::OBS_HOTKEY;
+
+	obs_hotkey_registerer_type _hotkeyType = OBS_HOTKEY_REGISTERER_FRONTEND;
+	std::string _hotkeyName;
+
 	HotkeyType _key = HotkeyType::Key_NoKey;
 	bool _leftShift = false;
 	bool _rightShift = false;
@@ -41,6 +49,9 @@ public:
 #endif
 
 private:
+	void SendOBSHotkey();
+	void SendCustomHotkey();
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -62,6 +73,9 @@ public:
 	}
 
 private slots:
+	void ActionChanged(int key);
+	void HotkeyTypeChanged(int key);
+	void OBSHotkeyChanged(int);
 	void KeyChanged(int key);
 	void LShiftChanged(int state);
 	void RShiftChanged(int state);
@@ -75,6 +89,9 @@ private slots:
 	void OnlySendToOBSChanged(int state);
 
 protected:
+	QComboBox *_actionType;
+	QComboBox *_hotkeyType;
+	QComboBox *_obsHotkeys;
 	QComboBox *_keys;
 	QCheckBox *_leftShift;
 	QCheckBox *_rightShift;
@@ -91,8 +108,11 @@ protected:
 	std::shared_ptr<MacroActionHotkey> _entryData;
 
 private:
-	void SetWarningVisibility();
-	QHBoxLayout *_mainLayout;
+	void RepopulateOBSHotkeySelection();
+	void SetWidgetVisibility();
+
+	QHBoxLayout *_entryLayout;
+	QHBoxLayout *_keyConfigLayout;
 	bool _loading = true;
 };
 
