@@ -80,7 +80,7 @@ protected:
 private:
 	void SetWidgetVisiblity();
 
-	QHBoxLayout *_mainLayout;
+	QHBoxLayout *_layout;
 	bool _loading = true;
 };
 

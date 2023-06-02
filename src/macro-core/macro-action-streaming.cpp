@@ -163,7 +163,8 @@ MacroActionStreamEdit::MacroActionStreamEdit(
 	  _actions(new QComboBox()),
 	  _keyFrameInterval(new VariableSpinBox()),
 	  _stringValue(new VariableLineEdit(this)),
-	  _showPassword(new QPushButton())
+	  _showPassword(new QPushButton()),
+	  _layout(new QHBoxLayout())
 {
 	_keyFrameInterval->setMinimum(0);
 	_keyFrameInterval->setMaximum(25);
@@ -189,15 +190,13 @@ MacroActionStreamEdit::MacroActionStreamEdit(
 	QWidget::connect(_showPassword, SIGNAL(released()), this,
 			 SLOT(HidePassword()));
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.streaming.entry"),
-		     mainLayout,
+		     _layout,
 		     {{"{{actions}}", _actions},
 		      {"{{keyFrameInterval}}", _keyFrameInterval},
 		      {"{{stringValue}}", _stringValue},
-		      {"{{showPassword}}", _showPassword}},
-		     false);
-	setLayout(mainLayout);
+		      {"{{showPassword}}", _showPassword}});
+	setLayout(_layout);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -258,11 +257,18 @@ void MacroActionStreamEdit::SetWidgetVisiblity()
 	const auto action = _entryData->_action;
 	_keyFrameInterval->setVisible(
 		action == MacroActionStream::Action::KEYFRAME_INTERVAL);
-	_stringValue->setVisible(
+	const bool modifyingStringValue =
 		action == MacroActionStream::Action::SERVER ||
 		action == MacroActionStream::Action::STREAM_KEY ||
 		action == MacroActionStream::Action::USERNAME ||
-		action == MacroActionStream::Action::PASSWORD);
+		action == MacroActionStream::Action::PASSWORD;
+	_stringValue->setVisible(modifyingStringValue);
+	if (modifyingStringValue) {
+		// Give as much space to string value line edit as posssible
+		RemoveStretchIfPresent(_layout);
+	} else {
+		AddStretchIfNecessary(_layout);
+	}
 	if (action == MacroActionStream::Action::PASSWORD ||
 	    action == MacroActionStream::Action::STREAM_KEY) {
 		_stringValue->setEchoMode(QLineEdit::PasswordEchoOnEdit);
