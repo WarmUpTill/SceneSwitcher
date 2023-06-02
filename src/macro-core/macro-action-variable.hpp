@@ -54,6 +54,9 @@ public:
 		"AdvSceneSwitcher.action.variable.findAndReplace.replace");
 	StringVariable _mathExpression = obs_module_text(
 		"AdvSceneSwitcher.action.variable.mathExpression.example");
+	bool _useCustomPrompt = false;
+	StringVariable _inputPrompt = obs_module_text(
+		"AdvSceneSwitcher.action.variable.askForValuePrompt");
 
 private:
 	void DecrementCurrentSegmentVariableRef();
@@ -101,6 +104,8 @@ private slots:
 	void FindStrValueChanged();
 	void ReplaceStrValueChanged();
 	void MathExpressionChanged();
+	void UseCustomPromptChanged(int);
+	void InputPromptChanged();
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -127,6 +132,9 @@ protected:
 	ResizingPlainTextEdit *_replaceStr;
 	VariableLineEdit *_mathExpression;
 	QLabel *_mathExpressionResult;
+	QHBoxLayout *_promptLayout;
+	QCheckBox *_useCustomPrompt;
+	VariableLineEdit *_inputPrompt;
 	std::shared_ptr<MacroActionVariable> _entryData;
 
 private:

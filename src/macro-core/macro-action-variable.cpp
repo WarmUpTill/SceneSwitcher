@@ -125,19 +125,15 @@ void MacroActionVariable::HandleMathExpression(Variable *var)
 }
 
 struct AskForInputParams {
-	const std::string varName;
+	QString prompt;
 	std::optional<std::string> result;
 };
 
 static void askForInput(void *param)
 {
 	auto parameters = static_cast<AskForInputParams *>(param);
-
-	QString prompt(obs_module_text(
-		"AdvSceneSwitcher.action.variable.askForValuePrompt"));
 	auto dialog = new NonModalMessageDialog(
-		prompt.arg(QString::fromStdString(parameters->varName)),
-		NonModalMessageDialog::Type::INPUT);
+		parameters->prompt, NonModalMessageDialog::Type::INPUT);
 	parameters->result = dialog->GetInput();
 }
 
@@ -210,7 +206,14 @@ bool MacroActionVariable::PerformAction()
 		return true;
 	}
 	case Type::USER_INPUT: {
-		AskForInputParams params{var->Name(), {}};
+		AskForInputParams params{
+			_useCustomPrompt
+				? QString::fromStdString(_inputPrompt)
+				: QString(obs_module_text(
+						  "AdvSceneSwitcher.action.variable.askForValuePromptDefault"))
+					  .arg(QString::fromStdString(
+						  var->Name())),
+			{}};
 		obs_queue_task(OBS_TASK_UI, askForInput, &params, true);
 		if (!params.result.has_value()) {
 			return false;
@@ -242,6 +245,8 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	obs_data_set_string(obj, "replaceStr", _replaceStr.c_str());
 	_regex.Save(obj);
 	_mathExpression.Save(obj, "mathExpression");
+	obs_data_set_bool(obj, "useCustomPrompt", _useCustomPrompt);
+	_inputPrompt.Save(obj, "inputPrompt");
 	return true;
 }
 
@@ -264,6 +269,8 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_findStr = obs_data_get_string(obj, "findStr");
 	_replaceStr = obs_data_get_string(obj, "replaceStr");
 	_mathExpression.Load(obj, "mathExpression");
+	_useCustomPrompt = obs_data_get_bool(obj, "useCustomPrompt");
+	_inputPrompt.Load(obj, "inputPrompt");
 	return true;
 }
 
@@ -381,7 +388,10 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _findStr(new ResizingPlainTextEdit(this, 10, 1, 1)),
 	  _replaceStr(new ResizingPlainTextEdit(this, 10, 1, 1)),
 	  _mathExpression(new VariableLineEdit(this)),
-	  _mathExpressionResult(new QLabel())
+	  _mathExpressionResult(new QLabel()),
+	  _promptLayout(new QHBoxLayout()),
+	  _useCustomPrompt(new QCheckBox()),
+	  _inputPrompt(new VariableLineEdit(this))
 {
 	_numValue->setMinimum(-9999999999);
 	_numValue->setMaximum(9999999999);
@@ -400,6 +410,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_regexMatchIdx->setMinimum(1);
 	_regexMatchIdx->setMaximum(999);
 	_regexMatchIdx->setSuffix(".");
+	_inputPrompt->setSizePolicy(QSizePolicy::MinimumExpanding,
+				    QSizePolicy::Preferred);
 	populateTypeSelection(_actions);
 
 	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),
@@ -432,6 +444,10 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 SLOT(ReplaceStrValueChanged()));
 	QWidget::connect(_mathExpression, SIGNAL(editingFinished()), this,
 			 SLOT(MathExpressionChanged()));
+	QWidget::connect(_useCustomPrompt, SIGNAL(stateChanged(int)), this,
+			 SLOT(UseCustomPromptChanged(int)));
+	QWidget::connect(_inputPrompt, SIGNAL(editingFinished()), this,
+			 SLOT(InputPromptChanged()));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -446,6 +462,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{findStr}}", _findStr},
 		{"{{replaceStr}}", _replaceStr},
 		{"{{mathExpression}}", _mathExpression},
+		{"{{useCustomPrompt}}", _useCustomPrompt},
+		{"{{inputPrompt}}", _inputPrompt},
 	};
 	auto entryLayout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.variable.entry"),
@@ -466,6 +484,11 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			"AdvSceneSwitcher.action.variable.entry.findAndReplace"),
 		_findReplaceLayout, widgetPlaceholders, false);
 
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.action.variable.entry.userInput"),
+		_promptLayout, widgetPlaceholders);
+
 	auto regexConfigLayout = new QHBoxLayout;
 	regexConfigLayout->addWidget(_regex);
 	regexConfigLayout->addStretch();
@@ -482,6 +505,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	layout->addWidget(_segmentValue);
 	layout->addLayout(_findReplaceLayout);
 	layout->addWidget(_mathExpressionResult);
+	layout->addLayout(_promptLayout);
 	setLayout(layout);
 
 	_entryData = entryData;
@@ -516,6 +540,8 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_replaceStr->setPlainText(
 		QString::fromStdString(_entryData->_replaceStr));
 	_mathExpression->setText(_entryData->_mathExpression);
+	_useCustomPrompt->setChecked(_entryData->_useCustomPrompt);
+	_inputPrompt->setText(_entryData->_inputPrompt);
 	SetWidgetVisibility();
 }
 
@@ -781,6 +807,33 @@ void MacroActionVariableEdit::MathExpressionChanged()
 	updateGeometry();
 }
 
+void MacroActionVariableEdit::UseCustomPromptChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	_inputPrompt->setVisible(value);
+	if (value) {
+		RemoveStretchIfPresent(_promptLayout);
+	} else {
+		AddStretchIfNecessary(_promptLayout);
+	}
+
+	auto lock = LockContext();
+	_entryData->_useCustomPrompt = value;
+}
+
+void MacroActionVariableEdit::InputPromptChanged()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_inputPrompt = _inputPrompt->text().toStdString();
+}
+
 void MacroActionVariableEdit::MarkSelectedSegment()
 {
 	if (switcher->disableHints) {
@@ -862,7 +915,10 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 	_mathExpression->setVisible(_entryData->_type ==
 				    MacroActionVariable::Type::MATH_EXPRESSION);
 	_mathExpressionResult->hide();
-
+	SetLayoutVisible(_promptLayout,
+			 _entryData->_type ==
+				 MacroActionVariable::Type::USER_INPUT);
+	_inputPrompt->setVisible(_entryData->_useCustomPrompt);
 	adjustSize();
 	updateGeometry();
 }
