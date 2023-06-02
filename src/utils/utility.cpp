@@ -23,6 +23,7 @@
 #include <QCursor>
 #include <QMainWindow>
 #include <QScreen>
+#include <QSpacerItem>
 #include <unordered_map>
 #include <regex>
 #include <set>
@@ -251,6 +252,33 @@ void SetLayoutVisible(QLayout *layout, bool visible)
 		}
 		if (nestedLayout) {
 			SetLayoutVisible(nestedLayout, visible);
+		}
+	}
+}
+
+void AddStretchIfNecessary(QBoxLayout *layout)
+{
+	int itemCount = layout->count();
+	if (itemCount > 0) {
+		auto lastItem = layout->itemAt(itemCount - 1);
+		auto lastSpacer = dynamic_cast<QSpacerItem *>(lastItem);
+		if (!lastSpacer) {
+			layout->addStretch();
+		}
+	} else {
+		layout->addStretch();
+	}
+}
+
+void RemoveStretchIfPresent(QBoxLayout *layout)
+{
+	int itemCount = layout->count();
+	if (itemCount > 0) {
+		auto lastItem = layout->itemAt(itemCount - 1);
+		auto lastSpacer = dynamic_cast<QSpacerItem *>(lastItem);
+		if (lastSpacer) {
+			layout->removeItem(lastItem);
+			delete lastItem;
 		}
 	}
 }
