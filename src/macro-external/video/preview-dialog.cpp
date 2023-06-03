@@ -307,6 +307,9 @@ void PreviewImage::MarkMatch(QImage &screenshot,
 		if (result.total() == 0 || countNonZero(result) == 0) {
 			emit StatusUpdate(obs_module_text(
 				"AdvSceneSwitcher.condition.video.patternMatchFail"));
+		} else if (result.cols == 1 && result.rows == 1) {
+			emit StatusUpdate(obs_module_text(
+				"AdvSceneSwitcher.condition.video.patternMatchSuccessFullImage"));
 		} else {
 			emit StatusUpdate(obs_module_text(
 				"AdvSceneSwitcher.condition.video.patternMatchSuccess"));
