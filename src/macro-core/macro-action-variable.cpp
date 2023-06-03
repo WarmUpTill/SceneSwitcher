@@ -16,7 +16,7 @@ bool MacroActionVariable::_registered = MacroActionFactory::Register(
 	{MacroActionVariable::Create, MacroActionVariableEdit::Create,
 	 "AdvSceneSwitcher.action.variable"});
 
-static std::map<MacroActionVariable::Type, std::string> actionTypes = {
+const static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	{MacroActionVariable::Type::SET_FIXED_VALUE,
 	 "AdvSceneSwitcher.action.variable.type.set"},
 	{MacroActionVariable::Type::APPEND,

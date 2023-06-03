@@ -10,7 +10,7 @@ bool MacroConditionStats::_registered = MacroConditionFactory::Register(
 	{MacroConditionStats::Create, MacroConditionStatsEdit::Create,
 	 "AdvSceneSwitcher.condition.stats"});
 
-static std::map<MacroConditionStats::Type, std::string> statsTypes = {
+const static std::map<MacroConditionStats::Type, std::string> statsTypes = {
 	{MacroConditionStats::Type::FPS,
 	 "AdvSceneSwitcher.condition.stats.type.fps"},
 	{MacroConditionStats::Type::CPU_USAGE,
@@ -39,7 +39,7 @@ static std::map<MacroConditionStats::Type, std::string> statsTypes = {
 	 "AdvSceneSwitcher.condition.stats.type.megabytesSent.recording"},
 };
 
-static std::map<MacroConditionStats::Condition, std::string>
+const static std::map<MacroConditionStats::Condition, std::string>
 	statsConditionTypes = {
 		{MacroConditionStats::Condition::ABOVE,
 		 "AdvSceneSwitcher.condition.stats.condition.above"},

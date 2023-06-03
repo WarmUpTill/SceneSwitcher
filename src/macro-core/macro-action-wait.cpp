@@ -13,7 +13,7 @@ bool MacroActionWait::_registered = MacroActionFactory::Register(
 	{MacroActionWait::Create, MacroActionWaitEdit::Create,
 	 "AdvSceneSwitcher.action.wait"});
 
-static std::map<WaitType, std::string> waitTypes = {
+const static std::map<WaitType, std::string> waitTypes = {
 	{WaitType::FIXED, "AdvSceneSwitcher.action.wait.type.fixed"},
 	{WaitType::RANDOM, "AdvSceneSwitcher.action.wait.type.random"},
 };

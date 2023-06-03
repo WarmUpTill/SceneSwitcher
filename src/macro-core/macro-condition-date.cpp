@@ -14,8 +14,8 @@ bool MacroConditionDate::_registered = MacroConditionFactory::Register(
 	{MacroConditionDate::Create, MacroConditionDateEdit::Create,
 	 "AdvSceneSwitcher.condition.date", false});
 
-static std::map<MacroConditionDate::Condition, std::string> dateConditionTypes =
-	{
+const static std::map<MacroConditionDate::Condition, std::string>
+	dateConditionTypes = {
 		{MacroConditionDate::Condition::AT,
 		 "AdvSceneSwitcher.condition.date.state.at"},
 		{MacroConditionDate::Condition::AFTER,
@@ -28,8 +28,8 @@ static std::map<MacroConditionDate::Condition, std::string> dateConditionTypes =
 		 "AdvSceneSwitcher.condition.date.state.pattern"},
 };
 
-static std::map<MacroConditionDate::Condition, std::string> weekConditionTypes =
-	{
+const static std::map<MacroConditionDate::Condition, std::string>
+	weekConditionTypes = {
 		{MacroConditionDate::Condition::AT,
 		 "AdvSceneSwitcher.condition.date.state.at"},
 		{MacroConditionDate::Condition::AFTER,
@@ -38,7 +38,7 @@ static std::map<MacroConditionDate::Condition, std::string> weekConditionTypes =
 		 "AdvSceneSwitcher.condition.date.state.before"},
 };
 
-static std::map<MacroConditionDate::Day, std::string> dayOfWeekNames = {
+const static std::map<MacroConditionDate::Day, std::string> dayOfWeekNames = {
 	{MacroConditionDate::Day::ANY,
 	 "AdvSceneSwitcher.condition.date.anyDay"},
 	{MacroConditionDate::Day::MONDAY,

@@ -14,7 +14,7 @@ bool MacroConditionSceneVisibility::_registered =
 		 MacroConditionSceneVisibilityEdit::Create,
 		 "AdvSceneSwitcher.condition.sceneVisibility"});
 
-static std::map<MacroConditionSceneVisibility::Condition, std::string>
+const static std::map<MacroConditionSceneVisibility::Condition, std::string>
 	conditionTypes = {
 		{MacroConditionSceneVisibility::Condition::SHOWN,
 		 "AdvSceneSwitcher.condition.sceneVisibility.type.shown"},

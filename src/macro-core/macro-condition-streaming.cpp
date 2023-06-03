@@ -11,17 +11,18 @@ bool MacroConditionStream::_registered = MacroConditionFactory::Register(
 	{MacroConditionStream::Create, MacroConditionStreamEdit::Create,
 	 "AdvSceneSwitcher.condition.stream"});
 
-static std::map<MacroConditionStream::Condition, std::string> streamStates = {
-	{MacroConditionStream::Condition::STOP,
-	 "AdvSceneSwitcher.condition.stream.state.stop"},
-	{MacroConditionStream::Condition::START,
-	 "AdvSceneSwitcher.condition.stream.state.start"},
-	{MacroConditionStream::Condition::STARTING,
-	 "AdvSceneSwitcher.condition.stream.state.starting"},
-	{MacroConditionStream::Condition::STOPPING,
-	 "AdvSceneSwitcher.condition.stream.state.stopping"},
-	{MacroConditionStream::Condition::KEYFRAME_INTERVAL,
-	 "AdvSceneSwitcher.condition.stream.state.keyFrameInterval"},
+const static std::map<MacroConditionStream::Condition, std::string>
+	streamStates = {
+		{MacroConditionStream::Condition::STOP,
+		 "AdvSceneSwitcher.condition.stream.state.stop"},
+		{MacroConditionStream::Condition::START,
+		 "AdvSceneSwitcher.condition.stream.state.start"},
+		{MacroConditionStream::Condition::STARTING,
+		 "AdvSceneSwitcher.condition.stream.state.starting"},
+		{MacroConditionStream::Condition::STOPPING,
+		 "AdvSceneSwitcher.condition.stream.state.stopping"},
+		{MacroConditionStream::Condition::KEYFRAME_INTERVAL,
+		 "AdvSceneSwitcher.condition.stream.state.keyFrameInterval"},
 };
 
 int MacroConditionStream::GetKeyFrameInterval()

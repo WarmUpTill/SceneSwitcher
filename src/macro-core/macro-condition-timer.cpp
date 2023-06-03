@@ -10,7 +10,7 @@ bool MacroConditionTimer::_registered = MacroConditionFactory::Register(
 	{MacroConditionTimer::Create, MacroConditionTimerEdit::Create,
 	 "AdvSceneSwitcher.condition.timer", false});
 
-static std::map<TimerType, std::string> timerTypes = {
+const static std::map<TimerType, std::string> timerTypes = {
 	{TimerType::FIXED, "AdvSceneSwitcher.condition.timer.type.fixed"},
 	{TimerType::RANDOM, "AdvSceneSwitcher.condition.timer.type.random"},
 };

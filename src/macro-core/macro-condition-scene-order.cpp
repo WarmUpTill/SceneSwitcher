@@ -10,7 +10,7 @@ bool MacroConditionSceneOrder::_registered = MacroConditionFactory::Register(
 	{MacroConditionSceneOrder::Create, MacroConditionSceneOrderEdit::Create,
 	 "AdvSceneSwitcher.condition.sceneOrder"});
 
-static std::map<MacroConditionSceneOrder::Condition, std::string>
+const static std::map<MacroConditionSceneOrder::Condition, std::string>
 	sceneOrderConditionTypes = {
 		{MacroConditionSceneOrder::Condition::ABOVE,
 		 "AdvSceneSwitcher.condition.sceneOrder.type.above"},

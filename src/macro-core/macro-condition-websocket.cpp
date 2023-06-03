@@ -13,11 +13,12 @@ bool MacroConditionWebsocket::_registered = MacroConditionFactory::Register(
 	{MacroConditionWebsocket::Create, MacroConditionWebsocketEdit::Create,
 	 "AdvSceneSwitcher.condition.websocket"});
 
-static std::map<MacroConditionWebsocket::Type, std::string> conditionTypes = {
-	{MacroConditionWebsocket::Type::REQUEST,
-	 "AdvSceneSwitcher.condition.websocket.type.request"},
-	{MacroConditionWebsocket::Type::EVENT,
-	 "AdvSceneSwitcher.condition.websocket.type.event"},
+const static std::map<MacroConditionWebsocket::Type, std::string>
+	conditionTypes = {
+		{MacroConditionWebsocket::Type::REQUEST,
+		 "AdvSceneSwitcher.condition.websocket.type.request"},
+		{MacroConditionWebsocket::Type::EVENT,
+		 "AdvSceneSwitcher.condition.websocket.type.event"},
 };
 
 static bool matchRegex(const RegexConfig &conf, const std::string &msg,

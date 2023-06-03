@@ -14,7 +14,7 @@ bool MacroConditionPluginState::_registered = MacroConditionFactory::Register(
 	 MacroConditionPluginStateEdit::Create,
 	 "AdvSceneSwitcher.condition.pluginState"});
 
-static std::map<MacroConditionPluginState::Condition, std::string>
+const static std::map<MacroConditionPluginState::Condition, std::string>
 	pluginStateConditionTypes = {
 		{MacroConditionPluginState::Condition::PLUGIN_START,
 		 "AdvSceneSwitcher.condition.pluginState.state.start"},

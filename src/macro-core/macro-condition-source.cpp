@@ -10,7 +10,7 @@ bool MacroConditionSource::_registered = MacroConditionFactory::Register(
 	{MacroConditionSource::Create, MacroConditionSourceEdit::Create,
 	 "AdvSceneSwitcher.condition.source"});
 
-static std::map<SourceCondition, std::string> sourceConditionTypes = {
+const static std::map<SourceCondition, std::string> sourceConditionTypes = {
 	{SourceCondition::ACTIVE,
 	 "AdvSceneSwitcher.condition.source.type.active"},
 	{SourceCondition::SHOWING,

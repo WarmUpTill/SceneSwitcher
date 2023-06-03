@@ -11,7 +11,7 @@ bool MacroConditionReplayBuffer::_registered = MacroConditionFactory::Register(
 					 MacroConditionReplayBufferEdit::Create,
 					 "AdvSceneSwitcher.condition.replay"});
 
-static std::map<ReplayBufferState, std::string> ReplayBufferStates = {
+const static std::map<ReplayBufferState, std::string> ReplayBufferStates = {
 	{ReplayBufferState::STOP,
 	 "AdvSceneSwitcher.condition.replay.state.stopped"},
 	{ReplayBufferState::START,

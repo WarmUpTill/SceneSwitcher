@@ -10,7 +10,7 @@ bool MacroConditionRecord::_registered = MacroConditionFactory::Register(
 	{MacroConditionRecord::Create, MacroConditionRecordEdit::Create,
 	 "AdvSceneSwitcher.condition.record"});
 
-static std::map<RecordState, std::string> recordStates = {
+const static std::map<RecordState, std::string> recordStates = {
 	{RecordState::STOP, "AdvSceneSwitcher.condition.record.state.stop"},
 	{RecordState::PAUSE, "AdvSceneSwitcher.condition.record.state.pause"},
 	{RecordState::START, "AdvSceneSwitcher.condition.record.state.start"},
