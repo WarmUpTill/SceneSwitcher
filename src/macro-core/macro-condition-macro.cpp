@@ -11,16 +11,17 @@ bool MacroConditionMacro::_registered = MacroConditionFactory::Register(
 	{MacroConditionMacro::Create, MacroConditionMacroEdit::Create,
 	 "AdvSceneSwitcher.condition.macro"});
 
-static std::map<MacroConditionMacro::Type, std::string> macroConditionTypes = {
-	{MacroConditionMacro::Type::COUNT,
-	 "AdvSceneSwitcher.condition.macro.type.count"},
-	{MacroConditionMacro::Type::STATE,
-	 "AdvSceneSwitcher.condition.macro.type.state"},
-	{MacroConditionMacro::Type::MULTI_STATE,
-	 "AdvSceneSwitcher.condition.macro.type.multiState"},
+const static std::map<MacroConditionMacro::Type, std::string>
+	macroConditionTypes = {
+		{MacroConditionMacro::Type::COUNT,
+		 "AdvSceneSwitcher.condition.macro.type.count"},
+		{MacroConditionMacro::Type::STATE,
+		 "AdvSceneSwitcher.condition.macro.type.state"},
+		{MacroConditionMacro::Type::MULTI_STATE,
+		 "AdvSceneSwitcher.condition.macro.type.multiState"},
 };
 
-static std::map<MacroConditionMacro::CounterCondition, std::string>
+const static std::map<MacroConditionMacro::CounterCondition, std::string>
 	counterConditionTypes = {
 		{MacroConditionMacro::CounterCondition::BELOW,
 		 "AdvSceneSwitcher.condition.macro.count.type.below"},
@@ -30,7 +31,7 @@ static std::map<MacroConditionMacro::CounterCondition, std::string>
 		 "AdvSceneSwitcher.condition.macro.count.type.equal"},
 };
 
-static std::map<MacroConditionMacro::MultiStateCondition, std::string>
+const static std::map<MacroConditionMacro::MultiStateCondition, std::string>
 	multiStateConditionTypes = {
 		{MacroConditionMacro::MultiStateCondition::BELOW,
 		 "AdvSceneSwitcher.condition.macro.state.type.below"},

@@ -12,7 +12,7 @@ bool MacroConditionFilter::_registered = MacroConditionFactory::Register(
 	{MacroConditionFilter::Create, MacroConditionFilterEdit::Create,
 	 "AdvSceneSwitcher.condition.filter"});
 
-static std::map<MacroConditionFilter::Condition, std::string>
+const static std::map<MacroConditionFilter::Condition, std::string>
 	filterConditionTypes = {
 		{MacroConditionFilter::Condition::ENABLED,
 		 "AdvSceneSwitcher.condition.filter.type.active"},

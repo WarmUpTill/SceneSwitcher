@@ -12,11 +12,12 @@ bool MacroConditionDisplay::_registered = MacroConditionFactory::Register(
 	{MacroConditionDisplay::Create, MacroConditionDisplayEdit::Create,
 	 "AdvSceneSwitcher.condition.display"});
 
-static std::map<MacroConditionDisplay::Condition, std::string> conditionTypes = {
-	{MacroConditionDisplay::Condition::DISPLAY_NAME,
-	 "AdvSceneSwitcher.condition.display.type.displayName"},
-	{MacroConditionDisplay::Condition::DISPLAY_COUNT,
-	 "AdvSceneSwitcher.condition.display.type.displayCount"},
+const static std::map<MacroConditionDisplay::Condition, std::string>
+	conditionTypes = {
+		{MacroConditionDisplay::Condition::DISPLAY_NAME,
+		 "AdvSceneSwitcher.condition.display.type.displayName"},
+		{MacroConditionDisplay::Condition::DISPLAY_COUNT,
+		 "AdvSceneSwitcher.condition.display.type.displayCount"},
 };
 
 static bool matchDisplayNames(const std::string &name, const RegexConfig &regex)

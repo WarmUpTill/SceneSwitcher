@@ -14,7 +14,7 @@ bool MacroActionTimer::_registered = MacroActionFactory::Register(
 	{MacroActionTimer::Create, MacroActionTimerEdit::Create,
 	 "AdvSceneSwitcher.action.timer"});
 
-static std::map<TimerAction, std::string> timerActions = {
+const static std::map<TimerAction, std::string> timerActions = {
 	{TimerAction::PAUSE, "AdvSceneSwitcher.action.timer.type.pause"},
 	{TimerAction::CONTINUE, "AdvSceneSwitcher.action.timer.type.continue"},
 	{TimerAction::RESET, "AdvSceneSwitcher.action.timer.type.reset"},

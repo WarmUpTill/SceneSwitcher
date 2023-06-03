@@ -12,7 +12,7 @@ bool MacroConditionAudio::_registered = MacroConditionFactory::Register(
 	{MacroConditionAudio::Create, MacroConditionAudioEdit::Create,
 	 "AdvSceneSwitcher.condition.audio"});
 
-static std::map<MacroConditionAudio::Type, std::string> checkTypes = {
+const static std::map<MacroConditionAudio::Type, std::string> checkTypes = {
 	{MacroConditionAudio::Type::OUTPUT_VOLUME,
 	 "AdvSceneSwitcher.condition.audio.type.output"},
 	{MacroConditionAudio::Type::CONFIGURED_VOLUME,
@@ -25,7 +25,7 @@ static std::map<MacroConditionAudio::Type, std::string> checkTypes = {
 	 "AdvSceneSwitcher.condition.audio.type.balance"},
 };
 
-static std::map<MacroConditionAudio::OutputCondition, std::string>
+const static std::map<MacroConditionAudio::OutputCondition, std::string>
 	audioOutputConditionTypes = {
 		{MacroConditionAudio::OutputCondition::ABOVE,
 		 "AdvSceneSwitcher.condition.audio.state.above"},
@@ -33,7 +33,7 @@ static std::map<MacroConditionAudio::OutputCondition, std::string>
 		 "AdvSceneSwitcher.condition.audio.state.below"},
 };
 
-static std::map<MacroConditionAudio::VolumeCondition, std::string>
+const static std::map<MacroConditionAudio::VolumeCondition, std::string>
 	audioVolumeConditionTypes = {
 		{MacroConditionAudio::VolumeCondition::ABOVE,
 		 "AdvSceneSwitcher.condition.audio.state.above"},

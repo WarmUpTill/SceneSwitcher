@@ -15,7 +15,7 @@ bool MacroConditionCursor::_registered = MacroConditionFactory::Register(
 	{MacroConditionCursor::Create, MacroConditionCursorEdit::Create,
 	 "AdvSceneSwitcher.condition.cursor"});
 
-static std::map<MacroConditionCursor::Condition, std::string>
+const static std::map<MacroConditionCursor::Condition, std::string>
 	cursorConditionTypes = {
 		{MacroConditionCursor::Condition::REGION,
 		 "AdvSceneSwitcher.condition.cursor.type.region"},
@@ -27,7 +27,7 @@ static std::map<MacroConditionCursor::Condition, std::string>
 #endif
 };
 
-static std::map<MacroConditionCursor::Button, std::string> buttonTypes = {
+const static std::map<MacroConditionCursor::Button, std::string> buttonTypes = {
 	{MacroConditionCursor::Button::LEFT,
 	 "AdvSceneSwitcher.condition.cursor.button.left"},
 	{MacroConditionCursor::Button::MIDDLE,

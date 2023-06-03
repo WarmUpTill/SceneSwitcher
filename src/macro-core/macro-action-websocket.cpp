@@ -10,7 +10,7 @@ bool MacroActionWebsocket::_registered = MacroActionFactory::Register(
 	{MacroActionWebsocket::Create, MacroActionWebsocketEdit::Create,
 	 "AdvSceneSwitcher.action.websocket"});
 
-static std::map<MacroActionWebsocket::Type, std::string> actionTypes = {
+const static std::map<MacroActionWebsocket::Type, std::string> actionTypes = {
 	{MacroActionWebsocket::Type::REQUEST,
 	 "AdvSceneSwitcher.action.websocket.type.request"},
 	{MacroActionWebsocket::Type::EVENT,

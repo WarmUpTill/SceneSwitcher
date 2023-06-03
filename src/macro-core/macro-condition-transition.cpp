@@ -11,7 +11,7 @@ bool MacroConditionTransition::_registered = MacroConditionFactory::Register(
 	{MacroConditionTransition::Create, MacroConditionTransitionEdit::Create,
 	 "AdvSceneSwitcher.condition.transition"});
 
-static std::map<TransitionCondition, std::string> filterConditionTypes = {
+const static std::map<TransitionCondition, std::string> filterConditionTypes = {
 	{TransitionCondition::CURRENT,
 	 "AdvSceneSwitcher.condition.transition.type.current"},
 	{TransitionCondition::DURATION,

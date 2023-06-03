@@ -10,13 +10,14 @@ bool MacroConditionStudioMode::_registered = MacroConditionFactory::Register(
 	{MacroConditionStudioMode::Create, MacroConditionStudioModeEdit::Create,
 	 "AdvSceneSwitcher.condition.studioMode"});
 
-static std::map<StudioModeCondition, std::string> studioModeConditionTypes = {
-	{StudioModeCondition::STUDIO_MODE_ACTIVE,
-	 "AdvSceneSwitcher.condition.studioMode.state.active"},
-	{StudioModeCondition::STUDIO_MODE_NOT_ACTIVE,
-	 "AdvSceneSwitcher.condition.studioMode.state.notActive"},
-	{StudioModeCondition::PREVIEW_SCENE,
-	 "AdvSceneSwitcher.condition.studioMode.state.previewScene"},
+const static std::map<StudioModeCondition, std::string>
+	studioModeConditionTypes = {
+		{StudioModeCondition::STUDIO_MODE_ACTIVE,
+		 "AdvSceneSwitcher.condition.studioMode.state.active"},
+		{StudioModeCondition::STUDIO_MODE_NOT_ACTIVE,
+		 "AdvSceneSwitcher.condition.studioMode.state.notActive"},
+		{StudioModeCondition::PREVIEW_SCENE,
+		 "AdvSceneSwitcher.condition.studioMode.state.previewScene"},
 };
 
 bool MacroConditionStudioMode::CheckCondition()

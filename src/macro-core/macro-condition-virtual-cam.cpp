@@ -10,7 +10,7 @@ bool MacroConditionVCam::_registered = MacroConditionFactory::Register(
 	{MacroConditionVCam::Create, MacroConditionVCamEdit::Create,
 	 "AdvSceneSwitcher.condition.virtualCamera"});
 
-static std::map<VCamState, std::string> VCamStates = {
+const static std::map<VCamState, std::string> VCamStates = {
 	{VCamState::STOP,
 	 "AdvSceneSwitcher.condition.virtualCamera.state.stop"},
 	{VCamState::START,
