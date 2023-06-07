@@ -46,15 +46,47 @@ void NumberVariable<T>::Load(obs_data_t *obj, const char *name)
 
 template<typename T> T NumberVariable<T>::GetValue() const
 {
-	if (_type == Type::VARIABLE) {
-		auto var = _variable.lock();
-		if (!var) {
-			return {};
-		}
+	if (_type == Type::FIXED_VALUE) {
+		return _value;
+	}
+
+	auto var = _variable.lock();
+	if (!var) {
+		return {};
+	}
+
+	if constexpr (std::is_same<T, int>::value) {
+		auto value = var->IntValue();
+		return value.value_or(0);
+	} else if constexpr (std::is_same<T, double>::value) {
 		auto value = var->DoubleValue();
 		return value.value_or(0.0);
 	}
-	return _value;
+
+	assert(false);
+	return 0;
+}
+
+template<typename T> bool NumberVariable<T>::HasValidValue() const
+{
+	if (_type == Type::FIXED_VALUE) {
+		return true;
+	}
+
+	auto var = _variable.lock();
+	if (!var) {
+		return false;
+	}
+
+	if constexpr (std::is_same<T, int>::value) {
+		auto value = var->IntValue();
+		return value.has_value();
+	} else if constexpr (std::is_same<T, double>::value) {
+		auto value = var->IntValue();
+		return value.has_value();
+	}
+	assert(false);
+	return false;
 }
 
 template<typename T> NumberVariable<T>::operator T() const
