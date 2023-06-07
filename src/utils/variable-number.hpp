@@ -15,6 +15,7 @@ public:
 
 	T GetValue() const;
 	T GetFixedValue() const { return _value; }
+	bool HasValidValue() const;
 	void SetValue(T val) { _value = val; }
 	void SetValue(const std::weak_ptr<Variable> &var) { _variable = var; }
 	operator T() const;
