@@ -1,7 +1,10 @@
 #pragma once
 #include "scene-selection.hpp"
-#include "variable.hpp"
 #include "filter-combo-box.hpp"
+#include "variable-spinbox.hpp"
+#include "variable-line-edit.hpp"
+#include "variable-string.hpp"
+#include "regex-config.hpp"
 #include "utility.hpp"
 
 #include <obs-data.h>
@@ -18,26 +21,64 @@ public:
 		  const char *idxName);
 
 	enum class Type {
-		SOURCE,
-		VARIABLE,
+		SOURCE_NAME,
+		VARIABLE_NAME,
+		SOURCE_NAME_PATTERN = 10,
+		SOURCE_GROUP = 20,
+		INDEX = 30,
+		INDEX_RANGE = 40,
+		ALL = 50,
 	};
-	enum class IdxType {
+
+	// Name conflicts can happen if multiple instances of a given source are
+	// present in a given scene.
+	//
+	// If that is the case, the user has the option to specify if all / any
+	// or a given individual instance of the source based on its index shall
+	// be returned.
+	enum class NameConflictSelection {
 		ALL,
 		ANY,
 		INDIVIDUAL,
 	};
 
 	Type GetType() const { return _type; }
-	IdxType GetIndexType() const { return _idxType; }
-	std::vector<obs_scene_item *> GetSceneItems(SceneSelection &s) const;
+	NameConflictSelection GetIndexType() const;
+	std::vector<OBSSceneItem> GetSceneItems(const SceneSelection &) const;
 	std::string ToString(bool resolve = false) const;
 
+	// TODO: Remove in future version
+	//
+	// Only exists to enable backwards compatabilty with older versions of
+	// scene item visibility action
+	void SetSourceTypeSelection(const char *);
+
 private:
-	OBSWeakSource _sceneItem;
+	std::vector<OBSSceneItem>
+	GetSceneItemsByName(const SceneSelection &) const;
+	std::vector<OBSSceneItem>
+	GetSceneItemsByPattern(const SceneSelection &) const;
+	std::vector<OBSSceneItem>
+	GetSceneItemsByGroup(const SceneSelection &) const;
+	std::vector<OBSSceneItem>
+	GetSceneItemsByIdx(const SceneSelection &) const;
+	std::vector<OBSSceneItem>
+	GetAllSceneItems(const SceneSelection &) const;
+
+	void ReduceBadedOnIndexSelection(std::vector<OBSSceneItem> &) const;
+
+	Type _type = Type::SOURCE_NAME;
+
+	OBSWeakSource _source;
 	std::weak_ptr<Variable> _variable;
-	Type _type = Type::SOURCE;
-	IdxType _idxType = IdxType::ALL;
-	int _idx = 0; // Multiple items with the same name can exist
+	IntVariable _index = 1;
+	IntVariable _indexEnd = 1;
+	NameConflictSelection _nameConflictSelectionType =
+		NameConflictSelection::ALL;
+	int _nameConflictSelectionIndex = 0;
+	std::string _sourceGroup;
+	StringVariable _pattern = ".*";
+	RegexConfig _regex = RegexConfig(true);
 	friend class SceneItemSelectionWidget;
 };
 
@@ -56,34 +97,61 @@ signals:
 	void SceneItemChanged(const SceneItemSelection &);
 
 private slots:
+	// Name based
 	void SceneChanged(const SceneSelection &);
-	void SelectionChanged(int);
-	void IdxChanged(int);
-	void ItemAdd(const QString &name);
-	void ItemRemove(const QString &name);
-	void ItemRename(const QString &oldName, const QString &newName);
+	void VariableChanged(const QString &);
+	void SourceChanged(int);
+	void NameConflictIndexChanged(int);
+	void PatternChanged();
+	void RegexChanged(RegexConfig);
+
+	// Source group based
+	void SourceGroupChanged(const QString &);
+
+	// Index based
+	void IndexChanged(const NumberVariable<int> &);
+	void IndexEndChanged(const NumberVariable<int> &);
+
+	void ChangeType();
 
 private:
-	void Reset();
-	SceneItemSelection CurrentSelection();
+	void ClearWidgets();
 	void PopulateItemSelection();
-	void SetupIdxSelection(int);
+	void SetupNameConflictIdxSelection(int);
+	void SetNameConflictVisibility();
+	void SetWidgetVisibility();
 
-	FilterComboBox *_sceneItems;
-	QComboBox *_idx;
+	QHBoxLayout *_controlsLayout;
+	FilterComboBox *_sources;
+	VariableSelection *_variables;
+	QComboBox *_nameConflictIndex;
+	VariableSpinBox *_index;
+	VariableSpinBox *_indexEnd;
+	QComboBox *_sourceGroups;
+	VariableLineEdit *_pattern;
+	RegexConfigWidget *_regex;
+	QPushButton *_changeType;
 
 	SceneSelection _scene;
 	SceneItemSelection _currentSelection;
 	bool _hasPlaceholderEntry = false;
 	Placeholder _placeholder = Placeholder::ALL;
 
-	// Order of entries
-	// 1. "select entry" entry
-	// 2. Variables
-	// 3. Scene items
-	const int _selectIdx = 0;
-	int _variablesEndIdx = -1;
-	int _itemsEndIdx = -1;
+	bool _showTypeSelection = false;
+};
+
+class SceneItemTypeSelection : public QDialog {
+	Q_OBJECT
+
+public:
+	SceneItemTypeSelection(QWidget *parent,
+			       const SceneItemSelection::Type &type);
+	static bool AskForSettings(QWidget *parent,
+				   SceneItemSelection::Type &type);
+
+private:
+	QComboBox *_typeSelection;
+	QDialogButtonBox *_buttonbox;
 };
 
 } // namespace advss
