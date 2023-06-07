@@ -44,4 +44,14 @@ std::optional<double> GetDouble(const std::string &str)
 	return {};
 }
 
+std::optional<int> GetInt(const std::string &str)
+{
+	char *end = nullptr;
+	int value = std::strtol(str.c_str(), &end, 10);
+	if (end != str.c_str() && *end == '\0') {
+		return value;
+	}
+	return {};
+}
+
 } // namespace advss
