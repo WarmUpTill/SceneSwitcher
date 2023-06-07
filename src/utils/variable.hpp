@@ -20,6 +20,7 @@ public:
 	void Save(obs_data_t *obj) const;
 	std::string Value() const { return _value; }
 	std::optional<double> DoubleValue() const;
+	std::optional<int> IntValue() const;
 	void SetValue(const std::string &val);
 	void SetValue(double);
 	static std::shared_ptr<Item> Create()

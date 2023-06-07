@@ -53,6 +53,11 @@ std::optional<double> Variable::DoubleValue() const
 	return GetDouble(_value);
 }
 
+std::optional<int> Variable::IntValue() const
+{
+	return GetInt(_value);
+}
+
 void Variable::SetValue(const std::string &val)
 {
 	_value = val;
