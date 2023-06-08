@@ -74,9 +74,13 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 		  "AdvSceneSwitcher.macroTab.currentDockAddRunButton"))),
 	  _currentMacroDockAddPauseButton(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentDockAddPauseButton"))),
+	  _currentMacroDockAddStatusLabel(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.currentDockAddStatusLabel"))),
 	  _runButtonText(new QLineEdit()),
 	  _pauseButtonText(new QLineEdit()),
 	  _unpauseButtonText(new QLineEdit()),
+	  _conditionsTrueStatusText(new QLineEdit()),
+	  _conditionsFalseStatusText(new QLineEdit()),
 	  _dockOptions(new QGroupBox(
 		  obs_module_text("AdvSceneSwitcher.macroTab.dockSettings"))),
 	  _dockLayout(new QGridLayout())
@@ -127,6 +131,23 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 		row, 1);
 	_dockLayout->addWidget(_unpauseButtonText, row, 2);
 	_unpauseButtonTextRow = row;
+	row++;
+	_dockLayout->addWidget(_currentMacroDockAddStatusLabel, row, 1, 1, 2);
+	row++;
+	_dockLayout->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.macroTab.currentDockStatusText.true")),
+		row, 1);
+	_dockLayout->addWidget(_conditionsTrueStatusText, row, 2);
+	_conditionsTrueTextRow = row;
+	row++;
+	_dockLayout->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.macroTab.currentDockStatusText.false")),
+		row, 1);
+	_dockLayout->addWidget(_conditionsFalseStatusText, row, 2);
+	_conditionsFalseTextRow = row;
+
 	_dockOptions->setLayout(_dockLayout);
 
 	QDialogButtonBox *buttonbox = new QDialogButtonBox(
@@ -141,6 +162,8 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 		&MacroPropertiesDialog::RunButtonEnableChanged);
 	connect(_currentMacroDockAddPauseButton, &QCheckBox::stateChanged, this,
 		&MacroPropertiesDialog::PauseButtonEnableChanged);
+	connect(_currentMacroDockAddStatusLabel, &QCheckBox::stateChanged, this,
+		&MacroPropertiesDialog::StatusLabelEnableChanged);
 
 	auto layout = new QVBoxLayout;
 	layout->addWidget(highlightOptions);
@@ -164,20 +187,31 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	_currentMacroDockAddRunButton->setChecked(macro->DockHasRunButton());
 	_currentMacroDockAddPauseButton->setChecked(
 		macro->DockHasPauseButton());
+	_currentMacroDockAddStatusLabel->setChecked(
+		macro->DockHasStatusLabel());
 	_runButtonText->setText(QString::fromStdString(macro->RunButtonText()));
 	_pauseButtonText->setText(
 		QString::fromStdString(macro->PauseButtonText()));
 	_unpauseButtonText->setText(
 		QString::fromStdString(macro->UnpauseButtonText()));
+	_conditionsTrueStatusText->setText(
+		QString::fromStdString(macro->ConditionsTrueStatusText()));
+	_conditionsFalseStatusText->setText(
+		QString::fromStdString(macro->ConditionsFalseStatusText()));
 
 	_currentMacroDockAddRunButton->setVisible(dockEnabled);
 	_currentMacroDockAddPauseButton->setVisible(dockEnabled);
+	_currentMacroDockAddStatusLabel->setVisible(dockEnabled);
 	setGridLayoutRowVisible(_dockLayout, _runButtonTextRow,
 				dockEnabled && macro->DockHasRunButton());
 	setGridLayoutRowVisible(_dockLayout, _pauseButtonTextRow,
 				dockEnabled && macro->DockHasPauseButton());
 	setGridLayoutRowVisible(_dockLayout, _unpauseButtonTextRow,
 				dockEnabled && macro->DockHasPauseButton());
+	setGridLayoutRowVisible(_dockLayout, _conditionsTrueTextRow,
+				dockEnabled && macro->DockHasStatusLabel());
+	setGridLayoutRowVisible(_dockLayout, _conditionsFalseTextRow,
+				dockEnabled && macro->DockHasStatusLabel());
 	MinimizeSizeOfColumn(_dockLayout, 0);
 	Resize();
 }
@@ -186,9 +220,22 @@ void MacroPropertiesDialog::DockEnableChanged(int enabled)
 {
 	_currentMacroDockAddRunButton->setVisible(enabled);
 	_currentMacroDockAddPauseButton->setVisible(enabled);
-	setGridLayoutRowVisible(_dockLayout, _runButtonTextRow, enabled);
-	setGridLayoutRowVisible(_dockLayout, _pauseButtonTextRow, enabled);
-	setGridLayoutRowVisible(_dockLayout, _unpauseButtonTextRow, enabled);
+	_currentMacroDockAddStatusLabel->setVisible(enabled);
+	setGridLayoutRowVisible(
+		_dockLayout, _runButtonTextRow,
+		enabled && _currentMacroDockAddRunButton->isChecked());
+	setGridLayoutRowVisible(
+		_dockLayout, _pauseButtonTextRow,
+		enabled && _currentMacroDockAddPauseButton->isChecked());
+	setGridLayoutRowVisible(
+		_dockLayout, _unpauseButtonTextRow,
+		enabled && _currentMacroDockAddPauseButton->isChecked());
+	setGridLayoutRowVisible(
+		_dockLayout, _conditionsTrueTextRow,
+		enabled && _currentMacroDockAddStatusLabel->isChecked());
+	setGridLayoutRowVisible(
+		_dockLayout, _conditionsFalseTextRow,
+		enabled && _currentMacroDockAddStatusLabel->isChecked());
 	Resize();
 }
 
@@ -202,6 +249,13 @@ void MacroPropertiesDialog::PauseButtonEnableChanged(int enabled)
 {
 	setGridLayoutRowVisible(_dockLayout, _pauseButtonTextRow, enabled);
 	setGridLayoutRowVisible(_dockLayout, _unpauseButtonTextRow, enabled);
+	Resize();
+}
+
+void MacroPropertiesDialog::StatusLabelEnableChanged(int enabled)
+{
+	setGridLayoutRowVisible(_dockLayout, _conditionsTrueTextRow, enabled);
+	setGridLayoutRowVisible(_dockLayout, _conditionsFalseTextRow, enabled);
 	Resize();
 }
 
@@ -238,11 +292,17 @@ bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
 		dialog._currentMacroDockAddRunButton->isChecked());
 	macro->SetDockHasPauseButton(
 		dialog._currentMacroDockAddPauseButton->isChecked());
+	macro->SetDockHasStatusLabel(
+		dialog._currentMacroDockAddStatusLabel->isChecked());
 	macro->SetRunButtonText(dialog._runButtonText->text().toStdString());
 	macro->SetPauseButtonText(
 		dialog._pauseButtonText->text().toStdString());
 	macro->SetUnpauseButtonText(
 		dialog._unpauseButtonText->text().toStdString());
+	macro->SetConditionsTrueStatusText(
+		dialog._conditionsTrueStatusText->text().toStdString());
+	macro->SetConditionsFalseStatusText(
+		dialog._conditionsFalseStatusText->text().toStdString());
 	return true;
 }
 

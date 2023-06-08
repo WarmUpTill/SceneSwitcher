@@ -35,6 +35,7 @@ private slots:
 	void DockEnableChanged(int);
 	void RunButtonEnableChanged(int);
 	void PauseButtonEnableChanged(int);
+	void StatusLabelEnableChanged(int);
 
 private:
 	void Resize();
@@ -48,15 +49,20 @@ private:
 	QCheckBox *_currentMacroRegisterDock;
 	QCheckBox *_currentMacroDockAddRunButton;
 	QCheckBox *_currentMacroDockAddPauseButton;
+	QCheckBox *_currentMacroDockAddStatusLabel;
 	QLineEdit *_runButtonText;
 	QLineEdit *_pauseButtonText;
 	QLineEdit *_unpauseButtonText;
+	QLineEdit *_conditionsTrueStatusText;
+	QLineEdit *_conditionsFalseStatusText;
 	QGroupBox *_dockOptions;
 	QGridLayout *_dockLayout;
 
 	int _runButtonTextRow = -1;
 	int _pauseButtonTextRow = -1;
 	int _unpauseButtonTextRow = -1;
+	int _conditionsTrueTextRow = -1;
+	int _conditionsFalseTextRow = -1;
 };
 
 } // namespace advss

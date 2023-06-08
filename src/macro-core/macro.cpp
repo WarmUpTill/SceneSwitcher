@@ -606,12 +606,17 @@ void Macro::SaveDockSettings(obs_data_t *obj) const
 	}
 	obs_data_set_bool(dockSettings, "hasRunButton", _dockHasRunButton);
 	obs_data_set_bool(dockSettings, "hasPauseButton", _dockHasPauseButton);
+	obs_data_set_bool(dockSettings, "hasStatusLabel", _dockHasStatusLabel);
 	obs_data_set_string(dockSettings, "runButtonText",
 			    _runButtonText.c_str());
 	obs_data_set_string(dockSettings, "pauseButtonText",
 			    _pauseButtonText.c_str());
 	obs_data_set_string(dockSettings, "unpauseButtonText",
 			    _unpauseButtonText.c_str());
+	obs_data_set_string(dockSettings, "conditionsTrueStatusText",
+			    _conditionsTrueStatusText.c_str());
+	obs_data_set_string(dockSettings, "conditionsFalseStatusText",
+			    _conditionsFalseStatusText.c_str());
 	if (_dock) {
 		auto window = static_cast<QMainWindow *>(
 			obs_frontend_get_main_window());
@@ -658,11 +663,18 @@ void Macro::LoadDockSettings(obs_data_t *obj)
 	_pauseButtonText = obs_data_get_string(dockSettings, "pauseButtonText");
 	_unpauseButtonText =
 		obs_data_get_string(dockSettings, "unpauseButtonText");
+	_conditionsTrueStatusText =
+		obs_data_get_string(dockSettings, "conditionsTrueStatusText");
+	_conditionsFalseStatusText =
+		obs_data_get_string(dockSettings, "conditionsFalseStatusText");
 	if (dockEnabled) {
 		_dockHasRunButton =
 			obs_data_get_bool(dockSettings, "hasRunButton");
 		_dockHasPauseButton =
 			obs_data_get_bool(dockSettings, "hasPauseButton");
+		_dockHasStatusLabel =
+			obs_data_get_bool(dockSettings, "hasStatusLabel");
+
 		_dockIsFloating = obs_data_get_bool(dockSettings, "isFloating");
 		_dockArea = static_cast<Qt::DockWidgetArea>(
 			obs_data_get_int(dockSettings, "area"));
@@ -697,10 +709,12 @@ void Macro::EnableDock(bool value)
 	// Create new dock widget
 	auto window =
 		static_cast<QMainWindow *>(obs_frontend_get_main_window());
-	_dock = new MacroDock(this, window,
-			      QString::fromStdString(_runButtonText),
-			      QString::fromStdString(_pauseButtonText),
-			      QString::fromStdString(_unpauseButtonText));
+	_dock = new MacroDock(
+		this, window, QString::fromStdString(_runButtonText),
+		QString::fromStdString(_pauseButtonText),
+		QString::fromStdString(_unpauseButtonText),
+		QString::fromStdString(_conditionsTrueStatusText),
+		QString::fromStdString(_conditionsFalseStatusText));
 	SetDockWidgetName(); // Used by OBS to restore position
 
 	// Register new dock
@@ -741,6 +755,15 @@ void Macro::SetDockHasPauseButton(bool value)
 	_dock->ShowPauseButton(value);
 }
 
+void Macro::SetDockHasStatusLabel(bool value)
+{
+	_dockHasStatusLabel = value;
+	if (!_dock) {
+		return;
+	}
+	_dock->ShowStatusLabel(value);
+}
+
 void Macro::SetRunButtonText(const std::string &text)
 {
 	_runButtonText = text;
@@ -766,6 +789,34 @@ void Macro::SetUnpauseButtonText(const std::string &text)
 		return;
 	}
 	_dock->SetUnpauseButtonText(QString::fromStdString(text));
+}
+
+void Macro::SetConditionsTrueStatusText(const std::string &text)
+{
+	_conditionsTrueStatusText = text;
+	if (!_dock) {
+		return;
+	}
+	_dock->SetConditionsTrueText(QString::fromStdString(text));
+}
+
+std::string Macro::ConditionsTrueStatusText() const
+{
+	return _conditionsTrueStatusText;
+}
+
+void Macro::SetConditionsFalseStatusText(const std::string &text)
+{
+	_conditionsFalseStatusText = text;
+	if (!_dock) {
+		return;
+	}
+	_dock->SetConditionsFalseText(QString::fromStdString(text));
+}
+
+std::string Macro::ConditionsFalseStatusText() const
+{
+	return _conditionsFalseStatusText;
 }
 
 void Macro::RemoveDock()
