@@ -27,6 +27,7 @@ public:
 	enum class Action {
 		ENABLE,
 		DISABLE,
+		TOGGLE,
 		SETTINGS,
 	};
 
