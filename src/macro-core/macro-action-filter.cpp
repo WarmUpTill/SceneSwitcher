@@ -15,6 +15,8 @@ const static std::map<MacroActionFilter::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.filter.type.enable"},
 	{MacroActionFilter::Action::DISABLE,
 	 "AdvSceneSwitcher.action.filter.type.disable"},
+	{MacroActionFilter::Action::TOGGLE,
+	 "AdvSceneSwitcher.action.filter.type.toggle"},
 	{MacroActionFilter::Action::SETTINGS,
 	 "AdvSceneSwitcher.action.filter.type.settings"},
 };
@@ -28,6 +30,9 @@ bool MacroActionFilter::PerformAction()
 		break;
 	case Action::DISABLE:
 		obs_source_set_enabled(s, false);
+		break;
+	case Action::TOGGLE:
+		obs_source_set_enabled(s, !obs_source_enabled(s));
 		break;
 	case Action::SETTINGS:
 		SetSourceSettings(s, _settings);
@@ -60,6 +65,7 @@ bool MacroActionFilter::Save(obs_data_t *obj) const
 	_filter.Save(obj, "filter");
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	_settings.Save(obj, "settings");
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
@@ -68,7 +74,17 @@ bool MacroActionFilter::Load(obs_data_t *obj)
 	MacroAction::Load(obj);
 	_source.Load(obj);
 	_filter.Load(obj, _source, "filter");
-	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
+	// TODO: Remove this fallback in future version
+	if (!obs_data_has_user_value(obj, "version")) {
+		const auto value = obs_data_get_int(obj, "action");
+		if (value == 2) {
+			_action = Action::SETTINGS;
+		} else {
+			_action = static_cast<Action>(value);
+		}
+	} else {
+		_action = static_cast<Action>(obs_data_get_int(obj, "action"));
+	}
 	_settings.Load(obj, "settings");
 	return true;
 }
