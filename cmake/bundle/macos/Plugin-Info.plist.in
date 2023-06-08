@@ -22,5 +22,9 @@
 	</array>
 	<key>LSMinimumSystemVersion</key>
 	<string>10.13</string>
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Advanced scene switcher needs additional permissions to be able to run AppleScript applications</string>
 </dict>
 </plist>
