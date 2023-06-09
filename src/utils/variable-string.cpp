@@ -6,7 +6,7 @@ namespace advss {
 
 void StringVariable::Resolve() const
 {
-	if (switcher->variables.empty()) {
+	if (switcher && switcher->variables.empty()) {
 		_resolvedValue = _value;
 		return;
 	}
@@ -65,6 +65,10 @@ const char *StringVariable::c_str() const
 
 std::string SubstitueVariables(std::string str)
 {
+	if (!switcher) {
+		return str;
+	}
+
 	for (const auto &v : switcher->variables) {
 		const auto &variable = std::dynamic_pointer_cast<Variable>(v);
 		const std::string pattern = "${" + variable->Name() + "}";
