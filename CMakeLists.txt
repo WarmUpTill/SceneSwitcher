@@ -125,6 +125,8 @@ target_sources(
           src/macro-core/macro-action-run.hpp
           src/macro-core/macro-action-scene-collection.cpp
           src/macro-core/macro-action-scene-collection.hpp
+          src/macro-core/macro-action-scene-lock.cpp
+          src/macro-core/macro-action-scene-lock.hpp
           src/macro-core/macro-action-scene-order.cpp
           src/macro-core/macro-action-scene-order.hpp
           src/macro-core/macro-action-scene-switch.cpp
