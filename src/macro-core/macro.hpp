@@ -2,6 +2,7 @@
 #include "macro-action.hpp"
 #include "macro-condition.hpp"
 #include "macro-ref.hpp"
+#include "variable-string.hpp"
 
 #include <QString>
 #include <QByteArray>
@@ -91,16 +92,16 @@ public:
 	bool DockHasPauseButton() const { return _dockHasPauseButton; }
 	void SetDockHasStatusLabel(bool value);
 	bool DockHasStatusLabel() const { return _dockHasStatusLabel; }
-	std::string RunButtonText() const { return _runButtonText; }
+	StringVariable RunButtonText() const { return _runButtonText; }
 	void SetRunButtonText(const std::string &text);
-	std::string PauseButtonText() const { return _pauseButtonText; }
+	StringVariable PauseButtonText() const { return _pauseButtonText; }
 	void SetPauseButtonText(const std::string &text);
-	std::string UnpauseButtonText() const { return _unpauseButtonText; }
+	StringVariable UnpauseButtonText() const { return _unpauseButtonText; }
 	void SetUnpauseButtonText(const std::string &text);
 	void SetConditionsTrueStatusText(const std::string &text);
-	std::string ConditionsTrueStatusText() const;
+	StringVariable ConditionsTrueStatusText() const;
 	void SetConditionsFalseStatusText(const std::string &text);
-	std::string ConditionsFalseStatusText() const;
+	StringVariable ConditionsFalseStatusText() const;
 
 private:
 	void SetupHotkeys();
@@ -150,15 +151,15 @@ private:
 	bool _dockHasRunButton = true;
 	bool _dockHasPauseButton = true;
 	bool _dockHasStatusLabel = false;
-	std::string _runButtonText =
+	StringVariable _runButtonText =
 		obs_module_text("AdvSceneSwitcher.macroDock.run");
-	std::string _pauseButtonText =
+	StringVariable _pauseButtonText =
 		obs_module_text("AdvSceneSwitcher.macroDock.pause");
-	std::string _unpauseButtonText =
+	StringVariable _unpauseButtonText =
 		obs_module_text("AdvSceneSwitcher.macroDock.unpause");
-	std::string _conditionsTrueStatusText =
+	StringVariable _conditionsTrueStatusText =
 		obs_module_text("AdvSceneSwitcher.macroDock.statusLabel.true");
-	std::string _conditionsFalseStatusText =
+	StringVariable _conditionsFalseStatusText =
 		obs_module_text("AdvSceneSwitcher.macroDock.statusLabel.false");
 	bool _dockIsFloating = true;
 	bool _dockIsVisible = false;

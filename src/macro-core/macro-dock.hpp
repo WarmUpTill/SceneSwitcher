@@ -1,5 +1,6 @@
 #pragma once
 #include "obs-dock.hpp"
+#include "variable-string.hpp"
 
 #include <QPushButton>
 #include <QTimer>
@@ -14,32 +15,32 @@ class MacroDock : public OBSDock {
 	Q_OBJECT
 
 public:
-	MacroDock(Macro *, QWidget *parent, const QString &runButtonText,
-		  const QString &pauseButtonText,
-		  const QString &unpauseButtonText,
-		  const QString &conditionsTrueText,
-		  const QString &conditionsFalseText);
+	MacroDock(Macro *, QWidget *parent, const StringVariable &runButtonText,
+		  const StringVariable &pauseButtonText,
+		  const StringVariable &unpauseButtonText,
+		  const StringVariable &conditionsTrueText,
+		  const StringVariable &conditionsFalseText);
 	void SetName(const QString &);
 	void ShowRunButton(bool);
-	void SetRunButtonText(const QString &);
+	void SetRunButtonText(const StringVariable &);
 	void ShowPauseButton(bool);
-	void SetPauseButtonText(const QString &);
-	void SetUnpauseButtonText(const QString &);
+	void SetPauseButtonText(const StringVariable &);
+	void SetUnpauseButtonText(const StringVariable &);
 	void ShowStatusLabel(bool);
-	void SetConditionsTrueText(const QString &);
-	void SetConditionsFalseText(const QString &);
+	void SetConditionsTrueText(const StringVariable &);
+	void SetConditionsFalseText(const StringVariable &);
 
 private slots:
 	void RunClicked();
 	void PauseToggleClicked();
-	void UpdatePauseText();
-	void UpdateStatusText();
+	void UpdateText();
 
 private:
-	QString _pauseButtonText;
-	QString _unpauseButtonText;
-	QString _conditionsTrueText;
-	QString _conditionsFalseText;
+	StringVariable _runButtonText;
+	StringVariable _pauseButtonText;
+	StringVariable _unpauseButtonText;
+	StringVariable _conditionsTrueText;
+	StringVariable _conditionsFalseText;
 	QPushButton *_run;
 	QPushButton *_pauseToggle;
 	QLabel *_statusText;
