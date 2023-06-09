@@ -1,5 +1,6 @@
 #pragma once
 #include "macro.hpp"
+#include "variable-line-edit.hpp"
 
 #include <QWidget>
 #include <QDialog>
@@ -50,11 +51,11 @@ private:
 	QCheckBox *_currentMacroDockAddRunButton;
 	QCheckBox *_currentMacroDockAddPauseButton;
 	QCheckBox *_currentMacroDockAddStatusLabel;
-	QLineEdit *_runButtonText;
-	QLineEdit *_pauseButtonText;
-	QLineEdit *_unpauseButtonText;
-	QLineEdit *_conditionsTrueStatusText;
-	QLineEdit *_conditionsFalseStatusText;
+	VariableLineEdit *_runButtonText;
+	VariableLineEdit *_pauseButtonText;
+	VariableLineEdit *_unpauseButtonText;
+	VariableLineEdit *_conditionsTrueStatusText;
+	VariableLineEdit *_conditionsFalseStatusText;
 	QGroupBox *_dockOptions;
 	QGridLayout *_dockLayout;
 

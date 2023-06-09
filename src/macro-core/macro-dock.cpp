@@ -6,19 +6,21 @@
 
 namespace advss {
 
-MacroDock::MacroDock(Macro *m, QWidget *parent, const QString &runButtonText,
-		     const QString &pauseButtonText,
-		     const QString &unpauseButtonText,
-		     const QString &conditionsTrueText,
-		     const QString &conditionsFalseText)
+MacroDock::MacroDock(Macro *m, QWidget *parent,
+		     const StringVariable &runButtonText,
+		     const StringVariable &pauseButtonText,
+		     const StringVariable &unpauseButtonText,
+		     const StringVariable &conditionsTrueText,
+		     const StringVariable &conditionsFalseText)
 	: OBSDock(parent),
+	  _runButtonText(runButtonText),
 	  _pauseButtonText(pauseButtonText),
 	  _unpauseButtonText(unpauseButtonText),
 	  _conditionsTrueText(conditionsTrueText),
 	  _conditionsFalseText(conditionsFalseText),
-	  _run(new QPushButton(runButtonText)),
+	  _run(new QPushButton(runButtonText.c_str())),
 	  _pauseToggle(new QPushButton()),
-	  _statusText(new QLabel(conditionsFalseText)),
+	  _statusText(new QLabel(conditionsFalseText.c_str())),
 	  _macro(m)
 {
 	if (_macro) {
@@ -42,14 +44,9 @@ MacroDock::MacroDock(Macro *m, QWidget *parent, const QString &runButtonText,
 	layout->addWidget(_pauseToggle);
 	layout->addWidget(_statusText);
 
-	QWidget::connect(&_timer, SIGNAL(timeout()), this,
-			 SLOT(UpdatePauseText()));
-	QWidget::connect(&_timer, SIGNAL(timeout()), this,
-			 SLOT(UpdateStatusText()));
-	_timer.start(1000);
-
-	UpdatePauseText();
-	UpdateStatusText();
+	UpdateText();
+	QWidget::connect(&_timer, SIGNAL(timeout()), this, SLOT(UpdateText()));
+	_timer.start(500);
 
 	// QFrame wrapper is necessary to avoid dock being partially
 	// transparent
@@ -73,9 +70,10 @@ void MacroDock::ShowRunButton(bool value)
 	_run->setVisible(value);
 }
 
-void MacroDock::SetRunButtonText(const QString &text)
+void MacroDock::SetRunButtonText(const StringVariable &text)
 {
-	_run->setText(text);
+	_runButtonText = text;
+	_run->setText(text.c_str());
 }
 
 void MacroDock::ShowPauseButton(bool value)
@@ -83,16 +81,16 @@ void MacroDock::ShowPauseButton(bool value)
 	_pauseToggle->setVisible(value);
 }
 
-void MacroDock::SetPauseButtonText(const QString &text)
+void MacroDock::SetPauseButtonText(const StringVariable &text)
 {
 	_pauseButtonText = text;
-	UpdatePauseText();
+	UpdateText();
 }
 
-void MacroDock::SetUnpauseButtonText(const QString &text)
+void MacroDock::SetUnpauseButtonText(const StringVariable &text)
 {
 	_unpauseButtonText = text;
-	UpdatePauseText();
+	UpdateText();
 }
 
 void MacroDock::ShowStatusLabel(bool value)
@@ -100,16 +98,16 @@ void MacroDock::ShowStatusLabel(bool value)
 	_statusText->setVisible(value);
 }
 
-void MacroDock::SetConditionsTrueText(const QString &text)
+void MacroDock::SetConditionsTrueText(const StringVariable &text)
 {
 	_conditionsTrueText = text;
-	UpdateStatusText();
+	UpdateText();
 }
 
-void MacroDock::SetConditionsFalseText(const QString &text)
+void MacroDock::SetConditionsFalseText(const StringVariable &text)
 {
 	_conditionsFalseText = text;
-	UpdateStatusText();
+	UpdateText();
 }
 
 void MacroDock::RunClicked()
@@ -133,27 +131,21 @@ void MacroDock::PauseToggleClicked()
 	}
 
 	_macro->SetPaused(!_macro->Paused());
-	UpdatePauseText();
+	UpdateText();
 }
 
-void MacroDock::UpdatePauseText()
+void MacroDock::UpdateText()
 {
+	_run->setText(_runButtonText.c_str());
+
 	if (!_macro) {
 		return;
 	}
 
-	_pauseToggle->setText(_macro->Paused() ? _unpauseButtonText
-					       : _pauseButtonText);
-}
-
-void MacroDock::UpdateStatusText()
-{
-	if (!_macro) {
-		return;
-	}
-
-	_statusText->setText(_macro->Matched() ? _conditionsTrueText
-					       : _conditionsFalseText);
+	_pauseToggle->setText(_macro->Paused() ? _unpauseButtonText.c_str()
+					       : _pauseButtonText.c_str());
+	_statusText->setText(_macro->Matched() ? _conditionsTrueText.c_str()
+					       : _conditionsFalseText.c_str());
 }
 
 } // namespace advss

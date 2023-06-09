@@ -607,16 +607,13 @@ void Macro::SaveDockSettings(obs_data_t *obj) const
 	obs_data_set_bool(dockSettings, "hasRunButton", _dockHasRunButton);
 	obs_data_set_bool(dockSettings, "hasPauseButton", _dockHasPauseButton);
 	obs_data_set_bool(dockSettings, "hasStatusLabel", _dockHasStatusLabel);
-	obs_data_set_string(dockSettings, "runButtonText",
-			    _runButtonText.c_str());
-	obs_data_set_string(dockSettings, "pauseButtonText",
-			    _pauseButtonText.c_str());
-	obs_data_set_string(dockSettings, "unpauseButtonText",
-			    _unpauseButtonText.c_str());
-	obs_data_set_string(dockSettings, "conditionsTrueStatusText",
-			    _conditionsTrueStatusText.c_str());
-	obs_data_set_string(dockSettings, "conditionsFalseStatusText",
-			    _conditionsFalseStatusText.c_str());
+	_runButtonText.Save(dockSettings, "runButtonText");
+	_pauseButtonText.Save(dockSettings, "pauseButtonText");
+	_unpauseButtonText.Save(dockSettings, "unpauseButtonText");
+	_conditionsTrueStatusText.Save(dockSettings,
+				       "conditionsTrueStatusText");
+	_conditionsFalseStatusText.Save(dockSettings,
+					"conditionsFalseStatusText");
 	if (_dock) {
 		auto window = static_cast<QMainWindow *>(
 			obs_frontend_get_main_window());
@@ -658,15 +655,13 @@ void Macro::LoadDockSettings(obs_data_t *obj)
 	obs_data_set_default_string(
 		dockSettings, "unpauseButtonText",
 		obs_module_text("AdvSceneSwitcher.macroDock.unpause"));
-
-	_runButtonText = obs_data_get_string(dockSettings, "runButtonText");
-	_pauseButtonText = obs_data_get_string(dockSettings, "pauseButtonText");
-	_unpauseButtonText =
-		obs_data_get_string(dockSettings, "unpauseButtonText");
-	_conditionsTrueStatusText =
-		obs_data_get_string(dockSettings, "conditionsTrueStatusText");
-	_conditionsFalseStatusText =
-		obs_data_get_string(dockSettings, "conditionsFalseStatusText");
+	_runButtonText.Load(dockSettings, "runButtonText");
+	_pauseButtonText.Load(dockSettings, "pauseButtonText");
+	_unpauseButtonText.Load(dockSettings, "unpauseButtonText");
+	_conditionsTrueStatusText.Load(dockSettings,
+				       "conditionsTrueStatusText");
+	_conditionsFalseStatusText.Load(dockSettings,
+					"conditionsFalseStatusText");
 	if (dockEnabled) {
 		_dockHasRunButton =
 			obs_data_get_bool(dockSettings, "hasRunButton");
@@ -709,12 +704,9 @@ void Macro::EnableDock(bool value)
 	// Create new dock widget
 	auto window =
 		static_cast<QMainWindow *>(obs_frontend_get_main_window());
-	_dock = new MacroDock(
-		this, window, QString::fromStdString(_runButtonText),
-		QString::fromStdString(_pauseButtonText),
-		QString::fromStdString(_unpauseButtonText),
-		QString::fromStdString(_conditionsTrueStatusText),
-		QString::fromStdString(_conditionsFalseStatusText));
+	_dock = new MacroDock(this, window, _runButtonText, _pauseButtonText,
+			      _unpauseButtonText, _conditionsTrueStatusText,
+			      _conditionsFalseStatusText);
 	SetDockWidgetName(); // Used by OBS to restore position
 
 	// Register new dock
@@ -770,7 +762,7 @@ void Macro::SetRunButtonText(const std::string &text)
 	if (!_dock) {
 		return;
 	}
-	_dock->SetRunButtonText(QString::fromStdString(text));
+	_dock->SetRunButtonText(text);
 }
 
 void Macro::SetPauseButtonText(const std::string &text)
@@ -779,7 +771,7 @@ void Macro::SetPauseButtonText(const std::string &text)
 	if (!_dock) {
 		return;
 	}
-	_dock->SetPauseButtonText(QString::fromStdString(text));
+	_dock->SetPauseButtonText(text);
 }
 
 void Macro::SetUnpauseButtonText(const std::string &text)
@@ -788,7 +780,7 @@ void Macro::SetUnpauseButtonText(const std::string &text)
 	if (!_dock) {
 		return;
 	}
-	_dock->SetUnpauseButtonText(QString::fromStdString(text));
+	_dock->SetUnpauseButtonText(text);
 }
 
 void Macro::SetConditionsTrueStatusText(const std::string &text)
@@ -797,10 +789,10 @@ void Macro::SetConditionsTrueStatusText(const std::string &text)
 	if (!_dock) {
 		return;
 	}
-	_dock->SetConditionsTrueText(QString::fromStdString(text));
+	_dock->SetConditionsTrueText(text);
 }
 
-std::string Macro::ConditionsTrueStatusText() const
+StringVariable Macro::ConditionsTrueStatusText() const
 {
 	return _conditionsTrueStatusText;
 }
@@ -811,10 +803,10 @@ void Macro::SetConditionsFalseStatusText(const std::string &text)
 	if (!_dock) {
 		return;
 	}
-	_dock->SetConditionsFalseText(QString::fromStdString(text));
+	_dock->SetConditionsFalseText(text);
 }
 
-std::string Macro::ConditionsFalseStatusText() const
+StringVariable Macro::ConditionsFalseStatusText() const
 {
 	return _conditionsFalseStatusText;
 }

@@ -76,11 +76,11 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 		  "AdvSceneSwitcher.macroTab.currentDockAddPauseButton"))),
 	  _currentMacroDockAddStatusLabel(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentDockAddStatusLabel"))),
-	  _runButtonText(new QLineEdit()),
-	  _pauseButtonText(new QLineEdit()),
-	  _unpauseButtonText(new QLineEdit()),
-	  _conditionsTrueStatusText(new QLineEdit()),
-	  _conditionsFalseStatusText(new QLineEdit()),
+	  _runButtonText(new VariableLineEdit(this)),
+	  _pauseButtonText(new VariableLineEdit(this)),
+	  _unpauseButtonText(new VariableLineEdit(this)),
+	  _conditionsTrueStatusText(new VariableLineEdit(this)),
+	  _conditionsFalseStatusText(new VariableLineEdit(this)),
 	  _dockOptions(new QGroupBox(
 		  obs_module_text("AdvSceneSwitcher.macroTab.dockSettings"))),
 	  _dockLayout(new QGridLayout())
@@ -189,15 +189,11 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 		macro->DockHasPauseButton());
 	_currentMacroDockAddStatusLabel->setChecked(
 		macro->DockHasStatusLabel());
-	_runButtonText->setText(QString::fromStdString(macro->RunButtonText()));
-	_pauseButtonText->setText(
-		QString::fromStdString(macro->PauseButtonText()));
-	_unpauseButtonText->setText(
-		QString::fromStdString(macro->UnpauseButtonText()));
-	_conditionsTrueStatusText->setText(
-		QString::fromStdString(macro->ConditionsTrueStatusText()));
-	_conditionsFalseStatusText->setText(
-		QString::fromStdString(macro->ConditionsFalseStatusText()));
+	_runButtonText->setText(macro->RunButtonText());
+	_pauseButtonText->setText(macro->PauseButtonText());
+	_unpauseButtonText->setText(macro->UnpauseButtonText());
+	_conditionsTrueStatusText->setText(macro->ConditionsTrueStatusText());
+	_conditionsFalseStatusText->setText(macro->ConditionsFalseStatusText());
 
 	_currentMacroDockAddRunButton->setVisible(dockEnabled);
 	_currentMacroDockAddPauseButton->setVisible(dockEnabled);
