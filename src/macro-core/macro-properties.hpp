@@ -51,6 +51,7 @@ private:
 	QCheckBox *_currentMacroDockAddRunButton;
 	QCheckBox *_currentMacroDockAddPauseButton;
 	QCheckBox *_currentMacroDockAddStatusLabel;
+	QCheckBox *_currentMacroDockHighlightIfConditionsTrue;
 	VariableLineEdit *_runButtonText;
 	VariableLineEdit *_pauseButtonText;
 	VariableLineEdit *_unpauseButtonText;

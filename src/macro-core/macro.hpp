@@ -93,6 +93,8 @@ public:
 	bool DockHasPauseButton() const { return _dockHasPauseButton; }
 	void SetDockHasStatusLabel(bool value);
 	bool DockHasStatusLabel() const { return _dockHasStatusLabel; }
+	void SetHighlightEnable(bool value);
+	bool DockHighlightEnabled() const { return _dockHighlight; }
 	StringVariable RunButtonText() const { return _runButtonText; }
 	void SetRunButtonText(const std::string &text);
 	StringVariable PauseButtonText() const { return _pauseButtonText; }
@@ -151,6 +153,7 @@ private:
 	bool _dockHasRunButton = true;
 	bool _dockHasPauseButton = true;
 	bool _dockHasStatusLabel = false;
+	bool _dockHighlight = false;
 	StringVariable _runButtonText =
 		obs_module_text("AdvSceneSwitcher.macroDock.run");
 	StringVariable _pauseButtonText =

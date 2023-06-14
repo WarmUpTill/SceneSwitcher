@@ -11,13 +11,15 @@ MacroDock::MacroDock(Macro *m, QWidget *parent,
 		     const StringVariable &pauseButtonText,
 		     const StringVariable &unpauseButtonText,
 		     const StringVariable &conditionsTrueText,
-		     const StringVariable &conditionsFalseText)
+		     const StringVariable &conditionsFalseText,
+		     bool enableHighlight)
 	: OBSDock(parent),
 	  _runButtonText(runButtonText),
 	  _pauseButtonText(pauseButtonText),
 	  _unpauseButtonText(unpauseButtonText),
 	  _conditionsTrueText(conditionsTrueText),
 	  _conditionsFalseText(conditionsFalseText),
+	  _highlight(enableHighlight),
 	  _run(new QPushButton(runButtonText.c_str())),
 	  _pauseToggle(new QPushButton()),
 	  _statusText(new QLabel(conditionsFalseText.c_str())),
@@ -46,6 +48,7 @@ MacroDock::MacroDock(Macro *m, QWidget *parent,
 
 	UpdateText();
 	QWidget::connect(&_timer, SIGNAL(timeout()), this, SLOT(UpdateText()));
+	QWidget::connect(&_timer, SIGNAL(timeout()), this, SLOT(Highlight()));
 	_timer.start(500);
 
 	// QFrame wrapper is necessary to avoid dock being partially
@@ -110,6 +113,11 @@ void MacroDock::SetConditionsFalseText(const StringVariable &text)
 	UpdateText();
 }
 
+void MacroDock::EnableHighlight(bool value)
+{
+	_highlight = value;
+}
+
 void MacroDock::RunClicked()
 {
 	if (!_macro) {
@@ -146,6 +154,18 @@ void MacroDock::UpdateText()
 					       : _pauseButtonText.c_str());
 	_statusText->setText(_macro->Matched() ? _conditionsTrueText.c_str()
 					       : _conditionsFalseText.c_str());
+}
+
+void MacroDock::Highlight()
+{
+	if (!_highlight || !_macro) {
+		return;
+	}
+	if (_lastHighlightCheckTime.time_since_epoch().count() != 0 &&
+	    _macro->ExecutedSince(_lastHighlightCheckTime)) {
+		PulseWidget(this, Qt::green, QColor(0, 0, 0, 0), true);
+	}
+	_lastHighlightCheckTime = std::chrono::high_resolution_clock::now();
 }
 
 } // namespace advss

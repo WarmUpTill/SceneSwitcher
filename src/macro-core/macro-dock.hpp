@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QLabel>
 #include <memory>
+#include <chrono>
 
 namespace advss {
 
@@ -19,7 +20,8 @@ public:
 		  const StringVariable &pauseButtonText,
 		  const StringVariable &unpauseButtonText,
 		  const StringVariable &conditionsTrueText,
-		  const StringVariable &conditionsFalseText);
+		  const StringVariable &conditionsFalseText,
+		  bool enableHighlight);
 	void SetName(const QString &);
 	void ShowRunButton(bool);
 	void SetRunButtonText(const StringVariable &);
@@ -29,11 +31,13 @@ public:
 	void ShowStatusLabel(bool);
 	void SetConditionsTrueText(const StringVariable &);
 	void SetConditionsFalseText(const StringVariable &);
+	void EnableHighlight(bool);
 
 private slots:
 	void RunClicked();
 	void PauseToggleClicked();
 	void UpdateText();
+	void Highlight();
 
 private:
 	StringVariable _runButtonText;
@@ -41,11 +45,13 @@ private:
 	StringVariable _unpauseButtonText;
 	StringVariable _conditionsTrueText;
 	StringVariable _conditionsFalseText;
+	bool _highlight;
 	QPushButton *_run;
 	QPushButton *_pauseToggle;
 	QLabel *_statusText;
 
 	QTimer _timer;
+	std::chrono::high_resolution_clock::time_point _lastHighlightCheckTime{};
 
 	Macro *_macro;
 };
