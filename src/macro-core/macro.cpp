@@ -605,6 +605,8 @@ void Macro::SaveDockSettings(obs_data_t *obj) const
 	obs_data_set_bool(dockSettings, "hasRunButton", _dockHasRunButton);
 	obs_data_set_bool(dockSettings, "hasPauseButton", _dockHasPauseButton);
 	obs_data_set_bool(dockSettings, "hasStatusLabel", _dockHasStatusLabel);
+	obs_data_set_bool(dockSettings, "highlightIfConditionsTrue",
+			  _dockHighlight);
 	_runButtonText.Save(dockSettings, "runButtonText");
 	_pauseButtonText.Save(dockSettings, "pauseButtonText");
 	_unpauseButtonText.Save(dockSettings, "unpauseButtonText");
@@ -667,7 +669,8 @@ void Macro::LoadDockSettings(obs_data_t *obj)
 			obs_data_get_bool(dockSettings, "hasPauseButton");
 		_dockHasStatusLabel =
 			obs_data_get_bool(dockSettings, "hasStatusLabel");
-
+		_dockHighlight = obs_data_get_bool(dockSettings,
+						   "highlightIfConditionsTrue");
 		_dockIsFloating = obs_data_get_bool(dockSettings, "isFloating");
 		_dockArea = static_cast<Qt::DockWidgetArea>(
 			obs_data_get_int(dockSettings, "area"));
@@ -704,7 +707,7 @@ void Macro::EnableDock(bool value)
 		static_cast<QMainWindow *>(obs_frontend_get_main_window());
 	_dock = new MacroDock(this, window, _runButtonText, _pauseButtonText,
 			      _unpauseButtonText, _conditionsTrueStatusText,
-			      _conditionsFalseStatusText);
+			      _conditionsFalseStatusText, _dockHighlight);
 	SetDockWidgetName(); // Used by OBS to restore position
 
 	// Register new dock
@@ -752,6 +755,15 @@ void Macro::SetDockHasStatusLabel(bool value)
 		return;
 	}
 	_dock->ShowStatusLabel(value);
+}
+
+void Macro::SetHighlightEnable(bool value)
+{
+	_dockHighlight = value;
+	if (!_dock) {
+		return;
+	}
+	_dock->EnableHighlight(value);
 }
 
 void Macro::SetRunButtonText(const std::string &text)
