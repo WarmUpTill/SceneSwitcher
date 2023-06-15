@@ -437,11 +437,11 @@ void MacroActionAudioEdit::SetWidgetVisibility()
 	_balance->setVisible(_entryData->_action ==
 			     MacroActionAudio::Action::BALANCE);
 
-	_fadeTypes->setDisabled(!_entryData->_fade);
-	_wait->setDisabled(!_entryData->_fade);
-	_abortActiveFade->setDisabled(!_entryData->_fade);
-	_duration->setDisabled(!_entryData->_fade);
-	_rate->setDisabled(!_entryData->_fade);
+	_fadeTypes->setEnabled(_entryData->_fade);
+	_wait->setEnabled(_entryData->_fade);
+	_abortActiveFade->setEnabled(_entryData->_fade);
+	_duration->setEnabled(_entryData->_fade);
+	_rate->setEnabled(_entryData->_fade);
 
 	_fadeTypeLayout->removeWidget(_fade);
 	_fadeTypeLayout->removeWidget(_fadeTypes);
@@ -474,6 +474,10 @@ void MacroActionAudioEdit::SetWidgetVisibility()
 			 hasVolumeControl(_entryData->_action));
 	SetLayoutVisible(_fadeOptionsLayout,
 			 hasVolumeControl(_entryData->_action));
+	_abortActiveFade->setVisible(_entryData->_fade);
+	_wait->setVisible(_entryData->_fade);
+
+	updateGeometry();
 	adjustSize();
 }
 
