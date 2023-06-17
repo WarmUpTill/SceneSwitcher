@@ -12,6 +12,10 @@ if(NOT EXISTS "${LIBREMIDI_DIR}")
 endif()
 add_subdirectory("${LIBREMIDI_DIR}" "${LIBREMIDI_DIR}/build" EXCLUDE_FROM_ALL)
 
+if(MSVC)
+  target_compile_options(libremidi PRIVATE /wd4251 /wd4267 /wd4275)
+endif(MSVC)
+
 # --- End of section ---
 
 add_library(${PROJECT_NAME} MODULE)
