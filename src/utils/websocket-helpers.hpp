@@ -30,6 +30,7 @@ constexpr char VendorEvent[] = "AdvancedSceneSwitcherEvent";
 
 void ClearWebsocketMessages();
 void SendWebsocketEvent(const std::string &);
+std::string ConstructVendorRequestMessage(const std::string &message);
 
 class WSConnection : public QObject {
 public:
@@ -79,7 +80,6 @@ private:
 	std::atomic_bool _disconnect{false};
 
 	std::vector<std::string> _messages;
-	bool _useOBSProtocol = true;
 };
 
 } // namespace advss

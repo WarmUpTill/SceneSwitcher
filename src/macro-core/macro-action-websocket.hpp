@@ -24,17 +24,24 @@ public:
 		return std::make_shared<MacroActionWebsocket>(m);
 	}
 
-	enum class Type {
+	enum class API {
+		SCENE_SWITCHER,
+		OBS_WEBSOCKET,
+		GENERIC_WEBSOCKET,
+	};
+
+	enum class MessageType {
 		REQUEST,
 		EVENT,
 	};
 
-	Type _type = Type::REQUEST;
+	API _api = API::SCENE_SWITCHER;
+	MessageType _type = MessageType::REQUEST;
 	StringVariable _message = obs_module_text("AdvSceneSwitcher.enterText");
 	std::weak_ptr<Connection> _connection;
 
 private:
-	void SendRequest();
+	void SendRequest(const std::string &msg);
 
 	static bool _registered;
 	static const std::string id;
@@ -57,7 +64,8 @@ public:
 	}
 
 private slots:
-	void ActionChanged(int);
+	void APITypeChanged(int);
+	void MessageTypeChanged(int);
 	void MessageChanged();
 	void ConnectionSelectionChanged(const QString &);
 signals:
@@ -67,13 +75,20 @@ protected:
 	std::shared_ptr<MacroActionWebsocket> _entryData;
 
 private:
+	void CheckForSettingsConflict();
+	void SetupWidgetVisibility();
 	void SetupRequestEdit();
 	void SetupEventEdit();
+	void SetupGenericEdit();
+	void ClearWidgets();
 
-	QComboBox *_actions;
+	QComboBox *_apiType;
+	QComboBox *_messageType;
 	VariableTextEdit *_message;
 	ConnectionSelection *_connection;
 	QHBoxLayout *_editLayout;
+	QLabel *_settingsConflict;
+
 	bool _loading = true;
 };
 

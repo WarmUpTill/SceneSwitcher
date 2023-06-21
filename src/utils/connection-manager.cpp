@@ -131,6 +131,7 @@ Connection *GetConnectionByName(const QString &name)
 {
 	return GetConnectionByName(name.toStdString());
 }
+
 Connection *GetConnectionByName(const std::string &name)
 {
 	for (auto &con : switcher->connections) {
