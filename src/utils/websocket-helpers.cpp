@@ -75,8 +75,7 @@ extern "C" void RegisterWebsocketVendor()
 	}
 }
 
-WSConnection::WSConnection(bool useOBSProtocol)
-	: QObject(nullptr), _useOBSProtocol(useOBSProtocol)
+WSConnection::WSConnection(bool useOBSProtocol) : QObject(nullptr)
 {
 	_client.get_alog().clear_channels(
 		websocketpp::log::alevel::frame_header |
@@ -179,14 +178,13 @@ void WSConnection::Disconnect()
 	_status = Status::DISCONNECTED;
 }
 
-static std::string constructVendorRequestMessage(const std::string &message,
-						 const std::string &uri)
+std::string ConstructVendorRequestMessage(const std::string &message)
 {
 	auto request = obs_data_create();
 	obs_data_set_int(request, "op", 6);
 	auto *data = obs_data_create();
 	obs_data_set_string(data, "requestType", "CallVendorRequest");
-	obs_data_set_string(data, "requestId", (message + " - " + uri).c_str());
+	obs_data_set_string(data, "requestId", message.c_str());
 
 	auto vendorData = obs_data_create();
 	obs_data_set_string(vendorData, "vendorName", VendorName);
@@ -211,11 +209,7 @@ static std::string constructVendorRequestMessage(const std::string &message,
 
 void WSConnection::SendRequest(const std::string &msg)
 {
-	if (_useOBSProtocol) {
-		Send(constructVendorRequestMessage(msg, _uri));
-	} else {
-		Send(msg);
-	}
+	Send(msg);
 }
 
 WSConnection::Status WSConnection::GetStatus() const
@@ -225,7 +219,6 @@ WSConnection::Status WSConnection::GetStatus() const
 
 void WSConnection::UseOBSWebsocketProtocol(bool useOBSProtocol)
 {
-	_useOBSProtocol = useOBSProtocol;
 	_client.set_open_handler(bind(useOBSProtocol
 					      ? &WSConnection::OnOBSOpen
 					      : &WSConnection::OnGenericOpen,
