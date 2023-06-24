@@ -237,7 +237,7 @@ void OSCMessageElement::Save(obs_data_t *obj) const
 				arg.Save(obj, "nullValue");
 			} else {
 				blog(LOG_WARNING,
-				     "cannot save unkown OSCMessageElement");
+				     "cannot save unknown OSCMessageElement");
 			}
 		},
 		_value);
@@ -270,7 +270,7 @@ void OSCMessageElement::Load(obs_data_t *obj)
 	} else if (obs_data_has_user_value(obj, "nullValue")) {
 		_value = OSCNull();
 	} else {
-		blog(LOG_WARNING, "cannot load unkown OSCMessageElement");
+		blog(LOG_WARNING, "cannot load unknown OSCMessageElement");
 	}
 }
 
