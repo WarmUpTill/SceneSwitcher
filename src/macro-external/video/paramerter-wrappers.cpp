@@ -221,6 +221,17 @@ static void SaveColor(obs_data_t *obj, const char *name, const QColor &color)
 	obs_data_release(data);
 }
 
+static QColor LoadColor(obs_data_t *obj, const char *name)
+{
+	QColor color = Qt::black;
+	auto data = obs_data_get_obj(obj, name);
+	color.setRed(obs_data_get_int(data, "red"));
+	color.setGreen(obs_data_get_int(data, "green"));
+	color.setBlue(obs_data_get_int(data, "blue"));
+	obs_data_release(data);
+	return color;
+}
+
 OCRParameters::OCRParameters()
 {
 	Setup();
@@ -238,6 +249,7 @@ OCRParameters::OCRParameters(const OCRParameters &other)
 	: text(other.text),
 	  regex(other.regex),
 	  color(other.color),
+	  colorThreshold(other.colorThreshold),
 	  pageSegMode(other.pageSegMode)
 {
 	Setup();
@@ -251,6 +263,7 @@ OCRParameters &OCRParameters::operator=(const OCRParameters &other)
 	text = other.text;
 	regex = other.regex;
 	color = other.color;
+	colorThreshold = other.colorThreshold;
 	pageSegMode = other.pageSegMode;
 	ocr->SetPageSegMode(pageSegMode);
 	return *this;
@@ -263,22 +276,12 @@ bool OCRParameters::Save(obs_data_t *obj) const
 	regex.Save(data);
 	languageCode.Save(data, "language");
 	SaveColor(data, "textColor", color);
+	colorThreshold.Save(data, "colorThreshold");
 	obs_data_set_int(data, "pageSegMode", static_cast<int>(pageSegMode));
 	obs_data_set_int(data, "version", 1);
 	obs_data_set_obj(obj, "ocrData", data);
 	obs_data_release(data);
 	return true;
-}
-
-static QColor LoadColor(obs_data_t *obj, const char *name)
-{
-	QColor color = Qt::black;
-	auto data = obs_data_get_obj(obj, name);
-	color.setRed(obs_data_get_int(data, "red"));
-	color.setGreen(obs_data_get_int(data, "green"));
-	color.setBlue(obs_data_get_int(data, "blue"));
-	obs_data_release(data);
-	return color;
 }
 
 bool OCRParameters::Load(obs_data_t *obj)
@@ -289,6 +292,9 @@ bool OCRParameters::Load(obs_data_t *obj)
 	obs_data_set_default_string(data, "language", "eng");
 	languageCode.Load(data, "language");
 	color = LoadColor(data, "textColor");
+	if (obs_data_has_user_value(data, "version")) {
+		colorThreshold.Load(data, "colorThreshold");
+	}
 	pageSegMode = static_cast<tesseract::PageSegMode>(
 		obs_data_get_int(data, "pageSegMode"));
 	obs_data_release(data);

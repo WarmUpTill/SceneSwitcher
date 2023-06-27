@@ -331,13 +331,11 @@ void PreviewImage::MarkMatch(QImage &screenshot,
 			markObjects(screenshot, objects);
 		}
 	} else if (condition == VideoCondition::OCR) {
-		auto text =
-			RunOCR(ocrParams.GetOCR(), screenshot, ocrParams.color);
+		auto text = RunOCR(ocrParams.GetOCR(), screenshot,
+				   ocrParams.color, ocrParams.colorThreshold);
 		QString status(obs_module_text(
 			"AdvSceneSwitcher.condition.video.ocrMatchSuccess"));
 		emit StatusUpdate(status.arg(QString::fromStdString(text)));
-
-		// TODO: show preprocessed image
 	}
 }
 
