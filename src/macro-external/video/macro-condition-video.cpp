@@ -315,7 +315,7 @@ bool MacroConditionVideo::CheckOCR()
 	}
 
 	auto text = RunOCR(_ocrParameters.GetOCR(), _screenshotData.image,
-			   _ocrParameters.color);
+			   _ocrParameters.color, _ocrParameters.colorThreshold);
 
 	if (_ocrParameters.regex.Enabled()) {
 		auto expr = _ocrParameters.regex.GetRegularExpression(
@@ -466,6 +466,13 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 	  _textColor(new QLabel),
 	  _selectColor(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.selectColor"))),
+	  _colorThreshold(new SliderSpinBox(
+		  0., 1.,
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.colorDeviationThreshold"),
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.colorDeviationThresholdDescription"),
+		  true)),
 	  _pageSegMode(new QComboBox()),
 	  _languageCode(new VariableLineEdit(this)),
 	  _previewDialog(previewDialog),
@@ -475,6 +482,11 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 
 	QWidget::connect(_selectColor, SIGNAL(clicked()), this,
 			 SLOT(SelectColorClicked()));
+	QWidget::connect(
+		_colorThreshold,
+		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
+		this,
+		SLOT(ColorThresholdChanged(const NumberVariable<double> &)));
 	QWidget::connect(_matchText, SIGNAL(textChanged()), this,
 			 SLOT(MatchTextChanged()));
 	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
@@ -516,11 +528,13 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 			"AdvSceneSwitcher.condition.video.entry.orcColorPick"),
 		colorPickLayout, widgetPlaceholders);
 	layout->addLayout(colorPickLayout);
+	layout->addWidget(_colorThreshold);
 	setLayout(layout);
 
 	_matchText->setPlainText(_data->_ocrParameters.text);
 	_regex->SetRegexConfig(_data->_ocrParameters.regex);
 	SetupColorLabel(_data->_ocrParameters.color);
+	_colorThreshold->SetDoubleValue(_data->_ocrParameters.colorThreshold);
 	_pageSegMode->setCurrentIndex(_pageSegMode->findData(
 		static_cast<int>(_data->_ocrParameters.GetPageMode())));
 	_languageCode->setText(_data->_ocrParameters.GetLanguageCode());
@@ -552,6 +566,18 @@ void OCREdit::SelectColorClicked()
 	SetupColorLabel(color);
 	auto lock = LockContext();
 	_data->_ocrParameters.color = color;
+
+	_previewDialog->OCRParametersChanged(_data->_ocrParameters);
+}
+
+void OCREdit::ColorThresholdChanged(const DoubleVariable &value)
+{
+	if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_data->_ocrParameters.colorThreshold = value;
 
 	_previewDialog->OCRParametersChanged(_data->_ocrParameters);
 }

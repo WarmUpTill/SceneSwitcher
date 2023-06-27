@@ -124,21 +124,40 @@ uchar GetAvgBrightness(QImage &img)
 	return brightnessSum / (hsvImage.rows * hsvImage.cols);
 }
 
-cv::UMat PreprocessForOCR(const QImage &image, const QColor &color)
+static bool colorIsSimilar(const QColor &color1, const QColor &color2,
+			   int maxDiff)
 {
-	auto mat = QImageToMat(image);
+	const int diffRed = std::abs(color1.red() - color2.red());
+	const int diffGreen = std::abs(color1.green() - color2.green());
+	const int diffBlue = std::abs(color1.blue() - color2.blue());
 
-	// Only keep the desired color
-	cv::cvtColor(mat, mat, cv::COLOR_RGBA2RGB);
-	cv::cvtColor(mat, mat, cv::COLOR_RGB2HSV);
-	cv::inRange(mat, cv::Scalar(0, 0, 0),
-		    cv::Scalar(color.red(), color.green(), color.blue()), mat);
+	return diffRed <= maxDiff && diffGreen <= maxDiff &&
+	       diffBlue <= maxDiff;
+}
 
-	// Invert to improve ORC detection
-	cv::bitwise_not(mat, mat);
+cv::Mat PreprocessForOCR(const QImage &image, const QColor &textColor,
+			 double colorDiff)
+{
+	auto umat = QImageToMat(image);
+	auto mat = umat.getMat(cv::ACCESS_RW);
 
-	// Scale image up if selected area is too small
-	// Results will probably still be unsatisfying
+	// Tesseract works best when matching black text on a white background,
+	// so everything that matches the text color will be displayed black
+	// while the rest of the image should be white.
+	const int diff = colorDiff * 255;
+	for (int y = 0; y < image.height(); y++) {
+		for (int x = 0; x < image.width(); x++) {
+			if (colorIsSimilar(image.pixelColor(x, y), textColor,
+					   diff)) {
+				mat.at<cv::Vec4b>(y, x) = {0, 0, 0, 255};
+			} else {
+				mat.at<cv::Vec4b>(y, x) = {255, 255, 255, 255};
+			}
+		}
+	}
+
+	// Scale image up if selected area is very small.
+	// Results will probably still be unsatisfying.
 	if (mat.rows <= 300 || mat.cols <= 300) {
 		double scale = 0.;
 		if (mat.rows < mat.cols) {
@@ -146,26 +165,28 @@ cv::UMat PreprocessForOCR(const QImage &image, const QColor &color)
 		} else {
 			scale = 300. / mat.cols;
 		}
-
 		cv::resize(mat, mat,
 			   cv::Size(mat.cols * scale, mat.rows * scale),
 			   cv::INTER_CUBIC);
 	}
 
-	return mat;
+	cv::Mat result;
+	mat.copyTo(result);
+	return result;
 }
 
 std::string RunOCR(tesseract::TessBaseAPI *ocr, const QImage &image,
-		   const QColor &color)
+		   const QColor &color, double colorDiff)
 {
 	if (image.isNull()) {
 		return "";
 	}
 
 #ifdef OCR_SUPPORT
-	auto mat = PreprocessForOCR(image, color);
-	ocr->SetImage(mat.getMat(cv::ACCESS_READ).data, mat.cols, mat.rows, 1,
-		      mat.step);
+	auto mat = PreprocessForOCR(image, color, colorDiff);
+	cv::Mat gray;
+	cv::cvtColor(mat, gray, cv::COLOR_RGBA2GRAY);
+	ocr->SetImage(gray.data, gray.cols, gray.rows, 1, gray.step);
 	ocr->Recognize(0);
 	std::unique_ptr<char[]> detectedText(ocr->GetUTF8Text());
 
@@ -189,17 +210,8 @@ bool ContainsPixelsInColorRange(const QImage &image, const QColor &color,
 
 	for (int y = 0; y < image.height(); y++) {
 		for (int x = 0; x < image.width(); x++) {
-			const auto pixelColor = image.pixelColor(x, y);
-			const int diffRed =
-				std::abs(pixelColor.red() - color.red());
-			const int diffGreen =
-				std::abs(pixelColor.green() - color.green());
-			const int diffBlue =
-				std::abs(pixelColor.blue() - color.blue());
-
-			if (diffRed <= maxColorDiff &&
-			    diffGreen <= maxColorDiff &&
-			    diffBlue <= maxColorDiff) {
+			if (colorIsSimilar(image.pixelColor(x, y), color,
+					   maxColorDiff)) {
 				matchingPixels++;
 			}
 		}

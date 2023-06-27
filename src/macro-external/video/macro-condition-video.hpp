@@ -117,6 +117,7 @@ public:
 
 private slots:
 	void SelectColorClicked();
+	void ColorThresholdChanged(const NumberVariable<double> &);
 	void MatchTextChanged();
 	void RegexChanged(RegexConfig conf);
 	void PageSegModeChanged(int);
@@ -129,6 +130,7 @@ private:
 	RegexConfigWidget *_regex;
 	QLabel *_textColor;
 	QPushButton *_selectColor;
+	SliderSpinBox *_colorThreshold;
 	QComboBox *_pageSegMode;
 	VariableLineEdit *_languageCode;
 

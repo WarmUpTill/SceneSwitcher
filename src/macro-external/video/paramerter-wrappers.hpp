@@ -98,6 +98,7 @@ public:
 	StringVariable text = obs_module_text("AdvSceneSwitcher.enterText");
 	RegexConfig regex = RegexConfig::PartialMatchRegexConfig();
 	QColor color = Qt::black;
+	DoubleVariable colorThreshold = 0.3;
 	StringVariable languageCode = "eng";
 
 private:
