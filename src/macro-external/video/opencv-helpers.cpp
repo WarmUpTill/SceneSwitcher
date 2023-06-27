@@ -24,16 +24,15 @@ PatternImageData CreatePatternData(const QImage &pattern)
 	return data;
 }
 
-static void invertPatternMatchResult(cv::UMat &mat)
+static void invertPatternMatchResult(cv::UMat &umat)
 {
-	auto temp = mat.getMat(cv::ACCESS_RW);
-	for (int r = 0; r < temp.rows; r++) {
-		for (int c = 0; c < temp.cols; c++) {
-			float value = temp.at<float>(r, c) =
-				1.0 - temp.at<float>(r, c);
+	auto mat = umat.getMat(cv::ACCESS_RW);
+	for (int r = 0; r < mat.rows; r++) {
+		for (int c = 0; c < mat.cols; c++) {
+			mat.at<float>(r, c) = 1.0 - mat.at<float>(r, c);
 		}
 	}
-	mat = temp.getUMat(cv::ACCESS_RW);
+	umat = mat.getUMat(cv::ACCESS_RW);
 }
 
 void MatchPattern(QImage &img, const PatternImageData &patternData,
