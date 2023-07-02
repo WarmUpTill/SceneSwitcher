@@ -17,6 +17,17 @@ install_advss_plugin_dependency(...)
 ... to install the plugin and its dependencies.
 #]]
 
-add_subdirectory(midi)
-add_subdirectory(openvr)
-add_subdirectory(video)
+option(ENABLE_MIDI_PLUGIN "Enable the midi plugin" ON)
+if(ENABLE_MIDI_PLUGIN)
+  add_subdirectory(midi)
+endif()
+
+option(ENABLE_OPENVR_PLUGIN "Enable the openvr plugin" ON)
+if(ENABLE_OPENVR_PLUGIN)
+  add_subdirectory(openvr)
+endif()
+
+option(ENABLE_VIDEO_PLUGIN "Enable the video plugin" ON)
+if(ENABLE_VIDEO_PLUGIN)
+  add_subdirectory(video)
+endif()
