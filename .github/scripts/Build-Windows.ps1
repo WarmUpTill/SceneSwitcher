@@ -104,7 +104,7 @@ function Build {
             '-G', $CmakeGenerator
             "-DCMAKE_SYSTEM_VERSION=${script:PlatformSDK}"
             "-DCMAKE_GENERATOR_PLATFORM=$(if (${script:Target} -eq "x86") { "Win32" } else { "x64" })"
-            "-DCMAKE_BUILD_TYPE=Release"
+            "-DCMAKE_BUILD_TYPE=${Configuration}"
             "-DCMAKE_PREFIX_PATH:PATH=${DepInstallPath}"
             "-DCMAKE_INSTALL_PREFIX:PATH=${DepInstallPath}"
             "-DSW_BUILD=OFF"
@@ -115,7 +115,7 @@ function Build {
         Invoke-External cmake -S ${LeptonicaPath} -B ${LeptonicaBuildPath} @LeptonicaCmakeArgs
 
         $LeptonicaCmakeArgs = @(
-            '--config', "Release"
+            '--config', "${Configuration}"
         )
 
         if ( $VerbosePreference -eq 'Continue' ) {
@@ -140,7 +140,7 @@ function Build {
             '-G', $CmakeGenerator
             "-DCMAKE_SYSTEM_VERSION=${script:PlatformSDK}"
             "-DCMAKE_GENERATOR_PLATFORM=$(if (${script:Target} -eq "x86") { "Win32" } else { "x64" })"
-            "-DCMAKE_BUILD_TYPE=Release"
+            "-DCMAKE_BUILD_TYPE=${Configuration}"
             "-DCMAKE_PREFIX_PATH:PATH=${DepInstallPath}"
             "-DCMAKE_INSTALL_PREFIX:PATH=${DepInstallPath}"
             "-DSW_BUILD=OFF"
@@ -154,7 +154,7 @@ function Build {
         Invoke-External cmake -S ${TesseractPath} -B ${TesseractBuildPath} @TesseractCmakeArgs
 
         $TesseractCmakeArgs = @(
-            '--config', "Release"
+            '--config', "${Configuration}"
         )
 
         if ( $VerbosePreference -eq 'Continue' ) {
