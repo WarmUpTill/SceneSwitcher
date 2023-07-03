@@ -10,14 +10,6 @@
 
 namespace advss {
 
-enum class SourceAction {
-	ENABLE,
-	DISABLE,
-	SETTINGS,
-	REFRESH_SETTINGS,
-	SETTINGS_BUTTON,
-};
-
 struct SourceSettingButton {
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
@@ -44,7 +36,20 @@ public:
 	SourceSelection _source;
 	SourceSettingButton _button;
 	StringVariable _settings = "";
-	SourceAction _action = SourceAction::ENABLE;
+	obs_deinterlace_mode _deinterlaceMode = OBS_DEINTERLACE_MODE_DISABLE;
+	obs_deinterlace_field_order _deinterlaceOrder =
+		OBS_DEINTERLACE_FIELD_ORDER_TOP;
+
+	enum class Action {
+		ENABLE,
+		DISABLE,
+		SETTINGS,
+		REFRESH_SETTINGS,
+		SETTINGS_BUTTON,
+		DEINTERLACE_MODE,
+		DEINTERLACE_FIELD_ORDER,
+	};
+	Action _action = Action::ENABLE;
 
 private:
 	static bool _registered;
@@ -73,6 +78,8 @@ private slots:
 	void ButtonChanged(int idx);
 	void GetSettingsClicked();
 	void SettingsChanged();
+	void DeinterlaceModeChanged(int);
+	void DeinterlaceOrderChanged(int);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -82,6 +89,8 @@ protected:
 	QComboBox *_settingsButtons;
 	QPushButton *_getSettings;
 	VariableTextEdit *_settings;
+	QComboBox *_deinterlaceMode;
+	QComboBox *_deinterlaceOrder;
 	QLabel *_warning;
 	std::shared_ptr<MacroActionSource> _entryData;
 
