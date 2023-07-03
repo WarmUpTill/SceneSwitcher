@@ -12,15 +12,50 @@ bool MacroActionSource::_registered = MacroActionFactory::Register(
 	{MacroActionSource::Create, MacroActionSourceEdit::Create,
 	 "AdvSceneSwitcher.action.source"});
 
-const static std::map<SourceAction, std::string> actionTypes = {
-	{SourceAction::ENABLE, "AdvSceneSwitcher.action.source.type.enable"},
-	{SourceAction::DISABLE, "AdvSceneSwitcher.action.source.type.disable"},
-	{SourceAction::SETTINGS,
+const static std::map<MacroActionSource::Action, std::string> actionTypes = {
+	{MacroActionSource::Action::ENABLE,
+	 "AdvSceneSwitcher.action.source.type.enable"},
+	{MacroActionSource::Action::DISABLE,
+	 "AdvSceneSwitcher.action.source.type.disable"},
+	{MacroActionSource::Action::SETTINGS,
 	 "AdvSceneSwitcher.action.source.type.settings"},
-	{SourceAction::REFRESH_SETTINGS,
+	{MacroActionSource::Action::REFRESH_SETTINGS,
 	 "AdvSceneSwitcher.action.source.type.refreshSettings"},
-	{SourceAction::SETTINGS_BUTTON,
+	{MacroActionSource::Action::SETTINGS_BUTTON,
 	 "AdvSceneSwitcher.action.source.type.pressSettingsButton"},
+	{MacroActionSource::Action::DEINTERLACE_MODE,
+	 "AdvSceneSwitcher.action.source.type.deinterlaceMode"},
+	{MacroActionSource::Action::DEINTERLACE_FIELD_ORDER,
+	 "AdvSceneSwitcher.action.source.type.deinterlaceOrder"},
+};
+
+const static std::map<obs_deinterlace_mode, std::string> deinterlaceModes = {
+	{OBS_DEINTERLACE_MODE_DISABLE,
+	 "AdvSceneSwitcher.action.source.deinterlaceMode.disable"},
+	{OBS_DEINTERLACE_MODE_DISCARD,
+	 "AdvSceneSwitcher.action.source.deinterlaceMode.disable"},
+	{OBS_DEINTERLACE_MODE_RETRO,
+	 "AdvSceneSwitcher.action.source.deinterlaceMode.retro"},
+	{OBS_DEINTERLACE_MODE_BLEND,
+	 "AdvSceneSwitcher.action.source.deinterlaceMode.blend"},
+	{OBS_DEINTERLACE_MODE_BLEND_2X,
+	 "AdvSceneSwitcher.action.source.deinterlaceMode.blend2x"},
+	{OBS_DEINTERLACE_MODE_LINEAR,
+	 "AdvSceneSwitcher.action.source.deinterlaceMode.linear"},
+	{OBS_DEINTERLACE_MODE_LINEAR_2X,
+	 "AdvSceneSwitcher.action.source.deinterlaceMode.linear2x"},
+	{OBS_DEINTERLACE_MODE_YADIF,
+	 "AdvSceneSwitcher.action.source.deinterlaceMode.yadif"},
+	{OBS_DEINTERLACE_MODE_YADIF_2X,
+	 "AdvSceneSwitcher.action.source.deinterlaceMode.yadif2x"},
+};
+
+const static std::map<obs_deinterlace_field_order, std::string>
+	deinterlaceFieldOrders = {
+		{OBS_DEINTERLACE_FIELD_ORDER_TOP,
+		 "AdvSceneSwitcher.action.source.deinterlaceOrder.topFieldFirst"},
+		{OBS_DEINTERLACE_FIELD_ORDER_BOTTOM,
+		 "AdvSceneSwitcher.action.source.deinterlaceOrder.bottomFieldFirst"},
 };
 
 static std::vector<SourceSettingButton> getSourceButtons(OBSWeakSource source)
@@ -79,20 +114,26 @@ bool MacroActionSource::PerformAction()
 {
 	auto s = obs_weak_source_get_source(_source.GetSource());
 	switch (_action) {
-	case SourceAction::ENABLE:
+	case Action::ENABLE:
 		obs_source_set_enabled(s, true);
 		break;
-	case SourceAction::DISABLE:
+	case Action::DISABLE:
 		obs_source_set_enabled(s, false);
 		break;
-	case SourceAction::SETTINGS:
+	case Action::SETTINGS:
 		SetSourceSettings(s, _settings);
 		break;
-	case SourceAction::REFRESH_SETTINGS:
+	case Action::REFRESH_SETTINGS:
 		refreshSourceSettings(s);
 		break;
-	case SourceAction::SETTINGS_BUTTON:
+	case Action::SETTINGS_BUTTON:
 		pressSourceButton(_button, s);
+		break;
+	case Action::DEINTERLACE_MODE:
+		obs_source_set_deinterlace_mode(s, _deinterlaceMode);
+		break;
+	case Action::DEINTERLACE_FIELD_ORDER:
+		obs_source_set_deinterlace_field_order(s, _deinterlaceOrder);
 		break;
 	default:
 		break;
@@ -120,6 +161,10 @@ bool MacroActionSource::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	_button.Save(obj);
 	_settings.Save(obj, "settings");
+	obs_data_set_int(obj, "deinterlaceMode",
+			 static_cast<int>(_deinterlaceMode));
+	obs_data_set_int(obj, "deinterlaceOrder",
+			 static_cast<int>(_deinterlaceOrder));
 	return true;
 }
 
@@ -127,9 +172,13 @@ bool MacroActionSource::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 	_source.Load(obj);
-	_action = static_cast<SourceAction>(obs_data_get_int(obj, "action"));
+	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
 	_button.Load(obj);
 	_settings.Load(obj, "settings");
+	_deinterlaceMode = static_cast<obs_deinterlace_mode>(
+		obs_data_get_int(obj, "deinterlaceMode"));
+	_deinterlaceOrder = static_cast<obs_deinterlace_field_order>(
+		obs_data_get_int(obj, "deinterlaceOrder"));
 	return true;
 }
 
@@ -143,7 +192,7 @@ static inline void populateActionSelection(QComboBox *list)
 {
 	for (auto &[actionType, name] : actionTypes) {
 		list->addItem(obs_module_text(name.c_str()));
-		if (actionType == SourceAction::REFRESH_SETTINGS) {
+		if (actionType == MacroActionSource::Action::REFRESH_SETTINGS) {
 			list->setItemData(
 				list->count() - 1,
 				obs_module_text(
@@ -170,23 +219,44 @@ static inline void populateSourceButtonSelection(QComboBox *list,
 	}
 }
 
+static inline void populateDeinterlaceModeSelection(QComboBox *list)
+{
+	list->clear();
+	for (const auto &[value, name] : deinterlaceModes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(value));
+	}
+}
+
+static inline void populateDeinterlaceFieldOrderSelection(QComboBox *list)
+{
+	list->clear();
+	for (const auto &[value, name] : deinterlaceFieldOrders) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(value));
+	}
+}
+
 MacroActionSourceEdit::MacroActionSourceEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSource> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
+	  _actions(new QComboBox()),
+	  _settingsButtons(new QComboBox()),
+	  _getSettings(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.action.source.getSettings"))),
+	  _settings(new VariableTextEdit(this)),
+	  _deinterlaceMode(new QComboBox()),
+	  _deinterlaceOrder(new QComboBox()),
+	  _warning(new QLabel(
+		  obs_module_text("AdvSceneSwitcher.action.source.warning")))
 {
-	_sources = new SourceSelectionWidget(this, QStringList(), true);
-	_actions = new QComboBox();
-	_settingsButtons = new QComboBox();
-	_getSettings = new QPushButton(
-		obs_module_text("AdvSceneSwitcher.action.source.getSettings"));
-	_settings = new VariableTextEdit(this);
-	_warning = new QLabel(
-		obs_module_text("AdvSceneSwitcher.action.source.warning"));
-
 	populateActionSelection(_actions);
 	auto sources = GetSourceNames();
 	sources.sort();
 	_sources->SetSourceNameList(sources);
+	populateDeinterlaceModeSelection(_deinterlaceMode);
+	populateDeinterlaceFieldOrderSelection(_deinterlaceOrder);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
@@ -199,6 +269,10 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 			 SLOT(GetSettingsClicked()));
 	QWidget::connect(_settings, SIGNAL(textChanged()), this,
 			 SLOT(SettingsChanged()));
+	QWidget::connect(_deinterlaceMode, SIGNAL(currentIndexChanged(int)),
+			 this, SLOT(DeinterlaceModeChanged(int)));
+	QWidget::connect(_deinterlaceOrder, SIGNAL(currentIndexChanged(int)),
+			 this, SLOT(DeinterlaceOrderChanged(int)));
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	QHBoxLayout *entryLayout = new QHBoxLayout;
@@ -209,6 +283,8 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 		{"{{settings}}", _settings},
 		{"{{getSettings}}", _getSettings},
 		{"{{settingsButtons}}", _settingsButtons},
+		{"{{deinterlaceMode}}", _deinterlaceMode},
+		{"{{deinterlaceOrder}}", _deinterlaceOrder},
 	};
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.source.entry"),
 		     entryLayout, widgetPlaceholders);
@@ -238,10 +314,11 @@ void MacroActionSourceEdit::UpdateEntryData()
 	_settingsButtons->setCurrentText(
 		QString::fromStdString(_entryData->_button.ToString()));
 	_settings->setPlainText(_entryData->_settings);
+	_deinterlaceMode->setCurrentIndex(_deinterlaceMode->findData(
+		static_cast<int>(_entryData->_deinterlaceMode)));
+	_deinterlaceOrder->setCurrentIndex(_deinterlaceOrder->findData(
+		static_cast<int>(_entryData->_deinterlaceOrder)));
 	SetWidgetVisibility();
-
-	adjustSize();
-	updateGeometry();
 }
 
 void MacroActionSourceEdit::SourceChanged(const SourceSelection &source)
@@ -267,7 +344,7 @@ void MacroActionSourceEdit::ActionChanged(int value)
 	}
 
 	auto lock = LockContext();
-	_entryData->_action = static_cast<SourceAction>(value);
+	_entryData->_action = static_cast<MacroActionSource::Action>(value);
 	SetWidgetVisibility();
 }
 
@@ -305,17 +382,50 @@ void MacroActionSourceEdit::SettingsChanged()
 	updateGeometry();
 }
 
+void MacroActionSourceEdit::DeinterlaceModeChanged(int idx)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_deinterlaceMode = static_cast<obs_deinterlace_mode>(
+		_deinterlaceMode->itemData(idx).toInt());
+}
+
+void MacroActionSourceEdit::DeinterlaceOrderChanged(int idx)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_deinterlaceOrder =
+		static_cast<obs_deinterlace_field_order>(
+			_deinterlaceOrder->itemData(idx).toInt());
+}
+
 void MacroActionSourceEdit::SetWidgetVisibility()
 {
-	const bool showSettings = _entryData->_action == SourceAction::SETTINGS;
-	const bool showWarning = _entryData->_action == SourceAction::ENABLE ||
-				 _entryData->_action == SourceAction::DISABLE;
+	const bool showSettings = _entryData->_action ==
+				  MacroActionSource::Action::SETTINGS;
+	const bool showWarning =
+		_entryData->_action == MacroActionSource::Action::ENABLE ||
+		_entryData->_action == MacroActionSource::Action::DISABLE;
 	_settings->setVisible(showSettings);
 	_getSettings->setVisible(showSettings);
 	_warning->setVisible(showWarning);
-	_settingsButtons->setVisible(_entryData->_action ==
-				     SourceAction::SETTINGS_BUTTON);
+	_settingsButtons->setVisible(
+		_entryData->_action ==
+		MacroActionSource::Action::SETTINGS_BUTTON);
+	_deinterlaceMode->setVisible(
+		_entryData->_action ==
+		MacroActionSource::Action::DEINTERLACE_MODE);
+	_deinterlaceOrder->setVisible(
+		_entryData->_action ==
+		MacroActionSource::Action::DEINTERLACE_FIELD_ORDER);
 	adjustSize();
+	updateGeometry();
 }
 
 bool SourceSettingButton::Save(obs_data_t *obj) const
