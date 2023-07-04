@@ -255,6 +255,14 @@ MacroConditionMacroEdit::MacroConditionMacroEdit(
 			     "AdvSceneSwitcher.condition.macro.type.selection"),
 		     typesLayout, widgetPlaceholders);
 
+	_settingsLine1->addWidget(_macros);
+	_settingsLine1->addWidget(_counterConditions);
+	_settingsLine1->addWidget(_count);
+	_settingsLine2->addWidget(_currentCount);
+	_settingsLine2->addWidget(_resetCount);
+	_settingsLine1->addWidget(_multiStateConditions);
+	_settingsLine1->addWidget(_multiStateCount);
+
 	auto mainLayout = new QVBoxLayout(this);
 	mainLayout->addLayout(typesLayout);
 	mainLayout->addLayout(_settingsLine1);
@@ -522,6 +530,7 @@ void MacroConditionMacroEdit::UpdatePaused()
 		_entryData->_type != MacroConditionMacro::Type::MULTI_STATE &&
 		macro && macro->Paused());
 	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionMacroEdit::MultiStateConditionChanged(int cond)
