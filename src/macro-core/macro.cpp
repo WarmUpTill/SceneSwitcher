@@ -213,12 +213,18 @@ bool Macro::PerformActions(bool forceParallel, bool ignorePause)
 	} else {
 		RunActions(ret, ignorePause);
 	}
-	_wasExecutedRecently = true;
+	_lastExecutionTime = std::chrono::high_resolution_clock::now();
 	auto group = _parent.lock();
 	if (group) {
-		group->_wasExecutedRecently = true;
+		group->_lastExecutionTime = _lastExecutionTime;
 	}
 	return ret;
+}
+
+bool Macro::ExecutedSince(
+	const std::chrono::high_resolution_clock::time_point &time)
+{
+	return _lastExecutionTime > time;
 }
 
 int64_t Macro::MsSinceLastCheck() const
@@ -246,6 +252,7 @@ void Macro::ResetTimers()
 		c->ResetDuration();
 	}
 	_lastCheckTime = {};
+	_lastExecutionTime = {};
 }
 
 void Macro::RunActions(bool &retVal, bool ignorePause)
@@ -544,15 +551,6 @@ bool Macro::SwitchesScene() const
 		if (a->GetId() == sceneSwitchId) {
 			return true;
 		}
-	}
-	return false;
-}
-
-bool Macro::WasExecutedRecently()
-{
-	if (_wasExecutedRecently) {
-		_wasExecutedRecently = false;
-		return true;
 	}
 	return false;
 }

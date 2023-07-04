@@ -96,15 +96,15 @@ void MacroTreeItem::UpdatePaused()
 
 void MacroTreeItem::HighlightIfExecuted()
 {
-	if (!_highlight) {
-		// Run check regardless to reset "_wasExecutedRecently"
-		(void)_macro->WasExecutedRecently();
+	if (!_highlight || !_macro) {
 		return;
 	}
 
-	if (_macro && _macro->WasExecutedRecently()) {
+	if (_lastHighlightCheckTime.time_since_epoch().count() != 0 &&
+	    _macro->ExecutedSince(_lastHighlightCheckTime)) {
 		PulseWidget(this, Qt::green, QColor(0, 0, 0, 0), true);
 	}
+	_lastHighlightCheckTime = std::chrono::high_resolution_clock::now();
 }
 
 void MacroTreeItem::MacroRenamed(const QString &oldName, const QString &newName)

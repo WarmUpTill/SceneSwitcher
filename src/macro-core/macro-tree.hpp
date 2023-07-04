@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <deque>
+#include <chrono>
 
 class QLabel;
 class QSpacerItem;
@@ -61,6 +62,7 @@ private:
 	QLabel *_label = nullptr;
 	MacroTree *_tree;
 	bool _highlight;
+	std::chrono::high_resolution_clock::time_point _lastHighlightCheckTime{};
 	QTimer _timer;
 	std::shared_ptr<Macro> _macro;
 
