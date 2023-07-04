@@ -176,21 +176,14 @@ bool Macro::CeckMatch()
 	}
 	vblog(LOG_INFO, "Macro %s returned %d", _name.c_str(), _matched);
 
-	bool newLastMatched = _matched;
-	if (_matched && _matchOnChange && _lastMatched == _matched) {
+	bool matchedBeforeOnChangeCheck = _matched;
+	if (_matched && _matchOnChange && _lastMatched) {
 		vblog(LOG_INFO, "ignore match for Macro %s (on change)",
 		      _name.c_str());
 		_matched = false;
 		SetOnChangeHighlight();
 	}
-	_lastMatched = newLastMatched;
-
-	// TODO: Move back to PerformAction() once new scene collection frontend
-	// events are available - see:
-	// https://github.com/obsproject/obs-studio/commit/feda1aaa283e8a99f6ba1159cfe6b9c1f2934a61
-	if (_matched && _runCount != std::numeric_limits<int>::max()) {
-		_runCount++;
-	}
+	_lastMatched = matchedBeforeOnChangeCheck;
 	_lastCheckTime = std::chrono::high_resolution_clock::now();
 	return _matched;
 }
@@ -217,6 +210,9 @@ bool Macro::PerformActions(bool forceParallel, bool ignorePause)
 	auto group = _parent.lock();
 	if (group) {
 		group->_lastExecutionTime = _lastExecutionTime;
+	}
+	if (_runCount != std::numeric_limits<int>::max()) {
+		_runCount++;
 	}
 	return ret;
 }
