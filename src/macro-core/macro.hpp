@@ -77,7 +77,8 @@ public:
 	bool SwitchesScene() const;
 
 	// UI helpers
-	bool WasExecutedRecently();
+	bool
+	ExecutedSince(const std::chrono::high_resolution_clock::time_point &);
 	bool OnChangePreventedActionsRecently();
 	void ResetUIHelpers();
 
@@ -121,6 +122,7 @@ private:
 	bool _stop = false;
 	bool _done = true;
 	std::chrono::high_resolution_clock::time_point _lastCheckTime{};
+	std::chrono::high_resolution_clock::time_point _lastExecutionTime{};
 	std::thread _backgroundThread;
 	std::vector<std::thread> _helperThreads;
 
@@ -143,8 +145,6 @@ private:
 	obs_hotkey_id _unpauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _togglePauseHotkey = OBS_INVALID_HOTKEY_ID;
 
-	// UI helpers for the macro tab
-	bool _wasExecutedRecently = false;
 	bool _onChangeTriggered = false;
 
 	bool _registerDock = false;
