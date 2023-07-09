@@ -277,6 +277,7 @@ void MacroTreeModel::MoveItemBefore(const std::shared_ptr<Macro> &item,
 		blog(LOG_WARNING,
 		     "error while trying to move item \"%s\" before \"%s\"",
 		     item->Name().c_str(), before->Name().c_str());
+		assert(IsInValidState());
 		return;
 	}
 
@@ -293,6 +294,7 @@ void MacroTreeModel::MoveItemBefore(const std::shared_ptr<Macro> &item,
 		_macros.erase(it);
 		_macros.insert(std::next(_macros.begin(), macroTo), tmp);
 		endMoveRows();
+		assert(IsInValidState());
 		return;
 	}
 
@@ -309,6 +311,7 @@ void MacroTreeModel::MoveItemBefore(const std::shared_ptr<Macro> &item,
 		_macros.insert(std::next(_macros.begin(), macroTo + i), tmp);
 	}
 	endMoveRows();
+	assert(IsInValidState());
 }
 
 void MacroTreeModel::MoveItemAfter(const std::shared_ptr<Macro> &item,
@@ -318,34 +321,39 @@ void MacroTreeModel::MoveItemAfter(const std::shared_ptr<Macro> &item,
 		return;
 	}
 
-	int modelFromIdx = 0, modelFromEndIdx = 0, modelTo = 0, macroFrom = 0,
-	    macroTo = 0;
+	auto moveAfter = after;
+	int modelFromIdx = 0, modelFromEndIdx = 0, modelTo = 0;
 	try {
 		modelFromIdx = GetItemModelIndex(item);
 		modelFromEndIdx = modelFromIdx;
 		modelTo = GetItemModelIndex(after);
-		macroFrom = GetItemMacroIndex(item);
-		macroTo = GetItemMacroIndex(after);
 	} catch (const std::out_of_range &) {
 		blog(LOG_WARNING,
 		     "error while trying to move item \"%s\" after \"%s\"",
 		     item->Name().c_str(), after->Name().c_str());
+		assert(IsInValidState());
 		return;
 	}
 
 	if (after->IsGroup()) {
 		modelTo += after->IsCollapsed() ? 0 : after->GroupSize();
-		macroTo += after->GroupSize();
+		moveAfter = FindEndOfGroup(after, false);
 	}
 
 	if (!item->IsGroup()) {
 		beginMoveRows(QModelIndex(), modelFromIdx, modelFromEndIdx,
 			      QModelIndex(), modelTo + 1);
-		auto it = std::next(_macros.begin(), macroFrom);
+		auto it = std::find(_macros.begin(), _macros.end(), item);
 		std::shared_ptr<Macro> tmp = *it;
 		_macros.erase(it);
-		_macros.insert(std::next(_macros.begin(), macroTo), tmp);
+		it = std::find(_macros.begin(), _macros.end(), moveAfter);
+		if (it == _macros.end()) {
+			_macros.insert(it, tmp);
+		} else {
+			_macros.insert(std::next(it), tmp);
+		}
 		endMoveRows();
+		assert(IsInValidState());
 		return;
 	}
 
@@ -355,13 +363,22 @@ void MacroTreeModel::MoveItemAfter(const std::shared_ptr<Macro> &item,
 
 	beginMoveRows(QModelIndex(), modelFromIdx, modelFromEndIdx,
 		      QModelIndex(), modelTo + 1);
-	for (uint32_t i = 0; i <= item->GroupSize(); i++) {
-		auto it = std::next(_macros.begin(), macroFrom);
-		auto tmp = *it;
+	auto groupStart = std::find(_macros.begin(), _macros.end(), item);
+	auto groupEnd = std::next(groupStart, item->GroupSize() + 1);
+	std::deque<std::shared_ptr<Macro>> elementsToMove(groupStart, groupEnd);
+	for (const auto &element : elementsToMove) {
+		auto it = std::find(_macros.begin(), _macros.end(), element);
 		_macros.erase(it);
-		_macros.insert(std::next(_macros.begin(), macroTo), tmp);
+		it = std::find(_macros.begin(), _macros.end(), moveAfter);
+		if (it == _macros.end()) {
+			_macros.insert(it, element);
+		} else {
+			_macros.insert(std::next(it), element);
+		}
+		moveAfter = element;
 	}
 	endMoveRows();
+	assert(IsInValidState());
 }
 
 static inline int
@@ -419,6 +436,7 @@ void MacroTreeModel::Remove(std::shared_ptr<Macro> item)
 	if (isGroup) {
 		UpdateGroupState(true);
 	}
+	assert(IsInValidState());
 }
 
 std::shared_ptr<Macro> MacroTreeModel::Neighbor(const std::shared_ptr<Macro> &m,
@@ -586,6 +604,37 @@ bool MacroTreeModel::IsLastItem(std::shared_ptr<Macro> item) const
 	return GetItemModelIndex(item) + 1 == (int)_macros.size();
 }
 
+bool MacroTreeModel::IsInValidState()
+{
+	// Check for reordering erros
+	for (int i = 0, j = 0; i < _macros.size(); i++) {
+		const auto &m = _macros[i];
+		if (QString::fromStdString(m->Name()) !=
+		    data(index(j, 0), Qt::AccessibleTextRole)) {
+			return false;
+		}
+		if (m->IsGroup() && m->IsCollapsed()) {
+			i += m->GroupSize();
+		}
+		j++;
+	}
+
+	// Check for group errors
+	for (int i = 0; i < _macros.size(); i++) {
+		const auto &m = _macros[i];
+		if (!m->IsGroup()) {
+			continue;
+		}
+		const auto groupSize = m->GroupSize();
+		assert(i + groupSize < _macros.size());
+		for (uint32_t j = 1; j <= groupSize; j++) {
+			assert(_macros[i + j]->IsSubitem());
+		}
+	}
+
+	return true;
+}
+
 void MacroTreeModel::GroupSelectedItems(QModelIndexList &indices)
 {
 	if (indices.count() == 0) {
@@ -630,6 +679,7 @@ void MacroTreeModel::GroupSelectedItems(QModelIndexList &indices)
 	_mt->selectionModel()->clear();
 
 	Reset(_macros);
+	assert(IsInValidState());
 }
 
 void MacroTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
@@ -650,6 +700,7 @@ void MacroTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
 	_mt->selectionModel()->clear();
 
 	Reset(_macros);
+	assert(IsInValidState());
 }
 
 void MacroTreeModel::ExpandGroup(std::shared_ptr<Macro> item)
@@ -664,6 +715,7 @@ void MacroTreeModel::ExpandGroup(std::shared_ptr<Macro> item)
 	Reset(_macros);
 
 	_mt->selectionModel()->clear();
+	assert(IsInValidState());
 }
 
 void MacroTreeModel::CollapseGroup(std::shared_ptr<Macro> item)
@@ -678,6 +730,7 @@ void MacroTreeModel::CollapseGroup(std::shared_ptr<Macro> item)
 	Reset(_macros);
 
 	_mt->selectionModel()->clear();
+	assert(IsInValidState());
 }
 
 void MacroTreeModel::UpdateGroupState(bool update)
@@ -714,6 +767,7 @@ void MacroTree::Add(std::shared_ptr<Macro> item,
 	if (after) {
 		MoveItemAfter(item, after);
 	}
+	assert(GetModel()->IsInValidState());
 }
 
 std::shared_ptr<Macro> MacroTree::GetCurrentMacro() const
@@ -759,6 +813,7 @@ void MacroTree::ResetWidgets()
 		}
 		modelIdx++;
 	}
+	assert(GetModel()->IsInValidState());
 }
 
 void MacroTree::UpdateWidget(const QModelIndex &idx,
@@ -1043,6 +1098,7 @@ void MacroTree::dropEvent(QDropEvent *event)
 	event->setDropAction(Qt::CopyAction);
 
 	QListView::dropEvent(event);
+	assert(GetModel()->IsInValidState());
 }
 
 bool MacroTree::GroupsSelected() const
@@ -1180,12 +1236,14 @@ void MacroTree::GroupSelectedItems()
 	QModelIndexList indices = selectedIndexes();
 	std::sort(indices.begin(), indices.end());
 	GetModel()->GroupSelectedItems(indices);
+	assert(GetModel()->IsInValidState());
 }
 
 void MacroTree::UngroupSelectedGroups()
 {
 	QModelIndexList indices = selectedIndexes();
 	GetModel()->UngroupSelectedGroups(indices);
+	assert(GetModel()->IsInValidState());
 }
 
 inline MacroTreeItem *MacroTree::GetItemWidget(int idx) const
