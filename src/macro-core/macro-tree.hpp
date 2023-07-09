@@ -105,6 +105,7 @@ private:
 	int GetItemMacroIndex(const std::shared_ptr<Macro> &item) const;
 	int GetItemModelIndex(const std::shared_ptr<Macro> &item) const;
 	bool IsLastItem(std::shared_ptr<Macro> item) const;
+	bool IsInValidState();
 
 	MacroTree *_mt;
 	std::deque<std::shared_ptr<Macro>> &_macros;
