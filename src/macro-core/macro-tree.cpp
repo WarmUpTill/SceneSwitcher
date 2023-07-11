@@ -657,14 +657,15 @@ void MacroTreeModel::GroupSelectedItems(QModelIndexList &indices)
 		itemsToGroup.emplace_back(item);
 	}
 
-	std::shared_ptr<Macro> item =
+	std::shared_ptr<Macro> group =
 		Macro::CreateGroup(name.toStdString(), itemsToGroup);
-	if (!item) {
+	if (!group) {
 		return;
 	}
 
-	// A new list entry for group
-	_macros.insert(_macros.begin() + insertGroupAt, item);
+	// Add new list entry for group
+	insertGroupAt = ModelIndexToMacroIndex(insertGroupAt, _macros);
+	_macros.insert(_macros.begin() + insertGroupAt, group);
 
 	// Move all selected items after new group entry
 	int offset = 1;
