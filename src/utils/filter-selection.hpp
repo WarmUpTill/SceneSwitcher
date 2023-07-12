@@ -1,5 +1,6 @@
 #pragma once
 #include "source-selection.hpp"
+#include "filter-combo-box.hpp"
 
 namespace advss {
 
@@ -33,7 +34,7 @@ private:
 	friend class FilterSelectionWidget;
 };
 
-class FilterSelectionWidget : public QComboBox {
+class FilterSelectionWidget : public FilterComboBox {
 	Q_OBJECT
 
 public:
@@ -47,7 +48,7 @@ signals:
 public slots:
 	void SourceChanged(const SourceSelection &);
 private slots:
-	void SelectionChanged(const QString &name);
+	void SelectionChanged(int);
 	void ItemAdd(const QString &name);
 	void ItemRemove(const QString &name);
 	void ItemRename(const QString &oldName, const QString &newName);

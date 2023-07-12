@@ -48,7 +48,7 @@ ItemSelection::ItemSelection(std::deque<std::shared_ptr<Item>> &items,
 			     std::string_view select, std::string_view add,
 			     QWidget *parent)
 	: QWidget(parent),
-	  _selection(new QComboBox),
+	  _selection(new FilterComboBox(this, obs_module_text(select.data()))),
 	  _modify(new QPushButton),
 	  _create(create),
 	  _askForSettings(callback),
@@ -77,7 +77,6 @@ ItemSelection::ItemSelection(std::deque<std::shared_ptr<Item>> &items,
 		_selection->addItem(QString::fromStdString(i->_name));
 	}
 	_selection->model()->sort(0);
-	AddSelectionEntry(_selection, obs_module_text(_selectStr.data()));
 	_selection->insertSeparator(_selection->count());
 	_selection->addItem(obs_module_text(_addStr.data()));
 }
@@ -230,7 +229,7 @@ void ItemSelection::RemoveItem(const QString &name)
 {
 	const int idx = _selection->findText(name);
 	if (idx == _selection->currentIndex()) {
-		_selection->setCurrentIndex(0);
+		_selection->setCurrentIndex(-1);
 	}
 	_selection->removeItem(idx);
 }

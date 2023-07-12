@@ -182,7 +182,7 @@ MacroConditionEdit::MacroConditionEdit(
 	: MacroSegmentEdit(switcher->macroProperties._highlightConditions,
 			   parent),
 	  _logicSelection(new QComboBox()),
-	  _conditionSelection(new QComboBox()),
+	  _conditionSelection(new FilterComboBox()),
 	  _dur(new DurationModifierEdit()),
 	  _entryData(entryData),
 	  _isRoot(root)
@@ -295,13 +295,16 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 		return;
 	}
 
-	auto idx = _entryData->get()->GetIndex();
-	auto macro = _entryData->get()->GetMacro();
 	std::string id = MacroConditionFactory::GetIdByName(text);
+	if (id.empty()) {
+		return;
+	}
 
 	auto temp = DurationModifier();
 	_dur->SetValue(temp);
 	HeaderInfoChanged("");
+	auto idx = _entryData->get()->GetIndex();
+	auto macro = _entryData->get()->GetMacro();
 	{
 		auto lock = LockContext();
 		auto logic = (*_entryData)->GetLogicType();

@@ -113,6 +113,9 @@ FilterSelection FilterSelectionWidget::CurrentSelection()
 	FilterSelection s;
 	const int idx = currentIndex();
 	const auto name = currentText();
+	if (idx == -1 || name.isEmpty()) {
+		return s;
+	}
 
 	if (idx < _variablesEndIdx) {
 		s._type = FilterSelection::Type::VARIABLE;
@@ -136,10 +139,6 @@ void FilterSelectionWidget::PopulateSelection()
 {
 	const QSignalBlocker b(this);
 	clear();
-	AddSelectionEntry(this,
-			  obs_module_text("AdvSceneSwitcher.selectFilter"));
-	insertSeparator(count());
-
 	if (_addVariables) {
 		const QStringList variables = GetVariablesNameList();
 		AddSelectionGroup(this, variables);
@@ -151,18 +150,20 @@ void FilterSelectionWidget::PopulateSelection()
 
 	// Remove last separator
 	removeItem(count() - 1);
-	setCurrentIndex(0);
+	setCurrentIndex(-1);
 }
 
 FilterSelectionWidget::FilterSelectionWidget(QWidget *parent,
 					     SourceSelectionWidget *sources,
 					     bool addVariables)
-	: QComboBox(parent), _addVariables(addVariables)
+	: FilterComboBox(parent,
+			 obs_module_text("AdvSceneSwitcher.selectFilter")),
+	  _addVariables(addVariables)
 {
 	setDuplicatesEnabled(true);
 
-	QWidget::connect(this, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SelectionChanged(const QString &)));
+	QWidget::connect(this, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(SelectionChanged(int)));
 	QWidget::connect(sources,
 			 SIGNAL(SourceChanged(const SourceSelection &)), this,
 			 SLOT(SourceChanged(const SourceSelection &)));
@@ -184,12 +185,12 @@ void FilterSelectionWidget::SetFilter(const SourceSelection &source,
 	_source = source;
 	PopulateSelection();
 
-	int idx = 0;
+	int idx = -1;
 
 	switch (filter.GetType()) {
 	case FilterSelection::Type::SOURCE: {
 		if (_filterEndIdx == -1) {
-			idx = 0;
+			idx = -1;
 			break;
 		}
 		idx = FindIdxInRagne(this, _variablesEndIdx, _filterEndIdx,
@@ -198,14 +199,14 @@ void FilterSelectionWidget::SetFilter(const SourceSelection &source,
 	}
 	case FilterSelection::Type::VARIABLE: {
 		if (_variablesEndIdx == -1) {
-			idx = 0;
+			idx = -1;
 			break;
 		}
 		idx = FindIdxInRagne(this, _selectIdx, _variablesEndIdx,
 				     filter.ToString());
 		break;
 	default:
-		idx = 0;
+		idx = -1;
 		break;
 	}
 	}
@@ -224,9 +225,10 @@ void FilterSelectionWidget::SourceChanged(const SourceSelection &source)
 	emit FilterChanged(_currentSelection);
 }
 
-void FilterSelectionWidget::SelectionChanged(const QString &)
+void FilterSelectionWidget::SelectionChanged(int)
 {
-	emit FilterChanged(CurrentSelection());
+	_currentSelection = CurrentSelection();
+	emit FilterChanged(_currentSelection);
 }
 
 void FilterSelectionWidget::ItemAdd(const QString &)

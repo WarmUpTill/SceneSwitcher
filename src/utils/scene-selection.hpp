@@ -1,9 +1,8 @@
 #pragma once
 #include "scene-group.hpp"
 #include "variable.hpp"
+#include "filter-combo-box.hpp"
 #include "utility.hpp"
-
-#include <QComboBox>
 
 namespace advss {
 
@@ -34,7 +33,7 @@ private:
 	friend class SceneSelectionWidget;
 };
 
-class SceneSelectionWidget : public QComboBox {
+class SceneSelectionWidget : public FilterComboBox {
 	Q_OBJECT
 
 public:
@@ -46,7 +45,7 @@ signals:
 	void SceneChanged(const SceneSelection &);
 
 private slots:
-	void SelectionChanged(const QString &name);
+	void SelectionChanged(int);
 	void ItemAdd(const QString &name);
 	void ItemRemove(const QString &name);
 	void ItemRename(const QString &oldName, const QString &newName);

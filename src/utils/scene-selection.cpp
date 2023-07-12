@@ -178,6 +178,9 @@ SceneSelection SceneSelectionWidget::CurrentSelection()
 	SceneSelection s;
 	const int idx = currentIndex();
 	const auto name = currentText();
+	if (idx == -1 || name.isEmpty()) {
+		return s;
+	}
 
 	if (idx < _placeholderEndIdx) {
 		if (IsCurrentSceneSelected(name)) {
@@ -251,10 +254,6 @@ void SceneSelectionWidget::Reset()
 void SceneSelectionWidget::PopulateSelection()
 {
 	clear();
-	AddSelectionEntry(this,
-			  obs_module_text("AdvSceneSwitcher.selectScene"));
-	insertSeparator(count());
-
 	if (_current || _previous) {
 		const QStringList order =
 			getOrderList(_current, _previous, _preview);
@@ -280,13 +279,14 @@ void SceneSelectionWidget::PopulateSelection()
 
 	// Remove last separator
 	removeItem(count() - 1);
-	setCurrentIndex(0);
+	setCurrentIndex(-1);
 }
 
 SceneSelectionWidget::SceneSelectionWidget(QWidget *parent, bool variables,
 					   bool sceneGroups, bool previous,
 					   bool current, bool preview)
-	: QComboBox(parent),
+	: FilterComboBox(parent,
+			 obs_module_text("AdvSceneSwitcher.selectScene")),
 	  _current(current),
 	  _previous(previous),
 	  _preview(preview),
@@ -296,8 +296,8 @@ SceneSelectionWidget::SceneSelectionWidget(QWidget *parent, bool variables,
 	setDuplicatesEnabled(true);
 	PopulateSelection();
 
-	QWidget::connect(this, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SelectionChanged(const QString &)));
+	QWidget::connect(this, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(SelectionChanged(int)));
 
 	// Scene groups
 	QWidget::connect(window(), SIGNAL(SceneGroupAdded(const QString &)),
@@ -322,12 +322,12 @@ SceneSelectionWidget::SceneSelectionWidget(QWidget *parent, bool variables,
 
 void SceneSelectionWidget::SetScene(const SceneSelection &s)
 {
-	int idx = 0;
+	int idx = -1;
 
 	switch (s.GetType()) {
 	case SceneSelection::Type::SCENE: {
 		if (_scenesEndIdx == -1) {
-			idx = 0;
+			idx = -1;
 			break;
 		}
 		idx = FindIdxInRagne(this, _groupsEndIdx, _scenesEndIdx,
@@ -336,7 +336,7 @@ void SceneSelectionWidget::SetScene(const SceneSelection &s)
 	}
 	case SceneSelection::Type::GROUP: {
 		if (_groupsEndIdx == -1) {
-			idx = 0;
+			idx = -1;
 			break;
 		}
 		idx = FindIdxInRagne(this, _variablesEndIdx, _groupsEndIdx,
@@ -345,7 +345,7 @@ void SceneSelectionWidget::SetScene(const SceneSelection &s)
 	}
 	case SceneSelection::Type::PREVIOUS: {
 		if (_placeholderEndIdx == -1) {
-			idx = 0;
+			idx = -1;
 			break;
 		}
 
@@ -357,7 +357,7 @@ void SceneSelectionWidget::SetScene(const SceneSelection &s)
 	}
 	case SceneSelection::Type::CURRENT: {
 		if (_placeholderEndIdx == -1) {
-			idx = 0;
+			idx = -1;
 			break;
 		}
 
@@ -368,7 +368,7 @@ void SceneSelectionWidget::SetScene(const SceneSelection &s)
 	}
 	case SceneSelection::Type::PREVIEW: {
 		if (_placeholderEndIdx == -1) {
-			idx = 0;
+			idx = -1;
 			break;
 		}
 
@@ -379,14 +379,14 @@ void SceneSelectionWidget::SetScene(const SceneSelection &s)
 	}
 	case SceneSelection::Type::VARIABLE: {
 		if (_variablesEndIdx == -1) {
-			idx = 0;
+			idx = -1;
 			break;
 		}
 		idx = FindIdxInRagne(this, _placeholderEndIdx, _variablesEndIdx,
 				     s.ToString());
 		break;
 	default:
-		idx = 0;
+		idx = -1;
 		break;
 	}
 	}
@@ -412,7 +412,7 @@ bool SceneSelectionWidget::IsPreviewSceneSelected(const QString &name)
 			       "AdvSceneSwitcher.selectPreviewScene")));
 }
 
-void SceneSelectionWidget::SelectionChanged(const QString &)
+void SceneSelectionWidget::SelectionChanged(int)
 {
 	_currentSelection = CurrentSelection();
 	emit SceneChanged(_currentSelection);

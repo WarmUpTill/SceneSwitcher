@@ -67,10 +67,11 @@ std::string TransitionSelection::ToString() const
 
 TransitionSelectionWidget::TransitionSelectionWidget(QWidget *parent,
 						     bool current, bool any)
-	: QComboBox(parent)
+	: FilterComboBox(parent,
+			 obs_module_text("AdvSceneSwitcher.selectTransition"))
 {
 	setDuplicatesEnabled(true);
-	PopulateTransitionSelection(this, current, any);
+	PopulateTransitionSelection(this, current, any, false);
 
 	QWidget::connect(this, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(SelectionChanged(const QString &)));

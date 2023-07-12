@@ -1,6 +1,6 @@
 #pragma once
+#include "filter-combo-box.hpp"
 
-#include <QComboBox>
 #include <QPushButton>
 #include <QDialog>
 #include <QLineEdit>
@@ -93,7 +93,7 @@ signals:
 protected:
 	Item *GetCurrentItem();
 
-	QComboBox *_selection;
+	FilterComboBox *_selection;
 	QPushButton *_modify;
 	CreateItemFunc _create;
 	SettingsCallback _askForSettings;

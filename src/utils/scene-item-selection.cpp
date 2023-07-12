@@ -265,10 +265,6 @@ void SceneItemSelectionWidget::Reset()
 void SceneItemSelectionWidget::PopulateItemSelection()
 {
 	_sceneItems->clear();
-	AddSelectionEntry(_sceneItems,
-			  obs_module_text("AdvSceneSwitcher.selectItem"));
-	_sceneItems->insertSeparator(_sceneItems->count());
-
 	const QStringList variables = GetVariablesNameList();
 	AddSelectionGroup(_sceneItems, variables);
 	_variablesEndIdx = _sceneItems->count();
@@ -276,7 +272,7 @@ void SceneItemSelectionWidget::PopulateItemSelection()
 	const QStringList sceneItmes = GetSceneItemsList(_scene);
 	AddSelectionGroup(_sceneItems, sceneItmes, false);
 	_itemsEndIdx = _sceneItems->count();
-	_sceneItems->setCurrentIndex(0);
+	_sceneItems->setCurrentIndex(-1);
 }
 
 SceneItemSelectionWidget::SceneItemSelectionWidget(QWidget *parent,
@@ -284,7 +280,8 @@ SceneItemSelectionWidget::SceneItemSelectionWidget(QWidget *parent,
 						   Placeholder type)
 	: QWidget(parent), _hasPlaceholderEntry(showAll), _placeholder(type)
 {
-	_sceneItems = new QComboBox();
+	_sceneItems = new FilterComboBox(
+		this, obs_module_text("AdvSceneSwitcher.selectItem"));
 	_idx = new QComboBox();
 
 	_sceneItems->setSizeAdjustPolicy(QComboBox::AdjustToContents);
@@ -292,9 +289,8 @@ SceneItemSelectionWidget::SceneItemSelectionWidget(QWidget *parent,
 
 	populateSceneItemSelection(_sceneItems);
 
-	QWidget::connect(_sceneItems,
-			 SIGNAL(currentTextChanged(const QString &)), this,
-			 SLOT(SelectionChanged(const QString &)));
+	QWidget::connect(_sceneItems, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(SelectionChanged(int)));
 	QWidget::connect(_idx, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(IdxChanged(int)));
 	// Variables
@@ -317,7 +313,7 @@ SceneItemSelectionWidget::SceneItemSelectionWidget(QWidget *parent,
 
 void SceneItemSelectionWidget::SetSceneItem(const SceneItemSelection &item)
 {
-	int itemIdx = 0;
+	int itemIdx = -1;
 	switch (item._type) {
 	case SceneItemSelection::Type::SOURCE: {
 		int idx = item._idx;
@@ -379,7 +375,7 @@ void SceneItemSelectionWidget::SetPlaceholderType(Placeholder t,
 {
 	_placeholder = t;
 	if (resetSelection) {
-		_sceneItems->setCurrentIndex(0);
+		_sceneItems->setCurrentIndex(-1);
 	} else {
 		auto count = _idx->count() - 1;
 		const QSignalBlocker b(_idx);
@@ -393,9 +389,12 @@ void SceneItemSelectionWidget::SceneChanged(const SceneSelection &s)
 	adjustSize();
 }
 
-void SceneItemSelectionWidget::SelectionChanged(const QString &name)
+SceneItemSelection SceneItemSelectionWidget::CurrentSelection()
 {
 	SceneItemSelection s;
+	const int idx = _sceneItems->currentIndex();
+	const auto name = _sceneItems->currentText();
+
 	int sceneItemCount =
 		getCountOfSceneItemOccurance(_scene, name.toStdString());
 	if (sceneItemCount > 1) {
@@ -416,7 +415,10 @@ void SceneItemSelectionWidget::SelectionChanged(const QString &name)
 		}
 	}
 
-	const int idx = _sceneItems->currentIndex();
+	if (idx == -1 || name.isEmpty()) {
+		return s;
+	}
+
 	if (idx < _variablesEndIdx) {
 		s._type = SceneItemSelection::Type::VARIABLE;
 		s._variable = GetWeakVariableByQString(name);
@@ -425,8 +427,13 @@ void SceneItemSelectionWidget::SelectionChanged(const QString &name)
 		s._sceneItem = GetWeakSourceByQString(name);
 	}
 
-	_currentSelection = s;
-	emit SceneItemChanged(s);
+	return s;
+}
+
+void SceneItemSelectionWidget::SelectionChanged(int)
+{
+	_currentSelection = CurrentSelection();
+	emit SceneItemChanged(_currentSelection);
 }
 
 void SceneItemSelectionWidget::IdxChanged(int idx)
