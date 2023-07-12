@@ -257,6 +257,8 @@ target_sources(
           src/utils/log-helper.hpp
           src/utils/file-selection.cpp
           src/utils/file-selection.hpp
+          src/utils/filter-combo-box.cpp
+          src/utils/filter-combo-box.hpp
           src/utils/filter-selection.cpp
           src/utils/filter-selection.hpp
           src/utils/macro-list.cpp
