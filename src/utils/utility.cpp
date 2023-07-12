@@ -1141,7 +1141,7 @@ void AddSelectionGroup(QComboBox *selection, const QStringList &group,
 }
 
 int FindIdxInRagne(QComboBox *list, int start, int stop,
-		   const std::string &value)
+		   const std::string &value, Qt::MatchFlags flags)
 {
 	if (value.empty()) {
 		return 0;
@@ -1150,7 +1150,7 @@ int FindIdxInRagne(QComboBox *list, int start, int stop,
 	auto startIdx = model->index(start, 0);
 	auto match = model->match(startIdx, Qt::DisplayRole,
 				  QString::fromStdString(value), 1,
-				  Qt::MatchExactly | Qt::MatchCaseSensitive);
+				  flags);
 	if (match.isEmpty()) {
 		return 0;
 	}
