@@ -1149,19 +1149,18 @@ int FindIdxInRagne(QComboBox *list, int start, int stop,
 		   const std::string &value, Qt::MatchFlags flags)
 {
 	if (value.empty()) {
-		return 0;
+		return -1;
 	}
 	auto model = list->model();
 	auto startIdx = model->index(start, 0);
 	auto match = model->match(startIdx, Qt::DisplayRole,
-				  QString::fromStdString(value), 1,
-				  flags);
+				  QString::fromStdString(value), 1, flags);
 	if (match.isEmpty()) {
-		return 0;
+		return -1;
 	}
 	int foundIdx = match.first().row();
 	if (foundIdx > stop) {
-		return 0;
+		return -1;
 	}
 	return foundIdx;
 }

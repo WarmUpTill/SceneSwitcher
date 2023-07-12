@@ -1,7 +1,6 @@
 #pragma once
+#include "filter-combo-box.hpp"
 #include "utility.hpp"
-
-#include <QComboBox>
 
 namespace advss {
 
@@ -28,7 +27,7 @@ private:
 	friend class TransitionSelectionWidget;
 };
 
-class TransitionSelectionWidget : public QComboBox {
+class TransitionSelectionWidget : public FilterComboBox {
 	Q_OBJECT
 
 public:

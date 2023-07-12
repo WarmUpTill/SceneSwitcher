@@ -1,5 +1,6 @@
 #pragma once
-#include <QComboBox>
+#include "filter-combo-box.hpp"
+
 #include <QDialog>
 
 namespace advss {
@@ -7,7 +8,7 @@ namespace advss {
 class Macro;
 class MacroRef;
 
-class MacroSelection : public QComboBox {
+class MacroSelection : public FilterComboBox {
 	Q_OBJECT
 
 public:

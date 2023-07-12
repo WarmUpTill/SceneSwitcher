@@ -78,7 +78,7 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 				 std::shared_ptr<MacroAction> *entryData,
 				 const std::string &id)
 	: MacroSegmentEdit(switcher->macroProperties._highlightActions, parent),
-	  _actionSelection(new QComboBox()),
+	  _actionSelection(new FilterComboBox()),
 	  _entryData(entryData)
 {
 	QWidget::connect(_actionSelection,
@@ -115,10 +115,14 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 		return;
 	}
 
+	std::string id = MacroActionFactory::GetIdByName(text);
+	if (id.empty()) {
+		return;
+	}
+
+	HeaderInfoChanged("");
 	auto idx = _entryData->get()->GetIndex();
 	auto macro = _entryData->get()->GetMacro();
-	std::string id = MacroActionFactory::GetIdByName(text);
-	HeaderInfoChanged("");
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
 		_entryData->reset();

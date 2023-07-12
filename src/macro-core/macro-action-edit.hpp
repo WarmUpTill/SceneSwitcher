@@ -1,7 +1,7 @@
 #pragma once
 #include "macro-action.hpp"
+#include "filter-combo-box.hpp"
 
-#include <QComboBox>
 #include <memory>
 
 namespace advss {
@@ -48,7 +48,7 @@ private slots:
 private:
 	std::shared_ptr<MacroSegment> Data();
 
-	QComboBox *_actionSelection;
+	FilterComboBox *_actionSelection;
 
 	std::shared_ptr<MacroAction> *_entryData;
 	bool _loading = true;

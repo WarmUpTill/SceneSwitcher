@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-condition.hpp"
+#include "filter-combo-box.hpp"
 
 #include <memory>
 
@@ -77,7 +78,7 @@ private:
 	std::shared_ptr<MacroSegment> Data();
 
 	QComboBox *_logicSelection;
-	QComboBox *_conditionSelection;
+	FilterComboBox *_conditionSelection;
 	DurationModifierEdit *_dur;
 
 	std::shared_ptr<MacroCondition> *_entryData;

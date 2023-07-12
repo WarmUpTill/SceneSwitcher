@@ -125,6 +125,9 @@ SourceSelection SourceSelectionWidget::CurrentSelection()
 	SourceSelection s;
 	const int idx = currentIndex();
 	const auto name = currentText();
+	if (idx == -1 || name.isEmpty()) {
+		return s;
+	}
 
 	if (idx < _variablesEndIdx) {
 		s._type = SourceSelection::Type::VARIABLE;
@@ -146,10 +149,6 @@ void SourceSelectionWidget::Reset()
 void SourceSelectionWidget::PopulateSelection()
 {
 	clear();
-	AddSelectionEntry(this,
-			  obs_module_text("AdvSceneSwitcher.selectSource"));
-	insertSeparator(count());
-
 	if (_addVariables) {
 		const QStringList variables = GetVariablesNameList();
 		AddSelectionGroup(this, variables);
@@ -161,21 +160,22 @@ void SourceSelectionWidget::PopulateSelection()
 
 	// Remove last separator
 	removeItem(count() - 1);
-	setCurrentIndex(0);
+	setCurrentIndex(-1);
 }
 
 SourceSelectionWidget::SourceSelectionWidget(QWidget *parent,
 					     const QStringList &sourceNames,
 					     bool addVariables)
-	: QComboBox(parent),
+	: FilterComboBox(parent,
+			 obs_module_text("AdvSceneSwitcher.selectSource")),
 	  _addVariables(addVariables),
 	  _sourceNames(sourceNames)
 {
 	setDuplicatesEnabled(true);
 	PopulateSelection();
 
-	QWidget::connect(this, SIGNAL(currentTextChanged(const QString &)),
-			 this, SLOT(SelectionChanged(const QString &)));
+	QWidget::connect(this, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(SelectionChanged(int)));
 
 	// Variables
 	QWidget::connect(window(), SIGNAL(VariableAdded(const QString &)), this,
@@ -190,12 +190,12 @@ SourceSelectionWidget::SourceSelectionWidget(QWidget *parent,
 
 void SourceSelectionWidget::SetSource(const SourceSelection &s)
 {
-	int idx = 0;
+	int idx = -1;
 
 	switch (s.GetType()) {
 	case SourceSelection::Type::SOURCE: {
 		if (_sourcesEndIdx == -1) {
-			idx = 0;
+			idx = -1;
 			break;
 		}
 		idx = FindIdxInRagne(this, _variablesEndIdx, _sourcesEndIdx,
@@ -204,14 +204,14 @@ void SourceSelectionWidget::SetSource(const SourceSelection &s)
 	}
 	case SourceSelection::Type::VARIABLE: {
 		if (_variablesEndIdx == -1) {
-			idx = 0;
+			idx = -1;
 			break;
 		}
 		idx = FindIdxInRagne(this, _selectIdx, _variablesEndIdx,
 				     s.ToString());
 		break;
 	default:
-		idx = 0;
+		idx = -1;
 		break;
 	}
 	}
@@ -225,7 +225,7 @@ void SourceSelectionWidget::SetSourceNameList(const QStringList &list)
 	Reset();
 }
 
-void SourceSelectionWidget::SelectionChanged(const QString &)
+void SourceSelectionWidget::SelectionChanged(int)
 {
 	_currentSelection = CurrentSelection();
 	emit SourceChanged(_currentSelection);

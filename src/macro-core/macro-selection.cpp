@@ -8,18 +8,10 @@
 
 namespace advss {
 
-MacroSelection::MacroSelection(QWidget *parent) : QComboBox(parent)
+MacroSelection::MacroSelection(QWidget *parent)
+	: FilterComboBox(parent,
+			 obs_module_text("AdvSceneSwitcher.selectMacro"))
 {
-	addItem(obs_module_text("AdvSceneSwitcher.selectMacro"));
-
-	QStandardItemModel *model =
-		qobject_cast<QStandardItemModel *>(this->model());
-	QModelIndex firstIndex =
-		model->index(0, modelColumn(), rootModelIndex());
-	QStandardItem *firstItem = model->itemFromIndex(firstIndex);
-	firstItem->setSelectable(false);
-	firstItem->setEnabled(false);
-
 	for (const auto &m : switcher->macros) {
 		if (m->IsGroup()) {
 			continue;
@@ -139,8 +131,9 @@ bool MacroSelectionDialog::AskForMacro(QWidget *parent, std::string &macroName)
 	if (dialog.exec() != DialogCode::Accepted) {
 		return false;
 	}
-	macroName = dialog._macroSelection->currentText().toUtf8().constData();
-	if (macroName == obs_module_text("AdvSceneSwitcher.selectMacro")) {
+	macroName = dialog._macroSelection->currentText().toStdString();
+	if (macroName == obs_module_text("AdvSceneSwitcher.selectMacro") ||
+	    macroName.empty()) {
 		return false;
 	}
 

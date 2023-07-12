@@ -1,9 +1,9 @@
 #pragma once
 #include "scene-selection.hpp"
 #include "variable.hpp"
+#include "filter-combo-box.hpp"
 #include "utility.hpp"
 
-#include <QComboBox>
 #include <obs-data.h>
 
 namespace advss {
@@ -57,7 +57,7 @@ signals:
 
 private slots:
 	void SceneChanged(const SceneSelection &);
-	void SelectionChanged(const QString &name);
+	void SelectionChanged(int);
 	void IdxChanged(int);
 	void ItemAdd(const QString &name);
 	void ItemRemove(const QString &name);
@@ -65,10 +65,11 @@ private slots:
 
 private:
 	void Reset();
+	SceneItemSelection CurrentSelection();
 	void PopulateItemSelection();
 	void SetupIdxSelection(int);
 
-	QComboBox *_sceneItems;
+	FilterComboBox *_sceneItems;
 	QComboBox *_idx;
 
 	SceneSelection _scene;
