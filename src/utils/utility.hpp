@@ -97,7 +97,8 @@ QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
 void SetHeightToContentHeight(QListWidget *list);
 void SetButtonIcon(QPushButton *button, const char *path);
 int FindIdxInRagne(QComboBox *list, int start, int stop,
-		   const std::string &value);
+		   const std::string &value,
+		   Qt::MatchFlags = Qt::MatchExactly | Qt::MatchCaseSensitive);
 
 /* UI helpers */
 
