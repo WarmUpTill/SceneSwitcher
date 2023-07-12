@@ -617,7 +617,8 @@ void PopulateSourceSelection(QComboBox *list, bool addSelect)
 	list->setCurrentIndex(0);
 }
 
-void PopulateTransitionSelection(QComboBox *sel, bool addCurrent, bool addAny)
+void PopulateTransitionSelection(QComboBox *sel, bool addCurrent, bool addAny,
+				 bool addSelect)
 {
 
 	obs_frontend_source_list *transitions = new obs_frontend_source_list();
@@ -633,18 +634,22 @@ void PopulateTransitionSelection(QComboBox *sel, bool addCurrent, bool addAny)
 
 	sel->model()->sort(0);
 
-	AddSelectionEntry(sel,
-			  obs_module_text("AdvSceneSwitcher.selectTransition"));
+	if (addSelect) {
+		AddSelectionEntry(
+			sel,
+			obs_module_text("AdvSceneSwitcher.selectTransition"));
+	}
 	sel->setCurrentIndex(0);
 
 	if (addCurrent) {
 		sel->insertItem(
-			1,
+			addSelect ? 1 : 0,
 			obs_module_text("AdvSceneSwitcher.currentTransition"));
 	}
 	if (addAny) {
 		sel->insertItem(
-			1, obs_module_text("AdvSceneSwitcher.anyTransition"));
+			addSelect ? 1 : 0,
+			obs_module_text("AdvSceneSwitcher.anyTransition"));
 	}
 }
 

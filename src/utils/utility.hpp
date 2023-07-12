@@ -59,7 +59,7 @@ void AddSelectionEntry(QComboBox *sel, const char *description,
 void AddSelectionGroup(QComboBox *selection, const QStringList &group,
 		       bool addSeparator = true);
 void PopulateTransitionSelection(QComboBox *sel, bool addCurrent = true,
-				 bool addAny = false);
+				 bool addAny = false, bool addSelect = true);
 void PopulateWindowSelection(QComboBox *sel, bool addSelect = true);
 void PopulateAudioSelection(QComboBox *sel, bool addSelect = true);
 void populateVideoSelection(QComboBox *sel, bool addMainOutput = false,
