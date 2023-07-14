@@ -255,13 +255,20 @@ void Macro::RunActions(bool &retVal, bool ignorePause)
 {
 	bool ret = true;
 	for (auto &a : _actions) {
-		a->LogAction();
-		ret = ret && a->PerformAction();
+		if (a->Enabled()) {
+			a->LogAction();
+			ret = ret && a->PerformAction();
+		} else {
+			vblog(LOG_INFO, "skipping disabled action %s",
+			      a->GetId().c_str());
+		}
 		if (!ret || (_paused && !ignorePause) || _stop || _die) {
 			retVal = ret;
 			break;
 		}
-		a->SetHighlight();
+		if (a->Enabled()) {
+			a->SetHighlight();
+		}
 	}
 	_done = true;
 }
