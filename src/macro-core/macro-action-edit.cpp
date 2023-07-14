@@ -3,7 +3,10 @@
 #include "macro-action-edit.hpp"
 #include "macro-action-scene-switch.hpp"
 #include "section.hpp"
+#include "switch-button.hpp"
 #include "utility.hpp"
+
+#include <QGraphicsOpacityEffect>
 
 namespace advss {
 
@@ -79,16 +82,20 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 				 const std::string &id)
 	: MacroSegmentEdit(switcher->macroProperties._highlightActions, parent),
 	  _actionSelection(new FilterComboBox()),
+	  _enable(new SwitchButton()),
 	  _entryData(entryData)
 {
 	QWidget::connect(_actionSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ActionSelectionChanged(const QString &)));
+	QWidget::connect(_enable, SIGNAL(checked(bool)), this,
+			 SLOT(ActionEnableChanged(bool)));
 	QWidget::connect(window(), SIGNAL(HighlightActionsChanged(bool)), this,
 			 SLOT(EnableHighlight(bool)));
 
 	populateActionSelection(_actionSelection);
 
+	_section->AddHeaderWidget(_enable);
 	_section->AddHeaderWidget(_actionSelection);
 	_section->AddHeaderWidget(_headerInfo);
 
@@ -140,6 +147,9 @@ void MacroActionEdit::UpdateEntryData(const std::string &id)
 {
 	_actionSelection->setCurrentText(
 		obs_module_text(MacroActionFactory::GetActionName(id).c_str()));
+	const bool enabled = (*_entryData)->Enabled();
+	_enable->setChecked(enabled);
+	SetDisableEffect(!enabled);
 	auto widget = MacroActionFactory::CreateWidget(id, this, *_entryData);
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
 			 this, SLOT(HeaderInfoChanged(const QString &)));
@@ -152,6 +162,28 @@ void MacroActionEdit::UpdateEntryData(const std::string &id)
 void MacroActionEdit::SetEntryData(std::shared_ptr<MacroAction> *data)
 {
 	_entryData = data;
+}
+
+void advss::MacroActionEdit::SetDisableEffect(bool value)
+{
+	if (value) {
+		auto effect = new QGraphicsOpacityEffect(this);
+		effect->setOpacity(0.5);
+		_section->setGraphicsEffect(effect);
+	} else {
+		_section->setGraphicsEffect(nullptr);
+	}
+}
+
+void MacroActionEdit::ActionEnableChanged(bool value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	(*_entryData)->SetEnabled(value);
+	SetDisableEffect(!value);
 }
 
 std::shared_ptr<MacroSegment> MacroActionEdit::Data()

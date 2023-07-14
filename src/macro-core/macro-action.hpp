@@ -12,6 +12,11 @@ public:
 	virtual bool Save(obs_data_t *obj) const = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
 	virtual void LogAction() const;
+	void SetEnabled(bool);
+	bool Enabled() const;
+
+private:
+	bool _enabled = true;
 };
 
 class MacroRefAction : virtual public MacroAction {

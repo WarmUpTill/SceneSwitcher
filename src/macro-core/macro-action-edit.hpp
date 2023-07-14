@@ -6,6 +6,8 @@
 
 namespace advss {
 
+class SwitchButton;
+
 struct MacroActionInfo {
 	using TCreateMethod = std::shared_ptr<MacroAction> (*)(Macro *m);
 	using TCreateWidgetMethod = QWidget *(*)(QWidget *parent,
@@ -44,11 +46,14 @@ public:
 
 private slots:
 	void ActionSelectionChanged(const QString &text);
+	void ActionEnableChanged(bool);
 
 private:
 	std::shared_ptr<MacroSegment> Data();
+	void SetDisableEffect(bool);
 
 	FilterComboBox *_actionSelection;
+	SwitchButton *_enable;
 
 	std::shared_ptr<MacroAction> *_entryData;
 	bool _loading = true;
