@@ -302,6 +302,8 @@ target_sources(
           src/utils/string-list.hpp
           src/utils/striped-frame.cpp
           src/utils/striped-frame.hpp
+          src/utils/switch-button.cpp
+          src/utils/switch-button.hpp
           src/utils/sync-helper.cpp
           src/utils/sync-helper.hpp
           src/utils/transition-selection.cpp
