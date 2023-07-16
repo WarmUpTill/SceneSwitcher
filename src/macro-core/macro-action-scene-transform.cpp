@@ -235,6 +235,7 @@ void MacroActionSceneTransform::Transform(obs_scene_item *item)
 		center(item, CenterType::HORIZONTAL);
 		break;
 	case MacroActionSceneTransform::Action::MANUAL_TRANSFORM:
+		ApplySettings(_settings); // Resolves variables
 		obs_sceneitem_defer_update_begin(item);
 		obs_sceneitem_set_info(item, &_info);
 		obs_sceneitem_set_crop(item, &_crop);
@@ -245,12 +246,9 @@ void MacroActionSceneTransform::Transform(obs_scene_item *item)
 
 bool MacroActionSceneTransform::PerformAction()
 {
-	ApplySettings(_settings); // Resolves variables
-
 	auto items = _source.GetSceneItems(_scene);
-	for (auto &item : items) {
+	for (const auto &item : items) {
 		Transform(item);
-		obs_sceneitem_release(item);
 	}
 	return true;
 }
@@ -344,9 +342,6 @@ void MacroActionSceneTransform::ApplySettings(const std::string &settings)
 				w / double(obs_source_get_width(source));
 		}
 		obs_data_release(obj);
-	}
-	for (auto item : items) {
-		obs_sceneitem_release(item);
 	}
 	obs_data_release(data);
 }
@@ -455,6 +450,8 @@ void MacroActionSceneTransformEdit::SourceChanged(const SceneItemSelection &item
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionSceneTransformEdit::ActionChanged(int idx)
@@ -492,9 +489,6 @@ void MacroActionSceneTransformEdit::GetSettingsClicked()
 
 	auto settings = GetSceneItemTransform(items[0]);
 	_settings->setPlainText(FormatJsonString(settings));
-	for (auto item : items) {
-		obs_sceneitem_release(item);
-	}
 }
 
 void MacroActionSceneTransformEdit::SettingsChanged()

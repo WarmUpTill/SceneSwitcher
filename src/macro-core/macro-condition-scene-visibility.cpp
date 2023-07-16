@@ -24,32 +24,30 @@ const static std::map<MacroConditionSceneVisibility::Condition, std::string>
 		 "AdvSceneSwitcher.condition.sceneVisibility.type.changed"},
 };
 
-static bool areAllSceneItemsShown(const std::vector<obs_scene_item *> &items)
+static bool areAllSceneItemsShown(const std::vector<OBSSceneItem> &items)
 {
 	bool ret = true;
-	for (auto item : items) {
+	for (const auto &item : items) {
 		if (!obs_sceneitem_visible(item)) {
 			ret = false;
 		}
-		obs_sceneitem_release(item);
 	}
 	return ret;
 }
 
-static bool areAllSceneItemsHidden(const std::vector<obs_scene_item *> &items)
+static bool areAllSceneItemsHidden(const std::vector<OBSSceneItem> &items)
 {
 	bool ret = true;
-	for (auto item : items) {
+	for (const auto &item : items) {
 		if (obs_sceneitem_visible(item)) {
 			ret = false;
 		}
-		obs_sceneitem_release(item);
 	}
 	return ret;
 }
 
 static bool
-didVisibilityOfAnySceneItemsChange(const std::vector<obs_scene_item *> &items,
+didVisibilityOfAnySceneItemsChange(const std::vector<OBSSceneItem> &items,
 				   std::vector<bool> &previousVisibility)
 {
 	std::vector<bool> currentVisibility;
@@ -64,10 +62,6 @@ didVisibilityOfAnySceneItemsChange(const std::vector<obs_scene_item *> &items,
 		ret = previousVisibility != currentVisibility;
 	}
 	previousVisibility = currentVisibility;
-
-	for (const auto &item : items) {
-		obs_sceneitem_release(item);
-	}
 	return ret;
 }
 
@@ -86,10 +80,10 @@ bool MacroConditionSceneVisibility::CheckCondition()
 	case Condition::CHANGED:
 		return didVisibilityOfAnySceneItemsChange(items,
 							  _previousVisibilty);
-		break;
 	default:
 		break;
 	}
+
 	return false;
 }
 
@@ -129,7 +123,7 @@ std::string MacroConditionSceneVisibility::GetShortDesc() const
 
 static inline void populateConditionSelection(QComboBox *list)
 {
-	for (auto entry : conditionTypes) {
+	for (const auto &entry : conditionTypes) {
 		list->addItem(obs_module_text(entry.second.c_str()));
 	}
 }
@@ -183,6 +177,8 @@ void MacroConditionSceneVisibilityEdit::SourceChanged(
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionSceneVisibilityEdit::SceneChanged(const SceneSelection &s)

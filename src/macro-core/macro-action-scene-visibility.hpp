@@ -7,17 +7,6 @@
 
 namespace advss {
 
-enum class SceneVisibilityAction {
-	SHOW,
-	HIDE,
-	TOGGLE,
-};
-
-enum class SceneItemSourceType {
-	SOURCE,
-	SOURCE_GROUP,
-};
-
 class MacroActionSceneVisibility : public MacroAction {
 public:
 	MacroActionSceneVisibility(Macro *m) : MacroAction(m) {}
@@ -33,10 +22,14 @@ public:
 	}
 
 	SceneSelection _scene;
-	SceneItemSourceType _sourceType = SceneItemSourceType::SOURCE;
 	SceneItemSelection _source;
-	std::string _sourceGroup = "";
-	SceneVisibilityAction _action = SceneVisibilityAction::SHOW;
+
+	enum class Action {
+		SHOW,
+		HIDE,
+		TOGGLE,
+	};
+	Action _action = Action::SHOW;
 
 private:
 	static bool _registered;
@@ -62,25 +55,18 @@ public:
 
 private slots:
 	void SceneChanged(const SceneSelection &);
-	void SourceTypeChanged(int value);
 	void SourceChanged(const SceneItemSelection &);
-	void SourceGroupChanged(const QString &text);
 	void ActionChanged(int value);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
 	SceneSelectionWidget *_scenes;
-	QComboBox *_sourceTypes;
 	SceneItemSelectionWidget *_sources;
-	QComboBox *_sourceGroups;
 	QComboBox *_actions;
 	std::shared_ptr<MacroActionSceneVisibility> _entryData;
 
 private:
-	void SetWidgetVisibility();
-
-	QHBoxLayout *_mainLayout;
 	bool _loading = true;
 };
 
