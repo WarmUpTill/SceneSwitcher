@@ -88,7 +88,7 @@ void MacroActionTransition::SetSourceTransition(bool show)
 	obs_source_release(transition);
 
 	const auto items = _source.GetSceneItems(_scene);
-	for (auto &item : items) {
+	for (const auto &item : items) {
 		if (_setTransitionType) {
 			obs_sceneitem_set_transition(item, show, t);
 		}
@@ -96,7 +96,6 @@ void MacroActionTransition::SetSourceTransition(bool show)
 			obs_sceneitem_set_transition_duration(
 				item, show, _duration.Milliseconds());
 		}
-		obs_sceneitem_release(item);
 	}
 
 	obs_source_release(t);
@@ -200,7 +199,7 @@ std::string MacroActionTransition::GetShortDesc() const
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (auto entry : actionTypes) {
+	for (const auto &entry : actionTypes) {
 		list->addItem(obs_module_text(entry.second.c_str()));
 	}
 }
@@ -298,6 +297,8 @@ void MacroActionTransitionEdit::SourceChanged(const SceneItemSelection &item)
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionTransitionEdit::ActionChanged(int value)

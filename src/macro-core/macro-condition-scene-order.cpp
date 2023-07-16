@@ -29,16 +29,16 @@ struct PosInfo2 {
 static bool getSceneItemPositionHelper(obs_scene_t *, obs_sceneitem_t *item,
 				       void *ptr)
 {
-	PosInfo2 *posInfo = reinterpret_cast<PosInfo2 *>(ptr);
+	auto posInfo = reinterpret_cast<PosInfo2 *>(ptr);
+	if (obs_sceneitem_is_group(item)) {
+		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
+		obs_scene_enum_items(scene, getSceneItemPositionHelper, ptr);
+	}
 	if (posInfo->item == item) {
 		posInfo->pos = posInfo->curPos;
 		return false;
 	}
 
-	if (obs_sceneitem_is_group(item)) {
-		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
-		obs_scene_enum_items(scene, getSceneItemPositionHelper, ptr);
-	}
 	posInfo->curPos += 1;
 	return true;
 }
@@ -50,11 +50,11 @@ static PosInfo2 getSceneItemPos(obs_scene_item *item, obs_scene *scene)
 	return pos;
 }
 
-std::vector<int> getSceneItemPositions(std::vector<obs_scene_item *> &items,
-				       obs_scene *scene)
+static std::vector<int> getSceneItemPositions(std::vector<OBSSceneItem> &items,
+					      obs_scene *scene)
 {
 	std::vector<int> positions;
-	for (auto item : items) {
+	for (const auto &item : items) {
 		auto pos = getSceneItemPos(item, scene);
 		if (pos.pos != -1) {
 			positions.emplace_back(pos.pos);
@@ -106,13 +106,6 @@ bool MacroConditionSceneOrder::CheckCondition()
 	auto positions1 = getSceneItemPositions(items1, scene);
 	auto positions2 = getSceneItemPositions(items2, scene);
 
-	for (auto i : items1) {
-		obs_sceneitem_release(i);
-	}
-	for (auto i : items2) {
-		obs_sceneitem_release(i);
-	}
-
 	bool ret = false;
 
 	switch (_condition) {
@@ -124,8 +117,9 @@ bool MacroConditionSceneOrder::CheckCondition()
 		break;
 	case Condition::POSITION:
 		for (int p : positions1) {
-			if (p == _position)
+			if (p == _position) {
 				ret = true;
+			}
 		}
 		break;
 	default:
@@ -195,7 +189,7 @@ std::string MacroConditionSceneOrder::GetShortDesc() const
 
 static inline void populateConditionSelection(QComboBox *list)
 {
-	for (auto entry : sceneOrderConditionTypes) {
+	for (const auto &entry : sceneOrderConditionTypes) {
 		list->addItem(obs_module_text(entry.second.c_str()));
 	}
 }
@@ -282,6 +276,8 @@ void MacroConditionSceneOrderEdit::SourceChanged(const SceneItemSelection &item)
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionSceneOrderEdit::Source2Changed(const SceneItemSelection &item)
@@ -294,6 +290,8 @@ void MacroConditionSceneOrderEdit::Source2Changed(const SceneItemSelection &item
 	_entryData->_source2 = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionSceneOrderEdit::ConditionChanged(int index)

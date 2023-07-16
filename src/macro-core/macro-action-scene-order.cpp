@@ -23,7 +23,7 @@ const static std::map<SceneOrderAction, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.sceneOrder.type.movePosition"},
 };
 
-static void moveSceneItemsUp(std::vector<obs_scene_item *> &items)
+static void moveSceneItemsUp(std::vector<OBSSceneItem> &items)
 {
 	// In the case of the same source being in two sequential positions
 	// moving the sources up will cause the sources to swap positions due to
@@ -33,41 +33,36 @@ static void moveSceneItemsUp(std::vector<obs_scene_item *> &items)
 	// will be moved up.
 	std::reverse(items.begin(), items.end());
 
-	for (auto &i : items) {
+	for (const auto &i : items) {
 		obs_sceneitem_set_order(i, OBS_ORDER_MOVE_UP);
-		obs_sceneitem_release(i);
 	}
 }
 
-static void moveSceneItemsDown(std::vector<obs_scene_item *> &items)
+static void moveSceneItemsDown(std::vector<OBSSceneItem> &items)
 {
-	for (auto &i : items) {
+	for (const auto &i : items) {
 		obs_sceneitem_set_order(i, OBS_ORDER_MOVE_DOWN);
-		obs_sceneitem_release(i);
 	}
 }
 
-static void moveSceneItemsTop(std::vector<obs_scene_item *> &items)
+static void moveSceneItemsTop(std::vector<OBSSceneItem> &items)
 {
-	for (auto &i : items) {
+	for (const auto &i : items) {
 		obs_sceneitem_set_order(i, OBS_ORDER_MOVE_TOP);
-		obs_sceneitem_release(i);
 	}
 }
 
-static void moveSceneItemsBottom(std::vector<obs_scene_item *> &items)
+static void moveSceneItemsBottom(std::vector<OBSSceneItem> &items)
 {
-	for (auto &i : items) {
+	for (const auto &i : items) {
 		obs_sceneitem_set_order(i, OBS_ORDER_MOVE_BOTTOM);
-		obs_sceneitem_release(i);
 	}
 }
 
-static void moveSceneItemsPos(std::vector<obs_scene_item *> &items, int pos)
+static void moveSceneItemsPos(std::vector<OBSSceneItem> &items, int pos)
 {
-	for (auto &i : items) {
+	for (const auto &i : items) {
 		obs_sceneitem_set_order_position(i, pos);
-		obs_sceneitem_release(i);
 	}
 }
 
@@ -149,7 +144,7 @@ std::string MacroActionSceneOrder::GetShortDesc() const
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (auto entry : actionTypes) {
+	for (const auto &entry : actionTypes) {
 		list->addItem(obs_module_text(entry.second.c_str()));
 	}
 }
@@ -228,6 +223,8 @@ void MacroActionSceneOrderEdit::SourceChanged(const SceneItemSelection &item)
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionSceneOrderEdit::ActionChanged(int value)

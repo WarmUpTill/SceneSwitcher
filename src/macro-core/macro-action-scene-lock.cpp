@@ -39,9 +39,8 @@ bool MacroActionSceneLock::PerformAction()
 {
 
 	auto items = _source.GetSceneItems(_scene);
-	for (auto item : items) {
+	for (const auto &item : items) {
 		setSceneItemLock(item, _action);
-		obs_sceneitem_release(item);
 	}
 
 	return true;
@@ -160,6 +159,8 @@ void MacroActionSceneLockEdit::SourceChanged(const SceneItemSelection &item)
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionSceneLockEdit::ActionChanged(int value)

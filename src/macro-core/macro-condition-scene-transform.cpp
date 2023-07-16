@@ -18,12 +18,11 @@ bool MacroConditionSceneTransform::CheckCondition()
 	auto items = _source.GetSceneItems(_scene);
 
 	std::string json;
-	for (auto &item : items) {
+	for (const auto &item : items) {
 		json = GetSceneItemTransform(item);
 		if (MatchJson(json, _settings, _regex)) {
 			ret = true;
 		}
-		obs_sceneitem_release(item);
 	}
 	SetVariableValue(json);
 	return ret;
@@ -165,6 +164,8 @@ void MacroConditionSceneTransformEdit::SourceChanged(
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionSceneTransformEdit::GetSettingsClicked()
@@ -184,10 +185,6 @@ void MacroConditionSceneTransformEdit::GetSettingsClicked()
 		settings = EscapeForRegex(settings);
 	}
 	_settings->setPlainText(settings);
-
-	for (auto item : items) {
-		obs_sceneitem_release(item);
-	}
 }
 
 void MacroConditionSceneTransformEdit::SettingsChanged()
