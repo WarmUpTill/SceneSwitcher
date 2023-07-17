@@ -271,7 +271,7 @@ void VariableSelection::SetVariable(const std::string &variable)
 	if (!!GetVariableByName(variable)) {
 		_selection->setCurrentText(QString::fromStdString(variable));
 	} else {
-		_selection->setCurrentIndex(0);
+		_selection->setCurrentIndex(-1);
 	}
 }
 
@@ -282,7 +282,7 @@ void VariableSelection::SetVariable(const std::weak_ptr<Variable> &variable_)
 	if (var) {
 		SetVariable(var->Name());
 	} else {
-		_selection->setCurrentIndex(0);
+		_selection->setCurrentIndex(-1);
 	}
 }
 

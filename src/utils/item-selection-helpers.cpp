@@ -87,7 +87,7 @@ void ItemSelection::SetItem(const std::string &item)
 	if (!!GetItemByName(item, _items)) {
 		_selection->setCurrentText(QString::fromStdString(item));
 	} else {
-		_selection->setCurrentIndex(0);
+		_selection->setCurrentIndex(-1);
 	}
 }
 
@@ -97,7 +97,7 @@ void ItemSelection::ChangeSelection(const QString &sel)
 		auto item = _create();
 		bool accepted = _askForSettings(this, *item.get());
 		if (!accepted) {
-			_selection->setCurrentIndex(0);
+			_selection->setCurrentIndex(-1);
 			return;
 		}
 		_items.emplace_back(item);

@@ -38,7 +38,7 @@ void MacroSelection::SetCurrentMacro(const MacroRef &macro)
 {
 	auto m = macro.GetMacro();
 	if (!m) {
-		this->setCurrentIndex(0);
+		this->setCurrentIndex(-1);
 	} else {
 		this->setCurrentText(QString::fromStdString(m->Name()));
 	}
@@ -78,7 +78,7 @@ void MacroSelection::MacroRemove(const QString &name)
 		return;
 	}
 	removeItem(idx);
-	setCurrentIndex(0);
+	setCurrentIndex(-1);
 }
 
 void MacroSelection::MacroRename(const QString &oldName, const QString &newName)

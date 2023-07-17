@@ -84,28 +84,20 @@ void TransitionSelectionWidget::SetTransition(TransitionSelection &t)
 	// 2. Current transition
 	// 4. Transitions
 
-	int idx;
-
 	switch (t.GetType()) {
 	case TransitionSelection::Type::TRANSITION:
 		setCurrentText(QString::fromStdString(t.ToString()));
 		break;
 	case TransitionSelection::Type::CURRENT:
-		idx = findText(QString::fromStdString(
-			obs_module_text("AdvSceneSwitcher.currentTransition")));
-		if (idx != -1) {
-			setCurrentIndex(idx);
-		}
+		setCurrentIndex(findText(QString::fromStdString(obs_module_text(
+			"AdvSceneSwitcher.currentTransition"))));
 		break;
 	case TransitionSelection::Type::ANY:
-		idx = findText(QString::fromStdString(
-			obs_module_text("AdvSceneSwitcher.anyTransition")));
-		if (idx != -1) {
-			setCurrentIndex(idx);
-		}
+		setCurrentIndex(findText(QString::fromStdString(
+			obs_module_text("AdvSceneSwitcher.anyTransition"))));
 		break;
 	default:
-		setCurrentIndex(0);
+		setCurrentIndex(-1);
 		break;
 	}
 }
@@ -116,7 +108,7 @@ void TransitionSelectionWidget::Repopulate(bool current, bool any)
 		const QSignalBlocker blocker(this);
 		clear();
 		PopulateTransitionSelection(this, current, any);
-		setCurrentIndex(0);
+		setCurrentIndex(-1);
 	}
 	TransitionSelection t;
 	emit TransitionChanged(t);
