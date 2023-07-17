@@ -70,6 +70,9 @@ void FilterComboBox::CompleterHighlightChanged(const QModelIndex &index)
 	_lastCompleterHighlightRow = index.row();
 	const auto text = currentText();
 	int idx = findXthOccurance(this, _lastCompleterHighlightRow, text);
+	if (idx == -1) {
+		return;
+	}
 	emit currentIndexChanged(idx);
 	emit currentTextChanged(text);
 }
@@ -80,6 +83,9 @@ void FilterComboBox::TextChagned(const QString &text)
 	const bool completerActive = c->completionCount() > 0;
 	int count = completerActive ? _lastCompleterHighlightRow + 1 : 1;
 	int idx = findXthOccurance(this, count, text);
+	if (idx == -1) {
+		return;
+	}
 	emit currentIndexChanged(idx);
 	emit currentTextChanged(text);
 }
