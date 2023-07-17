@@ -276,7 +276,7 @@ void ConnectionSelection::SetConnection(const std::string &con)
 	if (!!GetConnectionByName(con)) {
 		_selection->setCurrentText(QString::fromStdString(con));
 	} else {
-		_selection->setCurrentIndex(0);
+		_selection->setCurrentIndex(-1);
 	}
 }
 
@@ -288,7 +288,7 @@ void ConnectionSelection::SetConnection(
 	if (connection) {
 		SetConnection(connection->Name());
 	} else {
-		_selection->setCurrentIndex(0);
+		_selection->setCurrentIndex(-1);
 	}
 }
 
