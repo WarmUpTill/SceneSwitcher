@@ -92,6 +92,8 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 			 SLOT(ActionEnableChanged(bool)));
 	QWidget::connect(window(), SIGNAL(HighlightActionsChanged(bool)), this,
 			 SLOT(EnableHighlight(bool)));
+	QWidget::connect(&_actionStateTimer, SIGNAL(timeout()), this,
+			 SLOT(UpdateActionState()));
 
 	populateActionSelection(_actionSelection);
 
@@ -99,12 +101,12 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	_section->AddHeaderWidget(_actionSelection);
 	_section->AddHeaderWidget(_headerInfo);
 
-	QVBoxLayout *actionLayout = new QVBoxLayout;
+	auto actionLayout = new QVBoxLayout;
 	actionLayout->setContentsMargins({7, 7, 7, 7});
 	actionLayout->addWidget(_section);
 	_contentLayout->addLayout(actionLayout);
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
+	auto mainLayout = new QHBoxLayout;
 	mainLayout->setContentsMargins(0, 0, 0, 0);
 	mainLayout->setSpacing(0);
 	mainLayout->addWidget(_frame);
@@ -113,6 +115,7 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	_entryData = entryData;
 	UpdateEntryData(id);
 
+	_actionStateTimer.start(300);
 	_loading = false;
 }
 
@@ -164,7 +167,7 @@ void MacroActionEdit::SetEntryData(std::shared_ptr<MacroAction> *data)
 	_entryData = data;
 }
 
-void advss::MacroActionEdit::SetDisableEffect(bool value)
+void MacroActionEdit::SetDisableEffect(bool value)
 {
 	if (value) {
 		auto effect = new QGraphicsOpacityEffect(this);
@@ -183,6 +186,21 @@ void MacroActionEdit::ActionEnableChanged(bool value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	(*_entryData)->SetEnabled(value);
+	SetDisableEffect(!value);
+}
+
+void MacroActionEdit::UpdateActionState()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	SetEnableAppearance((*_entryData)->Enabled());
+}
+
+void MacroActionEdit::SetEnableAppearance(bool value)
+{
+	_enable->setChecked(value);
 	SetDisableEffect(!value);
 }
 
