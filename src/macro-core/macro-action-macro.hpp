@@ -1,18 +1,11 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "macro-selection.hpp"
+#include "macro-segment-selection.hpp"
 
 #include <QHBoxLayout>
 
 namespace advss {
-
-enum class PerformMacroAction {
-	PAUSE,
-	UNPAUSE,
-	RESET_COUNTER,
-	RUN,
-	STOP,
-};
 
 class MacroActionMacro : public MacroRefAction {
 public:
@@ -28,7 +21,18 @@ public:
 		return std::make_shared<MacroActionMacro>(m);
 	}
 
-	PerformMacroAction _action = PerformMacroAction::PAUSE;
+	enum class Action {
+		PAUSE,
+		UNPAUSE,
+		RESET_COUNTER,
+		RUN,
+		STOP,
+		DISABLE_ACTION,
+		ENABLE_ACTION,
+		TOGGLE_ACTION,
+	};
+	Action _action = Action::PAUSE;
+	IntVariable _actionIndex = 1;
 
 private:
 	static bool _registered;
@@ -54,16 +58,19 @@ public:
 private slots:
 	void MacroChanged(const QString &text);
 	void ActionChanged(int value);
+	void ActionIndexChanged(const IntVariable &value);
 signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
 	MacroSelection *_macros;
+	MacroSegmentSelection *_actionIndex;
 	QComboBox *_actions;
 	std::shared_ptr<MacroActionMacro> _entryData;
 
 private:
-	QHBoxLayout *_mainLayout;
+	void SetWidgetVisibility();
+
 	bool _loading = true;
 };
 

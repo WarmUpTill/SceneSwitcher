@@ -47,15 +47,18 @@ public:
 private slots:
 	void ActionSelectionChanged(const QString &text);
 	void ActionEnableChanged(bool);
+	void UpdateActionState();
 
 private:
 	std::shared_ptr<MacroSegment> Data();
 	void SetDisableEffect(bool);
+	void SetEnableAppearance(bool);
 
 	FilterComboBox *_actionSelection;
 	SwitchButton *_enable;
 
 	std::shared_ptr<MacroAction> *_entryData;
+	QTimer _actionStateTimer;
 	bool _loading = true;
 };
 
