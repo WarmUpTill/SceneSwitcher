@@ -15,6 +15,8 @@ class RegexConfigDialog;
 
 class RegexConfig {
 public:
+	RegexConfig(bool enabled = false);
+
 	void Save(obs_data_t *obj, const char *name = "regexConfig") const;
 	void Load(obs_data_t *obj, const char *name = "regexConfig");
 
@@ -42,7 +44,7 @@ private:
 class RegexConfigWidget : public QWidget {
 	Q_OBJECT
 public:
-	RegexConfigWidget(QWidget *parent = nullptr);
+	RegexConfigWidget(QWidget *parent = nullptr, bool showEnable = true);
 	void SetRegexConfig(const RegexConfig &);
 
 public slots:
