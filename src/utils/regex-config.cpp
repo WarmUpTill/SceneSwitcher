@@ -6,6 +6,8 @@
 
 namespace advss {
 
+RegexConfig::RegexConfig(bool enabled) : _enable(enabled) {}
+
 void RegexConfig::Save(obs_data_t *obj, const char *name) const
 {
 	auto data = obs_data_create();
@@ -56,7 +58,7 @@ RegexConfig RegexConfig::PartialMatchRegexConfig()
 	return conf;
 }
 
-RegexConfigWidget::RegexConfigWidget(QWidget *parent)
+RegexConfigWidget::RegexConfigWidget(QWidget *parent, bool showEnable)
 	: QWidget(parent),
 	  _openSettings(new QPushButton()),
 	  _enable(new QPushButton())
@@ -82,6 +84,8 @@ RegexConfigWidget::RegexConfigWidget(QWidget *parent)
 	layout->addWidget(_enable);
 	layout->addWidget(_openSettings);
 	setLayout(layout);
+
+	_enable->setVisible(showEnable);
 }
 
 void RegexConfigWidget::SetRegexConfig(const RegexConfig &config)
