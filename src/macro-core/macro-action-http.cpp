@@ -156,6 +156,7 @@ MacroActionHttpEdit::MacroActionHttpEdit(
 	  _timeout(new DurationSelection(this, false))
 {
 	populateMethodSelection(_methods);
+	_headerList->SetMaxStringSize(4096);
 
 	QWidget::connect(_url, SIGNAL(editingFinished()), this,
 			 SLOT(URLChanged()));
