@@ -107,11 +107,17 @@ void StringListEdit::SetStringList(const StringList &list)
 	SetListSize();
 }
 
+void StringListEdit::SetMaxStringSize(int size)
+{
+	_maxStringSize = size;
+}
+
 void StringListEdit::Add()
 {
 	std::string name;
-	bool accepted = AdvSSNameDialog::AskForName(
-		this, _addString, _addStringDescription, name, "", 170, false);
+	bool accepted = AdvSSNameDialog::AskForName(this, _addString,
+						    _addStringDescription, name,
+						    "", _maxStringSize, false);
 
 	if (!accepted || name.empty()) {
 		return;
@@ -175,7 +181,8 @@ void StringListEdit::Clicked(QListWidgetItem *item)
 	std::string name;
 	bool accepted = AdvSSNameDialog::AskForName(this, _addString,
 						    _addStringDescription, name,
-						    item->text(), 170, false);
+						    item->text(),
+						    _maxStringSize, false);
 
 	if (!accepted || name.empty()) {
 		return;

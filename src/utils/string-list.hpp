@@ -27,6 +27,7 @@ public:
 	StringListEdit(QWidget *parent, const QString &addString = "",
 		       const QString &addStringDescription = "");
 	void SetStringList(const StringList &);
+	void SetMaxStringSize(int);
 
 private slots:
 	void Add();
@@ -50,6 +51,7 @@ private:
 
 	QString _addString;
 	QString _addStringDescription;
+	int _maxStringSize = 170;
 };
 
 } // namespace advss
