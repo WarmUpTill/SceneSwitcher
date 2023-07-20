@@ -3,6 +3,7 @@
 #include "scene-selection.hpp"
 #include "scene-item-selection.hpp"
 #include "variable-text-edit.hpp"
+#include "variable-spinbox.hpp"
 
 #include <QSpinBox>
 
@@ -22,11 +23,27 @@ public:
 		return std::make_shared<MacroActionSceneTransform>(m);
 	}
 
+	enum class Action {
+		RESET,
+		ROTATE,
+		FLIP_HORIZONTAL,
+		FLIP_VERTICAL,
+		FIT_TO_SCREEN,
+		STRETCH_TO_SCREEN,
+		CENTER_TO_SCREEN,
+		CENTER_VERTICALLY,
+		CENTER_HORIZONTALLY,
+		MANUAL_TRANSFORM = 100,
+	};
+
+	Action _action = Action::RESET;
 	SceneSelection _scene;
 	SceneItemSelection _source;
 	StringVariable _settings = "";
+	DoubleVariable _rotation = 90.0;
 
 private:
+	void Transform(obs_scene_item *);
 	void ApplySettings(const std::string &);
 	std::string ConvertSettings();
 
@@ -57,19 +74,25 @@ public:
 private slots:
 	void SceneChanged(const SceneSelection &);
 	void SourceChanged(const SceneItemSelection &);
+	void ActionChanged(int);
+	void RotationChanged(const NumberVariable<double> &value);
 	void GetSettingsClicked();
 	void SettingsChanged();
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	SceneSelectionWidget *_scenes;
 	SceneItemSelectionWidget *_sources;
+	QComboBox *_action;
+	VariableDoubleSpinBox *_rotation;
 	QPushButton *_getSettings;
 	VariableTextEdit *_settings;
-	std::shared_ptr<MacroActionSceneTransform> _entryData;
+	QHBoxLayout *_buttonLayout;
 
-private:
+	std::shared_ptr<MacroActionSceneTransform> _entryData;
 	bool _loading = true;
 };
 
