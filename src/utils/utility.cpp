@@ -24,6 +24,7 @@
 #include <QMainWindow>
 #include <QScreen>
 #include <QSpacerItem>
+#include <QScrollBar>
 #include <unordered_map>
 #include <regex>
 #include <set>
@@ -1108,19 +1109,32 @@ bool listMoveDown(QListWidget *list)
 	return true;
 }
 
+static int getHorizontalScrollBarHeight(QListWidget *list)
+{
+	if (!list) {
+		return 0;
+	}
+	auto horizontalScrollBar = list->horizontalScrollBar();
+	if (!horizontalScrollBar || !horizontalScrollBar->isVisible()) {
+		return 0;
+	}
+	return horizontalScrollBar->height();
+}
+
 void SetHeightToContentHeight(QListWidget *list)
 {
 	auto nrItems = list->count();
 	if (nrItems == 0) {
 		list->setMaximumHeight(0);
 		list->setMinimumHeight(0);
-	} else {
-		int height =
-			(list->sizeHintForRow(0) + list->spacing()) * nrItems +
-			2 * list->frameWidth();
-		list->setMinimumHeight(height);
-		list->setMaximumHeight(height);
+		return;
 	}
+
+	int scrollBarHeight = getHorizontalScrollBarHeight(list);
+	int height = (list->sizeHintForRow(0) + list->spacing()) * nrItems +
+		     2 * list->frameWidth() + scrollBarHeight;
+	list->setMinimumHeight(height);
+	list->setMaximumHeight(height);
 }
 
 bool DoubleEquals(double left, double right, double epsilon)

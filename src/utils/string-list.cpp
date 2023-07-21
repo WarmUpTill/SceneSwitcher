@@ -112,6 +112,17 @@ void StringListEdit::SetMaxStringSize(int size)
 	_maxStringSize = size;
 }
 
+void StringListEdit::showEvent(QShowEvent *e)
+{
+	QWidget::showEvent(e);
+	// This is necessary as the list viewport might not be updated yet
+	// while the list was hidden.
+	// Thus, previous calls to SetListSize() might not have resized the
+	// widget correctly, for example due to not regarding the horizontal
+	// scrollbar yet.
+	SetListSize();
+}
+
 void StringListEdit::Add()
 {
 	std::string name;
@@ -129,7 +140,9 @@ void StringListEdit::Add()
 	item->setData(Qt::UserRole, string);
 
 	_stringList << string;
-	SetListSize();
+
+	// Delay resizing to make sure the list viewport was already updated
+	QTimer::singleShot(0, this, [this]() { SetListSize(); });
 
 	StringListChanged(_stringList);
 }
@@ -147,7 +160,9 @@ void StringListEdit::Remove()
 		return;
 	}
 	delete item;
-	SetListSize();
+
+	// Delay resizing to make sure the list viewport was already updated
+	QTimer::singleShot(0, this, [this]() { SetListSize(); });
 
 	StringListChanged(_stringList);
 }
@@ -194,6 +209,9 @@ void StringListEdit::Clicked(QListWidgetItem *item)
 	item->setData(Qt::UserRole, string);
 	int idx = _list->currentRow();
 	_stringList[idx] = string;
+
+	// Delay resizing to make sure the list viewport was already updated
+	QTimer::singleShot(0, this, [this]() { SetListSize(); });
 
 	StringListChanged(_stringList);
 }
