@@ -29,6 +29,9 @@ public:
 	void SetStringList(const StringList &);
 	void SetMaxStringSize(int);
 
+protected:
+	void showEvent(QShowEvent *);
+
 private slots:
 	void Add();
 	void Remove();
