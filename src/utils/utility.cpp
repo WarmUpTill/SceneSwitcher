@@ -5,6 +5,9 @@
 #include "scene-group.hpp"
 #include "non-modal-dialog.hpp"
 #include "obs-module-helper.hpp"
+#include "macro.hpp"
+#include "macro-action-edit.hpp"
+#include "macro-condition-edit.hpp"
 
 #include <QStandardPaths>
 #include <QFile>
@@ -593,6 +596,58 @@ QStringList GetMonitorNames()
 		monitorNames << str;
 	}
 	return monitorNames;
+}
+
+bool IsValidMacroSegmentIndex(Macro *m, const int idx, bool isCondition)
+{
+	if (!m || idx < 0) {
+		return false;
+	}
+	if (isCondition) {
+		if (idx >= m->Conditions().size()) {
+			return false;
+		}
+	} else {
+		if (idx >= m->Actions().size()) {
+			return false;
+		}
+	}
+	return true;
+}
+
+QString GetMacroSegmentDescription(Macro *macro, int idx, bool isCondition)
+{
+	if (!macro) {
+		return "";
+	}
+	if (!IsValidMacroSegmentIndex(macro, idx, isCondition)) {
+		return "";
+	}
+
+	MacroSegment *segment;
+	if (isCondition) {
+		segment = macro->Conditions().at(idx).get();
+	} else {
+		segment = macro->Actions().at(idx).get();
+	}
+
+	QString description = QString::fromStdString(segment->GetShortDesc());
+	QString type;
+	if (isCondition) {
+		type = obs_module_text(MacroConditionFactory::GetConditionName(
+					       segment->GetId())
+					       .c_str());
+	} else {
+		type = obs_module_text(
+			MacroActionFactory::GetActionName(segment->GetId())
+				.c_str());
+	}
+
+	QString result = type;
+	if (!description.isEmpty()) {
+		result += ": " + description;
+	}
+	return result;
 }
 
 QStringList GetSourceNames()

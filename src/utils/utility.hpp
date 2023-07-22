@@ -17,6 +17,7 @@ namespace advss {
 class SceneSelection;
 class RegexConfig;
 struct SceneGroup;
+class Macro;
 
 /* Source helpers */
 
@@ -126,6 +127,8 @@ void ReplaceAll(std::string &str, const std::string &from,
 QString GetDefaultSettingsSaveLocation();
 std::string GetPathInProfileDir(const char *filePath);
 QStringList GetMonitorNames();
+bool IsValidMacroSegmentIndex(Macro *m, const int idx, bool isCondition);
+QString GetMacroSegmentDescription(Macro *, int idx, bool isCondition);
 
 /* Legacy helpers */
 
