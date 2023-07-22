@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "macro-segment-selection.hpp"
 #include "regex-config.hpp"
 #include "resizing-text-edit.hpp"
 #include "variable-line-edit.hpp"
@@ -93,7 +94,7 @@ private slots:
 	void ActionChanged(int);
 	void StrValueChanged();
 	void NumValueChanged(double);
-	void SegmentIndexChanged(int val);
+	void SegmentIndexChanged(const IntVariable &);
 	void UpdateSegmentVariableValue();
 	void MacroSegmentOrderChanged();
 	void SubStringStartChanged(int val);
@@ -116,7 +117,7 @@ protected:
 	QComboBox *_actions;
 	ResizingPlainTextEdit *_strValue;
 	QDoubleSpinBox *_numValue;
-	QSpinBox *_segmentIdx;
+	MacroSegmentSelection *_segmentIdx;
 	QLabel *_segmentValueStatus;
 	ResizingPlainTextEdit *_segmentValue;
 	QVBoxLayout *_substringLayout;
@@ -138,7 +139,6 @@ protected:
 	std::shared_ptr<MacroActionVariable> _entryData;
 
 private:
-	void MarkSelectedSegment();
 	void SetWidgetVisibility();
 	void SetSegmentValueError(const QString &);
 

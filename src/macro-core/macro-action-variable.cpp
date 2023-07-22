@@ -373,7 +373,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _actions(new QComboBox()),
 	  _strValue(new ResizingPlainTextEdit(this, 5, 1, 1)),
 	  _numValue(new QDoubleSpinBox()),
-	  _segmentIdx(new QSpinBox()),
+	  _segmentIdx(new MacroSegmentSelection(
+		  this, MacroSegmentSelection::Type::CONDITION, false)),
 	  _segmentValueStatus(new QLabel()),
 	  _segmentValue(new ResizingPlainTextEdit(this, 10, 1, 1)),
 	  _substringLayout(new QVBoxLayout()),
@@ -395,9 +396,6 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 {
 	_numValue->setMinimum(-9999999999);
 	_numValue->setMaximum(9999999999);
-	_segmentIdx->setMinimum(0);
-	_segmentIdx->setMaximum(99);
-	_segmentIdx->setSpecialValueText("-");
 	_segmentValue->setReadOnly(true);
 	_subStringStart->setMinimum(1);
 	_subStringStart->setMaximum(99999);
@@ -424,8 +422,9 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 SLOT(StrValueChanged()));
 	QWidget::connect(_numValue, SIGNAL(valueChanged(double)), this,
 			 SLOT(NumValueChanged(double)));
-	QWidget::connect(_segmentIdx, SIGNAL(valueChanged(int)), this,
-			 SLOT(SegmentIndexChanged(int)));
+	QWidget::connect(_segmentIdx,
+			 SIGNAL(SelectionChanged(const IntVariable &)), this,
+			 SLOT(SegmentIndexChanged(const IntVariable &)));
 	QWidget::connect(window(), SIGNAL(MacroSegmentOrderChanged()), this,
 			 SLOT(MacroSegmentOrderChanged()));
 	QWidget::connect(_subStringStart, SIGNAL(valueChanged(int)), this,
@@ -529,7 +528,13 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_type));
 	_strValue->setPlainText(QString::fromStdString(_entryData->_strValue));
 	_numValue->setValue(_entryData->_numValue);
-	_segmentIdx->setValue(_entryData->GetSegmentIndexValue() + 1);
+	_segmentIdx->SetValue(_entryData->GetSegmentIndexValue() + 1);
+	_segmentIdx->SetMacro(_entryData->GetMacro());
+	_segmentIdx->SetType(
+		_entryData->_type ==
+				MacroActionVariable::Type::SET_CONDITION_VALUE
+			? MacroSegmentSelection::Type::CONDITION
+			: MacroSegmentSelection::Type::ACTION);
 	_subStringStart->setValue(_entryData->_subStringStart + 1);
 	_subStringSize->setValue(_entryData->_subStringSize);
 	_regex->SetRegexConfig(_entryData->_regex);
@@ -573,13 +578,14 @@ void MacroActionVariableEdit::ActionChanged(int value)
 
 	auto lock = LockContext();
 	_entryData->_type = static_cast<MacroActionVariable::Type>(value);
-	SetWidgetVisibility();
 
-	if (_entryData->_type == MacroActionVariable::Type::SET_ACTION_VALUE ||
-	    _entryData->_type ==
-		    MacroActionVariable::Type::SET_CONDITION_VALUE) {
-		MarkSelectedSegment();
+	if (_entryData->_type == MacroActionVariable::Type::SET_ACTION_VALUE) {
+		_segmentIdx->SetType(MacroSegmentSelection::Type::ACTION);
+	} else if (_entryData->_type ==
+		   MacroActionVariable::Type::SET_CONDITION_VALUE) {
+		_segmentIdx->SetType(MacroSegmentSelection::Type::CONDITION);
 	}
+	SetWidgetVisibility();
 }
 
 void MacroActionVariableEdit::StrValueChanged()
@@ -604,7 +610,7 @@ void MacroActionVariableEdit::NumValueChanged(double val)
 	_entryData->_numValue = val;
 }
 
-void MacroActionVariableEdit::SegmentIndexChanged(int val)
+void MacroActionVariableEdit::SegmentIndexChanged(const IntVariable &val)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -612,7 +618,6 @@ void MacroActionVariableEdit::SegmentIndexChanged(int val)
 
 	auto lock = LockContext();
 	_entryData->SetSegmentIndexValue(val - 1);
-	MarkSelectedSegment();
 }
 
 void MacroActionVariableEdit::SetSegmentValueError(const QString &text)
@@ -645,7 +650,7 @@ void MacroActionVariableEdit::UpdateSegmentVariableValue()
 		SetSegmentValueError(obs_module_text(
 			"AdvSceneSwitcher.action.variable.invalidSelection"));
 		const QSignalBlocker b(_segmentIdx);
-		_segmentIdx->setValue(index);
+		_segmentIdx->SetValue(0);
 		return;
 	}
 
@@ -704,7 +709,7 @@ void MacroActionVariableEdit::UpdateSegmentVariableValue()
 void MacroActionVariableEdit::MacroSegmentOrderChanged()
 {
 	const QSignalBlocker b(_segmentIdx);
-	_segmentIdx->setValue(_entryData->GetSegmentIndexValue() + 1);
+	_segmentIdx->SetValue(_entryData->GetSegmentIndexValue() + 1);
 }
 
 void MacroActionVariableEdit::SubStringStartChanged(int val)
@@ -832,42 +837,6 @@ void MacroActionVariableEdit::InputPromptChanged()
 
 	auto lock = LockContext();
 	_entryData->_inputPrompt = _inputPrompt->text().toStdString();
-}
-
-void MacroActionVariableEdit::MarkSelectedSegment()
-{
-	if (switcher->disableHints) {
-		return;
-	}
-
-	auto m = _entryData->GetMacro();
-	if (!m) {
-		return;
-	}
-
-	int index = _entryData->GetSegmentIndexValue();
-	if (index < 0) {
-		return;
-	}
-
-	if (_entryData->_type == MacroActionVariable::Type::SET_ACTION_VALUE) {
-		const auto &actions = m->Actions();
-		if (index >= (int)actions.size()) {
-			return;
-		}
-		AdvSceneSwitcher::window->HighlightAction(
-			index, QColor(Qt::lightGray));
-	} else {
-		const auto &conditions = m->Conditions();
-		if (index >= (int)conditions.size()) {
-			return;
-		}
-		AdvSceneSwitcher::window->HighlightCondition(
-			index, QColor(Qt::lightGray));
-	}
-
-	PulseWidget(_segmentIdx, QColor(Qt::lightGray), QColor(0, 0, 0, 0),
-		    true);
 }
 
 void MacroActionVariableEdit::SetWidgetVisibility()
