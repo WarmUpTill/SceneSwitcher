@@ -2,7 +2,7 @@
 #include "macro-condition-edit.hpp"
 #include "macro-selection.hpp"
 #include "macro-list.hpp"
-#include "variable-spinbox.hpp"
+#include "macro-segment-selection.hpp"
 
 #include <QComboBox>
 #include <QSpinBox>
@@ -37,6 +37,8 @@ public:
 		COUNT,
 		STATE,
 		MULTI_STATE,
+		ACTION_DISABLED,
+		ACTION_ENABLED,
 	};
 	Type _type = Type::STATE;
 
@@ -55,11 +57,13 @@ public:
 	};
 	MultiStateCondition _multiSateCondition = MultiStateCondition::ABOVE;
 	NumberVariable<int> _multiSateCount = 0;
+	IntVariable _actionIndex = 1;
 
 private:
 	bool CheckCountCondition();
 	bool CheckStateCondition();
 	bool CheckMultiStateCondition();
+	bool CheckActionStateCondition();
 
 	static bool _registered;
 	static const std::string id;
@@ -95,6 +99,7 @@ private slots:
 	void Add(const std::string &);
 	void Remove(int);
 	void Replace(int, const std::string &);
+	void ActionIndexChanged(const IntVariable &value);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -111,15 +116,18 @@ protected:
 	MacroList *_macroList;
 	QComboBox *_multiStateConditions;
 	VariableSpinBox *_multiStateCount;
+	MacroSegmentSelection *_actionIndex;
 	QTimer _countTimer;
 	QTimer _pausedTimer;
 	std::shared_ptr<MacroConditionMacro> _entryData;
 
 private:
 	void ClearLayouts();
+	void SetupWidgets();
 	void SetupStateWidgets();
 	void SetupMultiStateWidgets();
 	void SetupCountWidgets();
+	void SetupActionStateWidgets(bool enable);
 	void SetWidgetVisibility();
 	bool _loading = true;
 };
