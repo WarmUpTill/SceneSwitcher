@@ -405,6 +405,55 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         log_info "Clean up openssl dir..."
         mv openssl_x86 openssl
         rm -rf openssl_arm
+        popd
+
+        pushd ${project_root}/deps/libusb
+        log_info "Prepare libusb ..."
+
+        log_info "Building libusb x86 (deps) ..."
+        export MACOSX_DEPLOYMENT_TARGET=10.9
+        mkdir ${project_root}/deps/libusb/out_x86
+        ./autogen.sh
+        ./configure --host=x86_64-apple-darwin --prefix=${advss_dep_path}
+        make && make install
+
+        log_info "Building libusb x86 ..."
+        make clean
+        rm -r ${project_root}/deps/libusb/out_x86
+        mkdir ${project_root}/deps/libusb/out_x86
+        ./configure --host=aarch64-apple-darwin --prefix=${project_root}/deps/libusb/out_x86
+        make && make install
+
+        log_info "Building libusb arm ..."
+        make clean
+        export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+        export CC=$(xcrun --sdk macosx --find clang)
+        export CXX=$(xcrun --sdk macosx --find clang++)
+        export CFLAGS="-arch arm64 -isysroot $SDKROOT"
+        export CXXFLAGS="-arch arm64 -isysroot $SDKROOT"
+        export LDFLAGS="-arch arm64 -isysroot $SDKROOT"
+        export MACOSX_DEPLOYMENT_TARGET=10.15
+        mkdir ${project_root}/deps/libusb/out_arm
+        ./configure --host=aarch64-apple-darwin --prefix=${project_root}/deps/libusb/out_arm
+        make && make install
+
+        log_info "Combine arm and x86 libusb binaries ..."
+        lipo -create ${project_root}/deps/libusb/out_x86/lib/libusb-1.0.0.dylib \
+          ${project_root}/deps/libusb/out_arm/lib/libusb-1.0.0.dylib \
+          -output ${advss_dep_path}/lib/temp-libusb-1.0.0.dylib
+        mv ${advss_dep_path}/lib/temp-libusb-1.0.0.dylib ${advss_dep_path}/lib/libusb-1.0.0.dylib
+        install_name_tool -id @rpath/libusb-1.0.0.dylib ${advss_dep_path}/lib/libusb-1.0.0.dylib
+        log_info "Clean up libusb ..."
+
+        unset SDKROOT
+        unset CC
+        unset CXX
+        unset CFLAGS
+        unset CXXFLAGS
+        unset LDFLAGS
+        unset MACOSX_DEPLOYMENT_TARGET
+
+        popd
       ;;
     linux)
       # Nothing to do for now
