@@ -247,7 +247,8 @@ VariableSelection::VariableSelection(QWidget *parent)
 	: ItemSelection(switcher->variables, Variable::Create,
 			AskForSettingsWrapper,
 			"AdvSceneSwitcher.variable.select",
-			"AdvSceneSwitcher.variable.add", parent)
+			"AdvSceneSwitcher.variable.add",
+			"AdvSceneSwitcher.variable.configure", parent)
 {
 	// Connect to slots
 	QWidget::connect(
