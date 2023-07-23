@@ -199,6 +199,26 @@ function Build {
 
     Log-Information "Install tesseract..."
     Invoke-External cmake --install "${TesseractBuildPath}" --prefix "${ADVSSDepPath}" @TesseractCmakeArgs
+
+    Push-Location -Stack BuildLibusbTemp
+    Ensure-Location $ProjectRoot
+
+    $LibusbPath = "${ProjectRoot}/deps/libusb"
+
+    Log-Information "Building libusb..."
+    $msbuildExe = vswhere -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe | select-object -first 1
+
+    if ($msbuildExe) {
+        Invoke-External $msbuildExe "${LibusbPath}/msvc/libusb.sln" /property:Configuration=Release /property:Platform=x64
+
+        $libusbBuildResultDirectory = "${LibusbPath}/build/v143/x64/Release"
+        if (-not (Test-Path -Path $libusbBuildResultDirectory)) {
+            $libusbBuildResultDirectory = "${LibusbPath}/x64/Release/dll"
+        }
+        Copy-Item -Path "${libusbBuildResultDirectory}/*" -Destination ${ADVSSDepPath} -Recurse -Force
+    } else {
+        Log-Information "Failed to locate msbuild.exe - skipping libusb build"
+    }
 }
 
 Build

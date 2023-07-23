@@ -1,3 +1,4 @@
 package 'cmake', path: 'Cmake\bin', bin: 'cmake'
 package 'innosetup', path: 'Inno Setup 6', bin: 'iscc'
 package 'OpenSSL', path: 'OpenSSL', bin: 'openssl'
+package 'Microsoft.VisualStudio.Locator', path: 'vswhere', bin: 'vswhere'
