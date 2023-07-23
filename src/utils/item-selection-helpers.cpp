@@ -46,7 +46,7 @@ static bool ItemNameAvailable(const std::string &name,
 ItemSelection::ItemSelection(std::deque<std::shared_ptr<Item>> &items,
 			     CreateItemFunc create, SettingsCallback callback,
 			     std::string_view select, std::string_view add,
-			     QWidget *parent)
+			     std::string_view configureTooltip, QWidget *parent)
 	: QWidget(parent),
 	  _selection(new FilterComboBox(this, obs_module_text(select.data()))),
 	  _modify(new QPushButton),
@@ -59,6 +59,9 @@ ItemSelection::ItemSelection(std::deque<std::shared_ptr<Item>> &items,
 	_modify->setMaximumWidth(22);
 	SetButtonIcon(_modify, ":/settings/images/settings/general.svg");
 	_modify->setFlat(true);
+	if (!configureTooltip.empty()) {
+		_modify->setToolTip(obs_module_text(configureTooltip.data()));
+	}
 
 	// Connect to slots
 	QWidget::connect(_selection,

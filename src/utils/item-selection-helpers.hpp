@@ -68,11 +68,12 @@ class ItemSelection : public QWidget {
 	Q_OBJECT
 
 public:
-	ItemSelection(std::deque<std::shared_ptr<Item>> &, CreateItemFunc,
-		      SettingsCallback,
-		      std::string_view = "AdvSceneSwitcher.item.select",
-		      std::string_view = "AdvSceneSwitcher.item.select",
-		      QWidget *parent = 0);
+	ItemSelection(
+		std::deque<std::shared_ptr<Item>> &, CreateItemFunc,
+		SettingsCallback,
+		std::string_view selectString = "AdvSceneSwitcher.item.select",
+		std::string_view addString = "AdvSceneSwitcher.item.add",
+		std::string_view configureTooltip = "", QWidget *parent = 0);
 	virtual ~ItemSelection() = default;
 	void SetItem(const std::string &);
 

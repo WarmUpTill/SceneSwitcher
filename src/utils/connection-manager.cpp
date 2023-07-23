@@ -247,7 +247,8 @@ ConnectionSelection::ConnectionSelection(QWidget *parent)
 	: ItemSelection(switcher->connections, Connection::Create,
 			AskForSettingsWrapper,
 			"AdvSceneSwitcher.connection.select",
-			"AdvSceneSwitcher.connection.add", parent)
+			"AdvSceneSwitcher.connection.add",
+			"AdvSceneSwitcher.connection.configure", parent)
 {
 	// Connect to slots
 	QWidget::connect(
