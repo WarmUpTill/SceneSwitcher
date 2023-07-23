@@ -66,6 +66,8 @@ RegexConfigWidget::RegexConfigWidget(QWidget *parent, bool showEnable)
 	_openSettings->setMaximumWidth(22);
 	SetButtonIcon(_openSettings, ":/settings/images/settings/general.svg");
 	_openSettings->setFlat(true);
+	_openSettings->setToolTip(
+		obs_module_text("AdvSceneSwitcher.regex.configure"));
 
 	_enable->setToolTip(obs_module_text("AdvSceneSwitcher.regex.enable"));
 	_enable->setMaximumWidth(22);
