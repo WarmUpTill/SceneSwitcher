@@ -263,6 +263,8 @@ target_sources(
           src/utils/filter-selection.hpp
           src/utils/macro-list.cpp
           src/utils/macro-list.hpp
+          src/utils/macro-segment-selection.cpp
+          src/utils/macro-segment-selection.hpp
           src/utils/math-helpers.cpp
           src/utils/math-helpers.hpp
           src/utils/mouse-wheel-guard.cpp
