@@ -8,7 +8,7 @@ const std::string MacroConditionHotkey::id = "hotkey";
 bool MacroConditionHotkey::_registered = MacroConditionFactory::Register(
 	MacroConditionHotkey::id,
 	{MacroConditionHotkey::Create, MacroConditionHotkeyEdit::Create,
-	 "AdvSceneSwitcher.condition.hotkey", false});
+	 "AdvSceneSwitcher.condition.hotkey"});
 
 static uint32_t count = 1;
 
