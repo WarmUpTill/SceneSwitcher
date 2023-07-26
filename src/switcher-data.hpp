@@ -18,10 +18,8 @@
 
 #include "macro-properties.hpp"
 #include "duration-control.hpp"
-#include "connection-manager.hpp"
 #include "curl-helper.hpp"
 #include "priority-helper.hpp"
-
 #include "log-helper.hpp"
 
 #include <condition_variable>
