@@ -14,6 +14,7 @@ public:
 	GenericVaraiableSpinbox(QWidget *parent, bool wholeNumber);
 	void SetValue(const NumberVariable<int> &);
 	void SetValue(const NumberVariable<double> &);
+	void DisableVariableSelection();
 
 	void setMinimum(double value);
 	void setMaximum(double value);
@@ -54,6 +55,7 @@ private:
 	QPushButton *_toggleType;
 	VariableSelection *_variable;
 	bool _wholeNumber;
+	bool _hideTypeToggle = false;
 };
 
 class VariableSpinBox : public GenericVaraiableSpinbox {

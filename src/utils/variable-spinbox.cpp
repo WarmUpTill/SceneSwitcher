@@ -76,6 +76,13 @@ void GenericVaraiableSpinbox::SetValue(const NumberVariable<double> &number)
 	SetVisibility();
 }
 
+void GenericVaraiableSpinbox::DisableVariableSelection()
+{
+	_hideTypeToggle = true;
+	_toggleType->hide();
+	ToggleTypeClicked(false);
+}
+
 void GenericVaraiableSpinbox::setMinimum(double value)
 {
 	_fixedValueInt->setMinimum(value);
@@ -168,7 +175,8 @@ void GenericVaraiableSpinbox::SetVisibilityInt()
 	if (_numberInt.IsFixedType()) {
 		_fixedValueInt->show();
 		_variable->hide();
-		_toggleType->setVisible(!switcher->variables.empty());
+		_toggleType->setVisible(!switcher->variables.empty() &&
+					!_hideTypeToggle);
 	} else {
 		_fixedValueInt->hide();
 		_variable->show();
@@ -183,7 +191,8 @@ void GenericVaraiableSpinbox::SetVisibilityDouble()
 	if (_numberDouble.IsFixedType()) {
 		_fixedValueDouble->show();
 		_variable->hide();
-		_toggleType->setVisible(!switcher->variables.empty());
+		_toggleType->setVisible(!switcher->variables.empty() &&
+					!_hideTypeToggle);
 	} else {
 		_fixedValueDouble->hide();
 		_variable->show();
