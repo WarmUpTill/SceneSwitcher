@@ -88,6 +88,7 @@ void PlaceWidgets(std::string text, QBoxLayout *layout,
 void DeleteLayoutItemWidget(QLayoutItem *item);
 void ClearLayout(QLayout *layout, int afterIdx = 0);
 void SetLayoutVisible(QLayout *layout, bool visible);
+void SetGridLayoutRowVisible(QGridLayout *layout, int row, bool visible);
 void AddStretchIfNecessary(QBoxLayout *layout);
 void RemoveStretchIfPresent(QBoxLayout *layout);
 void MinimizeSizeOfColumn(QGridLayout *layout, int idx);
