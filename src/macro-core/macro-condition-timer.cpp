@@ -18,8 +18,10 @@ const static std::map<TimerType, std::string> timerTypes = {
 bool MacroConditionTimer::CheckCondition()
 {
 	if (_paused) {
+		SetVariableValue(std::to_string(_remaining));
 		return _remaining == 0.;
 	}
+	SetVariableValue(std::to_string(_duration.TimeRemaining()));
 	if (_duration.DurationReached()) {
 		if (!_oneshot) {
 			_duration.Reset();

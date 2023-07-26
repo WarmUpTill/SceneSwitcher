@@ -19,7 +19,7 @@ enum class TimerType {
 
 class MacroConditionTimer : public MacroCondition {
 public:
-	MacroConditionTimer(Macro *m) : MacroCondition(m) {}
+	MacroConditionTimer(Macro *m) : MacroCondition(m, true) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
