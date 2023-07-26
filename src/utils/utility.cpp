@@ -257,6 +257,30 @@ void SetLayoutVisible(QLayout *layout, bool visible)
 	}
 }
 
+void SetGridLayoutRowVisible(QGridLayout *layout, int row, bool visible)
+{
+	for (int col = 0; col < layout->columnCount(); col++) {
+		auto item = layout->itemAtPosition(row, col);
+		if (!item) {
+			continue;
+		}
+
+		auto rowLayout = item->layout();
+		if (rowLayout) {
+			SetLayoutVisible(rowLayout, visible);
+		}
+
+		auto widget = item->widget();
+		if (widget) {
+			widget->setVisible(visible);
+		}
+	}
+
+	if (!visible) {
+		layout->setRowMinimumHeight(row, 0);
+	}
+}
+
 void AddStretchIfNecessary(QBoxLayout *layout)
 {
 	int itemCount = layout->count();

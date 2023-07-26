@@ -30,30 +30,6 @@ void MacroProperties::Load(obs_data_t *obj)
 	obs_data_release(data);
 }
 
-static void setGridLayoutRowVisible(QGridLayout *layout, int row, bool visible)
-{
-	for (int col = 0; col < layout->columnCount(); col++) {
-		auto item = layout->itemAtPosition(row, col);
-		if (!item) {
-			continue;
-		}
-
-		auto rowLayout = item->layout();
-		if (rowLayout) {
-			SetLayoutVisible(rowLayout, visible);
-		}
-
-		auto widget = item->widget();
-		if (widget) {
-			widget->setVisible(visible);
-		}
-	}
-
-	if (!visible) {
-		layout->setRowMinimumHeight(row, 0);
-	}
-}
-
 MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 					     const MacroProperties &prop,
 					     Macro *macro)
@@ -206,15 +182,15 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	_currentMacroDockAddPauseButton->setVisible(dockEnabled);
 	_currentMacroDockAddStatusLabel->setVisible(dockEnabled);
 	_currentMacroDockHighlightIfConditionsTrue->setVisible(dockEnabled);
-	setGridLayoutRowVisible(_dockLayout, _runButtonTextRow,
+	SetGridLayoutRowVisible(_dockLayout, _runButtonTextRow,
 				dockEnabled && macro->DockHasRunButton());
-	setGridLayoutRowVisible(_dockLayout, _pauseButtonTextRow,
+	SetGridLayoutRowVisible(_dockLayout, _pauseButtonTextRow,
 				dockEnabled && macro->DockHasPauseButton());
-	setGridLayoutRowVisible(_dockLayout, _unpauseButtonTextRow,
+	SetGridLayoutRowVisible(_dockLayout, _unpauseButtonTextRow,
 				dockEnabled && macro->DockHasPauseButton());
-	setGridLayoutRowVisible(_dockLayout, _conditionsTrueTextRow,
+	SetGridLayoutRowVisible(_dockLayout, _conditionsTrueTextRow,
 				dockEnabled && macro->DockHasStatusLabel());
-	setGridLayoutRowVisible(_dockLayout, _conditionsFalseTextRow,
+	SetGridLayoutRowVisible(_dockLayout, _conditionsFalseTextRow,
 				dockEnabled && macro->DockHasStatusLabel());
 	MinimizeSizeOfColumn(_dockLayout, 0);
 	Resize();
@@ -226,19 +202,19 @@ void MacroPropertiesDialog::DockEnableChanged(int enabled)
 	_currentMacroDockAddPauseButton->setVisible(enabled);
 	_currentMacroDockAddStatusLabel->setVisible(enabled);
 	_currentMacroDockHighlightIfConditionsTrue->setVisible(enabled);
-	setGridLayoutRowVisible(
+	SetGridLayoutRowVisible(
 		_dockLayout, _runButtonTextRow,
 		enabled && _currentMacroDockAddRunButton->isChecked());
-	setGridLayoutRowVisible(
+	SetGridLayoutRowVisible(
 		_dockLayout, _pauseButtonTextRow,
 		enabled && _currentMacroDockAddPauseButton->isChecked());
-	setGridLayoutRowVisible(
+	SetGridLayoutRowVisible(
 		_dockLayout, _unpauseButtonTextRow,
 		enabled && _currentMacroDockAddPauseButton->isChecked());
-	setGridLayoutRowVisible(
+	SetGridLayoutRowVisible(
 		_dockLayout, _conditionsTrueTextRow,
 		enabled && _currentMacroDockAddStatusLabel->isChecked());
-	setGridLayoutRowVisible(
+	SetGridLayoutRowVisible(
 		_dockLayout, _conditionsFalseTextRow,
 		enabled && _currentMacroDockAddStatusLabel->isChecked());
 	Resize();
@@ -246,21 +222,21 @@ void MacroPropertiesDialog::DockEnableChanged(int enabled)
 
 void MacroPropertiesDialog::RunButtonEnableChanged(int enabled)
 {
-	setGridLayoutRowVisible(_dockLayout, _runButtonTextRow, enabled);
+	SetGridLayoutRowVisible(_dockLayout, _runButtonTextRow, enabled);
 	Resize();
 }
 
 void MacroPropertiesDialog::PauseButtonEnableChanged(int enabled)
 {
-	setGridLayoutRowVisible(_dockLayout, _pauseButtonTextRow, enabled);
-	setGridLayoutRowVisible(_dockLayout, _unpauseButtonTextRow, enabled);
+	SetGridLayoutRowVisible(_dockLayout, _pauseButtonTextRow, enabled);
+	SetGridLayoutRowVisible(_dockLayout, _unpauseButtonTextRow, enabled);
 	Resize();
 }
 
 void MacroPropertiesDialog::StatusLabelEnableChanged(int enabled)
 {
-	setGridLayoutRowVisible(_dockLayout, _conditionsTrueTextRow, enabled);
-	setGridLayoutRowVisible(_dockLayout, _conditionsFalseTextRow, enabled);
+	SetGridLayoutRowVisible(_dockLayout, _conditionsTrueTextRow, enabled);
+	SetGridLayoutRowVisible(_dockLayout, _conditionsFalseTextRow, enabled);
 	Resize();
 }
 
