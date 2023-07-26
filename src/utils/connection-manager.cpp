@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <QAction>
 #include <QMenu>
-#include <QLayout>
 #include <obs-module.h>
 
 Q_DECLARE_METATYPE(advss::Connection *);
@@ -44,10 +43,13 @@ void SwitcherData::LoadConnections(obs_data_t *obj)
 	obs_data_array_release(connectionArray);
 }
 
-Connection::Connection(std::string name, std::string address, uint64_t port,
+Connection::Connection(bool useCustomURI, std::string customURI,
+		       std::string name, std::string address, uint64_t port,
 		       std::string pass, bool connectOnStart, bool reconnect,
 		       int reconnectDelay, bool useOBSWebsocketProtocol)
 	: Item(name),
+	  _useCustomURI(useCustomURI),
+	  _customURI(customURI),
 	  _address(address),
 	  _port(port),
 	  _password(pass),
@@ -61,6 +63,8 @@ Connection::Connection(std::string name, std::string address, uint64_t port,
 
 Connection::Connection(const Connection &other) : Item(other)
 {
+	_useCustomURI = other._useCustomURI;
+	_customURI = other._customURI;
 	_name = other._name;
 	_address = other._address;
 	_port = other._port;
@@ -75,6 +79,8 @@ Connection::Connection(const Connection &other) : Item(other)
 Connection &Connection::operator=(const Connection &other)
 {
 	if (this != &other) {
+		_useCustomURI = other._useCustomURI;
+		_customURI = other._customURI;
 		_name = other._name;
 		_address = other._address;
 		_port = other._port;
@@ -94,14 +100,17 @@ Connection::~Connection()
 	_client.Disconnect();
 }
 
-static std::string GetUri(std::string addr, int port)
+static std::string constructUri(std::string addr, int port)
 {
 	return "ws://" + addr + ":" + std::to_string(port);
 }
 
 std::string Connection::GetURI()
 {
-	return GetUri(_address, _port);
+	if (_useCustomURI) {
+		return _customURI;
+	}
+	return constructUri(_address, _port);
 }
 
 void Connection::Reconnect()
@@ -125,6 +134,55 @@ void Connection::SendMsg(const std::string &msg)
 	if (status == WSConnection::Status::AUTHENTICATED) {
 		_client.SendRequest(msg);
 	}
+}
+
+void Connection::Load(obs_data_t *obj)
+{
+	Item::Load(obj);
+
+	if (obs_data_has_user_value(obj, "version")) {
+		UseOBSWebsocketProtocol(
+			obs_data_get_bool(obj, "useOBSWSProtocol"));
+	} else {
+		// TODO: Remove this fallback in future version
+		_useOBSWSProtocol = true;
+	}
+	_client.UseOBSWebsocketProtocol(_useOBSWSProtocol);
+
+	_useCustomURI = obs_data_get_bool(obj, "useCustomURI");
+	_customURI = obs_data_get_string(obj, "customURI");
+	_address = obs_data_get_string(obj, "address");
+	_port = obs_data_get_int(obj, "port");
+	_password = obs_data_get_string(obj, "password");
+	_connectOnStart = obs_data_get_bool(obj, "connectOnStart");
+	_reconnect = obs_data_get_bool(obj, "reconnect");
+	_reconnectDelay = obs_data_get_int(obj, "reconnectDelay");
+
+	if (_connectOnStart) {
+		_client.Connect(GetURI(), _password, _reconnect,
+				_reconnectDelay);
+	}
+}
+
+void Connection::Save(obs_data_t *obj) const
+{
+	Item::Save(obj);
+	obs_data_set_bool(obj, "useCustomURI", _useCustomURI);
+	obs_data_set_string(obj, "customURI", _customURI.c_str());
+	obs_data_set_bool(obj, "useOBSWSProtocol", _useOBSWSProtocol);
+	obs_data_set_string(obj, "address", _address.c_str());
+	obs_data_set_int(obj, "port", _port);
+	obs_data_set_string(obj, "password", _password.c_str());
+	obs_data_set_bool(obj, "connectOnStart", _connectOnStart);
+	obs_data_set_bool(obj, "reconnect", _reconnect);
+	obs_data_set_int(obj, "reconnectDelay", _reconnectDelay);
+	obs_data_set_int(obj, "version", 1);
+}
+
+void Connection::UseOBSWebsocketProtocol(bool useOBSWSProtocol)
+{
+	_useOBSWSProtocol = useOBSWSProtocol;
+	_client.UseOBSWebsocketProtocol(useOBSWSProtocol);
 }
 
 Connection *GetConnectionByName(const QString &name)
@@ -239,17 +297,20 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 	: ItemSettingsDialog(settings, switcher->connections,
 			     "AdvSceneSwitcher.connection.select",
 			     "AdvSceneSwitcher.connection.add", parent),
+	  _useCustomURI(new QCheckBox()),
+	  _customUri(new QLineEdit()),
 	  _address(new QLineEdit()),
 	  _port(new QSpinBox()),
-	  _useOBSWSProtocol(new QCheckBox()),
 	  _password(new QLineEdit()),
 	  _showPassword(new QPushButton()),
 	  _connectOnStart(new QCheckBox()),
 	  _reconnect(new QCheckBox()),
 	  _reconnectDelay(new QSpinBox()),
+	  _useOBSWSProtocol(new QCheckBox()),
 	  _test(new QPushButton(
 		  obs_module_text("AdvSceneSwitcher.connection.test"))),
-	  _status(new QLabel())
+	  _status(new QLabel()),
+	  _layout(new QGridLayout())
 {
 	_port->setMaximum(65535);
 	_showPassword->setMaximumWidth(22);
@@ -259,6 +320,8 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 	_reconnectDelay->setMaximum(9999);
 	_reconnectDelay->setSuffix("s");
 
+	_useCustomURI->setChecked(settings._useCustomURI);
+	_customUri->setText(QString::fromStdString(settings._customURI));
 	_address->setText(QString::fromStdString(settings._address));
 	_port->setValue(settings._port);
 	_password->setText(QString::fromStdString(settings._password));
@@ -267,6 +330,8 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 	_reconnectDelay->setValue(settings._reconnectDelay);
 	_useOBSWSProtocol->setChecked(settings._useOBSWSProtocol);
 
+	QWidget::connect(_useCustomURI, SIGNAL(stateChanged(int)), this,
+			 SLOT(UseCustomURIChanged(int)));
 	QWidget::connect(_useOBSWSProtocol, SIGNAL(stateChanged(int)), this,
 			 SLOT(ProtocolChanged(int)));
 	QWidget::connect(_reconnect, SIGNAL(stateChanged(int)), this,
@@ -278,66 +343,90 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 	QWidget::connect(_test, SIGNAL(clicked()), this,
 			 SLOT(TestConnection()));
 
-	QGridLayout *layout = new QGridLayout;
 	int row = 0;
-	layout->addWidget(
+	_layout->addWidget(
 		new QLabel(obs_module_text("AdvSceneSwitcher.connection.name")),
 		row, 0);
 	QHBoxLayout *nameLayout = new QHBoxLayout;
 	nameLayout->addWidget(_name);
 	nameLayout->addWidget(_nameHint);
-	layout->addLayout(nameLayout, row, 1);
+	_layout->addLayout(nameLayout, row, 1);
 	++row;
-	layout->addWidget(new QLabel(obs_module_text(
-				  "AdvSceneSwitcher.connection.address")),
-			  row, 0);
-	layout->addWidget(_address, row, 1);
+	_layout->addWidget(new QLabel(obs_module_text(
+				   "AdvSceneSwitcher.connection.useCustomURI")),
+			   row, 0);
+	_layout->addWidget(_useCustomURI, row, 1);
 	++row;
-	layout->addWidget(
+	_layout->addWidget(new QLabel(obs_module_text(
+				   "AdvSceneSwitcher.connection.customURI")),
+			   row, 0);
+	_layout->addWidget(_customUri, row, 1);
+	_customURIRow = row;
+	++row;
+	_layout->addWidget(new QLabel(obs_module_text(
+				   "AdvSceneSwitcher.connection.address")),
+			   row, 0);
+	_layout->addWidget(_address, row, 1);
+	_addressRow = row;
+	++row;
+	_layout->addWidget(
 		new QLabel(obs_module_text("AdvSceneSwitcher.connection.port")),
 		row, 0);
-	layout->addWidget(_port, row, 1);
+	_layout->addWidget(_port, row, 1);
+	_portRow = row;
 	++row;
-	layout->addWidget(new QLabel(obs_module_text(
-				  "AdvSceneSwitcher.connection.password")),
-			  row, 0);
-	QHBoxLayout *passLayout = new QHBoxLayout;
+	_layout->addWidget(new QLabel(obs_module_text(
+				   "AdvSceneSwitcher.connection.password")),
+			   row, 0);
+	auto passLayout = new QHBoxLayout;
 	passLayout->addWidget(_password);
 	passLayout->addWidget(_showPassword);
-	layout->addLayout(passLayout, row, 1);
+	_layout->addLayout(passLayout, row, 1);
 	++row;
-	layout->addWidget(
+	_layout->addWidget(
 		new QLabel(obs_module_text(
 			"AdvSceneSwitcher.connection.connectOnStart")),
 		row, 0);
-	layout->addWidget(_connectOnStart, row, 1);
+	_layout->addWidget(_connectOnStart, row, 1);
 	++row;
-	layout->addWidget(new QLabel(obs_module_text(
-				  "AdvSceneSwitcher.connection.reconnect")),
-			  row, 0);
-	layout->addWidget(_reconnect, row, 1);
+	_layout->addWidget(new QLabel(obs_module_text(
+				   "AdvSceneSwitcher.connection.reconnect")),
+			   row, 0);
+	_layout->addWidget(_reconnect, row, 1);
 	++row;
-	layout->addWidget(
+	_layout->addWidget(
 		new QLabel(obs_module_text(
 			"AdvSceneSwitcher.connection.reconnectDelay")),
 		row, 0);
-	layout->addWidget(_reconnectDelay, row, 1);
+	_layout->addWidget(_reconnectDelay, row, 1);
 	++row;
-	layout->addWidget(
+	_layout->addWidget(
 		new QLabel(obs_module_text(
 			"AdvSceneSwitcher.connection.useOBSWebsocketProtocol")),
 		row, 0);
-	layout->addWidget(_useOBSWSProtocol, row, 1);
+	_layout->addWidget(_useOBSWSProtocol, row, 1);
 	++row;
-	layout->addWidget(_test, row, 0);
-	layout->addWidget(_status, row, 1);
+	_layout->addWidget(_test, row, 0);
+	_layout->addWidget(_status, row, 1);
 	++row;
-	layout->addWidget(_buttonbox, row, 0, 1, -1);
-	setLayout(layout);
+	_layout->addWidget(_buttonbox, row, 0, 1, -1);
+	setLayout(_layout);
 
+	MinimizeSizeOfColumn(_layout, 0);
 	ReconnectChanged(_reconnect->isChecked());
 	ProtocolChanged(_useOBSWSProtocol->isChecked());
 	HidePassword();
+	UseCustomURIChanged(settings._useCustomURI);
+}
+
+void ConnectionSettingsDialog::UseCustomURIChanged(int state)
+{
+	SetGridLayoutRowVisible(_layout, _addressRow, !state);
+	SetGridLayoutRowVisible(_layout, _portRow, !state);
+	SetGridLayoutRowVisible(_layout, _customURIRow, state);
+
+	adjustSize();
+	updateGeometry();
 }
 
 void ConnectionSettingsDialog::ProtocolChanged(int state)
@@ -391,9 +480,11 @@ void ConnectionSettingsDialog::TestConnection()
 {
 	_testConnection.UseOBSWebsocketProtocol(_useOBSWSProtocol->isChecked());
 	_testConnection.Disconnect();
-	_testConnection.Connect(GetUri(_address->text().toStdString(),
-				       _port->value()),
-				_password->text().toStdString(), false);
+	std::string uri = _useCustomURI->isChecked()
+				  ? _customUri->text().toStdString()
+				  : constructUri(_address->text().toStdString(),
+						 _port->value());
+	_testConnection.Connect(uri, _password->text().toStdString(), false);
 	_statusTimer.setInterval(1000);
 	QWidget::connect(&_statusTimer, &QTimer::timeout, this,
 			 &ConnectionSettingsDialog::SetStatus);
@@ -410,6 +501,8 @@ bool ConnectionSettingsDialog::AskForSettings(QWidget *parent,
 	}
 
 	settings._name = dialog._name->text().toStdString();
+	settings._useCustomURI = dialog._useCustomURI->isChecked();
+	settings._customURI = dialog._customUri->text().toStdString();
 	settings._address = dialog._address->text().toStdString();
 	settings._port = dialog._port->value();
 	settings._password = dialog._password->text().toStdString();
@@ -419,51 +512,6 @@ bool ConnectionSettingsDialog::AskForSettings(QWidget *parent,
 	settings.UseOBSWebsocketProtocol(dialog._useOBSWSProtocol->isChecked());
 	settings.Reconnect();
 	return true;
-}
-
-void Connection::Load(obs_data_t *obj)
-{
-	Item::Load(obj);
-
-	if (obs_data_has_user_value(obj, "version")) {
-		UseOBSWebsocketProtocol(
-			obs_data_get_bool(obj, "useOBSWSProtocol"));
-	} else {
-		// TODO: Remove this fallback in future version
-		_useOBSWSProtocol = true;
-	}
-	_client.UseOBSWebsocketProtocol(_useOBSWSProtocol);
-
-	_address = obs_data_get_string(obj, "address");
-	_port = obs_data_get_int(obj, "port");
-	_password = obs_data_get_string(obj, "password");
-	_connectOnStart = obs_data_get_bool(obj, "connectOnStart");
-	_reconnect = obs_data_get_bool(obj, "reconnect");
-	_reconnectDelay = obs_data_get_int(obj, "reconnectDelay");
-
-	if (_connectOnStart) {
-		_client.Connect(GetURI(), _password, _reconnect,
-				_reconnectDelay);
-	}
-}
-
-void Connection::Save(obs_data_t *obj) const
-{
-	Item::Save(obj);
-	obs_data_set_bool(obj, "useOBSWSProtocol", _useOBSWSProtocol);
-	obs_data_set_string(obj, "address", _address.c_str());
-	obs_data_set_int(obj, "port", _port);
-	obs_data_set_string(obj, "password", _password.c_str());
-	obs_data_set_bool(obj, "connectOnStart", _connectOnStart);
-	obs_data_set_bool(obj, "reconnect", _reconnect);
-	obs_data_set_int(obj, "reconnectDelay", _reconnectDelay);
-	obs_data_set_int(obj, "version", 1);
-}
-
-void Connection::UseOBSWebsocketProtocol(bool useOBSWSProtocol)
-{
-	_useOBSWSProtocol = useOBSWSProtocol;
-	_client.UseOBSWebsocketProtocol(useOBSWSProtocol);
 }
 
 } // namespace advss
