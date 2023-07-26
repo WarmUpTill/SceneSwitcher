@@ -11,6 +11,7 @@
 #include <QSpinBox>
 #include <QTimer>
 #include <QWidget>
+#include <QGridLayout>
 #include <deque>
 #include <obs.hpp>
 #include <websocket-helpers.hpp>
@@ -22,9 +23,10 @@ class ConnectionSettingsDialog;
 
 class Connection : public Item {
 public:
-	Connection(std::string name, std::string address, uint64_t port,
-		   std::string pass, bool connectOnStart, bool reconnect,
-		   int reconnectDelay, bool useOBSWebsocketProtocol);
+	Connection(bool useCustomURI, std::string customURI, std::string name,
+		   std::string address, uint64_t port, std::string pass,
+		   bool connectOnStart, bool reconnect, int reconnectDelay,
+		   bool useOBSWebsocketProtocol);
 	Connection() = default;
 	Connection(const Connection &);
 	Connection &operator=(const Connection &);
@@ -44,16 +46,18 @@ public:
 
 private:
 	void UseOBSWebsocketProtocol(bool);
+	std::string GetURI();
 
-	bool _useOBSWSProtocol = true;
+	bool _useCustomURI = false;
+	std::string _customURI = "ws://localhost:4455";
 	std::string _address = "localhost";
 	uint64_t _port = 4455;
 	std::string _password = "password";
 	bool _connectOnStart = true;
 	bool _reconnect = true;
 	int _reconnectDelay = 3;
+	bool _useOBSWSProtocol = true;
 
-	std::string GetURI();
 	WSConnection _client;
 
 	friend ConnectionSelection;
@@ -74,6 +78,7 @@ public:
 	static bool AskForSettings(QWidget *parent, Connection &settings);
 
 private slots:
+	void UseCustomURIChanged(int);
 	void ProtocolChanged(int);
 	void ReconnectChanged(int);
 	void ShowPassword();
@@ -82,19 +87,26 @@ private slots:
 	void TestConnection();
 
 private:
+	QCheckBox *_useCustomURI;
+	QLineEdit *_customUri;
 	QLineEdit *_address;
 	QSpinBox *_port;
-	QCheckBox *_useOBSWSProtocol;
 	QLineEdit *_password;
 	QPushButton *_showPassword;
 	QCheckBox *_connectOnStart;
 	QCheckBox *_reconnect;
 	QSpinBox *_reconnectDelay;
+	QCheckBox *_useOBSWSProtocol;
 	QPushButton *_test;
 	QLabel *_status;
+	QGridLayout *_layout;
 
 	QTimer _statusTimer;
 	WSConnection _testConnection;
+
+	int _customURIRow = -1;
+	int _addressRow = -1;
+	int _portRow = -1;
 };
 
 class ConnectionSelection : public ItemSelection {
