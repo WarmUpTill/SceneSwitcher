@@ -6,7 +6,9 @@
 #include "switcher-data.hpp"
 #include "name-dialog.hpp"
 #include "macro-properties.hpp"
+#include "macro-export-import-dialog.hpp"
 #include "utility.hpp"
+#include "version.h"
 
 #include <QColor>
 #include <QMenu>
@@ -18,7 +20,7 @@ namespace advss {
 static QMetaObject::Connection addPulse;
 static QTimer onChangeHighlightTimer;
 
-static bool macroNameExists(std::string name)
+static bool macroNameExists(const std::string &name)
 {
 	return !!GetMacroByName(name.c_str());
 }
@@ -60,12 +62,8 @@ bool AdvSceneSwitcher::AddNewMacro(std::shared_ptr<Macro> &res,
 		return false;
 	}
 
-	{
-		auto lock = LockContext();
-		res = std::make_shared<Macro>(
-			name,
-			switcher->macroProperties._newMacroRegisterHotkeys);
-	}
+	res = std::make_shared<Macro>(
+		name, switcher->macroProperties._newMacroRegisterHotkeys);
 	return true;
 }
 
@@ -77,11 +75,7 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 		return;
 	}
 
-	{
-		auto lock = LockContext();
-		ui->macros->Add(newMacro);
-	}
-
+	ui->macros->Add(newMacro);
 	ui->macroAdd->disconnect(addPulse);
 	emit MacroAdded(QString::fromStdString(name));
 }
@@ -101,11 +95,7 @@ void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 		}
 	}
 
-	{
-		auto lock = LockContext();
-		ui->macros->Remove(macro);
-	}
-
+	ui->macros->Remove(macro);
 	emit MacroRemoved(name);
 }
 
@@ -152,7 +142,6 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 
 void AdvSceneSwitcher::on_macroUp_clicked()
 {
-	auto lock = LockContext();
 	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
@@ -162,7 +151,6 @@ void AdvSceneSwitcher::on_macroUp_clicked()
 
 void AdvSceneSwitcher::on_macroDown_clicked()
 {
-	auto lock = LockContext();
 	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
@@ -200,6 +188,179 @@ void AdvSceneSwitcher::RenameCurrentMacro()
 
 	const QSignalBlocker b(ui->macroName);
 	ui->macroName->setText(QString::fromStdString(name));
+}
+
+static void addGroupSubitems(std::vector<std::shared_ptr<Macro>> &macros,
+			     const std::shared_ptr<Macro> &group)
+{
+	std::vector<std::shared_ptr<Macro>> subitems;
+	subitems.reserve(group->GroupSize());
+
+	// Find all subitems
+	for (auto it = switcher->macros.begin(); it < switcher->macros.end();
+	     it++) {
+		if ((*it)->Name() == group->Name()) {
+			for (uint32_t i = 1; i <= group->GroupSize(); i++) {
+				subitems.emplace_back(*std::next(it, i));
+			}
+			break;
+		}
+	}
+
+	// Remove subitems which were already selected to avoid duplicates
+	for (const auto &subitem : subitems) {
+		auto it = std::find(macros.begin(), macros.end(), subitem);
+		if (it == macros.end()) {
+			continue;
+		}
+		macros.erase(it);
+	}
+
+	// Add group subitems
+	auto it = std::find(macros.begin(), macros.end(), group);
+	if (it == macros.end()) {
+		return;
+	}
+	it = std::next(it);
+	macros.insert(it, subitems.begin(), subitems.end());
+}
+
+void AdvSceneSwitcher::ExportMacros()
+{
+	auto selectedMacros = GetSelectedMacros();
+	auto macros = selectedMacros;
+	for (const auto &macro : selectedMacros) {
+		if (macro->IsGroup() && macro->GroupSize() > 0) {
+			addGroupSubitems(macros, macro);
+		}
+	}
+
+	auto data = obs_data_create();
+	auto macroArray = obs_data_array_create();
+	for (const auto &macro : macros) {
+		obs_data_t *obj = obs_data_create();
+		macro->Save(obj);
+		obs_data_array_push_back(macroArray, obj);
+		obs_data_release(obj);
+	}
+	obs_data_set_array(data, "macros", macroArray);
+	obs_data_array_release(macroArray);
+	obs_data_set_string(data, "version", g_GIT_TAG);
+	auto json = obs_data_get_json(data);
+	QString exportString(json);
+	obs_data_release(data);
+
+	MacroExportImportDialog::ExportMacros(exportString);
+}
+
+bool AdvSceneSwitcher::ResolveMacroImportNameConflict(
+	std::shared_ptr<Macro> &macro)
+{
+	QString errorMesg = obs_module_text(
+		"AdvSceneSwitcher.macroTab.import.nameConflict");
+	errorMesg = errorMesg.arg(QString::fromStdString(macro->Name()),
+				  QString::fromStdString(macro->Name()));
+	bool continueResolve = DisplayMessage(errorMesg, true);
+	if (!continueResolve) {
+		return false;
+	}
+
+	QString format = QString::fromStdString(macro->Name()) + " %1";
+	int i = 2;
+
+	QString placeHolderText = format.arg(i);
+	while ((macroNameExists(placeHolderText.toUtf8().constData()))) {
+		placeHolderText = format.arg(++i);
+	}
+
+	std::string newName;
+	bool accepted = AdvSSNameDialog::AskForName(
+		this, obs_module_text("AdvSceneSwitcher.macroTab.add"),
+		obs_module_text("AdvSceneSwitcher.macroTab.name"), newName,
+		placeHolderText);
+
+	if (!accepted) {
+		return false;
+	}
+
+	if (newName.empty()) {
+		return false;
+	}
+
+	if (macroNameExists(newName)) {
+		DisplayMessage(
+			obs_module_text("AdvSceneSwitcher.macroTab.exists"));
+		return ResolveMacroImportNameConflict(macro);
+	}
+
+	macro->SetName(newName);
+	return true;
+}
+
+void AdvSceneSwitcher::ImportMacros()
+{
+	QString json;
+	if (!MacroExportImportDialog::ImportMacros(json)) {
+		return;
+	}
+	auto data = obs_data_create_from_json(json.toStdString().c_str());
+	if (!data) {
+		DisplayMessage(obs_module_text(
+			"AdvSceneSwitcher.macroTab.import.invalid"));
+		ImportMacros();
+		return;
+	}
+
+	auto version = obs_data_get_string(data, "version");
+	if (strcmp(version, g_GIT_TAG) != 0) {
+		blog(LOG_WARNING,
+		     "importing macros from non matching plugin version \"%s\"",
+		     version);
+	}
+
+	auto array = obs_data_get_array(data, "macros");
+	size_t count = obs_data_array_count(array);
+
+	int groupSize = 0;
+	std::shared_ptr<Macro> group;
+
+	auto lock = LockContext();
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *array_obj = obs_data_array_item(array, i);
+		auto macro = std::make_shared<Macro>();
+		macro->Load(array_obj);
+		macro->PostLoad();
+
+		if (macroNameExists(macro->Name()) &&
+		    !ResolveMacroImportNameConflict(macro)) {
+			obs_data_release(array_obj);
+			groupSize--;
+			continue;
+		}
+
+		switcher->macros.emplace_back(macro);
+		if (groupSize > 0 && !macro->IsGroup()) {
+			Macro::PrepareMoveToGroup(group, macro);
+			groupSize--;
+		}
+
+		if (macro->IsGroup()) {
+			group = macro;
+			groupSize = macro->GroupSize();
+			// We are not sure if all elements will be added so we
+			// have to reset the group size to zero and add elements
+			// to the group as they come up.
+			macro->ResetGroupSize();
+		}
+
+		obs_data_release(array_obj);
+	}
+	obs_data_array_release(array);
+	obs_data_release(data);
+
+	ui->macros->Reset(switcher->macros,
+			  switcher->macroProperties._highlightExecuted);
 }
 
 void AdvSceneSwitcher::on_macroName_editingFinished()
@@ -372,8 +533,7 @@ std::vector<std::shared_ptr<Macro>> AdvSceneSwitcher::GetSelectedMacros()
 	return ui->macros->GetCurrentMacros();
 }
 
-void AdvSceneSwitcher::MacroSelectionChanged(const QItemSelection &,
-					     const QItemSelection &)
+void AdvSceneSwitcher::MacroSelectionChanged()
 {
 	if (loading) {
 		return;
@@ -445,12 +605,8 @@ void AdvSceneSwitcher::SetupMacroTab()
 	}
 	ui->macros->Reset(switcher->macros,
 			  switcher->macroProperties._highlightExecuted);
-	connect(ui->macros->selectionModel(),
-		SIGNAL(selectionChanged(const QItemSelection &,
-					const QItemSelection &)),
-		this,
-		SLOT(MacroSelectionChanged(const QItemSelection &,
-					   const QItemSelection &)));
+	connect(ui->macros, SIGNAL(MacroSelectionChanged()), this,
+		SLOT(MacroSelectionChanged()));
 
 	delete conditionsList;
 	conditionsList = new MacroSegmentList(this);
@@ -569,6 +725,15 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 		obs_module_text("AdvSceneSwitcher.macroTab.remove"), this,
 		&AdvSceneSwitcher::on_macroRemove_clicked);
 	remove->setDisabled(ui->macros->SelectionEmpty());
+	menu.addSeparator();
+
+	auto exportAction = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.export"), this,
+		&AdvSceneSwitcher::ExportMacros);
+	exportAction->setDisabled(ui->macros->SelectionEmpty());
+	auto import = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.import"), this,
+		&AdvSceneSwitcher::ImportMacros);
 
 	menu.exec(globalPos);
 }

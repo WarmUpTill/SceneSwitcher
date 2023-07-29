@@ -60,6 +60,7 @@ public:
 				       std::shared_ptr<Macro> item);
 	bool IsGroup() const { return _isGroup; }
 	uint32_t GroupSize() const { return _groupSize; }
+	void ResetGroupSize() { _groupSize = 0; }
 	bool IsSubitem() const { return !_parent.expired(); }
 	void SetCollapsed(bool val) { _isCollapsed = val; }
 	bool IsCollapsed() const { return _isCollapsed; }
