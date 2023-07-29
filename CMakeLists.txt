@@ -203,6 +203,8 @@ target_sources(
           src/macro-core/macro-condition-scene-transform.hpp
           src/macro-core/macro-condition-scene-visibility.cpp
           src/macro-core/macro-condition-scene-visibility.hpp
+          src/macro-core/macro-condition-slideshow.cpp
+          src/macro-core/macro-condition-slideshow.hpp
           src/macro-core/macro-condition-scene.cpp
           src/macro-core/macro-condition-scene.hpp
           src/macro-core/macro-condition-source.cpp
