@@ -263,6 +263,8 @@ target_sources(
           src/utils/filter-combo-box.hpp
           src/utils/filter-selection.cpp
           src/utils/filter-selection.hpp
+          src/utils/macro-export-import-dialog.cpp
+          src/utils/macro-export-import-dialog.hpp
           src/utils/macro-list.cpp
           src/utils/macro-list.hpp
           src/utils/macro-segment-selection.cpp

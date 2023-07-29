@@ -112,8 +112,7 @@ public slots:
 	void on_actionUp_clicked();
 	void on_actionDown_clicked();
 	void on_actionBottom_clicked();
-	void MacroSelectionChanged(const QItemSelection &,
-				   const QItemSelection &);
+	void MacroSelectionChanged();
 	void UpMacroSegementHotkey();
 	void DownMacroSegementHotkey();
 	void DeleteMacroSegementHotkey();
@@ -122,6 +121,8 @@ public slots:
 	void ShowMacroConditionsContextMenu(const QPoint &);
 	void CopyMacro();
 	void RenameCurrentMacro();
+	void ExportMacros();
+	void ImportMacros();
 	void ExpandAllActions();
 	void ExpandAllConditions();
 	void CollapseAllActions();
@@ -165,6 +166,7 @@ signals:
 	void VariableRemoved(const QString &);
 
 private:
+	bool ResolveMacroImportNameConflict(std::shared_ptr<Macro> &);
 	bool MacroTabIsInFocus();
 
 	MacroSegmentList *conditionsList = nullptr;

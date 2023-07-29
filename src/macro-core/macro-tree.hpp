@@ -138,6 +138,11 @@ public:
 public slots:
 	void GroupSelectedItems();
 	void UngroupSelectedGroups();
+	void SelectionChangedHelper(const QItemSelection &,
+				    const QItemSelection &);
+
+signals:
+	void MacroSelectionChanged();
 
 protected:
 	virtual void dropEvent(QDropEvent *event) override;

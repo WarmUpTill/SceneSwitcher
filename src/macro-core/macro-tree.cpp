@@ -395,6 +395,7 @@ CountItemsVisibleInModel(const std::deque<std::shared_ptr<Macro>> &macros)
 
 void MacroTreeModel::Add(std::shared_ptr<Macro> item)
 {
+	std::lock_guard<std::mutex> lock(switcher->m);
 	auto idx = CountItemsVisibleInModel(_macros);
 	beginInsertRows(QModelIndex(), idx, idx);
 	_macros.emplace_back(item);
@@ -407,6 +408,7 @@ void MacroTreeModel::Add(std::shared_ptr<Macro> item)
 
 void MacroTreeModel::Remove(std::shared_ptr<Macro> item)
 {
+	std::lock_guard<std::mutex> lock(switcher->m);
 	auto uiStartIdx = GetItemModelIndex(item);
 	if (uiStartIdx == -1) {
 		return;
@@ -759,6 +761,12 @@ void MacroTree::Reset(std::deque<std::shared_ptr<Macro>> &macros,
 	MacroTreeModel *mtm = new MacroTreeModel(this, macros);
 	setModel(mtm);
 	GetModel()->Reset(macros);
+	connect(selectionModel(),
+		SIGNAL(selectionChanged(const QItemSelection &,
+					const QItemSelection &)),
+		this,
+		SLOT(SelectionChangedHelper(const QItemSelection &,
+					    const QItemSelection &)));
 }
 
 void MacroTree::Add(std::shared_ptr<Macro> item,
@@ -1173,6 +1181,7 @@ void MacroTree::Remove(std::shared_ptr<Macro> item) const
 
 void MacroTree::Up(std::shared_ptr<Macro> item) const
 {
+	std::lock_guard<std::mutex> lock(switcher->m);
 	auto above = GetModel()->Neighbor(item, true);
 	if (!above) {
 		return;
@@ -1198,6 +1207,7 @@ void MacroTree::Up(std::shared_ptr<Macro> item) const
 
 void MacroTree::Down(std::shared_ptr<Macro> item) const
 {
+	std::lock_guard<std::mutex> lock(switcher->m);
 	auto below = GetModel()->Neighbor(item, false);
 	if (!below) {
 		return;
@@ -1245,6 +1255,12 @@ void MacroTree::UngroupSelectedGroups()
 	QModelIndexList indices = selectedIndexes();
 	GetModel()->UngroupSelectedGroups(indices);
 	assert(GetModel()->IsInValidState());
+}
+
+void MacroTree::SelectionChangedHelper(const QItemSelection &,
+				       const QItemSelection &)
+{
+	emit MacroSelectionChanged();
 }
 
 inline MacroTreeItem *MacroTree::GetItemWidget(int idx) const
