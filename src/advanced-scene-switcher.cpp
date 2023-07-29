@@ -688,6 +688,9 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING:
 		handleSceneCollectionChanging();
 		break;
+	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP:
+		SaveSceneSwitcher(nullptr, false, nullptr);
+		break;
 #endif
 	default:
 		break;
