@@ -39,7 +39,8 @@ bool StringList::Load(obs_data_t *obj, const char *name,
 }
 
 StringListEdit::StringListEdit(QWidget *parent, const QString &addString,
-			       const QString &addStringDescription)
+			       const QString &addStringDescription,
+			       int maxStringSize, bool allowEmtpy)
 	: QWidget(parent),
 	  _list(new QListWidget()),
 	  _add(new QPushButton()),
@@ -47,7 +48,9 @@ StringListEdit::StringListEdit(QWidget *parent, const QString &addString,
 	  _up(new QPushButton()),
 	  _down(new QPushButton()),
 	  _addString(addString),
-	  _addStringDescription(addStringDescription)
+	  _addStringDescription(addStringDescription),
+	  _maxStringSize(maxStringSize),
+	  _allowEmpty(allowEmtpy)
 {
 	_add->setMaximumWidth(22);
 	_add->setProperty("themeID",
@@ -130,7 +133,7 @@ void StringListEdit::Add()
 						    _addStringDescription, name,
 						    "", _maxStringSize, false);
 
-	if (!accepted || name.empty()) {
+	if (!accepted || (!_allowEmpty && name.empty())) {
 		return;
 	}
 	StringVariable string = name;
@@ -199,7 +202,7 @@ void StringListEdit::Clicked(QListWidgetItem *item)
 						    item->text(),
 						    _maxStringSize, false);
 
-	if (!accepted || name.empty()) {
+	if (!accepted || (!_allowEmpty && name.empty())) {
 		return;
 	}
 
