@@ -503,6 +503,16 @@ void AdvSceneSwitcher::SetupMacroTab()
 	ui->macroActionConditionSplitter->setStyleSheet(
 		"QSplitter::handle {background: transparent;}");
 
+	// Set action and condition control icons
+	const std::string pathPrefix =
+		GetDataFilePath("res/images/" + GetThemeTypeName());
+	SetButtonIcon(ui->actionTop, (pathPrefix + "DoubleUp.svg").c_str());
+	SetButtonIcon(ui->actionBottom,
+		      (pathPrefix + "DoubleDown.svg").c_str());
+	SetButtonIcon(ui->conditionTop, (pathPrefix + "DoubleUp.svg").c_str());
+	SetButtonIcon(ui->conditionBottom,
+		      (pathPrefix + "DoubleDown.svg").c_str());
+
 	// Reserve more space for macro edit area than for the macro list
 	ui->macroListMacroEditSplitter->setStretchFactor(0, 1);
 	ui->macroListMacroEditSplitter->setStretchFactor(1, 4);
@@ -844,32 +854,40 @@ void AdvSceneSwitcher::FadeOutActionControls()
 {
 	fade(ui->actionAdd, true);
 	fade(ui->actionRemove, true);
+	fade(ui->actionTop, true);
 	fade(ui->actionUp, true);
 	fade(ui->actionDown, true);
+	fade(ui->actionBottom, true);
 }
 
 void AdvSceneSwitcher::FadeOutConditionControls()
 {
 	fade(ui->conditionAdd, true);
 	fade(ui->conditionRemove, true);
+	fade(ui->conditionTop, true);
 	fade(ui->conditionUp, true);
 	fade(ui->conditionDown, true);
+	fade(ui->conditionBottom, true);
 }
 
 void AdvSceneSwitcher::ResetOpacityActionControls()
 {
 	fade(ui->actionAdd, false);
 	fade(ui->actionRemove, false);
+	fade(ui->actionTop, false);
 	fade(ui->actionUp, false);
 	fade(ui->actionDown, false);
+	fade(ui->actionBottom, false);
 }
 
 void AdvSceneSwitcher::ResetOpacityConditionControls()
 {
 	fade(ui->conditionAdd, false);
 	fade(ui->conditionRemove, false);
+	fade(ui->conditionTop, false);
 	fade(ui->conditionUp, false);
 	fade(ui->conditionDown, false);
+	fade(ui->conditionBottom, false);
 }
 
 void AdvSceneSwitcher::HighlightControls()

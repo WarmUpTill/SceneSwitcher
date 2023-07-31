@@ -102,12 +102,16 @@ public slots:
 	void on_runMacroOnChange_stateChanged(int value);
 	void on_conditionAdd_clicked();
 	void on_conditionRemove_clicked();
+	void on_conditionTop_clicked();
 	void on_conditionUp_clicked();
 	void on_conditionDown_clicked();
+	void on_conditionBottom_clicked();
 	void on_actionAdd_clicked();
 	void on_actionRemove_clicked();
+	void on_actionTop_clicked();
 	void on_actionUp_clicked();
 	void on_actionDown_clicked();
+	void on_actionBottom_clicked();
 	void MacroSelectionChanged(const QItemSelection &,
 				   const QItemSelection &);
 	void UpMacroSegementHotkey();

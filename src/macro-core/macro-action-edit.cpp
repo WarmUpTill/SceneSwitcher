@@ -305,6 +305,15 @@ void AdvSceneSwitcher::on_actionRemove_clicked()
 	MacroActionSelectionChanged(-1);
 }
 
+void AdvSceneSwitcher::on_actionTop_clicked()
+{
+	if (currentActionIdx == -1) {
+		return;
+	}
+	MacroActionReorder(0, currentActionIdx);
+	MacroActionSelectionChanged(0);
+}
+
 void AdvSceneSwitcher::on_actionUp_clicked()
 {
 	if (currentActionIdx == -1 || currentActionIdx == 0) {
@@ -321,6 +330,16 @@ void AdvSceneSwitcher::on_actionDown_clicked()
 	}
 	MoveMacroActionDown(currentActionIdx);
 	MacroActionSelectionChanged(currentActionIdx + 1);
+}
+
+void AdvSceneSwitcher::on_actionBottom_clicked()
+{
+	if (currentActionIdx == -1) {
+		return;
+	}
+	const int newIdx = actionsList->ContentLayout()->count() - 1;
+	MacroActionReorder(newIdx, currentActionIdx);
+	MacroActionSelectionChanged(newIdx);
 }
 
 void AdvSceneSwitcher::SwapActions(Macro *m, int pos1, int pos2)
@@ -402,8 +421,8 @@ void AdvSceneSwitcher::MacroActionReorder(int to, int from)
 		return;
 	}
 
-	if (from < 0 || from > (int)macro->Actions().size() || to < 0 ||
-	    to > (int)macro->Actions().size()) {
+	if (to == from || from < 0 || from > (int)macro->Actions().size() ||
+	    to < 0 || to > (int)macro->Actions().size()) {
 		return;
 	}
 	{
