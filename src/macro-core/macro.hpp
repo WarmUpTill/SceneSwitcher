@@ -139,7 +139,7 @@ private:
 	bool _runInParallel = false;
 	bool _matched = false;
 	bool _lastMatched = false;
-	bool _matchOnChange = false;
+	bool _matchOnChange = true;
 	bool _paused = false;
 	int _runCount = 0;
 	bool _registerHotkeys = true;
