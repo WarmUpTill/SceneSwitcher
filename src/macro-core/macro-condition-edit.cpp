@@ -459,7 +459,7 @@ void AdvSceneSwitcher::on_conditionRemove_clicked()
 
 void AdvSceneSwitcher::on_conditionUp_clicked()
 {
-	if (currentConditionIdx == -1) {
+	if (currentConditionIdx == -1 || currentConditionIdx == 0) {
 		return;
 	}
 	MoveMacroConditionUp(currentConditionIdx);
@@ -468,7 +468,9 @@ void AdvSceneSwitcher::on_conditionUp_clicked()
 
 void AdvSceneSwitcher::on_conditionDown_clicked()
 {
-	if (currentConditionIdx == -1) {
+	if (currentConditionIdx == -1 ||
+	    currentConditionIdx ==
+		    conditionsList->ContentLayout()->count() - 1) {
 		return;
 	}
 	MoveMacroConditionDown(currentConditionIdx);
