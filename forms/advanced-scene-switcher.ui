@@ -989,6 +989,19 @@
                   </spacer>
                  </item>
                  <item>
+                  <widget class="QPushButton" name="conditionTop">
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
                   <widget class="QPushButton" name="conditionUp">
                    <property name="maximumSize">
                     <size>
@@ -1020,6 +1033,19 @@
                    </property>
                    <property name="themeID" stdset="0">
                     <string notr="true">downArrowIconSmall</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="conditionBottom">
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -1131,6 +1157,19 @@
                   </spacer>
                  </item>
                  <item>
+                  <widget class="QPushButton" name="actionTop">
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
                   <widget class="QPushButton" name="actionUp">
                    <property name="maximumSize">
                     <size>
@@ -1159,6 +1198,19 @@
                    </property>
                    <property name="themeID" stdset="0">
                     <string notr="true">downArrowIconSmall</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="actionBottom">
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>

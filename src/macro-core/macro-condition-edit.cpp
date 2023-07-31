@@ -457,6 +457,15 @@ void AdvSceneSwitcher::on_conditionRemove_clicked()
 	MacroConditionSelectionChanged(-1);
 }
 
+void AdvSceneSwitcher::on_conditionTop_clicked()
+{
+	if (currentConditionIdx == -1) {
+		return;
+	}
+	MacroConditionReorder(0, currentConditionIdx);
+	MacroConditionSelectionChanged(0);
+}
+
 void AdvSceneSwitcher::on_conditionUp_clicked()
 {
 	if (currentConditionIdx == -1 || currentConditionIdx == 0) {
@@ -475,6 +484,16 @@ void AdvSceneSwitcher::on_conditionDown_clicked()
 	}
 	MoveMacroConditionDown(currentConditionIdx);
 	MacroConditionSelectionChanged(currentConditionIdx + 1);
+}
+
+void AdvSceneSwitcher::on_conditionBottom_clicked()
+{
+	if (currentConditionIdx == -1) {
+		return;
+	}
+	const int newIdx = conditionsList->ContentLayout()->count() - 1;
+	MacroConditionReorder(newIdx, currentConditionIdx);
+	MacroConditionSelectionChanged(newIdx);
 }
 
 void AdvSceneSwitcher::SwapConditions(Macro *m, int pos1, int pos2)
@@ -570,8 +589,8 @@ void AdvSceneSwitcher::MacroConditionReorder(int to, int from)
 		return;
 	}
 
-	if (from < 0 || from > (int)macro->Conditions().size() || to < 0 ||
-	    to > (int)macro->Conditions().size()) {
+	if (to == from || from < 0 || from > (int)macro->Conditions().size() ||
+	    to < 0 || to > (int)macro->Conditions().size()) {
 		return;
 	}
 	{
