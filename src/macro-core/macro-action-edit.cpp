@@ -307,7 +307,7 @@ void AdvSceneSwitcher::on_actionRemove_clicked()
 
 void AdvSceneSwitcher::on_actionUp_clicked()
 {
-	if (currentActionIdx == -1) {
+	if (currentActionIdx == -1 || currentActionIdx == 0) {
 		return;
 	}
 	MoveMacroActionUp(currentActionIdx);
@@ -315,7 +315,8 @@ void AdvSceneSwitcher::on_actionUp_clicked()
 }
 void AdvSceneSwitcher::on_actionDown_clicked()
 {
-	if (currentActionIdx == -1) {
+	if (currentActionIdx == -1 ||
+	    currentActionIdx == actionsList->ContentLayout()->count() - 1) {
 		return;
 	}
 	MoveMacroActionDown(currentActionIdx);
