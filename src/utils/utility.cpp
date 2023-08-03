@@ -845,7 +845,8 @@ QStringList GetMediaSourceNames()
 		std::string sourceId = obs_source_get_id(source);
 		if (sourceId.compare("ffmpeg_source") == 0 ||
 		    sourceId.compare("vlc_source") == 0 ||
-		    sourceId.compare("slideshow") == 0) {
+		    sourceId.compare("slideshow") == 0 ||
+		    sourceId.compare("media_playlist_source_codeyan") == 0) {
 			*list << obs_source_get_name(source);
 		}
 		return true;
