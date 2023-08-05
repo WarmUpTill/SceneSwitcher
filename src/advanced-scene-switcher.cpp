@@ -123,6 +123,10 @@ static void AskForBackup(obs_data_t *obj);
 
 static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 {
+	if (!switcher) {
+		return;
+	}
+
 	if (saving) {
 		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->Prune();
@@ -614,7 +618,7 @@ static void setStreamStopping()
 		std::chrono::high_resolution_clock::now();
 }
 
-static void handleExit()
+static void handleShutdown()
 {
 	if (!switcher) {
 		return;
@@ -624,8 +628,14 @@ static void handleExit()
 		switcher->Stop();
 		switcher->CheckMacros();
 		switcher->RunMacros();
+
+		// Unfortunately this will not work as OBS will now allow saving
+		// the scene collection data at this point, So any OBS specific
+		// changes done during shutdown will be lost
+		//
+		// TODO: Look for a way to possibly resolve this
+		obs_frontend_save();
 	}
-	FreeSceneSwitcher();
 }
 
 static void handleSceneCollectionChanging()
@@ -649,8 +659,12 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 	}
 
 	switch (event) {
-	case OBS_FRONTEND_EVENT_EXIT:
-		handleExit();
+	case OBS_FRONTEND_EVENT_SCRIPTING_SHUTDOWN:
+		// Note: We are intentionally not listening for
+		// OBS_FRONTEND_EVENT_EXIT here as at that point all scene
+		// collection data will already have been cleared and thus all
+		// macros will have already been cleared
+		handleShutdown();
 		break;
 	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
 		handleSceneChange();

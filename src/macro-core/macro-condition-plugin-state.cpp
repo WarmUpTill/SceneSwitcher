@@ -112,24 +112,28 @@ static inline void populateConditionSelection(QComboBox *list)
 
 MacroConditionPluginStateEdit::MacroConditionPluginStateEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionPluginState> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _condition(new QComboBox()),
+	  _shutdownLimitation(new QLabel(obs_module_text(
+		  "AdvSceneSwitcher.condition.pluginState.state.shutdown.limitation")))
 {
-	_condition = new QComboBox();
-
+	_shutdownLimitation->setWordWrap(true);
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
 	populateConditionSelection(_condition);
 
-	QHBoxLayout *switchLayout = new QHBoxLayout;
+	auto entryLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{condition}}", _condition},
 	};
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.pluginState.entry"),
-		switchLayout, widgetPlaceholders);
+		entryLayout, widgetPlaceholders);
+	entryLayout->setContentsMargins(0, 0, 0, 0);
 
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->addLayout(switchLayout);
+	auto mainLayout = new QVBoxLayout;
+	mainLayout->addLayout(entryLayout);
+	mainLayout->addWidget(_shutdownLimitation);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -155,6 +159,7 @@ void MacroConditionPluginStateEdit::ConditionChanged(int idx)
 	    MacroConditionPluginState::Condition::OBS_SHUTDOWN) {
 		switcher->shutdownConditionCount++;
 	}
+	SetWidgetVisibility();
 }
 
 void MacroConditionPluginStateEdit::UpdateEntryData()
@@ -165,6 +170,16 @@ void MacroConditionPluginStateEdit::UpdateEntryData()
 
 	_condition->setCurrentIndex(
 		_condition->findData(static_cast<int>(_entryData->_condition)));
+	SetWidgetVisibility();
+}
+
+void MacroConditionPluginStateEdit::SetWidgetVisibility()
+{
+	_shutdownLimitation->setVisible(
+		_entryData->_condition ==
+		MacroConditionPluginState::Condition::OBS_SHUTDOWN);
+	adjustSize();
+	updateGeometry();
 }
 
 } // namespace advss

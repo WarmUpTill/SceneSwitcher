@@ -58,7 +58,10 @@ private slots:
 	void ConditionChanged(int idx);
 
 protected:
+	void SetWidgetVisibility();
+
 	QComboBox *_condition;
+	QLabel *_shutdownLimitation;
 	std::shared_ptr<MacroConditionPluginState> _entryData;
 
 private:
