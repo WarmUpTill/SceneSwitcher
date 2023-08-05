@@ -37,6 +37,8 @@ public:
 	bool Paused() const { return _paused; }
 	void SetMatchOnChange(bool onChange) { _matchOnChange = onChange; }
 	bool MatchOnChange() const { return _matchOnChange; }
+	void SetSkipExecOnStart(bool skip) { _skipExecOnStart = skip; }
+	bool SkipExecOnStart() const { return _skipExecOnStart; }
 	int RunCount() const { return _runCount; };
 	void ResetRunCount() { _runCount = 0; };
 	void ResetTimers();
@@ -141,6 +143,7 @@ private:
 	bool _matched = false;
 	bool _lastMatched = false;
 	bool _matchOnChange = true;
+	bool _skipExecOnStart = false;
 	bool _paused = false;
 	int _runCount = 0;
 	bool _registerHotkeys = true;

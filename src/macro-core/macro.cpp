@@ -31,7 +31,7 @@ Macro::~Macro()
 	Stop();
 	ClearHotkeys();
 
-	// Keep the dock widgets in case of shutdown so they can be rostored by
+	// Keep the dock widgets in case of shutdown so they can be restored by
 	// OBS on startup
 	if (!switcher->obsIsShuttingDown) {
 		RemoveDock();
@@ -361,6 +361,7 @@ bool Macro::Save(obs_data_t *obj) const
 	obs_data_set_bool(obj, "pause", _paused);
 	obs_data_set_bool(obj, "parallel", _runInParallel);
 	obs_data_set_bool(obj, "onChange", _matchOnChange);
+	obs_data_set_bool(obj, "skipExecOnStart", _skipExecOnStart);
 
 	obs_data_set_bool(obj, "group", _isGroup);
 	if (_isGroup) {
@@ -453,6 +454,7 @@ bool Macro::Load(obs_data_t *obj)
 	_paused = obs_data_get_bool(obj, "pause");
 	_runInParallel = obs_data_get_bool(obj, "parallel");
 	_matchOnChange = obs_data_get_bool(obj, "onChange");
+	_skipExecOnStart = obs_data_get_bool(obj, "skipExecOnStart");
 
 	_isGroup = obs_data_get_bool(obj, "group");
 	if (_isGroup) {
@@ -1026,7 +1028,7 @@ bool SwitcherData::CheckMacros()
 
 bool SwitcherData::RunMacros()
 {
-	// Create copy of macor list as elements might be removed, inserted, or
+	// Create copy of macro list as elements might be removed, inserted, or
 	// reordered while macros are currently being executed.
 	// For example, this can happen if a macro is performing a wait action,
 	// as the main lock will be unlocked during this time.
@@ -1047,12 +1049,18 @@ bool SwitcherData::RunMacros()
 	}
 
 	for (auto &m : runPhaseMacros) {
-		if (m && m->Matched()) {
-			vblog(LOG_INFO, "running macro: %s", m->Name().c_str());
-			if (!m->PerformActions()) {
-				blog(LOG_WARNING, "abort macro: %s",
-				     m->Name().c_str());
-			}
+		if (!m || !m->Matched()) {
+			continue;
+		}
+		if (firstInterval && m->SkipExecOnStart()) {
+			blog(LOG_INFO,
+			     "skip execution of macro \"%s\" at startup",
+			     m->Name().c_str());
+			continue;
+		}
+		vblog(LOG_INFO, "running macro: %s", m->Name().c_str());
+		if (!m->PerformActions()) {
+			blog(LOG_WARNING, "abort macro: %s", m->Name().c_str());
 		}
 	}
 	if (GetLock()) {

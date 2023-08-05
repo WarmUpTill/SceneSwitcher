@@ -44,6 +44,8 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 		  "AdvSceneSwitcher.macroTab.newMacroRegisterHotkey"))),
 	  _currentMacroRegisterHotkeys(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentDisableHotkeys"))),
+	  _currentSkipOnStartup(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.currentSkipExecutionOnStartup"))),
 	  _currentMacroRegisterDock(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentRegisterDock"))),
 	  _currentMacroDockAddRunButton(new QCheckBox(obs_module_text(
@@ -81,6 +83,12 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	hotkeyLayout->addWidget(_newMacroRegisterHotkeys);
 	hotkeyLayout->addWidget(_currentMacroRegisterHotkeys);
 	hotkeyOptions->setLayout(hotkeyLayout);
+
+	auto generalOptions = new QGroupBox(
+		obs_module_text("AdvSceneSwitcher.macroTab.generalSettings"));
+	auto generalLayout = new QVBoxLayout;
+	generalLayout->addWidget(_currentSkipOnStartup);
+	generalOptions->setLayout(generalLayout);
 
 	int row = 0;
 	_dockLayout->addWidget(_currentMacroRegisterDock, row, 1, 1, 2);
@@ -149,6 +157,7 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	auto layout = new QVBoxLayout;
 	layout->addWidget(highlightOptions);
 	layout->addWidget(hotkeyOptions);
+	layout->addWidget(generalOptions);
 	layout->addWidget(_dockOptions);
 	layout->addWidget(buttonbox);
 	setLayout(layout);
@@ -159,10 +168,12 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	_newMacroRegisterHotkeys->setChecked(prop._newMacroRegisterHotkeys);
 	if (!macro || macro->IsGroup()) {
 		hotkeyOptions->hide();
+		generalOptions->hide();
 		_dockOptions->hide();
 		return;
 	}
 	_currentMacroRegisterHotkeys->setChecked(macro->PauseHotkeysEnabled());
+	_currentSkipOnStartup->setChecked(macro->SkipExecOnStart());
 	const bool dockEnabled = macro->DockEnabled();
 	_currentMacroRegisterDock->setChecked(dockEnabled);
 	_currentMacroDockAddRunButton->setChecked(macro->DockHasRunButton());
@@ -268,6 +279,7 @@ bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
 
 	macro->EnablePauseHotkeys(
 		dialog._currentMacroRegisterHotkeys->isChecked());
+	macro->SetSkipExecOnStart(dialog._currentSkipOnStartup->isChecked());
 	macro->EnableDock(dialog._currentMacroRegisterDock->isChecked());
 	macro->SetDockHasRunButton(
 		dialog._currentMacroDockAddRunButton->isChecked());
