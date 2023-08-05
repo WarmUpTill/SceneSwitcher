@@ -4,6 +4,8 @@
 
 #include <QVBoxLayout>
 #include <QDialogButtonBox>
+#include <QScrollArea>
+#include <QScrollBar>
 
 namespace advss {
 
@@ -154,13 +156,23 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	connect(_currentMacroDockAddStatusLabel, &QCheckBox::stateChanged, this,
 		&MacroPropertiesDialog::StatusLabelEnableChanged);
 
-	auto layout = new QVBoxLayout;
+	auto scrollArea = new QScrollArea(this);
+	scrollArea->setWidgetResizable(true);
+	scrollArea->setFrameShape(QFrame::NoFrame);
+
+	auto contentWidget = new QWidget(scrollArea);
+	auto layout = new QVBoxLayout(contentWidget);
 	layout->addWidget(highlightOptions);
 	layout->addWidget(hotkeyOptions);
 	layout->addWidget(generalOptions);
 	layout->addWidget(_dockOptions);
-	layout->addWidget(buttonbox);
-	setLayout(layout);
+	layout->setContentsMargins(0, 0, 0, 0);
+	scrollArea->setWidget(contentWidget);
+
+	auto dialogLayout = new QVBoxLayout();
+	dialogLayout->addWidget(scrollArea);
+	dialogLayout->addWidget(buttonbox);
+	setLayout(dialogLayout);
 
 	_executed->setChecked(prop._highlightExecuted);
 	_conditions->setChecked(prop._highlightConditions);
@@ -205,6 +217,20 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 				dockEnabled && macro->DockHasStatusLabel());
 	MinimizeSizeOfColumn(_dockLayout, 0);
 	Resize();
+
+	// Try to set sensible initial size for the dialog window
+	QSize contentSize = contentWidget->sizeHint();
+	resize(contentSize.width() + layout->contentsMargins().left() +
+		       layout->contentsMargins().right() +
+		       dialogLayout->contentsMargins().left() +
+		       dialogLayout->contentsMargins().right() +
+		       scrollArea->verticalScrollBar()->sizeHint().width() + 20,
+	       contentSize.height() + dialogLayout->spacing() +
+		       buttonbox->sizeHint().height() +
+		       dialogLayout->contentsMargins().top() +
+		       dialogLayout->contentsMargins().bottom() +
+		       scrollArea->horizontalScrollBar()->sizeHint().height() +
+		       20);
 }
 
 void MacroPropertiesDialog::DockEnableChanged(int enabled)
@@ -255,8 +281,6 @@ void MacroPropertiesDialog::Resize()
 {
 	_dockOptions->adjustSize();
 	_dockOptions->updateGeometry();
-	adjustSize();
-	updateGeometry();
 }
 
 bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
