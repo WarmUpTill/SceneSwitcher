@@ -510,7 +510,8 @@ bool DisplayMessage(const QString &msg, bool question, bool modal)
 		return (answer == QMessageBox::Yes);
 	} else if (question && modal) {
 		auto answer = QMessageBox::question(
-			nullptr,
+			static_cast<QMainWindow *>(
+				obs_frontend_get_main_window()),
 			obs_module_text("AdvSceneSwitcher.windowTitle"), msg,
 			QMessageBox::Yes | QMessageBox::No);
 		return answer == QMessageBox::Yes;
