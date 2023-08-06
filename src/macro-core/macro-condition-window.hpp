@@ -21,10 +21,6 @@ public:
 		return std::make_shared<MacroConditionWindow>(m);
 	}
 
-private:
-	bool WindowMatches(const std::string &window);
-	bool WindowRegexMatches(const std::vector<std::string> &windowList);
-
 public:
 	StringVariable _window;
 	RegexConfig _windowRegex;
@@ -40,6 +36,11 @@ public:
 	RegexConfig _textRegex = RegexConfig::PartialMatchRegexConfig();
 
 private:
+	bool WindowMatchesRequirements(const std::string &window) const;
+	bool WindowMatches(const std::vector<std::string> &windowList);
+	bool WindowRegexMatches(const std::vector<std::string> &windowList);
+	void SetVariableValueBasedOnMatch(const std::string &matchWindow);
+
 	static bool _registered;
 	static const std::string id;
 };
