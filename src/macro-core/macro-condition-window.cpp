@@ -40,7 +40,8 @@ static bool windowContainsText(const std::string &window,
 	return text == matchText;
 }
 
-bool MacroConditionWindow::WindowMatches(const std::string &window)
+bool MacroConditionWindow::WindowMatchesRequirements(
+	const std::string &window) const
 {
 	const bool focusCheckOK = (!_focus || window == switcher->currentTitle);
 	if (!focusCheckOK) {
@@ -60,24 +61,50 @@ bool MacroConditionWindow::WindowMatches(const std::string &window)
 		return false;
 	}
 
-	if (_checkText) {
-		auto text = GetTextInWindow(window);
-		SetVariableValue(text.value_or(""));
-	}
-
 	return true;
+}
+
+bool MacroConditionWindow::WindowMatches(
+	const std::vector<std::string> &windowList)
+{
+	bool match = !_checkTitle ||
+		     std::find(windowList.begin(), windowList.end(),
+			       std::string(_window)) != windowList.end();
+	match = match && WindowMatchesRequirements(_window);
+	SetVariableValueBasedOnMatch(_window);
+	return match;
 }
 
 bool MacroConditionWindow::WindowRegexMatches(
 	const std::vector<std::string> &windowList)
 {
+	// No need to test if checking for window title is required as if the
+	// user has disabled window title matching the option will always be
+	// enabled in the backend and use the regular expression ".*".
+
 	for (const auto &window : windowList) {
 		if (matchRegex(_windowRegex, window, _window) &&
-		    WindowMatches(window)) {
+		    WindowMatchesRequirements(window)) {
+			SetVariableValueBasedOnMatch(window);
 			return true;
 		}
 	}
+	SetVariableValueBasedOnMatch("");
 	return false;
+}
+
+void MacroConditionWindow::SetVariableValueBasedOnMatch(
+	const std::string &matchWindow)
+{
+	if (!IsReferencedInVars()) {
+		return;
+	}
+	if (_checkText) {
+		auto text = GetTextInWindow(matchWindow);
+		SetVariableValue(text.value_or(""));
+	} else {
+		SetVariableValue(switcher->currentTitle);
+	}
 }
 
 static bool foregroundWindowChanged()
@@ -87,19 +114,13 @@ static bool foregroundWindowChanged()
 
 bool MacroConditionWindow::CheckCondition()
 {
-	SetVariableValue("");
-	if (!_checkText) {
-		SetVariableValue(switcher->currentTitle);
-	}
-
 	std::vector<std::string> windowList;
 	GetWindowList(windowList);
-
 	bool match = false;
 	if (_windowRegex.Enabled()) {
 		match = WindowRegexMatches(windowList);
 	} else {
-		match = WindowMatches(_window);
+		match = WindowMatches(windowList);
 	}
 	match = match && (!_windowFocusChanged || foregroundWindowChanged());
 	return match;
