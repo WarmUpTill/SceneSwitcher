@@ -22,6 +22,7 @@ A clear and concise description of what you expected to happen.
 
 **Logs**
 Please provide a log of your issue with verbose logging enabled (See General tab of the plugin).  
+In case of a crash, please also include the corresponding crash log.  
 See [here](https://obsproject.com/forum/threads/please-post-a-log-with-your-issue-heres-how.23074/) for a description where to find the log files and how to share them.  
 Please share the currently used plugin settings by exporting them them to a file (See General tab of the plugin).  
 If applicable, add screenshots to help explain your problem.
