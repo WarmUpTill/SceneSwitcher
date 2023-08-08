@@ -843,11 +843,9 @@ QStringList GetMediaSourceNames()
 	auto sourceEnum = [](void *param, obs_source_t *source) -> bool /* -- */
 	{
 		QStringList *list = reinterpret_cast<QStringList *>(param);
-		std::string sourceId = obs_source_get_id(source);
-		if (sourceId.compare("ffmpeg_source") == 0 ||
-		    sourceId.compare("vlc_source") == 0 ||
-		    sourceId.compare("slideshow") == 0 ||
-		    sourceId.compare("media_playlist_source_codeyan") == 0) {
+		uint32_t flags = obs_source_get_output_flags(source);
+
+		if ((flags & OBS_SOURCE_CONTROLLABLE_MEDIA) != 0) {
 			*list << obs_source_get_name(source);
 		}
 		return true;
