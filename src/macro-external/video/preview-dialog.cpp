@@ -122,6 +122,7 @@ void PreviewDialog::PatternMatchParametersChanged(
 {
 	std::unique_lock<std::mutex> lock(_mtx);
 	_patternMatchParams = params;
+	_patternImageData = CreatePatternData(_patternMatchParams.image);
 }
 
 void PreviewDialog::ObjDetectParametersChanged(const ObjDetectParameters &params)
@@ -169,8 +170,8 @@ void PreviewDialog::UpdateImage(const QPixmap &image)
 	if (_type == PreviewType::SELECT_AREA && !_selectingArea) {
 		DrawFrame();
 	}
-	emit NeedImage(_video, _type, _patternMatchParams, _objDetectParams,
-		       _ocrParams, _areaParams, _condition);
+	emit NeedImage(_video, _type, _patternMatchParams, _patternImageData,
+		       _objDetectParams, _ocrParams, _areaParams, _condition);
 }
 
 void PreviewDialog::Start()
@@ -186,7 +187,7 @@ void PreviewDialog::Start()
 		return;
 	}
 
-	PreviewImage *worker = new PreviewImage(_mtx);
+	auto worker = new PreviewImage(_mtx);
 	worker->moveToThread(&_thread);
 	connect(&_thread, &QThread::finished, worker, &QObject::deleteLater);
 	connect(worker, &PreviewImage::ImageReady, this,
@@ -197,8 +198,8 @@ void PreviewDialog::Start()
 		&PreviewImage::CreateImage);
 	_thread.start();
 
-	emit NeedImage(_video, _type, _patternMatchParams, _objDetectParams,
-		       _ocrParams, _areaParams, _condition);
+	emit NeedImage(_video, _type, _patternMatchParams, _patternImageData,
+		       _objDetectParams, _ocrParams, _areaParams, _condition);
 }
 
 void PreviewDialog::DrawFrame()
@@ -216,14 +217,13 @@ void PreviewDialog::DrawFrame()
 	_rubberBand->show();
 }
 
-static void markPatterns(cv::UMat &matchResult, QImage &image,
-			 const cv::UMat &pattern)
+static void markPatterns(cv::Mat &matchResult, QImage &image,
+			 const cv::Mat &pattern)
 {
-	auto temp = matchResult.getMat(cv::ACCESS_RW);
 	auto matchImg = QImageToMat(image);
-	for (int row = 0; row < temp.rows - 1; row++) {
-		for (int col = 0; col < temp.cols - 1; col++) {
-			if (temp.at<float>(row, col) != 0.0) {
+	for (int row = 0; row < matchResult.rows - 1; row++) {
+		for (int col = 0; col < matchResult.cols - 1; col++) {
+			if (matchResult.at<float>(row, col) != 0.0) {
 				rectangle(matchImg, {col, row},
 					  cv::Point(col + pattern.cols,
 						    row + pattern.rows),
@@ -231,7 +231,6 @@ static void markPatterns(cv::UMat &matchResult, QImage &image,
 			}
 		}
 	}
-	matchResult = temp.getUMat(cv::ACCESS_RW);
 }
 
 static void markObjects(QImage &image, std::vector<cv::Rect> &objects)
@@ -249,6 +248,7 @@ PreviewImage::PreviewImage(std::mutex &mtx) : _mtx(mtx) {}
 
 void PreviewImage::CreateImage(const VideoInput &video, PreviewType type,
 			       const PatternMatchParameters &patternMatchParams,
+			       const PatternImageData &patternImageData,
 			       ObjDetectParameters objDetectParams,
 			       OCRParameters ocrParams,
 			       const AreaParameters &areaParams,
@@ -279,8 +279,6 @@ void PreviewImage::CreateImage(const VideoInput &video, PreviewType type,
 				areaParams.area.x, areaParams.area.y,
 				areaParams.area.width, areaParams.area.height);
 		}
-		const auto patternImageData =
-			CreatePatternData(patternMatchParams.image);
 		// Will emit status label update
 		MarkMatch(screenshot.image, patternMatchParams,
 			  patternImageData, objDetectParams, ocrParams,
@@ -299,7 +297,7 @@ void PreviewImage::MarkMatch(QImage &screenshot,
 			     VideoCondition condition)
 {
 	if (condition == VideoCondition::PATTERN) {
-		cv::UMat result;
+		cv::Mat result;
 		MatchPattern(screenshot, patternImageData,
 			     patternMatchParams.threshold, result,
 			     patternMatchParams.useAlphaAsMask,

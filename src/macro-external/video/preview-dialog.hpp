@@ -25,7 +25,8 @@ public:
 
 public slots:
 	void CreateImage(const VideoInput &, PreviewType,
-			 const PatternMatchParameters &, ObjDetectParameters,
+			 const PatternMatchParameters &,
+			 const PatternImageData &, ObjDetectParameters,
 			 OCRParameters, const AreaParameters &, VideoCondition);
 signals:
 	void ImageReady(const QPixmap &);
@@ -63,8 +64,9 @@ private slots:
 signals:
 	void SelectionAreaChanged(QRect area);
 	void NeedImage(const VideoInput &, PreviewType,
-		       const PatternMatchParameters &, ObjDetectParameters,
-		       OCRParameters, const AreaParameters &, VideoCondition);
+		       const PatternMatchParameters &, const PatternImageData &,
+		       ObjDetectParameters, OCRParameters,
+		       const AreaParameters &, VideoCondition);
 
 private:
 	void Start();
@@ -76,6 +78,7 @@ private:
 
 	VideoInput _video;
 	PatternMatchParameters _patternMatchParams;
+	PatternImageData _patternImageData;
 	ObjDetectParameters _objDetectParams;
 	OCRParameters _ocrParams;
 	AreaParameters _areaParams;
