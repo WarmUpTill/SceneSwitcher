@@ -252,7 +252,9 @@ OCRParameters::OCRParameters(const OCRParameters &other)
 	  colorThreshold(other.colorThreshold),
 	  pageSegMode(other.pageSegMode)
 {
-	Setup();
+	if (!initDone) {
+		Setup();
+	}
 	if (initDone) {
 		ocr->SetPageSegMode(pageSegMode);
 	}
@@ -265,7 +267,12 @@ OCRParameters &OCRParameters::operator=(const OCRParameters &other)
 	color = other.color;
 	colorThreshold = other.colorThreshold;
 	pageSegMode = other.pageSegMode;
-	ocr->SetPageSegMode(pageSegMode);
+	if (!initDone) {
+		Setup();
+	}
+	if (initDone) {
+		ocr->SetPageSegMode(pageSegMode);
+	}
 	return *this;
 }
 
