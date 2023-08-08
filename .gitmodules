@@ -19,3 +19,6 @@
 [submodule "deps/libremidi"]
 	path = deps/libremidi
 	url = https://github.com/jcelerier/libremidi.git
+[submodule "deps/cpp-httplib"]
+	path = deps/cpp-httplib
+	url = https://github.com/yhirose/cpp-httplib.git
