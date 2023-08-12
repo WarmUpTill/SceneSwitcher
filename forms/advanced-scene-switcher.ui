@@ -67,8 +67,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>957</width>
-            <height>905</height>
+            <width>962</width>
+            <height>1033</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -243,6 +243,30 @@
                     </item>
                     <item>
                      <spacer name="horizontalSpacer_52">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>40</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
+                  </item>
+                  <item>
+                   <layout class="QHBoxLayout" name="horizontalLayout_11">
+                    <item>
+                     <widget class="QCheckBox" name="disableComboBoxFilter">
+                      <property name="text">
+                       <string>AdvSceneSwitcher.generalTab.generalBehavior.comboBoxFilterDisable</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="horizontalSpacer_13">
                       <property name="orientation">
                        <enum>Qt::Horizontal</enum>
                       </property>

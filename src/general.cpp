@@ -2,6 +2,7 @@
 #include "switcher-data.hpp"
 #include "status-control.hpp"
 #include "file-selection.hpp"
+#include "filter-combo-box.hpp"
 #include "utility.hpp"
 #include "version.h"
 
@@ -173,6 +174,16 @@ void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 	}
 
 	switcher->disableHints = state;
+}
+
+void AdvSceneSwitcher::on_disableComboBoxFilter_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	switcher->disableFilterComboboxFilter = state;
+	FilterComboBox::SetFilterBehaviourEnabled(!state);
 }
 
 void AdvSceneSwitcher::on_warnPluginLoadFailure_stateChanged(int state)
@@ -575,6 +586,8 @@ void SwitcherData::SaveGeneralSettings(obs_data_t *obj)
 	obs_data_set_bool(obj, "showSystemTrayNotifications",
 			  showSystemTrayNotifications);
 	obs_data_set_bool(obj, "disableHints", disableHints);
+	obs_data_set_bool(obj, "disableFilterComboboxFilter",
+			  disableFilterComboboxFilter);
 	obs_data_set_bool(obj, "warnPluginLoadFailure", warnPluginLoadFailure);
 	obs_data_set_bool(obj, "hideLegacyTabs", hideLegacyTabs);
 
@@ -623,6 +636,8 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 	showSystemTrayNotifications =
 		obs_data_get_bool(obj, "showSystemTrayNotifications");
 	disableHints = obs_data_get_bool(obj, "disableHints");
+	disableFilterComboboxFilter =
+		obs_data_get_bool(obj, "disableFilterComboboxFilter");
 	obs_data_set_default_bool(obj, "warnPluginLoadFailure", true);
 	warnPluginLoadFailure = obs_data_get_bool(obj, "warnPluginLoadFailure");
 	obs_data_set_default_bool(obj, "hideLegacyTabs", true);
@@ -997,6 +1012,10 @@ void AdvSceneSwitcher::SetupGeneralTab()
 	ui->showTrayNotifications->setChecked(
 		switcher->showSystemTrayNotifications);
 	ui->uiHintsDisable->setChecked(switcher->disableHints);
+	ui->disableComboBoxFilter->setChecked(
+		switcher->disableFilterComboboxFilter);
+	FilterComboBox::SetFilterBehaviourEnabled(
+		!switcher->disableFilterComboboxFilter);
 	ui->warnPluginLoadFailure->setChecked(switcher->warnPluginLoadFailure);
 	ui->hideLegacyTabs->setChecked(switcher->hideLegacyTabs);
 
