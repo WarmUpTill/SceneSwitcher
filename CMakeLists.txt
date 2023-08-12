@@ -254,6 +254,7 @@ target_sources(
           src/utils/curl-helper.hpp
           src/utils/duration-control.cpp
           src/utils/duration-control.hpp
+          src/utils/export-symbol-helper.hpp
           src/utils/item-selection-helpers.cpp
           src/utils/item-selection-helpers.hpp
           src/utils/log-helper.hpp
@@ -374,6 +375,8 @@ target_include_directories(
          "${CMAKE_CURRENT_SOURCE_DIR}/deps/websocketpp"
          "${CMAKE_CURRENT_SOURCE_DIR}/deps/obs-websocket/lib"
          "${CMAKE_CURRENT_SOURCE_DIR}/deps/exprtk")
+
+target_compile_definitions(${LIB_NAME} PRIVATE ADVSS_EXPORT_SYMBOLS=1)
 
 # --- End of section ---
 
