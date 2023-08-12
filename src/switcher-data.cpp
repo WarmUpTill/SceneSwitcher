@@ -168,11 +168,22 @@ void SwitcherData::SaveVersion(obs_data_t *obj,
 	obs_data_set_string(obj, "version", currentVersion.c_str());
 }
 
-void SwitcherData::AddResetForNextIntervalFunction(
-	std::function<void()> function)
+void SwitcherData::AddIntervalResetStep(std::function<void()> function)
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
-	resetForNextIntervalFuncs.emplace_back(function);
+	resetIntervalSteps.emplace_back(function);
+}
+
+void SwitcherData::AddSaveStep(std::function<void(obs_data_t *)> function)
+{
+	std::lock_guard<std::mutex> lock(switcher->m);
+	saveSteps.emplace_back(function);
+}
+
+void SwitcherData::AddLoadStep(std::function<void(obs_data_t *)> function)
+{
+	std::lock_guard<std::mutex> lock(switcher->m);
+	loadSteps.emplace_back(function);
 }
 
 } // namespace advss

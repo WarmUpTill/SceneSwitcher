@@ -505,6 +505,11 @@ void SwitcherData::LoadSettings(obs_data_t *obj)
 	loadSceneGroups(obj);
 	LoadVariables(obj);
 	LoadConnections(obj);
+
+	for (const auto &func : loadSteps) {
+		func(obj);
+	}
+
 	LoadMacros(obj);
 	loadWindowTitleSwitches(obj);
 	loadScreenRegionSwitches(obj);
@@ -559,6 +564,10 @@ void SwitcherData::SaveSettings(obs_data_t *obj)
 	SaveHotkeys(obj);
 	SaveUISettings(obj);
 	SaveVersion(obj, g_GIT_SHA1);
+
+	for (const auto &func : saveSteps) {
+		func(obj);
+	}
 }
 
 void SwitcherData::SaveGeneralSettings(obs_data_t *obj)

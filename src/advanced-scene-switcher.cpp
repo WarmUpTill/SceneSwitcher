@@ -334,7 +334,7 @@ void SwitcherData::ResetForNextInterval()
 	// Core reset functions
 	ClearWebsocketMessages();
 	// Plugin reset functions
-	for (const auto &func : resetForNextIntervalFuncs) {
+	for (const auto &func : resetIntervalSteps) {
 		func();
 	}
 }
