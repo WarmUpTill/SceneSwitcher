@@ -4,16 +4,10 @@
 #include <QPushButton>
 #include <QDialog>
 #include <QLineEdit>
-#include <QCheckBox>
-#include <QSpinBox>
 #include <QLabel>
 #include <QDialogButtonBox>
-#include <QSpinBox>
-#include <QTimer>
-#include <QWidget>
 #include <deque>
-#include <obs.hpp>
-#include <websocket-helpers.hpp>
+#include <obs-data.h>
 
 namespace advss {
 

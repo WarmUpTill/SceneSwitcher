@@ -5,7 +5,7 @@ project(advanced-scene-switcher-midi)
 
 get_target_property(ADVSS_SOURCE_DIR advanced-scene-switcher-lib SOURCE_DIR)
 set(LIBREMIDI_DIR "${ADVSS_SOURCE_DIR}/deps/libremidi")
-if(NOT EXISTS "${LIBREMIDI_DIR}")
+if(NOT EXISTS "${LIBREMIDI_DIR}/CMakeLists.txt")
   message(WARNING "libremidi directory \"${LIBREMIDI_DIR}\" not found!\n"
                   "MIDI support will be disabled!")
   return()

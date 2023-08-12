@@ -332,7 +332,7 @@ bool IsFullscreen(const std::string &title)
 	return windowStatesAreSet(title, states);
 }
 
-std::optional<std::string> GetTextInWindow(const std::string &window)
+std::optional<std::string> GetTextInWindow(const std::string &)
 {
 	// Not implemented
 	return {};

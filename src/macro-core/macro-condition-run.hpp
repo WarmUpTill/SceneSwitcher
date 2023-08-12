@@ -3,6 +3,7 @@
 #include "process-config.hpp"
 #include "duration-control.hpp"
 
+#include <thread>
 #include <QCheckBox>
 #include <QSpinBox>
 

@@ -731,9 +731,8 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 		obs_module_text("AdvSceneSwitcher.macroTab.export"), this,
 		&AdvSceneSwitcher::ExportMacros);
 	exportAction->setDisabled(ui->macros->SelectionEmpty());
-	auto import = menu.addAction(
-		obs_module_text("AdvSceneSwitcher.macroTab.import"), this,
-		&AdvSceneSwitcher::ImportMacros);
+	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.import"),
+		       this, &AdvSceneSwitcher::ImportMacros);
 
 	menu.exec(globalPos);
 }

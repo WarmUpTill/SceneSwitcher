@@ -5,6 +5,12 @@
 #include <string.h>
 #include <QGroupBox>
 
+#ifdef WIN32
+#include <winsock.h>
+#else
+#include <arpa/inet.h>
+#endif
+
 namespace advss {
 
 std::unordered_map<size_t, OSCMessageElement::TypeInfo>
@@ -360,7 +366,7 @@ OSCMessageElementEdit::OSCMessageElementEdit(QWidget *parent)
 	_text->hide();
 	_binaryText->hide();
 
-	for (int i = 0; i < OSCMessageElement::_typeNames.size() - 1; i++) {
+	for (size_t i = 0; i < OSCMessageElement::_typeNames.size() - 1; i++) {
 		_type->addItem(obs_module_text(
 			OSCMessageElement::_typeNames.at(i).localizedName));
 	}
