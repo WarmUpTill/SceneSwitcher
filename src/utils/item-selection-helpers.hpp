@@ -1,5 +1,6 @@
 #pragma once
 #include "filter-combo-box.hpp"
+#include "export-symbol-helper.hpp"
 
 #include <QPushButton>
 #include <QDialog>
@@ -11,8 +12,8 @@
 
 namespace advss {
 
-class ItemSelection;
-class ItemSettingsDialog;
+class ADVSS_EXPORT ItemSelection;
+class ADVSS_EXPORT ItemSettingsDialog;
 
 class Item {
 public:
