@@ -1,13 +1,3 @@
-#include <QMainWindow>
-#include <QAction>
-#include <QFileDialog>
-#include <QDirIterator>
-#include <regex>
-#include <filesystem>
-
-#include <obs-module.h>
-#include <obs-frontend-api.h>
-
 #include "advanced-scene-switcher.hpp"
 #include "switcher-data.hpp"
 #include "status-control.hpp"
@@ -16,6 +6,15 @@
 #include "platform-funcs.hpp"
 #include "utility.hpp"
 #include "version.h"
+
+#include <QMainWindow>
+#include <QAction>
+#include <QFileDialog>
+#include <QDirIterator>
+#include <regex>
+#include <filesystem>
+#include <obs-module.h>
+#include <obs-frontend-api.h>
 
 namespace advss {
 
@@ -327,6 +326,8 @@ void SwitcherData::SetPreconditions()
 			   cursorPos.second != switcher->lastCursorPos.second;
 	lastCursorPos = GetCursorPos();
 }
+
+void ClearWebsocketMessages();
 
 void SwitcherData::ResetForNextInterval()
 {

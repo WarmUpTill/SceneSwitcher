@@ -605,11 +605,11 @@ bool IsValidMacroSegmentIndex(Macro *m, const int idx, bool isCondition)
 		return false;
 	}
 	if (isCondition) {
-		if (idx >= m->Conditions().size()) {
+		if (idx >= (int)m->Conditions().size()) {
 			return false;
 		}
 	} else {
-		if (idx >= m->Actions().size()) {
+		if (idx >= (int)m->Actions().size()) {
 			return false;
 		}
 	}

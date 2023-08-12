@@ -2,6 +2,7 @@
 #include "platform-funcs.hpp"
 #include "utility.hpp"
 
+#include <thread>
 #include <obs-interaction.h>
 
 namespace advss {
@@ -723,7 +724,7 @@ static QString getHotkeyDescriptionByName(const std::string &name)
 		QString description = "";
 	} params;
 
-	auto func = [](void *param, obs_hotkey_id id, obs_hotkey_t *hotkey) {
+	auto func = [](void *param, obs_hotkey_id, obs_hotkey_t *hotkey) {
 		auto params = static_cast<Parameters *>(param);
 		std::string name = obs_hotkey_get_name(hotkey);
 		addNamePrefix(name, hotkey);

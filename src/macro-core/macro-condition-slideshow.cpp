@@ -200,9 +200,9 @@ MacroConditionSlideshowEdit::MacroConditionSlideshowEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionSlideshow> entryData)
 	: QWidget(parent),
 	  _conditions(new QComboBox(this)),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _index(new VariableSpinBox(this)),
-	  _path(new VariableLineEdit(this))
+	  _path(new VariableLineEdit(this)),
+	  _sources(new SourceSelectionWidget(this, QStringList(), true))
 {
 	setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.slideshow.updateIntervalTooltip"));

@@ -367,7 +367,6 @@ std::vector<OBSSceneItem> SceneItemSelection::GetSceneItemsByName(
 	} else {
 		name = GetWeakSourceName(_source);
 	}
-	int count = getCountOfSceneItemOccurance(sceneSelection, name, false);
 	auto items = getSceneItemsWithName(scene, name);
 	ReduceBadedOnIndexSelection(items);
 	return items;
@@ -753,6 +752,10 @@ void SceneItemSelectionWidget::SetNameConflictVisibility()
 	case SceneItemSelection::Type::SOURCE_GROUP:
 		sceneItemCount =
 			getTotalSceneItemCountOnScene(_scene.GetScene(false));
+		break;
+	case SceneItemSelection::Type::INDEX:
+	case SceneItemSelection::Type::INDEX_RANGE:
+	case SceneItemSelection::Type::ALL:
 		break;
 	}
 

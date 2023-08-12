@@ -609,7 +609,7 @@ bool MacroTreeModel::IsLastItem(std::shared_ptr<Macro> item) const
 bool MacroTreeModel::IsInValidState()
 {
 	// Check for reordering erros
-	for (int i = 0, j = 0; i < _macros.size(); i++) {
+	for (size_t i = 0, j = 0; i < _macros.size(); i++) {
 		const auto &m = _macros[i];
 		if (QString::fromStdString(m->Name()) !=
 		    data(index(j, 0), Qt::AccessibleTextRole)) {
@@ -622,7 +622,7 @@ bool MacroTreeModel::IsInValidState()
 	}
 
 	// Check for group errors
-	for (int i = 0; i < _macros.size(); i++) {
+	for (size_t i = 0; i < _macros.size(); i++) {
 		const auto &m = _macros[i];
 		if (!m->IsGroup()) {
 			continue;

@@ -3,6 +3,7 @@
 #include "utility.hpp"
 
 #include <QLayout>
+#include <QTimer>
 
 namespace advss {
 
