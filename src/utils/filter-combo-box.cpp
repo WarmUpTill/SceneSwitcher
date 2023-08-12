@@ -7,9 +7,22 @@
 
 namespace advss {
 
+bool FilterComboBox::_filteringEnabled = false;
+
 FilterComboBox::FilterComboBox(QWidget *parent, const QString &placehodler)
 	: QComboBox(parent)
 {
+	// If the filtering behaviour of the FilterComboBox is disabled it is
+	// just a regular QComboBox with the option to set a placeholder so exit
+	// the constructor early.
+
+	if (!_filteringEnabled) {
+		if (!placehodler.isEmpty()) {
+			setPlaceholderText(placehodler);
+		}
+		return;
+	}
+
 	// Allow edit for completer but don't add new entries on pressing enter
 	setEditable(true);
 	setInsertPolicy(InsertPolicy::NoInsert);
@@ -29,6 +42,11 @@ FilterComboBox::FilterComboBox(QWidget *parent, const QString &placehodler)
 		this, &FilterComboBox::CompleterHighlightChanged);
 	connect(lineEdit(), &QLineEdit::textChanged, this,
 		&FilterComboBox::TextChagned);
+}
+
+void FilterComboBox::SetFilterBehaviourEnabled(bool value)
+{
+	FilterComboBox::_filteringEnabled = value;
 }
 
 void FilterComboBox::focusOutEvent(QFocusEvent *event)

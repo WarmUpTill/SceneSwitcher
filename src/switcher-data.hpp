@@ -204,6 +204,7 @@ public:
 	QStringList loadFailureLibs;
 	bool warnPluginLoadFailure = true;
 	bool disableHints = false;
+	bool disableFilterComboboxFilter = false;
 	bool hideLegacyTabs = true;
 	std::vector<int> tabOrder = std::vector<int>(tab_count);
 	bool saveWindowGeo = false;

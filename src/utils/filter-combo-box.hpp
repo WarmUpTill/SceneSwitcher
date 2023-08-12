@@ -10,6 +10,7 @@ class FilterComboBox : public QComboBox {
 public:
 	FilterComboBox(QWidget *parent = nullptr,
 		       const QString &placehodler = "");
+	static void SetFilterBehaviourEnabled(bool);
 
 protected:
 	void focusOutEvent(QFocusEvent *event) override;
@@ -20,6 +21,7 @@ private slots:
 
 private:
 	int _lastCompleterHighlightRow = -1;
+	static bool _filteringEnabled;
 };
 
 } // namespace advss
