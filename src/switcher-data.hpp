@@ -64,7 +64,9 @@ public:
 
 	void SetPreconditions();
 	void ResetForNextInterval();
-	void AddResetForNextIntervalFunction(std::function<void()>);
+	void AddSaveStep(std::function<void(obs_data_t *)>);
+	void AddLoadStep(std::function<void(obs_data_t *)>);
+	void AddIntervalResetStep(std::function<void()>);
 	bool CheckForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
 			   int &linger, bool &setPreviousSceneAsMatch,
 			   bool &macroMatch);
@@ -112,7 +114,9 @@ public:
 	std::atomic_bool abortMacroWait = {false};
 	std::condition_variable macroTransitionCv;
 
-	std::vector<std::function<void()>> resetForNextIntervalFuncs;
+	std::vector<std::function<void(obs_data_t *)>> saveSteps;
+	std::vector<std::function<void(obs_data_t *)>> loadSteps;
+	std::vector<std::function<void()>> resetIntervalSteps;
 
 	bool firstBoot = true;
 	bool transitionActive = false;

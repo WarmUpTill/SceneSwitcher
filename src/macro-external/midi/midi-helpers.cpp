@@ -9,7 +9,7 @@ namespace advss {
 static std::map<std::pair<MidiDeviceType, int>, MidiDeviceInstance *>
 SetupMidiMessageVector()
 {
-	GetSwitcher()->AddResetForNextIntervalFunction(
+	GetSwitcher()->AddIntervalResetStep(
 		MidiDeviceInstance::ClearMessageBuffersOfAllDevices);
 	return {};
 }
