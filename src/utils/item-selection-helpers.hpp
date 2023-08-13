@@ -36,10 +36,13 @@ class ItemSettingsDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	ItemSettingsDialog(const Item &, std::deque<std::shared_ptr<Item>> &,
-			   std::string_view = "AdvSceneSwitcher.item.select",
-			   std::string_view = "AdvSceneSwitcher.item.select",
-			   QWidget *parent = 0);
+	ItemSettingsDialog(
+		const Item &, std::deque<std::shared_ptr<Item>> &,
+		std::string_view selectString = "AdvSceneSwitcher.item.select",
+		std::string_view addString = "AdvSceneSwitcher.item.add",
+		std::string_view conflictString =
+			"AdvSceneSwitcher.item.nameNotAvailable",
+		QWidget *parent = 0);
 	virtual ~ItemSettingsDialog() = default;
 
 private slots:
@@ -54,6 +57,8 @@ protected:
 	std::deque<std::shared_ptr<Item>> &_items;
 	std::string_view _selectStr;
 	std::string_view _addStr;
+	std::string_view _conflictStr;
+	QString _originalName;
 };
 
 typedef bool (*SettingsCallback)(QWidget *, Item &);
@@ -68,9 +73,12 @@ public:
 		SettingsCallback,
 		std::string_view selectString = "AdvSceneSwitcher.item.select",
 		std::string_view addString = "AdvSceneSwitcher.item.add",
+		std::string_view conflictString =
+			"AdvSceneSwitcher.item.nameNotAvailable",
 		std::string_view configureTooltip = "", QWidget *parent = 0);
 	virtual ~ItemSelection() = default;
 	void SetItem(const std::string &);
+	void ShowRenameContextMenu(bool value);
 
 private slots:
 	void ModifyButtonClicked();
@@ -96,6 +104,8 @@ protected:
 	std::deque<std::shared_ptr<Item>> &_items;
 	std::string_view _selectStr;
 	std::string_view _addStr;
+	std::string_view _conflictStr;
+	bool _showRenameContextMenu = true;
 };
 
 } // namespace advss
