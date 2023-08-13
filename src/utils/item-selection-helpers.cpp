@@ -46,6 +46,7 @@ static bool ItemNameAvailable(const std::string &name,
 ItemSelection::ItemSelection(std::deque<std::shared_ptr<Item>> &items,
 			     CreateItemFunc create, SettingsCallback callback,
 			     std::string_view select, std::string_view add,
+			     std::string_view conflict,
 			     std::string_view configureTooltip, QWidget *parent)
 	: QWidget(parent),
 	  _selection(new FilterComboBox(this, obs_module_text(select.data()))),
@@ -54,7 +55,8 @@ ItemSelection::ItemSelection(std::deque<std::shared_ptr<Item>> &items,
 	  _askForSettings(callback),
 	  _items(items),
 	  _selectStr(select),
-	  _addStr(add)
+	  _addStr(add),
+	  _conflictStr(conflict)
 {
 	_modify->setMaximumWidth(22);
 	SetButtonIcon(_modify, ":/settings/images/settings/general.svg");
@@ -92,6 +94,11 @@ void ItemSelection::SetItem(const std::string &item)
 	} else {
 		_selection->setCurrentIndex(-1);
 	}
+}
+
+void ItemSelection::ShowRenameContextMenu(bool value)
+{
+	_showRenameContextMenu = value;
 }
 
 void ItemSelection::ChangeSelection(const QString &sel)
@@ -139,12 +146,14 @@ void ItemSelection::ModifyButtonClicked()
 	};
 
 	QMenu menu(this);
-
-	QAction *action = new QAction(
-		obs_module_text("AdvSceneSwitcher.item.rename"), &menu);
-	connect(action, SIGNAL(triggered()), this, SLOT(RenameItem()));
-	action->setProperty("connetion", QVariant::fromValue(item));
-	menu.addAction(action);
+	QAction *action;
+	if (_showRenameContextMenu) {
+		action = new QAction(
+			obs_module_text("AdvSceneSwitcher.item.rename"), &menu);
+		connect(action, SIGNAL(triggered()), this, SLOT(RenameItem()));
+		action->setProperty("item", QVariant::fromValue(item));
+		menu.addAction(action);
+	}
 
 	action = new QAction(obs_module_text("AdvSceneSwitcher.item.remove"),
 			     &menu);
@@ -162,7 +171,7 @@ void ItemSelection::ModifyButtonClicked()
 void ItemSelection::RenameItem()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
-	QVariant variant = action->property("connetion");
+	QVariant variant = action->property("item");
 	Item *item = variant.value<Item *>();
 
 	std::string name;
@@ -174,12 +183,13 @@ void ItemSelection::RenameItem()
 		return;
 	}
 	if (name.empty()) {
-		DisplayMessage("AdvSceneSwitcher.item.emptyName");
+		DisplayMessage(
+			obs_module_text("AdvSceneSwitcher.item.emptyName"));
 		return;
 	}
 	if (_selection->currentText().toStdString() != name &&
 	    !ItemNameAvailable(name, _items)) {
-		DisplayMessage("AdvSceneSwitcher.item.nameNotAvailable");
+		DisplayMessage(obs_module_text(_conflictStr.data()));
 		return;
 	}
 
@@ -245,7 +255,9 @@ Item *ItemSelection::GetCurrentItem()
 ItemSettingsDialog::ItemSettingsDialog(const Item &settings,
 				       std::deque<std::shared_ptr<Item>> &items,
 				       std::string_view select,
-				       std::string_view add, QWidget *parent)
+				       std::string_view add,
+				       std::string_view nameConflict,
+				       QWidget *parent)
 	: QDialog(parent),
 	  _name(new QLineEdit()),
 	  _nameHint(new QLabel),
@@ -253,18 +265,20 @@ ItemSettingsDialog::ItemSettingsDialog(const Item &settings,
 					  QDialogButtonBox::Cancel)),
 	  _items(items),
 	  _selectStr(select),
-	  _addStr(add)
+	  _addStr(add),
+	  _conflictStr(nameConflict)
 {
 	setModal(true);
 	setWindowModality(Qt::WindowModality::WindowModal);
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-	setFixedWidth(555);
+	setMinimumWidth(555);
 	setMinimumHeight(100);
 
 	_buttonbox->setCenterButtons(true);
 	_buttonbox->button(QDialogButtonBox::Ok)->setDisabled(true);
 
-	_name->setText(QString::fromStdString(settings._name));
+	_originalName = QString::fromStdString(settings._name);
+	_name->setText(_originalName);
 
 	QWidget::connect(_name, SIGNAL(textEdited(const QString &)), this,
 			 SLOT(NameChanged(const QString &)));
@@ -279,9 +293,8 @@ ItemSettingsDialog::ItemSettingsDialog(const Item &settings,
 void ItemSettingsDialog::NameChanged(const QString &text)
 {
 
-	if (text != _name->text() && !ItemNameAvailable(text, _items)) {
-		SetNameWarning(obs_module_text(
-			"AdvSceneSwitcher.item.nameNotAvailable"));
+	if (text != _originalName && !ItemNameAvailable(text, _items)) {
+		SetNameWarning(obs_module_text(_conflictStr.data()));
 		return;
 	}
 	if (text.isEmpty()) {

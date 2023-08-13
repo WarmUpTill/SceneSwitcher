@@ -116,7 +116,7 @@ std::string GetWeakVariableName(std::weak_ptr<Variable> var_)
 {
 	auto var = var_.lock();
 	if (!var) {
-		return "invalid variable selection";
+		return obs_module_text("AdvSceneSwitcher.variable.invalid");
 	}
 	return var->Name();
 }
@@ -164,7 +164,8 @@ VariableSettingsDialog::VariableSettingsDialog(QWidget *parent,
 					       const Variable &settings)
 	: ItemSettingsDialog(settings, switcher->variables,
 			     "AdvSceneSwitcher.variable.select",
-			     "AdvSceneSwitcher.variable.add", parent),
+			     "AdvSceneSwitcher.variable.add",
+			     "AdvSceneSwitcher.item.nameNotAvailable", parent),
 	  _value(new ResizingPlainTextEdit(this)),
 	  _defaultValue(new ResizingPlainTextEdit(this)),
 	  _save(new QComboBox())
@@ -248,6 +249,7 @@ VariableSelection::VariableSelection(QWidget *parent)
 			AskForSettingsWrapper,
 			"AdvSceneSwitcher.variable.select",
 			"AdvSceneSwitcher.variable.add",
+			"AdvSceneSwitcher.item.nameNotAvailable",
 			"AdvSceneSwitcher.variable.configure", parent)
 {
 	// Connect to slots

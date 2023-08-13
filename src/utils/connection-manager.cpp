@@ -221,7 +221,7 @@ std::string GetWeakConnectionName(std::weak_ptr<Connection> connection)
 {
 	auto con = connection.lock();
 	if (!con) {
-		return "invalid connection selection";
+		return obs_module_text("AdvSceneSwitcher.connection.invalid");
 	}
 	return con->Name();
 }
@@ -248,6 +248,7 @@ ConnectionSelection::ConnectionSelection(QWidget *parent)
 			AskForSettingsWrapper,
 			"AdvSceneSwitcher.connection.select",
 			"AdvSceneSwitcher.connection.add",
+			"AdvSceneSwitcher.item.nameNotAvailable",
 			"AdvSceneSwitcher.connection.configure", parent)
 {
 	// Connect to slots
@@ -297,7 +298,8 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 						   const Connection &settings)
 	: ItemSettingsDialog(settings, switcher->connections,
 			     "AdvSceneSwitcher.connection.select",
-			     "AdvSceneSwitcher.connection.add", parent),
+			     "AdvSceneSwitcher.connection.add",
+			     "AdvSceneSwitcher.item.nameNotAvailable", parent),
 	  _useCustomURI(new QCheckBox()),
 	  _customUri(new QLineEdit()),
 	  _address(new QLineEdit()),
