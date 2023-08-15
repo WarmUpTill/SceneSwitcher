@@ -315,19 +315,17 @@ bool MacroConditionVideo::CheckOCR()
 
 	auto text = RunOCR(_ocrParameters.GetOCR(), _screenshotData.image,
 			   _ocrParameters.color, _ocrParameters.colorThreshold);
-
-	if (_ocrParameters.regex.Enabled()) {
-		auto expr = _ocrParameters.regex.GetRegularExpression(
-			_ocrParameters.text);
-		if (!expr.isValid()) {
-			return false;
-		}
-		auto match = expr.match(QString::fromStdString(text));
-		return match.hasMatch();
-	}
-
 	SetVariableValue(text);
-	return text == std::string(_ocrParameters.text);
+	if (!_ocrParameters.regex.Enabled()) {
+		return text == std::string(_ocrParameters.text);
+	}
+	auto expr =
+		_ocrParameters.regex.GetRegularExpression(_ocrParameters.text);
+	if (!expr.isValid()) {
+		return false;
+	}
+	auto match = expr.match(QString::fromStdString(text));
+	return match.hasMatch();
 }
 
 bool MacroConditionVideo::CheckColor()
