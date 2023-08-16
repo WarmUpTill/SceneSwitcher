@@ -27,6 +27,11 @@ if(ENABLE_OPENVR_PLUGIN)
   add_subdirectory(openvr)
 endif()
 
+option(ENABLE_TWITCH_PLUGIN "Enable the twitch plugin" ON)
+if(ENABLE_TWITCH_PLUGIN)
+  add_subdirectory(twitch)
+endif()
+
 option(ENABLE_VIDEO_PLUGIN "Enable the video plugin" ON)
 if(ENABLE_VIDEO_PLUGIN)
   add_subdirectory(video)
