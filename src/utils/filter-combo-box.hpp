@@ -1,10 +1,12 @@
 #pragma once
+#include "export-symbol-helper.hpp"
+
 #include <QComboBox>
 
 namespace advss {
 
 // Helper class which enables user to filter possible selections by typing
-class FilterComboBox : public QComboBox {
+class ADVSS_EXPORT FilterComboBox : public QComboBox {
 	Q_OBJECT
 
 public:
