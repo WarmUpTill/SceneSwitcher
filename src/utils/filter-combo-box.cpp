@@ -29,6 +29,19 @@ FilterComboBox::FilterComboBox(QWidget *parent, const QString &placehodler)
 
 	if (!placehodler.isEmpty()) {
 		lineEdit()->setPlaceholderText(placehodler);
+
+		// Make sure that the placeholder text is visible
+		QFontMetrics fontMetrics(font());
+		int textWidth = fontMetrics.boundingRect(placehodler).width();
+
+		QStyleOptionComboBox comboBoxOption;
+		comboBoxOption.initFrom(this);
+		int buttonWidth =
+			style()->subControlRect(QStyle::CC_ComboBox,
+						&comboBoxOption,
+						QStyle::SC_ComboBoxArrow, this)
+				.width();
+		setMinimumWidth(buttonWidth + textWidth);
 	}
 
 	setMaxVisibleItems(30);
