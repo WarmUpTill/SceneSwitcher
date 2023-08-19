@@ -18,8 +18,10 @@ const static std::map<MacroConditionFilter::Condition, std::string>
 		 "AdvSceneSwitcher.condition.filter.type.active"},
 		{MacroConditionFilter::Condition::DISABLED,
 		 "AdvSceneSwitcher.condition.filter.type.showing"},
-		{MacroConditionFilter::Condition::SETTINGS,
+		{MacroConditionFilter::Condition::SETTINGS_MATCH,
 		 "AdvSceneSwitcher.condition.filter.type.settings"},
+		{MacroConditionFilter::Condition::SETTINGS_CHANGED,
+		 "AdvSceneSwitcher.condition.filter.type.settingsChanged"},
 };
 
 bool MacroConditionFilter::CheckCondition()
@@ -38,13 +40,20 @@ bool MacroConditionFilter::CheckCondition()
 	case Condition::DISABLED:
 		ret = !obs_source_enabled(filterSource);
 		break;
-	case Condition::SETTINGS:
+	case Condition::SETTINGS_MATCH:
 		ret = CompareSourceSettings(filterWeakSource, _settings,
 					    _regex);
 		if (IsReferencedInVars()) {
 			SetVariableValue(GetSourceSettings(filterWeakSource));
 		}
 		break;
+	case Condition::SETTINGS_CHANGED: {
+		std::string settings = GetSourceSettings(_source.GetSource());
+		ret = !_currentSettings.empty() && settings != _currentSettings;
+		_currentSettings = settings;
+		SetVariableValue(settings);
+		break;
+	}
 	default:
 		break;
 	}
@@ -95,8 +104,8 @@ std::string MacroConditionFilter::GetShortDesc() const
 
 static inline void populateConditionSelection(QComboBox *list)
 {
-	for (auto entry : filterConditionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : filterConditionTypes) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 
@@ -194,8 +203,9 @@ void MacroConditionFilterEdit::ConditionChanged(int index)
 	auto lock = LockContext();
 	_entryData->_condition =
 		static_cast<MacroConditionFilter::Condition>(index);
-	SetSettingsSelectionVisible(_entryData->_condition ==
-				    MacroConditionFilter::Condition::SETTINGS);
+	SetSettingsSelectionVisible(
+		_entryData->_condition ==
+		MacroConditionFilter::Condition::SETTINGS_MATCH);
 }
 
 void MacroConditionFilterEdit::GetSettingsClicked()
@@ -259,8 +269,9 @@ void MacroConditionFilterEdit::UpdateEntryData()
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_settings->setPlainText(_entryData->_settings);
 	_regex->SetRegexConfig(_entryData->_regex);
-	SetSettingsSelectionVisible(_entryData->_condition ==
-				    MacroConditionFilter::Condition::SETTINGS);
+	SetSettingsSelectionVisible(
+		_entryData->_condition ==
+		MacroConditionFilter::Condition::SETTINGS_MATCH);
 
 	adjustSize();
 	updateGeometry();

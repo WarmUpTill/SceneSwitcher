@@ -27,7 +27,8 @@ public:
 	enum class Condition {
 		ENABLED,
 		DISABLED,
-		SETTINGS,
+		SETTINGS_MATCH,
+		SETTINGS_CHANGED,
 	};
 
 	SourceSelection _source;
@@ -37,6 +38,8 @@ public:
 	RegexConfig _regex;
 
 private:
+	std::string _currentSettings;
+
 	static bool _registered;
 	static const std::string id;
 };
