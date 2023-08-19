@@ -10,12 +10,6 @@
 
 namespace advss {
 
-enum class SourceCondition {
-	ACTIVE,
-	SHOWING,
-	SETTINGS,
-};
-
 class MacroConditionSource : public MacroCondition {
 public:
 	MacroConditionSource(Macro *m) : MacroCondition(m, true) {}
@@ -29,12 +23,21 @@ public:
 		return std::make_shared<MacroConditionSource>(m);
 	}
 
+	enum class Condition {
+		ACTIVE,
+		SHOWING,
+		SETTINGS_MATCH,
+		SETTINGS_CHANGED,
+	};
+
 	SourceSelection _source;
-	SourceCondition _condition = SourceCondition::ACTIVE;
+	Condition _condition = Condition::ACTIVE;
 	StringVariable _settings = "";
 	RegexConfig _regex;
 
 private:
+	std::string _currentSettings;
+
 	static bool _registered;
 	static const std::string id;
 };

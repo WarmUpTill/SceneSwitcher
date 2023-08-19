@@ -10,13 +10,16 @@ bool MacroConditionSource::_registered = MacroConditionFactory::Register(
 	{MacroConditionSource::Create, MacroConditionSourceEdit::Create,
 	 "AdvSceneSwitcher.condition.source"});
 
-const static std::map<SourceCondition, std::string> sourceConditionTypes = {
-	{SourceCondition::ACTIVE,
-	 "AdvSceneSwitcher.condition.source.type.active"},
-	{SourceCondition::SHOWING,
-	 "AdvSceneSwitcher.condition.source.type.showing"},
-	{SourceCondition::SETTINGS,
-	 "AdvSceneSwitcher.condition.source.type.settings"},
+const static std::map<MacroConditionSource::Condition, std::string>
+	sourceCnditionTypes = {
+		{MacroConditionSource::Condition::ACTIVE,
+		 "AdvSceneSwitcher.condition.source.type.active"},
+		{MacroConditionSource::Condition::SHOWING,
+		 "AdvSceneSwitcher.condition.source.type.showing"},
+		{MacroConditionSource::Condition::SETTINGS_MATCH,
+		 "AdvSceneSwitcher.condition.source.type.settings"},
+		{MacroConditionSource::Condition::SETTINGS_CHANGED,
+		 "AdvSceneSwitcher.condition.source.type.settingsChanged"},
 };
 
 bool MacroConditionSource::CheckCondition()
@@ -29,13 +32,13 @@ bool MacroConditionSource::CheckCondition()
 	auto s = obs_weak_source_get_source(_source.GetSource());
 
 	switch (_condition) {
-	case SourceCondition::ACTIVE:
+	case Condition::ACTIVE:
 		ret = obs_source_active(s);
 		break;
-	case SourceCondition::SHOWING:
+	case Condition::SHOWING:
 		ret = obs_source_showing(s);
 		break;
-	case SourceCondition::SETTINGS:
+	case Condition::SETTINGS_MATCH:
 		ret = CompareSourceSettings(_source.GetSource(), _settings,
 					    _regex);
 		if (IsReferencedInVars()) {
@@ -43,6 +46,13 @@ bool MacroConditionSource::CheckCondition()
 				GetSourceSettings(_source.GetSource()));
 		}
 		break;
+	case Condition::SETTINGS_CHANGED: {
+		std::string settings = GetSourceSettings(_source.GetSource());
+		ret = !_currentSettings.empty() && settings != _currentSettings;
+		_currentSettings = settings;
+		SetVariableValue(settings);
+		break;
+	}
 	default:
 		break;
 	}
@@ -70,8 +80,7 @@ bool MacroConditionSource::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_source.Load(obj);
-	_condition = static_cast<SourceCondition>(
-		obs_data_get_int(obj, "condition"));
+	_condition = static_cast<Condition>(obs_data_get_int(obj, "condition"));
 	_settings.Load(obj, "settings");
 	_regex.Load(obj);
 	// TOOD: remove in future version
@@ -89,8 +98,8 @@ std::string MacroConditionSource::GetShortDesc() const
 
 static inline void populateConditionSelection(QComboBox *list)
 {
-	for (auto entry : sourceConditionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : sourceCnditionTypes) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 
@@ -173,7 +182,8 @@ void MacroConditionSourceEdit::ConditionChanged(int index)
 	}
 
 	auto lock = LockContext();
-	_entryData->_condition = static_cast<SourceCondition>(index);
+	_entryData->_condition =
+		static_cast<MacroConditionSource::Condition>(index);
 	SetWidgetVisibility();
 }
 
@@ -220,14 +230,18 @@ void MacroConditionSourceEdit::RegexChanged(RegexConfig conf)
 void MacroConditionSourceEdit::SetWidgetVisibility()
 {
 	_settings->setVisible(_entryData->_condition ==
-			      SourceCondition::SETTINGS);
-	_getSettings->setVisible(_entryData->_condition ==
-				 SourceCondition::SETTINGS);
-	_regex->setVisible(_entryData->_condition == SourceCondition::SETTINGS);
+			      MacroConditionSource::Condition::SETTINGS_MATCH);
+	_getSettings->setVisible(
+		_entryData->_condition ==
+		MacroConditionSource::Condition::SETTINGS_MATCH);
+	_regex->setVisible(_entryData->_condition ==
+			   MacroConditionSource::Condition::SETTINGS_MATCH);
 
 	setToolTip(
-		(_entryData->_condition == SourceCondition::ACTIVE ||
-		 _entryData->_condition == SourceCondition::SHOWING)
+		(_entryData->_condition ==
+			 MacroConditionSource::Condition::ACTIVE ||
+		 _entryData->_condition ==
+			 MacroConditionSource::Condition::SHOWING)
 			? obs_module_text(
 				  "AdvSceneSwitcher.condition.source.sceneVisibilityHint")
 			: "");
