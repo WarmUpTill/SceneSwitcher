@@ -19,3 +19,6 @@
 [submodule "deps/libremidi"]
 	path = deps/libremidi
 	url = https://github.com/jcelerier/libremidi.git
+[submodule "deps/libusb"]
+	path = deps/libusb
+	url = https://github.com/libusb/libusb.git

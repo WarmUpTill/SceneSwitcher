@@ -27,6 +27,11 @@ if(ENABLE_OPENVR_PLUGIN)
   add_subdirectory(openvr)
 endif()
 
+option(ENABLE_USB_PLUGIN "Enable the usb plugin" ON)
+if(ENABLE_USB_PLUGIN)
+  add_subdirectory(usb)
+endif()
+
 option(ENABLE_VIDEO_PLUGIN "Enable the video plugin" ON)
 if(ENABLE_VIDEO_PLUGIN)
   add_subdirectory(video)
