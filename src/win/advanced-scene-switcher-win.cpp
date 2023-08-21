@@ -15,6 +15,9 @@
 #include <obs-frontend-api.h>
 #include <QAbstractEventDispatcher>
 #include <QAbstractNativeEventFilter>
+#include <QApplication>
+#include <QWidget>
+#include <mutex>
 
 namespace advss {
 
@@ -102,10 +105,61 @@ static VOID EnumWindowsWithMetro(__in WNDENUMPROC lpEnumFunc,
 	}
 }
 
+// Asynchronously updates the OBS window list and returns the state of the last
+// successful update
+const std::vector<std::string> getOBSWindows()
+{
+	struct OBSWindowListHelper {
+		std::vector<std::string> windows;
+		std::atomic_bool done;
+	};
+	static OBSWindowListHelper obsWindowListHelper1 = {{}, {true}};
+	static OBSWindowListHelper obsWindowListHelper2 = {{}, {false}};
+	auto getQtWindowList = [](void *param) {
+		auto list = reinterpret_cast<OBSWindowListHelper *>(param);
+		for (auto w : QApplication::topLevelWidgets()) {
+			auto title = w->windowTitle();
+			if (!title.isEmpty()) {
+				list->windows.emplace_back(title.toStdString());
+			}
+		}
+		list->done = true;
+	};
+
+	static OBSWindowListHelper *lastDoneHelper = &obsWindowListHelper2;
+	static OBSWindowListHelper *pendingHelper = &obsWindowListHelper1;
+	static std::mutex mutex;
+
+	/* ------------------------------------------------------------------ */
+
+	std::lock_guard<std::mutex> lock(mutex);
+	if (pendingHelper->done) { // Check if swap is needed
+		auto temp = lastDoneHelper;
+		lastDoneHelper = pendingHelper;
+		pendingHelper = temp;
+		pendingHelper->done = false;
+		pendingHelper->windows.clear();
+		obs_queue_task(OBS_TASK_UI, getQtWindowList, pendingHelper,
+			       false);
+	}
+
+	return lastDoneHelper->windows;
+}
+
 void GetWindowList(std::vector<std::string> &windows)
 {
 	windows.resize(0);
 	EnumWindowsWithMetro(GetTitleCB, reinterpret_cast<LPARAM>(&windows));
+
+	// Also add OBS windows
+	for (const auto &window : getOBSWindows()) {
+		if (!window.empty()) {
+			windows.emplace_back(window);
+		}
+	}
+
+	// Add entry for OBS Studio itself - see GetCurrentWindowTitle()
+	windows.emplace_back("OBS");
 }
 
 void GetWindowList(QStringList &windows)
@@ -117,9 +171,6 @@ void GetWindowList(QStringList &windows)
 	for (auto window : w) {
 		windows << QString::fromStdString(window);
 	}
-
-	// Add entry for OBS Studio itself, see GetCurrentWindowTitle
-	windows << QString("OBS");
 }
 
 void GetCurrentWindowTitle(std::string &title)
@@ -128,9 +179,11 @@ void GetCurrentWindowTitle(std::string &title)
 	DWORD pid;
 	DWORD thid;
 	thid = GetWindowThreadProcessId(window, &pid);
-	// GetWindowText will freeze if the control it is reading was created in another thread.
-	// It does not directly read the control.
-	// Instead it waits for the thread that created the control to process a WM_GETTEXT message.
+	// GetWindowText will freeze if the control it is reading was created
+	// in another thread.
+	// In this case it does not directly read the control.
+	// Instead it waits for the thread that created the control to process a
+	// WM_GETTEXT message.
 	// So if that thread is frozen in a WaitFor... call you have a deadlock.
 	if (GetCurrentProcessId() == pid) {
 		title = "OBS";
