@@ -179,14 +179,24 @@ void GetCurrentWindowTitle(std::string &title)
 	DWORD pid;
 	DWORD thid;
 	thid = GetWindowThreadProcessId(window, &pid);
-	// GetWindowText will freeze if the control it is reading was created
-	// in another thread.
-	// In this case it does not directly read the control.
-	// Instead it waits for the thread that created the control to process a
-	// WM_GETTEXT message.
-	// So if that thread is frozen in a WaitFor... call you have a deadlock.
+	// Calling GetWindowTitle() on the OBS windows might cause a deadlock in
+	// the following scenario:
+	//
+	// The thread using GetWindowTitle() will send a WM_GETTEXT message to
+	// the main thread that created the window and wait for it to be
+	// processed.
+	// The main thread itself might be blocked from processing the message,
+	// however, when it itself is waiting for the thread using
+	// GetWindowTitle() to return.
+	//
+	// So instead rely on Qt to get the title of the active window.
 	if (GetCurrentProcessId() == pid) {
-		title = "OBS";
+		auto window = QApplication::activeWindow();
+		if (window) {
+			title = window->windowTitle().toStdString();
+		} else {
+			title = "OBS";
+		}
 		return;
 	}
 	GetWindowTitle(window, title);
