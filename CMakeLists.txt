@@ -301,6 +301,8 @@ target_sources(
           src/utils/screenshot-helper.hpp
           src/utils/section.cpp
           src/utils/section.hpp
+          src/utils/source-interact.cpp
+          src/utils/source-interact.hpp
           src/utils/slider-spinbox.cpp
           src/utils/slider-spinbox.hpp
           src/utils/source-selection.cpp

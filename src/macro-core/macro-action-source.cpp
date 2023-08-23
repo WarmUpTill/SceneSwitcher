@@ -27,6 +27,8 @@ const static std::map<MacroActionSource::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.source.type.deinterlaceMode"},
 	{MacroActionSource::Action::DEINTERLACE_FIELD_ORDER,
 	 "AdvSceneSwitcher.action.source.type.deinterlaceOrder"},
+	{MacroActionSource::Action::INTERACT,
+	 "AdvSceneSwitcher.action.source.type.interact"},
 };
 
 const static std::map<obs_deinterlace_mode, std::string> deinterlaceModes = {
@@ -128,6 +130,8 @@ bool MacroActionSource::PerformAction()
 		break;
 	case Action::SETTINGS_BUTTON:
 		pressSourceButton(_button, s);
+	case Action::INTERACT:
+		_interaction.SendToSource(s);
 		break;
 	case Action::DEINTERLACE_MODE:
 		obs_source_set_deinterlace_mode(s, _deinterlaceMode);
@@ -165,6 +169,7 @@ bool MacroActionSource::Save(obs_data_t *obj) const
 			 static_cast<int>(_deinterlaceMode));
 	obs_data_set_int(obj, "deinterlaceOrder",
 			 static_cast<int>(_deinterlaceOrder));
+	_interaction.Save(obj);
 	return true;
 }
 
@@ -179,6 +184,7 @@ bool MacroActionSource::Load(obs_data_t *obj)
 		obs_data_get_int(obj, "deinterlaceMode"));
 	_deinterlaceOrder = static_cast<obs_deinterlace_field_order>(
 		obs_data_get_int(obj, "deinterlaceOrder"));
+	_interaction.Load(obj);
 	return true;
 }
 
@@ -249,7 +255,8 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	  _deinterlaceMode(new QComboBox()),
 	  _deinterlaceOrder(new QComboBox()),
 	  _warning(new QLabel(
-		  obs_module_text("AdvSceneSwitcher.action.source.warning")))
+		  obs_module_text("AdvSceneSwitcher.action.source.warning"))),
+	  _interaction(new SourceInteractionWidget())
 {
 	populateActionSelection(_actions);
 	auto sources = GetSourceNames();
@@ -273,6 +280,13 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 			 this, SLOT(DeinterlaceModeChanged(int)));
 	QWidget::connect(_deinterlaceOrder, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(DeinterlaceOrderChanged(int)));
+	QWidget::connect(
+		_interaction,
+		SIGNAL(SettingsChanged(SourceInteractionInstance *)), this,
+		SLOT(InteractionSettingsChanged(SourceInteractionInstance *)));
+	QWidget::connect(_interaction,
+			 SIGNAL(TypeChanged(SourceInteraction::Type)), this,
+			 SLOT(InteractionTypeChanged(SourceInteraction::Type)));
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	QHBoxLayout *entryLayout = new QHBoxLayout;
@@ -294,6 +308,7 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	buttonLayout->addWidget(_getSettings);
 	buttonLayout->addStretch();
 	mainLayout->addLayout(buttonLayout);
+	mainLayout->addWidget(_interaction);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -318,6 +333,7 @@ void MacroActionSourceEdit::UpdateEntryData()
 		static_cast<int>(_entryData->_deinterlaceMode)));
 	_deinterlaceOrder->setCurrentIndex(_deinterlaceOrder->findData(
 		static_cast<int>(_entryData->_deinterlaceOrder)));
+	_interaction->SetSourceInteractionSelection(_entryData->_interaction);
 	SetWidgetVisibility();
 }
 
@@ -377,6 +393,16 @@ void MacroActionSourceEdit::SettingsChanged()
 
 	auto lock = LockContext();
 	_entryData->_settings = _settings->toPlainText().toStdString();
+}
+
+void MacroActionSourceEdit::InteractionTypeChanged(SourceInteraction::Type value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_interaction.SetType(value);
 
 	adjustSize();
 	updateGeometry();
@@ -405,6 +431,16 @@ void MacroActionSourceEdit::DeinterlaceOrderChanged(int idx)
 			_deinterlaceOrder->itemData(idx).toInt());
 }
 
+void MacroActionSourceEdit::InteractionSettingsChanged(
+	SourceInteractionInstance *value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+	auto lock = LockContext();
+	_entryData->_interaction.SetSettings(value);
+}
+
 void MacroActionSourceEdit::SetWidgetVisibility()
 {
 	const bool showSettings = _entryData->_action ==
@@ -424,6 +460,8 @@ void MacroActionSourceEdit::SetWidgetVisibility()
 	_deinterlaceOrder->setVisible(
 		_entryData->_action ==
 		MacroActionSource::Action::DEINTERLACE_FIELD_ORDER);
+	_interaction->setVisible(_entryData->_action ==
+				 MacroActionSource::Action::INTERACT);
 	adjustSize();
 	updateGeometry();
 }

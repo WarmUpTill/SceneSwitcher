@@ -2,6 +2,7 @@
 #include "macro-action-edit.hpp"
 #include "variable-text-edit.hpp"
 #include "source-selection.hpp"
+#include "source-interact.hpp"
 
 #include <QSpinBox>
 #include <QLabel>
@@ -39,6 +40,7 @@ public:
 	obs_deinterlace_mode _deinterlaceMode = OBS_DEINTERLACE_MODE_DISABLE;
 	obs_deinterlace_field_order _deinterlaceOrder =
 		OBS_DEINTERLACE_FIELD_ORDER_TOP;
+	SourceInteraction _interaction;
 
 	enum class Action {
 		ENABLE,
@@ -48,6 +50,7 @@ public:
 		SETTINGS_BUTTON,
 		DEINTERLACE_MODE,
 		DEINTERLACE_FIELD_ORDER,
+		INTERACT,
 	};
 	Action _action = Action::ENABLE;
 
@@ -80,6 +83,8 @@ private slots:
 	void SettingsChanged();
 	void DeinterlaceModeChanged(int);
 	void DeinterlaceOrderChanged(int);
+	void InteractionTypeChanged(SourceInteraction::Type value);
+	void InteractionSettingsChanged(SourceInteractionInstance *value);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -92,6 +97,8 @@ protected:
 	QComboBox *_deinterlaceMode;
 	QComboBox *_deinterlaceOrder;
 	QLabel *_warning;
+	SourceInteractionWidget *_interaction;
+
 	std::shared_ptr<MacroActionSource> _entryData;
 
 private:
