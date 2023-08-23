@@ -27,6 +27,8 @@ const static std::map<MacroActionSource::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.source.type.deinterlaceMode"},
 	{MacroActionSource::Action::DEINTERLACE_FIELD_ORDER,
 	 "AdvSceneSwitcher.action.source.type.deinterlaceOrder"},
+	{MacroActionSource::Action::OPEN_INTERACTION_DIALOG,
+	 "AdvSceneSwitcher.action.source.type.openInteractionDialog"},
 };
 
 const static std::map<obs_deinterlace_mode, std::string> deinterlaceModes = {
@@ -110,6 +112,12 @@ static void refreshSourceSettings(obs_source_t *s)
 	}
 }
 
+static bool isInteractable(obs_source_t *source)
+{
+	uint32_t flags = obs_source_get_output_flags(source);
+	return (flags & OBS_SOURCE_INTERACTION) != 0;
+}
+
 bool MacroActionSource::PerformAction()
 {
 	auto s = obs_weak_source_get_source(_source.GetSource());
@@ -134,6 +142,16 @@ bool MacroActionSource::PerformAction()
 		break;
 	case Action::DEINTERLACE_FIELD_ORDER:
 		obs_source_set_deinterlace_field_order(s, _deinterlaceOrder);
+		break;
+	case Action::OPEN_INTERACTION_DIALOG:
+		if (isInteractable(s)) {
+			obs_frontend_open_source_interaction(s);
+		} else {
+			blog(LOG_INFO,
+			     "refusing to open interaction dialog "
+			     "for non intractable source \"%s\"",
+			     _source.ToString().c_str());
+		}
 		break;
 	default:
 		break;
