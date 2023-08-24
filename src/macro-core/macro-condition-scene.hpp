@@ -23,12 +23,14 @@ public:
 	}
 
 	enum class Type {
-		CURRENT,
-		PREVIOUS,
-		CHANGED,
-		NOT_CHANGED,
-		CURRENT_PATTERN,
-		PREVIOUS_PATTERN,
+		CURRENT = 10,
+		PREVIOUS = 20,
+		PREVIEW = 30,
+		CHANGED = 40,
+		NOT_CHANGED = 50,
+		CURRENT_PATTERN = 60,
+		PREVIOUS_PATTERN = 70,
+		PREVIEW_PATTERN = 80,
 	};
 
 	SceneSelection _scene;
