@@ -12,7 +12,15 @@ const std::string MacroActionSwitchScene::id = "scene_switch";
 bool MacroActionSwitchScene::_registered = MacroActionFactory::Register(
 	MacroActionSwitchScene::id,
 	{MacroActionSwitchScene::Create, MacroActionSwitchSceneEdit::Create,
-	 "AdvSceneSwitcher.action.switchScene"});
+	 "AdvSceneSwitcher.action.scene"});
+
+const static std::map<MacroActionSwitchScene::SceneType, std::string>
+	sceneTypes = {
+		{MacroActionSwitchScene::SceneType::PROGRAM,
+		 "AdvSceneSwitcher.action.scene.type.program"},
+		{MacroActionSwitchScene::SceneType::PREVIEW,
+		 "AdvSceneSwitcher.action.scene.type.preview"},
+};
 
 static void waitForTransitionChange(OBSWeakSource &transition,
 				    std::unique_lock<std::mutex> *lock,
@@ -126,6 +134,14 @@ bool MacroActionSwitchScene::WaitForTransition(OBSWeakSource &scene,
 bool MacroActionSwitchScene::PerformAction()
 {
 	auto scene = _scene.GetScene();
+
+	if (_sceneType == SceneType::PREVIEW) {
+		OBSSourceAutoRelease previewScneSource =
+			obs_weak_source_get_source(scene);
+		obs_frontend_set_current_preview_scene(previewScneSource);
+		return true;
+	}
+
 	auto transition = _transition.GetTransition();
 	SwitchScene({scene, transition, (int)(_duration.Milliseconds())},
 		    obs_frontend_preview_program_mode_active());
@@ -137,24 +153,9 @@ bool MacroActionSwitchScene::PerformAction()
 
 void MacroActionSwitchScene::LogAction() const
 {
-	auto t = _scene.GetType();
-	auto sceneName = GetWeakSourceName(_scene.GetScene(false));
-	switch (t) {
-	case SceneSelection::Type::SCENE:
-		vblog(LOG_INFO, "switch to scene '%s'",
-		      _scene.ToString(true).c_str());
-		break;
-	case SceneSelection::Type::GROUP:
-		vblog(LOG_INFO, "switch to scene '%s' (scene group '%s')",
-		      sceneName.c_str(), _scene.ToString(true).c_str());
-		break;
-	case SceneSelection::Type::PREVIOUS:
-		vblog(LOG_INFO, "switch to previous scene '%s'",
-		      sceneName.c_str());
-		break;
-	default:
-		break;
-	}
+	vblog(LOG_INFO, "switch%s scene to '%s'",
+	      _sceneType == SceneType::PREVIEW ? " preview" : "",
+	      _scene.ToString(true).c_str());
 }
 
 bool MacroActionSwitchScene::Save(obs_data_t *obj) const
@@ -165,6 +166,7 @@ bool MacroActionSwitchScene::Save(obs_data_t *obj) const
 	_duration.Save(obj);
 	obs_data_set_bool(obj, "blockUntilTransitionDone",
 			  _blockUntilTransitionDone);
+	obs_data_set_int(obj, "sceneType", static_cast<int>(_sceneType));
 	return true;
 }
 
@@ -176,12 +178,20 @@ bool MacroActionSwitchScene::Load(obs_data_t *obj)
 	_duration.Load(obj);
 	_blockUntilTransitionDone =
 		obs_data_get_bool(obj, "blockUntilTransitionDone");
+	_sceneType = static_cast<SceneType>(obs_data_get_int(obj, "sceneType"));
 	return true;
 }
 
 std::string MacroActionSwitchScene::GetShortDesc() const
 {
 	return _scene.ToString();
+}
+
+static inline void populateTypeSelection(QComboBox *list)
+{
+	for (const auto &[_, name] : sceneTypes) {
+		list->addItem(obs_module_text(name.c_str()));
+	}
 }
 
 MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
@@ -192,9 +202,11 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	  _duration(new DurationSelection(parent, false)),
 	  _blockUntilTransitionDone(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.action.scene.blockUntilTransitionDone"))),
+	  _sceneTypes(new QComboBox()),
 	  _entryLayout(new QHBoxLayout())
 {
 	_duration->SpinBox()->setSpecialValueText("-");
+	populateTypeSelection(_sceneTypes);
 
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
@@ -206,28 +218,29 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 			 this, SLOT(DurationChanged(const Duration &)));
 	QWidget::connect(_blockUntilTransitionDone, SIGNAL(stateChanged(int)),
 			 this, SLOT(BlockUntilTransitionDoneChanged(int)));
+	QWidget::connect(_sceneTypes, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(SceneTypeChanged(int)));
 
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{scenes}}", _scenes},
-		{"{{transitions}}", _transitions},
-		{"{{duration}}", _duration},
-		{"{{blockUntilTransitionDone}}", _blockUntilTransitionDone},
-	};
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.scene.entry"),
-		     _entryLayout, widgetPlaceholders);
+		     _entryLayout,
+		     {{"{{scenes}}", _scenes},
+		      {"{{transitions}}", _transitions},
+		      {"{{duration}}", _duration},
+		      {"{{sceneTypes}}", _sceneTypes}});
 
-	QVBoxLayout *mainLayout = new QVBoxLayout;
+	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(_entryLayout);
 	mainLayout->addWidget(_blockUntilTransitionDone);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
+	_sceneTypes->setCurrentIndex(static_cast<int>(_entryData->_sceneType));
 	_scenes->SetScene(_entryData->_scene);
 	_transitions->SetTransition(_entryData->_transition);
 	_duration->SetDuration(_entryData->_duration);
 	_blockUntilTransitionDone->setChecked(
 		_entryData->_blockUntilTransitionDone);
-	SetDurationVisibility();
+	SetWidgetVisibility();
 	_loading = false;
 }
 
@@ -251,8 +264,44 @@ void MacroActionSwitchSceneEdit::BlockUntilTransitionDoneChanged(int state)
 	_entryData->_blockUntilTransitionDone = state;
 }
 
-void MacroActionSwitchSceneEdit::SetDurationVisibility()
+void MacroActionSwitchSceneEdit::SceneTypeChanged(int value)
 {
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_sceneType =
+		static_cast<MacroActionSwitchScene::SceneType>(value);
+	SetWidgetVisibility();
+}
+
+void MacroActionSwitchSceneEdit::SetWidgetVisibility()
+{
+	_entryLayout->removeWidget(_scenes);
+	_entryLayout->removeWidget(_transitions);
+	_entryLayout->removeWidget(_duration);
+	_entryLayout->removeWidget(_sceneTypes);
+	ClearLayout(_entryLayout);
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{scenes}}", _scenes},
+		{"{{transitions}}", _transitions},
+		{"{{duration}}", _duration},
+		{"{{sceneTypes}}", _sceneTypes},
+	};
+
+	if (_entryData->_sceneType ==
+	    MacroActionSwitchScene::SceneType::PREVIEW) {
+		_transitions->hide();
+		_duration->hide();
+		PlaceWidgets(
+			obs_module_text(
+				"AdvSceneSwitcher.action.scene.entry.preview"),
+			_entryLayout, widgetPlaceholders);
+		return;
+	}
+
+	_transitions->show();
 	if (_entryData->_transition.GetType() !=
 	    TransitionSelection::Type::TRANSITION) {
 		_duration->show();
@@ -261,15 +310,6 @@ void MacroActionSwitchSceneEdit::SetDurationVisibility()
 		_entryData->_transition.GetTransition());
 	_duration->setVisible(!fixedDuration);
 
-	_entryLayout->removeWidget(_scenes);
-	_entryLayout->removeWidget(_transitions);
-	_entryLayout->removeWidget(_duration);
-	ClearLayout(_entryLayout);
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{scenes}}", _scenes},
-		{"{{transitions}}", _transitions},
-		{"{{duration}}", _duration},
-	};
 	if (fixedDuration) {
 		PlaceWidgets(
 			obs_module_text(
@@ -302,7 +342,7 @@ void MacroActionSwitchSceneEdit::TransitionChanged(const TransitionSelection &t)
 
 	auto lock = LockContext();
 	_entryData->_transition = t;
-	SetDurationVisibility();
+	SetWidgetVisibility();
 }
 
 } // namespace advss

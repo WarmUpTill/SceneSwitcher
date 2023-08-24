@@ -22,6 +22,9 @@ public:
 	{
 		return std::make_shared<MacroActionSwitchScene>(m);
 	}
+
+	enum class SceneType { PROGRAM, PREVIEW };
+	SceneType _sceneType = SceneType::PROGRAM;
 	SceneSelection _scene;
 	TransitionSelection _transition;
 	Duration _duration;
@@ -55,20 +58,21 @@ private slots:
 	void TransitionChanged(const TransitionSelection &);
 	void DurationChanged(const Duration &seconds);
 	void BlockUntilTransitionDoneChanged(int state);
+	void SceneTypeChanged(int);
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	SceneSelectionWidget *_scenes;
 	TransitionSelectionWidget *_transitions;
 	DurationSelection *_duration;
 	QCheckBox *_blockUntilTransitionDone;
+	QComboBox *_sceneTypes;
 	QHBoxLayout *_entryLayout;
 
 	std::shared_ptr<MacroActionSwitchScene> _entryData;
-
-private:
-	void SetDurationVisibility();
 	bool _loading = true;
 };
 
