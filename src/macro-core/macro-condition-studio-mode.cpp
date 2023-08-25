@@ -155,6 +155,13 @@ void MacroConditionStudioModeEdit::SetWidgetVisibility()
 
 	_scenes->setVisible(_entryData->_condition ==
 			    StudioModeCondition::PREVIEW_SCENE);
+
+	// TODO: Remove this workaround once the PREVIEW_SCENE condition type
+	// has been removed
+	if (_entryData->_condition != StudioModeCondition::PREVIEW_SCENE) {
+		_condition->removeItem(
+			static_cast<int>(StudioModeCondition::PREVIEW_SCENE));
+	}
 }
 
 } // namespace advss

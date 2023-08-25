@@ -10,7 +10,8 @@ namespace advss {
 enum class StudioModeCondition {
 	STUDIO_MODE_ACTIVE,
 	STUDIO_MODE_NOT_ACTIVE,
-	PREVIEW_SCENE,
+	PREVIEW_SCENE, // TODO: Remove in future version as the functionality
+		       // moved to the scene condition
 };
 
 class MacroConditionStudioMode : public MacroCondition {

@@ -4,13 +4,6 @@
 
 namespace advss {
 
-enum class StudioModeAction {
-	SWAP_SCENE,
-	SET_SCENE,
-	ENABLE_STUDIO_MODE,
-	DISABLE_STUDIO_MODE,
-};
-
 class MacroActionSudioMode : public MacroAction {
 public:
 	MacroActionSudioMode(Macro *m) : MacroAction(m) {}
@@ -25,7 +18,14 @@ public:
 		return std::make_shared<MacroActionSudioMode>(m);
 	}
 
-	StudioModeAction _action = StudioModeAction::SWAP_SCENE;
+	enum class Action {
+		SWAP_SCENE,
+		SET_SCENE, // TODO: Remove in future version as the
+			   // functionality moved to the scene switch action
+		ENABLE_STUDIO_MODE,
+		DISABLE_STUDIO_MODE,
+	};
+	Action _action = Action::SWAP_SCENE;
 	SceneSelection _scene;
 
 private:
@@ -55,12 +55,13 @@ private slots:
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	QComboBox *_actions;
 	SceneSelectionWidget *_scenes;
 	std::shared_ptr<MacroActionSudioMode> _entryData;
 
-private:
 	bool _loading = true;
 };
 
