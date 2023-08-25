@@ -10,14 +10,14 @@ bool MacroActionSudioMode::_registered = MacroActionFactory::Register(
 	{MacroActionSudioMode::Create, MacroActionSudioModeEdit::Create,
 	 "AdvSceneSwitcher.action.studioMode"});
 
-const static std::map<StudioModeAction, std::string> actionTypes = {
-	{StudioModeAction::SWAP_SCENE,
+const static std::map<MacroActionSudioMode::Action, std::string> actionTypes = {
+	{MacroActionSudioMode::Action::SWAP_SCENE,
 	 "AdvSceneSwitcher.action.studioMode.type.swap"},
-	{StudioModeAction::SET_SCENE,
+	{MacroActionSudioMode::Action::SET_SCENE,
 	 "AdvSceneSwitcher.action.studioMode.type.setScene"},
-	{StudioModeAction::ENABLE_STUDIO_MODE,
+	{MacroActionSudioMode::Action::ENABLE_STUDIO_MODE,
 	 "AdvSceneSwitcher.action.studioMode.type.enable"},
-	{StudioModeAction::DISABLE_STUDIO_MODE,
+	{MacroActionSudioMode::Action::DISABLE_STUDIO_MODE,
 	 "AdvSceneSwitcher.action.studioMode.type.disable"},
 };
 
@@ -41,19 +41,19 @@ static void enableStudioMode(bool enable)
 bool MacroActionSudioMode::PerformAction()
 {
 	switch (_action) {
-	case StudioModeAction::SWAP_SCENE:
+	case Action::SWAP_SCENE:
 		obs_frontend_preview_program_trigger_transition();
 		break;
-	case StudioModeAction::SET_SCENE: {
+	case Action::SET_SCENE: {
 		auto s = obs_weak_source_get_source(_scene.GetScene());
 		obs_frontend_set_current_preview_scene(s);
 		obs_source_release(s);
 		break;
 	}
-	case StudioModeAction::ENABLE_STUDIO_MODE:
+	case Action::ENABLE_STUDIO_MODE:
 		enableStudioMode(true);
 		break;
-	case StudioModeAction::DISABLE_STUDIO_MODE:
+	case Action::DISABLE_STUDIO_MODE:
 		enableStudioMode(false);
 		break;
 	default:
@@ -86,15 +86,14 @@ bool MacroActionSudioMode::Save(obs_data_t *obj) const
 bool MacroActionSudioMode::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	_action =
-		static_cast<StudioModeAction>(obs_data_get_int(obj, "action"));
+	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
 	_scene.Load(obj);
 	return true;
 }
 
 std::string MacroActionSudioMode::GetShortDesc() const
 {
-	if (_action == StudioModeAction::SET_SCENE) {
+	if (_action == Action::SET_SCENE) {
 		return _scene.ToString();
 	}
 	return "";
@@ -102,8 +101,9 @@ std::string MacroActionSudioMode::GetShortDesc() const
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (auto entry : actionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[id, name] : actionTypes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(id));
 	}
 }
 
@@ -139,9 +139,10 @@ void MacroActionSudioModeEdit::UpdateEntryData()
 	if (!_entryData) {
 		return;
 	}
-	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_actions->setCurrentIndex(
+		_actions->findData(static_cast<int>(_entryData->_action)));
 	_scenes->SetScene(_entryData->_scene);
-	_scenes->setVisible(_entryData->_action == StudioModeAction::SET_SCENE);
+	SetWidgetVisibility();
 }
 
 void MacroActionSudioModeEdit::SceneChanged(const SceneSelection &s)
@@ -156,15 +157,27 @@ void MacroActionSudioModeEdit::SceneChanged(const SceneSelection &s)
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-void MacroActionSudioModeEdit::ActionChanged(int value)
+void MacroActionSudioModeEdit::SetWidgetVisibility()
+{
+	_scenes->setVisible(_entryData->_action ==
+			    MacroActionSudioMode::Action::SET_SCENE);
+
+	if (_entryData->_action != MacroActionSudioMode::Action::SET_SCENE) {
+		_actions->removeItem(_actions->findData(static_cast<int>(
+			MacroActionSudioMode::Action::SET_SCENE)));
+	}
+}
+
+void MacroActionSudioModeEdit::ActionChanged(int index)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	auto lock = LockContext();
-	_entryData->_action = static_cast<StudioModeAction>(value);
-	_scenes->setVisible(_entryData->_action == StudioModeAction::SET_SCENE);
+	_entryData->_action = static_cast<MacroActionSudioMode::Action>(
+		_actions->itemData(index).toInt());
+	SetWidgetVisibility();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
