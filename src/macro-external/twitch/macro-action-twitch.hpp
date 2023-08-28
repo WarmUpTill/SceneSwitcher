@@ -4,6 +4,7 @@
 #include "category-selection.hpp"
 
 #include <variable-line-edit.hpp>
+#include <duration-control.hpp>
 
 namespace advss {
 
@@ -24,16 +25,19 @@ public:
 	enum class Action {
 		TITLE,
 		CATEGORY,
+		COMMERCIAL,
 	};
 
 	Action _action = Action::TITLE;
 	std::weak_ptr<TwitchToken> _token;
 	StringVariable _text = obs_module_text("AdvSceneSwitcher.enterText");
 	TwitchCategory _category;
+	Duration _duration = 60;
 
 private:
-	void SetStreamTitle(const std::shared_ptr<TwitchToken> &);
-	void SetStreamCategory(const std::shared_ptr<TwitchToken> &);
+	void SetStreamTitle(const std::shared_ptr<TwitchToken> &) const;
+	void SetStreamCategory(const std::shared_ptr<TwitchToken> &) const;
+	void StartCommercial(const std::shared_ptr<TwitchToken> &) const;
 
 	static bool _registered;
 	static const std::string id;
@@ -60,6 +64,7 @@ private slots:
 	void TwitchTokenChanged(const QString &);
 	void TextChanged();
 	void CategoreyChanged(const TwitchCategory &);
+	void DurationChanged(const Duration &);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -75,6 +80,7 @@ private:
 	VariableLineEdit *_text;
 	TwitchCategorySelection *_category;
 	TwitchCategorySearchButton *_manualCategorySearch;
+	DurationSelection *_duration;
 	QHBoxLayout *_layout;
 	bool _loading = true;
 };

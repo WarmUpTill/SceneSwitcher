@@ -32,12 +32,13 @@ RequestResult SendGetRequest(const std::string &uri, const std::string &path,
 }
 
 RequestResult SendPostRequest(const std::string &uri, const std::string &path,
-			      const TwitchToken &token,
-			      const httplib::Params &params)
+			      const TwitchToken &token, const OBSData &data)
 {
 	httplib::Client cli(uri);
 	auto headers = getTokenRequestHeaders(token);
-	auto response = cli.Post(path, headers, params);
+	auto json = obs_data_get_json(data);
+	std::string body = json ? json : "";
+	auto response = cli.Post(path, headers, body, "application/json");
 	RequestResult result;
 	result.status = response->status;
 	if (response->body.empty()) {

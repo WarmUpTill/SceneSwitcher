@@ -22,6 +22,8 @@ const std::unordered_map<std::string, std::string> TokenOption::apiIdToLocale{
 
 	{"channel:manage:broadcast",
 	 "AdvSceneSwitcher.twitchToken.channel.manageBroadcast"},
+	{"channel:edit:commercial",
+	 "AdvSceneSwitcher.twitchToken.channel.startCommercial"},
 };
 
 static void saveConnections(obs_data_t *obj);
