@@ -58,6 +58,9 @@ public:
 	bool _useCustomPrompt = false;
 	StringVariable _inputPrompt = obs_module_text(
 		"AdvSceneSwitcher.action.variable.askForValuePrompt");
+	bool _useInputPlaceholder = false;
+	StringVariable _inputPlaceholder =
+		obs_module_text("AdvSceneSwitcher.enterText");
 
 private:
 	void DecrementCurrentSegmentVariableRef();
@@ -107,11 +110,16 @@ private slots:
 	void MathExpressionChanged();
 	void UseCustomPromptChanged(int);
 	void InputPromptChanged();
+	void UseInputPlaceholderChanged(int);
+	void InputPlaceholderChanged();
 
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
+	void SetWidgetVisibility();
+	void SetSegmentValueError(const QString &);
+
 	VariableSelection *_variables;
 	VariableSelection *_variables2;
 	QComboBox *_actions;
@@ -136,12 +144,11 @@ protected:
 	QHBoxLayout *_promptLayout;
 	QCheckBox *_useCustomPrompt;
 	VariableLineEdit *_inputPrompt;
+	QHBoxLayout *_placeholderLayout;
+	QCheckBox *_useInputPlaceholder;
+	VariableLineEdit *_inputPlaceholder;
+
 	std::shared_ptr<MacroActionVariable> _entryData;
-
-private:
-	void SetWidgetVisibility();
-	void SetSegmentValueError(const QString &);
-
 	QTimer _timer;
 	bool _loading = true;
 };

@@ -126,6 +126,7 @@ void MacroActionVariable::HandleMathExpression(Variable *var)
 
 struct AskForInputParams {
 	QString prompt;
+	QString placeholder;
 	std::optional<std::string> result;
 };
 
@@ -134,6 +135,7 @@ static void askForInput(void *param)
 	auto parameters = static_cast<AskForInputParams *>(param);
 	auto dialog = new NonModalMessageDialog(
 		parameters->prompt, NonModalMessageDialog::Type::INPUT);
+	dialog->SetInput(parameters->placeholder);
 	parameters->result = dialog->GetInput();
 }
 
@@ -213,6 +215,9 @@ bool MacroActionVariable::PerformAction()
 						  "AdvSceneSwitcher.action.variable.askForValuePromptDefault"))
 					  .arg(QString::fromStdString(
 						  var->Name())),
+			_useCustomPrompt && _useInputPlaceholder
+				? QString::fromStdString(_inputPlaceholder)
+				: "",
 			{}};
 		obs_queue_task(OBS_TASK_UI, askForInput, &params, true);
 		if (!params.result.has_value()) {
@@ -247,6 +252,8 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	_mathExpression.Save(obj, "mathExpression");
 	obs_data_set_bool(obj, "useCustomPrompt", _useCustomPrompt);
 	_inputPrompt.Save(obj, "inputPrompt");
+	obs_data_set_bool(obj, "useInputPlaceholder", _useInputPlaceholder);
+	_inputPlaceholder.Save(obj, "inputPlaceholder");
 	return true;
 }
 
@@ -271,6 +278,8 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_mathExpression.Load(obj, "mathExpression");
 	_useCustomPrompt = obs_data_get_bool(obj, "useCustomPrompt");
 	_inputPrompt.Load(obj, "inputPrompt");
+	_useInputPlaceholder = obs_data_get_bool(obj, "useInputPlaceholder");
+	_inputPlaceholder.Load(obj, "inputPlaceholder");
 	return true;
 }
 
@@ -392,7 +401,10 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _mathExpressionResult(new QLabel()),
 	  _promptLayout(new QHBoxLayout()),
 	  _useCustomPrompt(new QCheckBox()),
-	  _inputPrompt(new VariableLineEdit(this))
+	  _inputPrompt(new VariableLineEdit(this)),
+	  _placeholderLayout(new QHBoxLayout()),
+	  _useInputPlaceholder(new QCheckBox()),
+	  _inputPlaceholder(new VariableLineEdit(this))
 {
 	_numValue->setMinimum(-9999999999);
 	_numValue->setMaximum(9999999999);
@@ -447,6 +459,10 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 SLOT(UseCustomPromptChanged(int)));
 	QWidget::connect(_inputPrompt, SIGNAL(editingFinished()), this,
 			 SLOT(InputPromptChanged()));
+	QWidget::connect(_useInputPlaceholder, SIGNAL(stateChanged(int)), this,
+			 SLOT(UseInputPlaceholderChanged(int)));
+	QWidget::connect(_inputPlaceholder, SIGNAL(editingFinished()), this,
+			 SLOT(InputPlaceholderChanged()));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -463,6 +479,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{mathExpression}}", _mathExpression},
 		{"{{useCustomPrompt}}", _useCustomPrompt},
 		{"{{inputPrompt}}", _inputPrompt},
+		{"{{useInputPlaceholder}}", _useInputPlaceholder},
+		{"{{inputPlaceholder}}", _inputPlaceholder},
 	};
 	auto entryLayout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.variable.entry"),
@@ -485,8 +503,12 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 
 	PlaceWidgets(
 		obs_module_text(
-			"AdvSceneSwitcher.action.variable.entry.userInput"),
+			"AdvSceneSwitcher.action.variable.entry.userInput.customPrompt"),
 		_promptLayout, widgetPlaceholders);
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.action.variable.entry.userInput.placeholder"),
+		_placeholderLayout, widgetPlaceholders);
 
 	auto regexConfigLayout = new QHBoxLayout;
 	regexConfigLayout->addWidget(_regex);
@@ -505,6 +527,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	layout->addLayout(_findReplaceLayout);
 	layout->addWidget(_mathExpressionResult);
 	layout->addLayout(_promptLayout);
+	layout->addLayout(_placeholderLayout);
 	setLayout(layout);
 
 	_entryData = entryData;
@@ -547,6 +570,8 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_mathExpression->setText(_entryData->_mathExpression);
 	_useCustomPrompt->setChecked(_entryData->_useCustomPrompt);
 	_inputPrompt->setText(_entryData->_inputPrompt);
+	_useInputPlaceholder->setChecked(_entryData->_useInputPlaceholder);
+	_inputPlaceholder->setText(_entryData->_inputPlaceholder);
 	SetWidgetVisibility();
 }
 
@@ -818,15 +843,9 @@ void MacroActionVariableEdit::UseCustomPromptChanged(int value)
 		return;
 	}
 
-	_inputPrompt->setVisible(value);
-	if (value) {
-		RemoveStretchIfPresent(_promptLayout);
-	} else {
-		AddStretchIfNecessary(_promptLayout);
-	}
-
 	auto lock = LockContext();
 	_entryData->_useCustomPrompt = value;
+	SetWidgetVisibility();
 }
 
 void MacroActionVariableEdit::InputPromptChanged()
@@ -837,6 +856,27 @@ void MacroActionVariableEdit::InputPromptChanged()
 
 	auto lock = LockContext();
 	_entryData->_inputPrompt = _inputPrompt->text().toStdString();
+}
+
+void MacroActionVariableEdit::UseInputPlaceholderChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_useInputPlaceholder = value;
+	SetWidgetVisibility();
+}
+
+void MacroActionVariableEdit::InputPlaceholderChanged()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_inputPlaceholder = _inputPlaceholder->text().toStdString();
 }
 
 void MacroActionVariableEdit::SetWidgetVisibility()
@@ -887,7 +927,30 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 	SetLayoutVisible(_promptLayout,
 			 _entryData->_type ==
 				 MacroActionVariable::Type::USER_INPUT);
-	_inputPrompt->setVisible(_entryData->_useCustomPrompt);
+	_inputPrompt->setVisible(
+		_entryData->_type == MacroActionVariable::Type::USER_INPUT &&
+		_entryData->_useCustomPrompt);
+	if (_entryData->_useCustomPrompt) {
+		RemoveStretchIfPresent(_promptLayout);
+	} else {
+		AddStretchIfNecessary(_promptLayout);
+	}
+	SetLayoutVisible(
+		_placeholderLayout,
+		_entryData->_type == MacroActionVariable::Type::USER_INPUT &&
+			_entryData->_useCustomPrompt);
+	_useInputPlaceholder->setVisible(
+		_entryData->_type == MacroActionVariable::Type::USER_INPUT &&
+		_entryData->_useCustomPrompt);
+	_inputPlaceholder->setVisible(
+		_entryData->_type == MacroActionVariable::Type::USER_INPUT &&
+		_entryData->_useCustomPrompt &&
+		_entryData->_useInputPlaceholder);
+	if (_entryData->_useInputPlaceholder) {
+		RemoveStretchIfPresent(_placeholderLayout);
+	} else {
+		AddStretchIfNecessary(_placeholderLayout);
+	}
 	adjustSize();
 	updateGeometry();
 }
