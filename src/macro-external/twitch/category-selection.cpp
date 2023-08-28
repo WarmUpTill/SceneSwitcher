@@ -302,7 +302,8 @@ void TwitchCategorySearchButton::SetToken(
 		setToolTip(obs_module_text(
 			"AdvSceneSwitcher.action.twitch.categorySelectionDisabled"));
 	} else {
-		setToolTip("AdvSceneSwitcher.twitchCategories.manualSearch");
+		setToolTip(obs_module_text(
+			"AdvSceneSwitcher.twitchCategories.manualSearch"));
 	}
 }
 
