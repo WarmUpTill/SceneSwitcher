@@ -75,7 +75,7 @@ std::optional<std::string> NonModalMessageDialog::GetInput()
 	show();
 
 	// Trigger resize
-	_inputEdit->setPlainText("");
+	_inputEdit->setPlainText(_inputEdit->toPlainText());
 
 	exec();
 	this->deleteLater();
@@ -83,6 +83,12 @@ std::optional<std::string> NonModalMessageDialog::GetInput()
 		return _input.toStdString();
 	}
 	return {};
+}
+
+void NonModalMessageDialog::SetInput(const QString &input)
+{
+	assert(_type == Type::INPUT);
+	_inputEdit->setPlainText(input);
 }
 
 void NonModalMessageDialog::YesClicked()

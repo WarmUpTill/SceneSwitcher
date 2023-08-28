@@ -19,7 +19,8 @@ public:
 	NonModalMessageDialog(const QString &message, bool question);
 	QMessageBox::StandardButton ShowMessage();
 	std::optional<std::string> GetInput();
-	Type GetType() { return _type; }
+	Type GetType() const { return _type; }
+	void SetInput(const QString &);
 
 private slots:
 	void YesClicked();
