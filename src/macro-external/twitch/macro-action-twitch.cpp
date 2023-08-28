@@ -18,9 +18,12 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.twitch.type.title"},
 	{MacroActionTwitch::Action::CATEGORY,
 	 "AdvSceneSwitcher.action.twitch.type.category"},
+	{MacroActionTwitch::Action::COMMERCIAL,
+	 "AdvSceneSwitcher.action.twitch.type.commercial"},
 };
 
-void MacroActionTwitch::SetStreamTitle(const std::shared_ptr<TwitchToken> &token)
+void MacroActionTwitch::SetStreamTitle(
+	const std::shared_ptr<TwitchToken> &token) const
 {
 	if (std::string(_text).empty()) {
 		return;
@@ -34,12 +37,13 @@ void MacroActionTwitch::SetStreamTitle(const std::shared_ptr<TwitchToken> &token
 			token->GetUserID(),
 		*token, data.Get());
 	if (result.status != 204) {
-		blog(LOG_INFO, "Failed to set stream title");
+		blog(LOG_INFO, "Failed to set stream title! (%d)",
+		     result.status);
 	}
 }
 
 void MacroActionTwitch::SetStreamCategory(
-	const std::shared_ptr<TwitchToken> &token)
+	const std::shared_ptr<TwitchToken> &token) const
 {
 	if (_category.id == -1) {
 		return;
@@ -54,7 +58,33 @@ void MacroActionTwitch::SetStreamCategory(
 			token->GetUserID(),
 		*token, data.Get());
 	if (result.status != 204) {
-		blog(LOG_INFO, "Failed to set stream category");
+		blog(LOG_INFO, "Failed to set stream category! (%d)",
+		     result.status);
+	}
+}
+
+void MacroActionTwitch::StartCommercial(
+	const std::shared_ptr<TwitchToken> &token) const
+{
+	OBSDataAutoRelease data = obs_data_create();
+	obs_data_set_string(data, "broadcaster_id", token->GetUserID().c_str());
+	obs_data_set_int(data, "length", _duration.Seconds());
+	auto result = SendPostRequest("https://api.twitch.tv",
+				      "/helix/channels/commercial", *token,
+				      data.Get());
+	if (result.status != 200) {
+		OBSDataArrayAutoRelease replyArray =
+			obs_data_get_array(result.data, "data");
+		OBSDataAutoRelease replyData =
+			obs_data_array_item(replyArray, 0);
+		blog(LOG_INFO,
+		     "Failed to start commercial! (%d)\n"
+		     "length: %d\n"
+		     "message: %s\n"
+		     "retry_after: %d\n",
+		     result.status, obs_data_get_int(replyData, "length"),
+		     obs_data_get_string(replyData, "message"),
+		     obs_data_get_int(replyData, "retry_after"));
 	}
 }
 
@@ -71,6 +101,9 @@ bool MacroActionTwitch::PerformAction()
 		break;
 	case MacroActionTwitch::Action::CATEGORY:
 		SetStreamCategory(token);
+		break;
+	case MacroActionTwitch::Action::COMMERCIAL:
+		StartCommercial(token);
 		break;
 	default:
 		break;
@@ -100,6 +133,7 @@ bool MacroActionTwitch::Save(obs_data_t *obj) const
 			    GetWeakTwitchTokenName(_token).c_str());
 	_text.Save(obj, "text");
 	_category.Save(obj);
+	_duration.Save(obj);
 	return true;
 }
 
@@ -110,6 +144,7 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 	_token = GetWeakTwitchTokenByName(obs_data_get_string(obj, "token"));
 	_text.Load(obj, "text");
 	_category.Load(obj);
+	_duration.Load(obj);
 	return true;
 }
 
@@ -133,6 +168,7 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _text(new VariableLineEdit(this)),
 	  _category(new TwitchCategorySelection(this)),
 	  _manualCategorySearch(new TwitchCategorySearchButton()),
+	  _duration(new DurationSelection(this, false, 0)),
 	  _layout(new QHBoxLayout())
 {
 	_text->setSizePolicy(QSizePolicy::MinimumExpanding,
@@ -148,6 +184,11 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	QWidget::connect(_category,
 			 SIGNAL(CategoreyChanged(const TwitchCategory &)), this,
 			 SLOT(CategoreyChanged(const TwitchCategory &)));
+	QWidget::connect(_duration,
+			 SIGNAL(CategoreyChanged(const TwitchCategory &)), this,
+			 SLOT(CategoreyChanged(const TwitchCategory &)));
+	QObject::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
 
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.twitch.entry"),
 		     _layout,
@@ -155,7 +196,8 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 		      {"{{actions}}", _actions},
 		      {"{{text}}", _text},
 		      {"{{category}}", _category},
-		      {"{{manualCategorySearch}}", _manualCategorySearch}});
+		      {"{{manualCategorySearch}}", _manualCategorySearch},
+		      {"{{duration}}", _duration}});
 	setLayout(_layout);
 
 	_entryData = entryData;
@@ -197,12 +239,26 @@ void MacroActionTwitchEdit::CategoreyChanged(const TwitchCategory &category)
 	_entryData->_category = category;
 }
 
+void MacroActionTwitchEdit::DurationChanged(const Duration &duration)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_duration = duration;
+}
+
 void MacroActionTwitchEdit::SetupWidgetVisibility()
 {
 	_text->setVisible(_entryData->_action ==
 			  MacroActionTwitch::Action::TITLE);
 	_category->setVisible(_entryData->_action ==
 			      MacroActionTwitch::Action::CATEGORY);
+	_manualCategorySearch->setVisible(_entryData->_action ==
+					  MacroActionTwitch::Action::CATEGORY);
+	_duration->setVisible(_entryData->_action ==
+			      MacroActionTwitch::Action::COMMERCIAL);
 	if (_entryData->_action == MacroActionTwitch::Action::TITLE) {
 		RemoveStretchIfPresent(_layout);
 	} else {
@@ -225,6 +281,7 @@ void MacroActionTwitchEdit::UpdateEntryData()
 	_category->SetToken(_entryData->_token);
 	_manualCategorySearch->SetToken(_entryData->_token);
 	_category->SetCategory(_entryData->_category);
+	_duration->SetDuration(_entryData->_duration);
 	SetupWidgetVisibility();
 }
 

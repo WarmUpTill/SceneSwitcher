@@ -16,8 +16,7 @@ RequestResult SendGetRequest(const std::string &uri, const std::string &path,
 			     const TwitchToken &token,
 			     const httplib::Params & = {});
 RequestResult SendPostRequest(const std::string &uri, const std::string &path,
-			      const TwitchToken &token,
-			      const httplib::Params &params = {});
+			      const TwitchToken &token, const OBSData &data);
 RequestResult SendPatchRequest(const std::string &uri, const std::string &path,
 			       const TwitchToken &token, const OBSData &data);
 const char *GetClientID();
