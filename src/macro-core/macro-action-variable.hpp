@@ -37,6 +37,7 @@ public:
 		FIND_AND_REPLACE,
 		MATH_EXPRESSION,
 		USER_INPUT,
+		ENV_VARIABLE,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
@@ -61,6 +62,11 @@ public:
 	bool _useInputPlaceholder = false;
 	StringVariable _inputPlaceholder =
 		obs_module_text("AdvSceneSwitcher.enterText");
+#ifdef _WIN32
+	StringVariable _envVariableName = "USERPROFILE";
+#else
+	StringVariable _envVariableName = "HOME";
+#endif
 
 private:
 	void DecrementCurrentSegmentVariableRef();
@@ -112,6 +118,7 @@ private slots:
 	void InputPromptChanged();
 	void UseInputPlaceholderChanged(int);
 	void InputPlaceholderChanged();
+	void EnvVariableChanged();
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -147,6 +154,7 @@ private:
 	QHBoxLayout *_placeholderLayout;
 	QCheckBox *_useInputPlaceholder;
 	VariableLineEdit *_inputPlaceholder;
+	VariableLineEdit *_envVariable;
 
 	std::shared_ptr<MacroActionVariable> _entryData;
 	QTimer _timer;
