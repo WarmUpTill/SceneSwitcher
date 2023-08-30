@@ -322,6 +322,7 @@ void AdvSceneSwitcher::on_actionUp_clicked()
 	MoveMacroActionUp(currentActionIdx);
 	MacroActionSelectionChanged(currentActionIdx - 1);
 }
+
 void AdvSceneSwitcher::on_actionDown_clicked()
 {
 	if (currentActionIdx == -1 ||
@@ -340,6 +341,77 @@ void AdvSceneSwitcher::on_actionBottom_clicked()
 	const int newIdx = ui->actionsList->ContentLayout()->count() - 1;
 	MacroActionReorder(newIdx, currentActionIdx);
 	MacroActionSelectionChanged(newIdx);
+}
+
+void AdvSceneSwitcher::on_elseActionAdd_clicked()
+{
+	auto macro = GetSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	if (currentElseActionIdx == -1) {
+		AddMacroElseAction((int)macro->ElseActions().size());
+	} else {
+		AddMacroElseAction(currentElseActionIdx + 1);
+	}
+	if (currentElseActionIdx != -1) {
+		MacroElseActionSelectionChanged(currentElseActionIdx + 1);
+	}
+	ui->elseActionsList->SetHelpMsgVisible(false);
+}
+
+void AdvSceneSwitcher::on_elseActionRemove_clicked()
+{
+	if (currentElseActionIdx == -1) {
+		auto macro = GetSelectedMacro();
+		if (!macro) {
+			return;
+		}
+		RemoveMacroElseAction((int)macro->Actions().size() - 1);
+	} else {
+		RemoveMacroElseAction(currentElseActionIdx);
+	}
+	MacroElseActionSelectionChanged(-1);
+}
+
+void AdvSceneSwitcher::on_elseActionTop_clicked()
+{
+	if (currentElseActionIdx == -1) {
+		return;
+	}
+	MacroElseActionReorder(0, currentElseActionIdx);
+	MacroElseActionSelectionChanged(0);
+}
+
+void AdvSceneSwitcher::on_elseActionUp_clicked()
+{
+	if (currentElseActionIdx == -1 || currentElseActionIdx == 0) {
+		return;
+	}
+	MoveMacroElseActionUp(currentElseActionIdx);
+	MacroElseActionSelectionChanged(currentElseActionIdx - 1);
+}
+
+void AdvSceneSwitcher::on_elseActionDown_clicked()
+{
+	if (currentElseActionIdx == -1 ||
+	    currentElseActionIdx ==
+		    ui->elseActionsList->ContentLayout()->count() - 1) {
+		return;
+	}
+	MoveMacroElseActionDown(currentElseActionIdx);
+	MacroElseActionSelectionChanged(currentElseActionIdx + 1);
+}
+
+void AdvSceneSwitcher::on_elseActionBottom_clicked()
+{
+	if (currentElseActionIdx == -1) {
+		return;
+	}
+	const int newIdx = ui->elseActionsList->ContentLayout()->count() - 1;
+	MacroElseActionReorder(newIdx, currentElseActionIdx);
+	MacroElseActionSelectionChanged(newIdx);
 }
 
 void AdvSceneSwitcher::SwapActions(Macro *m, int pos1, int pos2)
@@ -394,24 +466,158 @@ void AdvSceneSwitcher::MoveMacroActionDown(int idx)
 	HighlightAction(idx + 1);
 }
 
-void AdvSceneSwitcher::MacroActionSelectionChanged(int idx)
+void AdvSceneSwitcher::MacroElseActionSelectionChanged(int idx)
+{
+	SetupMacroSegmentSelection(MacroSection::ELSE_ACTIONS, idx);
+}
+
+void AdvSceneSwitcher::MacroElseActionReorder(int to, int from)
 {
 	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
 
-	ui->actionsList->SetSelection(idx);
-	ui->conditionsList->SetSelection(-1);
-
-	if (idx < 0 || (unsigned)idx >= macro->Actions().size()) {
-		currentActionIdx = -1;
-	} else {
-		currentActionIdx = idx;
-		lastInteracted = MacroSection::ACTIONS;
+	if (to == from || from < 0 || from > (int)macro->ElseActions().size() ||
+	    to < 0 || to > (int)macro->ElseActions().size()) {
+		return;
 	}
-	currentConditionIdx = -1;
-	HighlightControls();
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		auto action = macro->ElseActions().at(from);
+		macro->ElseActions().erase(macro->ElseActions().begin() + from);
+		macro->ElseActions().insert(macro->ElseActions().begin() + to,
+					    action);
+		macro->UpdateElseActionIndices();
+		ui->elseActionsList->ContentLayout()->insertItem(
+			to, ui->elseActionsList->ContentLayout()->takeAt(from));
+		SetElseActionData(*macro);
+	}
+	HighlightElseAction(to);
+	emit(MacroSegmentOrderChanged());
+}
+
+void AdvSceneSwitcher::AddMacroElseAction(int idx)
+{
+	auto macro = GetSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	if (idx < 0 || idx > (int)macro->ElseActions().size()) {
+		return;
+	}
+
+	std::string id;
+	if (idx - 1 >= 0) {
+		id = macro->ElseActions().at(idx - 1)->GetId();
+	} else {
+		MacroActionSwitchScene temp(nullptr);
+		id = temp.GetId();
+	}
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		macro->ElseActions().emplace(
+			macro->ElseActions().begin() + idx,
+			MacroActionFactory::Create(id, macro.get()));
+		if (idx - 1 >= 0) {
+			OBSDataAutoRelease data = obs_data_create();
+			macro->ElseActions().at(idx - 1)->Save(data);
+			macro->ElseActions().at(idx)->Load(data);
+		}
+		macro->UpdateElseActionIndices();
+		ui->elseActionsList->Insert(
+			idx, new MacroActionEdit(
+				     this, &macro->ElseActions()[idx], id));
+		SetElseActionData(*macro);
+	}
+	HighlightElseAction(idx);
+	emit(MacroSegmentOrderChanged());
+}
+
+void AdvSceneSwitcher::RemoveMacroElseAction(int idx)
+{
+	auto macro = GetSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	if (idx < 0 || idx >= (int)macro->ElseActions().size()) {
+		return;
+	}
+
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		ui->elseActionsList->Remove(idx);
+		macro->ElseActions().erase(macro->ElseActions().begin() + idx);
+		switcher->abortMacroWait = true;
+		switcher->macroWaitCv.notify_all();
+		macro->UpdateElseActionIndices();
+		SetActionData(*macro);
+	}
+	MacroElseActionSelectionChanged(-1);
+	lastInteracted = MacroSection::ELSE_ACTIONS;
+	emit(MacroSegmentOrderChanged());
+}
+
+void AdvSceneSwitcher::SwapElseActions(Macro *m, int pos1, int pos2)
+{
+	if (pos1 == pos2) {
+		return;
+	}
+	if (pos1 > pos2) {
+		std::swap(pos1, pos2);
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	iter_swap(m->ElseActions().begin() + pos1,
+		  m->ElseActions().begin() + pos2);
+	m->UpdateElseActionIndices();
+	auto widget1 = static_cast<MacroActionEdit *>(
+		ui->elseActionsList->ContentLayout()->takeAt(pos1)->widget());
+	auto widget2 = static_cast<MacroActionEdit *>(
+		ui->elseActionsList->ContentLayout()
+			->takeAt(pos2 - 1)
+			->widget());
+	ui->elseActionsList->Insert(pos1, widget2);
+	ui->elseActionsList->Insert(pos2, widget1);
+	SetElseActionData(*m);
+	emit(MacroSegmentOrderChanged());
+}
+
+void AdvSceneSwitcher::MoveMacroElseActionUp(int idx)
+{
+	auto macro = GetSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	if (idx < 1 || idx >= (int)macro->ElseActions().size()) {
+		return;
+	}
+
+	SwapElseActions(macro.get(), idx, idx - 1);
+	HighlightElseAction(idx - 1);
+}
+
+void AdvSceneSwitcher::MoveMacroElseActionDown(int idx)
+{
+	auto macro = GetSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	if (idx < 0 || idx >= (int)macro->ElseActions().size() - 1) {
+		return;
+	}
+
+	SwapElseActions(macro.get(), idx, idx + 1);
+	HighlightElseAction(idx + 1);
+}
+
+void AdvSceneSwitcher::MacroActionSelectionChanged(int idx)
+{
+	SetupMacroSegmentSelection(MacroSection::ACTIONS, idx);
 }
 
 void AdvSceneSwitcher::MacroActionReorder(int to, int from)

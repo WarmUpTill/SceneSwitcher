@@ -132,10 +132,9 @@ void AdvSceneSwitcher::closeEvent(QCloseEvent *)
 	}
 	switcher->windowPos = this->pos();
 	switcher->windowSize = this->size();
-	switcher->macroActionConditionSplitterPosition =
-		ui->macroActionConditionSplitter->sizes();
 	switcher->macroListMacroEditSplitterPosition =
 		ui->macroListMacroEditSplitter->sizes();
+	MacroSelectionAboutToChange(); // Trigger saving of splitter states
 
 	obs_frontend_save();
 }
@@ -703,9 +702,7 @@ void SwitcherData::SaveUISettings(obs_data_t *obj)
 	obs_data_set_int(obj, "windowWidth", windowSize.width());
 	obs_data_set_int(obj, "windowHeight", windowSize.height());
 
-	saveSplitterPos(macroActionConditionSplitterPosition, obj,
-			"macroActionConditionSplitterPosition");
-	saveSplitterPos(macroListMacroEditSplitterPosition, obj,
+	SaveSplitterPos(macroListMacroEditSplitterPosition, obj,
 			"macroListMacroEditSplitterPosition");
 }
 
@@ -759,9 +756,8 @@ void SwitcherData::LoadUISettings(obs_data_t *obj)
 		     (int)obs_data_get_int(obj, "windowPosY")};
 	windowSize = {(int)obs_data_get_int(obj, "windowWidth"),
 		      (int)obs_data_get_int(obj, "windowHeight")};
-	loadSplitterPos(macroActionConditionSplitterPosition, obj,
-			"macroActionConditionSplitterPosition");
-	loadSplitterPos(macroListMacroEditSplitterPosition, obj,
+
+	LoadSplitterPos(macroListMacroEditSplitterPosition, obj,
 			"macroListMacroEditSplitterPosition");
 }
 

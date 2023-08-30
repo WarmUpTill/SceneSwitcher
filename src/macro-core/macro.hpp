@@ -28,6 +28,7 @@ public:
 	bool PerformActions(bool forceParallel = false,
 			    bool ignorePause = false);
 	bool Matched() const { return _matched; }
+	bool ShouldRunActions() const;
 	int64_t MsSinceLastCheck() const;
 	std::string Name() const { return _name; }
 	void SetName(const std::string &name);
@@ -35,8 +36,8 @@ public:
 	bool RunInParallel() const { return _runInParallel; }
 	void SetPaused(bool pause = true);
 	bool Paused() const { return _paused; }
-	void SetMatchOnChange(bool onChange) { _matchOnChange = onChange; }
-	bool MatchOnChange() const { return _matchOnChange; }
+	void SetMatchOnChange(bool onChange);
+	bool MatchOnChange() const { return _performActionsOnChange; }
 	void SetSkipExecOnStart(bool skip) { _skipExecOnStart = skip; }
 	bool SkipExecOnStart() const { return _skipExecOnStart; }
 	int RunCount() const { return _runCount; };
@@ -48,7 +49,9 @@ public:
 
 	std::deque<std::shared_ptr<MacroCondition>> &Conditions();
 	std::deque<std::shared_ptr<MacroAction>> &Actions();
+	std::deque<std::shared_ptr<MacroAction>> &ElseActions();
 	void UpdateActionIndices();
+	void UpdateElseActionIndices();
 	void UpdateConditionIndices();
 
 	// Group controls
@@ -80,6 +83,11 @@ public:
 	bool SwitchesScene() const;
 
 	// UI helpers
+	const QList<int> &GetActionConditionSplitterPosition() const;
+	void SetActionConditionSplitterPosition(const QList<int>);
+	const QList<int> &GetElseActionSplitterPosition() const;
+	void SetElseActionSplitterPosition(const QList<int>);
+	bool HasValidSplitterPositions() const;
 	bool
 	ExecutedSince(const std::chrono::high_resolution_clock::time_point &);
 	bool OnChangePreventedActionsRecently();
@@ -115,7 +123,6 @@ private:
 	void SetHotkeysDesc() const;
 	void RunActions(bool &ret, bool ignorePause);
 	void RunActions(bool ignorePause);
-	void SetOnChangeHighlight();
 	bool DockIsVisible() const;
 	void SetDockWidgetName() const;
 	void SaveDockSettings(obs_data_t *obj) const;
@@ -133,6 +140,7 @@ private:
 
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;
 	std::deque<std::shared_ptr<MacroAction>> _actions;
+	std::deque<std::shared_ptr<MacroAction>> _elseActions;
 
 	std::weak_ptr<Macro> _parent;
 	uint32_t _groupSize = 0;
@@ -142,7 +150,8 @@ private:
 	bool _runInParallel = false;
 	bool _matched = false;
 	bool _lastMatched = false;
-	bool _matchOnChange = true;
+	bool _conditionSateChanged = false;
+	bool _performActionsOnChange = true;
 	bool _skipExecOnStart = false;
 	bool _paused = false;
 	int _runCount = 0;
@@ -151,7 +160,11 @@ private:
 	obs_hotkey_id _unpauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _togglePauseHotkey = OBS_INVALID_HOTKEY_ID;
 
-	bool _onChangeTriggered = false;
+	// UI helpers
+	bool _onPreventedActionExecution = false;
+
+	QList<int> _actionConditionSplitterPosition;
+	QList<int> _elseActionSplitterPosition;
 
 	bool _registerDock = false;
 	bool _dockHasRunButton = true;

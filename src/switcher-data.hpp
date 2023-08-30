@@ -214,7 +214,6 @@ public:
 	bool saveWindowGeo = false;
 	QPoint windowPos = {};
 	QSize windowSize = {};
-	QList<int> macroActionConditionSplitterPosition;
 	QList<int> macroListMacroEditSplitterPosition;
 
 	/* --- End of UI section --- */

@@ -176,14 +176,11 @@ bool Macro::CeckMatch()
 	}
 	vblog(LOG_INFO, "Macro %s returned %d", _name.c_str(), _matched);
 
-	bool matchedBeforeOnChangeCheck = _matched;
-	if (_matched && _matchOnChange && _lastMatched) {
-		vblog(LOG_INFO, "ignore match for Macro %s (on change)",
-		      _name.c_str());
-		_matched = false;
-		SetOnChangeHighlight();
+	_conditionSateChanged = _lastMatched != _matched;
+	if (!_conditionSateChanged) {
+		_onPreventedActionExecution = true;
 	}
-	_lastMatched = matchedBeforeOnChangeCheck;
+	_lastMatched = _matched;
 	_lastCheckTime = std::chrono::high_resolution_clock::now();
 	return _matched;
 }
@@ -223,6 +220,28 @@ bool Macro::ExecutedSince(
 	return _lastExecutionTime > time;
 }
 
+bool Macro::ShouldRunActions() const
+{
+	const bool hasActionsToExecute =
+		(_matched || _elseActions.size() > 0) &&
+		(!_performActionsOnChange || _conditionSateChanged);
+
+	if (VerboseLoggingEnabled() && _performActionsOnChange &&
+	    !_conditionSateChanged) {
+		if (_matched && _actions.size() > 0) {
+			blog(LOG_INFO, "skip actions for Macro %s (on change)",
+			     _name.c_str());
+		}
+		if (!_matched && _elseActions.size() > 0) {
+			blog(LOG_INFO,
+			     "skip else actions for Macro %s (on change)",
+			     _name.c_str());
+		}
+	}
+
+	return hasActionsToExecute;
+}
+
 int64_t Macro::MsSinceLastCheck() const
 {
 	if (_lastCheckTime.time_since_epoch().count() == 0) {
@@ -254,20 +273,24 @@ void Macro::ResetTimers()
 void Macro::RunActions(bool &retVal, bool ignorePause)
 {
 	bool ret = true;
-	for (auto &a : _actions) {
-		if (a->Enabled()) {
-			a->LogAction();
-			ret = ret && a->PerformAction();
+	const std::deque<std::shared_ptr<MacroAction>> &actionsToExecute =
+		_matched ? _actions : _elseActions;
+	vblog(LOG_INFO, "running %sactions of %s", _matched ? "" : "else ",
+	      _name.c_str());
+	for (auto &action : actionsToExecute) {
+		if (action->Enabled()) {
+			action->LogAction();
+			ret = ret && action->PerformAction();
 		} else {
 			vblog(LOG_INFO, "skipping disabled action %s",
-			      a->GetId().c_str());
+			      action->GetId().c_str());
 		}
 		if (!ret || (_paused && !ignorePause) || _stop || _die) {
 			retVal = ret;
 			break;
 		}
-		if (a->Enabled()) {
-			a->SetHighlight();
+		if (action->Enabled()) {
+			action->SetHighlight();
 		}
 	}
 	_done = true;
@@ -279,14 +302,14 @@ void Macro::RunActions(bool ignorePause)
 	RunActions(unused, ignorePause);
 }
 
-void Macro::SetOnChangeHighlight()
-{
-	_onChangeTriggered = true;
-}
-
 bool Macro::DockIsVisible() const
 {
 	return _dock && _dockAction && _dock->isVisible();
+}
+
+void Macro::SetMatchOnChange(bool onChange)
+{
+	_performActionsOnChange = onChange;
 }
 
 void Macro::SetPaused(bool pause)
@@ -332,22 +355,39 @@ std::deque<std::shared_ptr<MacroAction>> &Macro::Actions()
 	return _actions;
 }
 
-void Macro::UpdateActionIndices()
+std::deque<std::shared_ptr<MacroAction>> &Macro::ElseActions()
+{
+	return _elseActions;
+}
+
+static void updateIndicesHelper(std::deque<std::shared_ptr<MacroSegment>> &list)
 {
 	int idx = 0;
-	for (auto a : _actions) {
-		a->SetIndex(idx);
+	for (auto segment : list) {
+		segment->SetIndex(idx);
 		idx++;
 	}
 }
 
+void Macro::UpdateActionIndices()
+{
+	std::deque<std::shared_ptr<MacroSegment>> list(_actions.begin(),
+						       _actions.end());
+	updateIndicesHelper(list);
+}
+
+void Macro::UpdateElseActionIndices()
+{
+	std::deque<std::shared_ptr<MacroSegment>> list(_elseActions.begin(),
+						       _elseActions.end());
+	updateIndicesHelper(list);
+}
+
 void Macro::UpdateConditionIndices()
 {
-	int idx = 0;
-	for (auto c : _conditions) {
-		c->SetIndex(idx);
-		idx++;
-	}
+	std::deque<std::shared_ptr<MacroSegment>> list(_conditions.begin(),
+						       _conditions.end());
+	updateIndicesHelper(list);
 }
 
 std::shared_ptr<Macro> Macro::Parent() const
@@ -360,56 +400,57 @@ bool Macro::Save(obs_data_t *obj) const
 	obs_data_set_string(obj, "name", _name.c_str());
 	obs_data_set_bool(obj, "pause", _paused);
 	obs_data_set_bool(obj, "parallel", _runInParallel);
-	obs_data_set_bool(obj, "onChange", _matchOnChange);
+	obs_data_set_bool(obj, "onChange", _performActionsOnChange);
 	obs_data_set_bool(obj, "skipExecOnStart", _skipExecOnStart);
 
 	obs_data_set_bool(obj, "group", _isGroup);
 	if (_isGroup) {
-		auto groupData = obs_data_create();
+		OBSDataAutoRelease groupData = obs_data_create();
 		obs_data_set_bool(groupData, "collapsed", _isCollapsed);
 		obs_data_set_int(groupData, "size", _groupSize);
 		obs_data_set_obj(obj, "groupData", groupData);
-		obs_data_release(groupData);
 		return true;
 	}
 
 	SaveDockSettings(obj);
 
+	SaveSplitterPos(_actionConditionSplitterPosition, obj,
+			"macroActionConditionSplitterPosition");
+	SaveSplitterPos(_elseActionSplitterPosition, obj,
+			"macroElseActionSplitterPosition");
+
 	obs_data_set_bool(obj, "registerHotkeys", _registerHotkeys);
-	obs_data_array_t *pauseHotkey = obs_hotkey_save(_pauseHotkey);
+	OBSDataArrayAutoRelease pauseHotkey = obs_hotkey_save(_pauseHotkey);
 	obs_data_set_array(obj, "pauseHotkey", pauseHotkey);
-	obs_data_array_release(pauseHotkey);
-	obs_data_array_t *unpauseHotkey = obs_hotkey_save(_unpauseHotkey);
+	OBSDataArrayAutoRelease unpauseHotkey = obs_hotkey_save(_unpauseHotkey);
 	obs_data_set_array(obj, "unpauseHotkey", unpauseHotkey);
-	obs_data_array_release(unpauseHotkey);
-	obs_data_array_t *togglePauseHotkey =
+	OBSDataArrayAutoRelease togglePauseHotkey =
 		obs_hotkey_save(_togglePauseHotkey);
 	obs_data_set_array(obj, "togglePauseHotkey", togglePauseHotkey);
-	obs_data_array_release(togglePauseHotkey);
 
-	obs_data_array_t *conditions = obs_data_array_create();
+	OBSDataArrayAutoRelease conditions = obs_data_array_create();
 	for (auto &c : _conditions) {
-		obs_data_t *array_obj = obs_data_create();
-
-		c->Save(array_obj);
-		obs_data_array_push_back(conditions, array_obj);
-
-		obs_data_release(array_obj);
+		OBSDataAutoRelease arrayObj = obs_data_create();
+		c->Save(arrayObj);
+		obs_data_array_push_back(conditions, arrayObj);
 	}
 	obs_data_set_array(obj, "conditions", conditions);
-	obs_data_array_release(conditions);
 
-	obs_data_array_t *actions = obs_data_array_create();
+	OBSDataArrayAutoRelease actions = obs_data_array_create();
 	for (auto &a : _actions) {
-		obs_data_t *array_obj = obs_data_create();
-
-		a->Save(array_obj);
-		obs_data_array_push_back(actions, array_obj);
-
-		obs_data_release(array_obj);
+		OBSDataAutoRelease arrayObj = obs_data_create();
+		a->Save(arrayObj);
+		obs_data_array_push_back(actions, arrayObj);
 	}
 	obs_data_set_array(obj, "actions", actions);
-	obs_data_array_release(actions);
+
+	OBSDataArrayAutoRelease elseActions = obs_data_array_create();
+	for (auto &a : _elseActions) {
+		OBSDataAutoRelease arrayObj = obs_data_create();
+		a->Save(arrayObj);
+		obs_data_array_push_back(elseActions, arrayObj);
+	}
+	obs_data_set_array(obj, "elseActions", elseActions);
 
 	return true;
 }
@@ -453,73 +494,69 @@ bool Macro::Load(obs_data_t *obj)
 	_name = obs_data_get_string(obj, "name");
 	_paused = obs_data_get_bool(obj, "pause");
 	_runInParallel = obs_data_get_bool(obj, "parallel");
-	_matchOnChange = obs_data_get_bool(obj, "onChange");
+	_performActionsOnChange = obs_data_get_bool(obj, "onChange");
 	_skipExecOnStart = obs_data_get_bool(obj, "skipExecOnStart");
 
 	_isGroup = obs_data_get_bool(obj, "group");
 	if (_isGroup) {
-		auto groupData = obs_data_get_obj(obj, "groupData");
+		OBSDataAutoRelease groupData =
+			obs_data_get_obj(obj, "groupData");
 		_isCollapsed = obs_data_get_bool(groupData, "collapsed");
 		_groupSize = obs_data_get_int(groupData, "size");
-		obs_data_release(groupData);
 		return true;
 	}
 
 	LoadDockSettings(obj);
+
+	LoadSplitterPos(_actionConditionSplitterPosition, obj,
+			"macroActionConditionSplitterPosition");
+	LoadSplitterPos(_elseActionSplitterPosition, obj,
+			"macroElseActionSplitterPosition");
 
 	obs_data_set_default_bool(obj, "registerHotkeys", true);
 	_registerHotkeys = obs_data_get_bool(obj, "registerHotkeys");
 	if (_registerHotkeys) {
 		SetupHotkeys();
 	}
-	obs_data_array_t *pauseHotkey = obs_data_get_array(obj, "pauseHotkey");
+	OBSDataArrayAutoRelease pauseHotkey =
+		obs_data_get_array(obj, "pauseHotkey");
 	obs_hotkey_load(_pauseHotkey, pauseHotkey);
-	obs_data_array_release(pauseHotkey);
-	obs_data_array_t *unpauseHotkey =
+	OBSDataArrayAutoRelease unpauseHotkey =
 		obs_data_get_array(obj, "unpauseHotkey");
 	obs_hotkey_load(_unpauseHotkey, unpauseHotkey);
-	obs_data_array_release(unpauseHotkey);
-	obs_data_array_t *togglePauseHotkey =
+	OBSDataArrayAutoRelease togglePauseHotkey =
 		obs_data_get_array(obj, "togglePauseHotkey");
 	obs_hotkey_load(_togglePauseHotkey, togglePauseHotkey);
-	obs_data_array_release(togglePauseHotkey);
 	SetHotkeysDesc();
 
 	bool root = true;
-	obs_data_array_t *conditions = obs_data_get_array(obj, "conditions");
+	OBSDataArrayAutoRelease conditions =
+		obs_data_get_array(obj, "conditions");
 	size_t count = obs_data_array_count(conditions);
-
 	for (size_t i = 0; i < count; i++) {
-		obs_data_t *array_obj = obs_data_array_item(conditions, i);
-
-		std::string id = obs_data_get_string(array_obj, "id");
-
+		OBSDataAutoRelease arrayObj =
+			obs_data_array_item(conditions, i);
+		std::string id = obs_data_get_string(arrayObj, "id");
 		auto newEntry = MacroConditionFactory::Create(id, this);
 		if (newEntry) {
 			_conditions.emplace_back(newEntry);
 			auto c = _conditions.back().get();
-			c->Load(array_obj);
+			c->Load(arrayObj);
 			setValidLogic(c, root, _name);
 		} else {
 			blog(LOG_WARNING,
 			     "discarding condition entry with unknown id (%s) for macro %s",
 			     id.c_str(), _name.c_str());
 		}
-
-		obs_data_release(array_obj);
 		root = false;
 	}
-	obs_data_array_release(conditions);
 	UpdateConditionIndices();
 
-	obs_data_array_t *actions = obs_data_get_array(obj, "actions");
+	OBSDataArrayAutoRelease actions = obs_data_get_array(obj, "actions");
 	count = obs_data_array_count(actions);
-
 	for (size_t i = 0; i < count; i++) {
-		obs_data_t *array_obj = obs_data_array_item(actions, i);
-
+		OBSDataAutoRelease array_obj = obs_data_array_item(actions, i);
 		std::string id = obs_data_get_string(array_obj, "id");
-
 		auto newEntry = MacroActionFactory::Create(id, this);
 		if (newEntry) {
 			_actions.emplace_back(newEntry);
@@ -529,11 +566,27 @@ bool Macro::Load(obs_data_t *obj)
 			     "discarding action entry with unknown id (%s) for macro %s",
 			     id.c_str(), _name.c_str());
 		}
-
-		obs_data_release(array_obj);
 	}
-	obs_data_array_release(actions);
 	UpdateActionIndices();
+
+	OBSDataArrayAutoRelease elseActions =
+		obs_data_get_array(obj, "elseActions");
+	count = obs_data_array_count(elseActions);
+	for (size_t i = 0; i < count; i++) {
+		OBSDataAutoRelease array_obj =
+			obs_data_array_item(elseActions, i);
+		std::string id = obs_data_get_string(array_obj, "id");
+		auto newEntry = MacroActionFactory::Create(id, this);
+		if (newEntry) {
+			_elseActions.emplace_back(newEntry);
+			_elseActions.back()->Load(array_obj);
+		} else {
+			blog(LOG_WARNING,
+			     "discarding elseAction entry with unknown id (%s) for macro %s",
+			     id.c_str(), _name.c_str());
+		}
+	}
+	UpdateElseActionIndices();
 	return true;
 }
 
@@ -552,7 +605,12 @@ bool Macro::SwitchesScene() const
 {
 	MacroActionSwitchScene temp(nullptr);
 	auto sceneSwitchId = temp.GetId();
-	for (auto &a : _actions) {
+	for (const auto &a : _actions) {
+		if (a->GetId() == sceneSwitchId) {
+			return true;
+		}
+	}
+	for (const auto &a : _elseActions) {
 		if (a->GetId() == sceneSwitchId) {
 			return true;
 		}
@@ -560,10 +618,36 @@ bool Macro::SwitchesScene() const
 	return false;
 }
 
+const QList<int> &Macro::GetActionConditionSplitterPosition() const
+{
+	return _actionConditionSplitterPosition;
+}
+
+void Macro::SetActionConditionSplitterPosition(const QList<int> sizes)
+{
+	_actionConditionSplitterPosition = sizes;
+}
+
+const QList<int> &Macro::GetElseActionSplitterPosition() const
+{
+	return _elseActionSplitterPosition;
+}
+
+void Macro::SetElseActionSplitterPosition(const QList<int> sizes)
+{
+	_elseActionSplitterPosition = sizes;
+}
+
+bool Macro::HasValidSplitterPositions() const
+{
+	return !_actionConditionSplitterPosition.empty() &&
+	       !_elseActionSplitterPosition.empty();
+}
+
 bool Macro::OnChangePreventedActionsRecently()
 {
-	if (_onChangeTriggered) {
-		_onChangeTriggered = false;
+	if (_onPreventedActionExecution) {
+		_onPreventedActionExecution = false;
 		return true;
 	}
 	return false;
@@ -571,7 +655,7 @@ bool Macro::OnChangePreventedActionsRecently()
 
 void Macro::ResetUIHelpers()
 {
-	_onChangeTriggered = false;
+	_onPreventedActionExecution = false;
 	for (auto c : _conditions) {
 		c->Highlight();
 	}
@@ -1014,7 +1098,7 @@ bool SwitcherData::CheckMacros()
 {
 	bool ret = false;
 	for (auto &m : macros) {
-		if (m->CeckMatch()) {
+		if (m->CeckMatch() || m->ElseActions().size() > 0) {
 			ret = true;
 			// This has to be performed here for now as actions are
 			// not performed immediately after checking conditions.
@@ -1049,7 +1133,7 @@ bool SwitcherData::RunMacros()
 	}
 
 	for (auto &m : runPhaseMacros) {
-		if (!m || !m->Matched()) {
+		if (!m || !m->ShouldRunActions()) {
 			continue;
 		}
 		if (firstInterval && m->SkipExecOnStart()) {
