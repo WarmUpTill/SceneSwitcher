@@ -1260,6 +1260,7 @@ void MacroTree::UngroupSelectedGroups()
 void MacroTree::SelectionChangedHelper(const QItemSelection &,
 				       const QItemSelection &)
 {
+	emit MacroSelectionAboutToChange();
 	emit MacroSelectionChanged();
 }
 

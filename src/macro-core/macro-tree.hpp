@@ -142,6 +142,7 @@ public slots:
 				    const QItemSelection &);
 
 signals:
+	void MacroSelectionAboutToChange();
 	void MacroSelectionChanged();
 
 protected:

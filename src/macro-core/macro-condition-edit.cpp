@@ -564,22 +564,7 @@ void AdvSceneSwitcher::MoveMacroConditionDown(int idx)
 
 void AdvSceneSwitcher::MacroConditionSelectionChanged(int idx)
 {
-	auto macro = GetSelectedMacro();
-	if (!macro) {
-		return;
-	}
-
-	ui->conditionsList->SetSelection(idx);
-	ui->actionsList->SetSelection(-1);
-
-	if (idx < 0 || (unsigned)idx >= macro->Conditions().size()) {
-		currentConditionIdx = -1;
-	} else {
-		currentConditionIdx = idx;
-		lastInteracted = MacroSection::CONDITIONS;
-	}
-	currentActionIdx = -1;
-	HighlightControls();
+	SetupMacroSegmentSelection(MacroSection::CONDITIONS, idx);
 }
 
 void AdvSceneSwitcher::MacroConditionReorder(int to, int from)

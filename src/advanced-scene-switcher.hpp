@@ -84,10 +84,13 @@ public:
 	void SetEditMacro(Macro &m);
 	void SetMacroEditAreaDisabled(bool);
 	void HighlightAction(int idx, QColor color = QColor(Qt::green));
+	void HighlightElseAction(int idx, QColor color = QColor(Qt::green));
 	void HighlightCondition(int idx, QColor color = QColor(Qt::green));
 	void PopulateMacroActions(Macro &m, uint32_t afterIdx = 0);
+	void PopulateMacroElseActions(Macro &m, uint32_t afterIdx = 0);
 	void PopulateMacroConditions(Macro &m, uint32_t afterIdx = 0);
 	void SetActionData(Macro &m);
+	void SetElseActionData(Macro &m);
 	void SetConditionData(Macro &m);
 	void SwapActions(Macro *m, int pos1, int pos2);
 	void SwapConditions(Macro *m, int pos1, int pos2);
@@ -113,29 +116,50 @@ public slots:
 	void on_actionUp_clicked();
 	void on_actionDown_clicked();
 	void on_actionBottom_clicked();
+	void on_elseActionAdd_clicked();
+	void on_elseActionRemove_clicked();
+	void on_elseActionTop_clicked();
+	void on_elseActionUp_clicked();
+	void on_elseActionDown_clicked();
+	void on_elseActionBottom_clicked();
+	void MacroSelectionAboutToChange();
 	void MacroSelectionChanged();
 	void UpMacroSegementHotkey();
 	void DownMacroSegementHotkey();
 	void DeleteMacroSegementHotkey();
 	void ShowMacroContextMenu(const QPoint &);
 	void ShowMacroActionsContextMenu(const QPoint &);
+	void ShowMacroElseActionsContextMenu(const QPoint &);
 	void ShowMacroConditionsContextMenu(const QPoint &);
 	void CopyMacro();
 	void RenameCurrentMacro();
 	void ExportMacros();
 	void ImportMacros();
 	void ExpandAllActions();
+	void ExpandAllElseActions();
 	void ExpandAllConditions();
 	void CollapseAllActions();
+	void CollapseAllElseActions();
 	void CollapseAllConditions();
 	void MinimizeActions();
+	void MaximizeActions();
+	void MinimizeElseActions();
+	void MaximizeElseActions();
 	void MinimizeConditions();
+	void MaximizeConditions();
 	void MacroActionSelectionChanged(int idx);
 	void MacroActionReorder(int to, int target);
 	void AddMacroAction(int idx);
 	void RemoveMacroAction(int idx);
 	void MoveMacroActionUp(int idx);
 	void MoveMacroActionDown(int idx);
+	void MacroElseActionSelectionChanged(int idx);
+	void MacroElseActionReorder(int to, int target);
+	void AddMacroElseAction(int idx);
+	void RemoveMacroElseAction(int idx);
+	void SwapElseActions(Macro *m, int pos1, int pos2);
+	void MoveMacroElseActionUp(int idx);
+	void MoveMacroElseActionDown(int idx);
 	void MacroConditionSelectionChanged(int idx);
 	void MacroConditionReorder(int to, int target);
 	void AddMacroCondition(int idx);
@@ -157,6 +181,7 @@ signals:
 	void MacroSegmentOrderChanged();
 	void HighlightMacrosChanged(bool value);
 	void HighlightActionsChanged(bool value);
+	void HighlightElseActionsChanged(bool value);
 	void HighlightConditionsChanged(bool value);
 
 	void ConnectionAdded(const QString &);
@@ -167,16 +192,16 @@ signals:
 	void VariableRemoved(const QString &);
 
 private:
+	enum class MacroSection { CONDITIONS, ACTIONS, ELSE_ACTIONS };
+
+	void SetupMacroSegmentSelection(MacroSection type, int idx);
 	bool ResolveMacroImportNameConflict(std::shared_ptr<Macro> &);
 	bool MacroTabIsInFocus();
 
-	enum class MacroSection {
-		CONDITIONS,
-		ACTIONS,
-	};
 	MacroSection lastInteracted = MacroSection::CONDITIONS;
 	int currentConditionIdx = -1;
 	int currentActionIdx = -1;
+	int currentElseActionIdx = -1;
 
 	/* --- End of macro tab section --- */
 
