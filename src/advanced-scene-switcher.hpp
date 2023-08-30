@@ -170,9 +170,6 @@ private:
 	bool ResolveMacroImportNameConflict(std::shared_ptr<Macro> &);
 	bool MacroTabIsInFocus();
 
-	MacroSegmentList *conditionsList = nullptr;
-	MacroSegmentList *actionsList = nullptr;
-
 	enum class MacroSection {
 		CONDITIONS,
 		ACTIONS,

@@ -239,7 +239,7 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 			obs_data_release(data);
 		}
 		macro->UpdateActionIndices();
-		actionsList->Insert(
+		ui->actionsList->Insert(
 			idx,
 			new MacroActionEdit(this, &macro->Actions()[idx], id));
 		SetActionData(*macro);
@@ -263,7 +263,7 @@ void AdvSceneSwitcher::on_actionAdd_clicked()
 	if (currentActionIdx != -1) {
 		MacroActionSelectionChanged(currentActionIdx + 1);
 	}
-	actionsList->SetHelpMsgVisible(false);
+	ui->actionsList->SetHelpMsgVisible(false);
 }
 
 void AdvSceneSwitcher::RemoveMacroAction(int idx)
@@ -279,7 +279,7 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 
 	{
 		std::lock_guard<std::mutex> lock(switcher->m);
-		actionsList->Remove(idx);
+		ui->actionsList->Remove(idx);
 		macro->Actions().erase(macro->Actions().begin() + idx);
 		switcher->abortMacroWait = true;
 		switcher->macroWaitCv.notify_all();
@@ -325,7 +325,7 @@ void AdvSceneSwitcher::on_actionUp_clicked()
 void AdvSceneSwitcher::on_actionDown_clicked()
 {
 	if (currentActionIdx == -1 ||
-	    currentActionIdx == actionsList->ContentLayout()->count() - 1) {
+	    currentActionIdx == ui->actionsList->ContentLayout()->count() - 1) {
 		return;
 	}
 	MoveMacroActionDown(currentActionIdx);
@@ -337,7 +337,7 @@ void AdvSceneSwitcher::on_actionBottom_clicked()
 	if (currentActionIdx == -1) {
 		return;
 	}
-	const int newIdx = actionsList->ContentLayout()->count() - 1;
+	const int newIdx = ui->actionsList->ContentLayout()->count() - 1;
 	MacroActionReorder(newIdx, currentActionIdx);
 	MacroActionSelectionChanged(newIdx);
 }
@@ -355,11 +355,11 @@ void AdvSceneSwitcher::SwapActions(Macro *m, int pos1, int pos2)
 	iter_swap(m->Actions().begin() + pos1, m->Actions().begin() + pos2);
 	m->UpdateActionIndices();
 	auto widget1 = static_cast<MacroActionEdit *>(
-		actionsList->ContentLayout()->takeAt(pos1)->widget());
+		ui->actionsList->ContentLayout()->takeAt(pos1)->widget());
 	auto widget2 = static_cast<MacroActionEdit *>(
-		actionsList->ContentLayout()->takeAt(pos2 - 1)->widget());
-	actionsList->Insert(pos1, widget2);
-	actionsList->Insert(pos2, widget1);
+		ui->actionsList->ContentLayout()->takeAt(pos2 - 1)->widget());
+	ui->actionsList->Insert(pos1, widget2);
+	ui->actionsList->Insert(pos2, widget1);
 	SetActionData(*m);
 	emit(MacroSegmentOrderChanged());
 }
@@ -401,8 +401,8 @@ void AdvSceneSwitcher::MacroActionSelectionChanged(int idx)
 		return;
 	}
 
-	actionsList->SetSelection(idx);
-	conditionsList->SetSelection(-1);
+	ui->actionsList->SetSelection(idx);
+	ui->conditionsList->SetSelection(-1);
 
 	if (idx < 0 || (unsigned)idx >= macro->Actions().size()) {
 		currentActionIdx = -1;
@@ -431,8 +431,8 @@ void AdvSceneSwitcher::MacroActionReorder(int to, int from)
 		macro->Actions().erase(macro->Actions().begin() + from);
 		macro->Actions().insert(macro->Actions().begin() + to, action);
 		macro->UpdateActionIndices();
-		actionsList->ContentLayout()->insertItem(
-			to, actionsList->ContentLayout()->takeAt(from));
+		ui->actionsList->ContentLayout()->insertItem(
+			to, ui->actionsList->ContentLayout()->takeAt(from));
 		SetActionData(*macro);
 	}
 	HighlightAction(to);

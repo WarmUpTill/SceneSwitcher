@@ -422,9 +422,9 @@ void AdvSceneSwitcher::PopulateMacroActions(Macro &m, uint32_t afterIdx)
 	for (; afterIdx < actions.size(); afterIdx++) {
 		auto newEntry = new MacroActionEdit(this, &actions[afterIdx],
 						    actions[afterIdx]->GetId());
-		actionsList->Add(newEntry);
+		ui->actionsList->Add(newEntry);
 	}
-	actionsList->SetHelpMsgVisible(actions.size() == 0);
+	ui->actionsList->SetHelpMsgVisible(actions.size() == 0);
 }
 
 void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
@@ -435,17 +435,18 @@ void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
 		auto newEntry = new MacroConditionEdit(
 			this, &conditions[afterIdx],
 			conditions[afterIdx]->GetId(), root);
-		conditionsList->Add(newEntry);
+		ui->conditionsList->Add(newEntry);
 		root = false;
 	}
-	conditionsList->SetHelpMsgVisible(conditions.size() == 0);
+	ui->conditionsList->SetHelpMsgVisible(conditions.size() == 0);
 }
 
 void AdvSceneSwitcher::SetActionData(Macro &m)
 {
 	auto &actions = m.Actions();
-	for (int idx = 0; idx < actionsList->ContentLayout()->count(); idx++) {
-		auto item = actionsList->ContentLayout()->itemAt(idx);
+	for (int idx = 0; idx < ui->actionsList->ContentLayout()->count();
+	     idx++) {
+		auto item = ui->actionsList->ContentLayout()->itemAt(idx);
 		if (!item) {
 			continue;
 		}
@@ -460,9 +461,9 @@ void AdvSceneSwitcher::SetActionData(Macro &m)
 void AdvSceneSwitcher::SetConditionData(Macro &m)
 {
 	auto &conditions = m.Conditions();
-	for (int idx = 0; idx < conditionsList->ContentLayout()->count();
+	for (int idx = 0; idx < ui->conditionsList->ContentLayout()->count();
 	     idx++) {
-		auto item = conditionsList->ContentLayout()->itemAt(idx);
+		auto item = ui->conditionsList->ContentLayout()->itemAt(idx);
 		if (!item) {
 			continue;
 		}
@@ -484,8 +485,8 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 		ui->runMacroInParallel->setChecked(m.RunInParallel());
 		ui->runMacroOnChange->setChecked(m.MatchOnChange());
 	}
-	conditionsList->Clear();
-	actionsList->Clear();
+	ui->conditionsList->Clear();
+	ui->actionsList->Clear();
 
 	m.ResetUIHelpers();
 
@@ -515,12 +516,12 @@ void AdvSceneSwitcher::SetMacroEditAreaDisabled(bool disable)
 
 void AdvSceneSwitcher::HighlightAction(int idx, QColor color)
 {
-	actionsList->Highlight(idx, color);
+	ui->actionsList->Highlight(idx, color);
 }
 
 void AdvSceneSwitcher::HighlightCondition(int idx, QColor color)
 {
-	conditionsList->Highlight(idx, color);
+	ui->conditionsList->Highlight(idx, color);
 }
 
 std::shared_ptr<Macro> AdvSceneSwitcher::GetSelectedMacro()
@@ -542,10 +543,10 @@ void AdvSceneSwitcher::MacroSelectionChanged()
 	auto macro = GetSelectedMacro();
 	if (!macro) {
 		SetMacroEditAreaDisabled(true);
-		conditionsList->Clear();
-		actionsList->Clear();
-		conditionsList->SetHelpMsgVisible(true);
-		actionsList->SetHelpMsgVisible(true);
+		ui->conditionsList->Clear();
+		ui->actionsList->Clear();
+		ui->conditionsList->SetHelpMsgVisible(true);
+		ui->actionsList->SetHelpMsgVisible(true);
 		return;
 	}
 	SetEditMacro(*macro);
@@ -608,34 +609,28 @@ void AdvSceneSwitcher::SetupMacroTab()
 	connect(ui->macros, SIGNAL(MacroSelectionChanged()), this,
 		SLOT(MacroSelectionChanged()));
 
-	delete conditionsList;
-	conditionsList = new MacroSegmentList(this);
-	conditionsList->SetHelpMsg(
+	ui->conditionsList->SetHelpMsg(
 		obs_module_text("AdvSceneSwitcher.macroTab.editConditionHelp"));
-	connect(conditionsList, &MacroSegmentList::SelectionChagned, this,
+	connect(ui->conditionsList, &MacroSegmentList::SelectionChagned, this,
 		&AdvSceneSwitcher::MacroConditionSelectionChanged);
-	connect(conditionsList, &MacroSegmentList::Reorder, this,
+	connect(ui->conditionsList, &MacroSegmentList::Reorder, this,
 		&AdvSceneSwitcher::MacroConditionReorder);
-	ui->macroConditionsLayout->insertWidget(0, conditionsList);
 
-	delete actionsList;
-	actionsList = new MacroSegmentList(this);
-	actionsList->SetHelpMsg(
+	ui->actionsList->SetHelpMsg(
 		obs_module_text("AdvSceneSwitcher.macroTab.editActionHelp"));
-	connect(actionsList, &MacroSegmentList::SelectionChagned, this,
+	connect(ui->actionsList, &MacroSegmentList::SelectionChagned, this,
 		&AdvSceneSwitcher::MacroActionSelectionChanged);
-	connect(actionsList, &MacroSegmentList::Reorder, this,
+	connect(ui->actionsList, &MacroSegmentList::Reorder, this,
 		&AdvSceneSwitcher::MacroActionReorder);
-	ui->macroActionsLayout->insertWidget(0, actionsList);
 
 	ui->macros->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(ui->macros, &QWidget::customContextMenuRequested, this,
 		&AdvSceneSwitcher::ShowMacroContextMenu);
-	actionsList->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(actionsList, &QWidget::customContextMenuRequested, this,
+	ui->actionsList->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(ui->actionsList, &QWidget::customContextMenuRequested, this,
 		&AdvSceneSwitcher::ShowMacroActionsContextMenu);
-	conditionsList->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(conditionsList, &QWidget::customContextMenuRequested, this,
+	ui->conditionsList->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(ui->conditionsList, &QWidget::customContextMenuRequested, this,
 		&AdvSceneSwitcher::ShowMacroConditionsContextMenu);
 
 	SetMacroEditAreaDisabled(true);
@@ -739,7 +734,7 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 
 void AdvSceneSwitcher::ShowMacroActionsContextMenu(const QPoint &pos)
 {
-	QPoint globalPos = actionsList->mapToGlobal(pos);
+	QPoint globalPos = ui->actionsList->mapToGlobal(pos);
 	QMenu menu;
 	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.expandAll"),
 		       this, &AdvSceneSwitcher::ExpandAllActions);
@@ -754,7 +749,7 @@ void AdvSceneSwitcher::ShowMacroActionsContextMenu(const QPoint &pos)
 
 void AdvSceneSwitcher::ShowMacroConditionsContextMenu(const QPoint &pos)
 {
-	QPoint globalPos = conditionsList->mapToGlobal(pos);
+	QPoint globalPos = ui->conditionsList->mapToGlobal(pos);
 	QMenu menu;
 	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.expandAll"),
 		       this, &AdvSceneSwitcher::ExpandAllConditions);
@@ -800,7 +795,7 @@ void AdvSceneSwitcher::ExpandAllActions()
 	if (!m) {
 		return;
 	}
-	actionsList->SetCollapsed(false);
+	ui->actionsList->SetCollapsed(false);
 }
 
 void AdvSceneSwitcher::ExpandAllConditions()
@@ -809,7 +804,7 @@ void AdvSceneSwitcher::ExpandAllConditions()
 	if (!m) {
 		return;
 	}
-	conditionsList->SetCollapsed(false);
+	ui->conditionsList->SetCollapsed(false);
 }
 
 void AdvSceneSwitcher::CollapseAllActions()
@@ -818,7 +813,7 @@ void AdvSceneSwitcher::CollapseAllActions()
 	if (!m) {
 		return;
 	}
-	actionsList->SetCollapsed(true);
+	ui->actionsList->SetCollapsed(true);
 }
 
 void AdvSceneSwitcher::CollapseAllConditions()
@@ -827,7 +822,7 @@ void AdvSceneSwitcher::CollapseAllConditions()
 	if (!m) {
 		return;
 	}
-	conditionsList->SetCollapsed(true);
+	ui->conditionsList->SetCollapsed(true);
 }
 
 void AdvSceneSwitcher::MinimizeActions()
