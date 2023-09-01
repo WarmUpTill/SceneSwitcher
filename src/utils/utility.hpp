@@ -129,6 +129,10 @@ std::string GetPathInProfileDir(const char *filePath);
 QStringList GetMonitorNames();
 bool IsValidMacroSegmentIndex(Macro *m, const int idx, bool isCondition);
 QString GetMacroSegmentDescription(Macro *, int idx, bool isCondition);
+void SaveSplitterPos(const QList<int> &sizes, obs_data_t *obj,
+		     const std::string name);
+void LoadSplitterPos(QList<int> &sizes, obs_data_t *obj,
+		     const std::string name);
 
 /* Legacy helpers */
 
