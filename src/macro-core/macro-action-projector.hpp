@@ -17,6 +17,8 @@ public:
 	{
 		return std::make_shared<MacroActionProjector>(m);
 	}
+	void SetMonitor(int);
+	int GetMonitor() const;
 
 	enum class Type {
 		SOURCE,
@@ -29,10 +31,15 @@ public:
 	Type _type = Type::SCENE;
 	SourceSelection _source;
 	SceneSelection _scene;
-	int _monitor = 0;
 	bool _fullscreen = true;
 
 private:
+	bool MonitorSetupChanged();
+
+	int _monitor = -1;
+	// Only used to detect display setup changes
+	std::string _monitorName = "";
+
 	static bool _registered;
 	static const std::string id;
 };

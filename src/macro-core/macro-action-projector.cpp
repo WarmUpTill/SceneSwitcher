@@ -57,6 +57,12 @@ bool MacroActionProjector::PerformAction()
 		break;
 	}
 
+	if (_fullscreen && _monitor == -1) {
+		blog(LOG_INFO, "refusing to open fullscreen projector"
+			       " with invalid display selection");
+		return true;
+	}
+
 	obs_frontend_open_projector(type, _fullscreen ? _monitor : -1, "",
 				    name.c_str());
 
@@ -85,6 +91,7 @@ bool MacroActionProjector::Save(obs_data_t *obj) const
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "type", static_cast<int>(_type));
 	obs_data_set_int(obj, "monitor", _monitor);
+	obs_data_set_string(obj, "monitorName", _monitorName.c_str());
 	obs_data_set_bool(obj, "fullscreen", _fullscreen);
 	_scene.Save(obj);
 	_source.Save(obj);
@@ -96,10 +103,48 @@ bool MacroActionProjector::Load(obs_data_t *obj)
 	MacroAction::Load(obj);
 	_type = static_cast<Type>(obs_data_get_int(obj, "type"));
 	_monitor = obs_data_get_int(obj, "monitor");
+	_monitorName = obs_data_get_string(obj, "monitorName");
 	_fullscreen = obs_data_get_bool(obj, "fullscreen");
 	_scene.Load(obj);
 	_source.Load(obj);
+
+	if (MonitorSetupChanged()) {
+		blog(LOG_INFO, "monitor setup seems to have changed! "
+			       "resetting projector action monitor selection!");
+		_monitor = -1;
+	}
+
 	return true;
+}
+
+void MacroActionProjector::SetMonitor(int idx)
+{
+	_monitor = idx;
+	auto monitorNames = GetMonitorNames();
+	if (_monitor < 0 || _monitor >= monitorNames.size()) {
+		// Monitor setup changed while settings were selected?
+		_monitorName = "";
+		return;
+	}
+	_monitorName = monitorNames.at(_monitor).toStdString();
+}
+
+int MacroActionProjector::GetMonitor() const
+{
+	return _monitor;
+}
+
+bool MacroActionProjector::MonitorSetupChanged()
+{
+	if (_monitorName.empty()) {
+		return false;
+	}
+	auto monitorNames = GetMonitorNames();
+	if (_monitor < 0 || _monitor >= monitorNames.size()) {
+		return true;
+	}
+	return monitorNames.at(_monitor) !=
+	       QString::fromStdString(_monitorName);
 }
 
 static inline void populateSelectionTypes(QComboBox *list)
@@ -134,6 +179,8 @@ MacroActionProjectorEdit::MacroActionProjectorEdit(
 	sources.sort();
 	_sources->SetSourceNameList(sources);
 	_monitors->addItems(GetMonitorNames());
+	_monitors->setPlaceholderText(
+		obs_module_text("AdvSceneSwitcher.selectDisplay"));
 
 	QWidget::connect(_windowTypes, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(WindowTypeChanged(int)));
@@ -177,7 +224,7 @@ void MacroActionProjectorEdit::UpdateEntryData()
 	_types->setCurrentIndex(static_cast<int>(_entryData->_type));
 	_scenes->SetScene(_entryData->_scene);
 	_sources->SetSource(_entryData->_source);
-	_monitors->setCurrentIndex(_entryData->_monitor);
+	_monitors->setCurrentIndex(_entryData->GetMonitor());
 	SetWidgetVisibility();
 }
 
@@ -208,7 +255,7 @@ void MacroActionProjectorEdit::MonitorChanged(int value)
 	}
 
 	auto lock = LockContext();
-	_entryData->_monitor = value;
+	_entryData->SetMonitor(value);
 }
 
 void MacroActionProjectorEdit::WindowTypeChanged(int)
