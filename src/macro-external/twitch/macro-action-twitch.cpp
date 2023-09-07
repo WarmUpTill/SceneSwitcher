@@ -173,6 +173,7 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 {
 	_text->setSizePolicy(QSizePolicy::MinimumExpanding,
 			     QSizePolicy::Preferred);
+	_duration->SpinBox()->setSuffix("s");
 	populateActionSelection(_actions);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
