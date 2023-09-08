@@ -17,6 +17,7 @@ on:
 env:
   PLUGIN_NAME: SceneSwitcher
   LIB_NAME: advanced-scene-switcher
+  DEP_DIR: advss-build-dependencies-1
 
 jobs:
   clang_check:
@@ -115,9 +116,6 @@ jobs:
         with:
           path: |
             ${{ github.workspace }}/.ccache
-            ${{ github.workspace }}/plugin/deps/opencv/build_*
-            ${{ github.workspace }}/plugin/deps/leptonica/build_*
-            ${{ github.workspace }}/plugin/deps/tesseract/build*
           key: macos-${{ matrix.arch }}-ccache-plugin-${{ steps.setup.outputs.ccacheDate }}
           restore-keys: |
             macos-${{ matrix.arch }}-ccache-plugin-
@@ -145,6 +143,13 @@ jobs:
         run: |
           print "CODESIGN_IDENT=${{ secrets.MACOS_SIGNING_APPLICATION_IDENTITY }}" >> $GITHUB_ENV
           print "CODESIGN_IDENT_INSTALLER=${{ secrets.MACOS_SIGNING_INSTALLER_IDENTITY }}" >> $GITHUB_ENV
+
+      - name: Build Dependencies
+        uses: ./plugin/.github/actions/build-dependencies
+        with:
+          workingDirectory: ${{ github.workspace }}/plugin
+          target: ${{ matrix.arch }}
+          config: RelWithDebInfo
 
       - name: Build Plugin
         uses: ./plugin/.github/actions/build-plugin
@@ -248,6 +253,13 @@ jobs:
             echo 'found=false' >> $GITHUB_OUTPUT
           fi
 
+      - name: Build Dependencies
+        uses: ./plugin/.github/actions/build-dependencies
+        with:
+          workingDirectory: ${{ github.workspace }}/plugin
+          target: ${{ matrix.arch }}
+          config: RelWithDebInfo
+
       - name: Build Plugin
         uses: ./plugin/.github/actions/build-plugin
         with:
@@ -329,9 +341,6 @@ jobs:
         with:
           path: |
             ${{ github.workspace }}/.ccache
-            ${{ github.workspace }}/plugin/deps/opencv/build_*
-            ${{ github.workspace }}/plugin/deps/leptonica/build_*
-            ${{ github.workspace }}/plugin/deps/tesseract/build*
           key: windows-${{ matrix.arch }}-ccache-plugin-${{ steps.setup.outputs.ccacheDate }}
           restore-keys: |
             windows-${{ matrix.arch }}-ccache-plugin-
@@ -356,6 +365,14 @@ jobs:
           }
 
           "found=$(([string]${LabelFound}).ToLower())" >> $env:GITHUB_OUTPUT
+
+      - name: Build Dependencies
+        uses: ./plugin/.github/actions/build-dependencies
+        with:
+          workingDirectory: ${{ github.workspace }}/plugin
+          target: ${{ matrix.arch }}
+          config: RelWithDebInfo
+          visualStudio: 'Visual Studio 17 2022'
 
       - name: Build Plugin
         uses: ./plugin/.github/actions/build-plugin

@@ -1,5 +1,5 @@
-name: 'Setup and build plugin'
-description: 'Builds the plugin for specified architecture and build config.'
+name: 'Setup plugin build dependencies'
+description: 'Builds the plugin build dependencies'
 inputs:
   target:
     description: 'Build target for dependencies'
@@ -8,22 +8,10 @@ inputs:
     description: 'Build configuration'
     required: false
     default: 'Release'
-  codesign:
-    description: 'Enable codesigning (macOS only)'
-    required: false
-    default: 'false'
-  codesignIdent:
-    description: 'Developer ID for application codesigning (macOS only)'
-    required: false
-    default: '-'
   visualStudio:
     description: 'Visual Studio version (Windows only)'
     required: false
     default: 'Visual Studio 16 2019'
-  portable:
-    description: 'Set portable mode (Linux only)'
-    required: false
-    default: 'false'
   workingDirectory:
     description: 'Working directory for packaging'
     required: false
@@ -35,24 +23,29 @@ runs:
       uses: jwlawson/actions-setup-cmake@v1.13
       with:
         cmake-version: '3.24.x'
+
+    - name: Restore cached dependencies
+      id: restore-cache
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.DEP_DIR }}
+        key: ${{ env.DEP_DIR }}-${{ runner.os }}
+
     - name: Run macOS Build
-      if: ${{ runner.os == 'macOS' }}
+      if: ${{ runner.os == 'macOS' && steps.restore-cache.outputs.cache-hit != 'true' }}
       shell: zsh {0}
-      env:
-        CODESIGN_IDENT: ${{ inputs.codesignIdent }}
       run: |
         build_args=(
           -c ${{ inputs.config }}
           -t macos-${{ inputs.target }}
         )
 
-        if [[ '${{ inputs.codesign }}' == 'true' ]] build_args+=(-s)
         if (( ${+CI} && ${+RUNNER_DEBUG} )) build_args+=(--debug)
 
-        ${{ inputs.workingDirectory }}/.github/scripts/build-macos.zsh ${build_args}
+        ${{ inputs.workingDirectory }}/.github/scripts/build-deps-macos.zsh -o ${{ env.DEP_DIR }} ${build_args}
 
     - name: Run Linux Build
-      if: ${{ runner.os == 'Linux' }}
+      if: ${{ runner.os == 'Linux' && steps.restore-cache.outputs.cache-hit != 'true' }}
       shell: bash
       run: |
         build_args=(
@@ -64,14 +57,10 @@ runs:
           build_args+=(--debug)
         fi
 
-        if [[ '${{ inputs.portable }}' == 'true' ]]; then
-          build_args+=(-p)
-        fi
-
-        ${{ inputs.workingDirectory }}/.github/scripts/build-linux.sh "${build_args[@]}"
+        ${{ inputs.workingDirectory }}/.github/scripts/build-deps-linux.sh -o ${{ env.DEP_DIR }} "${build_args[@]}"
 
     - name: Run Windows Build
-      if: ${{ runner.os == 'Windows' }}
+      if: ${{ runner.os == 'Windows' && steps.restore-cache.outputs.cache-hit != 'true' }}
       shell: pwsh
       run: |
         $BuildArgs = @{
@@ -86,4 +75,5 @@ runs:
           }
         }
 
-        ${{ inputs.workingDirectory }}/.github/scripts/Build-Windows.ps1 -ADVSSDepName ${{ env.DEP_DIR }} @BuildArgs
+        ${{ inputs.workingDirectory }}/.github/scripts/Build-Deps-Windows.ps1 -OutDirName ${{ env.DEP_DIR }} @BuildArgs
+
