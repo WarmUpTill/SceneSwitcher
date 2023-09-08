@@ -299,8 +299,8 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 			 SLOT(ShowToken()));
 	QWidget::connect(_showToken, SIGNAL(released()), this,
 			 SLOT(HideToken()));
-	connect(&_tokenGrabber, &TokenGrabberThread::GotToken, this,
-		&TwitchTokenSettingsDialog::GotToken);
+	QWidget::connect(&_tokenGrabber, &TokenGrabberThread::GotToken, this,
+			 &TwitchTokenSettingsDialog::GotToken);
 
 	auto generalSettingsGrid = new QGridLayout();
 	int row = 0;
@@ -601,7 +601,7 @@ void TokenGrabberThread::run()
 			break;
 		}
 	}
-
+	_server.stop();
 	emit GotToken(_tokenString);
 }
 
