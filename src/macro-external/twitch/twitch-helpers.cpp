@@ -20,6 +20,12 @@ RequestResult SendGetRequest(const std::string &uri, const std::string &path,
 	httplib::Client cli(uri);
 	auto headers = getTokenRequestHeaders(token);
 	auto response = cli.Get(path, params, headers);
+	if (!response) {
+		auto err = response.error();
+		blog(LOG_INFO, "%s failed - %s", __func__,
+		     httplib::to_string(err).c_str());
+		return {};
+	}
 	RequestResult result;
 	result.status = response->status;
 	if (response->body.empty()) {
@@ -39,6 +45,12 @@ RequestResult SendPostRequest(const std::string &uri, const std::string &path,
 	auto json = obs_data_get_json(data);
 	std::string body = json ? json : "";
 	auto response = cli.Post(path, headers, body, "application/json");
+	if (!response) {
+		auto err = response.error();
+		blog(LOG_INFO, "%s failed - %s", __func__,
+		     httplib::to_string(err).c_str());
+		return {};
+	}
 	RequestResult result;
 	result.status = response->status;
 	if (response->body.empty()) {
@@ -58,6 +70,12 @@ RequestResult SendPatchRequest(const std::string &uri, const std::string &path,
 	auto json = obs_data_get_json(data);
 	std::string body = json ? json : "";
 	auto response = cli.Patch(path, headers, body, "application/json");
+	if (!response) {
+		auto err = response.error();
+		blog(LOG_INFO, "%s failed - %s", __func__,
+		     httplib::to_string(err).c_str());
+		return {};
+	}
 	RequestResult result;
 	result.status = response->status;
 	if (response->body.empty()) {
