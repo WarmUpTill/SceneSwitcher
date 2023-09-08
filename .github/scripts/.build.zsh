@@ -237,12 +237,17 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
         num_procs=$(( $(sysctl -n hw.ncpu) + 1 ))
 
+        local openssl_lib_dir="${advss_deps_path}/openssl-combined/"
+        local openssl_include_dir="${advss_deps_path}/openssl/include"
+
         cmake_args+=(
           -DCMAKE_FRAMEWORK_PATH="${_plugin_deps}/Frameworks"
           -DCMAKE_OSX_ARCHITECTURES=${${target##*-}//universal/x86_64;arm64}
           -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
           -DOBS_CODESIGN_LINKER=ON
           -DOBS_BUNDLE_CODESIGN_IDENTITY="${CODESIGN_IDENT:--}"
+          -DOPENSSL_INCLUDE_DIR="${openssl_include_dir}"
+          -DOPENSSL_LIBRARIES="${openssl_lib_dir}/libcrypto.a;${openssl_lib_dir}/libssl.a"
         )
 
         ;;

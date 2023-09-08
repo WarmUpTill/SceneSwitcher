@@ -285,6 +285,35 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         log_info "Installing Tesseract..."
         cmake --install ${tesseract_build_dir} --prefix "${advss_dep_path}" --config Release
         popd
+
+        pushd ${advss_dep_path}
+        log_info "Prepare openssl ..."
+        rm -rf openssl
+        git clone git://git.openssl.org/openssl.git --branch openssl-3.1.2 --depth 1
+        mv openssl openssl_x86
+        cp -r openssl_x86 openssl_arm
+
+        log_info "Building openssl x86 ..."
+        export MACOSX_DEPLOYMENT_TARGET=10.9
+        cd openssl_x86
+        ./Configure darwin64-x86_64-cc shared
+        make
+
+        log_info "Building openssl arm ..."
+        export MACOSX_DEPLOYMENT_TARGET=10.15
+        cd ../openssl_arm
+        ./Configure enable-rc5 zlib darwin64-arm64-cc no-asm
+        make
+
+        log_info "Combine arm and x86 openssl binaries ..."
+        cd ..
+        mkdir openssl-combined
+        lipo -create openssl_x86/libcrypto.a openssl_arm/libcrypto.a -output openssl-combined/libcrypto.a
+        lipo -create openssl_x86/libssl.a openssl_arm/libssl.a -output openssl-combined/libssl.a
+
+        log_info "Clean up openssl dir..."
+        mv openssl_x86 openssl
+        rm -rf openssl_arm
       ;;
     linux)
       # Nothing to do for now
