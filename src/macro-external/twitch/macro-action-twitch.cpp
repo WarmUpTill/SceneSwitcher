@@ -153,6 +153,22 @@ std::string MacroActionTwitch::GetShortDesc() const
 	return GetWeakTwitchTokenName(_token);
 }
 
+bool MacroActionTwitch::ActionIsSupportedByToken()
+{
+	static const std::unordered_map<Action, TokenOption> requiredOption = {
+		{Action::TITLE, {"channel:manage:broadcast"}},
+		{Action::CATEGORY, {"channel:manage:broadcast"}},
+		{Action::COMMERCIAL, {"channel:edit:commercial"}},
+	};
+	auto token = _token.lock();
+	if (!token) {
+		return false;
+	}
+	auto option = requiredOption.find(_action);
+	assert(option != requiredOption.end());
+	return token->OptionIsEnabled(option->second);
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (const auto &[_, name] : actionTypes) {
@@ -169,7 +185,9 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _category(new TwitchCategorySelection(this)),
 	  _manualCategorySearch(new TwitchCategorySearchButton()),
 	  _duration(new DurationSelection(this, false, 0)),
-	  _layout(new QHBoxLayout())
+	  _layout(new QHBoxLayout()),
+	  _tokenPermissionWarning(new QLabel(obs_module_text(
+		  "AdvSceneSwitcher.action.twitch.tokenPermissionsInsufficient")))
 {
 	_text->setSizePolicy(QSizePolicy::MinimumExpanding,
 			     QSizePolicy::Preferred);
@@ -190,6 +208,8 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 			 SLOT(CategoreyChanged(const TwitchCategory &)));
 	QObject::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
 			 this, SLOT(DurationChanged(const Duration &)));
+	QWidget::connect(&_tokenPermissionCheckTimer, SIGNAL(timeout()), this,
+			 SLOT(CheckTokenPermissions()));
 
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.twitch.entry"),
 		     _layout,
@@ -199,7 +219,14 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 		      {"{{category}}", _category},
 		      {"{{manualCategorySearch}}", _manualCategorySearch},
 		      {"{{duration}}", _duration}});
-	setLayout(_layout);
+	_layout->setContentsMargins(0, 0, 0, 0);
+
+	auto mainLayout = new QVBoxLayout();
+	mainLayout->addLayout(_layout);
+	mainLayout->addWidget(_tokenPermissionWarning);
+	setLayout(mainLayout);
+
+	_tokenPermissionCheckTimer.start(1000);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -250,6 +277,14 @@ void MacroActionTwitchEdit::DurationChanged(const Duration &duration)
 	_entryData->_duration = duration;
 }
 
+void MacroActionTwitchEdit::CheckTokenPermissions()
+{
+	_tokenPermissionWarning->setVisible(
+		_entryData && !_entryData->ActionIsSupportedByToken());
+	adjustSize();
+	updateGeometry();
+}
+
 void MacroActionTwitchEdit::SetupWidgetVisibility()
 {
 	_text->setVisible(_entryData->_action ==
@@ -265,6 +300,9 @@ void MacroActionTwitchEdit::SetupWidgetVisibility()
 	} else {
 		AddStretchIfNecessary(_layout);
 	}
+
+	_tokenPermissionWarning->setVisible(
+		!_entryData->ActionIsSupportedByToken());
 
 	adjustSize();
 	updateGeometry();

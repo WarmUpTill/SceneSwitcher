@@ -21,6 +21,7 @@ public:
 	{
 		return std::make_shared<MacroActionTwitch>(m);
 	}
+	bool ActionIsSupportedByToken();
 
 	enum class Action {
 		TITLE,
@@ -65,6 +66,7 @@ private slots:
 	void TextChanged();
 	void CategoreyChanged(const TwitchCategory &);
 	void DurationChanged(const Duration &);
+	void CheckTokenPermissions();
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -82,6 +84,8 @@ private:
 	TwitchCategorySearchButton *_manualCategorySearch;
 	DurationSelection *_duration;
 	QHBoxLayout *_layout;
+	QLabel *_tokenPermissionWarning;
+	QTimer _tokenPermissionCheckTimer;
 	bool _loading = true;
 };
 

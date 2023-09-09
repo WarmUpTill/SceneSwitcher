@@ -18,7 +18,7 @@ public:
 	std::string GetLocale() const;
 
 	static const std::unordered_map<std::string, std::string> &
-	GetTokenMap();
+	GetTokenOptionMap();
 	bool operator<(const TokenOption &other) const;
 	std::string apiId = "";
 
@@ -90,6 +90,7 @@ public:
 private slots:
 	void ShowToken();
 	void HideToken();
+	void TokenOptionChanged(int);
 	void RequestToken();
 	void GotToken(const std::optional<QString> &);
 
