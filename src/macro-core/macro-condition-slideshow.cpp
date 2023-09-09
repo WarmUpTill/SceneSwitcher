@@ -6,10 +6,13 @@ namespace advss {
 
 const std::string MacroConditionSlideshow::id = "slideshow";
 
-bool MacroConditionSlideshow::_registered = MacroConditionFactory::Register(
-	MacroConditionSlideshow::id,
-	{MacroConditionSlideshow::Create, MacroConditionSlideshowEdit::Create,
-	 "AdvSceneSwitcher.condition.slideshow"});
+bool MacroConditionSlideshow::_registered =
+	obs_get_version() >= MAKE_SEMANTIC_VERSION(29, 1, 0) &&
+	MacroConditionFactory::Register(
+		MacroConditionSlideshow::id,
+		{MacroConditionSlideshow::Create,
+		 MacroConditionSlideshowEdit::Create,
+		 "AdvSceneSwitcher.condition.slideshow"});
 
 static const std::map<MacroConditionSlideshow::Condition, std::string>
 	conditions = {
