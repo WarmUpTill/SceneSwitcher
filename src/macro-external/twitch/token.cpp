@@ -80,7 +80,8 @@ std::string TokenOption::GetLocale() const
 	return apiIdToLocale.at(apiId);
 }
 
-const std::unordered_map<std::string, std::string> &TokenOption::GetTokenMap()
+const std::unordered_map<std::string, std::string> &
+TokenOption::GetTokenOptionMap()
 {
 	return apiIdToLocale;
 }
@@ -329,8 +330,10 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 	row = 0;
 	auto optionsBox = new QGroupBox(
 		obs_module_text("AdvSceneSwitcher.twitchToken.permissions"));
-	for (const auto &[id, _] : TokenOption::GetTokenMap()) {
+	for (const auto &[id, _] : TokenOption::GetTokenOptionMap()) {
 		auto checkBox = addOption({id}, settings, optionsGrid, row);
+		QWidget::connect(checkBox, SIGNAL(stateChanged(int)), this,
+				 SLOT(TokenOptionChanged(int)));
 		_optionWidgets[id] = checkBox;
 	}
 	MinimizeSizeOfColumn(optionsGrid, 0);
@@ -359,7 +362,7 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 	}
 	HideToken();
 
-	if (_name->text() == "") {
+	if (_name->text().isEmpty()) {
 		PulseWidget(_requestToken, Qt::green, QColor(0, 0, 0, 0), true);
 	}
 
@@ -376,6 +379,17 @@ void TwitchTokenSettingsDialog::HideToken()
 {
 	SetButtonIcon(_showToken, ":res/images/invisible.svg");
 	_currentTokenValue->setEchoMode(QLineEdit::PasswordEchoOnEdit);
+}
+
+void TwitchTokenSettingsDialog::TokenOptionChanged(int)
+{
+	if (!_name->text().isEmpty()) {
+		PulseWidget(_requestToken, Qt::green, QColor(0, 0, 0, 0), true);
+	}
+	_name->setText("");
+	QMetaObject::invokeMethod(this, "NameChanged",
+				  Q_ARG(const QString &, ""));
+	_currentTokenValue->setText("");
 }
 
 static std::string generateStateString()
