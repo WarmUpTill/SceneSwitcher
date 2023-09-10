@@ -177,7 +177,7 @@ bool Macro::CeckMatch()
 	vblog(LOG_INFO, "Macro %s returned %d", _name.c_str(), _matched);
 
 	_conditionSateChanged = _lastMatched != _matched;
-	if (!_conditionSateChanged) {
+	if (!_conditionSateChanged && _performActionsOnChange) {
 		_onPreventedActionExecution = true;
 	}
 	_lastMatched = _matched;
@@ -185,7 +185,8 @@ bool Macro::CeckMatch()
 	return _matched;
 }
 
-bool Macro::PerformActions(bool forceParallel, bool ignorePause)
+bool Macro::PerformActions(bool forceParallel, bool ignorePause,
+			   bool forceMatch)
 {
 	if (!_done) {
 		vblog(LOG_INFO, "macro %s already running", _name.c_str());
@@ -198,10 +199,13 @@ bool Macro::PerformActions(bool forceParallel, bool ignorePause)
 		if (_backgroundThread.joinable()) {
 			_backgroundThread.join();
 		}
-		_backgroundThread = std::thread(
-			[this, ignorePause] { RunActions(ignorePause); });
+		_backgroundThread =
+			std::thread([this, ignorePause, forceMatch] {
+				bool _ = false;
+				RunActions(_, ignorePause, forceMatch);
+			});
 	} else {
-		RunActions(ret, ignorePause);
+		RunActions(ret, ignorePause, forceMatch);
 	}
 	_lastExecutionTime = std::chrono::high_resolution_clock::now();
 	auto group = _parent.lock();
@@ -270,11 +274,11 @@ void Macro::ResetTimers()
 	_lastExecutionTime = {};
 }
 
-void Macro::RunActions(bool &retVal, bool ignorePause)
+void Macro::RunActions(bool &retVal, bool ignorePause, bool forceMatch)
 {
 	bool ret = true;
 	const std::deque<std::shared_ptr<MacroAction>> &actionsToExecute =
-		_matched ? _actions : _elseActions;
+		_matched || forceMatch ? _actions : _elseActions;
 	vblog(LOG_INFO, "running %sactions of %s", _matched ? "" : "else ",
 	      _name.c_str());
 	for (auto &action : actionsToExecute) {
@@ -294,12 +298,6 @@ void Macro::RunActions(bool &retVal, bool ignorePause)
 		}
 	}
 	_done = true;
-}
-
-void Macro::RunActions(bool ignorePause)
-{
-	bool unused;
-	RunActions(unused, ignorePause);
 }
 
 bool Macro::DockIsVisible() const
@@ -648,7 +646,7 @@ bool Macro::OnChangePreventedActionsRecently()
 {
 	if (_onPreventedActionExecution) {
 		_onPreventedActionExecution = false;
-		return true;
+		return _matched ? _actions.size() > 0 : _elseActions.size() > 0;
 	}
 	return false;
 }

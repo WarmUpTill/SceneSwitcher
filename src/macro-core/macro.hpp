@@ -26,7 +26,7 @@ public:
 	virtual ~Macro();
 	bool CeckMatch();
 	bool PerformActions(bool forceParallel = false,
-			    bool ignorePause = false);
+			    bool ignorePause = false, bool forceMatch = false);
 	bool Matched() const { return _matched; }
 	bool ShouldRunActions() const;
 	int64_t MsSinceLastCheck() const;
@@ -121,8 +121,7 @@ private:
 	void SetupHotkeys();
 	void ClearHotkeys() const;
 	void SetHotkeysDesc() const;
-	void RunActions(bool &ret, bool ignorePause);
-	void RunActions(bool ignorePause);
+	void RunActions(bool &ret, bool ignorePause, bool forceMatch);
 	bool DockIsVisible() const;
 	void SetDockWidgetName() const;
 	void SaveDockSettings(obs_data_t *obj) const;
