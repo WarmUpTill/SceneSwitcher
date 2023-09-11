@@ -676,6 +676,10 @@ void AdvSceneSwitcher::MacroSelectionAboutToChange()
 		return;
 	}
 
+	if (!ui->macroName->isEnabled()) { // No macro is selected
+		return;
+	}
+
 	auto macro = GetMacroByQString(ui->macroName->text());
 	if (!macro) {
 		return;
