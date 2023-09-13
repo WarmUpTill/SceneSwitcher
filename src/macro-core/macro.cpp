@@ -806,7 +806,8 @@ void Macro::EnableDock(bool value)
 	// Create new dock widget
 	auto window =
 		static_cast<QMainWindow *>(obs_frontend_get_main_window());
-	_dock = new MacroDock(this, window, _runButtonText, _pauseButtonText,
+	_dock = new MacroDock(GetWeakMacroByName(_name.c_str()), window,
+			      _runButtonText, _pauseButtonText,
 			      _unpauseButtonText, _conditionsTrueStatusText,
 			      _conditionsFalseStatusText, _dockHighlight);
 	SetDockWidgetName(); // Used by OBS to restore position

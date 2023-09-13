@@ -16,7 +16,8 @@ class MacroDock : public OBSDock {
 	Q_OBJECT
 
 public:
-	MacroDock(Macro *, QWidget *parent, const StringVariable &runButtonText,
+	MacroDock(std::weak_ptr<Macro>, QWidget *parent,
+		  const StringVariable &runButtonText,
 		  const StringVariable &pauseButtonText,
 		  const StringVariable &unpauseButtonText,
 		  const StringVariable &conditionsTrueText,
@@ -53,7 +54,7 @@ private:
 	QTimer _timer;
 	std::chrono::high_resolution_clock::time_point _lastHighlightCheckTime{};
 
-	Macro *_macro;
+	std::weak_ptr<Macro> _macro;
 };
 
 } // namespace advss
