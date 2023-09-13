@@ -3,6 +3,7 @@
 #include "macro-segment-selection.hpp"
 #include "regex-config.hpp"
 #include "resizing-text-edit.hpp"
+#include "scene-selection.hpp"
 #include "variable-line-edit.hpp"
 
 namespace advss {
@@ -38,6 +39,7 @@ public:
 		MATH_EXPRESSION,
 		USER_INPUT,
 		ENV_VARIABLE,
+		SCENE_ITEM_COUNT,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
@@ -67,6 +69,7 @@ public:
 #else
 	StringVariable _envVariableName = "HOME";
 #endif
+	SceneSelection _scene;
 
 private:
 	void DecrementCurrentSegmentVariableRef();
@@ -119,6 +122,7 @@ private slots:
 	void UseInputPlaceholderChanged(int);
 	void InputPlaceholderChanged();
 	void EnvVariableChanged();
+	void SceneChanged(const SceneSelection &);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -155,6 +159,7 @@ private:
 	QCheckBox *_useInputPlaceholder;
 	VariableLineEdit *_inputPlaceholder;
 	VariableLineEdit *_envVariable;
+	SceneSelectionWidget *_scenes;
 
 	std::shared_ptr<MacroActionVariable> _entryData;
 	QTimer _timer;
