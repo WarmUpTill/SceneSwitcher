@@ -6,7 +6,7 @@
 
 namespace advss {
 
-MacroDock::MacroDock(Macro *m, QWidget *parent,
+MacroDock::MacroDock(std::weak_ptr<Macro> m, QWidget *parent,
 		     const StringVariable &runButtonText,
 		     const StringVariable &pauseButtonText,
 		     const StringVariable &unpauseButtonText,
@@ -25,11 +25,12 @@ MacroDock::MacroDock(Macro *m, QWidget *parent,
 	  _statusText(new QLabel(conditionsFalseText.c_str())),
 	  _macro(m)
 {
-	if (_macro) {
-		setWindowTitle(QString::fromStdString(_macro->Name()));
-		_run->setVisible(_macro->DockHasRunButton());
-		_pauseToggle->setVisible(_macro->DockHasPauseButton());
-		_statusText->setVisible(_macro->DockHasStatusLabel());
+	auto macro = _macro.lock();
+	if (macro) {
+		setWindowTitle(QString::fromStdString(macro->Name()));
+		_run->setVisible(macro->DockHasRunButton());
+		_pauseToggle->setVisible(macro->DockHasPauseButton());
+		_statusText->setVisible(macro->DockHasStatusLabel());
 	} else {
 		setWindowTitle("<deleted macro>");
 	}
@@ -120,49 +121,52 @@ void MacroDock::EnableHighlight(bool value)
 
 void MacroDock::RunClicked()
 {
-	if (!_macro) {
+	auto macro = _macro.lock();
+	if (!macro) {
 		return;
 	}
 
-	auto ret = _macro->PerformActions(true);
+	auto ret = macro->PerformActions(true);
 	if (!ret) {
 		QString err =
 			obs_module_text("AdvSceneSwitcher.macroTab.runFail");
-		DisplayMessage(err.arg(QString::fromStdString(_macro->Name())));
+		DisplayMessage(err.arg(QString::fromStdString(macro->Name())));
 	}
 }
 
 void MacroDock::PauseToggleClicked()
 {
-	if (!_macro) {
+	auto macro = _macro.lock();
+	if (!macro) {
 		return;
 	}
 
-	_macro->SetPaused(!_macro->Paused());
+	macro->SetPaused(!macro->Paused());
 	UpdateText();
 }
 
 void MacroDock::UpdateText()
 {
 	_run->setText(_runButtonText.c_str());
-
-	if (!_macro) {
+	auto macro = _macro.lock();
+	if (!macro) {
 		return;
 	}
 
-	_pauseToggle->setText(_macro->Paused() ? _unpauseButtonText.c_str()
-					       : _pauseButtonText.c_str());
-	_statusText->setText(_macro->Matched() ? _conditionsTrueText.c_str()
-					       : _conditionsFalseText.c_str());
+	_pauseToggle->setText(macro->Paused() ? _unpauseButtonText.c_str()
+					      : _pauseButtonText.c_str());
+	_statusText->setText(macro->Matched() ? _conditionsTrueText.c_str()
+					      : _conditionsFalseText.c_str());
 }
 
 void MacroDock::Highlight()
 {
-	if (!_highlight || !_macro) {
+	auto macro = _macro.lock();
+	if (!_highlight || !macro) {
 		return;
 	}
 	if (_lastHighlightCheckTime.time_since_epoch().count() != 0 &&
-	    _macro->ExecutedSince(_lastHighlightCheckTime)) {
+	    macro->ExecutedSince(_lastHighlightCheckTime)) {
 		PulseWidget(this, Qt::green, QColor(0, 0, 0, 0), true);
 	}
 	_lastHighlightCheckTime = std::chrono::high_resolution_clock::now();
