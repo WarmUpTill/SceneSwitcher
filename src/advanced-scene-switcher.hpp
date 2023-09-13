@@ -101,7 +101,6 @@ public slots:
 	void on_macroUp_clicked();
 	void on_macroDown_clicked();
 	void on_macroName_editingFinished();
-	void on_runMacro_clicked();
 	void on_runMacroInParallel_stateChanged(int value);
 	void on_runMacroOnChange_stateChanged(int value);
 	void on_conditionAdd_clicked();

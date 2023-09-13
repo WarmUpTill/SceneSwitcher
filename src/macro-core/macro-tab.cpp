@@ -451,21 +451,6 @@ void AdvSceneSwitcher::on_macroName_editingFinished()
 	RenameMacro(macro, newName);
 }
 
-void AdvSceneSwitcher::on_runMacro_clicked()
-{
-	auto macro = GetSelectedMacro();
-	if (!macro) {
-		return;
-	}
-
-	bool ret = macro->PerformActions(true, true, true);
-	if (!ret) {
-		QString err =
-			obs_module_text("AdvSceneSwitcher.macroTab.runFail");
-		DisplayMessage(err.arg(QString::fromStdString(macro->Name())));
-	}
-}
-
 void AdvSceneSwitcher::on_runMacroInParallel_stateChanged(int value)
 {
 	auto macro = GetSelectedMacro();
@@ -792,6 +777,7 @@ void AdvSceneSwitcher::SetupMacroTab()
 		SLOT(MacroSelectionAboutToChange()));
 	connect(ui->macros, SIGNAL(MacroSelectionChanged()), this,
 		SLOT(MacroSelectionChanged()));
+	ui->runMacro->SetMacroTree(ui->macros);
 
 	ui->conditionsList->SetHelpMsg(
 		obs_module_text("AdvSceneSwitcher.macroTab.editConditionHelp"));
