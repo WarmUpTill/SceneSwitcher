@@ -49,7 +49,7 @@ runs:
         if [[ '${{ inputs.codesign }}' == 'true' ]] build_args+=(-s)
         if (( ${+CI} && ${+RUNNER_DEBUG} )) build_args+=(--debug)
 
-        ${{ inputs.workingDirectory }}/.github/scripts/build-macos.zsh ${build_args}
+        ${{ inputs.workingDirectory }}/.github/scripts/build-macos.zsh -d ${{ env.DEP_DIR }} ${build_args}
 
     - name: Run Linux Build
       if: ${{ runner.os == 'Linux' }}
@@ -68,7 +68,7 @@ runs:
           build_args+=(-p)
         fi
 
-        ${{ inputs.workingDirectory }}/.github/scripts/build-linux.sh "${build_args[@]}"
+        ${{ inputs.workingDirectory }}/.github/scripts/build-linux.sh -d ${{ env.DEP_DIR }} "${build_args[@]}"
 
     - name: Run Windows Build
       if: ${{ runner.os == 'Windows' }}
