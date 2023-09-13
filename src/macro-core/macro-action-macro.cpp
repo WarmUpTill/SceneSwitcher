@@ -49,7 +49,7 @@ bool MacroActionMacro::PerformAction()
 		break;
 	case Action::RUN:
 		if (!macro->Paused()) {
-			macro->PerformActions(false, false, true);
+			macro->PerformActions(true, false, true);
 		}
 		break;
 	case Action::STOP:

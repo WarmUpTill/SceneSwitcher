@@ -185,13 +185,17 @@ bool Macro::CeckMatch()
 	return _matched;
 }
 
-bool Macro::PerformActions(bool forceParallel, bool ignorePause,
-			   bool forceMatch)
+bool Macro::PerformActions(bool match, bool forceParallel, bool ignorePause)
 {
 	if (!_done) {
 		vblog(LOG_INFO, "macro %s already running", _name.c_str());
 		return !forceParallel;
 	}
+	std::function<bool(bool)> runFunc =
+		match ? std::bind(&Macro::RunActions, this,
+				  std::placeholders::_1)
+		      : std::bind(&Macro::RunElseActions, this,
+				  std::placeholders::_1);
 	_stop = false;
 	_done = false;
 	bool ret = true;
@@ -199,13 +203,10 @@ bool Macro::PerformActions(bool forceParallel, bool ignorePause,
 		if (_backgroundThread.joinable()) {
 			_backgroundThread.join();
 		}
-		_backgroundThread =
-			std::thread([this, ignorePause, forceMatch] {
-				bool _ = false;
-				RunActions(_, ignorePause, forceMatch);
-			});
+		_backgroundThread = std::thread(
+			[this, runFunc, ignorePause] { runFunc(ignorePause); });
 	} else {
-		RunActions(ret, ignorePause, forceMatch);
+		ret = runFunc(ignorePause);
 	}
 	_lastExecutionTime = std::chrono::high_resolution_clock::now();
 	auto group = _parent.lock();
@@ -274,23 +275,23 @@ void Macro::ResetTimers()
 	_lastExecutionTime = {};
 }
 
-void Macro::RunActions(bool &retVal, bool ignorePause, bool forceMatch)
+bool Macro::RunActionsHelper(
+	const std::deque<std::shared_ptr<MacroAction>> &actions,
+	bool ignorePause)
 {
-	bool ret = true;
-	const std::deque<std::shared_ptr<MacroAction>> &actionsToExecute =
-		_matched || forceMatch ? _actions : _elseActions;
-	vblog(LOG_INFO, "running %sactions of %s", _matched ? "" : "else ",
-	      _name.c_str());
-	for (auto &action : actionsToExecute) {
+	bool actionsExecutedSuccessfully = true;
+	for (auto &action : actions) {
 		if (action->Enabled()) {
 			action->LogAction();
-			ret = ret && action->PerformAction();
+			actionsExecutedSuccessfully =
+				actionsExecutedSuccessfully &&
+				action->PerformAction();
 		} else {
 			vblog(LOG_INFO, "skipping disabled action %s",
 			      action->GetId().c_str());
 		}
-		if (!ret || (_paused && !ignorePause) || _stop || _die) {
-			retVal = ret;
+		if (!actionsExecutedSuccessfully || (_paused && !ignorePause) ||
+		    _stop || _die) {
 			break;
 		}
 		if (action->Enabled()) {
@@ -298,6 +299,19 @@ void Macro::RunActions(bool &retVal, bool ignorePause, bool forceMatch)
 		}
 	}
 	_done = true;
+	return actionsExecutedSuccessfully;
+}
+
+bool Macro::RunActions(bool ignorePause)
+{
+	vblog(LOG_INFO, "running actions of %s", _name.c_str());
+	return RunActionsHelper(_actions, ignorePause);
+}
+
+bool Macro::RunElseActions(bool ignorePause)
+{
+	vblog(LOG_INFO, "running else actions of %s", _name.c_str());
+	return RunActionsHelper(_elseActions, ignorePause);
 }
 
 bool Macro::DockIsVisible() const
@@ -1141,7 +1155,7 @@ bool SwitcherData::RunMacros()
 			continue;
 		}
 		vblog(LOG_INFO, "running macro: %s", m->Name().c_str());
-		if (!m->PerformActions()) {
+		if (!m->PerformActions(m->Matched())) {
 			blog(LOG_WARNING, "abort macro: %s", m->Name().c_str());
 		}
 	}
