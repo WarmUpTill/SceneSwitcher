@@ -29,7 +29,7 @@ runs:
       uses: actions/cache@v3
       with:
         path: ${{ env.DEP_DIR }}
-        key: ${{ env.DEP_DIR }}-${{ runner.os }}
+        key: ${{ env.DEP_DIR }}-${{ runner.os }}-${{ inputs.target }}
 
     - name: Run macOS Build
       if: ${{ runner.os == 'macOS' && steps.restore-cache.outputs.cache-hit != 'true' }}
