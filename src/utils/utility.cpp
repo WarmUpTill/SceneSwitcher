@@ -502,6 +502,29 @@ bool SaveTransformState(obs_data_t *obj, const struct obs_transform_info &info,
 	return true;
 }
 
+static bool getTotalSceneItemCountHelper(obs_scene_t *, obs_sceneitem_t *item,
+					 void *ptr)
+{
+	auto count = reinterpret_cast<int *>(ptr);
+
+	if (obs_sceneitem_is_group(item)) {
+		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
+		obs_scene_enum_items(scene, getTotalSceneItemCountHelper, ptr);
+	}
+	*count = *count + 1;
+	return true;
+}
+
+int GetSceneItemCount(const OBSWeakSource &sceneWeakSource)
+{
+	auto s = obs_weak_source_get_source(sceneWeakSource);
+	auto scene = obs_scene_from_source(s);
+	int count = 0;
+	obs_scene_enum_items(scene, getTotalSceneItemCountHelper, &count);
+	obs_source_release(s);
+	return count;
+}
+
 bool DisplayMessage(const QString &msg, bool question, bool modal)
 {
 	if (!modal) {

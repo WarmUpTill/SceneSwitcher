@@ -38,6 +38,7 @@ void LoadTransformState(obs_data_t *obj, struct obs_transform_info &info,
 			struct obs_sceneitem_crop &crop);
 bool SaveTransformState(obs_data_t *obj, const struct obs_transform_info &info,
 			const struct obs_sceneitem_crop &crop);
+int GetSceneItemCount(const OBSWeakSource &);
 
 /* Scene item helpers */
 

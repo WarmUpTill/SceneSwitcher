@@ -162,29 +162,6 @@ static bool getSceneItemAtIdx(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 	return true;
 }
 
-static bool getTotalSceneItemCountHelper(obs_scene_t *, obs_sceneitem_t *item,
-					 void *ptr)
-{
-	auto count = reinterpret_cast<int *>(ptr);
-
-	if (obs_sceneitem_is_group(item)) {
-		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
-		obs_scene_enum_items(scene, getTotalSceneItemCountHelper, ptr);
-	}
-	*count = *count + 1;
-	return true;
-}
-
-static int getTotalSceneItemCountOnScene(const OBSWeakSource &sceneWeakSource)
-{
-	auto s = obs_weak_source_get_source(sceneWeakSource);
-	auto scene = obs_scene_from_source(s);
-	int count = 0;
-	obs_scene_enum_items(scene, getTotalSceneItemCountHelper, &count);
-	obs_source_release(s);
-	return count;
-}
-
 struct GroupData {
 	std::string type;
 	std::vector<OBSSceneItem> items = {};
@@ -408,7 +385,7 @@ std::vector<OBSSceneItem> SceneItemSelection::GetSceneItemsByIdx(
 	}
 
 	auto sceneWeakSource = sceneSelection.GetScene(false);
-	int count = getTotalSceneItemCountOnScene(sceneWeakSource);
+	int count = GetSceneItemCount(sceneWeakSource);
 	if (count == 0) {
 		return {};
 	}
@@ -750,8 +727,7 @@ void SceneItemSelectionWidget::SetNameConflictVisibility()
 
 	case SceneItemSelection::Type::SOURCE_NAME_PATTERN:
 	case SceneItemSelection::Type::SOURCE_GROUP:
-		sceneItemCount =
-			getTotalSceneItemCountOnScene(_scene.GetScene(false));
+		sceneItemCount = GetSceneItemCount(_scene.GetScene(false));
 		break;
 	case SceneItemSelection::Type::INDEX:
 	case SceneItemSelection::Type::INDEX_RANGE:
@@ -761,8 +737,7 @@ void SceneItemSelectionWidget::SetNameConflictVisibility()
 
 	if (_currentSelection._type ==
 	    SceneItemSelection::Type::SOURCE_NAME_PATTERN) {
-		int sceneItemCount =
-			getTotalSceneItemCountOnScene(_scene.GetScene(false));
+		int sceneItemCount = GetSceneItemCount(_scene.GetScene(false));
 		if (sceneItemCount == 0) {
 			_nameConflictIndex->hide();
 			return;
