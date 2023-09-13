@@ -124,7 +124,7 @@ void MacroDock::RunClicked()
 		return;
 	}
 
-	auto ret = _macro->PerformActions();
+	auto ret = _macro->PerformActions(true);
 	if (!ret) {
 		QString err =
 			obs_module_text("AdvSceneSwitcher.macroTab.runFail");

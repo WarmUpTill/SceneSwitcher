@@ -25,8 +25,8 @@ public:
 	Macro(const std::string &name = "", const bool addHotkey = false);
 	virtual ~Macro();
 	bool CeckMatch();
-	bool PerformActions(bool forceParallel = false,
-			    bool ignorePause = false, bool forceMatch = false);
+	bool PerformActions(bool match, bool forceParallel = false,
+			    bool ignorePause = false);
 	bool Matched() const { return _matched; }
 	bool ShouldRunActions() const;
 	int64_t MsSinceLastCheck() const;
@@ -121,7 +121,11 @@ private:
 	void SetupHotkeys();
 	void ClearHotkeys() const;
 	void SetHotkeysDesc() const;
-	void RunActions(bool &ret, bool ignorePause, bool forceMatch);
+	bool RunActionsHelper(
+		const std::deque<std::shared_ptr<MacroAction>> &actions,
+		bool ignorePause);
+	bool RunActions(bool ignorePause);
+	bool RunElseActions(bool ignorePause);
 	bool DockIsVisible() const;
 	void SetDockWidgetName() const;
 	void SaveDockSettings(obs_data_t *obj) const;
