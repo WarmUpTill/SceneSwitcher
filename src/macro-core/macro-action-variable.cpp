@@ -43,6 +43,8 @@ const static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.askForValue"},
 	{MacroActionVariable::Type::ENV_VARIABLE,
 	 "AdvSceneSwitcher.action.variable.type.environmentVariable"},
+	{MacroActionVariable::Type::SCENE_ITEM_COUNT,
+	 "AdvSceneSwitcher.action.variable.type.sceneItemCount"},
 };
 
 static void apppend(Variable &var, const std::string &value)
@@ -232,6 +234,10 @@ bool MacroActionVariable::PerformAction()
 		var->SetValue(std::getenv(_envVariableName.c_str()));
 		return true;
 	}
+	case Type::SCENE_ITEM_COUNT: {
+		var->SetValue(GetSceneItemCount(_scene.GetScene(false)));
+		return true;
+	}
 	}
 
 	return true;
@@ -261,6 +267,7 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	obs_data_set_bool(obj, "useInputPlaceholder", _useInputPlaceholder);
 	_inputPlaceholder.Save(obj, "inputPlaceholder");
 	_envVariableName.Save(obj, "environmentVariableName");
+	_scene.Save(obj);
 	return true;
 }
 
@@ -288,6 +295,7 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_useInputPlaceholder = obs_data_get_bool(obj, "useInputPlaceholder");
 	_inputPlaceholder.Load(obj, "inputPlaceholder");
 	_envVariableName.Load(obj, "environmentVariableName");
+	_scene.Load(obj);
 	return true;
 }
 
@@ -413,7 +421,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _placeholderLayout(new QHBoxLayout()),
 	  _useInputPlaceholder(new QCheckBox()),
 	  _inputPlaceholder(new VariableLineEdit(this)),
-	  _envVariable(new VariableLineEdit(this))
+	  _envVariable(new VariableLineEdit(this)),
+	  _scenes(new SceneSelectionWidget(this, true, false, true, true, true))
 {
 	_numValue->setMinimum(-9999999999);
 	_numValue->setMaximum(9999999999);
@@ -474,6 +483,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 SLOT(InputPlaceholderChanged()));
 	QWidget::connect(_envVariable, SIGNAL(editingFinished()), this,
 			 SLOT(EnvVariableChanged()));
+	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
+			 this, SLOT(SceneChanged(const SceneSelection &)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -493,6 +504,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{useInputPlaceholder}}", _useInputPlaceholder},
 		{"{{inputPlaceholder}}", _inputPlaceholder},
 		{"{{envVariableName}}", _envVariable},
+		{"{{scenes}}", _scenes},
 	};
 	auto entryLayout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.variable.entry"),
@@ -585,6 +597,7 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_useInputPlaceholder->setChecked(_entryData->_useInputPlaceholder);
 	_inputPlaceholder->setText(_entryData->_inputPlaceholder);
 	_envVariable->setText(_entryData->_envVariableName);
+	_scenes->SetScene(_entryData->_scene);
 	SetWidgetVisibility();
 }
 
@@ -902,6 +915,16 @@ void MacroActionVariableEdit::EnvVariableChanged()
 	_entryData->_envVariableName = _envVariable->text().toStdString();
 }
 
+void MacroActionVariableEdit::SceneChanged(const SceneSelection &scene)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_scene = scene;
+}
+
 void MacroActionVariableEdit::SetWidgetVisibility()
 {
 	if (!_entryData) {
@@ -976,6 +999,8 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 	}
 	_envVariable->setVisible(_entryData->_type ==
 				 MacroActionVariable::Type::ENV_VARIABLE);
+	_scenes->setVisible(_entryData->_type ==
+			    MacroActionVariable::Type::SCENE_ITEM_COUNT);
 	adjustSize();
 	updateGeometry();
 }
