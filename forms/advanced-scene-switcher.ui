@@ -843,7 +843,7 @@
               <widget class="QLineEdit" name="macroName"/>
              </item>
              <item>
-              <widget class="QPushButton" name="runMacro">
+              <widget class="advss::MacroRunButton" name="runMacro">
                <property name="text">
                 <string>AdvSceneSwitcher.macroTab.run</string>
                </property>
@@ -4848,6 +4848,11 @@
    <extends>QScrollArea</extends>
    <header>macro-segment-list.hpp</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>advss::MacroRunButton</class>
+   <extends>QPushButton</extends>
+   <header>macro-run-button.hpp</header>
   </customwidget>
  </customwidgets>
  <resources/>
