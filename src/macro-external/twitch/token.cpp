@@ -11,15 +11,6 @@ namespace advss {
 static std::deque<std::shared_ptr<Item>> twitchTokens;
 
 const std::unordered_map<std::string, std::string> TokenOption::apiIdToLocale{
-	// Add necessary token permissions here
-	/*
-	{"analytics:read:extensions",
-	 "AdvSceneSwitcher.twitchToken.analytics.readExtensions"},
-	{"analytics:read:games",
-	 "AdvSceneSwitcher.twitchToken.analytics.readGames"},
-	{"bits:read", "AdvSceneSwitcher.twitchToken.bits.read"},
-	*/
-
 	{"channel:manage:broadcast",
 	 "AdvSceneSwitcher.twitchToken.channel.manageBroadcast"},
 	{"clips:edit", "AdvSceneSwitcher.twitchToken.clips.edit"},
@@ -28,7 +19,9 @@ const std::unordered_map<std::string, std::string> TokenOption::apiIdToLocale{
 	{"moderator:manage:announcements",
 	 "AdvSceneSwitcher.twitchToken.moderator.manageAnnouncements"},
 	{"moderator:manage:chat_settings",
-	 "AdvSceneSwitcher.twitchToken.moderator.manageChatSettings"}};
+	 "AdvSceneSwitcher.twitchToken.moderator.manageChatSettings"},
+	{"channel:manage:raids", "AdvSceneSwitcher.twitchToken.channel.raid"},
+};
 
 static void saveConnections(obs_data_t *obj);
 static void loadConnections(obs_data_t *obj);

@@ -30,6 +30,8 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.twitch.type.emoteOnlyEnable"},
 	{MacroActionTwitch::Action::DISABLE_EMOTE_ONLY,
 	 "AdvSceneSwitcher.action.twitch.type.emoteOnlyDisable"},
+	{MacroActionTwitch::Action::RAID,
+	 "AdvSceneSwitcher.action.twitch.type.raid"},
 };
 
 const static std::map<MacroActionTwitch::AnnouncementColor, std::string>
@@ -200,6 +202,20 @@ void MacroActionTwitch::SetChatEmoteOnlyMode(
 	}
 }
 
+void MacroActionTwitch::StartRaid(const std::shared_ptr<TwitchToken> &token)
+{
+	OBSDataAutoRelease data = obs_data_create();
+	obs_data_set_string(data, "from_broadcaster_id",
+			    token->GetUserID().c_str());
+	obs_data_set_string(data, "to_broadcaster_id",
+			    _channel.GetUserID(*token).c_str());
+	auto result = SendPostRequest("https://api.twitch.tv", "/helix/raids",
+				      *token, data.Get());
+	if (result.status != 200) {
+		blog(LOG_INFO, "Failed to start raid! (%d)\n", result.status);
+	}
+}
+
 bool MacroActionTwitch::PerformAction()
 {
 	auto token = _token.lock();
@@ -231,6 +247,8 @@ bool MacroActionTwitch::PerformAction()
 		break;
 	case MacroActionTwitch::Action::DISABLE_EMOTE_ONLY:
 		SetChatEmoteOnlyMode(token, false);
+	case MacroActionTwitch::Action::RAID:
+		StartRaid(token);
 		break;
 	default:
 		break;
@@ -266,6 +284,7 @@ bool MacroActionTwitch::Save(obs_data_t *obj) const
 	_announcementMessage.Save(obj, "announcementMessage");
 	obs_data_set_int(obj, "announcementColor",
 			 static_cast<int>(_announcementColor));
+	_channel.Save(obj);
 	return true;
 }
 
@@ -282,6 +301,7 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 	_announcementMessage.Load(obj, "announcementMessage");
 	_announcementColor = static_cast<AnnouncementColor>(
 		obs_data_get_int(obj, "announcementColor"));
+	_channel.Load(obj);
 	return true;
 }
 
@@ -302,6 +322,7 @@ bool MacroActionTwitch::ActionIsSupportedByToken()
 		{Action::ENABLE_EMOTE_ONLY, {"moderator:manage:chat_settings"}},
 		{Action::DISABLE_EMOTE_ONLY,
 		 {"moderator:manage:chat_settings"}},
+		{Action::RAID, {"channel:manage:raids"}},
 	};
 	auto token = _token.lock();
 	if (!token) {
@@ -342,7 +363,8 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 		  "AdvSceneSwitcher.action.twitch.clip.hasDelay"))),
 	  _duration(new DurationSelection(this, false, 0)),
 	  _announcementMessage(new VariableTextEdit(this)),
-	  _announcementColor(new QComboBox(this))
+	  _announcementColor(new QComboBox(this)),
+	  _channel(new TwitchChannelSelection(this))
 {
 	_streamTitle->setSizePolicy(QSizePolicy::MinimumExpanding,
 				    QSizePolicy::Preferred);
@@ -381,6 +403,11 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 			 SLOT(AnnouncementMessageChanged()));
 	QWidget::connect(_announcementColor, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(AnnouncementColorChanged(int)));
+	QWidget::connect(_channel,
+			 SIGNAL(ChannelChanged(const TwitchChannel &)), this,
+			 SLOT(ChannelChanged(const TwitchChannel &)));
+	QWidget::connect(&_tokenPermissionCheckTimer, SIGNAL(timeout()), this,
+			 SLOT(CheckTokenPermissions()));
 
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.twitch.entry.line1"),
@@ -393,7 +420,8 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 		 {"{{markerDescription}}", _markerDescription},
 		 {"{{clipHasDelay}}", _clipHasDelay},
 		 {"{{duration}}", _duration},
-		 {"{{announcementColor}}", _announcementColor}});
+		 {"{{announcementColor}}", _announcementColor},
+		 {"{{channel}}", _channel}});
 	_layout->setContentsMargins(0, 0, 0, 0);
 
 	auto mainLayout = new QVBoxLayout();
@@ -526,6 +554,8 @@ void MacroActionTwitchEdit::SetupWidgetVisibility()
 	_announcementColor->setVisible(_entryData->_action ==
 				       MacroActionTwitch::Action::ANNOUNCEMENT);
 
+	_channel->setVisible(_entryData->_action ==
+			     MacroActionTwitch::Action::RAID);
 	if (_entryData->_action == MacroActionTwitch::Action::TITLE ||
 	    _entryData->_action == MacroActionTwitch::Action::MARKER) {
 		RemoveStretchIfPresent(_layout);
@@ -538,6 +568,16 @@ void MacroActionTwitchEdit::SetupWidgetVisibility()
 
 	adjustSize();
 	updateGeometry();
+}
+
+void MacroActionTwitchEdit::ChannelChanged(const TwitchChannel &channel)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_channel = channel;
 }
 
 void MacroActionTwitchEdit::UpdateEntryData()
@@ -559,6 +599,7 @@ void MacroActionTwitchEdit::UpdateEntryData()
 	_announcementColor->setCurrentIndex(
 		static_cast<int>(_entryData->_announcementColor));
 
+	_channel->SetChannel(_entryData->_channel);
 	SetupWidgetVisibility();
 }
 

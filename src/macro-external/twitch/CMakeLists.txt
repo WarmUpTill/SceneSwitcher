@@ -39,6 +39,8 @@ target_sources(
   ${PROJECT_NAME}
   PRIVATE category-selection.cpp
           category-selection.hpp
+          channel-selection.cpp
+          channel-selection.hpp
           macro-action-twitch.cpp
           macro-action-twitch.hpp
           token.cpp
