@@ -22,6 +22,7 @@ const std::unordered_map<std::string, std::string> TokenOption::apiIdToLocale{
 
 	{"channel:manage:broadcast",
 	 "AdvSceneSwitcher.twitchToken.channel.manageBroadcast"},
+	{"clips:edit", "AdvSceneSwitcher.twitchToken.channel.createClip"},
 	{"channel:edit:commercial",
 	 "AdvSceneSwitcher.twitchToken.channel.startCommercial"},
 };

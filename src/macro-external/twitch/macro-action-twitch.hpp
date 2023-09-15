@@ -26,18 +26,26 @@ public:
 	enum class Action {
 		TITLE,
 		CATEGORY,
+		MARKER,
+		CLIP,
 		COMMERCIAL,
 	};
 
 	Action _action = Action::TITLE;
 	std::weak_ptr<TwitchToken> _token;
-	StringVariable _text = obs_module_text("AdvSceneSwitcher.enterText");
+	StringVariable _streamTitle =
+		obs_module_text("AdvSceneSwitcher.action.twitch.title.title");
 	TwitchCategory _category;
+	StringVariable _markerDescription = obs_module_text(
+		"AdvSceneSwitcher.action.twitch.marker.description");
+	bool _clipHasDelay = false;
 	Duration _duration = 60;
 
 private:
 	void SetStreamTitle(const std::shared_ptr<TwitchToken> &) const;
 	void SetStreamCategory(const std::shared_ptr<TwitchToken> &) const;
+	void CreateStreamMarker(const std::shared_ptr<TwitchToken> &) const;
+	void CreateStreamClip(const std::shared_ptr<TwitchToken> &) const;
 	void StartCommercial(const std::shared_ptr<TwitchToken> &) const;
 
 	static bool _registered;
@@ -63,8 +71,10 @@ public:
 private slots:
 	void ActionChanged(int);
 	void TwitchTokenChanged(const QString &);
-	void TextChanged();
+	void StreamTitleChanged();
 	void CategoreyChanged(const TwitchCategory &);
+	void MarkerDescriptionChanged();
+	void ClipHasDelayChanged(int state);
 	void DurationChanged(const Duration &);
 	void CheckTokenPermissions();
 
@@ -79,9 +89,11 @@ private:
 
 	QComboBox *_actions;
 	TwitchConnectionSelection *_tokens;
-	VariableLineEdit *_text;
+	VariableLineEdit *_streamTitle;
 	TwitchCategorySelection *_category;
 	TwitchCategorySearchButton *_manualCategorySearch;
+	VariableLineEdit *_markerDescription;
+	QCheckBox *_clipHasDelay;
 	DurationSelection *_duration;
 	QHBoxLayout *_layout;
 	QLabel *_tokenPermissionWarning;
