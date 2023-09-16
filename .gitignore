@@ -91,6 +91,7 @@ Thumbs.db
 .settings
 .idea
 .metadata
+.vscode
 *.iml
 *.ipr
 *.sublime*
