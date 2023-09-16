@@ -104,7 +104,9 @@ static bool requiresFileInput(VideoCondition t)
 bool MacroConditionVideo::CheckShouldBeSkipped()
 {
 	if (_condition != VideoCondition::PATTERN &&
-	    _condition != VideoCondition::OBJECT) {
+	    _condition != VideoCondition::OBJECT &&
+	    _condition != VideoCondition::HAS_CHANGED &&
+	    _condition != VideoCondition::HAS_NOT_CHANGED) {
 		return false;
 	}
 
@@ -1452,7 +1454,9 @@ static bool needsShowMatch(VideoCondition cond)
 static bool needsThrottleControls(VideoCondition cond)
 {
 	return cond == VideoCondition::PATTERN ||
-	       cond == VideoCondition::OBJECT;
+	       cond == VideoCondition::OBJECT ||
+	       cond == VideoCondition::HAS_CHANGED ||
+	       cond == VideoCondition::HAS_NOT_CHANGED;
 }
 
 static bool needsThreshold(VideoCondition cond)
