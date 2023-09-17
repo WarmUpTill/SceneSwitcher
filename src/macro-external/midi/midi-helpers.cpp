@@ -920,7 +920,6 @@ QStringList GetAllNotes()
 			     "F#", "G",  "G#", "A",  "A#", "B"};
 	for (int octave = -1; octave <= 9; octave++) {
 		for (int noteIndex = 0; noteIndex < 12; noteIndex++) {
-			int midiNote = octave * 12 + noteIndex;
 			result << notes[noteIndex] + QString::number(octave);
 		}
 	}

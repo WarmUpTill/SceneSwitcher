@@ -212,7 +212,7 @@ static inline int
 ModelIndexToMacroIndex(int modelIdx,
 		       const std::deque<std::shared_ptr<Macro>> &macros)
 {
-	assert(macros.size() >= modelIdx);
+	assert((int)macros.size() >= modelIdx);
 	int realIdx = 0;
 	const auto &m = macros[0];
 	bool inCollapsedGroup = m->IsGroup() && m->IsCollapsed();

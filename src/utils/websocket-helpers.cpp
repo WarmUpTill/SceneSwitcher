@@ -229,7 +229,7 @@ void WSConnection::UseOBSWebsocketProtocol(bool useOBSProtocol)
 		     this, _1, _2));
 }
 
-void WSConnection::OnGenericOpen(connection_hdl hdl)
+void WSConnection::OnGenericOpen(connection_hdl)
 {
 	blog(LOG_INFO, "connection to %s opened", _uri.c_str());
 	_status = Status::AUTHENTICATED;
@@ -317,8 +317,7 @@ void WSConnection::HandleResponse(obs_data_t *response)
 	obs_data_release(data);
 }
 
-void WSConnection::OnGenericMessage(connection_hdl hdl,
-				    client::message_ptr message)
+void WSConnection::OnGenericMessage(connection_hdl, client::message_ptr message)
 {
 	if (!message) {
 		return;

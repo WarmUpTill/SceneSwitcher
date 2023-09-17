@@ -178,6 +178,9 @@ cv::Mat PreprocessForOCR(const QImage &image, const QColor &textColor,
 std::string RunOCR(tesseract::TessBaseAPI *ocr, const QImage &image,
 		   const QColor &color, double colorDiff)
 {
+	(void)ocr;
+	(void)color;
+	(void)colorDiff;
 	if (image.isNull()) {
 		return "";
 	}

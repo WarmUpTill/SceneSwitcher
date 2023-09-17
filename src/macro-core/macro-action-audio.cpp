@@ -39,6 +39,22 @@ const static std::map<MacroActionAudio::FadeType, std::string> fadeTypes = {
 constexpr auto fadeInterval = std::chrono::milliseconds(100);
 constexpr float minFade = 0.000001f;
 
+// For backwards compatibility
+#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(29, 0, 0)
+static float get_master_volume()
+{
+	return 1;
+}
+
+static void set_master_volume(float)
+{
+	return;
+}
+#else
+auto get_master_volume = obs_get_master_volume;
+auto set_master_volume = obs_set_master_volume;
+#endif
+
 void MacroActionAudio::SetFadeActive(bool value)
 {
 	if (_action == Action::SOURCE_VOLUME) {
@@ -87,7 +103,7 @@ void MacroActionAudio::SetVolume(float vol)
 		obs_source_set_volume(s, vol);
 		obs_source_release(s);
 	} else {
-		obs_set_master_volume(vol);
+		set_master_volume(vol);
 	}
 }
 
@@ -102,7 +118,7 @@ float MacroActionAudio::GetVolume()
 		curVol = obs_source_get_volume(s);
 		obs_source_release(s);
 	} else {
-		curVol = obs_get_master_volume();
+		curVol = get_master_volume();
 	}
 	return curVol;
 }
