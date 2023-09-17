@@ -1,5 +1,5 @@
-# Add macro conditions or actions which have dependencies to external libraries
-# or other components which might potentially not be fulfilled.
+# Add macro conditions or actions which have dependencies to external libraries or other components which might
+# potentially not be fulfilled.
 
 #[[
 To add a new plugin with external dependencies append a ...

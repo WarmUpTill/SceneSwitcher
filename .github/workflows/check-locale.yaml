@@ -1,0 +1,26 @@
+name: Check locale
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+    paths:
+      - 'data/locale/**'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'data/locale/**'
+
+jobs:
+  ubuntu64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Check locale files
+        run: |
+          python3 ./.github/scripts/checkLocale.py -p data/locale/

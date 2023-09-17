@@ -66,6 +66,8 @@ cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake_install
+/cmake/.CMakeBuildNumber
+*.lock.json
 
 # OS generated files #
 ######################
@@ -96,6 +98,7 @@ Thumbs.db
 *.ipr
 *.sublime*
 .vscode/*
+.vscode/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
@@ -109,6 +112,7 @@ forms/advanced-scene-switcher.ui.autosave
 ###############
 *~
 .DS_Store
+/.deps/
 /build/
 /build_*/
 /release/

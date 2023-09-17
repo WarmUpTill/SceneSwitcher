@@ -1,0 +1,61 @@
+name: 'Setup plugin build dependencies'
+description: 'Builds the plugin build dependencies'
+inputs:
+  target:
+    description: 'Build target for dependencies'
+    required: true
+  config:
+    description: 'Build configuration'
+    required: false
+    default: 'Release'
+  workingDirectory:
+    description: 'Working directory for packaging'
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup cmake
+      uses: jwlawson/actions-setup-cmake@v1.13
+      with:
+        cmake-version: '3.24.x'
+
+    - name: Restore cached dependencies
+      id: restore-cache
+      uses: actions/cache@v3
+      with:
+        path: .deps/${{ env.DEP_DIR }}
+        key: ${{ env.DEP_DIR }}-${{ runner.os }}
+
+    - name: Run macOS Build
+      if: ${{ runner.os == 'macOS' && steps.restore-cache.outputs.cache-hit != 'true' }}
+      shell: zsh {0}
+      run: |
+        build_args=(
+          -c ${{ inputs.config }}
+          -t ${{ inputs.target }}
+          -o ${{ env.DEP_DIR }}
+        )
+
+        if (( ${+CI} && ${+RUNNER_DEBUG} )) build_args+=(--debug)
+
+        .github/scripts/build-deps-macos.zsh ${build_args}
+
+    - name: Run Windows Build
+      if: ${{ runner.os == 'Windows' && steps.restore-cache.outputs.cache-hit != 'true' }}
+      shell: pwsh
+      run: |
+        $BuildArgs = @{
+          Target = '${{ inputs.target }}'
+          Configuration = '${{ inputs.config }}'
+          OutDirName  = '${{ env.DEP_DIR }}'
+        }
+
+        if ( ( Test-Path env:CI ) -and ( Test-Path env:RUNNER_DEBUG ) ) {
+          $BuildArgs += @{
+            Debug = $true
+          }
+        }
+
+        .github/scripts/Build-Deps-Windows.ps1 @BuildArgs
+

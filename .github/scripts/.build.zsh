@@ -17,56 +17,77 @@ setopt FUNCTION_ARGZERO
 # setopt XTRACE
 
 autoload -Uz is-at-least && if ! is-at-least 5.2; then
-  print -u2 -PR "%F{1}${funcstack[1]##*/}:%f Running on Zsh version %B${ZSH_VERSION}%b, but Zsh %B5.2%b is the minimum supported version. Upgrade Zsh to fix this issue."
+  print -u2 -PR "${CI:+::error::}%F{1}${funcstack[1]##*/}:%f Running on Zsh version %B${ZSH_VERSION}%b, but Zsh %B5.2%b is the minimum supported version. Upgrade Zsh to fix this issue."
   exit 1
 fi
 
-_trap_error() {
-  print -u2 -PR '%F{1}    ✖︎ script execution error%f'
-  print -PR -e "
+TRAPEXIT() {
+  local return_value=$?
+
+  if (( ${+CI} )) unset NSUnbufferedIO
+
+  return ${return_value}
+}
+
+TRAPZERR() {
+  if (( ${_loglevel:-3} > 2 )) {
+    print -u2 -PR "${CI:+::error::}%F{1}    ✖︎ script execution error%f"
+    print -PR -e "
     Callstack:
     ${(j:\n     :)funcfiletrace}
-  "
+    "
+  }
+
   exit 2
 }
 
 build() {
   if (( ! ${+SCRIPT_HOME} )) typeset -g SCRIPT_HOME=${ZSH_ARGZERO:A:h}
   local host_os=${${(s:-:)ZSH_ARGZERO:t:r}[2]}
-  local target="${host_os}-${CPUTYPE}"
   local project_root=${SCRIPT_HOME:A:h:h}
-  local buildspec_file="${project_root}/buildspec.json"
+  local buildspec_file=${project_root}/buildspec.json
   local dep_dir=""
 
-  trap '_trap_error' ZERR
-
   fpath=("${SCRIPT_HOME}/utils.zsh" ${fpath})
-  autoload -Uz log_info log_error log_output set_loglevel check_${host_os} setup_${host_os} setup_obs setup_ccache
+  autoload -Uz log_group log_info log_error log_output set_loglevel check_${host_os} setup_ccache
 
   if [[ ! -r ${buildspec_file} ]] {
     log_error \
-      'No buildspec.json found. Please create a build specification for your project.' \
-      'A buildspec.json.template file is provided in the repository to get you started.'
+      'No buildspec.json found. Please create a build specification for your project.'
     return 2
   }
 
   typeset -g -a skips=()
-  local -i _verbosity=1
-  local -r _version='1.0.0'
+  local -i verbosity=1
+  local -r _version='2.0.0'
   local -r -a _valid_targets=(
-    macos-x86_64
-    macos-arm64
     macos-universal
     linux-x86_64
+    linux-aarch64
   )
+  local target
+  local config='RelWithDebInfo'
   local -r -a _valid_configs=(Debug RelWithDebInfo Release MinSizeRel)
-  if [[ ${host_os} == 'macos' ]] {
-    local -r -a _valid_generators=(Xcode Ninja 'Unix Makefiles')
-    local generator="${${CI:+Ninja}:-Xcode}"
-  } else {
+  local -i codesign=0
+
+  if [[ ${host_os} == linux ]] {
     local -r -a _valid_generators=(Ninja 'Unix Makefiles')
     local generator='Ninja'
+    local -r _usage_host="
+%F{yellow} Additional options for Linux builds%f
+ -----------------------------------------------------------------------------
+  %B--generator%b                       Specify build system to generate
+                                    Available generators:
+                                      - Ninja
+                                      - Unix Makefiles"
+  } elif [[ ${host_os} == macos ]] {
+    local -r _usage_host="
+%F{yellow} Additional options for macOS builds%f
+ -----------------------------------------------------------------------------
+  %B-s | --codesign%b                   Enable codesigning (macOS only)"
   }
+
+  local -i print_config=0
   local -r _usage="
 Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
@@ -74,28 +95,23 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
 %F{yellow} Build configuration options%f
  -----------------------------------------------------------------------------
-  %B-t | --target%b                     Specify target - default: %B%F{green}${host_os}-${CPUTYPE}%f%b
-  %B-c | --config%b                     Build configuration - default: %B%F{green}RelWithDebInfo%f%b
-  %B-s | --codesign%b                   Enable codesigning (macOS only)
+  %B-t | --target%b                     Specify target
+  %B-c | --config%b                     Build configuration
   %B-p | --portable%b                   Enable portable mode (Linux only)
   %B-d | --dep%b                        Dependency directory name - default: %B%F{green}advss-build-dependencies%f%b
-  %B--generator%b                       Specify build system to generate - default: %B%F{green}Ninja%f%b
-                                    Available generators:
-                                      - Ninja
-                                      - Unix Makefiles
-                                      - Xcode (macOS only)
+  %B--skip-[all|build|deps]%b           Skip all|building|checking for dependencies
 
 %F{yellow} Output options%f
  -----------------------------------------------------------------------------
   %B-q | --quiet%b                      Quiet (error output only)
   %B-v | --verbose%b                    Verbose (more detailed output)
-  %B--skip-[all|build|deps|unpack]%b    Skip all|building OBS|checking for dependencies|unpacking dependencies
   %B--debug%b                           Debug (very detailed and added output)
 
 %F{yellow} General options%f
  -----------------------------------------------------------------------------
   %B-h | --help%b                       Print this usage help
-  %B-V | --version%b                    Print script version information"
+  %B-V | --version%b                    Print script version information
+${_usage_host:-}"
 
   local -a args
   while (( # )) {
@@ -129,32 +145,35 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
           log_output ${_usage}
           exit 2
         }
-        BUILD_CONFIG=${2}
+        config=${2}
         shift 2
         ;;
+      -s|--codesign) codesign=1; shift ;;
       -d|--dep)
         dep_dir="${2}"
         shift 2
         ;;
-      -s|--codesign) CODESIGN=1; shift ;;
       -p|--portable) typeset -g PORTABLE=1; shift ;;
-      -q|--quiet) (( _verbosity -= 1 )) || true; shift ;;
-      -v|--verbose) (( _verbosity += 1 )); shift ;;
+      -q|--quiet) (( verbosity -= 1 )) || true; shift ;;
+      -v|--verbose) (( verbosity += 1 )); shift ;;
       -h|--help) log_output ${_usage}; exit 0 ;;
       -V|--version) print -Pr "${_version}"; exit 0 ;;
-      --debug) _verbosity=3; shift ;;
+      --debug) verbosity=3; shift ;;
       --generator)
-        if (( ! ${_valid_generators[(Ie)${2}]} )) {
-          log_error "Invalid value %B${2}%b for option %B${1}%b"
-          log_output ${_usage}
-          exit 2
+        if [[ ${host_os} == linux ]] {
+          if (( ! ${_valid_generators[(Ie)${2}]} )) {
+            log_error "Invalid value %B${2}%b for option %B${1}%b"
+            log_output ${_usage}
+            exit 2
+          }
+          generator=${2}
         }
-        generator=${2}
         shift 2
         ;;
+      --print-config) print_config=1; skips+=(deps); shift ;;
       --skip-*)
-        local _skip="${${(s:-:)1}[-1]}"
-        local _check=(all deps unpack build)
+        local -r _skip="${${(s:-:)1}[-1]}"
+        local -r -a _check=(all build deps)
         (( ${_check[(Ie)${_skip}]} )) || log_warning "Invalid skip mode %B${_skip}%b supplied"
         typeset -g -a skips=(${skips} ${_skip})
         shift
@@ -163,30 +182,32 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
     }
   }
 
+  : "${target:="${host_os}-${CPUTYPE}"}"
+
   set -- ${(@)args}
-  set_loglevel ${_verbosity}
+  set_loglevel ${verbosity}
 
-  check_${host_os}
-  setup_ccache
+  if (( ! (${skips[(Ie)all]} + ${skips[(Ie)deps]}) )) {
+    check_${host_os}
+    setup_ccache
+  }
 
-  typeset -g QT_VERSION
-  typeset -g DEPLOYMENT_TARGET
-  typeset -g OBS_DEPS_VERSION
-  setup_${host_os}
+  if [[ ${host_os} == linux ]] {
+    autoload -Uz setup_linux && setup_linux
+  }
 
   local advss_deps_path
   if [[ -z "${dep_dir}" ]] {
     log_info "Building advss deps ..."
     dep_dir="advss-build-dependencies"
-    ${SCRIPT_HOME}/build-deps-${host_os}.zsh -c "${BUILD_CONFIG:-RelWithDebInfo}" -t "${target}" --generator "${generator}" -o "${dep_dir}" --skip-deps --skip-unpack
+    ${SCRIPT_HOME}/build-deps-${host_os}.zsh -c "${BUILD_CONFIG:-RelWithDebInfo}" -t "${target}" --generator "${generator}" -o "${dep_dir}"
   }
-  advss_deps_path=$(realpath ${project_root}/../${dep_dir})
+  advss_deps_path=$(realpath ${project_root}/.deps/${dep_dir})
   log_info "Using advss deps at $advss_deps_path ..."
 
   local product_name
   local product_version
   local git_tag="$(git describe --tags)"
-
   read -r product_name product_version <<< \
     "$(jq -r '. | {name, version} | join(" ")' ${buildspec_file})"
 
@@ -210,77 +231,108 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
       ;;
   }
 
-  setup_obs
 
   pushd ${project_root}
   if (( ! (${skips[(Ie)all]} + ${skips[(Ie)build]}) )) {
-    log_info "Configuring ${product_name}..."
+    log_group "Configuring ${product_name}..."
 
-    local _plugin_deps="${project_root:h}/obs-build-dependencies/plugin-deps-${OBS_DEPS_VERSION}-qt${QT_VERSION}-${target##*-}"
     local -a cmake_args=(
-      -DCMAKE_BUILD_TYPE=${BUILD_CONFIG:-RelWithDebInfo}
-      -DQT_VERSION=${QT_VERSION}
-      -DCMAKE_PREFIX_PATH="${_plugin_deps};${advss_deps_path}"
+      -DCMAKE_PREFIX_PATH="${advss_deps_path}"
     )
+    local -a cmake_build_args=(--build)
+    local -a cmake_install_args=(--install)
 
-    if (( _loglevel == 0 )) cmake_args+=(-Wno_deprecated -Wno-dev --log-level=ERROR)
-    if (( _loglevel  > 2 )) cmake_args+=(--debug-output)
+    case ${_loglevel} {
+      0) cmake_args+=(-Wno_deprecated -Wno-dev --log-level=ERROR) ;;
+      1) ;;
+      2) cmake_build_args+=(--verbose) ;;
+      *) cmake_args+=(--debug-output) ;;
+    }
 
-    local num_procs
-
+    local -r _preset="${target%%-*}${CI:+-ci}"
     case ${target} {
       macos-*)
-        autoload -Uz read_codesign
-        if (( ${+CODESIGN} )) {
-          read_codesign
-        }
-
-        num_procs=$(( $(sysctl -n hw.ncpu) + 1 ))
+        if (( ${+CI} )) typeset -gx NSUnbufferedIO=YES
 
         local openssl_lib_dir="${advss_deps_path}/openssl-combined/"
         local openssl_include_dir="${advss_deps_path}/openssl/include"
 
         cmake_args+=(
-          -DCMAKE_FRAMEWORK_PATH="${_plugin_deps}/Frameworks"
-          -DCMAKE_OSX_ARCHITECTURES=${${target##*-}//universal/x86_64;arm64}
-          -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
-          -DOBS_CODESIGN_LINKER=ON
-          -DOBS_BUNDLE_CODESIGN_IDENTITY="${CODESIGN_IDENT:--}"
           -DOPENSSL_INCLUDE_DIR="${openssl_include_dir}"
           -DOPENSSL_LIBRARIES="${openssl_lib_dir}/libcrypto.a;${openssl_lib_dir}/libssl.a"
+          --preset ${_preset}
         )
 
+        if (( codesign )) {
+          autoload -Uz read_codesign_team && read_codesign_team
+
+          if [[ -z ${CODESIGN_TEAM} ]] {
+            autoload -Uz read_codesign && read_codesign
+          }
+        }
+
+        cmake_args+=(
+          -DCODESIGN_TEAM=${CODESIGN_TEAM:-}
+          -DCODESIGN_IDENTITY=${CODESIGN_IDENT:--}
+        )
+
+        cmake_build_args+=(--preset ${_preset} --parallel --config ${config} -- ONLY_ACTIVE_ARCH=NO -arch arm64 -arch x86_64)
+        cmake_install_args+=(build_macos --config ${config} --prefix "${project_root}/release/${config}")
+
+        local -a xcbeautify_opts=()
+        if (( _loglevel == 0 )) xcbeautify_opts+=(--quiet)
         ;;
       linux-*)
-        if (( ${+PORTABLE} )) {
-          cmake_args+=(
-            -DLINUX_PORTABLE=ON
-          )
-        } else {
-          cmake_args+=(
-            -DCMAKE_INSTALL_PREFIX=/usr
-            -DLINUX_PORTABLE=OFF
-          )
+        cmake_args+=(
+          --preset ${_preset}-${target##*-}
+          -G "${generator}"
+          -DQT_VERSION=${QT_VERSION:-6}
+          -DCMAKE_BUILD_TYPE=${config}
+        )
+
+        local cmake_version
+        read -r _ _ cmake_version <<< "$(cmake --version)"
+
+        if [[ ${CPUTYPE} != ${target##*-} ]] {
+          if is-at-least 3.21.0 ${cmake_version}; then
+            cmake_args+=(--toolchain "${project_root}/cmake/linux/toolchains/${target##*-}-linux-gcc.cmake")
+          else
+            cmake_args+=(-D"CMAKE_TOOLCHAIN_FILE=${project_root}/cmake/linux/toolchains/${target##*-}-linux-gcc.cmake")
+          fi
         }
-        num_procs=$(( $(nproc) + 1 ))
+
+        cmake_build_args+=(--preset ${_preset}-${target##*-} --config ${config})
+        if [[ ${generator} == 'Unix Makefiles' ]] {
+          cmake_build_args+=(--parallel $(( $(nproc) + 1 )))
+        } else {
+          cmake_build_args+=(--parallel)
+        }
+
+        cmake_install_args+=(build_${target##*-} --prefix ${project_root}/release/${config})
         ;;
     }
 
-    log_debug "Attempting to configure ${product_name} with CMake arguments: ${cmake_args}"
-    cmake -S . -B build_${target##*-} -G ${generator} ${cmake_args}
+    log_debug "Attempting to configure with CMake arguments: ${cmake_args}"
 
-    log_info "Building ${product_name}..."
-    local -a cmake_args=()
-    if (( _loglevel > 1 )) cmake_args+=(--verbose)
-    if [[ ${generator} == 'Unix Makefiles' ]] cmake_args+=(--parallel ${num_procs})
-    cmake --build build_${target##*-} --config ${BUILD_CONFIG:-RelWithDebInfo} ${cmake_args}
+    cmake ${cmake_args}
+
+    log_group "Building ${product_name}..."
+    if [[ ${host_os} == macos ]] {
+      if (( _loglevel > 1 )) {
+        cmake ${cmake_build_args}
+      } else {
+        cmake ${cmake_build_args} 2>&1 | xcbeautify ${xcbeautify_opts}
+      }
+    } else {
+      cmake ${cmake_build_args}
+    }
   }
 
-  log_info "Installing ${product_name}..."
-  local -a cmake_args=()
-  if (( _loglevel > 1 )) cmake_args+=(--verbose)
-  cmake --install build_${target##*-} --config ${BUILD_CONFIG:-RelWithDebInfo} --prefix "${project_root}/release" ${cmake_args}
+  log_group "Installing ${product_name}..."
+  if (( _loglevel > 1 )) cmake_install_args+=(--verbose)
+  cmake ${cmake_install_args}
   popd
+  log_group
 }
 
 build ${@}

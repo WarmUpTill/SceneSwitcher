@@ -4,16 +4,14 @@ project(advanced-scene-switcher-openvr)
 # --- Check OpenCV requirements ---
 
 if(NOT WIN32)
-  message(
-    WARNING "OpenVR condition is only supported on Windows builds for now.")
+  message(WARNING "OpenVR condition is only supported on Windows builds for now.")
   return()
 endif(NOT WIN32)
 
 # --- End of section ---
 
 add_library(${PROJECT_NAME} MODULE)
-target_sources(${PROJECT_NAME} PRIVATE macro-condition-openvr.cpp
-                                       macro-condition-openvr.hpp)
+target_sources(${PROJECT_NAME} PRIVATE macro-condition-openvr.cpp macro-condition-openvr.hpp)
 
 setup_advss_plugin(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
@@ -38,8 +36,7 @@ if(EXISTS ${OpenVR_DIR})
       set(PLATFORM_NAME "linux")
     endif()
   elseif(APPLE)
-    if(CMAKE_SYSTEM_NAME MATCHES ".*Darwin.*" OR CMAKE_SYSTEM_NAME MATCHES
-                                                 ".*MacOS.*")
+    if(CMAKE_SYSTEM_NAME MATCHES ".*Darwin.*" OR CMAKE_SYSTEM_NAME MATCHES ".*MacOS.*")
       set(PLATFORM_NAME "osx")
     endif()
   endif()
@@ -69,5 +66,4 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenVR_LIBRARIES})
 # --- End of section ---
 
 install_advss_plugin(${PROJECT_NAME})
-install_advss_plugin_dependency(TARGET ${PROJECT_NAME} DEPENDENCIES
-                                ${OpenVR_BINARIES})
+install_advss_plugin_dependency(TARGET ${PROJECT_NAME} DEPENDENCIES ${OpenVR_BINARIES})
