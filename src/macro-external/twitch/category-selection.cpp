@@ -110,7 +110,7 @@ void TwitchCategorySelection::showPopup()
 
 bool TwitchCategorySelection::IsPopulated()
 {
-	return count() == _categoryGrabber.GetCategories().size() &&
+	return count() == (int)_categoryGrabber.GetCategories().size() &&
 	       _fetchingCategoriesDone;
 }
 

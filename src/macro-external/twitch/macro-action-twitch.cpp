@@ -120,9 +120,9 @@ void MacroActionTwitch::StartCommercial(
 			obs_data_array_item(replyArray, 0);
 		blog(LOG_INFO,
 		     "Failed to start commercial! (%d)\n"
-		     "length: %d\n"
+		     "length: %lld\n"
 		     "message: %s\n"
-		     "retry_after: %d\n",
+		     "retry_after: %lld\n",
 		     result.status, obs_data_get_int(replyData, "length"),
 		     obs_data_get_string(replyData, "message"),
 		     obs_data_get_int(replyData, "retry_after"));
