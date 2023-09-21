@@ -112,7 +112,7 @@ void PreviewDialog::Stop()
 	_thread.wait();
 }
 
-void PreviewDialog::closeEvent(QCloseEvent *event)
+void PreviewDialog::closeEvent(QCloseEvent *)
 {
 	Stop();
 }
