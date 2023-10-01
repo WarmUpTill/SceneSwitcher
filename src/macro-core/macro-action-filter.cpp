@@ -21,26 +21,35 @@ const static std::map<MacroActionFilter::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.filter.type.settings"},
 };
 
-bool MacroActionFilter::PerformAction()
+static void performActionHelper(MacroActionFilter::Action action,
+				const OBSWeakSource &filter,
+				const StringVariable &settings)
 {
-	auto s = obs_weak_source_get_source(_filter.GetFilter(_source));
-	switch (_action) {
-	case Action::ENABLE:
-		obs_source_set_enabled(s, true);
+	OBSSourceAutoRelease source = obs_weak_source_get_source(filter);
+	switch (action) {
+	case MacroActionFilter::Action::ENABLE:
+		obs_source_set_enabled(source, true);
 		break;
-	case Action::DISABLE:
-		obs_source_set_enabled(s, false);
+	case MacroActionFilter::Action::DISABLE:
+		obs_source_set_enabled(source, false);
 		break;
-	case Action::TOGGLE:
-		obs_source_set_enabled(s, !obs_source_enabled(s));
+	case MacroActionFilter::Action::TOGGLE:
+		obs_source_set_enabled(source, !obs_source_enabled(source));
 		break;
-	case Action::SETTINGS:
-		SetSourceSettings(s, _settings);
+	case MacroActionFilter::Action::SETTINGS:
+		SetSourceSettings(source, settings);
 		break;
 	default:
 		break;
 	}
-	obs_source_release(s);
+}
+
+bool MacroActionFilter::PerformAction()
+{
+	auto filters = _filter.GetFilters(_source);
+	for (const auto &filter : filters) {
+		performActionHelper(_action, filter, _settings);
+	}
 	return true;
 }
 
@@ -214,12 +223,12 @@ void MacroActionFilterEdit::ActionChanged(int value)
 void MacroActionFilterEdit::GetSettingsClicked()
 {
 	if (_loading || !_entryData ||
-	    !_entryData->_filter.GetFilter(_entryData->_source)) {
+	    _entryData->_filter.GetFilters(_entryData->_source).empty()) {
 		return;
 	}
 
 	_settings->setPlainText(FormatJsonString(GetSourceSettings(
-		_entryData->_filter.GetFilter(_entryData->_source))));
+		_entryData->_filter.GetFilters(_entryData->_source).at(0))));
 }
 
 void MacroActionFilterEdit::SettingsChanged()

@@ -65,31 +65,56 @@ void FilterSelection::LoadFallback(obs_data_t *obj,
 	_filterName = obs_data_get_string(obj, name);
 }
 
-OBSWeakSource FilterSelection::GetFilter(const SourceSelection &source) const
+static std::vector<OBSWeakSource> getFiltersOfSource(OBSWeakSource source)
+{
+	if (!source) {
+		return {};
+	}
+
+	auto enumFilters = [](obs_source_t *, obs_source_t *filter, void *ptr) {
+		auto filters =
+			reinterpret_cast<std::vector<OBSWeakSource> *>(ptr);
+		OBSWeakSourceAutoRelease weakFilter =
+			obs_source_get_weak_source(filter);
+		filters->emplace_back(weakFilter);
+	};
+
+	std::vector<OBSWeakSource> filters;
+	OBSSourceAutoRelease s = obs_weak_source_get_source(source);
+	obs_source_enum_filters(s, enumFilters, &filters);
+	return filters;
+}
+
+std::vector<OBSWeakSource>
+FilterSelection::GetFilters(const SourceSelection &source) const
 {
 	switch (_type) {
+	case Type::ALL:
+		return getFiltersOfSource(source.GetSource());
 	case Type::SOURCE:
-		return GetWeakFilterByName(
+		return {GetWeakFilterByName(
 			source.GetSource(),
 			_filter ? GetWeakSourceName(_filter).c_str()
-				: _filterName.c_str());
+				: _filterName.c_str())};
 	case Type::VARIABLE: {
 		auto var = _variable.lock();
 		if (!var) {
-			return nullptr;
+			return {};
 		}
-		return GetWeakFilterByName(source.GetSource(),
-					   var->Value().c_str());
+		return {GetWeakFilterByName(source.GetSource(),
+					    var->Value().c_str())};
 	}
 	default:
 		break;
 	}
-	return nullptr;
+	return {};
 }
 
 std::string FilterSelection::ToString(bool resolve) const
 {
 	switch (_type) {
+	case Type::ALL:
+		return obs_module_text("AdvSceneSwitcher.filterSelection.all");
 	case Type::SOURCE:
 		return _filter ? GetWeakSourceName(_filter) : _filterName;
 	case Type::VARIABLE: {
@@ -117,7 +142,9 @@ FilterSelection FilterSelectionWidget::CurrentSelection()
 		return s;
 	}
 
-	if (idx < _variablesEndIdx) {
+	if (idx < _allEndIdx) {
+		s._type = FilterSelection::Type::ALL;
+	} else if (idx < _variablesEndIdx) {
 		s._type = FilterSelection::Type::VARIABLE;
 		s._variable = GetWeakVariableByQString(name);
 	} else if (idx < _filterEndIdx) {
@@ -139,6 +166,12 @@ void FilterSelectionWidget::PopulateSelection()
 {
 	const QSignalBlocker b(this);
 	clear();
+
+	AddSelectionGroup(
+		this,
+		{obs_module_text("AdvSceneSwitcher.filterSelection.all")});
+	_allEndIdx = count();
+
 	if (_addVariables) {
 		const QStringList variables = GetVariablesNameList();
 		AddSelectionGroup(this, variables);
@@ -188,6 +221,10 @@ void FilterSelectionWidget::SetFilter(const SourceSelection &source,
 	int idx = -1;
 
 	switch (filter.GetType()) {
+	case FilterSelection::Type::ALL:
+		idx = findText(obs_module_text(
+			"AdvSceneSwitcher.filterSelection.all"));
+		break;
 	case FilterSelection::Type::SOURCE: {
 		if (_filterEndIdx == -1) {
 			idx = -1;

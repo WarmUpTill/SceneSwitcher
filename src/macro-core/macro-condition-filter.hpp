@@ -38,8 +38,9 @@ public:
 	RegexConfig _regex;
 
 private:
-	std::string _currentSettings;
+	bool CheckConditionHelper(const OBSWeakSource &);
 
+	std::string _currentSettings;
 	static bool _registered;
 	static const std::string id;
 };
