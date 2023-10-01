@@ -14,7 +14,7 @@ add_subdirectory("${CPP_HTTPLIB_DIR}" "${CPP_HTTPLIB_DIR}/build"
                  EXCLUDE_FROM_ALL)
 
 if(NOT OPENSSL_INCLUDE_DIR OR NOT OPENSSL_LIBRARIES)
-  find_package(OpenSSL)
+  find_package(OpenSSL 3)
   if(NOT OPENSSL_FOUND)
     message(WARNING "OpenSSL not found!\n"
                     "Twitch support will be disabled!\n\n")
