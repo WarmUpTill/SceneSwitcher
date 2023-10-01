@@ -10,6 +10,7 @@ public:
 	VariableTextEdit(QWidget *parent);
 	void setPlainText(const QString &);
 	void setPlainText(const StringVariable &);
+	void setToolTip(const QString &string);
 
 private:
 };

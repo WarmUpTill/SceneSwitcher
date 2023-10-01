@@ -11,6 +11,7 @@ public:
 	VariableLineEdit(QWidget *parent);
 	void setText(const QString &);
 	void setText(const StringVariable &);
+	void setToolTip(const QString &string);
 
 private:
 };
