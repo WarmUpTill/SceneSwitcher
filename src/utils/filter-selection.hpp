@@ -13,15 +13,17 @@ public:
 	enum class Type {
 		SOURCE,
 		VARIABLE,
+		ALL,
 	};
 
 	Type GetType() const { return _type; }
-	OBSWeakSource GetFilter(const SourceSelection &source) const;
+	std::vector<OBSWeakSource>
+	GetFilters(const SourceSelection &source) const;
 	std::string ToString(bool resolve = false) const;
 
 private:
 	// TODO: Remove in future version
-	// Used for backwards compatability to older settings versions
+	// Used for backwards compatibility to older settings versions
 	void LoadFallback(obs_data_t *obj, const SourceSelection &source,
 			  const char *name);
 
@@ -65,9 +67,11 @@ private:
 
 	// Order of entries
 	// 1. "select entry" entry
-	// 2. Variables
-	// 3. Regular filters
+	// 2. All filters
+	// 3. Variables
+	// 4. Regular filters
 	const int _selectIdx = 0;
+	int _allEndIdx = -1;
 	int _variablesEndIdx = -1;
 	int _filterEndIdx = -1;
 };

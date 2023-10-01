@@ -24,15 +24,14 @@ const static std::map<MacroConditionFilter::Condition, std::string>
 		 "AdvSceneSwitcher.condition.filter.type.settingsChanged"},
 };
 
-bool MacroConditionFilter::CheckCondition()
+bool MacroConditionFilter::CheckConditionHelper(const OBSWeakSource &filter)
 {
-	auto filterWeakSource = _filter.GetFilter(_source);
-	if (!filterWeakSource) {
+	bool ret = false;
+	OBSSourceAutoRelease filterSource = obs_weak_source_get_source(filter);
+	if (!filterSource.Get()) {
 		return false;
 	}
-	auto filterSource = obs_weak_source_get_source(filterWeakSource);
 
-	bool ret = false;
 	switch (_condition) {
 	case Condition::ENABLED:
 		ret = obs_source_enabled(filterSource);
@@ -41,10 +40,9 @@ bool MacroConditionFilter::CheckCondition()
 		ret = !obs_source_enabled(filterSource);
 		break;
 	case Condition::SETTINGS_MATCH:
-		ret = CompareSourceSettings(filterWeakSource, _settings,
-					    _regex);
+		ret = CompareSourceSettings(filter, _settings, _regex);
 		if (IsReferencedInVars()) {
-			SetVariableValue(GetSourceSettings(filterWeakSource));
+			SetVariableValue(GetSourceSettings(filter));
 		}
 		break;
 	case Condition::SETTINGS_CHANGED: {
@@ -57,8 +55,20 @@ bool MacroConditionFilter::CheckCondition()
 	default:
 		break;
 	}
+	return ret;
+}
 
-	obs_source_release(filterSource);
+bool MacroConditionFilter::CheckCondition()
+{
+	auto filters = _filter.GetFilters(_source);
+	if (filters.empty()) {
+		return false;
+	}
+
+	bool ret = true;
+	for (const auto &filter : filters) {
+		ret = ret && CheckConditionHelper(filter);
+	}
 
 	if (GetVariableValue().empty()) {
 		SetVariableValue(ret ? "true" : "false");
@@ -211,12 +221,12 @@ void MacroConditionFilterEdit::ConditionChanged(int index)
 void MacroConditionFilterEdit::GetSettingsClicked()
 {
 	if (_loading || !_entryData ||
-	    !_entryData->_filter.GetFilter(_entryData->_source)) {
+	    _entryData->_filter.GetFilters(_entryData->_source).empty()) {
 		return;
 	}
 
 	QString json = FormatJsonString(GetSourceSettings(
-		_entryData->_filter.GetFilter(_entryData->_source)));
+		_entryData->_filter.GetFilters(_entryData->_source).at(0)));
 	if (_entryData->_regex.Enabled()) {
 		json = EscapeForRegex(json);
 	}
