@@ -277,7 +277,8 @@ void ProgressDialog::CategoryCountUpdated(int value)
 			.arg(value));
 }
 
-TwitchCategorySearchButton::TwitchCategorySearchButton()
+TwitchCategorySearchButton::TwitchCategorySearchButton(QWidget *parent)
+	: QPushButton(parent)
 {
 	setMaximumWidth(22);
 	const std::string pathPrefix =
@@ -353,6 +354,33 @@ void TwitchCategorySearchButton::StartManualCategorySearch()
 				.arg(QString::number(newCategoryCount),
 				     QString::fromStdString(category)));
 	}
+}
+
+TwitchCategoryWidget::TwitchCategoryWidget(QWidget *parent)
+	: QWidget(parent),
+	  _selection(new TwitchCategorySelection(this)),
+	  _manualSearch(new TwitchCategorySearchButton(this))
+{
+	QWidget::connect(_selection,
+			 SIGNAL(CategoreyChanged(const TwitchCategory &)), this,
+			 SIGNAL(CategoreyChanged(const TwitchCategory &)));
+
+	auto layout = new QHBoxLayout();
+	layout->setContentsMargins(0, 0, 0, 0);
+	layout->addWidget(_selection);
+	layout->addWidget(_manualSearch);
+	setLayout(layout);
+}
+
+void TwitchCategoryWidget::SetCategory(const TwitchCategory &category)
+{
+	_selection->SetCategory(category);
+}
+
+void TwitchCategoryWidget::SetToken(const std::weak_ptr<TwitchToken> &token)
+{
+	_selection->SetToken(token);
+	_manualSearch->SetToken(token);
 }
 
 TwitchCategorySignalManager *TwitchCategorySignalManager::Instance()

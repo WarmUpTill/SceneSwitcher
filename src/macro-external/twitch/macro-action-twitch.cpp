@@ -359,8 +359,7 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _tokenPermissionWarning(new QLabel(obs_module_text(
 		  "AdvSceneSwitcher.action.twitch.tokenPermissionsInsufficient"))),
 	  _streamTitle(new VariableLineEdit(this)),
-	  _category(new TwitchCategorySelection(this)),
-	  _manualCategorySearch(new TwitchCategorySearchButton()),
+	  _category(new TwitchCategoryWidget(this)),
 	  _markerDescription(new VariableLineEdit(this)),
 	  _clipHasDelay(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.action.twitch.clip.hasDelay"))),
@@ -419,7 +418,6 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 		 {"{{actions}}", _actions},
 		 {"{{streamTitle}}", _streamTitle},
 		 {"{{category}}", _category},
-		 {"{{manualCategorySearch}}", _manualCategorySearch},
 		 {"{{markerDescription}}", _markerDescription},
 		 {"{{clipHasDelay}}", _clipHasDelay},
 		 {"{{duration}}", _duration},
@@ -449,7 +447,6 @@ void MacroActionTwitchEdit::TwitchTokenChanged(const QString &token)
 	auto lock = LockContext();
 	_entryData->_token = GetWeakTwitchTokenByQString(token);
 	_category->SetToken(_entryData->_token);
-	_manualCategorySearch->SetToken(_entryData->_token);
 	SetupWidgetVisibility();
 	emit(HeaderInfoChanged(token));
 }
@@ -544,8 +541,6 @@ void MacroActionTwitchEdit::SetupWidgetVisibility()
 				 MacroActionTwitch::Action::TITLE);
 	_category->setVisible(_entryData->_action ==
 			      MacroActionTwitch::Action::CATEGORY);
-	_manualCategorySearch->setVisible(_entryData->_action ==
-					  MacroActionTwitch::Action::CATEGORY);
 	_markerDescription->setVisible(_entryData->_action ==
 				       MacroActionTwitch::Action::MARKER);
 	_clipHasDelay->setVisible(_entryData->_action ==
@@ -593,7 +588,6 @@ void MacroActionTwitchEdit::UpdateEntryData()
 	_tokens->SetToken(_entryData->_token);
 	_streamTitle->setText(_entryData->_streamTitle);
 	_category->SetToken(_entryData->_token);
-	_manualCategorySearch->SetToken(_entryData->_token);
 	_category->SetCategory(_entryData->_category);
 	_markerDescription->setText(_entryData->_markerDescription);
 	_clipHasDelay->setChecked(_entryData->_clipHasDelay);

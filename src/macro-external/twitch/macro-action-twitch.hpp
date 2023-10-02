@@ -119,8 +119,7 @@ private:
 	QTimer _tokenPermissionCheckTimer;
 
 	VariableLineEdit *_streamTitle;
-	TwitchCategorySelection *_category;
-	TwitchCategorySearchButton *_manualCategorySearch;
+	TwitchCategoryWidget *_category;
 	VariableLineEdit *_markerDescription;
 	QCheckBox *_clipHasDelay;
 	DurationSelection *_duration;
