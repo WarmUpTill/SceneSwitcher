@@ -43,6 +43,8 @@ target_sources(
           channel-selection.hpp
           macro-action-twitch.cpp
           macro-action-twitch.hpp
+          macro-condition-twitch.cpp
+          macro-condition-twitch.hpp
           token.cpp
           token.hpp
           twitch-helpers.cpp
