@@ -24,7 +24,7 @@ if (( ! ${+commands[packagesbuild]} )) {
   pushd
   mkcd ${project_root:h}/obs-build-dependencies
 
-  local packages_url='http://s.sudre.free.fr/Software/files/Packages.dmg'
+  local packages_url='https://web.archive.org/web/20230727054218/http://s.sudre.free.fr/Software/files/Packages.dmg'
   local packages_hash='6afdd25386295974dad8f078b8f1e41cabebd08e72d970bf92f707c7e48b16c9'
 
   if [[ ! -f Packages.dmg ]] {
