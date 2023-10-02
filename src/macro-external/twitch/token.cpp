@@ -22,10 +22,13 @@ const std::unordered_map<std::string, std::string> TokenOption::apiIdToLocale{
 
 	{"channel:manage:broadcast",
 	 "AdvSceneSwitcher.twitchToken.channel.manageBroadcast"},
-	{"clips:edit", "AdvSceneSwitcher.twitchToken.channel.createClip"},
+	{"clips:edit", "AdvSceneSwitcher.twitchToken.clips.edit"},
 	{"channel:edit:commercial",
 	 "AdvSceneSwitcher.twitchToken.channel.startCommercial"},
-};
+	{"moderator:manage:announcements",
+	 "AdvSceneSwitcher.twitchToken.moderator.manageAnnouncements"},
+	{"moderator:manage:chat_settings",
+	 "AdvSceneSwitcher.twitchToken.moderator.manageChatSettings"}};
 
 static void saveConnections(obs_data_t *obj);
 static void loadConnections(obs_data_t *obj);

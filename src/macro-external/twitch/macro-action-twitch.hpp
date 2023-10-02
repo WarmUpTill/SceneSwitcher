@@ -4,6 +4,7 @@
 #include "category-selection.hpp"
 
 #include <variable-line-edit.hpp>
+#include <variable-text-edit.hpp>
 #include <duration-control.hpp>
 
 namespace advss {
@@ -29,6 +30,16 @@ public:
 		MARKER,
 		CLIP,
 		COMMERCIAL,
+		ANNOUNCEMENT,
+		EMOTE_ONLY,
+	};
+
+	enum class AnnouncementColor {
+		PRIMARY,
+		BLUE,
+		GREEN,
+		ORANGE,
+		PURPLE,
 	};
 
 	Action _action = Action::TITLE;
@@ -40,6 +51,10 @@ public:
 		"AdvSceneSwitcher.action.twitch.marker.description");
 	bool _clipHasDelay = false;
 	Duration _duration = 60;
+	StringVariable _announcementMessage = obs_module_text(
+		"AdvSceneSwitcher.action.twitch.announcement.message");
+	AnnouncementColor _announcementColor = AnnouncementColor::PRIMARY;
+	bool _emoteOnlyEnabled = true;
 
 private:
 	void SetStreamTitle(const std::shared_ptr<TwitchToken> &) const;
@@ -47,6 +62,8 @@ private:
 	void CreateStreamMarker(const std::shared_ptr<TwitchToken> &) const;
 	void CreateStreamClip(const std::shared_ptr<TwitchToken> &) const;
 	void StartCommercial(const std::shared_ptr<TwitchToken> &) const;
+	void SendChatAnnouncement(const std::shared_ptr<TwitchToken> &) const;
+	void SetChatEmoteOnlyMode(const std::shared_ptr<TwitchToken> &) const;
 
 	static bool _registered;
 	static const std::string id;
@@ -71,12 +88,15 @@ public:
 private slots:
 	void ActionChanged(int);
 	void TwitchTokenChanged(const QString &);
+	void CheckTokenPermissions();
 	void StreamTitleChanged();
 	void CategoreyChanged(const TwitchCategory &);
 	void MarkerDescriptionChanged();
 	void ClipHasDelayChanged(int state);
 	void DurationChanged(const Duration &);
-	void CheckTokenPermissions();
+	void AnnouncementMessageChanged();
+	void AnnouncementColorChanged(int index);
+	void EmoteOnlyEnabledChanged(int state);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -87,17 +107,23 @@ protected:
 private:
 	void SetupWidgetVisibility();
 
+	QHBoxLayout *_firstLineLayout;
+	QHBoxLayout *_secondLineLayout;
 	QComboBox *_actions;
 	TwitchConnectionSelection *_tokens;
+	QLabel *_tokenPermissionWarning;
+	QTimer _tokenPermissionCheckTimer;
+
 	VariableLineEdit *_streamTitle;
 	TwitchCategorySelection *_category;
 	TwitchCategorySearchButton *_manualCategorySearch;
 	VariableLineEdit *_markerDescription;
 	QCheckBox *_clipHasDelay;
 	DurationSelection *_duration;
-	QHBoxLayout *_layout;
-	QLabel *_tokenPermissionWarning;
-	QTimer _tokenPermissionCheckTimer;
+	VariableTextEdit *_announcementMessage;
+	QComboBox *_announcementColor;
+	QCheckBox *_emoteOnlyEnabled;
+
 	bool _loading = true;
 };
 

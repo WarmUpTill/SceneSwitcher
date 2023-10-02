@@ -24,6 +24,33 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.twitch.type.clip"},
 	{MacroActionTwitch::Action::COMMERCIAL,
 	 "AdvSceneSwitcher.action.twitch.type.commercial"},
+	{MacroActionTwitch::Action::ANNOUNCEMENT,
+	 "AdvSceneSwitcher.action.twitch.type.announcement"},
+	{MacroActionTwitch::Action::EMOTE_ONLY,
+	 "AdvSceneSwitcher.action.twitch.type.emoteOnly"},
+};
+
+const static std::map<MacroActionTwitch::AnnouncementColor, std::string>
+	announcementColors = {
+		{MacroActionTwitch::AnnouncementColor::PRIMARY,
+		 "AdvSceneSwitcher.action.twitch.announcement.primary"},
+		{MacroActionTwitch::AnnouncementColor::BLUE,
+		 "AdvSceneSwitcher.action.twitch.announcement.blue"},
+		{MacroActionTwitch::AnnouncementColor::GREEN,
+		 "AdvSceneSwitcher.action.twitch.announcement.green"},
+		{MacroActionTwitch::AnnouncementColor::ORANGE,
+		 "AdvSceneSwitcher.action.twitch.announcement.orange"},
+		{MacroActionTwitch::AnnouncementColor::PURPLE,
+		 "AdvSceneSwitcher.action.twitch.announcement.purple"},
+};
+
+const static std::map<MacroActionTwitch::AnnouncementColor, std::string>
+	announcementColorsTwitch = {
+		{MacroActionTwitch::AnnouncementColor::PRIMARY, "primary"},
+		{MacroActionTwitch::AnnouncementColor::BLUE, "blue"},
+		{MacroActionTwitch::AnnouncementColor::GREEN, "green"},
+		{MacroActionTwitch::AnnouncementColor::ORANGE, "orange"},
+		{MacroActionTwitch::AnnouncementColor::PURPLE, "purple"},
 };
 
 void MacroActionTwitch::SetStreamTitle(
@@ -93,6 +120,7 @@ void MacroActionTwitch::CreateStreamClip(
 {
 	OBSDataAutoRelease data = obs_data_create();
 	auto hasDelay = _clipHasDelay ? "true" : "false";
+
 	auto result = SendPostRequest(
 		"https://api.twitch.tv",
 		"/helix/clips?broadcaster_id=" + token->GetUserID() +
@@ -129,6 +157,47 @@ void MacroActionTwitch::StartCommercial(
 	}
 }
 
+void MacroActionTwitch::SendChatAnnouncement(
+	const std::shared_ptr<TwitchToken> &token) const
+{
+	OBSDataAutoRelease data = obs_data_create();
+	obs_data_set_string(data, "message", _announcementMessage.c_str());
+	obs_data_set_string(
+		data, "color",
+		announcementColorsTwitch.at(_announcementColor).c_str());
+	auto userId = token->GetUserID();
+
+	auto result =
+		SendPostRequest("https://api.twitch.tv",
+				"/helix/chat/announcements?broadcaster_id=" +
+					userId + "&moderator_id=" + userId,
+				*token, data.Get());
+
+	if (result.status != 204) {
+		blog(LOG_INFO, "Failed to send chat announcement! (%d)",
+		     result.status);
+	}
+}
+
+void MacroActionTwitch::SetChatEmoteOnlyMode(
+	const std::shared_ptr<TwitchToken> &token) const
+{
+	OBSDataAutoRelease data = obs_data_create();
+	obs_data_set_bool(data, "emote_mode", _emoteOnlyEnabled);
+	auto userId = token->GetUserID();
+
+	auto result =
+		SendPatchRequest("https://api.twitch.tv",
+				 "/helix/chat/settings?broadcaster_id=" +
+					 userId + "&moderator_id=" + userId,
+				 *token, data.Get());
+
+	if (result.status != 200) {
+		blog(LOG_INFO, "Failed to set chat's emote-only mode! (%d)",
+		     result.status);
+	}
+}
+
 bool MacroActionTwitch::PerformAction()
 {
 	auto token = _token.lock();
@@ -151,6 +220,12 @@ bool MacroActionTwitch::PerformAction()
 		break;
 	case MacroActionTwitch::Action::COMMERCIAL:
 		StartCommercial(token);
+		break;
+	case MacroActionTwitch::Action::ANNOUNCEMENT:
+		SendChatAnnouncement(token);
+		break;
+	case MacroActionTwitch::Action::EMOTE_ONLY:
+		SetChatEmoteOnlyMode(token);
 		break;
 	default:
 		break;
@@ -183,6 +258,11 @@ bool MacroActionTwitch::Save(obs_data_t *obj) const
 	_markerDescription.Save(obj, "markerDescription");
 	obs_data_set_bool(obj, "clipHasDelay", _clipHasDelay);
 	_duration.Save(obj);
+	_announcementMessage.Save(obj, "announcementMessage");
+	obs_data_set_int(obj, "announcementColor",
+			 static_cast<int>(_announcementColor));
+	obs_data_set_bool(obj, "emoteOnlyEnabled", _emoteOnlyEnabled);
+
 	return true;
 }
 
@@ -196,6 +276,11 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 	_markerDescription.Load(obj, "markerDescription");
 	_clipHasDelay = obs_data_get_bool(obj, "clipHasDelay");
 	_duration.Load(obj);
+	_announcementMessage.Load(obj, "announcementMessage");
+	_announcementColor = static_cast<AnnouncementColor>(
+		obs_data_get_int(obj, "announcementColor"));
+	_emoteOnlyEnabled = obs_data_get_bool(obj, "emoteOnlyEnabled");
+
 	return true;
 }
 
@@ -212,6 +297,8 @@ bool MacroActionTwitch::ActionIsSupportedByToken()
 		{Action::MARKER, {"channel:manage:broadcast"}},
 		{Action::CLIP, {"clips:edit"}},
 		{Action::COMMERCIAL, {"channel:edit:commercial"}},
+		{Action::ANNOUNCEMENT, {"moderator:manage:announcements"}},
+		{Action::EMOTE_ONLY, {"moderator:manage:chat_settings"}},
 	};
 	auto token = _token.lock();
 	if (!token) {
@@ -229,11 +316,22 @@ static inline void populateActionSelection(QComboBox *list)
 	}
 }
 
+static inline void populateAnnouncementColorSelection(QComboBox *list)
+{
+	for (const auto &[_, name] : announcementColors) {
+		list->addItem(obs_module_text(name.c_str()));
+	}
+}
+
 MacroActionTwitchEdit::MacroActionTwitchEdit(
 	QWidget *parent, std::shared_ptr<MacroActionTwitch> entryData)
 	: QWidget(parent),
+	  _firstLineLayout(new QHBoxLayout()),
+	  _secondLineLayout(new QHBoxLayout()),
 	  _actions(new QComboBox()),
 	  _tokens(new TwitchConnectionSelection()),
+	  _tokenPermissionWarning(new QLabel(obs_module_text(
+		  "AdvSceneSwitcher.action.twitch.tokenPermissionsInsufficient"))),
 	  _streamTitle(new VariableLineEdit(this)),
 	  _category(new TwitchCategorySelection(this)),
 	  _manualCategorySearch(new TwitchCategorySearchButton()),
@@ -241,9 +339,10 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _clipHasDelay(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.action.twitch.clip.hasDelay"))),
 	  _duration(new DurationSelection(this, false, 0)),
-	  _layout(new QHBoxLayout()),
-	  _tokenPermissionWarning(new QLabel(obs_module_text(
-		  "AdvSceneSwitcher.action.twitch.tokenPermissionsInsufficient")))
+	  _announcementMessage(new VariableTextEdit(this)),
+	  _announcementColor(new QComboBox(this)),
+	  _emoteOnlyEnabled(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.action.twitch.emoteOnly.enabled")))
 {
 	_streamTitle->setSizePolicy(QSizePolicy::MinimumExpanding,
 				    QSizePolicy::Preferred);
@@ -251,16 +350,22 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	_markerDescription->setSizePolicy(QSizePolicy::MinimumExpanding,
 					  QSizePolicy::Preferred);
 	_markerDescription->setMaxLength(140);
+	_announcementMessage->setSizePolicy(QSizePolicy::MinimumExpanding,
+					    QSizePolicy::Preferred);
 
 	auto spinBox = _duration->SpinBox();
 	spinBox->setSuffix("s");
 	spinBox->setMaximum(180);
+
 	populateActionSelection(_actions);
+	populateAnnouncementColorSelection(_announcementColor);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
 	QWidget::connect(_tokens, SIGNAL(SelectionChanged(const QString &)),
 			 this, SLOT(TwitchTokenChanged(const QString &)));
+	QWidget::connect(&_tokenPermissionCheckTimer, SIGNAL(timeout()), this,
+			 SLOT(CheckTokenPermissions()));
 	QWidget::connect(_streamTitle, SIGNAL(editingFinished()), this,
 			 SLOT(StreamTitleChanged()));
 	QWidget::connect(_category,
@@ -269,26 +374,40 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	QWidget::connect(_markerDescription, SIGNAL(editingFinished()), this,
 			 SLOT(MarkerDescriptionChanged()));
 	QObject::connect(_clipHasDelay, SIGNAL(stateChanged(int)), this,
-			 SLOT(HasClipDelayChanged(const Duration &)));
+			 SLOT(HasClipDelayChanged(int)));
 	QObject::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
 			 this, SLOT(DurationChanged(const Duration &)));
-	QWidget::connect(&_tokenPermissionCheckTimer, SIGNAL(timeout()), this,
-			 SLOT(CheckTokenPermissions()));
+	QWidget::connect(_announcementMessage, SIGNAL(textChanged()), this,
+			 SLOT(AnnouncementMessageChanged()));
+	QWidget::connect(_announcementColor, SIGNAL(currentIndexChanged(int)),
+			 this, SLOT(AnnouncementColorChanged(int)));
+	QObject::connect(_emoteOnlyEnabled, SIGNAL(stateChanged(int)), this,
+			 SLOT(EmoteOnlyEnabledChanged(int)));
 
-	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.twitch.entry"),
-		     _layout,
-		     {{"{{account}}", _tokens},
-		      {"{{actions}}", _actions},
-		      {"{{streamTitle}}", _streamTitle},
-		      {"{{category}}", _category},
-		      {"{{manualCategorySearch}}", _manualCategorySearch},
-		      {"{{markerDescription}}", _markerDescription},
-		      {"{{clipHasDelay}}", _clipHasDelay},
-		      {"{{duration}}", _duration}});
-	_layout->setContentsMargins(0, 0, 0, 0);
+	PlaceWidgets(
+		obs_module_text("AdvSceneSwitcher.action.twitch.entry.line1"),
+		_firstLineLayout,
+		{{"{{account}}", _tokens},
+		 {"{{actions}}", _actions},
+		 {"{{streamTitle}}", _streamTitle},
+		 {"{{category}}", _category},
+		 {"{{manualCategorySearch}}", _manualCategorySearch},
+		 {"{{markerDescription}}", _markerDescription},
+		 {"{{clipHasDelay}}", _clipHasDelay},
+		 {"{{duration}}", _duration},
+		 {"{{announcementColor}}", _announcementColor},
+		 {"{{emoteOnlyEnabled}}", _emoteOnlyEnabled}});
+	_firstLineLayout->setContentsMargins(0, 0, 0, 0);
+
+	PlaceWidgets(
+		obs_module_text("AdvSceneSwitcher.action.twitch.entry.line2"),
+		_secondLineLayout,
+		{{"{{announcementMessage}}", _announcementMessage}});
+	_secondLineLayout->setContentsMargins(0, 0, 0, 0);
 
 	auto mainLayout = new QVBoxLayout();
-	mainLayout->addLayout(_layout);
+	mainLayout->addLayout(_firstLineLayout);
+	mainLayout->addLayout(_secondLineLayout);
 	mainLayout->addWidget(_tokenPermissionWarning);
 	setLayout(mainLayout);
 
@@ -364,6 +483,41 @@ void MacroActionTwitchEdit::DurationChanged(const Duration &duration)
 	_entryData->_duration = duration;
 }
 
+void MacroActionTwitchEdit::AnnouncementMessageChanged()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_announcementMessage =
+		_announcementMessage->toPlainText().toStdString();
+
+	adjustSize();
+	updateGeometry();
+}
+
+void MacroActionTwitchEdit::AnnouncementColorChanged(int index)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_announcementColor =
+		static_cast<MacroActionTwitch::AnnouncementColor>(index);
+}
+
+void MacroActionTwitchEdit::EmoteOnlyEnabledChanged(int state)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_emoteOnlyEnabled = state;
+}
+
 void MacroActionTwitchEdit::CheckTokenPermissions()
 {
 	_tokenPermissionWarning->setVisible(
@@ -386,12 +540,24 @@ void MacroActionTwitchEdit::SetupWidgetVisibility()
 				  MacroActionTwitch::Action::CLIP);
 	_duration->setVisible(_entryData->_action ==
 			      MacroActionTwitch::Action::COMMERCIAL);
+	_announcementMessage->setVisible(
+		_entryData->_action == MacroActionTwitch::Action::ANNOUNCEMENT);
+	_announcementColor->setVisible(_entryData->_action ==
+				       MacroActionTwitch::Action::ANNOUNCEMENT);
+	_emoteOnlyEnabled->setVisible(_entryData->_action ==
+				      MacroActionTwitch::Action::EMOTE_ONLY);
 
 	if (_entryData->_action == MacroActionTwitch::Action::TITLE ||
 	    _entryData->_action == MacroActionTwitch::Action::MARKER) {
-		RemoveStretchIfPresent(_layout);
+		RemoveStretchIfPresent(_firstLineLayout);
 	} else {
-		AddStretchIfNecessary(_layout);
+		AddStretchIfNecessary(_firstLineLayout);
+	}
+
+	if (_entryData->_action == MacroActionTwitch::Action::ANNOUNCEMENT) {
+		RemoveStretchIfPresent(_secondLineLayout);
+	} else {
+		AddStretchIfNecessary(_secondLineLayout);
 	}
 
 	_tokenPermissionWarning->setVisible(
@@ -416,6 +582,11 @@ void MacroActionTwitchEdit::UpdateEntryData()
 	_markerDescription->setText(_entryData->_markerDescription);
 	_clipHasDelay->setChecked(_entryData->_clipHasDelay);
 	_duration->SetDuration(_entryData->_duration);
+	_announcementMessage->setPlainText(_entryData->_announcementMessage);
+	_announcementColor->setCurrentIndex(
+		static_cast<int>(_entryData->_announcementColor));
+	_emoteOnlyEnabled->setChecked(_entryData->_emoteOnlyEnabled);
+
 	SetupWidgetVisibility();
 }
 
