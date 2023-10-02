@@ -69,12 +69,7 @@ class TwitchCategorySelection : public FilterComboBox {
 
 public:
 	TwitchCategorySelection(QWidget *parent);
-
-	// Will *not* verify if ID is still valid or populate the selection
-	// list as that would take too long
 	void SetCategory(const TwitchCategory &);
-
-	// Used for populating the category list
 	void SetToken(const std::weak_ptr<TwitchToken> &);
 
 private slots:
@@ -103,7 +98,7 @@ class TwitchCategorySearchButton : public QPushButton {
 	Q_OBJECT
 
 public:
-	TwitchCategorySearchButton();
+	TwitchCategorySearchButton(QWidget *parent);
 	void SetToken(const std::weak_ptr<TwitchToken> &);
 
 private slots:
@@ -113,6 +108,28 @@ signals:
 	void RequestRepopulate();
 
 private:
+	std::weak_ptr<TwitchToken> _token;
+};
+
+class TwitchCategoryWidget : public QWidget {
+	Q_OBJECT
+
+public:
+	TwitchCategoryWidget(QWidget *parent);
+	// Will *not* verify if ID is still valid or populate the selection
+	// list as that would take too long
+	void SetCategory(const TwitchCategory &);
+
+	// Used for populating the category list
+	void SetToken(const std::weak_ptr<TwitchToken> &);
+
+signals:
+	void CategoreyChanged(const TwitchCategory &);
+
+private:
+	TwitchCategorySelection *_selection;
+	TwitchCategorySearchButton *_manualSearch;
+
 	std::weak_ptr<TwitchToken> _token;
 };
 
