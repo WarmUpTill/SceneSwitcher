@@ -23,12 +23,20 @@ public:
 		return std::make_shared<MacroConditionSceneTransform>(m);
 	}
 
+	enum class CondType {
+		MATCHES,
+		CHANGED,
+	};
+
 	SceneSelection _scene;
 	SceneItemSelection _source;
+	CondType _type = CondType::MATCHES;
 	RegexConfig _regex;
 	StringVariable _settings = "";
 
 private:
+	std::vector<std::string> _previousTransform;
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -54,6 +62,7 @@ public:
 private slots:
 	void SceneChanged(const SceneSelection &);
 	void SourceChanged(const SceneItemSelection &);
+	void TypeChanged(int type);
 	void GetSettingsClicked();
 	void SettingsChanged();
 	void RegexChanged(RegexConfig);
@@ -63,6 +72,7 @@ signals:
 protected:
 	SceneSelectionWidget *_scenes;
 	SceneItemSelectionWidget *_sources;
+	QComboBox *_types;
 	QPushButton *_getSettings;
 	VariableTextEdit *_settings;
 	RegexConfigWidget *_regex;
@@ -70,6 +80,7 @@ protected:
 	std::shared_ptr<MacroConditionSceneTransform> _entryData;
 
 private:
+	void SetWidgetVisibility();
 	bool _loading = true;
 };
 
