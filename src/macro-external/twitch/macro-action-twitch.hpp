@@ -107,8 +107,7 @@ protected:
 private:
 	void SetupWidgetVisibility();
 
-	QHBoxLayout *_firstLineLayout;
-	QHBoxLayout *_secondLineLayout;
+	QHBoxLayout *_layout;
 	QComboBox *_actions;
 	TwitchConnectionSelection *_tokens;
 	QLabel *_tokenPermissionWarning;

@@ -326,8 +326,7 @@ static inline void populateAnnouncementColorSelection(QComboBox *list)
 MacroActionTwitchEdit::MacroActionTwitchEdit(
 	QWidget *parent, std::shared_ptr<MacroActionTwitch> entryData)
 	: QWidget(parent),
-	  _firstLineLayout(new QHBoxLayout()),
-	  _secondLineLayout(new QHBoxLayout()),
+	  _layout(new QHBoxLayout()),
 	  _actions(new QComboBox()),
 	  _tokens(new TwitchConnectionSelection()),
 	  _tokenPermissionWarning(new QLabel(obs_module_text(
@@ -386,7 +385,7 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.twitch.entry.line1"),
-		_firstLineLayout,
+		_layout,
 		{{"{{account}}", _tokens},
 		 {"{{actions}}", _actions},
 		 {"{{streamTitle}}", _streamTitle},
@@ -397,17 +396,11 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 		 {"{{duration}}", _duration},
 		 {"{{announcementColor}}", _announcementColor},
 		 {"{{emoteOnlyEnabled}}", _emoteOnlyEnabled}});
-	_firstLineLayout->setContentsMargins(0, 0, 0, 0);
-
-	PlaceWidgets(
-		obs_module_text("AdvSceneSwitcher.action.twitch.entry.line2"),
-		_secondLineLayout,
-		{{"{{announcementMessage}}", _announcementMessage}});
-	_secondLineLayout->setContentsMargins(0, 0, 0, 0);
+	_layout->setContentsMargins(0, 0, 0, 0);
 
 	auto mainLayout = new QVBoxLayout();
-	mainLayout->addLayout(_firstLineLayout);
-	mainLayout->addLayout(_secondLineLayout);
+	mainLayout->addLayout(_layout);
+	mainLayout->addWidget(_announcementMessage);
 	mainLayout->addWidget(_tokenPermissionWarning);
 	setLayout(mainLayout);
 
@@ -549,15 +542,9 @@ void MacroActionTwitchEdit::SetupWidgetVisibility()
 
 	if (_entryData->_action == MacroActionTwitch::Action::TITLE ||
 	    _entryData->_action == MacroActionTwitch::Action::MARKER) {
-		RemoveStretchIfPresent(_firstLineLayout);
+		RemoveStretchIfPresent(_layout);
 	} else {
-		AddStretchIfNecessary(_firstLineLayout);
-	}
-
-	if (_entryData->_action == MacroActionTwitch::Action::ANNOUNCEMENT) {
-		RemoveStretchIfPresent(_secondLineLayout);
-	} else {
-		AddStretchIfNecessary(_secondLineLayout);
+		AddStretchIfNecessary(_layout);
 	}
 
 	_tokenPermissionWarning->setVisible(
