@@ -26,8 +26,10 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.twitch.type.commercial"},
 	{MacroActionTwitch::Action::ANNOUNCEMENT,
 	 "AdvSceneSwitcher.action.twitch.type.announcement"},
-	{MacroActionTwitch::Action::EMOTE_ONLY,
-	 "AdvSceneSwitcher.action.twitch.type.emoteOnly"},
+	{MacroActionTwitch::Action::ENABLE_EMOTE_ONLY,
+	 "AdvSceneSwitcher.action.twitch.type.emoteOnlyEnable"},
+	{MacroActionTwitch::Action::DISABLE_EMOTE_ONLY,
+	 "AdvSceneSwitcher.action.twitch.type.emoteOnlyDisable"},
 };
 
 const static std::map<MacroActionTwitch::AnnouncementColor, std::string>
@@ -180,10 +182,10 @@ void MacroActionTwitch::SendChatAnnouncement(
 }
 
 void MacroActionTwitch::SetChatEmoteOnlyMode(
-	const std::shared_ptr<TwitchToken> &token) const
+	const std::shared_ptr<TwitchToken> &token, bool enable) const
 {
 	OBSDataAutoRelease data = obs_data_create();
-	obs_data_set_bool(data, "emote_mode", _emoteOnlyEnabled);
+	obs_data_set_bool(data, "emote_mode", enable);
 	auto userId = token->GetUserID();
 
 	auto result =
@@ -193,8 +195,8 @@ void MacroActionTwitch::SetChatEmoteOnlyMode(
 				 *token, data.Get());
 
 	if (result.status != 200) {
-		blog(LOG_INFO, "Failed to set chat's emote-only mode! (%d)",
-		     result.status);
+		blog(LOG_INFO, "Failed to %s chat's emote-only mode! (%d)",
+		     enable ? "enable" : "disable", result.status);
 	}
 }
 
@@ -224,8 +226,11 @@ bool MacroActionTwitch::PerformAction()
 	case MacroActionTwitch::Action::ANNOUNCEMENT:
 		SendChatAnnouncement(token);
 		break;
-	case MacroActionTwitch::Action::EMOTE_ONLY:
-		SetChatEmoteOnlyMode(token);
+	case MacroActionTwitch::Action::ENABLE_EMOTE_ONLY:
+		SetChatEmoteOnlyMode(token, true);
+		break;
+	case MacroActionTwitch::Action::DISABLE_EMOTE_ONLY:
+		SetChatEmoteOnlyMode(token, false);
 		break;
 	default:
 		break;
@@ -261,8 +266,6 @@ bool MacroActionTwitch::Save(obs_data_t *obj) const
 	_announcementMessage.Save(obj, "announcementMessage");
 	obs_data_set_int(obj, "announcementColor",
 			 static_cast<int>(_announcementColor));
-	obs_data_set_bool(obj, "emoteOnlyEnabled", _emoteOnlyEnabled);
-
 	return true;
 }
 
@@ -279,8 +282,6 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 	_announcementMessage.Load(obj, "announcementMessage");
 	_announcementColor = static_cast<AnnouncementColor>(
 		obs_data_get_int(obj, "announcementColor"));
-	_emoteOnlyEnabled = obs_data_get_bool(obj, "emoteOnlyEnabled");
-
 	return true;
 }
 
@@ -298,7 +299,9 @@ bool MacroActionTwitch::ActionIsSupportedByToken()
 		{Action::CLIP, {"clips:edit"}},
 		{Action::COMMERCIAL, {"channel:edit:commercial"}},
 		{Action::ANNOUNCEMENT, {"moderator:manage:announcements"}},
-		{Action::EMOTE_ONLY, {"moderator:manage:chat_settings"}},
+		{Action::ENABLE_EMOTE_ONLY, {"moderator:manage:chat_settings"}},
+		{Action::DISABLE_EMOTE_ONLY,
+		 {"moderator:manage:chat_settings"}},
 	};
 	auto token = _token.lock();
 	if (!token) {
@@ -339,9 +342,7 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 		  "AdvSceneSwitcher.action.twitch.clip.hasDelay"))),
 	  _duration(new DurationSelection(this, false, 0)),
 	  _announcementMessage(new VariableTextEdit(this)),
-	  _announcementColor(new QComboBox(this)),
-	  _emoteOnlyEnabled(new QCheckBox(obs_module_text(
-		  "AdvSceneSwitcher.action.twitch.emoteOnly.enabled")))
+	  _announcementColor(new QComboBox(this))
 {
 	_streamTitle->setSizePolicy(QSizePolicy::MinimumExpanding,
 				    QSizePolicy::Preferred);
@@ -380,8 +381,6 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 			 SLOT(AnnouncementMessageChanged()));
 	QWidget::connect(_announcementColor, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(AnnouncementColorChanged(int)));
-	QObject::connect(_emoteOnlyEnabled, SIGNAL(stateChanged(int)), this,
-			 SLOT(EmoteOnlyEnabledChanged(int)));
 
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.twitch.entry.line1"),
@@ -394,8 +393,7 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 		 {"{{markerDescription}}", _markerDescription},
 		 {"{{clipHasDelay}}", _clipHasDelay},
 		 {"{{duration}}", _duration},
-		 {"{{announcementColor}}", _announcementColor},
-		 {"{{emoteOnlyEnabled}}", _emoteOnlyEnabled}});
+		 {"{{announcementColor}}", _announcementColor}});
 	_layout->setContentsMargins(0, 0, 0, 0);
 
 	auto mainLayout = new QVBoxLayout();
@@ -501,16 +499,6 @@ void MacroActionTwitchEdit::AnnouncementColorChanged(int index)
 		static_cast<MacroActionTwitch::AnnouncementColor>(index);
 }
 
-void MacroActionTwitchEdit::EmoteOnlyEnabledChanged(int state)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_emoteOnlyEnabled = state;
-}
-
 void MacroActionTwitchEdit::CheckTokenPermissions()
 {
 	_tokenPermissionWarning->setVisible(
@@ -537,8 +525,6 @@ void MacroActionTwitchEdit::SetupWidgetVisibility()
 		_entryData->_action == MacroActionTwitch::Action::ANNOUNCEMENT);
 	_announcementColor->setVisible(_entryData->_action ==
 				       MacroActionTwitch::Action::ANNOUNCEMENT);
-	_emoteOnlyEnabled->setVisible(_entryData->_action ==
-				      MacroActionTwitch::Action::EMOTE_ONLY);
 
 	if (_entryData->_action == MacroActionTwitch::Action::TITLE ||
 	    _entryData->_action == MacroActionTwitch::Action::MARKER) {
@@ -572,7 +558,6 @@ void MacroActionTwitchEdit::UpdateEntryData()
 	_announcementMessage->setPlainText(_entryData->_announcementMessage);
 	_announcementColor->setCurrentIndex(
 		static_cast<int>(_entryData->_announcementColor));
-	_emoteOnlyEnabled->setChecked(_entryData->_emoteOnlyEnabled);
 
 	SetupWidgetVisibility();
 }

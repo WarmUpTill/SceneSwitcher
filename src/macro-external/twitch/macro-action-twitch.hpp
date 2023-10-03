@@ -31,7 +31,8 @@ public:
 		CLIP,
 		COMMERCIAL,
 		ANNOUNCEMENT,
-		EMOTE_ONLY,
+		ENABLE_EMOTE_ONLY,
+		DISABLE_EMOTE_ONLY,
 	};
 
 	enum class AnnouncementColor {
@@ -54,7 +55,6 @@ public:
 	StringVariable _announcementMessage = obs_module_text(
 		"AdvSceneSwitcher.action.twitch.announcement.message");
 	AnnouncementColor _announcementColor = AnnouncementColor::PRIMARY;
-	bool _emoteOnlyEnabled = true;
 
 private:
 	void SetStreamTitle(const std::shared_ptr<TwitchToken> &) const;
@@ -63,7 +63,8 @@ private:
 	void CreateStreamClip(const std::shared_ptr<TwitchToken> &) const;
 	void StartCommercial(const std::shared_ptr<TwitchToken> &) const;
 	void SendChatAnnouncement(const std::shared_ptr<TwitchToken> &) const;
-	void SetChatEmoteOnlyMode(const std::shared_ptr<TwitchToken> &) const;
+	void SetChatEmoteOnlyMode(const std::shared_ptr<TwitchToken> &,
+				  bool enable) const;
 
 	static bool _registered;
 	static const std::string id;
@@ -96,7 +97,6 @@ private slots:
 	void DurationChanged(const Duration &);
 	void AnnouncementMessageChanged();
 	void AnnouncementColorChanged(int index);
-	void EmoteOnlyEnabledChanged(int state);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -121,7 +121,6 @@ private:
 	DurationSelection *_duration;
 	VariableTextEdit *_announcementMessage;
 	QComboBox *_announcementColor;
-	QCheckBox *_emoteOnlyEnabled;
 
 	bool _loading = true;
 };
