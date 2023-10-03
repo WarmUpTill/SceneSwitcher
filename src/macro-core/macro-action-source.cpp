@@ -29,6 +29,10 @@ const static std::map<MacroActionSource::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.source.type.deinterlaceOrder"},
 	{MacroActionSource::Action::OPEN_INTERACTION_DIALOG,
 	 "AdvSceneSwitcher.action.source.type.openInteractionDialog"},
+	{MacroActionSource::Action::OPEN_FILTER_DIALOG,
+	 "AdvSceneSwitcher.action.source.type.openFilterDialog"},
+	{MacroActionSource::Action::OPEN_PROPERTIES_DIALOG,
+	 "AdvSceneSwitcher.action.source.type.openPropertiesDialog"},
 };
 
 const static std::map<obs_deinterlace_mode, std::string> deinterlaceModes = {
@@ -152,6 +156,12 @@ bool MacroActionSource::PerformAction()
 			     "for non intractable source \"%s\"",
 			     _source.ToString().c_str());
 		}
+		break;
+	case Action::OPEN_FILTER_DIALOG:
+		obs_frontend_open_source_filters(s);
+		break;
+	case Action::OPEN_PROPERTIES_DIALOG:
+		obs_frontend_open_source_properties(s);
 		break;
 	default:
 		break;
