@@ -330,6 +330,9 @@ bool MacroActionTwitch::ActionIsSupportedByToken()
 	}
 	auto option = requiredOption.find(_action);
 	assert(option != requiredOption.end());
+	if (option == requiredOption.end()) {
+		return false;
+	}
 	return token->OptionIsEnabled(option->second);
 }
 
