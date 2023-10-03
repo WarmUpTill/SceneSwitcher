@@ -28,12 +28,11 @@ static bool doesTransformOfAnySceneItemMatch(
 	std::string json;
 	for (const auto &item : items) {
 		json = GetSceneItemTransform(item);
-		newVariable = json;
 		if (MatchJson(json, jsonCompare, regex)) {
 			ret = true;
-			break;
 		}
 	}
+	newVariable = json;
 	return ret;
 }
 
@@ -53,12 +52,12 @@ didTransformOfAnySceneItemChange(const std::vector<OBSSceneItem> &items,
 	for (int idx = 0; idx < n_items; ++idx) {
 		auto const &item = items[idx];
 		json = GetSceneItemTransform(item);
-		newVariable = json;
 		if (!MatchJson(json, previousTransform[idx], regex)) {
 			ret = true;
 			previousTransform[idx] = json;
 		}
 	}
+	newVariable = json;
 	return ret;
 }
 
