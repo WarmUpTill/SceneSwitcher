@@ -1,5 +1,8 @@
 #include "resizing-text-edit.hpp"
 
+#include <obs-module.h>
+#include <utility.hpp>
+
 namespace advss {
 
 ResizingPlainTextEdit::ResizingPlainTextEdit(QWidget *parent,
@@ -13,6 +16,18 @@ ResizingPlainTextEdit::ResizingPlainTextEdit(QWidget *parent,
 {
 	QWidget::connect(this, SIGNAL(textChanged()), this,
 			 SLOT(ResizeTexteditArea()));
+	QWidget::connect(this, SIGNAL(textChanged()), this,
+			 SLOT(PreventExceedingMaxLength()));
+}
+
+int ResizingPlainTextEdit::maxLength()
+{
+	return _maxLength;
+}
+
+void ResizingPlainTextEdit::setMaxLength(int maxLength)
+{
+	_maxLength = maxLength;
 }
 
 void ResizingPlainTextEdit::ResizeTexteditArea()
@@ -30,6 +45,21 @@ void ResizingPlainTextEdit::ResizeTexteditArea()
 
 	adjustSize();
 	updateGeometry();
+}
+
+void ResizingPlainTextEdit::PreventExceedingMaxLength()
+{
+	auto plainText = QPlainTextEdit::toPlainText();
+
+	if (_maxLength > -1 && plainText.length() > _maxLength) {
+		QPlainTextEdit::setPlainText(plainText.left(_maxLength));
+		QPlainTextEdit::moveCursor(QTextCursor::End);
+
+		DisplayMessage(
+			QString(obs_module_text(
+					"AdvSceneSwitcher.validation.text.maxLength"))
+				.arg(QString::number(_maxLength)));
+	}
 }
 
 } // namespace advss

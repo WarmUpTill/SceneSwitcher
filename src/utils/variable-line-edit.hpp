@@ -13,6 +13,9 @@ public:
 	void setText(const StringVariable &);
 	void setToolTip(const QString &string);
 
+private slots:
+	void DisplayValidationMessages();
+
 private:
 };
 

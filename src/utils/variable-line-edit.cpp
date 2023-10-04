@@ -1,6 +1,7 @@
 #include "variable-line-edit.hpp"
 
 #include <obs-module.h>
+#include <utility.hpp>
 
 namespace advss {
 
@@ -8,6 +9,9 @@ VariableLineEdit::VariableLineEdit(QWidget *parent) : QLineEdit(parent)
 {
 	QLineEdit::setToolTip(
 		obs_module_text("AdvSceneSwitcher.tooltip.availableVariables"));
+
+	QWidget::connect(this, SIGNAL(inputRejected()), this,
+			 SLOT(DisplayValidationMessages()));
 }
 
 void VariableLineEdit::setText(const QString &string)
@@ -25,6 +29,18 @@ void VariableLineEdit::setToolTip(const QString &string)
 	QLineEdit::setToolTip(
 		string + "\n" +
 		obs_module_text("AdvSceneSwitcher.tooltip.availableVariables"));
+}
+
+void VariableLineEdit::DisplayValidationMessages()
+{
+	int maxLength = QLineEdit::maxLength();
+
+	if (QLineEdit::text().length() == maxLength) {
+		DisplayMessage(
+			QString(obs_module_text(
+					"AdvSceneSwitcher.validation.text.maxLength"))
+				.arg(QString::number(maxLength)));
+	}
 }
 
 } // namespace advss
