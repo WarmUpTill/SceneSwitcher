@@ -27,7 +27,8 @@ find_package(ZLIB)
 # --- End of section ---
 
 add_library(${PROJECT_NAME} MODULE)
-target_compile_definitions(${PROJECT_NAME} PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT=1)
+target_compile_definitions(${PROJECT_NAME} PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT=1
+                                                   ASIO_HAS_OPENSSSL=1)
 if(OS_MACOS)
   target_compile_definitions(
     ${PROJECT_NAME} PRIVATE CPPHTTPLIB_USE_CERTS_FROM_MACOSX_KEYCHAIN=1)
@@ -41,6 +42,8 @@ target_sources(
           category-selection.hpp
           channel-selection.cpp
           channel-selection.hpp
+          event-sub.cpp
+          event-sub.hpp
           macro-action-twitch.cpp
           macro-action-twitch.hpp
           token.cpp

@@ -1,4 +1,6 @@
 #pragma once
+#include "event-sub.hpp"
+
 #include <item-selection-helpers.hpp>
 #include <httplib.h>
 #include <set>
@@ -41,11 +43,13 @@ public:
 	bool IsEmpty() const { return _token.empty(); }
 	std::string GetToken() const { return _token; }
 	std::string GetUserID() const { return _userID; }
+	std::shared_ptr<EventSub> GetEventSub();
 
 private:
 	std::string _token;
 	std::string _userID;
 	std::set<TokenOption> _tokenOptions = {{"channel:manage:broadcast"}};
+	std::shared_ptr<EventSub> _eventSub;
 
 	static bool _setup;
 
