@@ -148,6 +148,14 @@ void TwitchToken::SetToken(const std::string &value)
 	}
 }
 
+std::shared_ptr<EventSub> TwitchToken::GetEventSub()
+{
+	if (!_eventSub) {
+		_eventSub = std::make_shared<EventSub>();
+	}
+	return _eventSub;
+}
+
 TwitchToken *GetTwitchTokenByName(const QString &name)
 {
 	return GetTwitchTokenByName(name.toStdString());
