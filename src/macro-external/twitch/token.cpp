@@ -21,6 +21,11 @@ const std::unordered_map<std::string, std::string> TokenOption::_apiIdToLocale{
 	{"moderator:manage:chat_settings",
 	 "AdvSceneSwitcher.twitchToken.moderator.manageChatSettings"},
 	{"channel:manage:raids", "AdvSceneSwitcher.twitchToken.channel.raid"},
+	{"moderator:read:followers",
+	 "AdvSceneSwitcher.twitchToken.readSubscriptions"},
+	{"channel:read:subscriptions",
+	 "AdvSceneSwitcher.twitchToken.readFollowers"},
+	{"bits:read", "AdvSceneSwitcher.twitchToken.bits"},
 };
 
 static void saveConnections(obs_data_t *obj);

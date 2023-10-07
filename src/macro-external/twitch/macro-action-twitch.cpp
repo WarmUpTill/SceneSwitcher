@@ -358,7 +358,7 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _actions(new FilterComboBox()),
 	  _tokens(new TwitchConnectionSelection()),
 	  _tokenPermissionWarning(new QLabel(obs_module_text(
-		  "AdvSceneSwitcher.action.twitch.tokenPermissionsInsufficient"))),
+		  "AdvSceneSwitcher.twitchToken.permissionsInsufficient"))),
 	  _streamTitle(new VariableLineEdit(this)),
 	  _category(new TwitchCategoryWidget(this)),
 	  _markerDescription(new VariableLineEdit(this)),
