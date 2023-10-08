@@ -750,8 +750,14 @@ void MacroActionVariableEdit::UpdateSegmentVariableValue()
 	_segmentValueStatus->setText(obs_module_text(
 		"AdvSceneSwitcher.action.variable.currentSegmentValue"));
 	_segmentValue->show();
-	_segmentValue->setPlainText(
-		QString::fromStdString(segment->GetVariableValue()));
+
+	// Only update the text if the value changed to prevent possible text
+	// selections being lost
+	auto previousText = _segmentValue->toPlainText();
+	auto newText = QString::fromStdString(segment->GetVariableValue());
+	if (newText != previousText) {
+		_segmentValue->setPlainText(newText);
+	}
 
 	adjustSize();
 	updateGeometry();
