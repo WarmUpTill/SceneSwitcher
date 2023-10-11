@@ -249,7 +249,6 @@ ProgressDialog::ProgressDialog(QWidget *parent, bool showSkip)
 		  "AdvSceneSwitcher.twitchCategories.fetchStart")))
 {
 	setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
-	_skipFetchCheckBox->setVisible(showSkip);
 	auto layout = new QVBoxLayout(this);
 	layout->addWidget(_status);
 	auto cancelButton = new QPushButton(
@@ -264,6 +263,7 @@ ProgressDialog::ProgressDialog(QWidget *parent, bool showSkip)
 	QWidget::connect(cancelButton, &QPushButton::clicked, this,
 			 [this]() { _skipFetch ? accept() : reject(); });
 
+	_skipFetchCheckBox->setVisible(showSkip);
 	if (_skipFetch) {
 		accept();
 	}
