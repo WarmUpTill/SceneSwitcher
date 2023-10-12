@@ -6,6 +6,8 @@
 #include <set>
 #include <QCheckBox>
 #include <QThread>
+#include <QLayout>
+#include <QTimer>
 #include <optional>
 
 namespace advss {
@@ -21,11 +23,12 @@ public:
 
 	static const std::unordered_map<std::string, std::string> &
 	GetTokenOptionMap();
+	static std::set<TokenOption> GetAllTokenOptions();
 	bool operator<(const TokenOption &other) const;
 	std::string apiId = "";
 
 private:
-	const static std::unordered_map<std::string, std::string> apiIdToLocale;
+	const static std::unordered_map<std::string, std::string> _apiIdToLocale;
 };
 
 class TwitchToken : public Item {
@@ -41,14 +44,15 @@ public:
 	bool OptionIsEnabled(const TokenOption &) const;
 	void SetToken(const std::string &);
 	bool IsEmpty() const { return _token.empty(); }
-	std::string GetToken() const { return _token; }
+	std::optional<std::string> GetToken() const;
 	std::string GetUserID() const { return _userID; }
 	std::shared_ptr<EventSub> GetEventSub();
+	bool IsValid(bool forceUpdate = false) const;
 
 private:
 	std::string _token;
 	std::string _userID;
-	std::set<TokenOption> _tokenOptions = {{"channel:manage:broadcast"}};
+	std::set<TokenOption> _tokenOptions = TokenOption::GetAllTokenOptions();
 	std::shared_ptr<EventSub> _eventSub;
 
 	static bool _setup;
@@ -97,17 +101,23 @@ private slots:
 	void TokenOptionChanged(int);
 	void RequestToken();
 	void GotToken(const std::optional<QString> &);
+	void CheckIfTokenValid();
 
 private:
 	std::set<TokenOption> GetEnabledOptions();
+	void SetTokenInfoVisible(bool);
 
 	QPushButton *_requestToken;
 	QPushButton *_showToken;
 	QLineEdit *_currentTokenValue;
 	QLabel *_tokenStatus;
+	QGridLayout *_generalSettingsGrid;
+	int _nameRow = -1;
+	int _tokenValueRow = -1;
 	TokenGrabberThread _tokenGrabber;
 	TwitchToken _currentToken;
 	std::unordered_map<std::string, QCheckBox *> _optionWidgets;
+	QTimer _validationTimer;
 };
 
 class TwitchConnectionSelection : public ItemSelection {
