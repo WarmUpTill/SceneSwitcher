@@ -335,8 +335,9 @@ bool MacroActionTwitch::ActionIsSupportedByToken()
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (const auto &[_, name] : actionTypes) {
-		list->addItem(obs_module_text(name.c_str()));
+	for (const auto &[action, name] : actionTypes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(action));
 	}
 }
 
@@ -351,7 +352,7 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	QWidget *parent, std::shared_ptr<MacroActionTwitch> entryData)
 	: QWidget(parent),
 	  _layout(new QHBoxLayout()),
-	  _actions(new QComboBox()),
+	  _actions(new FilterComboBox()),
 	  _tokens(new TwitchConnectionSelection()),
 	  _tokenPermissionWarning(new QLabel(obs_module_text(
 		  "AdvSceneSwitcher.action.twitch.tokenPermissionsInsufficient"))),
@@ -397,7 +398,7 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	QWidget::connect(_markerDescription, SIGNAL(editingFinished()), this,
 			 SLOT(MarkerDescriptionChanged()));
 	QObject::connect(_clipHasDelay, SIGNAL(stateChanged(int)), this,
-			 SLOT(HasClipDelayChanged(int)));
+			 SLOT(ClipHasDelayChanged(int)));
 	QObject::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
 			 this, SLOT(DurationChanged(const Duration &)));
 	QWidget::connect(_announcementMessage, SIGNAL(textChanged()), this,
@@ -587,7 +588,8 @@ void MacroActionTwitchEdit::UpdateEntryData()
 		return;
 	}
 
-	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_actions->setCurrentIndex(
+		_actions->findData(static_cast<int>(_entryData->_action)));
 	_tokens->SetToken(_entryData->_token);
 	_streamTitle->setText(_entryData->_streamTitle);
 	_category->SetToken(_entryData->_token);
@@ -604,14 +606,21 @@ void MacroActionTwitchEdit::UpdateEntryData()
 	SetupWidgetVisibility();
 }
 
-void MacroActionTwitchEdit::ActionChanged(int value)
+void MacroActionTwitchEdit::ActionChanged(int idx)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
+	if (idx == -1) { // Reset to previous selection
+		_actions->setCurrentIndex(_actions->findData(
+			static_cast<int>(_entryData->_action)));
+		return;
+	}
+
 	auto lock = LockContext();
-	_entryData->_action = static_cast<MacroActionTwitch::Action>(value);
+	_entryData->_action = static_cast<MacroActionTwitch::Action>(
+		_actions->itemData(idx).toInt());
 	SetupWidgetVisibility();
 }
 
