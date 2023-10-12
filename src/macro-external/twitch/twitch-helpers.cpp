@@ -57,10 +57,10 @@ static bool cacheIsValid(const std::map<Args, CacheEntry> &cache,
 	return it != cache.end() && !chacheIsTooOld(it->second);
 }
 
-static httplib::Headers getTokenRequestHeaders(const TwitchToken &token)
+static httplib::Headers getTokenRequestHeaders(const std::string &token)
 {
 	return {
-		{"Authorization", "Bearer " + token.GetToken()},
+		{"Authorization", "Bearer " + token},
 		{"Client-Id", clientID.data()},
 	};
 }
@@ -70,7 +70,11 @@ RequestResult SendGetRequest(const std::string &uri, const std::string &path,
 			     const httplib::Params &params)
 {
 	httplib::Client cli(uri);
-	auto headers = getTokenRequestHeaders(token);
+	auto tokenStr = token.GetToken();
+	if (!tokenStr) {
+		return {};
+	}
+	auto headers = getTokenRequestHeaders(*tokenStr);
 	auto response = cli.Get(path, params, headers);
 	if (!response) {
 		auto err = response.error();
@@ -96,7 +100,11 @@ RequestResult SendGetRequest(const std::string &uri, const std::string &path,
 	static std::map<Args, CacheEntry> cache;
 	static std::mutex mtx;
 	std::lock_guard<std::mutex> lock(mtx);
-	auto headers = getTokenRequestHeaders(token);
+	auto tokenStr = token.GetToken();
+	if (!tokenStr) {
+		return {};
+	}
+	auto headers = getTokenRequestHeaders(*tokenStr);
 	Args args(uri, path, "", params, headers);
 	if (useCache && cacheIsValid(cache, args)) {
 		auto it = cache.find(args);
@@ -112,7 +120,11 @@ RequestResult SendPostRequest(const std::string &uri, const std::string &path,
 			      const TwitchToken &token, const OBSData &data)
 {
 	httplib::Client cli(uri);
-	auto headers = getTokenRequestHeaders(token);
+	auto tokenStr = token.GetToken();
+	if (!tokenStr) {
+		return {};
+	}
+	auto headers = getTokenRequestHeaders(*tokenStr);
 	auto json = obs_data_get_json(data);
 	std::string body = json ? json : "";
 	auto response = cli.Post(path, headers, body, "application/json");
@@ -140,7 +152,11 @@ RequestResult SendPostRequest(const std::string &uri, const std::string &path,
 	static std::map<Args, CacheEntry> cache;
 	static std::mutex mtx;
 	std::lock_guard<std::mutex> lock(mtx);
-	auto headers = getTokenRequestHeaders(token);
+	auto tokenStr = token.GetToken();
+	if (!tokenStr) {
+		return {};
+	}
+	auto headers = getTokenRequestHeaders(*tokenStr);
 	auto jsonCstr = obs_data_get_json(data);
 	Args args(uri, path, jsonCstr ? jsonCstr : "", {}, headers);
 	if (useCache && cacheIsValid(cache, args)) {
@@ -157,7 +173,11 @@ RequestResult SendPatchRequest(const std::string &uri, const std::string &path,
 			       const TwitchToken &token, const OBSData &data)
 {
 	httplib::Client cli(uri);
-	auto headers = getTokenRequestHeaders(token);
+	auto tokenStr = token.GetToken();
+	if (!tokenStr) {
+		return {};
+	}
+	auto headers = getTokenRequestHeaders(*tokenStr);
 	auto json = obs_data_get_json(data);
 	std::string body = json ? json : "";
 	auto response = cli.Patch(path, headers, body, "application/json");
@@ -185,7 +205,11 @@ RequestResult SendPatchRequest(const std::string &uri, const std::string &path,
 	static std::map<Args, CacheEntry> cache;
 	static std::mutex mtx;
 	std::lock_guard<std::mutex> lock(mtx);
-	auto headers = getTokenRequestHeaders(token);
+	auto tokenStr = token.GetToken();
+	if (!tokenStr) {
+		return {};
+	}
+	auto headers = getTokenRequestHeaders(*tokenStr);
 	auto jsonCstr = obs_data_get_json(data);
 	Args args(uri, path, jsonCstr ? jsonCstr : "", {}, headers);
 	if (useCache && cacheIsValid(cache, args)) {

@@ -10,7 +10,7 @@ namespace advss {
 
 static std::deque<std::shared_ptr<Item>> twitchTokens;
 
-const std::unordered_map<std::string, std::string> TokenOption::apiIdToLocale{
+const std::unordered_map<std::string, std::string> TokenOption::_apiIdToLocale{
 	{"channel:manage:broadcast",
 	 "AdvSceneSwitcher.twitchToken.channel.manageBroadcast"},
 	{"clips:edit", "AdvSceneSwitcher.twitchToken.clips.edit"},
@@ -74,13 +74,23 @@ void TokenOption::Save(obs_data_t *obj) const
 
 std::string TokenOption::GetLocale() const
 {
-	return apiIdToLocale.at(apiId);
+	return _apiIdToLocale.at(apiId);
 }
 
 const std::unordered_map<std::string, std::string> &
 TokenOption::GetTokenOptionMap()
 {
-	return apiIdToLocale;
+	return _apiIdToLocale;
+}
+
+std::set<TokenOption> TokenOption::GetAllTokenOptions()
+{
+	std::set<TokenOption> result;
+	for (const auto &[optionStr, _] : _apiIdToLocale) {
+		TokenOption option = {optionStr};
+		result.emplace(option);
+	}
+	return result;
 }
 
 bool TokenOption::operator<(const TokenOption &other) const
@@ -146,6 +156,19 @@ void TwitchToken::SetToken(const std::string &value)
 		_userID = obs_data_get_string(arrayObj, "id");
 		_name = obs_data_get_string(arrayObj, "display_name");
 	}
+
+	// Trigger resubscribes with new token
+	if (_eventSub) {
+		_eventSub->ClearActiveSubscriptions();
+	}
+}
+
+std::optional<std::string> TwitchToken::GetToken() const
+{
+	if (!IsValid()) {
+		return {};
+	}
+	return _token;
 }
 
 std::shared_ptr<EventSub> TwitchToken::GetEventSub()
@@ -154,6 +177,43 @@ std::shared_ptr<EventSub> TwitchToken::GetEventSub()
 		_eventSub = std::make_shared<EventSub>();
 	}
 	return _eventSub;
+}
+
+bool TwitchToken::IsValid(bool forceUpdate) const
+{
+	static std::chrono::system_clock::time_point queryTime;
+	static std::string lastQueryToken;
+	static httplib::Result response;
+	static httplib::Client cli("https://id.twitch.tv");
+	httplib::Headers headers{{"Authorization", "OAuth " + _token}};
+
+	auto currentTime = std::chrono::system_clock::now();
+	auto diff = currentTime - queryTime;
+	const bool cacheIsTooOld = diff >= std::chrono::hours(1);
+
+	const bool tokenChanged = lastQueryToken != _token;
+	if (tokenChanged) {
+		response =
+			cli.Get("/oauth2/validate", httplib::Params{}, headers);
+		queryTime = std::chrono::system_clock::now();
+		lastQueryToken = _token;
+		return response && response->status == 200;
+	}
+
+	// No point in checking again as token will not become valid again
+	if (!forceUpdate && response && response->status != 200) {
+		blog(LOG_INFO, "Twitch token %s is not valid!", _name.c_str());
+		return false;
+	}
+
+	if (!forceUpdate && !cacheIsTooOld && response) {
+		return response->status == 200;
+	}
+
+	response = cli.Get("/oauth2/validate", httplib::Params{}, headers);
+	queryTime = std::chrono::system_clock::now();
+	lastQueryToken = _token;
+	return response && response->status == 200;
 }
 
 TwitchToken *GetTwitchTokenByName(const QString &name)
@@ -287,7 +347,8 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 		  obs_module_text("AdvSceneSwitcher.twitchToken.request"))),
 	  _showToken(new QPushButton()),
 	  _currentTokenValue(new QLineEdit()),
-	  _tokenStatus(new QLabel())
+	  _tokenStatus(new QLabel()),
+	  _generalSettingsGrid(new QGridLayout())
 {
 	_showToken->setMaximumWidth(22);
 	_showToken->setFlat(true);
@@ -298,6 +359,7 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 	_currentTokenValue->setText(QString::fromStdString(settings._token));
 
 	_name->setReadOnly(true);
+	_showNameEmptyWarning = false;
 
 	QWidget::connect(_requestToken, SIGNAL(clicked()), this,
 			 SLOT(RequestToken()));
@@ -308,28 +370,29 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 	QWidget::connect(&_tokenGrabber, &TokenGrabberThread::GotToken, this,
 			 &TwitchTokenSettingsDialog::GotToken);
 
-	auto generalSettingsGrid = new QGridLayout();
 	int row = 0;
-	generalSettingsGrid->addWidget(
+	_generalSettingsGrid->addWidget(
 		new QLabel(
 			obs_module_text("AdvSceneSwitcher.twitchToken.name")),
 		row, 0);
-	auto nameLayout = new QHBoxLayout;
+	auto nameLayout = new QHBoxLayout();
 	nameLayout->addWidget(_name);
 	nameLayout->addWidget(_nameHint);
-	generalSettingsGrid->addLayout(nameLayout, row, 1);
+	_generalSettingsGrid->addLayout(nameLayout, row, 1);
+	_nameRow = row;
 	++row;
-	generalSettingsGrid->addWidget(
+	_generalSettingsGrid->addWidget(
 		new QLabel(
 			obs_module_text("AdvSceneSwitcher.twitchToken.value")),
 		row, 0);
-	auto tokenValueLayout = new QHBoxLayout;
+	auto tokenValueLayout = new QHBoxLayout();
 	tokenValueLayout->addWidget(_currentTokenValue);
 	tokenValueLayout->addWidget(_showToken);
-	generalSettingsGrid->addLayout(tokenValueLayout, row, 1);
+	_generalSettingsGrid->addLayout(tokenValueLayout, row, 1);
+	_tokenValueRow = row;
 	++row;
-	generalSettingsGrid->addWidget(_requestToken, row, 0);
-	generalSettingsGrid->addWidget(_tokenStatus, row, 1);
+	_generalSettingsGrid->addWidget(_requestToken, row, 0);
+	_generalSettingsGrid->addWidget(_tokenStatus, row, 1);
 
 	auto optionsGrid = new QGridLayout();
 	row = 0;
@@ -350,7 +413,7 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 
 	auto contentWidget = new QWidget(scrollArea);
 	auto layout = new QVBoxLayout(contentWidget);
-	layout->addLayout(generalSettingsGrid);
+	layout->addLayout(_generalSettingsGrid);
 	layout->addWidget(optionsBox);
 	layout->setContentsMargins(0, 0, 0, 0);
 	scrollArea->setWidget(contentWidget);
@@ -364,6 +427,7 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 	if (settings._token.empty()) {
 		_tokenStatus->setText(obs_module_text(
 			"AdvSceneSwitcher.twitchToken.request.notSet"));
+		SetTokenInfoVisible(false);
 	}
 	HideToken();
 
@@ -372,6 +436,29 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 	}
 
 	_currentToken = settings;
+
+	QWidget::connect(&_validationTimer, &QTimer::timeout, this,
+			 &TwitchTokenSettingsDialog::CheckIfTokenValid);
+	_validationTimer.start(10000);
+	CheckIfTokenValid();
+}
+
+void TwitchTokenSettingsDialog::SetTokenInfoVisible(bool visible)
+{
+	SetGridLayoutRowVisible(_generalSettingsGrid, _nameRow, visible);
+	SetGridLayoutRowVisible(_generalSettingsGrid, _tokenValueRow, visible);
+}
+
+void TwitchTokenSettingsDialog::CheckIfTokenValid()
+{
+	if (_currentToken._token.empty()) {
+		return;
+	}
+	if (_currentToken.IsValid(true)) {
+		return;
+	}
+	_tokenStatus->setText(
+		obs_module_text("AdvSceneSwitcher.twitchToken.request.notSet"));
 }
 
 void TwitchTokenSettingsDialog::ShowToken()
@@ -392,9 +479,30 @@ void TwitchTokenSettingsDialog::TokenOptionChanged(int)
 		PulseWidget(_requestToken, Qt::green, QColor(0, 0, 0, 0), true);
 	}
 	_name->setText("");
+	SetTokenInfoVisible(false);
 	QMetaObject::invokeMethod(this, "NameChanged",
 				  Q_ARG(const QString &, ""));
+	_tokenStatus->setText(
+		obs_module_text("AdvSceneSwitcher.twitchToken.request.notSet"));
 	_currentTokenValue->setText("");
+}
+
+static void revokeToken(const std::string &token)
+{
+	httplib::Client cli("https://id.twitch.tv");
+	auto response = cli.Post("/oauth2/revoke",
+				 std::string("client_id=") + GetClientID() +
+					 "&token=" + token,
+				 "application/x-www-form-urlencoded");
+	if (!response) {
+		auto err = response.error();
+		blog(LOG_INFO, "Failed to revoke token: %s",
+		     httplib::to_string(err).c_str());
+		return;
+	}
+	if (response->status != 200) {
+		blog(LOG_INFO, "Failed to revoke token: %d", response->status);
+	}
 }
 
 static std::string generateStateString()
@@ -481,10 +589,14 @@ void TwitchTokenSettingsDialog::GotToken(const std::optional<QString> &value)
 		auto name = QString::fromStdString(_currentToken._name);
 		_name->setText(name);
 		_name->textEdited(name);
+		QMetaObject::invokeMethod(this, "NameChanged",
+					  Q_ARG(const QString &, name));
+		SetTokenInfoVisible(true);
 	} else {
 		_tokenStatus->setText(obs_module_text(
 			"AdvSceneSwitcher.twitchToken.request.fail"));
 		_name->setText("");
+		SetTokenInfoVisible(false);
 	}
 	_requestToken->setEnabled(true);
 }
