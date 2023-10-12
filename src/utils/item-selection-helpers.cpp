@@ -298,8 +298,14 @@ void ItemSettingsDialog::NameChanged(const QString &text)
 		return;
 	}
 	if (text.isEmpty()) {
-		SetNameWarning(
-			obs_module_text("AdvSceneSwitcher.item.emptyName"));
+		if (_showNameEmptyWarning) {
+			SetNameWarning(obs_module_text(
+				"AdvSceneSwitcher.item.emptyName"));
+			return;
+		}
+		_nameHint->setText("");
+		_nameHint->hide();
+		_buttonbox->button(QDialogButtonBox::Ok)->setDisabled(true);
 		return;
 	}
 	if (text == obs_module_text(_selectStr.data()) ||

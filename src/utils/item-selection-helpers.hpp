@@ -59,6 +59,7 @@ protected:
 	std::string_view _addStr;
 	std::string_view _conflictStr;
 	QString _originalName;
+	bool _showNameEmptyWarning = true;
 };
 
 typedef bool (*SettingsCallback)(QWidget *, Item &);
