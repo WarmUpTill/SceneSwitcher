@@ -27,14 +27,14 @@ public:
 
 	enum class Action {
 		TITLE,
-		CATEGORY,
-		MARKER,
-		CLIP,
-		COMMERCIAL,
-		ANNOUNCEMENT,
-		ENABLE_EMOTE_ONLY,
-		DISABLE_EMOTE_ONLY,
-		RAID,
+		CATEGORY = 10,
+		MARKER = 20,
+		CLIP = 30,
+		COMMERCIAL = 40,
+		ANNOUNCEMENT = 50,
+		ENABLE_EMOTE_ONLY = 60,
+		DISABLE_EMOTE_ONLY = 70,
+		RAID = 80,
 	};
 
 	enum class AnnouncementColor {
@@ -113,7 +113,7 @@ private:
 	void SetupWidgetVisibility();
 
 	QHBoxLayout *_layout;
-	QComboBox *_actions;
+	FilterComboBox *_actions;
 	TwitchConnectionSelection *_tokens;
 	QLabel *_tokenPermissionWarning;
 	QTimer _tokenPermissionCheckTimer;
