@@ -610,6 +610,7 @@ void MacroActionTwitchEdit::ActionChanged(int idx)
 	}
 
 	if (idx == -1) { // Reset to previous selection
+		const QSignalBlocker b(_actions);
 		_actions->setCurrentIndex(_actions->findData(
 			static_cast<int>(_entryData->_action)));
 		return;
