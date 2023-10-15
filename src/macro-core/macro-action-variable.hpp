@@ -5,6 +5,7 @@
 #include "resizing-text-edit.hpp"
 #include "scene-selection.hpp"
 #include "variable-line-edit.hpp"
+#include "variable-text-edit.hpp"
 
 namespace advss {
 
@@ -40,12 +41,13 @@ public:
 		USER_INPUT,
 		ENV_VARIABLE,
 		SCENE_ITEM_COUNT,
+		STRING_LENGTH,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
 	std::weak_ptr<Variable> _variable;
 	std::weak_ptr<Variable> _variable2;
-	std::string _strValue = "";
+	StringVariable _strValue = "";
 	double _numValue = 0;
 	int _subStringStart = 0;
 	int _subStringSize = 0;
@@ -134,7 +136,7 @@ private:
 	VariableSelection *_variables;
 	VariableSelection *_variables2;
 	QComboBox *_actions;
-	ResizingPlainTextEdit *_strValue;
+	VariableTextEdit *_strValue;
 	QDoubleSpinBox *_numValue;
 	MacroSegmentSelection *_segmentIdx;
 	QLabel *_segmentValueStatus;
