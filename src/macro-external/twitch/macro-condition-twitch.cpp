@@ -773,6 +773,7 @@ void MacroConditionTwitchEdit::ConditionChanged(int idx)
 	}
 
 	if (idx == -1) { // Reset to previous selection
+		const QSignalBlocker b(_conditions);
 		_conditions->setCurrentIndex(_conditions->findData(
 			static_cast<int>(_entryData->GetCondition())));
 		return;
