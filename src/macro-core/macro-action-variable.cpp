@@ -45,6 +45,8 @@ const static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.environmentVariable"},
 	{MacroActionVariable::Type::SCENE_ITEM_COUNT,
 	 "AdvSceneSwitcher.action.variable.type.sceneItemCount"},
+	{MacroActionVariable::Type::STRING_LENGTH,
+	 "AdvSceneSwitcher.action.variable.type.stringLength"},
 };
 
 static void apppend(Variable &var, const std::string &value)
@@ -238,6 +240,10 @@ bool MacroActionVariable::PerformAction()
 		var->SetValue(GetSceneItemCount(_scene.GetScene(false)));
 		return true;
 	}
+	case Type::STRING_LENGTH: {
+		var->SetValue(std::string(_strValue).length());
+		return true;
+	}
 	}
 
 	return true;
@@ -250,7 +256,7 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 			    GetWeakVariableName(_variable).c_str());
 	obs_data_set_string(obj, "variable2Name",
 			    GetWeakVariableName(_variable2).c_str());
-	obs_data_set_string(obj, "strValue", _strValue.c_str());
+	_strValue.Save(obj, "strValue");
 	obs_data_set_double(obj, "numValue", _numValue);
 	obs_data_set_int(obj, "condition", static_cast<int>(_type));
 	obs_data_set_int(obj, "segmentIdx", GetSegmentIndexValue());
@@ -278,7 +284,7 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 		GetWeakVariableByName(obs_data_get_string(obj, "variableName"));
 	_variable2 = GetWeakVariableByName(
 		obs_data_get_string(obj, "variable2Name"));
-	_strValue = obs_data_get_string(obj, "strValue");
+	_strValue.Load(obj, "strValue");
 	_numValue = obs_data_get_double(obj, "numValue");
 	_type = static_cast<Type>(obs_data_get_int(obj, "condition"));
 	_segmentIdxLoadValue = obs_data_get_int(obj, "segmentIdx");
@@ -385,8 +391,9 @@ void MacroActionVariable::DecrementCurrentSegmentVariableRef()
 
 static inline void populateTypeSelection(QComboBox *list)
 {
-	for (auto entry : actionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[action, name] : actionTypes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(action));
 	}
 }
 
@@ -396,7 +403,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _variables(new VariableSelection(this)),
 	  _variables2(new VariableSelection(this)),
 	  _actions(new QComboBox()),
-	  _strValue(new ResizingPlainTextEdit(this, 5, 1, 1)),
+	  _strValue(new VariableTextEdit(this, 5, 1, 1)),
 	  _numValue(new QDoubleSpinBox()),
 	  _segmentIdx(new MacroSegmentSelection(
 		  this, MacroSegmentSelection::Type::CONDITION, false)),
@@ -572,8 +579,9 @@ void MacroActionVariableEdit::UpdateEntryData()
 
 	_variables->SetVariable(_entryData->_variable);
 	_variables2->SetVariable(_entryData->_variable2);
-	_actions->setCurrentIndex(static_cast<int>(_entryData->_type));
-	_strValue->setPlainText(QString::fromStdString(_entryData->_strValue));
+	_actions->setCurrentIndex(
+		_actions->findData(static_cast<int>(_entryData->_type)));
+	_strValue->setPlainText(_entryData->_strValue);
 	_numValue->setValue(_entryData->_numValue);
 	_segmentIdx->SetValue(_entryData->GetSegmentIndexValue() + 1);
 	_segmentIdx->SetMacro(_entryData->GetMacro());
@@ -621,14 +629,15 @@ void MacroActionVariableEdit::Variable2Changed(const QString &text)
 	_entryData->_variable2 = GetWeakVariableByQString(text);
 }
 
-void MacroActionVariableEdit::ActionChanged(int value)
+void MacroActionVariableEdit::ActionChanged(int idx)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	auto lock = LockContext();
-	_entryData->_type = static_cast<MacroActionVariable::Type>(value);
+	_entryData->_type = static_cast<MacroActionVariable::Type>(
+		_actions->itemData(idx).toInt());
 
 	if (_entryData->_type == MacroActionVariable::Type::SET_ACTION_VALUE) {
 		_segmentIdx->SetType(MacroSegmentSelection::Type::ACTION);
@@ -942,7 +951,8 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 	_strValue->setVisible(
 		_entryData->_type ==
 			MacroActionVariable::Type::SET_FIXED_VALUE ||
-		_entryData->_type == MacroActionVariable::Type::APPEND);
+		_entryData->_type == MacroActionVariable::Type::APPEND ||
+		_entryData->_type == MacroActionVariable::Type::STRING_LENGTH);
 	_numValue->setVisible(
 		_entryData->_type == MacroActionVariable::Type::INCREMENT ||
 		_entryData->_type == MacroActionVariable::Type::DECREMENT);
