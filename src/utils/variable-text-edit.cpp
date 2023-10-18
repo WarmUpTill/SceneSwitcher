@@ -5,8 +5,9 @@
 
 namespace advss {
 
-VariableTextEdit::VariableTextEdit(QWidget *parent)
-	: ResizingPlainTextEdit(parent)
+VariableTextEdit::VariableTextEdit(QWidget *parent, const int scrollAt,
+				   const int minLines, const int paddingLines)
+	: ResizingPlainTextEdit(parent, scrollAt, minLines, paddingLines)
 {
 	QPlainTextEdit::setToolTip(
 		obs_module_text("AdvSceneSwitcher.tooltip.availableVariables"));
