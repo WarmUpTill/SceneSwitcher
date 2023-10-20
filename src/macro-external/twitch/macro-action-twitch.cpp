@@ -375,8 +375,6 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	_markerDescription->setSizePolicy(QSizePolicy::MinimumExpanding,
 					  QSizePolicy::Preferred);
 	_markerDescription->setMaxLength(140);
-	_announcementMessage->setSizePolicy(QSizePolicy::MinimumExpanding,
-					    QSizePolicy::Preferred);
 	_announcementMessage->setMaxLength(500);
 
 	auto spinBox = _duration->SpinBox();

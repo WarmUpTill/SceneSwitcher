@@ -14,6 +14,7 @@
 #include <QTextStream>
 #include <QLabel>
 #include <QMessageBox>
+#include <QErrorMessage>
 #include <QStandardItemModel>
 #include <QtGui/qstandarditemmodel.h>
 #include <QPropertyAnimation>
@@ -543,8 +544,16 @@ bool DisplayMessage(const QString &msg, bool question, bool modal)
 	QMessageBox Msgbox;
 	Msgbox.setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
 	Msgbox.setText(msg);
+	Msgbox.setTextInteractionFlags(Qt::TextBrowserInteraction);
 	Msgbox.exec();
 	return false;
+}
+
+void DisplayErrorMessage(const QString &msg)
+{
+	QErrorMessage dialog;
+	dialog.showMessage(msg);
+	dialog.exec();
 }
 
 void DisplayTrayMessage(const QString &title, const QString &msg,
