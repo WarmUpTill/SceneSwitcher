@@ -499,6 +499,9 @@ void SwitcherData::LoadSettings(obs_data_t *obj)
 		return;
 	}
 
+	// New post load steps to be declared during load
+	postLoadSteps.clear();
+
 	// Needs to be loaded before any entries which might rely on scene group
 	// selections to be available.
 	loadSceneGroups(obj);
@@ -528,6 +531,10 @@ void SwitcherData::LoadSettings(obs_data_t *obj)
 	LoadGeneralSettings(obj);
 	LoadHotkeys(obj);
 	LoadUISettings(obj);
+
+	for (const auto &func : postLoadSteps) {
+		func();
+	}
 
 	// Reset on startup and scene collection change
 	switcher->lastOpenedTab = -1;

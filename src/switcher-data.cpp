@@ -186,4 +186,9 @@ void SwitcherData::AddLoadStep(std::function<void(obs_data_t *)> function)
 	loadSteps.emplace_back(function);
 }
 
+void SwitcherData::AddPostLoadStep(std::function<void()> function)
+{
+	postLoadSteps.emplace_back(function);
+}
+
 } // namespace advss
