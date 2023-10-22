@@ -22,7 +22,7 @@ void DurationModifier::Save(obs_data_t *obj, const char *condName,
 void DurationModifier::Load(obs_data_t *obj, const char *condName,
 			    const char *duration)
 {
-	// For backwards compatability check if duration value exist without
+	// For backwards compatibility check if duration value exist without
 	// time constraint condition - if so assume DurationCondition::MORE
 	if (!obs_data_has_user_value(obj, condName) &&
 	    obs_data_has_user_value(obj, duration)) {
@@ -105,7 +105,7 @@ bool MacroCondition::Load(obs_data_t *obj)
 		_duration.Load(durObj);
 		obs_data_release(durObj);
 	} else {
-		// For backwards compatability
+		// For backwards compatibility
 		_duration.Load(obj);
 	}
 	return true;

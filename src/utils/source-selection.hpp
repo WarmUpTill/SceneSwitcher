@@ -24,7 +24,7 @@ public:
 
 private:
 	// TODO: Remove in future version
-	// Used for backwards compatability to older settings versions
+	// Used for backwards compatibility to older settings versions
 	void LoadFallback(obs_data_t *obj, const char *name);
 
 	OBSWeakSource _source;
