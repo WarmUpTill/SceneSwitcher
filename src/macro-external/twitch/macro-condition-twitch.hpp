@@ -24,25 +24,60 @@ public:
 	bool ConditionIsSupportedByToken();
 
 	enum class Condition {
-		// Event based
-		LIVE_EVENT_REGULAR = 10,
-		LIVE_EVENT_PLAYLIST = 20,
-		LIVE_EVENT_WATCHPARTY = 30,
-		LIVE_EVENT_PREMIERE = 40,
-		LIVE_EVENT_RERUN = 50,
-		OFFLINE_EVENT = 60,
-		CHANNEL_UPDATE_EVENT = 70,
-		FOLLOW_EVENT = 80,
-		SUBSCRIBE_EVENT = 90,
-		SUBSCRIBE_END_EVENT = 100,
-		SUBSCRIBE_GIFT_EVENT = 110,
-		SUBSCRIBE_MESSAGE_EVENT = 120,
-		CHEER_EVENT = 130,
+		// Generic event based
+		STREAM_ONLINE_EVENT = 0,
+		STREAM_OFFLINE_EVENT = 100,
+		CHANNEL_INFO_UPDATE_EVENT = 200,
+		FOLLOW_EVENT = 300,
+		SUBSCRIPTION_START_EVENT = 400,
+		SUBSCRIPTION_END_EVENT = 500,
+		SUBSCRIPTION_GIFT_EVENT = 600,
+		SUBSCRIPTION_MESSAGE_EVENT = 700,
+		CHEER_EVENT = 800,
+		RAID_OUTBOUND_EVENT = 900,
+		RAID_INBOUND_EVENT = 1000,
+		SHOUTOUT_OUTBOUND_EVENT = 1100,
+		SHOUTOUT_INBOUND_EVENT = 1200,
+		POLL_START_EVENT = 1300,
+		POLL_PROGRESS_EVENT = 1400,
+		POLL_END_EVENT = 1500,
+		PREDICTION_START_EVENT = 1600,
+		PREDICTION_PROGRESS_EVENT = 1700,
+		PREDICTION_LOCK_EVENT = 1800,
+		PREDICTION_END_EVENT = 1900,
+		GOAL_START_EVENT = 2000,
+		GOAL_PROGRESS_EVENT = 2100,
+		GOAL_END_EVENT = 2200,
+		HYPE_TRAIN_START_EVENT = 2300,
+		HYPE_TRAIN_PROGRESS_EVENT = 2400,
+		HYPE_TRAIN_END_EVENT = 2500,
+		CHARITY_CAMPAIGN_START_EVENT = 2600,
+		CHARITY_CAMPAIGN_PROGRESS_EVENT = 2700,
+		CHARITY_CAMPAIGN_DONATION_EVENT = 2800,
+		CHARITY_CAMPAIGN_END_EVENT = 2900,
+		SHIELD_MODE_START_EVENT = 3000,
+		SHIELD_MODE_END_EVENT = 3100,
+		POINTS_REWARD_ADDITION_EVENT = 3200,
+		POINTS_REWARD_UPDATE_EVENT = 3300,
+		POINTS_REWARD_DELETION_EVENT = 3400,
+		POINTS_REWARD_REDEMPTION_EVENT = 3500,
+		POINTS_REWARD_REDEMPTION_UPDATE_EVENT = 3600,
+		USER_BAN_EVENT = 3700,
+		USER_UNBAN_EVENT = 3800,
+		USER_MODERATOR_ADDITION_EVENT = 3900,
+		USER_MODERATOR_DELETION_EVENT = 4000,
+
+		// Event based with custom logic
+		STREAM_ONLINE_LIVE_EVENT = 1,
+		STREAM_ONLINE_PLAYLIST_EVENT = 2,
+		STREAM_ONLINE_WATCHPARTY_EVENT = 3,
+		STREAM_ONLINE_PREMIERE_EVENT = 4,
+		STREAM_ONLINE_RERUN_EVENT = 5,
 
 		// Polling
-		LIVE = 1000,
-		TITLE = 1010,
-		CATEGORY = 1020,
+		LIVE_POLLING = 1000000,
+		TITLE_POLLING = 1000100,
+		CATEGORY_POLLING = 1000200,
 	};
 
 	void SetCondition(const Condition &);
@@ -56,24 +91,19 @@ public:
 	TwitchCategory _category;
 
 private:
+	bool CheckChannelGenericEvents(
+		TwitchToken &,
+		const char *mainUserIdFieldName = "broadcaster_user_id");
 	bool CheckChannelLiveEvents(TwitchToken &);
-	bool CheckChannelOfflineEvents(TwitchToken &);
-	bool CheckChannelUpdateEvents(TwitchToken &);
-	bool CheckChannelFollowEvents(TwitchToken &);
-	bool CheckChannelSubscribeEvents(TwitchToken &);
-	bool CheckChannelCheerEvents(TwitchToken &);
 
 	bool IsUsingEventSubCondition();
 	void SetupEventSubscriptions();
 	void CheckEventSubscription(EventSub &);
-	void AddChannelLiveEventSubscription();
-	void AddChannelOfflineEventSubscription();
-	void AddChannelUpdateEventSubscription();
-	void AddChannelFollowEventSubscription();
-	void AddChannelSubscribeEventSubscription();
-	void AddChannelCheerEventSubscription();
+	void AddChannelGenericEventSubscription(
+		const char *version, bool includeModeratorId = false,
+		const char *mainUserIdFieldName = "broadcaster_user_id");
 
-	Condition _condition = Condition::LIVE;
+	Condition _condition = Condition::LIVE_POLLING;
 	std::future<std::string> _subscriptionIDFuture;
 	std::string _subscriptionID;
 	static bool _registered;
