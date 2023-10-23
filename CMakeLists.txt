@@ -378,6 +378,12 @@ target_include_directories(
          "${CMAKE_CURRENT_SOURCE_DIR}/deps/obs-websocket/lib"
          "${CMAKE_CURRENT_SOURCE_DIR}/deps/exprtk")
 
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/json/CMakeLists.txt")
+  add_subdirectory(deps/json)
+else()
+  find_package(nlohmann_json REQUIRED)
+endif()
+target_link_libraries(${LIB_NAME} PUBLIC nlohmann_json::nlohmann_json)
 target_compile_definitions(${LIB_NAME} PRIVATE ADVSS_EXPORT_SYMBOLS=1)
 
 # --- End of section ---
