@@ -614,6 +614,9 @@ bool Macro::PostLoad()
 	for (auto &a : _actions) {
 		a->PostLoad();
 	}
+	for (auto &a : _elseActions) {
+		a->PostLoad();
+	}
 	return true;
 }
 
