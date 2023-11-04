@@ -3,6 +3,7 @@
 #include "variable-text-edit.hpp"
 #include "source-selection.hpp"
 #include "filter-selection.hpp"
+#include "source-setting.hpp"
 
 #include <QComboBox>
 #include <QSpinBox>
@@ -31,10 +32,21 @@ public:
 		SETTINGS,
 	};
 
+	enum class SettingsInputMethod {
+		INDIVIDUAL_MANUAL,
+		INDIVIDUAL_TEMPVAR,
+		JSON_STRING,
+	};
+	SettingsInputMethod _settingsInputMethod =
+		SettingsInputMethod::INDIVIDUAL_MANUAL;
+
 	SourceSelection _source;
 	FilterSelection _filter;
 	Action _action = Action::ENABLE;
-	StringVariable _settings = "";
+	StringVariable _settingsString = "";
+	TempVariableRef _tempVar;
+	StringVariable _manualSettingValue = "";
+	SourceSetting _setting;
 
 private:
 	static bool _registered;
@@ -62,7 +74,11 @@ private slots:
 	void FilterChanged(const FilterSelection &);
 	void ActionChanged(int value);
 	void GetSettingsClicked();
-	void SettingsChanged();
+	void SettingsStringChanged();
+	void SettingsInputMethodChanged(int);
+	void SelectionChanged(const TempVariableRef &);
+	void SelectionChanged(const SourceSetting &);
+	void ManualSettingsValueChanged();
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -71,11 +87,17 @@ protected:
 	FilterSelectionWidget *_filters;
 	QComboBox *_actions;
 	QPushButton *_getSettings;
-	VariableTextEdit *_settings;
+	QHBoxLayout *_settingsLayout;
+	QComboBox *_settingsInputMethods;
+	VariableTextEdit *_manualSettingValue;
+	TempVariableSelection *_tempVars;
+	SourceSettingSelection *_filterSettings;
+	VariableTextEdit *_settingsString;
+
 	std::shared_ptr<MacroActionFilter> _entryData;
 
 private:
-	void SetWidgetVisibility(bool);
+	void SetWidgetVisibility();
 	bool _loading = true;
 };
 

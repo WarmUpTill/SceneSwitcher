@@ -2,6 +2,7 @@
 #include "macro-action-edit.hpp"
 #include "variable-text-edit.hpp"
 #include "source-selection.hpp"
+#include "source-setting.hpp"
 
 #include <QSpinBox>
 #include <QLabel>
@@ -35,10 +36,13 @@ public:
 
 	SourceSelection _source;
 	SourceSettingButton _button;
-	StringVariable _settings = "";
+	StringVariable _settingsString = "";
+	StringVariable _manualSettingValue = "";
 	obs_deinterlace_mode _deinterlaceMode = OBS_DEINTERLACE_MODE_DISABLE;
 	obs_deinterlace_field_order _deinterlaceOrder =
 		OBS_DEINTERLACE_FIELD_ORDER_TOP;
+	TempVariableRef _tempVar;
+	SourceSetting _setting;
 
 	enum class Action {
 		ENABLE,
@@ -52,7 +56,15 @@ public:
 		OPEN_FILTER_DIALOG,
 		OPEN_PROPERTIES_DIALOG,
 	};
-	Action _action = Action::ENABLE;
+	Action _action = Action::SETTINGS;
+
+	enum class SettingsInputMethod {
+		INDIVIDUAL_MANUAL,
+		INDIVIDUAL_TEMPVAR,
+		JSON_STRING,
+	};
+	SettingsInputMethod _settingsInputMethod =
+		SettingsInputMethod::INDIVIDUAL_MANUAL;
 
 private:
 	static bool _registered;
@@ -80,9 +92,13 @@ private slots:
 	void ActionChanged(int value);
 	void ButtonChanged(int idx);
 	void GetSettingsClicked();
-	void SettingsChanged();
+	void SettingsStringChanged();
 	void DeinterlaceModeChanged(int);
 	void DeinterlaceOrderChanged(int);
+	void SelectionChanged(const TempVariableRef &);
+	void SettingsInputMethodChanged(int);
+	void SelectionChanged(const SourceSetting &);
+	void ManualSettingsValueChanged();
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -90,11 +106,17 @@ protected:
 	SourceSelectionWidget *_sources;
 	QComboBox *_actions;
 	QComboBox *_settingsButtons;
+	QHBoxLayout *_settingsLayout;
+	QComboBox *_settingsInputMethods;
+	VariableTextEdit *_manualSettingValue;
+	TempVariableSelection *_tempVars;
+	SourceSettingSelection *_sourceSettings;
+	VariableTextEdit *_settingsString;
 	QPushButton *_getSettings;
-	VariableTextEdit *_settings;
 	QComboBox *_deinterlaceMode;
 	QComboBox *_deinterlaceOrder;
 	QLabel *_warning;
+
 	std::shared_ptr<MacroActionSource> _entryData;
 
 private:
