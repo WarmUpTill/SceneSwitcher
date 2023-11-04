@@ -109,6 +109,9 @@ private:
 		const char *version, bool includeModeratorId = false,
 		const char *mainUserIdFieldName = "broadcaster_user_id",
 		obs_data_t *extraConditions = nullptr);
+	void SetupTempVars();
+	void SetTempVarValues(const ChannelLiveInfo &);
+	void SetTempVarValues(const ChannelInfo &);
 
 	Condition _condition = Condition::LIVE_POLLING;
 	std::future<std::string> _subscriptionIDFuture;
@@ -145,6 +148,7 @@ private slots:
 
 signals:
 	void HeaderInfoChanged(const QString &);
+	void TempVarsChanged();
 
 protected:
 	std::shared_ptr<MacroConditionTwitch> _entryData;
