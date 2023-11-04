@@ -96,6 +96,7 @@ bool MacroConditionWindow::WindowRegexMatches(
 void MacroConditionWindow::SetVariableValueBasedOnMatch(
 	const std::string &matchWindow)
 {
+	SetTempVarValue("window", matchWindow);
 	if (!IsReferencedInVars()) {
 		return;
 	}
@@ -171,6 +172,15 @@ bool MacroConditionWindow::Load(obs_data_t *obj)
 std::string MacroConditionWindow::GetShortDesc() const
 {
 	return _window;
+}
+
+void MacroConditionWindow::SetupTempVars()
+{
+	AddTempvar(
+		"window",
+		obs_module_text("AdvSceneSwitcher.tempVar.window.window"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.window.window.description"));
 }
 
 MacroConditionWindowEdit::MacroConditionWindowEdit(

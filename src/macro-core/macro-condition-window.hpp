@@ -21,7 +21,6 @@ public:
 		return std::make_shared<MacroConditionWindow>(m);
 	}
 
-public:
 	StringVariable _window;
 	RegexConfig _windowRegex;
 	bool _checkTitle = true;
@@ -40,6 +39,7 @@ private:
 	bool WindowMatches(const std::vector<std::string> &windowList);
 	bool WindowRegexMatches(const std::vector<std::string> &windowList);
 	void SetVariableValueBasedOnMatch(const std::string &matchWindow);
+	void SetupTempVars();
 
 	static bool _registered;
 	static const std::string id;
