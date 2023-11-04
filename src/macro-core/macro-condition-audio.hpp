@@ -37,6 +37,8 @@ public:
 		MONITOR,
 		BALANCE,
 	};
+	void SetType(const Type &);
+	Type GetType() const { return _checkType; }
 
 	enum class OutputCondition {
 		ABOVE,
@@ -56,7 +58,6 @@ public:
 	NumberVariable<int> _syncOffset = 0;
 	obs_monitoring_type _monitorType = OBS_MONITORING_TYPE_NONE;
 	NumberVariable<double> _balance = 0.5;
-	Type _checkType = Type::OUTPUT_VOLUME;
 	OutputCondition _outputCondition = OutputCondition::ABOVE;
 	VolumeCondition _volumeCondition = VolumeCondition::ABOVE;
 	obs_volmeter_t *_volmeter = nullptr;
@@ -67,7 +68,9 @@ private:
 	bool CheckSyncOffset();
 	bool CheckMonitor();
 	bool CheckBalance();
+	void SetupTempVars();
 
+	Type _checkType = Type::OUTPUT_VOLUME;
 	float _peak = -std::numeric_limits<float>::infinity();
 	static bool _registered;
 	static const std::string id;
