@@ -5,6 +5,7 @@
 #include <QLayout>
 #include <QDesktopServices>
 #include <obs-module-helper.hpp>
+#include <nlohmann/json.hpp>
 
 namespace advss {
 
@@ -81,11 +82,22 @@ static QDate parseRFC3339Date(const std::string &rfc3339Date)
 static std::vector<std::string>
 getStringArrayHelper(const OBSDataAutoRelease &data, const std::string &value)
 {
-	static std::vector<std::string> result;
-	OBSDataArrayAutoRelease array = obs_data_get_array(data, value.c_str());
-	size_t count = obs_data_array_count(array);
-	for (size_t i = 0; i < count; i++) {
-		// TODO
+	std::vector<std::string> result;
+	auto jsonStr = obs_data_get_json(data);
+	if (!jsonStr) {
+		return result;
+	}
+	try {
+		auto json = nlohmann::json::parse(jsonStr);
+		auto array = json[value];
+		if (!array.is_array()) {
+			return result;
+		}
+		for (const auto &element : array) {
+			std::string strElement = element.get<std::string>();
+			result.emplace_back(strElement);
+		}
+	} catch (const nlohmann::json::exception &) {
 	}
 	return result;
 }
