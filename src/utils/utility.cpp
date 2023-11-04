@@ -31,6 +31,7 @@
 #include <unordered_map>
 #include <regex>
 #include <set>
+#include <nlohmann/json.hpp>
 
 namespace advss {
 
@@ -701,6 +702,24 @@ void LoadSplitterPos(QList<int> &sizes, obs_data_t *obj, const std::string name)
 	obs_data_array_release(array);
 }
 
+std::optional<std::string> GetJsonField(const std::string &jsonStr,
+					const std::string &fieldToExtract)
+{
+	try {
+		nlohmann::json json = nlohmann::json::parse(jsonStr);
+		auto it = json.find(fieldToExtract);
+		if (it == json.end()) {
+			return {};
+		}
+		if (it->is_string()) {
+			return it->get<std::string>();
+		}
+		return it->dump();
+	} catch (const nlohmann::json::exception &) {
+		return {};
+	}
+	return {};
+}
 QStringList GetSourceNames()
 {
 	auto sourceEnum = [](void *param, obs_source_t *source) -> bool /* -- */

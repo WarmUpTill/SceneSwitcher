@@ -42,6 +42,7 @@ public:
 		ENV_VARIABLE,
 		SCENE_ITEM_COUNT,
 		STRING_LENGTH,
+		EXTRACT_JSON,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
@@ -135,7 +136,7 @@ private:
 
 	VariableSelection *_variables;
 	VariableSelection *_variables2;
-	QComboBox *_actions;
+	FilterComboBox *_actions;
 	VariableTextEdit *_strValue;
 	QDoubleSpinBox *_numValue;
 	MacroSegmentSelection *_segmentIdx;
