@@ -47,6 +47,8 @@ const static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.sceneItemCount"},
 	{MacroActionVariable::Type::STRING_LENGTH,
 	 "AdvSceneSwitcher.action.variable.type.stringLength"},
+	{MacroActionVariable::Type::EXTRACT_JSON,
+	 "AdvSceneSwitcher.action.variable.type.extractJson"},
 };
 
 static void apppend(Variable &var, const std::string &value)
@@ -244,6 +246,14 @@ bool MacroActionVariable::PerformAction()
 		var->SetValue(std::string(_strValue).length());
 		return true;
 	}
+	case Type::EXTRACT_JSON: {
+		auto value = GetJsonField(var->Value(), _strValue);
+		if (!value.has_value()) {
+			return true;
+		}
+		var->SetValue(*value);
+		return true;
+	}
 	}
 
 	return true;
@@ -402,7 +412,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	: QWidget(parent),
 	  _variables(new VariableSelection(this)),
 	  _variables2(new VariableSelection(this)),
-	  _actions(new QComboBox()),
+	  _actions(new FilterComboBox(this)),
 	  _strValue(new VariableTextEdit(this, 5, 1, 1)),
 	  _numValue(new QDoubleSpinBox()),
 	  _segmentIdx(new MacroSegmentSelection(
@@ -631,7 +641,7 @@ void MacroActionVariableEdit::Variable2Changed(const QString &text)
 
 void MacroActionVariableEdit::ActionChanged(int idx)
 {
-	if (_loading || !_entryData) {
+	if (_loading || !_entryData || idx == -1) {
 		return;
 	}
 
@@ -952,7 +962,8 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 		_entryData->_type ==
 			MacroActionVariable::Type::SET_FIXED_VALUE ||
 		_entryData->_type == MacroActionVariable::Type::APPEND ||
-		_entryData->_type == MacroActionVariable::Type::STRING_LENGTH);
+		_entryData->_type == MacroActionVariable::Type::STRING_LENGTH ||
+		_entryData->_type == MacroActionVariable::Type::EXTRACT_JSON);
 	_numValue->setVisible(
 		_entryData->_type == MacroActionVariable::Type::INCREMENT ||
 		_entryData->_type == MacroActionVariable::Type::DECREMENT);

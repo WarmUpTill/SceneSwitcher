@@ -11,6 +11,7 @@
 #include <obs-frontend-api.h>
 #include <deque>
 #include <unordered_map>
+#include <optional>
 
 namespace advss {
 
@@ -134,6 +135,8 @@ void SaveSplitterPos(const QList<int> &sizes, obs_data_t *obj,
 		     const std::string name);
 void LoadSplitterPos(QList<int> &sizes, obs_data_t *obj,
 		     const std::string name);
+std::optional<std::string> GetJsonField(const std::string &json,
+					const std::string &id);
 
 /* Legacy helpers */
 
