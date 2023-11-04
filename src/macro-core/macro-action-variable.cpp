@@ -49,6 +49,8 @@ const static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.stringLength"},
 	{MacroActionVariable::Type::EXTRACT_JSON,
 	 "AdvSceneSwitcher.action.variable.type.extractJson"},
+	{MacroActionVariable::Type::SET_TO_TEMPVAR,
+	 "AdvSceneSwitcher.action.variable.type.setToTempvar"},
 };
 
 static void apppend(Variable &var, const std::string &value)
@@ -254,6 +256,18 @@ bool MacroActionVariable::PerformAction()
 		var->SetValue(*value);
 		return true;
 	}
+	case Type::SET_TO_TEMPVAR: {
+		auto tempVar = _tempVar.GetTempVariable(GetMacro());
+		if (!tempVar) {
+			return true;
+		}
+		auto value = tempVar->Value();
+		if (!value) {
+			return true;
+		}
+		var->SetValue(*value);
+		return true;
+	}
 	}
 
 	return true;
@@ -284,6 +298,7 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	_inputPlaceholder.Save(obj, "inputPlaceholder");
 	_envVariableName.Save(obj, "environmentVariableName");
 	_scene.Save(obj);
+	_tempVar.Save(obj);
 	return true;
 }
 
@@ -312,6 +327,7 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_inputPlaceholder.Load(obj, "inputPlaceholder");
 	_envVariableName.Load(obj, "environmentVariableName");
 	_scene.Load(obj);
+	_tempVar.Load(obj, GetMacro());
 	return true;
 }
 
@@ -354,7 +370,7 @@ void MacroActionVariable::SetSegmentIndexValue(int value)
 
 	_macroSegment = segment;
 	if (segment) {
-		segment->IncrementVariableRef();
+		IncrementVariableRef(segment.get());
 	}
 }
 
@@ -396,7 +412,7 @@ void MacroActionVariable::DecrementCurrentSegmentVariableRef()
 		return;
 	}
 
-	segment->DecrementVariableRef();
+	DecrementVariableRef(segment.get());
 }
 
 static inline void populateTypeSelection(QComboBox *list)
@@ -439,7 +455,9 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _useInputPlaceholder(new QCheckBox()),
 	  _inputPlaceholder(new VariableLineEdit(this)),
 	  _envVariable(new VariableLineEdit(this)),
-	  _scenes(new SceneSelectionWidget(this, true, false, true, true, true))
+	  _scenes(new SceneSelectionWidget(this, true, false, true, true,
+					   true)),
+	  _tempVars(new TempVariableSelection(this))
 {
 	_numValue->setMinimum(-9999999999);
 	_numValue->setMaximum(9999999999);
@@ -502,6 +520,9 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 SLOT(EnvVariableChanged()));
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
+	QWidget::connect(_tempVars,
+			 SIGNAL(SelectionChanged(const TempVariableRef &)),
+			 this, SLOT(SelectionChanged(const TempVariableRef &)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -522,6 +543,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{inputPlaceholder}}", _inputPlaceholder},
 		{"{{envVariableName}}", _envVariable},
 		{"{{scenes}}", _scenes},
+		{"{{tempVars}}", _tempVars},
 	};
 	auto entryLayout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.variable.entry"),
@@ -616,6 +638,7 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_inputPlaceholder->setText(_entryData->_inputPlaceholder);
 	_envVariable->setText(_entryData->_envVariableName);
 	_scenes->SetScene(_entryData->_scene);
+	_tempVars->SetVariable(_entryData->_tempVar);
 	SetWidgetVisibility();
 }
 
@@ -744,7 +767,7 @@ void MacroActionVariableEdit::UpdateSegmentVariableValue()
 		return;
 	}
 
-	if (!segment->SupportsVariableValue()) {
+	if (!SupportsVariableValue(segment.get())) {
 		std::string type;
 		QString fmt;
 
@@ -950,6 +973,16 @@ void MacroActionVariableEdit::SceneChanged(const SceneSelection &scene)
 	_entryData->_scene = scene;
 }
 
+void MacroActionVariableEdit::SelectionChanged(const TempVariableRef &var)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_tempVar = var;
+}
+
 void MacroActionVariableEdit::SetWidgetVisibility()
 {
 	if (!_entryData) {
@@ -1028,6 +1061,8 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 				 MacroActionVariable::Type::ENV_VARIABLE);
 	_scenes->setVisible(_entryData->_type ==
 			    MacroActionVariable::Type::SCENE_ITEM_COUNT);
+	_tempVars->setVisible(_entryData->_type ==
+			      MacroActionVariable::Type::SET_TO_TEMPVAR);
 	adjustSize();
 	updateGeometry();
 }

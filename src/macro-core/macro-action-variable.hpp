@@ -43,6 +43,7 @@ public:
 		SCENE_ITEM_COUNT,
 		STRING_LENGTH,
 		EXTRACT_JSON,
+		SET_TO_TEMPVAR,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
@@ -73,6 +74,7 @@ public:
 	StringVariable _envVariableName = "HOME";
 #endif
 	SceneSelection _scene;
+	TempVariableRef _tempVar;
 
 private:
 	void DecrementCurrentSegmentVariableRef();
@@ -126,6 +128,7 @@ private slots:
 	void InputPlaceholderChanged();
 	void EnvVariableChanged();
 	void SceneChanged(const SceneSelection &);
+	void SelectionChanged(const TempVariableRef &var);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -163,6 +166,7 @@ private:
 	VariableLineEdit *_inputPlaceholder;
 	VariableLineEdit *_envVariable;
 	SceneSelectionWidget *_scenes;
+	TempVariableSelection *_tempVars;
 
 	std::shared_ptr<MacroActionVariable> _entryData;
 	QTimer _timer;
