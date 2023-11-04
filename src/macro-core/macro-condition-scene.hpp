@@ -32,9 +32,10 @@ public:
 		PREVIOUS_PATTERN = 70,
 		PREVIEW_PATTERN = 80,
 	};
+	void SetType(const Type &);
+	Type GetType() const { return _type; }
 
 	SceneSelection _scene;
-	Type _type = Type::CURRENT;
 	std::string _pattern = ".*Scene.*";
 	// During a transition "current" scene could either stand for the scene
 	// being transitioned to or the scene still being transitioned away
@@ -42,6 +43,9 @@ public:
 	bool _useTransitionTargetScene = false;
 
 private:
+	void SetupTempVars();
+
+	Type _type = Type::CURRENT;
 	std::chrono::high_resolution_clock::time_point _lastSceneChangeTime{};
 	static bool _registered;
 	static const std::string id;
