@@ -47,6 +47,12 @@ const static std::map<MacroConditionAudio::VolumeCondition, std::string>
 		 "AdvSceneSwitcher.condition.audio.state.unmute"},
 };
 
+void MacroConditionAudio::SetType(const Type &type)
+{
+	_checkType = type;
+	SetupTempVars();
+}
+
 MacroConditionAudio::~MacroConditionAudio()
 {
 	obs_volmeter_remove_callback(_volmeter, SetVolumeLevel, this);
@@ -74,6 +80,7 @@ bool MacroConditionAudio::CheckOutputCondition()
 	}
 
 	SetVariableValue(std::to_string(curVolume));
+	SetTempVarValue("output_volume", std::to_string(curVolume));
 
 	// Reset for next check
 	_peak = -std::numeric_limits<float>::infinity();
@@ -118,6 +125,9 @@ bool MacroConditionAudio::CheckVolumeCondition()
 		break;
 	}
 
+	SetTempVarValue("configured_volume", std::to_string(curVolume));
+	SetTempVarValue("muted", muted ? "true" : "false");
+
 	obs_source_release(s);
 	return ret;
 }
@@ -137,6 +147,7 @@ bool MacroConditionAudio::CheckSyncOffset()
 		ret = curOffset < _syncOffset;
 	}
 	SetVariableValue(std::to_string(curOffset));
+	SetTempVarValue("sync_offset", std::to_string(curOffset));
 	obs_source_release(s);
 	return ret;
 }
@@ -151,6 +162,8 @@ bool MacroConditionAudio::CheckMonitor()
 	auto s = obs_weak_source_get_source(_audioSource.GetSource());
 	ret = obs_source_get_monitoring_type(s) == _monitorType;
 	SetVariableValue("");
+	SetTempVarValue("monitor",
+			std::to_string(obs_source_get_monitoring_type(s)));
 	obs_source_release(s);
 	return ret;
 }
@@ -170,6 +183,7 @@ bool MacroConditionAudio::CheckBalance()
 		ret = curBalance < _balance;
 	}
 	SetVariableValue(std::to_string(curBalance));
+	SetTempVarValue("balance", std::to_string(curBalance));
 	obs_source_release(s);
 	return ret;
 }
@@ -288,6 +302,50 @@ void MacroConditionAudio::ResetVolmeter()
 	obs_volmeter_destroy(_volmeter);
 
 	_volmeter = AddVolmeterToSource(this, _audioSource.GetSource());
+}
+
+void MacroConditionAudio::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+	switch (_checkType) {
+	case Type::OUTPUT_VOLUME:
+		AddTempvar(
+			"output_volume",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.audio.output_volume"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.audio.output_volume.description"));
+		break;
+	case Type::CONFIGURED_VOLUME:
+		AddTempvar(
+			"configured_volume",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.audio.configured_volume"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.audio.configured_volume.description"));
+		AddTempvar("muted",
+			   obs_module_text(
+				   "AdvSceneSwitcher.tempVar.audio.muted"));
+		break;
+	case Type::SYNC_OFFSET:
+		AddTempvar(
+			"sync_offset",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.audio.sync_offset"));
+		break;
+	case Type::MONITOR:
+		AddTempvar("monitor",
+			   obs_module_text(
+				   "AdvSceneSwitcher.tempVar.audio.monitor"));
+		break;
+	case Type::BALANCE:
+		AddTempvar("balance",
+			   obs_module_text(
+				   "AdvSceneSwitcher.tempVar.audio.balance"));
+		break;
+	default:
+		break;
+	}
 }
 
 static inline void populateCheckTypes(QComboBox *list)
@@ -479,10 +537,9 @@ void MacroConditionAudioEdit::ConditionChanged(int cond)
 	}
 
 	auto lock = LockContext();
-	if (_entryData->_checkType ==
-		    MacroConditionAudio::Type::OUTPUT_VOLUME ||
-	    _entryData->_checkType == MacroConditionAudio::Type::BALANCE ||
-	    _entryData->_checkType == MacroConditionAudio::Type::SYNC_OFFSET) {
+	if (_entryData->GetType() == MacroConditionAudio::Type::OUTPUT_VOLUME ||
+	    _entryData->GetType() == MacroConditionAudio::Type::BALANCE ||
+	    _entryData->GetType() == MacroConditionAudio::Type::SYNC_OFFSET) {
 		_entryData->_outputCondition =
 			static_cast<MacroConditionAudio::OutputCondition>(cond);
 	} else {
@@ -499,16 +556,15 @@ void MacroConditionAudioEdit::CheckTypeChanged(int idx)
 	}
 
 	auto lock = LockContext();
-	_entryData->_checkType = static_cast<MacroConditionAudio::Type>(
-		_checkTypes->itemData(idx).toInt());
+	_entryData->SetType(static_cast<MacroConditionAudio::Type>(
+		_checkTypes->itemData(idx).toInt()));
 
 	const QSignalBlocker b(_condition);
-	if (_entryData->_checkType ==
-		    MacroConditionAudio::Type::OUTPUT_VOLUME ||
-	    _entryData->_checkType == MacroConditionAudio::Type::BALANCE ||
-	    _entryData->_checkType == MacroConditionAudio::Type::SYNC_OFFSET) {
+	if (_entryData->GetType() == MacroConditionAudio::Type::OUTPUT_VOLUME ||
+	    _entryData->GetType() == MacroConditionAudio::Type::BALANCE ||
+	    _entryData->GetType() == MacroConditionAudio::Type::SYNC_OFFSET) {
 		populateOutputConditionSelection(_condition);
-	} else if (_entryData->_checkType ==
+	} else if (_entryData->GetType() ==
 		   MacroConditionAudio::Type::CONFIGURED_VOLUME) {
 		populateVolumeConditionSelection(_condition);
 	}
@@ -526,17 +582,16 @@ void MacroConditionAudioEdit::UpdateEntryData()
 	_syncOffset->SetValue(_entryData->_syncOffset);
 	_monitorTypes->setCurrentIndex(_entryData->_monitorType);
 	_balance->SetDoubleValue(_entryData->_balance);
-	_checkTypes->setCurrentIndex(_checkTypes->findData(
-		static_cast<int>(_entryData->_checkType)));
+	_checkTypes->setCurrentIndex(
+		_checkTypes->findData(static_cast<int>(_entryData->GetType())));
 
-	if (_entryData->_checkType ==
-		    MacroConditionAudio::Type::OUTPUT_VOLUME ||
-	    _entryData->_checkType == MacroConditionAudio::Type::BALANCE ||
-	    _entryData->_checkType == MacroConditionAudio::Type::SYNC_OFFSET) {
+	if (_entryData->GetType() == MacroConditionAudio::Type::OUTPUT_VOLUME ||
+	    _entryData->GetType() == MacroConditionAudio::Type::BALANCE ||
+	    _entryData->GetType() == MacroConditionAudio::Type::SYNC_OFFSET) {
 		populateOutputConditionSelection(_condition);
 		_condition->setCurrentIndex(
 			static_cast<int>(_entryData->_outputCondition));
-	} else if (_entryData->_checkType ==
+	} else if (_entryData->GetType() ==
 		   MacroConditionAudio::Type::CONFIGURED_VOLUME) {
 		populateVolumeConditionSelection(_condition);
 		_condition->setCurrentIndex(
@@ -554,9 +609,9 @@ void MacroConditionAudioEdit::SetWidgetVisibility()
 	}
 
 	_volume->setVisible(
-		_entryData->_checkType ==
+		_entryData->GetType() ==
 			MacroConditionAudio::Type::OUTPUT_VOLUME ||
-		(_entryData->_checkType ==
+		(_entryData->GetType() ==
 			 MacroConditionAudio::Type::CONFIGURED_VOLUME &&
 		 (_entryData->_volumeCondition ==
 			  MacroConditionAudio::VolumeCondition::ABOVE ||
@@ -565,20 +620,20 @@ void MacroConditionAudioEdit::SetWidgetVisibility()
 		  _entryData->_volumeCondition ==
 			  MacroConditionAudio::VolumeCondition::BELOW)));
 	_condition->setVisible(
-		_entryData->_checkType ==
+		_entryData->GetType() ==
 			MacroConditionAudio::Type::OUTPUT_VOLUME ||
-		_entryData->_checkType ==
+		_entryData->GetType() ==
 			MacroConditionAudio::Type::CONFIGURED_VOLUME ||
-		_entryData->_checkType == MacroConditionAudio::Type::BALANCE ||
-		_entryData->_checkType ==
+		_entryData->GetType() == MacroConditionAudio::Type::BALANCE ||
+		_entryData->GetType() ==
 			MacroConditionAudio::Type::SYNC_OFFSET);
-	_syncOffset->setVisible(_entryData->_checkType ==
+	_syncOffset->setVisible(_entryData->GetType() ==
 				MacroConditionAudio::Type::SYNC_OFFSET);
-	_monitorTypes->setVisible(_entryData->_checkType ==
+	_monitorTypes->setVisible(_entryData->GetType() ==
 				  MacroConditionAudio::Type::MONITOR);
-	_balance->setVisible(_entryData->_checkType ==
+	_balance->setVisible(_entryData->GetType() ==
 			     MacroConditionAudio::Type::BALANCE);
-	_volMeter->setVisible(_entryData->_checkType ==
+	_volMeter->setVisible(_entryData->GetType() ==
 			      MacroConditionAudio::Type::OUTPUT_VOLUME);
 	adjustSize();
 }
