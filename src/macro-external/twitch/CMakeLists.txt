@@ -42,6 +42,8 @@ target_sources(
           category-selection.hpp
           channel-selection.cpp
           channel-selection.hpp
+          chat-connection.cpp
+          chat-connection.hpp
           event-sub.cpp
           event-sub.hpp
           macro-action-twitch.cpp

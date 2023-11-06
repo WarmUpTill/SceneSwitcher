@@ -4,8 +4,10 @@
 #include "category-selection.hpp"
 #include "channel-selection.hpp"
 #include "points-reward-selection.hpp"
+#include "chat-connection.hpp"
 
 #include <variable-line-edit.hpp>
+#include <variable-text-edit.hpp>
 #include <regex-config.hpp>
 
 namespace advss {
@@ -71,6 +73,9 @@ public:
 		STREAM_ONLINE_PREMIERE_EVENT = 4,
 		STREAM_ONLINE_RERUN_EVENT = 5,
 
+		// Chat
+		CHAT_MESSAGE_RECEIVED = 500000,
+
 		// Polling
 		LIVE_POLLING = 1000000,
 		TITLE_POLLING = 1000100,
@@ -83,6 +88,7 @@ public:
 	TwitchChannel GetChannel() const { return _channel; }
 	void SetPointsReward(const TwitchPointsReward &pointsReward);
 	TwitchPointsReward GetPointsReward() const { return _pointsReward; }
+	void ResetChatConnection();
 
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
@@ -94,12 +100,15 @@ public:
 	TwitchPointsReward _pointsReward;
 	StringVariable _streamTitle = obs_module_text(
 		"AdvSceneSwitcher.condition.twitch.title.title");
-	RegexConfig _regex = RegexConfig::PartialMatchRegexConfig();
+	RegexConfig _regexTitle = RegexConfig::PartialMatchRegexConfig();
+	StringVariable _chatMessage;
+	RegexConfig _regexChat = RegexConfig::PartialMatchRegexConfig();
 	TwitchCategory _category;
 
 private:
 	bool CheckChannelGenericEvents(TwitchToken &token);
 	bool CheckChannelLiveEvents(TwitchToken &token);
+	bool CheckChatMessages(TwitchToken &token);
 
 	void SetupEventSubscriptions();
 	void ResetSubscription();
@@ -109,13 +118,18 @@ private:
 		const char *version, bool includeModeratorId = false,
 		const char *mainUserIdFieldName = "broadcaster_user_id",
 		obs_data_t *extraConditions = nullptr);
+
 	void SetupTempVars();
 	void SetTempVarValues(const ChannelLiveInfo &);
 	void SetTempVarValues(const ChannelInfo &);
 
 	Condition _condition = Condition::LIVE_POLLING;
+
 	std::future<std::string> _subscriptionIDFuture;
 	std::string _subscriptionID;
+
+	std::shared_ptr<TwitchChatConnection> _chatConnection;
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -143,7 +157,9 @@ private slots:
 	void ChannelChanged(const TwitchChannel &);
 	void PointsRewardChanged(const TwitchPointsReward &);
 	void StreamTitleChanged();
-	void RegexChanged(RegexConfig);
+	void ChatMessageChanged();
+	void RegexTitleChanged(RegexConfig);
+	void RegexChatChanged(RegexConfig);
 	void CategoreyChanged(const TwitchCategory &);
 
 signals:
@@ -156,8 +172,6 @@ protected:
 private:
 	void SetupWidgetVisibility();
 
-	bool _loading = true;
-
 	QHBoxLayout *_layout;
 	FilterComboBox *_conditions;
 	TwitchConnectionSelection *_tokens;
@@ -166,8 +180,12 @@ private:
 	TwitchChannelSelection *_channel;
 	TwitchPointsRewardWidget *_pointsReward;
 	VariableLineEdit *_streamTitle;
-	RegexConfigWidget *_regex;
+	RegexConfigWidget *_regexTitle;
+	VariableTextEdit *_chatMessage;
+	RegexConfigWidget *_regexChat;
 	TwitchCategoryWidget *_category;
+
+	bool _loading = true;
 };
 
 } // namespace advss

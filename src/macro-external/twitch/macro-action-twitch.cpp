@@ -37,6 +37,8 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.twitch.type.emoteOnlyDisable"},
 	{MacroActionTwitch::Action::RAID,
 	 "AdvSceneSwitcher.action.twitch.type.raid"},
+	{MacroActionTwitch::Action::SEND_CHAT_MESSAGE,
+	 "AdvSceneSwitcher.action.twitch.type.sendChatMessage"},
 };
 
 const static std::map<MacroActionTwitch::AnnouncementColor, std::string>
@@ -221,6 +223,18 @@ void MacroActionTwitch::StartRaid(const std::shared_ptr<TwitchToken> &token)
 	}
 }
 
+void MacroActionTwitch::SendChatMessage(
+	const std::shared_ptr<TwitchToken> &token)
+{
+	if (!_chatConnection) {
+		_chatConnection = TwitchChatConnection::GetChatConnection(
+			*token, _channel);
+		return;
+	}
+
+	_chatConnection->SendChatMessage(_chatMessage);
+}
+
 bool MacroActionTwitch::PerformAction()
 {
 	auto token = _token.lock();
@@ -252,8 +266,12 @@ bool MacroActionTwitch::PerformAction()
 		break;
 	case MacroActionTwitch::Action::DISABLE_EMOTE_ONLY:
 		SetChatEmoteOnlyMode(token, false);
+		break;
 	case MacroActionTwitch::Action::RAID:
 		StartRaid(token);
+		break;
+	case MacroActionTwitch::Action::SEND_CHAT_MESSAGE:
+		SendChatMessage(token);
 		break;
 	default:
 		break;
@@ -291,6 +309,7 @@ bool MacroActionTwitch::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "announcementColor",
 			 static_cast<int>(_announcementColor));
 	_channel.Save(obj);
+	_chatMessage.Save(obj, "chatMessage");
 
 	return true;
 }
@@ -310,6 +329,8 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 	_announcementColor = static_cast<AnnouncementColor>(
 		obs_data_get_int(obj, "announcementColor"));
 	_channel.Load(obj);
+	_chatMessage.Load(obj, "chatMessage");
+	ResetChatConnection();
 
 	return true;
 }
@@ -327,6 +348,7 @@ bool MacroActionTwitch::ActionIsSupportedByToken()
 		{Action::DISABLE_EMOTE_ONLY,
 		 {"moderator:manage:chat_settings"}},
 		{Action::RAID, {"channel:manage:raids"}},
+		{Action::SEND_CHAT_MESSAGE, {"chat:edit"}},
 	};
 	auto token = _token.lock();
 	if (!token) {
@@ -338,6 +360,11 @@ bool MacroActionTwitch::ActionIsSupportedByToken()
 		return false;
 	}
 	return token->OptionIsEnabled(option->second);
+}
+
+void MacroActionTwitch::ResetChatConnection()
+{
+	_chatConnection.reset();
 }
 
 static inline void populateActionSelection(QComboBox *list)
@@ -371,7 +398,8 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _duration(new DurationSelection(this, false, 0)),
 	  _announcementMessage(new VariableTextEdit(this)),
 	  _announcementColor(new QComboBox(this)),
-	  _channel(new TwitchChannelSelection(this))
+	  _channel(new TwitchChannelSelection(this)),
+	  _chatMessage(new VariableTextEdit(this))
 {
 	_streamTitle->setSizePolicy(QSizePolicy::MinimumExpanding,
 				    QSizePolicy::Preferred);
@@ -414,30 +442,21 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	QWidget::connect(_channel,
 			 SIGNAL(ChannelChanged(const TwitchChannel &)), this,
 			 SLOT(ChannelChanged(const TwitchChannel &)));
+	QWidget::connect(_chatMessage, SIGNAL(textChanged()), this,
+			 SLOT(ChatMessageChanged()));
 
-	PlaceWidgets(
-		obs_module_text("AdvSceneSwitcher.action.twitch.entry.line1"),
-		_layout,
-		{{"{{account}}", _tokens},
-		 {"{{actions}}", _actions},
-		 {"{{streamTitle}}", _streamTitle},
-		 {"{{category}}", _category},
-		 {"{{markerDescription}}", _markerDescription},
-		 {"{{clipHasDelay}}", _clipHasDelay},
-		 {"{{duration}}", _duration},
-		 {"{{announcementColor}}", _announcementColor},
-		 {"{{channel}}", _channel}});
-	_layout->setContentsMargins(0, 0, 0, 0);
+	_entryData = entryData;
+	SetWidgetLayout();
 
 	auto mainLayout = new QVBoxLayout();
 	mainLayout->addLayout(_layout);
 	mainLayout->addWidget(_announcementMessage);
+	mainLayout->addWidget(_chatMessage);
 	mainLayout->addWidget(_tokenPermissionWarning);
 	setLayout(mainLayout);
 
 	_tokenPermissionCheckTimer.start(1000);
 
-	_entryData = entryData;
 	UpdateEntryData();
 	_loading = false;
 }
@@ -459,6 +478,7 @@ void MacroActionTwitchEdit::ActionChanged(int idx)
 	_entryData->_action = static_cast<MacroActionTwitch::Action>(
 		_actions->itemData(idx).toInt());
 	SetupWidgetVisibility();
+	SetWidgetLayout();
 }
 
 void MacroActionTwitchEdit::TwitchTokenChanged(const QString &token)
@@ -576,9 +596,12 @@ void MacroActionTwitchEdit::SetupWidgetVisibility()
 		_entryData->_action == MacroActionTwitch::Action::ANNOUNCEMENT);
 	_announcementColor->setVisible(_entryData->_action ==
 				       MacroActionTwitch::Action::ANNOUNCEMENT);
-
-	_channel->setVisible(_entryData->_action ==
-			     MacroActionTwitch::Action::RAID);
+	_channel->setVisible(
+		_entryData->_action == MacroActionTwitch::Action::RAID ||
+		_entryData->_action ==
+			MacroActionTwitch::Action::SEND_CHAT_MESSAGE);
+	_chatMessage->setVisible(_entryData->_action ==
+				 MacroActionTwitch::Action::SEND_CHAT_MESSAGE);
 	if (_entryData->_action == MacroActionTwitch::Action::TITLE ||
 	    _entryData->_action == MacroActionTwitch::Action::MARKER) {
 		RemoveStretchIfPresent(_layout);
@@ -603,6 +626,50 @@ void MacroActionTwitchEdit::ChannelChanged(const TwitchChannel &channel)
 	_entryData->_channel = channel;
 }
 
+void MacroActionTwitchEdit::ChatMessageChanged()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_chatMessage = _chatMessage->toPlainText().toStdString();
+
+	adjustSize();
+	updateGeometry();
+}
+
+void MacroActionTwitchEdit::SetWidgetLayout()
+{
+	static const std::vector<QWidget *> widgets{
+		_tokens,   _actions,           _streamTitle,
+		_category, _markerDescription, _clipHasDelay,
+		_duration, _announcementColor, _channel};
+	for (auto widget : widgets) {
+		_layout->removeWidget(widget);
+	}
+	ClearLayout(_layout);
+
+	auto layoutText =
+		_entryData->_action ==
+				MacroActionTwitch::Action::SEND_CHAT_MESSAGE
+			? obs_module_text(
+				  "AdvSceneSwitcher.action.twitch.entry.chat")
+			: obs_module_text(
+				  "AdvSceneSwitcher.action.twitch.entry.default");
+	PlaceWidgets(layoutText, _layout,
+		     {{"{{account}}", _tokens},
+		      {"{{actions}}", _actions},
+		      {"{{streamTitle}}", _streamTitle},
+		      {"{{category}}", _category},
+		      {"{{markerDescription}}", _markerDescription},
+		      {"{{clipHasDelay}}", _clipHasDelay},
+		      {"{{duration}}", _duration},
+		      {"{{announcementColor}}", _announcementColor},
+		      {"{{channel}}", _channel}});
+	_layout->setContentsMargins(0, 0, 0, 0);
+}
+
 void MacroActionTwitchEdit::UpdateEntryData()
 {
 	if (!_entryData) {
@@ -623,6 +690,7 @@ void MacroActionTwitchEdit::UpdateEntryData()
 		static_cast<int>(_entryData->_announcementColor));
 	_channel->SetToken(_entryData->_token);
 	_channel->SetChannel(_entryData->_channel);
+	_chatMessage->setPlainText(_entryData->_chatMessage);
 
 	SetupWidgetVisibility();
 }
