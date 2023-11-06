@@ -3,6 +3,7 @@
 #include "token.hpp"
 #include "category-selection.hpp"
 #include "channel-selection.hpp"
+#include "chat-connection.hpp"
 
 #include <variable-line-edit.hpp>
 #include <variable-text-edit.hpp>
@@ -30,6 +31,7 @@ public:
 		ENABLE_EMOTE_ONLY = 60,
 		DISABLE_EMOTE_ONLY = 70,
 		RAID = 80,
+		SEND_CHAT_MESSAGE = 90,
 	};
 
 	enum class AnnouncementColor {
@@ -45,6 +47,7 @@ public:
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
 	bool ActionIsSupportedByToken();
+	void ResetChatConnection();
 
 	Action _action = Action::TITLE;
 	std::weak_ptr<TwitchToken> _token;
@@ -59,6 +62,7 @@ public:
 		"AdvSceneSwitcher.action.twitch.announcement.message");
 	AnnouncementColor _announcementColor = AnnouncementColor::PRIMARY;
 	TwitchChannel _channel;
+	StringVariable _chatMessage;
 
 private:
 	void SetStreamTitle(const std::shared_ptr<TwitchToken> &) const;
@@ -70,6 +74,9 @@ private:
 	void SetChatEmoteOnlyMode(const std::shared_ptr<TwitchToken> &,
 				  bool enable) const;
 	void StartRaid(const std::shared_ptr<TwitchToken> &);
+	void SendChatMessage(const std::shared_ptr<TwitchToken> &);
+
+	std::shared_ptr<TwitchChatConnection> _chatConnection;
 
 	static bool _registered;
 	static const std::string id;
@@ -103,6 +110,7 @@ private slots:
 	void AnnouncementMessageChanged();
 	void AnnouncementColorChanged(int index);
 	void ChannelChanged(const TwitchChannel &);
+	void ChatMessageChanged();
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -112,8 +120,7 @@ protected:
 
 private:
 	void SetupWidgetVisibility();
-
-	bool _loading = true;
+	void SetWidgetLayout();
 
 	QHBoxLayout *_layout;
 	FilterComboBox *_actions;
@@ -128,6 +135,9 @@ private:
 	VariableTextEdit *_announcementMessage;
 	QComboBox *_announcementColor;
 	TwitchChannelSelection *_channel;
+	VariableTextEdit *_chatMessage;
+
+	bool _loading = true;
 };
 
 } // namespace advss
