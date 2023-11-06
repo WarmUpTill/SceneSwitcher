@@ -44,12 +44,12 @@ didTransformOfAnySceneItemChange(const std::vector<OBSSceneItem> &items,
 	bool ret = false;
 	std::string json;
 	RegexConfig regex;
-	int n_items = items.size();
-	if (previousTransform.size() < n_items) {
+	auto numItems = items.size();
+	if (previousTransform.size() < numItems) {
 		ret = true;
-		previousTransform.resize(n_items);
+		previousTransform.resize(numItems);
 	}
-	for (int idx = 0; idx < n_items; ++idx) {
+	for (size_t idx = 0; idx < numItems; ++idx) {
 		auto const &item = items[idx];
 		json = GetSceneItemTransform(item);
 		if (!MatchJson(json, previousTransform[idx], regex)) {
