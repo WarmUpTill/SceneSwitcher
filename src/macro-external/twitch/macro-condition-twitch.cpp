@@ -13,6 +13,11 @@ bool MacroConditionTwitch::_registered = MacroConditionFactory::Register(
 	{MacroConditionTwitch::Create, MacroConditionTwitchEdit::Create,
 	 "AdvSceneSwitcher.condition.twitch"});
 
+std::string MacroConditionTwitch::GetShortDesc() const
+{
+	return GetWeakTwitchTokenName(_token);
+}
+
 const static std::map<MacroConditionTwitch::Condition, std::string> conditionTypes = {
 	{MacroConditionTwitch::Condition::STREAM_ONLINE_EVENT,
 	 "AdvSceneSwitcher.condition.twitch.type.event.channel.stream.online"},
@@ -214,25 +219,40 @@ const static std::map<MacroConditionTwitch::Condition, std::string>
 		 "rerun"},
 };
 
-bool MacroConditionTwitch::CheckChannelGenericEvents(
-	TwitchToken &token, const char *mainUserIdFieldName)
+void MacroConditionTwitch::SetCondition(const Condition &condition)
+{
+	_condition = condition;
+	ResetSubscription();
+}
+
+void MacroConditionTwitch::SetChannel(const TwitchChannel &channel)
+{
+	_channel = channel;
+	ResetSubscription();
+}
+
+void MacroConditionTwitch::SetPointsReward(
+	const TwitchPointsReward &pointsReward)
+{
+	_pointsReward = pointsReward;
+	ResetSubscription();
+}
+
+bool MacroConditionTwitch::CheckChannelGenericEvents(TwitchToken &token)
 {
 	auto eventSub = token.GetEventSub();
 	if (!eventSub) {
 		return false;
 	}
+
 	auto events = eventSub->Events();
 	for (const auto &event : events) {
-		if (event.type != eventIdentifiers.find(_condition)->second) {
-			continue;
+		if (_subscriptionID == event.id) {
+			SetVariableValue(event.ToString());
+			return true;
 		}
-		auto id = obs_data_get_string(event.data, mainUserIdFieldName);
-		if (id != _channel.GetUserID(token)) {
-			continue;
-		}
-		SetVariableValue(event.ToString());
-		return true;
 	}
+
 	return false;
 }
 
@@ -242,28 +262,28 @@ bool MacroConditionTwitch::CheckChannelLiveEvents(TwitchToken &token)
 	if (!eventSub) {
 		return false;
 	}
+
 	auto events = eventSub->Events();
 	for (const auto &event : events) {
-		if (event.type != eventIdentifiers.find(_condition)->second) {
+		if (_subscriptionID != event.id) {
 			continue;
 		}
-		auto id =
-			obs_data_get_string(event.data, "broadcaster_user_id");
-		if (id != _channel.GetUserID(token)) {
-			continue;
-		}
-		auto type = obs_data_get_string(event.data, "type");
+
 		auto it = liveEventIDs.find(_condition);
 		if (it == liveEventIDs.end()) {
 			continue;
 		}
+
+		auto type = obs_data_get_string(event.data, "type");
 		const auto &typeId = it->second;
 		if (type != typeId) {
 			continue;
 		}
+
 		SetVariableValue(event.ToString());
 		return true;
 	}
+
 	return false;
 }
 
@@ -313,6 +333,8 @@ bool MacroConditionTwitch::CheckCondition()
 	case Condition::SUBSCRIPTION_GIFT_EVENT:
 	case Condition::SUBSCRIPTION_MESSAGE_EVENT:
 	case Condition::CHEER_EVENT:
+	case Condition::RAID_OUTBOUND_EVENT:
+	case Condition::RAID_INBOUND_EVENT:
 	case Condition::SHOUTOUT_OUTBOUND_EVENT:
 	case Condition::SHOUTOUT_INBOUND_EVENT:
 	case Condition::POLL_START_EVENT:
@@ -344,12 +366,6 @@ bool MacroConditionTwitch::CheckCondition()
 	case Condition::USER_MODERATOR_ADDITION_EVENT:
 	case Condition::USER_MODERATOR_DELETION_EVENT:
 		return CheckChannelGenericEvents(*token);
-	case Condition::RAID_OUTBOUND_EVENT:
-		return CheckChannelGenericEvents(*token,
-						 "from_broadcaster_user_id");
-	case Condition::RAID_INBOUND_EVENT:
-		return CheckChannelGenericEvents(*token,
-						 "to_broadcaster_user_id");
 	case Condition::STREAM_ONLINE_LIVE_EVENT:
 	case Condition::STREAM_ONLINE_PLAYLIST_EVENT:
 	case Condition::STREAM_ONLINE_WATCHPARTY_EVENT:
@@ -386,56 +402,36 @@ bool MacroConditionTwitch::CheckCondition()
 	return false;
 }
 
-void MacroConditionTwitch::CheckEventSubscription(EventSub &eventSub)
-{
-	if (_subscriptionIDFuture.valid()) {
-		if (_subscriptionIDFuture.wait_for(std::chrono::seconds(0)) !=
-		    std::future_status::ready)
-			return;
-
-		_subscriptionID = _subscriptionIDFuture.get();
-	}
-	if (eventSub.SubscriptionIsActive(_subscriptionID)) {
-		return;
-	}
-	SetupEventSubscriptions();
-}
-
-void MacroConditionTwitch::SetCondition(const Condition &cond)
-{
-	_condition = cond;
-	_subscriptionID = "";
-}
-
 bool MacroConditionTwitch::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
+
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_string(obj, "token",
 			    GetWeakTwitchTokenName(_token).c_str());
-	_streamTitle.Save(obj, "streamTitle");
-	_category.Save(obj);
 	_channel.Save(obj);
+	_pointsReward.Save(obj);
+	_streamTitle.Save(obj, "streamTitle");
 	_regex.Save(obj);
+	_category.Save(obj);
+
 	return true;
 }
 
 bool MacroConditionTwitch::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
+
 	_condition = static_cast<Condition>(obs_data_get_int(obj, "condition"));
 	_token = GetWeakTwitchTokenByName(obs_data_get_string(obj, "token"));
 	_streamTitle.Load(obj, "streamTitle");
-	_category.Load(obj);
 	_channel.Load(obj);
+	_pointsReward.Load(obj);
 	_regex.Load(obj);
+	_category.Load(obj);
 	_subscriptionID = "";
-	return true;
-}
 
-std::string MacroConditionTwitch::GetShortDesc() const
-{
-	return GetWeakTwitchTokenName(_token);
+	return true;
 }
 
 bool MacroConditionTwitch::ConditionIsSupportedByToken()
@@ -549,13 +545,8 @@ bool MacroConditionTwitch::ConditionIsSupportedByToken()
 	}
 
 	const auto &[_, options] = *it;
-	for (const auto &tokenOption : options) {
-		if (!token->OptionIsEnabled(tokenOption)) {
-			return false;
-		}
-	}
 
-	return true;
+	return token->AnyOptionIsEnabled(options);
 }
 
 void MacroConditionTwitch::SetupEventSubscriptions()
@@ -565,70 +556,100 @@ void MacroConditionTwitch::SetupEventSubscriptions()
 	}
 
 	switch (_condition) {
-	case MacroConditionTwitch::Condition::STREAM_ONLINE_EVENT:
-	case MacroConditionTwitch::Condition::STREAM_OFFLINE_EVENT:
-	case MacroConditionTwitch::Condition::SUBSCRIPTION_START_EVENT:
-	case MacroConditionTwitch::Condition::SUBSCRIPTION_END_EVENT:
-	case MacroConditionTwitch::Condition::SUBSCRIPTION_GIFT_EVENT:
-	case MacroConditionTwitch::Condition::SUBSCRIPTION_MESSAGE_EVENT:
-	case MacroConditionTwitch::Condition::CHEER_EVENT:
-	case MacroConditionTwitch::Condition::POLL_START_EVENT:
-	case MacroConditionTwitch::Condition::POLL_PROGRESS_EVENT:
-	case MacroConditionTwitch::Condition::POLL_END_EVENT:
-	case MacroConditionTwitch::Condition::PREDICTION_START_EVENT:
-	case MacroConditionTwitch::Condition::PREDICTION_PROGRESS_EVENT:
-	case MacroConditionTwitch::Condition::PREDICTION_LOCK_EVENT:
-	case MacroConditionTwitch::Condition::PREDICTION_END_EVENT:
-	case MacroConditionTwitch::Condition::GOAL_START_EVENT:
-	case MacroConditionTwitch::Condition::GOAL_PROGRESS_EVENT:
-	case MacroConditionTwitch::Condition::GOAL_END_EVENT:
-	case MacroConditionTwitch::Condition::HYPE_TRAIN_START_EVENT:
-	case MacroConditionTwitch::Condition::HYPE_TRAIN_PROGRESS_EVENT:
-	case MacroConditionTwitch::Condition::HYPE_TRAIN_END_EVENT:
-	case MacroConditionTwitch::Condition::CHARITY_CAMPAIGN_START_EVENT:
-	case MacroConditionTwitch::Condition::CHARITY_CAMPAIGN_PROGRESS_EVENT:
-	case MacroConditionTwitch::Condition::CHARITY_CAMPAIGN_DONATION_EVENT:
-	case MacroConditionTwitch::Condition::CHARITY_CAMPAIGN_END_EVENT:
-	case MacroConditionTwitch::Condition::POINTS_REWARD_ADDITION_EVENT:
-	case MacroConditionTwitch::Condition::POINTS_REWARD_UPDATE_EVENT:
-	case MacroConditionTwitch::Condition::POINTS_REWARD_DELETION_EVENT:
-	case MacroConditionTwitch::Condition::POINTS_REWARD_REDEMPTION_EVENT:
-	case MacroConditionTwitch::Condition::USER_BAN_EVENT:
-	case MacroConditionTwitch::Condition::USER_UNBAN_EVENT:
-	case MacroConditionTwitch::Condition::USER_MODERATOR_ADDITION_EVENT:
-	case MacroConditionTwitch::Condition::USER_MODERATOR_DELETION_EVENT:
-	case MacroConditionTwitch::Condition::
-		POINTS_REWARD_REDEMPTION_UPDATE_EVENT:
-	case MacroConditionTwitch::Condition::STREAM_ONLINE_LIVE_EVENT:
-	case MacroConditionTwitch::Condition::STREAM_ONLINE_PLAYLIST_EVENT:
-	case MacroConditionTwitch::Condition::STREAM_ONLINE_WATCHPARTY_EVENT:
-	case MacroConditionTwitch::Condition::STREAM_ONLINE_PREMIERE_EVENT:
-	case MacroConditionTwitch::Condition::STREAM_ONLINE_RERUN_EVENT:
+	case Condition::STREAM_ONLINE_EVENT:
+	case Condition::STREAM_OFFLINE_EVENT:
+	case Condition::SUBSCRIPTION_START_EVENT:
+	case Condition::SUBSCRIPTION_END_EVENT:
+	case Condition::SUBSCRIPTION_GIFT_EVENT:
+	case Condition::SUBSCRIPTION_MESSAGE_EVENT:
+	case Condition::CHEER_EVENT:
+	case Condition::POLL_START_EVENT:
+	case Condition::POLL_PROGRESS_EVENT:
+	case Condition::POLL_END_EVENT:
+	case Condition::PREDICTION_START_EVENT:
+	case Condition::PREDICTION_PROGRESS_EVENT:
+	case Condition::PREDICTION_LOCK_EVENT:
+	case Condition::PREDICTION_END_EVENT:
+	case Condition::GOAL_START_EVENT:
+	case Condition::GOAL_PROGRESS_EVENT:
+	case Condition::GOAL_END_EVENT:
+	case Condition::HYPE_TRAIN_START_EVENT:
+	case Condition::HYPE_TRAIN_PROGRESS_EVENT:
+	case Condition::HYPE_TRAIN_END_EVENT:
+	case Condition::CHARITY_CAMPAIGN_START_EVENT:
+	case Condition::CHARITY_CAMPAIGN_PROGRESS_EVENT:
+	case Condition::CHARITY_CAMPAIGN_DONATION_EVENT:
+	case Condition::CHARITY_CAMPAIGN_END_EVENT:
+	case Condition::POINTS_REWARD_ADDITION_EVENT:
+	case Condition::USER_BAN_EVENT:
+	case Condition::USER_UNBAN_EVENT:
+	case Condition::USER_MODERATOR_ADDITION_EVENT:
+	case Condition::USER_MODERATOR_DELETION_EVENT:
+	case Condition::STREAM_ONLINE_LIVE_EVENT:
+	case Condition::STREAM_ONLINE_PLAYLIST_EVENT:
+	case Condition::STREAM_ONLINE_WATCHPARTY_EVENT:
+	case Condition::STREAM_ONLINE_PREMIERE_EVENT:
+	case Condition::STREAM_ONLINE_RERUN_EVENT:
 		AddChannelGenericEventSubscription("1");
 		break;
-	case MacroConditionTwitch::Condition::CHANNEL_INFO_UPDATE_EVENT:
+	case Condition::CHANNEL_INFO_UPDATE_EVENT:
 		AddChannelGenericEventSubscription("2");
 		break;
-	case MacroConditionTwitch::Condition::SHOUTOUT_OUTBOUND_EVENT:
-	case MacroConditionTwitch::Condition::SHOUTOUT_INBOUND_EVENT:
-	case MacroConditionTwitch::Condition::SHIELD_MODE_START_EVENT:
-	case MacroConditionTwitch::Condition::SHIELD_MODE_END_EVENT:
+	case Condition::SHOUTOUT_OUTBOUND_EVENT:
+	case Condition::SHOUTOUT_INBOUND_EVENT:
+	case Condition::SHIELD_MODE_START_EVENT:
+	case Condition::SHIELD_MODE_END_EVENT:
 		AddChannelGenericEventSubscription("1", true);
 		break;
-	case MacroConditionTwitch::Condition::FOLLOW_EVENT:
+	case Condition::FOLLOW_EVENT:
 		AddChannelGenericEventSubscription("2", true);
 		break;
-	case MacroConditionTwitch::Condition::RAID_OUTBOUND_EVENT:
+	case Condition::RAID_OUTBOUND_EVENT:
 		AddChannelGenericEventSubscription("1", false,
 						   "from_broadcaster_user_id");
 		break;
-	case MacroConditionTwitch::Condition::RAID_INBOUND_EVENT:
+	case Condition::RAID_INBOUND_EVENT:
 		AddChannelGenericEventSubscription("1", false,
 						   "to_broadcaster_user_id");
 		break;
+	case Condition::POINTS_REWARD_UPDATE_EVENT:
+	case Condition::POINTS_REWARD_DELETION_EVENT:
+	case Condition::POINTS_REWARD_REDEMPTION_EVENT:
+	case Condition::POINTS_REWARD_REDEMPTION_UPDATE_EVENT: {
+		OBSDataAutoRelease extraConditions = obs_data_create();
+
+		if (_pointsReward.id != "-") {
+			obs_data_set_string(extraConditions, "reward_id",
+					    _pointsReward.id.c_str());
+		}
+
+		AddChannelGenericEventSubscription(
+			"1", false, "broadcaster_user_id", extraConditions);
+		break;
+	}
 	default:
 		break;
 	}
+}
+
+void MacroConditionTwitch::ResetSubscription()
+{
+	_subscriptionID = "";
+}
+
+void MacroConditionTwitch::CheckEventSubscription(EventSub &eventSub)
+{
+	if (_subscriptionIDFuture.valid()) {
+		if (_subscriptionIDFuture.wait_for(std::chrono::seconds(0)) !=
+		    std::future_status::ready)
+			return;
+
+		_subscriptionID = _subscriptionIDFuture.get();
+	}
+	if (eventSub.SubscriptionIsActive(_subscriptionID)) {
+		return;
+	}
+	SetupEventSubscriptions();
 }
 
 bool MacroConditionTwitch::IsUsingEventSubCondition()
@@ -648,7 +669,7 @@ waitForSubscription(const std::shared_ptr<TwitchToken> &token,
 
 void MacroConditionTwitch::AddChannelGenericEventSubscription(
 	const char *version, bool includeModeratorId,
-	const char *mainUserIdFieldName)
+	const char *mainUserIdFieldName, obs_data_t *extraConditions)
 {
 	if (!IsUsingEventSubCondition()) {
 		return;
@@ -673,6 +694,7 @@ void MacroConditionTwitch::AddChannelGenericEventSubscription(
 				    token->GetUserID().c_str());
 	}
 
+	obs_data_apply(condition, extraConditions);
 	obs_data_set_obj(subscription.data, "condition", condition);
 	_subscriptionIDFuture = waitForSubscription(token, subscription);
 }
@@ -688,15 +710,16 @@ static inline void populateConditionSelection(QComboBox *list)
 MacroConditionTwitchEdit::MacroConditionTwitchEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionTwitch> entryData)
 	: QWidget(parent),
+	  _layout(new QHBoxLayout()),
 	  _conditions(new FilterComboBox()),
 	  _tokens(new TwitchConnectionSelection()),
-	  _streamTitle(new VariableLineEdit(this)),
-	  _category(new TwitchCategoryWidget(this)),
-	  _channel(new TwitchChannelSelection(this)),
-	  _regex(new RegexConfigWidget(parent)),
-	  _layout(new QHBoxLayout()),
 	  _tokenPermissionWarning(new QLabel(obs_module_text(
-		  "AdvSceneSwitcher.twitchToken.permissionsInsufficient")))
+		  "AdvSceneSwitcher.twitchToken.permissionsInsufficient"))),
+	  _channel(new TwitchChannelSelection(this)),
+	  _pointsReward(new TwitchPointsRewardWidget(this)),
+	  _streamTitle(new VariableLineEdit(this)),
+	  _regex(new RegexConfigWidget(parent)),
+	  _category(new TwitchCategoryWidget(this))
 {
 	_streamTitle->setSizePolicy(QSizePolicy::MinimumExpanding,
 				    QSizePolicy::Preferred);
@@ -708,26 +731,31 @@ MacroConditionTwitchEdit::MacroConditionTwitchEdit(
 			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_tokens, SIGNAL(SelectionChanged(const QString &)),
 			 this, SLOT(TwitchTokenChanged(const QString &)));
-	QWidget::connect(_streamTitle, SIGNAL(editingFinished()), this,
-			 SLOT(StreamTitleChanged()));
-	QWidget::connect(_category,
-			 SIGNAL(CategoreyChanged(const TwitchCategory &)), this,
-			 SLOT(CategoreyChanged(const TwitchCategory &)));
+	QWidget::connect(&_tokenPermissionCheckTimer, SIGNAL(timeout()), this,
+			 SLOT(CheckTokenPermissions()));
 	QWidget::connect(_channel,
 			 SIGNAL(ChannelChanged(const TwitchChannel &)), this,
 			 SLOT(ChannelChanged(const TwitchChannel &)));
+	QWidget::connect(
+		_pointsReward,
+		SIGNAL(PointsRewardChanged(const TwitchPointsReward &)), this,
+		SLOT(PointsRewardChanged(const TwitchPointsReward &)));
+	QWidget::connect(_streamTitle, SIGNAL(editingFinished()), this,
+			 SLOT(StreamTitleChanged()));
 	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
 			 SLOT(RegexChanged(RegexConfig)));
-	QWidget::connect(&_tokenPermissionCheckTimer, SIGNAL(timeout()), this,
-			 SLOT(CheckTokenPermissions()));
+	QWidget::connect(_category,
+			 SIGNAL(CategoreyChanged(const TwitchCategory &)), this,
+			 SLOT(CategoreyChanged(const TwitchCategory &)));
 
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.twitch.entry"),
 		     _layout,
 		     {{"{{conditions}}", _conditions},
+		      {"{{channel}}", _channel},
+		      {"{{pointsReward}}", _pointsReward},
 		      {"{{streamTitle}}", _streamTitle},
-		      {"{{category}}", _category},
 		      {"{{regex}}", _regex},
-		      {"{{channel}}", _channel}});
+		      {"{{category}}", _category}});
 	_layout->setContentsMargins(0, 0, 0, 0);
 
 	auto accountLayout = new QHBoxLayout();
@@ -749,96 +777,6 @@ MacroConditionTwitchEdit::MacroConditionTwitchEdit(
 	_loading = false;
 }
 
-void MacroConditionTwitchEdit::TwitchTokenChanged(const QString &token)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_token = GetWeakTwitchTokenByQString(token);
-	_category->SetToken(_entryData->_token);
-	SetupWidgetVisibility();
-	emit(HeaderInfoChanged(token));
-}
-
-void MacroConditionTwitchEdit::StreamTitleChanged()
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_streamTitle = _streamTitle->text().toStdString();
-}
-
-void MacroConditionTwitchEdit::CategoreyChanged(const TwitchCategory &category)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_category = category;
-}
-
-void MacroConditionTwitchEdit::CheckTokenPermissions()
-{
-	_tokenPermissionWarning->setVisible(
-		_entryData && !_entryData->ConditionIsSupportedByToken());
-	adjustSize();
-	updateGeometry();
-}
-
-void MacroConditionTwitchEdit::SetupWidgetVisibility()
-{
-	auto condition = _entryData->GetCondition();
-	_streamTitle->setVisible(
-		condition == MacroConditionTwitch::Condition::TITLE_POLLING);
-	_regex->setVisible(condition ==
-			   MacroConditionTwitch::Condition::TITLE_POLLING);
-	_category->setVisible(
-		condition == MacroConditionTwitch::Condition::CATEGORY_POLLING);
-	if (condition == MacroConditionTwitch::Condition::TITLE_POLLING) {
-		RemoveStretchIfPresent(_layout);
-	} else {
-		AddStretchIfNecessary(_layout);
-	}
-
-	_tokenPermissionWarning->setVisible(
-		!_entryData->ConditionIsSupportedByToken());
-
-	adjustSize();
-	updateGeometry();
-}
-
-void MacroConditionTwitchEdit::ChannelChanged(const TwitchChannel &channel)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_channel = channel;
-}
-
-void MacroConditionTwitchEdit::UpdateEntryData()
-{
-	if (!_entryData) {
-		return;
-	}
-
-	_conditions->setCurrentIndex(_conditions->findData(
-		static_cast<int>(_entryData->GetCondition())));
-	_tokens->SetToken(_entryData->_token);
-	_streamTitle->setText(_entryData->_streamTitle);
-	_category->SetToken(_entryData->_token);
-	_category->SetCategory(_entryData->_category);
-	_channel->SetChannel(_entryData->_channel);
-	_regex->SetRegexConfig(_entryData->_regex);
-	SetupWidgetVisibility();
-}
-
 void MacroConditionTwitchEdit::ConditionChanged(int idx)
 {
 	if (_loading || !_entryData) {
@@ -858,6 +796,62 @@ void MacroConditionTwitchEdit::ConditionChanged(int idx)
 	SetupWidgetVisibility();
 }
 
+void MacroConditionTwitchEdit::TwitchTokenChanged(const QString &token)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_token = GetWeakTwitchTokenByQString(token);
+	_category->SetToken(_entryData->_token);
+	_channel->SetToken(_entryData->_token);
+	_pointsReward->SetToken(_entryData->_token);
+
+	SetupWidgetVisibility();
+	emit(HeaderInfoChanged(token));
+}
+
+void MacroConditionTwitchEdit::CheckTokenPermissions()
+{
+	_tokenPermissionWarning->setVisible(
+		_entryData && !_entryData->ConditionIsSupportedByToken());
+	adjustSize();
+	updateGeometry();
+}
+
+void MacroConditionTwitchEdit::ChannelChanged(const TwitchChannel &channel)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->SetChannel(channel);
+	_pointsReward->SetChannel(channel);
+}
+
+void MacroConditionTwitchEdit::PointsRewardChanged(
+	const TwitchPointsReward &pointsReward)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->SetPointsReward(pointsReward);
+}
+
+void MacroConditionTwitchEdit::StreamTitleChanged()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_streamTitle = _streamTitle->text().toStdString();
+}
+
 void MacroConditionTwitchEdit::RegexChanged(RegexConfig conf)
 {
 	if (_loading || !_entryData) {
@@ -869,6 +863,71 @@ void MacroConditionTwitchEdit::RegexChanged(RegexConfig conf)
 
 	adjustSize();
 	updateGeometry();
+}
+
+void MacroConditionTwitchEdit::CategoreyChanged(const TwitchCategory &category)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_category = category;
+}
+
+void MacroConditionTwitchEdit::SetupWidgetVisibility()
+{
+	auto condition = _entryData->GetCondition();
+
+	_pointsReward->setVisible(
+		condition == MacroConditionTwitch::Condition::
+				     POINTS_REWARD_UPDATE_EVENT ||
+		condition == MacroConditionTwitch::Condition::
+				     POINTS_REWARD_DELETION_EVENT ||
+		condition == MacroConditionTwitch::Condition::
+				     POINTS_REWARD_REDEMPTION_EVENT ||
+		condition == MacroConditionTwitch::Condition::
+				     POINTS_REWARD_REDEMPTION_UPDATE_EVENT);
+	_streamTitle->setVisible(
+		condition == MacroConditionTwitch::Condition::TITLE_POLLING);
+	_regex->setVisible(condition ==
+			   MacroConditionTwitch::Condition::TITLE_POLLING);
+	_category->setVisible(
+		condition == MacroConditionTwitch::Condition::CATEGORY_POLLING);
+
+	if (condition == MacroConditionTwitch::Condition::TITLE_POLLING) {
+		RemoveStretchIfPresent(_layout);
+	} else {
+		AddStretchIfNecessary(_layout);
+	}
+
+	_tokenPermissionWarning->setVisible(
+		!_entryData->ConditionIsSupportedByToken());
+
+	adjustSize();
+	updateGeometry();
+}
+
+void MacroConditionTwitchEdit::UpdateEntryData()
+{
+	if (!_entryData) {
+		return;
+	}
+
+	_conditions->setCurrentIndex(_conditions->findData(
+		static_cast<int>(_entryData->GetCondition())));
+	_tokens->SetToken(_entryData->_token);
+	_channel->SetToken(_entryData->_token);
+	_channel->SetChannel(_entryData->_channel);
+	_pointsReward->SetToken(_entryData->_token);
+	_pointsReward->SetChannel(_entryData->_channel);
+	_pointsReward->SetPointsReward(_entryData->_pointsReward);
+	_streamTitle->setText(_entryData->_streamTitle);
+	_regex->SetRegexConfig(_entryData->_regex);
+	_category->SetToken(_entryData->_token);
+	_category->SetCategory(_entryData->_category);
+
+	SetupWidgetVisibility();
 }
 
 } // namespace advss

@@ -3,6 +3,7 @@
 #include "token.hpp"
 #include "category-selection.hpp"
 #include "channel-selection.hpp"
+#include "points-reward-selection.hpp"
 
 #include <variable-line-edit.hpp>
 #include <regex-config.hpp>
@@ -12,16 +13,12 @@ namespace advss {
 class MacroConditionTwitch : public MacroCondition {
 public:
 	MacroConditionTwitch(Macro *m) : MacroCondition(m, true) {}
-	bool CheckCondition();
-	bool Save(obs_data_t *obj) const;
-	bool Load(obs_data_t *obj);
-	std::string GetShortDesc() const;
-	std::string GetId() const { return id; };
 	static std::shared_ptr<MacroCondition> Create(Macro *m)
 	{
 		return std::make_shared<MacroConditionTwitch>(m);
 	}
-	bool ConditionIsSupportedByToken();
+	std::string GetId() const { return id; };
+	std::string GetShortDesc() const;
 
 	enum class Condition {
 		// Generic event based
@@ -80,28 +77,38 @@ public:
 		CATEGORY_POLLING = 1000200,
 	};
 
-	void SetCondition(const Condition &);
-	Condition GetCondition() { return _condition; }
+	void SetCondition(const Condition &condition);
+	Condition GetCondition() const { return _condition; }
+	void SetChannel(const TwitchChannel &channel);
+	TwitchChannel GetChannel() const { return _channel; }
+	void SetPointsReward(const TwitchPointsReward &pointsReward);
+	TwitchPointsReward GetPointsReward() const { return _pointsReward; }
+
+	bool CheckCondition();
+	bool Save(obs_data_t *obj) const;
+	bool Load(obs_data_t *obj);
+	bool ConditionIsSupportedByToken();
 
 	std::weak_ptr<TwitchToken> _token;
 	TwitchChannel _channel;
+	TwitchPointsReward _pointsReward;
 	StringVariable _streamTitle = obs_module_text(
 		"AdvSceneSwitcher.condition.twitch.title.title");
 	RegexConfig _regex = RegexConfig::PartialMatchRegexConfig();
 	TwitchCategory _category;
 
 private:
-	bool CheckChannelGenericEvents(
-		TwitchToken &,
-		const char *mainUserIdFieldName = "broadcaster_user_id");
-	bool CheckChannelLiveEvents(TwitchToken &);
+	bool CheckChannelGenericEvents(TwitchToken &token);
+	bool CheckChannelLiveEvents(TwitchToken &token);
 
-	bool IsUsingEventSubCondition();
 	void SetupEventSubscriptions();
+	void ResetSubscription();
 	void CheckEventSubscription(EventSub &);
+	bool IsUsingEventSubCondition();
 	void AddChannelGenericEventSubscription(
 		const char *version, bool includeModeratorId = false,
-		const char *mainUserIdFieldName = "broadcaster_user_id");
+		const char *mainUserIdFieldName = "broadcaster_user_id",
+		obs_data_t *extraConditions = nullptr);
 
 	Condition _condition = Condition::LIVE_POLLING;
 	std::future<std::string> _subscriptionIDFuture;
@@ -117,7 +124,6 @@ public:
 	MacroConditionTwitchEdit(
 		QWidget *parent,
 		std::shared_ptr<MacroConditionTwitch> entryData = nullptr);
-	void UpdateEntryData();
 	static QWidget *Create(QWidget *parent,
 			       std::shared_ptr<MacroCondition> cond)
 	{
@@ -125,15 +131,17 @@ public:
 			parent,
 			std::dynamic_pointer_cast<MacroConditionTwitch>(cond));
 	}
+	void UpdateEntryData();
 
 private slots:
 	void ConditionChanged(int);
 	void TwitchTokenChanged(const QString &);
-	void StreamTitleChanged();
-	void CategoreyChanged(const TwitchCategory &);
-	void ChannelChanged(const TwitchChannel &);
-	void RegexChanged(RegexConfig);
 	void CheckTokenPermissions();
+	void ChannelChanged(const TwitchChannel &);
+	void PointsRewardChanged(const TwitchPointsReward &);
+	void StreamTitleChanged();
+	void RegexChanged(RegexConfig);
+	void CategoreyChanged(const TwitchCategory &);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -144,16 +152,18 @@ protected:
 private:
 	void SetupWidgetVisibility();
 
+	bool _loading = true;
+
+	QHBoxLayout *_layout;
 	FilterComboBox *_conditions;
 	TwitchConnectionSelection *_tokens;
-	VariableLineEdit *_streamTitle;
-	TwitchCategoryWidget *_category;
-	TwitchChannelSelection *_channel;
-	RegexConfigWidget *_regex;
-	QHBoxLayout *_layout;
 	QLabel *_tokenPermissionWarning;
 	QTimer _tokenPermissionCheckTimer;
-	bool _loading = true;
+	TwitchChannelSelection *_channel;
+	TwitchPointsRewardWidget *_pointsReward;
+	VariableLineEdit *_streamTitle;
+	RegexConfigWidget *_regex;
+	TwitchCategoryWidget *_category;
 };
 
 } // namespace advss
