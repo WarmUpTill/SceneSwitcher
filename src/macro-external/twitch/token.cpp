@@ -172,6 +172,22 @@ bool TwitchToken::OptionIsEnabled(const TokenOption &option) const
 	return false;
 }
 
+bool TwitchToken::AnyOptionIsEnabled(
+	const std::vector<TokenOption> &options) const
+{
+	if (options.empty()) {
+		return true;
+	}
+
+	for (const auto &tokenOption : options) {
+		if (OptionIsEnabled(tokenOption)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void TwitchToken::SetToken(const std::string &value)
 {
 	_token = value;

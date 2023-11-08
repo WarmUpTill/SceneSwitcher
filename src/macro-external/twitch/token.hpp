@@ -41,7 +41,8 @@ public:
 	void Load(obs_data_t *obj);
 	void Save(obs_data_t *obj) const;
 	std::string GetName() { return _name; }
-	bool OptionIsEnabled(const TokenOption &) const;
+	bool OptionIsEnabled(const TokenOption &option) const;
+	bool AnyOptionIsEnabled(const std::vector<TokenOption> &options) const;
 	void SetToken(const std::string &);
 	bool IsEmpty() const { return _token.empty(); }
 	std::optional<std::string> GetToken() const;
