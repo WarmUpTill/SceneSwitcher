@@ -48,6 +48,8 @@ target_sources(
           macro-action-twitch.hpp
           macro-condition-twitch.cpp
           macro-condition-twitch.hpp
+          points-reward-selection.cpp
+          points-reward-selection.hpp
           token.cpp
           token.hpp
           twitch-helpers.cpp
