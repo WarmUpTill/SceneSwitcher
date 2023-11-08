@@ -26,7 +26,7 @@ void TwitchChannel::Save(obs_data_t *obj) const
 	obs_data_set_obj(obj, "channel", data);
 }
 
-std::string TwitchChannel::GetUserID(const TwitchToken &token)
+std::string TwitchChannel::GetUserID(const TwitchToken &token) const
 {
 	static std::map<std::string, std::string> userIDCache;
 	auto it = userIDCache.find(std::string(_name));
@@ -179,13 +179,16 @@ bool TwitchChannel::IsValid(const std::string &id) const
 TwitchChannelSelection::TwitchChannelSelection(QWidget *parent)
 	: QWidget(parent),
 	  _channelName(new VariableLineEdit(this)),
-	  _openChannel(new QPushButton(
-		  obs_module_text("AdvSceneSwitcher.channel.open")))
+	  _openChannel(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.twitch.selection.channel.open")))
 {
 	QWidget::connect(_channelName, SIGNAL(editingFinished()), this,
 			 SLOT(SelectionChanged()));
 	QWidget::connect(_openChannel, SIGNAL(pressed()), this,
 			 SLOT(OpenChannel()));
+	QWidget::connect(this, SIGNAL(ChannelChanged(const TwitchChannel &)),
+			 this,
+			 SLOT(SetOpenChannelState(const TwitchChannel &)));
 
 	auto layout = new QHBoxLayout();
 	layout->setContentsMargins(0, 0, 0, 0);
@@ -197,6 +200,13 @@ TwitchChannelSelection::TwitchChannelSelection(QWidget *parent)
 void TwitchChannelSelection::SetChannel(const TwitchChannel &channel)
 {
 	_channelName->setText(channel._name);
+
+	emit ChannelChanged(channel);
+}
+
+void TwitchChannelSelection::SetToken(const std::weak_ptr<TwitchToken> &token)
+{
+	_token = token;
 }
 
 void TwitchChannelSelection::OpenChannel()
@@ -207,10 +217,34 @@ void TwitchChannelSelection::OpenChannel()
 				  QString::fromStdString(temp));
 }
 
+void TwitchChannelSelection::SetOpenChannelState(const TwitchChannel &channel)
+{
+	auto token = _token.lock();
+
+	if (!token) {
+		_openChannel->setToolTip(obs_module_text(
+			"AdvSceneSwitcher.twitch.selection.channel.open.tooltip.noAccount"));
+		_openChannel->setDisabled(false);
+		return;
+	}
+
+	if (channel.GetUserID(*token) != "invalid") {
+		_openChannel->setToolTip(obs_module_text(
+			"AdvSceneSwitcher.twitch.selection.channel.open.tooltip.details"));
+		_openChannel->setDisabled(false);
+		return;
+	}
+
+	_openChannel->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.twitch.selection.channel.open.tooltip.noChannel"));
+	_openChannel->setDisabled(true);
+}
+
 void TwitchChannelSelection::SelectionChanged()
 {
 	TwitchChannel channel;
 	channel._name = _channelName->text().toStdString();
+
 	emit ChannelChanged(channel);
 }
 

@@ -48,7 +48,8 @@ struct ChannelInfo {
 struct TwitchChannel {
 	void Load(obs_data_t *obj);
 	void Save(obs_data_t *obj) const;
-	std::string GetUserID(const TwitchToken &);
+	StringVariable GetName() const { return _name; };
+	std::string GetUserID(const TwitchToken &token) const;
 	bool IsValid(const std::string &id) const;
 	std::optional<ChannelLiveInfo> GetLiveInfo(const TwitchToken &);
 	std::optional<ChannelInfo> GetInfo(const TwitchToken &);
@@ -64,11 +65,13 @@ class TwitchChannelSelection : public QWidget {
 
 public:
 	TwitchChannelSelection(QWidget *parent);
-	void SetChannel(const TwitchChannel &);
+	void SetChannel(const TwitchChannel &channel);
+	void SetToken(const std::weak_ptr<TwitchToken> &token);
 
 private slots:
 	void SelectionChanged();
 	void OpenChannel();
+	void SetOpenChannelState(const TwitchChannel &channel);
 
 signals:
 	void ChannelChanged(const TwitchChannel &);
@@ -76,6 +79,8 @@ signals:
 private:
 	VariableLineEdit *_channelName;
 	QPushButton *_openChannel;
+
+	std::weak_ptr<TwitchToken> _token;
 };
 
 } // namespace advss
