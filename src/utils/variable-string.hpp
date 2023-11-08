@@ -20,6 +20,7 @@ public:
 	void operator=(const char *value);
 	const char *c_str();
 	const char *c_str() const;
+	bool empty() const;
 
 	const std::string &UnresolvedValue() const { return _value; }
 

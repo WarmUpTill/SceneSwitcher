@@ -63,6 +63,12 @@ const char *StringVariable::c_str() const
 	return _resolvedValue.c_str();
 }
 
+bool StringVariable::empty() const
+{
+	Resolve();
+	return _resolvedValue.empty();
+}
+
 std::string SubstitueVariables(std::string str)
 {
 	if (!switcher) {
