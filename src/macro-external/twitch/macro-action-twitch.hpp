@@ -13,17 +13,12 @@ namespace advss {
 class MacroActionTwitch : public MacroAction {
 public:
 	MacroActionTwitch(Macro *m) : MacroAction(m) {}
-	bool PerformAction();
-	void LogAction() const;
-	bool Save(obs_data_t *obj) const;
-	bool Load(obs_data_t *obj);
-	std::string GetShortDesc() const;
-	std::string GetId() const { return id; };
 	static std::shared_ptr<MacroAction> Create(Macro *m)
 	{
 		return std::make_shared<MacroActionTwitch>(m);
 	}
-	bool ActionIsSupportedByToken();
+	std::string GetId() const { return id; };
+	std::string GetShortDesc() const;
 
 	enum class Action {
 		TITLE,
@@ -44,6 +39,12 @@ public:
 		ORANGE,
 		PURPLE,
 	};
+
+	bool PerformAction();
+	void LogAction() const;
+	bool Save(obs_data_t *obj) const;
+	bool Load(obs_data_t *obj);
+	bool ActionIsSupportedByToken();
 
 	Action _action = Action::TITLE;
 	std::weak_ptr<TwitchToken> _token;
@@ -81,7 +82,6 @@ public:
 	MacroActionTwitchEdit(
 		QWidget *parent,
 		std::shared_ptr<MacroActionTwitch> entryData = nullptr);
-	void UpdateEntryData();
 	static QWidget *Create(QWidget *parent,
 			       std::shared_ptr<MacroAction> action)
 	{
@@ -89,6 +89,7 @@ public:
 			parent,
 			std::dynamic_pointer_cast<MacroActionTwitch>(action));
 	}
+	void UpdateEntryData();
 
 private slots:
 	void ActionChanged(int);
@@ -112,12 +113,13 @@ protected:
 private:
 	void SetupWidgetVisibility();
 
+	bool _loading = true;
+
 	QHBoxLayout *_layout;
 	FilterComboBox *_actions;
 	TwitchConnectionSelection *_tokens;
 	QLabel *_tokenPermissionWarning;
 	QTimer _tokenPermissionCheckTimer;
-
 	VariableLineEdit *_streamTitle;
 	TwitchCategoryWidget *_category;
 	VariableLineEdit *_markerDescription;
@@ -126,8 +128,6 @@ private:
 	VariableTextEdit *_announcementMessage;
 	QComboBox *_announcementColor;
 	TwitchChannelSelection *_channel;
-
-	bool _loading = true;
 };
 
 } // namespace advss

@@ -116,6 +116,7 @@ class TwitchCategoryWidget : public QWidget {
 
 public:
 	TwitchCategoryWidget(QWidget *parent);
+
 	// Will *not* verify if ID is still valid or populate the selection
 	// list as that would take too long
 	void SetCategory(const TwitchCategory &);
@@ -129,8 +130,6 @@ signals:
 private:
 	TwitchCategorySelection *_selection;
 	TwitchCategorySearchButton *_manualSearch;
-
-	std::weak_ptr<TwitchToken> _token;
 };
 
 // Helper class to ease singal / slot handling
