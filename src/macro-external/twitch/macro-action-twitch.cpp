@@ -13,6 +13,11 @@ bool MacroActionTwitch::_registered = MacroActionFactory::Register(
 	{MacroActionTwitch::Create, MacroActionTwitchEdit::Create,
 	 "AdvSceneSwitcher.action.twitch"});
 
+std::string MacroActionTwitch::GetShortDesc() const
+{
+	return GetWeakTwitchTokenName(_token);
+}
+
 const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	{MacroActionTwitch::Action::TITLE,
 	 "AdvSceneSwitcher.action.twitch.type.title"},
@@ -273,6 +278,7 @@ void MacroActionTwitch::LogAction() const
 bool MacroActionTwitch::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
+
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	obs_data_set_string(obj, "token",
 			    GetWeakTwitchTokenName(_token).c_str());
@@ -285,12 +291,14 @@ bool MacroActionTwitch::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "announcementColor",
 			 static_cast<int>(_announcementColor));
 	_channel.Save(obj);
+
 	return true;
 }
 
 bool MacroActionTwitch::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
+
 	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
 	_token = GetWeakTwitchTokenByName(obs_data_get_string(obj, "token"));
 	_streamTitle.Load(obj, "streamTitle");
@@ -302,12 +310,8 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 	_announcementColor = static_cast<AnnouncementColor>(
 		obs_data_get_int(obj, "announcementColor"));
 	_channel.Load(obj);
-	return true;
-}
 
-std::string MacroActionTwitch::GetShortDesc() const
-{
-	return GetWeakTwitchTokenName(_token);
+	return true;
 }
 
 bool MacroActionTwitch::ActionIsSupportedByToken()
@@ -410,8 +414,6 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	QWidget::connect(_channel,
 			 SIGNAL(ChannelChanged(const TwitchChannel &)), this,
 			 SLOT(ChannelChanged(const TwitchChannel &)));
-	QWidget::connect(&_tokenPermissionCheckTimer, SIGNAL(timeout()), this,
-			 SLOT(CheckTokenPermissions()));
 
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.twitch.entry.line1"),
@@ -440,6 +442,25 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	_loading = false;
 }
 
+void MacroActionTwitchEdit::ActionChanged(int idx)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	if (idx == -1) { // Reset to previous selection
+		const QSignalBlocker b(_actions);
+		_actions->setCurrentIndex(_actions->findData(
+			static_cast<int>(_entryData->_action)));
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_action = static_cast<MacroActionTwitch::Action>(
+		_actions->itemData(idx).toInt());
+	SetupWidgetVisibility();
+}
+
 void MacroActionTwitchEdit::TwitchTokenChanged(const QString &token)
 {
 	if (_loading || !_entryData) {
@@ -449,8 +470,18 @@ void MacroActionTwitchEdit::TwitchTokenChanged(const QString &token)
 	auto lock = LockContext();
 	_entryData->_token = GetWeakTwitchTokenByQString(token);
 	_category->SetToken(_entryData->_token);
+	_channel->SetToken(_entryData->_token);
+
 	SetupWidgetVisibility();
 	emit(HeaderInfoChanged(token));
+}
+
+void MacroActionTwitchEdit::CheckTokenPermissions()
+{
+	_tokenPermissionWarning->setVisible(
+		_entryData && !_entryData->ActionIsSupportedByToken());
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionTwitchEdit::StreamTitleChanged()
@@ -529,14 +560,6 @@ void MacroActionTwitchEdit::AnnouncementColorChanged(int index)
 		static_cast<MacroActionTwitch::AnnouncementColor>(index);
 }
 
-void MacroActionTwitchEdit::CheckTokenPermissions()
-{
-	_tokenPermissionWarning->setVisible(
-		_entryData && !_entryData->ActionIsSupportedByToken());
-	adjustSize();
-	updateGeometry();
-}
-
 void MacroActionTwitchEdit::SetupWidgetVisibility()
 {
 	_streamTitle->setVisible(_entryData->_action ==
@@ -598,27 +621,9 @@ void MacroActionTwitchEdit::UpdateEntryData()
 	_announcementMessage->setPlainText(_entryData->_announcementMessage);
 	_announcementColor->setCurrentIndex(
 		static_cast<int>(_entryData->_announcementColor));
-
+	_channel->SetToken(_entryData->_token);
 	_channel->SetChannel(_entryData->_channel);
-	SetupWidgetVisibility();
-}
 
-void MacroActionTwitchEdit::ActionChanged(int idx)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	if (idx == -1) { // Reset to previous selection
-		const QSignalBlocker b(_actions);
-		_actions->setCurrentIndex(_actions->findData(
-			static_cast<int>(_entryData->_action)));
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_action = static_cast<MacroActionTwitch::Action>(
-		_actions->itemData(idx).toInt());
 	SetupWidgetVisibility();
 }
 
