@@ -93,6 +93,8 @@ target_sources(
   ${LIB_NAME}
   PRIVATE src/macro-core/macro-action-audio.cpp
           src/macro-core/macro-action-audio.hpp
+          src/macro-core/macro-action-clipboard.cpp
+          src/macro-core/macro-action-clipboard.hpp
           src/macro-core/macro-action-edit.cpp
           src/macro-core/macro-action-edit.hpp
           src/macro-core/macro-action-file.cpp

@@ -5,22 +5,25 @@
 namespace advss {
 
 typedef CURL *(*initFunction)(void);
-typedef void (*cleanupFunction)(CURL *);
 typedef CURLcode (*setOptFunction)(CURL *, CURLoption, ...);
 typedef struct curl_slist *(*slistAppendFunction)(struct curl_slist *list,
 						  const char *string);
 typedef CURLcode (*performFunction)(CURL *);
+typedef void (*cleanupFunction)(CURL *);
+typedef char *(*errorFunction)(CURLcode);
 
 class Curlhelper {
 public:
 	Curlhelper();
 	~Curlhelper();
 
+	bool Initialized() { return _initialized; }
+
 	template<typename... Args> CURLcode SetOpt(CURLoption, Args...);
 	struct curl_slist *SlistAppend(struct curl_slist *list,
 				       const char *string);
 	CURLcode Perform();
-	bool Initialized() { return _initialized; }
+	char *GetError(CURLcode code);
 
 private:
 	bool LoadLib();
@@ -31,6 +34,7 @@ private:
 	slistAppendFunction _slistAppend = nullptr;
 	performFunction _perform = nullptr;
 	cleanupFunction _cleanup = nullptr;
+	errorFunction _error = nullptr;
 	CURL *_curl = nullptr;
 	QLibrary *_lib;
 	bool _initialized = false;

@@ -50,6 +50,15 @@ CURLcode Curlhelper::Perform()
 	return _perform(_curl);
 }
 
+char *Curlhelper::GetError(CURLcode code)
+{
+	if (!_initialized) {
+		return (char *)"CURL initialization failed";
+	}
+
+	return _error(code);
+}
+
 bool Curlhelper::LoadLib()
 {
 	_lib = new QLibrary(curl_library_name, nullptr);
@@ -101,8 +110,10 @@ bool Curlhelper::Resolve()
 	_slistAppend = (slistAppendFunction)_lib->resolve("curl_slist_append");
 	_perform = (performFunction)_lib->resolve("curl_easy_perform");
 	_cleanup = (cleanupFunction)_lib->resolve("curl_easy_cleanup");
+	_error = (errorFunction)_lib->resolve("curl_easy_strerror");
 
-	if (_init && _setopt && _slistAppend && _perform && _cleanup) {
+	if (_init && _setopt && _slistAppend && _perform && _cleanup &&
+	    _error) {
 		blog(LOG_INFO, "[adv-ss] curl loaded successfully");
 		return true;
 	}
