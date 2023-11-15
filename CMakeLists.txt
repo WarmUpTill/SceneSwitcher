@@ -213,6 +213,8 @@ target_sources(
           src/macro-core/macro-condition-streaming.hpp
           src/macro-core/macro-condition-studio-mode.cpp
           src/macro-core/macro-condition-studio-mode.hpp
+          src/macro-core/macro-condition-tempvar.cpp
+          src/macro-core/macro-condition-tempvar.hpp
           src/macro-core/macro-condition-timer.cpp
           src/macro-core/macro-condition-timer.hpp
           src/macro-core/macro-condition-transition.cpp
