@@ -178,7 +178,7 @@ std::optional<ChannelInfo> TwitchChannel::GetInfo(const TwitchToken &token)
 	info.delay = obs_data_get_int(data, "delay");
 	info.tags = getStringArrayHelper(data, "tags");
 	info.content_classification_labels =
-		getStringArrayHelper(data, "thumbnail_url");
+		getStringArrayHelper(data, "content_classification_labels");
 	info.is_branded_content = obs_data_get_bool(data, "is_branded_content");
 	return info;
 }
