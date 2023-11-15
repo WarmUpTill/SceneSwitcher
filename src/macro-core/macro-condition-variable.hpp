@@ -3,6 +3,7 @@
 #include "resizing-text-edit.hpp"
 #include "variable.hpp"
 #include "regex-config.hpp"
+#include "variable-text-edit.hpp"
 
 #include <QWidget>
 #include <QComboBox>
@@ -24,7 +25,7 @@ public:
 		return std::make_shared<MacroConditionVariable>(m);
 	}
 
-	enum class Type {
+	enum class Condition {
 		EQUALS,
 		IS_EMPTY,
 		IS_NUMBER,
@@ -36,10 +37,10 @@ public:
 		GREATER_THAN_VARIABLE,
 	};
 
-	Type _type = Type::EQUALS;
+	Condition _type = Condition::EQUALS;
 	std::weak_ptr<Variable> _variable;
 	std::weak_ptr<Variable> _variable2;
-	std::string _strValue = "";
+	StringVariable _strValue = "";
 	double _numValue = 0;
 	RegexConfig _regex;
 
@@ -86,7 +87,7 @@ protected:
 	VariableSelection *_variables;
 	VariableSelection *_variables2;
 	QComboBox *_conditions;
-	ResizingPlainTextEdit *_strValue;
+	VariableTextEdit *_strValue;
 	QDoubleSpinBox *_numValue;
 	RegexConfigWidget *_regex;
 	std::shared_ptr<MacroConditionVariable> _entryData;

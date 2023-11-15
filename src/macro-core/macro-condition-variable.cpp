@@ -1,8 +1,6 @@
 #include "macro-condition-variable.hpp"
 #include "utility.hpp"
 
-#include <regex>
-
 namespace advss {
 
 const std::string MacroConditionVariable::id = "variable";
@@ -12,25 +10,25 @@ bool MacroConditionVariable::_registered = MacroConditionFactory::Register(
 	{MacroConditionVariable::Create, MacroConditionVariableEdit::Create,
 	 "AdvSceneSwitcher.condition.variable"});
 
-const static std::map<MacroConditionVariable::Type, std::string>
+const static std::map<MacroConditionVariable::Condition, std::string>
 	conditionTypes = {
-		{MacroConditionVariable::Type::EQUALS,
+		{MacroConditionVariable::Condition::EQUALS,
 		 "AdvSceneSwitcher.condition.variable.type.compare"},
-		{MacroConditionVariable::Type::IS_EMPTY,
+		{MacroConditionVariable::Condition::IS_EMPTY,
 		 "AdvSceneSwitcher.condition.variable.type.empty"},
-		{MacroConditionVariable::Type::IS_NUMBER,
+		{MacroConditionVariable::Condition::IS_NUMBER,
 		 "AdvSceneSwitcher.condition.variable.type.number"},
-		{MacroConditionVariable::Type::LESS_THAN,
+		{MacroConditionVariable::Condition::LESS_THAN,
 		 "AdvSceneSwitcher.condition.variable.type.lessThan"},
-		{MacroConditionVariable::Type::GREATER_THAN,
+		{MacroConditionVariable::Condition::GREATER_THAN,
 		 "AdvSceneSwitcher.condition.variable.type.greaterThan"},
-		{MacroConditionVariable::Type::VALUE_CHANGED,
+		{MacroConditionVariable::Condition::VALUE_CHANGED,
 		 "AdvSceneSwitcher.condition.variable.type.valueChanged"},
-		{MacroConditionVariable::Type::EQUALS_VARIABLE,
+		{MacroConditionVariable::Condition::EQUALS_VARIABLE,
 		 "AdvSceneSwitcher.condition.variable.type.equalsVariable"},
-		{MacroConditionVariable::Type::LESS_THAN_VARIABLE,
+		{MacroConditionVariable::Condition::LESS_THAN_VARIABLE,
 		 "AdvSceneSwitcher.condition.variable.type.lessThanVariable"},
-		{MacroConditionVariable::Type::GREATER_THAN_VARIABLE,
+		{MacroConditionVariable::Condition::GREATER_THAN_VARIABLE,
 		 "AdvSceneSwitcher.condition.variable.type.greaterThanVariable"},
 };
 
@@ -62,7 +60,7 @@ bool MacroConditionVariable::Compare(const Variable &var) const
 		return match.hasMatch();
 	}
 
-	return _strValue == var.Value();
+	return std::string(_strValue) == var.Value();
 }
 
 bool MacroConditionVariable::ValueChanged(const Variable &var)
@@ -87,12 +85,12 @@ bool MacroConditionVariable::CompareVariables()
 	bool validNumbers = val1.has_value() && val2.has_value();
 
 	switch (_type) {
-	case MacroConditionVariable::Type::EQUALS_VARIABLE:
+	case MacroConditionVariable::Condition::EQUALS_VARIABLE:
 		return var1->Value() == var2->Value() ||
 		       (validNumbers && val1 == val2);
-	case MacroConditionVariable::Type::LESS_THAN_VARIABLE:
+	case MacroConditionVariable::Condition::LESS_THAN_VARIABLE:
 		return validNumbers && val1 < val2;
-	case MacroConditionVariable::Type::GREATER_THAN_VARIABLE:
+	case MacroConditionVariable::Condition::GREATER_THAN_VARIABLE:
 		return validNumbers && val1 > val2;
 	default:
 		blog(LOG_WARNING,
@@ -111,23 +109,23 @@ bool MacroConditionVariable::CheckCondition()
 	}
 
 	switch (_type) {
-	case MacroConditionVariable::Type::EQUALS:
+	case MacroConditionVariable::Condition::EQUALS:
 		return Compare(*var);
-	case MacroConditionVariable::Type::IS_EMPTY:
+	case MacroConditionVariable::Condition::IS_EMPTY:
 		return var->Value().empty();
-	case MacroConditionVariable::Type::IS_NUMBER:
+	case MacroConditionVariable::Condition::IS_NUMBER:
 		return isNumber(*var);
-	case MacroConditionVariable::Type::LESS_THAN:
+	case MacroConditionVariable::Condition::LESS_THAN:
 		return compareNumber(*var, _numValue, true);
-	case MacroConditionVariable::Type::GREATER_THAN:
+	case MacroConditionVariable::Condition::GREATER_THAN:
 		return compareNumber(*var, _numValue, false);
-	case MacroConditionVariable::Type::VALUE_CHANGED:
+	case MacroConditionVariable::Condition::VALUE_CHANGED:
 		return ValueChanged(*var);
-	case MacroConditionVariable::Type::EQUALS_VARIABLE:
+	case MacroConditionVariable::Condition::EQUALS_VARIABLE:
 		return CompareVariables();
-	case MacroConditionVariable::Type::LESS_THAN_VARIABLE:
+	case MacroConditionVariable::Condition::LESS_THAN_VARIABLE:
 		return CompareVariables();
-	case MacroConditionVariable::Type::GREATER_THAN_VARIABLE:
+	case MacroConditionVariable::Condition::GREATER_THAN_VARIABLE:
 		return CompareVariables();
 	}
 
@@ -141,7 +139,7 @@ bool MacroConditionVariable::Save(obs_data_t *obj) const
 			    GetWeakVariableName(_variable).c_str());
 	obs_data_set_string(obj, "variable2Name",
 			    GetWeakVariableName(_variable2).c_str());
-	obs_data_set_string(obj, "strValue", _strValue.c_str());
+	_strValue.Save(obj, "strValue");
 	obs_data_set_double(obj, "numValue", _numValue);
 	obs_data_set_int(obj, "condition", static_cast<int>(_type));
 	_regex.Save(obj);
@@ -155,9 +153,9 @@ bool MacroConditionVariable::Load(obs_data_t *obj)
 		GetWeakVariableByName(obs_data_get_string(obj, "variableName"));
 	_variable2 = GetWeakVariableByName(
 		obs_data_get_string(obj, "variable2Name"));
-	_strValue = obs_data_get_string(obj, "strValue");
+	_strValue.Load(obj, "strValue");
 	_numValue = obs_data_get_double(obj, "numValue");
-	_type = static_cast<Type>(obs_data_get_int(obj, "condition"));
+	_type = static_cast<Condition>(obs_data_get_int(obj, "condition"));
 	_regex.Load(obj);
 	// TODO: remove in future version
 	if (obs_data_has_user_value(obj, "regex")) {
@@ -185,7 +183,7 @@ MacroConditionVariableEdit::MacroConditionVariableEdit(
 	  _variables(new VariableSelection(this)),
 	  _variables2(new VariableSelection(this)),
 	  _conditions(new QComboBox()),
-	  _strValue(new ResizingPlainTextEdit(this, 5, 1, 1)),
+	  _strValue(new VariableTextEdit(this, 5, 1, 1)),
 	  _numValue(new QDoubleSpinBox()),
 	  _regex(new RegexConfigWidget(parent))
 {
@@ -215,19 +213,11 @@ MacroConditionVariableEdit::MacroConditionVariableEdit(
 		{"{{regex}}", _regex},
 	};
 
-	QHBoxLayout *layout = new QHBoxLayout;
+	auto layout = new QHBoxLayout;
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.variable.entry"),
 		layout, widgetPlaceholders);
-
-	auto *regexLayout = new QHBoxLayout;
-	regexLayout->addWidget(_regex);
-	regexLayout->addStretch();
-
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->addLayout(layout);
-	mainLayout->addLayout(regexLayout);
-	setLayout(mainLayout);
+	setLayout(layout);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -243,7 +233,7 @@ void MacroConditionVariableEdit::UpdateEntryData()
 	_variables->SetVariable(_entryData->_variable);
 	_variables2->SetVariable(_entryData->_variable2);
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_type));
-	_strValue->setPlainText(QString::fromStdString(_entryData->_strValue));
+	_strValue->setPlainText(_entryData->_strValue);
 	_numValue->setValue(_entryData->_numValue);
 	_regex->SetRegexConfig(_entryData->_regex);
 	SetWidgetVisibility();
@@ -277,7 +267,8 @@ void MacroConditionVariableEdit::ConditionChanged(int value)
 	}
 
 	auto lock = LockContext();
-	_entryData->_type = static_cast<MacroConditionVariable::Type>(value);
+	_entryData->_type =
+		static_cast<MacroConditionVariable::Condition>(value);
 	SetWidgetVisibility();
 }
 
@@ -290,6 +281,7 @@ void MacroConditionVariableEdit::StrValueChanged()
 	auto lock = LockContext();
 	_entryData->_strValue = _strValue->toPlainText().toStdString();
 	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionVariableEdit::NumValueChanged(double val)
@@ -321,24 +313,26 @@ void MacroConditionVariableEdit::SetWidgetVisibility()
 	}
 
 	_regex->setVisible(_entryData->_type ==
-			   MacroConditionVariable::Type::EQUALS);
+			   MacroConditionVariable::Condition::EQUALS);
 	_strValue->setVisible(_entryData->_type ==
-			      MacroConditionVariable::Type::EQUALS);
+			      MacroConditionVariable::Condition::EQUALS);
 	_numValue->setVisible(
-		_entryData->_type == MacroConditionVariable::Type::LESS_THAN ||
 		_entryData->_type ==
-			MacroConditionVariable::Type::GREATER_THAN);
+			MacroConditionVariable::Condition::LESS_THAN ||
+		_entryData->_type ==
+			MacroConditionVariable::Condition::GREATER_THAN);
 	_numValue->setVisible(
-		_entryData->_type == MacroConditionVariable::Type::LESS_THAN ||
 		_entryData->_type ==
-			MacroConditionVariable::Type::GREATER_THAN);
+			MacroConditionVariable::Condition::LESS_THAN ||
+		_entryData->_type ==
+			MacroConditionVariable::Condition::GREATER_THAN);
 	_variables2->setVisible(
 		_entryData->_type ==
-			MacroConditionVariable::Type::EQUALS_VARIABLE ||
+			MacroConditionVariable::Condition::EQUALS_VARIABLE ||
 		_entryData->_type ==
-			MacroConditionVariable::Type::LESS_THAN_VARIABLE ||
+			MacroConditionVariable::Condition::LESS_THAN_VARIABLE ||
 		_entryData->_type ==
-			MacroConditionVariable::Type::GREATER_THAN_VARIABLE);
+			MacroConditionVariable::Condition::GREATER_THAN_VARIABLE);
 
 	adjustSize();
 	updateGeometry();
