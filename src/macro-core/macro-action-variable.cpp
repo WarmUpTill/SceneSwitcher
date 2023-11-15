@@ -288,8 +288,8 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "subStringSize", _subStringSize);
 	obs_data_set_string(obj, "regexPattern", _regexPattern.c_str());
 	obs_data_set_int(obj, "regexMatchIdx", _regexMatchIdx);
-	obs_data_set_string(obj, "findStr", _findStr.c_str());
-	obs_data_set_string(obj, "replaceStr", _replaceStr.c_str());
+	_findStr.Save(obj, "findStr");
+	_replaceStr.Save(obj, "replaceStr");
 	_regex.Save(obj);
 	_mathExpression.Save(obj, "mathExpression");
 	obs_data_set_bool(obj, "useCustomPrompt", _useCustomPrompt);
@@ -318,8 +318,8 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_regex.Load(obj);
 	_regexPattern = obs_data_get_string(obj, "regexPattern");
 	_regexMatchIdx = obs_data_get_int(obj, "regexMatchIdx");
-	_findStr = obs_data_get_string(obj, "findStr");
-	_replaceStr = obs_data_get_string(obj, "replaceStr");
+	_findStr.Load(obj, "findStr");
+	_replaceStr.Load(obj, "replaceStr");
 	_mathExpression.Load(obj, "mathExpression");
 	_useCustomPrompt = obs_data_get_bool(obj, "useCustomPrompt");
 	_inputPrompt.Load(obj, "inputPrompt");
@@ -444,8 +444,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _regexPattern(new ResizingPlainTextEdit(this, 10, 1, 1)),
 	  _regexMatchIdx(new QSpinBox()),
 	  _findReplaceLayout(new QHBoxLayout()),
-	  _findStr(new ResizingPlainTextEdit(this, 10, 1, 1)),
-	  _replaceStr(new ResizingPlainTextEdit(this, 10, 1, 1)),
+	  _findStr(new VariableTextEdit(this, 10, 1, 1)),
+	  _replaceStr(new VariableTextEdit(this, 10, 1, 1)),
 	  _mathExpression(new VariableLineEdit(this)),
 	  _mathExpressionResult(new QLabel()),
 	  _promptLayout(new QHBoxLayout()),
@@ -628,9 +628,8 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_regexPattern->setPlainText(
 		QString::fromStdString(_entryData->_regexPattern));
 	_regexMatchIdx->setValue(_entryData->_regexMatchIdx + 1);
-	_findStr->setPlainText(QString::fromStdString(_entryData->_findStr));
-	_replaceStr->setPlainText(
-		QString::fromStdString(_entryData->_replaceStr));
+	_findStr->setPlainText(_entryData->_findStr);
+	_replaceStr->setPlainText(_entryData->_replaceStr);
 	_mathExpression->setText(_entryData->_mathExpression);
 	_useCustomPrompt->setChecked(_entryData->_useCustomPrompt);
 	_inputPrompt->setText(_entryData->_inputPrompt);

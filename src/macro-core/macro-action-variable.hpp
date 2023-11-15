@@ -56,9 +56,9 @@ public:
 	RegexConfig _regex = RegexConfig::PartialMatchRegexConfig();
 	std::string _regexPattern = ".*";
 	int _regexMatchIdx = 0;
-	std::string _findStr = obs_module_text(
+	StringVariable _findStr = obs_module_text(
 		"AdvSceneSwitcher.action.variable.findAndReplace.find");
-	std::string _replaceStr = obs_module_text(
+	StringVariable _replaceStr = obs_module_text(
 		"AdvSceneSwitcher.action.variable.findAndReplace.replace");
 	StringVariable _mathExpression = obs_module_text(
 		"AdvSceneSwitcher.action.variable.mathExpression.example");
@@ -154,8 +154,8 @@ private:
 	ResizingPlainTextEdit *_regexPattern;
 	QSpinBox *_regexMatchIdx;
 	QHBoxLayout *_findReplaceLayout;
-	ResizingPlainTextEdit *_findStr;
-	ResizingPlainTextEdit *_replaceStr;
+	VariableTextEdit *_findStr;
+	VariableTextEdit *_replaceStr;
 	VariableLineEdit *_mathExpression;
 	QLabel *_mathExpressionResult;
 	QHBoxLayout *_promptLayout;
