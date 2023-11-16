@@ -3,6 +3,7 @@
 #include "macro-condition.hpp"
 #include "macro-ref.hpp"
 #include "variable-string.hpp"
+#include "temp-variable.hpp"
 
 #include <QString>
 #include <QByteArray>
@@ -47,6 +48,13 @@ public:
 	bool GetStop() const { return _stop; }
 	void Stop();
 
+	// Temporary variable helpers
+	std::vector<TempVariable> GetTempVars(MacroSegment *filter) const;
+	std::optional<const TempVariable>
+	GetTempVar(const MacroSegment *, const std::string &id) const;
+	void InvalidateTempVarValues() const;
+
+	// Macro segments
 	std::deque<std::shared_ptr<MacroCondition>> &Conditions();
 	std::deque<std::shared_ptr<MacroAction>> &Actions();
 	std::deque<std::shared_ptr<MacroAction>> &ElseActions();
@@ -121,11 +129,13 @@ private:
 	void SetupHotkeys();
 	void ClearHotkeys() const;
 	void SetHotkeysDesc() const;
+
 	bool RunActionsHelper(
 		const std::deque<std::shared_ptr<MacroAction>> &actions,
 		bool ignorePause);
 	bool RunActions(bool ignorePause);
 	bool RunElseActions(bool ignorePause);
+
 	bool DockIsVisible() const;
 	void SetDockWidgetName() const;
 	void SaveDockSettings(obs_data_t *obj) const;
@@ -195,5 +205,6 @@ private:
 Macro *GetMacroByName(const char *name);
 Macro *GetMacroByQString(const QString &name);
 std::weak_ptr<Macro> GetWeakMacroByName(const char *name);
+void InvalidateMacroTempVarValues();
 
 } // namespace advss

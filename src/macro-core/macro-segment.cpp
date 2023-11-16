@@ -1,4 +1,5 @@
 #include "macro-segment.hpp"
+#include "macro.hpp"
 #include "section.hpp"
 #include "utility.hpp"
 #include "mouse-wheel-guard.hpp"
@@ -26,11 +27,13 @@ bool MacroSegment::Save(obs_data_t *obj) const
 bool MacroSegment::Load(obs_data_t *obj)
 {
 	_collapsed = obs_data_get_bool(obj, "collapsed");
+	ClearAvailableTempvars();
 	return true;
 }
 
 bool MacroSegment::PostLoad()
 {
+	SetupTempVars();
 	return true;
 }
 
@@ -68,20 +71,111 @@ void MacroSegment::SetVariableValue(const std::string &value)
 	}
 }
 
-void MacroSegment::IncrementVariableRef()
+void MacroSegment::SetupTempVars()
 {
-	if (!_supportsVariableValue) {
-		return;
-	}
-	_variableRefs++;
+	ClearAvailableTempvars();
 }
 
-void MacroSegment::DecrementVariableRef()
+void MacroSegment::ClearAvailableTempvars()
 {
-	if (!_supportsVariableValue || _variableRefs == 0) {
+	_tempVariables.clear();
+	NotifyUIAboutTempVarChange();
+}
+
+static std::shared_ptr<MacroSegment>
+getSharedSegmentFromMacro(Macro *macro, const MacroSegment *segment)
+{
+	auto matches = [segment](const std::shared_ptr<MacroSegment> &s) {
+		return s.get() == segment;
+	};
+	auto condIt = std::find_if(macro->Conditions().begin(),
+				   macro->Conditions().end(), matches);
+	if (condIt != macro->Conditions().end()) {
+		return *condIt;
+	}
+	auto actionIt = std::find_if(macro->Actions().begin(),
+				     macro->Actions().end(), matches);
+	if (actionIt != macro->Actions().end()) {
+		return *actionIt;
+	}
+	auto elseIt = std::find_if(macro->ElseActions().begin(),
+				   macro->ElseActions().end(), matches);
+	if (elseIt != macro->ElseActions().end()) {
+		return *elseIt;
+	}
+	return {};
+}
+
+void MacroSegment::AddTempvar(const std::string &id, const std::string &name,
+			      const std::string &description)
+{
+	auto macro = GetMacro();
+	if (!macro) {
 		return;
 	}
-	_variableRefs--;
+
+	auto sharedSegment = getSharedSegmentFromMacro(macro, this);
+	if (!sharedSegment) {
+		return;
+	}
+
+	TempVariable var(id, name, description, sharedSegment);
+	_tempVariables.emplace_back(std::move(var));
+	NotifyUIAboutTempVarChange();
+}
+
+void MacroSegment::SetTempVarValue(const std::string &id,
+				   const std::string &value)
+{
+	for (auto &var : _tempVariables) {
+		if (var.ID() != id) {
+			continue;
+		}
+		var.SetValue(value);
+		break;
+	}
+}
+
+void MacroSegment::InvalidateTempVarValues()
+{
+	for (auto &var : _tempVariables) {
+		var.InvalidateValue();
+	}
+}
+
+std::optional<const TempVariable>
+MacroSegment::GetTempVar(const std::string &id) const
+{
+	TempVariable *result = nullptr;
+	for (auto &var : _tempVariables) {
+		if (var.ID() == id) {
+			return var;
+		}
+	}
+	vblog(LOG_INFO, "cannot get value of unknown tempvar %s", id.c_str());
+	return {};
+}
+
+bool SupportsVariableValue(MacroSegment *segment)
+{
+	return segment && segment->_supportsVariableValue;
+}
+
+void IncrementVariableRef(MacroSegment *segment)
+{
+	if (!segment || !segment->_supportsVariableValue) {
+		return;
+	}
+	segment->_variableRefs++;
+}
+
+void DecrementVariableRef(MacroSegment *segment)
+{
+	if (!segment || !segment->_supportsVariableValue ||
+	    segment->_variableRefs == 0) {
+		return;
+	}
+	segment->_variableRefs--;
 }
 
 MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)

@@ -75,7 +75,7 @@ private slots:
 
 private:
 	void SetLogicSelection();
-	std::shared_ptr<MacroSegment> Data();
+	std::shared_ptr<MacroSegment> Data() const;
 
 	QComboBox *_logicSelection;
 	FilterComboBox *_conditionSelection;

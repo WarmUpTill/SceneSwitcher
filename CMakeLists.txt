@@ -315,6 +315,8 @@ target_sources(
           src/utils/switch-button.hpp
           src/utils/sync-helper.cpp
           src/utils/sync-helper.hpp
+          src/utils/temp-variable.cpp
+          src/utils/temp-variable.hpp
           src/utils/transition-selection.cpp
           src/utils/transition-selection.hpp
           src/utils/utility.cpp

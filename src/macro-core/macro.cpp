@@ -361,6 +361,126 @@ void Macro::Stop()
 	}
 }
 
+std::vector<TempVariable> Macro::GetTempVars(MacroSegment *filter) const
+{
+	std::vector<TempVariable> res;
+
+	auto addTempVars = [&res](const std::deque<std::shared_ptr<MacroSegment>>
+					  &segments) {
+		for (const auto &s : segments) {
+			const auto &tempVars = s->_tempVariables;
+			res.insert(res.end(), tempVars.begin(), tempVars.end());
+		}
+	};
+
+	addTempVars({_conditions.begin(), _conditions.end()});
+	addTempVars({_actions.begin(), _actions.end()});
+	addTempVars({_elseActions.begin(), _elseActions.end()});
+
+	if (!filter) {
+		return res;
+	}
+
+	auto isCondition = [this](const MacroSegment *segment) -> bool {
+		return std::find_if(_conditions.begin(), _conditions.end(),
+				    [segment](
+					    const std::shared_ptr<MacroSegment>
+						    &ptr) {
+					    return ptr.get() == segment;
+				    }) != _conditions.end();
+	};
+	auto isAction = [this](MacroSegment *segment) -> bool {
+		return std::find_if(_actions.begin(), _actions.end(),
+				    [segment](
+					    const std::shared_ptr<MacroSegment>
+						    &ptr) {
+					    return ptr.get() == segment;
+				    }) != _actions.end();
+	};
+	auto isElseAction = [this](MacroSegment *segment) -> bool {
+		return std::find_if(_elseActions.begin(), _elseActions.end(),
+				    [segment](
+					    const std::shared_ptr<MacroSegment>
+						    &ptr) {
+					    return ptr.get() == segment;
+				    }) != _elseActions.end();
+	};
+
+	const int filterIndex = filter->GetIndex();
+	// Remove all actions and else actions and conditions after filterIndex
+	if (isCondition(filter)) {
+		for (auto it = res.begin(); it != res.end();) {
+			auto segment = it->Segment().lock().get();
+			if (isCondition(segment) &&
+			    segment->GetIndex() >= filterIndex) {
+				it = res.erase(it);
+				continue;
+			}
+			if (isAction(segment) || isElseAction(segment)) {
+				it = res.erase(it);
+				continue;
+			}
+			++it;
+		}
+		return res;
+	}
+	// Remove all else actions and actions after filterIndex
+	if (isAction(filter)) {
+		for (auto it = res.begin(); it != res.end();) {
+			auto segment = it->Segment().lock().get();
+			if (isAction(segment) &&
+			    segment->GetIndex() >= filterIndex) {
+				it = res.erase(it);
+				continue;
+			}
+			if (isElseAction(segment)) {
+				it = res.erase(it);
+				continue;
+			}
+			++it;
+		}
+		return res;
+	}
+	// Remove all actions and elseActions after filterIndex
+	for (auto it = res.begin(); it != res.end();) {
+		auto segment = it->Segment().lock().get();
+		if (isElseAction(segment) &&
+		    segment->GetIndex() >= filterIndex) {
+			it = res.erase(it);
+			continue;
+		}
+		if (isAction(segment)) {
+			it = res.erase(it);
+			continue;
+		}
+		++it;
+	}
+	return res;
+}
+
+std::optional<const TempVariable> Macro::GetTempVar(const MacroSegment *segment,
+						    const std::string &id) const
+{
+	if (!segment) {
+		return {};
+	}
+	return segment->GetTempVar(id);
+}
+
+void Macro::InvalidateTempVarValues() const
+{
+	auto invalidateHelper =
+		[](const std::deque<std::shared_ptr<MacroSegment>> &segments) {
+			for (const auto &s : segments) {
+				s->InvalidateTempVarValues();
+			}
+		};
+
+	invalidateHelper({_conditions.begin(), _conditions.end()});
+	invalidateHelper({_actions.begin(), _actions.end()});
+	invalidateHelper({_elseActions.begin(), _elseActions.end()});
+}
+
 std::deque<std::shared_ptr<MacroCondition>> &Macro::Conditions()
 {
 	return _conditions;
@@ -1198,6 +1318,13 @@ std::weak_ptr<Macro> GetWeakMacroByName(const char *name)
 	}
 
 	return {};
+}
+
+void InvalidateMacroTempVarValues()
+{
+	for (auto &m : switcher->macros) {
+		m->InvalidateTempVarValues();
+	}
 }
 
 } // namespace advss

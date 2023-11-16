@@ -1,10 +1,11 @@
 #pragma once
 
-// The following helpers are used by all macro seements,
+// The following helpers are used by all macro segments,
 // so it makes sense to include them here:
 #include "log-helper.hpp"
 #include "obs-module-helper.hpp"
 #include "sync-helper.hpp"
+#include "temp-variable.hpp"
 
 #include <QWidget>
 #include <QFrame>
@@ -34,16 +35,26 @@ public:
 	virtual std::string GetId() const = 0;
 	void SetHighlight();
 	bool Highlight();
-	bool SupportsVariableValue() const { return _supportsVariableValue; }
 	virtual std::string GetVariableValue() const;
-	void IncrementVariableRef();
-	void DecrementVariableRef();
 
 protected:
+	friend bool SupportsVariableValue(MacroSegment *);
+	friend void IncrementVariableRef(MacroSegment *);
+	friend void DecrementVariableRef(MacroSegment *);
 	void SetVariableValue(const std::string &value);
 	bool IsReferencedInVars() { return _variableRefs != 0; }
 
+	virtual void SetupTempVars();
+	void AddTempvar(const std::string &id, const std::string &name,
+			const std::string &description = "");
+	void SetTempVarValue(const std::string &id, const std::string &value);
+
 private:
+	void ClearAvailableTempvars();
+	std::optional<const TempVariable>
+	GetTempVar(const std::string &id) const;
+	void InvalidateTempVarValues();
+
 	// Macro helpers
 	Macro *_macro = nullptr;
 	int _idx = 0;
@@ -56,6 +67,9 @@ private:
 	const bool _supportsVariableValue = false;
 	int _variableRefs = 0;
 	std::string _variableValue;
+	std::vector<TempVariable> _tempVariables;
+
+	friend class Macro;
 };
 
 class Section;
@@ -70,6 +84,7 @@ public:
 	void SetFocusPolicyOfWidgets();
 	void SetCollapsed(bool collapsed);
 	void SetSelected(bool);
+	virtual std::shared_ptr<MacroSegment> Data() const = 0;
 
 protected slots:
 	void HeaderInfoChanged(const QString &);
@@ -99,7 +114,6 @@ private:
 		BELOW,
 	};
 
-	virtual std::shared_ptr<MacroSegment> Data() = 0;
 	void ShowDropLine(DropLineState);
 
 	// The reason for using two separate frame widget each with their own

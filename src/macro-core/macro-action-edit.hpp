@@ -50,7 +50,7 @@ private slots:
 	void UpdateActionState();
 
 private:
-	std::shared_ptr<MacroSegment> Data();
+	std::shared_ptr<MacroSegment> Data() const;
 	void SetDisableEffect(bool);
 	void SetEnableAppearance(bool);
 
