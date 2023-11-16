@@ -1,42 +1,45 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "duration-control.hpp"
+#include "slider-spinbox.hpp"
 #include "source-selection.hpp"
 
-#include <QSpinBox>
-#include <QHBoxLayout>
-
 namespace advss {
-
-enum class MediaAction {
-	PLAY,
-	PAUSE,
-	STOP,
-	RESTART,
-	NEXT,
-	PREVIOUS,
-	SEEK,
-};
 
 class MacroActionMedia : public MacroAction {
 public:
 	MacroActionMedia(Macro *m) : MacroAction(m) {}
-	bool PerformAction();
-	void LogAction() const;
-	bool Save(obs_data_t *obj) const;
-	bool Load(obs_data_t *obj);
-	std::string GetShortDesc() const;
-	std::string GetId() const { return id; };
 	static std::shared_ptr<MacroAction> Create(Macro *m)
 	{
 		return std::make_shared<MacroActionMedia>(m);
 	}
+	std::string GetId() const { return id; };
+	std::string GetShortDesc() const;
 
+	bool PerformAction();
+	void LogAction() const;
+	bool Save(obs_data_t *obj) const;
+	bool Load(obs_data_t *obj);
+
+	enum class Action {
+		PLAY,
+		PAUSE,
+		STOP,
+		RESTART,
+		NEXT,
+		PREVIOUS,
+		SEEK_DURATION,
+		SEEK_PERCENTAGE,
+	};
+
+	Action _action = Action::PLAY;
+	Duration _seekDuration;
+	DoubleVariable _seekPercentage = 50;
 	SourceSelection _mediaSource;
-	MediaAction _action = MediaAction::PLAY;
-	Duration _seek;
 
 private:
+	void SeekToPercentage(obs_source_t *source) const;
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -48,7 +51,6 @@ public:
 	MacroActionMediaEdit(
 		QWidget *parent,
 		std::shared_ptr<MacroActionMedia> entryData = nullptr);
-	void UpdateEntryData();
 	static QWidget *Create(QWidget *parent,
 			       std::shared_ptr<MacroAction> action)
 	{
@@ -56,24 +58,27 @@ public:
 			parent,
 			std::dynamic_pointer_cast<MacroActionMedia>(action));
 	}
+	void UpdateEntryData();
 
 private slots:
-	void SourceChanged(const SourceSelection &);
 	void ActionChanged(int value);
-	void DurationChanged(const Duration &value);
+	void SeekDurationChanged(const Duration &seekDuration);
+	void
+	SeekPercentageChanged(const NumberVariable<double> &seekPercentage);
+	void SourceChanged(const SourceSelection &source);
+
 signals:
 	void HeaderInfoChanged(const QString &);
-
-protected:
-	SourceSelectionWidget *_sources;
-	QComboBox *_actions;
-	DurationSelection *_seek;
-	std::shared_ptr<MacroActionMedia> _entryData;
 
 private:
 	void SetWidgetVisibility();
 
-	QHBoxLayout *_mainLayout;
+	QComboBox *_actions;
+	DurationSelection *_seekDuration;
+	SliderSpinBox *_seekPercentage;
+	SourceSelectionWidget *_sources;
+
+	std::shared_ptr<MacroActionMedia> _entryData;
 	bool _loading = true;
 };
 

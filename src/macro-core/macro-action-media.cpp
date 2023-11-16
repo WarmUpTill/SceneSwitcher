@@ -10,22 +10,45 @@ bool MacroActionMedia::_registered = MacroActionFactory::Register(
 	{MacroActionMedia::Create, MacroActionMediaEdit::Create,
 	 "AdvSceneSwitcher.action.media"});
 
-const static std::map<MediaAction, std::string> actionTypes = {
-	{MediaAction::PLAY, "AdvSceneSwitcher.action.media.type.play"},
-	{MediaAction::PAUSE, "AdvSceneSwitcher.action.media.type.pause"},
-	{MediaAction::STOP, "AdvSceneSwitcher.action.media.type.stop"},
-	{MediaAction::RESTART, "AdvSceneSwitcher.action.media.type.restart"},
-	{MediaAction::NEXT, "AdvSceneSwitcher.action.media.type.next"},
-	{MediaAction::PREVIOUS, "AdvSceneSwitcher.action.media.type.previous"},
-	{MediaAction::SEEK, "AdvSceneSwitcher.action.media.type.seek"},
+const static std::map<MacroActionMedia::Action, std::string> actionTypes = {
+	{MacroActionMedia::Action::PLAY,
+	 "AdvSceneSwitcher.action.media.type.play"},
+	{MacroActionMedia::Action::PAUSE,
+	 "AdvSceneSwitcher.action.media.type.pause"},
+	{MacroActionMedia::Action::STOP,
+	 "AdvSceneSwitcher.action.media.type.stop"},
+	{MacroActionMedia::Action::RESTART,
+	 "AdvSceneSwitcher.action.media.type.restart"},
+	{MacroActionMedia::Action::NEXT,
+	 "AdvSceneSwitcher.action.media.type.next"},
+	{MacroActionMedia::Action::PREVIOUS,
+	 "AdvSceneSwitcher.action.media.type.previous"},
+	{MacroActionMedia::Action::SEEK_DURATION,
+	 "AdvSceneSwitcher.action.media.type.seek.duration"},
+	{MacroActionMedia::Action::SEEK_PERCENTAGE,
+	 "AdvSceneSwitcher.action.media.type.seek.percentage"},
 };
+
+std::string MacroActionMedia::GetShortDesc() const
+{
+	return _mediaSource.ToString();
+}
+
+void MacroActionMedia::SeekToPercentage(obs_source_t *source) const
+{
+	auto totalTimeMs = obs_source_media_get_duration(source);
+	auto percentageTimeMs = round(totalTimeMs * _seekPercentage / 100);
+
+	obs_source_media_set_time(source, percentageTimeMs);
+}
 
 bool MacroActionMedia::PerformAction()
 {
 	auto source = obs_weak_source_get_source(_mediaSource.GetSource());
 	obs_media_state state = obs_source_media_get_state(source);
+
 	switch (_action) {
-	case MediaAction::PLAY:
+	case Action::PLAY:
 		if (state == OBS_MEDIA_STATE_STOPPED ||
 		    state == OBS_MEDIA_STATE_ENDED) {
 			obs_source_media_restart(source);
@@ -33,27 +56,31 @@ bool MacroActionMedia::PerformAction()
 			obs_source_media_play_pause(source, false);
 		}
 		break;
-	case MediaAction::PAUSE:
+	case Action::PAUSE:
 		obs_source_media_play_pause(source, true);
 		break;
-	case MediaAction::STOP:
+	case Action::STOP:
 		obs_source_media_stop(source);
 		break;
-	case MediaAction::RESTART:
+	case Action::RESTART:
 		obs_source_media_restart(source);
 		break;
-	case MediaAction::NEXT:
+	case Action::NEXT:
 		obs_source_media_next(source);
 		break;
-	case MediaAction::PREVIOUS:
+	case Action::PREVIOUS:
 		obs_source_media_previous(source);
 		break;
-	case MediaAction::SEEK:
-		obs_source_media_set_time(source, _seek.Milliseconds());
+	case Action::SEEK_DURATION:
+		obs_source_media_set_time(source, _seekDuration.Milliseconds());
+		break;
+	case Action::SEEK_PERCENTAGE:
+		SeekToPercentage(source);
 		break;
 	default:
 		break;
 	}
+
 	obs_source_release(source);
 	return true;
 }
@@ -73,39 +100,42 @@ void MacroActionMedia::LogAction() const
 bool MacroActionMedia::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
-	_mediaSource.Save(obj, "mediaSource");
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
-	_seek.Save(obj);
+	_seekDuration.Save(obj);
+	_seekPercentage.Save(obj, "seekPercentage");
+	_mediaSource.Save(obj, "mediaSource");
+
 	return true;
 }
 
 bool MacroActionMedia::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
+	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
+	_seekDuration.Load(obj);
+	_seekPercentage.Load(obj, "seekPercentage");
 	_mediaSource.Load(obj, "mediaSource");
-	_action = static_cast<MediaAction>(obs_data_get_int(obj, "action"));
-	_seek.Load(obj);
-	return true;
-}
 
-std::string MacroActionMedia::GetShortDesc() const
-{
-	return _mediaSource.ToString();
+	return true;
 }
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (auto entry : actionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : actionTypes) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 
 MacroActionMediaEdit::MacroActionMediaEdit(
 	QWidget *parent, std::shared_ptr<MacroActionMedia> entryData)
 	: QWidget(parent),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _actions(new QComboBox()),
-	  _seek(new DurationSelection())
+	  _seekDuration(new DurationSelection()),
+	  _seekPercentage(new SliderSpinBox(
+		  0, 100,
+		  obs_module_text(
+			  "AdvSceneSwitcher.action.media.seek.percentage.label"))),
+	  _sources(new SourceSelectionWidget(this, QStringList(), true))
 {
 	populateActionSelection(_actions);
 	auto sources = GetMediaSourceNames();
@@ -114,37 +144,65 @@ MacroActionMediaEdit::MacroActionMediaEdit(
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
+	QWidget::connect(_seekDuration,
+			 SIGNAL(DurationChanged(const Duration &)), this,
+			 SLOT(SeekDurationChanged(const Duration &)));
+	QWidget::connect(
+		_seekPercentage,
+		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
+		this,
+		SLOT(SeekPercentageChanged(const NumberVariable<double> &)));
 	QWidget::connect(_sources,
 			 SIGNAL(SourceChanged(const SourceSelection &)), this,
 			 SLOT(SourceChanged(const SourceSelection &)));
-	QWidget::connect(_seek, SIGNAL(DurationChanged(const Duration &)), this,
-			 SLOT(DurationChanged(const Duration &)));
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
+	auto layout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{mediaSources}}", _sources},
 		{"{{actions}}", _actions},
-		{"{{duration}}", _seek},
+		{"{{seekDuration}}", _seekDuration},
+		{"{{seekPercentage}}", _seekPercentage},
+		{"{{mediaSources}}", _sources},
 	};
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.media.entry"),
-		     mainLayout, widgetPlaceholders);
-	setLayout(mainLayout);
+		     layout, widgetPlaceholders);
+	setLayout(layout);
 
 	_entryData = entryData;
 	UpdateEntryData();
 	_loading = false;
 }
 
-void MacroActionMediaEdit::UpdateEntryData()
+void MacroActionMediaEdit::ActionChanged(int value)
 {
-	if (!_entryData) {
+	if (_loading || !_entryData) {
 		return;
 	}
 
-	_sources->SetSource(_entryData->_mediaSource);
-	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
-	_seek->SetDuration(_entryData->_seek);
+	auto lock = LockContext();
+	_entryData->_action = static_cast<MacroActionMedia::Action>(value);
+
 	SetWidgetVisibility();
+}
+
+void MacroActionMediaEdit::SeekDurationChanged(const Duration &seekDuration)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_seekDuration = seekDuration;
+}
+
+void MacroActionMediaEdit::SeekPercentageChanged(
+	const NumberVariable<double> &seekPercentage)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_seekPercentage = seekPercentage;
 }
 
 void MacroActionMediaEdit::SourceChanged(const SourceSelection &source)
@@ -159,34 +217,32 @@ void MacroActionMediaEdit::SourceChanged(const SourceSelection &source)
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-void MacroActionMediaEdit::ActionChanged(int value)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_action = static_cast<MediaAction>(value);
-	SetWidgetVisibility();
-}
-
-void MacroActionMediaEdit::DurationChanged(const Duration &dur)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_seek = dur;
-}
-
 void MacroActionMediaEdit::SetWidgetVisibility()
 {
 	if (!_entryData) {
 		return;
 	}
-	_seek->setVisible(_entryData->_action == MediaAction::SEEK);
+
+	_seekDuration->setVisible(_entryData->_action ==
+				  MacroActionMedia::Action::SEEK_DURATION);
+	_seekPercentage->setVisible(_entryData->_action ==
+				    MacroActionMedia::Action::SEEK_PERCENTAGE);
+
 	adjustSize();
+}
+
+void MacroActionMediaEdit::UpdateEntryData()
+{
+	if (!_entryData) {
+		return;
+	}
+
+	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_seekDuration->SetDuration(_entryData->_seekDuration);
+	_seekPercentage->SetDoubleValue(_entryData->_seekPercentage);
+	_sources->SetSource(_entryData->_mediaSource);
+
+	SetWidgetVisibility();
 }
 
 } // namespace advss
