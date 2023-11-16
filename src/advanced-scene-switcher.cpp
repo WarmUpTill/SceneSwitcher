@@ -325,6 +325,9 @@ void SwitcherData::SetPreconditions()
 	cursorPosChanged = cursorPos.first != switcher->lastCursorPos.first ||
 			   cursorPos.second != switcher->lastCursorPos.second;
 	lastCursorPos = GetCursorPos();
+
+	// Macro
+	InvalidateMacroTempVarValues();
 }
 
 void ClearWebsocketMessages();

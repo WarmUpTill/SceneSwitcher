@@ -312,6 +312,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 		*_entryData = MacroConditionFactory::Create(id, macro);
 		(*_entryData)->SetIndex(idx);
 		(*_entryData)->SetLogicType(logic);
+		(*_entryData)->PostLoad();
 	}
 	auto widget =
 		MacroConditionFactory::CreateWidget(id, this, *_entryData);
@@ -342,7 +343,7 @@ void MacroConditionEdit::DurationModifierChanged(DurationModifier::Type m)
 	(*_entryData)->SetDurationModifier(m);
 }
 
-std::shared_ptr<MacroSegment> MacroConditionEdit::Data()
+std::shared_ptr<MacroSegment> MacroConditionEdit::Data() const
 {
 	return *_entryData;
 }
@@ -383,6 +384,7 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 			macro->Conditions().at(idx)->Load(data);
 			obs_data_release(data);
 		}
+		macro->Conditions().at(idx)->PostLoad();
 		(*cond)->SetLogicType(logic);
 		macro->UpdateConditionIndices();
 		ui->conditionsList->Insert(

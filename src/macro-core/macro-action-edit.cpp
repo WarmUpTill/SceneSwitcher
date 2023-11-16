@@ -138,6 +138,7 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 		_entryData->reset();
 		*_entryData = MacroActionFactory::Create(id, macro);
 		(*_entryData)->SetIndex(idx);
+		(*_entryData)->PostLoad();
 	}
 	auto widget = MacroActionFactory::CreateWidget(id, this, *_entryData);
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
@@ -204,7 +205,7 @@ void MacroActionEdit::SetEnableAppearance(bool value)
 	SetDisableEffect(!value);
 }
 
-std::shared_ptr<MacroSegment> MacroActionEdit::Data()
+std::shared_ptr<MacroSegment> MacroActionEdit::Data() const
 {
 	return *_entryData;
 }
@@ -236,6 +237,7 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 			auto data = obs_data_create();
 			macro->Actions().at(idx - 1)->Save(data);
 			macro->Actions().at(idx)->Load(data);
+			macro->Actions().at(idx)->PostLoad();
 			obs_data_release(data);
 		}
 		macro->UpdateActionIndices();
@@ -525,6 +527,7 @@ void AdvSceneSwitcher::AddMacroElseAction(int idx)
 			macro->ElseActions().at(idx - 1)->Save(data);
 			macro->ElseActions().at(idx)->Load(data);
 		}
+		macro->ElseActions().at(idx)->PostLoad();
 		macro->UpdateElseActionIndices();
 		ui->elseActionsList->Insert(
 			idx, new MacroActionEdit(
