@@ -12,11 +12,6 @@
 
 namespace advss {
 
-enum class TimerType {
-	FIXED,
-	RANDOM,
-};
-
 class MacroConditionTimer : public MacroCondition {
 public:
 	MacroConditionTimer(Macro *m) : MacroCondition(m, true) {}
@@ -32,6 +27,7 @@ public:
 	void Continue();
 	void Reset();
 
+	enum class TimerType { FIXED, RANDOM };
 	TimerType _type = TimerType::FIXED;
 	Duration _duration;
 	Duration _duration2;
@@ -42,6 +38,9 @@ public:
 
 private:
 	void SetRandomTimeRemaining();
+	void SetVariables(double seconds);
+	void SetupTempVars();
+
 	std::default_random_engine _re;
 	static bool _registered;
 	static const std::string id;

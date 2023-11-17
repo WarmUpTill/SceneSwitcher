@@ -10,18 +10,20 @@ bool MacroConditionTimer::_registered = MacroConditionFactory::Register(
 	{MacroConditionTimer::Create, MacroConditionTimerEdit::Create,
 	 "AdvSceneSwitcher.condition.timer", false});
 
-const static std::map<TimerType, std::string> timerTypes = {
-	{TimerType::FIXED, "AdvSceneSwitcher.condition.timer.type.fixed"},
-	{TimerType::RANDOM, "AdvSceneSwitcher.condition.timer.type.random"},
+const static std::map<MacroConditionTimer::TimerType, std::string> timerTypes = {
+	{MacroConditionTimer::TimerType::FIXED,
+	 "AdvSceneSwitcher.condition.timer.type.fixed"},
+	{MacroConditionTimer::TimerType::RANDOM,
+	 "AdvSceneSwitcher.condition.timer.type.random"},
 };
 
 bool MacroConditionTimer::CheckCondition()
 {
 	if (_paused) {
-		SetVariableValue(std::to_string(_remaining));
+		SetVariables(_remaining);
 		return _remaining == 0.;
 	}
-	SetVariableValue(std::to_string(_duration.TimeRemaining()));
+	SetVariables(_duration.TimeRemaining());
 	if (_duration.DurationReached()) {
 		if (!_oneshot) {
 			_duration.Reset();
@@ -120,6 +122,29 @@ void MacroConditionTimer::Reset()
 	}
 }
 
+void MacroConditionTimer::SetVariables(double seconds)
+{
+	SetVariableValue(std::to_string(seconds));
+	SetTempVarValue("seconds", std::to_string((int)seconds));
+	SetTempVarValue("minutes", std::to_string((int)(seconds / 60)));
+	SetTempVarValue("hours", std::to_string((int)(seconds / (60 * 60))));
+	SetTempVarValue("days",
+			std::to_string((int)(seconds / (60 * 60 * 24))));
+}
+
+void MacroConditionTimer::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+	AddTempvar("seconds",
+		   obs_module_text("AdvSceneSwitcher.tempVar.timer.seconds"));
+	AddTempvar("minutes",
+		   obs_module_text("AdvSceneSwitcher.tempVar.timer.minutes"));
+	AddTempvar("hours",
+		   obs_module_text("AdvSceneSwitcher.tempVar.timer.hours"));
+	AddTempvar("days",
+		   obs_module_text("AdvSceneSwitcher.tempVar.timer.days"));
+}
+
 static inline void populateTimerTypeSelection(QComboBox *list)
 {
 	for (auto entry : timerTypes) {
@@ -203,7 +228,7 @@ void MacroConditionTimerEdit::TimerTypeChanged(int type)
 	}
 
 	auto lock = LockContext();
-	_entryData->_type = static_cast<TimerType>(type);
+	_entryData->_type = static_cast<MacroConditionTimer::TimerType>(type);
 	SetWidgetVisibility();
 }
 
@@ -337,7 +362,7 @@ void MacroConditionTimerEdit::SetWidgetVisibility()
 		{"{{duration2}}", _duration2},
 	};
 
-	if (_entryData->_type == TimerType::RANDOM) {
+	if (_entryData->_type == MacroConditionTimer::TimerType::RANDOM) {
 		PlaceWidgets(
 			obs_module_text(
 				"AdvSceneSwitcher.condition.timer.entry.line1.random"),
