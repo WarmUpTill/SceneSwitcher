@@ -1,6 +1,8 @@
 #include "websocket-helpers.hpp"
 #include "connection-manager.hpp"
-#include "switcher-data.hpp"
+#include "log-helper.hpp"
+#include "plugin-state-helper.hpp"
+#include "sync-helper.hpp"
 
 #include <QCryptographicHash>
 #include <obs-websocket-api.h>
@@ -13,16 +15,38 @@ using websocketpp::lib::bind;
 
 #define RPC_VERSION 1
 
+constexpr char VendorName[] = "AdvancedSceneSwitcher";
+constexpr char VendorRequest[] = "AdvancedSceneSwitcherMessage";
+constexpr char VendorEvent[] = "AdvancedSceneSwitcherEvent";
 obs_websocket_vendor vendor;
 
-void ClearWebsocketMessages()
+static void clearWebsocketMessages();
+static std::vector<std::string> websocketMessages;
+
+void SetupWebsocketHelpers()
 {
-	switcher->websocketMessages.clear();
-	for (auto &connection : switcher->connections) {
-		Connection *c = dynamic_cast<Connection *>(connection.get());
-		if (c) {
-			c->Events().clear();
+	static bool done = false;
+	if (done) {
+		return;
+	}
+	AddIntervalResetStep(clearWebsocketMessages);
+	done = true;
+}
+
+std::vector<std::string> &GetWebsocketMessages()
+{
+	return websocketMessages;
+}
+
+static void clearWebsocketMessages()
+{
+	websocketMessages.clear();
+	for (auto &connection : GetConnections()) {
+		auto c = dynamic_cast<Connection *>(connection.get());
+		if (!c) {
+			continue;
 		}
+		c->Events().clear();
 	}
 }
 
@@ -44,8 +68,8 @@ static void receiveWebsocketMessage(obs_data_t *request_data, obs_data_t *,
 	}
 
 	auto msg = obs_data_get_string(request_data, "message");
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->websocketMessages.emplace_back(msg);
+	auto lock = LockContext();
+	websocketMessages.emplace_back(msg);
 	vblog(LOG_INFO, "received message: %s", msg);
 }
 
@@ -294,7 +318,7 @@ void WSConnection::HandleEvent(obs_data_t *msg)
 		return;
 	}
 	auto eventDataNested = obs_data_get_obj(eventData, "eventData");
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	_messages.emplace_back(obs_data_get_string(eventDataNested, "message"));
 	vblog(LOG_INFO, "received event msg \"%s\"",
 	      obs_data_get_string(eventDataNested, "message"));
@@ -326,7 +350,7 @@ void WSConnection::OnGenericMessage(connection_hdl, client::message_ptr message)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	const auto payload = message->get_payload();
 	_messages.emplace_back(payload);
 	vblog(LOG_INFO, "received event msg \"%s\"", payload.c_str());

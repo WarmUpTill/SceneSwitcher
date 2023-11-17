@@ -330,12 +330,8 @@ void SwitcherData::SetPreconditions()
 	InvalidateMacroTempVarValues();
 }
 
-void ClearWebsocketMessages();
-
 void SwitcherData::ResetForNextInterval()
 {
-	// Core reset functions
-	ClearWebsocketMessages();
 	// Plugin reset functions
 	for (const auto &func : resetIntervalSteps) {
 		func();
@@ -759,6 +755,9 @@ void OpenSettingsWindow()
 	}
 }
 
+void SetupConnectionManager();
+void SetupWebsocketHelpers();
+
 extern "C" void InitSceneSwitcher(obs_module_t *module, translateFunc translate)
 {
 	blog(LOG_INFO, "version: %s", g_GIT_TAG);
@@ -769,6 +768,8 @@ extern "C" void InitSceneSwitcher(obs_module_t *module, translateFunc translate)
 	PlatformInit();
 	LoadPlugins();
 	SetupDock();
+	SetupConnectionManager();
+	SetupWebsocketHelpers();
 
 	obs_frontend_add_save_callback(SaveSceneSwitcher, nullptr);
 	obs_frontend_add_event_callback(OBSEvent, switcher);

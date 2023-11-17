@@ -34,28 +34,24 @@ static bool matchRegex(const RegexConfig &conf, const std::string &msg,
 
 bool MacroConditionWebsocket::CheckCondition()
 {
-	const std::vector<std::string> *messages = nullptr;
+	std::vector<std::string> messages;
 	switch (_type) {
 	case MacroConditionWebsocket::Type::REQUEST:
-		messages = &switcher->websocketMessages;
+		messages = GetWebsocketMessages();
 		break;
 	case MacroConditionWebsocket::Type::EVENT: {
 		auto connection = _connection.lock();
 		if (!connection) {
 			return false;
 		}
-		messages = &connection->Events();
+		messages = connection->Events();
 		break;
 	}
 	default:
 		break;
 	}
 
-	if (!messages) {
-		return false;
-	}
-
-	for (const auto &msg : *messages) {
+	for (const auto &msg : messages) {
 		if (_regex.Enabled()) {
 			if (matchRegex(_regex, msg, _message)) {
 				SetVariableValue(msg);

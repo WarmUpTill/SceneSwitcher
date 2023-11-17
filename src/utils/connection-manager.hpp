@@ -1,5 +1,6 @@
 #pragma once
 #include "item-selection-helpers.hpp"
+#include "websocket-helpers.hpp"
 
 #include <QComboBox>
 #include <QPushButton>
@@ -14,9 +15,10 @@
 #include <QGridLayout>
 #include <deque>
 #include <obs.hpp>
-#include <websocket-helpers.hpp>
 
 namespace advss {
+
+void SetupConnectionManager();
 
 class ConnectionSelection;
 class ConnectionSettingsDialog;
@@ -69,6 +71,7 @@ Connection *GetConnectionByName(const std::string &);
 std::weak_ptr<Connection> GetWeakConnectionByName(const std::string &name);
 std::weak_ptr<Connection> GetWeakConnectionByQString(const QString &name);
 std::string GetWeakConnectionName(std::weak_ptr<Connection>);
+std::deque<std::shared_ptr<Item>> &GetConnections();
 
 class ConnectionSettingsDialog : public ItemSettingsDialog {
 	Q_OBJECT
