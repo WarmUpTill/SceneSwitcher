@@ -64,6 +64,8 @@ private:
 	bool CheckRegularDate(int64_t);
 	bool CheckBetween(const QDateTime &now);
 	bool CheckPattern(QDateTime now, int64_t secondsSinceLastCheck);
+	void SetVariables(const QDateTime &date);
+	void SetupTempVars();
 
 	QDateTime _dateTime = QDateTime::currentDateTime();
 	QDateTime _dateTime2 = QDateTime::currentDateTime();
