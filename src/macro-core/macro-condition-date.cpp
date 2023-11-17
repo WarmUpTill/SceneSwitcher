@@ -60,7 +60,8 @@ const static std::map<MacroConditionDate::Day, std::string> dayOfWeekNames = {
 bool MacroConditionDate::CheckDayOfWeek(int64_t msSinceLastCheck)
 {
 	QDateTime cur = QDateTime::currentDateTime();
-	SetVariableValue(cur.toString().toStdString());
+	SetVariables(cur);
+
 	if (_dayOfWeek != Day::ANY &&
 	    cur.date().dayOfWeek() != static_cast<int>(_dayOfWeek)) {
 		return false;
@@ -133,7 +134,7 @@ bool MacroConditionDate::CheckRegularDate(int64_t msSinceLastCheck)
 {
 	bool match = false;
 	QDateTime cur = QDateTime::currentDateTime();
-	SetVariableValue(cur.toString().toStdString());
+	SetVariables(cur);
 
 	if (_ignoreDate) {
 		_dateTime.setDate(cur.date());
@@ -302,6 +303,37 @@ QDateTime MacroConditionDate::GetDateTime2() const
 QDateTime MacroConditionDate::GetNextMatchDateTime() const
 {
 	return _dateTime;
+}
+
+void MacroConditionDate::SetVariables(const QDateTime &date)
+{
+	SetVariableValue(date.toString().toStdString());
+
+	SetTempVarValue("year", std::to_string(date.date().year()));
+	SetTempVarValue("month", std::to_string(date.date().month()));
+	SetTempVarValue("day", std::to_string(date.date().day()));
+	SetTempVarValue("hour", std::to_string(date.time().hour()));
+	SetTempVarValue("minute", std::to_string(date.time().minute()));
+	SetTempVarValue("second", std::to_string(date.time().second()));
+	SetTempVarValue("dayOfWeek", std::to_string(date.date().dayOfWeek()));
+}
+
+void MacroConditionDate::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+	AddTempvar("year",
+		   obs_module_text("AdvSceneSwitcher.tempVar.date.year"));
+	AddTempvar("month",
+		   obs_module_text("AdvSceneSwitcher.tempVar.date.month"));
+	AddTempvar("day", obs_module_text("AdvSceneSwitcher.tempVar.date.day"));
+	AddTempvar("hour",
+		   obs_module_text("AdvSceneSwitcher.tempVar.date.hour"));
+	AddTempvar("minute",
+		   obs_module_text("AdvSceneSwitcher.tempVar.date.minute"));
+	AddTempvar("second",
+		   obs_module_text("AdvSceneSwitcher.tempVar.date.second"));
+	AddTempvar("dayOfWeek",
+		   obs_module_text("AdvSceneSwitcher.tempVar.date.dayOfWeek"));
 }
 
 static inline void populateDaySelection(QComboBox *list)
