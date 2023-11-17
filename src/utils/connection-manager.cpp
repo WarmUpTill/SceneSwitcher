@@ -1,18 +1,33 @@
 #include "connection-manager.hpp"
 #include "utility.hpp"
+#include "obs-module-helper.hpp"
+#include "plugin-state-helper.hpp"
 #include "name-dialog.hpp"
-#include "switcher-data.hpp"
 
 #include <algorithm>
 #include <QAction>
 #include <QMenu>
-#include <obs-module.h>
 
 Q_DECLARE_METATYPE(advss::Connection *);
 
 namespace advss {
 
-void SwitcherData::SaveConnections(obs_data_t *obj)
+static std::deque<std::shared_ptr<Item>> connections;
+static void saveConnections(obs_data_t *obj);
+static void loadConnections(obs_data_t *obj);
+
+void SetupConnectionManager()
+{
+	static bool done = false;
+	if (done) {
+		return;
+	}
+	AddSaveStep(saveConnections);
+	AddLoadStep(loadConnections);
+	done = true;
+}
+
+static void saveConnections(obs_data_t *obj)
 {
 	obs_data_array_t *connectionArray = obs_data_array_create();
 	for (const auto &c : connections) {
@@ -25,7 +40,7 @@ void SwitcherData::SaveConnections(obs_data_t *obj)
 	obs_data_array_release(connectionArray);
 }
 
-void SwitcherData::LoadConnections(obs_data_t *obj)
+static void loadConnections(obs_data_t *obj)
 {
 	connections.clear();
 
@@ -192,7 +207,7 @@ Connection *GetConnectionByName(const QString &name)
 
 Connection *GetConnectionByName(const std::string &name)
 {
-	for (auto &con : switcher->connections) {
+	for (auto &con : connections) {
 		if (con->Name() == name) {
 			return dynamic_cast<Connection *>(con.get());
 		}
@@ -202,7 +217,7 @@ Connection *GetConnectionByName(const std::string &name)
 
 std::weak_ptr<Connection> GetWeakConnectionByName(const std::string &name)
 {
-	for (const auto &c : switcher->connections) {
+	for (const auto &c : connections) {
 		if (c->Name() == name) {
 			std::weak_ptr<Connection> wp =
 				std::dynamic_pointer_cast<Connection>(c);
@@ -226,6 +241,11 @@ std::string GetWeakConnectionName(std::weak_ptr<Connection> connection)
 	return con->Name();
 }
 
+std::deque<std::shared_ptr<Item>> &GetConnections()
+{
+	return connections;
+}
+
 static bool ConnectionNameAvailable(const QString &name)
 {
 	return !GetConnectionByName(name);
@@ -244,8 +264,7 @@ static bool AskForSettingsWrapper(QWidget *parent, Item &settings)
 }
 
 ConnectionSelection::ConnectionSelection(QWidget *parent)
-	: ItemSelection(switcher->connections, Connection::Create,
-			AskForSettingsWrapper,
+	: ItemSelection(connections, Connection::Create, AskForSettingsWrapper,
 			"AdvSceneSwitcher.connection.select",
 			"AdvSceneSwitcher.connection.add",
 			"AdvSceneSwitcher.item.nameNotAvailable",
@@ -296,7 +315,7 @@ void ConnectionSelection::SetConnection(
 
 ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 						   const Connection &settings)
-	: ItemSettingsDialog(settings, switcher->connections,
+	: ItemSettingsDialog(settings, connections,
 			     "AdvSceneSwitcher.connection.select",
 			     "AdvSceneSwitcher.connection.add",
 			     "AdvSceneSwitcher.item.nameNotAvailable", parent),

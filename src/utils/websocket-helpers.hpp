@@ -21,18 +21,17 @@
 namespace advss {
 
 using websocketpp::connection_hdl;
-typedef websocketpp::server<websocketpp::config::asio> server;
-typedef websocketpp::client<websocketpp::config::asio_client> client;
 
-constexpr char VendorName[] = "AdvancedSceneSwitcher";
-constexpr char VendorRequest[] = "AdvancedSceneSwitcherMessage";
-constexpr char VendorEvent[] = "AdvancedSceneSwitcherEvent";
+void SetupWebsocketHelpers();
 
-void ClearWebsocketMessages();
 void SendWebsocketEvent(const std::string &);
 std::string ConstructVendorRequestMessage(const std::string &message);
+std::vector<std::string> &GetWebsocketMessages();
 
 class WSConnection : public QObject {
+	using server = websocketpp::server<websocketpp::config::asio>;
+	using client = websocketpp::client<websocketpp::config::asio_client>;
+
 public:
 	explicit WSConnection(bool useOBSProtocol = true);
 	virtual ~WSConnection();

@@ -81,7 +81,6 @@ public:
 
 	void SaveSettings(obs_data_t *obj);
 	void SaveMacros(obs_data_t *obj);
-	void SaveConnections(obs_data_t *obj);
 	void SaveVariables(obs_data_t *obj);
 	void SaveGeneralSettings(obs_data_t *obj);
 	void SaveHotkeys(obs_data_t *obj);
@@ -90,7 +89,6 @@ public:
 
 	void LoadSettings(obs_data_t *obj);
 	void LoadMacros(obs_data_t *obj);
-	void LoadConnections(obs_data_t *obj);
 	void LoadVariables(obs_data_t *obj);
 	void LoadGeneralSettings(obs_data_t *obj);
 	void LoadHotkeys(obs_data_t *obj);
@@ -175,8 +173,6 @@ public:
 	bool macroSceneSwitched = false;
 
 	Curlhelper curl;
-	std::deque<std::shared_ptr<Item>> connections;
-	std::vector<std::string> websocketMessages;
 	std::deque<std::shared_ptr<Item>> variables;
 
 	std::string lastTitle;

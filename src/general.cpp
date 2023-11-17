@@ -506,7 +506,6 @@ void SwitcherData::LoadSettings(obs_data_t *obj)
 	// selections to be available.
 	loadSceneGroups(obj);
 	LoadVariables(obj);
-	LoadConnections(obj);
 
 	for (const auto &func : loadSteps) {
 		func(obj);
@@ -549,7 +548,6 @@ void SwitcherData::SaveSettings(obs_data_t *obj)
 
 	saveSceneGroups(obj);
 	SaveMacros(obj);
-	SaveConnections(obj);
 	SaveVariables(obj);
 	saveWindowTitleSwitches(obj);
 	saveScreenRegionSwitches(obj);
