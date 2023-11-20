@@ -276,9 +276,13 @@ void Macro::ResetTimers()
 }
 
 bool Macro::RunActionsHelper(
-	const std::deque<std::shared_ptr<MacroAction>> &actions,
+	const std::deque<std::shared_ptr<MacroAction>> &actionsToRun,
 	bool ignorePause)
 {
+	// Create copy of action list as elements might be removed, inserted, or
+	// reordered while actions are currently being executed.
+	auto actions = actionsToRun;
+
 	bool actionsExecutedSuccessfully = true;
 	for (auto &action : actions) {
 		if (action->Enabled()) {
