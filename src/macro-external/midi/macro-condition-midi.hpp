@@ -24,6 +24,9 @@ public:
 	MidiMessage _message;
 
 private:
+	void SetupTempVars();
+	void SetVariableValues(const MidiMessage &);
+
 	static bool _registered;
 	static const std::string id;
 };

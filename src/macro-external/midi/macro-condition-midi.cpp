@@ -19,8 +19,7 @@ bool MacroConditionMidi::CheckCondition()
 
 	for (const auto &m : *messages) {
 		if (m.Matches(_message)) {
-			SetVariableValue(std::to_string(m.Note()) + " " +
-					 std::to_string(m.Value()));
+			SetVariableValues(m);
 			return true;
 		}
 	}
@@ -47,6 +46,36 @@ bool MacroConditionMidi::Load(obs_data_t *obj)
 std::string MacroConditionMidi::GetShortDesc() const
 {
 	return _device.Name();
+}
+
+void MacroConditionMidi::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+	AddTempvar("type",
+		   obs_module_text("AdvSceneSwitcher.tempVar.midi.type"));
+	AddTempvar("channel",
+		   obs_module_text("AdvSceneSwitcher.tempVar.midi.channel"));
+	AddTempvar("note",
+		   obs_module_text("AdvSceneSwitcher.tempVar.midi.note"));
+	AddTempvar("value1",
+		   obs_module_text("AdvSceneSwitcher.tempVar.midi.value1"));
+	AddTempvar("value2",
+		   obs_module_text("AdvSceneSwitcher.tempVar.midi.value2"));
+}
+
+void MacroConditionMidi::SetVariableValues(const MidiMessage &m)
+{
+	SetVariableValue(std::to_string(m.Note()) + " " +
+			 std::to_string(m.Value()));
+	SetTempVarValue("type", m.MidiTypeToString(m.Type()));
+	SetTempVarValue("channel", std::to_string(m.Channel()));
+	try {
+		SetTempVarValue("note",
+				GetAllNotes().at(m.Note()).toStdString());
+	} catch (...) {
+	}
+	SetTempVarValue("value1", std::to_string(m.Note()));
+	SetTempVarValue("value2", std::to_string(m.Value()));
 }
 
 MacroConditionMidiEdit::MacroConditionMidiEdit(
