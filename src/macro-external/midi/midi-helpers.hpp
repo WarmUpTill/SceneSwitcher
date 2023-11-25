@@ -100,7 +100,7 @@ public:
 	const std::vector<MidiMessage> *            // Might resize! Only call
 	GetMessages(bool ignoreListenMode = false); // while holding switcher
 						    // lock!
-	std::string Name() const;
+	std::string Name(bool addPort = true) const;
 
 	// Used for "listen" mode of message selection
 	// Listen mode disables automatic clearing of buffers
@@ -110,9 +110,6 @@ public:
 	bool DeviceSelected() { return !!_dev; }
 
 private:
-	std::string GetInputName() const;
-	std::string GetOutputName() const;
-
 	MidiDeviceType _type = MidiDeviceType::INPUT;
 	int _port = -1;
 	MidiDeviceInstance *_dev = nullptr;

@@ -260,8 +260,43 @@ void MidiDevice::Save(obs_data_t *obj) const
 	auto data = obs_data_create();
 	obs_data_set_int(data, "type", static_cast<int>(_type));
 	obs_data_set_int(data, "port", _dev ? _dev->_port : -1);
+	obs_data_set_string(data, "name", _dev ? Name(false).c_str() : "");
 	obs_data_set_obj(obj, "midiDevice", data);
 	obs_data_release(data);
+}
+
+static int nameToPort(bool input, const char *name)
+{
+	if (input) {
+		try {
+			auto midiin = libremidi::midi_in();
+			auto nPorts = midiin.get_port_count();
+			for (unsigned i = 0; i < nPorts; i++) {
+				if (midiin.get_port_name(i) == name) {
+					return i;
+				}
+			}
+		} catch (const libremidi::driver_error &error) {
+			blog(LOG_WARNING,
+			     "Failed to get midi input devices: %s",
+			     error.what());
+		}
+	}
+
+	try {
+		auto midiout = libremidi::midi_out();
+		auto nPorts = midiout.get_port_count();
+		for (unsigned i = 0; i < nPorts; i++) {
+			if (midiout.get_port_name(i) == name) {
+				return i;
+			}
+		}
+	} catch (const libremidi::driver_error &error) {
+		blog(LOG_WARNING, "Failed to get midi input devices: %s",
+		     error.what());
+	}
+
+	return -1;
 }
 
 void MidiDevice::Load(obs_data_t *obj)
@@ -270,6 +305,10 @@ void MidiDevice::Load(obs_data_t *obj)
 	_type = static_cast<MidiDeviceType>(obs_data_get_int(data, "type"));
 	obs_data_set_default_int(data, "port", -1);
 	_port = obs_data_get_int(data, "port");
+	auto name = obs_data_get_string(data, "name");
+	if (bool testing = true) {
+		_port = nameToPort(_type == MidiDeviceType::INPUT, name);
+	}
 	_dev = MidiDeviceInstance::GetDevice(_type, _port);
 	obs_data_release(data);
 }
@@ -481,7 +520,7 @@ const std::vector<MidiMessage> *MidiDevice::GetMessages(bool ignoreSkip)
 	return &_dev->GetMessages();
 }
 
-static QString portToName(bool input, int port)
+static QString portToName(bool input, int port, bool addPort)
 {
 	std::string name;
 	try {
@@ -498,32 +537,26 @@ static QString portToName(bool input, int port)
 		     input ? "input" : "output", port, error.what());
 	}
 
+	if (!addPort) {
+		return QString::fromStdString(name);
+	}
+
 	const QString deviceNamePattern =
 		obs_module_text("AdvSceneSwitcher.midi.deviceNamePattern");
 	return deviceNamePattern.arg(QString::number(port),
 				     QString::fromStdString(name));
 }
 
-std::string MidiDevice::GetInputName() const
-{
-	return portToName(true, _port).toStdString();
-}
-
-std::string MidiDevice::GetOutputName() const
-{
-	return portToName(false, _port).toStdString();
-}
-
-std::string MidiDevice::Name() const
+std::string MidiDevice::Name(bool addPort) const
 {
 	if (_port < 0) {
 		return "";
 	}
 
 	if (_type == MidiDeviceType::INPUT) {
-		return GetInputName();
+		return portToName(true, _port, addPort).toStdString();
 	}
-	return GetOutputName();
+	return portToName(false, _port, addPort).toStdString();
 }
 
 static inline QStringList getInputDeviceNames()
@@ -533,7 +566,7 @@ static inline QStringList getInputDeviceNames()
 		auto midiin = libremidi::midi_in();
 		auto nPorts = midiin.get_port_count();
 		for (unsigned i = 0; i < nPorts; i++) {
-			devices << portToName(true, i);
+			devices << portToName(true, i, true);
 		}
 	} catch (const libremidi::driver_error &error) {
 		blog(LOG_WARNING, "Failed to get midi input devices: %s",
@@ -549,7 +582,7 @@ static inline QStringList getOutputDeviceNames()
 		auto midiout = libremidi::midi_out();
 		auto nPorts = midiout.get_port_count();
 		for (unsigned i = 0; i < nPorts; i++) {
-			devices << portToName(false, i);
+			devices << portToName(false, i, true);
 		}
 	} catch (const libremidi::driver_error &error) {
 		blog(LOG_WARNING, "Failed to get midi output devices: %s",
@@ -915,12 +948,16 @@ void MidiMessageSelection::ValueChanged(const NumberVariable<int> &v)
 
 QStringList GetAllNotes()
 {
-	QStringList result;
-	QStringList notes = {"C",  "C#", "D",  "D#", "E",  "F",
-			     "F#", "G",  "G#", "A",  "A#", "B"};
-	for (int octave = -1; octave <= 9; octave++) {
-		for (int noteIndex = 0; noteIndex < 12; noteIndex++) {
-			result << notes[noteIndex] + QString::number(octave);
+	static bool done = false;
+	static QStringList result;
+	static const QStringList notes = {"C",  "C#", "D",  "D#", "E",  "F",
+					  "F#", "G",  "G#", "A",  "A#", "B"};
+	if (!done) {
+		for (int octave = -1; octave <= 9; octave++) {
+			for (int noteIndex = 0; noteIndex < 12; noteIndex++) {
+				result << notes[noteIndex] +
+						  QString::number(octave);
+			}
 		}
 	}
 	return result;
