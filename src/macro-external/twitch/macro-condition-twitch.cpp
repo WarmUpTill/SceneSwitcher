@@ -866,7 +866,9 @@ void MacroConditionTwitch::SetupTempVars()
 		AddTempvar(id, name.empty() ? id : name, description);
 	};
 
-	if (_condition != Condition::CHAT_MESSAGE_RECEIVED) {
+	if (_condition != Condition::CHAT_MESSAGE_RECEIVED &&
+	    _condition != Condition::RAID_INBOUND_EVENT &&
+	    _condition != Condition::RAID_OUTBOUND_EVENT) {
 		setupTempVarHelper("broadcaster_user_id");
 		setupTempVarHelper("broadcaster_user_login");
 		setupTempVarHelper("broadcaster_user_name");
@@ -1141,7 +1143,16 @@ void MacroConditionTwitch::SetupTempVars()
 		setupTempVarHelper("user_name", ".follow");
 		setupTempVarHelper("followed_at");
 		break;
+	case Condition::RAID_INBOUND_EVENT:
 	case Condition::RAID_OUTBOUND_EVENT:
+		setupTempVarHelper("from_broadcaster_user_id", ".raid");
+		setupTempVarHelper("from_broadcaster_user_login", ".raid");
+		setupTempVarHelper("from_broadcaster_user_name", ".raid");
+		setupTempVarHelper("to_broadcaster_user_id", ".raid");
+		setupTempVarHelper("to_broadcaster_user_login", ".raid");
+		setupTempVarHelper("to_broadcaster_user_name", ".raid");
+		setupTempVarHelper("viewers", ".raid");
+		break;
 	case Condition::LIVE_POLLING:
 		setupTempVarHelper("id", ".stream.online");
 		setupTempVarHelper("game_id");
