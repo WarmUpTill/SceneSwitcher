@@ -432,8 +432,8 @@ void TwitchChatConnection::ConnectThread()
 		_client.reset();
 		_connected = true;
 		websocketpp::lib::error_code ec;
-		EventSubWSClient::connection_ptr con =
-			_client.get_connection(_url, ec);
+		websocketpp::client<websocketpp::config::asio_tls_client>::
+			connection_ptr con = _client.get_connection(_url, ec);
 		if (ec) {
 			blog(LOG_INFO, "Twitch TwitchChatConnection failed: %s",
 			     ec.message().c_str());
@@ -634,8 +634,10 @@ void TwitchChatConnection::OnOpen(connection_hdl)
 	Authenticate();
 }
 
-void TwitchChatConnection::OnMessage(connection_hdl,
-				     EventSubWSClient::message_ptr message)
+void TwitchChatConnection::OnMessage(
+	connection_hdl,
+	websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr
+		message)
 {
 	constexpr std::string_view authOKCommand = "001";
 	constexpr std::string_view pingCommand = "PING";
@@ -679,7 +681,8 @@ void TwitchChatConnection::OnMessage(connection_hdl,
 
 void TwitchChatConnection::OnClose(connection_hdl hdl)
 {
-	EventSubWSClient::connection_ptr con = _client.get_con_from_hdl(hdl);
+	websocketpp::client<websocketpp::config::asio_tls_client>::connection_ptr
+		con = _client.get_con_from_hdl(hdl);
 	auto msg = con->get_ec().message();
 	blog(LOG_INFO, "Twitch chat connection closed: %s", msg.c_str());
 	_connected = false;
@@ -687,7 +690,8 @@ void TwitchChatConnection::OnClose(connection_hdl hdl)
 
 void TwitchChatConnection::OnFail(connection_hdl hdl)
 {
-	EventSubWSClient::connection_ptr con = _client.get_con_from_hdl(hdl);
+	websocketpp::client<websocketpp::config::asio_tls_client>::connection_ptr
+		con = _client.get_con_from_hdl(hdl);
 	auto msg = con->get_ec().message();
 	blog(LOG_INFO, "Twitch chat connection failed: %s", msg.c_str());
 	_connected = false;
