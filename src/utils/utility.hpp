@@ -108,6 +108,7 @@ int FindIdxInRagne(QComboBox *list, int start, int stop,
 
 bool DisplayMessage(const QString &msg, bool question = false,
 		    bool modal = true);
+void DisplayErrorMessage(const QString &msg);
 void DisplayTrayMessage(const QString &title, const QString &msg,
 			const QIcon &icon = QIcon());
 bool WindowPosValid(QPoint pos);

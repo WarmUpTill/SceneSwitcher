@@ -159,6 +159,8 @@ target_sources(
           src/macro-core/macro-action-wait.hpp
           src/macro-core/macro-action-websocket.cpp
           src/macro-core/macro-action-websocket.hpp
+          src/macro-core/macro-action-widget.cpp
+          src/macro-core/macro-action-widget.hpp
           src/macro-core/macro-action.cpp
           src/macro-core/macro-action.hpp
           src/macro-core/macro-condition-audio.cpp
