@@ -19,24 +19,24 @@ std::string MacroActionTwitch::GetShortDesc() const
 }
 
 const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
-	{MacroActionTwitch::Action::TITLE,
-	 "AdvSceneSwitcher.action.twitch.type.title"},
-	{MacroActionTwitch::Action::CATEGORY,
-	 "AdvSceneSwitcher.action.twitch.type.category"},
-	{MacroActionTwitch::Action::MARKER,
-	 "AdvSceneSwitcher.action.twitch.type.marker"},
-	{MacroActionTwitch::Action::CLIP,
-	 "AdvSceneSwitcher.action.twitch.type.clip"},
-	{MacroActionTwitch::Action::COMMERCIAL,
-	 "AdvSceneSwitcher.action.twitch.type.commercial"},
-	{MacroActionTwitch::Action::ANNOUNCEMENT,
-	 "AdvSceneSwitcher.action.twitch.type.announcement"},
-	{MacroActionTwitch::Action::ENABLE_EMOTE_ONLY,
-	 "AdvSceneSwitcher.action.twitch.type.emoteOnlyEnable"},
-	{MacroActionTwitch::Action::DISABLE_EMOTE_ONLY,
-	 "AdvSceneSwitcher.action.twitch.type.emoteOnlyDisable"},
-	{MacroActionTwitch::Action::RAID,
-	 "AdvSceneSwitcher.action.twitch.type.raid"},
+	{MacroActionTwitch::Action::CHANNEL_INFO_TITLE_SET,
+	 "AdvSceneSwitcher.action.twitch.type.channel.info.title.set"},
+	{MacroActionTwitch::Action::CHANNEL_INFO_CATEGORY_SET,
+	 "AdvSceneSwitcher.action.twitch.type.channel.info.category.set"},
+	{MacroActionTwitch::Action::RAID_START,
+	 "AdvSceneSwitcher.action.twitch.type.raid.start"},
+	{MacroActionTwitch::Action::COMMERCIAL_START,
+	 "AdvSceneSwitcher.action.twitch.type.commercial.start"},
+	{MacroActionTwitch::Action::MARKER_CREATE,
+	 "AdvSceneSwitcher.action.twitch.type.marker.create"},
+	{MacroActionTwitch::Action::CLIP_CREATE,
+	 "AdvSceneSwitcher.action.twitch.type.clip.create"},
+	{MacroActionTwitch::Action::CHAT_ANNOUNCEMENT_SEND,
+	 "AdvSceneSwitcher.action.twitch.type.chat.announcement.send"},
+	{MacroActionTwitch::Action::CHAT_EMOTE_ONLY_ENABLE,
+	 "AdvSceneSwitcher.action.twitch.type.chat.emoteOnly.enable"},
+	{MacroActionTwitch::Action::CHAT_EMOTE_ONLY_DISABLE,
+	 "AdvSceneSwitcher.action.twitch.type.chat.emoteOnly.disable"},
 	{MacroActionTwitch::Action::SEND_CHAT_MESSAGE,
 	 "AdvSceneSwitcher.action.twitch.type.sendChatMessage"},
 };
@@ -62,6 +62,12 @@ const static std::map<MacroActionTwitch::AnnouncementColor, std::string>
 		{MacroActionTwitch::AnnouncementColor::GREEN, "green"},
 		{MacroActionTwitch::AnnouncementColor::ORANGE, "orange"},
 		{MacroActionTwitch::AnnouncementColor::PURPLE, "purple"},
+};
+
+const static std::map<MacroActionTwitch::RedemptionStatus, std::string>
+	redemptionStatusesTwitch = {
+		{MacroActionTwitch::RedemptionStatus::CANCELED, "CANCELED"},
+		{MacroActionTwitch::RedemptionStatus::FULFILLED, "FULFILLED"},
 };
 
 void MacroActionTwitch::SetStreamTitle(
@@ -239,33 +245,32 @@ bool MacroActionTwitch::PerformAction()
 	}
 
 	switch (_action) {
-	case MacroActionTwitch::Action::TITLE:
+	case Action::CHANNEL_INFO_TITLE_SET:
 		SetStreamTitle(token);
 		break;
-	case MacroActionTwitch::Action::CATEGORY:
+	case Action::CHANNEL_INFO_CATEGORY_SET:
 		SetStreamCategory(token);
 		break;
-	case MacroActionTwitch::Action::MARKER:
-		CreateStreamMarker(token);
-		break;
-	case MacroActionTwitch::Action::CLIP:
-		CreateStreamClip(token);
-		break;
-	case MacroActionTwitch::Action::COMMERCIAL:
-		StartCommercial(token);
-		break;
-	case MacroActionTwitch::Action::ANNOUNCEMENT:
-		SendChatAnnouncement(token);
-		break;
-	case MacroActionTwitch::Action::ENABLE_EMOTE_ONLY:
-		SetChatEmoteOnlyMode(token, true);
-		break;
-	case MacroActionTwitch::Action::DISABLE_EMOTE_ONLY:
-		SetChatEmoteOnlyMode(token, false);
-		break;
-	case MacroActionTwitch::Action::RAID:
+	case Action::RAID_START:
 		StartRaid(token);
 		break;
+	case Action::COMMERCIAL_START:
+		StartCommercial(token);
+		break;
+	case Action::MARKER_CREATE:
+		CreateStreamMarker(token);
+		break;
+	case Action::CLIP_CREATE:
+		CreateStreamClip(token);
+		break;
+	case Action::CHAT_ANNOUNCEMENT_SEND:
+		SendChatAnnouncement(token);
+		break;
+	case Action::CHAT_EMOTE_ONLY_ENABLE:
+		SetChatEmoteOnlyMode(token, true);
+		break;
+	case Action::CHAT_EMOTE_ONLY_DISABLE:
+		SetChatEmoteOnlyMode(token, false);
 	case MacroActionTwitch::Action::SEND_CHAT_MESSAGE:
 		SendChatMessage(token);
 		break;
@@ -334,27 +339,111 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 bool MacroActionTwitch::ActionIsSupportedByToken()
 {
 	static const std::unordered_map<Action, TokenOption> requiredOption = {
-		{Action::TITLE, {"channel:manage:broadcast"}},
-		{Action::CATEGORY, {"channel:manage:broadcast"}},
-		{Action::MARKER, {"channel:manage:broadcast"}},
-		{Action::CLIP, {"clips:edit"}},
-		{Action::COMMERCIAL, {"channel:edit:commercial"}},
-		{Action::ANNOUNCEMENT, {"moderator:manage:announcements"}},
-		{Action::ENABLE_EMOTE_ONLY, {"moderator:manage:chat_settings"}},
-		{Action::DISABLE_EMOTE_ONLY,
+		{Action::CHANNEL_INFO_TITLE_SET, {"channel:manage:broadcast"}},
+		{Action::CHANNEL_INFO_CATEGORY_SET,
+		 {"channel:manage:broadcast"}},
+		{Action::CHANNEL_INFO_LANGUAGE_SET,
+		 {"channel:manage:broadcast"}},
+		{Action::CHANNEL_INFO_DELAY_SET, {"channel:manage:broadcast"}},
+		{Action::CHANNEL_INFO_BRANDED_CONTENT_ENABLE,
+		 {"channel:manage:broadcast"}},
+		{Action::CHANNEL_INFO_BRANDED_CONTENT_DISABLE,
+		 {"channel:manage:broadcast"}},
+		{Action::RAID_START, {"channel:manage:raids"}},
+		{Action::RAID_END, {"channel:manage:raids"}},
+		{Action::SHOUTOUT_SEND, {"moderator:manage:shoutouts"}},
+		{Action::POLL_END, {"channel:manage:polls"}},
+		{Action::PREDICTION_END, {"channel:manage:predictions"}},
+		{Action::SHIELD_MODE_START, {"moderator:manage:shield_mode"}},
+		{Action::SHIELD_MODE_END, {"moderator:manage:shield_mode"}},
+		{Action::POINTS_REWARD_ENABLE, {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_DISABLE, {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_PAUSE, {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_UNPAUSE, {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_TITLE_SET,
+		 {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_PROMPT_SET,
+		 {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_COST_SET,
+		 {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_USER_INPUT_REQUIRE,
+		 {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_USER_INPUT_UNREQUIRE,
+		 {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_COOLDOWN_ENABLE,
+		 {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_COOLDOWN_DISABLE,
+		 {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_QUEUE_SKIP_ENABLE,
+		 {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_QUEUE_SKIP_DISABLE,
+		 {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_MAX_PER_STREAM_ENABLE,
+		 {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_MAX_PER_STREAM_DISABLE,
+		 {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_MAX_PER_USER_ENABLE,
+		 {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_MAX_PER_USER_DISABLE,
+		 {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_DELETE, {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_REDEMPTION_CANCEL,
+		 {"channel:manage:redemptions"}},
+		{Action::POINTS_REWARD_REDEMPTION_FULFILL,
+		 {"channel:manage:redemptions"}},
+		{Action::USER_BAN, {"moderator:manage:banned_users"}},
+		{Action::USER_UNBAN, {"moderator:manage:banned_users"}},
+		{Action::USER_BLOCK, {"user:manage:blocked_users"}},
+		{Action::USER_UNBLOCK, {"user:manage:blocked_users"}},
+		{Action::USER_MODERATOR_ADD, {"channel:manage:moderators"}},
+		{Action::USER_MODERATOR_DELETE, {"channel:manage:moderators"}},
+		{Action::USER_VIP_ADD, {"channel:manage:vips"}},
+		{Action::USER_VIP_DELETE, {"channel:manage:vips"}},
+		{Action::COMMERCIAL_START, {"channel:edit:commercial"}},
+		{Action::COMMERCIAL_SNOOZE, {"channel:manage:ads"}},
+		{Action::MARKER_CREATE, {"channel:manage:broadcast"}},
+		{Action::CLIP_CREATE, {"clips:edit"}},
+		{Action::CHAT_ANNOUNCEMENT_SEND,
+		 {"moderator:manage:announcements"}},
+		{Action::CHAT_EMOTE_ONLY_ENABLE,
 		 {"moderator:manage:chat_settings"}},
-		{Action::RAID, {"channel:manage:raids"}},
+		{Action::CHAT_EMOTE_ONLY_DISABLE,
+		 {"moderator:manage:chat_settings"}},
+		{Action::CHAT_FOLLOWER_ONLY_ENABLE,
+		 {"moderator:manage:chat_settings"}},
+		{Action::CHAT_FOLLOWER_ONLY_DISABLE,
+		 {"moderator:manage:chat_settings"}},
+		{Action::CHAT_SUBSCRIBER_ONLY_ENABLE,
+		 {"moderator:manage:chat_settings"}},
+		{Action::CHAT_SUBSCRIBER_ONLY_DISABLE,
+		 {"moderator:manage:chat_settings"}},
+		{Action::CHAT_SLOW_MODE_ENABLE,
+		 {"moderator:manage:chat_settings"}},
+		{Action::CHAT_SLOW_MODE_DISABLE,
+		 {"moderator:manage:chat_settings"}},
+		{Action::CHAT_NON_MODERATOR_DELAY_ENABLE,
+		 {"moderator:manage:chat_settings"}},
+		{Action::CHAT_NON_MODERATOR_DELAY_DISABLE,
+		 {"moderator:manage:chat_settings"}},
+		{Action::CHAT_UNIQUE_MODE_ENABLE,
+		 {"moderator:manage:chat_settings"}},
+		{Action::CHAT_UNIQUE_MODE_DISABLE,
+		 {"moderator:manage:chat_settings"}},
+		{Action::WHISPER_SEND, {"user:manage:whispers"}},
 		{Action::SEND_CHAT_MESSAGE, {"chat:edit"}},
 	};
+
 	auto token = _token.lock();
 	if (!token) {
 		return false;
 	}
+
 	auto option = requiredOption.find(_action);
 	assert(option != requiredOption.end());
 	if (option == requiredOption.end()) {
 		return false;
 	}
+
 	return token->OptionIsEnabled(option->second);
 }
 
@@ -397,49 +486,8 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _channel(new TwitchChannelSelection(this)),
 	  _chatMessage(new VariableTextEdit(this))
 {
-	_streamTitle->setSizePolicy(QSizePolicy::MinimumExpanding,
-				    QSizePolicy::Preferred);
-	_streamTitle->setMaxLength(140);
-	_markerDescription->setSizePolicy(QSizePolicy::MinimumExpanding,
-					  QSizePolicy::Preferred);
-	_markerDescription->setMaxLength(140);
-	_announcementMessage->setSizePolicy(QSizePolicy::MinimumExpanding,
-					    QSizePolicy::Preferred);
-	_announcementMessage->setMaxLength(500);
-
-	auto spinBox = _duration->SpinBox();
-	spinBox->setSuffix("s");
-	spinBox->setMaximum(180);
-
-	populateActionSelection(_actions);
-	populateAnnouncementColorSelection(_announcementColor);
-
-	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(ActionChanged(int)));
-	QWidget::connect(_tokens, SIGNAL(SelectionChanged(const QString &)),
-			 this, SLOT(TwitchTokenChanged(const QString &)));
-	QWidget::connect(&_tokenPermissionCheckTimer, SIGNAL(timeout()), this,
-			 SLOT(CheckTokenPermissions()));
-	QWidget::connect(_streamTitle, SIGNAL(editingFinished()), this,
-			 SLOT(StreamTitleChanged()));
-	QWidget::connect(_category,
-			 SIGNAL(CategoreyChanged(const TwitchCategory &)), this,
-			 SLOT(CategoreyChanged(const TwitchCategory &)));
-	QWidget::connect(_markerDescription, SIGNAL(editingFinished()), this,
-			 SLOT(MarkerDescriptionChanged()));
-	QObject::connect(_clipHasDelay, SIGNAL(stateChanged(int)), this,
-			 SLOT(ClipHasDelayChanged(int)));
-	QObject::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
-			 this, SLOT(DurationChanged(const Duration &)));
-	QWidget::connect(_announcementMessage, SIGNAL(textChanged()), this,
-			 SLOT(AnnouncementMessageChanged()));
-	QWidget::connect(_announcementColor, SIGNAL(currentIndexChanged(int)),
-			 this, SLOT(AnnouncementColorChanged(int)));
-	QWidget::connect(_channel,
-			 SIGNAL(ChannelChanged(const TwitchChannel &)), this,
-			 SLOT(ChannelChanged(const TwitchChannel &)));
-	QWidget::connect(_chatMessage, SIGNAL(textChanged()), this,
-			 SLOT(ChatMessageChanged()));
+	SetWidgetProperties();
+	SetWidgetSignalConnections();
 
 	_entryData = entryData;
 	SetWidgetLayout();
@@ -473,8 +521,8 @@ void MacroActionTwitchEdit::ActionChanged(int idx)
 	auto lock = LockContext();
 	_entryData->_action = static_cast<MacroActionTwitch::Action>(
 		_actions->itemData(idx).toInt());
-	SetWidgetVisibility();
 	SetWidgetLayout();
+	SetWidgetVisibility();
 }
 
 void MacroActionTwitchEdit::TwitchTokenChanged(const QString &token)
@@ -576,30 +624,86 @@ void MacroActionTwitchEdit::AnnouncementColorChanged(int index)
 		static_cast<MacroActionTwitch::AnnouncementColor>(index);
 }
 
+void MacroActionTwitchEdit::SetWidgetProperties()
+{
+	_streamTitle->setSizePolicy(QSizePolicy::MinimumExpanding,
+				    QSizePolicy::Preferred);
+	_streamTitle->setMaxLength(140);
+	_markerDescription->setSizePolicy(QSizePolicy::MinimumExpanding,
+					  QSizePolicy::Preferred);
+	_markerDescription->setMaxLength(140);
+	_announcementMessage->setMaxLength(500);
+
+	auto durationSpinBox = _duration->SpinBox();
+	durationSpinBox->setMaximum(180);
+	durationSpinBox->setSuffix("s");
+
+	populateActionSelection(_actions);
+	populateAnnouncementColorSelection(_announcementColor);
+}
+
+void MacroActionTwitchEdit::SetWidgetSignalConnections()
+{
+	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(ActionChanged(int)));
+	QWidget::connect(_tokens, SIGNAL(SelectionChanged(const QString &)),
+			 this, SLOT(TwitchTokenChanged(const QString &)));
+	QWidget::connect(&_tokenPermissionCheckTimer, SIGNAL(timeout()), this,
+			 SLOT(CheckTokenPermissions()));
+	QWidget::connect(_streamTitle, SIGNAL(editingFinished()), this,
+			 SLOT(StreamTitleChanged()));
+	QWidget::connect(_category,
+			 SIGNAL(CategoreyChanged(const TwitchCategory &)), this,
+			 SLOT(CategoreyChanged(const TwitchCategory &)));
+	QWidget::connect(_markerDescription, SIGNAL(editingFinished()), this,
+			 SLOT(MarkerDescriptionChanged()));
+	QObject::connect(_clipHasDelay, SIGNAL(stateChanged(int)), this,
+			 SLOT(ClipHasDelayChanged(int)));
+	QObject::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
+	QWidget::connect(_announcementMessage, SIGNAL(textChanged()), this,
+			 SLOT(AnnouncementMessageChanged()));
+	QWidget::connect(_announcementColor, SIGNAL(currentIndexChanged(int)),
+			 this, SLOT(AnnouncementColorChanged(int)));
+	QWidget::connect(_channel,
+			 SIGNAL(ChannelChanged(const TwitchChannel &)), this,
+			 SLOT(ChannelChanged(const TwitchChannel &)));
+	QWidget::connect(_chatMessage, SIGNAL(textChanged()), this,
+			 SLOT(ChatMessageChanged()));
+}
+
 void MacroActionTwitchEdit::SetWidgetVisibility()
 {
-	_streamTitle->setVisible(_entryData->_action ==
-				 MacroActionTwitch::Action::TITLE);
-	_category->setVisible(_entryData->_action ==
-			      MacroActionTwitch::Action::CATEGORY);
-	_markerDescription->setVisible(_entryData->_action ==
-				       MacroActionTwitch::Action::MARKER);
-	_clipHasDelay->setVisible(_entryData->_action ==
-				  MacroActionTwitch::Action::CLIP);
-	_duration->setVisible(_entryData->_action ==
-			      MacroActionTwitch::Action::COMMERCIAL);
-	_announcementMessage->setVisible(
-		_entryData->_action == MacroActionTwitch::Action::ANNOUNCEMENT);
-	_announcementColor->setVisible(_entryData->_action ==
-				       MacroActionTwitch::Action::ANNOUNCEMENT);
+	_streamTitle->setVisible(
+		_entryData->_action ==
+		MacroActionTwitch::Action::CHANNEL_INFO_TITLE_SET);
+	_category->setVisible(
+		_entryData->_action ==
+		MacroActionTwitch::Action::CHANNEL_INFO_CATEGORY_SET);
 	_channel->setVisible(
-		_entryData->_action == MacroActionTwitch::Action::RAID ||
+		_entryData->_action == MacroActionTwitch::Action::RAID_START ||
+		_entryData->_action == MacroActionTwitch::Action::RAID_END ||
 		_entryData->_action ==
 			MacroActionTwitch::Action::SEND_CHAT_MESSAGE);
+	_duration->setVisible(_entryData->_action ==
+			      MacroActionTwitch::Action::COMMERCIAL_START);
+	_markerDescription->setVisible(
+		_entryData->_action ==
+		MacroActionTwitch::Action::MARKER_CREATE);
+	_clipHasDelay->setVisible(_entryData->_action ==
+				  MacroActionTwitch::Action::CLIP_CREATE);
+	_announcementMessage->setVisible(
+		_entryData->_action ==
+		MacroActionTwitch::Action::CHAT_ANNOUNCEMENT_SEND);
+	_announcementColor->setVisible(
+		_entryData->_action ==
+		MacroActionTwitch::Action::CHAT_ANNOUNCEMENT_SEND);
 	_chatMessage->setVisible(_entryData->_action ==
 				 MacroActionTwitch::Action::SEND_CHAT_MESSAGE);
-	if (_entryData->_action == MacroActionTwitch::Action::TITLE ||
-	    _entryData->_action == MacroActionTwitch::Action::MARKER) {
+
+	if (_entryData->_action ==
+		    MacroActionTwitch::Action::CHANNEL_INFO_TITLE_SET ||
+	    _entryData->_action == MacroActionTwitch::Action::MARKER_CREATE) {
 		RemoveStretchIfPresent(_layout);
 	} else {
 		AddStretchIfNecessary(_layout);
@@ -637,7 +741,7 @@ void MacroActionTwitchEdit::ChatMessageChanged()
 
 void MacroActionTwitchEdit::SetWidgetLayout()
 {
-	static const std::vector<QWidget *> widgets{
+	const std::vector<QWidget *> widgets{
 		_tokens,   _actions,           _streamTitle,
 		_category, _markerDescription, _clipHasDelay,
 		_duration, _announcementColor, _channel};
