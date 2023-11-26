@@ -192,7 +192,7 @@ void MacroActionWebsocketEdit::CheckForSettingsConflict()
 	updateGeometry();
 }
 
-void MacroActionWebsocketEdit::SetupWidgetVisibility()
+void MacroActionWebsocketEdit::SetWidgetVisibility()
 {
 	_messageType->setVisible(_entryData->_api ==
 				 MacroActionWebsocket::API::SCENE_SWITCHER);
@@ -283,7 +283,7 @@ void MacroActionWebsocketEdit::UpdateEntryData()
 	_message->setPlainText(_entryData->_message);
 	_connection->SetConnection(_entryData->_connection);
 
-	SetupWidgetVisibility();
+	SetWidgetVisibility();
 }
 
 void MacroActionWebsocketEdit::APITypeChanged(int index)
@@ -294,7 +294,7 @@ void MacroActionWebsocketEdit::APITypeChanged(int index)
 
 	auto lock = LockContext();
 	_entryData->_api = static_cast<MacroActionWebsocket::API>(index);
-	SetupWidgetVisibility();
+	SetWidgetVisibility();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -308,7 +308,7 @@ void MacroActionWebsocketEdit::MessageTypeChanged(int index)
 	auto lock = LockContext();
 	_entryData->_type =
 		static_cast<MacroActionWebsocket::MessageType>(index);
-	SetupWidgetVisibility();
+	SetWidgetVisibility();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }

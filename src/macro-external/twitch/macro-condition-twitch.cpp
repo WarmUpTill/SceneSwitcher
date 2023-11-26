@@ -1291,7 +1291,7 @@ void MacroConditionTwitchEdit::ConditionChanged(int idx)
 	auto lock = LockContext();
 	_entryData->SetCondition(static_cast<MacroConditionTwitch::Condition>(
 		_conditions->itemData(idx).toInt()));
-	SetupWidgetVisibility();
+	SetWidgetVisibility();
 	emit TempVarsChanged();
 }
 
@@ -1308,7 +1308,7 @@ void MacroConditionTwitchEdit::TwitchTokenChanged(const QString &token)
 	_pointsReward->SetToken(_entryData->_token);
 	_entryData->ResetChatConnection();
 
-	SetupWidgetVisibility();
+	SetWidgetVisibility();
 	emit(HeaderInfoChanged(token));
 }
 
@@ -1399,7 +1399,7 @@ void MacroConditionTwitchEdit::CategoreyChanged(const TwitchCategory &category)
 	_entryData->_category = category;
 }
 
-void MacroConditionTwitchEdit::SetupWidgetVisibility()
+void MacroConditionTwitchEdit::SetWidgetVisibility()
 {
 	auto condition = _entryData->GetCondition();
 
@@ -1459,7 +1459,7 @@ void MacroConditionTwitchEdit::UpdateEntryData()
 	_category->SetToken(_entryData->_token);
 	_category->SetCategory(_entryData->_category);
 
-	SetupWidgetVisibility();
+	SetWidgetVisibility();
 }
 
 } // namespace advss
