@@ -194,7 +194,7 @@ void TwitchToken::SetToken(const std::string &value)
 {
 	_token = value;
 	auto res =
-		SendGetRequest("https://api.twitch.tv", "/helix/users", *this);
+		SendGetRequest(*this, "https://api.twitch.tv", "/helix/users");
 	if (res.status != 200) {
 		blog(LOG_WARNING, "failed to get Twitch user id from token!");
 		_userID = -1;

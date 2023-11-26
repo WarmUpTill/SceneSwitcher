@@ -35,8 +35,8 @@ std::string TwitchChannel::GetUserID(const TwitchToken &token) const
 		return it->second;
 	}
 
-	auto res = SendGetRequest("https://api.twitch.tv", "/helix/users",
-				  token, {{"login", _name}});
+	auto res = SendGetRequest(token, "https://api.twitch.tv",
+				  "/helix/users", {{"login", _name}});
 
 	if (res.status == 400) {
 		userIDCache[_name] = "invalid";
@@ -112,8 +112,8 @@ TwitchChannel::GetLiveInfo(const TwitchToken &token)
 
 	httplib::Params params = {
 		{"first", "1"}, {"after", ""}, {"user_id", id}};
-	auto result = SendGetRequest("https://api.twitch.tv", "/helix/streams",
-				     token, params, true);
+	auto result = SendGetRequest(token, "https://api.twitch.tv",
+				     "/helix/streams", params, true);
 	if (result.status != 200) {
 		return {};
 	}
@@ -153,8 +153,8 @@ std::optional<ChannelInfo> TwitchChannel::GetInfo(const TwitchToken &token)
 
 	httplib::Params params = {
 		{"first", "1"}, {"after", ""}, {"broadcaster_id", id}};
-	auto result = SendGetRequest("https://api.twitch.tv", "/helix/channels",
-				     token, params, true);
+	auto result = SendGetRequest(token, "https://api.twitch.tv",
+				     "/helix/channels", params, true);
 	if (result.status != 200) {
 		return {};
 	}

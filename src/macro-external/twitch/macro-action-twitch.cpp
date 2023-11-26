@@ -73,11 +73,10 @@ void MacroActionTwitch::SetStreamTitle(
 
 	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_string(data, "title", _streamTitle.c_str());
-	auto result = SendPatchRequest(
-		"https://api.twitch.tv",
-		std::string("/helix/channels?broadcaster_id=") +
-			token->GetUserID(),
-		*token, data.Get());
+	auto result = SendPatchRequest(*token, "https://api.twitch.tv",
+				       "/helix/channels",
+				       {{"broadcaster_id", token->GetUserID()}},
+				       data.Get());
 
 	if (result.status != 204) {
 		blog(LOG_INFO, "Failed to set stream title! (%d)",
@@ -95,11 +94,11 @@ void MacroActionTwitch::SetStreamCategory(
 	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_string(data, "game_id",
 			    std::to_string(_category.id).c_str());
-	auto result = SendPatchRequest(
-		"https://api.twitch.tv",
-		std::string("/helix/channels?broadcaster_id=") +
-			token->GetUserID(),
-		*token, data.Get());
+	auto result = SendPatchRequest(*token, "https://api.twitch.tv",
+				       "/helix/channels",
+				       {{"broadcaster_id", token->GetUserID()}},
+				       data.Get());
+
 	if (result.status != 204) {
 		blog(LOG_INFO, "Failed to set stream category! (%d)",
 		     result.status);
@@ -117,9 +116,8 @@ void MacroActionTwitch::CreateStreamMarker(
 				    _markerDescription.c_str());
 	}
 
-	auto result = SendPostRequest("https://api.twitch.tv",
-				      "/helix/streams/markers", *token,
-				      data.Get());
+	auto result = SendPostRequest(*token, "https://api.twitch.tv",
+				      "/helix/streams/markers", {}, data.Get());
 
 	if (result.status != 200) {
 		blog(LOG_INFO, "Failed to create marker! (%d)", result.status);
@@ -129,14 +127,12 @@ void MacroActionTwitch::CreateStreamMarker(
 void MacroActionTwitch::CreateStreamClip(
 	const std::shared_ptr<TwitchToken> &token) const
 {
-	OBSDataAutoRelease data = obs_data_create();
 	auto hasDelay = _clipHasDelay ? "true" : "false";
 
-	auto result = SendPostRequest(
-		"https://api.twitch.tv",
-		"/helix/clips?broadcaster_id=" + token->GetUserID() +
-			"&has_delay=" + hasDelay,
-		*token, data.Get());
+	auto result = SendPostRequest(*token, "https://api.twitch.tv",
+				      "/helix/clips",
+				      {{"broadcaster_id", token->GetUserID()},
+				       {"has_delay", hasDelay}});
 
 	if (result.status != 202) {
 		blog(LOG_INFO, "Failed to create clip! (%d)", result.status);
@@ -149,9 +145,10 @@ void MacroActionTwitch::StartCommercial(
 	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_string(data, "broadcaster_id", token->GetUserID().c_str());
 	obs_data_set_int(data, "length", _duration.Seconds());
-	auto result = SendPostRequest("https://api.twitch.tv",
-				      "/helix/channels/commercial", *token,
+	auto result = SendPostRequest(*token, "https://api.twitch.tv",
+				      "/helix/channels/commercial", {},
 				      data.Get());
+
 	if (result.status != 200) {
 		OBSDataArrayAutoRelease replyArray =
 			obs_data_get_array(result.data, "data");
@@ -178,11 +175,10 @@ void MacroActionTwitch::SendChatAnnouncement(
 		announcementColorsTwitch.at(_announcementColor).c_str());
 	auto userId = token->GetUserID();
 
-	auto result =
-		SendPostRequest("https://api.twitch.tv",
-				"/helix/chat/announcements?broadcaster_id=" +
-					userId + "&moderator_id=" + userId,
-				*token, data.Get());
+	auto result = SendPostRequest(
+		*token, "https://api.twitch.tv", "/helix/chat/announcements",
+		{{"broadcaster_id", userId}, {"moderator_id", userId}},
+		data.Get());
 
 	if (result.status != 204) {
 		blog(LOG_INFO, "Failed to send chat announcement! (%d)",
@@ -197,11 +193,10 @@ void MacroActionTwitch::SetChatEmoteOnlyMode(
 	obs_data_set_bool(data, "emote_mode", enable);
 	auto userId = token->GetUserID();
 
-	auto result =
-		SendPatchRequest("https://api.twitch.tv",
-				 "/helix/chat/settings?broadcaster_id=" +
-					 userId + "&moderator_id=" + userId,
-				 *token, data.Get());
+	auto result = SendPatchRequest(
+		*token, "https://api.twitch.tv", "/helix/chat/settings",
+		{{"broadcaster_id", userId}, {"moderator_id", userId}},
+		data.Get());
 
 	if (result.status != 200) {
 		blog(LOG_INFO, "Failed to %s chat's emote-only mode! (%d)",
@@ -216,8 +211,9 @@ void MacroActionTwitch::StartRaid(const std::shared_ptr<TwitchToken> &token)
 			    token->GetUserID().c_str());
 	obs_data_set_string(data, "to_broadcaster_id",
 			    _channel.GetUserID(*token).c_str());
-	auto result = SendPostRequest("https://api.twitch.tv", "/helix/raids",
-				      *token, data.Get());
+	auto result = SendPostRequest(*token, "https://api.twitch.tv",
+				      "/helix/raids", {}, data.Get());
+
 	if (result.status != 200) {
 		blog(LOG_INFO, "Failed to start raid! (%d)\n", result.status);
 	}
