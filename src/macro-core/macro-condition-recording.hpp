@@ -6,15 +6,10 @@
 
 namespace advss {
 
-enum class RecordState {
-	STOP,
-	PAUSE,
-	START,
-};
-
 class MacroConditionRecord : public MacroCondition {
 public:
-	MacroConditionRecord(Macro *m) : MacroCondition(m) {}
+	MacroConditionRecord(Macro *m);
+	~MacroConditionRecord();
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
@@ -24,9 +19,18 @@ public:
 		return std::make_shared<MacroConditionRecord>(m);
 	}
 
-	RecordState _recordState = RecordState::STOP;
+	enum class Condition {
+		STOP,
+		PAUSE,
+		START,
+		SAVE_DONE,
+	};
+	Condition _condition = Condition::STOP;
 
 private:
+	static void StopSignal(void *condition, calldata_t *);
+	bool _recordingSaveDone = false;
+
 	static bool _registered;
 	static const std::string id;
 };
