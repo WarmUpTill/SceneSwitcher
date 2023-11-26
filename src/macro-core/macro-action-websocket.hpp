@@ -76,7 +76,7 @@ protected:
 
 private:
 	void CheckForSettingsConflict();
-	void SetupWidgetVisibility();
+	void SetWidgetVisibility();
 	void SetupRequestEdit();
 	void SetupEventEdit();
 	void SetupGenericEdit();

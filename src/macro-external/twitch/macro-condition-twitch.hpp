@@ -170,7 +170,7 @@ protected:
 	std::shared_ptr<MacroConditionTwitch> _entryData;
 
 private:
-	void SetupWidgetVisibility();
+	void SetWidgetVisibility();
 
 	QHBoxLayout *_layout;
 	FilterComboBox *_conditions;

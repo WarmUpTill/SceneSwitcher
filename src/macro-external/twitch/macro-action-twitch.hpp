@@ -119,7 +119,7 @@ protected:
 	std::shared_ptr<MacroActionTwitch> _entryData;
 
 private:
-	void SetupWidgetVisibility();
+	void SetWidgetVisibility();
 	void SetWidgetLayout();
 
 	QHBoxLayout *_layout;

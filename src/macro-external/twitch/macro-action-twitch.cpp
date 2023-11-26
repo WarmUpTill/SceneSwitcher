@@ -477,7 +477,7 @@ void MacroActionTwitchEdit::ActionChanged(int idx)
 	auto lock = LockContext();
 	_entryData->_action = static_cast<MacroActionTwitch::Action>(
 		_actions->itemData(idx).toInt());
-	SetupWidgetVisibility();
+	SetWidgetVisibility();
 	SetWidgetLayout();
 }
 
@@ -492,7 +492,7 @@ void MacroActionTwitchEdit::TwitchTokenChanged(const QString &token)
 	_category->SetToken(_entryData->_token);
 	_channel->SetToken(_entryData->_token);
 
-	SetupWidgetVisibility();
+	SetWidgetVisibility();
 	emit(HeaderInfoChanged(token));
 }
 
@@ -580,7 +580,7 @@ void MacroActionTwitchEdit::AnnouncementColorChanged(int index)
 		static_cast<MacroActionTwitch::AnnouncementColor>(index);
 }
 
-void MacroActionTwitchEdit::SetupWidgetVisibility()
+void MacroActionTwitchEdit::SetWidgetVisibility()
 {
 	_streamTitle->setVisible(_entryData->_action ==
 				 MacroActionTwitch::Action::TITLE);
@@ -692,7 +692,7 @@ void MacroActionTwitchEdit::UpdateEntryData()
 	_channel->SetChannel(_entryData->_channel);
 	_chatMessage->setPlainText(_entryData->_chatMessage);
 
-	SetupWidgetVisibility();
+	SetWidgetVisibility();
 }
 
 } // namespace advss
