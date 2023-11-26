@@ -134,9 +134,9 @@ TwitchPointsRewardSelection::GetPointsRewards(
 	httplib::Params params = {
 		{"broadcaster_id", channel.GetUserID(*token)}};
 
-	auto response = SendGetRequest("https://api.twitch.tv",
+	auto response = SendGetRequest(*token, "https://api.twitch.tv",
 				       "/helix/channel_points/custom_rewards",
-				       *token, params);
+				       params);
 
 	if (response.status != 200) {
 		blog(LOG_WARNING,

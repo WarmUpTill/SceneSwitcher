@@ -230,14 +230,16 @@ std::string EventSub::AddEventSubscribtion(std::shared_ptr<TwitchToken> token,
 
 	OBSDataAutoRelease postData = copyData(subscription.data);
 	setTransportData(postData.Get(), eventSub->_sessionID);
-	auto result = SendPostRequest(registerSubscriptionURL.data(),
-				      registerSubscriptionPath.data(), *token,
+	auto result = SendPostRequest(*token, registerSubscriptionURL.data(),
+				      registerSubscriptionPath.data(), {},
 				      postData.Get());
+
 	if (result.status != 202) {
 		vblog(LOG_INFO, "failed to register Twitch EventSub (%d)",
 		      result.status);
 		return "";
 	}
+
 	OBSDataArrayAutoRelease replyArray =
 		obs_data_get_array(result.data, "data");
 	OBSDataAutoRelease replyData = obs_data_array_item(replyArray, 0);
