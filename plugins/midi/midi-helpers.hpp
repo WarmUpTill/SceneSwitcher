@@ -5,11 +5,8 @@
 #include <QComboBox>
 #include <obs-data.h>
 
-#pragma warning(push)
-#pragma warning(disable : 4005)
 #define LIBREMIDI_HEADER_ONLY 1
 #include <libremidi/libremidi.hpp>
-#pragma warning(pop)
 
 namespace advss {
 
@@ -60,6 +57,8 @@ enum class MidiDeviceType {
 
 class MidiDeviceInstance {
 public:
+	static MidiDeviceInstance *GetDevice(MidiDeviceType type,
+					     const std::string &);
 	static MidiDeviceInstance *GetDevice(MidiDeviceType type, int port);
 	static void ClearMessageBuffersOfAllDevices();
 	static void ResetAllDevices();
@@ -71,18 +70,24 @@ private:
 	void ClosePort();
 	bool SendMessge(const MidiMessage &);
 	const std::vector<MidiMessage> &GetMessages();
-	void ReceiveMidiMessage(const libremidi::message &);
+	void ReceiveMidiMessage(libremidi::message &&);
 	void ClearMessageBuffer();
 
-	static std::map<std::pair<MidiDeviceType, int>, MidiDeviceInstance *>
+	static std::map<std::pair<MidiDeviceType, std::string>,
+			MidiDeviceInstance *>
 		devices;
 
 	bool _skipBufferClear = false;
 
 	MidiDeviceType _type = MidiDeviceType::INPUT;
-	int _port = -1;
-	libremidi::midi_in in;
-	libremidi::midi_out out;
+	std::string _name;
+	libremidi::midi_in in =
+		libremidi::midi_in(libremidi::input_configuration{
+			[this](libremidi::message &&message) {
+				ReceiveMidiMessage(std::move(message));
+			}});
+	libremidi::midi_out out =
+		libremidi::midi_out(libremidi::output_configuration());
 	std::vector<MidiMessage> _messages;
 
 	friend class MidiDevice;
@@ -110,11 +115,8 @@ public:
 	bool DeviceSelected() { return !!_dev; }
 
 private:
-	std::string GetInputName() const;
-	std::string GetOutputName() const;
-
 	MidiDeviceType _type = MidiDeviceType::INPUT;
-	int _port = -1;
+	std::string _name;
 	MidiDeviceInstance *_dev = nullptr;
 
 	friend class MidiDeviceSelection;

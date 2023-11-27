@@ -11,16 +11,18 @@
 
 namespace advss {
 
-static std::map<std::pair<MidiDeviceType, int>, MidiDeviceInstance *>
-SetupMidiMessageVector()
+std::map<std::pair<MidiDeviceType, std::string>, MidiDeviceInstance *>
+	MidiDeviceInstance::devices = {};
+
+static bool registerClearMessageBufferStep()
 {
 	AddIntervalResetStep(
 		MidiDeviceInstance::ClearMessageBuffersOfAllDevices);
-	return {};
+	return true;
 }
 
-std::map<std::pair<MidiDeviceType, int>, MidiDeviceInstance *>
-	MidiDeviceInstance::devices = SetupMidiMessageVector();
+static bool registerClearMessageBufferStepDone =
+	registerClearMessageBufferStep();
 
 void MidiDeviceInstance::ClearMessageBuffersOfAllDevices()
 {
@@ -60,26 +62,24 @@ MidiMessage::MidiMessage(const libremidi::message &message)
 
 void MidiMessage::Save(obs_data_t *obj) const
 {
-	auto data = obs_data_create();
+	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_bool(data, "typeIsOptional", _typeIsOptional);
 	obs_data_set_int(data, "type", static_cast<int>(_type));
 	_channel.Save(data, "channel");
 	_note.Save(data, "note");
 	_value.Save(data, "value");
 	obs_data_set_obj(obj, "midiMessage", data);
-	obs_data_release(data);
 }
 
 void MidiMessage::Load(obs_data_t *obj)
 {
-	auto data = obs_data_get_obj(obj, "midiMessage");
+	OBSDataAutoRelease data = obs_data_get_obj(obj, "midiMessage");
 	_typeIsOptional = obs_data_get_bool(data, "typeIsOptional");
 	_type = static_cast<libremidi::message_type>(
 		obs_data_get_int(data, "type"));
 	_channel.Load(data, "channel");
 	_note.Load(data, "note");
 	_value.Load(data, "value");
-	obs_data_release(data);
 }
 
 int MidiMessage::GetMidiNote(const libremidi::message &msg)
@@ -231,13 +231,14 @@ bool MidiMessage::Matches(const MidiMessage &m) const
 	return channelMatch && noteMatch && valueMatch && typeMatch;
 }
 
-MidiDeviceInstance *MidiDeviceInstance::GetDevice(MidiDeviceType type, int port)
+MidiDeviceInstance *MidiDeviceInstance::GetDevice(MidiDeviceType type,
+						  const std::string &name)
 {
-	if (port < 0) {
+	if (name.empty()) {
 		return nullptr;
 	}
 
-	auto key = std::make_pair(type, port);
+	auto key = std::make_pair(type, name);
 	auto it = devices.find(key);
 	if (it != devices.end()) {
 		it->second->OpenPort();
@@ -247,45 +248,145 @@ MidiDeviceInstance *MidiDeviceInstance::GetDevice(MidiDeviceType type, int port)
 	try {
 		auto device = new MidiDeviceInstance();
 		device->_type = type;
-		device->_port = port;
+		device->_name = name;
 		devices[key] = device;
 		device->OpenPort();
 		return device;
 	} catch (const libremidi::driver_error &error) {
 		blog(LOG_WARNING,
-		     "Failed to create midi %s device instance for port #%d: %s",
-		     type == MidiDeviceType::INPUT ? "input" : "output", port,
-		     error.what());
+		     "Failed to create midi %s device instance for port '%s': %s",
+		     type == MidiDeviceType::INPUT ? "input" : "output",
+		     name.c_str(), error.what());
 	}
 	return nullptr;
 }
 
+static std::string
+getNameFromPortInformation(const libremidi::port_information &info)
+{
+	std::string name = info.manufacturer + " " + info.device_name + " " +
+			   info.port_name + "] " + info.display_name;
+	name.erase(name.begin(), std::find_if(name.begin(), name.end(),
+					      [](char c) { return c != ' '; }));
+	return "[" + name;
+}
+
+static inline QStringList getInputDeviceNames()
+{
+	QStringList devices;
+	try {
+		libremidi::observer obs;
+		for (const libremidi::input_port &port :
+		     obs.get_input_ports()) {
+			devices << QString::fromStdString(
+				getNameFromPortInformation(port));
+		}
+	} catch (const libremidi::driver_error &error) {
+		blog(LOG_WARNING, "Failed to get midi input devices: %s",
+		     error.what());
+	}
+	return devices;
+}
+
+static inline QStringList getOutputDeviceNames()
+{
+	QStringList devices;
+	try {
+		libremidi::observer obs;
+		for (const libremidi::output_port &port :
+		     obs.get_output_ports()) {
+			devices << QString::fromStdString(
+				getNameFromPortInformation(port));
+		}
+	} catch (const libremidi::driver_error &error) {
+		blog(LOG_WARNING, "Failed to get midi output devices: %s",
+		     error.what());
+	}
+	return devices;
+}
+
+static std::string getPortNameFromNumber(MidiDeviceType type, int port)
+{
+	if (port < 0) {
+		return "";
+	}
+
+	QStringList devices;
+	if (type == MidiDeviceType::INPUT) {
+		devices = getInputDeviceNames();
+	} else {
+		devices = getOutputDeviceNames();
+	}
+
+	if (port >= devices.size()) {
+		return "";
+	}
+	return devices.at(port).toStdString();
+}
+
+MidiDeviceInstance *MidiDeviceInstance::GetDevice(MidiDeviceType type, int port)
+{
+	std::string name = getPortNameFromNumber(type, port);
+	return GetDevice(type, name);
+}
+
 void MidiDevice::Save(obs_data_t *obj) const
 {
-	auto data = obs_data_create();
+	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_int(data, "type", static_cast<int>(_type));
-	obs_data_set_int(data, "port", _dev ? _dev->_port : -1);
+	obs_data_set_string(data, "portName", _dev ? _dev->_name.c_str() : "");
 	obs_data_set_obj(obj, "midiDevice", data);
-	obs_data_release(data);
 }
 
 void MidiDevice::Load(obs_data_t *obj)
 {
-	auto data = obs_data_get_obj(obj, "midiDevice");
+	OBSDataAutoRelease data = obs_data_get_obj(obj, "midiDevice");
 	_type = static_cast<MidiDeviceType>(obs_data_get_int(data, "type"));
 	obs_data_set_default_int(data, "port", -1);
-	_port = obs_data_get_int(data, "port");
-	_dev = MidiDeviceInstance::GetDevice(_type, _port);
-	obs_data_release(data);
+	// TODO: Remove this fallback at some point
+	if (obs_data_has_user_value(data, "port")) {
+		auto port = obs_data_get_int(data, "port");
+		_dev = MidiDeviceInstance::GetDevice(_type, port);
+		if (_dev) {
+			_name = _dev->_name;
+		}
+	} else {
+		_name = obs_data_get_string(data, "portName");
+		_dev = MidiDeviceInstance::GetDevice(_type, _name);
+	}
 }
 
 bool MidiDevice::SendMessge(const MidiMessage &m)
 {
-	if (_type == MidiDeviceType::INPUT || _port == -1 || !_dev) {
+	if (_type == MidiDeviceType::INPUT || _name.empty() || !_dev) {
 		return false;
 	}
 
 	return _dev->SendMessge(m);
+}
+
+static std::optional<libremidi::output_port>
+getOutPortFromName(const std::string &name)
+{
+	libremidi::observer obs;
+	for (const libremidi::output_port &port : obs.get_output_ports()) {
+		if (getNameFromPortInformation(port) == name) {
+			return port;
+		}
+	}
+	return {};
+}
+
+static std::optional<libremidi::input_port>
+getInPortFromName(const std::string &name)
+{
+	libremidi::observer obs;
+	for (const libremidi::input_port &port : obs.get_input_ports()) {
+		if (getNameFromPortInformation(port) == name) {
+			return port;
+		}
+	}
+	return {};
 }
 
 bool MidiDeviceInstance::OpenPort()
@@ -296,44 +397,61 @@ bool MidiDeviceInstance::OpenPort()
 	}
 
 	if (_type == MidiDeviceType::OUTPUT) {
+		auto port = getOutPortFromName(_name);
+		if (!port) {
+			blog(LOG_INFO,
+			     "Could not find output port with name '%s'",
+			     _name.c_str());
+			return false;
+		}
 		try {
-			out.open_port(_port);
-			blog(LOG_INFO, "Opened output midi port #%d", _port);
+			out.open_port(*port);
+			blog(LOG_INFO, "Opened output midi port '%s'",
+			     _name.c_str());
 			return true;
 		} catch (const libremidi::driver_error &error) {
 			blog(LOG_WARNING,
-			     "Failed to open output midi port #%d: %s", _port,
-			     error.what());
+			     "Failed to open output midi port '%s': %s",
+			     _name.c_str(), error.what());
 		} catch (const libremidi::system_error &error) {
 			blog(LOG_WARNING,
-			     "Failed to open output midi port #%d: %s", _port,
-			     error.what());
+			     "Failed to open output midi port '%s': %s",
+			     _name.c_str(), error.what());
 		} catch (const libremidi::midi_exception &error) {
 			blog(LOG_WARNING,
-			     "Failed to open output midi port #%d: %s", _port,
-			     error.what());
+			     "Failed to open output midi port '%s': %s",
+			     _name.c_str(), error.what());
 		}
 		return false;
 	}
 
-	auto cb = [this](const libremidi::message &m) {
-		this->ReceiveMidiMessage(m);
+	auto cb = [this](libremidi::message &&m) {
+		ReceiveMidiMessage(std::move(m));
 	};
 
-	in.set_callback(cb);
+	in = libremidi::midi_in{
+		libremidi::input_configuration{.on_message = cb}};
+
+	auto port = getInPortFromName(_name);
+	if (!port) {
+		blog(LOG_INFO, "Could not find input port with name '%s'",
+		     _name.c_str());
+		return false;
+	}
+
 	try {
-		in.open_port(_port);
-		blog(LOG_INFO, "Opened input midi port #%d", _port);
+		in.open_port(*port);
+		blog(LOG_INFO, "Opened input midi port '%s'", _name.c_str());
 		return true;
 	} catch (const libremidi::driver_error &error) {
-		blog(LOG_WARNING, "Failed to open input midi port #%d: %s",
-		     _port, error.what());
+		blog(LOG_WARNING, "Failed to open input midi port '%s': %s",
+		     _name.c_str(), error.what());
 	} catch (const libremidi::system_error &error) {
-		blog(LOG_WARNING, "Failed to open input midi port #%d: %s",
-		     _port, error.what());
+		blog(LOG_WARNING, "Failed to open input midi port '%s': %s",
+		     _name.c_str(), error.what());
 	} catch (const libremidi::midi_exception &error) {
-		blog(LOG_WARNING, "Failed to open input midi port #%d: %s",
-		     _port, error.what());
+		blog(LOG_WARNING, "Failed to open input midi port '%s': %s",
+		     _name.c_str(), error.what());
 	}
 	return false;
 }
@@ -348,40 +466,36 @@ void MidiDeviceInstance::ClosePort()
 	if (_type == MidiDeviceType::OUTPUT) {
 		try {
 			out.close_port();
-			blog(LOG_INFO, "Closed output midi port #%d", _port);
+			blog(LOG_INFO, "Closed output midi port '%s'",
+			     _name.c_str());
 		} catch (const libremidi::driver_error &error) {
 			blog(LOG_WARNING,
-			     "Failed to close output midi port #%d: %s", _port,
-			     error.what());
+			     "Failed to close output midi port '%s': %s",
+			     _name.c_str(), error.what());
 		} catch (const libremidi::system_error &error) {
 			blog(LOG_WARNING,
-			     "Failed to close output midi port #%d: %s", _port,
-			     error.what());
+			     "Failed to close output midi port '%s': %s",
+			     _name.c_str(), error.what());
 		} catch (const libremidi::midi_exception &error) {
 			blog(LOG_WARNING,
-			     "Failed to close output midi port #%d: %s", _port,
-			     error.what());
+			     "Failed to close output midi port '%s': %s",
+			     _name.c_str(), error.what());
 		}
 		return;
 	}
 
-	auto cb = [this](const libremidi::message &m) {
-		this->ReceiveMidiMessage(m);
-	};
-
-	in.set_callback(cb);
 	try {
 		in.close_port();
-		blog(LOG_INFO, "Closed input midi port #%d", _port);
+		blog(LOG_INFO, "Closed input midi port '%s'", _name.c_str());
 	} catch (const libremidi::driver_error &error) {
-		blog(LOG_WARNING, "Failed to close input midi port #%d: %s",
-		     _port, error.what());
+		blog(LOG_WARNING, "Failed to close input midi port '%s': %s",
+		     _name.c_str(), error.what());
 	} catch (const libremidi::system_error &error) {
-		blog(LOG_WARNING, "Failed to close input midi port #%d: %s",
-		     _port, error.what());
+		blog(LOG_WARNING, "Failed to close input midi port '%s': %s",
+		     _name.c_str(), error.what());
 	} catch (const libremidi::midi_exception &error) {
-		blog(LOG_WARNING, "Failed to close input midi port #%d: %s",
-		     _port, error.what());
+		blog(LOG_WARNING, "Failed to close input midi port '%s': %s",
+		     _name.c_str(), error.what());
 	}
 }
 
@@ -394,31 +508,35 @@ bool MidiDeviceInstance::SendMessge(const MidiMessage &m)
 
 	switch (m.Type()) {
 	case libremidi::message_type::NOTE_OFF:
-		message = libremidi::message::note_off(channel, note, value);
+		message = libremidi::channel_events::note_off(channel, note,
+							      value);
 		break;
 	case libremidi::message_type::NOTE_ON:
-		message = libremidi::message::note_on(channel, note, value);
-		break;
-	case libremidi::message_type::CONTROL_CHANGE:
-		message = libremidi::message::control_change(channel, note,
+		message = libremidi::channel_events::note_on(channel, note,
 							     value);
 		break;
+	case libremidi::message_type::CONTROL_CHANGE:
+		message = libremidi::channel_events::control_change(
+			channel, note, value);
+		break;
 	case libremidi::message_type::PROGRAM_CHANGE:
-		message = libremidi::message::program_change(channel, value);
+		message = libremidi::channel_events::program_change(channel,
+								    value);
 		break;
 	case libremidi::message_type::PITCH_BEND:
-		message = libremidi::message::pitch_bend(
+		message = libremidi::channel_events::pitch_bend(
 			channel, (value <= 64 ? 0 : value - 64) * 2, value);
 		break;
 	case libremidi::message_type::POLY_PRESSURE:
-		message =
-			libremidi::message::poly_pressure(channel, note, value);
+		message = libremidi::channel_events::poly_pressure(channel,
+								   note, value);
 		break;
 	case libremidi::message_type::AFTERTOUCH:
-		message = libremidi::message::aftertouch(channel, value);
+		message = libremidi::channel_events::aftertouch(channel, value);
 		break;
 	default:
-		message = {libremidi::message::make_command(m.Type(), channel),
+		message = {libremidi::channel_events::make_command(m.Type(),
+								   channel),
 			   (unsigned char)note, (unsigned char)value};
 		blog(LOG_WARNING,
 		     "sending midi message of non-default type \"%s\"",
@@ -441,7 +559,7 @@ const std::vector<MidiMessage> &MidiDeviceInstance::GetMessages()
 	return _messages;
 }
 
-void MidiDeviceInstance::ReceiveMidiMessage(const libremidi::message &msg)
+void MidiDeviceInstance::ReceiveMidiMessage(libremidi::message &&msg)
 {
 	auto lock = LockContext();
 	_messages.emplace_back(msg);
@@ -478,7 +596,7 @@ void MidiDevice::ClearMessageBuffer()
 
 const std::vector<MidiMessage> *MidiDevice::GetMessages(bool ignoreSkip)
 {
-	if (_type == MidiDeviceType::OUTPUT || _port == -1 || !_dev ||
+	if (_type == MidiDeviceType::OUTPUT || _name.empty() || !_dev ||
 	    (_dev->_skipBufferClear && !ignoreSkip)) {
 		return nullptr;
 	}
@@ -486,81 +604,9 @@ const std::vector<MidiMessage> *MidiDevice::GetMessages(bool ignoreSkip)
 	return &_dev->GetMessages();
 }
 
-static QString portToName(bool input, int port)
-{
-	std::string name;
-	try {
-		if (input) {
-			auto midiin = libremidi::midi_in();
-			name = midiin.get_port_name(port);
-		} else {
-			auto midiout = libremidi::midi_out();
-			name = midiout.get_port_name(port);
-		}
-	} catch (const libremidi::driver_error &error) {
-		blog(LOG_WARNING,
-		     "Failed to get midi %s device name of port #%d: %s",
-		     input ? "input" : "output", port, error.what());
-	}
-
-	const QString deviceNamePattern =
-		obs_module_text("AdvSceneSwitcher.midi.deviceNamePattern");
-	return deviceNamePattern.arg(QString::number(port),
-				     QString::fromStdString(name));
-}
-
-std::string MidiDevice::GetInputName() const
-{
-	return portToName(true, _port).toStdString();
-}
-
-std::string MidiDevice::GetOutputName() const
-{
-	return portToName(false, _port).toStdString();
-}
-
 std::string MidiDevice::Name() const
 {
-	if (_port < 0) {
-		return "";
-	}
-
-	if (_type == MidiDeviceType::INPUT) {
-		return GetInputName();
-	}
-	return GetOutputName();
-}
-
-static inline QStringList getInputDeviceNames()
-{
-	QStringList devices;
-	try {
-		auto midiin = libremidi::midi_in();
-		auto nPorts = midiin.get_port_count();
-		for (unsigned i = 0; i < nPorts; i++) {
-			devices << portToName(true, i);
-		}
-	} catch (const libremidi::driver_error &error) {
-		blog(LOG_WARNING, "Failed to get midi input devices: %s",
-		     error.what());
-	}
-	return devices;
-}
-
-static inline QStringList getOutputDeviceNames()
-{
-	QStringList devices;
-	try {
-		auto midiout = libremidi::midi_out();
-		auto nPorts = midiout.get_port_count();
-		for (unsigned i = 0; i < nPorts; i++) {
-			devices << portToName(false, i);
-		}
-	} catch (const libremidi::driver_error &error) {
-		blog(LOG_WARNING, "Failed to get midi output devices: %s",
-		     error.what());
-	}
-	return devices;
+	return _name;
 }
 
 MidiDeviceSelection::MidiDeviceSelection(QWidget *parent, MidiDeviceType t)
@@ -589,7 +635,8 @@ void MidiDeviceSelection::IdxChangedHelper(int idx)
 		emit DeviceSelectionChanged(MidiDevice());
 	}
 
-	auto devInstance = MidiDeviceInstance::GetDevice(_type, idx - 1);
+	auto name = currentText().toStdString();
+	auto devInstance = MidiDeviceInstance::GetDevice(_type, name);
 	if (!devInstance) {
 		DisplayMessage(obs_module_text(
 			"AdvSceneSwitcher.midi.deviceOpenFail"));
@@ -600,7 +647,7 @@ void MidiDeviceSelection::IdxChangedHelper(int idx)
 
 	MidiDevice dev;
 	dev._type = _type;
-	dev._port = idx - 1;
+	dev._name = name;
 	dev._dev = devInstance;
 	emit DeviceSelectionChanged(dev);
 }
@@ -920,13 +967,18 @@ void MidiMessageSelection::ValueChanged(const NumberVariable<int> &v)
 
 QStringList GetAllNotes()
 {
-	QStringList result;
-	QStringList notes = {"C",  "C#", "D",  "D#", "E",  "F",
-			     "F#", "G",  "G#", "A",  "A#", "B"};
-	for (int octave = -1; octave <= 9; octave++) {
-		for (int noteIndex = 0; noteIndex < 12; noteIndex++) {
-			result << notes[noteIndex] + QString::number(octave);
+	static bool done = false;
+	static QStringList result;
+	static const QStringList notes = {"C",  "C#", "D",  "D#", "E",  "F",
+					  "F#", "G",  "G#", "A",  "A#", "B"};
+	if (!done) {
+		for (int octave = -1; octave <= 9; octave++) {
+			for (int noteIndex = 0; noteIndex < 12; noteIndex++) {
+				result << notes[noteIndex] +
+						  QString::number(octave);
+			}
 		}
+		done = true;
 	}
 	return result;
 }
