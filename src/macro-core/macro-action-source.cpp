@@ -601,11 +601,17 @@ void MacroActionSourceEdit::SetWidgetVisibility()
 			      _entryData->_settingsInputMethod ==
 				      MacroActionSource::SettingsInputMethod::
 					      INDIVIDUAL_TEMPVAR);
-	_manualSettingValue->setVisible(
-		_entryData->_action == MacroActionSource::Action::SETTINGS &&
-		_entryData->_settingsInputMethod ==
-			MacroActionSource::SettingsInputMethod::
-				INDIVIDUAL_MANUAL);
+
+	if (_entryData->_action == MacroActionSource::Action::SETTINGS &&
+	    _entryData->_settingsInputMethod ==
+		    MacroActionSource::SettingsInputMethod::INDIVIDUAL_MANUAL) {
+		RemoveStretchIfPresent(_settingsLayout);
+		_manualSettingValue->show();
+	} else {
+		AddStretchIfNecessary(_settingsLayout);
+		_manualSettingValue->hide();
+	}
+
 	const bool showWarning =
 		_entryData->_action == MacroActionSource::Action::ENABLE ||
 		_entryData->_action == MacroActionSource::Action::DISABLE;
