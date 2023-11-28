@@ -424,11 +424,16 @@ void MacroActionFilterEdit::SetWidgetVisibility()
 			      _entryData->_settingsInputMethod ==
 				      MacroActionFilter::SettingsInputMethod::
 					      INDIVIDUAL_TEMPVAR);
-	_manualSettingValue->setVisible(
-		_entryData->_action == MacroActionFilter::Action::SETTINGS &&
-		_entryData->_settingsInputMethod ==
-			MacroActionFilter::SettingsInputMethod::
-				INDIVIDUAL_MANUAL);
+
+	if (_entryData->_action == MacroActionFilter::Action::SETTINGS &&
+	    _entryData->_settingsInputMethod ==
+		    MacroActionFilter::SettingsInputMethod::INDIVIDUAL_MANUAL) {
+		RemoveStretchIfPresent(_settingsLayout);
+		_manualSettingValue->show();
+	} else {
+		AddStretchIfNecessary(_settingsLayout);
+		_manualSettingValue->hide();
+	}
 
 	adjustSize();
 	updateGeometry();
