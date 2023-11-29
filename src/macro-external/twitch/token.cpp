@@ -787,8 +787,18 @@ void TokenGrabberThread::run()
 
 	// Start the server and wait
 	std::unique_lock<std::mutex> lock(_mutex);
-	_serverThread =
-		std::thread([this]() { _server.listen("localhost", 8080); });
+	_serverThread = std::thread([this]() {
+		if (!_server.bind_to_port("localhost", 8080, 0)) {
+			blog(LOG_WARNING,
+			     "Failed to bind token server to localhost 8080!");
+			return;
+		}
+		if (!_server.listen_after_bind()) {
+			blog(LOG_WARNING, "Token server failed to listen()!");
+			return;
+		}
+		vblog(LOG_INFO, "Token server stopped!");
+	});
 	auto time = std::chrono::high_resolution_clock::now() +
 		    std::chrono::seconds(_timeout);
 	while (!_stopWaiting) {
