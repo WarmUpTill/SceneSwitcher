@@ -176,6 +176,7 @@ std::string MacroConditionWindow::GetShortDesc() const
 
 void MacroConditionWindow::SetupTempVars()
 {
+	MacroCondition::SetupTempVars();
 	AddTempvar(
 		"window",
 		obs_module_text("AdvSceneSwitcher.tempVar.window.window"),
