@@ -41,7 +41,8 @@ public:
 		ACTION_ENABLED,
 		PAUSED,
 	};
-	Type _type = Type::STATE;
+	void SetType(Type);
+	Type GetType() const { return _type; }
 
 	enum class CounterCondition {
 		BELOW,
@@ -67,6 +68,9 @@ private:
 	bool CheckActionStateCondition();
 	bool CheckPauseState();
 
+	void SetupTempVars();
+
+	Type _type = Type::STATE;
 	static bool _registered;
 	static const std::string id;
 };
