@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-condition-edit.hpp"
+#include "regex-config.hpp"
 
 #include <QComboBox>
 #include <QCheckBox>
@@ -20,9 +21,12 @@ public:
 	}
 
 	std::string _process;
-	bool _focus = true;
+	bool _checkFocus = true;
+	RegexConfig _regex = RegexConfig::PartialMatchRegexConfig();
 
 private:
+	void SetupTempVars();
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -45,22 +49,22 @@ public:
 
 private slots:
 	void ProcessChanged(const QString &text);
+	void RegexChanged(RegexConfig);
 	void FocusChanged(int state);
 	void UpdateFocusProcess();
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	QComboBox *_processSelection;
+	RegexConfigWidget *_regex;
 	QCheckBox *_focused;
 	QLabel *_focusProcess;
 	QHBoxLayout *_focusLayout;
 	QTimer _timer;
 	std::shared_ptr<MacroConditionProcess> _entryData;
-
-private:
-	void SetWidgetVisibility();
-
 	bool _loading = true;
 };
 
