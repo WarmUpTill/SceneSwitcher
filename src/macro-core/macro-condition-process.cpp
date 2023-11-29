@@ -19,25 +19,43 @@ bool MacroConditionProcess::CheckCondition()
 	QStringList runningProcesses;
 	QString proc = QString::fromStdString(_process);
 	GetProcessList(runningProcesses);
+	std::string foregroundProcessName;
+	GetForegroundProcessName(foregroundProcessName);
 
-	bool equals = runningProcesses.contains(proc);
-	bool matches = runningProcesses.indexOf(QRegularExpression(proc)) != -1;
-	bool focus = !_focus || IsInFocus(proc);
+	SetVariableValue(foregroundProcessName);
 
-	if (IsReferencedInVars()) {
-		std::string name;
-		GetForegroundProcessName(name);
-		SetVariableValue(name);
+	if (!_regex.Enabled()) {
+		if (runningProcesses.contains(proc) &&
+		    (!_checkFocus || IsInFocus(proc))) {
+			SetTempVarValue("name", proc.toStdString());
+			return true;
+		}
+		return false;
 	}
 
-	return (equals || matches) && focus;
+	auto matchIndex = runningProcesses.indexOf(QRegularExpression(proc));
+	if (matchIndex == -1) {
+		return false;
+	}
+	if (!_checkFocus) {
+		SetTempVarValue("name",
+				runningProcesses.at(matchIndex).toStdString());
+		return true;
+	}
+	if (!IsInFocus(proc)) {
+		return false;
+	}
+	SetTempVarValue("name", foregroundProcessName);
+	return true;
 }
 
 bool MacroConditionProcess::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	obs_data_set_string(obj, "process", _process.c_str());
-	obs_data_set_bool(obj, "focus", _focus);
+	obs_data_set_bool(obj, "focus", _checkFocus);
+	_regex.Save(obj);
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
@@ -45,7 +63,13 @@ bool MacroConditionProcess::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_process = obs_data_get_string(obj, "process");
-	_focus = obs_data_get_bool(obj, "focus");
+	_checkFocus = obs_data_get_bool(obj, "focus");
+	// Fall back to partial match regex as default for old version
+	if (!obs_data_has_user_value(obj, "version")) {
+		_regex.SetEnabled(true);
+	} else {
+		_regex.Load(obj);
+	}
 	return true;
 }
 
@@ -54,10 +78,18 @@ std::string MacroConditionProcess::GetShortDesc() const
 	return _process;
 }
 
+void MacroConditionProcess::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+	AddTempvar("name",
+		   obs_module_text("AdvSceneSwitcher.tempVar.process.name"));
+}
+
 MacroConditionProcessEdit::MacroConditionProcessEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionProcess> entryData)
 	: QWidget(parent),
 	  _processSelection(new QComboBox()),
+	  _regex(new RegexConfigWidget(this)),
 	  _focused(new QCheckBox()),
 	  _focusProcess(new QLabel()),
 	  _focusLayout(new QHBoxLayout())
@@ -68,6 +100,8 @@ MacroConditionProcessEdit::MacroConditionProcessEdit(
 	QWidget::connect(_processSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ProcessChanged(const QString &)));
+	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
+			 SLOT(RegexChanged(RegexConfig)));
 	QWidget::connect(_focused, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
 	QWidget::connect(&_timer, SIGNAL(timeout()), this,
@@ -77,6 +111,7 @@ MacroConditionProcessEdit::MacroConditionProcessEdit(
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{processes}}", _processSelection},
+		{"{{regex}}", _regex},
 		{"{{focused}}", _focused},
 		{"{{focusProcess}}", _focusProcess},
 	};
@@ -112,6 +147,18 @@ void MacroConditionProcessEdit::ProcessChanged(const QString &text)
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
+void MacroConditionProcessEdit::RegexChanged(RegexConfig conf)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_regex = conf;
+	adjustSize();
+	updateGeometry();
+}
+
 void MacroConditionProcessEdit::FocusChanged(int state)
 {
 	if (_loading || !_entryData) {
@@ -119,7 +166,7 @@ void MacroConditionProcessEdit::FocusChanged(int state)
 	}
 
 	auto lock = LockContext();
-	_entryData->_focus = state;
+	_entryData->_checkFocus = state;
 	SetWidgetVisibility();
 }
 
@@ -134,7 +181,7 @@ void MacroConditionProcessEdit::SetWidgetVisibility()
 	if (!_entryData) {
 		return;
 	}
-	SetLayoutVisible(_focusLayout, _entryData->_focus);
+	SetLayoutVisible(_focusLayout, _entryData->_checkFocus);
 	adjustSize();
 }
 
@@ -145,7 +192,8 @@ void MacroConditionProcessEdit::UpdateEntryData()
 	}
 
 	_processSelection->setCurrentText(_entryData->_process.c_str());
-	_focused->setChecked(_entryData->_focus);
+	_regex->SetRegexConfig(_entryData->_regex);
+	_focused->setChecked(_entryData->_checkFocus);
 	SetWidgetVisibility();
 }
 
