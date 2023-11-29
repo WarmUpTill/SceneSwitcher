@@ -24,6 +24,8 @@ const static std::map<MacroConditionMacro::Type, std::string>
 		 "AdvSceneSwitcher.condition.macro.type.actionDisabled"},
 		{MacroConditionMacro::Type::ACTION_ENABLED,
 		 "AdvSceneSwitcher.condition.macro.type.actionEnabled"},
+		{MacroConditionMacro::Type::PAUSED,
+		 "AdvSceneSwitcher.condition.macro.type.paused"},
 };
 
 const static std::map<MacroConditionMacro::CounterCondition, std::string>
@@ -107,6 +109,16 @@ bool MacroConditionMacro::CheckActionStateCondition()
 	return false;
 }
 
+bool MacroConditionMacro::CheckPauseState()
+{
+	auto macro = _macro.GetMacro();
+	if (!macro) {
+		return false;
+	}
+
+	return macro->Paused();
+}
+
 bool MacroConditionMacro::CheckCountCondition()
 {
 	auto macro = _macro.GetMacro();
@@ -140,6 +152,8 @@ bool MacroConditionMacro::CheckCondition()
 	case Type::ACTION_DISABLED:
 	case Type::ACTION_ENABLED:
 		return CheckActionStateCondition();
+	case Type::PAUSED:
+		return CheckPauseState();
 	default:
 		break;
 	}
@@ -335,6 +349,9 @@ void MacroConditionMacroEdit::ClearLayouts()
 
 void MacroConditionMacroEdit::SetupWidgets()
 {
+	SetWidgetVisibility();
+	ClearLayouts();
+
 	switch (_entryData->_type) {
 	case MacroConditionMacro::Type::COUNT:
 		SetupCountWidgets();
@@ -351,6 +368,9 @@ void MacroConditionMacroEdit::SetupWidgets()
 	case MacroConditionMacro::Type::ACTION_ENABLED:
 		SetupActionStateWidgets(true);
 		break;
+	case MacroConditionMacro::Type::PAUSED:
+		SetupPauseWidgets();
+		break;
 	default:
 		break;
 	}
@@ -358,38 +378,24 @@ void MacroConditionMacroEdit::SetupWidgets()
 
 void MacroConditionMacroEdit::SetupStateWidgets()
 {
-	SetWidgetVisibility();
-	ClearLayouts();
-
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{macros}}", _macros},
-	};
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.macro.state.entry"),
-		_settingsLine1, widgetPlaceholders);
+		_settingsLine1, {{"{{macros}}", _macros}});
 }
 
 void MacroConditionMacroEdit::SetupMultiStateWidgets()
 {
-	SetWidgetVisibility();
-	ClearLayouts();
-
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{multiStateConditions}}", _multiStateConditions},
-		{"{{multiStateCount}}", _multiStateCount},
-	};
 	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.macro.multistate.entry"),
-		_settingsLine1, widgetPlaceholders);
+		_settingsLine1,
+		{{"{{multiStateConditions}}", _multiStateConditions},
+		 {"{{multiStateCount}}", _multiStateCount}});
 }
 
 void MacroConditionMacroEdit::SetupCountWidgets()
 {
-	SetWidgetVisibility();
-	ClearLayouts();
-
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{macros}}", _macros},
 		{"{{conditions}}", _counterConditions},
 		{"{{count}}", _count},
@@ -408,15 +414,19 @@ void MacroConditionMacroEdit::SetupCountWidgets()
 
 void MacroConditionMacroEdit::SetupActionStateWidgets(bool enable)
 {
-	SetWidgetVisibility();
-	ClearLayouts();
-
 	PlaceWidgets(
 		obs_module_text(
 			enable ? "AdvSceneSwitcher.condition.macro.actionState.enabled.entry"
 			       : "AdvSceneSwitcher.condition.macro.actionState.disabled.entry"),
 		_settingsLine1,
 		{{"{{macros}}", _macros}, {"{{actionIndex}}", _actionIndex}});
+}
+
+void MacroConditionMacroEdit::SetupPauseWidgets()
+{
+	PlaceWidgets(obs_module_text(
+			     "AdvSceneSwitcher.condition.macro.paused.entry"),
+		     _settingsLine1, {{"{{macros}}", _macros}});
 }
 
 void MacroConditionMacroEdit::SetWidgetVisibility()
@@ -426,7 +436,9 @@ void MacroConditionMacroEdit::SetWidgetVisibility()
 		_entryData->_type == MacroConditionMacro::Type::STATE ||
 		_entryData->_type ==
 			MacroConditionMacro::Type::ACTION_DISABLED ||
-		_entryData->_type == MacroConditionMacro::Type::ACTION_ENABLED);
+		_entryData->_type ==
+			MacroConditionMacro::Type::ACTION_ENABLED ||
+		_entryData->_type == MacroConditionMacro::Type::PAUSED);
 	_counterConditions->setVisible(_entryData->_type ==
 				       MacroConditionMacro::Type::COUNT);
 	_count->setVisible(_entryData->_type ==
@@ -447,7 +459,8 @@ void MacroConditionMacroEdit::SetWidgetVisibility()
 		_entryData->_type == MacroConditionMacro::Type::ACTION_ENABLED);
 	if (_entryData->_type == MacroConditionMacro::Type::MULTI_STATE ||
 	    _entryData->_type == MacroConditionMacro::Type::ACTION_DISABLED ||
-	    _entryData->_type == MacroConditionMacro::Type::ACTION_ENABLED) {
+	    _entryData->_type == MacroConditionMacro::Type::ACTION_ENABLED ||
+	    _entryData->_type == MacroConditionMacro::Type::PAUSED) {
 		_pausedWarning->hide();
 	}
 

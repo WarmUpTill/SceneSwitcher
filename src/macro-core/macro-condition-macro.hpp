@@ -39,6 +39,7 @@ public:
 		MULTI_STATE,
 		ACTION_DISABLED,
 		ACTION_ENABLED,
+		PAUSED,
 	};
 	Type _type = Type::STATE;
 
@@ -64,6 +65,7 @@ private:
 	bool CheckStateCondition();
 	bool CheckMultiStateCondition();
 	bool CheckActionStateCondition();
+	bool CheckPauseState();
 
 	static bool _registered;
 	static const std::string id;
@@ -128,6 +130,7 @@ private:
 	void SetupMultiStateWidgets();
 	void SetupCountWidgets();
 	void SetupActionStateWidgets(bool enable);
+	void SetupPauseWidgets();
 	void SetWidgetVisibility();
 	bool _loading = true;
 };
