@@ -80,7 +80,6 @@ void DurationSelection::_UnitChanged(int idx)
 	double prevMultiplier = durationUnitToMultiplier(_current._unit);
 	double newMultiplier = durationUnitToMultiplier(unit);
 	_current._unit = unit;
-	const QSignalBlocker b(_duration);
 	_duration->SetFixedValue(_duration->Value() *
 				 (prevMultiplier / newMultiplier));
 	emit DurationChanged(_current);
