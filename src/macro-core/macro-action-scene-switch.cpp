@@ -145,7 +145,8 @@ bool MacroActionSwitchScene::PerformAction()
 	auto transition = _transition.GetTransition();
 	SwitchScene({scene, transition, (int)(_duration.Milliseconds())},
 		    obs_frontend_preview_program_mode_active());
-	if (_blockUntilTransitionDone && scene) {
+	if (_blockUntilTransitionDone && scene &&
+	    scene != switcher->currentScene) {
 		return WaitForTransition(scene, transition);
 	}
 	return true;
