@@ -1,6 +1,8 @@
 #include "macro-condition-recording.hpp"
 #include "utility.hpp"
 
+#include <thread>
+
 namespace advss {
 
 const std::string MacroConditionRecord::id = "recording";
@@ -10,43 +12,79 @@ bool MacroConditionRecord::_registered = MacroConditionFactory::Register(
 	{MacroConditionRecord::Create, MacroConditionRecordEdit::Create,
 	 "AdvSceneSwitcher.condition.record"});
 
-const static std::map<RecordState, std::string> recordStates = {
-	{RecordState::STOP, "AdvSceneSwitcher.condition.record.state.stop"},
-	{RecordState::PAUSE, "AdvSceneSwitcher.condition.record.state.pause"},
-	{RecordState::START, "AdvSceneSwitcher.condition.record.state.start"},
+const static std::map<MacroConditionRecord::Condition, std::string>
+	recordStates = {
+		{MacroConditionRecord::Condition::STOP,
+		 "AdvSceneSwitcher.condition.record.state.stop"},
+		{MacroConditionRecord::Condition::PAUSE,
+		 "AdvSceneSwitcher.condition.record.state.pause"},
+		{MacroConditionRecord::Condition::START,
+		 "AdvSceneSwitcher.condition.record.state.start"},
+		{MacroConditionRecord::Condition::DURATION,
+		 "AdvSceneSwitcher.condition.record.state.duration"},
 };
+
+static bool SetupRecordingTimer();
+static bool recordingTimerIsSetup = SetupRecordingTimer();
+static int currentRecordingDurationInSeconds = 0;
 
 bool MacroConditionRecord::CheckCondition()
 {
-	bool stateMatch = false;
-	switch (_recordState) {
-	case RecordState::STOP:
-		stateMatch = !obs_frontend_recording_active();
-		break;
-	case RecordState::PAUSE:
-		stateMatch = obs_frontend_recording_paused();
-		break;
-	case RecordState::START:
-		stateMatch = obs_frontend_recording_active();
-		break;
+	switch (_condition) {
+	case Condition::STOP:
+		return !obs_frontend_recording_active();
+	case Condition::PAUSE:
+		return obs_frontend_recording_paused();
+	case Condition::START:
+		return obs_frontend_recording_active();
+	case Condition::DURATION:
+		SetTempVarValue(
+			"durationSeconds",
+			std::to_string(currentRecordingDurationInSeconds));
+		return currentRecordingDurationInSeconds > _duration.Seconds();
 	default:
 		break;
 	}
-	return stateMatch;
+	return false;
 }
 
 bool MacroConditionRecord::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
-	obs_data_set_int(obj, "state", static_cast<int>(_recordState));
+	obs_data_set_int(obj, "state", static_cast<int>(_condition));
+	_duration.Save(obj);
 	return true;
 }
 
 bool MacroConditionRecord::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	_recordState = static_cast<RecordState>(obs_data_get_int(obj, "state"));
+	_condition = static_cast<Condition>(obs_data_get_int(obj, "state"));
+	_duration.Load(obj);
 	return true;
+}
+
+void MacroConditionRecord::SetCondition(Condition condition)
+{
+	_condition = condition;
+	SetupTempVars();
+}
+
+void MacroConditionRecord::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+	switch (_condition) {
+	case Condition::DURATION:
+		AddTempvar(
+			"durationSeconds",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.recording.durationSeconds"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.recording.durationSeconds.description"));
+		break;
+	default:
+		break;
+	}
 }
 
 static inline void populateStateSelection(QComboBox *list)
@@ -58,38 +96,39 @@ static inline void populateStateSelection(QComboBox *list)
 
 MacroConditionRecordEdit::MacroConditionRecordEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionRecord> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _condition(new QComboBox(this)),
+	  _duration(new DurationSelection(this))
 {
-	_recordState = new QComboBox();
+	populateStateSelection(_condition);
 
-	QWidget::connect(_recordState, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(StateChanged(int)));
+	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(ConditionChanged(int)));
+	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
 
-	populateStateSelection(_recordState);
-
-	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{recordState}}", _recordState},
-	};
-
+	auto layout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.record.entry"),
-		     mainLayout, widgetPlaceholders);
-	setLayout(mainLayout);
+		     layout,
+		     {{"{{condition}}", _condition},
+		      {"{{duration}}", _duration}});
+	setLayout(layout);
 
 	_entryData = entryData;
 	UpdateEntryData();
 	_loading = false;
 }
 
-void MacroConditionRecordEdit::StateChanged(int value)
+void MacroConditionRecordEdit::ConditionChanged(int value)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	auto lock = LockContext();
-	_entryData->_recordState = static_cast<RecordState>(value);
+	_entryData->SetCondition(
+		static_cast<MacroConditionRecord::Condition>(value));
+	SetWidgetVisibility();
 }
 
 void MacroConditionRecordEdit::UpdateEntryData()
@@ -98,8 +137,65 @@ void MacroConditionRecordEdit::UpdateEntryData()
 		return;
 	}
 
-	_recordState->setCurrentIndex(
-		static_cast<int>(_entryData->_recordState));
+	_condition->setCurrentIndex(
+		static_cast<int>(_entryData->GetCondition()));
+	_duration->SetDuration(_entryData->_duration);
+	SetWidgetVisibility();
+}
+
+void MacroConditionRecordEdit::DurationChanged(const Duration &duration)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_duration = duration;
+}
+
+void MacroConditionRecordEdit::SetWidgetVisibility()
+{
+	_duration->setVisible(_entryData->GetCondition() ==
+			      MacroConditionRecord::Condition::DURATION);
+}
+
+bool SetupRecordingTimer()
+{
+	static std::atomic_bool recordingStopped = {true};
+	static std::atomic_bool recordingPaused = {false};
+	static auto handleRecordingEvents = [](enum obs_frontend_event event,
+					       void *) {
+		switch (event) {
+		case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
+			recordingStopped = true;
+			break;
+		case OBS_FRONTEND_EVENT_RECORDING_STARTED:
+			recordingStopped = false;
+			break;
+		case OBS_FRONTEND_EVENT_RECORDING_PAUSED:
+			recordingPaused = true;
+			break;
+		case OBS_FRONTEND_EVENT_RECORDING_UNPAUSED:
+			recordingPaused = false;
+			break;
+		};
+	};
+	obs_frontend_add_event_callback(handleRecordingEvents, nullptr);
+	std::thread thread([]() {
+		while (true) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+			if (recordingStopped) {
+				currentRecordingDurationInSeconds = 0;
+				continue;
+			}
+			if (recordingPaused) {
+				continue;
+			}
+			++currentRecordingDurationInSeconds;
+		}
+	});
+	thread.detach();
+	return true;
 }
 
 } // namespace advss
