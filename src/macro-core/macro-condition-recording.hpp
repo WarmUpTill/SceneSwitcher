@@ -6,12 +6,6 @@
 
 namespace advss {
 
-enum class RecordState {
-	STOP,
-	PAUSE,
-	START,
-};
-
 class MacroConditionRecord : public MacroCondition {
 public:
 	MacroConditionRecord(Macro *m) : MacroCondition(m) {}
@@ -24,9 +18,21 @@ public:
 		return std::make_shared<MacroConditionRecord>(m);
 	}
 
-	RecordState _recordState = RecordState::STOP;
+	enum class Condition {
+		STOP,
+		PAUSE,
+		START,
+		DURATION,
+	};
+
+	void SetCondition(Condition);
+	Condition GetCondition() const { return _condition; }
+	Duration _duration;
 
 private:
+	void SetupTempVars();
+
+	Condition _condition = Condition::STOP;
 	static bool _registered;
 	static const std::string id;
 };
@@ -48,13 +54,15 @@ public:
 	}
 
 private slots:
-	void StateChanged(int value);
-
-protected:
-	QComboBox *_recordState;
-	std::shared_ptr<MacroConditionRecord> _entryData;
+	void ConditionChanged(int value);
+	void DurationChanged(const Duration &);
 
 private:
+	void SetWidgetVisibility();
+
+	QComboBox *_condition;
+	DurationSelection *_duration;
+	std::shared_ptr<MacroConditionRecord> _entryData;
 	bool _loading = true;
 };
 
