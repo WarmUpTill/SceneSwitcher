@@ -256,6 +256,8 @@ target_sources(
           src/utils/connection-manager.hpp
           src/utils/curl-helper.cpp
           src/utils/curl-helper.hpp
+          src/utils/duration.cpp
+          src/utils/duration.hpp
           src/utils/duration-control.cpp
           src/utils/duration-control.hpp
           src/utils/export-symbol-helper.hpp
