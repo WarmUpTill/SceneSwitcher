@@ -33,7 +33,7 @@ void AdvSceneSwitcher::on_noMatchDontSwitch_clicked()
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->switchIfNotMatching = SwitcherData::NoMatch::NO_SWITCH;
+	switcher->switchIfNotMatching = NoMatchBehavior::NO_SWITCH;
 	ui->noMatchSwitchScene->setEnabled(false);
 	ui->randomDisabledWarning->setVisible(true);
 }
@@ -45,7 +45,7 @@ void AdvSceneSwitcher::on_noMatchSwitch_clicked()
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->switchIfNotMatching = SwitcherData::NoMatch::SWITCH;
+	switcher->switchIfNotMatching = NoMatchBehavior::SWITCH;
 	ui->noMatchSwitchScene->setEnabled(true);
 	UpdateNonMatchingScene(ui->noMatchSwitchScene->currentText());
 	ui->randomDisabledWarning->setVisible(true);
@@ -58,7 +58,7 @@ void AdvSceneSwitcher::on_noMatchRandomSwitch_clicked()
 	}
 
 	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->switchIfNotMatching = SwitcherData::NoMatch::RANDOM_SWITCH;
+	switcher->switchIfNotMatching = NoMatchBehavior::RANDOM_SWITCH;
 	ui->noMatchSwitchScene->setEnabled(false);
 	ui->randomDisabledWarning->setVisible(false);
 }
@@ -624,9 +624,9 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 	interval = obs_data_get_int(obj, "interval");
 
 	obs_data_set_default_int(obj, "switch_if_not_matching",
-				 static_cast<int>(NoMatch::NO_SWITCH));
-	switchIfNotMatching =
-		(NoMatch)obs_data_get_int(obj, "switch_if_not_matching");
+				 static_cast<int>(NoMatchBehavior::NO_SWITCH));
+	switchIfNotMatching = static_cast<NoMatchBehavior>(
+		obs_data_get_int(obj, "switch_if_not_matching"));
 	std::string nonMatchingSceneName =
 		obs_data_get_string(obj, "non_matching_scene");
 	nonMatchingScene = GetWeakSourceByName(nonMatchingSceneName.c_str());
@@ -800,12 +800,13 @@ void SwitcherData::CheckNoMatchSwitch(bool &match, OBSWeakSource &scene,
 		return;
 	}
 
-	if (switchIfNotMatching == NoMatch::SWITCH && nonMatchingScene) {
+	if (switchIfNotMatching == NoMatchBehavior::SWITCH &&
+	    nonMatchingScene) {
 		match = true;
 		scene = nonMatchingScene;
 		transition = nullptr;
 	}
-	if (switchIfNotMatching == NoMatch::RANDOM_SWITCH) {
+	if (switchIfNotMatching == NoMatchBehavior::RANDOM_SWITCH) {
 		match = checkRandom(scene, transition, sleep);
 	}
 }
@@ -956,11 +957,11 @@ void AdvSceneSwitcher::SetupGeneralTab()
 {
 	PopulateSceneSelection(ui->noMatchSwitchScene, false);
 
-	if (switcher->switchIfNotMatching == SwitcherData::NoMatch::SWITCH) {
+	if (switcher->switchIfNotMatching == NoMatchBehavior::SWITCH) {
 		ui->noMatchSwitch->setChecked(true);
 		ui->noMatchSwitchScene->setEnabled(true);
 	} else if (switcher->switchIfNotMatching ==
-		   SwitcherData::NoMatch::NO_SWITCH) {
+		   NoMatchBehavior::NO_SWITCH) {
 		ui->noMatchDontSwitch->setChecked(true);
 		ui->noMatchSwitchScene->setEnabled(false);
 	} else {

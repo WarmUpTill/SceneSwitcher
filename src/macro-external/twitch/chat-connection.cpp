@@ -3,7 +3,7 @@
 #include "twitch-helpers.hpp"
 
 #include <log-helper.hpp>
-#include <switcher-data.hpp>
+#include <plugin-state-helper.hpp>
 
 namespace advss {
 
@@ -364,8 +364,7 @@ TwitchChatConnection::~TwitchChatConnection()
 
 static bool setupChatMessageClear()
 {
-	GetSwitcher()->AddIntervalResetStep(
-		&TwitchChatConnection::ClearAllMessages);
+	AddIntervalResetStep(&TwitchChatConnection::ClearAllMessages);
 	return true;
 }
 

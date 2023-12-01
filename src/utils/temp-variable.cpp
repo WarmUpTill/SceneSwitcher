@@ -2,7 +2,7 @@
 #include "advanced-scene-switcher.hpp"
 #include "macro.hpp"
 #include "macro-segment.hpp"
-#include "switcher-data.hpp"
+#include "plugin-state-helper.hpp"
 #include "utility.hpp"
 
 #include <QVariant>
@@ -170,7 +170,7 @@ void TempVariableRef::Load(obs_data_t *obj, Macro *macro, const char *name)
 	_id = obs_data_get_string(data, "id");
 	const auto type =
 		static_cast<SegmentType>(obs_data_get_int(data, "type"));
-	switcher->AddPostLoadStep([this, idx, type, macro]() {
+	AddPostLoadStep([this, idx, type, macro]() {
 		this->PostLoad(idx, type, macro);
 	});
 }
@@ -427,7 +427,7 @@ void NotifyUIAboutTempVarChange()
 	obs_queue_task(
 		OBS_TASK_UI,
 		[](void *) {
-			if (!GetSwitcher()->settingsWindowOpened) {
+			if (!SettingsWindowIsOpened()) {
 				return;
 			}
 			AdvSceneSwitcher::window->SegmentTempVarsChanged();

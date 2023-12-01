@@ -21,6 +21,7 @@
 #include "curl-helper.hpp"
 #include "priority-helper.hpp"
 #include "log-helper.hpp"
+#include "plugin-state-helper.hpp"
 
 #include <condition_variable>
 #include <vector>
@@ -143,8 +144,7 @@ public:
 
 	int interval = default_interval;
 	OBSWeakSource nonMatchingScene;
-	enum class NoMatch { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 };
-	NoMatch switchIfNotMatching = NoMatch::NO_SWITCH;
+	NoMatchBehavior switchIfNotMatching = NoMatchBehavior::NO_SWITCH;
 	Duration noMatchDelay;
 	enum class StartupBehavior { PERSIST = 0, START = 1, STOP = 2 };
 	StartupBehavior startupBehavior = StartupBehavior::PERSIST;

@@ -1,5 +1,5 @@
 #include "macro-action-scene-collection.hpp"
-#include "switcher-data.hpp"
+#include "plugin-state-helper.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -17,7 +17,7 @@ bool MacroActionSceneCollection::PerformAction()
 	// Changing the scene collection will also reload the settings of the
 	// scene switcher, so to avoid issues of not being able to change
 	// settings ignore this action if the settings dialog is opened.
-	if (switcher->settingsWindowOpened) {
+	if (SettingsWindowIsOpened()) {
 		return false;
 	}
 	obs_frontend_set_current_scene_collection(_sceneCollection.c_str());

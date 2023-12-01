@@ -45,7 +45,7 @@ void SwitcherData::Prune()
 	}
 
 	if (nonMatchingScene && !WeakSourceValid(nonMatchingScene)) {
-		switchIfNotMatching = NoMatch::NO_SWITCH;
+		switchIfNotMatching = NoMatchBehavior::NO_SWITCH;
 		nonMatchingScene = nullptr;
 	}
 

@@ -143,8 +143,7 @@ void AdvSceneSwitcher::SetupRandomTab()
 		border-radius: 7px; \
 		border-color: rgb(0,0,0,0) \
 		}");
-	if (switcher->switchIfNotMatching !=
-	    SwitcherData::NoMatch::RANDOM_SWITCH) {
+	if (switcher->switchIfNotMatching != NoMatchBehavior::RANDOM_SWITCH) {
 		if (!switcher->disableHints) {
 			PulseWidget(ui->randomDisabledWarning, QColor(Qt::red),
 				    QColor(0, 0, 0, 0));
