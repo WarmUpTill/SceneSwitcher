@@ -1,15 +1,17 @@
 #include "midi-helpers.hpp"
 
 #include <utility.hpp>
+#include <log-helper.hpp>
 #include <obs-module-helper.hpp>
-#include <switcher-data.hpp>
+#include <plugin-state-helper.hpp>
+#include <sync-helper.hpp>
 
 namespace advss {
 
 static std::map<std::pair<MidiDeviceType, int>, MidiDeviceInstance *>
 SetupMidiMessageVector()
 {
-	GetSwitcher()->AddIntervalResetStep(
+	AddIntervalResetStep(
 		MidiDeviceInstance::ClearMessageBuffersOfAllDevices);
 	return {};
 }

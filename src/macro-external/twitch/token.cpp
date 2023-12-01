@@ -1,10 +1,14 @@
 #include "token.hpp"
 #include "twitch-helpers.hpp"
 
-#include <switcher-data.hpp>
+#include <plugin-state-helper.hpp>
+#include <log-helper.hpp>
+#include <obs-module-helper.hpp>
 #include <utility.hpp>
 #include <QScrollArea>
 #include <QDesktopServices>
+#include <QGroupBox>
+#include <QUrl>
 
 namespace advss {
 
@@ -78,8 +82,8 @@ static void loadConnections(obs_data_t *obj);
 
 bool setupTwitchTokenSupport()
 {
-	GetSwitcher()->AddSaveStep(saveConnections);
-	GetSwitcher()->AddLoadStep(loadConnections);
+	AddSaveStep(saveConnections);
+	AddLoadStep(loadConnections);
 	return true;
 }
 

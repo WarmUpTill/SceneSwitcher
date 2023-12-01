@@ -3,7 +3,7 @@
 #include "twitch-helpers.hpp"
 
 #include <log-helper.hpp>
-#include <switcher-data.hpp>
+#include <plugin-state-helper.hpp>
 
 namespace advss {
 
@@ -58,7 +58,7 @@ EventSub::~EventSub()
 
 static bool setupEventSubMessageClear()
 {
-	GetSwitcher()->AddIntervalResetStep(&EventSub::ClearAllEvents);
+	AddIntervalResetStep(&EventSub::ClearAllEvents);
 	return true;
 }
 

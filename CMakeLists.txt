@@ -291,6 +291,8 @@ target_sources(
           src/utils/obs-module-helper.hpp
           src/utils/osc-helpers.cpp
           src/utils/osc-helpers.hpp
+          src/utils/plugin-state-helper.cpp
+          src/utils/plugin-state-helper.hpp
           src/utils/priority-helper.cpp
           src/utils/priority-helper.hpp
           src/utils/process-config.cpp

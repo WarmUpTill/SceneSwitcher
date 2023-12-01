@@ -1,8 +1,9 @@
 #include "macro-action-plugin-state.hpp"
-#include "switcher-data.hpp"
+#include "plugin-state-helper.hpp"
 #include "utility.hpp"
 
 #include <thread>
+#include <condition_variable>
 #include <QMainWindow>
 
 using namespace std::chrono_literals;
@@ -27,40 +28,38 @@ const static std::map<PluginStateAction, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.pluginState.type.terminate"},
 };
 
-const static std::map<SwitcherData::NoMatch, std::string> noMatchValues = {
-	{SwitcherData::NoMatch::NO_SWITCH,
+const static std::map<NoMatchBehavior, std::string> noMatchValues = {
+	{NoMatchBehavior::NO_SWITCH,
 	 "AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.dontSwitch"},
-	{SwitcherData::NoMatch::SWITCH,
+	{NoMatchBehavior::SWITCH,
 	 "AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.switchTo"},
-	{SwitcherData::NoMatch::RANDOM_SWITCH,
+	{NoMatchBehavior::RANDOM_SWITCH,
 	 "AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.switchToRandom"},
 };
 
 static void stopPlugin()
 {
-	std::thread t([]() { switcher->Stop(); });
+	std::thread t([]() { StopPlugin(); });
 	t.detach();
 }
 
 static void importSettings(const std::string &path)
 {
-	if (switcher->settingsWindowOpened) {
+	if (SettingsWindowIsOpened()) {
 		return;
 	}
-	obs_data_t *obj = obs_data_create_from_json_file(path.c_str());
+	OBSDataAutoRelease obj = obs_data_create_from_json_file(path.c_str());
 	if (!obj) {
 		return;
 	}
-	switcher->LoadSettings(obj);
-	obs_data_release(obj);
+	LoadPluginSettings(obj);
 }
 
 static void setNoMatchBehaviour(int value, OBSWeakSource &scene)
 {
-	switcher->switchIfNotMatching =
-		static_cast<SwitcherData::NoMatch>(value);
-	if (switcher->switchIfNotMatching == SwitcherData::NoMatch::SWITCH) {
-		switcher->nonMatchingScene = scene;
+	SetPluginNoMatchBehavior(static_cast<NoMatchBehavior>(value));
+	if (GetPluginNoMatchBehavior() == NoMatchBehavior::SWITCH) {
+		SetNoMatchScene(scene);
 	}
 }
 
@@ -342,8 +341,8 @@ void MacroActionPluginStateEdit::SetWidgetVisibility()
 		break;
 	case PluginStateAction::NO_MATCH_BEHAVIOUR:
 		_values->show();
-		if (static_cast<SwitcherData::NoMatch>(_entryData->_value) ==
-		    SwitcherData::NoMatch::SWITCH) {
+		if (static_cast<NoMatchBehavior>(_entryData->_value) ==
+		    NoMatchBehavior::SWITCH) {
 			_scenes->show();
 		}
 		break;
