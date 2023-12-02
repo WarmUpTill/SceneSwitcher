@@ -8,6 +8,8 @@
 
 namespace advss {
 
+static const int tokenGrabberPort = 8080;
+
 static std::deque<std::shared_ptr<Item>> twitchTokens;
 
 const std::unordered_map<std::string, std::string> TokenOption::_apiIdToLocale{
@@ -605,7 +607,7 @@ static std::string generateScopeString(const std::set<TokenOption> &options)
 
 static std::string getHtml(const QString &redirect)
 {
-	const char *html = R"(
+	QString html = R"(
 	<html>
 	<head>
 	    <title>Advanced scene switcher</title>
@@ -617,17 +619,18 @@ static std::string getHtml(const QString &redirect)
 	        if (document.location.hash && document.location.hash != '') {
 	            var parsedHash = new URLSearchParams(window.location.hash.slice(1));
 	            if (parsedHash.get('access_token')) {
-	                window.location.replace(`http://localhost:8080/token?access_token=${parsedHash.get('access_token')}&state=${parsedHash.get('state')}`);
+	                window.location.replace(`http://localhost:%1/token?access_token=${parsedHash.get('access_token')}&state=${parsedHash.get('state')}`);
 	                output.textContent = 'It is safe to close this window';
 	            }
 	        } else {
-	            window.location.replace('%1');
+	            window.location.replace('%2');
 	        }
 	    </script>
 	</body>
 	</html>)";
 
-	return QString(html).arg(redirect).toStdString();
+	return html.arg(QString::number(tokenGrabberPort), redirect)
+		.toStdString();
 }
 
 void TwitchTokenSettingsDialog::RequestToken()
@@ -722,13 +725,16 @@ void TokenGrabberThread::run()
 
 	// Generate URI to request token
 	auto state = generateStateString();
-	auto getTokenURI = "https://id.twitch.tv/oauth2/authorize"
-			   "?response_type=token"
-			   "&client_id=" +
-			   QString(GetClientID()) +
-			   "&redirect_uri=http://localhost:8080/auth"
-			   "&scope=" +
-			   _scope + "&state=" + QString::fromStdString(state);
+	QString getTokenURI =
+		("https://id.twitch.tv/oauth2/authorize"
+		 "?response_type=token"
+		 "&client_id=" +
+		 QString(GetClientID()) +
+		 "&redirect_uri=http://localhost:%1"
+		 "/auth"
+		 "&scope=" +
+		 _scope + "&state=" + QString::fromStdString(state))
+			.arg(QString::number(tokenGrabberPort));
 
 	// Setup server receiving token string
 	auto html = getHtml(getTokenURI);
@@ -788,9 +794,10 @@ void TokenGrabberThread::run()
 	// Start the server and wait
 	std::unique_lock<std::mutex> lock(_mutex);
 	_serverThread = std::thread([this]() {
-		if (!_server.bind_to_port("localhost", 8080, 0)) {
+		if (!_server.bind_to_port("localhost", tokenGrabberPort, 0)) {
 			blog(LOG_WARNING,
-			     "Failed to bind token server to localhost 8080!");
+			     "Failed to bind token server to localhost %d!",
+			     tokenGrabberPort);
 			return;
 		}
 		if (!_server.listen_after_bind()) {
