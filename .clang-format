@@ -1,6 +1,6 @@
-# please use clang-format version 8 or later
+# please use clang-format version 15 or later
 
-Standard: Cpp11
+Standard: c++20
 AccessModifierOffset: -8
 AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: false
@@ -53,7 +53,7 @@ Cpp11BracedListStyle: true
 DerivePointerAlignment: false
 DisableFormat: false
 FixNamespaceComments: false
-ForEachMacros: 
+ForEachMacros:
   - 'json_object_foreach'
   - 'json_object_foreach_safe'
   - 'json_array_foreach'

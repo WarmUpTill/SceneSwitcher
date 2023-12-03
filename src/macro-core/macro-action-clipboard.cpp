@@ -96,14 +96,15 @@ static void copyImageFromUrl(void *param)
 bool MacroActionClipboard::PerformAction()
 {
 	switch (_action) {
-	case Action::COPY_TEXT: {
-		ClipboardTextQueueParams params{"", "", _text};
+		using enum Action;
+	case COPY_TEXT: {
+		ClipboardTextQueueParams params{.text = _text};
 		obs_queue_task(OBS_TASK_UI, copyText, &params, true);
 		SetTempVarValues(params);
 		break;
 	}
-	case Action::COPY_IMAGE: {
-		ClipboardImageQueueParams params{"", "", _url};
+	case COPY_IMAGE: {
+		ClipboardImageQueueParams params{.url = _url};
 		obs_queue_task(OBS_TASK_UI, copyImageFromUrl, &params, true);
 		SetTempVarValues(params);
 		break;
