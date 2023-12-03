@@ -20,9 +20,13 @@ private slots:
 	void Pressed();
 
 private:
-	MacroTree *_macros = nullptr;
+	void ActivateElseState();
+	void DeactivateElseState();
+
 	bool _macroHasElseActions = false;
-	bool _runElseActionsKeyHeld = false;
+	bool _elseStateActive = false;
+	bool _shiftHeld = false;
+	MacroTree *_macros = nullptr;
 	QTimer _timer;
 };
 
