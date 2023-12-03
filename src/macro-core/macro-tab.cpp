@@ -413,13 +413,13 @@ void AdvSceneSwitcher::ImportMacros()
 
 	int groupSize = 0;
 	std::shared_ptr<Macro> group;
+	std::vector<std::shared_ptr<Macro>> importedMacros;
 
 	auto lock = LockContext();
 	for (size_t i = 0; i < count; i++) {
 		OBSDataAutoRelease array_obj = obs_data_array_item(array, i);
 		auto macro = std::make_shared<Macro>();
 		macro->Load(array_obj);
-		macro->PostLoad();
 
 		if (macroNameExists(macro->Name()) &&
 		    !ResolveMacroImportNameConflict(macro)) {
@@ -427,6 +427,7 @@ void AdvSceneSwitcher::ImportMacros()
 			continue;
 		}
 
+		importedMacros.emplace_back(macro);
 		switcher->macros.emplace_back(macro);
 		if (groupSize > 0 && !macro->IsGroup()) {
 			Macro::PrepareMoveToGroup(group, macro);
@@ -441,6 +442,10 @@ void AdvSceneSwitcher::ImportMacros()
 			// to the group as they come up.
 			macro->ResetGroupSize();
 		}
+	}
+
+	for (const auto &macro : importedMacros) {
+		macro->PostLoad();
 	}
 
 	ui->macros->Reset(switcher->macros,
