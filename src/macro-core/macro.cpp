@@ -149,6 +149,7 @@ bool Macro::CeckMatch()
 			}
 			break;
 		case LogicType::OR_NOT:
+			_matched = _matched || !cond;
 			if (!cond) {
 				c->SetHighlight();
 			}
