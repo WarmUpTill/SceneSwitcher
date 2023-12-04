@@ -146,7 +146,6 @@ void MacroSegment::InvalidateTempVarValues()
 std::optional<const TempVariable>
 MacroSegment::GetTempVar(const std::string &id) const
 {
-	TempVariable *result = nullptr;
 	for (auto &var : _tempVariables) {
 		if (var.ID() == id) {
 			return var;
