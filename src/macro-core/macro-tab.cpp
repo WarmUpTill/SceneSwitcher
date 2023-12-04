@@ -235,21 +235,18 @@ void AdvSceneSwitcher::ExportMacros()
 		}
 	}
 
-	auto data = obs_data_create();
-	auto macroArray = obs_data_array_create();
+	OBSDataAutoRelease data = obs_data_create();
+	OBSDataArrayAutoRelease macroArray = obs_data_array_create();
 	for (const auto &macro : macros) {
-		obs_data_t *obj = obs_data_create();
+		OBSDataAutoRelease obj = obs_data_create();
 		macro->Save(obj);
 		obs_data_array_push_back(macroArray, obj);
-		obs_data_release(obj);
 	}
 	obs_data_set_array(data, "macros", macroArray);
 	switcher->SaveVariables(data);
-	obs_data_array_release(macroArray);
 	obs_data_set_string(data, "version", g_GIT_TAG);
 	auto json = obs_data_get_json(data);
 	QString exportString(json);
-	obs_data_release(data);
 
 	MacroExportImportDialog::ExportMacros(exportString);
 }
@@ -394,7 +391,8 @@ void AdvSceneSwitcher::ImportMacros()
 	if (!MacroExportImportDialog::ImportMacros(json)) {
 		return;
 	}
-	auto data = obs_data_create_from_json(json.toStdString().c_str());
+	OBSDataAutoRelease data =
+		obs_data_create_from_json(json.toStdString().c_str());
 	if (!data) {
 		DisplayMessage(obs_module_text(
 			"AdvSceneSwitcher.macroTab.import.invalid"));
@@ -410,23 +408,21 @@ void AdvSceneSwitcher::ImportMacros()
 		     version);
 	}
 
-	auto array = obs_data_get_array(data, "macros");
+	OBSDataArrayAutoRelease array = obs_data_get_array(data, "macros");
 	size_t count = obs_data_array_count(array);
 
 	int groupSize = 0;
 	std::shared_ptr<Macro> group;
 
 	auto lock = LockContext();
-
 	for (size_t i = 0; i < count; i++) {
-		obs_data_t *array_obj = obs_data_array_item(array, i);
+		OBSDataAutoRelease array_obj = obs_data_array_item(array, i);
 		auto macro = std::make_shared<Macro>();
 		macro->Load(array_obj);
 		macro->PostLoad();
 
 		if (macroNameExists(macro->Name()) &&
 		    !ResolveMacroImportNameConflict(macro)) {
-			obs_data_release(array_obj);
 			groupSize--;
 			continue;
 		}
@@ -445,11 +441,7 @@ void AdvSceneSwitcher::ImportMacros()
 			// to the group as they come up.
 			macro->ResetGroupSize();
 		}
-
-		obs_data_release(array_obj);
 	}
-	obs_data_array_release(array);
-	obs_data_release(data);
 
 	ui->macros->Reset(switcher->macros,
 			  switcher->macroProperties._highlightExecuted);
@@ -988,13 +980,12 @@ void AdvSceneSwitcher::CopyMacro()
 		return;
 	}
 
-	obs_data_t *data = obs_data_create();
+	OBSDataAutoRelease data = obs_data_create();
 	macro->Save(data);
 	newMacro->Load(data);
 	newMacro->PostLoad();
 	newMacro->SetName(name);
 	Macro::PrepareMoveToGroup(macro->Parent(), newMacro);
-	obs_data_release(data);
 
 	ui->macros->Add(newMacro, macro);
 	ui->macroAdd->disconnect(addPulse);
