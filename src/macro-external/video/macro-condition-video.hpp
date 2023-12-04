@@ -45,8 +45,10 @@ public:
 	void SetPageSegMode(tesseract::PageSegMode);
 	bool SetLanguage(const std::string &);
 
+	void SetCondition(VideoCondition);
+	VideoCondition GetCondition() const { return _condition; }
+
 	VideoInput _video;
-	VideoCondition _condition = VideoCondition::MATCH;
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	// Enabling this will reduce matching latency, but slow down the
 	// the condition checks of all macros overall.
@@ -73,6 +75,10 @@ private:
 	bool CheckColor();
 	bool Compare();
 	bool CheckShouldBeSkipped();
+
+	void SetupTempVars();
+
+	VideoCondition _condition = VideoCondition::MATCH;
 
 	bool _getNextScreenshot = true;
 	ScreenshotHelper _screenshotData;

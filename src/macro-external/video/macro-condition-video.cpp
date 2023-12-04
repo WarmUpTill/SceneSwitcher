@@ -177,8 +177,8 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_video.Load(obj);
-	_condition =
-		static_cast<VideoCondition>(obs_data_get_int(obj, "condition"));
+	SetCondition(static_cast<VideoCondition>(
+		obs_data_get_int(obj, "condition")));
 	_file = obs_data_get_string(obj, "filePath");
 	_blockUntilScreenshotDone =
 		obs_data_get_bool(obj, "blockUntilScreenshotDone");
@@ -261,6 +261,12 @@ bool MacroConditionVideo::SetLanguage(const std::string &language)
 	return _ocrParameters.SetLanguageCode(language);
 }
 
+void MacroConditionVideo::SetCondition(VideoCondition condition)
+{
+	_condition = condition;
+	SetupTempVars();
+}
+
 bool MacroConditionVideo::ScreenshotContainsPattern()
 {
 	cv::Mat result;
@@ -269,9 +275,12 @@ bool MacroConditionVideo::ScreenshotContainsPattern()
 		     _patternMatchParameters.useAlphaAsMask,
 		     _patternMatchParameters.matchMode);
 	if (result.total() == 0) {
+		SetTempVarValue("patternCount", "0");
 		return false;
 	}
-	return countNonZero(result) > 0;
+	const auto count = countNonZero(result);
+	SetTempVarValue("patternCount", std::to_string(count));
+	return count > 0;
 }
 
 bool MacroConditionVideo::OutputChanged()
@@ -300,12 +309,15 @@ bool MacroConditionVideo::ScreenshotContainsObject()
 				   _objMatchParameters.minNeighbors,
 				   _objMatchParameters.minSize.CV(),
 				   _objMatchParameters.maxSize.CV());
-	return objects.size() > 0;
+	const auto count = objects.size();
+	SetTempVarValue("objectCount", std::to_string(count));
+	return count > 0;
 }
 
 bool MacroConditionVideo::CheckBrightnessThreshold()
 {
 	_currentBrightness = GetAvgBrightness(_screenshotData.image) / 255.;
+	SetTempVarValue("brightness", std::to_string(_currentBrightness));
 	return _currentBrightness > _brightnessThreshold;
 }
 
@@ -318,6 +330,7 @@ bool MacroConditionVideo::CheckOCR()
 	auto text = RunOCR(_ocrParameters.GetOCR(), _screenshotData.image,
 			   _ocrParameters.color, _ocrParameters.colorThreshold);
 	SetVariableValue(text);
+	SetTempVarValue("text", text);
 	if (!_ocrParameters.regex.Enabled()) {
 		return text == std::string(_ocrParameters.text);
 	}
@@ -332,10 +345,18 @@ bool MacroConditionVideo::CheckOCR()
 
 bool MacroConditionVideo::CheckColor()
 {
-	return ContainsPixelsInColorRange(_screenshotData.image,
-					  _colorParameters.color,
-					  _colorParameters.colorThreshold,
-					  _colorParameters.matchThreshold);
+	const bool ret = ContainsPixelsInColorRange(
+		_screenshotData.image, _colorParameters.color,
+		_colorParameters.colorThreshold,
+		_colorParameters.matchThreshold);
+	// Way too slow for now
+	//SetTempVarValue("dominantColor", GetDominantColor(_screenshotData.image, 3)
+	//				 .name(QColor::HexArgb)
+	//				 .toStdString());
+	SetTempVarValue("color", GetAverageColor(_screenshotData.image)
+					 .name(QColor::HexArgb)
+					 .toStdString());
+	return ret;
 }
 
 bool MacroConditionVideo::Compare()
@@ -376,6 +397,58 @@ bool MacroConditionVideo::Compare()
 		break;
 	}
 	return false;
+}
+
+void MacroConditionVideo::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+	switch (_condition) {
+	case VideoCondition::PATTERN:
+		AddTempvar(
+			"patternCount",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.patternCount"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.patternCount.description"));
+		break;
+	case VideoCondition::OBJECT:
+		AddTempvar(
+			"objectCount",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.objectCount"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.objectCount.description"));
+		break;
+	case VideoCondition::BRIGHTNESS:
+		AddTempvar(
+			"brightness",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.brightness"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.brightness.description"));
+		break;
+	case VideoCondition::OCR:
+		AddTempvar(
+			"text",
+			obs_module_text("AdvSceneSwitcher.tempVar.video.text"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.text.description"));
+		break;
+	case VideoCondition::COLOR:
+		AddTempvar(
+			"color",
+			obs_module_text("AdvSceneSwitcher.tempVar.video.color"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.color.description"));
+		break;
+	case VideoCondition::MATCH:
+	case VideoCondition::DIFFER:
+	case VideoCondition::HAS_NOT_CHANGED:
+	case VideoCondition::HAS_CHANGED:
+	case VideoCondition::NO_IMAGE:
+	default:
+		break;
+	}
 }
 
 static inline void populateVideoInputSelection(QComboBox *list)
@@ -1155,7 +1228,7 @@ void MacroConditionVideoEdit::UpdatePreviewTooltip()
 		return;
 	}
 
-	if (!requiresFileInput(_entryData->_condition)) {
+	if (!requiresFileInput(_entryData->GetCondition())) {
 		this->setToolTip("");
 		return;
 	}
@@ -1224,7 +1297,7 @@ void MacroConditionVideoEdit::ConditionChanged(int cond)
 	}
 
 	auto lock = LockContext();
-	_entryData->_condition = static_cast<VideoCondition>(cond);
+	_entryData->SetCondition(static_cast<VideoCondition>(cond));
 	_entryData->ResetLastMatch();
 	SetWidgetVisibility();
 
@@ -1239,7 +1312,7 @@ void MacroConditionVideoEdit::ConditionChanged(int cond)
 	_previewDialog.PatternMatchParametersChanged(
 		_entryData->_patternMatchParameters);
 
-	if (_entryData->_condition == VideoCondition::OBJECT) {
+	if (_entryData->GetCondition() == VideoCondition::OBJECT) {
 		auto path = _entryData->GetModelDataPath();
 		_entryData->_objMatchParameters.cascade =
 			initObjectCascade(path);
@@ -1482,27 +1555,28 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 	_sources->setVisible(_entryData->_video.type ==
 			     VideoInput::Type::SOURCE);
 	_scenes->setVisible(_entryData->_video.type == VideoInput::Type::SCENE);
-	_imagePath->setVisible(requiresFileInput(_entryData->_condition));
+	_imagePath->setVisible(requiresFileInput(_entryData->GetCondition()));
 	_usePatternForChangedCheck->setVisible(
-		patternControlIsOptional(_entryData->_condition));
-	_patternThreshold->setVisible(needsThreshold(_entryData->_condition));
-	_useAlphaAsMask->setVisible(_entryData->_condition ==
+		patternControlIsOptional(_entryData->GetCondition()));
+	_patternThreshold->setVisible(
+		needsThreshold(_entryData->GetCondition()));
+	_useAlphaAsMask->setVisible(_entryData->GetCondition() ==
 				    VideoCondition::PATTERN);
 	SetLayoutVisible(_patternMatchModeLayout,
-			 _entryData->_condition == VideoCondition::PATTERN);
-	_brightness->setVisible(_entryData->_condition ==
+			 _entryData->GetCondition() == VideoCondition::PATTERN);
+	_brightness->setVisible(_entryData->GetCondition() ==
 				VideoCondition::BRIGHTNESS);
-	_showMatch->setVisible(needsShowMatch(_entryData->_condition));
-	_ocr->setVisible(_entryData->_condition == VideoCondition::OCR);
-	_objectDetect->setVisible(_entryData->_condition ==
+	_showMatch->setVisible(needsShowMatch(_entryData->GetCondition()));
+	_ocr->setVisible(_entryData->GetCondition() == VideoCondition::OCR);
+	_objectDetect->setVisible(_entryData->GetCondition() ==
 				  VideoCondition::OBJECT);
-	_color->setVisible(_entryData->_condition == VideoCondition::COLOR);
+	_color->setVisible(_entryData->GetCondition() == VideoCondition::COLOR);
 	SetLayoutVisible(_throttleControlLayout,
-			 needsThrottleControls(_entryData->_condition));
-	_area->setVisible(needsAreaControls(_entryData->_condition));
+			 needsThrottleControls(_entryData->GetCondition()));
+	_area->setVisible(needsAreaControls(_entryData->GetCondition()));
 
-	if (_entryData->_condition == VideoCondition::HAS_CHANGED ||
-	    _entryData->_condition == VideoCondition::HAS_NOT_CHANGED) {
+	if (_entryData->GetCondition() == VideoCondition::HAS_CHANGED ||
+	    _entryData->GetCondition() == VideoCondition::HAS_NOT_CHANGED) {
 		_patternThreshold->setVisible(
 			_entryData->_patternMatchParameters.useForChangedCheck);
 		SetLayoutVisible(
@@ -1528,7 +1602,7 @@ void MacroConditionVideoEdit::SetupPreviewDialogParams()
 	_previewDialog.VideoSelectionChanged(_entryData->_video);
 	_previewDialog.AreaParametersChanged(_entryData->_areaParameters);
 	_previewDialog.ConditionChanged(
-		static_cast<int>(_entryData->_condition));
+		static_cast<int>(_entryData->GetCondition()));
 }
 
 void MacroConditionVideoEdit::UpdateEntryData()
@@ -1541,7 +1615,8 @@ void MacroConditionVideoEdit::UpdateEntryData()
 		static_cast<int>(_entryData->_video.type));
 	_scenes->SetScene(_entryData->_video.scene);
 	_sources->SetSource(_entryData->_video.source);
-	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
+	_condition->setCurrentIndex(
+		static_cast<int>(_entryData->GetCondition()));
 	_reduceLatency->setChecked(_entryData->_blockUntilScreenshotDone);
 	_imagePath->SetPath(QString::fromStdString(_entryData->_file));
 	_usePatternForChangedCheck->setChecked(
