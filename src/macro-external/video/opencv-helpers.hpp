@@ -66,6 +66,8 @@ std::string RunOCR(tesseract::TessBaseAPI *, const QImage &, const QColor &,
 bool ContainsPixelsInColorRange(const QImage &image, const QColor &color,
 				double colorDeviationThreshold,
 				double totalPixelMatchThreshold);
+QColor GetAverageColor(const QImage &img);
+QColor GetDominantColor(const QImage &image, int k);
 cv::Mat QImageToMat(const QImage &img);
 QImage MatToQImage(const cv::Mat &mat);
 
