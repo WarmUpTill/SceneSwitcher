@@ -50,11 +50,17 @@ std::vector<SourceSetting> GetSoruceSettings(obs_source_t *source)
 		if (!it) {
 			continue;
 		}
-		SourceSetting setting(
-			obs_property_name(it), obs_property_description(it),
-			obs_property_long_description(it)
-				? obs_property_long_description(it)
-				: "");
+		auto name = obs_property_name(it);
+		if (!name) {
+			continue;
+		}
+		auto description = obs_property_description(it);
+		if (!description) {
+			continue;
+		}
+		auto longDescription = obs_property_long_description(it);
+		SourceSetting setting(name, description,
+				      longDescription ? longDescription : "");
 		settings.emplace_back(setting);
 	} while (obs_property_next(&it));
 	obs_properties_destroy(properties);
