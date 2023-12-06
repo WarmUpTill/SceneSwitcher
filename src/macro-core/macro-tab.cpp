@@ -268,8 +268,9 @@ void AdvSceneSwitcher::SetupMacroSegmentSelection(MacroSection type, int idx)
 		return;
 	}
 
-	MacroSegmentList *setList, *resetList1, *resetList2;
-	int *setIdx, *resetIdx1, *resetIdx2;
+	MacroSegmentList *setList = nullptr, *resetList1 = nullptr,
+			 *resetList2 = nullptr;
+	int *setIdx = nullptr, *resetIdx1 = nullptr, *resetIdx2 = nullptr;
 	std::deque<std::shared_ptr<MacroSegment>> segements;
 
 	switch (type) {
