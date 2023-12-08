@@ -1,5 +1,6 @@
 #include "platform-funcs.hpp"
 #include "hotkey.hpp"
+#include "log-helper.hpp"
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -25,9 +26,10 @@
 #include <QStringList>
 #include <QRegularExpression>
 #include <QLibrary>
-#ifdef USE_PROCPS
+#ifdef PROCPS_AVAILABLE
 #include <proc/readproc.h>
-#else
+#endif
+#ifdef PROCPS2_AVAILABLE
 #include <libproc2/pids.h>
 #endif
 #include <fstream>
@@ -52,6 +54,31 @@ bool canGetIdleTime = false;
 std::chrono::high_resolution_clock::time_point lastMouseLeftClickTime{};
 std::chrono::high_resolution_clock::time_point lastMouseMiddleClickTime{};
 std::chrono::high_resolution_clock::time_point lastMouseRightClickTime{};
+
+static QLibrary *libprocps = nullptr;
+#ifdef PROCPS_AVAILABLE
+typedef PROCTAB *(*openproc_func)(int flags);
+typedef void (*closeproc_func)(PROCTAB *PT);
+typedef proc_t *(*readproc_func)(PROCTAB *__restrict const PT,
+				 proc_t *__restrict p);
+static openproc_func openproc_ = nullptr;
+static closeproc_func closeproc_ = nullptr;
+static readproc_func readproc_ = nullptr;
+#endif
+static bool libprocpsSupported = false;
+
+static QLibrary *libproc2 = nullptr;
+#ifdef PROCPS2_AVAILABLE
+typedef int (*procps_pids_new_func)(struct pids_info **info,
+				    enum pids_item *items, int numitems);
+typedef struct pids_stack *(*procps_pids_get_func)(struct pids_info *info,
+						   enum pids_fetch_type which);
+typedef int (*procps_pids_unref_func)(struct pids_info **info);
+static procps_pids_new_func procps_pids_new_ = nullptr;
+static procps_pids_get_func procps_pids_get_ = nullptr;
+static procps_pids_unref_func procps_pids_unref_ = nullptr;
+#endif
+static bool libprocps2Supported = false;
 
 Display *disp()
 {
@@ -338,46 +365,57 @@ std::optional<std::string> GetTextInWindow(const std::string &)
 	return {};
 }
 
-#ifdef USE_PROCPS
-void GetProcessList(QStringList &processes)
+static void getProcessListProcps(QStringList &processes)
 {
-	processes.clear();
-	PROCTAB *proc = openproc(PROC_FILLSTAT);
+#ifdef PROCPS_AVAILABLE
+	PROCTAB *proc = openproc_(PROC_FILLSTAT);
 	proc_t proc_info;
 	memset(&proc_info, 0, sizeof(proc_info));
-	while (readproc(proc, &proc_info) != NULL) {
+	while (readproc_(proc, &proc_info) != NULL) {
 		QString procName(proc_info.cmd);
 		if (!procName.isEmpty() && !processes.contains(procName)) {
 			processes << procName;
 		}
 	}
-	closeproc(proc);
+	closeproc_(proc);
+#endif
 }
-#else
-void GetProcessList(QStringList &processes)
+
+static void getProcessListProcps2(QStringList &processes)
 {
-	processes.clear();
+#ifdef PROCPS2_AVAILABLE
 	struct pids_info *info = NULL;
 	struct pids_stack *stack;
 	enum pids_item Items[] = {
 		PIDS_CMD,
 	};
 
-	if (procps_pids_new(&info, Items, sizeof(Items) / sizeof(Items[0])) <
+	if (procps_pids_new_(&info, Items, sizeof(Items) / sizeof(Items[0])) <
 	    0) {
 		return;
 	}
-
-	while ((stack = procps_pids_get(info, PIDS_FETCH_TASKS_ONLY))) {
+	while ((stack = procps_pids_get_(info, PIDS_FETCH_TASKS_ONLY))) {
 		auto cmd = PIDS_VAL(0, str, stack, info);
 		QString procName(cmd);
 		if (!procName.isEmpty() && !processes.contains(procName)) {
 			processes << procName;
 		}
 	}
-	procps_pids_unref(&info);
-}
+	procps_pids_unref_(&info);
 #endif
+}
+
+void GetProcessList(QStringList &processes)
+{
+	processes.clear();
+	if (libprocpsSupported) {
+		getProcessListProcps(processes);
+		return;
+	}
+	if (libprocps2Supported) {
+		getProcessListProcps2(processes);
+	}
+}
 
 long getForegroundProcessPid()
 {
@@ -633,6 +671,58 @@ void PressKeys(const std::vector<HotkeyType> keys, int duration)
 	XFlush(display);
 }
 
+static void initXtst()
+{
+	libXtstHandle = new QLibrary("libXtst", nullptr);
+	pressFunc = (keyPressFunc)libXtstHandle->resolve("XTestFakeKeyEvent");
+	int _;
+	canSimulateKeyPresses = pressFunc &&
+				XQueryExtension(disp(), "XTEST", &_, &_, &_);
+}
+
+static void initXss()
+{
+	libXssHandle = new QLibrary("libXss", nullptr);
+	allocSSFunc = (XScreenSaverAllocInfoFunc)libXssHandle->resolve(
+		"XScreenSaverAllocInfo");
+	querySSFunc = (XScreenSaverQueryInfoFunc)libXssHandle->resolve(
+		"XScreenSaverQueryInfo");
+	int _;
+	canGetIdleTime = allocSSFunc && querySSFunc &&
+			 XQueryExtension(disp(), ScreenSaverName, &_, &_, &_);
+}
+
+static void initProcps()
+{
+#ifdef PROCPS_AVAILABLE
+	libprocps = new QLibrary("libprocps", nullptr);
+	openproc_ = (openproc_func)libprocps->resolve("openproc");
+	closeproc_ = (closeproc_func)libprocps->resolve("closeproc");
+	readproc_ = (readproc_func)libprocps->resolve("readproc");
+	if (openproc_ && closeproc_ && readproc_) {
+		libprocpsSupported = true;
+		blog(LOG_INFO, "libprocps symbols resolved successfully!");
+	}
+#endif
+}
+
+static void initProc2()
+{
+#ifdef PROCPS2_AVAILABLE
+	libproc2 = new QLibrary("libproc2", nullptr);
+	procps_pids_new_ =
+		(procps_pids_new_func)libproc2->resolve("procps_pids_new");
+	procps_pids_get_ =
+		(procps_pids_get_func)libproc2->resolve("procps_pids_get");
+	procps_pids_unref_ =
+		(procps_pids_unref_func)libproc2->resolve("procps_pids_unref");
+	if (procps_pids_new_ && procps_pids_get_ && procps_pids_unref_) {
+		libprocps2Supported = true;
+		blog(LOG_INFO, "libproc2 symbols resolved successfully!");
+	}
+#endif
+}
+
 void PlatformInit()
 {
 	auto display = disp();
@@ -640,31 +730,26 @@ void PlatformInit()
 		return;
 	}
 
-	libXtstHandle = new QLibrary("libXtst", nullptr);
-	pressFunc = (keyPressFunc)libXtstHandle->resolve("XTestFakeKeyEvent");
-	int _;
-	canSimulateKeyPresses = pressFunc &&
-				XQueryExtension(disp(), "XTEST", &_, &_, &_);
+	initXtst();
+	initXss();
+	initProcps();
+	initProc2();
+}
 
-	libXssHandle = new QLibrary("libXss", nullptr);
-	allocSSFunc = (XScreenSaverAllocInfoFunc)libXssHandle->resolve(
-		"XScreenSaverAllocInfo");
-	querySSFunc = (XScreenSaverQueryInfoFunc)libXssHandle->resolve(
-		"XScreenSaverQueryInfo");
-	canGetIdleTime = allocSSFunc && querySSFunc &&
-			 XQueryExtension(disp(), ScreenSaverName, &_, &_, &_);
+static void cleanupHelper(QLibrary *lib)
+{
+	if (lib) {
+		delete lib;
+		lib = nullptr;
+	}
 }
 
 void PlatformCleanup()
 {
-	if (libXtstHandle) {
-		delete libXtstHandle;
-		libXtstHandle = nullptr;
-	}
-	if (libXssHandle) {
-		delete libXssHandle;
-		libXssHandle = nullptr;
-	}
+	cleanupHelper(libXtstHandle);
+	cleanupHelper(libXssHandle);
+	cleanupHelper(libprocps);
+	cleanupHelper(libproc2);
 	cleanupDisplay();
 }
 
