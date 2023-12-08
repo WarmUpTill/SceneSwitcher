@@ -34,13 +34,6 @@ if (( ! (${skips[(Ie)all]} + ${skips[(Ie)deps]}) )) {
 
   log_info 'Installing obs plugin dependencies...'
 
-  sudo apt-get install -y \
-    libxtst-dev \
-    libxss-dev \
-    libopencv-dev \
-    libtesseract-dev \
-    libprocps-dev
-
   local -a _qt_packages=()
 
   if (( QT_VERSION == 5 )) {
