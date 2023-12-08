@@ -39,6 +39,9 @@ public:
 	void RestoreWindowGeo();
 	void CheckFirstTimeSetup();
 
+protected:
+	bool eventFilter(QObject *obj, QEvent *event) override;
+
 	/* --- Begin of general tab section --- */
 public:
 	void SetupGeneralTab();
@@ -115,6 +118,7 @@ public slots:
 	void on_actionUp_clicked();
 	void on_actionDown_clicked();
 	void on_actionBottom_clicked();
+	void on_toggleElseActions_clicked();
 	void on_elseActionAdd_clicked();
 	void on_elseActionRemove_clicked();
 	void on_elseActionTop_clicked();
@@ -146,6 +150,8 @@ public slots:
 	void MaximizeElseActions();
 	void MinimizeConditions();
 	void MaximizeConditions();
+	void SetElseActionsStateToHidden();
+	void SetElseActionsStateToVisible();
 	void MacroActionSelectionChanged(int idx);
 	void MacroActionReorder(int to, int target);
 	void AddMacroAction(int idx);
@@ -334,7 +340,7 @@ public slots:
 	void on_timeUp_clicked();
 	void on_timeDown_clicked();
 
-	// Video tab
+	// Audio tab
 public:
 	void SetupAudioTab();
 public slots:
