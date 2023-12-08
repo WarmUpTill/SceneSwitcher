@@ -1275,6 +1275,22 @@
                     </property>
                    </spacer>
                   </item>
+                  <item>
+                   <widget class="QPushButton" name="toggleElseActions">
+                    <property name="maximumSize">
+                     <size>
+                      <width>22</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="checkable">
+                     <bool>true</bool>
+                    </property>
+                    <property name="flat">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
                  </layout>
                 </item>
                </layout>

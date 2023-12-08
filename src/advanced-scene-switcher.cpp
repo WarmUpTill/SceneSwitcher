@@ -115,6 +115,23 @@ void AdvSceneSwitcher::LoadUI()
 	loading = false;
 }
 
+bool AdvSceneSwitcher::eventFilter(QObject *obj, QEvent *event)
+{
+	auto eventType = event->type();
+	if (obj == ui->macroElseActions && eventType == QEvent::Resize) {
+		QResizeEvent *resizeEvent = static_cast<QResizeEvent *>(event);
+
+		if (resizeEvent->size().height() == 0) {
+			SetElseActionsStateToHidden();
+			return QDialog::eventFilter(obj, event);
+		}
+
+		SetElseActionsStateToVisible();
+	}
+
+	return QDialog::eventFilter(obj, event);
+}
+
 /******************************************************************************
  * Saving and loading
  ******************************************************************************/

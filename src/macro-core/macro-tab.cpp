@@ -700,8 +700,7 @@ void AdvSceneSwitcher::MacroSelectionAboutToChange()
 	// actions nor elseActions being visible when the condition <-> action
 	// splitter is moved
 	if (elsePos[0] == 0 && elsePos[1] == 0) {
-		macro->SetElseActionSplitterPosition(QList<int>()
-						     << 999999 << 0);
+		maximizeFirstSplitterEntry(ui->macroElseActionSplitter);
 		return;
 	}
 	macro->SetElseActionSplitterPosition(
@@ -790,6 +789,8 @@ bool shouldRestoreSplitter(const QList<int> &pos)
 
 void AdvSceneSwitcher::SetupMacroTab()
 {
+	ui->macroElseActions->installEventFilter(this);
+
 	if (switcher->macros.size() == 0 && !switcher->disableHints) {
 		addPulse = PulseWidget(ui->macroAdd, QColor(Qt::green));
 	}
@@ -862,6 +863,8 @@ void AdvSceneSwitcher::SetupMacroTab()
 	SetButtonIcon(ui->conditionTop, (pathPrefix + "DoubleUp.svg").c_str());
 	SetButtonIcon(ui->conditionBottom,
 		      (pathPrefix + "DoubleDown.svg").c_str());
+	SetButtonIcon(ui->toggleElseActions,
+		      (pathPrefix + "NotEqual.svg").c_str());
 
 	// Reserve more space for macro edit area than for the macro list
 	ui->macroListMacroEditSplitter->setStretchFactor(0, 1);
@@ -1098,6 +1101,31 @@ void AdvSceneSwitcher::MaximizeConditions()
 {
 	MinimizeElseActions();
 	MinimizeActions();
+}
+
+void AdvSceneSwitcher::on_toggleElseActions_clicked()
+{
+	auto elsePosition = ui->macroElseActionSplitter->sizes();
+	if (elsePosition[1] == 0) {
+		centerSplitterPosition(ui->macroElseActionSplitter);
+		return;
+	}
+
+	maximizeFirstSplitterEntry(ui->macroElseActionSplitter);
+}
+
+void AdvSceneSwitcher::SetElseActionsStateToHidden()
+{
+	ui->toggleElseActions->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.macroTab.toggleElseActions.show.tooltip"));
+	ui->toggleElseActions->setChecked(false);
+}
+
+void AdvSceneSwitcher::SetElseActionsStateToVisible()
+{
+	ui->toggleElseActions->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.macroTab.toggleElseActions.hide.tooltip"));
+	ui->toggleElseActions->setChecked(true);
 }
 
 bool AdvSceneSwitcher::MacroTabIsInFocus()
