@@ -460,27 +460,24 @@ else()
 
   find_path(PROCPS_INCLUDE_DIR NAMES proc/procps.h)
   find_path(PROCPS2_INCLUDE_DIR NAMES libproc2/pids.h)
-  find_library(PROCPS_LIBRARY NAMES procps)
-  find_library(PROCPS2_LIBRARY NAMES proc2)
-  if(PROCPS_INCLUDE_DIR AND PROCPS_LIBRARY)
+  if(PROCPS_INCLUDE_DIR)
     message(STATUS "${PROJECT_NAME} using procps")
     set(PROC_INCLUDE_DIR "${PROCPS_INCLUDE_DIR}")
-    set(PROC_LIBRARY "${PROCPS_LIBRARY}")
-    target_compile_definitions(${LIB_NAME} PRIVATE USE_PROCPS)
-  elseif(PROCPS2_INCLUDE_DIR AND PROCPS2_LIBRARY)
+    target_compile_definitions(${LIB_NAME} PRIVATE PROCPS_AVAILABLE)
+    set(PROCESS_CONDITION_SUPPORTED 1)
+  endif()
+  if(PROCPS2_INCLUDE_DIR)
     message(STATUS "${PROJECT_NAME} using libproc2")
     set(PROC_INCLUDE_DIR "${PROCPS2_INCLUDE_DIR}")
-    set(PROC_LIBRARY "${PROCPS2_LIBRARY}")
-  else()
-    message(
-      FATAL_ERROR
-        "found neither procps nor libproc2!
-      please either set ...
-      PROCPS_INCLUDE_DIR and PROCPS_LIBRARY
-      ... or ...
-      PROCPS2_INCLUDE_DIR and PROCPS2_LIBRARY")
+    target_compile_definitions(${LIB_NAME} PRIVATE PROCPS2_AVAILABLE)
+    set(PROCESS_CONDITION_SUPPORTED 1)
   endif()
-  target_link_libraries(${LIB_NAME} PRIVATE "${PROC_LIBRARY}")
+  if(NOT DEFINED PROCESS_CONDITION_SUPPORTED)
+    message(
+      WARNING
+        "found neither procps nor libproc2! Process condition will not be functional!"
+    )
+  endif()
   target_include_directories(${LIB_NAME} PRIVATE "${PROC_INCLUDE_DIR}")
 
   find_package(CURL)
