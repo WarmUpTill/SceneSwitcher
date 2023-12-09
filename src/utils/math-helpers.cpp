@@ -1,32 +1,35 @@
 #include "math-helpers.hpp"
+#include "obs-module-helper.hpp"
+
 #include <exprtk.hpp>
-
-#ifdef UNIT_TEST
-const char *obs_module_text(const char *text)
-{
-	return text;
-}
-#else
-#include <obs-module.h>
-#endif
-
-typedef exprtk::expression<double> expression_t;
-typedef exprtk::parser<double> parser_t;
+#include <random>
 
 namespace advss {
 
 std::variant<double, std::string> EvalMathExpression(const std::string &expr)
 {
-	expression_t expression;
+	static bool setupDone = false;
+	static exprtk::symbol_table<double> symbolTable;
+	static std::random_device rd;
+	static std::mt19937 gen(rd());
+	static std::uniform_real_distribution<double> dis(0.0, 1.0);
+	static auto randomFunc = []() { return dis(gen); };
 
-	parser_t parser;
+	if (!setupDone) {
+		symbolTable.add_function("random", randomFunc);
+		setupDone = true;
+	}
+
+	exprtk::expression<double> expression;
+	expression.register_symbol_table(symbolTable);
+	exprtk::parser<double> parser;
 
 	if (parser.compile(expr, expression)) {
 		return expression.value();
 	}
 	return std::string(obs_module_text(
 		       "AdvSceneSwitcher.math.expressionFail")) +
-	       " \"" + expr;
+	       " \"" + expr + "\"";
 }
 
 bool IsValidNumber(const std::string &str)
