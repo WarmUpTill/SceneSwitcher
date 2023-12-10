@@ -7,10 +7,11 @@ namespace advss {
 
 static void ScreenshotTick(void *param, float);
 
-ScreenshotHelper::ScreenshotHelper(obs_source_t *source, bool blocking,
-				   int timeout, bool saveToFile,
+ScreenshotHelper::ScreenshotHelper(obs_source_t *source, const QRect &subarea,
+				   bool blocking, int timeout, bool saveToFile,
 				   std::string path)
 	: weakSource(OBSGetWeakRef(source)),
+	  _subarea(subarea),
 	  _blocking(blocking),
 	  _saveToFile(saveToFile),
 	  _path(path)
@@ -62,7 +63,12 @@ void ScreenshotHelper::Screenshot()
 		cy = ovi.base_height;
 	}
 
-	if (!cx || !cy) {
+	QRect renderArea(0, 0, cx, cy);
+	if (!_subarea.isEmpty()) {
+		renderArea &= _subarea;
+	}
+
+	if (renderArea.isEmpty()) {
 		vblog(LOG_WARNING,
 		      "Cannot screenshot \"%s\", invalid target size",
 		      obs_source_get_name(source));
@@ -71,16 +77,24 @@ void ScreenshotHelper::Screenshot()
 		return;
 	}
 
+	cx = renderArea.width();
+	cy = renderArea.height();
+
 	texrender = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
-	stagesurf = gs_stagesurface_create(cx, cy, GS_RGBA);
+	stagesurf = gs_stagesurface_create(renderArea.width(),
+					   renderArea.height(), GS_RGBA);
 
 	gs_texrender_reset(texrender);
-	if (gs_texrender_begin(texrender, cx, cy)) {
+	if (gs_texrender_begin(texrender, renderArea.width(),
+			       renderArea.height())) {
 		vec4 zero;
 		vec4_zero(&zero);
 
 		gs_clear(GS_CLEAR_COLOR, &zero, 0.0f, 0);
-		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
+		gs_ortho((float)(renderArea.left()),
+			 (float)(renderArea.right() + 1),
+			 (float)(renderArea.top()),
+			 (float)(renderArea.bottom() + 1), -100.0f, 100.0f);
 
 		gs_blend_state_push();
 		gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);

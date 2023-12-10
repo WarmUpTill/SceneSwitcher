@@ -32,7 +32,7 @@ void MacroActionScreenshot::CustomScreenshot(OBSWeakSource &source)
 	}
 	auto s = obs_weak_source_get_source(source);
 	_screenshot.~ScreenshotHelper();
-	new (&_screenshot) ScreenshotHelper(s, false, 0, true, _path);
+	new (&_screenshot) ScreenshotHelper(s, QRect(), false, 0, true, _path);
 	obs_source_release(s);
 }
 
