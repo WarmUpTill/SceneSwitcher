@@ -255,7 +255,13 @@ void PreviewImage::CreateImage(const VideoInput &video, PreviewType type,
 			       VideoCondition condition)
 {
 	auto source = obs_weak_source_get_source(video.GetVideo());
-	ScreenshotHelper screenshot(source, true);
+	QRect screenshotArea;
+	if (areaParams.enable && type == PreviewType::SHOW_MATCH) {
+		screenshotArea.setRect(areaParams.area.x, areaParams.area.y,
+				       areaParams.area.width,
+				       areaParams.area.height);
+	}
+	ScreenshotHelper screenshot(source, screenshotArea, true);
 	obs_source_release(source);
 
 	if (!video.ValidSelection() || !screenshot.done) {
@@ -274,11 +280,6 @@ void PreviewImage::CreateImage(const VideoInput &video, PreviewType type,
 
 	if (type == PreviewType::SHOW_MATCH) {
 		std::unique_lock<std::mutex> lock(_mtx);
-		if (areaParams.enable) {
-			screenshot.image = screenshot.image.copy(
-				areaParams.area.x, areaParams.area.y,
-				areaParams.area.width, areaParams.area.height);
-		}
 		// Will emit status label update
 		MarkMatch(screenshot.image, patternMatchParams,
 			  patternImageData, objDetectParams, ocrParams,

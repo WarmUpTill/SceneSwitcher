@@ -12,9 +12,9 @@ namespace advss {
 class ScreenshotHelper {
 public:
 	ScreenshotHelper() = default;
-	ScreenshotHelper(obs_source_t *source, bool blocking = false,
-			 int timeout = 1000, bool saveToFile = false,
-			 std::string path = "");
+	ScreenshotHelper(obs_source_t *source, const QRect &subarea = QRect(),
+			 bool blocking = false, int timeout = 1000,
+			 bool saveToFile = false, std::string path = "");
 	ScreenshotHelper &operator=(const ScreenshotHelper &) = delete;
 	ScreenshotHelper(const ScreenshotHelper &) = delete;
 	~ScreenshotHelper();
@@ -39,6 +39,7 @@ public:
 
 private:
 	std::atomic_bool _initDone = false;
+	QRect _subarea = QRect();
 	bool _blocking = false;
 	std::thread _saveThread;
 	bool _saveToFile = false;

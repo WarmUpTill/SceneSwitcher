@@ -215,8 +215,15 @@ void MacroConditionVideo::GetScreenshot(bool blocking)
 {
 	auto source = obs_weak_source_get_source(_video.GetVideo());
 	_screenshotData.~ScreenshotHelper();
-	new (&_screenshotData)
-		ScreenshotHelper(source, blocking, GetSwitcher()->interval);
+	QRect screenshotArea;
+	if (_areaParameters.enable && _condition != VideoCondition::NO_IMAGE) {
+		screenshotArea.setRect(_areaParameters.area.x,
+				       _areaParameters.area.y,
+				       _areaParameters.area.width,
+				       _areaParameters.area.height);
+	}
+	new (&_screenshotData) ScreenshotHelper(
+		source, screenshotArea, blocking, GetSwitcher()->interval);
 	obs_source_release(source);
 	_getNextScreenshot = false;
 }
@@ -361,13 +368,6 @@ bool MacroConditionVideo::CheckColor()
 
 bool MacroConditionVideo::Compare()
 {
-	if (_areaParameters.enable && _condition != VideoCondition::NO_IMAGE) {
-		_screenshotData.image = _screenshotData.image.copy(
-			_areaParameters.area.x, _areaParameters.area.y,
-			_areaParameters.area.width,
-			_areaParameters.area.height);
-	}
-
 	if (_condition != VideoCondition::OCR) {
 		SetVariableValue("");
 	}
