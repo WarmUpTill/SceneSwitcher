@@ -10,6 +10,7 @@
 #include <QMainWindow>
 #include <QAction>
 #include <QFileDialog>
+#include <QTextStream>
 #include <QDirIterator>
 #include <regex>
 #include <filesystem>
@@ -135,7 +136,7 @@ bool AdvSceneSwitcher::eventFilter(QObject *obj, QEvent *event)
 /******************************************************************************
  * Saving and loading
  ******************************************************************************/
-static void AskForBackup(obs_data_t *obj);
+static void AskForBackup(const QString &json);
 
 static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 {
@@ -156,16 +157,25 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->Stop();
 
 		switcher->m.lock();
-		obs_data_t *obj =
+		OBSDataAutoRelease obj =
 			obs_data_get_obj(save_data, "advanced-scene-switcher");
 		if (!obj) {
 			obj = obs_data_create();
 		}
 		if (switcher->VersionChanged(obj, g_GIT_SHA1)) {
-			AskForBackup(obj);
+			auto json = obs_data_get_json(obj);
+			static QString jsonQString = json ? json : "";
+			std::thread t([]() {
+				obs_queue_task(
+					OBS_TASK_UI,
+					[](void *) {
+						AskForBackup(jsonQString);
+					},
+					nullptr, false);
+			});
+			t.detach();
 		}
 		switcher->LoadSettings(obj);
-		obs_data_release(obj);
 		switcher->m.unlock();
 
 		if (!switcher->stop) {
@@ -174,12 +184,12 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 	}
 }
 
-static void AskForBackup(obs_data_t *obj)
+static void AskForBackup(const QString &json)
 {
-	bool backupSettings = DisplayMessage(
-		obs_module_text("AdvSceneSwitcher.askBackup"), true);
+	const bool backupWasConfirmed = DisplayMessage(
+		obs_module_text("AdvSceneSwitcher.askBackup"), true, false);
 
-	if (!backupSettings) {
+	if (!backupWasConfirmed) {
 		return;
 	}
 
@@ -198,8 +208,8 @@ static void AskForBackup(obs_data_t *obj)
 	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 		return;
 	}
-
-	obs_data_save_json(obj, file.fileName().toUtf8().constData());
+	auto out = QTextStream(&file);
+	out << json;
 }
 
 /******************************************************************************
