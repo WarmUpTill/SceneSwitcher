@@ -119,7 +119,7 @@
                        <string notr="true">ms</string>
                       </property>
                       <property name="minimum">
-                       <number>50</number>
+                       <number>10</number>
                       </property>
                       <property name="maximum">
                        <number>20000</number>
