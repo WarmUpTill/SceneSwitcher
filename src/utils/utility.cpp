@@ -413,12 +413,7 @@ bool MatchJson(const std::string &json1, const std::string &json2,
 	}
 
 	if (regex.Enabled()) {
-		auto expr = regex.GetRegularExpression(j2);
-		if (!expr.isValid()) {
-			return false;
-		}
-		auto match = expr.match(QString::fromStdString(j1));
-		return match.hasMatch();
+		return regex.Matches(j1, j2);
 	}
 	return j1 == j2;
 }

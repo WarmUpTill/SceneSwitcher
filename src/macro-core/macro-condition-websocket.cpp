@@ -20,17 +20,6 @@ const static std::map<MacroConditionWebsocket::Type, std::string>
 		 "AdvSceneSwitcher.condition.websocket.type.event"},
 };
 
-static bool matchRegex(const RegexConfig &conf, const std::string &msg,
-		       const std::string &expr)
-{
-	auto regex = conf.GetRegularExpression(expr);
-	if (!regex.isValid()) {
-		return false;
-	}
-	auto match = regex.match(QString::fromStdString(msg));
-	return match.hasMatch();
-}
-
 bool MacroConditionWebsocket::CheckCondition()
 {
 	std::vector<std::string> messages;
@@ -52,7 +41,7 @@ bool MacroConditionWebsocket::CheckCondition()
 
 	for (const auto &msg : messages) {
 		if (_regex.Enabled()) {
-			if (matchRegex(_regex, msg, _message)) {
+			if (_regex.Matches(msg, _message)) {
 				SetVariableValue(msg);
 				return true;
 			}

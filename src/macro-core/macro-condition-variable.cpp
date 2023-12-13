@@ -52,14 +52,8 @@ static bool compareNumber(const Variable &var, double value, bool less)
 bool MacroConditionVariable::Compare(const Variable &var) const
 {
 	if (_regex.Enabled()) {
-		auto expr = _regex.GetRegularExpression(_strValue);
-		if (!expr.isValid()) {
-			return false;
-		}
-		auto match = expr.match(QString::fromStdString(var.Value()));
-		return match.hasMatch();
+		return _regex.Matches(var.Value(), _strValue);
 	}
-
 	return std::string(_strValue) == var.Value();
 }
 

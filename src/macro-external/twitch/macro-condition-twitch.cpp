@@ -339,19 +339,14 @@ bool MacroConditionTwitch::CheckChannelLiveEvents(TwitchToken &token)
 	return false;
 }
 
-static bool stringMatches(const RegexConfig &conf, const std::string &string,
+static bool stringMatches(const RegexConfig &regex, const std::string &string,
 			  const std::string &expr)
 {
-	if (!conf.Enabled()) {
+	if (!regex.Enabled()) {
 		return string == expr;
 	}
 
-	auto regex = conf.GetRegularExpression(expr);
-	if (!regex.isValid()) {
-		return false;
-	}
-	auto match = regex.match(QString::fromStdString(string));
-	return match.hasMatch();
+	return regex.Matches(string, expr);
 }
 
 bool MacroConditionTwitch::CheckChatMessages(TwitchToken &token)

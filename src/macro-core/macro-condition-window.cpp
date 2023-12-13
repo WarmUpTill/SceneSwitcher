@@ -14,28 +14,17 @@ bool MacroConditionWindow::_registered = MacroConditionFactory::Register(
 	{MacroConditionWindow::Create, MacroConditionWindowEdit::Create,
 	 "AdvSceneSwitcher.condition.window"});
 
-static bool matchRegex(const RegexConfig &conf, const std::string &msg,
-		       const std::string &expr)
-{
-	auto regex = conf.GetRegularExpression(expr);
-	if (!regex.isValid()) {
-		return false;
-	}
-	auto match = regex.match(QString::fromStdString(msg));
-	return match.hasMatch();
-}
-
 static bool windowContainsText(const std::string &window,
 			       const std::string &matchText,
-			       const RegexConfig &conf)
+			       const RegexConfig &regex)
 {
 	auto text = GetTextInWindow(window);
 	if (!text.has_value()) {
 		return false;
 	}
 
-	if (conf.Enabled()) {
-		return matchRegex(conf, *text, matchText);
+	if (regex.Enabled()) {
+		return regex.Matches(*text, matchText);
 	}
 	return text == matchText;
 }
@@ -84,7 +73,7 @@ bool MacroConditionWindow::WindowRegexMatches(
 	// enabled in the backend and use the regular expression ".*".
 
 	for (const auto &window : windowList) {
-		if (matchRegex(_windowRegex, window, _window) &&
+		if (_windowRegex.Matches(window, _window) &&
 		    WindowMatchesRequirements(window)) {
 			SetVariableValueBasedOnMatch(window);
 			return true;
