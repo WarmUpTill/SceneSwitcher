@@ -43,12 +43,8 @@ public:
 	ConditionType _condition = ConditionType::MATCH;
 	RegexConfig _regex;
 
-	// TODO: Remove in future version
-	bool _useTime = false;
-	bool _onlyMatchIfChanged = false;
-
 private:
-	bool MatchFileContent(QString &filedata);
+	bool MatchFileContent(QString &filedata) const;
 	bool CheckRemoteFileContent();
 	bool CheckLocalFileContent();
 	bool CheckChangeContent();
@@ -82,8 +78,6 @@ private slots:
 	void PathChanged(const QString &text);
 	void MatchTextChanged();
 	void RegexChanged(RegexConfig);
-	void CheckModificationDateChanged(int state);
-	void OnlyMatchIfChangedChanged(int state);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -93,8 +87,6 @@ protected:
 	FileSelection *_filePath;
 	VariableTextEdit *_matchText;
 	RegexConfigWidget *_regex;
-	QCheckBox *_checkModificationDate;
-	QCheckBox *_checkFileContent;
 	std::shared_ptr<MacroConditionFile> _entryData;
 
 private:

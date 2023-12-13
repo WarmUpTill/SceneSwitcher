@@ -41,16 +41,8 @@ static std::string getRemoteData(std::string &url)
 	return readBuffer;
 }
 
-bool MacroConditionFile::MatchFileContent(QString &filedata)
+bool MacroConditionFile::MatchFileContent(QString &filedata) const
 {
-	if (_onlyMatchIfChanged) {
-		size_t newHash = strHash(filedata.toUtf8().constData());
-		if (newHash == _lastHash) {
-			return false;
-		}
-		_lastHash = newHash;
-	}
-
 	if (_regex.Enabled()) {
 		auto expr = _regex.GetRegularExpression(_text);
 		if (!expr.isValid()) {
@@ -78,14 +70,6 @@ bool MacroConditionFile::CheckLocalFileContent()
 	QFile file(QString::fromStdString(_file));
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 		return false;
-	}
-
-	if (_useTime) {
-		QDateTime newLastMod = QFileInfo(file).lastModified();
-		if (_lastMod == newLastMod) {
-			return false;
-		}
-		_lastMod = newLastMod;
 	}
 
 	QString filedata = QTextStream(&file).readAll();
@@ -174,8 +158,6 @@ bool MacroConditionFile::Save(obs_data_t *obj) const
 	_text.Save(obj, "text");
 	obs_data_set_int(obj, "fileType", static_cast<int>(_fileType));
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
-	obs_data_set_bool(obj, "useTime", _useTime);
-	obs_data_set_bool(obj, "onlyMatchIfChanged", _onlyMatchIfChanged);
 	return true;
 }
 
@@ -193,8 +175,6 @@ bool MacroConditionFile::Load(obs_data_t *obj)
 	_fileType = static_cast<FileType>(obs_data_get_int(obj, "fileType"));
 	_condition =
 		static_cast<ConditionType>(obs_data_get_int(obj, "condition"));
-	_useTime = obs_data_get_bool(obj, "useTime");
-	_onlyMatchIfChanged = obs_data_get_bool(obj, "onlyMatchIfChanged");
 	return true;
 }
 
@@ -227,11 +207,7 @@ MacroConditionFileEdit::MacroConditionFileEdit(
 	  _conditions(new QComboBox()),
 	  _filePath(new FileSelection()),
 	  _matchText(new VariableTextEdit(this)),
-	  _regex(new RegexConfigWidget(parent)),
-	  _checkModificationDate(new QCheckBox(obs_module_text(
-		  "AdvSceneSwitcher.fileTab.checkfileContentTime"))),
-	  _checkFileContent(new QCheckBox(
-		  obs_module_text("AdvSceneSwitcher.fileTab.checkfileContent")))
+	  _regex(new RegexConfigWidget(parent))
 {
 	populateFileTypes(_fileTypes);
 	populateConditions(_conditions);
@@ -246,41 +222,27 @@ MacroConditionFileEdit::MacroConditionFileEdit(
 			 SLOT(MatchTextChanged()));
 	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
 			 SLOT(RegexChanged(RegexConfig)));
-	QWidget::connect(_checkModificationDate, SIGNAL(stateChanged(int)),
-			 this, SLOT(CheckModificationDateChanged(int)));
-	QWidget::connect(_checkFileContent, SIGNAL(stateChanged(int)), this,
-			 SLOT(OnlyMatchIfChangedChanged(int)));
 
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{fileType}}", _fileTypes},
-		{"{{conditions}}", _conditions},
-		{"{{filePath}}", _filePath},
-		{"{{matchText}}", _matchText},
+	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{fileType}}", _fileTypes}, {"{{conditions}}", _conditions},
+		{"{{filePath}}", _filePath},  {"{{matchText}}", _matchText},
 		{"{{useRegex}}", _regex},
-		{"{{checkModificationDate}}", _checkModificationDate},
-		{"{{checkFileContent}}", _checkFileContent},
 	};
 
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	QHBoxLayout *line1Layout = new QHBoxLayout;
-	QHBoxLayout *line2Layout = new QHBoxLayout;
-	QHBoxLayout *line3Layout = new QHBoxLayout;
+	auto line1Layout = new QHBoxLayout;
 	line1Layout->setContentsMargins(0, 0, 0, 0);
-	line2Layout->setContentsMargins(0, 0, 0, 0);
-	line3Layout->setContentsMargins(0, 0, 0, 0);
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.file.entry.line1"),
 		line1Layout, widgetPlaceholders);
+	auto line2Layout = new QHBoxLayout;
+	line2Layout->setContentsMargins(0, 0, 0, 0);
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.file.entry.line2"),
 		line2Layout, widgetPlaceholders, false);
-	PlaceWidgets(
-		obs_module_text("AdvSceneSwitcher.condition.file.entry.line3"),
-		line3Layout, widgetPlaceholders);
+
+	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(line1Layout);
 	mainLayout->addLayout(line2Layout);
-	mainLayout->addLayout(line3Layout);
-
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -299,16 +261,6 @@ void MacroConditionFileEdit::UpdateEntryData()
 	_filePath->SetPath(_entryData->_file);
 	_matchText->setPlainText(_entryData->_text);
 	_regex->SetRegexConfig(_entryData->_regex);
-	_checkModificationDate->setChecked(_entryData->_useTime);
-	_checkFileContent->setChecked(_entryData->_onlyMatchIfChanged);
-
-	// TODO: Remove in future version
-	if (!_entryData->_useTime) {
-		_checkModificationDate->hide();
-	}
-	if (!_entryData->_onlyMatchIfChanged) {
-		_checkFileContent->hide();
-	}
 
 	SetWidgetVisibility();
 }
@@ -319,17 +271,9 @@ void MacroConditionFileEdit::FileTypeChanged(int index)
 		return;
 	}
 
-	MacroConditionFile::FileType type =
-		static_cast<MacroConditionFile::FileType>(index);
-
-	if (type == MacroConditionFile::FileType::LOCAL) {
-		_filePath->Button()->setDisabled(false);
-		_checkModificationDate->setDisabled(false);
-	} else {
-		_filePath->Button()->setDisabled(true);
-		_checkModificationDate->setDisabled(true);
-	}
-
+	auto type = static_cast<MacroConditionFile::FileType>(index);
+	_filePath->Button()->setEnabled(type ==
+					MacroConditionFile::FileType::LOCAL);
 	auto lock = LockContext();
 	_entryData->_fileType = type;
 }
@@ -383,26 +327,6 @@ void MacroConditionFileEdit::RegexChanged(RegexConfig conf)
 	updateGeometry();
 }
 
-void MacroConditionFileEdit::CheckModificationDateChanged(int state)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_useTime = state;
-}
-
-void MacroConditionFileEdit::OnlyMatchIfChangedChanged(int state)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_onlyMatchIfChanged = state;
-}
-
 void MacroConditionFileEdit::SetWidgetVisibility()
 {
 	if (!_entryData) {
@@ -413,14 +337,6 @@ void MacroConditionFileEdit::SetWidgetVisibility()
 			       MacroConditionFile::ConditionType::MATCH);
 	_regex->setVisible(_entryData->_condition ==
 			   MacroConditionFile::ConditionType::MATCH);
-	_checkModificationDate->setVisible(
-		_entryData->_useTime &&
-		_entryData->_condition ==
-			MacroConditionFile::ConditionType::MATCH);
-	_checkFileContent->setVisible(
-		_entryData->_onlyMatchIfChanged &&
-		_entryData->_condition ==
-			MacroConditionFile::ConditionType::MATCH);
 	adjustSize();
 	updateGeometry();
 }
