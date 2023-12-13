@@ -341,13 +341,7 @@ bool MacroConditionVideo::CheckOCR()
 	if (!_ocrParameters.regex.Enabled()) {
 		return text == std::string(_ocrParameters.text);
 	}
-	auto expr =
-		_ocrParameters.regex.GetRegularExpression(_ocrParameters.text);
-	if (!expr.isValid()) {
-		return false;
-	}
-	auto match = expr.match(QString::fromStdString(text));
-	return match.hasMatch();
+	return _ocrParameters.regex.Matches(text, _ocrParameters.text);
 }
 
 bool MacroConditionVideo::CheckColor()

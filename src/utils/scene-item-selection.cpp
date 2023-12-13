@@ -62,27 +62,16 @@ static std::vector<OBSSceneItem> getSceneItemsWithName(obs_scene_t *scene,
 
 struct NamePatternMatchData {
 	std::string pattern;
-	const RegexConfig &conf;
+	const RegexConfig &regex;
 	std::vector<OBSSceneItem> items = {};
 };
-
-static bool matchesRegex(const RegexConfig &conf, const std::string &msg,
-			 const std::string &expr)
-{
-	auto regex = conf.GetRegularExpression(expr);
-	if (!regex.isValid()) {
-		return false;
-	}
-	auto match = regex.match(QString::fromStdString(msg));
-	return match.hasMatch();
-}
 
 static bool getSceneItemsByPatternHelper(obs_scene_t *, obs_sceneitem_t *item,
 					 void *ptr)
 {
 	auto data = reinterpret_cast<NamePatternMatchData *>(ptr);
 	auto sourceName = obs_source_get_name(obs_sceneitem_get_source(item));
-	if (matchesRegex(data->conf, sourceName, data->pattern)) {
+	if (data->regex.Matches(sourceName, data->pattern)) {
 		data->items.emplace_back(item);
 	}
 

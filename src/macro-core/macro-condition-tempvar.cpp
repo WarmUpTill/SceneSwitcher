@@ -68,12 +68,7 @@ bool MacroConditionTempVar::Compare(const TempVariable &var) const
 	}
 
 	if (_regex.Enabled()) {
-		auto expr = _regex.GetRegularExpression(_strValue);
-		if (!expr.isValid()) {
-			return false;
-		}
-		auto match = expr.match(QString::fromStdString(*value));
-		return match.hasMatch();
+		return _regex.Matches(*value, _strValue);
 	}
 
 	return std::string(_strValue) == *value;

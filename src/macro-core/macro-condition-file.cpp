@@ -52,12 +52,7 @@ bool MacroConditionFile::MatchFileContent(QString &filedata)
 	}
 
 	if (_regex.Enabled()) {
-		auto expr = _regex.GetRegularExpression(_text);
-		if (!expr.isValid()) {
-			return false;
-		}
-		auto match = expr.match(filedata);
-		return match.hasMatch();
+		return _regex.Matches(filedata, QString::fromStdString(_text));
 	}
 
 	QString text = QString::fromStdString(_text);
