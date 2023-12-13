@@ -10,6 +10,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QCheckBox>
+#include <QStringList>
 
 namespace advss {
 
@@ -35,23 +36,31 @@ public:
 		MATCH,
 		CONTENT_CHANGE,
 		DATE_CHANGE,
+		CHANGES_MATCH,
+	};
+
+	enum class ChangeMatchType {
+		ANY,
+		ADDED,
+		REMOVED,
 	};
 
 	StringVariable _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	StringVariable _text = obs_module_text("AdvSceneSwitcher.enterText");
 	FileType _fileType = FileType::LOCAL;
+	ChangeMatchType _changeMatchType = ChangeMatchType::ANY;
 	ConditionType _condition = ConditionType::MATCH;
 	RegexConfig _regex;
 
 private:
-	bool MatchFileContent(QString &filedata) const;
-	bool CheckRemoteFileContent();
-	bool CheckLocalFileContent();
+	bool CheckFileContentMatch();
 	bool CheckChangeContent();
 	bool CheckChangeDate();
+	bool CheckChangedMatch();
 
 	QDateTime _lastMod;
 	size_t _lastHash = 0;
+	QStringList _previousContent;
 	static bool _registered;
 	static const std::string id;
 };
@@ -74,6 +83,7 @@ public:
 
 private slots:
 	void FileTypeChanged(int index);
+	void ChangeMatchTypeChanged(int index);
 	void ConditionChanged(int index);
 	void PathChanged(const QString &text);
 	void MatchTextChanged();
@@ -83,6 +93,7 @@ signals:
 
 protected:
 	QComboBox *_fileTypes;
+	QComboBox *_changeMatchTypes;
 	QComboBox *_conditions;
 	FileSelection *_filePath;
 	VariableTextEdit *_matchText;
