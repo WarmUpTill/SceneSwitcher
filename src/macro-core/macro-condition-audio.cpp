@@ -62,17 +62,17 @@ MacroConditionAudio::~MacroConditionAudio()
 bool MacroConditionAudio::CheckOutputCondition()
 {
 	bool ret = false;
-	auto s = obs_weak_source_get_source(_audioSource.GetSource());
+	OBSSourceAutoRelease source =
+		obs_weak_source_get_source(_audioSource.GetSource());
 
+	// peak will have a value from -60 db to 0 db so we need to scale it
 	double curVolume = ((double)_peak + 60) * 1.7;
 
 	switch (_outputCondition) {
 	case OutputCondition::ABOVE:
-		// peak will have a value from -60 db to 0 db
 		ret = curVolume > _volume;
 		break;
 	case OutputCondition::BELOW:
-		// peak will have a value from -60 db to 0 db
 		ret = curVolume < _volume;
 		break;
 	default:
@@ -84,21 +84,21 @@ bool MacroConditionAudio::CheckOutputCondition()
 
 	// Reset for next check
 	_peak = -std::numeric_limits<float>::infinity();
-	obs_source_release(s);
 	if (_audioSource.GetType() == SourceSelection::Type::VARIABLE) {
 		ResetVolmeter();
 	}
 
-	return ret;
+	return ret && source;
 }
 
 bool MacroConditionAudio::CheckVolumeCondition()
 {
 	bool ret = false;
-	auto s = obs_weak_source_get_source(_audioSource.GetSource());
+	OBSSourceAutoRelease source =
+		obs_weak_source_get_source(_audioSource.GetSource());
 
-	float curVolume = obs_source_get_volume(s);
-	bool muted = obs_source_muted(s);
+	float curVolume = obs_source_get_volume(source);
+	bool muted = obs_source_muted(source);
 
 	switch (_volumeCondition) {
 	case VolumeCondition::ABOVE:
@@ -126,10 +126,9 @@ bool MacroConditionAudio::CheckVolumeCondition()
 	}
 
 	SetTempVarValue("configured_volume", std::to_string(curVolume));
-	SetTempVarValue("muted", muted ? "true" : "false");
+	SetTempVarValue("muted", (source && muted) ? "true" : "false");
 
-	obs_source_release(s);
-	return ret;
+	return ret && source;
 }
 
 bool MacroConditionAudio::CheckSyncOffset()
@@ -139,8 +138,9 @@ bool MacroConditionAudio::CheckSyncOffset()
 	}
 
 	bool ret = false;
-	auto s = obs_weak_source_get_source(_audioSource.GetSource());
-	auto curOffset = obs_source_get_sync_offset(s) / nsPerMs;
+	OBSSourceAutoRelease source =
+		obs_weak_source_get_source(_audioSource.GetSource());
+	auto curOffset = obs_source_get_sync_offset(source) / nsPerMs;
 	if (_outputCondition == OutputCondition::ABOVE) {
 		ret = curOffset > _syncOffset;
 	} else {
@@ -148,8 +148,7 @@ bool MacroConditionAudio::CheckSyncOffset()
 	}
 	SetVariableValue(std::to_string(curOffset));
 	SetTempVarValue("sync_offset", std::to_string(curOffset));
-	obs_source_release(s);
-	return ret;
+	return ret && source;
 }
 
 bool MacroConditionAudio::CheckMonitor()
@@ -159,13 +158,13 @@ bool MacroConditionAudio::CheckMonitor()
 	}
 
 	bool ret = false;
-	auto s = obs_weak_source_get_source(_audioSource.GetSource());
-	ret = obs_source_get_monitoring_type(s) == _monitorType;
+	OBSSourceAutoRelease source =
+		obs_weak_source_get_source(_audioSource.GetSource());
+	ret = obs_source_get_monitoring_type(source) == _monitorType;
 	SetVariableValue("");
 	SetTempVarValue("monitor",
-			std::to_string(obs_source_get_monitoring_type(s)));
-	obs_source_release(s);
-	return ret;
+			std::to_string(obs_source_get_monitoring_type(source)));
+	return ret && source;
 }
 
 bool MacroConditionAudio::CheckBalance()
@@ -175,8 +174,9 @@ bool MacroConditionAudio::CheckBalance()
 	}
 
 	bool ret = false;
-	auto s = obs_weak_source_get_source(_audioSource.GetSource());
-	auto curBalance = obs_source_get_balance_value(s);
+	OBSSourceAutoRelease source =
+		obs_weak_source_get_source(_audioSource.GetSource());
+	auto curBalance = obs_source_get_balance_value(source);
 	if (_outputCondition == OutputCondition::ABOVE) {
 		ret = curBalance > _balance;
 	} else {
@@ -184,8 +184,7 @@ bool MacroConditionAudio::CheckBalance()
 	}
 	SetVariableValue(std::to_string(curBalance));
 	SetTempVarValue("balance", std::to_string(curBalance));
-	obs_source_release(s);
-	return ret;
+	return ret && source;
 }
 
 bool MacroConditionAudio::CheckCondition()
@@ -239,13 +238,12 @@ obs_volmeter_t *AddVolmeterToSource(MacroConditionAudio *entry,
 	obs_volmeter_t *volmeter = obs_volmeter_create(OBS_FADER_LOG);
 	obs_volmeter_add_callback(volmeter, MacroConditionAudio::SetVolumeLevel,
 				  entry);
-	obs_source_t *as = obs_weak_source_get_source(source);
-	if (!obs_volmeter_attach_source(volmeter, as)) {
-		const char *name = obs_source_get_name(as);
+	OBSSourceAutoRelease audioSource = obs_weak_source_get_source(source);
+	if (!obs_volmeter_attach_source(volmeter, audioSource)) {
+		const char *name = obs_source_get_name(audioSource);
 		blog(LOG_WARNING, "failed to attach volmeter to source %s",
 		     name);
 	}
-	obs_source_release(as);
 
 	return volmeter;
 }
@@ -455,10 +453,9 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 void MacroConditionAudioEdit::UpdateVolmeterSource()
 {
 	delete _volMeter;
-	obs_source_t *soruce = obs_weak_source_get_source(
+	OBSSourceAutoRelease soruce = obs_weak_source_get_source(
 		_entryData->_audioSource.GetSource());
-	_volMeter = new VolControl(soruce);
-	obs_source_release(soruce);
+	_volMeter = new VolControl(soruce.Get());
 
 	QLayout *layout = this->layout();
 	layout->addWidget(_volMeter);
