@@ -51,6 +51,8 @@ const static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.extractJson"},
 	{MacroActionVariable::Type::SET_TO_TEMPVAR,
 	 "AdvSceneSwitcher.action.variable.type.setToTempvar"},
+	{MacroActionVariable::Type::SCENE_ITEM_NAME,
+	 "AdvSceneSwitcher.action.variable.type.sceneItemName"},
 };
 
 static void apppend(Variable &var, const std::string &value)
@@ -132,6 +134,49 @@ void MacroActionVariable::HandleMathExpression(Variable *var)
 		return;
 	}
 	var->SetValue(std::get<double>(result));
+}
+
+struct GetSceneItemNameHelper {
+	int curIdx = 0;
+	int targetIdx = 0;
+	std::string name = "";
+};
+
+static bool getSceneItemAtIdx(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
+{
+	auto data = reinterpret_cast<GetSceneItemNameHelper *>(ptr);
+	if (obs_sceneitem_is_group(item)) {
+		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
+		obs_scene_enum_items(scene, getSceneItemAtIdx, ptr);
+	}
+	if (data->curIdx == data->targetIdx) {
+		data->name =
+			obs_source_get_name(obs_sceneitem_get_source(item));
+		data->curIdx--;
+		return false;
+	}
+	data->curIdx--;
+	return true;
+}
+
+void MacroActionVariable::SetToSceneItemName(Variable *var)
+{
+	auto weakSource = _scene.GetScene();
+	if (!weakSource) {
+		var->SetValue("");
+		return;
+	}
+	auto index = _sceneItemIndex.GetValue();
+	if (index < 1) {
+		var->SetValue("");
+		return;
+	}
+	auto sceneItemCount = GetSceneItemCount(weakSource);
+	OBSSourceAutoRelease source = obs_weak_source_get_source(weakSource);
+	auto scene = obs_scene_from_source(source);
+	GetSceneItemNameHelper data{sceneItemCount, index};
+	obs_scene_enum_items(scene, getSceneItemAtIdx, &data);
+	var->SetValue(data.name);
 }
 
 struct AskForInputParams {
@@ -268,6 +313,9 @@ bool MacroActionVariable::PerformAction()
 		var->SetValue(*value);
 		return true;
 	}
+	case Type::SCENE_ITEM_NAME:
+		SetToSceneItemName(var.get());
+		return true;
 	}
 
 	return true;
@@ -299,6 +347,7 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	_envVariableName.Save(obj, "environmentVariableName");
 	_scene.Save(obj);
 	_tempVar.Save(obj);
+	_sceneItemIndex.Save(obj, "sceneItemIndex");
 	return true;
 }
 
@@ -328,6 +377,7 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_envVariableName.Load(obj, "environmentVariableName");
 	_scene.Load(obj);
 	_tempVar.Load(obj, GetMacro());
+	_sceneItemIndex.Load(obj, "sceneItemIndex");
 	return true;
 }
 
@@ -457,7 +507,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _envVariable(new VariableLineEdit(this)),
 	  _scenes(new SceneSelectionWidget(this, true, false, true, true,
 					   true)),
-	  _tempVars(new TempVariableSelection(this))
+	  _tempVars(new TempVariableSelection(this)),
+	  _sceneItemIndex(new VariableSpinBox())
 {
 	_numValue->setMinimum(-9999999999);
 	_numValue->setMaximum(9999999999);
@@ -475,6 +526,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_regexMatchIdx->setSuffix(".");
 	_inputPrompt->setSizePolicy(QSizePolicy::MinimumExpanding,
 				    QSizePolicy::Preferred);
+	_sceneItemIndex->setMinimum(1);
 	populateTypeSelection(_actions);
 
 	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),
@@ -523,6 +575,10 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	QWidget::connect(_tempVars,
 			 SIGNAL(SelectionChanged(const TempVariableRef &)),
 			 this, SLOT(SelectionChanged(const TempVariableRef &)));
+	QWidget::connect(
+		_sceneItemIndex,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(SceneItemIndexChanged(const NumberVariable<int> &)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -544,6 +600,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{envVariableName}}", _envVariable},
 		{"{{scenes}}", _scenes},
 		{"{{tempVars}}", _tempVars},
+		{"{{sceneItemIndex}}", _sceneItemIndex},
 	};
 	auto entryLayout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.variable.entry"),
@@ -638,6 +695,7 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_envVariable->setText(_entryData->_envVariableName);
 	_scenes->SetScene(_entryData->_scene);
 	_tempVars->SetVariable(_entryData->_tempVar);
+	_sceneItemIndex->SetValue(_entryData->_sceneItemIndex);
 	SetWidgetVisibility();
 }
 
@@ -982,6 +1040,17 @@ void MacroActionVariableEdit::SelectionChanged(const TempVariableRef &var)
 	_entryData->_tempVar = var;
 }
 
+void MacroActionVariableEdit::SceneItemIndexChanged(
+	const NumberVariable<int> &value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_sceneItemIndex = value;
+}
+
 void MacroActionVariableEdit::SetWidgetVisibility()
 {
 	if (!_entryData) {
@@ -1058,10 +1127,15 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 	}
 	_envVariable->setVisible(_entryData->_type ==
 				 MacroActionVariable::Type::ENV_VARIABLE);
-	_scenes->setVisible(_entryData->_type ==
-			    MacroActionVariable::Type::SCENE_ITEM_COUNT);
+	_scenes->setVisible(
+		_entryData->_type ==
+			MacroActionVariable::Type::SCENE_ITEM_COUNT ||
+		_entryData->_type ==
+			MacroActionVariable::Type::SCENE_ITEM_NAME);
 	_tempVars->setVisible(_entryData->_type ==
 			      MacroActionVariable::Type::SET_TO_TEMPVAR);
+	_sceneItemIndex->setVisible(_entryData->_type ==
+				    MacroActionVariable::Type::SCENE_ITEM_NAME);
 	adjustSize();
 	updateGeometry();
 }

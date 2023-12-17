@@ -6,6 +6,7 @@
 #include "scene-selection.hpp"
 #include "variable-line-edit.hpp"
 #include "variable-text-edit.hpp"
+#include "variable-spinbox.hpp"
 
 namespace advss {
 
@@ -44,6 +45,7 @@ public:
 		STRING_LENGTH,
 		EXTRACT_JSON,
 		SET_TO_TEMPVAR,
+		SCENE_ITEM_NAME,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
@@ -75,6 +77,7 @@ public:
 #endif
 	SceneSelection _scene;
 	TempVariableRef _tempVar;
+	IntVariable _sceneItemIndex = 1;
 
 private:
 	void DecrementCurrentSegmentVariableRef();
@@ -82,6 +85,7 @@ private:
 	void HandleRegexSubString(Variable *);
 	void HandleFindAndReplace(Variable *);
 	void HandleMathExpression(Variable *);
+	void SetToSceneItemName(Variable *);
 
 	std::weak_ptr<MacroSegment> _macroSegment;
 	int _segmentIdxLoadValue = -1;
@@ -129,6 +133,7 @@ private slots:
 	void EnvVariableChanged();
 	void SceneChanged(const SceneSelection &);
 	void SelectionChanged(const TempVariableRef &var);
+	void SceneItemIndexChanged(const NumberVariable<int> &);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -167,6 +172,7 @@ private:
 	VariableLineEdit *_envVariable;
 	SceneSelectionWidget *_scenes;
 	TempVariableSelection *_tempVars;
+	VariableSpinBox *_sceneItemIndex;
 
 	std::shared_ptr<MacroActionVariable> _entryData;
 	QTimer _timer;
