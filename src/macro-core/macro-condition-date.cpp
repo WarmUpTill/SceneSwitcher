@@ -638,10 +638,24 @@ void MacroConditionDateEdit::AdvancedSettingsToggleClicked()
 	{
 		auto lock = LockContext();
 		_entryData->_dayOfWeekCheck = !_entryData->_dayOfWeekCheck;
-		_entryData->_condition = MacroConditionDate::Condition::AT;
 	}
-	_condition->setCurrentIndex(0);
-	_weekCondition->setCurrentIndex(0);
+
+	switch (_entryData->_condition) {
+	case MacroConditionDate::Condition::BETWEEN:
+	case MacroConditionDate::Condition::PATTERN:
+		_condition->setCurrentIndex(0);
+		_weekCondition->setCurrentIndex(0);
+		break;
+	case MacroConditionDate::Condition::AT:
+	case MacroConditionDate::Condition::AFTER:
+	case MacroConditionDate::Condition::BEFORE:
+		_weekCondition->setCurrentIndex(
+			static_cast<int>(_entryData->_condition));
+		_condition->setCurrentIndex(
+			static_cast<int>(_entryData->_condition));
+		break;
+	}
+
 	SetWidgetStatus();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
