@@ -1,6 +1,9 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "process-config.hpp"
+#include "duration-control.hpp"
+
+#include <QCheckBox>
 
 namespace advss {
 
@@ -19,6 +22,8 @@ public:
 	}
 
 	ProcessConfig _procConfig;
+	bool _wait = false;
+	Duration _timeout = 1;
 
 private:
 	static bool _registered;
@@ -42,14 +47,19 @@ public:
 
 private slots:
 	void ProcessConfigChanged(const ProcessConfig &);
+	void ProcessConfigAdvancedSettingsShown();
+	void WaitChanged(int);
+	void TimeoutChanged(const Duration &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
-	std::shared_ptr<MacroActionRun> _entryData;
-
 private:
 	ProcessConfigEdit *_procConfig;
+	QHBoxLayout *_waitLayout;
+	QCheckBox *_wait;
+	DurationSelection *_timeout;
+
+	std::shared_ptr<MacroActionRun> _entryData;
 	bool _loading = true;
 };
 
