@@ -3,12 +3,13 @@
 #include "string-list.hpp"
 
 #include <obs-data.h>
-#include <obs-module.h>
+#include <obs-module-helper.hpp>
 
 #include <QPushButton>
 #include <QListWidget>
 #include <QStringList>
 #include <QVBoxLayout>
+#include <variant>
 
 namespace advss {
 
@@ -17,10 +18,21 @@ public:
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
 
-	std::string Path() { return _path; }
+	std::string Path() const { return _path; }
 	std::string UnresolvedPath() const { return _path.UnresolvedValue(); }
-	std::string WorkingDir() { return _workingDirectory; }
-	QStringList Args(); // Resolves variables
+	std::string WorkingDir() const { return _workingDirectory; }
+	QStringList Args() const; // Resolves variables
+
+	enum class ProcStartError {
+		NONE,
+		FAILED_TO_START,
+		TIMEOUT,
+		CRASH,
+	};
+
+	std::variant<int, ProcStartError>
+	StartProcessAndWait(int timeoutInMs) const;
+	bool StartProcessDetached() const;
 
 private:
 	StringVariable _path = obs_module_text("AdvSceneSwitcher.enterPath");
@@ -44,6 +56,7 @@ private slots:
 	void ArgsChanged(const StringList &);
 signals:
 	void ConfigChanged(const ProcessConfig &);
+	void AdvancedSettingsEnabled();
 
 private:
 	void ShowAdvancedSettings(bool);

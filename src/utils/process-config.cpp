@@ -1,4 +1,5 @@
 #include "process-config.hpp"
+#include "log-helper.hpp"
 #include "name-dialog.hpp"
 #include "utility.hpp"
 
@@ -37,13 +38,49 @@ bool ProcessConfig::Load(obs_data_t *obj)
 	return true;
 }
 
-QStringList ProcessConfig::Args()
+QStringList ProcessConfig::Args() const
 {
 	QStringList result;
 	for (auto &arg : _args) {
 		result << QString::fromStdString(arg);
 	}
 	return result;
+}
+
+bool ProcessConfig::StartProcessDetached() const
+{
+	return QProcess::startDetached(QString::fromStdString(Path()), Args(),
+				       QString::fromStdString(WorkingDir()));
+}
+
+std::variant<int, ProcessConfig::ProcStartError>
+ProcessConfig::StartProcessAndWait(int timeout) const
+{
+	QProcess process;
+	process.setWorkingDirectory(QString::fromStdString(WorkingDir()));
+	process.start(QString::fromStdString(Path()), Args());
+	vblog(LOG_INFO, "run \"%s\" with a timeout of %d ms", Path().c_str(),
+	      timeout);
+
+	if (!process.waitForFinished(timeout)) {
+		if (process.error() == QProcess::FailedToStart) {
+			vblog(LOG_INFO, "failed to start \"%s\"!",
+			      Path().c_str());
+			return ProcStartError::FAILED_TO_START;
+		}
+		vblog(LOG_INFO,
+		      "timeout while running \"%s\"\nAttempting to kill process!",
+		      Path().c_str());
+		process.kill();
+		process.waitForFinished();
+		return ProcStartError::TIMEOUT;
+	}
+
+	if (process.exitStatus() == QProcess::NormalExit) {
+		return process.exitCode();
+	}
+	vblog(LOG_INFO, "process \"%s\" crashed!", Path().c_str());
+	return ProcStartError::CRASH;
 }
 
 ProcessConfigEdit::ProcessConfigEdit(QWidget *parent)
@@ -91,7 +128,7 @@ ProcessConfigEdit::ProcessConfigEdit(QWidget *parent)
 	_advancedSettingsLayout->addWidget(_argList);
 	_advancedSettingsLayout->addLayout(workingDirectoryLayout);
 
-	auto *mainLayout = new QVBoxLayout;
+	auto mainLayout = new QVBoxLayout;
 	mainLayout->setContentsMargins(0, 0, 0, 0);
 	mainLayout->addLayout(entryLayout);
 	mainLayout->addLayout(_advancedSettingsLayout);
@@ -143,6 +180,9 @@ void ProcessConfigEdit::ShowAdvancedSettings(bool showAdvancedSettings)
 	_showAdvancedSettings->setVisible(!showAdvancedSettings);
 	adjustSize();
 	updateGeometry();
+	if (showAdvancedSettings) {
+		emit AdvancedSettingsEnabled();
+	}
 }
 
 } // namespace advss
