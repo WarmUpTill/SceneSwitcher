@@ -2,7 +2,6 @@
 #include "utility.hpp"
 
 #include <QProcess>
-#include <QDesktopServices>
 
 namespace advss {
 
@@ -28,17 +27,18 @@ bool MacroConditionRun::CheckCondition()
 
 	bool ret = false;
 
-	switch (_procStatus) {
-	case MacroConditionRun::Status::FAILED_TO_START:
+	switch (_error) {
+	case ProcessConfig::ProcStartError::FAILED_TO_START:
 		SetVariableValue("Failed to start process");
-		ret = false;
 		break;
-	case MacroConditionRun::Status::TIMEOUT:
+	case ProcessConfig::ProcStartError::TIMEOUT:
 		SetVariableValue("Timeout while running process");
-		ret = false;
 		break;
-	case MacroConditionRun::Status::OK:
-		ret = _checkExitCode ? _exitCode == _procExitCode : true;
+	case ProcessConfig::ProcStartError::CRASH:
+		SetVariableValue("Timeout while running process");
+		break;
+	case ProcessConfig::ProcStartError::NONE:
+		ret = _checkExitCode ? _exitCodeToCheck == _procExitCode : true;
 		SetVariableValue(std::to_string(_procExitCode));
 		break;
 	default:
@@ -56,42 +56,14 @@ bool MacroConditionRun::CheckCondition()
 
 void MacroConditionRun::RunProcess()
 {
-	QProcess process;
-	process.setWorkingDirectory(
-		QString::fromStdString(_procConfig.WorkingDir()));
-	process.start(QString::fromStdString(_procConfig.Path()),
-		      _procConfig.Args());
-	int timeout = _timeout.Milliseconds();
+	auto result = _procConfig.StartProcessAndWait(_timeout.Milliseconds());
 
-	vblog(LOG_INFO, "run \"%s\" with a timeout of %d ms",
-	      _procConfig.Path().c_str(), timeout);
-
-	bool procFinishedInTime = process.waitForFinished(timeout);
-
-	if (!procFinishedInTime) {
-		if (process.error() == QProcess::FailedToStart) {
-			vblog(LOG_INFO, "failed to start \"%s\"!",
-			      _procConfig.Path().c_str());
-			_procStatus = Status::FAILED_TO_START;
-		} else {
-			vblog(LOG_INFO,
-			      "timeout while running \"%s\"\nAttempting to kill process!",
-			      _procConfig.Path().c_str());
-			process.kill();
-			process.waitForFinished();
-			_procStatus = Status::TIMEOUT;
-		}
+	if (std::holds_alternative<ProcessConfig::ProcStartError>(result)) {
+		_error = std::get<ProcessConfig::ProcStartError>(result);
+	} else {
+		_error = ProcessConfig::ProcStartError::NONE;
+		_procExitCode = std::get<int>(result);
 	}
-
-	bool validExitCode = process.exitStatus() == QProcess::NormalExit;
-
-	if ((_checkExitCode && !validExitCode) || !procFinishedInTime) {
-		_threadDone = true;
-		return;
-	}
-
-	_procExitCode = process.exitCode();
-	_procStatus = Status::OK;
 	_threadDone = true;
 }
 
@@ -100,7 +72,7 @@ bool MacroConditionRun::Save(obs_data_t *obj) const
 	MacroCondition::Save(obj);
 	_procConfig.Save(obj);
 	obs_data_set_bool(obj, "checkExitCode", _checkExitCode);
-	obs_data_set_int(obj, "exitCode", _exitCode);
+	obs_data_set_int(obj, "exitCode", _exitCodeToCheck);
 	_timeout.Save(obj, "timeout");
 	return true;
 }
@@ -110,7 +82,7 @@ bool MacroConditionRun::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	_procConfig.Load(obj);
 	_checkExitCode = obs_data_get_bool(obj, "checkExitCode");
-	_exitCode = obs_data_get_int(obj, "exitCode");
+	_exitCodeToCheck = obs_data_get_int(obj, "exitCode");
 	_timeout.Load(obj, "timeout");
 	return true;
 }
@@ -174,7 +146,7 @@ void MacroConditionRunEdit::UpdateEntryData()
 	_procConfig->SetProcessConfig(_entryData->_procConfig);
 	_timeout->SetDuration(_entryData->_timeout);
 	_checkExitCode->setChecked(_entryData->_checkExitCode);
-	_exitCode->setValue(_entryData->_exitCode);
+	_exitCode->setValue(_entryData->_exitCodeToCheck);
 }
 
 void MacroConditionRunEdit::TimeoutChanged(const Duration &dur)
@@ -204,7 +176,7 @@ void MacroConditionRunEdit::ExitCodeChanged(int exitCode)
 	}
 
 	auto lock = LockContext();
-	_entryData->_exitCode = exitCode;
+	_entryData->_exitCodeToCheck = exitCode;
 }
 
 void MacroConditionRunEdit::ProcessConfigChanged(const ProcessConfig &conf)

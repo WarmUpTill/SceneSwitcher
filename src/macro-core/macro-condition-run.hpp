@@ -25,22 +25,15 @@ public:
 
 	ProcessConfig _procConfig;
 	bool _checkExitCode = true;
-	int _exitCode = 0;
+	int _exitCodeToCheck = 0;
 	Duration _timeout = Duration(0.1);
 
 private:
-	enum class Status {
-		NONE,
-		FAILED_TO_START,
-		TIMEOUT,
-		OK,
-	};
-
 	void RunProcess();
-
 	std::thread _thread;
 	std::atomic_bool _threadDone{true};
-	Status _procStatus = Status::NONE;
+	ProcessConfig::ProcStartError _error =
+		ProcessConfig::ProcStartError::NONE;
 	int _procExitCode = 0;
 
 	static bool _registered;
