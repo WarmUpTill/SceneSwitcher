@@ -97,6 +97,8 @@ target_sources(
           src/macro-core/macro-action-clipboard.hpp
           src/macro-core/macro-action-edit.cpp
           src/macro-core/macro-action-edit.hpp
+          src/macro-core/macro-action-factory.cpp
+          src/macro-core/macro-action-factory.hpp
           src/macro-core/macro-action-file.cpp
           src/macro-core/macro-action-file.hpp
           src/macro-core/macro-action-filter.cpp
@@ -173,6 +175,8 @@ target_sources(
           src/macro-core/macro-condition-display.hpp
           src/macro-core/macro-condition-edit.cpp
           src/macro-core/macro-condition-edit.hpp
+          src/macro-core/macro-condition-factory.cpp
+          src/macro-core/macro-condition-factory.hpp
           src/macro-core/macro-condition-file.cpp
           src/macro-core/macro-condition-file.hpp
           src/macro-core/macro-condition-filter.cpp
