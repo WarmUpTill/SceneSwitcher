@@ -1,84 +1,23 @@
+#include "macro-condition-edit.hpp"
 #include "advanced-scene-switcher.hpp"
 #include "switcher-data.hpp"
-#include "macro-condition-edit.hpp"
 #include "macro-condition-scene.hpp"
 #include "section.hpp"
 #include "utility.hpp"
 
 namespace advss {
 
-std::map<std::string, MacroConditionInfo> &MacroConditionFactory::GetMap()
-{
-	static std::map<std::string, MacroConditionInfo> _methods;
-	return _methods;
-}
-
-bool MacroConditionFactory::Register(const std::string &id,
-				     MacroConditionInfo info)
-{
-	if (auto it = GetMap().find(id); it == GetMap().end()) {
-		GetMap()[id] = info;
-		return true;
-	}
-	return false;
-}
-
-std::shared_ptr<MacroCondition>
-MacroConditionFactory::Create(const std::string &id, Macro *m)
-{
-	if (auto it = GetMap().find(id); it != GetMap().end()) {
-		return it->second._createFunc(m);
-	}
-	return nullptr;
-}
-
-QWidget *
-MacroConditionFactory::CreateWidget(const std::string &id, QWidget *parent,
-				    std::shared_ptr<MacroCondition> cond)
-{
-	if (auto it = GetMap().find(id); it != GetMap().end()) {
-		return it->second._createWidgetFunc(parent, cond);
-	}
-	return nullptr;
-}
-
-std::string MacroConditionFactory::GetConditionName(const std::string &id)
-{
-	if (auto it = GetMap().find(id); it != GetMap().end()) {
-		return it->second._name;
-	}
-	return "unknown condition";
-}
-
-std::string MacroConditionFactory::GetIdByName(const QString &name)
-{
-	for (auto it : GetMap()) {
-		if (name == obs_module_text(it.second._name.c_str())) {
-			return it.first;
-		}
-	}
-	return "";
-}
-
-bool MacroConditionFactory::UsesDurationModifier(const std::string &id)
-{
-	if (auto it = GetMap().find(id); it != GetMap().end()) {
-		return it->second._useDurationModifier;
-	}
-	return false;
-}
-
 static inline void populateLogicSelection(QComboBox *list, bool root = false)
 {
 	if (root) {
-		for (auto entry : MacroCondition::logicTypes) {
+		for (const auto &entry : MacroCondition::logicTypes) {
 			if (static_cast<int>(entry.first) < logic_root_offset) {
 				list->addItem(obs_module_text(
 					entry.second._name.c_str()));
 			}
 		}
 	} else {
-		for (auto entry : MacroCondition::logicTypes) {
+		for (const auto &entry : MacroCondition::logicTypes) {
 			if (static_cast<int>(entry.first) >=
 			    logic_root_offset) {
 				list->addItem(obs_module_text(
@@ -90,7 +29,7 @@ static inline void populateLogicSelection(QComboBox *list, bool root = false)
 
 static inline void populateConditionSelection(QComboBox *list)
 {
-	for (auto &[_, condition] :
+	for (const auto &[_, condition] :
 	     MacroConditionFactory::GetConditionTypes()) {
 		QString entry(obs_module_text(condition._name.c_str()));
 		if (list->findText(entry) == -1) {
