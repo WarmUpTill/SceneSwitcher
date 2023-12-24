@@ -43,14 +43,6 @@ private:
 	friend VariableSettingsDialog;
 };
 
-Variable *GetVariableByName(const std::string &name);
-Variable *GetVariableByQString(const QString &name);
-std::weak_ptr<Variable> GetWeakVariableByName(const std::string &name);
-std::weak_ptr<Variable> GetWeakVariableByQString(const QString &name);
-QStringList GetVariablesNameList();
-std::string GetWeakVariableName(std::weak_ptr<Variable>);
-std::chrono::high_resolution_clock::time_point GetLastVariableChangeTime();
-
 class VariableSettingsDialog : public ItemSettingsDialog {
 	Q_OBJECT
 
@@ -75,5 +67,19 @@ public:
 	void SetVariable(const std::string &);
 	void SetVariable(const std::weak_ptr<Variable> &);
 };
+
+void SaveVariables(obs_data_t *obj);
+void LoadVariables(obs_data_t *obj);
+
+std::deque<std::shared_ptr<Item>> &GetVariables();
+
+Variable *GetVariableByName(const std::string &name);
+Variable *GetVariableByQString(const QString &name);
+std::weak_ptr<Variable> GetWeakVariableByName(const std::string &name);
+std::weak_ptr<Variable> GetWeakVariableByQString(const QString &name);
+std::string GetWeakVariableName(std::weak_ptr<Variable>);
+QStringList GetVariablesNameList();
+
+std::chrono::high_resolution_clock::time_point GetLastVariableChangeTime();
 
 } // namespace advss

@@ -243,7 +243,7 @@ void AdvSceneSwitcher::ExportMacros()
 		obs_data_array_push_back(macroArray, obj);
 	}
 	obs_data_set_array(data, "macros", macroArray);
-	switcher->SaveVariables(data);
+	SaveVariables(data);
 	obs_data_set_string(data, "version", g_GIT_TAG);
 	auto json = obs_data_get_json(data);
 	QString exportString(json);
@@ -382,7 +382,7 @@ static void importVariables(obs_data_t *obj)
 		if (variableWithNameExists(var->Name())) {
 			continue;
 		}
-		switcher->variables.emplace_back(var);
+		GetVariables().emplace_back(var);
 	}
 }
 

@@ -1,7 +1,5 @@
 #include "variable-text-edit.hpp"
-#include "switcher-data.hpp"
-
-#include <obs-module.h>
+#include "obs-module-helper.hpp"
 
 namespace advss {
 

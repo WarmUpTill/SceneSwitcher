@@ -1,6 +1,5 @@
 #include "macro-action-variable.hpp"
 #include "macro-condition-edit.hpp"
-#include "switcher-data.hpp"
 #include "advanced-scene-switcher.hpp"
 #include "macro.hpp"
 #include "math-helpers.hpp"

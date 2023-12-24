@@ -3,6 +3,7 @@
 #include "status-control.hpp"
 #include "file-selection.hpp"
 #include "filter-combo-box.hpp"
+#include "variable.hpp"
 #include "utility.hpp"
 #include "version.h"
 
