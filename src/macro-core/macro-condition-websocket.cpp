@@ -1,5 +1,4 @@
 #include "macro-condition-websocket.hpp"
-#include "switcher-data.hpp"
 #include "utility.hpp"
 
 #include <regex>

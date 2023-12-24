@@ -4,7 +4,7 @@
 // so it makes sense to include them here:
 #include "log-helper.hpp"
 #include "obs-module-helper.hpp"
-#include "sync-helper.hpp"
+#include "sync-helpers.hpp"
 #include "temp-variable.hpp"
 
 #include <QWidget>

@@ -1,5 +1,5 @@
 #include "macro-condition-scene.hpp"
-#include "switcher-data.hpp"
+#include "scene-switch-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -53,23 +53,22 @@ static OBSWeakSource getCurrentSceneHelper(bool useTransitionTargetScene)
 		obs_source_release(current);
 		return weak;
 	}
-	return switcher->currentScene;
+	return GetCurrentScene();
 }
 
 static OBSWeakSource getPreviousSceneHelper(bool useTransitionTargetScene)
 {
-	if (switcher->AnySceneTransitionStarted() && useTransitionTargetScene) {
-		return switcher->currentScene;
+	if (AnySceneTransitionStarted() && useTransitionTargetScene) {
+		return GetCurrentScene();
 	}
-	return switcher->previousScene;
+	return GetPreviousScene();
 }
 
 bool MacroConditionScene::CheckCondition()
 {
-	bool sceneChanged = _lastSceneChangeTime !=
-			    switcher->lastSceneChangeTime;
+	bool sceneChanged = _lastSceneChangeTime != GetLastSceneChangeTime();
 	if (sceneChanged) {
-		_lastSceneChangeTime = switcher->lastSceneChangeTime;
+		_lastSceneChangeTime = GetLastSceneChangeTime();
 	}
 
 	switch (_type) {
@@ -95,14 +94,14 @@ bool MacroConditionScene::CheckCondition()
 		return scene == _scene.GetScene(false);
 	}
 	case Type::CHANGED:
-		SetVariableValue(GetWeakSourceName(switcher->currentScene));
+		SetVariableValue(GetWeakSourceName(GetCurrentScene()));
 		SetTempVarValue("current",
-				GetWeakSourceName(switcher->currentScene));
+				GetWeakSourceName(GetCurrentScene()));
 		return sceneChanged;
 	case Type::NOT_CHANGED:
-		SetVariableValue(GetWeakSourceName(switcher->currentScene));
+		SetVariableValue(GetWeakSourceName(GetCurrentScene()));
 		SetTempVarValue("current",
-				GetWeakSourceName(switcher->currentScene));
+				GetWeakSourceName(GetCurrentScene()));
 		return !sceneChanged;
 	case Type::CURRENT_PATTERN: {
 		auto scene = getCurrentSceneHelper(_useTransitionTargetScene);
@@ -189,8 +188,8 @@ bool MacroConditionScene::Load(obs_data_t *obj)
 			break;
 		default:
 			blog(LOG_WARNING,
-			     "failed to convert scene condition type (%d) for macro %s",
-			     oldType, GetMacro()->Name().c_str());
+			     "failed to convert scene condition type (%d)",
+			     oldType);
 			_type = Type::CURRENT;
 			break;
 		}

@@ -1,7 +1,7 @@
 #include "macro-condition-video.hpp"
 
 #include <macro-condition-edit.hpp>
-#include <switcher-data.hpp>
+#include <plugin-state-helpers.hpp>
 #include <utility.hpp>
 
 #include <QFileDialog>
@@ -222,8 +222,8 @@ void MacroConditionVideo::GetScreenshot(bool blocking)
 				       _areaParameters.area.width,
 				       _areaParameters.area.height);
 	}
-	new (&_screenshotData) ScreenshotHelper(
-		source, screenshotArea, blocking, GetSwitcher()->interval);
+	new (&_screenshotData) ScreenshotHelper(source, screenshotArea,
+						blocking, GetIntervalValue());
 	obs_source_release(source);
 	_getNextScreenshot = false;
 }
@@ -1110,9 +1110,9 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 		"AdvSceneSwitcher.condition.video.patternMatchMode.tip"));
 	populatePatternMatchModeSelection(_patternMatchMode);
 
-	_throttleCount->setMinimum(1 * GetSwitcher()->interval);
-	_throttleCount->setMaximum(10 * GetSwitcher()->interval);
-	_throttleCount->setSingleStep(GetSwitcher()->interval);
+	_throttleCount->setMinimum(1 * GetIntervalValue());
+	_throttleCount->setMaximum(10 * GetIntervalValue());
+	_throttleCount->setSingleStep(GetIntervalValue());
 
 	_brightness->setSizePolicy(QSizePolicy::MinimumExpanding,
 				   QSizePolicy::Preferred);
@@ -1507,7 +1507,7 @@ void MacroConditionVideoEdit::ThrottleCountChanged(int value)
 	}
 
 	auto lock = LockContext();
-	_entryData->_throttleCount = value / GetSwitcher()->interval;
+	_entryData->_throttleCount = value / GetIntervalValue();
 }
 
 void MacroConditionVideoEdit::ShowMatchClicked()
@@ -1629,7 +1629,7 @@ void MacroConditionVideoEdit::UpdateEntryData()
 		_entryData->_patternMatchParameters.matchMode));
 	_throttleEnable->setChecked(_entryData->_throttleEnabled);
 	_throttleCount->setValue(_entryData->_throttleCount *
-				 GetSwitcher()->interval);
+				 GetIntervalValue());
 	UpdatePreviewTooltip();
 	SetupPreviewDialogParams();
 	SetWidgetVisibility();

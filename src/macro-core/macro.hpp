@@ -202,6 +202,11 @@ private:
 	QAction *_dockAction = nullptr;
 };
 
+void LoadMacros(obs_data_t *obj);
+void SaveMacros(obs_data_t *obj);
+std::deque<std::shared_ptr<Macro>> &GetMacros();
+bool CheckMacros();
+bool RunMacros();
 Macro *GetMacroByName(const char *name);
 Macro *GetMacroByQString(const QString &name);
 std::weak_ptr<Macro> GetWeakMacroByName(const char *name);

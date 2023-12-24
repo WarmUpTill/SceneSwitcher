@@ -21,7 +21,7 @@
 #include "curl-helper.hpp"
 #include "priority-helper.hpp"
 #include "log-helper.hpp"
-#include "plugin-state-helper.hpp"
+#include "plugin-state-helpers.hpp"
 
 #include <condition_variable>
 #include <vector>
@@ -47,6 +47,7 @@ class SwitcherData;
 extern SwitcherData *switcher;
 SwitcherData *GetSwitcher();
 std::mutex *GetSwitcherMutex();
+std::unique_lock<std::mutex> *GetSwitcherLoopLock();
 bool VerboseLoggingEnabled();
 
 class SwitcherData {
@@ -54,7 +55,6 @@ public:
 	void Thread();
 	void Start();
 	void Stop();
-	std::unique_lock<std::mutex> *GetLock() { return mainLoopLock; }
 
 	const char *Translate(const char *);
 	obs_module_t *GetModule();
@@ -72,15 +72,12 @@ public:
 	bool CheckForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
 			   int &linger, bool &setPreviousSceneAsMatch,
 			   bool &macroMatch);
-	bool CheckMacros();
-	bool RunMacros();
 	void CheckNoMatchSwitch(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition, int &sleep);
 
 	/* --- Start of saving / loading section --- */
 
 	void SaveSettings(obs_data_t *obj);
-	void SaveMacros(obs_data_t *obj);
 	void SaveVariables(obs_data_t *obj);
 	void SaveGeneralSettings(obs_data_t *obj);
 	void SaveHotkeys(obs_data_t *obj);
@@ -88,7 +85,6 @@ public:
 	void SaveVersion(obs_data_t *obj, const std::string &currentVersion);
 
 	void LoadSettings(obs_data_t *obj);
-	void LoadMacros(obs_data_t *obj);
 	void LoadVariables(obs_data_t *obj);
 	void LoadGeneralSettings(obs_data_t *obj);
 	void LoadHotkeys(obs_data_t *obj);
@@ -110,9 +106,6 @@ public:
 	std::unique_lock<std::mutex> *mainLoopLock = nullptr;
 	bool stop = false;
 	std::condition_variable cv;
-	std::condition_variable macroWaitCv;
-	std::atomic_bool abortMacroWait = {false};
-	std::condition_variable macroTransitionCv;
 
 	std::vector<std::function<void(obs_data_t *)>> saveSteps;
 	std::vector<std::function<void(obs_data_t *)>> loadSteps;
@@ -126,7 +119,6 @@ public:
 	bool obsIsShuttingDown = false;
 	bool firstInterval = true;
 	bool firstIntervalAfterStop = true;
-	int shutdownConditionCount = 0;
 	bool startupLoadDone = false;
 
 	obs_source_t *waitScene = nullptr;
@@ -164,10 +156,6 @@ public:
 	};
 	AudioFadeInfo masterAudioFade;
 	std::unordered_map<std::string, AudioFadeInfo> activeAudioFades;
-
-	MacroProperties macroProperties;
-	std::deque<std::shared_ptr<Macro>> macros;
-	bool macroSceneSwitched = false;
 
 	Curlhelper curl;
 	std::deque<std::shared_ptr<Item>> variables;

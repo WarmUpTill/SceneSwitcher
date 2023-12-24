@@ -1,6 +1,8 @@
 #include "macro-action-edit.hpp"
+#include "macro-helpers.hpp"
+#include "macro.hpp"
+#include "macro-properties.hpp"
 #include "advanced-scene-switcher.hpp"
-#include "switcher-data.hpp"
 #include "macro-action-scene-switch.hpp"
 #include "section.hpp"
 #include "switch-button.hpp"
@@ -28,7 +30,8 @@ static inline void populateActionSelection(QComboBox *list)
 MacroActionEdit::MacroActionEdit(QWidget *parent,
 				 std::shared_ptr<MacroAction> *entryData,
 				 const std::string &id)
-	: MacroSegmentEdit(switcher->macroProperties._highlightActions, parent),
+	: MacroSegmentEdit(GetGlobalMacroProperties()._highlightActions,
+			   parent),
 	  _actionSelection(new FilterComboBox()),
 	  _enable(new SwitchButton()),
 	  _entryData(entryData)
@@ -82,7 +85,7 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 	auto idx = _entryData->get()->GetIndex();
 	auto macro = _entryData->get()->GetMacro();
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		_entryData->reset();
 		*_entryData = MacroActionFactory::Create(id, macro);
 		(*_entryData)->SetIndex(idx);
@@ -133,7 +136,7 @@ void MacroActionEdit::ActionEnableChanged(bool value)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	(*_entryData)->SetEnabled(value);
 	SetDisableEffect(!value);
 }
@@ -177,7 +180,7 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 		id = temp.GetId();
 	}
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		macro->Actions().emplace(
 			macro->Actions().begin() + idx,
 			MacroActionFactory::Create(id, macro.get()));
@@ -228,11 +231,11 @@ void AdvSceneSwitcher::RemoveMacroAction(int idx)
 	}
 
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		ui->actionsList->Remove(idx);
 		macro->Actions().erase(macro->Actions().begin() + idx);
-		switcher->abortMacroWait = true;
-		switcher->macroWaitCv.notify_all();
+		SetMacroAbortWait(true);
+		GetMacroWaitCV().notify_all();
 		macro->UpdateActionIndices();
 		SetActionData(*macro);
 	}
@@ -373,7 +376,7 @@ void AdvSceneSwitcher::SwapActions(Macro *m, int pos1, int pos2)
 		std::swap(pos1, pos2);
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	iter_swap(m->Actions().begin() + pos1, m->Actions().begin() + pos2);
 	m->UpdateActionIndices();
 	auto widget1 = static_cast<MacroActionEdit *>(
@@ -433,7 +436,7 @@ void AdvSceneSwitcher::MacroElseActionReorder(int to, int from)
 		return;
 	}
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		auto action = macro->ElseActions().at(from);
 		macro->ElseActions().erase(macro->ElseActions().begin() + from);
 		macro->ElseActions().insert(macro->ElseActions().begin() + to,
@@ -466,7 +469,7 @@ void AdvSceneSwitcher::AddMacroElseAction(int idx)
 		id = temp.GetId();
 	}
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		macro->ElseActions().emplace(
 			macro->ElseActions().begin() + idx,
 			MacroActionFactory::Create(id, macro.get()));
@@ -498,11 +501,11 @@ void AdvSceneSwitcher::RemoveMacroElseAction(int idx)
 	}
 
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		ui->elseActionsList->Remove(idx);
 		macro->ElseActions().erase(macro->ElseActions().begin() + idx);
-		switcher->abortMacroWait = true;
-		switcher->macroWaitCv.notify_all();
+		SetMacroAbortWait(true);
+		GetMacroWaitCV().notify_all();
 		macro->UpdateElseActionIndices();
 		SetActionData(*macro);
 	}
@@ -520,7 +523,7 @@ void AdvSceneSwitcher::SwapElseActions(Macro *m, int pos1, int pos2)
 		std::swap(pos1, pos2);
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	iter_swap(m->ElseActions().begin() + pos1,
 		  m->ElseActions().begin() + pos2);
 	m->UpdateElseActionIndices();
@@ -583,7 +586,7 @@ void AdvSceneSwitcher::MacroActionReorder(int to, int from)
 		return;
 	}
 	{
-		std::lock_guard<std::mutex> lock(switcher->m);
+		auto lock = LockContext();
 		auto action = macro->Actions().at(from);
 		macro->Actions().erase(macro->Actions().begin() + from);
 		macro->Actions().insert(macro->Actions().begin() + to, action);

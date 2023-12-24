@@ -1,7 +1,7 @@
 #include "macro-tree.hpp"
 #include "macro.hpp"
+#include "sync-helpers.hpp"
 #include "utility.hpp"
-#include "switcher-data.hpp"
 
 #include <obs.h>
 #include <string>
@@ -395,7 +395,7 @@ CountItemsVisibleInModel(const std::deque<std::shared_ptr<Macro>> &macros)
 
 void MacroTreeModel::Add(std::shared_ptr<Macro> item)
 {
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	auto idx = CountItemsVisibleInModel(_macros);
 	beginInsertRows(QModelIndex(), idx, idx);
 	_macros.emplace_back(item);
@@ -408,7 +408,7 @@ void MacroTreeModel::Add(std::shared_ptr<Macro> item)
 
 void MacroTreeModel::Remove(std::shared_ptr<Macro> item)
 {
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	auto uiStartIdx = GetItemModelIndex(item);
 	if (uiStartIdx == -1) {
 		return;
@@ -643,7 +643,7 @@ void MacroTreeModel::GroupSelectedItems(QModelIndexList &indices)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	QString name = GetNewGroupName();
 	std::vector<std::shared_ptr<Macro>> itemsToGroup;
 	itemsToGroup.reserve(indices.size());
@@ -691,7 +691,7 @@ void MacroTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	for (int i = indices.count() - 1; i >= 0; i--) {
 		std::shared_ptr<Macro> item = _macros[ModelIndexToMacroIndex(
 			indices[i].row(), _macros)];
@@ -1055,7 +1055,7 @@ void MacroTree::dropEvent(QDropEvent *event)
 	}
 
 	// Move items in backend
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	int to = row;
 	try {
 		to = ModelIndexToMacroIndex(row, items);
@@ -1181,7 +1181,7 @@ void MacroTree::Remove(std::shared_ptr<Macro> item) const
 
 void MacroTree::Up(std::shared_ptr<Macro> item) const
 {
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	auto above = GetModel()->Neighbor(item, true);
 	if (!above) {
 		return;
@@ -1207,7 +1207,7 @@ void MacroTree::Up(std::shared_ptr<Macro> item) const
 
 void MacroTree::Down(std::shared_ptr<Macro> item) const
 {
-	std::lock_guard<std::mutex> lock(switcher->m);
+	auto lock = LockContext();
 	auto below = GetModel()->Neighbor(item, false);
 	if (!below) {
 		return;
