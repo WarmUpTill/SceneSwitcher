@@ -1,5 +1,5 @@
 #include "status-control.hpp"
-#include "switcher-data.hpp"
+#include "plugin-state-helpers.hpp"
 #include "utility.hpp"
 
 #include <obs-module.h>
@@ -51,10 +51,10 @@ StatusControl::StatusControl(QWidget *parent, bool noLayout)
 		setLayout(layout);
 	}
 
-	if (switcher->stop) {
-		SetStopped();
-	} else {
+	if (PluginIsRunning()) {
 		SetStarted();
+	} else {
+		SetStopped();
 	}
 	connect(&_timer, SIGNAL(timeout()), this, SLOT(UpdateStatus()));
 	_timer.start(1000);
@@ -62,22 +62,18 @@ StatusControl::StatusControl(QWidget *parent, bool noLayout)
 
 void StatusControl::ButtonClicked()
 {
-	if (switcher->th && switcher->th->isRunning()) {
-		switcher->Stop();
+	if (PluginIsRunning()) {
+		StopPlugin();
 		SetStopped();
 	} else {
-		switcher->Start();
+		StartPlugin();
 		SetStarted();
 	}
 }
 
 void StatusControl::UpdateStatus()
 {
-	if (!switcher) {
-		return;
-	}
-
-	if (switcher->th && switcher->th->isRunning()) {
+	if (PluginIsRunning()) {
 		if (!_setToStopped) {
 			return;
 		}
@@ -104,7 +100,7 @@ void StatusControl::SetStopped()
 	_button->setText(
 		obs_module_text("AdvSceneSwitcher.generalTab.status.start"));
 	_status->setText(obs_module_text("AdvSceneSwitcher.status.inactive"));
-	if (!switcher->disableHints) {
+	if (HighlightUIElementsEnabled()) {
 		_pulse = PulseWidget(_status, QColor(Qt::red),
 				     QColor(0, 0, 0, 0));
 	}
