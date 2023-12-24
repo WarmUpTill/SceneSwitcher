@@ -2,7 +2,7 @@
 #include "advanced-scene-switcher.hpp"
 #include "macro.hpp"
 #include "macro-segment.hpp"
-#include "plugin-state-helper.hpp"
+#include "plugin-state-helpers.hpp"
 #include "utility.hpp"
 
 #include <QVariant>

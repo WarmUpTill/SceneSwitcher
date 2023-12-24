@@ -1,8 +1,8 @@
 #include "websocket-helpers.hpp"
 #include "connection-manager.hpp"
 #include "log-helper.hpp"
-#include "plugin-state-helper.hpp"
-#include "sync-helper.hpp"
+#include "plugin-state-helpers.hpp"
+#include "sync-helpers.hpp"
 
 #include <QCryptographicHash>
 #include <obs-websocket-api.h>

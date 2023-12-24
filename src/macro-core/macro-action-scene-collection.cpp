@@ -1,5 +1,5 @@
 #include "macro-action-scene-collection.hpp"
-#include "plugin-state-helper.hpp"
+#include "plugin-state-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {
