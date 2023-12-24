@@ -1,20 +1,24 @@
 #include "macro.hpp"
-#include "macro-action-edit.hpp"
-#include "macro-condition-edit.hpp"
+#include "macro-action-factory.hpp"
+#include "macro-condition-factory.hpp"
 #include "macro-dock.hpp"
-#include "macro-action-scene-switch.hpp"
-#include "switcher-data.hpp"
+#include "macro-helpers.hpp"
+#include "plugin-state-helpers.hpp"
 #include "hotkey.hpp"
+#include "sync-helpers.hpp"
+#include "utility.hpp"
 
 #include <limits>
 #undef max
 #include <chrono>
 #include <unordered_map>
+#include <QAction>
 #include <QMainWindow>
 
 namespace advss {
 
-constexpr int perfLogThreshold = 300;
+static constexpr int perfLogThreshold = 300;
+static std::deque<std::shared_ptr<Macro>> macros;
 
 Macro::Macro(const std::string &name, const bool addHotkey)
 {
@@ -33,7 +37,7 @@ Macro::~Macro()
 
 	// Keep the dock widgets in case of shutdown so they can be restored by
 	// OBS on startup
-	if (!switcher->obsIsShuttingDown) {
+	if (!OBSIsShuttingDown()) {
 		RemoveDock();
 	}
 }
@@ -53,9 +57,8 @@ Macro::CreateGroup(const std::string &name,
 
 void Macro::RemoveGroup(std::shared_ptr<Macro> group)
 {
-	auto it = std::find(switcher->macros.begin(), switcher->macros.end(),
-			    group);
-	if (it == switcher->macros.end()) {
+	auto it = std::find(macros.begin(), macros.end(), group);
+	if (it == macros.end()) {
 		return;
 	}
 
@@ -65,12 +68,12 @@ void Macro::RemoveGroup(std::shared_ptr<Macro> group)
 		(*m)->SetParent(nullptr);
 	}
 
-	switcher->macros.erase(it);
+	macros.erase(it);
 }
 
 void Macro::PrepareMoveToGroup(Macro *group, std::shared_ptr<Macro> item)
 {
-	for (auto &m : switcher->macros) {
+	for (const auto &m : macros) {
 		if (m.get() == group) {
 			PrepareMoveToGroup(m, item);
 			return;
@@ -351,7 +354,7 @@ void Macro::AddHelperThread(std::thread &&newThread)
 void Macro::Stop()
 {
 	_stop = true;
-	switcher->macroWaitCv.notify_all();
+	GetMacroWaitCV().notify_all();
 	for (auto &t : _helperThreads) {
 		if (t.joinable()) {
 			t.join();
@@ -743,15 +746,13 @@ bool Macro::PostLoad()
 
 bool Macro::SwitchesScene() const
 {
-	MacroActionSwitchScene temp(nullptr);
-	auto sceneSwitchId = temp.GetId();
 	for (const auto &a : _actions) {
-		if (a->GetId() == sceneSwitchId) {
+		if (a->GetId() == GetSceneSwitchActionId()) {
 			return true;
 		}
 	}
 	for (const auto &a : _elseActions) {
-		if (a->GetId() == sceneSwitchId) {
+		if (a->GetId() == GetSceneSwitchActionId()) {
 			return true;
 		}
 	}
@@ -947,7 +948,7 @@ void Macro::EnableDock(bool value)
 	// geometry set here.
 	// The function calls here are only intended to attempt to restore the
 	// dock status when switching scene collections.
-	if (switcher->startupLoadDone) {
+	if (InitialLoadIsComplete()) {
 		_dock->setVisible(_dockIsVisible);
 		if (window->dockWidgetArea(_dock) != _dockArea) {
 			window->addDockWidget(_dockArea, _dock);
@@ -1163,12 +1164,10 @@ void Macro::SetHotkeysDesc() const
 				   _name, _togglePauseHotkey);
 }
 
-void SwitcherData::SaveMacros(obs_data_t *obj)
+void SaveMacros(obs_data_t *obj)
 {
-	switcher->macroProperties.Save(obj);
-
 	obs_data_array_t *macroArray = obs_data_array_create();
-	for (auto &m : macros) {
+	for (const auto &m : macros) {
 		obs_data_t *array_obj = obs_data_create();
 
 		m->Save(array_obj);
@@ -1180,10 +1179,9 @@ void SwitcherData::SaveMacros(obs_data_t *obj)
 	obs_data_array_release(macroArray);
 }
 
-void SwitcherData::LoadMacros(obs_data_t *obj)
+void LoadMacros(obs_data_t *obj)
 {
 	Hotkey::ClearAllHotkeys();
-	switcher->macroProperties.Load(obj);
 
 	macros.clear();
 	obs_data_array_t *macroArray = obs_data_get_array(obj, "macros");
@@ -1200,7 +1198,7 @@ void SwitcherData::LoadMacros(obs_data_t *obj)
 	int groupCount = 0;
 	std::shared_ptr<Macro> group;
 	std::vector<std::shared_ptr<Macro>> invalidGroups;
-	for (auto &m : macros) {
+	for (const auto &m : macros) {
 		if (groupCount && m->IsGroup()) {
 			blog(LOG_ERROR,
 			     "nested group detected - will delete \"%s\"",
@@ -1235,23 +1233,28 @@ void SwitcherData::LoadMacros(obs_data_t *obj)
 	}
 }
 
-bool SwitcherData::CheckMacros()
+std::deque<std::shared_ptr<Macro>> &GetMacros()
 {
-	bool ret = false;
-	for (auto &m : macros) {
+	return macros;
+}
+
+bool CheckMacros()
+{
+	bool matchFound = false;
+	for (const auto &m : macros) {
 		if (m->CeckMatch() || m->ElseActions().size() > 0) {
-			ret = true;
+			matchFound = true;
 			// This has to be performed here for now as actions are
 			// not performed immediately after checking conditions.
 			if (m->SwitchesScene()) {
-				switcher->macroSceneSwitched = true;
+				SetMacroSwitchedScene(true);
 			}
 		}
 	}
-	return ret;
+	return matchFound;
 }
 
-bool SwitcherData::RunMacros()
+bool RunMacros()
 {
 	// Create copy of macro list as elements might be removed, inserted, or
 	// reordered while macros are currently being executed.
@@ -1269,15 +1272,16 @@ bool SwitcherData::RunMacros()
 	// the constructor of AdvSceneSwitcher() to complete.
 	// The constructor of AdvSceneSwitcher() cannot continue however as it
 	// cannot lock the main switcher mutex.
-	if (GetLock()) {
-		GetLock()->unlock();
+	auto lock = GetLoopLock();
+	if (lock) {
+		lock->unlock();
 	}
 
 	for (auto &m : runPhaseMacros) {
 		if (!m || !m->ShouldRunActions()) {
 			continue;
 		}
-		if (firstInterval && m->SkipExecOnStart()) {
+		if (IsFirstInterval() && m->SkipExecOnStart()) {
 			blog(LOG_INFO,
 			     "skip execution of macro \"%s\" at startup",
 			     m->Name().c_str());
@@ -1288,15 +1292,15 @@ bool SwitcherData::RunMacros()
 			blog(LOG_WARNING, "abort macro: %s", m->Name().c_str());
 		}
 	}
-	if (GetLock()) {
-		GetLock()->lock();
+	if (lock) {
+		lock->lock();
 	}
 	return true;
 }
 
 Macro *GetMacroByName(const char *name)
 {
-	for (auto &m : switcher->macros) {
+	for (const auto &m : macros) {
 		if (m->Name() == name) {
 			return m.get();
 		}
@@ -1312,7 +1316,7 @@ Macro *GetMacroByQString(const QString &name)
 
 std::weak_ptr<Macro> GetWeakMacroByName(const char *name)
 {
-	for (auto &m : switcher->macros) {
+	for (const auto &m : macros) {
 		if (m->Name() == name) {
 			return m;
 		}
@@ -1323,7 +1327,7 @@ std::weak_ptr<Macro> GetWeakMacroByName(const char *name)
 
 void InvalidateMacroTempVarValues()
 {
-	for (auto &m : switcher->macros) {
+	for (const auto &m : macros) {
 		m->InvalidateTempVarValues();
 	}
 }

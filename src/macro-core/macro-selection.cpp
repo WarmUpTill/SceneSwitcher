@@ -1,6 +1,6 @@
 #include "macro-selection.hpp"
+#include "macro.hpp"
 #include "advanced-scene-switcher.hpp"
-#include "switcher-data.hpp"
 #include "utility.hpp"
 
 #include <QStandardItemModel>
@@ -12,7 +12,7 @@ MacroSelection::MacroSelection(QWidget *parent)
 	: FilterComboBox(parent,
 			 obs_module_text("AdvSceneSwitcher.selectMacro"))
 {
-	for (const auto &m : switcher->macros) {
+	for (const auto &m : GetMacros()) {
 		if (m->IsGroup()) {
 			continue;
 		}

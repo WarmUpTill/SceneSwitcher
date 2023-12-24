@@ -26,10 +26,11 @@ public:
 		SCENE_COLLECTION_CHANGE,
 		PLUGIN_SCENE_CHANGE,
 	};
-
-	Condition _condition = Condition::PLUGIN_SCENE_CHANGE;
+	void SetCondition(Condition);
+	Condition GetCondition() const { return _condition; }
 
 private:
+	Condition _condition = Condition::PLUGIN_SCENE_CHANGE;
 	bool _firstCheckAfterSceneCollectionChange = true;
 
 	const static uint32_t _version;

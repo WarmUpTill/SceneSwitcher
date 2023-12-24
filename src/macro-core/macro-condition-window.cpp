@@ -1,5 +1,5 @@
 #include "macro-condition-window.hpp"
-#include "switcher-data.hpp"
+#include "plugin-state-helpers.hpp"
 #include "platform-funcs.hpp"
 #include "utility.hpp"
 
@@ -43,7 +43,8 @@ static bool windowContainsText(const std::string &window,
 bool MacroConditionWindow::WindowMatchesRequirements(
 	const std::string &window) const
 {
-	const bool focusCheckOK = (!_focus || window == switcher->currentTitle);
+	const bool focusCheckOK =
+		(!_focus || window == ForegroundWindowTitle());
 	if (!focusCheckOK) {
 		return false;
 	}
@@ -104,13 +105,13 @@ void MacroConditionWindow::SetVariableValueBasedOnMatch(
 		auto text = GetTextInWindow(matchWindow);
 		SetVariableValue(text.value_or(""));
 	} else {
-		SetVariableValue(switcher->currentTitle);
+		SetVariableValue(ForegroundWindowTitle());
 	}
 }
 
 static bool foregroundWindowChanged()
 {
-	return switcher->currentTitle != switcher->lastTitle;
+	return ForegroundWindowTitle() != PreviousForegroundWindowTitle();
 }
 
 bool MacroConditionWindow::CheckCondition()
@@ -432,7 +433,7 @@ void MacroConditionWindowEdit::WindowFocusChanged(int state)
 
 void MacroConditionWindowEdit::UpdateFocusWindow()
 {
-	_focusWindow->setText(QString::fromStdString(switcher->currentTitle));
+	_focusWindow->setText(QString::fromStdString(ForegroundWindowTitle()));
 }
 
 void MacroConditionWindowEdit::SetWidgetVisibility()

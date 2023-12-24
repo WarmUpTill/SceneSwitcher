@@ -1,5 +1,7 @@
 #include "macro-condition-media.hpp"
-#include "switcher-data.hpp"
+#include "macro.hpp"
+#include "plugin-state-helpers.hpp"
+#include "scene-switch-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -167,7 +169,7 @@ bool MacroConditionMedia::CheckMediaMatch()
 void MacroConditionMedia::HandleSceneChange()
 {
 	UpdateMediaSourcesOfSceneList();
-	_lastConfigureScene = switcher->currentScene;
+	_lastConfigureScene = GetCurrentScene();
 }
 
 bool MacroConditionMedia::CheckCondition()
@@ -194,7 +196,7 @@ bool MacroConditionMedia::CheckCondition()
 		break;
 	}
 
-	if (_lastConfigureScene != switcher->currentScene) {
+	if (_lastConfigureScene != GetCurrentScene()) {
 		HandleSceneChange();
 	}
 

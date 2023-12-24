@@ -1,5 +1,6 @@
 #include "advanced-scene-switcher.hpp"
 #include "switcher-data.hpp"
+#include "macro-helpers.hpp"
 #include "status-control.hpp"
 #include "scene-switch-helpers.hpp"
 #include "curl-helper.hpp"
@@ -236,7 +237,6 @@ void SwitcherData::Thread()
 		// if a longer transition is used than the configured check interval
 		bool setPrevSceneAfterLinger = false;
 		bool macroMatch = false;
-		macroSceneSwitched = false;
 		endTime = std::chrono::high_resolution_clock::now();
 		auto runTime =
 			std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -434,7 +434,7 @@ bool SwitcherData::CheckForMatch(OBSWeakSource &scene,
 
 static void ResetMacros()
 {
-	for (auto &m : switcher->macros) {
+	for (auto &m : GetMacros()) {
 		m->ResetRunCount();
 		m->ResetTimers();
 	}
@@ -477,9 +477,9 @@ void SwitcherData::Stop()
 	if (th && th->isRunning()) {
 		stop = true;
 		cv.notify_all();
-		abortMacroWait = true;
-		macroWaitCv.notify_all();
-		macroTransitionCv.notify_all();
+		SetMacroAbortWait(true);
+		GetMacroWaitCV().notify_all();
+		GetMacroTransitionCV().notify_all();
 
 		// Not waiting if a dialog was closed is a workaround to avoid
 		// deadlocks when a variable input dialog is opened while Stop()
@@ -646,10 +646,10 @@ static void handleShutdown()
 		return;
 	}
 	switcher->obsIsShuttingDown = true;
-	if (switcher->shutdownConditionCount) {
+	if (ShutdownCheckIsNecessary()) {
 		switcher->Stop();
-		switcher->CheckMacros();
-		switcher->RunMacros();
+		CheckMacros();
+		RunMacros();
 
 		// Unfortunately this will not work as OBS will now allow saving
 		// the scene collection data at this point, So any OBS specific

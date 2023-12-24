@@ -1,6 +1,7 @@
 #include "macro-condition-edit.hpp"
+#include "macro.hpp"
+#include "macro-properties.hpp"
 #include "advanced-scene-switcher.hpp"
-#include "switcher-data.hpp"
 #include "macro-condition-scene.hpp"
 #include "section.hpp"
 #include "utility.hpp"
@@ -118,7 +119,7 @@ void DurationModifierEdit::Collapse(bool collapse)
 MacroConditionEdit::MacroConditionEdit(
 	QWidget *parent, std::shared_ptr<MacroCondition> *entryData,
 	const std::string &id, bool root)
-	: MacroSegmentEdit(switcher->macroProperties._highlightConditions,
+	: MacroSegmentEdit(GetGlobalMacroProperties()._highlightConditions,
 			   parent),
 	  _logicSelection(new QComboBox()),
 	  _conditionSelection(new FilterComboBox()),

@@ -1,5 +1,4 @@
 #include "macro-condition-process.hpp"
-#include "switcher-data.hpp"
 #include "platform-funcs.hpp"
 #include "utility.hpp"
 
@@ -172,8 +171,9 @@ void MacroConditionProcessEdit::FocusChanged(int state)
 
 void MacroConditionProcessEdit::UpdateFocusProcess()
 {
-	_focusProcess->setText(
-		QString::fromStdString(switcher->currentForegroundProcess));
+	std::string name;
+	GetForegroundProcessName(name);
+	_focusProcess->setText(QString::fromStdString(name));
 }
 
 void MacroConditionProcessEdit::SetWidgetVisibility()

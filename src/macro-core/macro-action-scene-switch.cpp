@@ -1,5 +1,7 @@
 #include "macro-action-scene-switch.hpp"
-#include "switcher-data.hpp"
+#include "macro-helpers.hpp"
+#include "plugin-state-helpers.hpp"
+#include "macro.hpp"
 #include "scene-switch-helpers.hpp"
 #include "utility.hpp"
 
@@ -7,7 +9,7 @@ namespace advss {
 
 using namespace std::chrono_literals;
 
-const std::string MacroActionSwitchScene::id = "scene_switch";
+const std::string MacroActionSwitchScene::id = GetSceneSwitchActionId().data();
 
 bool MacroActionSwitchScene::_registered = MacroActionFactory::Register(
 	MacroActionSwitchScene::id,
@@ -33,9 +35,9 @@ static void waitForTransitionChange(OBSWeakSource &transition,
 	}
 
 	bool stillTransitioning = true;
-	while (stillTransitioning && !switcher->abortMacroWait &&
+	while (stillTransitioning && !MacroWaitShouldAbort() &&
 	       !macro->GetStop()) {
-		switcher->macroTransitionCv.wait_for(*lock, time);
+		GetMacroTransitionCV().wait_for(*lock, time);
 		float t = obs_transition_get_time(source);
 		stillTransitioning = t < 1.0f && t > 0.0f;
 	}
@@ -49,8 +51,8 @@ static void waitForTransitionChangeFixedDuration(
 	auto time = std::chrono::high_resolution_clock::now() +
 		    std::chrono::milliseconds(duration);
 
-	while (!switcher->abortMacroWait && !macro->GetStop()) {
-		if (switcher->macroTransitionCv.wait_until(*lock, time) ==
+	while (!MacroWaitShouldAbort() && !macro->GetStop()) {
+		if (GetMacroTransitionCV().wait_until(*lock, time) ==
 		    std::cv_status::timeout) {
 			break;
 		}
@@ -91,11 +93,16 @@ static OBSWeakSource getOverrideTransition(OBSWeakSource &scene)
 	return transition;
 }
 
-static int getExpectedTransitionDuration(OBSWeakSource &scene, OBSWeakSource &t,
+static int getExpectedTransitionDuration(OBSWeakSource &scene,
+					 OBSWeakSource &transiton_,
 					 double duration)
 {
-	OBSWeakSource transition = t;
-	if (!switcher->transitionOverrideOverride) {
+	OBSWeakSource transition = transiton_;
+
+	// If we are not modifying the transition override, we will have to
+	// check, if a transition override is set by the user and use its
+	// duration instead
+	if (!ShouldModifyTransitionOverrides()) {
 		auto overrideTransition = getOverrideTransition(scene);
 		if (overrideTransition) {
 			transition = overrideTransition;
@@ -104,6 +111,7 @@ static int getExpectedTransitionDuration(OBSWeakSource &scene, OBSWeakSource &t,
 			}
 		}
 	}
+
 	if (isUsingFixedLengthTransition(transition)) {
 		return -1; // no API is available to access the fixed duration
 	}
@@ -118,9 +126,9 @@ bool MacroActionSwitchScene::WaitForTransition(OBSWeakSource &scene,
 {
 	const int expectedTransitionDuration = getExpectedTransitionDuration(
 		scene, transition, _duration.Seconds());
-	switcher->abortMacroWait = false;
+	SetMacroAbortWait(false);
 
-	std::unique_lock<std::mutex> lock(switcher->m);
+	std::unique_lock<std::mutex> lock(*GetMutex());
 	if (expectedTransitionDuration < 0) {
 		waitForTransitionChange(transition, &lock, GetMacro());
 	} else {
@@ -128,7 +136,7 @@ bool MacroActionSwitchScene::WaitForTransition(OBSWeakSource &scene,
 						     &lock, GetMacro());
 	}
 
-	return !switcher->abortMacroWait;
+	return !MacroWaitShouldAbort();
 }
 
 bool MacroActionSwitchScene::PerformAction()
@@ -145,8 +153,7 @@ bool MacroActionSwitchScene::PerformAction()
 	auto transition = _transition.GetTransition();
 	SwitchScene({scene, transition, (int)(_duration.Milliseconds())},
 		    obs_frontend_preview_program_mode_active());
-	if (_blockUntilTransitionDone && scene &&
-	    scene != switcher->currentScene) {
+	if (_blockUntilTransitionDone && scene && scene != GetCurrentScene()) {
 		return WaitForTransition(scene, transition);
 	}
 	return true;

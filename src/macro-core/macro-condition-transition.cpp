@@ -1,5 +1,5 @@
 #include "macro-condition-transition.hpp"
-#include "switcher-data.hpp"
+#include "scene-switch-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -50,8 +50,8 @@ static bool isTargetScene(OBSWeakSource &target)
 bool MacroConditionTransition::CheckCondition()
 {
 	bool anyTransitionEnded = _lastTransitionEndTime !=
-				  switcher->lastTransitionEndTime;
-	bool anyTransitionStarted = switcher->AnySceneTransitionStarted();
+				  GetLastTransitionEndTime();
+	bool anyTransitionStarted = AnySceneTransitionStarted();
 	bool transitionStarted = false;
 	bool transitionEnded = false;
 
@@ -82,7 +82,7 @@ bool MacroConditionTransition::CheckCondition()
 		break;
 	case TransitionCondition::TRANSITION_SOURCE:
 		ret = anyTransitionStarted &&
-		      _scene.GetScene() == switcher->currentScene;
+		      _scene.GetScene() == GetCurrentScene();
 		break;
 	case TransitionCondition::TRANSITION_TARGET: {
 		auto scene = _scene.GetScene();
@@ -101,7 +101,7 @@ bool MacroConditionTransition::CheckCondition()
 		_ended = false;
 	}
 	if (anyTransitionEnded) {
-		_lastTransitionEndTime = switcher->lastTransitionEndTime;
+		_lastTransitionEndTime = GetLastTransitionEndTime();
 	}
 
 	return ret;

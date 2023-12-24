@@ -63,7 +63,7 @@ bool AdvSceneSwitcher::AddNewMacro(std::shared_ptr<Macro> &res,
 	}
 
 	res = std::make_shared<Macro>(
-		name, switcher->macroProperties._newMacroRegisterHotkeys);
+		name, GetGlobalMacroProperties()._newMacroRegisterHotkeys);
 	return true;
 }
 
@@ -197,8 +197,8 @@ static void addGroupSubitems(std::vector<std::shared_ptr<Macro>> &macros,
 	subitems.reserve(group->GroupSize());
 
 	// Find all subitems
-	for (auto it = switcher->macros.begin(); it < switcher->macros.end();
-	     it++) {
+	auto allMacros = GetMacros();
+	for (auto it = allMacros.begin(); it < allMacros.end(); it++) {
 		if ((*it)->Name() == group->Name()) {
 			for (uint32_t i = 1; i <= group->GroupSize(); i++) {
 				subitems.emplace_back(*std::next(it, i));
@@ -429,7 +429,7 @@ void AdvSceneSwitcher::ImportMacros()
 		}
 
 		importedMacros.emplace_back(macro);
-		switcher->macros.emplace_back(macro);
+		GetMacros().emplace_back(macro);
 		if (groupSize > 0 && !macro->IsGroup()) {
 			Macro::PrepareMoveToGroup(group, macro);
 			groupSize--;
@@ -449,8 +449,8 @@ void AdvSceneSwitcher::ImportMacros()
 		macro->PostLoad();
 	}
 
-	ui->macros->Reset(switcher->macros,
-			  switcher->macroProperties._highlightExecuted);
+	ui->macros->Reset(GetMacros(),
+			  GetGlobalMacroProperties()._highlightExecuted);
 }
 
 void AdvSceneSwitcher::on_macroName_editingFinished()
@@ -729,8 +729,8 @@ void AdvSceneSwitcher::MacroSelectionChanged()
 
 void AdvSceneSwitcher::HighlightOnChange()
 {
-	if (!switcher->macroProperties._highlightActions &&
-	    !switcher->macroProperties._highlightExecuted) {
+	if (!GetGlobalMacroProperties()._highlightActions &&
+	    !GetGlobalMacroProperties()._highlightExecuted) {
 		return;
 	}
 
@@ -747,13 +747,13 @@ void AdvSceneSwitcher::HighlightOnChange()
 
 void AdvSceneSwitcher::on_macroProperties_clicked()
 {
-	MacroProperties prop = switcher->macroProperties;
+	MacroProperties prop = GetGlobalMacroProperties();
 	bool accepted = MacroPropertiesDialog::AskForSettings(
 		this, prop, GetSelectedMacro().get());
 	if (!accepted) {
 		return;
 	}
-	switcher->macroProperties = prop;
+	GetGlobalMacroProperties() = prop;
 	emit HighlightMacrosChanged(prop._highlightExecuted);
 	emit HighlightActionsChanged(prop._highlightActions);
 	emit HighlightConditionsChanged(prop._highlightConditions);
@@ -789,11 +789,11 @@ void AdvSceneSwitcher::SetupMacroTab()
 {
 	ui->macroElseActions->installEventFilter(this);
 
-	if (switcher->macros.size() == 0 && !switcher->disableHints) {
+	if (GetMacros().size() == 0 && !switcher->disableHints) {
 		addPulse = PulseWidget(ui->macroAdd, QColor(Qt::green));
 	}
-	ui->macros->Reset(switcher->macros,
-			  switcher->macroProperties._highlightExecuted);
+	ui->macros->Reset(GetMacros(),
+			  GetGlobalMacroProperties()._highlightExecuted);
 	connect(ui->macros, SIGNAL(MacroSelectionAboutToChange()), this,
 		SLOT(MacroSelectionAboutToChange()));
 	connect(ui->macros, SIGNAL(MacroSelectionChanged()), this,

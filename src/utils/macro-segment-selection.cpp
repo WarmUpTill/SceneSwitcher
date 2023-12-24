@@ -1,7 +1,7 @@
 #include "macro-segment-selection.hpp"
 #include "advanced-scene-switcher.hpp"
 #include "obs-module-helper.hpp"
-#include "switcher-data.hpp"
+#include "plugin-state-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -108,7 +108,7 @@ void MacroSegmentSelection::IndexChanged(const IntVariable &value)
 
 void MacroSegmentSelection::MarkSelectedSegment()
 {
-	if (!GetSwitcher() || GetSwitcher()->disableHints) {
+	if (!HighlightUIElementsEnabled()) {
 		return;
 	}
 
