@@ -14,6 +14,11 @@ std::mutex *GetSwitcherMutex()
 	return switcher ? &switcher->m : nullptr;
 }
 
+std::unique_lock<std::mutex> *GetSwitcherLoopLock()
+{
+	return switcher ? switcher->mainLoopLock : nullptr;
+}
+
 bool VerboseLoggingEnabled()
 {
 	return switcher ? switcher->verbose : false;
