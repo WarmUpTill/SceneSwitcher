@@ -68,7 +68,7 @@ public:
 	void AddSaveStep(std::function<void(obs_data_t *)>);
 	void AddLoadStep(std::function<void(obs_data_t *)>);
 	void AddPostLoadStep(std::function<void()>);
-	void AddIntervalResetStep(std::function<void()>);
+	void AddIntervalResetStep(std::function<void()>, bool lock = true);
 	bool CheckForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
 			   int &linger, bool &setPreviousSceneAsMatch,
 			   bool &macroMatch);

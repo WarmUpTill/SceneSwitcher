@@ -1,4 +1,4 @@
-#include "plugin-state-helper.hpp"
+#include "plugin-state-helpers.hpp"
 #include "switcher-data.hpp"
 
 namespace advss {
@@ -23,9 +23,9 @@ void AddPostLoadStep(std::function<void()> step)
 	GetSwitcher()->AddPostLoadStep(step);
 }
 
-void AddIntervalResetStep(std::function<void()> step)
+void AddIntervalResetStep(std::function<void()> step, bool lock)
 {
-	GetSwitcher()->AddIntervalResetStep(step);
+	GetSwitcher()->AddIntervalResetStep(step, lock);
 }
 
 void StopPlugin()
@@ -38,14 +38,20 @@ void StartPlugin()
 	GetSwitcher()->Start();
 }
 
+bool PluginIsRunning()
+{
+	return GetSwitcher() && GetSwitcher()->th &&
+	       GetSwitcher()->th->isRunning();
+}
+
+int GetIntervalValue()
+{
+	return GetSwitcher()->interval;
+}
+
 void SetPluginNoMatchBehavior(NoMatchBehavior behavior)
 {
 	GetSwitcher()->switchIfNotMatching = behavior;
-}
-
-void SetNoMatchScene(const OBSWeakSource &scene)
-{
-	GetSwitcher()->nonMatchingScene = scene;
 }
 
 NoMatchBehavior GetPluginNoMatchBehavior()
@@ -53,9 +59,49 @@ NoMatchBehavior GetPluginNoMatchBehavior()
 	return GetSwitcher()->switchIfNotMatching;
 }
 
+void SetNoMatchScene(const OBSWeakSource &scene)
+{
+	GetSwitcher()->nonMatchingScene = scene;
+}
+
+std::string ForegroundWindowTitle()
+{
+	return GetSwitcher()->currentTitle;
+}
+
+std::string PreviousForegroundWindowTitle()
+{
+	return GetSwitcher()->lastTitle;
+}
+
 bool SettingsWindowIsOpened()
 {
 	return GetSwitcher()->settingsWindowOpened;
+}
+
+bool HighlightUIElementsEnabled()
+{
+	return GetSwitcher() && !GetSwitcher()->disableHints;
+}
+
+bool OBSIsShuttingDown()
+{
+	return GetSwitcher()->obsIsShuttingDown;
+}
+
+bool InitialLoadIsComplete()
+{
+	return GetSwitcher()->startupLoadDone;
+}
+
+bool IsFirstInterval()
+{
+	return GetSwitcher()->firstInterval;
+}
+
+bool IsFirstIntervalAfterStop()
+{
+	return GetSwitcher()->firstIntervalAfterStop;
 }
 
 } // namespace advss
