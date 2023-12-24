@@ -1,6 +1,5 @@
 #include "macro-action-clipboard.hpp"
 #include "curl-helper.hpp"
-#include "switcher-data.hpp"
 
 #include <QApplication>
 #include <QClipboard>
@@ -34,17 +33,17 @@ static std::optional<QImage> getImageFromUrl(const char *url)
 {
 	QByteArray response;
 
-	switcher->curl.SetOpt(CURLOPT_URL, url);
-	switcher->curl.SetOpt(CURLOPT_HTTPGET, 1L);
-	switcher->curl.SetOpt(CURLOPT_TIMEOUT_MS, 30000);
-	switcher->curl.SetOpt(CURLOPT_WRITEFUNCTION, writeCallback);
-	switcher->curl.SetOpt(CURLOPT_WRITEDATA, &response);
-	auto code = switcher->curl.Perform();
+	CurlHelper::SetOpt(CURLOPT_URL, url);
+	CurlHelper::SetOpt(CURLOPT_HTTPGET, 1L);
+	CurlHelper::SetOpt(CURLOPT_TIMEOUT_MS, 30000);
+	CurlHelper::SetOpt(CURLOPT_WRITEFUNCTION, writeCallback);
+	CurlHelper::SetOpt(CURLOPT_WRITEDATA, &response);
+	auto code = CurlHelper::Perform();
 
 	if (code != CURLE_OK) {
 		blog(LOG_WARNING,
 		     "Retrieving image failed in %s with error: %s", __func__,
-		     switcher->curl.GetError(code));
+		     CurlHelper::GetError(code));
 		return {};
 	}
 

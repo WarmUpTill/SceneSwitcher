@@ -1,7 +1,7 @@
 #include "macro-condition-file.hpp"
 #include "utility.hpp"
-#include "switcher-data.hpp"
 #include "curl-helper.hpp"
+#include "plugin-state-helpers.hpp"
 
 #include <QTextStream>
 #include <QFileDialog>
@@ -28,16 +28,16 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb,
 static std::string getRemoteData(std::string &url)
 {
 	std::string readBuffer;
-	switcher->curl.SetOpt(CURLOPT_URL, url.c_str());
-	switcher->curl.SetOpt(CURLOPT_WRITEFUNCTION, WriteCallback);
-	switcher->curl.SetOpt(CURLOPT_WRITEDATA, &readBuffer);
+	CurlHelper::SetOpt(CURLOPT_URL, url.c_str());
+	CurlHelper::SetOpt(CURLOPT_WRITEFUNCTION, WriteCallback);
+	CurlHelper::SetOpt(CURLOPT_WRITEDATA, &readBuffer);
 	// Set timeout to at least one second
-	int timeout = switcher->interval / 1000;
+	int timeout = GetIntervalValue() / 1000;
 	if (timeout == 0) {
 		timeout = 1;
 	}
-	switcher->curl.SetOpt(CURLOPT_TIMEOUT, 1);
-	switcher->curl.Perform();
+	CurlHelper::SetOpt(CURLOPT_TIMEOUT, 1);
+	CurlHelper::Perform();
 	return readBuffer;
 }
 

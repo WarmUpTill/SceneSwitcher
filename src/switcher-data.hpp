@@ -18,7 +18,6 @@
 
 #include "macro-properties.hpp"
 #include "duration-control.hpp"
-#include "curl-helper.hpp"
 #include "priority-helper.hpp"
 #include "log-helper.hpp"
 #include "plugin-state-helpers.hpp"
@@ -29,7 +28,6 @@
 #include <mutex>
 #include <QDateTime>
 #include <QThread>
-#include <curl/curl.h>
 #include <unordered_map>
 
 namespace advss {
@@ -157,7 +155,6 @@ public:
 	AudioFadeInfo masterAudioFade;
 	std::unordered_map<std::string, AudioFadeInfo> activeAudioFades;
 
-	Curlhelper curl;
 	std::deque<std::shared_ptr<Item>> variables;
 
 	std::string lastTitle;

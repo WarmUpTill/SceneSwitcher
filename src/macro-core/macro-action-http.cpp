@@ -1,5 +1,4 @@
 #include "macro-action-http.hpp"
-#include "switcher-data.hpp"
 #include "utility.hpp"
 #include "curl-helper.hpp"
 
@@ -36,44 +35,44 @@ void MacroActionHttp::SetupHeaders()
 	}
 	struct curl_slist *headers = nullptr;
 	for (auto &header : _headers) {
-		headers = switcher->curl.SlistAppend(headers, header.c_str());
+		headers = CurlHelper::SlistAppend(headers, header.c_str());
 	}
 	if (!_headers.empty()) {
-		switcher->curl.SetOpt(CURLOPT_HTTPHEADER, headers);
+		CurlHelper::SetOpt(CURLOPT_HTTPHEADER, headers);
 	}
 }
 
 void MacroActionHttp::Get()
 {
-	switcher->curl.SetOpt(CURLOPT_URL, _url.c_str());
-	switcher->curl.SetOpt(CURLOPT_HTTPGET, 1L);
-	switcher->curl.SetOpt(CURLOPT_TIMEOUT_MS, _timeout.Milliseconds());
+	CurlHelper::SetOpt(CURLOPT_URL, _url.c_str());
+	CurlHelper::SetOpt(CURLOPT_HTTPGET, 1L);
+	CurlHelper::SetOpt(CURLOPT_TIMEOUT_MS, _timeout.Milliseconds());
 	SetupHeaders();
 
 	std::string response;
 	if (IsReferencedInVars()) {
-		switcher->curl.SetOpt(CURLOPT_WRITEFUNCTION, WriteCB);
+		CurlHelper::SetOpt(CURLOPT_WRITEFUNCTION, WriteCB);
 	} else {
-		switcher->curl.SetOpt(CURLOPT_WRITEFUNCTION, DropCB);
+		CurlHelper::SetOpt(CURLOPT_WRITEFUNCTION, DropCB);
 	}
-	switcher->curl.SetOpt(CURLOPT_WRITEDATA, &response);
-	switcher->curl.Perform();
+	CurlHelper::SetOpt(CURLOPT_WRITEDATA, &response);
+	CurlHelper::Perform();
 
 	SetVariableValue(response);
 }
 
 void MacroActionHttp::Post()
 {
-	switcher->curl.SetOpt(CURLOPT_URL, _url.c_str());
-	switcher->curl.SetOpt(CURLOPT_POSTFIELDS, _data.c_str());
-	switcher->curl.SetOpt(CURLOPT_TIMEOUT_MS, _timeout.Milliseconds());
+	CurlHelper::SetOpt(CURLOPT_URL, _url.c_str());
+	CurlHelper::SetOpt(CURLOPT_POSTFIELDS, _data.c_str());
+	CurlHelper::SetOpt(CURLOPT_TIMEOUT_MS, _timeout.Milliseconds());
 	SetupHeaders();
-	switcher->curl.Perform();
+	CurlHelper::Perform();
 }
 
 bool MacroActionHttp::PerformAction()
 {
-	if (!switcher->curl.Initialized()) {
+	if (!CurlHelper::Initialized()) {
 		blog(LOG_WARNING,
 		     "cannot perform http action (curl not found)");
 		return true;

@@ -1,31 +1,35 @@
 #pragma once
 #include <curl/curl.h>
 #include <QLibrary>
+#include <atomic>
 
 namespace advss {
 
-typedef CURL *(*initFunction)(void);
-typedef CURLcode (*setOptFunction)(CURL *, CURLoption, ...);
-typedef struct curl_slist *(*slistAppendFunction)(struct curl_slist *list,
-						  const char *string);
-typedef CURLcode (*performFunction)(CURL *);
-typedef void (*cleanupFunction)(CURL *);
-typedef char *(*errorFunction)(CURLcode);
-
-class Curlhelper {
+class CurlHelper {
 public:
-	Curlhelper();
-	~Curlhelper();
-
-	bool Initialized() { return _initialized; }
-
-	template<typename... Args> CURLcode SetOpt(CURLoption, Args...);
-	struct curl_slist *SlistAppend(struct curl_slist *list,
-				       const char *string);
-	CURLcode Perform();
-	char *GetError(CURLcode code);
+	static bool Initialized();
+	template<typename... Args> static CURLcode SetOpt(CURLoption, Args...);
+	static struct curl_slist *SlistAppend(struct curl_slist *list,
+					      const char *string);
+	static CURLcode Perform();
+	static char *GetError(CURLcode code);
 
 private:
+	CurlHelper();
+	CurlHelper(const CurlHelper &) = delete;
+	CurlHelper &operator=(const CurlHelper &) = delete;
+	~CurlHelper();
+
+	typedef CURL *(*initFunction)(void);
+	typedef CURLcode (*setOptFunction)(CURL *, CURLoption, ...);
+	typedef struct curl_slist *(*slistAppendFunction)(
+		struct curl_slist *list, const char *string);
+	typedef CURLcode (*performFunction)(CURL *);
+	typedef void (*cleanupFunction)(CURL *);
+	typedef char *(*errorFunction)(CURLcode);
+
+	static CurlHelper &GetInstance();
+
 	bool LoadLib();
 	bool Resolve();
 
@@ -37,16 +41,17 @@ private:
 	errorFunction _error = nullptr;
 	CURL *_curl = nullptr;
 	QLibrary *_lib;
-	bool _initialized = false;
+	std::atomic_bool _initialized = {false};
 };
 
 template<typename... Args>
-inline CURLcode Curlhelper::SetOpt(CURLoption option, Args... args)
+inline CURLcode CurlHelper::SetOpt(CURLoption option, Args... args)
 {
-	if (!_initialized) {
+	auto &curl = GetInstance();
+	if (!curl._initialized) {
 		return CURLE_FAILED_INIT;
 	}
-	return _setopt(_curl, option, args...);
+	return curl._setopt(curl._curl, option, args...);
 }
 
 } // namespace advss
