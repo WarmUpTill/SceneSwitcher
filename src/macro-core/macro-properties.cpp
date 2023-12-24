@@ -9,6 +9,8 @@
 
 namespace advss {
 
+static MacroProperties macroProperties;
+
 void MacroProperties::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
@@ -323,6 +325,21 @@ bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
 	macro->SetConditionsFalseStatusText(
 		dialog._conditionsFalseStatusText->text().toStdString());
 	return true;
+}
+
+MacroProperties &GetGlobalMacroProperties()
+{
+	return macroProperties;
+}
+
+void SaveGlobalMacroProperties(obs_data_t *obj)
+{
+	macroProperties.Save(obj);
+}
+
+void LoadGlobalMacroProperties(obs_data_t *obj)
+{
+	macroProperties.Load(obj);
 }
 
 } // namespace advss

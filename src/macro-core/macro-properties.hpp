@@ -68,4 +68,8 @@ private:
 	int _conditionsFalseTextRow = -1;
 };
 
+MacroProperties &GetGlobalMacroProperties();
+void SaveGlobalMacroProperties(obs_data_t *obj);
+void LoadGlobalMacroProperties(obs_data_t *obj);
+
 } // namespace advss
