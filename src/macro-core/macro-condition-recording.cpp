@@ -178,6 +178,8 @@ bool SetupRecordingTimer()
 		case OBS_FRONTEND_EVENT_RECORDING_UNPAUSED:
 			recordingPaused = false;
 			break;
+		default:
+			break;
 		};
 	};
 	obs_frontend_add_event_callback(handleRecordingEvents, nullptr);
