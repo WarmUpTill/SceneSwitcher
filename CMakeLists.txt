@@ -237,6 +237,8 @@ target_sources(
           src/macro-core/macro-condition.hpp
           src/macro-core/macro-dock.cpp
           src/macro-core/macro-dock.hpp
+          src/macro-core/macro-helpers.cpp
+          src/macro-core/macro-helpers.hpp
           src/macro-core/macro-properties.cpp
           src/macro-core/macro-properties.hpp
           src/macro-core/macro-ref.cpp
