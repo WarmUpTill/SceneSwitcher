@@ -1,5 +1,4 @@
 #include "variable-spinbox.hpp"
-#include "switcher-data.hpp"
 #include "utility.hpp"
 
 #include <QLayout>
@@ -175,7 +174,7 @@ void GenericVaraiableSpinbox::SetVisibilityInt()
 	if (_numberInt.IsFixedType()) {
 		_fixedValueInt->show();
 		_variable->hide();
-		_toggleType->setVisible(!switcher->variables.empty() &&
+		_toggleType->setVisible(!GetVariables().empty() &&
 					!_hideTypeToggle);
 	} else {
 		_fixedValueInt->hide();
@@ -191,7 +190,7 @@ void GenericVaraiableSpinbox::SetVisibilityDouble()
 	if (_numberDouble.IsFixedType()) {
 		_fixedValueDouble->show();
 		_variable->hide();
-		_toggleType->setVisible(!switcher->variables.empty() &&
+		_toggleType->setVisible(!GetVariables().empty() &&
 					!_hideTypeToggle);
 	} else {
 		_fixedValueDouble->hide();

@@ -1,12 +1,11 @@
 #include "variable-string.hpp"
-#include "switcher-data.hpp"
 #include "utility.hpp"
 
 namespace advss {
 
 void StringVariable::Resolve() const
 {
-	if (switcher && switcher->variables.empty()) {
+	if (GetVariables().empty()) {
 		_resolvedValue = _value;
 		return;
 	}
@@ -71,11 +70,7 @@ bool StringVariable::empty() const
 
 std::string SubstitueVariables(std::string str)
 {
-	if (!switcher) {
-		return str;
-	}
-
-	for (const auto &v : switcher->variables) {
+	for (const auto &v : GetVariables()) {
 		const auto &variable = std::dynamic_pointer_cast<Variable>(v);
 		const std::string pattern = "${" + variable->Name() + "}";
 		ReplaceAll(str, pattern, variable->Value());

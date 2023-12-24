@@ -76,14 +76,12 @@ public:
 	/* --- Start of saving / loading section --- */
 
 	void SaveSettings(obs_data_t *obj);
-	void SaveVariables(obs_data_t *obj);
 	void SaveGeneralSettings(obs_data_t *obj);
 	void SaveHotkeys(obs_data_t *obj);
 	void SaveUISettings(obs_data_t *obj);
 	void SaveVersion(obs_data_t *obj, const std::string &currentVersion);
 
 	void LoadSettings(obs_data_t *obj);
-	void LoadVariables(obs_data_t *obj);
 	void LoadGeneralSettings(obs_data_t *obj);
 	void LoadHotkeys(obs_data_t *obj);
 	void LoadUISettings(obs_data_t *obj);
@@ -154,8 +152,6 @@ public:
 	};
 	AudioFadeInfo masterAudioFade;
 	std::unordered_map<std::string, AudioFadeInfo> activeAudioFades;
-
-	std::deque<std::shared_ptr<Item>> variables;
 
 	std::string lastTitle;
 	std::string currentTitle;

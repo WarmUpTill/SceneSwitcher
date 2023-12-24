@@ -1,9 +1,11 @@
 #include "variable.hpp"
-#include "switcher-data.hpp"
 #include "math-helpers.hpp"
+#include "obs-module-helper.hpp"
 #include "utility.hpp"
 
 namespace advss {
+
+static std::deque<std::shared_ptr<Item>> variables;
 
 // Keep track of the last time a variable was changed to save some work when
 // when resolving strings containing variables, etc.
@@ -70,9 +72,14 @@ void Variable::SetValue(double value)
 	lastVariableChange = std::chrono::high_resolution_clock::now();
 }
 
+std::deque<std::shared_ptr<Item>> &GetVariables()
+{
+	return variables;
+}
+
 Variable *GetVariableByName(const std::string &name)
 {
-	for (const auto &v : switcher->variables) {
+	for (const auto &v : variables) {
 		if (v->Name() == name) {
 			return dynamic_cast<Variable *>(v.get());
 		}
@@ -87,7 +94,7 @@ Variable *GetVariableByQString(const QString &name)
 
 std::weak_ptr<Variable> GetWeakVariableByName(const std::string &name)
 {
-	for (const auto &v : switcher->variables) {
+	for (const auto &v : variables) {
 		if (v->Name() == name) {
 			std::weak_ptr<Variable> wp =
 				std::dynamic_pointer_cast<Variable>(v);
@@ -105,7 +112,7 @@ std::weak_ptr<Variable> GetWeakVariableByQString(const QString &name)
 QStringList GetVariablesNameList()
 {
 	QStringList list;
-	for (const auto &var : switcher->variables) {
+	for (const auto &var : variables) {
 		list << QString::fromStdString(var->Name());
 	}
 	list.sort();
@@ -121,7 +128,7 @@ std::string GetWeakVariableName(std::weak_ptr<Variable> var_)
 	return var->Name();
 }
 
-void SwitcherData::SaveVariables(obs_data_t *obj)
+void SaveVariables(obs_data_t *obj)
 {
 	obs_data_array_t *variablesArray = obs_data_array_create();
 	for (const auto &v : variables) {
@@ -134,7 +141,7 @@ void SwitcherData::SaveVariables(obs_data_t *obj)
 	obs_data_array_release(variablesArray);
 }
 
-void SwitcherData::LoadVariables(obs_data_t *obj)
+void LoadVariables(obs_data_t *obj)
 {
 	variables.clear();
 
@@ -162,7 +169,7 @@ static void populateSaveActionSelection(QComboBox *list)
 
 VariableSettingsDialog::VariableSettingsDialog(QWidget *parent,
 					       const Variable &settings)
-	: ItemSettingsDialog(settings, switcher->variables,
+	: ItemSettingsDialog(settings, variables,
 			     "AdvSceneSwitcher.variable.select",
 			     "AdvSceneSwitcher.variable.add",
 			     "AdvSceneSwitcher.item.nameNotAvailable", parent),
@@ -245,8 +252,7 @@ static bool AskForSettingsWrapper(QWidget *parent, Item &settings)
 }
 
 VariableSelection::VariableSelection(QWidget *parent)
-	: ItemSelection(switcher->variables, Variable::Create,
-			AskForSettingsWrapper,
+	: ItemSelection(variables, Variable::Create, AskForSettingsWrapper,
 			"AdvSceneSwitcher.variable.select",
 			"AdvSceneSwitcher.variable.add",
 			"AdvSceneSwitcher.item.nameNotAvailable",
