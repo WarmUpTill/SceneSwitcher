@@ -15,7 +15,7 @@ constexpr auto curl_library_name = "libcurl.4.dylib";
 constexpr auto curl_library_name = "libcurl.so.4";
 #endif
 
-Curlhelper::Curlhelper()
+CurlHelper::CurlHelper()
 {
 	if (LoadLib()) {
 		_curl = _init();
@@ -23,7 +23,7 @@ Curlhelper::Curlhelper()
 	}
 }
 
-Curlhelper::~Curlhelper()
+CurlHelper::~CurlHelper()
 {
 	if (_lib) {
 		if (_cleanup) {
@@ -34,32 +34,46 @@ Curlhelper::~Curlhelper()
 	}
 }
 
-curl_slist *Curlhelper::SlistAppend(curl_slist *list, const char *string)
+CurlHelper &CurlHelper::GetInstance()
 {
-	if (!_initialized) {
+	static CurlHelper curl;
+	return curl;
+}
+
+bool CurlHelper::Initialized()
+{
+	return GetInstance()._initialized;
+}
+
+curl_slist *CurlHelper::SlistAppend(curl_slist *list, const char *string)
+{
+	auto &curl = GetInstance();
+	if (!curl._initialized) {
 		return nullptr;
 	}
-	return _slistAppend(list, string);
+	return curl._slistAppend(list, string);
 }
 
-CURLcode Curlhelper::Perform()
+CURLcode CurlHelper::Perform()
 {
-	if (!_initialized) {
+	auto &curl = GetInstance();
+	if (!curl._initialized) {
 		return CURLE_FAILED_INIT;
 	}
-	return _perform(_curl);
+	return curl._perform(curl._curl);
 }
 
-char *Curlhelper::GetError(CURLcode code)
+char *CurlHelper::GetError(CURLcode code)
 {
-	if (!_initialized) {
+	auto &curl = GetInstance();
+	if (!curl._initialized) {
 		return (char *)"CURL initialization failed";
 	}
 
-	return _error(code);
+	return curl._error(code);
 }
 
-bool Curlhelper::LoadLib()
+bool CurlHelper::LoadLib()
 {
 	_lib = new QLibrary(curl_library_name, nullptr);
 	if (Resolve()) {
@@ -103,7 +117,7 @@ bool Curlhelper::LoadLib()
 	return false;
 }
 
-bool Curlhelper::Resolve()
+bool CurlHelper::Resolve()
 {
 	_init = (initFunction)_lib->resolve("curl_easy_init");
 	_setopt = (setOptFunction)_lib->resolve("curl_easy_setopt");

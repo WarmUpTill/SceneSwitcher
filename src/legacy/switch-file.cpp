@@ -177,17 +177,17 @@ static std::string getRemoteData(std::string &url)
 {
 	std::string readBuffer;
 
-	switcher->curl.SetOpt(CURLOPT_URL, url.c_str());
-	switcher->curl.SetOpt(CURLOPT_WRITEFUNCTION, WriteCallback);
-	switcher->curl.SetOpt(CURLOPT_WRITEDATA, &readBuffer);
+	CurlHelper::SetOpt(CURLOPT_URL, url.c_str());
+	CurlHelper::SetOpt(CURLOPT_WRITEFUNCTION, WriteCallback);
+	CurlHelper::SetOpt(CURLOPT_WRITEDATA, &readBuffer);
 
 	// Set timeout to at least one second
 	int timeout = switcher->interval / 1000;
 	if (timeout == 0) {
 		timeout = 1;
 	}
-	switcher->curl.SetOpt(CURLOPT_TIMEOUT, 1);
-	switcher->curl.Perform();
+	CurlHelper::SetOpt(CURLOPT_TIMEOUT, 1);
+	CurlHelper::Perform();
 
 	return readBuffer;
 }
@@ -422,7 +422,7 @@ void AdvSceneSwitcher::SetupFileTab()
 		obs_module_text("AdvSceneSwitcher.fileTab.remoteFileWarning2"));
 	ui->remoteFileWarningLabel->hide();
 
-	if (switcher->curl.Initialized()) {
+	if (CurlHelper::Initialized()) {
 		ui->libcurlWarning->setVisible(false);
 	}
 
