@@ -3,8 +3,8 @@
 #include <utility.hpp>
 #include <log-helper.hpp>
 #include <obs-module-helper.hpp>
-#include <plugin-state-helper.hpp>
-#include <sync-helper.hpp>
+#include <plugin-state-helpers.hpp>
+#include <sync-helpers.hpp>
 
 namespace advss {
 

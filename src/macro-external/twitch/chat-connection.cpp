@@ -3,7 +3,7 @@
 #include "twitch-helpers.hpp"
 
 #include <log-helper.hpp>
-#include <plugin-state-helper.hpp>
+#include <plugin-state-helpers.hpp>
 
 namespace advss {
 

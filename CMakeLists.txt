@@ -297,8 +297,8 @@ target_sources(
           src/utils/obs-module-helper.hpp
           src/utils/osc-helpers.cpp
           src/utils/osc-helpers.hpp
-          src/utils/plugin-state-helper.cpp
-          src/utils/plugin-state-helper.hpp
+          src/utils/plugin-state-helpers.cpp
+          src/utils/plugin-state-helpers.hpp
           src/utils/priority-helper.cpp
           src/utils/priority-helper.hpp
           src/utils/process-config.cpp
@@ -329,8 +329,8 @@ target_sources(
           src/utils/striped-frame.hpp
           src/utils/switch-button.cpp
           src/utils/switch-button.hpp
-          src/utils/sync-helper.cpp
-          src/utils/sync-helper.hpp
+          src/utils/sync-helpers.cpp
+          src/utils/sync-helpers.hpp
           src/utils/temp-variable.cpp
           src/utils/temp-variable.hpp
           src/utils/transition-selection.cpp

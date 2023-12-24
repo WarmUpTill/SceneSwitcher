@@ -1,7 +1,7 @@
 #include "connection-manager.hpp"
 #include "utility.hpp"
 #include "obs-module-helper.hpp"
-#include "plugin-state-helper.hpp"
+#include "plugin-state-helpers.hpp"
 #include "name-dialog.hpp"
 
 #include <algorithm>

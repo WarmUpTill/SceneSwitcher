@@ -1,7 +1,7 @@
 #include "token.hpp"
 #include "twitch-helpers.hpp"
 
-#include <plugin-state-helper.hpp>
+#include <plugin-state-helpers.hpp>
 #include <log-helper.hpp>
 #include <obs-module-helper.hpp>
 #include <utility.hpp>
