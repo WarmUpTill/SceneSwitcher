@@ -41,6 +41,7 @@ public:
 private:
 	bool CheckClick();
 	std::chrono::high_resolution_clock::time_point _lastCheckTime{};
+	std::pair<int, int> _lastCursorPosition;
 
 	static bool _registered;
 	static const std::string id;

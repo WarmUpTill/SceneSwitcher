@@ -347,12 +347,6 @@ void SwitcherData::SetPreconditions()
 	// Process name
 	GetForegroundProcessName(currentForegroundProcess);
 
-	// Cursor
-	std::pair<int, int> cursorPos = GetCursorPos();
-	cursorPosChanged = cursorPos.first != switcher->lastCursorPos.first ||
-			   cursorPos.second != switcher->lastCursorPos.second;
-	lastCursorPos = GetCursorPos();
-
 	// Macro
 	InvalidateMacroTempVarValues();
 }

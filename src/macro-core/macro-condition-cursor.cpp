@@ -1,5 +1,4 @@
 #include "macro-condition-cursor.hpp"
-#include "switcher-data.hpp"
 #include "platform-funcs.hpp"
 #include "utility.hpp"
 
@@ -61,13 +60,15 @@ bool MacroConditionCursor::CheckCondition()
 				 std::to_string(cursorPos.second));
 		break;
 	case Condition::MOVING:
-		ret = switcher->cursorPosChanged;
+		ret = cursorPos.first != _lastCursorPosition.first ||
+		      cursorPos.second != _lastCursorPosition.second;
 		break;
 	case Condition::CLICK:
 		ret = CheckClick();
 		break;
 	}
 	_lastCheckTime = std::chrono::high_resolution_clock::now();
+	_lastCursorPosition = cursorPos;
 
 	if (GetVariableValue().empty()) {
 		SetVariableValue(ret ? "true" : "false");
