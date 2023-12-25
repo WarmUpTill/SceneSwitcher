@@ -1,5 +1,7 @@
 #include "scene-selection.hpp"
-#include "switcher-data.hpp"
+#include "obs-module-helper.hpp"
+#include "scene-group.hpp"
+#include "scene-switch-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -108,9 +110,9 @@ OBSWeakSource SceneSelection::GetScene(bool advance) const
 		}
 		return _group->getCurrentScene();
 	case Type::PREVIOUS:
-		return switcher->previousScene;
+		return GetPreviousScene();
 	case Type::CURRENT:
-		return switcher->currentScene;
+		return GetCurrentScene();
 	case Type::PREVIEW: {
 		auto s = obs_frontend_get_current_preview_scene();
 		auto scene = obs_source_get_weak_source(s);
@@ -237,7 +239,7 @@ static QStringList getScenesList()
 static QStringList getSceneGroupsList()
 {
 	QStringList list;
-	for (const auto &sg : switcher->sceneGroups) {
+	for (const auto &sg : GetSceneGroups()) {
 		list << QString::fromStdString(sg.name);
 	}
 	list.sort();

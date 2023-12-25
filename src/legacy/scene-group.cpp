@@ -12,6 +12,11 @@ namespace advss {
 static QMetaObject::Connection addPulse;
 SceneGroupEditWidget *typeEdit = nullptr;
 
+std::deque<SceneGroup> &GetSceneGroups()
+{
+	return switcher->sceneGroups;
+}
+
 void SceneGroup::advanceIdx()
 {
 	currentIdx++;
