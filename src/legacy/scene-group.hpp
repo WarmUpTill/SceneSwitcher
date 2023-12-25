@@ -1,5 +1,5 @@
 #pragma once
-
+#include <deque>
 #include <vector>
 #include <QDialog>
 #include <QLabel>
@@ -87,5 +87,6 @@ private:
 
 SceneGroup *GetSceneGroupByName(const char *name);
 SceneGroup *GetSceneGroupByQString(const QString &name);
+std::deque<SceneGroup> &GetSceneGroups();
 
 } // namespace advss
