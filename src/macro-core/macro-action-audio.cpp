@@ -1,5 +1,5 @@
 #include "macro-action-audio.hpp"
-#include "switcher-data.hpp"
+#include "macro.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -36,6 +36,16 @@ const static std::map<MacroActionAudio::FadeType, std::string> fadeTypes = {
 	 "AdvSceneSwitcher.action.audio.fade.type.rate"},
 };
 
+namespace {
+struct FadeInfo {
+	std::atomic_bool active = {false};
+	std::atomic_int id = {0};
+};
+}
+
+static FadeInfo masterAudioFade;
+static std::unordered_map<std::string, FadeInfo> audioFades;
+
 constexpr auto fadeInterval = std::chrono::milliseconds(100);
 constexpr float minFade = 0.000001f;
 
@@ -58,10 +68,9 @@ auto set_master_volume = obs_set_master_volume;
 void MacroActionAudio::SetFadeActive(bool value)
 {
 	if (_action == Action::SOURCE_VOLUME) {
-		switcher->activeAudioFades[_audioSource.ToString()].active =
-			value;
+		audioFades[_audioSource.ToString()].active = value;
 	} else {
-		switcher->masterAudioFade.active = value;
+		masterAudioFade.active = value;
 	}
 }
 
@@ -69,14 +78,13 @@ bool MacroActionAudio::FadeActive()
 {
 	bool active = true;
 	if (_action == Action::SOURCE_VOLUME) {
-		auto it = switcher->activeAudioFades.find(
-			_audioSource.ToString());
-		if (it == switcher->activeAudioFades.end()) {
+		auto it = audioFades.find(_audioSource.ToString());
+		if (it == audioFades.end()) {
 			return false;
 		}
 		active = it->second.active;
 	} else {
-		active = switcher->masterAudioFade.active;
+		active = masterAudioFade.active;
 	}
 
 	return active;
@@ -86,14 +94,13 @@ std::atomic_int *MacroActionAudio::GetFadeIdPtr()
 {
 
 	if (_action == Action::SOURCE_VOLUME) {
-		auto it = switcher->activeAudioFades.find(
-			_audioSource.ToString());
-		if (it == switcher->activeAudioFades.end()) {
+		auto it = audioFades.find(_audioSource.ToString());
+		if (it == audioFades.end()) {
 			return nullptr;
 		}
 		return &it->second.id;
 	}
-	return &switcher->masterAudioFade.id;
+	return &masterAudioFade.id;
 }
 
 void MacroActionAudio::SetVolume(float vol)
