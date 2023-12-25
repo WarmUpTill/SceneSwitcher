@@ -623,18 +623,6 @@ static void setReplayBufferSaved()
 	switcher->replayBufferSaved = true;
 }
 
-static void setStreamStarting()
-{
-	switcher->lastStreamStartingTime =
-		std::chrono::high_resolution_clock::now();
-}
-
-static void setStreamStopping()
-{
-	switcher->lastStreamStoppingTime =
-		std::chrono::high_resolution_clock::now();
-}
-
 static void handleTransitionEnd()
 {
 	GetMacroTransitionCV().notify_all();
@@ -713,12 +701,6 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 #endif
 	case OBS_FRONTEND_EVENT_TRANSITION_STOPPED:
 		handleTransitionEnd();
-		break;
-	case OBS_FRONTEND_EVENT_STREAMING_STARTING:
-		setStreamStarting();
-		break;
-	case OBS_FRONTEND_EVENT_STREAMING_STOPPING:
-		setStreamStopping();
 		break;
 #if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(27, 2, 0)
 	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING:

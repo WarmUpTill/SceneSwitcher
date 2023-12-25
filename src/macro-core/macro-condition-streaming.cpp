@@ -1,5 +1,4 @@
 #include "macro-condition-streaming.hpp"
-#include "switcher-data.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -25,6 +24,32 @@ const static std::map<MacroConditionStream::Condition, std::string>
 		 "AdvSceneSwitcher.condition.stream.state.keyFrameInterval"},
 };
 
+static bool setupStreamingEventHandler();
+static bool steamingEventHandlerIsSetup = setupStreamingEventHandler();
+static std::chrono::high_resolution_clock::time_point streamStartTime{};
+static std::chrono::high_resolution_clock::time_point streamStopTime{};
+
+bool setupStreamingEventHandler()
+{
+	static auto handleStreamingEvents = [](enum obs_frontend_event event,
+					       void *) {
+		switch (event) {
+		case OBS_FRONTEND_EVENT_STREAMING_STARTING:
+			streamStartTime =
+				std::chrono::high_resolution_clock::now();
+			break;
+		case OBS_FRONTEND_EVENT_STREAMING_STOPPING:
+			streamStopTime =
+				std::chrono::high_resolution_clock::now();
+			break;
+		default:
+			break;
+		};
+	};
+	obs_frontend_add_event_callback(handleStreamingEvents, nullptr);
+	return true;
+}
+
 int MacroConditionStream::GetKeyFrameInterval()
 {
 	const auto configPath = GetPathInProfileDir("streamEncoder.json");
@@ -42,10 +67,8 @@ bool MacroConditionStream::CheckCondition()
 {
 	bool match = false;
 
-	bool streamStarting = switcher->lastStreamStartingTime !=
-			      _lastStreamStartingTime;
-	bool streamStopping = switcher->lastStreamStoppingTime !=
-			      _lastStreamStoppingTime;
+	bool streamStarting = streamStartTime != _lastStreamStartingTime;
+	bool streamStopping = streamStopTime != _lastStreamStoppingTime;
 
 	switch (_condition) {
 	case Condition::STOP:
@@ -68,10 +91,10 @@ bool MacroConditionStream::CheckCondition()
 	}
 
 	if (streamStarting) {
-		_lastStreamStartingTime = switcher->lastStreamStartingTime;
+		_lastStreamStartingTime = streamStartTime;
 	}
 	if (streamStopping) {
-		_lastStreamStoppingTime = switcher->lastStreamStoppingTime;
+		_lastStreamStoppingTime = streamStopTime;
 	}
 	return match;
 }
