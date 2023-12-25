@@ -150,20 +150,14 @@ bool MacroConditionMedia::CheckMediaMatch()
 	if (!_source.GetSource()) {
 		return false;
 	}
-	bool match = false;
 	bool matched = CheckState() && CheckTime();
-
-	if (matched && !(_onlyMatchOnChagne && _alreadyMatched)) {
-		match = true;
-	}
-	_alreadyMatched = matched;
 
 	// reset for next check
 	_stopped = false;
 	_ended = false;
 	_next = false;
 
-	return match;
+	return matched;
 }
 
 void MacroConditionMedia::HandleSceneChange()
@@ -212,7 +206,6 @@ bool MacroConditionMedia::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "state", static_cast<int>(_state));
 	obs_data_set_int(obj, "restriction", static_cast<int>(_restriction));
 	_time.Save(obj);
-	obs_data_set_bool(obj, "matchOnChagne", _onlyMatchOnChagne);
 	obs_data_set_int(obj, "version", 0);
 	return true;
 }
@@ -270,7 +263,6 @@ bool MacroConditionMedia::Load(obs_data_t *obj)
 	_restriction = static_cast<MacroConditionMedia::Time>(
 		obs_data_get_int(obj, "restriction"));
 	_time.Load(obj);
-	_onlyMatchOnChagne = obs_data_get_bool(obj, "matchOnChagne");
 
 	if (_sourceType == Type::SOURCE) {
 		obs_source_t *mediasource =
@@ -410,9 +402,7 @@ MacroConditionMediaEdit::MacroConditionMediaEdit(
 	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _states(new QComboBox()),
 	  _timeRestrictions(new QComboBox()),
-	  _time(new DurationSelection()),
-	  _onChange(new QCheckBox(obs_module_text(
-		  "AdvSceneSwitcher.condition.media.matchOnChange")))
+	  _time(new DurationSelection())
 {
 	_states->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.media.inconsistencyInfo"));
@@ -434,14 +424,12 @@ MacroConditionMediaEdit::MacroConditionMediaEdit(
 			 this, SLOT(TimeRestrictionChanged(int)));
 	QWidget::connect(_time, SIGNAL(DurationChanged(const Duration &)), this,
 			 SLOT(TimeChanged(const Duration &)));
-	QWidget::connect(_onChange, SIGNAL(stateChanged(int)), this,
-			 SLOT(OnChangeChanged(int)));
 
 	populateSourceTypes(_sourceTypes);
 	populateMediaStates(_states);
 	populateMediaTimes(_timeRestrictions);
 
-	QHBoxLayout *entryLayout = new QHBoxLayout;
+	auto layout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{sourceTypes}}", _sourceTypes},
 		{"{{mediaSources}}", _sources},
@@ -451,11 +439,8 @@ MacroConditionMediaEdit::MacroConditionMediaEdit(
 		{"{{time}}", _time},
 	};
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.media.entry"),
-		     entryLayout, widgetPlaceholders);
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->addLayout(entryLayout);
-	mainLayout->addWidget(_onChange);
-	setLayout(mainLayout);
+		     layout, widgetPlaceholders);
+	setLayout(layout);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -574,28 +559,12 @@ void MacroConditionMediaEdit::TimeChanged(const Duration &dur)
 	}
 }
 
-void MacroConditionMediaEdit::OnChangeChanged(int value)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_onlyMatchOnChagne = value;
-	if (_entryData->_sourceType != MacroConditionMedia::Type::SOURCE) {
-		_entryData->UpdateMediaSourcesOfSceneList();
-	}
-}
-
 void MacroConditionMediaEdit::SetWidgetVisibility()
 {
 	_sources->setVisible(_entryData->_sourceType ==
 			     MacroConditionMedia::Type::SOURCE);
 	_scenes->setVisible(_entryData->_sourceType !=
 			    MacroConditionMedia::Type::SOURCE);
-	if (!_onChange->isChecked()) {
-		_onChange->hide();
-	}
 }
 
 static int getIdxFromMediaState(MacroConditionMedia::State state)
@@ -627,7 +596,6 @@ void MacroConditionMediaEdit::UpdateEntryData()
 	    MacroConditionMedia::Time::TIME_RESTRICTION_NONE) {
 		_time->setDisabled(true);
 	}
-	_onChange->setChecked(_entryData->_onlyMatchOnChagne);
 	SetWidgetVisibility();
 }
 

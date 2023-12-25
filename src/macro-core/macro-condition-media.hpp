@@ -72,7 +72,6 @@ public:
 	OBSWeakSource _rawSource = nullptr;
 	std::vector<MacroConditionMedia> _sourceGroup;
 	Duration _time;
-	bool _onlyMatchOnChagne = false;
 
 private:
 	bool CheckTime();
@@ -84,9 +83,7 @@ private:
 	bool _stopped = false;
 	bool _ended = false;
 	bool _next = false;
-	// TODO: Remove _alreadyMatched as it does not make much sense when
-	// time restrictions for macro conditions are available.
-	bool _alreadyMatched = false;
+
 	// Workaround to enable use of "ended" to specify end of VLC playlist
 	bool _previousStateEnded = false;
 	// Used to keep track of scene changes
@@ -119,7 +116,6 @@ private slots:
 	void StateChanged(int index);
 	void TimeRestrictionChanged(int index);
 	void TimeChanged(const Duration &seconds);
-	void OnChangeChanged(int);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -130,7 +126,6 @@ protected:
 	QComboBox *_states;
 	QComboBox *_timeRestrictions;
 	DurationSelection *_time;
-	QCheckBox *_onChange;
 	std::shared_ptr<MacroConditionMedia> _entryData;
 
 private:
