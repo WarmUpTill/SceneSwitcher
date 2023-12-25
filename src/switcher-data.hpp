@@ -153,8 +153,6 @@ public:
 	std::string lastTitle;
 	std::string currentTitle;
 	std::string currentForegroundProcess;
-	std::pair<int, int> lastCursorPos = {0, 0};
-	bool cursorPosChanged = false;
 
 	std::vector<int> functionNamesByPriority =
 		GetDefaultFunctionPriorityList();
