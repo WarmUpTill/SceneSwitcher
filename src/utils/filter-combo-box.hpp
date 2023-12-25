@@ -19,7 +19,7 @@ protected:
 
 private slots:
 	void CompleterHighlightChanged(const QModelIndex &);
-	void TextChagned(const QString &);
+	void TextChanged(const QString &);
 
 private:
 	int _lastCompleterHighlightRow = -1;

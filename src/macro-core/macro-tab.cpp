@@ -802,21 +802,21 @@ void AdvSceneSwitcher::SetupMacroTab()
 
 	ui->conditionsList->SetHelpMsg(
 		obs_module_text("AdvSceneSwitcher.macroTab.editConditionHelp"));
-	connect(ui->conditionsList, &MacroSegmentList::SelectionChagned, this,
+	connect(ui->conditionsList, &MacroSegmentList::SelectionChanged, this,
 		&AdvSceneSwitcher::MacroConditionSelectionChanged);
 	connect(ui->conditionsList, &MacroSegmentList::Reorder, this,
 		&AdvSceneSwitcher::MacroConditionReorder);
 
 	ui->actionsList->SetHelpMsg(
 		obs_module_text("AdvSceneSwitcher.macroTab.editActionHelp"));
-	connect(ui->actionsList, &MacroSegmentList::SelectionChagned, this,
+	connect(ui->actionsList, &MacroSegmentList::SelectionChanged, this,
 		&AdvSceneSwitcher::MacroActionSelectionChanged);
 	connect(ui->actionsList, &MacroSegmentList::Reorder, this,
 		&AdvSceneSwitcher::MacroActionReorder);
 
 	ui->elseActionsList->SetHelpMsg(obs_module_text(
 		"AdvSceneSwitcher.macroTab.editElseActionHelp"));
-	connect(ui->elseActionsList, &MacroSegmentList::SelectionChagned, this,
+	connect(ui->elseActionsList, &MacroSegmentList::SelectionChanged, this,
 		&AdvSceneSwitcher::MacroElseActionSelectionChanged);
 	connect(ui->elseActionsList, &MacroSegmentList::Reorder, this,
 		&AdvSceneSwitcher::MacroElseActionReorder);

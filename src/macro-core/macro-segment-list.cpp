@@ -161,7 +161,7 @@ void MacroSegmentList::mousePressEvent(QMouseEvent *event)
 #else
 		_dragPosition = GetDragIndex(event->globalPosition().toPoint());
 #endif
-		emit SelectionChagned(_dragPosition);
+		emit SelectionChanged(_dragPosition);
 	} else {
 		_dragPosition = -1;
 	}
