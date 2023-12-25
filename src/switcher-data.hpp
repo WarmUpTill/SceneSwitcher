@@ -120,8 +120,6 @@ public:
 	obs_source_t *waitScene = nullptr;
 	OBSWeakSource currentScene = nullptr;
 	OBSWeakSource previousScene = nullptr;
-	std::chrono::high_resolution_clock::time_point lastStreamStartingTime{};
-	std::chrono::high_resolution_clock::time_point lastStreamStoppingTime{};
 
 	/* --- Start of General tab section --- */
 
