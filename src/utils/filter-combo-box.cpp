@@ -54,7 +54,7 @@ FilterComboBox::FilterComboBox(QWidget *parent, const QString &placehodler)
 	connect(c, QOverload<const QModelIndex &>::of(&QCompleter::highlighted),
 		this, &FilterComboBox::CompleterHighlightChanged);
 	connect(lineEdit(), &QLineEdit::textChanged, this,
-		&FilterComboBox::TextChagned);
+		&FilterComboBox::TextChanged);
 }
 
 void FilterComboBox::SetFilterBehaviourEnabled(bool value)
@@ -108,7 +108,7 @@ void FilterComboBox::CompleterHighlightChanged(const QModelIndex &index)
 	emit currentTextChanged(text);
 }
 
-void FilterComboBox::TextChagned(const QString &text)
+void FilterComboBox::TextChanged(const QString &text)
 {
 	auto c = completer();
 	const bool completerActive = c->completionCount() > 0;

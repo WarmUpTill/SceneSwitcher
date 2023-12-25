@@ -28,7 +28,7 @@ public:
 	QVBoxLayout *ContentLayout() { return _contentLayout; }
 
 signals:
-	void SelectionChagned(int idx);
+	void SelectionChanged(int idx);
 	void Reorder(int source, int target);
 
 protected:
