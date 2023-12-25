@@ -618,11 +618,6 @@ static void handlePeviewSceneChange()
 	}
 }
 
-static void setReplayBufferSaved()
-{
-	switcher->replayBufferSaved = true;
-}
-
 static void handleTransitionEnd()
 {
 	GetMacroTransitionCV().notify_all();
@@ -694,11 +689,6 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 	case OBS_FRONTEND_EVENT_STREAMING_STOPPED:
 		resetLiveTime();
 		break;
-#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(26, 0, 0)
-	case OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
-		setReplayBufferSaved();
-		break;
-#endif
 	case OBS_FRONTEND_EVENT_TRANSITION_STOPPED:
 		handleTransitionEnd();
 		break;

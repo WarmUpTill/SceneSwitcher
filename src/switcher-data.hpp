@@ -111,7 +111,6 @@ public:
 	bool firstBoot = true;
 	bool transitionActive = false;
 	bool sceneColletionStop = false;
-	bool replayBufferSaved = false;
 	bool obsIsShuttingDown = false;
 	bool firstInterval = true;
 	bool firstIntervalAfterStop = true;

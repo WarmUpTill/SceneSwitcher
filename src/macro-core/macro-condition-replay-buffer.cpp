@@ -1,5 +1,4 @@
 #include "macro-condition-replay-buffer.hpp"
-#include "switcher-data.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -11,35 +10,63 @@ bool MacroConditionReplayBuffer::_registered = MacroConditionFactory::Register(
 					 MacroConditionReplayBufferEdit::Create,
 					 "AdvSceneSwitcher.condition.replay"});
 
-const static std::map<ReplayBufferState, std::string> ReplayBufferStates = {
-	{ReplayBufferState::STOP,
-	 "AdvSceneSwitcher.condition.replay.state.stopped"},
-	{ReplayBufferState::START,
-	 "AdvSceneSwitcher.condition.replay.state.started"},
-	{ReplayBufferState::SAVE,
-	 "AdvSceneSwitcher.condition.replay.state.saved"},
+const static std::map<MacroConditionReplayBuffer::Condition, std::string>
+	conditions = {
+		{MacroConditionReplayBuffer::Condition::STOP,
+		 "AdvSceneSwitcher.condition.replay.state.stopped"},
+		{MacroConditionReplayBuffer::Condition::START,
+		 "AdvSceneSwitcher.condition.replay.state.started"},
+		{MacroConditionReplayBuffer::Condition::SAVE,
+		 "AdvSceneSwitcher.condition.replay.state.saved"},
 };
+
+static bool replayBufferSaved = false;
+
+static std::chrono::high_resolution_clock::time_point replayBufferSaveTime{};
+static bool setupReplayBufferEventHandler();
+static bool replayBufferEventHandlerIsSetup = setupReplayBufferEventHandler();
+
+static bool setupReplayBufferEventHandler()
+{
+	static auto handleReplayBufferEvent = [](enum obs_frontend_event event,
+						 void *) {
+		switch (event) {
+		case OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
+			replayBufferSaveTime =
+				std::chrono::high_resolution_clock::now();
+			break;
+		default:
+			break;
+		};
+	};
+	obs_frontend_add_event_callback(handleReplayBufferEvent, nullptr);
+	return true;
+}
+
+bool MacroConditionReplayBuffer::ReplayBufferWasSaved()
+{
+	bool timersAreInitialized =
+		_saveTime.time_since_epoch().count() != 0 &&
+		replayBufferSaveTime.time_since_epoch().count() != 0;
+	bool newSaveOccurred = timersAreInitialized &&
+			       _saveTime != replayBufferSaveTime;
+	_saveTime = replayBufferSaveTime;
+	return newSaveOccurred;
+}
 
 bool MacroConditionReplayBuffer::CheckCondition()
 {
-	bool stateMatch = false;
 	switch (_state) {
-	case ReplayBufferState::STOP:
-		stateMatch = !obs_frontend_replay_buffer_active();
-		break;
-	case ReplayBufferState::START:
-		stateMatch = obs_frontend_replay_buffer_active();
-		break;
-	case ReplayBufferState::SAVE:
-		if (switcher->replayBufferSaved) {
-			stateMatch = true;
-			switcher->replayBufferSaved = false;
-		}
-		break;
+	case Condition::STOP:
+		return !obs_frontend_replay_buffer_active();
+	case Condition::START:
+		return obs_frontend_replay_buffer_active();
+	case Condition::SAVE:
+		return ReplayBufferWasSaved();
 	default:
 		break;
 	}
-	return stateMatch;
+	return false;
 }
 
 bool MacroConditionReplayBuffer::Save(obs_data_t *obj) const
@@ -52,37 +79,30 @@ bool MacroConditionReplayBuffer::Save(obs_data_t *obj) const
 bool MacroConditionReplayBuffer::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	_state = static_cast<ReplayBufferState>(obs_data_get_int(obj, "state"));
+	_state = static_cast<Condition>(obs_data_get_int(obj, "state"));
 	return true;
 }
 
 static inline void populateStateSelection(QComboBox *list)
 {
-	for (auto entry : ReplayBufferStates) {
+	for (const auto &entry : conditions) {
 		list->addItem(obs_module_text(entry.second.c_str()));
 	}
 }
 
 MacroConditionReplayBufferEdit::MacroConditionReplayBufferEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionReplayBuffer> entryData)
-	: QWidget(parent)
+	: QWidget(parent), _state(new QComboBox())
 {
-	_state = new QComboBox();
-
 	QWidget::connect(_state, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(StateChanged(int)));
 
 	populateStateSelection(_state);
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{state}}", _state},
-	};
-
+	auto layout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.replay.entry"),
-		     mainLayout, widgetPlaceholders);
-	setLayout(mainLayout);
+		     layout, {{"{{state}}", _state}});
+	setLayout(layout);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -96,7 +116,8 @@ void MacroConditionReplayBufferEdit::StateChanged(int value)
 	}
 
 	auto lock = LockContext();
-	_entryData->_state = static_cast<ReplayBufferState>(value);
+	_entryData->_state =
+		static_cast<MacroConditionReplayBuffer::Condition>(value);
 }
 
 void MacroConditionReplayBufferEdit::UpdateEntryData()
