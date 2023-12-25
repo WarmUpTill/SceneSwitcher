@@ -6,12 +6,6 @@
 
 namespace advss {
 
-enum class ReplayBufferState {
-	STOP,
-	START,
-	SAVE,
-};
-
 class MacroConditionReplayBuffer : public MacroCondition {
 public:
 	MacroConditionReplayBuffer(Macro *m) : MacroCondition(m) {}
@@ -24,9 +18,18 @@ public:
 		return std::make_shared<MacroConditionReplayBuffer>(m);
 	}
 
-	ReplayBufferState _state = ReplayBufferState::STOP;
+	enum class Condition {
+		STOP,
+		START,
+		SAVE,
+	};
+
+	Condition _state = Condition::STOP;
 
 private:
+	bool ReplayBufferWasSaved();
+
+	std::chrono::high_resolution_clock::time_point _saveTime = {};
 	static bool _registered;
 	static const std::string id;
 };
