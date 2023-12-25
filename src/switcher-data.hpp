@@ -143,13 +143,6 @@ public:
 
 	/* --- End of General tab section --- */
 
-	struct AudioFadeInfo {
-		std::atomic_bool active = {false};
-		std::atomic_int id = {0};
-	};
-	AudioFadeInfo masterAudioFade;
-	std::unordered_map<std::string, AudioFadeInfo> activeAudioFades;
-
 	std::string lastTitle;
 	std::string currentTitle;
 	std::string currentForegroundProcess;
