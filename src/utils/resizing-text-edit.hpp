@@ -13,15 +13,21 @@ public:
 	int maxLength();
 	void setMaxLength(int maxLength);
 
+protected:
+	bool eventFilter(QObject *obj, QEvent *event) override;
+
 private slots:
 	void ResizeTexteditArea();
 	void PreventExceedingMaxLength();
 
 private:
+	void AddHeightForScrollBar(bool addHeight);
+
 	const int _scrollAt;
 	const int _minLines;
 	const int _paddingLines;
 	int _maxLength = -1;
+	int _hScrollBarAddedHeight = 0;
 };
 
 } // namespace advss
