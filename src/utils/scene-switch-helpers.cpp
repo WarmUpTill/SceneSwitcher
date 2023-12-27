@@ -1,9 +1,35 @@
 #include "scene-switch-helpers.hpp"
-#include "switcher-data.hpp"
+#include "log-helper.hpp"
 #include "obs-frontend-api.h"
+#include "switcher-data.hpp"
 #include "utility.hpp"
 
 namespace advss {
+
+static std::chrono::high_resolution_clock::time_point lastSceneChangeTime{};
+static std::chrono::high_resolution_clock::time_point lastTransitionEndTime{};
+static bool setupEventHandler();
+static bool eventHandlerIsSetup = setupEventHandler();
+
+static bool setupEventHandler()
+{
+	static auto handleEvents = [](enum obs_frontend_event event, void *) {
+		switch (event) {
+		case OBS_FRONTEND_EVENT_SCENE_CHANGED:
+			lastSceneChangeTime =
+				std::chrono::high_resolution_clock::now();
+			break;
+		case OBS_FRONTEND_EVENT_TRANSITION_STOPPED:
+			lastTransitionEndTime =
+				std::chrono::high_resolution_clock::now();
+			break;
+		default:
+			break;
+		};
+	};
+	obs_frontend_add_event_callback(handleEvents, nullptr);
+	return true;
+}
 
 static std::pair<obs_weak_source_t *, int>
 getNextTransition(obs_weak_source_t *scene1, obs_weak_source_t *scene2)
@@ -35,10 +61,9 @@ void SetNextTransition(const SceneSwitchInfo &sceneSwitch,
 	// 3. Current transition settings
 
 	// Transition Tab
-	obs_weak_source_t *currentScene =
+	OBSWeakSourceAutoRelease currentScene =
 		obs_source_get_weak_source(currentSource);
 	auto tinfo = getNextTransition(currentScene, sceneSwitch.scene);
-	obs_weak_source_release(currentScene);
 
 	OBSWeakSource nextTransition = tinfo.first;
 	int nextTransitionDuration = tinfo.second;
@@ -53,23 +78,23 @@ void SetNextTransition(const SceneSwitchInfo &sceneSwitch,
 
 	// Current transition settings
 	if (!nextTransition) {
-		auto ct = obs_frontend_get_current_transition();
-		nextTransition = obs_source_get_weak_source(ct);
+		OBSSourceAutoRelease currentTransition =
+			obs_frontend_get_current_transition();
+		nextTransition = obs_source_get_weak_source(currentTransition);
 		obs_weak_source_release(nextTransition);
-		obs_source_release(ct);
 	}
 	if (!nextTransitionDuration) {
 		nextTransitionDuration = obs_frontend_get_transition_duration();
 	}
 
-	if (switcher->adjustActiveTransitionType) {
+	if (ShouldModifyActiveTransition()) {
 		obs_frontend_set_transition_duration(nextTransitionDuration);
-		auto t = obs_weak_source_get_source(nextTransition);
-		obs_frontend_set_current_transition(t);
-		obs_source_release(t);
+		OBSSourceAutoRelease transition =
+			obs_weak_source_get_source(nextTransition);
+		obs_frontend_set_current_transition(transition);
 	}
 
-	if (switcher->transitionOverrideOverride) {
+	if (ShouldModifyTransitionOverrides()) {
 		OverwriteTransitionOverride({sceneSwitch.scene, nextTransition,
 					     nextTransitionDuration},
 					    td);
@@ -78,8 +103,8 @@ void SetNextTransition(const SceneSwitchInfo &sceneSwitch,
 
 void OverwriteTransitionOverride(const SceneSwitchInfo &ssi, TransitionData &td)
 {
-	obs_source_t *scene = obs_weak_source_get_source(ssi.scene);
-	obs_data_t *data = obs_source_get_private_settings(scene);
+	OBSSourceAutoRelease scene = obs_weak_source_get_source(ssi.scene);
+	OBSDataAutoRelease data = obs_source_get_private_settings(scene);
 
 	td.name = obs_data_get_string(data, "transition");
 	td.duration = obs_data_get_int(data, "transition_duration");
@@ -88,19 +113,13 @@ void OverwriteTransitionOverride(const SceneSwitchInfo &ssi, TransitionData &td)
 
 	obs_data_set_string(data, "transition", name.c_str());
 	obs_data_set_int(data, "transition_duration", ssi.duration);
-
-	obs_data_release(data);
-	obs_source_release(scene);
 }
 
 void RestoreTransitionOverride(obs_source_t *scene, const TransitionData &td)
 {
-	obs_data_t *data = obs_source_get_private_settings(scene);
-
+	OBSDataAutoRelease data = obs_source_get_private_settings(scene);
 	obs_data_set_string(data, "transition", td.name.c_str());
 	obs_data_set_int(data, "transition_duration", td.duration);
-
-	obs_data_release(data);
 }
 
 void SwitchScene(const SceneSwitchInfo &sceneSwitch, bool force)
@@ -110,36 +129,67 @@ void SwitchScene(const SceneSwitchInfo &sceneSwitch, bool force)
 		return;
 	}
 
-	obs_source_t *source = obs_weak_source_get_source(sceneSwitch.scene);
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
+	OBSSourceAutoRelease source =
+		obs_weak_source_get_source(sceneSwitch.scene);
+	OBSSourceAutoRelease currentSource = obs_frontend_get_current_scene();
 
 	if (source && (source != currentSource || force)) {
 		TransitionData currentTransitionData;
 		SetNextTransition(sceneSwitch, currentSource,
 				  currentTransitionData);
 		obs_frontend_set_current_scene(source);
-		if (switcher->transitionOverrideOverride) {
+		if (ShouldModifyTransitionOverrides()) {
 			RestoreTransitionOverride(source,
 						  currentTransitionData);
 		}
 
-		if (switcher->verbose) {
-			blog(LOG_INFO, "switched scene");
-		}
+		vblog(LOG_INFO, "switched scene");
 
 		if (switcher->networkConfig.ShouldSendSceneChange()) {
 			switcher->server.sendMessage(sceneSwitch);
 		}
 	}
-	obs_source_release(currentSource);
-	obs_source_release(source);
 }
 
 void SwitchPreviewScene(const OBSWeakSource &ws)
 {
-	auto source = obs_weak_source_get_source(ws);
+	OBSSourceAutoRelease source = obs_weak_source_get_source(ws);
 	obs_frontend_set_current_preview_scene(source);
-	obs_source_release(source);
+}
+
+std::chrono::high_resolution_clock::time_point GetLastTransitionEndTime()
+{
+	return lastTransitionEndTime;
+}
+
+std::chrono::high_resolution_clock::time_point GetLastSceneChangeTime()
+{
+	return lastSceneChangeTime;
+}
+
+OBSWeakSource GetCurrentScene()
+{
+	return switcher->currentScene;
+}
+
+OBSWeakSource GetPreviousScene()
+{
+	return switcher->previousScene;
+}
+
+bool AnySceneTransitionStarted()
+{
+	return switcher->AnySceneTransitionStarted();
+}
+
+bool ShouldModifyTransitionOverrides()
+{
+	return switcher->transitionOverrideOverride;
+}
+
+bool ShouldModifyActiveTransition()
+{
+	return switcher->adjustActiveTransitionType;
 }
 
 } // namespace advss

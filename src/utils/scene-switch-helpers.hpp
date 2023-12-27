@@ -1,5 +1,6 @@
 #pragma once
 #include <obs.hpp>
+#include <chrono>
 #include <string>
 
 namespace advss {
@@ -15,12 +16,24 @@ struct TransitionData {
 	int duration = 0;
 };
 
-void SetNextTransition(const SceneSwitchInfo &ssi, obs_source_t *currentSource,
-		       TransitionData &td);
-void OverwriteTransitionOverride(const SceneSwitchInfo &ssi,
-				 TransitionData &td);
-void RestoreTransitionOverride(obs_source_t *scene, const TransitionData &td);
-void SwitchScene(const SceneSwitchInfo &ssi, bool force = false);
-void SwitchPreviewScene(const OBSWeakSource &ws);
+void SwitchScene(const SceneSwitchInfo &, bool force = false);
+void SwitchPreviewScene(const OBSWeakSource &scene);
+
+std::chrono::high_resolution_clock::time_point GetLastTransitionEndTime();
+std::chrono::high_resolution_clock::time_point GetLastSceneChangeTime();
+
+OBSWeakSource GetCurrentScene();
+OBSWeakSource GetPreviousScene();
+
+bool ShouldModifyTransitionOverrides();
+bool ShouldModifyActiveTransition();
+void OverwriteTransitionOverride(const SceneSwitchInfo &, TransitionData &);
+void RestoreTransitionOverride(obs_source_t *scene, const TransitionData &);
+
+bool AnySceneTransitionStarted();
+
+// TODO: Remove at some point
+void SetNextTransition(const SceneSwitchInfo &, obs_source_t *currentSource,
+		       TransitionData &);
 
 } // namespace advss

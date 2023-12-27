@@ -552,9 +552,6 @@ extern "C" void FreeSceneSwitcher()
 
 static void handleSceneChange()
 {
-	switcher->lastSceneChangeTime =
-		std::chrono::high_resolution_clock::now();
-
 	// Stop waiting if scene was changed
 	if (switcher->SceneChangedDuringWait()) {
 		switcher->cv.notify_one();
@@ -626,13 +623,6 @@ static void setReplayBufferSaved()
 	switcher->replayBufferSaved = true;
 }
 
-static void setTranstionEnd()
-{
-	switcher->lastTransitionEndTime =
-		std::chrono::high_resolution_clock::now();
-	switcher->macroTransitionCv.notify_all();
-}
-
 static void setStreamStarting()
 {
 	switcher->lastStreamStartingTime =
@@ -643,6 +633,11 @@ static void setStreamStopping()
 {
 	switcher->lastStreamStoppingTime =
 		std::chrono::high_resolution_clock::now();
+}
+
+static void handleTransitionEnd()
+{
+	GetMacroTransitionCV().notify_all();
 }
 
 static void handleShutdown()
@@ -717,7 +712,7 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 		break;
 #endif
 	case OBS_FRONTEND_EVENT_TRANSITION_STOPPED:
-		setTranstionEnd();
+		handleTransitionEnd();
 		break;
 	case OBS_FRONTEND_EVENT_STREAMING_STARTING:
 		setStreamStarting();
