@@ -1,5 +1,5 @@
 #include "transition-selection.hpp"
-#include "switcher-data.hpp"
+#include "obs-module-helper.hpp"
 
 namespace advss {
 
