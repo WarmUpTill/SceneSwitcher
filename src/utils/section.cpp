@@ -125,6 +125,7 @@ bool Section::eventFilter(QObject *obj, QEvent *event)
 			// filter will cause a segfault for some reason
 			SetupAnimations();
 		}
+		setMinimumWidth(_content->sizeHint().width());
 	}
 	return QObject::eventFilter(obj, event);
 }
