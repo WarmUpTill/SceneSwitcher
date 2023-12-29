@@ -87,7 +87,9 @@ target_sources(
 # Maro sources
 target_sources(
   ${LIB_NAME}
-  PRIVATE src/macro-core/macro-action-audio.cpp
+  PRIVATE src/macro-core/action-queue.cpp
+          src/macro-core/action-queue.hpp
+          src/macro-core/macro-action-audio.cpp
           src/macro-core/macro-action-audio.hpp
           src/macro-core/macro-action-clipboard.cpp
           src/macro-core/macro-action-clipboard.hpp
@@ -115,6 +117,8 @@ target_sources(
           src/macro-core/macro-action-profile.hpp
           src/macro-core/macro-action-projector.cpp
           src/macro-core/macro-action-projector.hpp
+          src/macro-core/macro-action-queue.cpp
+          src/macro-core/macro-action-queue.hpp
           src/macro-core/macro-action-random.cpp
           src/macro-core/macro-action-random.hpp
           src/macro-core/macro-action-recording.cpp
@@ -193,6 +197,8 @@ target_sources(
           src/macro-core/macro-condition-process.hpp
           src/macro-core/macro-condition-profile.cpp
           src/macro-core/macro-condition-profile.hpp
+          src/macro-core/macro-condition-queue.cpp
+          src/macro-core/macro-condition-queue.hpp
           src/macro-core/macro-condition-recording.cpp
           src/macro-core/macro-condition-recording.hpp
           src/macro-core/macro-condition-replay-buffer.cpp

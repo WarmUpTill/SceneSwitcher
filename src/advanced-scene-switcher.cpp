@@ -434,11 +434,14 @@ static void ResetMacros()
 	}
 }
 
+void AutoStartActionQueues();
+
 void SwitcherData::Start()
 {
 	if (!(th && th->isRunning())) {
 		ResetForNextInterval();
 		ResetMacros();
+		AutoStartActionQueues();
 
 		stop = false;
 		th = new SwitcherThread();
@@ -465,6 +468,7 @@ void SwitcherData::Start()
 }
 
 bool CloseAllInputDialogs();
+void StopAndClearAllActionQueues();
 
 void SwitcherData::Stop()
 {
@@ -474,6 +478,7 @@ void SwitcherData::Stop()
 		SetMacroAbortWait(true);
 		GetMacroWaitCV().notify_all();
 		GetMacroTransitionCV().notify_all();
+		StopAndClearAllActionQueues();
 
 		// Not waiting if a dialog was closed is a workaround to avoid
 		// deadlocks when a variable input dialog is opened while Stop()
@@ -750,6 +755,7 @@ QWidget *GetSettingsWindow()
 
 void SetupConnectionManager();
 void SetupWebsocketHelpers();
+void SetupActionQueues();
 
 extern "C" void InitSceneSwitcher(obs_module_t *module, translateFunc translate)
 {
@@ -763,6 +769,7 @@ extern "C" void InitSceneSwitcher(obs_module_t *module, translateFunc translate)
 	SetupDock();
 	SetupConnectionManager();
 	SetupWebsocketHelpers();
+	SetupActionQueues();
 
 	obs_frontend_add_save_callback(SaveSceneSwitcher, nullptr);
 	obs_frontend_add_event_callback(OBSEvent, switcher);
