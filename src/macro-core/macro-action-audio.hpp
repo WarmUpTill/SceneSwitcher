@@ -47,7 +47,9 @@ public:
 	NumberVariable<int> _syncOffset = 0;
 	obs_monitoring_type _monitorType = OBS_MONITORING_TYPE_NONE;
 	NumberVariable<double> _balance = 0.5;
+	bool _useDb = false;
 	NumberVariable<int> _volume = 0;
+	NumberVariable<double> _volumeDB = 0.0;
 	bool _fade = false;
 	Duration _duration;
 	NumberVariable<double> _rate = 100.;
@@ -58,10 +60,11 @@ private:
 	void StartFade();
 	void FadeVolume();
 	void SetVolume(float vol);
-	float GetVolume();
+	float GetCurrentVolume();
 	void SetFadeActive(bool value);
 	bool FadeActive();
 	std::atomic_int *GetFadeIdPtr();
+	float GetVolume();
 
 	static bool _registered;
 	static const std::string id;
@@ -90,6 +93,8 @@ private slots:
 	void MonitorTypeChanged(int value);
 	void BalanceChanged(const NumberVariable<double> &value);
 	void VolumeChanged(const NumberVariable<int> &value);
+	void VolumeDBChanged(const NumberVariable<double> &value);
+	void PercentDBClicked();
 	void FadeChanged(int value);
 	void DurationChanged(const Duration &seconds);
 	void RateChanged(const NumberVariable<double> &value);
@@ -107,6 +112,8 @@ protected:
 	QComboBox *_monitorTypes;
 	SliderSpinBox *_balance;
 	VariableSpinBox *_volumePercent;
+	VariableDoubleSpinBox *_volumeDB;
+	QPushButton *_percentDBToggle;
 	QCheckBox *_fade;
 	DurationSelection *_duration;
 	VariableDoubleSpinBox *_rate;
