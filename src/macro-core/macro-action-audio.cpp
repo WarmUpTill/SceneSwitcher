@@ -2,6 +2,8 @@
 #include "macro.hpp"
 #include "utility.hpp"
 
+#include <cmath>
+
 namespace advss {
 
 constexpr int64_t nsPerMs = 1000000;
@@ -48,6 +50,11 @@ static std::unordered_map<std::string, FadeInfo> audioFades;
 
 constexpr auto fadeInterval = std::chrono::milliseconds(100);
 constexpr float minFade = 0.000001f;
+
+static float decibelToPercent(float db)
+{
+	return pow(10, (db / 20));
+}
 
 // For backwards compatibility
 #if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(29, 0, 0)
@@ -103,6 +110,11 @@ std::atomic_int *MacroActionAudio::GetFadeIdPtr()
 	return &masterAudioFade.id;
 }
 
+float MacroActionAudio::GetVolume()
+{
+	return _useDb ? decibelToPercent(_volumeDB) : (float)_volume / 100.0f;
+}
+
 void MacroActionAudio::SetVolume(float vol)
 {
 	if (_action == Action::SOURCE_VOLUME) {
@@ -114,7 +126,7 @@ void MacroActionAudio::SetVolume(float vol)
 	}
 }
 
-float MacroActionAudio::GetVolume()
+float MacroActionAudio::GetCurrentVolume()
 {
 	float curVol;
 	if (_action == Action::SOURCE_VOLUME) {
@@ -132,8 +144,8 @@ float MacroActionAudio::GetVolume()
 
 void MacroActionAudio::FadeVolume()
 {
-	float vol = (float)_volume / 100.0f;
-	float curVol = GetVolume();
+	float vol = GetVolume();
+	float curVol = GetCurrentVolume();
 	bool volIncrease = curVol <= vol;
 	float volDiff = (volIncrease) ? vol - curVol : curVol - vol;
 	int nrSteps = 0;
@@ -211,7 +223,7 @@ bool MacroActionAudio::PerformAction()
 		if (_fade) {
 			StartFade();
 		} else {
-			SetVolume((float)_volume / 100.0f);
+			SetVolume(GetVolume());
 		}
 		break;
 	case Action::SYNC_OFFSET:
@@ -234,10 +246,11 @@ void MacroActionAudio::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
+		auto &[_, action] = *it;
 		vblog(LOG_INFO,
-		      "performed action \"%s\" for source \"%s\" with volume %d with fade %d %f",
-		      it->second.c_str(), _audioSource.ToString(true).c_str(),
-		      _volume.GetValue(), _fade, _duration.Seconds());
+		      "performed action \"%s\" for source \"%s\" with volume %f with fade %d %f",
+		      action.c_str(), _audioSource.ToString(true).c_str(),
+		      GetVolume(), _fade, _duration.Seconds());
 	} else {
 		blog(LOG_WARNING, "ignored unknown audio action %d",
 		     static_cast<int>(_action));
@@ -259,7 +272,9 @@ bool MacroActionAudio::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "fadeType", static_cast<int>(_fadeType));
 	obs_data_set_bool(obj, "wait", _wait);
 	obs_data_set_bool(obj, "abortActiveFade", _abortActiveFade);
-	obs_data_set_int(obj, "version", 1);
+	obs_data_set_bool(obj, "useDb", _useDb);
+	_volumeDB.Save(obj, "volumeDB");
+	obs_data_set_int(obj, "version", 2);
 	return true;
 }
 
@@ -299,6 +314,15 @@ bool MacroActionAudio::Load(obs_data_t *obj)
 	} else {
 		_abortActiveFade = false;
 	}
+
+	if (obs_data_get_int(obj, "version") != 2) {
+		_useDb = false;
+		_volumeDB = 0.0;
+	} else {
+		_useDb = obs_data_get_bool(obj, "useDb");
+		_volumeDB.Load(obj, "volumeDB");
+	}
+
 	return true;
 }
 
@@ -322,7 +346,7 @@ static inline void populateActionSelection(QComboBox *list)
 
 static inline void populateFadeTypeSelection(QComboBox *list)
 {
-	for (auto entry : fadeTypes) {
+	for (const auto &entry : fadeTypes) {
 		list->addItem(obs_module_text(entry.second.c_str()));
 	}
 }
@@ -340,6 +364,8 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 		  obs_module_text(
 			  "AdvSceneSwitcher.action.audio.balance.description"))),
 	  _volumePercent(new VariableSpinBox),
+	  _volumeDB(new VariableDoubleSpinBox),
+	  _percentDBToggle(new QPushButton),
 	  _fade(new QCheckBox),
 	  _duration(new DurationSelection(parent, false)),
 	  _rate(new VariableDoubleSpinBox),
@@ -357,6 +383,11 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	_volumePercent->setMinimum(0);
 	_volumePercent->setMaximum(2000);
 	_volumePercent->setSuffix("%");
+
+	_volumeDB->setMinimum(-60);
+	_volumeDB->setMaximum(0);
+	_volumeDB->setSuffix("db");
+	_volumeDB->specialValueText("-inf");
 
 	_rate->setMinimum(0.01);
 	_rate->setMaximum(999.);
@@ -388,6 +419,12 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 		_volumePercent,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
 		this, SLOT(VolumeChanged(const NumberVariable<int> &)));
+	QWidget::connect(
+		_volumeDB,
+		SIGNAL(NumberVariableChanged(const NumberVariable<double> &)),
+		this, SLOT(VolumeDBChanged(const NumberVariable<double> &)));
+	QWidget::connect(_percentDBToggle, SIGNAL(clicked()), this,
+			 SLOT(PercentDBClicked()));
 	QWidget::connect(_fade, SIGNAL(stateChanged(int)), this,
 			 SLOT(FadeChanged(int)));
 	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
@@ -410,6 +447,8 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 		{"{{monitorTypes}}", _monitorTypes},
 		{"{{balance}}", _balance},
 		{"{{volume}}", _volumePercent},
+		{"{{volumeDB}}", _volumeDB},
+		{"{{percentDBToggle}}", _percentDBToggle},
 		{"{{fade}}", _fade},
 		{"{{duration}}", _duration},
 		{"{{rate}}", _rate},
@@ -448,7 +487,12 @@ static bool hasVolumeControl(MacroActionAudio::Action action)
 
 void MacroActionAudioEdit::SetWidgetVisibility()
 {
-	_volumePercent->setVisible(hasVolumeControl(_entryData->_action));
+	_volumePercent->setVisible(hasVolumeControl(_entryData->_action) &&
+				   !_entryData->_useDb);
+	_volumeDB->setVisible(hasVolumeControl(_entryData->_action) &&
+			      _entryData->_useDb);
+	_percentDBToggle->setText(_entryData->_useDb ? "db" : "%");
+	_percentDBToggle->setVisible(hasVolumeControl(_entryData->_action));
 	_sources->setVisible(_entryData->_action !=
 			     MacroActionAudio::Action::MASTER_VOLUME);
 	_syncOffset->setVisible(_entryData->_action ==
@@ -519,6 +563,7 @@ void MacroActionAudioEdit::UpdateEntryData()
 	_monitorTypes->setCurrentIndex(_entryData->_monitorType);
 	_balance->SetDoubleValue(_entryData->_balance);
 	_volumePercent->SetValue(_entryData->_volume);
+	_volumeDB->SetValue(_entryData->_volumeDB);
 	_fade->setChecked(_entryData->_fade);
 	_duration->SetDuration(_entryData->_duration);
 	_rate->SetValue(_entryData->_rate);
@@ -580,6 +625,27 @@ void MacroActionAudioEdit::BalanceChanged(const NumberVariable<double> &value)
 
 	auto lock = LockContext();
 	_entryData->_balance = value;
+}
+
+void MacroActionAudioEdit::VolumeDBChanged(const NumberVariable<double> &value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_volumeDB = value;
+}
+
+void MacroActionAudioEdit::PercentDBClicked()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_useDb = !_entryData->_useDb;
+	SetWidgetVisibility();
 }
 
 void MacroActionAudioEdit::VolumeChanged(const NumberVariable<int> &value)
