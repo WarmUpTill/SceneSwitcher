@@ -4,6 +4,7 @@
 #include "regex-config.hpp"
 #include "source-selection.hpp"
 #include "filter-selection.hpp"
+#include "source-setting.hpp"
 
 #include <QComboBox>
 #include <QPushButton>
@@ -29,6 +30,8 @@ public:
 		DISABLED,
 		SETTINGS_MATCH,
 		SETTINGS_CHANGED,
+		INDIVIDUAL_SETTING_MATCH,
+		INDIVIDUAL_SETTING_CHANGED,
 	};
 
 	SourceSelection _source;
@@ -36,11 +39,14 @@ public:
 	Condition _condition = Condition::ENABLED;
 	StringVariable _settings = "";
 	RegexConfig _regex;
+	SourceSetting _setting;
 
 private:
 	bool CheckConditionHelper(const OBSWeakSource &);
 
 	std::string _currentSettings;
+	std::string _currentSettingsValue;
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -68,21 +74,22 @@ private slots:
 	void GetSettingsClicked();
 	void SettingsChanged();
 	void RegexChanged(RegexConfig);
+	void SettingSelectionChanged(const SourceSetting &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	SourceSelectionWidget *_sources;
 	FilterSelectionWidget *_filters;
 	QComboBox *_conditions;
 	QPushButton *_getSettings;
 	VariableTextEdit *_settings;
 	RegexConfigWidget *_regex;
+	SourceSettingSelection *_settingSelection;
 
 	std::shared_ptr<MacroConditionFilter> _entryData;
-
-private:
-	void SetSettingsSelectionVisible(bool visible);
 	bool _loading = true;
 };
 

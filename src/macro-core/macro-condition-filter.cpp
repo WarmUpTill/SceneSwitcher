@@ -19,9 +19,13 @@ const static std::map<MacroConditionFilter::Condition, std::string>
 		{MacroConditionFilter::Condition::DISABLED,
 		 "AdvSceneSwitcher.condition.filter.type.showing"},
 		{MacroConditionFilter::Condition::SETTINGS_MATCH,
-		 "AdvSceneSwitcher.condition.filter.type.settings"},
+		 "AdvSceneSwitcher.condition.filter.type.settingsMatch"},
 		{MacroConditionFilter::Condition::SETTINGS_CHANGED,
 		 "AdvSceneSwitcher.condition.filter.type.settingsChanged"},
+		{MacroConditionFilter::Condition::INDIVIDUAL_SETTING_MATCH,
+		 "AdvSceneSwitcher.condition.filter.type.individualSettingMatches"},
+		{MacroConditionFilter::Condition::INDIVIDUAL_SETTING_CHANGED,
+		 "AdvSceneSwitcher.condition.filter.type.individualSettingChanged"},
 };
 
 bool MacroConditionFilter::CheckConditionHelper(const OBSWeakSource &filter)
@@ -46,10 +50,24 @@ bool MacroConditionFilter::CheckConditionHelper(const OBSWeakSource &filter)
 		}
 		break;
 	case Condition::SETTINGS_CHANGED: {
-		std::string settings = GetSourceSettings(_source.GetSource());
+		std::string settings = GetSourceSettings(filter);
 		ret = !_currentSettings.empty() && settings != _currentSettings;
 		_currentSettings = settings;
 		SetVariableValue(settings);
+		break;
+	}
+	case Condition::INDIVIDUAL_SETTING_MATCH: {
+		std::string value = GetSourceSettingValue(filter, _setting);
+		ret = _regex.Enabled() ? _regex.Matches(value, _settings)
+				       : value == std::string(_settings);
+		SetVariableValue(value);
+		break;
+	}
+	case Condition::INDIVIDUAL_SETTING_CHANGED: {
+		std::string value = GetSourceSettingValue(filter, _setting);
+		ret = _currentSettingsValue != value;
+		_currentSettingsValue = value;
+		SetVariableValue(value);
 		break;
 	}
 	default:
@@ -85,6 +103,7 @@ bool MacroConditionFilter::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	_settings.Save(obj, "settings");
 	_regex.Save(obj);
+	_setting.Save(obj);
 	return true;
 }
 
@@ -101,6 +120,7 @@ bool MacroConditionFilter::Load(obs_data_t *obj)
 		_regex.CreateBackwardsCompatibleRegex(
 			obs_data_get_bool(obj, "regex"));
 	}
+	_setting.Load(obj);
 	return true;
 }
 
@@ -128,7 +148,8 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 	  _getSettings(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.filter.getSettings"))),
 	  _settings(new VariableTextEdit(this)),
-	  _regex(new RegexConfigWidget(parent))
+	  _regex(new RegexConfigWidget(parent)),
+	  _settingSelection(new SourceSettingSelection())
 {
 	populateConditionSelection(_conditions);
 	auto sources = GetSourcesWithFilterNames();
@@ -149,11 +170,19 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 			 SLOT(SettingsChanged()));
 	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
 			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_settingSelection,
+			 SIGNAL(SelectionChanged(const SourceSetting &)), this,
+			 SLOT(SettingSelectionChanged(const SourceSetting &)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{sources}}", _sources},         {"{{filters}}", _filters},
-		{"{{conditions}}", _conditions},   {"{{settings}}", _settings},
-		{"{{getSettings}}", _getSettings}, {"{{regex}}", _regex},
+		{"{{sources}}", _sources},
+		{"{{filters}}", _filters},
+		{"{{conditions}}", _conditions},
+		{"{{settings}}", _settings},
+		{"{{getSettings}}", _getSettings},
+		{"{{regex}}", _regex},
+		{"{{settingSelection}}", _settingSelection},
+
 	};
 	auto line1Layout = new QHBoxLayout;
 	line1Layout->setContentsMargins(0, 0, 0, 0);
@@ -171,7 +200,7 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 			     "AdvSceneSwitcher.condition.filter.entry.line3"),
 		     line3Layout, widgetPlaceholders);
 
-	QVBoxLayout *mainLayout = new QVBoxLayout;
+	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(line1Layout);
 	mainLayout->addLayout(line2Layout);
 	mainLayout->addLayout(line3Layout);
@@ -198,8 +227,13 @@ void MacroConditionFilterEdit::FilterChanged(const FilterSelection &filter)
 		return;
 	}
 
-	auto lock = LockContext();
-	_entryData->_filter = filter;
+	{
+		auto lock = LockContext();
+		_entryData->_filter = filter;
+	}
+	const auto filters =
+		_entryData->_filter.GetFilters(_entryData->_source);
+	_settingSelection->SetSource(filters.empty() ? nullptr : filters.at(0));
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -213,9 +247,7 @@ void MacroConditionFilterEdit::ConditionChanged(int index)
 	auto lock = LockContext();
 	_entryData->_condition =
 		static_cast<MacroConditionFilter::Condition>(index);
-	SetSettingsSelectionVisible(
-		_entryData->_condition ==
-		MacroConditionFilter::Condition::SETTINGS_MATCH);
+	SetWidgetVisibility();
 }
 
 void MacroConditionFilterEdit::GetSettingsClicked()
@@ -225,12 +257,26 @@ void MacroConditionFilterEdit::GetSettingsClicked()
 		return;
 	}
 
-	QString json = FormatJsonString(GetSourceSettings(
-		_entryData->_filter.GetFilters(_entryData->_source).at(0)));
-	if (_entryData->_regex.Enabled()) {
-		json = EscapeForRegex(json);
+	const auto filters =
+		_entryData->_filter.GetFilters(_entryData->_source);
+	if (filters.empty()) {
+		_settings->setPlainText(QString(""));
+		return;
 	}
-	_settings->setPlainText(json);
+
+	QString value;
+	if (_entryData->_condition ==
+	    MacroConditionFilter::Condition::SETTINGS_MATCH) {
+		value = FormatJsonString(GetSourceSettings(filters.at(0)));
+	} else {
+		value = QString::fromStdString(GetSourceSettingValue(
+			filters.at(0), _entryData->_setting));
+	}
+
+	if (_entryData->_regex.Enabled()) {
+		value = EscapeForRegex(value);
+	}
+	_settings->setPlainText(value);
 }
 
 void MacroConditionFilterEdit::SettingsChanged()
@@ -259,11 +305,30 @@ void MacroConditionFilterEdit::RegexChanged(RegexConfig conf)
 	updateGeometry();
 }
 
-void MacroConditionFilterEdit::SetSettingsSelectionVisible(bool visible)
+void MacroConditionFilterEdit::SettingSelectionChanged(
+	const SourceSetting &setting)
 {
-	_settings->setVisible(visible);
-	_getSettings->setVisible(visible);
-	_regex->setVisible(visible);
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_setting = setting;
+}
+
+void MacroConditionFilterEdit::SetWidgetVisibility()
+{
+	const bool showSettingsControls =
+		_entryData->_condition ==
+			MacroConditionFilter::Condition::SETTINGS_MATCH ||
+		_entryData->_condition ==
+			MacroConditionFilter::Condition::INDIVIDUAL_SETTING_MATCH;
+	_settings->setVisible(showSettingsControls);
+	_getSettings->setVisible(showSettingsControls);
+	_regex->setVisible(showSettingsControls);
+	_settingSelection->setVisible(
+		_entryData->_condition ==
+		MacroConditionFilter::Condition::INDIVIDUAL_SETTING_MATCH);
 	adjustSize();
 	updateGeometry();
 }
@@ -279,9 +344,11 @@ void MacroConditionFilterEdit::UpdateEntryData()
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_settings->setPlainText(_entryData->_settings);
 	_regex->SetRegexConfig(_entryData->_regex);
-	SetSettingsSelectionVisible(
-		_entryData->_condition ==
-		MacroConditionFilter::Condition::SETTINGS_MATCH);
+	const auto filters =
+		_entryData->_filter.GetFilters(_entryData->_source);
+	_settingSelection->SetSource(filters.empty() ? nullptr : filters.at(0));
+	_settingSelection->SetSetting(_entryData->_setting);
+	SetWidgetVisibility();
 
 	adjustSize();
 	updateGeometry();
