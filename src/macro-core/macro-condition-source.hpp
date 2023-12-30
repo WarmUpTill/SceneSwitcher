@@ -3,6 +3,7 @@
 #include "variable-text-edit.hpp"
 #include "regex-config.hpp"
 #include "source-selection.hpp"
+#include "source-setting.hpp"
 
 #include <QComboBox>
 #include <QPushButton>
@@ -26,17 +27,21 @@ public:
 	enum class Condition {
 		ACTIVE,
 		SHOWING,
-		SETTINGS_MATCH,
+		ALL_SETTINGS_MATCH,
 		SETTINGS_CHANGED,
+		INDIVIDUAL_SETTING_MATCH,
+		INDIVIDUAL_SETTING_CHANGED,
 	};
 
 	SourceSelection _source;
 	Condition _condition = Condition::ACTIVE;
 	StringVariable _settings = "";
+	SourceSetting _setting;
 	RegexConfig _regex;
 
 private:
 	std::string _currentSettings;
+	std::string _currentSettingsValue;
 
 	static bool _registered;
 	static const std::string id;
@@ -64,6 +69,7 @@ private slots:
 	void GetSettingsClicked();
 	void SettingsChanged();
 	void RegexChanged(RegexConfig);
+	void SettingSelectionChanged(const SourceSetting &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -73,6 +79,7 @@ protected:
 	QPushButton *_getSettings;
 	VariableTextEdit *_settings;
 	RegexConfigWidget *_regex;
+	SourceSettingSelection *_settingSelection;
 
 	std::shared_ptr<MacroConditionSource> _entryData;
 

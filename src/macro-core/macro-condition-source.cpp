@@ -16,10 +16,14 @@ const static std::map<MacroConditionSource::Condition, std::string>
 		 "AdvSceneSwitcher.condition.source.type.active"},
 		{MacroConditionSource::Condition::SHOWING,
 		 "AdvSceneSwitcher.condition.source.type.showing"},
-		{MacroConditionSource::Condition::SETTINGS_MATCH,
-		 "AdvSceneSwitcher.condition.source.type.settings"},
+		{MacroConditionSource::Condition::ALL_SETTINGS_MATCH,
+		 "AdvSceneSwitcher.condition.source.type.settingsMatch"},
 		{MacroConditionSource::Condition::SETTINGS_CHANGED,
 		 "AdvSceneSwitcher.condition.source.type.settingsChanged"},
+		{MacroConditionSource::Condition::INDIVIDUAL_SETTING_MATCH,
+		 "AdvSceneSwitcher.condition.source.type.individualSettingMatches"},
+		{MacroConditionSource::Condition::INDIVIDUAL_SETTING_CHANGED,
+		 "AdvSceneSwitcher.condition.source.type.individualSettingChanged"},
 };
 
 bool MacroConditionSource::CheckCondition()
@@ -29,7 +33,8 @@ bool MacroConditionSource::CheckCondition()
 	}
 
 	bool ret = false;
-	auto s = obs_weak_source_get_source(_source.GetSource());
+	OBSSourceAutoRelease s =
+		obs_weak_source_get_source(_source.GetSource());
 
 	switch (_condition) {
 	case Condition::ACTIVE:
@@ -38,7 +43,7 @@ bool MacroConditionSource::CheckCondition()
 	case Condition::SHOWING:
 		ret = obs_source_showing(s);
 		break;
-	case Condition::SETTINGS_MATCH:
+	case Condition::ALL_SETTINGS_MATCH:
 		ret = CompareSourceSettings(_source.GetSource(), _settings,
 					    _regex);
 		if (IsReferencedInVars()) {
@@ -53,11 +58,25 @@ bool MacroConditionSource::CheckCondition()
 		SetVariableValue(settings);
 		break;
 	}
+	case Condition::INDIVIDUAL_SETTING_MATCH: {
+		std::string value =
+			GetSourceSettingValue(_source.GetSource(), _setting);
+		ret = _regex.Enabled() ? _regex.Matches(value, _settings)
+				       : value == std::string(_settings);
+		SetVariableValue(value);
+		break;
+	}
+	case Condition::INDIVIDUAL_SETTING_CHANGED: {
+		std::string value =
+			GetSourceSettingValue(_source.GetSource(), _setting);
+		ret = _currentSettingsValue != value;
+		_currentSettingsValue = value;
+		SetVariableValue(value);
+		break;
+	}
 	default:
 		break;
 	}
-
-	obs_source_release(s);
 
 	if (GetVariableValue().empty()) {
 		SetVariableValue(ret ? "true" : "false");
@@ -73,6 +92,7 @@ bool MacroConditionSource::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	_settings.Save(obj, "settings");
 	_regex.Save(obj);
+	_setting.Save(obj);
 	return true;
 }
 
@@ -88,6 +108,7 @@ bool MacroConditionSource::Load(obs_data_t *obj)
 		_regex.CreateBackwardsCompatibleRegex(
 			obs_data_get_bool(obj, "regex"));
 	}
+	_setting.Load(obj);
 	return true;
 }
 
@@ -109,9 +130,10 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _conditions(new QComboBox()),
 	  _getSettings(new QPushButton(obs_module_text(
-		  "AdvSceneSwitcher.condition.filter.getSettings"))),
+		  "AdvSceneSwitcher.condition.source.getSettings"))),
 	  _settings(new VariableTextEdit(this)),
-	  _regex(new RegexConfigWidget(parent))
+	  _regex(new RegexConfigWidget(parent)),
+	  _settingSelection(new SourceSettingSelection())
 {
 	populateConditionSelection(_conditions);
 	auto sources = GetSourceNames();
@@ -131,12 +153,18 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 			 SLOT(SettingsChanged()));
 	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
 			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_settingSelection,
+			 SIGNAL(SelectionChanged(const SourceSetting &)), this,
+			 SLOT(SettingSelectionChanged(const SourceSetting &)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{sources}}", _sources},   {"{{conditions}}", _conditions},
-		{"{{settings}}", _settings}, {"{{getSettings}}", _getSettings},
+		{"{{sources}}", _sources},
+		{"{{conditions}}", _conditions},
+		{"{{settings}}", _settings},
+		{"{{getSettings}}", _getSettings},
 		{"{{regex}}", _regex},
-	};
+		{"{{settingSelection}}", _settingSelection}};
+
 	auto line1Layout = new QHBoxLayout;
 	line1Layout->setContentsMargins(0, 0, 0, 0);
 	PlaceWidgets(obs_module_text(
@@ -169,8 +197,11 @@ void MacroConditionSourceEdit::SourceChanged(const SourceSelection &source)
 		return;
 	}
 
-	auto lock = LockContext();
-	_entryData->_source = source;
+	{
+		auto lock = LockContext();
+		_entryData->_source = source;
+	}
+	_settingSelection->SetSource(_entryData->_source.GetSource());
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -193,12 +224,20 @@ void MacroConditionSourceEdit::GetSettingsClicked()
 		return;
 	}
 
-	QString json = FormatJsonString(
-		GetSourceSettings(_entryData->_source.GetSource()));
-	if (_entryData->_regex.Enabled()) {
-		json = EscapeForRegex(json);
+	QString value;
+	if (_entryData->_condition ==
+	    MacroConditionSource::Condition::ALL_SETTINGS_MATCH) {
+		value = FormatJsonString(
+			GetSourceSettings(_entryData->_source.GetSource()));
+	} else {
+		value = QString::fromStdString(GetSourceSettingValue(
+			_entryData->_source.GetSource(), _entryData->_setting));
 	}
-	_settings->setPlainText(json);
+
+	if (_entryData->_regex.Enabled()) {
+		value = EscapeForRegex(value);
+	}
+	_settings->setPlainText(value);
 }
 
 void MacroConditionSourceEdit::SettingsChanged()
@@ -227,15 +266,30 @@ void MacroConditionSourceEdit::RegexChanged(RegexConfig conf)
 	updateGeometry();
 }
 
+void MacroConditionSourceEdit::SettingSelectionChanged(
+	const SourceSetting &setting)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_setting = setting;
+}
+
 void MacroConditionSourceEdit::SetWidgetVisibility()
 {
-	_settings->setVisible(_entryData->_condition ==
-			      MacroConditionSource::Condition::SETTINGS_MATCH);
-	_getSettings->setVisible(
+	const bool settingsMatch =
 		_entryData->_condition ==
-		MacroConditionSource::Condition::SETTINGS_MATCH);
-	_regex->setVisible(_entryData->_condition ==
-			   MacroConditionSource::Condition::SETTINGS_MATCH);
+			MacroConditionSource::Condition::ALL_SETTINGS_MATCH ||
+		_entryData->_condition ==
+			MacroConditionSource::Condition::INDIVIDUAL_SETTING_MATCH;
+	_settings->setVisible(settingsMatch);
+	_getSettings->setVisible(settingsMatch);
+	_regex->setVisible(settingsMatch);
+	_settingSelection->setVisible(
+		_entryData->_condition ==
+		MacroConditionSource::Condition::INDIVIDUAL_SETTING_MATCH);
 
 	setToolTip(
 		(_entryData->_condition ==
@@ -260,6 +314,8 @@ void MacroConditionSourceEdit::UpdateEntryData()
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_settings->setPlainText(_entryData->_settings);
 	_regex->SetRegexConfig(_entryData->_regex);
+	_settingSelection->SetSource(_entryData->_source.GetSource());
+	_settingSelection->SetSetting(_entryData->_setting);
 	SetWidgetVisibility();
 }
 
