@@ -44,8 +44,28 @@ MacroSegmentList::~MacroSegmentList()
 	}
 }
 
+static bool posIsInScrollbar(const QScrollBar *scrollbar, const QPoint &pos)
+{
+	if (!scrollbar) {
+		return false;
+	}
+	if (!scrollbar->isVisible()) {
+		return false;
+	}
+	const auto geo = scrollbar->geometry();
+	const auto globalGeo = QRect(scrollbar->mapToGlobal(geo.topLeft()),
+				     scrollbar->mapToGlobal(geo.bottomRight()));
+	return globalGeo.contains(pos);
+}
+
 int MacroSegmentList::GetDragIndex(const QPoint &pos)
 {
+	// Don't drag widget when interacting with the scrollbars
+	if (posIsInScrollbar(horizontalScrollBar(), mapTo(this, pos)) ||
+	    posIsInScrollbar(verticalScrollBar(), mapTo(this, pos))) {
+		return -1;
+	}
+
 	for (int idx = 0; idx < _contentLayout->count(); ++idx) {
 		auto item = _contentLayout->itemAt(idx);
 		if (!item) {
