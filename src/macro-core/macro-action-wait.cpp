@@ -1,6 +1,5 @@
 #include "macro-action-wait.hpp"
 #include "macro-helpers.hpp"
-#include "macro.hpp"
 #include "sync-helpers.hpp"
 #include "utility.hpp"
 
@@ -26,7 +25,7 @@ static std::default_random_engine re(rd());
 static void waitHelper(std::unique_lock<std::mutex> *lock, Macro *macro,
 		       std::chrono::high_resolution_clock::time_point &time)
 {
-	while (!MacroWaitShouldAbort() && !macro->GetStop()) {
+	while (!MacroWaitShouldAbort() && !MacroIsStopped(macro)) {
 		if (GetMacroWaitCV().wait_until(*lock, time) ==
 		    std::cv_status::timeout) {
 			break;

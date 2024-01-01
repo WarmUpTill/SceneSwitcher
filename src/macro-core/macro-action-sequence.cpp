@@ -1,5 +1,5 @@
 #include "macro-action-sequence.hpp"
-#include "macro.hpp"
+#include "macro-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -15,7 +15,7 @@ static int getNextUnpausedMacroIdx(std::vector<MacroRef> &macros, int startIdx)
 {
 	for (; (int)macros.size() > startIdx; ++startIdx) {
 		auto macro = macros[startIdx].GetMacro();
-		if (macro && !macro->Paused()) {
+		if (!MacroIsPaused(macro.get())) {
 			return startIdx;
 		}
 	}
@@ -66,7 +66,7 @@ bool MacroActionSequence::PerformAction()
 		return true;
 	}
 
-	return macro->PerformActions(true);
+	return RunMacroActions(macro.get());
 }
 
 void MacroActionSequence::LogAction() const
@@ -254,11 +254,13 @@ void MacroActionSequenceEdit::UpdateStatusLine()
 		obs_module_text("AdvSceneSwitcher.action.sequence.status.none");
 	if (_entryData) {
 		if (auto macro = _entryData->_lastSequenceMacro.GetMacro()) {
-			lastMacroName = QString::fromStdString(macro->Name());
+			lastMacroName = QString::fromStdString(
+				GetMacroName(macro.get()));
 		}
 		auto next = _entryData->GetNextMacro(false).GetMacro();
 		if (next) {
-			nextMacroName = QString::fromStdString(next->Name());
+			nextMacroName = QString::fromStdString(
+				GetMacroName(next.get()));
 		}
 	}
 

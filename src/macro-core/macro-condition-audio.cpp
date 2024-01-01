@@ -1,5 +1,5 @@
 #include "macro-condition-audio.hpp"
-#include "macro.hpp"
+#include "macro-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -281,9 +281,9 @@ void MacroConditionAudio::SetVolumeLevel(void *data, const float *,
 					 const float peak[MAX_AUDIO_CHANNELS],
 					 const float *)
 {
-	MacroConditionAudio *c = static_cast<MacroConditionAudio *>(data);
+	auto c = static_cast<MacroConditionAudio *>(data);
 	const auto macro = c->GetMacro();
-	if (macro && macro->Paused()) {
+	if (MacroIsPaused(macro)) {
 		return;
 	}
 

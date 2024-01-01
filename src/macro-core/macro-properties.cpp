@@ -1,4 +1,5 @@
 #include "macro-properties.hpp"
+#include "macro.hpp"
 #include "obs-module-helper.hpp"
 #include "utility.hpp"
 

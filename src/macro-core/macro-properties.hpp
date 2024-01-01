@@ -1,5 +1,4 @@
 #pragma once
-#include "macro.hpp"
 #include "variable-line-edit.hpp"
 
 #include <QWidget>
@@ -11,6 +10,8 @@
 #include <obs-data.h>
 
 namespace advss {
+
+class Macro;
 
 class MacroProperties {
 public:

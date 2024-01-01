@@ -1,5 +1,5 @@
 #include "macro-condition-slideshow.hpp"
-#include "macro.hpp"
+#include "macro-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -121,7 +121,7 @@ void MacroConditionSlideshow::SlideChanged(void *c, calldata_t *data)
 {
 	auto condition = static_cast<MacroConditionSlideshow *>(c);
 	const auto macro = condition->GetMacro();
-	if (macro && macro->Paused()) {
+	if (MacroIsPaused(macro)) {
 		return;
 	}
 

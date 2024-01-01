@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-action.hpp"
 #include "macro-condition.hpp"
+#include "macro-helpers.hpp"
 #include "macro-ref.hpp"
 #include "variable-string.hpp"
 #include "temp-variable.hpp"
@@ -16,8 +17,6 @@
 #include <obs-module.h>
 
 namespace advss {
-
-constexpr auto macro_func = 10;
 
 class MacroDock;
 

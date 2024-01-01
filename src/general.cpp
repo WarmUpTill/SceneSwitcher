@@ -1,10 +1,11 @@
 #include "advanced-scene-switcher.hpp"
-#include "switcher-data.hpp"
-#include "status-control.hpp"
 #include "file-selection.hpp"
 #include "filter-combo-box.hpp"
-#include "variable.hpp"
+#include "macro.hpp"
+#include "status-control.hpp"
+#include "switcher-data.hpp"
 #include "utility.hpp"
+#include "variable.hpp"
 #include "version.h"
 
 #include <QFileDialog>

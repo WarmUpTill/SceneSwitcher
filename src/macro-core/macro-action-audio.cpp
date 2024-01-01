@@ -1,5 +1,5 @@
 #include "macro-action-audio.hpp"
-#include "macro.hpp"
+#include "macro-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -156,7 +156,8 @@ void MacroActionAudio::FadeVolume()
 	int step = 0;
 	auto fadeId = GetFadeIdPtr();
 	int expectedFadeId = ++(*fadeId);
-	for (; step < nrSteps && !macro->GetStop() && expectedFadeId == *fadeId;
+	for (; step < nrSteps && !MacroIsStopped(macro) &&
+	       expectedFadeId == *fadeId;
 	     ++step) {
 		curVol = (volIncrease) ? curVol + volStep : curVol - volStep;
 		SetVolume(curVol);
@@ -191,8 +192,9 @@ void MacroActionAudio::StartFade()
 	if (_wait) {
 		FadeVolume();
 	} else {
-		GetMacro()->AddHelperThread(
-			std::thread(&MacroActionAudio::FadeVolume, this));
+		AddMacroHelperThread(GetMacro(),
+				     std::thread(&MacroActionAudio::FadeVolume,
+						 this));
 	}
 }
 

@@ -1,6 +1,7 @@
 #include "macro-list.hpp"
-#include "macro.hpp"
+#include "macro-helpers.hpp"
 #include "macro-selection.hpp"
+#include "obs-module-helper.hpp"
 #include "utility.hpp"
 
 namespace advss {

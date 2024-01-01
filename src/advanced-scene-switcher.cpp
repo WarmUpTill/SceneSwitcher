@@ -429,8 +429,8 @@ bool SwitcherData::CheckForMatch(OBSWeakSource &scene,
 static void ResetMacros()
 {
 	for (auto &m : GetMacros()) {
-		m->ResetRunCount();
-		m->ResetTimers();
+		ResetMacroRunCount(m.get());
+		ResetMacroConditionTimers(m.get());
 	}
 }
 
