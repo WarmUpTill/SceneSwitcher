@@ -1,5 +1,5 @@
 #include "macro-condition-date.hpp"
-#include "macro.hpp"
+#include "macro-helpers.hpp"
 #include "utility.hpp"
 
 #include <QCalendarWidget>
@@ -180,7 +180,7 @@ bool MacroConditionDate::CheckCondition()
 	if (!m) {
 		return false;
 	}
-	auto msSinceLastCheck = m->MsSinceLastCheck();
+	auto msSinceLastCheck = MillisecondsSinceMacroConditionCheck(m);
 	if (_dayOfWeekCheck) {
 		return CheckDayOfWeek(msSinceLastCheck);
 	}

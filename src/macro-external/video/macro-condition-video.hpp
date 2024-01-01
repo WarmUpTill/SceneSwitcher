@@ -4,7 +4,7 @@
 #include "preview-dialog.hpp"
 #include "paramerter-wrappers.hpp"
 
-#include <macro.hpp>
+#include <macro-condition-edit.hpp>
 #include <file-selection.hpp>
 #include <screenshot-helper.hpp>
 #include <slider-spinbox.hpp>

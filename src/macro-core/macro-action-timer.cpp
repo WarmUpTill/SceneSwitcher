@@ -1,6 +1,6 @@
 #include "macro-action-timer.hpp"
 #include "macro-condition-timer.hpp"
-#include "macro.hpp"
+#include "macro-helpers.hpp"
 #include "utility.hpp"
 
 #include <random>
@@ -28,12 +28,13 @@ bool MacroActionTimer::PerformAction()
 	if (!macro) {
 		return true;
 	}
-	for (auto c : macro->Conditions()) {
-		if (c->GetId() != "timer") {
+	auto conditions = *GetMacroConditions(macro.get());
+	for (auto condition : conditions) {
+		if (condition->GetId() != id) {
 			continue;
 		}
 		auto timerCondition =
-			dynamic_cast<MacroConditionTimer *>(c.get());
+			dynamic_cast<MacroConditionTimer *>(condition.get());
 		if (!timerCondition) {
 			continue;
 		}
@@ -68,20 +69,21 @@ void MacroActionTimer::LogAction() const
 	switch (_actionType) {
 	case TimerAction::PAUSE:
 		vblog(LOG_INFO, "paused timers on \"%s\"",
-		      macro->Name().c_str());
+		      GetMacroName(macro.get()).c_str());
 		break;
 	case TimerAction::CONTINUE:
 		vblog(LOG_INFO, "continued timers on \"%s\"",
-		      macro->Name().c_str());
+		      GetMacroName(macro.get()).c_str());
 		break;
 	case TimerAction::RESET:
 		vblog(LOG_INFO, "reset timers on \"%s\"",
-		      macro->Name().c_str());
+		      GetMacroName(macro.get()).c_str());
 		break;
 	case TimerAction::SET_TIME_REMAINING:
 		vblog(LOG_INFO,
 		      "set time remaining of timers on \"%s\" to \"%s\"",
-		      macro->Name().c_str(), _duration.ToString().c_str());
+		      GetMacroName(macro.get()).c_str(),
+		      _duration.ToString().c_str());
 		break;
 	default:
 		break;

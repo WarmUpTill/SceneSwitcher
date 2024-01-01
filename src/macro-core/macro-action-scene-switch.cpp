@@ -1,7 +1,6 @@
 #include "macro-action-scene-switch.hpp"
 #include "macro-helpers.hpp"
 #include "plugin-state-helpers.hpp"
-#include "macro.hpp"
 #include "scene-switch-helpers.hpp"
 #include "utility.hpp"
 
@@ -36,7 +35,7 @@ static void waitForTransitionChange(OBSWeakSource &transition,
 
 	bool stillTransitioning = true;
 	while (stillTransitioning && !MacroWaitShouldAbort() &&
-	       !macro->GetStop()) {
+	       !MacroIsStopped(macro)) {
 		GetMacroTransitionCV().wait_for(*lock, time);
 		float t = obs_transition_get_time(source);
 		stillTransitioning = t < 1.0f && t > 0.0f;
@@ -51,7 +50,7 @@ static void waitForTransitionChangeFixedDuration(
 	auto time = std::chrono::high_resolution_clock::now() +
 		    std::chrono::milliseconds(duration);
 
-	while (!MacroWaitShouldAbort() && !macro->GetStop()) {
+	while (!MacroWaitShouldAbort() && !MacroIsStopped(macro)) {
 		if (GetMacroTransitionCV().wait_until(*lock, time) ==
 		    std::cv_status::timeout) {
 			break;

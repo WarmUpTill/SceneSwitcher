@@ -1,5 +1,5 @@
 #include "macro-action-random.hpp"
-#include "macro.hpp"
+#include "macro-helpers.hpp"
 #include "utility.hpp"
 
 #include <cstdlib>
@@ -15,7 +15,7 @@ bool MacroActionRandom::_registered = MacroActionFactory::Register(
 
 static bool validNextMacro(const std::shared_ptr<Macro> &macro)
 {
-	return macro && !macro->Paused();
+	return !MacroIsPaused(macro.get());
 }
 
 static std::vector<std::shared_ptr<Macro>>
@@ -54,12 +54,12 @@ bool MacroActionRandom::PerformAction()
 	}
 	if (macros.size() == 1) {
 		lastRandomMacro = macros[0];
-		return macros[0]->PerformActions(true);
+		return RunMacroActions(macros[0].get());
 	}
 	srand((unsigned int)time(0));
 	size_t idx = std::rand() % (macros.size());
 	lastRandomMacro = macros[idx];
-	return macros[idx]->PerformActions(true);
+	return RunMacroActions(macros[idx].get());
 }
 
 void MacroActionRandom::LogAction() const

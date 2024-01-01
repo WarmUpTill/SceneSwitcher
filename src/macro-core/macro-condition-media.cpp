@@ -1,5 +1,5 @@
 #include "macro-condition-media.hpp"
-#include "macro.hpp"
+#include "macro-helpers.hpp"
 #include "plugin-state-helpers.hpp"
 #include "scene-switch-helpers.hpp"
 #include "utility.hpp"
@@ -13,20 +13,21 @@ bool MacroConditionMedia::_registered = MacroConditionFactory::Register(
 	{MacroConditionMedia::Create, MacroConditionMediaEdit::Create,
 	 "AdvSceneSwitcher.condition.media"});
 
-static std::map<MacroConditionMedia::Time, std::string> mediaTimeRestrictions = {
-	{MacroConditionMedia::Time::TIME_RESTRICTION_NONE,
-	 "AdvSceneSwitcher.mediaTab.timeRestriction.none"},
-	{MacroConditionMedia::Time::TIME_RESTRICTION_SHORTER,
-	 "AdvSceneSwitcher.mediaTab.timeRestriction.shorter"},
-	{MacroConditionMedia::Time::TIME_RESTRICTION_LONGER,
-	 "AdvSceneSwitcher.mediaTab.timeRestriction.longer"},
-	{MacroConditionMedia::Time::TIME_RESTRICTION_REMAINING_SHORTER,
-	 "AdvSceneSwitcher.mediaTab.timeRestriction.remainShorter"},
-	{MacroConditionMedia::Time::TIME_RESTRICTION_REMAINING_LONGER,
-	 "AdvSceneSwitcher.mediaTab.timeRestriction.remainLonger"},
+static const std::map<MacroConditionMedia::Time, std::string>
+	mediaTimeRestrictions = {
+		{MacroConditionMedia::Time::TIME_RESTRICTION_NONE,
+		 "AdvSceneSwitcher.mediaTab.timeRestriction.none"},
+		{MacroConditionMedia::Time::TIME_RESTRICTION_SHORTER,
+		 "AdvSceneSwitcher.mediaTab.timeRestriction.shorter"},
+		{MacroConditionMedia::Time::TIME_RESTRICTION_LONGER,
+		 "AdvSceneSwitcher.mediaTab.timeRestriction.longer"},
+		{MacroConditionMedia::Time::TIME_RESTRICTION_REMAINING_SHORTER,
+		 "AdvSceneSwitcher.mediaTab.timeRestriction.remainShorter"},
+		{MacroConditionMedia::Time::TIME_RESTRICTION_REMAINING_LONGER,
+		 "AdvSceneSwitcher.mediaTab.timeRestriction.remainLonger"},
 };
 
-static std::map<MacroConditionMedia::State, std::string> mediaStates = {
+static const std::map<MacroConditionMedia::State, std::string> mediaStates = {
 	{MacroConditionMedia::State::OBS_MEDIA_STATE_NONE,
 	 "AdvSceneSwitcher.mediaTab.states.none"},
 	{MacroConditionMedia::State::OBS_MEDIA_STATE_PLAYING,
@@ -332,7 +333,7 @@ void MacroConditionMedia::MediaStopped(void *data, calldata_t *)
 {
 	MacroConditionMedia *media = static_cast<MacroConditionMedia *>(data);
 	const auto macro = media->GetMacro();
-	if (macro && macro->Paused()) {
+	if (MacroIsPaused(macro)) {
 		return;
 	}
 	media->_stopped = true;
@@ -342,7 +343,7 @@ void MacroConditionMedia::MediaEnded(void *data, calldata_t *)
 {
 	MacroConditionMedia *media = static_cast<MacroConditionMedia *>(data);
 	const auto macro = media->GetMacro();
-	if (macro && macro->Paused()) {
+	if (MacroIsPaused(macro)) {
 		return;
 	}
 	media->_ended = true;
@@ -352,7 +353,7 @@ void MacroConditionMedia::MediaNext(void *data, calldata_t *)
 {
 	MacroConditionMedia *media = static_cast<MacroConditionMedia *>(data);
 	const auto macro = media->GetMacro();
-	if (macro && macro->Paused()) {
+	if (MacroIsPaused(macro)) {
 		return;
 	}
 	media->_next = true;
