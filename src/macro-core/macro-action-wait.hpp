@@ -7,17 +7,13 @@
 
 namespace advss {
 
-enum class WaitType {
-	FIXED,
-	RANDOM,
-};
-
 class MacroActionWait : public MacroAction {
 public:
 	MacroActionWait(Macro *m) : MacroAction(m) {}
 	bool PerformAction();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
+	std::string GetShortDesc() const;
 	std::string GetId() const { return id; };
 	static std::shared_ptr<MacroAction> Create(Macro *m)
 	{
@@ -25,7 +21,12 @@ public:
 	}
 	Duration _duration;
 	Duration _duration2;
-	WaitType _waitType = WaitType::FIXED;
+
+	enum class Type {
+		FIXED,
+		RANDOM,
+	};
+	Type _waitType = Type::FIXED;
 
 private:
 	static bool _registered;
@@ -55,14 +56,16 @@ private slots:
 	void Duration2Changed(const Duration &value);
 	void TypeChanged(int value);
 
-protected:
+signals:
+	void HeaderInfoChanged(const QString &);
+
+private:
 	DurationSelection *_duration;
 	DurationSelection *_duration2;
 	QComboBox *_waitType;
-	std::shared_ptr<MacroActionWait> _entryData;
-
-private:
 	QHBoxLayout *_mainLayout;
+
+	std::shared_ptr<MacroActionWait> _entryData;
 	bool _loading = true;
 };
 

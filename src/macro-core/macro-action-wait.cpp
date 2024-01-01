@@ -15,9 +15,11 @@ bool MacroActionWait::_registered = MacroActionFactory::Register(
 	{MacroActionWait::Create, MacroActionWaitEdit::Create,
 	 "AdvSceneSwitcher.action.wait"});
 
-const static std::map<WaitType, std::string> waitTypes = {
-	{WaitType::FIXED, "AdvSceneSwitcher.action.wait.type.fixed"},
-	{WaitType::RANDOM, "AdvSceneSwitcher.action.wait.type.random"},
+static const std::map<MacroActionWait::Type, std::string> waitTypes = {
+	{MacroActionWait::Type::FIXED,
+	 "AdvSceneSwitcher.action.wait.type.fixed"},
+	{MacroActionWait::Type::RANDOM,
+	 "AdvSceneSwitcher.action.wait.type.random"},
 };
 
 static std::random_device rd;
@@ -37,7 +39,7 @@ static void waitHelper(std::unique_lock<std::mutex> *lock, Macro *macro,
 bool MacroActionWait::PerformAction()
 {
 	double sleepDuration;
-	if (_waitType == WaitType::FIXED) {
+	if (_waitType == Type::FIXED) {
 		sleepDuration = _duration.Seconds();
 	} else {
 		double min = (_duration.Seconds() < _duration2.Seconds())
@@ -84,25 +86,33 @@ bool MacroActionWait::Load(obs_data_t *obj)
 		_duration2.SetUnit(static_cast<Duration::Unit>(
 			obs_data_get_int(obj, "displayUnit2")));
 	}
-	_waitType = static_cast<WaitType>(obs_data_get_int(obj, "waitType"));
+	_waitType = static_cast<Type>(obs_data_get_int(obj, "waitType"));
 	return true;
+}
+
+std::string MacroActionWait::GetShortDesc() const
+{
+	if (_waitType == Type::FIXED) {
+		return _duration.ToString();
+	}
+	return _duration.ToString() + " - " + _duration2.ToString();
 }
 
 static inline void populateTypeSelection(QComboBox *list)
 {
-	for (auto entry : waitTypes) {
+	for (const auto &entry : waitTypes) {
 		list->addItem(obs_module_text(entry.second.c_str()));
 	}
 }
 
 MacroActionWaitEdit::MacroActionWaitEdit(
 	QWidget *parent, std::shared_ptr<MacroActionWait> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _duration(new DurationSelection()),
+	  _duration2(new DurationSelection()),
+	  _waitType(new QComboBox()),
+	  _mainLayout(new QHBoxLayout())
 {
-	_duration = new DurationSelection();
-	_duration2 = new DurationSelection();
-	_waitType = new QComboBox();
-
 	populateTypeSelection(_waitType);
 
 	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
@@ -112,7 +122,6 @@ MacroActionWaitEdit::MacroActionWaitEdit(
 	QWidget::connect(_waitType, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TypeChanged(int)));
 
-	_mainLayout = new QHBoxLayout;
 	setLayout(_mainLayout);
 
 	_entryData = entryData;
@@ -126,7 +135,7 @@ void MacroActionWaitEdit::UpdateEntryData()
 		return;
 	}
 
-	if (_entryData->_waitType == WaitType::FIXED) {
+	if (_entryData->_waitType == MacroActionWait::Type::FIXED) {
 		SetupFixedDurationEdit();
 	} else {
 		SetupRandomDurationEdit();
@@ -177,15 +186,17 @@ void MacroActionWaitEdit::TypeChanged(int value)
 	}
 
 	auto lock = LockContext();
-	WaitType type = static_cast<WaitType>(value);
+	auto type = static_cast<MacroActionWait::Type>(value);
 
-	if (type == WaitType::FIXED) {
+	if (type == MacroActionWait::Type::FIXED) {
 		SetupFixedDurationEdit();
 	} else {
 		SetupRandomDurationEdit();
 	}
 
 	_entryData->_waitType = type;
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroActionWaitEdit::DurationChanged(const Duration &dur)
@@ -196,6 +207,8 @@ void MacroActionWaitEdit::DurationChanged(const Duration &dur)
 
 	auto lock = LockContext();
 	_entryData->_duration = dur;
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroActionWaitEdit::Duration2Changed(const Duration &dur)
@@ -206,6 +219,8 @@ void MacroActionWaitEdit::Duration2Changed(const Duration &dur)
 
 	auto lock = LockContext();
 	_entryData->_duration2 = dur;
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 } // namespace advss
