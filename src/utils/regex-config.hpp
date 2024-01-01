@@ -29,6 +29,9 @@ public:
 	};
 	QRegularExpression GetRegularExpression(const QString &) const;
 	QRegularExpression GetRegularExpression(const std::string &) const;
+	bool Matches(const QString &text, const QString &expression) const;
+	bool Matches(const std::string &text,
+		     const std::string &expression) const;
 
 	static RegexConfig PartialMatchRegexConfig();
 

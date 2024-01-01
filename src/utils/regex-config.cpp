@@ -51,6 +51,23 @@ RegexConfig::GetRegularExpression(const std::string &expr) const
 	return GetRegularExpression(QString::fromStdString(expr));
 }
 
+bool RegexConfig::Matches(const QString &text, const QString &expression) const
+{
+	auto regex = GetRegularExpression(expression);
+	if (!regex.isValid()) {
+		return false;
+	}
+	auto match = regex.match(text);
+	return match.hasMatch();
+}
+
+bool RegexConfig::Matches(const std::string &text,
+			  const std::string &expression) const
+{
+	return Matches(QString::fromStdString(text),
+		       QString::fromStdString(expression));
+}
+
 RegexConfig RegexConfig::PartialMatchRegexConfig()
 {
 	RegexConfig conf;
