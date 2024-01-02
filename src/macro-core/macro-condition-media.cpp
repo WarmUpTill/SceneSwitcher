@@ -51,21 +51,20 @@ static std::map<MacroConditionMedia::State, std::string> mediaStates = {
 
 MacroConditionMedia::~MacroConditionMedia()
 {
-	obs_source_t *mediasource =
+	OBSSourceAutoRelease mediasource =
 		obs_weak_source_get_source(_source.GetSource());
 	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
 	signal_handler_disconnect(sh, "media_stopped", MediaStopped, this);
 	signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
 	signal_handler_disconnect(sh, "media_next", MediaNext, this);
-	obs_source_release(mediasource);
 }
 
 bool MacroConditionMedia::CheckTime()
 {
-	obs_source_t *s = obs_weak_source_get_source(_source.GetSource());
+	OBSSourceAutoRelease s =
+		obs_weak_source_get_source(_source.GetSource());
 	auto duration = obs_source_media_get_duration(s);
 	auto currentTime = obs_source_media_get_time(s);
-	obs_source_release(s);
 
 	bool match = false;
 
@@ -96,9 +95,9 @@ bool MacroConditionMedia::CheckTime()
 
 bool MacroConditionMedia::CheckState()
 {
-	obs_source_t *s = obs_weak_source_get_source(_source.GetSource());
+	OBSSourceAutoRelease s =
+		obs_weak_source_get_source(_source.GetSource());
 	obs_media_state currentState = obs_source_media_get_state(s);
-	obs_source_release(s);
 
 	bool match = false;
 	// To be able to compare to obs_media_state more easily
@@ -224,9 +223,9 @@ static bool enumSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 
 	if (sourceId.compare("ffmpeg_source") == 0 ||
 	    sourceId.compare("vlc_source") == 0) {
-		auto ws = obs_source_get_weak_source(source);
-		obs_weak_source_release(ws);
-		sources->emplace_back(ws);
+		OBSWeakSourceAutoRelease weak =
+			obs_source_get_weak_source(source);
+		sources->emplace_back(weak);
 	}
 	return true;
 }
@@ -238,10 +237,10 @@ void MacroConditionMedia::UpdateMediaSourcesOfSceneList()
 		return;
 	}
 	std::vector<OBSWeakSource> mediaSources;
-	auto s = obs_weak_source_get_source(_scene.GetScene(false));
+	OBSSourceAutoRelease s =
+		obs_weak_source_get_source(_scene.GetScene(false));
 	auto scene = obs_scene_from_source(s);
 	obs_scene_enum_items(scene, enumSceneItem, &mediaSources);
-	obs_source_release(s);
 	_sourceGroup.reserve(mediaSources.size());
 
 	for (auto &source : mediaSources) {
@@ -265,14 +264,13 @@ bool MacroConditionMedia::Load(obs_data_t *obj)
 	_time.Load(obj);
 
 	if (_sourceType == Type::SOURCE) {
-		obs_source_t *mediasource =
+		OBSSourceAutoRelease mediasource =
 			obs_weak_source_get_source(_source.GetSource());
 		signal_handler_t *sh =
 			obs_source_get_signal_handler(mediasource);
 		signal_handler_connect(sh, "media_stopped", MediaStopped, this);
 		signal_handler_connect(sh, "media_ended", MediaEnded, this);
 		signal_handler_connect(sh, "media_next", MediaNext, this);
-		obs_source_release(mediasource);
 	}
 
 	UpdateMediaSourcesOfSceneList();
@@ -312,18 +310,17 @@ std::string MacroConditionMedia::GetShortDesc() const
 
 void MacroConditionMedia::ClearSignalHandler()
 {
-	obs_source_t *mediasource =
+	OBSSourceAutoRelease mediasource =
 		obs_weak_source_get_source(_source.GetSource());
 	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
 	signal_handler_disconnect(sh, "media_stopped", MediaStopped, this);
 	signal_handler_disconnect(sh, "media_ended", MediaEnded, this);
 	signal_handler_disconnect(sh, "media_next", MediaNext, this);
-	obs_source_release(mediasource);
 }
 
 void MacroConditionMedia::ResetSignalHandler()
 {
-	obs_source_t *mediasource =
+	OBSSourceAutoRelease mediasource =
 		obs_weak_source_get_source(_source.GetSource());
 	signal_handler_t *sh = obs_source_get_signal_handler(mediasource);
 	signal_handler_disconnect(sh, "media_stopped", MediaStopped, this);
@@ -332,7 +329,6 @@ void MacroConditionMedia::ResetSignalHandler()
 	signal_handler_connect(sh, "media_stopped", MediaStopped, this);
 	signal_handler_connect(sh, "media_ended", MediaEnded, this);
 	signal_handler_connect(sh, "media_next", MediaNext, this);
-	obs_source_release(mediasource);
 }
 
 void MacroConditionMedia::MediaStopped(void *data, calldata_t *)
