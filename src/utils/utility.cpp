@@ -907,14 +907,18 @@ void populateVideoSelection(QComboBox *sel, bool addMainOutput, bool addScenes,
 	sel->setCurrentIndex(0);
 }
 
+bool IsMediaSource(obs_source_t *source)
+{
+	uint32_t flags = obs_source_get_output_flags(source);
+	return (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) != 0;
+}
+
 QStringList GetMediaSourceNames()
 {
 	auto sourceEnum = [](void *param, obs_source_t *source) -> bool /* -- */
 	{
 		QStringList *list = reinterpret_cast<QStringList *>(param);
-		uint32_t flags = obs_source_get_output_flags(source);
-
-		if ((flags & OBS_SOURCE_CONTROLLABLE_MEDIA) != 0) {
+		if (IsMediaSource(source)) {
 			*list << obs_source_get_name(source);
 		}
 		return true;

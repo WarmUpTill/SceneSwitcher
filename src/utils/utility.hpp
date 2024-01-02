@@ -47,6 +47,8 @@ std::string GetSceneItemTransform(obs_scene_item *item);
 
 /* Selection helpers */
 
+bool IsMediaSource(obs_source_t *source);
+
 QStringList GetAudioSourceNames();
 QStringList GetSourcesWithFilterNames();
 QStringList GetMediaSourceNames();
