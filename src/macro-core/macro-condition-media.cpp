@@ -219,10 +219,7 @@ static bool enumSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 	}
 
 	auto source = obs_sceneitem_get_source(item);
-	std::string sourceId = obs_source_get_id(source);
-
-	if (sourceId.compare("ffmpeg_source") == 0 ||
-	    sourceId.compare("vlc_source") == 0) {
+	if (IsMediaSource(source)) {
 		OBSWeakSourceAutoRelease weak =
 			obs_source_get_weak_source(source);
 		sources->emplace_back(weak);
