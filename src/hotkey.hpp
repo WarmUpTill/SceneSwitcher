@@ -160,7 +160,9 @@ enum class HotkeyType {
 	Key_NumpadMultiply,
 	Key_NumpadDivide,
 	Key_NumpadDecimal,
-	Key_NumpadEnter
+	Key_NumpadEnter,
+
+	Key_Tilde,
 };
 
 } // namespace advss
