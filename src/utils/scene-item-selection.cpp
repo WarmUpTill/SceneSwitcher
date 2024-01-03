@@ -635,6 +635,8 @@ void SceneItemSelectionWidget::SetSceneItem(const SceneItemSelection &item)
 	_pattern->setText(item._pattern);
 	_regex->SetRegexConfig(item._regex);
 
+	_currentSelection = item;
+
 	SetNameConflictVisibility();
 
 	switch (item._nameConflictSelectionType) {
@@ -651,7 +653,6 @@ void SceneItemSelectionWidget::SetSceneItem(const SceneItemSelection &item)
 		_nameConflictIndex->setCurrentIndex(idx);
 		break;
 	}
-	_currentSelection = item;
 
 	SetWidgetVisibility();
 }
