@@ -17,6 +17,7 @@ PreviewDialog::PreviewDialog(QWidget *parent)
 	setWindowFlags(windowFlags() | Qt::WindowMaximizeButtonHint |
 		       Qt::WindowCloseButtonHint);
 
+	_valueLabel = new QLabel("");
 	_statusLabel = new QLabel(obs_module_text(
 		"AdvSceneSwitcher.condition.video.showMatch.loading"));
 	resize(parent->window()->size());
@@ -37,6 +38,7 @@ PreviewDialog::PreviewDialog(QWidget *parent)
 	_scrollArea->setWidget(wrapper);
 	_scrollArea->setWidgetResizable(true);
 	QVBoxLayout *layout = new QVBoxLayout;
+	layout->addWidget(_valueLabel);
 	layout->addWidget(_statusLabel);
 	layout->addWidget(_scrollArea);
 	setLayout(layout);
@@ -93,13 +95,17 @@ void PreviewDialog::ShowMatch()
 {
 	_type = PreviewType::SHOW_MATCH;
 	_rubberBand->hide();
+	_valueLabel->show();
 	Start();
+	_statusLabel->setText("");
 }
 
 void PreviewDialog::SelectArea()
 {
 	_selectingArea = false;
 	_type = PreviewType::SELECT_AREA;
+	_rubberBand->show();
+	_valueLabel->hide();
 	Start();
 	DrawFrame();
 	_statusLabel->setText(obs_module_text(
@@ -158,6 +164,14 @@ void PreviewDialog::ConditionChanged(int cond)
 	_condition = static_cast<VideoCondition>(cond);
 }
 
+void PreviewDialog::UpdateValue(double matchValue)
+{
+	std::string temp = obs_module_text(
+		"AdvSceneSwitcher.condition.video.patternMatchValue");
+	temp += "%.3f";
+	_valueLabel->setText(QString::asprintf(temp.c_str(), matchValue));
+}
+
 void PreviewDialog::UpdateStatus(const QString &status)
 {
 	_statusLabel->setText(status);
@@ -194,6 +208,8 @@ void PreviewDialog::Start()
 		&PreviewDialog::UpdateImage);
 	connect(worker, &PreviewImage::StatusUpdate, this,
 		&PreviewDialog::UpdateStatus);
+	connect(worker, &PreviewImage::ValueUpdate, this,
+		&PreviewDialog::UpdateValue);
 	connect(this, &PreviewDialog::NeedImage, worker,
 		&PreviewImage::CreateImage);
 	_thread.start();
@@ -285,7 +301,8 @@ void PreviewImage::CreateImage(const VideoInput &video, PreviewType type,
 			  patternImageData, objDetectParams, ocrParams,
 			  condition);
 	} else {
-		emit StatusUpdate("");
+		emit StatusUpdate(obs_module_text(
+			"AdvSceneSwitcher.condition.video.selectArea.status"));
 	}
 	emit ImageReady(QPixmap::fromImage(screenshot.image));
 }
@@ -299,10 +316,13 @@ void PreviewImage::MarkMatch(QImage &screenshot,
 {
 	if (condition == VideoCondition::PATTERN) {
 		cv::Mat result;
+		double matchValue =
+			std::numeric_limits<double>::signaling_NaN();
 		MatchPattern(screenshot, patternImageData,
-			     patternMatchParams.threshold, result,
+			     patternMatchParams.threshold, result, &matchValue,
 			     patternMatchParams.useAlphaAsMask,
 			     patternMatchParams.matchMode);
+		emit ValueUpdate(matchValue);
 		if (result.total() == 0 || countNonZero(result) == 0) {
 			emit StatusUpdate(obs_module_text(
 				"AdvSceneSwitcher.condition.video.patternMatchFail"));

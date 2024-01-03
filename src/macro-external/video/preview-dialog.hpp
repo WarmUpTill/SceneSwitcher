@@ -30,6 +30,7 @@ public slots:
 			 OCRParameters, const AreaParameters &, VideoCondition);
 signals:
 	void ImageReady(const QPixmap &);
+	void ValueUpdate(double);
 	void StatusUpdate(const QString &);
 
 private:
@@ -60,6 +61,7 @@ public slots:
 	void ConditionChanged(int cond);
 private slots:
 	void UpdateImage(const QPixmap &);
+	void UpdateValue(double);
 	void UpdateStatus(const QString &);
 signals:
 	void SelectionAreaChanged(QRect area);
@@ -85,6 +87,7 @@ private:
 
 	VideoCondition _condition = VideoCondition::PATTERN;
 	QScrollArea *_scrollArea;
+	QLabel *_valueLabel;
 	QLabel *_statusLabel;
 	QLabel *_imageLabel;
 

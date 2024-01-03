@@ -278,7 +278,7 @@ bool MacroConditionVideo::ScreenshotContainsPattern()
 {
 	cv::Mat result;
 	MatchPattern(_screenshotData.image, _patternImageData,
-		     _patternMatchParameters.threshold, result,
+		     _patternMatchParameters.threshold, result, nullptr,
 		     _patternMatchParameters.useAlphaAsMask,
 		     _patternMatchParameters.matchMode);
 	if (result.total() == 0) {
@@ -299,7 +299,7 @@ bool MacroConditionVideo::OutputChanged()
 	cv::Mat result;
 	_patternImageData = CreatePatternData(_matchImage);
 	MatchPattern(_screenshotData.image, _patternImageData,
-		     _patternMatchParameters.threshold, result,
+		     _patternMatchParameters.threshold, result, nullptr,
 		     _patternMatchParameters.useAlphaAsMask,
 		     _patternMatchParameters.matchMode);
 	if (result.total() == 0) {

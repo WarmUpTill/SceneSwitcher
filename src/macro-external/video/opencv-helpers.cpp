@@ -32,8 +32,8 @@ static void invertPatternMatchResult(cv::Mat &mat)
 }
 
 void MatchPattern(QImage &img, const PatternImageData &patternData,
-		  double threshold, cv::Mat &result, bool useAlphaAsMask,
-		  cv::TemplateMatchModes matchMode)
+		  double threshold, cv::Mat &result, double *pBestFitValue,
+		  bool useAlphaAsMask, cv::TemplateMatchModes matchMode)
 {
 	if (img.isNull() || patternData.rgbaPattern.empty()) {
 		return;
@@ -72,15 +72,21 @@ void MatchPattern(QImage &img, const PatternImageData &patternData,
 	if (matchMode == cv::TM_SQDIFF_NORMED) {
 		invertPatternMatchResult(result);
 	}
+
+	if (pBestFitValue) {
+		cv::minMaxLoc(result, nullptr, pBestFitValue);
+	}
+
 	cv::threshold(result, result, threshold, 0.0, cv::THRESH_TOZERO);
 }
 
 void MatchPattern(QImage &img, QImage &pattern, double threshold,
-		  cv::Mat &result, bool useAlphaAsMask,
+		  cv::Mat &result, double *pBestFitValue, bool useAlphaAsMask,
 		  cv::TemplateMatchModes matchColor)
 {
 	auto data = CreatePatternData(pattern);
-	MatchPattern(img, data, threshold, result, useAlphaAsMask, matchColor);
+	MatchPattern(img, data, threshold, result, pBestFitValue,
+		     useAlphaAsMask, matchColor);
 }
 
 std::vector<cv::Rect> MatchObject(QImage &img, cv::CascadeClassifier &cascade,
