@@ -237,8 +237,8 @@ static void markPatterns(cv::Mat &matchResult, QImage &image,
 			 const cv::Mat &pattern)
 {
 	auto matchImg = QImageToMat(image);
-	for (int row = 0; row < matchResult.rows - 1; row++) {
-		for (int col = 0; col < matchResult.cols - 1; col++) {
+	for (int row = 0; row < matchResult.rows; row++) {
+		for (int col = 0; col < matchResult.cols; col++) {
 			if (matchResult.at<float>(row, col) != 0.0) {
 				rectangle(matchImg, {col, row},
 					  cv::Point(col + pattern.cols,
