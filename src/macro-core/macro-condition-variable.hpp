@@ -78,7 +78,7 @@ private slots:
 	void ConditionChanged(int);
 	void StrValueChanged();
 	void NumValueChanged(double);
-	void RegexChanged(RegexConfig);
+	void RegexChanged(const RegexConfig &);
 
 signals:
 	void HeaderInfoChanged(const QString &);

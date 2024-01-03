@@ -201,8 +201,9 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 	QWidget::connect(_windowSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(WindowChanged(const QString &)));
-	QWidget::connect(_windowRegex, SIGNAL(RegexConfigChanged(RegexConfig)),
-			 this, SLOT(WindowRegexChanged(RegexConfig)));
+	QWidget::connect(_windowRegex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(WindowRegexChanged(const RegexConfig &)));
 	QWidget::connect(_checkTitle, SIGNAL(stateChanged(int)), this,
 			 SLOT(CheckTitleChanged(int)));
 	QWidget::connect(_fullscreen, SIGNAL(stateChanged(int)), this,
@@ -217,8 +218,9 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 			 SLOT(CheckTextChanged(int)));
 	QWidget::connect(_text, SIGNAL(textChanged()), this,
 			 SLOT(WindowTextChanged()));
-	QWidget::connect(_textRegex, SIGNAL(RegexConfigChanged(RegexConfig)),
-			 this, SLOT(TextRegexChanged(RegexConfig)));
+	QWidget::connect(_textRegex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(TextRegexChanged(const RegexConfig &)));
 	QWidget::connect(&_timer, SIGNAL(timeout()), this,
 			 SLOT(UpdateFocusWindow()));
 
@@ -312,7 +314,7 @@ void MacroConditionWindowEdit::WindowChanged(const QString &text)
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-void MacroConditionWindowEdit::WindowRegexChanged(RegexConfig conf)
+void MacroConditionWindowEdit::WindowRegexChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -366,7 +368,7 @@ void MacroConditionWindowEdit::WindowTextChanged()
 	updateGeometry();
 }
 
-void MacroConditionWindowEdit::TextRegexChanged(RegexConfig conf)
+void MacroConditionWindowEdit::TextRegexChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;

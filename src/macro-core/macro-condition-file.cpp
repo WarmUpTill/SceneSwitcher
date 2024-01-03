@@ -239,8 +239,9 @@ MacroConditionFileEdit::MacroConditionFileEdit(
 			 SLOT(PathChanged(const QString &)));
 	QWidget::connect(_matchText, SIGNAL(textChanged()), this,
 			 SLOT(MatchTextChanged()));
-	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
-			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
 	QWidget::connect(_checkModificationDate, SIGNAL(stateChanged(int)),
 			 this, SLOT(CheckModificationDateChanged(int)));
 	QWidget::connect(_checkFileContent, SIGNAL(stateChanged(int)), this,
@@ -366,7 +367,7 @@ void MacroConditionFileEdit::MatchTextChanged()
 	updateGeometry();
 }
 
-void MacroConditionFileEdit::RegexChanged(RegexConfig conf)
+void MacroConditionFileEdit::RegexChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;

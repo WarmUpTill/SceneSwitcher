@@ -49,7 +49,7 @@ public:
 
 private slots:
 	void ProcessChanged(const QString &text);
-	void RegexChanged(RegexConfig);
+	void RegexChanged(const RegexConfig &);
 	void FocusChanged(int state);
 	void UpdateFocusProcess();
 signals:

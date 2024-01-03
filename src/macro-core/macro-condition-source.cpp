@@ -151,8 +151,9 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 			 SLOT(GetSettingsClicked()));
 	QWidget::connect(_settings, SIGNAL(textChanged()), this,
 			 SLOT(SettingsChanged()));
-	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
-			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
 	QWidget::connect(_settingSelection,
 			 SIGNAL(SelectionChanged(const SourceSetting &)), this,
 			 SLOT(SettingSelectionChanged(const SourceSetting &)));
@@ -253,7 +254,7 @@ void MacroConditionSourceEdit::SettingsChanged()
 	updateGeometry();
 }
 
-void MacroConditionSourceEdit::RegexChanged(RegexConfig conf)
+void MacroConditionSourceEdit::RegexChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;

@@ -56,7 +56,7 @@ public:
 private slots:
 	void ConditionChanged(int);
 	void MessageChanged();
-	void RegexChanged(RegexConfig);
+	void RegexChanged(const RegexConfig &);
 	void ConnectionSelectionChanged(const QString &);
 signals:
 	void HeaderInfoChanged(const QString &);

@@ -101,8 +101,9 @@ MacroConditionDisplayEdit::MacroConditionDisplayEdit(
 			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_displays, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(DisplayNameChanged(const QString &)));
-	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
-			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
 	QWidget::connect(
 		_displayCount,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
@@ -147,7 +148,7 @@ void MacroConditionDisplayEdit::DisplayNameChanged(const QString &display)
 	_entryData->_displayName = display.toStdString();
 }
 
-void MacroConditionDisplayEdit::RegexChanged(RegexConfig conf)
+void MacroConditionDisplayEdit::RegexChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;

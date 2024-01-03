@@ -166,8 +166,9 @@ MacroConditionSceneTransformEdit::MacroConditionSceneTransformEdit(
 			 SLOT(GetSettingsClicked()));
 	QWidget::connect(_settings, SIGNAL(textChanged()), this,
 			 SLOT(SettingsChanged()));
-	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
-			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", _scenes},
@@ -288,7 +289,7 @@ void MacroConditionSceneTransformEdit::SettingsChanged()
 	updateGeometry();
 }
 
-void MacroConditionSceneTransformEdit::RegexChanged(RegexConfig conf)
+void MacroConditionSceneTransformEdit::RegexChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;

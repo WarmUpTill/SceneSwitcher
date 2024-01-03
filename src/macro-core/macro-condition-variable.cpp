@@ -195,8 +195,9 @@ MacroConditionVariableEdit::MacroConditionVariableEdit(
 			 SLOT(StrValueChanged()));
 	QWidget::connect(_numValue, SIGNAL(valueChanged(double)), this,
 			 SLOT(NumValueChanged(double)));
-	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
-			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -288,7 +289,7 @@ void MacroConditionVariableEdit::NumValueChanged(double val)
 	_entryData->_numValue = val;
 }
 
-void MacroConditionVariableEdit::RegexChanged(RegexConfig conf)
+void MacroConditionVariableEdit::RegexChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;
