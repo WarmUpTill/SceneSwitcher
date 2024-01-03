@@ -54,7 +54,7 @@ public slots:
 	void EnableChanged(bool);
 	void OpenSettingsClicked();
 signals:
-	void RegexConfigChanged(RegexConfig);
+	void RegexConfigChanged(const RegexConfig &);
 
 private:
 	void SetVisibility();

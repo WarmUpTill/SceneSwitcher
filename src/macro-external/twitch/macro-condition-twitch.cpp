@@ -1225,12 +1225,14 @@ MacroConditionTwitchEdit::MacroConditionTwitchEdit(
 		SLOT(PointsRewardChanged(const TwitchPointsReward &)));
 	QWidget::connect(_streamTitle, SIGNAL(editingFinished()), this,
 			 SLOT(StreamTitleChanged()));
-	QWidget::connect(_regexTitle, SIGNAL(RegexConfigChanged(RegexConfig)),
-			 this, SLOT(RegexTitleChanged(RegexConfig)));
+	QWidget::connect(_regexTitle,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexTitleChanged(const RegexConfig &)));
 	QWidget::connect(_chatMessage, SIGNAL(textChanged()), this,
 			 SLOT(ChatMessageChanged()));
-	QWidget::connect(_regexChat, SIGNAL(RegexConfigChanged(RegexConfig)),
-			 this, SLOT(RegexChatChanged(RegexConfig)));
+	QWidget::connect(_regexChat,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChatChanged(const RegexConfig &)));
 	QWidget::connect(_category,
 			 SIGNAL(CategoreyChanged(const TwitchCategory &)), this,
 			 SLOT(CategoreyChanged(const TwitchCategory &)));
@@ -1358,7 +1360,7 @@ void MacroConditionTwitchEdit::ChatMessageChanged()
 	_entryData->_chatMessage = _chatMessage->toPlainText().toStdString();
 }
 
-void MacroConditionTwitchEdit::RegexTitleChanged(RegexConfig conf)
+void MacroConditionTwitchEdit::RegexTitleChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -1371,7 +1373,7 @@ void MacroConditionTwitchEdit::RegexTitleChanged(RegexConfig conf)
 	updateGeometry();
 }
 
-void MacroConditionTwitchEdit::RegexChatChanged(RegexConfig conf)
+void MacroConditionTwitchEdit::RegexChatChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;

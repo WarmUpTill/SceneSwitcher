@@ -125,7 +125,7 @@ private slots:
 	void SelectColorClicked();
 	void ColorThresholdChanged(const NumberVariable<double> &);
 	void MatchTextChanged();
-	void RegexChanged(RegexConfig conf);
+	void RegexChanged(const RegexConfig &conf);
 	void PageSegModeChanged(int);
 	void LanguageChanged();
 

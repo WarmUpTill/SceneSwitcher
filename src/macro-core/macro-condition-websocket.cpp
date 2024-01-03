@@ -113,8 +113,9 @@ MacroConditionWebsocketEdit::MacroConditionWebsocketEdit(
 			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_message, SIGNAL(textChanged()), this,
 			 SLOT(MessageChanged()));
-	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
-			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
 	QWidget::connect(_connection, SIGNAL(SelectionChanged(const QString &)),
 			 this,
 			 SLOT(ConnectionSelectionChanged(const QString &)));
@@ -229,7 +230,7 @@ void MacroConditionWebsocketEdit::ConnectionSelectionChanged(
 	emit(HeaderInfoChanged(connection));
 }
 
-void MacroConditionWebsocketEdit::RegexChanged(RegexConfig conf)
+void MacroConditionWebsocketEdit::RegexChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;

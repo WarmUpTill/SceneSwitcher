@@ -99,8 +99,9 @@ MacroConditionProcessEdit::MacroConditionProcessEdit(
 	QWidget::connect(_processSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ProcessChanged(const QString &)));
-	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
-			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
 	QWidget::connect(_focused, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
 	QWidget::connect(&_timer, SIGNAL(timeout()), this,
@@ -146,7 +147,7 @@ void MacroConditionProcessEdit::ProcessChanged(const QString &text)
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-void MacroConditionProcessEdit::RegexChanged(RegexConfig conf)
+void MacroConditionProcessEdit::RegexChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;

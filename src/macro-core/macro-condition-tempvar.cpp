@@ -223,8 +223,9 @@ MacroConditionTempVarEdit::MacroConditionTempVarEdit(
 			 SLOT(StrValueChanged()));
 	QWidget::connect(_numValue, SIGNAL(valueChanged(double)), this,
 			 SLOT(NumValueChanged(double)));
-	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
-			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _tempVars},
@@ -316,7 +317,7 @@ void MacroConditionTempVarEdit::NumValueChanged(double val)
 	_entryData->_numValue = val;
 }
 
-void MacroConditionTempVarEdit::RegexChanged(RegexConfig conf)
+void MacroConditionTempVarEdit::RegexChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;

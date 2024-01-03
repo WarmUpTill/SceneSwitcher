@@ -54,7 +54,7 @@ public:
 private slots:
 	void ConditionChanged(int);
 	void DisplayNameChanged(const QString &);
-	void RegexChanged(RegexConfig conf);
+	void RegexChanged(const RegexConfig &conf);
 	void DisplayCountChanged(const NumberVariable<int> &);
 
 protected:

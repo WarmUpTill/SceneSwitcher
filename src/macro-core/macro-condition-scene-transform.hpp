@@ -65,7 +65,7 @@ private slots:
 	void TypeChanged(int type);
 	void GetSettingsClicked();
 	void SettingsChanged();
-	void RegexChanged(RegexConfig);
+	void RegexChanged(const RegexConfig &);
 signals:
 	void HeaderInfoChanged(const QString &);
 

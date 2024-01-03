@@ -156,8 +156,8 @@ private slots:
 	void PointsRewardChanged(const TwitchPointsReward &);
 	void StreamTitleChanged();
 	void ChatMessageChanged();
-	void RegexTitleChanged(RegexConfig);
-	void RegexChatChanged(RegexConfig);
+	void RegexTitleChanged(const RegexConfig &);
+	void RegexChatChanged(const RegexConfig &);
 	void CategoreyChanged(const TwitchCategory &);
 
 signals:

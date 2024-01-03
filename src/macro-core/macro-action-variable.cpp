@@ -547,8 +547,9 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 SLOT(SubStringStartChanged(int)));
 	QWidget::connect(_subStringSize, SIGNAL(valueChanged(int)), this,
 			 SLOT(SubStringSizeChanged(int)));
-	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
-			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
 	QWidget::connect(_regexPattern, SIGNAL(textChanged()), this,
 			 SLOT(RegexPatternChanged()));
 	QWidget::connect(_regexMatchIdx, SIGNAL(valueChanged(int)), this,
@@ -887,7 +888,7 @@ void MacroActionVariableEdit::SubStringSizeChanged(int val)
 	_entryData->_subStringSize = val;
 }
 
-void MacroActionVariableEdit::RegexChanged(RegexConfig conf)
+void MacroActionVariableEdit::RegexChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;

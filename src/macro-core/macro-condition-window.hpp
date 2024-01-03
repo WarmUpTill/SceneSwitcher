@@ -63,7 +63,7 @@ public:
 
 private slots:
 	void WindowChanged(const QString &text);
-	void WindowRegexChanged(RegexConfig);
+	void WindowRegexChanged(const RegexConfig &);
 	void CheckTitleChanged(int state);
 	void FullscreenChanged(int state);
 	void MaximizedChanged(int state);
@@ -71,7 +71,7 @@ private slots:
 	void WindowFocusChanged(int state);
 	void CheckTextChanged(int state);
 	void WindowTextChanged();
-	void TextRegexChanged(RegexConfig);
+	void TextRegexChanged(const RegexConfig &);
 	void UpdateFocusWindow();
 signals:
 	void HeaderInfoChanged(const QString &);

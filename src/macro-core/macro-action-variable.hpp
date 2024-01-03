@@ -120,7 +120,7 @@ private slots:
 	void MacroSegmentOrderChanged();
 	void SubStringStartChanged(int val);
 	void SubStringSizeChanged(int val);
-	void RegexChanged(RegexConfig conf);
+	void RegexChanged(const RegexConfig &conf);
 	void RegexPatternChanged();
 	void RegexMatchIdxChanged(int val);
 	void FindStrValueChanged();

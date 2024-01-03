@@ -555,8 +555,9 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 		SLOT(ColorThresholdChanged(const NumberVariable<double> &)));
 	QWidget::connect(_matchText, SIGNAL(textChanged()), this,
 			 SLOT(MatchTextChanged()));
-	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
-			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
 	QWidget::connect(_pageSegMode, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(PageSegModeChanged(int)));
 	QWidget::connect(_languageCode, SIGNAL(editingFinished()), this,
@@ -664,7 +665,7 @@ void OCREdit::MatchTextChanged()
 	_previewDialog->OCRParametersChanged(_data->_ocrParameters);
 }
 
-void OCREdit::RegexChanged(RegexConfig conf)
+void OCREdit::RegexChanged(const RegexConfig &conf)
 {
 	if (_loading || !_data) {
 		return;

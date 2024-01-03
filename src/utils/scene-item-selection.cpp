@@ -603,8 +603,9 @@ SceneItemSelectionWidget::SceneItemSelectionWidget(QWidget *parent,
 		this, SLOT(IndexEndChanged(const NumberVariable<int> &)));
 	QWidget::connect(_pattern, SIGNAL(editingFinished()), this,
 			 SLOT(PatternChanged()));
-	QWidget::connect(_regex, SIGNAL(RegexConfigChanged(RegexConfig)), this,
-			 SLOT(RegexChanged(RegexConfig)));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
 	QWidget::connect(_changeType, SIGNAL(clicked()), this,
 			 SLOT(ChangeType()));
 
@@ -808,10 +809,11 @@ void SceneItemSelectionWidget::PatternChanged()
 	emit SceneItemChanged(_currentSelection);
 }
 
-void SceneItemSelectionWidget::RegexChanged(RegexConfig regex)
+void SceneItemSelectionWidget::RegexChanged(const RegexConfig &regex)
 {
-	regex.SetEnabled(true); // No reason for it to be disabled
 	_currentSelection._regex = regex;
+	// No reason for the regex to be disabled
+	_currentSelection._regex.SetEnabled(true);
 	emit SceneItemChanged(_currentSelection);
 }
 

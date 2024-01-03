@@ -103,7 +103,7 @@ private slots:
 	void SourceChanged(int);
 	void NameConflictIndexChanged(int);
 	void PatternChanged();
-	void RegexChanged(RegexConfig);
+	void RegexChanged(const RegexConfig &);
 
 	// Source group based
 	void SourceGroupChanged(const QString &);

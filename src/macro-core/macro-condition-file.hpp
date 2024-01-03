@@ -81,7 +81,7 @@ private slots:
 	void ConditionChanged(int index);
 	void PathChanged(const QString &text);
 	void MatchTextChanged();
-	void RegexChanged(RegexConfig);
+	void RegexChanged(const RegexConfig &);
 	void CheckModificationDateChanged(int state);
 	void OnlyMatchIfChangedChanged(int state);
 signals:
