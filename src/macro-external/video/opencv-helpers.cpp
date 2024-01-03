@@ -22,11 +22,28 @@ PatternImageData CreatePatternData(const QImage &pattern)
 	return data;
 }
 
-static void invertPatternMatchResult(cv::Mat &mat)
+static void preprocessPatternMatchResult(cv::Mat &mat, bool invert)
 {
+	// Not finite values are not handled well by the cv::threshold method.
+	// These occur when the image is completely black, the denominator in all
+	// normalized algorithms approaches 0 in these cases if the alpha channel is
+	// used as mask.
+	//
+	// So we are clamping the values here to 0.0..1.0 and dismiss not-finite
+	// values.
+	// Invertion mode is for the TM_SQDIFF_NORMED method.
+	float value;
 	for (int r = 0; r < mat.rows; r++) {
 		for (int c = 0; c < mat.cols; c++) {
-			mat.at<float>(r, c) = 1.0 - mat.at<float>(r, c);
+			value = mat.at<float>(r, c);
+			if (invert) {
+				value = 1.0f - value;
+			}
+			if (!std::isfinite(value)) {
+				value = 0.0f;
+			}
+			mat.at<float>(r, c) =
+				std::fmaxf(0.0f, std::fminf(1.0f, value));
 		}
 	}
 }
@@ -35,6 +52,10 @@ void MatchPattern(QImage &img, const PatternImageData &patternData,
 		  double threshold, cv::Mat &result, double *pBestFitValue,
 		  bool useAlphaAsMask, cv::TemplateMatchModes matchMode)
 {
+	result = cv::Mat(0, 0, CV_32F);
+	if (pBestFitValue) {
+		*pBestFitValue = std::numeric_limits<double>::signaling_NaN();
+	}
 	if (img.isNull() || patternData.rgbaPattern.empty()) {
 		return;
 	}
@@ -69,9 +90,9 @@ void MatchPattern(QImage &img, const PatternImageData &patternData,
 	//
 	// For TM_CCOEFF_NORMED and TM_CCORR_NORMED a perfect match is
 	// represented as "1"
-	if (matchMode == cv::TM_SQDIFF_NORMED) {
-		invertPatternMatchResult(result);
-	}
+	//
+	// -> Invert TM_SQDIFF_NORMED in the preprocess step
+	preprocessPatternMatchResult(result, matchMode == cv::TM_SQDIFF_NORMED);
 
 	if (pBestFitValue) {
 		cv::minMaxLoc(result, nullptr, pBestFitValue);
