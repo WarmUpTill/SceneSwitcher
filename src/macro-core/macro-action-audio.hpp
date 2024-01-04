@@ -57,14 +57,14 @@ public:
 	bool _abortActiveFade = false;
 
 private:
-	void StartFade();
-	void FadeVolume();
-	void SetVolume(float vol);
-	float GetCurrentVolume();
-	void SetFadeActive(bool value);
-	bool FadeActive();
-	std::atomic_int *GetFadeIdPtr();
-	float GetVolume();
+	void StartFade() const;
+	void FadeVolume() const;
+	void SetVolume(float vol) const;
+	float GetCurrentVolume() const;
+	void SetFadeActive(bool value) const;
+	bool FadeActive() const;
+	std::atomic_int *GetFadeIdPtr() const;
+	float GetVolume() const;
 
 	static bool _registered;
 	static const std::string id;

@@ -14,7 +14,7 @@ bool MacroActionAudio::_registered = MacroActionFactory::Register(
 	{MacroActionAudio::Create, MacroActionAudioEdit::Create,
 	 "AdvSceneSwitcher.action.audio"});
 
-const static std::map<MacroActionAudio::Action, std::string> actionTypes = {
+static const std::map<MacroActionAudio::Action, std::string> actionTypes = {
 	{MacroActionAudio::Action::MUTE,
 	 "AdvSceneSwitcher.action.audio.type.mute"},
 	{MacroActionAudio::Action::UNMUTE,
@@ -31,7 +31,7 @@ const static std::map<MacroActionAudio::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.audio.type.balance"},
 };
 
-const static std::map<MacroActionAudio::FadeType, std::string> fadeTypes = {
+static const std::map<MacroActionAudio::FadeType, std::string> fadeTypes = {
 	{MacroActionAudio::FadeType::DURATION,
 	 "AdvSceneSwitcher.action.audio.fade.type.duration"},
 	{MacroActionAudio::FadeType::RATE,
@@ -72,7 +72,7 @@ auto get_master_volume = obs_get_master_volume;
 auto set_master_volume = obs_set_master_volume;
 #endif
 
-void MacroActionAudio::SetFadeActive(bool value)
+void MacroActionAudio::SetFadeActive(bool value) const
 {
 	if (_action == Action::SOURCE_VOLUME) {
 		audioFades[_audioSource.ToString()].active = value;
@@ -81,7 +81,7 @@ void MacroActionAudio::SetFadeActive(bool value)
 	}
 }
 
-bool MacroActionAudio::FadeActive()
+bool MacroActionAudio::FadeActive() const
 {
 	bool active = true;
 	if (_action == Action::SOURCE_VOLUME) {
@@ -97,7 +97,7 @@ bool MacroActionAudio::FadeActive()
 	return active;
 }
 
-std::atomic_int *MacroActionAudio::GetFadeIdPtr()
+std::atomic_int *MacroActionAudio::GetFadeIdPtr() const
 {
 
 	if (_action == Action::SOURCE_VOLUME) {
@@ -110,12 +110,12 @@ std::atomic_int *MacroActionAudio::GetFadeIdPtr()
 	return &masterAudioFade.id;
 }
 
-float MacroActionAudio::GetVolume()
+float MacroActionAudio::GetVolume() const
 {
 	return _useDb ? decibelToPercent(_volumeDB) : (float)_volume / 100.0f;
 }
 
-void MacroActionAudio::SetVolume(float vol)
+void MacroActionAudio::SetVolume(float vol) const
 {
 	if (_action == Action::SOURCE_VOLUME) {
 		auto s = obs_weak_source_get_source(_audioSource.GetSource());
@@ -126,7 +126,7 @@ void MacroActionAudio::SetVolume(float vol)
 	}
 }
 
-float MacroActionAudio::GetCurrentVolume()
+float MacroActionAudio::GetCurrentVolume() const
 {
 	float curVol;
 	if (_action == Action::SOURCE_VOLUME) {
@@ -142,7 +142,7 @@ float MacroActionAudio::GetCurrentVolume()
 	return curVol;
 }
 
-void MacroActionAudio::FadeVolume()
+void MacroActionAudio::FadeVolume() const
 {
 	float vol = GetVolume();
 	float curVol = GetCurrentVolume();
@@ -184,7 +184,7 @@ void MacroActionAudio::FadeVolume()
 	SetFadeActive(false);
 }
 
-void MacroActionAudio::StartFade()
+void MacroActionAudio::StartFade() const
 {
 	if (_action == Action::SOURCE_VOLUME && !_audioSource.GetSource()) {
 		return;
