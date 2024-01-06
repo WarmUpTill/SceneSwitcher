@@ -1,6 +1,8 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "macro-list.hpp"
+#include "macro-selection.hpp"
+#include "variable-spinbox.hpp"
 
 #include <QPushButton>
 #include <QListWidget>
@@ -9,15 +11,17 @@
 
 namespace advss {
 
-class MacroActionSequence : public MultiMacroRefAction {
+class MacroActionSequence : public MultiMacroRefAction, public MacroRefAction {
 public:
-	MacroActionSequence(Macro *m) : MacroAction(m), MultiMacroRefAction(m)
+	MacroActionSequence(Macro *m)
+		: MacroAction(m), MultiMacroRefAction(m), MacroRefAction(m)
 	{
 	}
 	bool PerformAction();
 	void LogAction() const;
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
+	bool PostLoad() override;
 	std::string GetId() const { return id; };
 	MacroRef GetNextMacro(bool advance = true);
 	static std::shared_ptr<MacroAction> Create(Macro *m)
@@ -25,11 +29,21 @@ public:
 		return std::make_shared<MacroActionSequence>(m);
 	}
 
+	enum class Action {
+		RUN_SEQUENCE,
+		SET_INDEX,
+	};
+	Action _action = Action::RUN_SEQUENCE;
 	bool _restart = true;
+	IntVariable _resetIndex = 1;
+
 	MacroRef _lastSequenceMacro;
 	int _lastIdx = -1;
 
 private:
+	bool RunSequence();
+	bool SetSequenceIndex() const;
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -60,16 +74,24 @@ private slots:
 	void ContinueFromClicked();
 	void RestartChanged(int state);
 	void UpdateStatusLine();
-
-protected:
-	std::shared_ptr<MacroActionSequence> _entryData;
+	void ActionChanged(int);
+	void MacroChanged(const QString &text);
+	void ResetIndexChanged(const NumberVariable<int> &);
 
 private:
-	MacroList *_list;
+	void SetWidgetVisibility();
+
+	MacroList *_macroList;
 	QPushButton *_continueFrom;
 	QCheckBox *_restart;
 	QLabel *_statusLine;
+	QComboBox *_actions;
+	MacroSelection *_macros;
+	VariableSpinBox *_resetIndex;
+	QHBoxLayout *_layout;
 	QTimer _statusTimer;
+
+	std::shared_ptr<MacroActionSequence> _entryData;
 	bool _loading = true;
 };
 
