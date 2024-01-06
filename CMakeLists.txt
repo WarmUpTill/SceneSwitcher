@@ -40,11 +40,7 @@ target_sources(
   PRIVATE src/advanced-scene-switcher.cpp
           src/advanced-scene-switcher.hpp
           src/general.cpp
-          src/hotkey.cpp
-          src/hotkey.hpp
           src/platform-funcs.hpp
-          src/status-control.cpp
-          src/status-control.hpp
           src/switcher-data.cpp
           src/switcher-data.hpp
           src/version.cpp
@@ -276,6 +272,8 @@ target_sources(
           src/utils/filter-combo-box.hpp
           src/utils/filter-selection.cpp
           src/utils/filter-selection.hpp
+          src/utils/hotkey.cpp
+          src/utils/hotkey.hpp
           src/utils/macro-export-import-dialog.cpp
           src/utils/macro-export-import-dialog.hpp
           src/utils/macro-list.cpp
@@ -323,6 +321,8 @@ target_sources(
           src/utils/source-selection.hpp
           src/utils/source-setting.cpp
           src/utils/source-setting.hpp
+          src/utils/status-control.cpp
+          src/utils/status-control.hpp
           src/utils/string-list.cpp
           src/utils/string-list.hpp
           src/utils/striped-frame.cpp
