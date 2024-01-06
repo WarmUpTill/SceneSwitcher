@@ -16,9 +16,6 @@ MacroList::MacroList(QWidget *parent, bool allowDuplicates, bool reorder)
 	  _allowDuplicates(allowDuplicates),
 	  _reorder(reorder)
 {
-	_up->setVisible(reorder);
-	_down->setVisible(reorder);
-
 	_add->setMaximumWidth(22);
 	_add->setProperty("themeID",
 			  QVariant(QString::fromUtf8("addIconSmall")));
@@ -66,6 +63,10 @@ MacroList::MacroList(QWidget *parent, bool allowDuplicates, bool reorder)
 	mainLayout->addWidget(_list);
 	mainLayout->addLayout(_controlsLayout);
 	setLayout(mainLayout);
+
+	_up->setVisible(reorder);
+	_down->setVisible(reorder);
+
 	SetMacroListSize();
 }
 
