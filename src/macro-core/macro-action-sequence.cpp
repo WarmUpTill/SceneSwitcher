@@ -11,8 +11,19 @@ bool MacroActionSequence::_registered = MacroActionFactory::Register(
 	{MacroActionSequence::Create, MacroActionSequenceEdit::Create,
 	 "AdvSceneSwitcher.action.sequence"});
 
+static const std::map<MacroActionSequence::Action, std::string> actionTypes = {
+	{MacroActionSequence::Action::RUN_SEQUENCE,
+	 "AdvSceneSwitcher.action.sequence.action.run"},
+	{MacroActionSequence::Action::SET_INDEX,
+	 "AdvSceneSwitcher.action.sequence.action.setIndex"},
+};
+
 static int getNextUnpausedMacroIdx(std::vector<MacroRef> &macros, int startIdx)
 {
+	if (startIdx < 0) {
+		return -1;
+	}
+
 	for (; (int)macros.size() > startIdx; ++startIdx) {
 		auto macro = macros[startIdx].GetMacro();
 		if (!MacroIsPaused(macro.get())) {
@@ -55,7 +66,7 @@ MacroRef MacroActionSequence::GetNextMacro(bool advance)
 	return res;
 }
 
-bool MacroActionSequence::PerformAction()
+bool MacroActionSequence::RunSequence()
 {
 	if (_macros.size() == 0) {
 		return true;
@@ -69,9 +80,53 @@ bool MacroActionSequence::PerformAction()
 	return RunMacroActions(macro.get());
 }
 
+bool MacroActionSequence::SetSequenceIndex() const
+{
+	auto macro = _macro.GetMacro();
+	if (!macro) {
+		return true;
+	}
+
+	auto actions = GetMacroActions(macro.get());
+	if (!actions) {
+		return true;
+	}
+
+	for (const auto &action : *actions) {
+		if (action->GetId() != id) {
+			continue;
+		}
+
+		auto sequenceAction =
+			dynamic_cast<MacroActionSequence *>(action.get());
+		if (!sequenceAction) {
+			continue;
+		}
+		// -2 is needed since the _lastIndex starts at -1 and the reset
+		// index starts at 1
+		sequenceAction->_lastIdx = _resetIndex - 2;
+	}
+	return true;
+}
+
+bool MacroActionSequence::PerformAction()
+{
+	if (_action == Action::RUN_SEQUENCE) {
+		return RunSequence();
+	} else {
+		return SetSequenceIndex();
+	}
+	return false;
+}
+
 void MacroActionSequence::LogAction() const
 {
-	vblog(LOG_INFO, "running macro sequence");
+	if (_action == Action::RUN_SEQUENCE) {
+		vblog(LOG_INFO, "running macro sequence");
+	} else {
+		vblog(LOG_INFO, "set sequences of macro '%s' to index %d",
+		      _macro.Name().c_str(), _resetIndex.GetValue());
+	}
 }
 
 bool MacroActionSequence::Save(obs_data_t *obj) const
@@ -79,6 +134,9 @@ bool MacroActionSequence::Save(obs_data_t *obj) const
 	MacroAction::Save(obj);
 	SaveMacroList(obj, _macros);
 	obs_data_set_bool(obj, "restart", _restart);
+	_macro.Save(obj);
+	obs_data_set_int(obj, "action", static_cast<int>(_action));
+	_resetIndex.Save(obj, "resetIndex");
 	return true;
 }
 
@@ -87,31 +145,57 @@ bool MacroActionSequence::Load(obs_data_t *obj)
 	MacroAction::Load(obj);
 	LoadMacroList(obj, _macros);
 	_restart = obs_data_get_bool(obj, "restart");
+	_macro.Load(obj);
+	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
+	_resetIndex.Load(obj, "resetIndex");
 	return true;
+}
+
+bool MacroActionSequence::PostLoad()
+{
+	return MacroAction::PostLoad() && MacroRefAction::PostLoad() &&
+	       MultiMacroRefAction::PostLoad();
+}
+
+static inline void populateActionSelection(QComboBox *list)
+{
+	for (const auto &[_, name] : actionTypes) {
+		list->addItem(obs_module_text(name.c_str()));
+	}
 }
 
 MacroActionSequenceEdit::MacroActionSequenceEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSequence> entryData)
 	: QWidget(parent),
-	  _list(new MacroList(this, true, true)),
+	  _macroList(new MacroList(this, true, true)),
 	  _continueFrom(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.action.sequence.continueFrom"))),
 	  _restart(new QCheckBox(
 		  obs_module_text("AdvSceneSwitcher.action.sequence.restart"))),
-	  _statusLine(new QLabel())
+	  _statusLine(new QLabel()),
+	  _actions(new QComboBox()),
+	  _macros(new MacroSelection(this)),
+	  _resetIndex(new VariableSpinBox()),
+	  _layout(new QHBoxLayout())
 {
-	QFrame *line = new QFrame();
+	populateActionSelection(_actions);
+
+	_resetIndex->setMinimum(1);
+
+	auto line = new QFrame();
 	line->setFrameShape(QFrame::VLine);
 	line->setFrameShadow(QFrame::Sunken);
-	_list->AddControl(line);
-	_list->AddControl(_continueFrom);
+	_macroList->AddControl(line);
+	_macroList->AddControl(_continueFrom);
 
-	QWidget::connect(_list, SIGNAL(Added(const std::string &)), this,
+	QWidget::connect(_macroList, SIGNAL(Added(const std::string &)), this,
 			 SLOT(Add(const std::string &)));
-	QWidget::connect(_list, SIGNAL(Removed(int)), this, SLOT(Remove(int)));
-	QWidget::connect(_list, SIGNAL(MovedUp(int)), this, SLOT(Up(int)));
-	QWidget::connect(_list, SIGNAL(MovedDown(int)), this, SLOT(Down(int)));
-	QWidget::connect(_list, SIGNAL(Replaced(int, const std::string &)),
+	QWidget::connect(_macroList, SIGNAL(Removed(int)), this,
+			 SLOT(Remove(int)));
+	QWidget::connect(_macroList, SIGNAL(MovedUp(int)), this, SLOT(Up(int)));
+	QWidget::connect(_macroList, SIGNAL(MovedDown(int)), this,
+			 SLOT(Down(int)));
+	QWidget::connect(_macroList, SIGNAL(Replaced(int, const std::string &)),
 			 this, SLOT(Replace(int, const std::string &)));
 	QWidget::connect(_continueFrom, SIGNAL(clicked()), this,
 			 SLOT(ContinueFromClicked()));
@@ -119,27 +203,34 @@ MacroActionSequenceEdit::MacroActionSequenceEdit(
 			 SLOT(RestartChanged(int)));
 	QWidget::connect(window(), SIGNAL(MacroRemoved(const QString &)), this,
 			 SLOT(MacroRemove(const QString &)));
+	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(ActionChanged(int)));
+	QWidget::connect(_macros, SIGNAL(currentTextChanged(const QString &)),
+			 this, SLOT(MacroChanged(const QString &)));
+	QWidget::connect(
+		_resetIndex,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(ResetIndexChanged(const NumberVariable<int> &)));
 
-	auto *entryLayout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {};
-	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.sequence.entry"),
-		     entryLayout, widgetPlaceholders);
+	_layout->addWidget(_actions);
+	_layout->addWidget(_macros);
+	_layout->addWidget(_resetIndex);
 
-	auto *mainLayout = new QVBoxLayout;
-	mainLayout->addLayout(entryLayout);
-	mainLayout->addWidget(_list);
+	auto mainLayout = new QVBoxLayout;
+	mainLayout->addLayout(_layout);
+	mainLayout->addWidget(_macroList);
 	mainLayout->addWidget(_restart);
 	mainLayout->addWidget(_statusLine);
 	setLayout(mainLayout);
+
+	_entryData = entryData;
+	UpdateEntryData();
+	_loading = false;
 
 	UpdateStatusLine();
 	connect(&_statusTimer, SIGNAL(timeout()), this,
 		SLOT(UpdateStatusLine()));
 	_statusTimer.start(1000);
-
-	_entryData = entryData;
-	UpdateEntryData();
-	_loading = false;
 }
 
 void MacroActionSequenceEdit::UpdateEntryData()
@@ -148,8 +239,12 @@ void MacroActionSequenceEdit::UpdateEntryData()
 		return;
 	}
 
-	_list->SetContent(_entryData->_macros);
+	_macroList->SetContent(_entryData->_macros);
 	_restart->setChecked(_entryData->_restart);
+	_resetIndex->SetValue(_entryData->_resetIndex);
+	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_macros->SetCurrentMacro(_entryData->_macro);
+	SetWidgetVisibility();
 	adjustSize();
 }
 
@@ -228,7 +323,7 @@ void MacroActionSequenceEdit::ContinueFromClicked()
 		return;
 	}
 
-	int idx = _list->CurrentRow();
+	int idx = _macroList->CurrentRow();
 	if (idx == -1) {
 		return;
 	}
@@ -267,6 +362,71 @@ void MacroActionSequenceEdit::UpdateStatusLine()
 	QString format{
 		obs_module_text("AdvSceneSwitcher.action.sequence.status")};
 	_statusLine->setText(format.arg(lastMacroName, nextMacroName));
+}
+
+void MacroActionSequenceEdit::ActionChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_action = static_cast<MacroActionSequence::Action>(value);
+	SetWidgetVisibility();
+}
+
+void MacroActionSequenceEdit::MacroChanged(const QString &text)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_macro = text;
+}
+
+void MacroActionSequenceEdit::ResetIndexChanged(const NumberVariable<int> &value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_resetIndex = value;
+}
+
+void MacroActionSequenceEdit::SetWidgetVisibility()
+{
+	_layout->removeWidget(_actions);
+	_layout->removeWidget(_macros);
+	_layout->removeWidget(_resetIndex);
+
+	ClearLayout(_layout);
+
+	PlaceWidgets(
+		obs_module_text(
+			_entryData->_action ==
+					MacroActionSequence::Action::RUN_SEQUENCE
+				? "AdvSceneSwitcher.action.sequence.entry.run"
+				: "AdvSceneSwitcher.action.sequence.entry.setIndex"),
+		_layout,
+		{{"{{actions}}", _actions},
+		 {"{{macros}}", _macros},
+		 {"{{index}}", _resetIndex}});
+
+	_macroList->setVisible(_entryData->_action ==
+			       MacroActionSequence::Action::RUN_SEQUENCE);
+	_restart->setVisible(_entryData->_action ==
+			     MacroActionSequence::Action::RUN_SEQUENCE);
+	_statusLine->setVisible(_entryData->_action ==
+				MacroActionSequence::Action::RUN_SEQUENCE);
+	_macros->setVisible(_entryData->_action ==
+			    MacroActionSequence::Action::SET_INDEX);
+	_resetIndex->setVisible(_entryData->_action ==
+				MacroActionSequence::Action::SET_INDEX);
+
+	adjustSize();
+	updateGeometry();
 }
 
 } // namespace advss
