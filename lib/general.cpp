@@ -996,13 +996,10 @@ void AdvSceneSwitcher::SetupGeneralTab()
 
 	ui->checkInterval->setValue(switcher->interval);
 
-	DurationSelection *cooldownTime = new DurationSelection();
-	cooldownTime->SetDuration(switcher->cooldown);
-	cooldownTime->setToolTip(obs_module_text(
+	ui->cooldownTime->SetDuration(switcher->cooldown);
+	ui->cooldownTime->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.generalTab.generalBehavior.cooldownHint"));
-	ui->cooldownLayout->addWidget(cooldownTime);
-	ui->cooldownLayout->addStretch();
-	QWidget::connect(cooldownTime,
+	QWidget::connect(ui->cooldownTime,
 			 SIGNAL(DurationChanged(const Duration &)), this,
 			 SLOT(CooldownDurationChanged(const Duration &)));
 
@@ -1041,6 +1038,12 @@ void AdvSceneSwitcher::SetupGeneralTab()
 	// as otherwise it could block user input
 	statusControl->hide();
 	setupGeneralTabInactiveWarning(ui->tabWidget);
+
+	// Adjust tab order
+	setTabOrder(ui->checkInterval, statusControl->Button());
+	setTabOrder(statusControl->Button(), ui->startupBehavior);
+	setTabOrder(ui->importSettings, ui->cooldownTime);
+	setTabOrder(ui->cooldownTime, ui->noMatchDontSwitch);
 
 	MinimizeSizeOfColumn(ui->statusLayout, 0);
 	setWindowTitle(windowTitle() + " - " + g_GIT_TAG);
