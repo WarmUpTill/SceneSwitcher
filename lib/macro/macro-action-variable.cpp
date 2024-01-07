@@ -99,7 +99,7 @@ void MacroActionVariable::HandleIndexSubString(Variable *var)
 void MacroActionVariable::HandleRegexSubString(Variable *var)
 {
 	const auto curValue = var->Value();
-	auto regex = _regex.GetRegularExpression(_regexPattern);
+	auto regex = _subStringRegex.GetRegularExpression(_regexPattern);
 	if (!regex.isValid()) {
 		return;
 	}
@@ -123,8 +123,23 @@ void MacroActionVariable::HandleRegexSubString(Variable *var)
 void MacroActionVariable::HandleFindAndReplace(Variable *var)
 {
 	auto value = var->Value();
-	ReplaceAll(value, _findStr, _replaceStr);
-	var->SetValue(value);
+	if (!_findRegex.Enabled()) {
+		ReplaceAll(value, _findStr, _replaceStr);
+		var->SetValue(value);
+		return;
+	}
+	QString resultString = QString::fromStdString(value);
+	QString replacement = QString::fromStdString(_replaceStr);
+	auto regex = _findRegex.GetRegularExpression(_findStr);
+	auto matchIterator = regex.globalMatch(QString::fromStdString(value));
+	int offset = 0;
+	while (matchIterator.hasNext()) {
+		QRegularExpressionMatch match = matchIterator.next();
+		resultString.replace(match.capturedStart() + offset,
+				     match.capturedLength(), replacement);
+		offset += replacement.length() - match.capturedLength();
+	}
+	var->SetValue(resultString.toStdString());
 }
 
 void MacroActionVariable::HandleMathExpression(Variable *var)
@@ -253,7 +268,7 @@ bool MacroActionVariable::PerformAction()
 		return true;
 	}
 	case Type::SUBSTRING: {
-		if (_regex.Enabled()) {
+		if (_subStringRegex.Enabled()) {
 			HandleRegexSubString(var.get());
 			return true;
 		}
@@ -348,9 +363,10 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "subStringSize", _subStringSize);
 	obs_data_set_string(obj, "regexPattern", _regexPattern.c_str());
 	obs_data_set_int(obj, "regexMatchIdx", _regexMatchIdx);
+	_findRegex.Save(obj, "findRegex");
 	_findStr.Save(obj, "findStr");
 	_replaceStr.Save(obj, "replaceStr");
-	_regex.Save(obj);
+	_subStringRegex.Save(obj);
 	_mathExpression.Save(obj, "mathExpression");
 	obs_data_set_bool(obj, "useCustomPrompt", _useCustomPrompt);
 	_inputPrompt.Save(obj, "inputPrompt");
@@ -376,9 +392,10 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_segmentIdxLoadValue = obs_data_get_int(obj, "segmentIdx");
 	_subStringStart = obs_data_get_int(obj, "subStringStart");
 	_subStringSize = obs_data_get_int(obj, "subStringSize");
-	_regex.Load(obj);
+	_subStringRegex.Load(obj);
 	_regexPattern = obs_data_get_string(obj, "regexPattern");
 	_regexMatchIdx = obs_data_get_int(obj, "regexMatchIdx");
+	_findRegex.Load(obj, "findRegex");
 	_findStr.Load(obj, "findStr");
 	_replaceStr.Load(obj, "replaceStr");
 	_mathExpression.Load(obj, "mathExpression");
@@ -502,10 +519,11 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _subStringRegexEntryLayout(new QHBoxLayout()),
 	  _subStringStart(new QSpinBox()),
 	  _subStringSize(new QSpinBox()),
-	  _regex(new RegexConfigWidget(parent)),
+	  _substringRegex(new RegexConfigWidget(parent)),
 	  _regexPattern(new ResizingPlainTextEdit(this, 10, 1, 1)),
 	  _regexMatchIdx(new QSpinBox()),
 	  _findReplaceLayout(new QHBoxLayout()),
+	  _findRegex(new RegexConfigWidget()),
 	  _findStr(new VariableTextEdit(this, 10, 1, 1)),
 	  _replaceStr(new VariableTextEdit(this, 10, 1, 1)),
 	  _mathExpression(new VariableLineEdit(this)),
@@ -561,13 +579,16 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 SLOT(SubStringStartChanged(int)));
 	QWidget::connect(_subStringSize, SIGNAL(valueChanged(int)), this,
 			 SLOT(SubStringSizeChanged(int)));
-	QWidget::connect(_regex,
+	QWidget::connect(_substringRegex,
 			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
-			 SLOT(RegexChanged(const RegexConfig &)));
+			 SLOT(SubStringRegexChanged(const RegexConfig &)));
 	QWidget::connect(_regexPattern, SIGNAL(textChanged()), this,
 			 SLOT(RegexPatternChanged()));
 	QWidget::connect(_regexMatchIdx, SIGNAL(valueChanged(int)), this,
 			 SLOT(RegexMatchIdxChanged(int)));
+	QWidget::connect(_findRegex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(FindRegexChanged(const RegexConfig &)));
 	QWidget::connect(_findStr, SIGNAL(textChanged()), this,
 			 SLOT(FindStrValueChanged()));
 	QWidget::connect(_replaceStr, SIGNAL(textChanged()), this,
@@ -604,6 +625,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{subStringStart}}", _subStringStart},
 		{"{{subStringSize}}", _subStringSize},
 		{"{{regexMatchIdx}}", _regexMatchIdx},
+		{"{{findRegex}}", _findRegex},
 		{"{{findStr}}", _findStr},
 		{"{{replaceStr}}", _replaceStr},
 		{"{{mathExpression}}", _mathExpression},
@@ -644,7 +666,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		_placeholderLayout, widgetPlaceholders);
 
 	auto regexConfigLayout = new QHBoxLayout;
-	regexConfigLayout->addWidget(_regex);
+	regexConfigLayout->addWidget(_substringRegex);
 	regexConfigLayout->addStretch();
 
 	_substringLayout->addLayout(_subStringIndexEntryLayout);
@@ -694,7 +716,8 @@ void MacroActionVariableEdit::UpdateEntryData()
 			: MacroSegmentSelection::Type::ACTION);
 	_subStringStart->setValue(_entryData->_subStringStart + 1);
 	_subStringSize->setValue(_entryData->_subStringSize);
-	_regex->SetRegexConfig(_entryData->_regex);
+	_substringRegex->SetRegexConfig(_entryData->_subStringRegex);
+	_findRegex->SetRegexConfig(_entryData->_findRegex);
 	_regexPattern->setPlainText(
 		QString::fromStdString(_entryData->_regexPattern));
 	_regexMatchIdx->setValue(_entryData->_regexMatchIdx + 1);
@@ -903,14 +926,14 @@ void MacroActionVariableEdit::SubStringSizeChanged(int val)
 	_entryData->_subStringSize = val;
 }
 
-void MacroActionVariableEdit::RegexChanged(const RegexConfig &conf)
+void MacroActionVariableEdit::SubStringRegexChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	auto lock = LockContext();
-	_entryData->_regex = conf;
+	_entryData->_subStringRegex = conf;
 
 	SetWidgetVisibility();
 }
@@ -945,6 +968,18 @@ void MacroActionVariableEdit::FindStrValueChanged()
 
 	auto lock = LockContext();
 	_entryData->_findStr = _findStr->toPlainText().toStdString();
+	adjustSize();
+	updateGeometry();
+}
+
+void MacroActionVariableEdit::FindRegexChanged(const RegexConfig &conf)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_findRegex = conf;
 	adjustSize();
 	updateGeometry();
 }
@@ -1113,7 +1148,7 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 			 _entryData->_type ==
 				 MacroActionVariable::Type::SUBSTRING);
 	if (_entryData->_type == MacroActionVariable::Type::SUBSTRING) {
-		bool showRegex = _entryData->_regex.Enabled();
+		bool showRegex = _entryData->_subStringRegex.Enabled();
 		SetLayoutVisible(_subStringIndexEntryLayout, !showRegex);
 		SetLayoutVisible(_subStringRegexEntryLayout, showRegex);
 		_regexPattern->setVisible(showRegex);
