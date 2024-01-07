@@ -55,9 +55,10 @@ public:
 	double _numValue = 0;
 	int _subStringStart = 0;
 	int _subStringSize = 0;
-	RegexConfig _regex = RegexConfig::PartialMatchRegexConfig();
+	RegexConfig _subStringRegex = RegexConfig::PartialMatchRegexConfig();
 	std::string _regexPattern = ".*";
 	int _regexMatchIdx = 0;
+	RegexConfig _findRegex;
 	StringVariable _findStr = obs_module_text(
 		"AdvSceneSwitcher.action.variable.findAndReplace.find");
 	StringVariable _replaceStr = obs_module_text(
@@ -120,10 +121,11 @@ private slots:
 	void MacroSegmentOrderChanged();
 	void SubStringStartChanged(int val);
 	void SubStringSizeChanged(int val);
-	void RegexChanged(const RegexConfig &conf);
+	void SubStringRegexChanged(const RegexConfig &conf);
 	void RegexPatternChanged();
 	void RegexMatchIdxChanged(int val);
 	void FindStrValueChanged();
+	void FindRegexChanged(const RegexConfig &conf);
 	void ReplaceStrValueChanged();
 	void MathExpressionChanged();
 	void UseCustomPromptChanged(int);
@@ -155,10 +157,11 @@ private:
 	QHBoxLayout *_subStringRegexEntryLayout;
 	QSpinBox *_subStringStart;
 	QSpinBox *_subStringSize;
-	RegexConfigWidget *_regex;
+	RegexConfigWidget *_substringRegex;
 	ResizingPlainTextEdit *_regexPattern;
 	QSpinBox *_regexMatchIdx;
 	QHBoxLayout *_findReplaceLayout;
+	RegexConfigWidget *_findRegex;
 	VariableTextEdit *_findStr;
 	VariableTextEdit *_replaceStr;
 	VariableLineEdit *_mathExpression;
