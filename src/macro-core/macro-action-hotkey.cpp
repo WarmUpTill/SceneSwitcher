@@ -14,14 +14,14 @@ bool MacroActionHotkey::_registered = MacroActionFactory::Register(
 	{MacroActionHotkey::Create, MacroActionHotkeyEdit::Create,
 	 "AdvSceneSwitcher.action.hotkey"});
 
-const static std::map<MacroActionHotkey::Action, std::string> actionTypes = {
+static const std::map<MacroActionHotkey::Action, std::string> actionTypes = {
 	{MacroActionHotkey::Action::OBS_HOTKEY,
 	 "AdvSceneSwitcher.action.hotkey.type.obs"},
 	{MacroActionHotkey::Action::CUSTOM,
 	 "AdvSceneSwitcher.action.hotkey.type.custom"},
 };
 
-const static std::map<obs_hotkey_registerer_type, std::string> hotkeyTypes = {
+static const std::map<obs_hotkey_registerer_type, std::string> hotkeyTypes = {
 	{OBS_HOTKEY_REGISTERER_FRONTEND,
 	 "AdvSceneSwitcher.action.hotkey.type.obs.type.frontend"},
 	{OBS_HOTKEY_REGISTERER_SOURCE,
@@ -34,7 +34,7 @@ const static std::map<obs_hotkey_registerer_type, std::string> hotkeyTypes = {
 	 "AdvSceneSwitcher.action.hotkey.type.obs.type.service"},
 };
 
-static std::unordered_map<HotkeyType, long> keyTable = {
+static const std::unordered_map<HotkeyType, long> keyTable = {
 	// Chars
 	{HotkeyType::Key_A, OBS_KEY_A},
 	{HotkeyType::Key_B, OBS_KEY_B},
@@ -74,6 +74,9 @@ static std::unordered_map<HotkeyType, long> keyTable = {
 	{HotkeyType::Key_7, OBS_KEY_7},
 	{HotkeyType::Key_8, OBS_KEY_8},
 	{HotkeyType::Key_9, OBS_KEY_9},
+
+	// Other
+	{HotkeyType::Key_Tilde, OBS_KEY_ASCIITILDE},
 
 	{HotkeyType::Key_F1, OBS_KEY_F1},
 	{HotkeyType::Key_F2, OBS_KEY_F2},
@@ -525,6 +528,7 @@ static inline void populateKeySelection(QComboBox *list)
 	list->addItem("NumpadDivide");
 	list->addItem("NumpadDecimal");
 	list->addItem("NumpadEnter");
+	list->addItem("Tilde");
 }
 
 static void populateActionSelection(QComboBox *list)

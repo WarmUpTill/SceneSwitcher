@@ -383,6 +383,9 @@ static std::map<HotkeyType, CGKeyCode> keyTable = {
 	{HotkeyType::Key_8, kVK_ANSI_8},
 	{HotkeyType::Key_9, kVK_ANSI_9},
 
+	// Other
+	// Not sure which key to use for tilde
+
 	{HotkeyType::Key_F1, kVK_F1},
 	{HotkeyType::Key_F2, kVK_F2},
 	{HotkeyType::Key_F3, kVK_F3},

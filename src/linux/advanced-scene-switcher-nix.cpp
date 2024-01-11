@@ -555,6 +555,9 @@ static std::unordered_map<HotkeyType, long> keyTable = {
 	{HotkeyType::Key_8, XK_8},
 	{HotkeyType::Key_9, XK_9},
 
+	// Other
+	{HotkeyType::Key_Tilde, XK_asciitilde},
+
 	{HotkeyType::Key_F1, XK_F1},
 	{HotkeyType::Key_F2, XK_F2},
 	{HotkeyType::Key_F3, XK_F3},
