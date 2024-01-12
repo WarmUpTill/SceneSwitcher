@@ -321,7 +321,7 @@ void AdvSceneSwitcher::on_elseActionRemove_clicked()
 		if (!macro) {
 			return;
 		}
-		RemoveMacroElseAction((int)macro->Actions().size() - 1);
+		RemoveMacroElseAction((int)macro->ElseActions().size() - 1);
 	} else {
 		RemoveMacroElseAction(currentElseActionIdx);
 	}
