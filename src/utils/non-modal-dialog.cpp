@@ -9,6 +9,8 @@
 
 namespace advss {
 
+QWidget *GetSettingsWindow();
+
 NonModalMessageDialog::NonModalMessageDialog(const QString &message,
 					     bool question)
 	: NonModalMessageDialog(message, question ? Type::QUESTION : Type::INFO)
@@ -16,7 +18,10 @@ NonModalMessageDialog::NonModalMessageDialog(const QString &message,
 }
 
 NonModalMessageDialog::NonModalMessageDialog(const QString &message, Type type)
-	: QDialog(static_cast<QMainWindow *>(obs_frontend_get_main_window())),
+	: QDialog(GetSettingsWindow()
+			  ? GetSettingsWindow()
+			  : static_cast<QMainWindow *>(
+				    obs_frontend_get_main_window())),
 	  _type(type),
 	  _answer(QMessageBox::No)
 {

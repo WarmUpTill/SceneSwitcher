@@ -412,5 +412,6 @@ public slots:
 };
 
 void OpenSettingsWindow();
+QWidget *GetSettingsWindow();
 
 } // namespace advss

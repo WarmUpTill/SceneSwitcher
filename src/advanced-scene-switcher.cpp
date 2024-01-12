@@ -743,6 +743,11 @@ void OpenSettingsWindow()
 	}
 }
 
+QWidget *GetSettingsWindow()
+{
+	return SettingsWindowIsOpened() ? AdvSceneSwitcher::window : nullptr;
+}
+
 void SetupConnectionManager();
 void SetupWebsocketHelpers();
 
