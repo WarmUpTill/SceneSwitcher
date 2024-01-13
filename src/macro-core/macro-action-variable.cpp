@@ -507,7 +507,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _scenes(new SceneSelectionWidget(this, true, false, true, true,
 					   true)),
 	  _tempVars(new TempVariableSelection(this)),
-	  _sceneItemIndex(new VariableSpinBox())
+	  _sceneItemIndex(new VariableSpinBox()),
+	  _entryLayout(new QHBoxLayout())
 {
 	_numValue->setMinimum(-9999999999);
 	_numValue->setMaximum(9999999999);
@@ -602,9 +603,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{tempVars}}", _tempVars},
 		{"{{sceneItemIndex}}", _sceneItemIndex},
 	};
-	auto entryLayout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.variable.entry"),
-		     entryLayout, widgetPlaceholders);
+		     _entryLayout, widgetPlaceholders);
 
 	PlaceWidgets(
 		obs_module_text(
@@ -640,7 +640,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_substringLayout->addLayout(regexConfigLayout);
 
 	auto layout = new QVBoxLayout;
-	layout->addLayout(entryLayout);
+	layout->addLayout(_entryLayout);
 	layout->addLayout(_substringLayout);
 	layout->addWidget(_segmentValueStatus);
 	layout->addWidget(_segmentValue);
@@ -1055,6 +1055,17 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 {
 	if (!_entryData) {
 		return;
+	}
+
+	if (_entryData->_type == MacroActionVariable::Type::SET_FIXED_VALUE ||
+	    _entryData->_type == MacroActionVariable::Type::APPEND ||
+	    _entryData->_type == MacroActionVariable::Type::MATH_EXPRESSION ||
+	    _entryData->_type == MacroActionVariable::Type::ENV_VARIABLE ||
+	    _entryData->_type == MacroActionVariable::Type::STRING_LENGTH ||
+	    _entryData->_type == MacroActionVariable::Type::EXTRACT_JSON) {
+		RemoveStretchIfPresent(_entryLayout);
+	} else {
+		AddStretchIfNecessary(_entryLayout);
 	}
 
 	_variables2->setVisible(_entryData->_type ==
