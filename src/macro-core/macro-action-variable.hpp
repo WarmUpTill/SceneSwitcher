@@ -173,6 +173,7 @@ private:
 	SceneSelectionWidget *_scenes;
 	TempVariableSelection *_tempVars;
 	VariableSpinBox *_sceneItemIndex;
+	QHBoxLayout *_entryLayout;
 
 	std::shared_ptr<MacroActionVariable> _entryData;
 	QTimer _timer;
