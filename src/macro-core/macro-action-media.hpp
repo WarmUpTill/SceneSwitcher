@@ -3,6 +3,8 @@
 #include "duration-control.hpp"
 #include "slider-spinbox.hpp"
 #include "source-selection.hpp"
+#include "scene-selection.hpp"
+#include "scene-item-selection.hpp"
 
 namespace advss {
 
@@ -32,12 +34,18 @@ public:
 		SEEK_PERCENTAGE,
 	};
 
+	enum class SelectionType { SOURCE, SCENE_ITEM };
+
 	Action _action = Action::PLAY;
+	SelectionType _selection = SelectionType::SOURCE;
 	Duration _seekDuration;
 	DoubleVariable _seekPercentage = 50;
 	SourceSelection _mediaSource;
+	SceneItemSelection _sceneItem;
+	SceneSelection _scene;
 
 private:
+	void PerformActionHelper(obs_source_t *) const;
 	void SeekToPercentage(obs_source_t *source) const;
 
 	static bool _registered;
@@ -62,10 +70,13 @@ public:
 
 private slots:
 	void ActionChanged(int value);
+	void SelectionTypeChanged(int value);
 	void SeekDurationChanged(const Duration &seekDuration);
 	void
 	SeekPercentageChanged(const NumberVariable<double> &seekPercentage);
 	void SourceChanged(const SourceSelection &source);
+	void SourceChanged(const SceneItemSelection &);
+	void SceneChanged(const SceneSelection &);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -74,9 +85,12 @@ private:
 	void SetWidgetVisibility();
 
 	QComboBox *_actions;
+	QComboBox *_selectionTypes;
 	DurationSelection *_seekDuration;
 	SliderSpinBox *_seekPercentage;
 	SourceSelectionWidget *_sources;
+	SceneSelectionWidget *_scenes;
+	SceneItemSelectionWidget *_sceneItems;
 
 	std::shared_ptr<MacroActionMedia> _entryData;
 	bool _loading = true;
