@@ -24,10 +24,9 @@ const static std::map<MacroActionTransition::Type, std::string> actionTypes = {
 void MacroActionTransition::SetSceneTransition()
 {
 	if (_setTransitionType) {
-		auto t =
+		OBSSourceAutoRelease transition =
 			obs_weak_source_get_source(_transition.GetTransition());
-		obs_frontend_set_current_transition(t);
-		obs_source_release(t);
+		obs_frontend_set_current_transition(transition);
 	}
 	if (_setDuration) {
 		obs_frontend_set_transition_duration(_duration.Seconds() *
@@ -37,8 +36,9 @@ void MacroActionTransition::SetSceneTransition()
 
 void MacroActionTransition::SetTransitionOverride()
 {
-	obs_source_t *scene = obs_weak_source_get_source(_scene.GetScene());
-	obs_data_t *data = obs_source_get_private_settings(scene);
+	OBSSourceAutoRelease scene =
+		obs_weak_source_get_source(_scene.GetScene());
+	OBSDataAutoRelease data = obs_source_get_private_settings(scene);
 	if (_setTransitionType) {
 		obs_data_set_string(data, "transition",
 				    _transition.ToString().c_str());
@@ -47,8 +47,6 @@ void MacroActionTransition::SetTransitionOverride()
 		obs_data_set_int(data, "transition_duration",
 				 _duration.Milliseconds());
 	}
-	obs_data_release(data);
-	obs_source_release(scene);
 }
 
 #if (LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(27, 0, 0)) && \
@@ -75,22 +73,35 @@ static void obs_sceneitem_set_transition_duration(obs_sceneitem_t *item,
 }
 #endif
 
+static void setSceneItemTransition(const OBSSceneItem &item,
+				   const OBSSourceAutoRelease &transition,
+				   bool show)
+{
+	OBSDataAutoRelease settings = obs_source_get_settings(transition);
+	if (!transition || !settings) {
+		// Set transition to "None"
+		obs_sceneitem_set_transition(item, show, nullptr);
+		return;
+	}
+
+	// We cannot share the transition source between
+	// scene items without introducing strange graphical
+	// artifacts so we have to create new ones here
+	OBSSourceAutoRelease transitionSource = obs_source_create_private(
+		obs_source_get_id(transition), obs_source_get_name(transition),
+		settings);
+	obs_sceneitem_set_transition(item, show, transitionSource);
+}
+
 void MacroActionTransition::SetSourceTransition(bool show)
 {
 #if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(27, 0, 0)
-	auto transition =
+	OBSSourceAutoRelease transition =
 		obs_weak_source_get_source(_transition.GetTransition());
-	obs_data_t *settings = obs_source_get_settings(transition);
-	obs_source_t *t = obs_source_create_private(
-		obs_source_get_id(transition), obs_source_get_name(transition),
-		settings);
-	obs_data_release(settings);
-	obs_source_release(transition);
-
 	const auto items = _source.GetSceneItems(_scene);
 	for (const auto &item : items) {
 		if (_setTransitionType) {
-			obs_sceneitem_set_transition(item, show, t);
+			setSceneItemTransition(item, transition, show);
 		}
 		if (_setDuration) {
 			obs_sceneitem_set_transition_duration(
@@ -98,7 +109,6 @@ void MacroActionTransition::SetSourceTransition(bool show)
 		}
 	}
 
-	obs_source_release(t);
 #endif
 }
 
