@@ -202,13 +202,33 @@ void GetCurrentWindowTitle(std::string &title)
 	GetWindowTitle(window, title);
 }
 
-static HWND getHWNDfromTitle(std::string title)
+static HWND getHWNDfromTitle(const std::string &title)
 {
 	HWND hwnd = NULL;
 	wchar_t wTitle[512];
 	os_utf8_to_wcs(title.c_str(), 0, wTitle, 512);
 	hwnd = FindWindowEx(NULL, NULL, NULL, wTitle);
 	return hwnd;
+}
+
+std::string GetWindowClassByWindowTitle(const std::string &window)
+{
+	HWND hwnd = NULL;
+	hwnd = getHWNDfromTitle(window);
+	if (!hwnd) {
+		return "";
+	}
+	std::wstring wClass;
+	wClass.resize(1024);
+	if (!GetClassNameW(hwnd, &wClass[0], wClass.capacity())) {
+		return "";
+	}
+
+	size_t len = os_wcs_to_utf8(wClass.c_str(), 0, nullptr, 0);
+	std::string className;
+	className.resize(len);
+	os_wcs_to_utf8(wClass.c_str(), 0, &className[0], len + 1);
+	return className;
 }
 
 bool IsMaximized(const std::string &title)

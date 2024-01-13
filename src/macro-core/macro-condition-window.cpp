@@ -87,6 +87,10 @@ void MacroConditionWindow::SetVariableValueBasedOnMatch(
 	const std::string &matchWindow)
 {
 	SetTempVarValue("window", matchWindow);
+#ifdef _WIN32
+	SetTempVarValue("windowClass",
+			GetWindowClassByWindowTitle(matchWindow));
+#endif
 	if (!IsReferencedInVars()) {
 		return;
 	}
@@ -172,6 +176,13 @@ void MacroConditionWindow::SetupTempVars()
 		obs_module_text("AdvSceneSwitcher.tempVar.window.window"),
 		obs_module_text(
 			"AdvSceneSwitcher.tempVar.window.window.description"));
+#ifdef _WIN32
+	AddTempvar(
+		"windowClass",
+		obs_module_text("AdvSceneSwitcher.tempVar.window.windowClass"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.window.windowClass.description"));
+#endif
 }
 
 MacroConditionWindowEdit::MacroConditionWindowEdit(

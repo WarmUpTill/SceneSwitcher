@@ -17,6 +17,9 @@ extern std::chrono::high_resolution_clock::time_point lastMouseRightClickTime;
 void GetWindowList(std::vector<std::string> &windows);
 void GetWindowList(QStringList &windows);
 void GetCurrentWindowTitle(std::string &title);
+#ifdef _WIN32
+std::string GetWindowClassByWindowTitle(const std::string &window);
+#endif
 bool IsFullscreen(const std::string &title);
 bool IsMaximized(const std::string &title);
 std::optional<std::string> GetTextInWindow(const std::string &window);
