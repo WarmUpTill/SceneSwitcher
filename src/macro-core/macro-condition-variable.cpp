@@ -242,6 +242,8 @@ void MacroConditionVariableEdit::VariableChanged(const QString &text)
 
 	auto lock = LockContext();
 	_entryData->_variable = GetWeakVariableByQString(text);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroConditionVariableEdit::Variable2Changed(const QString &text)
