@@ -535,6 +535,7 @@ void MacroActionTwitchEdit::TwitchTokenChanged(const QString &token)
 	_entryData->_token = GetWeakTwitchTokenByQString(token);
 	_category->SetToken(_entryData->_token);
 	_channel->SetToken(_entryData->_token);
+	_entryData->ResetChatConnection();
 
 	SetWidgetVisibility();
 	emit(HeaderInfoChanged(token));
@@ -724,6 +725,7 @@ void MacroActionTwitchEdit::ChannelChanged(const TwitchChannel &channel)
 
 	auto lock = LockContext();
 	_entryData->_channel = channel;
+	_entryData->ResetChatConnection();
 }
 
 void MacroActionTwitchEdit::ChatMessageChanged()
