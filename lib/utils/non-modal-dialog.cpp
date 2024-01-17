@@ -1,24 +1,40 @@
 #include "non-modal-dialog.hpp"
 #include "obs-module-helper.hpp"
 
-#include <QMainWindow>
-#include <QLayout>
-#include <QLabel>
-#include <QDialogButtonBox>
+#include <atomic>
+#include <mutex>
 #include <obs-frontend-api.h>
+#include <QDialogButtonBox>
+#include <QLabel>
+#include <QLayout>
+#include <QMainWindow>
+#include <QCoreApplication>
 
 namespace advss {
+
+static std::mutex mutex;
+static std::vector<NonModalMessageDialog *> dialogs;
 
 QWidget *GetSettingsWindow();
 
 NonModalMessageDialog::NonModalMessageDialog(const QString &message,
-					     bool question)
-	: NonModalMessageDialog(message, question ? Type::QUESTION : Type::INFO)
+					     bool question,
+					     bool focusAdvssWindow)
+	: NonModalMessageDialog(message, question ? Type::QUESTION : Type::INFO,
+				focusAdvssWindow)
 {
 }
 
-NonModalMessageDialog::NonModalMessageDialog(const QString &message, Type type)
-	: QDialog(GetSettingsWindow()
+NonModalMessageDialog::~NonModalMessageDialog()
+{
+	std::lock_guard<std::mutex> lock(mutex);
+	dialogs.erase(std::remove(dialogs.begin(), dialogs.end(), this),
+		      dialogs.end());
+}
+
+NonModalMessageDialog::NonModalMessageDialog(const QString &message, Type type,
+					     bool focusAdvssWindow)
+	: QDialog(focusAdvssWindow && GetSettingsWindow()
 			  ? GetSettingsWindow()
 			  : static_cast<QMainWindow *>(
 				    obs_frontend_get_main_window())),
@@ -65,6 +81,9 @@ NonModalMessageDialog::NonModalMessageDialog(const QString &message, Type type)
 	}
 	}
 	setLayout(layout);
+
+	std::lock_guard<std::mutex> lock(mutex);
+	dialogs.emplace_back(this);
 }
 
 QMessageBox::StandardButton NonModalMessageDialog::ShowMessage()
@@ -83,7 +102,8 @@ std::optional<std::string> NonModalMessageDialog::GetInput()
 	_inputEdit->setPlainText(_inputEdit->toPlainText());
 
 	exec();
-	this->deleteLater();
+	deleteLater();
+
 	if (_answer == QMessageBox::Yes) {
 		return _input.toStdString();
 	}
@@ -115,28 +135,23 @@ void NonModalMessageDialog::InputChanged()
 	updateGeometry();
 }
 
-bool CloseAllInputDialogs()
+void CloseAllInputDialogs()
 {
-	auto window =
-		static_cast<QMainWindow *>(obs_frontend_get_main_window());
-	if (!window) {
-		return false;
+	std::lock_guard<std::mutex> lock(mutex);
+	if (dialogs.empty()) {
+		return;
 	}
-
-	bool closedAtLeastOneDialog = false;
-	QList<QWidget *> widgets = window->findChildren<QWidget *>();
-	for (auto &widget : widgets) {
-		auto dialog = qobject_cast<NonModalMessageDialog *>(widget);
-		if (!dialog) {
-			continue;
-		}
-		if (dialog->GetType() != NonModalMessageDialog::Type::INPUT) {
-			continue;
-		}
-		dialog->close();
-		closedAtLeastOneDialog = true;
-	}
-	return closedAtLeastOneDialog;
+	obs_queue_task(
+		OBS_TASK_UI,
+		[](void *) {
+			for (const auto dialog : dialogs) {
+				if (dialog->GetType() ==
+				    NonModalMessageDialog::Type::INPUT) {
+					dialog->close();
+				}
+			}
+		},
+		nullptr, true);
 }
 
 } // namespace advss

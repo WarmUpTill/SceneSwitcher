@@ -181,18 +181,23 @@ void MacroActionVariable::SetToSceneItemName(Variable *var)
 }
 
 struct AskForInputParams {
+	AskForInputParams(const QString &prompt_, const QString &placeholder_)
+		: prompt(prompt_), placeholder(placeholder_){};
 	QString prompt;
 	QString placeholder;
 	std::optional<std::string> result;
+	std::atomic_bool resultReady = {false};
 };
 
 static void askForInput(void *param)
 {
-	auto parameters = static_cast<AskForInputParams *>(param);
+	auto parameters =
+		*static_cast<std::shared_ptr<AskForInputParams> *>(param);
 	auto dialog = new NonModalMessageDialog(
-		parameters->prompt, NonModalMessageDialog::Type::INPUT);
+		parameters->prompt, NonModalMessageDialog::Type::INPUT, false);
 	dialog->SetInput(parameters->placeholder);
 	parameters->result = dialog->GetInput();
+	parameters->resultReady = true;
 }
 
 bool MacroActionVariable::PerformAction()
@@ -264,7 +269,7 @@ bool MacroActionVariable::PerformAction()
 		return true;
 	}
 	case Type::USER_INPUT: {
-		AskForInputParams params{
+		auto params = std::make_shared<AskForInputParams>(
 			_useCustomPrompt
 				? QString::fromStdString(_inputPrompt)
 				: QString(obs_module_text(
@@ -273,13 +278,19 @@ bool MacroActionVariable::PerformAction()
 						  var->Name())),
 			_useCustomPrompt && _useInputPlaceholder
 				? QString::fromStdString(_inputPlaceholder)
-				: "",
-			{}};
-		obs_queue_task(OBS_TASK_UI, askForInput, &params, true);
-		if (!params.result.has_value()) {
-			return false;
+				: "");
+		obs_queue_task(OBS_TASK_UI, askForInput, &params, false);
+		while (!params->resultReady) {
+			if (GetMacro()->GetStop()) {
+				return false;
+			}
+			std::this_thread::sleep_for(
+				std::chrono::milliseconds(100));
 		}
-		var->SetValue(*params.result);
+		if (!params->result.has_value()) {
+			return true;
+		}
+		var->SetValue(*params->result);
 		return true;
 	}
 	case Type::ENV_VARIABLE: {
