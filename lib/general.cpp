@@ -641,6 +641,7 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 
 	cooldown.Load(obj, "cooldown");
 
+	obs_data_set_default_bool(obj, "active", true);
 	stop = !obs_data_get_bool(obj, "active");
 	startupBehavior =
 		(StartupBehavior)obs_data_get_int(obj, "startup_behavior");
