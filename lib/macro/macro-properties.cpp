@@ -27,6 +27,9 @@ void MacroProperties::Save(obs_data_t *obj) const
 void MacroProperties::Load(obs_data_t *obj)
 {
 	auto data = obs_data_get_obj(obj, "macroProperties");
+	obs_data_set_default_bool(data, "highlightExecuted", true);
+	obs_data_set_default_bool(data, "highlightConditions", true);
+	obs_data_set_default_bool(data, "highlightActions", true);
 	_highlightExecuted = obs_data_get_bool(data, "highlightExecuted");
 	_highlightConditions = obs_data_get_bool(data, "highlightConditions");
 	_highlightActions = obs_data_get_bool(data, "highlightActions");

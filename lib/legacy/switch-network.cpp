@@ -84,11 +84,11 @@ void NetworkConfig::Save(obs_data_t *obj)
 
 void NetworkConfig::SetDefaults(obs_data_t *obj)
 {
-	obs_data_set_default_bool(obj, PARAM_SERVER_ENABLE, ServerEnabled);
+	obs_data_set_default_bool(obj, PARAM_SERVER_ENABLE, false);
 	obs_data_set_default_int(obj, PARAM_SERVER_PORT, ServerPort);
 	obs_data_set_default_bool(obj, PARAM_LOCKTOIPV4, LockToIPv4);
 
-	obs_data_set_default_bool(obj, PARAM_CLIENT_ENABLE, ClientEnabled);
+	obs_data_set_default_bool(obj, PARAM_CLIENT_ENABLE, false);
 	obs_data_set_default_string(obj, PARAM_ADDRESS, Address.c_str());
 	obs_data_set_default_int(obj, PARAM_CLIENT_PORT, ClientPort);
 	obs_data_set_default_bool(obj, PARAM_CLIENT_SEND_SCENE_CHANGE,
