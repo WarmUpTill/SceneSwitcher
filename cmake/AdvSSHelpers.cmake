@@ -264,6 +264,9 @@ function(setup_advss_plugin target)
                AUTOUIC ON
                AUTORCC ON)
 
+  target_compile_features(${target} PUBLIC cxx_std_17)
+  set_target_properties(${target} PROPERTIES CXX_VISIBILITY_PRESET hidden)
+
   target_link_libraries(${target} PRIVATE advanced-scene-switcher-lib)
 
   get_target_property(ADVSS_SOURCE_DIR advanced-scene-switcher-lib SOURCE_DIR)
@@ -290,9 +293,9 @@ function(setup_advss_plugin target)
   # General includes
   target_include_directories(
     ${target}
-    PRIVATE "${ADVSS_SOURCE_DIR}/src" "${ADVSS_SOURCE_DIR}/src/legacy"
-            "${ADVSS_SOURCE_DIR}/src/macro-core"
-            "${ADVSS_SOURCE_DIR}/src/utils" "${ADVSS_SOURCE_DIR}/forms")
+    PRIVATE "${ADVSS_SOURCE_DIR}/lib" "${ADVSS_SOURCE_DIR}/lib/legacy"
+            "${ADVSS_SOURCE_DIR}/lib/macro" "${ADVSS_SOURCE_DIR}/lib/utils"
+            "${ADVSS_SOURCE_DIR}/forms")
 endfunction()
 
 function(install_advss_plugin_dependency)
