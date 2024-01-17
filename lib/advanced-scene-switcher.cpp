@@ -470,7 +470,7 @@ void SwitcherData::Start()
 	}
 }
 
-bool CloseAllInputDialogs();
+void CloseAllInputDialogs();
 void StopAndClearAllActionQueues();
 
 void SwitcherData::Stop()
@@ -482,23 +482,10 @@ void SwitcherData::Stop()
 		GetMacroWaitCV().notify_all();
 		GetMacroTransitionCV().notify_all();
 		StopAndClearAllActionQueues();
-
-		// Not waiting if a dialog was closed is a workaround to avoid
-		// deadlocks when a variable input dialog is opened while Stop()
-		// is called.
-		//
-		// The QEventLoop handling the dialog would not exit until Stop()
-		// would return, which itself would wait for the switcher thread
-		// to complete, which itself is blocked by the variable input
-		// dialog.
-		//
-		// Must be reworked in the future, as this will not go well when
-		// OBS is shutting down and a dialog is still opened.
-		if (!CloseAllInputDialogs()) {
-			th->wait();
-			delete th;
-			th = nullptr;
-		}
+		CloseAllInputDialogs();
+		th->wait();
+		delete th;
+		th = nullptr;
 		writeToStatusFile("Advanced Scene Switcher stopped");
 	}
 

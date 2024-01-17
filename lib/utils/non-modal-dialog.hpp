@@ -7,7 +7,7 @@
 
 namespace advss {
 
-bool CloseAllInputDialogs();
+void CloseAllInputDialogs();
 
 class NonModalMessageDialog : public QDialog {
 	Q_OBJECT
@@ -15,8 +15,11 @@ class NonModalMessageDialog : public QDialog {
 public:
 	enum class Type { INFO, QUESTION, INPUT };
 
-	NonModalMessageDialog(const QString &message, Type);
-	NonModalMessageDialog(const QString &message, bool question);
+	NonModalMessageDialog(const QString &message, Type,
+			      bool focusAdvssWindow = false);
+	NonModalMessageDialog(const QString &message, bool question,
+			      bool focusAdvssWindow = false);
+	~NonModalMessageDialog();
 	QMessageBox::StandardButton ShowMessage();
 	std::optional<std::string> GetInput();
 	Type GetType() const { return _type; }
