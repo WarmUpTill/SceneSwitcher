@@ -231,7 +231,7 @@ bool Macro::ExecutedSince(
 bool Macro::ShouldRunActions() const
 {
 	const bool hasActionsToExecute =
-		(_matched || _elseActions.size() > 0) &&
+		!_paused && (_matched || _elseActions.size() > 0) &&
 		(!_performActionsOnChange || _conditionSateChanged);
 
 	if (VerboseLoggingEnabled() && _performActionsOnChange &&
