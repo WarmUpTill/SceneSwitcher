@@ -1,6 +1,8 @@
 #include "filter-selection.hpp"
 #include "obs-module-helper.hpp"
-#include "utility.hpp"
+#include "selection-helpers.hpp"
+#include "source-helpers.hpp"
+#include "ui-helpers.hpp"
 #include "variable.hpp"
 
 namespace advss {
@@ -164,6 +166,25 @@ void FilterSelectionWidget::Reset()
 	SetFilter(_source, previousSelection);
 }
 
+static QStringList getFilterNames(OBSWeakSource weakSource)
+{
+	if (!weakSource) {
+		return {};
+	}
+
+	QStringList list;
+	auto enumFilters = [](obs_source_t *, obs_source_t *filter, void *ptr) {
+		auto name = obs_source_get_name(filter);
+		QStringList *list = reinterpret_cast<QStringList *>(ptr);
+		*list << QString(name);
+	};
+
+	auto s = obs_weak_source_get_source(weakSource);
+	obs_source_enum_filters(s, enumFilters, &list);
+	obs_source_release(s);
+	return list;
+}
+
 void FilterSelectionWidget::PopulateSelection()
 {
 	const QSignalBlocker b(this);
@@ -180,7 +201,7 @@ void FilterSelectionWidget::PopulateSelection()
 	}
 	_variablesEndIdx = count();
 
-	AddSelectionGroup(this, GetFilterNames(_source.GetSource()));
+	AddSelectionGroup(this, getFilterNames(_source.GetSource()));
 	_filterEndIdx = count();
 
 	// Remove last separator

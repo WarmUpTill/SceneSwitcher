@@ -1,6 +1,6 @@
 #include "macro-condition-scene-visibility.hpp"
+#include "layout-helpers.hpp"
 #include "obs-module-helper.hpp"
-#include "utility.hpp"
 
 #include <regex>
 

@@ -4,15 +4,16 @@
 #include "macro-dock.hpp"
 #include "macro-helpers.hpp"
 #include "plugin-state-helpers.hpp"
+#include "splitter-helpers.hpp"
 #include "sync-helpers.hpp"
-#include "utility.hpp"
 
+#include <chrono>
 #include <limits>
 #undef max
-#include <chrono>
-#include <unordered_map>
+#include <obs-frontend-api.h>
 #include <QAction>
 #include <QMainWindow>
+#include <unordered_map>
 
 namespace advss {
 

@@ -1,5 +1,6 @@
 #include "macro-action-midi.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
+#include "ui-helpers.hpp"
 
 namespace advss {
 

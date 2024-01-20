@@ -1,8 +1,12 @@
 #include "advanced-scene-switcher.hpp"
-#include "switcher-data.hpp"
 #include "curl-helper.hpp"
+#include "layout-helpers.hpp"
+#include "source-helpers.hpp"
+#include "switcher-data.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 
+#include <obs-frontend-api.h>
 #include <QtGlobal>
 #include <QFileDialog>
 #include <QTextStream>

@@ -1,6 +1,8 @@
 #include "source-selection.hpp"
 #include "obs-module-helper.hpp"
-#include "utility.hpp"
+#include "selection-helpers.hpp"
+#include "source-helpers.hpp"
+#include "ui-helpers.hpp"
 #include "variable.hpp"
 
 namespace advss {

@@ -1,5 +1,5 @@
 #include "section.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
 
 #include <QPropertyAnimation>
 #include <QEvent>

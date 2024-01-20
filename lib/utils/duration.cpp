@@ -1,6 +1,5 @@
 #include "duration.hpp"
 #include "obs-module-helper.hpp"
-#include "utility.hpp"
 
 #include <sstream>
 #include <iomanip>

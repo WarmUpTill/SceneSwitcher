@@ -1,8 +1,8 @@
 #include "resizing-text-edit.hpp"
+#include "obs-module-helper.hpp"
+#include "ui-helpers.hpp"
 
-#include <obs-module-helper.hpp>
 #include <QScrollBar>
-#include <utility.hpp>
 
 namespace advss {
 

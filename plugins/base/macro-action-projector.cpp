@@ -1,6 +1,10 @@
 #include "macro-action-projector.hpp"
+#include "layout-helpers.hpp"
 #include "monitor-helpers.hpp"
-#include "utility.hpp"
+#include "selection-helpers.hpp"
+#include "source-helpers.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 

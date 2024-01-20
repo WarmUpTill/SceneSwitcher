@@ -1,7 +1,8 @@
 #include "variable.hpp"
 #include "math-helpers.hpp"
 #include "obs-module-helper.hpp"
-#include "utility.hpp"
+
+#include <QGridLayout>
 
 namespace advss {
 

@@ -1,8 +1,10 @@
 #include "macro-condition-media.hpp"
+#include "layout-helpers.hpp"
 #include "macro-helpers.hpp"
 #include "plugin-state-helpers.hpp"
 #include "scene-switch-helpers.hpp"
-#include "utility.hpp"
+#include "selection-helpers.hpp"
+#include "source-helpers.hpp"
 
 namespace advss {
 

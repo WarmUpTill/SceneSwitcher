@@ -1,10 +1,13 @@
 #include "midi-helpers.hpp"
 
-#include <utility.hpp>
+#include <layout-helpers.hpp>
 #include <log-helper.hpp>
 #include <obs-module-helper.hpp>
 #include <plugin-state-helpers.hpp>
+#include <selection-helpers.hpp>
 #include <sync-helpers.hpp>
+#include <ui-helpers.hpp>
+#include <utility.hpp>
 
 namespace advss {
 

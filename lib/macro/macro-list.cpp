@@ -2,7 +2,7 @@
 #include "macro-helpers.hpp"
 #include "macro-selection.hpp"
 #include "obs-module-helper.hpp"
-#include "utility.hpp"
+#include "ui-helpers.hpp"
 
 namespace advss {
 

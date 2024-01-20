@@ -2,7 +2,13 @@
 #include "obs-module-helper.hpp"
 #include "scene-group.hpp"
 #include "scene-switch-helpers.hpp"
+#include "selection-helpers.hpp"
+#include "source-helpers.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
+#include "variable.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 

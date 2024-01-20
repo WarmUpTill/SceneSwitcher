@@ -1,13 +1,14 @@
 #include "macro-segment-list.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
+#include "ui-helpers.hpp"
 
-#include <QGridLayout>
-#include <QSpacerItem>
 #include <QEvent>
-#include <QMouseEvent>
 #include <QDrag>
+#include <QGridLayout>
 #include <QMimeData>
+#include <QMouseEvent>
 #include <QScrollBar>
+#include <QSpacerItem>
 #include <QtGlobal>
 
 namespace advss {

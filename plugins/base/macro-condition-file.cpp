@@ -1,10 +1,11 @@
 #include "macro-condition-file.hpp"
-#include "utility.hpp"
 #include "curl-helper.hpp"
+#include "layout-helpers.hpp"
 #include "plugin-state-helpers.hpp"
+#include "utility.hpp"
 
-#include <QTextStream>
 #include <QFileDialog>
+#include <QTextStream>
 #include <regex>
 
 namespace advss {

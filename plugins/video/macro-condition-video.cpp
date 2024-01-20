@@ -1,15 +1,16 @@
 #include "macro-condition-video.hpp"
 
+#include <layout-helpers.hpp>
 #include <macro-condition-edit.hpp>
 #include <plugin-state-helpers.hpp>
-#include <utility.hpp>
-
-#include <QFileDialog>
 #include <QBuffer>
-#include <QToolTip>
+#include <QColorDialog>
+#include <QFileDialog>
 #include <QMessageBox>
 #include <QtGlobal>
-#include <QColorDialog>
+#include <QToolTip>
+#include <ui-helpers.hpp>
+#include <selection-helpers.hpp>
 
 namespace advss {
 

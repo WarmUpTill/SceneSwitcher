@@ -1,8 +1,9 @@
 #include "macro-condition-source.hpp"
-#include "source-settings-helpers.hpp"
+#include "layout-helpers.hpp"
 #include "json-helpers.hpp"
 #include "text-helpers.hpp"
-#include "utility.hpp"
+#include "selection-helpers.hpp"
+#include "source-settings-helpers.hpp"
 
 namespace advss {
 

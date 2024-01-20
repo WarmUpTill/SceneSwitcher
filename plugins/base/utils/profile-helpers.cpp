@@ -1,6 +1,6 @@
 #include "profile-helpers.hpp"
 #include "obs-module-helper.hpp"
-#include "utility.hpp"
+#include "selection-helpers.hpp"
 
 #include <obs-frontend-api.h>
 

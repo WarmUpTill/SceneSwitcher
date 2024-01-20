@@ -1,5 +1,6 @@
 #include "macro-action-media.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
+#include "selection-helpers.hpp"
 
 namespace advss {
 

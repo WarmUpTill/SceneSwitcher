@@ -1,10 +1,10 @@
 #include "macro-selection.hpp"
-#include "macro.hpp"
 #include "advanced-scene-switcher.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
+#include "macro.hpp"
 
-#include <QStandardItemModel>
 #include <QDialogButtonBox>
+#include <QStandardItemModel>
 
 namespace advss {
 

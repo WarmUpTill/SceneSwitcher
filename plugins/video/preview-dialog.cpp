@@ -1,8 +1,8 @@
 #include "preview-dialog.hpp"
-
 #include "opencv-helpers.hpp"
-#include "utility.hpp"
+#include "ui-helpers.hpp"
 
+#include <QLayout>
 #include <screenshot-helper.hpp>
 
 namespace advss {

@@ -1,7 +1,7 @@
 #include "macro-condition-openvr.hpp"
 
+#include <layout-helpers.hpp>
 #include <macro-condition-edit.hpp>
-#include <utility.hpp>
 #include <openvr.h>
 
 namespace advss {

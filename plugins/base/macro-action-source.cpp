@@ -1,7 +1,10 @@
 #include "macro-action-source.hpp"
-#include "source-settings-helpers.hpp"
+#include "layout-helpers.hpp"
 #include "json-helpers.hpp"
-#include "utility.hpp"
+#include "selection-helpers.hpp"
+#include "source-settings-helpers.hpp"
+
+#include <obs-frontend-api.h>
 
 Q_DECLARE_METATYPE(advss::SourceSettingButton);
 

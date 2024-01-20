@@ -1,6 +1,7 @@
 #include "macro-action-recording.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
 
+#include <obs-frontend-api.h>
 #include <util/config-file.h>
 
 namespace advss {

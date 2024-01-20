@@ -1,9 +1,10 @@
 #include "macro-condition-cursor.hpp"
 #include "cursor-helpers.hpp"
+#include "layout-helpers.hpp"
 #include "utility.hpp"
 
-#include <QScreen>
 #include <QGuiApplication>
+#include <QScreen>
 
 namespace advss {
 

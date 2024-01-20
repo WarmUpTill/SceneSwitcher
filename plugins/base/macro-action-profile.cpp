@@ -1,6 +1,8 @@
 #include "macro-action-profile.hpp"
+#include "layout-helpers.hpp"
 #include "profile-helpers.hpp"
-#include "utility.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 

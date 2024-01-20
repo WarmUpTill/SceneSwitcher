@@ -1,6 +1,9 @@
 #include "macro-condition-scene.hpp"
+#include "layout-helpers.hpp"
 #include "scene-switch-helpers.hpp"
-#include "utility.hpp"
+#include "source-helpers.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 

@@ -1,7 +1,8 @@
 #include "macro-condition-window.hpp"
+#include "layout-helpers.hpp"
 #include "plugin-state-helpers.hpp"
 #include "platform-funcs.hpp"
-#include "utility.hpp"
+#include "selection-helpers.hpp"
 
 #include <regex>
 

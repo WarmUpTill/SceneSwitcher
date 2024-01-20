@@ -1,9 +1,10 @@
 #include "osc-helpers.hpp"
 #include "obs-module-helper.hpp"
-#include "utility.hpp"
+#include "ui-helpers.hpp"
 
-#include <string.h>
 #include <QGroupBox>
+#include <QLayout>
+#include <string.h>
 
 #ifdef WIN32
 #include <winsock.h>

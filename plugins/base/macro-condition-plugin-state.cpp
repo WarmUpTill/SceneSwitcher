@@ -1,7 +1,7 @@
 #include "macro-condition-plugin-state.hpp"
+#include "layout-helpers.hpp"
 #include "macro-helpers.hpp"
 #include "plugin-state-helpers.hpp"
-#include "utility.hpp"
 
 namespace advss {
 

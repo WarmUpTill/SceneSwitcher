@@ -1,8 +1,8 @@
 #include "macro-condition-scene-transform.hpp"
-#include "scene-item-transform-helpers.hpp"
+#include "layout-helpers.hpp"
 #include "json-helpers.hpp"
 #include "text-helpers.hpp"
-#include "utility.hpp"
+#include "scene-item-transform-helpers.hpp"
 
 namespace advss {
 

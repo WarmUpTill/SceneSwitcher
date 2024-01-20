@@ -1,10 +1,12 @@
 #include "status-control.hpp"
 #include "obs-module-helper.hpp"
 #include "plugin-state-helpers.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 
-#include <QMainWindow>
+#include <obs-frontend-api.h>
 #include <QAction>
+#include <QMainWindow>
 #include <QToolBar>
 
 namespace advss {

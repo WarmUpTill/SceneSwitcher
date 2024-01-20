@@ -1,5 +1,8 @@
 #include "macro-condition-studio-mode.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
+#include "source-helpers.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 

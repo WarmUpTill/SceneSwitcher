@@ -1,8 +1,8 @@
 #include "macro-run-button.hpp"
+#include "obs-module-helper.hpp"
 #include "macro-tree.hpp"
 #include "macro.hpp"
-#include "obs-module-helper.hpp"
-#include "utility.hpp"
+#include "ui-helpers.hpp"
 
 #include <QKeyEvent>
 

@@ -1,6 +1,8 @@
 #include "advanced-scene-switcher.hpp"
+#include "layout-helpers.hpp"
 #include "switcher-data.hpp"
 #include "utility.hpp"
+#include "ui-helpers.hpp"
 
 #include <random>
 

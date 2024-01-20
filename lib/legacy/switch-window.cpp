@@ -1,6 +1,9 @@
 #include "advanced-scene-switcher.hpp"
-#include "switcher-data.hpp"
+#include "layout-helpers.hpp"
 #include "platform-funcs.hpp"
+#include "selection-helpers.hpp"
+#include "switcher-data.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 
 #include <regex>

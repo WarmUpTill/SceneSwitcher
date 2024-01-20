@@ -1,9 +1,11 @@
 #include "source-setting.hpp"
 #include "obs-module-helper.hpp"
 #include "math-helpers.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 
 #include <nlohmann/json.hpp>
+#include <QLayout>
 
 Q_DECLARE_METATYPE(advss::SourceSetting);
 

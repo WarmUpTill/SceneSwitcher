@@ -1,5 +1,8 @@
 #include "macro-action-screenshot.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
+#include "selection-helpers.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 

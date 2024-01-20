@@ -1,6 +1,9 @@
 #include "transition-selection.hpp"
 #include "obs-module-helper.hpp"
-#include "utility.hpp"
+#include "selection-helpers.hpp"
+#include "source-helpers.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 

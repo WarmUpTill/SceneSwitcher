@@ -1,6 +1,6 @@
 #include "string-list.hpp"
 #include "name-dialog.hpp"
-#include "utility.hpp"
+#include "ui-helpers.hpp"
 
 #include <QLayout>
 #include <QTimer>

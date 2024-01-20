@@ -5,9 +5,9 @@
 #include "variable-line-edit.hpp"
 #include "variable-string.hpp"
 #include "regex-config.hpp"
-#include "utility.hpp"
 
 #include <obs-data.h>
+#include <QLayout>
 
 namespace advss {
 

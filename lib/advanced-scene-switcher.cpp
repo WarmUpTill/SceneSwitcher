@@ -1,22 +1,25 @@
 #include "advanced-scene-switcher.hpp"
-#include "switcher-data.hpp"
+#include "curl-helper.hpp"
+#include "log-helper.hpp"
 #include "macro-helpers.hpp"
 #include "obs-module-helper.hpp"
-#include "status-control.hpp"
-#include "scene-switch-helpers.hpp"
-#include "curl-helper.hpp"
 #include "platform-funcs.hpp"
+#include "scene-switch-helpers.hpp"
+#include "source-helpers.hpp"
+#include "status-control.hpp"
+#include "switcher-data.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 #include "version.h"
 
-#include <QMainWindow>
-#include <QAction>
-#include <QFileDialog>
-#include <QTextStream>
-#include <QDirIterator>
-#include <regex>
 #include <filesystem>
 #include <obs-frontend-api.h>
+#include <QAction>
+#include <QDirIterator>
+#include <QFileDialog>
+#include <QMainWindow>
+#include <QTextStream>
+#include <regex>
 
 namespace advss {
 

@@ -61,4 +61,6 @@ EXPORT void InvalidateMacroTempVarValues();
 EXPORT void ResetMacroConditionTimers(Macro *);
 EXPORT void ResetMacroRunCount(Macro *);
 
+bool IsValidMacroSegmentIndex(Macro *m, const int idx, bool isCondition);
+
 } // namespace advss

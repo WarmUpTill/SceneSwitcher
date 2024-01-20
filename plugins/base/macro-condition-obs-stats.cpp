@@ -1,5 +1,8 @@
 #include "macro-condition-obs-stats.hpp"
+#include "layout-helpers.hpp"
 #include "utility.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 
