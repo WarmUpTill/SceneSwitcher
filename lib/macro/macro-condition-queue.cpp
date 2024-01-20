@@ -33,7 +33,7 @@ bool MacroConditionQueue::CheckCondition()
 	case Condition::STOPPED:
 		return !queue->IsRunning();
 	case Condition::SIZE:
-		return queue->Size() < _size;
+		return (int)queue->Size() < _size;
 	default:
 		break;
 	}
