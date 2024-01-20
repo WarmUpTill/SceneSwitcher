@@ -1,5 +1,5 @@
 #include "filter-combo-box.hpp"
-#include "utility.hpp"
+#include "ui-helpers.hpp"
 
 #include <QCompleter>
 #include <QLineEdit>

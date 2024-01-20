@@ -129,4 +129,21 @@ void ResetMacroRunCount(Macro *macro)
 	macro->ResetRunCount();
 }
 
+bool IsValidMacroSegmentIndex(Macro *m, const int idx, bool isCondition)
+{
+	if (!m || idx < 0) {
+		return false;
+	}
+	if (isCondition) {
+		if (idx >= (int)m->Conditions().size()) {
+			return false;
+		}
+	} else {
+		if (idx >= (int)m->Actions().size()) {
+			return false;
+		}
+	}
+	return true;
+}
+
 } // namespace advss

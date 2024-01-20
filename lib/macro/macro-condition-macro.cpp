@@ -1,7 +1,7 @@
 #include "macro-condition-macro.hpp"
-#include "macro.hpp"
+#include "layout-helpers.hpp"
 #include "macro-action-edit.hpp"
-#include "utility.hpp"
+#include "macro.hpp"
 
 namespace advss {
 

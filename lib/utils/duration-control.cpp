@@ -1,7 +1,6 @@
 #include "duration-control.hpp"
 #include "mouse-wheel-guard.hpp"
 #include "obs-module-helper.hpp"
-#include "utility.hpp"
 
 #include <QHBoxLayout>
 

@@ -1,6 +1,8 @@
 #include "macro-condition-streaming.hpp"
 #include "profile-helpers.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 

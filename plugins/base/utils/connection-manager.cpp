@@ -1,8 +1,9 @@
 #include "connection-manager.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
+#include "name-dialog.hpp"
 #include "obs-module-helper.hpp"
 #include "plugin-state-helpers.hpp"
-#include "name-dialog.hpp"
+#include "ui-helpers.hpp"
 
 #include <algorithm>
 #include <QAction>

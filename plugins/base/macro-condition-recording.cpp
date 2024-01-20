@@ -1,6 +1,7 @@
 #include "macro-condition-recording.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
 
+#include <obs-frontend-api.h>
 #include <thread>
 
 namespace advss {

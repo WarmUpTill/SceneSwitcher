@@ -1,9 +1,9 @@
 #include "macro-action-file.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
 
+#include <QFileDialog>
 #include <QFile>
 #include <QTextStream>
-#include <QFileDialog>
 
 namespace advss {
 

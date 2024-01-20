@@ -1,6 +1,6 @@
 #include "macro-condition-date.hpp"
+#include "layout-helpers.hpp"
 #include "macro-helpers.hpp"
-#include "utility.hpp"
 
 #include <QCalendarWidget>
 

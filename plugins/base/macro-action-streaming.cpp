@@ -1,7 +1,9 @@
 #include "macro-action-streaming.hpp"
+#include "layout-helpers.hpp"
 #include "profile-helpers.hpp"
-#include "utility.hpp"
+#include "ui-helpers.hpp"
 
+#include <obs-frontend-api.h>
 #include <util/config-file.h>
 
 namespace advss {

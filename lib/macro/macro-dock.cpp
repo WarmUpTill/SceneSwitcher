@@ -1,6 +1,6 @@
 #include "macro-dock.hpp"
 #include "macro.hpp"
-#include "utility.hpp"
+#include "ui-helpers.hpp"
 
 #include <QLayout>
 

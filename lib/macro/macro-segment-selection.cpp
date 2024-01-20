@@ -1,8 +1,14 @@
 #include "macro-segment-selection.hpp"
 #include "advanced-scene-switcher.hpp"
+#include "macro-action-factory.hpp"
+#include "macro-condition-factory.hpp"
+#include "macro-helpers.hpp"
+#include "macro-segment.hpp"
 #include "obs-module-helper.hpp"
 #include "plugin-state-helpers.hpp"
-#include "utility.hpp"
+#include "ui-helpers.hpp"
+
+#include <QHBoxLayout>
 
 namespace advss {
 
@@ -62,6 +68,41 @@ void MacroSegmentSelection::SetType(const Type &value)
 void MacroSegmentSelection::MacroSegmentOrderChanged()
 {
 	SetupDescription();
+}
+
+QString GetMacroSegmentDescription(Macro *macro, int idx, bool isCondition)
+{
+	if (!macro) {
+		return "";
+	}
+	if (!IsValidMacroSegmentIndex(macro, idx, isCondition)) {
+		return "";
+	}
+
+	MacroSegment *segment;
+	if (isCondition) {
+		segment = GetMacroConditions(macro)->at(idx).get();
+	} else {
+		segment = GetMacroActions(macro)->at(idx).get();
+	}
+
+	QString description = QString::fromStdString(segment->GetShortDesc());
+	QString type;
+	if (isCondition) {
+		type = obs_module_text(MacroConditionFactory::GetConditionName(
+					       segment->GetId())
+					       .c_str());
+	} else {
+		type = obs_module_text(
+			MacroActionFactory::GetActionName(segment->GetId())
+				.c_str());
+	}
+
+	QString result = type;
+	if (!description.isEmpty()) {
+		result += ": " + description;
+	}
+	return result;
 }
 
 void MacroSegmentSelection::SetupDescription() const

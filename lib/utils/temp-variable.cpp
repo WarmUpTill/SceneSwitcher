@@ -4,6 +4,7 @@
 #include "macro.hpp"
 #include "macro-segment.hpp"
 #include "plugin-state-helpers.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 
 #include <QVariant>

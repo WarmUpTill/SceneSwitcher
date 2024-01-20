@@ -1,10 +1,10 @@
 #include "process-config.hpp"
+#include "layout-helpers.hpp"
 #include "log-helper.hpp"
 #include "name-dialog.hpp"
-#include "utility.hpp"
 
-#include <QProcess>
 #include <QFileDialog>
+#include <QProcess>
 
 namespace advss {
 

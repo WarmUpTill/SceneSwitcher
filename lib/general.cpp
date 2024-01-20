@@ -1,13 +1,19 @@
 #include "advanced-scene-switcher.hpp"
 #include "file-selection.hpp"
 #include "filter-combo-box.hpp"
+#include "layout-helpers.hpp"
 #include "macro.hpp"
+#include "selection-helpers.hpp"
+#include "source-helpers.hpp"
+#include "splitter-helpers.hpp"
 #include "status-control.hpp"
 #include "switcher-data.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 #include "variable.hpp"
 #include "version.h"
 
+#include <obs-frontend-api.h>
 #include <QFileDialog>
 
 namespace advss {

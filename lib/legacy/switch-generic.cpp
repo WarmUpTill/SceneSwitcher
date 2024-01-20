@@ -1,6 +1,7 @@
 #include "advanced-scene-switcher.hpp"
+#include "selection-helpers.hpp"
+#include "source-helpers.hpp"
 #include "switcher-data.hpp"
-#include "utility.hpp"
 
 constexpr auto previous_scene_name = "Previous Scene";
 constexpr auto current_transition_name = "Current Transition";

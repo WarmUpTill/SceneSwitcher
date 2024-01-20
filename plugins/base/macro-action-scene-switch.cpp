@@ -1,8 +1,11 @@
 #include "macro-action-scene-switch.hpp"
+#include "layout-helpers.hpp"
 #include "macro-helpers.hpp"
 #include "plugin-state-helpers.hpp"
 #include "scene-switch-helpers.hpp"
-#include "utility.hpp"
+#include "source-helpers.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 

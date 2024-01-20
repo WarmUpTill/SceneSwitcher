@@ -1,11 +1,10 @@
 #include "macro-action-edit.hpp"
-#include "macro-helpers.hpp"
-#include "macro.hpp"
-#include "macro-properties.hpp"
 #include "advanced-scene-switcher.hpp"
+#include "macro-helpers.hpp"
+#include "macro-properties.hpp"
+#include "macro.hpp"
 #include "section.hpp"
 #include "switch-button.hpp"
-#include "utility.hpp"
 
 #include <QGraphicsOpacityEffect>
 

@@ -2,11 +2,12 @@
 #include "token.hpp"
 #include "twitch-helpers.hpp"
 
-#include <utility.hpp>
 #include <name-dialog.hpp>
 #include <obs-module-helper.hpp>
 #include <obs.hpp>
 #include <QVBoxLayout>
+#include <ui-helpers.hpp>
+#include <utility.hpp>
 
 namespace advss {
 

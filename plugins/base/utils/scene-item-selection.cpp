@@ -1,5 +1,9 @@
 #include "scene-item-selection.hpp"
+#include "layout-helpers.hpp"
 #include "obs-module-helper.hpp"
+#include "selection-helpers.hpp"
+#include "source-helpers.hpp"
+#include "ui-helpers.hpp"
 
 #include <set>
 

@@ -1,5 +1,9 @@
 #include "advanced-scene-switcher.hpp"
+#include "layout-helpers.hpp"
+#include "source-helpers.hpp"
+#include "selection-helpers.hpp"
 #include "switcher-data.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 
 #include <QFileDialog>
@@ -404,7 +408,7 @@ VideoSwitchWidget::VideoSwitchWidget(QWidget *parent, VideoSwitch *s)
 	QWidget::connect(ignoreInactiveSource, SIGNAL(stateChanged(int)), this,
 			 SLOT(IgnoreInactiveChanged(int)));
 
-	populateVideoSelection(videoSources);
+	PopulateVideoSelection(videoSources);
 	populateConditionSelection(condition);
 
 	if (s) {

@@ -1,7 +1,8 @@
 #include "macro-action-filter.hpp"
+#include "layout-helpers.hpp"
 #include "json-helpers.hpp"
 #include "source-settings-helpers.hpp"
-#include "utility.hpp"
+#include "selection-helpers.hpp"
 
 namespace advss {
 

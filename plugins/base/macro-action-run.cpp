@@ -1,5 +1,5 @@
 #include "macro-action-run.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
 
 #include <QProcess>
 #include <QDesktopServices>

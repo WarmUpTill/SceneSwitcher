@@ -1,6 +1,9 @@
 #include "macro-action-scene-collection.hpp"
+#include "layout-helpers.hpp"
 #include "plugin-state-helpers.hpp"
-#include "utility.hpp"
+#include "selection-helpers.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 

@@ -1,8 +1,9 @@
 #include "scene-switch-helpers.hpp"
 #include "log-helper.hpp"
-#include "obs-frontend-api.h"
+#include "source-helpers.hpp"
 #include "switcher-data.hpp"
-#include "utility.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 

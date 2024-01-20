@@ -1,6 +1,7 @@
 #include "macro-action-hotkey.hpp"
-#include "platform-funcs.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
+#include "selection-helpers.hpp"
+#include "source-helpers.hpp"
 
 #include <thread>
 #include <obs-interaction.h>

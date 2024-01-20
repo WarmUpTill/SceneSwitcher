@@ -1,18 +1,19 @@
-#include "macro.hpp"
-#include "macro-tree.hpp"
+#include "advanced-scene-switcher.hpp"
 #include "macro-action-edit.hpp"
 #include "macro-condition-edit.hpp"
-#include "advanced-scene-switcher.hpp"
-#include "switcher-data.hpp"
-#include "name-dialog.hpp"
-#include "macro-properties.hpp"
 #include "macro-export-import-dialog.hpp"
+#include "macro-properties.hpp"
+#include "macro-tree.hpp"
+#include "macro.hpp"
+#include "name-dialog.hpp"
+#include "switcher-data.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 #include "version.h"
 
 #include <QColor>
-#include <QMenu>
 #include <QGraphicsOpacityEffect>
+#include <QMenu>
 #include <QPropertyAnimation>
 
 namespace advss {

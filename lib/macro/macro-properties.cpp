@@ -1,12 +1,12 @@
 #include "macro-properties.hpp"
-#include "macro.hpp"
+#include "layout-helpers.hpp"
 #include "obs-module-helper.hpp"
-#include "utility.hpp"
+#include "macro.hpp"
 
-#include <QVBoxLayout>
 #include <QDialogButtonBox>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QVBoxLayout>
 
 namespace advss {
 

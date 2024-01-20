@@ -1,5 +1,5 @@
 #include "variable-spinbox.hpp"
-#include "utility.hpp"
+#include "ui-helpers.hpp"
 
 #include <QLayout>
 

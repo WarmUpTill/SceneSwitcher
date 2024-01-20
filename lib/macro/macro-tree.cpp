@@ -1,6 +1,7 @@
 #include "macro-tree.hpp"
 #include "macro.hpp"
 #include "sync-helpers.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 
 #include <obs.h>

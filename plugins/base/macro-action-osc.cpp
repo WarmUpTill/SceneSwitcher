@@ -1,8 +1,7 @@
 #include "macro-action-osc.hpp"
-#include "utility.hpp"
 
-#include <system_error>
 #include <QGroupBox>
+#include <system_error>
 
 namespace advss {
 

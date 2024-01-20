@@ -159,6 +159,8 @@ target_sources(
           lib/utils/filter-combo-box.hpp
           lib/utils/item-selection-helpers.cpp
           lib/utils/item-selection-helpers.hpp
+          lib/utils/layout-helpers.cpp
+          lib/utils/layout-helpers.hpp
           lib/utils/log-helper.cpp
           lib/utils/log-helper.hpp
           lib/utils/math-helpers.cpp
@@ -188,10 +190,16 @@ target_sources(
           lib/utils/screenshot-helper.hpp
           lib/utils/section.cpp
           lib/utils/section.hpp
+          lib/utils/selection-helpers.cpp
+          lib/utils/selection-helpers.hpp
           lib/utils/slider-spinbox.cpp
           lib/utils/slider-spinbox.hpp
+          lib/utils/source-helpers.cpp
+          lib/utils/source-helpers.hpp
           lib/utils/source-selection.cpp
           lib/utils/source-selection.hpp
+          lib/utils/splitter-helpers.cpp
+          lib/utils/splitter-helpers.hpp
           lib/utils/status-control.cpp
           lib/utils/status-control.hpp
           lib/utils/switch-button.cpp
@@ -200,6 +208,8 @@ target_sources(
           lib/utils/sync-helpers.hpp
           lib/utils/temp-variable.cpp
           lib/utils/temp-variable.hpp
+          lib/utils/ui-helpers.cpp
+          lib/utils/ui-helpers.hpp
           lib/utils/utility.cpp
           lib/utils/utility.hpp
           lib/utils/variable-line-edit.cpp

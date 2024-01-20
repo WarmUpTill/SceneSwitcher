@@ -1,6 +1,7 @@
 #include "macro-condition-process.hpp"
+#include "layout-helpers.hpp"
 #include "platform-funcs.hpp"
-#include "utility.hpp"
+#include "selection-helpers.hpp"
 
 #include <regex>
 

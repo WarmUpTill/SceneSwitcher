@@ -2,15 +2,16 @@
 Most of this code is based on https://github.com/Palakis/obs-websocket
 */
 
-#include <QtWidgets/QMainWindow>
-#include <QTime>
-#include <QMessageBox>
-
 #include "advanced-scene-switcher.hpp"
 #include "obs-module-helper.hpp"
-#include "switcher-data.hpp"
 #include "scene-switch-helpers.hpp"
-#include "utility.hpp"
+#include "source-helpers.hpp"
+#include "switcher-data.hpp"
+
+#include <obs-frontend-api.h>
+#include <QMessageBox>
+#include <QTime>
+#include <QMainWindow>
 
 namespace advss {
 

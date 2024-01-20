@@ -1,5 +1,10 @@
 #include "advanced-scene-switcher.hpp"
+#include "layout-helpers.hpp"
+#include "obs-frontend-api.h"
+#include "selection-helpers.hpp"
+#include "source-helpers.hpp"
 #include "switcher-data.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 
 #include <QFileDialog>

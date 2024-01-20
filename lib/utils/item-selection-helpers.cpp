@@ -1,7 +1,7 @@
 #include "item-selection-helpers.hpp"
 #include "name-dialog.hpp"
 #include "obs-module-helper.hpp"
-#include "utility.hpp"
+#include "ui-helpers.hpp"
 
 #include <algorithm>
 #include <QAction>

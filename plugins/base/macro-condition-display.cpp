@@ -1,6 +1,6 @@
 #include "macro-condition-display.hpp"
+#include "layout-helpers.hpp"
 #include "monitor-helpers.hpp"
-#include "utility.hpp"
 
 #include <QGuiApplication>
 

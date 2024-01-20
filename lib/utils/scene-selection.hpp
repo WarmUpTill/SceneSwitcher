@@ -1,10 +1,12 @@
 #pragma once
-#include "scene-group.hpp"
-#include "variable.hpp"
 #include "filter-combo-box.hpp"
-#include "utility.hpp"
+
+#include <obs.hpp>
 
 namespace advss {
+
+struct SceneGroup;
+class Variable;
 
 class SceneSelection {
 public:

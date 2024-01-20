@@ -1,5 +1,7 @@
 #include "macro-action-replay-buffer.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 
@@ -10,7 +12,7 @@ bool MacroActionReplayBuffer::_registered = MacroActionFactory::Register(
 	{MacroActionReplayBuffer::Create, MacroActionReplayBufferEdit::Create,
 	 "AdvSceneSwitcher.action.replay"});
 
-const static std::map<ReplayBufferAction, std::string> actionTypes = {
+static const std::map<ReplayBufferAction, std::string> actionTypes = {
 	{ReplayBufferAction::STOP, "AdvSceneSwitcher.action.replay.type.stop"},
 	{ReplayBufferAction::START,
 	 "AdvSceneSwitcher.action.replay.type.start"},

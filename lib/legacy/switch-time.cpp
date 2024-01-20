@@ -1,5 +1,7 @@
 #include "advanced-scene-switcher.hpp"
+#include "layout-helpers.hpp"
 #include "switcher-data.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {

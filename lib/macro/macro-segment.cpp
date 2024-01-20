@@ -1,15 +1,15 @@
 #include "macro-segment.hpp"
 #include "macro.hpp"
-#include "section.hpp"
-#include "utility.hpp"
 #include "mouse-wheel-guard.hpp"
+#include "section.hpp"
+#include "ui-helpers.hpp"
 
 #include <obs.hpp>
-#include <QEvent>
-#include <QMouseEvent>
-#include <QLabel>
-#include <QScrollBar>
 #include <QApplication>
+#include <QEvent>
+#include <QLabel>
+#include <QMouseEvent>
+#include <QScrollBar>
 
 namespace advss {
 

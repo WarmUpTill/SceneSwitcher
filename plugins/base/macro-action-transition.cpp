@@ -1,5 +1,7 @@
 #include "macro-action-transition.hpp"
-#include "utility.hpp"
+#include "layout-helpers.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 

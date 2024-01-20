@@ -1,11 +1,14 @@
-#include <QVBoxLayout>
-#include <QDialogButtonBox>
-#include <random>
-
 #include "advanced-scene-switcher.hpp"
-#include "switcher-data.hpp"
+#include "layout-helpers.hpp"
 #include "name-dialog.hpp"
-#include "utility.hpp"
+#include "selection-helpers.hpp"
+#include "source-helpers.hpp"
+#include "switcher-data.hpp"
+#include "ui-helpers.hpp"
+
+#include <QDialogButtonBox>
+#include <QVBoxLayout>
+#include <random>
 
 namespace advss {
 

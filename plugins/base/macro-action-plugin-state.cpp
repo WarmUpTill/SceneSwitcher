@@ -1,10 +1,14 @@
 #include "macro-action-plugin-state.hpp"
+#include "layout-helpers.hpp"
 #include "plugin-state-helpers.hpp"
-#include "utility.hpp"
+#include "selection-helpers.hpp"
+#include "source-helpers.hpp"
+#include "ui-helpers.hpp"
 
-#include <thread>
 #include <condition_variable>
+#include <obs-frontend-api.h>
 #include <QMainWindow>
+#include <thread>
 
 using namespace std::chrono_literals;
 
