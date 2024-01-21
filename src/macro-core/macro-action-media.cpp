@@ -58,7 +58,8 @@ void MacroActionMedia::PerformActionHelper(obs_source_t *source) const
 	obs_media_state state = obs_source_media_get_state(source);
 
 	switch (_action) {
-	case Action::PLAY:
+		using enum Action;
+	case PLAY:
 		if (state == OBS_MEDIA_STATE_STOPPED ||
 		    state == OBS_MEDIA_STATE_ENDED) {
 			obs_source_media_restart(source);
@@ -66,25 +67,25 @@ void MacroActionMedia::PerformActionHelper(obs_source_t *source) const
 			obs_source_media_play_pause(source, false);
 		}
 		break;
-	case Action::PAUSE:
+	case PAUSE:
 		obs_source_media_play_pause(source, true);
 		break;
-	case Action::STOP:
+	case STOP:
 		obs_source_media_stop(source);
 		break;
-	case Action::RESTART:
+	case RESTART:
 		obs_source_media_restart(source);
 		break;
-	case Action::NEXT:
+	case NEXT:
 		obs_source_media_next(source);
 		break;
-	case Action::PREVIOUS:
+	case PREVIOUS:
 		obs_source_media_previous(source);
 		break;
-	case Action::SEEK_DURATION:
+	case SEEK_DURATION:
 		obs_source_media_set_time(source, _seekDuration.Milliseconds());
 		break;
-	case Action::SEEK_PERCENTAGE:
+	case SEEK_PERCENTAGE:
 		SeekToPercentage(source);
 		break;
 	default:

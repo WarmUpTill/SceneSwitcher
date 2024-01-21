@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16.3)
+cmake_minimum_required(VERSION 3.22)
 
 project(advanced-scene-switcher VERSION 1.0.0)
 set(LIB_NAME "${PROJECT_NAME}-lib")
@@ -391,8 +391,8 @@ set_target_properties(
              AUTORCC ON
              AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/forms")
 
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
-target_compile_features(${LIB_NAME} PUBLIC cxx_std_17)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
+target_compile_features(${LIB_NAME} PUBLIC cxx_std_20)
 
 add_definitions(-DASIO_STANDALONE)
 target_include_directories(
