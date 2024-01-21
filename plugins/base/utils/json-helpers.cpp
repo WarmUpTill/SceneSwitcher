@@ -12,6 +12,9 @@ QString FormatJsonString(std::string s)
 QString FormatJsonString(QString json)
 {
 	QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+	if (doc.isNull()) {
+		return "";
+	}
 	return QString::fromUtf8(doc.toJson(QJsonDocument::Indented));
 }
 

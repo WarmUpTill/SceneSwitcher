@@ -1,6 +1,7 @@
 #pragma once
-#include "obs-data.h"
+#include "export-symbol-helper.hpp"
 
+#include <obs-data.h>
 #include <QWidget>
 #include <QCheckBox>
 #include <QPushButton>
@@ -23,11 +24,10 @@ public:
 
 	EXPORT bool Enabled() const { return _enable; }
 	EXPORT void SetEnabled(bool enable) { _enable = enable; }
-	EXPORT void CreateBackwardsCompatibleRegex(bool, bool = true);
-	EXPORT QRegularExpression::PatternOptions GetPatternOptions() const
-	{
-		return _options;
-	};
+	EXPORT void CreateBackwardsCompatibleRegex(bool enable,
+						   bool setOptions = true);
+	EXPORT QRegularExpression::PatternOptions GetPatternOptions() const;
+	void SetPatternOptions(QRegularExpression::PatternOptions);
 	EXPORT QRegularExpression GetRegularExpression(const QString &) const;
 	EXPORT QRegularExpression
 	GetRegularExpression(const std::string &) const;
