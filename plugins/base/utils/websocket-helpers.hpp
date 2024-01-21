@@ -22,9 +22,15 @@ namespace advss {
 
 using websocketpp::connection_hdl;
 
+struct WSMessage {
+	WSMessage(const std::string &m) : message(m) {}
+	std::string message = "";
+	bool processed = false;
+};
+
 void SendWebsocketEvent(const std::string &);
 std::string ConstructVendorRequestMessage(const std::string &message);
-std::vector<std::string> &GetWebsocketMessages();
+std::vector<WSMessage> &GetWebsocketMessages();
 
 class WSConnection : public QObject {
 	using server = websocketpp::server<websocketpp::config::asio>;
@@ -38,7 +44,7 @@ public:
 		     bool _reconnect, int reconnectDelay = 10);
 	void Disconnect();
 	void SendRequest(const std::string &msg);
-	std::vector<std::string> &Events() { return _messages; }
+	std::vector<WSMessage> &Events() { return _messages; }
 	std::string GetFail() { return _failMsg; }
 
 	enum class Status {
@@ -76,7 +82,7 @@ private:
 	std::atomic<Status> _status = {Status::DISCONNECTED};
 	std::atomic_bool _disconnect{false};
 
-	std::vector<std::string> _messages;
+	std::vector<WSMessage> _messages;
 };
 
 } // namespace advss

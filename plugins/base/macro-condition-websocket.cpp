@@ -22,32 +22,34 @@ const static std::map<MacroConditionWebsocket::Type, std::string>
 
 bool MacroConditionWebsocket::CheckCondition()
 {
-	std::vector<std::string> messages;
+	std::vector<WSMessage> *messages;
 	switch (_type) {
 	case MacroConditionWebsocket::Type::REQUEST:
-		messages = GetWebsocketMessages();
+		messages = &GetWebsocketMessages();
 		break;
 	case MacroConditionWebsocket::Type::EVENT: {
 		auto connection = _connection.lock();
 		if (!connection) {
 			return false;
 		}
-		messages = connection->Events();
+		messages = &connection->Events();
 		break;
 	}
 	default:
 		break;
 	}
 
-	for (const auto &msg : messages) {
+	for (auto &m : *messages) {
 		if (_regex.Enabled()) {
-			if (_regex.Matches(msg, _message)) {
-				SetVariableValue(msg);
+			if (_regex.Matches(m.message, _message)) {
+				SetVariableValue(m.message);
+				m.processed = true;
 				return true;
 			}
 		} else {
-			if (msg == std::string(_message)) {
-				SetVariableValue(msg);
+			if (m.message == std::string(_message)) {
+				SetVariableValue(m.message);
+				m.processed = true;
 				return true;
 			}
 		}

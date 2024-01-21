@@ -21,7 +21,7 @@ constexpr char VendorEvent[] = "AdvancedSceneSwitcherEvent";
 obs_websocket_vendor vendor;
 
 static void clearWebsocketMessages();
-static std::vector<std::string> websocketMessages;
+static std::vector<WSMessage> websocketMessages;
 static void registerWebsocketVendor();
 
 static bool setup();
@@ -34,20 +34,30 @@ bool setup()
 	return true;
 }
 
-std::vector<std::string> &GetWebsocketMessages()
+std::vector<WSMessage> &GetWebsocketMessages()
 {
 	return websocketMessages;
 }
 
 static void clearWebsocketMessages()
 {
-	websocketMessages.clear();
+	websocketMessages.erase(std::remove_if(websocketMessages.begin(),
+					       websocketMessages.end(),
+					       [](const WSMessage &message) {
+						       return message.processed;
+					       }),
+				websocketMessages.end());
 	for (auto &connection : GetConnections()) {
 		auto c = dynamic_cast<Connection *>(connection.get());
 		if (!c) {
 			continue;
 		}
-		c->Events().clear();
+		auto &messages = c->Events();
+		messages.erase(std::remove_if(messages.begin(), messages.end(),
+					      [](const WSMessage &message) {
+						      return message.processed;
+					      }),
+			       messages.end());
 	}
 }
 
