@@ -37,6 +37,16 @@ void RegexConfig::CreateBackwardsCompatibleRegex(bool enable, bool setOptions)
 	}
 }
 
+QRegularExpression::PatternOptions RegexConfig::GetPatternOptions() const
+{
+	return _options;
+}
+
+void RegexConfig::SetPatternOptions(QRegularExpression::PatternOptions options)
+{
+	_options = options;
+}
+
 QRegularExpression RegexConfig::GetRegularExpression(const QString &expr) const
 {
 	if (_partialMatch) {
