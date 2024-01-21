@@ -41,7 +41,7 @@ public:
 	void Load(obs_data_t *obj);
 	void Save(obs_data_t *obj) const;
 	std::string GetName() { return _name; }
-	std::vector<std::string> &Events() { return _client.Events(); }
+	std::vector<WSMessage> &Events() { return _client.Events(); }
 	bool IsUsingOBSProtocol() { return _useOBSWSProtocol; }
 
 private:
