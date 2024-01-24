@@ -95,8 +95,8 @@ public:
 	const QList<int> &GetElseActionSplitterPosition() const;
 	void SetElseActionSplitterPosition(const QList<int>);
 	bool HasValidSplitterPositions() const;
-	bool
-	ExecutedSince(const std::chrono::high_resolution_clock::time_point &);
+	bool WasExecutedSince(
+		const std::chrono::high_resolution_clock::time_point &) const;
 	bool OnChangePreventedActionsRecently();
 	void ResetUIHelpers();
 

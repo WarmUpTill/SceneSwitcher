@@ -223,8 +223,8 @@ bool Macro::PerformActions(bool match, bool forceParallel, bool ignorePause)
 	return ret;
 }
 
-bool Macro::ExecutedSince(
-	const std::chrono::high_resolution_clock::time_point &time)
+bool Macro::WasExecutedSince(
+	const std::chrono::high_resolution_clock::time_point &time) const
 {
 	return _lastExecutionTime > time;
 }
