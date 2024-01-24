@@ -169,13 +169,13 @@ bool MacroRefCondition::PostLoad()
 	return true;
 }
 
-MultiMacroRefCondtition::MultiMacroRefCondtition(Macro *m,
-						 bool supportsVariableValue)
+MultiMacroRefCondition::MultiMacroRefCondition(Macro *m,
+					       bool supportsVariableValue)
 	: MacroCondition(m, supportsVariableValue)
 {
 }
 
-bool MultiMacroRefCondtition::PostLoad()
+bool MultiMacroRefCondition::PostLoad()
 {
 	for (auto &macro : _macros) {
 		macro.PostLoad();

@@ -212,7 +212,7 @@ bool MacroConditionMacro::Load(obs_data_t *obj)
 bool MacroConditionMacro::PostLoad()
 {
 	return MacroCondition::PostLoad() && MacroRefCondition::PostLoad() &&
-	       MultiMacroRefCondtition::PostLoad();
+	       MultiMacroRefCondition::PostLoad();
 }
 
 std::string MacroConditionMacro::GetShortDesc() const
