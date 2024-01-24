@@ -166,7 +166,7 @@ void MacroDock::Highlight()
 		return;
 	}
 	if (_lastHighlightCheckTime.time_since_epoch().count() != 0 &&
-	    macro->ExecutedSince(_lastHighlightCheckTime)) {
+	    macro->WasExecutedSince(_lastHighlightCheckTime)) {
 		PulseWidget(this, Qt::green, QColor(0, 0, 0, 0), true);
 	}
 	_lastHighlightCheckTime = std::chrono::high_resolution_clock::now();
