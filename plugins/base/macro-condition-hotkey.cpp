@@ -1,5 +1,6 @@
 #include "macro-condition-hotkey.hpp"
 #include "layout-helpers.hpp"
+#include "macro-helpers.hpp"
 
 namespace advss {
 
@@ -22,8 +23,14 @@ MacroConditionHotkey::MacroConditionHotkey(Macro *m) : MacroCondition(m)
 
 bool MacroConditionHotkey::CheckCondition()
 {
-	bool ret = _hotkey->GetPressed() ||
-		   _hotkey->GetLastPressed() > _lastCheck;
+	const bool hotkeyIsCurrentlyPressed = _hotkey->GetPressed();
+	const bool hotkeyWasPressedSinceLastCheck = _hotkey->GetLastPressed() >
+						    _lastCheck;
+	const bool macroWasPausedSinceLastCheck =
+		MacroWasPausedSince(GetMacro(), _lastCheck);
+	bool ret = hotkeyIsCurrentlyPressed ||
+		   (hotkeyWasPressedSinceLastCheck &&
+		    !macroWasPausedSinceLastCheck);
 	_lastCheck = std::chrono::high_resolution_clock::now();
 	return ret;
 }

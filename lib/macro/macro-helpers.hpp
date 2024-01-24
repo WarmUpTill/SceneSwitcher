@@ -48,7 +48,8 @@ EXPORT int64_t MillisecondsSinceMacroConditionCheck(Macro *);
 EXPORT bool MacroIsStopped(Macro *);
 EXPORT bool MacroIsPaused(Macro *);
 EXPORT bool
-MacroWasPausedSince(Macro *, const std::chrono::high_resolution_clock::time_point &);
+MacroWasPausedSince(Macro *,
+		    const std::chrono::high_resolution_clock::time_point &);
 
 EXPORT void AddMacroHelperThread(Macro *, std::thread &&);
 
