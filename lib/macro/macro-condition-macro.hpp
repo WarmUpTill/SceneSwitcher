@@ -13,12 +13,12 @@
 
 namespace advss {
 
-class MacroConditionMacro : public MultiMacroRefCondtition,
+class MacroConditionMacro : public MultiMacroRefCondition,
 			    public MacroRefCondition {
 public:
 	MacroConditionMacro(Macro *m)
 		: MacroCondition(m),
-		  MultiMacroRefCondtition(m),
+		  MultiMacroRefCondition(m),
 		  MacroRefCondition(m)
 	{
 	}

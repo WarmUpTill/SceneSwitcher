@@ -89,9 +89,9 @@ public:
 	MacroRef _macro;
 };
 
-class EXPORT MultiMacroRefCondtition : virtual public MacroCondition {
+class EXPORT MultiMacroRefCondition : virtual public MacroCondition {
 public:
-	MultiMacroRefCondtition(Macro *m, bool supportsVariableValue = false);
+	MultiMacroRefCondition(Macro *m, bool supportsVariableValue = false);
 	bool PostLoad() override;
 
 	std::vector<MacroRef> _macros;
