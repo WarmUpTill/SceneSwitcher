@@ -327,6 +327,12 @@ bool Macro::DockIsVisible() const
 	return _dock && _dockAction && _dock->isVisible();
 }
 
+bool Macro::WasPausedSince(
+	const std::chrono::high_resolution_clock::time_point &time) const
+{
+	return _lastUnpauseTime > time;
+}
+
 void Macro::SetMatchOnChange(bool onChange)
 {
 	_performActionsOnChange = onChange;
@@ -335,6 +341,7 @@ void Macro::SetMatchOnChange(bool onChange)
 void Macro::SetPaused(bool pause)
 {
 	if (_paused && !pause) {
+		_lastUnpauseTime = std::chrono::high_resolution_clock::now();
 		ResetTimers();
 	}
 	_paused = pause;
