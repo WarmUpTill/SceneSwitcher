@@ -36,6 +36,8 @@ public:
 	bool RunInParallel() const { return _runInParallel; }
 	void SetPaused(bool pause = true);
 	bool Paused() const { return _paused; }
+	bool WasPausedSince(
+		const std::chrono::high_resolution_clock::time_point &) const;
 	void SetMatchOnChange(bool onChange);
 	bool MatchOnChange() const { return _performActionsOnChange; }
 	void SetSkipExecOnStart(bool skip) { _skipExecOnStart = skip; }
@@ -146,6 +148,7 @@ private:
 	bool _stop = false;
 	bool _done = true;
 	std::chrono::high_resolution_clock::time_point _lastCheckTime{};
+	std::chrono::high_resolution_clock::time_point _lastUnpauseTime{};
 	std::chrono::high_resolution_clock::time_point _lastExecutionTime{};
 	std::thread _backgroundThread;
 	std::vector<std::thread> _helperThreads;

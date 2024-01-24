@@ -2,6 +2,7 @@
 #include "export-symbol-helper.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <deque>
 #include <optional>
@@ -46,6 +47,8 @@ EXPORT int64_t MillisecondsSinceMacroConditionCheck(Macro *);
 
 EXPORT bool MacroIsStopped(Macro *);
 EXPORT bool MacroIsPaused(Macro *);
+EXPORT bool
+MacroWasPausedSince(Macro *, const std::chrono::high_resolution_clock::time_point &);
 
 EXPORT void AddMacroHelperThread(Macro *, std::thread &&);
 

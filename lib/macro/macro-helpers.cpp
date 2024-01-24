@@ -100,6 +100,13 @@ bool MacroIsPaused(Macro *macro)
 	return macro ? macro->Paused() : true;
 }
 
+bool MacroWasPausedSince(
+	Macro *macro,
+	const std::chrono::high_resolution_clock::time_point &time)
+{
+	return macro ? macro->WasPausedSince(time) : false;
+}
+
 void AddMacroHelperThread(Macro *macro, std::thread &&newThread)
 {
 	if (!macro) {
