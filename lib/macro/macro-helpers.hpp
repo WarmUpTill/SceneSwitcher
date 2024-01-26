@@ -57,6 +57,7 @@ EXPORT bool CheckMacros();
 
 EXPORT bool RunMacroActions(Macro *);
 EXPORT bool RunMacros();
+void StopAllMacros();
 
 EXPORT void LoadMacros(obs_data_t *obj);
 EXPORT void SaveMacros(obs_data_t *obj);
