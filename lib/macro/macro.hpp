@@ -209,6 +209,7 @@ void SaveMacros(obs_data_t *obj);
 std::deque<std::shared_ptr<Macro>> &GetMacros();
 bool CheckMacros();
 bool RunMacros();
+void StopAllMacros();
 Macro *GetMacroByName(const char *name);
 Macro *GetMacroByQString(const QString &name);
 std::weak_ptr<Macro> GetWeakMacroByName(const char *name);

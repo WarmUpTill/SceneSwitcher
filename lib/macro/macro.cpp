@@ -1303,6 +1303,13 @@ bool RunMacros()
 	return true;
 }
 
+void StopAllMacros()
+{
+	for (const auto &m : macros) {
+		m->Stop();
+	}
+}
+
 Macro *GetMacroByName(const char *name)
 {
 	for (const auto &m : macros) {
