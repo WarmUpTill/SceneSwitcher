@@ -41,7 +41,7 @@ cd SceneSwitcher
 ```
 
 You'll need [CMake](https://cmake.org/download/) and a working [OBS Studio development environment](https://obsproject.com/wiki/Building-OBS-Studio) installed on your computer.  
-The easiest way to set this up is to call the corresponding CI scripts, as they will automatically download all required dependencies and start build of the plugin:
+The easiest way to set this up is to call the corresponding CI scripts, as they will automatically download all required dependencies and start a build of the plugin:
 
 | Platform      | Command |
 | ----------- | ----------- |
@@ -51,7 +51,7 @@ The easiest way to set this up is to call the corresponding CI scripts, as they 
 
 Alternatively you can download the OBS dependencies from https://github.com/obsproject/obs-deps/releases and manually configure and start the build.
 
-Start by creating a build directory:
+Once all dependencies are set up start by creating a build directory:
 ```
 mkdir build && cd build
 ```
@@ -66,8 +66,8 @@ Finally, start the plugin build using your provided generator. (E.g. Ninja on Li
 
 Contributions to the plugin are always welcome and if you need any assistance do not hesitate to reach out.
 
-If you would like to expand upon the macro system by adding a new condition or action type have a loot at the examples in `src/macro-core`.  
-In general changes in the `src/legacy` folder should be avoided.  
+If you would like to expand upon the macro system by adding a new condition or action type have a look at the examples in `plugins/base`.  
+In general changes in the `lib/legacy` folder should be avoided.  
 
 ## Macro condition
 Macro conditions should inherit from the `MacroCondition` class and must implement the following functions:
@@ -76,7 +76,7 @@ Macro conditions should inherit from the `MacroCondition` class and must impleme
 class MacroConditionExample : public MacroCondition {
 public:
     MacroConditionExample(Macro *m) : MacroCondition(m) {}
-    // This function should perfrom the condition check
+    // This function should perform the condition check
     bool CheckCondition();
     // This function should store the required condition data to "obj"
     // For example called on OBS shutdown
@@ -88,7 +88,7 @@ public:
     // The _id is defined below
     std::string GetId() { return _id; };
     // Helper function called when new conditions are created
-    // Will be used later when regeistering the new condition type
+    // Will be used later when registering the new condition type
     static std::shared_ptr<MacroCondition> Create(Macro *m)
     {
         return std::make_shared<MacroConditionExample>(m);
@@ -148,7 +148,7 @@ The differences are highlighted in the comments below.
 class MacroActionExample : public MacroAction {
 public:
     MacroActionExample(Macro *m) : MacroAction(m) {}
-    // This function should perfrom the action
+    // This function should perform the action
     // If false is returned the macro will aborted
     bool PerformAction();
     bool Save(obs_data_t *obj);
@@ -194,5 +194,5 @@ MacroActionFactory::Register(
 );
 ```
 ## External dependencies
-If your intention is to add macro functionality which depends on external libraries, which is likely not to exist on all user setups, try to follow the examples under `src/macro-external`.
-These are basically plugins themselves that get attempted to be loaded on startup of the advanced scene switcher.
+If your intention is to add macro functionality which depends on external libraries, which is likely not to exist on all user setups, have a look at the folders in the `plugins/` directory, which are not named base.  
+For example `plugins/video` will only be loaded if the `OpenCV` dependencies are met.
