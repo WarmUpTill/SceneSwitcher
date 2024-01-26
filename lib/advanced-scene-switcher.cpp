@@ -481,6 +481,7 @@ void SwitcherData::Stop()
 		SetMacroAbortWait(true);
 		GetMacroWaitCV().notify_all();
 		GetMacroTransitionCV().notify_all();
+		StopAllMacros();
 		StopAndClearAllActionQueues();
 		CloseAllInputDialogs();
 		th->wait();
