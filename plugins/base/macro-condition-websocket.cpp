@@ -42,12 +42,14 @@ bool MacroConditionWebsocket::CheckCondition()
 	for (auto &m : *messages) {
 		if (_regex.Enabled()) {
 			if (_regex.Matches(m.message, _message)) {
+				SetTempVarValue("message", m.message);
 				SetVariableValue(m.message);
 				m.processed = true;
 				return true;
 			}
 		} else {
 			if (m.message == std::string(_message)) {
+				SetTempVarValue("message", m.message);
 				SetVariableValue(m.message);
 				m.processed = true;
 				return true;
@@ -91,6 +93,16 @@ std::string MacroConditionWebsocket::GetShortDesc() const
 		return "";
 	}
 	return GetWeakConnectionName(_connection);
+}
+
+void MacroConditionWebsocket::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+	AddTempvar(
+		"message",
+		obs_module_text("AdvSceneSwitcher.tempVar.websocket.message"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.websocket.message.description"));
 }
 
 static inline void populateConditionSelection(QComboBox *list)

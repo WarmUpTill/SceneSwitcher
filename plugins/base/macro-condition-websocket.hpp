@@ -32,6 +32,8 @@ public:
 	std::weak_ptr<Connection> _connection;
 
 private:
+	void SetupTempVars();
+
 	static bool _registered;
 	static const std::string id;
 };
