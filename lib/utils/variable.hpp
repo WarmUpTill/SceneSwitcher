@@ -69,6 +69,18 @@ public:
 	void SetVariable(const std::weak_ptr<Variable> &);
 };
 
+class ADVSS_EXPORT VariableSignalManager : public QObject {
+	Q_OBJECT
+public:
+	VariableSignalManager(QObject *parent = nullptr);
+	static VariableSignalManager *Instance();
+
+signals:
+	void Rename(const QString &, const QString &);
+	void Add(const QString &);
+	void Remove(const QString &);
+};
+
 void SaveVariables(obs_data_t *obj);
 void LoadVariables(obs_data_t *obj);
 

@@ -260,24 +260,27 @@ VariableSelection::VariableSelection(QWidget *parent)
 			"AdvSceneSwitcher.variable.configure", parent)
 {
 	// Connect to slots
-	QWidget::connect(
-		window(),
-		SIGNAL(VariableRenamed(const QString &, const QString &)), this,
-		SLOT(RenameItem(const QString &, const QString &)));
-	QWidget::connect(window(), SIGNAL(VariableAdded(const QString &)), this,
+	QWidget::connect(VariableSignalManager::Instance(),
+			 SIGNAL(Rename(const QString &, const QString &)), this,
+			 SLOT(RenameItem(const QString &, const QString &)));
+	QWidget::connect(VariableSignalManager::Instance(),
+			 SIGNAL(Add(const QString &)), this,
 			 SLOT(AddItem(const QString &)));
-	QWidget::connect(window(), SIGNAL(VariableRemoved(const QString &)),
-			 this, SLOT(RemoveItem(const QString &)));
+	QWidget::connect(VariableSignalManager::Instance(),
+			 SIGNAL(Remove(const QString &)), this,
+			 SLOT(RemoveItem(const QString &)));
 
 	// Forward signals
-	QWidget::connect(
-		this, SIGNAL(ItemRenamed(const QString &, const QString &)),
-		window(),
-		SIGNAL(VariableRenamed(const QString &, const QString &)));
-	QWidget::connect(this, SIGNAL(ItemAdded(const QString &)), window(),
-			 SIGNAL(VariableAdded(const QString &)));
-	QWidget::connect(this, SIGNAL(ItemRemoved(const QString &)), window(),
-			 SIGNAL(VariableRemoved(const QString &)));
+	QWidget::connect(this,
+			 SIGNAL(ItemRenamed(const QString &, const QString &)),
+			 VariableSignalManager::Instance(),
+			 SIGNAL(Rename(const QString &, const QString &)));
+	QWidget::connect(this, SIGNAL(ItemAdded(const QString &)),
+			 VariableSignalManager::Instance(),
+			 SIGNAL(Add(const QString &)));
+	QWidget::connect(this, SIGNAL(ItemRemoved(const QString &)),
+			 VariableSignalManager::Instance(),
+			 SIGNAL(Remove(const QString &)));
 }
 
 void VariableSelection::SetVariable(const std::string &variable)
@@ -299,6 +302,16 @@ void VariableSelection::SetVariable(const std::weak_ptr<Variable> &variable_)
 	} else {
 		_selection->setCurrentIndex(-1);
 	}
+}
+
+VariableSignalManager::VariableSignalManager(QObject *parent) : QObject(parent)
+{
+}
+
+VariableSignalManager *VariableSignalManager::Instance()
+{
+	static VariableSignalManager manager;
+	return &manager;
 }
 
 } // namespace advss
