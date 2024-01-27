@@ -24,13 +24,27 @@ public:
 	enum class Condition {
 		DISPLAY_NAME,
 		DISPLAY_COUNT,
+		DISPLAY_WIDTH,
+		DISPLAY_HEIGHT,
 	};
-	Condition _condition = Condition::DISPLAY_NAME;
+	enum class CompareMode { EQUALS, LESS, MORE };
+	CompareMode _compare = CompareMode::EQUALS;
+
+	void SetCondition(Condition);
+	Condition GetCondition() const { return _condition; }
+
 	StringVariable _displayName;
 	RegexConfig _regexConf;
 	IntVariable _displayCount;
+	IntVariable _displayWidth;
+	IntVariable _displayHeight;
+	bool _useDevicePixelRatio = true;
 
 private:
+	void SetupTempVars();
+
+	Condition _condition = Condition::DISPLAY_NAME;
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -53,20 +67,27 @@ public:
 
 private slots:
 	void ConditionChanged(int);
+	void CompareModeChanged(int);
 	void DisplayNameChanged(const QString &);
 	void RegexChanged(const RegexConfig &conf);
 	void DisplayCountChanged(const NumberVariable<int> &);
-
-protected:
-	QComboBox *_conditions;
-	QComboBox *_displays;
-	RegexConfigWidget *_regex;
-	VariableSpinBox *_displayCount;
-	std::shared_ptr<MacroConditionDisplay> _entryData;
+	void DisplayWidthChanged(const NumberVariable<int> &);
+	void DisplayHeightChanged(const NumberVariable<int> &);
+	void UseDevicePixelRatioChanged(int state);
 
 private:
 	void SetWidgetVisibility();
 
+	QComboBox *_conditions;
+	QComboBox *_compareModes;
+	QComboBox *_displays;
+	RegexConfigWidget *_regex;
+	VariableSpinBox *_displayCount;
+	VariableSpinBox *_displayWidth;
+	VariableSpinBox *_displayHeight;
+	QCheckBox *_useDevicePixelRatio;
+
+	std::shared_ptr<MacroConditionDisplay> _entryData;
 	bool _loading = true;
 };
 
