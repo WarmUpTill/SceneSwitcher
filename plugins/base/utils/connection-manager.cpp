@@ -35,7 +35,7 @@ static void saveConnections(obs_data_t *obj)
 		obs_data_array_push_back(connectionArray, array_obj);
 		obs_data_release(array_obj);
 	}
-	obs_data_set_array(obj, "connections", connectionArray);
+	obs_data_set_array(obj, "websocketConnections", connectionArray);
 	obs_data_array_release(connectionArray);
 }
 
@@ -43,8 +43,14 @@ static void loadConnections(obs_data_t *obj)
 {
 	connections.clear();
 
-	obs_data_array_t *connectionArray =
-		obs_data_get_array(obj, "connections");
+	obs_data_array_t *connectionArray = nullptr;
+	// TODO: remove this fallback at some point in the future
+	if (!obs_data_has_user_value(obj, "websocketConnections")) {
+		connectionArray = obs_data_get_array(obj, "connections");
+	} else {
+		connectionArray =
+			obs_data_get_array(obj, "websocketConnections");
+	}
 	size_t count = obs_data_array_count(connectionArray);
 
 	for (size_t i = 0; i < count; i++) {
