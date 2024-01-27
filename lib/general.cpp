@@ -259,6 +259,22 @@ void AdvSceneSwitcher::SetDeprecationWarnings()
 	}
 }
 
+static bool containsSensitiveData(obs_data_t *data)
+{
+	// Only checking for Twitch tokens and websocket connections for now
+	// Might have to be expanded upon / generalized in the future
+	OBSDataArrayAutoRelease twitchTokens =
+		obs_data_get_array(data, "twitchConnections");
+	OBSDataArrayAutoRelease websocketConnections =
+		obs_data_get_array(data, "websocketConnections");
+
+	auto isNotEmpty = [](obs_data_array *array) {
+		return obs_data_array_count(array) > 0;
+	};
+
+	return isNotEmpty(twitchTokens) || isNotEmpty(websocketConnections);
+}
+
 void AdvSceneSwitcher::on_exportSettings_clicked()
 {
 	QString directory = QFileDialog::getSaveFileName(
@@ -277,9 +293,13 @@ void AdvSceneSwitcher::on_exportSettings_clicked()
 		return;
 	}
 
-	OBSDataAutoRelease obj = obs_data_create();
-	switcher->SaveSettings(obj);
-	obs_data_save_json(obj, file.fileName().toUtf8().constData());
+	OBSDataAutoRelease data = obs_data_create();
+	switcher->SaveSettings(data);
+	obs_data_save_json(data, file.fileName().toUtf8().constData());
+	if (containsSensitiveData(data)) {
+		(void)DisplayMessage(obs_module_text(
+			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.exportSensitiveDataWarning"));
+	}
 }
 
 void AdvSceneSwitcher::on_importSettings_clicked()
