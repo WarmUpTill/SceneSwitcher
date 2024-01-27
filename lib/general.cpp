@@ -25,13 +25,11 @@ void AdvSceneSwitcher::reject()
 
 void AdvSceneSwitcher::UpdateNonMatchingScene(const QString &name)
 {
-	obs_source_t *scene = obs_get_source_by_name(name.toUtf8().constData());
-	obs_weak_source_t *ws = obs_source_get_weak_source(scene);
+	OBSSourceAutoRelease scene =
+		obs_get_source_by_name(name.toUtf8().constData());
+	OBSWeakSourceAutoRelease ws = obs_source_get_weak_source(scene);
 
 	switcher->nonMatchingScene = ws;
-
-	obs_weak_source_release(ws);
-	obs_source_release(scene);
 }
 
 void AdvSceneSwitcher::on_noMatchDontSwitch_clicked()
@@ -279,10 +277,9 @@ void AdvSceneSwitcher::on_exportSettings_clicked()
 		return;
 	}
 
-	obs_data_t *obj = obs_data_create();
+	OBSDataAutoRelease obj = obs_data_create();
 	switcher->SaveSettings(obj);
 	obs_data_save_json(obj, file.fileName().toUtf8().constData());
-	obs_data_release(obj);
 }
 
 void AdvSceneSwitcher::on_importSettings_clicked()
@@ -310,7 +307,7 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 		return;
 	}
 
-	obs_data_t *obj = obs_data_create_from_json_file(
+	OBSDataAutoRelease obj = obs_data_create_from_json_file(
 		file.fileName().toUtf8().constData());
 
 	if (!obj) {
@@ -321,7 +318,6 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->LoadSettings(obj);
-	obs_data_release(obj);
 	switcher->lastImportPath = path.toStdString();
 
 	(void)DisplayMessage(obs_module_text(
