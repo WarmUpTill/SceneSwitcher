@@ -27,21 +27,16 @@ GenericVaraiableSpinbox::GenericVaraiableSpinbox(QWidget *parent,
 	QWidget::connect(_variable, SIGNAL(SelectionChanged(const QString &)),
 			 this, SLOT(VariableChanged(const QString &)));
 
-	// Forward signals for variable selection
-	if (window() != this) {
-		QWidget::connect(window(),
-				 SIGNAL(VariableRenamed(const QString &,
-							const QString &)),
-				 this,
-				 SIGNAL(VariableRenamed(const QString &,
-							const QString &)));
-		QWidget::connect(window(),
-				 SIGNAL(VariableAdded(const QString &)), this,
-				 SIGNAL(VariableAdded(const QString &)));
-		QWidget::connect(window(),
-				 SIGNAL(VariableRemoved(const QString &)), this,
-				 SIGNAL(VariableRemoved(const QString &)));
-	}
+	QWidget::connect(
+		VariableSignalManager::Instance(),
+		SIGNAL(Rename(const QString &, const QString &)), this,
+		SIGNAL(VariableRenamed(const QString &, const QString &)));
+	QWidget::connect(VariableSignalManager::Instance(),
+			 SIGNAL(Add(const QString &)), this,
+			 SIGNAL(VariableAdded(const QString &)));
+	QWidget::connect(VariableSignalManager::Instance(),
+			 SIGNAL(Remove(const QString &)), this,
+			 SIGNAL(VariableRemoved(const QString &)));
 
 	auto layout = new QHBoxLayout();
 	layout->setContentsMargins(0, 0, 0, 0);

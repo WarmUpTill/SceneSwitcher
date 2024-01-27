@@ -193,9 +193,6 @@ signals:
 	void ConnectionAdded(const QString &);
 	void ConnectionRenamed(const QString &oldName, const QString &newName);
 	void ConnectionRemoved(const QString &);
-	void VariableAdded(const QString &);
-	void VariableRenamed(const QString &oldName, const QString &newName);
-	void VariableRemoved(const QString &);
 
 private:
 	enum class MacroSection { CONDITIONS, ACTIONS, ELSE_ACTIONS };

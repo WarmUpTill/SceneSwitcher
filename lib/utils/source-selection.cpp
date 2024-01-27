@@ -182,14 +182,15 @@ SourceSelectionWidget::SourceSelectionWidget(QWidget *parent,
 			 SLOT(SelectionChanged(int)));
 
 	// Variables
-	QWidget::connect(window(), SIGNAL(VariableAdded(const QString &)), this,
+	QWidget::connect(VariableSignalManager::Instance(),
+			 SIGNAL(Add(const QString &)), this,
 			 SLOT(ItemAdd(const QString &)));
-	QWidget::connect(window(), SIGNAL(VariableRemoved(const QString &)),
-			 this, SLOT(ItemRemove(const QString &)));
-	QWidget::connect(
-		window(),
-		SIGNAL(VariableRenamed(const QString &, const QString &)), this,
-		SLOT(ItemRename(const QString &, const QString &)));
+	QWidget::connect(VariableSignalManager::Instance(),
+			 SIGNAL(Remove(const QString &)), this,
+			 SLOT(ItemRemove(const QString &)));
+	QWidget::connect(VariableSignalManager::Instance(),
+			 SIGNAL(Rename(const QString &, const QString &)), this,
+			 SLOT(ItemRename(const QString &, const QString &)));
 }
 
 void SourceSelectionWidget::SetSource(const SourceSelection &s)
