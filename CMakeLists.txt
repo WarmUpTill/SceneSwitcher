@@ -212,20 +212,20 @@ target_sources(
           lib/utils/ui-helpers.hpp
           lib/utils/utility.cpp
           lib/utils/utility.hpp
-          lib/utils/variable-line-edit.cpp
-          lib/utils/variable-line-edit.hpp
-          lib/utils/variable-number.hpp
-          lib/utils/variable-number.tpp
-          lib/utils/variable-spinbox.cpp
-          lib/utils/variable-spinbox.hpp
-          lib/utils/variable-string.cpp
-          lib/utils/variable-string.hpp
-          lib/utils/variable-text-edit.cpp
-          lib/utils/variable-text-edit.hpp
-          lib/utils/variable.cpp
-          lib/utils/variable.hpp
           lib/utils/volume-control.cpp
-          lib/utils/volume-control.hpp)
+          lib/utils/volume-control.hpp
+          lib/variables/variable-line-edit.cpp
+          lib/variables/variable-line-edit.hpp
+          lib/variables/variable-number.hpp
+          lib/variables/variable-number.tpp
+          lib/variables/variable-spinbox.cpp
+          lib/variables/variable-spinbox.hpp
+          lib/variables/variable-string.cpp
+          lib/variables/variable-string.hpp
+          lib/variables/variable-text-edit.cpp
+          lib/variables/variable-text-edit.hpp
+          lib/variables/variable.cpp
+          lib/variables/variable.hpp)
 
 # --- End of section ---
 
@@ -249,6 +249,7 @@ target_include_directories(
           "${CMAKE_CURRENT_SOURCE_DIR}/lib/legacy"
           "${CMAKE_CURRENT_SOURCE_DIR}/lib/macro"
           "${CMAKE_CURRENT_SOURCE_DIR}/lib/utils"
+          "${CMAKE_CURRENT_SOURCE_DIR}/lib/variables"
           "${CMAKE_CURRENT_BINARY_DIR}/forms")
 
 set_target_properties(
