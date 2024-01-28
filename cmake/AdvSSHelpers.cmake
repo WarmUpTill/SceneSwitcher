@@ -295,7 +295,7 @@ function(setup_advss_plugin target)
     ${target}
     PRIVATE "${ADVSS_SOURCE_DIR}/lib" "${ADVSS_SOURCE_DIR}/lib/legacy"
             "${ADVSS_SOURCE_DIR}/lib/macro" "${ADVSS_SOURCE_DIR}/lib/utils"
-            "${ADVSS_SOURCE_DIR}/forms")
+            "${ADVSS_SOURCE_DIR}/lib/variables" "${ADVSS_SOURCE_DIR}/forms")
 endfunction()
 
 function(install_advss_plugin_dependency)
