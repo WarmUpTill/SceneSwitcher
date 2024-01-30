@@ -229,6 +229,11 @@ void MacroConditionTwitch::SetCondition(const Condition &condition)
 	ResetSubscription();
 }
 
+void MacroConditionTwitch::SetToken(const std::weak_ptr<TwitchToken> &t)
+{
+	_token = t;
+}
+
 void MacroConditionTwitch::SetChannel(const TwitchChannel &channel)
 {
 	_channel = channel;
@@ -281,19 +286,21 @@ setTempVarsHelper(obs_data_t *data,
 
 bool MacroConditionTwitch::CheckChannelGenericEvents(TwitchToken &token)
 {
-	auto eventSub = token.GetEventSub();
-	if (!eventSub) {
+	if (!_eventBuffer) {
 		return false;
 	}
 
-	auto events = eventSub->Events();
-	for (const auto &event : events) {
-		if (_subscriptionID != event.id) {
+	while (!_eventBuffer->Empty()) {
+		auto event = _eventBuffer->ConsumeMessage();
+		if (!event) {
 			continue;
 		}
-		SetVariableValue(event.ToString());
+		if (_subscriptionID != event->id) {
+			continue;
+		}
+		SetVariableValue(event->ToString());
 		setTempVarsHelper(
-			event.data,
+			event->data,
 			std::bind(&MacroConditionTwitch::SetTempVarValue, this,
 				  std::placeholders::_1,
 				  std::placeholders::_2));
@@ -305,14 +312,16 @@ bool MacroConditionTwitch::CheckChannelGenericEvents(TwitchToken &token)
 
 bool MacroConditionTwitch::CheckChannelLiveEvents(TwitchToken &token)
 {
-	auto eventSub = token.GetEventSub();
-	if (!eventSub) {
+	if (!_eventBuffer) {
 		return false;
 	}
 
-	auto events = eventSub->Events();
-	for (const auto &event : events) {
-		if (_subscriptionID != event.id) {
+	while (!_eventBuffer->Empty()) {
+		auto event = _eventBuffer->ConsumeMessage();
+		if (!event) {
+			continue;
+		}
+		if (_subscriptionID != event->id) {
 			continue;
 		}
 
@@ -321,15 +330,15 @@ bool MacroConditionTwitch::CheckChannelLiveEvents(TwitchToken &token)
 			continue;
 		}
 
-		auto type = obs_data_get_string(event.data, "type");
+		auto type = obs_data_get_string(event->data, "type");
 		const auto &typeId = it->second;
 		if (type != typeId) {
 			continue;
 		}
 
-		SetVariableValue(event.ToString());
+		SetVariableValue(event->ToString());
 		setTempVarsHelper(
-			event.data,
+			event->data,
 			std::bind(&MacroConditionTwitch::SetTempVarValue, this,
 				  std::placeholders::_1,
 				  std::placeholders::_2));
@@ -422,6 +431,20 @@ void MacroConditionTwitch::SetTempVarValues(const ChannelInfo &info)
 			info.is_branded_content ? "true" : "false");
 }
 
+bool advss::MacroConditionTwitch::EventSubscriptionIsSetup(
+	const std::shared_ptr<EventSub> &eventSub)
+{
+	if (!eventSub) {
+		return false;
+	}
+	SetupEventSubscription(*eventSub);
+	if (_subscriptionIDFuture.valid()) {
+		// Still waiting for the subscription to be registered
+		return false;
+	}
+	return true;
+}
+
 bool MacroConditionTwitch::CheckCondition()
 {
 	SetVariableValue("");
@@ -432,15 +455,8 @@ bool MacroConditionTwitch::CheckCondition()
 
 	auto eventSub = token->GetEventSub();
 
-	if (IsUsingEventSubCondition()) {
-		if (!eventSub) {
-			return false;
-		}
-		CheckEventSubscription(*eventSub);
-		if (_subscriptionIDFuture.valid()) {
-			// Still waiting for the subscription to be registered
-			return false;
-		}
+	if (IsUsingEventSubCondition() && !EventSubscriptionIsSetup(eventSub)) {
+		return false;
 	}
 
 	switch (_condition) {
@@ -688,7 +704,7 @@ bool MacroConditionTwitch::ConditionIsSupportedByToken()
 	return token->AnyOptionIsEnabled(options);
 }
 
-void MacroConditionTwitch::SetupEventSubscriptions()
+void MacroConditionTwitch::RegisterEventSubscription()
 {
 	if (!IsUsingEventSubCondition()) {
 		return;
@@ -773,10 +789,11 @@ void MacroConditionTwitch::SetupEventSubscriptions()
 
 void MacroConditionTwitch::ResetSubscription()
 {
+	_eventBuffer.reset();
 	_subscriptionID = "";
 }
 
-void MacroConditionTwitch::CheckEventSubscription(EventSub &eventSub)
+void MacroConditionTwitch::SetupEventSubscription(EventSub &eventSub)
 {
 	if (_subscriptionIDFuture.valid()) {
 		if (_subscriptionIDFuture.wait_for(std::chrono::seconds(0)) !=
@@ -788,7 +805,8 @@ void MacroConditionTwitch::CheckEventSubscription(EventSub &eventSub)
 	if (eventSub.SubscriptionIsActive(_subscriptionID)) {
 		return;
 	}
-	SetupEventSubscriptions();
+	RegisterEventSubscription();
+	_eventBuffer = eventSub.RegisterForEvents();
 }
 
 bool MacroConditionTwitch::IsUsingEventSubCondition()
@@ -1298,10 +1316,10 @@ void MacroConditionTwitchEdit::TwitchTokenChanged(const QString &token)
 	}
 
 	auto lock = LockContext();
-	_entryData->_token = GetWeakTwitchTokenByQString(token);
-	_category->SetToken(_entryData->_token);
-	_channel->SetToken(_entryData->_token);
-	_pointsReward->SetToken(_entryData->_token);
+	_entryData->SetToken(GetWeakTwitchTokenByQString(token));
+	_category->SetToken(_entryData->GetToken());
+	_channel->SetToken(_entryData->GetToken());
+	_pointsReward->SetToken(_entryData->GetToken());
 	_entryData->ResetChatConnection();
 
 	SetWidgetVisibility();
@@ -1322,14 +1340,14 @@ void MacroConditionTwitchEdit::CheckToken()
 	if (!_entryData) {
 		return;
 	}
-	if (_entryData->_token.expired()) {
+	if (_entryData->GetToken().expired()) {
 		SetTokenWarning(
 			true,
 			obs_module_text(
 				"AdvSceneSwitcher.twitchToken.noSelection"));
 		return;
 	}
-	if (!TokenIsValid(_entryData->_token)) {
+	if (!TokenIsValid(_entryData->GetToken())) {
 		SetTokenWarning(
 			true, obs_module_text(
 				      "AdvSceneSwitcher.twitchToken.notValid"));
@@ -1470,17 +1488,17 @@ void MacroConditionTwitchEdit::UpdateEntryData()
 
 	_conditions->setCurrentIndex(_conditions->findData(
 		static_cast<int>(_entryData->GetCondition())));
-	_tokens->SetToken(_entryData->_token);
-	_channel->SetToken(_entryData->_token);
+	_tokens->SetToken(_entryData->GetToken());
+	_channel->SetToken(_entryData->GetToken());
 	_channel->SetChannel(_entryData->_channel);
-	_pointsReward->SetToken(_entryData->_token);
+	_pointsReward->SetToken(_entryData->GetToken());
 	_pointsReward->SetChannel(_entryData->_channel);
 	_pointsReward->SetPointsReward(_entryData->_pointsReward);
 	_streamTitle->setText(_entryData->_streamTitle);
 	_regexTitle->SetRegexConfig(_entryData->_regexTitle);
 	_chatMessage->setPlainText(_entryData->_chatMessage);
 	_regexChat->SetRegexConfig(_entryData->_regexChat);
-	_category->SetToken(_entryData->_token);
+	_category->SetToken(_entryData->GetToken());
 	_category->SetCategory(_entryData->_category);
 
 	SetWidgetVisibility();

@@ -1,4 +1,6 @@
 #pragma once
+#include "message-dispatcher.hpp"
+
 #include <obs.hpp>
 #include <websocketpp/client.hpp>
 #include <QObject>
@@ -23,8 +25,12 @@ typedef websocketpp::client<websocketpp::config::asio_tls_client>
 	EventSubWSClient;
 #endif
 
-using websocketpp::connection_hdl;
+struct Event;
 class TwitchToken;
+
+using websocketpp::connection_hdl;
+using EventSubMessageBuffer = std::shared_ptr<MessageBuffer<Event>>;
+using EventSubMessageDispatcher = MessageDispatcher<Event>;
 
 struct Event {
 	std::string id;
@@ -47,11 +53,10 @@ public:
 
 	void Connect();
 	void Disconnect();
-	std::vector<Event> Events();
+	[[nodiscard]] EventSubMessageBuffer RegisterForEvents();
 	bool SubscriptionIsActive(const std::string &id);
 	static std::string AddEventSubscribtion(std::shared_ptr<TwitchToken>,
 						Subscription);
-	static void ClearAllEvents();
 	void ClearActiveSubscriptions();
 
 private:
@@ -71,8 +76,6 @@ private:
 	void HandleReconnect(obs_data_t *);
 	void HanldeRevocation(obs_data_t *);
 
-	void ClearEvents();
-
 	void RegisterInstance();
 	void UnregisterInstance();
 
@@ -87,14 +90,12 @@ private:
 	std::string _url;
 	std::string _sessionID;
 
-	std::mutex _messageMtx;
-	std::vector<Event> _messages;
 	std::deque<std::string> _messageIDs;
 	std::mutex _subscriptionMtx;
 	std::set<Subscription> _activeSubscriptions;
 	static std::mutex _instancesMtx;
 	static std::vector<EventSub *> _instances;
-	static bool _setupDone;
+	EventSubMessageDispatcher _dispatcher;
 };
 
 } // namespace advss
