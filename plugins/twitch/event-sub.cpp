@@ -3,7 +3,6 @@
 #include "twitch-helpers.hpp"
 
 #include <log-helper.hpp>
-#include <plugin-state-helpers.hpp>
 
 namespace advss {
 
@@ -26,6 +25,8 @@ static constexpr std::string_view registerSubscriptionPath =
 	"/helix/eventsub/subscriptions";
 #endif
 static const int reconnectDelay = 15;
+
+#undef DispatchMessage
 
 EventSub::EventSub() : QObject(nullptr)
 {
@@ -59,20 +60,6 @@ EventSub::~EventSub()
 	UnregisterInstance();
 }
 
-static bool setupEventSubMessageClear()
-{
-	AddIntervalResetStep(&EventSub::ClearAllEvents);
-	return true;
-}
-
-bool EventSub::_setupDone = setupEventSubMessageClear();
-
-void EventSub::ClearEvents()
-{
-	std::lock_guard<std::mutex> lock(_messageMtx);
-	_messages.clear();
-}
-
 std::mutex EventSub::_instancesMtx;
 std::vector<EventSub *> EventSub::_instances;
 
@@ -87,14 +74,6 @@ void EventSub::UnregisterInstance()
 	std::lock_guard<std::mutex> lock(_instancesMtx);
 	auto it = std::remove(_instances.begin(), _instances.end(), this);
 	_instances.erase(it, _instances.end());
-}
-
-void EventSub::ClearAllEvents()
-{
-	std::lock_guard<std::mutex> lock(_instancesMtx);
-	for (const auto &eventSub : _instances) {
-		eventSub->ClearEvents();
-	}
 }
 
 void EventSub::ConnectThread()
@@ -169,10 +148,9 @@ void EventSub::Disconnect()
 	ClearActiveSubscriptions();
 }
 
-std::vector<Event> EventSub::Events()
+EventSubMessageBuffer EventSub::RegisterForEvents()
 {
-	std::lock_guard<std::mutex> lock(_messageMtx);
-	return _messages;
+	return _dispatcher.RegisterClient();
 }
 
 bool EventSub::SubscriptionIsActive(const std::string &id)
@@ -358,8 +336,7 @@ void EventSub::HandleNotification(obs_data_t *data)
 	event.type = obs_data_get_string(subscription, "type");
 	OBSDataAutoRelease eventData = obs_data_get_obj(data, "event");
 	event.data = eventData;
-	std::lock_guard<std::mutex> lock(_messageMtx);
-	_messages.emplace_back(event);
+	_dispatcher.DispatchMessage(event);
 }
 
 void EventSub::HandleReconnect(obs_data_t *data)

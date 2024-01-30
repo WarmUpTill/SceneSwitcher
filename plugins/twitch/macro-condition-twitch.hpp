@@ -82,6 +82,8 @@ public:
 
 	void SetCondition(const Condition &condition);
 	Condition GetCondition() const { return _condition; }
+	void SetToken(const std::weak_ptr<TwitchToken> &);
+	std::weak_ptr<TwitchToken> GetToken() const { return _token; }
 	void SetChannel(const TwitchChannel &channel);
 	TwitchChannel GetChannel() const { return _channel; }
 	void SetPointsReward(const TwitchPointsReward &pointsReward);
@@ -93,7 +95,6 @@ public:
 	bool Load(obs_data_t *obj);
 	bool ConditionIsSupportedByToken();
 
-	std::weak_ptr<TwitchToken> _token;
 	TwitchChannel _channel;
 	TwitchPointsReward _pointsReward;
 	StringVariable _streamTitle = obs_module_text(
@@ -108,10 +109,11 @@ private:
 	bool CheckChannelLiveEvents(TwitchToken &token);
 	bool CheckChatMessages(TwitchToken &token);
 
-	void SetupEventSubscriptions();
+	void RegisterEventSubscription();
 	void ResetSubscription();
-	void CheckEventSubscription(EventSub &);
+	void SetupEventSubscription(EventSub &);
 	bool IsUsingEventSubCondition();
+	bool EventSubscriptionIsSetup(const std::shared_ptr<EventSub> &);
 	void AddChannelGenericEventSubscription(
 		const char *version, bool includeModeratorId = false,
 		const char *mainUserIdFieldName = "broadcaster_user_id",
@@ -123,6 +125,9 @@ private:
 
 	Condition _condition = Condition::LIVE_POLLING;
 
+	std::weak_ptr<TwitchToken> _token;
+
+	EventSubMessageBuffer _eventBuffer;
 	std::future<std::string> _subscriptionIDFuture;
 	std::string _subscriptionID;
 
