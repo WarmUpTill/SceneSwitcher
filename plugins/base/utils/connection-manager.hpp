@@ -40,9 +40,9 @@ public:
 	void SendMsg(const std::string &msg);
 	void Load(obs_data_t *obj);
 	void Save(obs_data_t *obj) const;
-	std::string GetName() { return _name; }
-	std::vector<WSMessage> &Events() { return _client.Events(); }
-	bool IsUsingOBSProtocol() { return _useOBSWSProtocol; }
+	std::string GetName() const { return _name; }
+	WebsocketMessageBuffer RegisterForEvents();
+	bool IsUsingOBSProtocol() const { return _useOBSWSProtocol; }
 
 private:
 	void UseOBSWebsocketProtocol(bool);

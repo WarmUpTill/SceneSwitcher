@@ -1,4 +1,6 @@
 #pragma once
+#include "message-buffer.hpp"
+#include "message-dispatcher.hpp"
 
 #include <set>
 #include <QtCore/QObject>
@@ -21,16 +23,12 @@
 namespace advss {
 
 using websocketpp::connection_hdl;
-
-struct WSMessage {
-	WSMessage(const std::string &m) : message(m) {}
-	std::string message = "";
-	bool processed = false;
-};
+using WebsocketMessageBuffer = std::shared_ptr<MessageBuffer<std::string>>;
+using WebsocketMessageDispatcher = MessageDispatcher<std::string>;
 
 void SendWebsocketEvent(const std::string &);
 std::string ConstructVendorRequestMessage(const std::string &message);
-std::vector<WSMessage> &GetWebsocketMessages();
+[[nodiscard]] WebsocketMessageBuffer RegisterForWebsocketMessages();
 
 class WSConnection : public QObject {
 	using server = websocketpp::server<websocketpp::config::asio>;
@@ -44,7 +42,7 @@ public:
 		     bool _reconnect, int reconnectDelay = 10);
 	void Disconnect();
 	void SendRequest(const std::string &msg);
-	std::vector<WSMessage> &Events() { return _messages; }
+	[[nodiscard]] WebsocketMessageBuffer RegisterForEvents();
 	std::string GetFail() { return _failMsg; }
 
 	enum class Status {
@@ -82,7 +80,7 @@ private:
 	std::atomic<Status> _status = {Status::DISCONNECTED};
 	std::atomic_bool _disconnect{false};
 
-	std::vector<WSMessage> _messages;
+	WebsocketMessageDispatcher _dispatcher;
 };
 
 } // namespace advss

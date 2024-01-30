@@ -14,14 +14,14 @@ using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 
 #define RPC_VERSION 1
+#undef DispatchMessage
 
 constexpr char VendorName[] = "AdvancedSceneSwitcher";
 constexpr char VendorRequest[] = "AdvancedSceneSwitcherMessage";
 constexpr char VendorEvent[] = "AdvancedSceneSwitcherEvent";
 obs_websocket_vendor vendor;
 
-static void clearWebsocketMessages();
-static std::vector<WSMessage> websocketMessages;
+static WebsocketMessageDispatcher websocketMessageDispatcher;
 static void registerWebsocketVendor();
 
 static bool setup();
@@ -29,36 +29,13 @@ static bool setupDone = setup();
 
 bool setup()
 {
-	AddIntervalResetStep(clearWebsocketMessages);
 	AddPluginPostLoadStep(registerWebsocketVendor);
 	return true;
 }
 
-std::vector<WSMessage> &GetWebsocketMessages()
+WebsocketMessageBuffer RegisterForWebsocketMessages()
 {
-	return websocketMessages;
-}
-
-static void clearWebsocketMessages()
-{
-	websocketMessages.erase(std::remove_if(websocketMessages.begin(),
-					       websocketMessages.end(),
-					       [](const WSMessage &message) {
-						       return message.processed;
-					       }),
-				websocketMessages.end());
-	for (auto &connection : GetConnections()) {
-		auto c = dynamic_cast<Connection *>(connection.get());
-		if (!c) {
-			continue;
-		}
-		auto &messages = c->Events();
-		messages.erase(std::remove_if(messages.begin(), messages.end(),
-					      [](const WSMessage &message) {
-						      return message.processed;
-					      }),
-			       messages.end());
-	}
+	return websocketMessageDispatcher.RegisterClient();
 }
 
 void SendWebsocketEvent(const std::string &eventMsg)
@@ -79,8 +56,7 @@ static void receiveWebsocketMessage(obs_data_t *request_data, obs_data_t *,
 	}
 
 	auto msg = obs_data_get_string(request_data, "message");
-	auto lock = LockContext();
-	websocketMessages.emplace_back(msg);
+	websocketMessageDispatcher.DispatchMessage(msg);
 	vblog(LOG_INFO, "received message: %s", msg);
 }
 
@@ -247,6 +223,11 @@ void WSConnection::SendRequest(const std::string &msg)
 	Send(msg);
 }
 
+WebsocketMessageBuffer WSConnection::RegisterForEvents()
+{
+	return _dispatcher.RegisterClient();
+}
+
 WSConnection::Status WSConnection::GetStatus() const
 {
 	return _status;
@@ -329,8 +310,8 @@ void WSConnection::HandleEvent(obs_data_t *msg)
 		return;
 	}
 	auto eventDataNested = obs_data_get_obj(eventData, "eventData");
-	auto lock = LockContext();
-	_messages.emplace_back(obs_data_get_string(eventDataNested, "message"));
+	_dispatcher.DispatchMessage(
+		obs_data_get_string(eventDataNested, "message"));
 	vblog(LOG_INFO, "received event msg \"%s\"",
 	      obs_data_get_string(eventDataNested, "message"));
 	obs_data_release(eventDataNested);
@@ -361,9 +342,8 @@ void WSConnection::OnGenericMessage(connection_hdl, client::message_ptr message)
 		return;
 	}
 
-	auto lock = LockContext();
 	const auto payload = message->get_payload();
-	_messages.emplace_back(payload);
+	_dispatcher.DispatchMessage(payload);
 	vblog(LOG_INFO, "received event msg \"%s\"", payload.c_str());
 }
 

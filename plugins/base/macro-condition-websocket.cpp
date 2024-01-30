@@ -20,38 +20,33 @@ const static std::map<MacroConditionWebsocket::Type, std::string>
 		 "AdvSceneSwitcher.condition.websocket.type.event"},
 };
 
+MacroConditionWebsocket::MacroConditionWebsocket(Macro *m)
+	: MacroCondition(m, true)
+{
+	_messageBuffer = RegisterForWebsocketMessages();
+}
+
 bool MacroConditionWebsocket::CheckCondition()
 {
-	std::vector<WSMessage> *messages;
-	switch (_type) {
-	case MacroConditionWebsocket::Type::REQUEST:
-		messages = &GetWebsocketMessages();
-		break;
-	case MacroConditionWebsocket::Type::EVENT: {
-		auto connection = _connection.lock();
-		if (!connection) {
-			return false;
-		}
-		messages = &connection->Events();
-		break;
-	}
-	default:
-		break;
+	if (!_messageBuffer) {
+		return false;
 	}
 
-	for (auto &m : *messages) {
+	while (!_messageBuffer->Empty()) {
+		auto message = _messageBuffer->ConsumeMessage();
+		if (!message) {
+			continue;
+		}
 		if (_regex.Enabled()) {
-			if (_regex.Matches(m.message, _message)) {
-				SetTempVarValue("message", m.message);
-				SetVariableValue(m.message);
-				m.processed = true;
+			if (_regex.Matches(*message, _message)) {
+				SetTempVarValue("message", *message);
+				SetVariableValue(*message);
 				return true;
 			}
 		} else {
-			if (m.message == std::string(_message)) {
-				SetTempVarValue("message", m.message);
-				SetVariableValue(m.message);
-				m.processed = true;
+			if (*message == std::string(_message)) {
+				SetTempVarValue("message", *message);
+				SetVariableValue(*message);
 				return true;
 			}
 		}
@@ -84,6 +79,8 @@ bool MacroConditionWebsocket::Load(obs_data_t *obj)
 	}
 	_connection =
 		GetWeakConnectionByName(obs_data_get_string(obj, "connection"));
+
+	SetType(_type);
 	return true;
 }
 
@@ -93,6 +90,41 @@ std::string MacroConditionWebsocket::GetShortDesc() const
 		return "";
 	}
 	return GetWeakConnectionName(_connection);
+}
+
+void MacroConditionWebsocket::SetType(Type type)
+{
+	_type = type;
+	if (_type == Type::REQUEST) {
+		_messageBuffer = RegisterForWebsocketMessages();
+		return;
+	}
+
+	auto connection = _connection.lock();
+	if (!connection) {
+		return;
+	}
+	_messageBuffer = connection->RegisterForEvents();
+}
+
+void MacroConditionWebsocket::SetConnection(const std::string &connectionName)
+{
+	_connection = GetWeakConnectionByName(connectionName);
+	if (_type == Type::REQUEST) {
+		// This should not really happen, but let's be safe
+		return;
+	}
+
+	auto connection = _connection.lock();
+	if (!connection) {
+		return;
+	}
+	_messageBuffer = connection->RegisterForEvents();
+}
+
+std::weak_ptr<Connection> MacroConditionWebsocket::GetConnection() const
+{
+	return _connection;
 }
 
 void MacroConditionWebsocket::SetupTempVars()
@@ -187,12 +219,12 @@ void MacroConditionWebsocketEdit::UpdateEntryData()
 		return;
 	}
 
-	_conditions->setCurrentIndex(static_cast<int>(_entryData->_type));
+	_conditions->setCurrentIndex(static_cast<int>(_entryData->GetType()));
 	_message->setPlainText(_entryData->_message);
 	_regex->SetRegexConfig(_entryData->_regex);
-	_connection->SetConnection(_entryData->_connection);
+	_connection->SetConnection(_entryData->GetConnection());
 
-	if (_entryData->_type == MacroConditionWebsocket::Type::REQUEST) {
+	if (_entryData->GetType() == MacroConditionWebsocket::Type::REQUEST) {
 		SetupRequestEdit();
 	} else {
 		SetupEventEdit();
@@ -209,8 +241,8 @@ void MacroConditionWebsocketEdit::ConditionChanged(int index)
 	}
 
 	auto lock = LockContext();
-	_entryData->_type = static_cast<MacroConditionWebsocket::Type>(index);
-	if (_entryData->_type == MacroConditionWebsocket::Type::REQUEST) {
+	_entryData->SetType(static_cast<MacroConditionWebsocket::Type>(index));
+	if (_entryData->GetType() == MacroConditionWebsocket::Type::REQUEST) {
 		SetupRequestEdit();
 	} else {
 		SetupEventEdit();
@@ -240,7 +272,7 @@ void MacroConditionWebsocketEdit::ConnectionSelectionChanged(
 	}
 
 	auto lock = LockContext();
-	_entryData->_connection = GetWeakConnectionByQString(connection);
+	_entryData->SetConnection(connection.toStdString());
 	emit(HeaderInfoChanged(connection));
 }
 
