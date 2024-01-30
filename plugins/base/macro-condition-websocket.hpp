@@ -3,6 +3,7 @@
 #include "connection-manager.hpp"
 #include "variable-text-edit.hpp"
 #include "regex-config.hpp"
+#include "websocket-helpers.hpp"
 
 #include <QCheckBox>
 
@@ -10,7 +11,7 @@ namespace advss {
 
 class MacroConditionWebsocket : public MacroCondition {
 public:
-	MacroConditionWebsocket(Macro *m) : MacroCondition(m, true) {}
+	MacroConditionWebsocket(Macro *m);
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
@@ -26,14 +27,20 @@ public:
 		EVENT,
 	};
 
-	Type _type = Type::REQUEST;
+	void SetType(Type);
+	Type GetType() const { return _type; }
+	void SetConnection(const std::string &);
+	std::weak_ptr<Connection> GetConnection() const;
 	StringVariable _message = obs_module_text("AdvSceneSwitcher.enterText");
 	RegexConfig _regex;
-	std::weak_ptr<Connection> _connection;
 
 private:
 	void SetupTempVars();
 
+	Type _type = Type::REQUEST;
+	std::weak_ptr<Connection> _connection;
+
+	WebsocketMessageBuffer _messageBuffer;
 	static bool _registered;
 	static const std::string id;
 };

@@ -199,6 +199,11 @@ void Connection::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "version", 1);
 }
 
+WebsocketMessageBuffer Connection::RegisterForEvents()
+{
+	return _client.RegisterForEvents();
+}
+
 void Connection::UseOBSWebsocketProtocol(bool useOBSWSProtocol)
 {
 	_useOBSWSProtocol = useOBSWSProtocol;
