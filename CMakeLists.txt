@@ -166,6 +166,8 @@ target_sources(
           lib/utils/log-helper.hpp
           lib/utils/math-helpers.cpp
           lib/utils/math-helpers.hpp
+          lib/utils/message-buffer.hpp
+          lib/utils/message-dispatcher.hpp
           lib/utils/mouse-wheel-guard.cpp
           lib/utils/mouse-wheel-guard.hpp
           lib/utils/name-dialog.cpp
