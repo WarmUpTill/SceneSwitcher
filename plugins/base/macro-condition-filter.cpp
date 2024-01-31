@@ -332,8 +332,10 @@ void MacroConditionFilterEdit::SetWidgetVisibility()
 	_getSettings->setVisible(showSettingsControls);
 	_regex->setVisible(showSettingsControls);
 	_settingSelection->setVisible(
-		_entryData->_condition ==
-		MacroConditionFilter::Condition::INDIVIDUAL_SETTING_MATCH);
+		_entryData->_condition == MacroConditionFilter::Condition::
+						  INDIVIDUAL_SETTING_MATCH ||
+		_entryData->_condition == MacroConditionFilter::Condition::
+						  INDIVIDUAL_SETTING_CHANGED);
 	adjustSize();
 	updateGeometry();
 }
