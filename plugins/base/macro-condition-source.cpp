@@ -293,8 +293,10 @@ void MacroConditionSourceEdit::SetWidgetVisibility()
 	_getSettings->setVisible(settingsMatch);
 	_regex->setVisible(settingsMatch);
 	_settingSelection->setVisible(
-		_entryData->_condition ==
-		MacroConditionSource::Condition::INDIVIDUAL_SETTING_MATCH);
+		_entryData->_condition == MacroConditionSource::Condition::
+						  INDIVIDUAL_SETTING_MATCH ||
+		_entryData->_condition == MacroConditionSource::Condition::
+						  INDIVIDUAL_SETTING_CHANGED);
 
 	setToolTip(
 		(_entryData->_condition ==
