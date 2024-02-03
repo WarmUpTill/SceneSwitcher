@@ -19,8 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check locale files
         run: |
-          python3 ./CI/checkLocale.py -p data/locale/
+          python3 ./build-aux/CI/check-locale.py -p data/locale/

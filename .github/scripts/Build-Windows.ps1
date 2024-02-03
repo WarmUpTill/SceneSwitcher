@@ -1,16 +1,13 @@
 [CmdletBinding()]
 param(
+    [ValidateSet('x64')]
+    [string] $Target = 'x64',
     [ValidateSet('Debug', 'RelWithDebInfo', 'Release', 'MinSizeRel')]
     [string] $Configuration = 'RelWithDebInfo',
-    [ValidateSet('x86', 'x64')]
-    [string] $Target,
-    [ValidateSet('Visual Studio 17 2022', 'Visual Studio 16 2019')]
-    [string] $CMakeGenerator,
-    [string] $ADVSSDepName,
     [switch] $SkipAll,
     [switch] $SkipBuild,
     [switch] $SkipDeps,
-    [switch] $SkipUnpack
+    [string] $ADVSSDepName
 )
 
 $ErrorActionPreference = 'Stop'
@@ -18,6 +15,10 @@ $ErrorActionPreference = 'Stop'
 if ( $DebugPreference -eq 'Continue' ) {
     $VerbosePreference = 'Continue'
     $InformationPreference = 'Continue'
+}
+
+if ( ! ( [System.Environment]::Is64BitOperatingSystem ) ) {
+    throw "A 64-bit system is required to build the project."
 }
 
 if ( $PSVersionTable.PSVersion -lt '7.0.0' ) {
@@ -29,6 +30,7 @@ function Build {
     trap {
         Pop-Location -Stack BuildTemp -ErrorAction 'SilentlyContinue'
         Write-Error $_
+        Log-Group
         exit 2
     }
 
@@ -38,7 +40,7 @@ function Build {
 
     $UtilityFunctions = Get-ChildItem -Path $PSScriptRoot/utils.pwsh/*.ps1 -Recurse
 
-    foreach ($Utility in $UtilityFunctions) {
+    foreach($Utility in $UtilityFunctions) {
         Write-Debug "Loading $($Utility.FullName)"
         . $Utility.FullName
     }
@@ -47,66 +49,82 @@ function Build {
     $ProductName = $BuildSpec.name
     $ProductVersion = $BuildSpec.version
 
-    $script:DepsVersion = ''
-    $script:QtVersion = '5'
-    $script:VisualStudioVersion = ''
-    $script:PlatformSDK = '10.0.18363.657'
-
-    Setup-Host
-
-    if ( $CmakeGenerator -eq '' ) {
-        $CmakeGenerator = $script:VisualStudioVersion
+    $GitOutput = git describe --tags
+    if ($GitOutput -match '^([0-9]+\.){0,2}(\*|[0-9]+)$') {
+        Log-Information "Using git tag as version identifier '${GitOutput}'"
+        $ProductVersion = $GitOutput
+    } else {
+        Log-Information "Using buildspec.json version identifier '${ProductVersion}'"
     }
 
-    $DepsPath = "plugin-deps-${script:DepsVersion}-qt${script:QtVersion}-${script:Target}"
-    $DepInstallPath = "$(Resolve-Path -Path ${ProjectRoot}/../obs-build-dependencies/${DepsPath})"
+    if ( ! $SkipDeps ) {
+        Install-BuildDependencies -WingetFile "${ScriptHome}/.Wingetfile"
+    }
 
     if ( $ADVSSDepName -eq '' ) {
-        Log-Information "Building advss deps ..."
-        $ADVSSDepName = "advss-build-dependencies"
-        invoke-expression -Command "$PSScriptRoot/Build-Deps-Windows.ps1 -Configuration $Configuration -Target $Target -CMakeGenerator `"$CMakeGenerator`" -OutDirName $ADVSSDepName -SkipDeps -SkipUnpack"
+        $ADVSSDepName = ".deps/advss-build-dependencies"
     }
-    $ADVSSDepPath = "$(Resolve-Path -Path ${ProjectRoot}/../${script:ADVSSDepName})"
+
+    if ( -not (Test-Path -LiteralPath "${ProjectRoot}/${ADVSSDepName}") ) {
+        Log-Information "Building advss deps ${ProjectRoot}/${ADVSSDepName} ..."
+        invoke-expression -Command "$PSScriptRoot/Build-Deps-Windows.ps1 -Configuration $Configuration -Target $Target -OutDirName $ADVSSDepName"
+    }
+    $ADVSSDepPath = "$(Resolve-Path -Path ${ProjectRoot}/${ADVSSDepName})"
     Log-Information "Using advss deps at $ADVSSDepPath ..."
 
     (Get-Content -Path ${ProjectRoot}/CMakeLists.txt -Raw) `
         -replace "project\((.*) VERSION (.*)\)", "project(${ProductName} VERSION ${ProductVersion})" `
     | Out-File -Path ${ProjectRoot}/CMakeLists.txt -NoNewline
 
-    Setup-Obs
-
     Push-Location -Stack BuildTemp
     if ( ! ( ( $SkipAll ) -or ( $SkipBuild ) ) ) {
         Ensure-Location $ProjectRoot
 
-        $CmakeArgs = @(
-            '-G', $CmakeGenerator
-            "-DCMAKE_SYSTEM_VERSION=${script:PlatformSDK}"
-            "-DCMAKE_GENERATOR_PLATFORM=$(if (${script:Target} -eq "x86") { "Win32" } else { "x64" })"
-            "-DCMAKE_BUILD_TYPE=${Configuration}"
-            "-DCMAKE_PREFIX_PATH:PATH=${DepInstallPath};${ADVSSDepPath}"
-            "-DQT_VERSION=${script:QtVersion}"
-        )
-
-        Log-Debug "Attempting to configure OBS with CMake arguments: $($CmakeArgs | Out-String)"
-        Log-Information "Configuring ${ProductName}..."
-        Invoke-External cmake -S . -B build_${script:Target} @CmakeArgs
-
-        $CmakeArgs = @(
-            '--config', "${Configuration}"
-        )
+        $CmakeArgs = @()
+        $CmakeBuildArgs = @()
+        $CmakeInstallArgs = @()
 
         if ( $VerbosePreference -eq 'Continue' ) {
-            $CmakeArgs += ('--verbose')
+            $CmakeBuildArgs += ('--verbose')
+            $CmakeInstallArgs += ('--verbose')
         }
 
-        Log-Information "Building ${ProductName}..."
-        Invoke-External cmake --build "build_${script:Target}" @CmakeArgs
+        if ( $DebugPreference -eq 'Continue' ) {
+            $CmakeArgs += ('--debug-output')
+        }
+
+        $Preset = "windows-$(if ( $Env:CI -ne $null ) { 'ci-' })${Target}"
+
+        $CmakeArgs += @(
+            '--preset', $Preset
+            "-DCMAKE_PREFIX_PATH:PATH=${ADVSSDepPath}"
+        )
+
+        $CmakeBuildArgs += @(
+            '--build'
+            '--preset', $Preset
+            '--config', $Configuration
+            '--parallel'
+            '--', '/consoleLoggerParameters:Summary', '/noLogo'
+        )
+
+        $CmakeInstallArgs += @(
+            '--install', "build_${Target}"
+            '--prefix', "${ProjectRoot}/release/${Configuration}"
+            '--config', $Configuration
+        )
+
+        Log-Group "Configuring ${ProductName}..."
+        Invoke-External cmake @CmakeArgs
+
+        Log-Group "Building ${ProductName}..."
+        Invoke-External cmake @CmakeBuildArgs
     }
-    Log-Information "Install ${ProductName}..."
-    Invoke-External cmake --install "build_${script:Target}" --prefix "${ProjectRoot}/release" @CmakeArgs
+    Log-Group "Install ${ProductName}..."
+    Invoke-External cmake @CmakeInstallArgs
 
     Pop-Location -Stack BuildTemp
+    Log-Group
 }
 
 Build

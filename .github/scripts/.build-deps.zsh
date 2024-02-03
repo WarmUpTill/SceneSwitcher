@@ -33,7 +33,6 @@ _trap_error() {
 build() {
   if (( ! ${+SCRIPT_HOME} )) typeset -g SCRIPT_HOME=${ZSH_ARGZERO:A:h}
   local host_os=${${(s:-:)ZSH_ARGZERO:t:r}[3]}
-  local target="${host_os}-${CPUTYPE}"
   local project_root=${SCRIPT_HOME:A:h:h}
   local buildspec_file="${project_root}/buildspec.json"
 
@@ -53,8 +52,6 @@ build() {
   local -i _verbosity=1
   local -r _version='1.0.0'
   local -r -a _valid_targets=(
-    macos-x86_64
-    macos-arm64
     macos-universal
     linux-x86_64
   )
@@ -126,7 +123,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
           log_output ${_usage}
           exit 2
         }
-        BUILD_CONFIG=${2}
+        config=${2}
         shift 2
         ;;
       -o|--out)
@@ -164,11 +161,6 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
   check_${host_os}
   setup_ccache
 
-  typeset -g QT_VERSION
-  typeset -g DEPLOYMENT_TARGET
-  typeset -g OBS_DEPS_VERSION
-  setup_${host_os}
-
   local product_name
   local product_version
   local git_tag="$(git describe --tags)"
@@ -183,12 +175,111 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
     log_info "Using buildspec.json version identifier '${product_version}'"
   }
 
-  if [[ -z "${OUT_DIR}" ]] {
-    OUT_DIR="advss-build-dependencies"
+  case ${host_os} {
+    macos)
+      sed -i '' \
+        "s/project(\(.*\) VERSION \(.*\))/project(${product_name} VERSION ${product_version})/" \
+        "${project_root}/CMakeLists.txt"
+      ;;
+    linux)
+      sed -i'' \
+        "s/project(\(.*\) VERSION \(.*\))/project(${product_name} VERSION ${product_version})/"\
+        "${project_root}/CMakeLists.txt"
+      ;;
   }
-  mkdir -p "${project_root}/../${OUT_DIR}"
-  local advss_dep_path="$(realpath ${project_root}/../${OUT_DIR})"
-  local _plugin_deps="${project_root:h}/obs-build-dependencies/plugin-deps-${OBS_DEPS_VERSION}-qt${QT_VERSION}-${target##*-}"
+
+  log_info "Run plugin configure step to download OBS deps ..."
+  pushd ${project_root}
+  if (( ! (${skips[(Ie)all]} + ${skips[(Ie)build]}) )) {
+    log_group "Configuring ${product_name}..."
+
+    local -a cmake_args=()
+    local -a cmake_build_args=(--build)
+    local -a cmake_install_args=(--install)
+
+    case ${_loglevel} {
+      0) cmake_args+=(-Wno_deprecated -Wno-dev --log-level=ERROR) ;;
+      1) ;;
+      2) cmake_build_args+=(--verbose) ;;
+      *) cmake_args+=(--debug-output) ;;
+    }
+
+    local -r _preset="${target%%-*}${CI:+-ci}"
+    case ${target} {
+      macos-*)
+        if (( ${+CI} )) typeset -gx NSUnbufferedIO=YES
+
+        cmake_args+=(
+          -DENABLE_TWITCH_PLUGIN=OFF
+          --preset ${_preset}
+        )
+
+        if (( codesign )) {
+          autoload -Uz read_codesign_team && read_codesign_team
+
+          if [[ -z ${CODESIGN_TEAM} ]] {
+            autoload -Uz read_codesign && read_codesign
+          }
+        }
+
+        cmake_args+=(
+          -DCODESIGN_TEAM=${CODESIGN_TEAM:-}
+          -DCODESIGN_IDENTITY=${CODESIGN_IDENT:--}
+        )
+
+        cmake_build_args+=(--preset ${_preset} --parallel --config ${config} -- ONLY_ACTIVE_ARCH=NO -arch arm64 -arch x86_64)
+        cmake_install_args+=(build_macos --config ${config} --prefix "${project_root}/release/${config}")
+
+        local -a xcbeautify_opts=()
+        if (( _loglevel == 0 )) xcbeautify_opts+=(--quiet)
+        ;;
+      linux-*)
+        cmake_args+=(
+          --preset ${_preset}-${target##*-}
+          -G "${generator}"
+          -DQT_VERSION=${QT_VERSION:-6}
+          -DCMAKE_BUILD_TYPE=${config}
+        )
+
+        local cmake_version
+        read -r _ _ cmake_version <<< "$(cmake --version)"
+
+        if [[ ${CPUTYPE} != ${target##*-} ]] {
+          if is-at-least 3.21.0 ${cmake_version}; then
+            cmake_args+=(--toolchain "${project_root}/cmake/linux/toolchains/${target##*-}-linux-gcc.cmake")
+          else
+            cmake_args+=(-D"CMAKE_TOOLCHAIN_FILE=${project_root}/cmake/linux/toolchains/${target##*-}-linux-gcc.cmake")
+          fi
+        }
+
+        cmake_build_args+=(--preset ${_preset}-${target##*-} --config ${config})
+        if [[ ${generator} == 'Unix Makefiles' ]] {
+          cmake_build_args+=(--parallel $(( $(nproc) + 1 )))
+        } else {
+          cmake_build_args+=(--parallel)
+        }
+
+        cmake_install_args+=(build_${target##*-} --prefix ${project_root}/release/${config})
+        ;;
+    }
+
+    log_debug "Attempting to configure with CMake arguments: ${cmake_args}"
+
+    cmake ${cmake_args}
+
+  }
+
+  popd
+  log_group
+
+  if [[ -z "${OUT_DIR}" ]] {
+    OUT_DIR=".deps/advss-build-dependencies"
+  }
+  mkdir -p "${project_root}/${OUT_DIR}"
+  local advss_dep_path="$(realpath ${project_root}/${OUT_DIR})"
+  local deps_version=$(jq -r '.dependencies.prebuilt.version' ${buildspec_file})
+  local qt_deps_version=$(jq -r '.dependencies.qt6.version' ${buildspec_file})
+  local _plugin_deps="${project_root:h}/.deps/obs-deps-${deps_version}-${target##*-};${project_root:h}/.deps/obs-deps-qt6-${qt_deps_version}-${target##*-}"
 
   case ${host_os} {
     macos)
@@ -210,7 +301,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
         pushd ${opencv_dir}
         log_info "Configure OpenCV ..."
-        cmake -S . -B ${opencv_build_dir} -G ${generator} ${opencv_cmake_args}
+        cmake -S . -B ${opencv_build_dir} ${opencv_cmake_args}
 
         log_info "Building OpenCV ..."
         cmake --build ${opencv_build_dir} --config Release
@@ -239,7 +330,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
         pushd ${leptonica_dir}
         log_info "Configure Leptonica ..."
-        cmake -S . -B ${leptonica_build_dir} -G ${generator} ${leptonica_cmake_args}
+        cmake -S . -B ${leptonica_build_dir} ${leptonica_cmake_args}
 
         log_info "Building Leptonica ..."
         cmake --build ${leptonica_build_dir} --config Release
@@ -277,7 +368,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
         pushd ${tesseract_dir}
         log_info "Configure Tesseract ..."
-        cmake -S . -B ${tesseract_build_dir} -G ${generator} ${tesseract_cmake_args}
+        cmake -S . -B ${tesseract_build_dir} ${tesseract_cmake_args}
 
         log_info "Building Tesseract ..."
         cmake --build ${tesseract_build_dir} --config Release
