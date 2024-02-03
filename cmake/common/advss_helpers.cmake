@@ -1,18 +1,21 @@
 # --- Helper functions ---#
 
+if(BUILD_OUT_OF_TREE)
+  if(OS_WINDOWS)
+    set(OBS_PLUGIN_DESTINATION "obs-plugins/64bit")
+  else()
+    set(OBS_PLUGIN_DESTINATION "${CMAKE_INSTALL_LIBDIR}/obs-plugins")
+  endif()
+endif()
+
 # Subfolder for advanced scene switcher plugins
 set(_PLUGIN_FOLDER "adv-ss-plugins")
 
 # --- MACOS section ---
 if(OS_MACOS)
-  set(ADVSS_BUNDLE_DIR "${CMAKE_INSTALL_PREFIX}/advanced-scene-switcher.plugin")
+  set(ADVSS_BUNDLE_DIR "advanced-scene-switcher.plugin")
   set(ADVSS_BUNDLE_MODULE_DIR "${ADVSS_BUNDLE_DIR}/Contents/MacOS")
   set(ADVSS_BUNDLE_PLUGIN_DIR ${ADVSS_BUNDLE_MODULE_DIR}/${_PLUGIN_FOLDER})
-
-  function(resign_advss target)
-    set(_COMMAND "codesign --force --deep --sign - ${ADVSS_BUNDLE_DIR}")
-    install(CODE "execute_process(COMMAND /bin/sh -c \"${_COMMAND}\")")
-  endfunction()
 
   function(install_advss_lib_helper target where)
     install(
@@ -20,17 +23,19 @@ if(OS_MACOS)
       RUNTIME DESTINATION "${where}" COMPONENT advss_plugins
       LIBRARY DESTINATION "${where}" COMPONENT advss_plugins
       FRAMEWORK DESTINATION "${where}" COMPONENT advss_plugins)
-    resign_advss(${target})
   endfunction()
 
   function(install_advss_lib target)
     install_advss_lib_helper(${target} "${ADVSS_BUNDLE_MODULE_DIR}")
-    set(_COMMAND
-        "${CMAKE_INSTALL_NAME_TOOL} \\
-      -change @rpath/advanced-scene-switcher-lib.so @loader_path/advanced-scene-switcher-lib.so \\
-      \\\"${ADVSS_BUNDLE_MODULE_DIR}/advanced-scene-switcher\\\"")
-    install(CODE "execute_process(COMMAND /bin/sh -c \"${_COMMAND}\")"
-            COMPONENT obs_plugins)
+
+    # Tell the advanced scene switcher plugin where to find the lib
+    string(JSON _name GET ${buildspec} name)
+    add_custom_command(
+      TARGET ${_name}
+      POST_BUILD
+      COMMAND
+        ${CMAKE_INSTALL_NAME_TOOL} -change @rpath/$<TARGET_FILE_NAME:${target}>
+        @loader_path/$<TARGET_FILE_NAME:${target}> $<TARGET_FILE:${_name}>)
   endfunction()
 
   function(install_advss_plugin target)
@@ -53,14 +58,12 @@ if(OS_MACOS)
       ${dep}_Runtime
       NAMELINK_COMPONENT
       ${dep}_Development)
-    resign_advss(${target})
   endfunction()
 
   function(install_advss_plugin_dependency_file ${target} dep)
     target_sources(advanced-scene-switcher PRIVATE ${dep})
     set_source_files_properties(${dep} PROPERTIES MACOSX_PACKAGE_LOCATION
                                                   ${ADVSS_BUNDLE_PLUGIN_DIR})
-    resign_advss(${target})
   endfunction()
 
   # --- End of section ---
@@ -77,11 +80,10 @@ else()
     else()
       install(
         TARGETS ${what}
-        RUNTIME DESTINATION "${where}" COMPONENT ${what}_Runtime
         LIBRARY DESTINATION "${where}"
                 COMPONENT ${what}_Runtime
-                NAMELINK_COMPONENT ${what}_Development)
-
+                NAMELINK_COMPONENT ${what}_Development
+        RUNTIME DESTINATION "${where}")
       install(
         FILES $<TARGET_FILE:${what}>
         DESTINATION $<CONFIG>/${where}
@@ -102,21 +104,24 @@ else()
         COMPONENT ${what}_rundir
         OPTIONAL EXCLUDE_FROM_ALL)
     endif()
-    add_custom_command(
-      TARGET ${what}
-      POST_BUILD
-      COMMAND
-        "${CMAKE_COMMAND}" -DCMAKE_INSTALL_PREFIX=${OBS_OUTPUT_DIR}
-        -DCMAKE_INSTALL_COMPONENT=${what}_rundir
-        -DCMAKE_INSTALL_CONFIG_NAME=$<CONFIG> -P
-        ${CMAKE_CURRENT_BINARY_DIR}/cmake_install.cmake
-      COMMENT "Installing ${what} to plugin rundir ${OBS_OUTPUT_DIR}/${where}\n"
-      VERBATIM)
+    if(OBS_OUTPUT_DIR)
+      add_custom_command(
+        TARGET ${what}
+        POST_BUILD
+        COMMAND
+          "${CMAKE_COMMAND}" -DCMAKE_INSTALL_PREFIX=${OBS_OUTPUT_DIR}
+          -DCMAKE_INSTALL_COMPONENT=${what}_rundir
+          -DCMAKE_INSTALL_CONFIG_NAME=$<CONFIG> -P
+          ${CMAKE_CURRENT_BINARY_DIR}/cmake_install.cmake
+        COMMENT
+          "Installing ${what} to plugin rundir ${OBS_OUTPUT_DIR}/${where}\n"
+        VERBATIM)
+    endif()
   endfunction()
 
   function(install_advss_lib target)
     plugin_install_helper("${target}" "${OBS_PLUGIN_DESTINATION}" "")
-    if(OS_POSIX)
+    if(NOT OS_WINDOWS)
       set_target_properties(${target} PROPERTIES INSTALL_RPATH "$ORIGIN")
     endif()
   endfunction()
@@ -125,7 +130,7 @@ else()
     plugin_install_helper(
       "${target}" "${OBS_PLUGIN_DESTINATION}/${_PLUGIN_FOLDER}"
       "${_PLUGIN_FOLDER}")
-    if(OS_POSIX)
+    if(NOT OS_WINDOWS)
       set_target_properties(${target} PROPERTIES INSTALL_RPATH
                                                  "$ORIGIN:$ORIGIN/..")
     endif()
@@ -273,9 +278,10 @@ function(setup_advss_plugin target)
   get_target_property(ADVSS_BINARY_DIR advanced-scene-switcher-lib BINARY_DIR)
 
   if(OS_MACOS)
-    set(_INSTALL_RPATH "@loader_path" "@loader_path/..")
-    set_target_properties(${target} PROPERTIES INSTALL_RPATH
-                                               "${_INSTALL_RPATH}")
+    set(_COMMAND
+        "${CMAKE_INSTALL_NAME_TOOL} -add_rpath @loader_path \\\"$<TARGET_FILE:${target}>\\\""
+    )
+    install(CODE "execute_process(COMMAND /bin/sh -c \"${_COMMAND}\")")
   endif()
 
   # Set up include directories for headers generated by Qt

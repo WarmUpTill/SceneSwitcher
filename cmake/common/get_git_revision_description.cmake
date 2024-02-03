@@ -148,7 +148,7 @@ function(get_git_head_revision _refspecvar _hashvar)
   set(HEAD_FILE "${GIT_DATA}/HEAD")
   configure_file("${HEAD_SOURCE_FILE}" "${HEAD_FILE}" COPYONLY)
 
-  configure_file("${_gitdescmoddir}/GetGitRevisionDescription.cmake.in"
+  configure_file("${_gitdescmoddir}/get_git_revision_description.cmake.in"
                  "${GIT_DATA}/grabRef.cmake" @ONLY)
   include("${GIT_DATA}/grabRef.cmake")
 

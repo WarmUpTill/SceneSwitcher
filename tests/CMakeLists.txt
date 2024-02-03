@@ -64,6 +64,10 @@ target_include_directories(${PROJECT_NAME}
 if(MSVC)
   target_compile_options(${PROJECT_NAME} PUBLIC /MP /d2FH4- /wd4267 /wd4267
                                                 /bigobj)
+else()
+  target_compile_options(
+    ${PROJECT_NAME} PUBLIC -Wno-error=unused-parameter -Wno-error=conversion
+                           -Wno-error=unused-value)
 endif()
 
 # --- regex --- #

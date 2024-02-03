@@ -29,6 +29,9 @@ if(Leptonica_FOUND AND Tesseract_FOUND)
                                                 ${Leptonica_LIBRARIES})
   target_include_directories(${PROJECT_NAME} PRIVATE ${Tesseract_INCLUDE_DIRS}
                                                      ${Leptonica_INCLUDE_DIRS})
+  if(OS_WINDOWS)
+    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/ignore:4099")
+  endif()
 else()
   message(
     WARNING "OCR capabilities of video condition disabled!\n"
