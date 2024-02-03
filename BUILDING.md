@@ -22,6 +22,8 @@ add_subdirectory(SceneSwitcher)
 
 Now follow the [build instructions for obs-studio](https://obsproject.com/wiki/Building-OBS-Studio) for your particular platform.
 
+### Dependencies for plugins
+
 Note that on Linux systems it might be necessary to additionally install the following packages to fulfill the dependencies to `XTest`, `XScreensaver` and `OpenCV` - exact command may differ:
 ```
 sudo apt-get install \
@@ -31,6 +33,13 @@ sudo apt-get install \
     libopencv-dev
 ```
 
+If you have decided to build some dependencies of the plugin yourself (e.g. `OpenCV` for the video condition) you will have to pass the corresponding arguments to the cmake command used to configure OBS.
+
+Here is an example of what the adjusted command might look like on a Windows machine:
+```
+cd obs-studio
+cmake -DOpenCV_DIR="C:/Users/BuildUser/Documents/OBS/opencv/build/" -DLeptonica_DIR="C:/Users/BuildUser/Documents/OBS/leptonica/build" -DTesseract_DIR="C:/Users/BuildUser/Documents/OBS/tesseract/build/lib/cmake/tesseract" --preset windows-x64
+```
 
 ## Compiling out of tree
 
@@ -40,27 +49,37 @@ git clone --recursive https://github.com/WarmUpTill/SceneSwitcher.git
 cd SceneSwitcher
 ```
 
-You'll need [CMake](https://cmake.org/download/) and a working [OBS Studio development environment](https://obsproject.com/wiki/Building-OBS-Studio) installed on your computer.  
-The easiest way to set this up is to call the corresponding CI scripts, as they will automatically download all required dependencies and start a build of the plugin:
+Next you will need [CMake](https://cmake.org/download/) and run the command with suitable arguments for your particular platform.   
+For example, on Windows you might want to run this command:
+```
+cmake --preset windows-x64
+```
+Next, you can build the plugin and install the files into a folder named release using the following commands:
+```
+cmake --build build_x64 --preset windows-x64 --config RelWithDebInfo
+cmake --install build_x64 --prefix release --config RelWithDebInfo
+```
+You can of course also build the plugin in an IDE depending on which generator you chose. (E.g. a Visual Studio solution on Windows)
+
+### Dependencies for plugins
+
+If you also want to include plugins which depend on external libraries you will have to adjust the cmake call in the configuration phase accordingly.   
+For example, to include the "Video" condition in your build you will have to supply the paths to `OpenCV`, `tesseract`, and `leptonica` binaries.   
+
+On a Window system the command might look something like this:   
+```
+cd SceneSwitcher
+cmake -DOpenCV_DIR="C:/Users/BuildUser/Documents/OBS/opencv/build/" -DLeptonica_DIR="C:/Users/BuildUser/Documents/OBS/leptonica/build" -DTesseract_DIR="C:/Users/BuildUser/Documents/OBS/tesseract/build/lib/cmake/tesseract" --preset windows-x64
+```
+
+You can rely on the CI scripts to build the dependencies for you, although it is not guaranteed that they will work in every environment:
 
 | Platform      | Command |
 | ----------- | ----------- |
-| Windows      | `./.github/scripts/Build-Windows.ps1`      |
-| Linux   | `./.github/scripts/build-linux.sh` |
-| MacOS   |  `./.github/scripts/build-macos.zsh` |
+| Windows      | `.\.github\scripts\Build-Deps-Windows.ps1`      |
+| Linux   | `./.github/scripts/build-deps-linux.sh` |
+| MacOS   |  `./.github/scripts/build-deps-macos.zsh` |
 
-Alternatively you can download the OBS dependencies from https://github.com/obsproject/obs-deps/releases and manually configure and start the build.
-
-Once all dependencies are set up start by creating a build directory:
-```
-mkdir build && cd build
-```
-Next configure the build.
-```
-cmake -DCMAKE_PREFIX_PATH=<path-to-obs-deps> -Dlibobs_DIR=<path-to-libobs-dir> -Dobs-frontend-api_DIR=<path-to-frontend-api-dir> ..
-```
-It might be necessary to provide additional variables depending on your build setup.  
-Finally, start the plugin build using your provided generator. (E.g. Ninja on Linux or a Visual Studio solution on Windows)
 
 # Contributing
 
