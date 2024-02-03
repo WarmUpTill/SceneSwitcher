@@ -63,7 +63,7 @@
 															<key>GID</key>
 															<integer>80</integer>
 															<key>PATH</key>
-															<string>../@RELATIVE_INSTALL_PATH@/@CMAKE_PROJECT_NAME@.plugin</string>
+															<string>../release/@CMAKE_INSTALL_CONFIG_NAME@/@CMAKE_PROJECT_NAME@.plugin</string>
 															<key>PATH_TYPE</key>
 															<integer>1</integer>
 															<key>PERMISSIONS</key>
@@ -538,7 +538,7 @@
 			<key>TYPE</key>
 			<integer>0</integer>
 			<key>UUID</key>
-			<string>@MACOS_PACKAGE_UUID@</string>
+			<string>@UUID_PACKAGE@</string>
 		</dict>
 	</array>
 	<key>PROJECT</key>
@@ -584,13 +584,13 @@
 									<integer>1</integer>
 								</dict>
 								<key>PACKAGE_UUID</key>
-								<string>@MACOS_PACKAGE_UUID@</string>
+								<string>@UUID_PACKAGE@</string>
 								<key>TITLE</key>
 								<array/>
 								<key>TYPE</key>
 								<integer>0</integer>
 								<key>UUID</key>
-								<string>@MACOS_INSTALLER_UUID@</string>
+								<string>@UUID_INSTALLER@</string>
 							</dict>
 						</array>
 						<key>REMOVED</key>
@@ -732,7 +732,7 @@
 			<key>BUILD_PATH</key>
 			<dict>
 				<key>PATH</key>
-				<string>../@RELATIVE_BUILD_PATH@</string>
+				<string>.</string>
 				<key>PATH_TYPE</key>
 				<integer>1</integer>
 			</dict>

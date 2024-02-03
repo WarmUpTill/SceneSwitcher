@@ -1,5 +1,5 @@
 #
-# Internal file for GetGitRevisionDescription.cmake
+# Internal file for get_git_revision_description.cmake.in
 #
 # Requires CMake 2.6 or newer (uses the 'function' command)
 #

@@ -1,16 +1,6 @@
-cmake_minimum_required(VERSION 3.16.3)
+cmake_minimum_required(VERSION 3.16...3.26)
 
 project(advanced-scene-switcher VERSION 1.0.0)
-set(LIB_NAME "${PROJECT_NAME}-lib")
-add_library(${PROJECT_NAME} MODULE)
-add_library(${LIB_NAME} SHARED)
-
-set(PLUGIN_AUTHOR "WarmUpTill")
-set(MACOS_BUNDLEID "com.warmuptill.${PROJECT_NAME}")
-set(LINUX_MAINTAINER_EMAIL "noone@nothing.com")
-set(MACOS_PACKAGE_UUID "3F0D2A6A-2583-11ED-861D-0242AC120002")
-set(MACOS_INSTALLER_UUID "B7F15A6E-2583-11ED-861D-0242AC120002")
-set(WINDOWS_INSTALLER_UUID "A4ADDF26-4426-4D2E-B26A-C7C878DA8FC9")
 
 message(STATUS "CMAKE_PROJECT_NAME is ${CMAKE_PROJECT_NAME}")
 if(${CMAKE_PROJECT_NAME} STREQUAL "obs-studio")
@@ -22,11 +12,22 @@ else()
   message(STATUS "${PROJECT_NAME} configured for out-of-tree build")
 endif()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-include(GetGitRevisionDescription)
+if(BUILD_OUT_OF_TREE)
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake"
+          NO_POLICY_SCOPE)
+  include(compilerconfig)
+  include(defaults)
+  include(helpers)
+endif()
+
+set(LIB_NAME "${PROJECT_NAME}-lib")
+add_library(${PROJECT_NAME} MODULE)
+add_library(${LIB_NAME} SHARED)
+
+include(cmake/common/get_git_revision_description.cmake)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 git_describe(GIT_TAG)
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cpp.in"
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/version.cpp.in"
                "${CMAKE_CURRENT_BINARY_DIR}/lib/version.cpp" @ONLY)
 
 # --- Set target sources ---
@@ -229,17 +230,25 @@ target_sources(
 
 # --- End of section ---
 
-if(BUILD_OUT_OF_TREE)
-  include(cmake/ObsPluginHelpers.cmake)
-endif()
-include(cmake/AdvSSHelpers.cmake)
+include(cmake/common/advss_helpers.cmake)
 setup_obs_lib_dependency(${LIB_NAME})
 setup_obs_lib_dependency(${PROJECT_NAME})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_NAME})
-
 find_qt(COMPONENTS Widgets Core)
-target_link_libraries(${LIB_NAME} PUBLIC Qt::Core Qt::Widgets)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt::Core Qt::Widgets)
+target_link_libraries(${LIB_NAME} PRIVATE Qt::Core Qt::Widgets)
+target_compile_options(
+  ${PROJECT_NAME}
+  PRIVATE
+    $<$<C_COMPILER_ID:Clang,AppleClang>:-Wno-quoted-include-in-framework-header
+    -Wno-comma>)
+set_target_properties(
+  ${PROJECT_NAME}
+  PROPERTIES AUTOMOC ON
+             AUTOUIC ON
+             AUTORCC ON)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_NAME})
 
 # --- Platform-independent build settings ---
 
@@ -271,21 +280,36 @@ target_include_directories(
          "${CMAKE_CURRENT_SOURCE_DIR}/deps/obs-websocket/lib"
          "${CMAKE_CURRENT_SOURCE_DIR}/deps/exprtk")
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/json/CMakeLists.txt")
+if(NOT nlohmann_json_DIR
+   AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/json/CMakeLists.txt")
   add_subdirectory(deps/json)
 else()
   find_package(nlohmann_json REQUIRED)
 endif()
 target_link_libraries(${LIB_NAME} PUBLIC nlohmann_json::nlohmann_json)
+
+find_package(CURL QUIET)
+find_package(Libcurl QUIET)
+if(CURL_FOUND)
+  if(NOT DEFINED CURL_INCLUDE_DIRS AND TARGET CURL::libcurl)
+    get_target_property(CURL_INCLUDE_DIR CURL::libcurl
+                        INTERFACE_INCLUDE_DIRECTORIES)
+    target_include_directories(${LIB_NAME} PUBLIC "${CURL_INCLUDE_DIR}")
+  else()
+    target_include_directories(${LIB_NAME} PUBLIC "${CURL_INCLUDE_DIRS}")
+  endif()
+elseif(Libcurl_FOUND)
+  target_include_directories(${LIB_NAME} PUBLIC "${LIBCURL_INCLUDE_DIRS}")
+else()
+  message(FATAL_ERROR "Couldn't find CURL or Libcurl - abort")
+endif()
+
 target_compile_definitions(${LIB_NAME} PRIVATE ADVSS_EXPORT_SYMBOLS=1)
 
 # --- End of section ---
 
 # --- Windows-specific build settings and tasks ---
 if(OS_WINDOWS)
-  configure_file(cmake/bundle/windows/installer-Windows.iss.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/installer-Windows.generated.iss)
-
   target_compile_definitions(${LIB_NAME} PRIVATE UNICODE _UNICODE)
   if(MSVC)
     target_compile_options(${LIB_NAME} PUBLIC /MP /d2FH4- /wd4267 /wd4267
@@ -297,32 +321,11 @@ if(OS_WINDOWS)
 
   # -- macOS specific build settings and tasks --
 elseif(OS_MACOS)
-  configure_file(cmake/bundle/macos/installer-macos.pkgproj.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/installer-macos.generated.pkgproj)
-
-  set(MACOSX_PLUGIN_GUI_IDENTIFIER "${MACOS_BUNDLEID}")
-  set(MACOSX_PLUGIN_BUNDLE_VERSION "${PROJECT_VERSION}")
-  set(MACOSX_PLUGIN_SHORT_VERSION_STRING "1")
-
-  target_compile_options(
-    ${LIB_NAME} PRIVATE -Wall -Wextra -Werror-implicit-function-declaration
-                        -stdlib=libc++)
-
   set_target_properties(${LIB_NAME} PROPERTIES PREFIX "" SUFFIX ".so")
 
   find_library(COCOA Cocoa)
   target_include_directories(${LIB_NAME} PRIVATE ${COCOA})
   target_link_libraries(${LIB_NAME} PRIVATE ${COCOA})
-
-  find_package(CURL)
-  find_package(Libcurl)
-  if(CURL_FOUND)
-    target_include_directories(${LIB_NAME} PRIVATE "${CURL_INCLUDE_DIRS}")
-  elseif(Libcurl_FOUND)
-    target_include_directories(${LIB_NAME} PRIVATE "${LIBCURL_INCLUDE_DIRS}")
-  else()
-    message(FATAL_ERROR "Couldn't find CURL or Libcurl - abort")
-  endif()
 
   target_sources(${LIB_NAME} PRIVATE lib/osx/advanced-scene-switcher-osx.mm)
   set_source_files_properties(advanced-scene-switcher-osx.mm
@@ -332,7 +335,6 @@ elseif(OS_MACOS)
   # --- Linux-specific build settings and tasks ---
 else()
   set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
-  target_compile_options(${LIB_NAME} PRIVATE -Wall -Wextra)
   set_target_properties(${LIB_NAME} PROPERTIES PREFIX "")
   set_target_properties(${LIB_NAME} PROPERTIES SOVERSION 1)
 
@@ -362,20 +364,23 @@ else()
     )
   endif()
   target_include_directories(${LIB_NAME} PRIVATE "${PROC_INCLUDE_DIR}")
-
-  find_package(CURL)
-  find_package(Libcurl)
-  if(CURL_FOUND)
-    target_include_directories(${LIB_NAME} PRIVATE "${CURL_INCLUDE_DIRS}")
-  elseif(Libcurl_FOUND)
-    target_include_directories(${LIB_NAME} PRIVATE "${LIBCURL_INCLUDE_DIRS}")
-  else()
-    message(FATAL_ERROR "Couldn't find CURL or Libcurl - abort")
-  endif()
-
   target_sources(${LIB_NAME} PRIVATE lib/linux/advanced-scene-switcher-nix.cpp)
 endif()
+
+if(NOT OS_WINDOWS)
+  target_compile_options(
+    ${LIB_NAME}
+    PUBLIC -Wno-error=unused-parameter -Wno-error=conversion -Wno-error=shadow
+           -Wno-error=float-conversion -Wno-error=enum-conversion
+           -Wno-error=deprecated-declarations)
+endif()
+
 # --- End of section ---
+
+add_subdirectory(plugins)
+add_subdirectory(tests)
+
+# --- Install ---
 
 if(DEB_INSTALL)
   file(GLOB ASS_TRANSLATION_FILES "data/locale/*.ini")
@@ -394,11 +399,11 @@ if(DEB_INSTALL)
   install(DIRECTORY data/res
           DESTINATION ${CMAKE_INSTALL_PREFIX}/${DATA_OUT_DIR})
 else()
-  setup_plugin_target(${PROJECT_NAME})
   install_advss_lib(${LIB_NAME})
+  if(BUILD_OUT_OF_TREE)
+    set_target_properties_plugin(${PROJECT_NAME} PROPERTIES OUTPUT_NAME
+                                 ${_name})
+  else()
+    set_target_properties_obs(${PROJECT_NAME} PROPERTIES PREFIX "")
+  endif()
 endif()
-
-# --- End of section ---
-
-add_subdirectory(plugins)
-add_subdirectory(tests)

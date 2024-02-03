@@ -13,9 +13,17 @@ if(NOT EXISTS "${LIBREMIDI_DIR}/CMakeLists.txt")
 endif()
 add_subdirectory("${LIBREMIDI_DIR}" "${LIBREMIDI_DIR}/build" EXCLUDE_FROM_ALL)
 
-if(MSVC)
-  target_compile_options(libremidi PRIVATE /wd4251 /wd4267 /wd4275)
-endif(MSVC)
+if(OS_WINDOWS)
+  if(MSVC)
+    target_compile_options(libremidi PUBLIC /wd4251 /wd4267 /wd4275)
+  endif()
+else()
+  target_compile_options(
+    libremidi
+    PUBLIC -Wno-error=conversion -Wno-error=unused-result -Wno-error=shadow
+           -Wno-error=unused-parameter -Wno-error=deprecated-declarations
+           -Wno-error=sign-compare)
+endif()
 
 # --- End of section ---
 
