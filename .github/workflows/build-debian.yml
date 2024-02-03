@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: "recursive"
       - name: check_libobs_revision
@@ -37,7 +37,7 @@ jobs:
           tar --exclude=.git -cvzf obs-scene-switcher_0.1+testonly.orig.tar.gz SceneSwitcher
       - name: create_debian_dir
         run: |
-          cp -a CI/linux/debian .
+          cp -a build-aux/CI/linux/debian .
       - name: install_dependencies
         run: |
           # devscripts and libobs-dev are needed but they were already installed

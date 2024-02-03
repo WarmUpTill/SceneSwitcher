@@ -26,7 +26,7 @@ runs:
 
     - name: Restore cached dependencies
       id: restore-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ env.DEP_DIR }}
         key: ${{ env.DEP_DIR }}-${{ runner.os }}-${{ inputs.target }}
@@ -37,12 +37,13 @@ runs:
       run: |
         build_args=(
           -c ${{ inputs.config }}
-          -t macos-${{ inputs.target }}
+          -t ${{ inputs.target }}
+          -o ${{ env.DEP_DIR }}
         )
 
         if (( ${+CI} && ${+RUNNER_DEBUG} )) build_args+=(--debug)
 
-        ${{ inputs.workingDirectory }}/.github/scripts/build-deps-macos.zsh -o ${{ env.DEP_DIR }} ${build_args}
+        .github/scripts/build-deps-macos.zsh -o ${{ env.DEP_DIR }} ${build_args}
 
     - name: Run Linux Build
       if: ${{ runner.os == 'Linux' && steps.restore-cache.outputs.cache-hit != 'true' }}
@@ -57,7 +58,7 @@ runs:
           build_args+=(--debug)
         fi
 
-        ${{ inputs.workingDirectory }}/.github/scripts/build-deps-linux.sh -o ${{ env.DEP_DIR }} "${build_args[@]}"
+        .github/scripts/build-deps-linux.sh -o ${{ env.DEP_DIR }} "${build_args[@]}"
 
     - name: Run Windows Build
       if: ${{ runner.os == 'Windows' && steps.restore-cache.outputs.cache-hit != 'true' }}
@@ -66,7 +67,7 @@ runs:
         $BuildArgs = @{
           Target = '${{ inputs.target }}'
           Configuration = '${{ inputs.config }}'
-          CMakeGenerator = '${{ inputs.visualStudio }}'
+          OutDirName  = '${{ env.DEP_DIR }}'
         }
 
         if ( ( Test-Path env:CI ) -and ( Test-Path env:RUNNER_DEBUG ) ) {
@@ -75,5 +76,5 @@ runs:
           }
         }
 
-        ${{ inputs.workingDirectory }}/.github/scripts/Build-Deps-Windows.ps1 -OutDirName ${{ env.DEP_DIR }} @BuildArgs
+        .github/scripts/Build-Deps-Windows.ps1 -OutDirName ${{ env.DEP_DIR }} @BuildArgs
 
