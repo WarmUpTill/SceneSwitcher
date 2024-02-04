@@ -11,8 +11,7 @@ using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 
-static constexpr int reconnectDelay = 15;
-static constexpr int messageIDBufferSize = 20;
+static const int reconnectDelay = 15;
 
 /* ------------------------------------------------------------------------- */
 
@@ -331,7 +330,9 @@ std::map<TwitchChatConnection::ChatMapKey, std::weak_ptr<TwitchChatConnection>>
 
 TwitchChatConnection::TwitchChatConnection(const TwitchToken &token,
 					   const TwitchChannel &channel)
-	: QObject(nullptr), _token(token), _channel(channel)
+	: QObject(nullptr),
+	  _token(token),
+	  _channel(channel)
 {
 	_client.get_alog().clear_channels(
 		websocketpp::log::alevel::frame_header |

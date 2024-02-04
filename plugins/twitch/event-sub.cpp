@@ -12,17 +12,20 @@ using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 
 #ifdef USE_TWITCH_CLI_MOCK
-constexpr std::string_view defaultURL = "ws://127.0.0.1:8080/ws";
-constexpr std::string_view registerSubscriptionURL = "http://127.0.0.1:8080";
-constexpr std::string_view registerSubscriptionPath = "/eventsub/subscriptions";
+static constexpr std::string_view defaultURL = "ws://127.0.0.1:8080/ws";
+static constexpr std::string_view registerSubscriptionURL =
+	"http://127.0.0.1:8080";
+static constexpr std::string_view registerSubscriptionPath =
+	"/eventsub/subscriptions";
 #else
-constexpr std::string_view defaultURL = "wss://eventsub.wss.twitch.tv/ws";
-constexpr std::string_view registerSubscriptionURL = "https://api.twitch.tv";
-constexpr std::string_view registerSubscriptionPath =
+static constexpr std::string_view defaultURL =
+	"wss://eventsub.wss.twitch.tv/ws";
+static constexpr std::string_view registerSubscriptionURL =
+	"https://api.twitch.tv";
+static constexpr std::string_view registerSubscriptionPath =
 	"/helix/eventsub/subscriptions";
 #endif
-const int reconnectDelay = 15;
-const int messageIDBufferSize = 20;
+static const int reconnectDelay = 15;
 
 EventSub::EventSub() : QObject(nullptr)
 {

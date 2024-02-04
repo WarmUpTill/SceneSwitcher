@@ -32,8 +32,8 @@ bool AdvSceneSwitcher::AddNewMacro(std::shared_ptr<Macro> &res,
 	QString fmt;
 	int i = 1;
 	if (format.empty()) {
-		fmt = {obs_module_text(
-			"AdvSceneSwitcher.macroTab.defaultname")};
+		fmt = QString(obs_module_text(
+			"AdvSceneSwitcher.macroTab.defaultname"));
 	} else {
 		fmt = QString::fromStdString(format);
 		i = 2;

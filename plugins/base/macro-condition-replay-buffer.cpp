@@ -22,8 +22,6 @@ const static std::map<MacroConditionReplayBuffer::Condition, std::string>
 		 "AdvSceneSwitcher.condition.replay.state.saved"},
 };
 
-static bool replayBufferSaved = false;
-
 static std::chrono::high_resolution_clock::time_point replayBufferSaveTime{};
 static bool setupReplayBufferEventHandler();
 static bool replayBufferEventHandlerIsSetup = setupReplayBufferEventHandler();
@@ -94,7 +92,8 @@ static inline void populateStateSelection(QComboBox *list)
 
 MacroConditionReplayBufferEdit::MacroConditionReplayBufferEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionReplayBuffer> entryData)
-	: QWidget(parent), _state(new QComboBox())
+	: QWidget(parent),
+	  _state(new QComboBox())
 {
 	QWidget::connect(_state, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(StateChanged(int)));

@@ -222,7 +222,7 @@ long long obs_data_get_autoselect_int(obs_data_t *data, const char *name)
 
 double obs_data_get_autoselect_double(obs_data_t *data, const char *name)
 {
-	return 0, 0;
+	return 0.0;
 }
 
 bool obs_data_get_autoselect_bool(obs_data_t *data, const char *name)

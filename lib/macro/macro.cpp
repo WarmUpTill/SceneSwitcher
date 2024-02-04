@@ -122,7 +122,8 @@ bool Macro::CeckMatch()
 		if (ms.count() >= perfLogThreshold) {
 			blog(LOG_WARNING,
 			     "spent %ld ms in %s condition check of macro '%s'!",
-			     ms.count(), c->GetId().c_str(), Name().c_str());
+			     (long int)ms.count(), c->GetId().c_str(),
+			     Name().c_str());
 		}
 
 		c->CheckDurationModifier(cond);
