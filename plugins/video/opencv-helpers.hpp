@@ -1,6 +1,7 @@
 #pragma once
 #include <QImage>
 #undef NO // MacOS macro that can conflict with OpenCV
+#include <cstddef>
 #include <opencv2/opencv.hpp>
 
 #ifdef OCR_SUPPORT

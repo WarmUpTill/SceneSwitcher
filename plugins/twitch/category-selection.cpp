@@ -166,8 +166,8 @@ const std::map<QString, int> &CategoryGrabber::GetCategories()
 void CategoryGrabber::run()
 {
 	if (!_token) {
-		return;
 		emit Failed();
+		return;
 	}
 
 	{

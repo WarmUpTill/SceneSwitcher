@@ -29,7 +29,8 @@ AdvSceneSwitcher *AdvSceneSwitcher::window = nullptr;
  * Create the Advanced Scene Switcher settings window
  ******************************************************************************/
 AdvSceneSwitcher::AdvSceneSwitcher(QWidget *parent)
-	: QDialog(parent), ui(new Ui_AdvSceneSwitcher)
+	: QDialog(parent),
+	  ui(new Ui_AdvSceneSwitcher)
 {
 	switcher->settingsWindowOpened = true;
 	ui->setupUi(this);
@@ -258,7 +259,8 @@ void SwitcherData::Thread()
 			}
 		}
 
-		vblog(LOG_INFO, "try to sleep for %ld", duration.count());
+		vblog(LOG_INFO, "try to sleep for %ld",
+		      (long int)duration.count());
 		SetWaitScene();
 		cv.wait_for(lock, duration);
 
@@ -285,7 +287,7 @@ void SwitcherData::Thread()
 		if (linger) {
 			duration = std::chrono::milliseconds(linger);
 			vblog(LOG_INFO, "sleep for %ld before switching scene",
-			      duration.count());
+			      (long int)duration.count());
 
 			SetWaitScene();
 			cv.wait_for(lock, duration);
