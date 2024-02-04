@@ -30,7 +30,8 @@ public:
 	NumberVariable<int> _keyFrameInterval = 0;
 
 private:
-	int GetKeyFrameInterval();
+	void SetupTempVars();
+	int GetKeyFrameInterval() const;
 
 	std::chrono::high_resolution_clock::time_point _lastStreamStartingTime{};
 	std::chrono::high_resolution_clock::time_point _lastStreamStoppingTime{};
