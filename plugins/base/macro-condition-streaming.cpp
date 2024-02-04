@@ -53,7 +53,7 @@ bool setupStreamingEventHandler()
 	return true;
 }
 
-int MacroConditionStream::GetKeyFrameInterval()
+int MacroConditionStream::GetKeyFrameInterval() const
 {
 	const auto configPath = GetPathInProfileDir("streamEncoder.json");
 	obs_data_t *settings =
@@ -72,6 +72,7 @@ bool MacroConditionStream::CheckCondition()
 
 	bool streamStarting = streamStartTime != _lastStreamStartingTime;
 	bool streamStopping = streamStopTime != _lastStreamStoppingTime;
+	const int keyFrameInterval = GetKeyFrameInterval();
 
 	switch (_condition) {
 	case Condition::STOP:
@@ -87,7 +88,7 @@ bool MacroConditionStream::CheckCondition()
 		match = streamStopping;
 		break;
 	case Condition::KEYFRAME_INTERVAL:
-		match = GetKeyFrameInterval() == _keyFrameInterval;
+		match = keyFrameInterval == _keyFrameInterval;
 		break;
 	default:
 		break;
@@ -99,6 +100,15 @@ bool MacroConditionStream::CheckCondition()
 	if (streamStopping) {
 		_lastStreamStoppingTime = streamStopTime;
 	}
+
+	const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(
+		std::chrono::high_resolution_clock::now() - streamStartTime);
+	const auto streamDurationSeconds =
+		obs_frontend_streaming_active() ? seconds.count() : 0;
+	SetTempVarValue("durationSeconds",
+			std::to_string(streamDurationSeconds));
+	SetTempVarValue("keyframeInterval", std::to_string(keyFrameInterval));
+
 	return match;
 }
 
@@ -116,6 +126,23 @@ bool MacroConditionStream::Load(obs_data_t *obj)
 	_condition = static_cast<Condition>(obs_data_get_int(obj, "state"));
 	_keyFrameInterval.Load(obj, "keyFrameInterval");
 	return true;
+}
+
+void MacroConditionStream::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+	AddTempvar(
+		"keyframeInterval",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.streaming.keyframeInterval"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.streaming.keyframeInterval.description"));
+	AddTempvar(
+		"durationSeconds",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.streaming.durationSeconds"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.streaming.durationSeconds.description"));
 }
 
 static inline void populateStateSelection(QComboBox *list)
