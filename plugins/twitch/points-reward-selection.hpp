@@ -41,7 +41,7 @@ private:
 	std::vector<TwitchPointsReward> ParseResponse(obs_data_t *response);
 
 	bool _allowAny;
-	const std::vector<TokenOption> SUPPORTED_TOKEN_OPTIONS = {
+	const std::vector<TokenOption> _supportedTokenOptions = {
 		{"channel:read:redemptions"},
 		{"channel:manage:redemptions"}};
 
