@@ -183,25 +183,39 @@ void TwitchToken::Save(obs_data_t *obj) const
 	obs_data_set_array(obj, "options", options);
 }
 
-bool TwitchToken::OptionIsEnabled(const TokenOption &option) const
+bool TwitchToken::OptionIsActive(const TokenOption &option) const
 {
 	for (const auto &activeOption : _tokenOptions) {
 		if (activeOption.apiId == option.apiId) {
 			return true;
 		}
 	}
+
 	return false;
+}
+
+bool TwitchToken::OptionIsEnabled(const TokenOption &option) const
+{
+	if (!IsValid()) {
+		return false;
+	}
+
+	return OptionIsActive(option);
 }
 
 bool TwitchToken::AnyOptionIsEnabled(
 	const std::vector<TokenOption> &options) const
 {
+	if (!IsValid()) {
+		return false;
+	}
+
 	if (options.empty()) {
 		return true;
 	}
 
 	for (const auto &tokenOption : options) {
-		if (OptionIsEnabled(tokenOption)) {
+		if (OptionIsActive(tokenOption)) {
 			return true;
 		}
 	}
@@ -401,7 +415,7 @@ static QCheckBox *addOption(const TokenOption &option, const TwitchToken &token,
 	label->setWordWrap(true);
 	layout->addWidget(label, row, 1);
 	auto checkBox = new QCheckBox();
-	checkBox->setChecked(token.OptionIsEnabled(option));
+	checkBox->setChecked(token.OptionIsActive(option));
 	layout->addWidget(checkBox, row, 0);
 	row++;
 	return checkBox;
