@@ -72,7 +72,7 @@ void TwitchPointsRewardSelection::PopulateSelection()
 {
 	auto token = _token.lock();
 
-	if (!token || !token->AnyOptionIsEnabled(SUPPORTED_TOKEN_OPTIONS)) {
+	if (!token || !token->AnyOptionIsEnabled(_supportedTokenOptions)) {
 		DisplayErrorMessage(obs_module_text(
 			"AdvSceneSwitcher.twitch.selection.points.reward.tooltip.noPermission"));
 		return;
