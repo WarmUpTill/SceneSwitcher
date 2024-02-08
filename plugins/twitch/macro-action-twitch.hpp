@@ -206,7 +206,7 @@ public:
 private slots:
 	void ActionChanged(int);
 	void TwitchTokenChanged(const QString &);
-	void CheckTokenPermissions();
+	void CheckToken();
 	void StreamTitleChanged();
 	void CategoreyChanged(const TwitchCategory &);
 	void MarkerDescriptionChanged();
@@ -228,12 +228,13 @@ private:
 	void SetWidgetSignalConnections();
 	void SetWidgetLayout();
 	void SetWidgetVisibility();
+	void SetTokenWarning(bool visible, const QString &text = "");
 
 	QHBoxLayout *_layout;
 	FilterComboBox *_actions;
 	TwitchConnectionSelection *_tokens;
-	QLabel *_tokenPermissionWarning;
-	QTimer _tokenPermissionCheckTimer;
+	QLabel *_tokenWarning;
+	QTimer _tokenCheckTimer;
 	VariableLineEdit *_streamTitle;
 	TwitchCategoryWidget *_category;
 	VariableLineEdit *_markerDescription;

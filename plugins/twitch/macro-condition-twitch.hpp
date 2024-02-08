@@ -151,7 +151,7 @@ public:
 private slots:
 	void ConditionChanged(int);
 	void TwitchTokenChanged(const QString &);
-	void CheckTokenPermissions();
+	void CheckToken();
 	void ChannelChanged(const TwitchChannel &);
 	void PointsRewardChanged(const TwitchPointsReward &);
 	void StreamTitleChanged();
@@ -169,12 +169,13 @@ protected:
 
 private:
 	void SetWidgetVisibility();
+	void SetTokenWarning(bool visible, const QString &text = "");
 
 	QHBoxLayout *_layout;
 	FilterComboBox *_conditions;
 	TwitchConnectionSelection *_tokens;
-	QLabel *_tokenPermissionWarning;
-	QTimer _tokenPermissionCheckTimer;
+	QLabel *_tokenWarning;
+	QTimer _tokenCheckTimer;
 	TwitchChannelSelection *_channel;
 	TwitchPointsRewardWidget *_pointsReward;
 	VariableLineEdit *_streamTitle;

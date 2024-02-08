@@ -151,6 +151,7 @@ TwitchToken *GetTwitchTokenByName(const std::string &);
 std::weak_ptr<TwitchToken> GetWeakTwitchTokenByName(const std::string &name);
 std::weak_ptr<TwitchToken> GetWeakTwitchTokenByQString(const QString &name);
 std::string GetWeakTwitchTokenName(std::weak_ptr<TwitchToken>);
+bool TokenIsValid(const std::weak_ptr<TwitchToken> &token);
 
 } // namespace advss
 
