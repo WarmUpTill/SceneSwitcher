@@ -151,24 +151,23 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 	if (saving) {
 		std::lock_guard<std::mutex> lock(switcher->m);
 		switcher->Prune();
-		obs_data_t *obj = obs_data_create();
-		switcher->SaveSettings(obj);
-		obs_data_set_obj(save_data, "advanced-scene-switcher", obj);
-		obs_data_release(obj);
+		OBSDataAutoRelease data = obs_data_create();
+		switcher->SaveSettings(data);
+		obs_data_set_obj(save_data, "advanced-scene-switcher", data);
 	} else {
 		// Stop the scene switcher at least once to
 		// avoid scene duplication issues with scene collection changes
 		switcher->Stop();
 
-		OBSDataAutoRelease obj =
+		OBSDataAutoRelease data =
 			obs_data_get_obj(save_data, "advanced-scene-switcher");
-		if (!obj) {
-			obj = obs_data_create();
+		if (!data) {
+			data = obs_data_create();
 		}
 
 		switcher->m.lock();
-		if (switcher->VersionChanged(obj, g_GIT_SHA1)) {
-			auto json = obs_data_get_json(obj);
+		if (switcher->VersionChanged(data, g_GIT_SHA1)) {
+			auto json = obs_data_get_json(data);
 			static QString jsonQString = json ? json : "";
 			std::thread t([]() {
 				obs_queue_task(
@@ -181,7 +180,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			t.detach();
 		}
 
-		switcher->LoadSettings(obj);
+		switcher->LoadSettings(data);
 		switcher->m.unlock();
 
 		if (!switcher->stop) {
@@ -510,11 +509,10 @@ void SwitcherData::SetWaitScene()
 
 bool SwitcherData::SceneChangedDuringWait()
 {
-	obs_source_t *currentSource = obs_frontend_get_current_scene();
+	OBSSourceAutoRelease currentSource = obs_frontend_get_current_scene();
 	if (!currentSource) {
 		return true;
 	}
-	obs_source_release(currentSource);
 	return (waitScene && currentSource != waitScene);
 }
 
@@ -523,11 +521,11 @@ bool SwitcherData::SceneChangedDuringWait()
 // already return the scene to be transitioned to.
 bool SwitcherData::AnySceneTransitionStarted()
 {
-	auto currentSceneSrouce = obs_frontend_get_current_scene();
-	auto currentScene = obs_source_get_weak_source(currentSceneSrouce);
+	OBSSourceAutoRelease currentSceneSrouce =
+		obs_frontend_get_current_scene();
+	OBSWeakSourceAutoRelease currentScene =
+		obs_source_get_weak_source(currentSceneSrouce);
 	bool ret = switcher->currentScene != currentScene;
-	obs_weak_source_release(currentScene);
-	obs_source_release(currentSceneSrouce);
 	return ret;
 }
 
@@ -553,8 +551,8 @@ static void handleSceneChange()
 	}
 
 	// Set current and previous scene
-	obs_source_t *source = obs_frontend_get_current_scene();
-	obs_weak_source_t *ws = obs_source_get_weak_source(source);
+	OBSSourceAutoRelease source = obs_frontend_get_current_scene();
+	OBSWeakSourceAutoRelease ws = obs_source_get_weak_source(source);
 
 	if (ws && ws != switcher->currentScene) {
 		switcher->previousScene = switcher->currentScene;
@@ -565,14 +563,11 @@ static void handleSceneChange()
 		      GetWeakSourceName(switcher->previousScene).c_str());
 	}
 
-	obs_source_release(source);
-	obs_weak_source_release(ws);
-
 	switcher->checkTriggers();
 	switcher->checkDefaultSceneTransitions();
 
 	if (switcher->networkConfig.ShouldSendFrontendSceneChange()) {
-		switcher->server.sendMessage({ws, nullptr, 0});
+		switcher->server.sendMessage({ws.Get(), nullptr, 0});
 	}
 }
 
@@ -605,11 +600,11 @@ static void checkAutoStartStreaming()
 static void handlePeviewSceneChange()
 {
 	if (switcher->networkConfig.ShouldSendPrviewSceneChange()) {
-		auto source = obs_frontend_get_current_preview_scene();
-		auto weak = obs_source_get_weak_source(source);
-		switcher->server.sendMessage({weak, nullptr, 0}, true);
-		obs_weak_source_release(weak);
-		obs_source_release(source);
+		OBSSourceAutoRelease source =
+			obs_frontend_get_current_preview_scene();
+		OBSWeakSourceAutoRelease weak =
+			obs_source_get_weak_source(source);
+		switcher->server.sendMessage({weak.Get(), nullptr, 0}, true);
 	}
 }
 
