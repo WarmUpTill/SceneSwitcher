@@ -473,8 +473,7 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _layout(new QHBoxLayout()),
 	  _actions(new FilterComboBox()),
 	  _tokens(new TwitchConnectionSelection()),
-	  _tokenPermissionWarning(new QLabel(obs_module_text(
-		  "AdvSceneSwitcher.twitchToken.permissionsInsufficient"))),
+	  _tokenWarning(new QLabel()),
 	  _streamTitle(new VariableLineEdit(this)),
 	  _category(new TwitchCategoryWidget(this)),
 	  _markerDescription(new VariableLineEdit(this)),
@@ -496,10 +495,10 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	mainLayout->addLayout(_layout);
 	mainLayout->addWidget(_announcementMessage);
 	mainLayout->addWidget(_chatMessage);
-	mainLayout->addWidget(_tokenPermissionWarning);
+	mainLayout->addWidget(_tokenWarning);
 	setLayout(mainLayout);
 
-	_tokenPermissionCheckTimer.start(1000);
+	_tokenCheckTimer.start(1000);
 
 	UpdateEntryData();
 	_loading = false;
@@ -541,12 +540,40 @@ void MacroActionTwitchEdit::TwitchTokenChanged(const QString &token)
 	emit(HeaderInfoChanged(token));
 }
 
-void MacroActionTwitchEdit::CheckTokenPermissions()
+void MacroActionTwitchEdit::SetTokenWarning(bool visible, const QString &text)
 {
-	_tokenPermissionWarning->setVisible(
-		_entryData && !_entryData->ActionIsSupportedByToken());
+	_tokenWarning->setText(text);
+	_tokenWarning->setVisible(visible);
 	adjustSize();
 	updateGeometry();
+}
+
+void MacroActionTwitchEdit::CheckToken()
+{
+	if (!_entryData) {
+		return;
+	}
+	if (_entryData->_token.expired()) {
+		SetTokenWarning(
+			true,
+			obs_module_text(
+				"AdvSceneSwitcher.twitchToken.noSelection"));
+		return;
+	}
+	if (!TokenIsValid(_entryData->_token)) {
+		SetTokenWarning(
+			true, obs_module_text(
+				      "AdvSceneSwitcher.twitchToken.notValid"));
+		return;
+	}
+	if (!_entryData->ActionIsSupportedByToken()) {
+		SetTokenWarning(
+			true,
+			obs_module_text(
+				"AdvSceneSwitcher.twitchToken.permissionsInsufficient"));
+		return;
+	}
+	SetTokenWarning(false);
 }
 
 void MacroActionTwitchEdit::StreamTitleChanged()
@@ -649,8 +676,8 @@ void MacroActionTwitchEdit::SetWidgetSignalConnections()
 			 SLOT(ActionChanged(int)));
 	QWidget::connect(_tokens, SIGNAL(SelectionChanged(const QString &)),
 			 this, SLOT(TwitchTokenChanged(const QString &)));
-	QWidget::connect(&_tokenPermissionCheckTimer, SIGNAL(timeout()), this,
-			 SLOT(CheckTokenPermissions()));
+	QWidget::connect(&_tokenCheckTimer, SIGNAL(timeout()), this,
+			 SLOT(CheckToken()));
 	QWidget::connect(_streamTitle, SIGNAL(editingFinished()), this,
 			 SLOT(StreamTitleChanged()));
 	QWidget::connect(_category,
@@ -710,8 +737,7 @@ void MacroActionTwitchEdit::SetWidgetVisibility()
 		AddStretchIfNecessary(_layout);
 	}
 
-	_tokenPermissionWarning->setVisible(
-		!_entryData->ActionIsSupportedByToken());
+	CheckToken();
 
 	adjustSize();
 	updateGeometry();

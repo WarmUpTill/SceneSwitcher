@@ -328,6 +328,15 @@ std::string GetWeakTwitchTokenName(std::weak_ptr<TwitchToken> token)
 	return con->Name();
 }
 
+bool TokenIsValid(const std::weak_ptr<TwitchToken> &token_)
+{
+	auto token = token_.lock();
+	if (!token) {
+		return false;
+	}
+	return token->IsValid();
+}
+
 static bool ConnectionNameAvailable(const QString &name)
 {
 	return !GetTwitchTokenByName(name);

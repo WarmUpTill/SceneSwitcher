@@ -1194,8 +1194,7 @@ MacroConditionTwitchEdit::MacroConditionTwitchEdit(
 	  _layout(new QHBoxLayout()),
 	  _conditions(new FilterComboBox()),
 	  _tokens(new TwitchConnectionSelection()),
-	  _tokenPermissionWarning(new QLabel(obs_module_text(
-		  "AdvSceneSwitcher.twitchToken.permissionsInsufficient"))),
+	  _tokenWarning(new QLabel()),
 	  _channel(new TwitchChannelSelection(this)),
 	  _pointsReward(new TwitchPointsRewardWidget(this)),
 	  _streamTitle(new VariableLineEdit(this)),
@@ -1214,8 +1213,8 @@ MacroConditionTwitchEdit::MacroConditionTwitchEdit(
 			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_tokens, SIGNAL(SelectionChanged(const QString &)),
 			 this, SLOT(TwitchTokenChanged(const QString &)));
-	QWidget::connect(&_tokenPermissionCheckTimer, SIGNAL(timeout()), this,
-			 SLOT(CheckTokenPermissions()));
+	QWidget::connect(&_tokenCheckTimer, SIGNAL(timeout()), this,
+			 SLOT(CheckToken()));
 	QWidget::connect(_channel,
 			 SIGNAL(ChannelChanged(const TwitchChannel &)), this,
 			 SLOT(ChannelChanged(const TwitchChannel &)));
@@ -1262,10 +1261,10 @@ MacroConditionTwitchEdit::MacroConditionTwitchEdit(
 	chatLayout->addWidget(_regexChat);
 	mainLayout->addLayout(chatLayout);
 	mainLayout->addLayout(accountLayout);
-	mainLayout->addWidget(_tokenPermissionWarning);
+	mainLayout->addWidget(_tokenWarning);
 	setLayout(mainLayout);
 
-	_tokenPermissionCheckTimer.start(1000);
+	_tokenCheckTimer.start(1000);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -1309,12 +1308,41 @@ void MacroConditionTwitchEdit::TwitchTokenChanged(const QString &token)
 	emit(HeaderInfoChanged(token));
 }
 
-void MacroConditionTwitchEdit::CheckTokenPermissions()
+void MacroConditionTwitchEdit::SetTokenWarning(bool visible,
+					       const QString &text)
 {
-	_tokenPermissionWarning->setVisible(
-		_entryData && !_entryData->ConditionIsSupportedByToken());
+	_tokenWarning->setText(text);
+	_tokenWarning->setVisible(visible);
 	adjustSize();
 	updateGeometry();
+}
+
+void MacroConditionTwitchEdit::CheckToken()
+{
+	if (!_entryData) {
+		return;
+	}
+	if (_entryData->_token.expired()) {
+		SetTokenWarning(
+			true,
+			obs_module_text(
+				"AdvSceneSwitcher.twitchToken.noSelection"));
+		return;
+	}
+	if (!TokenIsValid(_entryData->_token)) {
+		SetTokenWarning(
+			true, obs_module_text(
+				      "AdvSceneSwitcher.twitchToken.notValid"));
+		return;
+	}
+	if (!_entryData->ConditionIsSupportedByToken()) {
+		SetTokenWarning(
+			true,
+			obs_module_text(
+				"AdvSceneSwitcher.twitchToken.permissionsInsufficient"));
+		return;
+	}
+	SetTokenWarning(false);
 }
 
 void MacroConditionTwitchEdit::ChannelChanged(const TwitchChannel &channel)
@@ -1428,8 +1456,7 @@ void MacroConditionTwitchEdit::SetWidgetVisibility()
 		AddStretchIfNecessary(_layout);
 	}
 
-	_tokenPermissionWarning->setVisible(
-		!_entryData->ConditionIsSupportedByToken());
+	CheckToken();
 
 	adjustSize();
 	updateGeometry();
