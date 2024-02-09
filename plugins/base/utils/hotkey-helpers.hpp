@@ -34,6 +34,7 @@ private:
 	static bool DescriptionAvailable(const std::string &);
 	static void Callback(void *data, obs_hotkey_id, obs_hotkey_t *,
 			     bool pressed);
+	static std::string GetNameFromDescription(const std::string &desc);
 
 	static std::vector<std::weak_ptr<Hotkey>> _registeredHotkeys;
 	static uint32_t _hotkeyCounter;
