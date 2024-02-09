@@ -160,12 +160,13 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		// avoid scene duplication issues with scene collection changes
 		switcher->Stop();
 
-		switcher->m.lock();
 		OBSDataAutoRelease obj =
 			obs_data_get_obj(save_data, "advanced-scene-switcher");
 		if (!obj) {
 			obj = obs_data_create();
 		}
+
+		switcher->m.lock();
 		if (switcher->VersionChanged(obj, g_GIT_SHA1)) {
 			auto json = obs_data_get_json(obj);
 			static QString jsonQString = json ? json : "";
@@ -179,6 +180,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			});
 			t.detach();
 		}
+
 		switcher->LoadSettings(obj);
 		switcher->m.unlock();
 
@@ -647,6 +649,25 @@ static void handleSceneCollectionChanging()
 	}
 }
 
+static void handleSceneCollectionCleanup()
+{
+	// Reset the plugin to default settings to avoid settings being carried
+	// over to newly created scene collections.
+
+	// Skip this step for the initial OBS startup.
+	// OBSBasic::LoadData() will call ClearSceneData() which will trigger
+	// this function to be called.
+	// This would result in the plugin being started with default settings
+	// before the "real" settings are loaded.
+	static bool isOBSStartup = true;
+	if (isOBSStartup) {
+		isOBSStartup = false;
+		return;
+	}
+
+	SaveSceneSwitcher(nullptr, false, nullptr);
+}
+
 // Note to future self:
 // be careful using switcher->m here as there is potential for deadlocks when using
 // frontend functions such as obs_frontend_set_current_scene()
@@ -690,7 +711,7 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 		handleSceneCollectionChanging();
 		break;
 	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP:
-		SaveSceneSwitcher(nullptr, false, nullptr);
+		handleSceneCollectionCleanup();
 		break;
 #endif
 	default:
