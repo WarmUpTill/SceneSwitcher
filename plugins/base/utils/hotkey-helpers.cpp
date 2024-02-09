@@ -5,7 +5,7 @@
 namespace advss {
 
 std::vector<std::weak_ptr<Hotkey>> Hotkey::_registeredHotkeys = {};
-uint32_t Hotkey::_hotkeyCounter = 1;
+uint32_t Hotkey::_hotkeyCounter = 0;
 
 static bool setup()
 {
@@ -48,10 +48,9 @@ std::shared_ptr<Hotkey> Hotkey::GetHotkey(const std::string &description,
 
 Hotkey::Hotkey(const std::string &description) : _description(description)
 {
-	std::string name =
-		"macro_condition_hotkey_" + std::to_string(_hotkeyCounter);
 	_hotkeyID = obs_hotkey_register_frontend(
-		name.c_str(), _description.c_str(), Callback, this);
+		GetNameFromDescription(description).c_str(),
+		_description.c_str(), Callback, this);
 	_hotkeyCounter++;
 }
 
@@ -90,6 +89,8 @@ bool Hotkey::UpdateDescription(const std::string &descritpion)
 		return false;
 	}
 	_description = descritpion;
+	obs_hotkey_set_name(_hotkeyID,
+			    GetNameFromDescription(descritpion).c_str());
 	obs_hotkey_set_description(_hotkeyID, descritpion.c_str());
 	return true;
 }
@@ -117,6 +118,11 @@ void Hotkey::Callback(void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed)
 			std::chrono::high_resolution_clock::now();
 	}
 	hotkey->_pressed = pressed;
+}
+
+std::string Hotkey::GetNameFromDescription(const std::string &description)
+{
+	return "macro_condition_hotkey_" + description;
 }
 
 void Hotkey::ClearAllHotkeys()
