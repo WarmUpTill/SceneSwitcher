@@ -541,6 +541,9 @@ void MacroActionAudioEdit::SetWidgetVisibility()
 				     _entryData->_fade);
 	_wait->setVisible(hasVolumeControl(_entryData->_action) &&
 			  _entryData->_fade);
+	_duration->setEnabled(_entryData->_fade);
+	_rate->setEnabled(_entryData->_fade);
+	_fadeTypes->setEnabled(_entryData->_fade);
 
 	// TODO: Remove this in a future version:
 	if (_entryData->_action != MacroActionAudio::Action::MASTER_VOLUME &&
