@@ -2,6 +2,7 @@
 #include "filter-combo-box.hpp"
 
 #include <obs.hpp>
+#include <optional>
 #include <string>
 #include <vector>
 #include <QWidget>
@@ -28,8 +29,8 @@ private:
 };
 
 std::vector<SourceSetting> GetSoruceSettings(obs_source_t *source);
-std::string GetSourceSettingValue(const OBSWeakSource &source,
-				  const SourceSetting &setting);
+std::optional<std::string> GetSourceSettingValue(const OBSWeakSource &source,
+						 const SourceSetting &setting);
 void SetSourceSetting(obs_source_t *source, const SourceSetting &setting,
 		      const std::string &value);
 

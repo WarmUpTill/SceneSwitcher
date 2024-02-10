@@ -187,7 +187,9 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 	  _manualSettingValue(new VariableTextEdit(this, 5, 1, 1)),
 	  _tempVars(new TempVariableSelection(this)),
 	  _filterSettings(new SourceSettingSelection(this)),
-	  _settingsString(new VariableTextEdit(this))
+	  _settingsString(new VariableTextEdit(this)),
+	  _refreshSettingSelection(new QPushButton(
+		  obs_module_text("AdvSceneSwitcher.action.filter.refresh")))
 {
 	_filters->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
@@ -195,6 +197,8 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 	auto sources = GetSourcesWithFilterNames();
 	sources.sort();
 	_sources->SetSourceNameList(sources);
+	_refreshSettingSelection->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.action.filter.refreshTooltip"));
 
 	populateSettingsInputMethods(_settingsInputMethods);
 
@@ -221,6 +225,8 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 	QWidget::connect(_filterSettings,
 			 SIGNAL(SelectionChanged(const SourceSetting &)), this,
 			 SLOT(SelectionChanged(const SourceSetting &)));
+	QWidget::connect(_refreshSettingSelection, SIGNAL(clicked()), this,
+			 SLOT(RefreshVariableSourceSelectionValue()));
 
 	auto entrylayout = new QHBoxLayout;
 
@@ -232,8 +238,8 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 		{"{{settingsInputMethod}}", _settingsInputMethods},
 		{"{{settingValue}}", _manualSettingValue},
 		{"{{tempVar}}", _tempVars},
-		{"{{getSettings}}", _getSettings},
-	};
+		{"{{refresh}}", _refreshSettingSelection}};
+
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.filter.entry"),
 		     entrylayout, widgetPlaceholders);
 	_settingsLayout->setContentsMargins(0, 0, 0, 0);
@@ -302,6 +308,7 @@ void MacroActionFilterEdit::FilterChanged(const FilterSelection &filter)
 	const auto filters =
 		_entryData->_filter.GetFilters(_entryData->_source);
 	_filterSettings->SetSource(filters.empty() ? nullptr : filters.at(0));
+	SetWidgetVisibility();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -328,9 +335,11 @@ void MacroActionFilterEdit::GetSettingsClicked()
 	case MacroActionFilter::SettingsInputMethod::INDIVIDUAL_MANUAL: {
 		const auto filters =
 			_entryData->_filter.GetFilters(_entryData->_source);
-		_manualSettingValue->setPlainText(GetSourceSettingValue(
-			filters.empty() ? nullptr : filters.at(0),
-			_entryData->_setting));
+		_manualSettingValue->setPlainText(
+			GetSourceSettingValue(filters.empty() ? nullptr
+							      : filters.at(0),
+					      _entryData->_setting)
+				.value_or(""));
 		break;
 	}
 	case MacroActionFilter::SettingsInputMethod::INDIVIDUAL_TEMPVAR:
@@ -407,6 +416,13 @@ void MacroActionFilterEdit::ManualSettingsValueChanged()
 	updateGeometry();
 }
 
+void MacroActionFilterEdit::RefreshVariableSourceSelectionValue()
+{
+	const auto filters =
+		_entryData->_filter.GetFilters(_entryData->_source);
+	_filterSettings->SetSource(filters.empty() ? nullptr : filters.at(0));
+}
+
 void MacroActionFilterEdit::SetWidgetVisibility()
 {
 	SetLayoutVisible(_settingsLayout,
@@ -437,6 +453,14 @@ void MacroActionFilterEdit::SetWidgetVisibility()
 		AddStretchIfNecessary(_settingsLayout);
 		_manualSettingValue->hide();
 	}
+
+	_refreshSettingSelection->setVisible(
+		_entryData->_settingsInputMethod ==
+			MacroActionFilter::SettingsInputMethod::INDIVIDUAL_MANUAL &&
+		(_entryData->_source.GetType() ==
+			 SourceSelection::Type::VARIABLE ||
+		 _entryData->_filter.GetType() ==
+			 FilterSelection::Type::VARIABLE));
 
 	adjustSize();
 	updateGeometry();

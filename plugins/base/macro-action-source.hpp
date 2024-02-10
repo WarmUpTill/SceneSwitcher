@@ -99,6 +99,8 @@ private slots:
 	void SettingsInputMethodChanged(int);
 	void SelectionChanged(const SourceSetting &);
 	void ManualSettingsValueChanged();
+	void RefreshVariableSourceSelectionValue();
+
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -116,6 +118,7 @@ protected:
 	QComboBox *_deinterlaceMode;
 	QComboBox *_deinterlaceOrder;
 	QLabel *_warning;
+	QPushButton *_refreshSettingSelection;
 
 	std::shared_ptr<MacroActionSource> _entryData;
 

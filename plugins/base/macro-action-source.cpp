@@ -341,8 +341,9 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	  _deinterlaceMode(new QComboBox()),
 	  _deinterlaceOrder(new QComboBox()),
 	  _warning(new QLabel(
-		  obs_module_text("AdvSceneSwitcher.action.source.warning")))
-
+		  obs_module_text("AdvSceneSwitcher.action.source.warning"))),
+	  _refreshSettingSelection(new QPushButton(
+		  obs_module_text("AdvSceneSwitcher.action.source.refresh")))
 {
 	populateActionSelection(_actions);
 	auto sources = GetSourceNames();
@@ -351,6 +352,8 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	populateDeinterlaceModeSelection(_deinterlaceMode);
 	populateDeinterlaceFieldOrderSelection(_deinterlaceOrder);
 	populateSettingsInputMethods(_settingsInputMethods);
+	_refreshSettingSelection->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.action.source.refreshTooltip"));
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
@@ -378,6 +381,8 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	QWidget::connect(_sourceSettings,
 			 SIGNAL(SelectionChanged(const SourceSetting &)), this,
 			 SLOT(SelectionChanged(const SourceSetting &)));
+	QWidget::connect(_refreshSettingSelection, SIGNAL(clicked()), this,
+			 SLOT(RefreshVariableSourceSelectionValue()));
 
 	auto entryLayout = new QHBoxLayout;
 	entryLayout->setContentsMargins(0, 0, 0, 0);
@@ -392,7 +397,8 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 		{"{{settingsButtons}}", _settingsButtons},
 		{"{{deinterlaceMode}}", _deinterlaceMode},
 		{"{{deinterlaceOrder}}", _deinterlaceOrder},
-	};
+		{"{{refresh}}", _refreshSettingSelection}};
+
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.source.entry"),
 		     entryLayout, widgetPlaceholders);
 	_settingsLayout->setContentsMargins(0, 0, 0, 0);
@@ -456,6 +462,7 @@ void MacroActionSourceEdit::SourceChanged(const SourceSelection &source)
 	populateSourceButtonSelection(_settingsButtons,
 				      _entryData->_source.GetSource());
 	_sourceSettings->SetSource(_entryData->_source.GetSource());
+	SetWidgetVisibility();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -490,8 +497,10 @@ void MacroActionSourceEdit::GetSettingsClicked()
 
 	switch (_entryData->_settingsInputMethod) {
 	case MacroActionSource::SettingsInputMethod::INDIVIDUAL_MANUAL:
-		_manualSettingValue->setPlainText(GetSourceSettingValue(
-			_entryData->_source.GetSource(), _entryData->_setting));
+		_manualSettingValue->setPlainText(
+			GetSourceSettingValue(_entryData->_source.GetSource(),
+					      _entryData->_setting)
+				.value_or(""));
 		break;
 	case MacroActionSource::SettingsInputMethod::INDIVIDUAL_TEMPVAR:
 		break;
@@ -586,6 +595,11 @@ void MacroActionSourceEdit::ManualSettingsValueChanged()
 	updateGeometry();
 }
 
+void MacroActionSourceEdit::RefreshVariableSourceSelectionValue()
+{
+	_sourceSettings->SetSource(_entryData->_source.GetSource());
+}
+
 void MacroActionSourceEdit::SetWidgetVisibility()
 {
 	SetLayoutVisible(_settingsLayout,
@@ -630,6 +644,13 @@ void MacroActionSourceEdit::SetWidgetVisibility()
 	_deinterlaceOrder->setVisible(
 		_entryData->_action ==
 		MacroActionSource::Action::DEINTERLACE_FIELD_ORDER);
+
+	_refreshSettingSelection->setVisible(
+		_entryData->_settingsInputMethod ==
+			MacroActionSource::SettingsInputMethod::INDIVIDUAL_MANUAL &&
+		_entryData->_source.GetType() ==
+			SourceSelection::Type::VARIABLE);
+
 	adjustSize();
 	updateGeometry();
 }

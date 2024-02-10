@@ -63,19 +63,25 @@ bool MacroConditionSource::CheckCondition()
 		break;
 	}
 	case Condition::INDIVIDUAL_SETTING_MATCH: {
-		std::string value =
+		auto value =
 			GetSourceSettingValue(_source.GetSource(), _setting);
-		ret = _regex.Enabled() ? _regex.Matches(value, _settings)
+		if (!value) {
+			return false;
+		}
+		ret = _regex.Enabled() ? _regex.Matches(*value, _settings)
 				       : value == std::string(_settings);
-		SetVariableValue(value);
+		SetVariableValue(*value);
 		break;
 	}
 	case Condition::INDIVIDUAL_SETTING_CHANGED: {
-		std::string value =
+		auto value =
 			GetSourceSettingValue(_source.GetSource(), _setting);
-		ret = _currentSettingsValue != value;
-		_currentSettingsValue = value;
-		SetVariableValue(value);
+		if (!value) {
+			return false;
+		}
+		ret = _currentSettingsValue != *value;
+		_currentSettingsValue = *value;
+		SetVariableValue(*value);
 		break;
 	}
 	default:
@@ -137,7 +143,9 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 		  "AdvSceneSwitcher.condition.source.getSettings"))),
 	  _settings(new VariableTextEdit(this)),
 	  _regex(new RegexConfigWidget(parent)),
-	  _settingSelection(new SourceSettingSelection())
+	  _settingSelection(new SourceSettingSelection()),
+	  _refreshSettingSelection(new QPushButton(
+		  obs_module_text("AdvSceneSwitcher.condition.source.refresh")))
 {
 	populateConditionSelection(_conditions);
 	auto sources = GetSourceNames();
@@ -145,6 +153,8 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 	auto scenes = GetSceneNames();
 	scenes.sort();
 	_sources->SetSourceNameList(sources + scenes);
+	_refreshSettingSelection->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.condition.source.refreshTooltip"));
 
 	QWidget::connect(_sources,
 			 SIGNAL(SourceChanged(const SourceSelection &)), this,
@@ -161,6 +171,8 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 	QWidget::connect(_settingSelection,
 			 SIGNAL(SelectionChanged(const SourceSetting &)), this,
 			 SLOT(SettingSelectionChanged(const SourceSetting &)));
+	QWidget::connect(_refreshSettingSelection, SIGNAL(clicked()), this,
+			 SLOT(RefreshVariableSourceSelectionValue()));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{sources}}", _sources},
@@ -168,7 +180,8 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 		{"{{settings}}", _settings},
 		{"{{getSettings}}", _getSettings},
 		{"{{regex}}", _regex},
-		{"{{settingSelection}}", _settingSelection}};
+		{"{{settingSelection}}", _settingSelection},
+		{"{{refresh}}", _refreshSettingSelection}};
 
 	auto line1Layout = new QHBoxLayout;
 	line1Layout->setContentsMargins(0, 0, 0, 0);
@@ -207,6 +220,7 @@ void MacroConditionSourceEdit::SourceChanged(const SourceSelection &source)
 		_entryData->_source = source;
 	}
 	_settingSelection->SetSource(_entryData->_source.GetSource());
+	SetWidgetVisibility();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -235,8 +249,10 @@ void MacroConditionSourceEdit::GetSettingsClicked()
 		value = FormatJsonString(
 			GetSourceSettings(_entryData->_source.GetSource()));
 	} else {
-		value = QString::fromStdString(GetSourceSettingValue(
-			_entryData->_source.GetSource(), _entryData->_setting));
+		value = QString::fromStdString(
+			GetSourceSettingValue(_entryData->_source.GetSource(),
+					      _entryData->_setting)
+				.value_or(""));
 	}
 
 	if (_entryData->_regex.Enabled()) {
@@ -282,6 +298,11 @@ void MacroConditionSourceEdit::SettingSelectionChanged(
 	_entryData->_setting = setting;
 }
 
+void MacroConditionSourceEdit::RefreshVariableSourceSelectionValue()
+{
+	_settingSelection->SetSource(_entryData->_source.GetSource());
+}
+
 void MacroConditionSourceEdit::SetWidgetVisibility()
 {
 	const bool settingsMatch =
@@ -306,6 +327,12 @@ void MacroConditionSourceEdit::SetWidgetVisibility()
 			? obs_module_text(
 				  "AdvSceneSwitcher.condition.source.sceneVisibilityHint")
 			: "");
+
+	_refreshSettingSelection->setVisible(
+		_entryData->_condition == MacroConditionSource::Condition::
+						  INDIVIDUAL_SETTING_MATCH &&
+		_entryData->_source.GetType() ==
+			SourceSelection::Type::VARIABLE);
 
 	adjustSize();
 	updateGeometry();

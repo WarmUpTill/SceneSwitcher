@@ -61,17 +61,23 @@ bool MacroConditionFilter::CheckConditionHelper(const OBSWeakSource &filter)
 		break;
 	}
 	case Condition::INDIVIDUAL_SETTING_MATCH: {
-		std::string value = GetSourceSettingValue(filter, _setting);
-		ret = _regex.Enabled() ? _regex.Matches(value, _settings)
+		auto value = GetSourceSettingValue(filter, _setting);
+		if (!value) {
+			return false;
+		}
+		ret = _regex.Enabled() ? _regex.Matches(*value, _settings)
 				       : value == std::string(_settings);
-		SetVariableValue(value);
+		SetVariableValue(*value);
 		break;
 	}
 	case Condition::INDIVIDUAL_SETTING_CHANGED: {
-		std::string value = GetSourceSettingValue(filter, _setting);
+		auto value = GetSourceSettingValue(filter, _setting);
+		if (!value) {
+			return false;
+		}
 		ret = _currentSettingsValue != value;
-		_currentSettingsValue = value;
-		SetVariableValue(value);
+		_currentSettingsValue = *value;
+		SetVariableValue(*value);
 		break;
 	}
 	default:
@@ -153,12 +159,16 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 		  "AdvSceneSwitcher.condition.filter.getSettings"))),
 	  _settings(new VariableTextEdit(this)),
 	  _regex(new RegexConfigWidget(parent)),
-	  _settingSelection(new SourceSettingSelection())
+	  _settingSelection(new SourceSettingSelection()),
+	  _refreshSettingSelection(new QPushButton(
+		  obs_module_text("AdvSceneSwitcher.condition.filter.refresh")))
 {
 	populateConditionSelection(_conditions);
 	auto sources = GetSourcesWithFilterNames();
 	sources.sort();
 	_sources->SetSourceNameList(sources);
+	_refreshSettingSelection->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.condition.filter.refreshTooltip"));
 
 	QWidget::connect(_sources,
 			 SIGNAL(SourceChanged(const SourceSelection &)), this,
@@ -178,6 +188,8 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 	QWidget::connect(_settingSelection,
 			 SIGNAL(SelectionChanged(const SourceSetting &)), this,
 			 SLOT(SettingSelectionChanged(const SourceSetting &)));
+	QWidget::connect(_refreshSettingSelection, SIGNAL(clicked()), this,
+			 SLOT(RefreshVariableSourceSelectionValue()));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{sources}}", _sources},
@@ -187,8 +199,8 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 		{"{{getSettings}}", _getSettings},
 		{"{{regex}}", _regex},
 		{"{{settingSelection}}", _settingSelection},
+		{"{{refresh}}", _refreshSettingSelection}};
 
-	};
 	auto line1Layout = new QHBoxLayout;
 	line1Layout->setContentsMargins(0, 0, 0, 0);
 	PlaceWidgets(obs_module_text(
@@ -239,6 +251,7 @@ void MacroConditionFilterEdit::FilterChanged(const FilterSelection &filter)
 	const auto filters =
 		_entryData->_filter.GetFilters(_entryData->_source);
 	_settingSelection->SetSource(filters.empty() ? nullptr : filters.at(0));
+	SetWidgetVisibility();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -274,8 +287,10 @@ void MacroConditionFilterEdit::GetSettingsClicked()
 	    MacroConditionFilter::Condition::SETTINGS_MATCH) {
 		value = FormatJsonString(GetSourceSettings(filters.at(0)));
 	} else {
-		value = QString::fromStdString(GetSourceSettingValue(
-			filters.at(0), _entryData->_setting));
+		value = QString::fromStdString(
+			GetSourceSettingValue(filters.at(0),
+					      _entryData->_setting)
+				.value_or(""));
 	}
 
 	if (_entryData->_regex.Enabled()) {
@@ -321,6 +336,13 @@ void MacroConditionFilterEdit::SettingSelectionChanged(
 	_entryData->_setting = setting;
 }
 
+void MacroConditionFilterEdit::RefreshVariableSourceSelectionValue()
+{
+	const auto filters =
+		_entryData->_filter.GetFilters(_entryData->_source);
+	_settingSelection->SetSource(filters.empty() ? nullptr : filters.at(0));
+}
+
 void MacroConditionFilterEdit::SetWidgetVisibility()
 {
 	const bool showSettingsControls =
@@ -336,6 +358,13 @@ void MacroConditionFilterEdit::SetWidgetVisibility()
 						  INDIVIDUAL_SETTING_MATCH ||
 		_entryData->_condition == MacroConditionFilter::Condition::
 						  INDIVIDUAL_SETTING_CHANGED);
+	_refreshSettingSelection->setVisible(
+		_entryData->_condition == MacroConditionFilter::Condition::
+						  INDIVIDUAL_SETTING_MATCH &&
+		(_entryData->_source.GetType() ==
+			 SourceSelection::Type::VARIABLE ||
+		 _entryData->_filter.GetType() ==
+			 FilterSelection::Type::VARIABLE));
 	adjustSize();
 	updateGeometry();
 }

@@ -79,6 +79,7 @@ private slots:
 	void SelectionChanged(const TempVariableRef &);
 	void SelectionChanged(const SourceSetting &);
 	void ManualSettingsValueChanged();
+	void RefreshVariableSourceSelectionValue();
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -93,6 +94,7 @@ protected:
 	TempVariableSelection *_tempVars;
 	SourceSettingSelection *_filterSettings;
 	VariableTextEdit *_settingsString;
+	QPushButton *_refreshSettingSelection;
 
 	std::shared_ptr<MacroActionFilter> _entryData;
 
