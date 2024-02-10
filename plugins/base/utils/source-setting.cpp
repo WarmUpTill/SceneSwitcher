@@ -14,7 +14,9 @@ namespace advss {
 SourceSetting::SourceSetting(const std::string &id,
 			     const std::string &description,
 			     const std::string &longDescription)
-	: _id(id), _description(description), _longDescription(longDescription)
+	: _id(id),
+	  _description(description),
+	  _longDescription(longDescription)
 {
 }
 
@@ -69,22 +71,22 @@ std::vector<SourceSetting> GetSoruceSettings(obs_source_t *source)
 	return settings;
 }
 
-std::string GetSourceSettingValue(const OBSWeakSource &ws,
-				  const SourceSetting &setting)
+std::optional<std::string> GetSourceSettingValue(const OBSWeakSource &ws,
+						 const SourceSetting &setting)
 {
 	OBSSourceAutoRelease source = obs_weak_source_get_source(ws);
 	OBSDataAutoRelease data = obs_source_get_settings(source);
 	if (!data) {
-		return "";
+		return {};
 	}
 	OBSDataAutoRelease dataWithDefaults = obs_data_get_defaults(data);
 	obs_data_apply(dataWithDefaults, data);
 	auto json = obs_data_get_json(dataWithDefaults);
 	if (!json) {
-		return "";
+		return {};
 	}
 	auto value = GetJsonField(json, setting.GetID());
-	return value.value_or("");
+	return value;
 }
 
 void SetSourceSetting(obs_source_t *source, const SourceSetting &setting,

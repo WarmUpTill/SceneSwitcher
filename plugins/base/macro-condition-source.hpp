@@ -70,6 +70,7 @@ private slots:
 	void SettingsChanged();
 	void RegexChanged(const RegexConfig &);
 	void SettingSelectionChanged(const SourceSetting &);
+	void RefreshVariableSourceSelectionValue();
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -80,6 +81,7 @@ protected:
 	VariableTextEdit *_settings;
 	RegexConfigWidget *_regex;
 	SourceSettingSelection *_settingSelection;
+	QPushButton *_refreshSettingSelection;
 
 	std::shared_ptr<MacroConditionSource> _entryData;
 
