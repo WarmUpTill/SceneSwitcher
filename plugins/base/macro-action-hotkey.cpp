@@ -15,14 +15,14 @@ bool MacroActionHotkey::_registered = MacroActionFactory::Register(
 	{MacroActionHotkey::Create, MacroActionHotkeyEdit::Create,
 	 "AdvSceneSwitcher.action.hotkey"});
 
-const static std::map<MacroActionHotkey::Action, std::string> actionTypes = {
+static const std::map<MacroActionHotkey::Action, std::string> actionTypes = {
 	{MacroActionHotkey::Action::OBS_HOTKEY,
 	 "AdvSceneSwitcher.action.hotkey.type.obs"},
 	{MacroActionHotkey::Action::CUSTOM,
 	 "AdvSceneSwitcher.action.hotkey.type.custom"},
 };
 
-const static std::map<obs_hotkey_registerer_type, std::string> hotkeyTypes = {
+static const std::map<obs_hotkey_registerer_type, std::string> hotkeyTypes = {
 	{OBS_HOTKEY_REGISTERER_FRONTEND,
 	 "AdvSceneSwitcher.action.hotkey.type.obs.type.frontend"},
 	{OBS_HOTKEY_REGISTERER_SOURCE,
@@ -35,7 +35,7 @@ const static std::map<obs_hotkey_registerer_type, std::string> hotkeyTypes = {
 	 "AdvSceneSwitcher.action.hotkey.type.obs.type.service"},
 };
 
-static std::unordered_map<HotkeyType, long> keyTable = {
+static const std::unordered_map<HotkeyType, long> keyTable = {
 	// Chars
 	{HotkeyType::Key_A, OBS_KEY_A},
 	{HotkeyType::Key_B, OBS_KEY_B},
@@ -223,40 +223,47 @@ static void addNamePrefix(std::string &name, obs_hotkey_t *hotkey)
 	const auto type = obs_hotkey_get_registerer_type(hotkey);
 	std::string prefix;
 	if (type == OBS_HOTKEY_REGISTERER_SOURCE) {
-		auto source = reinterpret_cast<obs_weak_source_t *>(
+		auto weakSource = reinterpret_cast<obs_weak_source_t *>(
 			obs_hotkey_get_registerer(hotkey));
-		prefix = "[" + GetWeakSourceName(source) + "] ";
+		prefix = "[" + GetWeakSourceName(weakSource) + "] ";
 	} else if (type == OBS_HOTKEY_REGISTERER_OUTPUT) {
+		std::string name;
 		auto weakOutput = reinterpret_cast<obs_weak_output_t *>(
 			obs_hotkey_get_registerer(hotkey));
-		std::string name;
-		auto output = obs_weak_output_get_output(weakOutput);
+		OBSOutputAutoRelease output =
+			obs_weak_output_get_output(weakOutput);
+
 		if (output) {
 			name = obs_output_get_name(output);
-			obs_output_release(output);
 		}
+
 		prefix = "[" + name + "] ";
 	} else if (type == OBS_HOTKEY_REGISTERER_ENCODER) {
+		std::string name;
 		auto weakEncoder = reinterpret_cast<obs_weak_encoder_t *>(
 			obs_hotkey_get_registerer(hotkey));
-		std::string name;
-		auto encoder = obs_weak_encoder_get_encoder(weakEncoder);
+		OBSEncoderAutoRelease encoder =
+			obs_weak_encoder_get_encoder(weakEncoder);
+
 		if (encoder) {
 			name = obs_encoder_get_name(encoder);
-			obs_encoder_release(encoder);
 		}
+
 		prefix = "[" + name + "] ";
 	} else if (type == OBS_HOTKEY_REGISTERER_SERVICE) {
+		std::string name;
 		auto weakService = reinterpret_cast<obs_weak_service_t *>(
 			obs_hotkey_get_registerer(hotkey));
-		std::string name;
-		auto service = obs_weak_service_get_service(weakService);
+		OBSServiceAutoRelease service =
+			obs_weak_service_get_service(weakService);
+
 		if (service) {
 			name = obs_service_get_name(service);
-			obs_service_release(service);
 		}
+
 		prefix = "[" + name + "] ";
 	}
+
 	name = prefix + name;
 }
 

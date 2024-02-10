@@ -230,9 +230,8 @@ void MacroConditionStats::OutputInfo::Update(obs_output_t *output)
 
 bool MacroConditionStats::CheckStreamDroppedFrames()
 {
-	auto output = obs_frontend_get_streaming_output();
+	OBSOutputAutoRelease output = obs_frontend_get_streaming_output();
 	_streamInfo.Update(output);
-	obs_output_release(output);
 
 	switch (_condition) {
 	case Condition::ABOVE:
@@ -249,9 +248,8 @@ bool MacroConditionStats::CheckStreamDroppedFrames()
 
 bool MacroConditionStats::CheckStreamBitrate()
 {
-	auto output = obs_frontend_get_streaming_output();
+	OBSOutputAutoRelease output = obs_frontend_get_streaming_output();
 	_streamInfo.Update(output);
-	obs_output_release(output);
 
 	switch (_condition) {
 	case Condition::ABOVE:
@@ -268,9 +266,8 @@ bool MacroConditionStats::CheckStreamBitrate()
 
 bool MacroConditionStats::CheckStreamMBSent()
 {
-	auto output = obs_frontend_get_streaming_output();
+	OBSOutputAutoRelease output = obs_frontend_get_streaming_output();
 	uint64_t totalBytes = output ? obs_output_get_total_bytes(output) : 0;
-	obs_output_release(output);
 	long double num = (long double)totalBytes / (1024.0l * 1024.0l);
 
 	switch (_condition) {
@@ -288,9 +285,8 @@ bool MacroConditionStats::CheckStreamMBSent()
 
 bool MacroConditionStats::CheckRecordingDroppedFrames()
 {
-	auto output = obs_frontend_get_recording_output();
+	OBSOutputAutoRelease output = obs_frontend_get_recording_output();
 	_recordingInfo.Update(output);
-	obs_output_release(output);
 
 	switch (_condition) {
 	case Condition::ABOVE:
@@ -308,9 +304,8 @@ bool MacroConditionStats::CheckRecordingDroppedFrames()
 
 bool MacroConditionStats::CheckRecordingBitrate()
 {
-	auto output = obs_frontend_get_recording_output();
+	OBSOutputAutoRelease output = obs_frontend_get_recording_output();
 	_recordingInfo.Update(output);
-	obs_output_release(output);
 
 	switch (_condition) {
 	case Condition::ABOVE:
@@ -327,9 +322,8 @@ bool MacroConditionStats::CheckRecordingBitrate()
 
 bool MacroConditionStats::CheckRecordingMBSent()
 {
-	auto output = obs_frontend_get_recording_output();
+	OBSOutputAutoRelease output = obs_frontend_get_recording_output();
 	uint64_t totalBytes = output ? obs_output_get_total_bytes(output) : 0;
-	obs_output_release(output);
 	long double num = (long double)totalBytes / (1024.0l * 1024.0l);
 
 	switch (_condition) {
