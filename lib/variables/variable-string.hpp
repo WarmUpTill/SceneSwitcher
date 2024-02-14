@@ -15,6 +15,7 @@ public:
 	EXPORT StringVariable(std::string str) : _value(std::move(str)){};
 	EXPORT StringVariable(const char *str) : _value(str){};
 	EXPORT operator std::string() const;
+	EXPORT operator QString() const;
 	EXPORT operator QVariant() const;
 	EXPORT void operator=(std::string);
 	EXPORT void operator=(const char *value);

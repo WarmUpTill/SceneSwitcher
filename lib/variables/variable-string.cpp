@@ -22,6 +22,12 @@ StringVariable::operator std::string() const
 	return _resolvedValue;
 }
 
+StringVariable::operator QString() const
+{
+	Resolve();
+	return QString::fromStdString(_resolvedValue);
+}
+
 StringVariable::operator QVariant() const
 {
 	return QVariant::fromValue<StringVariable>(*this);
