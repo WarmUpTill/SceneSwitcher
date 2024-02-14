@@ -51,6 +51,7 @@ curl_slist *CurlHelper::SlistAppend(curl_slist *list, const char *string)
 	if (!curl._initialized) {
 		return nullptr;
 	}
+
 	return curl._slistAppend(list, string);
 }
 
@@ -60,7 +61,18 @@ CURLcode CurlHelper::Perform()
 	if (!curl._initialized) {
 		return CURLE_FAILED_INIT;
 	}
+
 	return curl._perform(curl._curl);
+}
+
+void CurlHelper::Reset()
+{
+	auto &curl = GetInstance();
+	if (!curl._initialized) {
+		return;
+	}
+
+	curl._reset(curl._curl);
 }
 
 char *CurlHelper::GetError(CURLcode code)
@@ -113,6 +125,7 @@ bool CurlHelper::LoadLib()
 			}
 		}
 	}
+
 	blog(LOG_WARNING, "[adv-ss] can't find the curl library");
 	return false;
 }
@@ -120,14 +133,16 @@ bool CurlHelper::LoadLib()
 bool CurlHelper::Resolve()
 {
 	_init = (initFunction)_lib->resolve("curl_easy_init");
-	_setopt = (setOptFunction)_lib->resolve("curl_easy_setopt");
+	_setOpt = (setOptFunction)_lib->resolve("curl_easy_setopt");
 	_slistAppend = (slistAppendFunction)_lib->resolve("curl_slist_append");
 	_perform = (performFunction)_lib->resolve("curl_easy_perform");
 	_cleanup = (cleanupFunction)_lib->resolve("curl_easy_cleanup");
+	_reset = (resetFunction)_lib->resolve("curl_easy_reset");
 	_error = (errorFunction)_lib->resolve("curl_easy_strerror");
+	_getInfo = (getInfoFunction)_lib->resolve("curl_easy_getinfo");
 
-	if (_init && _setopt && _slistAppend && _perform && _cleanup &&
-	    _error) {
+	if (_init && _setOpt && _slistAppend && _perform && _cleanup &&
+	    _reset && _error && _getInfo) {
 		blog(LOG_INFO, "[adv-ss] curl loaded successfully");
 		return true;
 	}

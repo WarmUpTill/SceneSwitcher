@@ -26,21 +26,43 @@ public:
 	}
 
 	enum class Method {
-		GET = 0,
+		GET,
 		POST,
+		PUT,
+		PATCH,
+		DELETION,
+		HEAD,
 	};
 
+	Method _method = Method::GET;
 	StringVariable _url = obs_module_text("AdvSceneSwitcher.enterURL");
-	StringVariable _data = obs_module_text("AdvSceneSwitcher.enterText");
+	StringVariable _data = obs_module_text(
+		"AdvSceneSwitcher.action.http.requestBody.placeholder");
 	bool _setHeaders = false;
 	StringList _headers;
-	Method _method = Method::GET;
 	Duration _timeout = Duration(1.0);
+	IntVariable _retryCount = 0;
+	Duration _retryDelay = Duration(6.0);
+	bool _errorForBadStatusCode = false;
 
 private:
-	void SetupHeaders();
-	void Get();
-	void Post();
+	void SetCommonOpts(bool useRequestBody, bool useResponseBody);
+	void SetHeaders();
+	void SendRequest();
+	void Reset();
+
+	void SendGetRequest();
+	void SendPostRequest();
+	void SendPutRequest();
+	void SendPatchRequest();
+	void SendDeleteRequest();
+	void SendHeadRequest();
+
+	void SetupTempVars();
+	void SetTempVarValues();
+
+	std::string _responseBody;
+	std::string _responseHeaders;
 
 	static bool _registered;
 	static const std::string id;
@@ -69,6 +91,9 @@ private slots:
 	void TimeoutChanged(const Duration &seconds);
 	void SetHeadersChanged(int);
 	void HeadersChanged(const StringList &);
+	void RetryCountChanged(const NumberVariable<int> &number);
+	void RetryDelayChanged(const Duration &duration);
+	void ErrorForBadStatusCodeChanged(int state);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -78,13 +103,17 @@ protected:
 private:
 	void SetWidgetVisibility();
 
-	VariableLineEdit *_url;
 	QComboBox *_methods;
+	VariableLineEdit *_url;
 	VariableTextEdit *_data;
 	QCheckBox *_setHeaders;
 	QVBoxLayout *_headerListLayout;
 	StringListEdit *_headerList;
 	DurationSelection *_timeout;
+	VariableSpinBox *_retryCount;
+	DurationSelection *_retryDelay;
+	QCheckBox *_errorForBadStatusCode;
+
 	bool _loading = true;
 };
 
