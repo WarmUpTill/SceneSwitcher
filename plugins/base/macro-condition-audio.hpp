@@ -54,7 +54,9 @@ public:
 	};
 
 	SourceSelection _audioSource;
-	NumberVariable<int> _volume = 0;
+	bool _useDb = false;
+	NumberVariable<int> _volumePercent = 0;
+	NumberVariable<double> _volumeDB = 0.0;
 	NumberVariable<int> _syncOffset = 0;
 	obs_monitoring_type _monitorType = OBS_MONITORING_TYPE_NONE;
 	NumberVariable<double> _balance = 0.5;
@@ -95,30 +97,35 @@ public:
 
 private slots:
 	void SourceChanged(const SourceSelection &);
-	void VolumeThresholdChanged(const NumberVariable<int> &vol);
+	void VolumePercentChanged(const NumberVariable<int> &vol);
 	void ConditionChanged(int cond);
 	void CheckTypeChanged(int cond);
 	void SyncOffsetChanged(const NumberVariable<int> &value);
 	void MonitorTypeChanged(int value);
 	void BalanceChanged(const NumberVariable<double> &value);
+	void VolumeDBChanged(const NumberVariable<double> &value);
+	void PercentDBClicked();
+	void SyncSliderAndValueSelection(bool sliderMoved);
 
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
+	void SetWidgetVisibility();
+	bool HasVolumeControl() const;
+
 	QComboBox *_checkTypes;
 	SourceSelectionWidget *_sources;
 	QComboBox *_condition;
-	VariableSpinBox *_volume;
+	VariableSpinBox *_volumePercent;
+	VariableDoubleSpinBox *_volumeDB;
+	QPushButton *_percentDBToggle;
 	VariableSpinBox *_syncOffset;
 	QComboBox *_monitorTypes;
 	SliderSpinBox *_balance;
 	VolControl *_volMeter = nullptr;
+
 	std::shared_ptr<MacroConditionAudio> _entryData;
-
-private:
-	void SetWidgetVisibility();
-
 	bool _loading = true;
 };
 

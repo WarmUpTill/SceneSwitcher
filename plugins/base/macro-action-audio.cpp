@@ -4,8 +4,6 @@
 #include "macro-helpers.hpp"
 #include "selection-helpers.hpp"
 
-#include <cmath>
-
 namespace advss {
 
 constexpr int64_t nsPerMs = 1000000;
@@ -45,18 +43,13 @@ struct FadeInfo {
 	std::atomic_bool active = {false};
 	std::atomic_int id = {0};
 };
-}
+} // namespace
 
 static FadeInfo masterAudioFade;
 static std::unordered_map<std::string, FadeInfo> audioFades;
 
 constexpr auto fadeInterval = std::chrono::milliseconds(100);
 constexpr float minFade = 0.000001f;
-
-static float decibelToPercent(float db)
-{
-	return pow(10, (db / 20));
-}
 
 // For backwards compatibility
 #if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(29, 0, 0)
@@ -114,7 +107,7 @@ std::atomic_int *MacroActionAudio::GetFadeIdPtr() const
 
 float MacroActionAudio::GetVolume() const
 {
-	return _useDb ? decibelToPercent(_volumeDB) : (float)_volume / 100.0f;
+	return _useDb ? DecibelToPercent(_volumeDB) : (float)_volume / 100.0f;
 }
 
 void MacroActionAudio::SetVolume(float vol) const

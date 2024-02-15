@@ -67,15 +67,22 @@ bool MacroConditionAudio::CheckOutputCondition()
 	OBSSourceAutoRelease source =
 		obs_weak_source_get_source(_audioSource.GetSource());
 
-	// peak will have a value from -60 db to 0 db so we need to scale it
-	double curVolume = ((double)_peak + 60) * 1.7;
+	double curVolume = _useDb ? _peak : DecibelToPercent(_peak);
 
 	switch (_outputCondition) {
 	case OutputCondition::ABOVE:
-		ret = curVolume > _volume;
+		if (_useDb) {
+			ret = curVolume > _volumeDB;
+		} else {
+			ret = curVolume > _volumePercent;
+		}
 		break;
 	case OutputCondition::BELOW:
-		ret = curVolume < _volume;
+		if (_useDb) {
+			ret = curVolume < _volumeDB;
+		} else {
+			ret = curVolume < _volumePercent;
+		}
 		break;
 	default:
 		break;
@@ -99,20 +106,34 @@ bool MacroConditionAudio::CheckVolumeCondition()
 	OBSSourceAutoRelease source =
 		obs_weak_source_get_source(_audioSource.GetSource());
 
-	float curVolume = obs_source_get_volume(source);
+	float curVolume =
+		_useDb ? PercentToDecibel(obs_source_get_volume(source))
+		       : obs_source_get_volume(source);
 	bool muted = obs_source_muted(source);
 
 	switch (_volumeCondition) {
 	case VolumeCondition::ABOVE:
-		ret = curVolume > _volume / 100.f;
+		if (_useDb) {
+			ret = curVolume > _volumeDB;
+		} else {
+			ret = curVolume > _volumePercent / 100.f;
+		}
 		SetVariableValue(std::to_string(curVolume));
 		break;
 	case VolumeCondition::EXACT:
-		ret = curVolume == _volume / 100.f;
+		if (_useDb) {
+			ret = curVolume == _volumeDB;
+		} else {
+			ret = curVolume == _volumePercent / 100.f;
+		}
 		SetVariableValue(std::to_string(curVolume));
 		break;
 	case VolumeCondition::BELOW:
-		ret = curVolume < _volume / 100.f;
+		if (_useDb) {
+			ret = curVolume < _volumeDB;
+		} else {
+			ret = curVolume < _volumePercent / 100.f;
+		}
 		SetVariableValue(std::to_string(curVolume));
 		break;
 	case VolumeCondition::MUTE:
@@ -222,7 +243,7 @@ bool MacroConditionAudio::Save(obs_data_t *obj) const
 	MacroCondition::Save(obj);
 	_audioSource.Save(obj, "audioSource");
 	obs_data_set_int(obj, "monitor", _monitorType);
-	_volume.Save(obj, "volume");
+	_volumePercent.Save(obj, "volume");
 	_syncOffset.Save(obj, "syncOffset");
 	_balance.Save(obj, "balance");
 	obs_data_set_int(obj, "checkType", static_cast<int>(_checkType));
@@ -230,7 +251,9 @@ bool MacroConditionAudio::Save(obs_data_t *obj) const
 			 static_cast<int>(_outputCondition));
 	obs_data_set_int(obj, "volumeCondition",
 			 static_cast<int>(_volumeCondition));
-	obs_data_set_int(obj, "version", 1);
+	obs_data_set_bool(obj, "useDb", _useDb);
+	_volumeDB.Save(obj, "volumeDB");
+	obs_data_set_int(obj, "version", 2);
 	return true;
 }
 
@@ -257,11 +280,11 @@ bool MacroConditionAudio::Load(obs_data_t *obj)
 	_monitorType = static_cast<obs_monitoring_type>(
 		obs_data_get_int(obj, "monitor"));
 	if (!obs_data_has_user_value(obj, "version")) {
-		_volume = obs_data_get_int(obj, "volume");
+		_volumePercent = obs_data_get_int(obj, "volume");
 		_syncOffset = obs_data_get_int(obj, "syncOffset");
 		_balance = obs_data_get_double(obj, "balance");
 	} else {
-		_volume.Load(obj, "volume");
+		_volumePercent.Load(obj, "volume");
 		_syncOffset.Load(obj, "syncOffset");
 		_balance.Load(obj, "balance");
 	}
@@ -271,6 +294,13 @@ bool MacroConditionAudio::Load(obs_data_t *obj)
 	_volumeCondition = static_cast<VolumeCondition>(
 		obs_data_get_int(obj, "volumeCondition"));
 	_volmeter = AddVolmeterToSource(this, _audioSource.GetSource());
+	if (obs_data_get_int(obj, "version") != 2) {
+		_useDb = false;
+		_volumeDB = 0.0;
+	} else {
+		_useDb = obs_data_get_bool(obj, "useDb");
+		_volumeDB.Load(obj, "volumeDB");
+	}
 	return true;
 }
 
@@ -367,16 +397,16 @@ static inline void populateCheckTypes(QComboBox *list)
 static inline void populateOutputConditionSelection(QComboBox *list)
 {
 	list->clear();
-	for (auto entry : audioOutputConditionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : audioOutputConditionTypes) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 
 static inline void populateVolumeConditionSelection(QComboBox *list)
 {
 	list->clear();
-	for (auto entry : audioVolumeConditionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : audioVolumeConditionTypes) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 
@@ -386,14 +416,21 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 	  _checkTypes(new QComboBox()),
 	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _condition(new QComboBox()),
-	  _volume(new VariableSpinBox()),
+	  _volumePercent(new VariableSpinBox()),
+	  _volumeDB(new VariableDoubleSpinBox),
+	  _percentDBToggle(new QPushButton),
 	  _syncOffset(new VariableSpinBox()),
 	  _monitorTypes(new QComboBox),
 	  _balance(new SliderSpinBox(0., 1., ""))
 {
-	_volume->setSuffix("%");
-	_volume->setMaximum(100);
-	_volume->setMinimum(0);
+	_volumePercent->setSuffix("%");
+	_volumePercent->setMaximum(100);
+	_volumePercent->setMinimum(0);
+
+	_volumeDB->setMinimum(-100);
+	_volumeDB->setMaximum(0);
+	_volumeDB->setSuffix("dB");
+	_volumeDB->specialValueText("-inf");
 
 	_syncOffset->setMinimum(-950);
 	_syncOffset->setMaximum(20000);
@@ -406,10 +443,9 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 	QWidget::connect(_checkTypes, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(CheckTypeChanged(int)));
 	QWidget::connect(
-		_volume,
+		_volumePercent,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
-		this,
-		SLOT(VolumeThresholdChanged(const NumberVariable<int> &)));
+		this, SLOT(VolumePercentChanged(const NumberVariable<int> &)));
 	QWidget::connect(
 		_syncOffset,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
@@ -425,6 +461,12 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 	QWidget::connect(_sources,
 			 SIGNAL(SourceChanged(const SourceSelection &)), this,
 			 SLOT(SourceChanged(const SourceSelection &)));
+	QWidget::connect(
+		_volumeDB,
+		SIGNAL(NumberVariableChanged(const NumberVariable<double> &)),
+		this, SLOT(VolumeDBChanged(const NumberVariable<double> &)));
+	QWidget::connect(_percentDBToggle, SIGNAL(clicked()), this,
+			 SLOT(PercentDBClicked()));
 
 	populateCheckTypes(_checkTypes);
 	PopulateMonitorTypeSelection(_monitorTypes);
@@ -433,11 +475,13 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{checkType}}", _checkTypes},
 		{"{{audioSources}}", _sources},
-		{"{{volume}}", _volume},
+		{"{{volume}}", _volumePercent},
 		{"{{syncOffset}}", _syncOffset},
 		{"{{monitorTypes}}", _monitorTypes},
 		{"{{balance}}", _balance},
 		{"{{condition}}", _condition},
+		{"{{volumeDB}}", _volumeDB},
+		{"{{percentDBToggle}}", _percentDBToggle},
 	};
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.audio.entry"),
 		     switchLayout, widgetPlaceholders);
@@ -459,16 +503,14 @@ void MacroConditionAudioEdit::UpdateVolmeterSource()
 		_entryData->_audioSource.GetSource());
 	_volMeter = new VolControl(soruce.Get());
 
-	QLayout *layout = this->layout();
+	auto layout = this->layout();
 	layout->addWidget(_volMeter);
 
-	QWidget::connect(_volMeter->GetSlider(), SIGNAL(valueChanged(int)),
-			 _volume, SLOT(SetFixedValue(int)));
-	QWidget::connect(_volume, SIGNAL(FixedValueChanged(int)),
-			 _volMeter->GetSlider(), SLOT(setValue(int)));
+	QWidget::connect(_volMeter->GetSlider(), &QSlider::valueChanged,
+			 [=](int) { SyncSliderAndValueSelection(true); });
 
 	// Slider will default to 0 so set it manually once
-	_volMeter->GetSlider()->setValue(_entryData->_volume);
+	_volMeter->GetSlider()->setValue(_entryData->_volumePercent);
 }
 
 void MacroConditionAudioEdit::SourceChanged(const SourceSelection &source)
@@ -488,15 +530,18 @@ void MacroConditionAudioEdit::SourceChanged(const SourceSelection &source)
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-void MacroConditionAudioEdit::VolumeThresholdChanged(
+void MacroConditionAudioEdit::VolumePercentChanged(
 	const NumberVariable<int> &vol)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
+	{
+		auto lock = LockContext();
+		_entryData->_volumePercent = vol;
+	}
 
-	auto lock = LockContext();
-	_entryData->_volume = vol;
+	SyncSliderAndValueSelection(false);
 }
 
 void MacroConditionAudioEdit::SyncOffsetChanged(const NumberVariable<int> &value)
@@ -527,6 +572,64 @@ void MacroConditionAudioEdit::BalanceChanged(const NumberVariable<double> &value
 
 	auto lock = LockContext();
 	_entryData->_balance = value;
+}
+
+void MacroConditionAudioEdit::VolumeDBChanged(
+	const NumberVariable<double> &value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+	{
+		auto lock = LockContext();
+		_entryData->_volumeDB = value;
+	}
+	SyncSliderAndValueSelection(false);
+}
+
+void MacroConditionAudioEdit::PercentDBClicked()
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_useDb = !_entryData->_useDb;
+	SetWidgetVisibility();
+}
+
+void MacroConditionAudioEdit::SyncSliderAndValueSelection(bool sliderMoved)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	if (sliderMoved) {
+		if (_entryData->_useDb) {
+			_volumeDB->SetFixedValue(PercentToDecibel(
+				(float)_volMeter->GetSlider()->value() /
+				100.0));
+			const QSignalBlocker blocker(this);
+			_volumePercent->SetFixedValue(
+				_volMeter->GetSlider()->value());
+		} else {
+			_volumePercent->SetFixedValue(
+				_volMeter->GetSlider()->value());
+			const QSignalBlocker blocker(this);
+			_volumeDB->SetFixedValue(PercentToDecibel(
+				(float)_volMeter->GetSlider()->value() /
+				100.0));
+		}
+	} else {
+		const QSignalBlocker blocker(this);
+		if (_entryData->_useDb) {
+			_volMeter->GetSlider()->setValue(
+				DecibelToPercent(_entryData->_volumeDB) * 100);
+		} else {
+			_volMeter->GetSlider()->setValue(
+				_entryData->_volumePercent);
+		}
+	}
 }
 
 void MacroConditionAudioEdit::ConditionChanged(int cond)
@@ -577,7 +680,8 @@ void MacroConditionAudioEdit::UpdateEntryData()
 	}
 
 	_sources->SetSource(_entryData->_audioSource);
-	_volume->SetValue(_entryData->_volume);
+	_volumePercent->SetValue(_entryData->_volumePercent);
+	_volumeDB->SetValue(_entryData->_volumeDB);
 	_syncOffset->SetValue(_entryData->_syncOffset);
 	_monitorTypes->setCurrentIndex(_entryData->_monitorType);
 	_balance->SetDoubleValue(_entryData->_balance);
@@ -601,23 +705,26 @@ void MacroConditionAudioEdit::UpdateEntryData()
 	SetWidgetVisibility();
 }
 
+bool MacroConditionAudioEdit::HasVolumeControl() const
+{
+	return _entryData->GetType() ==
+		       MacroConditionAudio::Type::OUTPUT_VOLUME ||
+	       (_entryData->GetType() ==
+			MacroConditionAudio::Type::CONFIGURED_VOLUME &&
+		(_entryData->_volumeCondition ==
+			 MacroConditionAudio::VolumeCondition::ABOVE ||
+		 _entryData->_volumeCondition ==
+			 MacroConditionAudio::VolumeCondition::EXACT ||
+		 _entryData->_volumeCondition ==
+			 MacroConditionAudio::VolumeCondition::BELOW));
+}
+
 void MacroConditionAudioEdit::SetWidgetVisibility()
 {
 	if (!_entryData) {
 		return;
 	}
 
-	_volume->setVisible(
-		_entryData->GetType() ==
-			MacroConditionAudio::Type::OUTPUT_VOLUME ||
-		(_entryData->GetType() ==
-			 MacroConditionAudio::Type::CONFIGURED_VOLUME &&
-		 (_entryData->_volumeCondition ==
-			  MacroConditionAudio::VolumeCondition::ABOVE ||
-		  _entryData->_volumeCondition ==
-			  MacroConditionAudio::VolumeCondition::EXACT ||
-		  _entryData->_volumeCondition ==
-			  MacroConditionAudio::VolumeCondition::BELOW)));
 	_condition->setVisible(
 		_entryData->GetType() ==
 			MacroConditionAudio::Type::OUTPUT_VOLUME ||
@@ -634,6 +741,10 @@ void MacroConditionAudioEdit::SetWidgetVisibility()
 			     MacroConditionAudio::Type::BALANCE);
 	_volMeter->setVisible(_entryData->GetType() ==
 			      MacroConditionAudio::Type::OUTPUT_VOLUME);
+	_volumePercent->setVisible(HasVolumeControl() && !_entryData->_useDb);
+	_volumeDB->setVisible(HasVolumeControl() && _entryData->_useDb);
+	_percentDBToggle->setText(_entryData->_useDb ? "dB" : "%");
+	_percentDBToggle->setVisible(HasVolumeControl());
 	adjustSize();
 }
 
