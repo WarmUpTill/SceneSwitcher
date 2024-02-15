@@ -388,7 +388,7 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	_volumePercent->setMaximum(2000);
 	_volumePercent->setSuffix("%");
 
-	_volumeDB->setMinimum(-60);
+	_volumeDB->setMinimum(-100);
 	_volumeDB->setMaximum(0);
 	_volumeDB->setSuffix("dB");
 	_volumeDB->specialValueText("-inf");
