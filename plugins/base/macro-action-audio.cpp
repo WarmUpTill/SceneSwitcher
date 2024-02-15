@@ -390,7 +390,7 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 
 	_volumeDB->setMinimum(-60);
 	_volumeDB->setMaximum(0);
-	_volumeDB->setSuffix("db");
+	_volumeDB->setSuffix("dB");
 	_volumeDB->specialValueText("-inf");
 
 	_rate->setMinimum(0.01);
@@ -495,7 +495,7 @@ void MacroActionAudioEdit::SetWidgetVisibility()
 				   !_entryData->_useDb);
 	_volumeDB->setVisible(hasVolumeControl(_entryData->_action) &&
 			      _entryData->_useDb);
-	_percentDBToggle->setText(_entryData->_useDb ? "db" : "%");
+	_percentDBToggle->setText(_entryData->_useDb ? "dB" : "%");
 	_percentDBToggle->setVisible(hasVolumeControl(_entryData->_action));
 	_sources->setVisible(_entryData->_action !=
 			     MacroActionAudio::Action::MASTER_VOLUME);
