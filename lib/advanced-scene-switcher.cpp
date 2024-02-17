@@ -767,7 +767,7 @@ QWidget *GetSettingsWindow()
 
 void SetupActionQueues();
 
-extern "C" EXPORT void RunPostLoadSteps()
+extern "C" EXPORT void RunPluginPostLoadSteps()
 {
 	for (const auto &postLoadStep : switcher->pluginPostLoadSteps) {
 		postLoadStep();
