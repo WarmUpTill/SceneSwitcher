@@ -449,6 +449,7 @@ void AdvSceneSwitcher::ImportMacros()
 	for (const auto &macro : importedMacros) {
 		macro->PostLoad();
 	}
+	RunPostLoadSteps();
 
 	ui->macros->Reset(GetMacros(),
 			  GetGlobalMacroProperties()._highlightExecuted);
@@ -995,6 +996,7 @@ void AdvSceneSwitcher::CopyMacro()
 	newMacro->Load(data);
 	newMacro->PostLoad();
 	newMacro->SetName(name);
+	RunPostLoadSteps();
 	Macro::PrepareMoveToGroup(macro->Parent(), newMacro);
 
 	ui->macros->Add(newMacro, macro);

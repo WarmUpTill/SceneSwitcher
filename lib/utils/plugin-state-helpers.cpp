@@ -28,6 +28,11 @@ void AddIntervalResetStep(std::function<void()> step, bool lock)
 	GetSwitcher()->AddIntervalResetStep(step, lock);
 }
 
+void RunPostLoadSteps()
+{
+	GetSwitcher()->RunPostLoadSteps();
+}
+
 void AddPluginInitStep(std::function<void()> step)
 {
 	GetSwitcher()->AddPluginInitStep(step);

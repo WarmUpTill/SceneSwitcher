@@ -561,9 +561,7 @@ void SwitcherData::LoadSettings(obs_data_t *obj)
 	LoadHotkeys(obj);
 	LoadUISettings(obj);
 
-	for (const auto &func : postLoadSteps) {
-		func();
-	}
+	RunPostLoadSteps();
 
 	// Reset on startup and scene collection change
 	switcher->lastOpenedTab = -1;
