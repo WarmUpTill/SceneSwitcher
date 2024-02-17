@@ -65,6 +65,7 @@ public:
 	void AddLoadStep(std::function<void(obs_data_t *)>);
 	void AddPostLoadStep(std::function<void()>);
 	void AddIntervalResetStep(std::function<void()>, bool lock = true);
+	void RunPostLoadSteps();
 	void AddPluginInitStep(std::function<void()>);
 	void AddPluginPostLoadStep(std::function<void()>);
 	void AddPluginCleanupStep(std::function<void()>);

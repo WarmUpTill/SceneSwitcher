@@ -179,6 +179,14 @@ void SwitcherData::AddIntervalResetStep(std::function<void()> function,
 	resetIntervalSteps.emplace_back(function);
 }
 
+void SwitcherData::RunPostLoadSteps()
+{
+	for (const auto &func : postLoadSteps) {
+		func();
+	}
+	postLoadSteps.clear();
+}
+
 void SwitcherData::AddPluginInitStep(std::function<void()> function)
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
