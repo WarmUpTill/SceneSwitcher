@@ -88,9 +88,12 @@ ItemSelection::ItemSelection(std::deque<std::shared_ptr<Item>> &items,
 
 void ItemSelection::SetItem(const std::string &item)
 {
-	const QSignalBlocker blocker(_selection);
 	if (!!GetItemByName(item, _items)) {
 		_selection->setCurrentText(QString::fromStdString(item));
+		if (_selection->lineEdit()) {
+			_selection->lineEdit()->setText(
+				QString::fromStdString(item));
+		}
 	} else {
 		_selection->setCurrentIndex(-1);
 	}
@@ -111,7 +114,6 @@ void ItemSelection::ChangeSelection(const QString &sel)
 			return;
 		}
 		_items.emplace_back(item);
-		const QSignalBlocker b(_selection);
 		const QString name = QString::fromStdString(item->_name);
 		AddItem(name);
 		_selection->setCurrentText(name);
@@ -195,6 +197,7 @@ void ItemSelection::RenameItem()
 
 	const auto oldName = item->_name;
 	item->_name = name;
+	SetItem(name);
 	emit ItemRenamed(QString::fromStdString(oldName),
 			 QString::fromStdString(name));
 }
@@ -205,7 +208,11 @@ void ItemSelection::RenameItem(const QString &oldName, const QString &name)
 	if (idx == -1) {
 		return;
 	}
+	auto currentText = _selection->currentText();
 	_selection->setItemText(idx, name);
+	if (oldName == currentText) {
+		SetItem(name.toStdString());
+	}
 }
 
 void ItemSelection::AddItem(const QString &name)
@@ -240,9 +247,10 @@ void ItemSelection::RemoveItem()
 
 void ItemSelection::RemoveItem(const QString &name)
 {
+	auto currentText = _selection->currentText();
 	const int idx = _selection->findText(name);
-	if (idx == _selection->currentIndex()) {
-		_selection->setCurrentIndex(-1);
+	if (currentText == name) {
+		SetItem("");
 	}
 	_selection->removeItem(idx);
 }

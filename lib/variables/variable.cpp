@@ -285,22 +285,20 @@ VariableSelection::VariableSelection(QWidget *parent)
 
 void VariableSelection::SetVariable(const std::string &variable)
 {
-	const QSignalBlocker blocker(_selection);
 	if (!!GetVariableByName(variable)) {
-		_selection->setCurrentText(QString::fromStdString(variable));
+		SetItem(variable);
 	} else {
-		_selection->setCurrentIndex(-1);
+		SetItem("");
 	}
 }
 
 void VariableSelection::SetVariable(const std::weak_ptr<Variable> &variable_)
 {
-	const QSignalBlocker blocker(_selection);
 	auto var = variable_.lock();
 	if (var) {
-		SetVariable(var->Name());
+		SetItem(var->Name());
 	} else {
-		_selection->setCurrentIndex(-1);
+		SetItem("");
 	}
 }
 

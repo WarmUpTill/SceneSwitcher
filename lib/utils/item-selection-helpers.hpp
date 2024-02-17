@@ -95,7 +95,7 @@ signals:
 	void ItemRemoved(const QString &);
 	void ItemRenamed(const QString &oldName, const QString &name);
 
-protected:
+private:
 	Item *GetCurrentItem();
 
 	FilterComboBox *_selection;
