@@ -62,6 +62,23 @@ void FilterComboBox::SetFilterBehaviourEnabled(bool value)
 	FilterComboBox::_filteringEnabled = value;
 }
 
+void FilterComboBox::setCurrentText(const QString &text)
+{
+	if (_filteringEnabled) {
+		lineEdit()->setText(text);
+	}
+	QComboBox::setCurrentText(text);
+}
+
+void FilterComboBox::setItemText(int index, const QString &text)
+{
+	QComboBox::setItemText(index, text);
+	if (_filteringEnabled && index == currentIndex()) {
+		const QSignalBlocker b(this);
+		lineEdit()->setText(text);
+	}
+}
+
 void FilterComboBox::focusOutEvent(QFocusEvent *event)
 {
 	// Reset on invalid selection
