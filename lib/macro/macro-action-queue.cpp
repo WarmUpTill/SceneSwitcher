@@ -176,6 +176,8 @@ void MacroActionQueueEdit::QueueChanged(const QString &text)
 
 	auto lock = LockContext();
 	_entryData->_queue = GetWeakActionQueueByQString(text);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 void MacroActionQueueEdit::ActionChanged(int value)
