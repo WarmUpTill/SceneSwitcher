@@ -397,23 +397,21 @@ TwitchConnectionSelection::TwitchConnectionSelection(QWidget *parent)
 
 void TwitchConnectionSelection::SetToken(const std::string &token)
 {
-	const QSignalBlocker blocker(_selection);
 	if (!!GetTwitchTokenByName(token)) {
-		_selection->setCurrentText(QString::fromStdString(token));
+		SetItem(token);
 	} else {
-		_selection->setCurrentIndex(-1);
+		SetItem("");
 	}
 }
 
 void TwitchConnectionSelection::SetToken(
 	const std::weak_ptr<TwitchToken> &token_)
 {
-	const QSignalBlocker blocker(_selection);
 	auto token = token_.lock();
 	if (token) {
-		SetToken(token->Name());
+		SetItem(token->Name());
 	} else {
-		_selection->setCurrentIndex(-1);
+		SetItem("");
 	}
 }
 

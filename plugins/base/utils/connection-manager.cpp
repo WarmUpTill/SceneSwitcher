@@ -298,23 +298,21 @@ ConnectionSelection::ConnectionSelection(QWidget *parent)
 
 void ConnectionSelection::SetConnection(const std::string &con)
 {
-	const QSignalBlocker blocker(_selection);
 	if (!!GetConnectionByName(con)) {
-		_selection->setCurrentText(QString::fromStdString(con));
+		SetItem(con);
 	} else {
-		_selection->setCurrentIndex(-1);
+		SetItem("");
 	}
 }
 
 void ConnectionSelection::SetConnection(
 	const std::weak_ptr<Connection> &connection_)
 {
-	const QSignalBlocker blocker(_selection);
 	auto connection = connection_.lock();
 	if (connection) {
-		SetConnection(connection->Name());
+		SetItem(connection->Name());
 	} else {
-		_selection->setCurrentIndex(-1);
+		SetItem("");
 	}
 }
 

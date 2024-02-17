@@ -239,13 +239,11 @@ static bool AskForSettingsWrapper(QWidget *parent, Item &settings)
 void ActionQueueSelection::SetActionQueue(
 	const std::weak_ptr<ActionQueue> &queue_)
 {
-	const QSignalBlocker blocker(_selection);
 	auto queue = queue_.lock();
 	if (queue) {
-		_selection->setCurrentText(
-			QString::fromStdString(queue->Name()));
+		SetItem(queue->Name());
 	} else {
-		_selection->setCurrentIndex(-1);
+		SetItem("");
 	}
 }
 
