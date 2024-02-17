@@ -180,7 +180,7 @@ void ItemSelection::RenameItem()
 	bool accepted = AdvSSNameDialog::AskForName(
 		this, obs_module_text("AdvSceneSwitcher.windowTitle"),
 		obs_module_text("AdvSceneSwitcher.item.newName"), name,
-		QString::fromStdString(name));
+		QString::fromStdString(item->Name()));
 	if (!accepted) {
 		return;
 	}
