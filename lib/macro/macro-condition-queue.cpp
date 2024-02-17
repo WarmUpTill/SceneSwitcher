@@ -58,6 +58,11 @@ bool MacroConditionQueue::Load(obs_data_t *obj)
 	return true;
 }
 
+std::string MacroConditionQueue::GetShortDesc() const
+{
+	return GetActionQueueName(_queue);
+}
+
 static inline void populateQueueTypeSelection(QComboBox *list)
 {
 	for (const auto &[_, name] : conditionTypes) {
@@ -102,6 +107,8 @@ void MacroConditionQueueEdit::ConditionChanged(int condition)
 	auto lock = LockContext();
 	_entryData->_condition =
 		static_cast<MacroConditionQueue::Condition>(condition);
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 	SetWidgetVisibility();
 }
 
