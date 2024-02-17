@@ -14,6 +14,9 @@ public:
 		       const QString &placehodler = "");
 	static void SetFilterBehaviourEnabled(bool);
 
+	void setCurrentText(const QString &text);
+	void setItemText(int index, const QString &text);
+
 protected:
 	void focusOutEvent(QFocusEvent *event) override;
 
