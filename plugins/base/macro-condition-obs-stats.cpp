@@ -53,7 +53,8 @@ const static std::map<MacroConditionStats::Condition, std::string>
 };
 
 MacroConditionStats::MacroConditionStats(Macro *m)
-	: MacroCondition(m), _cpu_info(os_cpu_usage_info_start())
+	: MacroCondition(m),
+	  _cpu_info(os_cpu_usage_info_start())
 {
 }
 
@@ -490,8 +491,8 @@ void MacroConditionStatsEdit::StatsTypeChanged(int type)
 		auto lock = LockContext();
 		_entryData->_type =
 			static_cast<MacroConditionStats::Type>(type);
-		SetWidgetVisibility();
 	}
+	SetWidgetVisibility();
 	_value->SetFixedValue(0);
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
