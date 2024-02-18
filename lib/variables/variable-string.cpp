@@ -22,7 +22,7 @@ StringVariable::operator std::string() const
 	return _resolvedValue;
 }
 
-StringVariable::operator QString() const
+QString StringVariable::toQString() const
 {
 	Resolve();
 	return QString::fromStdString(_resolvedValue);

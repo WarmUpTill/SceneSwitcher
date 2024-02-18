@@ -3,6 +3,7 @@
 #include "variable-text-edit.hpp"
 #include "variable-line-edit.hpp"
 #include "duration-control.hpp"
+#include "file-selection.hpp"
 #include "string-list.hpp"
 
 #include <QLineEdit>
@@ -38,6 +39,8 @@ public:
 	StringVariable _url = obs_module_text("AdvSceneSwitcher.enterURL");
 	StringVariable _data = obs_module_text(
 		"AdvSceneSwitcher.action.http.requestBody.placeholder");
+	StringVariable _filePath =
+		obs_module_text("AdvSceneSwitcher.enterPath");
 	bool _setHeaders = false;
 	StringList _headers;
 	Duration _timeout = Duration(1.0);
@@ -48,6 +51,7 @@ public:
 private:
 	void SetCommonOpts(bool useRequestBody, bool useResponseBody);
 	void SetHeaders();
+	void SetFileRequestBody();
 	void SendRequest();
 	void Reset();
 
@@ -86,6 +90,7 @@ public:
 
 private slots:
 	void DataChanged();
+	void FilePathChanged(const QString &text);
 	void URLChanged();
 	void MethodChanged(int);
 	void TimeoutChanged(const Duration &seconds);
@@ -106,6 +111,7 @@ private:
 	QComboBox *_methods;
 	VariableLineEdit *_url;
 	VariableTextEdit *_data;
+	FileSelection *_filePath;
 	QCheckBox *_setHeaders;
 	QVBoxLayout *_headerListLayout;
 	StringListEdit *_headerList;

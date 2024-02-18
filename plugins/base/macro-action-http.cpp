@@ -2,6 +2,8 @@
 #include "curl-helper.hpp"
 #include "layout-helpers.hpp"
 
+#include <QFile>
+
 namespace advss {
 
 const std::string MacroActionHttp::id = "http";
@@ -30,6 +32,13 @@ static size_t WriteCB(void *ptr, size_t size, size_t nmemb, std::string *buffer)
 	return size * nmemb;
 }
 
+static size_t curlReadFile(char *buffer, size_t size, size_t count, QFile *file)
+{
+	auto bytesRead = file->read(buffer, count);
+	vblog(LOG_WARNING, "YEEEEHAW %d", bytesRead);
+	return bytesRead;
+}
+
 void MacroActionHttp::SetCommonOpts(bool useRequestBody = true,
 				    bool useResponseBody = true)
 {
@@ -47,7 +56,11 @@ void MacroActionHttp::SetCommonOpts(bool useRequestBody = true,
 	}
 
 	if (useRequestBody) {
-		CurlHelper::SetOpt(CURLOPT_POSTFIELDS, _data.c_str());
+		if (!_filePath.empty()) {
+			SetFileRequestBody();
+		} else {
+			CurlHelper::SetOpt(CURLOPT_POSTFIELDS, _data.c_str());
+		}
 	}
 
 	if (_errorForBadStatusCode) {
@@ -70,6 +83,23 @@ void MacroActionHttp::SetHeaders()
 
 		CurlHelper::SetOpt(CURLOPT_HTTPHEADER, headers);
 	}
+}
+
+void MacroActionHttp::SetFileRequestBody()
+{
+	QFile file(_filePath.toQString());
+
+	if (!file.exists()) {
+		vblog(LOG_WARNING,
+		      "File specified for HTTP request doesn't exist: %s",
+		      _filePath.c_str());
+		return;
+	}
+
+	file.open(QIODevice::ReadOnly);
+	CurlHelper::SetOpt(CURLOPT_POSTFIELDSIZE, file.size());
+	CurlHelper::SetOpt(CURLOPT_READFUNCTION, curlReadFile);
+	CurlHelper::SetOpt(CURLOPT_READDATA, &file);
 }
 
 void MacroActionHttp::SendRequest()
@@ -302,6 +332,7 @@ bool MacroActionHttp::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "method", static_cast<int>(_method));
 	_url.Save(obj, "url");
 	_data.Save(obj, "data");
+	_filePath.Save(obj, "filePath");
 	obs_data_set_bool(obj, "setHeaders", _setHeaders);
 	_headers.Save(obj, "headers", "header");
 	_timeout.Save(obj);
@@ -318,6 +349,7 @@ bool MacroActionHttp::Load(obs_data_t *obj)
 	_method = static_cast<Method>(obs_data_get_int(obj, "method"));
 	_url.Load(obj, "url");
 	_data.Load(obj, "data");
+	_filePath.Load(obj, "filePath");
 	_setHeaders = obs_data_get_bool(obj, "setHeaders");
 	_headers.Load(obj, "headers", "header");
 	_timeout.Load(obj);
@@ -347,6 +379,7 @@ MacroActionHttpEdit::MacroActionHttpEdit(
 	  _methods(new QComboBox()),
 	  _url(new VariableLineEdit(this)),
 	  _data(new VariableTextEdit(this)),
+	  _filePath(new FileSelection(FileSelection::Type::READ, this)),
 	  _setHeaders(new QCheckBox(
 		  obs_module_text("AdvSceneSwitcher.action.http.setHeaders"))),
 	  _headerListLayout(new QVBoxLayout()),
@@ -367,6 +400,8 @@ MacroActionHttpEdit::MacroActionHttpEdit(
 			 SLOT(URLChanged()));
 	QWidget::connect(_data, SIGNAL(textChanged()), this,
 			 SLOT(DataChanged()));
+	QWidget::connect(_filePath, SIGNAL(PathChanged(const QString &)), this,
+			 SLOT(FilePathChanged(const QString &)));
 	QWidget::connect(_methods, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(MethodChanged(int)));
 	QWidget::connect(_setHeaders, SIGNAL(stateChanged(int)), this,
@@ -418,6 +453,7 @@ MacroActionHttpEdit::MacroActionHttpEdit(
 	mainLayout->addWidget(_setHeaders);
 	mainLayout->addLayout(_headerListLayout);
 	mainLayout->addWidget(_data);
+	mainLayout->addWidget(_filePath);
 	mainLayout->addLayout(timeoutLayout);
 	mainLayout->addLayout(retryLayout);
 	mainLayout->addWidget(_errorForBadStatusCode);
@@ -436,6 +472,7 @@ void MacroActionHttpEdit::UpdateEntryData()
 
 	_url->setText(_entryData->_url);
 	_data->setPlainText(_entryData->_data);
+	_filePath->SetPath(QString::fromStdString(_entryData->_filePath));
 	_setHeaders->setChecked(_entryData->_setHeaders);
 	_headerList->SetStringList(_entryData->_headers);
 	_methods->setCurrentIndex(static_cast<int>(_entryData->_method));
@@ -553,6 +590,16 @@ void MacroActionHttpEdit::DataChanged()
 
 	adjustSize();
 	updateGeometry();
+}
+
+void MacroActionHttpEdit::FilePathChanged(const QString &text)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_filePath = text.toUtf8().constData();
 }
 
 } // namespace advss
