@@ -21,17 +21,20 @@ bool DoubleEquals(double left, double right, double epsilon)
 	return (fabs(left - right) < epsilon);
 }
 
-void ReplaceAll(std::string &str, const std::string &from,
+bool ReplaceAll(std::string &str, const std::string &from,
 		const std::string &to)
 {
 	if (from.empty()) {
-		return;
+		return false;
 	}
+	bool somethingWasReplaced = false;
 	size_t start_pos = 0;
 	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
 		str.replace(start_pos, from.length(), to);
 		start_pos += to.length();
+		somethingWasReplaced = true;
 	}
+	return somethingWasReplaced;
 }
 
 std::optional<std::string> GetJsonField(const std::string &jsonStr,
