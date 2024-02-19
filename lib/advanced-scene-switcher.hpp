@@ -208,6 +208,16 @@ private:
 
 	/* --- End of macro tab section --- */
 
+	/* --- Begin of variable tab section --- */
+public:
+	void SetupVariableTab();
+
+public slots:
+	void on_variableAdd_clicked();
+	void on_variableRemove_clicked();
+
+	/* --- End of variable tab section --- */
+
 	/* --- Begin of legacy tab section --- */
 public:
 	void ClearFrames(QListWidget *list);
