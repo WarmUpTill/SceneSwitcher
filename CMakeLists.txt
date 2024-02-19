@@ -223,6 +223,7 @@ target_sources(
           lib/variables/variable-spinbox.hpp
           lib/variables/variable-string.cpp
           lib/variables/variable-string.hpp
+          lib/variables/variable-tab.cpp
           lib/variables/variable-text-edit.cpp
           lib/variables/variable-text-edit.hpp
           lib/variables/variable.cpp

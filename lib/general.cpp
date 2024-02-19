@@ -18,6 +18,17 @@
 
 namespace advss {
 
+static constexpr std::array<const char *, 19> tabNames = {
+	"generalTab",     "macroTab",       "variableTab",
+	"windowTitleTab", "executableTab",  "screenRegionTab",
+	"mediaTab",       "fileTab",        "randomTab",
+	"timeTab",        "idleTab",        "sceneSequenceTab",
+	"audioTab",       "videoTab",       "networkTab",
+	"sceneGroupTab",  "transitionsTab", "pauseTab",
+	"sceneTriggerTab"};
+
+static std::vector<int> tabOrder = std::vector<int>(tabNames.size());
+
 void AdvSceneSwitcher::reject()
 {
 	close();
@@ -355,65 +366,7 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 static int findTabIndex(QTabWidget *tabWidget, int pos)
 {
 	int at = -1;
-
-	QString tabName = "";
-	switch (pos) {
-	case 0:
-		tabName = "generalTab";
-		break;
-	case 1:
-		tabName = "macroTab";
-		break;
-	case 2:
-		tabName = "transitionsTab";
-		break;
-	case 3:
-		tabName = "pauseTab";
-		break;
-	case 4:
-		tabName = "windowTitleTab";
-		break;
-	case 5:
-		tabName = "executableTab";
-		break;
-	case 6:
-		tabName = "screenRegionTab";
-		break;
-	case 7:
-		tabName = "mediaTab";
-		break;
-	case 8:
-		tabName = "fileTab";
-		break;
-	case 9:
-		tabName = "randomTab";
-		break;
-	case 10:
-		tabName = "timeTab";
-		break;
-	case 11:
-		tabName = "idleTab";
-		break;
-	case 12:
-		tabName = "sceneSequenceTab";
-		break;
-	case 13:
-		tabName = "audioTab";
-		break;
-	case 14:
-		tabName = "videoTab";
-		break;
-	case 15:
-		tabName = "networkTab";
-		break;
-	case 16:
-		tabName = "sceneGroupTab";
-		break;
-	case 17:
-		tabName = "sceneTriggerTab";
-		break;
-	}
-
+	QString tabName = tabNames.at(pos);
 	QWidget *page = tabWidget->findChild<QWidget *>(tabName);
 	if (page) {
 		at = tabWidget->indexOf(page);
@@ -426,15 +379,35 @@ static int findTabIndex(QTabWidget *tabWidget, int pos)
 	return at;
 }
 
+static bool tabWidgetOrderValid()
+{
+	auto tmp = std::vector<int>(tabNames.size());
+	std::iota(tmp.begin(), tmp.end(), 0);
+
+	for (auto &p : tmp) {
+		auto it = std::find(tabOrder.begin(), tabOrder.end(), p);
+		if (it == tabOrder.end()) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static void resetTabWidgetOrder()
+{
+	tabOrder = std::vector<int>(tabNames.size());
+	std::iota(tabOrder.begin(), tabOrder.end(), 0);
+}
+
 void AdvSceneSwitcher::SetTabOrder()
 {
-	if (!switcher->TabOrderValid()) {
-		switcher->ResetTabOrder();
+	if (!tabWidgetOrderValid()) {
+		resetTabWidgetOrder();
 	}
 
 	QTabBar *bar = ui->tabWidget->tabBar();
 	for (int i = 0; i < bar->count(); ++i) {
-		int curPos = findTabIndex(ui->tabWidget, switcher->tabOrder[i]);
+		int curPos = findTabIndex(ui->tabWidget, tabOrder[i]);
 
 		if (i != curPos && curPos != -1) {
 			bar->moveTab(curPos, i);
@@ -479,7 +452,7 @@ void AdvSceneSwitcher::on_tabMoved(int from, int to)
 		return;
 	}
 
-	std::swap(switcher->tabOrder[from], switcher->tabOrder[to]);
+	std::swap(tabOrder[from], tabOrder[to]);
 }
 
 void AdvSceneSwitcher::on_tabWidget_currentChanged(int)
@@ -712,24 +685,13 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 
 void SwitcherData::SaveUISettings(obs_data_t *obj)
 {
-	obs_data_set_int(obj, "generalTabPos", tabOrder[0]);
-	obs_data_set_int(obj, "macroTabPos", tabOrder[1]);
-	obs_data_set_int(obj, "transitionTabPos", tabOrder[2]);
-	obs_data_set_int(obj, "pauseTabPos", tabOrder[3]);
-	obs_data_set_int(obj, "titleTabPos", tabOrder[4]);
-	obs_data_set_int(obj, "exeTabPos", tabOrder[5]);
-	obs_data_set_int(obj, "regionTabPos", tabOrder[6]);
-	obs_data_set_int(obj, "mediaTabPos", tabOrder[7]);
-	obs_data_set_int(obj, "fileTabPos", tabOrder[8]);
-	obs_data_set_int(obj, "randomTabPos", tabOrder[9]);
-	obs_data_set_int(obj, "timeTabPos", tabOrder[10]);
-	obs_data_set_int(obj, "idleTabPos", tabOrder[11]);
-	obs_data_set_int(obj, "sequenceTabPos", tabOrder[12]);
-	obs_data_set_int(obj, "audioTabPos", tabOrder[13]);
-	obs_data_set_int(obj, "videoTabPos", tabOrder[14]);
-	obs_data_set_int(obj, "networkTabPos", tabOrder[15]);
-	obs_data_set_int(obj, "sceneGroupTabPos", tabOrder[16]);
-	obs_data_set_int(obj, "triggerTabPos", tabOrder[17]);
+	OBSDataArrayAutoRelease tabWidgetOrder = obs_data_array_create();
+	for (size_t i = 0; i < tabNames.size(); i++) {
+		OBSDataAutoRelease entry = obs_data_create();
+		obs_data_set_int(entry, tabNames[i], tabOrder[i]);
+		obs_data_array_push_back(tabWidgetOrder, entry);
+	}
+	obs_data_set_array(obj, "tabWidgetOrder", tabWidgetOrder);
 
 	obs_data_set_bool(obj, "saveWindowGeo", saveWindowGeo);
 	obs_data_set_int(obj, "windowPosX", windowPos.x());
@@ -743,47 +705,27 @@ void SwitcherData::SaveUISettings(obs_data_t *obj)
 
 void SwitcherData::LoadUISettings(obs_data_t *obj)
 {
-	obs_data_set_default_int(obj, "generalTabPos", 0);
-	obs_data_set_default_int(obj, "macroTabPos", 1);
-	obs_data_set_default_int(obj, "networkTabPos", 13);
-	obs_data_set_default_int(obj, "sceneGroupTabPos", 14);
-	obs_data_set_default_int(obj, "transitionTabPos", 15);
-	obs_data_set_default_int(obj, "pauseTabPos", 16);
-	obs_data_set_default_int(obj, "titleTabPos", 2);
-	obs_data_set_default_int(obj, "exeTabPos", 3);
-	obs_data_set_default_int(obj, "regionTabPos", 4);
-	obs_data_set_default_int(obj, "mediaTabPos", 5);
-	obs_data_set_default_int(obj, "fileTabPos", 6);
-	obs_data_set_default_int(obj, "randomTabPos", 7);
-	obs_data_set_default_int(obj, "timeTabPos", 8);
-	obs_data_set_default_int(obj, "idleTabPos", 9);
-	obs_data_set_default_int(obj, "sequenceTabPos", 10);
-	obs_data_set_default_int(obj, "audioTabPos", 11);
-	obs_data_set_default_int(obj, "videoTabPos", 12);
-	obs_data_set_default_int(obj, "triggerTabPos", 17);
+	OBSDataArrayAutoRelease defaultTabWidgetOrder = obs_data_array_create();
+	for (size_t i = 0; i < tabNames.size(); i++) {
+		OBSDataAutoRelease entry = obs_data_create();
+		obs_data_set_default_int(entry, tabNames[i], i);
+		obs_data_array_push_back(defaultTabWidgetOrder, entry);
+	}
+	obs_data_set_default_array(obj, "tabWidgetOrder",
+				   defaultTabWidgetOrder);
 
 	tabOrder.clear();
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "generalTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "macroTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "transitionTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "pauseTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "titleTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "exeTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "regionTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "mediaTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "fileTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "randomTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "timeTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "idleTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "sequenceTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "audioTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "videoTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "networkTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "sceneGroupTabPos")));
-	tabOrder.emplace_back((int)(obs_data_get_int(obj, "triggerTabPos")));
+	OBSDataArrayAutoRelease tabWidgetOrder =
+		obs_data_get_array(obj, "tabWidgetOrder");
+	for (size_t i = 0; i < tabNames.size(); i++) {
+		OBSDataAutoRelease entry =
+			obs_data_array_item(tabWidgetOrder, i);
+		tabOrder.emplace_back(
+			(int)(obs_data_get_int(entry, tabNames[i])));
+	}
 
-	if (!TabOrderValid()) {
-		ResetTabOrder();
+	if (!tabWidgetOrderValid()) {
+		resetTabWidgetOrder();
 	}
 
 	saveWindowGeo = obs_data_get_bool(obj, "saveWindowGeo");
@@ -794,26 +736,6 @@ void SwitcherData::LoadUISettings(obs_data_t *obj)
 
 	LoadSplitterPos(macroListMacroEditSplitterPosition, obj,
 			"macroListMacroEditSplitterPosition");
-}
-
-bool SwitcherData::TabOrderValid()
-{
-	auto tmp = std::vector<int>(tab_count);
-	std::iota(tmp.begin(), tmp.end(), 0);
-
-	for (auto &p : tmp) {
-		auto it = std::find(tabOrder.begin(), tabOrder.end(), p);
-		if (it == tabOrder.end()) {
-			return false;
-		}
-	}
-	return true;
-}
-
-void SwitcherData::ResetTabOrder()
-{
-	tabOrder = std::vector<int>(tab_count);
-	std::iota(tabOrder.begin(), tabOrder.end(), 0);
 }
 
 void SwitcherData::CheckNoMatchSwitch(bool &match, OBSWeakSource &scene,

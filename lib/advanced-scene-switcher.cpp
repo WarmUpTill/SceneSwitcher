@@ -111,6 +111,7 @@ void AdvSceneSwitcher::LoadUI()
 	SetupSceneGroupTab();
 	SetupTriggerTab();
 	SetupMacroTab();
+	SetupVariableTab();
 
 	SetDeprecationWarnings();
 	SetTabOrder();

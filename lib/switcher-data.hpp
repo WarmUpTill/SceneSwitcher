@@ -32,7 +32,6 @@
 namespace advss {
 
 constexpr auto default_interval = 300;
-constexpr auto tab_count = 18;
 
 typedef const char *(*translateFunc)(const char *);
 
@@ -89,8 +88,6 @@ public:
 	void LoadUISettings(obs_data_t *obj);
 
 	bool VersionChanged(obs_data_t *obj, std::string currentVersion);
-	bool TabOrderValid();
-	void ResetTabOrder();
 	bool PrioFuncsValid();
 
 	/* --- End of saving / loading section --- */
@@ -179,7 +176,6 @@ public:
 	bool disableHints = false;
 	bool disableFilterComboboxFilter = false;
 	bool hideLegacyTabs = true;
-	std::vector<int> tabOrder = std::vector<int>(tab_count);
 	bool saveWindowGeo = false;
 	QPoint windowPos = {};
 	QSize windowSize = {};
