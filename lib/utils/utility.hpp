@@ -16,7 +16,7 @@ EXPORT std::pair<int, int> GetCursorPos();
 
 EXPORT bool DoubleEquals(double left, double right, double epsilon);
 
-void ReplaceAll(std::string &str, const std::string &from,
+bool ReplaceAll(std::string &str, const std::string &from,
 		const std::string &to);
 EXPORT std::optional<std::string> GetJsonField(const std::string &json,
 					       const std::string &id);
