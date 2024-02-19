@@ -73,7 +73,9 @@ std::string SubstitueVariables(std::string str)
 	for (const auto &v : GetVariables()) {
 		const auto &variable = std::dynamic_pointer_cast<Variable>(v);
 		const std::string pattern = "${" + variable->Name() + "}";
-		ReplaceAll(str, pattern, variable->Value());
+		if (ReplaceAll(str, pattern, variable->Value(false))) {
+			variable->UpdateLastUsed();
+		}
 	}
 	return str;
 }

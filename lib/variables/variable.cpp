@@ -51,26 +51,51 @@ void Variable::Save(obs_data_t *obj) const
 	obs_data_set_string(obj, "defaultValue", _defaultValue.c_str());
 }
 
+std::string Variable::Value(bool updateLastUsed) const
+{
+	if (updateLastUsed) {
+		UpdateLastUsed();
+	}
+	return _value;
+}
+
 std::optional<double> Variable::DoubleValue() const
 {
-	return GetDouble(_value);
+	return GetDouble(Value());
 }
 
 std::optional<int> Variable::IntValue() const
 {
-	return GetInt(_value);
+	return GetInt(Value());
 }
 
 void Variable::SetValue(const std::string &val)
 {
 	_value = val;
+	_lastUsed = std::chrono::high_resolution_clock::now();
 	lastVariableChange = std::chrono::high_resolution_clock::now();
 }
 
 void Variable::SetValue(double value)
 {
 	_value = std::to_string(value);
+	_lastUsed = std::chrono::high_resolution_clock::now();
 	lastVariableChange = std::chrono::high_resolution_clock::now();
+}
+
+std::optional<uint64_t> Variable::SecondsSinceLastUse() const
+{
+	if (_lastUsed.time_since_epoch().count() == 0) {
+		return {};
+	}
+	const auto now = std::chrono::high_resolution_clock::now();
+	return std::chrono::duration_cast<std::chrono::seconds>(now - _lastUsed)
+		.count();
+}
+
+void Variable::UpdateLastUsed() const
+{
+	_lastUsed = std::chrono::high_resolution_clock::now();
 }
 
 std::deque<std::shared_ptr<Item>> &GetVariables()

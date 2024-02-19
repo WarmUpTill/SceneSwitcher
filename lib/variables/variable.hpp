@@ -19,11 +19,12 @@ public:
 	~Variable();
 	void Load(obs_data_t *obj);
 	void Save(obs_data_t *obj) const;
-	EXPORT std::string Value() const { return _value; }
+	EXPORT std::string Value(bool updateLastUsed = true) const;
 	EXPORT std::optional<double> DoubleValue() const;
 	EXPORT std::optional<int> IntValue() const;
 	void SetValue(const std::string &val);
 	void SetValue(double);
+	std::string GetDefaultValue() const { return _defaultValue; }
 	static std::shared_ptr<Item> Create()
 	{
 		return std::make_shared<Variable>();
@@ -34,11 +35,15 @@ public:
 		SAVE,
 		SET_DEFAULT,
 	};
+	SaveAction GetSaveAction() const { return _saveAction; }
+	std::optional<uint64_t> SecondsSinceLastUse() const;
+	void UpdateLastUsed() const;
 
 private:
 	SaveAction _saveAction = SaveAction::DONT_SAVE;
 	std::string _value = "";
 	std::string _defaultValue = "";
+	mutable std::chrono::high_resolution_clock::time_point _lastUsed;
 
 	friend VariableSelection;
 	friend VariableSettingsDialog;
