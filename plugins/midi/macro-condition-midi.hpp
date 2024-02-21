@@ -20,13 +20,16 @@ public:
 		return std::make_shared<MacroConditionMidi>(m);
 	}
 
-	MidiDevice _device;
+	void SetDevice(const MidiDevice &dev);
+	const MidiDevice &GetDevice() const { return _device; }
 	MidiMessage _message;
 
 private:
 	void SetupTempVars();
 	void SetVariableValues(const MidiMessage &);
 
+	MidiDevice _device;
+	MidiMessageBuffer _messageBuffer;
 	static bool _registered;
 	static const std::string id;
 };
@@ -67,6 +70,7 @@ private:
 	QPushButton *_resetMidiDevices;
 	QPushButton *_listen;
 	QTimer _listenTimer;
+	MidiMessageBuffer _messageBuffer;
 	bool _currentlyListening = false;
 	bool _loading = true;
 };

@@ -68,6 +68,7 @@ private:
 	QPushButton *_listen;
 	MidiDevice _listenDevice;
 	QTimer _listenTimer;
+	MidiMessageBuffer _messageBuffer;
 	bool _currentlyListening = false;
 	bool _loading = true;
 };

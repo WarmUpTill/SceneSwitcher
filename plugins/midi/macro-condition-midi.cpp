@@ -13,14 +13,17 @@ bool MacroConditionMidi::_registered = MacroConditionFactory::Register(
 
 bool MacroConditionMidi::CheckCondition()
 {
-	auto messages = _device.GetMessages();
-	if (!messages) {
+	if (!_messageBuffer) {
 		return false;
 	}
 
-	for (const auto &m : *messages) {
-		if (m.Matches(_message)) {
-			SetVariableValues(m);
+	while (!_messageBuffer->Empty()) {
+		auto message = _messageBuffer->ConsumeMessage();
+		if (!message) {
+			continue;
+		}
+		if (message->Matches(_message)) {
+			SetVariableValues(*message);
 			return true;
 		}
 	}
@@ -41,12 +44,19 @@ bool MacroConditionMidi::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	_message.Load(obj);
 	_device.Load(obj);
+	_messageBuffer = _device.RegisterForMidiMessages();
 	return true;
 }
 
 std::string MacroConditionMidi::GetShortDesc() const
 {
 	return _device.Name();
+}
+
+void MacroConditionMidi::SetDevice(const MidiDevice &dev)
+{
+	_device = dev;
+	_messageBuffer = dev.RegisterForMidiMessages();
 }
 
 void MacroConditionMidi::SetupTempVars()
@@ -137,7 +147,7 @@ void MacroConditionMidiEdit::UpdateEntryData()
 	}
 
 	_message->SetMessage(_entryData->_message);
-	_devices->SetDevice(_entryData->_device);
+	_devices->SetDevice(_entryData->GetDevice());
 
 	adjustSize();
 	updateGeometry();
@@ -155,7 +165,7 @@ void MacroConditionMidiEdit::DeviceSelectionChanged(const MidiDevice &device)
 
 	{
 		auto lock = LockContext();
-		_entryData->_device = device;
+		_entryData->SetDevice(device);
 	}
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -182,10 +192,12 @@ void MacroConditionMidiEdit::EnableListening(bool enable)
 	if (_currentlyListening == enable) {
 		return;
 	}
-	_entryData->_device.UseForMessageSelection(enable);
 	if (enable) {
+		_messageBuffer =
+			_entryData->GetDevice().RegisterForMidiMessages();
 		_listenTimer.start();
 	} else {
+		_messageBuffer.reset();
 		_listenTimer.stop();
 	}
 }
@@ -193,13 +205,6 @@ void MacroConditionMidiEdit::EnableListening(bool enable)
 void MacroConditionMidiEdit::ToggleListen()
 {
 	if (!_entryData) {
-		return;
-	}
-
-	if (!_currentlyListening &&
-	    _entryData->_device.IsUsedForMessageSelection()) {
-		DisplayMessage(obs_module_text(
-			"AdvSceneSwitcher.midi.startListenFail"));
 		return;
 	}
 
@@ -215,14 +220,24 @@ void MacroConditionMidiEdit::ToggleListen()
 void MacroConditionMidiEdit::SetMessageSelectionToLastReceived()
 {
 	auto lock = LockContext();
-	auto messages = _entryData->_device.GetMessages(true);
-	if (!_entryData || !messages || messages->empty()) {
+	if (!_entryData || !_messageBuffer || _messageBuffer->Empty()) {
 		return;
 	}
 
-	_message->SetMessage(messages->back());
-	_entryData->_message = messages->back();
-	_entryData->_device.ClearMessageBuffer();
+	std::optional<MidiMessage> message;
+	while (!_messageBuffer->Empty()) {
+		message = _messageBuffer->ConsumeMessage();
+		if (!message) {
+			continue;
+		}
+	}
+
+	if (!message) {
+		return;
+	}
+
+	_message->SetMessage(*message);
+	_entryData->_message = *message;
 }
 
 } // namespace advss

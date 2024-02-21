@@ -156,10 +156,11 @@ void MacroActionMidiEdit::EnableListening(bool enable)
 	if (_currentlyListening == enable) {
 		return;
 	}
-	_listenDevice.UseForMessageSelection(enable);
 	if (enable) {
+		_messageBuffer = _entryData->_device.RegisterForMidiMessages();
 		_listenTimer.start();
 	} else {
+		_messageBuffer.reset();
 		_listenTimer.stop();
 	}
 }
@@ -176,12 +177,6 @@ void MacroActionMidiEdit::ToggleListen()
 		return;
 	}
 
-	if (!_currentlyListening && _listenDevice.IsUsedForMessageSelection()) {
-		DisplayMessage(obs_module_text(
-			"AdvSceneSwitcher.midi.startListenFail"));
-		return;
-	}
-
 	_listen->setText(
 		_currentlyListening
 			? obs_module_text("AdvSceneSwitcher.midi.startListen")
@@ -194,14 +189,24 @@ void MacroActionMidiEdit::ToggleListen()
 void MacroActionMidiEdit::SetMessageSelectionToLastReceived()
 {
 	auto lock = LockContext();
-	auto messages = _listenDevice.GetMessages(true);
-	if (!_entryData || !messages || messages->empty()) {
+	if (!_entryData || !_messageBuffer || _messageBuffer->Empty()) {
 		return;
 	}
 
-	_message->SetMessage(messages->back());
-	_entryData->_message = messages->back();
-	_listenDevice.ClearMessageBuffer();
+	std::optional<MidiMessage> message;
+	while (!_messageBuffer->Empty()) {
+		message = _messageBuffer->ConsumeMessage();
+		if (!message) {
+			continue;
+		}
+	}
+
+	if (!message) {
+		return;
+	}
+
+	_message->SetMessage(*message);
+	_entryData->_message = *message;
 }
 
 } // namespace advss

@@ -1,14 +1,19 @@
 #pragma once
-#include <variable-spinbox.hpp>
-#include <variable-number.hpp>
-#include <variable-string.hpp>
 #include <QComboBox>
+#include <message-dispatcher.hpp>
 #include <obs-data.h>
+#include <variable-number.hpp>
+#include <variable-spinbox.hpp>
+#include <variable-string.hpp>
 
 #define LIBREMIDI_HEADER_ONLY 1
 #include <libremidi/libremidi.hpp>
 
 namespace advss {
+
+class MidiMessage;
+using MidiMessageBuffer = std::shared_ptr<MessageBuffer<MidiMessage>>;
+using MidiMessageDispatcher = MessageDispatcher<MidiMessage>;
 
 // Based on https://github.com/nhielost/obs-midi-mg MMGMessage
 class MidiMessage {
@@ -60,7 +65,6 @@ public:
 	static MidiDeviceInstance *GetDevice(MidiDeviceType type,
 					     const std::string &);
 	static MidiDeviceInstance *GetDevice(MidiDeviceType type, int port);
-	static void ClearMessageBuffersOfAllDevices();
 	static void ResetAllDevices();
 
 private:
@@ -69,26 +73,23 @@ private:
 	bool OpenPort();
 	void ClosePort();
 	bool SendMessge(const MidiMessage &);
-	const std::vector<MidiMessage> &GetMessages();
+	[[nodiscard]] MidiMessageBuffer RegisterForMidiMessages();
 	void ReceiveMidiMessage(libremidi::message &&);
-	void ClearMessageBuffer();
 
 	static std::map<std::pair<MidiDeviceType, std::string>,
 			MidiDeviceInstance *>
 		devices;
 
-	bool _skipBufferClear = false;
-
 	MidiDeviceType _type = MidiDeviceType::INPUT;
 	std::string _name;
-	libremidi::midi_in in =
+	libremidi::midi_in _in =
 		libremidi::midi_in(libremidi::input_configuration{
 			[this](libremidi::message &&message) {
 				ReceiveMidiMessage(std::move(message));
 			}});
-	libremidi::midi_out out =
+	libremidi::midi_out _out =
 		libremidi::midi_out(libremidi::output_configuration());
-	std::vector<MidiMessage> _messages;
+	MidiMessageDispatcher _dispatcher;
 
 	friend class MidiDevice;
 };
@@ -100,19 +101,12 @@ public:
 	void Save(obs_data_t *obj) const;
 	void Load(obs_data_t *obj);
 
-	bool SendMessge(const MidiMessage &);
+	bool SendMessge(const MidiMessage &) const;
+	[[nodiscard]] MidiMessageBuffer RegisterForMidiMessages() const;
 
-	const std::vector<MidiMessage> *            // Might resize! Only call
-	GetMessages(bool ignoreListenMode = false); // while holding switcher
-						    // lock!
 	std::string Name() const;
 
-	// Used for "listen" mode of message selection
-	// Listen mode disables automatic clearing of buffers
-	void UseForMessageSelection(bool);
-	bool IsUsedForMessageSelection();
-	void ClearMessageBuffer();
-	bool DeviceSelected() { return !!_dev; }
+	bool DeviceSelected() const { return !!_dev; }
 
 private:
 	MidiDeviceType _type = MidiDeviceType::INPUT;

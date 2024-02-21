@@ -10,46 +10,19 @@
 #include <ui-helpers.hpp>
 #include <utility.hpp>
 
+#undef DispatchMessage
+
 namespace advss {
 
 std::map<std::pair<MidiDeviceType, std::string>, MidiDeviceInstance *>
 	MidiDeviceInstance::devices = {};
 
-static bool registerClearMessageBufferStep()
-{
-	AddIntervalResetStep(
-		MidiDeviceInstance::ClearMessageBuffersOfAllDevices);
-	return true;
-}
-
-static bool registerClearMessageBufferStepDone =
-	registerClearMessageBufferStep();
-
-void MidiDeviceInstance::ClearMessageBuffersOfAllDevices()
-{
-	for (auto const &[_, device] : MidiDeviceInstance::devices) {
-		if (device->_skipBufferClear) {
-			continue;
-		}
-		device->ClearMessageBuffer();
-	}
-}
-
 void MidiDeviceInstance::ResetAllDevices()
 {
 	for (auto const &[_, device] : MidiDeviceInstance::devices) {
-		if (device->_skipBufferClear) {
-			continue;
-		}
 		device->ClosePort();
-		device->ClearMessageBuffer();
 		device->OpenPort();
 	}
-}
-
-void MidiDeviceInstance::ClearMessageBuffer()
-{
-	_messages.clear();
 }
 
 MidiMessage::MidiMessage(const libremidi::message &message)
@@ -357,7 +330,7 @@ void MidiDevice::Load(obs_data_t *obj)
 	}
 }
 
-bool MidiDevice::SendMessge(const MidiMessage &m)
+bool MidiDevice::SendMessge(const MidiMessage &m) const
 {
 	if (_type == MidiDeviceType::INPUT || _name.empty() || !_dev) {
 		return false;
@@ -392,8 +365,8 @@ getInPortFromName(const std::string &name)
 
 bool MidiDeviceInstance::OpenPort()
 {
-	if ((_type == MidiDeviceType::INPUT && in.is_port_open()) ||
-	    (_type == MidiDeviceType::OUTPUT && out.is_port_open())) {
+	if ((_type == MidiDeviceType::INPUT && _in.is_port_open()) ||
+	    (_type == MidiDeviceType::OUTPUT && _out.is_port_open())) {
 		return true;
 	}
 
@@ -406,7 +379,7 @@ bool MidiDeviceInstance::OpenPort()
 			return false;
 		}
 		try {
-			out.open_port(*port);
+			_out.open_port(*port);
 			blog(LOG_INFO, "Opened output midi port '%s'",
 			     _name.c_str());
 			return true;
@@ -430,7 +403,7 @@ bool MidiDeviceInstance::OpenPort()
 		ReceiveMidiMessage(std::move(m));
 	};
 
-	in = libremidi::midi_in{
+	_in = libremidi::midi_in{
 		libremidi::input_configuration{.on_message = cb}};
 
 	auto port = getInPortFromName(_name);
@@ -441,7 +414,7 @@ bool MidiDeviceInstance::OpenPort()
 	}
 
 	try {
-		in.open_port(*port);
+		_in.open_port(*port);
 		blog(LOG_INFO, "Opened input midi port '%s'", _name.c_str());
 		return true;
 	} catch (const libremidi::driver_error &error) {
@@ -459,14 +432,14 @@ bool MidiDeviceInstance::OpenPort()
 
 void MidiDeviceInstance::ClosePort()
 {
-	if ((_type == MidiDeviceType::INPUT && !in.is_port_open()) ||
-	    (_type == MidiDeviceType::OUTPUT && !out.is_port_open())) {
+	if ((_type == MidiDeviceType::INPUT && !_in.is_port_open()) ||
+	    (_type == MidiDeviceType::OUTPUT && !_out.is_port_open())) {
 		return;
 	}
 
 	if (_type == MidiDeviceType::OUTPUT) {
 		try {
-			out.close_port();
+			_out.close_port();
 			blog(LOG_INFO, "Closed output midi port '%s'",
 			     _name.c_str());
 		} catch (const libremidi::driver_error &error) {
@@ -486,7 +459,7 @@ void MidiDeviceInstance::ClosePort()
 	}
 
 	try {
-		in.close_port();
+		_in.close_port();
 		blog(LOG_INFO, "Closed input midi port '%s'", _name.c_str());
 	} catch (const libremidi::driver_error &error) {
 		blog(LOG_WARNING, "Failed to close input midi port '%s': %s",
@@ -546,7 +519,7 @@ bool MidiDeviceInstance::SendMessge(const MidiMessage &m)
 	}
 
 	try {
-		out.send_message(message);
+		_out.send_message(message);
 		return true;
 	} catch (const libremidi::driver_error &err) {
 		blog(LOG_WARNING, "%s", err.what());
@@ -555,54 +528,26 @@ bool MidiDeviceInstance::SendMessge(const MidiMessage &m)
 	return false;
 }
 
-const std::vector<MidiMessage> &MidiDeviceInstance::GetMessages()
+MidiMessageBuffer MidiDeviceInstance::RegisterForMidiMessages()
 {
-	return _messages;
+	return _dispatcher.RegisterClient();
 }
 
 void MidiDeviceInstance::ReceiveMidiMessage(libremidi::message &&msg)
 {
 	auto lock = LockContext();
-	_messages.emplace_back(msg);
+	_dispatcher.DispatchMessage(msg);
 	vblog(LOG_INFO, "received midi: %s",
 	      MidiMessage::ToString(msg).c_str());
 }
 
-void MidiDevice::UseForMessageSelection(bool skipBufferClear)
+[[nodiscard]] MidiMessageBuffer MidiDevice::RegisterForMidiMessages() const
 {
-	if (!_dev) {
-		return;
+	if (_type == MidiDeviceType::OUTPUT || _name.empty() || !_dev) {
+		return {};
 	}
 
-	blog(LOG_INFO, "%s \"listen\" mode for midi input device \"%s\"! %s",
-	     skipBufferClear ? "Enable" : "Disable", Name().c_str(),
-	     skipBufferClear
-		     ? "This will block incoming messages from being processed!"
-		     : "");
-	ClearMessageBuffer();
-	_dev->_skipBufferClear = skipBufferClear;
-}
-
-bool MidiDevice::IsUsedForMessageSelection()
-{
-	return _dev && _dev->_skipBufferClear;
-}
-
-void MidiDevice::ClearMessageBuffer()
-{
-	if (_dev) {
-		_dev->ClearMessageBuffer();
-	}
-}
-
-const std::vector<MidiMessage> *MidiDevice::GetMessages(bool ignoreSkip)
-{
-	if (_type == MidiDeviceType::OUTPUT || _name.empty() || !_dev ||
-	    (_dev->_skipBufferClear && !ignoreSkip)) {
-		return nullptr;
-	}
-
-	return &_dev->GetMessages();
+	return _dev->RegisterForMidiMessages();
 }
 
 std::string MidiDevice::Name() const
