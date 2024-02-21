@@ -41,6 +41,8 @@ private:
 	std::weak_ptr<Connection> _connection;
 
 	WebsocketMessageBuffer _messageBuffer;
+	std::chrono::high_resolution_clock::time_point _lastCheck{};
+
 	static bool _registered;
 	static const std::string id;
 };

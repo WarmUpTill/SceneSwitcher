@@ -2,6 +2,7 @@
 #include "twitch-helpers.hpp"
 
 #include <layout-helpers.hpp>
+#include <macro-helpers.hpp>
 #include <log-helper.hpp>
 #include <nlohmann/json.hpp>
 
@@ -363,6 +364,9 @@ bool MacroConditionTwitch::CheckChatMessages(TwitchToken &token)
 	if (!_chatConnection) {
 		_chatConnection = TwitchChatConnection::GetChatConnection(
 			token, _channel);
+		if (!_chatConnection) {
+			return false;
+		}
 		_chatBuffer = _chatConnection->RegisterForMessages();
 		return false;
 	}
@@ -435,7 +439,7 @@ void MacroConditionTwitch::SetTempVarValues(const ChannelInfo &info)
 			info.is_branded_content ? "true" : "false");
 }
 
-bool advss::MacroConditionTwitch::EventSubscriptionIsSetup(
+bool MacroConditionTwitch::EventSubscriptionIsSetup(
 	const std::shared_ptr<EventSub> &eventSub)
 {
 	if (!eventSub) {
@@ -449,6 +453,22 @@ bool advss::MacroConditionTwitch::EventSubscriptionIsSetup(
 	return true;
 }
 
+void MacroConditionTwitch::HandleMacroPause()
+{
+	const bool macroWasPausedSinceLastCheck =
+		MacroWasPausedSince(GetMacro(), _lastCheck);
+	_lastCheck = std::chrono::high_resolution_clock::now();
+
+	if (macroWasPausedSinceLastCheck) {
+		if (_eventBuffer) {
+			_eventBuffer->Clear();
+		}
+		if (_chatBuffer) {
+			_chatBuffer->Clear();
+		}
+	}
+}
+
 bool MacroConditionTwitch::CheckCondition()
 {
 	SetVariableValue("");
@@ -458,10 +478,11 @@ bool MacroConditionTwitch::CheckCondition()
 	}
 
 	auto eventSub = token->GetEventSub();
-
 	if (IsUsingEventSubCondition() && !EventSubscriptionIsSetup(eventSub)) {
 		return false;
 	}
+
+	HandleMacroPause();
 
 	switch (_condition) {
 	case Condition::STREAM_ONLINE_EVENT:

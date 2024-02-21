@@ -119,6 +119,8 @@ private:
 		const char *mainUserIdFieldName = "broadcaster_user_id",
 		obs_data_t *extraConditions = nullptr);
 
+	void HandleMacroPause();
+
 	void SetupTempVars();
 	void SetTempVarValues(const ChannelLiveInfo &);
 	void SetTempVarValues(const ChannelInfo &);
@@ -133,6 +135,8 @@ private:
 
 	ChatMessageBuffer _chatBuffer;
 	std::shared_ptr<TwitchChatConnection> _chatConnection;
+
+	std::chrono::high_resolution_clock::time_point _lastCheck{};
 
 	static bool _registered;
 	static const std::string id;
