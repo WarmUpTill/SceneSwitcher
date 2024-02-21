@@ -131,6 +131,7 @@ private:
 	std::future<std::string> _subscriptionIDFuture;
 	std::string _subscriptionID;
 
+	ChatMessageBuffer _chatBuffer;
 	std::shared_ptr<TwitchChatConnection> _chatConnection;
 
 	static bool _registered;

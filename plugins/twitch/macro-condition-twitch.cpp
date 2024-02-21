@@ -363,14 +363,18 @@ bool MacroConditionTwitch::CheckChatMessages(TwitchToken &token)
 	if (!_chatConnection) {
 		_chatConnection = TwitchChatConnection::GetChatConnection(
 			token, _channel);
+		_chatBuffer = _chatConnection->RegisterForMessages();
 		return false;
 	}
 
-	auto messages = _chatConnection->Messages();
-	for (const auto &message : messages) {
-		if (stringMatches(_regexChat, message.message, _chatMessage)) {
-			SetTempVarValue("chatter", message.source.nick);
-			SetTempVarValue("chat_message", message.message);
+	while (!_chatBuffer->Empty()) {
+		auto message = _chatBuffer->ConsumeMessage();
+		if (!message) {
+			continue;
+		}
+		if (stringMatches(_regexChat, message->message, _chatMessage)) {
+			SetTempVarValue("chatter", message->source.nick);
+			SetTempVarValue("chat_message", message->message);
 			return true;
 		}
 	}
