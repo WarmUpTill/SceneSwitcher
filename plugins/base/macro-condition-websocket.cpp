@@ -1,5 +1,6 @@
 #include "macro-condition-websocket.hpp"
 #include "layout-helpers.hpp"
+#include "macro-helpers.hpp"
 
 #include <regex>
 
@@ -29,6 +30,14 @@ MacroConditionWebsocket::MacroConditionWebsocket(Macro *m)
 bool MacroConditionWebsocket::CheckCondition()
 {
 	if (!_messageBuffer) {
+		return false;
+	}
+
+	const bool macroWasPausedSinceLastCheck =
+		MacroWasPausedSince(GetMacro(), _lastCheck);
+	_lastCheck = std::chrono::high_resolution_clock::now();
+	if (macroWasPausedSinceLastCheck) {
+		_messageBuffer->Clear();
 		return false;
 	}
 

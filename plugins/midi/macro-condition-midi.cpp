@@ -1,5 +1,6 @@
 #include "macro-condition-midi.hpp"
 #include "layout-helpers.hpp"
+#include "macro-helpers.hpp"
 #include "ui-helpers.hpp"
 
 namespace advss {
@@ -14,6 +15,14 @@ bool MacroConditionMidi::_registered = MacroConditionFactory::Register(
 bool MacroConditionMidi::CheckCondition()
 {
 	if (!_messageBuffer) {
+		return false;
+	}
+
+	const bool macroWasPausedSinceLastCheck =
+		MacroWasPausedSince(GetMacro(), _lastCheck);
+	_lastCheck = std::chrono::high_resolution_clock::now();
+	if (macroWasPausedSinceLastCheck) {
+		_messageBuffer->Clear();
 		return false;
 	}
 
