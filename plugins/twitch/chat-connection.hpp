@@ -2,13 +2,13 @@
 #include "channel-selection.hpp"
 #include "token.hpp"
 
-#include <websocketpp/client.hpp>
-#include <QObject>
-#include <mutex>
 #include <condition_variable>
-
-#include <websocketpp/config/asio_client.hpp>
+#include <mutex>
+#include <message-buffer.hpp>
+#include <QObject>
+#include <websocketpp/client.hpp>
 #include <websocketpp/config/asio.hpp>
+#include <websocketpp/config/asio_client.hpp>
 
 namespace advss {
 
@@ -38,6 +38,9 @@ struct IRCMessage {
 	std::string message;
 };
 
+using ChatMessageBuffer = std::shared_ptr<MessageBuffer<IRCMessage>>;
+using ChatMessageDispatcher = MessageDispatcher<IRCMessage>;
+
 class TwitchChatConnection : public QObject {
 public:
 	~TwitchChatConnection();
@@ -45,12 +48,10 @@ public:
 	static std::shared_ptr<TwitchChatConnection>
 	GetChatConnection(const TwitchToken &token,
 			  const TwitchChannel &channel);
-	std::vector<IRCMessage> Messages();
-	std::vector<IRCMessage> Whispers();
+	[[nodiscard]] ChatMessageBuffer RegisterForMessages();
+	[[nodiscard]] ChatMessageBuffer RegisterForWhispers();
 	void SendChatMessage(const std::string &message);
-
-	static void ClearAllMessages();
-	void ClearMessages();
+	void ConnectToChat();
 
 private:
 	TwitchChatConnection(const TwitchToken &token,
@@ -77,9 +78,6 @@ private:
 	void HandleNotice(const IRCMessage &) const;
 	void HandleReconnect();
 
-	void RegisterInstance();
-	void UnregisterInstance();
-
 	struct ChatMapKey {
 		std::string channelName;
 		std::string token;
@@ -103,12 +101,8 @@ private:
 	std::atomic_bool _disconnect{false};
 	std::string _url;
 
-	std::mutex _messageMtx;
-	std::vector<IRCMessage> _messages;
-	std::vector<IRCMessage> _whispers;
-	static std::mutex _instancesMtx;
-	static std::vector<TwitchChatConnection *> _instances;
-	static bool _setupDone;
+	ChatMessageDispatcher _messageDispatcher;
+	ChatMessageDispatcher _whisperDispatcher;
 };
 
 } // namespace advss

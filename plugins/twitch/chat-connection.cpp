@@ -5,6 +5,8 @@
 #include <log-helper.hpp>
 #include <plugin-state-helpers.hpp>
 
+#undef DispatchMessage
+
 namespace advss {
 
 using websocketpp::lib::placeholders::_1;
@@ -354,43 +356,11 @@ TwitchChatConnection::TwitchChatConnection(const TwitchToken &token,
 			asio::ssl::context::sslv23_client);
 	});
 	_url = defaultURL.data();
-	RegisterInstance();
 }
 
 TwitchChatConnection::~TwitchChatConnection()
 {
 	Disconnect();
-	UnregisterInstance();
-}
-
-static bool setupChatMessageClear()
-{
-	AddIntervalResetStep(&TwitchChatConnection::ClearAllMessages);
-	return true;
-}
-
-bool TwitchChatConnection::_setupDone = setupChatMessageClear();
-
-void TwitchChatConnection::ClearMessages()
-{
-	std::lock_guard<std::mutex> lock(_messageMtx);
-	_messages.clear();
-}
-
-std::mutex TwitchChatConnection::_instancesMtx;
-std::vector<TwitchChatConnection *> TwitchChatConnection::_instances;
-
-void TwitchChatConnection::RegisterInstance()
-{
-	std::lock_guard<std::mutex> lock(_instancesMtx);
-	_instances.emplace_back(this);
-}
-
-void TwitchChatConnection::UnregisterInstance()
-{
-	std::lock_guard<std::mutex> lock(_instancesMtx);
-	auto it = std::remove(_instances.begin(), _instances.end(), this);
-	_instances.erase(it, _instances.end());
 }
 
 std::shared_ptr<TwitchChatConnection>
@@ -414,15 +384,8 @@ TwitchChatConnection::GetChatConnection(const TwitchToken &token_,
 	auto connection = std::shared_ptr<TwitchChatConnection>(
 		new TwitchChatConnection(token_, channel));
 	_chatMap[key] = connection;
+	connection->ConnectToChat();
 	return connection;
-}
-
-void TwitchChatConnection::ClearAllMessages()
-{
-	std::lock_guard<std::mutex> lock(_instancesMtx);
-	for (const auto &TwitchChatConnection : _instances) {
-		TwitchChatConnection->ClearMessages();
-	}
 }
 
 void TwitchChatConnection::ConnectThread()
@@ -503,55 +466,29 @@ static std::string toLowerCase(const std::string &str)
 	return result;
 }
 
-std::vector<IRCMessage> TwitchChatConnection::Messages()
+void TwitchChatConnection::ConnectToChat()
 {
 	if (!_connected) {
 		Connect();
-		return {};
+		return;
 	}
-
-	if (_joinedChannelName !=
-	    "#" + toLowerCase(std::string(_channel.GetName()))) {
-		// TODO: disconnect previous channel?
-		JoinChannel(_channel.GetName());
-		return {};
-	}
-
-	std::lock_guard<std::mutex> lock(_messageMtx);
-	return _messages;
 }
 
-std::vector<IRCMessage> TwitchChatConnection::Whispers()
+ChatMessageBuffer TwitchChatConnection::RegisterForMessages()
 {
-	if (!_connected) {
-		Connect();
-		return {};
-	}
+	ConnectToChat();
+	return _messageDispatcher.RegisterClient();
+}
 
-	if (_joinedChannelName !=
-	    "#" + toLowerCase(std::string(_channel.GetName()))) {
-		// TODO: disconnect previous channel?
-		JoinChannel(_channel.GetName());
-		return {};
-	}
-
-	std::lock_guard<std::mutex> lock(_messageMtx);
-	return _whispers;
+ChatMessageBuffer TwitchChatConnection::RegisterForWhispers()
+{
+	ConnectToChat();
+	return _whisperDispatcher.RegisterClient();
 }
 
 void TwitchChatConnection::SendChatMessage(const std::string &message)
 {
-	if (!_connected) {
-		Connect();
-		return;
-	}
-
-	if (_joinedChannelName !=
-	    "#" + toLowerCase(std::string(_channel.GetName()))) {
-		// TODO: disconnect previous channel?
-		JoinChannel(_channel.GetName());
-		return;
-	}
+	ConnectToChat();
 	Send("PRIVMSG " + _joinedChannelName + " :" + message);
 }
 
@@ -582,23 +519,20 @@ void TwitchChatConnection::JoinChannel(const std::string &channelName)
 
 void TwitchChatConnection::HandleJoin(const IRCMessage &message)
 {
-	std::lock_guard<std::mutex> lock(_messageMtx);
 	_joinedChannelName = std::get<std::string>(message.command.parameters);
 	vblog(LOG_INFO, "Twitch chat join was successful!");
 }
 
 void TwitchChatConnection::HandleNewMessage(const IRCMessage &message)
 {
-	std::lock_guard<std::mutex> lock(_messageMtx);
-	_messages.emplace_back(message);
+	_messageDispatcher.DispatchMessage(message);
 	vblog(LOG_INFO, "Received new chat message %s",
 	      message.message.c_str());
 }
 
 void TwitchChatConnection::HandleWhisper(const IRCMessage &message)
 {
-	std::lock_guard<std::mutex> lock(_messageMtx);
-	_whispers.emplace_back(message);
+	_whisperDispatcher.DispatchMessage(message);
 	vblog(LOG_INFO, "Received new chat whisper message %s",
 	      message.message.c_str());
 }
@@ -662,6 +596,7 @@ void TwitchChatConnection::OnMessage(
 			vblog(LOG_INFO,
 			      "Twitch chat connection authenticated!");
 			_authenticated = true;
+			JoinChannel(_channel.GetName());
 		} else if (message.command.command == pingCommand) {
 			Send("PONG " +
 			     std::get<std::string>(message.command.parameters));
