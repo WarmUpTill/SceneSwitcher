@@ -8,6 +8,7 @@ namespace advss {
 template<class T> class MessageBuffer {
 public:
 	bool Empty();
+	void Clear();
 	void AppendMessage(const T &);
 	std::optional<T> ConsumeMessage();
 
@@ -20,6 +21,12 @@ template<class T> inline bool MessageBuffer<T>::Empty()
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 	return _buffer.empty();
+}
+
+template<class T> inline void MessageBuffer<T>::Clear()
+{
+	std::lock_guard<std::mutex> lock(_mutex);
+	_buffer.clear();
 }
 
 template<class T> inline void MessageBuffer<T>::AppendMessage(const T &message)
