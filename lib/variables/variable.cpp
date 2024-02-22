@@ -1,6 +1,7 @@
 #include "variable.hpp"
 #include "math-helpers.hpp"
 #include "obs-module-helper.hpp"
+#include "utility.hpp"
 
 #include <QGridLayout>
 
@@ -78,7 +79,7 @@ void Variable::SetValue(const std::string &val)
 
 void Variable::SetValue(double value)
 {
-	_value = std::to_string(value);
+	_value = ToString(value);
 	_lastUsed = std::chrono::high_resolution_clock::now();
 	lastVariableChange = std::chrono::high_resolution_clock::now();
 }
