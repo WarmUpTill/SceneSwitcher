@@ -1,6 +1,7 @@
 #include "math-helpers.hpp"
 #include "obs-module-helper.hpp"
 
+#include <climits>
 #include <exprtk.hpp>
 #include <random>
 
@@ -41,7 +42,8 @@ std::optional<double> GetDouble(const std::string &str)
 {
 	char *end = nullptr;
 	double value = std::strtod(str.c_str(), &end);
-	if (end != str.c_str() && *end == '\0' && value != HUGE_VAL) {
+	if (end != str.c_str() && *end == '\0' && value != HUGE_VAL &&
+	    value != -HUGE_VAL) {
 		return value;
 	}
 	return {};
@@ -51,7 +53,8 @@ std::optional<int> GetInt(const std::string &str)
 {
 	char *end = nullptr;
 	int value = std::strtol(str.c_str(), &end, 10);
-	if (end != str.c_str() && *end == '\0') {
+	if (end != str.c_str() && *end == '\0' && value != INT_MAX &&
+	    value != INT_MIN) {
 		return value;
 	}
 	return {};
