@@ -356,10 +356,10 @@ void MacroActionHotkey::SendCustomHotkey()
 bool MacroActionHotkey::PerformAction()
 {
 	switch (_action) {
-	case advss::MacroActionHotkey::Action::OBS_HOTKEY:
+	case Action::OBS_HOTKEY:
 		SendOBSHotkey();
 		break;
-	case advss::MacroActionHotkey::Action::CUSTOM:
+	case Action::CUSTOM:
 		SendCustomHotkey();
 		break;
 	default:
