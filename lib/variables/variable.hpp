@@ -6,7 +6,7 @@
 #include <string>
 #include <optional>
 #include <QStringList>
-#include <obs.hpp>
+#include <obs-data.h>
 
 namespace advss {
 
@@ -22,8 +22,8 @@ public:
 	EXPORT std::string Value(bool updateLastUsed = true) const;
 	EXPORT std::optional<double> DoubleValue() const;
 	EXPORT std::optional<int> IntValue() const;
-	void SetValue(const std::string &val);
-	void SetValue(double);
+	void SetValue(const std::string &value);
+	void SetValue(double value);
 	std::string GetDefaultValue() const { return _defaultValue; }
 	static std::shared_ptr<Item> Create()
 	{

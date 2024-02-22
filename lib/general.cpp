@@ -3,6 +3,7 @@
 #include "filter-combo-box.hpp"
 #include "layout-helpers.hpp"
 #include "macro.hpp"
+#include "path-helpers.hpp"
 #include "selection-helpers.hpp"
 #include "source-helpers.hpp"
 #include "splitter-helpers.hpp"

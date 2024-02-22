@@ -5,6 +5,7 @@
 #include <name-dialog.hpp>
 #include <obs-module-helper.hpp>
 #include <obs.hpp>
+#include <path-helpers.hpp>
 #include <QVBoxLayout>
 #include <ui-helpers.hpp>
 #include <utility.hpp>
@@ -189,8 +190,9 @@ void CategoryGrabber::Search(const std::string &)
 
 	int startCount = _categoryMap.size();
 	std::string cursor;
-	httplib::Params params = {
-		{"first", "100"}, {"after", cursor}, {"query", _searchString}};
+	httplib::Params params = {{"first", "100"},
+				  {"after", cursor},
+				  {"query", _searchString}};
 	auto response = SendGetRequest(*_token, uri, path, params);
 
 	while (response.status == 200 && !_stop) {

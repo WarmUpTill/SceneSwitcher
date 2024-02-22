@@ -14,7 +14,9 @@ std::variant<double, std::string> EvalMathExpression(const std::string &expr)
 	static std::random_device rd;
 	static std::mt19937 gen(rd());
 	static std::uniform_real_distribution<double> dis(0.0, 1.0);
-	static auto randomFunc = []() { return dis(gen); };
+	static auto randomFunc = []() {
+		return dis(gen);
+	};
 
 	if (!setupDone) {
 		symbolTable.add_function("random", randomFunc);
@@ -42,10 +44,12 @@ std::optional<double> GetDouble(const std::string &str)
 {
 	char *end = nullptr;
 	double value = std::strtod(str.c_str(), &end);
+
 	if (end != str.c_str() && *end == '\0' && value != HUGE_VAL &&
 	    value != -HUGE_VAL) {
 		return value;
 	}
+
 	return {};
 }
 
@@ -53,11 +57,18 @@ std::optional<int> GetInt(const std::string &str)
 {
 	char *end = nullptr;
 	int value = std::strtol(str.c_str(), &end, 10);
+
 	if (end != str.c_str() && *end == '\0' && value != INT_MAX &&
 	    value != INT_MIN) {
 		return value;
 	}
+
 	return {};
+}
+
+bool DoubleEquals(double left, double right, double epsilon)
+{
+	return (fabs(left - right) < epsilon);
 }
 
 } // namespace advss

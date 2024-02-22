@@ -3,6 +3,7 @@
 #include "log-helper.hpp"
 #include "macro-helpers.hpp"
 #include "obs-module-helper.hpp"
+#include "path-helpers.hpp"
 #include "platform-funcs.hpp"
 #include "scene-switch-helpers.hpp"
 #include "source-helpers.hpp"

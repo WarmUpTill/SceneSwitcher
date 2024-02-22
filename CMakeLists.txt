@@ -177,6 +177,8 @@ target_sources(
           lib/utils/obs-dock.hpp
           lib/utils/obs-module-helper.cpp
           lib/utils/obs-module-helper.hpp
+          lib/utils/path-helpers.cpp
+          lib/utils/path-helpers.hpp
           lib/utils/plugin-state-helpers.cpp
           lib/utils/plugin-state-helpers.hpp
           lib/utils/priority-helper.cpp

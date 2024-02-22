@@ -3,6 +3,7 @@
 #include <layout-helpers.hpp>
 #include <log-helper.hpp>
 #include <obs-module-helper.hpp>
+#include <path-helpers.hpp>
 #include <plugin-state-helpers.hpp>
 #include <selection-helpers.hpp>
 #include <sync-helpers.hpp>
@@ -564,7 +565,8 @@ static inline QStringList getOutputDeviceNames()
 }
 
 MidiDeviceSelection::MidiDeviceSelection(QWidget *parent, MidiDeviceType t)
-	: QComboBox(parent), _type(t)
+	: QComboBox(parent),
+	  _type(t)
 {
 	AddSelectionEntry(this, obs_module_text("AdvSceneSwitcher.selectItem"));
 
