@@ -7,6 +7,7 @@
 #include <QDateTime>
 #include <QFile>
 #include <QStandardPaths>
+#include <sstream>
 
 namespace advss {
 
@@ -75,6 +76,13 @@ bool CompareIgnoringLineEnding(QString &s1, QString &s2)
 	}
 
 	return true;
+}
+
+std::string ToString(double value)
+{
+	std::stringstream stream;
+	stream << value;
+	return stream.str();
 }
 
 std::string GetDataFilePath(const std::string &file)
