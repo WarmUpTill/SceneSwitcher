@@ -2,6 +2,7 @@
 #include "advanced-scene-switcher.hpp"
 #include "macro-properties.hpp"
 #include "macro.hpp"
+#include "path-helpers.hpp"
 #include "section.hpp"
 #include "ui-helpers.hpp"
 #include "utility.hpp"

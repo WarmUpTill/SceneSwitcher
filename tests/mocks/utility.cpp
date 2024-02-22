@@ -9,11 +9,6 @@ std::pair<int, int> GetCursorPos()
 	return {0, 0};
 }
 
-bool DoubleEquals(double left, double right, double epsilon)
-{
-	return (fabs(left - right) < epsilon);
-}
-
 bool ReplaceAll(std::string &str, const std::string &from,
 		const std::string &to)
 {

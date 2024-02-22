@@ -68,6 +68,7 @@ static void modifyNumValue(Variable &var, double val, const bool increment)
 	if (!current.has_value()) {
 		return;
 	}
+
 	if (increment) {
 		var.SetValue(*current + val);
 	} else {

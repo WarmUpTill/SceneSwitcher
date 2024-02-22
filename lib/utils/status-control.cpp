@@ -1,5 +1,6 @@
 #include "status-control.hpp"
 #include "obs-module-helper.hpp"
+#include "path-helpers.hpp"
 #include "plugin-state-helpers.hpp"
 #include "ui-helpers.hpp"
 #include "utility.hpp"

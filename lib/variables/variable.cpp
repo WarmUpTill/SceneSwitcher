@@ -70,17 +70,19 @@ std::optional<int> Variable::IntValue() const
 	return GetInt(Value());
 }
 
-void Variable::SetValue(const std::string &val)
+void Variable::SetValue(const std::string &value)
 {
-	_value = val;
-	_lastUsed = std::chrono::high_resolution_clock::now();
+	_value = value;
+
+	UpdateLastUsed();
 	lastVariableChange = std::chrono::high_resolution_clock::now();
 }
 
 void Variable::SetValue(double value)
 {
 	_value = ToString(value);
-	_lastUsed = std::chrono::high_resolution_clock::now();
+
+	UpdateLastUsed();
 	lastVariableChange = std::chrono::high_resolution_clock::now();
 }
 

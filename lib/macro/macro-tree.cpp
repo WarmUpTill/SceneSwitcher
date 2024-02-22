@@ -1,5 +1,6 @@
 #include "macro-tree.hpp"
 #include "macro.hpp"
+#include "path-helpers.hpp"
 #include "sync-helpers.hpp"
 #include "ui-helpers.hpp"
 #include "utility.hpp"
@@ -21,7 +22,9 @@ namespace advss {
 
 MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 			     bool highlight)
-	: _tree(tree), _highlight(highlight), _macro(macroItem)
+	: _tree(tree),
+	  _highlight(highlight),
+	  _macro(macroItem)
 {
 	setAttribute(Qt::WA_TranslucentBackground);
 	// This is necessary for some theses to display active selections properly
@@ -72,7 +75,9 @@ MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 	Update(true);
 	setLayout(_boxLayout);
 
-	auto setRunning = [this](bool val) { _macro->SetPaused(!val); };
+	auto setRunning = [this](bool val) {
+		_macro->SetPaused(!val);
+	};
 	connect(_running, &QAbstractButton::clicked, setRunning);
 	connect(_tree->window(), SIGNAL(HighlightMacrosChanged(bool)), this,
 		SLOT(EnableHighlight(bool)));
@@ -523,7 +528,9 @@ MacroTreeModel::GetCurrentMacros(const QModelIndexList &selection) const
 
 MacroTreeModel::MacroTreeModel(MacroTree *st_,
 			       std::deque<std::shared_ptr<Macro>> &macros)
-	: QAbstractListModel(st_), _mt(st_), _macros(macros)
+	: QAbstractListModel(st_),
+	  _mt(st_),
+	  _macros(macros)
 {
 	UpdateGroupState(false);
 }

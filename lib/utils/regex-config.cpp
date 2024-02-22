@@ -1,7 +1,7 @@
 #include "regex-config.hpp"
 #include "obs-module-helper.hpp"
+#include "path-helpers.hpp"
 #include "ui-helpers.hpp"
-#include "utility.hpp"
 
 #include <QLayout>
 
