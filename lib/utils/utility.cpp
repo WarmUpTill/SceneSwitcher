@@ -1,6 +1,7 @@
 #include "utility.hpp"
 
 #include <nlohmann/json.hpp>
+#include <QTextStream>
 #include <sstream>
 
 namespace advss {

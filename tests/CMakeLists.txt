@@ -6,11 +6,13 @@ add_executable(${PROJECT_NAME})
 target_compile_definitions(${PROJECT_NAME} PRIVATE UNIT_TEST)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 
-target_sources(${PROJECT_NAME} PRIVATE main.cpp mocks/obs-data.cpp
-                                       mocks/ui-helpers.cpp mocks/utility.cpp)
+target_sources(
+  ${PROJECT_NAME} PRIVATE test-main.cpp mocks/obs-data.cpp
+                          mocks/path-helpers.cpp mocks/ui-helpers.cpp)
 target_include_directories(
-  ${PROJECT_NAME} PRIVATE mocks ${ADVSS_SOURCE_DIR}/lib/utils
-                          ${ADVSS_SOURCE_DIR}/plugins/base/utils)
+  ${PROJECT_NAME}
+  PRIVATE mocks ${ADVSS_SOURCE_DIR}/lib/utils ${ADVSS_SOURCE_DIR}/lib/variables
+          ${ADVSS_SOURCE_DIR}/plugins/base/utils)
 
 # --- Qt --- #
 
@@ -50,13 +52,13 @@ set_target_properties(
 
 target_sources(
   ${PROJECT_NAME}
-  PRIVATE json.cpp ${ADVSS_SOURCE_DIR}/plugins/base/utils/json-helpers.cpp)
+  PRIVATE test-json.cpp ${ADVSS_SOURCE_DIR}/plugins/base/utils/json-helpers.cpp)
 
 # --- math --- #
 
 target_sources(
   ${PROJECT_NAME}
-  PRIVATE math.cpp ${ADVSS_SOURCE_DIR}/lib/utils/math-helpers.cpp
+  PRIVATE test-math.cpp ${ADVSS_SOURCE_DIR}/lib/utils/math-helpers.cpp
           ${ADVSS_SOURCE_DIR}/lib/utils/obs-module-helper.cpp)
 target_include_directories(${PROJECT_NAME}
                            PRIVATE ${ADVSS_SOURCE_DIR}/deps/exprtk)
@@ -74,8 +76,31 @@ endif()
 
 target_sources(
   ${PROJECT_NAME}
-  PRIVATE regex.cpp ${ADVSS_SOURCE_DIR}/lib/utils/regex-config.cpp
+  PRIVATE test-regex.cpp ${ADVSS_SOURCE_DIR}/lib/utils/regex-config.cpp
           ${ADVSS_SOURCE_DIR}/plugins/base/utils/text-helpers.cpp)
+
+# --- utility --- #
+
+target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json)
+
+target_sources(
+  ${PROJECT_NAME} PRIVATE test-utility.cpp
+                          ${ADVSS_SOURCE_DIR}/lib/utils/utility.cpp)
+
+# --- variable --- #
+
+if(NOT OS_WINDOWS)
+  target_compile_options(${PROJECT_NAME} PUBLIC -Wno-error=shadow)
+endif()
+
+target_sources(
+  ${PROJECT_NAME}
+  PRIVATE test-variable.cpp
+          ${ADVSS_SOURCE_DIR}/lib/utils/filter-combo-box.cpp
+          ${ADVSS_SOURCE_DIR}/lib/utils/item-selection-helpers.cpp
+          ${ADVSS_SOURCE_DIR}/lib/utils/name-dialog.cpp
+          ${ADVSS_SOURCE_DIR}/lib/utils/resizing-text-edit.cpp
+          ${ADVSS_SOURCE_DIR}/lib/variables/variable.cpp)
 
 # --- #
 
