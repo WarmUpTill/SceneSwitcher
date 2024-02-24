@@ -151,10 +151,11 @@ public:
 	void LogAction() const;
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
+	void SetAction(Action);
+	Action GetAction() const { return _action; }
 	bool ActionIsSupportedByToken();
 	void ResetChatConnection();
 
-	Action _action = Action::CHANNEL_INFO_TITLE_SET;
 	std::weak_ptr<TwitchToken> _token;
 	StringVariable _streamTitle =
 		obs_module_text("AdvSceneSwitcher.action.twitch.title.title");
@@ -181,6 +182,7 @@ private:
 	void StartRaid(const std::shared_ptr<TwitchToken> &);
 	void SendChatMessage(const std::shared_ptr<TwitchToken> &);
 
+	Action _action = Action::CHANNEL_INFO_TITLE_SET;
 	std::shared_ptr<TwitchChatConnection> _chatConnection;
 
 	static bool _registered;

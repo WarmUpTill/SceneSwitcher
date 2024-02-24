@@ -319,7 +319,6 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 
-	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
 	_token = GetWeakTwitchTokenByName(obs_data_get_string(obj, "token"));
 	_streamTitle.Load(obj, "streamTitle");
 	_category.Load(obj);
@@ -331,9 +330,15 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 		obs_data_get_int(obj, "announcementColor"));
 	_channel.Load(obj);
 	_chatMessage.Load(obj, "chatMessage");
-	ResetChatConnection();
+	SetAction(static_cast<Action>(obs_data_get_int(obj, "action")));
 
 	return true;
+}
+
+void MacroActionTwitch::SetAction(Action action)
+{
+	_action = action;
+	ResetChatConnection();
 }
 
 bool MacroActionTwitch::ActionIsSupportedByToken()
@@ -450,6 +455,14 @@ bool MacroActionTwitch::ActionIsSupportedByToken()
 void MacroActionTwitch::ResetChatConnection()
 {
 	_chatConnection.reset();
+	if (_action == Action::SEND_CHAT_MESSAGE) {
+		auto token = _token.lock();
+		if (!token) {
+			return;
+		}
+		_chatConnection = TwitchChatConnection::GetChatConnection(
+			*token, _channel);
+	}
 }
 
 static inline void populateActionSelection(QComboBox *list)
@@ -513,13 +526,13 @@ void MacroActionTwitchEdit::ActionChanged(int idx)
 	if (idx == -1) { // Reset to previous selection
 		const QSignalBlocker b(_actions);
 		_actions->setCurrentIndex(_actions->findData(
-			static_cast<int>(_entryData->_action)));
+			static_cast<int>(_entryData->GetAction())));
 		return;
 	}
 
 	auto lock = LockContext();
-	_entryData->_action = static_cast<MacroActionTwitch::Action>(
-		_actions->itemData(idx).toInt());
+	_entryData->SetAction(static_cast<MacroActionTwitch::Action>(
+		_actions->itemData(idx).toInt()));
 	SetWidgetLayout();
 	SetWidgetVisibility();
 }
@@ -703,35 +716,38 @@ void MacroActionTwitchEdit::SetWidgetSignalConnections()
 void MacroActionTwitchEdit::SetWidgetVisibility()
 {
 	_streamTitle->setVisible(
-		_entryData->_action ==
+		_entryData->GetAction() ==
 		MacroActionTwitch::Action::CHANNEL_INFO_TITLE_SET);
 	_category->setVisible(
-		_entryData->_action ==
+		_entryData->GetAction() ==
 		MacroActionTwitch::Action::CHANNEL_INFO_CATEGORY_SET);
 	_channel->setVisible(
-		_entryData->_action == MacroActionTwitch::Action::RAID_START ||
-		_entryData->_action == MacroActionTwitch::Action::RAID_END ||
-		_entryData->_action ==
+		_entryData->GetAction() ==
+			MacroActionTwitch::Action::RAID_START ||
+		_entryData->GetAction() ==
+			MacroActionTwitch::Action::RAID_END ||
+		_entryData->GetAction() ==
 			MacroActionTwitch::Action::SEND_CHAT_MESSAGE);
-	_duration->setVisible(_entryData->_action ==
+	_duration->setVisible(_entryData->GetAction() ==
 			      MacroActionTwitch::Action::COMMERCIAL_START);
 	_markerDescription->setVisible(
-		_entryData->_action ==
+		_entryData->GetAction() ==
 		MacroActionTwitch::Action::MARKER_CREATE);
-	_clipHasDelay->setVisible(_entryData->_action ==
+	_clipHasDelay->setVisible(_entryData->GetAction() ==
 				  MacroActionTwitch::Action::CLIP_CREATE);
 	_announcementMessage->setVisible(
-		_entryData->_action ==
+		_entryData->GetAction() ==
 		MacroActionTwitch::Action::CHAT_ANNOUNCEMENT_SEND);
 	_announcementColor->setVisible(
-		_entryData->_action ==
+		_entryData->GetAction() ==
 		MacroActionTwitch::Action::CHAT_ANNOUNCEMENT_SEND);
-	_chatMessage->setVisible(_entryData->_action ==
+	_chatMessage->setVisible(_entryData->GetAction() ==
 				 MacroActionTwitch::Action::SEND_CHAT_MESSAGE);
 
-	if (_entryData->_action ==
+	if (_entryData->GetAction() ==
 		    MacroActionTwitch::Action::CHANNEL_INFO_TITLE_SET ||
-	    _entryData->_action == MacroActionTwitch::Action::MARKER_CREATE) {
+	    _entryData->GetAction() ==
+		    MacroActionTwitch::Action::MARKER_CREATE) {
 		RemoveStretchIfPresent(_layout);
 	} else {
 		AddStretchIfNecessary(_layout);
@@ -779,7 +795,7 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 	ClearLayout(_layout);
 
 	auto layoutText =
-		_entryData->_action ==
+		_entryData->GetAction() ==
 				MacroActionTwitch::Action::SEND_CHAT_MESSAGE
 			? obs_module_text(
 				  "AdvSceneSwitcher.action.twitch.entry.chat")
@@ -805,7 +821,7 @@ void MacroActionTwitchEdit::UpdateEntryData()
 	}
 
 	_actions->setCurrentIndex(
-		_actions->findData(static_cast<int>(_entryData->_action)));
+		_actions->findData(static_cast<int>(_entryData->GetAction())));
 	_tokens->SetToken(_entryData->_token);
 	_streamTitle->setText(_entryData->_streamTitle);
 	_category->SetToken(_entryData->_token);
