@@ -163,8 +163,12 @@ ${_usage_host:-}"
 
   local product_name
   local product_version
+  local git_tag="$(git describe --tags)"
   read -r product_name product_version <<< \
     "$(jq -r '. | {name, version} | join(" ")' ${buildspec_file})"
+
+  log_info "Using git tag as version identifier '${git_tag}'"
+  product_version="${git_tag}"
 
   if [[ ${host_os} == macos ]] {
     autoload -Uz check_packages read_codesign read_codesign_installer read_codesign_pass
@@ -247,15 +251,19 @@ ${_usage_host:-}"
     cmake --build build_${target##*-} --config ${config} -t package_source ${cmake_args}
     popd
 
+    local output_name="${product_name}-${product_version}-${target##*-}-linux-gnu"
+
     if (( package )) {
       log_group "Packaging ${product_name}..."
       pushd ${project_root}
       cmake --build build_${target##*-} --config ${config} -t package ${cmake_args}
+
+      mv ${project_root}/release/*.deb ${project_root}/release/${output_name}.deb
+      mv ${project_root}/release/*.ddeb ${project_root}/release/${output_name}.ddeb
       popd
     }
 
     log_group "Archiving ${product_name}..."
-    local output_name="${product_name}-${product_version}-${target##*-}-linux-gnu"
     local _tarflags='cJf'
     if (( _loglevel > 1 || ${+CI} )) _tarflags="v${_tarflags}"
 
