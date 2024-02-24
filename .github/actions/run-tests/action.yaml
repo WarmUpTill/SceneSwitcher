@@ -8,6 +8,10 @@ inputs:
     description: "Working directory"
     required: false
     default: ${{ github.workspace }}
+  config:
+    description: "Build config"
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -19,7 +23,7 @@ runs:
           echo tests skipped!
           exit 0
         fi
-        ${{ inputs.workingDirectory }}/build_macos/tests/advanced-scene-switcher-tests
+        ${{ inputs.workingDirectory }}/build_macos/tests/${{ inputs.config }}/advanced-scene-switcher-tests
 
     - name: Run Linux packaging
       if: ${{ runner.os == 'Linux' }}
@@ -34,4 +38,4 @@ runs:
       if: ${{ runner.os == 'Windows' }}
       shell: pwsh
       run: |
-        ${{ inputs.workingDirectory }}/build_x64/tests/RelWithDebInfo/advanced-scene-switcher-tests.exe
+        ${{ inputs.workingDirectory }}/build_x64/tests/${{ inputs.config }}/advanced-scene-switcher-tests.exe

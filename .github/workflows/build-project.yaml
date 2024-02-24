@@ -223,6 +223,7 @@ jobs:
         uses: ./.github/actions/run-tests
         with:
           target: x86_64
+          config: ${{ needs.check-event.outputs.config }}
 
       - name: Package Plugin 📀
         uses: ./.github/actions/package-plugin
@@ -295,6 +296,7 @@ jobs:
         uses: ./.github/actions/run-tests
         with:
           target: x64
+          config: ${{ needs.check-event.outputs.config }}
 
       - name: Package Plugin 📀
         uses: ./.github/actions/package-plugin
