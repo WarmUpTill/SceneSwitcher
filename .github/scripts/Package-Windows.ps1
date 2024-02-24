@@ -48,6 +48,10 @@ function Package {
     $ProductName = $BuildSpec.name
     $ProductVersion = $BuildSpec.version
 
+    $GitOutput = git describe --tags
+    Log-Information "Using git tag as version identifier '${GitOutput}'"
+    $ProductVersion = $GitOutput
+
     $OutputName = "${ProductName}-${ProductVersion}-windows-${Target}"
 
     if ( ! $SkipDeps ) {
