@@ -1,0 +1,37 @@
+name: "Run tests"
+description: "Run tests."
+inputs:
+  target:
+    description: "Build target"
+    required: true
+  workingDirectory:
+    description: "Working directory"
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: "composite"
+  steps:
+    - name: Run macOS tests
+      if: ${{ runner.os == 'macOS' }}
+      shell: zsh {0}
+      run: |
+        if [[ '${{ inputs.target }}' != 'macos-universal' ]]; then
+          echo tests skipped!
+          exit 0
+        fi
+        ${{ inputs.workingDirectory }}/build_macos/tests/advanced-scene-switcher-tests
+
+    - name: Run Linux packaging
+      if: ${{ runner.os == 'Linux' }}
+      shell: bash
+      run: |
+        if [[ '${{ inputs.target }}' != 'x86_64' ]]; then
+          exit 0
+        fi
+        ${{ inputs.workingDirectory }}/build_x86_64/tests/advanced-scene-switcher-tests
+
+    - name: Run Windows packaging
+      if: ${{ runner.os == 'Windows' }}
+      shell: pwsh
+      run: |
+        ${{ inputs.workingDirectory }}/build_x64/tests/RelWithDebInfo/advanced-scene-switcher-tests.exe

@@ -3,7 +3,7 @@ on:
   workflow_call:
     outputs:
       pluginName:
-        description: 'Project name detected by parsing build spec file'
+        description: "Project name detected by parsing build spec file"
         value: ${{ jobs.check-event.outputs.pluginName }}
 env:
   DEP_DIR: .deps/advss-build-dependencies
@@ -110,7 +110,6 @@ jobs:
           print '::group::Select Xcode version'
           sudo xcode-select --switch /Applications/Xcode_14.3.1.app
           print '::endgroup::'
-                           
 
       - uses: actions/cache@v4
         id: ccache-cache
@@ -220,6 +219,11 @@ jobs:
           target: x86_64
           config: ${{ needs.check-event.outputs.config }}
 
+      - name: Run tests
+        uses: ./.github/actions/run-tests
+        with:
+          target: x86_64
+
       - name: Package Plugin 📀
         uses: ./.github/actions/package-plugin
         with:
@@ -286,6 +290,11 @@ jobs:
         with:
           target: x64
           config: ${{ needs.check-event.outputs.config }}
+
+      - name: Run tests
+        uses: ./.github/actions/run-tests
+        with:
+          target: x64
 
       - name: Package Plugin 📀
         uses: ./.github/actions/package-plugin
