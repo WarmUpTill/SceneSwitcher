@@ -69,6 +69,8 @@ target_sources(
           macro-action-wait.hpp
           macro-action-websocket.cpp
           macro-action-websocket.hpp
+          macro-action-window.cpp
+          macro-action-window.hpp
           macro-condition-audio.cpp
           macro-condition-audio.hpp
           macro-condition-cursor.cpp
