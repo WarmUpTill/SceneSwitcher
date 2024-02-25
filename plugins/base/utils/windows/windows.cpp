@@ -204,6 +204,45 @@ std::string GetWindowClassByWindowTitle(const std::string &window)
 	return className;
 }
 
+void SetFocusWindow(const std::string &title)
+{
+	auto handle = getHWNDfromTitle(title);
+	if (!handle) {
+		return;
+	}
+	ShowWindow(handle, SW_RESTORE);
+	SetForegroundWindow(handle);
+	SetFocus(handle);
+	SetActiveWindow(handle);
+}
+
+void CloseWindow(const std::string &title)
+{
+	auto handle = getHWNDfromTitle(title);
+	if (!handle) {
+		return;
+	}
+	SendMessage(handle, WM_CLOSE, 0, 0);
+}
+
+void MaximizeWindow(const std::string &title)
+{
+	auto handle = getHWNDfromTitle(title);
+	if (!handle) {
+		return;
+	}
+	ShowWindow(handle, SW_MAXIMIZE);
+}
+
+void MinimizeWindow(const std::string &title)
+{
+	auto handle = getHWNDfromTitle(title);
+	if (!handle) {
+		return;
+	}
+	ShowWindow(handle, SW_MINIMIZE);
+}
+
 class RawMouseInputFilter;
 static RawMouseInputFilter *mouseInputFilter;
 static std::chrono::high_resolution_clock::time_point lastMouseLeftClickTime{};
