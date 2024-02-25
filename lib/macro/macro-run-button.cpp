@@ -96,11 +96,15 @@ void MacroRunButton::Pressed()
 
 	bool ret = _elseStateActive ? macro->PerformActions(false, true, true)
 				    : macro->PerformActions(true, true, true);
+	if (ret) {
+		return;
+	}
 
-	if (!ret) {
-		QString err =
-			obs_module_text("AdvSceneSwitcher.macroTab.runFail");
-		DisplayMessage(err.arg(QString::fromStdString(macro->Name())));
+	QString err = obs_module_text("AdvSceneSwitcher.macroTab.runFail");
+	const bool abortMacro = DisplayMessage(
+		err.arg(QString::fromStdString(macro->Name())), true);
+	if (abortMacro) {
+		macro->Stop();
 	}
 }
 
