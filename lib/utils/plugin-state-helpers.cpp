@@ -3,6 +3,11 @@
 
 namespace advss {
 
+void SavePluginSettings(obs_data_t *obj)
+{
+	GetSwitcher()->SaveSettings(obj);
+}
+
 void LoadPluginSettings(obs_data_t *obj)
 {
 	GetSwitcher()->LoadSettings(obj);

@@ -147,6 +147,8 @@ target_sources(
   ${LIB_NAME}
   PRIVATE lib/utils/action-queue.cpp
           lib/utils/action-queue.hpp
+          lib/utils/backup.cpp
+          lib/utils/backup.hpp
           lib/utils/curl-helper.cpp
           lib/utils/curl-helper.hpp
           lib/utils/duration-control.cpp

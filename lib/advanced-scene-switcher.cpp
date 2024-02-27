@@ -1,4 +1,5 @@
 #include "advanced-scene-switcher.hpp"
+#include "backup.hpp"
 #include "curl-helper.hpp"
 #include "log-helper.hpp"
 #include "macro-helpers.hpp"
@@ -17,7 +18,6 @@
 #include <obs-frontend-api.h>
 #include <QAction>
 #include <QDirIterator>
-#include <QFileDialog>
 #include <QMainWindow>
 #include <QTextStream>
 #include <regex>
@@ -143,7 +143,6 @@ bool AdvSceneSwitcher::eventFilter(QObject *obj, QEvent *event)
 /******************************************************************************
  * Saving and loading
  ******************************************************************************/
-static void AskForBackup(const QString &json);
 
 static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 {
@@ -190,34 +189,6 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			switcher->Start();
 		}
 	}
-}
-
-static void AskForBackup(const QString &json)
-{
-	const bool backupWasConfirmed = DisplayMessage(
-		obs_module_text("AdvSceneSwitcher.askBackup"), true, false);
-
-	if (!backupWasConfirmed) {
-		return;
-	}
-
-	QString path = QFileDialog::getSaveFileName(
-		nullptr,
-		obs_module_text(
-			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.exportWindowTitle"),
-		GetDefaultSettingsSaveLocation(),
-		obs_module_text(
-			"AdvSceneSwitcher.generalTab.saveOrLoadsettings.textType"));
-	if (path.isEmpty()) {
-		return;
-	}
-
-	QFile file(path);
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-		return;
-	}
-	auto out = QTextStream(&file);
-	out << json;
 }
 
 /******************************************************************************
@@ -635,6 +606,8 @@ static void handleShutdown()
 		// TODO: Look for a way to possibly resolve this
 		obs_frontend_save();
 	}
+
+	BackupSettingsOfCurrentVersion();
 }
 
 static void handleSceneCollectionChanging()

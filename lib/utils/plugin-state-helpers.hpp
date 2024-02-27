@@ -5,6 +5,7 @@
 
 namespace advss {
 
+void SavePluginSettings(obs_data_t *);
 EXPORT void LoadPluginSettings(obs_data_t *);
 
 EXPORT void AddSaveStep(std::function<void(obs_data_t *)>);
