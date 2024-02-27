@@ -1,6 +1,7 @@
 #include "macro-action-clipboard.hpp"
 #include "curl-helper.hpp"
 
+#include <obs.hpp>
 #include <QApplication>
 #include <QClipboard>
 #include <QImage>

@@ -3,7 +3,6 @@
 #include "obs-module-helper.hpp"
 
 #include <obs-frontend-api.h>
-#include <obs.hpp>
 #include <QGraphicsColorizeEffect>
 #include <QMainWindow>
 #include <QPropertyAnimation>

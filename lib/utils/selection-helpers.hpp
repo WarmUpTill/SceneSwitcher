@@ -2,7 +2,6 @@
 #include "export-symbol-helper.hpp"
 
 #include <deque>
-#include <obs.hpp>
 #include <QComboBox>
 #include <QStringList>
 #include <string>

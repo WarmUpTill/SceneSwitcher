@@ -11,7 +11,7 @@
 #include <QFrame>
 #include <QVBoxLayout>
 #include <QTimer>
-#include <obs.hpp>
+#include <obs-data.h>
 
 class QLabel;
 
@@ -116,8 +116,8 @@ private:
 
 	void ShowDropLine(DropLineState);
 
-	// The reason for using two separate frame widget each with their own
-	// stylesheet and changing their visibility vs. using a single frame
+	// The reason for using two separate frame widgets, each with their own
+	// stylesheet, and changing their visibility vs. using a single frame
 	// and changing the stylesheet at runtime is that the operation of
 	// adjusting the stylesheet is very expensive and can take multiple
 	// hundred milliseconds per widget.

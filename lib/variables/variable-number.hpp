@@ -1,8 +1,6 @@
 #pragma once
 #include "variable.hpp"
 
-#include <obs.hpp>
-
 namespace advss {
 
 template<typename T> class NumberVariable {

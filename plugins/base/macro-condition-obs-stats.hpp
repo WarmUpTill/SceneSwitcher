@@ -2,6 +2,7 @@
 #include "macro-condition-edit.hpp"
 #include "variable-spinbox.hpp"
 
+#include <obs.hpp>
 #include <QWidget>
 #include <QComboBox>
 #include <util/platform.h>
