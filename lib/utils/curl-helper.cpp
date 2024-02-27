@@ -1,9 +1,9 @@
 #include "curl-helper.hpp"
+#include "log-helper.hpp"
 
 #include <QDir>
 #include <QFileInfo>
 #include <curl/curl.h>
-#include <obs.hpp>
 
 namespace advss {
 

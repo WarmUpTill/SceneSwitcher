@@ -4,7 +4,6 @@
 #include "section.hpp"
 #include "ui-helpers.hpp"
 
-#include <obs.hpp>
 #include <QApplication>
 #include <QEvent>
 #include <QLabel>

@@ -1,7 +1,7 @@
 #pragma once
 #include "filter-combo-box.hpp"
 
-#include <obs.hpp>
+#include <obs-data.h>
 #include <mutex>
 #include <optional>
 #include <QEnterEvent>

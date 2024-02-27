@@ -13,7 +13,7 @@
 #include <memory>
 #include <map>
 #include <thread>
-#include <obs-data.h>
+#include <obs.hpp>
 #include <obs-module-helper.hpp>
 
 namespace advss {

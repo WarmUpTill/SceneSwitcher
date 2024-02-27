@@ -2,7 +2,7 @@
 #include "variable.hpp"
 
 #include <string>
-#include <obs.hpp>
+#include <obs-data.h>
 
 namespace advss {
 
