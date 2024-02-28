@@ -1,0 +1,2 @@
+/build-aux/*.zsh eol=lf
+/build-aux/.functions/* eol=lf
