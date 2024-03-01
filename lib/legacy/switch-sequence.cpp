@@ -225,13 +225,13 @@ bool SwitcherData::checkSceneSequence(OBSWeakSource &scene,
 				scene = s.getScene();
 				transition = s.transition;
 				setPrevSceneAfterLinger = s.usePreviousScene;
-				if (verbose) {
+				if (VerboseLoggingEnabled()) {
 					s.logMatch();
 				}
 			}
 
 			s.advanceActiveSequence();
-			if (verbose) {
+			if (VerboseLoggingEnabled()) {
 				s.logAdvanceSequence();
 			}
 

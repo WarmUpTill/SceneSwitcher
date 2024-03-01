@@ -88,32 +88,32 @@ void MacroActionMacro::LogAction() const
 	}
 	switch (_action) {
 	case Action::PAUSE:
-		vblog(LOG_INFO, "paused \"%s\"", macro->Name().c_str());
+		ablog(LOG_INFO, "paused \"%s\"", macro->Name().c_str());
 		break;
 	case Action::UNPAUSE:
-		vblog(LOG_INFO, "unpaused \"%s\"", macro->Name().c_str());
+		ablog(LOG_INFO, "unpaused \"%s\"", macro->Name().c_str());
 		break;
 	case Action::RESET_COUNTER:
-		vblog(LOG_INFO, "reset counter for \"%s\"",
+		ablog(LOG_INFO, "reset counter for \"%s\"",
 		      macro->Name().c_str());
 		break;
 	case Action::RUN:
-		vblog(LOG_INFO, "run nested macro \"%s\"",
+		ablog(LOG_INFO, "run nested macro \"%s\"",
 		      macro->Name().c_str());
 		break;
 	case Action::STOP:
-		vblog(LOG_INFO, "stopped macro \"%s\"", macro->Name().c_str());
+		ablog(LOG_INFO, "stopped macro \"%s\"", macro->Name().c_str());
 		break;
 	case Action::DISABLE_ACTION:
-		vblog(LOG_INFO, "disabled action %d of macro \"%s\"",
+		ablog(LOG_INFO, "disabled action %d of macro \"%s\"",
 		      _actionIndex.GetValue(), macro->Name().c_str());
 		break;
 	case Action::ENABLE_ACTION:
-		vblog(LOG_INFO, "enabled action %d of macro \"%s\"",
+		ablog(LOG_INFO, "enabled action %d of macro \"%s\"",
 		      _actionIndex.GetValue(), macro->Name().c_str());
 		break;
 	case Action::TOGGLE_ACTION:
-		vblog(LOG_INFO, "toggled action %d of macro \"%s\"",
+		ablog(LOG_INFO, "toggled action %d of macro \"%s\"",
 		      _actionIndex.GetValue(), macro->Name().c_str());
 		break;
 	default:

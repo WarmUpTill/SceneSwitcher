@@ -23,7 +23,7 @@ bool MacroActionMidi::PerformAction()
 
 void MacroActionMidi::LogAction() const
 {
-	vblog(LOG_INFO, "send midi message \"%s\" to \"%s\"",
+	ablog(LOG_INFO, "send midi message \"%s\" to \"%s\"",
 	      _message.ToString().c_str(), _device.Name().c_str());
 }
 

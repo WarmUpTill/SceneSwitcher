@@ -244,7 +244,7 @@ void MacroActionAudio::LogAction() const
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
 		auto &[_, action] = *it;
-		vblog(LOG_INFO,
+		ablog(LOG_INFO,
 		      "performed action \"%s\" for source \"%s\" with volume %f with fade %d %f",
 		      action.c_str(), _audioSource.ToString(true).c_str(),
 		      GetVolume(), _fade, _duration.Seconds());

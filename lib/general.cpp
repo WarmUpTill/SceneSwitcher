@@ -112,6 +112,14 @@ void AdvSceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
 		static_cast<SwitcherData::StartupBehavior>(index);
 }
 
+void AdvSceneSwitcher::on_logLevel_currentIndexChanged(int value)
+{
+	if (loading) {
+		return;
+	}
+	switcher->logLevel = static_cast<SwitcherData::LogLevel>(value);
+}
+
 void AdvSceneSwitcher::on_autoStartEvent_currentIndexChanged(int index)
 {
 	if (loading) {
@@ -155,15 +163,6 @@ void AdvSceneSwitcher::closeEvent(QCloseEvent *)
 	MacroSelectionAboutToChange(); // Trigger saving of splitter states
 
 	obs_frontend_save();
-}
-
-void AdvSceneSwitcher::on_verboseLogging_stateChanged(int state)
-{
-	if (loading) {
-		return;
-	}
-
-	switcher->verbose = state;
 }
 
 void AdvSceneSwitcher::on_saveWindowGeo_stateChanged(int state)
@@ -598,7 +597,7 @@ void SwitcherData::SaveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "autoStartEvent",
 			 static_cast<int>(autoStartEvent));
 
-	obs_data_set_bool(obj, "verbose", verbose);
+	obs_data_set_int(obj, "logLevel", static_cast<int>(logLevel));
 	obs_data_set_bool(obj, "showSystemTrayNotifications",
 			  showSystemTrayNotifications);
 	obs_data_set_bool(obj, "disableHints", disableHints);
@@ -649,7 +648,7 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 	autoStartEvent =
 		static_cast<AutoStart>(obs_data_get_int(obj, "autoStartEvent"));
 
-	verbose = obs_data_get_bool(obj, "verbose");
+	logLevel = static_cast<LogLevel>(obs_data_get_int(obj, "logLevel"));
 	showSystemTrayNotifications =
 		obs_data_get_bool(obj, "showSystemTrayNotifications");
 	disableHints = obs_data_get_bool(obj, "disableHints");
@@ -940,7 +939,8 @@ void AdvSceneSwitcher::SetupGeneralTab()
 			 SIGNAL(DurationChanged(const Duration &)), this,
 			 SLOT(CooldownDurationChanged(const Duration &)));
 
-	ui->verboseLogging->setChecked(switcher->verbose);
+	ui->logLevel->setCurrentIndex(static_cast<int>(switcher->logLevel));
+
 	ui->saveWindowGeo->setChecked(switcher->saveWindowGeo);
 	ui->showTrayNotifications->setChecked(
 		switcher->showSystemTrayNotifications);

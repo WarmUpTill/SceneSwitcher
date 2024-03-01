@@ -193,7 +193,7 @@ bool SwitcherData::checkMediaSwitch(OBSWeakSource &scene,
 			scene = mediaSwitch.getScene();
 			transition = mediaSwitch.transition;
 
-			if (verbose) {
+			if (VerboseLoggingEnabled()) {
 				mediaSwitch.logMatch();
 			}
 		}

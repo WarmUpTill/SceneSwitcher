@@ -94,7 +94,7 @@ void MacroActionFilter::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
-		vblog(LOG_INFO,
+		ablog(LOG_INFO,
 		      "performed action \"%s\" for filter \"%s\" on source \"%s\"",
 		      it->second.c_str(), _filter.ToString().c_str(),
 		      _source.ToString(true).c_str());

@@ -122,7 +122,7 @@ void MacroActionMedia::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
-		vblog(LOG_INFO, "performed action \"%s\" for source \"%s\"",
+		ablog(LOG_INFO, "performed action \"%s\" for source \"%s\"",
 		      it->second.c_str(),
 		      _selection == SelectionType::SOURCE
 			      ? _mediaSource.ToString(true).c_str()

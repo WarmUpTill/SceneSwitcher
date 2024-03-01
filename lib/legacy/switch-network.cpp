@@ -253,7 +253,7 @@ void WSServer::sendMessage(SceneSwitchInfo sceneSwitch, bool preview)
 		}
 	}
 
-	if (switcher->verbose) {
+	if (VerboseLoggingEnabled()) {
 		blog(LOG_INFO, "server sent message:\n%s", message.c_str());
 	}
 }
@@ -305,7 +305,7 @@ std::string processMessage(std::string payload)
 	std::string ret = "message ok";
 
 	auto transition = GetWeakTransitionByName(transitionName.c_str());
-	if (switcher->verbose && !transition) {
+	if (VerboseLoggingEnabled() && !transition) {
 		ret += " - ignoring invalid transition: '" + transitionName +
 		       "'";
 	}
@@ -481,7 +481,7 @@ void WSClient::onMessage(connection_hdl hdl, client::message_ptr message)
 		     errorCodeMessage.c_str());
 	}
 
-	if (switcher->verbose) {
+	if (VerboseLoggingEnabled()) {
 		blog(LOG_INFO, "client sent message:\n%s", response.c_str());
 	}
 }

@@ -168,7 +168,7 @@ void SwitcherData::checkDefaultSceneTransitions()
 
 	for (auto &t : defaultSceneTransitions) {
 		if (t.checkMatch(currentScene)) {
-			if (verbose) {
+			if (VerboseLoggingEnabled()) {
 				t.logMatch();
 			}
 			t.setTransition();
@@ -427,7 +427,8 @@ DefTransitionSwitchWidget::DefTransitionSwitchWidget(QWidget *parent,
 {
 	QHBoxLayout *mainLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{scenes}}", scenes}, {"{{transitions}}", transitions}};
+		{"{{scenes}}", scenes},
+		{"{{transitions}}", transitions}};
 	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.transitionTab.defaultTransitionEntry"),

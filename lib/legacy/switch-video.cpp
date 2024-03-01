@@ -148,7 +148,7 @@ bool SwitcherData::checkVideoSwitch(OBSWeakSource &scene,
 			match = true;
 			scene = s.getScene();
 			transition = s.transition;
-			if (verbose) {
+			if (VerboseLoggingEnabled()) {
 				s.logMatch();
 			}
 		}

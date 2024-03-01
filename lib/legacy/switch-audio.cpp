@@ -104,7 +104,7 @@ void SwitcherData::checkAudioSwitchFallback(OBSWeakSource &scene,
 		scene = audioFallback.getScene();
 		transition = audioFallback.transition;
 
-		if (verbose) {
+		if (VerboseLoggingEnabled()) {
 			audioFallback.logMatch();
 		}
 	}
@@ -165,7 +165,7 @@ bool SwitcherData::checkAudioSwitch(OBSWeakSource &scene,
 			transition = s.transition;
 			match = true;
 
-			if (verbose) {
+			if (VerboseLoggingEnabled()) {
 				s.logMatch();
 			}
 

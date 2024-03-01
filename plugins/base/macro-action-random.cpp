@@ -64,7 +64,7 @@ bool MacroActionRandom::PerformAction()
 
 void MacroActionRandom::LogAction() const
 {
-	vblog(LOG_INFO, "running random macro");
+	ablog(LOG_INFO, "running random macro");
 }
 
 bool MacroActionRandom::Save(obs_data_t *obj) const

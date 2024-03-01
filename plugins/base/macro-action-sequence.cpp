@@ -137,7 +137,7 @@ bool MacroActionSequence::PerformAction()
 void MacroActionSequence::LogAction() const
 {
 	if (_action == Action::RUN_SEQUENCE) {
-		vblog(LOG_INFO, "running macro sequence");
+		ablog(LOG_INFO, "running macro sequence");
 	} else {
 		vblog(LOG_INFO, "set sequences of macro '%s' to index %d",
 		      _macro.Name().c_str(), _resetIndex.GetValue());

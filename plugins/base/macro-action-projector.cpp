@@ -75,7 +75,7 @@ void MacroActionProjector::LogAction() const
 {
 	auto it = selectionTypes.find(_type);
 	if (it != selectionTypes.end()) {
-		vblog(LOG_INFO,
+		ablog(LOG_INFO,
 		      "performed projector action \"%s\" with"
 		      "source \"%s\","
 		      "scene \"%s\","

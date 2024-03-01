@@ -183,7 +183,7 @@ bool SwitcherData::checkScreenRegionSwitch(OBSWeakSource &scene,
 				transition = s.transition;
 				minRegionSize = regionSize;
 
-				if (verbose) {
+				if (VerboseLoggingEnabled()) {
 					s.logMatch();
 				}
 				break;

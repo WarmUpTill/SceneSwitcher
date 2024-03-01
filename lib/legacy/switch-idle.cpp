@@ -53,7 +53,7 @@ bool SwitcherData::checkIdleSwitch(OBSWeakSource &scene,
 		match = true;
 		idleData.alreadySwitched = true;
 
-		if (verbose) {
+		if (VerboseLoggingEnabled()) {
 			idleData.logMatch();
 		}
 	} else {

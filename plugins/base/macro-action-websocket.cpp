@@ -56,7 +56,7 @@ bool MacroActionWebsocket::PerformAction()
 void MacroActionWebsocket::LogAction() const
 {
 	if (_api == API::GENERIC_WEBSOCKET) {
-		vblog(LOG_INFO,
+		ablog(LOG_INFO,
 		      "sent generic websocket message \"%s\" via \"%s\"",
 		      _message.c_str(),
 		      GetWeakConnectionName(_connection).c_str());
@@ -64,7 +64,7 @@ void MacroActionWebsocket::LogAction() const
 	}
 
 	if (_api == API::OBS_WEBSOCKET) {
-		vblog(LOG_INFO, "sent obs websocket message \"%s\" via \"%s\"",
+		ablog(LOG_INFO, "sent obs websocket message \"%s\" via \"%s\"",
 		      _message.c_str(),
 		      GetWeakConnectionName(_connection).c_str());
 		return;
@@ -72,12 +72,12 @@ void MacroActionWebsocket::LogAction() const
 
 	switch (_type) {
 	case MacroActionWebsocket::MessageType::REQUEST:
-		vblog(LOG_INFO, "sent scene switcher message \"%s\" via \"%s\"",
+		ablog(LOG_INFO, "sent scene switcher message \"%s\" via \"%s\"",
 		      _message.c_str(),
 		      GetWeakConnectionName(_connection).c_str());
 		break;
 	case MacroActionWebsocket::MessageType::EVENT:
-		vblog(LOG_INFO,
+		ablog(LOG_INFO,
 		      "sent scene switcher event \"%s\" to connected clients",
 		      _message.c_str());
 		break;

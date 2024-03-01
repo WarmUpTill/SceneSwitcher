@@ -95,7 +95,7 @@ void MacroActionHttp::LogAction() const
 {
 	auto it = methods.find(_method);
 	if (it != methods.end()) {
-		vblog(LOG_INFO,
+		ablog(LOG_INFO,
 		      "sent http request \"%s\" to \"%s\" with data \"%s\"",
 		      it->second.c_str(), _url.c_str(), _data.c_str());
 	} else {

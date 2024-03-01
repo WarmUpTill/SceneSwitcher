@@ -371,7 +371,7 @@ bool MacroActionHotkey::PerformAction()
 
 void MacroActionHotkey::LogAction() const
 {
-	vblog(LOG_INFO, "sent hotkey type %d", static_cast<int>(_action));
+	ablog(LOG_INFO, "sent hotkey type %d", static_cast<int>(_action));
 }
 
 bool MacroActionHotkey::Save(obs_data_t *obj) const

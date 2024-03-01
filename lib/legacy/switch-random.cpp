@@ -76,7 +76,7 @@ bool SwitcherData::checkRandom(OBSWeakSource &scene, OBSWeakSource &transition,
 		lastRandomScene = r.scene;
 		lastRandomSceneGroup = r.group;
 
-		if (verbose) {
+		if (VerboseLoggingEnabled()) {
 			r.logMatch();
 		}
 		break;

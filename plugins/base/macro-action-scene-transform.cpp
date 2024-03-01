@@ -257,7 +257,7 @@ bool MacroActionSceneTransform::PerformAction()
 
 void MacroActionSceneTransform::LogAction() const
 {
-	vblog(LOG_INFO,
+	ablog(LOG_INFO,
 	      "performed transform action %d for source \"%s\" on scene \"%s\"",
 	      static_cast<int>(_action), _source.ToString(true).c_str(),
 	      _scene.ToString(true).c_str());

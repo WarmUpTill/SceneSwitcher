@@ -31,7 +31,7 @@ bool MacroActionSceneCollection::PerformAction()
 
 void MacroActionSceneCollection::LogAction() const
 {
-	vblog(LOG_INFO, "set scene collection type to \"%s\"",
+	ablog(LOG_INFO, "set scene collection type to \"%s\"",
 	      _sceneCollection.c_str());
 }
 

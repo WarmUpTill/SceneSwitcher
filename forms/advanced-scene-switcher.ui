@@ -163,10 +163,29 @@
                   <item>
                    <layout class="QHBoxLayout" name="horizontalLayout_52">
                     <item>
-                     <widget class="QCheckBox" name="verboseLogging">
+                     <widget class="QLabel" name="label_21">
                       <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.generalBehavior.verboseLogging</string>
+                       <string>AdvSceneSwitcher.generalTab.generalBehavior.logLevel</string>
                       </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QComboBox" name="logLevel">
+                      <item>
+                       <property name="text">
+                        <string>AdvSceneSwitcher.generalTab.generalBehavior.logLevel.default</string>
+                       </property>
+                      </item>
+                      <item>
+                       <property name="text">
+                        <string>AdvSceneSwitcher.generalTab.generalBehavior.logLevel.printActions</string>
+                       </property>
+                      </item>
+                      <item>
+                       <property name="text">
+                        <string>AdvSceneSwitcher.generalTab.generalBehavior.logLevel.verbose</string>
+                       </property>
+                      </item>
                      </widget>
                     </item>
                     <item>
@@ -5078,7 +5097,7 @@
   <tabstop>checkInterval</tabstop>
   <tabstop>startupBehavior</tabstop>
   <tabstop>autoStartEvent</tabstop>
-  <tabstop>verboseLogging</tabstop>
+  <tabstop>logLevel</tabstop>
   <tabstop>saveWindowGeo</tabstop>
   <tabstop>showTrayNotifications</tabstop>
   <tabstop>uiHintsDisable</tabstop>
