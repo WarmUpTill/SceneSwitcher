@@ -114,6 +114,20 @@ FilterSelection::GetFilters(const SourceSelection &source) const
 	return {};
 }
 
+void FilterSelection::ResolveVariables()
+{
+	if (_type != Type::VARIABLE) {
+		return;
+	}
+	_type = Type::SOURCE;
+	auto var = _variable.lock();
+	if (!var) {
+		_filterName = "";
+		return;
+	}
+	_filterName = var->Value();
+}
+
 std::string FilterSelection::ToString(bool resolve) const
 {
 	switch (_type) {

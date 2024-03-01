@@ -140,6 +140,11 @@ void OSCBlob::Load(obs_data_t *obj, const char *name)
 	_stringRep.Load(obj, name);
 }
 
+void OSCBlob::ResolveVariables()
+{
+	_stringRep.ResolveVariables();
+}
+
 void OSCTrue::Save(obs_data_t *obj, const char *name) const
 {
 	obs_data_set_bool(obj, name, true);
@@ -201,6 +206,14 @@ std::optional<std::vector<char>> OSCMessage::GetBuffer() const
 	return buffer;
 }
 
+void OSCMessage::ResolveVariables()
+{
+	_address.ResolveVariables();
+	for (auto &element : _elements) {
+		element.ResolveVariables();
+	}
+}
+
 const char *OSCMessageElement::GetTypeTag() const
 {
 	return GetTypeTag(*this);
@@ -214,6 +227,21 @@ const char *OSCMessageElement::GetTypeName() const
 const char *OSCMessageElement::GetTypeTag(const OSCMessageElement &element)
 {
 	return _typeNames.at(element._value.index()).tag;
+}
+
+void OSCMessageElement::ResolveVariables()
+{
+	std::visit(
+		[](auto &&arg) {
+			using T = std::decay_t<decltype(arg)>;
+			if constexpr (std::is_same_v<T, StringVariable> ||
+				      std::is_same_v<T, DoubleVariable> ||
+				      std::is_same_v<T, OSCBlob> ||
+				      std::is_same_v<T, IntVariable>) {
+				arg.ResolveVariables();
+			}
+		},
+		_value);
 }
 
 const char *OSCMessageElement::GetTypeName(const OSCMessageElement &element)

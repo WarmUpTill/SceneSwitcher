@@ -19,6 +19,7 @@ public:
 	std::optional<std::vector<char>> GetBinary() const;
 	void Save(obs_data_t *obj, const char *name) const;
 	void Load(obs_data_t *obj, const char *name);
+	void ResolveVariables();
 
 private:
 	StringVariable _stringRep;
@@ -69,6 +70,8 @@ public:
 	static const char *GetTypeName(const OSCMessageElement &);
 	static const char *GetTypeTag(const OSCMessageElement &);
 
+	void ResolveVariables();
+
 private:
 	struct TypeInfo {
 		const char *localizedName, *tag;
@@ -90,6 +93,8 @@ public:
 
 	std::string ToString() const;
 	std::optional<std::vector<char>> GetBuffer() const;
+
+	void ResolveVariables();
 
 private:
 	StringVariable _address = "/address";

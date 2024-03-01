@@ -53,6 +53,13 @@ bool ProcessConfig::StartProcessDetached() const
 				       QString::fromStdString(WorkingDir()));
 }
 
+void ProcessConfig::ResolveVariables()
+{
+	_path.ResolveVariables();
+	_workingDirectory.ResolveVariables();
+	_args.ResolveVariables();
+}
+
 std::variant<int, ProcessConfig::ProcStartError>
 ProcessConfig::StartProcessAndWait(int timeout) const
 {

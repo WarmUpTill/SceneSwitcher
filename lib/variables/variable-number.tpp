@@ -93,3 +93,9 @@ template<typename T> NumberVariable<T>::operator T() const
 {
 	return GetValue();
 }
+
+template<typename T> void NumberVariable<T>::ResolveVariables()
+{
+	_value = GetValue();
+	_type = Type::FIXED_VALUE;
+}

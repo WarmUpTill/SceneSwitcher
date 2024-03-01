@@ -53,6 +53,8 @@ public:
 	// scene item visibility action
 	void SetSourceTypeSelection(const char *);
 
+	void ResolveVariables();
+
 private:
 	std::vector<OBSSceneItem>
 	GetSceneItemsByName(const SceneSelection &) const;

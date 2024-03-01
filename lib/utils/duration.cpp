@@ -165,4 +165,9 @@ void Duration::SetUnit(Unit u)
 	_value = _value * (prevMultiplier / newMultiplier);
 }
 
+void Duration::ResolveVariables()
+{
+	_value.ResolveVariables();
+}
+
 } // namespace advss

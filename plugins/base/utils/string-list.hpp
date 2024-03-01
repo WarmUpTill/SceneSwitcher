@@ -16,6 +16,7 @@ public:
 		  const char *elementName = "string") const;
 	bool Load(obs_data_t *obj, const char *name,
 		  const char *elementName = "string");
+	void ResolveVariables();
 
 	friend class StringListEdit;
 };

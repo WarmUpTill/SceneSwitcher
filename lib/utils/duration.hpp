@@ -34,8 +34,10 @@ public:
 	// Only use this function if you intend to convert old settings formats
 	EXPORT void SetUnit(Unit u);
 
+	EXPORT void ResolveVariables();
+
 private:
-	NumberVariable<double> _value = 0.;
+	DoubleVariable _value = 0.;
 	Unit _unit = Unit::SECONDS;
 	std::chrono::high_resolution_clock::time_point _startTime;
 

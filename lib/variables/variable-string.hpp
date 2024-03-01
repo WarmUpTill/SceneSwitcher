@@ -27,6 +27,8 @@ public:
 	EXPORT void Load(obs_data_t *obj, const char *name);
 	EXPORT void Save(obs_data_t *obj, const char *name) const;
 
+	EXPORT void ResolveVariables();
+
 private:
 	void Resolve() const;
 

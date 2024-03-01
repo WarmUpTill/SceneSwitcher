@@ -304,6 +304,25 @@ void SceneItemSelection::SetSourceTypeSelection(const char *type)
 	_sourceGroup = type;
 }
 
+void SceneItemSelection::ResolveVariables()
+{
+	_index.ResolveVariables();
+	_indexEnd.ResolveVariables();
+	_pattern = std::string(_pattern);
+
+	if (_type != Type::VARIABLE_NAME) {
+		return;
+	}
+	_type = Type::SOURCE_NAME;
+
+	auto variable = _variable.lock();
+	if (variable) {
+		_source = GetWeakSourceByName(variable->Value().c_str());
+	} else {
+		_source = nullptr;
+	}
+}
+
 void SceneItemSelection::ReduceBadedOnIndexSelection(
 	std::vector<OBSSceneItem> &items) const
 {

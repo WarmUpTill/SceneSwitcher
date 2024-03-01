@@ -88,6 +88,11 @@ void SourceSelection::SetSource(OBSWeakSource source)
 	_source = source;
 }
 
+void SourceSelection::ResolveVariables()
+{
+	SetSource(GetSource());
+}
+
 std::string SourceSelection::ToString(bool resolve) const
 {
 	switch (_type) {
