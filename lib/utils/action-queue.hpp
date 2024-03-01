@@ -38,6 +38,7 @@ private:
 	void RunActions();
 
 	bool _runOnStartup = true;
+	bool _resolveVariablesOnAdd = true;
 	std::atomic_bool _stop = {false};
 	std::mutex _mutex;
 	std::condition_variable _cv;
@@ -66,6 +67,7 @@ private:
 	QLabel *_queueSize;
 	QPushButton *_clear;
 	QCheckBox *_runOnStartup;
+	QCheckBox *_resolveVariablesOnAdd;
 
 	ActionQueue &_queue;
 };
