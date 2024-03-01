@@ -33,6 +33,7 @@ void ActionQueue::Save(obs_data_t *obj) const
 {
 	obs_data_set_string(obj, "name", _name.c_str());
 	obs_data_set_bool(obj, "runOnStartup", _runOnStartup);
+	obs_data_set_bool(obj, "resolveVariablesOnAdd", _resolveVariablesOnAdd);
 }
 
 void ActionQueue::Load(obs_data_t *obj)
@@ -40,6 +41,8 @@ void ActionQueue::Load(obs_data_t *obj)
 	std::lock_guard<std::mutex> lock(_mutex);
 	_name = obs_data_get_string(obj, "name");
 	_runOnStartup = obs_data_get_bool(obj, "runOnStartup");
+	_resolveVariablesOnAdd =
+		obs_data_get_bool(obj, "resolveVariablesOnAdd");
 
 	if (_runOnStartup) {
 		Start();
@@ -80,10 +83,21 @@ void ActionQueue::Clear()
 	_actions.clear();
 }
 
-void ActionQueue::Add(const std::shared_ptr<MacroAction> &actions)
+void ActionQueue::Add(const std::shared_ptr<MacroAction> &action)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
-	_actions.emplace_back(actions);
+	if (_resolveVariablesOnAdd) {
+		auto copy = action->Copy();
+		copy->GetMacro();
+		OBSDataAutoRelease data = obs_data_create();
+		action->Save(data);
+		copy->Load(data);
+		copy->PostLoad();
+		copy->ResolveVariablesToFixedValues();
+		_actions.emplace_back(copy);
+	} else {
+		_actions.emplace_back(action);
+	}
 	_cv.notify_all();
 }
 
@@ -139,6 +153,7 @@ ActionQueueSettingsDialog::ActionQueueSettingsDialog(QWidget *parent,
 	  _clear(new QPushButton(
 		  obs_module_text("AdvSceneSwitcher.actionQueues.clear"))),
 	  _runOnStartup(new QCheckBox()),
+	  _resolveVariablesOnAdd(new QCheckBox()),
 	  _queue(settings)
 {
 	QWidget::connect(_startStopToggle, SIGNAL(clicked()), this,
@@ -146,6 +161,7 @@ ActionQueueSettingsDialog::ActionQueueSettingsDialog(QWidget *parent,
 	QWidget::connect(_clear, SIGNAL(clicked()), this, SLOT(ClearClicked()));
 
 	_runOnStartup->setChecked(settings._runOnStartup);
+	_resolveVariablesOnAdd->setChecked(settings._resolveVariablesOnAdd);
 	UpdateLabels();
 
 	auto layout = new QGridLayout();
@@ -166,6 +182,14 @@ ActionQueueSettingsDialog::ActionQueueSettingsDialog(QWidget *parent,
 	layout->addWidget(_runOnStartup, row, 1);
 	_runOnStartup->setToolTip(
 		obs_module_text("AdvSceneSwitcher.actionQueues.runOnStartup"));
+	++row;
+	layout->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.actionQueues.resolveVariablesOnAdd")),
+		row, 0);
+	layout->addWidget(_resolveVariablesOnAdd, row, 1);
+	_resolveVariablesOnAdd->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.actionQueues.resolveVariablesOnAdd"));
 	++row;
 	layout->addWidget(_queueRunStatus, row, 0);
 	layout->addWidget(_startStopToggle, row, 1);
@@ -194,6 +218,8 @@ bool ActionQueueSettingsDialog::AskForSettings(QWidget *parent,
 
 	settings._name = dialog._name->text().toStdString();
 	settings._runOnStartup = dialog._runOnStartup->isChecked();
+	settings._resolveVariablesOnAdd =
+		dialog._resolveVariablesOnAdd->isChecked();
 	return true;
 }
 
