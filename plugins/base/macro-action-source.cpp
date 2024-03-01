@@ -209,7 +209,7 @@ void MacroActionSource::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
-		vblog(LOG_INFO, "performed action \"%s\" for Source \"%s\"",
+		ablog(LOG_INFO, "performed action \"%s\" for Source \"%s\"",
 		      it->second.c_str(), _source.ToString(true).c_str());
 	} else {
 		blog(LOG_WARNING, "ignored unknown source action %d",

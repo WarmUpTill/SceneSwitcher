@@ -69,20 +69,20 @@ void MacroActionQueue::LogAction() const
 	}
 	switch (_action) {
 	case Action::ADD_TO_QUEUE:
-		vblog(LOG_INFO, "queued actions of \"%s\" to \"%s\"",
+		ablog(LOG_INFO, "queued actions of \"%s\" to \"%s\"",
 		      GetMacroName(macro.get()).c_str(),
 		      GetActionQueueName(_queue).c_str());
 		break;
 	case Action::START_QUEUE:
-		vblog(LOG_INFO, "start queue \"%s\"",
+		ablog(LOG_INFO, "start queue \"%s\"",
 		      GetActionQueueName(_queue).c_str());
 		break;
 	case Action::STOP_QUEUE:
-		vblog(LOG_INFO, "stop queue \"%s\"",
+		ablog(LOG_INFO, "stop queue \"%s\"",
 		      GetActionQueueName(_queue).c_str());
 		break;
 	case Action::CLEAR_QUEUE:
-		vblog(LOG_INFO, "cleared queue \"%s\"",
+		ablog(LOG_INFO, "cleared queue \"%s\"",
 		      GetActionQueueName(_queue).c_str());
 		break;
 	default:

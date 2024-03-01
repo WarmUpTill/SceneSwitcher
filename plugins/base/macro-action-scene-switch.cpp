@@ -164,7 +164,7 @@ bool MacroActionSwitchScene::PerformAction()
 
 void MacroActionSwitchScene::LogAction() const
 {
-	vblog(LOG_INFO, "switch%s scene to '%s'",
+	ablog(LOG_INFO, "switch%s scene to '%s'",
 	      _sceneType == SceneType::PREVIEW ? " preview" : "",
 	      _scene.ToString(true).c_str());
 }

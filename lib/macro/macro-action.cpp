@@ -25,7 +25,7 @@ bool MacroAction::Load(obs_data_t *obj)
 
 void MacroAction::LogAction() const
 {
-	vblog(LOG_INFO, "performed action %s", GetId().c_str());
+	ablog(LOG_INFO, "performed action %s", GetId().c_str());
 }
 
 void MacroAction::SetEnabled(bool value)

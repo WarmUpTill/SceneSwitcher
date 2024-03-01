@@ -96,7 +96,7 @@ void MacroActionSceneOrder::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
-		vblog(LOG_INFO,
+		ablog(LOG_INFO,
 		      "performed order action \"%s\" for source \"%s\" on scene \"%s\"",
 		      it->second.c_str(), _source.ToString(true).c_str(),
 		      _scene.ToString(true).c_str());

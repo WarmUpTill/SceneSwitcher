@@ -55,6 +55,7 @@ public slots:
 	void NoMatchDelayDurationChanged(const Duration &);
 	void CooldownDurationChanged(const Duration &);
 	void on_startupBehavior_currentIndexChanged(int index);
+	void on_logLevel_currentIndexChanged(int index);
 	void on_autoStartEvent_currentIndexChanged(int index);
 	void on_noMatchSwitchScene_currentTextChanged(const QString &text);
 	void on_checkInterval_valueChanged(int value);
@@ -62,7 +63,6 @@ public slots:
 	void on_tabWidget_currentChanged(int index);
 	void on_exportSettings_clicked();
 	void on_importSettings_clicked();
-	void on_verboseLogging_stateChanged(int state);
 	void on_saveWindowGeo_stateChanged(int state);
 	void on_showTrayNotifications_stateChanged(int state);
 	void on_uiHintsDisable_stateChanged(int state);

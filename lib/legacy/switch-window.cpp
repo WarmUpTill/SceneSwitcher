@@ -249,7 +249,7 @@ bool SwitcherData::checkWindowTitleSwitch(OBSWeakSource &scene,
 		}
 
 		if (match) {
-			if (verbose) {
+			if (VerboseLoggingEnabled()) {
 				s.logMatch();
 			}
 			break;

@@ -97,7 +97,7 @@ void MacroActionRecord::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
-		vblog(LOG_INFO, "performed action \"%s\"", it->second.c_str());
+		ablog(LOG_INFO, "performed action \"%s\"", it->second.c_str());
 	} else {
 		blog(LOG_WARNING, "ignored unknown recording action %d",
 		     static_cast<int>(_action));

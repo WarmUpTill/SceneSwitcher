@@ -141,7 +141,9 @@ public:
 	bool showSystemTrayNotifications = false;
 	bool transitionOverrideOverride = false;
 	bool adjustActiveTransitionType = true;
-	bool verbose = false;
+
+	enum class LogLevel { DEFAULT, PRINT_ACTION, VERBOSE };
+	LogLevel logLevel = LogLevel::DEFAULT;
 
 	/* --- End of General tab section --- */
 

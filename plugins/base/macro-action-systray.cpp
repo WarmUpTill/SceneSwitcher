@@ -24,7 +24,7 @@ bool MacroActionSystray::PerformAction()
 
 void MacroActionSystray::LogAction() const
 {
-	vblog(LOG_INFO, "display systray message \"%s\":\n%s", _title.c_str(),
+	ablog(LOG_INFO, "display systray message \"%s\":\n%s", _title.c_str(),
 	      _message.c_str());
 }
 

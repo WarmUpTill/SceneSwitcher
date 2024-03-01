@@ -71,19 +71,19 @@ void MacroActionTimer::LogAction() const
 	}
 	switch (_actionType) {
 	case Action::PAUSE:
-		vblog(LOG_INFO, "paused timers on \"%s\"",
+		ablog(LOG_INFO, "paused timers on \"%s\"",
 		      GetMacroName(macro.get()).c_str());
 		break;
 	case Action::CONTINUE:
-		vblog(LOG_INFO, "continued timers on \"%s\"",
+		ablog(LOG_INFO, "continued timers on \"%s\"",
 		      GetMacroName(macro.get()).c_str());
 		break;
 	case Action::RESET:
-		vblog(LOG_INFO, "reset timers on \"%s\"",
+		ablog(LOG_INFO, "reset timers on \"%s\"",
 		      GetMacroName(macro.get()).c_str());
 		break;
 	case Action::SET_TIME_REMAINING:
-		vblog(LOG_INFO,
+		ablog(LOG_INFO,
 		      "set time remaining of timers on \"%s\" to \"%s\"",
 		      GetMacroName(macro.get()).c_str(),
 		      _duration.ToString().c_str());

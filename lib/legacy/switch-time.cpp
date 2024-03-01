@@ -142,7 +142,7 @@ bool SwitcherData::checkTimeSwitch(OBSWeakSource &scene,
 			transition = s.transition;
 			match = true;
 
-			if (verbose) {
+			if (VerboseLoggingEnabled()) {
 				s.logMatch();
 			}
 			break;

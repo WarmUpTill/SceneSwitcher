@@ -305,7 +305,7 @@ void MacroActionTwitch::LogAction() const
 {
 	auto it = actionTypes.find(_action);
 	if (it != actionTypes.end()) {
-		vblog(LOG_INFO, "performed action \"%s\" with token for \"%s\"",
+		ablog(LOG_INFO, "performed action \"%s\" with token for \"%s\"",
 		      it->second.c_str(),
 		      GetWeakTwitchTokenName(_token).c_str());
 	} else {

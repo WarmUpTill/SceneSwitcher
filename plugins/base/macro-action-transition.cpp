@@ -156,11 +156,11 @@ void MacroActionTransition::LogAction() const
 		break;
 	}
 	if (_setDuration) {
-		vblog(LOG_INFO, "%s duration to %s", msgBegin.c_str(),
+		ablog(LOG_INFO, "%s duration to %s", msgBegin.c_str(),
 		      _duration.ToString().c_str());
 	}
 	if (_setTransitionType) {
-		vblog(LOG_INFO, "%s type to \"%s\"", msgBegin.c_str(),
+		ablog(LOG_INFO, "%s type to \"%s\"", msgBegin.c_str(),
 		      _transition.ToString().c_str());
 	}
 }

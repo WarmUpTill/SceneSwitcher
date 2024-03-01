@@ -174,14 +174,14 @@ void MacroActionPluginState::LogAction() const
 		blog(LOG_INFO, "stop() called by macro");
 		break;
 	case PluginStateAction::NO_MATCH_BEHAVIOUR:
-		vblog(LOG_INFO, "setting no match to %d", _value);
+		ablog(LOG_INFO, "setting no match to %d", _value);
 		break;
 	case PluginStateAction::IMPORT_SETTINGS:
-		vblog(LOG_INFO, "importing settings from %s",
+		ablog(LOG_INFO, "importing settings from %s",
 		      _settingsPath.c_str());
 		break;
 	case PluginStateAction::TERMINATE:
-		vblog(LOG_INFO, "sending terminate signal to OBS in 10s");
+		ablog(LOG_INFO, "sending terminate signal to OBS in 10s");
 		break;
 	default:
 		blog(LOG_WARNING, "ignored unknown pluginState action %d",

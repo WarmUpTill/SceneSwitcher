@@ -33,7 +33,7 @@ bool MacroActionRun::PerformAction()
 
 void MacroActionRun::LogAction() const
 {
-	vblog(LOG_INFO, "run \"%s\"", _procConfig.UnresolvedPath().c_str());
+	ablog(LOG_INFO, "run \"%s\"", _procConfig.UnresolvedPath().c_str());
 }
 
 bool MacroActionRun::Save(obs_data_t *obj) const

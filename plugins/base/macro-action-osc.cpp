@@ -147,7 +147,7 @@ bool MacroActionOSC::PerformAction()
 
 void MacroActionOSC::LogAction() const
 {
-	vblog(LOG_INFO, "sending OSC message '%s' to %s %s %d",
+	ablog(LOG_INFO, "sending OSC message '%s' to %s %s %d",
 	      _message.ToString().c_str(),
 	      _protocol == Protocol::UDP ? "UDP" : "TCP", _ip.c_str(),
 	      _port.GetValue());

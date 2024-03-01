@@ -21,7 +21,7 @@ bool MacroActionProfile::PerformAction()
 
 void MacroActionProfile::LogAction() const
 {
-	vblog(LOG_INFO, "set profile type to \"%s\"", _profile.c_str());
+	ablog(LOG_INFO, "set profile type to \"%s\"", _profile.c_str());
 }
 
 bool MacroActionProfile::Save(obs_data_t *obj) const

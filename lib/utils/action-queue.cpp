@@ -134,8 +134,11 @@ void ActionQueue::RunActions()
 			continue;
 		}
 
-		vblog(LOG_INFO, "Performing action '%s' in queue '%s'",
-		      action->GetId().c_str(), _name.c_str());
+		if (ActionLoggingEnabled()) {
+			blog(LOG_INFO, "Performing action '%s' in queue '%s'",
+			     action->GetId().c_str(), _name.c_str());
+			action->LogAction();
+		}
 		action->PerformAction();
 	}
 }

@@ -119,7 +119,7 @@ bool SwitcherData::checkExeSwitch(OBSWeakSource &scene,
 			scene = s.getScene();
 			transition = s.transition;
 
-			if (verbose) {
+			if (VerboseLoggingEnabled()) {
 				s.logMatch();
 			}
 			break;

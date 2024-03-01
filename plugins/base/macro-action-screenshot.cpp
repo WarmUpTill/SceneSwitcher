@@ -69,15 +69,15 @@ void MacroActionScreenshot::LogAction() const
 {
 	switch (_targetType) {
 	case MacroActionScreenshot::TargetType::SOURCE:
-		vblog(LOG_INFO, "trigger screenshot of \"%s\"",
+		ablog(LOG_INFO, "trigger screenshot of \"%s\"",
 		      _source.ToString(true).c_str());
 		break;
 	case MacroActionScreenshot::TargetType::SCENE:
-		vblog(LOG_INFO, "trigger screenshot of \"%s\"",
+		ablog(LOG_INFO, "trigger screenshot of \"%s\"",
 		      _scene.ToString(true).c_str());
 		break;
 	case MacroActionScreenshot::TargetType::MAIN_OUTPUT:
-		vblog(LOG_INFO, "trigger screenshot of main output");
+		ablog(LOG_INFO, "trigger screenshot of main output");
 		break;
 	}
 }
