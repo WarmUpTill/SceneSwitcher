@@ -101,6 +101,22 @@ std::string MacroActionSceneVisibility::GetShortDesc() const
 	return "";
 }
 
+std::shared_ptr<MacroAction> MacroActionSceneVisibility::Create(Macro *m)
+{
+	return std::make_shared<MacroActionSceneVisibility>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionSceneVisibility::Copy() const
+{
+	return std::make_shared<MacroActionSceneVisibility>(*this);
+}
+
+void MacroActionSceneVisibility::ResolveVariablesToFixedValues()
+{
+	_scene.ResolveVariables();
+	_source.ResolveVariables();
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (const auto &entry : actionTypes) {

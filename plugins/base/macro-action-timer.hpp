@@ -8,13 +8,6 @@
 
 namespace advss {
 
-enum class TimerAction {
-	PAUSE,
-	CONTINUE,
-	RESET,
-	SET_TIME_REMAINING,
-};
-
 class MacroActionTimer : public MacroRefAction {
 public:
 	MacroActionTimer(Macro *m) : MacroAction(m), MacroRefAction(m) {}
@@ -24,12 +17,19 @@ public:
 	bool Load(obs_data_t *obj);
 	std::string GetShortDesc() const;
 	std::string GetId() const { return id; };
-	static std::shared_ptr<MacroAction> Create(Macro *m)
-	{
-		return std::make_shared<MacroActionTimer>(m);
-	}
+	static std::shared_ptr<MacroAction> Create(Macro *m);
+	std::shared_ptr<MacroAction> Copy() const;
+	void ResolveVariablesToFixedValues();
+
 	Duration _duration;
-	TimerAction _actionType = TimerAction::PAUSE;
+
+	enum class Action {
+		PAUSE,
+		CONTINUE,
+		RESET,
+		SET_TIME_REMAINING,
+	};
+	Action _actionType = Action::PAUSE;
 
 private:
 	static bool _registered;

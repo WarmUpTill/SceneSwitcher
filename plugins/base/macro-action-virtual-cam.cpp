@@ -12,21 +12,23 @@ bool MacroActionVCam::_registered = MacroActionFactory::Register(
 	{MacroActionVCam::Create, MacroActionVCamEdit::Create,
 	 "AdvSceneSwitcher.action.virtualCamera"});
 
-const static std::map<VCamAction, std::string> actionTypes = {
-	{VCamAction::STOP, "AdvSceneSwitcher.action.virtualCamera.type.stop"},
-	{VCamAction::START, "AdvSceneSwitcher.action.virtualCamera.type.start"},
+static const std::map<MacroActionVCam::Action, std::string> actionTypes = {
+	{MacroActionVCam::Action::STOP,
+	 "AdvSceneSwitcher.action.virtualCamera.type.stop"},
+	{MacroActionVCam::Action::START,
+	 "AdvSceneSwitcher.action.virtualCamera.type.start"},
 };
 
 bool MacroActionVCam::PerformAction()
 {
 #if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(27, 0, 0)
 	switch (_action) {
-	case VCamAction::STOP:
+	case Action::STOP:
 		if (obs_frontend_virtualcam_active()) {
 			obs_frontend_stop_virtualcam();
 		}
 		break;
-	case VCamAction::START:
+	case Action::START:
 		if (!obs_frontend_virtualcam_active()) {
 			obs_frontend_start_virtualcam();
 		}
@@ -59,14 +61,24 @@ bool MacroActionVCam::Save(obs_data_t *obj) const
 bool MacroActionVCam::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	_action = static_cast<VCamAction>(obs_data_get_int(obj, "action"));
+	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
 	return true;
+}
+
+std::shared_ptr<MacroAction> MacroActionVCam::Create(Macro *m)
+{
+	return std::shared_ptr<MacroAction>();
+}
+
+std::shared_ptr<MacroAction> MacroActionVCam::Copy() const
+{
+	return std::shared_ptr<MacroAction>();
 }
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (auto entry : actionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : actionTypes) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 
@@ -110,7 +122,7 @@ void MacroActionVCamEdit::ActionChanged(int value)
 	}
 
 	auto lock = LockContext();
-	_entryData->_action = static_cast<VCamAction>(value);
+	_entryData->_action = static_cast<MacroActionVCam::Action>(value);
 }
 
 } // namespace advss

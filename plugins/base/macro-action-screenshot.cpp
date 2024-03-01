@@ -6,8 +6,6 @@
 
 namespace advss {
 
-const uint32_t MacroActionScreenshot::_version = 1;
-
 const std::string MacroActionScreenshot::id = "screenshot";
 
 bool MacroActionScreenshot::_registered = MacroActionFactory::Register(
@@ -92,7 +90,7 @@ bool MacroActionScreenshot::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "saveType", static_cast<int>(_saveType));
 	obs_data_set_int(obj, "targetType", static_cast<int>(_targetType));
 	_path.Save(obj, "savePath");
-	obs_data_set_int(obj, "version", _version);
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
@@ -123,6 +121,28 @@ std::string MacroActionScreenshot::GetShortDesc() const
 		return _source.ToString();
 	}
 	return "";
+}
+
+std::shared_ptr<MacroAction> MacroActionScreenshot::Create(Macro *m)
+{
+	return std::make_shared<MacroActionScreenshot>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionScreenshot::Copy() const
+{
+	auto result = Create(GetMacro());
+	OBSDataAutoRelease data = obs_data_create();
+	Save(data);
+	result->Load(data);
+	result->PostLoad();
+	return result;
+}
+
+void MacroActionScreenshot::ResolveVariablesToFixedValues()
+{
+	_scene.ResolveVariables();
+	_source.ResolveVariables();
+	_path.ResolveVariables();
 }
 
 static void populateSaveTypeSelection(QComboBox *list)

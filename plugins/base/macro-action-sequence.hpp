@@ -14,7 +14,9 @@ namespace advss {
 class MacroActionSequence : public MultiMacroRefAction, public MacroRefAction {
 public:
 	MacroActionSequence(Macro *m)
-		: MacroAction(m), MultiMacroRefAction(m), MacroRefAction(m)
+		: MacroAction(m),
+		  MultiMacroRefAction(m),
+		  MacroRefAction(m)
 	{
 	}
 	bool PerformAction();
@@ -24,10 +26,9 @@ public:
 	bool PostLoad() override;
 	std::string GetId() const { return id; };
 	MacroRef GetNextMacro(bool advance = true);
-	static std::shared_ptr<MacroAction> Create(Macro *m)
-	{
-		return std::make_shared<MacroActionSequence>(m);
-	}
+	static std::shared_ptr<MacroAction> Create(Macro *m);
+	std::shared_ptr<MacroAction> Copy() const;
+	void ResolveVariablesToFixedValues();
 
 	enum class Action {
 		RUN_SEQUENCE,

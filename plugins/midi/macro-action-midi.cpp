@@ -48,6 +48,21 @@ std::string MacroActionMidi::GetShortDesc() const
 	return _device.Name();
 }
 
+void MacroActionMidi::ResolveVariablesToFixedValues()
+{
+	_message.ResolveVariables();
+}
+
+std::shared_ptr<MacroAction> MacroActionMidi::Create(Macro *m)
+{
+	return std::make_shared<MacroActionMidi>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionMidi::Copy() const
+{
+	return std::make_shared<MacroActionMidi>(*this);
+}
+
 MacroActionMidiEdit::MacroActionMidiEdit(
 	QWidget *parent, std::shared_ptr<MacroActionMidi> entryData)
 	: QWidget(parent),

@@ -6,11 +6,6 @@
 
 namespace advss {
 
-enum class VCamAction {
-	STOP,
-	START,
-};
-
 class MacroActionVCam : public MacroAction {
 public:
 	MacroActionVCam(Macro *m) : MacroAction(m) {}
@@ -19,12 +14,14 @@ public:
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
 	std::string GetId() const { return id; };
-	static std::shared_ptr<MacroAction> Create(Macro *m)
-	{
-		return std::make_shared<MacroActionVCam>(m);
-	}
+	static std::shared_ptr<MacroAction> Create(Macro *m);
+	std::shared_ptr<MacroAction> Copy() const;
 
-	VCamAction _action = VCamAction::STOP;
+	enum class Action {
+		STOP,
+		START,
+	};
+	Action _action = Action::STOP;
 
 private:
 	static bool _registered;

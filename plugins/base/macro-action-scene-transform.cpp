@@ -312,6 +312,24 @@ std::string MacroActionSceneTransform::GetShortDesc() const
 	return _scene.ToString() + " - " + _source.ToString();
 }
 
+std::shared_ptr<MacroAction> MacroActionSceneTransform::Create(Macro *m)
+{
+	return std::make_shared<MacroActionSceneTransform>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionSceneTransform::Copy() const
+{
+	return std::make_shared<MacroActionSceneTransform>(*this);
+}
+
+void MacroActionSceneTransform::ResolveVariablesToFixedValues()
+{
+	_scene.ResolveVariables();
+	_source.ResolveVariables();
+	_settings.ResolveVariables();
+	_rotation.ResolveVariables();
+}
+
 std::string MacroActionSceneTransform::ConvertSettings()
 {
 	auto data = obs_data_create();

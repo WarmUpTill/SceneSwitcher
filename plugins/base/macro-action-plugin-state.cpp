@@ -212,10 +212,25 @@ bool MacroActionPluginState::Load(obs_data_t *obj)
 	return true;
 }
 
+std::shared_ptr<MacroAction> MacroActionPluginState::Create(Macro *m)
+{
+	return std::make_shared<MacroActionPluginState>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionPluginState::Copy() const
+{
+	return std::make_shared<MacroActionPluginState>(*this);
+}
+
+void MacroActionPluginState::ResolveVariablesToFixedValues()
+{
+	_settingsPath = std::string(_settingsPath);
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (auto entry : actionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : actionTypes) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 
@@ -223,8 +238,8 @@ static inline void populateValueSelection(QComboBox *list,
 					  PluginStateAction action)
 {
 	if (action == PluginStateAction::NO_MATCH_BEHAVIOUR) {
-		for (auto entry : noMatchValues) {
-			list->addItem(obs_module_text(entry.second.c_str()));
+		for (const auto &[_, name] : noMatchValues) {
+			list->addItem(obs_module_text(name.c_str()));
 		}
 	}
 }

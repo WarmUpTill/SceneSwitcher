@@ -48,11 +48,12 @@ struct ChannelInfo {
 struct TwitchChannel {
 	void Load(obs_data_t *obj);
 	void Save(obs_data_t *obj) const;
-	StringVariable GetName() const { return _name; };
+	StringVariable GetName() const { return _name; }
 	std::string GetUserID(const TwitchToken &token) const;
 	bool IsValid(const std::string &id) const;
 	std::optional<ChannelLiveInfo> GetLiveInfo(const TwitchToken &);
 	std::optional<ChannelInfo> GetInfo(const TwitchToken &);
+	void ResolveVariables();
 
 private:
 	StringVariable _name = "";

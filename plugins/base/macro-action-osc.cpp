@@ -1,5 +1,6 @@
 #include "macro-action-osc.hpp"
 
+#include <obs.hpp>
 #include <QGroupBox>
 #include <system_error>
 
@@ -172,6 +173,21 @@ bool MacroActionOSC::Load(obs_data_t *obj)
 	return true;
 }
 
+std::shared_ptr<MacroAction> MacroActionOSC::Create(Macro *m)
+{
+	return std::make_shared<MacroActionOSC>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionOSC::Copy() const
+{
+	auto result = Create(GetMacro());
+	OBSDataAutoRelease data = obs_data_create();
+	Save(data);
+	result->Load(data);
+	result->PostLoad();
+	return result;
+}
+
 void MacroActionOSC::SetProtocol(Protocol p)
 {
 	_protocol = p;
@@ -188,6 +204,13 @@ void MacroActionOSC::SetPortNr(IntVariable port)
 {
 	_port = port;
 	_reconnect = true;
+}
+
+void MacroActionOSC::ResolveVariablesToFixedValues()
+{
+	_ip.ResolveVariables();
+	_port.ResolveVariables();
+	_message.ResolveVariables();
 }
 
 static void populateProtocolSelection(QComboBox *list)

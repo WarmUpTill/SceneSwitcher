@@ -7,11 +7,6 @@
 
 namespace advss {
 
-enum class FileAction {
-	WRITE,
-	APPEND,
-};
-
 class MacroActionFile : public MacroAction {
 public:
 	MacroActionFile(Macro *m) : MacroAction(m) {}
@@ -21,14 +16,18 @@ public:
 	bool Load(obs_data_t *obj);
 	std::string GetShortDesc() const;
 	std::string GetId() const { return id; };
-	static std::shared_ptr<MacroAction> Create(Macro *m)
-	{
-		return std::make_shared<MacroActionFile>(m);
-	}
+	static std::shared_ptr<MacroAction> Create(Macro *m);
+	std::shared_ptr<MacroAction> Copy() const;
+	void ResolveVariablesToFixedValues();
 
 	StringVariable _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	StringVariable _text = obs_module_text("AdvSceneSwitcher.enterText");
-	FileAction _action = FileAction::WRITE;
+
+	enum class Action {
+		WRITE,
+		APPEND,
+	};
+	Action _action = Action::WRITE;
 
 private:
 	static bool _registered;
@@ -58,13 +57,12 @@ private slots:
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
 	FileSelection *_filePath;
 	VariableTextEdit *_text;
 	QComboBox *_actions;
-	std::shared_ptr<MacroActionFile> _entryData;
 
-private:
+	std::shared_ptr<MacroActionFile> _entryData;
 	bool _loading = true;
 };
 

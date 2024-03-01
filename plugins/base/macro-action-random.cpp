@@ -83,6 +83,16 @@ bool MacroActionRandom::Load(obs_data_t *obj)
 	return true;
 }
 
+std::shared_ptr<MacroAction> MacroActionRandom::Create(Macro *m)
+{
+	return std::make_shared<MacroActionRandom>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionRandom::Copy() const
+{
+	return std::make_shared<MacroActionRandom>(*this);
+}
+
 MacroActionRandomEdit::MacroActionRandomEdit(
 	QWidget *parent, std::shared_ptr<MacroActionRandom> entryData)
 	: QWidget(parent),

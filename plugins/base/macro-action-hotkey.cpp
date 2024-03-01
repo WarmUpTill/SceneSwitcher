@@ -425,6 +425,16 @@ bool MacroActionHotkey::Load(obs_data_t *obj)
 	return true;
 }
 
+std::shared_ptr<MacroAction> MacroActionHotkey::Create(Macro *m)
+{
+	return std::make_shared<MacroActionHotkey>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionHotkey::Copy() const
+{
+	return std::make_shared<MacroActionHotkey>(*this);
+}
+
 static inline void populateKeySelection(QComboBox *list)
 {
 	list->addItems({"No key",

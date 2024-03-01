@@ -110,8 +110,9 @@ TwitchChannel::GetLiveInfo(const TwitchToken &token)
 		return {};
 	}
 
-	httplib::Params params = {
-		{"first", "1"}, {"after", ""}, {"user_id", id}};
+	httplib::Params params = {{"first", "1"},
+				  {"after", ""},
+				  {"user_id", id}};
 	auto result = SendGetRequest(token, "https://api.twitch.tv",
 				     "/helix/streams", params, true);
 	if (result.status != 200) {
@@ -151,8 +152,9 @@ std::optional<ChannelInfo> TwitchChannel::GetInfo(const TwitchToken &token)
 		return {};
 	}
 
-	httplib::Params params = {
-		{"first", "1"}, {"after", ""}, {"broadcaster_id", id}};
+	httplib::Params params = {{"first", "1"},
+				  {"after", ""},
+				  {"broadcaster_id", id}};
 	auto result = SendGetRequest(token, "https://api.twitch.tv",
 				     "/helix/channels", params, true);
 	if (result.status != 200) {
@@ -181,6 +183,11 @@ std::optional<ChannelInfo> TwitchChannel::GetInfo(const TwitchToken &token)
 		getStringArrayHelper(data, "content_classification_labels");
 	info.is_branded_content = obs_data_get_bool(data, "is_branded_content");
 	return info;
+}
+
+void TwitchChannel::ResolveVariables()
+{
+	_name.ResolveVariables();
 }
 
 bool TwitchChannel::IsValid(const std::string &id) const

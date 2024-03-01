@@ -198,6 +198,22 @@ std::string MacroActionSwitchScene::GetShortDesc() const
 	return _scene.ToString();
 }
 
+std::shared_ptr<MacroAction> MacroActionSwitchScene::Create(Macro *m)
+{
+	return std::make_shared<MacroActionSwitchScene>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionSwitchScene::Copy() const
+{
+	return std::make_shared<MacroActionSwitchScene>(*this);
+}
+
+void MacroActionSwitchScene::ResolveVariablesToFixedValues()
+{
+	_scene.ResolveVariables();
+	_duration.ResolveVariables();
+}
+
 static inline void populateTypeSelection(QComboBox *list)
 {
 	for (const auto &[_, name] : sceneTypes) {

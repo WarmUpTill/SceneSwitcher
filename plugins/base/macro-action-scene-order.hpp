@@ -24,10 +24,9 @@ public:
 	bool Load(obs_data_t *obj);
 	std::string GetShortDesc() const;
 	std::string GetId() const { return id; };
-	static std::shared_ptr<MacroAction> Create(Macro *m)
-	{
-		return std::make_shared<MacroActionSceneOrder>(m);
-	}
+	static std::shared_ptr<MacroAction> Create(Macro *m);
+	std::shared_ptr<MacroAction> Copy() const;
+	void ResolveVariablesToFixedValues();
 
 	SceneSelection _scene;
 	SceneItemSelection _source;

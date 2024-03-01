@@ -158,6 +158,24 @@ std::string MacroActionFilter::GetShortDesc() const
 	return "";
 }
 
+std::shared_ptr<MacroAction> MacroActionFilter::Create(Macro *m)
+{
+	return std::make_shared<MacroActionFilter>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionFilter::Copy() const
+{
+	return std::make_shared<MacroActionFilter>(*this);
+}
+
+void MacroActionFilter::ResolveVariablesToFixedValues()
+{
+	_source.ResolveVariables();
+	_filter.ResolveVariables();
+	_settingsString.ResolveVariables();
+	_manualSettingValue.ResolveVariables();
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (auto entry : actionTypes) {

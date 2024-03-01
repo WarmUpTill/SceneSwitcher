@@ -38,6 +38,8 @@ bool MacroAction::Enabled() const
 	return _enabled;
 }
 
+void MacroAction::ResolveVariablesToFixedValues() {}
+
 std::string_view MacroAction::GetDefaultID()
 {
 	return "scene_switch";

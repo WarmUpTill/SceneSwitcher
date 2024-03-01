@@ -101,6 +101,21 @@ std::string MacroActionSudioMode::GetShortDesc() const
 	return "";
 }
 
+std::shared_ptr<MacroAction> MacroActionSudioMode::Create(Macro *m)
+{
+	return std::make_shared<MacroActionSudioMode>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionSudioMode::Copy() const
+{
+	return std::make_shared<MacroActionSudioMode>(*this);
+}
+
+void MacroActionSudioMode::ResolveVariablesToFixedValues()
+{
+	_scene.ResolveVariables();
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (const auto &[id, name] : actionTypes) {

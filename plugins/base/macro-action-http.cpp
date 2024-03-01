@@ -133,6 +133,24 @@ std::string MacroActionHttp::GetShortDesc() const
 	return _url.UnresolvedValue();
 }
 
+std::shared_ptr<MacroAction> MacroActionHttp::Create(Macro *m)
+{
+	return std::make_shared<MacroActionHttp>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionHttp::Copy() const
+{
+	return std::make_shared<MacroActionHttp>(*this);
+}
+
+void MacroActionHttp::ResolveVariablesToFixedValues()
+{
+	_url.ResolveVariables();
+	_data.ResolveVariables();
+	_headers.ResolveVariables();
+	_timeout.ResolveVariables();
+}
+
 static inline void populateMethodSelection(QComboBox *list)
 {
 	for (auto entry : methods) {

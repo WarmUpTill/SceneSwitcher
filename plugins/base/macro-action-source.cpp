@@ -266,6 +266,23 @@ std::string MacroActionSource::GetShortDesc() const
 	return "";
 }
 
+std::shared_ptr<MacroAction> MacroActionSource::Create(Macro *m)
+{
+	return std::make_shared<MacroActionSource>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionSource::Copy() const
+{
+	return std::make_shared<MacroActionSource>(*this);
+}
+
+void MacroActionSource::ResolveVariablesToFixedValues()
+{
+	_source.ResolveVariables();
+	_settingsString.ResolveVariables();
+	_manualSettingValue.ResolveVariables();
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (auto &[actionType, name] : actionTypes) {

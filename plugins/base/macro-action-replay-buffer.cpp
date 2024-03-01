@@ -69,10 +69,20 @@ bool MacroActionReplayBuffer::Load(obs_data_t *obj)
 	return true;
 }
 
+std::shared_ptr<MacroAction> MacroActionReplayBuffer::Create(Macro *m)
+{
+	return std::make_shared<MacroActionReplayBuffer>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionReplayBuffer::Copy() const
+{
+	return std::make_shared<MacroActionReplayBuffer>(*this);
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (auto entry : actionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : actionTypes) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 

@@ -119,6 +119,22 @@ bool MacroActionProjector::Load(obs_data_t *obj)
 	return true;
 }
 
+std::shared_ptr<MacroAction> MacroActionProjector::Create(Macro *m)
+{
+	return std::make_shared<MacroActionProjector>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionProjector::Copy() const
+{
+	return std::make_shared<MacroActionProjector>(*this);
+}
+
+void MacroActionProjector::ResolveVariablesToFixedValues()
+{
+	_source.ResolveVariables();
+	_scene.ResolveVariables();
+}
+
 void MacroActionProjector::SetMonitor(int idx)
 {
 	_monitor = idx;

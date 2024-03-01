@@ -116,6 +116,21 @@ std::string MacroActionWebsocket::GetShortDesc() const
 	return "";
 }
 
+std::shared_ptr<MacroAction> MacroActionWebsocket::Create(Macro *m)
+{
+	return std::make_shared<MacroActionWebsocket>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionWebsocket::Copy() const
+{
+	return std::make_shared<MacroActionWebsocket>(*this);
+}
+
+void MacroActionWebsocket::ResolveVariablesToFixedValues()
+{
+	_message.ResolveVariables();
+}
+
 static inline void populateAPISelection(QComboBox *list)
 {
 	for (const auto &[_, name] : apiTypes) {

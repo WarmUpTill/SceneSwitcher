@@ -198,7 +198,8 @@ void MacroActionVariable::SetToSceneItemName(Variable *var)
 
 struct AskForInputParams {
 	AskForInputParams(const QString &prompt_, const QString &placeholder_)
-		: prompt(prompt_), placeholder(placeholder_){};
+		: prompt(prompt_),
+		  placeholder(placeholder_){};
 	QString prompt;
 	QString placeholder;
 	std::optional<std::string> result;
@@ -422,6 +423,16 @@ std::string MacroActionVariable::GetShortDesc() const
 	return GetWeakVariableName(_variable);
 }
 
+std::shared_ptr<MacroAction> MacroActionVariable::Create(Macro *m)
+{
+	return std::make_shared<MacroActionVariable>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionVariable::Copy() const
+{
+	return std::make_shared<MacroActionVariable>(*this);
+}
+
 void MacroActionVariable::SetSegmentIndexValue(int value)
 {
 	DecrementCurrentSegmentVariableRef();
@@ -483,6 +494,19 @@ int MacroActionVariable::GetSegmentIndexValue() const
 	}
 
 	return -1;
+}
+
+void MacroActionVariable::ResolveVariablesToFixedValues()
+{
+	_strValue.ResolveVariables();
+	_findStr.ResolveVariables();
+	_replaceStr.ResolveVariables();
+	_mathExpression.ResolveVariables();
+	_inputPrompt.ResolveVariables();
+	_inputPlaceholder.ResolveVariables();
+	_envVariableName.ResolveVariables();
+	_scene.ResolveVariables();
+	_sceneItemIndex.ResolveVariables();
 }
 
 void MacroActionVariable::DecrementCurrentSegmentVariableRef()
