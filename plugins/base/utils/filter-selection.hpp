@@ -19,6 +19,7 @@ public:
 	Type GetType() const { return _type; }
 	std::vector<OBSWeakSource>
 	GetFilters(const SourceSelection &source) const;
+	void ResolveVariables();
 	std::string ToString(bool resolve = false) const;
 
 private:

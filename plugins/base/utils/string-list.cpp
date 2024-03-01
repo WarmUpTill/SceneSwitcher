@@ -39,6 +39,13 @@ bool StringList::Load(obs_data_t *obj, const char *name,
 	return true;
 }
 
+void StringList::ResolveVariables()
+{
+	for (auto &value : *this) {
+		value.ResolveVariables();
+	}
+}
+
 StringListEdit::StringListEdit(QWidget *parent, const QString &addString,
 			       const QString &addStringDescription,
 			       int maxStringSize, bool allowEmtpy)

@@ -181,6 +181,12 @@ std::string SceneSelection::ToString(bool resolve) const
 	return "";
 }
 
+void SceneSelection::ResolveVariables()
+{
+	_scene = GetScene();
+	_type = Type::SCENE;
+}
+
 SceneSelection SceneSelectionWidget::CurrentSelection()
 {
 	SceneSelection s;

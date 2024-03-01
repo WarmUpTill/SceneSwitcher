@@ -34,6 +34,8 @@ public:
 	StartProcessAndWait(int timeoutInMs) const;
 	bool StartProcessDetached() const;
 
+	void ResolveVariables();
+
 private:
 	StringVariable _path = obs_module_text("AdvSceneSwitcher.enterPath");
 	StringVariable _workingDirectory = "";

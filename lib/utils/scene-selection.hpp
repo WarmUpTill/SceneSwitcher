@@ -26,6 +26,7 @@ public:
 	EXPORT Type GetType() const { return _type; }
 	EXPORT OBSWeakSource GetScene(bool advance = true) const;
 	EXPORT std::string ToString(bool resolve = false) const;
+	EXPORT void ResolveVariables();
 
 private:
 	OBSWeakSource _scene;

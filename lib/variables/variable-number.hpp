@@ -22,6 +22,7 @@ public:
 	Type GetType() const { return _type; }
 	bool IsFixedType() const { return _type == Type::FIXED_VALUE; }
 	std::weak_ptr<Variable> GetVariable() const { return _variable; }
+	void ResolveVariables();
 
 private:
 	Type _type = Type::FIXED_VALUE;

@@ -19,6 +19,7 @@ public:
 	EXPORT Type GetType() const { return _type; }
 	EXPORT OBSWeakSource GetSource() const;
 	EXPORT void SetSource(OBSWeakSource);
+	EXPORT void ResolveVariables();
 	EXPORT std::string ToString(bool resolve = false) const;
 
 	EXPORT bool operator==(const SourceSelection &) const;
