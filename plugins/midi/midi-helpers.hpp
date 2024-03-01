@@ -38,6 +38,8 @@ public:
 	int Note() const { return _note; }
 	int Value() const { return _value; }
 
+	void ResolveVariables();
+
 private:
 	// Values which don't appear for channel, note, and value will be used
 	// to indicate whether this part of the message is optional and can be

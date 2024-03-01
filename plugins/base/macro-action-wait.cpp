@@ -97,10 +97,26 @@ std::string MacroActionWait::GetShortDesc() const
 	return _duration.ToString() + " - " + _duration2.ToString();
 }
 
+std::shared_ptr<MacroAction> MacroActionWait::Create(Macro *m)
+{
+	return std::make_shared<MacroActionWait>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionWait::Copy() const
+{
+	return std::make_shared<MacroActionWait>(*this);
+}
+
+void MacroActionWait::ResolveVariablesToFixedValues()
+{
+	_duration.ResolveVariables();
+	_duration2.ResolveVariables();
+}
+
 static inline void populateTypeSelection(QComboBox *list)
 {
-	for (const auto &entry : waitTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : waitTypes) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 

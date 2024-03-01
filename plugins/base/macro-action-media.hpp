@@ -11,10 +11,8 @@ namespace advss {
 class MacroActionMedia : public MacroAction {
 public:
 	MacroActionMedia(Macro *m) : MacroAction(m) {}
-	static std::shared_ptr<MacroAction> Create(Macro *m)
-	{
-		return std::make_shared<MacroActionMedia>(m);
-	}
+	static std::shared_ptr<MacroAction> Create(Macro *m);
+	std::shared_ptr<MacroAction> Copy() const;
 	std::string GetId() const { return id; };
 	std::string GetShortDesc() const;
 
@@ -22,6 +20,7 @@ public:
 	void LogAction() const;
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
+	void ResolveVariablesToFixedValues();
 
 	enum class Action {
 		PLAY,

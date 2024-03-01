@@ -37,7 +37,6 @@ static void setSceneItemLock(obs_sceneitem_t *item,
 
 bool MacroActionSceneLock::PerformAction()
 {
-
 	auto items = _source.GetSceneItems(_scene);
 	for (const auto &item : items) {
 		setSceneItemLock(item, _action);
@@ -87,11 +86,27 @@ std::string MacroActionSceneLock::GetShortDesc() const
 	return "";
 }
 
+std::shared_ptr<MacroAction> MacroActionSceneLock::Create(Macro *m)
+{
+	return std::make_shared<MacroActionSceneLock>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionSceneLock::Copy() const
+{
+	return std::make_shared<MacroActionSceneLock>(*this);
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (const auto &[_, name] : actionTypes) {
 		list->addItem(obs_module_text(name.c_str()));
 	}
+}
+
+void MacroActionSceneLock::ResolveVariablesToFixedValues()
+{
+	_scene.ResolveVariables();
+	_source.ResolveVariables();
 }
 
 MacroActionSceneLockEdit::MacroActionSceneLockEdit(

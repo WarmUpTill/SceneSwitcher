@@ -38,6 +38,16 @@ static const std::map<MacroActionMedia::SelectionType, std::string>
 		 "AdvSceneSwitcher.action.media.selectionType.sceneItem"},
 };
 
+std::shared_ptr<MacroAction> MacroActionMedia::Create(Macro *m)
+{
+	return std::make_shared<MacroActionMedia>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionMedia::Copy() const
+{
+	return std::make_shared<MacroActionMedia>(*this);
+}
+
 std::string MacroActionMedia::GetShortDesc() const
 {
 	if (_selection == SelectionType::SOURCE) {
@@ -148,6 +158,15 @@ bool MacroActionMedia::Load(obs_data_t *obj)
 	_scene.Load(obj);
 	_sceneItem.Load(obj);
 	return true;
+}
+
+void MacroActionMedia::ResolveVariablesToFixedValues()
+{
+	_seekDuration.ResolveVariables();
+	_seekPercentage.ResolveVariables();
+	_mediaSource.ResolveVariables();
+	_sceneItem.ResolveVariables();
+	_scene.ResolveVariables();
 }
 
 static inline void populateActionSelection(QComboBox *list)

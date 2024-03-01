@@ -142,6 +142,22 @@ std::string MacroActionSceneOrder::GetShortDesc() const
 	return _scene.ToString() + " - " + _source.ToString();
 }
 
+std::shared_ptr<MacroAction> MacroActionSceneOrder::Create(Macro *m)
+{
+	return std::make_shared<MacroActionSceneOrder>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionSceneOrder::Copy() const
+{
+	return std::make_shared<MacroActionSceneOrder>(*this);
+}
+
+void MacroActionSceneOrder::ResolveVariablesToFixedValues()
+{
+	_scene.ResolveVariables();
+	_source.ResolveVariables();
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (const auto &entry : actionTypes) {

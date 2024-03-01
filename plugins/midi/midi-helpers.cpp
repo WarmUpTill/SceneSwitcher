@@ -91,6 +91,13 @@ std::string MidiMessage::ToString() const
 	       " Value: " + std::to_string(_value);
 }
 
+void MidiMessage::ResolveVariables()
+{
+	_channel.ResolveVariables();
+	_note.ResolveVariables();
+	_value.ResolveVariables();
+}
+
 std::string MidiMessage::ToString(const libremidi::message &msg)
 {
 	return "Type: " + GetMidiType(msg) +

@@ -20,12 +20,11 @@ public:
 	bool PostLoad() override;
 	std::string GetShortDesc() const;
 	std::string GetId() const { return id; };
-	static std::shared_ptr<MacroAction> Create(Macro *m)
-	{
-		return std::make_shared<MacroActionVariable>(m);
-	}
+	static std::shared_ptr<MacroAction> Create(Macro *m);
+	std::shared_ptr<MacroAction> Copy() const;
 	void SetSegmentIndexValue(int);
 	int GetSegmentIndexValue() const;
+	void ResolveVariablesToFixedValues();
 
 	enum class Type {
 		SET_FIXED_VALUE,

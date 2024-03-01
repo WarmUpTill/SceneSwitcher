@@ -20,10 +20,9 @@ public:
 	bool Load(obs_data_t *obj);
 	std::string GetShortDesc() const;
 	std::string GetId() const { return id; };
-	static std::shared_ptr<MacroAction> Create(Macro *m)
-	{
-		return std::make_shared<MacroActionAudio>(m);
-	}
+	static std::shared_ptr<MacroAction> Create(Macro *m);
+	std::shared_ptr<MacroAction> Copy() const;
+	void ResolveVariablesToFixedValues();
 
 	SourceSelection _audioSource;
 
@@ -44,15 +43,15 @@ public:
 
 	Action _action = Action::MUTE;
 	FadeType _fadeType = FadeType::DURATION;
-	NumberVariable<int> _syncOffset = 0;
+	IntVariable _syncOffset = 0;
 	obs_monitoring_type _monitorType = OBS_MONITORING_TYPE_NONE;
-	NumberVariable<double> _balance = 0.5;
+	DoubleVariable _balance = 0.5;
 	bool _useDb = false;
-	NumberVariable<int> _volume = 0;
-	NumberVariable<double> _volumeDB = 0.0;
+	IntVariable _volume = 0;
+	DoubleVariable _volumeDB = 0.0;
 	bool _fade = false;
 	Duration _duration;
-	NumberVariable<double> _rate = 100.;
+	DoubleVariable _rate = 100.;
 	bool _wait = false;
 	bool _abortActiveFade = false;
 

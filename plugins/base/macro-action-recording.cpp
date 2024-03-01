@@ -122,10 +122,26 @@ bool MacroActionRecord::Load(obs_data_t *obj)
 	return true;
 }
 
+std::shared_ptr<MacroAction> MacroActionRecord::Create(Macro *m)
+{
+	return std::make_shared<MacroActionRecord>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionRecord::Copy() const
+{
+	return std::make_shared<MacroActionRecord>(*this);
+}
+
+void MacroActionRecord::ResolveVariablesToFixedValues()
+{
+	_folder.ResolveVariables();
+	_fileFormat.ResolveVariables();
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (auto entry : actionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : actionTypes) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 

@@ -64,6 +64,22 @@ std::string MacroActionRun::GetShortDesc() const
 	return _procConfig.UnresolvedPath();
 }
 
+std::shared_ptr<MacroAction> MacroActionRun::Create(Macro *m)
+{
+	return std::make_shared<MacroActionRun>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionRun::Copy() const
+{
+	return std::make_shared<MacroActionRun>(*this);
+}
+
+void MacroActionRun::ResolveVariablesToFixedValues()
+{
+	_procConfig.ResolveVariables();
+	_timeout.ResolveVariables();
+}
+
 MacroActionRunEdit::MacroActionRunEdit(
 	QWidget *parent, std::shared_ptr<MacroActionRun> entryData)
 	: QWidget(parent),

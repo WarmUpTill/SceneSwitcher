@@ -22,15 +22,15 @@ struct ClipboardImageQueueParams : ClipboardQueueParams {
 class MacroActionClipboard : public MacroAction {
 public:
 	MacroActionClipboard(Macro *m) : MacroAction(m) {}
-	static std::shared_ptr<MacroAction> Create(Macro *m)
-	{
-		return std::make_shared<MacroActionClipboard>(m);
-	}
+	static std::shared_ptr<MacroAction> Create(Macro *m);
+	std::shared_ptr<MacroAction> Copy() const;
 	std::string GetId() const { return id; };
 
 	bool PerformAction();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
+
+	void ResolveVariablesToFixedValues();
 
 	enum class Action {
 		COPY_TEXT,

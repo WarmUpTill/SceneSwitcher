@@ -14,11 +14,14 @@ bool MacroActionTimer::_registered = MacroActionFactory::Register(
 	{MacroActionTimer::Create, MacroActionTimerEdit::Create,
 	 "AdvSceneSwitcher.action.timer"});
 
-const static std::map<TimerAction, std::string> timerActions = {
-	{TimerAction::PAUSE, "AdvSceneSwitcher.action.timer.type.pause"},
-	{TimerAction::CONTINUE, "AdvSceneSwitcher.action.timer.type.continue"},
-	{TimerAction::RESET, "AdvSceneSwitcher.action.timer.type.reset"},
-	{TimerAction::SET_TIME_REMAINING,
+const static std::map<MacroActionTimer::Action, std::string> timerActions = {
+	{MacroActionTimer::Action::PAUSE,
+	 "AdvSceneSwitcher.action.timer.type.pause"},
+	{MacroActionTimer::Action::CONTINUE,
+	 "AdvSceneSwitcher.action.timer.type.continue"},
+	{MacroActionTimer::Action::RESET,
+	 "AdvSceneSwitcher.action.timer.type.reset"},
+	{MacroActionTimer::Action::SET_TIME_REMAINING,
 	 "AdvSceneSwitcher.action.timer.type.setTimeRemaining"},
 };
 
@@ -40,16 +43,16 @@ bool MacroActionTimer::PerformAction()
 		}
 
 		switch (_actionType) {
-		case TimerAction::PAUSE:
+		case Action::PAUSE:
 			timerCondition->Pause();
 			break;
-		case TimerAction::CONTINUE:
+		case Action::CONTINUE:
 			timerCondition->Continue();
 			break;
-		case TimerAction::RESET:
+		case Action::RESET:
 			timerCondition->Reset();
 			break;
-		case TimerAction::SET_TIME_REMAINING:
+		case Action::SET_TIME_REMAINING:
 			timerCondition->_duration.SetTimeRemaining(
 				_duration.Seconds());
 			break;
@@ -67,19 +70,19 @@ void MacroActionTimer::LogAction() const
 		return;
 	}
 	switch (_actionType) {
-	case TimerAction::PAUSE:
+	case Action::PAUSE:
 		vblog(LOG_INFO, "paused timers on \"%s\"",
 		      GetMacroName(macro.get()).c_str());
 		break;
-	case TimerAction::CONTINUE:
+	case Action::CONTINUE:
 		vblog(LOG_INFO, "continued timers on \"%s\"",
 		      GetMacroName(macro.get()).c_str());
 		break;
-	case TimerAction::RESET:
+	case Action::RESET:
 		vblog(LOG_INFO, "reset timers on \"%s\"",
 		      GetMacroName(macro.get()).c_str());
 		break;
-	case TimerAction::SET_TIME_REMAINING:
+	case Action::SET_TIME_REMAINING:
 		vblog(LOG_INFO,
 		      "set time remaining of timers on \"%s\" to \"%s\"",
 		      GetMacroName(macro.get()).c_str(),
@@ -104,8 +107,7 @@ bool MacroActionTimer::Load(obs_data_t *obj)
 	MacroAction::Load(obj);
 	_macro.Load(obj);
 	_duration.Load(obj);
-	_actionType =
-		static_cast<TimerAction>(obs_data_get_int(obj, "actionType"));
+	_actionType = static_cast<Action>(obs_data_get_int(obj, "actionType"));
 	return true;
 }
 
@@ -114,10 +116,25 @@ std::string MacroActionTimer::GetShortDesc() const
 	return _macro.Name();
 }
 
+std::shared_ptr<MacroAction> MacroActionTimer::Create(Macro *m)
+{
+	return std::make_shared<MacroActionTimer>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionTimer::Copy() const
+{
+	return std::make_shared<MacroActionTimer>(*this);
+}
+
+void MacroActionTimer::ResolveVariablesToFixedValues()
+{
+	_duration.ResolveVariables();
+}
+
 static inline void populateTypeSelection(QComboBox *list)
 {
-	for (auto entry : timerActions) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : timerActions) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 
@@ -173,7 +190,7 @@ void MacroActionTimerEdit::ActionTypeChanged(int value)
 	}
 
 	auto lock = LockContext();
-	_entryData->_actionType = static_cast<TimerAction>(value);
+	_entryData->_actionType = static_cast<MacroActionTimer::Action>(value);
 	SetWidgetVisibility();
 }
 
@@ -183,7 +200,7 @@ void MacroActionTimerEdit::SetWidgetVisibility()
 		return;
 	}
 	_duration->setVisible(_entryData->_actionType ==
-			      TimerAction::SET_TIME_REMAINING);
+			      MacroActionTimer::Action::SET_TIME_REMAINING);
 	adjustSize();
 }
 

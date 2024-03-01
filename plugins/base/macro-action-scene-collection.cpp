@@ -54,6 +54,16 @@ std::string MacroActionSceneCollection::GetShortDesc() const
 	return _sceneCollection;
 }
 
+std::shared_ptr<MacroAction> MacroActionSceneCollection::Create(Macro *m)
+{
+	return std::make_shared<MacroActionSceneCollection>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionSceneCollection::Copy() const
+{
+	return std::make_shared<MacroActionSceneCollection>(*this);
+}
+
 void populateSceneCollectionSelection(QComboBox *box)
 {
 	auto sceneCollections = obs_frontend_get_scene_collections();

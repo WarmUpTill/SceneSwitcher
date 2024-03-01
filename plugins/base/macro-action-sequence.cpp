@@ -66,6 +66,21 @@ MacroRef MacroActionSequence::GetNextMacro(bool advance)
 	return res;
 }
 
+std::shared_ptr<MacroAction> MacroActionSequence::Create(Macro *m)
+{
+	return std::make_shared<MacroActionSequence>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionSequence::Copy() const
+{
+	return std::make_shared<MacroActionSequence>(*this);
+}
+
+void MacroActionSequence::ResolveVariablesToFixedValues()
+{
+	_resetIndex.ResolveVariables();
+}
+
 bool MacroActionSequence::RunSequence()
 {
 	if (_macros.size() == 0) {

@@ -43,6 +43,16 @@ std::string MacroActionProfile::GetShortDesc() const
 	return _profile;
 }
 
+std::shared_ptr<MacroAction> MacroActionProfile::Create(Macro *m)
+{
+	return std::make_shared<MacroActionProfile>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionProfile::Copy() const
+{
+	return std::make_shared<MacroActionProfile>(*this);
+}
+
 MacroActionProfileEdit::MacroActionProfileEdit(
 	QWidget *parent, std::shared_ptr<MacroActionProfile> entryData)
 	: QWidget(parent)

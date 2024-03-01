@@ -328,6 +328,27 @@ std::string MacroActionAudio::GetShortDesc() const
 	return _audioSource.ToString();
 }
 
+std::shared_ptr<MacroAction> MacroActionAudio::Create(Macro *m)
+{
+	return std::make_shared<MacroActionAudio>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionAudio::Copy() const
+{
+	return std::make_shared<MacroActionAudio>(*this);
+}
+
+void MacroActionAudio::ResolveVariablesToFixedValues()
+{
+	_audioSource.ResolveVariables();
+	_syncOffset.ResolveVariables();
+	_balance.ResolveVariables();
+	_volume.ResolveVariables();
+	_volumeDB.ResolveVariables();
+	_duration.ResolveVariables();
+	_rate.ResolveVariables();
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (const auto &[action, name] : actionTypes) {

@@ -50,6 +50,23 @@ bool MacroActionSystray::Load(obs_data_t *obj)
 	return true;
 }
 
+std::shared_ptr<MacroAction> MacroActionSystray::Create(Macro *m)
+{
+	return std::make_shared<MacroActionSystray>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionSystray::Copy() const
+{
+	return std::make_shared<MacroActionSystray>(*this);
+}
+
+void MacroActionSystray::ResolveVariablesToFixedValues()
+{
+	_message.ResolveVariables();
+	_title.ResolveVariables();
+	_iconPath.ResolveVariables();
+}
+
 MacroActionSystrayEdit::MacroActionSystrayEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSystray> entryData)
 	: QWidget(parent),

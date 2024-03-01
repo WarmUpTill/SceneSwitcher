@@ -114,6 +114,16 @@ std::string MacroActionQueue::GetShortDesc() const
 	return GetActionQueueName(_queue);
 }
 
+std::shared_ptr<MacroAction> MacroActionQueue::Create(Macro *m)
+{
+	return std::make_shared<MacroActionQueue>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionQueue::Copy() const
+{
+	return std::make_shared<MacroActionQueue>(*this);
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (const auto &[_, name] : actionTypes) {

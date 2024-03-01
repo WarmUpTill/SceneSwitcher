@@ -13,6 +13,26 @@ bool MacroActionTwitch::_registered = MacroActionFactory::Register(
 	{MacroActionTwitch::Create, MacroActionTwitchEdit::Create,
 	 "AdvSceneSwitcher.action.twitch"});
 
+void MacroActionTwitch::ResolveVariablesToFixedValues()
+{
+	_streamTitle.ResolveVariables();
+	_markerDescription.ResolveVariables();
+	_duration.ResolveVariables();
+	_announcementMessage.ResolveVariables();
+	_channel.ResolveVariables();
+	_chatMessage.ResolveVariables();
+}
+
+std::shared_ptr<MacroAction> MacroActionTwitch::Create(Macro *m)
+{
+	return std::make_shared<MacroActionTwitch>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionTwitch::Copy() const
+{
+	return std::make_shared<MacroActionTwitch>(*this);
+}
+
 std::string MacroActionTwitch::GetShortDesc() const
 {
 	return GetWeakTwitchTokenName(_token);

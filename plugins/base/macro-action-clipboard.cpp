@@ -93,6 +93,16 @@ static void copyImageFromUrl(void *param)
 	setMimeTypeParams(params, clipboard);
 }
 
+std::shared_ptr<MacroAction> MacroActionClipboard::Create(Macro *m)
+{
+	return std::make_shared<MacroActionClipboard>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionClipboard::Copy() const
+{
+	return std::make_shared<MacroActionClipboard>(*this);
+}
+
 bool MacroActionClipboard::PerformAction()
 {
 	switch (_action) {
@@ -157,6 +167,12 @@ bool MacroActionClipboard::Load(obs_data_t *obj)
 	_url.Load(obj, "url");
 
 	return true;
+}
+
+void MacroActionClipboard::ResolveVariablesToFixedValues()
+{
+	_text.ResolveVariables();
+	_url.ResolveVariables();
 }
 
 static inline void populateActionSelection(QComboBox *list)

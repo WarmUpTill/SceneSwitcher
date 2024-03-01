@@ -153,6 +153,22 @@ bool MacroActionStream::Load(obs_data_t *obj)
 	return true;
 }
 
+std::shared_ptr<MacroAction> MacroActionStream::Create(Macro *m)
+{
+	return std::make_shared<MacroActionStream>(m);
+}
+
+std::shared_ptr<MacroAction> MacroActionStream::Copy() const
+{
+	return std::make_shared<MacroActionStream>(*this);
+}
+
+void MacroActionStream::ResolveVariablesToFixedValues()
+{
+	_keyFrameInterval.ResolveVariables();
+	_stringValue.ResolveVariables();
+}
+
 static inline void populateActionSelection(QComboBox *list)
 {
 	for (auto entry : actionTypes) {
