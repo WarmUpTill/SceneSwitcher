@@ -23,6 +23,9 @@
 !LICENSE
 !README.md
 
+# Exclude .orig leftovers
+*.orig
+
 # Exclude lock files
 *.lock.json
 
