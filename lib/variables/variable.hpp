@@ -17,15 +17,6 @@ class Variable : public Item {
 public:
 	Variable();
 	~Variable();
-	void Load(obs_data_t *obj);
-	void Save(obs_data_t *obj) const;
-	EXPORT std::string Value(bool updateLastUsed = true) const;
-	EXPORT std::optional<double> DoubleValue() const;
-	EXPORT std::optional<int> IntValue() const;
-	EXPORT std::string PreviousValue() const;
-	void SetValue(const std::string &value);
-	void SetValue(double value);
-	std::string GetDefaultValue() const { return _defaultValue; }
 	static std::shared_ptr<Item> Create()
 	{
 		return std::make_shared<Variable>();
@@ -36,8 +27,18 @@ public:
 		SAVE,
 		SET_DEFAULT,
 	};
+
+	void Load(obs_data_t *obj);
+	void Save(obs_data_t *obj) const;
+	EXPORT std::string Value(bool updateLastUsed = true) const;
+	EXPORT std::optional<double> DoubleValue() const;
+	EXPORT std::optional<int> IntValue() const;
+	std::string GetPreviousValue() const { return _previousValue; };
+	std::string GetDefaultValue() const { return _defaultValue; }
+	void SetValue(const std::string &value);
+	void SetValue(double value);
 	SaveAction GetSaveAction() const { return _saveAction; }
-	std::optional<uint64_t> SecondsSinceLastUse() const;
+	std::optional<uint64_t> GetSecondsSinceLastUse() const;
 	std::optional<uint64_t> GetSecondsSinceLastChange() const;
 	void UpdateLastUsed() const;
 	void UpdateLastChanged() const;
@@ -91,18 +92,17 @@ signals:
 	void Remove(const QString &);
 };
 
-void SaveVariables(obs_data_t *obj);
-void LoadVariables(obs_data_t *obj);
-void ImportVariables(obs_data_t *obj);
-
 std::deque<std::shared_ptr<Item>> &GetVariables();
-
 EXPORT Variable *GetVariableByName(const std::string &name);
 EXPORT Variable *GetVariableByQString(const QString &name);
 EXPORT std::weak_ptr<Variable> GetWeakVariableByName(const std::string &name);
 EXPORT std::weak_ptr<Variable> GetWeakVariableByQString(const QString &name);
 std::string GetWeakVariableName(std::weak_ptr<Variable>);
 EXPORT QStringList GetVariablesNameList();
+
+void SaveVariables(obs_data_t *obj);
+void LoadVariables(obs_data_t *obj);
+void ImportVariables(obs_data_t *obj);
 
 std::chrono::high_resolution_clock::time_point GetLastVariableChangeTime();
 
