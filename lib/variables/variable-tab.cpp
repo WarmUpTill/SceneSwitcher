@@ -100,8 +100,9 @@ static void addVariableRow(QTableWidget *table, Variable *variable)
 	auto *item =
 		new QTableWidgetItem(QString::fromStdString(variable->Name()));
 	table->setItem(row, col, item);
-	item = new QTableWidgetItem(
-		QString::fromStdString(variable->Value(false)));
+	auto varValue = QString::fromStdString(variable->Value(false));
+	item = new QTableWidgetItem(varValue);
+	item->setToolTip(varValue);
 	table->setItem(row, ++col, item);
 	item = new QTableWidgetItem(getSaveActionString(variable));
 	table->setItem(row, ++col, item);
@@ -139,7 +140,9 @@ static void updateVaribleStatus(QTableWidget *table)
 			continue;
 		}
 		item = table->item(row, 1);
-		item->setText(QString::fromStdString(variable->Value(false)));
+		auto varValue = QString::fromStdString(variable->Value(false));
+		item->setText(varValue);
+		item->setToolTip(varValue);
 		item = table->item(row, 2);
 		item->setText(getSaveActionString(variable.get()));
 		item = table->item(row, 3);
