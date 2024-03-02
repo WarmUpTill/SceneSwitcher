@@ -267,6 +267,7 @@ bool VariableSettingsDialog::AskForSettings(QWidget *parent, Variable &settings)
 		dialog._defaultValue->toPlainText().toStdString();
 	settings._saveAction =
 		static_cast<Variable::SaveAction>(dialog._save->currentIndex());
+	lastVariableChange = std::chrono::high_resolution_clock::now();
 	return true;
 }
 
@@ -274,7 +275,6 @@ static bool AskForSettingsWrapper(QWidget *parent, Item &settings)
 {
 	Variable &VariableSettings = dynamic_cast<Variable &>(settings);
 	if (VariableSettingsDialog::AskForSettings(parent, VariableSettings)) {
-		lastVariableChange = std::chrono::high_resolution_clock::now();
 		return true;
 	}
 	return false;
