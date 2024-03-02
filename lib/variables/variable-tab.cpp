@@ -60,6 +60,31 @@ static QString getLastUsedString(Variable *variable)
 	return fmt.arg(QString::number(*lastUsed));
 }
 
+static QString formatLastChangedText(Variable *variable)
+{
+	auto lastChanged = variable->GetSecondsSinceLastChange();
+	if (!lastChanged) {
+		return obs_module_text(
+			"AdvSceneSwitcher.variableTab.lastChanged.text.never");
+	}
+
+	QString text =
+		obs_module_text("AdvSceneSwitcher.variableTab.lastChanged");
+	return text.arg(QString::number(*lastChanged));
+}
+
+static QString formatLastChangedTooltip(Variable *variable)
+{
+	auto lastChanged = variable->GetSecondsSinceLastChange();
+	if (!lastChanged) {
+		return QString();
+	}
+
+	QString tooltip = obs_module_text(
+		"AdvSceneSwitcher.variableTab.lastChanged.tooltip");
+	return tooltip.arg(QString::fromStdString(variable->PreviousValue()));
+}
+
 static void addVariableRow(QTableWidget *table, Variable *variable)
 {
 	if (!variable) {
@@ -75,16 +100,17 @@ static void addVariableRow(QTableWidget *table, Variable *variable)
 	auto *item =
 		new QTableWidgetItem(QString::fromStdString(variable->Name()));
 	table->setItem(row, col, item);
-	col++;
 	item = new QTableWidgetItem(
 		QString::fromStdString(variable->Value(false)));
-	table->setItem(row, col, item);
-	col++;
+	table->setItem(row, ++col, item);
 	item = new QTableWidgetItem(getSaveActionString(variable));
-	table->setItem(row, col, item);
-	col++;
+	table->setItem(row, ++col, item);
 	item = new QTableWidgetItem(getLastUsedString(variable));
-	table->setItem(row, col, item);
+	table->setItem(row, ++col, item);
+	item = new QTableWidgetItem(formatLastChangedText(variable));
+	item->setToolTip(formatLastChangedTooltip(variable));
+	table->setItem(row, ++col, item);
+
 	table->sortByColumn(0, Qt::AscendingOrder);
 }
 
@@ -118,6 +144,9 @@ static void updateVaribleStatus(QTableWidget *table)
 		item->setText(getSaveActionString(variable.get()));
 		item = table->item(row, 3);
 		item->setText(getLastUsedString(variable.get()));
+		item = table->item(row, 4);
+		item->setText(formatLastChangedText(variable.get()));
+		item->setToolTip(formatLastChangedTooltip(variable.get()));
 	}
 }
 
@@ -177,7 +206,9 @@ void AdvSceneSwitcher::SetupVariableTab()
 		<< obs_module_text(
 			   "AdvSceneSwitcher.variableTab.header.saveLoadBehavior")
 		<< obs_module_text(
-			   "AdvSceneSwitcher.variableTab.header.lastUse");
+			   "AdvSceneSwitcher.variableTab.header.lastUse")
+		<< obs_module_text(
+			   "AdvSceneSwitcher.variableTab.header.lastChanged");
 
 	auto &variables = GetVariables();
 

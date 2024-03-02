@@ -35,9 +35,9 @@ void Variable::Load(obs_data_t *obj)
 		static_cast<SaveAction>(obs_data_get_int(obj, "saveAction"));
 	_defaultValue = obs_data_get_string(obj, "defaultValue");
 	if (_saveAction == SaveAction::SAVE) {
-		_value = obs_data_get_string(obj, "value");
+		SetValue(obs_data_get_string(obj, "value"));
 	} else if (_saveAction == SaveAction::SET_DEFAULT) {
-		_value = _defaultValue;
+		SetValue(_defaultValue);
 	}
 	lastVariableChange = std::chrono::high_resolution_clock::now();
 }
@@ -70,20 +70,24 @@ std::optional<int> Variable::IntValue() const
 	return GetInt(Value());
 }
 
+std::string Variable::PreviousValue() const
+{
+	return _previousValue;
+}
+
 void Variable::SetValue(const std::string &value)
 {
+	_previousValue = _value;
 	_value = value;
 
 	UpdateLastUsed();
+	UpdateLastChanged();
 	lastVariableChange = std::chrono::high_resolution_clock::now();
 }
 
 void Variable::SetValue(double value)
 {
-	_value = ToString(value);
-
-	UpdateLastUsed();
-	lastVariableChange = std::chrono::high_resolution_clock::now();
+	SetValue(ToString(value));
 }
 
 std::optional<uint64_t> Variable::SecondsSinceLastUse() const
@@ -96,9 +100,28 @@ std::optional<uint64_t> Variable::SecondsSinceLastUse() const
 		.count();
 }
 
+std::optional<uint64_t> Variable::GetSecondsSinceLastChange() const
+{
+	if (_lastChanged.time_since_epoch().count() == 0) {
+		return {};
+	}
+
+	const auto now = std::chrono::high_resolution_clock::now();
+	return std::chrono::duration_cast<std::chrono::seconds>(now -
+								_lastChanged)
+		.count();
+}
+
 void Variable::UpdateLastUsed() const
 {
 	_lastUsed = std::chrono::high_resolution_clock::now();
+}
+
+void Variable::UpdateLastChanged() const
+{
+	if (_previousValue != _value) {
+		_lastChanged = std::chrono::high_resolution_clock::now();
+	}
 }
 
 std::deque<std::shared_ptr<Item>> &GetVariables()
@@ -284,7 +307,7 @@ bool VariableSettingsDialog::AskForSettings(QWidget *parent, Variable &settings)
 	}
 
 	settings._name = dialog._name->text().toStdString();
-	settings._value = dialog._value->toPlainText().toStdString();
+	settings.SetValue(dialog._value->toPlainText().toStdString());
 	settings._defaultValue =
 		dialog._defaultValue->toPlainText().toStdString();
 	settings._saveAction =
