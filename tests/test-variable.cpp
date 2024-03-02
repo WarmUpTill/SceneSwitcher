@@ -6,7 +6,7 @@
 TEST_CASE("Variable", "[variable]")
 {
 	advss::Variable variable;
-	REQUIRE_FALSE(variable.SecondsSinceLastUse());
+	REQUIRE_FALSE(variable.GetSecondsSinceLastUse());
 
 	REQUIRE(variable.Value() == "");
 	REQUIRE(variable.GetDefaultValue() == "");
@@ -25,14 +25,23 @@ TEST_CASE("Variable", "[variable]")
 	variable.SetValue(123.123);
 	REQUIRE(variable.Value() == "123.123");
 
-	REQUIRE(*variable.SecondsSinceLastUse() == 0);
+	REQUIRE(*variable.GetSecondsSinceLastUse() == 0);
+	REQUIRE(*variable.GetSecondsSinceLastChange() == 0);
 
 	std::this_thread::sleep_for(std::chrono::seconds(2));
-	REQUIRE(*variable.SecondsSinceLastUse() > 1);
+	REQUIRE(*variable.GetSecondsSinceLastUse() > 1);
+	REQUIRE(*variable.GetSecondsSinceLastChange() > 1);
 
 	variable.Value(false);
-	REQUIRE(*variable.SecondsSinceLastUse() > 1);
+	REQUIRE(*variable.GetSecondsSinceLastUse() > 1);
 
 	variable.UpdateLastUsed();
-	REQUIRE(*variable.SecondsSinceLastUse() == 0);
+	REQUIRE(*variable.GetSecondsSinceLastUse() == 0);
+
+	variable.SetValue(123);
+	REQUIRE(*variable.GetSecondsSinceLastChange() == 0);
+
+	std::this_thread::sleep_for(std::chrono::seconds(1));
+	variable.SetValue(123);
+	REQUIRE(*variable.GetSecondsSinceLastChange() > 0);
 }

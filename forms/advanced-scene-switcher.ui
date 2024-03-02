@@ -1648,7 +1648,7 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>AdvSceneSwitcher.variableTab.tooltip.variableAddButton</string>
+            <string>AdvSceneSwitcher.variableTab.variableAddButton.tooltip</string>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -1667,7 +1667,7 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>AdvSceneSwitcher.variableTab.tooltip.variableRemoveButton</string>
+            <string>AdvSceneSwitcher.variableTab.variableRemoveButton.tooltip</string>
            </property>
            <property name="flat">
             <bool>true</bool>
