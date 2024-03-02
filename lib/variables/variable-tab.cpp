@@ -85,7 +85,8 @@ static QString formatLastChangedTooltip(Variable *variable)
 
 	QString tooltip = obs_module_text(
 		"AdvSceneSwitcher.variableTab.lastChanged.tooltip");
-	return tooltip.arg(QString::fromStdString(variable->GetPreviousValue()));
+	return tooltip.arg(QString::number(variable->GetValueChangeCount()))
+		.arg(QString::fromStdString(variable->GetPreviousValue()));
 }
 
 static void addVariableRow(QTableWidget *table, Variable *variable)
