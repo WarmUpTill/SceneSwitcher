@@ -258,8 +258,10 @@ ${_usage_host:-}"
       pushd ${project_root}
       cmake --build build_${target##*-} --config ${config} -t package ${cmake_args}
 
-      mv ${project_root}/release/*.deb ${project_root}/release/${output_name}.deb
-      mv ${project_root}/release/*.ddeb ${project_root}/release/${output_name}.ddeb
+      if [ ! -e ${project_root}/release/${output_name}.deb ]; then
+        mv ${project_root}/release/*.deb ${project_root}/release/${output_name}.deb
+        mv ${project_root}/release/*.ddeb ${project_root}/release/${output_name}.ddeb
+      fi
       popd
     }
 
