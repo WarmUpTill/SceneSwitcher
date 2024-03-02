@@ -3,6 +3,7 @@
 #include "macro-helpers.hpp"
 #include "macro-properties.hpp"
 #include "macro.hpp"
+#include "plugin-state-helpers.hpp"
 #include "section.hpp"
 #include "switch-button.hpp"
 
@@ -88,6 +89,7 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 		*_entryData = MacroActionFactory::Create(id, macro);
 		(*_entryData)->SetIndex(idx);
 		(*_entryData)->PostLoad();
+		RunPostLoadSteps();
 	}
 	auto widget = MacroActionFactory::CreateWidget(id, this, *_entryData);
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
@@ -185,9 +187,10 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 			auto data = obs_data_create();
 			macro->Actions().at(idx - 1)->Save(data);
 			macro->Actions().at(idx)->Load(data);
-			macro->Actions().at(idx)->PostLoad();
 			obs_data_release(data);
 		}
+		macro->Actions().at(idx)->PostLoad();
+		RunPostLoadSteps();
 		macro->UpdateActionIndices();
 		ui->actionsList->Insert(
 			idx,
@@ -475,6 +478,7 @@ void AdvSceneSwitcher::AddMacroElseAction(int idx)
 			macro->ElseActions().at(idx)->Load(data);
 		}
 		macro->ElseActions().at(idx)->PostLoad();
+		RunPostLoadSteps();
 		macro->UpdateElseActionIndices();
 		ui->elseActionsList->Insert(
 			idx, new MacroActionEdit(
