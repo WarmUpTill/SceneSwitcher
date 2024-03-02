@@ -38,16 +38,18 @@ public:
 	void SetValue(const std::string &value);
 	void SetValue(double value);
 	SaveAction GetSaveAction() const { return _saveAction; }
+	int GetValueChangeCount() const { return _valueChangeCount; }
 	std::optional<uint64_t> GetSecondsSinceLastUse() const;
 	std::optional<uint64_t> GetSecondsSinceLastChange() const;
 	void UpdateLastUsed() const;
-	void UpdateLastChanged() const;
+	void UpdateLastChanged();
 
 private:
 	SaveAction _saveAction = SaveAction::DONT_SAVE;
 	std::string _value = "";
 	std::string _previousValue = "";
 	std::string _defaultValue = "";
+	int _valueChangeCount = 0;
 	mutable std::chrono::high_resolution_clock::time_point _lastUsed;
 	mutable std::chrono::high_resolution_clock::time_point _lastChanged;
 

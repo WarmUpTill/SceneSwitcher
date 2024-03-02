@@ -9,15 +9,20 @@ TEST_CASE("Variable", "[variable]")
 	REQUIRE_FALSE(variable.GetSecondsSinceLastUse());
 
 	REQUIRE(variable.Value() == "");
+	REQUIRE(variable.GetPreviousValue() == "");
 	REQUIRE(variable.GetDefaultValue() == "");
 	REQUIRE(variable.GetSaveAction() ==
 		advss::Variable::SaveAction::DONT_SAVE);
+	REQUIRE(variable.GetValueChangeCount() == 0);
 
 	variable.SetValue("testing");
 	REQUIRE(variable.Value() == "testing");
+	REQUIRE(variable.GetPreviousValue() == "");
+	REQUIRE(variable.GetValueChangeCount() == 1);
 
 	variable.SetValue(123);
 	REQUIRE(variable.Value() == "123");
+	REQUIRE(variable.GetPreviousValue() == "testing");
 
 	variable.SetValue(123.0);
 	REQUIRE(variable.Value() == "123");

@@ -113,10 +113,11 @@ void Variable::UpdateLastUsed() const
 	_lastUsed = std::chrono::high_resolution_clock::now();
 }
 
-void Variable::UpdateLastChanged() const
+void Variable::UpdateLastChanged()
 {
 	if (_previousValue != _value) {
 		_lastChanged = std::chrono::high_resolution_clock::now();
+		++_valueChangeCount;
 	}
 }
 
