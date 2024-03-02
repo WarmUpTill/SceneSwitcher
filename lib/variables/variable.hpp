@@ -22,6 +22,7 @@ public:
 	EXPORT std::string Value(bool updateLastUsed = true) const;
 	EXPORT std::optional<double> DoubleValue() const;
 	EXPORT std::optional<int> IntValue() const;
+	EXPORT std::string PreviousValue() const;
 	void SetValue(const std::string &value);
 	void SetValue(double value);
 	std::string GetDefaultValue() const { return _defaultValue; }
@@ -37,13 +38,17 @@ public:
 	};
 	SaveAction GetSaveAction() const { return _saveAction; }
 	std::optional<uint64_t> SecondsSinceLastUse() const;
+	std::optional<uint64_t> GetSecondsSinceLastChange() const;
 	void UpdateLastUsed() const;
+	void UpdateLastChanged() const;
 
 private:
 	SaveAction _saveAction = SaveAction::DONT_SAVE;
 	std::string _value = "";
+	std::string _previousValue = "";
 	std::string _defaultValue = "";
 	mutable std::chrono::high_resolution_clock::time_point _lastUsed;
+	mutable std::chrono::high_resolution_clock::time_point _lastChanged;
 
 	friend VariableSelection;
 	friend VariableSettingsDialog;
