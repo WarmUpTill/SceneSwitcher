@@ -3,6 +3,7 @@
 #include "macro-properties.hpp"
 #include "macro.hpp"
 #include "path-helpers.hpp"
+#include "plugin-state-helpers.hpp"
 #include "section.hpp"
 #include "ui-helpers.hpp"
 #include "utility.hpp"
@@ -254,6 +255,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 		(*_entryData)->SetIndex(idx);
 		(*_entryData)->SetLogicType(logic);
 		(*_entryData)->PostLoad();
+		RunPostLoadSteps();
 	}
 	auto widget =
 		MacroConditionFactory::CreateWidget(id, this, *_entryData);
@@ -325,6 +327,7 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 			obs_data_release(data);
 		}
 		macro->Conditions().at(idx)->PostLoad();
+		RunPostLoadSteps();
 		(*cond)->SetLogicType(logic);
 		macro->UpdateConditionIndices();
 		ui->conditionsList->Insert(
