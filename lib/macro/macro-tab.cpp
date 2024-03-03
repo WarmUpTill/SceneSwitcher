@@ -13,6 +13,7 @@
 #include "utility.hpp"
 #include "version.h"
 
+#include <obs-frontend-api.h>
 #include <QColor>
 #include <QGraphicsOpacityEffect>
 #include <QMenu>
@@ -729,6 +730,7 @@ void AdvSceneSwitcher::MacroSelectionChanged()
 		return;
 	}
 	SetEditMacro(*macro);
+	obs_frontend_save();
 }
 
 void AdvSceneSwitcher::HighlightOnChange()
