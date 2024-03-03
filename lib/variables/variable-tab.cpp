@@ -102,7 +102,6 @@ static void removeVariableRow(QTableWidget *table, const QString &name)
 
 static void updateVaribleStatus(QTableWidget *table)
 {
-	auto lock = LockContext();
 	for (int row = 0; row < table->rowCount(); row++) {
 		auto item = table->item(row, 0);
 		if (!item) {
