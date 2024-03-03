@@ -67,7 +67,7 @@ bool MacroConditionAudio::CheckOutputCondition()
 	OBSSourceAutoRelease source =
 		obs_weak_source_get_source(_audioSource.GetSource());
 
-	double curVolume = _useDb ? _peak : DecibelToPercent(_peak);
+	double curVolume = _useDb ? _peak : DecibelToPercent(_peak) * 100;
 
 	switch (_outputCondition) {
 	case OutputCondition::ABOVE:
