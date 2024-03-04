@@ -75,6 +75,8 @@ target_sources(
           macro-action-window.hpp
           macro-condition-audio.cpp
           macro-condition-audio.hpp
+          macro-condition-clipboard.cpp
+          macro-condition-clipboard.hpp
           macro-condition-cursor.cpp
           macro-condition-cursor.hpp
           macro-condition-date.cpp
