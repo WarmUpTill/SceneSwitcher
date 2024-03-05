@@ -67,12 +67,12 @@ bool MacroActionVCam::Load(obs_data_t *obj)
 
 std::shared_ptr<MacroAction> MacroActionVCam::Create(Macro *m)
 {
-	return std::shared_ptr<MacroAction>();
+	return std::make_shared<MacroActionVCam>(m);
 }
 
 std::shared_ptr<MacroAction> MacroActionVCam::Copy() const
 {
-	return std::shared_ptr<MacroAction>();
+	return std::make_shared<MacroActionVCam>(*this);
 }
 
 static inline void populateActionSelection(QComboBox *list)
