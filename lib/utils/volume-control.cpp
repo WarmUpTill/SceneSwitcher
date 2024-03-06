@@ -90,15 +90,17 @@ void VolControl::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 }
 
 VolumeSlider::VolumeSlider(obs_fader_t *fader, QWidget *parent)
-	: QSlider(parent)
+	: DoubleSlider(parent)
 {
 	fad = fader;
 }
 
 VolumeSlider::VolumeSlider(obs_fader_t *fader, Qt::Orientation orientation,
 			   QWidget *parent)
-	: QSlider(orientation, parent)
+	: DoubleSlider(parent)
 {
+	SetDoubleConstraints(0, 100, 0.01, 0);
+	setOrientation(orientation);
 	fad = fader;
 }
 
@@ -219,7 +221,6 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	nameLabel->setText(sourceName);
 
 	slider->setMinimum(0);
-	slider->setMaximum(int(FADER_PRECISION));
 
 	obs_fader_add_callback(obs_fader, OBSVolumeChanged, this);
 	obs_volmeter_add_callback(obs_volmeter, OBSVolumeLevel, this);
@@ -592,7 +593,9 @@ void VolumeMeter::mousePressEvent(QMouseEvent *event)
 
 VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 			 bool vertical)
-	: QWidget(parent), obs_volmeter(obs_volmeter), vertical(vertical)
+	: QWidget(parent),
+	  obs_volmeter(obs_volmeter),
+	  vertical(vertical)
 {
 	setAttribute(Qt::WA_OpaquePaintEvent, true);
 

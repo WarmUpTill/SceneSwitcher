@@ -151,6 +151,8 @@ target_sources(
           lib/utils/backup.hpp
           lib/utils/curl-helper.cpp
           lib/utils/curl-helper.hpp
+          lib/utils/double-slider.cpp
+          lib/utils/double-slider.hpp
           lib/utils/duration-control.cpp
           lib/utils/duration-control.hpp
           lib/utils/duration.cpp
