@@ -1,4 +1,5 @@
 #pragma once
+#include "double-slider.hpp"
 
 #include <obs.hpp>
 #include <QWidget>
@@ -284,7 +285,7 @@ private:
 	QLabel *nameLabel;
 	QLabel *volLabel;
 	VolumeMeter *volMeter;
-	QSlider *slider;
+	DoubleSlider *slider;
 	QPushButton *config = nullptr;
 	float levelTotal;
 	float levelCount;
@@ -327,10 +328,10 @@ public:
 	inline void SetContextMenu(QMenu *cm) { contextMenu = cm; }
 
 	void refreshColors();
-	QSlider *GetSlider() const { return slider; }
+	DoubleSlider *GetSlider() const { return slider; }
 };
 
-class VolumeSlider : public QSlider {
+class VolumeSlider : public DoubleSlider {
 	Q_OBJECT
 
 public:
