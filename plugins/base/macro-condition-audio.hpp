@@ -55,11 +55,11 @@ public:
 
 	SourceSelection _audioSource;
 	bool _useDb = false;
-	NumberVariable<int> _volumePercent = 0;
-	NumberVariable<double> _volumeDB = 0.0;
-	NumberVariable<int> _syncOffset = 0;
+	DoubleVariable _volumePercent = 0;
+	DoubleVariable _volumeDB = 0.0;
+	IntVariable _syncOffset = 0;
 	obs_monitoring_type _monitorType = OBS_MONITORING_TYPE_NONE;
-	NumberVariable<double> _balance = 0.5;
+	DoubleVariable _balance = 0.5;
 	OutputCondition _outputCondition = OutputCondition::ABOVE;
 	VolumeCondition _volumeCondition = VolumeCondition::ABOVE;
 	obs_volmeter_t *_volmeter = nullptr;
@@ -97,7 +97,7 @@ public:
 
 private slots:
 	void SourceChanged(const SourceSelection &);
-	void VolumePercentChanged(const NumberVariable<int> &vol);
+	void VolumePercentChanged(const NumberVariable<double> &vol);
 	void ConditionChanged(int cond);
 	void CheckTypeChanged(int cond);
 	void SyncOffsetChanged(const NumberVariable<int> &value);
@@ -117,7 +117,7 @@ private:
 	QComboBox *_checkTypes;
 	SourceSelectionWidget *_sources;
 	QComboBox *_condition;
-	VariableSpinBox *_volumePercent;
+	VariableDoubleSpinBox *_volumePercent;
 	VariableDoubleSpinBox *_volumeDB;
 	QPushButton *_percentDBToggle;
 	VariableSpinBox *_syncOffset;
