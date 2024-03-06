@@ -253,7 +253,7 @@ bool MacroConditionAudio::Save(obs_data_t *obj) const
 			 static_cast<int>(_volumeCondition));
 	obs_data_set_bool(obj, "useDb", _useDb);
 	_volumeDB.Save(obj, "volumeDB");
-	obs_data_set_int(obj, "version", 2);
+	obs_data_set_int(obj, "version", 3);
 	return true;
 }
 
@@ -295,9 +295,18 @@ bool MacroConditionAudio::Load(obs_data_t *obj)
 		obs_data_get_int(obj, "volumeCondition"));
 	_volmeter = AddVolmeterToSource(this, _audioSource.GetSource());
 
-	if (obs_data_get_int(obj, "version") != 2) {
+	if (obs_data_get_int(obj, "version") < 2) {
+		// Set default values for dB handling
 		_useDb = false;
 		_volumeDB = 0.0;
+
+		// In previous versions the scaling happened in CheckCondition()
+		// so these values must now be converted to enable compatibility
+		// with the decibel value based checks.
+		OBSDataAutoRelease data = obs_data_get_obj(obj, "volume");
+		auto oldFixedValue = obs_data_get_int(data, "value");
+		_volumeDB = ((double)oldFixedValue / 1.7) - 60;
+		_volumePercent = DecibelToPercent(_volumeDB) * 100;
 	} else {
 		_useDb = obs_data_get_bool(obj, "useDb");
 		_volumeDB.Load(obj, "volumeDB");
