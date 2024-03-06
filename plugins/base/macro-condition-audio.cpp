@@ -294,6 +294,7 @@ bool MacroConditionAudio::Load(obs_data_t *obj)
 	_volumeCondition = static_cast<VolumeCondition>(
 		obs_data_get_int(obj, "volumeCondition"));
 	_volmeter = AddVolmeterToSource(this, _audioSource.GetSource());
+
 	if (obs_data_get_int(obj, "version") != 2) {
 		_useDb = false;
 		_volumeDB = 0.0;
@@ -416,7 +417,7 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 	  _checkTypes(new QComboBox()),
 	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _condition(new QComboBox()),
-	  _volumePercent(new VariableSpinBox()),
+	  _volumePercent(new VariableDoubleSpinBox()),
 	  _volumeDB(new VariableDoubleSpinBox),
 	  _percentDBToggle(new QPushButton),
 	  _syncOffset(new VariableSpinBox()),
@@ -444,8 +445,9 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 			 SLOT(CheckTypeChanged(int)));
 	QWidget::connect(
 		_volumePercent,
-		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
-		this, SLOT(VolumePercentChanged(const NumberVariable<int> &)));
+		SIGNAL(NumberVariableChanged(const NumberVariable<double> &)),
+		this,
+		SLOT(VolumePercentChanged(const NumberVariable<double> &)));
 	QWidget::connect(
 		_syncOffset,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
@@ -506,11 +508,12 @@ void MacroConditionAudioEdit::UpdateVolmeterSource()
 	auto layout = this->layout();
 	layout->addWidget(_volMeter);
 
-	QWidget::connect(_volMeter->GetSlider(), &QSlider::valueChanged,
-			 [=](int) { SyncSliderAndValueSelection(true); });
+	QWidget::connect(_volMeter->GetSlider(),
+			 &DoubleSlider::DoubleValChanged,
+			 [=](double) { SyncSliderAndValueSelection(true); });
 
 	// Slider will default to 0 so set it manually once
-	_volMeter->GetSlider()->setValue(_entryData->_volumePercent);
+	SyncSliderAndValueSelection(false);
 }
 
 void MacroConditionAudioEdit::SourceChanged(const SourceSelection &source)
@@ -531,7 +534,7 @@ void MacroConditionAudioEdit::SourceChanged(const SourceSelection &source)
 }
 
 void MacroConditionAudioEdit::VolumePercentChanged(
-	const NumberVariable<int> &vol)
+	const NumberVariable<double> &vol)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -600,35 +603,35 @@ void MacroConditionAudioEdit::PercentDBClicked()
 
 void MacroConditionAudioEdit::SyncSliderAndValueSelection(bool sliderMoved)
 {
-	if (_loading || !_entryData) {
+	if (!_entryData) {
 		return;
 	}
 
 	if (sliderMoved) {
+		auto sliderPosition = _volMeter->GetSlider()->DoubleValue();
+		// Adjust to the dB scale on the volume meter widget
+		auto dBScaleValue = ((sliderPosition * 3.0) / 5.0) - 60.0;
+
 		if (_entryData->_useDb) {
-			_volumeDB->SetFixedValue(PercentToDecibel(
-				(float)_volMeter->GetSlider()->value() /
-				100.0));
+			_volumeDB->SetFixedValue(dBScaleValue);
 			const QSignalBlocker blocker(this);
 			_volumePercent->SetFixedValue(
-				_volMeter->GetSlider()->value());
+				DecibelToPercent(dBScaleValue) * 100);
 		} else {
 			_volumePercent->SetFixedValue(
-				_volMeter->GetSlider()->value());
+				DecibelToPercent(dBScaleValue) * 100);
 			const QSignalBlocker blocker(this);
-			_volumeDB->SetFixedValue(PercentToDecibel(
-				(float)_volMeter->GetSlider()->value() /
-				100.0));
+			_volumeDB->SetFixedValue(dBScaleValue);
 		}
 	} else {
 		const QSignalBlocker blocker(this);
-		if (_entryData->_useDb) {
-			_volMeter->GetSlider()->setValue(
-				DecibelToPercent(_entryData->_volumeDB) * 100);
-		} else {
-			_volMeter->GetSlider()->setValue(
-				_entryData->_volumePercent);
-		}
+		double dBValue =
+			_entryData->_useDb
+				? _entryData->_volumeDB.GetFixedValue()
+				: PercentToDecibel(_entryData->_volumePercent /
+						   100.0);
+		auto sliderPosition = (dBValue + 60.0) * 5 / 3.0;
+		_volMeter->GetSlider()->SetDoubleVal(sliderPosition);
 	}
 }
 
