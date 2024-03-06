@@ -437,10 +437,8 @@ AudioSwitchWidget::AudioSwitchWidget(QWidget *parent, AudioSwitch *s)
 	audioVolumeThreshold->setMaximum(100);
 	audioVolumeThreshold->setMinimum(0);
 
-	QWidget::connect(volMeter->GetSlider(), SIGNAL(valueChanged(int)),
-			 audioVolumeThreshold, SLOT(setValue(int)));
-	QWidget::connect(audioVolumeThreshold, SIGNAL(valueChanged(int)),
-			 volMeter->GetSlider(), SLOT(setValue(int)));
+	QWidget::connect(volMeter->GetSlider(), &DoubleSlider::DoubleValChanged,
+			 [=](double) { SyncSliderAndValueSelection(true); });
 	QWidget::connect(audioVolumeThreshold, SIGNAL(valueChanged(int)), this,
 			 SLOT(VolumeThresholdChanged(int)));
 	QWidget::connect(condition, SIGNAL(currentIndexChanged(int)), this,
@@ -487,6 +485,7 @@ AudioSwitchWidget::AudioSwitchWidget(QWidget *parent, AudioSwitch *s)
 	switchData = s;
 
 	loading = false;
+	SyncSliderAndValueSelection(false);
 }
 
 AudioSwitch *AudioSwitchWidget::getSwitchData()
@@ -509,6 +508,21 @@ void AudioSwitchWidget::swapSwitchData(AudioSwitchWidget *s1,
 	s2->setSwitchData(t);
 }
 
+void AudioSwitchWidget::SyncSliderAndValueSelection(bool sliderMoved)
+{
+	if (loading || !switchData) {
+		return;
+	}
+
+	if (sliderMoved) {
+		auto sliderPosition = volMeter->GetSlider()->DoubleValue();
+		audioVolumeThreshold->setValue(sliderPosition);
+	} else {
+		volMeter->GetSlider()->SetDoubleVal(
+			switchData->volumeThreshold);
+	}
+}
+
 void AudioSwitchWidget::UpdateVolmeterSource()
 {
 	delete volMeter;
@@ -520,10 +534,8 @@ void AudioSwitchWidget::UpdateVolmeterSource()
 	QLayout *layout = this->layout();
 	layout->addWidget(volMeter);
 
-	QWidget::connect(volMeter->GetSlider(), SIGNAL(valueChanged(int)),
-			 audioVolumeThreshold, SLOT(setValue(int)));
-	QWidget::connect(audioVolumeThreshold, SIGNAL(valueChanged(int)),
-			 volMeter->GetSlider(), SLOT(setValue(int)));
+	QWidget::connect(volMeter->GetSlider(), &DoubleSlider::DoubleValChanged,
+			 [=](double) { SyncSliderAndValueSelection(true); });
 
 	// Slider will default to 0 so set it manually once
 	volMeter->GetSlider()->setValue(switchData->volumeThreshold);
@@ -547,8 +559,11 @@ void AudioSwitchWidget::VolumeThresholdChanged(int vol)
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switchData->volumeThreshold = vol;
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		switchData->volumeThreshold = vol;
+	}
+	SyncSliderAndValueSelection(false);
 }
 
 void AudioSwitchWidget::ConditionChanged(int cond)

@@ -79,6 +79,7 @@ private slots:
 	void ConditionChanged(int cond);
 	void DurationChanged(const Duration &);
 	void IgnoreInactiveChanged(int state);
+	void SyncSliderAndValueSelection(bool sliderMoved);
 
 private:
 	QComboBox *audioSources;
