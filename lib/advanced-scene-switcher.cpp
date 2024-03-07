@@ -135,6 +135,23 @@ bool AdvSceneSwitcher::eventFilter(QObject *obj, QEvent *event)
 		}
 
 		SetElseActionsStateToVisible();
+	} else if (eventType == QEvent::KeyPress) {
+		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+		auto pressedKey = keyEvent->key();
+
+		if (obj == ui->macros && ui->macros->isVisible()) {
+			if (pressedKey == Qt::Key_F2) {
+				RenameSelectedMacro();
+			} else if (pressedKey == Qt::Key_Delete) {
+				RemoveSelectedMacros();
+			}
+		} else if (obj == ui->variables && ui->variables->isVisible()) {
+			if (pressedKey == Qt::Key_F2) {
+				OpenSettingsForSelectedVariable();
+			} else if (pressedKey == Qt::Key_Delete) {
+				RemoveSelectedVariables();
+			}
+		}
 	}
 
 	return QDialog::eventFilter(obj, event);
