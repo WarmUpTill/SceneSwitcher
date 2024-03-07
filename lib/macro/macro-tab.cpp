@@ -116,10 +116,11 @@ void AdvSceneSwitcher::RemoveSelectedMacros()
 		QString deleteWarning = obs_module_text(
 			"AdvSceneSwitcher.macroTab.removeSingleMacroPopup.text");
 		auto macro = macros.at(0);
+		deleteWarning = deleteWarning.arg(
+			QString::fromStdString(macro->Name()));
 
-		if (!DisplayMessage(deleteWarning.arg(QString::fromStdString(
-					    macro->Name())),
-				    true)) {
+		if ((!macro->IsGroup() || macro->GroupSize() == 0) &&
+		    !DisplayMessage(deleteWarning, true)) {
 			return;
 		}
 
