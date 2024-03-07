@@ -1,4 +1,5 @@
 #include "advanced-scene-switcher.hpp"
+#include "ui-helpers.hpp"
 #include "variable.hpp"
 
 #include <QTableWidgetItem>
@@ -179,31 +180,10 @@ static void renameVariable(QTableWidget *table, const QString &oldName,
 	assert(false);
 }
 
-static void openSettingsDialogAtRow(QTableWidget *table, int row)
-{
-	auto item = table->item(row, 0);
-	if (!item) {
-		return;
-	}
-
-	auto weakVariable = GetWeakVariableByQString(item->text());
-	auto variable = weakVariable.lock();
-	if (!variable) {
-		return;
-	}
-
-	auto oldName = variable->Name();
-	bool accepted =
-		VariableSettingsDialog::AskForSettings(table, *variable.get());
-	if (accepted && oldName != variable->Name()) {
-		VariableSignalManager::Instance()->Rename(
-			QString::fromStdString(oldName),
-			QString::fromStdString(variable->Name()));
-	}
-}
-
 void AdvSceneSwitcher::SetupVariableTab()
 {
+	ui->variables->installEventFilter(this);
+
 	if (GetVariables().empty()) {
 		setVariableTabVisible(ui->tabWidget, false);
 	} else {
@@ -258,16 +238,96 @@ void AdvSceneSwitcher::SetupVariableTab()
 					 ui->variablesHelp->show();
 				 }
 			 });
-	QWidget::connect(ui->variables, &QTableWidget::cellDoubleClicked,
-			 [this](int row, int _) {
-				 openSettingsDialogAtRow(ui->variables, row);
-			 });
+	QWidget::connect(ui->variables, &QTableWidget::cellDoubleClicked, this,
+			 &AdvSceneSwitcher::OpenSettingsForSelectedVariable);
 
 	auto timer = new QTimer(this);
 	timer->setInterval(1000);
 	QWidget::connect(timer, &QTimer::timeout,
 			 [this]() { updateVariableStatus(ui->variables); });
 	timer->start();
+}
+
+void AdvSceneSwitcher::OpenSettingsForSelectedVariable()
+{
+	auto selectedRows = ui->variables->selectionModel()->selectedRows();
+	if (selectedRows.empty()) {
+		return;
+	}
+
+	auto cell = ui->variables->item(selectedRows.last().row(), 0);
+	if (!cell) {
+		return;
+	}
+
+	auto weakVariable = GetWeakVariableByQString(cell->text());
+	auto variable = weakVariable.lock();
+	if (!variable) {
+		return;
+	}
+
+	auto oldName = variable->Name();
+	bool accepted = VariableSettingsDialog::AskForSettings(ui->variables,
+							       *variable.get());
+	if (accepted && oldName != variable->Name()) {
+		VariableSignalManager::Instance()->Rename(
+			QString::fromStdString(oldName),
+			QString::fromStdString(variable->Name()));
+	}
+}
+
+void AdvSceneSwitcher::RemoveSelectedVariables()
+{
+	auto selectedRows = ui->variables->selectionModel()->selectedRows();
+	if (selectedRows.empty()) {
+		return;
+	}
+
+	QStringList varNames;
+	for (auto row : selectedRows) {
+		auto cell = ui->variables->item(row.row(), 0);
+		if (!cell) {
+			continue;
+		}
+
+		varNames << cell->text();
+	}
+
+	int varNameCount = varNames.size();
+	if (varNameCount == 1) {
+		QString deleteWarning = obs_module_text(
+			"AdvSceneSwitcher.variableTab.removeSingleVariablePopup.text");
+		if (!DisplayMessage(deleteWarning.arg(varNames.at(0)), true)) {
+			return;
+		}
+	} else {
+		QString deleteWarning = obs_module_text(
+			"AdvSceneSwitcher.variableTab.removeMultipleVariablesPopup.text");
+		if (!DisplayMessage(deleteWarning.arg(varNameCount), true)) {
+			return;
+		}
+	}
+
+	for (const auto &name : varNames) {
+		VariableSignalManager::Instance()->Remove(name);
+	}
+
+	auto lock = LockContext();
+	for (const auto &name : varNames) {
+		auto variable = GetVariableByQString(name);
+		if (!variable) {
+			continue;
+		}
+
+		auto &variables = GetVariables();
+		variables.erase(
+			std::remove_if(
+				variables.begin(), variables.end(),
+				[variable](const std::shared_ptr<Item> &item) {
+					return item.get() == variable;
+				}),
+			variables.end());
+	}
 }
 
 void AdvSceneSwitcher::on_variableAdd_clicked()
@@ -291,48 +351,7 @@ void AdvSceneSwitcher::on_variableAdd_clicked()
 
 void AdvSceneSwitcher::on_variableRemove_clicked()
 {
-	auto selectedItems = ui->variables->selectedItems();
-	QList<int> selectedRows;
-	for (auto item : selectedItems) {
-		int row = item->row();
-		if (!selectedRows.contains(row)) {
-			selectedRows.append(row);
-		}
-	}
-
-	if (selectedRows.empty()) {
-		return;
-	}
-
-	QStringList names;
-	for (int row : selectedRows) {
-		auto item = ui->variables->item(row, 0);
-		if (!item) {
-			continue;
-		}
-		names << item->text();
-	}
-
-	for (const auto &name : names) {
-		VariableSignalManager::Instance()->Remove(name);
-	}
-
-	auto lock = LockContext();
-	for (const auto &name : names) {
-		auto variable = GetVariableByQString(name);
-		if (!variable) {
-			continue;
-		}
-
-		auto &variables = GetVariables();
-		variables.erase(
-			std::remove_if(
-				variables.begin(), variables.end(),
-				[variable](const std::shared_ptr<Item> &item) {
-					return item.get() == variable;
-				}),
-			variables.end());
-	}
+	RemoveSelectedVariables();
 }
 
 } // namespace advss

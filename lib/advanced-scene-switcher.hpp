@@ -81,6 +81,7 @@ public:
 	bool AddNewMacro(std::shared_ptr<Macro> &res, std::string &name,
 			 std::string format = "");
 	void RemoveMacro(std::shared_ptr<Macro> &);
+	void RemoveSelectedMacros();
 	void RenameMacro(std::shared_ptr<Macro> &, const QString &name);
 	std::shared_ptr<Macro> GetSelectedMacro();
 	std::vector<std::shared_ptr<Macro>> GetSelectedMacros();
@@ -135,7 +136,7 @@ public slots:
 	void ShowMacroElseActionsContextMenu(const QPoint &);
 	void ShowMacroConditionsContextMenu(const QPoint &);
 	void CopyMacro();
-	void RenameCurrentMacro();
+	void RenameSelectedMacro();
 	void ExportMacros();
 	void ImportMacros();
 	void ExpandAllActions();
@@ -215,6 +216,9 @@ public:
 public slots:
 	void on_variableAdd_clicked();
 	void on_variableRemove_clicked();
+
+	void OpenSettingsForSelectedVariable();
+	void RemoveSelectedVariables();
 
 	/* --- End of variable tab section --- */
 

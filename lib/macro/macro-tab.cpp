@@ -94,7 +94,7 @@ void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 	auto name = QString::fromStdString(macro->Name());
 	if (macro->IsGroup() && macro->GroupSize() > 0) {
 		QString deleteWarning = obs_module_text(
-			"AdvSceneSwitcher.macroTab.groupDeleteConfirm");
+			"AdvSceneSwitcher.macroTab.removeGroupPopup.text");
 		if (!DisplayMessage(deleteWarning.arg(name), true)) {
 			return;
 		}
@@ -102,6 +102,40 @@ void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 
 	ui->macros->Remove(macro);
 	emit MacroRemoved(name);
+}
+
+void AdvSceneSwitcher::RemoveSelectedMacros()
+{
+	auto macros = GetSelectedMacros();
+	if (macros.empty()) {
+		return;
+	}
+
+	int macroCount = macros.size();
+	if (macroCount == 1) {
+		QString deleteWarning = obs_module_text(
+			"AdvSceneSwitcher.macroTab.removeSingleMacroPopup.text");
+		auto macro = macros.at(0);
+
+		if (!DisplayMessage(deleteWarning.arg(QString::fromStdString(
+					    macro->Name())),
+				    true)) {
+			return;
+		}
+
+		RemoveMacro(macro);
+		return;
+	}
+
+	QString deleteWarning = obs_module_text(
+		"AdvSceneSwitcher.macroTab.removeMultipleMacrosPopup.text");
+	if (!DisplayMessage(deleteWarning.arg(macroCount), true)) {
+		return;
+	}
+
+	for (auto &macro : macros) {
+		RemoveMacro(macro);
+	}
 }
 
 void AdvSceneSwitcher::RenameMacro(std::shared_ptr<Macro> &macro,
@@ -117,32 +151,7 @@ void AdvSceneSwitcher::RenameMacro(std::shared_ptr<Macro> &macro,
 
 void AdvSceneSwitcher::on_macroRemove_clicked()
 {
-	auto macros = GetSelectedMacros();
-	if (macros.empty()) {
-		return;
-	}
-
-	if (macros.size() == 1) {
-		QString deleteWarning = obs_module_text(
-			"AdvSceneSwitcher.macroTab.deleteSingleMacroConfirmation");
-		if (!DisplayMessage(deleteWarning.arg(QString::fromStdString(
-					    macros.at(0)->Name())),
-				    true)) {
-			return;
-		}
-		RemoveMacro(macros.at(0));
-		return;
-	}
-
-	QString deleteWarning = obs_module_text(
-		"AdvSceneSwitcher.macroTab.deleteMultipleMacrosConfirmation");
-	if (!DisplayMessage(deleteWarning.arg(macros.size()), true)) {
-		return;
-	}
-
-	for (auto &macro : macros) {
-		RemoveMacro(macro);
-	}
+	RemoveSelectedMacros();
 }
 
 void AdvSceneSwitcher::on_macroUp_clicked()
@@ -172,12 +181,13 @@ static bool newMacroNameValid(const std::string &name)
 	return false;
 }
 
-void AdvSceneSwitcher::RenameCurrentMacro()
+void AdvSceneSwitcher::RenameSelectedMacro()
 {
 	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
+
 	std::string oldName = macro->Name();
 	std::string name;
 	if (!AdvSSNameDialog::AskForName(
@@ -186,9 +196,11 @@ void AdvSceneSwitcher::RenameCurrentMacro()
 		    QString::fromStdString(oldName))) {
 		return;
 	}
+
 	if (name.empty() || name == oldName || !newMacroNameValid(name)) {
 		return;
 	}
+
 	RenameMacro(macro, QString::fromStdString(name));
 
 	const QSignalBlocker b(ui->macroName);
@@ -778,6 +790,7 @@ bool shouldRestoreSplitter(const QList<int> &pos)
 void AdvSceneSwitcher::SetupMacroTab()
 {
 	ui->macroElseActions->installEventFilter(this);
+	ui->macros->installEventFilter(this);
 
 	if (GetMacros().size() == 0 && !switcher->disableHints) {
 		addPulse = PulseWidget(ui->macroAdd, QColor(Qt::green));
@@ -901,7 +914,7 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 
 	auto rename = menu.addAction(
 		obs_module_text("AdvSceneSwitcher.macroTab.rename"), this,
-		&AdvSceneSwitcher::RenameCurrentMacro);
+		&AdvSceneSwitcher::RenameSelectedMacro);
 	rename->setEnabled(ui->macros->SingleItemSelected());
 
 	auto remove = menu.addAction(
