@@ -88,6 +88,7 @@ signals:
 
 void SaveVariables(obs_data_t *obj);
 void LoadVariables(obs_data_t *obj);
+void ImportVariables(obs_data_t *obj);
 
 std::deque<std::shared_ptr<Item>> &GetVariables();
 

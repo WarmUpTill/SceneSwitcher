@@ -1,4 +1,5 @@
 #include "advanced-scene-switcher.hpp"
+#include "action-queue.hpp"
 #include "macro-action-edit.hpp"
 #include "macro-condition-edit.hpp"
 #include "macro-export-import-dialog.hpp"
@@ -248,6 +249,7 @@ void AdvSceneSwitcher::ExportMacros()
 	}
 	obs_data_set_array(data, "macros", macroArray);
 	SaveVariables(data);
+	SaveActionQueues(data);
 	obs_data_set_string(data, "version", g_GIT_TAG);
 	auto json = obs_data_get_json(data);
 	QString exportString(json);
@@ -370,26 +372,6 @@ bool AdvSceneSwitcher::ResolveMacroImportNameConflict(
 	return true;
 }
 
-static bool variableWithNameExists(const std::string &name)
-{
-	return !!GetVariableByName(name);
-}
-
-static void importVariables(obs_data_t *obj)
-{
-	OBSDataArrayAutoRelease array = obs_data_get_array(obj, "variables");
-	size_t count = obs_data_array_count(array);
-	for (size_t i = 0; i < count; i++) {
-		OBSDataAutoRelease data = obs_data_array_item(array, i);
-		auto var = Variable::Create();
-		var->Load(data);
-		if (variableWithNameExists(var->Name())) {
-			continue;
-		}
-		GetVariables().emplace_back(var);
-	}
-}
-
 void AdvSceneSwitcher::ImportMacros()
 {
 	QString json;
@@ -404,7 +386,8 @@ void AdvSceneSwitcher::ImportMacros()
 		ImportMacros();
 		return;
 	}
-	importVariables(data);
+	ImportVariables(data);
+	ImportQueues(data);
 
 	auto version = obs_data_get_string(data, "version");
 	if (strcmp(version, g_GIT_TAG) != 0) {
@@ -425,6 +408,7 @@ void AdvSceneSwitcher::ImportMacros()
 		OBSDataAutoRelease array_obj = obs_data_array_item(array, i);
 		auto macro = std::make_shared<Macro>();
 		macro->Load(array_obj);
+		RunPostLoadSteps();
 
 		if (macroNameExists(macro->Name()) &&
 		    !ResolveMacroImportNameConflict(macro)) {
