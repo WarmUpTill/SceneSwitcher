@@ -17,6 +17,55 @@ namespace advss {
 std::map<std::pair<MidiDeviceType, std::string>, MidiDeviceInstance *>
 	MidiDeviceInstance::devices = {};
 
+static bool setupDeviceObservers()
+{
+	static std::vector<libremidi::observer> observers;
+	for (auto api : libremidi::available_apis()) {
+		libremidi::observer_configuration cbs;
+		cbs.input_added = [=](const libremidi::input_port &p) {
+			auto dev = MidiDeviceInstance::GetDevice(p);
+			if (!dev) {
+				return;
+			}
+			blog(LOG_INFO, "MIDI input connected: %s",
+			     p.port_name.c_str());
+			dev->ClosePort();
+			dev->OpenPort();
+		};
+		cbs.input_removed = [=](const libremidi::input_port &p) {
+			auto dev = MidiDeviceInstance::GetDevice(p);
+			if (!dev) {
+				return;
+			}
+			blog(LOG_INFO, "MIDI input removed: %s",
+			     p.port_name.c_str());
+		};
+		cbs.output_added = [=](const libremidi::output_port &p) {
+			auto dev = MidiDeviceInstance::GetDevice(p);
+			if (!dev) {
+				return;
+			}
+			blog(LOG_INFO, "MIDI output connected: %s",
+			     p.port_name.c_str());
+			dev->ClosePort();
+			dev->OpenPort();
+		};
+		cbs.output_removed = [=](const libremidi::output_port &p) {
+			auto dev = MidiDeviceInstance::GetDevice(p);
+			if (!dev) {
+				return;
+			}
+			blog(LOG_INFO, "MIDI output removed: %s",
+			     p.port_name.c_str());
+		};
+		observers.emplace_back(
+			cbs, libremidi::observer_configuration_for(api));
+	}
+	return true;
+}
+
+static bool deviceObserversAreSetup = setupDeviceObservers();
+
 void MidiDeviceInstance::ResetAllDevices()
 {
 	for (auto const &[_, device] : MidiDeviceInstance::devices) {
@@ -212,8 +261,9 @@ bool MidiMessage::Matches(const MidiMessage &m) const
 	return channelMatch && noteMatch && valueMatch && typeMatch;
 }
 
-MidiDeviceInstance *MidiDeviceInstance::GetDevice(MidiDeviceType type,
-						  const std::string &name)
+MidiDeviceInstance *
+MidiDeviceInstance::GetDeviceAndOpen(MidiDeviceType type,
+				     const std::string &name)
 {
 	if (name.empty()) {
 		return nullptr;
@@ -250,6 +300,30 @@ getNameFromPortInformation(const libremidi::port_information &info)
 	name.erase(name.begin(), std::find_if(name.begin(), name.end(),
 					      [](char c) { return c != ' '; }));
 	return "[" + name;
+}
+
+MidiDeviceInstance *
+advss::MidiDeviceInstance::GetDevice(const libremidi::input_port &p)
+{
+	auto key = std::make_pair(MidiDeviceType::INPUT,
+				  getNameFromPortInformation(p));
+	auto it = MidiDeviceInstance::devices.find(key);
+	if (it == devices.end()) {
+		return nullptr;
+	}
+	return it->second;
+}
+
+MidiDeviceInstance *
+advss::MidiDeviceInstance::GetDevice(const libremidi::output_port &p)
+{
+	auto key = std::make_pair(MidiDeviceType::OUTPUT,
+				  getNameFromPortInformation(p));
+	auto it = MidiDeviceInstance::devices.find(key);
+	if (it == devices.end()) {
+		return nullptr;
+	}
+	return it->second;
 }
 
 static inline QStringList getInputDeviceNames()
@@ -305,10 +379,11 @@ static std::string getPortNameFromNumber(MidiDeviceType type, int port)
 	return devices.at(port).toStdString();
 }
 
-MidiDeviceInstance *MidiDeviceInstance::GetDevice(MidiDeviceType type, int port)
+MidiDeviceInstance *MidiDeviceInstance::GetDeviceAndOpen(MidiDeviceType type,
+							 int port)
 {
 	std::string name = getPortNameFromNumber(type, port);
-	return GetDevice(type, name);
+	return GetDeviceAndOpen(type, name);
 }
 
 void MidiDevice::Save(obs_data_t *obj) const
@@ -327,13 +402,13 @@ void MidiDevice::Load(obs_data_t *obj)
 	// TODO: Remove this fallback at some point
 	if (obs_data_has_user_value(data, "port")) {
 		auto port = obs_data_get_int(data, "port");
-		_dev = MidiDeviceInstance::GetDevice(_type, port);
+		_dev = MidiDeviceInstance::GetDeviceAndOpen(_type, port);
 		if (_dev) {
 			_name = _dev->_name;
 		}
 	} else {
 		_name = obs_data_get_string(data, "portName");
-		_dev = MidiDeviceInstance::GetDevice(_type, _name);
+		_dev = MidiDeviceInstance::GetDeviceAndOpen(_type, _name);
 	}
 }
 
@@ -372,8 +447,7 @@ getInPortFromName(const std::string &name)
 
 bool MidiDeviceInstance::OpenPort()
 {
-	if ((_type == MidiDeviceType::INPUT && _in.is_port_open()) ||
-	    (_type == MidiDeviceType::OUTPUT && _out.is_port_open())) {
+	if (IsOpened()) {
 		return true;
 	}
 
@@ -437,10 +511,15 @@ bool MidiDeviceInstance::OpenPort()
 	return false;
 }
 
+bool MidiDeviceInstance::IsOpened() const
+{
+	return (_type == MidiDeviceType::INPUT && _in.is_port_open()) ||
+	       (_type == MidiDeviceType::OUTPUT && _out.is_port_open());
+}
+
 void MidiDeviceInstance::ClosePort()
 {
-	if ((_type == MidiDeviceType::INPUT && !_in.is_port_open()) ||
-	    (_type == MidiDeviceType::OUTPUT && !_out.is_port_open())) {
+	if (!IsOpened()) {
 		return;
 	}
 
@@ -542,7 +621,6 @@ MidiMessageBuffer MidiDeviceInstance::RegisterForMidiMessages()
 
 void MidiDeviceInstance::ReceiveMidiMessage(libremidi::message &&msg)
 {
-	auto lock = LockContext();
 	_dispatcher.DispatchMessage(msg);
 	vblog(LOG_INFO, "received midi: %s",
 	      MidiMessage::ToString(msg).c_str());
@@ -590,7 +668,7 @@ void MidiDeviceSelection::IdxChangedHelper(int idx)
 	}
 
 	auto name = currentText().toStdString();
-	auto devInstance = MidiDeviceInstance::GetDevice(_type, name);
+	auto devInstance = MidiDeviceInstance::GetDeviceAndOpen(_type, name);
 	if (!devInstance) {
 		DisplayMessage(obs_module_text(
 			"AdvSceneSwitcher.midi.deviceOpenFail"));

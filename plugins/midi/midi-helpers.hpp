@@ -64,16 +64,22 @@ enum class MidiDeviceType {
 
 class MidiDeviceInstance {
 public:
-	static MidiDeviceInstance *GetDevice(MidiDeviceType type,
-					     const std::string &);
-	static MidiDeviceInstance *GetDevice(MidiDeviceType type, int port);
+	static MidiDeviceInstance *GetDeviceAndOpen(MidiDeviceType type,
+						    const std::string &);
+	static MidiDeviceInstance *GetDeviceAndOpen(MidiDeviceType type,
+						    int port);
+	static MidiDeviceInstance *GetDevice(const libremidi::input_port &p);
+	static MidiDeviceInstance *GetDevice(const libremidi::output_port &p);
+
 	static void ResetAllDevices();
+
+	bool OpenPort();
+	void ClosePort();
 
 private:
 	MidiDeviceInstance() = default;
 	~MidiDeviceInstance() = default;
-	bool OpenPort();
-	void ClosePort();
+	bool IsOpened() const;
 	bool SendMessge(const MidiMessage &);
 	[[nodiscard]] MidiMessageBuffer RegisterForMidiMessages();
 	void ReceiveMidiMessage(libremidi::message &&);
