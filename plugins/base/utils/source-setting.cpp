@@ -113,11 +113,13 @@ void SetSourceSetting(obs_source_t *source, const SourceSetting &setting,
 				obs_data_set_int(data, id.c_str(), *intValue);
 				break;
 			}
+
 			auto doubleValue = GetDouble(value);
 			if (doubleValue.has_value()) {
 				obs_data_set_int(data, id.c_str(),
 						 *doubleValue);
 			}
+
 			break;
 		}
 		case OBS_DATA_NUM_DOUBLE: {
@@ -125,7 +127,8 @@ void SetSourceSetting(obs_source_t *source, const SourceSetting &setting,
 			if (!numValue.has_value()) {
 				break;
 			}
-			obs_data_set_int(data, id.c_str(), *numValue);
+
+			obs_data_set_double(data, id.c_str(), *numValue);
 			break;
 		}
 		}
