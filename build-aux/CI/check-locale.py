@@ -27,16 +27,20 @@ def getNonDefaultLocales(dir):
 
 def getAllLocaleEntriesWithWidgetPlaceholders(file):
     localeEntries = []
-    with open(file, 'r', encoding='UTF-8') as f:
+    with open(file, "r", encoding="UTF-8") as f:
         for line in f.readlines():
             widgetPlaceholders = []
+
+            if line.startswith(";"):
+                continue
+
             for word in line.split("{{"):
                 if not "}}" in word:
                     continue
-                word = "{{" + word[:word.rfind("}}")] + "}}"
+                word = "{{" + word[: word.rfind("}}")] + "}}"
                 widgetPlaceholders.append(word)
-            localeEntries.append(localeEntry(
-                line.split("=")[0], widgetPlaceholders))
+
+            localeEntries.append(localeEntry(line.split("=")[0], widgetPlaceholders))
     return localeEntries
 
 
@@ -47,44 +51,62 @@ def getLocaleEntryFrom(entry, list):
     return None
 
 
-def checkWidgetPlacehodlers(file, expectedPlaceholders):
+def checkWidgetPlaceholders(file, expectedPlaceholders):
     localeEntries = getAllLocaleEntriesWithWidgetPlaceholders(file)
     result = True
+
     for localeEntry in localeEntries:
         expectedEntry = getLocaleEntryFrom(localeEntry, expectedPlaceholders)
         if expectedEntry is None:
+            result = False
             print(
-                "WARNING: Locale entry \"{}\" from \"{}\" not found in \"{}\"".format(localeEntry.locale, file, defaultLocaleFile))
+                'ERROR: Locale entry "{}" from "{}" not found in "{}"'.format(
+                    localeEntry.locale, file, defaultLocaleFile
+                )
+            )
             continue
-        for p in localeEntry.placeholders:
-            if p not in expectedEntry.placeholders:
-                print("WARNING: Locale entry \"{}\" from \"{}\" does contain \"{}\" while \"{}\" does not".format(
-                    localeEntry.locale, file, p, defaultLocaleFile))
-        for p in expectedEntry.placeholders:
-            if p not in localeEntry.placeholders:
+
+        for placeholder in localeEntry.placeholders:
+            if placeholder not in expectedEntry.placeholders:
                 result = False
-                print("ERROR: Locale entry \"{}\" from \"{}\" does not contain \"{}\"".format(
-                    localeEntry.locale, file, p))
+                print(
+                    'ERROR: Locale entry "{}" from "{}" does contain "{}" while "{}" does not'.format(
+                        localeEntry.locale, file, placeholder, defaultLocaleFile
+                    )
+                )
+
+        for placeholder in expectedEntry.placeholders:
+            if placeholder not in localeEntry.placeholders:
+                result = False
+                print(
+                    'ERROR: Locale entry "{}" from "{}" does not contain "{}"'.format(
+                        localeEntry.locale, file, placeholder
+                    )
+                )
+
     return result
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Checks for inconsistencies regarding widget placeholders in the different locale files.')
-    parser.add_argument(
-        '-p', '--path', help='Path to locale folder', required=True)
+        description="Checks for inconsistencies regarding widget placeholders in the different locale files."
+    )
+    parser.add_argument("-p", "--path", help="Path to locale folder", required=True)
     args = parser.parse_args()
 
     placeholders = getAllLocaleEntriesWithWidgetPlaceholders(
-        os.path.join(args.path, defaultLocaleFile))
+        os.path.join(args.path, defaultLocaleFile)
+    )
     nonDefaultLocales = getNonDefaultLocales(args.path)
 
     result = True
-    for f in nonDefaultLocales:
-        if checkWidgetPlacehodlers(f, placeholders) == False:
+    for file in nonDefaultLocales:
+        if checkWidgetPlaceholders(file, placeholders) == False:
             result = False
+
     if result == False:
         sys.exit(1)
+
     print("SUCCESS: No issues found!")
     sys.exit(0)
 
