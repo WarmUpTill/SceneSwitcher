@@ -187,6 +187,28 @@ void LoadVariables(obs_data_t *obj)
 	obs_data_array_release(variablesArray);
 }
 
+static bool variableWithNameExists(const std::string &name)
+{
+	return !!GetVariableByName(name);
+}
+
+void ImportVariables(obs_data_t *data)
+{
+	obs_data_array_t *array = obs_data_get_array(data, "variables");
+	size_t count = obs_data_array_count(array);
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *arrayElement = obs_data_array_item(array, i);
+		auto var = Variable::Create();
+		var->Load(arrayElement);
+		obs_data_release(arrayElement);
+		if (variableWithNameExists(var->Name())) {
+			continue;
+		}
+		GetVariables().emplace_back(var);
+	}
+	obs_data_array_release(array);
+}
+
 static void populateSaveActionSelection(QComboBox *list)
 {
 	list->addItem(

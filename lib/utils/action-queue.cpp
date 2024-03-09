@@ -358,6 +358,27 @@ void LoadActionQueues(obs_data_t *obj)
 	}
 }
 
+static bool queueWithNameExists(const std::string &name)
+{
+	return !GetWeakActionQueueByName(name).expired();
+}
+
+void ImportQueues(obs_data_t *data)
+{
+	OBSDataArrayAutoRelease array =
+		obs_data_get_array(data, "actionQueues");
+	size_t count = obs_data_array_count(array);
+	for (size_t i = 0; i < count; i++) {
+		OBSDataAutoRelease arrayElement = obs_data_array_item(array, i);
+		auto queue = ActionQueue::Create();
+		queue->Load(arrayElement);
+		if (queueWithNameExists(queue->Name())) {
+			continue;
+		}
+		queues.emplace_back(queue);
+	}
+}
+
 std::weak_ptr<ActionQueue> GetWeakActionQueueByName(const std::string &name)
 {
 	for (const auto &queue : queues) {

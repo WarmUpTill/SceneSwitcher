@@ -98,6 +98,7 @@ signals:
 void SetupActionQueues();
 void SaveActionQueues(obs_data_t *);
 void LoadActionQueues(obs_data_t *);
+void ImportQueues(obs_data_t *);
 std::weak_ptr<ActionQueue> GetWeakActionQueueByName(const std::string &name);
 std::weak_ptr<ActionQueue> GetWeakActionQueueByQString(const QString &name);
 std::string GetActionQueueName(const std::weak_ptr<ActionQueue> &);
