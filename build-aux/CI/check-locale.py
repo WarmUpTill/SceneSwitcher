@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 
-import os
-import sys
 import argparse
+import os
+import re
+import sys
 
 defaultLocaleFile = "en-US.ini"
 
 
 class localeEntry:
     locale = ""
-    placeholders = []
+    widgetPlaceholders = []
+    qStringArgs = []
 
-    def __init__(self, locale, widgets) -> None:
+    def __init__(self, locale, widgetPlaceholders, qStringArgs) -> None:
         self.locale = locale
-        self.placeholders = widgets
+        self.widgetPlaceholders = widgetPlaceholders
+        self.qStringArgs = qStringArgs
 
 
 def getNonDefaultLocales(dir):
@@ -22,14 +25,16 @@ def getNonDefaultLocales(dir):
         f = os.path.join(dir, filename)
         if os.path.isfile(f) and not f.endswith(defaultLocaleFile):
             files.append(f)
+
     return files
 
 
-def getAllLocaleEntriesWithWidgetPlaceholders(file):
+def getAllLocaleEntries(file):
     localeEntries = []
     with open(file, "r", encoding="UTF-8") as f:
         for line in f.readlines():
             widgetPlaceholders = []
+            qStringArgs = []
 
             if line.startswith(";"):
                 continue
@@ -37,10 +42,16 @@ def getAllLocaleEntriesWithWidgetPlaceholders(file):
             for word in line.split("{{"):
                 if not "}}" in word:
                     continue
-                word = "{{" + word[: word.rfind("}}")] + "}}"
-                widgetPlaceholders.append(word)
+                placeholder = "{{" + word[: word.rfind("}}")] + "}}"
+                widgetPlaceholders.append(placeholder)
 
-            localeEntries.append(localeEntry(line.split("=")[0], widgetPlaceholders))
+            for match in re.finditer(r"%\d+", line):
+                qStringArgs.append(match.group(0))
+
+            localeEntries.append(
+                localeEntry(line.split("=")[0], widgetPlaceholders, qStringArgs)
+            )
+
     return localeEntries
 
 
@@ -48,16 +59,18 @@ def getLocaleEntryFrom(entry, list):
     for element in list:
         if element.locale == entry.locale:
             return element
+
     return None
 
 
-def checkWidgetPlaceholders(file, expectedPlaceholders):
-    localeEntries = getAllLocaleEntriesWithWidgetPlaceholders(file)
+def checkLocaleEntries(file, expectedLocaleEntries):
+    localeEntries = getAllLocaleEntries(file)
     result = True
 
     for localeEntry in localeEntries:
-        expectedEntry = getLocaleEntryFrom(localeEntry, expectedPlaceholders)
-        if expectedEntry is None:
+        expectedLocaleEntry = getLocaleEntryFrom(localeEntry, expectedLocaleEntries)
+
+        if expectedLocaleEntry is None:
             result = False
             print(
                 'ERROR: Locale entry "{}" from "{}" not found in "{}"'.format(
@@ -66,21 +79,39 @@ def checkWidgetPlaceholders(file, expectedPlaceholders):
             )
             continue
 
-        for placeholder in localeEntry.placeholders:
-            if placeholder not in expectedEntry.placeholders:
+        for placeholder in localeEntry.widgetPlaceholders:
+            if placeholder not in expectedLocaleEntry.widgetPlaceholders:
                 result = False
                 print(
-                    'ERROR: Locale entry "{}" from "{}" does contain "{}" while "{}" does not'.format(
+                    'ERROR: Locale entry "{}" from "{}" does contain "{}" widget placeholder while "{}" does not'.format(
                         localeEntry.locale, file, placeholder, defaultLocaleFile
                     )
                 )
 
-        for placeholder in expectedEntry.placeholders:
-            if placeholder not in localeEntry.placeholders:
+        for placeholder in expectedLocaleEntry.widgetPlaceholders:
+            if placeholder not in localeEntry.widgetPlaceholders:
                 result = False
                 print(
-                    'ERROR: Locale entry "{}" from "{}" does not contain "{}"'.format(
+                    'ERROR: Locale entry "{}" from "{}" does not contain "{}" widget placeholder'.format(
                         localeEntry.locale, file, placeholder
+                    )
+                )
+
+        for arg in localeEntry.qStringArgs:
+            if arg not in expectedLocaleEntry.qStringArgs:
+                result = False
+                print(
+                    'ERROR: Locale entry "{}" from "{}" does contain "{}" QString arg while "{}" does not'.format(
+                        localeEntry.locale, file, arg, defaultLocaleFile
+                    )
+                )
+
+        for arg in expectedLocaleEntry.qStringArgs:
+            if arg not in localeEntry.qStringArgs:
+                result = False
+                print(
+                    'ERROR: Locale entry "{}" from "{}" does not contain "{}" QString arg'.format(
+                        localeEntry.locale, file, arg
                     )
                 )
 
@@ -94,14 +125,14 @@ def main():
     parser.add_argument("-p", "--path", help="Path to locale folder", required=True)
     args = parser.parse_args()
 
-    placeholders = getAllLocaleEntriesWithWidgetPlaceholders(
+    defaultLocaleEntries = getAllLocaleEntries(
         os.path.join(args.path, defaultLocaleFile)
     )
     nonDefaultLocales = getNonDefaultLocales(args.path)
 
     result = True
     for file in nonDefaultLocales:
-        if checkWidgetPlaceholders(file, placeholders) == False:
+        if checkLocaleEntries(file, defaultLocaleEntries) == False:
             result = False
 
     if result == False:
