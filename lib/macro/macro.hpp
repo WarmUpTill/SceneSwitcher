@@ -24,6 +24,7 @@ class Macro {
 public:
 	Macro(const std::string &name = "", const bool addHotkey = false);
 	virtual ~Macro();
+
 	bool CeckMatch();
 	bool PerformActions(bool match, bool forceParallel = false,
 			    bool ignorePause = false);
@@ -42,6 +43,11 @@ public:
 	bool MatchOnChange() const { return _performActionsOnChange; }
 	void SetSkipExecOnStart(bool skip) { _skipExecOnStart = skip; }
 	bool SkipExecOnStart() const { return _skipExecOnStart; }
+	void SetStopActionsIfNotDone(bool stopActionsIfNotDone)
+	{
+		_stopActionsIfNotDone = stopActionsIfNotDone;
+	}
+	bool StopActionsIfNotDone() const { return _stopActionsIfNotDone; }
 	int RunCount() const { return _runCount; };
 	void ResetRunCount() { _runCount = 0; };
 	void ResetTimers();
@@ -168,6 +174,7 @@ private:
 	bool _conditionSateChanged = false;
 	bool _performActionsOnChange = true;
 	bool _skipExecOnStart = false;
+	bool _stopActionsIfNotDone = false;
 	bool _paused = false;
 	int _runCount = 0;
 	bool _registerHotkeys = true;

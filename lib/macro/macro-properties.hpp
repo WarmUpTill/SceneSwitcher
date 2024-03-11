@@ -49,6 +49,7 @@ private:
 	// Current macro specific settings
 	QCheckBox *_currentMacroRegisterHotkeys;
 	QCheckBox *_currentSkipOnStartup;
+	QCheckBox *_currentStopActionsIfNotDone;
 	QCheckBox *_currentMacroRegisterDock;
 	QCheckBox *_currentMacroDockAddRunButton;
 	QCheckBox *_currentMacroDockAddPauseButton;
