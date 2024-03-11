@@ -12,7 +12,73 @@ bool MacroConditionMidi::_registered = MacroConditionFactory::Register(
 	{MacroConditionMidi::Create, MacroConditionMidiEdit::Create,
 	 "AdvSceneSwitcher.condition.midi"});
 
+static const std::map<MacroConditionMidi::Condition, std::string>
+	conditionTypes = {
+		{MacroConditionMidi::Condition::MIDI_MESSAGE,
+		 "AdvSceneSwitcher.condition.midi.condition.message"},
+		{MacroConditionMidi::Condition::MIDI_CONNECTED_DEVICE_NAMES,
+		 "AdvSceneSwitcher.condition.midi.condition.deviceName"},
+};
+
 bool MacroConditionMidi::CheckCondition()
+{
+	switch (_condition) {
+	case Condition::MIDI_MESSAGE:
+		return CheckMessage();
+	case Condition::MIDI_CONNECTED_DEVICE_NAMES:
+		return CheckConnectedDevcieNames();
+	default:
+		break;
+	}
+	return false;
+}
+
+bool MacroConditionMidi::Save(obs_data_t *obj) const
+{
+	MacroCondition::Save(obj);
+	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
+	_message.Save(obj);
+	_device.Save(obj);
+	_deviceName.Save(obj, "deviceName");
+	_regex.Save(obj);
+	return true;
+}
+
+bool MacroConditionMidi::Load(obs_data_t *obj)
+{
+	MacroCondition::Load(obj);
+	_message.Load(obj);
+	_device.Load(obj);
+	_deviceName.Load(obj, "deviceName");
+	_regex.Load(obj);
+	SetCondition(
+		static_cast<Condition>(obs_data_get_int(obj, "condition")));
+	return true;
+}
+
+std::string MacroConditionMidi::GetShortDesc() const
+{
+	return _condition == MacroConditionMidi::Condition::MIDI_MESSAGE
+		       ? _device.Name()
+		       : "";
+}
+
+void MacroConditionMidi::SetDevice(const MidiDevice &dev)
+{
+	_device = dev;
+	_messageBuffer = dev.RegisterForMidiMessages();
+}
+
+void MacroConditionMidi::SetCondition(Condition condition)
+{
+	_condition = condition;
+	if (_condition == Condition::MIDI_MESSAGE) {
+		_messageBuffer = _device.RegisterForMidiMessages();
+	}
+	SetupTempVars();
+}
+
+bool MacroConditionMidi::CheckMessage()
 {
 	if (!_messageBuffer) {
 		return false;
@@ -40,37 +106,27 @@ bool MacroConditionMidi::CheckCondition()
 	return false;
 }
 
-bool MacroConditionMidi::Save(obs_data_t *obj) const
+bool MacroConditionMidi::CheckConnectedDevcieNames()
 {
-	MacroCondition::Save(obj);
-	_message.Save(obj);
-	_device.Save(obj);
-	return true;
-}
-
-bool MacroConditionMidi::Load(obs_data_t *obj)
-{
-	MacroCondition::Load(obj);
-	_message.Load(obj);
-	_device.Load(obj);
-	_messageBuffer = _device.RegisterForMidiMessages();
-	return true;
-}
-
-std::string MacroConditionMidi::GetShortDesc() const
-{
-	return _device.Name();
-}
-
-void MacroConditionMidi::SetDevice(const MidiDevice &dev)
-{
-	_device = dev;
-	_messageBuffer = dev.RegisterForMidiMessages();
+	auto deviceNames = GetDeviceNames();
+	if (!_regex.Enabled()) {
+		return std::find(deviceNames.begin(), deviceNames.end(),
+				 std::string(_deviceName)) != deviceNames.end();
+	}
+	for (const auto &deviceName : deviceNames) {
+		if (_regex.Matches(deviceName, _deviceName)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void MacroConditionMidi::SetupTempVars()
 {
 	MacroCondition::SetupTempVars();
+	if (_condition == Condition::MIDI_CONNECTED_DEVICE_NAMES) {
+		return;
+	}
 	AddTempvar("type",
 		   obs_module_text("AdvSceneSwitcher.tempVar.midi.type"));
 	AddTempvar("channel",
@@ -98,16 +154,45 @@ void MacroConditionMidi::SetVariableValues(const MidiMessage &m)
 	SetTempVarValue("value2", std::to_string(m.Value()));
 }
 
+static void populateConditionSelection(QComboBox *list)
+{
+	for (const auto &[_, name] : conditionTypes) {
+		list->addItem(obs_module_text(name.c_str()));
+	}
+}
+
 MacroConditionMidiEdit::MacroConditionMidiEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionMidi> entryData)
 	: QWidget(parent),
+	  _conditions(new QComboBox()),
 	  _devices(new MidiDeviceSelection(this, MidiDeviceType::INPUT)),
 	  _message(new MidiMessageSelection(this)),
 	  _resetMidiDevices(new QPushButton(
 		  obs_module_text("AdvSceneSwitcher.midi.resetDevices"))),
 	  _listen(new QPushButton(
-		  obs_module_text("AdvSceneSwitcher.midi.startListen")))
+		  obs_module_text("AdvSceneSwitcher.midi.startListen"))),
+	  _deviceNames(new QComboBox()),
+	  _regex(new RegexConfigWidget()),
+	  _deviceListInfo(new QLabel()),
+	  _listenLayout(new QHBoxLayout()),
+	  _entryLayout(new QHBoxLayout())
 {
+	_deviceNames->addItems(GetDeviceNamesAsQStringList());
+	_deviceNames->setEditable(true);
+
+	QString path = GetThemeTypeName() == "Light"
+			       ? ":/res/images/help.svg"
+			       : ":/res/images/help_light.svg";
+	QIcon icon(path);
+	QPixmap pixmap = icon.pixmap(QSize(16, 16));
+	_deviceListInfo->setPixmap(pixmap);
+	_deviceListInfo->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.condition.midi.condition.deviceName.info"));
+
+	populateConditionSelection(_conditions);
+
+	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(ConditionChanged(int)));
 	QWidget::connect(_devices,
 			 SIGNAL(DeviceSelectionChanged(const MidiDevice &)),
 			 this,
@@ -121,19 +206,21 @@ MacroConditionMidiEdit::MacroConditionMidiEdit(
 			 SLOT(ToggleListen()));
 	QWidget::connect(&_listenTimer, SIGNAL(timeout()), this,
 			 SLOT(SetMessageSelectionToLastReceived()));
+	QWidget::connect(_deviceNames,
+			 SIGNAL(currentTextChanged(const QString &)), this,
+			 SLOT(DeviceNameChanged(const QString &)));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
 
-	auto entryLayout = new QHBoxLayout;
-	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.midi.entry"),
-		     entryLayout, {{"{{device}}", _devices}});
-	auto listenLayout = new QHBoxLayout;
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.midi.entry.listen"),
-		listenLayout, {{"{{listenButton}}", _listen}});
+		_listenLayout, {{"{{listenButton}}", _listen}});
 
 	auto mainLayout = new QVBoxLayout;
-	mainLayout->addLayout(entryLayout);
+	mainLayout->addLayout(_entryLayout);
 	mainLayout->addWidget(_message);
-	mainLayout->addLayout(listenLayout);
+	mainLayout->addLayout(_listenLayout);
 	mainLayout->addWidget(_resetMidiDevices);
 	setLayout(mainLayout);
 
@@ -155,11 +242,14 @@ void MacroConditionMidiEdit::UpdateEntryData()
 		return;
 	}
 
+	_conditions->setCurrentIndex(
+		static_cast<int>(_entryData->GetCondition()));
 	_message->SetMessage(_entryData->_message);
 	_devices->SetDevice(_entryData->GetDevice());
-
-	adjustSize();
-	updateGeometry();
+	_deviceNames->setCurrentText(QString::fromStdString(
+		_entryData->_deviceName.UnresolvedValue()));
+	_regex->SetRegexConfig(_entryData->_regex);
+	SetWidgetVisibility();
 }
 
 void MacroConditionMidiEdit::DeviceSelectionChanged(const MidiDevice &device)
@@ -211,6 +301,46 @@ void MacroConditionMidiEdit::EnableListening(bool enable)
 	}
 }
 
+void MacroConditionMidiEdit::SetWidgetVisibility()
+{
+	_entryLayout->removeWidget(_conditions);
+	_entryLayout->removeWidget(_devices);
+	_entryLayout->removeWidget(_deviceNames);
+	_entryLayout->removeWidget(_regex);
+
+	ClearLayout(_entryLayout);
+
+	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{conditions}}", _conditions},
+		{"{{device}}", _devices},
+		{"{{deviceNames}}", _deviceNames},
+		{"{{regex}}", _regex},
+		{"{{deviceListInfo}}", _deviceListInfo},
+	};
+
+	const bool isMessageCheck = _entryData->GetCondition() ==
+				    MacroConditionMidi::Condition::MIDI_MESSAGE;
+
+	auto layoutString =
+		isMessageCheck
+			? "AdvSceneSwitcher.condition.midi.entry.message"
+			: "AdvSceneSwitcher.condition.midi.entry.deviceName";
+
+	PlaceWidgets(obs_module_text(layoutString), _entryLayout,
+		     widgetPlaceholders);
+
+	SetLayoutVisible(_listenLayout, isMessageCheck);
+	_devices->setVisible(isMessageCheck);
+	_message->setVisible(isMessageCheck);
+	_resetMidiDevices->setVisible(isMessageCheck);
+	_deviceNames->setVisible(!isMessageCheck);
+	_regex->setVisible(!isMessageCheck);
+	_deviceListInfo->setVisible(!isMessageCheck);
+
+	adjustSize();
+	updateGeometry();
+}
+
 void MacroConditionMidiEdit::ToggleListen()
 {
 	if (!_entryData) {
@@ -247,6 +377,43 @@ void MacroConditionMidiEdit::SetMessageSelectionToLastReceived()
 
 	_message->SetMessage(*message);
 	_entryData->_message = *message;
+}
+
+void MacroConditionMidiEdit::ConditionChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->SetCondition(
+		static_cast<MacroConditionMidi::Condition>(value));
+	SetWidgetVisibility();
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
+}
+
+void MacroConditionMidiEdit::DeviceNameChanged(const QString &deviceName)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_deviceName = deviceName.toStdString();
+}
+
+void MacroConditionMidiEdit::RegexChanged(const RegexConfig &conf)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_regex = conf;
+
+	adjustSize();
+	updateGeometry();
 }
 
 } // namespace advss
