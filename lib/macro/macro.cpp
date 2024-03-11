@@ -193,9 +193,17 @@ bool Macro::CeckMatch()
 bool Macro::PerformActions(bool match, bool forceParallel, bool ignorePause)
 {
 	if (!_done) {
-		vblog(LOG_INFO, "macro %s already running", _name.c_str());
-		return !forceParallel;
+		vblog(LOG_INFO, "Macro %s already running", _name.c_str());
+
+		if (!_stopActionsIfNotDone) {
+			return !forceParallel;
+		}
+
+		Stop();
+		vblog(LOG_INFO, "Stopped macro %s actions to rerun them",
+		      _name.c_str());
 	}
+
 	std::function<bool(bool)> runFunc =
 		match ? std::bind(&Macro::RunActions, this,
 				  std::placeholders::_1)
@@ -213,6 +221,7 @@ bool Macro::PerformActions(bool match, bool forceParallel, bool ignorePause)
 	} else {
 		ret = runFunc(ignorePause);
 	}
+
 	_lastExecutionTime = std::chrono::high_resolution_clock::now();
 	auto group = _parent.lock();
 	if (group) {
@@ -550,6 +559,7 @@ bool Macro::Save(obs_data_t *obj) const
 	obs_data_set_bool(obj, "parallel", _runInParallel);
 	obs_data_set_bool(obj, "onChange", _performActionsOnChange);
 	obs_data_set_bool(obj, "skipExecOnStart", _skipExecOnStart);
+	obs_data_set_bool(obj, "stopActionsIfNotDone", _stopActionsIfNotDone);
 
 	obs_data_set_bool(obj, "group", _isGroup);
 	if (_isGroup) {
@@ -644,6 +654,7 @@ bool Macro::Load(obs_data_t *obj)
 	_runInParallel = obs_data_get_bool(obj, "parallel");
 	_performActionsOnChange = obs_data_get_bool(obj, "onChange");
 	_skipExecOnStart = obs_data_get_bool(obj, "skipExecOnStart");
+	_stopActionsIfNotDone = obs_data_get_bool(obj, "stopActionsIfNotDone");
 
 	_isGroup = obs_data_get_bool(obj, "group");
 	if (_isGroup) {
@@ -651,6 +662,7 @@ bool Macro::Load(obs_data_t *obj)
 			obs_data_get_obj(obj, "groupData");
 		_isCollapsed = obs_data_get_bool(groupData, "collapsed");
 		_groupSize = obs_data_get_int(groupData, "size");
+
 		return true;
 	}
 
@@ -735,6 +747,7 @@ bool Macro::Load(obs_data_t *obj)
 		}
 	}
 	UpdateElseActionIndices();
+
 	return true;
 }
 
