@@ -60,7 +60,8 @@ static QString formatLastUsedText(Variable *variable)
 			"AdvSceneSwitcher.variableTab.lastUsed.text.never");
 	}
 
-	QString text = obs_module_text("AdvSceneSwitcher.variableTab.lastUsed.text");
+	QString text =
+		obs_module_text("AdvSceneSwitcher.variableTab.lastUsed.text");
 	return text.arg(QString::number(*lastUsed));
 }
 
@@ -72,8 +73,8 @@ static QString formatLastChangedText(Variable *variable)
 			"AdvSceneSwitcher.variableTab.lastChanged.text.none");
 	}
 
-	QString text =
-		obs_module_text("AdvSceneSwitcher.variableTab.lastChanged.text");
+	QString text = obs_module_text(
+		"AdvSceneSwitcher.variableTab.lastChanged.text");
 	return text.arg(QString::number(*lastChanged));
 }
 

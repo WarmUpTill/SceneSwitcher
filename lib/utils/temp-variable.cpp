@@ -17,7 +17,10 @@ namespace advss {
 TempVariable::TempVariable(const std::string &id, const std::string &name,
 			   const std::string &description,
 			   const std::shared_ptr<MacroSegment> &segment)
-	: _id(id), _name(name), _description(description), _segment(segment)
+	: _id(id),
+	  _name(name),
+	  _description(description),
+	  _segment(segment)
 {
 }
 
@@ -439,7 +442,9 @@ void NotifyUIAboutTempVarChange()
 
 AutoUpdateTooltipLabel::AutoUpdateTooltipLabel(
 	QWidget *parent, std::function<QString()> updateFunc)
-	: QLabel(parent), _updateFunc(updateFunc), _timer(new QTimer(this))
+	: QLabel(parent),
+	  _updateFunc(updateFunc),
+	  _timer(new QTimer(this))
 {
 	connect(_timer, &QTimer::timeout, this,
 		&AutoUpdateTooltipLabel::UpdateTooltip);

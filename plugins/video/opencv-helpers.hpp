@@ -33,7 +33,7 @@ public:
 	int Init(const char *, const char *) { return 0; }
 	void End() {}
 };
-}
+} // namespace tesseract
 #endif
 
 namespace advss {

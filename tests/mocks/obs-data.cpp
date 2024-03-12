@@ -1,16 +1,12 @@
 #include "obs-data.h"
 
-struct obs_data_item {
-};
+struct obs_data_item {};
 
-struct obs_data {
-};
+struct obs_data {};
 
-struct obs_data_array {
-};
+struct obs_data_array {};
 
-struct obs_data_number {
-};
+struct obs_data_number {};
 
 obs_data_t *obs_data_create()
 {

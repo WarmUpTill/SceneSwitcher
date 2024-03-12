@@ -13,7 +13,8 @@
 namespace advss {
 
 MacroSegment::MacroSegment(Macro *m, bool supportsVariableValue)
-	: _macro(m), _supportsVariableValue(supportsVariableValue)
+	: _macro(m),
+	  _supportsVariableValue(supportsVariableValue)
 {
 }
 

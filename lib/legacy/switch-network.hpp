@@ -132,6 +132,6 @@ public:
 };
 
 QRunnable *CreateFunctionRunnable(std::function<void()> func);
-}
+} // namespace Compatability
 
 } // namespace advss

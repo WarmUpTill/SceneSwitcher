@@ -42,7 +42,8 @@ std::string MacroConditionProfile::GetShortDesc() const
 
 MacroConditionProfileEdit::MacroConditionProfileEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionProfile> entryData)
-	: QWidget(parent), _profiles(new QComboBox())
+	: QWidget(parent),
+	  _profiles(new QComboBox())
 {
 	PopulateProfileSelection(_profiles);
 	QWidget::connect(_profiles, SIGNAL(currentTextChanged(const QString &)),
