@@ -9,7 +9,8 @@
 namespace advss {
 
 MacroExportImportDialog::MacroExportImportDialog(Type type)
-	: QDialog(nullptr), _importExportString(new QPlainTextEdit(this))
+	: QDialog(nullptr),
+	  _importExportString(new QPlainTextEdit(this))
 {
 	_importExportString->setReadOnly(type == Type::EXPORT_MACRO);
 	auto label = new QLabel(obs_module_text(

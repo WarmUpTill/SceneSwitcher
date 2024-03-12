@@ -7,7 +7,8 @@
 namespace advss {
 
 Section::Section(const int animationDuration, QWidget *parent)
-	: QWidget(parent), _animationDuration(animationDuration)
+	: QWidget(parent),
+	  _animationDuration(animationDuration)
 {
 	_toggleButton = new QToolButton(this);
 	_headerLine = new QFrame(this);

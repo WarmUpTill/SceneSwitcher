@@ -64,7 +64,9 @@ void Area::Load(obs_data_t *obj, const char *name)
 }
 
 SizeSelection::SizeSelection(int min, int max, QWidget *parent)
-	: QWidget(parent), _x(new VariableSpinBox()), _y(new VariableSpinBox())
+	: QWidget(parent),
+	  _x(new VariableSpinBox()),
+	  _y(new VariableSpinBox())
 {
 	_x->setMinimum(min);
 	_y->setMinimum(min);
