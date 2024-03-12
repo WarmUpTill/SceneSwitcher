@@ -49,7 +49,16 @@ invoke_formatter() {
         exit 2
       }
 
-      local -a source_files=(src/**/*.(c|cpp|h|hpp|m|mm)(.N))
+      local -a source_files=()
+      for folder ("lib" "module" "plugins" "tests") {
+        source_files+=(${folder}/**/*.(c|cpp|h|hpp)(.N))
+      }
+
+      for file (${source_files}) {
+        if [[ $file == *"catch.hpp" ]]; then
+          source_files=("${source_files[@]/$file}")
+        fi
+      }
 
       local -a format_args=(-style=file -fallback-style=none)
       if (( _loglevel > 2 )) format_args+=(--verbose)
