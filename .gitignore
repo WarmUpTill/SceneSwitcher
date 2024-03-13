@@ -16,6 +16,7 @@
 !.cmake-format.json
 !.gitattributes
 !.gitignore
+!.pre-commit-config.yaml
 !BUILDING.md
 !buildspec.json
 !CMakeLists.txt
