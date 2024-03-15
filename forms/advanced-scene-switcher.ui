@@ -902,6 +902,9 @@
              </item>
              <item>
               <widget class="QCheckBox" name="runMacroInParallel">
+               <property name="toolTip">
+                <string>AdvSceneSwitcher.macroTab.runInParallel</string>
+               </property>
                <property name="text">
                 <string/>
                </property>
@@ -922,6 +925,9 @@
              </item>
              <item>
               <widget class="QCheckBox" name="runMacroOnChange">
+               <property name="toolTip">
+                <string>AdvSceneSwitcher.macroTab.onChange</string>
+               </property>
                <property name="text">
                 <string/>
                </property>
