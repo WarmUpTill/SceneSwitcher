@@ -171,6 +171,8 @@ private:
 	const MidiDeviceType _type;
 };
 
+std::vector<std::string> GetDeviceNames();
+QStringList GetDeviceNamesAsQStringList();
 QStringList GetAllNotes();
 
 } // namespace advss
