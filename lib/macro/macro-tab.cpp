@@ -30,6 +30,25 @@ static bool macroNameExists(const std::string &name)
 	return !!GetMacroByName(name.c_str());
 }
 
+static bool newMacroNameIsValid(const std::string &name)
+{
+	if (!macroNameExists(name)) {
+		return true;
+	}
+
+	auto macro = GetMacroByName(name.c_str());
+	if (!macro) {
+		return false;
+	}
+
+	QString fmt = obs_module_text(
+		macro->IsGroup() ? "AdvSceneSwitcher.macroTab.groupNameExists"
+				 : "AdvSceneSwitcher.macroTab.macroNameExists");
+
+	DisplayMessage(fmt.arg(QString::fromStdString(name)));
+	return false;
+}
+
 bool AdvSceneSwitcher::AddNewMacro(std::shared_ptr<Macro> &res,
 				   std::string &name, std::string format)
 {
@@ -61,9 +80,7 @@ bool AdvSceneSwitcher::AddNewMacro(std::shared_ptr<Macro> &res,
 		return false;
 	}
 
-	if (macroNameExists(name)) {
-		DisplayMessage(
-			obs_module_text("AdvSceneSwitcher.macroTab.exists"));
+	if (!newMacroNameIsValid(name)) {
 		return false;
 	}
 
@@ -173,15 +190,6 @@ void AdvSceneSwitcher::on_macroDown_clicked()
 	ui->macros->Down(macro);
 }
 
-static bool newMacroNameValid(const std::string &name)
-{
-	if (!macroNameExists(name)) {
-		return true;
-	}
-	DisplayMessage(obs_module_text("AdvSceneSwitcher.macroTab.exists"));
-	return false;
-}
-
 void AdvSceneSwitcher::RenameSelectedMacro()
 {
 	auto macro = GetSelectedMacro();
@@ -198,7 +206,7 @@ void AdvSceneSwitcher::RenameSelectedMacro()
 		return;
 	}
 
-	if (name.empty() || name == oldName || !newMacroNameValid(name)) {
+	if (name.empty() || name == oldName || !newMacroNameIsValid(name)) {
 		return;
 	}
 
@@ -363,7 +371,10 @@ bool AdvSceneSwitcher::ResolveMacroImportNameConflict(
 
 	std::string newName;
 	bool accepted = AdvSSNameDialog::AskForName(
-		this, obs_module_text("AdvSceneSwitcher.macroTab.add"),
+		this,
+		obs_module_text(macro->IsGroup()
+					? "AdvSceneSwitcher.macroTab.addGroup"
+					: "AdvSceneSwitcher.macroTab.add"),
 		obs_module_text("AdvSceneSwitcher.macroTab.name"), newName,
 		placeHolderText);
 
@@ -375,9 +386,7 @@ bool AdvSceneSwitcher::ResolveMacroImportNameConflict(
 		return false;
 	}
 
-	if (macroNameExists(newName)) {
-		DisplayMessage(
-			obs_module_text("AdvSceneSwitcher.macroTab.exists"));
+	if (!newMacroNameIsValid(newName)) {
 		return ResolveMacroImportNameConflict(macro);
 	}
 
@@ -466,7 +475,7 @@ void AdvSceneSwitcher::on_macroName_editingFinished()
 	QString oldName = QString::fromStdString(macro->Name());
 
 	if (newName.isEmpty() || newName == oldName ||
-	    !newMacroNameValid(newName.toStdString())) {
+	    !newMacroNameIsValid(newName.toStdString())) {
 		ui->macroName->setText(oldName);
 		return;
 	}
