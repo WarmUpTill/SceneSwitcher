@@ -307,9 +307,32 @@ void MacroActionWebsocketEdit::APITypeChanged(int index)
 		return;
 	}
 
-	auto lock = LockContext();
-	_entryData->_api = static_cast<MacroActionWebsocket::API>(index);
+	{
+		auto lock = LockContext();
+		_entryData->_api =
+			static_cast<MacroActionWebsocket::API>(index);
+	}
 	SetWidgetVisibility();
+
+	// Set example OBS websocket message if the default message or an empty
+	// message was entered as neither of those are valid OBS websocket
+	// messages
+	if ((std::string(_entryData->_message).empty() ||
+	     std::string(_entryData->_message) ==
+		     obs_module_text("AdvSceneSwitcher.enterText")) &&
+	    _entryData->_api == MacroActionWebsocket::API::OBS_WEBSOCKET) {
+		static constexpr std::string_view example =
+			"{\n"
+			"    \"d\": {\n"
+			"        \"requestData\" : {},\n"
+			"        \"requestId\": \"someUniqueIdHere\",\n"
+			"        \"requestType\" : \"StartRecord\"\n"
+			"    },\n"
+			"    \"op\": 6\n"
+			"}";
+		_message->setPlainText(QString(example.data()));
+	}
+
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
