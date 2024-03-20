@@ -19,14 +19,14 @@
 
 namespace advss {
 
-static constexpr std::array<const char *, 19> tabNames = {
-	"generalTab",     "macroTab",       "variableTab",
-	"windowTitleTab", "executableTab",  "screenRegionTab",
-	"mediaTab",       "fileTab",        "randomTab",
-	"timeTab",        "idleTab",        "sceneSequenceTab",
-	"audioTab",       "videoTab",       "networkTab",
-	"sceneGroupTab",  "transitionsTab", "pauseTab",
-	"sceneTriggerTab"};
+static constexpr std::array<const char *, 20> tabNames = {
+	"generalTab",       "macroTab",       "variableTab",
+	"connectionTab",    "windowTitleTab", "executableTab",
+	"screenRegionTab",  "mediaTab",       "fileTab",
+	"randomTab",        "timeTab",        "idleTab",
+	"sceneSequenceTab", "audioTab",       "videoTab",
+	"networkTab",       "sceneGroupTab",  "transitionsTab",
+	"pauseTab",         "sceneTriggerTab"};
 
 static std::vector<int> tabOrder = std::vector<int>(tabNames.size());
 
