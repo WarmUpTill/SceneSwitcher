@@ -311,7 +311,10 @@ bool MacroActionVariable::PerformAction()
 		return true;
 	}
 	case Type::ENV_VARIABLE: {
-		var->SetValue(std::getenv(_envVariableName.c_str()));
+		auto value = std::getenv(_envVariableName.c_str());
+		if (value) {
+			var->SetValue(value);
+		}
 		return true;
 	}
 	case Type::SCENE_ITEM_COUNT: {
