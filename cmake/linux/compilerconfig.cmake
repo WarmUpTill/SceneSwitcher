@@ -80,6 +80,9 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
   add_compile_options(-Wno-error=null-pointer-subtraction)
 endif()
 
+# TODO: remove me
+add_compile_options(-Wno-error=inconsistent-missing-override)
+
 # Enable compiler and build tracing (requires Ninja generator)
 if(ENABLE_COMPILER_TRACE AND CMAKE_GENERATOR STREQUAL "Ninja")
   add_compile_options($<$<COMPILE_LANG_AND_ID:C,Clang>:-ftime-trace>
