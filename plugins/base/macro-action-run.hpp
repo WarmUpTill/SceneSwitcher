@@ -25,6 +25,9 @@ public:
 	Duration _timeout = 1;
 
 private:
+	void SetupTempVars();
+	void SetTempVarValues();
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -57,6 +60,7 @@ private:
 	QHBoxLayout *_waitLayout;
 	QCheckBox *_wait;
 	DurationSelection *_timeout;
+	QLabel *_waitHelp;
 
 	std::shared_ptr<MacroActionRun> _entryData;
 	bool _loading = true;

@@ -48,6 +48,7 @@ bool MacroConditionRun::CheckCondition()
 	if (_thread.joinable()) {
 		_thread.join();
 	}
+
 	_threadDone = false;
 	_thread = std::thread(&MacroConditionRun::RunProcess, this);
 
@@ -64,7 +65,48 @@ void MacroConditionRun::RunProcess()
 		_error = ProcessConfig::ProcStartError::NONE;
 		_procExitCode = std::get<int>(result);
 	}
+
 	_threadDone = true;
+	SetTempVarValues();
+}
+
+void MacroConditionRun::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+
+	AddTempvar(
+		"process.id",
+		obs_module_text("AdvSceneSwitcher.tempVar.run.process.id"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.run.process.id.description"));
+	AddTempvar(
+		"process.exitCode",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.run.process.exitCode"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.run.process.exitCode.description"));
+	AddTempvar(
+		"process.stream.output",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.run.process.stream.output"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.run.process.stream.output.description"));
+	AddTempvar(
+		"process.stream.error",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.run.process.stream.error"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.run.process.stream.error.description"));
+}
+
+void MacroConditionRun::SetTempVarValues()
+{
+	SetTempVarValue("process.id", _procConfig.GetProcessId());
+	SetTempVarValue("process.exitCode", _procConfig.GetProcessExitCode());
+	SetTempVarValue("process.stream.output",
+			_procConfig.GetProcessOutputStream());
+	SetTempVarValue("process.stream.error",
+			_procConfig.GetProcessErrorStream());
 }
 
 bool MacroConditionRun::Save(obs_data_t *obj) const
