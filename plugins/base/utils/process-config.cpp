@@ -4,7 +4,6 @@
 #include "name-dialog.hpp"
 
 #include <QFileDialog>
-#include <QProcess>
 
 namespace advss {
 
@@ -16,6 +15,7 @@ bool ProcessConfig::Save(obs_data_t *obj) const
 	_args.Save(data, "args", "arg");
 	obs_data_set_obj(obj, "processConfig", data);
 	obs_data_release(data);
+
 	return true;
 }
 
@@ -27,6 +27,7 @@ bool ProcessConfig::Load(obs_data_t *obj)
 		_workingDirectory =
 			obs_data_get_string(obj, "workingDirectory");
 		_args.Load(obj, "args", "arg");
+
 		return true;
 	}
 
@@ -35,6 +36,7 @@ bool ProcessConfig::Load(obs_data_t *obj)
 	_workingDirectory.Load(data, "workingDirectory");
 	_args.Load(data, "args", "arg");
 	obs_data_release(data);
+
 	return true;
 }
 
@@ -44,6 +46,7 @@ QStringList ProcessConfig::Args() const
 	for (auto &arg : _args) {
 		result << QString::fromStdString(arg);
 	}
+
 	return result;
 }
 
@@ -61,11 +64,14 @@ void ProcessConfig::ResolveVariables()
 }
 
 std::variant<int, ProcessConfig::ProcStartError>
-ProcessConfig::StartProcessAndWait(int timeout) const
+ProcessConfig::StartProcessAndWait(int timeout)
 {
+	ResetFinishedProcessData();
+
 	QProcess process;
 	process.setWorkingDirectory(QString::fromStdString(WorkingDir()));
 	process.start(QString::fromStdString(Path()), Args());
+	SetProcessId(QString::number(process.processId()).toStdString());
 	vblog(LOG_INFO, "run \"%s\" with a timeout of %d ms", Path().c_str(),
 	      timeout);
 
@@ -75,19 +81,45 @@ ProcessConfig::StartProcessAndWait(int timeout) const
 			      Path().c_str());
 			return ProcStartError::FAILED_TO_START;
 		}
+
+		SetFinishedProcessData(process);
 		vblog(LOG_INFO,
 		      "timeout while running \"%s\"\nAttempting to kill process!",
 		      Path().c_str());
 		process.kill();
 		process.waitForFinished();
+
 		return ProcStartError::TIMEOUT;
 	}
+
+	SetFinishedProcessData(process);
 
 	if (process.exitStatus() == QProcess::NormalExit) {
 		return process.exitCode();
 	}
+
 	vblog(LOG_INFO, "process \"%s\" crashed!", Path().c_str());
 	return ProcStartError::CRASH;
+}
+
+void ProcessConfig::SetFinishedProcessData(QProcess &process)
+{
+	static const QRegularExpression regex("(\\r\\n|\\r|\\n)$");
+	_processExitCode = QString::number(process.exitCode()).toStdString();
+	// Qt reads extra newline, at least on Windows, hence the workaround
+	_processOutputStream = QString(process.readAllStandardOutput())
+				       .remove(regex)
+				       .toStdString();
+	_processErrorStream = QString(process.readAllStandardError())
+				      .remove(regex)
+				      .toStdString();
+}
+
+void ProcessConfig::ResetFinishedProcessData()
+{
+	_processExitCode = "";
+	_processOutputStream = "";
+	_processErrorStream = "";
 }
 
 ProcessConfigEdit::ProcessConfigEdit(QWidget *parent)

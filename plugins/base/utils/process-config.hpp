@@ -5,8 +5,9 @@
 #include <obs-data.h>
 #include <obs-module-helper.hpp>
 
-#include <QPushButton>
 #include <QListWidget>
+#include <QProcess>
+#include <QPushButton>
 #include <QStringList>
 #include <QVBoxLayout>
 #include <variant>
@@ -23,6 +24,20 @@ public:
 	std::string WorkingDir() const { return _workingDirectory; }
 	QStringList Args() const; // Resolves variables
 
+	void SetProcessId(std::string processId) { _processId = processId; }
+	std::string GetProcessId() const { return _processId; }
+	void SetFinishedProcessData(QProcess &process);
+	void ResetFinishedProcessData();
+	std::string GetProcessExitCode() const { return _processExitCode; }
+	std::string GetProcessOutputStream() const
+	{
+		return _processOutputStream;
+	}
+	std::string GetProcessErrorStream() const
+	{
+		return _processErrorStream;
+	}
+
 	enum class ProcStartError {
 		NONE,
 		FAILED_TO_START,
@@ -30,8 +45,7 @@ public:
 		CRASH,
 	};
 
-	std::variant<int, ProcStartError>
-	StartProcessAndWait(int timeoutInMs) const;
+	std::variant<int, ProcStartError> StartProcessAndWait(int timeoutInMs);
 	bool StartProcessDetached() const;
 
 	void ResolveVariables();
@@ -40,6 +54,11 @@ private:
 	StringVariable _path = obs_module_text("AdvSceneSwitcher.enterPath");
 	StringVariable _workingDirectory = "";
 	StringList _args;
+
+	std::string _processId;
+	std::string _processExitCode;
+	std::string _processOutputStream;
+	std::string _processErrorStream;
 
 	friend class ProcessConfigEdit;
 };

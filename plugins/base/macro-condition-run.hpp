@@ -30,6 +30,10 @@ public:
 
 private:
 	void RunProcess();
+
+	void SetupTempVars();
+	void SetTempVarValues();
+
 	std::thread _thread;
 	std::atomic_bool _threadDone{true};
 	ProcessConfig::ProcStartError _error =

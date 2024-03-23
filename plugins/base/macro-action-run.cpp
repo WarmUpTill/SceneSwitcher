@@ -1,5 +1,6 @@
 #include "macro-action-run.hpp"
 #include "layout-helpers.hpp"
+#include "ui-helpers.hpp"
 
 #include <QProcess>
 #include <QDesktopServices>
@@ -16,6 +17,8 @@ bool MacroActionRun::PerformAction()
 {
 	if (_wait) {
 		_procConfig.StartProcessAndWait(_timeout.Milliseconds());
+		SetTempVarValues();
+
 		return true;
 	}
 
@@ -28,12 +31,52 @@ bool MacroActionRun::PerformAction()
 		QDesktopServices::openUrl(QUrl::fromLocalFile(
 			QString::fromStdString(_procConfig.Path())));
 	}
+
 	return true;
 }
 
 void MacroActionRun::LogAction() const
 {
 	ablog(LOG_INFO, "run \"%s\"", _procConfig.UnresolvedPath().c_str());
+}
+
+void MacroActionRun::SetupTempVars()
+{
+	MacroAction::SetupTempVars();
+
+	AddTempvar(
+		"process.id",
+		obs_module_text("AdvSceneSwitcher.tempVar.run.process.id"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.run.process.id.description"));
+	AddTempvar(
+		"process.exitCode",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.run.process.exitCode"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.run.process.exitCode.description"));
+	AddTempvar(
+		"process.stream.output",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.run.process.stream.output"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.run.process.stream.output.description"));
+	AddTempvar(
+		"process.stream.error",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.run.process.stream.error"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.run.process.stream.error.description"));
+}
+
+void MacroActionRun::SetTempVarValues()
+{
+	SetTempVarValue("process.id", _procConfig.GetProcessId());
+	SetTempVarValue("process.exitCode", _procConfig.GetProcessExitCode());
+	SetTempVarValue("process.stream.output",
+			_procConfig.GetProcessOutputStream());
+	SetTempVarValue("process.stream.error",
+			_procConfig.GetProcessErrorStream());
 }
 
 bool MacroActionRun::Save(obs_data_t *obj) const
@@ -86,8 +129,18 @@ MacroActionRunEdit::MacroActionRunEdit(
 	  _procConfig(new ProcessConfigEdit(this)),
 	  _waitLayout(new QHBoxLayout()),
 	  _wait(new QCheckBox()),
-	  _timeout(new DurationSelection(this, true, 0.1))
+	  _timeout(new DurationSelection(this, true, 0.1)),
+	  _waitHelp(new QLabel())
 {
+	QString helpIconPath = GetThemeTypeName() == "Light"
+				       ? ":/res/images/help.svg"
+				       : ":/res/images/help_light.svg";
+	QIcon helpIcon(helpIconPath);
+	_waitHelp->setPixmap(helpIcon.pixmap(QSize(16, 16)));
+	_waitHelp->hide();
+	_waitHelp->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.action.run.wait.help.tooltip"));
+
 	QWidget::connect(_procConfig,
 			 SIGNAL(ConfigChanged(const ProcessConfig &)), this,
 			 SLOT(ProcessConfigChanged(const ProcessConfig &)));
@@ -98,9 +151,11 @@ MacroActionRunEdit::MacroActionRunEdit(
 	QWidget::connect(_timeout, SIGNAL(DurationChanged(const Duration &)),
 			 this, SLOT(TimeoutChanged(const Duration &)));
 
-	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.run.entry.wait"),
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.run.wait.entry"),
 		     _waitLayout,
-		     {{"{{wait}}", _wait}, {"{{timeout}}", _timeout}});
+		     {{"{{wait}}", _wait},
+		      {"{{timeout}}", _timeout},
+		      {"{{waitHelp}}", _waitHelp}});
 	SetLayoutVisible(_waitLayout, false);
 
 	auto layout = new QVBoxLayout;
