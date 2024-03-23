@@ -70,12 +70,18 @@ endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
   # Disable false-positive warning in GCC 12.1.0 and later
   add_compile_options(-Wno-error=maybe-uninitialized)
+  add_compile_options(-Wno-error=stringop-overflow)
 
   # Add warning for infinite recursion (added in GCC 12)
   if(CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0.0)
     add_compile_options(-Winfinite-recursion)
   endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
+  add_compile_options(-Wno-error=null-pointer-subtraction)
 endif()
+
+# TODO: remove me
+add_compile_options(-Wno-error=inconsistent-missing-override)
 
 # Enable compiler and build tracing (requires Ninja generator)
 if(ENABLE_COMPILER_TRACE AND CMAKE_GENERATOR STREQUAL "Ninja")
