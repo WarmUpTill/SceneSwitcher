@@ -87,6 +87,8 @@ target_sources(
           macro-condition-file.hpp
           macro-condition-filter.cpp
           macro-condition-filter.hpp
+          macro-condition-folder.cpp
+          macro-condition-folder.hpp
           macro-condition-hotkey.cpp
           macro-condition-hotkey.hpp
           macro-condition-idle.cpp
