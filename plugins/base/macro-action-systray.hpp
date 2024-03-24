@@ -50,6 +50,7 @@ private slots:
 	void MessageChanged();
 	void TitleChanged();
 	void IconPathChanged(const QString &text);
+	void CheckIfTrayIsDisabled();
 
 protected:
 	std::shared_ptr<MacroActionSystray> _entryData;
@@ -58,6 +59,9 @@ private:
 	VariableLineEdit *_message;
 	VariableLineEdit *_title;
 	FileSelection *_iconPath;
+	QLabel *_trayDisableWarning;
+
+	QTimer _checkTrayDisableTimer;
 	bool _loading = true;
 };
 

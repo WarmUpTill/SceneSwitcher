@@ -2,6 +2,9 @@
 #include "layout-helpers.hpp"
 #include "ui-helpers.hpp"
 
+#include <obs-frontend-api.h>
+#include <util/config-file.h>
+
 namespace advss {
 
 const std::string MacroActionSystray::id = "systray_notification";
@@ -72,7 +75,9 @@ MacroActionSystrayEdit::MacroActionSystrayEdit(
 	: QWidget(parent),
 	  _message(new VariableLineEdit(this)),
 	  _title(new VariableLineEdit(this)),
-	  _iconPath(new FileSelection())
+	  _iconPath(new FileSelection()),
+	  _trayDisableWarning(
+		  new QLabel("AdvSceneSwitcher.action.systray.disabled"))
 {
 	_iconPath->setToolTip(
 		obs_module_text("AdvSceneSwitcher.action.systray.iconHint"));
@@ -85,25 +90,35 @@ MacroActionSystrayEdit::MacroActionSystrayEdit(
 			 SLOT(IconPathChanged(const QString &)));
 
 	auto layout = new QGridLayout();
+	int row = 0;
 	layout->addWidget(new QLabel(obs_module_text(
 				  "AdvSceneSwitcher.action.systray.title")),
-			  0, 0);
-	layout->addWidget(_title, 0, 1);
+			  row, 0);
+	layout->addWidget(_title, ++row, 1);
 	layout->addWidget(new QLabel(obs_module_text(
 				  "AdvSceneSwitcher.action.systray.message")),
-			  1, 0);
-	layout->addWidget(_message, 1, 1);
+			  row, 0);
+	layout->addWidget(_message, ++row, 1);
 	layout->addWidget(new QLabel(obs_module_text(
 				  "AdvSceneSwitcher.action.systray.icon")),
-			  2, 0);
-	layout->addWidget(_iconPath, 2, 1);
-	setLayout(layout);
+			  row, 0);
+	layout->addWidget(_iconPath, ++row, 1);
+
+	auto mainlayout = new QVBoxLayout();
+	mainlayout->addLayout(layout);
+	mainlayout->addWidget(_trayDisableWarning);
+	setLayout(mainlayout);
 
 	_entryData = entryData;
 	_message->setText(_entryData->_message);
 	_title->setText(_entryData->_title);
 	_iconPath->SetPath(_entryData->_iconPath);
 	_loading = false;
+
+	CheckIfTrayIsDisabled();
+	QWidget::connect(&_checkTrayDisableTimer, SIGNAL(timeout()), this,
+			 SLOT(CheckIfTrayIsDisabled()));
+	_checkTrayDisableTimer.start(1000);
 }
 
 void MacroActionSystrayEdit::TitleChanged()
@@ -124,6 +139,19 @@ void MacroActionSystrayEdit::IconPathChanged(const QString &text)
 
 	auto lock = LockContext();
 	_entryData->_iconPath = text.toStdString();
+}
+
+void MacroActionSystrayEdit::CheckIfTrayIsDisabled()
+{
+	auto config = obs_frontend_get_global_config();
+	if (!config) {
+		return;
+	}
+
+	_trayDisableWarning->setVisible(
+		!config_get_bool(config, "BasicWindow", "SysTrayEnabled"));
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionSystrayEdit::MessageChanged()
