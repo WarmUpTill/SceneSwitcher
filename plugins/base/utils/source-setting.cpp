@@ -42,6 +42,68 @@ bool SourceSetting::operator==(const SourceSetting &other) const
 	return _id == other._id;
 }
 
+static const char *getPropertySuffix(obs_property_type type)
+{
+	switch (type) {
+	case OBS_PROPERTY_INVALID:
+		return "AdvSceneSwitcher.settings.suffix.type.invalid";
+	case OBS_PROPERTY_BOOL:
+		return "AdvSceneSwitcher.settings.suffix.type.bool";
+	case OBS_PROPERTY_INT:
+		return "AdvSceneSwitcher.settings.suffix.type.int";
+	case OBS_PROPERTY_FLOAT:
+		return "AdvSceneSwitcher.settings.suffix.type.float";
+	case OBS_PROPERTY_TEXT:
+		return "AdvSceneSwitcher.settings.suffix.type.text";
+	case OBS_PROPERTY_PATH:
+		return "AdvSceneSwitcher.settings.suffix.type.path";
+	case OBS_PROPERTY_LIST:
+		return "AdvSceneSwitcher.settings.suffix.type.list";
+	case OBS_PROPERTY_COLOR:
+		return "AdvSceneSwitcher.settings.suffix.type.color";
+	case OBS_PROPERTY_BUTTON:
+		return "AdvSceneSwitcher.settings.suffix.type.button";
+	case OBS_PROPERTY_FONT:
+		return "AdvSceneSwitcher.settings.suffix.type.font";
+	case OBS_PROPERTY_EDITABLE_LIST:
+		return "AdvSceneSwitcher.settings.suffix.type.editableList";
+	case OBS_PROPERTY_FRAME_RATE:
+		return "AdvSceneSwitcher.settings.suffix.type.frameRate";
+	case OBS_PROPERTY_GROUP:
+		return "AdvSceneSwitcher.settings.suffix.type.group";
+	case OBS_PROPERTY_COLOR_ALPHA:
+		return "AdvSceneSwitcher.settings.suffix.type.colorAlpha";
+	}
+	return "";
+}
+
+static void addSettingsHelper(obs_property_t *property,
+			      std::vector<SourceSetting> &settings)
+{
+	do {
+		if (!property) {
+			continue;
+		}
+		auto type = obs_property_get_type(property);
+
+		auto name = obs_property_name(property);
+		if (!name) {
+			continue;
+		}
+		auto description = obs_property_description(property);
+		if (!description) {
+			continue;
+		}
+		std::string descriptionWithSuffix =
+			std::string(description) +
+			obs_module_text(getPropertySuffix(type));
+		auto longDescription = obs_property_long_description(property);
+		SourceSetting setting(name, descriptionWithSuffix,
+				      longDescription ? longDescription : "");
+		settings.emplace_back(setting);
+	} while (obs_property_next(&property));
+}
+
 std::vector<SourceSetting> GetSoruceSettings(obs_source_t *source)
 {
 	auto properties = obs_source_properties(source);
@@ -50,23 +112,7 @@ std::vector<SourceSetting> GetSoruceSettings(obs_source_t *source)
 	}
 	std::vector<SourceSetting> settings;
 	auto it = obs_properties_first(properties);
-	do {
-		if (!it) {
-			continue;
-		}
-		auto name = obs_property_name(it);
-		if (!name) {
-			continue;
-		}
-		auto description = obs_property_description(it);
-		if (!description) {
-			continue;
-		}
-		auto longDescription = obs_property_long_description(it);
-		SourceSetting setting(name, description,
-				      longDescription ? longDescription : "");
-		settings.emplace_back(setting);
-	} while (obs_property_next(&it));
+	addSettingsHelper(it, settings);
 	obs_properties_destroy(properties);
 	return settings;
 }
@@ -174,7 +220,7 @@ void SetSourceSetting(obs_source_t *source, const SourceSetting &setting,
 SourceSettingSelection::SourceSettingSelection(QWidget *parent)
 	: QWidget(parent),
 	  _settings(new FilterComboBox(
-		  this, obs_module_text("AdvSceneSwitcher.selectSetting"))),
+		  this, obs_module_text("AdvSceneSwitcher.setting.select"))),
 	  _tooltip(new QLabel())
 {
 	QString path = GetThemeTypeName() == "Light"
