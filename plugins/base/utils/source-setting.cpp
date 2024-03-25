@@ -78,13 +78,25 @@ static const char *getPropertySuffix(obs_property_type type)
 }
 
 static void addSettingsHelper(obs_property_t *property,
-			      std::vector<SourceSetting> &settings)
+			      std::vector<SourceSetting> &settings,
+			      const std::string &prefix = "")
 {
 	do {
 		if (!property) {
 			continue;
 		}
 		auto type = obs_property_get_type(property);
+		if (type == OBS_PROPERTY_GROUP) {
+			auto group = obs_property_group_content(property);
+			auto description = obs_property_description(property);
+			std::string prefix =
+				description
+					? std::string("[") + description + "] "
+					: "";
+			addSettingsHelper(obs_properties_first(group), settings,
+					  prefix);
+			continue;
+		}
 
 		auto name = obs_property_name(property);
 		if (!name) {
@@ -94,11 +106,11 @@ static void addSettingsHelper(obs_property_t *property,
 		if (!description) {
 			continue;
 		}
-		std::string descriptionWithSuffix =
-			std::string(description) +
+		std::string descriptionWithPrefixAndSuffix =
+			prefix + description +
 			obs_module_text(getPropertySuffix(type));
 		auto longDescription = obs_property_long_description(property);
-		SourceSetting setting(name, descriptionWithSuffix,
+		SourceSetting setting(name, descriptionWithPrefixAndSuffix,
 				      longDescription ? longDescription : "");
 		settings.emplace_back(setting);
 	} while (obs_property_next(&property));
