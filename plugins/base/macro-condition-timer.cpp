@@ -1,6 +1,8 @@
 #include "macro-condition-timer.hpp"
 #include "layout-helpers.hpp"
 
+#include <random>
+
 namespace advss {
 
 const std::string MacroConditionTimer::id = "timer";
@@ -16,6 +18,9 @@ const static std::map<MacroConditionTimer::TimerType, std::string> timerTypes = 
 	{MacroConditionTimer::TimerType::RANDOM,
 	 "AdvSceneSwitcher.condition.timer.type.random"},
 };
+
+static std::random_device rd;
+static std::default_random_engine re(rd());
 
 bool MacroConditionTimer::CheckCondition()
 {
@@ -48,7 +53,7 @@ void MacroConditionTimer::SetRandomTimeRemaining()
 	}
 	std::uniform_real_distribution<double> unif(min, max);
 
-	double remainingTime = unif(_re);
+	double remainingTime = unif(re);
 	_duration.SetTimeRemaining(remainingTime);
 }
 

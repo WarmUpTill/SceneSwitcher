@@ -8,8 +8,6 @@
 #include <QComboBox>
 #include <QHBoxLayout>
 
-#include <random>
-
 namespace advss {
 
 class MacroConditionTimer : public MacroCondition {
@@ -41,7 +39,6 @@ private:
 	void SetVariables(double seconds);
 	void SetupTempVars();
 
-	std::default_random_engine _re;
 	static bool _registered;
 	static const std::string id;
 };
