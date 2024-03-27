@@ -201,6 +201,8 @@ target_sources(
           lib/utils/section.hpp
           lib/utils/selection-helpers.cpp
           lib/utils/selection-helpers.hpp
+          lib/utils/single-char-selection.cpp
+          lib/utils/single-char-selection.hpp
           lib/utils/slider-spinbox.cpp
           lib/utils/slider-spinbox.hpp
           lib/utils/source-helpers.cpp
