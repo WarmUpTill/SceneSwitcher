@@ -22,6 +22,8 @@ const static std::map<MacroActionFilter::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.filter.type.toggle"},
 	{MacroActionFilter::Action::SETTINGS,
 	 "AdvSceneSwitcher.action.filter.type.settings"},
+	{MacroActionFilter::Action::SETTINGS_BUTTON,
+	 "AdvSceneSwitcher.action.filter.type.pressSettingsButton"},
 };
 
 const static std::map<MacroActionFilter::SettingsInputMethod, std::string>
@@ -39,7 +41,7 @@ static void performActionHelper(
 	MacroActionFilter::SettingsInputMethod settingsInputMethod,
 	const SourceSetting &setting, const std::string &manualSettingValue,
 	const TempVariableRef &tempVar, Macro *macro,
-	const StringVariable &settingsString)
+	const StringVariable &settingsString, const SourceSettingButton &button)
 {
 	OBSSourceAutoRelease source = obs_weak_source_get_source(filter);
 	switch (action) {
@@ -74,6 +76,9 @@ static void performActionHelper(
 			break;
 		}
 		break;
+	case MacroActionFilter::Action::SETTINGS_BUTTON:
+		PressSourceButton(button, source);
+		break;
 	default:
 		break;
 	}
@@ -85,7 +90,7 @@ bool MacroActionFilter::PerformAction()
 	for (const auto &filter : filters) {
 		performActionHelper(_action, filter, _settingsInputMethod,
 				    _setting, _manualSettingValue, _tempVar,
-				    GetMacro(), _settingsString);
+				    GetMacro(), _settingsString, _button);
 	}
 	return true;
 }
@@ -116,6 +121,7 @@ bool MacroActionFilter::Save(obs_data_t *obj) const
 	_manualSettingValue.Save(obj, "manualSettingValue");
 	_tempVar.Save(obj);
 	_settingsString.Save(obj, "settings");
+	_button.Save(obj);
 	obs_data_set_int(obj, "version", 1);
 	return true;
 }
@@ -147,6 +153,7 @@ bool MacroActionFilter::Load(obs_data_t *obj)
 	_settingsString.Load(obj, "settings");
 	_manualSettingValue.Load(obj, "manualSettingValue");
 	_tempVar.Load(obj, GetMacro());
+	_button.Load(obj);
 	return true;
 }
 
@@ -207,7 +214,8 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 	  _filterSettings(new SourceSettingSelection(this)),
 	  _settingsString(new VariableTextEdit(this)),
 	  _refreshSettingSelection(new QPushButton(
-		  obs_module_text("AdvSceneSwitcher.action.filter.refresh")))
+		  obs_module_text("AdvSceneSwitcher.action.filter.refresh"))),
+	  _settingsButtons(new QComboBox())
 {
 	_filters->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
@@ -245,10 +253,10 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 			 SLOT(SelectionChanged(const SourceSetting &)));
 	QWidget::connect(_refreshSettingSelection, SIGNAL(clicked()), this,
 			 SLOT(RefreshVariableSourceSelectionValue()));
+	QWidget::connect(_settingsButtons, SIGNAL(currentIndexChanged(int)),
+			 this, SLOT(ButtonChanged(int)));
 
-	auto entrylayout = new QHBoxLayout;
-
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{sources}}", _sources},
 		{"{{filters}}", _filters},
 		{"{{actions}}", _actions},
@@ -256,8 +264,10 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 		{"{{settingsInputMethod}}", _settingsInputMethods},
 		{"{{settingValue}}", _manualSettingValue},
 		{"{{tempVar}}", _tempVars},
-		{"{{refresh}}", _refreshSettingSelection}};
+		{"{{refresh}}", _refreshSettingSelection},
+		{"{{settingsButtons}}", _settingsButtons}};
 
+	auto entrylayout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.filter.entry"),
 		     entrylayout, widgetPlaceholders);
 	_settingsLayout->setContentsMargins(0, 0, 0, 0);
@@ -294,12 +304,16 @@ void MacroActionFilterEdit::UpdateEntryData()
 	_settingsString->setPlainText(_entryData->_settingsString);
 	const auto filters =
 		_entryData->_filter.GetFilters(_entryData->_source);
-	_filterSettings->SetSource(filters.empty() ? nullptr : filters.at(0));
+	OBSWeakSource firstFilter = filters.empty() ? nullptr : filters.at(0);
+	_filterSettings->SetSource(firstFilter);
 	_filterSettings->SetSetting(_entryData->_setting);
 	_settingsInputMethods->setCurrentIndex(_settingsInputMethods->findData(
 		static_cast<int>(_entryData->_settingsInputMethod)));
 	_tempVars->SetVariable(_entryData->_tempVar);
 	_manualSettingValue->setPlainText(_entryData->_manualSettingValue);
+	PopulateSourceButtonSelection(_settingsButtons, firstFilter);
+	_settingsButtons->setCurrentText(
+		QString::fromStdString(_entryData->_button.ToString()));
 	SetWidgetVisibility();
 }
 
@@ -325,7 +339,9 @@ void MacroActionFilterEdit::FilterChanged(const FilterSelection &filter)
 	}
 	const auto filters =
 		_entryData->_filter.GetFilters(_entryData->_source);
-	_filterSettings->SetSource(filters.empty() ? nullptr : filters.at(0));
+	OBSWeakSource firstFilter = filters.empty() ? nullptr : filters.at(0);
+	_filterSettings->SetSource(firstFilter);
+	PopulateSourceButtonSelection(_settingsButtons, firstFilter);
 	SetWidgetVisibility();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -441,6 +457,17 @@ void MacroActionFilterEdit::RefreshVariableSourceSelectionValue()
 	_filterSettings->SetSource(filters.empty() ? nullptr : filters.at(0));
 }
 
+void MacroActionFilterEdit::ButtonChanged(int idx)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_button = qvariant_cast<SourceSettingButton>(
+		_settingsButtons->itemData(idx));
+}
+
 void MacroActionFilterEdit::SetWidgetVisibility()
 {
 	SetLayoutVisible(_settingsLayout,
@@ -479,6 +506,9 @@ void MacroActionFilterEdit::SetWidgetVisibility()
 			 SourceSelection::Type::VARIABLE ||
 		 _entryData->_filter.GetType() ==
 			 FilterSelection::Type::VARIABLE));
+	_settingsButtons->setVisible(
+		_entryData->_action ==
+		MacroActionFilter::Action::SETTINGS_BUTTON);
 
 	adjustSize();
 	updateGeometry();
