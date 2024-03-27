@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "variable-text-edit.hpp"
+#include "source-properties-button.hpp"
 #include "source-selection.hpp"
 #include "source-setting.hpp"
 
@@ -10,15 +11,6 @@
 #include <QComboBox>
 
 namespace advss {
-
-struct SourceSettingButton {
-	bool Save(obs_data_t *obj) const;
-	bool Load(obs_data_t *obj);
-	std::string ToString() const;
-
-	std::string id = "";
-	std::string description = "";
-};
 
 class MacroActionSource : public MacroAction {
 public:
@@ -103,7 +95,9 @@ private slots:
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	SourceSelectionWidget *_sources;
 	QComboBox *_actions;
 	QComboBox *_settingsButtons;
@@ -120,9 +114,6 @@ protected:
 	QPushButton *_refreshSettingSelection;
 
 	std::shared_ptr<MacroActionSource> _entryData;
-
-private:
-	void SetWidgetVisibility();
 	bool _loading = true;
 };
 

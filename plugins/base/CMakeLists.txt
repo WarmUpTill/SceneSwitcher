@@ -160,6 +160,8 @@ target_sources(
           utils/scene-item-selection.hpp
           utils/scene-item-transform-helpers.cpp
           utils/scene-item-transform-helpers.hpp
+          utils/source-properties-button.cpp
+          utils/source-properties-button.hpp
           utils/source-settings-helpers.cpp
           utils/source-settings-helpers.hpp
           utils/source-setting.cpp
