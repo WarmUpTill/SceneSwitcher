@@ -31,7 +31,9 @@ void MacroActionQueue::AddActions(ActionQueue *queue)
 
 	auto actions = *GetMacroActions(macro.get());
 	for (const auto &action : actions) {
-		queue->Add(action);
+		if (action->Enabled()) {
+			queue->Add(action);
+		}
 	}
 }
 
