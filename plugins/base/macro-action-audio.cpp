@@ -29,6 +29,10 @@ static const std::map<MacroActionAudio::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.audio.type.monitor"},
 	{MacroActionAudio::Action::BALANCE,
 	 "AdvSceneSwitcher.action.audio.type.balance"},
+	{MacroActionAudio::Action::ENABLE_ON_TRACK,
+	 "AdvSceneSwitcher.action.audio.type.enableOnTrack"},
+	{MacroActionAudio::Action::DISABLE_ON_TRACK,
+	 "AdvSceneSwitcher.action.audio.type.disableOnTrack"},
 };
 
 static const std::map<MacroActionAudio::FadeType, std::string> fadeTypes = {
@@ -205,6 +209,28 @@ void MacroActionAudio::StartFade() const
 	}
 }
 
+static void setMixerEnable(obs_source_t *source, const int mixerIdx,
+			   const bool enable)
+{
+	if (mixerIdx < 0) {
+		blog(LOG_INFO, "refusing to %s mixer id %d for %s",
+		     enable ? "enable" : "disable", mixerIdx,
+		     obs_source_get_name(source));
+		return;
+	}
+
+	uint32_t mixers = obs_source_get_audio_mixers(source);
+	uint32_t new_mixers = mixers;
+
+	if (enable) {
+		new_mixers |= (1 << mixerIdx);
+	} else {
+		new_mixers &= ~(1 << mixerIdx);
+	}
+
+	obs_source_set_audio_mixers(source, new_mixers);
+}
+
 bool MacroActionAudio::PerformAction()
 {
 	auto s = obs_weak_source_get_source(_audioSource.GetSource());
@@ -231,6 +257,12 @@ bool MacroActionAudio::PerformAction()
 		break;
 	case Action::BALANCE:
 		obs_source_set_balance_value(s, _balance);
+		break;
+	case Action::ENABLE_ON_TRACK:
+		setMixerEnable(s, _track - 1, true);
+		break;
+	case Action::DISABLE_ON_TRACK:
+		setMixerEnable(s, _track - 1, false);
 		break;
 	default:
 		break;
@@ -263,6 +295,7 @@ bool MacroActionAudio::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "monitor", _monitorType);
 	_syncOffset.Save(obj, "syncOffset");
 	_balance.Save(obj, "balance");
+	_track.Save(obj, "track");
 	_volume.Save(obj, "volume");
 	_rate.Save(obj, "rate");
 	obs_data_set_bool(obj, "fade", _fade);
@@ -271,7 +304,7 @@ bool MacroActionAudio::Save(obs_data_t *obj) const
 	obs_data_set_bool(obj, "abortActiveFade", _abortActiveFade);
 	obs_data_set_bool(obj, "useDb", _useDb);
 	_volumeDB.Save(obj, "volumeDB");
-	obs_data_set_int(obj, "version", 2);
+	obs_data_set_int(obj, "version", 3);
 	return true;
 }
 
@@ -312,12 +345,17 @@ bool MacroActionAudio::Load(obs_data_t *obj)
 		_abortActiveFade = false;
 	}
 
-	if (obs_data_get_int(obj, "version") != 2) {
+	if (obs_data_get_int(obj, "version") < 2) {
 		_useDb = false;
 		_volumeDB = 0.0;
 	} else {
 		_useDb = obs_data_get_bool(obj, "useDb");
 		_volumeDB.Load(obj, "volumeDB");
+	}
+	if (obs_data_get_int(obj, "version") < 3) {
+		_track = 1;
+	} else {
+		_track.Load(obj, "track");
 	}
 
 	return true;
@@ -381,6 +419,7 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 		  0., 1., "",
 		  obs_module_text(
 			  "AdvSceneSwitcher.action.audio.balance.description"))),
+	  _track(new VariableSpinBox),
 	  _volumePercent(new VariableSpinBox),
 	  _volumeDB(new VariableDoubleSpinBox),
 	  _percentDBToggle(new QPushButton),
@@ -397,6 +436,9 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	_syncOffset->setMinimum(-950);
 	_syncOffset->setMaximum(20000);
 	_syncOffset->setSuffix("ms");
+
+	_track->setMinimum(1);
+	_track->setMaximum(32);
 
 	_volumePercent->setMinimum(0);
 	_volumePercent->setMaximum(2000);
@@ -434,6 +476,10 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	QWidget::connect(_monitorTypes, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(MonitorTypeChanged(int)));
 	QWidget::connect(
+		_track,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(TrackChanged(const NumberVariable<int> &)));
+	QWidget::connect(
 		_volumePercent,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
 		this, SLOT(VolumeChanged(const NumberVariable<int> &)));
@@ -464,6 +510,7 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 		{"{{syncOffset}}", _syncOffset},
 		{"{{monitorTypes}}", _monitorTypes},
 		{"{{balance}}", _balance},
+		{"{{track}}", _track},
 		{"{{volume}}", _volumePercent},
 		{"{{volumeDB}}", _volumeDB},
 		{"{{percentDBToggle}}", _percentDBToggle},
@@ -519,6 +566,10 @@ void MacroActionAudioEdit::SetWidgetVisibility()
 				  MacroActionAudio::Action::MONITOR);
 	_balance->setVisible(_entryData->_action ==
 			     MacroActionAudio::Action::BALANCE);
+	_track->setVisible(_entryData->_action ==
+				   MacroActionAudio::Action::ENABLE_ON_TRACK ||
+			   _entryData->_action ==
+				   MacroActionAudio::Action::DISABLE_ON_TRACK);
 
 	_fadeTypeLayout->removeWidget(_fade);
 	_fadeTypeLayout->removeWidget(_fadeTypes);
@@ -583,6 +634,7 @@ void MacroActionAudioEdit::UpdateEntryData()
 	_syncOffset->SetValue(_entryData->_syncOffset);
 	_monitorTypes->setCurrentIndex(_entryData->_monitorType);
 	_balance->SetDoubleValue(_entryData->_balance);
+	_track->SetValue(_entryData->_track);
 	_volumePercent->SetValue(_entryData->_volume);
 	_volumeDB->SetValue(_entryData->_volumeDB);
 	_fade->setChecked(_entryData->_fade);
@@ -646,6 +698,16 @@ void MacroActionAudioEdit::BalanceChanged(const NumberVariable<double> &value)
 
 	auto lock = LockContext();
 	_entryData->_balance = value;
+}
+
+void MacroActionAudioEdit::TrackChanged(const NumberVariable<int> &value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_track = value;
 }
 
 void MacroActionAudioEdit::VolumeDBChanged(const NumberVariable<double> &value)

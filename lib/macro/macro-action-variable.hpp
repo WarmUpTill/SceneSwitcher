@@ -4,6 +4,7 @@
 #include "regex-config.hpp"
 #include "resizing-text-edit.hpp"
 #include "scene-selection.hpp"
+#include "single-char-selection.hpp"
 #include "variable-line-edit.hpp"
 #include "variable-text-edit.hpp"
 #include "variable-spinbox.hpp"
@@ -45,6 +46,8 @@ public:
 		EXTRACT_JSON,
 		SET_TO_TEMPVAR,
 		SCENE_ITEM_NAME,
+		PAD,
+		TRUNCATE,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
@@ -78,6 +81,11 @@ public:
 	SceneSelection _scene;
 	TempVariableRef _tempVar;
 	IntVariable _sceneItemIndex = 1;
+
+	enum class Direction { LEFT, RIGHT };
+	Direction _direction = Direction::LEFT;
+	IntVariable _stringLength = 1;
+	char _paddingChar = '0';
 
 private:
 	void DecrementCurrentSegmentVariableRef();
@@ -135,6 +143,9 @@ private slots:
 	void SceneChanged(const SceneSelection &);
 	void SelectionChanged(const TempVariableRef &var);
 	void SceneItemIndexChanged(const NumberVariable<int> &);
+	void DirectionChanged(int);
+	void StringLengthChanged(const NumberVariable<int> &);
+	void CharSelectionChanged(const QString &);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -175,6 +186,9 @@ private:
 	SceneSelectionWidget *_scenes;
 	TempVariableSelection *_tempVars;
 	VariableSpinBox *_sceneItemIndex;
+	QComboBox *_direction;
+	VariableSpinBox *_stringLength;
+	SingleCharSelection *_paddingCharSelection;
 	QHBoxLayout *_entryLayout;
 
 	std::shared_ptr<MacroActionVariable> _entryData;

@@ -34,6 +34,8 @@ public:
 		SYNC_OFFSET,
 		MONITOR,
 		BALANCE,
+		ENABLE_ON_TRACK,
+		DISABLE_ON_TRACK,
 	};
 
 	enum class FadeType {
@@ -46,6 +48,7 @@ public:
 	IntVariable _syncOffset = 0;
 	obs_monitoring_type _monitorType = OBS_MONITORING_TYPE_NONE;
 	DoubleVariable _balance = 0.5;
+	IntVariable _track = 1;
 	bool _useDb = false;
 	IntVariable _volume = 0;
 	DoubleVariable _volumeDB = 0.0;
@@ -91,6 +94,7 @@ private slots:
 	void SyncOffsetChanged(const NumberVariable<int> &value);
 	void MonitorTypeChanged(int value);
 	void BalanceChanged(const NumberVariable<double> &value);
+	void TrackChanged(const NumberVariable<int> &value);
 	void VolumeChanged(const NumberVariable<int> &value);
 	void VolumeDBChanged(const NumberVariable<double> &value);
 	void PercentDBClicked();
@@ -110,6 +114,7 @@ protected:
 	VariableSpinBox *_syncOffset;
 	QComboBox *_monitorTypes;
 	SliderSpinBox *_balance;
+	VariableSpinBox *_track;
 	VariableSpinBox *_volumePercent;
 	VariableDoubleSpinBox *_volumeDB;
 	QPushButton *_percentDBToggle;

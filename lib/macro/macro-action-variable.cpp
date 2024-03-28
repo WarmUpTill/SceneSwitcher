@@ -54,6 +54,10 @@ const static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.setToTempvar"},
 	{MacroActionVariable::Type::SCENE_ITEM_NAME,
 	 "AdvSceneSwitcher.action.variable.type.sceneItemName"},
+	{MacroActionVariable::Type::PAD,
+	 "AdvSceneSwitcher.action.variable.type.padValue"},
+	{MacroActionVariable::Type::TRUNCATE,
+	 "AdvSceneSwitcher.action.variable.type.truncateValue"},
 };
 
 static void apppend(Variable &var, const std::string &value)
@@ -217,6 +221,38 @@ static void askForInput(void *param)
 	parameters->resultReady = true;
 }
 
+static std::string truncate(const std::string &input,
+			    MacroActionVariable::Direction direction,
+			    size_t length)
+{
+	if (input.length() <= length) {
+		return input;
+	}
+
+	if (direction == MacroActionVariable::Direction::RIGHT) {
+		return input.substr(0, length);
+	} else {
+		return input.substr(input.length() - length);
+	}
+}
+
+static std::string pad(const std::string &input,
+		       MacroActionVariable::Direction direction, size_t length,
+		       char paddingChar)
+{
+	if (input.length() >= length) {
+		return input;
+	}
+
+	if (direction == MacroActionVariable::Direction::RIGHT) {
+		return input +
+		       std::string(length - input.length(), paddingChar);
+	} else {
+		return std::string(length - input.length(), paddingChar) +
+		       input;
+	}
+}
+
 bool MacroActionVariable::PerformAction()
 {
 	auto var = _variable.lock();
@@ -348,6 +384,14 @@ bool MacroActionVariable::PerformAction()
 	case Type::SCENE_ITEM_NAME:
 		SetToSceneItemName(var.get());
 		return true;
+	case Type::PAD:
+		var->SetValue(pad(var->Value(), _direction, _stringLength,
+				  _paddingChar));
+		return true;
+	case Type::TRUNCATE:
+		var->SetValue(
+			truncate(var->Value(), _direction, _stringLength));
+		return true;
 	}
 
 	return true;
@@ -381,6 +425,9 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	_scene.Save(obj);
 	_tempVar.Save(obj);
 	_sceneItemIndex.Save(obj, "sceneItemIndex");
+	obs_data_set_int(obj, "direction", static_cast<int>(_direction));
+	_stringLength.Save(obj, "stringLength");
+	obs_data_set_int(obj, "paddingChar", _paddingChar);
 	return true;
 }
 
@@ -412,6 +459,13 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_scene.Load(obj);
 	_tempVar.Load(obj, GetMacro());
 	_sceneItemIndex.Load(obj, "sceneItemIndex");
+	_direction = static_cast<Direction>(obs_data_get_int(obj, "direction"));
+	_stringLength.Load(obj, "stringLength");
+	if (obs_data_has_user_value(obj, "paddingChar")) {
+		_paddingChar = obs_data_get_int(obj, "paddingChar");
+	} else {
+		_paddingChar = ' ';
+	}
 	return true;
 }
 
@@ -530,6 +584,16 @@ static inline void populateTypeSelection(QComboBox *list)
 	}
 }
 
+static inline void populateDirectionSelection(QComboBox *list)
+{
+	list->addItems(
+		QStringList()
+		<< obs_module_text(
+			   "AdvSceneSwitcher.action.variable.truncateOrPadDirection.left")
+		<< obs_module_text(
+			   "AdvSceneSwitcher.action.variable.truncateOrPadDirection.right"));
+}
+
 MacroActionVariableEdit::MacroActionVariableEdit(
 	QWidget *parent, std::shared_ptr<MacroActionVariable> entryData)
 	: QWidget(parent),
@@ -567,6 +631,9 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 					   true)),
 	  _tempVars(new TempVariableSelection(this)),
 	  _sceneItemIndex(new VariableSpinBox()),
+	  _direction(new QComboBox()),
+	  _stringLength(new VariableSpinBox()),
+	  _paddingCharSelection(new SingleCharSelection()),
 	  _entryLayout(new QHBoxLayout())
 {
 	_numValue->setMinimum(-9999999999);
@@ -586,7 +653,9 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_inputPrompt->setSizePolicy(QSizePolicy::MinimumExpanding,
 				    QSizePolicy::Preferred);
 	_sceneItemIndex->setMinimum(1);
+	_stringLength->setMaximum(999);
 	populateTypeSelection(_actions);
+	populateDirectionSelection(_direction);
 
 	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),
 			 this, SLOT(VariableChanged(const QString &)));
@@ -642,8 +711,17 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		_sceneItemIndex,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
 		this, SLOT(SceneItemIndexChanged(const NumberVariable<int> &)));
+	QWidget::connect(_direction, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(DirectionChanged(int)));
+	QWidget::connect(
+		_stringLength,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(StringLengthChanged(const NumberVariable<int> &)));
+	QWidget::connect(_paddingCharSelection,
+			 SIGNAL(CharChanged(const QString &)), this,
+			 SLOT(CharSelectionChanged(const QString &)));
 
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
 		{"{{variables2}}", _variables2},
 		{"{{actions}}", _actions},
@@ -665,9 +743,13 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{scenes}}", _scenes},
 		{"{{tempVars}}", _tempVars},
 		{"{{sceneItemIndex}}", _sceneItemIndex},
+		{"{{direction}}", _direction},
+		{"{{stringLength}}", _stringLength},
+		{"{{paddingCharSelection}}", _paddingCharSelection},
 	};
-	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.variable.entry"),
-		     _entryLayout, widgetPlaceholders);
+	PlaceWidgets(
+		obs_module_text("AdvSceneSwitcher.action.variable.entry.other"),
+		_entryLayout, widgetPlaceholders);
 
 	PlaceWidgets(
 		obs_module_text(
@@ -760,6 +842,10 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_scenes->SetScene(_entryData->_scene);
 	_tempVars->SetVariable(_entryData->_tempVar);
 	_sceneItemIndex->SetValue(_entryData->_sceneItemIndex);
+	_direction->setCurrentIndex(static_cast<int>(_entryData->_direction));
+	_stringLength->SetValue(_entryData->_stringLength);
+	_paddingCharSelection->setText(
+		QChar::fromLatin1(_entryData->_paddingChar));
 	SetWidgetVisibility();
 }
 
@@ -1129,11 +1215,83 @@ void MacroActionVariableEdit::SceneItemIndexChanged(
 	_entryData->_sceneItemIndex = value;
 }
 
+void MacroActionVariableEdit::DirectionChanged(int value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_direction =
+		static_cast<MacroActionVariable::Direction>(value);
+}
+
+void MacroActionVariableEdit::StringLengthChanged(
+	const NumberVariable<int> &value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_stringLength = value;
+}
+
+void MacroActionVariableEdit::CharSelectionChanged(const QString &character)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	if (character.isEmpty()) {
+		_entryData->_paddingChar = ' ';
+	} else {
+		_entryData->_paddingChar = character.toStdString().at(0);
+	}
+}
+
 void MacroActionVariableEdit::SetWidgetVisibility()
 {
 	if (!_entryData) {
 		return;
 	}
+
+	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+		{"{{variables}}", _variables},
+		{"{{variables2}}", _variables2},
+		{"{{actions}}", _actions},
+		{"{{strValue}}", _strValue},
+		{"{{numValue}}", _numValue},
+		{"{{segmentIndex}}", _segmentIdx},
+		{"{{mathExpression}}", _mathExpression},
+		{"{{envVariableName}}", _envVariable},
+		{"{{scenes}}", _scenes},
+		{"{{tempVars}}", _tempVars},
+		{"{{sceneItemIndex}}", _sceneItemIndex},
+		{"{{direction}}", _direction},
+		{"{{stringLength}}", _stringLength},
+		{"{{paddingCharSelection}}", _paddingCharSelection},
+	};
+
+	const char *layoutString = "";
+	if (_entryData->_type == MacroActionVariable::Type::PAD) {
+		layoutString = obs_module_text(
+			"AdvSceneSwitcher.action.variable.entry.pad");
+	} else if (_entryData->_type == MacroActionVariable::Type::TRUNCATE) {
+		layoutString = obs_module_text(
+			"AdvSceneSwitcher.action.variable.entry.truncate");
+	} else {
+		layoutString = obs_module_text(
+			"AdvSceneSwitcher.action.variable.entry.other");
+	}
+
+	for (const auto &[_, widget] : widgetPlaceholders) {
+		_entryLayout->removeWidget(widget);
+	}
+
+	ClearLayout(_entryLayout);
+	PlaceWidgets(layoutString, _entryLayout, widgetPlaceholders);
 
 	if (_entryData->_type == MacroActionVariable::Type::SET_FIXED_VALUE ||
 	    _entryData->_type == MacroActionVariable::Type::APPEND ||
@@ -1225,6 +1383,14 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 			      MacroActionVariable::Type::SET_TO_TEMPVAR);
 	_sceneItemIndex->setVisible(_entryData->_type ==
 				    MacroActionVariable::Type::SCENE_ITEM_NAME);
+	_direction->setVisible(
+		_entryData->_type == MacroActionVariable::Type::PAD ||
+		_entryData->_type == MacroActionVariable::Type::TRUNCATE);
+	_stringLength->setVisible(
+		_entryData->_type == MacroActionVariable::Type::PAD ||
+		_entryData->_type == MacroActionVariable::Type::TRUNCATE);
+	_paddingCharSelection->setVisible(_entryData->_type ==
+					  MacroActionVariable::Type::PAD);
 	adjustSize();
 	updateGeometry();
 }

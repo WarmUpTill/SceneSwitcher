@@ -3,6 +3,7 @@
 #include "variable-text-edit.hpp"
 #include "source-selection.hpp"
 #include "filter-selection.hpp"
+#include "source-properties-button.hpp"
 #include "source-setting.hpp"
 
 #include <QComboBox>
@@ -29,6 +30,7 @@ public:
 		DISABLE,
 		TOGGLE,
 		SETTINGS,
+		SETTINGS_BUTTON,
 	};
 
 	enum class SettingsInputMethod {
@@ -46,6 +48,7 @@ public:
 	TempVariableRef _tempVar;
 	StringVariable _manualSettingValue = "";
 	SourceSetting _setting;
+	SourceSettingButton _button;
 
 private:
 	static bool _registered;
@@ -79,10 +82,14 @@ private slots:
 	void SelectionChanged(const SourceSetting &);
 	void ManualSettingsValueChanged();
 	void RefreshVariableSourceSelectionValue();
+	void ButtonChanged(int idx);
+
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	SourceSelectionWidget *_sources;
 	FilterSelectionWidget *_filters;
 	QComboBox *_actions;
@@ -94,11 +101,9 @@ protected:
 	SourceSettingSelection *_filterSettings;
 	VariableTextEdit *_settingsString;
 	QPushButton *_refreshSettingSelection;
+	QComboBox *_settingsButtons;
 
 	std::shared_ptr<MacroActionFilter> _entryData;
-
-private:
-	void SetWidgetVisibility();
 	bool _loading = true;
 };
 
