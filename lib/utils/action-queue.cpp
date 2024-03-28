@@ -51,8 +51,12 @@ void ActionQueue::Load(obs_data_t *obj)
 
 void ActionQueue::Start()
 {
-	if (_thread.joinable()) {
+	if (!_stop) {
 		return;
+	}
+
+	if (_thread.joinable()) {
+		_thread.join();
 	}
 	_stop = false;
 	_thread = std::thread(&ActionQueue::RunActions, this);
@@ -62,6 +66,10 @@ void ActionQueue::Stop()
 {
 	_stop = true;
 	_cv.notify_all();
+	if (std::this_thread::get_id() == _thread.get_id()) {
+		return;
+	}
+
 	if (_thread.joinable()) {
 		_thread.join();
 	}
@@ -69,7 +77,7 @@ void ActionQueue::Stop()
 
 bool ActionQueue::IsRunning() const
 {
-	return _thread.joinable();
+	return !_stop;
 }
 
 bool ActionQueue::RunsOnStartup() const

@@ -39,7 +39,7 @@ private:
 
 	bool _runOnStartup = true;
 	bool _resolveVariablesOnAdd = true;
-	std::atomic_bool _stop = {false};
+	std::atomic_bool _stop = {true};
 	std::mutex _mutex;
 	std::condition_variable _cv;
 	std::thread _thread;
