@@ -277,6 +277,25 @@ void AdvSceneSwitcher::OpenSettingsForSelectedVariable()
 	}
 }
 
+static void removeVariablesWithNames(const QStringList &varNames)
+{
+	for (const auto &name : varNames) {
+		auto variable = GetVariableByQString(name);
+		if (!variable) {
+			continue;
+		}
+
+		auto &variables = GetVariables();
+		variables.erase(
+			std::remove_if(
+				variables.begin(), variables.end(),
+				[variable](const std::shared_ptr<Item> &item) {
+					return item.get() == variable;
+				}),
+			variables.end());
+	}
+}
+
 void AdvSceneSwitcher::RemoveSelectedVariables()
 {
 	auto selectedRows = ui->variables->selectionModel()->selectedRows();
@@ -309,25 +328,13 @@ void AdvSceneSwitcher::RemoveSelectedVariables()
 		}
 	}
 
-	for (const auto &name : varNames) {
-		VariableSignalManager::Instance()->Remove(name);
+	{
+		auto lock = LockContext();
+		removeVariablesWithNames(varNames);
 	}
 
-	auto lock = LockContext();
 	for (const auto &name : varNames) {
-		auto variable = GetVariableByQString(name);
-		if (!variable) {
-			continue;
-		}
-
-		auto &variables = GetVariables();
-		variables.erase(
-			std::remove_if(
-				variables.begin(), variables.end(),
-				[variable](const std::shared_ptr<Item> &item) {
-					return item.get() == variable;
-				}),
-			variables.end());
+		VariableSignalManager::Instance()->Remove(name);
 	}
 }
 
