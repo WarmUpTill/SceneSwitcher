@@ -34,8 +34,6 @@ public:
 
 	void LoadUI();
 
-	void SetTabOrder();
-	void SetCurrentTab();
 	void RestoreWindowGeo();
 	void CheckFirstTimeSetup();
 
@@ -59,7 +57,6 @@ public slots:
 	void on_autoStartEvent_currentIndexChanged(int index);
 	void on_noMatchSwitchScene_currentTextChanged(const QString &text);
 	void on_checkInterval_valueChanged(int value);
-	void on_tabMoved(int from, int to);
 	void on_tabWidget_currentChanged(int index);
 	void on_exportSettings_clicked();
 	void on_importSettings_clicked();

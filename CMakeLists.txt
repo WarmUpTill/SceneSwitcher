@@ -217,6 +217,8 @@ target_sources(
           lib/utils/switch-button.hpp
           lib/utils/sync-helpers.cpp
           lib/utils/sync-helpers.hpp
+          lib/utils/tab-helpers.cpp
+          lib/utils/tab-helpers.hpp
           lib/utils/temp-variable.cpp
           lib/utils/temp-variable.hpp
           lib/utils/ui-helpers.cpp
