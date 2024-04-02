@@ -171,7 +171,6 @@ public:
 	/* --- Start of UI section --- */
 
 	bool settingsWindowOpened = false;
-	int lastOpenedTab = -1;
 	std::string lastImportPath;
 	QStringList loadFailureLibs;
 	bool warnPluginLoadFailure = true;

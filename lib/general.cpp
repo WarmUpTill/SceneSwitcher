@@ -9,6 +9,7 @@
 #include "splitter-helpers.hpp"
 #include "status-control.hpp"
 #include "switcher-data.hpp"
+#include "tab-helpers.hpp"
 #include "ui-helpers.hpp"
 #include "utility.hpp"
 #include "variable.hpp"
@@ -18,17 +19,6 @@
 #include <QFileDialog>
 
 namespace advss {
-
-static constexpr std::array<const char *, 19> tabNames = {
-	"generalTab",     "macroTab",       "variableTab",
-	"windowTitleTab", "executableTab",  "screenRegionTab",
-	"mediaTab",       "fileTab",        "randomTab",
-	"timeTab",        "idleTab",        "sceneSequenceTab",
-	"audioTab",       "videoTab",       "networkTab",
-	"sceneGroupTab",  "transitionsTab", "pauseTab",
-	"sceneTriggerTab"};
-
-static std::vector<int> tabOrder = std::vector<int>(tabNames.size());
 
 void AdvSceneSwitcher::reject()
 {
@@ -244,14 +234,7 @@ void AdvSceneSwitcher::on_hideLegacyTabs_stateChanged(int state)
 
 	for (int idx = 0; idx < ui->tabWidget->count(); idx++) {
 		if (isLegacyTab(ui->tabWidget->tabText(idx))) {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-			// TODO: Switch to setTabVisible() once QT 5.15 is more wide spread
-			ui->tabWidget->setTabEnabled(idx, !state);
-			ui->tabWidget->setStyleSheet(
-				"QTabBar::tab::disabled {width: 0; height: 0; margin: 0; padding: 0; border: none;} ");
-#else
 			ui->tabWidget->setTabVisible(idx, !state);
-#endif
 		}
 	}
 }
@@ -363,67 +346,6 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 	}
 }
 
-static int findTabIndex(QTabWidget *tabWidget, int pos)
-{
-	int at = -1;
-	QString tabName = tabNames.at(pos);
-	QWidget *page = tabWidget->findChild<QWidget *>(tabName);
-	if (page) {
-		at = tabWidget->indexOf(page);
-	}
-	if (at == -1) {
-		blog(LOG_INFO, "failed to find tab %s",
-		     tabName.toUtf8().constData());
-	}
-
-	return at;
-}
-
-static bool tabWidgetOrderValid()
-{
-	auto tmp = std::vector<int>(tabNames.size());
-	std::iota(tmp.begin(), tmp.end(), 0);
-
-	for (auto &p : tmp) {
-		auto it = std::find(tabOrder.begin(), tabOrder.end(), p);
-		if (it == tabOrder.end()) {
-			return false;
-		}
-	}
-	return true;
-}
-
-static void resetTabWidgetOrder()
-{
-	tabOrder = std::vector<int>(tabNames.size());
-	std::iota(tabOrder.begin(), tabOrder.end(), 0);
-}
-
-void AdvSceneSwitcher::SetTabOrder()
-{
-	if (!tabWidgetOrderValid()) {
-		resetTabWidgetOrder();
-	}
-
-	QTabBar *bar = ui->tabWidget->tabBar();
-	for (int i = 0; i < bar->count(); ++i) {
-		int curPos = findTabIndex(ui->tabWidget, tabOrder[i]);
-
-		if (i != curPos && curPos != -1) {
-			bar->moveTab(curPos, i);
-		}
-	}
-
-	connect(bar, &QTabBar::tabMoved, this, &AdvSceneSwitcher::on_tabMoved);
-}
-
-void AdvSceneSwitcher::SetCurrentTab()
-{
-	if (switcher->lastOpenedTab >= 0) {
-		ui->tabWidget->setCurrentIndex(switcher->lastOpenedTab);
-	}
-}
-
 static bool windowPosValid(QPoint pos)
 {
 	return !!QGuiApplication::screenAt(pos);
@@ -444,15 +366,6 @@ void AdvSceneSwitcher::CheckFirstTimeSetup()
 		DisplayMessage(
 			obs_module_text("AdvSceneSwitcher.firstBootMessage"));
 	}
-}
-
-void AdvSceneSwitcher::on_tabMoved(int from, int to)
-{
-	if (loading) {
-		return;
-	}
-
-	std::swap(tabOrder[from], tabOrder[to]);
 }
 
 void AdvSceneSwitcher::on_tabWidget_currentChanged(int)
@@ -537,7 +450,7 @@ void SwitcherData::LoadSettings(obs_data_t *obj)
 	RunPostLoadSteps();
 
 	// Reset on startup and scene collection change
-	switcher->lastOpenedTab = -1;
+	ResetLastOpenedTab();
 	startupLoadDone = true;
 }
 
@@ -685,13 +598,7 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 
 void SwitcherData::SaveUISettings(obs_data_t *obj)
 {
-	OBSDataArrayAutoRelease tabWidgetOrder = obs_data_array_create();
-	for (size_t i = 0; i < tabNames.size(); i++) {
-		OBSDataAutoRelease entry = obs_data_create();
-		obs_data_set_int(entry, tabNames[i], tabOrder[i]);
-		obs_data_array_push_back(tabWidgetOrder, entry);
-	}
-	obs_data_set_array(obj, "tabWidgetOrder", tabWidgetOrder);
+	SaveTabOrder(obj);
 
 	obs_data_set_bool(obj, "saveWindowGeo", saveWindowGeo);
 	obs_data_set_int(obj, "windowPosX", windowPos.x());
@@ -705,28 +612,7 @@ void SwitcherData::SaveUISettings(obs_data_t *obj)
 
 void SwitcherData::LoadUISettings(obs_data_t *obj)
 {
-	OBSDataArrayAutoRelease defaultTabWidgetOrder = obs_data_array_create();
-	for (size_t i = 0; i < tabNames.size(); i++) {
-		OBSDataAutoRelease entry = obs_data_create();
-		obs_data_set_default_int(entry, tabNames[i], i);
-		obs_data_array_push_back(defaultTabWidgetOrder, entry);
-	}
-	obs_data_set_default_array(obj, "tabWidgetOrder",
-				   defaultTabWidgetOrder);
-
-	tabOrder.clear();
-	OBSDataArrayAutoRelease tabWidgetOrder =
-		obs_data_get_array(obj, "tabWidgetOrder");
-	for (size_t i = 0; i < tabNames.size(); i++) {
-		OBSDataAutoRelease entry =
-			obs_data_array_item(tabWidgetOrder, i);
-		tabOrder.emplace_back(
-			(int)(obs_data_get_int(entry, tabNames[i])));
-	}
-
-	if (!tabWidgetOrderValid()) {
-		resetTabWidgetOrder();
-	}
+	LoadTabOrder(obj);
 
 	saveWindowGeo = obs_data_get_bool(obj, "saveWindowGeo");
 	windowPos = {(int)obs_data_get_int(obj, "windowPosX"),

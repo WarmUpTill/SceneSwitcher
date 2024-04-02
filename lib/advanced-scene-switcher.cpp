@@ -11,6 +11,7 @@
 #include "status-control.hpp"
 #include "switcher-data.hpp"
 #include "ui-helpers.hpp"
+#include "tab-helpers.hpp"
 #include "utility.hpp"
 #include "version.h"
 
@@ -44,7 +45,7 @@ AdvSceneSwitcher::~AdvSceneSwitcher()
 {
 	if (switcher) {
 		switcher->settingsWindowOpened = false;
-		switcher->lastOpenedTab = ui->tabWidget->currentIndex();
+		SaveLastOpenedTab(ui->tabWidget);
 	}
 }
 
@@ -113,10 +114,11 @@ void AdvSceneSwitcher::LoadUI()
 	SetupTriggerTab();
 	SetupMacroTab();
 	SetupVariableTab();
+	SetupOtherTabs(ui->tabWidget);
 
 	SetDeprecationWarnings();
-	SetTabOrder();
-	SetCurrentTab();
+	SetTabOrder(ui->tabWidget);
+	SetCurrentTab(ui->tabWidget);
 	RestoreWindowGeo();
 	CheckFirstTimeSetup();
 
