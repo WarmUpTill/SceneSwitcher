@@ -383,7 +383,7 @@ if(NOT OS_WINDOWS)
     ${LIB_NAME}
     PUBLIC -Wno-error=unused-parameter -Wno-error=conversion -Wno-error=shadow
            -Wno-error=float-conversion -Wno-error=enum-conversion
-           -Wno-error=deprecated-declarations)
+           -Wno-error=deprecated-declarations -Wno-error=stringop-overflow)
 endif()
 
 # --- End of section ---
