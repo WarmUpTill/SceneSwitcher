@@ -16,11 +16,6 @@ class QLabel;
 class QSpacerItem;
 class QHBoxLayout;
 
-// Only used to enable applying "SourceTreeSubItemCheckBox" stylesheet
-class SourceTreeSubItemCheckBox : public QCheckBox {
-	Q_OBJECT
-};
-
 namespace advss {
 
 class Macro;

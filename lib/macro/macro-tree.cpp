@@ -172,7 +172,8 @@ void MacroTreeItem::Update(bool force)
 		_boxLayout->insertItem(0, _spacer);
 
 	} else if (_type == Type::Group) {
-		_expand = new SourceTreeSubItemCheckBox();
+		_expand = new QCheckBox();
+		_expand->setProperty("sourceTreeSubItem", true);
 		_expand->setSizePolicy(QSizePolicy::Maximum,
 				       QSizePolicy::Maximum);
 		_expand->setMaximumSize(10, 16);
@@ -184,6 +185,7 @@ void MacroTreeItem::Update(bool force)
 		_expand->blockSignals(true);
 		_expand->setChecked(_macro->IsCollapsed());
 		_expand->blockSignals(false);
+
 		connect(_expand, &QPushButton::toggled, this,
 			&MacroTreeItem::ExpandClicked);
 	} else {
