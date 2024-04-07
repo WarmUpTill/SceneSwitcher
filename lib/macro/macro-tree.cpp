@@ -173,6 +173,7 @@ void MacroTreeItem::Update(bool force)
 
 	} else if (_type == Type::Group) {
 		_expand = new SourceTreeSubItemCheckBox();
+		_expand->setProperty("sourceTreeSubItem", true);
 		_expand->setSizePolicy(QSizePolicy::Maximum,
 				       QSizePolicy::Maximum);
 		_expand->setMaximumSize(10, 16);
