@@ -17,6 +17,7 @@ class QSpacerItem;
 class QHBoxLayout;
 
 // Only used to enable applying "SourceTreeSubItemCheckBox" stylesheet
+// Can be removed once the minimum supported OBS version is greater than 30.1
 class SourceTreeSubItemCheckBox : public QCheckBox {
 	Q_OBJECT
 };
