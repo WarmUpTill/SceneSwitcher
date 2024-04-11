@@ -232,7 +232,7 @@ void SceneItemSelection::Save(obs_data_t *obj, const char *name) const
 		break;
 	case SceneItemSelection::Type::INDEX_RANGE:
 		_index.Save(data, indexSaveName.data());
-		_index.Save(data, indexEndSaveName.data());
+		_indexEnd.Save(data, indexEndSaveName.data());
 		break;
 	default:
 		break;
