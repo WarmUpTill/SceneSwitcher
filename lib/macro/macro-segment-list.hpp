@@ -18,6 +18,7 @@ public:
 	void SetHelpMsg(const QString &msg);
 	void SetHelpMsgVisible(bool visible);
 	MacroSegmentEdit *WidgetAt(int idx);
+	MacroSegmentEdit *WidgetAt(const QPoint &);
 	void Insert(int idx, MacroSegmentEdit *widget);
 	void Add(QWidget *widget);
 	void Remove(int idx);
@@ -44,7 +45,7 @@ protected:
 private:
 	int GetDragIndex(const QPoint &);
 	int GetDropIndex(const QPoint &);
-	int GetWidgetIdx(const QPoint &);
+	int GetSegmentIndexFromPos(const QPoint &);
 	void CheckScroll();
 	void CheckDropLine(const QPoint &);
 	bool IsInListArea(const QPoint &);

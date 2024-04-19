@@ -20,13 +20,17 @@ MacroSegment::MacroSegment(Macro *m, bool supportsVariableValue)
 
 bool MacroSegment::Save(obs_data_t *obj) const
 {
-	obs_data_set_bool(obj, "collapsed", static_cast<int>(_collapsed));
+	obs_data_set_bool(obj, "collapsed", _collapsed);
+	obs_data_set_bool(obj, "useCustomLabel", _useCustomLabel);
+	obs_data_set_string(obj, "customLabel", _customLabel.c_str());
 	return true;
 }
 
 bool MacroSegment::Load(obs_data_t *obj)
 {
 	_collapsed = obs_data_get_bool(obj, "collapsed");
+	_useCustomLabel = obs_data_get_bool(obj, "useCustomLabel");
+	_customLabel = obs_data_get_string(obj, "customLabel");
 	ClearAvailableTempvars();
 	return true;
 }
@@ -296,6 +300,12 @@ bool MacroSegmentEdit::eventFilter(QObject *obj, QEvent *ev)
 
 void MacroSegmentEdit::HeaderInfoChanged(const QString &text)
 {
+	if (Data() && Data()->GetUseCustomLabel()) {
+		_headerInfo->show();
+		_headerInfo->setText(
+			QString::fromStdString(Data()->GetCustomLabel()));
+		return;
+	}
 	_headerInfo->setVisible(!text.isEmpty());
 	_headerInfo->setText(text);
 }

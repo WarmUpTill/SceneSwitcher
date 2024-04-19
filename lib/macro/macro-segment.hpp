@@ -28,6 +28,10 @@ public:
 	int GetIndex() const { return _idx; }
 	void SetCollapsed(bool collapsed) { _collapsed = collapsed; }
 	bool GetCollapsed() const { return _collapsed; }
+	void SetUseCustomLabel(bool enable) { _useCustomLabel = enable; }
+	bool GetUseCustomLabel() const { return _useCustomLabel; }
+	void SetCustomLabel(const std::string &label) { _customLabel = label; }
+	std::string GetCustomLabel() const { return _customLabel; }
 	virtual bool Save(obs_data_t *obj) const = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
 	virtual bool PostLoad();
@@ -63,6 +67,11 @@ private:
 	bool _highlight = false;
 	bool _collapsed = false;
 
+	// Custom header labels
+	bool _useCustomLabel = false;
+	std::string _customLabel = obs_module_text(
+		"AdvSceneSwitcher.macroTab.segment.defaultCustomLabel");
+
 	// Variable helpers
 	const bool _supportsVariableValue = false;
 	int _variableRefs = 0;
@@ -86,8 +95,10 @@ public:
 	void SetSelected(bool);
 	virtual std::shared_ptr<MacroSegment> Data() const = 0;
 
-protected slots:
+public slots:
 	void HeaderInfoChanged(const QString &);
+
+protected slots:
 	void Collapsed(bool);
 	void Highlight();
 	void EnableHighlight(bool);
