@@ -648,8 +648,10 @@ SceneItemSelectionWidget::SceneItemSelectionWidget(QWidget *parent,
 		"AdvSceneSwitcher.sceneItemSelection.configure"));
 
 	_index->setMinimum(1);
+	_index->setMaximum(999);
 	_index->setSuffix(".");
 	_indexEnd->setMinimum(1);
+	_indexEnd->setMaximum(999);
 	_indexEnd->setSuffix(".");
 
 	populateSourceGroupSelection(_sourceGroups);
