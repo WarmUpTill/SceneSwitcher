@@ -95,7 +95,9 @@ void MacroSelection::MacroRename(const QString &oldName, const QString &newName)
 	}
 }
 
-MacroSelectionDialog::MacroSelectionDialog(QWidget *)
+MacroSelectionDialog::MacroSelectionDialog(QWidget *parent)
+	: QDialog(parent),
+	  _macroSelection(new MacroSelection(this))
 {
 	setModal(true);
 	setWindowModality(Qt::WindowModality::ApplicationModal);
@@ -103,21 +105,20 @@ MacroSelectionDialog::MacroSelectionDialog(QWidget *)
 	setMinimumWidth(350);
 	setMinimumHeight(70);
 
-	QDialogButtonBox *buttonbox = new QDialogButtonBox(
-		QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+	auto buttonbox = new QDialogButtonBox(QDialogButtonBox::Ok |
+					      QDialogButtonBox::Cancel);
 
 	buttonbox->setCenterButtons(true);
 	connect(buttonbox, &QDialogButtonBox::accepted, this, &QDialog::accept);
 	connect(buttonbox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
-	_macroSelection = new MacroSelection(window());
-	auto *selectionLayout = new QHBoxLayout;
+	auto selectionLayout = new QHBoxLayout;
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{macroSelection}}", _macroSelection},
 	};
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.askForMacro"),
 		     selectionLayout, widgetPlaceholders);
-	auto *layout = new QVBoxLayout();
+	auto layout = new QVBoxLayout();
 	layout->addLayout(selectionLayout);
 	layout->addWidget(buttonbox);
 	setLayout(layout);
@@ -125,7 +126,7 @@ MacroSelectionDialog::MacroSelectionDialog(QWidget *)
 
 bool MacroSelectionDialog::AskForMacro(QWidget *parent, std::string &macroName)
 {
-	MacroSelectionDialog dialog(parent);
+	MacroSelectionDialog dialog(GetSettingsWindow());
 	dialog.setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
 
 	if (dialog.exec() != DialogCode::Accepted) {
