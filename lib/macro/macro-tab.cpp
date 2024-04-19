@@ -67,7 +67,7 @@ bool AdvSceneSwitcher::AddNewMacro(std::shared_ptr<Macro> &res,
 		placeHolderText = fmt.arg(++i);
 	}
 
-	bool accepted = AdvSSNameDialog::AskForName(
+	bool accepted = NameDialog::AskForName(
 		this, obs_module_text("AdvSceneSwitcher.macroTab.add"),
 		obs_module_text("AdvSceneSwitcher.macroTab.name"), name,
 		placeHolderText);
@@ -199,7 +199,7 @@ void AdvSceneSwitcher::RenameSelectedMacro()
 
 	std::string oldName = macro->Name();
 	std::string name;
-	if (!AdvSSNameDialog::AskForName(
+	if (!NameDialog::AskForName(
 		    this, obs_module_text("AdvSceneSwitcher.windowTitle"),
 		    obs_module_text("AdvSceneSwitcher.item.newName"), name,
 		    QString::fromStdString(oldName))) {
@@ -370,7 +370,7 @@ bool AdvSceneSwitcher::ResolveMacroImportNameConflict(
 	}
 
 	std::string newName;
-	bool accepted = AdvSSNameDialog::AskForName(
+	bool accepted = NameDialog::AskForName(
 		this,
 		obs_module_text(macro->IsGroup()
 					? "AdvSceneSwitcher.macroTab.addGroup"
@@ -956,7 +956,7 @@ static void handleCustomLabelChange(MacroSegmentEdit *segmentEdit,
 	}
 
 	std::string label;
-	bool accepted = AdvSSNameDialog::AskForName(
+	bool accepted = NameDialog::AskForName(
 		GetSettingsWindow(),
 		obs_module_text(
 			"AdvSceneSwitcher.macroTab.segment.setCustomLabel"),

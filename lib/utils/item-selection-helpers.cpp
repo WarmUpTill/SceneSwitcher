@@ -177,7 +177,7 @@ void ItemSelection::RenameItem()
 	Item *item = variant.value<Item *>();
 
 	std::string name;
-	bool accepted = AdvSSNameDialog::AskForName(
+	bool accepted = NameDialog::AskForName(
 		this, obs_module_text("AdvSceneSwitcher.windowTitle"),
 		obs_module_text("AdvSceneSwitcher.item.newName"), name,
 		QString::fromStdString(item->Name()));
