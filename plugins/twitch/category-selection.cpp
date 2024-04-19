@@ -314,7 +314,7 @@ void TwitchCategorySearchButton::SetToken(
 void TwitchCategorySearchButton::StartManualCategorySearch()
 {
 	std::string category;
-	bool accepted = AdvSSNameDialog::AskForName(
+	bool accepted = NameDialog::AskForName(
 		this,
 		obs_module_text("AdvSceneSwitcher.twitchCategories.search"),
 		obs_module_text("AdvSceneSwitcher.twitchCategories.name"),

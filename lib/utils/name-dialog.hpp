@@ -8,23 +8,23 @@
 namespace advss {
 
 // Based on OBS's NameDialog
-class AdvSSNameDialog : public QDialog {
+class NameDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	AdvSSNameDialog(QWidget *parent);
+	NameDialog(QWidget *parent);
 
 	// Returns true if user clicks OK, false otherwise
 	// userTextInput returns string that user typed into dialog
 	EXPORT static bool AskForName(QWidget *parent, const QString &title,
-				      const QString &text,
+				      const QString &prompt,
 				      std::string &userTextInput,
 				      const QString &placeHolder = QString(""),
 				      int maxSize = 170, bool clean = true);
 
 private:
-	QLabel *label;
-	QLineEdit *userText;
+	QLabel *_label;
+	QLineEdit *_userText;
 };
 
 } // namespace advss

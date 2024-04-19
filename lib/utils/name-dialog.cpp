@@ -5,22 +5,22 @@
 
 namespace advss {
 
-AdvSSNameDialog::AdvSSNameDialog(QWidget *parent) : QDialog(parent)
+NameDialog::NameDialog(QWidget *parent)
+	: QDialog(parent),
+	  _label(new QLabel(this)),
+	  _userText(new QLineEdit(this))
+
 {
 	setModal(true);
 	setWindowModality(Qt::WindowModality::WindowModal);
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	setFixedWidth(555);
 	setMinimumHeight(100);
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto layout = new QVBoxLayout;
 	setLayout(layout);
 
-	label = new QLabel(this);
-	layout->addWidget(label);
-	label->setText("Set Text");
-
-	userText = new QLineEdit(this);
-	layout->addWidget(userText);
+	layout->addWidget(_label);
+	layout->addWidget(_userText);
 
 	QDialogButtonBox *buttonbox = new QDialogButtonBox(
 		QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -30,43 +30,44 @@ AdvSSNameDialog::AdvSSNameDialog(QWidget *parent) : QDialog(parent)
 	connect(buttonbox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
 
-static bool IsWhitespace(char ch)
+static bool isWhitespace(char ch)
 {
 	return ch == ' ' || ch == '\t';
 }
 
-static void CleanWhitespace(std::string &str)
+static void cleanWhitespace(std::string &str)
 {
-	while (str.size() && IsWhitespace(str.back()))
+	while (str.size() && isWhitespace(str.back())) {
 		str.erase(str.end() - 1);
-	while (str.size() && IsWhitespace(str.front()))
+	}
+	while (str.size() && isWhitespace(str.front())) {
 		str.erase(str.begin());
+	}
 }
 
-bool AdvSSNameDialog::AskForName(QWidget *parent, const QString &title,
-				 const QString &text,
-				 std::string &userTextInput,
-				 const QString &placeHolder, int maxSize,
-				 bool clean)
+bool NameDialog::AskForName(QWidget *parent, const QString &title,
+			    const QString &prompt, std::string &userTextInput,
+			    const QString &placeHolder, int maxSize, bool clean)
 {
 	if (maxSize <= 0 || maxSize > 32767) {
 		maxSize = 170;
 	}
 
-	AdvSSNameDialog dialog(parent);
+	NameDialog dialog(parent);
 	dialog.setWindowTitle(title);
 
-	dialog.label->setText(text);
-	dialog.userText->setMaxLength(maxSize);
-	dialog.userText->setText(placeHolder);
-	dialog.userText->selectAll();
+	dialog._label->setVisible(!prompt.isEmpty());
+	dialog._label->setText(prompt);
+	dialog._userText->setMaxLength(maxSize);
+	dialog._userText->setText(placeHolder);
+	dialog._userText->selectAll();
 
 	if (dialog.exec() != DialogCode::Accepted) {
 		return false;
 	}
-	userTextInput = dialog.userText->text().toUtf8().constData();
+	userTextInput = dialog._userText->text().toUtf8().constData();
 	if (clean) {
-		CleanWhitespace(userTextInput);
+		cleanWhitespace(userTextInput);
 	}
 	return true;
 }

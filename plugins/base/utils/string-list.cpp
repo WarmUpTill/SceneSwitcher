@@ -137,9 +137,9 @@ void StringListEdit::showEvent(QShowEvent *e)
 void StringListEdit::Add()
 {
 	std::string name;
-	bool accepted = AdvSSNameDialog::AskForName(this, _addString,
-						    _addStringDescription, name,
-						    "", _maxStringSize, false);
+	bool accepted = NameDialog::AskForName(this, _addString,
+					       _addStringDescription, name, "",
+					       _maxStringSize, false);
 
 	if (!accepted || (!_allowEmpty && name.empty())) {
 		return;
@@ -205,10 +205,10 @@ void StringListEdit::Down()
 void StringListEdit::Clicked(QListWidgetItem *item)
 {
 	std::string name;
-	bool accepted = AdvSSNameDialog::AskForName(this, _addString,
-						    _addStringDescription, name,
-						    item->text(),
-						    _maxStringSize, false);
+	bool accepted = NameDialog::AskForName(this, _addString,
+					       _addStringDescription, name,
+					       item->text(), _maxStringSize,
+					       false);
 
 	if (!accepted || (!_allowEmpty && name.empty())) {
 		return;

@@ -141,7 +141,7 @@ void AdvSceneSwitcher::on_sceneGroupAdd_clicked()
 		placeHolderText = format.arg(++i);
 	}
 
-	bool accepted = AdvSSNameDialog::AskForName(
+	bool accepted = NameDialog::AskForName(
 		this, obs_module_text("AdvSceneSwitcher.sceneGroupTab.add"),
 		obs_module_text("AdvSceneSwitcher.sceneGroupTab.add"), name,
 		placeHolderText);
