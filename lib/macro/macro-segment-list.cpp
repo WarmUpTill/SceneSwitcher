@@ -246,6 +246,11 @@ MacroSegmentEdit *MacroSegmentList::WidgetAt(int idx)
 	return static_cast<MacroSegmentEdit *>(item->widget());
 }
 
+MacroSegmentEdit *MacroSegmentList::WidgetAt(const QPoint &pos)
+{
+	return WidgetAt(GetSegmentIndexFromPos(mapToGlobal(pos)));
+}
+
 void MacroSegmentList::HideLastDropLine()
 {
 	if (_dropLineIdx >= 0 && _dropLineIdx < _contentLayout->count()) {
@@ -319,7 +324,7 @@ QRect MacroSegmentList::GetContentItemRectWithPadding(int idx)
 	return rect;
 }
 
-int MacroSegmentList::GetWidgetIdx(const QPoint &pos)
+int MacroSegmentList::GetSegmentIndexFromPos(const QPoint &pos)
 {
 	int idx = -1;
 	for (int i = 0; i < _contentLayout->count(); ++i) {
@@ -359,7 +364,7 @@ void MacroSegmentList::CheckScroll()
 
 void MacroSegmentList::CheckDropLine(const QPoint &pos)
 {
-	int idx = GetWidgetIdx(pos);
+	int idx = GetSegmentIndexFromPos(pos);
 	if (idx == _dragPosition) {
 		return;
 	}
@@ -410,7 +415,7 @@ bool MacroSegmentList::IsInListArea(const QPoint &pos)
 
 int MacroSegmentList::GetDropIndex(const QPoint &pos)
 {
-	int idx = GetWidgetIdx(pos);
+	int idx = GetSegmentIndexFromPos(pos);
 	if (idx == _dragPosition) {
 		return -1;
 	}

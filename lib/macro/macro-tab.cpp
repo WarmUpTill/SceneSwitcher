@@ -943,11 +943,39 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 	menu.exec(globalPos);
 }
 
+static void handleCustomLabelChange(MacroSegmentEdit *segmentEdit,
+				    QAction *contextMenuOption)
+{
+	bool enable = contextMenuOption->isChecked();
+	auto segment = segmentEdit->Data();
+	segment->SetUseCustomLabel(enable);
+	if (!enable) {
+		segmentEdit->HeaderInfoChanged(
+			QString::fromStdString(segment->GetShortDesc()));
+		return;
+	}
+
+	std::string label;
+	bool accepted = AdvSSNameDialog::AskForName(
+		GetSettingsWindow(),
+		obs_module_text(
+			"AdvSceneSwitcher.macroTab.segment.setCustomLabel"),
+		"", label, QString::fromStdString(segment->GetCustomLabel()));
+	if (!accepted) {
+		segment->SetUseCustomLabel(false);
+		return;
+	}
+
+	segment->SetCustomLabel(label);
+	segmentEdit->HeaderInfoChanged("");
+}
+
 static void setupConextMenu(AdvSceneSwitcher *ss, const QPoint &pos,
 			    std::function<void(AdvSceneSwitcher *)> expand,
 			    std::function<void(AdvSceneSwitcher *)> collapse,
 			    std::function<void(AdvSceneSwitcher *)> maximize,
-			    std::function<void(AdvSceneSwitcher *)> minimize)
+			    std::function<void(AdvSceneSwitcher *)> minimize,
+			    MacroSegmentList *list)
 {
 	QMenu menu;
 	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.expandAll"),
@@ -958,34 +986,46 @@ static void setupConextMenu(AdvSceneSwitcher *ss, const QPoint &pos,
 		       ss, [ss, maximize]() { maximize(ss); });
 	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.minimize"),
 		       ss, [ss, minimize]() { minimize(ss); });
-	menu.exec(pos);
+
+	auto segmentEdit = list->WidgetAt(pos);
+	if (segmentEdit) {
+		auto customLabel = menu.addAction(obs_module_text(
+			"AdvSceneSwitcher.macroTab.segment.useCustomLabel"));
+		customLabel->setCheckable(true);
+		auto segment = segmentEdit ? segmentEdit->Data() : nullptr;
+		customLabel->setChecked(segment &&
+					segment->GetUseCustomLabel());
+		QWidget::connect(customLabel, &QAction::triggered,
+				 std::bind(handleCustomLabelChange, segmentEdit,
+					   customLabel));
+	}
+	menu.exec(list->mapToGlobal(pos));
 }
 
 void AdvSceneSwitcher::ShowMacroActionsContextMenu(const QPoint &pos)
 {
-	setupConextMenu(this, ui->actionsList->mapToGlobal(pos),
-			&AdvSceneSwitcher::ExpandAllActions,
+	setupConextMenu(this, pos, &AdvSceneSwitcher::ExpandAllActions,
 			&AdvSceneSwitcher::CollapseAllActions,
 			&AdvSceneSwitcher::MaximizeActions,
-			&AdvSceneSwitcher::MinimizeActions);
+			&AdvSceneSwitcher::MinimizeActions, ui->actionsList);
 }
 
 void AdvSceneSwitcher::ShowMacroElseActionsContextMenu(const QPoint &pos)
 {
-	setupConextMenu(this, ui->elseActionsList->mapToGlobal(pos),
-			&AdvSceneSwitcher::ExpandAllElseActions,
+	setupConextMenu(this, pos, &AdvSceneSwitcher::ExpandAllElseActions,
 			&AdvSceneSwitcher::CollapseAllElseActions,
 			&AdvSceneSwitcher::MaximizeElseActions,
-			&AdvSceneSwitcher::MinimizeElseActions);
+			&AdvSceneSwitcher::MinimizeElseActions,
+			ui->elseActionsList);
 }
 
 void AdvSceneSwitcher::ShowMacroConditionsContextMenu(const QPoint &pos)
 {
-	setupConextMenu(this, ui->conditionsList->mapToGlobal(pos),
-			&AdvSceneSwitcher::ExpandAllConditions,
+	setupConextMenu(this, pos, &AdvSceneSwitcher::ExpandAllConditions,
 			&AdvSceneSwitcher::CollapseAllConditions,
 			&AdvSceneSwitcher::MaximizeConditions,
-			&AdvSceneSwitcher::MinimizeConditions);
+			&AdvSceneSwitcher::MinimizeConditions,
+			ui->conditionsList);
 }
 
 void AdvSceneSwitcher::CopyMacro()
