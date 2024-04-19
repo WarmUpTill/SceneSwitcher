@@ -250,6 +250,8 @@ TempVariableSelection::TempVariableSelection(QWidget *parent)
 	_info->setPixmap(pixmap);
 	_info->hide();
 
+	_selection->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+	_selection->setMaximumWidth(350);
 	_selection->setDuplicatesEnabled(true);
 	PopulateSelection();
 
