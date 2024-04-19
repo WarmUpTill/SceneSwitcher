@@ -243,6 +243,9 @@ SourceSettingSelection::SourceSettingSelection(QWidget *parent)
 	_tooltip->setPixmap(pixmap);
 	_tooltip->hide();
 
+	_settings->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+	_settings->setMaximumWidth(350);
+
 	QWidget::connect(_settings, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(SelectionIdxChanged(int)));
 
