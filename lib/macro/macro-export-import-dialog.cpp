@@ -8,9 +8,13 @@
 
 namespace advss {
 
+static bool usePlainText = false;
+
 MacroExportImportDialog::MacroExportImportDialog(Type type)
 	: QDialog(nullptr),
-	  _importExportString(new QPlainTextEdit(this))
+	  _importExportString(new QPlainTextEdit(this)),
+	  _usePlainText(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.export.usePlainText")))
 {
 	_importExportString->setReadOnly(type == Type::EXPORT_MACRO);
 	auto label = new QLabel(obs_module_text(
@@ -30,9 +34,15 @@ MacroExportImportDialog::MacroExportImportDialog(Type type)
 	connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 	buttons->setCenterButtons(true);
 
+	_usePlainText->setChecked(usePlainText);
+	_usePlainText->setVisible(type == Type::EXPORT_MACRO);
+	connect(_usePlainText, &QCheckBox::stateChanged, this,
+		&MacroExportImportDialog::UsePlainTextChanged);
+
 	auto layout = new QVBoxLayout;
 	layout->addWidget(label);
 	layout->addWidget(_importExportString);
+	layout->addWidget(_usePlainText);
 	layout->addWidget(buttons);
 	setLayout(layout);
 
@@ -63,6 +73,21 @@ void MacroExportImportDialog::ExportMacros(const QString &json)
 	dialog.adjustSize();
 	dialog.updateGeometry();
 	dialog.exec();
+}
+
+void MacroExportImportDialog::UsePlainTextChanged(int value)
+{
+	if (usePlainText == (!!value)) {
+		return;
+	}
+	const auto current = _importExportString->toPlainText();
+	if (usePlainText) {
+		_importExportString->setPlainText(compressMacroString(current));
+	} else {
+		_importExportString->setPlainText(
+			decompressMacroString(current));
+	}
+	usePlainText = value;
 }
 
 static bool isValidData(const QString &json)

@@ -1,4 +1,5 @@
 #pragma once
+#include <QCheckBox>
 #include <QDialog>
 #include <QPlainTextEdit>
 
@@ -13,8 +14,12 @@ public:
 	static void ExportMacros(const QString &json);
 	static bool ImportMacros(QString &json);
 
+private slots:
+	void UsePlainTextChanged(int);
+
 private:
 	QPlainTextEdit *_importExportString;
+	QCheckBox *_usePlainText;
 };
 
 } // namespace advss
