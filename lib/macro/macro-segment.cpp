@@ -20,17 +20,30 @@ MacroSegment::MacroSegment(Macro *m, bool supportsVariableValue)
 
 bool MacroSegment::Save(obs_data_t *obj) const
 {
-	obs_data_set_bool(obj, "collapsed", _collapsed);
-	obs_data_set_bool(obj, "useCustomLabel", _useCustomLabel);
-	obs_data_set_string(obj, "customLabel", _customLabel.c_str());
+	OBSDataAutoRelease data = obs_data_create();
+	obs_data_set_bool(data, "collapsed", _collapsed);
+	obs_data_set_bool(data, "useCustomLabel", _useCustomLabel);
+	obs_data_set_string(data, "customLabel", _customLabel.c_str());
+	obs_data_set_obj(obj, "segmentSettings", data);
 	return true;
 }
 
 bool MacroSegment::Load(obs_data_t *obj)
 {
-	_collapsed = obs_data_get_bool(obj, "collapsed");
-	_useCustomLabel = obs_data_get_bool(obj, "useCustomLabel");
-	_customLabel = obs_data_get_string(obj, "customLabel");
+	// TODO: remove this fallback at some point
+	if (obs_data_has_user_value(obj, "segmentSettings")) {
+		OBSDataAutoRelease data =
+			obs_data_get_obj(obj, "segmentSettings");
+		_collapsed = obs_data_get_bool(data, "collapsed");
+		_useCustomLabel = obs_data_get_bool(data, "useCustomLabel");
+		_customLabel = obs_data_get_string(data, "customLabel");
+	} else {
+		_collapsed = obs_data_get_bool(obj, "collapsed");
+		_useCustomLabel = false;
+		_customLabel = obs_module_text(
+			"AdvSceneSwitcher.macroTab.segment.defaultCustomLabel");
+	}
+
 	ClearAvailableTempvars();
 	return true;
 }
