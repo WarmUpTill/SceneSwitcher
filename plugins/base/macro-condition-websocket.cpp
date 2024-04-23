@@ -131,7 +131,7 @@ void MacroConditionWebsocket::SetConnection(const std::string &connectionName)
 	_messageBuffer = connection->RegisterForEvents();
 }
 
-std::weak_ptr<Connection> MacroConditionWebsocket::GetConnection() const
+std::weak_ptr<WSConnection> MacroConditionWebsocket::GetConnection() const
 {
 	return _connection;
 }
@@ -159,7 +159,7 @@ MacroConditionWebsocketEdit::MacroConditionWebsocketEdit(
 	  _conditions(new QComboBox(this)),
 	  _message(new VariableTextEdit(this)),
 	  _regex(new RegexConfigWidget(parent)),
-	  _connection(new ConnectionSelection(this)),
+	  _connection(new WSConnectionSelection(this)),
 	  _editLayout(new QHBoxLayout())
 {
 	populateConditionSelection(_conditions);

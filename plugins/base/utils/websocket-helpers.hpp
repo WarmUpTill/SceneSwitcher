@@ -30,13 +30,13 @@ void SendWebsocketEvent(const std::string &);
 std::string ConstructVendorRequestMessage(const std::string &message);
 [[nodiscard]] WebsocketMessageBuffer RegisterForWebsocketMessages();
 
-class WSConnection : public QObject {
+class WSClientConnection : public QObject {
 	using server = websocketpp::server<websocketpp::config::asio>;
 	using client = websocketpp::client<websocketpp::config::asio_client>;
 
 public:
-	explicit WSConnection(bool useOBSProtocol = true);
-	virtual ~WSConnection();
+	explicit WSClientConnection(bool useOBSProtocol = true);
+	virtual ~WSClientConnection();
 
 	void Connect(const std::string &uri, const std::string &pass,
 		     bool _reconnect, int reconnectDelay = 10);

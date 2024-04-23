@@ -37,7 +37,7 @@ public:
 	API _api = API::SCENE_SWITCHER;
 	MessageType _type = MessageType::REQUEST;
 	StringVariable _message = obs_module_text("AdvSceneSwitcher.enterText");
-	std::weak_ptr<Connection> _connection;
+	std::weak_ptr<WSConnection> _connection;
 
 private:
 	void SendRequest(const std::string &msg);
@@ -84,7 +84,7 @@ private:
 	QComboBox *_apiType;
 	QComboBox *_messageType;
 	VariableTextEdit *_message;
-	ConnectionSelection *_connection;
+	WSConnectionSelection *_connection;
 	QHBoxLayout *_editLayout;
 	QLabel *_settingsConflict;
 

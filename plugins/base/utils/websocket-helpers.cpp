@@ -86,7 +86,7 @@ static void registerWebsocketVendor()
 	}
 }
 
-WSConnection::WSConnection(bool useOBSProtocol) : QObject(nullptr)
+WSClientConnection::WSClientConnection(bool useOBSProtocol) : QObject(nullptr)
 {
 	_client.get_alog().clear_channels(
 		websocketpp::log::alevel::frame_header |
@@ -98,15 +98,15 @@ WSConnection::WSConnection(bool useOBSProtocol) : QObject(nullptr)
 #endif
 
 	UseOBSWebsocketProtocol(useOBSProtocol);
-	_client.set_close_handler(bind(&WSConnection::OnClose, this, _1));
+	_client.set_close_handler(bind(&WSClientConnection::OnClose, this, _1));
 }
 
-WSConnection::~WSConnection()
+WSClientConnection::~WSClientConnection()
 {
 	Disconnect();
 }
 
-void WSConnection::ConnectThread()
+void WSClientConnection::ConnectThread()
 {
 	do {
 		std::unique_lock<std::mutex> lck(_waitMtx);
@@ -144,8 +144,9 @@ void WSConnection::ConnectThread()
 	_status = Status::DISCONNECTED;
 }
 
-void WSConnection::Connect(const std::string &uri, const std::string &pass,
-			   bool reconnect, int reconnectDelay)
+void WSClientConnection::Connect(const std::string &uri,
+				 const std::string &pass, bool reconnect,
+				 int reconnectDelay)
 {
 	std::lock_guard<std::mutex> lock(_connectMtx);
 	if (_status != Status::DISCONNECTED) {
@@ -161,11 +162,11 @@ void WSConnection::Connect(const std::string &uri, const std::string &pass,
 	if (_thread.joinable()) {
 		_thread.join();
 	}
-	_thread = std::thread(&WSConnection::ConnectThread, this);
+	_thread = std::thread(&WSClientConnection::ConnectThread, this);
 	blog(LOG_INFO, "connect to '%s' started", uri.c_str());
 }
 
-void WSConnection::Disconnect()
+void WSClientConnection::Disconnect()
 {
 	std::lock_guard<std::mutex> lock(_connectMtx);
 	_disconnect = true;
@@ -218,46 +219,46 @@ std::string ConstructVendorRequestMessage(const std::string &message)
 	return result;
 }
 
-void WSConnection::SendRequest(const std::string &msg)
+void WSClientConnection::SendRequest(const std::string &msg)
 {
 	Send(msg);
 }
 
-WebsocketMessageBuffer WSConnection::RegisterForEvents()
+WebsocketMessageBuffer WSClientConnection::RegisterForEvents()
 {
 	return _dispatcher.RegisterClient();
 }
 
-WSConnection::Status WSConnection::GetStatus() const
+WSClientConnection::Status WSClientConnection::GetStatus() const
 {
 	return _status;
 }
 
-void WSConnection::UseOBSWebsocketProtocol(bool useOBSProtocol)
+void WSClientConnection::UseOBSWebsocketProtocol(bool useOBSProtocol)
 {
-	_client.set_open_handler(bind(useOBSProtocol
-					      ? &WSConnection::OnOBSOpen
-					      : &WSConnection::OnGenericOpen,
-				      this, _1));
+	_client.set_open_handler(
+		bind(useOBSProtocol ? &WSClientConnection::OnOBSOpen
+				    : &WSClientConnection::OnGenericOpen,
+		     this, _1));
 	_client.set_message_handler(
-		bind(useOBSProtocol ? &WSConnection::OnOBSMessage
-				    : &WSConnection::OnGenericMessage,
+		bind(useOBSProtocol ? &WSClientConnection::OnOBSMessage
+				    : &WSClientConnection::OnGenericMessage,
 		     this, _1, _2));
 }
 
-void WSConnection::OnGenericOpen(connection_hdl)
+void WSClientConnection::OnGenericOpen(connection_hdl)
 {
 	blog(LOG_INFO, "connection to %s opened", _uri.c_str());
 	_status = Status::AUTHENTICATED;
 }
 
-void WSConnection::OnOBSOpen(connection_hdl)
+void WSClientConnection::OnOBSOpen(connection_hdl)
 {
 	blog(LOG_INFO, "connection to %s opened", _uri.c_str());
 	_status = Status::CONNECTING;
 }
 
-void WSConnection::HandleHello(obs_data_t *helloMsg)
+void WSClientConnection::HandleHello(obs_data_t *helloMsg)
 {
 	_status = Status::CONNECTED;
 
@@ -293,7 +294,7 @@ void WSConnection::HandleHello(obs_data_t *helloMsg)
 	Send(response);
 }
 
-void WSConnection::HandleEvent(obs_data_t *msg)
+void WSClientConnection::HandleEvent(obs_data_t *msg)
 {
 	auto d = obs_data_get_obj(msg, "d");
 	auto eventData = obs_data_get_obj(d, "eventData");
@@ -319,7 +320,7 @@ void WSConnection::HandleEvent(obs_data_t *msg)
 	obs_data_release(d);
 }
 
-void WSConnection::HandleResponse(obs_data_t *response)
+void WSClientConnection::HandleResponse(obs_data_t *response)
 {
 	auto data = obs_data_get_obj(response, "d");
 	auto id = obs_data_get_string(data, "requestId");
@@ -333,7 +334,8 @@ void WSConnection::HandleResponse(obs_data_t *response)
 	obs_data_release(data);
 }
 
-void WSConnection::OnGenericMessage(connection_hdl, client::message_ptr message)
+void WSClientConnection::OnGenericMessage(connection_hdl,
+					  client::message_ptr message)
 {
 	if (!message) {
 		return;
@@ -347,7 +349,8 @@ void WSConnection::OnGenericMessage(connection_hdl, client::message_ptr message)
 	vblog(LOG_INFO, "received event msg \"%s\"", payload.c_str());
 }
 
-void WSConnection::OnOBSMessage(connection_hdl, client::message_ptr message)
+void WSClientConnection::OnOBSMessage(connection_hdl,
+				      client::message_ptr message)
 {
 	if (!message) {
 		return;
@@ -392,7 +395,7 @@ void WSConnection::OnOBSMessage(connection_hdl, client::message_ptr message)
 	obs_data_release(json);
 }
 
-void WSConnection::Send(const std::string &msg)
+void WSClientConnection::Send(const std::string &msg)
 {
 	if (_connection.expired()) {
 		return;
@@ -408,7 +411,7 @@ void WSConnection::Send(const std::string &msg)
 	vblog(LOG_INFO, "sent message to '%s':\n%s", _uri.c_str(), msg.c_str());
 }
 
-void WSConnection::OnClose(connection_hdl)
+void WSClientConnection::OnClose(connection_hdl)
 {
 	blog(LOG_INFO, "client-connection to %s closed.", _uri.c_str());
 	_status = Status::DISCONNECTED;
