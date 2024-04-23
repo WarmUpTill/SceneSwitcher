@@ -30,7 +30,7 @@ public:
 	void SetType(Type);
 	Type GetType() const { return _type; }
 	void SetConnection(const std::string &);
-	std::weak_ptr<Connection> GetConnection() const;
+	std::weak_ptr<WSConnection> GetConnection() const;
 	StringVariable _message = obs_module_text("AdvSceneSwitcher.enterText");
 	RegexConfig _regex;
 
@@ -38,7 +38,7 @@ private:
 	void SetupTempVars();
 
 	Type _type = Type::REQUEST;
-	std::weak_ptr<Connection> _connection;
+	std::weak_ptr<WSConnection> _connection;
 
 	WebsocketMessageBuffer _messageBuffer;
 	std::chrono::high_resolution_clock::time_point _lastCheck{};
@@ -82,7 +82,7 @@ private:
 	QComboBox *_conditions;
 	VariableTextEdit *_message;
 	RegexConfigWidget *_regex;
-	ConnectionSelection *_connection;
+	WSConnectionSelection *_connection;
 	QHBoxLayout *_editLayout;
 	bool _loading = true;
 };

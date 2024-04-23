@@ -151,7 +151,7 @@ MacroActionWebsocketEdit::MacroActionWebsocketEdit(
 	  _apiType(new QComboBox(this)),
 	  _messageType(new QComboBox(this)),
 	  _message(new VariableTextEdit(this)),
-	  _connection(new ConnectionSelection(this)),
+	  _connection(new WSConnectionSelection(this)),
 	  _editLayout(new QHBoxLayout()),
 	  _settingsConflict(new QLabel())
 {

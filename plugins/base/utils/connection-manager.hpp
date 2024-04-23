@@ -18,22 +18,22 @@
 
 namespace advss {
 
-class ConnectionSelection;
-class ConnectionSettingsDialog;
+class WSConnectionSelection;
+class WSConnectionSettingsDialog;
 
-class Connection : public Item {
+class WSConnection : public Item {
 public:
-	Connection(bool useCustomURI, std::string customURI, std::string name,
-		   std::string address, uint64_t port, std::string pass,
-		   bool connectOnStart, bool reconnect, int reconnectDelay,
-		   bool useOBSWebsocketProtocol);
-	Connection() = default;
-	Connection(const Connection &);
-	Connection &operator=(const Connection &);
-	~Connection();
+	WSConnection(bool useCustomURI, std::string customURI, std::string name,
+		     std::string address, uint64_t port, std::string pass,
+		     bool connectOnStart, bool reconnect, int reconnectDelay,
+		     bool useOBSWebsocketProtocol);
+	WSConnection() = default;
+	WSConnection(const WSConnection &);
+	WSConnection &operator=(const WSConnection &);
+	~WSConnection();
 	static std::shared_ptr<Item> Create()
 	{
-		return std::make_shared<Connection>();
+		return std::make_shared<WSConnection>();
 	}
 
 	void Reconnect();
@@ -43,10 +43,11 @@ public:
 	std::string GetName() const { return _name; }
 	WebsocketMessageBuffer RegisterForEvents();
 	bool IsUsingOBSProtocol() const { return _useOBSWSProtocol; }
+	std::string GetURI() const;
+	uint64_t GetPort() const { return _port; }
 
 private:
 	void UseOBSWebsocketProtocol(bool);
-	std::string GetURI();
 
 	bool _useCustomURI = false;
 	std::string _customURI = "ws://localhost:4455";
@@ -58,25 +59,18 @@ private:
 	int _reconnectDelay = 3;
 	bool _useOBSWSProtocol = true;
 
-	WSConnection _client;
+	WSClientConnection _client;
 
-	friend ConnectionSelection;
-	friend ConnectionSettingsDialog;
+	friend WSConnectionSelection;
+	friend WSConnectionSettingsDialog;
 };
 
-Connection *GetConnectionByName(const QString &);
-Connection *GetConnectionByName(const std::string &);
-std::weak_ptr<Connection> GetWeakConnectionByName(const std::string &name);
-std::weak_ptr<Connection> GetWeakConnectionByQString(const QString &name);
-std::string GetWeakConnectionName(std::weak_ptr<Connection>);
-std::deque<std::shared_ptr<Item>> &GetConnections();
-
-class ConnectionSettingsDialog : public ItemSettingsDialog {
+class WSConnectionSettingsDialog : public ItemSettingsDialog {
 	Q_OBJECT
 
 public:
-	ConnectionSettingsDialog(QWidget *parent, const Connection &);
-	static bool AskForSettings(QWidget *parent, Connection &settings);
+	WSConnectionSettingsDialog(QWidget *parent, const WSConnection &);
+	static bool AskForSettings(QWidget *parent, WSConnection &settings);
 
 private slots:
 	void UseCustomURIChanged(int);
@@ -103,20 +97,39 @@ private:
 	QGridLayout *_layout;
 
 	QTimer _statusTimer;
-	WSConnection _testConnection;
+	WSClientConnection _testConnection;
 
 	int _customURIRow = -1;
 	int _addressRow = -1;
 	int _portRow = -1;
 };
 
-class ConnectionSelection : public ItemSelection {
+class WSConnectionSelection : public ItemSelection {
 	Q_OBJECT
 
 public:
-	ConnectionSelection(QWidget *parent = 0);
+	WSConnectionSelection(QWidget *parent = 0);
 	void SetConnection(const std::string &);
-	void SetConnection(const std::weak_ptr<Connection> &);
+	void SetConnection(const std::weak_ptr<WSConnection> &);
 };
+
+class ConnectionSelectionSignalManager : public QObject {
+	Q_OBJECT
+public:
+	ConnectionSelectionSignalManager(QObject *parent = nullptr);
+	static ConnectionSelectionSignalManager *Instance();
+
+signals:
+	void Rename(const QString &, const QString &);
+	void Add(const QString &);
+	void Remove(const QString &);
+};
+
+WSConnection *GetConnectionByName(const QString &);
+WSConnection *GetConnectionByName(const std::string &);
+std::weak_ptr<WSConnection> GetWeakConnectionByName(const std::string &name);
+std::weak_ptr<WSConnection> GetWeakConnectionByQString(const QString &name);
+std::string GetWeakConnectionName(std::weak_ptr<WSConnection>);
+std::deque<std::shared_ptr<Item>> &GetConnections();
 
 } // namespace advss

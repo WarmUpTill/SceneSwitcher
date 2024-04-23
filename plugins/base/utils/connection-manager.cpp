@@ -9,7 +9,7 @@
 #include <QAction>
 #include <QMenu>
 
-Q_DECLARE_METATYPE(advss::Connection *);
+Q_DECLARE_METATYPE(advss::WSConnection *);
 
 namespace advss {
 
@@ -55,7 +55,7 @@ static void loadConnections(obs_data_t *obj)
 
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(connectionArray, i);
-		auto con = Connection::Create();
+		auto con = WSConnection::Create();
 		connections.emplace_back(con);
 		connections.back()->Load(array_obj);
 		obs_data_release(array_obj);
@@ -63,10 +63,11 @@ static void loadConnections(obs_data_t *obj)
 	obs_data_array_release(connectionArray);
 }
 
-Connection::Connection(bool useCustomURI, std::string customURI,
-		       std::string name, std::string address, uint64_t port,
-		       std::string pass, bool connectOnStart, bool reconnect,
-		       int reconnectDelay, bool useOBSWebsocketProtocol)
+WSConnection::WSConnection(bool useCustomURI, std::string customURI,
+			   std::string name, std::string address, uint64_t port,
+			   std::string pass, bool connectOnStart,
+			   bool reconnect, int reconnectDelay,
+			   bool useOBSWebsocketProtocol)
 	: Item(name),
 	  _useCustomURI(useCustomURI),
 	  _customURI(customURI),
@@ -81,7 +82,7 @@ Connection::Connection(bool useCustomURI, std::string customURI,
 {
 }
 
-Connection::Connection(const Connection &other) : Item(other)
+WSConnection::WSConnection(const WSConnection &other) : Item(other)
 {
 	_useCustomURI = other._useCustomURI;
 	_customURI = other._customURI;
@@ -96,7 +97,7 @@ Connection::Connection(const Connection &other) : Item(other)
 	_client.UseOBSWebsocketProtocol(_useOBSWSProtocol);
 }
 
-Connection &Connection::operator=(const Connection &other)
+WSConnection &WSConnection::operator=(const WSConnection &other)
 {
 	if (this != &other) {
 		_useCustomURI = other._useCustomURI;
@@ -115,7 +116,7 @@ Connection &Connection::operator=(const Connection &other)
 	return *this;
 }
 
-Connection::~Connection()
+WSConnection::~WSConnection()
 {
 	_client.Disconnect();
 }
@@ -125,7 +126,7 @@ static std::string constructUri(std::string addr, int port)
 	return "ws://" + addr + ":" + std::to_string(port);
 }
 
-std::string Connection::GetURI()
+std::string WSConnection::GetURI() const
 {
 	if (_useCustomURI) {
 		return _customURI;
@@ -133,16 +134,16 @@ std::string Connection::GetURI()
 	return constructUri(_address, _port);
 }
 
-void Connection::Reconnect()
+void WSConnection::Reconnect()
 {
 	_client.Disconnect();
 	_client.Connect(GetURI(), _password, _reconnect, _reconnectDelay);
 }
 
-void Connection::SendMsg(const std::string &msg)
+void WSConnection::SendMsg(const std::string &msg)
 {
 	const auto status = _client.GetStatus();
-	if (status == WSConnection::Status::DISCONNECTED) {
+	if (status == WSClientConnection::Status::DISCONNECTED) {
 		_client.Connect(GetURI(), _password, _reconnect,
 				_reconnectDelay);
 		blog(LOG_WARNING,
@@ -151,12 +152,12 @@ void Connection::SendMsg(const std::string &msg)
 		return;
 	}
 
-	if (status == WSConnection::Status::AUTHENTICATED) {
+	if (status == WSClientConnection::Status::AUTHENTICATED) {
 		_client.SendRequest(msg);
 	}
 }
 
-void Connection::Load(obs_data_t *obj)
+void WSConnection::Load(obs_data_t *obj)
 {
 	Item::Load(obj);
 
@@ -184,7 +185,7 @@ void Connection::Load(obs_data_t *obj)
 	}
 }
 
-void Connection::Save(obs_data_t *obj) const
+void WSConnection::Save(obs_data_t *obj) const
 {
 	Item::Save(obj);
 	obs_data_set_bool(obj, "useCustomURI", _useCustomURI);
@@ -199,50 +200,50 @@ void Connection::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "version", 1);
 }
 
-WebsocketMessageBuffer Connection::RegisterForEvents()
+WebsocketMessageBuffer WSConnection::RegisterForEvents()
 {
 	return _client.RegisterForEvents();
 }
 
-void Connection::UseOBSWebsocketProtocol(bool useOBSWSProtocol)
+void WSConnection::UseOBSWebsocketProtocol(bool useOBSWSProtocol)
 {
 	_useOBSWSProtocol = useOBSWSProtocol;
 	_client.UseOBSWebsocketProtocol(useOBSWSProtocol);
 }
 
-Connection *GetConnectionByName(const QString &name)
+WSConnection *GetConnectionByName(const QString &name)
 {
 	return GetConnectionByName(name.toStdString());
 }
 
-Connection *GetConnectionByName(const std::string &name)
+WSConnection *GetConnectionByName(const std::string &name)
 {
 	for (auto &con : connections) {
 		if (con->Name() == name) {
-			return dynamic_cast<Connection *>(con.get());
+			return dynamic_cast<WSConnection *>(con.get());
 		}
 	}
 	return nullptr;
 }
 
-std::weak_ptr<Connection> GetWeakConnectionByName(const std::string &name)
+std::weak_ptr<WSConnection> GetWeakConnectionByName(const std::string &name)
 {
 	for (const auto &c : connections) {
 		if (c->Name() == name) {
-			std::weak_ptr<Connection> wp =
-				std::dynamic_pointer_cast<Connection>(c);
+			std::weak_ptr<WSConnection> wp =
+				std::dynamic_pointer_cast<WSConnection>(c);
 			return wp;
 		}
 	}
-	return std::weak_ptr<Connection>();
+	return std::weak_ptr<WSConnection>();
 }
 
-std::weak_ptr<Connection> GetWeakConnectionByQString(const QString &name)
+std::weak_ptr<WSConnection> GetWeakConnectionByQString(const QString &name)
 {
 	return GetWeakConnectionByName(name.toStdString());
 }
 
-std::string GetWeakConnectionName(std::weak_ptr<Connection> connection)
+std::string GetWeakConnectionName(std::weak_ptr<WSConnection> connection)
 {
 	auto con = connection.lock();
 	if (!con) {
@@ -268,40 +269,45 @@ static bool ConnectionNameAvailable(const std::string &name)
 
 static bool AskForSettingsWrapper(QWidget *parent, Item &settings)
 {
-	Connection &ConnectionSettings = dynamic_cast<Connection &>(settings);
-	return ConnectionSettingsDialog::AskForSettings(parent,
-							ConnectionSettings);
+	WSConnection &ConnectionSettings =
+		dynamic_cast<WSConnection &>(settings);
+	return WSConnectionSettingsDialog::AskForSettings(parent,
+							  ConnectionSettings);
 }
 
-ConnectionSelection::ConnectionSelection(QWidget *parent)
-	: ItemSelection(connections, Connection::Create, AskForSettingsWrapper,
+WSConnectionSelection::WSConnectionSelection(QWidget *parent)
+	: ItemSelection(connections, WSConnection::Create,
+			AskForSettingsWrapper,
 			"AdvSceneSwitcher.connection.select",
 			"AdvSceneSwitcher.connection.add",
 			"AdvSceneSwitcher.item.nameNotAvailable",
 			"AdvSceneSwitcher.connection.configure", parent)
 {
 	// Connect to slots
-	QWidget::connect(
-		window(),
-		SIGNAL(ConnectionRenamed(const QString &, const QString &)),
-		this, SLOT(RenameItem(const QString &, const QString &)));
-	QWidget::connect(window(), SIGNAL(ConnectionAdded(const QString &)),
-			 this, SLOT(AddItem(const QString &)));
-	QWidget::connect(window(), SIGNAL(ConnectionRemoved(const QString &)),
-			 this, SLOT(RemoveItem(const QString &)));
+	QWidget::connect(ConnectionSelectionSignalManager::Instance(),
+			 SIGNAL(Rename(const QString &, const QString &)), this,
+			 SLOT(RenameItem(const QString &, const QString &)));
+	QWidget::connect(ConnectionSelectionSignalManager::Instance(),
+			 SIGNAL(Add(const QString &)), this,
+			 SLOT(AddItem(const QString &)));
+	QWidget::connect(ConnectionSelectionSignalManager::Instance(),
+			 SIGNAL(Remove(const QString &)), this,
+			 SLOT(RemoveItem(const QString &)));
 
 	// Forward signals
-	QWidget::connect(
-		this, SIGNAL(ItemRenamed(const QString &, const QString &)),
-		window(),
-		SIGNAL(ConnectionRenamed(const QString &, const QString &)));
-	QWidget::connect(this, SIGNAL(ItemAdded(const QString &)), window(),
-			 SIGNAL(ConnectionAdded(const QString &)));
-	QWidget::connect(this, SIGNAL(ItemRemoved(const QString &)), window(),
-			 SIGNAL(ConnectionRemoved(const QString &)));
+	QWidget::connect(this,
+			 SIGNAL(ItemRenamed(const QString &, const QString &)),
+			 ConnectionSelectionSignalManager::Instance(),
+			 SIGNAL(Rename(const QString &, const QString &)));
+	QWidget::connect(this, SIGNAL(ItemAdded(const QString &)),
+			 ConnectionSelectionSignalManager::Instance(),
+			 SIGNAL(Add(const QString &)));
+	QWidget::connect(this, SIGNAL(ItemRemoved(const QString &)),
+			 ConnectionSelectionSignalManager::Instance(),
+			 SIGNAL(Remove(const QString &)));
 }
 
-void ConnectionSelection::SetConnection(const std::string &con)
+void WSConnectionSelection::SetConnection(const std::string &con)
 {
 	if (!!GetConnectionByName(con)) {
 		SetItem(con);
@@ -310,8 +316,8 @@ void ConnectionSelection::SetConnection(const std::string &con)
 	}
 }
 
-void ConnectionSelection::SetConnection(
-	const std::weak_ptr<Connection> &connection_)
+void WSConnectionSelection::SetConnection(
+	const std::weak_ptr<WSConnection> &connection_)
 {
 	auto connection = connection_.lock();
 	if (connection) {
@@ -321,8 +327,8 @@ void ConnectionSelection::SetConnection(
 	}
 }
 
-ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
-						   const Connection &settings)
+WSConnectionSettingsDialog::WSConnectionSettingsDialog(
+	QWidget *parent, const WSConnection &settings)
 	: ItemSettingsDialog(settings, connections,
 			     "AdvSceneSwitcher.connection.select",
 			     "AdvSceneSwitcher.connection.add",
@@ -449,7 +455,7 @@ ConnectionSettingsDialog::ConnectionSettingsDialog(QWidget *parent,
 	UseCustomURIChanged(settings._useCustomURI);
 }
 
-void ConnectionSettingsDialog::UseCustomURIChanged(int state)
+void WSConnectionSettingsDialog::UseCustomURIChanged(int state)
 {
 	SetGridLayoutRowVisible(_layout, _addressRow, !state);
 	SetGridLayoutRowVisible(_layout, _portRow, !state);
@@ -459,33 +465,33 @@ void ConnectionSettingsDialog::UseCustomURIChanged(int state)
 	updateGeometry();
 }
 
-void ConnectionSettingsDialog::ProtocolChanged(int state)
+void WSConnectionSettingsDialog::ProtocolChanged(int state)
 {
 	_password->setEnabled(state);
 	_showPassword->setEnabled(state);
 }
 
-void ConnectionSettingsDialog::ReconnectChanged(int state)
+void WSConnectionSettingsDialog::ReconnectChanged(int state)
 {
 	_reconnectDelay->setEnabled(state);
 }
 
-void ConnectionSettingsDialog::SetStatus()
+void WSConnectionSettingsDialog::SetStatus()
 {
 	switch (_testConnection.GetStatus()) {
-	case WSConnection::Status::DISCONNECTED:
+	case WSClientConnection::Status::DISCONNECTED:
 		_status->setText(obs_module_text(
 			"AdvSceneSwitcher.connection.status.disconnected"));
 		break;
-	case WSConnection::Status::CONNECTING:
+	case WSClientConnection::Status::CONNECTING:
 		_status->setText(obs_module_text(
 			"AdvSceneSwitcher.connection.status.connecting"));
 		break;
-	case WSConnection::Status::CONNECTED:
+	case WSClientConnection::Status::CONNECTED:
 		_status->setText(obs_module_text(
 			"AdvSceneSwitcher.connection.status.connected"));
 		break;
-	case WSConnection::Status::AUTHENTICATED:
+	case WSClientConnection::Status::AUTHENTICATED:
 		_status->setText(obs_module_text(
 			"AdvSceneSwitcher.connection.status.authenticated"));
 		break;
@@ -494,19 +500,19 @@ void ConnectionSettingsDialog::SetStatus()
 	}
 }
 
-void ConnectionSettingsDialog::ShowPassword()
+void WSConnectionSettingsDialog::ShowPassword()
 {
 	SetButtonIcon(_showPassword, ":res/images/visible.svg");
 	_password->setEchoMode(QLineEdit::Normal);
 }
 
-void ConnectionSettingsDialog::HidePassword()
+void WSConnectionSettingsDialog::HidePassword()
 {
 	SetButtonIcon(_showPassword, ":res/images/invisible.svg");
 	_password->setEchoMode(QLineEdit::PasswordEchoOnEdit);
 }
 
-void ConnectionSettingsDialog::TestConnection()
+void WSConnectionSettingsDialog::TestConnection()
 {
 	_testConnection.UseOBSWebsocketProtocol(_useOBSWSProtocol->isChecked());
 	_testConnection.Disconnect();
@@ -517,14 +523,14 @@ void ConnectionSettingsDialog::TestConnection()
 	_testConnection.Connect(uri, _password->text().toStdString(), false);
 	_statusTimer.setInterval(1000);
 	QWidget::connect(&_statusTimer, &QTimer::timeout, this,
-			 &ConnectionSettingsDialog::SetStatus);
+			 &WSConnectionSettingsDialog::SetStatus);
 	_statusTimer.start();
 }
 
-bool ConnectionSettingsDialog::AskForSettings(QWidget *parent,
-					      Connection &settings)
+bool WSConnectionSettingsDialog::AskForSettings(QWidget *parent,
+						WSConnection &settings)
 {
-	ConnectionSettingsDialog dialog(parent, settings);
+	WSConnectionSettingsDialog dialog(parent, settings);
 	dialog.setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
 	if (dialog.exec() != DialogCode::Accepted) {
 		return false;
@@ -542,6 +548,18 @@ bool ConnectionSettingsDialog::AskForSettings(QWidget *parent,
 	settings.UseOBSWebsocketProtocol(dialog._useOBSWSProtocol->isChecked());
 	settings.Reconnect();
 	return true;
+}
+
+ConnectionSelectionSignalManager::ConnectionSelectionSignalManager(
+	QObject *parent)
+	: QObject(parent)
+{
+}
+
+ConnectionSelectionSignalManager *ConnectionSelectionSignalManager::Instance()
+{
+	static ConnectionSelectionSignalManager manager;
+	return &manager;
 }
 
 } // namespace advss
