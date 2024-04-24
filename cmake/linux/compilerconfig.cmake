@@ -68,9 +68,14 @@ else()
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+  # Disable warning for https://github.com/WarmUpTill/SceneSwitcher/issues/1091
+  add_compile_options(-Wno-error=psabi)
+
   # Disable false-positive warning in GCC 12.1.0 and later
-  add_compile_options(-Wno-error=maybe-uninitialized)
-  add_compile_options(-Wno-error=stringop-overflow)
+  if(CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 12.1.0)
+    add_compile_options(-Wno-error=maybe-uninitialized)
+    add_compile_options(-Wno-error=stringop-overflow)
+  endif()
 
   # Add warning for infinite recursion (added in GCC 12)
   if(CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0.0)
