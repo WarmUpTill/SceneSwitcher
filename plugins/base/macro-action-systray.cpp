@@ -94,15 +94,15 @@ MacroActionSystrayEdit::MacroActionSystrayEdit(
 	layout->addWidget(new QLabel(obs_module_text(
 				  "AdvSceneSwitcher.action.systray.title")),
 			  row, 0);
-	layout->addWidget(_title, ++row, 1);
+	layout->addWidget(_title, row++, 1);
 	layout->addWidget(new QLabel(obs_module_text(
 				  "AdvSceneSwitcher.action.systray.message")),
 			  row, 0);
-	layout->addWidget(_message, ++row, 1);
+	layout->addWidget(_message, row++, 1);
 	layout->addWidget(new QLabel(obs_module_text(
 				  "AdvSceneSwitcher.action.systray.icon")),
 			  row, 0);
-	layout->addWidget(_iconPath, ++row, 1);
+	layout->addWidget(_iconPath, row++, 1);
 
 	auto mainlayout = new QVBoxLayout();
 	mainlayout->addLayout(layout);
