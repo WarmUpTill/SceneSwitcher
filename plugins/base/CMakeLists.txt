@@ -175,7 +175,9 @@ target_sources(
           utils/transition-selection.cpp
           utils/transition-selection.hpp
           utils/websocket-helpers.cpp
-          utils/websocket-helpers.hpp)
+          utils/websocket-helpers.hpp
+          utils/websocket-tab.cpp
+          utils/websocket-tab.hpp)
 
 if(OS_WINDOWS)
   target_sources(${PROJECT_NAME} PRIVATE utils/windows/windows.cpp)
