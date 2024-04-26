@@ -529,9 +529,7 @@ bool SwitcherData::AnySceneTransitionStarted()
 extern "C" EXPORT void FreeSceneSwitcher()
 {
 	PlatformCleanup();
-	for (const auto &cleanupStep : switcher->pluginCleanupSteps) {
-		cleanupStep();
-	}
+	RunPluginCleanupSteps();
 
 	delete switcher;
 	switcher = nullptr;
@@ -761,13 +759,6 @@ QWidget *GetSettingsWindow()
 
 void SetupActionQueues();
 
-extern "C" EXPORT void RunPluginPostLoadSteps()
-{
-	for (const auto &postLoadStep : switcher->pluginPostLoadSteps) {
-		postLoadStep();
-	}
-}
-
 extern "C" EXPORT void InitSceneSwitcher(obs_module_t *module,
 					 translateFunc translate)
 {
@@ -781,9 +772,7 @@ extern "C" EXPORT void InitSceneSwitcher(obs_module_t *module,
 	SetupDock();
 	SetupActionQueues();
 
-	for (const auto &initStep : switcher->pluginInitSteps) {
-		initStep();
-	}
+	RunPluginInitSteps();
 
 	obs_frontend_add_save_callback(SaveSceneSwitcher, nullptr);
 	obs_frontend_add_event_callback(OBSEvent, switcher);

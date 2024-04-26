@@ -65,9 +65,6 @@ public:
 	void AddPostLoadStep(std::function<void()>);
 	void AddIntervalResetStep(std::function<void()>, bool lock = true);
 	void RunPostLoadSteps();
-	void AddPluginInitStep(std::function<void()>);
-	void AddPluginPostLoadStep(std::function<void()>);
-	void AddPluginCleanupStep(std::function<void()>);
 	bool CheckForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
 			   int &linger, bool &setPreviousSceneAsMatch,
 			   bool &macroMatch);
@@ -106,9 +103,6 @@ public:
 	std::vector<std::function<void(obs_data_t *)>> loadSteps;
 	std::vector<std::function<void()>> postLoadSteps;
 	std::vector<std::function<void()>> resetIntervalSteps;
-	std::vector<std::function<void()>> pluginInitSteps;
-	std::vector<std::function<void()>> pluginPostLoadSteps;
-	std::vector<std::function<void()>> pluginCleanupSteps;
 
 	bool firstBoot = true;
 	bool transitionActive = false;

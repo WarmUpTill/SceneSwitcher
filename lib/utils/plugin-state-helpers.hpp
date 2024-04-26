@@ -17,6 +17,9 @@ EXPORT void RunPostLoadSteps();
 EXPORT void AddPluginInitStep(std::function<void()>);
 EXPORT void AddPluginPostLoadStep(std::function<void()>);
 EXPORT void AddPluginCleanupStep(std::function<void()>);
+void RunPluginInitSteps();
+extern "C" EXPORT void RunPluginPostLoadSteps();
+void RunPluginCleanupSteps();
 
 EXPORT void StopPlugin();
 EXPORT void StartPlugin();

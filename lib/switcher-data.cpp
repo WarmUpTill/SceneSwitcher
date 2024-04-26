@@ -187,24 +187,6 @@ void SwitcherData::RunPostLoadSteps()
 	postLoadSteps.clear();
 }
 
-void SwitcherData::AddPluginInitStep(std::function<void()> function)
-{
-	std::lock_guard<std::mutex> lock(switcher->m);
-	pluginInitSteps.emplace_back(function);
-}
-
-void SwitcherData::AddPluginPostLoadStep(std::function<void()> function)
-{
-	std::lock_guard<std::mutex> lock(switcher->m);
-	pluginPostLoadSteps.emplace_back(function);
-}
-
-void SwitcherData::AddPluginCleanupStep(std::function<void()> function)
-{
-	std::lock_guard<std::mutex> lock(switcher->m);
-	pluginCleanupSteps.emplace_back(function);
-}
-
 void SwitcherData::AddSaveStep(std::function<void(obs_data_t *)> function)
 {
 	std::lock_guard<std::mutex> lock(switcher->m);
