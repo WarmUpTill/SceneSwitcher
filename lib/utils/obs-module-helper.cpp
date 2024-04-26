@@ -9,7 +9,8 @@ namespace advss {
 const char *obs_module_text(const char *text)
 {
 	if (!advss::switcher) {
-		return "";
+		assert(false);
+		return "obs_module_text called too early";
 	}
 	return advss::switcher->Translate(text);
 }
