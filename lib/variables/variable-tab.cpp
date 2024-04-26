@@ -1,28 +1,61 @@
-#include "advanced-scene-switcher.hpp"
+#include "variable-tab.hpp"
+#include "log-helper.hpp"
+#include "obs-module-helper.hpp"
+#include "plugin-state-helpers.hpp"
+#include "sync-helpers.hpp"
+#include "tab-helpers.hpp"
 #include "ui-helpers.hpp"
 #include "variable.hpp"
 
-#include <QTableWidgetItem>
+#include <QTimer>
 
 namespace advss {
 
-static void setVariableTabVisible(QTabWidget *tabWidget, bool visible)
-{
-	for (int idx = 0; idx < tabWidget->count(); idx++) {
-		if (tabWidget->tabText(idx) !=
-		    obs_module_text("AdvSceneSwitcher.variableTab.title")) {
-			continue;
-		}
+static bool registerTab();
+static void setupTab(QTabWidget *);
+static bool registerTabDone = registerTab();
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-		// TODO: Switch to setTabVisible() once QT 5.15 is more wide spread
-		tabWidget->setTabEnabled(idx, visible);
-		tabWidget->setStyleSheet(
-			"QTabBar::tab::disabled {width: 0; height: 0; margin: 0; padding: 0; border: none;} ");
-#else
-		tabWidget->setTabVisible(idx, visible);
-#endif
+static VariableTable *tabWidget = nullptr;
+
+static bool registerTab()
+{
+	AddPluginInitStep([]() {
+		AddSetupTabCallback("variableTab", VariableTable::Create,
+				    setupTab);
+	});
+	return true;
+}
+
+static void setTabVisible(QTabWidget *tabWidget, bool visible)
+{
+	SetTabVisibleByName(
+		tabWidget, visible,
+		obs_module_text("AdvSceneSwitcher.variableTab.title"));
+}
+
+VariableTable *VariableTable::Create()
+{
+	tabWidget = new VariableTable();
+	return tabWidget;
+}
+
+void VariableTable::Add()
+{
+	auto newVariable = std::make_shared<Variable>();
+	auto accepted =
+		VariableSettingsDialog::AskForSettings(this, *newVariable);
+	if (!accepted) {
+		return;
 	}
+
+	{
+		auto lock = LockContext();
+		auto &variables = GetVariables();
+		variables.emplace_back(newVariable);
+	}
+
+	VariableSignalManager::Instance()->Add(
+		QString::fromStdString(newVariable->Name()));
 }
 
 static QString formatSaveActionText(Variable *variable)
@@ -91,46 +124,18 @@ static QString formatLastChangedTooltip(Variable *variable)
 		.arg(QString::fromStdString(variable->GetPreviousValue()));
 }
 
-static void addVariableRow(QTableWidget *table, Variable *variable)
+static QStringList getCellLabels(Variable *variable, bool addName = true)
 {
-	if (!variable) {
-		blog(LOG_INFO, "%s called with nullptr", __func__);
-		assert(false);
-		return;
+	assert(variable);
+
+	auto result = QStringList();
+	if (addName) {
+		result << QString::fromStdString(variable->Name());
 	}
-
-	int row = table->rowCount();
-	table->setRowCount(row + 1);
-
-	int col = 0;
-	auto *item =
-		new QTableWidgetItem(QString::fromStdString(variable->Name()));
-	table->setItem(row, col, item);
-	auto varValue = QString::fromStdString(variable->Value(false));
-	item = new QTableWidgetItem(varValue);
-	item->setToolTip(varValue);
-	table->setItem(row, ++col, item);
-	item = new QTableWidgetItem(formatSaveActionText(variable));
-	table->setItem(row, ++col, item);
-	item = new QTableWidgetItem(formatLastUsedText(variable));
-	table->setItem(row, ++col, item);
-	item = new QTableWidgetItem(formatLastChangedText(variable));
-	item->setToolTip(formatLastChangedTooltip(variable));
-	table->setItem(row, ++col, item);
-
-	table->sortByColumn(0, Qt::AscendingOrder);
-}
-
-static void removeVariableRow(QTableWidget *table, const QString &name)
-{
-	for (int row = 0; row < table->rowCount(); ++row) {
-		auto item = table->item(row, 0);
-		if (item && item->text() == name) {
-			table->removeRow(row);
-			return;
-		}
-	}
-	table->sortByColumn(0, Qt::AscendingOrder);
+	result << QString::fromStdString(variable->Value(false))
+	       << formatSaveActionText(variable) << formatLastUsedText(variable)
+	       << formatLastChangedText(variable);
+	return result;
 }
 
 static void updateVariableStatus(QTableWidget *table)
@@ -147,116 +152,20 @@ static void updateVariableStatus(QTableWidget *table)
 			continue;
 		}
 
-		item = table->item(row, 1);
-		auto varValue = QString::fromStdString(variable->Value(false));
-		item->setText(varValue);
-		item->setToolTip(varValue);
-		item = table->item(row, 2);
-		item->setText(formatSaveActionText(variable.get()));
-		item = table->item(row, 3);
-		item->setText(formatLastUsedText(variable.get()));
-		item = table->item(row, 4);
-		item->setText(formatLastChangedText(variable.get()));
-		item->setToolTip(formatLastChangedTooltip(variable.get()));
+		UpdateItemTableRow(table, row,
+				   getCellLabels(variable.get(), false));
 	}
 }
 
-static void renameVariable(QTableWidget *table, const QString &oldName,
-			   const QString &newName)
+static void openSettingsDialog()
 {
-	for (int row = 0; row < table->rowCount(); row++) {
-		auto item = table->item(row, 0);
-		if (!item) {
-			continue;
-		}
-
-		if (item->text() == oldName) {
-			item->setText(newName);
-			table->sortByColumn(0, Qt::AscendingOrder);
-			return;
-		}
-	}
-	blog(LOG_INFO, "%s called but entry \"%s\" not found", __func__,
-	     oldName.toStdString().c_str());
-	assert(false);
-}
-
-void AdvSceneSwitcher::SetupVariableTab()
-{
-	ui->variables->installEventFilter(this);
-
-	if (GetVariables().empty()) {
-		setVariableTabVisible(ui->tabWidget, false);
-	} else {
-		ui->variablesHelp->hide();
-	}
-
-	static const QStringList horizontalHeaders =
-		QStringList()
-		<< obs_module_text("AdvSceneSwitcher.variableTab.name.header")
-		<< obs_module_text("AdvSceneSwitcher.variableTab.value.header")
-		<< obs_module_text(
-			   "AdvSceneSwitcher.variableTab.saveLoadBehavior.header")
-		<< obs_module_text(
-			   "AdvSceneSwitcher.variableTab.lastUsed.header")
-		<< obs_module_text(
-			   "AdvSceneSwitcher.variableTab.lastChanged.header");
-
-	auto &variables = GetVariables();
-
-	ui->variables->setColumnCount(horizontalHeaders.size());
-	ui->variables->horizontalHeader()->setSectionResizeMode(
-		QHeaderView::ResizeMode::Stretch);
-	ui->variables->setHorizontalHeaderLabels(horizontalHeaders);
-
-	for (const auto &var : variables) {
-		auto variable = std::static_pointer_cast<Variable>(var);
-		addVariableRow(ui->variables, variable.get());
-	}
-
-	ui->variables->resizeColumnsToContents();
-	ui->variables->resizeRowsToContents();
-
-	QWidget::connect(
-		VariableSignalManager::Instance(),
-		&VariableSignalManager::Rename,
-		[this](const QString &oldName, const QString &newName) {
-			renameVariable(ui->variables, oldName, newName);
-		});
-	QWidget::connect(VariableSignalManager::Instance(),
-			 &VariableSignalManager::Add, this,
-			 [this](const QString &name) {
-				 addVariableRow(ui->variables,
-						GetVariableByQString(name));
-				 ui->variablesHelp->hide();
-				 setVariableTabVisible(ui->tabWidget, true);
-			 });
-	QWidget::connect(VariableSignalManager::Instance(),
-			 &VariableSignalManager::Remove, this,
-			 [this](const QString &name) {
-				 removeVariableRow(ui->variables, name);
-				 if (ui->variables->rowCount() == 0) {
-					 ui->variablesHelp->show();
-				 }
-			 });
-	QWidget::connect(ui->variables, &QTableWidget::cellDoubleClicked, this,
-			 &AdvSceneSwitcher::OpenSettingsForSelectedVariable);
-
-	auto timer = new QTimer(this);
-	timer->setInterval(1000);
-	QWidget::connect(timer, &QTimer::timeout,
-			 [this]() { updateVariableStatus(ui->variables); });
-	timer->start();
-}
-
-void AdvSceneSwitcher::OpenSettingsForSelectedVariable()
-{
-	auto selectedRows = ui->variables->selectionModel()->selectedRows();
+	auto selectedRows =
+		tabWidget->Table()->selectionModel()->selectedRows();
 	if (selectedRows.empty()) {
 		return;
 	}
 
-	auto cell = ui->variables->item(selectedRows.last().row(), 0);
+	auto cell = tabWidget->Table()->item(selectedRows.last().row(), 0);
 	if (!cell) {
 		return;
 	}
@@ -268,8 +177,8 @@ void AdvSceneSwitcher::OpenSettingsForSelectedVariable()
 	}
 
 	auto oldName = variable->Name();
-	bool accepted = VariableSettingsDialog::AskForSettings(ui->variables,
-							       *variable.get());
+	bool accepted = VariableSettingsDialog::AskForSettings(
+		tabWidget->Table(), *variable.get());
 	if (accepted && oldName != variable->Name()) {
 		VariableSignalManager::Instance()->Rename(
 			QString::fromStdString(oldName),
@@ -277,35 +186,17 @@ void AdvSceneSwitcher::OpenSettingsForSelectedVariable()
 	}
 }
 
-static void removeVariablesWithNames(const QStringList &varNames)
+void VariableTable::Remove()
 {
-	for (const auto &name : varNames) {
-		auto variable = GetVariableByQString(name);
-		if (!variable) {
-			continue;
-		}
-
-		auto &variables = GetVariables();
-		variables.erase(
-			std::remove_if(
-				variables.begin(), variables.end(),
-				[variable](const std::shared_ptr<Item> &item) {
-					return item.get() == variable;
-				}),
-			variables.end());
-	}
-}
-
-void AdvSceneSwitcher::RemoveSelectedVariables()
-{
-	auto selectedRows = ui->variables->selectionModel()->selectedRows();
+	auto selectedRows =
+		tabWidget->Table()->selectionModel()->selectedRows();
 	if (selectedRows.empty()) {
 		return;
 	}
 
 	QStringList varNames;
-	for (auto row : selectedRows) {
-		auto cell = ui->variables->item(row.row(), 0);
+	for (const auto &row : selectedRows) {
+		auto cell = tabWidget->Table()->item(row.row(), 0);
 		if (!cell) {
 			continue;
 		}
@@ -330,7 +221,7 @@ void AdvSceneSwitcher::RemoveSelectedVariables()
 
 	{
 		auto lock = LockContext();
-		removeVariablesWithNames(varNames);
+		RemoveItemsByName(GetVariables(), varNames);
 	}
 
 	for (const auto &name : varNames) {
@@ -338,28 +229,71 @@ void AdvSceneSwitcher::RemoveSelectedVariables()
 	}
 }
 
-void AdvSceneSwitcher::on_variableAdd_clicked()
+VariableTable::VariableTable(QTabWidget *parent)
+	: ResourceTable(
+		  parent, obs_module_text("AdvSceneSwitcher.variableTab.help"),
+		  obs_module_text(
+			  "AdvSceneSwitcher.variableTab.variableAddButton.tooltip"),
+		  obs_module_text(
+			  "AdvSceneSwitcher.variableTab.variableRemoveButton.tooltip"),
+		  QStringList()
+			  << obs_module_text(
+				     "AdvSceneSwitcher.variableTab.name.header")
+			  << obs_module_text(
+				     "AdvSceneSwitcher.variableTab.value.header")
+			  << obs_module_text(
+				     "AdvSceneSwitcher.variableTab.saveLoadBehavior.header")
+			  << obs_module_text(
+				     "AdvSceneSwitcher.variableTab.lastUsed.header")
+			  << obs_module_text(
+				     "AdvSceneSwitcher.variableTab.lastChanged.header"),
+		  openSettingsDialog)
 {
-	auto newVariable = std::make_shared<Variable>();
-	auto accepted =
-		VariableSettingsDialog::AskForSettings(this, *newVariable);
-	if (!accepted) {
-		return;
+	for (const auto &variable : GetVariables()) {
+		auto v = std::static_pointer_cast<Variable>(variable);
+		AddItemTableRow(Table(), getCellLabels(v.get()));
 	}
 
-	{
-		auto lock = LockContext();
-		auto &variables = GetVariables();
-		variables.emplace_back(newVariable);
-	}
-
-	VariableSignalManager::Instance()->Add(
-		QString::fromStdString(newVariable->Name()));
+	SetHelpVisible(GetVariables().empty());
 }
 
-void AdvSceneSwitcher::on_variableRemove_clicked()
+static void setupTab(QTabWidget *tab)
 {
-	RemoveSelectedVariables();
+	if (GetVariables().empty()) {
+		setTabVisible(tab, false);
+	}
+
+	QWidget::connect(VariableSignalManager::Instance(),
+			 &VariableSignalManager::Rename,
+			 [](const QString &oldName, const QString &newName) {
+				 RenameItemTableRow(tabWidget->Table(), oldName,
+						    newName);
+			 });
+	QWidget::connect(
+		VariableSignalManager::Instance(), &VariableSignalManager::Add,
+		[tab](const QString &name) {
+			AddItemTableRow(
+				tabWidget->Table(),
+				getCellLabels(GetVariableByQString(name)));
+			tabWidget->SetHelpVisible(false);
+			tabWidget->HighlightAddButton(false);
+			setTabVisible(tab, true);
+		});
+	QWidget::connect(VariableSignalManager::Instance(),
+			 &VariableSignalManager::Remove,
+			 [](const QString &name) {
+				 RemoveItemTableRow(tabWidget->Table(), name);
+				 if (tabWidget->Table()->rowCount() == 0) {
+					 tabWidget->SetHelpVisible(true);
+					 tabWidget->HighlightAddButton(true);
+				 }
+			 });
+
+	auto timer = new QTimer(tabWidget);
+	timer->setInterval(1000);
+	QWidget::connect(timer, &QTimer::timeout,
+			 []() { updateVariableStatus(tabWidget->Table()); });
+	timer->start();
 }
 
 } // namespace advss

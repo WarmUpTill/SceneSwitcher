@@ -113,7 +113,6 @@ void AdvSceneSwitcher::LoadUI()
 	SetupSceneGroupTab();
 	SetupTriggerTab();
 	SetupMacroTab();
-	SetupVariableTab();
 	SetupOtherTabs(ui->tabWidget);
 
 	SetDeprecationWarnings();
@@ -146,12 +145,6 @@ bool AdvSceneSwitcher::eventFilter(QObject *obj, QEvent *event)
 				RenameSelectedMacro();
 			} else if (pressedKey == Qt::Key_Delete) {
 				RemoveSelectedMacros();
-			}
-		} else if (obj == ui->variables && ui->variables->isVisible()) {
-			if (pressedKey == Qt::Key_F2) {
-				OpenSettingsForSelectedVariable();
-			} else if (pressedKey == Qt::Key_Delete) {
-				RemoveSelectedVariables();
 			}
 		}
 	}
