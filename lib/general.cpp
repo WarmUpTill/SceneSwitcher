@@ -370,6 +370,10 @@ void AdvSceneSwitcher::CheckFirstTimeSetup()
 
 void AdvSceneSwitcher::on_tabWidget_currentChanged(int)
 {
+	if (loading) {
+		return;
+	}
+
 	switcher->showFrame = false;
 	ClearFrames(ui->screenRegionSwitches);
 	SetShowFrames();
