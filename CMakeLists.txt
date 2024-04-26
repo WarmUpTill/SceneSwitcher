@@ -191,6 +191,10 @@ target_sources(
           lib/utils/regex-config.hpp
           lib/utils/resizing-text-edit.cpp
           lib/utils/resizing-text-edit.hpp
+          lib/utils/resource-table.cpp
+          lib/utils/resource-table.hpp
+          lib/utils/resource-table-hotkey-handler.cpp
+          lib/utils/resource-table-hotkey-handler.hpp
           lib/utils/scene-selection.cpp
           lib/utils/scene-selection.hpp
           lib/utils/scene-switch-helpers.cpp
