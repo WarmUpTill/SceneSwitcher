@@ -32,6 +32,9 @@ protected:
 	friend ItemSettingsDialog;
 };
 
+void EXPORT RemoveItemsByName(std::deque<std::shared_ptr<Item>> &items,
+			      const QStringList &names);
+
 class ItemSettingsDialog : public QDialog {
 	Q_OBJECT
 
