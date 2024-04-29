@@ -347,4 +347,18 @@ void Item::Save(obs_data_t *obj) const
 	obs_data_set_string(obj, "name", _name.c_str());
 }
 
+void RemoveItemsByName(std::deque<std::shared_ptr<Item>> &items,
+		       const QStringList &names)
+{
+	for (const auto &name : names) {
+		items.erase(std::remove_if(
+				    items.begin(), items.end(),
+				    [name](const std::shared_ptr<Item> &item) {
+					    return item->Name() ==
+						   name.toStdString();
+				    }),
+			    items.end());
+	}
+}
+
 } // namespace advss
