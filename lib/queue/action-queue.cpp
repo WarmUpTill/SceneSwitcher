@@ -6,6 +6,11 @@ namespace advss {
 
 static std::deque<std::shared_ptr<Item>> queues;
 
+std::deque<std::shared_ptr<Item>> &GetActionQueues()
+{
+	return queues;
+}
+
 void SetupActionQueues()
 {
 	static bool done = false;

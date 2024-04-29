@@ -145,8 +145,10 @@ target_sources(
 # Utility function sources
 target_sources(
   ${LIB_NAME}
-  PRIVATE lib/utils/action-queue.cpp
-          lib/utils/action-queue.hpp
+  PRIVATE lib/queue/action-queue.cpp
+          lib/queue/action-queue.hpp
+          lib/queue/action-queue-tab.cpp
+          lib/queue/action-queue-tab.hpp
           lib/utils/backup.cpp
           lib/utils/backup.hpp
           lib/utils/curl-helper.cpp
@@ -275,6 +277,7 @@ target_include_directories(
   PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/lib"
           "${CMAKE_CURRENT_SOURCE_DIR}/lib/legacy"
           "${CMAKE_CURRENT_SOURCE_DIR}/lib/macro"
+          "${CMAKE_CURRENT_SOURCE_DIR}/lib/queue"
           "${CMAKE_CURRENT_SOURCE_DIR}/lib/utils"
           "${CMAKE_CURRENT_SOURCE_DIR}/lib/variables"
           "${CMAKE_CURRENT_BINARY_DIR}/forms")
