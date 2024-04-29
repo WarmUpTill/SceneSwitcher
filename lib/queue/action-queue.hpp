@@ -95,6 +95,7 @@ signals:
 	void Remove(const QString &);
 };
 
+std::deque<std::shared_ptr<Item>> &GetActionQueues();
 void SetupActionQueues();
 void SaveActionQueues(obs_data_t *);
 void LoadActionQueues(obs_data_t *);
