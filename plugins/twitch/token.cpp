@@ -351,6 +351,11 @@ bool TokenIsValid(const std::weak_ptr<TwitchToken> &token_)
 	return token->IsValid();
 }
 
+std::deque<std::shared_ptr<Item>> &GetTwitchTokens()
+{
+	return twitchTokens;
+}
+
 static bool ConnectionNameAvailable(const QString &name)
 {
 	return !GetTwitchTokenByName(name);

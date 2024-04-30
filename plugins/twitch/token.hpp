@@ -50,6 +50,7 @@ public:
 	std::string GetUserID() const { return _userID; }
 	std::shared_ptr<EventSub> GetEventSub();
 	bool IsValid(bool forceUpdate = false) const;
+	size_t PermissionCount() const { return _tokenOptions.size(); }
 
 private:
 	std::string _token;
@@ -152,6 +153,7 @@ std::weak_ptr<TwitchToken> GetWeakTwitchTokenByName(const std::string &name);
 std::weak_ptr<TwitchToken> GetWeakTwitchTokenByQString(const QString &name);
 std::string GetWeakTwitchTokenName(std::weak_ptr<TwitchToken>);
 bool TokenIsValid(const std::weak_ptr<TwitchToken> &token);
+std::deque<std::shared_ptr<Item>> &GetTwitchTokens();
 
 } // namespace advss
 
