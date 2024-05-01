@@ -20,6 +20,7 @@ public:
 	}
 
 	std::shared_ptr<Hotkey> _hotkey;
+	bool _checkPressed = true;
 
 private:
 	std::chrono::high_resolution_clock::time_point _lastCheck{};
@@ -46,12 +47,12 @@ public:
 
 private slots:
 	void NameChanged();
-
-protected:
-	QLineEdit *_name;
-	std::shared_ptr<MacroConditionHotkey> _entryData;
+	void KeyStateChanged(int);
 
 private:
+	QLineEdit *_name;
+	QComboBox *_keyState;
+	std::shared_ptr<MacroConditionHotkey> _entryData;
 	bool _loading = true;
 };
 

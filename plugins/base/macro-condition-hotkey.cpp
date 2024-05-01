@@ -23,13 +23,17 @@ MacroConditionHotkey::MacroConditionHotkey(Macro *m) : MacroCondition(m)
 
 bool MacroConditionHotkey::CheckCondition()
 {
-	const bool hotkeyIsCurrentlyPressed = _hotkey->GetPressed();
-	const bool hotkeyWasPressedSinceLastCheck = _hotkey->GetLastPressed() >
-						    _lastCheck;
+	const bool keyStateCurrentlyMatches =
+		_checkPressed ? _hotkey->GetPressed() : !_hotkey->GetPressed();
+	const auto lastKeyStateMatch = _checkPressed
+					       ? _hotkey->GetLastPressed()
+					       : _hotkey->GetLastReleased();
+	const bool hotkeySateChangedSinceLastCheck = lastKeyStateMatch >
+						     _lastCheck;
 	const bool macroWasPausedSinceLastCheck =
 		MacroWasPausedSince(GetMacro(), _lastCheck);
-	bool ret = hotkeyIsCurrentlyPressed ||
-		   (hotkeyWasPressedSinceLastCheck &&
+	bool ret = keyStateCurrentlyMatches ||
+		   (hotkeySateChangedSinceLastCheck &&
 		    !macroWasPausedSinceLastCheck);
 	_lastCheck = std::chrono::high_resolution_clock::now();
 	return ret;
@@ -39,6 +43,7 @@ bool MacroConditionHotkey::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	_hotkey->Save(obj);
+	obs_data_set_bool(obj, "checkPressed", _checkPressed);
 	return true;
 }
 
@@ -52,34 +57,47 @@ bool MacroConditionHotkey::Load(obs_data_t *obj)
 		      "hotkey name conflict for \"%s\" - using previous key bind",
 		      description);
 	}
+	if (obs_data_has_user_value(obj, "checkPressed")) {
+		_checkPressed = obs_data_get_bool(obj, "checkPressed");
+	} else { // TODO: Remove fallback at some point in the future
+		_checkPressed = true;
+	}
 	return true;
 }
 
 MacroConditionHotkeyEdit::MacroConditionHotkeyEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionHotkey> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _name(new QLineEdit()),
+	  _keyState(new QComboBox())
 {
-	_name = new QLineEdit();
-	QLabel *line1 = new QLabel(obs_module_text(
-		"AdvSceneSwitcher.condition.hotkey.entry.line1"));
-	QLabel *hint = new QLabel(
-		obs_module_text("AdvSceneSwitcher.condition.hotkey.tip"));
+	_keyState->addItems(
+		QStringList()
+		<< obs_module_text("AdvSceneSwitcher.condition.hotkey.pressed")
+		<< obs_module_text(
+			   "AdvSceneSwitcher.condition.hotkey.released"));
 
 	QWidget::connect(_name, SIGNAL(editingFinished()), this,
 			 SLOT(NameChanged()));
+	QWidget::connect(_keyState, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(KeyStateChanged(int)));
 
-	QHBoxLayout *switchLayout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{name}}", _name},
-	};
-	PlaceWidgets(obs_module_text(
-			     "AdvSceneSwitcher.condition.hotkey.entry.line2"),
-		     switchLayout, widgetPlaceholders);
+	auto keyStateLayout = new QHBoxLayout;
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.hotkey.entry.keyState"),
+		keyStateLayout, {{"{{keyState}}", _keyState}});
 
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->addWidget(line1);
-	mainLayout->addLayout(switchLayout);
-	mainLayout->addWidget(hint);
+	auto nameLayout = new QHBoxLayout;
+	PlaceWidgets(
+		obs_module_text("AdvSceneSwitcher.condition.hotkey.entry.name"),
+		nameLayout, {{"{{name}}", _name}});
+
+	auto mainLayout = new QVBoxLayout;
+	mainLayout->addLayout(keyStateLayout);
+	mainLayout->addLayout(nameLayout);
+	mainLayout->addWidget(new QLabel(
+		obs_module_text("AdvSceneSwitcher.condition.hotkey.tip")));
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -116,6 +134,17 @@ void MacroConditionHotkeyEdit::UpdateEntryData()
 
 	_name->setText(
 		QString::fromStdString(_entryData->_hotkey->GetDescription()));
+	_keyState->setCurrentIndex(_entryData->_checkPressed ? 0 : 1);
+}
+
+void MacroConditionHotkeyEdit::KeyStateChanged(int index)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_checkPressed = index == 0;
 }
 
 } // namespace advss
