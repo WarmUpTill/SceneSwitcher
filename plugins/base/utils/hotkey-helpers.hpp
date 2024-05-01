@@ -27,6 +27,7 @@ public:
 
 	bool GetPressed() const { return _pressed; }
 	auto GetLastPressed() const { return _lastPressed; }
+	auto GetLastReleased() const { return _lastReleased; }
 	std::string GetDescription() const { return _description; }
 	bool UpdateDescription(const std::string &);
 
@@ -43,6 +44,7 @@ private:
 	obs_hotkey_id _hotkeyID = OBS_INVALID_HOTKEY_ID;
 	bool _pressed = false;
 	std::chrono::high_resolution_clock::time_point _lastPressed{};
+	std::chrono::high_resolution_clock::time_point _lastReleased{};
 	// When set will not attempt to share settings with existing hotkey
 	bool _ignoreExistingHotkeys = false;
 };

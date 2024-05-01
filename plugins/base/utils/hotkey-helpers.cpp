@@ -116,6 +116,9 @@ void Hotkey::Callback(void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed)
 	if (pressed) {
 		hotkey->_lastPressed =
 			std::chrono::high_resolution_clock::now();
+	} else {
+		hotkey->_lastReleased =
+			std::chrono::high_resolution_clock::now();
 	}
 	hotkey->_pressed = pressed;
 }
