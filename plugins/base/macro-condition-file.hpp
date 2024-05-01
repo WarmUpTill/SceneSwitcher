@@ -31,16 +31,17 @@ public:
 		REMOTE,
 	};
 
-	enum class ConditionType {
+	enum class Condition {
 		MATCH,
 		CONTENT_CHANGE,
 		DATE_CHANGE,
 	};
+	void SetCondition(Condition condition);
+	Condition GetCondition() const { return _condition; }
 
 	StringVariable _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	StringVariable _text = obs_module_text("AdvSceneSwitcher.enterText");
 	FileType _fileType = FileType::LOCAL;
-	ConditionType _condition = ConditionType::MATCH;
 	RegexConfig _regex;
 
 	// TODO: Remove in future version
@@ -53,7 +54,9 @@ private:
 	bool CheckLocalFileContent();
 	bool CheckChangeContent();
 	bool CheckChangeDate();
+	void SetupTempVars();
 
+	Condition _condition = Condition::MATCH;
 	QDateTime _lastMod;
 	size_t _lastHash = 0;
 	static bool _registered;
