@@ -3,6 +3,7 @@
 #include "macro-selection.hpp"
 #include "macro-segment-selection.hpp"
 
+#include <QCheckBox>
 #include <QHBoxLayout>
 
 namespace advss {
@@ -14,11 +15,26 @@ public:
 	void LogAction() const;
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
+	bool PostLoad();
 	std::string GetShortDesc() const;
 	std::string GetId() const { return id; };
 	static std::shared_ptr<MacroAction> Create(Macro *m);
 	std::shared_ptr<MacroAction> Copy() const;
 	void ResolveVariablesToFixedValues();
+
+	struct RunOptions {
+		void Save(obs_data_t *obj) const;
+		void Load(obs_data_t *obj);
+		enum class Logic {
+			IGNORE_CONDITIONS,
+			CONDITIONS,
+			INVERT_CONDITIONS,
+		};
+		Logic logic;
+		bool runElseActions = false;
+		bool skipWhenPaused = true;
+		MacroRef macro;
+	};
 
 	enum class Action {
 		PAUSE,
@@ -32,8 +48,11 @@ public:
 	};
 	Action _action = Action::PAUSE;
 	IntVariable _actionIndex = 1;
+	RunOptions _runOptions = {};
 
 private:
+	void RunActions(Macro *actionMacro) const;
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -58,18 +77,28 @@ private slots:
 	void MacroChanged(const QString &text);
 	void ActionChanged(int value);
 	void ActionIndexChanged(const IntVariable &value);
+	void ConditionMacroChanged(const QString &text);
+	void ConditionBehaviorChanged(int value);
+	void ActionTypeChanged(int value);
+	void SkipWhenPausedChanged(int value);
+
 signals:
 	void HeaderInfoChanged(const QString &);
-
-protected:
-	MacroSelection *_macros;
-	MacroSegmentSelection *_actionIndex;
-	QComboBox *_actions;
-	std::shared_ptr<MacroActionMacro> _entryData;
 
 private:
 	void SetWidgetVisibility();
 
+	MacroSelection *_macros;
+	MacroSegmentSelection *_actionIndex;
+	QComboBox *_actions;
+	MacroSelection *_conditionMacros;
+	QComboBox *_conditionBehaviors;
+	QComboBox *_actionTypes;
+	QCheckBox *_skipWhenPaused;
+	QHBoxLayout *_entryLayout;
+	QHBoxLayout *_conditionLayout;
+
+	std::shared_ptr<MacroActionMacro> _entryData;
 	bool _loading = true;
 };
 
