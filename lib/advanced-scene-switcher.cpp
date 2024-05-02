@@ -240,7 +240,7 @@ void SwitcherData::Thread()
 			if (duration.count() < 1) {
 				blog(LOG_INFO,
 				     "detected busy loop - refusing to sleep less than 1ms");
-				duration = std::chrono::milliseconds(50);
+				duration = std::chrono::milliseconds(10);
 			}
 		}
 
