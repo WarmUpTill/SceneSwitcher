@@ -128,6 +128,8 @@ target_sources(
           lib/macro/macro-ref.hpp
           lib/macro/macro-run-button.cpp
           lib/macro/macro-run-button.hpp
+          lib/macro/macro-segment-copy-paste.cpp
+          lib/macro/macro-segment-copy-paste.hpp
           lib/macro/macro-segment-list.cpp
           lib/macro/macro-segment-list.hpp
           lib/macro/macro-segment-selection.cpp

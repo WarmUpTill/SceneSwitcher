@@ -299,6 +299,7 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 	}
 
 	if (idx < 0 || idx > (int)macro->Conditions().size()) {
+		assert(false);
 		return;
 	}
 
@@ -315,16 +316,31 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 		id = MacroCondition::GetDefaultID();
 		logic = LogicType::ROOT_NONE;
 	}
+
+	OBSDataAutoRelease data;
+	if (idx - 1 >= 0) {
+		data = obs_data_create();
+		macro->Conditions().at(idx - 1)->Save(data);
+	}
+	AddMacroCondition(macro.get(), idx, id, data.Get(), logic);
+}
+
+void AdvSceneSwitcher::AddMacroCondition(Macro *macro, int idx,
+					 const std::string &id,
+					 obs_data_t *data, LogicType logic)
+{
+	if (idx < 0 || idx > (int)macro->Conditions().size()) {
+		assert(false);
+		return;
+	}
+
 	{
 		auto lock = LockContext();
 		auto cond = macro->Conditions().emplace(
 			macro->Conditions().begin() + idx,
-			MacroConditionFactory::Create(id, macro.get()));
-		if (idx - 1 >= 0) {
-			auto data = obs_data_create();
-			macro->Conditions().at(idx - 1)->Save(data);
+			MacroConditionFactory::Create(id, macro));
+		if (data) {
 			macro->Conditions().at(idx)->Load(data);
-			obs_data_release(data);
 		}
 		macro->Conditions().at(idx)->PostLoad();
 		RunPostLoadSteps();
@@ -337,6 +353,7 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 		SetConditionData(*macro);
 	}
 	HighlightCondition(idx);
+	ui->conditionsList->SetHelpMsgVisible(false);
 	emit(MacroSegmentOrderChanged());
 }
 
@@ -355,7 +372,6 @@ void AdvSceneSwitcher::on_conditionAdd_clicked()
 	if (currentConditionIdx != -1) {
 		MacroConditionSelectionChanged(currentConditionIdx + 1);
 	}
-	ui->conditionsList->SetHelpMsgVisible(false);
 }
 
 void AdvSceneSwitcher::RemoveMacroCondition(int idx)
