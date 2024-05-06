@@ -507,7 +507,7 @@ void AdvSceneSwitcher::RemoveMacroElseAction(int idx)
 		SetMacroAbortWait(true);
 		GetMacroWaitCV().notify_all();
 		macro->UpdateElseActionIndices();
-		SetActionData(*macro);
+		SetElseActionData(*macro);
 	}
 	MacroElseActionSelectionChanged(-1);
 	lastInteracted = MacroSection::ELSE_ACTIONS;
