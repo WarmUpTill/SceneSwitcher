@@ -1343,58 +1343,47 @@ static void fade(QWidget *widget, bool fadeOut)
 	animation->start(QPropertyAnimation::DeleteWhenStopped);
 }
 
-void AdvSceneSwitcher::FadeOutActionControls()
+void fadeWidgets(const std::vector<QWidget *> &widgets, bool fadeOut)
 {
-	fade(ui->actionAdd, true);
-	fade(ui->actionRemove, true);
-	fade(ui->actionTop, true);
-	fade(ui->actionUp, true);
-	fade(ui->actionDown, true);
-	fade(ui->actionBottom, true);
-}
-
-void AdvSceneSwitcher::FadeOutConditionControls()
-{
-	fade(ui->conditionAdd, true);
-	fade(ui->conditionRemove, true);
-	fade(ui->conditionTop, true);
-	fade(ui->conditionUp, true);
-	fade(ui->conditionDown, true);
-	fade(ui->conditionBottom, true);
-}
-
-void AdvSceneSwitcher::ResetOpacityActionControls()
-{
-	fade(ui->actionAdd, false);
-	fade(ui->actionRemove, false);
-	fade(ui->actionTop, false);
-	fade(ui->actionUp, false);
-	fade(ui->actionDown, false);
-	fade(ui->actionBottom, false);
-}
-
-void AdvSceneSwitcher::ResetOpacityConditionControls()
-{
-	fade(ui->conditionAdd, false);
-	fade(ui->conditionRemove, false);
-	fade(ui->conditionTop, false);
-	fade(ui->conditionUp, false);
-	fade(ui->conditionDown, false);
-	fade(ui->conditionBottom, false);
+	for (const auto &widget : widgets) {
+		fade(widget, fadeOut);
+	}
 }
 
 void AdvSceneSwitcher::HighlightControls()
 {
-	if ((currentActionIdx == -1 && currentConditionIdx == -1) ||
-	    (currentActionIdx != -1 && currentConditionIdx != -1)) {
-		ResetOpacityActionControls();
-		ResetOpacityConditionControls();
+	const std::vector<QWidget *> conditionControls{
+		ui->conditionAdd, ui->conditionRemove, ui->conditionTop,
+		ui->conditionUp,  ui->conditionDown,   ui->conditionBottom,
+	};
+	const std::vector<QWidget *> actionControls{
+		ui->actionAdd, ui->actionRemove, ui->actionTop,
+		ui->actionUp,  ui->actionDown,   ui->actionBottom,
+	};
+	const std::vector<QWidget *> elseActionControls{
+		ui->elseActionAdd, ui->elseActionRemove, ui->elseActionTop,
+		ui->elseActionUp,  ui->elseActionDown,   ui->elseActionBottom,
+	};
+
+	if ((currentActionIdx == -1 && currentConditionIdx == -1 &&
+	     currentElseActionIdx == -1)) {
+		fadeWidgets(conditionControls, false);
+		fadeWidgets(actionControls, false);
+		fadeWidgets(elseActionControls, false);
+	} else if (currentConditionIdx != -1) {
+		fadeWidgets(conditionControls, true);
+		fadeWidgets(actionControls, false);
+		fadeWidgets(elseActionControls, false);
 	} else if (currentActionIdx != -1) {
-		FadeOutConditionControls();
-		ResetOpacityActionControls();
+		fadeWidgets(conditionControls, false);
+		fadeWidgets(actionControls, true);
+		fadeWidgets(elseActionControls, false);
+	} else if (currentElseActionIdx != -1) {
+		fadeWidgets(conditionControls, false);
+		fadeWidgets(actionControls, false);
+		fadeWidgets(elseActionControls, true);
 	} else {
-		FadeOutActionControls();
-		ResetOpacityConditionControls();
+		assert(false);
 	}
 }
 
