@@ -12,6 +12,7 @@ class MacroActionEdit;
 class MacroConditionEdit;
 class Duration;
 class SequenceWidget;
+enum class LogicType;
 struct SceneGroup;
 
 /*******************************************************************************
@@ -152,12 +153,16 @@ public slots:
 	void SetElseActionsStateToVisible();
 	void MacroActionSelectionChanged(int idx);
 	void MacroActionReorder(int to, int target);
+	void AddMacroAction(Macro *macro, int idx, const std::string &id,
+			    obs_data_t *data);
 	void AddMacroAction(int idx);
 	void RemoveMacroAction(int idx);
 	void MoveMacroActionUp(int idx);
 	void MoveMacroActionDown(int idx);
 	void MacroElseActionSelectionChanged(int idx);
 	void MacroElseActionReorder(int to, int target);
+	void AddMacroElseAction(Macro *macro, int idx, const std::string &id,
+				obs_data_t *data);
 	void AddMacroElseAction(int idx);
 	void RemoveMacroElseAction(int idx);
 	void SwapElseActions(Macro *m, int pos1, int pos2);
@@ -166,12 +171,16 @@ public slots:
 	void MacroConditionSelectionChanged(int idx);
 	void MacroConditionReorder(int to, int target);
 	void AddMacroCondition(int idx);
+	void AddMacroCondition(Macro *macro, int idx, const std::string &id,
+			       obs_data_t *data, LogicType logic);
 	void RemoveMacroCondition(int idx);
 	void MoveMacroConditionUp(int idx);
 	void MoveMacroConditionDown(int idx);
 	void HighlightControls();
 	void HighlightOnChange();
 	void on_macroProperties_clicked();
+	void CopyMacroSegment();
+	void PasteMacroSegment();
 
 signals:
 	void MacroAdded(const QString &name);

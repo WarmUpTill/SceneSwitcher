@@ -4,6 +4,7 @@
 #include "macro-condition-edit.hpp"
 #include "macro-export-import-dialog.hpp"
 #include "macro-properties.hpp"
+#include "macro-segment-copy-paste.hpp"
 #include "macro-tree.hpp"
 #include "macro.hpp"
 #include "math-helpers.hpp"
@@ -891,6 +892,8 @@ void AdvSceneSwitcher::SetupMacroTab()
 				switcher->macroListMacroEditSplitterPosition);
 		}
 	}
+
+	SetupSegmentCopyPasteShortcutHandlers(this);
 }
 
 void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
@@ -978,16 +981,19 @@ static void setupConextMenu(AdvSceneSwitcher *ss, const QPoint &pos,
 			    MacroSegmentList *list)
 {
 	QMenu menu;
-	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.expandAll"),
-		       ss, [ss, expand]() { expand(ss); });
-	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.collapseAll"),
-		       ss, [ss, collapse]() { collapse(ss); });
-	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.maximize"),
-		       ss, [ss, maximize]() { maximize(ss); });
-	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.minimize"),
-		       ss, [ss, minimize]() { minimize(ss); });
-
 	auto segmentEdit = list->WidgetAt(pos);
+
+	auto copy = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.segment.copy"), ss,
+		[ss]() { ss->CopyMacroSegment(); });
+	copy->setEnabled(!!segmentEdit);
+	auto paste = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.segment.paste"), ss,
+		[ss]() { ss->PasteMacroSegment(); });
+	paste->setEnabled(MacroSegmentIsInClipboard());
+
+	menu.addSeparator();
+
 	if (segmentEdit) {
 		auto customLabel = menu.addAction(obs_module_text(
 			"AdvSceneSwitcher.macroTab.segment.useCustomLabel"));
@@ -999,6 +1005,21 @@ static void setupConextMenu(AdvSceneSwitcher *ss, const QPoint &pos,
 				 std::bind(handleCustomLabelChange, segmentEdit,
 					   customLabel));
 	}
+
+	menu.addSeparator();
+
+	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.expandAll"),
+		       ss, [ss, expand]() { expand(ss); });
+	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.collapseAll"),
+		       ss, [ss, collapse]() { collapse(ss); });
+
+	menu.addSeparator();
+
+	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.maximize"),
+		       ss, [ss, maximize]() { maximize(ss); });
+	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.minimize"),
+		       ss, [ss, minimize]() { minimize(ss); });
+
 	menu.exec(list->mapToGlobal(pos));
 }
 
@@ -1371,17 +1392,17 @@ void AdvSceneSwitcher::HighlightControls()
 		fadeWidgets(actionControls, false);
 		fadeWidgets(elseActionControls, false);
 	} else if (currentConditionIdx != -1) {
-		fadeWidgets(conditionControls, true);
-		fadeWidgets(actionControls, false);
-		fadeWidgets(elseActionControls, false);
-	} else if (currentActionIdx != -1) {
 		fadeWidgets(conditionControls, false);
 		fadeWidgets(actionControls, true);
-		fadeWidgets(elseActionControls, false);
-	} else if (currentElseActionIdx != -1) {
-		fadeWidgets(conditionControls, false);
+		fadeWidgets(elseActionControls, true);
+	} else if (currentActionIdx != -1) {
+		fadeWidgets(conditionControls, true);
 		fadeWidgets(actionControls, false);
 		fadeWidgets(elseActionControls, true);
+	} else if (currentElseActionIdx != -1) {
+		fadeWidgets(conditionControls, true);
+		fadeWidgets(actionControls, true);
+		fadeWidgets(elseActionControls, false);
 	} else {
 		assert(false);
 	}

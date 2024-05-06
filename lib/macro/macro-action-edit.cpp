@@ -161,33 +161,20 @@ std::shared_ptr<MacroSegment> MacroActionEdit::Data() const
 	return *_entryData;
 }
 
-void AdvSceneSwitcher::AddMacroAction(int idx)
+void AdvSceneSwitcher::AddMacroAction(Macro *macro, int idx,
+				      const std::string &id, obs_data_t *data)
 {
-	auto macro = GetSelectedMacro();
-	if (!macro) {
-		return;
-	}
-
 	if (idx < 0 || idx > (int)macro->Actions().size()) {
+		assert(false);
 		return;
 	}
 
-	std::string id;
-	if (idx - 1 >= 0) {
-		id = macro->Actions().at(idx - 1)->GetId();
-	} else {
-		id = MacroAction::GetDefaultID();
-	}
 	{
 		auto lock = LockContext();
-		macro->Actions().emplace(
-			macro->Actions().begin() + idx,
-			MacroActionFactory::Create(id, macro.get()));
-		if (idx - 1 >= 0) {
-			auto data = obs_data_create();
-			macro->Actions().at(idx - 1)->Save(data);
+		macro->Actions().emplace(macro->Actions().begin() + idx,
+					 MacroActionFactory::Create(id, macro));
+		if (data) {
 			macro->Actions().at(idx)->Load(data);
-			obs_data_release(data);
 		}
 		macro->Actions().at(idx)->PostLoad();
 		RunPostLoadSteps();
@@ -198,7 +185,35 @@ void AdvSceneSwitcher::AddMacroAction(int idx)
 		SetActionData(*macro);
 	}
 	HighlightAction(idx);
+	ui->actionsList->SetHelpMsgVisible(false);
 	emit(MacroSegmentOrderChanged());
+}
+
+void AdvSceneSwitcher::AddMacroAction(int idx)
+{
+	auto macro = GetSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	if (idx < 0 || idx > (int)macro->Actions().size()) {
+		assert(false);
+		return;
+	}
+
+	std::string id;
+	if (idx - 1 >= 0) {
+		id = macro->Actions().at(idx - 1)->GetId();
+	} else {
+		id = MacroAction::GetDefaultID();
+	}
+
+	OBSDataAutoRelease data;
+	if (idx - 1 >= 0) {
+		data = obs_data_create();
+		macro->Actions().at(idx - 1)->Save(data);
+	}
+	AddMacroAction(macro.get(), idx, id, data);
 }
 
 void AdvSceneSwitcher::on_actionAdd_clicked()
@@ -216,7 +231,6 @@ void AdvSceneSwitcher::on_actionAdd_clicked()
 	if (currentActionIdx != -1) {
 		MacroActionSelectionChanged(currentActionIdx + 1);
 	}
-	ui->actionsList->SetHelpMsgVisible(false);
 }
 
 void AdvSceneSwitcher::RemoveMacroAction(int idx)
@@ -311,7 +325,6 @@ void AdvSceneSwitcher::on_elseActionAdd_clicked()
 	if (currentElseActionIdx != -1) {
 		MacroElseActionSelectionChanged(currentElseActionIdx + 1);
 	}
-	ui->elseActionsList->SetHelpMsgVisible(false);
 }
 
 void AdvSceneSwitcher::on_elseActionRemove_clicked()
@@ -450,31 +463,21 @@ void AdvSceneSwitcher::MacroElseActionReorder(int to, int from)
 	emit(MacroSegmentOrderChanged());
 }
 
-void AdvSceneSwitcher::AddMacroElseAction(int idx)
+void AdvSceneSwitcher::AddMacroElseAction(Macro *macro, int idx,
+					  const std::string &id,
+					  obs_data_t *data)
 {
-	auto macro = GetSelectedMacro();
-	if (!macro) {
-		return;
-	}
-
 	if (idx < 0 || idx > (int)macro->ElseActions().size()) {
+		assert(false);
 		return;
 	}
 
-	std::string id;
-	if (idx - 1 >= 0) {
-		id = macro->ElseActions().at(idx - 1)->GetId();
-	} else {
-		id = MacroAction::GetDefaultID();
-	}
 	{
 		auto lock = LockContext();
-		macro->ElseActions().emplace(
-			macro->ElseActions().begin() + idx,
-			MacroActionFactory::Create(id, macro.get()));
-		if (idx - 1 >= 0) {
-			OBSDataAutoRelease data = obs_data_create();
-			macro->ElseActions().at(idx - 1)->Save(data);
+		macro->ElseActions().emplace(macro->ElseActions().begin() + idx,
+					     MacroActionFactory::Create(id,
+									macro));
+		if (data) {
 			macro->ElseActions().at(idx)->Load(data);
 		}
 		macro->ElseActions().at(idx)->PostLoad();
@@ -486,7 +489,35 @@ void AdvSceneSwitcher::AddMacroElseAction(int idx)
 		SetElseActionData(*macro);
 	}
 	HighlightElseAction(idx);
+	ui->elseActionsList->SetHelpMsgVisible(false);
 	emit(MacroSegmentOrderChanged());
+}
+
+void AdvSceneSwitcher::AddMacroElseAction(int idx)
+{
+	auto macro = GetSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	if (idx < 0 || idx > (int)macro->ElseActions().size()) {
+		assert(false);
+		return;
+	}
+
+	std::string id;
+	if (idx - 1 >= 0) {
+		id = macro->ElseActions().at(idx - 1)->GetId();
+	} else {
+		id = MacroAction::GetDefaultID();
+	}
+
+	OBSDataAutoRelease data;
+	if (idx - 1 >= 0) {
+		data = obs_data_create();
+		macro->ElseActions().at(idx - 1)->Save(data);
+	}
+	AddMacroElseAction(macro.get(), idx, id, data);
 }
 
 void AdvSceneSwitcher::RemoveMacroElseAction(int idx)
