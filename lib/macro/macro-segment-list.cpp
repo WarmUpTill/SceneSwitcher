@@ -176,7 +176,8 @@ bool MacroSegmentList::eventFilter(QObject *object, QEvent *event)
 
 void MacroSegmentList::mousePressEvent(QMouseEvent *event)
 {
-	if (event->button() == Qt::LeftButton) {
+	if (event->button() == Qt::LeftButton ||
+	    event->button() == Qt::RightButton) {
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 		_dragPosition = GetDragIndex(event->globalPos());
 #else
