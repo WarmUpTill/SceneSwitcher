@@ -45,11 +45,13 @@ static bool setupReplayBufferEventHandler()
 
 bool MacroConditionReplayBuffer::ReplayBufferWasSaved()
 {
-	bool timersAreInitialized =
-		_saveTime.time_since_epoch().count() != 0 &&
-		replayBufferSaveTime.time_since_epoch().count() != 0;
-	bool newSaveOccurred = timersAreInitialized &&
-			       _saveTime != replayBufferSaveTime;
+	if (!_saveTimeInitialized) {
+		_saveTime = replayBufferSaveTime;
+		_saveTimeInitialized = true;
+		return false;
+	}
+
+	bool newSaveOccurred = _saveTime != replayBufferSaveTime;
 	_saveTime = replayBufferSaveTime;
 	return newSaveOccurred;
 }

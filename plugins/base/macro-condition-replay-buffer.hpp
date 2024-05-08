@@ -29,6 +29,7 @@ public:
 private:
 	bool ReplayBufferWasSaved();
 
+	bool _saveTimeInitialized = false;
 	std::chrono::high_resolution_clock::time_point _saveTime = {};
 	static bool _registered;
 	static const std::string id;
