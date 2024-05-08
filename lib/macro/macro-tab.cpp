@@ -768,8 +768,6 @@ void AdvSceneSwitcher::on_macroProperties_clicked()
 	}
 	GetGlobalMacroProperties() = prop;
 	emit HighlightMacrosChanged(prop._highlightExecuted);
-	emit HighlightActionsChanged(prop._highlightActions);
-	emit HighlightConditionsChanged(prop._highlightConditions);
 }
 
 static void moveControlsToSplitter(QSplitter *splitter, int idx,
@@ -784,7 +782,7 @@ static void moveControlsToSplitter(QSplitter *splitter, int idx,
 	splitter->setStyleSheet("QSplitter::handle {background: transparent;}");
 }
 
-bool shouldRestoreSplitter(const QList<int> &pos)
+static bool shouldRestoreSplitter(const QList<int> &pos)
 {
 	if (pos.size() == 0) {
 		return false;
@@ -796,6 +794,36 @@ bool shouldRestoreSplitter(const QList<int> &pos)
 		}
 	}
 	return true;
+}
+
+static void runSegmentHighligtChecksHelper(MacroSegmentList *list)
+{
+	MacroSegmentEdit *widget = nullptr;
+	for (int i = 0; (widget = list->WidgetAt(i)); i++) {
+		if (widget->Data() && widget->Data()->GetHighlightAndReset()) {
+			list->Highlight(i);
+		}
+	}
+}
+
+static void runSegmentHighligtChecks(AdvSceneSwitcher *ss)
+{
+	if (!ss || !HighlightUIElementsEnabled()) {
+		return;
+	}
+	auto macro = ss->GetSelectedMacro();
+	if (!macro) {
+		return;
+	}
+
+	const auto &properties = GetGlobalMacroProperties();
+	if (properties._highlightConditions) {
+		runSegmentHighligtChecksHelper(ss->ui->conditionsList);
+	}
+	if (properties._highlightActions) {
+		runSegmentHighligtChecksHelper(ss->ui->actionsList);
+		runSegmentHighligtChecksHelper(ss->ui->elseActionsList);
+	}
 }
 
 void AdvSceneSwitcher::SetupMacroTab()
@@ -894,6 +922,12 @@ void AdvSceneSwitcher::SetupMacroTab()
 	}
 
 	SetupSegmentCopyPasteShortcutHandlers(this);
+
+	// Macro segment highlight
+	auto timer = new QTimer(this);
+	connect(timer, &QTimer::timeout,
+		[this]() { runSegmentHighligtChecks(this); });
+	timer->start(1500);
 }
 
 void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)

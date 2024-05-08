@@ -59,12 +59,12 @@ std::string MacroSegment::GetShortDesc() const
 	return "";
 }
 
-void MacroSegment::SetHighlight()
+void MacroSegment::EnableHighlight()
 {
 	_highlight = true;
 }
 
-bool MacroSegment::Highlight()
+bool MacroSegment::GetHighlightAndReset()
 {
 	if (_highlight) {
 		_highlight = false;
@@ -194,7 +194,7 @@ void DecrementVariableRef(MacroSegment *segment)
 	segment->_variableRefs--;
 }
 
-MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
+MacroSegmentEdit::MacroSegmentEdit(QWidget *parent)
 	: QWidget(parent),
 	  _section(new Section(300)),
 	  _headerInfo(new QLabel()),
@@ -203,8 +203,7 @@ MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
 	  _noBorderframe(new QFrame),
 	  _borderFrame(new QFrame),
 	  _dropLineAbove(new QFrame),
-	  _dropLineBelow(new QFrame),
-	  _showHighlight(highlight)
+	  _dropLineBelow(new QFrame)
 {
 	_dropLineAbove->setLineWidth(3);
 	_dropLineAbove->setFixedHeight(11);
@@ -282,10 +281,6 @@ MacroSegmentEdit::MacroSegmentEdit(bool highlight, QWidget *parent)
 
 	// Enable dragging while clicking on the header text
 	_headerInfo->installEventFilter(this);
-
-	_timer.setInterval(1500);
-	connect(&_timer, SIGNAL(timeout()), this, SLOT(Highlight()));
-	_timer.start();
 }
 
 bool MacroSegmentEdit::eventFilter(QObject *obj, QEvent *ev)
@@ -328,22 +323,6 @@ void MacroSegmentEdit::Collapsed(bool collapsed)
 	if (Data()) {
 		Data()->SetCollapsed(collapsed);
 	}
-}
-
-void MacroSegmentEdit::Highlight()
-{
-	if (!Data()) {
-		return;
-	}
-
-	if (_showHighlight && Data()->Highlight()) {
-		PulseWidget(this, Qt::green, QColor(0, 0, 0, 0), true);
-	}
-}
-
-void MacroSegmentEdit::EnableHighlight(bool value)
-{
-	_showHighlight = value;
 }
 
 void MacroSegmentEdit::SetFocusPolicyOfWidgets()

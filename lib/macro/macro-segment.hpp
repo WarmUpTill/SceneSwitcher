@@ -37,8 +37,8 @@ public:
 	virtual bool PostLoad();
 	virtual std::string GetShortDesc() const;
 	virtual std::string GetId() const = 0;
-	void SetHighlight();
-	bool Highlight();
+	void EnableHighlight();
+	bool GetHighlightAndReset();
 	virtual std::string GetVariableValue() const;
 
 protected:
@@ -87,7 +87,7 @@ class MacroSegmentEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroSegmentEdit(bool highlight, QWidget *parent = nullptr);
+	MacroSegmentEdit(QWidget *parent = nullptr);
 	// Use this function to avoid accidental edits when scrolling through
 	// list of actions and conditions
 	void SetFocusPolicyOfWidgets();
@@ -100,8 +100,6 @@ public slots:
 
 protected slots:
 	void Collapsed(bool);
-	void Highlight();
-	void EnableHighlight(bool);
 signals:
 	void MacroAdded(const QString &name);
 	void MacroRemoved(const QString &name);
@@ -142,9 +140,6 @@ private:
 	// the list.
 	QFrame *_dropLineAbove;
 	QFrame *_dropLineBelow;
-
-	bool _showHighlight;
-	QTimer _timer;
 
 	friend class MacroSegmentList;
 };

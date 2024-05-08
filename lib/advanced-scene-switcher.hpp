@@ -189,9 +189,6 @@ signals:
 	void MacroSegmentOrderChanged();
 	void SegmentTempVarsChanged();
 	void HighlightMacrosChanged(bool value);
-	void HighlightActionsChanged(bool value);
-	void HighlightElseActionsChanged(bool value);
-	void HighlightConditionsChanged(bool value);
 
 	void ConnectionAdded(const QString &);
 	void ConnectionRenamed(const QString &oldName, const QString &newName);
