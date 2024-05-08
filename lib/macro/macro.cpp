@@ -137,37 +137,37 @@ bool Macro::CeckMatch()
 		case LogicType::AND:
 			_matched = _matched && cond;
 			if (cond) {
-				c->SetHighlight();
+				c->EnableHighlight();
 			}
 			break;
 		case LogicType::OR:
 			_matched = _matched || cond;
 			if (cond) {
-				c->SetHighlight();
+				c->EnableHighlight();
 			}
 			break;
 		case LogicType::AND_NOT:
 			_matched = _matched && !cond;
 			if (!cond) {
-				c->SetHighlight();
+				c->EnableHighlight();
 			}
 			break;
 		case LogicType::OR_NOT:
 			_matched = _matched || !cond;
 			if (!cond) {
-				c->SetHighlight();
+				c->EnableHighlight();
 			}
 			break;
 		case LogicType::ROOT_NONE:
 			_matched = cond;
 			if (cond) {
-				c->SetHighlight();
+				c->EnableHighlight();
 			}
 			break;
 		case LogicType::ROOT_NOT:
 			_matched = !cond;
 			if (!cond) {
-				c->SetHighlight();
+				c->EnableHighlight();
 			}
 			break;
 		default:
@@ -313,7 +313,7 @@ bool Macro::RunActionsHelper(
 			break;
 		}
 		if (action->Enabled()) {
-			action->SetHighlight();
+			action->EnableHighlight();
 		}
 	}
 	_done = true;
@@ -819,10 +819,10 @@ void Macro::ResetUIHelpers()
 {
 	_onPreventedActionExecution = false;
 	for (auto c : _conditions) {
-		c->Highlight();
+		c->GetHighlightAndReset();
 	}
 	for (auto a : _actions) {
-		a->Highlight();
+		a->GetHighlightAndReset();
 	}
 }
 

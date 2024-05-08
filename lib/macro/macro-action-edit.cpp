@@ -29,8 +29,7 @@ static inline void populateActionSelection(QComboBox *list)
 MacroActionEdit::MacroActionEdit(QWidget *parent,
 				 std::shared_ptr<MacroAction> *entryData,
 				 const std::string &id)
-	: MacroSegmentEdit(GetGlobalMacroProperties()._highlightActions,
-			   parent),
+	: MacroSegmentEdit(parent),
 	  _actionSelection(new FilterComboBox()),
 	  _enable(new SwitchButton()),
 	  _entryData(entryData)
@@ -40,8 +39,6 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 			 SLOT(ActionSelectionChanged(const QString &)));
 	QWidget::connect(_enable, SIGNAL(checked(bool)), this,
 			 SLOT(ActionEnableChanged(bool)));
-	QWidget::connect(window(), SIGNAL(HighlightActionsChanged(bool)), this,
-			 SLOT(EnableHighlight(bool)));
 	QWidget::connect(&_actionStateTimer, SIGNAL(timeout()), this,
 			 SLOT(UpdateActionState()));
 

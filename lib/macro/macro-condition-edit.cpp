@@ -121,8 +121,7 @@ void DurationModifierEdit::Collapse(bool collapse)
 MacroConditionEdit::MacroConditionEdit(
 	QWidget *parent, std::shared_ptr<MacroCondition> *entryData,
 	const std::string &id, bool root)
-	: MacroSegmentEdit(GetGlobalMacroProperties()._highlightConditions,
-			   parent),
+	: MacroSegmentEdit(parent),
 	  _logicSelection(new QComboBox()),
 	  _conditionSelection(new FilterComboBox()),
 	  _dur(new DurationModifierEdit()),
@@ -139,8 +138,6 @@ MacroConditionEdit::MacroConditionEdit(
 	QWidget::connect(_dur, SIGNAL(ModifierChanged(DurationModifier::Type)),
 			 this,
 			 SLOT(DurationModifierChanged(DurationModifier::Type)));
-	QWidget::connect(window(), SIGNAL(HighlightConditionsChanged(bool)),
-			 this, SLOT(EnableHighlight(bool)));
 
 	populateLogicSelection(_logicSelection, root);
 	populateConditionSelection(_conditionSelection);
