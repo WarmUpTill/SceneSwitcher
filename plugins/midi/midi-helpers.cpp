@@ -22,7 +22,8 @@ static bool setupDeviceObservers()
 	static std::vector<libremidi::observer> observers;
 	for (auto api : libremidi::available_apis()) {
 		libremidi::observer_configuration cbs;
-		cbs.input_added = [=](const libremidi::input_port &p) {
+		cbs.track_virtual = true;
+		cbs.input_added = [](const libremidi::input_port &p) {
 			auto dev = MidiDeviceInstance::GetDevice(p);
 			if (!dev) {
 				return;
@@ -32,7 +33,7 @@ static bool setupDeviceObservers()
 			dev->ClosePort();
 			dev->OpenPort();
 		};
-		cbs.input_removed = [=](const libremidi::input_port &p) {
+		cbs.input_removed = [](const libremidi::input_port &p) {
 			auto dev = MidiDeviceInstance::GetDevice(p);
 			if (!dev) {
 				return;
@@ -40,7 +41,7 @@ static bool setupDeviceObservers()
 			blog(LOG_INFO, "MIDI input removed: %s",
 			     p.port_name.c_str());
 		};
-		cbs.output_added = [=](const libremidi::output_port &p) {
+		cbs.output_added = [](const libremidi::output_port &p) {
 			auto dev = MidiDeviceInstance::GetDevice(p);
 			if (!dev) {
 				return;
@@ -50,7 +51,7 @@ static bool setupDeviceObservers()
 			dev->ClosePort();
 			dev->OpenPort();
 		};
-		cbs.output_removed = [=](const libremidi::output_port &p) {
+		cbs.output_removed = [](const libremidi::output_port &p) {
 			auto dev = MidiDeviceInstance::GetDevice(p);
 			if (!dev) {
 				return;
@@ -328,35 +329,95 @@ advss::MidiDeviceInstance::GetDevice(const libremidi::output_port &p)
 
 static inline QStringList getInputDeviceNames()
 {
-	QStringList devices;
+	static QStringList devices;
+	static std::mutex m;
+	static std::vector<libremidi::observer> observers;
+	static bool setupDone = false;
+
+	if (setupDone) {
+		std::lock_guard<std::mutex> lock(m);
+		return devices;
+	}
+
+	// Set up observers
 	try {
-		libremidi::observer obs;
-		for (const libremidi::input_port &port :
-		     obs.get_input_ports()) {
-			devices << QString::fromStdString(
-				getNameFromPortInformation(port));
+		for (auto api : libremidi::available_apis()) {
+			libremidi::observer_configuration cbs;
+			cbs.track_virtual = true;
+			cbs.input_added = [](const libremidi::input_port &p) {
+				std::lock_guard<std::mutex> lock(m);
+				auto device = QString::fromStdString(
+					getNameFromPortInformation(p));
+				if (devices.indexOf(device) == -1) {
+					devices << device;
+				}
+			};
+			cbs.input_removed = [](const libremidi::input_port &p) {
+				std::lock_guard<std::mutex> lock(m);
+				auto device = QString::fromStdString(
+					getNameFromPortInformation(p));
+				if (int i = devices.indexOf(device) != -1) {
+					devices.removeAt(i);
+				}
+			};
+			observers.emplace_back(
+				cbs,
+				libremidi::observer_configuration_for(api));
 		}
 	} catch (const libremidi::driver_error &error) {
 		blog(LOG_WARNING, "Failed to get midi input devices: %s",
 		     error.what());
 	}
+
+	setupDone = true;
 	return devices;
 }
 
 static inline QStringList getOutputDeviceNames()
 {
-	QStringList devices;
+	static QStringList devices;
+	static std::mutex m;
+	static std::vector<libremidi::observer> observers;
+	static bool setupDone = false;
+
+	if (setupDone) {
+		std::lock_guard<std::mutex> lock(m);
+		return devices;
+	}
+
+	// Set up observers
 	try {
-		libremidi::observer obs;
-		for (const libremidi::output_port &port :
-		     obs.get_output_ports()) {
-			devices << QString::fromStdString(
-				getNameFromPortInformation(port));
+		for (auto api : libremidi::available_apis()) {
+			libremidi::observer_configuration cbs;
+			cbs.track_virtual = true;
+			cbs.output_added = [](const libremidi::output_port &p) {
+				std::lock_guard<std::mutex> lock(m);
+				auto device = QString::fromStdString(
+					getNameFromPortInformation(p));
+				if (devices.indexOf(device) == -1) {
+					devices << device;
+				}
+			};
+			cbs.output_removed =
+				[](const libremidi::output_port &p) {
+					std::lock_guard<std::mutex> lock(m);
+					auto device = QString::fromStdString(
+						getNameFromPortInformation(p));
+					if (int i = devices.indexOf(device) !=
+						    -1) {
+						devices.removeAt(i);
+					}
+				};
+			observers.emplace_back(
+				cbs,
+				libremidi::observer_configuration_for(api));
 		}
 	} catch (const libremidi::driver_error &error) {
 		blog(LOG_WARNING, "Failed to get midi output devices: %s",
 		     error.what());
 	}
+
+	setupDone = true;
 	return devices;
 }
 
@@ -995,6 +1056,28 @@ void MidiMessageSelection::ValueChanged(const NumberVariable<int> &v)
 {
 	_currentSelection._value = v;
 	emit MidiMessageChanged((_currentSelection));
+}
+
+std::vector<std::string> GetDeviceNames()
+{
+	std::vector<std::string> result;
+	const auto names = GetDeviceNamesAsQStringList();
+	for (const auto &name : names) {
+		result.emplace_back(name.toStdString());
+	}
+	return result;
+}
+
+QStringList GetDeviceNamesAsQStringList()
+{
+	QStringList result;
+	for (const auto &input : getInputDeviceNames()) {
+		result << input;
+	}
+	for (const auto &output : getOutputDeviceNames()) {
+		result << output;
+	}
+	return result;
 }
 
 QStringList GetAllNotes()
