@@ -20,46 +20,56 @@ std::map<std::pair<MidiDeviceType, std::string>, MidiDeviceInstance *>
 static bool setupDeviceObservers()
 {
 	static std::vector<libremidi::observer> observers;
-	for (auto api : libremidi::available_apis()) {
-		libremidi::observer_configuration cbs;
-		cbs.input_added = [=](const libremidi::input_port &p) {
-			auto dev = MidiDeviceInstance::GetDevice(p);
-			if (!dev) {
-				return;
-			}
-			blog(LOG_INFO, "MIDI input connected: %s",
-			     p.port_name.c_str());
-			dev->ClosePort();
-			dev->OpenPort();
-		};
-		cbs.input_removed = [=](const libremidi::input_port &p) {
-			auto dev = MidiDeviceInstance::GetDevice(p);
-			if (!dev) {
-				return;
-			}
-			blog(LOG_INFO, "MIDI input removed: %s",
-			     p.port_name.c_str());
-		};
-		cbs.output_added = [=](const libremidi::output_port &p) {
-			auto dev = MidiDeviceInstance::GetDevice(p);
-			if (!dev) {
-				return;
-			}
-			blog(LOG_INFO, "MIDI output connected: %s",
-			     p.port_name.c_str());
-			dev->ClosePort();
-			dev->OpenPort();
-		};
-		cbs.output_removed = [=](const libremidi::output_port &p) {
-			auto dev = MidiDeviceInstance::GetDevice(p);
-			if (!dev) {
-				return;
-			}
-			blog(LOG_INFO, "MIDI output removed: %s",
-			     p.port_name.c_str());
-		};
-		observers.emplace_back(
-			cbs, libremidi::observer_configuration_for(api));
+	try {
+		for (auto api : libremidi::available_apis()) {
+			libremidi::observer_configuration cbs;
+			cbs.input_added = [=](const libremidi::input_port &p) {
+				auto dev = MidiDeviceInstance::GetDevice(p);
+				if (!dev) {
+					return;
+				}
+				blog(LOG_INFO, "MIDI input connected: %s",
+				     p.port_name.c_str());
+				dev->ClosePort();
+				dev->OpenPort();
+			};
+			cbs.input_removed = [=](const libremidi::input_port &p) {
+				auto dev = MidiDeviceInstance::GetDevice(p);
+				if (!dev) {
+					return;
+				}
+				blog(LOG_INFO, "MIDI input removed: %s",
+				     p.port_name.c_str());
+			};
+			cbs.output_added = [=](const libremidi::output_port &p) {
+				auto dev = MidiDeviceInstance::GetDevice(p);
+				if (!dev) {
+					return;
+				}
+				blog(LOG_INFO, "MIDI output connected: %s",
+				     p.port_name.c_str());
+				dev->ClosePort();
+				dev->OpenPort();
+			};
+			cbs.output_removed =
+				[=](const libremidi::output_port &p) {
+					auto dev =
+						MidiDeviceInstance::GetDevice(
+							p);
+					if (!dev) {
+						return;
+					}
+					blog(LOG_INFO,
+					     "MIDI output removed: %s",
+					     p.port_name.c_str());
+				};
+			observers.emplace_back(
+				cbs,
+				libremidi::observer_configuration_for(api));
+		}
+	} catch (const libremidi::driver_error &error) {
+		blog(LOG_WARNING, "Failed to setup midi device observers: %s",
+		     error.what());
 	}
 	return true;
 }
@@ -424,11 +434,16 @@ bool MidiDevice::SendMessge(const MidiMessage &m) const
 static std::optional<libremidi::output_port>
 getOutPortFromName(const std::string &name)
 {
-	libremidi::observer obs;
-	for (const libremidi::output_port &port : obs.get_output_ports()) {
-		if (getNameFromPortInformation(port) == name) {
-			return port;
+	try {
+		libremidi::observer obs;
+		for (const libremidi::output_port &port :
+		     obs.get_output_ports()) {
+			if (getNameFromPortInformation(port) == name) {
+				return port;
+			}
 		}
+	} catch (const libremidi::driver_error &error) {
+		blog(LOG_WARNING, "%s: %s", __func__, error.what());
 	}
 	return {};
 }
@@ -436,11 +451,16 @@ getOutPortFromName(const std::string &name)
 static std::optional<libremidi::input_port>
 getInPortFromName(const std::string &name)
 {
-	libremidi::observer obs;
-	for (const libremidi::input_port &port : obs.get_input_ports()) {
-		if (getNameFromPortInformation(port) == name) {
-			return port;
+	try {
+		libremidi::observer obs;
+		for (const libremidi::input_port &port :
+		     obs.get_input_ports()) {
+			if (getNameFromPortInformation(port) == name) {
+				return port;
+			}
 		}
+	} catch (const libremidi::driver_error &error) {
+		blog(LOG_WARNING, "%s: %s", __func__, error.what());
 	}
 	return {};
 }
