@@ -67,7 +67,21 @@ bool MacroConditionAudio::CheckOutputCondition()
 	OBSSourceAutoRelease source =
 		obs_weak_source_get_source(_audioSource.GetSource());
 
-	double curVolume = _useDb ? _peak : DecibelToPercent(_peak) * 100;
+	// OBS might very rarely not update _peak quickly enough when very low
+	// intervals are configured on the General tab.
+	// In that case _peak might be set to negative infinity still, which
+	// will result in unexpected behavior, so we use the previously valid
+	// peak value instead.
+	float peak;
+	{
+		std::lock_guard<std::mutex> lock(_peakMutex);
+		peak = _peakUpdated ? _peak : _previousPeak;
+		_previousPeak = peak;
+		_peak = -std::numeric_limits<float>::infinity();
+		_peakUpdated = false;
+	}
+
+	double curVolume = _useDb ? peak : DecibelToPercent(peak) * 100;
 
 	switch (_outputCondition) {
 	case OutputCondition::ABOVE:
@@ -92,7 +106,6 @@ bool MacroConditionAudio::CheckOutputCondition()
 	SetTempVarValue("output_volume", std::to_string(curVolume));
 
 	// Reset for next check
-	_peak = -std::numeric_limits<float>::infinity();
 	if (_audioSource.GetType() == SourceSelection::Type::VARIABLE) {
 		ResetVolmeter();
 	}
@@ -329,11 +342,13 @@ void MacroConditionAudio::SetVolumeLevel(void *data, const float *,
 		return;
 	}
 
+	std::lock_guard<std::mutex> lock(c->_peakMutex);
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
 		if (peak[i] > c->_peak) {
 			c->_peak = peak[i];
 		}
 	}
+	c->_peakUpdated = true;
 }
 
 void MacroConditionAudio::ResetVolmeter()
