@@ -73,7 +73,10 @@ private:
 	void SetupTempVars();
 
 	Type _checkType = Type::OUTPUT_VOLUME;
+	std::mutex _peakMutex;
 	float _peak = -std::numeric_limits<float>::infinity();
+	float _previousPeak = -std::numeric_limits<float>::infinity();
+	bool _peakUpdated = false;
 	static bool _registered;
 	static const std::string id;
 };
