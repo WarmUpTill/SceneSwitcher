@@ -175,22 +175,49 @@ void PressKeys(const std::vector<HotkeyType> keys, int duration)
 	}
 }
 
-static HWND getHWNDfromTitle(const std::string &title)
+static bool windowIsValid(HWND window)
 {
-	HWND hwnd = NULL;
+	if (!IsWindowVisible(window)) {
+		return false;
+	}
+
+	DWORD id;
+	GetWindowThreadProcessId(window, &id);
+	if (id == GetCurrentProcessId()) {
+		return false;
+	}
+
+	// Only accept for top level windows and not controls within them
+	if (window != GetAncestor(window, GA_ROOT)) {
+		return false;
+	}
+
+	return true;
+}
+
+static std::vector<HWND> getHWNDfromTitle(const std::string &title)
+{
+	HWND hwnd = nullptr;
+	HWND hPrevWnd = nullptr;
+	std::vector<HWND> hwnds;
 	wchar_t wTitle[512];
 	os_utf8_to_wcs(title.c_str(), 0, wTitle, 512);
-	hwnd = FindWindowEx(NULL, NULL, NULL, wTitle);
-	return hwnd;
+	while ((hwnd = FindWindowEx(NULL, hPrevWnd, NULL, wTitle)) != nullptr) {
+		if (windowIsValid(hwnd)) {
+			hwnds.emplace_back(hwnd);
+		}
+		hPrevWnd = hwnd;
+	}
+	return hwnds;
 }
 
 std::string GetWindowClassByWindowTitle(const std::string &window)
 {
-	HWND hwnd = NULL;
-	hwnd = getHWNDfromTitle(window);
-	if (!hwnd) {
+	auto hwnds = getHWNDfromTitle(window);
+	if (hwnds.empty()) {
 		return "";
 	}
+	auto hwnd = hwnds.at(0);
 	std::wstring wClass;
 	wClass.resize(1024);
 	if (!GetClassNameW(hwnd, &wClass[0], wClass.capacity())) {
@@ -206,41 +233,54 @@ std::string GetWindowClassByWindowTitle(const std::string &window)
 
 void SetFocusWindow(const std::string &title)
 {
-	auto handle = getHWNDfromTitle(title);
-	if (!handle) {
+	auto hwnds = getHWNDfromTitle(title);
+	if (hwnds.empty()) {
 		return;
 	}
-	ShowWindow(handle, SW_RESTORE);
-	SetForegroundWindow(handle);
-	SetFocus(handle);
-	SetActiveWindow(handle);
+
+	for (const auto &handle : hwnds) {
+		const bool isMinimized = IsIconic(handle);
+		ShowWindow(handle, isMinimized ? SW_RESTORE : SW_SHOW);
+		SetForegroundWindow(handle);
+		SetFocus(handle);
+		SetActiveWindow(handle);
+	}
 }
 
 void CloseWindow(const std::string &title)
 {
-	auto handle = getHWNDfromTitle(title);
-	if (!handle) {
+	auto hwnds = getHWNDfromTitle(title);
+	if (hwnds.empty()) {
 		return;
 	}
-	SendMessage(handle, WM_CLOSE, 0, 0);
+
+	for (const auto &handle : hwnds) {
+		SendMessage(handle, WM_CLOSE, 0, 0);
+	}
 }
 
 void MaximizeWindow(const std::string &title)
 {
-	auto handle = getHWNDfromTitle(title);
-	if (!handle) {
+	auto hwnds = getHWNDfromTitle(title);
+	if (hwnds.empty()) {
 		return;
 	}
-	ShowWindow(handle, SW_MAXIMIZE);
+
+	for (const auto &handle : hwnds) {
+		ShowWindow(handle, SW_MAXIMIZE);
+	}
 }
 
 void MinimizeWindow(const std::string &title)
 {
-	auto handle = getHWNDfromTitle(title);
-	if (!handle) {
+	auto hwnds = getHWNDfromTitle(title);
+	if (hwnds.empty()) {
 		return;
 	}
-	ShowWindow(handle, SW_MINIMIZE);
+
+	for (const auto &handle : hwnds) {
+		ShowWindow(handle, SW_MINIMIZE);
+	}
 }
 
 class RawMouseInputFilter;
