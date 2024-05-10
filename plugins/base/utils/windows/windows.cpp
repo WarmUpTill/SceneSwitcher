@@ -181,12 +181,6 @@ static bool windowIsValid(HWND window)
 		return false;
 	}
 
-	DWORD id;
-	GetWindowThreadProcessId(window, &id);
-	if (id == GetCurrentProcessId()) {
-		return false;
-	}
-
 	// Only accept for top level windows and not controls within them
 	if (window != GetAncestor(window, GA_ROOT)) {
 		return false;
