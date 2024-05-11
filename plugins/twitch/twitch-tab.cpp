@@ -29,6 +29,12 @@ static void setTabVisible(QTabWidget *tabWidget, bool visible)
 		obs_module_text("AdvSceneSwitcher.twitchConnectionTab.title"));
 }
 
+static bool twitchTabIsSelected(QTabWidget *tabWidget)
+{
+	return tabWidget->tabText(tabWidget->currentIndex()) ==
+	       obs_module_text("AdvSceneSwitcher.twitchConnectionTab.title");
+}
+
 TwitchConnectionsTable *TwitchConnectionsTable::Create()
 {
 	tabWidget = new TwitchConnectionsTable();
@@ -211,11 +217,11 @@ static void setupTab(QTabWidget *tab)
 				 }
 			 });
 
-	auto timer = new QTimer(tabWidget);
-	timer->setInterval(1000);
-	QWidget::connect(timer, &QTimer::timeout,
-			 []() { updateConnectionStatus(tabWidget->Table()); });
-	timer->start();
+	QWidget::connect(tab, &QTabWidget::currentChanged, [tab]() {
+		if (twitchTabIsSelected(tab)) {
+			updateConnectionStatus(tabWidget->Table());
+		}
+	});
 }
 
 } // namespace advss
