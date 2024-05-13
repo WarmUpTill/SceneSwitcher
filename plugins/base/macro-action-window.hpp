@@ -59,9 +59,12 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 private:
+	void SetWidgetVisibility();
+
 	QComboBox *_actions;
 	QComboBox *_windows;
 	RegexConfigWidget *_regex;
+	QHBoxLayout *_infoLayout;
 
 	std::shared_ptr<MacroActionWindow> _entryData;
 	bool _loading = true;
