@@ -71,12 +71,14 @@ private:
 	bool CheckMonitor();
 	bool CheckBalance();
 	void SetupTempVars();
+	float GetVolumePeak();
 
 	Type _checkType = Type::OUTPUT_VOLUME;
 	std::mutex _peakMutex;
 	float _peak = -std::numeric_limits<float>::infinity();
 	float _previousPeak = -std::numeric_limits<float>::infinity();
 	bool _peakUpdated = false;
+	std::chrono::high_resolution_clock::time_point _lastPeakUpdate = {};
 	static bool _registered;
 	static const std::string id;
 };
