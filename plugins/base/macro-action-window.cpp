@@ -2,6 +2,7 @@
 #include "layout-helpers.hpp"
 #include "platform-funcs.hpp"
 #include "selection-helpers.hpp"
+#include "ui-helpers.hpp"
 
 namespace advss {
 
@@ -163,13 +164,30 @@ MacroActionWindowEdit::MacroActionWindowEdit(
 	: QWidget(parent),
 	  _actions(new QComboBox()),
 	  _windows(new QComboBox()),
-	  _regex(new RegexConfigWidget(this))
+	  _regex(new RegexConfigWidget(this)),
+	  _infoLayout(new QHBoxLayout())
 {
 	populateActionSelection(_actions);
 
 	_windows->setEditable(true);
 	_windows->setMaxVisibleItems(20);
 	PopulateWindowSelection(_windows);
+
+	auto focusLimitation = new QLabel(obs_module_text(
+		"AdvSceneSwitcher.action.window.type.setFocusWindow.limitation"));
+	_infoLayout->addWidget(focusLimitation);
+
+	const QString path = GetThemeTypeName() == "Light"
+				     ? ":/res/images/help.svg"
+				     : ":/res/images/help_light.svg";
+	const QIcon icon(path);
+	const QPixmap pixmap = icon.pixmap(QSize(16, 16));
+	auto focusLimitationDetails = new QLabel();
+	focusLimitationDetails->setPixmap(pixmap);
+	focusLimitationDetails->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.action.window.type.setFocusWindow.limitation.details"));
+	_infoLayout->addWidget(focusLimitationDetails);
+	_infoLayout->addStretch();
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
@@ -179,12 +197,15 @@ MacroActionWindowEdit::MacroActionWindowEdit(
 			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
 			 SLOT(RegexChanged(const RegexConfig &)));
 
-	auto layout = new QHBoxLayout;
+	auto entryLayout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.window.entry"),
-		     layout,
+		     entryLayout,
 		     {{"{{actions}}", _actions},
 		      {"{{windows}}", _windows},
 		      {"{{regex}}", _regex}});
+	auto layout = new QVBoxLayout();
+	layout->addLayout(entryLayout);
+	layout->addLayout(_infoLayout);
 	setLayout(layout);
 
 	_entryData = entryData;
@@ -200,8 +221,7 @@ void MacroActionWindowEdit::UpdateEntryData()
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_windows->setCurrentText(QString::fromStdString(_entryData->_window));
 	_regex->SetRegexConfig(_entryData->_regex);
-	adjustSize();
-	updateGeometry();
+	SetWidgetVisibility();
 }
 
 void MacroActionWindowEdit::WindowChanged(const QString &text)
@@ -228,6 +248,15 @@ void MacroActionWindowEdit::RegexChanged(const RegexConfig &regex)
 	updateGeometry();
 }
 
+void MacroActionWindowEdit::SetWidgetVisibility()
+{
+	SetLayoutVisible(_infoLayout,
+			 _entryData->_action ==
+				 MacroActionWindow::Action::SET_FOCUS_WINDOW);
+	adjustSize();
+	updateGeometry();
+}
+
 void MacroActionWindowEdit::ActionChanged(int value)
 {
 	if (_loading || !_entryData) {
@@ -236,6 +265,7 @@ void MacroActionWindowEdit::ActionChanged(int value)
 
 	auto lock = LockContext();
 	_entryData->_action = static_cast<MacroActionWindow::Action>(value);
+	SetWidgetVisibility();
 }
 
 } // namespace advss
