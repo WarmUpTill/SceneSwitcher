@@ -61,26 +61,48 @@ MacroConditionAudio::~MacroConditionAudio()
 	obs_volmeter_destroy(_volmeter);
 }
 
+float MacroConditionAudio::GetVolumePeak()
+{
+	using namespace std::chrono_literals;
+	using namespace std::chrono;
+	static constexpr std::chrono::milliseconds timeout = 250ms;
+
+	// OBS might rarely not update _peak quickly enough when very low
+	// intervals are configured on the General tab.
+	// In that case _peak might be set to negative infinity still, which
+	// will result in unexpected behavior, so we use the previously valid
+	// peak value instead.
+	//
+	// If no volume update was received within a timeout window, however, it
+	// is assumed, that the source no longer produces any audio output and
+	// thus a peak volume value of negative infinity is used.
+
+	float peak;
+
+	std::lock_guard<std::mutex> lock(_peakMutex);
+	auto msPassedSinceLastUpdate = duration_cast<milliseconds>(
+		high_resolution_clock::now() - _lastPeakUpdate);
+	if (_lastPeakUpdate.time_since_epoch().count() != 0 &&
+	    msPassedSinceLastUpdate > timeout) {
+		peak = -std::numeric_limits<float>::infinity();
+	} else {
+		peak = _peakUpdated ? _peak : _previousPeak;
+	}
+
+	_previousPeak = peak;
+	_peak = -std::numeric_limits<float>::infinity();
+	_peakUpdated = false;
+
+	return peak;
+}
+
 bool MacroConditionAudio::CheckOutputCondition()
 {
 	bool ret = false;
 	OBSSourceAutoRelease source =
 		obs_weak_source_get_source(_audioSource.GetSource());
 
-	// OBS might very rarely not update _peak quickly enough when very low
-	// intervals are configured on the General tab.
-	// In that case _peak might be set to negative infinity still, which
-	// will result in unexpected behavior, so we use the previously valid
-	// peak value instead.
-	float peak;
-	{
-		std::lock_guard<std::mutex> lock(_peakMutex);
-		peak = _peakUpdated ? _peak : _previousPeak;
-		_previousPeak = peak;
-		_peak = -std::numeric_limits<float>::infinity();
-		_peakUpdated = false;
-	}
-
+	float peak = GetVolumePeak();
 	double curVolume = _useDb ? peak : DecibelToPercent(peak) * 100;
 
 	switch (_outputCondition) {
@@ -349,6 +371,7 @@ void MacroConditionAudio::SetVolumeLevel(void *data, const float *,
 		}
 	}
 	c->_peakUpdated = true;
+	c->_lastPeakUpdate = std::chrono::high_resolution_clock::now();
 }
 
 void MacroConditionAudio::ResetVolmeter()
