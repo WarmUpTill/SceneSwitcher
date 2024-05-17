@@ -5,8 +5,8 @@
 
 namespace advss {
 
-EXPORT std::mutex *GetMutex();
-EXPORT std::lock_guard<std::mutex> LockContext();
-EXPORT std::unique_lock<std::mutex> *GetLoopLock();
+[[nodiscard]] EXPORT std::mutex *GetMutex();
+[[nodiscard]] EXPORT std::lock_guard<std::mutex> LockContext();
+[[nodiscard]] EXPORT std::unique_lock<std::mutex> *GetLoopLock();
 
 } // namespace advss
