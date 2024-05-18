@@ -11,19 +11,16 @@
 
 namespace advss {
 
-static bool registerTab();
 static void setupTab(QTabWidget *);
-static bool registerTabDone = registerTab();
 
 static ActionQueueTable *tabWidget = nullptr;
 
-static bool registerTab()
+void RegisterActionQueueTab()
 {
 	AddPluginInitStep([]() {
 		AddSetupTabCallback("actionQueueTab", ActionQueueTable::Create,
 				    setupTab);
 	});
-	return true;
 }
 
 static void setTabVisible(QTabWidget *tabWidget, bool visible)
