@@ -65,6 +65,7 @@ public:
 	EXPORT void Load(obs_data_t *, Macro *, const char *name = "tempVar");
 	EXPORT std::optional<const TempVariable> GetTempVariable(Macro *) const;
 	EXPORT bool operator==(const TempVariableRef &other) const;
+	bool HasValidID() const { return !_id.empty(); }
 
 private:
 	enum class SegmentType { NONE, CONDITION, ACTION, ELSEACTION };

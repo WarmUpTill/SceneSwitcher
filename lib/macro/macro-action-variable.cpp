@@ -6,6 +6,7 @@
 #include "macro.hpp"
 #include "non-modal-dialog.hpp"
 #include "source-helpers.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -630,6 +631,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _scenes(new SceneSelectionWidget(this, true, false, true, true,
 					   true)),
 	  _tempVars(new TempVariableSelection(this)),
+	  _tempVarsHelp(new QLabel()),
 	  _sceneItemIndex(new VariableSpinBox()),
 	  _direction(new QComboBox()),
 	  _stringLength(new VariableSpinBox()),
@@ -656,6 +658,15 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_stringLength->setMaximum(999);
 	populateTypeSelection(_actions);
 	populateDirectionSelection(_direction);
+
+	QString path = GetThemeTypeName() == "Light"
+			       ? ":/res/images/help.svg"
+			       : ":/res/images/help_light.svg";
+	QIcon icon(path);
+	QPixmap pixmap = icon.pixmap(QSize(16, 16));
+	_tempVarsHelp->setPixmap(pixmap);
+	_tempVarsHelp->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.action.variable.type.setToTempvar.help"));
 
 	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),
 			 this, SLOT(VariableChanged(const QString &)));
@@ -742,6 +753,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{envVariableName}}", _envVariable},
 		{"{{scenes}}", _scenes},
 		{"{{tempVars}}", _tempVars},
+		{"{{tempVarsHelp}}", _tempVarsHelp},
 		{"{{sceneItemIndex}}", _sceneItemIndex},
 		{"{{direction}}", _direction},
 		{"{{stringLength}}", _stringLength},
@@ -1202,6 +1214,7 @@ void MacroActionVariableEdit::SelectionChanged(const TempVariableRef &var)
 
 	auto lock = LockContext();
 	_entryData->_tempVar = var;
+	SetWidgetVisibility();
 }
 
 void MacroActionVariableEdit::SceneItemIndexChanged(
@@ -1268,6 +1281,7 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 		{"{{envVariableName}}", _envVariable},
 		{"{{scenes}}", _scenes},
 		{"{{tempVars}}", _tempVars},
+		{"{{tempVarsHelp}}", _tempVarsHelp},
 		{"{{sceneItemIndex}}", _sceneItemIndex},
 		{"{{direction}}", _direction},
 		{"{{stringLength}}", _stringLength},
@@ -1381,6 +1395,10 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 			MacroActionVariable::Type::SCENE_ITEM_NAME);
 	_tempVars->setVisible(_entryData->_type ==
 			      MacroActionVariable::Type::SET_TO_TEMPVAR);
+	_tempVarsHelp->setVisible(
+		_entryData->_type ==
+			MacroActionVariable::Type::SET_TO_TEMPVAR &&
+		!_entryData->_tempVar.HasValidID());
 	_sceneItemIndex->setVisible(_entryData->_type ==
 				    MacroActionVariable::Type::SCENE_ITEM_NAME);
 	_direction->setVisible(
