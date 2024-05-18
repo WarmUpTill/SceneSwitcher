@@ -70,11 +70,11 @@ static QStringList getCellLabels(ActionQueue *queue, bool addName = true)
 	       << QString::fromStdString(obs_module_text(
 			  queue->IsRunning()
 				  ? "AdvSceneSwitcher.actionQueueTab.yes"
-				  : "AdvSceneSwitcher.actionQueueTab.yes"))
+				  : "AdvSceneSwitcher.actionQueueTab.no"))
 	       << QString::fromStdString(obs_module_text(
 			  queue->RunsOnStartup()
 				  ? "AdvSceneSwitcher.actionQueueTab.yes"
-				  : "AdvSceneSwitcher.actionQueueTab.yes"));
+				  : "AdvSceneSwitcher.actionQueueTab.no"));
 	return result;
 }
 
