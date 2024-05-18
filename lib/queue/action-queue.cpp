@@ -11,6 +11,8 @@ std::deque<std::shared_ptr<Item>> &GetActionQueues()
 	return queues;
 }
 
+void RegisterActionQueueTab();
+
 void SetupActionQueues()
 {
 	static bool done = false;
@@ -19,6 +21,7 @@ void SetupActionQueues()
 	}
 	AddSaveStep(SaveActionQueues);
 	AddLoadStep(LoadActionQueues);
+	RegisterActionQueueTab();
 	done = true;
 }
 
