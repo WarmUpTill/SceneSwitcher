@@ -185,6 +185,7 @@ private:
 	VariableLineEdit *_envVariable;
 	SceneSelectionWidget *_scenes;
 	TempVariableSelection *_tempVars;
+	QLabel *_tempVarsHelp;
 	VariableSpinBox *_sceneItemIndex;
 	QComboBox *_direction;
 	VariableSpinBox *_stringLength;
