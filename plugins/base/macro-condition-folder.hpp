@@ -53,6 +53,7 @@ private:
 	std::unique_ptr<QFileSystemWatcher> _watcher;
 	std::string _lastWatchedValue = "";
 
+	std::mutex _mutex;
 	bool _matched = false;
 	QSet<QString> _newFiles;
 	QSet<QString> _changedFiles;

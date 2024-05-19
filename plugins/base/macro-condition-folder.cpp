@@ -37,8 +37,8 @@ MacroConditionFolder::MacroConditionFolder(Macro *m) : MacroCondition(m, true)
 
 bool MacroConditionFolder::CheckCondition()
 {
+	std::lock_guard<std::mutex> lock(_mutex);
 	bool ret = _matched;
-
 	if (_lastWatchedValue != _folder.UnresolvedValue()) {
 		SetupWatcher();
 	}
@@ -73,7 +73,7 @@ bool MacroConditionFolder::Load(obs_data_t *obj)
 	_enableFilter = obs_data_get_bool(obj, "enableFilter");
 	_regex.Load(obj);
 	_regex.SetEnabled(true); // Already controlled via _enableFilter
-	_filter.Save(obj, "filter");
+	_filter.Load(obj, "filter");
 	_condition = static_cast<Condition>(obs_data_get_int(obj, "condition"));
 	SetupWatcher();
 	return true;
@@ -108,13 +108,22 @@ static QSet<QString> getDirsInDir(const QString &path)
 	return result;
 }
 
+static void reduceSetToPatternMatch(QSet<QString> &set,
+				    const RegexConfig &regex,
+				    const std::string &pattern)
+{
+	QSet<QString> copy = set;
+	for (const auto &value : copy) {
+		if (!regex.Matches(value.toStdString(), pattern)) {
+			set.remove(value);
+		}
+	}
+}
+
 void MacroConditionFolder::DirectoryChanged(const QString &path)
 {
+	std::lock_guard<std::mutex> lock(_mutex);
 	if (MacroIsPaused(GetMacro())) {
-		return;
-	}
-
-	if (_enableFilter && !_regex.Matches(path.toStdString(), _filter)) {
 		return;
 	}
 
@@ -133,9 +142,18 @@ void MacroConditionFolder::DirectoryChanged(const QString &path)
 		_removedDirs += _currentDirs - currentDirs;
 	}
 
+	if (_enableFilter) {
+		reduceSetToPatternMatch(_newFiles, _regex, _filter);
+		reduceSetToPatternMatch(_removedFiles, _regex, _filter);
+		reduceSetToPatternMatch(_newDirs, _regex, _filter);
+		reduceSetToPatternMatch(_removedDirs, _regex, _filter);
+	}
+
 	switch (_condition) {
 	case Condition::ANY:
-		_matched = true;
+		_matched = _matched || _newFiles.count() > 0 ||
+			   _removedFiles.count() > 0 || _newDirs.count() > 0 ||
+			   _removedDirs.count() > 0;
 		break;
 	case Condition::FILE_ADD:
 		_matched = _newFiles.count() > 0;
@@ -163,13 +181,20 @@ void MacroConditionFolder::DirectoryChanged(const QString &path)
 
 void MacroConditionFolder::FileChanged(const QString &path)
 {
+	std::lock_guard<std::mutex> lock(_mutex);
 	QFileInfo fileInfo(path);
 	if (!fileInfo.exists()) {
 		return;
 	}
 
-	_changedFiles << fileInfo.fileName();
-	if (_condition == Condition::FILE_CHANGE) {
+	const auto fileName = fileInfo.fileName();
+	if (_enableFilter && !_regex.Matches(fileName.toStdString(), _filter)) {
+		return;
+	}
+
+	_changedFiles << fileName;
+	if (_condition == Condition::FILE_CHANGE ||
+	    _condition == Condition::ANY) {
 		_matched = true;
 	}
 }
