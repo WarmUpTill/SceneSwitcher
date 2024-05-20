@@ -43,7 +43,7 @@ jobs:
           # devscripts and libobs-dev are needed but they were already installed
           # from check_libobs_revision and install_frontend_header sections.
           sudo apt update
-          sudo apt install cmake debhelper libcurl4-openssl-dev libxss-dev libxtst-dev qtbase5-dev libopencv-dev libprocps-dev
+          sudo apt install cmake debhelper libcurl4-openssl-dev libxss-dev libxtst-dev qtbase5-dev libopencv-dev
       - name: build
         run: |
           debuild --no-lintian --no-sign
