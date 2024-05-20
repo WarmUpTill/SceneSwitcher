@@ -271,7 +271,6 @@ jobs:
           if ( $Env:RUNNER_DEBUG -ne $null ) {
             Set-PSDebug -Trace 1
           }
-1
           $BuildSpec = Get-Content -Path buildspec.json -Raw | ConvertFrom-Json
           $ProductName = $BuildSpec.name
           $GitOutput = git describe --tags
