@@ -59,6 +59,8 @@ const static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.padValue"},
 	{MacroActionVariable::Type::TRUNCATE,
 	 "AdvSceneSwitcher.action.variable.type.truncateValue"},
+	{MacroActionVariable::Type::SWAP_VALUES,
+	 "AdvSceneSwitcher.action.variable.type.swapValues"},
 };
 
 static void apppend(Variable &var, const std::string &value)
@@ -393,6 +395,17 @@ bool MacroActionVariable::PerformAction()
 		var->SetValue(
 			truncate(var->Value(), _direction, _stringLength));
 		return true;
+	case Type::SWAP_VALUES: {
+		auto var2 = _variable2.lock();
+		if (!var2) {
+			return true;
+		}
+
+		auto tempValue = var->Value();
+		var->SetValue(var2->Value());
+		var2->SetValue(tempValue);
+		return true;
+	}
 	}
 
 	return true;
@@ -1318,8 +1331,9 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 		AddStretchIfNecessary(_entryLayout);
 	}
 
-	_variables2->setVisible(_entryData->_type ==
-				MacroActionVariable::Type::APPEND_VAR);
+	_variables2->setVisible(
+		_entryData->_type == MacroActionVariable::Type::APPEND_VAR ||
+		_entryData->_type == MacroActionVariable::Type::SWAP_VALUES);
 	_strValue->setVisible(
 		_entryData->_type ==
 			MacroActionVariable::Type::SET_FIXED_VALUE ||

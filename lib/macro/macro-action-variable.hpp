@@ -48,6 +48,7 @@ public:
 		SCENE_ITEM_NAME,
 		PAD,
 		TRUNCATE,
+		SWAP_VALUES,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
