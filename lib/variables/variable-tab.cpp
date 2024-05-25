@@ -154,6 +154,15 @@ static void updateVariableStatus(QTableWidget *table)
 
 		UpdateItemTableRow(table, row,
 				   getCellLabels(variable.get(), false));
+
+		// Special tooltip handling for the "last used" cell
+		const auto lastUsedItem = table->item(row, 4);
+		if (!lastUsedItem) {
+			continue;
+		}
+		const auto lastUsedTooltip =
+			formatLastChangedTooltip(variable.get());
+		lastUsedItem->setToolTip(lastUsedTooltip);
 	}
 }
 
