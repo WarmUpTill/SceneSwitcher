@@ -26,6 +26,7 @@ private slots:
 private:
 	void SetStopped();
 	void SetStarted();
+	void SetStatusStyleSheet(bool stopped) const;
 
 	QPushButton *_button;
 	QHBoxLayout *_buttonLayout;

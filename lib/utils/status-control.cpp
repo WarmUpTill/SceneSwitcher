@@ -8,12 +8,57 @@
 #include <obs-frontend-api.h>
 #include <QAction>
 #include <QMainWindow>
+#include <QPalette>
 #include <QToolBar>
 
 namespace advss {
 
 void OpenSettingsWindow();
 StatusDock *dock = nullptr;
+
+static QString colorToString(const QColor &color)
+{
+	return QString("rgba(") + QString::number(color.red()) + "," +
+	       QString::number(color.green()) + "," +
+	       QString::number(color.blue()) + "," +
+	       QString::number(color.alpha()) + ")";
+}
+
+static QString getDefaultBackgroundColorString()
+{
+	static QString defaultColorString;
+	static bool cacheReady = false;
+
+	if (cacheReady) {
+		return defaultColorString;
+	}
+
+	QWidget tempWidget;
+	const auto defaultColor =
+		tempWidget.palette().brush(QPalette::Window).color();
+	defaultColorString = colorToString(defaultColor);
+
+	cacheReady = true;
+	return defaultColorString;
+}
+
+static QString getDefaultTextColorString()
+{
+	static QString defaultColorString;
+	static bool cacheReady = false;
+
+	if (cacheReady) {
+		return defaultColorString;
+	}
+
+	QLabel tempWidget;
+	const auto defaultColor =
+		tempWidget.palette().brush(QPalette::Text).color();
+	defaultColorString = colorToString(defaultColor);
+
+	cacheReady = true;
+	return defaultColorString;
+}
 
 StatusControl::StatusControl(QWidget *parent, bool noLayout)
 	: QWidget(parent),
@@ -28,30 +73,23 @@ StatusControl::StatusControl(QWidget *parent, bool noLayout)
 	_statusPrefix->setWordWrap(true);
 	_statusPrefix->setSizePolicy(QSizePolicy::Expanding,
 				     QSizePolicy::Expanding);
-	_status->setStyleSheet("QLabel{ \
-		border-style: outset; \
-		border-width: 2px; \
-		border-radius: 7px; \
-		border-color: rgb(0,0,0,0) \
-		}");
-	_status->setSizePolicy(QSizePolicy::Maximum,
-			       QSizePolicy::MinimumExpanding);
-
+	SetStatusStyleSheet(false);
 	QWidget::connect(_button, SIGNAL(clicked()), this,
 			 SLOT(ButtonClicked()));
 
 	if (!noLayout) {
-		QHBoxLayout *statusLayout = new QHBoxLayout();
-		statusLayout->addWidget(_statusPrefix);
-		statusLayout->addStretch();
-		statusLayout->addWidget(_status);
-		statusLayout->setStretch(0, 10);
 		_buttonLayout->setContentsMargins(0, 0, 0, 0);
 		_buttonLayout->addWidget(_button);
 		QVBoxLayout *layout = new QVBoxLayout();
-		layout->addLayout(statusLayout);
+		_statusPrefix->setAlignment(Qt::AlignCenter);
+		_status->setAlignment(Qt::AlignCenter);
+		layout->addWidget(_statusPrefix);
+		layout->addWidget(_status);
 		layout->addLayout(_buttonLayout);
 		setLayout(layout);
+	} else {
+		_status->setSizePolicy(QSizePolicy::Maximum,
+				       QSizePolicy::MinimumExpanding);
 	}
 
 	if (PluginIsRunning()) {
@@ -95,6 +133,8 @@ void StatusControl::SetStarted()
 		obs_module_text("AdvSceneSwitcher.generalTab.status.stop"));
 	_status->setText(obs_module_text("AdvSceneSwitcher.status.active"));
 	_status->disconnect(_pulse);
+	SetStatusStyleSheet(false);
+
 	_setToStopped = false;
 }
 
@@ -104,10 +144,28 @@ void StatusControl::SetStopped()
 		obs_module_text("AdvSceneSwitcher.generalTab.status.start"));
 	_status->setText(obs_module_text("AdvSceneSwitcher.status.inactive"));
 	if (HighlightUIElementsEnabled()) {
+		SetStatusStyleSheet(true);
 		_pulse = PulseWidget(_status, QColor(Qt::red),
 				     QColor(0, 0, 0, 0));
 	}
 	_setToStopped = true;
+}
+
+void StatusControl::SetStatusStyleSheet(bool stopped) const
+{
+	auto style = QString("QLabel{ "
+			     "background-color: ");
+	if (stopped) {
+		style += getDefaultBackgroundColorString() + "; ";
+	} else {
+		style += "transparent; ";
+	}
+	style += "border-style: outset; "
+		 "border-width: 2px; "
+		 "border-radius: 7px; "
+		 "border-color: " +
+		 getDefaultTextColorString() + "; }";
+	_status->setStyleSheet(style);
 }
 
 StatusDock::StatusDock(QWidget *parent) : OBSDock(parent)
