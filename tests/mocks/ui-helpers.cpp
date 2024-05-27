@@ -33,4 +33,6 @@ std::string GetThemeTypeName()
 	return "Dark";
 }
 
+void QeueUITask(void (*task)(void *param), void *) {}
+
 } // namespace advss

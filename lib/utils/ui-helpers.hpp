@@ -29,4 +29,6 @@ EXPORT void DisplayTrayMessage(const QString &title, const QString &msg,
 
 EXPORT std::string GetThemeTypeName();
 
+void QeueUITask(void (*task)(void *param), void *param);
+
 } // namespace advss
