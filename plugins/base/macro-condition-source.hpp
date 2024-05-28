@@ -34,11 +34,12 @@ public:
 		HEIGHT,
 		WIDTH,
 	};
+	void SetCondition(Condition);
+	Condition GetCondition() const { return _condition; }
 
 	enum class SizeComparision { LESS, EQUAL, MORE };
 
 	SourceSelection _source;
-	Condition _condition = Condition::ACTIVE;
 	StringVariable _settings = "";
 	SourceSetting _setting;
 	RegexConfig _regex;
@@ -46,6 +47,9 @@ public:
 	SizeComparision _comparision = SizeComparision::EQUAL;
 
 private:
+	void SetupTempVars();
+
+	Condition _condition = Condition::ACTIVE;
 	std::string _currentSettings;
 	std::string _currentSettingsValue;
 
