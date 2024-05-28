@@ -31,13 +31,19 @@ public:
 		SETTINGS_CHANGED,
 		INDIVIDUAL_SETTING_MATCH,
 		INDIVIDUAL_SETTING_CHANGED,
+		HEIGHT,
+		WIDTH,
 	};
+
+	enum class SizeComparision { LESS, EQUAL, MORE };
 
 	SourceSelection _source;
 	Condition _condition = Condition::ACTIVE;
 	StringVariable _settings = "";
 	SourceSetting _setting;
 	RegexConfig _regex;
+	IntVariable _size;
+	SizeComparision _comparision = SizeComparision::EQUAL;
 
 private:
 	std::string _currentSettings;
@@ -71,6 +77,8 @@ private slots:
 	void RegexChanged(const RegexConfig &);
 	void SettingSelectionChanged(const SourceSetting &);
 	void RefreshVariableSourceSelectionValue();
+	void SizeChanged(const NumberVariable<int> &value);
+	void CompareMethodChanged(int);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -82,6 +90,8 @@ protected:
 	RegexConfigWidget *_regex;
 	SourceSettingSelection *_settingSelection;
 	QPushButton *_refreshSettingSelection;
+	VariableSpinBox *_size;
+	QComboBox *_sizeCompareMethods;
 
 	std::shared_ptr<MacroConditionSource> _entryData;
 

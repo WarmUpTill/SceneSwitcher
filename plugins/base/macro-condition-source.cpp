@@ -14,8 +14,8 @@ bool MacroConditionSource::_registered = MacroConditionFactory::Register(
 	{MacroConditionSource::Create, MacroConditionSourceEdit::Create,
 	 "AdvSceneSwitcher.condition.source"});
 
-const static std::map<MacroConditionSource::Condition, std::string>
-	sourceCnditionTypes = {
+static const std::map<MacroConditionSource::Condition, std::string>
+	sourceConditionTypes = {
 		{MacroConditionSource::Condition::ACTIVE,
 		 "AdvSceneSwitcher.condition.source.type.active"},
 		{MacroConditionSource::Condition::SHOWING,
@@ -28,7 +28,37 @@ const static std::map<MacroConditionSource::Condition, std::string>
 		 "AdvSceneSwitcher.condition.source.type.individualSettingMatches"},
 		{MacroConditionSource::Condition::INDIVIDUAL_SETTING_CHANGED,
 		 "AdvSceneSwitcher.condition.source.type.individualSettingChanged"},
+		{MacroConditionSource::Condition::HEIGHT,
+		 "AdvSceneSwitcher.condition.source.type.height"},
+		{MacroConditionSource::Condition::WIDTH,
+		 "AdvSceneSwitcher.condition.source.type.width"},
 };
+
+static const std::map<MacroConditionSource::SizeComparision, std::string>
+	compareMethods = {
+		{MacroConditionSource::SizeComparision::LESS,
+		 "AdvSceneSwitcher.condition.source.sizeCompare.less"},
+		{MacroConditionSource::SizeComparision::EQUAL,
+		 "AdvSceneSwitcher.condition.source.sizeCompare.equal"},
+		{MacroConditionSource::SizeComparision::MORE,
+		 "AdvSceneSwitcher.condition.source.sizeCompare.more"},
+};
+
+static bool compareSourceSize(MacroConditionSource::SizeComparision method,
+			      int sourceValue, int compareValue)
+{
+	switch (method) {
+	case MacroConditionSource::SizeComparision::LESS:
+		return sourceValue < compareValue;
+	case MacroConditionSource::SizeComparision::EQUAL:
+		return sourceValue == compareValue;
+	case MacroConditionSource::SizeComparision::MORE:
+		return sourceValue > compareValue;
+	default:
+		break;
+	}
+	return false;
+}
 
 bool MacroConditionSource::CheckCondition()
 {
@@ -84,6 +114,14 @@ bool MacroConditionSource::CheckCondition()
 		SetVariableValue(*value);
 		break;
 	}
+	case Condition::HEIGHT:
+		ret = compareSourceSize(_comparision, obs_source_get_height(s),
+					_size);
+		break;
+	case Condition::WIDTH:
+		ret = compareSourceSize(_comparision, obs_source_get_width(s),
+					_size);
+		break;
 	default:
 		break;
 	}
@@ -103,6 +141,9 @@ bool MacroConditionSource::Save(obs_data_t *obj) const
 	_settings.Save(obj, "settings");
 	_regex.Save(obj);
 	_setting.Save(obj);
+	_size.Save(obj, "size");
+	obs_data_set_int(obj, "sizeComparisionMethod",
+			 static_cast<int>(_comparision));
 	return true;
 }
 
@@ -119,6 +160,9 @@ bool MacroConditionSource::Load(obs_data_t *obj)
 			obs_data_get_bool(obj, "regex"));
 	}
 	_setting.Load(obj);
+	_size.Load(obj, "size");
+	_comparision = static_cast<SizeComparision>(
+		obs_data_get_int(obj, "sizeComparisionMethod"));
 	return true;
 }
 
@@ -127,9 +171,11 @@ std::string MacroConditionSource::GetShortDesc() const
 	return _source.ToString();
 }
 
-static inline void populateConditionSelection(QComboBox *list)
+template<class T>
+static inline void populateSelection(QComboBox *list,
+				     const std::map<T, std::string> &map)
 {
-	for (const auto &[_, name] : sourceCnditionTypes) {
+	for (const auto &[_, name] : map) {
 		list->addItem(obs_module_text(name.c_str()));
 	}
 }
@@ -144,10 +190,13 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 	  _settings(new VariableTextEdit(this)),
 	  _regex(new RegexConfigWidget(parent)),
 	  _settingSelection(new SourceSettingSelection()),
-	  _refreshSettingSelection(new QPushButton(
-		  obs_module_text("AdvSceneSwitcher.condition.source.refresh")))
+	  _refreshSettingSelection(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.condition.source.refresh"))),
+	  _size(new VariableSpinBox(this)),
+	  _sizeCompareMethods(new QComboBox())
 {
-	populateConditionSelection(_conditions);
+	populateSelection(_conditions, sourceConditionTypes);
+	populateSelection(_sizeCompareMethods, compareMethods);
 	auto sources = GetSourceNames();
 	sources.sort();
 	auto scenes = GetSceneNames();
@@ -155,6 +204,7 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 	_sources->SetSourceNameList(sources + scenes);
 	_refreshSettingSelection->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.source.refreshTooltip"));
+	_size->setMaximum(999999);
 
 	QWidget::connect(_sources,
 			 SIGNAL(SourceChanged(const SourceSelection &)), this,
@@ -173,31 +223,36 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 			 SLOT(SettingSelectionChanged(const SourceSetting &)));
 	QWidget::connect(_refreshSettingSelection, SIGNAL(clicked()), this,
 			 SLOT(RefreshVariableSourceSelectionValue()));
-
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{sources}}", _sources},
-		{"{{conditions}}", _conditions},
-		{"{{settings}}", _settings},
-		{"{{getSettings}}", _getSettings},
-		{"{{regex}}", _regex},
-		{"{{settingSelection}}", _settingSelection},
-		{"{{refresh}}", _refreshSettingSelection}};
+	QWidget::connect(
+		_size,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(SizeChanged(const NumberVariable<int> &)));
+	QWidget::connect(_sizeCompareMethods, SIGNAL(currentIndexChanged(int)),
+			 this, SLOT(CompareMethodChanged(int)));
 
 	auto line1Layout = new QHBoxLayout;
 	line1Layout->setContentsMargins(0, 0, 0, 0);
 	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.source.entry.line1"),
-		     line1Layout, widgetPlaceholders);
+		     line1Layout,
+		     {{"{{sources}}", _sources},
+		      {"{{conditions}}", _conditions},
+		      {"{{settingSelection}}", _settingSelection},
+		      {"{{refresh}}", _refreshSettingSelection},
+		      {"{{size}}", _size},
+		      {"{{sizeCompareMethods}}", _sizeCompareMethods}});
 	auto line2Layout = new QHBoxLayout;
 	line2Layout->setContentsMargins(0, 0, 0, 0);
 	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.source.entry.line2"),
-		     line2Layout, widgetPlaceholders, false);
+		     line2Layout, {{"{{settings}}", _settings}}, false);
 	auto line3Layout = new QHBoxLayout;
 	line3Layout->setContentsMargins(0, 0, 0, 0);
 	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.condition.source.entry.line3"),
-		     line3Layout, widgetPlaceholders);
+		     line3Layout,
+		     {{"{{getSettings}}", _getSettings}, {"{{regex}}", _regex}},
+		     true);
 	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(line1Layout);
 	mainLayout->addLayout(line2Layout);
@@ -303,6 +358,27 @@ void MacroConditionSourceEdit::RefreshVariableSourceSelectionValue()
 	_settingSelection->SetSource(_entryData->_source.GetSource());
 }
 
+void MacroConditionSourceEdit::SizeChanged(const NumberVariable<int> &value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_size = value;
+}
+
+void MacroConditionSourceEdit::CompareMethodChanged(int index)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_comparision =
+		static_cast<MacroConditionSource::SizeComparision>(index);
+}
+
 void MacroConditionSourceEdit::SetWidgetVisibility()
 {
 	const bool settingsMatch =
@@ -334,6 +410,14 @@ void MacroConditionSourceEdit::SetWidgetVisibility()
 		_entryData->_source.GetType() ==
 			SourceSelection::Type::VARIABLE);
 
+	const bool isSizeCheck =
+		_entryData->_condition ==
+			MacroConditionSource::Condition::WIDTH ||
+		_entryData->_condition ==
+			MacroConditionSource::Condition::HEIGHT;
+	_size->setVisible(isSizeCheck);
+	_sizeCompareMethods->setVisible(isSizeCheck);
+
 	adjustSize();
 	updateGeometry();
 }
@@ -350,6 +434,9 @@ void MacroConditionSourceEdit::UpdateEntryData()
 	_regex->SetRegexConfig(_entryData->_regex);
 	_settingSelection->SetSource(_entryData->_source.GetSource());
 	_settingSelection->SetSetting(_entryData->_setting);
+	_size->SetValue(_entryData->_size);
+	_sizeCompareMethods->setCurrentIndex(
+		static_cast<int>(_entryData->_comparision));
 	SetWidgetVisibility();
 }
 
