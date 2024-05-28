@@ -161,7 +161,7 @@ void SetTabOrder(QTabWidget *tabWidget)
 
 void SetCurrentTab(QTabWidget *tabWidget)
 {
-	if (lastOpenedTab >= 0) {
+	if (lastOpenedTab >= 0 && tabWidget->isTabVisible(lastOpenedTab)) {
 		tabWidget->setCurrentIndex(lastOpenedTab);
 	}
 }
