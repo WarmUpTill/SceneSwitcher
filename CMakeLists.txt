@@ -120,6 +120,8 @@ target_sources(
           lib/macro/macro-export-import-dialog.hpp
           lib/macro/macro-helpers.cpp
           lib/macro/macro-helpers.hpp
+          lib/macro/macro-input.cpp
+          lib/macro/macro-input.hpp
           lib/macro/macro-list.cpp
           lib/macro/macro-list.hpp
           lib/macro/macro-properties.cpp
