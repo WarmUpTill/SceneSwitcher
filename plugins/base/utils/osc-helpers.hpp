@@ -1,4 +1,5 @@
 #pragma once
+#include "list-editor.hpp"
 #include "variable-string.hpp"
 #include "variable-number.hpp"
 #include "variable-line-edit.hpp"
@@ -6,7 +7,6 @@
 
 #include <variant>
 #include <unordered_map>
-#include <QListWidget>
 
 namespace advss {
 
@@ -137,7 +137,7 @@ private:
 	VariableLineEdit *_binaryText;
 };
 
-class OSCMessageEdit : public QWidget {
+class OSCMessageEdit final : public ListEditor {
 	Q_OBJECT
 public:
 	OSCMessageEdit(QWidget *);
@@ -157,15 +157,9 @@ signals:
 
 private:
 	void InsertElement(const OSCMessageElement &);
-	void SetWidgetSize();
 	int GetIndexOfSignal();
 
 	VariableLineEdit *_address;
-	QListWidget *_elements;
-	QPushButton *_add;
-	QPushButton *_remove;
-	QPushButton *_up;
-	QPushButton *_down;
 
 	OSCMessage _currentSelection;
 };
