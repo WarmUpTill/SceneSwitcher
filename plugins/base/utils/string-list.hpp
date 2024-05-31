@@ -1,12 +1,9 @@
 #pragma once
 #include "variable-string.hpp"
+#include "list-editor.hpp"
 #include "obs-module-helper.hpp"
 
 #include <obs-data.h>
-
-#include <QPushButton>
-#include <QListWidget>
-#include <QStringList>
 
 namespace advss {
 
@@ -21,7 +18,7 @@ public:
 	friend class StringListEdit;
 };
 
-class StringListEdit : public QWidget {
+class StringListEdit final : public ListEditor {
 	Q_OBJECT
 
 public:
@@ -30,9 +27,6 @@ public:
 		       int maxStringSize = 170, bool allowEmtpy = false);
 	void SetStringList(const StringList &);
 	void SetMaxStringSize(int);
-
-protected:
-	void showEvent(QShowEvent *);
 
 private slots:
 	void Add();
@@ -44,15 +38,7 @@ signals:
 	void StringListChanged(const StringList &);
 
 private:
-	void SetListSize();
-
 	StringList _stringList;
-
-	QListWidget *_list;
-	QPushButton *_add;
-	QPushButton *_remove;
-	QPushButton *_up;
-	QPushButton *_down;
 
 	QString _addString;
 	QString _addStringDescription;

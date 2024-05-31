@@ -529,68 +529,26 @@ void OSCMessageElementEdit::TypeChanged(int idx)
 }
 
 OSCMessageEdit::OSCMessageEdit(QWidget *parent)
-	: QWidget(parent),
-	  _address(new VariableLineEdit(this)),
-	  _elements(new QListWidget()),
-	  _add(new QPushButton()),
-	  _remove(new QPushButton()),
-	  _up(new QPushButton()),
-	  _down(new QPushButton())
+	: ListEditor(parent),
+	  _address(new VariableLineEdit(this))
 {
-	_elements->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-	_elements->setAutoScroll(false);
-
-	_add->setMaximumWidth(22);
-	_add->setProperty("themeID",
-			  QVariant(QString::fromUtf8("addIconSmall")));
-	_add->setFlat(true);
-	_remove->setMaximumWidth(22);
-	_remove->setProperty("themeID",
-			     QVariant(QString::fromUtf8("removeIconSmall")));
-	_remove->setFlat(true);
-	_up->setMaximumWidth(22);
-	_up->setProperty("themeID",
-			 QVariant(QString::fromUtf8("upArrowIconSmall")));
-	_up->setFlat(true);
-	_down->setMaximumWidth(22);
-	_down->setProperty("themeID",
-			   QVariant(QString::fromUtf8("downArrowIconSmall")));
-	_down->setFlat(true);
+	_list->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	_list->setAutoScroll(false);
 
 	QWidget::connect(_address, SIGNAL(editingFinished()), this,
 			 SLOT(AddressChanged()));
-	QWidget::connect(_add, SIGNAL(clicked()), this, SLOT(Add()));
-	QWidget::connect(_remove, SIGNAL(clicked()), this, SLOT(Remove()));
-	QWidget::connect(_up, SIGNAL(clicked()), this, SLOT(Up()));
-	QWidget::connect(_down, SIGNAL(clicked()), this, SLOT(Down()));
 
-	auto controlsLayout = new QHBoxLayout();
-	controlsLayout->addWidget(_add);
-	controlsLayout->addWidget(_remove);
-	QFrame *line = new QFrame();
-	line->setFrameShape(QFrame::VLine);
-	line->setFrameShadow(QFrame::Sunken);
-	controlsLayout->addWidget(line);
-	controlsLayout->addWidget(_up);
-	controlsLayout->addWidget(_down);
-	controlsLayout->addStretch();
-
-	auto layout = new QVBoxLayout;
-	layout->setContentsMargins(0, 0, 0, 0);
-	layout->addWidget(_address);
-	layout->addWidget(_elements);
-	layout->addLayout(controlsLayout);
-	setLayout(layout);
+	_mainLayout->insertWidget(0, _address);
 }
 
 void OSCMessageEdit::InsertElement(const OSCMessageElement &element)
 {
-	auto item = new QListWidgetItem(_elements);
-	_elements->addItem(item);
+	auto item = new QListWidgetItem(_list);
+	_list->addItem(item);
 	auto elementEdit = new OSCMessageElementEdit(this);
 	elementEdit->SetMessageElement(element);
 	item->setSizeHint(elementEdit->minimumSizeHint());
-	_elements->setItemWidget(item, elementEdit);
+	_list->setItemWidget(item, elementEdit);
 	QWidget::connect(elementEdit,
 			 SIGNAL(ElementValueChanged(const OSCMessageElement &)),
 			 this,
@@ -607,7 +565,7 @@ void OSCMessageEdit::SetMessage(const OSCMessage &message)
 		InsertElement(element);
 	}
 	_currentSelection = message;
-	SetWidgetSize();
+	UpdateListSize();
 }
 
 void OSCMessageEdit::AddressChanged()
@@ -621,13 +579,13 @@ void OSCMessageEdit::Add()
 	OSCMessageElement element;
 	InsertElement(element);
 	emit MessageChanged(_currentSelection);
-	SetWidgetSize();
+	UpdateListSize();
 }
 
 void OSCMessageEdit::Remove()
 {
-	auto item = _elements->currentItem();
-	int idx = _elements->currentRow();
+	auto item = _list->currentItem();
+	int idx = _list->currentRow();
 	if (!item || idx == -1) {
 		return;
 	}
@@ -635,7 +593,7 @@ void OSCMessageEdit::Remove()
 	_currentSelection._elements.erase(_currentSelection._elements.begin() +
 					  idx);
 	emit MessageChanged(_currentSelection);
-	SetWidgetSize();
+	UpdateListSize();
 }
 
 static bool moveUp(QListWidget *list)
@@ -658,8 +616,8 @@ static bool moveUp(QListWidget *list)
 
 void OSCMessageEdit::Up()
 {
-	int idx = _elements->currentRow();
-	if (!moveUp(_elements)) {
+	int idx = _list->currentRow();
+	if (!moveUp(_list)) {
 		return;
 	}
 
@@ -667,7 +625,7 @@ void OSCMessageEdit::Up()
 		  _currentSelection._elements.begin() + idx - 1);
 
 	emit MessageChanged(_currentSelection);
-	SetWidgetSize();
+	UpdateListSize();
 }
 
 static bool moveDown(QListWidget *list)
@@ -690,8 +648,8 @@ static bool moveDown(QListWidget *list)
 
 void OSCMessageEdit::Down()
 {
-	int idx = _elements->currentRow();
-	if (!moveDown(_elements)) {
+	int idx = _list->currentRow();
+	if (!moveDown(_list)) {
 		return;
 	}
 
@@ -699,7 +657,7 @@ void OSCMessageEdit::Down()
 		  _currentSelection._elements.begin() + idx + 1);
 
 	emit MessageChanged(_currentSelection);
-	SetWidgetSize();
+	UpdateListSize();
 }
 
 static QListWidgetItem *getItemFromWidget(QListWidget *list, QWidget *widget)
@@ -727,7 +685,7 @@ int OSCMessageEdit::GetIndexOfSignal()
 	if (!widget) {
 		return -1;
 	}
-	return _elements->row(getItemFromWidget(_elements, widget));
+	return _list->row(getItemFromWidget(_list, widget));
 }
 
 void OSCMessageEdit::ElementFocussed()
@@ -736,7 +694,7 @@ void OSCMessageEdit::ElementFocussed()
 	if (idx == -1) {
 		return;
 	}
-	_elements->setCurrentRow(idx);
+	_list->setCurrentRow(idx);
 }
 
 void OSCMessageEdit::ElementValueChanged(const OSCMessageElement &element)
@@ -747,15 +705,8 @@ void OSCMessageEdit::ElementValueChanged(const OSCMessageElement &element)
 	}
 
 	_currentSelection._elements.at(idx) = element;
-	_elements->setCurrentRow(idx);
+	_list->setCurrentRow(idx);
 	emit MessageChanged(_currentSelection);
-}
-
-void OSCMessageEdit::SetWidgetSize()
-{
-	SetHeightToContentHeight(_elements);
-	adjustSize();
-	updateGeometry();
 }
 
 } // namespace advss

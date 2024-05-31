@@ -170,6 +170,8 @@ target_sources(
           lib/utils/item-selection-helpers.hpp
           lib/utils/layout-helpers.cpp
           lib/utils/layout-helpers.hpp
+          lib/utils/list-editor.cpp
+          lib/utils/list-editor.hpp
           lib/utils/log-helper.cpp
           lib/utils/log-helper.hpp
           lib/utils/math-helpers.cpp
