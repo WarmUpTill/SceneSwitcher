@@ -35,4 +35,9 @@ std::string GetThemeTypeName()
 
 void QeueUITask(void (*task)(void *param), void *) {}
 
+QWidget *GetSettingsWindow()
+{
+	return nullptr;
+}
+
 } // namespace advss

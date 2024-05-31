@@ -268,6 +268,53 @@ void VariableSelection::SetVariable(const std::weak_ptr<Variable> &variable_)
 	}
 }
 
+VariableSelectionDialog::VariableSelectionDialog(QWidget *parent)
+	: QDialog(parent),
+	  _variableSelection(new VariableSelection(this))
+{
+	setModal(true);
+	setWindowModality(Qt::WindowModality::ApplicationModal);
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+	setMinimumWidth(350);
+	setMinimumHeight(70);
+
+	auto buttonbox = new QDialogButtonBox(QDialogButtonBox::Ok |
+					      QDialogButtonBox::Cancel);
+
+	buttonbox->setCenterButtons(true);
+	connect(buttonbox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+	connect(buttonbox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+	auto selectionLayout = new QHBoxLayout();
+	selectionLayout->addWidget(new QLabel(
+		obs_module_text("AdvSceneSwitcher.variable.selectionDialog")));
+	selectionLayout->addWidget(_variableSelection);
+	selectionLayout->addStretch();
+	auto layout = new QVBoxLayout();
+	layout->addLayout(selectionLayout);
+	layout->addWidget(buttonbox);
+	setLayout(layout);
+}
+
+QWidget *GetSettingsWindow();
+
+bool VariableSelectionDialog::AskForVariable(QWidget *parent,
+					     std::string &varName)
+{
+	VariableSelectionDialog dialog(GetSettingsWindow());
+	dialog.setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
+
+	if (dialog.exec() != DialogCode::Accepted) {
+		return false;
+	}
+	auto item = dialog._variableSelection->GetCurrentItem();
+	if (!item) {
+		return false;
+	}
+	varName = item->Name();
+	return true;
+}
+
 VariableSignalManager::VariableSignalManager(QObject *parent) : QObject(parent)
 {
 }
