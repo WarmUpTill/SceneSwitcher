@@ -56,6 +56,7 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 		  "AdvSceneSwitcher.macroTab.currentSkipExecutionOnStartup"))),
 	  _currentStopActionsIfNotDone(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentStopActionsIfNotDone"))),
+	  _currentInputs(new MacroInputSelection()),
 	  _currentMacroRegisterDock(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentRegisterDock"))),
 	  _currentMacroDockAddRunButton(new QCheckBox(obs_module_text(
@@ -100,6 +101,16 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	generalLayout->addWidget(_currentSkipOnStartup);
 	generalLayout->addWidget(_currentStopActionsIfNotDone);
 	generalOptions->setLayout(generalLayout);
+
+	auto inputOptions = new QGroupBox(
+		obs_module_text("AdvSceneSwitcher.macroTab.inputSettings"));
+	auto description = new QLabel(obs_module_text(
+		"AdvSceneSwitcher.macroTab.inputSettings.description"));
+	description->setWordWrap(true);
+	auto inputLayout = new QVBoxLayout();
+	inputLayout->addWidget(description);
+	inputLayout->addWidget(_currentInputs);
+	inputOptions->setLayout(inputLayout);
 
 	int row = 0;
 	_dockLayout->addWidget(_currentMacroRegisterDock, row, 1, 1, 2);
@@ -174,6 +185,7 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	layout->addWidget(highlightOptions);
 	layout->addWidget(hotkeyOptions);
 	layout->addWidget(generalOptions);
+	layout->addWidget(inputOptions);
 	layout->addWidget(_dockOptions);
 	layout->setContentsMargins(0, 0, 0, 0);
 	scrollArea->setWidget(contentWidget);
@@ -191,6 +203,7 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	if (!macro || macro->IsGroup()) {
 		hotkeyOptions->hide();
 		generalOptions->hide();
+		inputOptions->hide();
 		_dockOptions->hide();
 		return;
 	}
@@ -198,6 +211,7 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	_currentMacroRegisterHotkeys->setChecked(macro->PauseHotkeysEnabled());
 	_currentSkipOnStartup->setChecked(macro->SkipExecOnStart());
 	_currentStopActionsIfNotDone->setChecked(macro->StopActionsIfNotDone());
+	_currentInputs->SetInputs(macro->GetInputVariables());
 	const bool dockEnabled = macro->DockEnabled();
 	_currentMacroRegisterDock->setChecked(dockEnabled);
 	_currentMacroDockAddRunButton->setChecked(macro->DockHasRunButton());
@@ -337,7 +351,7 @@ bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
 		dialog._conditionsTrueStatusText->text().toStdString());
 	macro->SetConditionsFalseStatusText(
 		dialog._conditionsFalseStatusText->text().toStdString());
-
+	macro->SetInputVariables(dialog._currentInputs->GetInputs());
 	return true;
 }
 

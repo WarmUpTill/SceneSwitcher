@@ -348,6 +348,11 @@ void Macro::SetMatchOnChange(bool onChange)
 	_performActionsOnChange = onChange;
 }
 
+void Macro::SetStopActionsIfNotDone(bool stopActionsIfNotDone)
+{
+	_stopActionsIfNotDone = stopActionsIfNotDone;
+}
+
 void Macro::SetPaused(bool pause)
 {
 	if (_paused && !pause) {
@@ -380,6 +385,16 @@ void Macro::Stop()
 	if (_backgroundThread.joinable()) {
 		_backgroundThread.join();
 	}
+}
+
+MacroInputVariables Macro::GetInputVariables() const
+{
+	return _inputVariables;
+}
+
+void Macro::SetInputVariables(const MacroInputVariables &inputVariables)
+{
+	_inputVariables = inputVariables;
 }
 
 std::vector<TempVariable> Macro::GetTempVars(MacroSegment *filter) const
@@ -610,6 +625,8 @@ bool Macro::Save(obs_data_t *obj) const
 	}
 	obs_data_set_array(obj, "elseActions", elseActions);
 
+	_inputVariables.Save(obj);
+
 	return true;
 }
 
@@ -747,6 +764,8 @@ bool Macro::Load(obs_data_t *obj)
 		}
 	}
 	UpdateElseActionIndices();
+
+	_inputVariables.Load(obj);
 
 	return true;
 }

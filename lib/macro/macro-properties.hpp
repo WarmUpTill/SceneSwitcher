@@ -1,5 +1,6 @@
 #pragma once
 #include "variable-line-edit.hpp"
+#include "macro-input.hpp"
 
 #include <QWidget>
 #include <QDialog>
@@ -50,6 +51,7 @@ private:
 	QCheckBox *_currentMacroRegisterHotkeys;
 	QCheckBox *_currentSkipOnStartup;
 	QCheckBox *_currentStopActionsIfNotDone;
+	MacroInputSelection *_currentInputs;
 	QCheckBox *_currentMacroRegisterDock;
 	QCheckBox *_currentMacroDockAddRunButton;
 	QCheckBox *_currentMacroDockAddPauseButton;
