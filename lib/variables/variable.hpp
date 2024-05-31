@@ -82,6 +82,17 @@ public:
 	void SetVariable(const std::weak_ptr<Variable> &);
 };
 
+class VariableSelectionDialog : public QDialog {
+	Q_OBJECT
+
+public:
+	VariableSelectionDialog(QWidget *parent);
+	static bool AskForVariable(QWidget *parent, std::string &variableName);
+
+private:
+	VariableSelection *_variableSelection;
+};
+
 class ADVSS_EXPORT VariableSignalManager : public QObject {
 	Q_OBJECT
 public:
