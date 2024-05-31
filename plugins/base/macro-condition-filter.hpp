@@ -33,17 +33,20 @@ public:
 		INDIVIDUAL_SETTING_MATCH,
 		INDIVIDUAL_SETTING_CHANGED,
 	};
+	void SetCondition(Condition);
+	Condition GetCondition() const { return _condition; }
 
 	SourceSelection _source;
 	FilterSelection _filter;
-	Condition _condition = Condition::ENABLED;
 	StringVariable _settings = "";
 	RegexConfig _regex;
 	SourceSetting _setting;
 
 private:
+	void SetupTempVars();
 	bool CheckConditionHelper(const OBSWeakSource &);
 
+	Condition _condition = Condition::ENABLED;
 	std::string _currentSettings;
 	std::string _currentSettingsValue;
 
