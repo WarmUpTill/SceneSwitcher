@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "macro-input.hpp"
 #include "macro-selection.hpp"
 #include "macro-segment-selection.hpp"
 
@@ -8,7 +9,7 @@
 
 namespace advss {
 
-class MacroActionMacro : public MacroRefAction {
+class MacroActionMacro final : public MacroRefAction {
 public:
 	MacroActionMacro(Macro *m) : MacroAction(m), MacroRefAction(m) {}
 	bool PerformAction();
@@ -33,6 +34,8 @@ public:
 		Logic logic;
 		bool runElseActions = false;
 		bool skipWhenPaused = true;
+		bool setInputs = false;
+		StringList inputs;
 		MacroRef macro;
 	};
 
@@ -57,13 +60,14 @@ private:
 	static const std::string id;
 };
 
-class MacroActionMacroEdit : public QWidget {
+class MacroActionMacroEdit final : public QWidget {
 	Q_OBJECT
 
 public:
 	MacroActionMacroEdit(
 		QWidget *parent,
 		std::shared_ptr<MacroActionMacro> entryData = nullptr);
+	~MacroActionMacroEdit();
 	void UpdateEntryData();
 	static QWidget *Create(QWidget *parent,
 			       std::shared_ptr<MacroAction> action)
@@ -81,12 +85,15 @@ private slots:
 	void ConditionBehaviorChanged(int value);
 	void ActionTypeChanged(int value);
 	void SkipWhenPausedChanged(int value);
+	void SetInputsChanged(int value);
+	void InputsChanged(const StringList &);
 
 signals:
 	void HeaderInfoChanged(const QString &);
 
 private:
 	void SetWidgetVisibility();
+	void SetupMacroInput(Macro *) const;
 
 	MacroSelection *_macros;
 	MacroSegmentSelection *_actionIndex;
@@ -95,8 +102,11 @@ private:
 	QComboBox *_conditionBehaviors;
 	QComboBox *_actionTypes;
 	QCheckBox *_skipWhenPaused;
+	QCheckBox *_setInputs;
+	MacroInputEdit *_inputs;
 	QHBoxLayout *_entryLayout;
 	QHBoxLayout *_conditionLayout;
+	QHBoxLayout *_setInputsLayout;
 
 	std::shared_ptr<MacroActionMacro> _entryData;
 	bool _loading = true;

@@ -1,6 +1,7 @@
 #include "macro-action-macro.hpp"
 #include "layout-helpers.hpp"
 #include "macro.hpp"
+#include "ui-helpers.hpp"
 
 namespace advss {
 
@@ -175,6 +176,10 @@ void MacroActionMacro::RunActions(Macro *actionMacro) const
 	}
 
 	if (_runOptions.logic == RunOptions::Logic::IGNORE_CONDITIONS) {
+		if (_runOptions.setInputs) {
+			actionMacro->GetInputVariables().SetValues(
+				_runOptions.inputs);
+		}
 		actionMacro->PerformActions(!_runOptions.runElseActions, false,
 					    true);
 		return;
@@ -189,6 +194,10 @@ void MacroActionMacro::RunActions(Macro *actionMacro) const
 	     conditionMacro->Matched()) ||
 	    (_runOptions.logic == RunOptions::Logic::INVERT_CONDITIONS &&
 	     !conditionMacro->Matched())) {
+		if (_runOptions.setInputs) {
+			actionMacro->GetInputVariables().SetValues(
+				_runOptions.inputs);
+		}
 		actionMacro->PerformActions(!_runOptions.runElseActions, false,
 					    true);
 	}
@@ -231,8 +240,12 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 	  _actionTypes(new QComboBox()),
 	  _skipWhenPaused(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.action.macro.type.run.skipWhenPaused"))),
+	  _setInputs(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.action.macro.type.run.setInputs"))),
+	  _inputs(new MacroInputEdit()),
 	  _entryLayout(new QHBoxLayout()),
-	  _conditionLayout(new QHBoxLayout())
+	  _conditionLayout(new QHBoxLayout()),
+	  _setInputsLayout(new QHBoxLayout())
 {
 	populateActionSelection(_actions);
 	populateConditionBehaviorSelection(_conditionBehaviors);
@@ -256,15 +269,43 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 			 SLOT(ActionTypeChanged(int)));
 	QWidget::connect(_skipWhenPaused, SIGNAL(stateChanged(int)), this,
 			 SLOT(SkipWhenPausedChanged(int)));
+	QWidget::connect(_setInputs, SIGNAL(stateChanged(int)), this,
+			 SLOT(SetInputsChanged(int)));
+	QWidget::connect(_inputs,
+			 SIGNAL(MacroInputValuesChanged(const StringList &)),
+			 this, SLOT(InputsChanged(const StringList &)));
+
+	auto inputsDescription = new QLabel();
+	QString path = GetThemeTypeName() == "Light"
+			       ? ":/res/images/help.svg"
+			       : ":/res/images/help_light.svg";
+	QIcon icon(path);
+	QPixmap pixmap = icon.pixmap(QSize(16, 16));
+	inputsDescription->setPixmap(pixmap);
+	inputsDescription->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.action.macro.type.run.setInputs.description"));
+
+	_setInputsLayout->addWidget(_setInputs);
+	_setInputsLayout->addWidget(inputsDescription);
+	_setInputsLayout->addStretch();
 
 	auto layout = new QVBoxLayout();
 	layout->addLayout(_entryLayout);
 	layout->addLayout(_conditionLayout);
+	layout->addLayout(_setInputsLayout);
+	layout->addWidget(_inputs);
 	layout->addWidget(_skipWhenPaused);
 	setLayout(layout);
 	_entryData = entryData;
 	UpdateEntryData();
 	_loading = false;
+}
+
+void HighligthMacroSettingsButton(bool enable);
+
+MacroActionMacroEdit::~MacroActionMacroEdit()
+{
+	HighligthMacroSettingsButton(false);
 }
 
 void MacroActionMacroEdit::UpdateEntryData()
@@ -282,60 +323,45 @@ void MacroActionMacroEdit::UpdateEntryData()
 	_actionTypes->setCurrentIndex(
 		_entryData->_runOptions.runElseActions ? 1 : 0);
 	_skipWhenPaused->setChecked(_entryData->_runOptions.skipWhenPaused);
+	_setInputs->setChecked(_entryData->_runOptions.setInputs);
+	SetupMacroInput(_entryData->_macro.GetMacro().get());
 	SetWidgetVisibility();
 }
 
 void MacroActionMacroEdit::MacroChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_macro = text;
-	_actionIndex->SetMacro(_entryData->_macro.GetMacro());
+	const auto &macro = _entryData->_macro.GetMacro();
+	_actionIndex->SetMacro(macro);
+	SetupMacroInput(macro.get());
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
+	SetWidgetVisibility();
 }
 
 void MacroActionMacroEdit::ActionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionMacro::Action>(value);
 	SetWidgetVisibility();
 }
 
 void MacroActionMacroEdit::ActionIndexChanged(const IntVariable &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_actionIndex = value;
 }
 
 void MacroActionMacroEdit::ConditionMacroChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_runOptions.macro = text;
 }
 
 void MacroActionMacroEdit::ConditionBehaviorChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_runOptions.logic =
 		static_cast<MacroActionMacro::RunOptions::Logic>(value);
 	SetWidgetVisibility();
@@ -343,22 +369,29 @@ void MacroActionMacroEdit::ConditionBehaviorChanged(int value)
 
 void MacroActionMacroEdit::ActionTypeChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_runOptions.runElseActions = value;
 }
 
 void MacroActionMacroEdit::SkipWhenPausedChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_runOptions.skipWhenPaused = value;
+}
+
+void MacroActionMacroEdit::SetInputsChanged(int value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_runOptions.setInputs = value;
+	SetWidgetVisibility();
+}
+
+void MacroActionMacroEdit::InputsChanged(const StringList &inputs)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_runOptions.inputs = inputs;
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionMacroEdit::SetWidgetVisibility()
@@ -422,6 +455,15 @@ void MacroActionMacroEdit::SetWidgetVisibility()
 		_entryData->_action == MacroActionMacro::Action::RUN &&
 		_entryData->_runOptions.logic !=
 			MacroActionMacro::RunOptions::Logic::IGNORE_CONDITIONS);
+	SetLayoutVisible(_setInputsLayout,
+			 _entryData->_action == MacroActionMacro::Action::RUN);
+	_inputs->setVisible(_entryData->_action ==
+				    MacroActionMacro::Action::RUN &&
+			    _entryData->_runOptions.setInputs);
+	HighligthMacroSettingsButton(_entryData->_action ==
+					     MacroActionMacro::Action::RUN &&
+				     _entryData->_runOptions.setInputs &&
+				     !_inputs->HasInputsToSet());
 	_actionTypes->setVisible(_entryData->_action ==
 				 MacroActionMacro::Action::RUN);
 	_skipWhenPaused->setVisible(_entryData->_action ==
@@ -431,12 +473,25 @@ void MacroActionMacroEdit::SetWidgetVisibility()
 	updateGeometry();
 }
 
+void MacroActionMacroEdit::SetupMacroInput(Macro *macro) const
+{
+	if (macro) {
+		_inputs->SetInputVariablesAndValues(
+			macro->GetInputVariables(),
+			_entryData->_runOptions.inputs);
+	} else {
+		_inputs->SetInputVariablesAndValues({}, {});
+	}
+}
+
 void MacroActionMacro::RunOptions::Save(obs_data_t *obj) const
 {
 	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_int(data, "logic", static_cast<int>(logic));
 	obs_data_set_bool(data, "runElseActions", runElseActions);
 	obs_data_set_bool(data, "skipWhenPaused", skipWhenPaused);
+	obs_data_set_bool(data, "setInputs", setInputs);
+	inputs.Save(data, "inputs");
 	macro.Save(data);
 	obs_data_set_obj(obj, "runOptions", data);
 }
@@ -450,6 +505,8 @@ void MacroActionMacro::RunOptions::Load(obs_data_t *obj)
 	logic = static_cast<Logic>(obs_data_get_int(data, "logic"));
 	runElseActions = obs_data_get_bool(data, "runElseActions");
 	skipWhenPaused = obs_data_get_bool(data, "skipWhenPaused");
+	setInputs = obs_data_get_bool(data, "setInputs");
+	inputs.Load(data, "inputs");
 	macro.Load(data);
 }
 
