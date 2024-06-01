@@ -223,6 +223,8 @@ target_sources(
           lib/utils/splitter-helpers.hpp
           lib/utils/status-control.cpp
           lib/utils/status-control.hpp
+          lib/utils/string-list.cpp
+          lib/utils/string-list.hpp
           lib/utils/switch-button.cpp
           lib/utils/switch-button.hpp
           lib/utils/sync-helpers.cpp

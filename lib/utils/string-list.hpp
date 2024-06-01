@@ -1,7 +1,8 @@
 #pragma once
-#include "variable-string.hpp"
+#include "export-symbol-helper.hpp"
 #include "list-editor.hpp"
 #include "obs-module-helper.hpp"
+#include "variable-string.hpp"
 
 #include <obs-data.h>
 
@@ -9,16 +10,16 @@ namespace advss {
 
 class StringList : public QList<StringVariable> {
 public:
-	bool Save(obs_data_t *obj, const char *name,
-		  const char *elementName = "string") const;
-	bool Load(obs_data_t *obj, const char *name,
-		  const char *elementName = "string");
-	void ResolveVariables();
+	EXPORT bool Save(obs_data_t *obj, const char *name,
+			 const char *elementName = "string") const;
+	EXPORT bool Load(obs_data_t *obj, const char *name,
+			 const char *elementName = "string");
+	EXPORT void ResolveVariables();
 
 	friend class StringListEdit;
 };
 
-class StringListEdit final : public ListEditor {
+class ADVSS_EXPORT StringListEdit final : public ListEditor {
 	Q_OBJECT
 
 public:

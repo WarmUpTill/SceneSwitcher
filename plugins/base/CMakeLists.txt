@@ -168,8 +168,6 @@ target_sources(
           utils/source-settings-helpers.hpp
           utils/source-setting.cpp
           utils/source-setting.hpp
-          utils/string-list.cpp
-          utils/string-list.hpp
           utils/striped-frame.cpp
           utils/striped-frame.hpp
           utils/text-helpers.cpp
