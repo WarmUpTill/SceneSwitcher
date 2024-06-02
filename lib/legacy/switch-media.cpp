@@ -9,7 +9,7 @@
 namespace advss {
 
 bool MediaSwitch::pause = false;
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 
 constexpr auto media_played_to_end_idx = 8;
 constexpr auto media_any_idx = 9;
@@ -22,7 +22,7 @@ void AdvSceneSwitcher::on_mediaAdd_clicked()
 	listAddClicked(ui->mediaSwitches,
 		       new MediaSwitchWidget(this,
 					     &switcher->mediaSwitches.back()),
-		       ui->mediaAdd, &addPulse);
+		       ui->mediaAdd, addPulse);
 
 	ui->mediaHelp->setVisible(false);
 }
@@ -252,7 +252,8 @@ void AdvSceneSwitcher::SetupMediaTab()
 
 	if (switcher->mediaSwitches.size() == 0) {
 		if (!switcher->disableHints) {
-			addPulse = PulseWidget(ui->mediaAdd, QColor(Qt::green));
+			addPulse = HighlightWidget(ui->mediaAdd,
+						   QColor(Qt::green));
 		}
 		ui->mediaHelp->setVisible(true);
 	} else {

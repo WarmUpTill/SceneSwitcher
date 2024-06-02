@@ -13,8 +13,8 @@
 
 namespace advss {
 
-QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
-				    QColor endColor, bool once)
+QObject *HighlightWidget(QWidget *widget, QColor startColor, QColor endColor,
+			 bool once)
 {
 	QGraphicsColorizeEffect *effect = new QGraphicsColorizeEffect(widget);
 	widget->setGraphicsEffect(effect);
@@ -24,33 +24,22 @@ QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
 	animation->setEndValue(endColor);
 	animation->setDuration(1000);
 
-	QMetaObject::Connection con;
+	// Clean up the effect when the animation is deleted
+	QWidget::connect(animation, &QPropertyAnimation::destroyed, [widget]() {
+		if (widget) {
+			widget->setGraphicsEffect(nullptr);
+		}
+	});
+
 	if (once) {
-		auto widgetPtr = widget;
-		con = QWidget::connect(
-			animation, &QPropertyAnimation::finished,
-			[widgetPtr]() {
-				if (widgetPtr) {
-					widgetPtr->setGraphicsEffect(nullptr);
-				}
-			});
 		animation->start(QPropertyAnimation::DeleteWhenStopped);
-	} else {
-		auto widgetPtr = widget;
-		con = QWidget::connect(
-			animation, &QPropertyAnimation::finished,
-			[animation, widgetPtr]() {
-				QTimer *timer = new QTimer(widgetPtr);
-				QWidget::connect(timer, &QTimer::timeout,
-						 [animation] {
-							 animation->start();
-						 });
-				timer->setSingleShot(true);
-				timer->start(1000);
-			});
-		animation->start();
+		return animation;
 	}
-	return con;
+
+	QWidget::connect(animation, &QPropertyAnimation::finished,
+			 [animation]() { animation->start(); });
+	animation->start();
+	return animation;
 }
 
 static int getHorizontalScrollBarHeight(QListWidget *list)

@@ -9,7 +9,7 @@
 namespace advss {
 
 bool ExecutableSwitch::pause = false;
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 
 void AdvSceneSwitcher::on_executableAdd_clicked()
 {
@@ -19,7 +19,7 @@ void AdvSceneSwitcher::on_executableAdd_clicked()
 	listAddClicked(ui->executables,
 		       new ExecutableSwitchWidget(
 			       this, &switcher->executableSwitches.back()),
-		       ui->executableAdd, &addPulse);
+		       ui->executableAdd, addPulse);
 
 	ui->exeHelp->setVisible(false);
 }
@@ -177,8 +177,8 @@ void AdvSceneSwitcher::SetupExecutableTab()
 
 	if (switcher->executableSwitches.size() == 0) {
 		if (!switcher->disableHints) {
-			addPulse = PulseWidget(ui->executableAdd,
-					       QColor(Qt::green));
+			addPulse = HighlightWidget(ui->executableAdd,
+						   QColor(Qt::green));
 		}
 		ui->exeHelp->setVisible(true);
 	} else {

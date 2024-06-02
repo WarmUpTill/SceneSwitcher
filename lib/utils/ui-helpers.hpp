@@ -12,9 +12,11 @@
 
 namespace advss {
 
-EXPORT QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
-					   QColor endColor = QColor(0, 0, 0, 0),
-					   bool once = false);
+// Returns QObject* to QPropertyAnimation object
+// Delete it to stop the animation
+EXPORT QObject *HighlightWidget(QWidget *widget, QColor startColor,
+				QColor endColor = QColor(0, 0, 0, 0),
+				bool once = false);
 
 EXPORT void SetHeightToContentHeight(QListWidget *list);
 EXPORT void SetButtonIcon(QPushButton *button, const char *path);

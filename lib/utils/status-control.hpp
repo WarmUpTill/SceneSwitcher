@@ -33,7 +33,7 @@ private:
 	QLabel *_status;
 	QLabel *_statusPrefix;
 	QTimer _timer;
-	QMetaObject::Connection _pulse;
+	QObject *_pulse = nullptr;
 
 	bool _setToStopped = true;
 };

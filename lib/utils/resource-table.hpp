@@ -37,7 +37,7 @@ private:
 	QPushButton *_remove;
 	QLabel *_help;
 
-	QMetaObject::Connection _highlightConnection;
+	QObject *_highlightConnection = nullptr;
 };
 
 EXPORT void AddItemTableRow(QTableWidget *table, const QStringList &cells);
