@@ -96,6 +96,7 @@ public:
 	void SetConditionData(Macro &m);
 	void SwapActions(Macro *m, int pos1, int pos2);
 	void SwapConditions(Macro *m, int pos1, int pos2);
+	void HighligthMacroSettingsButton(bool enable = true);
 
 public slots:
 	void on_macroAdd_clicked();
@@ -410,5 +411,6 @@ public slots:
 
 void OpenSettingsWindow();
 QWidget *GetSettingsWindow();
+void HighligthMacroSettingsButton(bool enable);
 
 } // namespace advss
