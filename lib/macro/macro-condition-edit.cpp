@@ -1,6 +1,6 @@
 #include "macro-condition-edit.hpp"
 #include "advanced-scene-switcher.hpp"
-#include "macro-properties.hpp"
+#include "macro-settings.hpp"
 #include "macro.hpp"
 #include "path-helpers.hpp"
 #include "plugin-state-helpers.hpp"

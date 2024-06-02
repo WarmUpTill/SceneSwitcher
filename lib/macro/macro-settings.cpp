@@ -1,4 +1,4 @@
-#include "macro-properties.hpp"
+#include "macro-settings.hpp"
 #include "layout-helpers.hpp"
 #include "obs-module-helper.hpp"
 #include "macro.hpp"
@@ -10,9 +10,9 @@
 
 namespace advss {
 
-static MacroProperties macroProperties;
+static GlobalMacroSettings macroSettings;
 
-void MacroProperties::Save(obs_data_t *obj) const
+void GlobalMacroSettings::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
 	obs_data_set_bool(data, "highlightExecuted", _highlightExecuted);
@@ -20,13 +20,16 @@ void MacroProperties::Save(obs_data_t *obj) const
 	obs_data_set_bool(data, "highlightActions", _highlightActions);
 	obs_data_set_bool(data, "newMacroRegisterHotkey",
 			  _newMacroRegisterHotkeys);
-	obs_data_set_obj(obj, "macroProperties", data);
+	obs_data_set_obj(obj, "macroSettings", data);
 	obs_data_release(data);
 }
 
-void MacroProperties::Load(obs_data_t *obj)
+void GlobalMacroSettings::Load(obs_data_t *obj)
 {
-	auto data = obs_data_get_obj(obj, "macroProperties");
+	auto data = obs_data_get_obj(
+		obj, obs_data_has_user_value(obj, "macroProperties")
+			     ? "macroProperties"
+			     : "macroSettings");
 	obs_data_set_default_bool(data, "highlightExecuted", true);
 	obs_data_set_default_bool(data, "highlightConditions", true);
 	obs_data_set_default_bool(data, "highlightActions", true);
@@ -38,9 +41,9 @@ void MacroProperties::Load(obs_data_t *obj)
 	obs_data_release(data);
 }
 
-MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
-					     const MacroProperties &prop,
-					     Macro *macro)
+MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
+					 const GlobalMacroSettings &settings,
+					 Macro *macro)
 	: QDialog(parent),
 	  _executed(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.highlightExecutedMacros"))),
@@ -168,13 +171,13 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	connect(buttonbox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
 	connect(_currentMacroRegisterDock, &QCheckBox::stateChanged, this,
-		&MacroPropertiesDialog::DockEnableChanged);
+		&MacroSettingsDialog::DockEnableChanged);
 	connect(_currentMacroDockAddRunButton, &QCheckBox::stateChanged, this,
-		&MacroPropertiesDialog::RunButtonEnableChanged);
+		&MacroSettingsDialog::RunButtonEnableChanged);
 	connect(_currentMacroDockAddPauseButton, &QCheckBox::stateChanged, this,
-		&MacroPropertiesDialog::PauseButtonEnableChanged);
+		&MacroSettingsDialog::PauseButtonEnableChanged);
 	connect(_currentMacroDockAddStatusLabel, &QCheckBox::stateChanged, this,
-		&MacroPropertiesDialog::StatusLabelEnableChanged);
+		&MacroSettingsDialog::StatusLabelEnableChanged);
 
 	auto scrollArea = new QScrollArea(this);
 	scrollArea->setWidgetResizable(true);
@@ -195,10 +198,10 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 	dialogLayout->addWidget(buttonbox);
 	setLayout(dialogLayout);
 
-	_executed->setChecked(prop._highlightExecuted);
-	_conditions->setChecked(prop._highlightConditions);
-	_actions->setChecked(prop._highlightActions);
-	_newMacroRegisterHotkeys->setChecked(prop._newMacroRegisterHotkeys);
+	_executed->setChecked(settings._highlightExecuted);
+	_conditions->setChecked(settings._highlightConditions);
+	_actions->setChecked(settings._highlightActions);
+	_newMacroRegisterHotkeys->setChecked(settings._newMacroRegisterHotkeys);
 
 	if (!macro || macro->IsGroup()) {
 		hotkeyOptions->hide();
@@ -259,7 +262,7 @@ MacroPropertiesDialog::MacroPropertiesDialog(QWidget *parent,
 		       20);
 }
 
-void MacroPropertiesDialog::DockEnableChanged(int enabled)
+void MacroSettingsDialog::DockEnableChanged(int enabled)
 {
 	_currentMacroDockAddRunButton->setVisible(enabled);
 	_currentMacroDockAddPauseButton->setVisible(enabled);
@@ -284,37 +287,37 @@ void MacroPropertiesDialog::DockEnableChanged(int enabled)
 	Resize();
 }
 
-void MacroPropertiesDialog::RunButtonEnableChanged(int enabled)
+void MacroSettingsDialog::RunButtonEnableChanged(int enabled)
 {
 	SetGridLayoutRowVisible(_dockLayout, _runButtonTextRow, enabled);
 	Resize();
 }
 
-void MacroPropertiesDialog::PauseButtonEnableChanged(int enabled)
+void MacroSettingsDialog::PauseButtonEnableChanged(int enabled)
 {
 	SetGridLayoutRowVisible(_dockLayout, _pauseButtonTextRow, enabled);
 	SetGridLayoutRowVisible(_dockLayout, _unpauseButtonTextRow, enabled);
 	Resize();
 }
 
-void MacroPropertiesDialog::StatusLabelEnableChanged(int enabled)
+void MacroSettingsDialog::StatusLabelEnableChanged(int enabled)
 {
 	SetGridLayoutRowVisible(_dockLayout, _conditionsTrueTextRow, enabled);
 	SetGridLayoutRowVisible(_dockLayout, _conditionsFalseTextRow, enabled);
 	Resize();
 }
 
-void MacroPropertiesDialog::Resize()
+void MacroSettingsDialog::Resize()
 {
 	_dockOptions->adjustSize();
 	_dockOptions->updateGeometry();
 }
 
-bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
-					   MacroProperties &userInput,
-					   Macro *macro)
+bool MacroSettingsDialog::AskForSettings(QWidget *parent,
+					 GlobalMacroSettings &userInput,
+					 Macro *macro)
 {
-	MacroPropertiesDialog dialog(parent, userInput, macro);
+	MacroSettingsDialog dialog(parent, userInput, macro);
 	dialog.setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
 	if (dialog.exec() != DialogCode::Accepted) {
 		return false;
@@ -355,19 +358,19 @@ bool MacroPropertiesDialog::AskForSettings(QWidget *parent,
 	return true;
 }
 
-MacroProperties &GetGlobalMacroProperties()
+GlobalMacroSettings &GetGlobalMacroSettings()
 {
-	return macroProperties;
+	return macroSettings;
 }
 
-void SaveGlobalMacroProperties(obs_data_t *obj)
+void SaveGlobalMacroSettings(obs_data_t *obj)
 {
-	macroProperties.Save(obj);
+	macroSettings.Save(obj);
 }
 
-void LoadGlobalMacroProperties(obs_data_t *obj)
+void LoadGlobalMacroSettings(obs_data_t *obj)
 {
-	macroProperties.Load(obj);
+	macroSettings.Load(obj);
 }
 
 } // namespace advss

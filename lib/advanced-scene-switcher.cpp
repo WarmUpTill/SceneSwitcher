@@ -767,7 +767,7 @@ void AdvSceneSwitcher::HighligthMacroSettingsButton(bool enable)
 		return;
 	}
 
-	highlight = HighlightWidget(ui->macroProperties, Qt::green);
+	highlight = HighlightWidget(ui->macroSettings, Qt::green);
 }
 
 void HighligthMacroSettingsButton(bool enable)

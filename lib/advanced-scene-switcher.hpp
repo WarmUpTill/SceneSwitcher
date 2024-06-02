@@ -179,7 +179,7 @@ public slots:
 	void MoveMacroConditionDown(int idx);
 	void HighlightControls();
 	void HighlightOnChange();
-	void on_macroProperties_clicked();
+	void on_macroSettings_clicked();
 	void CopyMacroSegment();
 	void PasteMacroSegment();
 
