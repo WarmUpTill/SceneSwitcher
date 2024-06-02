@@ -14,7 +14,7 @@
 namespace advss {
 
 bool VideoSwitch::pause = false;
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 
 void AdvSceneSwitcher::on_videoAdd_clicked()
 {
@@ -24,7 +24,7 @@ void AdvSceneSwitcher::on_videoAdd_clicked()
 	VideoSwitchWidget *sw =
 		new VideoSwitchWidget(this, &switcher->videoSwitches.back());
 
-	listAddClicked(ui->videoSwitches, sw, ui->videoAdd, &addPulse);
+	listAddClicked(ui->videoSwitches, sw, ui->videoAdd, addPulse);
 
 	ui->videoHelp->setVisible(false);
 }
@@ -202,7 +202,8 @@ void AdvSceneSwitcher::SetupVideoTab()
 
 	if (switcher->videoSwitches.size() == 0) {
 		if (!switcher->disableHints) {
-			addPulse = PulseWidget(ui->videoAdd, QColor(Qt::green));
+			addPulse = HighlightWidget(ui->videoAdd,
+						   QColor(Qt::green));
 		}
 		ui->videoHelp->setVisible(true);
 	} else {

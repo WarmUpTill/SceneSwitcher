@@ -81,9 +81,13 @@ void ResourceTable::SetHelpVisible(bool visible) const
 
 void ResourceTable::HighlightAddButton(bool enable)
 {
-	_add->disconnect(_highlightConnection);
+	if (_highlightConnection) {
+		_highlightConnection->deleteLater();
+		_highlightConnection = nullptr;
+	}
+
 	if (enable && HighlightUIElementsEnabled()) {
-		_highlightConnection = PulseWidget(_add, QColor(Qt::green));
+		_highlightConnection = HighlightWidget(_add, QColor(Qt::green));
 	}
 }
 

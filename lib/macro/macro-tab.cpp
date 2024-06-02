@@ -23,7 +23,7 @@
 
 namespace advss {
 
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 static QTimer onChangeHighlightTimer;
 
 static bool macroNameExists(const std::string &name)
@@ -99,7 +99,8 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 	}
 
 	ui->macros->Add(newMacro);
-	ui->macroAdd->disconnect(addPulse);
+	addPulse->deleteLater();
+	addPulse = nullptr;
 	emit MacroAdded(QString::fromStdString(name));
 }
 
@@ -753,8 +754,8 @@ void AdvSceneSwitcher::HighlightOnChange()
 	}
 
 	if (macro->OnChangePreventedActionsRecently()) {
-		PulseWidget(ui->runMacroOnChange, Qt::yellow, Qt::transparent,
-			    true);
+		HighlightWidget(ui->runMacroOnChange, Qt::yellow,
+				Qt::transparent, true);
 	}
 }
 
@@ -832,7 +833,7 @@ void AdvSceneSwitcher::SetupMacroTab()
 	ui->macros->installEventFilter(this);
 
 	if (GetMacros().size() == 0 && !switcher->disableHints) {
-		addPulse = PulseWidget(ui->macroAdd, QColor(Qt::green));
+		addPulse = HighlightWidget(ui->macroAdd, QColor(Qt::green));
 	}
 	ui->macros->Reset(GetMacros(),
 			  GetGlobalMacroProperties()._highlightExecuted);
@@ -1106,7 +1107,8 @@ void AdvSceneSwitcher::CopyMacro()
 	Macro::PrepareMoveToGroup(macro->Parent(), newMacro);
 
 	ui->macros->Add(newMacro, macro);
-	ui->macroAdd->disconnect(addPulse);
+	addPulse->deleteLater();
+	addPulse = nullptr;
 	emit MacroAdded(QString::fromStdString(name));
 }
 

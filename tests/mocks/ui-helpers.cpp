@@ -1,11 +1,13 @@
 #include "ui-helpers.hpp"
 
+class QObejct;
+
 namespace advss {
 
-QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
-				    QColor endColor, bool once)
+QObject *HighlightWidget(QWidget *widget, QColor startColor, QColor endColor,
+			 bool once)
 {
-	return {};
+	return nullptr;
 }
 
 void SetHeightToContentHeight(QListWidget *list) {}

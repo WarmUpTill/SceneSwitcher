@@ -12,7 +12,7 @@
 
 namespace advss {
 
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 SceneGroupEditWidget *typeEdit = nullptr;
 
 std::deque<SceneGroup> &GetSceneGroups()
@@ -170,7 +170,8 @@ void AdvSceneSwitcher::on_sceneGroupAdd_clicked()
 	item->setData(Qt::UserRole, text);
 	ui->sceneGroups->setCurrentItem(item);
 
-	ui->sceneGroupAdd->disconnect(addPulse);
+	addPulse->deleteLater();
+	addPulse = nullptr;
 	ui->sceneGroupHelp->setVisible(false);
 
 	emit SceneGroupAdded(QString::fromStdString(name));
@@ -512,8 +513,8 @@ void AdvSceneSwitcher::SetupSceneGroupTab()
 
 	if (switcher->sceneGroups.size() == 0) {
 		if (!switcher->disableHints) {
-			addPulse = PulseWidget(ui->sceneGroupAdd,
-					       QColor(Qt::green));
+			addPulse = HighlightWidget(ui->sceneGroupAdd,
+						   QColor(Qt::green));
 		}
 		ui->sceneGroupHelp->setVisible(true);
 	} else {

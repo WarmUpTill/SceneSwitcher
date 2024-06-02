@@ -529,7 +529,8 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 	HideToken();
 
 	if (_name->text().isEmpty()) {
-		PulseWidget(_requestToken, Qt::green, QColor(0, 0, 0, 0), true);
+		HighlightWidget(_requestToken, Qt::green, QColor(0, 0, 0, 0),
+				true);
 	}
 
 	_currentToken = settings;
@@ -573,7 +574,8 @@ void TwitchTokenSettingsDialog::HideToken()
 void TwitchTokenSettingsDialog::TokenOptionChanged(int)
 {
 	if (!_name->text().isEmpty()) {
-		PulseWidget(_requestToken, Qt::green, QColor(0, 0, 0, 0), true);
+		HighlightWidget(_requestToken, Qt::green, QColor(0, 0, 0, 0),
+				true);
 	}
 	_name->setText("");
 	SetTokenInfoVisible(false);

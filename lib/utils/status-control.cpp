@@ -132,9 +132,8 @@ void StatusControl::SetStarted()
 	_button->setText(
 		obs_module_text("AdvSceneSwitcher.generalTab.status.stop"));
 	_status->setText(obs_module_text("AdvSceneSwitcher.status.active"));
-	_status->disconnect(_pulse);
+	_pulse->deleteLater();
 	SetStatusStyleSheet(false);
-
 	_setToStopped = false;
 }
 
@@ -144,9 +143,8 @@ void StatusControl::SetStopped()
 		obs_module_text("AdvSceneSwitcher.generalTab.status.start"));
 	_status->setText(obs_module_text("AdvSceneSwitcher.status.inactive"));
 	if (HighlightUIElementsEnabled()) {
-		SetStatusStyleSheet(true);
-		_pulse = PulseWidget(_status, QColor(Qt::red),
-				     QColor(0, 0, 0, 0));
+		_pulse = HighlightWidget(_status, QColor(Qt::red),
+					 QColor(0, 0, 0, 0));
 	}
 	_setToStopped = true;
 }

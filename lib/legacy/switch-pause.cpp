@@ -10,7 +10,7 @@
 
 namespace advss {
 
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 
 void AdvSceneSwitcher::on_pauseAdd_clicked()
 {
@@ -20,7 +20,7 @@ void AdvSceneSwitcher::on_pauseAdd_clicked()
 	listAddClicked(ui->pauseEntries,
 		       new PauseEntryWidget(this,
 					    &switcher->pauseEntries.back()),
-		       ui->pauseAdd, &addPulse);
+		       ui->pauseAdd, addPulse);
 
 	ui->pauseHelp->setVisible(false);
 }
@@ -264,7 +264,8 @@ void AdvSceneSwitcher::SetupPauseTab()
 
 	if (switcher->pauseEntries.size() == 0) {
 		if (!switcher->disableHints) {
-			addPulse = PulseWidget(ui->pauseAdd, QColor(Qt::green));
+			addPulse = HighlightWidget(ui->pauseAdd,
+						   QColor(Qt::green));
 		}
 		ui->pauseHelp->setVisible(true);
 	} else {

@@ -130,7 +130,7 @@ void MacroSegmentList::Highlight(int idx, QColor color)
 	if (!widget) {
 		return;
 	}
-	PulseWidget(widget, color, QColor(0, 0, 0, 0), true);
+	HighlightWidget(widget, color, QColor(0, 0, 0, 0), true);
 }
 
 void MacroSegmentList::SetCollapsed(bool collapse)

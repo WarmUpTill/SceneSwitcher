@@ -11,7 +11,7 @@
 namespace advss {
 
 bool WindowSwitch::pause = false;
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 
 void AdvSceneSwitcher::on_windowAdd_clicked()
 {
@@ -21,7 +21,7 @@ void AdvSceneSwitcher::on_windowAdd_clicked()
 	listAddClicked(ui->windowSwitches,
 		       new WindowSwitchWidget(this,
 					      &switcher->windowSwitches.back()),
-		       ui->windowAdd, &addPulse);
+		       ui->windowAdd, addPulse);
 
 	ui->windowHelp->setVisible(false);
 }
@@ -335,8 +335,8 @@ void AdvSceneSwitcher::SetupTitleTab()
 
 	if (switcher->windowSwitches.size() == 0) {
 		if (!switcher->disableHints) {
-			addPulse =
-				PulseWidget(ui->windowAdd, QColor(Qt::green));
+			addPulse = HighlightWidget(ui->windowAdd,
+						   QColor(Qt::green));
 		}
 		ui->windowHelp->setVisible(true);
 	} else {

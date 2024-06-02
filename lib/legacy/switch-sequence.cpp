@@ -16,7 +16,7 @@ namespace advss {
 constexpr auto max_extend_text_size = 150;
 
 bool SceneSequenceSwitch::pause = false;
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 
 void AdvSceneSwitcher::on_sceneSequenceAdd_clicked()
 {
@@ -26,7 +26,7 @@ void AdvSceneSwitcher::on_sceneSequenceAdd_clicked()
 	listAddClicked(ui->sceneSequenceSwitches,
 		       new SequenceWidget(
 			       this, &switcher->sceneSequenceSwitches.back()),
-		       ui->sceneSequenceAdd, &addPulse);
+		       ui->sceneSequenceAdd, addPulse);
 
 	ui->sequenceHelp->setVisible(false);
 }
@@ -299,8 +299,8 @@ void AdvSceneSwitcher::SetupSequenceTab()
 
 	if (switcher->sceneSequenceSwitches.size() == 0) {
 		if (!switcher->disableHints) {
-			addPulse = PulseWidget(ui->sceneSequenceAdd,
-					       QColor(Qt::green));
+			addPulse = HighlightWidget(ui->sceneSequenceAdd,
+						   QColor(Qt::green));
 		}
 		ui->sequenceHelp->setVisible(true);
 	} else {

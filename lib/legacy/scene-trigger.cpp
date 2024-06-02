@@ -12,7 +12,7 @@
 namespace advss {
 
 bool SceneTrigger::pause = false;
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 
 void AdvSceneSwitcher::on_triggerAdd_clicked()
 {
@@ -22,7 +22,7 @@ void AdvSceneSwitcher::on_triggerAdd_clicked()
 	listAddClicked(ui->sceneTriggers,
 		       new SceneTriggerWidget(this,
 					      &switcher->sceneTriggers.back()),
-		       ui->triggerAdd, &addPulse);
+		       ui->triggerAdd, addPulse);
 
 	ui->triggerHelp->setVisible(false);
 }
@@ -370,8 +370,8 @@ void AdvSceneSwitcher::SetupTriggerTab()
 
 	if (switcher->sceneTriggers.size() == 0) {
 		if (!switcher->disableHints) {
-			addPulse =
-				PulseWidget(ui->triggerAdd, QColor(Qt::green));
+			addPulse = HighlightWidget(ui->triggerAdd,
+						   QColor(Qt::green));
 		}
 		ui->triggerHelp->setVisible(true);
 	} else {

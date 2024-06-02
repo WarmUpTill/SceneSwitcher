@@ -12,7 +12,7 @@
 namespace advss {
 
 bool AudioSwitch::pause = false;
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 
 void AdvSceneSwitcher::on_audioAdd_clicked()
 {
@@ -22,7 +22,7 @@ void AdvSceneSwitcher::on_audioAdd_clicked()
 	AudioSwitchWidget *sw =
 		new AudioSwitchWidget(this, &switcher->audioSwitches.back());
 
-	listAddClicked(ui->audioSwitches, sw, ui->audioAdd, &addPulse);
+	listAddClicked(ui->audioSwitches, sw, ui->audioAdd, addPulse);
 
 	ui->audioHelp->setVisible(false);
 }
@@ -232,7 +232,8 @@ void AdvSceneSwitcher::SetupAudioTab()
 
 	if (switcher->audioSwitches.size() == 0) {
 		if (!switcher->disableHints) {
-			addPulse = PulseWidget(ui->audioAdd, QColor(Qt::green));
+			addPulse = HighlightWidget(ui->audioAdd,
+						   QColor(Qt::green));
 		}
 		ui->audioHelp->setVisible(true);
 	} else {

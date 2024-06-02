@@ -11,7 +11,7 @@
 namespace advss {
 
 bool ScreenRegionSwitch::pause = false;
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 
 void AdvSceneSwitcher::ClearFrames(QListWidget *list)
 {
@@ -79,7 +79,7 @@ void AdvSceneSwitcher::on_screenRegionAdd_clicked()
 	listAddClicked(ui->screenRegionSwitches,
 		       new ScreenRegionWidget(
 			       this, &switcher->screenRegionSwitches.back()),
-		       ui->screenRegionAdd, &addPulse);
+		       ui->screenRegionAdd, addPulse);
 
 	ui->regionHelp->setVisible(false);
 }
@@ -248,8 +248,8 @@ void AdvSceneSwitcher::SetupRegionTab()
 
 	if (switcher->screenRegionSwitches.size() == 0) {
 		if (!switcher->disableHints) {
-			addPulse = PulseWidget(ui->screenRegionAdd,
-					       QColor(Qt::green));
+			addPulse = HighlightWidget(ui->screenRegionAdd,
+						   QColor(Qt::green));
 		}
 		ui->regionHelp->setVisible(true);
 	} else {
