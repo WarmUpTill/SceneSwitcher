@@ -750,6 +750,36 @@ QWidget *GetSettingsWindow()
 	return SettingsWindowIsOpened() ? AdvSceneSwitcher::window : nullptr;
 }
 
+void AdvSceneSwitcher::HighligthMacroSettingsButton(bool enable)
+{
+	static QObject *highlight = nullptr;
+	if ((highlight && enable) || (!highlight && !enable)) {
+		return;
+	}
+
+	if (highlight && !enable) {
+		highlight->deleteLater();
+		highlight = nullptr;
+		return;
+	}
+
+	if (!HighlightUIElementsEnabled()) {
+		return;
+	}
+
+	highlight = HighlightWidget(ui->macroProperties, Qt::green);
+}
+
+void HighligthMacroSettingsButton(bool enable)
+{
+	auto window = GetSettingsWindow();
+	if (!window) {
+		return;
+	}
+	static_cast<AdvSceneSwitcher *>(window)->HighligthMacroSettingsButton(
+		enable);
+}
+
 void SetupActionQueues();
 
 extern "C" EXPORT void InitSceneSwitcher(obs_module_t *module,
