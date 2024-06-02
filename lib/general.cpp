@@ -431,7 +431,7 @@ void SwitcherData::LoadSettings(obs_data_t *obj)
 	}
 
 	LoadMacros(obj);
-	LoadGlobalMacroProperties(obj);
+	LoadGlobalMacroSettings(obj);
 	loadWindowTitleSwitches(obj);
 	loadScreenRegionSwitches(obj);
 	loadPauseSwitches(obj);
@@ -466,7 +466,7 @@ void SwitcherData::SaveSettings(obs_data_t *obj)
 
 	saveSceneGroups(obj);
 	SaveMacros(obj);
-	SaveGlobalMacroProperties(obj);
+	SaveGlobalMacroSettings(obj);
 	SaveVariables(obj);
 	saveWindowTitleSwitches(obj);
 	saveScreenRegionSwitches(obj);

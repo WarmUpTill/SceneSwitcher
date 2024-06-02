@@ -1,7 +1,7 @@
 #include "macro-action-edit.hpp"
 #include "advanced-scene-switcher.hpp"
 #include "macro-helpers.hpp"
-#include "macro-properties.hpp"
+#include "macro-settings.hpp"
 #include "macro.hpp"
 #include "plugin-state-helpers.hpp"
 #include "section.hpp"

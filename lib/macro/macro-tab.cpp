@@ -3,7 +3,7 @@
 #include "macro-action-edit.hpp"
 #include "macro-condition-edit.hpp"
 #include "macro-export-import-dialog.hpp"
-#include "macro-properties.hpp"
+#include "macro-settings.hpp"
 #include "macro-segment-copy-paste.hpp"
 #include "macro-tree.hpp"
 #include "macro.hpp"
@@ -86,7 +86,7 @@ bool AdvSceneSwitcher::AddNewMacro(std::shared_ptr<Macro> &res,
 	}
 
 	res = std::make_shared<Macro>(
-		name, GetGlobalMacroProperties()._newMacroRegisterHotkeys);
+		name, GetGlobalMacroSettings()._newMacroRegisterHotkeys);
 	return true;
 }
 
@@ -463,7 +463,7 @@ void AdvSceneSwitcher::ImportMacros()
 	RunPostLoadSteps();
 
 	ui->macros->Reset(GetMacros(),
-			  GetGlobalMacroProperties()._highlightExecuted);
+			  GetGlobalMacroSettings()._highlightExecuted);
 }
 
 void AdvSceneSwitcher::on_macroName_editingFinished()
@@ -743,8 +743,8 @@ void AdvSceneSwitcher::MacroSelectionChanged()
 
 void AdvSceneSwitcher::HighlightOnChange()
 {
-	if (!GetGlobalMacroProperties()._highlightActions &&
-	    !GetGlobalMacroProperties()._highlightExecuted) {
+	if (!GetGlobalMacroSettings()._highlightActions &&
+	    !GetGlobalMacroSettings()._highlightExecuted) {
 		return;
 	}
 
@@ -759,15 +759,15 @@ void AdvSceneSwitcher::HighlightOnChange()
 	}
 }
 
-void AdvSceneSwitcher::on_macroProperties_clicked()
+void AdvSceneSwitcher::on_macroSettings_clicked()
 {
-	MacroProperties prop = GetGlobalMacroProperties();
-	bool accepted = MacroPropertiesDialog::AskForSettings(
+	GlobalMacroSettings prop = GetGlobalMacroSettings();
+	bool accepted = MacroSettingsDialog::AskForSettings(
 		this, prop, GetSelectedMacro().get());
 	if (!accepted) {
 		return;
 	}
-	GetGlobalMacroProperties() = prop;
+	GetGlobalMacroSettings() = prop;
 	emit HighlightMacrosChanged(prop._highlightExecuted);
 }
 
@@ -817,11 +817,11 @@ static void runSegmentHighligtChecks(AdvSceneSwitcher *ss)
 		return;
 	}
 
-	const auto &properties = GetGlobalMacroProperties();
-	if (properties._highlightConditions) {
+	const auto &settings = GetGlobalMacroSettings();
+	if (settings._highlightConditions) {
 		runSegmentHighligtChecksHelper(ss->ui->conditionsList);
 	}
-	if (properties._highlightActions) {
+	if (settings._highlightActions) {
 		runSegmentHighligtChecksHelper(ss->ui->actionsList);
 		runSegmentHighligtChecksHelper(ss->ui->elseActionsList);
 	}
@@ -836,7 +836,7 @@ void AdvSceneSwitcher::SetupMacroTab()
 		addPulse = HighlightWidget(ui->macroAdd, QColor(Qt::green));
 	}
 	ui->macros->Reset(GetMacros(),
-			  GetGlobalMacroProperties()._highlightExecuted);
+			  GetGlobalMacroSettings()._highlightExecuted);
 	connect(ui->macros, SIGNAL(MacroSelectionAboutToChange()), this,
 		SLOT(MacroSelectionAboutToChange()));
 	connect(ui->macros, SIGNAL(MacroSelectionChanged()), this,

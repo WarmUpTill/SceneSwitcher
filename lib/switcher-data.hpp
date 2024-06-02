@@ -16,7 +16,7 @@
 #include "switch-video.hpp"
 #include "switch-network.hpp"
 
-#include "macro-properties.hpp"
+#include "macro-settings.hpp"
 #include "duration-control.hpp"
 #include "priority-helper.hpp"
 #include "plugin-state-helpers.hpp"

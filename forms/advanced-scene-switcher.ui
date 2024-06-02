@@ -960,7 +960,7 @@
               </spacer>
              </item>
              <item>
-              <widget class="QPushButton" name="macroProperties">
+              <widget class="QPushButton" name="macroSettings">
                <property name="maximumSize">
                 <size>
                  <width>22</width>
@@ -968,7 +968,7 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>AdvSceneSwitcher.macroTab.tooltip.openMacroPropertiesButton</string>
+                <string>AdvSceneSwitcher.macroTab.tooltip.openMacroSettingsButton</string>
                </property>
                <property name="text">
                 <string/>
@@ -5033,7 +5033,7 @@
   <tabstop>runMacro</tabstop>
   <tabstop>runMacroInParallel</tabstop>
   <tabstop>runMacroOnChange</tabstop>
-  <tabstop>macroProperties</tabstop>
+  <tabstop>macroSettings</tabstop>
   <tabstop>conditionsList</tabstop>
   <tabstop>conditionAdd</tabstop>
   <tabstop>conditionRemove</tabstop>

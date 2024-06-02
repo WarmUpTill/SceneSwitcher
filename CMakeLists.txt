@@ -124,8 +124,6 @@ target_sources(
           lib/macro/macro-input.hpp
           lib/macro/macro-list.cpp
           lib/macro/macro-list.hpp
-          lib/macro/macro-properties.cpp
-          lib/macro/macro-properties.hpp
           lib/macro/macro-ref.cpp
           lib/macro/macro-ref.hpp
           lib/macro/macro-run-button.cpp
@@ -140,6 +138,8 @@ target_sources(
           lib/macro/macro-segment.hpp
           lib/macro/macro-selection.cpp
           lib/macro/macro-selection.hpp
+          lib/macro/macro-settings.cpp
+          lib/macro/macro-settings.hpp
           lib/macro/macro-tab.cpp
           lib/macro/macro-tree.cpp
           lib/macro/macro-tree.hpp
