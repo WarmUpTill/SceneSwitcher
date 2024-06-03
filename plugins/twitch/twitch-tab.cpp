@@ -196,7 +196,7 @@ static void setupTab(QTabWidget *tab)
 
 	QWidget::connect(
 		TwitchConnectionSignalManager::Instance(),
-		&TwitchConnectionSignalManager::Add,
+		&TwitchConnectionSignalManager::Add, tab,
 		[tab](const QString &name) {
 			AddItemTableRow(
 				tabWidget->Table(),
@@ -208,7 +208,7 @@ static void setupTab(QTabWidget *tab)
 			setTabVisible(tab, true);
 		});
 	QWidget::connect(TwitchConnectionSignalManager::Instance(),
-			 &TwitchConnectionSignalManager::Remove,
+			 &TwitchConnectionSignalManager::Remove, tab,
 			 [](const QString &name) {
 				 RemoveItemTableRow(tabWidget->Table(), name);
 				 if (tabWidget->Table()->rowCount() == 0) {
