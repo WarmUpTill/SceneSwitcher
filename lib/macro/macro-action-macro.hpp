@@ -49,7 +49,7 @@ public:
 		ENABLE_ACTION,
 		TOGGLE_ACTION,
 	};
-	Action _action = Action::PAUSE;
+	Action _action = Action::RUN;
 	IntVariable _actionIndex = 1;
 	RunOptions _runOptions = {};
 
