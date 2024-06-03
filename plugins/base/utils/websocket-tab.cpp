@@ -207,14 +207,14 @@ static void setupTab(QTabWidget *tab)
 	}
 
 	QWidget::connect(ConnectionSelectionSignalManager::Instance(),
-			 &ConnectionSelectionSignalManager::Rename,
+			 &ConnectionSelectionSignalManager::Rename, tab,
 			 [](const QString &oldName, const QString &newName) {
 				 RenameItemTableRow(tabWidget->Table(), oldName,
 						    newName);
 			 });
 	QWidget::connect(
 		ConnectionSelectionSignalManager::Instance(),
-		&ConnectionSelectionSignalManager::Add,
+		&ConnectionSelectionSignalManager::Add, tab,
 		[tab](const QString &name) {
 			AddItemTableRow(
 				tabWidget->Table(),
@@ -224,7 +224,7 @@ static void setupTab(QTabWidget *tab)
 			setTabVisible(tab, true);
 		});
 	QWidget::connect(ConnectionSelectionSignalManager::Instance(),
-			 &ConnectionSelectionSignalManager::Remove,
+			 &ConnectionSelectionSignalManager::Remove, tab,
 			 [](const QString &name) {
 				 RemoveItemTableRow(tabWidget->Table(), name);
 				 if (tabWidget->Table()->rowCount() == 0) {

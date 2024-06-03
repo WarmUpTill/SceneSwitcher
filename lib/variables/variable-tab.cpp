@@ -273,14 +273,14 @@ static void setupTab(QTabWidget *tab)
 	}
 
 	QWidget::connect(VariableSignalManager::Instance(),
-			 &VariableSignalManager::Rename,
+			 &VariableSignalManager::Rename, tab,
 			 [](const QString &oldName, const QString &newName) {
 				 RenameItemTableRow(tabWidget->Table(), oldName,
 						    newName);
 			 });
 	QWidget::connect(
 		VariableSignalManager::Instance(), &VariableSignalManager::Add,
-		[tab](const QString &name) {
+		tab, [tab](const QString &name) {
 			AddItemTableRow(
 				tabWidget->Table(),
 				getCellLabels(GetVariableByQString(name)));
@@ -289,7 +289,7 @@ static void setupTab(QTabWidget *tab)
 			setTabVisible(tab, true);
 		});
 	QWidget::connect(VariableSignalManager::Instance(),
-			 &VariableSignalManager::Remove,
+			 &VariableSignalManager::Remove, tab,
 			 [](const QString &name) {
 				 RemoveItemTableRow(tabWidget->Table(), name);
 				 if (tabWidget->Table()->rowCount() == 0) {
