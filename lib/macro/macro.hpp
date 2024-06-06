@@ -29,7 +29,7 @@ public:
 	std::string Name() const { return _name; }
 	void SetName(const std::string &name);
 
-	bool CeckMatch();
+	bool CeckMatch(bool ignorePause = false);
 	bool Matched() const { return _matched; }
 	int64_t MsSinceLastCheck() const;
 	bool ShouldRunActions() const;

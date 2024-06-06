@@ -101,7 +101,7 @@ void Macro::PrepareMoveToGroup(std::shared_ptr<Macro> group,
 	}
 }
 
-bool Macro::CeckMatch()
+bool Macro::CeckMatch(bool ignorePause)
 {
 	if (_isGroup) {
 		return false;
@@ -109,7 +109,7 @@ bool Macro::CeckMatch()
 
 	_matched = false;
 	for (auto &c : _conditions) {
-		if (_paused) {
+		if (_paused && !ignorePause) {
 			vblog(LOG_INFO, "Macro %s is paused", _name.c_str());
 			return false;
 		}
@@ -185,6 +185,7 @@ bool Macro::CeckMatch()
 	if (!_conditionSateChanged && _performActionsOnChange) {
 		_onPreventedActionExecution = true;
 	}
+
 	_lastMatched = _matched;
 	_lastCheckTime = std::chrono::high_resolution_clock::now();
 	return _matched;
