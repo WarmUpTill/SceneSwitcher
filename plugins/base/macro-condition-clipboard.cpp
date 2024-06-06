@@ -1,6 +1,5 @@
 #include "macro-condition-clipboard.hpp"
 #include "layout-helpers.hpp"
-#include "ui-helpers.hpp"
 
 #include <QApplication>
 #include <QClipboard>
@@ -197,19 +196,11 @@ MacroConditionClipboardEdit::MacroConditionClipboardEdit(
 	  _conditions(new QComboBox(this)),
 	  _text(new VariableTextEdit(this)),
 	  _regex(new RegexConfigWidget(parent)),
-	  _urlInfo(new QLabel())
+	  _urlInfo(new HelpIcon(obs_module_text(
+		  "AdvSceneSwitcher.condition.clipboard.urlTooltip")))
 {
 	populateCompareModeselection(_conditions);
-
-	QString path = GetThemeTypeName() == "Light"
-			       ? ":/res/images/help.svg"
-			       : ":/res/images/help_light.svg";
-	QIcon icon(path);
-	QPixmap pixmap = icon.pixmap(QSize(16, 16));
-	_urlInfo->setPixmap(pixmap);
 	_urlInfo->hide();
-	_urlInfo->setToolTip(obs_module_text(
-		"AdvSceneSwitcher.condition.clipboard.urlTooltip"));
 
 	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));

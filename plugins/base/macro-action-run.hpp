@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "help-icon.hpp"
 #include "process-config.hpp"
 #include "duration-control.hpp"
 
@@ -60,7 +61,7 @@ private:
 	QHBoxLayout *_waitLayout;
 	QCheckBox *_wait;
 	DurationSelection *_timeout;
-	QLabel *_waitHelp;
+	HelpIcon *_waitHelp;
 
 	std::shared_ptr<MacroActionRun> _entryData;
 	bool _loading = true;

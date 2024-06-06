@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "help-icon.hpp"
 #include "macro-segment-selection.hpp"
 #include "regex-config.hpp"
 #include "resizing-text-edit.hpp"
@@ -186,7 +187,7 @@ private:
 	VariableLineEdit *_envVariable;
 	SceneSelectionWidget *_scenes;
 	TempVariableSelection *_tempVars;
-	QLabel *_tempVarsHelp;
+	HelpIcon *_tempVarsHelp;
 	VariableSpinBox *_sceneItemIndex;
 	QComboBox *_direction;
 	VariableSpinBox *_stringLength;

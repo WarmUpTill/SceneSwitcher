@@ -1,7 +1,7 @@
 #include "macro-condition-folder.hpp"
+#include "help-icon.hpp"
 #include "macro-helpers.hpp"
 #include "layout-helpers.hpp"
-#include "ui-helpers.hpp"
 
 #include <QDir>
 #include <QFileInfo>
@@ -282,16 +282,6 @@ MacroConditionFolderEdit::MacroConditionFolderEdit(
 	  _regex(new RegexConfigWidget(this, false)),
 	  _filter(new VariableLineEdit(this))
 {
-	QString path = GetThemeTypeName() == "Light"
-			       ? ":/res/images/help.svg"
-			       : ":/res/images/help_light.svg";
-	QIcon icon(path);
-	QPixmap pixmap = icon.pixmap(QSize(16, 16));
-	auto tooltipLabel = new QLabel(this);
-	tooltipLabel->setPixmap(pixmap);
-	tooltipLabel->setToolTip(
-		obs_module_text("AdvSceneSwitcher.condition.folder.tooltip"));
-
 	populateConditions(_conditions);
 
 	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
@@ -305,6 +295,9 @@ MacroConditionFolderEdit::MacroConditionFolderEdit(
 			 SLOT(RegexChanged(const RegexConfig &)));
 	QWidget::connect(_filter, SIGNAL(editingFinished()), this,
 			 SLOT(FilterChanged()));
+
+	auto tooltipLabel = new HelpIcon(
+		obs_module_text("AdvSceneSwitcher.condition.folder.tooltip"));
 
 	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{conditions}}", _conditions}, {"{{folder}}", _folder},
