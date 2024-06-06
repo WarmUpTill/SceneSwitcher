@@ -168,6 +168,8 @@ target_sources(
           lib/utils/file-selection.hpp
           lib/utils/filter-combo-box.cpp
           lib/utils/filter-combo-box.hpp
+          lib/utils/help-icon.hpp
+          lib/utils/help-icon.cpp
           lib/utils/item-selection-helpers.cpp
           lib/utils/item-selection-helpers.hpp
           lib/utils/layout-helpers.cpp

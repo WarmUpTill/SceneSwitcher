@@ -1,7 +1,6 @@
 #include "source-setting.hpp"
 #include "obs-module-helper.hpp"
 #include "math-helpers.hpp"
-#include "ui-helpers.hpp"
 #include "utility.hpp"
 
 #include <nlohmann/json.hpp>
@@ -233,14 +232,8 @@ SourceSettingSelection::SourceSettingSelection(QWidget *parent)
 	: QWidget(parent),
 	  _settings(new FilterComboBox(
 		  this, obs_module_text("AdvSceneSwitcher.setting.select"))),
-	  _tooltip(new QLabel())
+	  _tooltip(new HelpIcon())
 {
-	QString path = GetThemeTypeName() == "Light"
-			       ? ":/res/images/help.svg"
-			       : ":/res/images/help_light.svg";
-	QIcon icon(path);
-	QPixmap pixmap = icon.pixmap(QSize(16, 16));
-	_tooltip->setPixmap(pixmap);
 	_tooltip->hide();
 
 	_settings->setSizeAdjustPolicy(QComboBox::AdjustToContents);

@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-condition-edit.hpp"
 #include "filter-combo-box.hpp"
+#include "help-icon.hpp"
 #include "message-buffer.hpp"
 #include "message-dispatcher.hpp"
 #include "regex-config.hpp"
@@ -83,7 +84,7 @@ private:
 	QComboBox *_conditions;
 	VariableTextEdit *_text;
 	RegexConfigWidget *_regex;
-	QLabel *_urlInfo;
+	HelpIcon *_urlInfo;
 
 	std::shared_ptr<MacroConditionClipboard> _entryData;
 	bool _loading = true;

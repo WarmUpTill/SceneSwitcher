@@ -1,6 +1,5 @@
 #include "macro-action-run.hpp"
 #include "layout-helpers.hpp"
-#include "ui-helpers.hpp"
 
 #include <QProcess>
 #include <QDesktopServices>
@@ -130,16 +129,10 @@ MacroActionRunEdit::MacroActionRunEdit(
 	  _waitLayout(new QHBoxLayout()),
 	  _wait(new QCheckBox()),
 	  _timeout(new DurationSelection(this, true, 0.1)),
-	  _waitHelp(new QLabel())
+	  _waitHelp(new HelpIcon(obs_module_text(
+		  "AdvSceneSwitcher.action.run.wait.help.tooltip")))
 {
-	QString helpIconPath = GetThemeTypeName() == "Light"
-				       ? ":/res/images/help.svg"
-				       : ":/res/images/help_light.svg";
-	QIcon helpIcon(helpIconPath);
-	_waitHelp->setPixmap(helpIcon.pixmap(QSize(16, 16)));
 	_waitHelp->hide();
-	_waitHelp->setToolTip(obs_module_text(
-		"AdvSceneSwitcher.action.run.wait.help.tooltip"));
 
 	QWidget::connect(_procConfig,
 			 SIGNAL(ConfigChanged(const ProcessConfig &)), this,
