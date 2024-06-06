@@ -32,6 +32,7 @@ public:
 			INVERT_CONDITIONS,
 		};
 		Logic logic;
+		bool reevaluateConditionState = false;
 		bool runElseActions = false;
 		bool skipWhenPaused = true;
 		bool setInputs = false;
@@ -83,6 +84,7 @@ private slots:
 	void ActionIndexChanged(const IntVariable &value);
 	void ConditionMacroChanged(const QString &text);
 	void ConditionBehaviorChanged(int value);
+	void ReevaluateConditionStateChanged(int value);
 	void ActionTypeChanged(int value);
 	void SkipWhenPausedChanged(int value);
 	void SetInputsChanged(int value);
@@ -100,12 +102,14 @@ private:
 	QComboBox *_actions;
 	MacroSelection *_conditionMacros;
 	QComboBox *_conditionBehaviors;
+	QCheckBox *_reevaluateConditionState;
 	QComboBox *_actionTypes;
 	QCheckBox *_skipWhenPaused;
 	QCheckBox *_setInputs;
 	MacroInputEdit *_inputs;
 	QHBoxLayout *_entryLayout;
 	QHBoxLayout *_conditionLayout;
+	QHBoxLayout *_reevaluateConditionStateLayout;
 	QHBoxLayout *_setInputsLayout;
 
 	std::shared_ptr<MacroActionMacro> _entryData;

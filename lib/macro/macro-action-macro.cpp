@@ -1,7 +1,7 @@
 #include "macro-action-macro.hpp"
+#include "help-icon.hpp"
 #include "layout-helpers.hpp"
 #include "macro.hpp"
-#include "ui-helpers.hpp"
 
 namespace advss {
 
@@ -169,6 +169,15 @@ void MacroActionMacro::ResolveVariablesToFixedValues()
 	_actionIndex.ResolveVariables();
 }
 
+static void runActionsHelper(Macro *macro, bool runElseActions, bool setInputs,
+			     const StringList &inputs)
+{
+	if (setInputs) {
+		macro->GetInputVariables().SetValues(inputs);
+	}
+	macro->PerformActions(!runElseActions, false, true);
+}
+
 void MacroActionMacro::RunActions(Macro *actionMacro) const
 {
 	if (_runOptions.skipWhenPaused && actionMacro->Paused()) {
@@ -176,12 +185,8 @@ void MacroActionMacro::RunActions(Macro *actionMacro) const
 	}
 
 	if (_runOptions.logic == RunOptions::Logic::IGNORE_CONDITIONS) {
-		if (_runOptions.setInputs) {
-			actionMacro->GetInputVariables().SetValues(
-				_runOptions.inputs);
-		}
-		actionMacro->PerformActions(!_runOptions.runElseActions, false,
-					    true);
+		runActionsHelper(actionMacro, _runOptions.runElseActions,
+				 _runOptions.setInputs, _runOptions.inputs);
 		return;
 	}
 
@@ -190,16 +195,16 @@ void MacroActionMacro::RunActions(Macro *actionMacro) const
 		return;
 	}
 
+	if (_runOptions.reevaluateConditionState) {
+		conditionMacro->CeckMatch(true);
+	}
+
 	if ((_runOptions.logic == RunOptions::Logic::CONDITIONS &&
 	     conditionMacro->Matched()) ||
 	    (_runOptions.logic == RunOptions::Logic::INVERT_CONDITIONS &&
 	     !conditionMacro->Matched())) {
-		if (_runOptions.setInputs) {
-			actionMacro->GetInputVariables().SetValues(
-				_runOptions.inputs);
-		}
-		actionMacro->PerformActions(!_runOptions.runElseActions, false,
-					    true);
+		runActionsHelper(actionMacro, _runOptions.runElseActions,
+				 _runOptions.setInputs, _runOptions.inputs);
 	}
 }
 
@@ -237,6 +242,9 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 	  _actions(new QComboBox()),
 	  _conditionMacros(new MacroSelection(parent)),
 	  _conditionBehaviors(new QComboBox()),
+	  _reevaluateConditionState(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.action.macro.type.run."
+				  "updateConditionMatchState"))),
 	  _actionTypes(new QComboBox()),
 	  _skipWhenPaused(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.action.macro.type.run.skipWhenPaused"))),
@@ -245,6 +253,7 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 	  _inputs(new MacroInputEdit()),
 	  _entryLayout(new QHBoxLayout()),
 	  _conditionLayout(new QHBoxLayout()),
+	  _reevaluateConditionStateLayout(new QHBoxLayout()),
 	  _setInputsLayout(new QHBoxLayout())
 {
 	populateActionSelection(_actions);
@@ -274,24 +283,23 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 	QWidget::connect(_inputs,
 			 SIGNAL(MacroInputValuesChanged(const StringList &)),
 			 this, SLOT(InputsChanged(const StringList &)));
-
-	auto inputsDescription = new QLabel();
-	QString path = GetThemeTypeName() == "Light"
-			       ? ":/res/images/help.svg"
-			       : ":/res/images/help_light.svg";
-	QIcon icon(path);
-	QPixmap pixmap = icon.pixmap(QSize(16, 16));
-	inputsDescription->setPixmap(pixmap);
-	inputsDescription->setToolTip(obs_module_text(
-		"AdvSceneSwitcher.action.macro.type.run.setInputs.description"));
+	QWidget::connect(_reevaluateConditionState, SIGNAL(stateChanged(int)),
+			 this, SLOT(ReevaluateConditionStateChanged(int)));
 
 	_setInputsLayout->addWidget(_setInputs);
-	_setInputsLayout->addWidget(inputsDescription);
+	_setInputsLayout->addWidget(new HelpIcon(obs_module_text(
+		"AdvSceneSwitcher.action.macro.type.run.setInputs.description")));
 	_setInputsLayout->addStretch();
+
+	_reevaluateConditionStateLayout->addWidget(_reevaluateConditionState);
+	_reevaluateConditionStateLayout->addWidget(new HelpIcon(obs_module_text(
+		"AdvSceneSwitcher.action.macro.type.run.updateConditionMatchState.help")));
+	_reevaluateConditionStateLayout->addStretch();
 
 	auto layout = new QVBoxLayout();
 	layout->addLayout(_entryLayout);
 	layout->addLayout(_conditionLayout);
+	layout->addLayout(_reevaluateConditionStateLayout);
 	layout->addLayout(_setInputsLayout);
 	layout->addWidget(_inputs);
 	layout->addWidget(_skipWhenPaused);
@@ -320,6 +328,8 @@ void MacroActionMacroEdit::UpdateEntryData()
 	_conditionMacros->SetCurrentMacro(_entryData->_runOptions.macro);
 	_conditionBehaviors->setCurrentIndex(
 		static_cast<int>(_entryData->_runOptions.logic));
+	_reevaluateConditionState->setChecked(
+		_entryData->_runOptions.reevaluateConditionState);
 	_actionTypes->setCurrentIndex(
 		_entryData->_runOptions.runElseActions ? 1 : 0);
 	_skipWhenPaused->setChecked(_entryData->_runOptions.skipWhenPaused);
@@ -364,6 +374,13 @@ void MacroActionMacroEdit::ConditionBehaviorChanged(int value)
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_runOptions.logic =
 		static_cast<MacroActionMacro::RunOptions::Logic>(value);
+	SetWidgetVisibility();
+}
+
+void MacroActionMacroEdit::ReevaluateConditionStateChanged(int value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_runOptions.reevaluateConditionState = value;
 	SetWidgetVisibility();
 }
 
@@ -451,10 +468,13 @@ void MacroActionMacroEdit::SetWidgetVisibility()
 
 	SetLayoutVisible(_conditionLayout,
 			 _entryData->_action == MacroActionMacro::Action::RUN);
-	_conditionMacros->setVisible(
+	const bool needsAdditionalConditionWidgets =
 		_entryData->_action == MacroActionMacro::Action::RUN &&
 		_entryData->_runOptions.logic !=
-			MacroActionMacro::RunOptions::Logic::IGNORE_CONDITIONS);
+			MacroActionMacro::RunOptions::Logic::IGNORE_CONDITIONS;
+	_conditionMacros->setVisible(needsAdditionalConditionWidgets);
+	SetLayoutVisible(_reevaluateConditionStateLayout,
+			 needsAdditionalConditionWidgets);
 	SetLayoutVisible(_setInputsLayout,
 			 _entryData->_action == MacroActionMacro::Action::RUN);
 	_inputs->setVisible(_entryData->_action ==
@@ -488,6 +508,8 @@ void MacroActionMacro::RunOptions::Save(obs_data_t *obj) const
 {
 	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_int(data, "logic", static_cast<int>(logic));
+	obs_data_set_bool(data, "reevaluateConditionState",
+			  reevaluateConditionState);
 	obs_data_set_bool(data, "runElseActions", runElseActions);
 	obs_data_set_bool(data, "skipWhenPaused", skipWhenPaused);
 	obs_data_set_bool(data, "setInputs", setInputs);
@@ -503,6 +525,8 @@ void MacroActionMacro::RunOptions::Load(obs_data_t *obj)
 	}
 	OBSDataAutoRelease data = obs_data_get_obj(obj, "runOptions");
 	logic = static_cast<Logic>(obs_data_get_int(data, "logic"));
+	reevaluateConditionState =
+		obs_data_get_bool(data, "reevaluateConditionState");
 	runElseActions = obs_data_get_bool(data, "runElseActions");
 	skipWhenPaused = obs_data_get_bool(data, "skipWhenPaused");
 	setInputs = obs_data_get_bool(data, "setInputs");
