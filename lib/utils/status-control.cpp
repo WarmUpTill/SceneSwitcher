@@ -73,7 +73,6 @@ StatusControl::StatusControl(QWidget *parent, bool noLayout)
 	_statusPrefix->setWordWrap(true);
 	_statusPrefix->setSizePolicy(QSizePolicy::Expanding,
 				     QSizePolicy::Expanding);
-	SetStatusStyleSheet(false);
 	QWidget::connect(_button, SIGNAL(clicked()), this,
 			 SLOT(ButtonClicked()));
 
@@ -142,6 +141,7 @@ void StatusControl::SetStopped()
 	_button->setText(
 		obs_module_text("AdvSceneSwitcher.generalTab.status.start"));
 	_status->setText(obs_module_text("AdvSceneSwitcher.status.inactive"));
+	SetStatusStyleSheet(true);
 	if (HighlightUIElementsEnabled()) {
 		_pulse = HighlightWidget(_status, QColor(Qt::red),
 					 QColor(0, 0, 0, 0));
