@@ -345,6 +345,9 @@ if(OS_WINDOWS)
   if(MSVC)
     target_compile_options(${LIB_NAME} PUBLIC /MP /d2FH4- /wd4267 /wd4267
                                               /bigobj)
+
+    # Workaround for MSVC incompatibility in CI environment
+    add_compile_definitions(${target_name} _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
   endif()
   target_sources(${LIB_NAME} PRIVATE lib/win/advanced-scene-switcher-win.cpp)
   add_definitions(-D_WEBSOCKETPP_CPP11_STL_)
