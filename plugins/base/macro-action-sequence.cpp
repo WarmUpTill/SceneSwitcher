@@ -197,11 +197,7 @@ MacroActionSequenceEdit::MacroActionSequenceEdit(
 
 	_resetIndex->setMinimum(1);
 
-	auto line = new QFrame();
-	line->setFrameShape(QFrame::VLine);
-	line->setFrameShadow(QFrame::Sunken);
-	_macroList->AddControl(line);
-	_macroList->AddControl(_continueFrom);
+	(void)_macroList->AddControl(_continueFrom);
 
 	QWidget::connect(_macroList, SIGNAL(Added(const std::string &)), this,
 			 SLOT(Add(const std::string &)));

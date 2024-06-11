@@ -1,7 +1,7 @@
 #pragma once
 #include "export-symbol-helper.hpp"
+#include "list-controls.hpp"
 
-#include <QPushButton>
 #include <QListWidget>
 #include <QLayout>
 
@@ -27,11 +27,7 @@ protected:
 	void UpdateListSize();
 
 	QListWidget *_list;
-	QPushButton *_add;
-	QPushButton *_remove;
-	QPushButton *_up;
-	QPushButton *_down;
-	QHBoxLayout *_controlsLayout;
+	ListControls *_controls;
 	QVBoxLayout *_mainLayout;
 };
 

@@ -88,12 +88,10 @@ RegexConfig RegexConfig::PartialMatchRegexConfig()
 
 RegexConfigWidget::RegexConfigWidget(QWidget *parent, bool showEnable)
 	: QWidget(parent),
-	  _openSettings(new QPushButton()),
+	  _openSettings(new QToolButton()),
 	  _enable(new QPushButton())
 {
-	_openSettings->setMaximumWidth(22);
 	SetButtonIcon(_openSettings, ":/settings/images/settings/general.svg");
-	_openSettings->setFlat(true);
 	_openSettings->setToolTip(
 		obs_module_text("AdvSceneSwitcher.regex.configure"));
 

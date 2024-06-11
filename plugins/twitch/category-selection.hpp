@@ -6,7 +6,7 @@
 #include <QDialog>
 #include <QLabel>
 #include <QCheckBox>
-#include <QPushButton>
+#include <QToolButton>
 
 namespace advss {
 
@@ -94,7 +94,7 @@ private:
 	static std::map<QString, int> _streamingCategories;
 };
 
-class TwitchCategorySearchButton : public QPushButton {
+class TwitchCategorySearchButton : public QToolButton {
 	Q_OBJECT
 
 public:

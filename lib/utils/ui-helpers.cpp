@@ -70,7 +70,7 @@ void SetHeightToContentHeight(QListWidget *list)
 	list->setMaximumHeight(height);
 }
 
-void SetButtonIcon(QPushButton *button, const char *path)
+void SetButtonIcon(QAbstractButton *button, const char *path)
 {
 	QIcon icon;
 	icon.addFile(QString::fromUtf8(path), QSize(), QIcon::Normal,

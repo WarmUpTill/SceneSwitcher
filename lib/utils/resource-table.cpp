@@ -15,20 +15,16 @@ ResourceTable::ResourceTable(QTabWidget *parent, const QString &help,
 			     const std::function<void()> &openSettings)
 	: QWidget(parent),
 	  _table(new QTableWidget()),
-	  _add(new QPushButton()),
-	  _remove(new QPushButton()),
+	  _add(new QToolButton()),
+	  _remove(new QToolButton()),
 	  _help(new QLabel(help))
 {
-	_add->setMaximumWidth(22);
 	_add->setProperty("themeID",
 			  QVariant(QString::fromUtf8("addIconSmall")));
-	_add->setFlat(true);
 	_add->setToolTip(addToolTip);
 
-	_remove->setMaximumWidth(22);
 	_remove->setProperty("themeID",
 			     QVariant(QString::fromUtf8("removeIconSmall")));
-	_remove->setFlat(true);
 	_remove->setToolTip(removeToolTip);
 
 	_help->setWordWrap(true);

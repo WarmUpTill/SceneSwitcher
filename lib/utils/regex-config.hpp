@@ -2,12 +2,13 @@
 #include "export-symbol-helper.hpp"
 
 #include <obs-data.h>
-#include <QWidget>
 #include <QCheckBox>
-#include <QPushButton>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QPushButton>
 #include <QRegularExpression>
+#include <QToolButton>
+#include <QWidget>
 
 namespace advss {
 
@@ -63,7 +64,7 @@ signals:
 private:
 	void SetVisibility();
 
-	QPushButton *_openSettings;
+	QToolButton *_openSettings;
 	QPushButton *_enable;
 	RegexConfig _config;
 };

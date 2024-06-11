@@ -774,10 +774,12 @@ void AdvSceneSwitcher::on_macroSettings_clicked()
 static void moveControlsToSplitter(QSplitter *splitter, int idx,
 				   QLayoutItem *item)
 {
-	static int splitterHandleWidth = 38;
+	static int splitterHandleWidth = 32;
 	auto handle = splitter->handle(idx);
 	auto layout = item->layout();
-	layout->setContentsMargins(7, 7, 7, 7);
+	int leftMargin, rightMargin;
+	layout->getContentsMargins(&leftMargin, nullptr, &rightMargin, nullptr);
+	layout->setContentsMargins(leftMargin, 0, rightMargin, 0);
 	handle->setLayout(layout);
 	splitter->setHandleWidth(splitterHandleWidth);
 	splitter->setStyleSheet("QSplitter::handle {background: transparent;}");
@@ -827,6 +829,32 @@ static void runSegmentHighligtChecks(AdvSceneSwitcher *ss)
 	}
 }
 
+static QToolBar *
+setupToolBar(const std::initializer_list<std::initializer_list<QWidget *>>
+		     &widgetGroups)
+{
+	auto toolbar = new QToolBar();
+	toolbar->setIconSize({16, 16});
+
+	QAction *lastSeperator = nullptr;
+
+	for (const auto &widgetGroup : widgetGroups) {
+		for (const auto &widget : widgetGroup) {
+			toolbar->addWidget(widget);
+		}
+		lastSeperator = toolbar->addSeparator();
+	}
+
+	if (lastSeperator) {
+		toolbar->removeAction(lastSeperator);
+	}
+
+	// Prevent "extension" button from showing up
+	toolbar->setSizePolicy(QSizePolicy::MinimumExpanding,
+			       QSizePolicy::Preferred);
+	return toolbar;
+}
+
 void AdvSceneSwitcher::SetupMacroTab()
 {
 	ui->macroElseActions->installEventFilter(this);
@@ -835,6 +863,11 @@ void AdvSceneSwitcher::SetupMacroTab()
 	if (GetMacros().size() == 0 && !switcher->disableHints) {
 		addPulse = HighlightWidget(ui->macroAdd, QColor(Qt::green));
 	}
+
+	auto macroControls = setupToolBar({{ui->macroAdd, ui->macroRemove},
+					   {ui->macroUp, ui->macroDown}});
+	ui->macroControlLayout->addWidget(macroControls);
+
 	ui->macros->Reset(GetMacros(),
 			  GetGlobalMacroSettings()._highlightExecuted);
 	connect(ui->macros, SIGNAL(MacroSelectionAboutToChange()), this,
@@ -886,13 +919,7 @@ void AdvSceneSwitcher::SetupMacroTab()
 		SLOT(HighlightOnChange()));
 	onChangeHighlightTimer.start();
 
-	// Move condition controls into splitter handle layout
-	moveControlsToSplitter(ui->macroActionConditionSplitter, 1,
-			       ui->macroConditionsLayout->takeAt(1));
-	moveControlsToSplitter(ui->macroElseActionSplitter, 1,
-			       ui->macroActionsLayout->takeAt(1));
-
-	// Set action and condition control icons
+	// Set action and condition toolbars
 	const std::string pathPrefix =
 		GetDataFilePath("res/images/" + GetThemeTypeName());
 	SetButtonIcon(ui->actionTop, (pathPrefix + "DoubleUp.svg").c_str());
@@ -906,6 +933,28 @@ void AdvSceneSwitcher::SetupMacroTab()
 		      (pathPrefix + "DoubleDown.svg").c_str());
 	SetButtonIcon(ui->toggleElseActions,
 		      (pathPrefix + "NotEqual.svg").c_str());
+
+	auto conditionToolbar =
+		setupToolBar({{ui->conditionAdd, ui->conditionRemove},
+			      {ui->conditionTop, ui->conditionUp,
+			       ui->conditionDown, ui->conditionBottom}});
+	auto actionToolbar = setupToolBar({{ui->actionAdd, ui->actionRemove},
+					   {ui->actionTop, ui->actionUp,
+					    ui->actionDown, ui->actionBottom}});
+	auto elseActionToolbar =
+		setupToolBar({{ui->elseActionAdd, ui->elseActionRemove},
+			      {ui->elseActionTop, ui->elseActionUp,
+			       ui->elseActionDown, ui->elseActionBottom}});
+
+	ui->conditionControlsLayout->addWidget(conditionToolbar);
+	ui->actionControlsLayout->insertWidget(0, actionToolbar);
+	ui->elseActionControlsLayout->addWidget(elseActionToolbar);
+
+	// Move condition controls into splitter handle layout
+	moveControlsToSplitter(ui->macroActionConditionSplitter, 1,
+			       ui->macroConditionsLayout->takeAt(1));
+	moveControlsToSplitter(ui->macroElseActionSplitter, 1,
+			       ui->macroActionsLayout->takeAt(1));
 
 	// Reserve more space for macro edit area than for the macro list
 	ui->macroListMacroEditSplitter->setStretchFactor(0, 1);
@@ -1400,7 +1449,7 @@ static void fade(QWidget *widget, bool fadeOut)
 	animation->start(QPropertyAnimation::DeleteWhenStopped);
 }
 
-void fadeWidgets(const std::vector<QWidget *> &widgets, bool fadeOut)
+static void fadeWidgets(const std::vector<QWidget *> &widgets, bool fadeOut)
 {
 	for (const auto &widget : widgets) {
 		fade(widget, fadeOut);

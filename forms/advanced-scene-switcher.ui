@@ -68,7 +68,7 @@
             <x>0</x>
             <y>0</y>
             <width>962</width>
-            <height>1033</height>
+            <height>1040</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -572,19 +572,10 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_32">
                 <item>
-                 <widget class="QPushButton" name="priorityUp">
-                  <property name="maximumSize">
-                   <size>
-                    <width>22</width>
-                    <height>22</height>
-                   </size>
-                  </property>
+                 <widget class="QToolButton" name="priorityUp">
                   <property name="icon">
                    <iconset>
                     <normaloff>../../../forms/images/up.png</normaloff>../../../forms/images/up.png</iconset>
-                  </property>
-                  <property name="flat">
-                   <bool>true</bool>
                   </property>
                   <property name="themeID" stdset="0">
                    <string notr="true">upArrowIconSmall</string>
@@ -592,19 +583,10 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="priorityDown">
-                  <property name="maximumSize">
-                   <size>
-                    <width>22</width>
-                    <height>22</height>
-                   </size>
-                  </property>
+                 <widget class="QToolButton" name="priorityDown">
                   <property name="icon">
                    <iconset>
                     <normaloff>../../../forms/images/down.png</normaloff>../../../forms/images/down.png</iconset>
-                  </property>
-                  <property name="flat">
-                   <bool>true</bool>
                   </property>
                   <property name="themeID" stdset="0">
                    <string notr="true">downArrowIconSmall</string>
@@ -739,20 +721,11 @@
             </widget>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_61">
+            <layout class="QHBoxLayout" name="macroControlLayout">
              <item>
-              <widget class="QPushButton" name="macroAdd">
-               <property name="maximumSize">
-                <size>
-                 <width>22</width>
-                 <height>16777215</height>
-                </size>
-               </property>
+              <widget class="QToolButton" name="macroAdd">
                <property name="toolTip">
                 <string>AdvSceneSwitcher.macroTab.tooltip.macroAddButton</string>
-               </property>
-               <property name="flat">
-                <bool>true</bool>
                </property>
                <property name="themeID" stdset="0">
                 <string notr="true">addIconSmall</string>
@@ -760,18 +733,9 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="macroRemove">
-               <property name="maximumSize">
-                <size>
-                 <width>22</width>
-                 <height>16777215</height>
-                </size>
-               </property>
+              <widget class="QToolButton" name="macroRemove">
                <property name="toolTip">
                 <string>AdvSceneSwitcher.macroTab.tooltip.macroRemoveButton</string>
-               </property>
-               <property name="flat">
-                <bool>true</bool>
                </property>
                <property name="themeID" stdset="0">
                 <string notr="true">removeIconSmall</string>
@@ -779,57 +743,9 @@
               </widget>
              </item>
              <item>
-              <spacer name="horizontalSpacer_130">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>5</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <widget class="Line" name="line_46">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="horizontalSpacer_131">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>5</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <widget class="QPushButton" name="macroUp">
-               <property name="maximumSize">
-                <size>
-                 <width>22</width>
-                 <height>16777215</height>
-                </size>
-               </property>
+              <widget class="QToolButton" name="macroUp">
                <property name="toolTip">
                 <string>AdvSceneSwitcher.macroTab.tooltip.macroUpButton</string>
-               </property>
-               <property name="flat">
-                <bool>true</bool>
                </property>
                <property name="themeID" stdset="0">
                 <string notr="true">upArrowIconSmall</string>
@@ -837,36 +753,14 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="macroDown">
-               <property name="maximumSize">
-                <size>
-                 <width>22</width>
-                 <height>16777215</height>
-                </size>
-               </property>
+              <widget class="QToolButton" name="macroDown">
                <property name="toolTip">
                 <string>AdvSceneSwitcher.macroTab.tooltip.macroDownButton</string>
-               </property>
-               <property name="flat">
-                <bool>true</bool>
                </property>
                <property name="themeID" stdset="0">
                 <string notr="true">downArrowIconSmall</string>
                </property>
               </widget>
-             </item>
-             <item>
-              <spacer name="horizontalSpacer_65">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
              </item>
             </layout>
            </item>
@@ -960,21 +854,12 @@
               </spacer>
              </item>
              <item>
-              <widget class="QPushButton" name="macroSettings">
-               <property name="maximumSize">
-                <size>
-                 <width>22</width>
-                 <height>16777215</height>
-                </size>
-               </property>
+              <widget class="QToolButton" name="macroSettings">
                <property name="toolTip">
                 <string>AdvSceneSwitcher.macroTab.tooltip.openMacroSettingsButton</string>
                </property>
                <property name="text">
                 <string/>
-               </property>
-               <property name="flat">
-                <bool>true</bool>
                </property>
                <property name="themeID" stdset="0">
                 <string notr="true">propertiesIconSmall</string>
@@ -1013,23 +898,14 @@
                 </widget>
                </item>
                <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_12">
+                <layout class="QHBoxLayout" name="conditionControlsLayout">
                  <property name="leftMargin">
                   <number>9</number>
                  </property>
                  <item>
-                  <widget class="QPushButton" name="conditionAdd">
-                   <property name="maximumSize">
-                    <size>
-                     <width>22</width>
-                     <height>16777215</height>
-                    </size>
-                   </property>
+                  <widget class="QToolButton" name="conditionAdd">
                    <property name="toolTip">
                     <string>AdvSceneSwitcher.macroTab.tooltip.conditionAddButton</string>
-                   </property>
-                   <property name="flat">
-                    <bool>true</bool>
                    </property>
                    <property name="themeID" stdset="0">
                     <string notr="true">addIconSmall</string>
@@ -1037,18 +913,9 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QPushButton" name="conditionRemove">
-                   <property name="maximumSize">
-                    <size>
-                     <width>22</width>
-                     <height>16777215</height>
-                    </size>
-                   </property>
+                  <widget class="QToolButton" name="conditionRemove">
                    <property name="toolTip">
                     <string>AdvSceneSwitcher.macroTab.tooltip.conditionRemoveButton</string>
-                   </property>
-                   <property name="flat">
-                    <bool>true</bool>
                    </property>
                    <property name="themeID" stdset="0">
                     <string notr="true">removeIconSmall</string>
@@ -1056,76 +923,19 @@
                   </widget>
                  </item>
                  <item>
-                  <spacer name="horizontalSpacer_135">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeType">
-                    <enum>QSizePolicy::Fixed</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>5</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item>
-                  <widget class="Line" name="line_48">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="horizontalSpacer_134">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeType">
-                    <enum>QSizePolicy::Fixed</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>5</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="conditionTop">
-                   <property name="maximumSize">
-                    <size>
-                     <width>22</width>
-                     <height>16777215</height>
-                    </size>
-                   </property>
+                  <widget class="QToolButton" name="conditionTop">
                    <property name="toolTip">
                     <string>AdvSceneSwitcher.macroTab.tooltip.conditionTopButton</string>
                    </property>
-                   <property name="flat">
-                    <bool>true</bool>
-                   </property>
                   </widget>
                  </item>
                  <item>
-                  <widget class="QPushButton" name="conditionUp">
-                   <property name="maximumSize">
-                    <size>
-                     <width>22</width>
-                     <height>16777215</height>
-                    </size>
-                   </property>
+                  <widget class="QToolButton" name="conditionUp">
                    <property name="toolTip">
                     <string>AdvSceneSwitcher.macroTab.tooltip.conditionUpButton</string>
                    </property>
                    <property name="text">
                     <string/>
-                   </property>
-                   <property name="flat">
-                    <bool>true</bool>
                    </property>
                    <property name="themeID" stdset="0">
                     <string notr="true">upArrowIconSmall</string>
@@ -1133,18 +943,9 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QPushButton" name="conditionDown">
-                   <property name="maximumSize">
-                    <size>
-                     <width>22</width>
-                     <height>16777215</height>
-                    </size>
-                   </property>
+                  <widget class="QToolButton" name="conditionDown">
                    <property name="toolTip">
                     <string>AdvSceneSwitcher.macroTab.tooltip.conditionDownButton</string>
-                   </property>
-                   <property name="flat">
-                    <bool>true</bool>
                    </property>
                    <property name="themeID" stdset="0">
                     <string notr="true">downArrowIconSmall</string>
@@ -1152,33 +953,11 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QPushButton" name="conditionBottom">
-                   <property name="maximumSize">
-                    <size>
-                     <width>22</width>
-                     <height>16777215</height>
-                    </size>
-                   </property>
+                  <widget class="QToolButton" name="conditionBottom">
                    <property name="toolTip">
                     <string>AdvSceneSwitcher.macroTab.tooltip.conditionBottomButton</string>
                    </property>
-                   <property name="flat">
-                    <bool>true</bool>
-                   </property>
                   </widget>
-                 </item>
-                 <item>
-                  <spacer name="horizontalSpacer_15">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>40</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
                  </item>
                 </layout>
                </item>
@@ -1213,23 +992,14 @@
                  </widget>
                 </item>
                 <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_21">
+                 <layout class="QHBoxLayout" name="actionControlsLayout">
                   <property name="leftMargin">
                    <number>9</number>
                   </property>
                   <item>
-                   <widget class="QPushButton" name="actionAdd">
-                    <property name="maximumSize">
-                     <size>
-                      <width>22</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
+                   <widget class="QToolButton" name="actionAdd">
                     <property name="toolTip">
                      <string>AdvSceneSwitcher.macroTab.tooltip.actionAddButton</string>
-                    </property>
-                    <property name="flat">
-                     <bool>true</bool>
                     </property>
                     <property name="themeID" stdset="0">
                      <string notr="true">addIconSmall</string>
@@ -1237,18 +1007,9 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="actionRemove">
-                    <property name="maximumSize">
-                     <size>
-                      <width>22</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
+                   <widget class="QToolButton" name="actionRemove">
                     <property name="toolTip">
                      <string>AdvSceneSwitcher.macroTab.tooltip.actionRemoveButton</string>
-                    </property>
-                    <property name="flat">
-                     <bool>true</bool>
                     </property>
                     <property name="themeID" stdset="0">
                      <string notr="true">removeIconSmall</string>
@@ -1256,73 +1017,16 @@
                    </widget>
                   </item>
                   <item>
-                   <spacer name="horizontalSpacer_133">
-                    <property name="orientation">
-                     <enum>Qt::Horizontal</enum>
-                    </property>
-                    <property name="sizeType">
-                     <enum>QSizePolicy::Fixed</enum>
-                    </property>
-                    <property name="sizeHint" stdset="0">
-                     <size>
-                      <width>5</width>
-                      <height>20</height>
-                     </size>
-                    </property>
-                   </spacer>
-                  </item>
-                  <item>
-                   <widget class="Line" name="line_47">
-                    <property name="orientation">
-                     <enum>Qt::Vertical</enum>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <spacer name="horizontalSpacer_132">
-                    <property name="orientation">
-                     <enum>Qt::Horizontal</enum>
-                    </property>
-                    <property name="sizeType">
-                     <enum>QSizePolicy::Fixed</enum>
-                    </property>
-                    <property name="sizeHint" stdset="0">
-                     <size>
-                      <width>5</width>
-                      <height>20</height>
-                     </size>
-                    </property>
-                   </spacer>
-                  </item>
-                  <item>
-                   <widget class="QPushButton" name="actionTop">
-                    <property name="maximumSize">
-                     <size>
-                      <width>22</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
+                   <widget class="QToolButton" name="actionTop">
                     <property name="toolTip">
                      <string>AdvSceneSwitcher.macroTab.tooltip.actionTopButton</string>
                     </property>
-                    <property name="flat">
-                     <bool>true</bool>
-                    </property>
                    </widget>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="actionUp">
-                    <property name="maximumSize">
-                     <size>
-                      <width>22</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
+                   <widget class="QToolButton" name="actionUp">
                     <property name="toolTip">
                      <string>AdvSceneSwitcher.macroTab.tooltip.actionUpButton</string>
-                    </property>
-                    <property name="flat">
-                     <bool>true</bool>
                     </property>
                     <property name="themeID" stdset="0">
                      <string notr="true">upArrowIconSmall</string>
@@ -1330,18 +1034,9 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="actionDown">
-                    <property name="maximumSize">
-                     <size>
-                      <width>22</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
+                   <widget class="QToolButton" name="actionDown">
                     <property name="toolTip">
                      <string>AdvSceneSwitcher.macroTab.tooltip.actionDownButton</string>
-                    </property>
-                    <property name="flat">
-                     <bool>true</bool>
                     </property>
                     <property name="themeID" stdset="0">
                      <string notr="true">downArrowIconSmall</string>
@@ -1349,18 +1044,9 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="actionBottom">
-                    <property name="maximumSize">
-                     <size>
-                      <width>22</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
+                   <widget class="QToolButton" name="actionBottom">
                     <property name="toolTip">
                      <string>AdvSceneSwitcher.macroTab.tooltip.actionBottomButton</string>
-                    </property>
-                    <property name="flat">
-                     <bool>true</bool>
                     </property>
                    </widget>
                   </item>
@@ -1378,20 +1064,11 @@
                    </spacer>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="toggleElseActions">
-                    <property name="maximumSize">
-                     <size>
-                      <width>22</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
+                   <widget class="QToolButton" name="toggleElseActions">
                     <property name="toolTip">
                      <string>AdvSceneSwitcher.macroTab.tooltip.toggleShowElseSection</string>
                     </property>
                     <property name="checkable">
-                     <bool>true</bool>
-                    </property>
-                    <property name="flat">
                      <bool>true</bool>
                     </property>
                    </widget>
@@ -1425,23 +1102,14 @@
                  </widget>
                 </item>
                 <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_33">
+                 <layout class="QHBoxLayout" name="elseActionControlsLayout">
                   <property name="leftMargin">
                    <number>9</number>
                   </property>
                   <item>
-                   <widget class="QPushButton" name="elseActionAdd">
-                    <property name="maximumSize">
-                     <size>
-                      <width>22</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
+                   <widget class="QToolButton" name="elseActionAdd">
                     <property name="toolTip">
                      <string>AdvSceneSwitcher.macroTab.tooltip.elseActionAddButton</string>
-                    </property>
-                    <property name="flat">
-                     <bool>true</bool>
                     </property>
                     <property name="themeID" stdset="0">
                      <string notr="true">addIconSmall</string>
@@ -1449,18 +1117,9 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="elseActionRemove">
-                    <property name="maximumSize">
-                     <size>
-                      <width>22</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
+                   <widget class="QToolButton" name="elseActionRemove">
                     <property name="toolTip">
                      <string>AdvSceneSwitcher.macroTab.tooltip.elseActionRemoveButton</string>
-                    </property>
-                    <property name="flat">
-                     <bool>true</bool>
                     </property>
                     <property name="themeID" stdset="0">
                      <string notr="true">removeIconSmall</string>
@@ -1468,73 +1127,16 @@
                    </widget>
                   </item>
                   <item>
-                   <spacer name="horizontalSpacer_138">
-                    <property name="orientation">
-                     <enum>Qt::Horizontal</enum>
-                    </property>
-                    <property name="sizeType">
-                     <enum>QSizePolicy::Fixed</enum>
-                    </property>
-                    <property name="sizeHint" stdset="0">
-                     <size>
-                      <width>5</width>
-                      <height>20</height>
-                     </size>
-                    </property>
-                   </spacer>
-                  </item>
-                  <item>
-                   <widget class="Line" name="line_50">
-                    <property name="orientation">
-                     <enum>Qt::Vertical</enum>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <spacer name="horizontalSpacer_139">
-                    <property name="orientation">
-                     <enum>Qt::Horizontal</enum>
-                    </property>
-                    <property name="sizeType">
-                     <enum>QSizePolicy::Fixed</enum>
-                    </property>
-                    <property name="sizeHint" stdset="0">
-                     <size>
-                      <width>5</width>
-                      <height>20</height>
-                     </size>
-                    </property>
-                   </spacer>
-                  </item>
-                  <item>
-                   <widget class="QPushButton" name="elseActionTop">
-                    <property name="maximumSize">
-                     <size>
-                      <width>22</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
+                   <widget class="QToolButton" name="elseActionTop">
                     <property name="toolTip">
                      <string>AdvSceneSwitcher.macroTab.tooltip.elseActionTopButton</string>
                     </property>
-                    <property name="flat">
-                     <bool>true</bool>
-                    </property>
                    </widget>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="elseActionUp">
-                    <property name="maximumSize">
-                     <size>
-                      <width>22</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
+                   <widget class="QToolButton" name="elseActionUp">
                     <property name="toolTip">
                      <string>AdvSceneSwitcher.macroTab.tooltip.elseActionUpButton</string>
-                    </property>
-                    <property name="flat">
-                     <bool>true</bool>
                     </property>
                     <property name="themeID" stdset="0">
                      <string notr="true">upArrowIconSmall</string>
@@ -1542,18 +1144,9 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="elseActionDown">
-                    <property name="maximumSize">
-                     <size>
-                      <width>22</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
+                   <widget class="QToolButton" name="elseActionDown">
                     <property name="toolTip">
                      <string>AdvSceneSwitcher.macroTab.tooltip.elseActionDownButton</string>
-                    </property>
-                    <property name="flat">
-                     <bool>true</bool>
                     </property>
                     <property name="themeID" stdset="0">
                      <string notr="true">downArrowIconSmall</string>
@@ -1561,33 +1154,11 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="elseActionBottom">
-                    <property name="maximumSize">
-                     <size>
-                      <width>22</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
+                   <widget class="QToolButton" name="elseActionBottom">
                     <property name="toolTip">
                      <string>AdvSceneSwitcher.macroTab.tooltip.elseActionBottomButton</string>
                     </property>
-                    <property name="flat">
-                     <bool>true</bool>
-                    </property>
                    </widget>
-                  </item>
-                  <item>
-                   <spacer name="horizontalSpacer_22">
-                    <property name="orientation">
-                     <enum>Qt::Horizontal</enum>
-                    </property>
-                    <property name="sizeHint" stdset="0">
-                     <size>
-                      <width>40</width>
-                      <height>20</height>
-                     </size>
-                    </property>
-                   </spacer>
                   </item>
                  </layout>
                 </item>
