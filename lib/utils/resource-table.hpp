@@ -2,8 +2,8 @@
 #include "export-symbol-helper.hpp"
 
 #include <QLabel>
-#include <QPushButton>
 #include <QString>
+#include <QToolButton>
 #include <QTableWidget>
 
 class QResizeEvent;
@@ -33,8 +33,8 @@ protected:
 
 private:
 	QTableWidget *_table;
-	QPushButton *_add;
-	QPushButton *_remove;
+	QToolButton *_add;
+	QToolButton *_remove;
 	QLabel *_help;
 
 	QObject *_highlightConnection = nullptr;

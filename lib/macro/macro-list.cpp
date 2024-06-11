@@ -40,9 +40,12 @@ void MacroList::SetContent(const std::vector<MacroRef> &macros)
 	UpdateListSize();
 }
 
-void MacroList::AddControl(QWidget *widget)
+QAction *MacroList::AddControl(QWidget *widget, bool addSeperator)
 {
-	_controlsLayout->insertWidget(_controlsLayout->count() - 1, widget);
+	if (addSeperator) {
+		_controls->addSeparator();
+	}
+	return _controls->addWidget(widget);
 }
 
 int MacroList::CurrentRow()

@@ -1,11 +1,11 @@
 #pragma once
 #include "export-symbol-helper.hpp"
 
+#include <QAbstractButton>
 #include <QColor>
 #include <QComboBox>
 #include <QIcon>
 #include <QListWidget>
-#include <QPushButton>
 #include <QString>
 #include <QWidget>
 #include <string>
@@ -19,7 +19,7 @@ EXPORT QObject *HighlightWidget(QWidget *widget, QColor startColor,
 				bool once = false);
 
 EXPORT void SetHeightToContentHeight(QListWidget *list);
-EXPORT void SetButtonIcon(QPushButton *button, const char *path);
+EXPORT void SetButtonIcon(QAbstractButton *button, const char *path);
 EXPORT int
 FindIdxInRagne(QComboBox *list, int start, int stop, const std::string &value,
 	       Qt::MatchFlags = Qt::MatchExactly | Qt::MatchCaseSensitive);

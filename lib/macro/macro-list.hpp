@@ -9,7 +9,7 @@ class ADVSS_EXPORT MacroList final : public ListEditor {
 public:
 	MacroList(QWidget *parent, bool allowDuplicates, bool reorder);
 	void SetContent(const std::vector<MacroRef> &);
-	void AddControl(QWidget *);
+	QAction *AddControl(QWidget *, bool addSeperator = true);
 	int CurrentRow();
 
 private slots:
