@@ -184,11 +184,14 @@ static void populateConditionSelection(QComboBox *list)
 
 static QStringList getSlideshowNames()
 {
+	static constexpr std::array<std::string_view, 2> slideShowIds{
+		"slideshow", "slideshow_v2"};
 	auto sourceEnum = [](void *param, obs_source_t *source) -> bool /* -- */
 	{
 		QStringList *list = reinterpret_cast<QStringList *>(param);
-		std::string sourceId = obs_source_get_id(source);
-		if (sourceId.compare("slideshow") == 0) {
+		auto sourceId = obs_source_get_id(source);
+		if (std::find(slideShowIds.begin(), slideShowIds.end(),
+			      sourceId) != slideShowIds.end()) {
 			*list << obs_source_get_name(source);
 		}
 		return true;
