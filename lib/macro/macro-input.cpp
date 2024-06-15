@@ -49,15 +49,9 @@ void MacroInputVariables::Load(obs_data_t *obj)
 void MacroInputVariables::SetValues(const StringList &values)
 {
 	if (_inputVariables.size() != (size_t)values.size()) {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 		blog(LOG_WARNING,
-		     "%s - sizes do not match (variables: %ld, values %d)",
-		     __func__, _inputVariables.size(), values.size());
-#else
-		blog(LOG_WARNING,
-		     "%s - sizes do not match (variables: %ld, values %lld)",
-		     __func__, _inputVariables.size(), values.size());
-#endif
+		     "%s - sizes do not match (variables: %d, values %d)",
+		     __func__, (int)_inputVariables.size(), (int)values.size());
 	}
 
 	for (size_t index = 0;
