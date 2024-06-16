@@ -60,8 +60,13 @@ bool MacroActionProjector::PerformAction()
 	}
 
 	if (_fullscreen && _monitor == -1) {
-		blog(LOG_INFO, "refusing to open fullscreen projector"
-			       " with invalid display selection");
+		blog(LOG_INFO, "refusing to open fullscreen projector "
+			       "with invalid display selection");
+		return true;
+	}
+	if (_fullscreen && MonitorSetupChanged()) {
+		blog(LOG_INFO, "refusing to open fullscreen projector - "
+			       "monitor setup seems to have changed!");
 		return true;
 	}
 
@@ -109,13 +114,6 @@ bool MacroActionProjector::Load(obs_data_t *obj)
 	_fullscreen = obs_data_get_bool(obj, "fullscreen");
 	_scene.Load(obj);
 	_source.Load(obj);
-
-	if (MonitorSetupChanged()) {
-		blog(LOG_INFO, "monitor setup seems to have changed! "
-			       "resetting projector action monitor selection!");
-		_monitor = -1;
-	}
-
 	return true;
 }
 
@@ -149,10 +147,13 @@ void MacroActionProjector::SetMonitor(int idx)
 
 int MacroActionProjector::GetMonitor() const
 {
+	if (MonitorSetupChanged()) {
+		return -1;
+	}
 	return _monitor;
 }
 
-bool MacroActionProjector::MonitorSetupChanged()
+bool MacroActionProjector::MonitorSetupChanged() const
 {
 	if (_monitorName.empty()) {
 		return false;
@@ -248,41 +249,25 @@ void MacroActionProjectorEdit::UpdateEntryData()
 
 void MacroActionProjectorEdit::SceneChanged(const SceneSelection &s)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = s;
 }
 
 void MacroActionProjectorEdit::SourceChanged(const SourceSelection &source)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_source = source;
 }
 
 void MacroActionProjectorEdit::MonitorChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetMonitor(value);
 }
 
 void MacroActionProjectorEdit::WindowTypeChanged(int)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_fullscreen =
 		_windowTypes->currentText() ==
 		obs_module_text("AdvSceneSwitcher.action.projector.fullscreen");
@@ -291,11 +276,7 @@ void MacroActionProjectorEdit::WindowTypeChanged(int)
 
 void MacroActionProjectorEdit::TypeChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_type = static_cast<MacroActionProjector::Type>(value);
 	SetWidgetVisibility();
 }
