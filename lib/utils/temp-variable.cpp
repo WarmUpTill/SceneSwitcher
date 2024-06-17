@@ -182,6 +182,10 @@ void TempVariableRef::Load(obs_data_t *obj, Macro *macro, const char *name)
 
 void TempVariableRef::PostLoad(int idx, SegmentType type, Macro *macro)
 {
+	if (!macro) {
+		return;
+	}
+
 	std::deque<std::shared_ptr<MacroSegment>> segments;
 	switch (type) {
 	case SegmentType::NONE:
@@ -458,7 +462,7 @@ void AutoUpdateTooltipLabel::enterEvent(QEnterEvent *event)
 void AutoUpdateTooltipLabel::enterEvent(QEvent *event)
 #endif
 {
-	_timer->start(1000);
+	_timer->start(300);
 	QLabel::enterEvent(event);
 }
 
