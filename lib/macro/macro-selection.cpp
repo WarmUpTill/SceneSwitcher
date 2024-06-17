@@ -19,11 +19,13 @@ MacroSelection::MacroSelection(QWidget *parent)
 		addItem(QString::fromStdString(m->Name()));
 	}
 
-	QWidget::connect(parent, SIGNAL(MacroAdded(const QString &)), this,
+	QWidget::connect(GetSettingsWindow(),
+			 SIGNAL(MacroAdded(const QString &)), this,
 			 SLOT(MacroAdd(const QString &)));
-	QWidget::connect(parent, SIGNAL(MacroRemoved(const QString &)), this,
+	QWidget::connect(GetSettingsWindow(),
+			 SIGNAL(MacroRemoved(const QString &)), this,
 			 SLOT(MacroRemove(const QString &)));
-	QWidget::connect(parent,
+	QWidget::connect(GetSettingsWindow(),
 			 SIGNAL(MacroRenamed(const QString &, const QString &)),
 			 this,
 			 SLOT(MacroRename(const QString &, const QString &)));
