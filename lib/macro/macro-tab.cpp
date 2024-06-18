@@ -1,5 +1,6 @@
 #include "advanced-scene-switcher.hpp"
 #include "action-queue.hpp"
+#include "cursor-shape-changer.hpp"
 #include "macro-action-edit.hpp"
 #include "macro-condition-edit.hpp"
 #include "macro-export-import-dialog.hpp"
@@ -955,6 +956,22 @@ void AdvSceneSwitcher::SetupMacroTab()
 			       ui->macroConditionsLayout->takeAt(1));
 	moveControlsToSplitter(ui->macroElseActionSplitter, 1,
 			       ui->macroActionsLayout->takeAt(1));
+
+	// Override splitter cursor icon when hovering over controls in splitter
+	SetCursorOnWidgetHover(ui->conditionAdd, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->conditionRemove,
+			       Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->conditionTop, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->conditionUp, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->conditionDown, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->conditionBottom,
+			       Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->actionAdd, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->actionRemove, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->actionTop, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->actionUp, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->actionDown, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->actionBottom, Qt::CursorShape::ArrowCursor);
 
 	// Reserve more space for macro edit area than for the macro list
 	ui->macroListMacroEditSplitter->setStretchFactor(0, 1);
