@@ -37,7 +37,7 @@ void ListControls::AddActionHelper(const char *theme, const char *tooltip,
 	auto button = new QToolButton(this);
 	button->setToolTip(obs_module_text(tooltip));
 	button->setProperty("themeID", QVariant(QString(theme)));
-	auto action = addWidget(button);
+	(void)addWidget(button);
 	button->connect(button, &QToolButton::clicked, this, signal);
 }
 
