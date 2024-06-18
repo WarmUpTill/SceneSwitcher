@@ -4,6 +4,7 @@
 
 #include <obs-frontend-api.h>
 #include <QListView>
+#include <util/config-file.h>
 
 namespace advss {
 
@@ -64,7 +65,7 @@ MacroConditionStats::~MacroConditionStats()
 	os_cpu_usage_info_destroy(_cpu_info);
 }
 
-bool MacroConditionStats::CheckFPS()
+bool MacroConditionStats::CheckFPS() const
 {
 	switch (_condition) {
 	case Condition::ABOVE:
@@ -79,7 +80,7 @@ bool MacroConditionStats::CheckFPS()
 	return false;
 }
 
-bool MacroConditionStats::CheckCPU()
+bool MacroConditionStats::CheckCPU() const
 {
 	double usage = os_cpu_usage_info_query(_cpu_info);
 
@@ -96,7 +97,7 @@ bool MacroConditionStats::CheckCPU()
 	return false;
 }
 
-bool MacroConditionStats::CheckMemory()
+bool MacroConditionStats::CheckMemory() const
 {
 	auto rss =
 		(long double)os_get_proc_resident_size() / (1024.0l * 1024.0l);
@@ -114,7 +115,7 @@ bool MacroConditionStats::CheckMemory()
 	return false;
 }
 
-bool MacroConditionStats::CheckAvgFrametime()
+bool MacroConditionStats::CheckAvgFrametime() const
 {
 	auto num = (long double)obs_get_average_frame_time_ns() / 1000000.0l;
 
@@ -266,7 +267,7 @@ bool MacroConditionStats::CheckStreamBitrate()
 	return false;
 }
 
-bool MacroConditionStats::CheckStreamMBSent()
+bool MacroConditionStats::CheckStreamMBSent() const
 {
 	OBSOutputAutoRelease output = obs_frontend_get_streaming_output();
 	uint64_t totalBytes = output ? obs_output_get_total_bytes(output) : 0;
@@ -322,7 +323,7 @@ bool MacroConditionStats::CheckRecordingBitrate()
 	return false;
 }
 
-bool MacroConditionStats::CheckRecordingMBSent()
+bool MacroConditionStats::CheckRecordingMBSent() const
 {
 	OBSOutputAutoRelease output = obs_frontend_get_recording_output();
 	uint64_t totalBytes = output ? obs_output_get_total_bytes(output) : 0;
@@ -341,6 +342,53 @@ bool MacroConditionStats::CheckRecordingMBSent()
 	return false;
 }
 
+// Based on OBSBasic::GetCurrentOutputPath()
+static const char *getCurrentOutputPath()
+{
+	const char *path = nullptr;
+	auto config = obs_frontend_get_profile_config();
+	if (!config) {
+		return path;
+	}
+
+	const char *mode = config_get_string(config, "Output", "Mode");
+
+	if (strcmp(mode, "Advanced") == 0) {
+		const char *advanced_mode =
+			config_get_string(config, "AdvOut", "RecType");
+
+		if (strcmp(advanced_mode, "FFmpeg") == 0) {
+			path = config_get_string(config, "AdvOut",
+						 "FFFilePath");
+		} else {
+			path = config_get_string(config, "AdvOut",
+						 "RecFilePath");
+		}
+	} else {
+		path = config_get_string(config, "SimpleOutput", "FilePath");
+	}
+
+	return path;
+}
+
+bool MacroConditionStats::CheckDiskUsage() const
+{
+#define MBYTE (1024ULL * 1024ULL)
+	auto path = getCurrentOutputPath();
+	auto mb = os_get_free_disk_space(path) / MBYTE;
+	switch (_condition) {
+	case Condition::ABOVE:
+		return mb > _value;
+	case Condition::EQUALS:
+		return DoubleEquals(mb, _value, 0.1);
+	case Condition::BELOW:
+		return mb < _value;
+	default:
+		break;
+	}
+	return false;
+}
+
 bool MacroConditionStats::CheckCondition()
 {
 	switch (_type) {
@@ -349,8 +397,7 @@ bool MacroConditionStats::CheckCondition()
 	case Type::CPU_USAGE:
 		return CheckCPU();
 	case Type::DISK_USAGE:
-		// TODO: not implemented
-		break;
+		return CheckDiskUsage();
 	case Type::MEM_USAGE:
 		return CheckMemory();
 	case Type::AVG_FRAMETIME:
@@ -412,24 +459,13 @@ std::string MacroConditionStats::GetShortDesc() const
 	return "";
 }
 
-static inline void populateStatsTypes(QComboBox *list)
+template<class T>
+static inline void populateList(QComboBox *list,
+				const std::map<T, std::string> &map)
 {
 	list->clear();
-	for (auto entry : statsTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
-		// TODO: not implemented
-		if (entry.first == MacroConditionStats::Type::DISK_USAGE) {
-			qobject_cast<QListView *>(list->view())
-				->setRowHidden(list->count() - 1, true);
-		}
-	}
-}
-
-static inline void populateConditionSelection(QComboBox *list)
-{
-	list->clear();
-	for (auto entry : statsConditionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : map) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 
@@ -442,8 +478,8 @@ MacroConditionStatsEdit::MacroConditionStatsEdit(
 {
 	_value->setMaximum(999999999999);
 
-	populateStatsTypes(_stats);
-	populateConditionSelection(_condition);
+	populateList(_stats, statsTypes);
+	populateList(_condition, statsConditionTypes);
 
 	setToolTip(
 		obs_module_text("AdvSceneSwitcher.condition.stats.dockHint"));
@@ -457,14 +493,12 @@ MacroConditionStatsEdit::MacroConditionStatsEdit(
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
 
-	QHBoxLayout *layout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{value}}", _value},
-		{"{{stats}}", _stats},
-		{"{{condition}}", _condition},
-	};
+	auto layout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.stats.entry"),
-		     layout, widgetPlaceholders);
+		     layout,
+		     {{"{{value}}", _value},
+		      {"{{stats}}", _stats},
+		      {"{{condition}}", _condition}});
 	setLayout(layout);
 
 	_entryData = entryData;
@@ -474,22 +508,14 @@ MacroConditionStatsEdit::MacroConditionStatsEdit(
 
 void MacroConditionStatsEdit::ValueChanged(const NumberVariable<double> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_value = value;
 }
 
 void MacroConditionStatsEdit::StatsTypeChanged(int type)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
 	{
-		auto lock = LockContext();
+		GUARD_LOADING_AND_LOCK();
 		_entryData->_type =
 			static_cast<MacroConditionStats::Type>(type);
 	}
@@ -501,11 +527,7 @@ void MacroConditionStatsEdit::StatsTypeChanged(int type)
 
 void MacroConditionStatsEdit::ConditionChanged(int cond)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_condition =
 		static_cast<MacroConditionStats::Condition>(cond);
 }
