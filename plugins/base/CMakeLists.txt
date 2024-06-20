@@ -172,6 +172,8 @@ target_sources(
           utils/striped-frame.hpp
           utils/text-helpers.cpp
           utils/text-helpers.hpp
+          utils/transform-setting.cpp
+          utils/transform-setting.hpp
           utils/transition-selection.cpp
           utils/transition-selection.hpp
           utils/websocket-helpers.cpp
