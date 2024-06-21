@@ -2,6 +2,7 @@
 #include "layout-helpers.hpp"
 
 #include <obs-frontend-api.h>
+#include <util/config-file.h>
 
 namespace advss {
 
@@ -12,31 +13,49 @@ bool MacroActionReplayBuffer::_registered = MacroActionFactory::Register(
 	{MacroActionReplayBuffer::Create, MacroActionReplayBufferEdit::Create,
 	 "AdvSceneSwitcher.action.replay"});
 
-static const std::map<ReplayBufferAction, std::string> actionTypes = {
-	{ReplayBufferAction::STOP, "AdvSceneSwitcher.action.replay.type.stop"},
-	{ReplayBufferAction::START,
-	 "AdvSceneSwitcher.action.replay.type.start"},
-	{ReplayBufferAction::SAVE, "AdvSceneSwitcher.action.replay.type.save"},
+static const std::map<MacroActionReplayBuffer::Action, std::string>
+	actionTypes = {
+		{MacroActionReplayBuffer::Action::STOP,
+		 "AdvSceneSwitcher.action.replay.type.stop"},
+		{MacroActionReplayBuffer::Action::START,
+		 "AdvSceneSwitcher.action.replay.type.start"},
+		{MacroActionReplayBuffer::Action::SAVE,
+		 "AdvSceneSwitcher.action.replay.type.save"},
+		{MacroActionReplayBuffer::Action::DURATION,
+		 "AdvSceneSwitcher.action.replay.type.duration"},
 };
 
 bool MacroActionReplayBuffer::PerformAction()
 {
 	switch (_action) {
-	case ReplayBufferAction::STOP:
+	case Action::STOP:
 		if (obs_frontend_replay_buffer_active()) {
 			obs_frontend_replay_buffer_stop();
 		}
 		break;
-	case ReplayBufferAction::START:
+	case Action::START:
 		if (!obs_frontend_replay_buffer_active()) {
 			obs_frontend_replay_buffer_start();
 		}
 		break;
-	case ReplayBufferAction::SAVE:
+	case Action::SAVE:
 		if (obs_frontend_replay_buffer_active()) {
 			obs_frontend_replay_buffer_save();
 		}
 		break;
+	case Action::DURATION: {
+		auto conf = obs_frontend_get_profile_config();
+		auto value = std::to_string(_duration.Seconds());
+		config_set_string(conf, "SimpleOutput", "RecRBTime",
+				  value.c_str());
+		config_set_string(conf, "AdvOut", "RecRBTime", value.c_str());
+
+		if (config_save(conf) != CONFIG_SUCCESS) {
+			blog(LOG_WARNING,
+			     "failed to set replay buffer duration");
+		}
+		break;
+	}
 	default:
 		break;
 	}
@@ -58,14 +77,15 @@ bool MacroActionReplayBuffer::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
+	_duration.Save(obj);
 	return true;
 }
 
 bool MacroActionReplayBuffer::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	_action = static_cast<ReplayBufferAction>(
-		obs_data_get_int(obj, "action"));
+	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
+	_duration.Load(obj);
 	return true;
 }
 
@@ -90,23 +110,24 @@ MacroActionReplayBufferEdit::MacroActionReplayBufferEdit(
 	QWidget *parent, std::shared_ptr<MacroActionReplayBuffer> entryData)
 	: QWidget(parent),
 	  _actions(new QComboBox()),
-	  _saveWarning(new QLabel(
-		  obs_module_text("AdvSceneSwitcher.action.replay.saveWarn")))
+	  _warning(new QLabel(
+		  obs_module_text("AdvSceneSwitcher.action.replay.saveWarn"))),
+	  _duration(new DurationSelection(this, false, 5.))
 {
 	populateActionSelection(_actions);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
+	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
+			 this, SLOT(DurationChanged(const Duration &)));
 
-	QHBoxLayout *layout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{actions}}", _actions},
-	};
+	auto layout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.replay.entry"),
-		     layout, widgetPlaceholders);
+		     layout,
+		     {{"{{actions}}", _actions}, {"{{duration}}", _duration}});
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(layout);
-	mainLayout->addWidget(_saveWarning);
+	mainLayout->addWidget(_warning);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -120,21 +141,41 @@ void MacroActionReplayBufferEdit::UpdateEntryData()
 		return;
 	}
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
-	_saveWarning->setVisible(_entryData->_action ==
-				 ReplayBufferAction::SAVE);
+	_duration->SetDuration(_entryData->_duration);
+	SetWidgetVisiblity();
+}
+
+void MacroActionReplayBufferEdit::SetWidgetVisiblity()
+{
+	_warning->setVisible(_entryData->_action ==
+			     MacroActionReplayBuffer::Action::SAVE);
+	_duration->setVisible(_entryData->_action ==
+			      MacroActionReplayBuffer::Action::DURATION);
+	_warning->setText(obs_module_text(
+		(_entryData->_action == MacroActionReplayBuffer::Action::SAVE)
+			? "AdvSceneSwitcher.action.replay.saveWarn"
+			: "AdvSceneSwitcher.action.replay.durationWarn"));
+	_warning->setVisible(_entryData->_action ==
+				     MacroActionReplayBuffer::Action::SAVE ||
+			     _entryData->_action ==
+				     MacroActionReplayBuffer::Action::DURATION);
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionReplayBufferEdit::ActionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_action =
+		static_cast<MacroActionReplayBuffer::Action>(value);
 
-	auto lock = LockContext();
-	_entryData->_action = static_cast<ReplayBufferAction>(value);
-	_saveWarning->setVisible(_entryData->_action ==
-				 ReplayBufferAction::SAVE);
-	adjustSize();
+	SetWidgetVisiblity();
+}
+
+void MacroActionReplayBufferEdit::DurationChanged(const Duration &duration)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_duration = duration;
 }
 
 } // namespace advss
