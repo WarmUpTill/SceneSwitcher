@@ -1,9 +1,10 @@
 #pragma once
 #include "macro-condition-edit.hpp"
-#include "scene-selection.hpp"
-#include "scene-item-selection.hpp"
-#include "variable-text-edit.hpp"
 #include "regex-config.hpp"
+#include "scene-item-selection.hpp"
+#include "scene-selection.hpp"
+#include "transform-setting.hpp"
+#include "variable-text-edit.hpp"
 
 #include <QSpinBox>
 #include <QCheckBox>
@@ -23,19 +24,38 @@ public:
 		return std::make_shared<MacroConditionSceneTransform>(m);
 	}
 
-	enum class CondType {
-		MATCHES,
-		CHANGED,
-	};
+	enum class SettingsType { ALL, SINGLE };
+	enum class Condition { MATCHES, CHANGED };
+	enum class Compare { LESS, EQUAL, MORE };
+
+	void SetSettingsType(SettingsType type);
+	SettingsType GetSettingsType() const { return _settingsType; }
+	void SetCondition(Condition condition);
+	Condition GetCondition() const { return _condition; }
 
 	SceneSelection _scene;
 	SceneItemSelection _source;
-	CondType _type = CondType::MATCHES;
+	Compare _compare = Compare::EQUAL;
 	RegexConfig _regex;
-	StringVariable _settings = "";
+	StringVariable _transformString = "";
+	StringVariable _singleSetting = "";
+	TransformSetting _setting;
 
 private:
+	void SetupTempVars();
+	bool CheckAllSettings(const std::vector<OBSSceneItem> &);
+	bool CheckSingleSetting(const std::vector<OBSSceneItem> &);
+	bool
+	AnySceneItemTransformSettingChanged(const std::vector<OBSSceneItem> &);
+	bool
+	AnySceneItemTransformSettingMatches(const std::vector<OBSSceneItem> &);
+	void SetTempVarHelper(const std::vector<std::string> &values);
+
+	SettingsType _settingsType = SettingsType::SINGLE;
+	Condition _condition = Condition::MATCHES;
+
 	std::vector<std::string> _previousTransform;
+	std::vector<std::string> _previousSettingValues;
 
 	static bool _registered;
 	static const std::string id;
@@ -62,25 +82,36 @@ public:
 private slots:
 	void SceneChanged(const SceneSelection &);
 	void SourceChanged(const SceneItemSelection &);
-	void TypeChanged(int type);
+	void SettingsTypeChanged(int type);
+	void CompareChanged(int type);
+	void ConditionChanged(int type);
+	void SettingSelectionChanged(const TransformSetting &);
 	void GetSettingsClicked();
-	void SettingsChanged();
+	void GetCurrentValueClicked();
+	void TransformChanged();
+	void SettingValueChanged();
 	void RegexChanged(const RegexConfig &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
-	SceneSelectionWidget *_scenes;
-	SceneItemSelectionWidget *_sources;
-	QComboBox *_types;
-	QPushButton *_getSettings;
-	VariableTextEdit *_settings;
-	RegexConfigWidget *_regex;
-
-	std::shared_ptr<MacroConditionSceneTransform> _entryData;
-
 private:
 	void SetWidgetVisibility();
+	void UpdateSettingSelection() const;
+
+	SceneSelectionWidget *_scenes;
+	SceneItemSelectionWidget *_sources;
+	QComboBox *_settingsType;
+	QComboBox *_compare;
+	QComboBox *_conditions;
+	QPushButton *_getSettings;
+	QPushButton *_getCurrentValue;
+	VariableTextEdit *_transformString;
+	VariableLineEdit *_singleSettingValue;
+	RegexConfigWidget *_regex;
+	TransformSettingSelection *_settingSelection;
+	QHBoxLayout *_compareLayout;
+
+	std::shared_ptr<MacroConditionSceneTransform> _entryData;
 	bool _loading = true;
 };
 
