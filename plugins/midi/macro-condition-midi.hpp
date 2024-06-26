@@ -2,6 +2,7 @@
 #include "macro-condition-edit.hpp"
 #include "midi-helpers.hpp"
 
+#include <QCheckBox>
 #include <QPushButton>
 #include <QTimer>
 
@@ -23,6 +24,7 @@ public:
 	void SetDevice(const MidiDevice &dev);
 	const MidiDevice &GetDevice() const { return _device; }
 	MidiMessage _message;
+	bool _clearBufferOnMatch = true;
 
 private:
 	void SetupTempVars();
@@ -55,6 +57,7 @@ public:
 private slots:
 	void DeviceSelectionChanged(const MidiDevice &);
 	void MidiMessageChanged(const MidiMessage &);
+	void ClearBufferOnMatchChanged(int);
 	void ResetMidiDevices();
 	void ToggleListen();
 	void SetMessageSelectionToLastReceived();
@@ -64,12 +67,13 @@ signals:
 private:
 	void EnableListening(bool);
 
-	std::shared_ptr<MacroConditionMidi> _entryData;
-
 	MidiDeviceSelection *_devices;
 	MidiMessageSelection *_message;
 	QPushButton *_resetMidiDevices;
 	QPushButton *_listen;
+	QCheckBox *_clearBufferOnMatch;
+
+	std::shared_ptr<MacroConditionMidi> _entryData;
 	QTimer _listenTimer;
 	MidiMessageBuffer _messageBuffer;
 	bool _currentlyListening = false;

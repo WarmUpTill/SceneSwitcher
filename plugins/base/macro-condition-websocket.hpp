@@ -33,6 +33,7 @@ public:
 	std::weak_ptr<WSConnection> GetConnection() const;
 	StringVariable _message = obs_module_text("AdvSceneSwitcher.enterText");
 	RegexConfig _regex;
+	bool _clearBufferOnMatch = true;
 
 private:
 	void SetupTempVars();
@@ -69,11 +70,9 @@ private slots:
 	void MessageChanged();
 	void RegexChanged(const RegexConfig &);
 	void ConnectionSelectionChanged(const QString &);
+	void ClearBufferOnMatchChanged(int);
 signals:
 	void HeaderInfoChanged(const QString &);
-
-protected:
-	std::shared_ptr<MacroConditionWebsocket> _entryData;
 
 private:
 	void SetupRequestEdit();
@@ -83,7 +82,10 @@ private:
 	VariableTextEdit *_message;
 	RegexConfigWidget *_regex;
 	WSConnectionSelection *_connection;
+	QCheckBox *_clearBufferOnMatch;
 	QHBoxLayout *_editLayout;
+
+	std::shared_ptr<MacroConditionWebsocket> _entryData;
 	bool _loading = true;
 };
 
