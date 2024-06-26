@@ -89,6 +89,7 @@ public:
 	void SetPointsReward(const TwitchPointsReward &pointsReward);
 	TwitchPointsReward GetPointsReward() const { return _pointsReward; }
 	void ResetChatConnection();
+	bool IsUsingEventSubCondition();
 
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
@@ -103,6 +104,7 @@ public:
 	StringVariable _chatMessage;
 	RegexConfig _regexChat = RegexConfig::PartialMatchRegexConfig();
 	TwitchCategory _category;
+	bool _clearBufferOnMatch = false;
 
 private:
 	bool CheckChannelGenericEvents(TwitchToken &token);
@@ -112,7 +114,6 @@ private:
 	void RegisterEventSubscription();
 	void ResetSubscription();
 	void SetupEventSubscription(EventSub &);
-	bool IsUsingEventSubCondition();
 	bool EventSubscriptionIsSetup(const std::shared_ptr<EventSub> &);
 	void AddChannelGenericEventSubscription(
 		const char *version, bool includeModeratorId = false,
@@ -169,13 +170,11 @@ private slots:
 	void RegexTitleChanged(const RegexConfig &);
 	void RegexChatChanged(const RegexConfig &);
 	void CategoreyChanged(const TwitchCategory &);
+	void ClearBufferOnMatchChanged(int);
 
 signals:
 	void HeaderInfoChanged(const QString &);
 	void TempVarsChanged();
-
-protected:
-	std::shared_ptr<MacroConditionTwitch> _entryData;
 
 private:
 	void SetWidgetVisibility();
@@ -193,7 +192,9 @@ private:
 	VariableTextEdit *_chatMessage;
 	RegexConfigWidget *_regexChat;
 	TwitchCategoryWidget *_category;
+	QCheckBox *_clearBufferOnMatch;
 
+	std::shared_ptr<MacroConditionTwitch> _entryData;
 	bool _loading = true;
 };
 
