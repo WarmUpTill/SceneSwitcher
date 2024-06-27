@@ -33,6 +33,9 @@ bool MacroConditionMidi::CheckCondition()
 		}
 		if (message->Matches(_message)) {
 			SetVariableValues(*message);
+			if (_clearBufferOnMatch) {
+				_messageBuffer->Clear();
+			}
 			return true;
 		}
 	}
@@ -45,6 +48,8 @@ bool MacroConditionMidi::Save(obs_data_t *obj) const
 	MacroCondition::Save(obj);
 	_message.Save(obj);
 	_device.Save(obj);
+	obs_data_set_bool(obj, "clearBufferOnMatch", _clearBufferOnMatch);
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
@@ -54,6 +59,10 @@ bool MacroConditionMidi::Load(obs_data_t *obj)
 	_message.Load(obj);
 	_device.Load(obj);
 	_messageBuffer = _device.RegisterForMidiMessages();
+	_clearBufferOnMatch = obs_data_get_bool(obj, "clearBufferOnMatch");
+	if (!obs_data_has_user_value(obj, "version")) {
+		_clearBufferOnMatch = true;
+	}
 	return true;
 }
 
@@ -106,7 +115,9 @@ MacroConditionMidiEdit::MacroConditionMidiEdit(
 	  _resetMidiDevices(new QPushButton(
 		  obs_module_text("AdvSceneSwitcher.midi.resetDevices"))),
 	  _listen(new QPushButton(
-		  obs_module_text("AdvSceneSwitcher.midi.startListen")))
+		  obs_module_text("AdvSceneSwitcher.midi.startListen"))),
+	  _clearBufferOnMatch(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.clearBufferOnMatch")))
 {
 	QWidget::connect(_devices,
 			 SIGNAL(DeviceSelectionChanged(const MidiDevice &)),
@@ -119,6 +130,8 @@ MacroConditionMidiEdit::MacroConditionMidiEdit(
 			 SLOT(ResetMidiDevices()));
 	QWidget::connect(_listen, SIGNAL(clicked()), this,
 			 SLOT(ToggleListen()));
+	QWidget::connect(_clearBufferOnMatch, SIGNAL(stateChanged(int)), this,
+			 SLOT(ClearBufferOnMatchChanged(int)));
 	QWidget::connect(&_listenTimer, SIGNAL(timeout()), this,
 			 SLOT(SetMessageSelectionToLastReceived()));
 
@@ -135,6 +148,7 @@ MacroConditionMidiEdit::MacroConditionMidiEdit(
 	mainLayout->addWidget(_message);
 	mainLayout->addLayout(listenLayout);
 	mainLayout->addWidget(_resetMidiDevices);
+	mainLayout->addWidget(_clearBufferOnMatch);
 	setLayout(mainLayout);
 
 	_listenTimer.setInterval(100);
@@ -157,6 +171,7 @@ void MacroConditionMidiEdit::UpdateEntryData()
 
 	_message->SetMessage(_entryData->_message);
 	_devices->SetDevice(_entryData->GetDevice());
+	_clearBufferOnMatch->setChecked(_entryData->_clearBufferOnMatch);
 
 	adjustSize();
 	updateGeometry();
@@ -182,12 +197,14 @@ void MacroConditionMidiEdit::DeviceSelectionChanged(const MidiDevice &device)
 
 void MacroConditionMidiEdit::MidiMessageChanged(const MidiMessage &message)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_message = message;
+}
+
+void MacroConditionMidiEdit::ClearBufferOnMatchChanged(int value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_clearBufferOnMatch = value;
 }
 
 void MacroConditionMidiEdit::ResetMidiDevices()

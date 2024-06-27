@@ -47,17 +47,27 @@ bool MacroConditionWebsocket::CheckCondition()
 			continue;
 		}
 		if (_regex.Enabled()) {
-			if (_regex.Matches(*message, _message)) {
-				SetTempVarValue("message", *message);
-				SetVariableValue(*message);
-				return true;
+			if (!_regex.Matches(*message, _message)) {
+				continue;
 			}
+
+			SetTempVarValue("message", *message);
+			SetVariableValue(*message);
+			if (_clearBufferOnMatch) {
+				_messageBuffer->Clear();
+			}
+			return true;
 		} else {
-			if (*message == std::string(_message)) {
-				SetTempVarValue("message", *message);
-				SetVariableValue(*message);
-				return true;
+			if (*message != std::string(_message)) {
+				continue;
 			}
+
+			SetTempVarValue("message", *message);
+			SetVariableValue(*message);
+			if (_clearBufferOnMatch) {
+				_messageBuffer->Clear();
+			}
+			return true;
 		}
 	}
 	SetVariableValue("");
@@ -72,6 +82,8 @@ bool MacroConditionWebsocket::Save(obs_data_t *obj) const
 	_regex.Save(obj);
 	obs_data_set_string(obj, "connection",
 			    GetWeakConnectionName(_connection).c_str());
+	obs_data_set_bool(obj, "clearBufferOnMatch", _clearBufferOnMatch);
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
@@ -88,6 +100,11 @@ bool MacroConditionWebsocket::Load(obs_data_t *obj)
 	}
 	_connection =
 		GetWeakConnectionByName(obs_data_get_string(obj, "connection"));
+
+	_clearBufferOnMatch = obs_data_get_bool(obj, "clearBufferOnMatch");
+	if (!obs_data_has_user_value(obj, "version")) {
+		_clearBufferOnMatch = true;
+	}
 
 	SetType(_type);
 	return true;
@@ -160,6 +177,8 @@ MacroConditionWebsocketEdit::MacroConditionWebsocketEdit(
 	  _message(new VariableTextEdit(this)),
 	  _regex(new RegexConfigWidget(parent)),
 	  _connection(new WSConnectionSelection(this)),
+	  _clearBufferOnMatch(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.clearBufferOnMatch"))),
 	  _editLayout(new QHBoxLayout())
 {
 	populateConditionSelection(_conditions);
@@ -174,6 +193,8 @@ MacroConditionWebsocketEdit::MacroConditionWebsocketEdit(
 	QWidget::connect(_connection, SIGNAL(SelectionChanged(const QString &)),
 			 this,
 			 SLOT(ConnectionSelectionChanged(const QString &)));
+	QWidget::connect(_clearBufferOnMatch, SIGNAL(stateChanged(int)), this,
+			 SLOT(ClearBufferOnMatchChanged(int)));
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(_editLayout);
@@ -183,6 +204,7 @@ MacroConditionWebsocketEdit::MacroConditionWebsocketEdit(
 	regexLayout->addStretch();
 	regexLayout->setContentsMargins(0, 0, 0, 0);
 	mainLayout->addLayout(regexLayout);
+	mainLayout->addWidget(_clearBufferOnMatch);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -232,6 +254,7 @@ void MacroConditionWebsocketEdit::UpdateEntryData()
 	_message->setPlainText(_entryData->_message);
 	_regex->SetRegexConfig(_entryData->_regex);
 	_connection->SetConnection(_entryData->GetConnection());
+	_clearBufferOnMatch->setChecked(_entryData->_clearBufferOnMatch);
 
 	if (_entryData->GetType() == MacroConditionWebsocket::Type::REQUEST) {
 		SetupRequestEdit();
@@ -245,11 +268,7 @@ void MacroConditionWebsocketEdit::UpdateEntryData()
 
 void MacroConditionWebsocketEdit::ConditionChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetType(static_cast<MacroConditionWebsocket::Type>(index));
 	if (_entryData->GetType() == MacroConditionWebsocket::Type::REQUEST) {
 		SetupRequestEdit();
@@ -262,11 +281,7 @@ void MacroConditionWebsocketEdit::ConditionChanged(int index)
 
 void MacroConditionWebsocketEdit::MessageChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_message = _message->toPlainText().toUtf8().constData();
 
 	adjustSize();
@@ -276,22 +291,20 @@ void MacroConditionWebsocketEdit::MessageChanged()
 void MacroConditionWebsocketEdit::ConnectionSelectionChanged(
 	const QString &connection)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetConnection(connection.toStdString());
 	emit(HeaderInfoChanged(connection));
 }
 
+void MacroConditionWebsocketEdit::ClearBufferOnMatchChanged(int value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_clearBufferOnMatch = value;
+}
+
 void MacroConditionWebsocketEdit::RegexChanged(const RegexConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_regex = conf;
 
 	adjustSize();
