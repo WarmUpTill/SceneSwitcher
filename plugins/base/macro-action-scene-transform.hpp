@@ -2,6 +2,7 @@
 #include "macro-action-edit.hpp"
 #include "scene-selection.hpp"
 #include "scene-item-selection.hpp"
+#include "transform-setting.hpp"
 #include "variable-text-edit.hpp"
 #include "variable-spinbox.hpp"
 
@@ -33,13 +34,16 @@ public:
 		CENTER_VERTICALLY,
 		CENTER_HORIZONTALLY,
 		MANUAL_TRANSFORM = 100,
+		SINGLE_TRANSFORM_SETTING,
 	};
 
 	Action _action = Action::RESET;
 	SceneSelection _scene;
 	SceneItemSelection _source;
-	StringVariable _settings = "";
+	StringVariable _transformString = "";
 	DoubleVariable _rotation = 90.0;
+	StringVariable _singleSettingsValue = "";
+	TransformSetting _settingSelection;
 
 private:
 	void Transform(obs_scene_item *);
@@ -76,19 +80,26 @@ private slots:
 	void ActionChanged(int);
 	void RotationChanged(const NumberVariable<double> &value);
 	void GetSettingsClicked();
-	void SettingsChanged();
+	void GetCurrentValueClicked();
+	void TransformStringChanged();
+	void SettingSelectionChanged(const TransformSetting &);
+	void SettingValueChanged();
 signals:
 	void HeaderInfoChanged(const QString &);
 
 private:
 	void SetWidgetVisibility();
+	void UpdateSettingSelection() const;
 
 	SceneSelectionWidget *_scenes;
 	SceneItemSelectionWidget *_sources;
 	QComboBox *_action;
 	VariableDoubleSpinBox *_rotation;
-	QPushButton *_getSettings;
-	VariableTextEdit *_settings;
+	QPushButton *_getTransform;
+	QPushButton *_getCurrentValue;
+	VariableTextEdit *_transformString;
+	TransformSettingSelection *_settingSelection;
+	VariableLineEdit *_singleSettingValue;
 	QHBoxLayout *_buttonLayout;
 
 	std::shared_ptr<MacroActionSceneTransform> _entryData;
