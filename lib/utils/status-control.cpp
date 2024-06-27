@@ -131,7 +131,9 @@ void StatusControl::SetStarted()
 	_button->setText(
 		obs_module_text("AdvSceneSwitcher.generalTab.status.stop"));
 	_status->setText(obs_module_text("AdvSceneSwitcher.status.active"));
-	_pulse->deleteLater();
+	if (_pulse) {
+		_pulse->deleteLater();
+	}
 	SetStatusStyleSheet(false);
 	_setToStopped = false;
 }
