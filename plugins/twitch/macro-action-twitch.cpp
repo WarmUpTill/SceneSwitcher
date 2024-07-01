@@ -175,19 +175,26 @@ void MacroActionTwitch::StartCommercial(
 				      "/helix/channels/commercial", {},
 				      data.Get());
 
-	if (result.status != 200) {
+	if (result.status == 200) {
 		OBSDataArrayAutoRelease replyArray =
 			obs_data_get_array(result.data, "data");
 		OBSDataAutoRelease replyData =
 			obs_data_array_item(replyArray, 0);
+		vblog(LOG_INFO,
+		      "Commercial started! (%d)\n"
+		      "length: %lld\n"
+		      "message: %s\n"
+		      "retry_after: %lld\n",
+		      result.status, obs_data_get_int(replyData, "length"),
+		      obs_data_get_string(replyData, "message"),
+		      obs_data_get_int(replyData, "retry_after"));
+	} else {
 		blog(LOG_INFO,
 		     "Failed to start commercial! (%d)\n"
-		     "length: %lld\n"
-		     "message: %s\n"
-		     "retry_after: %lld\n",
-		     result.status, obs_data_get_int(replyData, "length"),
-		     obs_data_get_string(replyData, "message"),
-		     obs_data_get_int(replyData, "retry_after"));
+		     "error: %s\n"
+		     "message: %s\n",
+		     result.status, obs_data_get_string(result.data, "error"),
+		     obs_data_get_string(result.data, "message"));
 	}
 }
 
