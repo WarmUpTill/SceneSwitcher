@@ -70,6 +70,9 @@ static void DisplayMissingDependencyWarning()
 	QString warning(obs_module_text(
 		"AdvSceneSwitcher.generalTab.generalBehavior.warnPluginLoadFailureMessage"));
 	DisplayMessage(warning.arg(failedLibsString));
+
+	// Only display the warning once per plugin load
+	switcher->loadFailureLibs.clear();
 }
 
 static void DisplayMissingDataDirWarning()
