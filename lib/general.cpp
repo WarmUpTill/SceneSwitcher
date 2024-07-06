@@ -91,6 +91,17 @@ void AdvSceneSwitcher::CooldownDurationChanged(const Duration &dur)
 	switcher->cooldown = dur;
 }
 
+void AdvSceneSwitcher::on_enableCooldown_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(switcher->m);
+	switcher->enableCooldown = state;
+	ui->cooldownTime->setEnabled(state);
+}
+
 void AdvSceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
 {
 	if (loading) {
@@ -505,6 +516,7 @@ void SwitcherData::SaveGeneralSettings(obs_data_t *obj)
 	noMatchDelay.Save(obj, "noMatchDelay");
 
 	cooldown.Save(obj, "cooldown");
+	obs_data_set_bool(obj, "enableCooldown", enableCooldown);
 
 	obs_data_set_bool(obj, "active", sceneColletionStop ? true : !stop);
 	sceneColletionStop = false;
@@ -550,6 +562,11 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 	noMatchDelay.Load(obj, "noMatchDelay");
 
 	cooldown.Load(obj, "cooldown");
+	if (!obs_data_has_user_value(obj, "enableCooldown")) {
+		enableCooldown = cooldown.Seconds() != 0;
+	} else {
+		enableCooldown = obs_data_get_bool(obj, "enableCooldown");
+	}
 
 	obs_data_set_default_bool(obj, "active", true);
 	stop = !obs_data_get_bool(obj, "active");
@@ -653,7 +670,7 @@ void SwitcherData::CheckNoMatchSwitch(bool &match, OBSWeakSource &scene,
 
 void SwitcherData::checkSwitchCooldown(bool &match)
 {
-	if (!match) {
+	if (!match || !enableCooldown) {
 		return;
 	}
 
@@ -822,6 +839,8 @@ void AdvSceneSwitcher::SetupGeneralTab()
 
 	ui->checkInterval->setValue(switcher->interval);
 
+	ui->enableCooldown->setChecked(switcher->enableCooldown);
+	ui->cooldownTime->setEnabled(switcher->enableCooldown);
 	ui->cooldownTime->SetDuration(switcher->cooldown);
 	ui->cooldownTime->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.generalTab.generalBehavior.cooldownHint"));

@@ -131,6 +131,7 @@ public:
 		RECORINDG_OR_STREAMING
 	};
 	AutoStart autoStartEvent = AutoStart::NEVER;
+	bool enableCooldown = false;
 	Duration cooldown;
 	bool showSystemTrayNotifications = false;
 	bool transitionOverrideOverride = false;

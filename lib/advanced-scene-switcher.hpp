@@ -53,6 +53,7 @@ public slots:
 	void on_noMatchRandomSwitch_clicked();
 	void NoMatchDelayDurationChanged(const Duration &);
 	void CooldownDurationChanged(const Duration &);
+	void on_enableCooldown_stateChanged(int state);
 	void on_startupBehavior_currentIndexChanged(int index);
 	void on_logLevel_currentIndexChanged(int index);
 	void on_autoStartEvent_currentIndexChanged(int index);
