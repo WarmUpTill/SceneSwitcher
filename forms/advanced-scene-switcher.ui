@@ -390,7 +390,7 @@
               <item>
                <layout class="QHBoxLayout" name="cooldownLayout">
                 <item>
-                 <widget class="QLabel" name="label">
+                 <widget class="QCheckBox" name="enableCooldown">
                   <property name="text">
                    <string>AdvSceneSwitcher.generalTab.generalBehavior.cooldown</string>
                   </property>
