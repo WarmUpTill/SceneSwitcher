@@ -705,7 +705,7 @@ static void LoadPlugins()
 {
 	QFileInfo libPath(
 		QString(obs_get_module_binary_path(obs_current_module())));
-	QString pluginDir(libPath.absolutePath() + "/adv-ss-plugins");
+	QString pluginDir(libPath.absolutePath() + "/" ADVSS_PLUGIN_FOLDER);
 #ifdef _WIN32
 	QString libPattern = "*.dll";
 	SetDllDirectory(pluginDir.toStdWString().c_str());

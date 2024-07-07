@@ -264,6 +264,11 @@ target_sources(
 
 # --- End of section ---
 
+# Subfolder for advanced scene switcher plugins
+set(ADVSS_PLUGIN_FOLDER "advanced-scene-switcher-plugins")
+target_compile_definitions(
+  ${LIB_NAME} PRIVATE ADVSS_PLUGIN_FOLDER=\"${ADVSS_PLUGIN_FOLDER}\")
+
 include(cmake/common/advss_helpers.cmake)
 setup_obs_lib_dependency(${LIB_NAME})
 setup_obs_lib_dependency(${PROJECT_NAME})
