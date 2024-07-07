@@ -8,14 +8,11 @@ if(BUILD_OUT_OF_TREE)
   endif()
 endif()
 
-# Subfolder for advanced scene switcher plugins
-set(_PLUGIN_FOLDER "adv-ss-plugins")
-
 # --- MACOS section ---
 if(OS_MACOS)
   set(ADVSS_BUNDLE_DIR "advanced-scene-switcher.plugin")
   set(ADVSS_BUNDLE_MODULE_DIR "${ADVSS_BUNDLE_DIR}/Contents/MacOS")
-  set(ADVSS_BUNDLE_PLUGIN_DIR ${ADVSS_BUNDLE_MODULE_DIR}/${_PLUGIN_FOLDER})
+  set(ADVSS_BUNDLE_PLUGIN_DIR ${ADVSS_BUNDLE_MODULE_DIR}/${ADVSS_PLUGIN_FOLDER})
 
   function(install_advss_lib_helper target where)
     install(
@@ -154,8 +151,8 @@ else()
 
   function(install_advss_plugin target)
     plugin_install_helper(
-      "${target}" "${OBS_PLUGIN_DESTINATION}/${_PLUGIN_FOLDER}"
-      "${_PLUGIN_FOLDER}")
+      "${target}" "${OBS_PLUGIN_DESTINATION}/${ADVSS_PLUGIN_FOLDER}"
+      "${ADVSS_PLUGIN_FOLDER}")
     if(NOT OS_WINDOWS)
       set_target_properties(${target} PROPERTIES INSTALL_RPATH
                                                  "$ORIGIN:$ORIGIN/..")
@@ -169,12 +166,12 @@ else()
       ${dep}
       RUNTIME
       DESTINATION
-      "${OBS_PLUGIN_DESTINATION}/${_PLUGIN_FOLDER}"
+      "${OBS_PLUGIN_DESTINATION}/${ADVSS_PLUGIN_FOLDER}"
       COMPONENT
       ${dep}_Runtime
       LIBRARY
       DESTINATION
-      "${OBS_PLUGIN_DESTINATION}/${_PLUGIN_FOLDER}"
+      "${OBS_PLUGIN_DESTINATION}/${ADVSS_PLUGIN_FOLDER}"
       COMPONENT
       ${dep}_Runtime
       NAMELINK_COMPONENT
@@ -185,13 +182,13 @@ else()
       ${dep}
       RUNTIME
       DESTINATION
-      "${OBS_PLUGIN_DESTINATION}/${_PLUGIN_FOLDER}"
+      "${OBS_PLUGIN_DESTINATION}/${ADVSS_PLUGIN_FOLDER}"
       COMPONENT
       obs_${dep}
       EXCLUDE_FROM_ALL
       LIBRARY
       DESTINATION
-      "${OBS_PLUGIN_DESTINATION}/${_PLUGIN_FOLDER}"
+      "${OBS_PLUGIN_DESTINATION}/${ADVSS_PLUGIN_FOLDER}"
       COMPONENT
       obs_${dep}
       EXCLUDE_FROM_ALL)
@@ -214,18 +211,18 @@ else()
 
     install(
       FILES "${dep}"
-      DESTINATION "${OBS_PLUGIN_DESTINATION}/${_PLUGIN_FOLDER}"
+      DESTINATION "${OBS_PLUGIN_DESTINATION}/${ADVSS_PLUGIN_FOLDER}"
       COMPONENT ${_DEP_NAME}_Runtime
-      DESTINATION "${OBS_PLUGIN_DESTINATION}/${_PLUGIN_FOLDER}"
+      DESTINATION "${OBS_PLUGIN_DESTINATION}/${ADVSS_PLUGIN_FOLDER}"
       COMPONENT ${_DEP_NAME}_Runtime
       NAMELINK_COMPONENT ${_DEP_NAME}_Development)
 
     install(
       FILES "${dep}"
-      DESTINATION "${OBS_PLUGIN_DESTINATION}/${_PLUGIN_FOLDER}"
+      DESTINATION "${OBS_PLUGIN_DESTINATION}/${ADVSS_PLUGIN_FOLDER}"
       COMPONENT obs_${_DEP_NAME}
       EXCLUDE_FROM_ALL
-      DESTINATION "${OBS_PLUGIN_DESTINATION}/${_PLUGIN_FOLDER}"
+      DESTINATION "${OBS_PLUGIN_DESTINATION}/${ADVSS_PLUGIN_FOLDER}"
       COMPONENT obs_${_DEP_NAME}
       EXCLUDE_FROM_ALL)
 
@@ -335,7 +332,6 @@ function(install_advss_plugin_dependency)
   if(NOT PARSED_ARGS_TARGET)
     message(FATAL_ERROR "You must provide a target")
   endif()
-  set(_PLUGIN_FOLDER "adv-ss-plugins")
   foreach(_DEPENDENCY ${PARSED_ARGS_DEPENDENCIES})
     if(EXISTS ${_DEPENDENCY})
       install_advss_plugin_dependency_file(${PARSED_ARGS_TARGET} ${_DEPENDENCY})
