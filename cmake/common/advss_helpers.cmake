@@ -60,10 +60,36 @@ if(OS_MACOS)
       ${dep}_Development)
   endfunction()
 
-  function(install_advss_plugin_dependency_file ${target} dep)
-    target_sources(advanced-scene-switcher PRIVATE ${dep})
-    set_source_files_properties(${dep} PROPERTIES MACOSX_PACKAGE_LOCATION
-                                                  ${ADVSS_BUNDLE_PLUGIN_DIR})
+  function(install_advss_plugin_dependency_file target dep)
+    get_filename_component(_FILENAME ${dep} NAME)
+    string(REGEX REPLACE "\\.[^.]*$" "" _FILENAMENOEXT ${_FILENAME})
+    set(_DEP_NAME "${target}-${_FILENAMENOEXT}")
+
+    install(
+      FILES "${dep}"
+      DESTINATION "${ADVSS_BUNDLE_PLUGIN_DIR}"
+      COMPONENT ${_DEP_NAME}_Runtime
+      DESTINATION "${ADVSS_BUNDLE_PLUGIN_DIR}"
+      COMPONENT ${_DEP_NAME}_Runtime
+      NAMELINK_COMPONENT ${_DEP_NAME}_Development)
+
+    install(
+      FILES "${dep}"
+      DESTINATION "${ADVSS_BUNDLE_PLUGIN_DIR}"
+      COMPONENT obs_${_DEP_NAME}
+      EXCLUDE_FROM_ALL
+      DESTINATION "${ADVSS_BUNDLE_PLUGIN_DIR}"
+      COMPONENT obs_${_DEP_NAME}
+      EXCLUDE_FROM_ALL)
+
+    add_custom_command(
+      TARGET ${target}
+      POST_BUILD
+      COMMAND
+        "${CMAKE_COMMAND}" --install ${CMAKE_CURRENT_BINARY_DIR} --config
+        $<CONFIG> --prefix ${CMAKE_INSTALL_PREFIX} --component obs_${_DEP_NAME}
+      COMMENT "Installing ${_DEP_NAME} to OBS rundir\n"
+      VERBATIM)
   endfunction()
 
   # --- End of section ---
