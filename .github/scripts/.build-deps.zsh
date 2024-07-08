@@ -380,7 +380,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         pushd ${advss_dep_path}
         log_info "Prepare openssl ..."
         rm -rf openssl
-        git clone git://git.openssl.org/openssl.git --branch openssl-3.1.2 --depth 1
+        git clone https://github.com/openssl/openssl.git --branch openssl-3.1.2 --depth 1
         mv openssl openssl_x86
         cp -r openssl_x86 openssl_arm
 
