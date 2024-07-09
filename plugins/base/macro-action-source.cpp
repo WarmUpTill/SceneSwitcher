@@ -36,6 +36,8 @@ const static std::map<MacroActionSource::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.source.type.openFilterDialog"},
 	{MacroActionSource::Action::OPEN_PROPERTIES_DIALOG,
 	 "AdvSceneSwitcher.action.source.type.openPropertiesDialog"},
+	{MacroActionSource::Action::INTERACT,
+	 "AdvSceneSwitcher.action.source.type.interact"},
 };
 
 const static std::map<obs_deinterlace_mode, std::string> deinterlaceModes = {
@@ -142,6 +144,9 @@ bool MacroActionSource::PerformAction()
 	case Action::SETTINGS_BUTTON:
 		PressSourceButton(_button, s);
 		break;
+	case Action::INTERACT:
+		_interaction.SendToSource(s);
+		break;
 	case Action::DEINTERLACE_MODE:
 		obs_source_set_deinterlace_mode(s, _deinterlaceMode);
 		break;
@@ -199,6 +204,7 @@ bool MacroActionSource::Save(obs_data_t *obj) const
 			 static_cast<int>(_deinterlaceMode));
 	obs_data_set_int(obj, "deinterlaceOrder",
 			 static_cast<int>(_deinterlaceOrder));
+	_interaction.Save(obj);
 	return true;
 }
 
@@ -223,6 +229,7 @@ bool MacroActionSource::Load(obs_data_t *obj)
 		obs_data_get_int(obj, "deinterlaceMode"));
 	_deinterlaceOrder = static_cast<obs_deinterlace_field_order>(
 		obs_data_get_int(obj, "deinterlaceOrder"));
+	_interaction.Load(obj);
 	return true;
 }
 
@@ -309,7 +316,8 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	  _warning(new QLabel(
 		  obs_module_text("AdvSceneSwitcher.action.source.warning"))),
 	  _refreshSettingSelection(new QPushButton(
-		  obs_module_text("AdvSceneSwitcher.action.source.refresh")))
+		  obs_module_text("AdvSceneSwitcher.action.source.refresh"))),
+	  _interaction(new SourceInteractionWidget())
 {
 	populateActionSelection(_actions);
 	auto sources = GetSourceNames();
@@ -349,6 +357,13 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 			 SLOT(SelectionChanged(const SourceSetting &)));
 	QWidget::connect(_refreshSettingSelection, SIGNAL(clicked()), this,
 			 SLOT(RefreshVariableSourceSelectionValue()));
+	QWidget::connect(
+		_interaction,
+		SIGNAL(SettingsChanged(SourceInteractionInstance *)), this,
+		SLOT(InteractionSettingsChanged(SourceInteractionInstance *)));
+	QWidget::connect(_interaction,
+			 SIGNAL(TypeChanged(SourceInteraction::Type)), this,
+			 SLOT(InteractionTypeChanged(SourceInteraction::Type)));
 
 	auto entryLayout = new QHBoxLayout;
 	entryLayout->setContentsMargins(0, 0, 0, 0);
@@ -381,6 +396,7 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	buttonLayout->addWidget(_getSettings);
 	buttonLayout->addStretch();
 	mainLayout->addLayout(buttonLayout);
+	mainLayout->addWidget(_interaction);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -411,6 +427,7 @@ void MacroActionSourceEdit::UpdateEntryData()
 		static_cast<int>(_entryData->_settingsInputMethod)));
 	_tempVars->SetVariable(_entryData->_tempVar);
 	_manualSettingValue->setPlainText(_entryData->_manualSettingValue);
+	_interaction->SetSourceInteractionSelection(_entryData->_interaction);
 
 	SetWidgetVisibility();
 }
@@ -561,6 +578,29 @@ void MacroActionSourceEdit::ManualSettingsValueChanged()
 	updateGeometry();
 }
 
+void MacroActionSourceEdit::InteractionTypeChanged(SourceInteraction::Type value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_interaction.SetType(value);
+
+	adjustSize();
+	updateGeometry();
+}
+
+void MacroActionSourceEdit::InteractionSettingsChanged(
+	SourceInteractionInstance *value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+	auto lock = LockContext();
+	_entryData->_interaction.SetSettings(value);
+}
+
 void MacroActionSourceEdit::RefreshVariableSourceSelectionValue()
 {
 	_sourceSettings->SetSource(_entryData->_source.GetSource());
@@ -617,6 +657,8 @@ void MacroActionSourceEdit::SetWidgetVisibility()
 		_entryData->_source.GetType() ==
 			SourceSelection::Type::VARIABLE);
 
+	_interaction->setVisible(_entryData->_action ==
+				 MacroActionSource::Action::INTERACT);
 	adjustSize();
 	updateGeometry();
 }

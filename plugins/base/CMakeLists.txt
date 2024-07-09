@@ -166,6 +166,8 @@ target_sources(
           utils/source-properties-button.hpp
           utils/source-settings-helpers.cpp
           utils/source-settings-helpers.hpp
+          utils/source-interact.cpp
+          utils/source-interact.hpp
           utils/source-setting.cpp
           utils/source-setting.hpp
           utils/striped-frame.cpp
