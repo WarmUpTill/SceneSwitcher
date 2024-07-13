@@ -96,6 +96,8 @@ target_sources(
           lib/macro/macro-action-macro.hpp
           lib/macro/macro-action-queue.cpp
           lib/macro/macro-action-queue.hpp
+          lib/macro/macro-action-script.cpp
+          lib/macro/macro-action-script.hpp
           lib/macro/macro-action-variable.cpp
           lib/macro/macro-action-variable.hpp
           lib/macro/macro-action.cpp
@@ -108,6 +110,8 @@ target_sources(
           lib/macro/macro-condition-macro.hpp
           lib/macro/macro-condition-queue.cpp
           lib/macro/macro-condition-queue.hpp
+          lib/macro/macro-condition-script.cpp
+          lib/macro/macro-condition-script.hpp
           lib/macro/macro-condition-tempvar.cpp
           lib/macro/macro-condition-tempvar.hpp
           lib/macro/macro-condition-variable.cpp
@@ -128,10 +132,14 @@ target_sources(
           lib/macro/macro-ref.hpp
           lib/macro/macro-run-button.cpp
           lib/macro/macro-run-button.hpp
+          lib/macro/macro-script-handler.cpp
+          lib/macro/macro-script-handler.hpp
           lib/macro/macro-segment-copy-paste.cpp
           lib/macro/macro-segment-copy-paste.hpp
           lib/macro/macro-segment-list.cpp
           lib/macro/macro-segment-list.hpp
+          lib/macro/macro-segment-script.cpp
+          lib/macro/macro-segment-script.hpp
           lib/macro/macro-segment-selection.cpp
           lib/macro/macro-segment-selection.hpp
           lib/macro/macro-segment.cpp
@@ -205,6 +213,9 @@ target_sources(
           lib/utils/plugin-state-helpers.hpp
           lib/utils/priority-helper.cpp
           lib/utils/priority-helper.hpp
+          lib/utils/properties-view.cpp
+          lib/utils/properties-view.hpp
+          lib/utils/properties-view.moc.hpp
           lib/utils/regex-config.cpp
           lib/utils/regex-config.hpp
           lib/utils/resizing-text-edit.cpp
