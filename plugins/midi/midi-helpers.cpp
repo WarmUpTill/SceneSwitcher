@@ -70,6 +70,9 @@ static bool setupDeviceObservers()
 	} catch (const libremidi::driver_error &error) {
 		blog(LOG_WARNING, "Failed to setup midi device observers: %s",
 		     error.what());
+	} catch (const std::exception &error) {
+		blog(LOG_WARNING, "Failed to setup midi device observers: %s",
+		     error.what());
 	}
 	return true;
 }
