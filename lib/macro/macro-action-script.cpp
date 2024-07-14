@@ -15,17 +15,35 @@ MacroActionScript::MacroActionScript(Macro *m, const std::string &id,
 	  _signal(signal),
 	  _signalComplete(signalComplete)
 {
+	signal_handler_connect(obs_get_signal_handler(), signalComplete.c_str(),
+			       &MacroActionScript::CompletionSignalReceived,
+			       this);
+}
+
+MacroActionScript::MacroActionScript(const advss::MacroActionScript &other)
+	: MacroAction(other.GetMacro()),
+	  _id(other._id),
+	  _blocking(other._blocking),
+	  _signal(other._signal),
+	  _signalComplete(other._signalComplete)
+{
+}
+
+void MacroActionScript::CompletionSignalReceived(void *param, calldata_t *)
+{
+	auto action = static_cast<MacroActionScript *>(param);
+	action->_actionComplete = true;
 }
 
 bool MacroActionScript::PerformAction()
 {
+	_actionComplete = false;
 	auto data = calldata_create();
 	calldata_set_string(data, GetCompletionSignalParamName().data(),
 			    _signalComplete.c_str());
 	signal_handler_signal(obs_get_signal_handler(), _signal.c_str(), data);
 	calldata_destroy(data);
 	if (_blocking) {
-		// TODO
 	}
 	return true;
 }

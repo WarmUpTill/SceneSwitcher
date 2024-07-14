@@ -2,6 +2,7 @@
 #include "macro-action-edit.hpp"
 #include "macro-script-handler.hpp"
 
+#include <atomic>
 #include <QPushButton>
 
 namespace advss {
@@ -11,6 +12,7 @@ public:
 	MacroActionScript(Macro *m, const std::string &id, bool blocking,
 			  const std::string &signal,
 			  const std::string &signalComplete);
+	MacroActionScript(const advss::MacroActionScript &);
 	bool PerformAction();
 	void LogAction() const;
 	bool Save(obs_data_t *obj) const;
@@ -19,10 +21,13 @@ public:
 	std::shared_ptr<MacroAction> Copy() const;
 
 private:
+	static void CompletionSignalReceived(void *param, calldata_t *data);
+
 	std::string _id = "";
 	bool _blocking = false;
 	std::string _signal = "";
 	std::string _signalComplete = "";
+	std::atomic_bool _actionComplete = {false};
 };
 
 class MacroActionScriptEdit : public QWidget {

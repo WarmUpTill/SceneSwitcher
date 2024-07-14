@@ -1,7 +1,21 @@
 obs           = obslua
 
-function my_lua_action()
+function my_lua_action(data)
     obs.script_log(obs.LOG_WARNING, "hello from lua!")
+end
+
+function busy_sleep(seconds)
+    local start = os.clock()
+    while os.clock() - start <= seconds do end
+end
+
+function blocking_lua_action_example(data)
+    obs.script_log(obs.LOG_WARNING, "my blocking lua function is starting!")
+    busy_sleep(3)
+    obs.script_log(obs.LOG_WARNING, "my blocking lua function is finished!")
+    local signal_handler = obs.obs_get_signal_handler()
+    local signal_name = obs.calldata_string(data, "completion_signal_name")
+    obs.signal_handler_signal(signal_handler, signal_name, nil)
 end
 
 function register_action(name, callback, blocking)
@@ -31,5 +45,5 @@ end
 
 function script_load(settings)
     register_action("My custom Lua Action", my_lua_action)
-    register_action("My blocking Lua Action", my_lua_action, true)
+    register_action("My blocking Lua Action", blocking_lua_action_example, true)
 end
