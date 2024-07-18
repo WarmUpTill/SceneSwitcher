@@ -22,6 +22,8 @@ public:
 	ScriptHandler();
 	static void RegisterScriptAction(void *ctx, calldata_t *data);
 	static void DeregisterScriptAction(void *ctx, calldata_t *data);
+	static void GetVariableValue(void *ctx, calldata_t *data);
+	static void SetVariableValue(void *ctx, calldata_t *data);
 
 private:
 	std::mutex _mutex;

@@ -2,6 +2,7 @@
 #include "macro-action-script.hpp"
 #include "plugin-state-helpers.hpp"
 #include "log-helper.hpp"
+#include "variable.hpp"
 
 #include <obs.hpp>
 
@@ -32,6 +33,18 @@ static const std::string deregisterScriptActionDeclString =
 	std::string("bool ") + deregisterActionFuncName.data() + "(in string " +
 	nameParam.data() + ")";
 
+static constexpr std::string_view valueParam = "value";
+static constexpr std::string_view getVariableValueFuncName =
+	"advss_get_variable_value";
+static constexpr std::string_view setVariableValueFuncName =
+	"advss_set_variable_value";
+static const std::string getVariableValueDeclString =
+	std::string("bool ") + getVariableValueFuncName.data() + "(in string " +
+	nameParam.data() + " out string " + valueParam.data() + ")";
+static const std::string setVariableValueDeclString =
+	std::string("bool ") + setVariableValueFuncName.data() + "(in string " +
+	nameParam.data() + " in string " + valueParam.data() + ")";
+
 static bool setup();
 static bool setupDone = setup();
 
@@ -50,6 +63,10 @@ ScriptHandler::ScriptHandler()
 			 &RegisterScriptAction, this);
 	proc_handler_add(ph, deregisterScriptActionDeclString.c_str(),
 			 &DeregisterScriptAction, this);
+	proc_handler_add(ph, getVariableValueDeclString.c_str(),
+			 &GetVariableValue, this);
+	proc_handler_add(ph, setVariableValueDeclString.c_str(),
+			 &SetVariableValue, this);
 }
 
 static void replaceWithspace(std::string &string)
@@ -150,6 +167,59 @@ void ScriptHandler::DeregisterScriptAction(void *ctx, calldata_t *data)
 		RETURN_FAILURE();
 	}
 
+	RETURN_SUCCESS();
+}
+
+void ScriptHandler::GetVariableValue(void *, calldata_t *data)
+{
+	const char *variableName;
+	if (!calldata_get_string(data, nameParam.data(), &variableName) ||
+	    strlen(variableName) == 0) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     getVariableValueFuncName.data(), nameParam.data());
+		RETURN_FAILURE();
+	}
+
+	auto weakVariable = GetWeakVariableByName(variableName);
+	auto variable = weakVariable.lock();
+	if (!variable) {
+		blog(LOG_WARNING,
+		     "[%s] failed! \"%s\" variable does not exist!",
+		     getVariableValueFuncName.data(), nameParam.data());
+		RETURN_FAILURE();
+	}
+
+	calldata_set_string(data, valueParam.data(), variable->Value().c_str());
+	RETURN_SUCCESS();
+}
+
+void ScriptHandler::SetVariableValue(void *, calldata_t *data)
+{
+	const char *variableName;
+	if (!calldata_get_string(data, nameParam.data(), &variableName) ||
+	    strlen(variableName) == 0) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     getVariableValueFuncName.data(), nameParam.data());
+		RETURN_FAILURE();
+	}
+	const char *variableValue;
+	if (!calldata_get_string(data, valueParam.data(), &variableValue) ||
+	    strlen(variableValue) == 0) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     getVariableValueFuncName.data(), valueParam.data());
+		RETURN_FAILURE();
+	}
+
+	auto weakVariable = GetWeakVariableByName(variableName);
+	auto variable = weakVariable.lock();
+	if (!variable) {
+		blog(LOG_WARNING,
+		     "[%s] failed! \"%s\" variable does not exist!",
+		     getVariableValueFuncName.data(), nameParam.data());
+		RETURN_FAILURE();
+	}
+
+	variable->SetValue(variableValue);
 	RETURN_SUCCESS();
 }
 
