@@ -31,22 +31,40 @@ MacroActionScript::MacroActionScript(const advss::MacroActionScript &other)
 void MacroActionScript::CompletionSignalReceived(void *param, calldata_t *)
 {
 	auto action = static_cast<MacroActionScript *>(param);
-	action->_actionComplete = true;
+	action->_actionIsComplete = true;
 }
 
-static void waitHelper(Macro *macro, std::atomic_bool &actionComplete)
+void MacroActionScript::WaitForActionCompletion() const
 {
 	using namespace std::chrono_literals;
+	auto start = std::chrono::high_resolution_clock::now();
+	auto timePassed = std::chrono::duration_cast<std::chrono::milliseconds>(
+		start - start);
+	const auto timeoutMs = _timeout.Seconds() * 1000.0;
+
 	std::unique_lock<std::mutex> lock(*GetMutex());
-	while (!MacroWaitShouldAbort() && !MacroIsStopped(macro) &&
-	       !actionComplete) {
+	while (!_actionIsComplete) {
+		if (MacroWaitShouldAbort() || MacroIsStopped(GetMacro())) {
+			break;
+		}
+
+		if ((double)timePassed.count() > timeoutMs) {
+			blog(LOG_INFO, "script action timeout (%s)",
+			     _id.c_str());
+			break;
+		}
+
 		GetMacroWaitCV().wait_for(lock, 10ms);
+		const auto now = std::chrono::high_resolution_clock::now();
+		timePassed =
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				now - start);
 	}
 }
 
 bool MacroActionScript::PerformAction()
 {
-	_actionComplete = false;
+	_actionIsComplete = false;
 
 	auto data = calldata_create();
 	calldata_set_string(data, GetCompletionSignalParamName().data(),
@@ -56,7 +74,7 @@ bool MacroActionScript::PerformAction()
 
 	if (_blocking) {
 		SetMacroAbortWait(false);
-		waitHelper(GetMacro(), _actionComplete);
+		WaitForActionCompletion();
 	}
 	return true;
 }
@@ -69,12 +87,14 @@ void MacroActionScript::LogAction() const
 bool MacroActionScript::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
+	_timeout.Save(obj);
 	return true;
 }
 
 bool MacroActionScript::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
+	_timeout.Load(obj);
 	return true;
 }
 
@@ -86,13 +106,14 @@ std::shared_ptr<MacroAction> MacroActionScript::Copy() const
 MacroActionScriptEdit::MacroActionScriptEdit(
 	QWidget *parent, std::shared_ptr<MacroActionScript> entryData)
 	: QWidget(parent),
-	  _test(new QPushButton("Test"))
+	  _timeout(new DurationSelection(this))
 {
-	QWidget::connect(_test, &QPushButton::clicked, this,
-			 &MacroActionScriptEdit::Test);
+	QWidget::connect(_timeout, &DurationSelection::DurationChanged, this,
+			 &MacroActionScriptEdit::TimeoutChanged);
 
 	auto layout = new QHBoxLayout();
-	layout->addWidget(_test);
+	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.script.timeout"),
+		     layout, {{"{{timeout}}", _timeout}});
 	setLayout(layout);
 
 	_entryData = entryData;
@@ -100,11 +121,15 @@ MacroActionScriptEdit::MacroActionScriptEdit(
 	_loading = false;
 }
 
-void MacroActionScriptEdit::UpdateEntryData() {}
-
-void MacroActionScriptEdit::Test()
+void MacroActionScriptEdit::UpdateEntryData()
 {
-	_entryData->PerformAction();
+	_timeout->SetDuration(_entryData->_timeout);
+}
+
+void MacroActionScriptEdit::TimeoutChanged(const Duration &timeout)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_timeout = timeout;
 }
 
 } // namespace advss

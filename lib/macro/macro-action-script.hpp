@@ -1,9 +1,9 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "duration-control.hpp"
 #include "macro-script-handler.hpp"
 
 #include <atomic>
-#include <QPushButton>
 
 namespace advss {
 
@@ -20,14 +20,17 @@ public:
 	std::string GetId() const { return _id; };
 	std::shared_ptr<MacroAction> Copy() const;
 
+	Duration _timeout = Duration(10.0);
+
 private:
 	static void CompletionSignalReceived(void *param, calldata_t *data);
+	void WaitForActionCompletion() const;
 
 	std::string _id = "";
 	bool _blocking = false;
 	std::string _signal = "";
 	std::string _signalComplete = "";
-	std::atomic_bool _actionComplete = {false};
+	std::atomic_bool _actionIsComplete = {false};
 };
 
 class MacroActionScriptEdit : public QWidget {
@@ -47,10 +50,10 @@ public:
 	}
 
 private slots:
-	void Test();
+	void TimeoutChanged(const Duration &);
 
 private:
-	QPushButton *_test;
+	DurationSelection *_timeout;
 
 	std::shared_ptr<MacroActionScript> _entryData;
 	bool _loading = true;
