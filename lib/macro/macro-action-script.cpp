@@ -1,8 +1,7 @@
 #include "macro-action-script.hpp"
 #include "layout-helpers.hpp"
 #include "macro-helpers.hpp"
-
-#include <obs.hpp>
+#include "sync-helpers.hpp"
 
 namespace advss {
 
@@ -35,22 +34,36 @@ void MacroActionScript::CompletionSignalReceived(void *param, calldata_t *)
 	action->_actionComplete = true;
 }
 
+static void waitHelper(Macro *macro, std::atomic_bool &actionComplete)
+{
+	using namespace std::chrono_literals;
+	std::unique_lock<std::mutex> lock(*GetMutex());
+	while (!MacroWaitShouldAbort() && !MacroIsStopped(macro) &&
+	       !actionComplete) {
+		GetMacroWaitCV().wait_for(lock, 10ms);
+	}
+}
+
 bool MacroActionScript::PerformAction()
 {
 	_actionComplete = false;
+
 	auto data = calldata_create();
 	calldata_set_string(data, GetCompletionSignalParamName().data(),
 			    _signalComplete.c_str());
 	signal_handler_signal(obs_get_signal_handler(), _signal.c_str(), data);
 	calldata_destroy(data);
+
 	if (_blocking) {
+		SetMacroAbortWait(false);
+		waitHelper(GetMacro(), _actionComplete);
 	}
 	return true;
 }
 
 void MacroActionScript::LogAction() const
 {
-	// TODO
+	ablog(LOG_INFO, "performing script action \"%s\"", _id.c_str());
 }
 
 bool MacroActionScript::Save(obs_data_t *obj) const
