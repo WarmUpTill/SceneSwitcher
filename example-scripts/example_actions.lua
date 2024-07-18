@@ -1,4 +1,6 @@
-obs           = obslua
+obs = obslua
+
+counter = 0
 
 -- Example actions
 function my_lua_action(data)
@@ -16,20 +18,32 @@ function blocking_lua_action_example(data)
     obs.script_log(obs.LOG_WARNING, "my blocking lua function is finished!")
 end
 
+function variable_lua_action(data)
+    local value = advss_get_variable_value("variable")
+    if value ~= nil then
+        obs.script_log(obs.LOG_WARNING, string.format("variable has value: %s", value))
+    end
+
+    counter = counter + 1
+    advss_set_variable_value("variable", counter)
+end
+
 -- Register the example actions
 function script_load(settings)
-    register_action("My custom Lua Action", my_lua_action)
-    register_action("My blocking Lua Action", blocking_lua_action_example, true)
+    advss_register_action("My custom Lua Action", my_lua_action)
+    advss_register_action("My blocking Lua Action", blocking_lua_action_example, true)
+    advss_register_action("My variable Lua Action", variable_lua_action)
 end
 
 function script_unload()
-    deregister_action("My custom Lua Action")
-    deregister_action("My blocking Lua Action")
+    advss_deregister_action("My custom Lua Action")
+    advss_deregister_action("My blocking Lua Action")
+    advss_deregister_action("My variable Lua Action")
 end
 
 -- Advanced Scene Switcher helpers below
 -- Usually you should not have to modify this code and can copy it to your scripts as is
-function register_action(name, callback, blocking)
+function advss_register_action(name, callback, blocking)
     local proc_handler = obs.obs_get_proc_handler()
     local data = obs.calldata_create()
 
@@ -72,7 +86,7 @@ function register_action(name, callback, blocking)
     obs.calldata_destroy(data)
 end
 
-function deregister_action(name)
+function advss_deregister_action(name)
     local proc_handler = obs.obs_get_proc_handler()
     local data = obs.calldata_create()
     
@@ -82,6 +96,42 @@ function deregister_action(name)
     local success = obs.calldata_bool(data, "success")
     if success == false then
         obs.script_log(obs.LOG_WARNING, "failed to deregister custom action \"" + name + "\"")
+    end
+
+    obs.calldata_destroy(data)
+end
+
+function advss_get_variable_value(name)
+    local proc_handler = obs.obs_get_proc_handler()
+    local data = obs.calldata_create()
+    
+    obs.calldata_set_string(data, "name", name)
+    obs.proc_handler_call(proc_handler, "advss_get_variable_value", data)
+    
+    local success = obs.calldata_bool(data, "success")
+    if success == false then
+        obs.script_log(obs.LOG_WARNING, "failed to get value for variable \"" + name + "\"")
+        obs.calldata_destroy(data)
+        return None
+    end
+
+    local value = obs.calldata_string(data, "value")
+    
+    obs.calldata_destroy(data)
+    return value
+end
+
+function advss_set_variable_value(name, value)
+    local proc_handler = obs.obs_get_proc_handler()
+    local data = obs.calldata_create()
+    
+    obs.calldata_set_string(data, "name", name)
+    obs.calldata_set_string(data, "value", value)
+    obs.proc_handler_call(proc_handler, "advss_set_variable_value", data)
+    
+    local success = obs.calldata_bool(data, "success")
+    if success == false then
+        obs.script_log(obs.LOG_WARNING, "failed to set value for variable \"" + name + "\"")
     end
 
     obs.calldata_destroy(data)
