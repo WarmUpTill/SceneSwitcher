@@ -48,8 +48,8 @@ ScriptHandler::ScriptHandler()
 
 	proc_handler_add(ph, registerScriptActionDeclString.c_str(),
 			 &RegisterScriptAction, this);
-	proc_handler_add(ph, registerScriptActionDeclString.c_str(),
-			 &RegisterScriptAction, this);
+	proc_handler_add(ph, deregisterScriptActionDeclString.c_str(),
+			 &DeregisterScriptAction, this);
 }
 
 static void replaceWithspace(std::string &string)
@@ -136,15 +136,16 @@ void ScriptHandler::DeregisterScriptAction(void *ctx, calldata_t *data)
 	const std::string id = nameToScriptID(actionName);
 	std::lock_guard<std::mutex> lock(handler->_mutex);
 
-	if (handler->_actions.count(actionName) == 0) {
-		blog(LOG_WARNING, "[%s] failed! Action \"%s\" already exists!",
-		     deregisterActionFuncName.data(), actionName);
+	if (handler->_actions.count(id) == 0) {
+		blog(LOG_WARNING,
+		     "[%s] failed! Action \"%s\" was never registered!",
+		     deregisterActionFuncName.data(), id.c_str());
 		RETURN_FAILURE();
 	}
 
 	if (!MacroActionFactory::Deregister(id)) {
 		blog(LOG_WARNING,
-		     "[%s] failed! Action id \"%s\" already exists!",
+		     "[%s] failed! Action id \"%s\" does not exist!",
 		     deregisterActionFuncName.data(), id.c_str());
 		RETURN_FAILURE();
 	}
