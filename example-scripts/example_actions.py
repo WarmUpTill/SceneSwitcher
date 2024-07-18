@@ -16,6 +16,10 @@ def script_load(settings):
     register_action("My custom Python Action", my_python_action)
     register_action("My blocking Python Action", blocking_python_action_example, True)
 
+def script_unload():
+    deregister_action("My custom Python Action")
+    deregister_action("My blocking Python Action")
+
 # Advanced Scene Switcher helpers below
 # Usually you should not have to modify this code and can copy it to your scripts as is
 def register_action(name, callback, blocking = False):
@@ -50,4 +54,15 @@ def register_action(name, callback, blocking = False):
 
     obs.calldata_destroy(data)
 
-
+def deregister_action(name):
+    proc_handler = obs.obs_get_proc_handler()
+    data = obs.calldata_create()
+    
+    obs.calldata_set_string(data, "name", name)
+    obs.proc_handler_call(proc_handler, "advss_deregister_script_action", data)
+    
+    success = obs.calldata_bool(data, "success")
+    if success == False:
+        obs.script_log(obs.LOG_WARNING, "failed to deregister custom action \"" + name + "\"")
+    
+    obs.calldata_destroy(data)
