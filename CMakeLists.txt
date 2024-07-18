@@ -110,6 +110,8 @@ target_sources(
           lib/macro/macro-condition-macro.hpp
           lib/macro/macro-condition-queue.cpp
           lib/macro/macro-condition-queue.hpp
+          lib/macro/macro-condition-script.cpp
+          lib/macro/macro-condition-script.hpp
           lib/macro/macro-condition-tempvar.cpp
           lib/macro/macro-condition-tempvar.hpp
           lib/macro/macro-condition-variable.cpp

@@ -17,6 +17,15 @@ private:
 	std::string _id;
 };
 
+class ScriptCondition {
+public:
+	ScriptCondition() = delete;
+	ScriptCondition(const std::string &id, const std::string &signal);
+
+private:
+	std::string _id;
+};
+
 class ScriptHandler {
 public:
 	ScriptHandler();
@@ -28,6 +37,7 @@ public:
 private:
 	std::mutex _mutex;
 	std::unordered_map<std::string, ScriptAction> _actions;
+	std::unordered_map<std::string, ScriptAction> _conditions;
 };
 
 static constexpr std::string_view GetCompletionSignalParamName()

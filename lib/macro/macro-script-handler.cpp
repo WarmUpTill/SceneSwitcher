@@ -223,7 +223,7 @@ void ScriptHandler::SetVariableValue(void *, calldata_t *data)
 	RETURN_SUCCESS();
 }
 
-static std::string signalNameToSignalDecl(const std::string &name)
+static std::string actionSignalNameToSignalDecl(const std::string &name)
 {
 	return std::string("void ") + name + "()";
 }
@@ -234,12 +234,26 @@ ScriptAction::ScriptAction(const std::string &id, bool blocking,
 	: _id(id)
 {
 	signal_handler_add(obs_get_signal_handler(),
-			   signalNameToSignalDecl(signal).c_str());
+			   actionSignalNameToSignalDecl(signal).c_str());
 	if (!blocking) {
 		return;
 	}
+	signal_handler_add(
+		obs_get_signal_handler(),
+		actionSignalNameToSignalDecl(signalComplete).c_str());
+}
+
+static std::string conditionSignalNameToSignalDecl(const std::string &name)
+{
+	return std::string("void ") + name + "(in bool value)";
+}
+
+ScriptCondition::ScriptCondition(const std::string &id,
+				 const std::string &signal)
+	: _id(id)
+{
 	signal_handler_add(obs_get_signal_handler(),
-			   signalNameToSignalDecl(signalComplete).c_str());
+			   conditionSignalNameToSignalDecl(signal).c_str());
 }
 
 } // namespace advss
