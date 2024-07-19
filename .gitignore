@@ -36,3 +36,6 @@
 
 # Exclude CMake build number cache
 /cmake/.CMakeBuildNumber
+
+# Exclude python caches
+/**/__pycache__
