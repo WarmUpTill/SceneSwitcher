@@ -1,5 +1,6 @@
 #include "macro-script-handler.hpp"
 #include "macro-action-script.hpp"
+#include "macro-condition-script.hpp"
 #include "plugin-state-helpers.hpp"
 #include "log-helper.hpp"
 #include "variable.hpp"
@@ -8,6 +9,8 @@
 
 namespace advss {
 
+/* Return values */
+
 #define RETURN_STATUS(status)                               \
 	{                                                   \
 		calldata_set_bool(data, "success", status); \
@@ -15,6 +18,8 @@ namespace advss {
 	}
 #define RETURN_SUCCESS() RETURN_STATUS(true);
 #define RETURN_FAILURE() RETURN_STATUS(false);
+
+/* Script actions */
 
 static constexpr std::string_view nameParam = "name";
 static constexpr std::string_view blockingParam = "blocking";
@@ -28,10 +33,28 @@ static const std::string registerScriptActionDeclString =
 	std::string("bool ") + registerActionFuncName.data() + "(in string " +
 	nameParam.data() + ", in bool " + blockingParam.data() +
 	", out string " + triggerSignalParam.data() + ", out string " +
-	GetCompletionSignalParamName().data() + ")";
+	GetActionCompletionSignalParamName().data() + ")";
 static const std::string deregisterScriptActionDeclString =
 	std::string("bool ") + deregisterActionFuncName.data() + "(in string " +
 	nameParam.data() + ")";
+
+/* Script conditions */
+
+static constexpr std::string_view changeValueSignalParam =
+	"change_value_signal_name";
+static constexpr std::string_view registerConditionFuncName =
+	"advss_register_script_condition";
+static constexpr std::string_view deregisterConditionFuncName =
+	"advss_deregister_script_condition";
+static const std::string registerScriptConditionDeclString =
+	std::string("bool ") + registerConditionFuncName.data() +
+	"(in string " + nameParam.data() + ", out string " +
+	changeValueSignalParam.data() + ")";
+static const std::string deregisterScriptConditionDeclString =
+	std::string("bool ") + deregisterConditionFuncName.data() +
+	"(in string " + nameParam.data() + ")";
+
+/* Script variables */
 
 static constexpr std::string_view valueParam = "value";
 static constexpr std::string_view getVariableValueFuncName =
@@ -47,10 +70,15 @@ static const std::string setVariableValueDeclString =
 
 static bool setup();
 static bool setupDone = setup();
+static ScriptHandler *scriptHandler = nullptr;
 
 static bool setup()
 {
-	AddPluginInitStep([]() { new ScriptHandler(); });
+	AddPluginInitStep([]() { scriptHandler = new ScriptHandler(); });
+	AddPluginCleanupStep([]() {
+		delete scriptHandler;
+		scriptHandler = nullptr;
+	});
 	return true;
 }
 
@@ -63,6 +91,10 @@ ScriptHandler::ScriptHandler()
 			 &RegisterScriptAction, this);
 	proc_handler_add(ph, deregisterScriptActionDeclString.c_str(),
 			 &DeregisterScriptAction, this);
+	proc_handler_add(ph, registerScriptConditionDeclString.c_str(),
+			 &RegisterScriptCondition, this);
+	proc_handler_add(ph, deregisterScriptConditionDeclString.c_str(),
+			 &DeregisterScriptCondition, this);
 	proc_handler_add(ph, getVariableValueDeclString.c_str(),
 			 &GetVariableValue, this);
 	proc_handler_add(ph, setVariableValueDeclString.c_str(),
@@ -170,6 +202,88 @@ void ScriptHandler::DeregisterScriptAction(void *ctx, calldata_t *data)
 	RETURN_SUCCESS();
 }
 
+void ScriptHandler::RegisterScriptCondition(void *ctx, calldata_t *data)
+{
+	auto handler = static_cast<ScriptHandler *>(ctx);
+	const char *conditionName;
+	if (!calldata_get_string(data, nameParam.data(), &conditionName) ||
+	    strlen(conditionName) == 0) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     registerScriptConditionDeclString.data(),
+		     nameParam.data());
+		RETURN_FAILURE();
+	}
+
+	std::lock_guard<std::mutex> lock(handler->_mutex);
+
+	if (handler->_conditions.count(conditionName) > 0) {
+		blog(LOG_WARNING,
+		     "[%s] failed! Condition \"%s\" already exists!",
+		     registerConditionFuncName.data(), conditionName);
+		RETURN_FAILURE();
+	}
+
+	const std::string id = nameToScriptID(conditionName);
+
+	std::string signalName = std::string(conditionName);
+	replaceWithspace(signalName);
+	signalName += "_change_condition_value";
+
+	const auto createScriptCondition =
+		[id, signalName](Macro *m) -> std::shared_ptr<MacroCondition> {
+		return std::make_shared<MacroConditionScript>(m, id,
+							      signalName);
+	};
+	if (!MacroConditionFactory::Register(
+		    id, {createScriptCondition,
+			 MacroConditionScriptEdit::Create, conditionName})) {
+		blog(LOG_WARNING,
+		     "[%s] failed! Condition id \"%s\" already exists!",
+		     registerConditionFuncName.data(), id.c_str());
+		RETURN_FAILURE();
+	}
+
+	blog(LOG_INFO, "[%s] successful for \"%s\"",
+	     registerConditionFuncName.data(), conditionName);
+
+	calldata_set_string(data, changeValueSignalParam.data(),
+			    signalName.c_str());
+	handler->_conditions.emplace(id, ScriptCondition(id, signalName));
+
+	RETURN_SUCCESS();
+}
+
+void ScriptHandler::DeregisterScriptCondition(void *ctx, calldata_t *data)
+{
+	auto handler = static_cast<ScriptHandler *>(ctx);
+	const char *conditionName;
+	if (!calldata_get_string(data, nameParam.data(), &conditionName) ||
+	    strlen(conditionName) == 0) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     deregisterConditionFuncName.data(), nameParam.data());
+		RETURN_FAILURE();
+	}
+
+	const std::string id = nameToScriptID(conditionName);
+	std::lock_guard<std::mutex> lock(handler->_mutex);
+
+	if (handler->_conditions.count(id) == 0) {
+		blog(LOG_WARNING,
+		     "[%s] failed! Condition \"%s\" was never registered!",
+		     deregisterConditionFuncName.data(), id.c_str());
+		RETURN_FAILURE();
+	}
+
+	if (!MacroConditionFactory::Deregister(id)) {
+		blog(LOG_WARNING,
+		     "[%s] failed! Condition id \"%s\" does not exist!",
+		     deregisterConditionFuncName.data(), id.c_str());
+		RETURN_FAILURE();
+	}
+
+	RETURN_SUCCESS();
+}
+
 void ScriptHandler::GetVariableValue(void *, calldata_t *data)
 {
 	const char *variableName;
@@ -245,7 +359,8 @@ ScriptAction::ScriptAction(const std::string &id, bool blocking,
 
 static std::string conditionSignalNameToSignalDecl(const std::string &name)
 {
-	return std::string("void ") + name + "(in bool value)";
+	return std::string("void ") + name + "(in bool " +
+	       GetConditionValueSignalParamName().data() + ")";
 }
 
 ScriptCondition::ScriptCondition(const std::string &id,

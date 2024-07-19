@@ -67,7 +67,7 @@ bool MacroActionScript::PerformAction()
 	_actionIsComplete = false;
 
 	auto data = calldata_create();
-	calldata_set_string(data, GetCompletionSignalParamName().data(),
+	calldata_set_string(data, GetActionCompletionSignalParamName().data(),
 			    _signalComplete.c_str());
 	signal_handler_signal(obs_get_signal_handler(), _signal.c_str(), data);
 	calldata_destroy(data);

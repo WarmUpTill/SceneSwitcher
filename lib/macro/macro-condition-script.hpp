@@ -17,7 +17,7 @@ public:
 	std::string GetId() const { return _id; };
 
 private:
-	static void SignalReceived(void *param, calldata_t *data);
+	static void ValueChangeSignalReceived(void *param, calldata_t *data);
 
 	std::string _id = "";
 	std::string _signal = "";

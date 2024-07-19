@@ -11,6 +11,9 @@ MacroConditionScript::MacroConditionScript(Macro *m, const std::string &id,
 	  _id(id),
 	  _signal(signal)
 {
+	signal_handler_connect(obs_get_signal_handler(), signal.c_str(),
+			       &MacroConditionScript::ValueChangeSignalReceived,
+			       this);
 }
 
 MacroConditionScript::MacroConditionScript(
@@ -21,27 +24,17 @@ MacroConditionScript::MacroConditionScript(
 {
 }
 
-void MacroConditionScript::SignalReceived(void *param, calldata_t *)
+void MacroConditionScript::ValueChangeSignalReceived(void *param,
+						     calldata_t *data)
 {
 	auto condition = static_cast<MacroConditionScript *>(param);
-	condition->_conditionValue = true;
+	condition->_conditionValue = calldata_get_bool(
+		data, GetConditionValueChangeSignalParamName().data());
 }
 
 bool MacroConditionScript::CheckCondition()
 {
-	//	_actionIsComplete = false;
-	//
-	//	auto data = calldata_create();
-	//	calldata_set_string(data, GetCompletionSignalParamName().data(),
-	//			    _signalComplete.c_str());
-	//	signal_handler_signal(obs_get_signal_handler(), _signal.c_str(), data);
-	//	calldata_destroy(data);
-	//
-	//	if (_blocking) {
-	//		SetMacroAbortWait(false);
-	//		WaitForConditionCompletion();
-	//	}
-	return true;
+	return _conditionValue;
 }
 
 bool MacroConditionScript::Save(obs_data_t *obj) const
