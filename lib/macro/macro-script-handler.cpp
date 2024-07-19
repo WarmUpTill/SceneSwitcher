@@ -360,7 +360,7 @@ ScriptAction::ScriptAction(const std::string &id, bool blocking,
 static std::string conditionSignalNameToSignalDecl(const std::string &name)
 {
 	return std::string("void ") + name + "(in bool " +
-	       GetConditionValueSignalParamName().data() + ")";
+	       GetConditionValueChangeSignalParamName().data() + ")";
 }
 
 ScriptCondition::ScriptCondition(const std::string &id,

@@ -28,8 +28,13 @@ void MacroConditionScript::ValueChangeSignalReceived(void *param,
 						     calldata_t *data)
 {
 	auto condition = static_cast<MacroConditionScript *>(param);
-	condition->_conditionValue = calldata_get_bool(
-		data, GetConditionValueChangeSignalParamName().data());
+	bool value;
+	if (!calldata_get_bool(data,
+			       GetConditionValueChangeSignalParamName().data(),
+			       &value)) {
+		return;
+	}
+	condition->_conditionValue = value;
 }
 
 bool MacroConditionScript::CheckCondition()
