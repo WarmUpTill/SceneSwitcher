@@ -31,6 +31,7 @@ private:
 	std::string _signal = "";
 	std::string _signalComplete = "";
 	std::atomic_bool _actionIsComplete = {false};
+	int64_t _completionId = 0;
 };
 
 class MacroActionScriptEdit : public QWidget {

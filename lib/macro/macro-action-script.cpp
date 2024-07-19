@@ -5,6 +5,9 @@
 
 namespace advss {
 
+static std::atomic_int completionIdCounter = 0;
+static constexpr std::string_view completionIdParam = "completion_id";
+
 MacroActionScript::MacroActionScript(Macro *m, const std::string &id,
 				     bool blocking, const std::string &signal,
 				     const std::string &signalComplete)
@@ -28,9 +31,19 @@ MacroActionScript::MacroActionScript(const advss::MacroActionScript &other)
 {
 }
 
-void MacroActionScript::CompletionSignalReceived(void *param, calldata_t *)
+void MacroActionScript::CompletionSignalReceived(void *param, calldata_t *data)
 {
 	auto action = static_cast<MacroActionScript *>(param);
+	long long int id;
+	if (!calldata_get_int(data, completionIdParam.data(), &id)) {
+		blog(LOG_WARNING,
+		     "received completion signal without \"%s\" parameter",
+		     completionIdParam.data());
+		return;
+	}
+	if (id != action->_completionId) {
+		return;
+	}
 	action->_actionIsComplete = true;
 }
 
@@ -64,11 +77,14 @@ void MacroActionScript::WaitForActionCompletion() const
 
 bool MacroActionScript::PerformAction()
 {
+	completionIdCounter++;
+	_completionId = completionIdCounter;
 	_actionIsComplete = false;
 
 	auto data = calldata_create();
 	calldata_set_string(data, GetActionCompletionSignalParamName().data(),
 			    _signalComplete.c_str());
+	calldata_set_int(data, completionIdParam.data(), _completionId);
 	signal_handler_signal(obs_get_signal_handler(), _signal.c_str(), data);
 	calldata_destroy(data);
 

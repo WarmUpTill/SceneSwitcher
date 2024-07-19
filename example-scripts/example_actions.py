@@ -63,11 +63,13 @@ def advss_register_action(name, callback, blocking = False):
     # Action completion will be indicated via signal completion_signal_name
     def run_helper(data):
         completion_signal_name = obs.calldata_string(data, "completion_signal_name")
+        id = obs.calldata_int(data, "completion_id")
 
         def thread_func(data):                   
             callback(data)
             signal_handler = obs.obs_get_signal_handler()
-            obs.signal_handler_signal(signal_handler, completion_signal_name, None)
+            obs.calldata_set_int(data, "completion_id", id)
+            obs.signal_handler_signal(signal_handler, completion_signal_name, data)
             
         threading.Thread(target = thread_func, args = {data}).start()
 
