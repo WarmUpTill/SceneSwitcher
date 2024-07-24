@@ -58,8 +58,9 @@ MacroConditionScriptEdit::MacroConditionScriptEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionScript> entryData)
 	: QWidget(parent)
 {
-	auto layout = new QHBoxLayout();
-	layout->addWidget(new QLabel("dummy"));
+	auto layout = new QVBoxLayout();
+	layout->addWidget(new QLabel(
+		obs_module_text("AdvSceneSwitcher.script.settings")));
 	setLayout(layout);
 
 	_entryData = entryData;

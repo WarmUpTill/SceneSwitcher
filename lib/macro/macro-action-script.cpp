@@ -127,9 +127,14 @@ MacroActionScriptEdit::MacroActionScriptEdit(
 	QWidget::connect(_timeout, &DurationSelection::DurationChanged, this,
 			 &MacroActionScriptEdit::TimeoutChanged);
 
-	auto layout = new QHBoxLayout();
+	auto timeoutLayout = new QHBoxLayout();
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.script.timeout"),
-		     layout, {{"{{timeout}}", _timeout}});
+		     timeoutLayout, {{"{{timeout}}", _timeout}});
+
+	auto layout = new QVBoxLayout();
+	layout->addWidget(new QLabel(
+		obs_module_text("AdvSceneSwitcher.script.settings")));
+	layout->addLayout(timeoutLayout);
 	setLayout(layout);
 
 	_entryData = entryData;
