@@ -32,6 +32,9 @@ void MacroConditionScript::ValueChangeSignalReceived(void *param,
 	if (!calldata_get_bool(data,
 			       GetConditionValueChangeSignalParamName().data(),
 			       &value)) {
+		blog(LOG_WARNING, "%s failed to get %s parameter",
+		     condition->_signal.c_str(),
+		     GetConditionValueChangeSignalParamName().data());
 		return;
 	}
 	condition->_conditionValue = value;
