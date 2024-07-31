@@ -60,7 +60,7 @@ public:
 	bool useForChangedCheck = false;
 	bool useAlphaAsMask = false;
 	cv::TemplateMatchModes matchMode = cv::TM_CCORR_NORMED;
-	NumberVariable<double> threshold = 0.8;
+	NumberVariable<double> threshold = 0.999;
 };
 
 class ObjDetectParameters {
