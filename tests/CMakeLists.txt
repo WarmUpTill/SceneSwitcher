@@ -48,6 +48,12 @@ set_target_properties(
              AUTOUIC ON
              AUTORCC ON)
 
+# --- condition-logic --- #
+
+target_sources(
+  ${PROJECT_NAME} PRIVATE test-condition-logic.cpp
+                          ${ADVSS_SOURCE_DIR}/lib/utils/condition-logic.cpp)
+
 # --- json --- #
 
 target_sources(
