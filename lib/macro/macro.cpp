@@ -17,7 +17,6 @@
 
 namespace advss {
 
-static constexpr int perfLogThreshold = 300;
 static std::deque<std::shared_ptr<Macro>> macros;
 
 Macro::Macro(const std::string &name, const bool addHotkey)
@@ -101,6 +100,30 @@ void Macro::PrepareMoveToGroup(std::shared_ptr<Macro> group,
 	}
 }
 
+static bool checkCondition(const std::shared_ptr<MacroCondition> &condition)
+{
+	using namespace std::chrono_literals;
+	static constexpr auto perfLogThreshold = 300ms;
+
+	const auto startTime = std::chrono::high_resolution_clock::now();
+	const bool conditionMatched = condition->CheckCondition();
+	const auto endTime = std::chrono::high_resolution_clock::now();
+	const auto timeSpent = endTime - startTime;
+
+	if (timeSpent >= perfLogThreshold) {
+		const long int ms =
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				timeSpent)
+				.count();
+		blog(LOG_WARNING,
+		     "spent %ld ms in %s condition check of macro '%s'!", ms,
+		     condition->GetId().c_str(),
+		     condition->GetMacro()->Name().c_str());
+	}
+
+	return conditionMatched;
+}
+
 bool Macro::CeckMatch(bool ignorePause)
 {
 	if (_isGroup) {
@@ -108,77 +131,35 @@ bool Macro::CeckMatch(bool ignorePause)
 	}
 
 	_matched = false;
-	for (auto &c : _conditions) {
+	for (auto &condition : _conditions) {
 		if (_paused && !ignorePause) {
 			vblog(LOG_INFO, "Macro %s is paused", _name.c_str());
 			return false;
 		}
 
-		auto startTime = std::chrono::high_resolution_clock::now();
-		bool cond = c->CheckCondition();
-		auto endTime = std::chrono::high_resolution_clock::now();
-		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-			endTime - startTime);
-		if (ms.count() >= perfLogThreshold) {
-			blog(LOG_WARNING,
-			     "spent %ld ms in %s condition check of macro '%s'!",
-			     (long int)ms.count(), c->GetId().c_str(),
-			     Name().c_str());
-		}
+		bool conditionMatched = checkCondition(condition);
+		condition->CheckDurationModifier(conditionMatched);
 
-		c->CheckDurationModifier(cond);
-
-		switch (c->GetLogicType()) {
-		case LogicType::NONE:
-			vblog(LOG_INFO,
-			      "ignoring condition check 'none' for '%s'",
-			      _name.c_str());
+		const auto logicType = condition->GetLogicType();
+		if (logicType == Logic::Type::NONE) {
+			vblog(LOG_INFO, "ignoring condition '%s' for '%s'",
+			      condition->GetId().c_str(), _name.c_str());
 			continue;
-		case LogicType::AND:
-			_matched = _matched && cond;
-			if (cond) {
-				c->EnableHighlight();
-			}
-			break;
-		case LogicType::OR:
-			_matched = _matched || cond;
-			if (cond) {
-				c->EnableHighlight();
-			}
-			break;
-		case LogicType::AND_NOT:
-			_matched = _matched && !cond;
-			if (!cond) {
-				c->EnableHighlight();
-			}
-			break;
-		case LogicType::OR_NOT:
-			_matched = _matched || !cond;
-			if (!cond) {
-				c->EnableHighlight();
-			}
-			break;
-		case LogicType::ROOT_NONE:
-			_matched = cond;
-			if (cond) {
-				c->EnableHighlight();
-			}
-			break;
-		case LogicType::ROOT_NOT:
-			_matched = !cond;
-			if (!cond) {
-				c->EnableHighlight();
-			}
-			break;
-		default:
-			blog(LOG_WARNING,
-			     "ignoring unknown condition check for '%s'",
-			     _name.c_str());
-			break;
 		}
-		vblog(LOG_INFO, "condition %s returned %d", c->GetId().c_str(),
-		      cond);
+		vblog(LOG_INFO, "condition %s returned %d",
+		      condition->GetId().c_str(), conditionMatched);
+
+		const bool isNegativeLogicType =
+			Logic::IsNegationType(logicType);
+		if ((conditionMatched && !isNegativeLogicType) ||
+		    (!conditionMatched && isNegativeLogicType)) {
+			condition->EnableHighlight();
+		}
+
+		_matched = Logic::ApplyConditionLogic(
+			logicType, _matched, conditionMatched, _name.c_str());
 	}
+
 	vblog(LOG_INFO, "Macro %s returned %d", _name.c_str(), _matched);
 
 	_conditionSateChanged = _lastMatched != _matched;
@@ -631,40 +612,6 @@ bool Macro::Save(obs_data_t *obj) const
 	return true;
 }
 
-bool isValidLogic(LogicType t, bool root)
-{
-	bool isRoot = isRootLogicType(t);
-	if (!isRoot == root) {
-		return false;
-	}
-	if (isRoot) {
-		if (t >= LogicType::ROOT_LAST) {
-			return false;
-		}
-	} else if (t >= LogicType::LAST) {
-		return false;
-	}
-	return true;
-}
-
-void setValidLogic(MacroCondition *c, bool root, std::string name)
-{
-	if (isValidLogic(c->GetLogicType(), root)) {
-		return;
-	}
-	if (root) {
-		c->SetLogicType(LogicType::ROOT_NONE);
-		blog(LOG_WARNING,
-		     "setting invalid logic selection to 'if' for macro %s",
-		     name.c_str());
-	} else {
-		c->SetLogicType(LogicType::NONE);
-		blog(LOG_WARNING,
-		     "setting invalid logic selection to 'ignore' for macro %s",
-		     name.c_str());
-	}
-}
-
 bool Macro::Load(obs_data_t *obj)
 {
 	_name = obs_data_get_string(obj, "name");
@@ -720,7 +667,7 @@ bool Macro::Load(obs_data_t *obj)
 			_conditions.emplace_back(newEntry);
 			auto c = _conditions.back().get();
 			c->Load(arrayObj);
-			setValidLogic(c, root, _name);
+			c->ValidateLogicSelection(root, Name().c_str());
 		} else {
 			blog(LOG_WARNING,
 			     "discarding condition entry with unknown id (%s) for macro %s",
