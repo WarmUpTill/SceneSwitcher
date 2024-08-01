@@ -155,6 +155,8 @@ target_sources(
           lib/queue/action-queue-tab.hpp
           lib/utils/backup.cpp
           lib/utils/backup.hpp
+          lib/utils/condition-logic.cpp
+          lib/utils/condition-logic.hpp
           lib/utils/curl-helper.cpp
           lib/utils/curl-helper.hpp
           lib/utils/cursor-shape-changer.cpp
