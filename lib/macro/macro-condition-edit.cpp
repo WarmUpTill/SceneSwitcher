@@ -10,26 +10,6 @@
 
 namespace advss {
 
-static inline void populateLogicSelection(QComboBox *list, bool root = false)
-{
-	if (root) {
-		for (const auto &entry : MacroCondition::logicTypes) {
-			if (static_cast<int>(entry.first) < logic_root_offset) {
-				list->addItem(obs_module_text(
-					entry.second._name.c_str()));
-			}
-		}
-	} else {
-		for (const auto &entry : MacroCondition::logicTypes) {
-			if (static_cast<int>(entry.first) >=
-			    logic_root_offset) {
-				list->addItem(obs_module_text(
-					entry.second._name.c_str()));
-			}
-		}
-	}
-}
-
 static inline void populateConditionSelection(QComboBox *list)
 {
 	for (const auto &[_, condition] :
@@ -120,13 +100,13 @@ void DurationModifierEdit::Collapse(bool collapse)
 
 MacroConditionEdit::MacroConditionEdit(
 	QWidget *parent, std::shared_ptr<MacroCondition> *entryData,
-	const std::string &id, bool root)
+	const std::string &id, bool isRootCondition)
 	: MacroSegmentEdit(parent),
 	  _logicSelection(new QComboBox()),
 	  _conditionSelection(new FilterComboBox()),
 	  _dur(new DurationModifierEdit()),
 	  _entryData(entryData),
-	  _isRoot(root)
+	  _isRoot(isRootCondition)
 {
 	QWidget::connect(_logicSelection, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(LogicSelectionChanged(int)));
@@ -139,7 +119,7 @@ MacroConditionEdit::MacroConditionEdit(
 			 this,
 			 SLOT(DurationModifierChanged(DurationModifier::Type)));
 
-	populateLogicSelection(_logicSelection, root);
+	Logic::PopulateLogicTypeSelection(_logicSelection, isRootCondition);
 	populateConditionSelection(_conditionSelection);
 
 	_section->AddHeaderWidget(_logicSelection);
@@ -168,15 +148,10 @@ void MacroConditionEdit::LogicSelectionChanged(int idx)
 		return;
 	}
 
-	LogicType type;
-	if (IsRootNode()) {
-		type = static_cast<LogicType>(idx);
-	} else {
-		type = static_cast<LogicType>(idx + logic_root_offset);
-	}
-
 	auto lock = LockContext();
-	(*_entryData)->SetLogicType(type);
+	const auto logic = static_cast<Logic::Type>(
+		_logicSelection->itemData(idx).toInt());
+	(*_entryData)->SetLogicType(logic);
 }
 
 bool MacroConditionEdit::IsRootNode()
@@ -186,13 +161,9 @@ bool MacroConditionEdit::IsRootNode()
 
 void MacroConditionEdit::SetLogicSelection()
 {
-	auto logic = (*_entryData)->GetLogicType();
-	if (IsRootNode()) {
-		_logicSelection->setCurrentIndex(static_cast<int>(logic));
-	} else {
-		_logicSelection->setCurrentIndex(static_cast<int>(logic) -
-						 logic_root_offset);
-	}
+	const auto logic = (*_entryData)->GetLogicType();
+	_logicSelection->setCurrentIndex(
+		_logicSelection->findData(static_cast<int>(logic)));
 }
 
 void MacroConditionEdit::SetRootNode(bool root)
@@ -200,7 +171,7 @@ void MacroConditionEdit::SetRootNode(bool root)
 	_isRoot = root;
 	const QSignalBlocker blocker(_logicSelection);
 	_logicSelection->clear();
-	populateLogicSelection(_logicSelection, root);
+	Logic::PopulateLogicTypeSelection(_logicSelection, root);
 	SetLogicSelection();
 }
 
@@ -301,17 +272,17 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 	}
 
 	std::string id;
-	LogicType logic;
+	Logic::Type logic;
 	if (idx >= 1) {
 		id = macro->Conditions().at(idx - 1)->GetId();
 		if (idx == 1) {
-			logic = LogicType::OR;
+			logic = Logic::Type::OR;
 		} else {
 			logic = macro->Conditions().at(idx - 1)->GetLogicType();
 		}
 	} else {
 		id = MacroCondition::GetDefaultID();
-		logic = LogicType::ROOT_NONE;
+		logic = Logic::Type::ROOT_NONE;
 	}
 
 	OBSDataAutoRelease data;
@@ -324,7 +295,7 @@ void AdvSceneSwitcher::AddMacroCondition(int idx)
 
 void AdvSceneSwitcher::AddMacroCondition(Macro *macro, int idx,
 					 const std::string &id,
-					 obs_data_t *data, LogicType logic)
+					 obs_data_t *data, Logic::Type logic)
 {
 	if (idx < 0 || idx > (int)macro->Conditions().size()) {
 		assert(false);
@@ -389,7 +360,7 @@ void AdvSceneSwitcher::RemoveMacroCondition(int idx)
 		macro->UpdateConditionIndices();
 		if (idx == 0 && macro->Conditions().size() > 0) {
 			auto newRoot = macro->Conditions().at(0);
-			newRoot->SetLogicType(LogicType::ROOT_NONE);
+			newRoot->SetLogicType(Logic::Type::ROOT_NONE);
 			static_cast<MacroConditionEdit *>(
 				ui->conditionsList->WidgetAt(0))
 				->SetRootNode(true);
@@ -540,22 +511,23 @@ void AdvSceneSwitcher::MacroConditionReorder(int to, int from)
 		auto lock = LockContext();
 		auto condition = macro->Conditions().at(from);
 		if (to == 0) {
-			condition->SetLogicType(LogicType::ROOT_NONE);
+			condition->SetLogicType(Logic::Type::ROOT_NONE);
 			static_cast<MacroConditionEdit *>(
 				ui->conditionsList->WidgetAt(from))
 				->SetRootNode(true);
-			macro->Conditions().at(0)->SetLogicType(LogicType::AND);
+			macro->Conditions().at(0)->SetLogicType(
+				Logic::Type::AND);
 			static_cast<MacroConditionEdit *>(
 				ui->conditionsList->WidgetAt(0))
 				->SetRootNode(false);
 		}
 		if (from == 0) {
-			condition->SetLogicType(LogicType::AND);
+			condition->SetLogicType(Logic::Type::AND);
 			static_cast<MacroConditionEdit *>(
 				ui->conditionsList->WidgetAt(from))
 				->SetRootNode(false);
 			macro->Conditions().at(1)->SetLogicType(
-				LogicType::ROOT_NONE);
+				Logic::Type::ROOT_NONE);
 			static_cast<MacroConditionEdit *>(
 				ui->conditionsList->WidgetAt(1))
 				->SetRootNode(true);

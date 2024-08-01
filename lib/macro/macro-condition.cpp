@@ -2,16 +2,6 @@
 
 namespace advss {
 
-const std::map<LogicType, LogicTypeInfo> MacroCondition::logicTypes = {
-	{LogicType::NONE, {"AdvSceneSwitcher.logic.none"}},
-	{LogicType::AND, {"AdvSceneSwitcher.logic.and"}},
-	{LogicType::OR, {"AdvSceneSwitcher.logic.or"}},
-	{LogicType::AND_NOT, {"AdvSceneSwitcher.logic.andNot"}},
-	{LogicType::OR_NOT, {"AdvSceneSwitcher.logic.orNot"}},
-	{LogicType::ROOT_NONE, {"AdvSceneSwitcher.logic.rootNone"}},
-	{LogicType::ROOT_NOT, {"AdvSceneSwitcher.logic.not"}},
-};
-
 void DurationModifier::Save(obs_data_t *obj, const char *condName,
 			    const char *duration) const
 {
@@ -84,7 +74,7 @@ bool MacroCondition::Save(obs_data_t *obj) const
 {
 	MacroSegment::Save(obj);
 	obs_data_set_string(obj, "id", GetId().c_str());
-	obs_data_set_int(obj, "logic", static_cast<int>(_logic));
+	_logic.Save(obj, "logic");
 
 	// To avoid conflicts with conditions which also use the Duration class
 	// save the duration modifier in a separate obj
@@ -99,7 +89,7 @@ bool MacroCondition::Save(obs_data_t *obj) const
 bool MacroCondition::Load(obs_data_t *obj)
 {
 	MacroSegment::Load(obj);
-	_logic = static_cast<LogicType>(obs_data_get_int(obj, "logic"));
+	_logic.Load(obj, "logic");
 	if (obs_data_has_user_value(obj, "durationModifier")) {
 		auto durObj = obs_data_get_obj(obj, "durationModifier");
 		_duration.Load(durObj);
@@ -109,6 +99,27 @@ bool MacroCondition::Load(obs_data_t *obj)
 		_duration.Load(obj);
 	}
 	return true;
+}
+
+void MacroCondition::ValidateLogicSelection(bool isRootCondition,
+					    const char *context)
+{
+	if (_logic.IsValidSelection(isRootCondition)) {
+		return;
+	}
+
+	if (_logic.IsRootType()) {
+		_logic.SetType(Logic::Type::ROOT_NONE);
+		blog(LOG_WARNING,
+		     "setting invalid logic selection to 'if' for macro %s",
+		     context);
+		return;
+	}
+
+	_logic.SetType(Logic::Type::NONE);
+	blog(LOG_WARNING,
+	     "setting invalid logic selection to 'ignore' for macro %s",
+	     context);
 }
 
 void MacroCondition::ResetDuration()
