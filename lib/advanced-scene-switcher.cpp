@@ -241,8 +241,8 @@ void SwitcherData::Thread()
 			duration = std::chrono::milliseconds(interval) +
 				   std::chrono::milliseconds(linger) - runTime;
 			if (duration.count() < 1) {
-				blog(LOG_INFO,
-				     "detected busy loop - refusing to sleep less than 1ms");
+				vblog(LOG_INFO,
+				      "detected busy loop - refusing to sleep less than 1ms");
 				duration = std::chrono::milliseconds(10);
 			}
 		}
