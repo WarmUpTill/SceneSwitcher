@@ -32,4 +32,6 @@ private:
 	static std::map<std::string, MacroConditionInfo> &GetMap();
 };
 
+bool CanCreateDefaultCondition();
+
 } // namespace advss

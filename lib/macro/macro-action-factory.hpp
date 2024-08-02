@@ -31,4 +31,6 @@ private:
 	static std::map<std::string, MacroActionInfo> &GetMap();
 };
 
+bool CanCreateDefaultAction();
+
 } // namespace advss
