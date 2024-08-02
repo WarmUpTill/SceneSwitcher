@@ -54,4 +54,11 @@ std::string MacroActionFactory::GetIdByName(const QString &name)
 	return "";
 }
 
+bool CanCreateDefaultAction()
+{
+	const auto action = MacroActionFactory::Create(
+		MacroAction::GetDefaultID().data(), nullptr);
+	return !!action;
+}
+
 } // namespace advss
