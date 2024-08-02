@@ -93,10 +93,24 @@ static void DisplayMissingDataDirWarning()
 	DisplayMessage(msg);
 }
 
+bool CanCreateDefaultAction();
+bool CanCreateDefaultCondition();
+
+static void DisplayCorruptedInstallWarning()
+{
+	if (CanCreateDefaultAction() && CanCreateDefaultCondition()) {
+		return;
+	}
+
+	DisplayMessage(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.warnCorruptedInstallMessage"));
+}
+
 void AdvSceneSwitcher::LoadUI()
 {
 	DisplayMissingDataDirWarning();
 	DisplayMissingDependencyWarning();
+	DisplayCorruptedInstallWarning();
 
 	SetupGeneralTab();
 	SetupTitleTab();
