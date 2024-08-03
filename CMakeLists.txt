@@ -165,6 +165,8 @@ target_sources(
           lib/utils/double-slider.hpp
           lib/utils/duration-control.cpp
           lib/utils/duration-control.hpp
+          lib/utils/duration-modifier.cpp
+          lib/utils/duration-modifier.hpp
           lib/utils/duration.cpp
           lib/utils/duration.hpp
           lib/utils/export-symbol-helper.hpp

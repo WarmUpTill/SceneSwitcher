@@ -2,6 +2,7 @@
 #include "macro-condition.hpp"
 #include "macro-condition-factory.hpp"
 #include "filter-combo-box.hpp"
+#include "duration-control.hpp"
 
 #include <memory>
 

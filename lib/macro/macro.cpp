@@ -138,7 +138,8 @@ bool Macro::CeckMatch(bool ignorePause)
 		}
 
 		bool conditionMatched = checkCondition(condition);
-		condition->CheckDurationModifier(conditionMatched);
+		conditionMatched =
+			condition->CheckDurationModifier(conditionMatched);
 
 		const auto logicType = condition->GetLogicType();
 		if (logicType == Logic::Type::NONE) {
