@@ -101,7 +101,7 @@ double Duration::TimeRemaining() const
 
 void Duration::SetTimeRemaining(double remaining)
 {
-	long long msPassed = (Seconds() - remaining) * 1000;
+	long long msPassed = (long long)((Seconds() - remaining) * 1000);
 	_startTime = std::chrono::high_resolution_clock::now() -
 		     std::chrono::milliseconds(msPassed);
 }
