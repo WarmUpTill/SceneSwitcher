@@ -54,6 +54,14 @@ target_sources(
   ${PROJECT_NAME} PRIVATE test-condition-logic.cpp
                           ${ADVSS_SOURCE_DIR}/lib/utils/condition-logic.cpp)
 
+# --- duration-modifier --- #
+
+target_sources(
+  ${PROJECT_NAME}
+  PRIVATE test-duration-modifier.cpp
+          ${ADVSS_SOURCE_DIR}/lib/utils/duration-modifier.cpp
+          ${ADVSS_SOURCE_DIR}/lib/utils/duration.cpp)
+
 # --- json --- #
 
 target_sources(
