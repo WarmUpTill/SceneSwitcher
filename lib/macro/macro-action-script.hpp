@@ -9,7 +9,8 @@ namespace advss {
 
 class MacroActionScript : public MacroAction {
 public:
-	MacroActionScript(Macro *m, const std::string &id, bool blocking,
+	MacroActionScript(Macro *m, const std::string &id,
+			  obs_properties_t *props, bool blocking,
 			  const std::string &signal,
 			  const std::string &signalComplete);
 	MacroActionScript(const advss::MacroActionScript &);
@@ -21,12 +22,14 @@ public:
 	std::shared_ptr<MacroAction> Copy() const;
 
 	Duration _timeout = Duration(10.0);
+	obs_properties_t *GetProps() const { return _props; }
 
 private:
 	static void CompletionSignalReceived(void *param, calldata_t *data);
 	void WaitForActionCompletion() const;
 
 	std::string _id = "";
+	obs_properties_t *_props;
 	bool _blocking = false;
 	std::string _signal = "";
 	std::string _signalComplete = "";
@@ -54,6 +57,8 @@ private slots:
 	void TimeoutChanged(const Duration &);
 
 private:
+	static obs_properties_t *GetProps(void *obj);
+
 	DurationSelection *_timeout;
 
 	std::shared_ptr<MacroActionScript> _entryData;

@@ -207,6 +207,9 @@ target_sources(
           lib/utils/plugin-state-helpers.hpp
           lib/utils/priority-helper.cpp
           lib/utils/priority-helper.hpp
+          lib/utils/properties-view.cpp
+          lib/utils/properties-view.hpp
+          lib/utils/properties-view.moc.hpp
           lib/utils/regex-config.cpp
           lib/utils/regex-config.hpp
           lib/utils/resizing-text-edit.cpp

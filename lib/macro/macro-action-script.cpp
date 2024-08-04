@@ -3,16 +3,20 @@
 #include "macro-helpers.hpp"
 #include "sync-helpers.hpp"
 
+#include "properties-view.hpp"
+
 namespace advss {
 
 static std::atomic_int completionIdCounter = 0;
 static constexpr std::string_view completionIdParam = "completion_id";
 
 MacroActionScript::MacroActionScript(Macro *m, const std::string &id,
-				     bool blocking, const std::string &signal,
+				     obs_properties_t *props, bool blocking,
+				     const std::string &signal,
 				     const std::string &signalComplete)
 	: MacroAction(m),
 	  _id(id),
+	  _props(props),
 	  _blocking(blocking),
 	  _signal(signal),
 	  _signalComplete(signalComplete)
@@ -25,6 +29,7 @@ MacroActionScript::MacroActionScript(Macro *m, const std::string &id,
 MacroActionScript::MacroActionScript(const advss::MacroActionScript &other)
 	: MacroAction(other.GetMacro()),
 	  _id(other._id),
+	  _props(other._props),
 	  _blocking(other._blocking),
 	  _signal(other._signal),
 	  _signalComplete(other._signalComplete)
@@ -85,6 +90,9 @@ bool MacroActionScript::PerformAction()
 	calldata_set_string(data, GetActionCompletionSignalParamName().data(),
 			    _signalComplete.c_str());
 	calldata_set_int(data, completionIdParam.data(), _completionId);
+	OBSDataAutoRelease test = obs_data_create();
+	obs_data_set_string(test, "name", "warmuptill");
+	calldata_set_string(data, "settings", obs_data_get_json(test));
 	signal_handler_signal(obs_get_signal_handler(), _signal.c_str(), data);
 	calldata_destroy(data);
 
@@ -119,6 +127,14 @@ std::shared_ptr<MacroAction> MacroActionScript::Copy() const
 	return std::make_shared<MacroActionScript>(*this);
 }
 
+static auto test = obs_data_create();
+
+obs_properties_t *MacroActionScriptEdit::GetProps(void *obj)
+{
+	auto actionEdit = static_cast<MacroActionScriptEdit *>(obj);
+	return actionEdit->_entryData->GetProps();
+}
+
 MacroActionScriptEdit::MacroActionScriptEdit(
 	QWidget *parent, std::shared_ptr<MacroActionScript> entryData)
 	: QWidget(parent),
@@ -132,8 +148,9 @@ MacroActionScriptEdit::MacroActionScriptEdit(
 		     timeoutLayout, {{"{{timeout}}", _timeout}});
 
 	auto layout = new QVBoxLayout();
-	layout->addWidget(new QLabel(
-		obs_module_text("AdvSceneSwitcher.script.settings")));
+	OBSPropertiesView *view =
+		new OBSPropertiesView(test, this, GetProps, nullptr, nullptr);
+	layout->addWidget(view);
 	layout->addLayout(timeoutLayout);
 	setLayout(layout);
 

@@ -23,6 +23,8 @@ namespace advss {
 
 static constexpr std::string_view nameParam = "name";
 static constexpr std::string_view blockingParam = "blocking";
+static constexpr std::string_view propertiesParam = "properties";
+static constexpr std::string_view defaultSettingsParam = "default_settings";
 static constexpr std::string_view triggerSignalParam = "trigger_signal_name";
 static constexpr std::string_view registerActionFuncName =
 	"advss_register_script_action";
@@ -31,7 +33,8 @@ static constexpr std::string_view deregisterActionFuncName =
 
 static const std::string registerScriptActionDeclString =
 	std::string("bool ") + registerActionFuncName.data() + "(in string " +
-	nameParam.data() + ", in bool " + blockingParam.data() +
+	nameParam.data() + ", in bool " + blockingParam.data() + ", in ptr " +
+	propertiesParam.data() + ", in ptr " + defaultSettingsParam.data() +
 	", out string " + triggerSignalParam.data() + ", out string " +
 	GetActionCompletionSignalParamName().data() + ")";
 static const std::string deregisterScriptActionDeclString =
@@ -129,7 +132,20 @@ void ScriptHandler::RegisterScriptAction(void *ctx, calldata_t *data)
 		     registerActionFuncName.data(), blockingParam.data());
 		RETURN_FAILURE();
 	}
-
+	obs_properties_t *properties = nullptr;
+	if (!calldata_get_ptr(data, propertiesParam.data(), &properties)) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     registerActionFuncName.data(), propertiesParam.data());
+		RETURN_FAILURE();
+	}
+	obs_data_t *defaultSettings = nullptr;
+	if (!calldata_get_ptr(data, defaultSettingsParam.data(),
+			      &defaultSettings)) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     registerActionFuncName.data(),
+		     defaultSettingsParam.data());
+		RETURN_FAILURE();
+	}
 	std::lock_guard<std::mutex> lock(handler->_mutex);
 
 	if (handler->_actions.count(actionName) > 0) {
@@ -146,10 +162,11 @@ void ScriptHandler::RegisterScriptAction(void *ctx, calldata_t *data)
 	std::string completionSignalName = signalName + "_complete";
 
 	const auto createScriptAction =
-		[id, blocking, signalName, completionSignalName](
+		[id, properties, blocking, signalName, completionSignalName](
 			Macro *m) -> std::shared_ptr<MacroAction> {
 		return std::make_shared<MacroActionScript>(
-			m, id, blocking, signalName, completionSignalName);
+			m, id, properties, blocking, signalName,
+			completionSignalName);
 	};
 	if (!MacroActionFactory::Register(id, {createScriptAction,
 					       MacroActionScriptEdit::Create,
