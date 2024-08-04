@@ -2,12 +2,43 @@ import obspython as obs
 import threading
 import random
 
-# Simple example action callback
+###############################################################################
+
+# Simple action callback example
+
+
 def my_python_action(data):
     obs.script_log(obs.LOG_WARNING, "hello from python!")
 
+
+###############################################################################
+
+# Action showcasing how to provide configurable settings
+
+
+def get_action_properties():
+    props = obs.obs_properties_create()
+    obs.obs_properties_add_text(props, "name", "Name", obs.OBS_TEXT_DEFAULT)
+    return props
+
+
+def get_action_defaults():
+    default_settings = obs.obs_data_create()
+    obs.obs_data_set_default_string(default_settings, "name", "John")
+    return default_settings
+
+
+def my_python_settings_action(data):
+    name = obs.obs_data_get_string(data, "name")
+    obs.script_log(obs.LOG_WARNING, f"hello {name} from python!")
+
+
+###############################################################################
+
 # Action callback demonstrating the interacting with variables
+
 counter = 0
+
 
 def variable_python_action(data):
     value = advss_get_variable_value("variable")
@@ -18,35 +49,53 @@ def variable_python_action(data):
     counter += 1
     advss_set_variable_value("variable", str(counter))
 
+
+###############################################################################
+
 # Example condition randomly changing its value every second
+
 set_condition_function = None
+
 
 def timer_callback():
     if set_condition_function is not None:
         value = random.randint(0, 1) == 0
         set_condition_function(value)
 
+
 obs.timer_add(timer_callback, 1000)
 
 ###############################################################################
 
+
 def script_load(settings):
     # Register an example action
-    advss_register_action("My simple Python Action", my_python_action)
+    advss_register_action("My simple Python action", my_python_action)
+
+    # Register an example action with settings
+    advss_register_action(
+        "My settings Python action",
+        my_python_settings_action,
+        get_action_properties(),
+        get_action_defaults(),
+    )
 
     # This example action demonstrates how to interact with variables
-    advss_register_action("My variable Python Action", variable_python_action)
+    advss_register_action("My variable Python action", variable_python_action)
 
     # Register an example condition
     global set_condition_function
     set_condition_function = advss_register_condition("My Python condition")
 
+
 def script_unload():
     # Deregistering is useful if you plan on reloading the script files
-    advss_deregister_action("My simple Python Action")
-    advss_deregister_action("My variable Python Action")
+    advss_deregister_action("My simple Python action")
+    advss_deregister_action("My settings Python action")
+    advss_deregister_action("My variable Python action")
 
     advss_deregister_condition("My Python condition")
+
 
 ###############################################################################
 
@@ -58,50 +107,72 @@ def script_unload():
 
 # Actions
 
+
 # The advss_register_action() function is used to register custom actions
-# It takes three arguments:
+# It takes the following arguments:
 # 1. The name of the new action type
 # 2. The function callback to be ran when the action is executed
-# 3. The optional boolean flag for the "blocking" parameter
-# If the "blocking" parameter of advss_register_action() is set to false the
-# Advanced Scene Switcher plugin will not wait for the provided script function
-# to complete before continuing with the next action in a given macro
-def advss_register_action(name, callback, blocking = True):
+# 3. The optional properties pointer used to display the settings
+#    The pointer will be owned by the plugin and must not be freed within this
+#    script
+# 4. The optional default_settings pointer used to set the default settings of
+#    newly created actions
+#    The pointer will be owned by the plugin and must not be freed within this
+#    script
+# 5. The optional boolean flag for the "blocking" parameter
+#    If the "blocking" parameter of advss_register_action() is set to false the
+#    Advanced Scene Switcher plugin will not wait for the provided script
+#    function to complete before continuing with the next action in a given
+#    macro
+def advss_register_action(
+    name, callback, properties=None, default_settings=None, blocking=True
+):
     proc_handler = obs.obs_get_proc_handler()
     data = obs.calldata_create()
 
     obs.calldata_set_string(data, "name", name)
     obs.calldata_set_bool(data, "blocking", blocking)
+    obs.calldata_set_ptr(data, "properties", properties)
+    obs.calldata_set_ptr(data, "default_settings", default_settings)
     obs.proc_handler_call(proc_handler, "advss_register_script_action", data)
 
     success = obs.calldata_bool(data, "success")
     if success == False:
-        obs.script_log(obs.LOG_WARNING, "failed to register custom action \"" + name + "\"")
+        obs.script_log(
+            obs.LOG_WARNING, 'failed to register custom action "' + name + '"'
+        )
         obs.calldata_destroy(data)
         return
 
-    # Run action in coroutine to avoid blocking main OBS signal handler
+    # Run action in separate thread to avoid blocking main OBS signal handler
     # Action completion will be indicated via signal completion_signal_name
     def run_helper(data):
         completion_signal_name = obs.calldata_string(data, "completion_signal_name")
         id = obs.calldata_int(data, "completion_id")
 
-        def thread_func(data):
-            callback(data)
+        def thread_func(settings):
+            settings = obs.obs_data_create_from_json(
+                obs.calldata_string(data, "settings")
+            )
+            callback(settings)
 
             reply_data = obs.calldata_create()
             obs.calldata_set_int(reply_data, "completion_id", id)
             signal_handler = obs.obs_get_signal_handler()
-            obs.signal_handler_signal(signal_handler, completion_signal_name, reply_data)
+            obs.signal_handler_signal(
+                signal_handler, completion_signal_name, reply_data
+            )
+            obs.obs_data_release(settings)
             obs.calldata_destroy(reply_data)
 
-        threading.Thread(target = thread_func, args = {data}).start()
+        threading.Thread(target=thread_func, args={data}).start()
 
     signal_name = obs.calldata_string(data, "trigger_signal_name")
     signal_handler = obs.obs_get_signal_handler()
     obs.signal_handler_connect(signal_handler, signal_name, run_helper)
 
     obs.calldata_destroy(data)
+
 
 def advss_deregister_action(name):
     proc_handler = obs.obs_get_proc_handler()
@@ -112,11 +183,15 @@ def advss_deregister_action(name):
 
     success = obs.calldata_bool(data, "success")
     if success == False:
-        obs.script_log(obs.LOG_WARNING, "failed to deregister custom action \"" + name + "\"")
+        obs.script_log(
+            obs.LOG_WARNING, 'failed to deregister custom action "' + name + '"'
+        )
 
     obs.calldata_destroy(data)
 
+
 # Conditions
+
 
 # The advss_register_condition() function is used to register custom conditions
 # It takes one argument:
@@ -131,7 +206,9 @@ def advss_register_condition(name):
 
     success = obs.calldata_bool(data, "success")
     if success == False:
-        obs.script_log(obs.LOG_WARNING, "failed to register custom condition \"" + name + "\"")
+        obs.script_log(
+            obs.LOG_WARNING, 'failed to register custom condition "' + name + '"'
+        )
         obs.calldata_destroy(data)
         return
 
@@ -147,6 +224,7 @@ def advss_register_condition(name):
 
     return set_condition_value_func
 
+
 def advss_deregister_condition(name):
     proc_handler = obs.obs_get_proc_handler()
     data = obs.calldata_create()
@@ -156,11 +234,15 @@ def advss_deregister_condition(name):
 
     success = obs.calldata_bool(data, "success")
     if success == False:
-        obs.script_log(obs.LOG_WARNING, "failed to deregister custom condition \"" + name + "\"")
+        obs.script_log(
+            obs.LOG_WARNING, 'failed to deregister custom condition "' + name + '"'
+        )
 
     obs.calldata_destroy(data)
 
+
 # Variables
+
 
 # The advss_get_variable_value() function can be used to query the value of a
 # variable with a given name.
@@ -174,7 +256,9 @@ def advss_get_variable_value(name):
 
     success = obs.calldata_bool(data, "success")
     if success == False:
-        obs.script_log(obs.LOG_WARNING, "failed to get value for variable \"" + name + "\"")
+        obs.script_log(
+            obs.LOG_WARNING, 'failed to get value for variable "' + name + '"'
+        )
         obs.calldata_destroy(data)
         return None
 
@@ -182,6 +266,7 @@ def advss_get_variable_value(name):
 
     obs.calldata_destroy(data)
     return value
+
 
 # The advss_set_variable_value() function can be used to set the value of a
 # variable with a given name.
@@ -196,7 +281,9 @@ def advss_set_variable_value(name, value):
 
     success = obs.calldata_bool(data, "success")
     if success == False:
-        obs.script_log(obs.LOG_WARNING, "failed to set value for variable \"" + name + "\"")
+        obs.script_log(
+            obs.LOG_WARNING, 'failed to set value for variable "' + name + '"'
+        )
 
     obs.calldata_destroy(data)
     return success

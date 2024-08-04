@@ -12,12 +12,18 @@
 
 obs = obslua
 
+-------------------------------------------------------------------------------
+
 -- Simple example action callback
+
 function my_lua_action(data)
     obs.script_log(obs.LOG_WARNING, "hello from lua!")
 end
 
+-------------------------------------------------------------------------------
+
 -- Action callback demonstrating the interacting with variables
+
 counter = 0
 
 function variable_lua_action(data)
@@ -29,6 +35,8 @@ function variable_lua_action(data)
     counter = counter + 1
     advss_set_variable_value("variable", counter)
 end
+
+-------------------------------------------------------------------------------
 
 -- Example condition randomly changing its value every second
 set_condition_function = nil
@@ -47,10 +55,10 @@ obs.timer_add(timer_callback, 1000)
 
 function script_load(settings)
     -- Register an example action
-    advss_register_action("My simple Lua Action", my_lua_action)
+    advss_register_action("My simple Lua action", my_lua_action)
 
     -- This example action demonstrates how to interact with variables
-    advss_register_action("My variable Lua Action", variable_lua_action)
+    advss_register_action("My variable Lua action", variable_lua_action)
 
     -- Register an example condition
     set_condition_function = advss_register_condition("My Lua condition")
@@ -58,8 +66,8 @@ end
 
 function script_unload()
     -- Deregistering is useful if you plan on reloading the script files
-    advss_deregister_action("My simple Lua Action")
-    advss_deregister_action("My variable Lua Action")
+    advss_deregister_action("My simple Lua action")
+    advss_deregister_action("My variable Lua action")
 
     advss_deregister_condition("My Lua condition")
 end
