@@ -20,7 +20,7 @@ sudo snap install obs-studio
 ```
 
 ## Contributing
-
+- A 
 - If you wish to contribute code to the project, have a look at this [section](BUILDING.md) describing how to compile the plugin.
 - You can optionally use [pre-commit](https://pre-commit.com) to automatically handle formatting.
 - If you wish to contribute translations, feel free to submit pull requests for the corresponding files under `data/locale`.
