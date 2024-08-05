@@ -9,11 +9,10 @@ namespace advss {
 class ScriptAction {
 public:
 	ScriptAction() = delete;
-	ScriptAction(const std::string &id,
-		     const std::shared_ptr<obs_properties_t> &properties,
-		     const OBSData &defaultSettings, bool blocking,
-		     const std::string &signal,
-		     const std::string &signalComplete);
+	ScriptAction(const std::string &id, const OBSData &defaultSettings,
+		     const std::string &propertiesSignal,
+		     const std::string &triggerSignal,
+		     const std::string &completionSignal);
 
 private:
 	std::shared_ptr<obs_properties_t> _properties;
@@ -45,6 +44,11 @@ private:
 	std::unordered_map<std::string, ScriptAction> _actions;
 	std::unordered_map<std::string, ScriptCondition> _conditions;
 };
+
+static constexpr std::string_view GetPropertiesSignalParamName()
+{
+	return "properties";
+}
 
 static constexpr std::string_view GetActionCompletionSignalParamName()
 {

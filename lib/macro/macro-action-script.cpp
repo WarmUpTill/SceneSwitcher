@@ -13,21 +13,20 @@ namespace advss {
 static std::atomic_int completionIdCounter = 0;
 static constexpr std::string_view completionIdParam = "completion_id";
 
-MacroActionScript::MacroActionScript(
-	Macro *m, const std::string &id,
-	const std::shared_ptr<obs_properties_t> &properties,
-	const OBSData &defaultSettings, bool blocking,
-	const std::string &signal, const std::string &signalComplete)
+MacroActionScript::MacroActionScript(Macro *m, const std::string &id,
+				     const OBSData &defaultSettings,
+				     const std::string &propertiesSignal,
+				     const std::string &triggerSignal,
+				     const std::string &completionSignal)
 	: MacroAction(m),
 	  _id(id),
-	  _properties(properties),
-	  _settings(obs_data_create()),
-	  _blocking(blocking),
-	  _signal(signal),
-	  _signalComplete(signalComplete)
+	  _settings(obs_data_get_defaults(defaultSettings)),
+	  _propertiesSignal(propertiesSignal),
+	  _triggerSignal(triggerSignal),
+	  _completionSignal(completionSignal)
 {
-	obs_data_apply(_settings.Get(), defaultSettings.Get());
-	signal_handler_connect(obs_get_signal_handler(), signalComplete.c_str(),
+	signal_handler_connect(obs_get_signal_handler(),
+			       completionSignal.c_str(),
 			       &MacroActionScript::CompletionSignalReceived,
 			       this);
 }
@@ -35,13 +34,31 @@ MacroActionScript::MacroActionScript(
 MacroActionScript::MacroActionScript(const advss::MacroActionScript &other)
 	: MacroAction(other.GetMacro()),
 	  _id(other._id),
-	  _properties(other._properties),
 	  _settings(obs_data_create()),
-	  _blocking(other._blocking),
-	  _signal(other._signal),
-	  _signalComplete(other._signalComplete)
+	  _propertiesSignal(other._propertiesSignal),
+	  _triggerSignal(other._triggerSignal),
+	  _completionSignal(other._completionSignal)
 {
-	obs_data_apply(_settings.Get(), other._settings.Get());
+	obs_data_apply(_settings, other._settings);
+	signal_handler_connect(obs_get_signal_handler(),
+			       _completionSignal.c_str(),
+			       &MacroActionScript::CompletionSignalReceived,
+			       this);
+}
+
+obs_properties_t *MacroActionScript::GetProperties() const
+{
+	auto data = calldata_create();
+	signal_handler_signal(obs_get_signal_handler(),
+			      _propertiesSignal.c_str(), data);
+	obs_properties_t *properties = nullptr;
+	if (!calldata_get_ptr(data, GetPropertiesSignalParamName().data(),
+			      &properties)) {
+		calldata_destroy(data);
+		return nullptr;
+	}
+	calldata_destroy(data);
+	return properties;
 }
 
 void MacroActionScript::UpdateSettings(obs_data_t *newSettings) const
@@ -101,16 +118,15 @@ bool MacroActionScript::PerformAction()
 
 	auto data = calldata_create();
 	calldata_set_string(data, GetActionCompletionSignalParamName().data(),
-			    _signalComplete.c_str());
+			    _completionSignal.c_str());
 	calldata_set_int(data, completionIdParam.data(), _completionId);
 	calldata_set_string(data, "settings", obs_data_get_json(_settings));
-	signal_handler_signal(obs_get_signal_handler(), _signal.c_str(), data);
+	signal_handler_signal(obs_get_signal_handler(), _triggerSignal.c_str(),
+			      data);
 	calldata_destroy(data);
 
-	if (_blocking) {
-		SetMacroAbortWait(false);
-		WaitForActionCompletion();
-	}
+	SetMacroAbortWait(false);
+	WaitForActionCompletion();
 	return true;
 }
 
@@ -140,8 +156,6 @@ std::shared_ptr<MacroAction> MacroActionScript::Copy() const
 {
 	return std::make_shared<MacroActionScript>(*this);
 }
-
-static auto test = obs_data_create();
 
 obs_properties_t *MacroActionScriptEdit::GetProperties(void *obj)
 {
@@ -173,10 +187,16 @@ MacroActionScriptEdit::MacroActionScriptEdit(
 		     timeoutLayout, {{"{{timeout}}", _timeout}});
 
 	auto layout = new QVBoxLayout();
-	OBSPropertiesView *view = new OBSPropertiesView(
-		test, this, GetProperties, nullptr, UpdateSettings);
-	layout->addWidget(view);
 	layout->addLayout(timeoutLayout);
+	auto properties = entryData->GetProperties();
+	if (!!properties) {
+		obs_properties_destroy(properties);
+
+		auto propertiesView = new OBSPropertiesView(
+			entryData->GetSettings(), this, GetProperties, nullptr,
+			UpdateSettings);
+		//layout->addWidget(propertiesView);
+	}
 	setLayout(layout);
 
 	_entryData = entryData;

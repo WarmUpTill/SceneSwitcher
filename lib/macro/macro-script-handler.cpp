@@ -22,9 +22,10 @@ namespace advss {
 /* Script actions */
 
 static constexpr std::string_view nameParam = "name";
-static constexpr std::string_view blockingParam = "blocking";
 static constexpr std::string_view propertiesParam = "properties";
 static constexpr std::string_view defaultSettingsParam = "default_settings";
+static constexpr std::string_view propertiesSignalParam =
+	"properties_signal_name";
 static constexpr std::string_view triggerSignalParam = "trigger_signal_name";
 static constexpr std::string_view registerActionFuncName =
 	"advss_register_script_action";
@@ -33,10 +34,9 @@ static constexpr std::string_view deregisterActionFuncName =
 
 static const std::string registerScriptActionDeclString =
 	std::string("bool ") + registerActionFuncName.data() + "(in string " +
-	nameParam.data() + ", in bool " + blockingParam.data() + ", in ptr " +
-	propertiesParam.data() + ", in ptr " + defaultSettingsParam.data() +
-	", out string " + triggerSignalParam.data() + ", out string " +
-	GetActionCompletionSignalParamName().data() + ")";
+	nameParam.data() + ", in ptr " + defaultSettingsParam.data() +
+	", out string " + propertiesSignalParam.data() + ", out string " +
+	triggerSignalParam.data() + ")";
 static const std::string deregisterScriptActionDeclString =
 	std::string("bool ") + deregisterActionFuncName.data() + "(in string " +
 	nameParam.data() + ")";
@@ -116,6 +116,29 @@ static std::string nameToScriptID(const std::string &name)
 	return std::string("script_") + name;
 }
 
+static std::string getTriggerSignal(const std::string &name)
+{
+	std::string signal = name;
+	replaceWithspace(signal);
+	signal += "_perform_action";
+	return signal;
+}
+
+static std::string getCompletionSignal(const std::string &name)
+{
+	auto signal = getTriggerSignal(name);
+	signal += "_complete";
+	return signal;
+}
+
+static std::string getPropertiesSignal(const std::string &name)
+{
+	std::string signal = name;
+	replaceWithspace(signal);
+	signal += "_get_properties";
+	return signal;
+}
+
 void ScriptHandler::RegisterScriptAction(void *ctx, calldata_t *data)
 {
 	auto handler = static_cast<ScriptHandler *>(ctx);
@@ -124,18 +147,6 @@ void ScriptHandler::RegisterScriptAction(void *ctx, calldata_t *data)
 	    strlen(actionName) == 0) {
 		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
 		     registerScriptActionDeclString.data(), nameParam.data());
-		RETURN_FAILURE();
-	}
-	bool blocking;
-	if (!calldata_get_bool(data, blockingParam.data(), &blocking)) {
-		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
-		     registerActionFuncName.data(), blockingParam.data());
-		RETURN_FAILURE();
-	}
-	obs_properties_t *propertiesPtr = nullptr;
-	if (!calldata_get_ptr(data, propertiesParam.data(), &propertiesPtr)) {
-		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
-		     registerActionFuncName.data(), propertiesParam.data());
 		RETURN_FAILURE();
 	}
 	obs_data_t *defaultSettingsPtr = nullptr;
@@ -147,9 +158,6 @@ void ScriptHandler::RegisterScriptAction(void *ctx, calldata_t *data)
 		RETURN_FAILURE();
 	}
 	std::lock_guard<std::mutex> lock(handler->_mutex);
-
-	auto properties = std::shared_ptr<obs_properties_t>(
-		propertiesPtr, obs_properties_destroy);
 	OBSData defaultSettings(defaultSettingsPtr);
 
 	if (handler->_actions.count(actionName) > 0) {
@@ -159,19 +167,17 @@ void ScriptHandler::RegisterScriptAction(void *ctx, calldata_t *data)
 	}
 
 	const std::string id = nameToScriptID(actionName);
-
-	std::string signalName = std::string(actionName);
-	replaceWithspace(signalName);
-	signalName += "_perform_action";
-	std::string completionSignalName = signalName + "_complete";
+	auto triggerSignalName = getTriggerSignal(actionName);
+	auto completionSignalName = getCompletionSignal(actionName);
+	auto propertiesSignalName = getPropertiesSignal(actionName);
 
 	const auto createScriptAction =
-		[id, properties, defaultSettings, blocking, signalName,
+		[id, defaultSettings, propertiesSignalName, triggerSignalName,
 		 completionSignalName](
 			Macro *m) -> std::shared_ptr<MacroAction> {
 		return std::make_shared<MacroActionScript>(
-			m, id, properties, defaultSettings, blocking,
-			signalName, completionSignalName);
+			m, id, defaultSettings, propertiesSignalName,
+			triggerSignalName, completionSignalName);
 	};
 	if (!MacroActionFactory::Register(id, {createScriptAction,
 					       MacroActionScriptEdit::Create,
@@ -186,10 +192,12 @@ void ScriptHandler::RegisterScriptAction(void *ctx, calldata_t *data)
 	     registerActionFuncName.data(), actionName);
 
 	calldata_set_string(data, triggerSignalParam.data(),
-			    signalName.c_str());
+			    triggerSignalName.c_str());
+	calldata_set_string(data, propertiesSignalParam.data(),
+			    propertiesSignalName.c_str());
 	handler->_actions.emplace(
-		id, ScriptAction(id, properties, defaultSettings, blocking,
-				 signalName, completionSignalName));
+		id, ScriptAction(id, defaultSettings, propertiesSignalName,
+				 triggerSignalName, completionSignalName));
 
 	RETURN_SUCCESS();
 }
@@ -360,28 +368,34 @@ void ScriptHandler::SetVariableValue(void *, calldata_t *data)
 	RETURN_SUCCESS();
 }
 
-static std::string actionSignalNameToSignalDecl(const std::string &name)
+static std::string actionSignalNameToBasicSignalDecl(const std::string &name)
 {
 	return std::string("void ") + name + "()";
 }
 
+static std::string signalNameToPropertiesSignalDecl(const std::string &name)
+{
+	return std::string("void ") + name + "(in ptr " +
+	       GetPropertiesSignalParamName().data() + ")";
+}
+
 ScriptAction::ScriptAction(const std::string &id,
-			   const std::shared_ptr<obs_properties_t> &properties,
-			   const OBSData &defaultSettings, bool blocking,
-			   const std::string &signal,
-			   const std::string &signalComplete)
+			   const OBSData &defaultSettings,
+			   const std::string &propertiesSignal,
+			   const std::string &triggerSignal,
+			   const std::string &completionSignal)
 	: _id(id),
-	  _properties(properties),
 	  _defaultSettings(defaultSettings)
 {
-	signal_handler_add(obs_get_signal_handler(),
-			   actionSignalNameToSignalDecl(signal).c_str());
-	if (!blocking) {
-		return;
-	}
 	signal_handler_add(
 		obs_get_signal_handler(),
-		actionSignalNameToSignalDecl(signalComplete).c_str());
+		signalNameToPropertiesSignalDecl(propertiesSignal).c_str());
+	signal_handler_add(
+		obs_get_signal_handler(),
+		actionSignalNameToBasicSignalDecl(triggerSignal).c_str());
+	signal_handler_add(
+		obs_get_signal_handler(),
+		actionSignalNameToBasicSignalDecl(completionSignal).c_str());
 }
 
 static std::string conditionSignalNameToSignalDecl(const std::string &name)

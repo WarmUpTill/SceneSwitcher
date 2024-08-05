@@ -76,7 +76,7 @@ def script_load(settings):
     advss_register_action(
         "My settings Python action",
         my_python_settings_action,
-        get_action_properties(),
+        get_action_properties,
         get_action_defaults(),
     )
 
@@ -119,20 +119,11 @@ def script_unload():
 #    newly created actions
 #    The pointer will be owned by the plugin and must not be freed within this
 #    script
-# 5. The optional boolean flag for the "blocking" parameter
-#    If the "blocking" parameter of advss_register_action() is set to false the
-#    Advanced Scene Switcher plugin will not wait for the provided script
-#    function to complete before continuing with the next action in a given
-#    macro
-def advss_register_action(
-    name, callback, properties=None, default_settings=None, blocking=True
-):
+def advss_register_action(name, callback, get_properties=None, default_settings=None):
     proc_handler = obs.obs_get_proc_handler()
     data = obs.calldata_create()
 
     obs.calldata_set_string(data, "name", name)
-    obs.calldata_set_bool(data, "blocking", blocking)
-    obs.calldata_set_ptr(data, "properties", properties)
     obs.calldata_set_ptr(data, "default_settings", default_settings)
     obs.proc_handler_call(proc_handler, "advss_register_script_action", data)
 
@@ -167,9 +158,19 @@ def advss_register_action(
 
         threading.Thread(target=thread_func, args={data}).start()
 
-    signal_name = obs.calldata_string(data, "trigger_signal_name")
+    def properties_helper(data):
+        if get_properties is not None:
+            properties = get_properties()
+        else:
+            properties = None
+        obs.calldata_set_ptr(data, "properties", properties)
+
+    trigger_signal_name = obs.calldata_string(data, "trigger_signal_name")
+    property_signal_name = obs.calldata_string(data, "properties_signal_name")
+
     signal_handler = obs.obs_get_signal_handler()
-    obs.signal_handler_connect(signal_handler, signal_name, run_helper)
+    obs.signal_handler_connect(signal_handler, trigger_signal_name, run_helper)
+    obs.signal_handler_connect(signal_handler, property_signal_name, properties_helper)
 
     obs.calldata_destroy(data)
 

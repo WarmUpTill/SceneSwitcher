@@ -11,8 +11,8 @@ namespace advss {
 class MacroActionScript : public MacroAction {
 public:
 	MacroActionScript(Macro *m, const std::string &id,
-			  const std::shared_ptr<obs_properties_t> &properties,
-			  const OBSData &defaultSettings, bool blocking,
+			  const OBSData &defaultSettings,
+			  const std::string &propertiesSignalName,
 			  const std::string &signal,
 			  const std::string &signalComplete);
 	MacroActionScript(const advss::MacroActionScript &);
@@ -23,20 +23,21 @@ public:
 	std::string GetId() const { return _id; };
 	std::shared_ptr<MacroAction> Copy() const;
 
-	Duration _timeout = Duration(10.0);
-	obs_properties_t *GetProperties() const { return _properties.get(); }
+	obs_properties_t *GetProperties() const;
+	OBSData GetSettings() const { return _settings; }
 	void UpdateSettings(obs_data_t *newSettings) const;
+
+	Duration _timeout = Duration(10.0);
 
 private:
 	static void CompletionSignalReceived(void *param, calldata_t *data);
 	void WaitForActionCompletion() const;
 
 	std::string _id = "";
-	std::shared_ptr<obs_properties_t> _properties;
 	OBSData _settings;
-	bool _blocking = false;
-	std::string _signal = "";
-	std::string _signalComplete = "";
+	std::string _propertiesSignal = "";
+	std::string _triggerSignal = "";
+	std::string _completionSignal = "";
 	std::atomic_bool _actionIsComplete = {false};
 	int64_t _completionId = 0;
 };
