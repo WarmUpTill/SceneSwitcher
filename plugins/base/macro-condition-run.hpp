@@ -26,7 +26,7 @@ public:
 	ProcessConfig _procConfig;
 	bool _checkExitCode = true;
 	int _exitCodeToCheck = 0;
-	Duration _timeout = Duration(0.1);
+	Duration _timeout = Duration(1.0);
 
 private:
 	void RunProcess();
