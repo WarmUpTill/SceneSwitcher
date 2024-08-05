@@ -5,7 +5,7 @@
 #include "log-helper.hpp"
 #include "variable.hpp"
 
-#include <obs.hpp>
+#include <obs-properties.h>
 
 namespace advss {
 
@@ -132,21 +132,25 @@ void ScriptHandler::RegisterScriptAction(void *ctx, calldata_t *data)
 		     registerActionFuncName.data(), blockingParam.data());
 		RETURN_FAILURE();
 	}
-	obs_properties_t *properties = nullptr;
-	if (!calldata_get_ptr(data, propertiesParam.data(), &properties)) {
+	obs_properties_t *propertiesPtr = nullptr;
+	if (!calldata_get_ptr(data, propertiesParam.data(), &propertiesPtr)) {
 		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
 		     registerActionFuncName.data(), propertiesParam.data());
 		RETURN_FAILURE();
 	}
-	obs_data_t *defaultSettings = nullptr;
+	obs_data_t *defaultSettingsPtr = nullptr;
 	if (!calldata_get_ptr(data, defaultSettingsParam.data(),
-			      &defaultSettings)) {
+			      &defaultSettingsPtr)) {
 		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
 		     registerActionFuncName.data(),
 		     defaultSettingsParam.data());
 		RETURN_FAILURE();
 	}
 	std::lock_guard<std::mutex> lock(handler->_mutex);
+
+	auto properties = std::shared_ptr<obs_properties_t>(
+		propertiesPtr, obs_properties_destroy);
+	OBSData defaultSettings(defaultSettingsPtr);
 
 	if (handler->_actions.count(actionName) > 0) {
 		blog(LOG_WARNING, "[%s] failed! Action \"%s\" already exists!",
@@ -162,11 +166,12 @@ void ScriptHandler::RegisterScriptAction(void *ctx, calldata_t *data)
 	std::string completionSignalName = signalName + "_complete";
 
 	const auto createScriptAction =
-		[id, properties, blocking, signalName, completionSignalName](
+		[id, properties, defaultSettings, blocking, signalName,
+		 completionSignalName](
 			Macro *m) -> std::shared_ptr<MacroAction> {
 		return std::make_shared<MacroActionScript>(
-			m, id, properties, blocking, signalName,
-			completionSignalName);
+			m, id, properties, defaultSettings, blocking,
+			signalName, completionSignalName);
 	};
 	if (!MacroActionFactory::Register(id, {createScriptAction,
 					       MacroActionScriptEdit::Create,
@@ -182,8 +187,9 @@ void ScriptHandler::RegisterScriptAction(void *ctx, calldata_t *data)
 
 	calldata_set_string(data, triggerSignalParam.data(),
 			    signalName.c_str());
-	handler->_actions.emplace(id, ScriptAction(id, blocking, signalName,
-						   completionSignalName));
+	handler->_actions.emplace(
+		id, ScriptAction(id, properties, defaultSettings, blocking,
+				 signalName, completionSignalName));
 
 	RETURN_SUCCESS();
 }
@@ -359,10 +365,14 @@ static std::string actionSignalNameToSignalDecl(const std::string &name)
 	return std::string("void ") + name + "()";
 }
 
-ScriptAction::ScriptAction(const std::string &id, bool blocking,
+ScriptAction::ScriptAction(const std::string &id,
+			   const std::shared_ptr<obs_properties_t> &properties,
+			   const OBSData &defaultSettings, bool blocking,
 			   const std::string &signal,
 			   const std::string &signalComplete)
-	: _id(id)
+	: _id(id),
+	  _properties(properties),
+	  _defaultSettings(defaultSettings)
 {
 	signal_handler_add(obs_get_signal_handler(),
 			   actionSignalNameToSignalDecl(signal).c_str());

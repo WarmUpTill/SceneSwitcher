@@ -9,11 +9,15 @@ namespace advss {
 class ScriptAction {
 public:
 	ScriptAction() = delete;
-	ScriptAction(const std::string &id, bool blocking,
+	ScriptAction(const std::string &id,
+		     const std::shared_ptr<obs_properties_t> &properties,
+		     const OBSData &defaultSettings, bool blocking,
 		     const std::string &signal,
 		     const std::string &signalComplete);
 
 private:
+	std::shared_ptr<obs_properties_t> _properties;
+	OBSData _defaultSettings;
 	std::string _id;
 };
 

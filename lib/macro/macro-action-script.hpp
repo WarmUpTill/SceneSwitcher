@@ -4,13 +4,15 @@
 #include "macro-script-handler.hpp"
 
 #include <atomic>
+#include <obs-data.h>
 
 namespace advss {
 
 class MacroActionScript : public MacroAction {
 public:
 	MacroActionScript(Macro *m, const std::string &id,
-			  obs_properties_t *props, bool blocking,
+			  const std::shared_ptr<obs_properties_t> &properties,
+			  const OBSData &defaultSettings, bool blocking,
 			  const std::string &signal,
 			  const std::string &signalComplete);
 	MacroActionScript(const advss::MacroActionScript &);
@@ -22,14 +24,16 @@ public:
 	std::shared_ptr<MacroAction> Copy() const;
 
 	Duration _timeout = Duration(10.0);
-	obs_properties_t *GetProps() const { return _props; }
+	obs_properties_t *GetProperties() const { return _properties.get(); }
+	void UpdateSettings(obs_data_t *newSettings) const;
 
 private:
 	static void CompletionSignalReceived(void *param, calldata_t *data);
 	void WaitForActionCompletion() const;
 
 	std::string _id = "";
-	obs_properties_t *_props;
+	std::shared_ptr<obs_properties_t> _properties;
+	OBSData _settings;
 	bool _blocking = false;
 	std::string _signal = "";
 	std::string _signalComplete = "";
@@ -57,7 +61,8 @@ private slots:
 	void TimeoutChanged(const Duration &);
 
 private:
-	static obs_properties_t *GetProps(void *obj);
+	static obs_properties_t *GetProperties(void *obj);
+	static void UpdateSettings(void *obj, obs_data_t *settings);
 
 	DurationSelection *_timeout;
 

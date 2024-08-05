@@ -5,22 +5,28 @@
 
 #include "properties-view.hpp"
 
+// obs_properties_apply_settings -> apply current settings
+// add signal callback to get settings, since they are automatically destroyed by the properties view
+
 namespace advss {
 
 static std::atomic_int completionIdCounter = 0;
 static constexpr std::string_view completionIdParam = "completion_id";
 
-MacroActionScript::MacroActionScript(Macro *m, const std::string &id,
-				     obs_properties_t *props, bool blocking,
-				     const std::string &signal,
-				     const std::string &signalComplete)
+MacroActionScript::MacroActionScript(
+	Macro *m, const std::string &id,
+	const std::shared_ptr<obs_properties_t> &properties,
+	const OBSData &defaultSettings, bool blocking,
+	const std::string &signal, const std::string &signalComplete)
 	: MacroAction(m),
 	  _id(id),
-	  _props(props),
+	  _properties(properties),
+	  _settings(obs_data_create()),
 	  _blocking(blocking),
 	  _signal(signal),
 	  _signalComplete(signalComplete)
 {
+	obs_data_apply(_settings.Get(), defaultSettings.Get());
 	signal_handler_connect(obs_get_signal_handler(), signalComplete.c_str(),
 			       &MacroActionScript::CompletionSignalReceived,
 			       this);
@@ -29,11 +35,19 @@ MacroActionScript::MacroActionScript(Macro *m, const std::string &id,
 MacroActionScript::MacroActionScript(const advss::MacroActionScript &other)
 	: MacroAction(other.GetMacro()),
 	  _id(other._id),
-	  _props(other._props),
+	  _properties(other._properties),
+	  _settings(obs_data_create()),
 	  _blocking(other._blocking),
 	  _signal(other._signal),
 	  _signalComplete(other._signalComplete)
 {
+	obs_data_apply(_settings.Get(), other._settings.Get());
+}
+
+void MacroActionScript::UpdateSettings(obs_data_t *newSettings) const
+{
+	obs_data_clear(_settings);
+	obs_data_apply(_settings, newSettings);
 }
 
 void MacroActionScript::CompletionSignalReceived(void *param, calldata_t *data)
@@ -82,17 +96,14 @@ void MacroActionScript::WaitForActionCompletion() const
 
 bool MacroActionScript::PerformAction()
 {
-	completionIdCounter++;
-	_completionId = completionIdCounter;
+	_completionId = ++completionIdCounter;
 	_actionIsComplete = false;
 
 	auto data = calldata_create();
 	calldata_set_string(data, GetActionCompletionSignalParamName().data(),
 			    _signalComplete.c_str());
 	calldata_set_int(data, completionIdParam.data(), _completionId);
-	OBSDataAutoRelease test = obs_data_create();
-	obs_data_set_string(test, "name", "warmuptill");
-	calldata_set_string(data, "settings", obs_data_get_json(test));
+	calldata_set_string(data, "settings", obs_data_get_json(_settings));
 	signal_handler_signal(obs_get_signal_handler(), _signal.c_str(), data);
 	calldata_destroy(data);
 
@@ -111,6 +122,7 @@ void MacroActionScript::LogAction() const
 bool MacroActionScript::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
+	obs_data_set_obj(obj, "settings", _settings.Get());
 	_timeout.Save(obj);
 	return true;
 }
@@ -118,6 +130,8 @@ bool MacroActionScript::Save(obs_data_t *obj) const
 bool MacroActionScript::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
+	OBSDataAutoRelease settings = obs_data_get_obj(obj, "settings");
+	obs_data_apply(_settings.Get(), settings);
 	_timeout.Load(obj);
 	return true;
 }
@@ -129,10 +143,21 @@ std::shared_ptr<MacroAction> MacroActionScript::Copy() const
 
 static auto test = obs_data_create();
 
-obs_properties_t *MacroActionScriptEdit::GetProps(void *obj)
+obs_properties_t *MacroActionScriptEdit::GetProperties(void *obj)
 {
 	auto actionEdit = static_cast<MacroActionScriptEdit *>(obj);
-	return actionEdit->_entryData->GetProps();
+	return actionEdit->_entryData->GetProperties();
+}
+
+void MacroActionScriptEdit::UpdateSettings(void *obj, obs_data_t *settings)
+{
+	auto actionEdit = static_cast<MacroActionScriptEdit *>(obj);
+
+	if (actionEdit->_loading || !actionEdit->_entryData) {
+		return;
+	}
+	auto lock = LockContext();
+	actionEdit->_entryData->UpdateSettings(settings);
 }
 
 MacroActionScriptEdit::MacroActionScriptEdit(
@@ -148,8 +173,8 @@ MacroActionScriptEdit::MacroActionScriptEdit(
 		     timeoutLayout, {{"{{timeout}}", _timeout}});
 
 	auto layout = new QVBoxLayout();
-	OBSPropertiesView *view =
-		new OBSPropertiesView(test, this, GetProps, nullptr, nullptr);
+	OBSPropertiesView *view = new OBSPropertiesView(
+		test, this, GetProperties, nullptr, UpdateSettings);
 	layout->addWidget(view);
 	layout->addLayout(timeoutLayout);
 	setLayout(layout);
