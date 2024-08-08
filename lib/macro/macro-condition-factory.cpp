@@ -63,4 +63,11 @@ bool MacroConditionFactory::UsesDurationModifier(const std::string &id)
 	return false;
 }
 
+bool CanCreateDefaultCondition()
+{
+	const auto condition = MacroConditionFactory::Create(
+		MacroCondition::GetDefaultID().data(), nullptr);
+	return !!condition;
+}
+
 } // namespace advss

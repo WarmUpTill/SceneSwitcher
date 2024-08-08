@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-segment-list.hpp"
+#include "condition-logic.hpp"
 #include "log-helper.hpp"
 
 #include <ui_advanced-scene-switcher.h>
@@ -12,7 +13,6 @@ class MacroActionEdit;
 class MacroConditionEdit;
 class Duration;
 class SequenceWidget;
-enum class LogicType;
 struct SceneGroup;
 
 /*******************************************************************************
@@ -174,7 +174,7 @@ public slots:
 	void MacroConditionReorder(int to, int target);
 	void AddMacroCondition(int idx);
 	void AddMacroCondition(Macro *macro, int idx, const std::string &id,
-			       obs_data_t *data, LogicType logic);
+			       obs_data_t *data, Logic::Type logic);
 	void RemoveMacroCondition(int idx);
 	void MoveMacroConditionUp(int idx);
 	void MoveMacroConditionDown(int idx);

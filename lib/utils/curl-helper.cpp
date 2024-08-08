@@ -77,13 +77,12 @@ bool CurlHelper::LoadLib()
 {
 	_lib = new QLibrary(curl_library_name, nullptr);
 	if (Resolve()) {
-		blog(LOG_INFO, "[adv-ss] found curl library");
+		blog(LOG_INFO, "found curl library");
 		return true;
 	} else {
 		delete _lib;
 		_lib = nullptr;
-		blog(LOG_WARNING,
-		     "[adv-ss] couldn't find the curl library in PATH");
+		blog(LOG_WARNING, "couldn't find the curl library in PATH");
 	}
 	QStringList locations;
 	locations << QDir::currentPath();
@@ -94,14 +93,13 @@ bool CurlHelper::LoadLib()
 	locations << "/usr/local/opt/curl/lib";
 #endif
 	for (QString path : locations) {
-		blog(LOG_INFO, "[adv-ss] trying '%s'",
-		     path.toUtf8().constData());
+		blog(LOG_INFO, "trying '%s'", path.toUtf8().constData());
 		QFileInfo libPath(
 			QDir(path).absoluteFilePath(curl_library_name));
 
 		if (libPath.exists() && libPath.isFile()) {
 			QString libFilePath = libPath.absoluteFilePath();
-			blog(LOG_INFO, "[adv-ss] found curl library at '%s'",
+			blog(LOG_INFO, "found curl library at '%s'",
 			     libFilePath.toUtf8().constData());
 
 			_lib = new QLibrary(libFilePath, nullptr);
@@ -113,7 +111,7 @@ bool CurlHelper::LoadLib()
 			}
 		}
 	}
-	blog(LOG_WARNING, "[adv-ss] can't find the curl library");
+	blog(LOG_WARNING, "can't find the curl library");
 	return false;
 }
 
@@ -128,11 +126,11 @@ bool CurlHelper::Resolve()
 
 	if (_init && _setopt && _slistAppend && _perform && _cleanup &&
 	    _error) {
-		blog(LOG_INFO, "[adv-ss] curl loaded successfully");
+		blog(LOG_INFO, "curl loaded successfully");
 		return true;
 	}
 
-	blog(LOG_INFO, "[adv-ss] curl symbols not resolved");
+	blog(LOG_INFO, "curl symbols not resolved");
 	return false;
 }
 

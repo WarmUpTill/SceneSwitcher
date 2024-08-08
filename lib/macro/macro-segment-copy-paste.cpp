@@ -61,13 +61,13 @@ void AdvSceneSwitcher::PasteMacroSegment()
 		const auto condition = std::static_pointer_cast<MacroCondition>(
 			copyInfo.segment);
 		auto logic = condition->GetLogicType();
-		if (logic > LogicType::ROOT_LAST &&
+		if (logic > Logic::Type::ROOT_LAST &&
 		    macro->Conditions().empty()) {
-			logic = LogicType::ROOT_NONE;
+			logic = Logic::Type::ROOT_NONE;
 		}
-		if (logic < LogicType::ROOT_LAST &&
+		if (logic < Logic::Type::ROOT_LAST &&
 		    !macro->Conditions().empty()) {
-			logic = LogicType::OR;
+			logic = Logic::Type::OR;
 		}
 		AddMacroCondition(macro.get(), macro->Conditions().size(),
 				  copyInfo.segment->GetId(), data.Get(), logic);

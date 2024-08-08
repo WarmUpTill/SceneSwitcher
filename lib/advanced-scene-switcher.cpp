@@ -93,10 +93,24 @@ static void DisplayMissingDataDirWarning()
 	DisplayMessage(msg);
 }
 
+bool CanCreateDefaultAction();
+bool CanCreateDefaultCondition();
+
+static void DisplayCorruptedInstallWarning()
+{
+	if (CanCreateDefaultAction() && CanCreateDefaultCondition()) {
+		return;
+	}
+
+	DisplayMessage(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.warnCorruptedInstallMessage"));
+}
+
 void AdvSceneSwitcher::LoadUI()
 {
 	DisplayMissingDataDirWarning();
 	DisplayMissingDependencyWarning();
+	DisplayCorruptedInstallWarning();
 
 	SetupGeneralTab();
 	SetupTitleTab();
@@ -241,8 +255,8 @@ void SwitcherData::Thread()
 			duration = std::chrono::milliseconds(interval) +
 				   std::chrono::milliseconds(linger) - runTime;
 			if (duration.count() < 1) {
-				blog(LOG_INFO,
-				     "detected busy loop - refusing to sleep less than 1ms");
+				vblog(LOG_INFO,
+				      "detected busy loop - refusing to sleep less than 1ms");
 				duration = std::chrono::milliseconds(10);
 			}
 		}
