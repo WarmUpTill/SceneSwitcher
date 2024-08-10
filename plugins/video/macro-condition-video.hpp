@@ -1,31 +1,35 @@
 #pragma once
 #include "opencv-helpers.hpp"
 #include "area-selection.hpp"
-#include "preview-dialog.hpp"
 #include "paramerter-wrappers.hpp"
+#include "preview-dialog.hpp"
 
 #include <macro-condition-edit.hpp>
 #include <file-selection.hpp>
 #include <screenshot-helper.hpp>
 #include <slider-spinbox.hpp>
-#include <variable-text-edit.hpp>
 #include <variable-line-edit.hpp>
+#include <variable-text-edit.hpp>
 
-#include <QWidget>
-#include <QComboBox>
 #include <QCheckBox>
-#include <QHBoxLayout>
+#include <QComboBox>
+#include <QDateTime>
 #include <QGridLayout>
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QObject>
 #include <QRect>
+#include <QWidget>
 
 namespace advss {
 
 class PreviewDialog;
 
-class MacroConditionVideo : public MacroCondition {
+class MacroConditionVideo : public QObject, public MacroCondition {
+	Q_OBJECT
+
 public:
-	MacroConditionVideo(Macro *m) : MacroCondition(m, true){};
+	MacroConditionVideo(Macro *m);
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
@@ -66,7 +70,12 @@ public:
 	bool _throttleEnabled = false;
 	int _throttleCount = 3;
 
+signals:
+	void InputFileChanged();
+
 private:
+	bool FileInputIsUpToDate() const;
+
 	bool OutputChanged();
 	bool ScreenshotContainsPattern();
 	bool ScreenshotContainsObject();
@@ -89,6 +98,9 @@ private:
 	int _runCount = 0;
 
 	double _currentBrightness = 0.;
+
+	std::string _loadedFile;
+	QDateTime _loadedFileLastModified;
 
 	static bool _registered;
 	static const std::string id;
@@ -243,8 +255,6 @@ public:
 			std::dynamic_pointer_cast<MacroConditionVideo>(cond));
 	}
 
-	void UpdatePreviewTooltip();
-
 private slots:
 	void VideoInputTypeChanged(int);
 	void SourceChanged(const SourceSelection &);
@@ -272,6 +282,7 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 private:
+	void UpdatePreviewTooltip();
 	void HandleVideoInputUpdate();
 	void SetupPreviewDialogParams();
 

@@ -122,6 +122,12 @@ bool MacroConditionVideo::CheckShouldBeSkipped()
 	return false;
 }
 
+MacroConditionVideo::MacroConditionVideo(Macro *m)
+	: QObject(),
+	  MacroCondition(m, true)
+{
+}
+
 bool MacroConditionVideo::CheckCondition()
 {
 	if (!_video.ValidSelection()) {
@@ -131,6 +137,10 @@ bool MacroConditionVideo::CheckCondition()
 	bool match = false;
 	if (CheckShouldBeSkipped()) {
 		return _lastMatchResult;
+	}
+
+	if (!FileInputIsUpToDate()) {
+		LoadImageFromFile();
 	}
 
 	if (_blockUntilScreenshotDone) {
@@ -231,7 +241,10 @@ void MacroConditionVideo::GetScreenshot(bool blocking)
 
 bool MacroConditionVideo::LoadImageFromFile()
 {
-	if (!_matchImage.load(QString::fromStdString(_file))) {
+	const QFileInfo info(QString::fromStdString(_file));
+	_loadedFileLastModified = info.lastModified();
+	_loadedFile = _file;
+	if (!_matchImage.load(info.absoluteFilePath())) {
 		blog(LOG_WARNING, "Cannot load image data from file '%s'",
 		     _file.c_str());
 		(&_matchImage)->~QImage();
@@ -244,6 +257,8 @@ bool MacroConditionVideo::LoadImageFromFile()
 		_matchImage.convertToFormat(QImage::Format::Format_RGBA8888);
 	_patternMatchParameters.image = _matchImage;
 	_patternImageData = CreatePatternData(_matchImage);
+
+	emit InputFileChanged();
 	return true;
 }
 
@@ -289,6 +304,16 @@ bool MacroConditionVideo::ScreenshotContainsPattern()
 	const auto count = countNonZero(result);
 	SetTempVarValue("patternCount", std::to_string(count));
 	return count > 0;
+}
+
+bool MacroConditionVideo::FileInputIsUpToDate() const
+{
+	if (!requiresFileInput(_condition)) {
+		return true;
+	}
+	const QFileInfo info(QString::fromStdString(_file));
+	return (_loadedFileLastModified == info.lastModified()) &&
+	       (_file == _loadedFile);
 }
 
 bool MacroConditionVideo::OutputChanged()
@@ -1165,6 +1190,13 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)),
 			 &_previewDialog, SLOT(ConditionChanged(int)));
 	QWidget::connect(_area, SIGNAL(Resized()), this, SLOT(Resize()));
+	QWidget::connect(entryData.get(),
+			 &MacroConditionVideo::InputFileChanged, this,
+			 [this]() {
+				 UpdatePreviewTooltip();
+				 _previewDialog.PatternMatchParametersChanged(
+					 _entryData->_patternMatchParameters);
+			 });
 
 	populateVideoInputSelection(_videoInputTypes);
 	populateConditionSelection(_condition);
