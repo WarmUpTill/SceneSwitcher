@@ -133,7 +133,9 @@ bool Section::eventFilter(QObject *obj, QEvent *event)
 
 void Section::SetupAnimations()
 {
-	delete _toggleAnimation;
+	if (_toggleAnimation) {
+		_toggleAnimation->deleteLater();
+	}
 
 	_toggleAnimation = new QParallelAnimationGroup(this);
 	_toggleAnimation->addAnimation(
