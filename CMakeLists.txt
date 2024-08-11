@@ -204,7 +204,6 @@ target_sources(
           lib/utils/name-dialog.hpp
           lib/utils/non-modal-dialog.cpp
           lib/utils/non-modal-dialog.hpp
-          lib/utils/obs-dock.hpp
           lib/utils/obs-module-helper.cpp
           lib/utils/obs-module-helper.hpp
           lib/utils/path-helpers.cpp

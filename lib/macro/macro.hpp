@@ -98,7 +98,7 @@ public:
 	std::shared_ptr<Macro> Parent() const;
 
 	// Saving and loading
-	bool Save(obs_data_t *obj) const;
+	bool Save(obs_data_t *obj, bool saveForCopy = false) const;
 	bool Load(obs_data_t *obj);
 	// Some macros can refer to other macros, which are not yet loaded.
 	// Use this function to set these references after loading is complete.
@@ -155,11 +155,10 @@ private:
 	bool RunActions(bool ignorePause);
 	bool RunElseActions(bool ignorePause);
 
-	bool DockIsVisible() const;
-	void SetDockWidgetName() const;
-	void SaveDockSettings(obs_data_t *obj) const;
+	void SaveDockSettings(obs_data_t *obj, bool saveForCopy) const;
 	void LoadDockSettings(obs_data_t *obj);
 	void RemoveDock();
+	static std::string GenerateDockId();
 
 	std::string _name = "";
 	bool _die = false;
@@ -217,12 +216,8 @@ private:
 		obs_module_text("AdvSceneSwitcher.macroDock.statusLabel.true");
 	StringVariable _conditionsFalseStatusText =
 		obs_module_text("AdvSceneSwitcher.macroDock.statusLabel.false");
-	bool _dockIsFloating = true;
-	bool _dockIsVisible = false;
-	Qt::DockWidgetArea _dockArea;
-	QByteArray _dockGeo;
 	MacroDock *_dock = nullptr;
-	QAction *_dockAction = nullptr;
+	std::string _dockId = GenerateDockId();
 };
 
 void LoadMacros(obs_data_t *obj);

@@ -1,4 +1,5 @@
 #include "status-control.hpp"
+#include "log-helper.hpp"
 #include "obs-module-helper.hpp"
 #include "path-helpers.hpp"
 #include "plugin-state-helpers.hpp"
@@ -11,10 +12,30 @@
 #include <QPalette>
 #include <QToolBar>
 
+#if LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(30, 0, 0)
+#include <QDockWidget>
+
+static bool obs_frontend_add_dock_by_id(const char *id, const char *title,
+					QWidget *widget)
+{
+	widget->setObjectName(id);
+
+	auto dock = new QDockWidget();
+	dock->setWindowTitle(title);
+	dock->setWidget(widget);
+	dock->setFloating(true);
+	dock->setVisible(false);
+	dock->setFeatures(QDockWidget::DockWidgetClosable |
+			  QDockWidget::DockWidgetMovable |
+			  QDockWidget::DockWidgetFloatable);
+
+	return !!obs_frontend_add_dock(dock);
+}
+#endif
+
 namespace advss {
 
 void OpenSettingsWindow();
-StatusDock *dock = nullptr;
 
 static QString colorToString(const QColor &color)
 {
@@ -168,16 +189,12 @@ void StatusControl::SetStatusStyleSheet(bool stopped) const
 	_status->setStyleSheet(style);
 }
 
-StatusDock::StatusDock(QWidget *parent) : OBSDock(parent)
+StatusDockWidget::StatusDockWidget(QWidget *parent) : QFrame(parent)
 {
-	setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
-	setFeatures(DockWidgetClosable | DockWidgetMovable |
-		    DockWidgetFloatable);
-	// Setting a fixed object name is crucial for OBS to be able to restore
-	// the docks position, if the dock is not floating
-	setObjectName("Adv-ss-dock");
+	setFrameShape(QFrame::StyledPanel);
+	setFrameShadow(QFrame::Sunken);
 
-	QAction *action = new QAction;
+	auto action = new QAction;
 	action->setProperty("themeID", QVariant(QString::fromUtf8("cogsIcon")));
 	action->connect(action, &QAction::triggered, OpenSettingsWindow);
 	const auto path = QString::fromStdString(GetDataFilePath(
@@ -195,29 +212,21 @@ StatusDock::StatusDock(QWidget *parent) : OBSDock(parent)
 	statusControl->ButtonLayout()->setStretchFactor(statusControl->Button(),
 							100);
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto layout = new QVBoxLayout;
 	layout->addWidget(statusControl);
 	layout->setContentsMargins(0, 0, 0, 0);
-
-	// QFrame wrapper is necessary to avoid dock being partially
-	// transparent
-	QFrame *wrapper = new QFrame;
-	wrapper->setFrameShape(QFrame::StyledPanel);
-	wrapper->setFrameShadow(QFrame::Sunken);
-	wrapper->setLayout(layout);
-	setWidget(wrapper);
-
-	setFloating(true);
-	hide();
+	setLayout(layout);
 }
 
 void SetupDock()
 {
-	dock = new StatusDock(
-		static_cast<QMainWindow *>(obs_frontend_get_main_window()));
-	// Added for cosmetic reasons to avoid brief flash of dock window on startup
-	dock->setVisible(false);
-	obs_frontend_add_dock(dock);
+	auto dock = new StatusDockWidget();
+	if (!obs_frontend_add_dock_by_id(
+		    "advss-status-dock",
+		    obs_module_text("AdvSceneSwitcher.windowTitle"), dock)) {
+		blog(LOG_INFO, "failed to register status dock!");
+		dock->deleteLater();
+	}
 }
 
 } // namespace advss
