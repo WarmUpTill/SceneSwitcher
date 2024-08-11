@@ -3,10 +3,11 @@
 #include "item-selection-helpers.hpp"
 #include "resizing-text-edit.hpp"
 
-#include <string>
-#include <optional>
-#include <QStringList>
+#include <mutex>
 #include <obs-data.h>
+#include <optional>
+#include <string>
+#include <QStringList>
 
 namespace advss {
 
@@ -52,6 +53,7 @@ private:
 	int _valueChangeCount = 0;
 	mutable std::chrono::high_resolution_clock::time_point _lastUsed;
 	mutable std::chrono::high_resolution_clock::time_point _lastChanged;
+	mutable std::mutex _mutex;
 
 	friend VariableSelection;
 	friend VariableSettingsDialog;

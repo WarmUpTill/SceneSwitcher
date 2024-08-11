@@ -54,6 +54,7 @@ void Variable::Save(obs_data_t *obj) const
 
 std::string Variable::Value(bool updateLastUsed) const
 {
+	std::lock_guard<std::mutex> lock(_mutex);
 	if (updateLastUsed) {
 		UpdateLastUsed();
 	}
@@ -73,6 +74,7 @@ std::optional<int> Variable::IntValue() const
 
 void Variable::SetValue(const std::string &value)
 {
+	std::lock_guard<std::mutex> lock(_mutex);
 	_previousValue = _value;
 	_value = value;
 
