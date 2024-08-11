@@ -1165,7 +1165,7 @@ void AdvSceneSwitcher::CopyMacro()
 	}
 
 	OBSDataAutoRelease data = obs_data_create();
-	macro->Save(data);
+	macro->Save(data, true);
 	newMacro->Load(data);
 	newMacro->PostLoad();
 	newMacro->SetName(name);

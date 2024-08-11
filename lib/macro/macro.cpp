@@ -14,6 +14,63 @@
 #include <QAction>
 #include <QMainWindow>
 #include <unordered_map>
+#include <util/platform.h>
+
+#if LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(30, 0, 0)
+#include <QDockWidget>
+
+namespace {
+
+struct DockMapEntry {
+	QAction *action = nullptr;
+	QWidget *dock = nullptr;
+};
+
+} // namespace
+
+static std::unordered_map<const char *, DockMapEntry> dockIds;
+static std::mutex dockMutex;
+
+static bool obs_frontend_add_dock_by_id(const char *id, const char *title,
+					QWidget *widget)
+{
+	std::lock_guard<std::mutex> lock(dockMutex);
+	if (dockIds.count(id) > 0) {
+		return false;
+	}
+
+	widget->setObjectName(id);
+
+	auto dock = new QDockWidget();
+	dock->setWindowTitle(title);
+	dock->setWidget(widget);
+	dock->setFloating(true);
+	dock->setVisible(false);
+	dock->setFeatures(QDockWidget::DockWidgetClosable |
+			  QDockWidget::DockWidgetMovable |
+			  QDockWidget::DockWidgetFloatable);
+
+	auto action = static_cast<QAction *>(obs_frontend_add_dock(dock));
+	if (!action) {
+		return false;
+	}
+	dockIds[id] = {action, dock};
+	return true;
+}
+
+static void obs_frontend_remove_dock(const char *id)
+{
+	std::lock_guard<std::mutex> lock(dockMutex);
+	auto it = dockIds.find(id);
+	if (it == dockIds.end()) {
+		return;
+	}
+	it->second.action->deleteLater();
+	it->second.dock->deleteLater();
+	dockIds.erase(it);
+}
+
+#endif
 
 namespace advss {
 
@@ -258,9 +315,15 @@ int64_t Macro::MsSinceLastCheck() const
 
 void Macro::SetName(const std::string &name)
 {
+	const bool nameChanged = _name == name;
 	_name = name;
+
 	SetHotkeysDesc();
-	SetDockWidgetName();
+
+	if (nameChanged) {
+		_dockId = GenerateDockId();
+	}
+	EnableDock(_registerDock);
 }
 
 void Macro::ResetTimers()
@@ -313,11 +376,6 @@ bool Macro::RunElseActions(bool ignorePause)
 {
 	vblog(LOG_INFO, "running else actions of %s", _name.c_str());
 	return RunActionsHelper(_elseActions, ignorePause);
-}
-
-bool Macro::DockIsVisible() const
-{
-	return _dock && _dockAction && _dock->isVisible();
 }
 
 bool Macro::WasPausedSince(
@@ -550,9 +608,11 @@ std::shared_ptr<Macro> Macro::Parent() const
 	return _parent.lock();
 }
 
-bool Macro::Save(obs_data_t *obj) const
+bool Macro::Save(obs_data_t *obj, bool saveForCopy) const
 {
-	obs_data_set_string(obj, "name", _name.c_str());
+	if (!saveForCopy) {
+		obs_data_set_string(obj, "name", _name.c_str());
+	}
 	obs_data_set_bool(obj, "pause", _paused);
 	obs_data_set_bool(obj, "parallel", _runInParallel);
 	obs_data_set_bool(obj, "onChange", _performActionsOnChange);
@@ -568,7 +628,7 @@ bool Macro::Save(obs_data_t *obj) const
 		return true;
 	}
 
-	SaveDockSettings(obj);
+	SaveDockSettings(obj, saveForCopy);
 
 	SaveSplitterPos(_actionConditionSplitterPosition, obj,
 			"macroActionConditionSplitterPosition");
@@ -813,14 +873,10 @@ bool Macro::PauseHotkeysEnabled() const
 	return _registerHotkeys;
 }
 
-void Macro::SaveDockSettings(obs_data_t *obj) const
+void Macro::SaveDockSettings(obs_data_t *obj, bool saveForCopy) const
 {
 	auto dockSettings = obs_data_create();
 	obs_data_set_bool(dockSettings, "register", _registerDock);
-	// The object name is used to restore the position of the dock
-	if (_registerDock) {
-		SetDockWidgetName();
-	}
 	obs_data_set_bool(dockSettings, "hasRunButton", _dockHasRunButton);
 	obs_data_set_bool(dockSettings, "hasPauseButton", _dockHasPauseButton);
 	obs_data_set_bool(dockSettings, "hasStatusLabel", _dockHasStatusLabel);
@@ -833,18 +889,14 @@ void Macro::SaveDockSettings(obs_data_t *obj) const
 				       "conditionsTrueStatusText");
 	_conditionsFalseStatusText.Save(dockSettings,
 					"conditionsFalseStatusText");
-	if (_dock) {
-		auto window = static_cast<QMainWindow *>(
-			obs_frontend_get_main_window());
-		obs_data_set_bool(dockSettings, "isFloating",
-				  _dock->isFloating());
-		obs_data_set_bool(dockSettings, "isVisible", DockIsVisible());
-		obs_data_set_int(dockSettings, "area",
-				 window->dockWidgetArea(_dock));
-		obs_data_set_string(
-			dockSettings, "geometry",
-			_dock->saveGeometry().toBase64().constData());
+	if (saveForCopy) {
+		auto uuid = GenerateDockId();
+		obs_data_set_string(dockSettings, "dockId", uuid.c_str());
+
+	} else {
+		obs_data_set_string(dockSettings, "dockId", _dockId.c_str());
 	}
+	obs_data_set_int(dockSettings, "version", 1);
 	obs_data_set_obj(obj, "dockSettings", dockSettings);
 	obs_data_release(dockSettings);
 }
@@ -861,8 +913,13 @@ void Macro::LoadDockSettings(obs_data_t *obj)
 		return;
 	}
 
+	if (!obs_data_has_user_value(dockSettings, "version")) {
+		_dockId = std::string("ADVSS-") + _name;
+	} else {
+		_dockId = obs_data_get_string(dockSettings, "dockId");
+	}
+
 	const bool dockEnabled = obs_data_get_bool(dockSettings, "register");
-	_dockIsVisible = obs_data_get_bool(dockSettings, "isVisible");
 
 	// TODO: remove these default settings in a future version
 	obs_data_set_default_string(
@@ -890,15 +947,6 @@ void Macro::LoadDockSettings(obs_data_t *obj)
 			obs_data_get_bool(dockSettings, "hasStatusLabel");
 		_dockHighlight = obs_data_get_bool(dockSettings,
 						   "highlightIfConditionsTrue");
-		_dockIsFloating = obs_data_get_bool(dockSettings, "isFloating");
-		_dockArea = static_cast<Qt::DockWidgetArea>(
-			obs_data_get_int(dockSettings, "area"));
-		auto geometryStr =
-			obs_data_get_string(dockSettings, "geometry");
-		if (geometryStr && strlen(geometryStr)) {
-			_dockGeo =
-				QByteArray::fromBase64(QByteArray(geometryStr));
-		}
 	}
 	EnableDock(dockEnabled);
 	obs_data_release(dockSettings);
@@ -906,47 +954,29 @@ void Macro::LoadDockSettings(obs_data_t *obj)
 
 void Macro::EnableDock(bool value)
 {
-	if (_registerDock == value) {
-		return;
-	}
-
 	// Reset dock regardless
 	RemoveDock();
 
-	// Unregister dock
-	if (_registerDock) {
-		_dockIsFloating = true;
-		_dockGeo = QByteArray();
+	if (!value) {
 		_registerDock = value;
 		return;
 	}
 
-	// Create new dock widget
-	auto window =
-		static_cast<QMainWindow *>(obs_frontend_get_main_window());
-	_dock = new MacroDock(GetWeakMacroByName(_name.c_str()), window,
-			      _runButtonText, _pauseButtonText,
-			      _unpauseButtonText, _conditionsTrueStatusText,
+	_dock = new MacroDock(GetWeakMacroByName(_name.c_str()), _runButtonText,
+			      _pauseButtonText, _unpauseButtonText,
+			      _conditionsTrueStatusText,
 			      _conditionsFalseStatusText, _dockHighlight);
-	SetDockWidgetName(); // Used by OBS to restore position
 
-	// Register new dock
-	_dockAction = static_cast<QAction *>(obs_frontend_add_dock(_dock));
-
-	// Note that OBSBasic::OBSInit() has precedence over the visibility and
-	// geometry set here.
-	// The function calls here are only intended to attempt to restore the
-	// dock status when switching scene collections.
-	if (InitialLoadIsComplete()) {
-		_dock->setVisible(_dockIsVisible);
-		if (window->dockWidgetArea(_dock) != _dockArea) {
-			window->addDockWidget(_dockArea, _dock);
-		}
-		if (_dock->isFloating() != _dockIsFloating) {
-			_dock->setFloating(_dockIsFloating);
-		}
-		_dock->restoreGeometry(_dockGeo);
+	if (!obs_frontend_add_dock_by_id(_dockId.c_str(), _name.c_str(),
+					 _dock)) {
+		blog(LOG_INFO, "failed to add macro dock for macro %s",
+		     _name.c_str());
+		_dock->deleteLater();
+		_dock = nullptr;
+		_registerDock = false;
+		return;
 	}
+
 	_registerDock = value;
 }
 
@@ -1043,28 +1073,22 @@ StringVariable Macro::ConditionsFalseStatusText() const
 
 void Macro::RemoveDock()
 {
-	if (_dock) {
-		_dock->close();
-		_dock->deleteLater();
-		_dockAction->deleteLater();
-		_dock = nullptr;
-		_dockAction = nullptr;
-	}
+	obs_frontend_remove_dock(_dockId.c_str());
+	_dock = nullptr;
 }
 
-void Macro::SetDockWidgetName() const
+std::string Macro::GenerateDockId()
 {
-	if (!_dock) {
-		return;
-	}
-	// Set prefix to avoid dock name conflict
-	_dock->setObjectName("ADVSS-" + QString::fromStdString(_name));
-	_dock->SetName(QString::fromStdString(_name));
+#if LIBOBS_API_VER > MAKE_SEMANTIC_VERSION(30, 0, 0)
+	auto uuid = os_generate_uuid();
+	auto id = std::string("advss-macro-dock-") + std::string(uuid);
+	bfree(uuid);
+	return id;
 
-	if (!_dockAction) {
-		return;
-	}
-	_dockAction->setText(QString::fromStdString(_name));
+#else
+	static std::atomic_int16_t idCounter = 0;
+	return std::to_string(++idCounter);
+#endif
 }
 
 static void pauseCB(void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed)

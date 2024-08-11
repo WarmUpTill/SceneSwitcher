@@ -1,6 +1,4 @@
 #pragma once
-#include "obs-dock.hpp"
-
 #include <QPushButton>
 #include <QLabel>
 #include <QTimer>
@@ -38,11 +36,11 @@ private:
 	bool _setToStopped = true;
 };
 
-class StatusDock : public OBSDock {
+class StatusDockWidget : public QFrame {
 	Q_OBJECT
 
 public:
-	StatusDock(QWidget *parent = 0);
+	StatusDockWidget(QWidget *parent = 0);
 };
 
 void SetupDock();

@@ -1,10 +1,9 @@
 #pragma once
-#include "obs-dock.hpp"
 #include "variable-string.hpp"
 
+#include <QLabel>
 #include <QPushButton>
 #include <QTimer>
-#include <QLabel>
 #include <memory>
 #include <chrono>
 
@@ -12,18 +11,16 @@ namespace advss {
 
 class Macro;
 
-class MacroDock : public OBSDock {
+class MacroDock : public QFrame {
 	Q_OBJECT
 
 public:
-	MacroDock(std::weak_ptr<Macro>, QWidget *parent,
-		  const StringVariable &runButtonText,
+	MacroDock(std::weak_ptr<Macro>, const StringVariable &runButtonText,
 		  const StringVariable &pauseButtonText,
 		  const StringVariable &unpauseButtonText,
 		  const StringVariable &conditionsTrueText,
 		  const StringVariable &conditionsFalseText,
 		  bool enableHighlight);
-	void SetName(const QString &);
 	void ShowRunButton(bool);
 	void SetRunButtonText(const StringVariable &);
 	void ShowPauseButton(bool);

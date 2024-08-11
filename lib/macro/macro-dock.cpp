@@ -6,14 +6,14 @@
 
 namespace advss {
 
-MacroDock::MacroDock(std::weak_ptr<Macro> m, QWidget *parent,
+MacroDock::MacroDock(std::weak_ptr<Macro> m,
 		     const StringVariable &runButtonText,
 		     const StringVariable &pauseButtonText,
 		     const StringVariable &unpauseButtonText,
 		     const StringVariable &conditionsTrueText,
 		     const StringVariable &conditionsFalseText,
 		     bool enableHighlight)
-	: OBSDock(parent),
+	: QFrame(),
 	  _runButtonText(runButtonText),
 	  _pauseButtonText(pauseButtonText),
 	  _unpauseButtonText(unpauseButtonText),
@@ -25,18 +25,15 @@ MacroDock::MacroDock(std::weak_ptr<Macro> m, QWidget *parent,
 	  _statusText(new QLabel(conditionsFalseText.c_str())),
 	  _macro(m)
 {
+	setFrameShape(QFrame::StyledPanel);
+	setFrameShadow(QFrame::Sunken);
+
 	auto macro = _macro.lock();
 	if (macro) {
-		setWindowTitle(QString::fromStdString(macro->Name()));
 		_run->setVisible(macro->DockHasRunButton());
 		_pauseToggle->setVisible(macro->DockHasPauseButton());
 		_statusText->setVisible(macro->DockHasStatusLabel());
-	} else {
-		setWindowTitle("<deleted macro>");
 	}
-
-	setFeatures(DockWidgetClosable | DockWidgetMovable |
-		    DockWidgetFloatable);
 
 	QWidget::connect(_run, SIGNAL(clicked()), this, SLOT(RunClicked()));
 	QWidget::connect(_pauseToggle, SIGNAL(clicked()), this,
@@ -52,21 +49,7 @@ MacroDock::MacroDock(std::weak_ptr<Macro> m, QWidget *parent,
 	QWidget::connect(&_timer, SIGNAL(timeout()), this, SLOT(Highlight()));
 	_timer.start(500);
 
-	// QFrame wrapper is necessary to avoid dock being partially
-	// transparent
-	QFrame *wrapper = new QFrame;
-	wrapper->setFrameShape(QFrame::StyledPanel);
-	wrapper->setFrameShadow(QFrame::Sunken);
-	wrapper->setLayout(layout);
-	setWidget(wrapper);
-
-	setFloating(true);
-	hide();
-}
-
-void MacroDock::SetName(const QString &name)
-{
-	setWindowTitle(name);
+	setLayout(layout);
 }
 
 void MacroDock::ShowRunButton(bool value)
