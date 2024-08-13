@@ -160,4 +160,12 @@ void QeueUITask(void (*task)(void *param), void *param)
 	obs_queue_task(OBS_TASK_UI, task, param, false);
 }
 
+bool IsCursorInWidgetArea(QWidget *widget)
+{
+	const auto cursorPos = QCursor::pos();
+	const auto widgetPos = widget->mapFromGlobal(cursorPos);
+	const auto widgetRect = widget->rect();
+	return widgetRect.contains(widgetPos);
+}
+
 } // namespace advss
