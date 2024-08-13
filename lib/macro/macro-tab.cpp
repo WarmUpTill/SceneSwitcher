@@ -1051,6 +1051,10 @@ static bool handleCustomLabelRename(MacroSegmentEdit *segmentEdit)
 {
 	std::string label;
 	auto segment = segmentEdit->Data();
+	if (!segment) {
+		return false;
+	}
+
 	bool accepted = NameDialog::AskForName(
 		GetSettingsWindow(),
 		obs_module_text(
@@ -1115,6 +1119,30 @@ static void setupSegmentLabelContextMenuEntries(MacroSegmentEdit *segmentEdit,
 			 });
 }
 
+static void setupCopyPasteContextMenuEnry(AdvSceneSwitcher *ss,
+					  MacroSegmentEdit *segmentEdit,
+					  QMenu &menu)
+{
+	auto copy = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.segment.copy"), ss,
+		[ss]() { ss->CopyMacroSegment(); });
+	copy->setEnabled(!!segmentEdit);
+
+	const char *pasteText = "AdvSceneSwitcher.macroTab.segment.paste";
+	if (MacroActionIsInClipboard()) {
+		if (IsCursorInWidgetArea(ss->ui->macroActions)) {
+			pasteText =
+				"AdvSceneSwitcher.macroTab.segment.pasteAction";
+		} else if (IsCursorInWidgetArea(ss->ui->macroElseActions)) {
+			pasteText =
+				"AdvSceneSwitcher.macroTab.segment.pasteElseAction";
+		}
+	}
+	auto paste = menu.addAction(obs_module_text(pasteText), ss,
+				    [ss]() { ss->PasteMacroSegment(); });
+	paste->setEnabled(MacroSegmentIsInClipboard());
+}
+
 static void setupConextMenu(AdvSceneSwitcher *ss, const QPoint &pos,
 			    std::function<void(AdvSceneSwitcher *)> expand,
 			    std::function<void(AdvSceneSwitcher *)> collapse,
@@ -1125,33 +1153,19 @@ static void setupConextMenu(AdvSceneSwitcher *ss, const QPoint &pos,
 	QMenu menu;
 	auto segmentEdit = list->WidgetAt(pos);
 
-	auto copy = menu.addAction(
-		obs_module_text("AdvSceneSwitcher.macroTab.segment.copy"), ss,
-		[ss]() { ss->CopyMacroSegment(); });
-	copy->setEnabled(!!segmentEdit);
-	auto paste = menu.addAction(
-		obs_module_text("AdvSceneSwitcher.macroTab.segment.paste"), ss,
-		[ss]() { ss->PasteMacroSegment(); });
-	paste->setEnabled(MacroSegmentIsInClipboard());
-
+	setupCopyPasteContextMenuEnry(ss, segmentEdit, menu);
 	menu.addSeparator();
-
 	setupSegmentLabelContextMenuEntries(segmentEdit, menu);
-
 	menu.addSeparator();
-
 	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.expandAll"),
 		       ss, [ss, expand]() { expand(ss); });
 	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.collapseAll"),
 		       ss, [ss, collapse]() { collapse(ss); });
-
 	menu.addSeparator();
-
 	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.maximize"),
 		       ss, [ss, maximize]() { maximize(ss); });
 	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.minimize"),
 		       ss, [ss, minimize]() { minimize(ss); });
-
 	menu.exec(list->mapToGlobal(pos));
 }
 
