@@ -1047,8 +1047,26 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 	menu.exec(globalPos);
 }
 
-static void handleCustomLabelChange(MacroSegmentEdit *segmentEdit,
-				    QAction *contextMenuOption)
+static bool handleCustomLabelRename(MacroSegmentEdit *segmentEdit)
+{
+	std::string label;
+	auto segment = segmentEdit->Data();
+	bool accepted = NameDialog::AskForName(
+		GetSettingsWindow(),
+		obs_module_text(
+			"AdvSceneSwitcher.macroTab.segment.setCustomLabel"),
+		"", label, QString::fromStdString(segment->GetCustomLabel()));
+	if (!accepted) {
+		return false;
+	}
+
+	segment->SetCustomLabel(label);
+	segmentEdit->HeaderInfoChanged("");
+	return true;
+}
+
+static void handleCustomLabelEnableChange(MacroSegmentEdit *segmentEdit,
+					  QAction *contextMenuOption)
 {
 	bool enable = contextMenuOption->isChecked();
 	auto segment = segmentEdit->Data();
@@ -1059,19 +1077,42 @@ static void handleCustomLabelChange(MacroSegmentEdit *segmentEdit,
 		return;
 	}
 
-	std::string label;
-	bool accepted = NameDialog::AskForName(
-		GetSettingsWindow(),
-		obs_module_text(
-			"AdvSceneSwitcher.macroTab.segment.setCustomLabel"),
-		"", label, QString::fromStdString(segment->GetCustomLabel()));
-	if (!accepted) {
+	if (!handleCustomLabelRename(segmentEdit)) {
 		segment->SetUseCustomLabel(false);
+	}
+}
+
+static void setupSegmentLabelContextMenuEntries(MacroSegmentEdit *segmentEdit,
+						QMenu &menu)
+{
+	if (!segmentEdit) {
 		return;
 	}
 
-	segment->SetCustomLabel(label);
-	segmentEdit->HeaderInfoChanged("");
+	auto segment = segmentEdit ? segmentEdit->Data() : nullptr;
+	const bool customLabelIsEnabled = segment &&
+					  segment->GetUseCustomLabel();
+
+	auto enableCustomLabel = menu.addAction(obs_module_text(
+		"AdvSceneSwitcher.macroTab.segment.useCustomLabel"));
+	enableCustomLabel->setCheckable(true);
+	enableCustomLabel->setChecked(customLabelIsEnabled);
+	QWidget::connect(enableCustomLabel, &QAction::triggered,
+			 [segmentEdit, enableCustomLabel]() {
+				 handleCustomLabelEnableChange(
+					 segmentEdit, enableCustomLabel);
+			 });
+
+	if (!customLabelIsEnabled) {
+		return;
+	}
+
+	auto customLabelRename = menu.addAction(obs_module_text(
+		"AdvSceneSwitcher.macroTab.segment.customLabelRename"));
+	QWidget::connect(customLabelRename, &QAction::triggered,
+			 [segmentEdit]() {
+				 handleCustomLabelRename(segmentEdit);
+			 });
 }
 
 static void setupConextMenu(AdvSceneSwitcher *ss, const QPoint &pos,
@@ -1095,17 +1136,7 @@ static void setupConextMenu(AdvSceneSwitcher *ss, const QPoint &pos,
 
 	menu.addSeparator();
 
-	if (segmentEdit) {
-		auto customLabel = menu.addAction(obs_module_text(
-			"AdvSceneSwitcher.macroTab.segment.useCustomLabel"));
-		customLabel->setCheckable(true);
-		auto segment = segmentEdit ? segmentEdit->Data() : nullptr;
-		customLabel->setChecked(segment &&
-					segment->GetUseCustomLabel());
-		QWidget::connect(customLabel, &QAction::triggered,
-				 std::bind(handleCustomLabelChange, segmentEdit,
-					   customLabel));
-	}
+	setupSegmentLabelContextMenuEntries(segmentEdit, menu);
 
 	menu.addSeparator();
 
