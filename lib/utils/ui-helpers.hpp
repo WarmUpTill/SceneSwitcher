@@ -33,4 +33,6 @@ EXPORT std::string GetThemeTypeName();
 
 void QeueUITask(void (*task)(void *param), void *param);
 
+bool IsCursorInWidgetArea(QWidget *widget);
+
 } // namespace advss
