@@ -19,7 +19,7 @@ void AdvSceneSwitcher::on_executableAdd_clicked()
 	listAddClicked(ui->executables,
 		       new ExecutableSwitchWidget(
 			       this, &switcher->executableSwitches.back()),
-		       ui->executableAdd, addPulse);
+		       addPulse);
 
 	ui->exeHelp->setVisible(false);
 }

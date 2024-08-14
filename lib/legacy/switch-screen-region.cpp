@@ -79,7 +79,7 @@ void AdvSceneSwitcher::on_screenRegionAdd_clicked()
 	listAddClicked(ui->screenRegionSwitches,
 		       new ScreenRegionWidget(
 			       this, &switcher->screenRegionSwitches.back()),
-		       ui->screenRegionAdd, addPulse);
+		       addPulse);
 
 	ui->regionHelp->setVisible(false);
 }

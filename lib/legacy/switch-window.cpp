@@ -21,7 +21,7 @@ void AdvSceneSwitcher::on_windowAdd_clicked()
 	listAddClicked(ui->windowSwitches,
 		       new WindowSwitchWidget(this,
 					      &switcher->windowSwitches.back()),
-		       ui->windowAdd, addPulse);
+		       addPulse);
 
 	ui->windowHelp->setVisible(false);
 }

@@ -285,7 +285,7 @@ setTempVarsHelper(obs_data_t *data,
 	setTempVarsHelper(jsonStr, setVar);
 }
 
-bool MacroConditionTwitch::CheckChannelGenericEvents(TwitchToken &token)
+bool MacroConditionTwitch::CheckChannelGenericEvents()
 {
 	if (!_eventBuffer) {
 		return false;
@@ -315,7 +315,7 @@ bool MacroConditionTwitch::CheckChannelGenericEvents(TwitchToken &token)
 	return false;
 }
 
-bool MacroConditionTwitch::CheckChannelLiveEvents(TwitchToken &token)
+bool MacroConditionTwitch::CheckChannelLiveEvents()
 {
 	if (!_eventBuffer) {
 		return false;
@@ -541,13 +541,13 @@ bool MacroConditionTwitch::CheckCondition()
 	case Condition::USER_UNBAN_EVENT:
 	case Condition::USER_MODERATOR_ADDITION_EVENT:
 	case Condition::USER_MODERATOR_DELETION_EVENT:
-		return CheckChannelGenericEvents(*token);
+		return CheckChannelGenericEvents();
 	case Condition::STREAM_ONLINE_LIVE_EVENT:
 	case Condition::STREAM_ONLINE_PLAYLIST_EVENT:
 	case Condition::STREAM_ONLINE_WATCHPARTY_EVENT:
 	case Condition::STREAM_ONLINE_PREMIERE_EVENT:
 	case Condition::STREAM_ONLINE_RERUN_EVENT:
-		return CheckChannelLiveEvents(*token);
+		return CheckChannelLiveEvents();
 	case Condition::LIVE_POLLING: {
 		auto info = _channel.GetLiveInfo(*token);
 		if (!info) {

@@ -291,7 +291,7 @@ void AdvSceneSwitcher::on_fileAdd_clicked()
 	listAddClicked(ui->fileSwitches,
 		       new FileSwitchWidget(this,
 					    &switcher->fileSwitches.back()),
-		       ui->fileAdd, addPulse);
+		       addPulse);
 
 	ui->fileHelp->setVisible(false);
 }

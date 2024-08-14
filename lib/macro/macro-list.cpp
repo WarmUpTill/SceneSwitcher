@@ -79,7 +79,7 @@ void MacroList::MacroRemove(const QString &name)
 void MacroList::Add()
 {
 	std::string macroName;
-	bool accepted = MacroSelectionDialog::AskForMacro(this, macroName);
+	bool accepted = MacroSelectionDialog::AskForMacro(macroName);
 
 	if (!accepted || macroName.empty()) {
 		return;
@@ -132,7 +132,7 @@ void MacroList::Down()
 void MacroList::Clicked(QListWidgetItem *item)
 {
 	std::string macroName;
-	bool accepted = MacroSelectionDialog::AskForMacro(this, macroName);
+	bool accepted = MacroSelectionDialog::AskForMacro(macroName);
 
 	if (!accepted || macroName.empty()) {
 		return;

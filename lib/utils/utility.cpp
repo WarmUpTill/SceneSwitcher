@@ -76,7 +76,7 @@ std::string ToString(double value)
 }
 
 void listAddClicked(QListWidget *list, QWidget *newWidget,
-		    QPushButton *addButton, QObject *addHighlight)
+		    QObject *addHighlight)
 {
 	if (!list || !newWidget) {
 		return;

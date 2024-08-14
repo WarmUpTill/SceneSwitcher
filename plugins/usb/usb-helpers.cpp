@@ -103,7 +103,7 @@ static std::vector<USBDeviceInfo> pollUSBDevices()
 	return result;
 }
 
-static int hotplugCallback(struct libusb_context *ctx,
+static int hotplugCallback(struct libusb_context *,
 			   struct libusb_device *device,
 			   libusb_hotplug_event event, void *user_data)
 {

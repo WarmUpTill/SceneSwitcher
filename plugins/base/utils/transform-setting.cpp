@@ -84,8 +84,8 @@ GetTransformSettingValue(obs_scene_item *source,
 }
 
 template<class T>
-static void logConversionError(T exception, const char *func,
-			       const char *target, const char *value)
+static void logConversionError(T, const char *func, const char *target,
+			       const char *value)
 {
 	if (std::is_same<T, std::invalid_argument>::value) {
 		blog(LOG_WARNING, "%s invalid %s value (%s)", func, target,

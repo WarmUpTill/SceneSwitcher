@@ -300,8 +300,7 @@ VariableSelectionDialog::VariableSelectionDialog(QWidget *parent)
 
 QWidget *GetSettingsWindow();
 
-bool VariableSelectionDialog::AskForVariable(QWidget *parent,
-					     std::string &varName)
+bool VariableSelectionDialog::AskForVariable(std::string &varName)
 {
 	VariableSelectionDialog dialog(GetSettingsWindow());
 	dialog.setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
