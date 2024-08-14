@@ -106,7 +106,10 @@ bool CanCreateDefaultAction()
 {
 	const auto action = MacroActionFactory::Create(
 		MacroAction::GetDefaultID().data(), nullptr);
-	return !!action;
+	if (!action) {
+		return false;
+	}
+	return action->GetId() == MacroAction::GetDefaultID().data();
 }
 
 } // namespace advss
