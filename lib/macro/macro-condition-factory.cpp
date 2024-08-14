@@ -111,7 +111,10 @@ bool CanCreateDefaultCondition()
 {
 	const auto condition = MacroConditionFactory::Create(
 		MacroCondition::GetDefaultID().data(), nullptr);
-	return !!condition;
+	if (!condition) {
+		return false;
+	}
+	return condition->GetId() == MacroCondition::GetDefaultID().data();
 }
 
 } // namespace advss
