@@ -92,7 +92,7 @@ void MacroInputSelection::SetInputs(const MacroInputVariables &inputs)
 void MacroInputSelection::Add()
 {
 	std::string varName;
-	bool accepted = VariableSelectionDialog::AskForVariable(this, varName);
+	bool accepted = VariableSelectionDialog::AskForVariable(varName);
 
 	if (!accepted || varName.empty()) {
 		return;
@@ -155,7 +155,7 @@ void MacroInputSelection::Down()
 void MacroInputSelection::Clicked(QListWidgetItem *item)
 {
 	std::string varName;
-	bool accepted = VariableSelectionDialog::AskForVariable(this, varName);
+	bool accepted = VariableSelectionDialog::AskForVariable(varName);
 
 	if (!accepted || varName.empty()) {
 		return;

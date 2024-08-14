@@ -22,7 +22,7 @@ void AdvSceneSwitcher::on_mediaAdd_clicked()
 	listAddClicked(ui->mediaSwitches,
 		       new MediaSwitchWidget(this,
 					     &switcher->mediaSwitches.back()),
-		       ui->mediaAdd, addPulse);
+		       addPulse);
 
 	ui->mediaHelp->setVisible(false);
 }

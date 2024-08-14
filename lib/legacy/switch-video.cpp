@@ -24,7 +24,7 @@ void AdvSceneSwitcher::on_videoAdd_clicked()
 	VideoSwitchWidget *sw =
 		new VideoSwitchWidget(this, &switcher->videoSwitches.back());
 
-	listAddClicked(ui->videoSwitches, sw, ui->videoAdd, addPulse);
+	listAddClicked(ui->videoSwitches, sw, addPulse);
 
 	ui->videoHelp->setVisible(false);
 }

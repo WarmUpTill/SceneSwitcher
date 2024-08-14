@@ -89,7 +89,7 @@ class VariableSelectionDialog : public QDialog {
 
 public:
 	VariableSelectionDialog(QWidget *parent);
-	static bool AskForVariable(QWidget *parent, std::string &variableName);
+	static bool AskForVariable(std::string &variableName);
 
 private:
 	VariableSelection *_variableSelection;

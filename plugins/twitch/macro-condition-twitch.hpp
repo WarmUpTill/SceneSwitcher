@@ -107,8 +107,8 @@ public:
 	bool _clearBufferOnMatch = false;
 
 private:
-	bool CheckChannelGenericEvents(TwitchToken &token);
-	bool CheckChannelLiveEvents(TwitchToken &token);
+	bool CheckChannelGenericEvents();
+	bool CheckChannelLiveEvents();
 	bool CheckChatMessages(TwitchToken &token);
 
 	void RegisterEventSubscription();

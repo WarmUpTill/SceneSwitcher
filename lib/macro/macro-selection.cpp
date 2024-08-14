@@ -126,7 +126,7 @@ MacroSelectionDialog::MacroSelectionDialog(QWidget *parent)
 	setLayout(layout);
 }
 
-bool MacroSelectionDialog::AskForMacro(QWidget *parent, std::string &macroName)
+bool MacroSelectionDialog::AskForMacro(std::string &macroName)
 {
 	MacroSelectionDialog dialog(GetSettingsWindow());
 	dialog.setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
