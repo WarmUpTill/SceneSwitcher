@@ -70,7 +70,8 @@ void MacroSegmentSelection::MacroSegmentOrderChanged()
 	SetupDescription();
 }
 
-QString GetMacroSegmentDescription(Macro *macro, int idx, bool isCondition)
+static QString GetMacroSegmentDescription(Macro *macro, int idx,
+					  bool isCondition)
 {
 	if (!macro) {
 		return "";
