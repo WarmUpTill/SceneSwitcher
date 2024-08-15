@@ -160,7 +160,7 @@ void MacroTreeItem::Update(bool force)
 		_spacer = nullptr;
 	}
 
-	if (_type == Type::Group) {
+	if (_type == Type::Group && _expand) {
 		_boxLayout->removeWidget(_expand);
 		_expand->deleteLater();
 		_expand = nullptr;
