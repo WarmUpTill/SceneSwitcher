@@ -68,7 +68,7 @@ void MacroSelection::HideSelectedMacro()
 void MacroSelection::ShowAllMacros()
 {
 	auto v = qobject_cast<QListView *>(view());
-	for (int i = count(); i > 0; i--) {
+	for (int i = count() - 1; i >= 0; i--) {
 		v->setRowHidden(i, false);
 	}
 }
