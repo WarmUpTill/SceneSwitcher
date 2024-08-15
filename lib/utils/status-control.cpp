@@ -154,6 +154,7 @@ void StatusControl::SetStarted()
 	_status->setText(obs_module_text("AdvSceneSwitcher.status.active"));
 	if (_pulse) {
 		_pulse->deleteLater();
+		_pulse = nullptr;
 	}
 	SetStatusStyleSheet(false);
 	_setToStopped = false;

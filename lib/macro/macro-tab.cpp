@@ -100,8 +100,10 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 	}
 
 	ui->macros->Add(newMacro);
-	addPulse->deleteLater();
-	addPulse = nullptr;
+	if (addPulse) {
+		addPulse->deleteLater();
+		addPulse = nullptr;
+	}
 	emit MacroAdded(QString::fromStdString(name));
 }
 
@@ -1218,8 +1220,10 @@ void AdvSceneSwitcher::CopyMacro()
 	Macro::PrepareMoveToGroup(macro->Parent(), newMacro);
 
 	ui->macros->Add(newMacro, macro);
-	addPulse->deleteLater();
-	addPulse = nullptr;
+	if (addPulse) {
+		addPulse->deleteLater();
+		addPulse = nullptr;
+	}
 	emit MacroAdded(QString::fromStdString(name));
 }
 

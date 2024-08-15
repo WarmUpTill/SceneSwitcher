@@ -170,8 +170,10 @@ void AdvSceneSwitcher::on_sceneGroupAdd_clicked()
 	item->setData(Qt::UserRole, text);
 	ui->sceneGroups->setCurrentItem(item);
 
-	addPulse->deleteLater();
-	addPulse = nullptr;
+	if (addPulse) {
+		addPulse->deleteLater();
+		addPulse = nullptr;
+	}
 	ui->sceneGroupHelp->setVisible(false);
 
 	emit SceneGroupAdded(QString::fromStdString(name));
