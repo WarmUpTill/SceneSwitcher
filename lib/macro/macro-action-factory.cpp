@@ -21,7 +21,7 @@ public:
 
 } // namespace
 
-static std::mutex mutex;
+static std::recursive_mutex mutex;
 
 std::map<std::string, MacroActionInfo> &MacroActionFactory::GetMap()
 {
@@ -31,7 +31,7 @@ std::map<std::string, MacroActionInfo> &MacroActionFactory::GetMap()
 
 bool MacroActionFactory::Register(const std::string &id, MacroActionInfo info)
 {
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<std::recursive_mutex> lock(mutex);
 	if (auto it = GetMap().find(id); it == GetMap().end()) {
 		GetMap()[id] = info;
 		return true;
@@ -41,7 +41,7 @@ bool MacroActionFactory::Register(const std::string &id, MacroActionInfo info)
 
 bool MacroActionFactory::Deregister(const std::string &id)
 {
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<std::recursive_mutex> lock(mutex);
 	if (GetMap().count(id) == 0) {
 		return false;
 	}
@@ -57,7 +57,7 @@ static std::shared_ptr<MacroAction> createUnknownAction(Macro *m)
 std::shared_ptr<MacroAction> MacroActionFactory::Create(const std::string &id,
 							Macro *m)
 {
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<std::recursive_mutex> lock(mutex);
 	if (auto it = GetMap().find(id); it != GetMap().end()) {
 		return it->second._create(m);
 	}
@@ -74,7 +74,7 @@ QWidget *MacroActionFactory::CreateWidget(const std::string &id,
 					  QWidget *parent,
 					  std::shared_ptr<MacroAction> action)
 {
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<std::recursive_mutex> lock(mutex);
 	if (auto it = GetMap().find(id); it != GetMap().end()) {
 		return it->second._createWidget(parent, action);
 	}
@@ -84,7 +84,7 @@ QWidget *MacroActionFactory::CreateWidget(const std::string &id,
 
 std::string MacroActionFactory::GetActionName(const std::string &id)
 {
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<std::recursive_mutex> lock(mutex);
 	if (auto it = GetMap().find(id); it != GetMap().end()) {
 		return it->second._name;
 	}
@@ -93,7 +93,7 @@ std::string MacroActionFactory::GetActionName(const std::string &id)
 
 std::string MacroActionFactory::GetIdByName(const QString &name)
 {
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<std::recursive_mutex> lock(mutex);
 	for (auto it : GetMap()) {
 		if (name == obs_module_text(it.second._name.c_str())) {
 			return it.first;
