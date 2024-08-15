@@ -25,6 +25,11 @@ private slots:
 	void TextChanged(const QString &);
 
 private:
+	void Emit(int index, const QString &text);
+
+	int _lastEmittedIndex = -1;
+	QString _lastEmittedText;
+
 	int _lastCompleterHighlightRow = -1;
 	static bool _filteringEnabled;
 };
