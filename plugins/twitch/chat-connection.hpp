@@ -14,18 +14,21 @@ namespace advss {
 
 using websocketpp::connection_hdl;
 
-struct ParsedTags {
-	using BadgeMap = std::unordered_map<std::string, std::string>;
-	using EmoteMap = std::unordered_map<std::string,
-					    std::vector<std::pair<int, int>>>;
-	using EmoteSet = std::vector<std::string>;
-	std::unordered_map<std::string, std::variant<std::string, BadgeMap,
-						     EmoteMap, EmoteSet>>
-		tagMap;
-};
-
 struct IRCMessage {
-	ParsedTags tags;
+	struct Badge {
+		std::string name;
+		bool enabled;
+	};
+	struct {
+		std::string badgesString;
+		std::vector<Badge> badges;
+		std::string displayName;
+		bool isFirstMessage = false;
+		bool isUsingOnlyEmotes = false;
+		bool isMod = false;
+		bool isSubscriber = false;
+		bool isTurbo = false;
+	} properties;
 	struct {
 		std::string nick;
 		std::string host;
