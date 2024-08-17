@@ -5,6 +5,7 @@
 #include "channel-selection.hpp"
 #include "points-reward-selection.hpp"
 #include "chat-connection.hpp"
+#include "chat-message-pattern.hpp"
 
 #include <variable-line-edit.hpp>
 #include <variable-text-edit.hpp>
@@ -101,8 +102,7 @@ public:
 	StringVariable _streamTitle = obs_module_text(
 		"AdvSceneSwitcher.condition.twitch.title.title");
 	RegexConfig _regexTitle = RegexConfig::PartialMatchRegexConfig();
-	StringVariable _chatMessage;
-	RegexConfig _regexChat = RegexConfig::PartialMatchRegexConfig();
+	ChatMessagePattern _chatMessagePattern;
 	TwitchCategory _category;
 	bool _clearBufferOnMatch = false;
 
@@ -166,9 +166,8 @@ private slots:
 	void ChannelChanged(const TwitchChannel &);
 	void PointsRewardChanged(const TwitchPointsReward &);
 	void StreamTitleChanged();
-	void ChatMessageChanged();
 	void RegexTitleChanged(const RegexConfig &);
-	void RegexChatChanged(const RegexConfig &);
+	void ChatMessagePatternChanged(const ChatMessagePattern &);
 	void CategoreyChanged(const TwitchCategory &);
 	void ClearBufferOnMatchChanged(int);
 
@@ -189,8 +188,7 @@ private:
 	TwitchPointsRewardWidget *_pointsReward;
 	VariableLineEdit *_streamTitle;
 	RegexConfigWidget *_regexTitle;
-	VariableTextEdit *_chatMessage;
-	RegexConfigWidget *_regexChat;
+	ChatMessageEdit *_chatMesageEdit;
 	TwitchCategoryWidget *_category;
 	QCheckBox *_clearBufferOnMatch;
 

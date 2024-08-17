@@ -3,7 +3,6 @@
 #include "twitch-helpers.hpp"
 
 #include <log-helper.hpp>
-#include <plugin-state-helpers.hpp>
 
 #undef DispatchMessage
 
@@ -19,24 +18,50 @@ static const auto reconnectDelay = 15s;
 
 /* ------------------------------------------------------------------------- */
 
-static ParsedTags parseTags(const std::string &tags)
+static std::vector<IRCMessage::Badge> parseBadgeTag(const std::string &tag)
 {
-	ParsedTags parsedTags;
+	std::vector<std::string> badgePairs;
+	size_t badgePos = 0;
+	size_t badgeEndPos;
+
+	while ((badgeEndPos = tag.find(',', badgePos)) != std::string::npos) {
+		badgePairs.push_back(
+			tag.substr(badgePos, badgeEndPos - badgePos));
+		badgePos = badgeEndPos + 1;
+	}
+
+	badgePairs.push_back(tag.substr(badgePos));
+
+	std::vector<IRCMessage::Badge> badges;
+	for (const auto &badgePair : badgePairs) {
+		size_t slashPos = badgePair.find('/');
+		const auto badgeName = badgePair.substr(0, slashPos);
+		const auto badgeValue = (slashPos != std::string::npos)
+						? badgePair.substr(slashPos + 1)
+						: "";
+		badges.push_back({badgeName, badgeValue != "0"});
+	}
+
+	return badges;
+}
+
+static void parseTags(const std::string &tags, IRCMessage &message)
+{
 	static constexpr std::array<std::string_view, 2> tagsToIgnore = {
 		"client-nonce", "flags"};
 
-	std::vector<std::string> parsedTagPairs;
+	std::vector<std::string> properties;
 	size_t pos = 0;
 	size_t endPos;
 
 	while ((endPos = tags.find(';', pos)) != std::string::npos) {
-		parsedTagPairs.push_back(tags.substr(pos, endPos - pos));
+		properties.push_back(tags.substr(pos, endPos - pos));
 		pos = endPos + 1;
 	}
 
-	parsedTagPairs.push_back(tags.substr(pos));
+	properties.push_back(tags.substr(pos));
 
-	for (const auto &tagPair : parsedTagPairs) {
+	for (const auto &tagPair : properties) {
 		size_t equalsPos = tagPair.find('=');
 		std::string tagName = tagPair.substr(0, equalsPos);
 		std::string tagValue = (equalsPos != std::string::npos)
@@ -49,113 +74,26 @@ static ParsedTags parseTags(const std::string &tags)
 		}
 
 		if (tagValue.empty()) {
-			parsedTags.tagMap[tagName] = {};
 			continue;
 		}
 
 		if (tagName == "badges" || tagName == "badge-info") {
-			ParsedTags::BadgeMap badgeMap;
-			std::vector<std::string> badgePairs;
-			size_t badgePos = 0;
-			size_t badgeEndPos;
-
-			while ((badgeEndPos = tagValue.find(',', badgePos)) !=
-			       std::string::npos) {
-				badgePairs.push_back(tagValue.substr(
-					badgePos, badgeEndPos - badgePos));
-				badgePos = badgeEndPos + 1;
-			}
-
-			badgePairs.push_back(tagValue.substr(badgePos));
-
-			for (const auto &badgePair : badgePairs) {
-				size_t slashPos = badgePair.find('/');
-				std::string badgeName =
-					badgePair.substr(0, slashPos);
-				std::string badgeValue =
-					(slashPos != std::string::npos)
-						? badgePair.substr(slashPos + 1)
-						: "";
-
-				badgeMap[badgeName] = badgeValue;
-			}
-
-			parsedTags.tagMap[tagName] = badgeMap;
-
-		} else if (tagName == "emotes") {
-			ParsedTags::EmoteMap emoteMap;
-			std::vector<std::string> emotePairs;
-			size_t emotePos = 0;
-			size_t emoteEndPos;
-
-			while ((emoteEndPos = tagValue.find('/', emotePos)) !=
-			       std::string::npos) {
-				emotePairs.push_back(tagValue.substr(
-					emotePos, emoteEndPos - emotePos));
-				emotePos = emoteEndPos + 1;
-			}
-
-			emotePairs.push_back(tagValue.substr(emotePos));
-
-			for (const auto &emotePair : emotePairs) {
-				size_t colonPos = emotePair.find(':');
-				std::string emoteId =
-					emotePair.substr(0, colonPos);
-				std::string positions =
-					(colonPos != std::string::npos)
-						? emotePair.substr(colonPos + 1)
-						: "";
-
-				std::vector<std::pair<int, int>> textPositions;
-				size_t positionPos = 0;
-				size_t positionEndPos;
-
-				while ((positionEndPos = positions.find(
-						',', positionPos)) !=
-				       std::string::npos) {
-					std::string position = positions.substr(
-						positionPos,
-						positionEndPos - positionPos);
-					size_t dashPos = position.find('-');
-					int startPos = std::stoi(
-						position.substr(0, dashPos));
-					int endPos = std::stoi(
-						position.substr(dashPos + 1));
-					textPositions.push_back(
-						{startPos, endPos});
-					positionPos = positionEndPos + 1;
-				}
-
-				textPositions.push_back(
-					{std::stoi(
-						 positions.substr(positionPos)),
-					 std::stoi(positions.substr(
-						 positionPos))});
-				emoteMap[emoteId] = textPositions;
-			}
-
-			parsedTags.tagMap[tagName] = emoteMap;
-		} else if (tagName == "emote-sets") {
-			ParsedTags::EmoteSet emoteSetIds;
-			size_t setIdPos = 0;
-			size_t setIdEndPos;
-
-			while ((setIdEndPos = tagValue.find(',', setIdPos)) !=
-			       std::string::npos) {
-				emoteSetIds.push_back(tagValue.substr(
-					setIdPos, setIdEndPos - setIdPos));
-				setIdPos = setIdEndPos + 1;
-			}
-
-			emoteSetIds.push_back(tagValue.substr(setIdPos));
-
-			parsedTags.tagMap[tagName] = emoteSetIds;
-		} else {
-			parsedTags.tagMap[tagName] = tagValue;
+			message.properties.badges = parseBadgeTag(tagValue);
+			message.properties.badgesString = tagValue;
+		} else if (tagName == "display-name") {
+			message.properties.displayName = tagValue;
+		} else if (tagName == "first-msg") {
+			message.properties.isFirstMessage = tagValue == "1";
+		} else if (tagName == "emote-only") {
+			message.properties.isUsingOnlyEmotes = tagValue == "1";
+		} else if (tagName == "mod") {
+			message.properties.isMod = tagValue == "1";
+		} else if (tagName == "subscriber") {
+			message.properties.isSubscriber = tagValue == "1";
+		} else if (tagName == "turbo") {
+			message.properties.isTurbo = tagValue == "1";
 		}
 	}
-
-	return parsedTags;
 }
 
 static void parseSource(const std::string &rawSourceComponent,
@@ -273,7 +211,7 @@ static IRCMessage parseMessage(const std::string &message)
 		rawMessageComponent = message.substr(idx);
 	}
 
-	parsedMessage.tags = parseTags(rawTagsComponent);
+	parseTags(rawTagsComponent, parsedMessage);
 	parseSource(rawSourceComponent, parsedMessage);
 	parseCommand(rawCommandComponent, parsedMessage);
 	parsedMessage.message = rawMessageComponent;
@@ -594,13 +532,13 @@ void TwitchChatConnection::OnMessage(
 	websocketpp::client<websocketpp::config::asio_tls_client>::message_ptr
 		message)
 {
-	constexpr std::string_view authOKCommand = "001";
-	constexpr std::string_view pingCommand = "PING";
-	constexpr std::string_view joinOKCommand = "JOIN";
-	constexpr std::string_view noticeCommand = "NOTICE";
-	constexpr std::string_view reconnectCommand = "RECONNECT";
-	constexpr std::string_view newMessageCommand = "PRIVMSG";
-	constexpr std::string_view whisperCommand = "WHISPER";
+	static constexpr std::string_view authOKCommand = "001";
+	static constexpr std::string_view pingCommand = "PING";
+	static constexpr std::string_view joinOKCommand = "JOIN";
+	static constexpr std::string_view noticeCommand = "NOTICE";
+	static constexpr std::string_view reconnectCommand = "RECONNECT";
+	static constexpr std::string_view newMessageCommand = "PRIVMSG";
+	static constexpr std::string_view whisperCommand = "WHISPER";
 
 	if (!message) {
 		return;
@@ -610,7 +548,7 @@ void TwitchChatConnection::OnMessage(
 	}
 
 	std::string payload = message->get_payload();
-	auto messages = parseMessages(payload);
+	const auto messages = parseMessages(payload);
 
 	for (const auto &message : messages) {
 		if (message.command.command == authOKCommand) {

@@ -44,6 +44,8 @@ target_sources(
           channel-selection.hpp
           chat-connection.cpp
           chat-connection.hpp
+          chat-message-pattern.cpp
+          chat-message-pattern.hpp
           event-sub.cpp
           event-sub.hpp
           macro-action-twitch.cpp

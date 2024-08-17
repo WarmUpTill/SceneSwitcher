@@ -23,13 +23,16 @@ bool MouseWheelWidgetAdjustmentGuard::eventFilter(QObject *o, QEvent *e)
 
 void PreventMouseWheelAdjustWithoutFocus(QWidget *w)
 {
-	// Ignore QScrollBar as there is no danger of accidentally modifying anything
-	// and long expanded QComboBox would be difficult to interact with otherwise.
-	// Ignore OSCMessageElementEdit to allow OSCMessageEdit list to up update
-	// current index correctly.
+	// Ignore QScrollBar as there is no danger of accidentally modifying
+	// anything and long expanded QComboBox would be difficult to interact
+	// with otherwise.
+	// Ignore OSCMessageElementEdit and ChatMessagePropertyEdit to allow
+	// lists to up update the current index correctly.
 	if (qobject_cast<QScrollBar *>(w) ||
 	    QString(w->metaObject()->className()) ==
-		    "advss::OSCMessageElementEdit") {
+		    "advss::OSCMessageElementEdit" ||
+	    QString(w->metaObject()->className()) ==
+		    "advss::ChatMessagePropertyEdit") {
 		return;
 	}
 	w->setFocusPolicy(Qt::StrongFocus);
