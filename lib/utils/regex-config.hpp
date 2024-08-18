@@ -48,16 +48,15 @@ private:
 	friend RegexConfigDialog;
 };
 
-class RegexConfigWidget : public QWidget {
+class ADVSS_EXPORT RegexConfigWidget : public QWidget {
 	Q_OBJECT
 public:
-	EXPORT RegexConfigWidget(QWidget *parent = nullptr,
-				 bool showEnable = true);
-	EXPORT void SetRegexConfig(const RegexConfig &);
+	RegexConfigWidget(QWidget *parent = nullptr, bool showEnable = true);
+	void SetRegexConfig(const RegexConfig &);
 
 public slots:
-	EXPORT void EnableChanged(bool);
-	EXPORT void OpenSettingsClicked();
+	void EnableChanged(bool);
+	void OpenSettingsClicked();
 signals:
 	void RegexConfigChanged(const RegexConfig &);
 
