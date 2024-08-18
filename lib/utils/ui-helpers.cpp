@@ -64,8 +64,12 @@ void SetHeightToContentHeight(QListWidget *list)
 	}
 
 	int scrollBarHeight = getHorizontalScrollBarHeight(list);
-	int height = (list->sizeHintForRow(0) + list->spacing()) * nrItems +
-		     2 * list->frameWidth() + scrollBarHeight;
+	int height = 2 * list->frameWidth() + scrollBarHeight;
+
+	for (int i = 0; i < nrItems; i++) {
+		height += (list->sizeHintForRow(i) + list->spacing());
+	}
+
 	list->setMinimumHeight(height);
 	list->setMaximumHeight(height);
 }
