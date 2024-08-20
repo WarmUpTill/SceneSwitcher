@@ -33,6 +33,34 @@ void ListEditor::showEvent(QShowEvent *e)
 	UpdateListSize();
 }
 
+static QListWidgetItem *getItemFromWidget(QListWidget *list, QWidget *widget)
+{
+	for (int i = 0; i < list->count(); i++) {
+		auto item = list->item(i);
+		if (!item) {
+			continue;
+		}
+		auto itemWidget = list->itemWidget(item);
+		if (itemWidget == widget) {
+			return item;
+		}
+	}
+	return nullptr;
+}
+
+int ListEditor::GetIndexOfSignal() const
+{
+	auto sender = this->sender();
+	if (!sender) {
+		return -1;
+	}
+	auto widget = qobject_cast<QWidget *>(sender);
+	if (!widget) {
+		return -1;
+	}
+	return _list->row(getItemFromWidget(_list, widget));
+}
+
 void ListEditor::UpdateListSize()
 {
 	SetHeightToContentHeight(_list);

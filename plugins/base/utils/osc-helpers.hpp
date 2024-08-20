@@ -157,7 +157,6 @@ signals:
 
 private:
 	void InsertElement(const OSCMessageElement &);
-	int GetIndexOfSignal();
 
 	VariableLineEdit *_address;
 
