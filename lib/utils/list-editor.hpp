@@ -25,6 +25,7 @@ private slots:
 
 protected:
 	void UpdateListSize();
+	int GetIndexOfSignal() const;
 
 	QListWidget *_list;
 	ListControls *_controls;
