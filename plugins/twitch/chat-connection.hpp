@@ -96,9 +96,12 @@ private:
 	std::mutex _waitMtx;
 	std::mutex _connectMtx;
 	std::condition_variable _cv;
-	std::atomic_bool _connected{false};
+
+	enum class State { DISCONNECTED, CONNECTING, CONNECTED };
+	std::atomic<State> _state = {State::DISCONNECTED};
+
 	std::atomic_bool _authenticated{false};
-	std::atomic_bool _disconnect{false};
+	std::atomic_bool _stop{false};
 	std::string _url;
 
 	ChatMessageDispatcher _messageDispatcher;

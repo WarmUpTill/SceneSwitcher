@@ -9,11 +9,13 @@
 
 namespace advss {
 
+using namespace std::chrono_literals;
+
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 
-static const int reconnectDelay = 15;
+static const auto reconnectDelay = 15s;
 
 /* ------------------------------------------------------------------------- */
 
@@ -390,15 +392,14 @@ TwitchChatConnection::GetChatConnection(const TwitchToken &token_,
 
 void TwitchChatConnection::ConnectThread()
 {
-	while (!_disconnect) {
-		std::unique_lock<std::mutex> lock(_waitMtx);
+	while (!_stop) {
+		_state = State::CONNECTING;
 		_client.reset();
-		_connected = true;
 		websocketpp::lib::error_code ec;
 		websocketpp::client<websocketpp::config::asio_tls_client>::
 			connection_ptr con = _client.get_connection(_url, ec);
 		if (ec) {
-			blog(LOG_INFO, "Twitch TwitchChatConnection failed: %s",
+			blog(LOG_INFO, "TwitchChatConnection failed: %s",
 			     ec.message().c_str());
 		} else {
 			_client.connect(con);
@@ -406,52 +407,63 @@ void TwitchChatConnection::ConnectThread()
 			_client.run();
 		}
 
+		if (_stop) {
+			break;
+		}
+
 		blog(LOG_INFO,
-		     "Twitch TwitchChatConnection trying to reconnect to in %d seconds.",
-		     reconnectDelay);
+		     "TwitchChatConnection trying to reconnect to in %ld seconds.",
+		     (long int)reconnectDelay.count());
+		std::unique_lock<std::mutex> lock(_waitMtx);
 		_cv.wait_for(lock, std::chrono::seconds(reconnectDelay));
 	}
-	_connected = false;
+	_state = State::DISCONNECTED;
 }
 
 void TwitchChatConnection::Connect()
 {
 	std::lock_guard<std::mutex> lock(_connectMtx);
-	if (_connected) {
+	if (_state == State::CONNECTING || _state == State::CONNECTED) {
 		vblog(LOG_INFO,
 		      "Twitch TwitchChatConnection connect already in progress");
 		return;
 	}
-	_disconnect = true;
+
 	if (_thread.joinable()) {
 		_thread.join();
 	}
-	_disconnect = false;
+
+	_stop = false;
+	_state = State::CONNECTING;
 	_thread = std::thread(&TwitchChatConnection::ConnectThread, this);
 }
 
 void TwitchChatConnection::Disconnect()
 {
 	std::lock_guard<std::mutex> lock(_connectMtx);
-	_disconnect = true;
+	if (_state == State::DISCONNECTED) {
+		vblog(LOG_INFO, "TwitchChatConnection already disconnected");
+		return;
+	}
+
+	_stop = true;
+
 	websocketpp::lib::error_code ec;
 	_client.close(_connection, websocketpp::close::status::normal,
 		      "Twitch chat connection stopping", ec);
+	if (ec) {
+		blog(LOG_INFO, "TwitchChatConnection close failed: %s",
+		     ec.message().c_str());
+	}
+
 	{
 		std::unique_lock<std::mutex> waitLock(_waitMtx);
 		_cv.notify_all();
 	}
 
-	while (_connected) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		_client.close(_connection, websocketpp::close::status::normal,
-			      "Twitch chat connection stopping", ec);
-	}
-
 	if (_thread.joinable()) {
 		_thread.join();
 	}
-	_connected = false;
 }
 
 static std::string toLowerCase(const std::string &str)
@@ -468,7 +480,7 @@ static std::string toLowerCase(const std::string &str)
 
 void TwitchChatConnection::ConnectToChat()
 {
-	if (!_connected) {
+	if (_state == State::DISCONNECTED) {
 		Connect();
 		return;
 	}
@@ -556,15 +568,24 @@ void TwitchChatConnection::HandleNotice(const IRCMessage &message) const
 void TwitchChatConnection::HandleReconnect()
 {
 	blog(LOG_INFO,
-	     "Received RECONNECT notice! Twitch chat connection will be terminated!");
-	Disconnect();
+	     "Received RECONNECT notice! Twitch chat connection will be terminated shortly!");
+
+	// We need a separate thread here as we cannot close the current
+	// connection from within the message handler
+	std::thread reconnectThread([token = this->_token,
+				     channel = this->_channel]() {
+		auto chatConnection =
+			TwitchChatConnection::GetChatConnection(token, channel);
+		chatConnection->Disconnect();
+		chatConnection->Connect();
+	});
+	reconnectThread.detach();
 }
 
 void TwitchChatConnection::OnOpen(connection_hdl)
 {
 	vblog(LOG_INFO, "Twitch chat connection opened");
-	_connected = true;
-
+	_state = State::CONNECTED;
 	Authenticate();
 }
 
@@ -620,7 +641,6 @@ void TwitchChatConnection::OnClose(connection_hdl hdl)
 		con = _client.get_con_from_hdl(hdl);
 	auto msg = con->get_ec().message();
 	blog(LOG_INFO, "Twitch chat connection closed: %s", msg.c_str());
-	_connected = false;
 }
 
 void TwitchChatConnection::OnFail(connection_hdl hdl)
@@ -629,7 +649,6 @@ void TwitchChatConnection::OnFail(connection_hdl hdl)
 		con = _client.get_con_from_hdl(hdl);
 	auto msg = con->get_ec().message();
 	blog(LOG_INFO, "Twitch chat connection failed: %s", msg.c_str());
-	_connected = false;
 }
 
 void TwitchChatConnection::Send(const std::string &msg)
