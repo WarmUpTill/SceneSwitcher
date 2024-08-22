@@ -30,6 +30,7 @@ EXPORT void DisplayTrayMessage(const QString &title, const QString &msg,
 			       const QIcon &icon = QIcon());
 
 EXPORT std::string GetThemeTypeName();
+EXPORT QWidget *GetSettingsWindow();
 
 void QeueUITask(void (*task)(void *param), void *param);
 

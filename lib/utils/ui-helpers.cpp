@@ -1,6 +1,8 @@
 #include "ui-helpers.hpp"
+#include "advanced-scene-switcher.hpp"
 #include "non-modal-dialog.hpp"
 #include "obs-module-helper.hpp"
+#include "plugin-state-helpers.hpp"
 
 #include <obs-frontend-api.h>
 #include <QGraphicsColorizeEffect>
@@ -102,7 +104,10 @@ int FindIdxInRagne(QComboBox *list, int start, int stop,
 	return foundIdx;
 }
 
-QWidget *GetSettingsWindow();
+QWidget *GetSettingsWindow()
+{
+	return SettingsWindowIsOpened() ? AdvSceneSwitcher::window : nullptr;
+}
 
 bool DisplayMessage(const QString &msg, bool question, bool modal)
 {

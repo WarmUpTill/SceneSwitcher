@@ -762,11 +762,6 @@ void OpenSettingsWindow()
 	}
 }
 
-QWidget *GetSettingsWindow()
-{
-	return SettingsWindowIsOpened() ? AdvSceneSwitcher::window : nullptr;
-}
-
 void AdvSceneSwitcher::HighligthMacroSettingsButton(bool enable)
 {
 	static QObject *highlight = nullptr;

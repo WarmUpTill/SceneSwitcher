@@ -2,6 +2,7 @@
 #include "advanced-scene-switcher.hpp"
 #include "layout-helpers.hpp"
 #include "macro.hpp"
+#include "ui-helpers.hpp"
 
 #include <QDialogButtonBox>
 #include <QStandardItemModel>
