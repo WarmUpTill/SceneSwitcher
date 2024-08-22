@@ -298,8 +298,6 @@ VariableSelectionDialog::VariableSelectionDialog(QWidget *parent)
 	setLayout(layout);
 }
 
-QWidget *GetSettingsWindow();
-
 bool VariableSelectionDialog::AskForVariable(std::string &varName)
 {
 	VariableSelectionDialog dialog(GetSettingsWindow());

@@ -411,7 +411,6 @@ public slots:
 };
 
 void OpenSettingsWindow();
-QWidget *GetSettingsWindow();
 void HighligthMacroSettingsButton(bool enable);
 
 } // namespace advss
