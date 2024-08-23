@@ -76,15 +76,15 @@ std::string ToString(double value)
 }
 
 void listAddClicked(QListWidget *list, QWidget *newWidget,
-		    QObject *addHighlight)
+		    QObject **addHighlight)
 {
 	if (!list || !newWidget) {
 		return;
 	}
 
-	if (addHighlight) {
-		addHighlight->deleteLater();
-		addHighlight = nullptr;
+	if (addHighlight && *addHighlight) {
+		(*addHighlight)->deleteLater();
+		*addHighlight = nullptr;
 	}
 
 	QListWidgetItem *item;

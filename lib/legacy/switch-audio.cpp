@@ -22,7 +22,7 @@ void AdvSceneSwitcher::on_audioAdd_clicked()
 	AudioSwitchWidget *sw =
 		new AudioSwitchWidget(this, &switcher->audioSwitches.back());
 
-	listAddClicked(ui->audioSwitches, sw, addPulse);
+	listAddClicked(ui->audioSwitches, sw, &addPulse);
 
 	ui->audioHelp->setVisible(false);
 }

@@ -26,7 +26,7 @@ void AdvSceneSwitcher::on_sceneSequenceAdd_clicked()
 	listAddClicked(ui->sceneSequenceSwitches,
 		       new SequenceWidget(
 			       this, &switcher->sceneSequenceSwitches.back()),
-		       addPulse);
+		       &addPulse);
 
 	ui->sequenceHelp->setVisible(false);
 }

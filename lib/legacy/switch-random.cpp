@@ -19,7 +19,7 @@ void AdvSceneSwitcher::on_randomAdd_clicked()
 	listAddClicked(ui->randomSwitches,
 		       new RandomSwitchWidget(this,
 					      &switcher->randomSwitches.back()),
-		       addPulse);
+		       &addPulse);
 
 	ui->randomHelp->setVisible(false);
 }
