@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📚 Wiki
+    url: https://github.com/WarmUpTill/SceneSwitcher/wiki
+    about: For explanations on how the plugin works or to see example guides, check out the wiki.
+  - name: 💬 OBS Forum Thread
+    url: https://obsproject.com/forum/threads/advanced-scene-switcher.48264
+    about: To discuss the plugin or get assistance, feel free to use the OBS forum thread or the GitHub discussions page.
