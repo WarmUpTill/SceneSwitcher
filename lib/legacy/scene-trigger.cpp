@@ -22,7 +22,7 @@ void AdvSceneSwitcher::on_triggerAdd_clicked()
 	listAddClicked(ui->sceneTriggers,
 		       new SceneTriggerWidget(this,
 					      &switcher->sceneTriggers.back()),
-		       addPulse);
+		       &addPulse);
 
 	ui->triggerHelp->setVisible(false);
 }

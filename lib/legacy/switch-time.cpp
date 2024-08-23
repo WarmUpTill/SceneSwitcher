@@ -17,7 +17,7 @@ void AdvSceneSwitcher::on_timeAdd_clicked()
 	listAddClicked(ui->timeSwitches,
 		       new TimeSwitchWidget(this,
 					    &switcher->timeSwitches.back()),
-		       addPulse);
+		       &addPulse);
 
 	ui->timeHelp->setVisible(false);
 }
