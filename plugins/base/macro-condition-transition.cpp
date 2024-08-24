@@ -2,8 +2,6 @@
 #include "layout-helpers.hpp"
 #include "scene-switch-helpers.hpp"
 
-#include <obs-frontend-api.h>
-
 namespace advss {
 
 const std::string MacroConditionTransition::id = "transition";
@@ -13,131 +11,188 @@ bool MacroConditionTransition::_registered = MacroConditionFactory::Register(
 	{MacroConditionTransition::Create, MacroConditionTransitionEdit::Create,
 	 "AdvSceneSwitcher.condition.transition"});
 
-const static std::map<TransitionCondition, std::string> filterConditionTypes = {
-	{TransitionCondition::CURRENT,
-	 "AdvSceneSwitcher.condition.transition.type.current"},
-	{TransitionCondition::DURATION,
-	 "AdvSceneSwitcher.condition.transition.type.duration"},
-	{TransitionCondition::STARTED,
-	 "AdvSceneSwitcher.condition.transition.type.started"},
-	{TransitionCondition::ENDED,
-	 "AdvSceneSwitcher.condition.transition.type.ended"},
-	{TransitionCondition::TRANSITION_SOURCE,
-	 "AdvSceneSwitcher.condition.transition.type.transitionSource"},
-	{TransitionCondition::TRANSITION_TARGET,
-	 "AdvSceneSwitcher.condition.transition.type.transitionTarget"},
+const static std::map<MacroConditionTransition::Condition, std::string>
+	conditionTypes = {
+		{MacroConditionTransition::Condition::CURRENT,
+		 "AdvSceneSwitcher.condition.transition.type.current"},
+		{MacroConditionTransition::Condition::DURATION,
+		 "AdvSceneSwitcher.condition.transition.type.duration"},
+		{MacroConditionTransition::Condition::STARTED,
+		 "AdvSceneSwitcher.condition.transition.type.started"},
+		{MacroConditionTransition::Condition::ENDED,
+		 "AdvSceneSwitcher.condition.transition.type.ended"},
+		{MacroConditionTransition::Condition::VIDEO_ENDED,
+		 "AdvSceneSwitcher.condition.transition.type.videoEnded"},
+		{MacroConditionTransition::Condition::TRANSITION_SOURCE,
+		 "AdvSceneSwitcher.condition.transition.type.transitionSource"},
+		{MacroConditionTransition::Condition::TRANSITION_TARGET,
+		 "AdvSceneSwitcher.condition.transition.type.transitionTarget"},
 };
 
-static bool isCurrentTransition(OBSWeakSource &t)
+static bool isCurrentTransition(OBSWeakSource &transition)
 {
-	bool match;
-	auto tSource = obs_frontend_get_current_transition();
-	auto tWeakSource = obs_source_get_weak_source(tSource);
-	match = t == tWeakSource;
-	obs_weak_source_release(tWeakSource);
-	obs_source_release(tSource);
-	return match;
+	OBSSourceAutoRelease source = obs_frontend_get_current_transition();
+	OBSWeakSourceAutoRelease weakSource =
+		obs_source_get_weak_source(source);
+	return transition == weakSource;
 }
 
-static bool isTargetScene(OBSWeakSource &target)
+static bool isTargetScene(OBSWeakSource &targetScene)
 {
-	auto source = obs_frontend_get_current_scene();
-	auto targetScene = obs_source_get_weak_source(source);
-	bool ret = target == targetScene;
-	obs_weak_source_release(targetScene);
-	obs_source_release(source);
-	return ret;
+	OBSSourceAutoRelease source = obs_frontend_get_current_scene();
+	OBSWeakSourceAutoRelease scene = obs_source_get_weak_source(source);
+	return targetScene == scene;
+}
+
+MacroConditionTransition::MacroConditionTransition(Macro *m) : MacroCondition(m)
+{
+	obs_frontend_add_event_callback(HandleFrontendEvent, this);
+}
+
+MacroConditionTransition::~MacroConditionTransition()
+{
+	obs_frontend_remove_event_callback(HandleFrontendEvent, this);
+}
+
+static bool sceneListContainsScene(const std::vector<OBSWeakSource> &scenes,
+				   const OBSWeakSource &sceneToCheck)
+{
+	for (const auto &scene : scenes) {
+		if (scene == sceneToCheck) {
+			return true;
+		}
+	}
+	return false;
 }
 
 bool MacroConditionTransition::CheckCondition()
 {
-	bool anyTransitionEnded = _lastTransitionEndTime !=
-				  GetLastTransitionEndTime();
-	bool anyTransitionStarted = AnySceneTransitionStarted();
-	bool transitionStarted = false;
-	bool transitionEnded = false;
-
-	if (_transition.GetType() == TransitionSelection::Type::ANY) {
-		transitionStarted = anyTransitionStarted;
-		transitionEnded = anyTransitionEnded;
-	} else {
-		transitionStarted = _started;
-		transitionEnded = _ended;
-	}
+	std::lock_guard<std::mutex> lock(_mutex);
 
 	bool ret = false;
 	switch (_condition) {
-	case TransitionCondition::CURRENT: {
+	case Condition::CURRENT: {
 		auto transition = _transition.GetTransition();
 		ret = isCurrentTransition(transition);
 		break;
 	}
-	case TransitionCondition::DURATION:
+	case Condition::DURATION:
 		ret = _duration.Milliseconds() ==
 		      obs_frontend_get_transition_duration();
 		break;
-	case TransitionCondition::STARTED:
-		ret = transitionStarted;
+	case Condition::STARTED:
+		ret = _started;
 		break;
-	case TransitionCondition::ENDED:
-		ret = transitionEnded;
+	case Condition::ENDED:
+		ret = _ended;
 		break;
-	case TransitionCondition::TRANSITION_SOURCE:
-		ret = anyTransitionStarted &&
-		      _scene.GetScene() == GetCurrentScene();
+	case Condition::VIDEO_ENDED:
+		ret = _videoEnded;
 		break;
-	case TransitionCondition::TRANSITION_TARGET: {
-		auto scene = _scene.GetScene();
-		ret = anyTransitionStarted && isTargetScene(scene);
+	case Condition::TRANSITION_SOURCE:
+		ret = sceneListContainsScene(_transitionStartScenes,
+					     _scene.GetScene());
 		break;
-	}
+	case Condition::TRANSITION_TARGET:
+		ret = sceneListContainsScene(_transitionEndScenes,
+					     _scene.GetScene());
+		break;
 	default:
 		break;
 	}
 
 	// Reset for next interval
-	if (_started) {
-		_started = false;
-	}
-	if (_ended) {
-		_ended = false;
-	}
-	if (anyTransitionEnded) {
-		_lastTransitionEndTime = GetLastTransitionEndTime();
-	}
+	_started = false;
+	_ended = false;
+	_videoEnded = false;
+	_transitionStartScenes.clear();
+	_transitionEndScenes.clear();
 
 	return ret;
 }
 
 void MacroConditionTransition::ConnectToTransitionSignals()
 {
-	auto source = obs_weak_source_get_source(_transition.GetTransition());
-	auto sh = obs_source_get_signal_handler(source);
-	signal_handler_connect(sh, "transition_start", TransitionStarted, this);
-	signal_handler_connect(sh, "transition_stop", TransitionEnded, this);
-	obs_source_release(source);
+	const bool useFrontendTransitionSelection =
+		_transition.GetType() !=
+			TransitionSelection::Type::TRANSITION ||
+		(_condition == Condition::TRANSITION_SOURCE ||
+		 _condition == Condition::TRANSITION_TARGET);
+
+	_signals.clear();
+	OBSSourceAutoRelease source =
+		useFrontendTransitionSelection
+			? obs_frontend_get_current_transition()
+			: obs_weak_source_get_source(
+				  _transition.GetTransition());
+	signal_handler_t *sh = obs_source_get_signal_handler(source);
+	_signals.emplace_back(sh, "transition_start", TransitionStarted, this);
+	_signals.emplace_back(sh, "transition_stop", TransitionEnded, this);
+	_signals.emplace_back(sh, "transition_video_stop", TransitionVideoEnded,
+			      this);
 }
 
-void MacroConditionTransition::DisconnectTransitionSignals()
+void MacroConditionTransition::TransitionStarted(void *data, calldata_t *cd)
 {
-	auto source = obs_weak_source_get_source(_transition.GetTransition());
-	auto sh = obs_source_get_signal_handler(source);
-	signal_handler_disconnect(sh, "transition_start", TransitionStarted,
-				  this);
-	signal_handler_disconnect(sh, "transition_stop", TransitionEnded, this);
-	obs_source_release(source);
-}
+	auto *condition = static_cast<MacroConditionTransition *>(data);
+	if (!condition) {
+		return;
+	}
 
-void MacroConditionTransition::TransitionStarted(void *data, calldata_t *)
-{
-	auto *transitionCond = static_cast<MacroConditionTransition *>(data);
-	transitionCond->_started = true;
+	auto transitionSource = (obs_source_t *)calldata_ptr(cd, "source");
+
+	OBSSourceAutoRelease startSource = obs_transition_get_source(
+		transitionSource, OBS_TRANSITION_SOURCE_A);
+	OBSSourceAutoRelease endSource =
+		obs_frontend_preview_program_mode_active()
+			? obs_frontend_get_current_scene()
+			: obs_transition_get_source(transitionSource,
+						    OBS_TRANSITION_SOURCE_B);
+
+	std::lock_guard<std::mutex> lock(condition->_mutex);
+	condition->_started = true;
+	condition->_transitionStartScenes.emplace_back(
+		OBSGetWeakRef(startSource));
+	condition->_transitionEndScenes.emplace_back(OBSGetWeakRef(endSource));
 }
 
 void MacroConditionTransition::TransitionEnded(void *data, calldata_t *)
 {
-	auto *transitionCond = static_cast<MacroConditionTransition *>(data);
-	transitionCond->_ended = true;
+	auto *condition = static_cast<MacroConditionTransition *>(data);
+	if (!condition) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(condition->_mutex);
+	condition->_ended = true;
+}
+
+void MacroConditionTransition::TransitionVideoEnded(void *data, calldata_t *)
+{
+	auto *condition = static_cast<MacroConditionTransition *>(data);
+	if (!condition) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(condition->_mutex);
+	condition->_videoEnded = true;
+}
+
+void MacroConditionTransition::HandleFrontendEvent(obs_frontend_event event,
+						   void *data)
+{
+	auto condition = reinterpret_cast<MacroConditionTransition *>(data);
+	if (!condition) {
+		return;
+	}
+
+	switch (event) {
+	case OBS_FRONTEND_EVENT_TRANSITION_CHANGED:
+		condition->ConnectToTransitionSignals();
+		break;
+	default:
+		break;
+	};
 }
 
 bool MacroConditionTransition::Save(obs_data_t *obj) const
@@ -147,27 +202,66 @@ bool MacroConditionTransition::Save(obs_data_t *obj) const
 	_transition.Save(obj);
 	_scene.Save(obj);
 	_duration.Save(obj);
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
 bool MacroConditionTransition::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	_condition = static_cast<TransitionCondition>(
+	_condition = static_cast<MacroConditionTransition::Condition>(
 		obs_data_get_int(obj, "condition"));
+
 	_transition.Load(obj);
 	_scene.Load(obj);
 	_duration.Load(obj);
+
+	// Backwards compatibility
+	if (obs_data_get_int(obj, "version") < 1) {
+		enum class TransitionCondition {
+			CURRENT,
+			DURATION,
+			STARTED,
+			ENDED,
+			TRANSITION_SOURCE,
+			TRANSITION_TARGET,
+		};
+		TransitionCondition oldValue = static_cast<TransitionCondition>(
+			obs_data_get_int(obj, "condition"));
+		switch (oldValue) {
+		case TransitionCondition::CURRENT:
+			_condition = Condition::CURRENT;
+			break;
+		case TransitionCondition::DURATION:
+			_condition = Condition::DURATION;
+			break;
+		case TransitionCondition::STARTED:
+			_condition = Condition::STARTED;
+			break;
+		case TransitionCondition::ENDED:
+			_condition = Condition::ENDED;
+			break;
+		case TransitionCondition::TRANSITION_SOURCE:
+			_condition = Condition::TRANSITION_SOURCE;
+			break;
+		case TransitionCondition::TRANSITION_TARGET:
+			_condition = Condition::TRANSITION_TARGET;
+			break;
+		default:
+			break;
+		}
+	}
+
 	ConnectToTransitionSignals();
 	return true;
 }
 
 std::string MacroConditionTransition::GetShortDesc() const
 {
-	if (_condition == TransitionCondition::CURRENT ||
-	    _condition == TransitionCondition::DURATION ||
-	    _condition == TransitionCondition::STARTED ||
-	    _condition == TransitionCondition::ENDED) {
+	if (_condition == Condition::CURRENT ||
+	    _condition == Condition::DURATION ||
+	    _condition == Condition::STARTED ||
+	    _condition == Condition::ENDED) {
 		return _transition.ToString();
 	}
 	return "";
@@ -175,8 +269,9 @@ std::string MacroConditionTransition::GetShortDesc() const
 
 static inline void populateConditionSelection(QComboBox *list)
 {
-	for (auto entry : filterConditionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[value, name] : conditionTypes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(value));
 	}
 }
 
@@ -204,18 +299,16 @@ MacroConditionTransitionEdit::MacroConditionTransitionEdit(
 	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
 			 this, SLOT(DurationChanged(const Duration &)));
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{conditions}}", _conditions},
-		{"{{transitions}}", _transitions},
-		{"{{scenes}}", _scenes},
-		{"{{duration}}", _duration},
-		{"{{durationSuffix}}", _durationSuffix},
-	};
+	auto layout = new QHBoxLayout;
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.transition.entry"),
-		mainLayout, widgetPlaceholders);
-	setLayout(mainLayout);
+		layout,
+		{{"{{conditions}}", _conditions},
+		 {"{{transitions}}", _transitions},
+		 {"{{scenes}}", _scenes},
+		 {"{{duration}}", _duration},
+		 {"{{durationSuffix}}", _durationSuffix}});
+	setLayout(layout);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -231,7 +324,8 @@ void MacroConditionTransitionEdit::ConditionChanged(int index)
 	{
 		auto lock = LockContext();
 		_entryData->_condition =
-			static_cast<TransitionCondition>(index);
+			static_cast<MacroConditionTransition::Condition>(
+				_conditions->itemData(index).toInt());
 	}
 	SetWidgetVisibility();
 	emit HeaderInfoChanged(
@@ -246,7 +340,6 @@ void MacroConditionTransitionEdit::TransitionChanged(
 	}
 
 	auto lock = LockContext();
-	_entryData->DisconnectTransitionSignals();
 	_entryData->_transition = t;
 	_entryData->ConnectToTransitionSignals();
 	emit HeaderInfoChanged(
@@ -280,22 +373,33 @@ void MacroConditionTransitionEdit::SetWidgetVisibility()
 	}
 
 	_transitions->setVisible(
-		_entryData->_condition == TransitionCondition::CURRENT ||
-		_entryData->_condition == TransitionCondition::STARTED ||
-		_entryData->_condition == TransitionCondition::ENDED);
-	_scenes->setVisible(_entryData->_condition ==
-				    TransitionCondition::TRANSITION_SOURCE ||
-			    _entryData->_condition ==
-				    TransitionCondition::TRANSITION_TARGET);
+		_entryData->_condition ==
+			MacroConditionTransition::Condition::CURRENT ||
+		_entryData->_condition ==
+			MacroConditionTransition::Condition::STARTED ||
+		_entryData->_condition ==
+			MacroConditionTransition::Condition::ENDED ||
+		_entryData->_condition ==
+			MacroConditionTransition::Condition::VIDEO_ENDED);
+	_scenes->setVisible(
+		_entryData->_condition ==
+			MacroConditionTransition::Condition::TRANSITION_SOURCE ||
+		_entryData->_condition ==
+			MacroConditionTransition::Condition::TRANSITION_TARGET);
 	_duration->setVisible(_entryData->_condition ==
-			      TransitionCondition::DURATION);
-	_durationSuffix->setVisible(_entryData->_condition ==
-				    TransitionCondition::DURATION);
+			      MacroConditionTransition::Condition::DURATION);
+	_durationSuffix->setVisible(
+		_entryData->_condition ==
+		MacroConditionTransition::Condition::DURATION);
 
 	bool addCurrent = _entryData->_condition ==
-			  TransitionCondition::DURATION;
-	bool addAny = _entryData->_condition == TransitionCondition::STARTED ||
-		      _entryData->_condition == TransitionCondition::ENDED;
+			  MacroConditionTransition::Condition::DURATION;
+	bool addAny = _entryData->_condition ==
+			      MacroConditionTransition::Condition::STARTED ||
+		      _entryData->_condition ==
+			      MacroConditionTransition::Condition::ENDED ||
+		      _entryData->_condition ==
+			      MacroConditionTransition::Condition::VIDEO_ENDED;
 	_transitions->Repopulate(addCurrent, addAny);
 }
 
@@ -304,8 +408,11 @@ void MacroConditionTransitionEdit::UpdateEntryData()
 	if (!_entryData) {
 		return;
 	}
+
 	SetWidgetVisibility();
-	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
+
+	_conditions->setCurrentIndex(_conditions->findData(
+		static_cast<int>(_entryData->_condition)));
 	_transitions->SetTransition(_entryData->_transition);
 	_scenes->SetScene(_entryData->_scene);
 	_duration->SetDuration(_entryData->_duration);

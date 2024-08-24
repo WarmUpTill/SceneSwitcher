@@ -4,23 +4,14 @@
 #include "transition-selection.hpp"
 #include "scene-selection.hpp"
 
-#include <QWidget>
-#include <QComboBox>
+#include <obs-frontend-api.h>
 
 namespace advss {
 
-enum class TransitionCondition {
-	CURRENT,
-	DURATION,
-	STARTED,
-	ENDED,
-	TRANSITION_SOURCE,
-	TRANSITION_TARGET,
-};
-
 class MacroConditionTransition : public MacroCondition {
 public:
-	MacroConditionTransition(Macro *m) : MacroCondition(m) {}
+	MacroConditionTransition(Macro *m);
+	~MacroConditionTransition();
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
@@ -31,9 +22,17 @@ public:
 		return std::make_shared<MacroConditionTransition>(m);
 	}
 	void ConnectToTransitionSignals();
-	void DisconnectTransitionSignals();
 
-	TransitionCondition _condition = TransitionCondition::CURRENT;
+	enum class Condition {
+		CURRENT,
+		DURATION,
+		STARTED = 50,
+		ENDED,
+		VIDEO_ENDED,
+		TRANSITION_SOURCE = 100,
+		TRANSITION_TARGET,
+	};
+	Condition _condition = Condition::CURRENT;
 	TransitionSelection _transition;
 	SceneSelection _scene;
 	Duration _duration;
@@ -41,10 +40,19 @@ public:
 private:
 	static void TransitionStarted(void *data, calldata_t *);
 	static void TransitionEnded(void *data, calldata_t *);
+	static void TransitionVideoEnded(void *data, calldata_t *);
+	static void HandleFrontendEvent(enum obs_frontend_event event, void *);
+
+	std::vector<OBSSignal> _signals;
+
+	std::mutex _mutex;
+	std::vector<OBSWeakSource> _transitionStartScenes;
+	std::vector<OBSWeakSource> _transitionEndScenes;
 
 	bool _started = false;
 	bool _ended = false;
-	std::chrono::high_resolution_clock::time_point _lastTransitionEndTime{};
+	bool _videoEnded = false;
+
 	static bool _registered;
 	static const std::string id;
 };
