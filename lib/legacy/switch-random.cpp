@@ -143,7 +143,7 @@ void AdvSceneSwitcher::SetupRandomTab()
 		border-style: outset; \
 		border-width: 2px; \
 		border-radius: 7px; \
-		border-color: rgb(0,0,0,0) \
+		border-color: rgb(0,0,0) \
 		}");
 	if (switcher->switchIfNotMatching != NoMatchBehavior::RANDOM_SWITCH) {
 		if (!switcher->disableHints) {
