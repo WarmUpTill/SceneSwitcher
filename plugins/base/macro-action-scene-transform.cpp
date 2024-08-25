@@ -93,7 +93,11 @@ static void reset(obs_sceneitem_t *item)
 	info.bounds_type = OBS_BOUNDS_NONE;
 	info.bounds_alignment = OBS_ALIGN_CENTER;
 	vec2_set(&info.bounds, 0.0f, 0.0f);
+#if (LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(30, 1, 0))
+	obs_sceneitem_set_info2(item, &info);
+#else
 	obs_sceneitem_set_info(item, &info);
+#endif
 
 	obs_sceneitem_crop crop = {};
 	obs_sceneitem_set_crop(item, &crop);
@@ -140,7 +144,11 @@ static void centerAlign(obs_sceneitem_t *item, obs_bounds_type boundsType)
 	itemInfo.bounds_type = boundsType;
 	itemInfo.bounds_alignment = OBS_ALIGN_CENTER;
 
+#if (LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(30, 1, 0))
+	obs_sceneitem_set_info2(item, &itemInfo);
+#else
 	obs_sceneitem_set_info(item, &itemInfo);
+#endif
 }
 
 enum class CenterType {
@@ -241,7 +249,11 @@ void MacroActionSceneTransform::Transform(obs_scene_item *item)
 	case Action::MANUAL_TRANSFORM:
 		ApplySettings(_transformString); // Resolves variables
 		obs_sceneitem_defer_update_begin(item);
+#if (LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(30, 1, 0))
+		obs_sceneitem_set_info2(item, &_info);
+#else
 		obs_sceneitem_set_info(item, &_info);
+#endif
 		obs_sceneitem_set_crop(item, &_crop);
 		obs_sceneitem_defer_update_end(item);
 		break;

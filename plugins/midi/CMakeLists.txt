@@ -26,12 +26,8 @@ if(OS_WINDOWS)
 else()
   target_compile_options(
     libremidi
-    PUBLIC -Wno-error=conversion
-           -Wno-error=unused-result
-           -Wno-error=shadow
-           -Wno-error=unused-parameter
-           -Wno-error=unused-variable
-           -Wno-error=deprecated-declarations
+    PUBLIC -Wno-error=conversion -Wno-error=unused-result -Wno-error=shadow
+           -Wno-error=unused-parameter -Wno-error=unused-variable
            -Wno-error=sign-compare)
   if(OS_MACOS)
     target_compile_options(libremidi PUBLIC -Wno-error=vla-extension)

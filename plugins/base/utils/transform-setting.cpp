@@ -181,7 +181,11 @@ void SetTransformSetting(obs_scene_item *source,
 	struct obs_transform_info info = {};
 	struct obs_sceneitem_crop crop = {};
 
+#if (LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(30, 1, 0))
+	obs_sceneitem_get_info2(source, &info);
+#else
 	obs_sceneitem_get_info(source, &info);
+#endif
 	obs_sceneitem_get_crop(source, &crop);
 
 	if (id == "alignment") {
@@ -260,7 +264,11 @@ void SetTransformSetting(obs_scene_item *source,
 	}
 
 	obs_sceneitem_defer_update_begin(source);
+#if (LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(30, 1, 0))
+	obs_sceneitem_set_info2(source, &info);
+#else
 	obs_sceneitem_set_info(source, &info);
+#endif
 	obs_sceneitem_set_crop(source, &crop);
 	obs_sceneitem_defer_update_end(source);
 	obs_sceneitem_force_update_transform(source);
