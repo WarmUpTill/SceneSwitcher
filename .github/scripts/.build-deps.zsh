@@ -349,22 +349,10 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
           -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
           -DSW_BUILD=OFF
           -DBUILD_TRAINING_TOOLS=OFF
+          -DHAVE_NEON=TRUE
           -DCMAKE_PREFIX_PATH="${advss_dep_path};${_plugin_deps}"
           -DCMAKE_INSTALL_PREFIX="${advss_dep_path}"
         )
-
-        if [ "${target}" != "macos-x86_64" ]; then
-          tesseract_cmake_args+=(
-            -DCMAKE_SYSTEM_PROCESSOR=aarch64
-            -DHAVE_AVX=FALSE
-            -DHAVE_AVX2=FALSE
-            -DHAVE_AVX512F=FALSE
-            -DHAVE_FMA=FALSE
-            -DHAVE_SSE4_1=FALSE
-            -DHAVE_NEON=TRUE
-          )
-          sed -i'.original' 's/HAVE_NEON FALSE/HAVE_NEON TRUE/g' "${tesseract_dir}/CMakeLists.txt"
-        fi
 
         pushd ${tesseract_dir}
         log_info "Configure Tesseract ..."
