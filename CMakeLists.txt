@@ -430,8 +430,7 @@ if(NOT OS_WINDOWS)
   target_compile_options(
     ${LIB_NAME}
     PUBLIC -Wno-error=unused-parameter -Wno-error=conversion -Wno-error=shadow
-           -Wno-error=float-conversion -Wno-error=enum-conversion
-           -Wno-error=deprecated-declarations)
+           -Wno-error=float-conversion -Wno-error=enum-conversion)
 endif()
 
 # --- End of section ---

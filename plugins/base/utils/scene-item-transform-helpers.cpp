@@ -15,7 +15,11 @@ std::string GetSceneItemTransform(obs_scene_item *item)
 {
 	struct obs_transform_info info;
 	struct obs_sceneitem_crop crop;
+#if (LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(30, 1, 0))
+	obs_sceneitem_get_info2(item, &info);
+#else
 	obs_sceneitem_get_info(item, &info);
+#endif
 	obs_sceneitem_get_crop(item, &crop);
 	auto size = getSceneItemSize(item);
 
