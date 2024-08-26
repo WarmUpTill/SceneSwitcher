@@ -66,8 +66,6 @@ target_sources(
           lib/legacy/switch-idle.hpp
           lib/legacy/switch-media.cpp
           lib/legacy/switch-media.hpp
-          lib/legacy/switch-network.cpp
-          lib/legacy/switch-network.hpp
           lib/legacy/switch-pause.cpp
           lib/legacy/switch-pause.hpp
           lib/legacy/switch-random.cpp
@@ -328,13 +326,9 @@ set_target_properties(${LIB_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_compile_features(${LIB_NAME} PUBLIC cxx_std_17)
 
-add_definitions(-DASIO_STANDALONE)
 target_include_directories(
-  ${LIB_NAME}
-  PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/deps/asio/asio/include"
-         "${CMAKE_CURRENT_SOURCE_DIR}/deps/websocketpp"
-         "${CMAKE_CURRENT_SOURCE_DIR}/deps/obs-websocket/lib"
-         "${CMAKE_CURRENT_SOURCE_DIR}/deps/exprtk")
+  ${LIB_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/deps/obs-websocket/lib"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/deps/exprtk")
 
 if(NOT nlohmann_json_DIR
    AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/json/CMakeLists.txt")

@@ -216,7 +216,6 @@ static bool isLegacyTab(const QString &name)
 {
 	return name == obs_module_text(
 			       "AdvSceneSwitcher.sceneGroupTab.title") ||
-	       name == obs_module_text("AdvSceneSwitcher.networkTab.title") ||
 	       name == obs_module_text(
 			       "AdvSceneSwitcher.transitionTab.title") ||
 	       name == obs_module_text(
@@ -456,7 +455,6 @@ void SwitcherData::LoadSettings(obs_data_t *obj)
 	loadTimeSwitches(obj);
 	loadAudioSwitches(obj);
 	loadVideoSwitches(obj);
-	loadNetworkSettings(obj);
 	loadSceneTriggers(obj);
 	LoadGeneralSettings(obj);
 	LoadHotkeys(obj);
@@ -492,7 +490,6 @@ void SwitcherData::SaveSettings(obs_data_t *obj)
 	saveTimeSwitches(obj);
 	saveAudioSwitches(obj);
 	saveVideoSwitches(obj);
-	saveNetworkSwitches(obj);
 	saveSceneTriggers(obj);
 	SaveGeneralSettings(obj);
 	SaveHotkeys(obj);

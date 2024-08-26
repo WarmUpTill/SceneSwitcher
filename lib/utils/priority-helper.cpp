@@ -16,7 +16,6 @@
 #include "switch-window.hpp"
 #include "switch-sequence.hpp"
 #include "switch-video.hpp"
-#include "switch-network.hpp"
 #include "macro.hpp"
 
 #include <algorithm>

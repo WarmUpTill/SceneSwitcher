@@ -126,7 +126,6 @@ void AdvSceneSwitcher::LoadUI()
 	SetupTimeTab();
 	SetupAudioTab();
 	SetupVideoTab();
-	SetupNetworkTab();
 	SetupSceneGroupTab();
 	SetupTriggerTab();
 	SetupMacroTab();
@@ -459,15 +458,6 @@ void SwitcherData::Start()
 		writeToStatusFile("Advanced Scene Switcher running");
 	}
 
-	if (networkConfig.ServerEnabled) {
-		server.start(networkConfig.ServerPort,
-			     networkConfig.LockToIPv4);
-	}
-
-	if (networkConfig.ClientEnabled) {
-		client.connect(networkConfig.GetClientUri());
-	}
-
 	if (showSystemTrayNotifications) {
 		DisplayTrayMessage(
 			obs_module_text("AdvSceneSwitcher.pluginName"),
@@ -494,9 +484,6 @@ void SwitcherData::Stop()
 		th = nullptr;
 		writeToStatusFile("Advanced Scene Switcher stopped");
 	}
-
-	server.stop();
-	client.disconnect();
 
 	if (showSystemTrayNotifications) {
 		DisplayTrayMessage(
@@ -567,10 +554,6 @@ static void handleSceneChange()
 
 	switcher->checkTriggers();
 	switcher->checkDefaultSceneTransitions();
-
-	if (switcher->networkConfig.ShouldSendFrontendSceneChange()) {
-		switcher->server.sendMessage({ws.Get(), nullptr, 0});
-	}
 }
 
 static void setLiveTime()
@@ -597,17 +580,6 @@ static void checkAutoStartStreaming()
 	    switcher->autoStartEvent ==
 		    SwitcherData::AutoStart::RECORINDG_OR_STREAMING)
 		switcher->Start();
-}
-
-static void handlePeviewSceneChange()
-{
-	if (switcher->networkConfig.ShouldSendPrviewSceneChange()) {
-		OBSSourceAutoRelease source =
-			obs_frontend_get_current_preview_scene();
-		OBSWeakSourceAutoRelease weak =
-			obs_source_get_weak_source(source);
-		switcher->server.sendMessage({weak.Get(), nullptr, 0}, true);
-	}
 }
 
 static void handleTransitionEnd()
@@ -686,9 +658,6 @@ static void OBSEvent(enum obs_frontend_event event, void *switcher)
 		break;
 	case OBS_FRONTEND_EVENT_SCENE_CHANGED:
 		handleSceneChange();
-		break;
-	case OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED:
-		handlePeviewSceneChange();
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
 		setLiveTime();

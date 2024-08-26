@@ -145,10 +145,6 @@ void SwitchScene(const SceneSwitchInfo &sceneSwitch, bool force)
 		}
 
 		vblog(LOG_INFO, "switched scene");
-
-		if (switcher->networkConfig.ShouldSendSceneChange()) {
-			switcher->server.sendMessage(sceneSwitch);
-		}
 	}
 }
 

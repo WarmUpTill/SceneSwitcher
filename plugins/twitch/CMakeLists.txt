@@ -23,12 +23,20 @@ if(NOT OPENSSL_INCLUDE_DIR OR NOT OPENSSL_LIBRARIES)
 endif()
 
 find_package(ZLIB)
+if(NOT ZLIB_FOUND)
+  message(WARNING "zlib not found!\n" "Twitch support will be disabled!\n\n")
+  return()
+endif()
 
 # --- End of section ---
 
 add_library(${PROJECT_NAME} MODULE)
-target_compile_definitions(${PROJECT_NAME} PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT=1
-                                                   ASIO_HAS_OPENSSSL=1)
+target_compile_definitions(
+  ${PROJECT_NAME} PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT=1 ASIO_STANDALONE=1
+                          ASIO_HAS_OPENSSSL=1)
+target_include_directories(
+  ${PROJECT_NAME} PUBLIC "${ADVSS_SOURCE_DIR}/deps/asio/asio/include"
+                         "${ADVSS_SOURCE_DIR}/deps/websocketpp")
 if(OS_MACOS)
   target_compile_definitions(
     ${PROJECT_NAME} PRIVATE CPPHTTPLIB_USE_CERTS_FROM_MACOSX_KEYCHAIN=1)
