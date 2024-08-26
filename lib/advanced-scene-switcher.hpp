@@ -361,24 +361,6 @@ public slots:
 
 	// Scene group tab
 public:
-	void SetupNetworkTab();
-public slots:
-	void on_serverSettings_toggled(bool on);
-	void on_serverPort_valueChanged(int value);
-	void on_lockToIPv4_stateChanged(int state);
-	void on_serverRestart_clicked();
-	void UpdateServerStatus();
-	void on_clientSettings_toggled(bool on);
-	void on_clientHostname_textChanged(const QString &text);
-	void on_clientPort_valueChanged(int value);
-	void on_sendSceneChange_stateChanged(int state);
-	void on_restrictSend_stateChanged(int state);
-	void on_sendPreview_stateChanged(int state);
-	void on_clientReconnect_clicked();
-	void UpdateClientStatus();
-
-	// Scene group tab
-public:
 	void SetupSceneGroupTab();
 	void SetEditSceneGroup(SceneGroup &sg);
 public slots:

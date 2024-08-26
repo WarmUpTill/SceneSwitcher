@@ -14,7 +14,6 @@
 #include "switch-window.hpp"
 #include "switch-sequence.hpp"
 #include "switch-video.hpp"
-#include "switch-network.hpp"
 
 #include "macro-settings.hpp"
 #include "duration-control.hpp"
@@ -196,7 +195,6 @@ public:
 	void saveSceneGroups(obs_data_t *obj);
 	void saveSceneTriggers(obs_data_t *obj);
 	void saveVideoSwitches(obs_data_t *obj);
-	void saveNetworkSwitches(obs_data_t *obj);
 
 	void loadWindowTitleSwitches(obs_data_t *obj);
 	void loadScreenRegionSwitches(obs_data_t *obj);
@@ -213,7 +211,6 @@ public:
 	void loadSceneGroups(obs_data_t *obj);
 	void loadSceneTriggers(obs_data_t *obj);
 	void loadVideoSwitches(obs_data_t *obj);
-	void loadNetworkSettings(obs_data_t *obj);
 
 	void Prune();
 
@@ -265,11 +262,6 @@ public:
 	QDateTime liveTime;
 	std::deque<AudioSwitch> audioSwitches;
 	AudioSwitchFallback audioFallback;
-	WSServer server;
-	ServerStatus serverStatus = ServerStatus::NOT_RUNNING;
-	WSClient client;
-	ClientStatus clientStatus = ClientStatus::DISCONNECTED;
-	NetworkConfig networkConfig;
 	std::deque<VideoSwitch> videoSwitches;
 	std::deque<SceneGroup> sceneGroups;
 	SceneGroup *lastRandomSceneGroup = nullptr;

@@ -11,12 +11,11 @@
 namespace advss {
 
 static std::vector<std::string> tabNames = {
-	"generalTab",     "macroTab",         "windowTitleTab",
-	"executableTab",  "screenRegionTab",  "mediaTab",
-	"fileTab",        "randomTab",        "timeTab",
-	"idleTab",        "sceneSequenceTab", "audioTab",
-	"videoTab",       "networkTab",       "sceneGroupTab",
-	"transitionsTab", "pauseTab",         "sceneTriggerTab"};
+	"generalTab",      "macroTab",      "windowTitleTab",   "executableTab",
+	"screenRegionTab", "mediaTab",      "fileTab",          "randomTab",
+	"timeTab",         "idleTab",       "sceneSequenceTab", "audioTab",
+	"videoTab",        "sceneGroupTab", "transitionsTab",   "pauseTab",
+	"sceneTriggerTab"};
 
 static std::vector<int> tabOrder = std::vector<int>(tabNames.size());
 
