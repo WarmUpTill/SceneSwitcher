@@ -368,13 +368,13 @@ bool Macro::RunActionsHelper(
 
 bool Macro::RunActions(bool ignorePause)
 {
-	vblog(LOG_INFO, "running actions of %s", _name.c_str());
+	mblog(LOG_INFO, "running actions of %s", _name.c_str());
 	return RunActionsHelper(_actions, ignorePause);
 }
 
 bool Macro::RunElseActions(bool ignorePause)
 {
-	vblog(LOG_INFO, "running else actions of %s", _name.c_str());
+	mblog(LOG_INFO, "running else actions of %s", _name.c_str());
 	return RunActionsHelper(_elseActions, ignorePause);
 }
 

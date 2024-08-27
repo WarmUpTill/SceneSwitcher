@@ -12,9 +12,15 @@ bool VerboseLoggingEnabled()
 bool ActionLoggingEnabled()
 {
 	return GetSwitcher() &&
-	       (GetSwitcher()->logLevel ==
-			SwitcherData::LogLevel::PRINT_ACTION ||
-		GetSwitcher()->logLevel == SwitcherData::LogLevel::VERBOSE);
+	       (GetSwitcher()->logLevel == SwitcherData::LogLevel::LOG_ACTION ||
+		VerboseLoggingEnabled());
+}
+
+bool MacroLoggingEnabled()
+{
+	return GetSwitcher() &&
+	       (GetSwitcher()->logLevel == SwitcherData::LogLevel::LOG_MACRO ||
+		ActionLoggingEnabled());
 }
 
 } // namespace advss

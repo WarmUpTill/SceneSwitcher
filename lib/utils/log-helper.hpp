@@ -27,6 +27,13 @@ namespace advss {
 			blog(level, msg, ##__VA_ARGS__); \
 		}                                        \
 	} while (0)
+// Print log with "[adv-ss] " if log level is set to "macro", "action" or "verbose"
+#define mblog(level, msg, ...)                           \
+	do {                                             \
+		if (MacroLoggingEnabled()) {             \
+			blog(level, msg, ##__VA_ARGS__); \
+		}                                        \
+	} while (0)
 
 #endif
 
@@ -34,5 +41,7 @@ namespace advss {
 EXPORT bool VerboseLoggingEnabled();
 // Returns true if log level is set to "action" or "verbose"
 EXPORT bool ActionLoggingEnabled();
+// Returns true if log level is set to "macro", "action" or "verbose"
+EXPORT bool MacroLoggingEnabled();
 
 } // namespace advss

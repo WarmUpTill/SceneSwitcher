@@ -524,6 +524,7 @@ void SwitcherData::SaveGeneralSettings(obs_data_t *obj)
 			 static_cast<int>(autoStartEvent));
 
 	obs_data_set_int(obj, "logLevel", static_cast<int>(logLevel));
+	obs_data_set_int(obj, "logLevelVersion", 1);
 	obs_data_set_bool(obj, "showSystemTrayNotifications",
 			  showSystemTrayNotifications);
 	obs_data_set_bool(obj, "disableHints", disableHints);
@@ -580,6 +581,25 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 		static_cast<AutoStart>(obs_data_get_int(obj, "autoStartEvent"));
 
 	logLevel = static_cast<LogLevel>(obs_data_get_int(obj, "logLevel"));
+	if (obs_data_get_int(obj, "logLevelVersion") < 1) {
+		enum OldLogLevel { DEFAULT, LOG_ACTION, VERBOSE };
+		OldLogLevel oldLogLevel = static_cast<OldLogLevel>(
+			obs_data_get_int(obj, "logLevel"));
+		switch (oldLogLevel) {
+		case DEFAULT:
+			logLevel = LogLevel::DEFAULT;
+			break;
+		case LOG_ACTION:
+			logLevel = LogLevel::LOG_ACTION;
+			break;
+		case VERBOSE:
+			logLevel = LogLevel::VERBOSE;
+			break;
+		default:
+			break;
+		}
+	}
+
 	showSystemTrayNotifications =
 		obs_data_get_bool(obj, "showSystemTrayNotifications");
 	disableHints = obs_data_get_bool(obj, "disableHints");
