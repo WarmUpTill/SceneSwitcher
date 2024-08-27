@@ -9,7 +9,7 @@ Binaries for Windows, MacOS, and Linux are available in the [Releases](https://g
 
 For the **Windows** and **MacOS** platforms, it is recommended to run the provided installers.
 
-On Linux the plugin is available via the **Flatpak** package manager for users who installed OBS via Flatpak:
+On Linux the plugin is available via the **Flatpak** package manager for users who installed OBS via Flatpak::
 ```
 flatpak install com.obsproject.Studio.Plugin.SceneSwitcher
 ```
