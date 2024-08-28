@@ -306,7 +306,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         log_info "Building OpenCV ..."
         cmake --build ${opencv_build_dir} --config Release
 
-        log_info "Installing OpenCV..."
+        log_info "Installing OpenCV ..."
         cmake --install ${opencv_build_dir} --prefix "${advss_dep_path}" --config Release || true
         popd
 
@@ -335,34 +335,63 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         log_info "Building Leptonica ..."
         cmake --build ${leptonica_build_dir} --config Release
 
-        log_info "Installing Leptonica..."
+        log_info "Installing Leptonica ..."
         # Workaround for "unknown file attribute: H" errors when running install
         cmake --install ${leptonica_build_dir} --prefix "${advss_dep_path}" --config Release || :
         popd
 
         local tesseract_dir="${project_root}/deps/tesseract"
-        local tesseract_build_dir="${tesseract_dir}/build_${target##*-}"
+        local tesseract_build_dir_x86_64="${tesseract_dir}/build_x86_64"
+
+        pushd ${tesseract_dir}
+        log_info "Configure Tesseract (x86_64) ..."
 
         local -a tesseract_cmake_args=(
           -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_OSX_ARCHITECTURES=${${target##*-}//universal/x86_64;arm64}
+          -DCMAKE_SYSTEM_NAME="Darwin"
+          -DCMAKE_OSX_ARCHITECTURES=x86_64
+          -DCMAKE_SYSTEM_PROCESSOR=x86_64
           -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
           -DSW_BUILD=OFF
           -DBUILD_TRAINING_TOOLS=OFF
-          -DHAVE_NEON=TRUE
           -DCMAKE_PREFIX_PATH="${advss_dep_path};${_plugin_deps}"
           -DCMAKE_INSTALL_PREFIX="${advss_dep_path}"
         )
 
-        pushd ${tesseract_dir}
-        log_info "Configure Tesseract ..."
-        cmake -S . -B ${tesseract_build_dir} ${tesseract_cmake_args}
+        cmake -S . -B ${tesseract_build_dir_x86_64} ${tesseract_cmake_args}
 
-        log_info "Building Tesseract ..."
-        cmake --build ${tesseract_build_dir} --config Release
+        log_info "Building Tesseract (x86_64) ..."
+        cmake --build ${tesseract_build_dir_x86_64} --config Release
+
+        log_info "Configure Tesseract (arm64) ..."
+
+        git checkout .
+
+        local tesseract_build_dir_arm64="${tesseract_dir}/build_arm64"
+        local -a tesseract_cmake_args=(
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_SYSTEM_NAME="Darwin"
+          -DCMAKE_OSX_ARCHITECTURES=arm64
+          -DCMAKE_SYSTEM_PROCESSOR=arm64
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
+          -DSW_BUILD=OFF
+          -DBUILD_TRAINING_TOOLS=OFF
+          -DCMAKE_PREFIX_PATH="${advss_dep_path};${_plugin_deps}"
+          -DCMAKE_INSTALL_PREFIX="${advss_dep_path}"
+        )
+
+        cmake -S . -B ${tesseract_build_dir_arm64} ${tesseract_cmake_args}
+
+        log_info "Building Tesseract (arm64) ..."
+        cmake --build ${tesseract_build_dir_arm64} --config Release
+
+        log_info "Combine arm and x86 libtesseract binaries ..."
+        mv ${tesseract_build_dir_arm64}/libtesseract.a ${tesseract_build_dir_arm64}/libtesseract_arm.a
+        lipo -create ${tesseract_build_dir_x86_64}/libtesseract.a ${tesseract_build_dir_arm64}/libtesseract_arm.a -output ${tesseract_build_dir_arm64}/libtesseract.a
 
         log_info "Installing Tesseract..."
-        cmake --install ${tesseract_build_dir} --prefix "${advss_dep_path}" --config Release
+        cmake --install ${tesseract_build_dir_arm64} --prefix "${advss_dep_path}" --config Release
+
         popd
 
         pushd ${advss_dep_path}
@@ -390,22 +419,29 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         lipo -create openssl_x86/libcrypto.a openssl_arm/libcrypto.a -output openssl-combined/libcrypto.a
         lipo -create openssl_x86/libssl.a openssl_arm/libssl.a -output openssl-combined/libssl.a
 
-        log_info "Clean up openssl dir..."
+        log_info "Clean up openssl dir ..."
         mv openssl_x86 openssl
         rm -rf openssl_arm
         popd
 
         pushd ${project_root}/deps/libusb
-        log_info "Prepare libusb ..."
 
-        log_info "Building libusb x86 (deps) ..."
-        export MACOSX_DEPLOYMENT_TARGET=10.9
+        log_info "Configure libusb x86 ..."
+        export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+        export CC=$(xcrun --sdk macosx --find clang)
+        export CXX=$(xcrun --sdk macosx --find clang++)
+        export CFLAGS="-arch x86_64 -isysroot $SDKROOT"
+        export CXXFLAGS="-arch x86_64 -isysroot $SDKROOT"
+        export LDFLAGS="-arch x86_64 -isysroot $SDKROOT"
+        export MACOSX_DEPLOYMENT_TARGET=10.15
+
+        log_info "Building libusb x86 ..."
         mkdir ${project_root}/deps/libusb/out_x86
         ./autogen.sh
         ./configure --host=x86_64-apple-darwin --prefix=${advss_dep_path}
         make && make install
 
-        log_info "Building libusb x86 ..."
+        log_info "Configure libusb arm ..."
         make clean
         rm -r ${project_root}/deps/libusb/out_x86
         mkdir ${project_root}/deps/libusb/out_x86
