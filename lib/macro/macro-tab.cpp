@@ -762,6 +762,16 @@ void AdvSceneSwitcher::HighlightOnChange()
 	}
 }
 
+static void resetSegmentHighlights(MacroSegmentList *list)
+{
+	MacroSegmentEdit *widget = nullptr;
+	for (int i = 0; (widget = list->WidgetAt(i)); i++) {
+		if (widget && widget->Data()) {
+			(void)widget->Data()->GetHighlightAndReset();
+		}
+	}
+}
+
 void AdvSceneSwitcher::on_macroSettings_clicked()
 {
 	GlobalMacroSettings prop = GetGlobalMacroSettings();
@@ -770,8 +780,20 @@ void AdvSceneSwitcher::on_macroSettings_clicked()
 	if (!accepted) {
 		return;
 	}
+
 	GetGlobalMacroSettings() = prop;
 	emit HighlightMacrosChanged(prop._highlightExecuted);
+
+	// Reset highlights to avoid all macro segments being highlighted, which
+	// would have been highlighted at least once since the moment the
+	// highlighting was disabled
+	if (prop._highlightConditions) {
+		resetSegmentHighlights(ui->conditionsList);
+	}
+	if (prop._highlightActions) {
+		resetSegmentHighlights(ui->actionsList);
+		resetSegmentHighlights(ui->elseActionsList);
+	}
 }
 
 static void moveControlsToSplitter(QSplitter *splitter, int idx,
