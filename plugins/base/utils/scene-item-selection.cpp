@@ -26,6 +26,8 @@ const static std::map<SceneItemSelection::Type, std::string> types = {
 	 "AdvSceneSwitcher.sceneItemSelection.type.sourceNamePattern"},
 	{SceneItemSelection::Type::SOURCE_GROUP,
 	 "AdvSceneSwitcher.sceneItemSelection.type.sourceGroup"},
+	{SceneItemSelection::Type::SOURCE_TYPE,
+	 "AdvSceneSwitcher.sceneItemSelection.type.sourceType"},
 	{SceneItemSelection::Type::INDEX,
 	 "AdvSceneSwitcher.sceneItemSelection.type.index"},
 	{SceneItemSelection::Type::INDEX_RANGE,
@@ -225,7 +227,11 @@ void SceneItemSelection::Save(obs_data_t *obj, const char *name) const
 		_regex.Save(data);
 		break;
 	case SceneItemSelection::Type::SOURCE_GROUP:
-		obs_data_set_string(obj, "sourceGroup", _sourceGroup.c_str());
+		obs_data_set_string(data, itemSaveName.data(),
+				    GetWeakSourceName(_source).c_str());
+		break;
+	case SceneItemSelection::Type::SOURCE_TYPE:
+		obs_data_set_string(obj, "sourceGroup", _sourceType.c_str());
 		break;
 	case SceneItemSelection::Type::INDEX:
 		_index.Save(data, indexSaveName.data());
@@ -283,7 +289,10 @@ void SceneItemSelection::Load(obs_data_t *obj, const char *name)
 		_regex.SetEnabled(true); // No reason to disable it
 		break;
 	case SceneItemSelection::Type::SOURCE_GROUP:
-		_sourceGroup = obs_data_get_string(obj, "sourceGroup");
+		_source = GetWeakSourceByName(itemName);
+		break;
+	case SceneItemSelection::Type::SOURCE_TYPE:
+		_sourceType = obs_data_get_string(obj, "sourceGroup");
 		break;
 	case SceneItemSelection::Type::INDEX:
 		_index.Load(data, indexSaveName.data());
@@ -300,8 +309,8 @@ void SceneItemSelection::Load(obs_data_t *obj, const char *name)
 
 void SceneItemSelection::SetSourceTypeSelection(const char *type)
 {
-	_type = Type::SOURCE_GROUP;
-	_sourceGroup = type;
+	_type = Type::SOURCE_TYPE;
+	_sourceType = type;
 }
 
 void SceneItemSelection::ResolveVariables()
@@ -375,16 +384,25 @@ std::vector<OBSSceneItem> SceneItemSelection::GetSceneItemsByPattern(
 	return data.items;
 }
 
-std::vector<OBSSceneItem> SceneItemSelection::GetSceneItemsByGroup(
+std::vector<OBSSceneItem> SceneItemSelection::GetSceneItemsOfGroup() const
+{
+	OBSSourceAutoRelease group = OBSGetStrongRef(_source);
+	obs_scene_t *groupScene = obs_group_from_source(group);
+	std::vector<OBSSceneItem> sceneItems;
+	obs_scene_enum_items(groupScene, getAllSceneItems, &sceneItems);
+	return sceneItems;
+}
+
+std::vector<OBSSceneItem> SceneItemSelection::GetSceneItemsByType(
 	const SceneSelection &sceneSelection) const
 {
-	if (_sourceGroup.empty()) {
+	if (_sourceType.empty()) {
 		return {};
 	}
 
 	auto s = obs_weak_source_get_source(sceneSelection.GetScene(false));
 	auto scene = obs_scene_from_source(s);
-	GroupData data{_sourceGroup};
+	GroupData data{_sourceType};
 	obs_scene_enum_items(scene, getSceneItemsOfType, &data);
 	obs_source_release(s);
 	ReduceBadedOnIndexSelection(data.items);
@@ -450,7 +468,9 @@ SceneItemSelection::GetSceneItems(const SceneSelection &sceneSelection) const
 	case Type::SOURCE_NAME_PATTERN:
 		return GetSceneItemsByPattern(sceneSelection);
 	case Type::SOURCE_GROUP:
-		return GetSceneItemsByGroup(sceneSelection);
+		return GetSceneItemsOfGroup();
+	case Type::SOURCE_TYPE:
+		return GetSceneItemsByType(sceneSelection);
 	case Type::INDEX:
 	case Type::INDEX_RANGE:
 		return GetSceneItemsByIdx(sceneSelection);
@@ -489,9 +509,16 @@ std::string SceneItemSelection::ToString(bool resolve) const
 		if (resolve) {
 			return std::string(obs_module_text(
 				       "AdvSceneSwitcher.sceneItemSelection.type.sourceGroup")) +
-			       " \"" + std::string(_sourceGroup) + "\"";
+			       " \"" + std::string(_sourceType) + "\"";
 		}
-		return _sourceGroup;
+		return _sourceType;
+	case Type::SOURCE_TYPE:
+		if (resolve) {
+			return std::string(obs_module_text(
+				       "AdvSceneSwitcher.sceneItemSelection.type.sourceType")) +
+			       " \"" + std::string(_sourceType) + "\"";
+		}
+		return _sourceType;
 	case Type::INDEX:
 		if (resolve) {
 			return std::string(obs_module_text(
@@ -596,7 +623,7 @@ populateTypeList(std::set<QString> &list,
 	}
 }
 
-static void populateSourceGroupSelection(QComboBox *list)
+static void populateSourceTypeSelection(QComboBox *list)
 {
 	std::set<QString> sourceTypes;
 	populateTypeList(sourceTypes, obs_enum_source_types);
@@ -620,6 +647,32 @@ static void populateSourceGroupSelection(QComboBox *list)
 	list->setCurrentIndex(0);
 }
 
+static void populateSourceGroupSelection(QComboBox *list)
+{
+	auto sourceEnum = [](void *param, obs_source_t *source) -> bool /* -- */
+	{
+		QStringList *list = reinterpret_cast<QStringList *>(param);
+		if (obs_source_is_group(source)) {
+			*list << obs_source_get_name(source);
+		}
+		return true;
+	};
+
+	QStringList names;
+	obs_enum_sources(sourceEnum, &names);
+
+	for (const auto &name : names) {
+		if (name.isEmpty()) {
+			continue;
+		}
+		list->addItem(name);
+	}
+
+	list->model()->sort(0);
+	AddSelectionEntry(list, obs_module_text("AdvSceneSwitcher.selectItem"));
+	list->setCurrentIndex(0);
+}
+
 SceneItemSelectionWidget::SceneItemSelectionWidget(QWidget *parent,
 						   bool showAll,
 						   Placeholder type)
@@ -627,11 +680,13 @@ SceneItemSelectionWidget::SceneItemSelectionWidget(QWidget *parent,
 	  _controlsLayout(new QHBoxLayout),
 	  _sources(new FilterComboBox(
 		  this, obs_module_text("AdvSceneSwitcher.selectItem"))),
+	  _sourceGroups(new FilterComboBox(
+		  this, obs_module_text("AdvSceneSwitcher.selectItem"))),
 	  _variables(new VariableSelection(this)),
 	  _nameConflictIndex(new QComboBox(this)),
 	  _index(new VariableSpinBox(this)),
 	  _indexEnd(new VariableSpinBox(this)),
-	  _sourceGroups(new QComboBox(this)),
+	  _sourceTypes(new QComboBox(this)),
 	  _pattern(new VariableLineEdit(this)),
 	  _regex(new RegexConfigWidget(this, false)),
 	  _changeType(new QPushButton(this)),
@@ -639,6 +694,7 @@ SceneItemSelectionWidget::SceneItemSelectionWidget(QWidget *parent,
 	  _placeholder(type)
 {
 	_sources->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+	_sourceGroups->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 	_nameConflictIndex->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
 	_changeType->setMaximumWidth(22);
@@ -655,16 +711,19 @@ SceneItemSelectionWidget::SceneItemSelectionWidget(QWidget *parent,
 	_indexEnd->setSuffix(".");
 
 	populateSourceGroupSelection(_sourceGroups);
+	populateSourceTypeSelection(_sourceTypes);
 
 	QWidget::connect(_sources, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(SourceChanged(int)));
+	QWidget::connect(_sourceGroups, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(SourceGroupChanged(int)));
 	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),
 			 this, SLOT(VariableChanged(const QString &)));
 	QWidget::connect(_nameConflictIndex, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(NameConflictIndexChanged(int)));
-	QWidget::connect(_sourceGroups,
+	QWidget::connect(_sourceTypes,
 			 SIGNAL(currentTextChanged(const QString &)), this,
-			 SLOT(SourceGroupChanged(const QString &)));
+			 SLOT(SourceTypeChanged(const QString &)));
 	QWidget::connect(
 		_index,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
@@ -699,11 +758,13 @@ void SceneItemSelectionWidget::SetSceneItem(const SceneItemSelection &item)
 	_nameConflictIndex->setCurrentIndex(idx);
 	_sources->setCurrentText(
 		QString::fromStdString(GetWeakSourceName(item._source)));
+	_sourceGroups->setCurrentText(
+		QString::fromStdString(GetWeakSourceName(item._source)));
 	_variables->SetVariable(item._variable);
 	_index->SetValue(item._index);
 	_indexEnd->SetValue(item._indexEnd);
-	_sourceGroups->setCurrentIndex(_sourceGroups->findText(
-		QString::fromStdString(item._sourceGroup)));
+	_sourceTypes->setCurrentIndex(_sourceTypes->findText(
+		QString::fromStdString(item._sourceType)));
 	_pattern->setText(item._pattern);
 	_regex->SetRegexConfig(item._regex);
 
@@ -788,8 +849,12 @@ void SceneItemSelectionWidget::SetNameConflictVisibility()
 		break;
 	}
 
-	case SceneItemSelection::Type::SOURCE_NAME_PATTERN:
 	case SceneItemSelection::Type::SOURCE_GROUP:
+		// There cannot be a name conflict with source groups
+		_nameConflictIndex->hide();
+		return;
+	case SceneItemSelection::Type::SOURCE_NAME_PATTERN:
+	case SceneItemSelection::Type::SOURCE_TYPE:
 		sceneItemCount = GetSceneItemCount(_scene.GetScene(false));
 		break;
 	case SceneItemSelection::Type::INDEX:
@@ -833,6 +898,14 @@ void SceneItemSelectionWidget::SourceChanged(int)
 {
 	_currentSelection._source =
 		GetWeakSourceByQString(_sources->currentText());
+	SetNameConflictVisibility();
+	emit SceneItemChanged(_currentSelection);
+}
+
+void SceneItemSelectionWidget::SourceGroupChanged(int)
+{
+	_currentSelection._source =
+		GetWeakSourceByQString(_sourceGroups->currentText());
 	SetNameConflictVisibility();
 	emit SceneItemChanged(_currentSelection);
 }
@@ -890,12 +963,12 @@ void SceneItemSelectionWidget::RegexChanged(const RegexConfig &regex)
 	emit SceneItemChanged(_currentSelection);
 }
 
-void SceneItemSelectionWidget::SourceGroupChanged(const QString &text)
+void SceneItemSelectionWidget::SourceTypeChanged(const QString &text)
 {
 	if (text == obs_module_text("AdvSceneSwitcher.selectItem")) {
-		_currentSelection._sourceGroup = "";
+		_currentSelection._sourceType = "";
 	} else {
-		_currentSelection._sourceGroup = text.toStdString();
+		_currentSelection._sourceType = text.toStdString();
 	}
 	emit SceneItemChanged(_currentSelection);
 }
@@ -936,10 +1009,11 @@ void SceneItemSelectionWidget::ClearWidgets()
 {
 	_controlsLayout->removeWidget(_nameConflictIndex);
 	_controlsLayout->removeWidget(_sources);
+	_controlsLayout->removeWidget(_sourceGroups);
 	_controlsLayout->removeWidget(_variables);
 	_controlsLayout->removeWidget(_pattern);
 	_controlsLayout->removeWidget(_regex);
-	_controlsLayout->removeWidget(_sourceGroups);
+	_controlsLayout->removeWidget(_sourceTypes);
 	_controlsLayout->removeWidget(_index);
 	_controlsLayout->removeWidget(_indexEnd);
 	ClearLayout(_controlsLayout);
@@ -951,10 +1025,11 @@ void SceneItemSelectionWidget::SetWidgetVisibility()
 	const std::unordered_map<std::string, QWidget *> widgetMap = {
 		{"{{nameConflictIndex}}", _nameConflictIndex},
 		{"{{sourceName}}", _sources},
+		{"{{sourceGroups}}", _sourceGroups},
 		{"{{variable}}", _variables},
 		{"{{pattern}}", _pattern},
 		{"{{regex}}", _regex},
-		{"{{sourceGroups}}", _sourceGroups},
+		{"{{sourceTypes}}", _sourceTypes},
 		{"{{index}}", _index},
 		{"{{indexEnd}}", _indexEnd},
 	};
@@ -982,6 +1057,12 @@ void SceneItemSelectionWidget::SetWidgetVisibility()
 		PlaceWidgets(
 			obs_module_text(
 				"AdvSceneSwitcher.sceneItemSelection.type.sourceGroup.entry"),
+			_controlsLayout, widgetMap, false);
+		break;
+	case SceneItemSelection::Type::SOURCE_TYPE:
+		PlaceWidgets(
+			obs_module_text(
+				"AdvSceneSwitcher.sceneItemSelection.type.sourceType.entry"),
 			_controlsLayout, widgetMap, false);
 		break;
 	case SceneItemSelection::Type::INDEX:
@@ -1028,7 +1109,11 @@ void SceneItemSelectionWidget::SetWidgetVisibility()
 	_sourceGroups->setVisible(_currentSelection._type ==
 				  SceneItemSelection::Type::SOURCE_GROUP);
 
+	_sourceTypes->setVisible(_currentSelection._type ==
+				 SceneItemSelection::Type::SOURCE_TYPE);
+
 	if (!isNameSelection && !isRegexSelection &&
+	    _currentSelection._type != SceneItemSelection::Type::SOURCE_TYPE &&
 	    _currentSelection._type != SceneItemSelection::Type::SOURCE_GROUP) {
 		_nameConflictIndex->hide();
 	}

@@ -24,7 +24,8 @@ public:
 		SOURCE_NAME,
 		VARIABLE_NAME,
 		SOURCE_NAME_PATTERN = 10,
-		SOURCE_GROUP = 20,
+		SOURCE_GROUP = 15,
+		SOURCE_TYPE = 20,
 		INDEX = 30,
 		INDEX_RANGE = 40,
 		ALL = 50,
@@ -60,8 +61,9 @@ private:
 	GetSceneItemsByName(const SceneSelection &) const;
 	std::vector<OBSSceneItem>
 	GetSceneItemsByPattern(const SceneSelection &) const;
+	std::vector<OBSSceneItem> GetSceneItemsOfGroup() const;
 	std::vector<OBSSceneItem>
-	GetSceneItemsByGroup(const SceneSelection &) const;
+	GetSceneItemsByType(const SceneSelection &) const;
 	std::vector<OBSSceneItem>
 	GetSceneItemsByIdx(const SceneSelection &) const;
 	std::vector<OBSSceneItem>
@@ -78,7 +80,7 @@ private:
 	NameConflictSelection _nameConflictSelectionType =
 		NameConflictSelection::ALL;
 	int _nameConflictSelectionIndex = 0;
-	std::string _sourceGroup;
+	std::string _sourceType;
 	StringVariable _pattern = ".*";
 	RegexConfig _regex = RegexConfig(true);
 	friend class SceneItemSelectionWidget;
@@ -103,12 +105,13 @@ private slots:
 	void SceneChanged(const SceneSelection &);
 	void VariableChanged(const QString &);
 	void SourceChanged(int);
+	void SourceGroupChanged(int);
 	void NameConflictIndexChanged(int);
 	void PatternChanged();
 	void RegexChanged(const RegexConfig &);
 
-	// Source group based
-	void SourceGroupChanged(const QString &);
+	// Source type based
+	void SourceTypeChanged(const QString &);
 
 	// Index based
 	void IndexChanged(const NumberVariable<int> &);
@@ -125,11 +128,12 @@ private:
 
 	QHBoxLayout *_controlsLayout;
 	FilterComboBox *_sources;
+	FilterComboBox *_sourceGroups;
 	VariableSelection *_variables;
 	QComboBox *_nameConflictIndex;
 	VariableSpinBox *_index;
 	VariableSpinBox *_indexEnd;
-	QComboBox *_sourceGroups;
+	QComboBox *_sourceTypes;
 	VariableLineEdit *_pattern;
 	RegexConfigWidget *_regex;
 	QPushButton *_changeType;
