@@ -52,8 +52,6 @@ target_sources(
   ${LIB_NAME}
   PRIVATE lib/legacy/scene-group.cpp
           lib/legacy/scene-group.hpp
-          lib/legacy/scene-trigger.cpp
-          lib/legacy/scene-trigger.hpp
           lib/legacy/switch-audio.cpp
           lib/legacy/switch-audio.hpp
           lib/legacy/switch-executable.cpp

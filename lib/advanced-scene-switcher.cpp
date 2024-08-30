@@ -127,7 +127,6 @@ void AdvSceneSwitcher::LoadUI()
 	SetupAudioTab();
 	SetupVideoTab();
 	SetupSceneGroupTab();
-	SetupTriggerTab();
 	SetupMacroTab();
 	SetupOtherTabs(ui->tabWidget);
 
@@ -552,7 +551,6 @@ static void handleSceneChange()
 		      GetWeakSourceName(switcher->previousScene).c_str());
 	}
 
-	switcher->checkTriggers();
 	switcher->checkDefaultSceneTransitions();
 }
 

@@ -233,9 +233,7 @@ static bool isLegacyTab(const QString &name)
 			       "AdvSceneSwitcher.sceneSequenceTab.title") ||
 	       name == obs_module_text("AdvSceneSwitcher.audioTab.title") ||
 	       name == obs_module_text("AdvSceneSwitcher.videoTab.title") ||
-	       name == obs_module_text("AdvSceneSwitcher.pauseTab.title") ||
-	       name == obs_module_text(
-			       "AdvSceneSwitcher.sceneTriggerTab.title");
+	       name == obs_module_text("AdvSceneSwitcher.pauseTab.title");
 }
 
 void AdvSceneSwitcher::on_hideLegacyTabs_stateChanged(int state)
@@ -455,7 +453,6 @@ void SwitcherData::LoadSettings(obs_data_t *obj)
 	loadTimeSwitches(obj);
 	loadAudioSwitches(obj);
 	loadVideoSwitches(obj);
-	loadSceneTriggers(obj);
 	LoadGeneralSettings(obj);
 	LoadHotkeys(obj);
 	LoadUISettings(obj);
@@ -490,7 +487,6 @@ void SwitcherData::SaveSettings(obs_data_t *obj)
 	saveTimeSwitches(obj);
 	saveAudioSwitches(obj);
 	saveVideoSwitches(obj);
-	saveSceneTriggers(obj);
 	SaveGeneralSettings(obj);
 	SaveHotkeys(obj);
 	SaveUISettings(obj);
