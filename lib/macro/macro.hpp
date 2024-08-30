@@ -25,7 +25,7 @@ class Macro {
 public:
 	Macro(const std::string &name = "", const bool addHotkey = false,
 	      const bool shortCircuitEvaluation = false);
-	virtual ~Macro();
+	~Macro();
 
 	std::string Name() const { return _name; }
 	void SetName(const std::string &name);
