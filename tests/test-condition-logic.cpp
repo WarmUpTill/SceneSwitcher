@@ -171,3 +171,20 @@ TEST_CASE("Logic", "[conditon-logic]")
 	REQUIRE(advss::Logic::ApplyConditionLogic(logic, true, false, ""));
 	REQUIRE(advss::Logic::ApplyConditionLogic(logic, true, true, ""));
 }
+
+TEST_CASE("Short circuit", "[conditon-logic]")
+{
+	bool functionWasRun = false;
+	const auto testFunction = [&functionWasRun]() {
+		functionWasRun = true;
+		return true;
+	};
+
+	advss::Logic::ApplyConditionLogic(advss::Logic::Type::AND, false,
+					  testFunction, "");
+	REQUIRE_FALSE(functionWasRun);
+
+	advss::Logic::ApplyConditionLogic(advss::Logic::Type::OR, false,
+					  testFunction, "");
+	REQUIRE(functionWasRun);
+}

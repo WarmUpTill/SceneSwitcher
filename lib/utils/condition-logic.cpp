@@ -20,28 +20,37 @@ const std::map<Logic::Type, const char *> Logic::localeMap = {
 bool Logic::ApplyConditionLogic(Type type, bool currentMatchResult,
 				bool conditionMatched, const char *context)
 {
+	return ApplyConditionLogic(
+		type, currentMatchResult,
+		[conditionMatched]() { return conditionMatched; }, context);
+}
+
+bool Logic::ApplyConditionLogic(Type type, bool currentMatchResult,
+				const std::function<bool()> &evaluateCondition,
+				const char *context)
+{
 	if (!context) {
 		context = "";
 	}
 
 	switch (type) {
 	case Type::ROOT_NONE:
-		return conditionMatched;
+		return evaluateCondition();
 	case Type::ROOT_NOT:
-		return !conditionMatched;
+		return !evaluateCondition();
 	case Type::ROOT_LAST:
 		break;
 	case Type::NONE:
 		vblog(LOG_INFO, "skipping condition check for '%s'", context);
 		return currentMatchResult;
 	case Type::AND:
-		return currentMatchResult && conditionMatched;
+		return currentMatchResult && evaluateCondition();
 	case Type::OR:
-		return currentMatchResult || conditionMatched;
+		return currentMatchResult || evaluateCondition();
 	case Type::AND_NOT:
-		return currentMatchResult && !conditionMatched;
+		return currentMatchResult && !evaluateCondition();
 	case Type::OR_NOT:
-		return currentMatchResult || !conditionMatched;
+		return currentMatchResult || !evaluateCondition();
 	case Type::LAST:
 	default:
 		blog(LOG_WARNING, "ignoring invalid logic check (%s)", context);

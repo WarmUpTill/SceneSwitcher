@@ -23,7 +23,8 @@ class MacroDock;
 
 class Macro {
 public:
-	Macro(const std::string &name = "", const bool addHotkey = false);
+	Macro(const std::string &name = "", const bool addHotkey = false,
+	      const bool shortCircuitEvaluation = false);
 	virtual ~Macro();
 
 	std::string Name() const { return _name; }
@@ -53,6 +54,9 @@ public:
 
 	void SetStopActionsIfNotDone(bool stopActionsIfNotDone);
 	bool StopActionsIfNotDone() const { return _stopActionsIfNotDone; }
+
+	void SetShortCircuitEvaluation(bool useShortCircuitEvaluation);
+	bool ShortCircuitEvaluationEnabled() const;
 
 	int RunCount() const { return _runCount; };
 	void ResetRunCount() { _runCount = 0; };
@@ -149,6 +153,9 @@ private:
 	void ClearHotkeys() const;
 	void SetHotkeysDesc() const;
 
+	bool
+	CheckConditionHelper(const std::shared_ptr<MacroCondition> &) const;
+
 	bool RunActionsHelper(
 		const std::deque<std::shared_ptr<MacroAction>> &actions,
 		bool ignorePause);
@@ -179,6 +186,7 @@ private:
 	bool _isGroup = false;
 	bool _isCollapsed = false;
 
+	bool _useShortCircuitEvaluation = false;
 	bool _runInParallel = false;
 	bool _matched = false;
 	bool _lastMatched = false;

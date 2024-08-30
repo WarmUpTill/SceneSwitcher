@@ -76,13 +76,15 @@ namespace advss {
 
 static std::deque<std::shared_ptr<Macro>> macros;
 
-Macro::Macro(const std::string &name, const bool addHotkey)
+Macro::Macro(const std::string &name, const bool addHotkey,
+	     const bool shortCircuitEvaluation)
 {
 	SetName(name);
 	if (addHotkey) {
 		SetupHotkeys();
 	}
 	_registerHotkeys = addHotkey;
+	_useShortCircuitEvaluation = shortCircuitEvaluation;
 }
 
 Macro::~Macro()
@@ -181,6 +183,61 @@ static bool checkCondition(const std::shared_ptr<MacroCondition> &condition)
 	return conditionMatched;
 }
 
+bool Macro::CheckConditionHelper(
+	const std::shared_ptr<MacroCondition> &condition) const
+{
+	bool conditionMatched = false;
+	bool wasEvaluated = false;
+
+	const auto evaluateCondition = [&condition, &conditionMatched,
+					&wasEvaluated]() -> bool {
+		conditionMatched = checkCondition(condition);
+		conditionMatched =
+			condition->CheckDurationModifier(conditionMatched);
+		wasEvaluated = true;
+		return conditionMatched;
+	};
+
+	const auto logicType = condition->GetLogicType();
+	if (logicType == Logic::Type::NONE) {
+		vblog(LOG_INFO, "ignoring condition '%s' for '%s'",
+		      condition->GetId().c_str(), _name.c_str());
+		if (!_useShortCircuitEvaluation) {
+			(void)evaluateCondition();
+		}
+		return _matched;
+	}
+
+	bool result = _useShortCircuitEvaluation
+			      // Evaluate the condition result if needed
+			      ? Logic::ApplyConditionLogic(logicType, _matched,
+							   evaluateCondition,
+							   _name.c_str())
+			      // Evaluate the condition result right away
+			      : Logic::ApplyConditionLogic(logicType, _matched,
+							   evaluateCondition(),
+							   _name.c_str());
+
+	const bool isNegativeLogicType = Logic::IsNegationType(logicType);
+	if (wasEvaluated && ((conditionMatched && !isNegativeLogicType) ||
+			     (!conditionMatched && isNegativeLogicType))) {
+		condition->EnableHighlight();
+	}
+
+	if (VerboseLoggingEnabled()) {
+		if (wasEvaluated) {
+			blog(LOG_INFO, "condition %s returned %d",
+			     condition->GetId().c_str(), conditionMatched);
+		} else {
+			blog(LOG_INFO,
+			     "condition %s evaluation skipped (short circuit)",
+			     condition->GetId().c_str());
+		}
+	}
+
+	return result;
+}
+
 bool Macro::CeckMatch(bool ignorePause)
 {
 	if (_isGroup) {
@@ -194,28 +251,7 @@ bool Macro::CeckMatch(bool ignorePause)
 			return false;
 		}
 
-		bool conditionMatched = checkCondition(condition);
-		conditionMatched =
-			condition->CheckDurationModifier(conditionMatched);
-
-		const auto logicType = condition->GetLogicType();
-		if (logicType == Logic::Type::NONE) {
-			vblog(LOG_INFO, "ignoring condition '%s' for '%s'",
-			      condition->GetId().c_str(), _name.c_str());
-			continue;
-		}
-		vblog(LOG_INFO, "condition %s returned %d",
-		      condition->GetId().c_str(), conditionMatched);
-
-		const bool isNegativeLogicType =
-			Logic::IsNegationType(logicType);
-		if ((conditionMatched && !isNegativeLogicType) ||
-		    (!conditionMatched && isNegativeLogicType)) {
-			condition->EnableHighlight();
-		}
-
-		_matched = Logic::ApplyConditionLogic(
-			logicType, _matched, conditionMatched, _name.c_str());
+		_matched = CheckConditionHelper(condition);
 	}
 
 	vblog(LOG_INFO, "Macro %s returned %d", _name.c_str(), _matched);
@@ -392,6 +428,16 @@ void Macro::SetMatchOnChange(bool onChange)
 void Macro::SetStopActionsIfNotDone(bool stopActionsIfNotDone)
 {
 	_stopActionsIfNotDone = stopActionsIfNotDone;
+}
+
+void Macro::SetShortCircuitEvaluation(bool useShortCircuitEvaluation)
+{
+	_useShortCircuitEvaluation = useShortCircuitEvaluation;
+}
+
+bool Macro::ShortCircuitEvaluationEnabled() const
+{
+	return _useShortCircuitEvaluation;
 }
 
 void Macro::SetPaused(bool pause)
@@ -618,6 +664,8 @@ bool Macro::Save(obs_data_t *obj, bool saveForCopy) const
 	obs_data_set_bool(obj, "onChange", _performActionsOnChange);
 	obs_data_set_bool(obj, "skipExecOnStart", _skipExecOnStart);
 	obs_data_set_bool(obj, "stopActionsIfNotDone", _stopActionsIfNotDone);
+	obs_data_set_bool(obj, "useShortCircuitEvaluation",
+			  _useShortCircuitEvaluation);
 
 	obs_data_set_bool(obj, "group", _isGroup);
 	if (_isGroup) {
@@ -681,6 +729,8 @@ bool Macro::Load(obs_data_t *obj)
 	_performActionsOnChange = obs_data_get_bool(obj, "onChange");
 	_skipExecOnStart = obs_data_get_bool(obj, "skipExecOnStart");
 	_stopActionsIfNotDone = obs_data_get_bool(obj, "stopActionsIfNotDone");
+	_useShortCircuitEvaluation =
+		obs_data_get_bool(obj, "useShortCircuitEvaluation");
 
 	_isGroup = obs_data_get_bool(obj, "group");
 	if (_isGroup) {
