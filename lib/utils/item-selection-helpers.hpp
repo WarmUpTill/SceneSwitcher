@@ -81,6 +81,7 @@ public:
 			"AdvSceneSwitcher.item.nameNotAvailable",
 		std::string_view configureTooltip = "", QWidget *parent = 0);
 	virtual ~ItemSelection() = default;
+	Item *GetCurrentItem();
 	void SetItem(const std::string &);
 	void ShowRenameContextMenu(bool value);
 
@@ -99,8 +100,6 @@ signals:
 	void ItemRenamed(const QString &oldName, const QString &name);
 
 private:
-	Item *GetCurrentItem();
-
 	FilterComboBox *_selection;
 	QPushButton *_modify;
 	CreateItemFunc _create;

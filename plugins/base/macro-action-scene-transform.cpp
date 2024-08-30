@@ -18,6 +18,8 @@ bool MacroActionSceneTransform::_registered = MacroActionFactory::Register(
 const static std::map<MacroActionSceneTransform::Action, std::string> actions = {
 	{MacroActionSceneTransform::Action::MANUAL_TRANSFORM,
 	 "AdvSceneSwitcher.action.sceneTransform.type.manual"},
+	{MacroActionSceneTransform::Action::SINGLE_TRANSFORM_SETTING,
+	 "AdvSceneSwitcher.action.sceneTransform.type.setSingleSetting"},
 	{MacroActionSceneTransform::Action::RESET,
 	 "AdvSceneSwitcher.action.sceneTransform.type.reset"},
 	{MacroActionSceneTransform::Action::ROTATE,
@@ -200,49 +202,52 @@ void MacroActionSceneTransform::Transform(obs_scene_item *item)
 	}
 
 	switch (_action) {
-	case MacroActionSceneTransform::Action::RESET:
+	case Action::RESET:
 		obs_sceneitem_defer_update_begin(item);
 		reset(item);
 		obs_sceneitem_defer_update_end(item);
 
 		break;
-	case MacroActionSceneTransform::Action::ROTATE:
+	case Action::ROTATE:
 		rotate(item, _rotation);
 		break;
-	case MacroActionSceneTransform::Action::FLIP_HORIZONTAL: {
+	case Action::FLIP_HORIZONTAL: {
 		vec2 scale;
 		vec2_set(&scale, -1.0f, 1.0f);
 		flip(item, scale);
 		break;
 	}
-	case MacroActionSceneTransform::Action::FLIP_VERTICAL: {
+	case Action::FLIP_VERTICAL: {
 		vec2 scale;
 		vec2_set(&scale, 1.0f, -1.0f);
 		flip(item, scale);
 		break;
 	}
-	case MacroActionSceneTransform::Action::FIT_TO_SCREEN:
+	case Action::FIT_TO_SCREEN:
 		centerAlign(item, OBS_BOUNDS_SCALE_INNER);
 		break;
-	case MacroActionSceneTransform::Action::STRETCH_TO_SCREEN:
+	case Action::STRETCH_TO_SCREEN:
 		centerAlign(item, OBS_BOUNDS_STRETCH);
 		break;
-	case MacroActionSceneTransform::Action::CENTER_TO_SCREEN:
+	case Action::CENTER_TO_SCREEN:
 		center(item, CenterType::SCREEN);
 		break;
-	case MacroActionSceneTransform::Action::CENTER_VERTICALLY:
+	case Action::CENTER_VERTICALLY:
 		center(item, CenterType::VERTICAL);
 		break;
-	case MacroActionSceneTransform::Action::CENTER_HORIZONTALLY:
+	case Action::CENTER_HORIZONTALLY:
 		center(item, CenterType::HORIZONTAL);
 		break;
-	case MacroActionSceneTransform::Action::MANUAL_TRANSFORM:
-		ApplySettings(_settings); // Resolves variables
+	case Action::MANUAL_TRANSFORM:
+		ApplySettings(_transformString); // Resolves variables
 		obs_sceneitem_defer_update_begin(item);
 		obs_sceneitem_set_info(item, &_info);
 		obs_sceneitem_set_crop(item, &_crop);
 		obs_sceneitem_defer_update_end(item);
 		break;
+	case Action::SINGLE_TRANSFORM_SETTING:
+		SetTransformSetting(item, _settingSelection,
+				    _singleSettingsValue);
 	}
 }
 
@@ -270,7 +275,9 @@ bool MacroActionSceneTransform::Save(obs_data_t *obj) const
 	_scene.Save(obj);
 	_source.Save(obj);
 	_rotation.Save(obj, "rotation");
-	_settings.Save(obj, "settings");
+	_transformString.Save(obj, "settings");
+	_singleSettingsValue.Save(obj, "singleSettingsValue");
+	_settingSelection.Save(obj);
 	return true;
 }
 
@@ -293,13 +300,15 @@ bool MacroActionSceneTransform::Load(obs_data_t *obj)
 	_scene.Load(obj);
 	_source.Load(obj);
 	_rotation.Load(obj, "rotation");
-	_settings.Load(obj, "settings");
+	_transformString.Load(obj, "settings");
+	_singleSettingsValue.Load(obj, "singleSettingsValue");
+	_settingSelection.Load(obj);
 
 	// Convert old data format
 	// TODO: Remove in future version
 	if (!obs_data_has_user_value(obj, "settings")) {
 		LoadTransformState(obj, _info, _crop);
-		_settings = ConvertSettings();
+		_transformString = ConvertSettings();
 	}
 	return true;
 }
@@ -326,8 +335,9 @@ void MacroActionSceneTransform::ResolveVariablesToFixedValues()
 {
 	_scene.ResolveVariables();
 	_source.ResolveVariables();
-	_settings.ResolveVariables();
+	_transformString.ResolveVariables();
 	_rotation.ResolveVariables();
+	_singleSettingsValue.ResolveVariables();
 }
 
 std::string MacroActionSceneTransform::ConvertSettings()
@@ -381,9 +391,13 @@ MacroActionSceneTransformEdit::MacroActionSceneTransformEdit(
 	  _sources(new SceneItemSelectionWidget(parent)),
 	  _action(new QComboBox()),
 	  _rotation(new VariableDoubleSpinBox()),
-	  _getSettings(new QPushButton(obs_module_text(
+	  _getTransform(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.action.sceneTransform.getTransform"))),
-	  _settings(new VariableTextEdit(this)),
+	  _getCurrentValue(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.action.sceneTransform.getCurrentValue"))),
+	  _transformString(new VariableTextEdit(this)),
+	  _settingSelection(new TransformSettingSelection(this)),
+	  _singleSettingValue(new VariableLineEdit(this)),
 	  _buttonLayout(new QHBoxLayout())
 {
 	_rotation->setMinimum(-360);
@@ -405,28 +419,40 @@ MacroActionSceneTransformEdit::MacroActionSceneTransformEdit(
 		_rotation,
 		SIGNAL(NumberVariableChanged(const NumberVariable<double> &)),
 		this, SLOT(RotationChanged(const NumberVariable<double> &)));
-	QWidget::connect(_getSettings, SIGNAL(clicked()), this,
+	QWidget::connect(_getTransform, SIGNAL(clicked()), this,
 			 SLOT(GetSettingsClicked()));
-	QWidget::connect(_settings, SIGNAL(textChanged()), this,
-			 SLOT(SettingsChanged()));
+	QWidget::connect(_getCurrentValue, SIGNAL(clicked()), this,
+			 SLOT(GetCurrentValueClicked()));
+	QWidget::connect(_transformString, SIGNAL(textChanged()), this,
+			 SLOT(TransformStringChanged()));
+	QWidget::connect(_singleSettingValue, SIGNAL(editingFinished()), this,
+			 SLOT(SettingValueChanged()));
+	QWidget::connect(
+		_settingSelection,
+		SIGNAL(SelectionChanged(const TransformSetting &)), this,
+		SLOT(SettingSelectionChanged(const TransformSetting &)));
 
 	QHBoxLayout *entryLayout = new QHBoxLayout;
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{scenes}}", _scenes},     {"{{rotation}}", _rotation},
-		{"{{sources}}", _sources},   {"{{action}}", _action},
-		{"{{settings}}", _settings}, {"{{getSettings}}", _getSettings},
+		{"{{scenes}}", _scenes},
+		{"{{rotation}}", _rotation},
+		{"{{sources}}", _sources},
+		{"{{action}}", _action},
+		{"{{settingSelection}}", _settingSelection},
+		{"{{singleSettingValue}}", _singleSettingValue},
 	};
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.sceneTransform.entry"),
 		entryLayout, widgetPlaceholders);
 
-	_buttonLayout->addWidget(_getSettings);
+	_buttonLayout->addWidget(_getTransform);
+	_buttonLayout->addWidget(_getCurrentValue);
 	_buttonLayout->addStretch();
 
-	QVBoxLayout *mainLayout = new QVBoxLayout;
+	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(entryLayout);
-	mainLayout->addWidget(_settings);
+	mainLayout->addWidget(_transformString);
 	mainLayout->addLayout(_buttonLayout);
 	setLayout(mainLayout);
 
@@ -446,28 +472,31 @@ void MacroActionSceneTransformEdit::UpdateEntryData()
 	_action->setCurrentIndex(
 		_action->findData(static_cast<int>(_entryData->_action)));
 	_rotation->SetValue(_entryData->_rotation);
-	_settings->setPlainText(_entryData->_settings);
+	_transformString->setPlainText(_entryData->_transformString);
+	UpdateSettingSelection();
+	_settingSelection->SetSetting(_entryData->_settingSelection);
+	_singleSettingValue->setText(_entryData->_singleSettingsValue);
 	SetWidgetVisibility();
 }
 
 void MacroActionSceneTransformEdit::SceneChanged(const SceneSelection &s)
 {
-	if (_loading || !_entryData) {
-		return;
+	{
+		GUARD_LOADING_AND_LOCK();
+		_entryData->_scene = s;
 	}
 
-	auto lock = LockContext();
-	_entryData->_scene = s;
+	UpdateSettingSelection();
 }
 
 void MacroActionSceneTransformEdit::SourceChanged(const SceneItemSelection &item)
 {
-	if (_loading || !_entryData) {
-		return;
+	{
+		GUARD_LOADING_AND_LOCK();
+		_entryData->_source = item;
 	}
 
-	auto lock = LockContext();
-	_entryData->_source = item;
+	UpdateSettingSelection();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 	adjustSize();
@@ -476,11 +505,7 @@ void MacroActionSceneTransformEdit::SourceChanged(const SceneItemSelection &item
 
 void MacroActionSceneTransformEdit::ActionChanged(int idx)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionSceneTransform::Action>(
 		_action->itemData(idx).toInt());
 	SetWidgetVisibility();
@@ -488,11 +513,7 @@ void MacroActionSceneTransformEdit::ActionChanged(int idx)
 
 void MacroActionSceneTransformEdit::RotationChanged(const DoubleVariable &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_rotation = value;
 }
 
@@ -508,17 +529,52 @@ void MacroActionSceneTransformEdit::GetSettingsClicked()
 	}
 
 	auto settings = GetSceneItemTransform(items[0]);
-	_settings->setPlainText(FormatJsonString(settings));
+	_transformString->setPlainText(FormatJsonString(settings));
 }
 
-void MacroActionSceneTransformEdit::SettingsChanged()
+void MacroActionSceneTransformEdit::GetCurrentValueClicked()
 {
-	if (_loading || !_entryData) {
+	if (_loading || !_entryData || !_entryData->_scene.GetScene(false)) {
 		return;
 	}
 
-	auto lock = LockContext();
-	_entryData->_settings = _settings->toPlainText().toStdString();
+	auto items = _entryData->_source.GetSceneItems(_entryData->_scene);
+	if (items.empty()) {
+		return;
+	}
+
+	auto value = GetTransformSettingValue(items.at(0),
+					      _entryData->_settingSelection);
+	if (!value) {
+		return;
+	}
+
+	_singleSettingValue->setText(QString::fromStdString(*value));
+	SettingValueChanged();
+}
+
+void MacroActionSceneTransformEdit::TransformStringChanged()
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_transformString =
+		_transformString->toPlainText().toStdString();
+
+	adjustSize();
+	updateGeometry();
+}
+
+void MacroActionSceneTransformEdit::SettingSelectionChanged(
+	const TransformSetting &setting)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_settingSelection = setting;
+}
+
+void MacroActionSceneTransformEdit::SettingValueChanged()
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_singleSettingsValue =
+		_singleSettingValue->text().toStdString();
 
 	adjustSize();
 	updateGeometry();
@@ -530,13 +586,39 @@ void MacroActionSceneTransformEdit::SetWidgetVisibility()
 		_buttonLayout,
 		_entryData->_action ==
 			MacroActionSceneTransform::Action::MANUAL_TRANSFORM);
-	_settings->setVisible(
+	_transformString->setVisible(
 		_entryData->_action ==
 		MacroActionSceneTransform::Action::MANUAL_TRANSFORM);
 	_rotation->setVisible(_entryData->_action ==
 			      MacroActionSceneTransform::Action::ROTATE);
+	_getTransform->setVisible(
+		_entryData->_action ==
+		MacroActionSceneTransform::Action::MANUAL_TRANSFORM);
+	_getCurrentValue->setVisible(
+		_entryData->_action ==
+		MacroActionSceneTransform::Action::SINGLE_TRANSFORM_SETTING);
+	_settingSelection->setVisible(
+		_entryData->_action ==
+		MacroActionSceneTransform::Action::SINGLE_TRANSFORM_SETTING);
+	_singleSettingValue->setVisible(
+		_entryData->_action ==
+		MacroActionSceneTransform::Action::SINGLE_TRANSFORM_SETTING);
 	adjustSize();
 	updateGeometry();
+}
+
+void MacroActionSceneTransformEdit::UpdateSettingSelection() const
+{
+	if (!_entryData) {
+		_settingSelection->SetSource(nullptr);
+		return;
+	}
+	auto items = _entryData->_source.GetSceneItems(_entryData->_scene);
+	if (items.empty()) {
+		_settingSelection->SetSource(nullptr);
+		return;
+	}
+	_settingSelection->SetSource(items.at(0));
 }
 
 } // namespace advss

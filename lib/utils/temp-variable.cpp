@@ -161,6 +161,7 @@ void TempVariableRef::Save(obs_data_t *obj, const char *name) const
 	obs_data_set_int(data, "type", static_cast<int>(type));
 	obs_data_set_int(data, "idx", GetIdx());
 	obs_data_set_string(data, "id", _id.c_str());
+	obs_data_set_int(data, "version", 1);
 	obs_data_set_obj(obj, name, data);
 }
 
@@ -175,6 +176,14 @@ void TempVariableRef::Load(obs_data_t *obj, Macro *macro, const char *name)
 	_id = obs_data_get_string(data, "id");
 	const auto type =
 		static_cast<SegmentType>(obs_data_get_int(data, "type"));
+
+	// Backwards compatibility checks
+	if (obs_data_get_int(data, "version") < 1) {
+		if (_id == "chatter") {
+			_id = "user_login";
+		}
+	}
+
 	AddPostLoadStep([this, idx, type, macro]() {
 		this->PostLoad(idx, type, macro);
 	});
@@ -182,6 +191,10 @@ void TempVariableRef::Load(obs_data_t *obj, Macro *macro, const char *name)
 
 void TempVariableRef::PostLoad(int idx, SegmentType type, Macro *macro)
 {
+	if (!macro) {
+		return;
+	}
+
 	std::deque<std::shared_ptr<MacroSegment>> segments;
 	switch (type) {
 	case SegmentType::NONE:
@@ -458,7 +471,7 @@ void AutoUpdateTooltipLabel::enterEvent(QEnterEvent *event)
 void AutoUpdateTooltipLabel::enterEvent(QEvent *event)
 #endif
 {
-	_timer->start(1000);
+	_timer->start(300);
 	QLabel::enterEvent(event);
 }
 

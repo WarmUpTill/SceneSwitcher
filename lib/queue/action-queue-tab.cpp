@@ -220,14 +220,15 @@ static void setupTab(QTabWidget *tab)
 	}
 
 	QWidget::connect(ActionQueueSignalManager::Instance(),
-			 &ActionQueueSignalManager::Rename,
+			 &ActionQueueSignalManager::Rename, tab,
 			 [](const QString &oldName, const QString &newName) {
 				 RenameItemTableRow(tabWidget->Table(), oldName,
 						    newName);
 			 });
 	QWidget::connect(
 		ActionQueueSignalManager::Instance(),
-		&ActionQueueSignalManager::Add, [tab](const QString &name) {
+		&ActionQueueSignalManager::Add, tab,
+		[tab](const QString &name) {
 			AddItemTableRow(
 				tabWidget->Table(),
 				getCellLabels(GetWeakActionQueueByQString(name)
@@ -238,7 +239,7 @@ static void setupTab(QTabWidget *tab)
 			setTabVisible(tab, true);
 		});
 	QWidget::connect(ActionQueueSignalManager::Instance(),
-			 &ActionQueueSignalManager::Remove,
+			 &ActionQueueSignalManager::Remove, tab,
 			 [](const QString &name) {
 				 RemoveItemTableRow(tabWidget->Table(), name);
 				 if (tabWidget->Table()->rowCount() == 0) {

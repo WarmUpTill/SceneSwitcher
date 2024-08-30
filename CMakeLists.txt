@@ -96,6 +96,8 @@ target_sources(
           lib/macro/macro-action-macro.hpp
           lib/macro/macro-action-queue.cpp
           lib/macro/macro-action-queue.hpp
+          lib/macro/macro-action-script.cpp
+          lib/macro/macro-action-script.hpp
           lib/macro/macro-action-variable.cpp
           lib/macro/macro-action-variable.hpp
           lib/macro/macro-action.cpp
@@ -108,6 +110,8 @@ target_sources(
           lib/macro/macro-condition-macro.hpp
           lib/macro/macro-condition-queue.cpp
           lib/macro/macro-condition-queue.hpp
+          lib/macro/macro-condition-script.cpp
+          lib/macro/macro-condition-script.hpp
           lib/macro/macro-condition-tempvar.cpp
           lib/macro/macro-condition-tempvar.hpp
           lib/macro/macro-condition-variable.cpp
@@ -120,24 +124,30 @@ target_sources(
           lib/macro/macro-export-import-dialog.hpp
           lib/macro/macro-helpers.cpp
           lib/macro/macro-helpers.hpp
+          lib/macro/macro-input.cpp
+          lib/macro/macro-input.hpp
           lib/macro/macro-list.cpp
           lib/macro/macro-list.hpp
-          lib/macro/macro-properties.cpp
-          lib/macro/macro-properties.hpp
           lib/macro/macro-ref.cpp
           lib/macro/macro-ref.hpp
           lib/macro/macro-run-button.cpp
           lib/macro/macro-run-button.hpp
+          lib/macro/macro-script-handler.cpp
+          lib/macro/macro-script-handler.hpp
           lib/macro/macro-segment-copy-paste.cpp
           lib/macro/macro-segment-copy-paste.hpp
           lib/macro/macro-segment-list.cpp
           lib/macro/macro-segment-list.hpp
+          lib/macro/macro-segment-script.cpp
+          lib/macro/macro-segment-script.hpp
           lib/macro/macro-segment-selection.cpp
           lib/macro/macro-segment-selection.hpp
           lib/macro/macro-segment.cpp
           lib/macro/macro-segment.hpp
           lib/macro/macro-selection.cpp
           lib/macro/macro-selection.hpp
+          lib/macro/macro-settings.cpp
+          lib/macro/macro-settings.hpp
           lib/macro/macro-tab.cpp
           lib/macro/macro-tree.cpp
           lib/macro/macro-tree.hpp
@@ -153,12 +163,18 @@ target_sources(
           lib/queue/action-queue-tab.hpp
           lib/utils/backup.cpp
           lib/utils/backup.hpp
+          lib/utils/condition-logic.cpp
+          lib/utils/condition-logic.hpp
           lib/utils/curl-helper.cpp
           lib/utils/curl-helper.hpp
+          lib/utils/cursor-shape-changer.cpp
+          lib/utils/cursor-shape-changer.hpp
           lib/utils/double-slider.cpp
           lib/utils/double-slider.hpp
           lib/utils/duration-control.cpp
           lib/utils/duration-control.hpp
+          lib/utils/duration-modifier.cpp
+          lib/utils/duration-modifier.hpp
           lib/utils/duration.cpp
           lib/utils/duration.hpp
           lib/utils/export-symbol-helper.hpp
@@ -166,10 +182,16 @@ target_sources(
           lib/utils/file-selection.hpp
           lib/utils/filter-combo-box.cpp
           lib/utils/filter-combo-box.hpp
+          lib/utils/help-icon.hpp
+          lib/utils/help-icon.cpp
           lib/utils/item-selection-helpers.cpp
           lib/utils/item-selection-helpers.hpp
           lib/utils/layout-helpers.cpp
           lib/utils/layout-helpers.hpp
+          lib/utils/list-controls.cpp
+          lib/utils/list-controls.hpp
+          lib/utils/list-editor.cpp
+          lib/utils/list-editor.hpp
           lib/utils/log-helper.cpp
           lib/utils/log-helper.hpp
           lib/utils/math-helpers.cpp
@@ -182,7 +204,6 @@ target_sources(
           lib/utils/name-dialog.hpp
           lib/utils/non-modal-dialog.cpp
           lib/utils/non-modal-dialog.hpp
-          lib/utils/obs-dock.hpp
           lib/utils/obs-module-helper.cpp
           lib/utils/obs-module-helper.hpp
           lib/utils/path-helpers.cpp
@@ -191,6 +212,9 @@ target_sources(
           lib/utils/plugin-state-helpers.hpp
           lib/utils/priority-helper.cpp
           lib/utils/priority-helper.hpp
+          lib/utils/properties-view.cpp
+          lib/utils/properties-view.hpp
+          lib/utils/properties-view.moc.hpp
           lib/utils/regex-config.cpp
           lib/utils/regex-config.hpp
           lib/utils/resizing-text-edit.cpp
@@ -221,6 +245,8 @@ target_sources(
           lib/utils/splitter-helpers.hpp
           lib/utils/status-control.cpp
           lib/utils/status-control.hpp
+          lib/utils/string-list.cpp
+          lib/utils/string-list.hpp
           lib/utils/switch-button.cpp
           lib/utils/switch-button.hpp
           lib/utils/sync-helpers.cpp
@@ -251,6 +277,11 @@ target_sources(
           lib/variables/variable.hpp)
 
 # --- End of section ---
+
+# Subfolder for advanced scene switcher plugins
+set(ADVSS_PLUGIN_FOLDER "advanced-scene-switcher-plugins")
+target_compile_definitions(
+  ${LIB_NAME} PRIVATE ADVSS_PLUGIN_FOLDER=\"${ADVSS_PLUGIN_FOLDER}\")
 
 include(cmake/common/advss_helpers.cmake)
 setup_obs_lib_dependency(${LIB_NAME})
@@ -337,6 +368,9 @@ if(OS_WINDOWS)
   if(MSVC)
     target_compile_options(${LIB_NAME} PUBLIC /MP /d2FH4- /wd4267 /wd4267
                                               /bigobj)
+
+    # Workaround for MSVC incompatibility in CI environment
+    add_compile_definitions(${target_name} _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
   endif()
   target_sources(${LIB_NAME} PRIVATE lib/win/advanced-scene-switcher-win.cpp)
   add_definitions(-D_WEBSOCKETPP_CPP11_STL_)

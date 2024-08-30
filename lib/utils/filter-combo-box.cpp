@@ -84,8 +84,7 @@ void FilterComboBox::focusOutEvent(QFocusEvent *event)
 	// Reset on invalid selection
 	if (findText(currentText()) == -1) {
 		setCurrentIndex(-1);
-		emit currentIndexChanged(-1);
-		emit currentTextChanged("");
+		Emit(-1, "");
 	}
 
 	QComboBox::focusOutEvent(event);
@@ -121,8 +120,7 @@ void FilterComboBox::CompleterHighlightChanged(const QModelIndex &index)
 	if (idx == -1) {
 		return;
 	}
-	emit currentIndexChanged(idx);
-	emit currentTextChanged(text);
+	Emit(idx, text);
 }
 
 void FilterComboBox::TextChanged(const QString &text)
@@ -134,8 +132,18 @@ void FilterComboBox::TextChanged(const QString &text)
 	if (idx == -1) {
 		return;
 	}
-	emit currentIndexChanged(idx);
-	emit currentTextChanged(text);
+}
+
+void FilterComboBox::Emit(int index, const QString &text)
+{
+	if (_lastEmittedIndex != index) {
+		_lastEmittedIndex = index;
+		emit currentIndexChanged(index);
+	}
+	if (_lastEmittedText != text) {
+		_lastEmittedText = text;
+		emit currentTextChanged(text);
+	}
 }
 
 } // namespace advss

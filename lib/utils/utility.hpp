@@ -23,8 +23,7 @@ std::string ToString(double value);
 /* Legacy helpers */
 
 void listAddClicked(QListWidget *list, QWidget *newWidget,
-		    QPushButton *addButton = nullptr,
-		    QMetaObject::Connection *addHighlight = nullptr);
+		    QObject **addHighlight = nullptr);
 bool listMoveUp(QListWidget *list);
 bool listMoveDown(QListWidget *list);
 

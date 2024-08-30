@@ -7,68 +7,16 @@
 namespace advss {
 
 MacroList::MacroList(QWidget *parent, bool allowDuplicates, bool reorder)
-	: QWidget(parent),
-	  _list(new QListWidget()),
-	  _add(new QPushButton()),
-	  _remove(new QPushButton()),
-	  _up(new QPushButton()),
-	  _down(new QPushButton()),
-	  _controlsLayout(new QHBoxLayout()),
-	  _allowDuplicates(allowDuplicates),
-	  _reorder(reorder)
+	: ListEditor(parent, reorder),
+	  _allowDuplicates(allowDuplicates)
 {
-	_add->setMaximumWidth(22);
-	_add->setProperty("themeID",
-			  QVariant(QString::fromUtf8("addIconSmall")));
-	_add->setFlat(true);
-	_remove->setMaximumWidth(22);
-	_remove->setProperty("themeID",
-			     QVariant(QString::fromUtf8("removeIconSmall")));
-	_remove->setFlat(true);
-	_up->setMaximumWidth(22);
-	_up->setProperty("themeID",
-			 QVariant(QString::fromUtf8("upArrowIconSmall")));
-	_up->setFlat(true);
-	_down->setMaximumWidth(22);
-	_down->setProperty("themeID",
-			   QVariant(QString::fromUtf8("downArrowIconSmall")));
-	_down->setFlat(true);
-
-	QWidget::connect(_add, SIGNAL(clicked()), this, SLOT(Add()));
-	QWidget::connect(_remove, SIGNAL(clicked()), this, SLOT(Remove()));
-	QWidget::connect(_up, SIGNAL(clicked()), this, SLOT(Up()));
-	QWidget::connect(_down, SIGNAL(clicked()), this, SLOT(Down()));
-	QWidget::connect(_list, SIGNAL(itemDoubleClicked(QListWidgetItem *)),
-			 this, SLOT(MacroItemClicked(QListWidgetItem *)));
 	QWidget::connect(window(),
 			 SIGNAL(MacroRenamed(const QString &, const QString &)),
 			 this,
 			 SLOT(MacroRename(const QString &, const QString &)));
 	QWidget::connect(window(), SIGNAL(MacroRemoved(const QString &)), this,
 			 SLOT(MacroRemove(const QString &)));
-
-	_controlsLayout->addWidget(_add);
-	_controlsLayout->addWidget(_remove);
-	if (reorder) {
-		QFrame *line = new QFrame();
-		line->setFrameShape(QFrame::VLine);
-		line->setFrameShadow(QFrame::Sunken);
-		_controlsLayout->addWidget(line);
-	}
-	_controlsLayout->addWidget(_up);
-	_controlsLayout->addWidget(_down);
-	_controlsLayout->addStretch();
-
-	auto mainLayout = new QVBoxLayout;
-	mainLayout->setContentsMargins(0, 0, 0, 0);
-	mainLayout->addWidget(_list);
-	mainLayout->addLayout(_controlsLayout);
-	setLayout(mainLayout);
-
-	_up->setVisible(reorder);
-	_down->setVisible(reorder);
-
-	SetMacroListSize();
+	UpdateListSize();
 }
 
 void MacroList::SetContent(const std::vector<MacroRef> &macros)
@@ -89,12 +37,15 @@ void MacroList::SetContent(const std::vector<MacroRef> &macros)
 			new QListWidgetItem(listEntryName, _list);
 		item->setData(Qt::UserRole, listEntryName);
 	}
-	SetMacroListSize();
+	UpdateListSize();
 }
 
-void MacroList::AddControl(QWidget *widget)
+QAction *MacroList::AddControl(QWidget *widget, bool addSeperator)
 {
-	_controlsLayout->insertWidget(_controlsLayout->count() - 1, widget);
+	if (addSeperator) {
+		_controls->addSeparator();
+	}
+	return _controls->addWidget(widget);
 }
 
 int MacroList::CurrentRow()
@@ -122,13 +73,13 @@ void MacroList::MacroRemove(const QString &name)
 		delete _list->item(idx);
 		idx = FindEntry(name.toStdString());
 	}
-	SetMacroListSize();
+	UpdateListSize();
 }
 
 void MacroList::Add()
 {
 	std::string macroName;
-	bool accepted = MacroSelectionDialog::AskForMacro(this, macroName);
+	bool accepted = MacroSelectionDialog::AskForMacro(macroName);
 
 	if (!accepted || macroName.empty()) {
 		return;
@@ -142,7 +93,7 @@ void MacroList::Add()
 	auto item =
 		new QListWidgetItem(QString::fromStdString(macroName), _list);
 	item->setData(Qt::UserRole, QString::fromStdString(macroName));
-	SetMacroListSize();
+	UpdateListSize();
 	emit Added(macroName);
 }
 
@@ -154,7 +105,7 @@ void MacroList::Remove()
 		return;
 	}
 	delete item;
-	SetMacroListSize();
+	UpdateListSize();
 	emit Removed(idx);
 }
 
@@ -178,10 +129,10 @@ void MacroList::Down()
 	}
 }
 
-void MacroList::MacroItemClicked(QListWidgetItem *item)
+void MacroList::Clicked(QListWidgetItem *item)
 {
 	std::string macroName;
-	bool accepted = MacroSelectionDialog::AskForMacro(this, macroName);
+	bool accepted = MacroSelectionDialog::AskForMacro(macroName);
 
 	if (!accepted || macroName.empty()) {
 		return;
@@ -214,12 +165,6 @@ int MacroList::FindEntry(const std::string &macro)
 	}
 
 	return idx;
-}
-
-void MacroList::SetMacroListSize()
-{
-	SetHeightToContentHeight(_list);
-	adjustSize();
 }
 
 } // namespace advss

@@ -18,7 +18,7 @@
 namespace advss {
 
 bool FileSwitch::pause = false;
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 static std::hash<std::string> strHash;
 
 void AdvSceneSwitcher::on_browseButton_clicked()
@@ -291,7 +291,7 @@ void AdvSceneSwitcher::on_fileAdd_clicked()
 	listAddClicked(ui->fileSwitches,
 		       new FileSwitchWidget(this,
 					    &switcher->fileSwitches.back()),
-		       ui->fileAdd, &addPulse);
+		       &addPulse);
 
 	ui->fileHelp->setVisible(false);
 }
@@ -441,7 +441,8 @@ void AdvSceneSwitcher::SetupFileTab()
 
 	if (switcher->fileSwitches.size() == 0) {
 		if (!switcher->disableHints) {
-			addPulse = PulseWidget(ui->fileAdd, QColor(Qt::green));
+			addPulse =
+				HighlightWidget(ui->fileAdd, QColor(Qt::green));
 		}
 		ui->fileHelp->setVisible(true);
 	} else {

@@ -1,9 +1,10 @@
 #include "advanced-scene-switcher.hpp"
 #include "action-queue.hpp"
+#include "cursor-shape-changer.hpp"
 #include "macro-action-edit.hpp"
 #include "macro-condition-edit.hpp"
 #include "macro-export-import-dialog.hpp"
-#include "macro-properties.hpp"
+#include "macro-settings.hpp"
 #include "macro-segment-copy-paste.hpp"
 #include "macro-tree.hpp"
 #include "macro.hpp"
@@ -23,7 +24,7 @@
 
 namespace advss {
 
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 static QTimer onChangeHighlightTimer;
 
 static bool macroNameExists(const std::string &name)
@@ -86,7 +87,7 @@ bool AdvSceneSwitcher::AddNewMacro(std::shared_ptr<Macro> &res,
 	}
 
 	res = std::make_shared<Macro>(
-		name, GetGlobalMacroProperties()._newMacroRegisterHotkeys);
+		name, GetGlobalMacroSettings()._newMacroRegisterHotkeys);
 	return true;
 }
 
@@ -99,7 +100,10 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 	}
 
 	ui->macros->Add(newMacro);
-	ui->macroAdd->disconnect(addPulse);
+	if (addPulse) {
+		addPulse->deleteLater();
+		addPulse = nullptr;
+	}
 	emit MacroAdded(QString::fromStdString(name));
 }
 
@@ -462,7 +466,7 @@ void AdvSceneSwitcher::ImportMacros()
 	RunPostLoadSteps();
 
 	ui->macros->Reset(GetMacros(),
-			  GetGlobalMacroProperties()._highlightExecuted);
+			  GetGlobalMacroSettings()._highlightExecuted);
 }
 
 void AdvSceneSwitcher::on_macroName_editingFinished()
@@ -742,8 +746,8 @@ void AdvSceneSwitcher::MacroSelectionChanged()
 
 void AdvSceneSwitcher::HighlightOnChange()
 {
-	if (!GetGlobalMacroProperties()._highlightActions &&
-	    !GetGlobalMacroProperties()._highlightExecuted) {
+	if (!GetGlobalMacroSettings()._highlightActions &&
+	    !GetGlobalMacroSettings()._highlightExecuted) {
 		return;
 	}
 
@@ -753,30 +757,32 @@ void AdvSceneSwitcher::HighlightOnChange()
 	}
 
 	if (macro->OnChangePreventedActionsRecently()) {
-		PulseWidget(ui->runMacroOnChange, Qt::yellow, Qt::transparent,
-			    true);
+		HighlightWidget(ui->runMacroOnChange, Qt::yellow,
+				Qt::transparent, true);
 	}
 }
 
-void AdvSceneSwitcher::on_macroProperties_clicked()
+void AdvSceneSwitcher::on_macroSettings_clicked()
 {
-	MacroProperties prop = GetGlobalMacroProperties();
-	bool accepted = MacroPropertiesDialog::AskForSettings(
+	GlobalMacroSettings prop = GetGlobalMacroSettings();
+	bool accepted = MacroSettingsDialog::AskForSettings(
 		this, prop, GetSelectedMacro().get());
 	if (!accepted) {
 		return;
 	}
-	GetGlobalMacroProperties() = prop;
+	GetGlobalMacroSettings() = prop;
 	emit HighlightMacrosChanged(prop._highlightExecuted);
 }
 
 static void moveControlsToSplitter(QSplitter *splitter, int idx,
 				   QLayoutItem *item)
 {
-	static int splitterHandleWidth = 38;
+	static int splitterHandleWidth = 32;
 	auto handle = splitter->handle(idx);
 	auto layout = item->layout();
-	layout->setContentsMargins(7, 7, 7, 7);
+	int leftMargin, rightMargin;
+	layout->getContentsMargins(&leftMargin, nullptr, &rightMargin, nullptr);
+	layout->setContentsMargins(leftMargin, 0, rightMargin, 0);
 	handle->setLayout(layout);
 	splitter->setHandleWidth(splitterHandleWidth);
 	splitter->setStyleSheet("QSplitter::handle {background: transparent;}");
@@ -816,14 +822,40 @@ static void runSegmentHighligtChecks(AdvSceneSwitcher *ss)
 		return;
 	}
 
-	const auto &properties = GetGlobalMacroProperties();
-	if (properties._highlightConditions) {
+	const auto &settings = GetGlobalMacroSettings();
+	if (settings._highlightConditions) {
 		runSegmentHighligtChecksHelper(ss->ui->conditionsList);
 	}
-	if (properties._highlightActions) {
+	if (settings._highlightActions) {
 		runSegmentHighligtChecksHelper(ss->ui->actionsList);
 		runSegmentHighligtChecksHelper(ss->ui->elseActionsList);
 	}
+}
+
+static QToolBar *
+setupToolBar(const std::initializer_list<std::initializer_list<QWidget *>>
+		     &widgetGroups)
+{
+	auto toolbar = new QToolBar();
+	toolbar->setIconSize({16, 16});
+
+	QAction *lastSeperator = nullptr;
+
+	for (const auto &widgetGroup : widgetGroups) {
+		for (const auto &widget : widgetGroup) {
+			toolbar->addWidget(widget);
+		}
+		lastSeperator = toolbar->addSeparator();
+	}
+
+	if (lastSeperator) {
+		toolbar->removeAction(lastSeperator);
+	}
+
+	// Prevent "extension" button from showing up
+	toolbar->setSizePolicy(QSizePolicy::MinimumExpanding,
+			       QSizePolicy::Preferred);
+	return toolbar;
 }
 
 void AdvSceneSwitcher::SetupMacroTab()
@@ -832,10 +864,15 @@ void AdvSceneSwitcher::SetupMacroTab()
 	ui->macros->installEventFilter(this);
 
 	if (GetMacros().size() == 0 && !switcher->disableHints) {
-		addPulse = PulseWidget(ui->macroAdd, QColor(Qt::green));
+		addPulse = HighlightWidget(ui->macroAdd, QColor(Qt::green));
 	}
+
+	auto macroControls = setupToolBar({{ui->macroAdd, ui->macroRemove},
+					   {ui->macroUp, ui->macroDown}});
+	ui->macroControlLayout->addWidget(macroControls);
+
 	ui->macros->Reset(GetMacros(),
-			  GetGlobalMacroProperties()._highlightExecuted);
+			  GetGlobalMacroSettings()._highlightExecuted);
 	connect(ui->macros, SIGNAL(MacroSelectionAboutToChange()), this,
 		SLOT(MacroSelectionAboutToChange()));
 	connect(ui->macros, SIGNAL(MacroSelectionChanged()), this,
@@ -885,13 +922,7 @@ void AdvSceneSwitcher::SetupMacroTab()
 		SLOT(HighlightOnChange()));
 	onChangeHighlightTimer.start();
 
-	// Move condition controls into splitter handle layout
-	moveControlsToSplitter(ui->macroActionConditionSplitter, 1,
-			       ui->macroConditionsLayout->takeAt(1));
-	moveControlsToSplitter(ui->macroElseActionSplitter, 1,
-			       ui->macroActionsLayout->takeAt(1));
-
-	// Set action and condition control icons
+	// Set action and condition toolbars
 	const std::string pathPrefix =
 		GetDataFilePath("res/images/" + GetThemeTypeName());
 	SetButtonIcon(ui->actionTop, (pathPrefix + "DoubleUp.svg").c_str());
@@ -905,6 +936,44 @@ void AdvSceneSwitcher::SetupMacroTab()
 		      (pathPrefix + "DoubleDown.svg").c_str());
 	SetButtonIcon(ui->toggleElseActions,
 		      (pathPrefix + "NotEqual.svg").c_str());
+
+	auto conditionToolbar =
+		setupToolBar({{ui->conditionAdd, ui->conditionRemove},
+			      {ui->conditionTop, ui->conditionUp,
+			       ui->conditionDown, ui->conditionBottom}});
+	auto actionToolbar = setupToolBar({{ui->actionAdd, ui->actionRemove},
+					   {ui->actionTop, ui->actionUp,
+					    ui->actionDown, ui->actionBottom}});
+	auto elseActionToolbar =
+		setupToolBar({{ui->elseActionAdd, ui->elseActionRemove},
+			      {ui->elseActionTop, ui->elseActionUp,
+			       ui->elseActionDown, ui->elseActionBottom}});
+
+	ui->conditionControlsLayout->addWidget(conditionToolbar);
+	ui->actionControlsLayout->insertWidget(0, actionToolbar);
+	ui->elseActionControlsLayout->addWidget(elseActionToolbar);
+
+	// Move condition controls into splitter handle layout
+	moveControlsToSplitter(ui->macroActionConditionSplitter, 1,
+			       ui->macroConditionsLayout->takeAt(1));
+	moveControlsToSplitter(ui->macroElseActionSplitter, 1,
+			       ui->macroActionsLayout->takeAt(1));
+
+	// Override splitter cursor icon when hovering over controls in splitter
+	SetCursorOnWidgetHover(ui->conditionAdd, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->conditionRemove,
+			       Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->conditionTop, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->conditionUp, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->conditionDown, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->conditionBottom,
+			       Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->actionAdd, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->actionRemove, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->actionTop, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->actionUp, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->actionDown, Qt::CursorShape::ArrowCursor);
+	SetCursorOnWidgetHover(ui->actionBottom, Qt::CursorShape::ArrowCursor);
 
 	// Reserve more space for macro edit area than for the macro list
 	ui->macroListMacroEditSplitter->setStretchFactor(0, 1);
@@ -980,8 +1049,30 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 	menu.exec(globalPos);
 }
 
-static void handleCustomLabelChange(MacroSegmentEdit *segmentEdit,
-				    QAction *contextMenuOption)
+static bool handleCustomLabelRename(MacroSegmentEdit *segmentEdit)
+{
+	std::string label;
+	auto segment = segmentEdit->Data();
+	if (!segment) {
+		return false;
+	}
+
+	bool accepted = NameDialog::AskForName(
+		GetSettingsWindow(),
+		obs_module_text(
+			"AdvSceneSwitcher.macroTab.segment.setCustomLabel"),
+		"", label, QString::fromStdString(segment->GetCustomLabel()));
+	if (!accepted) {
+		return false;
+	}
+
+	segment->SetCustomLabel(label);
+	segmentEdit->HeaderInfoChanged("");
+	return true;
+}
+
+static void handleCustomLabelEnableChange(MacroSegmentEdit *segmentEdit,
+					  QAction *contextMenuOption)
 {
 	bool enable = contextMenuOption->isChecked();
 	auto segment = segmentEdit->Data();
@@ -992,19 +1083,66 @@ static void handleCustomLabelChange(MacroSegmentEdit *segmentEdit,
 		return;
 	}
 
-	std::string label;
-	bool accepted = NameDialog::AskForName(
-		GetSettingsWindow(),
-		obs_module_text(
-			"AdvSceneSwitcher.macroTab.segment.setCustomLabel"),
-		"", label, QString::fromStdString(segment->GetCustomLabel()));
-	if (!accepted) {
+	if (!handleCustomLabelRename(segmentEdit)) {
 		segment->SetUseCustomLabel(false);
+	}
+}
+
+static void setupSegmentLabelContextMenuEntries(MacroSegmentEdit *segmentEdit,
+						QMenu &menu)
+{
+	if (!segmentEdit) {
 		return;
 	}
 
-	segment->SetCustomLabel(label);
-	segmentEdit->HeaderInfoChanged("");
+	auto segment = segmentEdit ? segmentEdit->Data() : nullptr;
+	const bool customLabelIsEnabled = segment &&
+					  segment->GetUseCustomLabel();
+
+	auto enableCustomLabel = menu.addAction(obs_module_text(
+		"AdvSceneSwitcher.macroTab.segment.useCustomLabel"));
+	enableCustomLabel->setCheckable(true);
+	enableCustomLabel->setChecked(customLabelIsEnabled);
+	QWidget::connect(enableCustomLabel, &QAction::triggered,
+			 [segmentEdit, enableCustomLabel]() {
+				 handleCustomLabelEnableChange(
+					 segmentEdit, enableCustomLabel);
+			 });
+
+	if (!customLabelIsEnabled) {
+		return;
+	}
+
+	auto customLabelRename = menu.addAction(obs_module_text(
+		"AdvSceneSwitcher.macroTab.segment.customLabelRename"));
+	QWidget::connect(customLabelRename, &QAction::triggered,
+			 [segmentEdit]() {
+				 handleCustomLabelRename(segmentEdit);
+			 });
+}
+
+static void setupCopyPasteContextMenuEnry(AdvSceneSwitcher *ss,
+					  MacroSegmentEdit *segmentEdit,
+					  QMenu &menu)
+{
+	auto copy = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.segment.copy"), ss,
+		[ss]() { ss->CopyMacroSegment(); });
+	copy->setEnabled(!!segmentEdit);
+
+	const char *pasteText = "AdvSceneSwitcher.macroTab.segment.paste";
+	if (MacroActionIsInClipboard()) {
+		if (IsCursorInWidgetArea(ss->ui->macroActions)) {
+			pasteText =
+				"AdvSceneSwitcher.macroTab.segment.pasteAction";
+		} else if (IsCursorInWidgetArea(ss->ui->macroElseActions)) {
+			pasteText =
+				"AdvSceneSwitcher.macroTab.segment.pasteElseAction";
+		}
+	}
+	auto paste = menu.addAction(obs_module_text(pasteText), ss,
+				    [ss]() { ss->PasteMacroSegment(); });
+	paste->setEnabled(MacroSegmentIsInClipboard());
 }
 
 static void setupConextMenu(AdvSceneSwitcher *ss, const QPoint &pos,
@@ -1017,43 +1155,19 @@ static void setupConextMenu(AdvSceneSwitcher *ss, const QPoint &pos,
 	QMenu menu;
 	auto segmentEdit = list->WidgetAt(pos);
 
-	auto copy = menu.addAction(
-		obs_module_text("AdvSceneSwitcher.macroTab.segment.copy"), ss,
-		[ss]() { ss->CopyMacroSegment(); });
-	copy->setEnabled(!!segmentEdit);
-	auto paste = menu.addAction(
-		obs_module_text("AdvSceneSwitcher.macroTab.segment.paste"), ss,
-		[ss]() { ss->PasteMacroSegment(); });
-	paste->setEnabled(MacroSegmentIsInClipboard());
-
+	setupCopyPasteContextMenuEnry(ss, segmentEdit, menu);
 	menu.addSeparator();
-
-	if (segmentEdit) {
-		auto customLabel = menu.addAction(obs_module_text(
-			"AdvSceneSwitcher.macroTab.segment.useCustomLabel"));
-		customLabel->setCheckable(true);
-		auto segment = segmentEdit ? segmentEdit->Data() : nullptr;
-		customLabel->setChecked(segment &&
-					segment->GetUseCustomLabel());
-		QWidget::connect(customLabel, &QAction::triggered,
-				 std::bind(handleCustomLabelChange, segmentEdit,
-					   customLabel));
-	}
-
+	setupSegmentLabelContextMenuEntries(segmentEdit, menu);
 	menu.addSeparator();
-
 	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.expandAll"),
 		       ss, [ss, expand]() { expand(ss); });
 	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.collapseAll"),
 		       ss, [ss, collapse]() { collapse(ss); });
-
 	menu.addSeparator();
-
 	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.maximize"),
 		       ss, [ss, maximize]() { maximize(ss); });
 	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.minimize"),
 		       ss, [ss, minimize]() { minimize(ss); });
-
 	menu.exec(list->mapToGlobal(pos));
 }
 
@@ -1098,7 +1212,7 @@ void AdvSceneSwitcher::CopyMacro()
 	}
 
 	OBSDataAutoRelease data = obs_data_create();
-	macro->Save(data);
+	macro->Save(data, true);
 	newMacro->Load(data);
 	newMacro->PostLoad();
 	newMacro->SetName(name);
@@ -1106,7 +1220,10 @@ void AdvSceneSwitcher::CopyMacro()
 	Macro::PrepareMoveToGroup(macro->Parent(), newMacro);
 
 	ui->macros->Add(newMacro, macro);
-	ui->macroAdd->disconnect(addPulse);
+	if (addPulse) {
+		addPulse->deleteLater();
+		addPulse = nullptr;
+	}
 	emit MacroAdded(QString::fromStdString(name));
 }
 
@@ -1398,7 +1515,7 @@ static void fade(QWidget *widget, bool fadeOut)
 	animation->start(QPropertyAnimation::DeleteWhenStopped);
 }
 
-void fadeWidgets(const std::vector<QWidget *> &widgets, bool fadeOut)
+static void fadeWidgets(const std::vector<QWidget *> &widgets, bool fadeOut)
 {
 	for (const auto &widget : widgets) {
 		fade(widget, fadeOut);

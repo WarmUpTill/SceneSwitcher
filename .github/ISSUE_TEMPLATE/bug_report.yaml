@@ -1,0 +1,111 @@
+# Based on the OBS issue templates
+# https://github.com/obsproject/.github/tree/master/.github/ISSUE_TEMPLATE
+
+name: Bug Report
+description: Report a bug or crash
+body:
+- type: markdown
+  id: md_welcome
+  attributes:
+    value: This form is for reporting bugs for Advanced Scene Switcher!
+- type: dropdown
+  id: os_info
+  attributes:
+    label: Operating System Info
+    description: What Operating System are you running?
+    options:
+    - Windows 11
+    - Windows 10
+    - macOS 14
+    - macOS 13
+    - macOS 12
+    - macOS 11
+    - Ubuntu 23.10
+    - Ubuntu 22.04
+    - Other
+  validations:
+    required: true
+- type: input
+  id: os_info_other
+  attributes:
+    label: Other OS
+    description: "If \"Other\" was selected above, what OS are you using?"
+    placeholder: "e.g., Arch Linux, FreeBSD"
+  validations:
+    required: false
+- type: input
+  id: obs_version
+  attributes:
+    label: OBS Studio Version
+    description: What version of OBS Studio are you using?
+    placeholder: 30.2.2
+  validations:
+    required: true
+- type: input
+  id: advss_version
+  attributes:
+    label: Advanced Scene Switcher Version
+    description: What version of the Advanced Scene Switcher are you using?
+    placeholder: 1.27.2
+  validations:
+    required: true
+- type: input
+  id: settings
+  attributes:
+    label: Plugin settings
+    description: |
+      Please provide the plugin settings used.
+      Either only [export the macros](https://github.com/WarmUpTill/SceneSwitcher/wiki/Exporting-and-importing-individual-macros) relevant to this issue or [export all settings](https://github.com/WarmUpTill/SceneSwitcher/wiki/Saving-and-loading-settings#how-to-create-and-import-a-backup-of-your-settings) on the General tab of the plugin.
+  validations:
+    required: false
+- type: input
+  id: obs_log_url
+  attributes:
+    label: OBS Studio Log URL
+    description: Please provide the obsproject.com URL (from Help menu > Log Files > Upload Current/Previous Log File) to the OBS log file where this issue occurred.
+  validations:
+    required: false
+- type: input
+  id: obs_crash_log_url
+  attributes:
+    label: OBS Studio Crash Log URL
+    description: If this is a crash report, please provide the obsproject.com URL to the OBS crash log file where this issue occurred.
+  validations:
+    required: false
+- type: textarea
+  id: expected_behavior
+  attributes:
+    label: Expected Behavior
+    description: "What did you expect to happen?"
+  validations:
+    required: true
+- type: textarea
+  id: current_behavior
+  attributes:
+    label: Current Behavior
+    description: "What actually happened?"
+  validations:
+    required: true
+- type: textarea
+  id: steps_to_reproduce
+  attributes:
+    label: Steps to Reproduce
+    description: "How do you trigger this bug? Please walk us through it step by step."
+    placeholder: |
+      1.
+      2.
+      3.
+      ...
+    value: |
+      1.
+      2.
+      3.
+      ...
+  validations:
+    required: true
+- type: textarea
+  id: additional_notes
+  attributes:
+    label: Anything else we should know?
+  validations:
+    required: false

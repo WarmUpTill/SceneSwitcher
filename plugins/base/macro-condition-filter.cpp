@@ -47,17 +47,19 @@ bool MacroConditionFilter::CheckConditionHelper(const OBSWeakSource &filter)
 	case Condition::DISABLED:
 		ret = !obs_source_enabled(filterSource);
 		break;
-	case Condition::SETTINGS_MATCH:
+	case Condition::SETTINGS_MATCH: {
 		ret = CompareSourceSettings(filter, _settings, _regex);
-		if (IsReferencedInVars()) {
-			SetVariableValue(GetSourceSettings(filter));
-		}
+		const auto settings = GetSourceSettings(filter);
+		SetVariableValue(settings);
+		SetTempVarValue("settings", settings);
 		break;
+	}
 	case Condition::SETTINGS_CHANGED: {
-		std::string settings = GetSourceSettings(filter);
+		const auto settings = GetSourceSettings(filter);
 		ret = !_currentSettings.empty() && settings != _currentSettings;
 		_currentSettings = settings;
 		SetVariableValue(settings);
+		SetTempVarValue("settings", settings);
 		break;
 	}
 	case Condition::INDIVIDUAL_SETTING_MATCH: {
@@ -68,6 +70,7 @@ bool MacroConditionFilter::CheckConditionHelper(const OBSWeakSource &filter)
 		ret = _regex.Enabled() ? _regex.Matches(*value, _settings)
 				       : value == std::string(_settings);
 		SetVariableValue(*value);
+		SetTempVarValue("setting", *value);
 		break;
 	}
 	case Condition::INDIVIDUAL_SETTING_CHANGED: {
@@ -78,6 +81,7 @@ bool MacroConditionFilter::CheckConditionHelper(const OBSWeakSource &filter)
 		ret = _currentSettingsValue != value;
 		_currentSettingsValue = *value;
 		SetVariableValue(*value);
+		SetTempVarValue("setting", *value);
 		break;
 	}
 	default:
@@ -122,7 +126,8 @@ bool MacroConditionFilter::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	_source.Load(obj);
 	_filter.Load(obj, _source, "filter");
-	_condition = static_cast<Condition>(obs_data_get_int(obj, "condition"));
+	SetCondition(
+		static_cast<Condition>(obs_data_get_int(obj, "condition")));
 	_settings.Load(obj, "settings");
 	_regex.Load(obj);
 	// TOOD: remove in future version
@@ -140,6 +145,37 @@ std::string MacroConditionFilter::GetShortDesc() const
 		return _source.ToString() + " - " + _filter.ToString();
 	}
 	return "";
+}
+
+void MacroConditionFilter::SetCondition(Condition cond)
+{
+	_condition = cond;
+	SetupTempVars();
+}
+
+void MacroConditionFilter::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+	switch (_condition) {
+	case Condition::ENABLED:
+		break;
+	case Condition::DISABLED:
+		break;
+	case Condition::SETTINGS_MATCH:
+	case Condition::SETTINGS_CHANGED:
+		AddTempvar("settings",
+			   obs_module_text(
+				   "AdvSceneSwitcher.tempVar.filter.settings"));
+		break;
+	case Condition::INDIVIDUAL_SETTING_MATCH:
+	case Condition::INDIVIDUAL_SETTING_CHANGED:
+		AddTempvar("setting",
+			   obs_module_text(
+				   "AdvSceneSwitcher.tempVar.filter.setting"));
+		break;
+	default:
+		break;
+	}
 }
 
 static inline void populateConditionSelection(QComboBox *list)
@@ -263,8 +299,8 @@ void MacroConditionFilterEdit::ConditionChanged(int index)
 	}
 
 	auto lock = LockContext();
-	_entryData->_condition =
-		static_cast<MacroConditionFilter::Condition>(index);
+	_entryData->SetCondition(
+		static_cast<MacroConditionFilter::Condition>(index));
 	SetWidgetVisibility();
 }
 
@@ -283,7 +319,7 @@ void MacroConditionFilterEdit::GetSettingsClicked()
 	}
 
 	QString value;
-	if (_entryData->_condition ==
+	if (_entryData->GetCondition() ==
 	    MacroConditionFilter::Condition::SETTINGS_MATCH) {
 		value = FormatJsonString(GetSourceSettings(filters.at(0)));
 	} else {
@@ -346,21 +382,22 @@ void MacroConditionFilterEdit::RefreshVariableSourceSelectionValue()
 void MacroConditionFilterEdit::SetWidgetVisibility()
 {
 	const bool showSettingsControls =
-		_entryData->_condition ==
+		_entryData->GetCondition() ==
 			MacroConditionFilter::Condition::SETTINGS_MATCH ||
-		_entryData->_condition ==
+		_entryData->GetCondition() ==
 			MacroConditionFilter::Condition::INDIVIDUAL_SETTING_MATCH;
 	_settings->setVisible(showSettingsControls);
 	_getSettings->setVisible(showSettingsControls);
 	_regex->setVisible(showSettingsControls);
 	_settingSelection->setVisible(
-		_entryData->_condition == MacroConditionFilter::Condition::
-						  INDIVIDUAL_SETTING_MATCH ||
-		_entryData->_condition == MacroConditionFilter::Condition::
-						  INDIVIDUAL_SETTING_CHANGED);
+		_entryData->GetCondition() ==
+			MacroConditionFilter::Condition::INDIVIDUAL_SETTING_MATCH ||
+		_entryData->GetCondition() ==
+			MacroConditionFilter::Condition::
+				INDIVIDUAL_SETTING_CHANGED);
 	_refreshSettingSelection->setVisible(
-		_entryData->_condition == MacroConditionFilter::Condition::
-						  INDIVIDUAL_SETTING_MATCH &&
+		_entryData->GetCondition() ==
+			MacroConditionFilter::Condition::INDIVIDUAL_SETTING_MATCH &&
 		(_entryData->_source.GetType() ==
 			 SourceSelection::Type::VARIABLE ||
 		 _entryData->_filter.GetType() ==
@@ -377,7 +414,8 @@ void MacroConditionFilterEdit::UpdateEntryData()
 
 	_sources->SetSource(_entryData->_source);
 	_filters->SetFilter(_entryData->_source, _entryData->_filter);
-	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
+	_conditions->setCurrentIndex(
+		static_cast<int>(_entryData->GetCondition()));
 	_settings->setPlainText(_entryData->_settings);
 	_regex->SetRegexConfig(_entryData->_regex);
 	const auto filters =

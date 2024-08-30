@@ -1,4 +1,5 @@
 #include "status-control.hpp"
+#include "log-helper.hpp"
 #include "obs-module-helper.hpp"
 #include "path-helpers.hpp"
 #include "plugin-state-helpers.hpp"
@@ -8,12 +9,77 @@
 #include <obs-frontend-api.h>
 #include <QAction>
 #include <QMainWindow>
+#include <QPalette>
 #include <QToolBar>
+
+#if LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(30, 0, 0)
+#include <QDockWidget>
+
+static bool obs_frontend_add_dock_by_id(const char *id, const char *title,
+					QWidget *widget)
+{
+	widget->setObjectName(id);
+
+	auto dock = new QDockWidget();
+	dock->setWindowTitle(title);
+	dock->setWidget(widget);
+	dock->setFloating(true);
+	dock->setVisible(false);
+	dock->setFeatures(QDockWidget::DockWidgetClosable |
+			  QDockWidget::DockWidgetMovable |
+			  QDockWidget::DockWidgetFloatable);
+
+	return !!obs_frontend_add_dock(dock);
+}
+#endif
 
 namespace advss {
 
 void OpenSettingsWindow();
-StatusDock *dock = nullptr;
+
+static QString colorToString(const QColor &color)
+{
+	return QString("rgba(") + QString::number(color.red()) + "," +
+	       QString::number(color.green()) + "," +
+	       QString::number(color.blue()) + "," +
+	       QString::number(color.alpha()) + ")";
+}
+
+static QString getDefaultBackgroundColorString()
+{
+	static QString defaultColorString;
+	static bool cacheReady = false;
+
+	if (cacheReady) {
+		return defaultColorString;
+	}
+
+	QWidget tempWidget;
+	const auto defaultColor =
+		tempWidget.palette().brush(QPalette::Window).color();
+	defaultColorString = colorToString(defaultColor);
+
+	cacheReady = true;
+	return defaultColorString;
+}
+
+static QString getDefaultTextColorString()
+{
+	static QString defaultColorString;
+	static bool cacheReady = false;
+
+	if (cacheReady) {
+		return defaultColorString;
+	}
+
+	QLabel tempWidget;
+	const auto defaultColor =
+		tempWidget.palette().brush(QPalette::Text).color();
+	defaultColorString = colorToString(defaultColor);
+
+	cacheReady = true;
+	return defaultColorString;
+}
 
 StatusControl::StatusControl(QWidget *parent, bool noLayout)
 	: QWidget(parent),
@@ -28,30 +94,22 @@ StatusControl::StatusControl(QWidget *parent, bool noLayout)
 	_statusPrefix->setWordWrap(true);
 	_statusPrefix->setSizePolicy(QSizePolicy::Expanding,
 				     QSizePolicy::Expanding);
-	_status->setStyleSheet("QLabel{ \
-		border-style: outset; \
-		border-width: 2px; \
-		border-radius: 7px; \
-		border-color: rgb(0,0,0,0) \
-		}");
-	_status->setSizePolicy(QSizePolicy::Maximum,
-			       QSizePolicy::MinimumExpanding);
-
 	QWidget::connect(_button, SIGNAL(clicked()), this,
 			 SLOT(ButtonClicked()));
 
 	if (!noLayout) {
-		QHBoxLayout *statusLayout = new QHBoxLayout();
-		statusLayout->addWidget(_statusPrefix);
-		statusLayout->addStretch();
-		statusLayout->addWidget(_status);
-		statusLayout->setStretch(0, 10);
 		_buttonLayout->setContentsMargins(0, 0, 0, 0);
 		_buttonLayout->addWidget(_button);
 		QVBoxLayout *layout = new QVBoxLayout();
-		layout->addLayout(statusLayout);
+		_statusPrefix->setAlignment(Qt::AlignCenter);
+		_status->setAlignment(Qt::AlignCenter);
+		layout->addWidget(_statusPrefix);
+		layout->addWidget(_status);
 		layout->addLayout(_buttonLayout);
 		setLayout(layout);
+	} else {
+		_status->setSizePolicy(QSizePolicy::Maximum,
+				       QSizePolicy::MinimumExpanding);
 	}
 
 	if (PluginIsRunning()) {
@@ -94,7 +152,11 @@ void StatusControl::SetStarted()
 	_button->setText(
 		obs_module_text("AdvSceneSwitcher.generalTab.status.stop"));
 	_status->setText(obs_module_text("AdvSceneSwitcher.status.active"));
-	_status->disconnect(_pulse);
+	if (_pulse) {
+		_pulse->deleteLater();
+		_pulse = nullptr;
+	}
+	SetStatusStyleSheet(false);
 	_setToStopped = false;
 }
 
@@ -103,23 +165,37 @@ void StatusControl::SetStopped()
 	_button->setText(
 		obs_module_text("AdvSceneSwitcher.generalTab.status.start"));
 	_status->setText(obs_module_text("AdvSceneSwitcher.status.inactive"));
+	SetStatusStyleSheet(true);
 	if (HighlightUIElementsEnabled()) {
-		_pulse = PulseWidget(_status, QColor(Qt::red),
-				     QColor(0, 0, 0, 0));
+		_pulse = HighlightWidget(_status, QColor(Qt::red),
+					 QColor(0, 0, 0, 0));
 	}
 	_setToStopped = true;
 }
 
-StatusDock::StatusDock(QWidget *parent) : OBSDock(parent)
+void StatusControl::SetStatusStyleSheet(bool stopped) const
 {
-	setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
-	setFeatures(DockWidgetClosable | DockWidgetMovable |
-		    DockWidgetFloatable);
-	// Setting a fixed object name is crucial for OBS to be able to restore
-	// the docks position, if the dock is not floating
-	setObjectName("Adv-ss-dock");
+	auto style = QString("QLabel{ "
+			     "background-color: ");
+	if (stopped) {
+		style += getDefaultBackgroundColorString() + "; ";
+	} else {
+		style += "transparent; ";
+	}
+	style += "border-style: outset; "
+		 "border-width: 2px; "
+		 "border-radius: 7px; "
+		 "border-color: " +
+		 getDefaultTextColorString() + "; }";
+	_status->setStyleSheet(style);
+}
 
-	QAction *action = new QAction;
+StatusDockWidget::StatusDockWidget(QWidget *parent) : QFrame(parent)
+{
+	setFrameShape(QFrame::StyledPanel);
+	setFrameShadow(QFrame::Sunken);
+
+	auto action = new QAction;
 	action->setProperty("themeID", QVariant(QString::fromUtf8("cogsIcon")));
 	action->connect(action, &QAction::triggered, OpenSettingsWindow);
 	const auto path = QString::fromStdString(GetDataFilePath(
@@ -137,29 +213,21 @@ StatusDock::StatusDock(QWidget *parent) : OBSDock(parent)
 	statusControl->ButtonLayout()->setStretchFactor(statusControl->Button(),
 							100);
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto layout = new QVBoxLayout;
 	layout->addWidget(statusControl);
 	layout->setContentsMargins(0, 0, 0, 0);
-
-	// QFrame wrapper is necessary to avoid dock being partially
-	// transparent
-	QFrame *wrapper = new QFrame;
-	wrapper->setFrameShape(QFrame::StyledPanel);
-	wrapper->setFrameShadow(QFrame::Sunken);
-	wrapper->setLayout(layout);
-	setWidget(wrapper);
-
-	setFloating(true);
-	hide();
+	setLayout(layout);
 }
 
 void SetupDock()
 {
-	dock = new StatusDock(
-		static_cast<QMainWindow *>(obs_frontend_get_main_window()));
-	// Added for cosmetic reasons to avoid brief flash of dock window on startup
-	dock->setVisible(false);
-	obs_frontend_add_dock(dock);
+	auto dock = new StatusDockWidget();
+	if (!obs_frontend_add_dock_by_id(
+		    "advss-status-dock",
+		    obs_module_text("AdvSceneSwitcher.windowTitle"), dock)) {
+		blog(LOG_INFO, "failed to register status dock!");
+		dock->deleteLater();
+	}
 }
 
 } // namespace advss

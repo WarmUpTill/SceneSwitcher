@@ -2,6 +2,7 @@
 #include "macro-action.hpp"
 #include "macro-condition.hpp"
 #include "macro-helpers.hpp"
+#include "macro-input.hpp"
 #include "macro-ref.hpp"
 #include "variable-string.hpp"
 #include "temp-variable.hpp"
@@ -25,35 +26,44 @@ public:
 	Macro(const std::string &name = "", const bool addHotkey = false);
 	virtual ~Macro();
 
-	bool CeckMatch();
-	bool PerformActions(bool match, bool forceParallel = false,
-			    bool ignorePause = false);
-	bool Matched() const { return _matched; }
-	bool ShouldRunActions() const;
-	int64_t MsSinceLastCheck() const;
 	std::string Name() const { return _name; }
 	void SetName(const std::string &name);
-	void SetRunInParallel(bool parallel) { _runInParallel = parallel; }
-	bool RunInParallel() const { return _runInParallel; }
+
+	bool CeckMatch(bool ignorePause = false);
+	bool Matched() const { return _matched; }
+	int64_t MsSinceLastCheck() const;
+	bool ShouldRunActions() const;
+	bool PerformActions(bool match, bool forceParallel = false,
+			    bool ignorePause = false);
+
 	void SetPaused(bool pause = true);
 	bool Paused() const { return _paused; }
 	bool WasPausedSince(
 		const std::chrono::high_resolution_clock::time_point &) const;
+
+	void Stop();
+	bool GetStop() const { return _stop; }
+	void ResetTimers();
+
 	void SetMatchOnChange(bool onChange);
 	bool MatchOnChange() const { return _performActionsOnChange; }
+
 	void SetSkipExecOnStart(bool skip) { _skipExecOnStart = skip; }
 	bool SkipExecOnStart() const { return _skipExecOnStart; }
-	void SetStopActionsIfNotDone(bool stopActionsIfNotDone)
-	{
-		_stopActionsIfNotDone = stopActionsIfNotDone;
-	}
+
+	void SetStopActionsIfNotDone(bool stopActionsIfNotDone);
 	bool StopActionsIfNotDone() const { return _stopActionsIfNotDone; }
+
 	int RunCount() const { return _runCount; };
 	void ResetRunCount() { _runCount = 0; };
-	void ResetTimers();
+
 	void AddHelperThread(std::thread &&);
-	bool GetStop() const { return _stop; }
-	void Stop();
+	void SetRunInParallel(bool parallel) { _runInParallel = parallel; }
+	bool RunInParallel() const { return _runInParallel; }
+
+	// Input variables
+	MacroInputVariables GetInputVariables() const;
+	void SetInputVariables(const MacroInputVariables &);
 
 	// Temporary variable helpers
 	std::vector<TempVariable> GetTempVars(MacroSegment *filter) const;
@@ -88,7 +98,7 @@ public:
 	std::shared_ptr<Macro> Parent() const;
 
 	// Saving and loading
-	bool Save(obs_data_t *obj) const;
+	bool Save(obs_data_t *obj, bool saveForCopy = false) const;
 	bool Load(obs_data_t *obj);
 	// Some macros can refer to other macros, which are not yet loaded.
 	// Use this function to set these references after loading is complete.
@@ -98,19 +108,21 @@ public:
 	bool SwitchesScene() const;
 
 	// UI helpers
-	const QList<int> &GetActionConditionSplitterPosition() const;
 	void SetActionConditionSplitterPosition(const QList<int>);
-	const QList<int> &GetElseActionSplitterPosition() const;
+	const QList<int> &GetActionConditionSplitterPosition() const;
 	void SetElseActionSplitterPosition(const QList<int>);
+	const QList<int> &GetElseActionSplitterPosition() const;
 	bool HasValidSplitterPositions() const;
 	bool WasExecutedSince(
 		const std::chrono::high_resolution_clock::time_point &) const;
 	bool OnChangePreventedActionsRecently();
 	void ResetUIHelpers();
 
+	// Hotkeys
 	void EnablePauseHotkeys(bool);
 	bool PauseHotkeysEnabled() const;
 
+	// Docks
 	void EnableDock(bool);
 	bool DockEnabled() const { return _registerDock; }
 	void SetDockHasRunButton(bool value);
@@ -143,11 +155,10 @@ private:
 	bool RunActions(bool ignorePause);
 	bool RunElseActions(bool ignorePause);
 
-	bool DockIsVisible() const;
-	void SetDockWidgetName() const;
-	void SaveDockSettings(obs_data_t *obj) const;
+	void SaveDockSettings(obs_data_t *obj, bool saveForCopy) const;
 	void LoadDockSettings(obs_data_t *obj);
 	void RemoveDock();
+	static std::string GenerateDockId();
 
 	std::string _name = "";
 	bool _die = false;
@@ -182,6 +193,8 @@ private:
 	obs_hotkey_id _unpauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _togglePauseHotkey = OBS_INVALID_HOTKEY_ID;
 
+	MacroInputVariables _inputVariables;
+
 	// UI helpers
 	bool _onPreventedActionExecution = false;
 
@@ -203,12 +216,8 @@ private:
 		obs_module_text("AdvSceneSwitcher.macroDock.statusLabel.true");
 	StringVariable _conditionsFalseStatusText =
 		obs_module_text("AdvSceneSwitcher.macroDock.statusLabel.false");
-	bool _dockIsFloating = true;
-	bool _dockIsVisible = false;
-	Qt::DockWidgetArea _dockArea;
-	QByteArray _dockGeo;
 	MacroDock *_dock = nullptr;
-	QAction *_dockAction = nullptr;
+	std::string _dockId = GenerateDockId();
 };
 
 void LoadMacros(obs_data_t *obj);

@@ -6,10 +6,11 @@
 namespace advss {
 
 struct MacroConditionInfo {
-	using CreateCondition = std::shared_ptr<MacroCondition> (*)(Macro *m);
 	using CreateConditionWidget =
 		QWidget *(*)(QWidget *parent, std::shared_ptr<MacroCondition>);
-	CreateCondition _create = nullptr;
+
+	std::function<std::shared_ptr<MacroCondition>(Macro *m)> _create =
+		nullptr;
 	CreateConditionWidget _createWidget = nullptr;
 	std::string _name;
 	bool _useDurationModifier = true;
@@ -19,6 +20,7 @@ class MacroConditionFactory {
 public:
 	MacroConditionFactory() = delete;
 	EXPORT static bool Register(const std::string &, MacroConditionInfo);
+	static bool Deregister(const std::string &);
 	static std::shared_ptr<MacroCondition> Create(const std::string &,
 						      Macro *m);
 	static QWidget *CreateWidget(const std::string &id, QWidget *parent,
@@ -31,5 +33,7 @@ public:
 private:
 	static std::map<std::string, MacroConditionInfo> &GetMap();
 };
+
+bool CanCreateDefaultCondition();
 
 } // namespace advss

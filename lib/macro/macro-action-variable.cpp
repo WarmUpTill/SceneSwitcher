@@ -6,7 +6,6 @@
 #include "macro.hpp"
 #include "non-modal-dialog.hpp"
 #include "source-helpers.hpp"
-#include "ui-helpers.hpp"
 #include "utility.hpp"
 
 namespace advss {
@@ -59,6 +58,8 @@ const static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.padValue"},
 	{MacroActionVariable::Type::TRUNCATE,
 	 "AdvSceneSwitcher.action.variable.type.truncateValue"},
+	{MacroActionVariable::Type::SWAP_VALUES,
+	 "AdvSceneSwitcher.action.variable.type.swapValues"},
 };
 
 static void apppend(Variable &var, const std::string &value)
@@ -393,6 +394,17 @@ bool MacroActionVariable::PerformAction()
 		var->SetValue(
 			truncate(var->Value(), _direction, _stringLength));
 		return true;
+	case Type::SWAP_VALUES: {
+		auto var2 = _variable2.lock();
+		if (!var2) {
+			return true;
+		}
+
+		auto tempValue = var->Value();
+		var->SetValue(var2->Value());
+		var2->SetValue(tempValue);
+		return true;
+	}
 	}
 
 	return true;
@@ -631,7 +643,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _scenes(new SceneSelectionWidget(this, true, false, true, true,
 					   true)),
 	  _tempVars(new TempVariableSelection(this)),
-	  _tempVarsHelp(new QLabel()),
+	  _tempVarsHelp(new HelpIcon(obs_module_text(
+		  "AdvSceneSwitcher.action.variable.type.setToTempvar.help"))),
 	  _sceneItemIndex(new VariableSpinBox()),
 	  _direction(new QComboBox()),
 	  _stringLength(new VariableSpinBox()),
@@ -658,15 +671,6 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_stringLength->setMaximum(999);
 	populateTypeSelection(_actions);
 	populateDirectionSelection(_direction);
-
-	QString path = GetThemeTypeName() == "Light"
-			       ? ":/res/images/help.svg"
-			       : ":/res/images/help_light.svg";
-	QIcon icon(path);
-	QPixmap pixmap = icon.pixmap(QSize(16, 16));
-	_tempVarsHelp->setPixmap(pixmap);
-	_tempVarsHelp->setToolTip(obs_module_text(
-		"AdvSceneSwitcher.action.variable.type.setToTempvar.help"));
 
 	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),
 			 this, SLOT(VariableChanged(const QString &)));
@@ -1318,8 +1322,9 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 		AddStretchIfNecessary(_entryLayout);
 	}
 
-	_variables2->setVisible(_entryData->_type ==
-				MacroActionVariable::Type::APPEND_VAR);
+	_variables2->setVisible(
+		_entryData->_type == MacroActionVariable::Type::APPEND_VAR ||
+		_entryData->_type == MacroActionVariable::Type::SWAP_VALUES);
 	_strValue->setVisible(
 		_entryData->_type ==
 			MacroActionVariable::Type::SET_FIXED_VALUE ||

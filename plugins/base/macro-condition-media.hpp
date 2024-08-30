@@ -5,18 +5,18 @@
 #include "source-selection.hpp"
 
 #include <limits>
+#include <obs.hpp>
 #include <QWidget>
 #include <QComboBox>
 #include <QCheckBox>
 
 namespace advss {
 
-constexpr auto custom_media_states_offset = 100;
-
 class MacroConditionMedia : public MacroCondition {
 public:
 	MacroConditionMedia(Macro *m) : MacroCondition(m) {}
-	~MacroConditionMedia();
+	MacroConditionMedia(const MacroConditionMedia &);
+	MacroConditionMedia &operator=(const MacroConditionMedia &);
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
@@ -26,19 +26,17 @@ public:
 	{
 		return std::make_shared<MacroConditionMedia>(m);
 	}
-	void ClearSignalHandler();
 	void ResetSignalHandler();
 	void UpdateMediaSourcesOfSceneList();
 	static void MediaStopped(void *data, calldata_t *);
 	static void MediaEnded(void *data, calldata_t *);
 	static void MediaNext(void *data, calldata_t *);
 
-	enum class Type {
-		SOURCE,
-		ANY,
-		ALL,
-	};
-	Type _sourceType = Type::SOURCE;
+	enum class SourceType { SOURCE, ANY, ALL };
+	SourceType _sourceType = SourceType::SOURCE;
+
+	enum class CheckType { STATE, TIME, LEGACY = 1000 };
+	CheckType _checkType = CheckType::STATE;
 
 	enum class State {
 		// OBS's internal states
@@ -53,19 +51,19 @@ public:
 		// Just a marker
 		LAST_OBS_MEDIA_STATE,
 		// states added for use in the plugin
-		PLAYLIST_ENDED = custom_media_states_offset,
-		ANY,
+		PLAYLIST_ENDED = 100,
+		ANY
 	};
-	State _state = State::OBS_MEDIA_STATE_NONE;
+	State _state = State::OBS_MEDIA_STATE_PLAYING;
 
 	enum class Time {
 		TIME_RESTRICTION_NONE,
 		TIME_RESTRICTION_SHORTER,
 		TIME_RESTRICTION_LONGER,
 		TIME_RESTRICTION_REMAINING_SHORTER,
-		TIME_RESTRICTION_REMAINING_LONGER,
+		TIME_RESTRICTION_REMAINING_LONGER
 	};
-	Time _restriction = Time::TIME_RESTRICTION_NONE;
+	Time _timeRestriction = Time::TIME_RESTRICTION_REMAINING_SHORTER;
 
 	SceneSelection _scene;
 	SourceSelection _source;
@@ -74,11 +72,14 @@ public:
 	Duration _time;
 
 private:
+	bool IsUsingLegacyCheck() const;
 	bool CheckTime();
 	bool CheckState();
 	bool CheckPlaylistEnd(const obs_media_state);
 	bool CheckMediaMatch();
 	void HandleSceneChange();
+
+	std::vector<OBSSignal> _signals;
 
 	bool _stopped = false;
 	bool _ended = false;
@@ -110,6 +111,7 @@ public:
 	}
 
 private slots:
+	void CheckTypeChanged(int);
 	void SourceTypeChanged(int);
 	void SourceChanged(const SourceSelection &);
 	void SceneChanged(const SceneSelection &);
@@ -121,6 +123,7 @@ signals:
 
 protected:
 	QComboBox *_sourceTypes;
+	QComboBox *_checkTypes;
 	SceneSelectionWidget *_scenes;
 	SourceSelectionWidget *_sources;
 	QComboBox *_states;

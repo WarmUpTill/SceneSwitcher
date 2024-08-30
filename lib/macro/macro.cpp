@@ -14,10 +14,66 @@
 #include <QAction>
 #include <QMainWindow>
 #include <unordered_map>
+#include <util/platform.h>
+
+#if LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(30, 0, 0)
+#include <QDockWidget>
+
+namespace {
+
+struct DockMapEntry {
+	QAction *action = nullptr;
+	QWidget *dock = nullptr;
+};
+
+} // namespace
+
+static std::unordered_map<const char *, DockMapEntry> dockIds;
+static std::mutex dockMutex;
+
+static bool obs_frontend_add_dock_by_id(const char *id, const char *title,
+					QWidget *widget)
+{
+	std::lock_guard<std::mutex> lock(dockMutex);
+	if (dockIds.count(id) > 0) {
+		return false;
+	}
+
+	widget->setObjectName(id);
+
+	auto dock = new QDockWidget();
+	dock->setWindowTitle(title);
+	dock->setWidget(widget);
+	dock->setFloating(true);
+	dock->setVisible(false);
+	dock->setFeatures(QDockWidget::DockWidgetClosable |
+			  QDockWidget::DockWidgetMovable |
+			  QDockWidget::DockWidgetFloatable);
+
+	auto action = static_cast<QAction *>(obs_frontend_add_dock(dock));
+	if (!action) {
+		return false;
+	}
+	dockIds[id] = {action, dock};
+	return true;
+}
+
+static void obs_frontend_remove_dock(const char *id)
+{
+	std::lock_guard<std::mutex> lock(dockMutex);
+	auto it = dockIds.find(id);
+	if (it == dockIds.end()) {
+		return;
+	}
+	it->second.action->deleteLater();
+	it->second.dock->deleteLater();
+	dockIds.erase(it);
+}
+
+#endif
 
 namespace advss {
 
-static constexpr int perfLogThreshold = 300;
 static std::deque<std::shared_ptr<Macro>> macros;
 
 Macro::Macro(const std::string &name, const bool addHotkey)
@@ -101,90 +157,74 @@ void Macro::PrepareMoveToGroup(std::shared_ptr<Macro> group,
 	}
 }
 
-bool Macro::CeckMatch()
+static bool checkCondition(const std::shared_ptr<MacroCondition> &condition)
+{
+	using namespace std::chrono_literals;
+	static constexpr auto perfLogThreshold = 300ms;
+
+	const auto startTime = std::chrono::high_resolution_clock::now();
+	const bool conditionMatched = condition->CheckCondition();
+	const auto endTime = std::chrono::high_resolution_clock::now();
+	const auto timeSpent = endTime - startTime;
+
+	if (timeSpent >= perfLogThreshold) {
+		const long int ms =
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				timeSpent)
+				.count();
+		blog(LOG_WARNING,
+		     "spent %ld ms in %s condition check of macro '%s'!", ms,
+		     condition->GetId().c_str(),
+		     condition->GetMacro()->Name().c_str());
+	}
+
+	return conditionMatched;
+}
+
+bool Macro::CeckMatch(bool ignorePause)
 {
 	if (_isGroup) {
 		return false;
 	}
 
 	_matched = false;
-	for (auto &c : _conditions) {
-		if (_paused) {
+	for (auto &condition : _conditions) {
+		if (_paused && !ignorePause) {
 			vblog(LOG_INFO, "Macro %s is paused", _name.c_str());
 			return false;
 		}
 
-		auto startTime = std::chrono::high_resolution_clock::now();
-		bool cond = c->CheckCondition();
-		auto endTime = std::chrono::high_resolution_clock::now();
-		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-			endTime - startTime);
-		if (ms.count() >= perfLogThreshold) {
-			blog(LOG_WARNING,
-			     "spent %ld ms in %s condition check of macro '%s'!",
-			     (long int)ms.count(), c->GetId().c_str(),
-			     Name().c_str());
-		}
+		bool conditionMatched = checkCondition(condition);
+		conditionMatched =
+			condition->CheckDurationModifier(conditionMatched);
 
-		c->CheckDurationModifier(cond);
-
-		switch (c->GetLogicType()) {
-		case LogicType::NONE:
-			vblog(LOG_INFO,
-			      "ignoring condition check 'none' for '%s'",
-			      _name.c_str());
+		const auto logicType = condition->GetLogicType();
+		if (logicType == Logic::Type::NONE) {
+			vblog(LOG_INFO, "ignoring condition '%s' for '%s'",
+			      condition->GetId().c_str(), _name.c_str());
 			continue;
-		case LogicType::AND:
-			_matched = _matched && cond;
-			if (cond) {
-				c->EnableHighlight();
-			}
-			break;
-		case LogicType::OR:
-			_matched = _matched || cond;
-			if (cond) {
-				c->EnableHighlight();
-			}
-			break;
-		case LogicType::AND_NOT:
-			_matched = _matched && !cond;
-			if (!cond) {
-				c->EnableHighlight();
-			}
-			break;
-		case LogicType::OR_NOT:
-			_matched = _matched || !cond;
-			if (!cond) {
-				c->EnableHighlight();
-			}
-			break;
-		case LogicType::ROOT_NONE:
-			_matched = cond;
-			if (cond) {
-				c->EnableHighlight();
-			}
-			break;
-		case LogicType::ROOT_NOT:
-			_matched = !cond;
-			if (!cond) {
-				c->EnableHighlight();
-			}
-			break;
-		default:
-			blog(LOG_WARNING,
-			     "ignoring unknown condition check for '%s'",
-			     _name.c_str());
-			break;
 		}
-		vblog(LOG_INFO, "condition %s returned %d", c->GetId().c_str(),
-		      cond);
+		vblog(LOG_INFO, "condition %s returned %d",
+		      condition->GetId().c_str(), conditionMatched);
+
+		const bool isNegativeLogicType =
+			Logic::IsNegationType(logicType);
+		if ((conditionMatched && !isNegativeLogicType) ||
+		    (!conditionMatched && isNegativeLogicType)) {
+			condition->EnableHighlight();
+		}
+
+		_matched = Logic::ApplyConditionLogic(
+			logicType, _matched, conditionMatched, _name.c_str());
 	}
+
 	vblog(LOG_INFO, "Macro %s returned %d", _name.c_str(), _matched);
 
 	_conditionSateChanged = _lastMatched != _matched;
 	if (!_conditionSateChanged && _performActionsOnChange) {
 		_onPreventedActionExecution = true;
 	}
+
 	_lastMatched = _matched;
 	_lastCheckTime = std::chrono::high_resolution_clock::now();
 	return _matched;
@@ -275,9 +315,15 @@ int64_t Macro::MsSinceLastCheck() const
 
 void Macro::SetName(const std::string &name)
 {
+	const bool nameChanged = _name == name;
 	_name = name;
+
 	SetHotkeysDesc();
-	SetDockWidgetName();
+
+	if (nameChanged) {
+		_dockId = GenerateDockId();
+	}
+	EnableDock(_registerDock);
 }
 
 void Macro::ResetTimers()
@@ -332,11 +378,6 @@ bool Macro::RunElseActions(bool ignorePause)
 	return RunActionsHelper(_elseActions, ignorePause);
 }
 
-bool Macro::DockIsVisible() const
-{
-	return _dock && _dockAction && _dock->isVisible();
-}
-
 bool Macro::WasPausedSince(
 	const std::chrono::high_resolution_clock::time_point &time) const
 {
@@ -346,6 +387,11 @@ bool Macro::WasPausedSince(
 void Macro::SetMatchOnChange(bool onChange)
 {
 	_performActionsOnChange = onChange;
+}
+
+void Macro::SetStopActionsIfNotDone(bool stopActionsIfNotDone)
+{
+	_stopActionsIfNotDone = stopActionsIfNotDone;
 }
 
 void Macro::SetPaused(bool pause)
@@ -380,6 +426,16 @@ void Macro::Stop()
 	if (_backgroundThread.joinable()) {
 		_backgroundThread.join();
 	}
+}
+
+MacroInputVariables Macro::GetInputVariables() const
+{
+	return _inputVariables;
+}
+
+void Macro::SetInputVariables(const MacroInputVariables &inputVariables)
+{
+	_inputVariables = inputVariables;
 }
 
 std::vector<TempVariable> Macro::GetTempVars(MacroSegment *filter) const
@@ -552,9 +608,11 @@ std::shared_ptr<Macro> Macro::Parent() const
 	return _parent.lock();
 }
 
-bool Macro::Save(obs_data_t *obj) const
+bool Macro::Save(obs_data_t *obj, bool saveForCopy) const
 {
-	obs_data_set_string(obj, "name", _name.c_str());
+	if (!saveForCopy) {
+		obs_data_set_string(obj, "name", _name.c_str());
+	}
 	obs_data_set_bool(obj, "pause", _paused);
 	obs_data_set_bool(obj, "parallel", _runInParallel);
 	obs_data_set_bool(obj, "onChange", _performActionsOnChange);
@@ -570,7 +628,7 @@ bool Macro::Save(obs_data_t *obj) const
 		return true;
 	}
 
-	SaveDockSettings(obj);
+	SaveDockSettings(obj, saveForCopy);
 
 	SaveSplitterPos(_actionConditionSplitterPosition, obj,
 			"macroActionConditionSplitterPosition");
@@ -610,41 +668,9 @@ bool Macro::Save(obs_data_t *obj) const
 	}
 	obs_data_set_array(obj, "elseActions", elseActions);
 
-	return true;
-}
+	_inputVariables.Save(obj);
 
-bool isValidLogic(LogicType t, bool root)
-{
-	bool isRoot = isRootLogicType(t);
-	if (!isRoot == root) {
-		return false;
-	}
-	if (isRoot) {
-		if (t >= LogicType::ROOT_LAST) {
-			return false;
-		}
-	} else if (t >= LogicType::LAST) {
-		return false;
-	}
 	return true;
-}
-
-void setValidLogic(MacroCondition *c, bool root, std::string name)
-{
-	if (isValidLogic(c->GetLogicType(), root)) {
-		return;
-	}
-	if (root) {
-		c->SetLogicType(LogicType::ROOT_NONE);
-		blog(LOG_WARNING,
-		     "setting invalid logic selection to 'if' for macro %s",
-		     name.c_str());
-	} else {
-		c->SetLogicType(LogicType::NONE);
-		blog(LOG_WARNING,
-		     "setting invalid logic selection to 'ignore' for macro %s",
-		     name.c_str());
-	}
 }
 
 bool Macro::Load(obs_data_t *obj)
@@ -702,7 +728,7 @@ bool Macro::Load(obs_data_t *obj)
 			_conditions.emplace_back(newEntry);
 			auto c = _conditions.back().get();
 			c->Load(arrayObj);
-			setValidLogic(c, root, _name);
+			c->ValidateLogicSelection(root, Name().c_str());
 		} else {
 			blog(LOG_WARNING,
 			     "discarding condition entry with unknown id (%s) for macro %s",
@@ -747,6 +773,8 @@ bool Macro::Load(obs_data_t *obj)
 		}
 	}
 	UpdateElseActionIndices();
+
+	_inputVariables.Load(obj);
 
 	return true;
 }
@@ -845,14 +873,10 @@ bool Macro::PauseHotkeysEnabled() const
 	return _registerHotkeys;
 }
 
-void Macro::SaveDockSettings(obs_data_t *obj) const
+void Macro::SaveDockSettings(obs_data_t *obj, bool saveForCopy) const
 {
 	auto dockSettings = obs_data_create();
 	obs_data_set_bool(dockSettings, "register", _registerDock);
-	// The object name is used to restore the position of the dock
-	if (_registerDock) {
-		SetDockWidgetName();
-	}
 	obs_data_set_bool(dockSettings, "hasRunButton", _dockHasRunButton);
 	obs_data_set_bool(dockSettings, "hasPauseButton", _dockHasPauseButton);
 	obs_data_set_bool(dockSettings, "hasStatusLabel", _dockHasStatusLabel);
@@ -865,18 +889,14 @@ void Macro::SaveDockSettings(obs_data_t *obj) const
 				       "conditionsTrueStatusText");
 	_conditionsFalseStatusText.Save(dockSettings,
 					"conditionsFalseStatusText");
-	if (_dock) {
-		auto window = static_cast<QMainWindow *>(
-			obs_frontend_get_main_window());
-		obs_data_set_bool(dockSettings, "isFloating",
-				  _dock->isFloating());
-		obs_data_set_bool(dockSettings, "isVisible", DockIsVisible());
-		obs_data_set_int(dockSettings, "area",
-				 window->dockWidgetArea(_dock));
-		obs_data_set_string(
-			dockSettings, "geometry",
-			_dock->saveGeometry().toBase64().constData());
+	if (saveForCopy) {
+		auto uuid = GenerateDockId();
+		obs_data_set_string(dockSettings, "dockId", uuid.c_str());
+
+	} else {
+		obs_data_set_string(dockSettings, "dockId", _dockId.c_str());
 	}
+	obs_data_set_int(dockSettings, "version", 1);
 	obs_data_set_obj(obj, "dockSettings", dockSettings);
 	obs_data_release(dockSettings);
 }
@@ -893,8 +913,13 @@ void Macro::LoadDockSettings(obs_data_t *obj)
 		return;
 	}
 
+	if (!obs_data_has_user_value(dockSettings, "version")) {
+		_dockId = std::string("ADVSS-") + _name;
+	} else {
+		_dockId = obs_data_get_string(dockSettings, "dockId");
+	}
+
 	const bool dockEnabled = obs_data_get_bool(dockSettings, "register");
-	_dockIsVisible = obs_data_get_bool(dockSettings, "isVisible");
 
 	// TODO: remove these default settings in a future version
 	obs_data_set_default_string(
@@ -922,15 +947,6 @@ void Macro::LoadDockSettings(obs_data_t *obj)
 			obs_data_get_bool(dockSettings, "hasStatusLabel");
 		_dockHighlight = obs_data_get_bool(dockSettings,
 						   "highlightIfConditionsTrue");
-		_dockIsFloating = obs_data_get_bool(dockSettings, "isFloating");
-		_dockArea = static_cast<Qt::DockWidgetArea>(
-			obs_data_get_int(dockSettings, "area"));
-		auto geometryStr =
-			obs_data_get_string(dockSettings, "geometry");
-		if (geometryStr && strlen(geometryStr)) {
-			_dockGeo =
-				QByteArray::fromBase64(QByteArray(geometryStr));
-		}
 	}
 	EnableDock(dockEnabled);
 	obs_data_release(dockSettings);
@@ -938,47 +954,29 @@ void Macro::LoadDockSettings(obs_data_t *obj)
 
 void Macro::EnableDock(bool value)
 {
-	if (_registerDock == value) {
-		return;
-	}
-
 	// Reset dock regardless
 	RemoveDock();
 
-	// Unregister dock
-	if (_registerDock) {
-		_dockIsFloating = true;
-		_dockGeo = QByteArray();
+	if (!value) {
 		_registerDock = value;
 		return;
 	}
 
-	// Create new dock widget
-	auto window =
-		static_cast<QMainWindow *>(obs_frontend_get_main_window());
-	_dock = new MacroDock(GetWeakMacroByName(_name.c_str()), window,
-			      _runButtonText, _pauseButtonText,
-			      _unpauseButtonText, _conditionsTrueStatusText,
+	_dock = new MacroDock(GetWeakMacroByName(_name.c_str()), _runButtonText,
+			      _pauseButtonText, _unpauseButtonText,
+			      _conditionsTrueStatusText,
 			      _conditionsFalseStatusText, _dockHighlight);
-	SetDockWidgetName(); // Used by OBS to restore position
 
-	// Register new dock
-	_dockAction = static_cast<QAction *>(obs_frontend_add_dock(_dock));
-
-	// Note that OBSBasic::OBSInit() has precedence over the visibility and
-	// geometry set here.
-	// The function calls here are only intended to attempt to restore the
-	// dock status when switching scene collections.
-	if (InitialLoadIsComplete()) {
-		_dock->setVisible(_dockIsVisible);
-		if (window->dockWidgetArea(_dock) != _dockArea) {
-			window->addDockWidget(_dockArea, _dock);
-		}
-		if (_dock->isFloating() != _dockIsFloating) {
-			_dock->setFloating(_dockIsFloating);
-		}
-		_dock->restoreGeometry(_dockGeo);
+	if (!obs_frontend_add_dock_by_id(_dockId.c_str(), _name.c_str(),
+					 _dock)) {
+		blog(LOG_INFO, "failed to add macro dock for macro %s",
+		     _name.c_str());
+		_dock->deleteLater();
+		_dock = nullptr;
+		_registerDock = false;
+		return;
 	}
+
 	_registerDock = value;
 }
 
@@ -1075,28 +1073,22 @@ StringVariable Macro::ConditionsFalseStatusText() const
 
 void Macro::RemoveDock()
 {
-	if (_dock) {
-		_dock->close();
-		_dock->deleteLater();
-		_dockAction->deleteLater();
-		_dock = nullptr;
-		_dockAction = nullptr;
-	}
+	obs_frontend_remove_dock(_dockId.c_str());
+	_dock = nullptr;
 }
 
-void Macro::SetDockWidgetName() const
+std::string Macro::GenerateDockId()
 {
-	if (!_dock) {
-		return;
-	}
-	// Set prefix to avoid dock name conflict
-	_dock->setObjectName("ADVSS-" + QString::fromStdString(_name));
-	_dock->SetName(QString::fromStdString(_name));
+#if LIBOBS_API_VER > MAKE_SEMANTIC_VERSION(30, 0, 0)
+	auto uuid = os_generate_uuid();
+	auto id = std::string("advss-macro-dock-") + std::string(uuid);
+	bfree(uuid);
+	return id;
 
-	if (!_dockAction) {
-		return;
-	}
-	_dockAction->setText(QString::fromStdString(_name));
+#else
+	static std::atomic_int16_t idCounter = 0;
+	return std::to_string(++idCounter);
+#endif
 }
 
 static void pauseCB(void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed)

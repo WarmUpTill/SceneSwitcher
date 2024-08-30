@@ -1,6 +1,7 @@
 #include "variable.hpp"
 #include "math-helpers.hpp"
 #include "obs-module-helper.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 
 #include <QGridLayout>
@@ -53,6 +54,7 @@ void Variable::Save(obs_data_t *obj) const
 
 std::string Variable::Value(bool updateLastUsed) const
 {
+	std::lock_guard<std::mutex> lock(_mutex);
 	if (updateLastUsed) {
 		UpdateLastUsed();
 	}
@@ -72,6 +74,7 @@ std::optional<int> Variable::IntValue() const
 
 void Variable::SetValue(const std::string &value)
 {
+	std::lock_guard<std::mutex> lock(_mutex);
 	_previousValue = _value;
 	_value = value;
 
@@ -267,6 +270,50 @@ void VariableSelection::SetVariable(const std::weak_ptr<Variable> &variable_)
 	}
 }
 
+VariableSelectionDialog::VariableSelectionDialog(QWidget *parent)
+	: QDialog(parent),
+	  _variableSelection(new VariableSelection(this))
+{
+	setModal(true);
+	setWindowModality(Qt::WindowModality::ApplicationModal);
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+	setMinimumWidth(350);
+	setMinimumHeight(70);
+
+	auto buttonbox = new QDialogButtonBox(QDialogButtonBox::Ok |
+					      QDialogButtonBox::Cancel);
+
+	buttonbox->setCenterButtons(true);
+	connect(buttonbox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+	connect(buttonbox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+	auto selectionLayout = new QHBoxLayout();
+	selectionLayout->addWidget(new QLabel(
+		obs_module_text("AdvSceneSwitcher.variable.selectionDialog")));
+	selectionLayout->addWidget(_variableSelection);
+	selectionLayout->addStretch();
+	auto layout = new QVBoxLayout();
+	layout->addLayout(selectionLayout);
+	layout->addWidget(buttonbox);
+	setLayout(layout);
+}
+
+bool VariableSelectionDialog::AskForVariable(std::string &varName)
+{
+	VariableSelectionDialog dialog(GetSettingsWindow());
+	dialog.setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
+
+	if (dialog.exec() != DialogCode::Accepted) {
+		return false;
+	}
+	auto item = dialog._variableSelection->GetCurrentItem();
+	if (!item) {
+		return false;
+	}
+	varName = item->Name();
+	return true;
+}
+
 VariableSignalManager::VariableSignalManager(QObject *parent) : QObject(parent)
 {
 }
@@ -375,10 +422,22 @@ void LoadVariables(obs_data_t *obj)
 	obs_data_array_release(variablesArray);
 }
 
+static void signalImportedVariables(void *varsPtr)
+{
+	auto vars = std::unique_ptr<std::vector<std::shared_ptr<Item>>>(
+		static_cast<std::vector<std::shared_ptr<Item>> *>(varsPtr));
+	for (const auto &var : *vars) {
+		VariableSignalManager::Instance()->Add(
+			QString::fromStdString(var->Name()));
+	}
+}
+
 void ImportVariables(obs_data_t *data)
 {
 	obs_data_array_t *array = obs_data_get_array(data, "variables");
 	size_t count = obs_data_array_count(array);
+
+	auto importedVars = new std::vector<std::shared_ptr<Item>>;
 
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *arrayElement = obs_data_array_item(array, i);
@@ -391,9 +450,12 @@ void ImportVariables(obs_data_t *data)
 		}
 
 		GetVariables().emplace_back(var);
+		importedVars->emplace_back(var);
 	}
 
 	obs_data_array_release(array);
+
+	QeueUITask(signalImportedVariables, importedVars);
 }
 
 std::chrono::high_resolution_clock::time_point GetLastVariableChangeTime()

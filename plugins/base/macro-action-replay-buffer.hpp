@@ -6,12 +6,6 @@
 
 namespace advss {
 
-enum class ReplayBufferAction {
-	STOP,
-	START,
-	SAVE,
-};
-
 class MacroActionReplayBuffer : public MacroAction {
 public:
 	MacroActionReplayBuffer(Macro *m) : MacroAction(m) {}
@@ -23,7 +17,14 @@ public:
 	static std::shared_ptr<MacroAction> Create(Macro *m);
 	std::shared_ptr<MacroAction> Copy() const;
 
-	ReplayBufferAction _action = ReplayBufferAction::STOP;
+	enum class Action {
+		STOP,
+		START,
+		SAVE,
+		DURATION,
+	};
+	Action _action = Action::STOP;
+	Duration _duration;
 
 private:
 	static bool _registered;
@@ -49,13 +50,16 @@ public:
 
 private slots:
 	void ActionChanged(int value);
-
-protected:
-	QComboBox *_actions;
-	QLabel *_saveWarning;
-	std::shared_ptr<MacroActionReplayBuffer> _entryData;
+	void DurationChanged(const Duration &);
 
 private:
+	void SetWidgetVisiblity();
+
+	QComboBox *_actions;
+	QLabel *_warning;
+	DurationSelection *_duration;
+
+	std::shared_ptr<MacroActionReplayBuffer> _entryData;
 	bool _loading = true;
 };
 

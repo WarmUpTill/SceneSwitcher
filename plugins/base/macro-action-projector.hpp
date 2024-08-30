@@ -33,7 +33,7 @@ public:
 	bool _fullscreen = true;
 
 private:
-	bool MonitorSetupChanged();
+	bool MonitorSetupChanged() const;
 
 	int _monitor = -1;
 	// Only used to detect display setup changes
@@ -66,17 +66,17 @@ private slots:
 	void SourceChanged(const SourceSelection &);
 	void MonitorChanged(int value);
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	QComboBox *_windowTypes;
 	QComboBox *_types;
 	SceneSelectionWidget *_scenes;
 	SourceSelectionWidget *_sources;
 	QHBoxLayout *_monitorSelection;
 	QComboBox *_monitors;
-	std::shared_ptr<MacroActionProjector> _entryData;
 
-private:
-	void SetWidgetVisibility();
+	std::shared_ptr<MacroActionProjector> _entryData;
 	bool _loading = true;
 };
 

@@ -1,6 +1,8 @@
 #include "ui-helpers.hpp"
+#include "advanced-scene-switcher.hpp"
 #include "non-modal-dialog.hpp"
 #include "obs-module-helper.hpp"
+#include "plugin-state-helpers.hpp"
 
 #include <obs-frontend-api.h>
 #include <QGraphicsColorizeEffect>
@@ -13,8 +15,8 @@
 
 namespace advss {
 
-QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
-				    QColor endColor, bool once)
+QObject *HighlightWidget(QWidget *widget, QColor startColor, QColor endColor,
+			 bool once)
 {
 	QGraphicsColorizeEffect *effect = new QGraphicsColorizeEffect(widget);
 	widget->setGraphicsEffect(effect);
@@ -24,33 +26,22 @@ QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
 	animation->setEndValue(endColor);
 	animation->setDuration(1000);
 
-	QMetaObject::Connection con;
+	// Clean up the effect when the animation is deleted
+	QWidget::connect(animation, &QPropertyAnimation::destroyed, [widget]() {
+		if (widget) {
+			widget->setGraphicsEffect(nullptr);
+		}
+	});
+
 	if (once) {
-		auto widgetPtr = widget;
-		con = QWidget::connect(
-			animation, &QPropertyAnimation::finished,
-			[widgetPtr]() {
-				if (widgetPtr) {
-					widgetPtr->setGraphicsEffect(nullptr);
-				}
-			});
 		animation->start(QPropertyAnimation::DeleteWhenStopped);
-	} else {
-		auto widgetPtr = widget;
-		con = QWidget::connect(
-			animation, &QPropertyAnimation::finished,
-			[animation, widgetPtr]() {
-				QTimer *timer = new QTimer(widgetPtr);
-				QWidget::connect(timer, &QTimer::timeout,
-						 [animation] {
-							 animation->start();
-						 });
-				timer->setSingleShot(true);
-				timer->start(1000);
-			});
-		animation->start();
+		return animation;
 	}
-	return con;
+
+	QWidget::connect(animation, &QPropertyAnimation::finished,
+			 [animation]() { animation->start(); });
+	animation->start();
+	return animation;
 }
 
 static int getHorizontalScrollBarHeight(QListWidget *list)
@@ -75,13 +66,17 @@ void SetHeightToContentHeight(QListWidget *list)
 	}
 
 	int scrollBarHeight = getHorizontalScrollBarHeight(list);
-	int height = (list->sizeHintForRow(0) + list->spacing()) * nrItems +
-		     2 * list->frameWidth() + scrollBarHeight;
+	int height = 2 * list->frameWidth() + scrollBarHeight;
+
+	for (int i = 0; i < nrItems; i++) {
+		height += (list->sizeHintForRow(i) + list->spacing());
+	}
+
 	list->setMinimumHeight(height);
 	list->setMaximumHeight(height);
 }
 
-void SetButtonIcon(QPushButton *button, const char *path)
+void SetButtonIcon(QAbstractButton *button, const char *path)
 {
 	QIcon icon;
 	icon.addFile(QString::fromUtf8(path), QSize(), QIcon::Normal,
@@ -109,7 +104,10 @@ int FindIdxInRagne(QComboBox *list, int start, int stop,
 	return foundIdx;
 }
 
-QWidget *GetSettingsWindow();
+QWidget *GetSettingsWindow()
+{
+	return SettingsWindowIsOpened() ? AdvSceneSwitcher::window : nullptr;
+}
 
 bool DisplayMessage(const QString &msg, bool question, bool modal)
 {
@@ -164,6 +162,19 @@ std::string GetThemeTypeName()
 	const bool themeDarkMode = !(color.redF() < 0.5);
 	return themeDarkMode ? "Dark" : "Light";
 #endif
+}
+
+void QeueUITask(void (*task)(void *param), void *param)
+{
+	obs_queue_task(OBS_TASK_UI, task, param, false);
+}
+
+bool IsCursorInWidgetArea(QWidget *widget)
+{
+	const auto cursorPos = QCursor::pos();
+	const auto widgetPos = widget->mapFromGlobal(cursorPos);
+	const auto widgetRect = widget->rect();
+	return widgetRect.contains(widgetPos);
 }
 
 } // namespace advss

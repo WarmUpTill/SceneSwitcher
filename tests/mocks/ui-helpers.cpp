@@ -1,16 +1,18 @@
 #include "ui-helpers.hpp"
 
+class QObejct;
+
 namespace advss {
 
-QMetaObject::Connection PulseWidget(QWidget *widget, QColor startColor,
-				    QColor endColor, bool once)
+QObject *HighlightWidget(QWidget *widget, QColor startColor, QColor endColor,
+			 bool once)
 {
-	return {};
+	return nullptr;
 }
 
 void SetHeightToContentHeight(QListWidget *list) {}
 
-void SetButtonIcon(QPushButton *button, const char *path) {}
+void SetButtonIcon(QAbstractButton *button, const char *path) {}
 
 int FindIdxInRagne(QComboBox *list, int start, int stop,
 		   const std::string &value, Qt::MatchFlags flags)
@@ -31,6 +33,13 @@ void DisplayTrayMessage(const QString &title, const QString &msg,
 std::string GetThemeTypeName()
 {
 	return "Dark";
+}
+
+void QeueUITask(void (*task)(void *param), void *) {}
+
+QWidget *GetSettingsWindow()
+{
+	return nullptr;
 }
 
 } // namespace advss

@@ -281,9 +281,8 @@ void ProgressDialog::CategoryCountUpdated(int value)
 }
 
 TwitchCategorySearchButton::TwitchCategorySearchButton(QWidget *parent)
-	: QPushButton(parent)
+	: QToolButton(parent)
 {
-	setMaximumWidth(22);
 	const std::string pathPrefix =
 		GetDataFilePath("res/images/" + GetThemeTypeName());
 	SetButtonIcon(this, (pathPrefix + "Search.svg").c_str());

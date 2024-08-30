@@ -1,5 +1,6 @@
 #pragma once
 #include "filter-combo-box.hpp"
+#include "help-icon.hpp"
 
 #include <obs.hpp>
 #include <optional>
@@ -52,7 +53,7 @@ private:
 	void Populate(const OBSWeakSource &);
 
 	FilterComboBox *_settings;
-	QLabel *_tooltip;
+	HelpIcon *_tooltip;
 };
 
 } // namespace advss

@@ -9,7 +9,7 @@
 namespace advss {
 
 bool RandomSwitch::pause = false;
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 
 void AdvSceneSwitcher::on_randomAdd_clicked()
 {
@@ -19,7 +19,7 @@ void AdvSceneSwitcher::on_randomAdd_clicked()
 	listAddClicked(ui->randomSwitches,
 		       new RandomSwitchWidget(this,
 					      &switcher->randomSwitches.back()),
-		       ui->randomAdd, &addPulse);
+		       &addPulse);
 
 	ui->randomHelp->setVisible(false);
 }
@@ -131,8 +131,8 @@ void AdvSceneSwitcher::SetupRandomTab()
 
 	if (switcher->randomSwitches.size() == 0) {
 		if (!switcher->disableHints) {
-			addPulse =
-				PulseWidget(ui->randomAdd, QColor(Qt::green));
+			addPulse = HighlightWidget(ui->randomAdd,
+						   QColor(Qt::green));
 		}
 		ui->randomHelp->setVisible(true);
 	} else {
@@ -147,8 +147,8 @@ void AdvSceneSwitcher::SetupRandomTab()
 		}");
 	if (switcher->switchIfNotMatching != NoMatchBehavior::RANDOM_SWITCH) {
 		if (!switcher->disableHints) {
-			PulseWidget(ui->randomDisabledWarning, QColor(Qt::red),
-				    QColor(0, 0, 0, 0));
+			HighlightWidget(ui->randomDisabledWarning,
+					QColor(Qt::red), QColor(0, 0, 0, 0));
 		}
 	} else {
 		ui->randomDisabledWarning->setVisible(false);

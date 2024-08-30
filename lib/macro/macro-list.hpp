@@ -1,18 +1,15 @@
 #pragma once
+#include "list-editor.hpp"
 #include "macro-ref.hpp"
-
-#include <QListWidget>
-#include <QPushButton>
-#include <QHBoxLayout>
 
 namespace advss {
 
-class ADVSS_EXPORT MacroList : public QWidget {
+class ADVSS_EXPORT MacroList final : public ListEditor {
 	Q_OBJECT
 public:
 	MacroList(QWidget *parent, bool allowDuplicates, bool reorder);
 	void SetContent(const std::vector<MacroRef> &);
-	void AddControl(QWidget *);
+	QAction *AddControl(QWidget *, bool addSeperator = true);
 	int CurrentRow();
 
 private slots:
@@ -22,7 +19,7 @@ private slots:
 	void Remove();
 	void Up();
 	void Down();
-	void MacroItemClicked(QListWidgetItem *);
+	void Clicked(QListWidgetItem *);
 
 signals:
 	void Added(const std::string &);
@@ -33,16 +30,8 @@ signals:
 
 private:
 	int FindEntry(const std::string &macro);
-	void SetMacroListSize();
 
-	QListWidget *_list;
-	QPushButton *_add;
-	QPushButton *_remove;
-	QPushButton *_up;
-	QPushButton *_down;
-	QHBoxLayout *_controlsLayout;
 	const bool _allowDuplicates;
-	const bool _reorder;
 };
 
 } // namespace advss

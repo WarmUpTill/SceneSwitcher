@@ -1,0 +1,37 @@
+# Based on the OBS issue templates
+# https://github.com/obsproject/.github/tree/master/.github/ISSUE_TEMPLATE
+
+name: Feature request
+description: Suggest an idea for this projectReport a bug or crash
+body:
+- type: markdown
+  id: md_welcome
+  attributes:
+    value: This form is for requesting new features for Advanced Scene Switcher!
+- type: textarea
+  id: background
+  attributes:
+    label: Background
+    description: "Is your feature request related to a problem? Please describe."
+  validations:
+    required: false
+- type: textarea
+  id: solution
+  attributes:
+    label: Solution
+    description: "Describe the solution you'd like."
+  validations:
+    required: true
+- type: textarea
+  id: alternatives
+  attributes:
+    label: Alternatives
+    description: "Describe alternatives you've considered."
+  validations:
+    required: false
+- type: textarea
+  id: additional_notes
+  attributes:
+    label: Anything else we should know?
+  validations:
+    required: false

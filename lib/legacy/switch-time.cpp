@@ -7,7 +7,7 @@
 namespace advss {
 
 bool TimeSwitch::pause = false;
-static QMetaObject::Connection addPulse;
+static QObject *addPulse = nullptr;
 
 void AdvSceneSwitcher::on_timeAdd_clicked()
 {
@@ -17,7 +17,7 @@ void AdvSceneSwitcher::on_timeAdd_clicked()
 	listAddClicked(ui->timeSwitches,
 		       new TimeSwitchWidget(this,
 					    &switcher->timeSwitches.back()),
-		       ui->timeAdd, &addPulse);
+		       &addPulse);
 
 	ui->timeHelp->setVisible(false);
 }
@@ -197,7 +197,8 @@ void AdvSceneSwitcher::SetupTimeTab()
 
 	if (switcher->timeSwitches.size() == 0) {
 		if (!switcher->disableHints) {
-			addPulse = PulseWidget(ui->timeAdd, QColor(Qt::green));
+			addPulse =
+				HighlightWidget(ui->timeAdd, QColor(Qt::green));
 		}
 		ui->timeHelp->setVisible(true);
 	} else {

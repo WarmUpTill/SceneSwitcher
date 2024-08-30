@@ -1,5 +1,6 @@
 #pragma once
 #include "variable-line-edit.hpp"
+#include "macro-input.hpp"
 
 #include <QWidget>
 #include <QDialog>
@@ -13,7 +14,7 @@ namespace advss {
 
 class Macro;
 
-class MacroProperties {
+class GlobalMacroSettings {
 public:
 	void Save(obs_data_t *obj) const;
 	void Load(obs_data_t *obj);
@@ -25,13 +26,14 @@ public:
 };
 
 // Dialog for configuring global and individual macro specific settings
-class MacroPropertiesDialog : public QDialog {
+class MacroSettingsDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	MacroPropertiesDialog(QWidget *parent, const MacroProperties &,
-			      Macro *macro);
-	static bool AskForSettings(QWidget *parent, MacroProperties &userInput,
+	MacroSettingsDialog(QWidget *parent, const GlobalMacroSettings &,
+			    Macro *macro);
+	static bool AskForSettings(QWidget *parent,
+				   GlobalMacroSettings &userInput,
 				   Macro *macro);
 private slots:
 	void DockEnableChanged(int);
@@ -50,6 +52,7 @@ private:
 	QCheckBox *_currentMacroRegisterHotkeys;
 	QCheckBox *_currentSkipOnStartup;
 	QCheckBox *_currentStopActionsIfNotDone;
+	MacroInputSelection *_currentInputs;
 	QCheckBox *_currentMacroRegisterDock;
 	QCheckBox *_currentMacroDockAddRunButton;
 	QCheckBox *_currentMacroDockAddPauseButton;
@@ -70,8 +73,8 @@ private:
 	int _conditionsFalseTextRow = -1;
 };
 
-MacroProperties &GetGlobalMacroProperties();
-void SaveGlobalMacroProperties(obs_data_t *obj);
-void LoadGlobalMacroProperties(obs_data_t *obj);
+GlobalMacroSettings &GetGlobalMacroSettings();
+void SaveGlobalMacroSettings(obs_data_t *obj);
+void LoadGlobalMacroSettings(obs_data_t *obj);
 
 } // namespace advss

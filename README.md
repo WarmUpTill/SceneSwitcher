@@ -21,5 +21,6 @@ sudo snap install obs-studio
 
 ## Contributing
 - If you wish to contribute code to the project, have a look at this [section](BUILDING.md) describing how to compile the plugin.
+- You can add custom conditions and actions at runtime using the API described [here](https://github.com/WarmUpTill/SceneSwitcher/wiki/Scripting).
 - You can optionally use [pre-commit](https://pre-commit.com) to automatically handle formatting.
 - If you wish to contribute translations, feel free to submit pull requests for the corresponding files under `data/locale`.

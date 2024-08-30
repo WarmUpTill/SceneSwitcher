@@ -7,6 +7,7 @@
 !/cmake
 !/data
 !/deps
+!/scripting
 !/forms
 !/lib
 !/module
@@ -35,3 +36,6 @@
 
 # Exclude CMake build number cache
 /cmake/.CMakeBuildNumber
+
+# Exclude python caches
+/**/__pycache__

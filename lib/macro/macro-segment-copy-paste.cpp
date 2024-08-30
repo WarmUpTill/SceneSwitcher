@@ -1,5 +1,7 @@
+#include "macro-segment-copy-paste.hpp"
 #include "advanced-scene-switcher.hpp"
 #include "macro.hpp"
+#include "ui-helpers.hpp"
 
 #include <QShortcut>
 
@@ -61,23 +63,35 @@ void AdvSceneSwitcher::PasteMacroSegment()
 		const auto condition = std::static_pointer_cast<MacroCondition>(
 			copyInfo.segment);
 		auto logic = condition->GetLogicType();
-		if (logic > LogicType::ROOT_LAST &&
+		if (logic > Logic::Type::ROOT_LAST &&
 		    macro->Conditions().empty()) {
-			logic = LogicType::ROOT_NONE;
+			logic = Logic::Type::ROOT_NONE;
 		}
-		if (logic < LogicType::ROOT_LAST &&
+		if (logic < Logic::Type::ROOT_LAST &&
 		    !macro->Conditions().empty()) {
-			logic = LogicType::OR;
+			logic = Logic::Type::OR;
 		}
 		AddMacroCondition(macro.get(), macro->Conditions().size(),
 				  copyInfo.segment->GetId(), data.Get(), logic);
 		break;
 	}
 	case MacroSegmentCopyInfo::Type::ACTION:
+		if (IsCursorInWidgetArea(ui->macroElseActions)) {
+			AddMacroElseAction(macro.get(),
+					   macro->ElseActions().size(),
+					   copyInfo.segment->GetId(),
+					   data.Get());
+			break;
+		}
 		AddMacroAction(macro.get(), macro->Actions().size(),
 			       copyInfo.segment->GetId(), data.Get());
 		break;
 	case MacroSegmentCopyInfo::Type::ELSE:
+		if (IsCursorInWidgetArea(ui->macroActions)) {
+			AddMacroAction(macro.get(), macro->Actions().size(),
+				       copyInfo.segment->GetId(), data.Get());
+			break;
+		}
 		AddMacroElseAction(macro.get(), macro->ElseActions().size(),
 				   copyInfo.segment->GetId(), data.Get());
 		break;
@@ -89,6 +103,12 @@ void AdvSceneSwitcher::PasteMacroSegment()
 bool MacroSegmentIsInClipboard()
 {
 	return copyInfo.type != MacroSegmentCopyInfo::Type::NONE;
+}
+
+bool MacroActionIsInClipboard()
+{
+	return copyInfo.type == MacroSegmentCopyInfo::Type::ACTION ||
+	       copyInfo.type == MacroSegmentCopyInfo::Type::ELSE;
 }
 
 void SetupSegmentCopyPasteShortcutHandlers(AdvSceneSwitcher *window)

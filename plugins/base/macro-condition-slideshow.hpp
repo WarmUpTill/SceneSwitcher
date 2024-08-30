@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-condition-edit.hpp"
 #include "source-selection.hpp"
+#include "regex-config.hpp"
 #include "variable-spinbox.hpp"
 #include "variable-line-edit.hpp"
 
@@ -31,12 +32,15 @@ public:
 	Condition _condition = Condition::SLIDE_CHANGED;
 	IntVariable _index;
 	StringVariable _path;
+	RegexConfig _regex;
 
 private:
 	static void SlideChanged(void *condition, calldata_t *);
 	void RemoveSignalHandler();
 	void AddSignalHandler(const OBSWeakSource &);
 	void Reset();
+	void SetupTempVars();
+	void SetVariableValues(const std::string &value);
 
 	SourceSelection _source;
 	OBSWeakSource _currentSignalSource;
@@ -70,6 +74,7 @@ private slots:
 	void SourceChanged(const SourceSelection &);
 	void IndexChanged(const NumberVariable<int> &);
 	void PathChanged();
+	void RegexChanged(const RegexConfig &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -80,6 +85,8 @@ private:
 	VariableSpinBox *_index;
 	VariableLineEdit *_path;
 	SourceSelectionWidget *_sources;
+	RegexConfigWidget *_regex;
+	QHBoxLayout *_layout;
 
 	std::shared_ptr<MacroConditionSlideshow> _entryData;
 	bool _loading = true;

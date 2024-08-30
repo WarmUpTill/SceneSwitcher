@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-segment-list.hpp"
+#include "condition-logic.hpp"
 #include "log-helper.hpp"
 
 #include <ui_advanced-scene-switcher.h>
@@ -12,7 +13,6 @@ class MacroActionEdit;
 class MacroConditionEdit;
 class Duration;
 class SequenceWidget;
-enum class LogicType;
 struct SceneGroup;
 
 /*******************************************************************************
@@ -53,6 +53,7 @@ public slots:
 	void on_noMatchRandomSwitch_clicked();
 	void NoMatchDelayDurationChanged(const Duration &);
 	void CooldownDurationChanged(const Duration &);
+	void on_enableCooldown_stateChanged(int state);
 	void on_startupBehavior_currentIndexChanged(int index);
 	void on_logLevel_currentIndexChanged(int index);
 	void on_autoStartEvent_currentIndexChanged(int index);
@@ -96,6 +97,7 @@ public:
 	void SetConditionData(Macro &m);
 	void SwapActions(Macro *m, int pos1, int pos2);
 	void SwapConditions(Macro *m, int pos1, int pos2);
+	void HighligthMacroSettingsButton(bool enable = true);
 
 public slots:
 	void on_macroAdd_clicked();
@@ -172,13 +174,13 @@ public slots:
 	void MacroConditionReorder(int to, int target);
 	void AddMacroCondition(int idx);
 	void AddMacroCondition(Macro *macro, int idx, const std::string &id,
-			       obs_data_t *data, LogicType logic);
+			       obs_data_t *data, Logic::Type logic);
 	void RemoveMacroCondition(int idx);
 	void MoveMacroConditionUp(int idx);
 	void MoveMacroConditionDown(int idx);
 	void HighlightControls();
 	void HighlightOnChange();
-	void on_macroProperties_clicked();
+	void on_macroSettings_clicked();
 	void CopyMacroSegment();
 	void PasteMacroSegment();
 
@@ -409,6 +411,6 @@ public slots:
 };
 
 void OpenSettingsWindow();
-QWidget *GetSettingsWindow();
+void HighligthMacroSettingsButton(bool enable);
 
 } // namespace advss

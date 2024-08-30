@@ -14,18 +14,21 @@ namespace advss {
 
 using websocketpp::connection_hdl;
 
-struct ParsedTags {
-	using BadgeMap = std::unordered_map<std::string, std::string>;
-	using EmoteMap = std::unordered_map<std::string,
-					    std::vector<std::pair<int, int>>>;
-	using EmoteSet = std::vector<std::string>;
-	std::unordered_map<std::string, std::variant<std::string, BadgeMap,
-						     EmoteMap, EmoteSet>>
-		tagMap;
-};
-
 struct IRCMessage {
-	ParsedTags tags;
+	struct Badge {
+		std::string name;
+		bool enabled;
+	};
+	struct {
+		std::string badgesString;
+		std::vector<Badge> badges;
+		std::string displayName;
+		bool isFirstMessage = false;
+		bool isUsingOnlyEmotes = false;
+		bool isMod = false;
+		bool isSubscriber = false;
+		bool isTurbo = false;
+	} properties;
 	struct {
 		std::string nick;
 		std::string host;
@@ -96,9 +99,12 @@ private:
 	std::mutex _waitMtx;
 	std::mutex _connectMtx;
 	std::condition_variable _cv;
-	std::atomic_bool _connected{false};
+
+	enum class State { DISCONNECTED, CONNECTING, CONNECTED };
+	std::atomic<State> _state = {State::DISCONNECTED};
+
 	std::atomic_bool _authenticated{false};
-	std::atomic_bool _disconnect{false};
+	std::atomic_bool _stop{false};
 	std::string _url;
 
 	ChatMessageDispatcher _messageDispatcher;

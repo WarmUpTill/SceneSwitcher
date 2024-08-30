@@ -2,12 +2,13 @@
 #include "export-symbol-helper.hpp"
 
 #include <obs-data.h>
-#include <QWidget>
 #include <QCheckBox>
-#include <QPushButton>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QPushButton>
 #include <QRegularExpression>
+#include <QToolButton>
+#include <QWidget>
 
 namespace advss {
 
@@ -47,23 +48,22 @@ private:
 	friend RegexConfigDialog;
 };
 
-class RegexConfigWidget : public QWidget {
+class ADVSS_EXPORT RegexConfigWidget : public QWidget {
 	Q_OBJECT
 public:
-	EXPORT RegexConfigWidget(QWidget *parent = nullptr,
-				 bool showEnable = true);
-	EXPORT void SetRegexConfig(const RegexConfig &);
+	RegexConfigWidget(QWidget *parent = nullptr, bool showEnable = true);
+	void SetRegexConfig(const RegexConfig &);
 
 public slots:
-	EXPORT void EnableChanged(bool);
-	EXPORT void OpenSettingsClicked();
+	void EnableChanged(bool);
+	void OpenSettingsClicked();
 signals:
 	void RegexConfigChanged(const RegexConfig &);
 
 private:
 	void SetVisibility();
 
-	QPushButton *_openSettings;
+	QToolButton *_openSettings;
 	QPushButton *_enable;
 	RegexConfig _config;
 };

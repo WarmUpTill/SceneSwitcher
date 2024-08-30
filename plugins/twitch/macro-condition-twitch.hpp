@@ -5,6 +5,7 @@
 #include "channel-selection.hpp"
 #include "points-reward-selection.hpp"
 #include "chat-connection.hpp"
+#include "chat-message-pattern.hpp"
 
 #include <variable-line-edit.hpp>
 #include <variable-text-edit.hpp>
@@ -89,6 +90,7 @@ public:
 	void SetPointsReward(const TwitchPointsReward &pointsReward);
 	TwitchPointsReward GetPointsReward() const { return _pointsReward; }
 	void ResetChatConnection();
+	bool IsUsingEventSubCondition();
 
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
@@ -100,19 +102,18 @@ public:
 	StringVariable _streamTitle = obs_module_text(
 		"AdvSceneSwitcher.condition.twitch.title.title");
 	RegexConfig _regexTitle = RegexConfig::PartialMatchRegexConfig();
-	StringVariable _chatMessage;
-	RegexConfig _regexChat = RegexConfig::PartialMatchRegexConfig();
+	ChatMessagePattern _chatMessagePattern;
 	TwitchCategory _category;
+	bool _clearBufferOnMatch = false;
 
 private:
-	bool CheckChannelGenericEvents(TwitchToken &token);
-	bool CheckChannelLiveEvents(TwitchToken &token);
+	bool CheckChannelGenericEvents();
+	bool CheckChannelLiveEvents();
 	bool CheckChatMessages(TwitchToken &token);
 
 	void RegisterEventSubscription();
 	void ResetSubscription();
 	void SetupEventSubscription(EventSub &);
-	bool IsUsingEventSubCondition();
 	bool EventSubscriptionIsSetup(const std::shared_ptr<EventSub> &);
 	void AddChannelGenericEventSubscription(
 		const char *version, bool includeModeratorId = false,
@@ -165,17 +166,14 @@ private slots:
 	void ChannelChanged(const TwitchChannel &);
 	void PointsRewardChanged(const TwitchPointsReward &);
 	void StreamTitleChanged();
-	void ChatMessageChanged();
 	void RegexTitleChanged(const RegexConfig &);
-	void RegexChatChanged(const RegexConfig &);
+	void ChatMessagePatternChanged(const ChatMessagePattern &);
 	void CategoreyChanged(const TwitchCategory &);
+	void ClearBufferOnMatchChanged(int);
 
 signals:
 	void HeaderInfoChanged(const QString &);
 	void TempVarsChanged();
-
-protected:
-	std::shared_ptr<MacroConditionTwitch> _entryData;
 
 private:
 	void SetWidgetVisibility();
@@ -190,10 +188,11 @@ private:
 	TwitchPointsRewardWidget *_pointsReward;
 	VariableLineEdit *_streamTitle;
 	RegexConfigWidget *_regexTitle;
-	VariableTextEdit *_chatMessage;
-	RegexConfigWidget *_regexChat;
+	ChatMessageEdit *_chatMesageEdit;
 	TwitchCategoryWidget *_category;
+	QCheckBox *_clearBufferOnMatch;
 
+	std::shared_ptr<MacroConditionTwitch> _entryData;
 	bool _loading = true;
 };
 

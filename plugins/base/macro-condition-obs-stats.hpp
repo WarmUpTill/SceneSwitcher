@@ -50,18 +50,19 @@ public:
 	Condition _condition = Condition::ABOVE;
 
 private:
-	bool CheckFPS();
-	bool CheckCPU();
-	bool CheckMemory();
-	bool CheckAvgFrametime();
+	bool CheckFPS() const;
+	bool CheckCPU() const;
+	bool CheckMemory() const;
+	bool CheckAvgFrametime() const;
 	bool CheckRenderLag();
 	bool CheckEncodeLag();
 	bool CheckStreamDroppedFrames();
 	bool CheckStreamBitrate();
-	bool CheckStreamMBSent();
+	bool CheckStreamMBSent() const;
 	bool CheckRecordingDroppedFrames();
 	bool CheckRecordingBitrate();
-	bool CheckRecordingMBSent();
+	bool CheckRecordingMBSent() const;
+	bool CheckDiskUsage() const;
 
 	os_cpu_usage_info_t *_cpu_info = nullptr;
 	uint32_t _first_encoded = 0xFFFFFFFF;
@@ -109,15 +110,14 @@ private slots:
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
-	QComboBox *_stats;
-	QComboBox *_condition;
-	VariableDoubleSpinBox *_value;
-	std::shared_ptr<MacroConditionStats> _entryData;
-
 private:
 	void SetWidgetVisibility();
 
+	QComboBox *_stats;
+	QComboBox *_condition;
+	VariableDoubleSpinBox *_value;
+
+	std::shared_ptr<MacroConditionStats> _entryData;
 	bool _loading = true;
 };
 

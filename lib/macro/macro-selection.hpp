@@ -28,7 +28,7 @@ class MacroSelectionDialog : public QDialog {
 
 public:
 	MacroSelectionDialog(QWidget *parent);
-	static bool AskForMacro(QWidget *parent, std::string &macroName);
+	static bool AskForMacro(std::string &macroName);
 
 private:
 	MacroSelection *_macroSelection;

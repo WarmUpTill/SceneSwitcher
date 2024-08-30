@@ -12,11 +12,13 @@ class localeEntry:
     locale = ""
     widgetPlaceholders = []
     qStringArgs = []
+    lineNum = -1
 
-    def __init__(self, locale, widgetPlaceholders, qStringArgs) -> None:
+    def __init__(self, locale, widgetPlaceholders, qStringArgs, lineNum) -> None:
         self.locale = locale
         self.widgetPlaceholders = widgetPlaceholders
         self.qStringArgs = qStringArgs
+        self.lineNum = lineNum
 
 
 def getNonDefaultLocales(dir):
@@ -32,7 +34,7 @@ def getNonDefaultLocales(dir):
 def getAllLocaleEntries(file):
     localeEntries = []
     with open(file, "r", encoding="UTF-8") as f:
-        for line in f.readlines():
+        for lineNum, line in enumerate(f):
             widgetPlaceholders = []
             qStringArgs = []
 
@@ -49,7 +51,9 @@ def getAllLocaleEntries(file):
                 qStringArgs.append(match.group(0))
 
             localeEntries.append(
-                localeEntry(line.split("=")[0], widgetPlaceholders, qStringArgs)
+                localeEntry(
+                    line.split("=")[0], widgetPlaceholders, qStringArgs, lineNum + 1
+                )
             )
 
     return localeEntries
@@ -73,8 +77,8 @@ def checkLocaleEntries(file, expectedLocaleEntries):
         if expectedLocaleEntry is None:
             result = False
             print(
-                'ERROR: Locale entry "{}" from "{}" not found in "{}"'.format(
-                    localeEntry.locale, file, defaultLocaleFile
+                'ERROR: Locale entry "{}" from "{}:{}" not found in "{}"'.format(
+                    localeEntry.locale, file, localeEntry.lineNum, defaultLocaleFile
                 )
             )
             continue
@@ -83,8 +87,13 @@ def checkLocaleEntries(file, expectedLocaleEntries):
             if placeholder not in expectedLocaleEntry.widgetPlaceholders:
                 result = False
                 print(
-                    'ERROR: Locale entry "{}" from "{}" does contain "{}" widget placeholder while "{}" does not'.format(
-                        localeEntry.locale, file, placeholder, defaultLocaleFile
+                    'ERROR: Locale entry "{}" from "{}:{}" does contain "{}" widget placeholder while "{}:{}" does not'.format(
+                        localeEntry.locale,
+                        file,
+                        localeEntry.lineNum,
+                        placeholder,
+                        defaultLocaleFile,
+                        expectedLocaleEntry.lineNum,
                     )
                 )
 
@@ -92,8 +101,8 @@ def checkLocaleEntries(file, expectedLocaleEntries):
             if placeholder not in localeEntry.widgetPlaceholders:
                 result = False
                 print(
-                    'ERROR: Locale entry "{}" from "{}" does not contain "{}" widget placeholder'.format(
-                        localeEntry.locale, file, placeholder
+                    'ERROR: Locale entry "{}" from "{}:{}" does not contain "{}" widget placeholder'.format(
+                        localeEntry.locale, file, localeEntry.lineNum, placeholder
                     )
                 )
 
@@ -101,8 +110,13 @@ def checkLocaleEntries(file, expectedLocaleEntries):
             if arg not in expectedLocaleEntry.qStringArgs:
                 result = False
                 print(
-                    'ERROR: Locale entry "{}" from "{}" does contain "{}" QString arg while "{}" does not'.format(
-                        localeEntry.locale, file, arg, defaultLocaleFile
+                    'ERROR: Locale entry "{}" from "{}:{}" does contain "{}" QString arg while "{}:{}" does not'.format(
+                        localeEntry.locale,
+                        file,
+                        localeEntry.lineNum,
+                        arg,
+                        defaultLocaleFile,
+                        expectedLocaleEntry.lineNum,
                     )
                 )
 
@@ -110,8 +124,8 @@ def checkLocaleEntries(file, expectedLocaleEntries):
             if arg not in localeEntry.qStringArgs:
                 result = False
                 print(
-                    'ERROR: Locale entry "{}" from "{}" does not contain "{}" QString arg'.format(
-                        localeEntry.locale, file, arg
+                    'ERROR: Locale entry "{}" from "{}:{}" does not contain "{}" QString arg'.format(
+                        localeEntry.locale, file, localeEntry.lineNum, arg
                     )
                 )
 

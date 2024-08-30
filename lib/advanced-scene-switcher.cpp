@@ -70,6 +70,9 @@ static void DisplayMissingDependencyWarning()
 	QString warning(obs_module_text(
 		"AdvSceneSwitcher.generalTab.generalBehavior.warnPluginLoadFailureMessage"));
 	DisplayMessage(warning.arg(failedLibsString));
+
+	// Only display the warning once per plugin load
+	switcher->loadFailureLibs.clear();
 }
 
 static void DisplayMissingDataDirWarning()
@@ -90,10 +93,24 @@ static void DisplayMissingDataDirWarning()
 	DisplayMessage(msg);
 }
 
+bool CanCreateDefaultAction();
+bool CanCreateDefaultCondition();
+
+static void DisplayCorruptedInstallWarning()
+{
+	if (CanCreateDefaultAction() && CanCreateDefaultCondition()) {
+		return;
+	}
+
+	DisplayMessage(obs_module_text(
+		"AdvSceneSwitcher.generalTab.generalBehavior.warnCorruptedInstallMessage"));
+}
+
 void AdvSceneSwitcher::LoadUI()
 {
 	DisplayMissingDataDirWarning();
 	DisplayMissingDependencyWarning();
+	DisplayCorruptedInstallWarning();
 
 	SetupGeneralTab();
 	SetupTitleTab();
@@ -238,8 +255,8 @@ void SwitcherData::Thread()
 			duration = std::chrono::milliseconds(interval) +
 				   std::chrono::milliseconds(linger) - runTime;
 			if (duration.count() < 1) {
-				blog(LOG_INFO,
-				     "detected busy loop - refusing to sleep less than 1ms");
+				vblog(LOG_INFO,
+				      "detected busy loop - refusing to sleep less than 1ms");
 				duration = std::chrono::milliseconds(10);
 			}
 		}
@@ -705,7 +722,7 @@ static void LoadPlugins()
 {
 	QFileInfo libPath(
 		QString(obs_get_module_binary_path(obs_current_module())));
-	QString pluginDir(libPath.absolutePath() + "/adv-ss-plugins");
+	QString pluginDir(libPath.absolutePath() + "/" ADVSS_PLUGIN_FOLDER);
 #ifdef _WIN32
 	QString libPattern = "*.dll";
 	SetDllDirectory(pluginDir.toStdWString().c_str());
@@ -745,9 +762,34 @@ void OpenSettingsWindow()
 	}
 }
 
-QWidget *GetSettingsWindow()
+void AdvSceneSwitcher::HighligthMacroSettingsButton(bool enable)
 {
-	return SettingsWindowIsOpened() ? AdvSceneSwitcher::window : nullptr;
+	static QObject *highlight = nullptr;
+	if ((highlight && enable) || (!highlight && !enable)) {
+		return;
+	}
+
+	if (highlight && !enable) {
+		highlight->deleteLater();
+		highlight = nullptr;
+		return;
+	}
+
+	if (!HighlightUIElementsEnabled()) {
+		return;
+	}
+
+	highlight = HighlightWidget(ui->macroSettings, Qt::green);
+}
+
+void HighligthMacroSettingsButton(bool enable)
+{
+	auto window = GetSettingsWindow();
+	if (!window) {
+		return;
+	}
+	static_cast<AdvSceneSwitcher *>(window)->HighligthMacroSettingsButton(
+		enable);
 }
 
 void SetupActionQueues();

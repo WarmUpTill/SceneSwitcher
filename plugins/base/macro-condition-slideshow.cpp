@@ -2,6 +2,8 @@
 #include "macro-helpers.hpp"
 #include "layout-helpers.hpp"
 
+#include <QFileInfo>
+
 namespace advss {
 
 const std::string MacroConditionSlideshow::id = "slideshow";
@@ -50,25 +52,28 @@ bool MacroConditionSlideshow::CheckCondition()
 	switch (_condition) {
 	case MacroConditionSlideshow::Condition::SLIDE_CHANGED:
 		if (!_slideChanged) {
-			SetVariableValue("false");
+			SetVariableValues("false");
 			return false;
 		}
 		_slideChanged = false;
-		SetVariableValue("true");
+		SetVariableValues("true");
 		return true;
 	case MacroConditionSlideshow::Condition::SLIDE_INDEX:
 		if (_currentIndex == -1) {
-			SetVariableValue("-1");
+			SetVariableValues("-1");
 			return false;
 		}
-		SetVariableValue(std::to_string(_currentIndex + 1));
+		SetVariableValues(std::to_string(_currentIndex + 1));
 		return _currentIndex == _index - 1;
 	case MacroConditionSlideshow::Condition::SLIDE_PATH:
 		if (_currentPath[0] == '\0') {
-			SetVariableValue("");
+			SetVariableValues("");
 			return false;
 		}
-		SetVariableValue(_currentPath);
+		SetVariableValues(_currentPath);
+		if (_regex.Enabled()) {
+			return _regex.Matches(_currentPath, _path);
+		}
 		return std::string(_path) == std::string(_currentPath);
 	}
 
@@ -82,6 +87,7 @@ bool MacroConditionSlideshow::Save(obs_data_t *obj) const
 	_source.Save(obj);
 	_index.Save(obj, "index");
 	_path.Save(obj, "path");
+	_regex.Save(obj);
 	return true;
 }
 
@@ -92,6 +98,7 @@ bool MacroConditionSlideshow::Load(obs_data_t *obj)
 	_source.Load(obj);
 	_index.Load(obj, "index");
 	_path.Load(obj, "path");
+	_regex.Load(obj);
 
 	auto s = _source.GetSource();
 	AddSignalHandler(s);
@@ -175,6 +182,35 @@ void MacroConditionSlideshow::Reset()
 	_currentPath = "";
 }
 
+void MacroConditionSlideshow::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+	AddTempvar(
+		"index",
+		obs_module_text("AdvSceneSwitcher.tempVar.slideShow.index"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.slideShow.index.description"));
+	AddTempvar(
+		"path",
+		obs_module_text("AdvSceneSwitcher.tempVar.slideShow.path"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.slideShow.path.description"));
+	AddTempvar(
+		"fileName",
+		obs_module_text("AdvSceneSwitcher.tempVar.slideShow.fileName"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.slideShow.fileName.description"));
+}
+
+void MacroConditionSlideshow::SetVariableValues(const std::string &value)
+{
+	SetVariableValue(value);
+	SetTempVarValue("index", std::to_string(_currentIndex + 1));
+	SetTempVarValue("path", _currentPath ? _currentPath : "");
+	QFileInfo fileInfo(_currentPath ? _currentPath : "");
+	SetTempVarValue("fileName", fileInfo.fileName().toStdString());
+}
+
 static void populateConditionSelection(QComboBox *list)
 {
 	for (const auto &[_, name] : conditions) {
@@ -184,11 +220,14 @@ static void populateConditionSelection(QComboBox *list)
 
 static QStringList getSlideshowNames()
 {
+	static constexpr std::array<std::string_view, 2> slideShowIds{
+		"slideshow", "slideshow_v2"};
 	auto sourceEnum = [](void *param, obs_source_t *source) -> bool /* -- */
 	{
 		QStringList *list = reinterpret_cast<QStringList *>(param);
-		std::string sourceId = obs_source_get_id(source);
-		if (sourceId.compare("slideshow") == 0) {
+		auto sourceId = obs_source_get_id(source);
+		if (std::find(slideShowIds.begin(), slideShowIds.end(),
+			      sourceId) != slideShowIds.end()) {
 			*list << obs_source_get_name(source);
 		}
 		return true;
@@ -205,7 +244,9 @@ MacroConditionSlideshowEdit::MacroConditionSlideshowEdit(
 	  _conditions(new QComboBox(this)),
 	  _index(new VariableSpinBox(this)),
 	  _path(new VariableLineEdit(this)),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true))
+	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
+	  _regex(new RegexConfigWidget(this)),
+	  _layout(new QHBoxLayout())
 {
 	setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.slideshow.updateIntervalTooltip"));
@@ -227,16 +268,19 @@ MacroConditionSlideshowEdit::MacroConditionSlideshowEdit(
 		this, SLOT(IndexChanged(const NumberVariable<int> &)));
 	QWidget::connect(_path, SIGNAL(editingFinished()), this,
 			 SLOT(PathChanged()));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
 
-	auto layout = new QHBoxLayout;
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.slideshow.entry"),
-		layout,
+		_layout,
 		{{"{{conditions}}", _conditions},
 		 {"{{sources}}", _sources},
 		 {"{{index}}", _index},
-		 {"{{path}}", _path}});
-	setLayout(layout);
+		 {"{{path}}", _path},
+		 {"{{regex}}", _regex}});
+	setLayout(_layout);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -245,11 +289,7 @@ MacroConditionSlideshowEdit::MacroConditionSlideshowEdit(
 
 void MacroConditionSlideshowEdit::ConditionChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_condition =
 		static_cast<MacroConditionSlideshow::Condition>(index);
 	SetWidgetVisibility();
@@ -257,11 +297,7 @@ void MacroConditionSlideshowEdit::ConditionChanged(int index)
 
 void MacroConditionSlideshowEdit::SourceChanged(const SourceSelection &source)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetSource(source);
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -269,22 +305,20 @@ void MacroConditionSlideshowEdit::SourceChanged(const SourceSelection &source)
 
 void MacroConditionSlideshowEdit::IndexChanged(const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_index = value;
 }
 
 void MacroConditionSlideshowEdit::PathChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_path = _path->text().toStdString();
+}
+
+void MacroConditionSlideshowEdit::RegexChanged(const RegexConfig &regex)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_regex = regex;
 }
 
 void MacroConditionSlideshowEdit::UpdateEntryData()
@@ -297,6 +331,7 @@ void MacroConditionSlideshowEdit::UpdateEntryData()
 	_sources->SetSource(_entryData->GetSource());
 	_index->SetValue(_entryData->_index);
 	_path->setText(_entryData->_path);
+	_regex->SetRegexConfig(_entryData->_regex);
 	SetWidgetVisibility();
 }
 
@@ -310,6 +345,14 @@ void MacroConditionSlideshowEdit::SetWidgetVisibility()
 			   MacroConditionSlideshow::Condition::SLIDE_INDEX);
 	_path->setVisible(_entryData->_condition ==
 			  MacroConditionSlideshow::Condition::SLIDE_PATH);
+	_regex->setVisible(_entryData->_condition ==
+			   MacroConditionSlideshow::Condition::SLIDE_PATH);
+	if (_entryData->_condition ==
+	    MacroConditionSlideshow::Condition::SLIDE_PATH) {
+		RemoveStretchIfPresent(_layout);
+	} else {
+		AddStretchIfNecessary(_layout);
+	}
 }
 
 } // namespace advss

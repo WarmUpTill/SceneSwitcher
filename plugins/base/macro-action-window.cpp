@@ -1,8 +1,8 @@
 #include "macro-action-window.hpp"
+#include "help-icon.hpp"
 #include "layout-helpers.hpp"
 #include "platform-funcs.hpp"
 #include "selection-helpers.hpp"
-#include "ui-helpers.hpp"
 
 namespace advss {
 
@@ -177,14 +177,7 @@ MacroActionWindowEdit::MacroActionWindowEdit(
 		"AdvSceneSwitcher.action.window.type.setFocusWindow.limitation"));
 	_infoLayout->addWidget(focusLimitation);
 
-	const QString path = GetThemeTypeName() == "Light"
-				     ? ":/res/images/help.svg"
-				     : ":/res/images/help_light.svg";
-	const QIcon icon(path);
-	const QPixmap pixmap = icon.pixmap(QSize(16, 16));
-	auto focusLimitationDetails = new QLabel();
-	focusLimitationDetails->setPixmap(pixmap);
-	focusLimitationDetails->setToolTip(obs_module_text(
+	auto focusLimitationDetails = new HelpIcon(obs_module_text(
 		"AdvSceneSwitcher.action.window.type.setFocusWindow.limitation.details"));
 	_infoLayout->addWidget(focusLimitationDetails);
 	_infoLayout->addStretch();

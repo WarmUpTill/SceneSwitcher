@@ -285,7 +285,7 @@ setTempVarsHelper(obs_data_t *data,
 	setTempVarsHelper(jsonStr, setVar);
 }
 
-bool MacroConditionTwitch::CheckChannelGenericEvents(TwitchToken &token)
+bool MacroConditionTwitch::CheckChannelGenericEvents()
 {
 	if (!_eventBuffer) {
 		return false;
@@ -305,13 +305,17 @@ bool MacroConditionTwitch::CheckChannelGenericEvents(TwitchToken &token)
 			std::bind(&MacroConditionTwitch::SetTempVarValue, this,
 				  std::placeholders::_1,
 				  std::placeholders::_2));
+
+		if (_clearBufferOnMatch) {
+			_eventBuffer->Clear();
+		}
 		return true;
 	}
 
 	return false;
 }
 
-bool MacroConditionTwitch::CheckChannelLiveEvents(TwitchToken &token)
+bool MacroConditionTwitch::CheckChannelLiveEvents()
 {
 	if (!_eventBuffer) {
 		return false;
@@ -343,6 +347,10 @@ bool MacroConditionTwitch::CheckChannelLiveEvents(TwitchToken &token)
 			std::bind(&MacroConditionTwitch::SetTempVarValue, this,
 				  std::placeholders::_1,
 				  std::placeholders::_2));
+
+		if (_clearBufferOnMatch) {
+			_eventBuffer->Clear();
+		}
 		return true;
 	}
 
@@ -376,11 +384,20 @@ bool MacroConditionTwitch::CheckChatMessages(TwitchToken &token)
 		if (!message) {
 			continue;
 		}
-		if (stringMatches(_regexChat, message->message, _chatMessage)) {
-			SetTempVarValue("chatter", message->source.nick);
-			SetTempVarValue("chat_message", message->message);
-			return true;
+
+		if (!_chatMessagePattern.Matches(*message)) {
+			continue;
 		}
+
+		SetTempVarValue("user_login", message->source.nick);
+		SetTempVarValue("user_name", message->properties.displayName);
+		SetTempVarValue("chat_message", message->message);
+		SetTempVarValue("badges", message->properties.badgesString);
+
+		if (_clearBufferOnMatch) {
+			_eventBuffer->Clear();
+		}
+		return true;
 	}
 	return false;
 }
@@ -526,13 +543,13 @@ bool MacroConditionTwitch::CheckCondition()
 	case Condition::USER_UNBAN_EVENT:
 	case Condition::USER_MODERATOR_ADDITION_EVENT:
 	case Condition::USER_MODERATOR_DELETION_EVENT:
-		return CheckChannelGenericEvents(*token);
+		return CheckChannelGenericEvents();
 	case Condition::STREAM_ONLINE_LIVE_EVENT:
 	case Condition::STREAM_ONLINE_PLAYLIST_EVENT:
 	case Condition::STREAM_ONLINE_WATCHPARTY_EVENT:
 	case Condition::STREAM_ONLINE_PREMIERE_EVENT:
 	case Condition::STREAM_ONLINE_RERUN_EVENT:
-		return CheckChannelLiveEvents(*token);
+		return CheckChannelLiveEvents();
 	case Condition::LIVE_POLLING: {
 		auto info = _channel.GetLiveInfo(*token);
 		if (!info) {
@@ -585,9 +602,10 @@ bool MacroConditionTwitch::Save(obs_data_t *obj) const
 	_pointsReward.Save(obj);
 	_streamTitle.Save(obj, "streamTitle");
 	_regexTitle.Save(obj, "regexTitle");
-	_chatMessage.Save(obj, "chatMessage");
-	_regexChat.Save(obj, "regexChat");
+	_chatMessagePattern.Save(obj);
 	_category.Save(obj);
+	obs_data_set_bool(obj, "clearBufferOnMatch", _clearBufferOnMatch);
+	obs_data_set_int(obj, "version", 1);
 
 	return true;
 }
@@ -602,9 +620,12 @@ bool MacroConditionTwitch::Load(obs_data_t *obj)
 	_pointsReward.Load(obj);
 	_streamTitle.Load(obj, "streamTitle");
 	_regexTitle.Load(obj, "regexTitle");
-	_chatMessage.Load(obj, "chatMessage");
-	_regexChat.Load(obj, "regexChat");
+	_chatMessagePattern.Load(obj);
 	_category.Load(obj);
+	_clearBufferOnMatch = obs_data_get_bool(obj, "clearBufferOnMatch");
+	if (!obs_data_has_user_value(obj, "version")) {
+		_clearBufferOnMatch = false;
+	}
 
 	_subscriptionID = "";
 	ResetChatConnection();
@@ -1215,8 +1236,10 @@ void MacroConditionTwitch::SetupTempVars()
 		setupTempVarHelper("is_branded_content");
 		break;
 	case Condition::CHAT_MESSAGE_RECEIVED:
-		setupTempVarHelper("chat_message");
-		setupTempVarHelper("chatter");
+		setupTempVarHelper("chat_message", ".chatReceive");
+		setupTempVarHelper("user_login", ".chatReceive");
+		setupTempVarHelper("user_name", ".chatReceive");
+		setupTempVarHelper("badges", ".chatReceive");
 		break;
 	default:
 		break;
@@ -1242,9 +1265,10 @@ MacroConditionTwitchEdit::MacroConditionTwitchEdit(
 	  _pointsReward(new TwitchPointsRewardWidget(this)),
 	  _streamTitle(new VariableLineEdit(this)),
 	  _regexTitle(new RegexConfigWidget(parent)),
-	  _chatMessage(new VariableTextEdit(this, 5, 1, 1)),
-	  _regexChat(new RegexConfigWidget(parent)),
-	  _category(new TwitchCategoryWidget(this))
+	  _chatMesageEdit(new ChatMessageEdit(this)),
+	  _category(new TwitchCategoryWidget(this)),
+	  _clearBufferOnMatch(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.clearBufferOnMatch")))
 {
 	_streamTitle->setSizePolicy(QSizePolicy::MinimumExpanding,
 				    QSizePolicy::Preferred);
@@ -1270,16 +1294,18 @@ MacroConditionTwitchEdit::MacroConditionTwitchEdit(
 	QWidget::connect(_regexTitle,
 			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
 			 SLOT(RegexTitleChanged(const RegexConfig &)));
-	QWidget::connect(_chatMessage, SIGNAL(textChanged()), this,
-			 SLOT(ChatMessageChanged()));
-	QWidget::connect(_regexChat,
-			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
-			 SLOT(RegexChatChanged(const RegexConfig &)));
+	QWidget::connect(
+		_chatMesageEdit,
+		SIGNAL(ChatMessagePatternChanged(const ChatMessagePattern &)),
+		this,
+		SLOT(ChatMessagePatternChanged(const ChatMessagePattern &)));
 	QWidget::connect(_category,
 			 SIGNAL(CategoreyChanged(const TwitchCategory &)), this,
 			 SLOT(CategoreyChanged(const TwitchCategory &)));
 	QWidget::connect(this, SIGNAL(TempVarsChanged()), window(),
 			 SIGNAL(SegmentTempVarsChanged()));
+	QWidget::connect(_clearBufferOnMatch, SIGNAL(stateChanged(int)), this,
+			 SLOT(ClearBufferOnMatchChanged(int)));
 
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.twitch.entry"),
 		     _layout,
@@ -1299,12 +1325,10 @@ MacroConditionTwitchEdit::MacroConditionTwitchEdit(
 
 	auto mainLayout = new QVBoxLayout();
 	mainLayout->addLayout(_layout);
-	auto chatLayout = new QHBoxLayout();
-	chatLayout->addWidget(_chatMessage);
-	chatLayout->addWidget(_regexChat);
-	mainLayout->addLayout(chatLayout);
+	mainLayout->addWidget(_chatMesageEdit);
 	mainLayout->addLayout(accountLayout);
 	mainLayout->addWidget(_tokenWarning);
+	mainLayout->addWidget(_clearBufferOnMatch);
 	setLayout(mainLayout);
 
 	_tokenCheckTimer.start(1000);
@@ -1336,11 +1360,7 @@ void MacroConditionTwitchEdit::ConditionChanged(int idx)
 
 void MacroConditionTwitchEdit::TwitchTokenChanged(const QString &token)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetToken(GetWeakTwitchTokenByQString(token));
 	_category->SetToken(_entryData->GetToken());
 	_channel->SetToken(_entryData->GetToken());
@@ -1390,11 +1410,7 @@ void MacroConditionTwitchEdit::CheckToken()
 
 void MacroConditionTwitchEdit::ChannelChanged(const TwitchChannel &channel)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetChannel(channel);
 	_pointsReward->SetChannel(channel);
 	_entryData->ResetChatConnection();
@@ -1403,55 +1419,29 @@ void MacroConditionTwitchEdit::ChannelChanged(const TwitchChannel &channel)
 void MacroConditionTwitchEdit::PointsRewardChanged(
 	const TwitchPointsReward &pointsReward)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetPointsReward(pointsReward);
 }
 
 void MacroConditionTwitchEdit::StreamTitleChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_streamTitle = _streamTitle->text().toStdString();
 }
 
-void MacroConditionTwitchEdit::ChatMessageChanged()
+void MacroConditionTwitchEdit::ChatMessagePatternChanged(
+	const ChatMessagePattern &chatMessagePattern)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_chatMessage = _chatMessage->toPlainText().toStdString();
-}
-
-void MacroConditionTwitchEdit::RegexTitleChanged(const RegexConfig &conf)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_regexTitle = conf;
-
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_chatMessagePattern = chatMessagePattern;
 	adjustSize();
 	updateGeometry();
 }
 
-void MacroConditionTwitchEdit::RegexChatChanged(const RegexConfig &conf)
+void MacroConditionTwitchEdit::RegexTitleChanged(const RegexConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_regexChat = conf;
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_regexTitle = conf;
 
 	adjustSize();
 	updateGeometry();
@@ -1459,12 +1449,14 @@ void MacroConditionTwitchEdit::RegexChatChanged(const RegexConfig &conf)
 
 void MacroConditionTwitchEdit::CategoreyChanged(const TwitchCategory &category)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_category = category;
+}
+
+void MacroConditionTwitchEdit::ClearBufferOnMatchChanged(int value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_clearBufferOnMatch = value;
 }
 
 void MacroConditionTwitchEdit::SetWidgetVisibility()
@@ -1484,14 +1476,15 @@ void MacroConditionTwitchEdit::SetWidgetVisibility()
 		condition == MacroConditionTwitch::Condition::TITLE_POLLING);
 	_regexTitle->setVisible(condition ==
 				MacroConditionTwitch::Condition::TITLE_POLLING);
-	_chatMessage->setVisible(
-		condition ==
-		MacroConditionTwitch::Condition::CHAT_MESSAGE_RECEIVED);
-	_regexChat->setVisible(
+	_chatMesageEdit->setVisible(
 		condition ==
 		MacroConditionTwitch::Condition::CHAT_MESSAGE_RECEIVED);
 	_category->setVisible(
 		condition == MacroConditionTwitch::Condition::CATEGORY_POLLING);
+	_clearBufferOnMatch->setVisible(
+		_entryData->IsUsingEventSubCondition() ||
+		_entryData->GetCondition() ==
+			MacroConditionTwitch::Condition::CHAT_MESSAGE_RECEIVED);
 
 	if (condition == MacroConditionTwitch::Condition::TITLE_POLLING) {
 		RemoveStretchIfPresent(_layout);
@@ -1521,10 +1514,10 @@ void MacroConditionTwitchEdit::UpdateEntryData()
 	_pointsReward->SetPointsReward(_entryData->_pointsReward);
 	_streamTitle->setText(_entryData->_streamTitle);
 	_regexTitle->SetRegexConfig(_entryData->_regexTitle);
-	_chatMessage->setPlainText(_entryData->_chatMessage);
-	_regexChat->SetRegexConfig(_entryData->_regexChat);
+	_chatMesageEdit->SetMessagePattern(_entryData->_chatMessagePattern);
 	_category->SetToken(_entryData->GetToken());
 	_category->SetCategory(_entryData->_category);
+	_clearBufferOnMatch->setChecked(_entryData->_clearBufferOnMatch);
 
 	SetWidgetVisibility();
 }

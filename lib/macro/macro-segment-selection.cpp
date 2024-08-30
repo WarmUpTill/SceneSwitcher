@@ -70,7 +70,8 @@ void MacroSegmentSelection::MacroSegmentOrderChanged()
 	SetupDescription();
 }
 
-QString GetMacroSegmentDescription(Macro *macro, int idx, bool isCondition)
+static QString GetMacroSegmentDescription(Macro *macro, int idx,
+					  bool isCondition)
 {
 	if (!macro) {
 		return "";
@@ -175,7 +176,7 @@ void MacroSegmentSelection::MarkSelectedSegment()
 			index - 1, QColor(Qt::lightGray));
 	}
 
-	PulseWidget(this, QColor(Qt::lightGray), QColor(0, 0, 0, 0), true);
+	HighlightWidget(this, QColor(Qt::lightGray), QColor(0, 0, 0, 0), true);
 }
 
 } // namespace advss
