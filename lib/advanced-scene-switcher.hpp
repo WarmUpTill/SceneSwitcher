@@ -380,15 +380,6 @@ signals:
 	void SceneGroupRemoved(const QString &name);
 	void SceneGroupRenamed(const QString &oldName, const QString newName);
 
-	// Trigger tab
-public:
-	void SetupTriggerTab();
-public slots:
-	void on_triggerAdd_clicked();
-	void on_triggerRemove_clicked();
-	void on_triggerUp_clicked();
-	void on_triggerDown_clicked();
-
 	/* --- End of legacy tab section --- */
 };
 

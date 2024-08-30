@@ -2,7 +2,6 @@
 #include "switcher-data.hpp"
 #include "advanced-scene-switcher.hpp"
 #include "scene-group.hpp"
-#include "scene-trigger.hpp"
 #include "switch-audio.hpp"
 #include "switch-executable.hpp"
 #include "switch-file.hpp"

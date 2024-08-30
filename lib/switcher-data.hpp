@@ -1,6 +1,5 @@
 #pragma once
 #include "scene-group.hpp"
-#include "scene-trigger.hpp"
 #include "switch-audio.hpp"
 #include "switch-executable.hpp"
 #include "switch-file.hpp"
@@ -193,7 +192,6 @@ public:
 	void saveTimeSwitches(obs_data_t *obj);
 	void saveAudioSwitches(obs_data_t *obj);
 	void saveSceneGroups(obs_data_t *obj);
-	void saveSceneTriggers(obs_data_t *obj);
 	void saveVideoSwitches(obs_data_t *obj);
 
 	void loadWindowTitleSwitches(obs_data_t *obj);
@@ -209,7 +207,6 @@ public:
 	void loadTimeSwitches(obs_data_t *obj);
 	void loadAudioSwitches(obs_data_t *obj);
 	void loadSceneGroups(obs_data_t *obj);
-	void loadSceneTriggers(obs_data_t *obj);
 	void loadVideoSwitches(obs_data_t *obj);
 
 	void Prune();
@@ -233,7 +230,6 @@ public:
 	void checkAudioSwitchFallback(OBSWeakSource &scene,
 				      OBSWeakSource &transition);
 	bool checkVideoSwitch(OBSWeakSource &scene, OBSWeakSource &transition);
-	void checkTriggers();
 	bool checkPause();
 	void checkDefaultSceneTransitions();
 	void writeSceneInfoToFile();
@@ -253,7 +249,6 @@ public:
 	FileIOData fileIO;
 	std::deque<FileSwitch> fileSwitches;
 	std::deque<ExecutableSwitch> executableSwitches;
-	std::deque<SceneTrigger> sceneTriggers;
 	std::deque<SceneTransition> sceneTransitions;
 	std::deque<DefaultSceneTransition> defaultSceneTransitions;
 	std::deque<MediaSwitch> mediaSwitches;

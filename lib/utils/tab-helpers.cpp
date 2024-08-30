@@ -15,7 +15,7 @@ static std::vector<std::string> tabNames = {
 	"screenRegionTab", "mediaTab",      "fileTab",          "randomTab",
 	"timeTab",         "idleTab",       "sceneSequenceTab", "audioTab",
 	"videoTab",        "sceneGroupTab", "transitionsTab",   "pauseTab",
-	"sceneTriggerTab"};
+};
 
 static std::vector<int> tabOrder = std::vector<int>(tabNames.size());
 
