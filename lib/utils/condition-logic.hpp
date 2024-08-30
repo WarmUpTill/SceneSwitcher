@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <map>
 #include <obs-data.h>
 #include <string>
@@ -39,6 +40,10 @@ public:
 	static bool ApplyConditionLogic(Type, bool currentMatchResult,
 					bool conditionMatched,
 					const char *context);
+	static bool
+	ApplyConditionLogic(Type, bool currentMatchResult,
+			    const std::function<bool()> &evaluateCondition,
+			    const char *context);
 
 	static void PopulateLogicTypeSelection(QComboBox *list,
 					       bool isRootCondition);

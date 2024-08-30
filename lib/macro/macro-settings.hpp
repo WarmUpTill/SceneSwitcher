@@ -23,6 +23,7 @@ public:
 	bool _highlightConditions = false;
 	bool _highlightActions = false;
 	bool _newMacroRegisterHotkeys = true;
+	bool _newMacroUseShortCircuitEvaluation = false;
 };
 
 // Dialog for configuring global and individual macro specific settings
@@ -44,12 +45,15 @@ private slots:
 private:
 	void Resize();
 
-	QCheckBox *_executed;
-	QCheckBox *_conditions;
-	QCheckBox *_actions;
+	// Global macro settings
+	QCheckBox *_highlightExecutedMacros;
+	QCheckBox *_highlightConditions;
+	QCheckBox *_highlightActions;
 	QCheckBox *_newMacroRegisterHotkeys;
+	QCheckBox *_newMacroUseShortCircuitEvaluation;
 	// Current macro specific settings
 	QCheckBox *_currentMacroRegisterHotkeys;
+	QCheckBox *_currentUseShortCircuitEvaluation;
 	QCheckBox *_currentSkipOnStartup;
 	QCheckBox *_currentStopActionsIfNotDone;
 	MacroInputSelection *_currentInputs;

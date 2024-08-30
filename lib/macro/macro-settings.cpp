@@ -20,6 +20,8 @@ void GlobalMacroSettings::Save(obs_data_t *obj) const
 	obs_data_set_bool(data, "highlightActions", _highlightActions);
 	obs_data_set_bool(data, "newMacroRegisterHotkey",
 			  _newMacroRegisterHotkeys);
+	obs_data_set_bool(data, "newMacroUseShortCircuitEvaluation",
+			  _newMacroUseShortCircuitEvaluation);
 	obs_data_set_obj(obj, "macroSettings", data);
 	obs_data_release(data);
 }
@@ -38,6 +40,8 @@ void GlobalMacroSettings::Load(obs_data_t *obj)
 	_highlightActions = obs_data_get_bool(data, "highlightActions");
 	_newMacroRegisterHotkeys =
 		obs_data_get_bool(data, "newMacroRegisterHotkey");
+	_newMacroUseShortCircuitEvaluation =
+		obs_data_get_bool(data, "newMacroUseShortCircuitEvaluation");
 	obs_data_release(data);
 }
 
@@ -45,16 +49,20 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 					 const GlobalMacroSettings &settings,
 					 Macro *macro)
 	: QDialog(parent),
-	  _executed(new QCheckBox(obs_module_text(
+	  _highlightExecutedMacros(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.highlightExecutedMacros"))),
-	  _conditions(new QCheckBox(obs_module_text(
+	  _highlightConditions(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.highlightTrueConditions"))),
-	  _actions(new QCheckBox(obs_module_text(
+	  _highlightActions(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.highlightPerformedActions"))),
 	  _newMacroRegisterHotkeys(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.newMacroRegisterHotkey"))),
+	  _newMacroUseShortCircuitEvaluation(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.newMacroUseShortCircuitEvaluation"))),
 	  _currentMacroRegisterHotkeys(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentDisableHotkeys"))),
+	  _currentUseShortCircuitEvaluation(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.currentUseShortCircuitEvaluation"))),
 	  _currentSkipOnStartup(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentSkipExecutionOnStartup"))),
 	  _currentStopActionsIfNotDone(new QCheckBox(obs_module_text(
@@ -83,12 +91,17 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	setWindowModality(Qt::WindowModality::WindowModal);
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
+	_newMacroUseShortCircuitEvaluation->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.macroTab.shortCircuit.tooltip"));
+	_currentUseShortCircuitEvaluation->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.macroTab.shortCircuit.tooltip"));
+
 	auto highlightOptions = new QGroupBox(
 		obs_module_text("AdvSceneSwitcher.macroTab.highlightSettings"));
 	auto highlightLayout = new QVBoxLayout;
-	highlightLayout->addWidget(_executed);
-	highlightLayout->addWidget(_conditions);
-	highlightLayout->addWidget(_actions);
+	highlightLayout->addWidget(_highlightExecutedMacros);
+	highlightLayout->addWidget(_highlightConditions);
+	highlightLayout->addWidget(_highlightActions);
 	highlightOptions->setLayout(highlightLayout);
 
 	auto hotkeyOptions = new QGroupBox(
@@ -103,6 +116,8 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	auto generalLayout = new QVBoxLayout;
 	generalLayout->addWidget(_currentSkipOnStartup);
 	generalLayout->addWidget(_currentStopActionsIfNotDone);
+	generalLayout->addWidget(_currentUseShortCircuitEvaluation);
+	generalLayout->addWidget(_newMacroUseShortCircuitEvaluation);
 	generalOptions->setLayout(generalLayout);
 
 	auto inputOptions = new QGroupBox(
@@ -198,10 +213,12 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	dialogLayout->addWidget(buttonbox);
 	setLayout(dialogLayout);
 
-	_executed->setChecked(settings._highlightExecuted);
-	_conditions->setChecked(settings._highlightConditions);
-	_actions->setChecked(settings._highlightActions);
+	_highlightExecutedMacros->setChecked(settings._highlightExecuted);
+	_highlightConditions->setChecked(settings._highlightConditions);
+	_highlightActions->setChecked(settings._highlightActions);
 	_newMacroRegisterHotkeys->setChecked(settings._newMacroRegisterHotkeys);
+	_newMacroUseShortCircuitEvaluation->setChecked(
+		settings._newMacroUseShortCircuitEvaluation);
 
 	if (!macro || macro->IsGroup()) {
 		hotkeyOptions->hide();
@@ -212,6 +229,8 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	}
 
 	_currentMacroRegisterHotkeys->setChecked(macro->PauseHotkeysEnabled());
+	_currentUseShortCircuitEvaluation->setChecked(
+		macro->ShortCircuitEvaluationEnabled());
 	_currentSkipOnStartup->setChecked(macro->SkipExecOnStart());
 	_currentStopActionsIfNotDone->setChecked(macro->StopActionsIfNotDone());
 	_currentInputs->SetInputs(macro->GetInputVariables());
@@ -322,17 +341,23 @@ bool MacroSettingsDialog::AskForSettings(QWidget *parent,
 	if (dialog.exec() != DialogCode::Accepted) {
 		return false;
 	}
-	userInput._highlightExecuted = dialog._executed->isChecked();
-	userInput._highlightConditions = dialog._conditions->isChecked();
-	userInput._highlightActions = dialog._actions->isChecked();
+	userInput._highlightExecuted =
+		dialog._highlightExecutedMacros->isChecked();
+	userInput._highlightConditions =
+		dialog._highlightConditions->isChecked();
+	userInput._highlightActions = dialog._highlightActions->isChecked();
 	userInput._newMacroRegisterHotkeys =
 		dialog._newMacroRegisterHotkeys->isChecked();
+	userInput._newMacroUseShortCircuitEvaluation =
+		dialog._newMacroUseShortCircuitEvaluation->isChecked();
 	if (!macro) {
 		return true;
 	}
 
 	macro->EnablePauseHotkeys(
 		dialog._currentMacroRegisterHotkeys->isChecked());
+	macro->SetShortCircuitEvaluation(
+		dialog._currentUseShortCircuitEvaluation->isChecked());
 	macro->SetSkipExecOnStart(dialog._currentSkipOnStartup->isChecked());
 	macro->SetStopActionsIfNotDone(
 		dialog._currentStopActionsIfNotDone->isChecked());
