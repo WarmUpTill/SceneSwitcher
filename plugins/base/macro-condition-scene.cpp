@@ -35,17 +35,10 @@ const static std::map<MacroConditionScene::Type, std::string> sceneTypes = {
 };
 
 static bool sceneNameMatchesRegex(const OBSWeakSource &scene,
+				  const RegexConfig &regex,
 				  const std::string &pattern)
 {
-	auto regex = QRegularExpression(QRegularExpression::anchoredPattern(
-		QString::fromStdString(pattern)));
-	if (!regex.isValid()) {
-		return false;
-	}
-
-	auto match =
-		regex.match(QString::fromStdString(GetWeakSourceName(scene)));
-	return match.hasMatch();
+	return regex.Matches(GetWeakSourceName(scene), pattern);
 }
 
 static OBSWeakSource getCurrentSceneHelper(bool useTransitionTargetScene)
@@ -111,13 +104,13 @@ bool MacroConditionScene::CheckCondition()
 		auto scene = getCurrentSceneHelper(_useTransitionTargetScene);
 		SetVariableValue(GetWeakSourceName(scene));
 		SetTempVarValue("current", GetWeakSourceName(scene));
-		return sceneNameMatchesRegex(scene, _pattern);
+		return sceneNameMatchesRegex(scene, _regex, _pattern);
 	}
 	case Type::PREVIOUS_PATTERN: {
 		auto scene = getPreviousSceneHelper(_useTransitionTargetScene);
 		SetVariableValue(GetWeakSourceName(scene));
 		SetTempVarValue("previous", GetWeakSourceName(scene));
-		return sceneNameMatchesRegex(scene, _pattern);
+		return sceneNameMatchesRegex(scene, _regex, _pattern);
 	}
 	case Type::PREVIEW_PATTERN: {
 		OBSSourceAutoRelease source =
@@ -126,7 +119,7 @@ bool MacroConditionScene::CheckCondition()
 			obs_source_get_weak_source(source);
 		SetVariableValue(GetWeakSourceName(scene));
 		SetTempVarValue("preview", GetWeakSourceName(scene));
-		return sceneNameMatchesRegex(scene.Get(), _pattern);
+		return sceneNameMatchesRegex(scene.Get(), _regex, _pattern);
 	}
 	}
 
@@ -141,6 +134,7 @@ bool MacroConditionScene::Save(obs_data_t *obj) const
 	obs_data_set_string(obj, "pattern", _pattern.c_str());
 	obs_data_set_bool(obj, "useTransitionTargetScene",
 			  _useTransitionTargetScene);
+	_regex.Save(obj);
 	obs_data_set_int(obj, "version", 1);
 	return true;
 }
@@ -151,6 +145,9 @@ bool MacroConditionScene::Load(obs_data_t *obj)
 	_scene.Load(obj);
 	_type = static_cast<Type>(obs_data_get_int(obj, "type"));
 	_pattern = obs_data_get_string(obj, "pattern");
+	_regex.Load(obj);
+	_regex.SetEnabled(true);
+
 	if (obs_data_has_user_value(obj, "waitForTransition")) {
 		_useTransitionTargetScene =
 			!obs_data_get_bool(obj, "waitForTransition");
@@ -198,6 +195,7 @@ bool MacroConditionScene::Load(obs_data_t *obj)
 			break;
 		}
 	}
+
 	return true;
 }
 
@@ -260,7 +258,8 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 	  _sceneType(new QComboBox()),
 	  _pattern(new QLineEdit()),
 	  _useTransitionTargetScene(new QCheckBox(obs_module_text(
-		  "AdvSceneSwitcher.condition.scene.currentSceneTransitionBehaviour")))
+		  "AdvSceneSwitcher.condition.scene.currentSceneTransitionBehaviour"))),
+	  _regex(new RegexConfigWidget(this, false))
 {
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
@@ -270,6 +269,9 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 			 SLOT(PatternChanged()));
 	QWidget::connect(_useTransitionTargetScene, SIGNAL(stateChanged(int)),
 			 this, SLOT(UseTransitionTargetSceneChanged(int)));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
 
 	populateTypeSelection(_sceneType);
 
@@ -278,16 +280,17 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 		{"{{sceneType}}", _sceneType},
 		{"{{pattern}}", _pattern},
 		{"{{useTransitionTargetScene}}", _useTransitionTargetScene},
+		{"{{regex}}", _regex},
 	};
-	QHBoxLayout *line1Layout = new QHBoxLayout;
+	auto line1Layout = new QHBoxLayout;
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.scene.entry.line1"),
 		line1Layout, widgetPlaceholders);
-	QHBoxLayout *line2Layout = new QHBoxLayout;
+	auto line2Layout = new QHBoxLayout;
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.scene.entry.line2"),
 		line2Layout, widgetPlaceholders);
-	QVBoxLayout *mainLayout = new QVBoxLayout;
+	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(line1Layout);
 	mainLayout->addLayout(line2Layout);
 	setLayout(mainLayout);
@@ -299,11 +302,7 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 
 void MacroConditionSceneEdit::SceneChanged(const SceneSelection &s)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = s;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -311,11 +310,7 @@ void MacroConditionSceneEdit::SceneChanged(const SceneSelection &s)
 
 void MacroConditionSceneEdit::TypeChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetType(static_cast<MacroConditionScene::Type>(
 		_sceneType->itemData(index).toInt()));
 	SetWidgetVisibility();
@@ -323,22 +318,20 @@ void MacroConditionSceneEdit::TypeChanged(int index)
 
 void MacroConditionSceneEdit::PatternChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_pattern = _pattern->text().toStdString();
 }
 
 void MacroConditionSceneEdit::UseTransitionTargetSceneChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_useTransitionTargetScene = state;
+}
+
+void MacroConditionSceneEdit::RegexChanged(const RegexConfig &regex)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_regex = regex;
 }
 
 void MacroConditionSceneEdit::SetWidgetVisibility()
@@ -354,13 +347,15 @@ void MacroConditionSceneEdit::SetWidgetVisibility()
 			MacroConditionScene::Type::CURRENT_PATTERN ||
 		_entryData->GetType() ==
 			MacroConditionScene::Type::PREVIOUS_PATTERN);
-	_pattern->setVisible(
+	const bool isUsingPattern =
 		_entryData->GetType() ==
 			MacroConditionScene::Type::CURRENT_PATTERN ||
 		_entryData->GetType() ==
 			MacroConditionScene::Type::PREVIOUS_PATTERN ||
 		_entryData->GetType() ==
-			MacroConditionScene::Type::PREVIEW_PATTERN);
+			MacroConditionScene::Type::PREVIEW_PATTERN;
+	_pattern->setVisible(isUsingPattern);
+	_regex->setVisible(isUsingPattern);
 
 	if (_entryData->GetType() == MacroConditionScene::Type::PREVIOUS ||
 	    _entryData->GetType() ==
@@ -390,6 +385,7 @@ void MacroConditionSceneEdit::UpdateEntryData()
 	_pattern->setText(QString::fromStdString(_entryData->_pattern));
 	_useTransitionTargetScene->setChecked(
 		_entryData->_useTransitionTargetScene);
+	_regex->SetRegexConfig(_entryData->_regex);
 	SetWidgetVisibility();
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-condition-edit.hpp"
 #include "scene-selection.hpp"
+#include "regex-config.hpp"
 
 #include <QWidget>
 #include <QComboBox>
@@ -37,6 +38,7 @@ public:
 
 	SceneSelection _scene;
 	std::string _pattern = ".*Scene.*";
+	RegexConfig _regex = RegexConfig(true);
 	// During a transition "current" scene could either stand for the scene
 	// being transitioned to or the scene still being transitioned away
 	// from.
@@ -72,6 +74,7 @@ private slots:
 	void TypeChanged(int value);
 	void PatternChanged();
 	void UseTransitionTargetSceneChanged(int state);
+	void RegexChanged(const RegexConfig &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -80,6 +83,7 @@ protected:
 	QComboBox *_sceneType;
 	QLineEdit *_pattern;
 	QCheckBox *_useTransitionTargetScene;
+	RegexConfigWidget *_regex;
 	std::shared_ptr<MacroConditionScene> _entryData;
 
 private:
