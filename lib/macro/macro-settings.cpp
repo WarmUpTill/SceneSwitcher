@@ -60,7 +60,7 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	  _newMacroUseShortCircuitEvaluation(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.newMacroUseShortCircuitEvaluation"))),
 	  _currentMacroRegisterHotkeys(new QCheckBox(obs_module_text(
-		  "AdvSceneSwitcher.macroTab.currentDisableHotkeys"))),
+		  "AdvSceneSwitcher.macroTab.currentRegisterHotkeys"))),
 	  _currentUseShortCircuitEvaluation(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentUseShortCircuitEvaluation"))),
 	  _currentSkipOnStartup(new QCheckBox(obs_module_text(
