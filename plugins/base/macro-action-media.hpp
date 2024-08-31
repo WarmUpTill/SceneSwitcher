@@ -31,6 +31,7 @@ public:
 		PREVIOUS,
 		SEEK_DURATION,
 		SEEK_PERCENTAGE,
+		WAIT_FOR_PLAYBACK_STOP,
 	};
 
 	enum class SelectionType { SOURCE, SCENE_ITEM };
