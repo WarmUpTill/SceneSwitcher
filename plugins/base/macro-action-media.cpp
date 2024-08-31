@@ -1,6 +1,7 @@
 #include "macro-action-media.hpp"
 #include "layout-helpers.hpp"
 #include "selection-helpers.hpp"
+#include "macro-helpers.hpp"
 
 namespace advss {
 
@@ -28,6 +29,8 @@ static const std::map<MacroActionMedia::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.media.type.seek.duration"},
 	{MacroActionMedia::Action::SEEK_PERCENTAGE,
 	 "AdvSceneSwitcher.action.media.type.seek.percentage"},
+	{MacroActionMedia::Action::WAIT_FOR_PLAYBACK_STOP,
+	 "AdvSceneSwitcher.action.media.type.waitForPlaybackStop"},
 };
 
 static const std::map<MacroActionMedia::SelectionType, std::string>
@@ -64,6 +67,34 @@ void MacroActionMedia::SeekToPercentage(obs_source_t *source) const
 	obs_source_media_set_time(source, percentageTimeMs);
 }
 
+static void waitHelper(std::unique_lock<std::mutex> *lock, Macro *macro,
+		       obs_source_t *source)
+{
+	using namespace std::chrono_literals;
+
+	// Some media source types support playlists. (E.g. VLC Source)
+	// Whenever a playlist item ends the media state briefly changes to
+	// state OBS_MEDIA_STATE_ENDED.
+	// To make sure that playback really has ended we check that the state
+	// is not OBS_MEDIA_STATE_PLAYING at least twice in a row.
+	static const int playingStateBreakThreshold = 2;
+	int playingStateCount = 0;
+
+	while (true) {
+		if (MacroWaitShouldAbort() || MacroIsStopped(macro)) {
+			break;
+		}
+		if (obs_source_media_get_state(source) !=
+		    OBS_MEDIA_STATE_PLAYING) {
+			playingStateCount++;
+		}
+		if (playingStateCount >= playingStateBreakThreshold) {
+			break;
+		}
+		GetMacroWaitCV().wait_for(*lock, 10ms);
+	}
+}
+
 void MacroActionMedia::PerformActionHelper(obs_source_t *source) const
 {
 	obs_media_state state = obs_source_media_get_state(source);
@@ -98,6 +129,11 @@ void MacroActionMedia::PerformActionHelper(obs_source_t *source) const
 	case Action::SEEK_PERCENTAGE:
 		SeekToPercentage(source);
 		break;
+	case Action::WAIT_FOR_PLAYBACK_STOP: {
+		std::unique_lock<std::mutex> lock(*GetMutex());
+		waitHelper(&lock, GetMacro(), source);
+		break;
+	}
 	default:
 		break;
 	}
