@@ -1,6 +1,6 @@
 #include "paramerter-wrappers.hpp"
 
-#include <filesystem>
+#include <QFileInfo>
 #include <source-helpers.hpp>
 
 namespace advss {
@@ -321,10 +321,12 @@ void OCRParameters::SetPageMode(tesseract::PageSegMode mode)
 
 bool OCRParameters::SetLanguageCode(const std::string &value)
 {
-	std::string dataPath = obs_get_module_data_path(obs_current_module()) +
-			       std::string("/res/ocr") + "/" + value +
-			       ".traineddata";
-	if (!std::filesystem::exists(dataPath)) {
+	const auto dataPath =
+		QString(obs_get_module_data_path(obs_current_module())) +
+		QString("/res/ocr") + "/" + QString::fromStdString(value) +
+		".traineddata";
+	QFileInfo fileInfo(dataPath);
+	if (!fileInfo.exists(dataPath)) {
 		return false;
 	}
 	Setup();

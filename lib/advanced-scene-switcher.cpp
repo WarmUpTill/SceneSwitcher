@@ -15,7 +15,6 @@
 #include "utility.hpp"
 #include "version.h"
 
-#include <filesystem>
 #include <obs-frontend-api.h>
 #include <QAction>
 #include <QDirIterator>
@@ -85,8 +84,8 @@ static void DisplayMissingDataDirWarning()
 		      "Please check installation instructions!\n\n"
 		      "Data most likely expected at:\n\n";
 #ifdef _WIN32
-	msg += QString::fromStdString(
-		(std::filesystem::current_path().string()));
+
+	msg += QDir::currentPath();
 	msg += "/";
 #endif
 	msg += obs_get_module_data_path(obs_current_module());
