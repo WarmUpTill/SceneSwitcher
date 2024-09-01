@@ -4,7 +4,6 @@
 #include <QLayout>
 #include <QFileDialog>
 #include <QStandardPaths>
-#include <filesystem>
 
 namespace advss {
 
@@ -38,8 +37,8 @@ void FileSelection::SetPath(const QString &path)
 
 QString FileSelection::ValidPathOrDesktop(const QString &path)
 {
-	if (std::filesystem::exists(
-		    std::filesystem::path(path.toStdString()))) {
+	QFileInfo fileInfo(path);
+	if (fileInfo.isFile()) {
 		return path;
 	}
 	return QStandardPaths::writableLocation(
