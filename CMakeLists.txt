@@ -259,6 +259,8 @@ target_sources(
           lib/utils/utility.hpp
           lib/utils/volume-control.cpp
           lib/utils/volume-control.hpp
+          lib/utils/websocket-api.cpp
+          lib/utils/websocket-api.hpp
           lib/variables/variable-line-edit.cpp
           lib/variables/variable-line-edit.hpp
           lib/variables/variable-number.hpp

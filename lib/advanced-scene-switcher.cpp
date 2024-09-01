@@ -14,6 +14,7 @@
 #include "tab-helpers.hpp"
 #include "utility.hpp"
 #include "version.h"
+#include "websocket-api.hpp"
 
 #include <obs-frontend-api.h>
 #include <QAction>
@@ -454,6 +455,8 @@ void SwitcherData::Start()
 
 		// Will be overwritten quickly but might be useful
 		writeToStatusFile("Advanced Scene Switcher running");
+		SendWebsocketVendorEvent("AdvancedSceneSwitcherStarted",
+					 nullptr);
 	}
 
 	if (showSystemTrayNotifications) {
@@ -481,6 +484,10 @@ void SwitcherData::Stop()
 		delete th;
 		th = nullptr;
 		writeToStatusFile("Advanced Scene Switcher stopped");
+		if (!obsIsShuttingDown) {
+			SendWebsocketVendorEvent("AdvancedSceneSwitcherStopped",
+						 nullptr);
+		}
 	}
 
 	if (showSystemTrayNotifications) {

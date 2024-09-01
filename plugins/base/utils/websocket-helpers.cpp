@@ -3,6 +3,7 @@
 #include "log-helper.hpp"
 #include "plugin-state-helpers.hpp"
 #include "sync-helpers.hpp"
+#include "websocket-api.hpp"
 
 #include <QCryptographicHash>
 #include <obs-websocket-api.h>
@@ -16,20 +17,18 @@ using websocketpp::lib::bind;
 #define RPC_VERSION 1
 #undef DispatchMessage
 
-constexpr char VendorName[] = "AdvancedSceneSwitcher";
-constexpr char VendorRequest[] = "AdvancedSceneSwitcherMessage";
-constexpr char VendorEvent[] = "AdvancedSceneSwitcherEvent";
-obs_websocket_vendor vendor;
+constexpr char VendorRequestMessage[] = "AdvancedSceneSwitcherMessage";
+constexpr char VendorEventMessage[] = "AdvancedSceneSwitcherEvent";
 
 static WebsocketMessageDispatcher websocketMessageDispatcher;
-static void registerWebsocketVendor();
 
 static bool setup();
 static bool setupDone = setup();
+static void receiveWebsocketMessage(obs_data_t *request_data, obs_data_t *);
 
 bool setup()
 {
-	AddPluginPostLoadStep(registerWebsocketVendor);
+	RegisterWebsocketRequest(VendorRequestMessage, receiveWebsocketMessage);
 	return true;
 }
 
@@ -40,14 +39,12 @@ WebsocketMessageBuffer RegisterForWebsocketMessages()
 
 void SendWebsocketEvent(const std::string &eventMsg)
 {
-	auto data = obs_data_create();
+	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_string(data, "message", eventMsg.c_str());
-	obs_websocket_vendor_emit_event(vendor, VendorEvent, data);
-	obs_data_release(data);
+	SendWebsocketVendorEvent(VendorEventMessage, data);
 }
 
-static void receiveWebsocketMessage(obs_data_t *request_data, obs_data_t *,
-				    void *)
+static void receiveWebsocketMessage(obs_data_t *request_data, obs_data_t *)
 {
 	if (!obs_data_has_user_value(request_data, "message")) {
 		vblog(LOG_INFO, "received unexpected m '%s'",
@@ -58,32 +55,6 @@ static void receiveWebsocketMessage(obs_data_t *request_data, obs_data_t *,
 	auto msg = obs_data_get_string(request_data, "message");
 	websocketMessageDispatcher.DispatchMessage(msg);
 	vblog(LOG_INFO, "received message: %s", msg);
-}
-
-static void registerWebsocketVendor()
-{
-	vendor = obs_websocket_register_vendor(VendorName);
-	if (!vendor) {
-		blog(LOG_ERROR,
-		     "Vendor registration failed! (obs-websocket should have logged something if installed properly.)");
-		return;
-	}
-
-	if (!obs_websocket_vendor_register_request(
-		    vendor, VendorRequest, receiveWebsocketMessage, NULL))
-		blog(LOG_ERROR,
-		     "Failed to register `AdvancedSceneSwitcherMessage` request with obs-websocket.");
-
-	uint api_version = obs_websocket_get_api_version();
-	if (api_version == 0) {
-		blog(LOG_ERROR,
-		     "Unable to fetch obs-websocket plugin API version.");
-		return;
-	} else if (api_version == 1) {
-		blog(LOG_WARNING,
-		     "Unsupported obs-websocket plugin API version for calling requests.");
-		return;
-	}
 }
 
 WSClientConnection::WSClientConnection(bool useOBSProtocol) : QObject(nullptr)
@@ -199,8 +170,8 @@ std::string ConstructVendorRequestMessage(const std::string &message)
 	obs_data_set_string(data, "requestId", message.c_str());
 
 	auto vendorData = obs_data_create();
-	obs_data_set_string(vendorData, "vendorName", VendorName);
-	obs_data_set_string(vendorData, "requestType", VendorRequest);
+	obs_data_set_string(vendorData, "vendorName", GetWebsocketVendorName());
+	obs_data_set_string(vendorData, "requestType", VendorRequestMessage);
 
 	auto msgObj = obs_data_create();
 	obs_data_set_string(msgObj, "message", message.c_str());
@@ -298,14 +269,14 @@ void WSClientConnection::HandleEvent(obs_data_t *msg)
 {
 	auto d = obs_data_get_obj(msg, "d");
 	auto eventData = obs_data_get_obj(d, "eventData");
-	if (strcmp(obs_data_get_string(eventData, "vendorName"), VendorName) !=
-	    0) {
+	if (strcmp(obs_data_get_string(eventData, "vendorName"),
+		   GetWebsocketVendorName()) != 0) {
 		vblog(LOG_INFO, "ignoring vendor event from \"%s\"",
 		      obs_data_get_string(eventData, "vendorName"));
 		return;
 	}
-	if (strcmp(obs_data_get_string(eventData, "eventType"), VendorEvent) !=
-	    0) {
+	if (strcmp(obs_data_get_string(eventData, "eventType"),
+		   VendorEventMessage) != 0) {
 		vblog(LOG_INFO, "ignoring event type\"%s\"",
 		      obs_data_get_string(eventData, "eventType"));
 		return;
