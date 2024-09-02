@@ -795,6 +795,8 @@ void AdvSceneSwitcher::on_macroSettings_clicked()
 		resetSegmentHighlights(ui->actionsList);
 		resetSegmentHighlights(ui->elseActionsList);
 	}
+
+	SetCheckIntervalTooLowVisibility();
 }
 
 static void moveControlsToSplitter(QSplitter *splitter, int idx,

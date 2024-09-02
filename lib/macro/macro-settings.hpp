@@ -1,5 +1,6 @@
 #pragma once
 #include "variable-line-edit.hpp"
+#include "duration-control.hpp"
 #include "macro-input.hpp"
 
 #include <QWidget>
@@ -44,6 +45,7 @@ private slots:
 
 private:
 	void Resize();
+	void SetCustomConditionIntervalWarningVisibility() const;
 
 	// Global macro settings
 	QCheckBox *_highlightExecutedMacros;
@@ -54,6 +56,9 @@ private:
 	// Current macro specific settings
 	QCheckBox *_currentMacroRegisterHotkeys;
 	QCheckBox *_currentUseShortCircuitEvaluation;
+	QCheckBox *_currentUseCustomConditionCheckInterval;
+	DurationSelection *_currentCustomConditionCheckInterval;
+	QLabel *_currentCustomConditionCheckIntervalWarning;
 	QCheckBox *_currentSkipOnStartup;
 	QCheckBox *_currentStopActionsIfNotDone;
 	MacroInputSelection *_currentInputs;
