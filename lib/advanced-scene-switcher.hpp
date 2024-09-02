@@ -381,6 +381,8 @@ signals:
 	void SceneGroupRenamed(const QString &oldName, const QString newName);
 
 	/* --- End of legacy tab section --- */
+private:
+	void SetCheckIntervalTooLowVisibility() const;
 };
 
 void OpenSettingsWindow();

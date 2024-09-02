@@ -35,6 +35,7 @@ public:
 	bool CheckConditions(bool ignorePause = false);
 	bool ConditionsMatched() const { return _matched; }
 	TimePoint LastConditionCheckTime() const { return _lastCheckTime; }
+	bool ConditionsShouldBeChecked() const;
 
 	bool ShouldRunActions() const;
 	bool PerformActions(bool match, bool forceParallel = false,
@@ -59,6 +60,11 @@ public:
 
 	void SetShortCircuitEvaluation(bool useShortCircuitEvaluation);
 	bool ShortCircuitEvaluationEnabled() const;
+
+	void SetCustomConditionCheckIntervalEnabled(bool enable);
+	bool CustomConditionCheckIntervalEnabled() const;
+	void SetCustomConditionCheckInterval(const Duration &);
+	Duration GetCustomConditionCheckInterval() const;
 
 	int RunCount() const { return _runCount; };
 	void ResetRunCount() { _runCount = 0; };
@@ -188,10 +194,13 @@ private:
 	bool _isCollapsed = false;
 
 	bool _useShortCircuitEvaluation = false;
+	bool _useCustomConditionCheckInterval = true;
+	Duration _customConditionCheckInterval = 0.3;
+	bool _conditionSateChanged = false;
+
 	bool _runInParallel = false;
 	bool _matched = false;
 	bool _lastMatched = false;
-	bool _conditionSateChanged = false;
 	bool _performActionsOnChange = true;
 	bool _skipExecOnStart = false;
 	bool _stopActionsIfNotDone = false;
@@ -239,5 +248,6 @@ Macro *GetMacroByName(const char *name);
 Macro *GetMacroByQString(const QString &name);
 std::weak_ptr<Macro> GetWeakMacroByName(const char *name);
 void InvalidateMacroTempVarValues();
+std::shared_ptr<Macro> GetMacroWithInvalidConditionInterval();
 
 } // namespace advss

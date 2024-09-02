@@ -16,6 +16,7 @@ public:
 				 bool showUnitSelection = true,
 				 double minValue = 0.0);
 	EXPORT void SetDuration(const Duration &);
+	Duration GetDuration() const { return _current; }
 	EXPORT QDoubleSpinBox *SpinBox() { return _duration->SpinBox(); }
 
 private slots:

@@ -150,6 +150,8 @@ void AdvSceneSwitcher::on_checkInterval_valueChanged(int value)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->interval = value;
+
+	SetCheckIntervalTooLowVisibility();
 }
 
 void AdvSceneSwitcher::closeEvent(QCloseEvent *)
@@ -823,6 +825,28 @@ static void setupGeneralTabInactiveWarning(QTabWidget *tabs)
 	inactiveTimer->start();
 }
 
+void advss::AdvSceneSwitcher::SetCheckIntervalTooLowVisibility() const
+{
+	auto macro = GetMacroWithInvalidConditionInterval();
+	if (!macro) {
+		ui->checkIntervalTooLowWarning->hide();
+		return;
+	}
+
+	const QString labelTextFormat(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.checkIntervalTooLow"));
+	const QString labelTooltipFormat(obs_module_text(
+		"AdvSceneSwitcher.generalTab.status.checkIntervalTooLow.tooltip"));
+	const QString name = QString::fromStdString(macro->Name());
+	const QString duration = QString::fromStdString(
+		macro->GetCustomConditionCheckInterval().ToString());
+
+	ui->checkIntervalTooLowWarning->setText(labelTextFormat.arg(name));
+	ui->checkIntervalTooLowWarning->setToolTip(
+		labelTooltipFormat.arg(name).arg(duration).arg(name));
+	ui->checkIntervalTooLowWarning->show();
+}
+
 void AdvSceneSwitcher::SetupGeneralTab()
 {
 	PopulateSceneSelection(ui->noMatchSwitchScene, false);
@@ -851,6 +875,7 @@ void AdvSceneSwitcher::SetupGeneralTab()
 			 SLOT(NoMatchDelayDurationChanged(const Duration &)));
 
 	ui->checkInterval->setValue(switcher->interval);
+	SetCheckIntervalTooLowVisibility();
 
 	ui->enableCooldown->setChecked(switcher->enableCooldown);
 	ui->cooldownTime->setEnabled(switcher->enableCooldown);

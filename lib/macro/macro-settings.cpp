@@ -1,7 +1,8 @@
 #include "macro-settings.hpp"
 #include "layout-helpers.hpp"
-#include "obs-module-helper.hpp"
 #include "macro.hpp"
+#include "obs-module-helper.hpp"
+#include "plugin-state-helpers.hpp"
 
 #include <QDialogButtonBox>
 #include <QScrollArea>
@@ -63,6 +64,12 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 		  "AdvSceneSwitcher.macroTab.currentRegisterHotkeys"))),
 	  _currentUseShortCircuitEvaluation(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentUseShortCircuitEvaluation"))),
+	  _currentUseCustomConditionCheckInterval(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.currentUseCustomConditionCheckInterval"))),
+	  _currentCustomConditionCheckInterval(
+		  new DurationSelection(this, true, 0.01)),
+	  _currentCustomConditionCheckIntervalWarning(new QLabel(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.currentUseCustomConditionCheckIntervalWarning"))),
 	  _currentSkipOnStartup(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentSkipExecutionOnStartup"))),
 	  _currentStopActionsIfNotDone(new QCheckBox(obs_module_text(
@@ -118,6 +125,17 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	generalLayout->addWidget(_currentStopActionsIfNotDone);
 	generalLayout->addWidget(_currentUseShortCircuitEvaluation);
 	generalLayout->addWidget(_newMacroUseShortCircuitEvaluation);
+
+	auto durationLayout = new QHBoxLayout();
+	durationLayout->addWidget(_currentUseCustomConditionCheckInterval);
+	durationLayout->addWidget(_currentCustomConditionCheckInterval);
+	durationLayout->addStretch();
+	auto customConditionIntervalLayout = new QVBoxLayout();
+	customConditionIntervalLayout->addLayout(durationLayout);
+	customConditionIntervalLayout->addWidget(
+		_currentCustomConditionCheckIntervalWarning);
+
+	generalLayout->addLayout(customConditionIntervalLayout);
 	generalOptions->setLayout(generalLayout);
 
 	auto inputOptions = new QGroupBox(
@@ -193,6 +211,13 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 		&MacroSettingsDialog::PauseButtonEnableChanged);
 	connect(_currentMacroDockAddStatusLabel, &QCheckBox::stateChanged, this,
 		&MacroSettingsDialog::StatusLabelEnableChanged);
+	connect(_currentUseCustomConditionCheckInterval,
+		&QCheckBox::stateChanged, this, [this](int state) {
+			_currentCustomConditionCheckInterval->setEnabled(state);
+		});
+	connect(_currentCustomConditionCheckInterval,
+		&DurationSelection::DurationChanged, this,
+		[this]() { SetCustomConditionIntervalWarningVisibility(); });
 
 	auto scrollArea = new QScrollArea(this);
 	scrollArea->setWidgetResizable(true);
@@ -231,6 +256,13 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	_currentMacroRegisterHotkeys->setChecked(macro->PauseHotkeysEnabled());
 	_currentUseShortCircuitEvaluation->setChecked(
 		macro->ShortCircuitEvaluationEnabled());
+	_currentUseCustomConditionCheckInterval->setChecked(
+		macro->CustomConditionCheckIntervalEnabled());
+	_currentCustomConditionCheckInterval->SetDuration(
+		macro->GetCustomConditionCheckInterval());
+	_currentCustomConditionCheckInterval->setEnabled(
+		macro->CustomConditionCheckIntervalEnabled());
+	SetCustomConditionIntervalWarningVisibility();
 	_currentSkipOnStartup->setChecked(macro->SkipExecOnStart());
 	_currentStopActionsIfNotDone->setChecked(macro->StopActionsIfNotDone());
 	_currentInputs->SetInputs(macro->GetInputVariables());
@@ -332,6 +364,15 @@ void MacroSettingsDialog::Resize()
 	_dockOptions->updateGeometry();
 }
 
+void MacroSettingsDialog::SetCustomConditionIntervalWarningVisibility() const
+{
+	_currentCustomConditionCheckIntervalWarning->setVisible(
+		_currentUseCustomConditionCheckInterval->isChecked() &&
+		GetIntervalValue() >
+			_currentCustomConditionCheckInterval->GetDuration()
+				.Milliseconds());
+}
+
 bool MacroSettingsDialog::AskForSettings(QWidget *parent,
 					 GlobalMacroSettings &userInput,
 					 Macro *macro)
@@ -358,6 +399,10 @@ bool MacroSettingsDialog::AskForSettings(QWidget *parent,
 		dialog._currentMacroRegisterHotkeys->isChecked());
 	macro->SetShortCircuitEvaluation(
 		dialog._currentUseShortCircuitEvaluation->isChecked());
+	macro->SetCustomConditionCheckIntervalEnabled(
+		dialog._currentUseCustomConditionCheckInterval->isChecked());
+	macro->SetCustomConditionCheckInterval(
+		dialog._currentCustomConditionCheckInterval->GetDuration());
 	macro->SetSkipExecOnStart(dialog._currentSkipOnStartup->isChecked());
 	macro->SetStopActionsIfNotDone(
 		dialog._currentStopActionsIfNotDone->isChecked());

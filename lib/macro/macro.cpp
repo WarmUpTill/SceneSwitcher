@@ -314,6 +314,21 @@ bool Macro::WasExecutedSince(const TimePoint &time) const
 	return _lastExecutionTime > time;
 }
 
+bool Macro::ConditionsShouldBeChecked() const
+{
+	if (!_useCustomConditionCheckInterval) {
+		return true;
+	}
+
+	const auto timePassed = std::chrono::high_resolution_clock::now() -
+				LastConditionCheckTime();
+	const auto timePassedMs =
+		std::chrono::duration_cast<std::chrono::milliseconds>(
+			timePassed);
+	return timePassedMs.count() >=
+	       _customConditionCheckInterval.Milliseconds();
+}
+
 bool Macro::ShouldRunActions() const
 {
 	const bool hasActionsToExecute =
@@ -424,6 +439,26 @@ void Macro::SetShortCircuitEvaluation(bool useShortCircuitEvaluation)
 bool Macro::ShortCircuitEvaluationEnabled() const
 {
 	return _useShortCircuitEvaluation;
+}
+
+void Macro::SetCustomConditionCheckIntervalEnabled(bool enable)
+{
+	_useCustomConditionCheckInterval = enable;
+}
+
+bool Macro::CustomConditionCheckIntervalEnabled() const
+{
+	return _useCustomConditionCheckInterval;
+}
+
+void Macro::SetCustomConditionCheckInterval(const Duration &duration)
+{
+	_customConditionCheckInterval = duration;
+}
+
+Duration Macro::GetCustomConditionCheckInterval() const
+{
+	return _customConditionCheckInterval;
 }
 
 void Macro::SetPaused(bool pause)
@@ -645,13 +680,6 @@ bool Macro::Save(obs_data_t *obj, bool saveForCopy) const
 	if (!saveForCopy) {
 		obs_data_set_string(obj, "name", _name.c_str());
 	}
-	obs_data_set_bool(obj, "pause", _paused);
-	obs_data_set_bool(obj, "parallel", _runInParallel);
-	obs_data_set_bool(obj, "onChange", _performActionsOnChange);
-	obs_data_set_bool(obj, "skipExecOnStart", _skipExecOnStart);
-	obs_data_set_bool(obj, "stopActionsIfNotDone", _stopActionsIfNotDone);
-	obs_data_set_bool(obj, "useShortCircuitEvaluation",
-			  _useShortCircuitEvaluation);
 
 	obs_data_set_bool(obj, "group", _isGroup);
 	if (_isGroup) {
@@ -661,6 +689,17 @@ bool Macro::Save(obs_data_t *obj, bool saveForCopy) const
 		obs_data_set_obj(obj, "groupData", groupData);
 		return true;
 	}
+
+	obs_data_set_bool(obj, "pause", _paused);
+	obs_data_set_bool(obj, "parallel", _runInParallel);
+	obs_data_set_bool(obj, "onChange", _performActionsOnChange);
+	obs_data_set_bool(obj, "skipExecOnStart", _skipExecOnStart);
+	obs_data_set_bool(obj, "stopActionsIfNotDone", _stopActionsIfNotDone);
+	obs_data_set_bool(obj, "useShortCircuitEvaluation",
+			  _useShortCircuitEvaluation);
+	obs_data_set_bool(obj, "useCustomConditionCheckInterval",
+			  _useCustomConditionCheckInterval);
+	_customConditionCheckInterval.Save(obj, "customConditionCheckInterval");
 
 	SaveDockSettings(obj, saveForCopy);
 
@@ -710,13 +749,6 @@ bool Macro::Save(obs_data_t *obj, bool saveForCopy) const
 bool Macro::Load(obs_data_t *obj)
 {
 	_name = obs_data_get_string(obj, "name");
-	_paused = obs_data_get_bool(obj, "pause");
-	_runInParallel = obs_data_get_bool(obj, "parallel");
-	_performActionsOnChange = obs_data_get_bool(obj, "onChange");
-	_skipExecOnStart = obs_data_get_bool(obj, "skipExecOnStart");
-	_stopActionsIfNotDone = obs_data_get_bool(obj, "stopActionsIfNotDone");
-	_useShortCircuitEvaluation =
-		obs_data_get_bool(obj, "useShortCircuitEvaluation");
 
 	_isGroup = obs_data_get_bool(obj, "group");
 	if (_isGroup) {
@@ -727,6 +759,17 @@ bool Macro::Load(obs_data_t *obj)
 
 		return true;
 	}
+
+	_paused = obs_data_get_bool(obj, "pause");
+	_runInParallel = obs_data_get_bool(obj, "parallel");
+	_performActionsOnChange = obs_data_get_bool(obj, "onChange");
+	_skipExecOnStart = obs_data_get_bool(obj, "skipExecOnStart");
+	_stopActionsIfNotDone = obs_data_get_bool(obj, "stopActionsIfNotDone");
+	_useShortCircuitEvaluation =
+		obs_data_get_bool(obj, "useShortCircuitEvaluation");
+	_useCustomConditionCheckInterval =
+		obs_data_get_bool(obj, "useCustomConditionCheckInterval");
+	_customConditionCheckInterval.Load(obj, "customConditionCheckInterval");
 
 	LoadDockSettings(obj);
 
@@ -1289,6 +1332,14 @@ bool CheckMacros()
 {
 	bool matchFound = false;
 	for (const auto &m : macros) {
+		if (!m->ConditionsShouldBeChecked()) {
+			vblog(LOG_INFO,
+			      "skipping condition check for macro \"%s\" "
+			      "(custom check interval)",
+			      m->Name().c_str());
+			continue;
+		}
+
 		if (m->CheckConditions() || m->ElseActions().size() > 0) {
 			matchFound = true;
 			// This has to be performed here for now as actions are
@@ -1384,6 +1435,29 @@ void InvalidateMacroTempVarValues()
 	for (const auto &m : macros) {
 		m->InvalidateTempVarValues();
 	}
+}
+
+std::shared_ptr<Macro> GetMacroWithInvalidConditionInterval()
+{
+	if (macros.empty()) {
+		return {};
+	}
+
+	for (const auto &macro : macros) {
+		if (!macro) {
+			continue;
+		}
+		if (!macro->CustomConditionCheckIntervalEnabled()) {
+			continue;
+		}
+
+		if (macro->GetCustomConditionCheckInterval().Milliseconds() <
+		    GetIntervalValue()) {
+			return macro;
+		}
+	}
+
+	return {};
 }
 
 } // namespace advss
