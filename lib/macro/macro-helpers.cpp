@@ -85,9 +85,11 @@ std::string GetMacroName(Macro *macro)
 	return macro ? macro->Name() : "";
 }
 
-int64_t MillisecondsSinceMacroConditionCheck(Macro *macro)
+std::chrono::high_resolution_clock::time_point
+LastMacroConditionCheckTime(Macro *macro)
 {
-	return macro ? macro->MsSinceLastCheck() : 0;
+	return macro ? macro->LastConditionCheckTime()
+		     : std::chrono::high_resolution_clock::time_point{};
 }
 
 bool MacroIsStopped(Macro *macro)

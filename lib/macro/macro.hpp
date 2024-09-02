@@ -22,6 +22,8 @@ namespace advss {
 class MacroDock;
 
 class Macro {
+	using TimePoint = std::chrono::high_resolution_clock::time_point;
+
 public:
 	Macro(const std::string &name = "", const bool addHotkey = false,
 	      const bool shortCircuitEvaluation = false);
@@ -30,17 +32,17 @@ public:
 	std::string Name() const { return _name; }
 	void SetName(const std::string &name);
 
-	bool CeckMatch(bool ignorePause = false);
-	bool Matched() const { return _matched; }
-	int64_t MsSinceLastCheck() const;
+	bool CheckConditions(bool ignorePause = false);
+	bool ConditionsMatched() const { return _matched; }
+	TimePoint LastConditionCheckTime() const { return _lastCheckTime; }
+
 	bool ShouldRunActions() const;
 	bool PerformActions(bool match, bool forceParallel = false,
 			    bool ignorePause = false);
 
 	void SetPaused(bool pause = true);
 	bool Paused() const { return _paused; }
-	bool WasPausedSince(
-		const std::chrono::high_resolution_clock::time_point &) const;
+	bool WasPausedSince(const TimePoint &) const;
 
 	void Stop();
 	bool GetStop() const { return _stop; }
@@ -117,8 +119,7 @@ public:
 	void SetElseActionSplitterPosition(const QList<int>);
 	const QList<int> &GetElseActionSplitterPosition() const;
 	bool HasValidSplitterPositions() const;
-	bool WasExecutedSince(
-		const std::chrono::high_resolution_clock::time_point &) const;
+	bool WasExecutedSince(const TimePoint &) const;
 	bool OnChangePreventedActionsRecently();
 	void ResetUIHelpers();
 
@@ -171,9 +172,9 @@ private:
 	bool _die = false;
 	bool _stop = false;
 	bool _done = true;
-	std::chrono::high_resolution_clock::time_point _lastCheckTime{};
-	std::chrono::high_resolution_clock::time_point _lastUnpauseTime{};
-	std::chrono::high_resolution_clock::time_point _lastExecutionTime{};
+	TimePoint _lastCheckTime{};
+	TimePoint _lastUnpauseTime{};
+	TimePoint _lastExecutionTime{};
 	std::thread _backgroundThread;
 	std::vector<std::thread> _helperThreads;
 

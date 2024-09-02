@@ -138,8 +138,9 @@ void MacroDock::UpdateText()
 
 	_pauseToggle->setText(macro->Paused() ? _unpauseButtonText.c_str()
 					      : _pauseButtonText.c_str());
-	_statusText->setText(macro->Matched() ? _conditionsTrueText.c_str()
-					      : _conditionsFalseText.c_str());
+	_statusText->setText(macro->ConditionsMatched()
+				     ? _conditionsTrueText.c_str()
+				     : _conditionsFalseText.c_str());
 }
 
 void MacroDock::Highlight()

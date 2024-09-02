@@ -196,13 +196,13 @@ void MacroActionMacro::RunActions(Macro *actionMacro) const
 	}
 
 	if (_runOptions.reevaluateConditionState) {
-		conditionMacro->CeckMatch(true);
+		conditionMacro->CheckConditions(true);
 	}
 
 	if ((_runOptions.logic == RunOptions::Logic::CONDITIONS &&
-	     conditionMacro->Matched()) ||
+	     conditionMacro->ConditionsMatched()) ||
 	    (_runOptions.logic == RunOptions::Logic::INVERT_CONDITIONS &&
-	     !conditionMacro->Matched())) {
+	     !conditionMacro->ConditionsMatched())) {
 		runActionsHelper(actionMacro, _runOptions.runElseActions,
 				 _runOptions.setInputs, _runOptions.inputs);
 	}

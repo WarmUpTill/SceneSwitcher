@@ -180,11 +180,16 @@ bool MacroConditionDate::CheckCondition()
 	if (!m) {
 		return false;
 	}
-	auto msSinceLastCheck = MillisecondsSinceMacroConditionCheck(m);
+	const auto timePassed = std::chrono::high_resolution_clock::now() -
+				LastMacroConditionCheckTime(m);
+	const auto msSinceLastCheck =
+		std::chrono::duration_cast<std::chrono::milliseconds>(
+			timePassed);
+
 	if (_dayOfWeekCheck) {
-		return CheckDayOfWeek(msSinceLastCheck);
+		return CheckDayOfWeek(msSinceLastCheck.count());
 	}
-	return CheckRegularDate(msSinceLastCheck);
+	return CheckRegularDate(msSinceLastCheck.count());
 }
 
 bool MacroConditionDate::Save(obs_data_t *obj) const
