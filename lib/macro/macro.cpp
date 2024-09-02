@@ -238,7 +238,7 @@ bool Macro::CheckConditionHelper(
 	return result;
 }
 
-bool Macro::CeckMatch(bool ignorePause)
+bool Macro::CheckConditions(bool ignorePause)
 {
 	if (_isGroup) {
 		return false;
@@ -309,8 +309,7 @@ bool Macro::PerformActions(bool match, bool forceParallel, bool ignorePause)
 	return ret;
 }
 
-bool Macro::WasExecutedSince(
-	const std::chrono::high_resolution_clock::time_point &time) const
+bool Macro::WasExecutedSince(const TimePoint &time) const
 {
 	return _lastExecutionTime > time;
 }
@@ -335,18 +334,6 @@ bool Macro::ShouldRunActions() const
 	}
 
 	return hasActionsToExecute;
-}
-
-int64_t Macro::MsSinceLastCheck() const
-{
-	if (_lastCheckTime.time_since_epoch().count() == 0) {
-		return 0;
-	}
-	const auto timePassed =
-		std::chrono::high_resolution_clock::now() - _lastCheckTime;
-	return std::chrono::duration_cast<std::chrono::milliseconds>(timePassed)
-		       .count() +
-	       1;
 }
 
 void Macro::SetName(const std::string &name)
@@ -414,8 +401,7 @@ bool Macro::RunElseActions(bool ignorePause)
 	return RunActionsHelper(_elseActions, ignorePause);
 }
 
-bool Macro::WasPausedSince(
-	const std::chrono::high_resolution_clock::time_point &time) const
+bool Macro::WasPausedSince(const TimePoint &time) const
 {
 	return _lastUnpauseTime > time;
 }
@@ -1303,7 +1289,7 @@ bool CheckMacros()
 {
 	bool matchFound = false;
 	for (const auto &m : macros) {
-		if (m->CeckMatch() || m->ElseActions().size() > 0) {
+		if (m->CheckConditions() || m->ElseActions().size() > 0) {
 			matchFound = true;
 			// This has to be performed here for now as actions are
 			// not performed immediately after checking conditions.
@@ -1349,7 +1335,7 @@ bool RunMacros()
 			continue;
 		}
 		vblog(LOG_INFO, "running macro: %s", m->Name().c_str());
-		if (!m->PerformActions(m->Matched())) {
+		if (!m->PerformActions(m->ConditionsMatched())) {
 			blog(LOG_WARNING, "abort macro: %s", m->Name().c_str());
 		}
 	}

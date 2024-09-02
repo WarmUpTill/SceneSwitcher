@@ -58,7 +58,7 @@ bool MacroConditionMacro::CheckStateCondition()
 		return false;
 	}
 
-	return macro->Matched();
+	return macro->ConditionsMatched();
 }
 
 bool MacroConditionMacro::CheckMultiStateCondition()
@@ -72,7 +72,7 @@ bool MacroConditionMacro::CheckMultiStateCondition()
 		if (!macro) {
 			continue;
 		}
-		if (macro->Matched()) {
+		if (macro->ConditionsMatched()) {
 			matchedCount++;
 		}
 	}

@@ -43,7 +43,8 @@ EXPORT bool MacroSwitchedScene();
 
 EXPORT std::string GetMacroName(Macro *);
 
-EXPORT int64_t MillisecondsSinceMacroConditionCheck(Macro *);
+EXPORT std::chrono::high_resolution_clock::time_point
+LastMacroConditionCheckTime(Macro *);
 
 EXPORT bool MacroIsStopped(Macro *);
 EXPORT bool MacroIsPaused(Macro *);
