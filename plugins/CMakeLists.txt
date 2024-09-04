@@ -30,6 +30,7 @@ install_advss_plugin_dependency(...)
 
 add_plugin(midi)
 add_plugin(openvr)
+add_plugin(stream-deck)
 add_plugin(twitch)
 add_plugin(usb)
 add_plugin(video)
