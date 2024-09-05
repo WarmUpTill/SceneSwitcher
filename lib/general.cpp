@@ -247,6 +247,10 @@ void AdvSceneSwitcher::on_hideLegacyTabs_stateChanged(int state)
 			ui->tabWidget->setTabVisible(idx, !state);
 		}
 	}
+
+	// Changing priority of legacy tabs will very likely not be necessary if
+	// the legacy tabs are hidden
+	ui->priorityBox->setVisible(!switcher->hideLegacyTabs);
 }
 
 void AdvSceneSwitcher::SetDeprecationWarnings()
