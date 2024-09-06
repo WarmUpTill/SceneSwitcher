@@ -1170,7 +1170,25 @@ static void setupCopyPasteContextMenuEnry(AdvSceneSwitcher *ss,
 	paste->setEnabled(MacroSegmentIsInClipboard());
 }
 
+static void setupRemoveContextMenuEnry(
+	AdvSceneSwitcher *ss,
+	const std::function<void(AdvSceneSwitcher *, int)> &remove,
+	const QPoint &pos, MacroSegmentList *list, QMenu &menu)
+{
+	const auto segmentEditIndex = list->IndexAt(pos);
+	if (segmentEditIndex == -1) {
+		return;
+	}
+
+	menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.segment.remove"), ss,
+		[ss, remove, segmentEditIndex]() {
+			remove(ss, segmentEditIndex);
+		});
+}
+
 static void setupConextMenu(AdvSceneSwitcher *ss, const QPoint &pos,
+			    std::function<void(AdvSceneSwitcher *, int)> remove,
 			    std::function<void(AdvSceneSwitcher *)> expand,
 			    std::function<void(AdvSceneSwitcher *)> collapse,
 			    std::function<void(AdvSceneSwitcher *)> maximize,
@@ -1181,6 +1199,8 @@ static void setupConextMenu(AdvSceneSwitcher *ss, const QPoint &pos,
 	auto segmentEdit = list->WidgetAt(pos);
 
 	setupCopyPasteContextMenuEnry(ss, segmentEdit, menu);
+	menu.addSeparator();
+	setupRemoveContextMenuEnry(ss, remove, pos, list, menu);
 	menu.addSeparator();
 	setupSegmentLabelContextMenuEntries(segmentEdit, menu);
 	menu.addSeparator();
@@ -1198,7 +1218,8 @@ static void setupConextMenu(AdvSceneSwitcher *ss, const QPoint &pos,
 
 void AdvSceneSwitcher::ShowMacroActionsContextMenu(const QPoint &pos)
 {
-	setupConextMenu(this, pos, &AdvSceneSwitcher::ExpandAllActions,
+	setupConextMenu(this, pos, &AdvSceneSwitcher::RemoveMacroAction,
+			&AdvSceneSwitcher::ExpandAllActions,
 			&AdvSceneSwitcher::CollapseAllActions,
 			&AdvSceneSwitcher::MaximizeActions,
 			&AdvSceneSwitcher::MinimizeActions, ui->actionsList);
@@ -1206,7 +1227,8 @@ void AdvSceneSwitcher::ShowMacroActionsContextMenu(const QPoint &pos)
 
 void AdvSceneSwitcher::ShowMacroElseActionsContextMenu(const QPoint &pos)
 {
-	setupConextMenu(this, pos, &AdvSceneSwitcher::ExpandAllElseActions,
+	setupConextMenu(this, pos, &AdvSceneSwitcher::RemoveMacroElseAction,
+			&AdvSceneSwitcher::ExpandAllElseActions,
 			&AdvSceneSwitcher::CollapseAllElseActions,
 			&AdvSceneSwitcher::MaximizeElseActions,
 			&AdvSceneSwitcher::MinimizeElseActions,
@@ -1215,7 +1237,8 @@ void AdvSceneSwitcher::ShowMacroElseActionsContextMenu(const QPoint &pos)
 
 void AdvSceneSwitcher::ShowMacroConditionsContextMenu(const QPoint &pos)
 {
-	setupConextMenu(this, pos, &AdvSceneSwitcher::ExpandAllConditions,
+	setupConextMenu(this, pos, &AdvSceneSwitcher::RemoveMacroCondition,
+			&AdvSceneSwitcher::ExpandAllConditions,
 			&AdvSceneSwitcher::CollapseAllConditions,
 			&AdvSceneSwitcher::MaximizeConditions,
 			&AdvSceneSwitcher::MinimizeConditions,
