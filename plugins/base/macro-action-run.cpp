@@ -43,6 +43,16 @@ void MacroActionRun::SetupTempVars()
 {
 	MacroAction::SetupTempVars();
 
+	if (!_wait) {
+		AddTempvar(
+			"process.none",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.run.process.none"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.run.process.none.description"));
+		return;
+	}
+
 	AddTempvar(
 		"process.id",
 		obs_module_text("AdvSceneSwitcher.tempVar.run.process.id"),
@@ -122,6 +132,12 @@ void MacroActionRun::ResolveVariablesToFixedValues()
 	_timeout.ResolveVariables();
 }
 
+void MacroActionRun::SetWaitEnabled(bool value)
+{
+	_wait = value;
+	SetupTempVars();
+}
+
 MacroActionRunEdit::MacroActionRunEdit(
 	QWidget *parent, std::shared_ptr<MacroActionRun> entryData)
 	: QWidget(parent),
@@ -167,7 +183,7 @@ void MacroActionRunEdit::UpdateEntryData()
 		return;
 	}
 	_procConfig->SetProcessConfig(_entryData->_procConfig);
-	_wait->setChecked(_entryData->_wait);
+	_wait->setChecked(_entryData->IsWaitEnabled());
 	_timeout->SetDuration(_entryData->_timeout);
 }
 
@@ -178,29 +194,19 @@ void MacroActionRunEdit::ProcessConfigAdvancedSettingsShown()
 
 void MacroActionRunEdit::WaitChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-	auto lock = LockContext();
-	_entryData->_wait = value;
+	GUARD_LOADING_AND_LOCK();
+	_entryData->SetWaitEnabled(value);
 }
 
 void MacroActionRunEdit::TimeoutChanged(const Duration &timeout)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_timeout = timeout;
 }
 
 void MacroActionRunEdit::ProcessConfigChanged(const ProcessConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_procConfig = conf;
 	adjustSize();
 	updateGeometry();
