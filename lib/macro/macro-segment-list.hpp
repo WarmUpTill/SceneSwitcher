@@ -15,18 +15,19 @@ class MacroSegmentList : public QScrollArea {
 public:
 	MacroSegmentList(QWidget *parent = nullptr);
 	virtual ~MacroSegmentList();
-	void SetHelpMsg(const QString &msg);
-	void SetHelpMsgVisible(bool visible);
-	MacroSegmentEdit *WidgetAt(int idx);
-	MacroSegmentEdit *WidgetAt(const QPoint &);
+	void SetHelpMsg(const QString &msg) const;
+	void SetHelpMsgVisible(bool visible) const;
+	MacroSegmentEdit *WidgetAt(int idx) const;
+	MacroSegmentEdit *WidgetAt(const QPoint &) const;
+	int IndexAt(const QPoint &) const;
 	void Insert(int idx, MacroSegmentEdit *widget);
 	void Add(QWidget *widget);
-	void Remove(int idx);
-	void Clear(int idx = 0); // Clear all elements >= idx
+	void Remove(int idx) const;
+	void Clear(int idx = 0) const; // Clear all elements >= idx
 	void Highlight(int idx, QColor color = QColor(Qt::green));
-	void SetCollapsed(bool);
-	void SetSelection(int idx);
-	QVBoxLayout *ContentLayout() { return _contentLayout; }
+	void SetCollapsed(bool) const;
+	void SetSelection(int idx) const;
+	QVBoxLayout *ContentLayout() const { return _contentLayout; }
 
 signals:
 	void SelectionChanged(int idx);
@@ -43,13 +44,13 @@ protected:
 	void dropEvent(QDropEvent *event);
 
 private:
-	int GetDragIndex(const QPoint &);
-	int GetDropIndex(const QPoint &);
-	int GetSegmentIndexFromPos(const QPoint &);
-	void CheckScroll();
+	int GetSegmentIndexFromPos(const QPoint &) const;
+	int GetDragIndex(const QPoint &) const;
+	int GetDropIndex(const QPoint &) const;
+	void CheckScroll() const;
 	void CheckDropLine(const QPoint &);
-	bool IsInListArea(const QPoint &);
-	QRect GetContentItemRectWithPadding(int idx);
+	bool IsInListArea(const QPoint &) const;
+	QRect GetContentItemRectWithPadding(int idx) const;
 	void HideLastDropLine();
 
 	int _dragPosition = -1;

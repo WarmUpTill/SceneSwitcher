@@ -59,7 +59,7 @@ static bool posIsInScrollbar(const QScrollBar *scrollbar, const QPoint &pos)
 	return globalGeo.contains(pos);
 }
 
-int MacroSegmentList::GetDragIndex(const QPoint &pos)
+int MacroSegmentList::GetDragIndex(const QPoint &pos) const
 {
 	// Don't drag widget when interacting with the scrollbars
 	if (posIsInScrollbar(horizontalScrollBar(), mapTo(this, pos)) ||
@@ -88,12 +88,12 @@ int MacroSegmentList::GetDragIndex(const QPoint &pos)
 	return -1;
 }
 
-void MacroSegmentList::SetHelpMsg(const QString &msg)
+void MacroSegmentList::SetHelpMsg(const QString &msg) const
 {
 	_helpMsg->setText(msg);
 }
 
-void MacroSegmentList::SetHelpMsgVisible(bool visible)
+void MacroSegmentList::SetHelpMsgVisible(bool visible) const
 {
 	_helpMsg->setVisible(visible);
 }
@@ -110,12 +110,12 @@ void MacroSegmentList::Add(QWidget *widget)
 	_contentLayout->addWidget(widget);
 }
 
-void MacroSegmentList::Remove(int idx)
+void MacroSegmentList::Remove(int idx) const
 {
 	DeleteLayoutItemWidget(_contentLayout->takeAt(idx));
 }
 
-void MacroSegmentList::Clear(int idx)
+void MacroSegmentList::Clear(int idx) const
 {
 	ClearLayout(_contentLayout, idx);
 }
@@ -133,7 +133,7 @@ void MacroSegmentList::Highlight(int idx, QColor color)
 	HighlightWidget(widget, color, QColor(0, 0, 0, 0), true);
 }
 
-void MacroSegmentList::SetCollapsed(bool collapse)
+void MacroSegmentList::SetCollapsed(bool collapse) const
 {
 	QLayoutItem *item = nullptr;
 	for (int i = 0; i < _contentLayout->count(); i++) {
@@ -145,7 +145,7 @@ void MacroSegmentList::SetCollapsed(bool collapse)
 	}
 }
 
-void MacroSegmentList::SetSelection(int idx)
+void MacroSegmentList::SetSelection(int idx) const
 {
 	for (int i = 0; i < _contentLayout->count(); ++i) {
 		auto widget = static_cast<MacroSegmentEdit *>(
@@ -235,7 +235,7 @@ void MacroSegmentList::dragEnterEvent(QDragEnterEvent *event)
 	}
 }
 
-MacroSegmentEdit *MacroSegmentList::WidgetAt(int idx)
+MacroSegmentEdit *MacroSegmentList::WidgetAt(int idx) const
 {
 	if (idx < 0 || idx >= _contentLayout->count()) {
 		return nullptr;
@@ -247,9 +247,14 @@ MacroSegmentEdit *MacroSegmentList::WidgetAt(int idx)
 	return static_cast<MacroSegmentEdit *>(item->widget());
 }
 
-MacroSegmentEdit *MacroSegmentList::WidgetAt(const QPoint &pos)
+MacroSegmentEdit *MacroSegmentList::WidgetAt(const QPoint &pos) const
 {
 	return WidgetAt(GetSegmentIndexFromPos(mapToGlobal(pos)));
+}
+
+int MacroSegmentList::IndexAt(const QPoint &pos) const
+{
+	return GetSegmentIndexFromPos(mapToGlobal(pos));
 }
 
 void MacroSegmentList::HideLastDropLine()
@@ -303,7 +308,7 @@ void MacroSegmentList::dragMoveEvent(QDragMoveEvent *event)
 	CheckDropLine(_dragCursorPos);
 }
 
-QRect MacroSegmentList::GetContentItemRectWithPadding(int idx)
+QRect MacroSegmentList::GetContentItemRectWithPadding(int idx) const
 {
 	auto item = _contentLayout->itemAt(idx);
 	if (!item) {
@@ -325,7 +330,7 @@ QRect MacroSegmentList::GetContentItemRectWithPadding(int idx)
 	return rect;
 }
 
-int MacroSegmentList::GetSegmentIndexFromPos(const QPoint &pos)
+int MacroSegmentList::GetSegmentIndexFromPos(const QPoint &pos) const
 {
 	int idx = -1;
 	for (int i = 0; i < _contentLayout->count(); ++i) {
@@ -337,7 +342,7 @@ int MacroSegmentList::GetSegmentIndexFromPos(const QPoint &pos)
 	return idx;
 }
 
-void MacroSegmentList::CheckScroll()
+void MacroSegmentList::CheckScroll() const
 {
 	while (_autoScroll) {
 		const int scrollTrigger = 15;
@@ -407,14 +412,14 @@ void MacroSegmentList::CheckDropLine(const QPoint &pos)
 	}
 }
 
-bool MacroSegmentList::IsInListArea(const QPoint &pos)
+bool MacroSegmentList::IsInListArea(const QPoint &pos) const
 {
 	const QRect layoutRect(mapToGlobal(_layout->contentsRect().topLeft()),
 			       _layout->contentsRect().size());
 	return layoutRect.contains(pos);
 }
 
-int MacroSegmentList::GetDropIndex(const QPoint &pos)
+int MacroSegmentList::GetDropIndex(const QPoint &pos) const
 {
 	int idx = GetSegmentIndexFromPos(pos);
 	if (idx == _dragPosition) {
