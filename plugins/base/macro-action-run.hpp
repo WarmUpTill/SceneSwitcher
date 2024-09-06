@@ -20,15 +20,17 @@ public:
 	static std::shared_ptr<MacroAction> Create(Macro *m);
 	std::shared_ptr<MacroAction> Copy() const;
 	void ResolveVariablesToFixedValues();
+	void SetWaitEnabled(bool value);
+	bool IsWaitEnabled() const { return _wait; }
 
 	ProcessConfig _procConfig;
-	bool _wait = false;
 	Duration _timeout = 1;
 
 private:
 	void SetupTempVars();
 	void SetTempVarValues();
 
+	bool _wait = false;
 	static bool _registered;
 	static const std::string id;
 };
