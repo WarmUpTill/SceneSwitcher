@@ -1,4 +1,5 @@
 #pragma once
+#include "export-symbol-helper.hpp"
 #include "variable-number.hpp"
 
 #include <QWidget>
@@ -8,27 +9,27 @@
 
 namespace advss {
 
-class GenericVaraiableSpinbox : public QWidget {
+class ADVSS_EXPORT GenericVaraiableSpinbox : public QWidget {
 	Q_OBJECT
 public:
-	EXPORT GenericVaraiableSpinbox(QWidget *parent, bool wholeNumber);
-	EXPORT void SetValue(const NumberVariable<int> &);
-	EXPORT void SetValue(const NumberVariable<double> &);
-	EXPORT void DisableVariableSelection();
+	GenericVaraiableSpinbox(QWidget *parent, bool wholeNumber);
+	void SetValue(const NumberVariable<int> &);
+	void SetValue(const NumberVariable<double> &);
+	void DisableVariableSelection();
 
-	EXPORT void setMinimum(double value);
-	EXPORT void setMaximum(double value);
+	void setMinimum(double value);
+	void setMaximum(double value);
 
-	EXPORT void setPrefix(const QString &prefix);
-	EXPORT void setSuffix(const QString &suffix);
+	void setPrefix(const QString &prefix);
+	void setSuffix(const QString &suffix);
 
-	EXPORT void specialValueText(const QString &text);
+	void specialValueText(const QString &text);
 
 public slots:
-	EXPORT void SetFixedValue(int);
-	EXPORT void SetFixedValue(double);
-	EXPORT void VariableChanged(const QString &);
-	EXPORT void ToggleTypeClicked(bool);
+	void SetFixedValue(int);
+	void SetFixedValue(double);
+	void VariableChanged(const QString &);
+	void ToggleTypeClicked(bool);
 signals:
 	void NumberVariableChanged(const NumberVariable<int> &);
 	void NumberVariableChanged(const NumberVariable<double> &);
@@ -58,19 +59,23 @@ private:
 	bool _hideTypeToggle = false;
 };
 
-class VariableSpinBox : public GenericVaraiableSpinbox {
+class ADVSS_EXPORT VariableSpinBox : public GenericVaraiableSpinbox {
+	Q_OBJECT
+
 public:
-	EXPORT VariableSpinBox(QWidget *parent = nullptr);
-	EXPORT NumberVariable<int> Value() { return _numberInt; }
-	EXPORT QSpinBox *SpinBox() { return _fixedValueInt; }
+	VariableSpinBox(QWidget *parent = nullptr);
+	NumberVariable<int> Value() { return _numberInt; }
+	QSpinBox *SpinBox() { return _fixedValueInt; }
 };
 
-class VariableDoubleSpinBox : public GenericVaraiableSpinbox {
+class ADVSS_EXPORT VariableDoubleSpinBox : public GenericVaraiableSpinbox {
+	Q_OBJECT
+
 public:
-	EXPORT VariableDoubleSpinBox(QWidget *parent = nullptr);
-	EXPORT NumberVariable<double> Value() { return _numberDouble; }
-	EXPORT QDoubleSpinBox *SpinBox() { return _fixedValueDouble; }
-	EXPORT void setDecimals(int prec);
+	VariableDoubleSpinBox(QWidget *parent = nullptr);
+	NumberVariable<double> Value() { return _numberDouble; }
+	QDoubleSpinBox *SpinBox() { return _fixedValueDouble; }
+	void setDecimals(int prec);
 };
 
 } // namespace advss
