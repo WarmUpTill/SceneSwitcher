@@ -50,7 +50,7 @@ jobs:
           mv ../*.deb .
       - name: Publish
         if: success()
-        uses: actions/upload-artifact@v2.2.1
+        uses: actions/upload-artifact@v4
         with:
           name: "obs-scene-switcher.deb"
           path: ${{ github.workspace }}/*.deb
