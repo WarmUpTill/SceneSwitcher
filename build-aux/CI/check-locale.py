@@ -6,6 +6,7 @@ import re
 import sys
 
 defaultLocaleFile = "en-US.ini"
+commentChars = ";#"
 
 
 class localeEntry:
@@ -19,6 +20,13 @@ class localeEntry:
         self.widgetPlaceholders = widgetPlaceholders
         self.qStringArgs = qStringArgs
         self.lineNum = lineNum
+
+
+def isCommentLine(line):
+    for char in commentChars:
+        if line.startswith(char):
+            return True
+    return False
 
 
 def getNonDefaultLocales(dir):
@@ -38,7 +46,7 @@ def getAllLocaleEntries(file):
             widgetPlaceholders = []
             qStringArgs = []
 
-            if line.startswith(";"):
+            if isCommentLine(line):
                 continue
 
             for word in line.split("{{"):
