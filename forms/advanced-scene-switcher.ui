@@ -437,7 +437,7 @@
                   <item>
                    <widget class="QRadioButton" name="noMatchDontSwitch">
                     <property name="text">
-                     <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.dontSwitch</string>
+                     <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMatch.dontSwitch</string>
                     </property>
                     <property name="checked">
                      <bool>true</bool>
@@ -451,7 +451,7 @@
                   <item>
                    <widget class="QRadioButton" name="noMatchRandomSwitch">
                     <property name="text">
-                     <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.switchToRandom</string>
+                     <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMatch.switchToRandom</string>
                     </property>
                    </widget>
                   </item>
@@ -474,7 +474,7 @@
                   <item>
                    <widget class="QRadioButton" name="noMatchSwitch">
                     <property name="text">
-                     <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.switchTo</string>
+                     <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMatch.switchTo</string>
                     </property>
                    </widget>
                   </item>
@@ -504,7 +504,7 @@
                      </sizepolicy>
                     </property>
                     <property name="text">
-                     <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMet</string>
+                     <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMatch</string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>

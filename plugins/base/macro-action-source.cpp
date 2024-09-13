@@ -319,7 +319,7 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	populateDeinterlaceFieldOrderSelection(_deinterlaceOrder);
 	populateSettingsInputMethods(_settingsInputMethods);
 	_refreshSettingSelection->setToolTip(obs_module_text(
-		"AdvSceneSwitcher.action.source.refreshTooltip"));
+		"AdvSceneSwitcher.action.source.refresh.tooltip"));
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));

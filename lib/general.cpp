@@ -872,7 +872,7 @@ void AdvSceneSwitcher::SetupGeneralTab()
 	DurationSelection *noMatchDelay = new DurationSelection();
 	noMatchDelay->SetDuration(switcher->noMatchDelay);
 	noMatchDelay->setToolTip(obs_module_text(
-		"AdvSceneSwitcher.generalTab.generalBehavior.onNoMetDelayTooltip"));
+		"AdvSceneSwitcher.generalTab.generalBehavior.onNoMatchDelay.tooltip"));
 	ui->noMatchLayout->addWidget(noMatchDelay);
 	QWidget::connect(noMatchDelay,
 			 SIGNAL(DurationChanged(const Duration &)), this,
