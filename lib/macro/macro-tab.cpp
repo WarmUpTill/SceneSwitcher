@@ -742,7 +742,10 @@ void AdvSceneSwitcher::MacroSelectionChanged()
 		return;
 	}
 	SetEditMacro(*macro);
-	obs_frontend_save();
+
+	if (GetGlobalMacroSettings()._saveSettingsOnMacroChange) {
+		obs_frontend_save();
+	}
 }
 
 void AdvSceneSwitcher::HighlightOnChange()

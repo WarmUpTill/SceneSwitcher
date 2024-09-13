@@ -23,6 +23,8 @@ void GlobalMacroSettings::Save(obs_data_t *obj) const
 			  _newMacroRegisterHotkeys);
 	obs_data_set_bool(data, "newMacroUseShortCircuitEvaluation",
 			  _newMacroUseShortCircuitEvaluation);
+	obs_data_set_bool(data, "saveSettingsOnMacroChange",
+			  _saveSettingsOnMacroChange);
 	obs_data_set_obj(obj, "macroSettings", data);
 	obs_data_release(data);
 }
@@ -43,6 +45,10 @@ void GlobalMacroSettings::Load(obs_data_t *obj)
 		obs_data_get_bool(data, "newMacroRegisterHotkey");
 	_newMacroUseShortCircuitEvaluation =
 		obs_data_get_bool(data, "newMacroUseShortCircuitEvaluation");
+	_saveSettingsOnMacroChange =
+		obs_data_has_user_value(data, "saveSettingsOnMacroChange")
+			? obs_data_get_bool(data, "saveSettingsOnMacroChange")
+			: true;
 	obs_data_release(data);
 }
 
@@ -60,6 +66,8 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 		  "AdvSceneSwitcher.macroTab.newMacroRegisterHotkey"))),
 	  _newMacroUseShortCircuitEvaluation(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.newMacroUseShortCircuitEvaluation"))),
+	  _saveSettingsOnMacroChange(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.saveSettingsOnMacroChange"))),
 	  _currentMacroRegisterHotkeys(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentRegisterHotkeys"))),
 	  _currentUseShortCircuitEvaluation(new QCheckBox(obs_module_text(
@@ -100,6 +108,8 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 
 	_newMacroUseShortCircuitEvaluation->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.macroTab.shortCircuit.tooltip"));
+	_saveSettingsOnMacroChange->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.macroTab.saveSettingsOnMacroChange.tooltip"));
 	_currentUseShortCircuitEvaluation->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.macroTab.shortCircuit.tooltip"));
 
@@ -121,6 +131,7 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	auto generalOptions = new QGroupBox(
 		obs_module_text("AdvSceneSwitcher.macroTab.generalSettings"));
 	auto generalLayout = new QVBoxLayout;
+	generalLayout->addWidget(_saveSettingsOnMacroChange);
 	generalLayout->addWidget(_currentSkipOnStartup);
 	generalLayout->addWidget(_currentStopActionsIfNotDone);
 	generalLayout->addWidget(_currentUseShortCircuitEvaluation);
@@ -244,10 +255,18 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	_newMacroRegisterHotkeys->setChecked(settings._newMacroRegisterHotkeys);
 	_newMacroUseShortCircuitEvaluation->setChecked(
 		settings._newMacroUseShortCircuitEvaluation);
+	_saveSettingsOnMacroChange->setChecked(
+		settings._saveSettingsOnMacroChange);
 
 	if (!macro || macro->IsGroup()) {
 		hotkeyOptions->hide();
-		generalOptions->hide();
+
+		// General group
+		_currentSkipOnStartup->hide();
+		_currentStopActionsIfNotDone->hide();
+		_currentUseShortCircuitEvaluation->hide();
+		SetLayoutVisible(customConditionIntervalLayout, false);
+
 		inputOptions->hide();
 		_dockOptions->hide();
 		return;
@@ -391,6 +410,8 @@ bool MacroSettingsDialog::AskForSettings(QWidget *parent,
 		dialog._newMacroRegisterHotkeys->isChecked();
 	userInput._newMacroUseShortCircuitEvaluation =
 		dialog._newMacroUseShortCircuitEvaluation->isChecked();
+	userInput._saveSettingsOnMacroChange =
+		dialog._saveSettingsOnMacroChange->isChecked();
 	if (!macro) {
 		return true;
 	}
