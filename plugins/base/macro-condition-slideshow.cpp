@@ -249,7 +249,7 @@ MacroConditionSlideshowEdit::MacroConditionSlideshowEdit(
 	  _layout(new QHBoxLayout())
 {
 	setToolTip(obs_module_text(
-		"AdvSceneSwitcher.condition.slideshow.updateIntervalTooltip"));
+		"AdvSceneSwitcher.condition.slideshow.updateInterval.tooltip"));
 	_index->setMinimum(1);
 	populateConditionSelection(_conditions);
 

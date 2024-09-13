@@ -197,7 +197,7 @@ MacroConditionClipboardEdit::MacroConditionClipboardEdit(
 	  _text(new VariableTextEdit(this)),
 	  _regex(new RegexConfigWidget(parent)),
 	  _urlInfo(new HelpIcon(obs_module_text(
-		  "AdvSceneSwitcher.condition.clipboard.urlTooltip")))
+		  "AdvSceneSwitcher.condition.clipboard.url.tooltip")))
 {
 	populateCompareModeselection(_conditions);
 	_urlInfo->hide();

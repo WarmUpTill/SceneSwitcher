@@ -252,7 +252,7 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 	scenes.sort();
 	_sources->SetSourceNameList(sources + scenes);
 	_refreshSettingSelection->setToolTip(obs_module_text(
-		"AdvSceneSwitcher.condition.source.refreshTooltip"));
+		"AdvSceneSwitcher.condition.source.refresh.tooltip"));
 	_size->setMaximum(999999);
 
 	QWidget::connect(_sources,

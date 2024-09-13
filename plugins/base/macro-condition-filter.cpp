@@ -204,7 +204,7 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 	sources.sort();
 	_sources->SetSourceNameList(sources);
 	_refreshSettingSelection->setToolTip(obs_module_text(
-		"AdvSceneSwitcher.condition.filter.refreshTooltip"));
+		"AdvSceneSwitcher.condition.filter.refresh.tooltip"));
 
 	QWidget::connect(_sources,
 			 SIGNAL(SourceChanged(const SourceSelection &)), this,

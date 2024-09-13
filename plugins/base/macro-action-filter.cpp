@@ -224,7 +224,7 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 	sources.sort();
 	_sources->SetSourceNameList(sources);
 	_refreshSettingSelection->setToolTip(obs_module_text(
-		"AdvSceneSwitcher.action.filter.refreshTooltip"));
+		"AdvSceneSwitcher.action.filter.refresh.tooltip"));
 
 	populateSettingsInputMethods(_settingsInputMethods);
 
