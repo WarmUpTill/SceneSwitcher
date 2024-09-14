@@ -100,11 +100,33 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 		return;
 	}
 
-	ui->macros->Add(newMacro);
 	if (addPulse) {
 		addPulse->deleteLater();
 		addPulse = nullptr;
 	}
+
+	auto selectedMacro = GetSelectedMacro();
+	if (!selectedMacro) {
+		ui->macros->Add(newMacro);
+		emit MacroAdded(QString::fromStdString(name));
+		return;
+	}
+
+	if (selectedMacro->IsGroup()) {
+		ui->macros->Add(newMacro, selectedMacro);
+		emit MacroAdded(QString::fromStdString(name));
+		return;
+	}
+
+	auto selectedMacroGroup = selectedMacro->Parent();
+	if (!selectedMacroGroup) {
+		ui->macros->Add(newMacro, selectedMacro);
+		emit MacroAdded(QString::fromStdString(name));
+		return;
+	}
+
+	Macro::PrepareMoveToGroup(selectedMacroGroup, newMacro);
+	ui->macros->Add(newMacro, selectedMacro);
 	emit MacroAdded(QString::fromStdString(name));
 }
 
