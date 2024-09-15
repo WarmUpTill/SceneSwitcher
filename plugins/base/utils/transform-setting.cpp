@@ -147,6 +147,8 @@ static void handlePosOrScaleOrBounds(struct obs_transform_info &info,
 		target = &info.scale;
 	} else if (setting.GetNestedID() == "bounds") {
 		target = &info.bounds;
+	} else if (setting.GetNestedID() == "pos") {
+		target = &info.pos;
 	}
 
 	if (setting.GetID() == "x") {
