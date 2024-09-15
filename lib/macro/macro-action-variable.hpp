@@ -50,6 +50,8 @@ public:
 		PAD,
 		TRUNCATE,
 		SWAP_VALUES,
+		TRIM,
+		CHANGE_CASE,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
@@ -89,12 +91,22 @@ public:
 	IntVariable _stringLength = 1;
 	char _paddingChar = '0';
 
+	enum class CaseType {
+		LOWER_CASE,
+		UPPER_CASE,
+		CAPITALIZED,
+		START_CASE,
+	};
+
+	CaseType _caseType = CaseType::LOWER_CASE;
+
 private:
 	void DecrementCurrentSegmentVariableRef();
 	void HandleIndexSubString(Variable *);
 	void HandleRegexSubString(Variable *);
 	void HandleFindAndReplace(Variable *);
 	void HandleMathExpression(Variable *);
+	void HandleCaseChange(Variable *);
 	void SetToSceneItemName(Variable *);
 
 	std::weak_ptr<MacroSegment> _macroSegment;
@@ -148,6 +160,7 @@ private slots:
 	void DirectionChanged(int);
 	void StringLengthChanged(const NumberVariable<int> &);
 	void CharSelectionChanged(const QString &);
+	void CaseTypeChanged(int index);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -192,6 +205,7 @@ private:
 	QComboBox *_direction;
 	VariableSpinBox *_stringLength;
 	SingleCharSelection *_paddingCharSelection;
+	FilterComboBox *_caseType;
 	QHBoxLayout *_entryLayout;
 
 	std::shared_ptr<MacroActionVariable> _entryData;

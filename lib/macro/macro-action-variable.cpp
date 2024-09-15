@@ -60,6 +60,21 @@ const static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.truncateValue"},
 	{MacroActionVariable::Type::SWAP_VALUES,
 	 "AdvSceneSwitcher.action.variable.type.swapValues"},
+	{MacroActionVariable::Type::TRIM,
+	 "AdvSceneSwitcher.action.variable.type.trim"},
+	{MacroActionVariable::Type::CHANGE_CASE,
+	 "AdvSceneSwitcher.action.variable.type.changeCase"},
+};
+
+const static std::map<MacroActionVariable::CaseType, std::string> caseTypes = {
+	{MacroActionVariable::CaseType::LOWER_CASE,
+	 "AdvSceneSwitcher.action.variable.case.type.lowerCase"},
+	{MacroActionVariable::CaseType::UPPER_CASE,
+	 "AdvSceneSwitcher.action.variable.case.type.upperCase"},
+	{MacroActionVariable::CaseType::CAPITALIZED,
+	 "AdvSceneSwitcher.action.variable.case.type.capitalized"},
+	{MacroActionVariable::CaseType::START_CASE,
+	 "AdvSceneSwitcher.action.variable.case.type.startCase"},
 };
 
 static void apppend(Variable &var, const std::string &value)
@@ -159,6 +174,43 @@ void MacroActionVariable::HandleMathExpression(Variable *var)
 	var->SetValue(std::get<double>(result));
 }
 
+void MacroActionVariable::HandleCaseChange(Variable *var)
+{
+	auto value = QString::fromStdString(var->Value());
+
+	switch (_caseType) {
+	case CaseType::LOWER_CASE:
+		var->SetValue(value.toLower().toStdString());
+		break;
+	case CaseType::UPPER_CASE:
+		var->SetValue(value.toUpper().toStdString());
+		break;
+	case CaseType::CAPITALIZED: {
+		if (value.isEmpty()) {
+			return;
+		}
+
+		value[0] = value[0].toUpper();
+		var->SetValue(value.toStdString());
+		break;
+	}
+	case CaseType::START_CASE: {
+		auto partList = value.split(QRegularExpression("\\b"));
+
+		for (auto &part : partList) {
+			if (part.isEmpty()) {
+				continue;
+			}
+
+			part[0] = part[0].toUpper();
+		}
+
+		var->SetValue(partList.join("").toStdString());
+
+		break;
+	}
+	}
+}
 struct GetSceneItemNameHelper {
 	int curIdx = 0;
 	int targetIdx = 0;
@@ -405,6 +457,15 @@ bool MacroActionVariable::PerformAction()
 		var2->SetValue(tempValue);
 		return true;
 	}
+	case Type::TRIM: {
+		var->SetValue(QString::fromStdString(var->Value())
+				      .trimmed()
+				      .toStdString());
+		return true;
+	}
+	case Type::CHANGE_CASE:
+		HandleCaseChange(var.get());
+		return true;
 	}
 
 	return true;
@@ -441,6 +502,8 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "direction", static_cast<int>(_direction));
 	_stringLength.Save(obj, "stringLength");
 	obs_data_set_int(obj, "paddingChar", _paddingChar);
+	obs_data_set_int(obj, "caseType", static_cast<int>(_caseType));
+
 	return true;
 }
 
@@ -479,6 +542,8 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	} else {
 		_paddingChar = ' ';
 	}
+	_caseType = static_cast<CaseType>(obs_data_get_int(obj, "caseType"));
+
 	return true;
 }
 
@@ -597,6 +662,14 @@ static inline void populateTypeSelection(QComboBox *list)
 	}
 }
 
+static inline void populateCaseTypeSelection(QComboBox *list)
+{
+	for (const auto &[type, name] : caseTypes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(type));
+	}
+}
+
 static inline void populateDirectionSelection(QComboBox *list)
 {
 	list->addItems(
@@ -649,6 +722,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _direction(new QComboBox()),
 	  _stringLength(new VariableSpinBox()),
 	  _paddingCharSelection(new SingleCharSelection()),
+	  _caseType(new FilterComboBox(this)),
 	  _entryLayout(new QHBoxLayout())
 {
 	_numValue->setMinimum(-9999999999);
@@ -671,6 +745,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_stringLength->setMaximum(999);
 	populateTypeSelection(_actions);
 	populateDirectionSelection(_direction);
+	populateCaseTypeSelection(_caseType);
 
 	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),
 			 this, SLOT(VariableChanged(const QString &)));
@@ -735,6 +810,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	QWidget::connect(_paddingCharSelection,
 			 SIGNAL(CharChanged(const QString &)), this,
 			 SLOT(CharSelectionChanged(const QString &)));
+	QWidget::connect(_caseType, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(CaseTypeChanged(int)));
 
 	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -762,6 +839,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{direction}}", _direction},
 		{"{{stringLength}}", _stringLength},
 		{"{{paddingCharSelection}}", _paddingCharSelection},
+		{"{{caseType}}", _caseType},
 	};
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.variable.entry.other"),
@@ -862,6 +940,9 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_stringLength->SetValue(_entryData->_stringLength);
 	_paddingCharSelection->setText(
 		QChar::fromLatin1(_entryData->_paddingChar));
+	_caseType->setCurrentIndex(
+		_caseType->findData(static_cast<int>(_entryData->_caseType)));
+
 	SetWidgetVisibility();
 }
 
@@ -1268,6 +1349,17 @@ void MacroActionVariableEdit::CharSelectionChanged(const QString &character)
 	}
 }
 
+void MacroActionVariableEdit::CaseTypeChanged(int index)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	_entryData->_caseType = static_cast<MacroActionVariable::CaseType>(
+		_caseType->itemData(index).toInt());
+}
+
 void MacroActionVariableEdit::SetWidgetVisibility()
 {
 	if (!_entryData) {
@@ -1290,6 +1382,7 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 		{"{{direction}}", _direction},
 		{"{{stringLength}}", _stringLength},
 		{"{{paddingCharSelection}}", _paddingCharSelection},
+		{"{{caseType}}", _caseType},
 	};
 
 	const char *layoutString = "";
@@ -1414,6 +1507,9 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 		_entryData->_type == MacroActionVariable::Type::TRUNCATE);
 	_paddingCharSelection->setVisible(_entryData->_type ==
 					  MacroActionVariable::Type::PAD);
+	_caseType->setVisible(_entryData->_type ==
+			      MacroActionVariable::Type::CHANGE_CASE);
+
 	adjustSize();
 	updateGeometry();
 }
