@@ -28,15 +28,18 @@ public:
 	}
 	void ResetSignalHandler();
 	void UpdateMediaSourcesOfSceneList();
+	void SetSource(const SourceSelection &);
+	SourceSelection GetSource() const { return _source; }
 	static void MediaStopped(void *data, calldata_t *);
 	static void MediaEnded(void *data, calldata_t *);
 	static void MediaNext(void *data, calldata_t *);
 
 	enum class SourceType { SOURCE, ANY, ALL };
-	SourceType _sourceType = SourceType::SOURCE;
-
 	enum class CheckType { STATE, TIME, LEGACY = 1000 };
-	CheckType _checkType = CheckType::STATE;
+	void SetSourceType(SourceType);
+	SourceType GetSourceType() const { return _sourceType; }
+	void SetCheckType(CheckType);
+	CheckType GetCheckType() const { return _checkType; }
 
 	enum class State {
 		// OBS's internal states
@@ -64,10 +67,7 @@ public:
 		TIME_RESTRICTION_REMAINING_LONGER
 	};
 	Time _timeRestriction = Time::TIME_RESTRICTION_REMAINING_SHORTER;
-
 	SceneSelection _scene;
-	SourceSelection _source;
-	OBSWeakSource _rawSource = nullptr;
 	std::vector<MacroConditionMedia> _sourceGroup;
 	Duration _time;
 
@@ -78,6 +78,18 @@ private:
 	bool CheckPlaylistEnd(const obs_media_state);
 	bool CheckMediaMatch();
 	void HandleSceneChange();
+	void SetupTempVars();
+	struct MediaTimeInfo {
+		int64_t duration;
+		int64_t time;
+	};
+	void SetTempVarValues(obs_source_t *,
+			      std::variant<obs_media_state, MediaTimeInfo>);
+	void SetVLCTempVarValueHelper(obs_source_t *source, const char *id);
+
+	SourceSelection _source;
+	SourceType _sourceType = SourceType::SOURCE;
+	CheckType _checkType = CheckType::STATE;
 
 	std::vector<OBSSignal> _signals;
 

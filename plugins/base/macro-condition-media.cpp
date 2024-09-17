@@ -54,8 +54,7 @@ static const std::map<MacroConditionMedia::State, std::string> mediaStates = {
 
 bool MacroConditionMedia::CheckTime()
 {
-	OBSSourceAutoRelease s =
-		obs_weak_source_get_source(_source.GetSource());
+	auto s = OBSGetStrongRef(_source.GetSource());
 	auto duration = obs_source_media_get_duration(s);
 	auto currentTime = obs_source_media_get_time(s);
 
@@ -83,13 +82,14 @@ bool MacroConditionMedia::CheckTime()
 		break;
 	}
 
+	SetTempVarValues(s, MediaTimeInfo{duration, currentTime});
+
 	return match;
 }
 
 bool MacroConditionMedia::CheckState()
 {
-	OBSSourceAutoRelease s =
-		obs_weak_source_get_source(_source.GetSource());
+	auto s = OBSGetStrongRef(_source.GetSource());
 	obs_media_state currentState = obs_source_media_get_state(s);
 
 	bool match = false;
@@ -120,6 +120,8 @@ bool MacroConditionMedia::CheckState()
 	default:
 		break;
 	}
+
+	SetTempVarValues(s, currentState);
 
 	return match;
 }
@@ -172,6 +174,145 @@ void MacroConditionMedia::HandleSceneChange()
 	_lastConfigureScene = GetCurrentScene();
 }
 
+static bool isVLCSource(obs_source_t *source)
+{
+	return source &&
+	       strcmp(obs_source_get_unversioned_id(source), "vlc_source") == 0;
+}
+
+void MacroConditionMedia::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+
+	if (_sourceType != SourceType::SOURCE) {
+		return;
+	}
+
+	if (_checkType == CheckType::STATE) {
+		AddTempvar(
+			"state",
+			obs_module_text("AdvSceneSwitcher.tempVar.media.state"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.media.state.description"));
+	} else if (_checkType == CheckType::TIME) {
+		AddTempvar(
+			"time",
+			obs_module_text("AdvSceneSwitcher.tempVar.media.time"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.media.time.description"));
+		AddTempvar(
+			"duration",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.media.duration"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.media.duration.description"));
+	}
+
+	auto source = OBSGetStrongRef(_source.GetSource());
+	if (!isVLCSource(source)) {
+		return;
+	}
+
+#define CREATE_VLC_TEMPVAR(name)                                             \
+	AddTempvar(                                                          \
+		name,                                                        \
+		obs_module_text("AdvSceneSwitcher.tempVar.media.vlc." name), \
+		obs_module_text(                                             \
+			"AdvSceneSwitcher.tempVar.media.vlc.metadata.description"));
+
+	CREATE_VLC_TEMPVAR("title")
+	CREATE_VLC_TEMPVAR("artist")
+	CREATE_VLC_TEMPVAR("genre")
+	CREATE_VLC_TEMPVAR("copyright")
+	CREATE_VLC_TEMPVAR("album")
+	CREATE_VLC_TEMPVAR("track_number")
+	CREATE_VLC_TEMPVAR("description")
+	CREATE_VLC_TEMPVAR("rating")
+	CREATE_VLC_TEMPVAR("date")
+	CREATE_VLC_TEMPVAR("setting")
+	CREATE_VLC_TEMPVAR("url")
+	CREATE_VLC_TEMPVAR("language")
+	CREATE_VLC_TEMPVAR("now_playing")
+	CREATE_VLC_TEMPVAR("publisher")
+	CREATE_VLC_TEMPVAR("encoded_by")
+	CREATE_VLC_TEMPVAR("artwork_url")
+	CREATE_VLC_TEMPVAR("track_id")
+	CREATE_VLC_TEMPVAR("director")
+	CREATE_VLC_TEMPVAR("season")
+	CREATE_VLC_TEMPVAR("episode")
+	CREATE_VLC_TEMPVAR("show_name")
+	CREATE_VLC_TEMPVAR("actors")
+	CREATE_VLC_TEMPVAR("album_artist")
+	CREATE_VLC_TEMPVAR("disc_number")
+	CREATE_VLC_TEMPVAR("disc_total")
+#undef CREATE_TEMPVAR
+}
+
+void MacroConditionMedia::SetTempVarValues(
+	obs_source_t *source,
+	std::variant<obs_media_state, MediaTimeInfo> value)
+{
+	if (std::holds_alternative<obs_media_state>(value)) {
+		const auto state = std::get<obs_media_state>(value);
+		SetTempVarValue("state", std::to_string(state));
+	} else {
+		const auto timeInfo = std::get<MediaTimeInfo>(value);
+		SetTempVarValue("time", std::to_string(timeInfo.time));
+		SetTempVarValue("duration", std::to_string(timeInfo.duration));
+	}
+
+	if (!isVLCSource(source)) {
+		return;
+	}
+
+	SetVLCTempVarValueHelper(source, "title");
+	SetVLCTempVarValueHelper(source, "artist");
+	SetVLCTempVarValueHelper(source, "genre");
+	SetVLCTempVarValueHelper(source, "copyright");
+	SetVLCTempVarValueHelper(source, "album");
+	SetVLCTempVarValueHelper(source, "track_number");
+	SetVLCTempVarValueHelper(source, "description");
+	SetVLCTempVarValueHelper(source, "rating");
+	SetVLCTempVarValueHelper(source, "date");
+	SetVLCTempVarValueHelper(source, "setting");
+	SetVLCTempVarValueHelper(source, "url");
+	SetVLCTempVarValueHelper(source, "language");
+	SetVLCTempVarValueHelper(source, "now_playing");
+	SetVLCTempVarValueHelper(source, "publisher");
+	SetVLCTempVarValueHelper(source, "encoded_by");
+	SetVLCTempVarValueHelper(source, "artwork_url");
+	SetVLCTempVarValueHelper(source, "track_id");
+	SetVLCTempVarValueHelper(source, "director");
+	SetVLCTempVarValueHelper(source, "season");
+	SetVLCTempVarValueHelper(source, "episode");
+	SetVLCTempVarValueHelper(source, "show_name");
+	SetVLCTempVarValueHelper(source, "actors");
+	SetVLCTempVarValueHelper(source, "album_artist");
+	SetVLCTempVarValueHelper(source, "disc_number");
+	SetVLCTempVarValueHelper(source, "disc_total");
+}
+
+void MacroConditionMedia::SetVLCTempVarValueHelper(obs_source_t *source,
+						   const char *id)
+{
+	auto ph = obs_source_get_proc_handler(source);
+	auto cd = calldata_create();
+	calldata_set_string(cd, "tag_id", id);
+	if (!proc_handler_call(ph, "get_metadata", cd)) {
+		SetTempVarValue(id, "");
+		calldata_destroy(cd);
+		return;
+	}
+	const char *value;
+	if (!calldata_get_string(cd, "tag_data", &value) || !value) {
+		SetTempVarValue(id, "");
+		calldata_destroy(cd);
+		return;
+	}
+	SetTempVarValue(id, value);
+	calldata_destroy(cd);
+}
+
 MacroConditionMedia::MacroConditionMedia(const MacroConditionMedia &other)
 	: MacroCondition(other.GetMacro()),
 	  _sourceType(other._sourceType),
@@ -180,7 +321,6 @@ MacroConditionMedia::MacroConditionMedia(const MacroConditionMedia &other)
 	  _timeRestriction(other._timeRestriction),
 	  _scene(other._scene),
 	  _source(other._source),
-	  _rawSource(other._rawSource),
 	  _sourceGroup(),
 	  _time(other._time),
 	  _lastConfigureScene(other._lastConfigureScene)
@@ -197,7 +337,6 @@ MacroConditionMedia::operator=(const MacroConditionMedia &other)
 	_timeRestriction = other._timeRestriction;
 	_scene = other._scene;
 	_source = other._source;
-	_rawSource = other._rawSource;
 	_time = other._time;
 	_lastConfigureScene = other._lastConfigureScene;
 
@@ -291,6 +430,12 @@ void MacroConditionMedia::UpdateMediaSourcesOfSceneList()
 	}
 }
 
+void MacroConditionMedia::SetSource(const SourceSelection &source)
+{
+	_source = source;
+	SetupTempVars();
+}
+
 bool MacroConditionMedia::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
@@ -323,6 +468,9 @@ bool MacroConditionMedia::Load(obs_data_t *obj)
 			_checkType = CheckType::STATE;
 		}
 	}
+
+	SetupTempVars();
+
 	return true;
 }
 
@@ -396,6 +544,18 @@ void MacroConditionMedia::MediaNext(void *data, calldata_t *)
 		return;
 	}
 	media->_next = true;
+}
+
+void MacroConditionMedia::SetSourceType(SourceType t)
+{
+	SetupTempVars();
+	_sourceType = t;
+}
+
+void MacroConditionMedia::SetCheckType(CheckType t)
+{
+	SetupTempVars();
+	_checkType = t;
 }
 
 static void populateSateSelection(QComboBox *list, bool addLegacyEntries)
@@ -487,7 +647,7 @@ MacroConditionMediaEdit::MacroConditionMediaEdit(
 
 	populateSourceTypes(_sourceTypes);
 	populateCheckTypes(_checkTypes);
-	const bool isUsingLegacyCheck = entryData->_checkType ==
+	const bool isUsingLegacyCheck = entryData->GetCheckType() ==
 					MacroConditionMedia::CheckType::LEGACY;
 	populateSateSelection(_states, isUsingLegacyCheck);
 	populateTimeRestrictionSelection(_timeRestrictions, isUsingLegacyCheck);
@@ -518,10 +678,10 @@ MacroConditionMediaEdit::MacroConditionMediaEdit(
 void MacroConditionMediaEdit::SourceTypeChanged(int idx)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_sourceType = static_cast<MacroConditionMedia::SourceType>(
-		_sourceTypes->itemData(idx).toInt());
+	_entryData->SetSourceType(static_cast<MacroConditionMedia::SourceType>(
+		_sourceTypes->itemData(idx).toInt()));
 
-	if (_entryData->_sourceType ==
+	if (_entryData->GetSourceType() ==
 	    MacroConditionMedia::SourceType::SOURCE) {
 		_entryData->_sourceGroup.clear();
 	}
@@ -536,8 +696,8 @@ void MacroConditionMediaEdit::SourceTypeChanged(int idx)
 void MacroConditionMediaEdit::CheckTypeChanged(int idx)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_checkType = static_cast<MacroConditionMedia::CheckType>(
-		_checkTypes->itemData(idx).toInt());
+	_entryData->SetCheckType(static_cast<MacroConditionMedia::CheckType>(
+		_checkTypes->itemData(idx).toInt()));
 	SetWidgetVisibility();
 }
 
@@ -545,8 +705,8 @@ void MacroConditionMediaEdit::SourceChanged(const SourceSelection &source)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_sourceGroup.clear();
-	_entryData->_sourceType = MacroConditionMedia::SourceType::SOURCE;
-	_entryData->_source = source;
+	_entryData->SetSourceType(MacroConditionMedia::SourceType::SOURCE);
+	_entryData->SetSource(source);
 	_entryData->ResetSignalHandler();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -567,7 +727,7 @@ void MacroConditionMediaEdit::StateChanged(int index)
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_state = static_cast<MacroConditionMedia::State>(
 		_states->itemData(index).toInt());
-	if (_entryData->_sourceType !=
+	if (_entryData->GetSourceType() !=
 	    MacroConditionMedia::SourceType::SOURCE) {
 		_entryData->UpdateMediaSourcesOfSceneList();
 	}
@@ -590,7 +750,7 @@ void MacroConditionMediaEdit::TimeRestrictionChanged(int index)
 
 	auto lock = LockContext();
 	_entryData->_timeRestriction = timeRestriction;
-	if (_entryData->_sourceType !=
+	if (_entryData->GetSourceType() !=
 	    MacroConditionMedia::SourceType::SOURCE) {
 		_entryData->UpdateMediaSourcesOfSceneList();
 	}
@@ -604,7 +764,7 @@ void MacroConditionMediaEdit::TimeChanged(const Duration &dur)
 
 	auto lock = LockContext();
 	_entryData->_time = dur;
-	if (_entryData->_sourceType !=
+	if (_entryData->GetSourceType() !=
 	    MacroConditionMedia::SourceType::SOURCE) {
 		_entryData->UpdateMediaSourcesOfSceneList();
 	}
@@ -612,22 +772,23 @@ void MacroConditionMediaEdit::TimeChanged(const Duration &dur)
 
 void MacroConditionMediaEdit::SetWidgetVisibility()
 {
-	_sources->setVisible(_entryData->_sourceType ==
+	_sources->setVisible(_entryData->GetSourceType() ==
 			     MacroConditionMedia::SourceType::SOURCE);
-	_scenes->setVisible(_entryData->_sourceType !=
+	_scenes->setVisible(_entryData->GetSourceType() !=
 			    MacroConditionMedia::SourceType::SOURCE);
 
-	if (_entryData->_checkType == MacroConditionMedia::CheckType::LEGACY) {
+	if (_entryData->GetCheckType() ==
+	    MacroConditionMedia::CheckType::LEGACY) {
 		_checkTypes->hide();
 		return;
 	}
 
-	_states->setVisible(_entryData->_checkType ==
+	_states->setVisible(_entryData->GetCheckType() ==
 			    MacroConditionMedia::CheckType::STATE);
 
-	_timeRestrictions->setVisible(_entryData->_checkType ==
+	_timeRestrictions->setVisible(_entryData->GetCheckType() ==
 				      MacroConditionMedia::CheckType::TIME);
-	_time->setVisible(_entryData->_checkType ==
+	_time->setVisible(_entryData->GetCheckType() ==
 			  MacroConditionMedia::CheckType::TIME);
 
 	adjustSize();
@@ -641,10 +802,10 @@ void MacroConditionMediaEdit::UpdateEntryData()
 	}
 
 	_checkTypes->setCurrentIndex(_checkTypes->findData(
-		static_cast<int>(_entryData->_checkType)));
+		static_cast<int>(_entryData->GetCheckType())));
 	_sourceTypes->setCurrentIndex(_sourceTypes->findData(
-		static_cast<int>(_entryData->_sourceType)));
-	_sources->SetSource(_entryData->_source);
+		static_cast<int>(_entryData->GetSourceType())));
+	_sources->SetSource(_entryData->GetSource());
 	_scenes->SetScene(_entryData->_scene);
 	_states->setCurrentIndex(
 		_states->findData(static_cast<int>(_entryData->_state)));
