@@ -8,7 +8,7 @@ namespace advss {
 
 static void populateUnits(QComboBox *list)
 {
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.secends"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.seconds"));
 	list->addItem(obs_module_text("AdvSceneSwitcher.unit.minutes"));
 	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
 }

@@ -4,6 +4,7 @@
 #include "plugin-state-helpers.hpp"
 #include "sync-helpers.hpp"
 #include "tab-helpers.hpp"
+#include "time-helpers.hpp"
 #include "ui-helpers.hpp"
 #include "variable.hpp"
 
@@ -93,9 +94,7 @@ static QString formatLastUsedText(Variable *variable)
 			"AdvSceneSwitcher.variableTab.lastUsed.text.never");
 	}
 
-	QString text =
-		obs_module_text("AdvSceneSwitcher.variableTab.lastUsed.text");
-	return text.arg(QString::number(*lastUsed));
+	return FormatRelativeTime(*lastUsed);
 }
 
 static QString formatLastChangedText(Variable *variable)
@@ -106,9 +105,7 @@ static QString formatLastChangedText(Variable *variable)
 			"AdvSceneSwitcher.variableTab.lastChanged.text.none");
 	}
 
-	QString text = obs_module_text(
-		"AdvSceneSwitcher.variableTab.lastChanged.text");
-	return text.arg(QString::number(*lastChanged));
+	return FormatRelativeTime(*lastChanged);
 }
 
 static QString formatLastChangedTooltip(Variable *variable)

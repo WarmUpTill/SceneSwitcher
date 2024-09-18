@@ -255,6 +255,8 @@ target_sources(
           lib/utils/tab-helpers.hpp
           lib/utils/temp-variable.cpp
           lib/utils/temp-variable.hpp
+          lib/utils/time-helpers.cpp
+          lib/utils/time-helpers.hpp
           lib/utils/ui-helpers.cpp
           lib/utils/ui-helpers.hpp
           lib/utils/utility.cpp

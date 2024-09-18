@@ -115,7 +115,7 @@ static std::string durationUnitToString(Duration::Unit u)
 {
 	switch (u) {
 	case Duration::Unit::SECONDS:
-		return obs_module_text("AdvSceneSwitcher.unit.secends");
+		return obs_module_text("AdvSceneSwitcher.unit.seconds");
 	case Duration::Unit::MINUTES:
 		return obs_module_text("AdvSceneSwitcher.unit.minutes");
 	case Duration::Unit::HOURS:
