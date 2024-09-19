@@ -657,7 +657,7 @@ void MacroConditionAudioEdit::SyncSliderAndValueSelection(bool sliderMoved)
 	if (sliderMoved) {
 		auto sliderPosition = _volMeter->GetSlider()->DoubleValue();
 		// Adjust to the dB scale on the volume meter widget
-		auto dBScaleValue = ((sliderPosition * 3.0) / 5.0) - 60.0;
+		auto dBScaleValue = sliderPosition - 100.0;
 
 		if (_entryData->_useDb) {
 			_volumeDB->SetFixedValue(dBScaleValue);
@@ -677,7 +677,7 @@ void MacroConditionAudioEdit::SyncSliderAndValueSelection(bool sliderMoved)
 				? _entryData->_volumeDB.GetFixedValue()
 				: PercentToDecibel(_entryData->_volumePercent /
 						   100.0);
-		auto sliderPosition = (dBValue + 60.0) * 5 / 3.0;
+		auto sliderPosition = (dBValue + 100);
 		_volMeter->GetSlider()->SetDoubleVal(sliderPosition);
 	}
 }

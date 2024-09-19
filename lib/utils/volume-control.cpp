@@ -619,7 +619,7 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 	magnitudeColor.setRgb(0x00, 0x00, 0x00); // Black
 	majorTickColor.setRgb(0xff, 0xff, 0xff); // Black
 	minorTickColor.setRgb(0xcc, 0xcc, 0xcc); // Black
-	minimumLevel = -60.0;                    // -60 dB
+	minimumLevel = -100.0;                   // -100 dB
 	warningLevel = -20.0;                    // -20 dB
 	errorLevel = -9.0;                       //  -9 dB
 	clipLevel = -0.5;                        //  -0.5 dB
