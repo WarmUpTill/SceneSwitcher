@@ -277,17 +277,18 @@ void PreviewImage::CreateImage(const VideoInput &video, PreviewType type,
 				       areaParams.area.width,
 				       areaParams.area.height);
 	}
-	ScreenshotHelper screenshot(source, screenshotArea, true);
+	Screenshot screenshot(source, screenshotArea, true);
 	obs_source_release(source);
 
-	if (!video.ValidSelection() || !screenshot.done) {
+	if (!video.ValidSelection() || !screenshot.IsDone()) {
 		emit StatusUpdate(obs_module_text(
 			"AdvSceneSwitcher.condition.video.screenshotFail"));
 		emit ImageReady(QPixmap());
 		return;
 	}
 
-	if (screenshot.image.width() == 0 || screenshot.image.height() == 0) {
+	if (screenshot.GetImage().width() == 0 ||
+	    screenshot.GetImage().height() == 0) {
 		emit StatusUpdate(obs_module_text(
 			"AdvSceneSwitcher.condition.video.screenshotEmpty"));
 		emit ImageReady(QPixmap());
@@ -297,14 +298,14 @@ void PreviewImage::CreateImage(const VideoInput &video, PreviewType type,
 	if (type == PreviewType::SHOW_MATCH) {
 		std::unique_lock<std::mutex> lock(_mtx);
 		// Will emit status label update
-		MarkMatch(screenshot.image, patternMatchParams,
+		MarkMatch(screenshot.GetImage(), patternMatchParams,
 			  patternImageData, objDetectParams, ocrParams,
 			  condition);
 	} else {
 		emit StatusUpdate(obs_module_text(
 			"AdvSceneSwitcher.condition.video.selectArea.status"));
 	}
-	emit ImageReady(QPixmap::fromImage(screenshot.image));
+	emit ImageReady(QPixmap::fromImage(screenshot.GetImage()));
 }
 
 void PreviewImage::MarkMatch(QImage &screenshot,

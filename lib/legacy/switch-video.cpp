@@ -105,7 +105,7 @@ void AdvSceneSwitcher::on_getScreenshot_clicked()
 	}
 
 	auto source = obs_weak_source_get_source(s->videoSource);
-	auto screenshotData = std::make_unique<ScreenshotHelper>(source);
+	auto screenshotData = std::make_unique<Screenshot>(source);
 	obs_source_release(source);
 
 	QString filePath = QFileDialog::getSaveFileName(this);
@@ -121,16 +121,16 @@ void AdvSceneSwitcher::on_getScreenshot_clicked()
 	// During selection of the save path enough time should usually have
 	// passed already
 	// Add this just in case ...
-	if (!screenshotData->done) {
+	if (!screenshotData->IsDone()) {
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 
-	if (!screenshotData->done) {
+	if (!screenshotData->IsDone()) {
 		DisplayMessage("Failed to get screenshot of source!");
 		return;
 	}
 
-	screenshotData->image.save(file.fileName());
+	screenshotData->GetImage().save(file.fileName());
 	sw->SetFilePath(file.fileName());
 }
 
@@ -262,7 +262,7 @@ void VideoSwitch::load(obs_data_t *obj)
 void VideoSwitch::getScreenshot()
 {
 	auto source = obs_weak_source_get_source(videoSource);
-	screenshotData = std::make_unique<ScreenshotHelper>(source);
+	screenshotData = std::make_unique<Screenshot>(source);
 	obs_source_release(source);
 }
 
@@ -293,56 +293,55 @@ bool VideoSwitch::checkMatch()
 
 	bool match = false;
 
-	if (screenshotData) {
-		if (screenshotData->done) {
-			bool conditionMatch = false;
-
-			switch (condition) {
-			case videoSwitchType::MATCH:
-				conditionMatch = screenshotData->image ==
-						 matchImage;
-				break;
-			case videoSwitchType::DIFFER:
-				conditionMatch = screenshotData->image !=
-						 matchImage;
-				break;
-			case videoSwitchType::HAS_NOT_CHANGED:
-				conditionMatch = screenshotData->image ==
-						 matchImage;
-				break;
-			case videoSwitchType::HAS_CHANGED:
-				conditionMatch = screenshotData->image !=
-						 matchImage;
-				break;
-			default:
-				break;
-			}
-
-			if (conditionMatch) {
-				currentMatchDuration +=
-					std::chrono::duration_cast<
-						std::chrono::milliseconds>(
-						screenshotData->time -
-						previousTime);
-			} else {
-				currentMatchDuration = {};
-			}
-
-			bool durationMatch = currentMatchDuration.count() >=
-					     duration * 1000;
-
-			if (conditionMatch && durationMatch) {
-				match = true;
-			}
-
-			if (!requiresFileInput(condition)) {
-				matchImage = std::move(screenshotData->image);
-			}
-			previousTime = std::move(screenshotData->time);
-
-			screenshotData.reset(nullptr);
-		}
+	if (!screenshotData) {
+		getScreenshot();
+		return match;
 	}
+	if (!screenshotData->IsDone()) {
+		getScreenshot();
+		return match;
+	}
+
+	bool conditionMatch = false;
+
+	switch (condition) {
+	case videoSwitchType::MATCH:
+		conditionMatch = screenshotData->GetImage() == matchImage;
+		break;
+	case videoSwitchType::DIFFER:
+		conditionMatch = screenshotData->GetImage() != matchImage;
+		break;
+	case videoSwitchType::HAS_NOT_CHANGED:
+		conditionMatch = screenshotData->GetImage() == matchImage;
+		break;
+	case videoSwitchType::HAS_CHANGED:
+		conditionMatch = screenshotData->GetImage() != matchImage;
+		break;
+	default:
+		break;
+	}
+
+	if (conditionMatch) {
+		currentMatchDuration +=
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				screenshotData->GetScreenshotTime() -
+				previousTime);
+	} else {
+		currentMatchDuration = {};
+	}
+
+	bool durationMatch = currentMatchDuration.count() >= duration * 1000;
+
+	if (conditionMatch && durationMatch) {
+		match = true;
+	}
+
+	if (!requiresFileInput(condition)) {
+		matchImage = screenshotData->GetImage();
+	}
+	previousTime = screenshotData->GetScreenshotTime();
+
+	screenshotData.reset(nullptr);
 
 	getScreenshot();
 	return match;

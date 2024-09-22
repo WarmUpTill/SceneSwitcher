@@ -9,36 +9,42 @@
 
 namespace advss {
 
-class ScreenshotHelper {
-public:
-	EXPORT ScreenshotHelper() = default;
-	EXPORT ScreenshotHelper(obs_source_t *source,
-				const QRect &subarea = QRect(),
-				bool blocking = false, int timeout = 1000,
-				bool saveToFile = false, std::string path = "");
-	EXPORT ScreenshotHelper &operator=(const ScreenshotHelper &) = delete;
-	EXPORT ScreenshotHelper(const ScreenshotHelper &) = delete;
-	EXPORT ~ScreenshotHelper();
+class Screenshot {
+	using TimePoint = std::chrono::high_resolution_clock::time_point;
 
-	void Screenshot();
+public:
+	EXPORT Screenshot() = default;
+	EXPORT Screenshot(obs_source_t *source, const QRect &subarea = QRect(),
+			  bool blocking = false, int timeout = 1000,
+			  bool saveToFile = false, std::string path = "");
+	EXPORT Screenshot &operator=(const Screenshot &) = delete;
+	EXPORT Screenshot(const Screenshot &) = delete;
+	EXPORT ~Screenshot();
+
+	EXPORT bool IsDone() const { return _done; }
+	EXPORT QImage &GetImage() { return _image; }
+	EXPORT TimePoint GetScreenshotTime() const { return _time; }
+
+private:
+	static void ScreenshotTick(void *param, float);
+	void CreateScreenshot();
 	void Download();
 	void Copy();
 	void MarkDone();
 	void WriteToFile();
 
-	gs_texrender_t *texrender = nullptr;
-	gs_stagesurf_t *stagesurf = nullptr;
-	OBSWeakSource weakSource;
-	QImage image;
-	uint32_t cx = 0;
-	uint32_t cy = 0;
+	gs_texrender_t *_texrender = nullptr;
+	gs_stagesurf_t *_stagesurf = nullptr;
+	OBSWeakSource _weakSource;
+	QImage _image;
+	uint32_t _cx = 0;
+	uint32_t _cy = 0;
 
-	int stage = 0;
+	int _stage = 0;
 
-	bool done = false;
-	std::chrono::high_resolution_clock::time_point time;
+	bool _done = false;
+	TimePoint _time;
 
-private:
 	std::atomic_bool _initDone = false;
 	QRect _subarea = QRect();
 	bool _blocking = false;

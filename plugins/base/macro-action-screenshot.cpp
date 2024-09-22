@@ -32,8 +32,8 @@ void MacroActionScreenshot::CustomScreenshot(OBSWeakSource &source)
 		return;
 	}
 	auto s = obs_weak_source_get_source(source);
-	_screenshot.~ScreenshotHelper();
-	new (&_screenshot) ScreenshotHelper(s, QRect(), false, 0, true, _path);
+	_screenshot.~Screenshot();
+	new (&_screenshot) Screenshot(s, QRect(), false, 0, true, _path);
 	obs_source_release(s);
 }
 
@@ -230,11 +230,7 @@ void MacroActionScreenshotEdit::UpdateEntryData()
 
 void MacroActionScreenshotEdit::SceneChanged(const SceneSelection &s)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = s;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));

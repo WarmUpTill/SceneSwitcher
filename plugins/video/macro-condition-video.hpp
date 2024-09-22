@@ -90,7 +90,7 @@ private:
 	VideoCondition _condition = VideoCondition::MATCH;
 
 	bool _getNextScreenshot = true;
-	ScreenshotHelper _screenshotData;
+	Screenshot _screenshotData;
 	QImage _matchImage;
 	PatternImageData _patternImageData;
 
