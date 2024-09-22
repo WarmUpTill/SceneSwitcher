@@ -5,12 +5,10 @@
 
 namespace advss {
 
-static void ScreenshotTick(void *param, float);
-
-ScreenshotHelper::ScreenshotHelper(obs_source_t *source, const QRect &subarea,
-				   bool blocking, int timeout, bool saveToFile,
-				   std::string path)
-	: weakSource(OBSGetWeakRef(source)),
+Screenshot::Screenshot(obs_source_t *source, const QRect &subarea,
+		       bool blocking, int timeout, bool saveToFile,
+		       std::string path)
+	: _weakSource(OBSGetWeakRef(source)),
 	  _subarea(subarea),
 	  _blocking(blocking),
 	  _saveToFile(saveToFile),
@@ -35,12 +33,12 @@ ScreenshotHelper::ScreenshotHelper(obs_source_t *source, const QRect &subarea,
 	}
 }
 
-ScreenshotHelper::~ScreenshotHelper()
+Screenshot::~Screenshot()
 {
 	if (_initDone) {
 		obs_enter_graphics();
-		gs_stagesurface_destroy(stagesurf);
-		gs_texrender_destroy(texrender);
+		gs_stagesurface_destroy(_stagesurf);
+		gs_texrender_destroy(_texrender);
 		obs_leave_graphics();
 	}
 	obs_remove_tick_callback(ScreenshotTick, this);
@@ -49,21 +47,21 @@ ScreenshotHelper::~ScreenshotHelper()
 	}
 }
 
-void ScreenshotHelper::Screenshot()
+void Screenshot::CreateScreenshot()
 {
-	OBSSource source = OBSGetStrongRef(weakSource);
+	OBSSource source = OBSGetStrongRef(_weakSource);
 
 	if (source) {
-		cx = obs_source_get_base_width(source);
-		cy = obs_source_get_base_height(source);
+		_cx = obs_source_get_base_width(source);
+		_cy = obs_source_get_base_height(source);
 	} else {
 		obs_video_info ovi;
 		obs_get_video_info(&ovi);
-		cx = ovi.base_width;
-		cy = ovi.base_height;
+		_cx = ovi.base_width;
+		_cy = ovi.base_height;
 	}
 
-	QRect renderArea(0, 0, cx, cy);
+	QRect renderArea(0, 0, _cx, _cy);
 	if (!_subarea.isEmpty()) {
 		renderArea &= _subarea;
 	}
@@ -73,19 +71,19 @@ void ScreenshotHelper::Screenshot()
 		      "Cannot screenshot \"%s\", invalid target size",
 		      obs_source_get_name(source));
 		obs_remove_tick_callback(ScreenshotTick, this);
-		done = true;
+		_done = true;
 		return;
 	}
 
-	cx = renderArea.width();
-	cy = renderArea.height();
+	_cx = renderArea.width();
+	_cy = renderArea.height();
 
-	texrender = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
-	stagesurf = gs_stagesurface_create(renderArea.width(),
-					   renderArea.height(), GS_RGBA);
+	_texrender = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+	_stagesurf = gs_stagesurface_create(renderArea.width(),
+					    renderArea.height(), GS_RGBA);
 
-	gs_texrender_reset(texrender);
-	if (gs_texrender_begin(texrender, renderArea.width(),
+	gs_texrender_reset(_texrender);
+	if (gs_texrender_begin(_texrender, renderArea.width(),
 			       renderArea.height())) {
 		vec4 zero;
 		vec4_zero(&zero);
@@ -108,48 +106,48 @@ void ScreenshotHelper::Screenshot()
 		}
 
 		gs_blend_state_pop();
-		gs_texrender_end(texrender);
+		gs_texrender_end(_texrender);
 	}
 }
 
-void ScreenshotHelper::Download()
+void Screenshot::Download()
 {
-	gs_stage_texture(stagesurf, gs_texrender_get_texture(texrender));
+	gs_stage_texture(_stagesurf, gs_texrender_get_texture(_texrender));
 }
 
-void ScreenshotHelper::Copy()
+void Screenshot::Copy()
 {
 	uint8_t *videoData = nullptr;
 	uint32_t videoLinesize = 0;
 
-	image = QImage(cx, cy, QImage::Format::Format_RGBA8888);
+	_image = QImage(_cx, _cy, QImage::Format::Format_RGBA8888);
 
-	if (gs_stagesurface_map(stagesurf, &videoData, &videoLinesize)) {
-		int linesize = image.bytesPerLine();
-		for (int y = 0; y < (int)cy; y++)
-			memcpy(image.scanLine(y),
+	if (gs_stagesurface_map(_stagesurf, &videoData, &videoLinesize)) {
+		int linesize = _image.bytesPerLine();
+		for (int y = 0; y < (int)_cy; y++)
+			memcpy(_image.scanLine(y),
 			       videoData + (y * videoLinesize), linesize);
 
-		gs_stagesurface_unmap(stagesurf);
+		gs_stagesurface_unmap(_stagesurf);
 	}
 }
 
-void ScreenshotHelper::MarkDone()
+void Screenshot::MarkDone()
 {
-	time = std::chrono::high_resolution_clock::now();
-	done = true;
+	_time = std::chrono::high_resolution_clock::now();
+	_done = true;
 	std::unique_lock<std::mutex> lock(_mutex);
 	_cv.notify_all();
 }
 
-void ScreenshotHelper::WriteToFile()
+void Screenshot::WriteToFile()
 {
 	if (!_saveToFile) {
 		return;
 	}
 
 	_saveThread = std::thread([this]() {
-		if (image.save(QString::fromStdString(_path))) {
+		if (_image.save(QString::fromStdString(_path))) {
 			vblog(LOG_INFO, "Wrote screenshot to \"%s\"",
 			      _path.c_str());
 		} else {
@@ -165,19 +163,19 @@ void ScreenshotHelper::WriteToFile()
 #define STAGE_COPY_AND_SAVE 2
 #define STAGE_FINISH 3
 
-static void ScreenshotTick(void *param, float)
+void Screenshot::ScreenshotTick(void *param, float)
 {
-	ScreenshotHelper *data = reinterpret_cast<ScreenshotHelper *>(param);
+	Screenshot *data = reinterpret_cast<Screenshot *>(param);
 
-	if (data->stage == STAGE_FINISH) {
+	if (data->_stage == STAGE_FINISH) {
 		return;
 	}
 
 	obs_enter_graphics();
 
-	switch (data->stage) {
+	switch (data->_stage) {
 	case STAGE_SCREENSHOT:
-		data->Screenshot();
+		data->CreateScreenshot();
 		break;
 	case STAGE_DOWNLOAD:
 		data->Download();
@@ -193,7 +191,7 @@ static void ScreenshotTick(void *param, float)
 
 	obs_leave_graphics();
 
-	data->stage++;
+	data->_stage++;
 }
 
 } // namespace advss

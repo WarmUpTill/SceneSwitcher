@@ -1,4 +1,5 @@
 #include "macro-condition-video.hpp"
+#include "screenshot-dialog.hpp"
 
 #include <layout-helpers.hpp>
 #include <macro-condition-edit.hpp>
@@ -147,12 +148,12 @@ bool MacroConditionVideo::CheckCondition()
 		GetScreenshot(true);
 	}
 
-	if (_screenshotData.done) {
+	if (_screenshotData.IsDone()) {
 		match = Compare();
 		_lastMatchResult = match;
 
 		if (!requiresFileInput(_condition)) {
-			_matchImage = std::move(_screenshotData.image);
+			_matchImage = std::move(_screenshotData.GetImage());
 		}
 		_getNextScreenshot = true;
 	} else {
@@ -225,7 +226,7 @@ std::string MacroConditionVideo::GetShortDesc() const
 void MacroConditionVideo::GetScreenshot(bool blocking)
 {
 	auto source = obs_weak_source_get_source(_video.GetVideo());
-	_screenshotData.~ScreenshotHelper();
+	_screenshotData.~Screenshot();
 	QRect screenshotArea;
 	if (_areaParameters.enable && _condition != VideoCondition::NO_IMAGE) {
 		screenshotArea.setRect(_areaParameters.area.x,
@@ -233,8 +234,8 @@ void MacroConditionVideo::GetScreenshot(bool blocking)
 				       _areaParameters.area.width,
 				       _areaParameters.area.height);
 	}
-	new (&_screenshotData) ScreenshotHelper(source, screenshotArea,
-						blocking, GetIntervalValue());
+	new (&_screenshotData) Screenshot(source, screenshotArea, blocking,
+					  GetIntervalValue());
 	obs_source_release(source);
 	_getNextScreenshot = false;
 }
@@ -293,7 +294,7 @@ void MacroConditionVideo::SetCondition(VideoCondition condition)
 bool MacroConditionVideo::ScreenshotContainsPattern()
 {
 	cv::Mat result;
-	MatchPattern(_screenshotData.image, _patternImageData,
+	MatchPattern(_screenshotData.GetImage(), _patternImageData,
 		     _patternMatchParameters.threshold, result, nullptr,
 		     _patternMatchParameters.useAlphaAsMask,
 		     _patternMatchParameters.matchMode);
@@ -319,12 +320,12 @@ bool MacroConditionVideo::FileInputIsUpToDate() const
 bool MacroConditionVideo::OutputChanged()
 {
 	if (!_patternMatchParameters.useForChangedCheck) {
-		return _screenshotData.image != _matchImage;
+		return _screenshotData.GetImage() != _matchImage;
 	}
 
 	cv::Mat result;
 	_patternImageData = CreatePatternData(_matchImage);
-	MatchPattern(_screenshotData.image, _patternImageData,
+	MatchPattern(_screenshotData.GetImage(), _patternImageData,
 		     _patternMatchParameters.threshold, result, nullptr,
 		     _patternMatchParameters.useAlphaAsMask,
 		     _patternMatchParameters.matchMode);
@@ -336,7 +337,7 @@ bool MacroConditionVideo::OutputChanged()
 
 bool MacroConditionVideo::ScreenshotContainsObject()
 {
-	auto objects = MatchObject(_screenshotData.image,
+	auto objects = MatchObject(_screenshotData.GetImage(),
 				   _objMatchParameters.cascade,
 				   _objMatchParameters.scaleFactor,
 				   _objMatchParameters.minNeighbors,
@@ -349,7 +350,8 @@ bool MacroConditionVideo::ScreenshotContainsObject()
 
 bool MacroConditionVideo::CheckBrightnessThreshold()
 {
-	_currentBrightness = GetAvgBrightness(_screenshotData.image) / 255.;
+	_currentBrightness =
+		GetAvgBrightness(_screenshotData.GetImage()) / 255.;
 	SetTempVarValue("brightness", std::to_string(_currentBrightness));
 	return _currentBrightness > _brightnessThreshold;
 }
@@ -360,7 +362,7 @@ bool MacroConditionVideo::CheckOCR()
 		return false;
 	}
 
-	auto text = RunOCR(_ocrParameters.GetOCR(), _screenshotData.image,
+	auto text = RunOCR(_ocrParameters.GetOCR(), _screenshotData.GetImage(),
 			   _ocrParameters.color, _ocrParameters.colorThreshold);
 	SetVariableValue(text);
 	SetTempVarValue("text", text);
@@ -373,14 +375,14 @@ bool MacroConditionVideo::CheckOCR()
 bool MacroConditionVideo::CheckColor()
 {
 	const bool ret = ContainsPixelsInColorRange(
-		_screenshotData.image, _colorParameters.color,
+		_screenshotData.GetImage(), _colorParameters.color,
 		_colorParameters.colorThreshold,
 		_colorParameters.matchThreshold);
 	// Way too slow for now
 	//SetTempVarValue("dominantColor", GetDominantColor(_screenshotData.image, 3)
 	//				 .name(QColor::HexArgb)
 	//				 .toStdString());
-	SetTempVarValue("color", GetAverageColor(_screenshotData.image)
+	SetTempVarValue("color", GetAverageColor(_screenshotData.GetImage())
 					 .name(QColor::HexArgb)
 					 .toStdString());
 	return ret;
@@ -394,15 +396,15 @@ bool MacroConditionVideo::Compare()
 
 	switch (_condition) {
 	case VideoCondition::MATCH:
-		return _screenshotData.image == _matchImage;
+		return _screenshotData.GetImage() == _matchImage;
 	case VideoCondition::DIFFER:
-		return _screenshotData.image != _matchImage;
+		return _screenshotData.GetImage() != _matchImage;
 	case VideoCondition::HAS_CHANGED:
 		return OutputChanged();
 	case VideoCondition::HAS_NOT_CHANGED:
 		return !OutputChanged();
 	case VideoCondition::NO_IMAGE:
-		return _screenshotData.image.isNull();
+		return _screenshotData.GetImage().isNull();
 	case VideoCondition::PATTERN:
 		return ScreenshotContainsPattern();
 	case VideoCondition::OBJECT:
@@ -1418,11 +1420,6 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 		}
 
 	} else {
-		auto source = obs_weak_source_get_source(
-			_entryData->_video.GetVideo());
-		ScreenshotHelper screenshot(source);
-		obs_source_release(source);
-
 		path = QFileDialog::getSaveFileName(
 			this, "",
 			FileSelection::ValidPathOrDesktop(
@@ -1435,22 +1432,13 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 		if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 			return;
 		}
-		if (!screenshot.done) { // Screenshot usually completed by now
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
-		if (!screenshot.done) {
-			DisplayMessage(obs_module_text(
-				"AdvSceneSwitcher.condition.video.screenshotFail"));
+
+		auto source = OBSGetStrongRef(_entryData->_video.GetVideo());
+		auto screenshot = ScreenshotDialog::AskForScreenshot(source);
+		if (!screenshot) {
 			return;
 		}
-		if (_entryData->_areaParameters.enable) {
-			screenshot.image = screenshot.image.copy(
-				_entryData->_areaParameters.area.x,
-				_entryData->_areaParameters.area.y,
-				_entryData->_areaParameters.area.width,
-				_entryData->_areaParameters.area.height);
-		}
-		screenshot.image.save(path);
+		screenshot->save(path);
 	}
 	_imagePath->SetPath(path);
 	ImagePathChanged(path);
@@ -1458,11 +1446,7 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 
 void MacroConditionVideoEdit::UsePatternForChangedCheckChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_patternMatchParameters.useForChangedCheck = value;
 	SetWidgetVisibility();
 }
@@ -1470,11 +1454,7 @@ void MacroConditionVideoEdit::UsePatternForChangedCheckChanged(int value)
 void MacroConditionVideoEdit::PatternThresholdChanged(
 	const DoubleVariable &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_patternMatchParameters.threshold = value;
 	_previewDialog.PatternMatchParametersChanged(
 		_entryData->_patternMatchParameters);
@@ -1482,21 +1462,13 @@ void MacroConditionVideoEdit::PatternThresholdChanged(
 
 void MacroConditionVideoEdit::ReduceLatencyChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_blockUntilScreenshotDone = value;
 }
 
 void MacroConditionVideoEdit::UseAlphaAsMaskChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_patternMatchParameters.useAlphaAsMask = value;
 	_entryData->LoadImageFromFile();
 	_previewDialog.PatternMatchParametersChanged(
@@ -1505,11 +1477,7 @@ void MacroConditionVideoEdit::UseAlphaAsMaskChanged(int value)
 
 void MacroConditionVideoEdit::PatternMatchModeChanged(int idx)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_patternMatchParameters.matchMode =
 		static_cast<cv::TemplateMatchModes>(
 			_patternMatchMode->itemData(idx).toInt());
@@ -1519,22 +1487,14 @@ void MacroConditionVideoEdit::PatternMatchModeChanged(int idx)
 
 void MacroConditionVideoEdit::ThrottleEnableChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_throttleEnabled = value;
 	_throttleCount->setEnabled(value);
 }
 
 void MacroConditionVideoEdit::ThrottleCountChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_throttleCount = value / GetIntervalValue();
 }
 

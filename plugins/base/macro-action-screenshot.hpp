@@ -42,7 +42,7 @@ private:
 	void FrontendScreenshot(OBSWeakSource &);
 	void CustomScreenshot(OBSWeakSource &);
 
-	ScreenshotHelper _screenshot;
+	Screenshot _screenshot;
 
 	static bool _registered;
 	static const std::string id;
