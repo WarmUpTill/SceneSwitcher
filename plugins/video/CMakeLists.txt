@@ -50,7 +50,9 @@ target_sources(
           paramerter-wrappers.cpp
           paramerter-wrappers.hpp
           preview-dialog.cpp
-          preview-dialog.hpp)
+          preview-dialog.hpp
+          screenshot-dialog.cpp
+          screenshot-dialog.hpp)
 
 setup_advss_plugin(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")

@@ -1433,8 +1433,8 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 			return;
 		}
 
-		auto source = OBSGetStrongRef(_entryData->_video.GetVideo());
-		auto screenshot = ScreenshotDialog::AskForScreenshot(source);
+		auto screenshot =
+			ScreenshotDialog::AskForScreenshot(_entryData->_video);
 		if (!screenshot) {
 			return;
 		}
