@@ -1180,18 +1180,24 @@ static void setupCopyPasteContextMenuEnry(AdvSceneSwitcher *ss,
 		[ss]() { ss->CopyMacroSegment(); });
 	copy->setEnabled(!!segmentEdit);
 
+	bool pasteAsElseAction = true;
 	const char *pasteText = "AdvSceneSwitcher.macroTab.segment.paste";
 	if (MacroActionIsInClipboard()) {
 		if (IsCursorInWidgetArea(ss->ui->macroActions)) {
+			pasteAsElseAction = false;
 			pasteText =
 				"AdvSceneSwitcher.macroTab.segment.pasteAction";
 		} else if (IsCursorInWidgetArea(ss->ui->macroElseActions)) {
+			pasteAsElseAction = true;
 			pasteText =
 				"AdvSceneSwitcher.macroTab.segment.pasteElseAction";
 		}
 	}
-	auto paste = menu.addAction(obs_module_text(pasteText), ss,
-				    [ss]() { ss->PasteMacroSegment(); });
+	auto paste = menu.addAction(
+		obs_module_text(pasteText), ss, [ss, pasteAsElseAction]() {
+			SetCopySegmentTargetActionType(pasteAsElseAction);
+			ss->PasteMacroSegment();
+		});
 	paste->setEnabled(MacroSegmentIsInClipboard());
 }
 
