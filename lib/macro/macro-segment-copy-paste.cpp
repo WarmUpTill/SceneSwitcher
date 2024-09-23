@@ -1,7 +1,6 @@
 #include "macro-segment-copy-paste.hpp"
 #include "advanced-scene-switcher.hpp"
 #include "macro.hpp"
-#include "ui-helpers.hpp"
 
 #include <QShortcut>
 
@@ -76,22 +75,10 @@ void AdvSceneSwitcher::PasteMacroSegment()
 		break;
 	}
 	case MacroSegmentCopyInfo::Type::ACTION:
-		if (IsCursorInWidgetArea(ui->macroElseActions)) {
-			AddMacroElseAction(macro.get(),
-					   macro->ElseActions().size(),
-					   copyInfo.segment->GetId(),
-					   data.Get());
-			break;
-		}
 		AddMacroAction(macro.get(), macro->Actions().size(),
 			       copyInfo.segment->GetId(), data.Get());
 		break;
 	case MacroSegmentCopyInfo::Type::ELSE:
-		if (IsCursorInWidgetArea(ui->macroActions)) {
-			AddMacroAction(macro.get(), macro->Actions().size(),
-				       copyInfo.segment->GetId(), data.Get());
-			break;
-		}
 		AddMacroElseAction(macro.get(), macro->ElseActions().size(),
 				   copyInfo.segment->GetId(), data.Get());
 		break;
@@ -109,6 +96,21 @@ bool MacroActionIsInClipboard()
 {
 	return copyInfo.type == MacroSegmentCopyInfo::Type::ACTION ||
 	       copyInfo.type == MacroSegmentCopyInfo::Type::ELSE;
+}
+
+void SetCopySegmentTargetActionType(bool setToElseAction)
+{
+	if (copyInfo.type == MacroSegmentCopyInfo::Type::ACTION &&
+	    setToElseAction) {
+		copyInfo.type = MacroSegmentCopyInfo::Type::ELSE;
+		return;
+	}
+
+	if (copyInfo.type == MacroSegmentCopyInfo::Type::ELSE &&
+	    !setToElseAction) {
+		copyInfo.type = MacroSegmentCopyInfo::Type::ACTION;
+		return;
+	}
 }
 
 void SetupSegmentCopyPasteShortcutHandlers(AdvSceneSwitcher *window)
