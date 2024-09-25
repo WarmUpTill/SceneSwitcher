@@ -4,6 +4,8 @@
 #include "macro-helpers.hpp"
 #include "selection-helpers.hpp"
 
+#include <chrono>
+
 namespace advss {
 
 constexpr int64_t nsPerMs = 1000000;
@@ -231,6 +233,18 @@ static void setMixerEnable(obs_source_t *source, const int mixerIdx,
 	obs_source_set_audio_mixers(source, new_mixers);
 }
 
+static void setSyncOffsetHelper(obs_source_t *source, int64_t value)
+{
+	// Workaround for this issue:
+	// https://github.com/obsproject/obs-studio/issues/7912
+	using namespace std::chrono_literals;
+	obs_source_set_sync_offset(source, value - 2);
+	std::this_thread::sleep_for(10ms);
+	obs_source_set_sync_offset(source, value - 1);
+	std::this_thread::sleep_for(10ms);
+	obs_source_set_sync_offset(source, value);
+}
+
 bool MacroActionAudio::PerformAction()
 {
 	auto s = obs_weak_source_get_source(_audioSource.GetSource());
@@ -250,7 +264,7 @@ bool MacroActionAudio::PerformAction()
 		}
 		break;
 	case Action::SYNC_OFFSET:
-		obs_source_set_sync_offset(s, _syncOffset * nsPerMs);
+		setSyncOffsetHelper(s, _syncOffset * nsPerMs);
 		break;
 	case Action::MONITOR:
 		obs_source_set_monitoring_type(s, _monitorType);
