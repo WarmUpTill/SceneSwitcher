@@ -481,6 +481,16 @@ void Macro::AddHelperThread(std::thread &&newThread)
 	_helperThreads.push_back(std::move(newThread));
 }
 
+void Macro::SetPauseStateSaveBehavior(PauseStateSaveBehavior behavior)
+{
+	_pauseSaveBehavior = behavior;
+}
+
+Macro::PauseStateSaveBehavior Macro::GetPauseStateSaveBehavior() const
+{
+	return _pauseSaveBehavior;
+}
+
 void Macro::Stop()
 {
 	_stop = true;
@@ -690,6 +700,8 @@ bool Macro::Save(obs_data_t *obj, bool saveForCopy) const
 		return true;
 	}
 
+	obs_data_set_int(obj, "pauseSaveBehavior",
+			 static_cast<int>(_pauseSaveBehavior));
 	obs_data_set_bool(obj, "pause", _paused);
 	obs_data_set_bool(obj, "parallel", _runInParallel);
 	obs_data_set_bool(obj, "onChange", _performActionsOnChange);
@@ -760,7 +772,22 @@ bool Macro::Load(obs_data_t *obj)
 		return true;
 	}
 
-	_paused = obs_data_get_bool(obj, "pause");
+	_pauseSaveBehavior = static_cast<PauseStateSaveBehavior>(
+		obs_data_get_int(obj, "pauseSaveBehavior"));
+	switch (_pauseSaveBehavior) {
+	case PauseStateSaveBehavior::PERSIST:
+		_paused = obs_data_get_bool(obj, "pause");
+		break;
+	case PauseStateSaveBehavior::PAUSE:
+		_paused = true;
+		break;
+	case PauseStateSaveBehavior::UNPAUSE:
+		_paused = false;
+		break;
+	default:
+		_paused = obs_data_get_bool(obj, "pause");
+		break;
+	}
 	_runInParallel = obs_data_get_bool(obj, "parallel");
 	_performActionsOnChange = obs_data_get_bool(obj, "onChange");
 	_skipExecOnStart = obs_data_get_bool(obj, "skipExecOnStart");

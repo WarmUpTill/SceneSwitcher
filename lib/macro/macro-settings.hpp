@@ -61,6 +61,7 @@ private:
 	QCheckBox *_currentUseCustomConditionCheckInterval;
 	DurationSelection *_currentCustomConditionCheckInterval;
 	QLabel *_currentCustomConditionCheckIntervalWarning;
+	QComboBox *_currentPauseSaveBehavior;
 	QCheckBox *_currentSkipOnStartup;
 	QCheckBox *_currentStopActionsIfNotDone;
 	MacroInputSelection *_currentInputs;

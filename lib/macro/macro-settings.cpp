@@ -78,6 +78,7 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 		  new DurationSelection(this, true, 0.01)),
 	  _currentCustomConditionCheckIntervalWarning(new QLabel(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentUseCustomConditionCheckIntervalWarning"))),
+	  _currentPauseSaveBehavior(new QComboBox(this)),
 	  _currentSkipOnStartup(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentSkipExecutionOnStartup"))),
 	  _currentStopActionsIfNotDone(new QCheckBox(obs_module_text(
@@ -113,6 +114,19 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	_currentUseShortCircuitEvaluation->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.macroTab.shortCircuit.tooltip"));
 
+	_currentPauseSaveBehavior->addItem(
+		obs_module_text(
+			"AdvSceneSwitcher.macroTab.pauseStateSaveBehavior.persist"),
+		static_cast<int>(Macro::PauseStateSaveBehavior::PERSIST));
+	_currentPauseSaveBehavior->addItem(
+		obs_module_text(
+			"AdvSceneSwitcher.macroTab.pauseStateSaveBehavior.pause"),
+		static_cast<int>(Macro::PauseStateSaveBehavior::PAUSE));
+	_currentPauseSaveBehavior->addItem(
+		obs_module_text(
+			"AdvSceneSwitcher.macroTab.pauseStateSaveBehavior.unpause"),
+		static_cast<int>(Macro::PauseStateSaveBehavior::UNPAUSE));
+
 	auto highlightOptions = new QGroupBox(
 		obs_module_text("AdvSceneSwitcher.macroTab.highlightSettings"));
 	auto highlightLayout = new QVBoxLayout;
@@ -145,8 +159,15 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	customConditionIntervalLayout->addLayout(durationLayout);
 	customConditionIntervalLayout->addWidget(
 		_currentCustomConditionCheckIntervalWarning);
-
 	generalLayout->addLayout(customConditionIntervalLayout);
+
+	auto pauseStateSaveBehavorLayout = new QHBoxLayout();
+	pauseStateSaveBehavorLayout->addWidget(new QLabel(obs_module_text(
+		"AdvSceneSwitcher.macroTab.pauseStateSaveBehavior")));
+	pauseStateSaveBehavorLayout->addWidget(_currentPauseSaveBehavior);
+	pauseStateSaveBehavorLayout->addStretch();
+	generalLayout->addLayout(pauseStateSaveBehavorLayout);
+
 	generalOptions->setLayout(generalLayout);
 
 	auto inputOptions = new QGroupBox(
@@ -266,6 +287,7 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 		_currentStopActionsIfNotDone->hide();
 		_currentUseShortCircuitEvaluation->hide();
 		SetLayoutVisible(customConditionIntervalLayout, false);
+		SetLayoutVisible(pauseStateSaveBehavorLayout, false);
 
 		inputOptions->hide();
 		_dockOptions->hide();
@@ -282,6 +304,9 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	_currentCustomConditionCheckInterval->setEnabled(
 		macro->CustomConditionCheckIntervalEnabled());
 	SetCustomConditionIntervalWarningVisibility();
+	_currentPauseSaveBehavior->setCurrentIndex(
+		_currentPauseSaveBehavior->findData(
+			static_cast<int>(macro->GetPauseStateSaveBehavior())));
 	_currentSkipOnStartup->setChecked(macro->SkipExecOnStart());
 	_currentStopActionsIfNotDone->setChecked(macro->StopActionsIfNotDone());
 	_currentInputs->SetInputs(macro->GetInputVariables());
@@ -424,6 +449,10 @@ bool MacroSettingsDialog::AskForSettings(QWidget *parent,
 		dialog._currentUseCustomConditionCheckInterval->isChecked());
 	macro->SetCustomConditionCheckInterval(
 		dialog._currentCustomConditionCheckInterval->GetDuration());
+	macro->SetPauseStateSaveBehavior(
+		static_cast<Macro::PauseStateSaveBehavior>(
+			dialog._currentPauseSaveBehavior->currentData()
+				.toInt()));
 	macro->SetSkipExecOnStart(dialog._currentSkipOnStartup->isChecked());
 	macro->SetStopActionsIfNotDone(
 		dialog._currentStopActionsIfNotDone->isChecked());

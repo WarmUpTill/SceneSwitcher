@@ -25,6 +25,8 @@ class Macro {
 	using TimePoint = std::chrono::high_resolution_clock::time_point;
 
 public:
+	enum class PauseStateSaveBehavior { PERSIST, PAUSE, UNPAUSE };
+
 	Macro(const std::string &name = "", const bool addHotkey = false,
 	      const bool shortCircuitEvaluation = false);
 	~Macro();
@@ -44,6 +46,9 @@ public:
 	void SetPaused(bool pause = true);
 	bool Paused() const { return _paused; }
 	bool WasPausedSince(const TimePoint &) const;
+
+	void SetPauseStateSaveBehavior(PauseStateSaveBehavior);
+	PauseStateSaveBehavior GetPauseStateSaveBehavior() const;
 
 	void Stop();
 	bool GetStop() const { return _stop; }
@@ -210,6 +215,9 @@ private:
 	obs_hotkey_id _pauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _unpauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _togglePauseHotkey = OBS_INVALID_HOTKEY_ID;
+
+	PauseStateSaveBehavior _pauseSaveBehavior =
+		PauseStateSaveBehavior::PERSIST;
 
 	MacroInputVariables _inputVariables;
 
