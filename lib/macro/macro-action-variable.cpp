@@ -150,18 +150,12 @@ void MacroActionVariable::HandleFindAndReplace(Variable *var)
 		var->SetValue(value);
 		return;
 	}
-	QString resultString = QString::fromStdString(value);
+
 	QString replacement = QString::fromStdString(_replaceStr);
 	auto regex = _findRegex.GetRegularExpression(_findStr);
-	auto matchIterator = regex.globalMatch(QString::fromStdString(value));
-	int offset = 0;
-	while (matchIterator.hasNext()) {
-		QRegularExpressionMatch match = matchIterator.next();
-		resultString.replace(match.capturedStart() + offset,
-				     match.capturedLength(), replacement);
-		offset += replacement.length() - match.capturedLength();
-	}
-	var->SetValue(resultString.toStdString());
+	auto result = QString::fromStdString(value);
+	result = result.replace(regex, replacement);
+	var->SetValue(result.toStdString());
 }
 
 void MacroActionVariable::HandleMathExpression(Variable *var)
@@ -739,6 +733,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_regexMatchIdx->setMinimum(1);
 	_regexMatchIdx->setMaximum(999);
 	_regexMatchIdx->setSuffix(".");
+	_replaceStr->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.action.variable.findAndReplace.replace.tooltip"));
 	_inputPrompt->setSizePolicy(QSizePolicy::MinimumExpanding,
 				    QSizePolicy::Preferred);
 	_sceneItemIndex->setMinimum(1);
