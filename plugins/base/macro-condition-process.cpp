@@ -33,8 +33,16 @@ bool MacroConditionProcess::CheckCondition()
 		return false;
 	}
 
-	auto matchIndex = runningProcesses.indexOf(QRegularExpression(proc));
-	if (matchIndex == -1) {
+	int matchIndex = -1;
+	bool foundMatch = false;
+	for (const auto &process : runningProcesses) {
+		matchIndex++;
+		if (_regex.Matches(process, proc)) {
+			foundMatch = true;
+			break;
+		}
+	}
+	if (!foundMatch) {
 		return false;
 	}
 	if (!_checkFocus) {
