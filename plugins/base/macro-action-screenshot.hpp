@@ -4,6 +4,7 @@
 #include "scene-selection.hpp"
 #include "screenshot-helper.hpp"
 #include "source-selection.hpp"
+#include "variable.hpp"
 
 #include <QComboBox>
 
@@ -22,27 +23,20 @@ public:
 	std::shared_ptr<MacroAction> Copy() const;
 	void ResolveVariablesToFixedValues();
 
-	enum class SaveType {
-		OBS_DEFAULT,
-		CUSTOM,
-	};
-	SaveType _saveType = SaveType::OBS_DEFAULT;
+	enum class SaveType { OBS_DEFAULT_PATH, CUSTOM_PATH, VARIABLE };
+	SaveType _saveType = SaveType::OBS_DEFAULT_PATH;
 
-	enum class TargetType {
-		SOURCE,
-		SCENE,
-		MAIN_OUTPUT,
-	};
+	enum class TargetType { SOURCE, SCENE, MAIN_OUTPUT };
 	TargetType _targetType = TargetType::SOURCE;
 	SceneSelection _scene;
 	SourceSelection _source;
 	StringVariable _path = obs_module_text("AdvSceneSwitcher.enterPath");
+	std::weak_ptr<Variable> _variable;
 
 private:
-	void FrontendScreenshot(OBSWeakSource &);
-	void CustomScreenshot(OBSWeakSource &);
-
-	Screenshot _screenshot;
+	void FrontendScreenshot(OBSWeakSource &) const;
+	void CustomScreenshot(OBSWeakSource &) const;
+	void VariableScreenshot(OBSWeakSource &) const;
 
 	static bool _registered;
 	static const std::string id;
@@ -70,20 +64,21 @@ private slots:
 	void SaveTypeChanged(int index);
 	void TargetTypeChanged(int index);
 	void PathChanged(const QString &text);
+	void VariableChanged(const QString &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	SceneSelectionWidget *_scenes;
 	SourceSelectionWidget *_sources;
 	QComboBox *_saveType;
 	QComboBox *_targetType;
 	FileSelection *_savePath;
+	VariableSelection *_variables;
+
 	std::shared_ptr<MacroActionScreenshot> _entryData;
-
-private:
-	void SetWidgetVisibility();
-
 	bool _loading = true;
 };
 

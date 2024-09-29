@@ -3,6 +3,8 @@
 #include "selection-helpers.hpp"
 
 #include <obs-frontend-api.h>
+#include <QBuffer>
+#include <QByteArray>
 
 namespace advss {
 
@@ -13,28 +15,49 @@ bool MacroActionScreenshot::_registered = MacroActionFactory::Register(
 	{MacroActionScreenshot::Create, MacroActionScreenshotEdit::Create,
 	 "AdvSceneSwitcher.action.screenshot"});
 
-void MacroActionScreenshot::FrontendScreenshot(OBSWeakSource &source)
+void MacroActionScreenshot::FrontendScreenshot(OBSWeakSource &source) const
 {
 #if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(26, 0, 0)
 	if (source) {
-		auto s = obs_weak_source_get_source(source);
+		auto s = OBSGetStrongRef(source);
 		obs_frontend_take_source_screenshot(s);
-		obs_source_release(s);
 	} else {
 		obs_frontend_take_screenshot();
 	}
 #endif
 }
 
-void MacroActionScreenshot::CustomScreenshot(OBSWeakSource &source)
+void MacroActionScreenshot::CustomScreenshot(OBSWeakSource &source) const
 {
 	if (!source && _targetType == TargetType::SCENE) {
 		return;
 	}
-	auto s = obs_weak_source_get_source(source);
-	_screenshot.~Screenshot();
-	new (&_screenshot) Screenshot(s, QRect(), false, 0, true, _path);
-	obs_source_release(s);
+	auto s = OBSGetStrongRef(source);
+	Screenshot screenshot(s, QRect(), true, 3000, true, _path);
+}
+
+void MacroActionScreenshot::VariableScreenshot(OBSWeakSource &source) const
+{
+	if (!source && _targetType == TargetType::SCENE) {
+		return;
+	}
+
+	auto variable = _variable.lock();
+	if (!variable) {
+		return;
+	}
+
+	auto s = OBSGetStrongRef(source);
+	Screenshot screenshot(s, QRect(), true, 3000);
+
+	QByteArray byteArray;
+	QBuffer buffer(&byteArray);
+	buffer.open(QIODevice::WriteOnly);
+	if (!screenshot.GetImage().save(&buffer, "PNG")) {
+		blog(LOG_WARNING, "Failed to save screenshot to variable!");
+	}
+
+	variable->SetValue(byteArray.toBase64().toStdString());
 }
 
 bool MacroActionScreenshot::PerformAction()
@@ -52,11 +75,14 @@ bool MacroActionScreenshot::PerformAction()
 	}
 
 	switch (_saveType) {
-	case MacroActionScreenshot::SaveType::OBS_DEFAULT:
+	case MacroActionScreenshot::SaveType::OBS_DEFAULT_PATH:
 		FrontendScreenshot(source);
 		break;
-	case MacroActionScreenshot::SaveType::CUSTOM:
+	case MacroActionScreenshot::SaveType::CUSTOM_PATH:
 		CustomScreenshot(source);
+		break;
+	case MacroActionScreenshot::SaveType::VARIABLE:
+		VariableScreenshot(source);
 		break;
 	default:
 		break;
@@ -90,6 +116,8 @@ bool MacroActionScreenshot::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "saveType", static_cast<int>(_saveType));
 	obs_data_set_int(obj, "targetType", static_cast<int>(_targetType));
 	_path.Save(obj, "savePath");
+	obs_data_set_string(obj, "variable",
+			    GetWeakVariableName(_variable).c_str());
 	obs_data_set_int(obj, "version", 1);
 	return true;
 }
@@ -103,6 +131,8 @@ bool MacroActionScreenshot::Load(obs_data_t *obj)
 	_targetType =
 		static_cast<TargetType>(obs_data_get_int(obj, "targetType"));
 	_path.Load(obj, "savePath");
+	_variable =
+		GetWeakVariableByName(obs_data_get_string(obj, "variableName"));
 
 	// TODO: Remove fallback for older versions
 	if (!obs_data_has_user_value(obj, "version")) {
@@ -151,6 +181,8 @@ static void populateSaveTypeSelection(QComboBox *list)
 		"AdvSceneSwitcher.action.screenshot.save.default"));
 	list->addItem(obs_module_text(
 		"AdvSceneSwitcher.action.screenshot.save.custom"));
+	list->addItem(obs_module_text(
+		"AdvSceneSwitcher.action.screenshot.save.variable"));
 }
 
 static void populateTargetTypeSelection(QComboBox *list)
@@ -170,7 +202,8 @@ MacroActionScreenshotEdit::MacroActionScreenshotEdit(
 	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _saveType(new QComboBox()),
 	  _targetType(new QComboBox()),
-	  _savePath(new FileSelection(FileSelection::Type::WRITE, this))
+	  _savePath(new FileSelection(FileSelection::Type::WRITE, this)),
+	  _variables(new VariableSelection(this))
 {
 	setToolTip(obs_module_text(
 		"AdvSceneSwitcher.action.screenshot.blackscreenNote"));
@@ -192,19 +225,20 @@ MacroActionScreenshotEdit::MacroActionScreenshotEdit(
 			 SLOT(TargetTypeChanged(int)));
 	QWidget::connect(_savePath, SIGNAL(PathChanged(const QString &)), this,
 			 SLOT(PathChanged(const QString &)));
+	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),
+			 this, SLOT(VariableChanged(const QString &)));
 
-	QHBoxLayout *layout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{sources}}", _sources},
-		{"{{scenes}}", _scenes},
-		{"{{saveType}}", _saveType},
-		{"{{targetType}}", _targetType},
-	};
+	auto layout = new QHBoxLayout;
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.screenshot.entry"),
-		layout, widgetPlaceholders);
+		layout,
+		{{"{{sources}}", _sources},
+		 {"{{scenes}}", _scenes},
+		 {"{{saveType}}", _saveType},
+		 {"{{targetType}}", _targetType},
+		 {"{{variables}}", _variables}});
 
-	QVBoxLayout *mainLayout = new QVBoxLayout;
+	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(layout);
 	mainLayout->addWidget(_savePath);
 	setLayout(mainLayout);
@@ -225,6 +259,7 @@ void MacroActionScreenshotEdit::UpdateEntryData()
 	_saveType->setCurrentIndex(static_cast<int>(_entryData->_saveType));
 	_targetType->setCurrentIndex(static_cast<int>(_entryData->_targetType));
 	_savePath->SetPath(_entryData->_path);
+	_variables->SetVariable(_entryData->_variable);
 	SetWidgetVisibility();
 }
 
@@ -258,22 +293,22 @@ void MacroActionScreenshotEdit::TargetTypeChanged(int index)
 
 void MacroActionScreenshotEdit::PathChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_path = text.toStdString();
 }
 
 void MacroActionScreenshotEdit::SourceChanged(const SourceSelection &source)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_source = source;
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
+}
+
+void MacroActionScreenshotEdit::VariableChanged(const QString &text)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_variable = GetWeakVariableByQString(text);
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -284,13 +319,16 @@ void MacroActionScreenshotEdit::SetWidgetVisibility()
 		return;
 	}
 	_savePath->setVisible(_entryData->_saveType ==
-			      MacroActionScreenshot::SaveType::CUSTOM);
+			      MacroActionScreenshot::SaveType::CUSTOM_PATH);
 	_sources->setVisible(_entryData->_targetType ==
 			     MacroActionScreenshot::TargetType::SOURCE);
 	_scenes->setVisible(_entryData->_targetType ==
 			    MacroActionScreenshot::TargetType::SCENE);
+	_variables->setVisible(_entryData->_saveType ==
+			       MacroActionScreenshot::SaveType::VARIABLE);
 
 	adjustSize();
+	updateGeometry();
 }
 
 } // namespace advss

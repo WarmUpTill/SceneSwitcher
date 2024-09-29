@@ -36,7 +36,7 @@ public:
 	EXPORT std::optional<int> IntValue() const;
 	std::string GetPreviousValue() const { return _previousValue; };
 	std::string GetDefaultValue() const { return _defaultValue; }
-	void SetValue(const std::string &value);
+	EXPORT void SetValue(const std::string &value);
 	void SetValue(double value);
 	SaveAction GetSaveAction() const { return _saveAction; }
 	int GetValueChangeCount() const { return _valueChangeCount; }
@@ -112,7 +112,7 @@ EXPORT Variable *GetVariableByName(const std::string &name);
 EXPORT Variable *GetVariableByQString(const QString &name);
 EXPORT std::weak_ptr<Variable> GetWeakVariableByName(const std::string &name);
 EXPORT std::weak_ptr<Variable> GetWeakVariableByQString(const QString &name);
-std::string GetWeakVariableName(std::weak_ptr<Variable>);
+EXPORT std::string GetWeakVariableName(std::weak_ptr<Variable>);
 EXPORT QStringList GetVariablesNameList();
 
 void SaveVariables(obs_data_t *obj);
