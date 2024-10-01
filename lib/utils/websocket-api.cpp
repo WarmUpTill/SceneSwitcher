@@ -87,6 +87,7 @@ void RegisterWebsocketRequest(
 	std::lock_guard<std::mutex> lock(m);
 
 	callbacks.emplace_back(callback);
+	int index = callbacks.size() - 1;
 	auto handleRequest = [](obs_data *requestData, obs_data *other,
 				void *cbPtr) {
 		auto cb = *(static_cast<
@@ -95,10 +96,10 @@ void RegisterWebsocketRequest(
 		cb(requestData, other);
 	};
 
-	AddPluginPostLoadStep([name, handleRequest]() {
-		if (!obs_websocket_vendor_register_request(vendor, name.c_str(),
-							   handleRequest,
-							   &callbacks.back())) {
+	AddPluginPostLoadStep([name, handleRequest, index]() {
+		if (!obs_websocket_vendor_register_request(
+			    vendor, name.c_str(), handleRequest,
+			    &callbacks.at(index))) {
 			blog(LOG_ERROR,
 			     "Failed to register \"%s\" request with obs-websocket.",
 			     name.c_str());
