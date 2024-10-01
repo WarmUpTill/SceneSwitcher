@@ -17,8 +17,8 @@ using websocketpp::lib::bind;
 #define RPC_VERSION 1
 #undef DispatchMessage
 
-constexpr char VendorRequestMessage[] = "AdvancedSceneSwitcherMessage";
-constexpr char VendorEventMessage[] = "AdvancedSceneSwitcherEvent";
+static constexpr char VendorRequestMessage[] = "AdvancedSceneSwitcherMessage";
+static constexpr char VendorEventMessage[] = "AdvancedSceneSwitcherEvent";
 
 static WebsocketMessageDispatcher websocketMessageDispatcher;
 
@@ -47,7 +47,8 @@ void SendWebsocketEvent(const std::string &eventMsg)
 static void receiveWebsocketMessage(obs_data_t *request_data, obs_data_t *)
 {
 	if (!obs_data_has_user_value(request_data, "message")) {
-		vblog(LOG_INFO, "received unexpected m '%s'",
+		vblog(LOG_INFO,
+		      "received unexpected AdvancedSceneSwitcherMessage: '%s'",
 		      obs_data_get_json(request_data));
 		return;
 	}
