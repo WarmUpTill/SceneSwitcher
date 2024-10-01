@@ -9,11 +9,11 @@ namespace advss {
 
 static std::vector<std::function<void(obs_data_t *, obs_data_t *)>> callbacks;
 
-constexpr char VendorName[] = "AdvancedSceneSwitcher";
-constexpr char VendorRequestStart[] = "AdvancedSceneSwitcherStart";
-constexpr char VendorRequestStop[] = "AdvancedSceneSwitcherStop";
-constexpr char VendorRequestStatus[] = "IsAdvancedSceneSwitcherRunning";
-obs_websocket_vendor vendor;
+static constexpr char VendorName[] = "AdvancedSceneSwitcher";
+static constexpr char VendorRequestStart[] = "AdvancedSceneSwitcherStart";
+static constexpr char VendorRequestStop[] = "AdvancedSceneSwitcherStop";
+static constexpr char VendorRequestStatus[] = "IsAdvancedSceneSwitcherRunning";
+static obs_websocket_vendor vendor;
 
 static void registerWebsocketVendor();
 
