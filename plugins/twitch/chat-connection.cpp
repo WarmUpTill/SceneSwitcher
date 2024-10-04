@@ -77,21 +77,53 @@ static void parseTags(const std::string &tags, IRCMessage &message)
 			continue;
 		}
 
-		if (tagName == "badges" || tagName == "badge-info") {
+		if (tagName == "badge-info") {
+			message.properties.badgeInfoString = tagValue;
+		} else if (tagName == "badges") {
 			message.properties.badges = parseBadgeTag(tagValue);
 			message.properties.badgesString = tagValue;
+		} else if (tagName == "bits") {
+			message.properties.bits = std::stoi(tagValue);
+		} else if (tagName == "color") {
+			message.properties.color = tagValue;
 		} else if (tagName == "display-name") {
 			message.properties.displayName = tagValue;
-		} else if (tagName == "first-msg") {
-			message.properties.isFirstMessage = tagValue == "1";
 		} else if (tagName == "emote-only") {
 			message.properties.isUsingOnlyEmotes = tagValue == "1";
+		} else if (tagName == "emotes") {
+			message.properties.emotesString = tagValue;
+		} else if (tagName == "first-msg") {
+			message.properties.isFirstMessage = tagValue == "1";
+		} else if (tagName == "id") {
+			message.properties.id = tagValue;
 		} else if (tagName == "mod") {
 			message.properties.isMod = tagValue == "1";
+		} else if (tagName == "reply-parent-msg-body") {
+			message.properties.replyParentBody = tagValue;
+		} else if (tagName == "reply-parent-display-name") {
+			message.properties.replyParentDisplayName = tagValue;
+		} else if (tagName == "reply-parent-msg-id") {
+			message.properties.replyParentId = tagValue;
+		} else if (tagName == "reply-parent-user-id") {
+			message.properties.replyParentUserId = tagValue;
+		} else if (tagName == "reply-parent-user-login") {
+			message.properties.replyParentUserLogin = tagValue;
+		} else if (tagName == "reply-thread-parent-msg-id") {
+			message.properties.rootParentId = tagValue;
+		} else if (tagName == "reply-thread-parent-user-login") {
+			message.properties.rootParentUserLogin = tagValue;
 		} else if (tagName == "subscriber") {
 			message.properties.isSubscriber = tagValue == "1";
+		} else if (tagName == "tmi-sent-ts") {
+			message.properties.timestamp = std::stoull(tagValue);
 		} else if (tagName == "turbo") {
 			message.properties.isTurbo = tagValue == "1";
+		} else if (tagName == "user-id") {
+			message.properties.userId = tagValue;
+		} else if (tagName == "user-type") {
+			message.properties.userType = tagValue;
+		} else if (tagName == "vip") {
+			message.properties.isVIP = tagValue == "1";
 		}
 	}
 }

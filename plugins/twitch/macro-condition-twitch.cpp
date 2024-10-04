@@ -389,10 +389,47 @@ bool MacroConditionTwitch::CheckChatMessages(TwitchToken &token)
 			continue;
 		}
 
+		SetTempVarValue("id", message->properties.id);
+		SetTempVarValue("chat_message", message->message);
+		SetTempVarValue("user_id", message->properties.userId);
 		SetTempVarValue("user_login", message->source.nick);
 		SetTempVarValue("user_name", message->properties.displayName);
-		SetTempVarValue("chat_message", message->message);
+		SetTempVarValue("user_type", message->properties.userType);
+		SetTempVarValue("reply_parent_id",
+				message->properties.replyParentId);
+		SetTempVarValue("reply_parent_message",
+				message->properties.replyParentBody);
+		SetTempVarValue("reply_parent_user_id",
+				message->properties.replyParentUserId);
+		SetTempVarValue("reply_parent_user_login",
+				message->properties.replyParentUserLogin);
+		SetTempVarValue("reply_parent_user_name",
+				message->properties.replyParentDisplayName);
+		SetTempVarValue("root_parent_id",
+				message->properties.rootParentId);
+		SetTempVarValue("root_parent_user_login",
+				message->properties.rootParentUserLogin);
+		SetTempVarValue("badge_info",
+				message->properties.badgeInfoString);
 		SetTempVarValue("badges", message->properties.badgesString);
+		SetTempVarValue("bits",
+				std::to_string(message->properties.bits));
+		SetTempVarValue("color", message->properties.color);
+		SetTempVarValue("emotes", message->properties.emotesString);
+		SetTempVarValue("timestamp",
+				std::to_string(message->properties.timestamp));
+		SetTempVarValue("is_first_message",
+				message->properties.isFirstMessage ? "true"
+								   : "false");
+		SetTempVarValue("is_mod",
+				message->properties.isMod ? "true" : "false");
+		SetTempVarValue("is_subscriber",
+				message->properties.isSubscriber ? "true"
+								 : "false");
+		SetTempVarValue("is_turbo",
+				message->properties.isTurbo ? "true" : "false");
+		SetTempVarValue("is_vip",
+				message->properties.isVIP ? "true" : "false");
 
 		if (_clearBufferOnMatch) {
 			_eventBuffer->Clear();
@@ -1236,10 +1273,30 @@ void MacroConditionTwitch::SetupTempVars()
 		setupTempVarHelper("is_branded_content");
 		break;
 	case Condition::CHAT_MESSAGE_RECEIVED:
+		setupTempVarHelper("id", ".chatReceive");
 		setupTempVarHelper("chat_message", ".chatReceive");
+		setupTempVarHelper("user_id", ".chatReceive");
 		setupTempVarHelper("user_login", ".chatReceive");
 		setupTempVarHelper("user_name", ".chatReceive");
+		setupTempVarHelper("user_type", ".chatReceive");
+		setupTempVarHelper("reply_parent_id", ".chatReceive");
+		setupTempVarHelper("reply_parent_message", ".chatReceive");
+		setupTempVarHelper("reply_parent_user_id", ".chatReceive");
+		setupTempVarHelper("reply_parent_user_login", ".chatReceive");
+		setupTempVarHelper("reply_parent_user_name", ".chatReceive");
+		setupTempVarHelper("root_parent_id", ".chatReceive");
+		setupTempVarHelper("root_parent_user_login", ".chatReceive");
+		setupTempVarHelper("badge_info", ".chatReceive");
 		setupTempVarHelper("badges", ".chatReceive");
+		setupTempVarHelper("bits", ".chatReceive");
+		setupTempVarHelper("color", ".chatReceive");
+		setupTempVarHelper("emotes", ".chatReceive");
+		setupTempVarHelper("timestamp", ".chatReceive");
+		setupTempVarHelper("is_first_message", ".chatReceive");
+		setupTempVarHelper("is_mod", ".chatReceive");
+		setupTempVarHelper("is_subscriber", ".chatReceive");
+		setupTempVarHelper("is_turbo", ".chatReceive");
+		setupTempVarHelper("is_vip", ".chatReceive");
 		break;
 	default:
 		break;
