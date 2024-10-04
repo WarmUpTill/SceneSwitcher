@@ -392,6 +392,11 @@ void TwitchChatConnection::Disconnect()
 	if (ec) {
 		blog(LOG_INFO, "TwitchChatConnection close failed: %s",
 		     ec.message().c_str());
+
+		// TODO: avoid using stop()
+		_stop = true;
+		std::this_thread::sleep_for(3s);
+		_client.stop();
 	}
 
 	{
