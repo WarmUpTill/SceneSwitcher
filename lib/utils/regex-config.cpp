@@ -79,11 +79,12 @@ bool RegexConfig::Matches(const std::string &text,
 		       QString::fromStdString(expression));
 }
 
-RegexConfig RegexConfig::PartialMatchRegexConfig()
+RegexConfig RegexConfig::PartialMatchRegexConfig(bool enabled)
 {
-	RegexConfig conf;
-	conf._partialMatch = true;
-	return conf;
+	RegexConfig regex;
+	regex._partialMatch = true;
+	regex._enable = enabled;
+	return regex;
 }
 
 RegexConfigWidget::RegexConfigWidget(QWidget *parent, bool showEnable)
