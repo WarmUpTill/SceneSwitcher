@@ -37,7 +37,7 @@ public:
 	EXPORT bool Matches(const std::string &text,
 			    const std::string &expression) const;
 
-	EXPORT static RegexConfig PartialMatchRegexConfig();
+	EXPORT static RegexConfig PartialMatchRegexConfig(bool enabled = false);
 
 private:
 	bool _enable = false;
