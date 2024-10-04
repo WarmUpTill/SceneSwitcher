@@ -45,8 +45,8 @@ public:
 
 	bool Matches(const IRCMessage &) const;
 
-	StringVariable _message;
-	RegexConfig _regex = RegexConfig::PartialMatchRegexConfig();
+	StringVariable _message = ".*";
+	RegexConfig _regex = RegexConfig::PartialMatchRegexConfig(true);
 	std::vector<ChatMessageProperty> _properties;
 };
 
