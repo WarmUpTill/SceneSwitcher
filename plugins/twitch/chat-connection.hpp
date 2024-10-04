@@ -20,24 +20,43 @@ struct IRCMessage {
 		bool enabled;
 	};
 	struct {
+		std::string badgeInfoString;
 		std::string badgesString;
 		std::vector<Badge> badges;
+		int bits = 0;
+		std::string color;
 		std::string displayName;
-		bool isFirstMessage = false;
 		bool isUsingOnlyEmotes = false;
+		std::string emotesString;
+		bool isFirstMessage = false;
+		std::string id;
 		bool isMod = false;
+		std::string replyParentBody;
+		std::string replyParentDisplayName;
+		std::string replyParentId;
+		std::string replyParentUserId;
+		std::string replyParentUserLogin;
+		std::string rootParentId;
+		std::string rootParentUserLogin;
 		bool isSubscriber = false;
+		unsigned long long timestamp;
 		bool isTurbo = false;
+		std::string userId;
+		std::string userType;
+		bool isVIP = false;
 	} properties;
+
 	struct {
 		std::string nick;
 		std::string host;
 	} source;
+
 	struct {
 		std::string command;
 		std::variant<std::string, bool, std::vector<std::string>>
 			parameters;
 	} command;
+
 	std::string message;
 };
 

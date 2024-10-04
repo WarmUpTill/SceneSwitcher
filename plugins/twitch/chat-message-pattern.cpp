@@ -41,6 +41,22 @@ const std::vector<ChatMessageProperty::PropertyInfo> ChatMessageProperty::_suppo
 		 return message.properties.isTurbo ==
 			std::get<bool>(property._value);
 	 }},
+	{"vip", "AdvSceneSwitcher.condition.twitch.type.chat.properties.vip",
+	 true,
+	 [](const IRCMessage &message, const ChatMessageProperty &property) {
+		 return message.properties.isVIP ==
+			std::get<bool>(property._value);
+	 }},
+	{"color",
+	 "AdvSceneSwitcher.condition.twitch.type.chat.properties.color",
+	 std::string(),
+	 [](const IRCMessage &message, const ChatMessageProperty &property) {
+		 auto value = std::get<StringVariable>(property._value);
+		 return !property._regex.Enabled()
+				? message.properties.color == std::string(value)
+				: property._regex.Matches(
+					  message.properties.color, value);
+	 }},
 	{"displayName",
 	 "AdvSceneSwitcher.condition.twitch.type.chat.properties.displayName",
 	 std::string(),
