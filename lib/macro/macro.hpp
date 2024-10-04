@@ -199,7 +199,7 @@ private:
 	bool _isCollapsed = false;
 
 	bool _useShortCircuitEvaluation = false;
-	bool _useCustomConditionCheckInterval = true;
+	bool _useCustomConditionCheckInterval = false;
 	Duration _customConditionCheckInterval = 0.3;
 	bool _conditionSateChanged = false;
 
