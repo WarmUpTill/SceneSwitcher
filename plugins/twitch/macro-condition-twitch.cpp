@@ -418,6 +418,10 @@ bool MacroConditionTwitch::CheckChatMessages(TwitchToken &token)
 		SetTempVarValue("emotes", message->properties.emotesString);
 		SetTempVarValue("timestamp",
 				std::to_string(message->properties.timestamp));
+		SetTempVarValue("is_emotes_only",
+				message->properties.isUsingOnlyEmotes
+					? "true"
+					: "false");
 		SetTempVarValue("is_first_message",
 				message->properties.isFirstMessage ? "true"
 								   : "false");
@@ -1292,6 +1296,7 @@ void MacroConditionTwitch::SetupTempVars()
 		setupTempVarHelper("color", ".chatReceive");
 		setupTempVarHelper("emotes", ".chatReceive");
 		setupTempVarHelper("timestamp", ".chatReceive");
+		setupTempVarHelper("is_emotes_only", ".chatReceive");
 		setupTempVarHelper("is_first_message", ".chatReceive");
 		setupTempVarHelper("is_mod", ".chatReceive");
 		setupTempVarHelper("is_subscriber", ".chatReceive");
