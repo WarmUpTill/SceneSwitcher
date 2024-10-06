@@ -44,6 +44,8 @@ struct IRCMessage {
 		std::string userId;
 		std::string userType;
 		bool isVIP = false;
+		bool joinedChannel = false;
+		bool leftChannel = false;
 	} properties;
 
 	struct {
@@ -95,6 +97,7 @@ private:
 	void Authenticate();
 	void JoinChannel(const std::string &);
 	void HandleJoin(const IRCMessage &);
+	void HandlePart(const IRCMessage &);
 	void HandleNewMessage(const IRCMessage &);
 	void HandleWhisper(const IRCMessage &);
 	void HandleNotice(const IRCMessage &) const;
