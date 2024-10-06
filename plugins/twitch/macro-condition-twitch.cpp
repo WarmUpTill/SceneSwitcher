@@ -121,6 +121,10 @@ const static std::map<MacroConditionTwitch::Condition, std::string> conditionTyp
 	 "AdvSceneSwitcher.condition.twitch.type.polling.channel.category"},
 	{MacroConditionTwitch::Condition::CHAT_MESSAGE_RECEIVED,
 	 "AdvSceneSwitcher.condition.twitch.type.chat.message"},
+	{MacroConditionTwitch::Condition::CHAT_USER_JOINED,
+	 "AdvSceneSwitcher.condition.twitch.type.chat.userJoined"},
+	{MacroConditionTwitch::Condition::CHAT_USER_LEFT,
+	 "AdvSceneSwitcher.condition.twitch.type.chat.userLeft"},
 };
 
 const static std::map<MacroConditionTwitch::Condition, std::string> eventIdentifiers = {
@@ -385,6 +389,12 @@ bool MacroConditionTwitch::CheckChatMessages(TwitchToken &token)
 			continue;
 		}
 
+		// Join and leave message don't have any message data
+		if (message->properties.leftChannel ||
+		    message->properties.joinedChannel) {
+			continue;
+		}
+
 		if (!_chatMessagePattern.Matches(*message)) {
 			continue;
 		}
@@ -434,6 +444,41 @@ bool MacroConditionTwitch::CheckChatMessages(TwitchToken &token)
 				message->properties.isTurbo ? "true" : "false");
 		SetTempVarValue("is_vip",
 				message->properties.isVIP ? "true" : "false");
+
+		if (_clearBufferOnMatch) {
+			_eventBuffer->Clear();
+		}
+		return true;
+	}
+	return false;
+}
+
+bool MacroConditionTwitch::CheckChatUserJoinOrLeave(TwitchToken &token)
+{
+	if (!_chatConnection) {
+		_chatConnection = TwitchChatConnection::GetChatConnection(
+			token, _channel);
+		if (!_chatConnection) {
+			return false;
+		}
+		_chatBuffer = _chatConnection->RegisterForMessages();
+		return false;
+	}
+
+	while (!_chatBuffer->Empty()) {
+		auto message = _chatBuffer->ConsumeMessage();
+		if (!message) {
+			continue;
+		}
+
+		if ((_condition == Condition::CHAT_USER_JOINED &&
+		     !message->properties.joinedChannel) ||
+		    (_condition == Condition::CHAT_USER_LEFT &&
+		     !message->properties.leftChannel)) {
+			continue;
+		}
+
+		SetTempVarValue("user_login", message->source.nick);
 
 		if (_clearBufferOnMatch) {
 			_eventBuffer->Clear();
@@ -625,6 +670,14 @@ bool MacroConditionTwitch::CheckCondition()
 		}
 		return CheckChatMessages(*token);
 	}
+	case Condition::CHAT_USER_JOINED:
+	case Condition::CHAT_USER_LEFT: {
+		auto token = _token.lock();
+		if (!token) {
+			return false;
+		}
+		return CheckChatUserJoinOrLeave(*token);
+	}
 	default:
 		break;
 	}
@@ -772,6 +825,10 @@ bool MacroConditionTwitch::ConditionIsSupportedByToken()
 			{Condition::TITLE_POLLING, {}},
 			{Condition::CATEGORY_POLLING, {}},
 			{Condition::CHAT_MESSAGE_RECEIVED,
+			 {{"chat:read"}, {"chat:edit"}}},
+			{Condition::CHAT_USER_JOINED,
+			 {{"chat:read"}, {"chat:edit"}}},
+			{Condition::CHAT_USER_LEFT,
 			 {{"chat:read"}, {"chat:edit"}}},
 		};
 
@@ -967,6 +1024,8 @@ void MacroConditionTwitch::SetupTempVars()
 	};
 
 	if (_condition != Condition::CHAT_MESSAGE_RECEIVED &&
+	    _condition != Condition::CHAT_USER_JOINED &&
+	    _condition != Condition::CHAT_USER_LEFT &&
 	    _condition != Condition::RAID_INBOUND_EVENT &&
 	    _condition != Condition::RAID_OUTBOUND_EVENT) {
 		setupTempVarHelper("broadcaster_user_id");
@@ -1303,6 +1362,12 @@ void MacroConditionTwitch::SetupTempVars()
 		setupTempVarHelper("is_turbo", ".chatReceive");
 		setupTempVarHelper("is_vip", ".chatReceive");
 		break;
+	case Condition::CHAT_USER_JOINED:
+		setupTempVarHelper("user_login", ".chatJoin");
+		break;
+	case Condition::CHAT_USER_LEFT:
+		setupTempVarHelper("user_login", ".chatLeave");
+		break;
 	default:
 		break;
 	}
@@ -1546,7 +1611,11 @@ void MacroConditionTwitchEdit::SetWidgetVisibility()
 	_clearBufferOnMatch->setVisible(
 		_entryData->IsUsingEventSubCondition() ||
 		_entryData->GetCondition() ==
-			MacroConditionTwitch::Condition::CHAT_MESSAGE_RECEIVED);
+			MacroConditionTwitch::Condition::CHAT_MESSAGE_RECEIVED ||
+		_entryData->GetCondition() ==
+			MacroConditionTwitch::Condition::CHAT_USER_JOINED ||
+		_entryData->GetCondition() ==
+			MacroConditionTwitch::Condition::CHAT_USER_LEFT);
 
 	if (condition == MacroConditionTwitch::Condition::TITLE_POLLING) {
 		RemoveStretchIfPresent(_layout);

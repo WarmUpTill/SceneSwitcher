@@ -74,6 +74,8 @@ public:
 
 		// Chat
 		CHAT_MESSAGE_RECEIVED = 500000,
+		CHAT_USER_JOINED = 500100,
+		CHAT_USER_LEFT = 500200,
 
 		// Polling
 		LIVE_POLLING = 1000000,
@@ -110,6 +112,7 @@ private:
 	bool CheckChannelGenericEvents();
 	bool CheckChannelLiveEvents();
 	bool CheckChatMessages(TwitchToken &token);
+	bool CheckChatUserJoinOrLeave(TwitchToken &token);
 
 	void RegisterEventSubscription();
 	void ResetSubscription();

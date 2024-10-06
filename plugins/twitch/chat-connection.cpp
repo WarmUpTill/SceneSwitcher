@@ -181,8 +181,6 @@ static void parseCommand(const std::string &rawCommandComponent,
 		return;
 	} else if (message.command.command == "PING" ||
 		   message.command.command == "001" ||
-		   message.command.command == "JOIN" ||
-		   message.command.command == "PART" ||
 		   message.command.command == "NOTICE" ||
 		   message.command.command == "CLEARCHAT" ||
 		   message.command.command == "HOSTTARGET" ||
@@ -190,6 +188,18 @@ static void parseCommand(const std::string &rawCommandComponent,
 		if (commandParts.size() < 2) {
 			return;
 		}
+		message.command.parameters = commandParts[1];
+	} else if (message.command.command == "JOIN") {
+		if (commandParts.size() < 2) {
+			return;
+		}
+		message.properties.joinedChannel = true;
+		message.command.parameters = commandParts[1];
+	} else if (message.command.command == "PART") {
+		if (commandParts.size() < 2) {
+			return;
+		}
+		message.properties.leftChannel = true;
 		message.command.parameters = commandParts[1];
 	} else if (message.command.command == "GLOBALUSERSTATE" ||
 		   message.command.command == "USERSTATE" ||
@@ -504,10 +514,32 @@ void TwitchChatConnection::JoinChannel(const std::string &channelName)
 	Send("JOIN #" + channelName);
 }
 
+static bool nickMatchesTokenUser(const std::string &nick, TwitchToken &token)
+{
+	auto tokenUserName = token.GetName();
+	std::transform(tokenUserName.begin(), tokenUserName.end(),
+		       tokenUserName.begin(),
+		       [](unsigned char c) { return std::tolower(c); });
+	return nick == tokenUserName;
+}
+
 void TwitchChatConnection::HandleJoin(const IRCMessage &message)
 {
+	if (!nickMatchesTokenUser(message.source.nick, _token)) {
+		_messageDispatcher.DispatchMessage(message);
+		return;
+	}
 	_joinedChannelName = std::get<std::string>(message.command.parameters);
 	vblog(LOG_INFO, "Twitch chat join was successful!");
+}
+
+void TwitchChatConnection::HandlePart(const IRCMessage &message)
+{
+	if (!nickMatchesTokenUser(message.source.nick, _token)) {
+		_messageDispatcher.DispatchMessage(message);
+		return;
+	}
+	vblog(LOG_INFO, "Left Twitch chat!");
 }
 
 void TwitchChatConnection::HandleNewMessage(const IRCMessage &message)
@@ -571,7 +603,8 @@ void TwitchChatConnection::OnMessage(
 {
 	static constexpr std::string_view authOKCommand = "001";
 	static constexpr std::string_view pingCommand = "PING";
-	static constexpr std::string_view joinOKCommand = "JOIN";
+	static constexpr std::string_view joinCommand = "JOIN";
+	static constexpr std::string_view partCommand = "PART";
 	static constexpr std::string_view noticeCommand = "NOTICE";
 	static constexpr std::string_view reconnectCommand = "RECONNECT";
 	static constexpr std::string_view newMessageCommand = "PRIVMSG";
@@ -596,8 +629,10 @@ void TwitchChatConnection::OnMessage(
 		} else if (message.command.command == pingCommand) {
 			Send("PONG " +
 			     std::get<std::string>(message.command.parameters));
-		} else if (message.command.command == joinOKCommand) {
+		} else if (message.command.command == joinCommand) {
 			HandleJoin(message);
+		} else if (message.command.command == partCommand) {
+			HandlePart(message);
 		} else if (message.command.command == newMessageCommand) {
 			HandleNewMessage(message);
 		} else if (message.command.command == whisperCommand) {
