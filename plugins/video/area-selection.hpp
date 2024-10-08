@@ -2,7 +2,6 @@
 #include <variable-spinbox.hpp>
 
 #include <QWidget>
-#include <QSpinBox>
 #include <obs-data.h>
 #include <opencv2/opencv.hpp>
 
