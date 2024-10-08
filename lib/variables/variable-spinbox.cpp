@@ -101,7 +101,7 @@ void GenericVaraiableSpinbox::setSuffix(const QString &suffix)
 	_fixedValueDouble->setSuffix(suffix);
 }
 
-void GenericVaraiableSpinbox::specialValueText(const QString &text)
+void GenericVaraiableSpinbox::setSpecialValueText(const QString &text)
 {
 	_fixedValueInt->setSpecialValueText(text);
 	_fixedValueDouble->setSpecialValueText(text);
