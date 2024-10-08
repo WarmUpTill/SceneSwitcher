@@ -2,7 +2,6 @@
 #include "macro-action-edit.hpp"
 #include "duration-control.hpp"
 
-#include <QDoubleSpinBox>
 #include <QHBoxLayout>
 
 namespace advss {

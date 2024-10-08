@@ -3,8 +3,6 @@
 #include "scene-selection.hpp"
 #include "scene-item-selection.hpp"
 
-#include <QSpinBox>
-
 namespace advss {
 
 class MacroActionSceneVisibility : public MacroAction {

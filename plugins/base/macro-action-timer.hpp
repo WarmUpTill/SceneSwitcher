@@ -3,7 +3,6 @@
 #include "duration-control.hpp"
 #include "macro-selection.hpp"
 
-#include <QDoubleSpinBox>
 #include <QHBoxLayout>
 
 namespace advss {

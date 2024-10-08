@@ -3,7 +3,6 @@
 #include "striped-frame.hpp"
 #include "variable-spinbox.hpp"
 
-#include <QSpinBox>
 #include <QComboBox>
 #include <QPushButton>
 #include <QTimer>

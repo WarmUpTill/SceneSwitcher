@@ -6,7 +6,6 @@
 #include "transform-setting.hpp"
 #include "variable-text-edit.hpp"
 
-#include <QSpinBox>
 #include <QCheckBox>
 
 namespace advss {

@@ -3,7 +3,6 @@
 #include "file-selection.hpp"
 
 #include <obs.hpp>
-#include <QDoubleSpinBox>
 #include <QLabel>
 
 namespace advss {

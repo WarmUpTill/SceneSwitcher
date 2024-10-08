@@ -3,8 +3,6 @@
 #include "file-selection.hpp"
 #include "variable-text-edit.hpp"
 
-#include <QSpinBox>
-
 namespace advss {
 
 class MacroActionFile : public MacroAction {

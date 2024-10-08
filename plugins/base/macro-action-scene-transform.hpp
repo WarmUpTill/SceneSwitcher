@@ -6,8 +6,6 @@
 #include "variable-text-edit.hpp"
 #include "variable-spinbox.hpp"
 
-#include <QSpinBox>
-
 namespace advss {
 
 class MacroActionSceneTransform : public MacroAction {
