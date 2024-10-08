@@ -5,7 +5,6 @@
 #include "source-selection.hpp"
 #include "source-setting.hpp"
 
-#include <QSpinBox>
 #include <QLabel>
 #include <QPushButton>
 #include <QComboBox>

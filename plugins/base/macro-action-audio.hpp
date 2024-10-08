@@ -4,8 +4,6 @@
 #include "slider-spinbox.hpp"
 #include "source-selection.hpp"
 
-#include <QSpinBox>
-#include <QDoubleSpinBox>
 #include <QCheckBox>
 #include <QHBoxLayout>
 
