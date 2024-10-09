@@ -68,7 +68,7 @@
             <x>0</x>
             <y>0</y>
             <width>962</width>
-            <height>1040</height>
+            <height>1057</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -148,7 +148,7 @@
                       <item>
                        <widget class="QLabel" name="checkIntervalTooLowWarning">
                         <property name="text">
-                         <string></string>
+                         <string/>
                         </property>
                        </widget>
                       </item>
@@ -596,6 +596,9 @@
                   <property name="themeID" stdset="0">
                    <string notr="true">upArrowIconSmall</string>
                   </property>
+                  <property name="class" stdset="0">
+                   <string notr="true">icon-up</string>
+                  </property>
                  </widget>
                 </item>
                 <item>
@@ -606,6 +609,9 @@
                   </property>
                   <property name="themeID" stdset="0">
                    <string notr="true">downArrowIconSmall</string>
+                  </property>
+                  <property name="class" stdset="0">
+                   <string notr="true">icon-down</string>
                   </property>
                  </widget>
                 </item>
@@ -746,6 +752,9 @@
                <property name="themeID" stdset="0">
                 <string notr="true">addIconSmall</string>
                </property>
+               <property name="class" stdset="0">
+                <string notr="true">icon-plus</string>
+               </property>
               </widget>
              </item>
              <item>
@@ -755,6 +764,9 @@
                </property>
                <property name="themeID" stdset="0">
                 <string notr="true">removeIconSmall</string>
+               </property>
+               <property name="class" stdset="0">
+                <string notr="true">icon-trash</string>
                </property>
               </widget>
              </item>
@@ -766,6 +778,9 @@
                <property name="themeID" stdset="0">
                 <string notr="true">upArrowIconSmall</string>
                </property>
+               <property name="class" stdset="0">
+                <string notr="true">icon-up</string>
+               </property>
               </widget>
              </item>
              <item>
@@ -775,6 +790,9 @@
                </property>
                <property name="themeID" stdset="0">
                 <string notr="true">downArrowIconSmall</string>
+               </property>
+               <property name="class" stdset="0">
+                <string notr="true">icon-down</string>
                </property>
               </widget>
              </item>
@@ -880,6 +898,9 @@
                <property name="themeID" stdset="0">
                 <string notr="true">propertiesIconSmall</string>
                </property>
+               <property name="class" stdset="0">
+                <string notr="true">icon-gear</string>
+               </property>
               </widget>
              </item>
             </layout>
@@ -926,6 +947,9 @@
                    <property name="themeID" stdset="0">
                     <string notr="true">addIconSmall</string>
                    </property>
+                   <property name="class" stdset="0">
+                    <string notr="true">icon-plus</string>
+                   </property>
                   </widget>
                  </item>
                  <item>
@@ -935,6 +959,9 @@
                    </property>
                    <property name="themeID" stdset="0">
                     <string notr="true">removeIconSmall</string>
+                   </property>
+                   <property name="class" stdset="0">
+                    <string notr="true">icon-trash</string>
                    </property>
                   </widget>
                  </item>
@@ -956,6 +983,9 @@
                    <property name="themeID" stdset="0">
                     <string notr="true">upArrowIconSmall</string>
                    </property>
+                   <property name="class" stdset="0">
+                    <string notr="true">icon-up</string>
+                   </property>
                   </widget>
                  </item>
                  <item>
@@ -965,6 +995,9 @@
                    </property>
                    <property name="themeID" stdset="0">
                     <string notr="true">downArrowIconSmall</string>
+                   </property>
+                   <property name="class" stdset="0">
+                    <string notr="true">icon-down</string>
                    </property>
                   </widget>
                  </item>
@@ -1020,6 +1053,9 @@
                     <property name="themeID" stdset="0">
                      <string notr="true">addIconSmall</string>
                     </property>
+                    <property name="class" stdset="0">
+                     <string notr="true">icon-plus</string>
+                    </property>
                    </widget>
                   </item>
                   <item>
@@ -1029,6 +1065,9 @@
                     </property>
                     <property name="themeID" stdset="0">
                      <string notr="true">removeIconSmall</string>
+                    </property>
+                    <property name="class" stdset="0">
+                     <string notr="true">icon-trash</string>
                     </property>
                    </widget>
                   </item>
@@ -1047,6 +1086,9 @@
                     <property name="themeID" stdset="0">
                      <string notr="true">upArrowIconSmall</string>
                     </property>
+                    <property name="class" stdset="0">
+                     <string notr="true">icon-up</string>
+                    </property>
                    </widget>
                   </item>
                   <item>
@@ -1056,6 +1098,9 @@
                     </property>
                     <property name="themeID" stdset="0">
                      <string notr="true">downArrowIconSmall</string>
+                    </property>
+                    <property name="class" stdset="0">
+                     <string notr="true">icon-down</string>
                     </property>
                    </widget>
                   </item>
@@ -1130,6 +1175,9 @@
                     <property name="themeID" stdset="0">
                      <string notr="true">addIconSmall</string>
                     </property>
+                    <property name="class" stdset="0">
+                     <string notr="true">icon-plus</string>
+                    </property>
                    </widget>
                   </item>
                   <item>
@@ -1139,6 +1187,9 @@
                     </property>
                     <property name="themeID" stdset="0">
                      <string notr="true">removeIconSmall</string>
+                    </property>
+                    <property name="class" stdset="0">
+                     <string notr="true">icon-trash</string>
                     </property>
                    </widget>
                   </item>
@@ -1157,6 +1208,9 @@
                     <property name="themeID" stdset="0">
                      <string notr="true">upArrowIconSmall</string>
                     </property>
+                    <property name="class" stdset="0">
+                     <string notr="true">icon-up</string>
+                    </property>
                    </widget>
                   </item>
                   <item>
@@ -1166,6 +1220,9 @@
                     </property>
                     <property name="themeID" stdset="0">
                      <string notr="true">downArrowIconSmall</string>
+                    </property>
+                    <property name="class" stdset="0">
+                     <string notr="true">icon-down</string>
                     </property>
                    </widget>
                   </item>
@@ -1245,6 +1302,9 @@
               <property name="themeID" stdset="0">
                <string notr="true">addIconSmall</string>
               </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-plus</string>
+              </property>
              </widget>
             </item>
             <item>
@@ -1260,6 +1320,9 @@
               </property>
               <property name="themeID" stdset="0">
                <string notr="true">removeIconSmall</string>
+              </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-trash</string>
               </property>
              </widget>
             </item>
@@ -1319,6 +1382,9 @@
               <property name="themeID" stdset="0">
                <string>upArrowIconSmall</string>
               </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-up</string>
+              </property>
              </widget>
             </item>
             <item>
@@ -1337,6 +1403,9 @@
               </property>
               <property name="themeID" stdset="0">
                <string>downArrowIconSmall</string>
+              </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-down</string>
               </property>
              </widget>
             </item>
@@ -1457,6 +1526,9 @@
               <property name="themeID" stdset="0">
                <string notr="true">addIconSmall</string>
               </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-plus</string>
+              </property>
              </widget>
             </item>
             <item>
@@ -1472,6 +1544,9 @@
               </property>
               <property name="themeID" stdset="0">
                <string notr="true">removeIconSmall</string>
+              </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-trash</string>
               </property>
              </widget>
             </item>
@@ -1531,6 +1606,9 @@
               <property name="themeID" stdset="0">
                <string>upArrowIconSmall</string>
               </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-up</string>
+              </property>
              </widget>
             </item>
             <item>
@@ -1549,6 +1627,9 @@
               </property>
               <property name="themeID" stdset="0">
                <string>downArrowIconSmall</string>
+              </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-down</string>
               </property>
              </widget>
             </item>
@@ -1632,6 +1713,9 @@
               <property name="themeID" stdset="0">
                <string notr="true">addIconSmall</string>
               </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-plus</string>
+              </property>
              </widget>
             </item>
             <item>
@@ -1647,6 +1731,9 @@
               </property>
               <property name="themeID" stdset="0">
                <string notr="true">removeIconSmall</string>
+              </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-trash</string>
               </property>
              </widget>
             </item>
@@ -1706,6 +1793,9 @@
               <property name="themeID" stdset="0">
                <string>upArrowIconSmall</string>
               </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-up</string>
+              </property>
              </widget>
             </item>
             <item>
@@ -1724,6 +1814,9 @@
               </property>
               <property name="themeID" stdset="0">
                <string>downArrowIconSmall</string>
+              </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-down</string>
               </property>
              </widget>
             </item>
@@ -1800,6 +1893,9 @@
               <property name="themeID" stdset="0">
                <string notr="true">addIconSmall</string>
               </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-plus</string>
+              </property>
              </widget>
             </item>
             <item>
@@ -1815,6 +1911,9 @@
               </property>
               <property name="themeID" stdset="0">
                <string notr="true">removeIconSmall</string>
+              </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-trash</string>
               </property>
              </widget>
             </item>
@@ -1874,6 +1973,9 @@
               <property name="themeID" stdset="0">
                <string>upArrowIconSmall</string>
               </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-up</string>
+              </property>
              </widget>
             </item>
             <item>
@@ -1892,6 +1994,9 @@
               </property>
               <property name="themeID" stdset="0">
                <string>downArrowIconSmall</string>
+              </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-down</string>
               </property>
              </widget>
             </item>
@@ -1969,6 +2074,9 @@
            <property name="themeID" stdset="0">
             <string notr="true">addIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-plus</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -1984,6 +2092,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">removeIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-trash</string>
            </property>
           </widget>
          </item>
@@ -2043,6 +2154,9 @@
            <property name="themeID" stdset="0">
             <string>upArrowIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-up</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -2061,6 +2175,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string>downArrowIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-down</string>
            </property>
           </widget>
          </item>
@@ -2151,6 +2268,9 @@
            <property name="themeID" stdset="0">
             <string notr="true">addIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-plus</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -2166,6 +2286,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">removeIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-trash</string>
            </property>
           </widget>
          </item>
@@ -2225,6 +2348,9 @@
            <property name="themeID" stdset="0">
             <string>upArrowIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-up</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -2243,6 +2369,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string>downArrowIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-down</string>
            </property>
           </widget>
          </item>
@@ -2367,6 +2496,9 @@
            <property name="themeID" stdset="0">
             <string notr="true">addIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-plus</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -2382,6 +2514,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">removeIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-trash</string>
            </property>
           </widget>
          </item>
@@ -2453,6 +2588,9 @@
            <property name="themeID" stdset="0">
             <string notr="true">addIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-plus</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -2468,6 +2606,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">removeIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-trash</string>
            </property>
           </widget>
          </item>
@@ -2527,6 +2668,9 @@
            <property name="themeID" stdset="0">
             <string>upArrowIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-up</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -2545,6 +2689,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string>downArrowIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-down</string>
            </property>
           </widget>
          </item>
@@ -2694,6 +2841,9 @@
            <property name="themeID" stdset="0">
             <string notr="true">addIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-plus</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -2709,6 +2859,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">removeIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-trash</string>
            </property>
           </widget>
          </item>
@@ -2768,6 +2921,9 @@
            <property name="themeID" stdset="0">
             <string>upArrowIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-up</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -2786,6 +2942,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string>downArrowIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-down</string>
            </property>
           </widget>
          </item>
@@ -2854,6 +3013,9 @@
            <property name="themeID" stdset="0">
             <string notr="true">addIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-plus</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -2869,6 +3031,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">removeIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-trash</string>
            </property>
           </widget>
          </item>
@@ -2928,6 +3093,9 @@
            <property name="themeID" stdset="0">
             <string>upArrowIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-up</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -2946,6 +3114,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string>downArrowIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-down</string>
            </property>
           </widget>
          </item>
@@ -3127,6 +3298,9 @@
               <property name="themeID" stdset="0">
                <string notr="true">addIconSmall</string>
               </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-plus</string>
+              </property>
              </widget>
             </item>
             <item>
@@ -3142,6 +3316,9 @@
               </property>
               <property name="themeID" stdset="0">
                <string notr="true">removeIconSmall</string>
+              </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-trash</string>
               </property>
              </widget>
             </item>
@@ -3201,6 +3378,9 @@
               <property name="themeID" stdset="0">
                <string>upArrowIconSmall</string>
               </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-up</string>
+              </property>
              </widget>
             </item>
             <item>
@@ -3219,6 +3399,9 @@
               </property>
               <property name="themeID" stdset="0">
                <string>downArrowIconSmall</string>
+              </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-down</string>
               </property>
              </widget>
             </item>
@@ -3300,6 +3483,9 @@
            <property name="themeID" stdset="0">
             <string notr="true">addIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-plus</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -3315,6 +3501,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">removeIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-trash</string>
            </property>
           </widget>
          </item>
@@ -3383,6 +3572,9 @@
            <property name="themeID" stdset="0">
             <string notr="true">addIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-plus</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -3398,6 +3590,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">removeIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-trash</string>
            </property>
           </widget>
          </item>
@@ -3457,6 +3652,9 @@
            <property name="themeID" stdset="0">
             <string>upArrowIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-up</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -3475,6 +3673,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string>downArrowIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-down</string>
            </property>
           </widget>
          </item>
@@ -3580,6 +3781,9 @@
            <property name="themeID" stdset="0">
             <string notr="true">addIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-plus</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -3595,6 +3799,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">removeIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-trash</string>
            </property>
           </widget>
          </item>
@@ -3673,6 +3880,9 @@
            <property name="themeID" stdset="0">
             <string notr="true">addIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-plus</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -3688,6 +3898,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">removeIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-trash</string>
            </property>
           </widget>
          </item>
@@ -3747,6 +3960,9 @@
            <property name="themeID" stdset="0">
             <string>upArrowIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-up</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -3765,6 +3981,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string>downArrowIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-down</string>
            </property>
           </widget>
          </item>
@@ -3887,6 +4106,9 @@
               <property name="themeID" stdset="0">
                <string notr="true">addIconSmall</string>
               </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-plus</string>
+              </property>
              </widget>
             </item>
             <item>
@@ -3902,6 +4124,9 @@
               </property>
               <property name="themeID" stdset="0">
                <string notr="true">removeIconSmall</string>
+              </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-trash</string>
               </property>
              </widget>
             </item>
@@ -3961,6 +4186,9 @@
               <property name="themeID" stdset="0">
                <string>upArrowIconSmall</string>
               </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-up</string>
+              </property>
              </widget>
             </item>
             <item>
@@ -3979,6 +4207,9 @@
               </property>
               <property name="themeID" stdset="0">
                <string>downArrowIconSmall</string>
+              </property>
+              <property name="class" stdset="0">
+               <string notr="true">icon-down</string>
               </property>
              </widget>
             </item>
@@ -4071,6 +4302,9 @@
            <property name="themeID" stdset="0">
             <string notr="true">addIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-plus</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -4086,6 +4320,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">removeIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-trash</string>
            </property>
           </widget>
          </item>
@@ -4145,6 +4382,9 @@
            <property name="themeID" stdset="0">
             <string>upArrowIconSmall</string>
            </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-up</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -4163,6 +4403,9 @@
            </property>
            <property name="themeID" stdset="0">
             <string>downArrowIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-down</string>
            </property>
           </widget>
          </item>

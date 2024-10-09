@@ -14,29 +14,32 @@ ListControls::ListControls(QWidget *parent, bool reorder) : QToolBar(parent)
 
 	setIconSize({16, 16});
 
-	AddActionHelper("addIconSmall", "AdvSceneSwitcher.listControls.add",
+	AddActionHelper("addIconSmall", "icon-plus",
+			"AdvSceneSwitcher.listControls.add",
 			[this]() { Add(); });
-	AddActionHelper("removeIconSmall",
+	AddActionHelper("removeIconSmall", "icon-trash",
 			"AdvSceneSwitcher.listControls.remove",
 			[this]() { Remove(); });
 
 	if (reorder) {
 		addSeparator();
-		AddActionHelper("upArrowIconSmall",
+		AddActionHelper("upArrowIconSmall", "icon-up",
 				"AdvSceneSwitcher.listControls.up",
 				[this]() { Up(); });
-		AddActionHelper("downArrowIconSmall",
+		AddActionHelper("downArrowIconSmall", "icon-down",
 				"AdvSceneSwitcher.listControls.down",
 				[this]() { Down(); });
 	}
 }
 
-void ListControls::AddActionHelper(const char *theme, const char *tooltip,
+void ListControls::AddActionHelper(const char *theme, const char *className,
+				   const char *tooltip,
 				   const std::function<void()> &signal)
 {
 	auto button = new QToolButton(this);
 	button->setToolTip(obs_module_text(tooltip));
 	button->setProperty("themeID", QVariant(QString(theme)));
+	button->setProperty("class", QVariant(QString(className)));
 	(void)addWidget(button);
 	button->connect(button, &QToolButton::clicked, this, signal);
 }

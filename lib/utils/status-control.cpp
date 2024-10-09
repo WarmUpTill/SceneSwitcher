@@ -197,6 +197,7 @@ StatusDockWidget::StatusDockWidget(QWidget *parent) : QFrame(parent)
 
 	auto action = new QAction;
 	action->setProperty("themeID", QVariant(QString::fromUtf8("cogsIcon")));
+	action->setProperty("class", QVariant(QString::fromUtf8("icon-cogs")));
 	action->connect(action, &QAction::triggered, OpenSettingsWindow);
 	const auto path = QString::fromStdString(GetDataFilePath(
 		"res/images/" + GetThemeTypeName() + "Advanced.svg"));
