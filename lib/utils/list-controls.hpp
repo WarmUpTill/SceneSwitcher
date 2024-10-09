@@ -18,7 +18,8 @@ signals:
 	void Down();
 
 private:
-	void AddActionHelper(const char *theme, const char *tooltip,
+	void AddActionHelper(const char *theme, const char *className,
+			     const char *tooltip,
 			     const std::function<void()> &signal);
 };
 

@@ -21,10 +21,13 @@ ResourceTable::ResourceTable(QTabWidget *parent, const QString &help,
 {
 	_add->setProperty("themeID",
 			  QVariant(QString::fromUtf8("addIconSmall")));
+	_add->setProperty("class", QVariant(QString::fromUtf8("icon-plus")));
 	_add->setToolTip(addToolTip);
 
 	_remove->setProperty("themeID",
 			     QVariant(QString::fromUtf8("removeIconSmall")));
+	_remove->setProperty("class",
+			     QVariant(QString::fromUtf8("icon-trash")));
 	_remove->setToolTip(removeToolTip);
 
 	_help->setWordWrap(true);

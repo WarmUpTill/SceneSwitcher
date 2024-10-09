@@ -585,6 +585,8 @@ SequenceWidget::SequenceWidget(QWidget *parent, SceneSequenceSwitch *s,
 			    QVariant(QStringLiteral("addIconSmall")));
 	reduce->setProperty("themeID",
 			    QVariant(QStringLiteral("removeIconSmall")));
+	extend->setProperty("class", QVariant(QStringLiteral("icon-plus")));
+	reduce->setProperty("class", QVariant(QStringLiteral("icon-trash")));
 
 	extend->setMaximumSize(22, 22);
 	reduce->setMaximumSize(22, 22);
