@@ -21,7 +21,7 @@ MacroSegmentSelection::MacroSegmentSelection(QWidget *parent, Type type,
 {
 	_index->setMinimum(0);
 	_index->setMaximum(99);
-	_index->specialValueText("-");
+	_index->setSpecialValueText("-");
 	if (!allowVariables) {
 		_index->DisableVariableSelection();
 	}

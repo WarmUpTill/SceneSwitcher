@@ -782,11 +782,11 @@ MidiMessageSelection::MidiMessageSelection(QWidget *parent)
 					  "Note.svg");
 	SetButtonIcon(_noteValueStringToggle, path.c_str());
 
-	_channel->specialValueText(
+	_channel->setSpecialValueText(
 		obs_module_text("AdvSceneSwitcher.midi.message.placeholder"));
-	_noteValue->specialValueText(
+	_noteValue->setSpecialValueText(
 		obs_module_text("AdvSceneSwitcher.midi.message.placeholder"));
-	_value->specialValueText(
+	_value->setSpecialValueText(
 		obs_module_text("AdvSceneSwitcher.midi.message.placeholder"));
 
 	_channel->setMinimum(MidiMessage::optionalChannelIndicator);

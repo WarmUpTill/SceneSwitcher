@@ -478,7 +478,7 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 	_volumeDB->setMinimum(-100);
 	_volumeDB->setMaximum(0);
 	_volumeDB->setSuffix("dB");
-	_volumeDB->specialValueText("-inf");
+	_volumeDB->setSpecialValueText("-inf");
 
 	_syncOffset->setMinimum(-950);
 	_syncOffset->setMaximum(20000);

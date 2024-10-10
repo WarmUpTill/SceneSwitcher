@@ -7,7 +7,6 @@
 #include "source-setting.hpp"
 
 #include <QComboBox>
-#include <QSpinBox>
 #include <QPushButton>
 
 namespace advss {

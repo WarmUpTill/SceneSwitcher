@@ -3,7 +3,6 @@
 #include "variable-spinbox.hpp"
 #include "variable-line-edit.hpp"
 
-#include <QDoubleSpinBox>
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <chrono>

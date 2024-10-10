@@ -5,7 +5,6 @@
 
 #include <QComboBox>
 #include <QCheckBox>
-#include <QSpinBox>
 #include <QHBoxLayout>
 
 namespace advss {
