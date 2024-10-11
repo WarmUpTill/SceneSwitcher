@@ -105,16 +105,20 @@ MacroActionVariable::~MacroActionVariable()
 void MacroActionVariable::HandleIndexSubString(Variable *var)
 {
 	const auto curValue = var->Value();
+	const auto subStringSize = _subStringSize.GetValue();
+	const auto subStringStart = _subStringStart.GetValue() - 1;
+
 	try {
-		if (_subStringSize == 0) {
-			var->SetValue(curValue.substr(_subStringStart));
+		if (subStringSize == 0) {
+			var->SetValue(curValue.substr(subStringStart));
 			return;
 		}
-		var->SetValue(curValue.substr(_subStringStart, _subStringSize));
+
+		var->SetValue(curValue.substr(subStringStart, subStringSize));
 	} catch (const std::out_of_range &) {
 		vblog(LOG_WARNING,
 		      "invalid start index \"%d\" selected for substring of \"%s\" of variable \"%s\"",
-		      _subStringStart, curValue.c_str(), var->Name().c_str());
+		      subStringStart, curValue.c_str(), var->Name().c_str());
 	}
 }
 
@@ -127,7 +131,8 @@ void MacroActionVariable::HandleRegexSubString(Variable *var)
 	}
 
 	auto it = regex.globalMatch(QString::fromStdString(curValue));
-	for (int idx = 0; idx < _regexMatchIdx; idx++) {
+	const auto regexMatchIndex = _regexMatchIdx.GetValue() - 1;
+	for (int idx = 0; idx < regexMatchIndex; idx++) {
 		if (!it.hasNext()) {
 			return;
 		}
@@ -324,10 +329,10 @@ bool MacroActionVariable::PerformAction()
 		break;
 	}
 	case Type::INCREMENT:
-		modifyNumValue(*var, _numValue, true);
+		modifyNumValue(*var, _numValue.GetValue(), true);
 		break;
 	case Type::DECREMENT:
-		modifyNumValue(*var, _numValue, false);
+		modifyNumValue(*var, _numValue.GetValue(), false);
 		break;
 	case Type::SET_CONDITION_VALUE:
 	case Type::SET_ACTION_VALUE: {
@@ -473,13 +478,13 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	obs_data_set_string(obj, "variable2Name",
 			    GetWeakVariableName(_variable2).c_str());
 	_strValue.Save(obj, "strValue");
-	obs_data_set_double(obj, "numValue", _numValue);
+	_numValue.Save(obj, "numValue");
 	obs_data_set_int(obj, "condition", static_cast<int>(_type));
 	obs_data_set_int(obj, "segmentIdx", GetSegmentIndexValue());
-	obs_data_set_int(obj, "subStringStart", _subStringStart);
-	obs_data_set_int(obj, "subStringSize", _subStringSize);
+	_subStringStart.Save(obj, "subStringStart");
+	_subStringSize.Save(obj, "subStringSize");
 	obs_data_set_string(obj, "regexPattern", _regexPattern.c_str());
-	obs_data_set_int(obj, "regexMatchIdx", _regexMatchIdx);
+	_regexMatchIdx.Save(obj, "regexMatchIdx");
 	_findRegex.Save(obj, "findRegex");
 	_findStr.Save(obj, "findStr");
 	_replaceStr.Save(obj, "replaceStr");
@@ -498,6 +503,8 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "paddingChar", _paddingChar);
 	obs_data_set_int(obj, "caseType", static_cast<int>(_caseType));
 
+	obs_data_set_int(obj, "version", 1);
+
 	return true;
 }
 
@@ -509,14 +516,10 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_variable2 = GetWeakVariableByName(
 		obs_data_get_string(obj, "variable2Name"));
 	_strValue.Load(obj, "strValue");
-	_numValue = obs_data_get_double(obj, "numValue");
 	_type = static_cast<Type>(obs_data_get_int(obj, "condition"));
 	_segmentIdxLoadValue = obs_data_get_int(obj, "segmentIdx");
-	_subStringStart = obs_data_get_int(obj, "subStringStart");
-	_subStringSize = obs_data_get_int(obj, "subStringSize");
 	_subStringRegex.Load(obj);
 	_regexPattern = obs_data_get_string(obj, "regexPattern");
-	_regexMatchIdx = obs_data_get_int(obj, "regexMatchIdx");
 	_findRegex.Load(obj, "findRegex");
 	_findStr.Load(obj, "findStr");
 	_replaceStr.Load(obj, "replaceStr");
@@ -537,6 +540,20 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 		_paddingChar = ' ';
 	}
 	_caseType = static_cast<CaseType>(obs_data_get_int(obj, "caseType"));
+
+	// Convert old data format
+	// TODO: Remove in future version
+	if (!obs_data_has_user_value(obj, "version")) {
+		_numValue = obs_data_get_double(obj, "numValue");
+		_subStringStart = obs_data_get_int(obj, "subStringStart") + 1;
+		_subStringSize = obs_data_get_int(obj, "subStringSize");
+		_regexMatchIdx = obs_data_get_int(obj, "regexMatchIdx") + 1;
+	} else {
+		_numValue.Load(obj, "numValue");
+		_subStringStart.Load(obj, "subStringStart");
+		_subStringSize.Load(obj, "subStringSize");
+		_regexMatchIdx.Load(obj, "regexMatchIdx");
+	}
 
 	return true;
 }
@@ -681,7 +698,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _variables2(new VariableSelection(this)),
 	  _actions(new FilterComboBox(this)),
 	  _strValue(new VariableTextEdit(this, 5, 1, 1)),
-	  _numValue(new QDoubleSpinBox()),
+	  _numValue(new VariableDoubleSpinBox(this)),
 	  _segmentIdx(new MacroSegmentSelection(
 		  this, MacroSegmentSelection::Type::CONDITION, false)),
 	  _segmentValueStatus(new QLabel()),
@@ -689,11 +706,11 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _substringLayout(new QVBoxLayout()),
 	  _subStringIndexEntryLayout(new QHBoxLayout()),
 	  _subStringRegexEntryLayout(new QHBoxLayout()),
-	  _subStringStart(new QSpinBox()),
-	  _subStringSize(new QSpinBox()),
+	  _subStringStart(new VariableSpinBox(this)),
+	  _subStringSize(new VariableSpinBox(this)),
 	  _substringRegex(new RegexConfigWidget(parent)),
 	  _regexPattern(new ResizingPlainTextEdit(this, 10, 1, 1)),
-	  _regexMatchIdx(new QSpinBox()),
+	  _regexMatchIdx(new VariableSpinBox(this)),
 	  _findReplaceLayout(new QHBoxLayout()),
 	  _findRegex(new RegexConfigWidget()),
 	  _findStr(new VariableTextEdit(this, 10, 1, 1)),
@@ -712,9 +729,9 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _tempVars(new TempVariableSelection(this)),
 	  _tempVarsHelp(new HelpIcon(obs_module_text(
 		  "AdvSceneSwitcher.action.variable.type.setToTempvar.help"))),
-	  _sceneItemIndex(new VariableSpinBox()),
+	  _sceneItemIndex(new VariableSpinBox(this)),
 	  _direction(new QComboBox()),
-	  _stringLength(new VariableSpinBox()),
+	  _stringLength(new VariableSpinBox(this)),
 	  _paddingCharSelection(new SingleCharSelection()),
 	  _caseType(new FilterComboBox(this)),
 	  _entryLayout(new QHBoxLayout())
@@ -751,24 +768,32 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 SLOT(ActionChanged(int)));
 	QWidget::connect(_strValue, SIGNAL(textChanged()), this,
 			 SLOT(StrValueChanged()));
-	QWidget::connect(_numValue, SIGNAL(valueChanged(double)), this,
-			 SLOT(NumValueChanged(double)));
+	QWidget::connect(
+		_numValue,
+		SIGNAL(NumberVariableChanged(const NumberVariable<double> &)),
+		this, SLOT(NumValueChanged(const NumberVariable<double> &)));
 	QWidget::connect(_segmentIdx,
 			 SIGNAL(SelectionChanged(const IntVariable &)), this,
 			 SLOT(SegmentIndexChanged(const IntVariable &)));
 	QWidget::connect(window(), SIGNAL(MacroSegmentOrderChanged()), this,
 			 SLOT(MacroSegmentOrderChanged()));
-	QWidget::connect(_subStringStart, SIGNAL(valueChanged(int)), this,
-			 SLOT(SubStringStartChanged(int)));
-	QWidget::connect(_subStringSize, SIGNAL(valueChanged(int)), this,
-			 SLOT(SubStringSizeChanged(int)));
+	QWidget::connect(
+		_subStringStart,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(SubStringStartChanged(const NumberVariable<int> &)));
+	QWidget::connect(
+		_subStringSize,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(SubStringSizeChanged(const NumberVariable<int> &)));
 	QWidget::connect(_substringRegex,
 			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
 			 SLOT(SubStringRegexChanged(const RegexConfig &)));
 	QWidget::connect(_regexPattern, SIGNAL(textChanged()), this,
 			 SLOT(RegexPatternChanged()));
-	QWidget::connect(_regexMatchIdx, SIGNAL(valueChanged(int)), this,
-			 SLOT(RegexMatchIdxChanged(int)));
+	QWidget::connect(
+		_regexMatchIdx,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(RegexMatchIdxChanged(const NumberVariable<int> &)));
 	QWidget::connect(_findRegex,
 			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
 			 SLOT(FindRegexChanged(const RegexConfig &)));
@@ -906,7 +931,7 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_actions->setCurrentIndex(
 		_actions->findData(static_cast<int>(_entryData->_type)));
 	_strValue->setPlainText(_entryData->_strValue);
-	_numValue->setValue(_entryData->_numValue);
+	_numValue->SetValue(_entryData->_numValue);
 	_segmentIdx->SetValue(_entryData->GetSegmentIndexValue() + 1);
 	_segmentIdx->SetMacro(_entryData->GetMacro());
 	_segmentIdx->SetType(
@@ -914,13 +939,13 @@ void MacroActionVariableEdit::UpdateEntryData()
 				MacroActionVariable::Type::SET_CONDITION_VALUE
 			? MacroSegmentSelection::Type::CONDITION
 			: MacroSegmentSelection::Type::ACTION);
-	_subStringStart->setValue(_entryData->_subStringStart + 1);
-	_subStringSize->setValue(_entryData->_subStringSize);
+	_subStringStart->SetValue(_entryData->_subStringStart);
+	_subStringSize->SetValue(_entryData->_subStringSize);
 	_substringRegex->SetRegexConfig(_entryData->_subStringRegex);
 	_findRegex->SetRegexConfig(_entryData->_findRegex);
 	_regexPattern->setPlainText(
 		QString::fromStdString(_entryData->_regexPattern));
-	_regexMatchIdx->setValue(_entryData->_regexMatchIdx + 1);
+	_regexMatchIdx->SetValue(_entryData->_regexMatchIdx);
 	_findStr->setPlainText(_entryData->_findStr);
 	_replaceStr->setPlainText(_entryData->_replaceStr);
 	_mathExpression->setText(_entryData->_mathExpression);
@@ -995,14 +1020,15 @@ void MacroActionVariableEdit::StrValueChanged()
 	updateGeometry();
 }
 
-void MacroActionVariableEdit::NumValueChanged(double val)
+void MacroActionVariableEdit::NumValueChanged(
+	const NumberVariable<double> &value)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	auto lock = LockContext();
-	_entryData->_numValue = val;
+	_entryData->_numValue = value;
 }
 
 void MacroActionVariableEdit::SegmentIndexChanged(const IntVariable &val)
@@ -1113,24 +1139,26 @@ void MacroActionVariableEdit::MacroSegmentOrderChanged()
 	_segmentIdx->SetValue(_entryData->GetSegmentIndexValue() + 1);
 }
 
-void MacroActionVariableEdit::SubStringStartChanged(int val)
+void MacroActionVariableEdit::SubStringStartChanged(
+	const NumberVariable<int> &start)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	auto lock = LockContext();
-	_entryData->_subStringStart = val - 1;
+	_entryData->_subStringStart = start;
 }
 
-void MacroActionVariableEdit::SubStringSizeChanged(int val)
+void MacroActionVariableEdit::SubStringSizeChanged(
+	const NumberVariable<int> &size)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	auto lock = LockContext();
-	_entryData->_subStringSize = val;
+	_entryData->_subStringSize = size;
 }
 
 void MacroActionVariableEdit::SubStringRegexChanged(const RegexConfig &conf)
@@ -1157,14 +1185,15 @@ void MacroActionVariableEdit::RegexPatternChanged()
 	updateGeometry();
 }
 
-void MacroActionVariableEdit::RegexMatchIdxChanged(int val)
+void MacroActionVariableEdit::RegexMatchIdxChanged(
+	const NumberVariable<int> &index)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	auto lock = LockContext();
-	_entryData->_regexMatchIdx = val - 1;
+	_entryData->_regexMatchIdx = index;
 }
 
 void MacroActionVariableEdit::FindStrValueChanged()
