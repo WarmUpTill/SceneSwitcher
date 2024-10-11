@@ -23,7 +23,7 @@ public:
 	void setPrefix(const QString &prefix);
 	void setSuffix(const QString &suffix);
 
-	void specialValueText(const QString &text);
+	void setSpecialValueText(const QString &text);
 
 public slots:
 	void SetFixedValue(int);
