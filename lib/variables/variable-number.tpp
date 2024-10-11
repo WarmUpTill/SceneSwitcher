@@ -82,9 +82,10 @@ template<typename T> bool NumberVariable<T>::HasValidValue() const
 		auto value = var->IntValue();
 		return value.has_value();
 	} else if constexpr (std::is_same<T, double>::value) {
-		auto value = var->IntValue();
+		auto value = var->DoubleValue();
 		return value.has_value();
 	}
+
 	assert(false);
 	return false;
 }

@@ -461,7 +461,7 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	_volumeDB->setMinimum(-100);
 	_volumeDB->setMaximum(0);
 	_volumeDB->setSuffix("dB");
-	_volumeDB->specialValueText("-inf");
+	_volumeDB->setSpecialValueText("-inf");
 
 	_rate->setMinimum(0.01);
 	_rate->setMaximum(999.);
