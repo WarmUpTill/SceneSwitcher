@@ -76,7 +76,7 @@ protected:
 	std::shared_ptr<MacroActionStream> _entryData;
 
 private:
-	void SetWidgetVisiblity();
+	void SetWidgetVisibility();
 
 	QHBoxLayout *_layout;
 	bool _loading = true;

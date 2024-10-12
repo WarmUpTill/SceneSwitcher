@@ -53,7 +53,7 @@ private slots:
 	void DurationChanged(const Duration &);
 
 private:
-	void SetWidgetVisiblity();
+	void SetWidgetVisibility();
 
 	QComboBox *_actions;
 	QLabel *_warning;
