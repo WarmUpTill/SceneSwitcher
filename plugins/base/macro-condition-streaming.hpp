@@ -1,6 +1,9 @@
 #pragma once
 #include "macro-condition-edit.hpp"
 #include "variable-spinbox.hpp"
+#include "regex-config.hpp"
+#include "variable-string.hpp"
+#include "variable-line-edit.hpp"
 
 #include <QWidget>
 #include <QComboBox>
@@ -25,9 +28,12 @@ public:
 		STARTING,
 		STOPPING,
 		KEYFRAME_INTERVAL,
+		SERVICE,
 	};
 	Condition _condition = Condition::STOP;
 	NumberVariable<int> _keyFrameInterval = 0;
+	StringVariable _serviceName = "";
+	RegexConfig _regex;
 
 private:
 	void SetupTempVars();
@@ -59,15 +65,19 @@ public:
 private slots:
 	void StateChanged(int value);
 	void KeyFrameIntervalChanged(const NumberVariable<int> &);
-
-protected:
-	QComboBox *_streamState;
-	VariableSpinBox *_keyFrameInterval;
-	std::shared_ptr<MacroConditionStream> _entryData;
+	void ServiceNameChanged();
+	void RegexChanged(const RegexConfig &);
 
 private:
-	void SetWidgetVisiblity();
+	void SetWidgetVisibility();
 
+	QComboBox *_streamState;
+	VariableSpinBox *_keyFrameInterval;
+	VariableLineEdit *_serviceName;
+	QLabel *_currentService;
+	RegexConfigWidget *_regex;
+
+	std::shared_ptr<MacroConditionStream> _entryData;
 	bool _loading = true;
 };
 
