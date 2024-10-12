@@ -230,7 +230,7 @@ void MacroActionStreamEdit::UpdateEntryData()
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_keyFrameInterval->SetValue(_entryData->_keyFrameInterval);
 	_stringValue->setText(_entryData->_stringValue);
-	SetWidgetVisiblity();
+	SetWidgetVisibility();
 }
 
 void MacroActionStreamEdit::KeyFrameIntervalChanged(
@@ -252,7 +252,7 @@ void MacroActionStreamEdit::StringValueChanged()
 
 	auto lock = LockContext();
 	_entryData->_stringValue = _stringValue->text().toStdString();
-	SetWidgetVisiblity();
+	SetWidgetVisibility();
 }
 
 void MacroActionStreamEdit::ShowPassword()
@@ -267,7 +267,7 @@ void MacroActionStreamEdit::HidePassword()
 	_stringValue->setEchoMode(QLineEdit::PasswordEchoOnEdit);
 }
 
-void MacroActionStreamEdit::SetWidgetVisiblity()
+void MacroActionStreamEdit::SetWidgetVisibility()
 {
 	if (!_entryData) {
 		return;
@@ -310,7 +310,7 @@ void MacroActionStreamEdit::ActionChanged(int value)
 			static_cast<MacroActionStream::Action>(value);
 	}
 	_stringValue->setText(QString(""));
-	SetWidgetVisiblity();
+	SetWidgetVisibility();
 }
 
 } // namespace advss

@@ -142,10 +142,10 @@ void MacroActionReplayBufferEdit::UpdateEntryData()
 	}
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_duration->SetDuration(_entryData->_duration);
-	SetWidgetVisiblity();
+	SetWidgetVisibility();
 }
 
-void MacroActionReplayBufferEdit::SetWidgetVisiblity()
+void MacroActionReplayBufferEdit::SetWidgetVisibility()
 {
 	_warning->setVisible(_entryData->_action ==
 			     MacroActionReplayBuffer::Action::SAVE);
@@ -169,7 +169,7 @@ void MacroActionReplayBufferEdit::ActionChanged(int value)
 	_entryData->_action =
 		static_cast<MacroActionReplayBuffer::Action>(value);
 
-	SetWidgetVisiblity();
+	SetWidgetVisibility();
 }
 
 void MacroActionReplayBufferEdit::DurationChanged(const Duration &duration)
