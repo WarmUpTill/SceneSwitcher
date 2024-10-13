@@ -51,7 +51,16 @@ protected:
 	virtual void SetupTempVars();
 	void AddTempvar(const std::string &id, const std::string &name,
 			const std::string &description = "");
+
 	void SetTempVarValue(const std::string &id, const std::string &value);
+
+	template<typename T, typename = std::enable_if_t<
+				     std::is_same<std::decay_t<T>, bool>::value>>
+	void SetTempVarValue(const std::string &id, T value)
+	{
+		SetTempVarValue(id, value ? std::string("true")
+					  : std::string("false"));
+	}
 
 private:
 	void ClearAvailableTempvars();
