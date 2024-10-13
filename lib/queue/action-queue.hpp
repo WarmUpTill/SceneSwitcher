@@ -2,11 +2,12 @@
 #include "item-selection-helpers.hpp"
 #include "macro-action.hpp"
 
+#include <chrono>
+#include <condition_variable>
 #include <deque>
 #include <obs-data.h>
 #include <QCheckBox>
 #include <thread>
-#include <condition_variable>
 
 namespace advss {
 
@@ -14,6 +15,8 @@ class ActionQueueSelection;
 class ActionQueueSettingsDialog;
 
 class ActionQueue : public Item {
+	using TimePoint = std::chrono::high_resolution_clock::time_point;
+
 public:
 	ActionQueue();
 	~ActionQueue();
@@ -30,6 +33,7 @@ public:
 
 	void Clear();
 	bool IsEmpty();
+	TimePoint GetLastEmptyTime();
 
 	void Add(const std::shared_ptr<MacroAction> &);
 	size_t Size();
@@ -44,6 +48,7 @@ private:
 	std::condition_variable _cv;
 	std::thread _thread;
 	std::deque<std::shared_ptr<MacroAction>> _actions;
+	TimePoint _lastEmpty;
 
 	friend ActionQueueSelection;
 	friend ActionQueueSettingsDialog;
