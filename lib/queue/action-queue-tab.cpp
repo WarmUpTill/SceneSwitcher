@@ -5,6 +5,7 @@
 #include "plugin-state-helpers.hpp"
 #include "sync-helpers.hpp"
 #include "tab-helpers.hpp"
+#include "time-helpers.hpp"
 #include "ui-helpers.hpp"
 
 #include <QTimer>
@@ -55,6 +56,13 @@ void ActionQueueTable::Add()
 		QString::fromStdString(newQueue->Name()));
 }
 
+static double getSecondsSinceLastEmpty(ActionQueue *queue)
+{
+	const auto time = std::chrono::high_resolution_clock::now() -
+			  queue->GetLastEmptyTime();
+	return std::chrono::duration_cast<std::chrono::seconds>(time).count();
+}
+
 static QStringList getCellLabels(ActionQueue *queue, bool addName = true)
 {
 	assert(queue);
@@ -64,6 +72,7 @@ static QStringList getCellLabels(ActionQueue *queue, bool addName = true)
 		result << QString::fromStdString(queue->Name());
 	}
 	result << QString::number(queue->Size())
+	       << FormatRelativeTime(getSecondsSinceLastEmpty(queue))
 	       << QString::fromStdString(obs_module_text(
 			  queue->IsRunning()
 				  ? "AdvSceneSwitcher.actionQueueTab.yes"
@@ -199,6 +208,8 @@ ActionQueueTable::ActionQueueTable(QTabWidget *parent)
 				     "AdvSceneSwitcher.actionQueueTab.name.header")
 			  << obs_module_text(
 				     "AdvSceneSwitcher.actionQueueTab.size.header")
+			  << obs_module_text(
+				     "AdvSceneSwitcher.actionQueueTab.lastEmpty.header")
 			  << obs_module_text(
 				     "AdvSceneSwitcher.actionQueueTab.isRunning.header")
 			  << obs_module_text(

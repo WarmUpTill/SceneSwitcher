@@ -52,6 +52,7 @@ protected:
 	void AddTempvar(const std::string &id, const std::string &name,
 			const std::string &description = "");
 	void SetTempVarValue(const std::string &id, const std::string &value);
+	void SetTempVarValue(const std::string &id, bool value);
 
 private:
 	void ClearAvailableTempvars();
