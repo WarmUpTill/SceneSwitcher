@@ -155,7 +155,7 @@ void MacroSegment::SetTempVarValue(const std::string &id,
 
 void MacroSegment::SetTempVarValue(const std::string &id, bool value)
 {
-	SetTempVarValue(id, value ? "true" : "false");
+	SetTempVarValue(id, value ? std::string("true") : std::string("false"));
 }
 
 void MacroSegment::InvalidateTempVarValues()
