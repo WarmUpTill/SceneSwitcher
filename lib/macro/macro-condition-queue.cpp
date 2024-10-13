@@ -27,6 +27,9 @@ bool MacroConditionQueue::CheckCondition()
 		return false;
 	}
 
+	SetTempVarValue("size", std::to_string(queue->Size()));
+	SetTempVarValue("running", queue->IsRunning());
+
 	switch (_condition) {
 	case Condition::STARTED:
 		return queue->IsRunning();
@@ -61,6 +64,18 @@ bool MacroConditionQueue::Load(obs_data_t *obj)
 std::string MacroConditionQueue::GetShortDesc() const
 {
 	return GetActionQueueName(_queue);
+}
+
+void MacroConditionQueue::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+	AddTempvar("size",
+		   obs_module_text("AdvSceneSwitcher.tempVar.queue.size"));
+	AddTempvar(
+		"running",
+		obs_module_text("AdvSceneSwitcher.tempVar.queue.running"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.queue.running.description"));
 }
 
 static inline void populateQueueTypeSelection(QComboBox *list)
