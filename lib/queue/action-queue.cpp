@@ -26,7 +26,10 @@ void SetupActionQueues()
 	done = true;
 }
 
-ActionQueue::ActionQueue() : Item() {}
+ActionQueue::ActionQueue() : Item()
+{
+	_lastEmpty = std::chrono::high_resolution_clock::now();
+}
 
 ActionQueue::~ActionQueue()
 {
@@ -124,6 +127,14 @@ bool ActionQueue::IsEmpty()
 	return _actions.empty();
 }
 
+ActionQueue::TimePoint ActionQueue::GetLastEmptyTime()
+{
+	if (IsEmpty()) {
+		_lastEmpty = std::chrono::high_resolution_clock::now();
+	}
+	return _lastEmpty;
+}
+
 size_t ActionQueue::Size()
 {
 	std::lock_guard<std::mutex> lock(_mutex);
@@ -137,6 +148,8 @@ void ActionQueue::RunActions()
 		{ // Grab next action to run
 			std::unique_lock<std::mutex> lock(_mutex);
 			while (_actions.empty() && !_stop) {
+				_lastEmpty =
+					std::chrono::high_resolution_clock::now();
 				_cv.wait(lock);
 			}
 
