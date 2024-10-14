@@ -10,17 +10,21 @@ bool MacroActionSceneOrder::_registered = MacroActionFactory::Register(
 	{MacroActionSceneOrder::Create, MacroActionSceneOrderEdit::Create,
 	 "AdvSceneSwitcher.action.sceneOrder"});
 
-const static std::map<SceneOrderAction, std::string> actionTypes = {
-	{SceneOrderAction::MOVE_UP,
+const static std::map<MacroActionSceneOrder::Action, std::string> actionTypes = {
+	{MacroActionSceneOrder::Action::MOVE_UP,
 	 "AdvSceneSwitcher.action.sceneOrder.type.moveUp"},
-	{SceneOrderAction::MOVE_DOWN,
+	{MacroActionSceneOrder::Action::MOVE_DOWN,
 	 "AdvSceneSwitcher.action.sceneOrder.type.moveDown"},
-	{SceneOrderAction::MOVE_TOP,
+	{MacroActionSceneOrder::Action::MOVE_TOP,
 	 "AdvSceneSwitcher.action.sceneOrder.type.moveTop"},
-	{SceneOrderAction::MOVE_BOTTOM,
+	{MacroActionSceneOrder::Action::MOVE_BOTTOM,
 	 "AdvSceneSwitcher.action.sceneOrder.type.moveBottom"},
-	{SceneOrderAction::POSITION,
+	{MacroActionSceneOrder::Action::POSITION,
 	 "AdvSceneSwitcher.action.sceneOrder.type.movePosition"},
+	{MacroActionSceneOrder::Action::ABOVE,
+	 "AdvSceneSwitcher.action.sceneOrder.type.above"},
+	{MacroActionSceneOrder::Action::BELOW,
+	 "AdvSceneSwitcher.action.sceneOrder.type.below"},
 };
 
 static void moveSceneItemsUp(std::vector<OBSSceneItem> &items)
@@ -66,26 +70,128 @@ static void moveSceneItemsPos(std::vector<OBSSceneItem> &items, int pos)
 	}
 }
 
+namespace {
+
+struct PositionData {
+	obs_scene_item *item = nullptr;
+	bool found = false;
+	int position = 0;
+};
+
+} // namespace
+
+static bool getSceneItemPositionHelper(obs_scene_t *, obs_sceneitem_t *item,
+				       void *data)
+{
+	auto positionData = reinterpret_cast<PositionData *>(data);
+	if (obs_sceneitem_is_group(item)) {
+		obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
+		obs_scene_enum_items(scene, getSceneItemPositionHelper, data);
+	}
+	if (positionData->item == item) {
+		positionData->found = true;
+		return false;
+	}
+
+	positionData->position += 1;
+	return true;
+}
+
+static std::optional<int> getSceneItemPosition(const OBSSceneItem &item,
+					       const SceneSelection &scene)
+{
+	auto sceneSource = OBSGetStrongRef(scene.GetScene());
+	auto obsScene = obs_scene_from_source(sceneSource);
+	PositionData data{item};
+	obs_scene_enum_items(obsScene, getSceneItemPositionHelper, &data);
+
+	if (!data.found) {
+		return {};
+	}
+
+	return data.position;
+}
+
+static void moveItemFromToHelper(MacroActionSceneOrder::Action action,
+				 const OBSSceneItem &itemToMove,
+				 int currentPosition, int targetPosition)
+{
+	if (action == MacroActionSceneOrder::Action::ABOVE) {
+		if (currentPosition > targetPosition) {
+			obs_sceneitem_set_order_position(itemToMove,
+							 targetPosition + 1);
+		} else {
+			obs_sceneitem_set_order_position(itemToMove,
+							 targetPosition);
+		}
+	} else if (action == MacroActionSceneOrder::Action::BELOW) {
+		if (currentPosition > targetPosition) {
+			obs_sceneitem_set_order_position(itemToMove,
+							 targetPosition);
+		} else {
+			obs_sceneitem_set_order_position(itemToMove,
+							 targetPosition - 1);
+		}
+	}
+}
+
+static void moveItemToItemHelper(MacroActionSceneOrder::Action action,
+				 const std::vector<OBSSceneItem> &itemsToMove,
+				 const SceneItemSelection &target,
+				 const SceneSelection &scene)
+{
+	auto targetItems = target.GetSceneItems(scene);
+	if (targetItems.empty()) {
+		return;
+	}
+
+	auto targetItem = targetItems.at(0);
+
+	for (const auto &item : itemsToMove) {
+		if (item == targetItem) {
+			continue;
+		}
+
+		auto targetPosition = getSceneItemPosition(targetItem, scene);
+		if (!targetPosition) {
+			continue;
+		}
+
+		auto currentPosition = getSceneItemPosition(item, scene);
+		if (!currentPosition) {
+			continue;
+		}
+
+		moveItemFromToHelper(action, item, *currentPosition,
+				     *targetPosition);
+	}
+}
+
 bool MacroActionSceneOrder::PerformAction()
 {
 	auto items = _source.GetSceneItems(_scene);
 
 	switch (_action) {
-	case SceneOrderAction::MOVE_UP:
+	case Action::MOVE_UP:
 		moveSceneItemsUp(items);
 		break;
-	case SceneOrderAction::MOVE_DOWN:
+	case Action::MOVE_DOWN:
 		moveSceneItemsDown(items);
 		break;
-	case SceneOrderAction::MOVE_TOP:
+	case Action::MOVE_TOP:
 		moveSceneItemsTop(items);
 		break;
-	case SceneOrderAction::MOVE_BOTTOM:
+	case Action::MOVE_BOTTOM:
 		moveSceneItemsBottom(items);
 		break;
-	case SceneOrderAction::POSITION:
+	case Action::POSITION:
 		moveSceneItemsPos(items, _position);
 		break;
+	case Action::ABOVE:
+	case Action::BELOW: {
+		moveItemToItemHelper(_action, items, _source2, _scene);
+		break;
+	}
 	default:
 		break;
 	}
@@ -111,6 +217,7 @@ bool MacroActionSceneOrder::Save(obs_data_t *obj) const
 	MacroAction::Save(obj);
 	_scene.Save(obj);
 	_source.Save(obj);
+	_source2.Save(obj, "sceneItemSelection2");
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	obs_data_set_int(obj, "position", _position);
 	return true;
@@ -128,8 +235,8 @@ bool MacroActionSceneOrder::Load(obs_data_t *obj)
 	MacroAction::Load(obj);
 	_scene.Load(obj);
 	_source.Load(obj);
-	_action =
-		static_cast<SceneOrderAction>(obs_data_get_int(obj, "action"));
+	_source2.Load(obj, "sceneItemSelection2");
+	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
 	_position = obs_data_get_int(obj, "position");
 	return true;
 }
@@ -167,13 +274,13 @@ static inline void populateActionSelection(QComboBox *list)
 
 MacroActionSceneOrderEdit::MacroActionSceneOrderEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSceneOrder> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _scenes(new SceneSelectionWidget(this, true, false, false, true)),
+	  _sources(new SceneItemSelectionWidget(this)),
+	  _sources2(new SceneItemSelectionWidget(this)),
+	  _actions(new QComboBox(this)),
+	  _position(new QSpinBox(this))
 {
-	_scenes = new SceneSelectionWidget(window(), true, false, false, true);
-	_sources = new SceneItemSelectionWidget(parent);
-	_actions = new QComboBox();
-	_position = new QSpinBox();
-
 	populateActionSelection(_actions);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
@@ -182,23 +289,28 @@ MacroActionSceneOrderEdit::MacroActionSceneOrderEdit(
 			 this, SLOT(SceneChanged(const SceneSelection &)));
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 _sources, SLOT(SceneChanged(const SceneSelection &)));
+	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
+			 _sources2, SLOT(SceneChanged(const SceneSelection &)));
 	QWidget::connect(_sources,
 			 SIGNAL(SceneItemChanged(const SceneItemSelection &)),
 			 this, SLOT(SourceChanged(const SceneItemSelection &)));
+	QWidget::connect(_sources2,
+			 SIGNAL(SceneItemChanged(const SceneItemSelection &)),
+			 this,
+			 SLOT(Source2Changed(const SceneItemSelection &)));
 	QWidget::connect(_position, SIGNAL(valueChanged(int)), this,
 			 SLOT(PositionChanged(int)));
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{scenes}}", _scenes},
-		{"{{sources}}", _sources},
-		{"{{actions}}", _actions},
-		{"{{position}}", _position},
-	};
+	auto layout = new QHBoxLayout;
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.sceneOrder.entry"),
-		mainLayout, widgetPlaceholders);
-	setLayout(mainLayout);
+		layout,
+		{{"{{scenes}}", _scenes},
+		 {"{{sources}}", _sources},
+		 {"{{sources2}}", _sources2},
+		 {"{{actions}}", _actions},
+		 {"{{position}}", _position}});
+	setLayout(layout);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -214,28 +326,20 @@ void MacroActionSceneOrderEdit::UpdateEntryData()
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_scenes->SetScene(_entryData->_scene);
 	_sources->SetSceneItem(_entryData->_source);
+	_sources2->SetSceneItem(_entryData->_source2);
 	_position->setValue(_entryData->_position);
-	_position->setVisible(_entryData->_action ==
-			      SceneOrderAction::POSITION);
+	SetWidgetVisibility();
 }
 
 void MacroActionSceneOrderEdit::SceneChanged(const SceneSelection &s)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = s;
 }
 
 void MacroActionSceneOrderEdit::SourceChanged(const SceneItemSelection &item)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -243,26 +347,36 @@ void MacroActionSceneOrderEdit::SourceChanged(const SceneItemSelection &item)
 	updateGeometry();
 }
 
+void MacroActionSceneOrderEdit::Source2Changed(const SceneItemSelection &item)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_source2 = item;
+	adjustSize();
+	updateGeometry();
+}
+
 void MacroActionSceneOrderEdit::ActionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
-	_entryData->_action = static_cast<SceneOrderAction>(value);
-	_position->setVisible(_entryData->_action ==
-			      SceneOrderAction::POSITION);
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_action = static_cast<MacroActionSceneOrder::Action>(value);
+	SetWidgetVisibility();
 }
 
 void MacroActionSceneOrderEdit::PositionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_position = value;
+}
+
+void MacroActionSceneOrderEdit::SetWidgetVisibility()
+{
+	_position->setVisible(_entryData->_action ==
+			      MacroActionSceneOrder::Action::POSITION);
+	_sources2->setVisible(
+		_entryData->_action == MacroActionSceneOrder::Action::ABOVE ||
+		_entryData->_action == MacroActionSceneOrder::Action::BELOW);
+	adjustSize();
+	updateGeometry();
 }
 
 } // namespace advss
