@@ -7,14 +7,6 @@
 
 namespace advss {
 
-enum class SceneOrderAction {
-	MOVE_UP,
-	MOVE_DOWN,
-	MOVE_TOP,
-	MOVE_BOTTOM,
-	POSITION,
-};
-
 class MacroActionSceneOrder : public MacroAction {
 public:
 	MacroActionSceneOrder(Macro *m) : MacroAction(m) {}
@@ -30,7 +22,17 @@ public:
 
 	SceneSelection _scene;
 	SceneItemSelection _source;
-	SceneOrderAction _action = SceneOrderAction::MOVE_UP;
+	SceneItemSelection _source2;
+	enum class Action {
+		MOVE_UP,
+		MOVE_DOWN,
+		MOVE_TOP,
+		MOVE_BOTTOM,
+		POSITION,
+		ABOVE,
+		BELOW,
+	};
+	Action _action = Action::MOVE_UP;
 	int _position = 0;
 
 private:
@@ -58,20 +60,22 @@ public:
 private slots:
 	void SceneChanged(const SceneSelection &);
 	void SourceChanged(const SceneItemSelection &);
+	void Source2Changed(const SceneItemSelection &);
 	void ActionChanged(int value);
 	void PositionChanged(int value);
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	SceneSelectionWidget *_scenes;
 	SceneItemSelectionWidget *_sources;
+	SceneItemSelectionWidget *_sources2;
 	QComboBox *_actions;
 	QSpinBox *_position;
-	std::shared_ptr<MacroActionSceneOrder> _entryData;
 
-private:
-	QHBoxLayout *_mainLayout;
+	std::shared_ptr<MacroActionSceneOrder> _entryData;
 	bool _loading = true;
 };
 
