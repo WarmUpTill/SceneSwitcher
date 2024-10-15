@@ -131,8 +131,7 @@ bool MacroActionScreenshot::Load(obs_data_t *obj)
 	_targetType =
 		static_cast<TargetType>(obs_data_get_int(obj, "targetType"));
 	_path.Load(obj, "savePath");
-	_variable =
-		GetWeakVariableByName(obs_data_get_string(obj, "variableName"));
+	_variable = GetWeakVariableByName(obs_data_get_string(obj, "variable"));
 
 	// TODO: Remove fallback for older versions
 	if (!obs_data_has_user_value(obj, "version")) {
