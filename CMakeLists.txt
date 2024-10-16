@@ -295,9 +295,9 @@ include(cmake/common/advss_helpers.cmake)
 setup_obs_lib_dependency(${LIB_NAME})
 setup_obs_lib_dependency(${PROJECT_NAME})
 
-find_qt(COMPONENTS Widgets Core)
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt::Core Qt::Widgets)
-target_link_libraries(${LIB_NAME} PRIVATE Qt::Core Qt::Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Core)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Widgets)
+target_link_libraries(${LIB_NAME} PRIVATE Qt6::Core Qt6::Widgets)
 target_compile_options(
   ${PROJECT_NAME}
   PRIVATE

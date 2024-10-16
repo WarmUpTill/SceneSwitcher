@@ -283,8 +283,8 @@ endfunction()
 
 function(setup_advss_plugin target)
   setup_obs_lib_dependency(${target})
-  find_qt(COMPONENTS Widgets Core)
-  target_link_libraries(${target} PRIVATE Qt::Core Qt::Widgets)
+  find_package(Qt6 REQUIRED COMPONENTS Widgets Core)
+  target_link_libraries(${target} PRIVATE Qt6::Core Qt6::Widgets)
 
   set_target_properties(
     ${target}
