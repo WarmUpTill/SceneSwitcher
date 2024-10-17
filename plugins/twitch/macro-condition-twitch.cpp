@@ -446,7 +446,7 @@ bool MacroConditionTwitch::CheckChatMessages(TwitchToken &token)
 				message->properties.isVIP ? "true" : "false");
 
 		if (_clearBufferOnMatch) {
-			_eventBuffer->Clear();
+			_chatBuffer->Clear();
 		}
 		return true;
 	}
@@ -481,7 +481,7 @@ bool MacroConditionTwitch::CheckChatUserJoinOrLeave(TwitchToken &token)
 		SetTempVarValue("user_login", message->source.nick);
 
 		if (_clearBufferOnMatch) {
-			_eventBuffer->Clear();
+			_chatBuffer->Clear();
 		}
 		return true;
 	}
