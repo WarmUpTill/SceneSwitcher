@@ -304,11 +304,10 @@ bool MacroConditionTwitch::CheckChannelGenericEvents()
 			continue;
 		}
 		SetVariableValue(event->ToString());
-		setTempVarsHelper(
-			event->data,
-			std::bind(&MacroConditionTwitch::SetTempVarValue, this,
-				  std::placeholders::_1,
-				  std::placeholders::_2));
+		setTempVarsHelper(event->data,
+				  [this](const char *id, const char *value) {
+					  SetTempVarValue(id, value);
+				  });
 
 		if (_clearBufferOnMatch) {
 			_eventBuffer->Clear();
@@ -346,11 +345,10 @@ bool MacroConditionTwitch::CheckChannelLiveEvents()
 		}
 
 		SetVariableValue(event->ToString());
-		setTempVarsHelper(
-			event->data,
-			std::bind(&MacroConditionTwitch::SetTempVarValue, this,
-				  std::placeholders::_1,
-				  std::placeholders::_2));
+		setTempVarsHelper(event->data,
+				  [this](const char *id, const char *value) {
+					  SetTempVarValue(id, value);
+				  });
 
 		if (_clearBufferOnMatch) {
 			_eventBuffer->Clear();

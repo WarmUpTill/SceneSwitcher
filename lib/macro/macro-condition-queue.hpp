@@ -32,6 +32,8 @@ public:
 	IntVariable _size = 1;
 
 private:
+	void SetupTempVars();
+
 	static bool _registered;
 	static const std::string id;
 };
