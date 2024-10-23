@@ -15,8 +15,8 @@ bool MacroConditionStream::_registered = MacroConditionFactory::Register(
 	{MacroConditionStream::Create, MacroConditionStreamEdit::Create,
 	 "AdvSceneSwitcher.condition.stream"});
 
-const static std::map<MacroConditionStream::Condition, std::string>
-	streamStates = {
+const static std::map<MacroConditionStream::Condition, std::string> conditions =
+	{
 		{MacroConditionStream::Condition::STOP,
 		 "AdvSceneSwitcher.condition.stream.state.stop"},
 		{MacroConditionStream::Condition::START,
@@ -27,6 +27,8 @@ const static std::map<MacroConditionStream::Condition, std::string>
 		 "AdvSceneSwitcher.condition.stream.state.stopping"},
 		{MacroConditionStream::Condition::KEYFRAME_INTERVAL,
 		 "AdvSceneSwitcher.condition.stream.state.keyFrameInterval"},
+		{MacroConditionStream::Condition::STREAM_KEY,
+		 "AdvSceneSwitcher.condition.stream.state.streamKey"},
 		{MacroConditionStream::Condition::SERVICE,
 		 "AdvSceneSwitcher.condition.stream.state.service"},
 };
@@ -57,13 +59,28 @@ static bool setupStreamingEventHandler()
 	return true;
 }
 
-int MacroConditionStream::GetKeyFrameInterval() const
+static std::optional<std::string> getStreamKey()
+{
+	const auto configPath = GetPathInProfileDir("service.json");
+	OBSDataAutoRelease data =
+		obs_data_create_from_json_file_safe(configPath.c_str(), "bak");
+	if (!data) {
+		return {};
+	}
+	OBSDataAutoRelease settings = obs_data_get_obj(data, "settings");
+	if (!settings) {
+		return {};
+	}
+	return obs_data_get_string(settings, "key");
+}
+
+std::optional<int> getKeyFrameInterval()
 {
 	const auto configPath = GetPathInProfileDir("streamEncoder.json");
 	OBSDataAutoRelease settings =
 		obs_data_create_from_json_file_safe(configPath.c_str(), "bak");
 	if (!settings) {
-		return -1;
+		return {};
 	}
 	int ret = obs_data_get_int(settings, "keyint_sec");
 	return ret;
@@ -100,7 +117,8 @@ bool MacroConditionStream::CheckCondition()
 
 	bool streamStarting = streamStartTime != _lastStreamStartingTime;
 	bool streamStopping = streamStopTime != _lastStreamStoppingTime;
-	const int keyFrameInterval = GetKeyFrameInterval();
+	auto keyFrameInterval = getKeyFrameInterval();
+	auto streamKey = getStreamKey();
 	auto serviceName = getCurrentServiceName();
 
 	switch (_condition) {
@@ -117,7 +135,14 @@ bool MacroConditionStream::CheckCondition()
 		match = streamStopping;
 		break;
 	case Condition::KEYFRAME_INTERVAL:
-		match = keyFrameInterval == _keyFrameInterval;
+		if (keyFrameInterval) {
+			match = *keyFrameInterval == _keyFrameInterval;
+		}
+		break;
+	case Condition::STREAM_KEY:
+		if (streamKey) {
+			match = streamKey == std::string(_streamKey);
+		}
 		break;
 	case Condition::SERVICE:
 		if (_regex.Enabled()) {
@@ -143,8 +168,14 @@ bool MacroConditionStream::CheckCondition()
 		obs_frontend_streaming_active() ? seconds.count() : 0;
 	SetTempVarValue("durationSeconds",
 			std::to_string(streamDurationSeconds));
-	SetTempVarValue("keyframeInterval", std::to_string(keyFrameInterval));
 	SetTempVarValue("serviceName", serviceName);
+	if (keyFrameInterval) {
+		SetTempVarValue("keyframeInterval",
+				std::to_string(*keyFrameInterval));
+	}
+	if (streamKey) {
+		SetTempVarValue("streamKey", *streamKey);
+	}
 
 	return match;
 }
@@ -154,6 +185,7 @@ bool MacroConditionStream::Save(obs_data_t *obj) const
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "state", static_cast<int>(_condition));
 	_keyFrameInterval.Save(obj, "keyFrameInterval");
+	_streamKey.Save(obj, "streamKey");
 	_serviceName.Save(obj, "serviceName");
 	_regex.Save(obj);
 	return true;
@@ -164,6 +196,7 @@ bool MacroConditionStream::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	_condition = static_cast<Condition>(obs_data_get_int(obj, "state"));
 	_keyFrameInterval.Load(obj, "keyFrameInterval");
+	_streamKey.Load(obj, "streamKey");
 	_serviceName.Load(obj, "serviceName");
 	_regex.Load(obj);
 	return true;
@@ -178,6 +211,9 @@ void MacroConditionStream::SetupTempVars()
 			"AdvSceneSwitcher.tempVar.streaming.keyframeInterval"),
 		obs_module_text(
 			"AdvSceneSwitcher.tempVar.streaming.keyframeInterval.description"));
+	AddTempvar("streamKey",
+		   obs_module_text(
+			   "AdvSceneSwitcher.tempVar.streaming.streamKey"));
 	AddTempvar(
 		"durationSeconds",
 		obs_module_text(
@@ -192,18 +228,19 @@ void MacroConditionStream::SetupTempVars()
 			"AdvSceneSwitcher.tempVar.streaming.serviceName.description"));
 }
 
-static inline void populateStateSelection(QComboBox *list)
+static void populateConditionSelection(QComboBox *list)
 {
-	for (auto entry : streamStates) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : conditions) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 
 MacroConditionStreamEdit::MacroConditionStreamEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionStream> entryData)
 	: QWidget(parent),
-	  _streamState(new QComboBox()),
+	  _conditions(new QComboBox()),
 	  _keyFrameInterval(new VariableSpinBox()),
+	  _streamKey(new VariableLineEdit(this)),
 	  _serviceName(new VariableLineEdit(this)),
 	  _currentService(new AutoUpdateTooltipLabel(
 		  this,
@@ -225,10 +262,12 @@ MacroConditionStreamEdit::MacroConditionStreamEdit(
 	QPixmap pixmap = icon.pixmap(QSize(16, 16));
 	_currentService->setPixmap(pixmap);
 
-	populateStateSelection(_streamState);
+	_streamKey->setEchoMode(QLineEdit::PasswordEchoOnEdit);
 
-	QWidget::connect(_streamState, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(StateChanged(int)));
+	populateConditionSelection(_conditions);
+
+	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(ConditionChanged(int)));
 	QWidget::connect(
 		_keyFrameInterval,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
@@ -239,12 +278,15 @@ MacroConditionStreamEdit::MacroConditionStreamEdit(
 	QWidget::connect(_regex,
 			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
 			 SLOT(RegexChanged(const RegexConfig &)));
+	QWidget::connect(_streamKey, SIGNAL(editingFinished()), this,
+			 SLOT(StreamKeyChanged()));
 
 	auto layout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.stream.entry"),
 		     layout,
-		     {{"{{streamState}}", _streamState},
+		     {{"{{streamState}}", _conditions},
 		      {"{{keyFrameInterval}}", _keyFrameInterval},
+		      {"{{streamKey}}", _streamKey},
 		      {"{{serviceName}}", _serviceName},
 		      {"{{regex}}", _regex},
 		      {"{{currentService}}", _currentService}});
@@ -255,7 +297,7 @@ MacroConditionStreamEdit::MacroConditionStreamEdit(
 	_loading = false;
 }
 
-void MacroConditionStreamEdit::StateChanged(int value)
+void MacroConditionStreamEdit::ConditionChanged(int value)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_condition =
@@ -282,13 +324,22 @@ void MacroConditionStreamEdit::RegexChanged(const RegexConfig &regex)
 	_entryData->_regex = regex;
 }
 
+void MacroConditionStreamEdit::StreamKeyChanged()
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_streamKey = _streamKey->text().toStdString();
+}
+
 void MacroConditionStreamEdit::UpdateEntryData()
 {
 	if (!_entryData) {
 		return;
 	}
 
-	_streamState->setCurrentIndex(static_cast<int>(_entryData->_condition));
+	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
+	_streamKey->setText(_entryData->_streamKey);
+	_serviceName->setText(_entryData->_serviceName);
+	_regex->SetRegexConfig(_entryData->_regex);
 	_keyFrameInterval->SetValue(_entryData->_keyFrameInterval);
 	SetWidgetVisibility();
 }
@@ -301,6 +352,8 @@ void MacroConditionStreamEdit::SetWidgetVisibility()
 	_keyFrameInterval->setVisible(
 		_entryData->_condition ==
 		MacroConditionStream::Condition::KEYFRAME_INTERVAL);
+	_streamKey->setVisible(_entryData->_condition ==
+			       MacroConditionStream::Condition::STREAM_KEY);
 	const bool isCheckingStreamingService =
 		_entryData->_condition ==
 		MacroConditionStream::Condition::SERVICE;
