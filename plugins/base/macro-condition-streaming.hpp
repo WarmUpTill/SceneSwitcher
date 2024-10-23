@@ -28,16 +28,17 @@ public:
 		STARTING,
 		STOPPING,
 		KEYFRAME_INTERVAL,
+		STREAM_KEY,
 		SERVICE,
 	};
 	Condition _condition = Condition::STOP;
 	NumberVariable<int> _keyFrameInterval = 0;
+	StringVariable _streamKey;
 	StringVariable _serviceName = "";
 	RegexConfig _regex;
 
 private:
 	void SetupTempVars();
-	int GetKeyFrameInterval() const;
 
 	std::chrono::high_resolution_clock::time_point _lastStreamStartingTime{};
 	std::chrono::high_resolution_clock::time_point _lastStreamStoppingTime{};
@@ -63,16 +64,18 @@ public:
 	}
 
 private slots:
-	void StateChanged(int value);
+	void ConditionChanged(int value);
 	void KeyFrameIntervalChanged(const NumberVariable<int> &);
+	void StreamKeyChanged();
 	void ServiceNameChanged();
 	void RegexChanged(const RegexConfig &);
 
 private:
 	void SetWidgetVisibility();
 
-	QComboBox *_streamState;
+	QComboBox *_conditions;
 	VariableSpinBox *_keyFrameInterval;
+	VariableLineEdit *_streamKey;
 	VariableLineEdit *_serviceName;
 	QLabel *_currentService;
 	RegexConfigWidget *_regex;
