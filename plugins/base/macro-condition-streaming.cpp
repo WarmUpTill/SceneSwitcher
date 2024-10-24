@@ -3,6 +3,7 @@
 #include "layout-helpers.hpp"
 
 #include <obs-frontend-api.h>
+#include <obs.hpp>
 
 namespace advss {
 
@@ -13,8 +14,8 @@ bool MacroConditionStream::_registered = MacroConditionFactory::Register(
 	{MacroConditionStream::Create, MacroConditionStreamEdit::Create,
 	 "AdvSceneSwitcher.condition.stream"});
 
-const static std::map<MacroConditionStream::Condition, std::string>
-	streamStates = {
+const static std::map<MacroConditionStream::Condition, std::string> conditions =
+	{
 		{MacroConditionStream::Condition::STOP,
 		 "AdvSceneSwitcher.condition.stream.state.stop"},
 		{MacroConditionStream::Condition::START,
@@ -25,6 +26,8 @@ const static std::map<MacroConditionStream::Condition, std::string>
 		 "AdvSceneSwitcher.condition.stream.state.stopping"},
 		{MacroConditionStream::Condition::KEYFRAME_INTERVAL,
 		 "AdvSceneSwitcher.condition.stream.state.keyFrameInterval"},
+		{MacroConditionStream::Condition::STREAM_KEY,
+		 "AdvSceneSwitcher.condition.stream.state.streamKey"},
 };
 
 static bool setupStreamingEventHandler();
@@ -53,16 +56,30 @@ bool setupStreamingEventHandler()
 	return true;
 }
 
-int MacroConditionStream::GetKeyFrameInterval() const
+static std::optional<std::string> getStreamKey()
+{
+	const auto configPath = GetPathInProfileDir("service.json");
+	OBSDataAutoRelease data =
+		obs_data_create_from_json_file_safe(configPath.c_str(), "bak");
+	if (!data) {
+		return {};
+	}
+	OBSDataAutoRelease settings = obs_data_get_obj(data, "settings");
+	if (!settings) {
+		return {};
+	}
+	return obs_data_get_string(settings, "key");
+}
+
+std::optional<int> getKeyFrameInterval()
 {
 	const auto configPath = GetPathInProfileDir("streamEncoder.json");
-	obs_data_t *settings =
+	OBSDataAutoRelease settings =
 		obs_data_create_from_json_file_safe(configPath.c_str(), "bak");
 	if (!settings) {
-		return -1;
+		return {};
 	}
 	int ret = obs_data_get_int(settings, "keyint_sec");
-	obs_data_release(settings);
 	return ret;
 }
 
@@ -72,7 +89,8 @@ bool MacroConditionStream::CheckCondition()
 
 	bool streamStarting = streamStartTime != _lastStreamStartingTime;
 	bool streamStopping = streamStopTime != _lastStreamStoppingTime;
-	const int keyFrameInterval = GetKeyFrameInterval();
+	auto keyFrameInterval = getKeyFrameInterval();
+	auto streamKey = getStreamKey();
 
 	switch (_condition) {
 	case Condition::STOP:
@@ -88,7 +106,14 @@ bool MacroConditionStream::CheckCondition()
 		match = streamStopping;
 		break;
 	case Condition::KEYFRAME_INTERVAL:
-		match = keyFrameInterval == _keyFrameInterval;
+		if (keyFrameInterval) {
+			match = *keyFrameInterval == _keyFrameInterval;
+		}
+		break;
+	case Condition::STREAM_KEY:
+		if (streamKey) {
+			match = streamKey == std::string(_streamKey);
+		}
 		break;
 	default:
 		break;
@@ -107,7 +132,13 @@ bool MacroConditionStream::CheckCondition()
 		obs_frontend_streaming_active() ? seconds.count() : 0;
 	SetTempVarValue("durationSeconds",
 			std::to_string(streamDurationSeconds));
-	SetTempVarValue("keyframeInterval", std::to_string(keyFrameInterval));
+	if (keyFrameInterval) {
+		SetTempVarValue("keyframeInterval",
+				std::to_string(*keyFrameInterval));
+	}
+	if (streamKey) {
+		SetTempVarValue("streamKey", *streamKey);
+	}
 
 	return match;
 }
@@ -117,6 +148,7 @@ bool MacroConditionStream::Save(obs_data_t *obj) const
 	MacroCondition::Save(obj);
 	obs_data_set_int(obj, "state", static_cast<int>(_condition));
 	_keyFrameInterval.Save(obj, "keyFrameInterval");
+	_streamKey.Save(obj, "streamKey");
 	return true;
 }
 
@@ -125,6 +157,7 @@ bool MacroConditionStream::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	_condition = static_cast<Condition>(obs_data_get_int(obj, "state"));
 	_keyFrameInterval.Load(obj, "keyFrameInterval");
+	_streamKey.Load(obj, "streamKey");
 	return true;
 }
 
@@ -137,6 +170,9 @@ void MacroConditionStream::SetupTempVars()
 			"AdvSceneSwitcher.tempVar.streaming.keyframeInterval"),
 		obs_module_text(
 			"AdvSceneSwitcher.tempVar.streaming.keyframeInterval.description"));
+	AddTempvar("streamKey",
+		   obs_module_text(
+			   "AdvSceneSwitcher.tempVar.streaming.streamKey"));
 	AddTempvar(
 		"durationSeconds",
 		obs_module_text(
@@ -145,51 +181,53 @@ void MacroConditionStream::SetupTempVars()
 			"AdvSceneSwitcher.tempVar.streaming.durationSeconds.description"));
 }
 
-static inline void populateStateSelection(QComboBox *list)
+static void populateConditionSelection(QComboBox *list)
 {
-	for (auto entry : streamStates) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : conditions) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 
 MacroConditionStreamEdit::MacroConditionStreamEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionStream> entryData)
 	: QWidget(parent),
-	  _streamState(new QComboBox()),
-	  _keyFrameInterval(new VariableSpinBox())
+	  _conditions(new QComboBox(this)),
+	  _keyFrameInterval(new VariableSpinBox(this)),
+	  _streamKey(new VariableLineEdit(this))
 {
 	_keyFrameInterval->setMinimum(0);
 	_keyFrameInterval->setMaximum(25);
 
-	populateStateSelection(_streamState);
+	_streamKey->setEchoMode(QLineEdit::PasswordEchoOnEdit);
 
-	QWidget::connect(_streamState, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(StateChanged(int)));
+	populateConditionSelection(_conditions);
+
+	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(ConditionChanged(int)));
 	QWidget::connect(
 		_keyFrameInterval,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
 		this,
 		SLOT(KeyFrameIntervalChanged(const NumberVariable<int> &)));
+	QWidget::connect(_streamKey, SIGNAL(editingFinished()), this,
+			 SLOT(StreamKeyChanged()));
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
+	auto layout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.stream.entry"),
-		     mainLayout,
-		     {{"{{streamState}}", _streamState},
-		      {"{{keyFrameInterval}}", _keyFrameInterval}});
-	setLayout(mainLayout);
+		     layout,
+		     {{"{{streamState}}", _conditions},
+		      {"{{keyFrameInterval}}", _keyFrameInterval},
+		      {"{{streamKey}}", _streamKey}});
+	setLayout(layout);
 
 	_entryData = entryData;
 	UpdateEntryData();
 	_loading = false;
 }
 
-void MacroConditionStreamEdit::StateChanged(int value)
+void MacroConditionStreamEdit::ConditionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_condition =
 		static_cast<MacroConditionStream::Condition>(value);
 	SetWidgetVisiblity();
@@ -198,12 +236,14 @@ void MacroConditionStreamEdit::StateChanged(int value)
 void MacroConditionStreamEdit::KeyFrameIntervalChanged(
 	const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_keyFrameInterval = value;
+}
+
+void MacroConditionStreamEdit::StreamKeyChanged()
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_streamKey = _streamKey->text().toStdString();
 }
 
 void MacroConditionStreamEdit::UpdateEntryData()
@@ -212,8 +252,9 @@ void MacroConditionStreamEdit::UpdateEntryData()
 		return;
 	}
 
-	_streamState->setCurrentIndex(static_cast<int>(_entryData->_condition));
+	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_keyFrameInterval->SetValue(_entryData->_keyFrameInterval);
+	_streamKey->setText(_entryData->_streamKey);
 	SetWidgetVisiblity();
 }
 
@@ -225,6 +266,8 @@ void MacroConditionStreamEdit::SetWidgetVisiblity()
 	_keyFrameInterval->setVisible(
 		_entryData->_condition ==
 		MacroConditionStream::Condition::KEYFRAME_INTERVAL);
+	_streamKey->setVisible(_entryData->_condition ==
+			       MacroConditionStream::Condition::STREAM_KEY);
 }
 
 } // namespace advss
