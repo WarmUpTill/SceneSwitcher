@@ -1,4 +1,5 @@
 #pragma once
+#include "auto-update-tooltip-label.hpp"
 #include "filter-combo-box.hpp"
 
 #include <obs-data.h>
@@ -6,8 +7,6 @@
 #include <optional>
 #include <QEnterEvent>
 #include <QEvent>
-#include <QLabel>
-#include <QTimer>
 #include <QStringList>
 #include <string>
 
@@ -77,29 +76,6 @@ private:
 	std::weak_ptr<MacroSegment> _segment;
 	friend TempVariable;
 	friend TempVariableSelection;
-};
-
-class AutoUpdateTooltipLabel : public QLabel {
-	Q_OBJECT
-
-public:
-	AutoUpdateTooltipLabel(QWidget *parent,
-			       std::function<QString()> updateFunc);
-
-protected:
-#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
-	void enterEvent(QEnterEvent *event) override;
-#else
-	void enterEvent(QEvent *event) override;
-#endif
-	void leaveEvent(QEvent *event) override;
-
-private slots:
-	void UpdateTooltip();
-
-private:
-	std::function<QString()> _updateFunc;
-	QTimer *_timer;
 };
 
 class ADVSS_EXPORT TempVariableSelection : public QWidget {

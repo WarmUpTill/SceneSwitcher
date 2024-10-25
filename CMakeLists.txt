@@ -157,6 +157,8 @@ target_sources(
           lib/queue/action-queue.hpp
           lib/queue/action-queue-tab.cpp
           lib/queue/action-queue-tab.hpp
+          lib/utils/auto-update-tooltip-label.cpp
+          lib/utils/auto-update-tooltip-label.hpp
           lib/utils/backup.cpp
           lib/utils/backup.hpp
           lib/utils/condition-logic.cpp
