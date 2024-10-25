@@ -455,35 +455,4 @@ void NotifyUIAboutTempVarChange()
 		nullptr, false);
 }
 
-AutoUpdateTooltipLabel::AutoUpdateTooltipLabel(
-	QWidget *parent, std::function<QString()> updateFunc)
-	: QLabel(parent),
-	  _updateFunc(updateFunc),
-	  _timer(new QTimer(this))
-{
-	connect(_timer, &QTimer::timeout, this,
-		&AutoUpdateTooltipLabel::UpdateTooltip);
-}
-
-#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
-void AutoUpdateTooltipLabel::enterEvent(QEnterEvent *event)
-#else
-void AutoUpdateTooltipLabel::enterEvent(QEvent *event)
-#endif
-{
-	_timer->start(300);
-	QLabel::enterEvent(event);
-}
-
-void AutoUpdateTooltipLabel::leaveEvent(QEvent *event)
-{
-	_timer->stop();
-	QLabel::leaveEvent(event);
-}
-
-void AutoUpdateTooltipLabel::UpdateTooltip()
-{
-	setToolTip(_updateFunc());
-}
-
 } // namespace advss
