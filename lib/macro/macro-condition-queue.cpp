@@ -156,6 +156,7 @@ void MacroConditionQueueEdit::UpdateEntryData()
 	}
 	_conditions->setCurrentIndex(static_cast<int>(_entryData->_condition));
 	_queues->SetActionQueue(_entryData->_queue);
+	_size->SetValue(_entryData->_size);
 	SetWidgetVisibility();
 }
 
