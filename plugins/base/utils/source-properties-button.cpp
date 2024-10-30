@@ -29,20 +29,37 @@ std::string SourceSettingButton::ToString() const
 	return "[" + id + "] " + description;
 }
 
-std::vector<SourceSettingButton> GetSourceButtons(OBSWeakSource source)
+static void getSourceButtonsHelper(obs_properties_t *sourceProperties,
+				   std::vector<SourceSettingButton> &buttons)
 {
-	OBSSourceAutoRelease s = obs_weak_source_get_source(source);
-	std::vector<SourceSettingButton> buttons;
-	obs_properties_t *sourceProperties = obs_source_properties(s);
 	auto it = obs_properties_first(sourceProperties);
 	do {
-		if (!it || obs_property_get_type(it) != OBS_PROPERTY_BUTTON) {
+		if (!it) {
+			continue;
+		}
+
+		auto type = obs_property_get_type(it);
+		if (type == OBS_PROPERTY_GROUP) {
+			auto group = obs_property_group_content(it);
+			getSourceButtonsHelper(group, buttons);
+			continue;
+		}
+
+		if (obs_property_get_type(it) != OBS_PROPERTY_BUTTON) {
 			continue;
 		}
 		SourceSettingButton button = {obs_property_name(it),
 					      obs_property_description(it)};
 		buttons.emplace_back(button);
 	} while (obs_property_next(&it));
+}
+
+std::vector<SourceSettingButton> GetSourceButtons(OBSWeakSource source)
+{
+	OBSSourceAutoRelease s = obs_weak_source_get_source(source);
+	std::vector<SourceSettingButton> buttons;
+	auto sourceProperties = obs_source_properties(s);
+	getSourceButtonsHelper(sourceProperties, buttons);
 	obs_properties_destroy(sourceProperties);
 	return buttons;
 }
