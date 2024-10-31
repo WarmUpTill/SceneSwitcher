@@ -178,6 +178,7 @@ void MacroTreeItem::Update(bool force)
 				       QSizePolicy::Maximum);
 		_expand->setMaximumSize(10, 16);
 		_expand->setMinimumSize(10, 0);
+		_expand->setProperty("class", "checkbox-icon indicator-expand");
 #ifdef __APPLE__
 		_expand->setAttribute(Qt::WA_LayoutUsesWidgetRect);
 #endif
