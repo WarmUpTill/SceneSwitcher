@@ -109,6 +109,14 @@ bool MacroWasPausedSince(
 	return macro ? macro->WasPausedSince(time) : false;
 }
 
+bool MacroWasCheckedSinceLastStart(Macro *macro)
+{
+	return macro ? macro->LastConditionCheckTime()
+				       .time_since_epoch()
+				       .count() != 0
+		     : false;
+}
+
 void AddMacroHelperThread(Macro *macro, std::thread &&newThread)
 {
 	if (!macro) {
