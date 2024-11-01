@@ -176,15 +176,21 @@ bool MacroConditionDate::CheckRegularDate(int64_t msSinceLastCheck)
 
 bool MacroConditionDate::CheckCondition()
 {
-	auto m = GetMacro();
-	if (!m) {
+	auto macro = GetMacro();
+	if (!macro) {
 		return false;
 	}
-	const auto timePassed = std::chrono::high_resolution_clock::now() -
-				LastMacroConditionCheckTime(m);
+
+	const auto now = std::chrono::high_resolution_clock::now();
+	const auto lastCheck = LastMacroConditionCheckTime(macro);
+
+	const auto timePassed = now - lastCheck;
+
 	const auto msSinceLastCheck =
-		std::chrono::duration_cast<std::chrono::milliseconds>(
-			timePassed);
+		MacroWasCheckedSinceLastStart(macro)
+			? std::chrono::duration_cast<std::chrono::milliseconds>(
+				  timePassed)
+			: std::chrono::milliseconds(0);
 
 	if (_dayOfWeekCheck) {
 		return CheckDayOfWeek(msSinceLastCheck.count());
