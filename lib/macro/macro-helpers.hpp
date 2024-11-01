@@ -51,6 +51,7 @@ EXPORT bool MacroIsPaused(Macro *);
 EXPORT bool
 MacroWasPausedSince(Macro *,
 		    const std::chrono::high_resolution_clock::time_point &);
+EXPORT bool MacroWasCheckedSinceLastStart(Macro *);
 
 EXPORT void AddMacroHelperThread(Macro *, std::thread &&);
 
