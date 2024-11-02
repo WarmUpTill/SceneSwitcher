@@ -123,27 +123,23 @@ MacroActionSystrayEdit::MacroActionSystrayEdit(
 
 void MacroActionSystrayEdit::TitleChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_title = _title->text().toStdString();
 }
 
 void MacroActionSystrayEdit::IconPathChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_iconPath = text.toStdString();
 }
 
 void MacroActionSystrayEdit::CheckIfTrayIsDisabled()
 {
+#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(31, 0, 0)
+	auto config = obs_frontend_get_user_config();
+#else
 	auto config = obs_frontend_get_global_config();
+#endif
 	if (!config) {
 		return;
 	}
