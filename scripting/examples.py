@@ -35,7 +35,7 @@ def my_python_settings_action(data):
 
 ###############################################################################
 
-# Action callback demonstrating the interacting with variables
+# Action callback demonstrating the interaction with variables
 
 counter = 0
 

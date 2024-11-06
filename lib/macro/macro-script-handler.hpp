@@ -46,12 +46,12 @@ static constexpr std::string_view GetActionCompletionSignalParamName()
 	return "completion_signal_name";
 }
 
-static constexpr std::string_view GeCompletionIdParamName()
+static constexpr std::string_view GetCompletionIdParamName()
 {
 	return "completion_id";
 }
 
-static constexpr std::string_view GeResultSignalParamName()
+static constexpr std::string_view GetResultSignalParamName()
 {
 	return "result";
 }

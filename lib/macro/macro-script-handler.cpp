@@ -424,7 +424,7 @@ static std::string signalNameToPropertiesSignalDecl(const std::string &name)
 static std::string signalNameToCompletionSignalDecl(const std::string &name)
 {
 	return std::string("bool ") + name + "(in int " +
-	       GeCompletionIdParamName().data() + ")";
+	       GetCompletionIdParamName().data() + ")";
 }
 
 ScriptSegmentType::ScriptSegmentType(const std::string &id,

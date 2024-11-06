@@ -43,7 +43,7 @@ end
 
 -------------------------------------------------------------------------------
 
--- Action callback demonstrating the interacting with variables
+-- Action callback demonstrating the interaction with variables
 
 counter = 0
 
