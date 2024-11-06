@@ -85,7 +85,8 @@ bool MacroSegmentScript::SendTriggerSignal()
 	auto data = calldata_create();
 	calldata_set_string(data, GetActionCompletionSignalParamName().data(),
 			    _completionSignal.c_str());
-	calldata_set_int(data, GeCompletionIdParamName().data(), _completionId);
+	calldata_set_int(data, GetCompletionIdParamName().data(),
+			 _completionId);
 	calldata_set_string(data, "settings", obs_data_get_json(GetSettings()));
 	signal_handler_signal(obs_get_signal_handler(), _triggerSignal.c_str(),
 			      data);
@@ -101,18 +102,18 @@ void MacroSegmentScript::CompletionSignalReceived(void *param, calldata_t *data)
 {
 	auto segment = static_cast<MacroSegmentScript *>(param);
 	long long int id;
-	if (!calldata_get_int(data, GeCompletionIdParamName().data(), &id)) {
+	if (!calldata_get_int(data, GetCompletionIdParamName().data(), &id)) {
 		blog(LOG_WARNING,
 		     "received completion signal without \"%s\" parameter",
-		     GeCompletionIdParamName().data());
+		     GetCompletionIdParamName().data());
 		return;
 	}
 	bool result;
-	if (!calldata_get_bool(data, GeResultSignalParamName().data(),
+	if (!calldata_get_bool(data, GetResultSignalParamName().data(),
 			       &result)) {
 		blog(LOG_WARNING,
 		     "received completion signal without \"%s\" parameter",
-		     GeResultSignalParamName().data());
+		     GetResultSignalParamName().data());
 		return;
 	}
 	if (id != segment->_completionId) {
