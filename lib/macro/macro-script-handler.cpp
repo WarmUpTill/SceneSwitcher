@@ -29,6 +29,10 @@ static constexpr std::string_view defaultSettingsParam = "default_settings";
 static constexpr std::string_view propertiesSignalParam =
 	"properties_signal_name";
 static constexpr std::string_view triggerSignalParam = "trigger_signal_name";
+static constexpr std::string_view newInstanceSignalNameParam =
+	"new_instance_signal_name";
+static constexpr std::string_view deletedInstanceSignalNameParam =
+	"deleted_instance_signal_name";
 
 static std::string getRegisterScriptSegmentDeclString(const char *funcName)
 {
@@ -72,16 +76,37 @@ static const std::string deregisterScriptConditionDeclString =
 /* Script variables */
 
 static constexpr std::string_view valueParam = "value";
+static constexpr std::string_view tempVarIdParam = "temp_var_id";
+static constexpr std::string_view tempVarNameParam = "temp_var_name";
+static constexpr std::string_view tempVarHelpParam = "temp_var_help";
 static constexpr std::string_view getVariableValueFuncName =
 	"advss_get_variable_value";
 static constexpr std::string_view setVariableValueFuncName =
 	"advss_set_variable_value";
+static constexpr std::string_view registerTempVarFuncName =
+	"advss_register_temp_var";
+static constexpr std::string_view deregisterAllTempVarsFuncName =
+	"advss_deregister_temp_vars";
+static constexpr std::string_view setTempVarValueFuncName =
+	"advss_set_temp_var_value";
 static const std::string getVariableValueDeclString =
 	std::string("bool ") + getVariableValueFuncName.data() + "(in string " +
 	nameParam.data() + ", out string " + valueParam.data() + ")";
 static const std::string setVariableValueDeclString =
 	std::string("bool ") + setVariableValueFuncName.data() + "(in string " +
 	nameParam.data() + ", in string " + valueParam.data() + ")";
+static const std::string registerTempVarDeclString =
+	std::string("bool ") + registerTempVarFuncName.data() + "(in string " +
+	tempVarIdParam.data() + ", in string " + tempVarNameParam.data() +
+	", in string " + tempVarHelpParam.data() + ", in int " +
+	GetInstanceIdParamName().data() + ")";
+static const std::string deregisterAllTempVarsDeclString =
+	std::string("bool ") + deregisterAllTempVarsFuncName.data() +
+	"(in int " + GetInstanceIdParamName().data() + ")";
+static const std::string setTempVarValueDeclString =
+	std::string("bool ") + setTempVarValueFuncName.data() + "(in string " +
+	tempVarIdParam.data() + ", in string " + valueParam.data() +
+	", in int " + GetInstanceIdParamName().data() + ")";
 
 static bool setup();
 static bool setupDone = setup();
@@ -103,13 +128,23 @@ static bool setup()
 			 &ScriptHandler::GetVariableValue, nullptr);
 	proc_handler_add(ph, setVariableValueDeclString.c_str(),
 			 &ScriptHandler::SetVariableValue, nullptr);
+	proc_handler_add(ph, registerTempVarDeclString.c_str(),
+			 &ScriptHandler::RegisterTempVar, nullptr);
+	proc_handler_add(ph, deregisterAllTempVarsDeclString.c_str(),
+			 &ScriptHandler::DeregisterAllTempVars, nullptr);
+	proc_handler_add(ph, setTempVarValueDeclString.c_str(),
+			 &ScriptHandler::SetTempVarValue, nullptr);
 	return true;
 }
 
-static void replaceWhitespace(std::string &string)
+static void replaceProblematicChars(std::string &string)
 {
 	std::transform(string.begin(), string.end(), string.begin(), [](char c) {
-		return std::isspace(static_cast<unsigned char>(c)) ? '_' : c;
+		if (std::isspace(static_cast<unsigned char>(c)) || c == '(' ||
+		    c == ')' || c == '[' || c == ']' || c == '{' || c == '}') {
+			return '_';
+		}
+		return c;
 	});
 }
 
@@ -122,7 +157,7 @@ static std::string getTriggerSignal(const std::string &name,
 				    const bool isAction)
 {
 	std::string signal = name;
-	replaceWhitespace(signal);
+	replaceProblematicChars(signal);
 	signal += "_run";
 	signal += isAction ? "_action" : "_condition";
 	return signal;
@@ -140,9 +175,29 @@ static std::string getPropertiesSignal(const std::string &name,
 				       const bool isAction)
 {
 	std::string signal = name;
-	replaceWhitespace(signal);
+	replaceProblematicChars(signal);
 	signal += isAction ? "_action" : "_condition";
 	signal += "_get_properties";
+	return signal;
+}
+
+static std::string getNewInstanceSignal(const std::string &name,
+					const bool isAction)
+{
+	std::string signal = name;
+	replaceProblematicChars(signal);
+	signal += isAction ? "_action" : "_condition";
+	signal += "_new_instance";
+	return signal;
+}
+
+static std::string getDeletedInstanceSignal(const std::string &name,
+					    const bool isAction)
+{
+	std::string signal = name;
+	replaceProblematicChars(signal);
+	signal += isAction ? "_action" : "_condition";
+	signal += "_deleted_instance";
 	return signal;
 }
 
@@ -177,14 +232,19 @@ void ScriptHandler::RegisterScriptAction(void *, calldata_t *data)
 	auto triggerSignalName = getTriggerSignal(actionName, true);
 	auto completionSignalName = getCompletionSignal(actionName, true);
 	auto propertiesSignalName = getPropertiesSignal(actionName, true);
+	auto newInstanceSignalName = getNewInstanceSignal(actionName, true);
+	auto deletedInstanceSignalName =
+		getDeletedInstanceSignal(actionName, true);
 
 	const auto createScriptAction =
 		[id, defaultSettings, propertiesSignalName, triggerSignalName,
-		 completionSignalName](
+		 completionSignalName, newInstanceSignalName,
+		 deletedInstanceSignalName](
 			Macro *m) -> std::shared_ptr<MacroAction> {
 		return std::make_shared<MacroActionScript>(
 			m, id, defaultSettings, propertiesSignalName,
-			triggerSignalName, completionSignalName);
+			triggerSignalName, completionSignalName,
+			newInstanceSignalName, deletedInstanceSignalName);
 	};
 	if (!MacroActionFactory::Register(id, {createScriptAction,
 					       MacroSegmentScriptEdit::Create,
@@ -202,9 +262,15 @@ void ScriptHandler::RegisterScriptAction(void *, calldata_t *data)
 			    triggerSignalName.c_str());
 	calldata_set_string(data, propertiesSignalParam.data(),
 			    propertiesSignalName.c_str());
+	calldata_set_string(data, newInstanceSignalNameParam.data(),
+			    newInstanceSignalName.c_str());
+	calldata_set_string(data, deletedInstanceSignalNameParam.data(),
+			    deletedInstanceSignalName.c_str());
 	_actions.emplace(id, ScriptSegmentType(id, propertiesSignalName,
 					       triggerSignalName,
-					       completionSignalName));
+					       completionSignalName,
+					       newInstanceSignalName,
+					       deletedInstanceSignalName));
 
 	RETURN_SUCCESS();
 }
@@ -279,14 +345,19 @@ void ScriptHandler::RegisterScriptCondition(void *, calldata_t *data)
 	auto triggerSignalName = getTriggerSignal(conditionName, false);
 	auto completionSignalName = getCompletionSignal(conditionName, false);
 	auto propertiesSignalName = getPropertiesSignal(conditionName, false);
+	auto newInstanceSignalName = getNewInstanceSignal(conditionName, false);
+	auto deletedInstanceSignalName =
+		getDeletedInstanceSignal(conditionName, false);
 
 	const auto createScriptCondition =
 		[id, defaultSettings, propertiesSignalName, triggerSignalName,
-		 completionSignalName](
+		 completionSignalName, newInstanceSignalName,
+		 deletedInstanceSignalName](
 			Macro *m) -> std::shared_ptr<MacroCondition> {
 		return std::make_shared<MacroConditionScript>(
 			m, id, defaultSettings, propertiesSignalName,
-			triggerSignalName, completionSignalName);
+			triggerSignalName, completionSignalName,
+			newInstanceSignalName, deletedInstanceSignalName);
 	};
 	if (!MacroConditionFactory::Register(
 		    id, {createScriptCondition, MacroSegmentScriptEdit::Create,
@@ -304,9 +375,15 @@ void ScriptHandler::RegisterScriptCondition(void *, calldata_t *data)
 			    triggerSignalName.c_str());
 	calldata_set_string(data, propertiesSignalParam.data(),
 			    propertiesSignalName.c_str());
+	calldata_set_string(data, newInstanceSignalNameParam.data(),
+			    newInstanceSignalName.c_str());
+	calldata_set_string(data, deletedInstanceSignalNameParam.data(),
+			    deletedInstanceSignalName.c_str());
 	_conditions.emplace(id, ScriptSegmentType(id, propertiesSignalName,
 						  triggerSignalName,
-						  completionSignalName));
+						  completionSignalName,
+						  newInstanceSignalName,
+						  deletedInstanceSignalName));
 
 	RETURN_SUCCESS();
 }
@@ -399,6 +476,92 @@ void ScriptHandler::SetVariableValue(void *, calldata_t *data)
 	RETURN_SUCCESS();
 }
 
+void ScriptHandler::RegisterTempVar(void *, calldata_t *data)
+{
+	const char *variableId;
+	if (!calldata_get_string(data, tempVarIdParam.data(), &variableId) ||
+	    strlen(variableId) == 0) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     registerTempVarFuncName.data(), tempVarIdParam.data());
+		RETURN_FAILURE();
+	}
+	const char *name;
+	if (!calldata_get_string(data, tempVarNameParam.data(), &name) ||
+	    strlen(name) == 0) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     registerTempVarFuncName.data(), tempVarNameParam.data());
+		RETURN_FAILURE();
+	}
+	const char *helpText;
+	if (!calldata_get_string(data, tempVarHelpParam.data(), &helpText)) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     registerTempVarFuncName.data(), tempVarHelpParam.data());
+		RETURN_FAILURE();
+	}
+	long long instanceId;
+	if (!calldata_get_int(data, GetInstanceIdParamName().data(),
+			      &instanceId)) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     registerTempVarFuncName.data(),
+		     GetInstanceIdParamName().data());
+		RETURN_FAILURE();
+	}
+
+	std::lock_guard<std::mutex> lock(_mutex);
+	MacroSegmentScript::RegisterTempVar(variableId, name, helpText,
+					    instanceId);
+	RETURN_SUCCESS();
+}
+
+void ScriptHandler::DeregisterAllTempVars(void *, calldata_t *data)
+{
+	long long instanceId;
+	if (!calldata_get_int(data, GetInstanceIdParamName().data(),
+			      &instanceId)) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     deregisterAllTempVarsFuncName.data(),
+		     GetInstanceIdParamName().data());
+		RETURN_FAILURE();
+	}
+
+	std::lock_guard<std::mutex> lock(_mutex);
+	MacroSegmentScript::DeregisterAllTempVars(instanceId);
+	RETURN_SUCCESS();
+}
+
+void ScriptHandler::SetTempVarValue(void *, calldata_t *data)
+{
+	const char *variableId;
+	if (!calldata_get_string(data, tempVarIdParam.data(), &variableId) ||
+	    strlen(variableId) == 0) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     setTempVarValueFuncName.data(), tempVarIdParam.data());
+		RETURN_FAILURE();
+	}
+
+	const char *variableValue;
+	if (!calldata_get_string(data, valueParam.data(), &variableValue) ||
+	    strlen(variableValue) == 0) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     setTempVarValueFuncName.data(), valueParam.data());
+		RETURN_FAILURE();
+	}
+
+	long long instanceId;
+	if (!calldata_get_int(data, GetInstanceIdParamName().data(),
+			      &instanceId)) {
+		blog(LOG_WARNING, "[%s] failed! \"%s\" parameter missing!",
+		     setTempVarValueFuncName.data(),
+		     GetInstanceIdParamName().data());
+		RETURN_FAILURE();
+	}
+
+	std::lock_guard<std::mutex> lock(_mutex);
+	MacroSegmentScript::SetTempVarValue(variableId, variableValue,
+					    instanceId);
+	RETURN_SUCCESS();
+}
+
 bool ScriptHandler::ActionIdIsValid(const std::string &id)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
@@ -427,21 +590,36 @@ static std::string signalNameToCompletionSignalDecl(const std::string &name)
 	       GetCompletionIdParamName().data() + ")";
 }
 
-ScriptSegmentType::ScriptSegmentType(const std::string &id,
-				     const std::string &propertiesSignal,
-				     const std::string &triggerSignal,
-				     const std::string &completionSignal)
+static std::string signalNameToInstanceSignalDecl(const std::string &name)
+{
+	return std::string("void ") + name + "(out int " +
+	       GetInstanceIdParamName().data() + ")";
+}
+
+ScriptSegmentType::ScriptSegmentType(
+	const std::string &id, const std::string &propertiesSignalName,
+	const std::string &triggerSignalName,
+	const std::string &completionSignalName,
+	const std::string &newInstanceSignalName,
+	const std::string &deletedInstanceSignalName)
 	: _id(id)
 {
+	auto sh = obs_get_signal_handler();
+
 	signal_handler_add(
-		obs_get_signal_handler(),
-		signalNameToPropertiesSignalDecl(propertiesSignal).c_str());
+		sh,
+		signalNameToPropertiesSignalDecl(propertiesSignalName).c_str());
 	signal_handler_add(
-		obs_get_signal_handler(),
-		signalNameToTriggerSignalDecl(triggerSignal).c_str());
+		sh, signalNameToTriggerSignalDecl(triggerSignalName).c_str());
 	signal_handler_add(
-		obs_get_signal_handler(),
-		signalNameToCompletionSignalDecl(completionSignal).c_str());
+		sh,
+		signalNameToCompletionSignalDecl(completionSignalName).c_str());
+	signal_handler_add(
+		sh,
+		signalNameToInstanceSignalDecl(newInstanceSignalName).c_str());
+	signal_handler_add(
+		sh, signalNameToInstanceSignalDecl(deletedInstanceSignalName)
+			    .c_str());
 }
 
 } // namespace advss

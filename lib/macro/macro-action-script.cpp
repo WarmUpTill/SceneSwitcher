@@ -6,14 +6,17 @@
 
 namespace advss {
 
-MacroActionScript::MacroActionScript(Macro *m, const std::string &id,
-				     const OBSData &defaultSettings,
-				     const std::string &propertiesSignalName,
-				     const std::string &triggerSignal,
-				     const std::string &completionSignal)
+MacroActionScript::MacroActionScript(
+	Macro *m, const std::string &id, const OBSData &defaultSettings,
+	const std::string &propertiesSignalName,
+	const std::string &triggerSignalName,
+	const std::string &completionSignalName,
+	const std::string &newInstanceSignalName,
+	const std::string &deletedInstanceSignalName)
 	: MacroAction(m),
 	  MacroSegmentScript(defaultSettings, propertiesSignalName,
-			     triggerSignal, completionSignal),
+			     triggerSignalName, completionSignalName,
+			     newInstanceSignalName, deletedInstanceSignalName),
 	  _id(id)
 {
 }
@@ -87,6 +90,31 @@ void MacroActionScript::WaitForCompletion() const
 			std::chrono::duration_cast<std::chrono::milliseconds>(
 				now - start);
 	}
+}
+
+void MacroActionScript::RegisterTempVarHelper(const std::string &variableId,
+					      const std::string &name,
+					      const std::string &helpText)
+{
+	AddTempvar(variableId, name, helpText);
+}
+
+void MacroActionScript::DeregisterAllTempVarsHelper()
+{
+	MacroSegment::SetupTempVars();
+}
+
+void MacroActionScript::SetTempVarValueHelper(const std::string &variableId,
+					      const std::string &value)
+{
+	MacroAction::SetTempVarValue(variableId, value);
+}
+
+void MacroActionScript::SetupTempVars()
+{
+	// This just exists so MacroSegment::SetupTempVars() is not called.
+	// We want the ScriptHandler to handle the registration and clearing of
+	// the temp vars.
 }
 
 } // namespace advss

@@ -8,10 +8,14 @@ namespace advss {
 MacroConditionScript::MacroConditionScript(
 	Macro *m, const std::string &id, const OBSData &defaultSettings,
 	const std::string &propertiesSignalName,
-	const std::string &triggerSignal, const std::string &completionSignal)
+	const std::string &triggerSignalName,
+	const std::string &completionSignalName,
+	const std::string &newInstanceSignalName,
+	const std::string &deletedInstanceSignalName)
 	: MacroCondition(m),
 	  MacroSegmentScript(defaultSettings, propertiesSignalName,
-			     triggerSignal, completionSignal),
+			     triggerSignalName, completionSignalName,
+			     newInstanceSignalName, deletedInstanceSignalName),
 	  _id(id)
 {
 }
@@ -74,6 +78,31 @@ void MacroConditionScript::WaitForCompletion() const
 			std::chrono::duration_cast<std::chrono::milliseconds>(
 				now - start);
 	}
+}
+
+void MacroConditionScript::RegisterTempVarHelper(const std::string &variableId,
+						 const std::string &name,
+						 const std::string &helpText)
+{
+	AddTempvar(variableId, name, helpText);
+}
+
+void MacroConditionScript::DeregisterAllTempVarsHelper()
+{
+	MacroSegment::SetupTempVars();
+}
+
+void MacroConditionScript::SetTempVarValueHelper(const std::string &variableId,
+						 const std::string &value)
+{
+	MacroCondition::SetTempVarValue(variableId, value);
+}
+
+void MacroConditionScript::SetupTempVars()
+{
+	// This just exists so MacroSegment::SetupTempVars() is not called.
+	// We want the ScriptHandler to handle the registration and clearing of
+	// the temp vars.
 }
 
 } // namespace advss
