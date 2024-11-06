@@ -11,33 +11,106 @@
 namespace advss {
 
 static std::atomic_int completionIdCounter = 0;
+static std::atomic_int instanceIdCounter = 0;
+static std::mutex instanceMtx;
+static std::vector<MacroSegmentScript *> instances{};
 
-MacroSegmentScript::MacroSegmentScript(obs_data_t *defaultSettings,
-				       const std::string &propertiesSignalName,
-				       const std::string &triggerSignal,
-				       const std::string &completionSignal)
+MacroSegmentScript::MacroSegmentScript(
+	obs_data_t *defaultSettings, const std::string &propertiesSignalName,
+	const std::string &triggerSignalName,
+	const std::string &completionSignalName,
+	const std::string &newInstanceSignalName,
+	const std::string &deletedInstanceSignalName)
 	: _settings(obs_data_get_defaults(defaultSettings)),
 	  _propertiesSignal(propertiesSignalName),
-	  _triggerSignal(triggerSignal),
-	  _completionSignal(completionSignal)
+	  _triggerSignal(triggerSignalName),
+	  _completionSignal(completionSignalName),
+	  _newInstanceSignal(newInstanceSignalName),
+	  _deletedInstanceSignal(deletedInstanceSignalName),
+	  _instanceId(++instanceIdCounter)
 {
 	signal_handler_connect(obs_get_signal_handler(),
-			       completionSignal.c_str(),
+			       completionSignalName.c_str(),
 			       &MacroSegmentScript::CompletionSignalReceived,
 			       this);
+
+	std::lock_guard<std::mutex> lock(instanceMtx);
+	instances.emplace_back(this);
+
+	SignalNewInstance();
 }
 
 MacroSegmentScript::MacroSegmentScript(const MacroSegmentScript &other)
 	: _settings(obs_data_create()),
 	  _propertiesSignal(other._propertiesSignal),
 	  _triggerSignal(other._triggerSignal),
-	  _completionSignal(other._completionSignal)
+	  _completionSignal(other._completionSignal),
+	  _newInstanceSignal(other._newInstanceSignal),
+	  _deletedInstanceSignal(other._deletedInstanceSignal),
+	  _instanceId(++instanceIdCounter)
 {
 	signal_handler_connect(obs_get_signal_handler(),
 			       _completionSignal.c_str(),
 			       &MacroSegmentScript::CompletionSignalReceived,
 			       this);
 	obs_data_apply(_settings.Get(), other._settings.Get());
+
+	std::lock_guard<std::mutex> lock(instanceMtx);
+	instances.emplace_back(this);
+
+	SignalNewInstance();
+}
+
+MacroSegmentScript::~MacroSegmentScript()
+{
+	auto data = calldata_create();
+	calldata_set_int(data, GetInstanceIdParamName().data(), _instanceId);
+	signal_handler_signal(obs_get_signal_handler(),
+			      _deletedInstanceSignal.c_str(), data);
+	calldata_destroy(data);
+
+	std::lock_guard<std::mutex> lock(instanceMtx);
+	instances.erase(std::remove(instances.begin(), instances.end(), this),
+			instances.end());
+}
+
+void MacroSegmentScript::RegisterTempVar(const std::string &variableId,
+					 const std::string &name,
+					 const std::string &helpText,
+					 int instanceId)
+{
+	std::lock_guard<std::mutex> lock(instanceMtx);
+	for (auto instance : instances) {
+		if (instance->_instanceId != instanceId) {
+			continue;
+		}
+		instance->RegisterTempVarHelper(variableId, name, helpText);
+		break;
+	}
+}
+
+void MacroSegmentScript::DeregisterAllTempVars(int instanceId)
+{
+	std::lock_guard<std::mutex> lock(instanceMtx);
+	for (auto instance : instances) {
+		if (instance->_instanceId != instanceId) {
+			continue;
+		}
+		instance->DeregisterAllTempVarsHelper();
+	}
+}
+
+void MacroSegmentScript::SetTempVarValue(const std::string &variableId,
+					 const std::string &value,
+					 int instanceId)
+{
+	std::lock_guard<std::mutex> lock(instanceMtx);
+	for (auto instance : instances) {
+		if (instance->_instanceId != instanceId) {
+			continue;
+		}
+		instance->SetTempVarValueHelper(variableId, value);
+	}
 }
 
 bool MacroSegmentScript::Save(obs_data_t *obj) const
@@ -88,6 +161,7 @@ bool MacroSegmentScript::SendTriggerSignal()
 	calldata_set_int(data, GetCompletionIdParamName().data(),
 			 _completionId);
 	calldata_set_string(data, "settings", obs_data_get_json(GetSettings()));
+	calldata_set_int(data, GetInstanceIdParamName().data(), _instanceId);
 	signal_handler_signal(obs_get_signal_handler(), _triggerSignal.c_str(),
 			      data);
 	calldata_destroy(data);
@@ -121,6 +195,19 @@ void MacroSegmentScript::CompletionSignalReceived(void *param, calldata_t *data)
 	}
 	segment->_triggerIsComplete = true;
 	segment->_triggerResult = result;
+}
+
+void MacroSegmentScript::SignalNewInstance() const
+{
+	std::thread signalNewInstanceThread([this]() {
+		auto data = calldata_create();
+		calldata_set_int(data, GetInstanceIdParamName().data(),
+				 _instanceId);
+		signal_handler_signal(obs_get_signal_handler(),
+				      _newInstanceSignal.c_str(), data);
+		calldata_destroy(data);
+	});
+	signalNewInstanceThread.detach();
 }
 
 obs_properties_t *MacroSegmentScriptEdit::GetProperties(void *obj)
