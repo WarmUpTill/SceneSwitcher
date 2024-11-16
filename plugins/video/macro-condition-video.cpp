@@ -1433,8 +1433,8 @@ void MacroConditionVideoEdit::ImageBrowseButtonClicked()
 			return;
 		}
 
-		auto screenshot =
-			ScreenshotDialog::AskForScreenshot(_entryData->_video);
+		auto screenshot = ScreenshotDialog::AskForScreenshot(
+			_entryData->_video, _entryData->_areaParameters);
 		if (!screenshot) {
 			return;
 		}

@@ -7,22 +7,27 @@
 
 namespace advss {
 
-ScreenshotDialog::ScreenshotDialog(obs_source_t *source)
+ScreenshotDialog::ScreenshotDialog(obs_source_t *source,
+				   const AreaParameters &area)
 	: QDialog(GetSettingsWindow()),
 	  _scrollArea(new QScrollArea),
 	  _imageLabel(new QLabel(this)),
 	  _rubberBand(new QRubberBand(QRubberBand::Rectangle, this)),
-	  _buttonbox(new QDialogButtonBox(QDialogButtonBox::Ok |
+	  _buttonBox(new QDialogButtonBox(QDialogButtonBox::Ok |
 					  QDialogButtonBox::Cancel)),
-	  _screenshot(source, {}, true)
+	  _screenshot(source,
+		      area.enable ? QRect(area.area.x, area.area.y,
+					  area.area.width, area.area.height)
+				  : QRect(),
+		      true)
 {
 	setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
 	setWindowFlags(windowFlags() | Qt::WindowMaximizeButtonHint |
 		       Qt::WindowCloseButtonHint);
 
-	QWidget::connect(_buttonbox, &QDialogButtonBox::accepted, this,
+	QWidget::connect(_buttonBox, &QDialogButtonBox::accepted, this,
 			 &QDialog::accept);
-	QWidget::connect(_buttonbox, &QDialogButtonBox::rejected, this,
+	QWidget::connect(_buttonBox, &QDialogButtonBox::rejected, this,
 			 &QDialog::reject);
 
 	_imageLabel->setPixmap(QPixmap::fromImage(_screenshot.GetImage()));
@@ -48,7 +53,7 @@ ScreenshotDialog::ScreenshotDialog(obs_source_t *source)
 	layout->addWidget(new QLabel(obs_module_text(
 		"AdvSceneSwitcher.condition.video.screenshot.selectArea")));
 	layout->addWidget(_scrollArea);
-	layout->addWidget(_buttonbox);
+	layout->addWidget(_buttonBox);
 	setLayout(layout);
 
 	_result = _screenshot.GetImage();
@@ -95,14 +100,15 @@ void ScreenshotDialog::mouseReleaseEvent(QMouseEvent *)
 }
 
 std::optional<QImage>
-ScreenshotDialog::AskForScreenshot(const VideoInput &input)
+ScreenshotDialog::AskForScreenshot(const VideoInput &input,
+				   const AreaParameters &area)
 {
 	if (!input.ValidSelection()) {
 		return {};
 	}
 
 	auto source = OBSGetStrongRef(input.GetVideo());
-	ScreenshotDialog dialog(source);
+	ScreenshotDialog dialog(source, area);
 	if (dialog.exec() != DialogCode::Accepted) {
 		return {};
 	}
