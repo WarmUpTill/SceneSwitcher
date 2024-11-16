@@ -1,6 +1,6 @@
 #pragma once
 #include "screenshot-helper.hpp"
-#include "paramerter-wrappers.hpp"
+#include "parameter-wrappers.hpp"
 
 #include <optional>
 #include <obs.h>

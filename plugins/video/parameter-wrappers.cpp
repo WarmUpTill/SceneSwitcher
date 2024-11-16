@@ -1,4 +1,4 @@
-#include "paramerter-wrappers.hpp"
+#include "parameter-wrappers.hpp"
 
 #include <QFileInfo>
 #include <source-helpers.hpp>

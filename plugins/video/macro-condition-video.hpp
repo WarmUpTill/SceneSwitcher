@@ -1,7 +1,7 @@
 #pragma once
 #include "opencv-helpers.hpp"
 #include "area-selection.hpp"
-#include "paramerter-wrappers.hpp"
+#include "parameter-wrappers.hpp"
 #include "preview-dialog.hpp"
 
 #include <macro-condition-edit.hpp>
