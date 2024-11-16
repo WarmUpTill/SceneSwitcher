@@ -1,5 +1,5 @@
 #pragma once
-#include "paramerter-wrappers.hpp"
+#include "parameter-wrappers.hpp"
 
 #include <QDialog>
 #include <QLabel>
