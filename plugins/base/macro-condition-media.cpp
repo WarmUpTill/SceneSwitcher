@@ -548,14 +548,14 @@ void MacroConditionMedia::MediaNext(void *data, calldata_t *)
 
 void MacroConditionMedia::SetSourceType(SourceType t)
 {
-	SetupTempVars();
 	_sourceType = t;
+	SetupTempVars();
 }
 
 void MacroConditionMedia::SetCheckType(CheckType t)
 {
-	SetupTempVars();
 	_checkType = t;
+	SetupTempVars();
 }
 
 static void populateSateSelection(QComboBox *list, bool addLegacyEntries)
