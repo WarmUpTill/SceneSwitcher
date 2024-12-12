@@ -89,6 +89,8 @@ target_sources(
           macro-condition-filter.hpp
           macro-condition-folder.cpp
           macro-condition-folder.hpp
+          macro-condition-game-capture.cpp
+          macro-condition-game-capture.hpp
           macro-condition-hotkey.cpp
           macro-condition-hotkey.hpp
           macro-condition-idle.cpp
