@@ -20,6 +20,12 @@ if(BUILD_OUT_OF_TREE)
   include(helpers)
 endif()
 
+# OBS 31 no longer defines find_qt so check if we need to include it for in-tree
+# builds
+if(NOT COMMAND foo)
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/helpers_common.cmake")
+endif()
+
 set(LIB_NAME "${PROJECT_NAME}-lib")
 add_library(${PROJECT_NAME} MODULE)
 add_library(${LIB_NAME} SHARED)
