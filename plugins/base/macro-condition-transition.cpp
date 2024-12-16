@@ -111,25 +111,40 @@ bool MacroConditionTransition::CheckCondition()
 	return ret;
 }
 
-void MacroConditionTransition::ConnectToTransitionSignals()
+void advss::MacroConditionTransition::AddTransitionSignals(
+	obs_source_t *transition)
 {
-	const bool useFrontendTransitionSelection =
-		_transition.GetType() !=
-			TransitionSelection::Type::TRANSITION ||
-		(_condition == Condition::TRANSITION_SOURCE ||
-		 _condition == Condition::TRANSITION_TARGET);
-
-	_signals.clear();
-	OBSSourceAutoRelease source =
-		useFrontendTransitionSelection
-			? obs_frontend_get_current_transition()
-			: obs_weak_source_get_source(
-				  _transition.GetTransition());
-	signal_handler_t *sh = obs_source_get_signal_handler(source);
+	signal_handler_t *sh = obs_source_get_signal_handler(transition);
 	_signals.emplace_back(sh, "transition_start", TransitionStarted, this);
 	_signals.emplace_back(sh, "transition_stop", TransitionEnded, this);
 	_signals.emplace_back(sh, "transition_video_stop", TransitionVideoEnded,
 			      this);
+}
+
+void MacroConditionTransition::ConnectToTransitionSignals()
+{
+	_signals.clear();
+
+	const bool watchSingleTransitionType =
+		_transition.GetType() ==
+			TransitionSelection::Type::TRANSITION &&
+		!(_condition == Condition::TRANSITION_SOURCE ||
+		  _condition == Condition::TRANSITION_TARGET);
+
+	if (watchSingleTransitionType) {
+		OBSSourceAutoRelease transition =
+			OBSGetStrongRef(_transition.GetTransition());
+		AddTransitionSignals(transition);
+		return;
+	}
+
+	obs_frontend_source_list transitions = {};
+	obs_frontend_get_transitions(&transitions);
+	for (size_t i = 0; i < transitions.sources.num; i++) {
+		obs_source_t *transition = transitions.sources.array[i];
+		AddTransitionSignals(transition);
+	}
+	obs_frontend_source_list_free(&transitions);
 }
 
 void MacroConditionTransition::TransitionStarted(void *data, calldata_t *cd)

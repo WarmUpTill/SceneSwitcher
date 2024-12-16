@@ -42,6 +42,7 @@ private:
 	static void TransitionEnded(void *data, calldata_t *);
 	static void TransitionVideoEnded(void *data, calldata_t *);
 	static void HandleFrontendEvent(enum obs_frontend_event event, void *);
+	void AddTransitionSignals(obs_source_t *);
 
 	std::vector<OBSSignal> _signals;
 
