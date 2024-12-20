@@ -176,7 +176,6 @@ private slots:
 
 signals:
 	void HeaderInfoChanged(const QString &);
-	void TempVarsChanged();
 
 private:
 	void SetWidgetVisibility();
