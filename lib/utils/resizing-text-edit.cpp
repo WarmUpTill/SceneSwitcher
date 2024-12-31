@@ -94,7 +94,7 @@ void ResizingPlainTextEdit::AddHeightForScrollBar(bool addHeight)
 		return;
 	}
 
-	_hScrollBarAddedHeight = verticalScrollBar()->height();
+	_hScrollBarAddedHeight = horizontalScrollBar()->height();
 	setFixedHeight(height() + _hScrollBarAddedHeight);
 }
 
