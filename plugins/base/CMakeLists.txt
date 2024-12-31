@@ -117,6 +117,8 @@ target_sources(
           macro-condition-scene-visibility.hpp
           macro-condition-scene.cpp
           macro-condition-scene.hpp
+          macro-condition-screenshot.cpp
+          macro-condition-screenshot.hpp
           macro-condition-slideshow.cpp
           macro-condition-slideshow.hpp
           macro-condition-source.cpp
