@@ -7,7 +7,7 @@ Build-Depends: cmake,
                libcurl4-openssl-dev,
                libobs-dev,
                libxtst-dev,
-               qtbase5-dev,
+               qtbase6-dev,
                libxss-dev,
                libopencv-dev
 Standards-Version: 4.6.0

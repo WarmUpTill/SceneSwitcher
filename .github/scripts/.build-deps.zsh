@@ -480,12 +480,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         popd
       ;;
     linux)
-      # Hacky workaround to support libproc2 with Ubuntu 22 build environment
-      local lsb_version=$(lsb_release -r | cut -f 2 || true)
-      if [[ "${lsb_version}" == '22.04' ]] {
-        sudo apt install ${project_root}/build-aux/CI/linux/ubuntu22/libproc2-0_4.0.2-3_amd64.deb
-        sudo apt install ${project_root}/build-aux/CI/linux/ubuntu22/libproc2-dev_4.0.2-3_amd64.deb
-      }
+      # Nothing to do for now
       ;;
   }
 }
