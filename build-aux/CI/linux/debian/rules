@@ -3,7 +3,7 @@
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
-export QT_SELECT = qt5
+export QT_SELECT = qt6
 
 %:
 	dh $@
