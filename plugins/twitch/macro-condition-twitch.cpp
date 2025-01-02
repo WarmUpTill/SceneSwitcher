@@ -1427,8 +1427,6 @@ MacroConditionTwitchEdit::MacroConditionTwitchEdit(
 	QWidget::connect(_category,
 			 SIGNAL(CategoreyChanged(const TwitchCategory &)), this,
 			 SLOT(CategoreyChanged(const TwitchCategory &)));
-	QWidget::connect(this, SIGNAL(TempVarsChanged()), window(),
-			 SIGNAL(SegmentTempVarsChanged()));
 	QWidget::connect(_clearBufferOnMatch, SIGNAL(stateChanged(int)), this,
 			 SLOT(ClearBufferOnMatchChanged(int)));
 
@@ -1480,7 +1478,6 @@ void MacroConditionTwitchEdit::ConditionChanged(int idx)
 	_entryData->SetCondition(static_cast<MacroConditionTwitch::Condition>(
 		_conditions->itemData(idx).toInt()));
 	SetWidgetVisibility();
-	emit TempVarsChanged();
 }
 
 void MacroConditionTwitchEdit::TwitchTokenChanged(const QString &token)
