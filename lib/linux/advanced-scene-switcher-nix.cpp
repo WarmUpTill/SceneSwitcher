@@ -384,7 +384,11 @@ static void getProcessListProcps2(QStringList &processes)
 		return;
 	}
 	while ((stack = procps_pids_get_(info, PIDS_FETCH_TASKS_ONLY))) {
+#ifdef PROCPS2_USE_INFO
 		auto cmd = PIDS_VAL(0, str, stack, info);
+#else
+		auto cmd = PIDS_VAL(0, str, stack);
+#endif
 		QString procName(cmd);
 		if (!procName.isEmpty() && !processes.contains(procName)) {
 			processes << procName;
