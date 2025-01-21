@@ -344,6 +344,10 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 		return;
 	}
 
+	// We have to make sure to that no macro is currently being edited while
+	// the new settings are loaded
+	ui->macros->clearSelection();
+
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->LoadSettings(obj);
 	switcher->lastImportPath = path.toStdString();
