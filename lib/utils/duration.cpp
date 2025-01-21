@@ -29,6 +29,7 @@ void Duration::Load(obs_data_t *obj, const char *name)
 	// TODO: remove this fallback
 	if (!data || !obs_data_has_user_value(data, "version") ||
 	    obs_data_get_int(data, "version") != 1) {
+		_value = 0.;
 		bool usingDefaultArgs = strcmp("duration", name) == 0;
 		if (usingDefaultArgs) {
 			_value = obs_data_get_double(obj, "seconds");
