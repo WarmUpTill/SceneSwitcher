@@ -246,6 +246,10 @@ bool Macro::CheckConditions(bool ignorePause)
 
 	_matched = false;
 	for (auto &condition : _conditions) {
+		if (!condition) {
+			continue;
+		}
+
 		if (_paused && !ignorePause) {
 			vblog(LOG_INFO, "Macro %s is paused", _name.c_str());
 			return false;
@@ -383,6 +387,9 @@ bool Macro::RunActionsHelper(
 
 	bool actionsExecutedSuccessfully = true;
 	for (auto &action : actions) {
+		if (!action) {
+			continue;
+		}
 		if (action->Enabled()) {
 			action->LogAction();
 			actionsExecutedSuccessfully =
