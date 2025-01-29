@@ -244,6 +244,7 @@ bool Macro::CheckConditions(bool ignorePause)
 		return false;
 	}
 
+	_stop = false;
 	_matched = false;
 	for (auto &condition : _conditions) {
 		if (!condition) {
