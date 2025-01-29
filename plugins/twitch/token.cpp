@@ -681,22 +681,33 @@ void TwitchTokenSettingsDialog::RequestToken()
 void TwitchTokenSettingsDialog::GotToken(const std::optional<QString> &value)
 {
 	_currentTokenValue->setText(value.value_or(""));
-	if (value.has_value()) {
-		_tokenStatus->setText(obs_module_text(
-			"AdvSceneSwitcher.twitchToken.request.success"));
-		_currentToken.SetToken(value.value().toStdString());
-		auto name = QString::fromStdString(_currentToken._name);
-		_name->setText(name);
-		_name->textEdited(name);
-		QMetaObject::invokeMethod(this, "NameChanged",
-					  Q_ARG(const QString &, name));
-		SetTokenInfoVisible(true);
-	} else {
+	if (!value) {
 		_tokenStatus->setText(obs_module_text(
 			"AdvSceneSwitcher.twitchToken.request.fail"));
 		_name->setText("");
 		SetTokenInfoVisible(false);
+		_requestToken->setEnabled(true);
+		return;
 	}
+
+	_currentToken.SetToken(value.value().toStdString());
+	auto name = QString::fromStdString(_currentToken._name);
+	if (name.isEmpty()) {
+		_tokenStatus->setText(obs_module_text(
+			"AdvSceneSwitcher.twitchToken.request.fail"));
+		_name->setText("");
+		SetTokenInfoVisible(false);
+		_requestToken->setEnabled(true);
+		return;
+	}
+
+	_tokenStatus->setText(obs_module_text(
+		"AdvSceneSwitcher.twitchToken.request.success"));
+	_name->setText(name);
+	_name->textEdited(name);
+	QMetaObject::invokeMethod(this, "NameChanged",
+				  Q_ARG(const QString &, name));
+	SetTokenInfoVisible(true);
 	_requestToken->setEnabled(true);
 }
 
