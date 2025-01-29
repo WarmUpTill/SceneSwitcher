@@ -439,7 +439,7 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 			     "AdvSceneSwitcher.twitchToken.select",
 			     "AdvSceneSwitcher.twitchToken.add",
 			     "AdvSceneSwitcher.twitchToken.nameNotAvailable",
-			     parent),
+			     false, parent),
 	  _requestToken(new QPushButton(
 		  obs_module_text("AdvSceneSwitcher.twitchToken.request"))),
 	  _showToken(new QPushButton()),
@@ -456,7 +456,6 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 	_currentTokenValue->setText(QString::fromStdString(settings._token));
 
 	_name->setReadOnly(true);
-	_showNameEmptyWarning = false;
 
 	QWidget::connect(_requestToken, SIGNAL(clicked()), this,
 			 SLOT(RequestToken()));
