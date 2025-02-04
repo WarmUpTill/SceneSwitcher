@@ -45,7 +45,7 @@ public:
 		std::string_view addString = "AdvSceneSwitcher.item.add",
 		std::string_view conflictString =
 			"AdvSceneSwitcher.item.nameNotAvailable",
-		QWidget *parent = 0);
+		bool showEmptyNameWarning = true, QWidget *parent = 0);
 	virtual ~ItemSettingsDialog() = default;
 
 private slots:

@@ -265,6 +265,7 @@ ItemSettingsDialog::ItemSettingsDialog(const Item &settings,
 				       std::string_view select,
 				       std::string_view add,
 				       std::string_view nameConflict,
+				       bool showNameEmptyWarning,
 				       QWidget *parent)
 	: QDialog(parent),
 	  _name(new QLineEdit()),
@@ -274,7 +275,8 @@ ItemSettingsDialog::ItemSettingsDialog(const Item &settings,
 	  _items(items),
 	  _selectStr(select),
 	  _addStr(add),
-	  _conflictStr(nameConflict)
+	  _conflictStr(nameConflict),
+	  _showNameEmptyWarning(showNameEmptyWarning)
 {
 	setModal(true);
 	setWindowModality(Qt::WindowModality::WindowModal);
