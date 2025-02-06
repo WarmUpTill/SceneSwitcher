@@ -52,6 +52,7 @@ public:
 		SWAP_VALUES,
 		TRIM,
 		CHANGE_CASE,
+		RANDOM_NUMBER,
 	};
 
 	Type _type = Type::SET_FIXED_VALUE;
@@ -99,6 +100,9 @@ public:
 	};
 
 	CaseType _caseType = CaseType::LOWER_CASE;
+	DoubleVariable _randomNumberStart = 0;
+	DoubleVariable _randomNumberEnd = 100;
+	bool _generateInteger = true;
 
 private:
 	void DecrementCurrentSegmentVariableRef();
@@ -108,6 +112,7 @@ private:
 	void HandleMathExpression(Variable *);
 	void HandleCaseChange(Variable *);
 	void SetToSceneItemName(Variable *);
+	void GenerateRandomNumber(Variable *);
 
 	std::weak_ptr<MacroSegment> _macroSegment;
 	int _segmentIdxLoadValue = -1;
@@ -161,6 +166,9 @@ private slots:
 	void StringLengthChanged(const NumberVariable<int> &);
 	void CharSelectionChanged(const QString &);
 	void CaseTypeChanged(int index);
+	void RandomNumberStartChanged(const NumberVariable<double> &);
+	void RandomNumberEndChanged(const NumberVariable<double> &);
+	void GenerateIntegerChanged(int);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -206,6 +214,10 @@ private:
 	VariableSpinBox *_stringLength;
 	SingleCharSelection *_paddingCharSelection;
 	FilterComboBox *_caseType;
+	VariableDoubleSpinBox *_randomNumberStart;
+	VariableDoubleSpinBox *_randomNumberEnd;
+	QCheckBox *_generateInteger;
+	QVBoxLayout *_randomLayout;
 	QHBoxLayout *_entryLayout;
 
 	std::shared_ptr<MacroActionVariable> _entryData;
