@@ -8,6 +8,8 @@
 #include "source-helpers.hpp"
 #include "utility.hpp"
 
+#include <random>
+
 namespace advss {
 
 const std::string MacroActionVariable::id = "variable";
@@ -64,6 +66,8 @@ const static std::map<MacroActionVariable::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.variable.type.trim"},
 	{MacroActionVariable::Type::CHANGE_CASE,
 	 "AdvSceneSwitcher.action.variable.type.changeCase"},
+	{MacroActionVariable::Type::RANDOM_NUMBER,
+	 "AdvSceneSwitcher.action.variable.type.randomNumber"},
 };
 
 const static std::map<MacroActionVariable::CaseType, std::string> caseTypes = {
@@ -251,6 +255,27 @@ void MacroActionVariable::SetToSceneItemName(Variable *var)
 	GetSceneItemNameHelper data{sceneItemCount, index};
 	obs_scene_enum_items(scene, getSceneItemAtIdx, &data);
 	var->SetValue(data.name);
+}
+
+void MacroActionVariable::GenerateRandomNumber(Variable *var)
+{
+	static std::random_device rd;
+	static std::mt19937 gen(rd());
+
+	double start = _randomNumberStart;
+	double end = _randomNumberEnd;
+
+	if (start > end) {
+		std::swap(start, end);
+	}
+
+	if (_generateInteger) {
+		std::uniform_int_distribution<int> dis(start, end);
+		var->SetValue(dis(gen));
+	} else {
+		std::uniform_real_distribution<double> dis(start, end);
+		var->SetValue(dis(gen));
+	}
 }
 
 struct AskForInputParams {
@@ -465,6 +490,9 @@ bool MacroActionVariable::PerformAction()
 	case Type::CHANGE_CASE:
 		HandleCaseChange(var.get());
 		return true;
+	case Type::RANDOM_NUMBER:
+		GenerateRandomNumber(var.get());
+		return true;
 	}
 
 	return true;
@@ -502,6 +530,9 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	_stringLength.Save(obj, "stringLength");
 	obs_data_set_int(obj, "paddingChar", _paddingChar);
 	obs_data_set_int(obj, "caseType", static_cast<int>(_caseType));
+	_randomNumberStart.Save(obj, "randomNumberStart");
+	_randomNumberEnd.Save(obj, "randomNumberEnd");
+	obs_data_set_bool(obj, "generateInteger", _generateInteger);
 
 	obs_data_set_int(obj, "version", 1);
 
@@ -554,6 +585,10 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 		_subStringSize.Load(obj, "subStringSize");
 		_regexMatchIdx.Load(obj, "regexMatchIdx");
 	}
+
+	_randomNumberStart.Load(obj, "randomNumberStart");
+	_randomNumberEnd.Load(obj, "randomNumberEnd");
+	_generateInteger = obs_data_get_bool(obj, "generateInteger");
 
 	return true;
 }
@@ -734,6 +769,13 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _stringLength(new VariableSpinBox(this)),
 	  _paddingCharSelection(new SingleCharSelection()),
 	  _caseType(new FilterComboBox(this)),
+	  _randomNumberStart(new VariableDoubleSpinBox(this)),
+	  _randomNumberEnd(new VariableDoubleSpinBox(this)),
+	  _generateInteger(new QCheckBox(
+		  obs_module_text(
+			  "AdvSceneSwitcher.action.variable.generateInteger"),
+		  this)),
+	  _randomLayout(new QVBoxLayout()),
 	  _entryLayout(new QHBoxLayout())
 {
 	_numValue->setMinimum(-9999999999);
@@ -759,6 +801,10 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	populateTypeSelection(_actions);
 	populateDirectionSelection(_direction);
 	populateCaseTypeSelection(_caseType);
+	_randomNumberStart->setMinimum(-9999999999);
+	_randomNumberStart->setMaximum(9999999999);
+	_randomNumberEnd->setMinimum(-9999999999);
+	_randomNumberEnd->setMaximum(9999999999);
 
 	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),
 			 this, SLOT(VariableChanged(const QString &)));
@@ -833,6 +879,18 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 SLOT(CharSelectionChanged(const QString &)));
 	QWidget::connect(_caseType, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(CaseTypeChanged(int)));
+	QWidget::connect(
+		_randomNumberStart,
+		SIGNAL(NumberVariableChanged(const NumberVariable<double> &)),
+		this,
+		SLOT(RandomNumberStartChanged(const NumberVariable<double> &)));
+	QWidget::connect(
+		_randomNumberEnd,
+		SIGNAL(NumberVariableChanged(const NumberVariable<double> &)),
+		this,
+		SLOT(RandomNumberEndChanged(const NumberVariable<double> &)));
+	QWidget::connect(_generateInteger, SIGNAL(stateChanged(int)), this,
+			 SLOT(GenerateIntegerChanged(int)));
 
 	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -861,6 +919,9 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{stringLength}}", _stringLength},
 		{"{{paddingCharSelection}}", _paddingCharSelection},
 		{"{{caseType}}", _caseType},
+		{"{{randomNumberStart}}", _randomNumberStart},
+		{"{{randomNumberEnd}}", _randomNumberEnd},
+		{"{{generateInteger}}", _generateInteger},
 	};
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.variable.entry.other"),
@@ -890,6 +951,14 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			"AdvSceneSwitcher.action.variable.entry.userInput.placeholder"),
 		_placeholderLayout, widgetPlaceholders);
 
+	auto randomLayout = new QHBoxLayout();
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.action.variable.entry.randomNumber"),
+		randomLayout, widgetPlaceholders);
+	_randomLayout->addLayout(randomLayout);
+	_randomLayout->addWidget(_generateInteger);
+
 	auto regexConfigLayout = new QHBoxLayout;
 	regexConfigLayout->addWidget(_substringRegex);
 	regexConfigLayout->addStretch();
@@ -908,6 +977,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	layout->addWidget(_mathExpressionResult);
 	layout->addLayout(_promptLayout);
 	layout->addLayout(_placeholderLayout);
+	layout->addLayout(_randomLayout);
 	setLayout(layout);
 
 	_entryData = entryData;
@@ -963,6 +1033,9 @@ void MacroActionVariableEdit::UpdateEntryData()
 		QChar::fromLatin1(_entryData->_paddingChar));
 	_caseType->setCurrentIndex(
 		_caseType->findData(static_cast<int>(_entryData->_caseType)));
+	_randomNumberStart->SetValue(_entryData->_randomNumberStart);
+	_randomNumberEnd->SetValue(_entryData->_randomNumberEnd);
+	_generateInteger->setChecked(_entryData->_generateInteger);
 
 	SetWidgetVisibility();
 }
@@ -1385,6 +1458,26 @@ void MacroActionVariableEdit::CaseTypeChanged(int index)
 		_caseType->itemData(index).toInt());
 }
 
+void MacroActionVariableEdit::RandomNumberStartChanged(
+	const NumberVariable<double> &value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_randomNumberStart = value;
+}
+
+void MacroActionVariableEdit::RandomNumberEndChanged(
+	const NumberVariable<double> &value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_randomNumberEnd = value;
+}
+
+void MacroActionVariableEdit::GenerateIntegerChanged(int value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_generateInteger = value;
+}
+
 void MacroActionVariableEdit::SetWidgetVisibility()
 {
 	if (!_entryData) {
@@ -1534,6 +1627,9 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 					  MacroActionVariable::Type::PAD);
 	_caseType->setVisible(_entryData->_type ==
 			      MacroActionVariable::Type::CHANGE_CASE);
+	SetLayoutVisible(_randomLayout,
+			 _entryData->_type ==
+				 MacroActionVariable::Type::RANDOM_NUMBER);
 
 	adjustSize();
 	updateGeometry();
