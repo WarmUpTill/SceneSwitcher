@@ -319,11 +319,7 @@ void MacroActionFilterEdit::UpdateEntryData()
 
 void MacroActionFilterEdit::SourceChanged(const SourceSelection &source)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_source = source;
 }
 
@@ -351,11 +347,7 @@ void MacroActionFilterEdit::FilterChanged(const FilterSelection &filter)
 
 void MacroActionFilterEdit::ActionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionFilter::Action>(value);
 	SetWidgetVisibility();
 }
@@ -393,11 +385,7 @@ void MacroActionFilterEdit::GetSettingsClicked()
 
 void MacroActionFilterEdit::SettingsStringChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_settingsString =
 		_settingsString->toPlainText().toStdString();
 
@@ -407,11 +395,7 @@ void MacroActionFilterEdit::SettingsStringChanged()
 
 void MacroActionFilterEdit::SettingsInputMethodChanged(int idx)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_settingsInputMethod =
 		static_cast<MacroActionFilter::SettingsInputMethod>(
 			_settingsInputMethods->itemData(idx).toInt());
@@ -420,31 +404,19 @@ void MacroActionFilterEdit::SettingsInputMethodChanged(int idx)
 
 void MacroActionFilterEdit::SelectionChanged(const TempVariableRef &var)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_tempVar = var;
 }
 
 void MacroActionFilterEdit::SelectionChanged(const SourceSetting &setting)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_setting = setting;
 }
 
 void MacroActionFilterEdit::ManualSettingsValueChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_manualSettingValue =
 		_manualSettingValue->toPlainText().toStdString();
 
@@ -461,11 +433,7 @@ void MacroActionFilterEdit::RefreshVariableSourceSelectionValue()
 
 void MacroActionFilterEdit::ButtonChanged(const SourceSettingButton &button)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_button = button;
 }
 
