@@ -263,28 +263,12 @@ static inline void populateActionSelection(QComboBox *list)
 	}
 }
 
-static inline void populateDeinterlaceModeSelection(QComboBox *list)
+template<class T>
+static inline void populateModeSelection(QComboBox *list,
+					 const std::map<T, std::string> &modes)
 {
 	list->clear();
-	for (const auto &[value, name] : deinterlaceModes) {
-		list->addItem(obs_module_text(name.c_str()),
-			      static_cast<int>(value));
-	}
-}
-
-static inline void populateDeinterlaceFieldOrderSelection(QComboBox *list)
-{
-	list->clear();
-	for (const auto &[value, name] : deinterlaceFieldOrders) {
-		list->addItem(obs_module_text(name.c_str()),
-			      static_cast<int>(value));
-	}
-}
-
-static inline void populateSettingsInputMethods(QComboBox *list)
-{
-	list->clear();
-	for (const auto &[value, name] : inputMethods) {
+	for (const auto &[value, name] : modes) {
 		list->addItem(obs_module_text(name.c_str()),
 			      static_cast<int>(value));
 	}
@@ -315,9 +299,9 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	auto sources = GetSourceNames();
 	sources.sort();
 	_sources->SetSourceNameList(sources);
-	populateDeinterlaceModeSelection(_deinterlaceMode);
-	populateDeinterlaceFieldOrderSelection(_deinterlaceOrder);
-	populateSettingsInputMethods(_settingsInputMethods);
+	populateModeSelection(_deinterlaceMode, deinterlaceModes);
+	populateModeSelection(_deinterlaceOrder, deinterlaceFieldOrders);
+	populateModeSelection(_settingsInputMethods, inputMethods);
 	_refreshSettingSelection->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.action.source.refresh.tooltip"));
 
@@ -436,22 +420,14 @@ void MacroActionSourceEdit::SourceChanged(const SourceSelection &source)
 
 void MacroActionSourceEdit::ActionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionSource::Action>(value);
 	SetWidgetVisibility();
 }
 
 void MacroActionSourceEdit::ButtonChanged(const SourceSettingButton &button)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_button = button;
 }
 
@@ -479,11 +455,7 @@ void MacroActionSourceEdit::GetSettingsClicked()
 
 void MacroActionSourceEdit::SettingsStringChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_settingsString =
 		_settingsString->toPlainText().toStdString();
 
@@ -493,22 +465,14 @@ void MacroActionSourceEdit::SettingsStringChanged()
 
 void MacroActionSourceEdit::DeinterlaceModeChanged(int idx)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_deinterlaceMode = static_cast<obs_deinterlace_mode>(
 		_deinterlaceMode->itemData(idx).toInt());
 }
 
 void MacroActionSourceEdit::DeinterlaceOrderChanged(int idx)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_deinterlaceOrder =
 		static_cast<obs_deinterlace_field_order>(
 			_deinterlaceOrder->itemData(idx).toInt());
@@ -516,21 +480,13 @@ void MacroActionSourceEdit::DeinterlaceOrderChanged(int idx)
 
 void MacroActionSourceEdit::SelectionChanged(const TempVariableRef &var)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_tempVar = var;
 }
 
 void MacroActionSourceEdit::SettingsInputMethodChanged(int idx)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_settingsInputMethod =
 		static_cast<MacroActionSource::SettingsInputMethod>(
 			_settingsInputMethods->itemData(idx).toInt());
@@ -539,21 +495,13 @@ void MacroActionSourceEdit::SettingsInputMethodChanged(int idx)
 
 void MacroActionSourceEdit::SelectionChanged(const SourceSetting &setting)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_setting = setting;
 }
 
 void MacroActionSourceEdit::ManualSettingsValueChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_manualSettingValue =
 		_manualSettingValue->toPlainText().toStdString();
 
