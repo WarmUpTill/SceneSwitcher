@@ -81,7 +81,7 @@ private slots:
 	void SelectionChanged(const SourceSetting &);
 	void ManualSettingsValueChanged();
 	void RefreshVariableSourceSelectionValue();
-	void ButtonChanged(int idx);
+	void ButtonChanged(const SourceSettingButton &);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -100,7 +100,7 @@ private:
 	SourceSettingSelection *_filterSettings;
 	VariableTextEdit *_settingsString;
 	QPushButton *_refreshSettingSelection;
-	QComboBox *_settingsButtons;
+	SourceSettingsButtonSelection *_settingsButtons;
 
 	std::shared_ptr<MacroActionFilter> _entryData;
 	bool _loading = true;

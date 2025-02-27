@@ -215,7 +215,7 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 	  _settingsString(new VariableTextEdit(this)),
 	  _refreshSettingSelection(new QPushButton(
 		  obs_module_text("AdvSceneSwitcher.action.filter.refresh"))),
-	  _settingsButtons(new QComboBox())
+	  _settingsButtons(new SourceSettingsButtonSelection(this))
 {
 	_filters->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
@@ -253,8 +253,10 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 			 SLOT(SelectionChanged(const SourceSetting &)));
 	QWidget::connect(_refreshSettingSelection, SIGNAL(clicked()), this,
 			 SLOT(RefreshVariableSourceSelectionValue()));
-	QWidget::connect(_settingsButtons, SIGNAL(currentIndexChanged(int)),
-			 this, SLOT(ButtonChanged(int)));
+	QWidget::connect(_settingsButtons,
+			 SIGNAL(SelectionChanged(const SourceSettingButton &)),
+			 this,
+			 SLOT(ButtonChanged(const SourceSettingButton &)));
 
 	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{sources}}", _sources},
@@ -311,9 +313,7 @@ void MacroActionFilterEdit::UpdateEntryData()
 		static_cast<int>(_entryData->_settingsInputMethod)));
 	_tempVars->SetVariable(_entryData->_tempVar);
 	_manualSettingValue->setPlainText(_entryData->_manualSettingValue);
-	PopulateSourceButtonSelection(_settingsButtons, firstFilter);
-	_settingsButtons->setCurrentText(
-		QString::fromStdString(_entryData->_button.ToString()));
+	_settingsButtons->SetSelection(firstFilter, _entryData->_button);
 	SetWidgetVisibility();
 }
 
@@ -337,11 +337,13 @@ void MacroActionFilterEdit::FilterChanged(const FilterSelection &filter)
 		auto lock = LockContext();
 		_entryData->_filter = filter;
 	}
+
 	const auto filters =
 		_entryData->_filter.GetFilters(_entryData->_source);
 	OBSWeakSource firstFilter = filters.empty() ? nullptr : filters.at(0);
 	_filterSettings->SetSource(firstFilter);
-	PopulateSourceButtonSelection(_settingsButtons, firstFilter);
+	_settingsButtons->SetSource(firstFilter);
+
 	SetWidgetVisibility();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -457,15 +459,14 @@ void MacroActionFilterEdit::RefreshVariableSourceSelectionValue()
 	_filterSettings->SetSource(filters.empty() ? nullptr : filters.at(0));
 }
 
-void MacroActionFilterEdit::ButtonChanged(int idx)
+void MacroActionFilterEdit::ButtonChanged(const SourceSettingButton &button)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	auto lock = LockContext();
-	_entryData->_button = qvariant_cast<SourceSettingButton>(
-		_settingsButtons->itemData(idx));
+	_entryData->_button = button;
 }
 
 void MacroActionFilterEdit::SetWidgetVisibility()

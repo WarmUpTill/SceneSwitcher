@@ -76,19 +76,46 @@ void PressSourceButton(const SourceSettingButton &button, obs_source_t *source)
 	obs_properties_destroy(sourceProperties);
 }
 
-void PopulateSourceButtonSelection(QComboBox *list, OBSWeakSource source)
+SourceSettingsButtonSelection::SourceSettingsButtonSelection(QWidget *parent)
+	: FilterComboBox(parent)
 {
-	list->clear();
+	connect(this, &FilterComboBox::currentIndexChanged, [this](int idx) {
+		emit SelectionChanged(
+			qvariant_cast<SourceSettingButton>(itemData(idx)));
+	});
+}
+
+void SourceSettingsButtonSelection::SetSource(const OBSWeakSource &source,
+					      bool restorePreviousSelection)
+{
+	const auto previousSelection = currentText();
+	PopulateSelection(source);
+	if (restorePreviousSelection) {
+		setCurrentIndex(findText(previousSelection));
+	}
+}
+
+void SourceSettingsButtonSelection::SetSelection(
+	const OBSWeakSource &source, const SourceSettingButton &button)
+{
+	SetSource(source, false);
+	setCurrentText(QString::fromStdString(button.ToString()));
+}
+
+void SourceSettingsButtonSelection::PopulateSelection(
+	const OBSWeakSource &source)
+{
+	const QSignalBlocker b(this);
+	clear();
 	auto buttons = GetSourceButtons(source);
 	if (buttons.empty()) {
-		list->addItem(
-			obs_module_text("AdvSceneSwitcher.noSettingsButtons"));
+		addItem(obs_module_text("AdvSceneSwitcher.noSettingsButtons"));
 	}
 
 	for (const auto &button : buttons) {
 		QVariant value;
 		value.setValue(button);
-		list->addItem(QString::fromStdString(button.ToString()), value);
+		addItem(QString::fromStdString(button.ToString()), value);
 	}
 }
 

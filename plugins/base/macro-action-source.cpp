@@ -295,7 +295,7 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	: QWidget(parent),
 	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
 	  _actions(new QComboBox()),
-	  _settingsButtons(new QComboBox()),
+	  _settingsButtons(new SourceSettingsButtonSelection(this)),
 	  _settingsLayout(new QHBoxLayout()),
 	  _settingsInputMethods(new QComboBox(this)),
 	  _manualSettingValue(new VariableTextEdit(this, 5, 1, 1)),
@@ -323,8 +323,10 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
-	QWidget::connect(_settingsButtons, SIGNAL(currentIndexChanged(int)),
-			 this, SLOT(ButtonChanged(int)));
+	QWidget::connect(_settingsButtons,
+			 SIGNAL(SelectionChanged(const SourceSettingButton &)),
+			 this,
+			 SLOT(ButtonChanged(const SourceSettingButton &)));
 	QWidget::connect(_sources,
 			 SIGNAL(SourceChanged(const SourceSelection &)), this,
 			 SLOT(SourceChanged(const SourceSelection &)));
@@ -394,14 +396,12 @@ void MacroActionSourceEdit::UpdateEntryData()
 		return;
 	}
 
-	PopulateSourceButtonSelection(_settingsButtons,
-				      _entryData->_source.GetSource());
+	const auto weakSource = _entryData->_source.GetSource();
+	_settingsButtons->SetSelection(weakSource, _entryData->_button);
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_sources->SetSource(_entryData->_source);
-	_sourceSettings->SetSource(_entryData->_source.GetSource());
+	_sourceSettings->SetSource(weakSource);
 	_sourceSettings->SetSetting(_entryData->_setting);
-	_settingsButtons->setCurrentText(
-		QString::fromStdString(_entryData->_button.ToString()));
 	_settingsString->setPlainText(_entryData->_settingsString);
 	_deinterlaceMode->setCurrentIndex(_deinterlaceMode->findData(
 		static_cast<int>(_entryData->_deinterlaceMode)));
@@ -425,9 +425,10 @@ void MacroActionSourceEdit::SourceChanged(const SourceSelection &source)
 		auto lock = LockContext();
 		_entryData->_source = source;
 	}
-	PopulateSourceButtonSelection(_settingsButtons,
-				      _entryData->_source.GetSource());
-	_sourceSettings->SetSource(_entryData->_source.GetSource());
+
+	const auto weakSource = _entryData->_source.GetSource();
+	_sourceSettings->SetSource(weakSource);
+	_settingsButtons->SetSource(weakSource);
 	SetWidgetVisibility();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -444,15 +445,14 @@ void MacroActionSourceEdit::ActionChanged(int value)
 	SetWidgetVisibility();
 }
 
-void MacroActionSourceEdit::ButtonChanged(int idx)
+void MacroActionSourceEdit::ButtonChanged(const SourceSettingButton &button)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	auto lock = LockContext();
-	_entryData->_button = qvariant_cast<SourceSettingButton>(
-		_settingsButtons->itemData(idx));
+	_entryData->_button = button;
 }
 
 void MacroActionSourceEdit::GetSettingsClicked()
