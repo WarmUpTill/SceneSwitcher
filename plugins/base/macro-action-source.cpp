@@ -384,8 +384,7 @@ void MacroActionSourceEdit::UpdateEntryData()
 	_settingsButtons->SetSelection(weakSource, _entryData->_button);
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_sources->SetSource(_entryData->_source);
-	_sourceSettings->SetSource(weakSource);
-	_sourceSettings->SetSetting(_entryData->_setting);
+	_sourceSettings->SetSelection(weakSource, _entryData->_setting);
 	_settingsString->setPlainText(_entryData->_settingsString);
 	_deinterlaceMode->setCurrentIndex(_deinterlaceMode->findData(
 		static_cast<int>(_entryData->_deinterlaceMode)));

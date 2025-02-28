@@ -249,14 +249,21 @@ SourceSettingSelection::SourceSettingSelection(QWidget *parent)
 	setLayout(layout);
 }
 
-void SourceSettingSelection::SetSource(const OBSWeakSource &source)
+void SourceSettingSelection::SetSource(const OBSWeakSource &source,
+				       bool restorePreviousSelection)
 {
-	_settings->clear();
+	const auto previousSelection = _settings->currentData();
 	Populate(source);
+	if (restorePreviousSelection) {
+		_settings->setCurrentIndex(
+			_settings->findData(previousSelection));
+	}
 }
 
-void SourceSettingSelection::SetSetting(const SourceSetting &setting)
+void SourceSettingSelection::SetSelection(const OBSWeakSource &source,
+					  const SourceSetting &setting)
 {
+	SetSource(source, false);
 	QVariant variant;
 	variant.setValue(setting);
 	_settings->setCurrentIndex(_settings->findData(variant));
@@ -281,6 +288,7 @@ void SourceSettingSelection::SelectionIdxChanged(int idx)
 
 void SourceSettingSelection::Populate(const OBSWeakSource &source)
 {
+	_settings->clear();
 	OBSSourceAutoRelease s = obs_weak_source_get_source(source);
 	auto settings = GetSoruceSettings(s);
 	for (const auto &setting : settings) {
