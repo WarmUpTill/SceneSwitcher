@@ -40,8 +40,9 @@ class SourceSettingSelection : public QWidget {
 
 public:
 	SourceSettingSelection(QWidget *parent = nullptr);
-	void SetSource(const OBSWeakSource &);
-	void SetSetting(const SourceSetting &);
+	void SetSource(const OBSWeakSource &,
+		       bool restorePreviousSelection = true);
+	void SetSelection(const OBSWeakSource &source, const SourceSetting &);
 
 private slots:
 	void SelectionIdxChanged(int);

@@ -307,8 +307,7 @@ void MacroActionFilterEdit::UpdateEntryData()
 	const auto filters =
 		_entryData->_filter.GetFilters(_entryData->_source);
 	OBSWeakSource firstFilter = filters.empty() ? nullptr : filters.at(0);
-	_filterSettings->SetSource(firstFilter);
-	_filterSettings->SetSetting(_entryData->_setting);
+	_filterSettings->SetSelection(firstFilter, _entryData->_setting);
 	_settingsInputMethods->setCurrentIndex(_settingsInputMethods->findData(
 		static_cast<int>(_entryData->_settingsInputMethod)));
 	_tempVars->SetVariable(_entryData->_tempVar);

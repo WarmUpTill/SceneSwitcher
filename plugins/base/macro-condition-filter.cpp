@@ -420,8 +420,9 @@ void MacroConditionFilterEdit::UpdateEntryData()
 	_regex->SetRegexConfig(_entryData->_regex);
 	const auto filters =
 		_entryData->_filter.GetFilters(_entryData->_source);
-	_settingSelection->SetSource(filters.empty() ? nullptr : filters.at(0));
-	_settingSelection->SetSetting(_entryData->_setting);
+	_settingSelection->SetSelection(filters.empty() ? nullptr
+							: filters.at(0),
+					_entryData->_setting);
 	SetWidgetVisibility();
 
 	adjustSize();

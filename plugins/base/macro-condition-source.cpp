@@ -483,8 +483,8 @@ void MacroConditionSourceEdit::UpdateEntryData()
 		static_cast<int>(_entryData->GetCondition()));
 	_settings->setPlainText(_entryData->_settings);
 	_regex->SetRegexConfig(_entryData->_regex);
-	_settingSelection->SetSource(_entryData->_source.GetSource());
-	_settingSelection->SetSetting(_entryData->_setting);
+	_settingSelection->SetSelection(_entryData->_source.GetSource(),
+					_entryData->_setting);
 	_size->SetValue(_entryData->_size);
 	_sizeCompareMethods->setCurrentIndex(
 		static_cast<int>(_entryData->_comparision));
