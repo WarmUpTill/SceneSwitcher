@@ -251,7 +251,8 @@ OCRParameters::OCRParameters(const OCRParameters &other)
 	  regex(other.regex),
 	  color(other.color),
 	  colorThreshold(other.colorThreshold),
-	  pageSegMode(other.pageSegMode)
+	  pageSegMode(other.pageSegMode),
+	  languageCode(other.languageCode)
 {
 	if (!initDone) {
 		Setup();
@@ -268,6 +269,7 @@ OCRParameters &OCRParameters::operator=(const OCRParameters &other)
 	color = other.color;
 	colorThreshold = other.colorThreshold;
 	pageSegMode = other.pageSegMode;
+	languageCode = other.languageCode;
 	if (!initDone) {
 		Setup();
 	}
@@ -329,6 +331,7 @@ bool OCRParameters::SetLanguageCode(const std::string &value)
 	if (!fileInfo.exists(dataPath)) {
 		return false;
 	}
+	languageCode = value;
 	Setup();
 	ocr->SetPageSegMode(pageSegMode);
 	return true;
