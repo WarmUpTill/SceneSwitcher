@@ -312,6 +312,7 @@ bool OCRParameters::Load(obs_data_t *obj)
 	if (initDone) {
 		ocr->SetPageSegMode(pageSegMode);
 	}
+	Setup();
 	return true;
 }
 
