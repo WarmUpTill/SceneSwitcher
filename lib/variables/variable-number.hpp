@@ -29,7 +29,7 @@ private:
 	T _value = {};
 	std::weak_ptr<Variable> _variable;
 
-	friend class GenericVaraiableSpinbox;
+	friend class GenericVariableSpinbox;
 	friend class VariableSpinBox;
 	friend class VariableDoubleSpinBox;
 };

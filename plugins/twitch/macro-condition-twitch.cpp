@@ -1425,8 +1425,8 @@ MacroConditionTwitchEdit::MacroConditionTwitchEdit(
 		this,
 		SLOT(ChatMessagePatternChanged(const ChatMessagePattern &)));
 	QWidget::connect(_category,
-			 SIGNAL(CategoreyChanged(const TwitchCategory &)), this,
-			 SLOT(CategoreyChanged(const TwitchCategory &)));
+			 SIGNAL(CategoryChanged(const TwitchCategory &)), this,
+			 SLOT(CategoryChanged(const TwitchCategory &)));
 	QWidget::connect(_clearBufferOnMatch, SIGNAL(stateChanged(int)), this,
 			 SLOT(ClearBufferOnMatchChanged(int)));
 
@@ -1569,7 +1569,7 @@ void MacroConditionTwitchEdit::RegexTitleChanged(const RegexConfig &conf)
 	updateGeometry();
 }
 
-void MacroConditionTwitchEdit::CategoreyChanged(const TwitchCategory &category)
+void MacroConditionTwitchEdit::CategoryChanged(const TwitchCategory &category)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_category = category;
