@@ -298,6 +298,7 @@ bool MacroActionTwitch::PerformAction()
 		break;
 	case Action::CHAT_EMOTE_ONLY_DISABLE:
 		SetChatEmoteOnlyMode(token, false);
+		break;
 	case MacroActionTwitch::Action::SEND_CHAT_MESSAGE:
 		SendChatMessage(token);
 		break;
