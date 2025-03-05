@@ -21,6 +21,8 @@ void MacroActionTwitch::ResolveVariablesToFixedValues()
 	_announcementMessage.ResolveVariables();
 	_channel.ResolveVariables();
 	_chatMessage.ResolveVariables();
+	_userLogin.ResolveVariables();
+	_userId.ResolveVariables();
 }
 
 std::shared_ptr<MacroAction> MacroActionTwitch::Create(Macro *m)
@@ -59,6 +61,8 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.twitch.type.chat.emoteOnly.disable"},
 	{MacroActionTwitch::Action::SEND_CHAT_MESSAGE,
 	 "AdvSceneSwitcher.action.twitch.type.chat.sendMessage"},
+	{MacroActionTwitch::Action::USER_GET_INFO,
+	 "AdvSceneSwitcher.action.twitch.type.user.getInfo"},
 };
 
 const static std::map<MacroActionTwitch::AnnouncementColor, std::string>
@@ -264,6 +268,111 @@ void MacroActionTwitch::SendChatMessage(
 	_chatConnection->SendChatMessage(_chatMessage);
 }
 
+void MacroActionTwitch::GetUserInfo(const std::shared_ptr<TwitchToken> &token)
+{
+	httplib::Params params;
+	switch (_userInfoQueryType) {
+	case UserInfoQueryType::ID:
+		params.insert({"id", std::to_string(_userId)});
+		break;
+	case UserInfoQueryType::LOGIN:
+		params.insert({"login", _userLogin});
+		break;
+	default:
+		break;
+	}
+	auto result = SendGetRequest(*token, "https://api.twitch.tv",
+				     "/helix/users", params);
+
+	if (result.status != 200) {
+		blog(LOG_INFO, "Failed get user info! (%d)\n", result.status);
+		return;
+	}
+
+	OBSDataArrayAutoRelease array = obs_data_get_array(result.data, "data");
+	size_t count = obs_data_array_count(array);
+	if (count == 0) {
+		blog(LOG_WARNING, "%s did not return any data!", __func__);
+		return;
+	}
+
+	OBSDataAutoRelease data = obs_data_array_item(array, 0);
+
+	SetTempVarValue("id", obs_data_get_string(data, "id"));
+	SetTempVarValue("login", obs_data_get_string(data, "login"));
+	SetTempVarValue("display_name",
+			obs_data_get_string(data, "display_name"));
+	SetTempVarValue("type", obs_data_get_string(data, "type"));
+	SetTempVarValue("broadcaster_type",
+			obs_data_get_string(data, "broadcaster_type"));
+	SetTempVarValue("description",
+			obs_data_get_string(data, "description"));
+	SetTempVarValue("profile_image_url",
+			obs_data_get_string(data, "profile_image_url"));
+	SetTempVarValue("offline_image_url",
+			obs_data_get_string(data, "offline_image_url"));
+	SetTempVarValue("created_at", obs_data_get_string(data, "created_at"));
+}
+
+void MacroActionTwitch::SetupTempVars()
+{
+	MacroAction::SetupTempVars();
+	if (_action != Action::USER_GET_INFO) {
+		return;
+	}
+
+	AddTempvar(
+		"id",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.id.user.getInfo"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.id.user.getInfo.description"));
+	AddTempvar(
+		"login",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.login.user.getInfo"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.login.user.getInfo.description"));
+	AddTempvar(
+		"display_name",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.display_name.user.getInfo"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.display_name.user.getInfo.description"));
+	AddTempvar(
+		"type",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.type.user.getInfo"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.type.user.getInfo.description"));
+	AddTempvar(
+		"broadcaster_type",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.broadcaster_type.user.getInfo"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.broadcaster_type.user.getInfo.description"));
+	AddTempvar(
+		"description",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.description.user.getInfo"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.description.user.getInfo.description"));
+	AddTempvar(
+		"profile_image_url",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.profile_image_url.user.getInfo"));
+	AddTempvar(
+		"offline_image_url",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.offline_image_url.user.getInfo"));
+	AddTempvar(
+		"created_at",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.created_at.user.getInfo"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.twitch.created_at.user.getInfo.description"));
+}
+
 bool MacroActionTwitch::PerformAction()
 {
 	auto token = _token.lock();
@@ -302,6 +411,9 @@ bool MacroActionTwitch::PerformAction()
 	case MacroActionTwitch::Action::SEND_CHAT_MESSAGE:
 		SendChatMessage(token);
 		break;
+	case MacroActionTwitch::Action::USER_GET_INFO:
+		GetUserInfo(token);
+		break;
 	default:
 		break;
 	}
@@ -339,6 +451,10 @@ bool MacroActionTwitch::Save(obs_data_t *obj) const
 			 static_cast<int>(_announcementColor));
 	_channel.Save(obj);
 	_chatMessage.Save(obj, "chatMessage");
+	obs_data_set_int(obj, "userInfoQueryType",
+			 static_cast<int>(_userInfoQueryType));
+	_userLogin.Save(obj, "userLogin");
+	_userId.Save(obj, "userId");
 
 	return true;
 }
@@ -358,6 +474,10 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 		obs_data_get_int(obj, "announcementColor"));
 	_channel.Load(obj);
 	_chatMessage.Load(obj, "chatMessage");
+	_userInfoQueryType = static_cast<UserInfoQueryType>(
+		obs_data_get_int(obj, "userInfoQueryType"));
+	_userLogin.Load(obj, "userLogin");
+	_userId.Load(obj, "userId");
 	SetAction(static_cast<Action>(obs_data_get_int(obj, "action")));
 
 	return true;
@@ -367,117 +487,137 @@ void MacroActionTwitch::SetAction(Action action)
 {
 	_action = action;
 	ResetChatConnection();
+	SetupTempVars();
 }
 
 bool MacroActionTwitch::ActionIsSupportedByToken()
 {
-	static const std::unordered_map<Action, TokenOption> requiredOption = {
-		{Action::CHANNEL_INFO_TITLE_SET, {"channel:manage:broadcast"}},
-		{Action::CHANNEL_INFO_CATEGORY_SET,
-		 {"channel:manage:broadcast"}},
-		{Action::CHANNEL_INFO_LANGUAGE_SET,
-		 {"channel:manage:broadcast"}},
-		{Action::CHANNEL_INFO_DELAY_SET, {"channel:manage:broadcast"}},
-		{Action::CHANNEL_INFO_BRANDED_CONTENT_ENABLE,
-		 {"channel:manage:broadcast"}},
-		{Action::CHANNEL_INFO_BRANDED_CONTENT_DISABLE,
-		 {"channel:manage:broadcast"}},
-		{Action::RAID_START, {"channel:manage:raids"}},
-		{Action::RAID_END, {"channel:manage:raids"}},
-		{Action::SHOUTOUT_SEND, {"moderator:manage:shoutouts"}},
-		{Action::POLL_END, {"channel:manage:polls"}},
-		{Action::PREDICTION_END, {"channel:manage:predictions"}},
-		{Action::SHIELD_MODE_START, {"moderator:manage:shield_mode"}},
-		{Action::SHIELD_MODE_END, {"moderator:manage:shield_mode"}},
-		{Action::POINTS_REWARD_ENABLE, {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_DISABLE, {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_PAUSE, {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_UNPAUSE, {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_TITLE_SET,
-		 {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_PROMPT_SET,
-		 {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_COST_SET,
-		 {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_USER_INPUT_REQUIRE,
-		 {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_USER_INPUT_UNREQUIRE,
-		 {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_COOLDOWN_ENABLE,
-		 {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_COOLDOWN_DISABLE,
-		 {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_QUEUE_SKIP_ENABLE,
-		 {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_QUEUE_SKIP_DISABLE,
-		 {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_MAX_PER_STREAM_ENABLE,
-		 {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_MAX_PER_STREAM_DISABLE,
-		 {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_MAX_PER_USER_ENABLE,
-		 {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_MAX_PER_USER_DISABLE,
-		 {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_DELETE, {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_REDEMPTION_CANCEL,
-		 {"channel:manage:redemptions"}},
-		{Action::POINTS_REWARD_REDEMPTION_FULFILL,
-		 {"channel:manage:redemptions"}},
-		{Action::USER_BAN, {"moderator:manage:banned_users"}},
-		{Action::USER_UNBAN, {"moderator:manage:banned_users"}},
-		{Action::USER_BLOCK, {"user:manage:blocked_users"}},
-		{Action::USER_UNBLOCK, {"user:manage:blocked_users"}},
-		{Action::USER_MODERATOR_ADD, {"channel:manage:moderators"}},
-		{Action::USER_MODERATOR_DELETE, {"channel:manage:moderators"}},
-		{Action::USER_VIP_ADD, {"channel:manage:vips"}},
-		{Action::USER_VIP_DELETE, {"channel:manage:vips"}},
-		{Action::COMMERCIAL_START, {"channel:edit:commercial"}},
-		{Action::COMMERCIAL_SNOOZE, {"channel:manage:ads"}},
-		{Action::MARKER_CREATE, {"channel:manage:broadcast"}},
-		{Action::CLIP_CREATE, {"clips:edit"}},
-		{Action::CHAT_ANNOUNCEMENT_SEND,
-		 {"moderator:manage:announcements"}},
-		{Action::CHAT_EMOTE_ONLY_ENABLE,
-		 {"moderator:manage:chat_settings"}},
-		{Action::CHAT_EMOTE_ONLY_DISABLE,
-		 {"moderator:manage:chat_settings"}},
-		{Action::CHAT_FOLLOWER_ONLY_ENABLE,
-		 {"moderator:manage:chat_settings"}},
-		{Action::CHAT_FOLLOWER_ONLY_DISABLE,
-		 {"moderator:manage:chat_settings"}},
-		{Action::CHAT_SUBSCRIBER_ONLY_ENABLE,
-		 {"moderator:manage:chat_settings"}},
-		{Action::CHAT_SUBSCRIBER_ONLY_DISABLE,
-		 {"moderator:manage:chat_settings"}},
-		{Action::CHAT_SLOW_MODE_ENABLE,
-		 {"moderator:manage:chat_settings"}},
-		{Action::CHAT_SLOW_MODE_DISABLE,
-		 {"moderator:manage:chat_settings"}},
-		{Action::CHAT_NON_MODERATOR_DELAY_ENABLE,
-		 {"moderator:manage:chat_settings"}},
-		{Action::CHAT_NON_MODERATOR_DELAY_DISABLE,
-		 {"moderator:manage:chat_settings"}},
-		{Action::CHAT_UNIQUE_MODE_ENABLE,
-		 {"moderator:manage:chat_settings"}},
-		{Action::CHAT_UNIQUE_MODE_DISABLE,
-		 {"moderator:manage:chat_settings"}},
-		{Action::WHISPER_SEND, {"user:manage:whispers"}},
-		{Action::SEND_CHAT_MESSAGE, {"chat:edit"}},
-	};
+	static const std::unordered_map<Action, std::vector<TokenOption>>
+		requiredOption = {
+			{Action::CHANNEL_INFO_TITLE_SET,
+			 {{"channel:manage:broadcast"}}},
+			{Action::CHANNEL_INFO_CATEGORY_SET,
+			 {{"channel:manage:broadcast"}}},
+			{Action::CHANNEL_INFO_LANGUAGE_SET,
+			 {{"channel:manage:broadcast"}}},
+			{Action::CHANNEL_INFO_DELAY_SET,
+			 {{"channel:manage:broadcast"}}},
+			{Action::CHANNEL_INFO_BRANDED_CONTENT_ENABLE,
+			 {{"channel:manage:broadcast"}}},
+			{Action::CHANNEL_INFO_BRANDED_CONTENT_DISABLE,
+			 {{"channel:manage:broadcast"}}},
+			{Action::RAID_START, {{"channel:manage:raids"}}},
+			{Action::RAID_END, {{"channel:manage:raids"}}},
+			{Action::SHOUTOUT_SEND,
+			 {{"moderator:manage:shoutouts"}}},
+			{Action::POLL_END, {{"channel:manage:polls"}}},
+			{Action::PREDICTION_END,
+			 {{"channel:manage:predictions"}}},
+			{Action::SHIELD_MODE_START,
+			 {{"moderator:manage:shield_mode"}}},
+			{Action::SHIELD_MODE_END,
+			 {{"moderator:manage:shield_mode"}}},
+			{Action::POINTS_REWARD_ENABLE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_DISABLE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_PAUSE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_UNPAUSE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_TITLE_SET,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_PROMPT_SET,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_COST_SET,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_USER_INPUT_REQUIRE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_USER_INPUT_UNREQUIRE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_COOLDOWN_ENABLE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_COOLDOWN_DISABLE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_QUEUE_SKIP_ENABLE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_QUEUE_SKIP_DISABLE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_MAX_PER_STREAM_ENABLE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_MAX_PER_STREAM_DISABLE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_MAX_PER_USER_ENABLE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_MAX_PER_USER_DISABLE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_DELETE,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_REDEMPTION_CANCEL,
+			 {{"channel:manage:redemptions"}}},
+			{Action::POINTS_REWARD_REDEMPTION_FULFILL,
+			 {{"channel:manage:redemptions"}}},
+			{Action::USER_BAN, {{"moderator:manage:banned_users"}}},
+			{Action::USER_UNBAN,
+			 {{"moderator:manage:banned_users"}}},
+			{Action::USER_BLOCK, {{"user:manage:blocked_users"}}},
+			{Action::USER_UNBLOCK, {{"user:manage:blocked_users"}}},
+			{Action::USER_MODERATOR_ADD,
+			 {{"channel:manage:moderators"}}},
+			{Action::USER_MODERATOR_DELETE,
+			 {{"channel:manage:moderators"}}},
+			{Action::USER_VIP_ADD, {{"channel:manage:vips"}}},
+			{Action::USER_VIP_DELETE, {{"channel:manage:vips"}}},
+			{Action::COMMERCIAL_START,
+			 {{"channel:edit:commercial"}}},
+			{Action::COMMERCIAL_SNOOZE, {{"channel:manage:ads"}}},
+			{Action::MARKER_CREATE, {{"channel:manage:broadcast"}}},
+			{Action::CLIP_CREATE, {{"clips:edit"}}},
+			{Action::CHAT_ANNOUNCEMENT_SEND,
+			 {{"moderator:manage:announcements"}}},
+			{Action::CHAT_EMOTE_ONLY_ENABLE,
+			 {{"moderator:manage:chat_settings"}}},
+			{Action::CHAT_EMOTE_ONLY_DISABLE,
+			 {{"moderator:manage:chat_settings"}}},
+			{Action::CHAT_FOLLOWER_ONLY_ENABLE,
+			 {{"moderator:manage:chat_settings"}}},
+			{Action::CHAT_FOLLOWER_ONLY_DISABLE,
+			 {{"moderator:manage:chat_settings"}}},
+			{Action::CHAT_SUBSCRIBER_ONLY_ENABLE,
+			 {{"moderator:manage:chat_settings"}}},
+			{Action::CHAT_SUBSCRIBER_ONLY_DISABLE,
+			 {{"moderator:manage:chat_settings"}}},
+			{Action::CHAT_SLOW_MODE_ENABLE,
+			 {{"moderator:manage:chat_settings"}}},
+			{Action::CHAT_SLOW_MODE_DISABLE,
+			 {{"moderator:manage:chat_settings"}}},
+			{Action::CHAT_NON_MODERATOR_DELAY_ENABLE,
+			 {{"moderator:manage:chat_settings"}}},
+			{Action::CHAT_NON_MODERATOR_DELAY_DISABLE,
+			 {{"moderator:manage:chat_settings"}}},
+			{Action::CHAT_UNIQUE_MODE_ENABLE,
+			 {{"moderator:manage:chat_settings"}}},
+			{Action::CHAT_UNIQUE_MODE_DISABLE,
+			 {{"moderator:manage:chat_settings"}}},
+			{Action::WHISPER_SEND, {{"user:manage:whispers"}}},
+			{Action::SEND_CHAT_MESSAGE, {{"chat:edit"}}},
+			{Action::USER_GET_INFO, {}},
+		};
 
 	auto token = _token.lock();
 	if (!token) {
 		return false;
 	}
 
-	auto option = requiredOption.find(_action);
-	assert(option != requiredOption.end());
-	if (option == requiredOption.end()) {
+	auto it = requiredOption.find(_action);
+	assert(it != requiredOption.end());
+	if (it == requiredOption.end()) {
 		return false;
 	}
 
-	return token->OptionIsEnabled(option->second);
+	const auto &[_, options] = *it;
+
+	return token->AnyOptionIsEnabled(options);
 }
 
 void MacroActionTwitch::ResetChatConnection()
@@ -508,6 +648,18 @@ static inline void populateAnnouncementColorSelection(QComboBox *list)
 	}
 }
 
+static void populateUserQueryInfoTypeSelection(QComboBox *list)
+{
+	list->addItem(
+		obs_module_text(
+			"AdvSceneSwitcher.action.twitch.user.getInfo.queryType.id"),
+		static_cast<int>(MacroActionTwitch::UserInfoQueryType::ID));
+	list->addItem(
+		obs_module_text(
+			"AdvSceneSwitcher.action.twitch.user.getInfo.queryType.login"),
+		static_cast<int>(MacroActionTwitch::UserInfoQueryType::LOGIN));
+}
+
 MacroActionTwitchEdit::MacroActionTwitchEdit(
 	QWidget *parent, std::shared_ptr<MacroActionTwitch> entryData)
 	: QWidget(parent),
@@ -524,7 +676,10 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _announcementMessage(new VariableTextEdit(this)),
 	  _announcementColor(new QComboBox(this)),
 	  _channel(new TwitchChannelSelection(this)),
-	  _chatMessage(new VariableTextEdit(this))
+	  _chatMessage(new VariableTextEdit(this)),
+	  _userInfoQueryType(new QComboBox(this)),
+	  _userLogin(new VariableLineEdit(this)),
+	  _userId(new VariableSpinBox(this))
 {
 	SetWidgetProperties();
 	SetWidgetSignalConnections();
@@ -677,6 +832,9 @@ void MacroActionTwitchEdit::SetWidgetProperties()
 
 	populateActionSelection(_actions);
 	populateAnnouncementColorSelection(_announcementColor);
+	populateUserQueryInfoTypeSelection(_userInfoQueryType);
+
+	_userId->setMaximum(999999999);
 }
 
 void MacroActionTwitchEdit::SetWidgetSignalConnections()
@@ -707,6 +865,14 @@ void MacroActionTwitchEdit::SetWidgetSignalConnections()
 			 SLOT(ChannelChanged(const TwitchChannel &)));
 	QWidget::connect(_chatMessage, SIGNAL(textChanged()), this,
 			 SLOT(ChatMessageChanged()));
+	QWidget::connect(_userInfoQueryType, SIGNAL(currentIndexChanged(int)),
+			 this, SLOT(UserInfoQueryTypeChanged(int)));
+	QWidget::connect(_userLogin, SIGNAL(editingFinished()), this,
+			 SLOT(UserLoginChanged()));
+	QWidget::connect(
+		_userId,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(UserIdChanged(const NumberVariable<int> &)));
 }
 
 void MacroActionTwitchEdit::SetWidgetVisibility()
@@ -739,6 +905,18 @@ void MacroActionTwitchEdit::SetWidgetVisibility()
 		MacroActionTwitch::Action::CHAT_ANNOUNCEMENT_SEND);
 	_chatMessage->setVisible(_entryData->GetAction() ==
 				 MacroActionTwitch::Action::SEND_CHAT_MESSAGE);
+	_userInfoQueryType->setVisible(
+		_entryData->GetAction() ==
+		MacroActionTwitch::Action::USER_GET_INFO);
+	_userLogin->setVisible(
+		_entryData->GetAction() ==
+			MacroActionTwitch::Action::USER_GET_INFO &&
+		_entryData->_userInfoQueryType ==
+			MacroActionTwitch::UserInfoQueryType::LOGIN);
+	_userId->setVisible(_entryData->GetAction() ==
+				    MacroActionTwitch::Action::USER_GET_INFO &&
+			    _entryData->_userInfoQueryType ==
+				    MacroActionTwitch::UserInfoQueryType::ID);
 
 	if (_entryData->GetAction() ==
 		    MacroActionTwitch::Action::CHANNEL_INFO_TITLE_SET ||
@@ -771,24 +949,62 @@ void MacroActionTwitchEdit::ChatMessageChanged()
 	updateGeometry();
 }
 
+void MacroActionTwitchEdit::UserInfoQueryTypeChanged(int idx)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_userInfoQueryType =
+		static_cast<MacroActionTwitch::UserInfoQueryType>(
+			_userInfoQueryType->itemData(idx).toInt());
+	SetWidgetVisibility();
+}
+
+void MacroActionTwitchEdit::UserLoginChanged()
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_userLogin = _userLogin->text().toStdString();
+}
+
+void MacroActionTwitchEdit::UserIdChanged(const NumberVariable<int> &value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_userId = value;
+}
+
 void MacroActionTwitchEdit::SetWidgetLayout()
 {
-	const std::vector<QWidget *> widgets{
-		_tokens,   _actions,           _streamTitle,
-		_category, _markerDescription, _clipHasDelay,
-		_duration, _announcementColor, _channel};
+	const std::vector<QWidget *> widgets{_tokens,
+					     _actions,
+					     _streamTitle,
+					     _category,
+					     _markerDescription,
+					     _clipHasDelay,
+					     _duration,
+					     _announcementColor,
+					     _channel,
+					     _userInfoQueryType,
+					     _userLogin,
+					     _userId};
 	for (auto widget : widgets) {
 		_layout->removeWidget(widget);
 	}
 	ClearLayout(_layout);
 
-	auto layoutText =
-		_entryData->GetAction() ==
-				MacroActionTwitch::Action::SEND_CHAT_MESSAGE
-			? obs_module_text(
-				  "AdvSceneSwitcher.action.twitch.entry.chat")
-			: obs_module_text(
-				  "AdvSceneSwitcher.action.twitch.entry.default");
+	const char *layoutText;
+	switch (_entryData->GetAction()) {
+	case MacroActionTwitch::Action::SEND_CHAT_MESSAGE:
+		layoutText = obs_module_text(
+			"AdvSceneSwitcher.action.twitch.entry.chat");
+		break;
+	case MacroActionTwitch::Action::USER_GET_INFO:
+		layoutText = obs_module_text(
+			"AdvSceneSwitcher.action.twitch.entry.user.getInfo");
+		break;
+	default:
+		layoutText = obs_module_text(
+			"AdvSceneSwitcher.action.twitch.entry.default");
+		break;
+	}
+
 	PlaceWidgets(layoutText, _layout,
 		     {{"{{account}}", _tokens},
 		      {"{{actions}}", _actions},
@@ -798,7 +1014,11 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 		      {"{{clipHasDelay}}", _clipHasDelay},
 		      {"{{duration}}", _duration},
 		      {"{{announcementColor}}", _announcementColor},
-		      {"{{channel}}", _channel}});
+		      {"{{channel}}", _channel},
+		      {"{{userInfoQueryType}}", _userInfoQueryType},
+		      {"{{userLogin}}", _userLogin},
+		      {"{{userId}}", _userId}});
+
 	_layout->setContentsMargins(0, 0, 0, 0);
 }
 
@@ -823,6 +1043,10 @@ void MacroActionTwitchEdit::UpdateEntryData()
 	_channel->SetToken(_entryData->_token);
 	_channel->SetChannel(_entryData->_channel);
 	_chatMessage->setPlainText(_entryData->_chatMessage);
+	_userInfoQueryType->setCurrentIndex(_userInfoQueryType->findData(
+		static_cast<int>(_entryData->_userInfoQueryType)));
+	_userLogin->setText(_entryData->_userLogin);
+	_userId->SetValue(_entryData->_userId);
 
 	SetWidgetVisibility();
 }
