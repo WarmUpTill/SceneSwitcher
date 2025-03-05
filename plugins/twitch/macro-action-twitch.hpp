@@ -210,7 +210,7 @@ private slots:
 	void TwitchTokenChanged(const QString &);
 	void CheckToken();
 	void StreamTitleChanged();
-	void CategoreyChanged(const TwitchCategory &);
+	void CategoryChanged(const TwitchCategory &);
 	void MarkerDescriptionChanged();
 	void ClipHasDelayChanged(int state);
 	void DurationChanged(const Duration &);

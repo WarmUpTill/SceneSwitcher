@@ -139,7 +139,7 @@ void TwitchCategorySelection::SelectionChanged(int index)
 {
 	TwitchCategory category{itemData(index).toInt(),
 				currentText().toStdString()};
-	emit CategoreyChanged(category);
+	emit CategoryChanged(category);
 }
 
 std::map<QString, int> CategoryGrabber::_categoryMap = {};
@@ -364,8 +364,8 @@ TwitchCategoryWidget::TwitchCategoryWidget(QWidget *parent)
 	  _manualSearch(new TwitchCategorySearchButton(this))
 {
 	QWidget::connect(_selection,
-			 SIGNAL(CategoreyChanged(const TwitchCategory &)), this,
-			 SIGNAL(CategoreyChanged(const TwitchCategory &)));
+			 SIGNAL(CategoryChanged(const TwitchCategory &)), this,
+			 SIGNAL(CategoryChanged(const TwitchCategory &)));
 
 	auto layout = new QHBoxLayout();
 	layout->setContentsMargins(0, 0, 0, 0);
