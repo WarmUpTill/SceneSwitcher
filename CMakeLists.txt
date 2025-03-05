@@ -22,7 +22,7 @@ endif()
 
 # OBS 31 no longer defines find_qt so check if we need to include it for in-tree
 # builds
-if(NOT COMMAND foo)
+if(NOT COMMAND find_qt)
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/helpers_common.cmake")
 endif()
 
