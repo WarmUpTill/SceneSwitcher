@@ -28,8 +28,8 @@ public:
 	int GetSegmentIndexValue() const;
 	void ResolveVariablesToFixedValues();
 
-	enum class Type {
-		SET_FIXED_VALUE,
+	enum class Action {
+		SET_VALUE,
 		APPEND,
 		APPEND_VAR,
 		INCREMENT,
@@ -55,7 +55,7 @@ public:
 		RANDOM_NUMBER,
 	};
 
-	Type _type = Type::SET_FIXED_VALUE;
+	Action _action = Action::SET_VALUE;
 	std::weak_ptr<Variable> _variable;
 	std::weak_ptr<Variable> _variable2;
 	StringVariable _strValue = "";
