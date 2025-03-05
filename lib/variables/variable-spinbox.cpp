@@ -5,8 +5,8 @@
 
 namespace advss {
 
-GenericVaraiableSpinbox::GenericVaraiableSpinbox(QWidget *parent,
-						 bool wholeNumber)
+GenericVariableSpinbox::GenericVariableSpinbox(QWidget *parent,
+					       bool wholeNumber)
 	: QWidget(parent),
 	  _fixedValueInt(new QSpinBox()),
 	  _fixedValueDouble(new QDoubleSpinBox()),
@@ -50,7 +50,7 @@ GenericVaraiableSpinbox::GenericVaraiableSpinbox(QWidget *parent,
 	SetVisibility();
 }
 
-void GenericVaraiableSpinbox::SetValue(const NumberVariable<int> &number)
+void GenericVariableSpinbox::SetValue(const NumberVariable<int> &number)
 {
 	_numberInt = number;
 	const QSignalBlocker b1(_toggleType);
@@ -61,7 +61,7 @@ void GenericVaraiableSpinbox::SetValue(const NumberVariable<int> &number)
 	SetVisibility();
 }
 
-void GenericVaraiableSpinbox::SetValue(const NumberVariable<double> &number)
+void GenericVariableSpinbox::SetValue(const NumberVariable<double> &number)
 {
 	_numberDouble = number;
 	const QSignalBlocker b1(_toggleType);
@@ -72,44 +72,44 @@ void GenericVaraiableSpinbox::SetValue(const NumberVariable<double> &number)
 	SetVisibility();
 }
 
-void GenericVaraiableSpinbox::DisableVariableSelection()
+void GenericVariableSpinbox::DisableVariableSelection()
 {
 	_hideTypeToggle = true;
 	_toggleType->hide();
 	ToggleTypeClicked(false);
 }
 
-void GenericVaraiableSpinbox::setMinimum(double value)
+void GenericVariableSpinbox::setMinimum(double value)
 {
 	_fixedValueInt->setMinimum(value);
 	_fixedValueDouble->setMinimum(value);
 }
 
-void GenericVaraiableSpinbox::setMaximum(double value)
+void GenericVariableSpinbox::setMaximum(double value)
 {
 	_fixedValueInt->setMaximum(value);
 	_fixedValueDouble->setMaximum(value);
 }
 
-void GenericVaraiableSpinbox::setPrefix(const QString &prefix)
+void GenericVariableSpinbox::setPrefix(const QString &prefix)
 {
 	_fixedValueInt->setPrefix(prefix);
 	_fixedValueDouble->setPrefix(prefix);
 }
 
-void GenericVaraiableSpinbox::setSuffix(const QString &suffix)
+void GenericVariableSpinbox::setSuffix(const QString &suffix)
 {
 	_fixedValueInt->setSuffix(suffix);
 	_fixedValueDouble->setSuffix(suffix);
 }
 
-void GenericVaraiableSpinbox::setSpecialValueText(const QString &text)
+void GenericVariableSpinbox::setSpecialValueText(const QString &text)
 {
 	_fixedValueInt->setSpecialValueText(text);
 	_fixedValueDouble->setSpecialValueText(text);
 }
 
-void GenericVaraiableSpinbox::SetFixedValue(int value)
+void GenericVariableSpinbox::SetFixedValue(int value)
 {
 	_numberInt._value = value;
 	const QSignalBlocker b(_fixedValueInt);
@@ -117,7 +117,7 @@ void GenericVaraiableSpinbox::SetFixedValue(int value)
 	EmitSignals();
 }
 
-void GenericVaraiableSpinbox::SetFixedValue(double value)
+void GenericVariableSpinbox::SetFixedValue(double value)
 {
 	_numberDouble._value = value;
 	const QSignalBlocker b(_fixedValueDouble);
@@ -125,14 +125,14 @@ void GenericVaraiableSpinbox::SetFixedValue(double value)
 	EmitSignals();
 }
 
-void GenericVaraiableSpinbox::VariableChanged(const QString &name)
+void GenericVariableSpinbox::VariableChanged(const QString &name)
 {
 	_numberInt._variable = GetWeakVariableByQString(name);
 	_numberDouble._variable = GetWeakVariableByQString(name);
 	EmitSignals();
 }
 
-void GenericVaraiableSpinbox::ToggleTypeClicked(bool useVariable)
+void GenericVariableSpinbox::ToggleTypeClicked(bool useVariable)
 {
 	_numberInt._type = useVariable ? NumberVariable<int>::Type::VARIABLE
 				       : NumberVariable<int>::Type::FIXED_VALUE;
@@ -144,7 +144,7 @@ void GenericVaraiableSpinbox::ToggleTypeClicked(bool useVariable)
 	EmitSignals();
 }
 
-void GenericVaraiableSpinbox::EmitSignals()
+void GenericVariableSpinbox::EmitSignals()
 {
 	if (_wholeNumber) {
 		emit FixedValueChanged(_numberInt);
@@ -155,7 +155,7 @@ void GenericVaraiableSpinbox::EmitSignals()
 	}
 }
 
-void GenericVaraiableSpinbox::SetVisibility()
+void GenericVariableSpinbox::SetVisibility()
 {
 	if (_wholeNumber) {
 		_fixedValueDouble->hide();
@@ -166,7 +166,7 @@ void GenericVaraiableSpinbox::SetVisibility()
 	}
 }
 
-void GenericVaraiableSpinbox::SetVisibilityInt()
+void GenericVariableSpinbox::SetVisibilityInt()
 {
 	if (_numberInt.IsFixedType()) {
 		_fixedValueInt->show();
@@ -182,7 +182,7 @@ void GenericVaraiableSpinbox::SetVisibilityInt()
 	updateGeometry();
 }
 
-void GenericVaraiableSpinbox::SetVisibilityDouble()
+void GenericVariableSpinbox::SetVisibilityDouble()
 {
 	if (_numberDouble.IsFixedType()) {
 		_fixedValueDouble->show();
@@ -199,12 +199,12 @@ void GenericVaraiableSpinbox::SetVisibilityDouble()
 }
 
 VariableSpinBox::VariableSpinBox(QWidget *parent)
-	: GenericVaraiableSpinbox(parent, true)
+	: GenericVariableSpinbox(parent, true)
 {
 }
 
 VariableDoubleSpinBox::VariableDoubleSpinBox(QWidget *parent)
-	: GenericVaraiableSpinbox(parent, false)
+	: GenericVariableSpinbox(parent, false)
 {
 }
 

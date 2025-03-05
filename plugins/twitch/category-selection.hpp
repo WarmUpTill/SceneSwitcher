@@ -78,7 +78,7 @@ private slots:
 	void UpdateCategoryList();
 
 signals:
-	void CategoreyChanged(const TwitchCategory &);
+	void CategoryChanged(const TwitchCategory &);
 
 protected:
 	void showPopup() override;
@@ -125,7 +125,7 @@ public:
 	void SetToken(const std::weak_ptr<TwitchToken> &);
 
 signals:
-	void CategoreyChanged(const TwitchCategory &);
+	void CategoryChanged(const TwitchCategory &);
 
 private:
 	TwitchCategorySelection *_selection;

@@ -58,7 +58,7 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	{MacroActionTwitch::Action::CHAT_EMOTE_ONLY_DISABLE,
 	 "AdvSceneSwitcher.action.twitch.type.chat.emoteOnly.disable"},
 	{MacroActionTwitch::Action::SEND_CHAT_MESSAGE,
-	 "AdvSceneSwitcher.action.twitch.type.sendChatMessage"},
+	 "AdvSceneSwitcher.action.twitch.type.chat.sendMessage"},
 };
 
 const static std::map<MacroActionTwitch::AnnouncementColor, std::string>
@@ -567,11 +567,7 @@ void MacroActionTwitchEdit::ActionChanged(int idx)
 
 void MacroActionTwitchEdit::TwitchTokenChanged(const QString &token)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_token = GetWeakTwitchTokenByQString(token);
 	_category->SetToken(_entryData->_token);
 	_channel->SetToken(_entryData->_token);
@@ -619,62 +615,38 @@ void MacroActionTwitchEdit::CheckToken()
 
 void MacroActionTwitchEdit::StreamTitleChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_streamTitle = _streamTitle->text().toStdString();
 }
 
-void MacroActionTwitchEdit::CategoreyChanged(const TwitchCategory &category)
+void MacroActionTwitchEdit::CategoryChanged(const TwitchCategory &category)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_category = category;
 }
 
 void MacroActionTwitchEdit::MarkerDescriptionChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_markerDescription =
 		_markerDescription->text().toStdString();
 }
 
 void MacroActionTwitchEdit::ClipHasDelayChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_clipHasDelay = state;
 }
 
 void MacroActionTwitchEdit::DurationChanged(const Duration &duration)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_duration = duration;
 }
 
 void MacroActionTwitchEdit::AnnouncementMessageChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_announcementMessage =
 		_announcementMessage->toPlainText().toStdString();
 
@@ -684,11 +656,7 @@ void MacroActionTwitchEdit::AnnouncementMessageChanged()
 
 void MacroActionTwitchEdit::AnnouncementColorChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_announcementColor =
 		static_cast<MacroActionTwitch::AnnouncementColor>(index);
 }
@@ -722,8 +690,8 @@ void MacroActionTwitchEdit::SetWidgetSignalConnections()
 	QWidget::connect(_streamTitle, SIGNAL(editingFinished()), this,
 			 SLOT(StreamTitleChanged()));
 	QWidget::connect(_category,
-			 SIGNAL(CategoreyChanged(const TwitchCategory &)), this,
-			 SLOT(CategoreyChanged(const TwitchCategory &)));
+			 SIGNAL(CategoryChanged(const TwitchCategory &)), this,
+			 SLOT(CategoryChanged(const TwitchCategory &)));
 	QWidget::connect(_markerDescription, SIGNAL(editingFinished()), this,
 			 SLOT(MarkerDescriptionChanged()));
 	QObject::connect(_clipHasDelay, SIGNAL(stateChanged(int)), this,
@@ -789,22 +757,14 @@ void MacroActionTwitchEdit::SetWidgetVisibility()
 
 void MacroActionTwitchEdit::ChannelChanged(const TwitchChannel &channel)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_channel = channel;
 	_entryData->ResetChatConnection();
 }
 
 void MacroActionTwitchEdit::ChatMessageChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_chatMessage = _chatMessage->toPlainText().toStdString();
 
 	adjustSize();

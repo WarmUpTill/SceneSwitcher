@@ -171,7 +171,7 @@ private slots:
 	void StreamTitleChanged();
 	void RegexTitleChanged(const RegexConfig &);
 	void ChatMessagePatternChanged(const ChatMessagePattern &);
-	void CategoreyChanged(const TwitchCategory &);
+	void CategoryChanged(const TwitchCategory &);
 	void ClearBufferOnMatchChanged(int);
 
 signals:

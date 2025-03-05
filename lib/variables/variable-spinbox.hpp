@@ -9,10 +9,10 @@
 
 namespace advss {
 
-class ADVSS_EXPORT GenericVaraiableSpinbox : public QWidget {
+class ADVSS_EXPORT GenericVariableSpinbox : public QWidget {
 	Q_OBJECT
 public:
-	GenericVaraiableSpinbox(QWidget *parent, bool wholeNumber);
+	GenericVariableSpinbox(QWidget *parent, bool wholeNumber);
 	void SetValue(const NumberVariable<int> &);
 	void SetValue(const NumberVariable<double> &);
 	void DisableVariableSelection();
@@ -59,7 +59,7 @@ private:
 	bool _hideTypeToggle = false;
 };
 
-class ADVSS_EXPORT VariableSpinBox : public GenericVaraiableSpinbox {
+class ADVSS_EXPORT VariableSpinBox : public GenericVariableSpinbox {
 	Q_OBJECT
 
 public:
@@ -68,7 +68,7 @@ public:
 	QSpinBox *SpinBox() { return _fixedValueInt; }
 };
 
-class ADVSS_EXPORT VariableDoubleSpinBox : public GenericVaraiableSpinbox {
+class ADVSS_EXPORT VariableDoubleSpinBox : public GenericVariableSpinbox {
 	Q_OBJECT
 
 public:
