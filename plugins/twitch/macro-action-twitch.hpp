@@ -134,6 +134,9 @@ public:
 		CHANNEL_SCHEDULE_SEGMENT_DELETE = 3500, // TODO
 
 		SEND_CHAT_MESSAGE = 5000,
+
+		// Get user info
+		USER_GET_INFO = 6000
 	};
 
 	enum class AnnouncementColor {
@@ -145,6 +148,8 @@ public:
 	};
 
 	enum class RedemptionStatus { CANCELED, FULFILLED };
+
+	enum class UserInfoQueryType { ID, LOGIN };
 
 	bool PerformAction();
 	void LogAction() const;
@@ -169,6 +174,9 @@ public:
 	AnnouncementColor _announcementColor = AnnouncementColor::PRIMARY;
 	TwitchChannel _channel;
 	StringVariable _chatMessage;
+	UserInfoQueryType _userInfoQueryType = UserInfoQueryType::LOGIN;
+	StringVariable _userLogin = "user login";
+	IntVariable _userId = 0;
 
 private:
 	void SetStreamTitle(const std::shared_ptr<TwitchToken> &) const;
@@ -181,6 +189,9 @@ private:
 				  bool enable) const;
 	void StartRaid(const std::shared_ptr<TwitchToken> &);
 	void SendChatMessage(const std::shared_ptr<TwitchToken> &);
+	void GetUserInfo(const std::shared_ptr<TwitchToken> &);
+
+	void SetupTempVars();
 
 	Action _action = Action::CHANNEL_INFO_TITLE_SET;
 	std::shared_ptr<TwitchChatConnection> _chatConnection;
@@ -218,6 +229,9 @@ private slots:
 	void AnnouncementColorChanged(int index);
 	void ChannelChanged(const TwitchChannel &);
 	void ChatMessageChanged();
+	void UserInfoQueryTypeChanged(int);
+	void UserLoginChanged();
+	void UserIdChanged(const NumberVariable<int> &);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -246,6 +260,9 @@ private:
 	QComboBox *_announcementColor;
 	TwitchChannelSelection *_channel;
 	VariableTextEdit *_chatMessage;
+	QComboBox *_userInfoQueryType;
+	VariableLineEdit *_userLogin;
+	VariableSpinBox *_userId;
 
 	bool _loading = true;
 };
