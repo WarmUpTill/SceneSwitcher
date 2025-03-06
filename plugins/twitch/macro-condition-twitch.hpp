@@ -111,8 +111,11 @@ public:
 private:
 	bool CheckChannelGenericEvents();
 	bool CheckChannelLiveEvents();
+	bool CheckChannelRewardChangeEvents();
 	bool CheckChannelRewardRedemptionEvents();
 	bool CheckChatMessages(TwitchToken &token);
+	bool HandleMatchingSubscriptionEvents(
+		const std::function<void(const Event &)> &matchCb);
 	bool CheckChatUserJoinOrLeave(TwitchToken &token);
 
 	void RegisterEventSubscription();

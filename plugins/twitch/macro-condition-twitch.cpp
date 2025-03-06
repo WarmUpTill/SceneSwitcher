@@ -259,31 +259,13 @@ void MacroConditionTwitch::ResetChatConnection()
 
 bool MacroConditionTwitch::CheckChannelGenericEvents()
 {
-	if (!_eventBuffer) {
-		return false;
-	}
-
-	while (!_eventBuffer->Empty()) {
-		auto event = _eventBuffer->ConsumeMessage();
-		if (!event) {
-			continue;
-		}
-		if (_subscriptionID != event->id) {
-			continue;
-		}
-		SetVariableValue(event->ToString());
-		SetJsonTempVars(event->data,
+	return HandleMatchingSubscriptionEvents([this](const Event &event) {
+		SetVariableValue(event.ToString());
+		SetJsonTempVars(event.data,
 				[this](const char *id, const char *value) {
 					SetTempVarValue(id, value);
 				});
-
-		if (_clearBufferOnMatch) {
-			_eventBuffer->Clear();
-		}
-		return true;
-	}
-
-	return false;
+	});
 }
 
 bool MacroConditionTwitch::CheckChannelLiveEvents()
@@ -327,7 +309,77 @@ bool MacroConditionTwitch::CheckChannelLiveEvents()
 	return false;
 }
 
+bool MacroConditionTwitch::CheckChannelRewardChangeEvents()
+{
+	return HandleMatchingSubscriptionEvents([this](const Event &event) {
+		SetVariableValue(event.ToString());
+		SetJsonTempVars(event.data,
+				[this](const char *id, const char *value) {
+					SetTempVarValue(id, value);
+				});
+
+		OBSDataAutoRelease image =
+			obs_data_get_obj(event.data, "image");
+		SetTempVarValue("image.url_4x",
+				obs_data_get_string(image, "url_4x"));
+
+		OBSDataAutoRelease default_image =
+			obs_data_get_obj(event.data, "default_image");
+		SetTempVarValue("default_image.url_4x",
+				obs_data_get_string(default_image, "url_4x"));
+
+		OBSDataAutoRelease max_per_stream =
+			obs_data_get_obj(event.data, "max_per_stream");
+		SetTempVarValue("max_per_stream.is_enabled",
+				obs_data_get_bool(max_per_stream,
+						  "is_enabled"));
+		SetTempVarValue("max_per_stream.max_per_stream",
+				std::to_string(obs_data_get_int(max_per_stream,
+								"value")));
+
+		OBSDataAutoRelease max_per_user_per_stream =
+			obs_data_get_obj(event.data, "max_per_user_per_stream");
+		SetTempVarValue("max_per_user_per_stream.is_enabled",
+				obs_data_get_bool(max_per_user_per_stream,
+						  "is_enabled"));
+		SetTempVarValue(
+			"max_per_user_per_stream.max_per_user_per_stream",
+			std::to_string(obs_data_get_int(max_per_user_per_stream,
+							"value")));
+
+		OBSDataAutoRelease global_cooldown =
+			obs_data_get_obj(event.data, "global_cooldown");
+		SetTempVarValue("global_cooldown.is_enabled",
+				obs_data_get_bool(global_cooldown,
+						  "is_enabled"));
+		SetTempVarValue(
+			"max_per_user_per_stream.global_cooldown_seconds",
+			std::to_string(obs_data_get_int(max_per_user_per_stream,
+							"seconds")));
+	});
+}
+
 bool MacroConditionTwitch::CheckChannelRewardRedemptionEvents()
+{
+	return HandleMatchingSubscriptionEvents([this](const Event &event) {
+		SetVariableValue(event.ToString());
+		SetJsonTempVars(event.data,
+				[this](const char *id, const char *value) {
+					SetTempVarValue(id, value);
+				});
+		OBSDataAutoRelease rewardInfo =
+			obs_data_get_obj(event.data, "reward");
+		SetJsonTempVars(rewardInfo, [this](const char *nestedId,
+						   const char *value) {
+			const std::string id =
+				"reward." + std::string(nestedId);
+			SetTempVarValue(id, value);
+		});
+	});
+}
+
+bool MacroConditionTwitch::HandleMatchingSubscriptionEvents(
+	const std::function<void(const Event &)> &matchCb)
 {
 	if (!_eventBuffer) {
 		return false;
@@ -341,18 +393,7 @@ bool MacroConditionTwitch::CheckChannelRewardRedemptionEvents()
 		if (_subscriptionID != event->id) {
 			continue;
 		}
-		SetVariableValue(event->ToString());
-		SetJsonTempVars(event->data,
-				[this](const char *id, const char *value) {
-					SetTempVarValue(id, value);
-				});
-		OBSDataAutoRelease rewardInfo =
-			obs_data_get_obj(event->data, "reward");
-		SetJsonTempVars(rewardInfo, [this](const char *nestedId,
-						   const char *value) {
-			std::string id = "reward." + std::string(nestedId);
-			SetTempVarValue(id, value);
-		});
+		matchCb(*event);
 
 		if (_clearBufferOnMatch) {
 			_eventBuffer->Clear();
@@ -622,14 +663,15 @@ bool MacroConditionTwitch::CheckCondition()
 	case Condition::CHARITY_CAMPAIGN_END_EVENT:
 	case Condition::SHIELD_MODE_START_EVENT:
 	case Condition::SHIELD_MODE_END_EVENT:
-	case Condition::POINTS_REWARD_ADDITION_EVENT:
-	case Condition::POINTS_REWARD_UPDATE_EVENT:
-	case Condition::POINTS_REWARD_DELETION_EVENT:
 	case Condition::USER_BAN_EVENT:
 	case Condition::USER_UNBAN_EVENT:
 	case Condition::USER_MODERATOR_ADDITION_EVENT:
 	case Condition::USER_MODERATOR_DELETION_EVENT:
 		return CheckChannelGenericEvents();
+	case Condition::POINTS_REWARD_ADDITION_EVENT:
+	case Condition::POINTS_REWARD_UPDATE_EVENT:
+	case Condition::POINTS_REWARD_DELETION_EVENT:
+		return CheckChannelRewardChangeEvents();
 	case Condition::POINTS_REWARD_REDEMPTION_EVENT:
 	case Condition::POINTS_REWARD_REDEMPTION_UPDATE_EVENT:
 		return CheckChannelRewardRedemptionEvents();
@@ -1211,14 +1253,26 @@ void MacroConditionTwitch::SetupTempVars()
 		setupTempVarHelper("is_user_input_required", ".reward");
 		setupTempVarHelper("should_redemptions_skip_request_queue",
 				   ".reward");
-		setupTempVarHelper("max_per_stream", ".reward");
-		setupTempVarHelper("max_per_user_per_stream", ".reward");
 		setupTempVarHelper("background_color", ".reward");
 		setupTempVarHelper("image", ".reward");
+		setupTempVarHelper("image.url_4x", ".reward");
 		setupTempVarHelper("default_image", ".reward");
-		setupTempVarHelper("global_cooldown", ".reward");
+		setupTempVarHelper("default_image.url_4x", ".reward");
 		setupTempVarHelper("cooldown_expires_at", ".reward");
 		setupTempVarHelper("redemptions_redeemed_current_stream",
+				   ".reward");
+		setupTempVarHelper("max_per_stream", ".reward");
+		setupTempVarHelper("max_per_stream.is_enabled", ".reward");
+		setupTempVarHelper("max_per_stream.max_per_stream", ".reward");
+		setupTempVarHelper("max_per_user_per_stream", ".reward");
+		setupTempVarHelper("max_per_user_per_stream.is_enabled",
+				   ".reward");
+		setupTempVarHelper(
+			"max_per_user_per_stream.max_per_user_per_stream",
+			".reward");
+		setupTempVarHelper("global_cooldown", ".reward");
+		setupTempVarHelper("global_cooldown.is_enabled", ".reward");
+		setupTempVarHelper("global_cooldown.global_cooldown_seconds",
 				   ".reward");
 		break;
 	case Condition::POINTS_REWARD_REDEMPTION_EVENT:
