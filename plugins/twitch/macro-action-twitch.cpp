@@ -368,6 +368,7 @@ void MacroActionTwitch::GetRewardInfo(const std::shared_ptr<TwitchToken> &token)
 			     variable->Value().c_str());
 			return;
 		}
+		return;
 	}
 
 	httplib::Params params = {
