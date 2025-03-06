@@ -257,38 +257,6 @@ void MacroConditionTwitch::ResetChatConnection()
 	_chatConnection.reset();
 }
 
-static void
-setTempVarsHelper(const std::string &jsonStr,
-		  std::function<void(const char *, const char *)> setVar)
-{
-	try {
-		auto json = nlohmann::json::parse(jsonStr);
-		for (auto it = json.begin(); it != json.end(); ++it) {
-			if (it->is_string()) {
-				setVar(it.key().c_str(),
-				       it->get<std::string>().c_str());
-				continue;
-			}
-			setVar(it.key().c_str(), it->dump().c_str());
-		}
-	} catch (const nlohmann::json::exception &e) {
-		vblog(LOG_INFO, "%s", jsonStr.c_str());
-		vblog(LOG_INFO, "%s", e.what());
-	}
-}
-
-static void
-setTempVarsHelper(obs_data_t *data,
-		  std::function<void(const char *, const char *)> setVar)
-{
-	auto jsonStr = obs_data_get_json(data);
-	if (!jsonStr) {
-		return;
-	}
-
-	setTempVarsHelper(jsonStr, setVar);
-}
-
 bool MacroConditionTwitch::CheckChannelGenericEvents()
 {
 	if (!_eventBuffer) {
@@ -304,10 +272,10 @@ bool MacroConditionTwitch::CheckChannelGenericEvents()
 			continue;
 		}
 		SetVariableValue(event->ToString());
-		setTempVarsHelper(event->data,
-				  [this](const char *id, const char *value) {
-					  SetTempVarValue(id, value);
-				  });
+		SetJsonTempVars(event->data,
+				[this](const char *id, const char *value) {
+					SetTempVarValue(id, value);
+				});
 
 		if (_clearBufferOnMatch) {
 			_eventBuffer->Clear();
@@ -345,10 +313,10 @@ bool MacroConditionTwitch::CheckChannelLiveEvents()
 		}
 
 		SetVariableValue(event->ToString());
-		setTempVarsHelper(event->data,
-				  [this](const char *id, const char *value) {
-					  SetTempVarValue(id, value);
-				  });
+		SetJsonTempVars(event->data,
+				[this](const char *id, const char *value) {
+					SetTempVarValue(id, value);
+				});
 
 		if (_clearBufferOnMatch) {
 			_eventBuffer->Clear();
@@ -374,14 +342,14 @@ bool MacroConditionTwitch::CheckChannelRewardRedemptionEvents()
 			continue;
 		}
 		SetVariableValue(event->ToString());
-		setTempVarsHelper(event->data,
-				  [this](const char *id, const char *value) {
-					  SetTempVarValue(id, value);
-				  });
+		SetJsonTempVars(event->data,
+				[this](const char *id, const char *value) {
+					SetTempVarValue(id, value);
+				});
 		OBSDataAutoRelease rewardInfo =
 			obs_data_get_obj(event->data, "reward");
-		setTempVarsHelper(rewardInfo, [this](const char *nestedId,
-						     const char *value) {
+		SetJsonTempVars(rewardInfo, [this](const char *nestedId,
+						   const char *value) {
 			std::string id = "reward." + std::string(nestedId);
 			SetTempVarValue(id, value);
 		});

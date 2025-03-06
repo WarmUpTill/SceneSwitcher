@@ -2,6 +2,7 @@
 #include "token.hpp"
 
 #include <log-helper.hpp>
+#include <nlohmann/json.hpp>
 
 namespace advss {
 
@@ -328,6 +329,36 @@ RequestResult SendDeleteRequest(const TwitchToken &token,
 		cli.Delete(pathWithParams, headers, "", "application/json");
 
 	return processResult(response, __func__);
+}
+
+void SetJsonTempVars(const std::string &jsonStr,
+		     std::function<void(const char *, const char *)> setVarFunc)
+{
+	try {
+		auto json = nlohmann::json::parse(jsonStr);
+		for (auto it = json.begin(); it != json.end(); ++it) {
+			if (it->is_string()) {
+				setVarFunc(it.key().c_str(),
+					   it->get<std::string>().c_str());
+				continue;
+			}
+			setVarFunc(it.key().c_str(), it->dump().c_str());
+		}
+	} catch (const nlohmann::json::exception &e) {
+		vblog(LOG_INFO, "%s", jsonStr.c_str());
+		vblog(LOG_INFO, "%s", e.what());
+	}
+}
+
+void SetJsonTempVars(obs_data_t *data,
+		     std::function<void(const char *, const char *)> setVarFunc)
+{
+	auto jsonStr = obs_data_get_json(data);
+	if (!jsonStr) {
+		return;
+	}
+
+	SetJsonTempVars(jsonStr, setVarFunc);
 }
 
 } // namespace advss
