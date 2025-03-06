@@ -53,4 +53,10 @@ RequestResult SendPatchRequest(const TwitchToken &token, const std::string &uri,
 			       const httplib::Params &params,
 			       const OBSData &data, bool useCache);
 
+// Helper functions to set temp var values
+void SetJsonTempVars(const std::string &jsonStr,
+		     std::function<void(const char *, const char *)> setVarFunc);
+void SetJsonTempVars(obs_data_t *data,
+		     std::function<void(const char *, const char *)> setVarFunc);
+
 } // namespace advss
