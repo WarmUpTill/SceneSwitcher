@@ -359,6 +359,42 @@ bool MacroConditionTwitch::CheckChannelLiveEvents()
 	return false;
 }
 
+bool MacroConditionTwitch::CheckChannelRewardRedemptionEvents()
+{
+	if (!_eventBuffer) {
+		return false;
+	}
+
+	while (!_eventBuffer->Empty()) {
+		auto event = _eventBuffer->ConsumeMessage();
+		if (!event) {
+			continue;
+		}
+		if (_subscriptionID != event->id) {
+			continue;
+		}
+		SetVariableValue(event->ToString());
+		setTempVarsHelper(event->data,
+				  [this](const char *id, const char *value) {
+					  SetTempVarValue(id, value);
+				  });
+		OBSDataAutoRelease rewardInfo =
+			obs_data_get_obj(event->data, "reward");
+		setTempVarsHelper(rewardInfo, [this](const char *nestedId,
+						     const char *value) {
+			std::string id = "reward." + std::string(nestedId);
+			SetTempVarValue(id, value);
+		});
+
+		if (_clearBufferOnMatch) {
+			_eventBuffer->Clear();
+		}
+		return true;
+	}
+
+	return false;
+}
+
 static bool stringMatches(const RegexConfig &regex, const std::string &string,
 			  const std::string &expr)
 {
@@ -621,13 +657,14 @@ bool MacroConditionTwitch::CheckCondition()
 	case Condition::POINTS_REWARD_ADDITION_EVENT:
 	case Condition::POINTS_REWARD_UPDATE_EVENT:
 	case Condition::POINTS_REWARD_DELETION_EVENT:
-	case Condition::POINTS_REWARD_REDEMPTION_EVENT:
-	case Condition::POINTS_REWARD_REDEMPTION_UPDATE_EVENT:
 	case Condition::USER_BAN_EVENT:
 	case Condition::USER_UNBAN_EVENT:
 	case Condition::USER_MODERATOR_ADDITION_EVENT:
 	case Condition::USER_MODERATOR_DELETION_EVENT:
 		return CheckChannelGenericEvents();
+	case Condition::POINTS_REWARD_REDEMPTION_EVENT:
+	case Condition::POINTS_REWARD_REDEMPTION_UPDATE_EVENT:
+		return CheckChannelRewardRedemptionEvents();
 	case Condition::STREAM_ONLINE_LIVE_EVENT:
 	case Condition::STREAM_ONLINE_PLAYLIST_EVENT:
 	case Condition::STREAM_ONLINE_WATCHPARTY_EVENT:
@@ -1218,13 +1255,17 @@ void MacroConditionTwitch::SetupTempVars()
 		break;
 	case Condition::POINTS_REWARD_REDEMPTION_EVENT:
 	case Condition::POINTS_REWARD_REDEMPTION_UPDATE_EVENT:
-		setupTempVarHelper("id", ".reward");
+		setupTempVarHelper("id", ".redemption");
 		setupTempVarHelper("user_id", ".reward");
 		setupTempVarHelper("user_login", ".reward");
 		setupTempVarHelper("user_name", ".reward");
 		setupTempVarHelper("user_input", ".reward");
 		setupTempVarHelper("status", ".reward");
 		setupTempVarHelper("reward", ".reward");
+		setupTempVarHelper("reward.id", ".reward");
+		setupTempVarHelper("reward.title", ".reward");
+		setupTempVarHelper("reward.prompt", ".reward");
+		setupTempVarHelper("reward.cost", ".reward");
 		setupTempVarHelper("redeemed_at", ".reward");
 		break;
 	case Condition::USER_BAN_EVENT:

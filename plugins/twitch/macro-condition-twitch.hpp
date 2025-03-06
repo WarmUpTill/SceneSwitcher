@@ -111,6 +111,7 @@ public:
 private:
 	bool CheckChannelGenericEvents();
 	bool CheckChannelLiveEvents();
+	bool CheckChannelRewardRedemptionEvents();
 	bool CheckChatMessages(TwitchToken &token);
 	bool CheckChatUserJoinOrLeave(TwitchToken &token);
 
