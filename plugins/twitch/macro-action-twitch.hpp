@@ -54,6 +54,9 @@ public:
 		// Reward add
 		POINTS_REWARD_ADD = 600, // TODO
 
+		// Get reward information
+		POINTS_REWARD_GET_INFO = 650,
+
 		// Reward update
 		POINTS_REWARD_ENABLE = 710,
 		POINTS_REWARD_DISABLE = 711,
@@ -177,6 +180,7 @@ public:
 	UserInfoQueryType _userInfoQueryType = UserInfoQueryType::LOGIN;
 	StringVariable _userLogin = "user login";
 	IntVariable _userId = 0;
+	TwitchPointsReward _pointsReward;
 
 private:
 	void SetStreamTitle(const std::shared_ptr<TwitchToken> &) const;
@@ -190,6 +194,7 @@ private:
 	void StartRaid(const std::shared_ptr<TwitchToken> &);
 	void SendChatMessage(const std::shared_ptr<TwitchToken> &);
 	void GetUserInfo(const std::shared_ptr<TwitchToken> &);
+	void GetRewardInfo(const std::shared_ptr<TwitchToken> &);
 
 	void SetupTempVars();
 
@@ -232,6 +237,7 @@ private slots:
 	void UserInfoQueryTypeChanged(int);
 	void UserLoginChanged();
 	void UserIdChanged(const NumberVariable<int> &);
+	void PointsRewardChanged(const TwitchPointsReward &);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -263,6 +269,7 @@ private:
 	QComboBox *_userInfoQueryType;
 	VariableLineEdit *_userLogin;
 	VariableSpinBox *_userId;
+	TwitchPointsRewardWidget *_pointsReward;
 
 	bool _loading = true;
 };
