@@ -35,10 +35,6 @@ protected:
 
 private:
 	void AddPredefinedItems();
-	std::optional<std::vector<TwitchPointsReward>>
-	GetPointsRewards(const std::shared_ptr<TwitchToken> &token,
-			 const TwitchChannel &channel);
-	std::vector<TwitchPointsReward> ParseResponse(obs_data_t *response);
 
 	bool _allowAny;
 	const std::vector<TokenOption> _supportedTokenOptions = {
@@ -70,5 +66,9 @@ protected:
 	TwitchPointsRewardSelection *_selection;
 	QPushButton *_refreshButton;
 };
+
+std::optional<std::vector<TwitchPointsReward>>
+GetPointsRewardsForChannel(const std::shared_ptr<TwitchToken> &token,
+			   const TwitchChannel &channel);
 
 } // namespace advss

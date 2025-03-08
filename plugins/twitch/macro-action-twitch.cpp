@@ -3,6 +3,7 @@
 
 #include <log-helper.hpp>
 #include <layout-helpers.hpp>
+#include <ui-helpers.hpp>
 
 namespace advss {
 
@@ -23,6 +24,16 @@ void MacroActionTwitch::ResolveVariablesToFixedValues()
 	_chatMessage.ResolveVariables();
 	_userLogin.ResolveVariables();
 	_userId.ResolveVariables();
+	_useVariableForRewardSelection = false;
+	auto token = _token.lock();
+	if (token) {
+		ResolveVariableSelectionToRewardId(token);
+		_pointsReward.title = _lastResolvedRewardTitle;
+		_pointsReward.id = _lastResolvedRewardId;
+	} else {
+		_pointsReward.id = "";
+		_pointsReward.id = "";
+	}
 }
 
 std::shared_ptr<MacroAction> MacroActionTwitch::Create(Macro *m)
@@ -63,6 +74,8 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.twitch.type.chat.sendMessage"},
 	{MacroActionTwitch::Action::USER_GET_INFO,
 	 "AdvSceneSwitcher.action.twitch.type.user.getInfo"},
+	{MacroActionTwitch::Action::POINTS_REWARD_GET_INFO,
+	 "AdvSceneSwitcher.action.twitch.type.reward.getInfo"},
 };
 
 const static std::map<MacroActionTwitch::AnnouncementColor, std::string>
@@ -282,7 +295,7 @@ void MacroActionTwitch::GetUserInfo(const std::shared_ptr<TwitchToken> &token)
 		break;
 	}
 	auto result = SendGetRequest(*token, "https://api.twitch.tv",
-				     "/helix/users", params);
+				     "/helix/users", params, true);
 
 	if (result.status != 200) {
 		blog(LOG_INFO, "Failed get user info! (%d)\n", result.status);
@@ -297,80 +310,196 @@ void MacroActionTwitch::GetUserInfo(const std::shared_ptr<TwitchToken> &token)
 	}
 
 	OBSDataAutoRelease data = obs_data_array_item(array, 0);
+	SetJsonTempVars(data, [this](const char *id, const char *value) {
+		SetTempVarValue(id, value);
+	});
+}
 
-	SetTempVarValue("id", obs_data_get_string(data, "id"));
-	SetTempVarValue("login", obs_data_get_string(data, "login"));
-	SetTempVarValue("display_name",
-			obs_data_get_string(data, "display_name"));
-	SetTempVarValue("type", obs_data_get_string(data, "type"));
-	SetTempVarValue("broadcaster_type",
-			obs_data_get_string(data, "broadcaster_type"));
-	SetTempVarValue("description",
-			obs_data_get_string(data, "description"));
-	SetTempVarValue("profile_image_url",
-			obs_data_get_string(data, "profile_image_url"));
-	SetTempVarValue("offline_image_url",
-			obs_data_get_string(data, "offline_image_url"));
-	SetTempVarValue("created_at", obs_data_get_string(data, "created_at"));
+bool MacroActionTwitch::ResolveVariableSelectionToRewardId(
+	const std::shared_ptr<TwitchToken> &token)
+{
+	if (!token) {
+		return false;
+	}
+
+	auto variable = _rewardVariable.lock();
+	if (!variable) {
+		return false;
+	}
+
+	const auto rewardTitle = variable->Value();
+	if (rewardTitle.empty()) {
+		return false;
+	}
+
+	if (_lastResolvedRewardTitle == rewardTitle) {
+		return true;
+	}
+
+	const auto rewards = GetPointsRewardsForChannel(token, _channel);
+	if (!rewards) {
+		return false;
+	}
+
+	for (const auto &reward : *rewards) {
+		if (reward.title == rewardTitle) {
+			_lastResolvedRewardId = reward.id;
+			_lastResolvedRewardTitle = reward.title;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void MacroActionTwitch::GetRewardInfo(const std::shared_ptr<TwitchToken> &token)
+{
+	if (_useVariableForRewardSelection &&
+	    !ResolveVariableSelectionToRewardId(token)) {
+		if (VerboseLoggingEnabled()) {
+			auto variable = _rewardVariable.lock();
+			if (!variable) {
+				blog(LOG_WARNING,
+				     "failed to resolve variable reward name to reward id (invalid selection)");
+				return;
+			}
+			blog(LOG_WARNING,
+			     "failed to resolve variable reward name '%s' to reward id",
+			     variable->Value().c_str());
+			return;
+		}
+	}
+
+	httplib::Params params = {
+		{"broadcaster_id", token->GetUserID()},
+		{"id", _useVariableForRewardSelection ? _lastResolvedRewardId
+						      : _pointsReward.id},
+	};
+	auto result = SendGetRequest(*token, "https://api.twitch.tv",
+				     "/helix/channel_points/custom_rewards",
+				     params, true);
+
+	if (result.status != 200) {
+		blog(LOG_INFO, "Failed get reward info! (%d)\n", result.status);
+		return;
+	}
+
+	OBSDataArrayAutoRelease array = obs_data_get_array(result.data, "data");
+	size_t count = obs_data_array_count(array);
+	if (count == 0) {
+		blog(LOG_WARNING, "%s did not return any data!", __func__);
+		return;
+	}
+
+	OBSDataAutoRelease data = obs_data_array_item(array, 0);
+
+	SetJsonTempVars(data, [this](const char *id, const char *value) {
+		SetTempVarValue(id, value);
+	});
+
+	OBSDataAutoRelease image = obs_data_get_obj(data, "image");
+	SetTempVarValue("image.url_4x", obs_data_get_string(image, "url_4x"));
+
+	OBSDataAutoRelease default_image =
+		obs_data_get_obj(data, "default_image");
+	SetTempVarValue("default_image.url_4x",
+			obs_data_get_string(default_image, "url_4x"));
+
+	OBSDataAutoRelease max_per_stream_setting =
+		obs_data_get_obj(data, "max_per_stream_setting");
+	SetTempVarValue("max_per_stream.is_enabled",
+			obs_data_get_bool(max_per_stream_setting,
+					  "is_enabled"));
+	SetTempVarValue("max_per_stream.max_per_stream",
+			std::to_string(obs_data_get_int(max_per_stream_setting,
+							"max_per_stream")));
+
+	OBSDataAutoRelease max_per_user_per_stream_setting =
+		obs_data_get_obj(data, "max_per_user_per_stream_setting");
+	SetTempVarValue("max_per_user_per_stream.is_enabled",
+			obs_data_get_bool(max_per_user_per_stream_setting,
+					  "is_enabled"));
+	SetTempVarValue(
+		"max_per_user_per_stream.max_per_user_per_stream",
+		std::to_string(obs_data_get_int(max_per_user_per_stream_setting,
+						"max_per_user_per_stream")));
+
+	OBSDataAutoRelease global_cooldown_setting =
+		obs_data_get_obj(data, "global_cooldown_setting");
+	SetTempVarValue("global_cooldown.is_enabled",
+			obs_data_get_bool(global_cooldown_setting,
+					  "is_enabled"));
+	SetTempVarValue(
+		"max_per_user_per_stream.global_cooldown_seconds",
+		std::to_string(obs_data_get_int(max_per_user_per_stream_setting,
+						"global_cooldown_seconds")));
+}
+
+static std::string tryTranslate(const std::string &testString)
+{
+	auto translated = obs_module_text(testString.c_str());
+	if (testString != translated) {
+		return translated;
+	}
+	return "";
 }
 
 void MacroActionTwitch::SetupTempVars()
 {
 	MacroAction::SetupTempVars();
-	if (_action != Action::USER_GET_INFO) {
-		return;
-	}
 
-	AddTempvar(
-		"id",
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.id.user.getInfo"),
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.id.user.getInfo.description"));
-	AddTempvar(
-		"login",
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.login.user.getInfo"),
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.login.user.getInfo.description"));
-	AddTempvar(
-		"display_name",
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.display_name.user.getInfo"),
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.display_name.user.getInfo.description"));
-	AddTempvar(
-		"type",
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.type.user.getInfo"),
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.type.user.getInfo.description"));
-	AddTempvar(
-		"broadcaster_type",
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.broadcaster_type.user.getInfo"),
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.broadcaster_type.user.getInfo.description"));
-	AddTempvar(
-		"description",
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.description.user.getInfo"),
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.description.user.getInfo.description"));
-	AddTempvar(
-		"profile_image_url",
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.profile_image_url.user.getInfo"));
-	AddTempvar(
-		"offline_image_url",
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.offline_image_url.user.getInfo"));
-	AddTempvar(
-		"created_at",
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.created_at.user.getInfo"),
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.twitch.created_at.user.getInfo.description"));
+	auto setupTempVarHelper = [&](const std::string &id,
+				      const std::string &extra = "") {
+		std::string name = tryTranslate(
+			"AdvSceneSwitcher.tempVar.twitch." + id + extra);
+		std::string description =
+			tryTranslate("AdvSceneSwitcher.tempVar.twitch." + id +
+				     extra + ".description");
+		AddTempvar(id, name.empty() ? id : name, description);
+	};
+
+	switch (_action) {
+	case Action::POINTS_REWARD_GET_INFO:
+		setupTempVarHelper("title", ".reward");
+		setupTempVarHelper("prompt", ".reward");
+		setupTempVarHelper("cost", ".reward");
+		setupTempVarHelper("background_color", ".reward");
+		setupTempVarHelper("is_enabled", ".reward");
+		setupTempVarHelper("is_user_input_required", ".reward");
+		setupTempVarHelper("is_paused", ".reward");
+		setupTempVarHelper("is_in_stock", ".reward");
+		setupTempVarHelper("should_redemptions_skip_request_queue",
+				   ".reward");
+		setupTempVarHelper("redemptions_redeemed_current_stream",
+				   ".reward");
+		setupTempVarHelper("cooldown_expires_at", ".reward");
+		setupTempVarHelper("max_per_stream.is_enabled", ".reward");
+		setupTempVarHelper("max_per_stream.max_per_stream", ".reward");
+		setupTempVarHelper("max_per_user_per_stream.is_enabled",
+				   ".reward");
+		setupTempVarHelper(
+			"max_per_user_per_stream.max_per_user_per_stream",
+			".reward");
+		setupTempVarHelper("global_cooldown.is_enabled", ".reward");
+		setupTempVarHelper("global_cooldown.global_cooldown_seconds",
+				   ".reward");
+		setupTempVarHelper("image.url_4x", ".reward");
+		setupTempVarHelper("default_image.url_4x", ".reward");
+		break;
+	case Action::USER_GET_INFO:
+		setupTempVarHelper("id", ".user.getInfo");
+		setupTempVarHelper("login", ".user.getInfo");
+		setupTempVarHelper("display_name", ".user.getInfo");
+		setupTempVarHelper("type", ".user.getInfo");
+		setupTempVarHelper("broadcaster_type", ".user.getInfo");
+		setupTempVarHelper("description", ".user.getInfo");
+		setupTempVarHelper("profile_image_url", ".user.getInfo");
+		setupTempVarHelper("offline_image_url", ".user.getInfo");
+		setupTempVarHelper("created_at", ".user.getInfo");
+		break;
+	default:
+		break;
+	}
 }
 
 bool MacroActionTwitch::PerformAction()
@@ -414,6 +543,9 @@ bool MacroActionTwitch::PerformAction()
 	case MacroActionTwitch::Action::USER_GET_INFO:
 		GetUserInfo(token);
 		break;
+	case MacroActionTwitch::Action::POINTS_REWARD_GET_INFO:
+		GetRewardInfo(token);
+		break;
 	default:
 		break;
 	}
@@ -455,6 +587,11 @@ bool MacroActionTwitch::Save(obs_data_t *obj) const
 			 static_cast<int>(_userInfoQueryType));
 	_userLogin.Save(obj, "userLogin");
 	_userId.Save(obj, "userId");
+	_pointsReward.Save(obj);
+	obs_data_set_string(obj, "rewardVariable",
+			    GetWeakVariableName(_rewardVariable).c_str());
+	obs_data_set_bool(obj, "useVariableForRewardSelection",
+			  _useVariableForRewardSelection);
 
 	return true;
 }
@@ -478,6 +615,12 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 		obs_data_get_int(obj, "userInfoQueryType"));
 	_userLogin.Load(obj, "userLogin");
 	_userId.Load(obj, "userId");
+	_pointsReward.Load(obj);
+	_rewardVariable = GetWeakVariableByName(
+		obs_data_get_string(obj, "rewardVariable"));
+	_useVariableForRewardSelection =
+		obs_data_get_bool(obj, "useVariableForRewardSelection");
+
 	SetAction(static_cast<Action>(obs_data_get_int(obj, "action")));
 
 	return true;
@@ -602,7 +745,9 @@ bool MacroActionTwitch::ActionIsSupportedByToken()
 			{Action::WHISPER_SEND, {{"user:manage:whispers"}}},
 			{Action::SEND_CHAT_MESSAGE, {{"chat:edit"}}},
 			{Action::USER_GET_INFO, {}},
-		};
+			{Action::POINTS_REWARD_GET_INFO,
+			 {{"channel:read:redemptions"},
+			  {"channel:manage:redemptions"}}}};
 
 	auto token = _token.lock();
 	if (!token) {
@@ -679,7 +824,10 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _chatMessage(new VariableTextEdit(this)),
 	  _userInfoQueryType(new QComboBox(this)),
 	  _userLogin(new VariableLineEdit(this)),
-	  _userId(new VariableSpinBox(this))
+	  _userId(new VariableSpinBox(this)),
+	  _pointsReward(new TwitchPointsRewardWidget(this)),
+	  _rewardVariable(new VariableSelection(this)),
+	  _toggleRewardSelection(new QPushButton())
 {
 	SetWidgetProperties();
 	SetWidgetSignalConnections();
@@ -726,6 +874,7 @@ void MacroActionTwitchEdit::TwitchTokenChanged(const QString &token)
 	_entryData->_token = GetWeakTwitchTokenByQString(token);
 	_category->SetToken(_entryData->_token);
 	_channel->SetToken(_entryData->_token);
+	_pointsReward->SetToken(_entryData->_token);
 	_entryData->ResetChatConnection();
 
 	SetWidgetVisibility();
@@ -835,6 +984,15 @@ void MacroActionTwitchEdit::SetWidgetProperties()
 	populateUserQueryInfoTypeSelection(_userInfoQueryType);
 
 	_userId->setMaximum(999999999);
+
+	_toggleRewardSelection->setCheckable(true);
+	_toggleRewardSelection->setMaximumWidth(11);
+	SetButtonIcon(_toggleRewardSelection,
+		      GetThemeTypeName() == "Light"
+			      ? ":/res/images/dots-vert.svg"
+			      : "theme:Dark/dots-vert.svg");
+	_toggleRewardSelection->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.action.twitch.reward.toggleControl"));
 }
 
 void MacroActionTwitchEdit::SetWidgetSignalConnections()
@@ -873,6 +1031,15 @@ void MacroActionTwitchEdit::SetWidgetSignalConnections()
 		_userId,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
 		this, SLOT(UserIdChanged(const NumberVariable<int> &)));
+	QWidget::connect(
+		_pointsReward,
+		SIGNAL(PointsRewardChanged(const TwitchPointsReward &)), this,
+		SLOT(PointsRewardChanged(const TwitchPointsReward &)));
+	QWidget::connect(_rewardVariable,
+			 SIGNAL(SelectionChanged(const QString &)), this,
+			 SLOT(RewardVariableChanged(const QString &)));
+	QWidget::connect(_toggleRewardSelection, SIGNAL(toggled(bool)), this,
+			 SLOT(ToggleRewardSelection(bool)));
 }
 
 void MacroActionTwitchEdit::SetWidgetVisibility()
@@ -889,7 +1056,9 @@ void MacroActionTwitchEdit::SetWidgetVisibility()
 		_entryData->GetAction() ==
 			MacroActionTwitch::Action::RAID_END ||
 		_entryData->GetAction() ==
-			MacroActionTwitch::Action::SEND_CHAT_MESSAGE);
+			MacroActionTwitch::Action::SEND_CHAT_MESSAGE ||
+		_entryData->GetAction() ==
+			MacroActionTwitch::Action::POINTS_REWARD_GET_INFO);
 	_duration->setVisible(_entryData->GetAction() ==
 			      MacroActionTwitch::Action::COMMERCIAL_START);
 	_markerDescription->setVisible(
@@ -917,6 +1086,17 @@ void MacroActionTwitchEdit::SetWidgetVisibility()
 				    MacroActionTwitch::Action::USER_GET_INFO &&
 			    _entryData->_userInfoQueryType ==
 				    MacroActionTwitch::UserInfoQueryType::ID);
+	_pointsReward->setVisible(
+		_entryData->GetAction() ==
+			MacroActionTwitch::Action::POINTS_REWARD_GET_INFO &&
+		!_entryData->_useVariableForRewardSelection);
+	_rewardVariable->setVisible(
+		_entryData->GetAction() ==
+			MacroActionTwitch::Action::POINTS_REWARD_GET_INFO &&
+		_entryData->_useVariableForRewardSelection);
+	_toggleRewardSelection->setVisible(
+		_entryData->GetAction() ==
+		MacroActionTwitch::Action::POINTS_REWARD_GET_INFO);
 
 	if (_entryData->GetAction() ==
 		    MacroActionTwitch::Action::CHANNEL_INFO_TITLE_SET ||
@@ -937,6 +1117,7 @@ void MacroActionTwitchEdit::ChannelChanged(const TwitchChannel &channel)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_channel = channel;
+	_pointsReward->SetChannel(channel);
 	_entryData->ResetChatConnection();
 }
 
@@ -964,10 +1145,30 @@ void MacroActionTwitchEdit::UserLoginChanged()
 	_entryData->_userLogin = _userLogin->text().toStdString();
 }
 
+void MacroActionTwitchEdit::RewardVariableChanged(const QString &text)
+{
+	GUARD_LOADING_AND_LOCK()
+	_entryData->_rewardVariable = GetWeakVariableByQString(text);
+}
+
+void MacroActionTwitchEdit::ToggleRewardSelection(bool)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_useVariableForRewardSelection =
+		!_entryData->_useVariableForRewardSelection;
+	SetWidgetVisibility();
+}
+
 void MacroActionTwitchEdit::UserIdChanged(const NumberVariable<int> &value)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_userId = value;
+}
+
+void MacroActionTwitchEdit::PointsRewardChanged(const TwitchPointsReward &reward)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_pointsReward = reward;
 }
 
 void MacroActionTwitchEdit::SetWidgetLayout()
@@ -983,7 +1184,10 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 					     _channel,
 					     _userInfoQueryType,
 					     _userLogin,
-					     _userId};
+					     _userId,
+					     _pointsReward,
+					     _rewardVariable,
+					     _toggleRewardSelection};
 	for (auto widget : widgets) {
 		_layout->removeWidget(widget);
 	}
@@ -998,6 +1202,10 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 	case MacroActionTwitch::Action::USER_GET_INFO:
 		layoutText = obs_module_text(
 			"AdvSceneSwitcher.action.twitch.entry.user.getInfo");
+		break;
+	case MacroActionTwitch::Action::POINTS_REWARD_GET_INFO:
+		layoutText = obs_module_text(
+			"AdvSceneSwitcher.action.twitch.entry.reward.getInfo");
 		break;
 	default:
 		layoutText = obs_module_text(
@@ -1017,7 +1225,10 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 		      {"{{channel}}", _channel},
 		      {"{{userInfoQueryType}}", _userInfoQueryType},
 		      {"{{userLogin}}", _userLogin},
-		      {"{{userId}}", _userId}});
+		      {"{{userId}}", _userId},
+		      {"{{pointsReward}}", _pointsReward},
+		      {"{{rewardVariable}}", _rewardVariable},
+		      {"{{toggleRewardSelection}}", _toggleRewardSelection}});
 
 	_layout->setContentsMargins(0, 0, 0, 0);
 }
@@ -1047,6 +1258,10 @@ void MacroActionTwitchEdit::UpdateEntryData()
 		static_cast<int>(_entryData->_userInfoQueryType)));
 	_userLogin->setText(_entryData->_userLogin);
 	_userId->SetValue(_entryData->_userId);
+	_pointsReward->SetToken(_entryData->_token);
+	_pointsReward->SetChannel(_entryData->_channel);
+	_pointsReward->SetPointsReward(_entryData->_pointsReward);
+	_rewardVariable->SetVariable(_entryData->_rewardVariable);
 
 	SetWidgetVisibility();
 }
