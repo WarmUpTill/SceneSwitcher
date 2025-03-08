@@ -482,8 +482,9 @@ static inline void populateVideoInputSelection(QComboBox *list)
 
 static inline void populateConditionSelection(QComboBox *list)
 {
-	for (auto entry : conditionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (auto &[value, name] : conditionTypes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(value));
 	}
 }
 
@@ -1189,8 +1190,6 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 SIGNAL(VideoSelectionChanged(const VideoInput &)),
 			 &_previewDialog,
 			 SLOT(VideoSelectionChanged(const VideoInput &)));
-	QWidget::connect(_condition, SIGNAL(currentIndexChanged(int)),
-			 &_previewDialog, SLOT(ConditionChanged(int)));
 	QWidget::connect(_area, SIGNAL(Resized()), this, SLOT(Resize()));
 	QWidget::connect(entryData.get(),
 			 &MacroConditionVideo::InputFileChanged, this,
@@ -1320,14 +1319,15 @@ void MacroConditionVideoEdit::HandleVideoInputUpdate()
 	emit VideoSelectionChanged(_entryData->_video);
 }
 
-void MacroConditionVideoEdit::ConditionChanged(int cond)
+void MacroConditionVideoEdit::ConditionChanged(int idx)
 {
 	if (_loading || !_entryData) {
 		return;
 	}
 
 	auto lock = LockContext();
-	_entryData->SetCondition(static_cast<VideoCondition>(cond));
+	_entryData->SetCondition(
+		static_cast<VideoCondition>(_condition->itemData(idx).toInt()));
 	_entryData->ResetLastMatch();
 	SetWidgetVisibility();
 
@@ -1603,8 +1603,8 @@ void MacroConditionVideoEdit::UpdateEntryData()
 		static_cast<int>(_entryData->_video.type));
 	_scenes->SetScene(_entryData->_video.scene);
 	_sources->SetSource(_entryData->_video.source);
-	_condition->setCurrentIndex(
-		static_cast<int>(_entryData->GetCondition()));
+	_condition->setCurrentIndex(_condition->findData(
+		static_cast<int>(_entryData->GetCondition())));
 	_reduceLatency->setChecked(_entryData->_blockUntilScreenshotDone);
 	_imagePath->SetPath(QString::fromStdString(_entryData->_file));
 	_usePatternForChangedCheck->setChecked(
