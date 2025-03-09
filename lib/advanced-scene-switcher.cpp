@@ -735,7 +735,7 @@ void OpenSettingsWindow()
 	}
 }
 
-void AdvSceneSwitcher::HighligthMacroSettingsButton(bool enable)
+void AdvSceneSwitcher::HighlightMacroSettingsButton(bool enable)
 {
 	static QObject *highlight = nullptr;
 	if ((highlight && enable) || (!highlight && !enable)) {
@@ -755,13 +755,13 @@ void AdvSceneSwitcher::HighligthMacroSettingsButton(bool enable)
 	highlight = HighlightWidget(ui->macroSettings, Qt::green);
 }
 
-void HighligthMacroSettingsButton(bool enable)
+void HighlightMacroSettingsButton(bool enable)
 {
 	auto window = GetSettingsWindow();
 	if (!window) {
 		return;
 	}
-	static_cast<AdvSceneSwitcher *>(window)->HighligthMacroSettingsButton(
+	static_cast<AdvSceneSwitcher *>(window)->HighlightMacroSettingsButton(
 		enable);
 }
 
