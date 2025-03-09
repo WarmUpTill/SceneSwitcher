@@ -309,11 +309,11 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 	_loading = false;
 }
 
-void HighligthMacroSettingsButton(bool enable);
+void HighlightMacroSettingsButton(bool enable);
 
 MacroActionMacroEdit::~MacroActionMacroEdit()
 {
-	HighligthMacroSettingsButton(false);
+	HighlightMacroSettingsButton(false);
 }
 
 void MacroActionMacroEdit::UpdateEntryData()
@@ -480,7 +480,7 @@ void MacroActionMacroEdit::SetWidgetVisibility()
 	_inputs->setVisible(_entryData->_action ==
 				    MacroActionMacro::Action::RUN &&
 			    _entryData->_runOptions.setInputs);
-	HighligthMacroSettingsButton(_entryData->_action ==
+	HighlightMacroSettingsButton(_entryData->_action ==
 					     MacroActionMacro::Action::RUN &&
 				     _entryData->_runOptions.setInputs &&
 				     !_inputs->HasInputsToSet());

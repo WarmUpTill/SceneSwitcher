@@ -199,7 +199,7 @@ bool MacroInputEdit::HasInputsToSet() const
 	return !_variables._inputVariables.empty();
 }
 
-void HighligthMacroSettingsButton(bool enable);
+void HighlightMacroSettingsButton(bool enable);
 
 void MacroInputEdit::SetupWidgets()
 {
