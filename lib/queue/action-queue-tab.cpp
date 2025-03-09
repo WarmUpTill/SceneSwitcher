@@ -40,8 +40,8 @@ ActionQueueTable *ActionQueueTable::Create()
 void ActionQueueTable::Add()
 {
 	auto newQueue = std::make_shared<ActionQueue>();
-	auto accepted =
-		ActionQueueSettingsDialog::AskForSettings(this, *newQueue);
+	auto accepted = ActionQueueSettingsDialog::AskForSettings(
+		GetSettingsWindow(), *newQueue);
 	if (!accepted) {
 		return;
 	}
@@ -124,7 +124,7 @@ static void openSettingsDialog()
 
 	auto oldName = queue->Name();
 	bool accepted = ActionQueueSettingsDialog::AskForSettings(
-		tabWidget->Table(), *queue.get());
+		GetSettingsWindow(), *queue.get());
 	if (accepted && oldName != queue->Name()) {
 		ActionQueueSignalManager::Instance()->Rename(
 			QString::fromStdString(oldName),

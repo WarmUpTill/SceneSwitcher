@@ -40,7 +40,7 @@ void WSConnectionsTable::Add()
 {
 	auto newConnection = std::make_shared<WSConnection>();
 	auto accepted = WSConnectionSettingsDialog::AskForSettings(
-		this, *newConnection);
+		GetSettingsWindow(), *newConnection);
 	if (!accepted) {
 		return;
 	}
@@ -143,7 +143,7 @@ static void openSettingsDialog()
 
 	auto oldName = connection->Name();
 	bool accepted = WSConnectionSettingsDialog::AskForSettings(
-		tabWidget->Table(), *connection.get());
+		GetSettingsWindow(), *connection.get());
 	if (accepted && oldName != connection->Name()) {
 		ConnectionSelectionSignalManager::Instance()->Rename(
 			QString::fromStdString(oldName),

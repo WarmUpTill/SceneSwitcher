@@ -43,8 +43,8 @@ VariableTable *VariableTable::Create()
 void VariableTable::Add()
 {
 	auto newVariable = std::make_shared<Variable>();
-	auto accepted =
-		VariableSettingsDialog::AskForSettings(this, *newVariable);
+	auto accepted = VariableSettingsDialog::AskForSettings(
+		GetSettingsWindow(), *newVariable);
 	if (!accepted) {
 		return;
 	}
@@ -184,7 +184,7 @@ static void openSettingsDialog()
 
 	auto oldName = variable->Name();
 	bool accepted = VariableSettingsDialog::AskForSettings(
-		tabWidget->Table(), *variable.get());
+		GetSettingsWindow(), *variable.get());
 	if (accepted && oldName != variable->Name()) {
 		VariableSignalManager::Instance()->Rename(
 			QString::fromStdString(oldName),
