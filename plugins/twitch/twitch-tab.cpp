@@ -44,8 +44,8 @@ TwitchConnectionsTable *TwitchConnectionsTable::Create()
 void TwitchConnectionsTable::Add()
 {
 	auto newToken = std::make_shared<TwitchToken>();
-	auto accepted =
-		TwitchTokenSettingsDialog::AskForSettings(this, *newToken);
+	auto accepted = TwitchTokenSettingsDialog::AskForSettings(
+		GetSettingsWindow(), *newToken);
 	if (!accepted) {
 		return;
 	}
@@ -139,7 +139,7 @@ static void openSettingsDialog()
 		return;
 	}
 
-	TwitchTokenSettingsDialog::AskForSettings(tabWidget->Table(),
+	TwitchTokenSettingsDialog::AskForSettings(GetSettingsWindow(),
 						  *token.get());
 }
 
