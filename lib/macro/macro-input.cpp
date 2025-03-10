@@ -181,15 +181,7 @@ void MacroInputEdit::SetInputVariablesAndValues(
 	_variables = inputs;
 	_values = values;
 	if ((size_t)_values.size() < _variables._inputVariables.size()) {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-		for (int i = 0;
-		     _variables._inputVariables.size() - (size_t)_values.size();
-		     i++) {
-			_values.push_back({});
-		}
-#else
 		_values.resize(_variables._inputVariables.size());
-#endif
 	}
 	SetupWidgets();
 }
