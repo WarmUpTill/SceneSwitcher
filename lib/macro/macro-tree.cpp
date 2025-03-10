@@ -889,14 +889,7 @@ void MacroTree::dropEvent(QDropEvent *event)
 	QModelIndexList indices = selectedIndexes();
 
 	DropIndicatorPosition indicator = dropIndicatorPosition();
-	int row = indexAt(
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-			  event->position().toPoint()
-#else
-			  event->pos()
-#endif
-				  )
-			  .row();
+	int row = indexAt(event->position().toPoint()).row();
 	bool emptyDrop = row == -1;
 
 	if (emptyDrop) {

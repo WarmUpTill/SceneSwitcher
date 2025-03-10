@@ -14,11 +14,7 @@ AutoUpdateTooltipLabel::AutoUpdateTooltipLabel(
 		&AutoUpdateTooltipLabel::UpdateTooltip);
 }
 
-#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
 void AutoUpdateTooltipLabel::enterEvent(QEnterEvent *event)
-#else
-void AutoUpdateTooltipLabel::enterEvent(QEvent *event)
-#endif
 {
 	_timer->start(_updateIntervalMs);
 	QLabel::enterEvent(event);

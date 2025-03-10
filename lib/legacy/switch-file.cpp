@@ -122,11 +122,7 @@ void SwitcherData::writeToStatusFile(const QString &msg)
 	QFile file(QString::fromStdString(fileIO.writePath));
 	if (file.open(QIODevice::ReadWrite)) {
 		QTextStream stream(&file);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-		stream << msg << "\n";
-#else
 		stream << msg << Qt::endl;
-#endif
 	}
 	file.close();
 }

@@ -294,13 +294,8 @@ bool MacroSegmentEdit::eventFilter(QObject *obj, QEvent *ev)
 		QMouseEvent *newEvent = new QMouseEvent(
 			mouseEvent->type(),
 			_headerInfo->mapTo(this, mouseEvent->pos()),
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-			mouseEvent->globalPos(),
-#else
-			mouseEvent->globalPosition(),
-#endif
-			mouseEvent->button(), mouseEvent->buttons(),
-			mouseEvent->modifiers());
+			mouseEvent->globalPosition(), mouseEvent->button(),
+			mouseEvent->buttons(), mouseEvent->modifiers());
 		QApplication::sendEvent(parentWidget(), newEvent);
 	}
 	return QWidget::eventFilter(obj, ev);
