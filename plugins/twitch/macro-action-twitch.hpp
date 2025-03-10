@@ -54,6 +54,9 @@ public:
 		// Reward add
 		POINTS_REWARD_ADD = 600, // TODO
 
+		// Get reward information
+		POINTS_REWARD_GET_INFO = 650,
+
 		// Reward update
 		POINTS_REWARD_ENABLE = 710,
 		POINTS_REWARD_DISABLE = 711,
@@ -134,6 +137,9 @@ public:
 		CHANNEL_SCHEDULE_SEGMENT_DELETE = 3500, // TODO
 
 		SEND_CHAT_MESSAGE = 5000,
+
+		// Get user info
+		USER_GET_INFO = 6000
 	};
 
 	enum class AnnouncementColor {
@@ -145,6 +151,8 @@ public:
 	};
 
 	enum class RedemptionStatus { CANCELED, FULFILLED };
+
+	enum class UserInfoQueryType { ID, LOGIN };
 
 	bool PerformAction();
 	void LogAction() const;
@@ -169,6 +177,10 @@ public:
 	AnnouncementColor _announcementColor = AnnouncementColor::PRIMARY;
 	TwitchChannel _channel;
 	StringVariable _chatMessage;
+	UserInfoQueryType _userInfoQueryType = UserInfoQueryType::LOGIN;
+	StringVariable _userLogin = "user login";
+	IntVariable _userId = 0;
+	TwitchPointsReward _pointsReward;
 
 private:
 	void SetStreamTitle(const std::shared_ptr<TwitchToken> &) const;
@@ -181,6 +193,10 @@ private:
 				  bool enable) const;
 	void StartRaid(const std::shared_ptr<TwitchToken> &);
 	void SendChatMessage(const std::shared_ptr<TwitchToken> &);
+	void GetUserInfo(const std::shared_ptr<TwitchToken> &);
+	void GetRewardInfo(const std::shared_ptr<TwitchToken> &);
+
+	void SetupTempVars();
 
 	Action _action = Action::CHANNEL_INFO_TITLE_SET;
 	std::shared_ptr<TwitchChatConnection> _chatConnection;
@@ -210,7 +226,7 @@ private slots:
 	void TwitchTokenChanged(const QString &);
 	void CheckToken();
 	void StreamTitleChanged();
-	void CategoreyChanged(const TwitchCategory &);
+	void CategoryChanged(const TwitchCategory &);
 	void MarkerDescriptionChanged();
 	void ClipHasDelayChanged(int state);
 	void DurationChanged(const Duration &);
@@ -218,6 +234,10 @@ private slots:
 	void AnnouncementColorChanged(int index);
 	void ChannelChanged(const TwitchChannel &);
 	void ChatMessageChanged();
+	void UserInfoQueryTypeChanged(int);
+	void UserLoginChanged();
+	void UserIdChanged(const NumberVariable<int> &);
+	void PointsRewardChanged(const TwitchPointsReward &);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -246,6 +266,10 @@ private:
 	QComboBox *_announcementColor;
 	TwitchChannelSelection *_channel;
 	VariableTextEdit *_chatMessage;
+	QComboBox *_userInfoQueryType;
+	VariableLineEdit *_userLogin;
+	VariableSpinBox *_userId;
+	TwitchPointsRewardWidget *_pointsReward;
 
 	bool _loading = true;
 };

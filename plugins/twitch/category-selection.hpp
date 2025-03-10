@@ -78,7 +78,7 @@ private slots:
 	void UpdateCategoryList();
 
 signals:
-	void CategoreyChanged(const TwitchCategory &);
+	void CategoryChanged(const TwitchCategory &);
 
 protected:
 	void showPopup() override;

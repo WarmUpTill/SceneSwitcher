@@ -2,11 +2,14 @@
 #include "token.hpp"
 
 #include <log-helper.hpp>
+#include <nlohmann/json.hpp>
+#include <string>
 
 namespace advss {
 
 static constexpr std::string_view clientID = "ds5tt4ogliifsqc04mz3d3etnck3e5";
 static const int cacheTimeoutSeconds = 10;
+static std::atomic_bool apiIsThrottling = {false};
 
 const char *GetClientID()
 {
@@ -78,6 +81,37 @@ static std::string getRequestBody(const OBSData &data)
 	return json ? json : "";
 }
 
+static void handleThrottling(const httplib::Result &response)
+{
+	const auto &headers = response.value().headers;
+	const auto rateLimitResetTimeStr = headers.find("Ratelimit-Reset");
+	if (rateLimitResetTimeStr == headers.end()) {
+		return;
+	}
+
+	std::time_t rateLimitResetTime =
+		std::stoll(rateLimitResetTimeStr->second);
+	auto resetTimePoint =
+		std::chrono::system_clock::from_time_t(rateLimitResetTime);
+	auto sleepDuration = resetTimePoint - std::chrono::system_clock::now();
+	if (sleepDuration.count() < 0) {
+		return;
+	}
+
+	blog(LOG_WARNING, "Twitch API access is throttled for %lld seconds!",
+	     static_cast<long long int>(
+		     std::chrono::duration_cast<std::chrono::seconds>(
+			     sleepDuration)
+			     .count()));
+	apiIsThrottling = true;
+
+	auto resetThread = std::thread([sleepDuration]() {
+		std::this_thread::sleep_for(sleepDuration);
+		apiIsThrottling = false;
+	});
+	resetThread.detach();
+}
+
 static RequestResult processResult(const httplib::Result &response,
 				   const char *funcName)
 {
@@ -87,6 +121,10 @@ static RequestResult processResult(const httplib::Result &response,
 		     funcName, httplib::to_string(err).c_str());
 
 		return {};
+	}
+
+	if (response->status == 429) {
+		handleThrottling(response);
 	}
 
 	RequestResult result;
@@ -107,6 +145,10 @@ RequestResult SendGetRequest(const TwitchToken &token, const std::string &uri,
 			     const std::string &path,
 			     const httplib::Params &params)
 {
+	if (apiIsThrottling) {
+		return {};
+	}
+
 	httplib::Client cli(uri);
 	auto tokenStr = token.GetToken();
 
@@ -127,6 +169,10 @@ RequestResult SendGetRequest(const TwitchToken &token, const std::string &uri,
 			     const std::string &path,
 			     const httplib::Params &params, bool useCache)
 {
+	if (apiIsThrottling) {
+		return {};
+	}
+
 	static std::map<Args, CacheEntry> cache;
 	static std::mutex mtx;
 	std::lock_guard<std::mutex> lock(mtx);
@@ -155,6 +201,10 @@ RequestResult SendPostRequest(const TwitchToken &token, const std::string &uri,
 			      const httplib::Params &params,
 			      const OBSData &data)
 {
+	if (apiIsThrottling) {
+		return {};
+	}
+
 	httplib::Client cli(uri);
 	auto tokenStr = token.GetToken();
 
@@ -179,6 +229,10 @@ RequestResult SendPostRequest(const TwitchToken &token, const std::string &uri,
 			      const httplib::Params &params,
 			      const OBSData &data, bool useCache)
 {
+	if (apiIsThrottling) {
+		return {};
+	}
+
 	static std::map<Args, CacheEntry> cache;
 	static std::mutex mtx;
 	std::lock_guard<std::mutex> lock(mtx);
@@ -207,6 +261,10 @@ RequestResult SendPutRequest(const TwitchToken &token, const std::string &uri,
 			     const std::string &path,
 			     const httplib::Params &params, const OBSData &data)
 {
+	if (apiIsThrottling) {
+		return {};
+	}
+
 	httplib::Client cli(uri);
 	auto tokenStr = token.GetToken();
 
@@ -231,6 +289,10 @@ RequestResult SendPutRequest(const TwitchToken &token, const std::string &uri,
 			     const httplib::Params &params, const OBSData &data,
 			     bool useCache)
 {
+	if (apiIsThrottling) {
+		return {};
+	}
+
 	static std::map<Args, CacheEntry> cache;
 	static std::mutex mtx;
 	std::lock_guard<std::mutex> lock(mtx);
@@ -260,6 +322,10 @@ RequestResult SendPatchRequest(const TwitchToken &token, const std::string &uri,
 			       const httplib::Params &params,
 			       const OBSData &data)
 {
+	if (apiIsThrottling) {
+		return {};
+	}
+
 	httplib::Client cli(uri);
 	auto tokenStr = token.GetToken();
 
@@ -284,6 +350,10 @@ RequestResult SendPatchRequest(const TwitchToken &token, const std::string &uri,
 			       const httplib::Params &params,
 			       const OBSData &data, bool useCache)
 {
+	if (apiIsThrottling) {
+		return {};
+	}
+
 	static std::map<Args, CacheEntry> cache;
 	static std::mutex mtx;
 	std::lock_guard<std::mutex> lock(mtx);
@@ -312,6 +382,10 @@ RequestResult SendDeleteRequest(const TwitchToken &token,
 				const std::string &uri, const std::string &path,
 				const httplib::Params &params)
 {
+	if (apiIsThrottling) {
+		return {};
+	}
+
 	httplib::Client cli(uri);
 	auto tokenStr = token.GetToken();
 
@@ -328,6 +402,36 @@ RequestResult SendDeleteRequest(const TwitchToken &token,
 		cli.Delete(pathWithParams, headers, "", "application/json");
 
 	return processResult(response, __func__);
+}
+
+void SetJsonTempVars(const std::string &jsonStr,
+		     std::function<void(const char *, const char *)> setVarFunc)
+{
+	try {
+		auto json = nlohmann::json::parse(jsonStr);
+		for (auto it = json.begin(); it != json.end(); ++it) {
+			if (it->is_string()) {
+				setVarFunc(it.key().c_str(),
+					   it->get<std::string>().c_str());
+				continue;
+			}
+			setVarFunc(it.key().c_str(), it->dump().c_str());
+		}
+	} catch (const nlohmann::json::exception &e) {
+		vblog(LOG_INFO, "%s", jsonStr.c_str());
+		vblog(LOG_INFO, "%s", e.what());
+	}
+}
+
+void SetJsonTempVars(obs_data_t *data,
+		     std::function<void(const char *, const char *)> setVarFunc)
+{
+	auto jsonStr = obs_data_get_json(data);
+	if (!jsonStr) {
+		return;
+	}
+
+	SetJsonTempVars(jsonStr, setVarFunc);
 }
 
 } // namespace advss

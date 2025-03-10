@@ -111,7 +111,11 @@ public:
 private:
 	bool CheckChannelGenericEvents();
 	bool CheckChannelLiveEvents();
+	bool CheckChannelRewardChangeEvents();
+	bool CheckChannelRewardRedemptionEvents();
 	bool CheckChatMessages(TwitchToken &token);
+	bool HandleMatchingSubscriptionEvents(
+		const std::function<void(const Event &)> &matchCb);
 	bool CheckChatUserJoinOrLeave(TwitchToken &token);
 
 	void RegisterEventSubscription();
@@ -171,7 +175,7 @@ private slots:
 	void StreamTitleChanged();
 	void RegexTitleChanged(const RegexConfig &);
 	void ChatMessagePatternChanged(const ChatMessagePattern &);
-	void CategoreyChanged(const TwitchCategory &);
+	void CategoryChanged(const TwitchCategory &);
 	void ClearBufferOnMatchChanged(int);
 
 signals:

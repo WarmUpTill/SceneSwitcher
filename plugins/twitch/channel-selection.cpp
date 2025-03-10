@@ -1,4 +1,5 @@
 #include "channel-selection.hpp"
+#include "log-helper.hpp"
 #include "twitch-helpers.hpp"
 #include "token.hpp"
 
