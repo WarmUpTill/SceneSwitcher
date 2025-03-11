@@ -560,7 +560,9 @@ void TwitchTokenSettingsDialog::CheckIfTokenValid()
 
 void TwitchTokenSettingsDialog::ShowToken()
 {
-	SetButtonIcon(_showToken, ":res/images/visible.svg");
+	SetButtonIcon(_showToken, GetThemeTypeName() == "Light"
+					  ? ":res/images/visible.svg"
+					  : "theme:Dark/visible.svg");
 	_currentTokenValue->setEchoMode(QLineEdit::Normal);
 }
 

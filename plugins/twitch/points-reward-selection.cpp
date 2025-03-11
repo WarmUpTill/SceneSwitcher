@@ -182,7 +182,9 @@ TwitchPointsRewardWidget::TwitchPointsRewardWidget(QWidget *parent)
 	  _refreshButton(new QPushButton(this))
 {
 	_refreshButton->setMaximumWidth(22);
-	SetButtonIcon(_refreshButton, ":res/images/refresh.svg");
+	SetButtonIcon(_refreshButton, GetThemeTypeName() == "Light"
+					      ? ":res/images/refresh.svg"
+					      : "theme:Dark/refresh.svg");
 	_refreshButton->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.twitch.selection.points.reward.refresh"));
 

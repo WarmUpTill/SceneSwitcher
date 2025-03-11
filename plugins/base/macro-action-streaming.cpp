@@ -257,7 +257,9 @@ void MacroActionStreamEdit::StringValueChanged()
 
 void MacroActionStreamEdit::ShowPassword()
 {
-	SetButtonIcon(_showPassword, ":res/images/visible.svg");
+	SetButtonIcon(_showPassword, GetThemeTypeName() == "Light"
+					     ? ":res/images/visible.svg"
+					     : "theme:Dark/visible.svg");
 	_stringValue->setEchoMode(QLineEdit::Normal);
 }
 

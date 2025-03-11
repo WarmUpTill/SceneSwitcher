@@ -503,7 +503,9 @@ void WSConnectionSettingsDialog::SetStatus()
 
 void WSConnectionSettingsDialog::ShowPassword()
 {
-	SetButtonIcon(_showPassword, ":res/images/visible.svg");
+	SetButtonIcon(_showPassword, GetThemeTypeName() == "Light"
+					     ? ":res/images/visible.svg"
+					     : "theme:Dark/visible.svg");
 	_password->setEchoMode(QLineEdit::Normal);
 }
 

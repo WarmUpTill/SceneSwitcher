@@ -92,7 +92,10 @@ RegexConfigWidget::RegexConfigWidget(QWidget *parent, bool showEnable)
 	  _openSettings(new QToolButton()),
 	  _enable(new QPushButton())
 {
-	SetButtonIcon(_openSettings, ":/settings/images/settings/general.svg");
+	SetButtonIcon(_openSettings,
+		      GetThemeTypeName() == "Light"
+			      ? ":/settings/images/settings/general.svg"
+			      : "theme:Dark/settings/general.svg");
 	_openSettings->setToolTip(
 		obs_module_text("AdvSceneSwitcher.regex.configure"));
 

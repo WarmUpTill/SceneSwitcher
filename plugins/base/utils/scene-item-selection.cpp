@@ -698,7 +698,10 @@ SceneItemSelectionWidget::SceneItemSelectionWidget(QWidget *parent,
 	_nameConflictIndex->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
 	_changeType->setMaximumWidth(22);
-	SetButtonIcon(_changeType, ":/settings/images/settings/general.svg");
+	SetButtonIcon(_changeType,
+		      GetThemeTypeName() == "Light"
+			      ? ":/settings/images/settings/general.svg"
+			      : "theme:Dark/settings/general.svg");
 	_changeType->setFlat(true);
 	_changeType->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.sceneItemSelection.configure"));
