@@ -37,7 +37,7 @@ std::string TwitchChannel::GetUserID(const TwitchToken &token) const
 	}
 
 	auto res = SendGetRequest(token, "https://api.twitch.tv",
-				  "/helix/users", {{"login", _name}});
+				  "/helix/users", {{"login", _name}}, true);
 
 	if (res.status == 400) {
 		userIDCache[_name] = "invalid";
