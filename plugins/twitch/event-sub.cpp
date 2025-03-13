@@ -196,12 +196,12 @@ std::string EventSub::AddEventSubscribtion(std::shared_ptr<TwitchToken> token,
 		return "";
 	}
 
-	std::lock_guard<std::mutex> lock(eventSub->_subscriptionMtx);
+	std::unique_lock<std::mutex> lock(eventSub->_subscriptionMtx);
 	if (!eventSub->_connected) {
-		std::thread t([eventSub]() { eventSub->Connect(); });
-		t.detach();
 		vblog(LOG_INFO, "Twitch EventSub connect started for %s",
 		      token->GetName().c_str());
+		lock.unlock();
+		eventSub->Connect();
 		return "";
 	}
 
