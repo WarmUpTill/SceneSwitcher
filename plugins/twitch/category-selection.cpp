@@ -193,7 +193,7 @@ void CategoryGrabber::Search(const std::string &)
 	httplib::Params params = {{"first", "100"},
 				  {"after", cursor},
 				  {"query", _searchString}};
-	auto response = SendGetRequest(*_token, uri, path, params);
+	auto response = SendGetRequest(*_token, uri, path, params, true);
 
 	while (response.status == 200 && !_stop) {
 		cursor = ParseReply(response.data);
@@ -203,7 +203,7 @@ void CategoryGrabber::Search(const std::string &)
 		params = {{"first", "100"},
 			  {"after", cursor},
 			  {"query", _searchString}};
-		response = SendGetRequest(*_token, uri, path, params);
+		response = SendGetRequest(*_token, uri, path, params, true);
 		emit CategoryCountUpdated(_categoryMap.size() - startCount);
 	}
 }
@@ -217,7 +217,7 @@ void CategoryGrabber::GetAll()
 	static std::string cursor;
 
 	httplib::Params params = {{"first", "100"}, {"after", cursor}};
-	auto response = SendGetRequest(*_token, uri, path, params);
+	auto response = SendGetRequest(*_token, uri, path, params, true);
 
 	while (response.status == 200 && !_stop) {
 		cursor = ParseReply(response.data);
@@ -225,7 +225,7 @@ void CategoryGrabber::GetAll()
 			break; // End of category list
 		}
 		params = {{"first", "100"}, {"after", cursor}};
-		response = SendGetRequest(*_token, uri, path, params);
+		response = SendGetRequest(*_token, uri, path, params, true);
 		emit CategoryCountUpdated(_categoryMap.size());
 	}
 }

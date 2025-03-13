@@ -1,4 +1,5 @@
 #include "twitch-helpers.hpp"
+#include "plugin-state-helpers.hpp"
 #include "token.hpp"
 
 #include <log-helper.hpp>
@@ -65,6 +66,12 @@ static bool cacheIsValid(const std::map<Args, CacheEntry> &cache,
 	return it != cache.end() && !cacheIsTooOld(it->second);
 }
 
+static void cleanupCache(std::map<Args, CacheEntry> &cache, std::mutex &mtx)
+{
+	std::lock_guard<std::mutex> lock(mtx);
+	cache.clear();
+}
+
 static httplib::Headers getTokenRequestHeaders(const std::string &token)
 {
 	return {
@@ -104,9 +111,10 @@ static RequestResult processResult(const httplib::Result &response,
 	return result;
 }
 
-RequestResult SendGetRequest(const TwitchToken &token, const std::string &uri,
-			     const std::string &path,
-			     const httplib::Params &params)
+static RequestResult sendGetRequest(const TwitchToken &token,
+				    const std::string &uri,
+				    const std::string &path,
+				    const httplib::Params &params)
 {
 	httplib::Client cli(uri);
 	auto tokenStr = token.GetToken();
@@ -130,7 +138,11 @@ RequestResult SendGetRequest(const TwitchToken &token, const std::string &uri,
 {
 	static std::map<Args, CacheEntry> cache;
 	static std::mutex mtx;
-	std::lock_guard<std::mutex> lock(mtx);
+	[[maybe_unused]] static bool _ = []() {
+		AddPluginCleanupStep([]() { cleanupCache(cache, mtx); });
+		return true;
+	}();
+
 	auto tokenStr = token.GetToken();
 
 	if (!tokenStr) {
@@ -140,21 +152,27 @@ RequestResult SendGetRequest(const TwitchToken &token, const std::string &uri,
 	auto headers = getTokenRequestHeaders(*tokenStr);
 	Args args(uri, path, "", params, headers);
 
-	if (useCache && cacheIsValid(cache, args)) {
+	if (!useCache) {
+		return sendGetRequest(token, uri, path, params);
+	}
+
+	std::lock_guard<std::mutex> lock(mtx);
+	if (cacheIsValid(cache, args)) {
 		auto it = cache.find(args);
 		return it->second.result;
 	}
 
-	auto result = SendGetRequest(token, uri, path, params);
+	auto result = sendGetRequest(token, uri, path, params);
 	cache[args] = {result};
 
 	return result;
 }
 
-RequestResult SendPostRequest(const TwitchToken &token, const std::string &uri,
-			      const std::string &path,
-			      const httplib::Params &params,
-			      const OBSData &data)
+static RequestResult sendPostRequest(const TwitchToken &token,
+				     const std::string &uri,
+				     const std::string &path,
+				     const httplib::Params &params,
+				     const OBSData &data)
 {
 	httplib::Client cli(uri);
 	auto tokenStr = token.GetToken();
@@ -182,7 +200,11 @@ RequestResult SendPostRequest(const TwitchToken &token, const std::string &uri,
 {
 	static std::map<Args, CacheEntry> cache;
 	static std::mutex mtx;
-	std::lock_guard<std::mutex> lock(mtx);
+	[[maybe_unused]] static bool _ = []() {
+		AddPluginCleanupStep([]() { cleanupCache(cache, mtx); });
+		return true;
+	}();
+
 	auto tokenStr = token.GetToken();
 
 	if (!tokenStr) {
@@ -193,20 +215,27 @@ RequestResult SendPostRequest(const TwitchToken &token, const std::string &uri,
 	auto body = getRequestBody(data);
 	Args args(uri, path, body, params, headers);
 
-	if (useCache && cacheIsValid(cache, args)) {
+	if (!useCache) {
+		return sendPostRequest(token, uri, path, params, data);
+	}
+
+	std::lock_guard<std::mutex> lock(mtx);
+	if (cacheIsValid(cache, args)) {
 		auto it = cache.find(args);
 		return it->second.result;
 	}
 
-	auto result = SendPostRequest(token, uri, path, params, data);
+	auto result = sendPostRequest(token, uri, path, params, data);
 	cache[args] = {result};
 
 	return result;
 }
 
-RequestResult SendPutRequest(const TwitchToken &token, const std::string &uri,
-			     const std::string &path,
-			     const httplib::Params &params, const OBSData &data)
+static RequestResult sendPutRequest(const TwitchToken &token,
+				    const std::string &uri,
+				    const std::string &path,
+				    const httplib::Params &params,
+				    const OBSData &data)
 {
 	httplib::Client cli(uri);
 	auto tokenStr = token.GetToken();
@@ -234,7 +263,11 @@ RequestResult SendPutRequest(const TwitchToken &token, const std::string &uri,
 {
 	static std::map<Args, CacheEntry> cache;
 	static std::mutex mtx;
-	std::lock_guard<std::mutex> lock(mtx);
+	[[maybe_unused]] static bool _ = []() {
+		AddPluginCleanupStep([]() { cleanupCache(cache, mtx); });
+		return true;
+	}();
+
 	auto tokenStr = token.GetToken();
 
 	if (!tokenStr) {
@@ -245,21 +278,27 @@ RequestResult SendPutRequest(const TwitchToken &token, const std::string &uri,
 	auto body = getRequestBody(data);
 	Args args(uri, path, body, params, headers);
 
-	if (useCache && cacheIsValid(cache, args)) {
+	if (!useCache) {
+		return sendPutRequest(token, uri, path, params, data);
+	}
+
+	std::lock_guard<std::mutex> lock(mtx);
+	if (cacheIsValid(cache, args)) {
 		auto it = cache.find(args);
 		return it->second.result;
 	}
 
-	auto result = SendPutRequest(token, uri, path, params, data);
+	auto result = sendPutRequest(token, uri, path, params, data);
 	cache[args] = {result};
 
 	return result;
 }
 
-RequestResult SendPatchRequest(const TwitchToken &token, const std::string &uri,
-			       const std::string &path,
-			       const httplib::Params &params,
-			       const OBSData &data)
+static RequestResult sendPatchRequest(const TwitchToken &token,
+				      const std::string &uri,
+				      const std::string &path,
+				      const httplib::Params &params,
+				      const OBSData &data)
 {
 	httplib::Client cli(uri);
 	auto tokenStr = token.GetToken();
@@ -287,7 +326,11 @@ RequestResult SendPatchRequest(const TwitchToken &token, const std::string &uri,
 {
 	static std::map<Args, CacheEntry> cache;
 	static std::mutex mtx;
-	std::lock_guard<std::mutex> lock(mtx);
+	[[maybe_unused]] static bool _ = []() {
+		AddPluginCleanupStep([]() { cleanupCache(cache, mtx); });
+		return true;
+	}();
+
 	auto tokenStr = token.GetToken();
 
 	if (!tokenStr) {
@@ -298,20 +341,26 @@ RequestResult SendPatchRequest(const TwitchToken &token, const std::string &uri,
 	auto body = getRequestBody(data);
 	Args args(uri, path, body, params, headers);
 
-	if (useCache && cacheIsValid(cache, args)) {
+	if (!useCache) {
+		return sendPatchRequest(token, uri, path, params, data);
+	}
+
+	std::lock_guard<std::mutex> lock(mtx);
+	if (cacheIsValid(cache, args)) {
 		auto it = cache.find(args);
 		return it->second.result;
 	}
 
-	auto result = SendPatchRequest(token, uri, path, params, data);
+	auto result = sendPatchRequest(token, uri, path, params, data);
 	cache[args] = {result};
 
 	return result;
 }
 
-RequestResult SendDeleteRequest(const TwitchToken &token,
-				const std::string &uri, const std::string &path,
-				const httplib::Params &params)
+static RequestResult sendDeleteRequest(const TwitchToken &token,
+				       const std::string &uri,
+				       const std::string &path,
+				       const httplib::Params &params)
 {
 	httplib::Client cli(uri);
 	auto tokenStr = token.GetToken();

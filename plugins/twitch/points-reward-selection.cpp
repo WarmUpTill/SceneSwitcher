@@ -136,7 +136,7 @@ TwitchPointsRewardSelection::GetPointsRewards(
 
 	auto response = SendGetRequest(*token, "https://api.twitch.tv",
 				       "/helix/channel_points/custom_rewards",
-				       params);
+				       params, true);
 
 	if (response.status != 200) {
 		blog(LOG_WARNING,
