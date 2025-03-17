@@ -32,6 +32,7 @@ public:
 	static void DeregisterAllTempVars(void *ctx, calldata_t *data);
 	static void SetTempVarValue(void *ctx, calldata_t *data);
 	static void SetVariableValue(void *ctx, calldata_t *data);
+	static void GetRunningStatus(void *ctx, calldata_t *data);
 	static bool ActionIdIsValid(const std::string &id);
 	static bool ConditionIdIsValid(const std::string &id);
 
