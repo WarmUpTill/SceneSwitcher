@@ -219,6 +219,37 @@ function Build {
     } else {
         Log-Information "Failed to locate msbuild.exe - skipping libusb build"
     }
+
+    Push-Location -Stack BuildMqttTemp
+    Ensure-Location $ProjectRoot
+
+    $MqttPath = "${ProjectRoot}/deps/paho.mqtt.cpp"
+    $MqttBuildPath = "${MqttPath}/build"
+
+    # Explicitly disable PkgConfig and tiff as it will lead build errors
+    $MqttCmakeArgs = @(
+        "-DCMAKE_BUILD_TYPE=${Configuration}"
+        "-DCMAKE_PREFIX_PATH:PATH=${OBSDepPath}"
+        "-DCMAKE_INSTALL_PREFIX:PATH=${ADVSSDepPath}"
+        "-DPAHO_WITH_MQTT_C=ON"
+    )
+
+    Log-Information "Configuring paho.mqtt.cpp..."
+    Invoke-External cmake -S ${MqttPath} -B ${MqttBuildPath} @MqttCmakeArgs
+
+    $MqttCmakeArgs = @(
+        '--config', "${Configuration}"
+    )
+
+    if ( $VerbosePreference -eq 'Continue' ) {
+        $MqttCmakeArgs += ('--verbose')
+    }
+
+    Log-Information "Building paho.mqtt.cpp..."
+    Invoke-External cmake --build "${MqttBuildPath}" @MqttCmakeArgs
+
+    Log-Information "Install paho.mqtt.cpp..."
+    Invoke-External cmake --install "${MqttBuildPath}" --prefix "${ADVSSDepPath}" @MqttCmakeArgs
 }
 
 Build
