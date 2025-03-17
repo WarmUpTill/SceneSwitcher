@@ -29,16 +29,22 @@ public:
 		  _headers(headers)
 	{
 	}
-	bool operator<(const Args &other) const
+	bool operator==(const Args &other) const
 	{
 		bool ret = true;
-		ret = ret && _uri < other._uri;
-		ret = ret && _path < other._path;
-		ret = ret && _params < other._params;
-		ret = ret && _data < other._data;
-		ret = ret && _headers < other._headers;
+		ret = ret && _uri == other._uri;
+		ret = ret && _path == other._path;
+		ret = ret && _params == other._params;
+		ret = ret && _data == other._data;
+		ret = ret && _headers == other._headers;
 		return ret;
 	}
+
+	const std::string &uri() const { return _uri; }
+	const std::string &path() const { return _path; }
+	const std::string &data() const { return _data; }
+	const httplib::Params &params() const { return _params; }
+	const httplib::Headers &headers() const { return _headers; }
 
 private:
 	std::string _uri;
@@ -47,6 +53,37 @@ private:
 	httplib::Params _params;
 	httplib::Headers _headers;
 };
+
+}; // namespace advss
+
+template<> struct std::hash<advss::Args> {
+	inline std::size_t operator()(const advss::Args &args) const
+	{
+		static constexpr auto hash_combine = [](std::size_t &seed,
+							std::size_t hashValue) {
+			seed ^= hashValue + 0x9e3779b9 + (seed << 6) +
+				(seed >> 2);
+		};
+
+		std::size_t seed = 0;
+		hash_combine(seed, std::hash<std::string>()(args.uri()));
+		hash_combine(seed, std::hash<std::string>()(args.path()));
+		hash_combine(seed, std::hash<std::string>()(args.data()));
+
+		for (const auto &[key, value] : args.params()) {
+			hash_combine(seed, std::hash<std::string>()(key));
+			hash_combine(seed, std::hash<std::string>()(value));
+		}
+		for (const auto &[key, value] : args.headers()) {
+			hash_combine(seed, std::hash<std::string>()(key));
+			hash_combine(seed, std::hash<std::string>()(value));
+		}
+
+		return seed;
+	}
+};
+
+namespace advss {
 
 struct CacheEntry {
 	RequestResult result;
@@ -61,14 +98,15 @@ static bool cacheIsTooOld(const CacheEntry &cache)
 	return diff >= std::chrono::seconds(cacheTimeoutSeconds);
 }
 
-static bool cacheIsValid(const std::map<Args, CacheEntry> &cache,
+static bool cacheIsValid(const std::unordered_map<Args, CacheEntry> &cache,
 			 const Args &args)
 {
 	auto it = cache.find(args);
 	return it != cache.end() && !cacheIsTooOld(it->second);
 }
 
-static void cleanupCache(std::map<Args, CacheEntry> &cache, std::mutex &mtx)
+static void cleanupCache(std::unordered_map<Args, CacheEntry> &cache,
+			 std::mutex &mtx)
 {
 	std::lock_guard<std::mutex> lock(mtx);
 	cache.clear();
@@ -181,7 +219,7 @@ RequestResult SendGetRequest(const TwitchToken &token, const std::string &uri,
 		return {};
 	}
 
-	static std::map<Args, CacheEntry> cache;
+	static std::unordered_map<Args, CacheEntry> cache;
 	static std::mutex mtx;
 	[[maybe_unused]] static bool _ = []() {
 		AddPluginCleanupStep([]() { cleanupCache(cache, mtx); });
@@ -251,7 +289,7 @@ RequestResult SendPostRequest(const TwitchToken &token, const std::string &uri,
 		return {};
 	}
 
-	static std::map<Args, CacheEntry> cache;
+	static std::unordered_map<Args, CacheEntry> cache;
 	static std::mutex mtx;
 	[[maybe_unused]] static bool _ = []() {
 		AddPluginCleanupStep([]() { cleanupCache(cache, mtx); });
@@ -322,7 +360,7 @@ RequestResult SendPutRequest(const TwitchToken &token, const std::string &uri,
 		return {};
 	}
 
-	static std::map<Args, CacheEntry> cache;
+	static std::unordered_map<Args, CacheEntry> cache;
 	static std::mutex mtx;
 	[[maybe_unused]] static bool _ = []() {
 		AddPluginCleanupStep([]() { cleanupCache(cache, mtx); });
@@ -393,7 +431,7 @@ RequestResult SendPatchRequest(const TwitchToken &token, const std::string &uri,
 		return {};
 	}
 
-	static std::map<Args, CacheEntry> cache;
+	static std::unordered_map<Args, CacheEntry> cache;
 	static std::mutex mtx;
 	[[maybe_unused]] static bool _ = []() {
 		AddPluginCleanupStep([]() { cleanupCache(cache, mtx); });
