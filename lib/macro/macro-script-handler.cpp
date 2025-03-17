@@ -108,6 +108,24 @@ static const std::string setTempVarValueDeclString =
 	tempVarIdParam.data() + ", in string " + valueParam.data() +
 	", in int " + GetInstanceIdParamName().data() + ")";
 
+/* Plugin status */
+
+static constexpr std::string_view stopSignalName = "advss_plugin_stopped";
+static constexpr std::string_view startSignalName = "advss_plugin_started";
+static constexpr std::string_view getRunningStatusFuncName =
+	"advss_plugin_running";
+static constexpr std::string_view resetIntervalSignalName =
+	"advss_interval_reset";
+
+static const std::string stopSignalDeclString =
+	std::string("void ") + stopSignalName.data() + "()";
+static const std::string startSignalDeclString =
+	std::string("void ") + startSignalName.data() + "()";
+static const std::string resetIntervalDeclString =
+	std::string("void ") + resetIntervalSignalName.data() + "()";
+static const std::string getRunningStatusDeclString =
+	std::string("bool ") + getRunningStatusFuncName.data() + "()";
+
 static bool setup();
 static bool setupDone = setup();
 
@@ -134,6 +152,25 @@ static bool setup()
 			 &ScriptHandler::DeregisterAllTempVars, nullptr);
 	proc_handler_add(ph, setTempVarValueDeclString.c_str(),
 			 &ScriptHandler::SetTempVarValue, nullptr);
+	proc_handler_add(ph, getRunningStatusDeclString.c_str(),
+			 &ScriptHandler::GetRunningStatus, nullptr);
+
+	auto sh = obs_get_signal_handler();
+	signal_handler_add(sh, stopSignalDeclString.c_str());
+	signal_handler_add(sh, startSignalDeclString.c_str());
+	signal_handler_add(sh, resetIntervalDeclString.c_str());
+
+	static constexpr auto triggerSignal = [](const std::string_view &name) {
+		auto sh = obs_get_signal_handler();
+		struct calldata data;
+		calldata_init(&data);
+		signal_handler_signal(sh, name.data(), &data);
+		calldata_free(&data);
+	};
+
+	AddIntervalResetStep([]() { triggerSignal(resetIntervalSignalName); });
+	AddStartStep([]() { triggerSignal(startSignalName); });
+	AddStopStep([]() { triggerSignal(stopSignalName); });
 	return true;
 }
 
@@ -474,6 +511,11 @@ void ScriptHandler::SetVariableValue(void *, calldata_t *data)
 
 	variable->SetValue(variableValue);
 	RETURN_SUCCESS();
+}
+
+void ScriptHandler::GetRunningStatus(void *ctx, calldata_t *data)
+{
+	calldata_set_bool(data, "is_running", PluginIsRunning());
 }
 
 void ScriptHandler::RegisterTempVar(void *, calldata_t *data)

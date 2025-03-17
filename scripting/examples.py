@@ -148,6 +148,39 @@ def script_load(settings):
         ],
     )
 
+    # Other signals and procedures, which might be useful
+    def plugin_stop_handler(data):
+        obs.script_log(obs.LOG_INFO, "Hello from stop handler!")
+        get_running_status()
+
+    def plugin_start_handler(data):
+        obs.script_log(obs.LOG_INFO, "Hello from start handler!")
+        get_running_status()
+
+    def get_running_status():
+        proc_handler = obs.obs_get_proc_handler()
+        data = obs.calldata_create()
+        obs.proc_handler_call(proc_handler, "advss_plugin_running", data)
+        success = obs.calldata_bool(data, "is_running")
+        obs.script_log(
+            obs.LOG_INFO, f"The advanced scene switcher is currently running: {success}"
+        )
+        obs.calldata_destroy(data)
+
+    def interval_reset_handler(data):
+        obs.script_log(obs.LOG_INFO, "Hello from reset handler!")
+
+    signal_handler = obs.obs_get_signal_handler()
+    obs.signal_handler_connect(
+        signal_handler, "advss_plugin_stopped", plugin_stop_handler
+    )
+    obs.signal_handler_connect(
+        signal_handler, "advss_plugin_started", plugin_start_handler
+    )
+    obs.signal_handler_connect(
+        signal_handler, "advss_interval_reset", interval_reset_handler
+    )
+
 
 def script_unload():
     # Deregistering is useful if you plan on reloading the script files
