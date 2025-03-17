@@ -28,3 +28,6 @@
 [submodule "deps/libusb"]
 	path = deps/libusb
 	url = https://github.com/libusb/libusb.git
+[submodule "deps/paho.mqtt.cpp"]
+	path = deps/paho.mqtt.cpp
+	url = https://github.com/eclipse-paho/paho.mqtt.cpp.git
