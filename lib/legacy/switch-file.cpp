@@ -21,6 +21,29 @@ bool FileSwitch::pause = false;
 static QObject *addPulse = nullptr;
 static std::hash<std::string> strHash;
 
+static void writeToStatusFile(const QString &msg)
+{
+	if (!GetSwitcher() || !GetSwitcher()->fileIO.writeEnabled ||
+	    GetSwitcher()->fileIO.writePath.empty()) {
+		return;
+	}
+
+	QFile file(QString::fromStdString(GetSwitcher()->fileIO.writePath));
+	if (file.open(QIODevice::ReadWrite)) {
+		QTextStream stream(&file);
+		stream << msg << Qt::endl;
+	}
+	file.close();
+}
+
+static bool _ = []() {
+	AddStartStep(
+		[]() { writeToStatusFile("Advanced Scene Switcher running"); });
+	AddStopStep(
+		[]() { writeToStatusFile("Advanced Scene Switcher stopped"); });
+	return true;
+}();
+
 void AdvSceneSwitcher::on_browseButton_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(
@@ -111,20 +134,6 @@ void SwitcherData::writeSceneInfoToFile()
 		file.write(msg, qstrlen(msg));
 		file.close();
 	}
-}
-
-void SwitcherData::writeToStatusFile(const QString &msg)
-{
-	if (!fileIO.writeEnabled || fileIO.writePath.empty()) {
-		return;
-	}
-
-	QFile file(QString::fromStdString(fileIO.writePath));
-	if (file.open(QIODevice::ReadWrite)) {
-		QTextStream stream(&file);
-		stream << msg << Qt::endl;
-	}
-	file.close();
 }
 
 bool SwitcherData::checkSwitchInfoFromFile(OBSWeakSource &scene,

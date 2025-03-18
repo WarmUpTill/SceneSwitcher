@@ -20,12 +20,16 @@ EXPORT void AddPluginCleanupStep(std::function<void()>);
 void RunPluginInitSteps();
 extern "C" EXPORT void RunPluginPostLoadSteps();
 void RunPluginCleanupSteps();
-void RunIntervalResetSteps();
 
 EXPORT void StopPlugin();
 EXPORT void StartPlugin();
 EXPORT bool PluginIsRunning();
 EXPORT int GetIntervalValue();
+void AddStartStep(std::function<void()>);
+void AddStopStep(std::function<void()>);
+void RunStartSteps();
+void RunStopSteps();
+void RunIntervalResetSteps();
 
 enum class NoMatchBehavior { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 };
 EXPORT void SetPluginNoMatchBehavior(NoMatchBehavior);

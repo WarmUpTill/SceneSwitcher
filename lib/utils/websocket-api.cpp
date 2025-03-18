@@ -23,6 +23,14 @@ static bool setupDone = setup();
 bool setup()
 {
 	AddPluginPostLoadStep(registerWebsocketVendor);
+	AddStartStep([]() {
+		SendWebsocketVendorEvent("AdvancedSceneSwitcherStarted",
+					 nullptr);
+	});
+	AddStopStep([]() {
+		SendWebsocketVendorEvent("AdvancedSceneSwitcherStopped",
+					 nullptr);
+	});
 	return true;
 }
 
@@ -109,6 +117,9 @@ void RegisterWebsocketRequest(
 
 void SendWebsocketVendorEvent(const std::string &eventName, obs_data_t *data)
 {
+	if (OBSIsShuttingDown()) {
+		return;
+	}
 	obs_websocket_vendor_emit_event(vendor, eventName.c_str(), data);
 }
 

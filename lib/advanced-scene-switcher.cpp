@@ -445,10 +445,7 @@ void SwitcherData::Start()
 		th = new SwitcherThread();
 		th->start((QThread::Priority)threadPriority);
 
-		// Will be overwritten quickly but might be useful
-		writeToStatusFile("Advanced Scene Switcher running");
-		SendWebsocketVendorEvent("AdvancedSceneSwitcherStarted",
-					 nullptr);
+		RunStartSteps();
 	}
 
 	if (showSystemTrayNotifications) {
@@ -475,11 +472,7 @@ void SwitcherData::Stop()
 		th->wait();
 		delete th;
 		th = nullptr;
-		writeToStatusFile("Advanced Scene Switcher stopped");
-		if (!obsIsShuttingDown) {
-			SendWebsocketVendorEvent("AdvancedSceneSwitcherStopped",
-						 nullptr);
-		}
+		RunStopSteps();
 	}
 
 	if (showSystemTrayNotifications) {
