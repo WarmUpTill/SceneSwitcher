@@ -230,7 +230,6 @@ public:
 	bool checkPause();
 	void checkDefaultSceneTransitions();
 	void writeSceneInfoToFile();
-	void writeToStatusFile(const QString &msg);
 	void checkSwitchCooldown(bool &match);
 
 	std::deque<WindowSwitch> windowSwitches;

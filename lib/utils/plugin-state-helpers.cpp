@@ -27,6 +27,18 @@ static std::vector<std::function<void()>> &getResetIntervalSteps()
 	return steps;
 }
 
+static std::vector<std::function<void()>> &getStartSteps()
+{
+	static std::vector<std::function<void()>> steps;
+	return steps;
+}
+
+static std::vector<std::function<void()>> &getStopSteps()
+{
+	static std::vector<std::function<void()>> steps;
+	return steps;
+}
+
 static std::mutex mutex;
 
 void SavePluginSettings(obs_data_t *obj)
@@ -111,6 +123,34 @@ void RunIntervalResetSteps()
 {
 	std::lock_guard<std::mutex> lock(mutex);
 	for (const auto &step : getResetIntervalSteps()) {
+		step();
+	}
+}
+
+void AddStartStep(std::function<void()> step)
+{
+	std::lock_guard<std::mutex> lock(mutex);
+	getStartSteps().emplace_back(step);
+}
+
+void AddStopStep(std::function<void()> step)
+{
+	std::lock_guard<std::mutex> lock(mutex);
+	getStopSteps().emplace_back(step);
+}
+
+void RunStartSteps()
+{
+	std::lock_guard<std::mutex> lock(mutex);
+	for (const auto &step : getStartSteps()) {
+		step();
+	}
+}
+
+void RunStopSteps()
+{
+	std::lock_guard<std::mutex> lock(mutex);
+	for (const auto &step : getStopSteps()) {
 		step();
 	}
 }
