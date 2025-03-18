@@ -67,9 +67,7 @@ void SetMacroSwitchedScene(bool value)
 {
 	static bool setupDone = false;
 	if (!setupDone) {
-		// Will always be called with switcher lock already held
-		AddIntervalResetStep([]() { macroSceneSwitched = false; },
-				     false);
+		AddIntervalResetStep([]() { macroSceneSwitched = false; });
 		setupDone = true;
 	}
 	macroSceneSwitched = value;

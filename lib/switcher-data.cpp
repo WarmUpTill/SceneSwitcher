@@ -168,17 +168,6 @@ void SwitcherData::SaveVersion(obs_data_t *obj,
 	obs_data_set_string(obj, "version", currentVersion.c_str());
 }
 
-void SwitcherData::AddIntervalResetStep(std::function<void()> function,
-					bool tryLock)
-{
-	if (!tryLock) {
-		resetIntervalSteps.emplace_back(function);
-		return;
-	}
-	std::lock_guard<std::mutex> lock(switcher->m);
-	resetIntervalSteps.emplace_back(function);
-}
-
 void SwitcherData::RunPostLoadSteps()
 {
 	for (const auto &func : postLoadSteps) {

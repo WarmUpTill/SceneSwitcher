@@ -307,7 +307,7 @@ void SwitcherData::Thread()
 			}
 		}
 
-		ResetForNextInterval();
+		RunIntervalResetSteps();
 
 		if (match) {
 			if (macroMatch) {
@@ -355,14 +355,6 @@ void SwitcherData::SetPreconditions()
 
 	// Macro
 	InvalidateMacroTempVarValues();
-}
-
-void SwitcherData::ResetForNextInterval()
-{
-	// Plugin reset functions
-	for (const auto &func : resetIntervalSteps) {
-		func();
-	}
 }
 
 bool SwitcherData::CheckForMatch(OBSWeakSource &scene,
@@ -445,7 +437,7 @@ void AutoStartActionQueues();
 void SwitcherData::Start()
 {
 	if (!(th && th->isRunning())) {
-		ResetForNextInterval();
+		RunIntervalResetSteps();
 		ResetMacros();
 		AutoStartActionQueues();
 

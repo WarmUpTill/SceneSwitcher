@@ -11,7 +11,7 @@ EXPORT void LoadPluginSettings(obs_data_t *);
 EXPORT void AddSaveStep(std::function<void(obs_data_t *)>);
 EXPORT void AddLoadStep(std::function<void(obs_data_t *)>);
 EXPORT void AddPostLoadStep(std::function<void()>);
-EXPORT void AddIntervalResetStep(std::function<void()>, bool lock = true);
+EXPORT void AddIntervalResetStep(std::function<void()>);
 EXPORT void RunPostLoadSteps();
 
 EXPORT void AddPluginInitStep(std::function<void()>);
@@ -20,6 +20,7 @@ EXPORT void AddPluginCleanupStep(std::function<void()>);
 void RunPluginInitSteps();
 extern "C" EXPORT void RunPluginPostLoadSteps();
 void RunPluginCleanupSteps();
+void RunIntervalResetSteps();
 
 EXPORT void StopPlugin();
 EXPORT void StartPlugin();

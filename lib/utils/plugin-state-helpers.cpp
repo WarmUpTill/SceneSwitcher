@@ -21,6 +21,12 @@ static std::vector<std::function<void()>> &getPluginCleanupSteps()
 	return steps;
 }
 
+static std::vector<std::function<void()>> &getResetIntervalSteps()
+{
+	static std::vector<std::function<void()>> steps;
+	return steps;
+}
+
 static std::mutex mutex;
 
 void SavePluginSettings(obs_data_t *obj)
@@ -48,9 +54,10 @@ void AddPostLoadStep(std::function<void()> step)
 	GetSwitcher()->AddPostLoadStep(step);
 }
 
-void AddIntervalResetStep(std::function<void()> step, bool lock)
+void AddIntervalResetStep(std::function<void()> step)
 {
-	GetSwitcher()->AddIntervalResetStep(step, lock);
+	std::lock_guard<std::mutex> lock(mutex);
+	getResetIntervalSteps().emplace_back(step);
 }
 
 void RunPostLoadSteps()
@@ -96,6 +103,14 @@ void RunPluginCleanupSteps()
 {
 	std::lock_guard<std::mutex> lock(mutex);
 	for (const auto &step : getPluginCleanupSteps()) {
+		step();
+	}
+}
+
+void RunIntervalResetSteps()
+{
+	std::lock_guard<std::mutex> lock(mutex);
+	for (const auto &step : getResetIntervalSteps()) {
 		step();
 	}
 }
