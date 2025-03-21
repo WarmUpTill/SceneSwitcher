@@ -1450,7 +1450,7 @@ MacroConditionTwitchEdit::MacroConditionTwitchEdit(
 	  _tokens(new TwitchConnectionSelection()),
 	  _tokenWarning(new QLabel()),
 	  _channel(new TwitchChannelSelection(this)),
-	  _pointsReward(new TwitchPointsRewardWidget(this)),
+	  _pointsReward(new TwitchPointsRewardWidget(this, true)),
 	  _streamTitle(new VariableLineEdit(this)),
 	  _regexTitle(new RegexConfigWidget(parent)),
 	  _chatMesageEdit(new ChatMessageEdit(this)),

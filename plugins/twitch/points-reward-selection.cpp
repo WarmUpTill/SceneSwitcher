@@ -135,9 +135,10 @@ void TwitchPointsRewardSelection::SelectionChanged(int index)
 	emit PointsRewardChanged(pointsReward);
 }
 
-TwitchPointsRewardWidget::TwitchPointsRewardWidget(QWidget *parent)
+TwitchPointsRewardWidget::TwitchPointsRewardWidget(QWidget *parent,
+						   bool allowAny)
 	: QWidget(parent),
-	  _selection(new TwitchPointsRewardSelection(this)),
+	  _selection(new TwitchPointsRewardSelection(this, allowAny)),
 	  _refreshButton(new QPushButton(this))
 {
 	_refreshButton->setMaximumWidth(22);
