@@ -826,7 +826,7 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _userInfoQueryType(new QComboBox(this)),
 	  _userLogin(new VariableLineEdit(this)),
 	  _userId(new VariableSpinBox(this)),
-	  _pointsReward(new TwitchPointsRewardWidget(this)),
+	  _pointsReward(new TwitchPointsRewardWidget(this, false)),
 	  _rewardVariable(new VariableSelection(this)),
 	  _toggleRewardSelection(new QPushButton())
 {

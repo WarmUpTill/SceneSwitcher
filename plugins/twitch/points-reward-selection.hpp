@@ -20,7 +20,7 @@ class TwitchPointsRewardSelection : public FilterComboBox {
 	Q_OBJECT
 
 public:
-	TwitchPointsRewardSelection(QWidget *parent, bool allowAny = true);
+	TwitchPointsRewardSelection(QWidget *parent, bool allowAny);
 
 	void SetPointsReward(const TwitchPointsReward &pointsReward);
 	void SetChannel(const TwitchChannel &channel);
@@ -53,7 +53,7 @@ class TwitchPointsRewardWidget : public QWidget {
 	Q_OBJECT
 
 public:
-	TwitchPointsRewardWidget(QWidget *parent);
+	TwitchPointsRewardWidget(QWidget *parent, bool allowAny);
 
 	void SetPointsReward(const TwitchPointsReward &pointsReward);
 	void SetChannel(const TwitchChannel &channel);
