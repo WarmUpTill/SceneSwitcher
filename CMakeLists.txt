@@ -298,6 +298,13 @@ setup_obs_lib_dependency(${PROJECT_NAME})
 find_package(Qt6 REQUIRED COMPONENTS Widgets Core)
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Widgets)
 target_link_libraries(${LIB_NAME} PRIVATE Qt6::Core Qt6::Widgets)
+
+# Ignore QCheckBox::stateChanged deprecation warning until minimum supported Qt
+# version is at least Qt 6.7, which introduces QCheckBox::checkStateChanged
+if(Qt6_VERSION VERSION_GREATER "6.0.0")
+  target_compile_definitions(${LIB_NAME} PRIVATE QT_NO_DEPRECATED_WARNINGS)
+endif()
+
 target_compile_options(
   ${PROJECT_NAME}
   PRIVATE
