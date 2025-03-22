@@ -286,6 +286,12 @@ function(setup_advss_plugin target)
   find_package(Qt6 REQUIRED COMPONENTS Widgets Core)
   target_link_libraries(${target} PRIVATE Qt6::Core Qt6::Widgets)
 
+  # Ignore QCheckBox::stateChanged deprecation warning until minimum supported
+  # Qt version is at least Qt 6.7, which introduces QCheckBox::checkStateChanged
+  if(Qt6_VERSION VERSION_GREATER "6.7.0")
+    target_compile_definitions(${target} PRIVATE QT_NO_DEPRECATED_WARNINGS)
+  endif()
+
   set_target_properties(
     ${target}
     PROPERTIES AUTOMOC ON
