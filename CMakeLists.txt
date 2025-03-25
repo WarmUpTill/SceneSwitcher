@@ -33,6 +33,11 @@ add_library(${LIB_NAME} SHARED)
 include(cmake/common/get_git_revision_description.cmake)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 git_describe(GIT_TAG)
+
+if(${GIT_TAG} STREQUAL "GIT-NOTFOUND")
+  set(GIT_TAG ${PROJECT_VERSION})
+endif()
+message(STATUS "${PROJECT_NAME} version: ${GIT_TAG}")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/version.cpp.in"
                "${CMAKE_CURRENT_BINARY_DIR}/lib/version.cpp" @ONLY)
 
