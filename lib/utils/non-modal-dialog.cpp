@@ -67,6 +67,8 @@ NonModalMessageDialog::NonModalMessageDialog(const QString &message, Type type,
 	}
 	case Type::INPUT: {
 		_inputEdit = new ResizingPlainTextEdit(this);
+		_inputEdit->setTabChangesFocus(true);
+		_inputEdit->setFocus();
 		connect(_inputEdit, &ResizingPlainTextEdit::textChanged, this,
 			&NonModalMessageDialog::InputChanged);
 		layout->addWidget(_inputEdit);
