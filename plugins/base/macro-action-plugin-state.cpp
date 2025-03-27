@@ -34,11 +34,11 @@ const static std::map<PluginStateAction, std::string> actionTypes = {
 
 const static std::map<NoMatchBehavior, std::string> noMatchValues = {
 	{NoMatchBehavior::NO_SWITCH,
-	 "AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.dontSwitch"},
+	 "AdvSceneSwitcher.generalTab.generalBehavior.onNoMatch.dontSwitch"},
 	{NoMatchBehavior::SWITCH,
-	 "AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.switchTo"},
+	 "AdvSceneSwitcher.generalTab.generalBehavior.onNoMatch.switchTo"},
 	{NoMatchBehavior::RANDOM_SWITCH,
-	 "AdvSceneSwitcher.generalTab.generalBehavior.onNoMet.switchToRandom"},
+	 "AdvSceneSwitcher.generalTab.generalBehavior.onNoMatch.switchToRandom"},
 };
 
 static void stopPlugin()
