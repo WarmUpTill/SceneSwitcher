@@ -42,7 +42,7 @@ const static std::map<obs_deinterlace_mode, std::string> deinterlaceModes = {
 	{OBS_DEINTERLACE_MODE_DISABLE,
 	 "AdvSceneSwitcher.action.source.deinterlaceMode.disable"},
 	{OBS_DEINTERLACE_MODE_DISCARD,
-	 "AdvSceneSwitcher.action.source.deinterlaceMode.disable"},
+	 "AdvSceneSwitcher.action.source.deinterlaceMode.discard"},
 	{OBS_DEINTERLACE_MODE_RETRO,
 	 "AdvSceneSwitcher.action.source.deinterlaceMode.retro"},
 	{OBS_DEINTERLACE_MODE_BLEND,
