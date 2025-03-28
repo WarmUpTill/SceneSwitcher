@@ -526,8 +526,11 @@ void MacroActionSourceEdit::SetWidgetVisibility()
 		_entryData->_action == MacroActionSource::Action::SETTINGS &&
 		_entryData->_settingsInputMethod ==
 			MacroActionSource::SettingsInputMethod::JSON_STRING);
-	_getSettings->setVisible(_entryData->_action ==
-				 MacroActionSource::Action::SETTINGS);
+	_getSettings->setVisible(
+		_entryData->_action == MacroActionSource::Action::SETTINGS &&
+		_entryData->_settingsInputMethod !=
+			MacroActionSource::SettingsInputMethod::
+				INDIVIDUAL_TEMPVAR);
 	_tempVars->setVisible(_entryData->_action ==
 				      MacroActionSource::Action::SETTINGS &&
 			      _entryData->_settingsInputMethod ==
