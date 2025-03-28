@@ -449,8 +449,11 @@ void MacroActionFilterEdit::SetWidgetVisibility()
 		_entryData->_action == MacroActionFilter::Action::SETTINGS &&
 		_entryData->_settingsInputMethod ==
 			MacroActionFilter::SettingsInputMethod::JSON_STRING);
-	_getSettings->setVisible(_entryData->_action ==
-				 MacroActionFilter::Action::SETTINGS);
+	_getSettings->setVisible(
+		_entryData->_action == MacroActionFilter::Action::SETTINGS &&
+		_entryData->_settingsInputMethod !=
+			MacroActionFilter::SettingsInputMethod::
+				INDIVIDUAL_TEMPVAR);
 	_tempVars->setVisible(_entryData->_action ==
 				      MacroActionFilter::Action::SETTINGS &&
 			      _entryData->_settingsInputMethod ==
