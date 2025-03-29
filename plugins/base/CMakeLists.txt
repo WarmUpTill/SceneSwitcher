@@ -15,8 +15,8 @@ target_sources(
           macro-action-filter.hpp
           macro-action-hotkey.cpp
           macro-action-hotkey.hpp
-          macro-action-http.cpp
-          macro-action-http.hpp
+          macro-action-http-legacy.cpp
+          macro-action-http-legacy.hpp
           macro-action-log.cpp
           macro-action-log.hpp
           macro-action-media.cpp

@@ -32,7 +32,9 @@ void PreventMouseWheelAdjustWithoutFocus(QWidget *w)
 	    QString(w->metaObject()->className()) ==
 		    "advss::OSCMessageElementEdit" ||
 	    QString(w->metaObject()->className()) ==
-		    "advss::ChatMessagePropertyEdit") {
+		    "advss::ChatMessagePropertyEdit" ||
+	    QString(w->metaObject()->className()) ==
+		    "advss::KeyValueListContainerWidget") {
 		return;
 	}
 	w->setFocusPolicy(Qt::StrongFocus);
