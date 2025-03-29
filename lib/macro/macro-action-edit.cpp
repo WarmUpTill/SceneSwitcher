@@ -17,6 +17,9 @@ static inline void populateActionSelection(QComboBox *list)
 		QString entry(obs_module_text(action._name.c_str()));
 		if (list->findText(entry) == -1) {
 			list->addItem(entry);
+			qobject_cast<QListView *>(list->view())
+				->setRowHidden(list->count() - 1,
+					       action._hidden);
 		} else {
 			blog(LOG_WARNING,
 			     "did not insert duplicate action entry with name \"%s\"",

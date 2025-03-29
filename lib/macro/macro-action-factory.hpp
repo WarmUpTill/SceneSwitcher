@@ -12,6 +12,7 @@ struct MacroActionInfo {
 	std::function<std::shared_ptr<MacroAction>(Macro *m)> _create = nullptr;
 	CreateActionWidget _createWidget = nullptr;
 	std::string _name;
+	bool _hidden = false;
 };
 
 class MacroActionFactory {
