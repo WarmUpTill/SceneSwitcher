@@ -442,6 +442,13 @@ void MacroConditionFileEdit::SetWidgetVisibility()
 		_entryData->_onlyMatchIfChanged &&
 		_entryData->GetCondition() ==
 			MacroConditionFile::Condition::MATCH);
+
+	// TODO: Remove remote file support in future version in favor of HTTP
+	// action.
+	// Hide the option for now, if it is not used already.
+	_fileTypes->setVisible(_entryData->_fileType ==
+			       MacroConditionFile::FileType::REMOTE);
+
 	adjustSize();
 	updateGeometry();
 }
