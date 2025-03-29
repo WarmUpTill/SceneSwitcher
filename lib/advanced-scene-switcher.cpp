@@ -1,6 +1,5 @@
 #include "advanced-scene-switcher.hpp"
 #include "backup.hpp"
-#include "curl-helper.hpp"
 #include "log-helper.hpp"
 #include "macro-helpers.hpp"
 #include "obs-module-helper.hpp"
@@ -19,9 +18,14 @@
 #include <obs-frontend-api.h>
 #include <QAction>
 #include <QDirIterator>
+#include <QLibrary>
 #include <QMainWindow>
 #include <QTextStream>
 #include <regex>
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 namespace advss {
 
