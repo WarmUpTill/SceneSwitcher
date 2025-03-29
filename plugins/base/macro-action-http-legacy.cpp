@@ -1,4 +1,4 @@
-#include "macro-action-http.hpp"
+#include "macro-action-http-legacy.hpp"
 #include "curl-helper.hpp"
 #include "layout-helpers.hpp"
 
@@ -9,7 +9,7 @@ const std::string MacroActionHttp::id = "http";
 bool MacroActionHttp::_registered = MacroActionFactory::Register(
 	MacroActionHttp::id,
 	{MacroActionHttp::Create, MacroActionHttpEdit::Create,
-	 "AdvSceneSwitcher.action.http"});
+	 "AdvSceneSwitcher.action.http.legacy", true});
 
 const static std::map<MacroActionHttp::Method, std::string> methods = {
 	{MacroActionHttp::Method::GET, "AdvSceneSwitcher.action.http.type.get"},
