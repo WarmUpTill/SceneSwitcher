@@ -41,12 +41,12 @@ public:
 
 	StringVariable _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	StringVariable _text = obs_module_text("AdvSceneSwitcher.enterText");
-	FileType _fileType = FileType::LOCAL;
 	RegexConfig _regex;
 
 	// TODO: Remove in future version
 	bool _useTime = false;
 	bool _onlyMatchIfChanged = false;
+	FileType _fileType = FileType::LOCAL;
 
 private:
 	bool MatchFileContent(QString &filedata);
