@@ -9,7 +9,6 @@
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QTimer>
-#include <QListWidget>
 
 namespace advss {
 
