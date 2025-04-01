@@ -19,13 +19,9 @@ public:
 	// Used to resolve variables before actions are added to action queues
 	virtual void ResolveVariablesToFixedValues();
 
-	void SetEnabled(bool);
-	bool Enabled() const;
-
 	static std::string_view GetDefaultID();
 
 private:
-	bool _enabled = true;
 };
 
 class EXPORT MacroRefAction : virtual public MacroAction {

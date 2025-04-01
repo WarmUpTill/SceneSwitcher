@@ -27,8 +27,6 @@ private slots:
 
 private:
 	std::shared_ptr<MacroSegment> Data() const;
-	void SetDisableEffect(bool);
-	void SetEnableAppearance(bool);
 
 	FilterComboBox *_actionSelection;
 	SwitchButton *_enable;
