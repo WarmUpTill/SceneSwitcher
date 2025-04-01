@@ -39,6 +39,8 @@ public:
 	virtual std::string GetId() const = 0;
 	void EnableHighlight();
 	bool GetHighlightAndReset();
+	void SetEnabled(bool);
+	bool Enabled() const;
 	virtual std::string GetVariableValue() const;
 
 protected:
@@ -75,6 +77,7 @@ private:
 	// UI helper
 	bool _highlight = false;
 	bool _collapsed = false;
+	bool _enabled = true;
 
 	// Custom header labels
 	bool _useCustomLabel = false;
@@ -118,6 +121,9 @@ signals:
 	void SceneGroupRenamed(const QString &oldName, const QString newName);
 
 protected:
+	void SetDisableEffect(bool);
+	void SetEnableAppearance(bool);
+
 	bool eventFilter(QObject *obj, QEvent *ev) override;
 
 	Section *_section;

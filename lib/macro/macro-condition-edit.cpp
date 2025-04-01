@@ -152,6 +152,8 @@ void MacroConditionEdit::LogicSelectionChanged(int idx)
 	const auto logic = static_cast<Logic::Type>(
 		_logicSelection->itemData(idx).toInt());
 	(*_entryData)->SetLogicType(logic);
+
+	SetEnableAppearance(logic != Logic::Type::NONE);
 }
 
 bool MacroConditionEdit::IsRootNode()
@@ -164,6 +166,7 @@ void MacroConditionEdit::SetLogicSelection()
 	const auto logic = (*_entryData)->GetLogicType();
 	_logicSelection->setCurrentIndex(
 		_logicSelection->findData(static_cast<int>(logic)));
+	SetEnableAppearance(logic != Logic::Type::NONE);
 }
 
 void MacroConditionEdit::SetRootNode(bool root)

@@ -6,6 +6,7 @@
 
 #include <QApplication>
 #include <QEvent>
+#include <QGraphicsOpacityEffect>
 #include <QLabel>
 #include <QMouseEvent>
 #include <QScrollBar>
@@ -24,24 +25,24 @@ bool MacroSegment::Save(obs_data_t *obj) const
 	obs_data_set_bool(data, "collapsed", _collapsed);
 	obs_data_set_bool(data, "useCustomLabel", _useCustomLabel);
 	obs_data_set_string(data, "customLabel", _customLabel.c_str());
+	obs_data_set_bool(data, "enabled", _enabled);
+	obs_data_set_int(data, "version", 1);
 	obs_data_set_obj(obj, "segmentSettings", data);
 	return true;
 }
 
 bool MacroSegment::Load(obs_data_t *obj)
 {
+	OBSDataAutoRelease data = obs_data_get_obj(obj, "segmentSettings");
+	_collapsed = obs_data_get_bool(data, "collapsed");
+	_useCustomLabel = obs_data_get_bool(data, "useCustomLabel");
+	_customLabel = obs_data_get_string(data, "customLabel");
+	obs_data_set_default_bool(data, "enabled", true);
+	_enabled = obs_data_get_bool(data, "enabled");
+
 	// TODO: remove this fallback at some point
-	if (obs_data_has_user_value(obj, "segmentSettings")) {
-		OBSDataAutoRelease data =
-			obs_data_get_obj(obj, "segmentSettings");
-		_collapsed = obs_data_get_bool(data, "collapsed");
-		_useCustomLabel = obs_data_get_bool(data, "useCustomLabel");
-		_customLabel = obs_data_get_string(data, "customLabel");
-	} else {
-		_collapsed = obs_data_get_bool(obj, "collapsed");
-		_useCustomLabel = false;
-		_customLabel = obs_module_text(
-			"AdvSceneSwitcher.macroTab.segment.defaultCustomLabel");
+	if (!obs_data_has_user_value(data, "version")) {
+		_enabled = obs_data_get_bool(obj, "enabled");
 	}
 
 	ClearAvailableTempvars();
@@ -71,6 +72,16 @@ bool MacroSegment::GetHighlightAndReset()
 		return true;
 	}
 	return false;
+}
+
+void MacroSegment::SetEnabled(bool value)
+{
+	_enabled = value;
+}
+
+bool MacroSegment::Enabled() const
+{
+	return _enabled;
 }
 
 std::string MacroSegment::GetVariableValue() const
@@ -318,6 +329,22 @@ void MacroSegmentEdit::Collapsed(bool collapsed)
 	if (Data()) {
 		Data()->SetCollapsed(collapsed);
 	}
+}
+
+void MacroSegmentEdit::SetDisableEffect(bool value)
+{
+	if (value) {
+		auto effect = new QGraphicsOpacityEffect(this);
+		effect->setOpacity(0.5);
+		_section->setGraphicsEffect(effect);
+	} else {
+		_section->setGraphicsEffect(nullptr);
+	}
+}
+
+void MacroSegmentEdit::SetEnableAppearance(bool value)
+{
+	SetDisableEffect(!value);
 }
 
 void MacroSegmentEdit::SetFocusPolicyOfWidgets()

@@ -7,8 +7,6 @@
 #include "section.hpp"
 #include "switch-button.hpp"
 
-#include <QGraphicsOpacityEffect>
-
 namespace advss {
 
 static inline void populateActionSelection(QComboBox *list)
@@ -119,17 +117,6 @@ void MacroActionEdit::SetEntryData(std::shared_ptr<MacroAction> *data)
 	_entryData = data;
 }
 
-void MacroActionEdit::SetDisableEffect(bool value)
-{
-	if (value) {
-		auto effect = new QGraphicsOpacityEffect(this);
-		effect->setOpacity(0.5);
-		_section->setGraphicsEffect(effect);
-	} else {
-		_section->setGraphicsEffect(nullptr);
-	}
-}
-
 void MacroActionEdit::ActionEnableChanged(bool value)
 {
 	if (_loading || !_entryData) {
@@ -147,13 +134,9 @@ void MacroActionEdit::UpdateActionState()
 		return;
 	}
 
-	SetEnableAppearance((*_entryData)->Enabled());
-}
-
-void MacroActionEdit::SetEnableAppearance(bool value)
-{
-	_enable->setChecked(value);
-	SetDisableEffect(!value);
+	const bool enabled = (*_entryData)->Enabled();
+	SetEnableAppearance(enabled);
+	_enable->setChecked(enabled);
 }
 
 std::shared_ptr<MacroSegment> MacroActionEdit::Data() const
