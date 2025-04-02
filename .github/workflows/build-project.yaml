@@ -210,6 +210,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache-x86_64-
 
+      - name: Set up CMake 🏗️
+        uses: jwlawson/actions-setup-cmake@v1.13
+        with:
+          cmake-version: '3.24.x'
+
       - name: Set up Homebrew 🍺
         uses: Homebrew/actions/setup-homebrew@master
 
