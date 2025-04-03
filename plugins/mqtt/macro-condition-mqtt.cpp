@@ -1,18 +1,18 @@
-#include "macro-condition-midi.hpp"
+#include "macro-condition-mqtt.hpp"
 #include "layout-helpers.hpp"
 #include "macro-helpers.hpp"
 #include "ui-helpers.hpp"
 
 namespace advss {
 
-const std::string MacroConditionMidi::id = "midi";
+const std::string MacroConditionMqtt::id = "mqtt";
 
-bool MacroConditionMidi::_registered = MacroConditionFactory::Register(
-	MacroConditionMidi::id,
-	{MacroConditionMidi::Create, MacroConditionMidiEdit::Create,
-	 "AdvSceneSwitcher.condition.midi"});
+bool MacroConditionMqtt::_registered = MacroConditionFactory::Register(
+	MacroConditionMqtt::id,
+	{MacroConditionMqtt::Create, MacroConditionMqttEdit::Create,
+	 "AdvSceneSwitcher.condition.mqtt"});
 
-bool MacroConditionMidi::CheckCondition()
+bool MacroConditionMqtt::CheckCondition()
 {
 	if (!_messageBuffer) {
 		return false;
@@ -31,103 +31,100 @@ bool MacroConditionMidi::CheckCondition()
 		if (!message) {
 			continue;
 		}
-		if (message->Matches(_message)) {
-			SetVariableValues(*message);
-			if (_clearBufferOnMatch) {
-				_messageBuffer->Clear();
-			}
-			return true;
-		}
+		//if (_regex.Enabled()) {
+		//	if (!_regex.Matches(*message, _message)) {
+		//		continue;
+		//	}
+		//
+		//	SetTempVarValue("message", *message);
+		//	if (_clearBufferOnMatch) {
+		//		_messageBuffer->Clear();
+		//	}
+		//	return true;
+		//} else {
+		//	if (*message != std::string(_message)) {
+		//		continue;
+		//	}
+		//
+		//	SetTempVarValue("message", *message);
+		//	if (_clearBufferOnMatch) {
+		//		_messageBuffer->Clear();
+		//	}
+		//	return true;
+		//}
 	}
 
 	return false;
 }
 
-bool MacroConditionMidi::Save(obs_data_t *obj) const
+bool MacroConditionMqtt::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	_message.Save(obj);
-	_device.Save(obj);
+	_regex.Save(obj);
+	obs_data_set_string(obj, "connection",
+			    GetWeakMqttConnectionName(_connection).c_str());
 	obs_data_set_bool(obj, "clearBufferOnMatch", _clearBufferOnMatch);
-	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
-bool MacroConditionMidi::Load(obs_data_t *obj)
+bool MacroConditionMqtt::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_message.Load(obj);
-	_device.Load(obj);
-	_messageBuffer = _device.RegisterForMidiMessages();
+	_regex.Load(obj);
+	_connection = GetWeakMqttConnectionByName(
+		obs_data_get_string(obj, "connection"));
 	_clearBufferOnMatch = obs_data_get_bool(obj, "clearBufferOnMatch");
-	if (!obs_data_has_user_value(obj, "version")) {
-		_clearBufferOnMatch = true;
-	}
 	return true;
 }
 
-std::string MacroConditionMidi::GetShortDesc() const
+std::string MacroConditionMqtt::GetShortDesc() const
 {
-	return _device.Name();
+	return GetWeakMqttConnectionName(_connection);
 }
 
-void MacroConditionMidi::SetDevice(const MidiDevice &dev)
+void MacroConditionMqtt::SetConnection(const std::string &name)
 {
-	_device = dev;
-	_messageBuffer = dev.RegisterForMidiMessages();
+	_connection = GetWeakMqttConnectionByName(name);
+	auto connection = _connection.lock();
+	if (!connection) {
+		return;
+	}
+	_messageBuffer = connection->RegisterForEvents();
 }
 
-void MacroConditionMidi::SetupTempVars()
+std::weak_ptr<MqttConnection> MacroConditionMqtt::GetConnection() const
+{
+	return _connection;
+}
+
+void MacroConditionMqtt::SetupTempVars()
 {
 	MacroCondition::SetupTempVars();
-	AddTempvar("type",
-		   obs_module_text("AdvSceneSwitcher.tempVar.midi.type"));
-	AddTempvar("channel",
-		   obs_module_text("AdvSceneSwitcher.tempVar.midi.channel"));
-	AddTempvar("note",
-		   obs_module_text("AdvSceneSwitcher.tempVar.midi.note"));
-	AddTempvar("value1",
-		   obs_module_text("AdvSceneSwitcher.tempVar.midi.value1"));
-	AddTempvar("value2",
-		   obs_module_text("AdvSceneSwitcher.tempVar.midi.value2"));
+	// TODO
 }
 
-void MacroConditionMidi::SetVariableValues(const MidiMessage &m)
-{
-	SetVariableValue(std::to_string(m.Note()) + " " +
-			 std::to_string(m.Value()));
-	SetTempVarValue("type", m.MidiTypeToString(m.Type()));
-	SetTempVarValue("channel", std::to_string(m.Channel()));
-	try {
-		SetTempVarValue("note",
-				GetAllNotes().at(m.Note()).toStdString());
-	} catch (...) {
-	}
-	SetTempVarValue("value1", std::to_string(m.Note()));
-	SetTempVarValue("value2", std::to_string(m.Value()));
-}
-
-MacroConditionMidiEdit::MacroConditionMidiEdit(
-	QWidget *parent, std::shared_ptr<MacroConditionMidi> entryData)
+MacroConditionMqttEdit::MacroConditionMqttEdit(
+	QWidget *parent, std::shared_ptr<MacroConditionMqtt> entryData)
 	: QWidget(parent),
-	  _devices(new MidiDeviceSelection(this, MidiDeviceType::INPUT)),
-	  _message(new MidiMessageSelection(this)),
-	  _resetMidiDevices(new QPushButton(
-		  obs_module_text("AdvSceneSwitcher.midi.resetDevices"))),
+	  _connection(new MqttConnectionSelection(this)),
+	  _message(new VariableTextEdit(this)),
+	  _regex(new RegexConfigWidget(parent)),
 	  _listen(new QPushButton(
-		  obs_module_text("AdvSceneSwitcher.midi.startListen"))),
+		  obs_module_text("AdvSceneSwitcher.mqtt.startListen"))),
 	  _clearBufferOnMatch(new QCheckBox(
 		  obs_module_text("AdvSceneSwitcher.clearBufferOnMatch")))
 {
-	QWidget::connect(_devices,
-			 SIGNAL(DeviceSelectionChanged(const MidiDevice &)),
+	//QWidget::connect(_message,
+	//		 SIGNAL(MidiMessageChanged(const MidiMessage &)), this,
+	//		 SLOT(MidiMessageChanged(const MidiMessage &)));
+	QWidget::connect(_regex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(RegexChanged(const RegexConfig &)));
+	QWidget::connect(_connection, SIGNAL(SelectionChanged(const QString &)),
 			 this,
-			 SLOT(DeviceSelectionChanged(const MidiDevice &)));
-	QWidget::connect(_message,
-			 SIGNAL(MidiMessageChanged(const MidiMessage &)), this,
-			 SLOT(MidiMessageChanged(const MidiMessage &)));
-	QWidget::connect(_resetMidiDevices, SIGNAL(clicked()), this,
-			 SLOT(ResetMidiDevices()));
+			 SLOT(ConnectionSelectionChanged(const QString &)));
 	QWidget::connect(_listen, SIGNAL(clicked()), this,
 			 SLOT(ToggleListen()));
 	QWidget::connect(_clearBufferOnMatch, SIGNAL(stateChanged(int)), this,
@@ -135,19 +132,15 @@ MacroConditionMidiEdit::MacroConditionMidiEdit(
 	QWidget::connect(&_listenTimer, SIGNAL(timeout()), this,
 			 SLOT(SetMessageSelectionToLastReceived()));
 
-	auto entryLayout = new QHBoxLayout;
-	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.midi.entry"),
-		     entryLayout, {{"{{device}}", _devices}});
 	auto listenLayout = new QHBoxLayout;
 	PlaceWidgets(
-		obs_module_text("AdvSceneSwitcher.condition.midi.entry.listen"),
+		obs_module_text("AdvSceneSwitcher.condition.mqtt.entry.listen"),
 		listenLayout, {{"{{listenButton}}", _listen}});
 
 	auto mainLayout = new QVBoxLayout;
-	mainLayout->addLayout(entryLayout);
+	// TODO
 	mainLayout->addWidget(_message);
 	mainLayout->addLayout(listenLayout);
-	mainLayout->addWidget(_resetMidiDevices);
 	mainLayout->addWidget(_clearBufferOnMatch);
 	setLayout(mainLayout);
 
@@ -158,69 +151,57 @@ MacroConditionMidiEdit::MacroConditionMidiEdit(
 	_loading = false;
 }
 
-MacroConditionMidiEdit::~MacroConditionMidiEdit()
+MacroConditionMqttEdit::~MacroConditionMqttEdit()
 {
 	EnableListening(false);
 }
 
-void MacroConditionMidiEdit::UpdateEntryData()
+void MacroConditionMqttEdit::UpdateEntryData()
 {
 	if (!_entryData) {
 		return;
 	}
 
-	_message->SetMessage(_entryData->_message);
-	_devices->SetDevice(_entryData->GetDevice());
+	// TODO
+	//_message->SetMessage(_entryData->_message);
+	_connection->SetConnection(_entryData->GetConnection());
+	_regex->SetRegexConfig(_entryData->_regex);
 	_clearBufferOnMatch->setChecked(_entryData->_clearBufferOnMatch);
 
 	adjustSize();
 	updateGeometry();
 }
 
-void MacroConditionMidiEdit::DeviceSelectionChanged(const MidiDevice &device)
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	if (_currentlyListening) {
-		ToggleListen();
-	}
-
-	{
-		auto lock = LockContext();
-		_entryData->SetDevice(device);
-	}
-	emit HeaderInfoChanged(
-		QString::fromStdString(_entryData->GetShortDesc()));
-}
-
-void MacroConditionMidiEdit::MidiMessageChanged(const MidiMessage &message)
+void MacroConditionMqttEdit::MqttMessageChanged(const MqttMessage &message)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_message = message;
 }
 
-void MacroConditionMidiEdit::ClearBufferOnMatchChanged(int value)
+void MacroConditionMqttEdit::ClearBufferOnMatchChanged(int value)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_clearBufferOnMatch = value;
 }
 
-void MacroConditionMidiEdit::ResetMidiDevices()
+void MacroConditionMqttEdit::RegexChanged(const RegexConfig &conf)
 {
-	auto lock = LockContext();
-	MidiDeviceInstance::ResetAllDevices();
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_regex = conf;
+
+	adjustSize();
+	updateGeometry();
 }
 
-void MacroConditionMidiEdit::EnableListening(bool enable)
+void MacroConditionMqttEdit::EnableListening(bool enable)
 {
 	if (_currentlyListening == enable) {
 		return;
 	}
 	if (enable) {
-		_messageBuffer =
-			_entryData->GetDevice().RegisterForMidiMessages();
+		// TODO
+		//_messageBuffer =
+		//	_entryData->GetDevice().RegisterForMidiMessages();
 		_listenTimer.start();
 	} else {
 		_messageBuffer.reset();
@@ -228,7 +209,7 @@ void MacroConditionMidiEdit::EnableListening(bool enable)
 	}
 }
 
-void MacroConditionMidiEdit::ToggleListen()
+void MacroConditionMqttEdit::ToggleListen()
 {
 	if (!_entryData) {
 		return;
@@ -236,21 +217,21 @@ void MacroConditionMidiEdit::ToggleListen()
 
 	_listen->setText(
 		_currentlyListening
-			? obs_module_text("AdvSceneSwitcher.midi.startListen")
-			: obs_module_text("AdvSceneSwitcher.midi.stopListen"));
+			? obs_module_text("AdvSceneSwitcher.mqtt.startListen")
+			: obs_module_text("AdvSceneSwitcher.mqtt.stopListen"));
 	EnableListening(!_currentlyListening);
 	_currentlyListening = !_currentlyListening;
 	_message->setDisabled(_currentlyListening);
 }
 
-void MacroConditionMidiEdit::SetMessageSelectionToLastReceived()
+void MacroConditionMqttEdit::SetMessageSelectionToLastReceived()
 {
 	auto lock = LockContext();
 	if (!_entryData || !_messageBuffer || _messageBuffer->Empty()) {
 		return;
 	}
 
-	std::optional<MidiMessage> message;
+	std::optional<MqttMessage> message;
 	while (!_messageBuffer->Empty()) {
 		message = _messageBuffer->ConsumeMessage();
 		if (!message) {
@@ -262,7 +243,8 @@ void MacroConditionMidiEdit::SetMessageSelectionToLastReceived()
 		return;
 	}
 
-	_message->SetMessage(*message);
+	// TODO
+	//_message->SetMessage(*message);
 	_entryData->_message = *message;
 }
 
