@@ -1,6 +1,8 @@
 #pragma once
 #include "macro-condition-edit.hpp"
-#include "midi-helpers.hpp"
+#include "mqtt-helpers.hpp"
+#include "regex-config.hpp"
+#include "variable-text-edit.hpp"
 
 #include <QCheckBox>
 #include <QPushButton>
@@ -8,9 +10,9 @@
 
 namespace advss {
 
-class MacroConditionMidi : public MacroCondition {
+class MacroConditionMqtt : public MacroCondition {
 public:
-	MacroConditionMidi(Macro *m) : MacroCondition(m, true) {}
+	MacroConditionMqtt(Macro *m) : MacroCondition(m, true) {}
 	bool CheckCondition();
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
@@ -18,47 +20,47 @@ public:
 	std::string GetId() const { return id; };
 	static std::shared_ptr<MacroCondition> Create(Macro *m)
 	{
-		return std::make_shared<MacroConditionMidi>(m);
+		return std::make_shared<MacroConditionMqtt>(m);
 	}
 
-	void SetDevice(const MidiDevice &dev);
-	const MidiDevice &GetDevice() const { return _device; }
-	MidiMessage _message;
+	void SetConnection(const std::string &);
+	std::weak_ptr<MqttConnection> GetConnection() const;
+
+	MqttMessage _message;
+	RegexConfig _regex;
 	bool _clearBufferOnMatch = true;
 
 private:
 	void SetupTempVars();
-	void SetVariableValues(const MidiMessage &);
 
-	MidiDevice _device;
-	MidiMessageBuffer _messageBuffer;
+	std::weak_ptr<MqttConnection> _connection;
+	MqttMessageBuffer _messageBuffer;
 	std::chrono::high_resolution_clock::time_point _lastCheck{};
 	static bool _registered;
 	static const std::string id;
 };
 
-class MacroConditionMidiEdit : public QWidget {
+class MacroConditionMqttEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroConditionMidiEdit(
+	MacroConditionMqttEdit(
 		QWidget *parent,
-		std::shared_ptr<MacroConditionMidi> cond = nullptr);
-	virtual ~MacroConditionMidiEdit();
+		std::shared_ptr<MacroConditionMqtt> cond = nullptr);
+	virtual ~MacroConditionMqttEdit();
 	void UpdateEntryData();
 	static QWidget *Create(QWidget *parent,
 			       std::shared_ptr<MacroCondition> cond)
 	{
-		return new MacroConditionMidiEdit(
+		return new MacroConditionMqttEdit(
 			parent,
-			std::dynamic_pointer_cast<MacroConditionMidi>(cond));
+			std::dynamic_pointer_cast<MacroConditionMqtt>(cond));
 	}
 
 private slots:
-	void DeviceSelectionChanged(const MidiDevice &);
-	void MidiMessageChanged(const MidiMessage &);
+	void MqttMessageChanged(const MqttMessage &);
 	void ClearBufferOnMatchChanged(int);
-	void ResetMidiDevices();
+	void RegexChanged(const RegexConfig &conf);
 	void ToggleListen();
 	void SetMessageSelectionToLastReceived();
 signals:
@@ -67,15 +69,15 @@ signals:
 private:
 	void EnableListening(bool);
 
-	MidiDeviceSelection *_devices;
-	MidiMessageSelection *_message;
-	QPushButton *_resetMidiDevices;
+	MqttConnectionSelection *_connection;
+	VariableTextEdit *_message;
+	RegexConfigWidget *_regex;
 	QPushButton *_listen;
 	QCheckBox *_clearBufferOnMatch;
 
-	std::shared_ptr<MacroConditionMidi> _entryData;
+	std::shared_ptr<MacroConditionMqtt> _entryData;
 	QTimer _listenTimer;
-	MidiMessageBuffer _messageBuffer;
+	MqttMessageBuffer _messageBuffer;
 	bool _currentlyListening = false;
 	bool _loading = true;
 };

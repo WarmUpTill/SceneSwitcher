@@ -1,24 +1,26 @@
 #pragma once
-#include <message-dispatcher.hpp>
-#include <obs-data.h>
+#include "message-dispatcher.hpp"
+#include "item-selection-helpers.hpp"
 
+#include <obs-data.h>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QLayout>
 #include <QPushButton>
 #include <QSpinBox>
 
-/////////
-
-#include "item-selection-helpers.hpp"
-
 namespace advss {
 
-class MqttMessage;
+class MqttMessage {
+public:
+	void Load(obs_data_t *data);
+	void Save(obs_data_t *data) const;
+
+	std::string _value;
+};
+
 using MqttMessageBuffer = std::shared_ptr<MessageBuffer<MqttMessage>>;
 using MqttMessageDispatcher = MessageDispatcher<MqttMessage>;
-
-///
 
 class MqttConnection : public Item {
 public:
@@ -51,9 +53,6 @@ private:
 	bool _reconnect = true;
 	int _reconnectDelay = 3;
 
-	//WSClientConnection _client;
-	//
-	//friend MqttConnectionSelection;
 	friend class MqttConnectionSettingsDialog;
 };
 
@@ -89,8 +88,7 @@ class MqttConnectionSelection : public ItemSelection {
 
 public:
 	MqttConnectionSelection(QWidget *parent = 0);
-	void SetToken(const std::string &);
-	void SetToken(const std::weak_ptr<MqttConnection> &);
+	void SetConnection(const std::weak_ptr<MqttConnection> &);
 };
 
 class MqttConnectionSignalManager : public QObject {
@@ -109,5 +107,14 @@ signals:
 };
 
 std::deque<std::shared_ptr<Item>> &GetMqttConnections();
+MqttConnection *GetMqttConnectionByName(const QString &);
+MqttConnection *GetMqttConnectionByName(const std::string &);
+std::weak_ptr<MqttConnection>
+GetWeakMqttConnectionByName(const std::string &name);
+std::weak_ptr<MqttConnection>
+GetWeakMqttConnectionByQString(const QString &name);
+std::string GetWeakMqttConnectionName(const std::weak_ptr<MqttConnection> &);
+void SaveMqttConnections(obs_data_t *obj);
+void LoadMqttConnections(obs_data_t *obj);
 
 } // namespace advss

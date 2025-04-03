@@ -5,17 +5,15 @@
 #include "ui-helpers.hpp"
 
 #include <mqtt/async_client.h>
+#include <obs.hpp>
 
 #undef DispatchMessage
 
 namespace advss {
 
-static std::deque<std::shared_ptr<Item>> connections;
+void MqttMessage::Load(obs_data_t *data) {}
 
-std::deque<std::shared_ptr<Item>> &GetMqttConnections()
-{
-	return connections;
-}
+void MqttMessage::Save(obs_data_t *data) const {}
 
 MqttConnection::MqttConnection(const std::string &name, const std::string &uri,
 			       const std::string &username,
@@ -257,6 +255,39 @@ MqttConnectionSelection::MqttConnectionSelection(QWidget *parent)
 			"AdvSceneSwitcher.item.nameNotAvailable",
 			"AdvSceneSwitcher.mqttConnections.configure", parent)
 {
+	// Connect to slots
+	QWidget::connect(MqttConnectionSignalManager::Instance(),
+			 SIGNAL(Rename(const QString &, const QString &)), this,
+			 SLOT(RenameItem(const QString &, const QString &)));
+	QWidget::connect(MqttConnectionSignalManager::Instance(),
+			 SIGNAL(Add(const QString &)), this,
+			 SLOT(AddItem(const QString &)));
+	QWidget::connect(MqttConnectionSignalManager::Instance(),
+			 SIGNAL(Remove(const QString &)), this,
+			 SLOT(RemoveItem(const QString &)));
+
+	// Forward signals
+	QWidget::connect(this,
+			 SIGNAL(ItemRenamed(const QString &, const QString &)),
+			 MqttConnectionSignalManager::Instance(),
+			 SIGNAL(Rename(const QString &, const QString &)));
+	QWidget::connect(this, SIGNAL(ItemAdded(const QString &)),
+			 MqttConnectionSignalManager::Instance(),
+			 SIGNAL(Add(const QString &)));
+	QWidget::connect(this, SIGNAL(ItemRemoved(const QString &)),
+			 MqttConnectionSignalManager::Instance(),
+			 SIGNAL(Remove(const QString &)));
+}
+
+void MqttConnectionSelection::SetConnection(
+	const std::weak_ptr<MqttConnection> &connection_)
+{
+	auto connection = connection_.lock();
+	if (connection) {
+		SetItem(connection->Name());
+	} else {
+		SetItem("");
+	}
 }
 
 MqttConnectionSignalManager::MqttConnectionSignalManager(QObject *parent)
@@ -271,7 +302,42 @@ MqttConnectionSignalManager *MqttConnectionSignalManager::Instance()
 	return &manager;
 }
 
-std::weak_ptr<MqttConnection> GetWeakMqttByName(const std::string &name)
+void MqttConnectionSignalManager::OpenNewConnection(const QString &name)
+{
+
+	auto weakConnection = GetWeakMqttConnectionByName(name.toStdString());
+	auto connection = weakConnection.lock();
+	if (!connection) {
+		return;
+	}
+	if (connection->ConnectOnStartup()) {
+		connection->Reconnect();
+	}
+}
+
+std::deque<std::shared_ptr<Item>> &GetMqttConnections()
+{
+	static std::deque<std::shared_ptr<Item>> connections;
+	return connections;
+}
+
+MqttConnection *GetMqttConnectionByName(const QString &name)
+{
+	return GetMqttConnectionByName(name.toStdString());
+}
+
+MqttConnection *GetMqttConnectionByName(const std::string &name)
+{
+	for (const auto &connection : GetMqttConnections()) {
+		if (connection->Name() == name) {
+			return dynamic_cast<MqttConnection *>(connection.get());
+		}
+	}
+	return nullptr;
+}
+
+std::weak_ptr<MqttConnection>
+GetWeakMqttConnectionByName(const std::string &name)
 {
 	for (const auto &connection : GetMqttConnections()) {
 		if (connection->Name() == name) {
@@ -284,16 +350,55 @@ std::weak_ptr<MqttConnection> GetWeakMqttByName(const std::string &name)
 	return std::weak_ptr<MqttConnection>();
 }
 
-void MqttConnectionSignalManager::OpenNewConnection(const QString &name)
+std::weak_ptr<MqttConnection>
+GetWeakMqttConnectionByQString(const QString &name)
 {
+	return GetWeakMqttConnectionByName(name.toStdString());
+}
 
-	auto weakConnection = GetWeakMqttByName(name.toStdString());
-	auto connection = weakConnection.lock();
-	if (!connection) {
-		return;
+std::string GetWeakMqttConnectionName(std::weak_ptr<MqttConnection> connection)
+{
+	auto con = connection.lock();
+	if (!con) {
+		return obs_module_text("AdvSceneSwitcher.connection.invalid");
 	}
-	if (connection->ConnectOnStartup()) {
-		connection->Reconnect();
+	return con->Name();
+}
+
+std::string
+GetWeakMqttConnectionName(const std::weak_ptr<MqttConnection> &connection_)
+{
+	auto connection = connection_.lock();
+	if (!connection) {
+		return obs_module_text("AdvSceneSwitcher.connection.invalid");
+	}
+	return connection->Name();
+}
+
+void SaveMqttConnections(obs_data_t *obj)
+{
+	OBSDataArrayAutoRelease array = obs_data_array_create();
+	for (const auto &connection : GetMqttConnections()) {
+		OBSDataAutoRelease obj = obs_data_create();
+		connection->Save(obj);
+		obs_data_array_push_back(array, obj);
+	}
+	obs_data_set_array(obj, "mqttConnections", array);
+}
+
+void LoadMqttConnections(obs_data_t *obj)
+{
+	GetMqttConnections().clear();
+
+	OBSDataArrayAutoRelease array =
+		obs_data_get_array(obj, "mqttConnections");
+	size_t count = obs_data_array_count(array);
+
+	for (size_t i = 0; i < count; i++) {
+		OBSDataAutoRelease obj = obs_data_array_item(array, i);
+		auto connection = MqttConnection::Create();
+		GetMqttConnections().emplace_back(connection);
+		GetMqttConnections().back()->Load(obj);
 	}
 }
 
