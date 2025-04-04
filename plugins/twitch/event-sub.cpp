@@ -4,6 +4,10 @@
 
 #include <log-helper.hpp>
 
+#ifdef VERIFY_TIMESTAMPS
+#include "date/tz.h"
+#endif
+
 namespace advss {
 
 using websocketpp::lib::placeholders::_1;
@@ -237,15 +241,43 @@ void EventSub::OnOpen(connection_hdl)
 
 static bool isValidTimestamp(const std::string &timestamp)
 {
-	std::tm tm = {};
-	std::istringstream ss(timestamp);
-	ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S.%fZ");
-	auto tp = std::chrono::system_clock::from_time_t(std::mktime(&tm));
-	tp += std::chrono::hours(1); // UTC
-	std::chrono::system_clock::time_point currentTime =
-		std::chrono::system_clock::now();
-	auto diff = currentTime - tp;
-	return diff <= std::chrono::minutes(10);
+#ifdef VERIFY_TIMESTAMPS
+	// Example input: 2023-07-19T14:56:51.634234626Z
+	try {
+		// Discard the nanosecond part
+		static constexpr size_t dotPos = 19;
+		std::string trimmed = timestamp.substr(0, dotPos);
+		auto tzStart = timestamp.find_first_of("Z+-", dotPos);
+		trimmed = timestamp.substr(0, dotPos);
+		if (tzStart != std::string::npos) {
+			trimmed += timestamp.substr(tzStart);
+		}
+
+		std::istringstream in(trimmed);
+		date::sys_time<std::chrono::seconds> parsedTime;
+		in >> date::parse("%FT%TZ", parsedTime);
+		if (in.fail()) {
+			blog(LOG_WARNING, "failed to parse timestamp %s",
+			     timestamp.c_str());
+			return false;
+		}
+
+		auto now = date::zoned_time{date::current_zone(),
+					    std::chrono::system_clock::now()}
+				   .get_sys_time();
+
+		auto duration = now - parsedTime;
+		// Clocks might be off by a bit, so allow negative values also
+		return duration <= std::chrono::minutes(10) &&
+		       duration >= std::chrono::minutes(-1);
+	} catch (const std::exception &e) {
+		blog(LOG_WARNING, "%s: %s", __func__, e.what());
+		return false;
+	}
+#else
+	// Just assume timestamps are always valid
+	return true;
+#endif
 }
 
 bool EventSub::IsValidMessageID(const std::string &id)
@@ -288,7 +320,8 @@ void EventSub::OnMessage(connection_hdl, EventSubWSClient::message_ptr message)
 		obs_data_get_string(metadata, "message_timestamp");
 	if (!isValidTimestamp(timestamp)) {
 		blog(LOG_WARNING,
-		     "Discarding Twitch EventSub with invalid timestamp");
+		     "Discarding Twitch EventSub with invalid timestamp %s",
+		     timestamp.c_str());
 		return;
 	}
 	std::string id = obs_data_get_string(metadata, "message_id");

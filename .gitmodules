@@ -28,3 +28,6 @@
 [submodule "deps/libusb"]
 	path = deps/libusb
 	url = https://github.com/libusb/libusb.git
+[submodule "deps/date"]
+	path = deps/date
+	url = https://github.com/HowardHinnant/date.git
