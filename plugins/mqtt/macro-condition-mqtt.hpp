@@ -26,7 +26,7 @@ public:
 	void SetConnection(const std::string &);
 	std::weak_ptr<MqttConnection> GetConnection() const;
 
-	MqttMessage _message;
+	StringVariable _message;
 	RegexConfig _regex;
 	bool _clearBufferOnMatch = true;
 
@@ -58,7 +58,7 @@ public:
 	}
 
 private slots:
-	void MqttMessageChanged(const MqttMessage &);
+	void MqttMessageChanged();
 	void ClearBufferOnMatchChanged(int);
 	void RegexChanged(const RegexConfig &conf);
 	void ToggleListen();
