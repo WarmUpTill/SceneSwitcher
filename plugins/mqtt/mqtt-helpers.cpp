@@ -11,10 +11,6 @@
 
 namespace advss {
 
-void MqttMessage::Load(obs_data_t *data) {}
-
-void MqttMessage::Save(obs_data_t *data) const {}
-
 MqttConnection::MqttConnection(const std::string &name, const std::string &uri,
 			       const std::string &username,
 			       const std::string &password, bool connectOnStart,
@@ -101,12 +97,11 @@ MqttMessageBuffer MqttConnection::RegisterForEvents()
 
 MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
 	QWidget *parent, const MqttConnection &connection)
-	: ItemSettingsDialog(
-		  connection, GetMqttConnections(),
-		  "AdvSceneSwitcher.mqttConnections.select",
-		  "AdvSceneSwitcher.mqttConnections.add",
-		  "AdvSceneSwitcher.mqttConnections.nameNotAvailable", true,
-		  parent),
+	: ItemSettingsDialog(connection, GetMqttConnections(),
+			     "AdvSceneSwitcher.mqttConnection.select",
+			     "AdvSceneSwitcher.mqttConnection.add",
+			     "AdvSceneSwitcher.mqttConnection.nameNotAvailable",
+			     true, parent),
 	  _uri(new QLineEdit()),
 	  _username(new QLineEdit()),
 	  _password(new QLineEdit()),
@@ -114,9 +109,10 @@ MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
 	  _connectOnStart(new QCheckBox()),
 	  _reconnect(new QCheckBox()),
 	  _reconnectDelay(new QSpinBox()),
-	  _test(new QPushButton(
-		  obs_module_text("AdvSceneSwitcher.connection.test"))),
 	  _status(new QLabel()),
+	  _test(new QPushButton(
+		  obs_module_text("AdvSceneSwitcher.mqttConnection.test"))),
+	  _layout(new QGridLayout()),
 	  _currentConnection(connection)
 {
 	_showPassword->setMaximumWidth(22);
@@ -142,21 +138,21 @@ MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
 			 SLOT(TestConnection()));
 
 	int row = 0;
-	_layout->addWidget(
-		new QLabel(obs_module_text("AdvSceneSwitcher.connection.name")),
-		row, 0);
+	_layout->addWidget(new QLabel(obs_module_text(
+				   "AdvSceneSwitcher.mqttConnection.name")),
+			   row, 0);
 	auto nameLayout = new QHBoxLayout();
 	nameLayout->addWidget(_name);
 	nameLayout->addWidget(_nameHint);
 	_layout->addLayout(nameLayout, row, 1);
 	++row;
 	_layout->addWidget(new QLabel(obs_module_text(
-				   "AdvSceneSwitcher.connection.address")),
+				   "AdvSceneSwitcher.mqttConnection.address")),
 			   row, 0);
 	_layout->addWidget(_uri, row, 1);
 	++row;
 	_layout->addWidget(new QLabel(obs_module_text(
-				   "AdvSceneSwitcher.connection.username")),
+				   "AdvSceneSwitcher.mqttConnection.username")),
 			   row, 0);
 	_layout->addWidget(_username, row, 1);
 	++row;
@@ -167,18 +163,19 @@ MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
 	++row;
 	_layout->addWidget(
 		new QLabel(obs_module_text(
-			"AdvSceneSwitcher.connection.connectOnStart")),
+			"AdvSceneSwitcher.mqttConnection.connectOnStart")),
 		row, 0);
 	_layout->addWidget(_connectOnStart, row, 1);
 	++row;
-	_layout->addWidget(new QLabel(obs_module_text(
-				   "AdvSceneSwitcher.connection.reconnect")),
-			   row, 0);
+	_layout->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.mqttConnection.reconnect")),
+		row, 0);
 	_layout->addWidget(_reconnect, row, 1);
 	++row;
 	_layout->addWidget(
 		new QLabel(obs_module_text(
-			"AdvSceneSwitcher.connection.reconnectDelay")),
+			"AdvSceneSwitcher.mqttConnection.reconnectDelay")),
 		row, 0);
 	_layout->addWidget(_reconnectDelay, row, 1);
 	_layout->addWidget(_test, row, 0);
@@ -250,10 +247,10 @@ static bool AskForSettingsWrapper(QWidget *parent, Item &settings)
 MqttConnectionSelection::MqttConnectionSelection(QWidget *parent)
 	: ItemSelection(GetMqttConnections(), MqttConnection::Create,
 			AskForSettingsWrapper,
-			"AdvSceneSwitcher.mqttConnections.select",
-			"AdvSceneSwitcher.mqttConnections.add",
+			"AdvSceneSwitcher.mqttConnection.select",
+			"AdvSceneSwitcher.mqttConnection.add",
 			"AdvSceneSwitcher.item.nameNotAvailable",
-			"AdvSceneSwitcher.mqttConnections.configure", parent)
+			"AdvSceneSwitcher.mqttConnection.configure", parent)
 {
 	// Connect to slots
 	QWidget::connect(MqttConnectionSignalManager::Instance(),
@@ -360,7 +357,8 @@ std::string GetWeakMqttConnectionName(std::weak_ptr<MqttConnection> connection)
 {
 	auto con = connection.lock();
 	if (!con) {
-		return obs_module_text("AdvSceneSwitcher.connection.invalid");
+		return obs_module_text(
+			"AdvSceneSwitcher.mqttConnection.invalid");
 	}
 	return con->Name();
 }
@@ -370,7 +368,8 @@ GetWeakMqttConnectionName(const std::weak_ptr<MqttConnection> &connection_)
 {
 	auto connection = connection_.lock();
 	if (!connection) {
-		return obs_module_text("AdvSceneSwitcher.connection.invalid");
+		return obs_module_text(
+			"AdvSceneSwitcher.mqttConnection.invalid");
 	}
 	return connection->Name();
 }

@@ -8,19 +8,12 @@
 #include <QLayout>
 #include <QPushButton>
 #include <QSpinBox>
+#include <string>
 
 namespace advss {
 
-class MqttMessage {
-public:
-	void Load(obs_data_t *data);
-	void Save(obs_data_t *data) const;
-
-	std::string _value;
-};
-
-using MqttMessageBuffer = std::shared_ptr<MessageBuffer<MqttMessage>>;
-using MqttMessageDispatcher = MessageDispatcher<MqttMessage>;
+using MqttMessageBuffer = std::shared_ptr<MessageBuffer<std::string>>;
+using MqttMessageDispatcher = MessageDispatcher<std::string>;
 
 class MqttConnection : public Item {
 public:

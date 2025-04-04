@@ -31,27 +31,27 @@ bool MacroConditionMqtt::CheckCondition()
 		if (!message) {
 			continue;
 		}
-		//if (_regex.Enabled()) {
-		//	if (!_regex.Matches(*message, _message)) {
-		//		continue;
-		//	}
-		//
-		//	SetTempVarValue("message", *message);
-		//	if (_clearBufferOnMatch) {
-		//		_messageBuffer->Clear();
-		//	}
-		//	return true;
-		//} else {
-		//	if (*message != std::string(_message)) {
-		//		continue;
-		//	}
-		//
-		//	SetTempVarValue("message", *message);
-		//	if (_clearBufferOnMatch) {
-		//		_messageBuffer->Clear();
-		//	}
-		//	return true;
-		//}
+		if (_regex.Enabled()) {
+			if (!_regex.Matches(*message, _message)) {
+				continue;
+			}
+
+			SetTempVarValue("message", *message);
+			if (_clearBufferOnMatch) {
+				_messageBuffer->Clear();
+			}
+			return true;
+		} else {
+			if (*message != std::string(_message)) {
+				continue;
+			}
+
+			SetTempVarValue("message", *message);
+			if (_clearBufferOnMatch) {
+				_messageBuffer->Clear();
+			}
+			return true;
+		}
 	}
 
 	return false;
@@ -60,7 +60,7 @@ bool MacroConditionMqtt::CheckCondition()
 bool MacroConditionMqtt::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
-	_message.Save(obj);
+	_message.Save(obj, "message");
 	_regex.Save(obj);
 	obs_data_set_string(obj, "connection",
 			    GetWeakMqttConnectionName(_connection).c_str());
@@ -71,11 +71,10 @@ bool MacroConditionMqtt::Save(obs_data_t *obj) const
 bool MacroConditionMqtt::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	_message.Load(obj);
+	_message.Load(obj, "message");
 	_regex.Load(obj);
-	_connection = GetWeakMqttConnectionByName(
-		obs_data_get_string(obj, "connection"));
 	_clearBufferOnMatch = obs_data_get_bool(obj, "clearBufferOnMatch");
+	SetConnection(obs_data_get_string(obj, "connection"));
 	return true;
 }
 
@@ -109,16 +108,15 @@ MacroConditionMqttEdit::MacroConditionMqttEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionMqtt> entryData)
 	: QWidget(parent),
 	  _connection(new MqttConnectionSelection(this)),
-	  _message(new VariableTextEdit(this)),
+	  _message(new VariableTextEdit(this, 5, 1, 1)),
 	  _regex(new RegexConfigWidget(parent)),
 	  _listen(new QPushButton(
 		  obs_module_text("AdvSceneSwitcher.mqtt.startListen"))),
 	  _clearBufferOnMatch(new QCheckBox(
 		  obs_module_text("AdvSceneSwitcher.clearBufferOnMatch")))
 {
-	//QWidget::connect(_message,
-	//		 SIGNAL(MidiMessageChanged(const MidiMessage &)), this,
-	//		 SLOT(MidiMessageChanged(const MidiMessage &)));
+	QWidget::connect(_message, SIGNAL(textChanged()), this,
+			 SLOT(MqttMessageChanged()));
 	QWidget::connect(_regex,
 			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
 			 SLOT(RegexChanged(const RegexConfig &)));
@@ -132,16 +130,21 @@ MacroConditionMqttEdit::MacroConditionMqttEdit(
 	QWidget::connect(&_listenTimer, SIGNAL(timeout()), this,
 			 SLOT(SetMessageSelectionToLastReceived()));
 
-	auto listenLayout = new QHBoxLayout;
+	auto entryLayout = new QHBoxLayout;
 	PlaceWidgets(
-		obs_module_text("AdvSceneSwitcher.condition.mqtt.entry.listen"),
-		listenLayout, {{"{{listenButton}}", _listen}});
+		obs_module_text("AdvSceneSwitcher.condition.mqtt.layout.match"),
+		entryLayout,
+		{{"{{connection}}", _connection}, {"{{regex}}", _regex}});
+	auto listenLayout = new QHBoxLayout;
+	PlaceWidgets(obs_module_text(
+			     "AdvSceneSwitcher.condition.mqtt.layout.listen"),
+		     listenLayout, {{"{{listenButton}}", _listen}});
 
 	auto mainLayout = new QVBoxLayout;
-	// TODO
+	mainLayout->addLayout(entryLayout);
 	mainLayout->addWidget(_message);
-	mainLayout->addLayout(listenLayout);
 	mainLayout->addWidget(_clearBufferOnMatch);
+	mainLayout->addLayout(listenLayout);
 	setLayout(mainLayout);
 
 	_listenTimer.setInterval(100);
@@ -162,8 +165,7 @@ void MacroConditionMqttEdit::UpdateEntryData()
 		return;
 	}
 
-	// TODO
-	//_message->SetMessage(_entryData->_message);
+	_message->setPlainText(_entryData->_message);
 	_connection->SetConnection(_entryData->GetConnection());
 	_regex->SetRegexConfig(_entryData->_regex);
 	_clearBufferOnMatch->setChecked(_entryData->_clearBufferOnMatch);
@@ -172,10 +174,10 @@ void MacroConditionMqttEdit::UpdateEntryData()
 	updateGeometry();
 }
 
-void MacroConditionMqttEdit::MqttMessageChanged(const MqttMessage &message)
+void MacroConditionMqttEdit::MqttMessageChanged()
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_message = message;
+	_entryData->_message = _message->toPlainText().toStdString();
 }
 
 void MacroConditionMqttEdit::ClearBufferOnMatchChanged(int value)
@@ -231,7 +233,7 @@ void MacroConditionMqttEdit::SetMessageSelectionToLastReceived()
 		return;
 	}
 
-	std::optional<MqttMessage> message;
+	std::optional<std::string> message;
 	while (!_messageBuffer->Empty()) {
 		message = _messageBuffer->ConsumeMessage();
 		if (!message) {
@@ -243,8 +245,7 @@ void MacroConditionMqttEdit::SetMessageSelectionToLastReceived()
 		return;
 	}
 
-	// TODO
-	//_message->SetMessage(*message);
+	_message->setPlainText(*message);
 	_entryData->_message = *message;
 }
 
