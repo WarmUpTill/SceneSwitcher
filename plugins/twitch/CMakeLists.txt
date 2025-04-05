@@ -30,6 +30,31 @@ if(NOT ZLIB_FOUND)
   return()
 endif()
 
+set(DATE_LIB_DIR "${ADVSS_SOURCE_DIR}/deps/date")
+if(EXISTS "${DATE_LIB_DIR}/CMakeLists.txt")
+  set(BUILD_TZ_LIB ON)
+  if(OS_WINDOWS)
+    if(CURL_FOUND AND TARGET CURL::libcurl)
+      get_target_property(CURL_INCLUDE_DIR CURL::libcurl
+                          INTERFACE_INCLUDE_DIRECTORIES)
+      add_subdirectory("${DATE_LIB_DIR}" "${DATE_LIB_DIR}/build"
+                       EXCLUDE_FROM_ALL)
+      target_include_directories(date-tz PRIVATE "${CURL_INCLUDE_DIR}")
+      set(VERIFY_TWITCH_TIMESTAMPS ON)
+    else()
+      message(WARNING "CURL not found - not verifying Twitch timestamps")
+    endif()
+  else()
+    add_subdirectory("${DATE_LIB_DIR}" "${DATE_LIB_DIR}/build" EXCLUDE_FROM_ALL)
+    target_compile_options(date-tz PUBLIC -Wno-error=conversion
+                                          -Wno-error=shadow)
+    set(VERIFY_TWITCH_TIMESTAMPS ON)
+  endif()
+else()
+  message(WARNING "date lib not found in \"${DATE_LIB_DIR}\"!\n"
+                  "Twitch timestamps will not be checked!")
+endif()
+
 # --- End of section ---
 
 add_library(${PROJECT_NAME} MODULE)
@@ -76,6 +101,14 @@ set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
 target_include_directories(${PROJECT_NAME} PRIVATE "${CPP_HTTPLIB_DIR}/"
                                                    "${OPENSSL_INCLUDE_DIR}")
 target_link_libraries(${PROJECT_NAME} PRIVATE ${OPENSSL_LIBRARIES} ZLIB::ZLIB)
+if(DEFINED VERIFY_TWITCH_TIMESTAMPS)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE VERIFY_TIMESTAMPS=1)
+  target_link_libraries(${PROJECT_NAME} PRIVATE date::date-tz)
+  if(OS_WINDOWS)
+    target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
+  endif()
+endif()
+
 install_advss_plugin(${PROJECT_NAME})
 if(OS_WINDOWS)
   # Couldn't really find a better way to install runtime dependencies for

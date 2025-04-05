@@ -1,6 +1,7 @@
 #include "points-reward-selection.hpp"
 #include "twitch-helpers.hpp"
 
+#include <log-helper.hpp>
 #include <obs-module-helper.hpp>
 #include <ui-helpers.hpp>
 
