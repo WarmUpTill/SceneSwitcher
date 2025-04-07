@@ -18,6 +18,9 @@ using MqttMessageDispatcher = MessageDispatcher<std::string>;
 class MqttConnection : public Item {
 public:
 	MqttConnection() = default;
+	~MqttConnection();
+	MqttConnection(const MqttConnection &other);
+
 	MqttConnection(const std::string &name, const std::string &uri,
 		       const std::string &username, const std::string &password,
 		       bool connectOnStart, bool reconnect, int reconnectDelay);
@@ -26,7 +29,7 @@ public:
 		return std::make_shared<MqttConnection>();
 	}
 
-	void Reconnect();
+	void Connect();
 	void Load(obs_data_t *data);
 	void Save(obs_data_t *data) const;
 	std::string GetName() const { return _name; }
@@ -35,6 +38,8 @@ public:
 	bool ConnectOnStartup() const { return _connectOnStart; }
 
 private:
+	void ConnectThread();
+
 	std::string _uri = "mqtt://localhost:1883";
 	std::string _username = "user";
 	std::string _password = "password";
@@ -42,9 +47,16 @@ private:
 	std::vector<std::string> _topics;
 	std::vector<int> _qos;
 
+	std::thread _thread;
 	bool _connectOnStart = true;
 	bool _reconnect = true;
 	int _reconnectDelay = 3;
+	std::atomic_bool _disconnect{false};
+	std::atomic_bool _connected{false};
+	std::mutex _waitMtx;
+	std::condition_variable _cv;
+
+	MqttMessageDispatcher _dispatcher;
 
 	friend class MqttConnectionSettingsDialog;
 };
@@ -107,7 +119,5 @@ GetWeakMqttConnectionByName(const std::string &name);
 std::weak_ptr<MqttConnection>
 GetWeakMqttConnectionByQString(const QString &name);
 std::string GetWeakMqttConnectionName(const std::weak_ptr<MqttConnection> &);
-void SaveMqttConnections(obs_data_t *obj);
-void LoadMqttConnections(obs_data_t *obj);
 
 } // namespace advss

@@ -58,6 +58,7 @@ public:
 	}
 
 private slots:
+	void ConnectionSelectionChanged(const QString &);
 	void MqttMessageChanged();
 	void ClearBufferOnMatchChanged(int);
 	void RegexChanged(const RegexConfig &conf);

@@ -2,6 +2,7 @@
 #include "layout-helpers.hpp"
 #include "log-helper.hpp"
 #include "obs-module-helper.hpp"
+#include "plugin-state-helpers.hpp"
 #include "ui-helpers.hpp"
 
 #include <mqtt/async_client.h>
@@ -10,6 +11,29 @@
 #undef DispatchMessage
 
 namespace advss {
+
+MqttConnection::~MqttConnection()
+{
+	_disconnect = true;
+	{
+		std::unique_lock<std::mutex> waitLck(_waitMtx);
+		_cv.notify_all();
+	}
+	if (_thread.joinable()) {
+		_thread.join();
+	}
+}
+
+MqttConnection::MqttConnection(const MqttConnection &other)
+	: Item(other._name),
+	  _uri(other._uri),
+	  _username(other._username),
+	  _password(other._password),
+	  _connectOnStart(other._connectOnStart),
+	  _reconnect(other._reconnect),
+	  _reconnectDelay(other._reconnectDelay)
+{
+}
 
 MqttConnection::MqttConnection(const std::string &name, const std::string &uri,
 			       const std::string &username,
@@ -25,49 +49,115 @@ MqttConnection::MqttConnection(const std::string &name, const std::string &uri,
 {
 }
 
-void MqttConnection::Reconnect()
+void MqttConnection::Connect()
 {
+	static std::mutex mutex;
+	std::lock_guard<std::mutex> lock(mutex);
 
-	auto cli = std::make_shared<mqtt::async_client>(
-		_uri, std::string("advss_") + _name);
-
-	auto connOpts =
-		mqtt::connect_options_builder::v5()
-			.clean_start(false)
-			.properties({{mqtt::property::SESSION_EXPIRY_INTERVAL,
-				      604800}})
-			.finalize();
-
-	try {
-		cli->start_consuming();
-
-		// Connect to the server
-
-		blog(LOG_INFO, "connecting to MQTT server...");
-		auto tok = cli->connect(connOpts);
-
-		// Getting the connect response will block waiting for the
-		// connection to complete.
-		auto rsp = tok->get_connect_response();
-
-		// Make sure we were granted a v5 connection.
-		if (rsp.get_mqtt_version() < MQTTVERSION_5) {
-			blog(LOG_INFO, "did not get an MQTT v5 connection");
-			return;
-		}
-
-		if (!rsp.is_session_present()) {
-			blog(LOG_INFO,
-			     "session not present on broker. subscribing...");
-			cli->subscribe(
-				   std::make_shared<mqtt::string_collection>(
-					   _topics),
-				   _qos)
-				->wait();
-		}
-
-	} catch (...) {
+	if (_connected) {
+		return;
 	}
+
+	if (_thread.joinable()) {
+		_thread.join();
+	}
+
+	_connected = true;
+	_thread = std::thread(&MqttConnection::ConnectThread, this);
+}
+
+void MqttConnection::ConnectThread()
+{
+	do {
+		auto cli = std::make_shared<mqtt::async_client>(
+			_uri, std::string("advss_") + _name);
+
+		auto connOpts =
+			mqtt::connect_options_builder::v5()
+				.clean_start(false)
+				.properties(
+					{{mqtt::property::SESSION_EXPIRY_INTERVAL,
+					  604800}})
+				.finalize();
+
+		try {
+			cli->set_connection_lost_handler(
+				[this](const std::string &) {
+					blog(LOG_INFO,
+					     "MQTT connection \"%s\" lost",
+					     _name.c_str());
+				});
+
+			cli->set_disconnected_handler(
+				[](const mqtt::properties &,
+				   mqtt::ReasonCode reason) {
+					blog(LOG_INFO,
+					     "MQTT disconnected. Reason [%d]: %s",
+					     int(reason),
+					     std::to_string(reason).c_str());
+				});
+
+			cli->start_consuming();
+
+			blog(LOG_INFO, "connecting to MQTT server...");
+			auto tok = cli->connect(connOpts);
+
+			// Getting the connect response will block waiting for the
+			// connection to complete.
+			auto rsp = tok->get_connect_response();
+
+			// Make sure we were granted a v5 connection.
+			if (rsp.get_mqtt_version() < MQTTVERSION_5) {
+				blog(LOG_INFO,
+				     "did not get an MQTT v5 connection");
+				break;
+			}
+
+			if (!rsp.is_session_present()) {
+				blog(LOG_INFO,
+				     "session not present on broker. subscribing...");
+				cli->subscribe(std::make_shared<
+						       mqtt::string_collection>(
+						       "#"),
+					       _qos)
+					->wait();
+			}
+
+			while (!_disconnect) {
+				auto msg = cli->consume_message();
+				if (!msg) {
+					break;
+				}
+				_dispatcher.DispatchMessage(msg->to_string());
+			}
+
+			// If we're here, the client was almost certainly disconnected.
+			// But we check, just to make sure.
+
+			if (cli->is_connected()) {
+				blog(LOG_INFO,
+				     "Disconnecting from the MQTT server %s...",
+				     _name);
+				cli->stop_consuming();
+				cli->disconnect()->wait();
+			} else {
+				blog(LOG_INFO,
+				     "MQTT client %s was disconnected", _name);
+			}
+			std::unique_lock<std::mutex> lck(_waitMtx);
+			if (_reconnect) {
+				blog(LOG_INFO,
+				     "trying to reconnect to MQTT server '%s' in %d seconds.",
+				     _name.c_str(), _reconnectDelay);
+				_cv.wait_for(lck, std::chrono::seconds(
+							  _reconnectDelay));
+			}
+
+		} catch (const std::exception &e) {
+			blog(LOG_INFO, "%s %s", __func__, e.what());
+		}
+	} while (_reconnect && !_disconnect);
+	_connected = false;
 }
 
 void MqttConnection::Load(obs_data_t *data)
@@ -78,6 +168,10 @@ void MqttConnection::Load(obs_data_t *data)
 	_connectOnStart = obs_data_get_bool(data, "connectOnStart");
 	_reconnect = obs_data_get_bool(data, "reconnect");
 	_reconnectDelay = obs_data_get_bool(data, "reconnectDelay");
+
+	if (ConnectOnStartup()) {
+		Connect();
+	}
 }
 
 void MqttConnection::Save(obs_data_t *data) const
@@ -92,7 +186,7 @@ void MqttConnection::Save(obs_data_t *data) const
 
 MqttMessageBuffer MqttConnection::RegisterForEvents()
 {
-	return MqttMessageBuffer();
+	return _dispatcher.RegisterClient();
 }
 
 MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
@@ -206,7 +300,7 @@ bool MqttConnectionSettingsDialog::AskForSettings(QWidget *parent,
 	connection._connectOnStart = dialog._connectOnStart->isChecked();
 	connection._reconnect = dialog._reconnect->isChecked();
 	connection._reconnectDelay = dialog._reconnectDelay->value();
-	connection.Reconnect();
+	connection.Connect();
 	return true;
 }
 
@@ -308,7 +402,7 @@ void MqttConnectionSignalManager::OpenNewConnection(const QString &name)
 		return;
 	}
 	if (connection->ConnectOnStartup()) {
-		connection->Reconnect();
+		connection->Connect();
 	}
 }
 
@@ -374,7 +468,7 @@ GetWeakMqttConnectionName(const std::weak_ptr<MqttConnection> &connection_)
 	return connection->Name();
 }
 
-void SaveMqttConnections(obs_data_t *obj)
+static void SaveMqttConnections(obs_data_t *obj)
 {
 	OBSDataArrayAutoRelease array = obs_data_array_create();
 	for (const auto &connection : GetMqttConnections()) {
@@ -385,10 +479,9 @@ void SaveMqttConnections(obs_data_t *obj)
 	obs_data_set_array(obj, "mqttConnections", array);
 }
 
-void LoadMqttConnections(obs_data_t *obj)
+static void LoadMqttConnections(obs_data_t *obj)
 {
 	GetMqttConnections().clear();
-
 	OBSDataArrayAutoRelease array =
 		obs_data_get_array(obj, "mqttConnections");
 	size_t count = obs_data_array_count(array);
@@ -400,5 +493,14 @@ void LoadMqttConnections(obs_data_t *obj)
 		GetMqttConnections().back()->Load(obj);
 	}
 }
+
+static bool setup()
+{
+	AddSaveStep(SaveMqttConnections);
+	AddLoadStep(LoadMqttConnections);
+	return true;
+}
+
+static bool _ = setup();
 
 } // namespace advss
