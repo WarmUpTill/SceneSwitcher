@@ -174,6 +174,14 @@ void MacroConditionMqttEdit::UpdateEntryData()
 	updateGeometry();
 }
 
+void MacroConditionMqttEdit::ConnectionSelectionChanged(
+	const QString &connection)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->SetConnection(connection.toStdString());
+	emit(HeaderInfoChanged(connection));
+}
+
 void MacroConditionMqttEdit::MqttMessageChanged()
 {
 	GUARD_LOADING_AND_LOCK();
