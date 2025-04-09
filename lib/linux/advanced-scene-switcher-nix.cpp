@@ -550,6 +550,11 @@ static void initProc2()
 #endif
 }
 
+int ignoreXerror(Display *d, XErrorEvent *e)
+{
+	return 0;
+}
+
 void PlatformInit()
 {
 	auto display = disp();
@@ -560,6 +565,7 @@ void PlatformInit()
 	initXss();
 	initProcps();
 	initProc2();
+	XSetErrorHandler(ignoreXerror);
 }
 
 static void cleanupHelper(QLibrary *lib)
@@ -576,6 +582,7 @@ void PlatformCleanup()
 	cleanupHelper(libprocps);
 	cleanupHelper(libproc2);
 	cleanupDisplay();
+	XSetErrorHandler(NULL);
 }
 
 } // namespace advss
