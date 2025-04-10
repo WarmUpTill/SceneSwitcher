@@ -7,6 +7,7 @@
 
 #include <mqtt/async_client.h>
 #include <obs.hpp>
+#include <QTimer>
 
 #undef DispatchMessage
 
@@ -14,14 +15,7 @@ namespace advss {
 
 MqttConnection::~MqttConnection()
 {
-	_disconnect = true;
-	{
-		std::unique_lock<std::mutex> waitLck(_waitMtx);
-		_cv.notify_all();
-	}
-	if (_thread.joinable()) {
-		_thread.join();
-	}
+	Disconnect();
 }
 
 MqttConnection::MqttConnection(const MqttConnection &other)
@@ -54,7 +48,7 @@ void MqttConnection::Connect()
 	static std::mutex mutex;
 	std::lock_guard<std::mutex> lock(mutex);
 
-	if (_connected) {
+	if (_connecting) {
 		return;
 	}
 
@@ -62,112 +56,136 @@ void MqttConnection::Connect()
 		_thread.join();
 	}
 
-	_connected = true;
+	_connecting = true;
+	_disconnect = false;
 	_thread = std::thread(&MqttConnection::ConnectThread, this);
+}
+
+void MqttConnection::Disconnect()
+{
+	_disconnect = true;
+	{
+		std::unique_lock<std::mutex> waitLck(_waitMtx);
+		_cv.notify_all();
+	}
+	if (_thread.joinable()) {
+		_thread.join();
+	}
 }
 
 void MqttConnection::ConnectThread()
 {
-	do {
-		auto cli = std::make_shared<mqtt::async_client>(
-			_uri, std::string("advss_") + _name);
+	using namespace std::chrono_literals;
 
-		auto connOpts =
-			mqtt::connect_options_builder::v5()
-				.clean_start(false)
-				.properties(
-					{{mqtt::property::SESSION_EXPIRY_INTERVAL,
-					  604800}})
-				.finalize();
+	const auto waitBeforeReconnect = [this]() {
+		std::unique_lock<std::mutex> lck(_waitMtx);
+		vblog(LOG_INFO,
+		      "trying to reconnect to MQTT server \"%s\" in %d seconds.",
+		      _name.c_str(), _reconnectDelay);
+		_cv.wait_for(lck, std::chrono::seconds(_reconnectDelay));
+	};
+
+	const auto logConnectionLost = [this](const std::string &cause) {
+		blog(LOG_INFO, "MQTT connection \"%s\" lost: %s", _name.c_str(),
+		     cause.c_str());
+	};
+	const auto dispatchMessage = [this](mqtt::const_message_ptr msg) {
+		if (!msg) {
+			return;
+		}
+
+		vblog(LOG_INFO, "MQTT connection \"%s\" received message: %s",
+		      _name.c_str(), msg->to_string().c_str());
+		_dispatcher.DispatchMessage(msg->to_string());
+	};
+
+	do {
+		mqtt::async_client client(_uri, std::string("advss_") + _name);
+		auto connOpts = mqtt::connect_options_builder::v5()
+					.clean_start(false)
+					.clean_session(true)
+					.connect_timeout(5s) // TODO: Configure?
+					.user_name(_username)
+					.password(_password)
+					.finalize();
+
+		client.set_connection_lost_handler(logConnectionLost);
+		client.set_message_callback(dispatchMessage);
+		client.start_consuming();
 
 		try {
-			cli->set_connection_lost_handler(
-				[this](const std::string &) {
-					blog(LOG_INFO,
-					     "MQTT connection \"%s\" lost",
-					     _name.c_str());
-				});
-
-			cli->set_disconnected_handler(
-				[](const mqtt::properties &,
-				   mqtt::ReasonCode reason) {
-					blog(LOG_INFO,
-					     "MQTT disconnected. Reason [%d]: %s",
-					     int(reason),
-					     std::to_string(reason).c_str());
-				});
-
-			cli->start_consuming();
-
-			blog(LOG_INFO, "connecting to MQTT server...");
-			auto tok = cli->connect(connOpts);
-
-			// Getting the connect response will block waiting for the
-			// connection to complete.
+			vblog(LOG_INFO, "connecting to MQTT server \"%s\" ...",
+			      _name.c_str());
+			auto tok = client.connect(connOpts);
 			auto rsp = tok->get_connect_response();
-
-			// Make sure we were granted a v5 connection.
 			if (rsp.get_mqtt_version() < MQTTVERSION_5) {
 				blog(LOG_INFO,
-				     "did not get an MQTT v5 connection");
+				     "\"%s\" did not get an MQTT v5 connection",
+				     _name.c_str());
 				break;
 			}
 
 			if (!rsp.is_session_present()) {
-				blog(LOG_INFO,
-				     "session not present on broker. subscribing...");
-				cli->subscribe(std::make_shared<
-						       mqtt::string_collection>(
-						       "#"),
-					       _qos)
+				vblog(LOG_INFO,
+				      "\"%s\" session not present on broker. subscribing...",
+				      _name.c_str());
+				client.subscribe(
+					      // TODO:
+					      // _topics
+					      // _qos
+					      std::make_shared<
+						      mqtt::string_collection>(
+						      "/test"),
+					      {1})
 					->wait();
 			}
 
-			while (!_disconnect) {
-				auto msg = cli->consume_message();
-				if (!msg) {
-					break;
-				}
-				_dispatcher.DispatchMessage(msg->to_string());
-			}
-
-			// If we're here, the client was almost certainly disconnected.
-			// But we check, just to make sure.
-
-			if (cli->is_connected()) {
-				blog(LOG_INFO,
-				     "Disconnecting from the MQTT server %s...",
-				     _name);
-				cli->stop_consuming();
-				cli->disconnect()->wait();
-			} else {
-				blog(LOG_INFO,
-				     "MQTT client %s was disconnected", _name);
-			}
-			std::unique_lock<std::mutex> lck(_waitMtx);
-			if (_reconnect) {
-				blog(LOG_INFO,
-				     "trying to reconnect to MQTT server '%s' in %d seconds.",
-				     _name.c_str(), _reconnectDelay);
+			blog(LOG_INFO, "\"%s\" MQTT server connected!",
+			     _name.c_str());
+			_connected = true;
+			while (!_disconnect && client.is_connected()) {
+				std::unique_lock<std::mutex> lck(_waitMtx);
 				_cv.wait_for(lck, std::chrono::seconds(
 							  _reconnectDelay));
 			}
 
+			if (client.is_connected()) {
+				blog(LOG_INFO,
+				     "Disconnecting from the MQTT server \"%s\"",
+				     _name.c_str());
+				client.stop_consuming();
+				client.disconnect()->wait();
+			} else {
+				blog(LOG_INFO,
+				     "MQTT client %s was disconnected",
+				     _name.c_str());
+			}
+			_connected = false;
+			if (!_reconnect || _disconnect) {
+				break;
+			}
+			waitBeforeReconnect();
 		} catch (const std::exception &e) {
-			blog(LOG_INFO, "%s %s", __func__, e.what());
+			_lastError = e.what();
+			blog(LOG_INFO, "%s %s", __func__, _lastError);
+			if (!_reconnect || _disconnect) {
+				break;
+			}
+			waitBeforeReconnect();
 		}
 	} while (_reconnect && !_disconnect);
-	_connected = false;
+	_connecting = false;
 }
 
 void MqttConnection::Load(obs_data_t *data)
 {
+	Item::Load(data);
 	_uri = obs_data_get_string(data, "uri");
 	_username = obs_data_get_string(data, "username");
 	_password = obs_data_get_string(data, "password");
 	_connectOnStart = obs_data_get_bool(data, "connectOnStart");
 	_reconnect = obs_data_get_bool(data, "reconnect");
-	_reconnectDelay = obs_data_get_bool(data, "reconnectDelay");
+	_reconnectDelay = obs_data_get_int(data, "reconnectDelay");
 
 	if (ConnectOnStartup()) {
 		Connect();
@@ -176,12 +194,13 @@ void MqttConnection::Load(obs_data_t *data)
 
 void MqttConnection::Save(obs_data_t *data) const
 {
+	Item::Save(data);
 	obs_data_set_string(data, "uri", _uri.c_str());
 	obs_data_set_string(data, "username", _username.c_str());
 	obs_data_set_string(data, "password", _password.c_str());
 	obs_data_set_bool(data, "connectOnStart", _connectOnStart);
 	obs_data_set_bool(data, "reconnect", _reconnect);
-	obs_data_set_bool(data, "reconnectDelay", _reconnectDelay);
+	obs_data_set_int(data, "reconnectDelay", _reconnectDelay);
 }
 
 MqttMessageBuffer MqttConnection::RegisterForEvents()
@@ -189,13 +208,33 @@ MqttMessageBuffer MqttConnection::RegisterForEvents()
 	return _dispatcher.RegisterClient();
 }
 
+QString MqttConnection::GetStatus() const
+{
+	if (_connected) {
+		return obs_module_text(
+			"AdvSceneSwitcher.mqttConnection.status.connected");
+	}
+	if (_connecting) {
+		return obs_module_text(
+			"AdvSceneSwitcher.mqttConnection.status.connecting");
+	}
+	if (_lastError.empty()) {
+		return obs_module_text(
+			"AdvSceneSwitcher.mqttConnection.status.disconnected");
+	}
+	QString status(obs_module_text(
+		"AdvSceneSwitcher.mqttConnection.status.disconnected"));
+	status += " (" + QString::fromStdString(_lastError) + ")";
+	return status;
+}
+
 MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
 	QWidget *parent, const MqttConnection &connection)
 	: ItemSettingsDialog(connection, GetMqttConnections(),
 			     "AdvSceneSwitcher.mqttConnection.select",
 			     "AdvSceneSwitcher.mqttConnection.add",
-			     "AdvSceneSwitcher.mqttConnection.nameNotAvailable",
-			     true, parent),
+			     "AdvSceneSwitcher.item.nameNotAvailable", true,
+			     parent),
 	  _uri(new QLineEdit()),
 	  _username(new QLineEdit()),
 	  _password(new QLineEdit()),
@@ -206,8 +245,7 @@ MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
 	  _status(new QLabel()),
 	  _test(new QPushButton(
 		  obs_module_text("AdvSceneSwitcher.mqttConnection.test"))),
-	  _layout(new QGridLayout()),
-	  _currentConnection(connection)
+	  _layout(new QGridLayout())
 {
 	_showPassword->setMaximumWidth(22);
 	_showPassword->setFlat(true);
@@ -272,6 +310,7 @@ MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
 			"AdvSceneSwitcher.mqttConnection.reconnectDelay")),
 		row, 0);
 	_layout->addWidget(_reconnectDelay, row, 1);
+	++row;
 	_layout->addWidget(_test, row, 0);
 	_layout->addWidget(_status, row, 1);
 	++row;
@@ -300,6 +339,9 @@ bool MqttConnectionSettingsDialog::AskForSettings(QWidget *parent,
 	connection._connectOnStart = dialog._connectOnStart->isChecked();
 	connection._reconnect = dialog._reconnect->isChecked();
 	connection._reconnectDelay = dialog._reconnectDelay->value();
+	if (connection._connecting) {
+		connection.Disconnect();
+	}
 	connection.Connect();
 	return true;
 }
@@ -325,8 +367,28 @@ void MqttConnectionSettingsDialog::ReconnectChanged(int state)
 
 void MqttConnectionSettingsDialog::TestConnection()
 {
-	//TODO
-	// _status ...
+	if (_updateStatusTimer) {
+		_updateStatusTimer->stop();
+		_updateStatusTimer->deleteLater();
+	}
+
+	auto connection = std::make_shared<MqttConnection>();
+	connection->_name = _name->text().toStdString();
+	connection->_uri = _uri->text().toStdString();
+	connection->_username = _username->text().toStdString();
+	connection->_password = _password->text().toStdString();
+	connection->_connectOnStart = false;
+	connection->_reconnect = false;
+	connection->_reconnectDelay = _reconnectDelay->value();
+	connection->Connect();
+
+	_updateStatusTimer = new QTimer(this);
+	_updateStatusTimer->setInterval(300);
+	QObject::connect(_updateStatusTimer, &QTimer::timeout,
+			 [this, connection]() {
+				 _status->setText(connection->GetStatus());
+			 });
+	_updateStatusTimer->start();
 }
 
 static bool AskForSettingsWrapper(QWidget *parent, Item &settings)
