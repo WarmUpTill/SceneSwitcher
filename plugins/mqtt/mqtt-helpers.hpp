@@ -20,7 +20,6 @@ public:
 	MqttConnection() = default;
 	~MqttConnection();
 	MqttConnection(const MqttConnection &other);
-
 	MqttConnection(const std::string &name, const std::string &uri,
 		       const std::string &username, const std::string &password,
 		       bool connectOnStart, bool reconnect, int reconnectDelay);
@@ -32,13 +31,13 @@ public:
 	void Connect();
 	void Load(obs_data_t *data);
 	void Save(obs_data_t *data) const;
-	std::string GetName() const { return _name; }
 	MqttMessageBuffer RegisterForEvents();
-	const std::string &GetURI() const { return _uri; }
 	bool ConnectOnStartup() const { return _connectOnStart; }
+	QString GetStatus() const;
 
 private:
 	void ConnectThread();
+	void Disconnect();
 
 	std::string _uri = "mqtt://localhost:1883";
 	std::string _username = "user";
@@ -53,8 +52,10 @@ private:
 	int _reconnectDelay = 3;
 	std::atomic_bool _disconnect{false};
 	std::atomic_bool _connected{false};
+	std::atomic_bool _connecting{false};
 	std::mutex _waitMtx;
 	std::condition_variable _cv;
+	std::string _lastError = "";
 
 	MqttMessageDispatcher _dispatcher;
 
@@ -85,7 +86,7 @@ private:
 	QLabel *_status;
 	QPushButton *_test;
 	QGridLayout *_layout;
-	MqttConnection _currentConnection;
+	QTimer *_updateStatusTimer = nullptr;
 };
 
 class MqttConnectionSelection : public ItemSelection {
