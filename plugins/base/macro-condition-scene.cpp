@@ -94,11 +94,15 @@ bool MacroConditionScene::CheckCondition()
 		SetVariableValue(GetWeakSourceName(GetCurrentScene()));
 		SetTempVarValue("current",
 				GetWeakSourceName(GetCurrentScene()));
+		SetTempVarValue("previous",
+				GetWeakSourceName(GetPreviousScene()));
 		return sceneChanged;
 	case Type::NOT_CHANGED:
 		SetVariableValue(GetWeakSourceName(GetCurrentScene()));
 		SetTempVarValue("current",
 				GetWeakSourceName(GetCurrentScene()));
+		SetTempVarValue("previous",
+				GetWeakSourceName(GetPreviousScene()));
 		return !sceneChanged;
 	case Type::CURRENT_PATTERN: {
 		auto scene = getCurrentSceneHelper(_useTransitionTargetScene);
@@ -212,8 +216,6 @@ void MacroConditionScene::SetupTempVars()
 	MacroCondition::SetupTempVars();
 	switch (_type) {
 	case Type::CURRENT:
-	case Type::CHANGED:
-	case Type::NOT_CHANGED:
 	case Type::CURRENT_PATTERN:
 		AddTempvar("current",
 			   obs_module_text(
@@ -230,6 +232,15 @@ void MacroConditionScene::SetupTempVars()
 		AddTempvar("preview",
 			   obs_module_text(
 				   "AdvSceneSwitcher.tempVar.scene.preview"));
+		break;
+	case Type::CHANGED:
+	case Type::NOT_CHANGED:
+		AddTempvar("current",
+			   obs_module_text(
+				   "AdvSceneSwitcher.tempVar.scene.current"));
+		AddTempvar("previous",
+			   obs_module_text(
+				   "AdvSceneSwitcher.tempVar.scene.previous"));
 		break;
 	default:
 		break;
