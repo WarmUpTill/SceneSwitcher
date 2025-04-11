@@ -1,6 +1,5 @@
 #pragma once
 #include "string-list.hpp"
-#include "variable-line-edit.hpp"
 
 namespace advss {
 
