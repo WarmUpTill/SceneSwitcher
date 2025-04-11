@@ -9,6 +9,8 @@
 #include <obs.hpp>
 #include <QTimer>
 
+#include "topic-selection.hpp"
+
 #undef DispatchMessage
 
 namespace advss {
@@ -292,6 +294,11 @@ MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
 	passLayout->addWidget(_password);
 	passLayout->addWidget(_showPassword);
 	_layout->addLayout(passLayout, row, 1);
+	++row;
+	_layout->addWidget(new QLabel(
+		obs_module_text("AdvSceneSwitcher.mqttConnection.topics")));
+	++row;
+	_layout->addWidget(new MqttTopicListWidget(this), row, 0, 1, -1);
 	++row;
 	_layout->addWidget(
 		new QLabel(obs_module_text(

@@ -43,8 +43,8 @@ private:
 	std::string _username = "user";
 	std::string _password = "password";
 
-	std::vector<std::string> _topics;
-	std::vector<int> _qos;
+	std::vector<std::string> _topics = {"/#"};
+	std::vector<int> _qos = {1};
 
 	std::thread _thread;
 	bool _connectOnStart = true;

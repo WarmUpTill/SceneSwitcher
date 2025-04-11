@@ -17,8 +17,9 @@ endif()
 add_library(${PROJECT_NAME} MODULE)
 
 target_sources(
-  ${PROJECT_NAME} PRIVATE macro-condition-mqtt.cpp macro-condition-mqtt.hpp
-                          mqtt-helpers.cpp mqtt-helpers.hpp)
+  ${PROJECT_NAME}
+  PRIVATE macro-condition-mqtt.cpp macro-condition-mqtt.hpp mqtt-helpers.cpp
+          mqtt-helpers.hpp topic-selection.cpp topic-selection.hpp)
 
 setup_advss_plugin(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
