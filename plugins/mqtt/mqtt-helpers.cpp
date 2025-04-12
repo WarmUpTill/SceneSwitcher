@@ -9,8 +9,6 @@
 #include <obs.hpp>
 #include <QTimer>
 
-#include "topic-selection.hpp"
-
 #undef DispatchMessage
 
 namespace advss {
@@ -106,7 +104,7 @@ void MqttConnection::ConnectThread()
 		auto connOpts = mqtt::connect_options_builder::v5()
 					.clean_start(false)
 					.clean_session(true)
-					.connect_timeout(5s) // TODO: Configure?
+					.connect_timeout(5s)
 					.user_name(_username)
 					.password(_password)
 					.finalize();
@@ -131,18 +129,13 @@ void MqttConnection::ConnectThread()
 				vblog(LOG_INFO,
 				      "\"%s\" session not present on broker. subscribing...",
 				      _name.c_str());
-				client.subscribe(
-					      // TODO:
-					      // _topics
-					      // _qos
-					      std::make_shared<
-						      mqtt::string_collection>(
-						      "/test"),
-					      {1})
-					->wait();
+				const auto topics = std::make_shared<
+					mqtt::string_collection>(_topics);
+				client.subscribe(topics, _qos)->wait();
 			}
 
-			blog(LOG_INFO, "\"%s\" MQTT server connected!",
+			blog(LOG_INFO,
+			     "\"%s\" connection established to MQTT server!",
 			     _name.c_str());
 			_connected = true;
 			while (!_disconnect && client.is_connected()) {
@@ -241,6 +234,7 @@ MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
 	  _username(new QLineEdit()),
 	  _password(new QLineEdit()),
 	  _showPassword(new QPushButton()),
+	  _topics(new MqttTopicListWidget(this)),
 	  _connectOnStart(new QCheckBox()),
 	  _reconnect(new QCheckBox()),
 	  _reconnectDelay(new QSpinBox()),
@@ -256,6 +250,7 @@ MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
 	_uri->setText(QString::fromStdString(connection._uri));
 	_username->setText(QString::fromStdString(connection._username));
 	_password->setText(QString::fromStdString(connection._password));
+	_topics->SetValues(connection._topics, connection._qos);
 	_reconnectDelay->setMaximum(9999);
 	_reconnectDelay->setSuffix("s");
 	_connectOnStart->setChecked(connection._connectOnStart);
@@ -298,7 +293,7 @@ MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
 	_layout->addWidget(new QLabel(
 		obs_module_text("AdvSceneSwitcher.mqttConnection.topics")));
 	++row;
-	_layout->addWidget(new MqttTopicListWidget(this), row, 0, 1, -1);
+	_layout->addWidget(_topics, row, 0, 1, -1);
 	++row;
 	_layout->addWidget(
 		new QLabel(obs_module_text(
@@ -343,6 +338,8 @@ bool MqttConnectionSettingsDialog::AskForSettings(QWidget *parent,
 	connection._uri = dialog._uri->text().toStdString();
 	connection._username = dialog._username->text().toStdString();
 	connection._password = dialog._password->text().toStdString();
+	connection._topics = dialog._topics->GetTopics();
+	connection._qos = dialog._topics->GetQoS();
 	connection._connectOnStart = dialog._connectOnStart->isChecked();
 	connection._reconnect = dialog._reconnect->isChecked();
 	connection._reconnectDelay = dialog._reconnectDelay->value();
@@ -384,6 +381,8 @@ void MqttConnectionSettingsDialog::TestConnection()
 	connection->_uri = _uri->text().toStdString();
 	connection->_username = _username->text().toStdString();
 	connection->_password = _password->text().toStdString();
+	connection->_topics = _topics->GetTopics();
+	connection->_qos = _topics->GetQoS();
 	connection->_connectOnStart = false;
 	connection->_reconnect = false;
 	connection->_reconnectDelay = _reconnectDelay->value();

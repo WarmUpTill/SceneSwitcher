@@ -1,6 +1,7 @@
 #pragma once
 #include "message-dispatcher.hpp"
 #include "item-selection-helpers.hpp"
+#include "topic-selection.hpp"
 
 #include <obs-data.h>
 #include <QCheckBox>
@@ -80,6 +81,7 @@ private:
 	QLineEdit *_username;
 	QLineEdit *_password;
 	QPushButton *_showPassword;
+	MqttTopicListWidget *_topics;
 	QCheckBox *_connectOnStart;
 	QCheckBox *_reconnect;
 	QSpinBox *_reconnectDelay;

@@ -143,8 +143,8 @@ MacroConditionMqttEdit::MacroConditionMqttEdit(
 	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(entryLayout);
 	mainLayout->addWidget(_message);
-	mainLayout->addWidget(_clearBufferOnMatch);
 	mainLayout->addLayout(listenLayout);
+	mainLayout->addWidget(_clearBufferOnMatch);
 	setLayout(mainLayout);
 
 	_listenTimer.setInterval(100);
@@ -209,9 +209,17 @@ void MacroConditionMqttEdit::EnableListening(bool enable)
 		return;
 	}
 	if (enable) {
-		// TODO
-		//_messageBuffer =
-		//	_entryData->GetDevice().RegisterForMidiMessages();
+		auto connectionItem = _connection->GetCurrentItem();
+		if (!connectionItem) {
+			return;
+		}
+		auto weakConnection = GetWeakMqttConnectionByQString(
+			QString::fromStdString(connectionItem->Name()));
+		auto connection = weakConnection.lock();
+		if (!connection) {
+			return;
+		}
+		_messageBuffer = connection->RegisterForEvents();
 		_listenTimer.start();
 	} else {
 		_messageBuffer.reset();
@@ -253,6 +261,7 @@ void MacroConditionMqttEdit::SetMessageSelectionToLastReceived()
 		return;
 	}
 
+	const QSignalBlocker blocker(_message);
 	_message->setPlainText(*message);
 	_entryData->_message = *message;
 }
