@@ -3,18 +3,21 @@ project(advanced-scene-switcher-mqtt)
 
 # --- Check paho.mqtt.cpp requirements ---
 
-if(NOT OPENSSL_INCLUDE_DIR OR NOT OPENSSL_LIBRARIES)
-  find_package(PahoMqttCpp)
-  if(NOT PahoMqttCpp_FOUND)
-    message(WARNING "PahoMqttCpp not found!\n"
-                    "MQTT support will be disabled!\n\n")
-    return()
-  endif()
+find_package(PahoMqttCpp)
+if(NOT PahoMqttCpp_FOUND)
+  message(WARNING "PahoMqttCpp not found!\n"
+                  "MQTT support will be disabled!\n\n")
+  return()
 endif()
 
 # --- End of section ---
 
 add_library(${PROJECT_NAME} MODULE)
+
+# PDB was not found with paho-mqttpp3-static.lib
+if(MSVC)
+  target_link_options(${PROJECT_NAME} PRIVATE /IGNORE:4099)
+endif()
 
 target_sources(
   ${PROJECT_NAME}
