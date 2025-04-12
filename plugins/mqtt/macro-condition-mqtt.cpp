@@ -101,7 +101,8 @@ std::weak_ptr<MqttConnection> MacroConditionMqtt::GetConnection() const
 void MacroConditionMqtt::SetupTempVars()
 {
 	MacroCondition::SetupTempVars();
-	// TODO
+	AddTempvar("message",
+		   obs_module_text("AdvSceneSwitcher.tempVar.mqtt.message"));
 }
 
 MacroConditionMqttEdit::MacroConditionMqttEdit(
@@ -110,8 +111,8 @@ MacroConditionMqttEdit::MacroConditionMqttEdit(
 	  _connection(new MqttConnectionSelection(this)),
 	  _message(new VariableTextEdit(this, 5, 1, 1)),
 	  _regex(new RegexConfigWidget(parent)),
-	  _listen(new QPushButton(
-		  obs_module_text("AdvSceneSwitcher.mqtt.startListen"))),
+	  _listen(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.mqttConnection.startListen"))),
 	  _clearBufferOnMatch(new QCheckBox(
 		  obs_module_text("AdvSceneSwitcher.clearBufferOnMatch")))
 {
@@ -235,8 +236,10 @@ void MacroConditionMqttEdit::ToggleListen()
 
 	_listen->setText(
 		_currentlyListening
-			? obs_module_text("AdvSceneSwitcher.mqtt.startListen")
-			: obs_module_text("AdvSceneSwitcher.mqtt.stopListen"));
+			? obs_module_text(
+				  "AdvSceneSwitcher.mqttConnection.startListen")
+			: obs_module_text(
+				  "AdvSceneSwitcher.mqttConnection.stopListen"));
 	EnableListening(!_currentlyListening);
 	_currentlyListening = !_currentlyListening;
 	_message->setDisabled(_currentlyListening);
