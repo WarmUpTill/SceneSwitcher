@@ -101,7 +101,11 @@ void MqttConnection::ConnectThread()
 
 	do {
 		mqtt::async_client client(_uri, std::string("advss_") + _name);
+#ifdef ENABLE_MQTT5_SUPPORT
 		auto connOpts = mqtt::connect_options_builder::v5()
+#else
+		auto connOpts = mqtt::connect_options_builder()
+#endif
 					.clean_start(false)
 					.clean_session(true)
 					.connect_timeout(5s)
@@ -118,12 +122,14 @@ void MqttConnection::ConnectThread()
 			      _name.c_str());
 			auto tok = client.connect(connOpts);
 			auto rsp = tok->get_connect_response();
+#ifdef ENABLE_MQTT5_SUPPORT
 			if (rsp.get_mqtt_version() < MQTTVERSION_5) {
 				blog(LOG_INFO,
 				     "\"%s\" did not get an MQTT v5 connection",
 				     _name.c_str());
 				break;
 			}
+#endif
 
 			if (!rsp.is_session_present()) {
 				vblog(LOG_INFO,
@@ -162,7 +168,7 @@ void MqttConnection::ConnectThread()
 			waitBeforeReconnect();
 		} catch (const std::exception &e) {
 			_lastError = e.what();
-			blog(LOG_INFO, "%s %s", __func__, _lastError);
+			blog(LOG_INFO, "%s %s", __func__, _lastError.c_str());
 			if (!_reconnect || _disconnect) {
 				break;
 			}
@@ -450,6 +456,7 @@ void MqttConnectionSelection::SetConnection(
 }
 
 MqttConnectionSignalManager::MqttConnectionSignalManager(QObject *parent)
+	: QObject(parent)
 {
 	QWidget::connect(this, SIGNAL(Add(const QString &)), this,
 			 SLOT(OpenNewConnection(const QString &)));

@@ -3,6 +3,7 @@
 #include "item-selection-helpers.hpp"
 #include "topic-selection.hpp"
 
+#include <condition_variable>
 #include <obs-data.h>
 #include <QCheckBox>
 #include <QComboBox>
@@ -10,6 +11,7 @@
 #include <QPushButton>
 #include <QSpinBox>
 #include <string>
+#include <thread>
 
 namespace advss {
 

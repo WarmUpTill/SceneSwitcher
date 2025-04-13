@@ -14,6 +14,10 @@ endif()
 
 add_library(${PROJECT_NAME} MODULE)
 
+if(PAHO_MQTT_CPP_VERSION VERSION_GREATER_EQUAL "1.1.0")
+  target_compile_definitions(${PROJECT_NAME} PRIVATE ENABLE_MQTT5_SUPPORT=1)
+endif()
+
 # PDB was not found with paho-mqttpp3-static.lib
 if(MSVC)
   target_link_options(${PROJECT_NAME} PRIVATE /IGNORE:4099)
@@ -26,5 +30,10 @@ target_sources(
 
 setup_advss_plugin(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
-target_link_libraries(${PROJECT_NAME} PRIVATE PahoMqttCpp::paho-mqttpp3-static)
+if(OS_LINUX)
+  target_link_libraries(${PROJECT_NAME} PRIVATE PahoMqttCpp::paho-mqttpp3)
+else()
+  target_link_libraries(${PROJECT_NAME}
+                        PRIVATE PahoMqttCpp::paho-mqttpp3-static)
+endif()
 install_advss_plugin(${PROJECT_NAME})
