@@ -42,6 +42,7 @@ void StringVariable::operator=(const char *value)
 void StringVariable::Load(obs_data_t *obj, const char *name)
 {
 	_value = obs_data_get_string(obj, name);
+	_lastResolve = {};
 	Resolve();
 }
 
