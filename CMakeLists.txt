@@ -195,6 +195,8 @@ target_sources(
           lib/utils/help-icon.cpp
           lib/utils/item-selection-helpers.cpp
           lib/utils/item-selection-helpers.hpp
+          lib/utils/json-helpers.cpp
+          lib/utils/json-helpers.hpp
           lib/utils/layout-helpers.cpp
           lib/utils/layout-helpers.hpp
           lib/utils/list-controls.cpp

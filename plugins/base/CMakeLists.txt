@@ -152,8 +152,6 @@ target_sources(
           utils/filter-selection.hpp
           utils/hotkey-helpers.cpp
           utils/hotkey-helpers.hpp
-          utils/json-helpers.cpp
-          utils/json-helpers.hpp
           utils/monitor-helpers.cpp
           utils/monitor-helpers.hpp
           utils/osc-helpers.cpp
