@@ -1,5 +1,9 @@
 #include "json-helpers.hpp"
 
+#ifdef JSONPATH_SUPPORT
+#include <jsoncons/json.hpp>
+#include <jsoncons_ext/jsonpath/jsonpath.hpp>
+#endif
 #include <nlohmann/json.hpp>
 #include <QJsonDocument>
 
@@ -51,6 +55,44 @@ std::optional<std::string> GetJsonField(const std::string &jsonStr,
 			return it->get<std::string>();
 		}
 		return it->dump();
+	} catch (const nlohmann::json::exception &) {
+		return {};
+	}
+	return {};
+}
+
+std::optional<std::string> QueryJson(const std::string &jsonStr,
+				     const std::string &query)
+{
+#ifdef JSONPATH_SUPPORT
+	try {
+		auto json = jsoncons::json::parse(jsonStr);
+		auto result = jsoncons::jsonpath::json_query(json, query);
+		return result.as_string();
+	} catch (const jsoncons::json_exception &) {
+		return {};
+	} catch (const jsoncons::json_errc &) {
+		return {};
+	}
+#else
+	return {};
+#endif
+}
+
+std::optional<std::string> AccessJsonArrayIndex(const std::string &jsonStr,
+						const int index)
+{
+	try {
+		nlohmann::json json = nlohmann::json::parse(jsonStr);
+		if (!json.is_array() || index >= (int)json.size() ||
+		    index < 0) {
+			return {};
+		}
+		auto result = json.at(index);
+		if (result.is_string()) {
+			return result.get<std::string>();
+		}
+		return result.dump();
 	} catch (const nlohmann::json::exception &) {
 		return {};
 	}
