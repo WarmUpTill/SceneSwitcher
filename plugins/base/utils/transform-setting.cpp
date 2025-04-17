@@ -1,8 +1,8 @@
 #include "transform-setting.hpp"
+#include "json-helpers.hpp"
 #include "obs-module-helper.hpp"
 #include "math-helpers.hpp"
 #include "scene-item-transform-helpers.hpp"
-#include "utility.hpp"
 
 #include <nlohmann/json.hpp>
 #include <QLayout>

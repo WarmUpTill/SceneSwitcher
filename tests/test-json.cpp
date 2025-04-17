@@ -51,3 +51,18 @@ TEST_CASE("MatchJson", "[json-helpers]")
 	result = advss::MatchJson("{\n    \"test\": true\n}\n", "(", regex);
 	REQUIRE(result == false);
 }
+
+TEST_CASE("GetJsonField", "[utility]")
+{
+	auto result = advss::GetJsonField("{}", "");
+	REQUIRE_FALSE(result);
+
+	result = advss::GetJsonField("{}", "not there");
+	REQUIRE_FALSE(result);
+
+	result = advss::GetJsonField("invalid json", "not there");
+	REQUIRE_FALSE(result);
+
+	result = advss::GetJsonField("{ \"test\": 1 }", "test");
+	REQUIRE(*result == "1");
+}

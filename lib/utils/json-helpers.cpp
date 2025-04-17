@@ -1,5 +1,6 @@
 #include "json-helpers.hpp"
 
+#include <nlohmann/json.hpp>
 #include <QJsonDocument>
 
 namespace advss {
@@ -35,6 +36,25 @@ bool MatchJson(const std::string &json1, const std::string &json2,
 		return regex.Matches(j1, j2);
 	}
 	return j1 == j2;
+}
+
+std::optional<std::string> GetJsonField(const std::string &jsonStr,
+					const std::string &fieldToExtract)
+{
+	try {
+		nlohmann::json json = nlohmann::json::parse(jsonStr);
+		auto it = json.find(fieldToExtract);
+		if (it == json.end()) {
+			return {};
+		}
+		if (it->is_string()) {
+			return it->get<std::string>();
+		}
+		return it->dump();
+	} catch (const nlohmann::json::exception &) {
+		return {};
+	}
+	return {};
 }
 
 } // namespace advss
