@@ -52,7 +52,7 @@ TEST_CASE("MatchJson", "[json-helpers]")
 	REQUIRE(result == false);
 }
 
-TEST_CASE("GetJsonField", "[utility]")
+TEST_CASE("GetJsonField", "[json-helpers]")
 {
 	auto result = advss::GetJsonField("{}", "");
 	REQUIRE_FALSE(result);
@@ -65,4 +65,41 @@ TEST_CASE("GetJsonField", "[utility]")
 
 	result = advss::GetJsonField("{ \"test\": 1 }", "test");
 	REQUIRE(*result == "1");
+}
+
+TEST_CASE("QueryJson", "[json-helpers]")
+{
+	auto result = advss::QueryJson("{}", "");
+	REQUIRE_FALSE(result);
+
+	result = advss::QueryJson("invalid json", "$.test");
+	REQUIRE_FALSE(result);
+
+	result = advss::QueryJson("{}", "invalid query");
+	REQUIRE_FALSE(result);
+
+	result = advss::QueryJson("{}", "$.test");
+	REQUIRE(*result == "[]");
+
+	result = advss::QueryJson("{ \"test\": { \"something\" : 1 } }",
+				  "$.test.something");
+	REQUIRE(*result == "[1]");
+}
+
+TEST_CASE("AccessJsonArrayIndex", "[json-helpers]")
+{
+	auto result = advss::AccessJsonArrayIndex("{}", 0);
+	REQUIRE_FALSE(result);
+
+	result = advss::AccessJsonArrayIndex("invalid json", 0);
+	REQUIRE_FALSE(result);
+
+	result = advss::AccessJsonArrayIndex("[]", 0);
+	REQUIRE_FALSE(result);
+
+	result = advss::AccessJsonArrayIndex("[\"1\", \"2\"]", -1);
+	REQUIRE_FALSE(result);
+
+	result = advss::AccessJsonArrayIndex("[\"1\", \"2\"]", 1);
+	REQUIRE(*result == "2");
 }
