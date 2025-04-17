@@ -7,6 +7,7 @@
 #include "macro.hpp"
 #include "non-modal-dialog.hpp"
 #include "source-helpers.hpp"
+#include "ui-helpers.hpp"
 #include "utility.hpp"
 
 #include <random>
@@ -386,6 +387,22 @@ bool MacroActionVariable::PerformAction()
 		var->SetValue(*value);
 		return true;
 	}
+	case Action::QUERY_JSON: {
+		auto value = QueryJson(var->Value(), _jsonQuery);
+		if (!value.has_value()) {
+			return true;
+		}
+		var->SetValue(*value);
+		return true;
+	}
+	case Action::ARRAY_JSON: {
+		auto value = AccessJsonArrayIndex(var->Value(), _jsonIndex);
+		if (!value.has_value()) {
+			return true;
+		}
+		var->SetValue(*value);
+		return true;
+	}
 	case Action::SET_TO_TEMPVAR: {
 		auto tempVar = _tempVar.GetTempVariable(GetMacro());
 		if (!tempVar) {
@@ -472,6 +489,8 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	_randomNumberStart.Save(obj, "randomNumberStart");
 	_randomNumberEnd.Save(obj, "randomNumberEnd");
 	obs_data_set_bool(obj, "generateInteger", _generateInteger);
+	_jsonQuery.Save(obj, "jsonQuery");
+	_jsonIndex.Save(obj, "jsonIndex");
 
 	obs_data_set_int(obj, "version", 1);
 
@@ -528,6 +547,8 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_randomNumberStart.Load(obj, "randomNumberStart");
 	_randomNumberEnd.Load(obj, "randomNumberEnd");
 	_generateInteger = obs_data_get_bool(obj, "generateInteger");
+	_jsonQuery.Load(obj, "jsonQuery");
+	_jsonIndex.Load(obj, "jsonIndex");
 
 	return true;
 }
@@ -627,6 +648,8 @@ void MacroActionVariable::ResolveVariablesToFixedValues()
 	_envVariableName.ResolveVariables();
 	_scene.ResolveVariables();
 	_sceneItemIndex.ResolveVariables();
+	_jsonQuery.ResolveVariables();
+	_jsonIndex.ResolveVariables();
 }
 
 void MacroActionVariable::DecrementCurrentSegmentVariableRef()
@@ -656,14 +679,20 @@ static inline void populateActionSelection(QComboBox *list)
 			 "AdvSceneSwitcher.action.variable.type.subString"},
 			{MacroActionVariable::Action::FIND_AND_REPLACE,
 			 "AdvSceneSwitcher.action.variable.type.findAndReplace"},
-			{MacroActionVariable::Action::EXTRACT_JSON,
-			 "AdvSceneSwitcher.action.variable.type.extractJson"},
 			{MacroActionVariable::Action::STRING_LENGTH,
 			 "AdvSceneSwitcher.action.variable.type.stringLength"},
 			{MacroActionVariable::Action::TRIM,
 			 "AdvSceneSwitcher.action.variable.type.trim"},
 			{MacroActionVariable::Action::CHANGE_CASE,
 			 "AdvSceneSwitcher.action.variable.type.changeCase"},
+			{true, ""}, // Separator
+
+			{MacroActionVariable::Action::EXTRACT_JSON,
+			 "AdvSceneSwitcher.action.variable.type.extractJsonField"},
+			{MacroActionVariable::Action::QUERY_JSON,
+			 "AdvSceneSwitcher.action.variable.type.queryJson"},
+			{MacroActionVariable::Action::ARRAY_JSON,
+			 "AdvSceneSwitcher.action.variable.type.accessJsonArray"},
 			{true, ""}, // Separator
 
 			{MacroActionVariable::Action::SET_TO_TEMPVAR,
@@ -798,6 +827,9 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			  "AdvSceneSwitcher.action.variable.generateInteger"),
 		  this)),
 	  _randomLayout(new QVBoxLayout()),
+	  _jsonQuery(new VariableLineEdit(this)),
+	  _jsonQueryHelp(new QLabel(this)),
+	  _jsonIndex(new VariableSpinBox(this)),
 	  _entryLayout(new QHBoxLayout())
 {
 	_numValue->setMinimum(-9999999999);
@@ -827,6 +859,15 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_randomNumberStart->setMaximum(9999999999);
 	_randomNumberEnd->setMinimum(-9999999999);
 	_randomNumberEnd->setMaximum(9999999999);
+	const QString path = GetThemeTypeName() == "Light"
+				     ? ":/res/images/help.svg"
+				     : ":/res/images/help_light.svg";
+	const QIcon icon(path);
+	const QPixmap pixmap = icon.pixmap(QSize(16, 16));
+	_jsonQueryHelp->setPixmap(pixmap);
+	_jsonQueryHelp->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.action.variable.type.queryJson.info"));
+	_jsonIndex->setMaximum(999);
 
 	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),
 			 this, SLOT(VariableChanged(const QString &)));
@@ -913,6 +954,12 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		SLOT(RandomNumberEndChanged(const NumberVariable<double> &)));
 	QWidget::connect(_generateInteger, SIGNAL(stateChanged(int)), this,
 			 SLOT(GenerateIntegerChanged(int)));
+	QWidget::connect(_jsonQuery, SIGNAL(editingFinished()), this,
+			 SLOT(JsonQueryChanged()));
+	QWidget::connect(
+		_jsonIndex,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(JsonIndexChanged(const NumberVariable<int> &)));
 
 	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -944,39 +991,42 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{randomNumberStart}}", _randomNumberStart},
 		{"{{randomNumberEnd}}", _randomNumberEnd},
 		{"{{generateInteger}}", _generateInteger},
+		{"{{jsonQuery}}", _jsonQuery},
+		{"{{jsonQueryHelp}}", _jsonQueryHelp},
+		{"{{jsonIndex}}", _jsonIndex},
 	};
-	PlaceWidgets(
-		obs_module_text("AdvSceneSwitcher.action.variable.entry.other"),
-		_entryLayout, widgetPlaceholders);
+	PlaceWidgets(obs_module_text(
+			     "AdvSceneSwitcher.action.variable.layout.other"),
+		     _entryLayout, widgetPlaceholders);
 
 	PlaceWidgets(
 		obs_module_text(
-			"AdvSceneSwitcher.action.variable.entry.substringIndex"),
+			"AdvSceneSwitcher.action.variable.layout.substringIndex"),
 		_subStringIndexEntryLayout, widgetPlaceholders);
 
 	PlaceWidgets(
 		obs_module_text(
-			"AdvSceneSwitcher.action.variable.entry.substringRegex"),
+			"AdvSceneSwitcher.action.variable.layout.substringRegex"),
 		_subStringRegexEntryLayout, widgetPlaceholders);
 
 	PlaceWidgets(
 		obs_module_text(
-			"AdvSceneSwitcher.action.variable.entry.findAndReplace"),
+			"AdvSceneSwitcher.action.variable.layout.findAndReplace"),
 		_findReplaceLayout, widgetPlaceholders, false);
 
 	PlaceWidgets(
 		obs_module_text(
-			"AdvSceneSwitcher.action.variable.entry.userInput.customPrompt"),
+			"AdvSceneSwitcher.action.variable.layout.userInput.customPrompt"),
 		_promptLayout, widgetPlaceholders);
 	PlaceWidgets(
 		obs_module_text(
-			"AdvSceneSwitcher.action.variable.entry.userInput.placeholder"),
+			"AdvSceneSwitcher.action.variable.layout.userInput.placeholder"),
 		_placeholderLayout, widgetPlaceholders);
 
 	auto randomLayout = new QHBoxLayout();
 	PlaceWidgets(
 		obs_module_text(
-			"AdvSceneSwitcher.action.variable.entry.randomNumber"),
+			"AdvSceneSwitcher.action.variable.layout.randomNumber"),
 		randomLayout, widgetPlaceholders);
 	_randomLayout->addLayout(randomLayout);
 	_randomLayout->addWidget(_generateInteger);
@@ -1058,17 +1108,15 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_randomNumberStart->SetValue(_entryData->_randomNumberStart);
 	_randomNumberEnd->SetValue(_entryData->_randomNumberEnd);
 	_generateInteger->setChecked(_entryData->_generateInteger);
+	_jsonQuery->setText(_entryData->_jsonQuery);
+	_jsonIndex->SetValue(_entryData->_jsonIndex);
 
 	SetWidgetVisibility();
 }
 
 void MacroActionVariableEdit::VariableChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_variable = GetWeakVariableByQString(text);
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -1076,11 +1124,7 @@ void MacroActionVariableEdit::VariableChanged(const QString &text)
 
 void MacroActionVariableEdit::Variable2Changed(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_variable2 = GetWeakVariableByQString(text);
 }
 
@@ -1106,11 +1150,7 @@ void MacroActionVariableEdit::ActionChanged(int idx)
 
 void MacroActionVariableEdit::StrValueChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_strValue = _strValue->toPlainText().toStdString();
 	adjustSize();
 	updateGeometry();
@@ -1119,21 +1159,13 @@ void MacroActionVariableEdit::StrValueChanged()
 void MacroActionVariableEdit::NumValueChanged(
 	const NumberVariable<double> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_numValue = value;
 }
 
 void MacroActionVariableEdit::SegmentIndexChanged(const IntVariable &val)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetSegmentIndexValue(val - 1);
 }
 
@@ -1239,32 +1271,20 @@ void MacroActionVariableEdit::MacroSegmentOrderChanged()
 void MacroActionVariableEdit::SubStringStartChanged(
 	const NumberVariable<int> &start)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_subStringStart = start;
 }
 
 void MacroActionVariableEdit::SubStringSizeChanged(
 	const NumberVariable<int> &size)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_subStringSize = size;
 }
 
 void MacroActionVariableEdit::SubStringRegexChanged(const RegexConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_subStringRegex = conf;
 
 	SetWidgetVisibility();
@@ -1272,11 +1292,7 @@ void MacroActionVariableEdit::SubStringRegexChanged(const RegexConfig &conf)
 
 void MacroActionVariableEdit::RegexPatternChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_regexPattern = _regexPattern->toPlainText().toStdString();
 	adjustSize();
 	updateGeometry();
@@ -1285,21 +1301,13 @@ void MacroActionVariableEdit::RegexPatternChanged()
 void MacroActionVariableEdit::RegexMatchIdxChanged(
 	const NumberVariable<int> &index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_regexMatchIdx = index;
 }
 
 void MacroActionVariableEdit::FindStrValueChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_findStr = _findStr->toPlainText().toStdString();
 	adjustSize();
 	updateGeometry();
@@ -1307,11 +1315,7 @@ void MacroActionVariableEdit::FindStrValueChanged()
 
 void MacroActionVariableEdit::FindRegexChanged(const RegexConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_findRegex = conf;
 	adjustSize();
 	updateGeometry();
@@ -1319,11 +1323,7 @@ void MacroActionVariableEdit::FindRegexChanged(const RegexConfig &conf)
 
 void MacroActionVariableEdit::ReplaceStrValueChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_replaceStr = _replaceStr->toPlainText().toStdString();
 	adjustSize();
 	updateGeometry();
@@ -1331,11 +1331,7 @@ void MacroActionVariableEdit::ReplaceStrValueChanged()
 
 void MacroActionVariableEdit::MathExpressionChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_mathExpression = _mathExpression->text().toStdString();
 
 	// In case of invalid expression display an error
@@ -1353,73 +1349,45 @@ void MacroActionVariableEdit::MathExpressionChanged()
 
 void MacroActionVariableEdit::UseCustomPromptChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_useCustomPrompt = value;
 	SetWidgetVisibility();
 }
 
 void MacroActionVariableEdit::InputPromptChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_inputPrompt = _inputPrompt->text().toStdString();
 }
 
 void MacroActionVariableEdit::UseInputPlaceholderChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_useInputPlaceholder = value;
 	SetWidgetVisibility();
 }
 
 void MacroActionVariableEdit::InputPlaceholderChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_inputPlaceholder = _inputPlaceholder->text().toStdString();
 }
 
 void MacroActionVariableEdit::EnvVariableChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_envVariableName = _envVariable->text().toStdString();
 }
 
 void MacroActionVariableEdit::SceneChanged(const SceneSelection &scene)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = scene;
 }
 
 void MacroActionVariableEdit::SelectionChanged(const TempVariableRef &var)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_tempVar = var;
 	SetWidgetVisibility();
 }
@@ -1427,21 +1395,13 @@ void MacroActionVariableEdit::SelectionChanged(const TempVariableRef &var)
 void MacroActionVariableEdit::SceneItemIndexChanged(
 	const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_sceneItemIndex = value;
 }
 
 void MacroActionVariableEdit::DirectionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_direction =
 		static_cast<MacroActionVariable::Direction>(value);
 }
@@ -1449,21 +1409,13 @@ void MacroActionVariableEdit::DirectionChanged(int value)
 void MacroActionVariableEdit::StringLengthChanged(
 	const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_stringLength = value;
 }
 
 void MacroActionVariableEdit::CharSelectionChanged(const QString &character)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	if (character.isEmpty()) {
 		_entryData->_paddingChar = ' ';
 	} else {
@@ -1473,11 +1425,7 @@ void MacroActionVariableEdit::CharSelectionChanged(const QString &character)
 
 void MacroActionVariableEdit::CaseTypeChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_caseType = static_cast<MacroActionVariable::CaseType>(
 		_caseType->itemData(index).toInt());
 }
@@ -1500,6 +1448,18 @@ void MacroActionVariableEdit::GenerateIntegerChanged(int value)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_generateInteger = value;
+}
+
+void MacroActionVariableEdit::JsonQueryChanged()
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_jsonQuery = _jsonQuery->text().toStdString();
+}
+
+void MacroActionVariableEdit::JsonIndexChanged(const NumberVariable<int> &value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_jsonIndex = value;
 }
 
 void MacroActionVariableEdit::SetWidgetVisibility()
@@ -1525,19 +1485,22 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 		{"{{stringLength}}", _stringLength},
 		{"{{paddingCharSelection}}", _paddingCharSelection},
 		{"{{caseType}}", _caseType},
+		{"{{jsonQuery}}", _jsonQuery},
+		{"{{jsonQueryHelp}}", _jsonQueryHelp},
+		{"{{jsonIndex}}", _jsonIndex},
 	};
 
 	const char *layoutString = "";
 	if (_entryData->_action == MacroActionVariable::Action::PAD) {
 		layoutString = obs_module_text(
-			"AdvSceneSwitcher.action.variable.entry.pad");
+			"AdvSceneSwitcher.action.variable.layout.pad");
 	} else if (_entryData->_action ==
 		   MacroActionVariable::Action::TRUNCATE) {
 		layoutString = obs_module_text(
-			"AdvSceneSwitcher.action.variable.entry.truncate");
+			"AdvSceneSwitcher.action.variable.layout.truncate");
 	} else {
 		layoutString = obs_module_text(
-			"AdvSceneSwitcher.action.variable.entry.other");
+			"AdvSceneSwitcher.action.variable.layout.other");
 	}
 
 	for (const auto &[_, widget] : widgetPlaceholders) {
@@ -1553,7 +1516,8 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 		    MacroActionVariable::Action::MATH_EXPRESSION ||
 	    _entryData->_action == MacroActionVariable::Action::ENV_VARIABLE ||
 	    _entryData->_action == MacroActionVariable::Action::STRING_LENGTH ||
-	    _entryData->_action == MacroActionVariable::Action::EXTRACT_JSON) {
+	    _entryData->_action == MacroActionVariable::Action::EXTRACT_JSON ||
+	    _entryData->_action == MacroActionVariable::Action::QUERY_JSON) {
 		RemoveStretchIfPresent(_entryLayout);
 	} else {
 		AddStretchIfNecessary(_entryLayout);
@@ -1665,6 +1629,12 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 	SetLayoutVisible(_randomLayout,
 			 _entryData->_action ==
 				 MacroActionVariable::Action::RANDOM_NUMBER);
+	_jsonQuery->setVisible(_entryData->_action ==
+			       MacroActionVariable::Action::QUERY_JSON);
+	_jsonQueryHelp->setVisible(_entryData->_action ==
+				   MacroActionVariable::Action::QUERY_JSON);
+	_jsonIndex->setVisible(_entryData->_action ==
+			       MacroActionVariable::Action::ARRAY_JSON);
 
 	adjustSize();
 	updateGeometry();

@@ -53,6 +53,8 @@ public:
 		TRIM,
 		CHANGE_CASE,
 		RANDOM_NUMBER,
+		QUERY_JSON,
+		ARRAY_JSON,
 	};
 
 	Action _action = Action::SET_VALUE;
@@ -103,6 +105,9 @@ public:
 	DoubleVariable _randomNumberStart = 0;
 	DoubleVariable _randomNumberEnd = 100;
 	bool _generateInteger = true;
+
+	StringVariable _jsonQuery = "$.some.nested.value";
+	IntVariable _jsonIndex = 0;
 
 private:
 	void DecrementCurrentSegmentVariableRef();
@@ -169,6 +174,8 @@ private slots:
 	void RandomNumberStartChanged(const NumberVariable<double> &);
 	void RandomNumberEndChanged(const NumberVariable<double> &);
 	void GenerateIntegerChanged(int);
+	void JsonQueryChanged();
+	void JsonIndexChanged(const NumberVariable<int> &);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -218,6 +225,9 @@ private:
 	VariableDoubleSpinBox *_randomNumberEnd;
 	QCheckBox *_generateInteger;
 	QVBoxLayout *_randomLayout;
+	VariableLineEdit *_jsonQuery;
+	QLabel *_jsonQueryHelp;
+	VariableSpinBox *_jsonIndex;
 	QHBoxLayout *_entryLayout;
 
 	std::shared_ptr<MacroActionVariable> _entryData;
