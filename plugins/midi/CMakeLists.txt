@@ -43,21 +43,6 @@ else()
   endif()
 endif()
 
-if(OS_MACOS)
-  set(PATCH_FILE
-      "${CMAKE_CURRENT_SOURCE_DIR}/remove-bit-cast-for-macos-build.patch")
-  execute_process(
-    COMMAND git apply ${PATCH_FILE}
-    WORKING_DIRECTORY ${LIBREMIDI_DIR}
-    RESULT_VARIABLE PATCH_RESULT)
-  if(PATCH_RESULT EQUAL 0)
-    message("Libremidi patch \"${PATCH_FILE}\" applied successfully!")
-  else()
-    message(
-      WARNING "Libremidi patch \"${PATCH_FILE}\" did NOT apply successfully!")
-  endif()
-endif()
-
 target_sources(
   ${PROJECT_NAME}
   PRIVATE macro-condition-midi.cpp macro-condition-midi.hpp
