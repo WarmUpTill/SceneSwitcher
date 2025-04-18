@@ -1,6 +1,5 @@
 #include "utility.hpp"
 
-#include <nlohmann/json.hpp>
 #include <QTextStream>
 #include <sstream>
 
@@ -26,25 +25,6 @@ bool ReplaceAll(std::string &str, const std::string &from,
 		somethingWasReplaced = true;
 	}
 	return somethingWasReplaced;
-}
-
-std::optional<std::string> GetJsonField(const std::string &jsonStr,
-					const std::string &fieldToExtract)
-{
-	try {
-		nlohmann::json json = nlohmann::json::parse(jsonStr);
-		auto it = json.find(fieldToExtract);
-		if (it == json.end()) {
-			return {};
-		}
-		if (it->is_string()) {
-			return it->get<std::string>();
-		}
-		return it->dump();
-	} catch (const nlohmann::json::exception &) {
-		return {};
-	}
-	return {};
 }
 
 bool CompareIgnoringLineEnding(QString &s1, QString &s2)

@@ -64,9 +64,14 @@ target_sources(
 
 # --- json --- #
 
+if(TARGET jsoncons)
+  target_link_libraries(${PROJECT_NAME} PRIVATE jsoncons)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE JSONPATH_SUPPORT=1)
+endif()
+target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json)
 target_sources(
-  ${PROJECT_NAME}
-  PRIVATE test-json.cpp ${ADVSS_SOURCE_DIR}/plugins/base/utils/json-helpers.cpp)
+  ${PROJECT_NAME} PRIVATE test-json.cpp
+                          ${ADVSS_SOURCE_DIR}/lib/utils/json-helpers.cpp)
 
 # --- math --- #
 
@@ -94,8 +99,6 @@ target_sources(
           ${ADVSS_SOURCE_DIR}/plugins/base/utils/text-helpers.cpp)
 
 # --- utility --- #
-
-target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json)
 
 target_sources(
   ${PROJECT_NAME} PRIVATE test-utility.cpp

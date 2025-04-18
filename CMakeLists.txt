@@ -195,6 +195,8 @@ target_sources(
           lib/utils/help-icon.cpp
           lib/utils/item-selection-helpers.cpp
           lib/utils/item-selection-helpers.hpp
+          lib/utils/json-helpers.cpp
+          lib/utils/json-helpers.hpp
           lib/utils/layout-helpers.cpp
           lib/utils/layout-helpers.hpp
           lib/utils/list-controls.cpp
@@ -357,6 +359,21 @@ else()
   find_package(nlohmann_json REQUIRED)
 endif()
 target_link_libraries(${LIB_NAME} PUBLIC nlohmann_json::nlohmann_json)
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/jsoncons/CMakeLists.txt")
+  # Don't jsoncons build unit tests as they are causing compilation issues and
+  # won't be executed either way
+  if(OS_MACOS)
+    cmake_policy(SET CMP0077 NEW)
+  endif()
+  set(JSONCONS_BUILD_TESTS
+      OFF
+      CACHE BOOL "" FORCE)
+
+  add_subdirectory(deps/jsoncons)
+  target_link_libraries(${LIB_NAME} PRIVATE jsoncons)
+  target_compile_definitions(${LIB_NAME} PRIVATE JSONPATH_SUPPORT=1)
+endif()
 
 find_package(CURL QUIET)
 find_package(Libcurl QUIET)

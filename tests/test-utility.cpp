@@ -20,21 +20,6 @@ TEST_CASE("ReplaceAll", "[utility]")
 	REQUIRE(input == "sleeping");
 }
 
-TEST_CASE("GetJsonField", "[utility]")
-{
-	auto result = advss::GetJsonField("{}", "");
-	REQUIRE_FALSE(result);
-
-	result = advss::GetJsonField("{}", "not there");
-	REQUIRE_FALSE(result);
-
-	result = advss::GetJsonField("invalid json", "not there");
-	REQUIRE_FALSE(result);
-
-	result = advss::GetJsonField("{ \"test\": 1 }", "test");
-	REQUIRE(*result == "1");
-}
-
 TEST_CASE("CompareIgnoringLineEnding", "[utility]")
 {
 	QString s1;

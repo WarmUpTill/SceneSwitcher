@@ -31,3 +31,6 @@
 [submodule "deps/date"]
 	path = deps/date
 	url = https://github.com/HowardHinnant/date.git
+[submodule "deps/jsoncons"]
+	path = deps/jsoncons
+	url = https://github.com/danielaparker/jsoncons.git
