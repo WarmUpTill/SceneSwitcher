@@ -478,6 +478,33 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         unset MACOSX_DEPLOYMENT_TARGET
 
         popd
+
+        local mqtt_dir="${project_root}/deps/paho.mqtt.cpp"
+        local mqtt_build_dir="${mqtt_dir}/build_${target##*-}"
+
+        local -a mqtt_cmake_args=(
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_OSX_ARCHITECTURES=${${target##*-}//universal/x86_64;arm64}
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
+          -DCMAKE_PREFIX_PATH="${advss_dep_path};${_plugin_deps}"
+          -DCMAKE_INSTALL_PREFIX="${advss_dep_path}"
+          -DPAHO_BUILD_SHARED=OFF
+          -DPAHO_BUILD_STATIC=ON
+          -DPAHO_WITH_MQTT_C=ON
+          -DOPENSSL_ROOT_DIR="${advss_dep_path}"
+          -DPAHO_WITH_SSL=OFF # TODO: figure out linking issues with openssl
+        )
+
+        pushd ${mqtt_dir}
+        log_info "Configure paho.mqtt.cpp ..."
+        cmake -S . -B ${mqtt_build_dir} ${mqtt_cmake_args}
+
+        log_info "Building paho.mqtt.cpp ..."
+        cmake --build ${mqtt_build_dir} --config Release
+
+        log_info "Installing paho.mqtt.cpp ..."
+        cmake --install ${mqtt_build_dir} --prefix "${advss_dep_path}" --config Release
+        popd
       ;;
     linux)
       # Nothing to do for now
