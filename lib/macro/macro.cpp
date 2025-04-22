@@ -252,19 +252,52 @@ bool Macro::CheckConditions(bool ignorePause)
 		return false;
 	}
 
-	_stop = false;
-	_matched = false;
-	for (auto &condition : _conditions) {
-		if (!condition) {
-			continue;
-		}
+	const auto checkConditionsTask =
+		[this,
+		 ignorePause](const std::deque<std::shared_ptr<MacroCondition>>
+				      &conditions) {
+			for (auto &condition : conditions) {
+				if (!condition) {
+					continue;
+				}
 
-		if (_paused && !ignorePause) {
-			vblog(LOG_INFO, "Macro %s is paused", _name.c_str());
+				if (_paused && !ignorePause) {
+					vblog(LOG_INFO, "Macro %s is paused",
+					      _name.c_str());
+					return false;
+				}
+
+				_matched = CheckConditionHelper(condition);
+			}
+			return _matched;
+		};
+
+	if (CheckInParallel()) {
+		if (!_conditionCheckFuture.valid()) {
+			_stop = false;
+			_matched = false;
+			_conditionCheckFuture = std::async(
+				std::launch::async,
+				[this, checkConditionsTask]() {
+					// Copy to avoid settings modifications
+					// causing issues
+					const auto conditionsCopy = _conditions;
+					checkConditionsTask(conditionsCopy);
+				});
 			return false;
 		}
-
-		_matched = CheckConditionHelper(condition);
+		if (_conditionCheckFuture.wait_for(std::chrono::seconds(0)) !=
+		    std::future_status::ready) {
+			vblog(LOG_INFO,
+			      "Macro %s still waiting for condition check result",
+			      _name.c_str());
+			return false;
+		}
+		_conditionCheckFuture.get();
+	} else {
+		_stop = false;
+		_matched = false;
+		_matched = checkConditionsTask(_conditions);
 	}
 
 	vblog(LOG_INFO, "Macro %s returned %d", _name.c_str(), _matched);
@@ -344,6 +377,13 @@ bool Macro::ConditionsShouldBeChecked() const
 
 bool Macro::ShouldRunActions() const
 {
+	if (CheckInParallel() && _conditionCheckFuture.valid()) {
+		vblog(LOG_INFO,
+		      "%s not ready to perform actions as condition check is still running",
+		      _name.c_str());
+		return false;
+	}
+
 	const bool hasActionsToExecute =
 		!_paused && (_matched || _elseActions.size() > 0) &&
 		(!_performActionsOnChange || _conditionSateChanged);
@@ -519,6 +559,29 @@ void Macro::Stop()
 	if (_backgroundThread.joinable()) {
 		_backgroundThread.join();
 	}
+	if (_conditionCheckFuture.valid()) {
+		_conditionCheckFuture.get();
+	}
+}
+
+void Macro::SetCheckInParallel(bool parallel)
+{
+	_checkInParallel = parallel;
+	_conditionCheckFuture = {};
+}
+
+bool Macro::ParallelTasksCompleted() const
+{
+	if (!CheckInParallel() && !RunInParallel()) {
+		return true;
+	}
+	if (RunInParallel() && !_done) {
+		return false;
+	}
+	if (CheckInParallel() && _conditionCheckFuture.valid()) {
+		return false;
+	}
+	return true;
 }
 
 MacroInputVariables Macro::GetInputVariables() const
@@ -720,6 +783,7 @@ bool Macro::Save(obs_data_t *obj, bool saveForCopy) const
 			 static_cast<int>(_pauseSaveBehavior));
 	obs_data_set_bool(obj, "pause", _paused);
 	obs_data_set_bool(obj, "parallel", _runInParallel);
+	obs_data_set_bool(obj, "checkConditionsInParallel", _checkInParallel);
 	obs_data_set_bool(obj, "onChange", _performActionsOnChange);
 	obs_data_set_bool(obj, "skipExecOnStart", _skipExecOnStart);
 	obs_data_set_bool(obj, "stopActionsIfNotDone", _stopActionsIfNotDone);
@@ -805,6 +869,7 @@ bool Macro::Load(obs_data_t *obj)
 		break;
 	}
 	_runInParallel = obs_data_get_bool(obj, "parallel");
+	_checkInParallel = obs_data_get_bool(obj, "checkConditionsInParallel");
 	_performActionsOnChange = obs_data_get_bool(obj, "onChange");
 	_skipExecOnStart = obs_data_get_bool(obj, "skipExecOnStart");
 	_stopActionsIfNotDone = obs_data_get_bool(obj, "stopActionsIfNotDone");
@@ -1476,6 +1541,14 @@ std::weak_ptr<Macro> GetWeakMacroByName(const char *name)
 void InvalidateMacroTempVarValues()
 {
 	for (const auto &m : macros) {
+		// Do not invalidate the temp vars set during condition checks
+		// or action executions running in parallel to the "main" macro
+		// loop, as otherwise access to the information stored in those
+		// variables might get lost while those checks or actions are
+		// still ongoing.
+		if (!m->ParallelTasksCompleted()) {
+			continue;
+		}
 		m->InvalidateTempVarValues();
 	}
 }
