@@ -275,12 +275,15 @@ static bool containsSensitiveData(obs_data_t *data)
 		obs_data_get_array(data, "twitchConnections");
 	OBSDataArrayAutoRelease websocketConnections =
 		obs_data_get_array(data, "websocketConnections");
+	OBSDataArrayAutoRelease mqttConnections =
+		obs_data_get_array(data, "mqttConnections");
 
 	auto isNotEmpty = [](obs_data_array *array) {
 		return obs_data_array_count(array) > 0;
 	};
 
-	return isNotEmpty(twitchTokens) || isNotEmpty(websocketConnections);
+	return isNotEmpty(twitchTokens) || isNotEmpty(websocketConnections) ||
+	       isNotEmpty(mqttConnections);
 }
 
 void AdvSceneSwitcher::on_exportSettings_clicked()
