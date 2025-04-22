@@ -86,9 +86,7 @@ bool AdvSceneSwitcher::AddNewMacro(std::shared_ptr<Macro> &res,
 		return false;
 	}
 
-	res = std::make_shared<Macro>(
-		name, GetGlobalMacroSettings()._newMacroRegisterHotkeys,
-		GetGlobalMacroSettings()._newMacroUseShortCircuitEvaluation);
+	res = std::make_shared<Macro>(name, GetGlobalMacroSettings());
 	return true;
 }
 

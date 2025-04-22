@@ -20,6 +20,7 @@
 namespace advss {
 
 class MacroDock;
+class GlobalMacroSettings;
 
 class Macro {
 	using TimePoint = std::chrono::high_resolution_clock::time_point;
@@ -27,8 +28,8 @@ class Macro {
 public:
 	enum class PauseStateSaveBehavior { PERSIST, PAUSE, UNPAUSE };
 
-	Macro(const std::string &name = "", const bool addHotkey = false,
-	      const bool shortCircuitEvaluation = false);
+	Macro(const std::string &name = "");
+	Macro(const std::string &name, const GlobalMacroSettings &settings);
 	~Macro();
 
 	std::string Name() const { return _name; }

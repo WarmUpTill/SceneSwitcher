@@ -3,6 +3,7 @@
 #include "macro-condition-factory.hpp"
 #include "macro-dock.hpp"
 #include "macro-helpers.hpp"
+#include "macro-settings.hpp"
 #include "plugin-state-helpers.hpp"
 #include "splitter-helpers.hpp"
 #include "sync-helpers.hpp"
@@ -76,15 +77,21 @@ namespace advss {
 
 static std::deque<std::shared_ptr<Macro>> macros;
 
-Macro::Macro(const std::string &name, const bool addHotkey,
-	     const bool shortCircuitEvaluation)
+Macro::Macro(const std::string &name)
 {
 	SetName(name);
-	if (addHotkey) {
+}
+
+Macro::Macro(const std::string &name, const GlobalMacroSettings &settings)
+	: Macro(name)
+{
+	if (settings._newMacroRegisterHotkeys) {
 		SetupHotkeys();
 	}
-	_registerHotkeys = addHotkey;
-	_useShortCircuitEvaluation = shortCircuitEvaluation;
+	_registerHotkeys = settings._newMacroRegisterHotkeys;
+	_checkInParallel = settings._newMacroCheckInParallel;
+	_useShortCircuitEvaluation =
+		settings._newMacroUseShortCircuitEvaluation;
 }
 
 Macro::~Macro()
@@ -104,7 +111,8 @@ std::shared_ptr<Macro>
 Macro::CreateGroup(const std::string &name,
 		   std::vector<std::shared_ptr<Macro>> &children)
 {
-	auto group = std::make_shared<Macro>(name, false);
+	auto group = std::make_shared<Macro>(name);
+	group->_registerHotkeys = false;
 	for (auto &c : children) {
 		c->SetParent(group);
 	}
