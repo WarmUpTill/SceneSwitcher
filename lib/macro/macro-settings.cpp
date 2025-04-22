@@ -19,6 +19,8 @@ void GlobalMacroSettings::Save(obs_data_t *obj) const
 	obs_data_set_bool(data, "highlightExecuted", _highlightExecuted);
 	obs_data_set_bool(data, "highlightConditions", _highlightConditions);
 	obs_data_set_bool(data, "highlightActions", _highlightActions);
+	obs_data_set_bool(data, "newMacroCheckInParallel",
+			  _newMacroCheckInParallel);
 	obs_data_set_bool(data, "newMacroRegisterHotkey",
 			  _newMacroRegisterHotkeys);
 	obs_data_set_bool(data, "newMacroUseShortCircuitEvaluation",
@@ -41,6 +43,8 @@ void GlobalMacroSettings::Load(obs_data_t *obj)
 	_highlightExecuted = obs_data_get_bool(data, "highlightExecuted");
 	_highlightConditions = obs_data_get_bool(data, "highlightConditions");
 	_highlightActions = obs_data_get_bool(data, "highlightActions");
+	_newMacroCheckInParallel =
+		obs_data_get_bool(data, "newMacroCheckInParallel");
 	_newMacroRegisterHotkeys =
 		obs_data_get_bool(data, "newMacroRegisterHotkey");
 	_newMacroUseShortCircuitEvaluation =
@@ -62,12 +66,16 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 		  "AdvSceneSwitcher.macroTab.highlightTrueConditions"))),
 	  _highlightActions(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.highlightPerformedActions"))),
+	  _newMacroCheckInParallel(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.newMacroCheckInParallel"))),
 	  _newMacroRegisterHotkeys(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.newMacroRegisterHotkey"))),
 	  _newMacroUseShortCircuitEvaluation(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.newMacroUseShortCircuitEvaluation"))),
 	  _saveSettingsOnMacroChange(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.saveSettingsOnMacroChange"))),
+	  _currentCheckInParallel(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.currentCheckInParallel"))),
 	  _currentMacroRegisterHotkeys(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentRegisterHotkeys"))),
 	  _currentUseShortCircuitEvaluation(new QCheckBox(obs_module_text(
@@ -106,6 +114,11 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	setModal(true);
 	setWindowModality(Qt::WindowModality::WindowModal);
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+	_newMacroCheckInParallel->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.macroTab.checkInParallel.tooltip"));
+	_currentCheckInParallel->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.macroTab.checkInParallel.tooltip"));
 
 	_newMacroUseShortCircuitEvaluation->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.macroTab.shortCircuit.tooltip"));
@@ -146,6 +159,8 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 		obs_module_text("AdvSceneSwitcher.macroTab.generalSettings"));
 	auto generalLayout = new QVBoxLayout;
 	generalLayout->addWidget(_saveSettingsOnMacroChange);
+	generalLayout->addWidget(_currentCheckInParallel);
+	generalLayout->addWidget(_newMacroCheckInParallel);
 	generalLayout->addWidget(_currentSkipOnStartup);
 	generalLayout->addWidget(_currentStopActionsIfNotDone);
 	generalLayout->addWidget(_currentUseShortCircuitEvaluation);
@@ -273,6 +288,7 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	_highlightExecutedMacros->setChecked(settings._highlightExecuted);
 	_highlightConditions->setChecked(settings._highlightConditions);
 	_highlightActions->setChecked(settings._highlightActions);
+	_newMacroCheckInParallel->setChecked(settings._newMacroCheckInParallel);
 	_newMacroRegisterHotkeys->setChecked(settings._newMacroRegisterHotkeys);
 	_newMacroUseShortCircuitEvaluation->setChecked(
 		settings._newMacroUseShortCircuitEvaluation);
@@ -280,20 +296,23 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 		settings._saveSettingsOnMacroChange);
 
 	if (!macro || macro->IsGroup()) {
-		hotkeyOptions->hide();
-
 		// General group
 		_currentSkipOnStartup->hide();
 		_currentStopActionsIfNotDone->hide();
 		_currentUseShortCircuitEvaluation->hide();
+		_currentCheckInParallel->hide();
 		SetLayoutVisible(customConditionIntervalLayout, false);
 		SetLayoutVisible(pauseStateSaveBehavorLayout, false);
+
+		// Hotkey group
+		_currentMacroRegisterHotkeys->hide();
 
 		inputOptions->hide();
 		_dockOptions->hide();
 		return;
 	}
 
+	_currentCheckInParallel->setChecked(macro->CheckInParallel());
 	_currentMacroRegisterHotkeys->setChecked(macro->PauseHotkeysEnabled());
 	_currentUseShortCircuitEvaluation->setChecked(
 		macro->ShortCircuitEvaluationEnabled());
@@ -431,6 +450,8 @@ bool MacroSettingsDialog::AskForSettings(QWidget *parent,
 	userInput._highlightConditions =
 		dialog._highlightConditions->isChecked();
 	userInput._highlightActions = dialog._highlightActions->isChecked();
+	userInput._newMacroCheckInParallel =
+		dialog._newMacroCheckInParallel->isChecked();
 	userInput._newMacroRegisterHotkeys =
 		dialog._newMacroRegisterHotkeys->isChecked();
 	userInput._newMacroUseShortCircuitEvaluation =
@@ -441,6 +462,7 @@ bool MacroSettingsDialog::AskForSettings(QWidget *parent,
 		return true;
 	}
 
+	macro->SetCheckInParallel(dialog._currentCheckInParallel->isChecked());
 	macro->EnablePauseHotkeys(
 		dialog._currentMacroRegisterHotkeys->isChecked());
 	macro->SetShortCircuitEvaluation(

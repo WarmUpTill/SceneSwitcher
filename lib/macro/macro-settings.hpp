@@ -23,6 +23,7 @@ public:
 	bool _highlightExecuted = false;
 	bool _highlightConditions = false;
 	bool _highlightActions = false;
+	bool _newMacroCheckInParallel = false;
 	bool _newMacroRegisterHotkeys = true;
 	bool _newMacroUseShortCircuitEvaluation = false;
 	bool _saveSettingsOnMacroChange = true;
@@ -52,10 +53,12 @@ private:
 	QCheckBox *_highlightExecutedMacros;
 	QCheckBox *_highlightConditions;
 	QCheckBox *_highlightActions;
+	QCheckBox *_newMacroCheckInParallel;
 	QCheckBox *_newMacroRegisterHotkeys;
 	QCheckBox *_newMacroUseShortCircuitEvaluation;
 	QCheckBox *_saveSettingsOnMacroChange;
 	// Current macro specific settings
+	QCheckBox *_currentCheckInParallel;
 	QCheckBox *_currentMacroRegisterHotkeys;
 	QCheckBox *_currentUseShortCircuitEvaluation;
 	QCheckBox *_currentUseCustomConditionCheckInterval;

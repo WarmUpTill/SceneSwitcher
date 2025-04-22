@@ -7,6 +7,7 @@
 #include "variable-string.hpp"
 #include "temp-variable.hpp"
 
+#include <future>
 #include <QString>
 #include <QByteArray>
 #include <string>
@@ -78,6 +79,9 @@ public:
 	void AddHelperThread(std::thread &&);
 	void SetRunInParallel(bool parallel) { _runInParallel = parallel; }
 	bool RunInParallel() const { return _runInParallel; }
+	bool CheckInParallel() const { return _checkInParallel; }
+	void SetCheckInParallel(bool parallel);
+	bool ParallelTasksCompleted() const;
 
 	// Input variables
 	MacroInputVariables GetInputVariables() const;
@@ -205,7 +209,9 @@ private:
 	bool _conditionSateChanged = false;
 
 	bool _runInParallel = false;
+	bool _checkInParallel = false;
 	bool _matched = false;
+	std::future<void> _conditionCheckFuture;
 	bool _lastMatched = false;
 	bool _performActionsOnChange = true;
 	bool _skipExecOnStart = false;
