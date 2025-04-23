@@ -19,6 +19,8 @@ The **Snap** package manager offers an OBS Studio installation which is bundled 
 sudo snap install obs-studio
 ```
 
+More information can be found [here](https://github.com/WarmUpTill/SceneSwitcher/wiki/Installation).
+
 ## Contributing
 
 - If you wish to contribute code to the project, have a look at this [section](BUILDING.md) describing how to compile the plugin.
