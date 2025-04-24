@@ -102,6 +102,11 @@ bool MacroActionHttp::PerformAction()
 		break;
 	}
 
+	if (VerboseLoggingEnabled() && !response) {
+		blog(LOG_INFO, "HTTP action error: %s",
+		     httplib::to_string(response.error()).c_str());
+	}
+
 	SetTempVarValue("status",
 			response ? std::to_string(response->status) : "");
 	SetTempVarValue("body", response ? response->body : "");
@@ -139,6 +144,7 @@ static std::string stringListToString(const StringList &list)
 	for (const auto &string : list) {
 		result += std::string(string) + ", ";
 	}
+	result.pop_back();
 	result.pop_back();
 	return result + "]";
 }
