@@ -47,7 +47,7 @@ static httplib::Params getParams(const StringList &strings)
 static void setTimeout(httplib::Client &client, const Duration &timeout)
 {
 	const time_t seconds = timeout.Seconds();
-	const time_t usecs = timeout.Milliseconds() * 1000;
+	const time_t usecs = timeout.Milliseconds() - (seconds * 1000);
 	client.set_read_timeout(seconds, usecs);
 	client.set_write_timeout(seconds, usecs);
 }
@@ -73,29 +73,42 @@ bool MacroActionHttp::PerformAction()
 	const auto headers = _setHeaders ? getHeaders(_headers)
 					 : httplib::Headers();
 
+	// This copy is necessary for some reason for MacOS but not Linux or
+	// Windows.
+	// Without it all requests fail with "Invalid argument" or
+	// "Failed to write connection" when sending out the data.
+	std::string path = _path;
+
 	httplib::Result response;
 	switch (_method) {
 	case MacroActionHttp::Method::GET:
-		response = cli.Get(_path, params, headers);
+		response = cli.Get(path, params, headers);
 		break;
 	case MacroActionHttp::Method::POST: {
-		const auto path = httplib::append_query_params(_path, params);
-		response = cli.Post(path, headers, _body, _contentType);
+		const auto pathWithParam =
+			httplib::append_query_params(path, params);
+		response =
+			cli.Post(pathWithParam, headers, _body, _contentType);
 		break;
 	}
 	case MacroActionHttp::Method::PUT: {
-		const auto path = httplib::append_query_params(_path, params);
-		response = cli.Put(path, headers, _body, _contentType);
+		const auto pathWithParam =
+			httplib::append_query_params(path, params);
+		response = cli.Put(pathWithParam, headers, _body, _contentType);
 		break;
 	}
 	case MacroActionHttp::Method::PATCH: {
-		const auto path = httplib::append_query_params(_path, params);
-		response = cli.Patch(path, headers, _body, _contentType);
+		const auto pathWithParam =
+			httplib::append_query_params(path, params);
+		response =
+			cli.Patch(pathWithParam, headers, _body, _contentType);
 		break;
 	}
 	case MacroActionHttp::Method::DELETE: {
-		const auto path = httplib::append_query_params(_path, params);
-		response = cli.Delete(path, headers, _body, _contentType);
+		const auto pathWithParam =
+			httplib::append_query_params(path, params);
+		response =
+			cli.Delete(pathWithParam, headers, _body, _contentType);
 		break;
 	}
 	default:
