@@ -314,7 +314,9 @@ bool Macro::CheckConditions(bool ignorePause)
 
 bool Macro::PerformActions(bool match, bool forceParallel, bool ignorePause)
 {
-	if (!_done) {
+	if (_actionRunFuture.valid() &&
+	    _actionRunFuture.wait_for(std::chrono::seconds(0)) !=
+		    std::future_status::ready) {
 		vblog(LOG_INFO, "Macro %s already running", _name.c_str());
 
 		if (!_stopActionsIfNotDone) {
@@ -332,14 +334,15 @@ bool Macro::PerformActions(bool match, bool forceParallel, bool ignorePause)
 		      : std::bind(&Macro::RunElseActions, this,
 				  std::placeholders::_1);
 	_stop = false;
-	_done = false;
 	bool ret = true;
 	if (_runInParallel || forceParallel) {
-		if (_backgroundThread.joinable()) {
-			_backgroundThread.join();
+		if (_actionRunFuture.valid()) {
+			_actionRunFuture.get();
 		}
-		_backgroundThread = std::thread(
-			[this, runFunc, ignorePause] { runFunc(ignorePause); });
+		_actionRunFuture = std::async(std::launch::async,
+					      [this, runFunc, ignorePause] {
+						      runFunc(ignorePause);
+					      });
 	} else {
 		ret = runFunc(ignorePause);
 	}
@@ -456,7 +459,6 @@ bool Macro::RunActionsHelper(
 			action->EnableHighlight();
 		}
 	}
-	_done = true;
 	return actionsExecutedSuccessfully;
 }
 
@@ -556,8 +558,8 @@ void Macro::Stop()
 			t.join();
 		}
 	}
-	if (_backgroundThread.joinable()) {
-		_backgroundThread.join();
+	if (_actionRunFuture.valid()) {
+		_actionRunFuture.get();
 	}
 	if (_conditionCheckFuture.valid()) {
 		_conditionCheckFuture.get();
@@ -572,10 +574,13 @@ void Macro::SetCheckInParallel(bool parallel)
 
 bool Macro::ParallelTasksCompleted() const
 {
-	if (!CheckInParallel() && !RunInParallel()) {
+	// A parallel action run might be triggered by RunInParallel() or the
+	// "Run Macro" button, so checking just for RunInParallel() will not
+	// suffice
+	if (!CheckInParallel() && !_actionRunFuture.valid()) {
 		return true;
 	}
-	if (RunInParallel() && !_done) {
+	if (_actionRunFuture.valid()) {
 		return false;
 	}
 	if (CheckInParallel() && _conditionCheckFuture.valid()) {

@@ -187,11 +187,10 @@ private:
 	std::string _name = "";
 	bool _die = false;
 	bool _stop = false;
-	bool _done = true;
+	std::future<void> _actionRunFuture;
 	TimePoint _lastCheckTime{};
 	TimePoint _lastUnpauseTime{};
 	TimePoint _lastExecutionTime{};
-	std::thread _backgroundThread;
 	std::vector<std::thread> _helperThreads;
 
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;
