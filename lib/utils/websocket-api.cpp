@@ -1,7 +1,9 @@
 #include "websocket-api.hpp"
-#include "log-helper.hpp"
 #include "obs-websocket-api.h"
 #include "plugin-state-helpers.hpp"
+
+// Must be after "obs-websocket-api.h" to avoid logging function conflict
+#include "log-helper.hpp"
 
 #include <mutex>
 

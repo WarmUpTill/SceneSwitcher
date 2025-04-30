@@ -12,7 +12,13 @@ namespace advss {
 #else
 
 // Print log with "[adv-ss] " prefix
-#define blog(level, msg, ...) blog(level, "[adv-ss] " msg, ##__VA_ARGS__)
+#define blog(level, msg, ...)                                        \
+	do {                                                         \
+		if (LoggingEnabled()) {                              \
+			blog(level, "[adv-ss] " msg, ##__VA_ARGS__); \
+		}                                                    \
+	} while (0)
+
 // Print log with "[adv-ss] " if log level is set to "verbose"
 #define vblog(level, msg, ...)                           \
 	do {                                             \
@@ -43,5 +49,15 @@ EXPORT bool VerboseLoggingEnabled();
 EXPORT bool ActionLoggingEnabled();
 // Returns true if log level is set to "macro", "action" or "verbose"
 EXPORT bool MacroLoggingEnabled();
+// Returns true if logging is enabled and false otherwise
+EXPORT bool LoggingEnabled();
+
+enum class LogLevel { DISABLE = -1, DEFAULT, LOG_MACRO, LOG_ACTION, VERBOSE };
+
+void SetLogLevel(LogLevel);
+LogLevel GetLogLevel();
+void SaveLogLevel(void *data);
+void LoadLogLevel(void *data);
+void PopulateLogLevelSelection(void *);
 
 } // namespace advss

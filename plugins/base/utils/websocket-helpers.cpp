@@ -1,12 +1,14 @@
 #include "websocket-helpers.hpp"
 #include "connection-manager.hpp"
-#include "log-helper.hpp"
 #include "plugin-state-helpers.hpp"
 #include "sync-helpers.hpp"
 #include "websocket-api.hpp"
 
 #include <QCryptographicHash>
 #include <obs-websocket-api.h>
+
+// Must be after "obs-websocket-api.h" to avoid logging function conflict
+#include "log-helper.hpp"
 
 namespace advss {
 
