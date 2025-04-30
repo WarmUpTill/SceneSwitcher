@@ -191,7 +191,7 @@ static obs_data_t *copyData(const OBSData &data)
 	return obs_data_create_from_json(json);
 }
 
-std::string EventSub::AddEventSubscribtion(std::shared_ptr<TwitchToken> token,
+std::string EventSub::AddEventSubscription(std::shared_ptr<TwitchToken> token,
 					   Subscription subscription)
 {
 	auto eventSub = token->GetEventSub();
@@ -341,7 +341,7 @@ void EventSub::OnMessage(connection_hdl, EventSubWSClient::message_ptr message)
 	} else if (messageType == "session_reconnect") {
 		HandleReconnect(payloadJson);
 	} else if (messageType == "revocation") {
-		HanldeRevocation(payloadJson);
+		HandleRevocation(payloadJson);
 	} else {
 		vblog(LOG_INFO, "ignoring message of unknown type '%s'",
 		      messageType.c_str());
@@ -387,7 +387,7 @@ void EventSub::HandleReconnect(obs_data_t *data)
 		      "Twitch EventSub reconnecting", ec);
 }
 
-void EventSub::HanldeRevocation(obs_data_t *data)
+void EventSub::HandleRevocation(obs_data_t *data)
 {
 	OBSDataAutoRelease subscription =
 		obs_data_get_obj(data, "subscription");

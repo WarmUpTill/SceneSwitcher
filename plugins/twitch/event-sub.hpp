@@ -55,7 +55,7 @@ public:
 	void Disconnect();
 	[[nodiscard]] EventSubMessageBuffer RegisterForEvents();
 	bool SubscriptionIsActive(const std::string &id);
-	static std::string AddEventSubscribtion(std::shared_ptr<TwitchToken>,
+	static std::string AddEventSubscription(std::shared_ptr<TwitchToken>,
 						Subscription);
 	void ClearActiveSubscriptions();
 
@@ -74,7 +74,7 @@ private:
 	void HandleKeepAlive() const;
 	void HandleNotification(obs_data_t *);
 	void HandleReconnect(obs_data_t *);
-	void HanldeRevocation(obs_data_t *);
+	void HandleRevocation(obs_data_t *);
 
 	void RegisterInstance();
 	void UnregisterInstance();

@@ -1008,7 +1008,7 @@ waitForSubscription(const std::shared_ptr<TwitchToken> &token,
 		    const Subscription &subscription)
 {
 	return std::async(std::launch::async, [token, subscription]() {
-		auto id = EventSub::AddEventSubscribtion(token, subscription);
+		auto id = EventSub::AddEventSubscription(token, subscription);
 		return id;
 	});
 }
