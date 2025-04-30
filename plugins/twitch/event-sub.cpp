@@ -127,6 +127,11 @@ void EventSub::ClearActiveSubscriptions()
 	_activeSubscriptions.clear();
 }
 
+void EventSub::EnableTimestampValidation(bool enable)
+{
+	_validateTimestamps = enable;
+}
+
 void EventSub::Disconnect()
 {
 	std::lock_guard<std::mutex> lock(_connectMtx);
@@ -318,7 +323,7 @@ void EventSub::OnMessage(connection_hdl, EventSubWSClient::message_ptr message)
 	OBSDataAutoRelease metadata = obs_data_get_obj(json, "metadata");
 	std::string timestamp =
 		obs_data_get_string(metadata, "message_timestamp");
-	if (!isValidTimestamp(timestamp)) {
+	if (_validateTimestamps && !isValidTimestamp(timestamp)) {
 		blog(LOG_WARNING,
 		     "Discarding Twitch EventSub with invalid timestamp %s",
 		     timestamp.c_str());

@@ -58,6 +58,7 @@ public:
 	static std::string AddEventSubscription(std::shared_ptr<TwitchToken>,
 						Subscription);
 	void ClearActiveSubscriptions();
+	void EnableTimestampValidation(bool enable);
 
 private:
 	void OnOpen(connection_hdl hdl);
@@ -89,6 +90,7 @@ private:
 	std::atomic_bool _disconnect{false};
 	std::string _url;
 	std::string _sessionID;
+	bool _validateTimestamps = true;
 
 	std::deque<std::string> _messageIDs;
 	std::mutex _subscriptionMtx;
