@@ -49,6 +49,7 @@ public:
 	std::optional<std::string> GetToken() const;
 	std::string GetUserID() const { return _userID; }
 	std::shared_ptr<EventSub> GetEventSub();
+	bool ValidateTimestamps() const { return _validateEventSubTimestamps; }
 	bool IsValid(bool forceUpdate = false) const;
 	size_t PermissionCount() const { return _tokenOptions.size(); }
 
@@ -57,6 +58,7 @@ private:
 	std::string _userID;
 	std::set<TokenOption> _tokenOptions = TokenOption::GetAllTokenOptions();
 	std::shared_ptr<EventSub> _eventSub;
+	bool _validateEventSubTimestamps = true;
 
 	static bool _setup;
 
@@ -120,6 +122,7 @@ private:
 	TokenGrabberThread _tokenGrabber;
 	TwitchToken _currentToken;
 	std::unordered_map<std::string, QCheckBox *> _optionWidgets;
+	QCheckBox *_validateTimestamps;
 	QTimer _validationTimer;
 };
 

@@ -158,6 +158,9 @@ void TwitchToken::Load(obs_data_t *obj)
 	Item::Load(obj);
 	_token = obs_data_get_string(obj, "token");
 	_userID = obs_data_get_string(obj, "userID");
+	obs_data_set_default_bool(obj, "validateEventSubTimestamps", true);
+	_validateEventSubTimestamps =
+		obs_data_get_bool(obj, "validateEventSubTimestamps");
 	_tokenOptions.clear();
 	OBSDataArrayAutoRelease options = obs_data_get_array(obj, "options");
 	size_t count = obs_data_array_count(options);
@@ -174,6 +177,8 @@ void TwitchToken::Save(obs_data_t *obj) const
 	Item::Save(obj);
 	obs_data_set_string(obj, "token", _token.c_str());
 	obs_data_set_string(obj, "userID", _userID.c_str());
+	obs_data_set_bool(obj, "validateEventSubTimestamps",
+			  _validateEventSubTimestamps);
 	OBSDataArrayAutoRelease options = obs_data_array_create();
 	for (auto &option : _tokenOptions) {
 		OBSDataAutoRelease arrayObj = obs_data_create();
@@ -260,6 +265,8 @@ std::shared_ptr<EventSub> TwitchToken::GetEventSub()
 {
 	if (!_eventSub) {
 		_eventSub = std::make_shared<EventSub>();
+		_eventSub->EnableTimestampValidation(
+			_validateEventSubTimestamps);
 	}
 	return _eventSub;
 }
@@ -445,7 +452,9 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 	  _showToken(new QPushButton()),
 	  _currentTokenValue(new QLineEdit()),
 	  _tokenStatus(new QLabel()),
-	  _generalSettingsGrid(new QGridLayout())
+	  _generalSettingsGrid(new QGridLayout()),
+	  _validateTimestamps(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.twitchToken.validateTimestamps")))
 {
 	_showToken->setMaximumWidth(22);
 	_showToken->setFlat(true);
@@ -511,6 +520,7 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 	auto layout = new QVBoxLayout(contentWidget);
 	layout->addLayout(_generalSettingsGrid);
 	layout->addWidget(optionsBox);
+	layout->addWidget(_validateTimestamps);
 	layout->setContentsMargins(0, 0, 0, 0);
 	scrollArea->setWidget(contentWidget);
 
@@ -531,6 +541,8 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 		HighlightWidget(_requestToken, Qt::green, QColor(0, 0, 0, 0),
 				true);
 	}
+
+	_validateTimestamps->setChecked(settings._validateEventSubTimestamps);
 
 	_currentToken = settings;
 
@@ -737,6 +749,12 @@ bool TwitchTokenSettingsDialog::AskForSettings(QWidget *parent,
 
 	settings = dialog._currentToken;
 	settings._tokenOptions = dialog.GetEnabledOptions();
+	settings._validateEventSubTimestamps =
+		dialog._validateTimestamps->isChecked();
+	if (settings._eventSub) {
+		settings._eventSub->EnableTimestampValidation(
+			settings._validateEventSubTimestamps);
+	}
 	return true;
 }
 
