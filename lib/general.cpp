@@ -113,12 +113,12 @@ void AdvSceneSwitcher::on_startupBehavior_currentIndexChanged(int index)
 		static_cast<SwitcherData::StartupBehavior>(index);
 }
 
-void AdvSceneSwitcher::on_logLevel_currentIndexChanged(int value)
+void AdvSceneSwitcher::on_logLevel_currentIndexChanged(int idx)
 {
 	if (loading) {
 		return;
 	}
-	switcher->logLevel = static_cast<SwitcherData::LogLevel>(value);
+	SetLogLevel(static_cast<LogLevel>(ui->logLevel->itemData(idx).toInt()));
 }
 
 void AdvSceneSwitcher::on_autoStartEvent_currentIndexChanged(int index)
@@ -529,8 +529,8 @@ void SwitcherData::SaveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "autoStartEvent",
 			 static_cast<int>(autoStartEvent));
 
-	obs_data_set_int(obj, "logLevel", static_cast<int>(logLevel));
-	obs_data_set_int(obj, "logLevelVersion", 1);
+	SaveLogLevel(obj);
+
 	obs_data_set_bool(obj, "showSystemTrayNotifications",
 			  showSystemTrayNotifications);
 	obs_data_set_bool(obj, "disableHints", disableHints);
@@ -586,25 +586,7 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 	autoStartEvent =
 		static_cast<AutoStart>(obs_data_get_int(obj, "autoStartEvent"));
 
-	logLevel = static_cast<LogLevel>(obs_data_get_int(obj, "logLevel"));
-	if (obs_data_get_int(obj, "logLevelVersion") < 1) {
-		enum OldLogLevel { DEFAULT, LOG_ACTION, VERBOSE };
-		OldLogLevel oldLogLevel = static_cast<OldLogLevel>(
-			obs_data_get_int(obj, "logLevel"));
-		switch (oldLogLevel) {
-		case DEFAULT:
-			logLevel = LogLevel::DEFAULT;
-			break;
-		case LOG_ACTION:
-			logLevel = LogLevel::LOG_ACTION;
-			break;
-		case VERBOSE:
-			logLevel = LogLevel::VERBOSE;
-			break;
-		default:
-			break;
-		}
-	}
+	LoadLogLevel(obj);
 
 	showSystemTrayNotifications =
 		obs_data_get_bool(obj, "showSystemTrayNotifications");
@@ -894,7 +876,9 @@ void AdvSceneSwitcher::SetupGeneralTab()
 			 SIGNAL(DurationChanged(const Duration &)), this,
 			 SLOT(CooldownDurationChanged(const Duration &)));
 
-	ui->logLevel->setCurrentIndex(static_cast<int>(switcher->logLevel));
+	PopulateLogLevelSelection(ui->logLevel);
+	ui->logLevel->setCurrentIndex(
+		ui->logLevel->findData(static_cast<int>(GetLogLevel())));
 
 	ui->saveWindowGeo->setChecked(switcher->saveWindowGeo);
 	ui->showTrayNotifications->setChecked(

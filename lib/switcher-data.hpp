@@ -132,9 +132,6 @@ public:
 	bool transitionOverrideOverride = false;
 	bool adjustActiveTransitionType = true;
 
-	enum class LogLevel { DEFAULT, LOG_MACRO, LOG_ACTION, VERBOSE };
-	LogLevel logLevel = LogLevel::DEFAULT;
-
 	/* --- End of General tab section --- */
 
 	std::string lastTitle;

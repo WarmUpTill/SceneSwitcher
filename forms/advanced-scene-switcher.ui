@@ -182,26 +182,6 @@
                     </item>
                     <item>
                      <widget class="QComboBox" name="logLevel">
-                      <item>
-                       <property name="text">
-                        <string>AdvSceneSwitcher.generalTab.generalBehavior.logLevel.default</string>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>AdvSceneSwitcher.generalTab.generalBehavior.logLevel.logMacro</string>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>AdvSceneSwitcher.generalTab.generalBehavior.logLevel.logAction</string>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>AdvSceneSwitcher.generalTab.generalBehavior.logLevel.verbose</string>
-                       </property>
-                      </item>
                      </widget>
                     </item>
                     <item>
