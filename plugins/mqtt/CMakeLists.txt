@@ -31,6 +31,8 @@ target_sources(
           macro-condition-mqtt.cpp
           mqtt-helpers.cpp
           mqtt-helpers.hpp
+          mqtt-tab.cpp
+          mqtt-tab.hpp
           topic-selection.cpp
           topic-selection.hpp)
 
