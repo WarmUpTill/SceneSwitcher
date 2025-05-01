@@ -40,6 +40,8 @@ public:
 	void Save(obs_data_t *data) const;
 	MqttMessageBuffer RegisterForEvents();
 	bool ConnectOnStartup() const { return _connectOnStart; }
+	QString GetURI() const { return QString::fromStdString(_uri); }
+	int GetTopicSubscriptionCount() const { return _topics.size(); }
 	QString GetStatus() const;
 
 private:
