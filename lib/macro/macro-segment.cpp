@@ -324,7 +324,7 @@ void MacroSegmentEdit::HeaderInfoChanged(const QString &text)
 	_headerInfo->setText(text);
 }
 
-void MacroSegmentEdit::Collapsed(bool collapsed)
+void MacroSegmentEdit::Collapsed(bool collapsed) const
 {
 	if (Data()) {
 		Data()->SetCollapsed(collapsed);
