@@ -35,6 +35,9 @@ MacroSegmentList::MacroSegmentList(QWidget *parent)
 	setWidget(wrapper);
 	setWidgetResizable(true);
 	setAcceptDrops(true);
+
+	connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
+		[this]() { SetupVisibleMacroSegmentWidgets(); });
 }
 
 MacroSegmentList::~MacroSegmentList()
@@ -98,16 +101,18 @@ void MacroSegmentList::SetHelpMsgVisible(bool visible) const
 	_helpMsg->setVisible(visible);
 }
 
-void MacroSegmentList::Insert(int idx, MacroSegmentEdit *widget)
+void MacroSegmentList::Insert(int idx, QWidget *widget)
 {
 	widget->installEventFilter(this);
 	_contentLayout->insertWidget(idx, widget);
+	SetupVisibleMacroSegmentWidgets();
 }
 
 void MacroSegmentList::Add(QWidget *widget)
 {
 	widget->installEventFilter(this);
 	_contentLayout->addWidget(widget);
+	SetupVisibleMacroSegmentWidgets();
 }
 
 void MacroSegmentList::Remove(int idx) const
@@ -322,6 +327,36 @@ QRect MacroSegmentList::GetContentItemRectWithPadding(int idx) const
 	return rect;
 }
 
+void MacroSegmentList::SetVisibilityCheckEnable(bool enable)
+{
+	_checkVisibility = enable;
+
+	if (_checkVisibility) {
+		QTimer::singleShot(0, this, [this]() {
+			SetupVisibleMacroSegmentWidgets();
+		});
+	}
+}
+
+void MacroSegmentList::SetupVisibleMacroSegmentWidgets()
+{
+	if (!_checkVisibility) {
+		return;
+	}
+
+	const auto viewportRect = viewport()->rect();
+
+	for (auto segment : widget()->findChildren<MacroSegmentEdit *>()) {
+		const auto pos = segment->mapTo(viewport(), QPoint(0, 0));
+		const QRect rect(pos, segment->size());
+		if (!viewportRect.intersects(rect)) {
+			continue;
+		}
+
+		segment->SetupWidgets();
+	}
+}
+
 int MacroSegmentList::GetSegmentIndexFromPos(const QPoint &pos) const
 {
 	int idx = -1;
@@ -453,6 +488,12 @@ void MacroSegmentList::dropEvent(QDropEvent *event)
 		emit Reorder(dropPosition, _dragPosition);
 	}
 	_dragPosition = -1;
+}
+
+void MacroSegmentList::resizeEvent(QResizeEvent *event)
+{
+	QWidget::resizeEvent(event);
+	SetupVisibleMacroSegmentWidgets();
 }
 
 } // namespace advss

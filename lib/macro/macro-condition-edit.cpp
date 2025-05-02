@@ -138,7 +138,7 @@ MacroConditionEdit::MacroConditionEdit(
 	mainLayout->addWidget(_frame);
 	setLayout(mainLayout);
 
-	UpdateEntryData(id);
+	SetupWidgets(true);
 	_loading = false;
 }
 
@@ -178,23 +178,36 @@ void MacroConditionEdit::SetRootNode(bool root)
 	SetLogicSelection();
 }
 
-void MacroConditionEdit::UpdateEntryData(const std::string &id)
+void MacroConditionEdit::SetupWidgets(bool basicSetup)
 {
+	if (_allWidgetsAreSetup) {
+		return;
+	}
+
+	const auto id = (*_entryData)->GetId();
 	_conditionSelection->setCurrentText(obs_module_text(
 		MacroConditionFactory::GetConditionName(id).c_str()));
-	auto widget =
-		MacroConditionFactory::CreateWidget(id, this, *_entryData);
-	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
-			 this, SLOT(HeaderInfoChanged(const QString &)));
+
 	HeaderInfoChanged(
 		QString::fromStdString((*_entryData)->GetShortDesc()));
 	SetLogicSelection();
-	_section->SetContent(widget, (*_entryData)->GetCollapsed());
 
 	_dur->setVisible(MacroConditionFactory::UsesDurationModifier(id));
 	auto modifier = (*_entryData)->GetDurationModifier();
 	_dur->SetValue(modifier);
+
+	if (basicSetup) {
+		return;
+	}
+
+	auto widget =
+		MacroConditionFactory::CreateWidget(id, this, *_entryData);
+	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
+			 this, SLOT(HeaderInfoChanged(const QString &)));
+	_section->SetContent(widget, (*_entryData)->GetCollapsed());
 	SetFocusPolicyOfWidgets();
+
+	_allWidgetsAreSetup = true;
 }
 
 void MacroConditionEdit::SetEntryData(std::shared_ptr<MacroCondition> *data)

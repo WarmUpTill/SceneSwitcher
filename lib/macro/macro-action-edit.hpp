@@ -17,7 +17,7 @@ public:
 		QWidget *parent = nullptr,
 		std::shared_ptr<MacroAction> * = nullptr,
 		const std::string &id = MacroAction::GetDefaultID().data());
-	void UpdateEntryData(const std::string &id);
+	void SetupWidgets(bool basicSetup = false);
 	void SetEntryData(std::shared_ptr<MacroAction> *);
 
 private slots:
