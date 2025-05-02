@@ -106,6 +106,7 @@ public:
 	void SetCollapsed(bool collapsed);
 	void SetSelected(bool);
 	virtual std::shared_ptr<MacroSegment> Data() const = 0;
+	virtual void SetupWidgets(bool basicSetup = false) = 0;
 
 public slots:
 	void HeaderInfoChanged(const QString &);
@@ -130,6 +131,7 @@ protected:
 	QLabel *_headerInfo;
 	QWidget *_frame;
 	QVBoxLayout *_contentLayout;
+	bool _allWidgetsAreSetup = false;
 
 private:
 	enum class DropLineState {

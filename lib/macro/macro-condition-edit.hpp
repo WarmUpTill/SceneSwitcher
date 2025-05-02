@@ -41,7 +41,7 @@ public:
 		bool root = true);
 	bool IsRootNode() const;
 	void SetRootNode(bool);
-	void UpdateEntryData(const std::string &id);
+	void SetupWidgets(bool basicSetup = false);
 	void SetEntryData(std::shared_ptr<MacroCondition> *);
 
 private slots:

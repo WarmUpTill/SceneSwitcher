@@ -47,6 +47,12 @@ void Section::Collapse(bool collapse)
 	_toggleButton->setChecked(collapse);
 	_toggleButton->setArrowType(collapse ? Qt::ArrowType::RightArrow
 					     : Qt::ArrowType::DownArrow);
+	if (!_toggleAnimation) {
+		_collapsed = collapse;
+		emit Collapsed(collapse);
+		return;
+	}
+
 	_toggleAnimation->setDirection(collapse ? QAbstractAnimation::Backward
 						: QAbstractAnimation::Forward);
 	_transitioning = true;

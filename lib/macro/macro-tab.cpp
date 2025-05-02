@@ -531,29 +531,56 @@ void AdvSceneSwitcher::on_runMacroOnChange_stateChanged(int value) const
 void AdvSceneSwitcher::PopulateMacroActions(Macro &m, uint32_t afterIdx)
 {
 	auto &actions = m.Actions();
+
+	// The layout system has not completed geometry propagation yet, so we
+	// can skip those checks for now
+	ui->actionsList->SetVisibilityCheckEnable(false);
+
 	for (; afterIdx < actions.size(); afterIdx++) {
 		auto newEntry = new MacroActionEdit(this, &actions[afterIdx],
 						    actions[afterIdx]->GetId());
 		ui->actionsList->Add(newEntry);
 	}
 	ui->actionsList->SetHelpMsgVisible(actions.size() == 0);
+
+	// Give the layout system time before enabling the visibility checks and
+	// fully constructing the visible macro segments
+	QTimer::singleShot(0, this, [this]() {
+		ui->actionsList->SetVisibilityCheckEnable(true);
+	});
 }
 
 void AdvSceneSwitcher::PopulateMacroElseActions(Macro &m, uint32_t afterIdx)
 {
 	auto &actions = m.ElseActions();
+
+	// The layout system has not completed geometry propagation yet, so we
+	// can skip those checks for now
+	ui->elseActionsList->SetVisibilityCheckEnable(false);
+
 	for (; afterIdx < actions.size(); afterIdx++) {
 		auto newEntry = new MacroActionEdit(this, &actions[afterIdx],
 						    actions[afterIdx]->GetId());
 		ui->elseActionsList->Add(newEntry);
 	}
 	ui->elseActionsList->SetHelpMsgVisible(actions.size() == 0);
+
+	// Give the layout system time before enabling the visibility checks and
+	// fully constructing the visible macro segments
+	QTimer::singleShot(0, this, [this]() {
+		ui->elseActionsList->SetVisibilityCheckEnable(true);
+	});
 }
 
 void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
 {
 	bool root = afterIdx == 0;
 	auto &conditions = m.Conditions();
+
+	// The layout system has not completed geometry propagation yet, so we
+	// can skip those checks for now
+	ui->conditionsList->SetVisibilityCheckEnable(false);
+
 	for (; afterIdx < conditions.size(); afterIdx++) {
 		auto newEntry = new MacroConditionEdit(
 			this, &conditions[afterIdx],
@@ -562,6 +589,12 @@ void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
 		root = false;
 	}
 	ui->conditionsList->SetHelpMsgVisible(conditions.size() == 0);
+
+	// Give the layout system time before enabling the visibility checks and
+	// fully constructing the visible macro segments
+	QTimer::singleShot(0, this, [this]() {
+		ui->conditionsList->SetVisibilityCheckEnable(true);
+	});
 }
 
 void AdvSceneSwitcher::SetActionData(Macro &m) const

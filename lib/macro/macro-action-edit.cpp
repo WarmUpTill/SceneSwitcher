@@ -61,10 +61,38 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	setLayout(mainLayout);
 
 	_entryData = entryData;
-	UpdateEntryData(id);
+	SetupWidgets(true);
 
 	_actionStateTimer.start(300);
 	_loading = false;
+}
+
+void MacroActionEdit::SetupWidgets(bool basicSetup)
+{
+	if (_allWidgetsAreSetup) {
+		return;
+	}
+
+	const auto id = (*_entryData)->GetId();
+	_actionSelection->setCurrentText(
+		obs_module_text(MacroActionFactory::GetActionName(id).c_str()));
+	const bool enabled = (*_entryData)->Enabled();
+	_enable->setChecked(enabled);
+	SetDisableEffect(!enabled);
+	HeaderInfoChanged(
+		QString::fromStdString((*_entryData)->GetShortDesc()));
+
+	if (basicSetup) {
+		return;
+	}
+
+	auto widget = MacroActionFactory::CreateWidget(id, this, *_entryData);
+	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
+			 this, SLOT(HeaderInfoChanged(const QString &)));
+	_section->SetContent(widget, (*_entryData)->GetCollapsed());
+	SetFocusPolicyOfWidgets();
+
+	_allWidgetsAreSetup = true;
 }
 
 void MacroActionEdit::ActionSelectionChanged(const QString &text)
@@ -93,22 +121,6 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
 			 this, SLOT(HeaderInfoChanged(const QString &)));
 	_section->SetContent(widget);
-	SetFocusPolicyOfWidgets();
-}
-
-void MacroActionEdit::UpdateEntryData(const std::string &id)
-{
-	_actionSelection->setCurrentText(
-		obs_module_text(MacroActionFactory::GetActionName(id).c_str()));
-	const bool enabled = (*_entryData)->Enabled();
-	_enable->setChecked(enabled);
-	SetDisableEffect(!enabled);
-	auto widget = MacroActionFactory::CreateWidget(id, this, *_entryData);
-	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
-			 this, SLOT(HeaderInfoChanged(const QString &)));
-	HeaderInfoChanged(
-		QString::fromStdString((*_entryData)->GetShortDesc()));
-	_section->SetContent(widget, (*_entryData)->GetCollapsed());
 	SetFocusPolicyOfWidgets();
 }
 
