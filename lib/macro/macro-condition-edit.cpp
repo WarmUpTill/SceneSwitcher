@@ -156,7 +156,7 @@ void MacroConditionEdit::LogicSelectionChanged(int idx)
 	SetEnableAppearance(logic != Logic::Type::NONE);
 }
 
-bool MacroConditionEdit::IsRootNode()
+bool MacroConditionEdit::IsRootNode() const
 {
 	return _isRoot;
 }

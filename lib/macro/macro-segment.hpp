@@ -48,7 +48,7 @@ protected:
 	friend void IncrementVariableRef(MacroSegment *);
 	friend void DecrementVariableRef(MacroSegment *);
 	void SetVariableValue(const std::string &value);
-	bool IsReferencedInVars() { return _variableRefs != 0; }
+	bool IsReferencedInVars() const { return _variableRefs != 0; }
 
 	virtual void SetupTempVars();
 	void AddTempvar(const std::string &id, const std::string &name,
@@ -111,7 +111,7 @@ public slots:
 	void HeaderInfoChanged(const QString &);
 
 protected slots:
-	void Collapsed(bool);
+	void Collapsed(bool) const;
 signals:
 	void MacroAdded(const QString &name);
 	void MacroRemoved(const QString &name);

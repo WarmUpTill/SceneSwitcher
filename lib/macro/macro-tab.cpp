@@ -158,7 +158,7 @@ void AdvSceneSwitcher::RemoveSelectedMacros()
 	if (macroCount == 1) {
 		QString deleteWarning = obs_module_text(
 			"AdvSceneSwitcher.macroTab.removeSingleMacroPopup.text");
-		auto macro = macros.at(0);
+		auto &macro = macros.at(0);
 		deleteWarning = deleteWarning.arg(
 			QString::fromStdString(macro->Name()));
 
@@ -198,7 +198,7 @@ void AdvSceneSwitcher::on_macroRemove_clicked()
 	RemoveSelectedMacros();
 }
 
-void AdvSceneSwitcher::on_macroUp_clicked()
+void AdvSceneSwitcher::on_macroUp_clicked() const
 {
 	auto macro = GetSelectedMacro();
 	if (!macro) {
@@ -207,7 +207,7 @@ void AdvSceneSwitcher::on_macroUp_clicked()
 	ui->macros->Up(macro);
 }
 
-void AdvSceneSwitcher::on_macroDown_clicked()
+void AdvSceneSwitcher::on_macroDown_clicked() const
 {
 	auto macro = GetSelectedMacro();
 	if (!macro) {
@@ -277,7 +277,7 @@ static void addGroupSubitems(std::vector<std::shared_ptr<Macro>> &macros,
 	macros.insert(it, subitems.begin(), subitems.end());
 }
 
-void AdvSceneSwitcher::ExportMacros()
+void AdvSceneSwitcher::ExportMacros() const
 {
 	auto selectedMacros = GetSelectedMacros();
 	auto macros = selectedMacros;
@@ -508,7 +508,7 @@ void AdvSceneSwitcher::on_macroName_editingFinished()
 	RenameMacro(macro, newName);
 }
 
-void AdvSceneSwitcher::on_runMacroInParallel_stateChanged(int value)
+void AdvSceneSwitcher::on_runMacroInParallel_stateChanged(int value) const
 {
 	auto macro = GetSelectedMacro();
 	if (!macro) {
@@ -518,7 +518,7 @@ void AdvSceneSwitcher::on_runMacroInParallel_stateChanged(int value)
 	macro->SetRunInParallel(value);
 }
 
-void AdvSceneSwitcher::on_runMacroOnChange_stateChanged(int value)
+void AdvSceneSwitcher::on_runMacroOnChange_stateChanged(int value) const
 {
 	auto macro = GetSelectedMacro();
 	if (!macro) {
@@ -564,7 +564,7 @@ void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
 	ui->conditionsList->SetHelpMsgVisible(conditions.size() == 0);
 }
 
-void AdvSceneSwitcher::SetActionData(Macro &m)
+void AdvSceneSwitcher::SetActionData(Macro &m) const
 {
 	auto &actions = m.Actions();
 	for (int idx = 0; idx < ui->actionsList->ContentLayout()->count();
@@ -581,7 +581,7 @@ void AdvSceneSwitcher::SetActionData(Macro &m)
 	}
 }
 
-void AdvSceneSwitcher::SetElseActionData(Macro &m)
+void AdvSceneSwitcher::SetElseActionData(Macro &m) const
 {
 	auto &actions = m.ElseActions();
 	for (int idx = 0; idx < ui->elseActionsList->ContentLayout()->count();
@@ -598,7 +598,7 @@ void AdvSceneSwitcher::SetElseActionData(Macro &m)
 	}
 }
 
-void AdvSceneSwitcher::SetConditionData(Macro &m)
+void AdvSceneSwitcher::SetConditionData(Macro &m) const
 {
 	auto &conditions = m.Conditions();
 	for (int idx = 0; idx < ui->conditionsList->ContentLayout()->count();
@@ -676,7 +676,7 @@ void AdvSceneSwitcher::SetEditMacro(Macro &m)
 		m.GetElseActionSplitterPosition());
 }
 
-void AdvSceneSwitcher::SetMacroEditAreaDisabled(bool disable)
+void AdvSceneSwitcher::SetMacroEditAreaDisabled(bool disable) const
 {
 	ui->macroName->setDisabled(disable);
 	ui->runMacro->setDisabled(disable);
@@ -687,32 +687,32 @@ void AdvSceneSwitcher::SetMacroEditAreaDisabled(bool disable)
 	ui->macroActionConditionSplitter->setDisabled(disable);
 }
 
-void AdvSceneSwitcher::HighlightAction(int idx, QColor color)
+void AdvSceneSwitcher::HighlightAction(int idx, QColor color) const
 {
 	ui->actionsList->Highlight(idx, color);
 }
 
-void AdvSceneSwitcher::HighlightElseAction(int idx, QColor color)
+void AdvSceneSwitcher::HighlightElseAction(int idx, QColor color) const
 {
 	ui->elseActionsList->Highlight(idx, color);
 }
 
-void AdvSceneSwitcher::HighlightCondition(int idx, QColor color)
+void AdvSceneSwitcher::HighlightCondition(int idx, QColor color) const
 {
 	ui->conditionsList->Highlight(idx, color);
 }
 
-std::shared_ptr<Macro> AdvSceneSwitcher::GetSelectedMacro()
+std::shared_ptr<Macro> AdvSceneSwitcher::GetSelectedMacro() const
 {
 	return ui->macros->GetCurrentMacro();
 }
 
-std::vector<std::shared_ptr<Macro>> AdvSceneSwitcher::GetSelectedMacros()
+std::vector<std::shared_ptr<Macro>> AdvSceneSwitcher::GetSelectedMacros() const
 {
 	return ui->macros->GetCurrentMacros();
 }
 
-void AdvSceneSwitcher::MacroSelectionAboutToChange()
+void AdvSceneSwitcher::MacroSelectionAboutToChange() const
 {
 	if (loading) {
 		return;
@@ -768,7 +768,7 @@ void AdvSceneSwitcher::MacroSelectionChanged()
 	}
 }
 
-void AdvSceneSwitcher::HighlightOnChange()
+void AdvSceneSwitcher::HighlightOnChange() const
 {
 	if (!GetGlobalMacroSettings()._highlightActions &&
 	    !GetGlobalMacroSettings()._highlightExecuted) {
@@ -1304,8 +1304,8 @@ void AdvSceneSwitcher::CopyMacro()
 	emit MacroAdded(QString::fromStdString(name));
 }
 
-void setCollapsedHelper(const std::shared_ptr<Macro> &m, MacroSegmentList *list,
-			bool collapsed)
+static void setCollapsedHelper(const std::shared_ptr<Macro> &m,
+			       MacroSegmentList *list, bool collapsed)
 {
 	if (!m) {
 		return;
@@ -1313,32 +1313,32 @@ void setCollapsedHelper(const std::shared_ptr<Macro> &m, MacroSegmentList *list,
 	list->SetCollapsed(collapsed);
 }
 
-void AdvSceneSwitcher::ExpandAllActions()
+void AdvSceneSwitcher::ExpandAllActions() const
 {
 	setCollapsedHelper(GetSelectedMacro(), ui->actionsList, false);
 }
 
-void AdvSceneSwitcher::ExpandAllElseActions()
+void AdvSceneSwitcher::ExpandAllElseActions() const
 {
 	setCollapsedHelper(GetSelectedMacro(), ui->elseActionsList, false);
 }
 
-void AdvSceneSwitcher::ExpandAllConditions()
+void AdvSceneSwitcher::ExpandAllConditions() const
 {
 	setCollapsedHelper(GetSelectedMacro(), ui->conditionsList, false);
 }
 
-void AdvSceneSwitcher::CollapseAllActions()
+void AdvSceneSwitcher::CollapseAllActions() const
 {
 	setCollapsedHelper(GetSelectedMacro(), ui->actionsList, true);
 }
 
-void AdvSceneSwitcher::CollapseAllElseActions()
+void AdvSceneSwitcher::CollapseAllElseActions() const
 {
 	setCollapsedHelper(GetSelectedMacro(), ui->elseActionsList, true);
 }
 
-void AdvSceneSwitcher::CollapseAllConditions()
+void AdvSceneSwitcher::CollapseAllConditions() const
 {
 	setCollapsedHelper(GetSelectedMacro(), ui->conditionsList, true);
 }
@@ -1353,7 +1353,7 @@ static void reduceSizeOfSplitterIdx(QSplitter *splitter, int idx)
 	splitter->setSizes(sizes);
 }
 
-void AdvSceneSwitcher::MinimizeActions()
+void AdvSceneSwitcher::MinimizeActions() const
 {
 	auto macro = GetSelectedMacro();
 	if (!macro) {
@@ -1367,13 +1367,13 @@ void AdvSceneSwitcher::MinimizeActions()
 	}
 }
 
-void AdvSceneSwitcher::MaximizeActions()
+void AdvSceneSwitcher::MaximizeActions() const
 {
 	MinimizeElseActions();
 	MinimizeConditions();
 }
 
-void AdvSceneSwitcher::MinimizeElseActions()
+void AdvSceneSwitcher::MinimizeElseActions() const
 {
 	auto macro = GetSelectedMacro();
 	if (!macro) {
@@ -1386,24 +1386,24 @@ void AdvSceneSwitcher::MinimizeElseActions()
 	}
 }
 
-void AdvSceneSwitcher::MaximizeElseActions()
+void AdvSceneSwitcher::MaximizeElseActions() const
 {
 	MinimizeConditions();
 	reduceSizeOfSplitterIdx(ui->macroElseActionSplitter, 0);
 }
 
-void AdvSceneSwitcher::MinimizeConditions()
+void AdvSceneSwitcher::MinimizeConditions() const
 {
 	reduceSizeOfSplitterIdx(ui->macroActionConditionSplitter, 0);
 }
 
-void AdvSceneSwitcher::MaximizeConditions()
+void AdvSceneSwitcher::MaximizeConditions() const
 {
 	MinimizeElseActions();
 	MinimizeActions();
 }
 
-void AdvSceneSwitcher::on_toggleElseActions_clicked()
+void AdvSceneSwitcher::on_toggleElseActions_clicked() const
 {
 	auto elsePosition = ui->macroElseActionSplitter->sizes();
 	if (elsePosition[1] == 0) {
@@ -1414,14 +1414,14 @@ void AdvSceneSwitcher::on_toggleElseActions_clicked()
 	maximizeFirstSplitterEntry(ui->macroElseActionSplitter);
 }
 
-void AdvSceneSwitcher::SetElseActionsStateToHidden()
+void AdvSceneSwitcher::SetElseActionsStateToHidden() const
 {
 	ui->toggleElseActions->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.macroTab.toggleElseActions.show.tooltip"));
 	ui->toggleElseActions->setChecked(false);
 }
 
-void AdvSceneSwitcher::SetElseActionsStateToVisible()
+void AdvSceneSwitcher::SetElseActionsStateToVisible() const
 {
 	ui->toggleElseActions->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.macroTab.toggleElseActions.hide.tooltip"));
@@ -1599,7 +1599,7 @@ static void fadeWidgets(const std::vector<QWidget *> &widgets, bool fadeOut)
 	}
 }
 
-void AdvSceneSwitcher::HighlightControls()
+void AdvSceneSwitcher::HighlightControls() const
 {
 	const std::vector<QWidget *> conditionControls{
 		ui->conditionAdd, ui->conditionRemove, ui->conditionTop,

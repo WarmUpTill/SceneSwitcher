@@ -39,7 +39,7 @@ public:
 		std::shared_ptr<MacroCondition> * = nullptr,
 		const std::string &id = MacroCondition::GetDefaultID().data(),
 		bool root = true);
-	bool IsRootNode();
+	bool IsRootNode() const;
 	void SetRootNode(bool);
 	void UpdateEntryData(const std::string &id);
 	void SetEntryData(std::shared_ptr<MacroCondition> *);
