@@ -33,6 +33,10 @@ private:
 
 class TwitchToken : public Item {
 public:
+	TwitchToken() = default;
+	TwitchToken(const TwitchToken &);
+	TwitchToken &operator=(const TwitchToken &);
+
 	static std::shared_ptr<Item> Create()
 	{
 		return std::make_shared<TwitchToken>();
@@ -55,6 +59,10 @@ public:
 
 private:
 	std::string _token;
+	mutable std::mutex _cacheMutex;
+	mutable std::string _lastValidityCheckValue;
+	mutable bool _lastValidityCheckResult = false;
+	mutable std::chrono::system_clock::time_point _lastValidityCheckTime;
 	std::string _userID;
 	std::set<TokenOption> _tokenOptions = TokenOption::GetAllTokenOptions();
 	std::shared_ptr<EventSub> _eventSub;
