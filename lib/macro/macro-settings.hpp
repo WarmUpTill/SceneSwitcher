@@ -20,9 +20,9 @@ public:
 	void Save(obs_data_t *obj) const;
 	void Load(obs_data_t *obj);
 
-	bool _highlightExecuted = false;
-	bool _highlightConditions = false;
-	bool _highlightActions = false;
+	bool _highlightExecuted = true;
+	bool _highlightConditions = true;
+	bool _highlightActions = true;
 	bool _newMacroCheckInParallel = false;
 	bool _newMacroRegisterHotkeys = true;
 	bool _newMacroUseShortCircuitEvaluation = false;
