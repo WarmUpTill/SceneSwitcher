@@ -370,7 +370,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/jsoncons/CMakeLists.txt")
       OFF
       CACHE BOOL "" FORCE)
 
-  add_subdirectory(deps/jsoncons)
+  add_subdirectory(deps/jsoncons EXCLUDE_FROM_ALL)
   target_link_libraries(${LIB_NAME} PRIVATE jsoncons)
   target_compile_definitions(${LIB_NAME} PRIVATE JSONPATH_SUPPORT=1)
 endif()
