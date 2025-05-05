@@ -383,6 +383,7 @@ void AdvSceneSwitcher::CheckFirstTimeSetup()
 		switcher->firstBoot = false;
 		DisplayMessage(
 			obs_module_text("AdvSceneSwitcher.firstBootMessage"));
+		switcher->Start();
 	}
 }
 
