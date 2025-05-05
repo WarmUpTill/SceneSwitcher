@@ -81,7 +81,7 @@ const std::unordered_map<std::string, std::string> TokenOption::_apiIdToLocale{
 static void saveConnections(obs_data_t *obj);
 static void loadConnections(obs_data_t *obj);
 
-bool setupTwitchTokenSupport()
+static bool setupTwitchTokenSupport()
 {
 	AddSaveStep(saveConnections);
 	AddLoadStep(loadConnections);
@@ -151,6 +151,29 @@ std::set<TokenOption> TokenOption::GetAllTokenOptions()
 bool TokenOption::operator<(const TokenOption &other) const
 {
 	return apiId < other.apiId;
+}
+
+TwitchToken::TwitchToken(const TwitchToken &other)
+	: Item(other._name),
+	  _token(other._token),
+	  _lastValidityCheckTime(),
+	  _lastValidityCheckValue(),
+	  _lastValidityCheckResult(false),
+	  _userID(other._userID),
+	  _tokenOptions(other._tokenOptions),
+	  _eventSub(),
+	  _validateEventSubTimestamps(other._validateEventSubTimestamps)
+{
+}
+
+TwitchToken &TwitchToken::operator=(const TwitchToken &other)
+{
+	_name = other._name;
+	_token = other._token;
+	_userID = other._userID;
+	_tokenOptions = other._tokenOptions;
+	_validateEventSubTimestamps = other._validateEventSubTimestamps;
+	return *this;
 }
 
 void TwitchToken::Load(obs_data_t *obj)
@@ -273,39 +296,38 @@ std::shared_ptr<EventSub> TwitchToken::GetEventSub()
 
 bool TwitchToken::IsValid(bool forceUpdate) const
 {
-	static std::chrono::system_clock::time_point queryTime;
-	static std::string lastQueryToken;
-	static httplib::Result response;
 	static httplib::Client cli("https://id.twitch.tv");
 	httplib::Headers headers{{"Authorization", "OAuth " + _token}};
 
+	std::scoped_lock<std::mutex> lock(_cacheMutex);
+
 	auto currentTime = std::chrono::system_clock::now();
-	auto diff = currentTime - queryTime;
+	auto diff = currentTime - _lastValidityCheckTime;
 	const bool cacheIsTooOld = diff >= std::chrono::hours(1);
 
-	const bool tokenChanged = lastQueryToken != _token;
-	if (tokenChanged) {
-		response =
+	const auto checkToken = [&]() -> bool {
+		const auto response =
 			cli.Get("/oauth2/validate", httplib::Params{}, headers);
-		queryTime = std::chrono::system_clock::now();
-		lastQueryToken = _token;
-		return response && response->status == 200;
+		_lastValidityCheckTime = std::chrono::system_clock::now();
+		_lastValidityCheckValue = _token;
+		_lastValidityCheckResult = response && response->status == 200;
+		if (!_lastValidityCheckResult) {
+			blog(LOG_INFO, "Twitch token %s is not valid!",
+			     _name.c_str());
+		}
+		return _lastValidityCheckResult;
+	};
+
+	const bool tokenChanged = _lastValidityCheckValue != _token;
+	if (tokenChanged) {
+		return checkToken();
 	}
 
-	// No point in checking again as token will not become valid again
-	if (!forceUpdate && response && response->status != 200) {
-		blog(LOG_INFO, "Twitch token %s is not valid!", _name.c_str());
-		return false;
+	if (!forceUpdate && !cacheIsTooOld) {
+		return _lastValidityCheckResult;
 	}
 
-	if (!forceUpdate && !cacheIsTooOld && response) {
-		return response->status == 200;
-	}
-
-	response = cli.Get("/oauth2/validate", httplib::Params{}, headers);
-	queryTime = std::chrono::system_clock::now();
-	lastQueryToken = _token;
-	return response && response->status == 200;
+	return checkToken();
 }
 
 TwitchToken *GetTwitchTokenByName(const QString &name)
