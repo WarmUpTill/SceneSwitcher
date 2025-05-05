@@ -27,6 +27,14 @@ namespace advss {
 static QObject *addPulse = nullptr;
 static QTimer onChangeHighlightTimer;
 
+static void disableAddButtonHighlight()
+{
+	if (addPulse) {
+		addPulse->deleteLater();
+		addPulse = nullptr;
+	}
+}
+
 static bool macroNameExists(const std::string &name)
 {
 	return !!GetMacroByName(name.c_str());
@@ -98,10 +106,7 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 		return;
 	}
 
-	if (addPulse) {
-		addPulse->deleteLater();
-		addPulse = nullptr;
-	}
+	disableAddButtonHighlight();
 
 	auto selectedMacro = GetSelectedMacro();
 	if (!selectedMacro) {
@@ -488,6 +493,7 @@ void AdvSceneSwitcher::ImportMacros()
 
 	ui->macros->Reset(GetMacros(),
 			  GetGlobalMacroSettings()._highlightExecuted);
+	disableAddButtonHighlight();
 }
 
 void AdvSceneSwitcher::on_macroName_editingFinished()
@@ -1330,10 +1336,7 @@ void AdvSceneSwitcher::CopyMacro()
 	Macro::PrepareMoveToGroup(macro->Parent(), newMacro);
 
 	ui->macros->Add(newMacro, macro);
-	if (addPulse) {
-		addPulse->deleteLater();
-		addPulse = nullptr;
-	}
+	disableAddButtonHighlight();
 	emit MacroAdded(QString::fromStdString(name));
 }
 
