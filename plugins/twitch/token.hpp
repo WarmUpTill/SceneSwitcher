@@ -58,7 +58,7 @@ private:
 	std::string _userID;
 	std::set<TokenOption> _tokenOptions = TokenOption::GetAllTokenOptions();
 	std::shared_ptr<EventSub> _eventSub;
-	bool _validateEventSubTimestamps = true;
+	bool _validateEventSubTimestamps = false;
 
 	static bool _setup;
 
