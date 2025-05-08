@@ -34,3 +34,6 @@
 [submodule "deps/jsoncons"]
 	path = deps/jsoncons
 	url = https://github.com/danielaparker/jsoncons.git
+[submodule "deps/paho.mqtt.cpp"]
+	path = deps/paho.mqtt.cpp
+	url = https://github.com/eclipse-paho/paho.mqtt.cpp.git

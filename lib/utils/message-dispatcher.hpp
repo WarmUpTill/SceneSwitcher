@@ -9,6 +9,27 @@ namespace advss {
 
 template<class T> class MessageDispatcher {
 public:
+	MessageDispatcher() = default;
+	~MessageDispatcher() = default;
+	MessageDispatcher(const MessageDispatcher &other)
+		: _clients(other._clients)
+	{
+	}
+	MessageDispatcher(MessageDispatcher &&other) noexcept
+		: _clients(other._clients)
+	{
+	}
+	MessageDispatcher<T> &operator=(const MessageDispatcher<T> &other)
+	{
+		_clients = other._clients;
+		return *this;
+	}
+	MessageDispatcher<T> &operator=(MessageDispatcher<T> &&other) noexcept
+	{
+		std::swap(_clients, other._clients);
+		return *this;
+	}
+
 	[[nodiscard]] std::shared_ptr<MessageBuffer<T>> RegisterClient();
 	void DispatchMessage(const T &message);
 
