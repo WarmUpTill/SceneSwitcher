@@ -49,6 +49,7 @@ public:
 		DISABLE_ACTION,
 		ENABLE_ACTION,
 		TOGGLE_ACTION,
+		TOGGLE_PAUSE,
 	};
 	Action _action = Action::RUN;
 	IntVariable _actionIndex = 1;
