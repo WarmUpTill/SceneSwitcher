@@ -12,25 +12,6 @@ bool MacroActionMacro::_registered = MacroActionFactory::Register(
 	{MacroActionMacro::Create, MacroActionMacroEdit::Create,
 	 "AdvSceneSwitcher.action.macro"});
 
-const static std::map<MacroActionMacro::Action, std::string> actionTypes = {
-	{MacroActionMacro::Action::PAUSE,
-	 "AdvSceneSwitcher.action.macro.type.pause"},
-	{MacroActionMacro::Action::UNPAUSE,
-	 "AdvSceneSwitcher.action.macro.type.unpause"},
-	{MacroActionMacro::Action::RESET_COUNTER,
-	 "AdvSceneSwitcher.action.macro.type.resetCounter"},
-	{MacroActionMacro::Action::RUN,
-	 "AdvSceneSwitcher.action.macro.type.run"},
-	{MacroActionMacro::Action::STOP,
-	 "AdvSceneSwitcher.action.macro.type.stop"},
-	{MacroActionMacro::Action::DISABLE_ACTION,
-	 "AdvSceneSwitcher.action.macro.type.disableAction"},
-	{MacroActionMacro::Action::ENABLE_ACTION,
-	 "AdvSceneSwitcher.action.macro.type.enableAction"},
-	{MacroActionMacro::Action::TOGGLE_ACTION,
-	 "AdvSceneSwitcher.action.macro.type.toggleAction"},
-};
-
 bool MacroActionMacro::PerformAction()
 {
 	auto macro = _macro.GetMacro();
@@ -44,6 +25,9 @@ bool MacroActionMacro::PerformAction()
 		break;
 	case Action::UNPAUSE:
 		macro->SetPaused(false);
+		break;
+	case Action::TOGGLE_PAUSE:
+		macro->SetPaused(!macro->Paused());
 		break;
 	case Action::RESET_COUNTER:
 		macro->ResetRunCount();
@@ -210,8 +194,31 @@ void MacroActionMacro::RunActions(Macro *actionMacro) const
 
 static void populateActionSelection(QComboBox *list)
 {
-	for (const auto &[_, name] : actionTypes) {
-		list->addItem(obs_module_text(name.c_str()));
+	static const std::vector<std::pair<MacroActionMacro::Action, std::string>>
+		actions = {
+			{MacroActionMacro::Action::PAUSE,
+			 "AdvSceneSwitcher.action.macro.type.pause"},
+			{MacroActionMacro::Action::UNPAUSE,
+			 "AdvSceneSwitcher.action.macro.type.unpause"},
+			{MacroActionMacro::Action::TOGGLE_PAUSE,
+			 "AdvSceneSwitcher.action.macro.type.togglePause"},
+			{MacroActionMacro::Action::RESET_COUNTER,
+			 "AdvSceneSwitcher.action.macro.type.resetCounter"},
+			{MacroActionMacro::Action::RUN,
+			 "AdvSceneSwitcher.action.macro.type.run"},
+			{MacroActionMacro::Action::STOP,
+			 "AdvSceneSwitcher.action.macro.type.stop"},
+			{MacroActionMacro::Action::DISABLE_ACTION,
+			 "AdvSceneSwitcher.action.macro.type.disableAction"},
+			{MacroActionMacro::Action::ENABLE_ACTION,
+			 "AdvSceneSwitcher.action.macro.type.enableAction"},
+			{MacroActionMacro::Action::TOGGLE_ACTION,
+			 "AdvSceneSwitcher.action.macro.type.toggleAction"},
+		};
+
+	for (const auto &[value, name] : actions) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(value));
 	}
 }
 
@@ -321,7 +328,8 @@ void MacroActionMacroEdit::UpdateEntryData()
 	if (!_entryData) {
 		return;
 	}
-	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_actions->setCurrentIndex(
+		_actions->findData(static_cast<int>(_entryData->_action)));
 	_actionIndex->SetValue(_entryData->_actionIndex);
 	_actionIndex->SetMacro(_entryData->_macro.GetMacro());
 	_macros->SetCurrentMacro(_entryData->_macro);
@@ -350,10 +358,11 @@ void MacroActionMacroEdit::MacroChanged(const QString &text)
 	SetWidgetVisibility();
 }
 
-void MacroActionMacroEdit::ActionChanged(int value)
+void MacroActionMacroEdit::ActionChanged(int idx)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_action = static_cast<MacroActionMacro::Action>(value);
+	_entryData->_action = static_cast<MacroActionMacro::Action>(
+		_actions->itemData(idx).toInt());
 	SetWidgetVisibility();
 }
 
