@@ -60,13 +60,18 @@ public:
 	// If not set the screenshot will be gathered in one interval and
 	// checked in the next one.
 	// If set both operations will happen in the same interval.
-	bool _blockUntilScreenshotDone = false;
+	//
+	// TODO: Remove this option in a future release as it has become
+	// superfluous with "short circuit" evaluation.
+	bool _blockUntilScreenshotDone = true;
 	NumberVariable<double> _brightnessThreshold = 0.5;
 	PatternMatchParameters _patternMatchParameters;
 	ObjDetectParameters _objMatchParameters;
 	OCRParameters _ocrParameters;
 	ColorParameters _colorParameters;
 	AreaParameters _areaParameters;
+	// TODO: Remove this option in a future release as it has become
+	// superfluous with "short circuit" evaluation.
 	bool _throttleEnabled = false;
 	int _throttleCount = 3;
 

@@ -234,8 +234,9 @@ void MacroConditionVideo::GetScreenshot(bool blocking)
 				       _areaParameters.area.width,
 				       _areaParameters.area.height);
 	}
-	new (&_screenshotData) Screenshot(source, screenshotArea, blocking,
-					  GetIntervalValue());
+	const int timeout = GetIntervalValue() < 300 ? 300 : GetIntervalValue();
+	new (&_screenshotData)
+		Screenshot(source, screenshotArea, blocking, timeout);
 	obs_source_release(source);
 	_getNextScreenshot = false;
 }
@@ -1560,6 +1561,17 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 			_patternMatchModeLayout,
 			_entryData->_patternMatchParameters.useForChangedCheck);
 	}
+
+	// TODO:
+	// Remove "reduce matching latency" and "reduce cpu load" options as they
+	// have become superfluous with short circuit evaluation
+	if (!_entryData->_throttleEnabled) {
+		SetLayoutVisible(_throttleControlLayout, false);
+	}
+	if (_entryData->_blockUntilScreenshotDone) {
+		_reduceLatency->hide();
+	}
+
 	Resize();
 }
 
