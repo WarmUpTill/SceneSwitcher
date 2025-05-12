@@ -47,7 +47,8 @@ public:
 	void ResetLastMatch() { _lastMatchResult = false; }
 	double GetCurrentBrightness() const { return _currentBrightness; }
 	void SetPageSegMode(tesseract::PageSegMode);
-	bool SetLanguage(const std::string &);
+	bool SetLanguageCode(const std::string &);
+	bool SetTesseractBaseDir(const std::string &);
 
 	void SetCondition(VideoCondition);
 	VideoCondition GetCondition() const { return _condition; }
@@ -144,6 +145,7 @@ private slots:
 	void MatchTextChanged();
 	void RegexChanged(const RegexConfig &conf);
 	void PageSegModeChanged(int);
+	void TesseractBaseDirChanged(const QString &);
 	void LanguageChanged();
 
 private:
@@ -155,6 +157,7 @@ private:
 	QPushButton *_selectColor;
 	SliderSpinBox *_colorThreshold;
 	QComboBox *_pageSegMode;
+	FileSelection *_tesseractBaseDir;
 	VariableLineEdit *_languageCode;
 
 	PreviewDialog *_previewDialog;

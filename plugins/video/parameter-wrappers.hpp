@@ -93,6 +93,8 @@ public:
 	void SetPageMode(tesseract::PageSegMode);
 	bool SetLanguageCode(const std::string &);
 	std::string GetLanguageCode() const;
+	bool SetTesseractBasePath(const std::string &);
+	std::string GetTesseractBasePath() const;
 	tesseract::PageSegMode GetPageMode() const { return pageSegMode; }
 	tesseract::TessBaseAPI *GetOCR() const { return ocr.get(); }
 
@@ -100,12 +102,15 @@ public:
 	RegexConfig regex = RegexConfig::PartialMatchRegexConfig();
 	QColor color = Qt::black;
 	DoubleVariable colorThreshold = 0.3;
-	StringVariable languageCode = "eng";
 
 private:
 	void Setup();
 
 	tesseract::PageSegMode pageSegMode = tesseract::PSM_SINGLE_BLOCK;
+	StringVariable tesseractBasePath =
+		obs_get_module_data_path(obs_current_module()) +
+		std::string("/res/ocr");
+	StringVariable languageCode = "eng";
 	std::unique_ptr<tesseract::TessBaseAPI> ocr;
 	bool initDone = false;
 };

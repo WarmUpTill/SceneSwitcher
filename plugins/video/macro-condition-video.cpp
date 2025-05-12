@@ -281,9 +281,14 @@ void MacroConditionVideo::SetPageSegMode(tesseract::PageSegMode mode)
 	_ocrParameters.SetPageMode(mode);
 }
 
-bool MacroConditionVideo::SetLanguage(const std::string &language)
+bool MacroConditionVideo::SetLanguageCode(const std::string &language)
 {
 	return _ocrParameters.SetLanguageCode(language);
+}
+
+bool MacroConditionVideo::SetTesseractBaseDir(const std::string &dir)
+{
+	return _ocrParameters.SetTesseractBasePath(dir);
 }
 
 void MacroConditionVideo::SetCondition(VideoCondition condition)
@@ -570,6 +575,7 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 			  "AdvSceneSwitcher.condition.video.colorDeviationThresholdDescription"),
 		  true)),
 	  _pageSegMode(new QComboBox()),
+	  _tesseractBaseDir(new FileSelection(FileSelection::Type::FOLDER)),
 	  _languageCode(new VariableLineEdit(this)),
 	  _previewDialog(previewDialog),
 	  _data(data)
@@ -590,13 +596,17 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 			 SLOT(RegexChanged(const RegexConfig &)));
 	QWidget::connect(_pageSegMode, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(PageSegModeChanged(int)));
+	QWidget::connect(_tesseractBaseDir,
+			 SIGNAL(PathChanged(const QString &)), this,
+			 SLOT(TesseractBaseDirChanged(const QString &)));
 	QWidget::connect(_languageCode, SIGNAL(editingFinished()), this,
 			 SLOT(LanguageChanged()));
 
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{textColor}}", _textColor},
 		{"{{selectColor}}", _selectColor},
 		{"{{textType}}", _pageSegMode},
+		{"{{tesseractBaseDir}}", _tesseractBaseDir},
 		{"{{languageCode}}", _languageCode},
 	};
 
@@ -613,6 +623,12 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 			"AdvSceneSwitcher.condition.video.entry.orcTextType"),
 		pageModeSegLayout, widgetPlaceholders);
 	layout->addLayout(pageModeSegLayout);
+	auto baseDirLayout = new QHBoxLayout();
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.entry.orcBaseDir"),
+		baseDirLayout, widgetPlaceholders, false);
+	layout->addLayout(baseDirLayout);
 	auto languageLayout = new QHBoxLayout();
 	PlaceWidgets(
 		obs_module_text(
@@ -634,6 +650,8 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 	_colorThreshold->SetDoubleValue(_data->_ocrParameters.colorThreshold);
 	_pageSegMode->setCurrentIndex(_pageSegMode->findData(
 		static_cast<int>(_data->_ocrParameters.GetPageMode())));
+	_tesseractBaseDir->SetPath(
+		_data->_ocrParameters.GetTesseractBasePath());
 	_languageCode->setText(_data->_ocrParameters.GetLanguageCode());
 	_loading = false;
 }
@@ -722,6 +740,28 @@ void OCREdit::PageSegModeChanged(int idx)
 	_previewDialog->OCRParametersChanged(_data->_ocrParameters);
 }
 
+void OCREdit::TesseractBaseDirChanged(const QString &path){
+		if (_loading || !_data) {
+		return;
+	}
+
+	auto lock = LockContext();
+	if (!_data->SetTesseractBaseDir(path.toStdString())) {
+		const QString message(obs_module_text(
+			"AdvSceneSwitcher.condition.video.ocrLanguageNotFound"));
+		const QDir dataDir(path);
+		const QString fileName(_languageCode->text() + ".traineddata");
+		DisplayMessage(message.arg(fileName, dataDir.absolutePath()));
+
+		// Reset to previous value
+		const QSignalBlocker b(this);
+		_tesseractBaseDir->SetPath(_data->_ocrParameters.GetTesseractBasePath());
+		return;
+	}
+	_previewDialog->OCRParametersChanged(_data->_ocrParameters);
+}
+
+
 void OCREdit::LanguageChanged()
 {
 	if (_loading || !_data) {
@@ -729,11 +769,11 @@ void OCREdit::LanguageChanged()
 	}
 
 	auto lock = LockContext();
-	if (!_data->SetLanguage(_languageCode->text().toStdString())) {
+	if (!_data->SetLanguageCode(_languageCode->text().toStdString())) {
 		const QString message(obs_module_text(
 			"AdvSceneSwitcher.condition.video.ocrLanguageNotFound"));
-		const QDir dataDir(
-			obs_get_module_data_path(obs_current_module()));
+		const QDir dataDir(QString::fromStdString(
+			_data->_ocrParameters.GetTesseractBasePath()));
 		const QString fileName(_languageCode->text() + ".traineddata");
 		DisplayMessage(message.arg(fileName, dataDir.absolutePath()));
 
