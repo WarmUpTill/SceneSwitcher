@@ -16,8 +16,19 @@ endif()
 
 # --- Check optional OCR dependencies ---
 
-find_package(Leptonica)
-find_package(Tesseract)
+find_package(Leptonica QUIET)
+find_package(Tesseract QUIET)
+
+if(OS_LINUX AND NOT Leptonica_FOUND)
+  find_package(PkgConfig REQUIRED)
+
+  pkg_check_modules(Tesseract IMPORTED_TARGET tesseract lept)
+  if(Tesseract_FOUND)
+    add_library(Tesseract::libtesseract ALIAS PkgConfig::Tesseract)
+    set(Leptonica_FOUND TRUE)
+    set(Tesseract_FOUND TRUE)
+  endif()
+endif()
 
 # --- End of section ---
 
