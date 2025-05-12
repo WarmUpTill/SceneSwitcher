@@ -252,6 +252,7 @@ OCRParameters::OCRParameters(const OCRParameters &other)
 	  color(other.color),
 	  colorThreshold(other.colorThreshold),
 	  pageSegMode(other.pageSegMode),
+	  tesseractBasePath(other.tesseractBasePath),
 	  languageCode(other.languageCode)
 {
 	if (!initDone) {
@@ -269,6 +270,7 @@ OCRParameters &OCRParameters::operator=(const OCRParameters &other)
 	color = other.color;
 	colorThreshold = other.colorThreshold;
 	pageSegMode = other.pageSegMode;
+	tesseractBasePath = other.tesseractBasePath;
 	languageCode = other.languageCode;
 	if (!initDone) {
 		Setup();
@@ -284,11 +286,12 @@ bool OCRParameters::Save(obs_data_t *obj) const
 	auto data = obs_data_create();
 	text.Save(data, "pattern");
 	regex.Save(data);
+	tesseractBasePath.Save(data, "tesseractBasePath");
 	languageCode.Save(data, "language");
 	SaveColor(data, "textColor", color);
 	colorThreshold.Save(data, "colorThreshold");
 	obs_data_set_int(data, "pageSegMode", static_cast<int>(pageSegMode));
-	obs_data_set_int(data, "version", 1);
+	obs_data_set_int(data, "version", 2);
 	obs_data_set_obj(obj, "ocrData", data);
 	obs_data_release(data);
 	return true;
@@ -301,6 +304,14 @@ bool OCRParameters::Load(obs_data_t *obj)
 	regex.Load(data);
 	obs_data_set_default_string(data, "language", "eng");
 	languageCode.Load(data, "language");
+	tesseractBasePath.Load(data, "tesseractBasePath");
+	if (!obs_data_has_user_value(data, "version") ||
+	    obs_data_get_int(data, "version") < 2) {
+		tesseractBasePath = std::string(obs_get_module_data_path(
+					    obs_current_module())) +
+				    "/res/ocr/";
+	}
+
 	color = LoadColor(data, "textColor");
 	if (obs_data_has_user_value(data, "version")) {
 		colorThreshold.Load(data, "colorThreshold");
@@ -324,10 +335,8 @@ void OCRParameters::SetPageMode(tesseract::PageSegMode mode)
 
 bool OCRParameters::SetLanguageCode(const std::string &value)
 {
-	const auto dataPath =
-		QString(obs_get_module_data_path(obs_current_module())) +
-		QString("/res/ocr") + "/" + QString::fromStdString(value) +
-		".traineddata";
+	const auto dataPath = QString::fromStdString(tesseractBasePath) + "/" +
+			      QString::fromStdString(value) + ".traineddata";
 	QFileInfo fileInfo(dataPath);
 	if (!fileInfo.exists(dataPath)) {
 		return false;
@@ -343,6 +352,26 @@ std::string OCRParameters::GetLanguageCode() const
 	return languageCode;
 }
 
+bool OCRParameters::SetTesseractBasePath(const std::string &value)
+{
+	const auto dataPath = QString::fromStdString(value) + "/" +
+			      QString::fromStdString(languageCode) +
+			      ".traineddata";
+	QFileInfo fileInfo(dataPath);
+	if (!fileInfo.exists(dataPath)) {
+		return false;
+	}
+	tesseractBasePath = value;
+	Setup();
+	ocr->SetPageSegMode(pageSegMode);
+	return true;
+}
+
+std::string OCRParameters::GetTesseractBasePath() const
+{
+	return tesseractBasePath;
+}
+
 void OCRParameters::Setup()
 {
 	ocr = std::make_unique<tesseract::TessBaseAPI>();
@@ -350,8 +379,18 @@ void OCRParameters::Setup()
 		initDone = false;
 		return;
 	}
-	std::string dataPath = obs_get_module_data_path(obs_current_module()) +
-			       std::string("/res/ocr");
+
+	const std::string dataPath = std::string(tesseractBasePath) + "/";
+	const std::string modelFile =
+		std::string(languageCode) + ".traineddata";
+	const auto fullPath = QString::fromStdString(dataPath) +
+			      QString::fromStdString(modelFile);
+	QFileInfo fileInfo(fullPath);
+	if (!fileInfo.exists(fullPath)) {
+		initDone = false;
+		return;
+	}
+
 	if (ocr->Init(dataPath.c_str(), languageCode.c_str()) != 0) {
 		initDone = false;
 		return;
