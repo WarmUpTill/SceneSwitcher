@@ -128,7 +128,7 @@ private:
 	QLabel *_current;
 	QTimer _timer;
 
-	std::shared_ptr<MacroConditionVideo> _data;
+	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;
 };
 
@@ -147,6 +147,8 @@ private slots:
 	void PageSegModeChanged(int);
 	void TesseractBaseDirChanged(const QString &);
 	void LanguageChanged();
+	void UseConfigChanged(int);
+	void ConfigFileChanged(const QString &);
 
 private:
 	void SetupColorLabel(const QColor &);
@@ -159,10 +161,15 @@ private:
 	QComboBox *_pageSegMode;
 	FileSelection *_tesseractBaseDir;
 	VariableLineEdit *_languageCode;
+	QCheckBox *_useConfig;
+	FileSelection *_configFile;
+	QPushButton *_openConfigFile;
+	QPushButton *_reloadConfig;
+	QHBoxLayout *_configLayout;
 
 	PreviewDialog *_previewDialog;
 
-	std::shared_ptr<MacroConditionVideo> _data;
+	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;
 };
 
@@ -190,7 +197,7 @@ private:
 
 	PreviewDialog *_previewDialog;
 
-	std::shared_ptr<MacroConditionVideo> _data;
+	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;
 };
 
@@ -214,7 +221,7 @@ private:
 	QLabel *_color;
 	QPushButton *_selectColor;
 
-	std::shared_ptr<MacroConditionVideo> _data;
+	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;
 };
 
@@ -243,7 +250,7 @@ private:
 
 	PreviewDialog *_previewDialog;
 
-	std::shared_ptr<MacroConditionVideo> _data;
+	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;
 };
 

@@ -95,6 +95,10 @@ public:
 	std::string GetLanguageCode() const;
 	bool SetTesseractBasePath(const std::string &);
 	std::string GetTesseractBasePath() const;
+	void EnableCustomConfig(bool enable);
+	bool CustomConfigIsEnabled() const { return useConfig; }
+	void SetCustomConfigFile(const std::string &);
+	std::string GetCustomConfigFile() const { return configFile; }
 	tesseract::PageSegMode GetPageMode() const { return pageSegMode; }
 	tesseract::TessBaseAPI *GetOCR() const { return ocr.get(); }
 
@@ -111,6 +115,8 @@ private:
 		obs_get_module_data_path(obs_current_module()) +
 		std::string("/res/ocr");
 	StringVariable languageCode = "eng";
+	bool useConfig = false;
+	std::string configFile = "config.txt";
 	std::unique_ptr<tesseract::TessBaseAPI> ocr;
 	bool initDone = false;
 };
