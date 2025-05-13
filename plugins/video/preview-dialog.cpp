@@ -353,9 +353,15 @@ void PreviewImage::MarkMatch(QImage &screenshot,
 	} else if (condition == VideoCondition::OCR) {
 		auto text = RunOCR(ocrParams.GetOCR(), screenshot,
 				   ocrParams.color, ocrParams.colorThreshold);
+
+		if (!text) {
+			emit StatusUpdate(obs_module_text(
+				"AdvSceneSwitcher.condition.video.ocrMatchFail"));
+		}
+
 		QString status(obs_module_text(
 			"AdvSceneSwitcher.condition.video.ocrMatchSuccess"));
-		emit StatusUpdate(status.arg(QString::fromStdString(text)));
+		emit StatusUpdate(status.arg(QString::fromStdString(*text)));
 	}
 }
 
