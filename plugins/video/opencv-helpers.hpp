@@ -27,10 +27,23 @@ enum PageSegMode {
 	PSM_COUNT
 };
 
+enum OcrEngineMode {
+	OEM_TESSERACT_ONLY,
+	OEM_LSTM_ONLY,
+	OEM_TESSERACT_LSTM_COMBINED,
+	OEM_DEFAULT,
+	OEM_COUNT // Number of OEMs
+};
+
 class TessBaseAPI {
 public:
 	void SetPageSegMode(PageSegMode) {}
-	int Init(const char *, const char *) { return 0; }
+	int Init(const char *, const char *, OcrEngineMode, char **, int,
+		 const std::vector<std::string> *,
+		 const std::vector<std::string> *, bool)
+	{
+		return 0;
+	}
 	void End() {}
 };
 } // namespace tesseract
@@ -62,8 +75,8 @@ std::vector<cv::Rect> MatchObject(QImage &img, cv::CascadeClassifier &cascade,
 uchar GetAvgBrightness(QImage &img);
 cv::Mat PreprocessForOCR(const QImage &image, const QColor &color,
 			 double colorDiff);
-std::string RunOCR(tesseract::TessBaseAPI *, const QImage &, const QColor &,
-		   double colorDiff);
+std::optional<std::string> RunOCR(tesseract::TessBaseAPI *, const QImage &,
+				  const QColor &, double colorDiff);
 bool ContainsPixelsInColorRange(const QImage &image, const QColor &color,
 				double colorDeviationThreshold,
 				double totalPixelMatchThreshold);

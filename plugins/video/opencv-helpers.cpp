@@ -202,14 +202,15 @@ cv::Mat PreprocessForOCR(const QImage &image, const QColor &textColor,
 	return result;
 }
 
-std::string RunOCR(tesseract::TessBaseAPI *ocr, const QImage &image,
-		   const QColor &color, double colorDiff)
+std::optional<std::string> RunOCR(tesseract::TessBaseAPI *ocr,
+				  const QImage &image, const QColor &color,
+				  double colorDiff)
 {
 	(void)ocr;
 	(void)color;
 	(void)colorDiff;
 	if (image.isNull()) {
-		return "";
+		return {};
 	}
 
 #ifdef OCR_SUPPORT
@@ -221,12 +222,12 @@ std::string RunOCR(tesseract::TessBaseAPI *ocr, const QImage &image,
 	std::unique_ptr<char[]> detectedText(ocr->GetUTF8Text());
 
 	if (!detectedText) {
-		return "";
+		return {};
 	}
 	return detectedText.get();
 
 #else
-	return "";
+	return {};
 #endif
 }
 
