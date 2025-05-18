@@ -537,6 +537,11 @@ void AdvSceneSwitcher::on_runMacroOnChange_stateChanged(int value) const
 void AdvSceneSwitcher::PopulateMacroActions(Macro &m, uint32_t afterIdx)
 {
 	auto &actions = m.Actions();
+	ui->actionsList->SetHelpMsgVisible(actions.size() == 0);
+
+	if (ui->actionsList->PopulateWidgetsFromCache(&m)) {
+		return;
+	}
 
 	// The layout system has not completed geometry propagation yet, so we
 	// can skip those checks for now
@@ -547,7 +552,6 @@ void AdvSceneSwitcher::PopulateMacroActions(Macro &m, uint32_t afterIdx)
 						    actions[afterIdx]->GetId());
 		ui->actionsList->Add(newEntry);
 	}
-	ui->actionsList->SetHelpMsgVisible(actions.size() == 0);
 
 	// Give the layout system time before enabling the visibility checks and
 	// fully constructing the visible macro segments
@@ -559,6 +563,11 @@ void AdvSceneSwitcher::PopulateMacroActions(Macro &m, uint32_t afterIdx)
 void AdvSceneSwitcher::PopulateMacroElseActions(Macro &m, uint32_t afterIdx)
 {
 	auto &actions = m.ElseActions();
+	ui->elseActionsList->SetHelpMsgVisible(actions.size() == 0);
+
+	if (ui->elseActionsList->PopulateWidgetsFromCache(&m)) {
+		return;
+	}
 
 	// The layout system has not completed geometry propagation yet, so we
 	// can skip those checks for now
@@ -569,7 +578,6 @@ void AdvSceneSwitcher::PopulateMacroElseActions(Macro &m, uint32_t afterIdx)
 						    actions[afterIdx]->GetId());
 		ui->elseActionsList->Add(newEntry);
 	}
-	ui->elseActionsList->SetHelpMsgVisible(actions.size() == 0);
 
 	// Give the layout system time before enabling the visibility checks and
 	// fully constructing the visible macro segments
@@ -582,6 +590,11 @@ void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
 {
 	bool root = afterIdx == 0;
 	auto &conditions = m.Conditions();
+	ui->conditionsList->SetHelpMsgVisible(conditions.size() == 0);
+
+	if (ui->conditionsList->PopulateWidgetsFromCache(&m)) {
+		return;
+	}
 
 	// The layout system has not completed geometry propagation yet, so we
 	// can skip those checks for now
@@ -594,7 +607,6 @@ void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
 		ui->conditionsList->Add(newEntry);
 		root = false;
 	}
-	ui->conditionsList->SetHelpMsgVisible(conditions.size() == 0);
 
 	// Give the layout system time before enabling the visibility checks and
 	// fully constructing the visible macro segments
@@ -779,6 +791,10 @@ void AdvSceneSwitcher::MacroSelectionAboutToChange() const
 	}
 	macro->SetElseActionSplitterPosition(
 		ui->macroElseActionSplitter->sizes());
+
+	ui->conditionsList->CacheCurrentWidgetsFor(macro);
+	ui->actionsList->CacheCurrentWidgetsFor(macro);
+	ui->elseActionsList->CacheCurrentWidgetsFor(macro);
 }
 
 void AdvSceneSwitcher::MacroSelectionChanged()
