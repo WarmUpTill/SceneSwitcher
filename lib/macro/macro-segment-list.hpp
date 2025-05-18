@@ -9,12 +9,14 @@
 
 namespace advss {
 
+class Macro;
+
 class MacroSegmentList : public QScrollArea {
 	Q_OBJECT
 
 public:
 	MacroSegmentList(QWidget *parent = nullptr);
-	virtual ~MacroSegmentList();
+	~MacroSegmentList();
 	void SetHelpMsg(const QString &msg) const;
 	void SetHelpMsgVisible(bool visible) const;
 	MacroSegmentEdit *WidgetAt(int idx) const;
@@ -24,6 +26,8 @@ public:
 	void Add(QWidget *widget);
 	void Remove(int idx) const;
 	void Clear(int idx = 0) const; // Clear all elements >= idx
+	void CacheCurrentWidgetsFor(const Macro *);
+	bool PopulateWidgetsFromCache(const Macro *);
 	void Highlight(int idx, QColor color = QColor(Qt::green));
 	void SetCollapsed(bool) const;
 	void SetSelection(int idx) const;
@@ -67,6 +71,8 @@ private:
 	QLabel *_helpMsg;
 
 	bool _checkVisibility = true;
+
+	std::unordered_map<const Macro *, std::vector<QWidget *>> _widgetCache;
 };
 
 } // namespace advss
