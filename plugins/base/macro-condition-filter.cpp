@@ -185,10 +185,17 @@ static inline void populateConditionSelection(QComboBox *list)
 	}
 }
 
+static QStringList getFilterSourcesList()
+{
+	auto sources = GetSourcesWithFilterNames();
+	sources.sort();
+	return sources;
+}
+
 MacroConditionFilterEdit::MacroConditionFilterEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionFilter> entryData)
 	: QWidget(parent),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
+	  _sources(new SourceSelectionWidget(this, getFilterSourcesList, true)),
 	  _filters(new FilterSelectionWidget(this, _sources, true)),
 	  _conditions(new QComboBox()),
 	  _getSettings(new QPushButton(obs_module_text(
@@ -200,9 +207,7 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 		  obs_module_text("AdvSceneSwitcher.condition.filter.refresh")))
 {
 	populateConditionSelection(_conditions);
-	auto sources = GetSourcesWithFilterNames();
-	sources.sort();
-	_sources->SetSourceNameList(sources);
+
 	_refreshSettingSelection->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.filter.refresh.tooltip"));
 

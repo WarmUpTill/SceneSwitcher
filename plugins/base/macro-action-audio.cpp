@@ -421,10 +421,17 @@ static inline void populateFadeTypeSelection(QComboBox *list)
 	}
 }
 
+static QStringList getAudioSourcesList()
+{
+	auto sources = GetAudioSourceNames();
+	sources.sort();
+	return sources;
+}
+
 MacroActionAudioEdit::MacroActionAudioEdit(
 	QWidget *parent, std::shared_ptr<MacroActionAudio> entryData)
 	: QWidget(parent),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
+	  _sources(new SourceSelectionWidget(this, getAudioSourcesList, true)),
 	  _actions(new QComboBox),
 	  _fadeTypes(new QComboBox),
 	  _syncOffset(new VariableSpinBox),
@@ -468,9 +475,6 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	_rate->setSuffix("%");
 
 	populateActionSelection(_actions);
-	auto sources = GetAudioSourceNames();
-	sources.sort();
-	_sources->SetSourceNameList(sources);
 	populateFadeTypeSelection(_fadeTypes);
 	PopulateMonitorTypeSelection(_monitorTypes);
 

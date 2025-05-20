@@ -230,6 +230,13 @@ static void populateWindowTypes(QComboBox *list)
 		"AdvSceneSwitcher.action.projector.fullscreen"));
 }
 
+static QStringList getSourcesList()
+{
+	auto sources = GetSourceNames();
+	sources.sort();
+	return sources;
+}
+
 MacroActionProjectorEdit::MacroActionProjectorEdit(
 	QWidget *parent, std::shared_ptr<MacroActionProjector> entryData)
 	: QWidget(parent),
@@ -238,7 +245,7 @@ MacroActionProjectorEdit::MacroActionProjectorEdit(
 	  _windowTypes(new QComboBox()),
 	  _scenes(new SceneSelectionWidget(window(), true, false, true, true,
 					   true)),
-	  _sources(new SourceSelectionWidget(window(), QStringList(), true)),
+	  _sources(new SourceSelectionWidget(window(), getSourcesList, true)),
 	  _monitors(new QComboBox()),
 	  _projectorWindowName(new VariableLineEdit(this)),
 	  _regex(new RegexConfigWidget(this)),
@@ -247,9 +254,7 @@ MacroActionProjectorEdit::MacroActionProjectorEdit(
 	populateActionSelection(_actions);
 	populateWindowTypes(_windowTypes);
 	populateSelectionTypes(_types);
-	auto sources = GetSourceNames();
-	sources.sort();
-	_sources->SetSourceNameList(sources);
+
 	_monitors->addItems(GetMonitorNames());
 	_monitors->setPlaceholderText(
 		obs_module_text("AdvSceneSwitcher.selectDisplay"));

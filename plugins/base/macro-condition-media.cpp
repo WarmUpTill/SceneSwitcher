@@ -610,6 +610,13 @@ static void populateCheckTypes(QComboBox *list)
 		static_cast<int>(MacroConditionMedia::CheckType::TIME));
 }
 
+static QStringList getMediaSourcesList()
+{
+	auto sources = GetMediaSourceNames();
+	sources.sort();
+	return sources;
+}
+
 MacroConditionMediaEdit::MacroConditionMediaEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionMedia> entryData)
 	: QWidget(parent),
@@ -617,17 +624,13 @@ MacroConditionMediaEdit::MacroConditionMediaEdit(
 	  _checkTypes(new QComboBox()),
 	  _scenes(new SceneSelectionWidget(window(), true, true, true, true,
 					   true)),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
+	  _sources(new SourceSelectionWidget(this, getMediaSourcesList, true)),
 	  _states(new QComboBox()),
 	  _timeRestrictions(new QComboBox()),
 	  _time(new DurationSelection())
 {
 	_states->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.media.inconsistencyInfo"));
-
-	auto sources = GetMediaSourceNames();
-	sources.sort();
-	_sources->SetSourceNameList(sources);
 
 	QWidget::connect(_sourceTypes, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(SourceTypeChanged(int)));
