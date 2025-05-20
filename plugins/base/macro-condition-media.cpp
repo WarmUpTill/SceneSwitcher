@@ -256,7 +256,7 @@ void MacroConditionMedia::SetTempVarValues(
 		const auto state = std::get<obs_media_state>(value);
 		SetTempVarValue("state", std::to_string(state));
 	} else {
-		const auto timeInfo = std::get<MediaTimeInfo>(value);
+		const auto &timeInfo = std::get<MediaTimeInfo>(value);
 		SetTempVarValue("time", std::to_string(timeInfo.time));
 		SetTempVarValue("duration", std::to_string(timeInfo.duration));
 	}

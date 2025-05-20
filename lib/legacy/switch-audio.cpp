@@ -259,7 +259,8 @@ void AudioSwitch::setVolumeLevel(void *data, const float *,
 	}
 }
 
-obs_volmeter_t *AddVolmeterToSource(AudioSwitch *entry, obs_weak_source *source)
+static obs_volmeter_t *addVolmeterToSource(AudioSwitch *entry,
+					   obs_weak_source *source)
 {
 	obs_volmeter_t *volmeter = obs_volmeter_create(OBS_FADER_LOG);
 	obs_volmeter_add_callback(volmeter, AudioSwitch::setVolumeLevel, entry);
@@ -279,7 +280,7 @@ void AudioSwitch::resetVolmeter()
 	obs_volmeter_remove_callback(volmeter, setVolumeLevel, this);
 	obs_volmeter_destroy(volmeter);
 
-	volmeter = AddVolmeterToSource(this, audioSource);
+	volmeter = addVolmeterToSource(this, audioSource);
 }
 
 bool AudioSwitch::initialized()
@@ -318,7 +319,7 @@ void AudioSwitch::load(obs_data_t *obj)
 	duration.Load(obj, "duration");
 	ignoreInactiveSource = obs_data_get_bool(obj, "ignoreInactiveSource");
 
-	volmeter = AddVolmeterToSource(this, audioSource);
+	volmeter = addVolmeterToSource(this, audioSource);
 }
 
 void AudioSwitchFallback::save(obs_data_t *obj)
@@ -349,7 +350,7 @@ AudioSwitch::AudioSwitch(const AudioSwitch &other)
 	  condition(other.condition),
 	  duration(other.duration)
 {
-	volmeter = AddVolmeterToSource(this, other.audioSource);
+	volmeter = addVolmeterToSource(this, other.audioSource);
 }
 
 AudioSwitch::AudioSwitch(AudioSwitch &&other) noexcept

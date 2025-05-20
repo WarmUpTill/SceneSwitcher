@@ -242,7 +242,7 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 
 	PopulateWindowSelection(_windowSelection);
 
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{windows}}", _windowSelection},
 		{"{{windowRegex}}", _windowRegex},
 		{"{{checkTitle}}", _checkTitle},
