@@ -229,10 +229,19 @@ static inline void populateSelection(QComboBox *list,
 	}
 }
 
+static QStringList getSourcesList()
+{
+	auto sources = GetSourceNames();
+	sources.sort();
+	auto scenes = GetSceneNames();
+	scenes.sort();
+	return sources + scenes;
+}
+
 MacroConditionSourceEdit::MacroConditionSourceEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionSource> entryData)
 	: QWidget(parent),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
+	  _sources(new SourceSelectionWidget(this, getSourcesList, true)),
 	  _conditions(new QComboBox()),
 	  _getSettings(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.source.getSettings"))),
@@ -246,11 +255,7 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 {
 	populateSelection(_conditions, sourceConditionTypes);
 	populateSelection(_sizeCompareMethods, compareMethods);
-	auto sources = GetSourceNames();
-	sources.sort();
-	auto scenes = GetSceneNames();
-	scenes.sort();
-	_sources->SetSourceNameList(sources + scenes);
+
 	_refreshSettingSelection->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.source.refresh.tooltip"));
 	_size->setMaximum(999999);

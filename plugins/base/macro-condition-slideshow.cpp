@@ -235,6 +235,7 @@ static QStringList getSlideshowNames()
 
 	QStringList list;
 	obs_enum_sources(sourceEnum, &list);
+	list.sort();
 	return list;
 }
 
@@ -244,7 +245,7 @@ MacroConditionSlideshowEdit::MacroConditionSlideshowEdit(
 	  _conditions(new QComboBox(this)),
 	  _index(new VariableSpinBox(this)),
 	  _path(new VariableLineEdit(this)),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
+	  _sources(new SourceSelectionWidget(this, getSlideshowNames, true)),
 	  _regex(new RegexConfigWidget(this)),
 	  _layout(new QHBoxLayout())
 {
@@ -252,10 +253,6 @@ MacroConditionSlideshowEdit::MacroConditionSlideshowEdit(
 		"AdvSceneSwitcher.condition.slideshow.updateInterval.tooltip"));
 	_index->setMinimum(1);
 	populateConditionSelection(_conditions);
-
-	auto sources = getSlideshowNames();
-	sources.sort();
-	_sources->SetSourceNameList(sources);
 
 	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
