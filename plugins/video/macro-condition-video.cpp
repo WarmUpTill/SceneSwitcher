@@ -1131,13 +1131,20 @@ void AreaEdit::CheckAreaChanged(QRect rect)
 	CheckAreaChanged(area);
 }
 
+static QStringList getVideoSourcesList()
+{
+	auto sources = GetVideoSourceNames();
+	sources.sort();
+	return sources;
+}
+
 MacroConditionVideoEdit::MacroConditionVideoEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionVideo> entryData)
 	: QWidget(parent),
 	  _videoInputTypes(new QComboBox()),
 	  _scenes(new SceneSelectionWidget(this, true, false, true, true,
 					   true)),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
+	  _sources(new SourceSelectionWidget(this, getVideoSourcesList, true)),
 	  _condition(new QComboBox()),
 	  _reduceLatency(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.condition.video.reduceLatency"))),
@@ -1189,10 +1196,6 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			      QSizePolicy::Preferred);
 	_area->setSizePolicy(QSizePolicy::MinimumExpanding,
 			     QSizePolicy::Preferred);
-
-	auto sources = GetVideoSourceNames();
-	sources.sort();
-	_sources->SetSourceNameList(sources);
 
 	QWidget::connect(_videoInputTypes, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(VideoInputTypeChanged(int)));

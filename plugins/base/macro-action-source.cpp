@@ -274,10 +274,17 @@ static inline void populateModeSelection(QComboBox *list,
 	}
 }
 
+static QStringList getSourcesList()
+{
+	auto sources = GetSourceNames();
+	sources.sort();
+	return sources;
+}
+
 MacroActionSourceEdit::MacroActionSourceEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSource> entryData)
 	: QWidget(parent),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
+	  _sources(new SourceSelectionWidget(this, getSourcesList, true)),
 	  _actions(new QComboBox()),
 	  _settingsButtons(new SourceSettingsButtonSelection(this)),
 	  _settingsLayout(new QHBoxLayout()),
@@ -296,9 +303,7 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 		  obs_module_text("AdvSceneSwitcher.action.source.refresh")))
 {
 	populateActionSelection(_actions);
-	auto sources = GetSourceNames();
-	sources.sort();
-	_sources->SetSourceNameList(sources);
+
 	populateModeSelection(_deinterlaceMode, deinterlaceModes);
 	populateModeSelection(_deinterlaceOrder, deinterlaceFieldOrders);
 	populateModeSelection(_settingsInputMethods, inputMethods);

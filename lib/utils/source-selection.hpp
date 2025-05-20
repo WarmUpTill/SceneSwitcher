@@ -39,12 +39,15 @@ class ADVSS_EXPORT SourceSelectionWidget : public FilterComboBox {
 	Q_OBJECT
 
 public:
-	SourceSelectionWidget(QWidget *parent, const QStringList &sourceNames,
+	SourceSelectionWidget(QWidget *parent,
+			      const std::function<QStringList()> &populate,
 			      bool addVariables = true);
 	void SetSource(const SourceSelection &);
-	void SetSourceNameList(const QStringList &);
 signals:
 	void SourceChanged(const SourceSelection &);
+
+protected:
+	void showEvent(QShowEvent *event) override;
 
 private slots:
 	void SelectionChanged(int);
@@ -59,7 +62,7 @@ private:
 	bool NameUsed(const QString &name);
 
 	bool _addVariables;
-	QStringList _sourceNames;
+	std::function<QStringList()> _populateSourcesCallback;
 	SourceSelection _currentSelection;
 
 	// Order of entries

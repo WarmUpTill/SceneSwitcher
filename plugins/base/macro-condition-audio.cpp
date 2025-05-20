@@ -458,11 +458,18 @@ static inline void populateVolumeConditionSelection(QComboBox *list)
 	}
 }
 
+static QStringList getAudioSourcesList()
+{
+	auto sources = GetAudioSourceNames();
+	sources.sort();
+	return sources;
+}
+
 MacroConditionAudioEdit::MacroConditionAudioEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionAudio> entryData)
 	: QWidget(parent),
 	  _checkTypes(new QComboBox()),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
+	  _sources(new SourceSelectionWidget(this, getAudioSourcesList, true)),
 	  _condition(new QComboBox()),
 	  _volumePercent(new VariableDoubleSpinBox()),
 	  _volumeDB(new VariableDoubleSpinBox),
@@ -483,10 +490,6 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 	_syncOffset->setMinimum(-950);
 	_syncOffset->setMaximum(20000);
 	_syncOffset->setSuffix("ms");
-
-	auto sources = GetAudioSourceNames();
-	sources.sort();
-	_sources->SetSourceNameList(sources);
 
 	QWidget::connect(_checkTypes, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(CheckTypeChanged(int)));
