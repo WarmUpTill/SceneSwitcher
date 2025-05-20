@@ -292,8 +292,8 @@ bool MacroConditionAudio::Save(obs_data_t *obj) const
 	return true;
 }
 
-obs_volmeter_t *AddVolmeterToSource(MacroConditionAudio *entry,
-				    obs_weak_source *source)
+static obs_volmeter_t *addVolmeterToSource(MacroConditionAudio *entry,
+					   obs_weak_source *source)
 {
 	obs_volmeter_t *volmeter = obs_volmeter_create(OBS_FADER_LOG);
 	obs_volmeter_add_callback(volmeter, MacroConditionAudio::SetVolumeLevel,
@@ -328,7 +328,7 @@ bool MacroConditionAudio::Load(obs_data_t *obj)
 		obs_data_get_int(obj, "outputCondition"));
 	_volumeCondition = static_cast<VolumeCondition>(
 		obs_data_get_int(obj, "volumeCondition"));
-	_volmeter = AddVolmeterToSource(this, _audioSource.GetSource());
+	_volmeter = addVolmeterToSource(this, _audioSource.GetSource());
 
 	if (obs_data_get_int(obj, "version") < 2) {
 		// Set default values for dB handling
@@ -379,7 +379,7 @@ void MacroConditionAudio::ResetVolmeter()
 	obs_volmeter_remove_callback(_volmeter, SetVolumeLevel, this);
 	obs_volmeter_destroy(_volmeter);
 
-	_volmeter = AddVolmeterToSource(this, _audioSource.GetSource());
+	_volmeter = addVolmeterToSource(this, _audioSource.GetSource());
 }
 
 void MacroConditionAudio::SetupTempVars()

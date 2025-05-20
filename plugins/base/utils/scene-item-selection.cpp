@@ -558,7 +558,7 @@ static bool populateSceneItemSelectionHelper(obs_scene_t *,
 	return true;
 }
 
-QStringList GetSceneItemsList(SceneSelection &s)
+static QStringList getSceneItemsList(SceneSelection &s)
 {
 	QStringList names;
 	if (s.GetType() != SceneSelection::Type::SCENE) {
@@ -589,8 +589,8 @@ QStringList GetSceneItemsList(SceneSelection &s)
 
 void SceneItemSelectionWidget::PopulateItemSelection()
 {
-	const QStringList sceneItmes = GetSceneItemsList(_scene);
-	AddSelectionGroup(_sources, sceneItmes, false);
+	const QStringList sceneItems = getSceneItemsList(_scene);
+	AddSelectionGroup(_sources, sceneItems, false);
 	_sources->setCurrentIndex(-1);
 }
 

@@ -518,7 +518,7 @@ MacroActionAudioEdit::MacroActionAudioEdit(
 	QWidget::connect(_fadeTypes, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(FadeTypeChanged(int)));
 
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{audioSources}}", _sources},
 		{"{{actions}}", _actions},
 		{"{{syncOffset}}", _syncOffset},

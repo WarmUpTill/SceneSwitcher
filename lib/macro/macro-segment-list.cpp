@@ -67,7 +67,7 @@ static bool posIsInScrollbar(const QScrollBar *scrollbar, const QPoint &pos)
 	if (!scrollbar->isVisible()) {
 		return false;
 	}
-	const auto geo = scrollbar->geometry();
+	const auto &geo = scrollbar->geometry();
 	const auto globalGeo = QRect(scrollbar->mapToGlobal(geo.topLeft()),
 				     scrollbar->mapToGlobal(geo.bottomRight()));
 	return globalGeo.contains(pos);

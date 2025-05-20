@@ -85,7 +85,7 @@ const static std::map<tesseract::PageSegMode, std::string> pageSegModes = {
 	 "AdvSceneSwitcher.condition.video.ocrMode.sparseTextOSD"},
 };
 
-cv::CascadeClassifier initObjectCascade(std::string &path)
+static cv::CascadeClassifier initObjectCascade(std::string &path)
 {
 	cv::CascadeClassifier cascade;
 	try {
