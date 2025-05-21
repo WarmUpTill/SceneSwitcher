@@ -72,7 +72,9 @@ std::string TransitionSelection::ToString() const
 TransitionSelectionWidget::TransitionSelectionWidget(QWidget *parent,
 						     bool current, bool any)
 	: FilterComboBox(parent,
-			 obs_module_text("AdvSceneSwitcher.selectTransition"))
+			 obs_module_text("AdvSceneSwitcher.selectTransition")),
+	  _addCurrent(current),
+	  _addAny(any)
 {
 	setDuplicatesEnabled(true);
 	PopulateTransitionSelection(this, current, any, false);
@@ -81,7 +83,7 @@ TransitionSelectionWidget::TransitionSelectionWidget(QWidget *parent,
 			 this, SLOT(SelectionChanged(const QString &)));
 }
 
-void TransitionSelectionWidget::SetTransition(TransitionSelection &t)
+void TransitionSelectionWidget::SetTransition(const TransitionSelection &t)
 {
 	// Order of entries
 	// 1. Any transition
@@ -106,19 +108,35 @@ void TransitionSelectionWidget::SetTransition(TransitionSelection &t)
 	}
 }
 
-void TransitionSelectionWidget::Repopulate(bool current, bool any)
+void TransitionSelectionWidget::EnableCurrentEntry(bool enable)
 {
-	{
-		const QSignalBlocker blocker(this);
-		clear();
-		PopulateTransitionSelection(this, current, any);
-		setCurrentIndex(-1);
-	}
-	TransitionSelection t;
-	emit TransitionChanged(t);
+	_addCurrent = enable;
+	Populate();
 }
 
-static bool isFirstEntry(QComboBox *l, QString name, int idx)
+void TransitionSelectionWidget::EnableAnyEntry(bool enable)
+{
+	_addAny = enable;
+	Populate();
+}
+
+void TransitionSelectionWidget::showEvent(QShowEvent *event)
+{
+	FilterComboBox::showEvent(event);
+	const auto selection = GetCurrentSelection();
+	const QSignalBlocker b(this);
+	Populate();
+	SetTransition(selection);
+}
+
+void TransitionSelectionWidget::Populate()
+{
+	const QSignalBlocker blocker(this);
+	clear();
+	PopulateTransitionSelection(this, _addCurrent, _addAny);
+}
+
+static bool isFirstEntry(const QComboBox *l, QString name, int idx)
 {
 	for (auto i = l->count() - 1; i >= 0; i--) {
 		if (l->itemText(i) == name) {
@@ -130,7 +148,27 @@ static bool isFirstEntry(QComboBox *l, QString name, int idx)
 	return false;
 }
 
-bool TransitionSelectionWidget::IsCurrentTransitionSelected(const QString &name)
+TransitionSelection TransitionSelectionWidget::GetCurrentSelection() const
+{
+	TransitionSelection result;
+	const auto text = currentText();
+	auto transition = GetWeakTransitionByQString(text);
+	if (transition) {
+		result._type = TransitionSelection::Type::TRANSITION;
+		result._transition = transition;
+	} else {
+		if (IsCurrentTransitionSelected(text)) {
+			result._type = TransitionSelection::Type::CURRENT;
+		}
+		if (IsAnyTransitionSelected(text)) {
+			result._type = TransitionSelection::Type::ANY;
+		}
+	}
+	return result;
+}
+
+bool TransitionSelectionWidget::IsCurrentTransitionSelected(
+	const QString &name) const
 {
 	if (name == QString::fromStdString((obs_module_text(
 			    "AdvSceneSwitcher.currentTransition")))) {
@@ -139,7 +177,8 @@ bool TransitionSelectionWidget::IsCurrentTransitionSelected(const QString &name)
 	return false;
 }
 
-bool TransitionSelectionWidget::IsAnyTransitionSelected(const QString &name)
+bool TransitionSelectionWidget::IsAnyTransitionSelected(
+	const QString &name) const
 {
 	if (name == QString::fromStdString((obs_module_text(
 			    "AdvSceneSwitcher.anyTransition")))) {
@@ -148,25 +187,9 @@ bool TransitionSelectionWidget::IsAnyTransitionSelected(const QString &name)
 	return false;
 }
 
-void TransitionSelectionWidget::SelectionChanged(const QString &name)
+void TransitionSelectionWidget::SelectionChanged(const QString &)
 {
-	TransitionSelection t;
-	auto transition = GetWeakTransitionByQString(name);
-	if (transition) {
-		t._type = TransitionSelection::Type::TRANSITION;
-		t._transition = transition;
-	}
-
-	if (!transition) {
-		if (IsCurrentTransitionSelected(name)) {
-			t._type = TransitionSelection::Type::CURRENT;
-		}
-		if (IsAnyTransitionSelected(name)) {
-			t._type = TransitionSelection::Type::ANY;
-		}
-	}
-
-	emit TransitionChanged(t);
+	emit TransitionChanged(GetCurrentSelection());
 }
 
 } // namespace advss

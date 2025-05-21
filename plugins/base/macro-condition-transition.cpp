@@ -407,15 +407,16 @@ void MacroConditionTransitionEdit::SetWidgetVisibility()
 		_entryData->_condition ==
 		MacroConditionTransition::Condition::DURATION);
 
-	bool addCurrent = _entryData->_condition ==
-			  MacroConditionTransition::Condition::DURATION;
-	bool addAny = _entryData->_condition ==
-			      MacroConditionTransition::Condition::STARTED ||
-		      _entryData->_condition ==
-			      MacroConditionTransition::Condition::ENDED ||
-		      _entryData->_condition ==
-			      MacroConditionTransition::Condition::VIDEO_ENDED;
-	_transitions->Repopulate(addCurrent, addAny);
+	_transitions->EnableCurrentEntry(
+		_entryData->_condition ==
+		MacroConditionTransition::Condition::DURATION);
+	_transitions->EnableAnyEntry(
+		_entryData->_condition ==
+			MacroConditionTransition::Condition::STARTED ||
+		_entryData->_condition ==
+			MacroConditionTransition::Condition::ENDED ||
+		_entryData->_condition ==
+			MacroConditionTransition::Condition::VIDEO_ENDED);
 }
 
 void MacroConditionTransitionEdit::UpdateEntryData()

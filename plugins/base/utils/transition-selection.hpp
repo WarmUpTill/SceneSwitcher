@@ -34,8 +34,13 @@ class TransitionSelectionWidget : public FilterComboBox {
 public:
 	TransitionSelectionWidget(QWidget *parent, bool current = true,
 				  bool any = false);
-	void SetTransition(TransitionSelection &);
-	void Repopulate(bool current, bool any);
+	void SetTransition(const TransitionSelection &);
+	void EnableCurrentEntry(bool enable);
+	void EnableAnyEntry(bool enable);
+
+protected:
+	void showEvent(QShowEvent *event) override;
+
 signals:
 	void TransitionChanged(const TransitionSelection &);
 
@@ -43,8 +48,13 @@ private slots:
 	void SelectionChanged(const QString &name);
 
 private:
-	bool IsCurrentTransitionSelected(const QString &name);
-	bool IsAnyTransitionSelected(const QString &name);
+	void Populate();
+	TransitionSelection GetCurrentSelection() const;
+	bool IsCurrentTransitionSelected(const QString &name) const;
+	bool IsAnyTransitionSelected(const QString &name) const;
+
+	bool _addCurrent;
+	bool _addAny;
 };
 
 } // namespace advss
