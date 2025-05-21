@@ -47,6 +47,9 @@ public:
 			std::dynamic_pointer_cast<MacroConditionProcess>(cond));
 	}
 
+protected:
+	void showEvent(QShowEvent *event) override;
+
 private slots:
 	void ProcessChanged(const QString &text);
 	void RegexChanged(const RegexConfig &);
