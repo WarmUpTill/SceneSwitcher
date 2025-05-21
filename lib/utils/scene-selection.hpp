@@ -45,6 +45,10 @@ public:
 				    bool previous = false, bool current = false,
 				    bool preview = false);
 	EXPORT void SetScene(const SceneSelection &);
+
+protected:
+	void showEvent(QShowEvent *event) override;
+
 signals:
 	void SceneChanged(const SceneSelection &);
 
