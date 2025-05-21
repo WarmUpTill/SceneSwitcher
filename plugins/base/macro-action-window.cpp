@@ -163,15 +163,11 @@ MacroActionWindowEdit::MacroActionWindowEdit(
 	QWidget *parent, std::shared_ptr<MacroActionWindow> entryData)
 	: QWidget(parent),
 	  _actions(new QComboBox()),
-	  _windows(new QComboBox()),
+	  _windows(new WindowSelectionWidget(this)),
 	  _regex(new RegexConfigWidget(this)),
 	  _infoLayout(new QHBoxLayout())
 {
 	populateActionSelection(_actions);
-
-	_windows->setEditable(true);
-	_windows->setMaxVisibleItems(20);
-	PopulateWindowSelection(_windows);
 
 	auto focusLimitation = new QLabel(obs_module_text(
 		"AdvSceneSwitcher.action.window.type.setFocusWindow.limitation"));
