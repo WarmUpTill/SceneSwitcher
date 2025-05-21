@@ -1,6 +1,5 @@
 #include "macro-action-projector.hpp"
 #include "layout-helpers.hpp"
-#include "monitor-helpers.hpp"
 #include "selection-helpers.hpp"
 #include "source-helpers.hpp"
 
@@ -246,7 +245,7 @@ MacroActionProjectorEdit::MacroActionProjectorEdit(
 	  _scenes(new SceneSelectionWidget(window(), true, false, true, true,
 					   true)),
 	  _sources(new SourceSelectionWidget(window(), getSourcesList, true)),
-	  _monitors(new QComboBox()),
+	  _monitors(new MonitorSelectionWidget(this)),
 	  _projectorWindowName(new VariableLineEdit(this)),
 	  _regex(new RegexConfigWidget(this)),
 	  _layout(new QHBoxLayout(this))
@@ -258,6 +257,7 @@ MacroActionProjectorEdit::MacroActionProjectorEdit(
 	_monitors->addItems(GetMonitorNames());
 	_monitors->setPlaceholderText(
 		obs_module_text("AdvSceneSwitcher.selectDisplay"));
+	_monitors->SetAllowUnmatchedSelection(false);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));

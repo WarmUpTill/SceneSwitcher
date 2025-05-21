@@ -1,6 +1,5 @@
 #include "macro-condition-display.hpp"
 #include "layout-helpers.hpp"
-#include "monitor-helpers.hpp"
 
 #include <QGuiApplication>
 #include <QScreen>
@@ -254,7 +253,7 @@ MacroConditionDisplayEdit::MacroConditionDisplayEdit(
 	: QWidget(parent),
 	  _conditions(new QComboBox()),
 	  _compareModes(new QComboBox()),
-	  _displays(new QComboBox()),
+	  _displays(new MonitorSelectionWidget(this)),
 	  _regex(new RegexConfigWidget()),
 	  _displayCount(new VariableSpinBox(this)),
 	  _displayWidth(new VariableSpinBox(this)),
@@ -264,8 +263,6 @@ MacroConditionDisplayEdit::MacroConditionDisplayEdit(
 {
 	populateConditionSelection(_conditions);
 	populateCompareModeselection(_compareModes);
-	_displays->addItems(GetMonitorNames());
-	_displays->setEditable(true);
 	_displayWidth->setMaximum(99999);
 	_displayHeight->setMaximum(99999);
 
