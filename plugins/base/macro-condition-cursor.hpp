@@ -38,9 +38,12 @@ public:
 	NumberVariable<int> _minX = 0, _minY = 0, _maxX = 0, _maxY = 0;
 
 private:
+	void SetupTempVars();
+
 	bool CheckClick();
 	std::chrono::high_resolution_clock::time_point _lastCheckTime{};
-	std::pair<int, int> _lastCursorPosition;
+	int _lastX = 0;
+	int _lastY = 0;
 
 	static bool _registered;
 	static const std::string id;
