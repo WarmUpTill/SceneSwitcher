@@ -289,6 +289,13 @@ void FilterSelectionWidget::SetFilter(const SourceSelection &source,
 	_currentSelection = filter;
 }
 
+void FilterSelectionWidget::showEvent(QShowEvent *event)
+{
+	FilterComboBox::showEvent(event);
+	const QSignalBlocker b(this);
+	Reset();
+}
+
 void FilterSelectionWidget::SourceChanged(const SourceSelection &source)
 {
 	if (source == _source) {
