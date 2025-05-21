@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-condition-edit.hpp"
+#include "monitor-helpers.hpp"
 #include "variable-line-edit.hpp"
 #include "variable-spinbox.hpp"
 #include "regex-config.hpp"
@@ -80,7 +81,7 @@ private:
 
 	QComboBox *_conditions;
 	QComboBox *_compareModes;
-	QComboBox *_displays;
+	MonitorSelectionWidget *_displays;
 	RegexConfigWidget *_regex;
 	VariableSpinBox *_displayCount;
 	VariableSpinBox *_displayWidth;

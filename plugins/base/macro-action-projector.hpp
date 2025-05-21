@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "monitor-helpers.hpp"
 #include "regex-config.hpp"
 #include "scene-selection.hpp"
 #include "source-selection.hpp"
@@ -88,7 +89,7 @@ private:
 	QComboBox *_windowTypes;
 	SceneSelectionWidget *_scenes;
 	SourceSelectionWidget *_sources;
-	QComboBox *_monitors;
+	MonitorSelectionWidget *_monitors;
 	VariableLineEdit *_projectorWindowName;
 	RegexConfigWidget *_regex;
 	QHBoxLayout *_layout;
