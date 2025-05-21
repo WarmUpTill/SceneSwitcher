@@ -52,24 +52,26 @@ bool MacroConditionCursor::CheckClick()
 bool MacroConditionCursor::CheckCondition()
 {
 	bool ret = false;
-	std::pair<int, int> cursorPos = GetCursorPos();
+	const auto &[x, y] = GetCursorPos();
+	SetTempVarValue("x", std::to_string(x));
+	SetTempVarValue("y", std::to_string(y));
+
 	switch (_condition) {
 	case Condition::REGION:
-		ret = cursorPos.first >= _minX && cursorPos.second >= _minY &&
-		      cursorPos.first <= _maxX && cursorPos.second <= _maxY;
-		SetVariableValue(std::to_string(cursorPos.first) + " " +
-				 std::to_string(cursorPos.second));
+		ret = x >= _minX && y >= _minY && x <= _maxX && y <= _maxY;
+		SetVariableValue(std::to_string(x) + " " + std::to_string(y));
 		break;
 	case Condition::MOVING:
-		ret = cursorPos.first != _lastCursorPosition.first ||
-		      cursorPos.second != _lastCursorPosition.second;
+		ret = x != _lastX || y != _lastY;
 		break;
 	case Condition::CLICK:
 		ret = CheckClick();
 		break;
 	}
+
 	_lastCheckTime = std::chrono::high_resolution_clock::now();
-	_lastCursorPosition = cursorPos;
+	_lastX = x;
+	_lastY = y;
 
 	if (GetVariableValue().empty()) {
 		SetVariableValue(ret ? "true" : "false");
@@ -107,6 +109,12 @@ bool MacroConditionCursor::Load(obs_data_t *obj)
 		_maxY.Load(obj, "maxY");
 	}
 	return true;
+}
+
+void MacroConditionCursor::SetupTempVars()
+{
+	AddTempvar("x", obs_module_text("AdvSceneSwitcher.tempVar.cursor.x"));
+	AddTempvar("y", obs_module_text("AdvSceneSwitcher.tempVar.cursor.y"));
 }
 
 static inline void populateConditionSelection(QComboBox *list)
