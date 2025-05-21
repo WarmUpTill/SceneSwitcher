@@ -589,6 +589,7 @@ static QStringList getSceneItemsList(SceneSelection &s)
 
 void SceneItemSelectionWidget::PopulateItemSelection()
 {
+	_sources->clear();
 	const QStringList sceneItems = getSceneItemsList(_scene);
 	AddSelectionGroup(_sources, sceneItems, false);
 	_sources->setCurrentIndex(-1);
@@ -759,8 +760,8 @@ void SceneItemSelectionWidget::SetSceneItem(const SceneItemSelection &item)
 		idx += 1;
 	}
 	_nameConflictIndex->setCurrentIndex(idx);
-	_sources->setCurrentText(
-		QString::fromStdString(GetWeakSourceName(item._source)));
+	_sources->setCurrentIndex(_sources->findText(
+		QString::fromStdString(GetWeakSourceName(item._source))));
 	_sourceGroups->setCurrentText(
 		QString::fromStdString(GetWeakSourceName(item._source)));
 	_variables->SetVariable(item._variable);
@@ -773,7 +774,10 @@ void SceneItemSelectionWidget::SetSceneItem(const SceneItemSelection &item)
 
 	_currentSelection = item;
 
-	SetNameConflictVisibility();
+	{
+		const QSignalBlocker b(_nameConflictIndex);
+		SetNameConflictVisibility();
+	}
 
 	switch (item._nameConflictSelectionType) {
 	case SceneItemSelection::NameConflictSelection::ALL:
@@ -795,10 +799,17 @@ void SceneItemSelectionWidget::SetSceneItem(const SceneItemSelection &item)
 
 void SceneItemSelectionWidget::SetScene(const SceneSelection &s)
 {
+
 	_scene = s;
-	_sources->clear();
 	_nameConflictIndex->hide();
+	if (_currentSelection._type != SceneItemSelection::Type::SOURCE_NAME) {
+		PopulateItemSelection();
+		return;
+	}
+
+	auto previous = _currentSelection;
 	PopulateItemSelection();
+	SetSceneItem(previous);
 }
 
 void SceneItemSelectionWidget::ShowPlaceholder(bool value)
@@ -817,6 +828,15 @@ void SceneItemSelectionWidget::SetPlaceholderType(Placeholder t,
 		const QSignalBlocker b(_nameConflictIndex);
 		SetupNameConflictIdxSelection(count > 0 ? count : 1);
 	}
+}
+
+void SceneItemSelectionWidget::showEvent(QShowEvent *event)
+{
+	QWidget::showEvent(event);
+	const QSignalBlocker b1(_sources);
+	const QSignalBlocker b2(this);
+	PopulateItemSelection();
+	SetSceneItem(_currentSelection);
 }
 
 void SceneItemSelectionWidget::SceneChanged(const SceneSelection &s)

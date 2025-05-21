@@ -97,6 +97,10 @@ public:
 	void SetScene(const SceneSelection &);
 	void ShowPlaceholder(bool);
 	void SetPlaceholderType(Placeholder t, bool resetSelection = true);
+
+protected:
+	void showEvent(QShowEvent *event) override;
+
 signals:
 	void SceneItemChanged(const SceneItemSelection &);
 
