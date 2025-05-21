@@ -2,6 +2,7 @@
 #include "macro-condition-edit.hpp"
 #include "variable-text-edit.hpp"
 #include "regex-config.hpp"
+#include "window-selection.hpp"
 
 #include <QComboBox>
 #include <QCheckBox>
@@ -77,7 +78,7 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
-	QComboBox *_windowSelection;
+	WindowSelectionWidget *_windowSelection;
 	RegexConfigWidget *_windowRegex;
 	QCheckBox *_checkTitle;
 	QCheckBox *_fullscreen;

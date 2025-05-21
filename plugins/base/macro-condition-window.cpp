@@ -2,7 +2,6 @@
 #include "layout-helpers.hpp"
 #include "plugin-state-helpers.hpp"
 #include "platform-funcs.hpp"
-#include "selection-helpers.hpp"
 
 #include <regex>
 
@@ -193,7 +192,7 @@ void MacroConditionWindow::SetupTempVars()
 MacroConditionWindowEdit::MacroConditionWindowEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionWindow> entryData)
 	: QWidget(parent),
-	  _windowSelection(new QComboBox()),
+	  _windowSelection(new WindowSelectionWidget(this)),
 	  _windowRegex(new RegexConfigWidget(this)),
 	  _checkTitle(new QCheckBox()),
 	  _fullscreen(new QCheckBox()),
@@ -206,9 +205,6 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 	  _focusWindow(new QLabel()),
 	  _currentFocusLayout(new QHBoxLayout())
 {
-	_windowSelection->setEditable(true);
-	_windowSelection->setMaxVisibleItems(20);
-
 	_checkText->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.window.entry.text.note"));
 	_text->setToolTip(obs_module_text(
@@ -239,8 +235,6 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 			 SLOT(TextRegexChanged(const RegexConfig &)));
 	QWidget::connect(&_timer, SIGNAL(timeout()), this,
 			 SLOT(UpdateFocusWindow()));
-
-	PopulateWindowSelection(_windowSelection);
 
 	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{windows}}", _windowSelection},
