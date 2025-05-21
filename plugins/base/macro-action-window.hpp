@@ -2,6 +2,7 @@
 #include "macro-action-edit.hpp"
 #include "regex-config.hpp"
 #include "variable-string.hpp"
+#include "window-selection.hpp"
 
 namespace advss {
 
@@ -62,7 +63,7 @@ private:
 	void SetWidgetVisibility();
 
 	QComboBox *_actions;
-	QComboBox *_windows;
+	WindowSelectionWidget *_windows;
 	RegexConfigWidget *_regex;
 	QHBoxLayout *_infoLayout;
 
