@@ -1,8 +1,6 @@
 #pragma once
 #include "macro-condition-edit.hpp"
-
-#include <QWidget>
-#include <QComboBox>
+#include "profile-helpers.hpp"
 
 namespace advss {
 
@@ -47,11 +45,10 @@ private slots:
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
-	QComboBox *_profiles;
-	std::shared_ptr<MacroConditionProfile> _entryData;
-
 private:
+	ProfileSelectionWidget *_profiles;
+
+	std::shared_ptr<MacroConditionProfile> _entryData;
 	bool _loading = true;
 };
 
