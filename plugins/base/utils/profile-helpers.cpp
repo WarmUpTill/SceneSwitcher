@@ -30,4 +30,23 @@ std::string GetPathInProfileDir(const char *filePath)
 	return result + "/" + filePath;
 }
 
+ProfileSelectionWidget::ProfileSelectionWidget(QWidget *parent)
+	: FilterComboBox(parent)
+{
+	setEditable(true);
+	SetAllowUnmatchedSelection(true);
+	setMaxVisibleItems(20);
+	PopulateProfileSelection(this);
+}
+
+void ProfileSelectionWidget::showEvent(QShowEvent *event)
+{
+	FilterComboBox::showEvent(event);
+	const QSignalBlocker b(this);
+	const auto text = currentText();
+	clear();
+	PopulateProfileSelection(this);
+	setCurrentText(text);
+}
+
 } // namespace advss

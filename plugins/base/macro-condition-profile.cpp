@@ -1,6 +1,5 @@
 #include "macro-condition-profile.hpp"
 #include "layout-helpers.hpp"
-#include "profile-helpers.hpp"
 
 #include <obs-frontend-api.h>
 
@@ -43,22 +42,16 @@ std::string MacroConditionProfile::GetShortDesc() const
 MacroConditionProfileEdit::MacroConditionProfileEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionProfile> entryData)
 	: QWidget(parent),
-	  _profiles(new QComboBox())
+	  _profiles(new ProfileSelectionWidget(this))
 {
-	PopulateProfileSelection(_profiles);
 	QWidget::connect(_profiles, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(ProfileChanged(const QString &)));
 
-	QHBoxLayout *mainLayout = new QHBoxLayout;
-
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{profiles}}", _profiles},
-	};
-
+	auto layout = new QHBoxLayout;
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.profile.entry"),
-		mainLayout, widgetPlaceholders);
-	setLayout(mainLayout);
+		layout, {{"{{profiles}}", _profiles}});
+	setLayout(layout);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -67,11 +60,7 @@ MacroConditionProfileEdit::MacroConditionProfileEdit(
 
 void MacroConditionProfileEdit::ProfileChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_profile = text.toStdString();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));

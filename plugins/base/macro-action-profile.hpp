@@ -1,7 +1,6 @@
 #pragma once
 #include "macro-action-edit.hpp"
-
-#include <QComboBox>
+#include "profile-helpers.hpp"
 
 namespace advss {
 
@@ -45,11 +44,10 @@ private slots:
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
-	QComboBox *_profiles;
-	std::shared_ptr<MacroActionProfile> _entryData;
-
 private:
+	ProfileSelectionWidget *_profiles;
+
+	std::shared_ptr<MacroActionProfile> _entryData;
 	bool _loading = true;
 };
 
