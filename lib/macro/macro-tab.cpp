@@ -100,6 +100,13 @@ bool AdvSceneSwitcher::AddNewMacro(std::shared_ptr<Macro> &res,
 
 void AdvSceneSwitcher::on_macroAdd_clicked()
 {
+	// Hotkey to add new macro will also use this function.
+	// Since we don't want the hotkey to have an effect if the macro tab is
+	// not focused we need to check this here.
+	if (!MacroTabIsInFocus()) {
+		return;
+	}
+
 	std::string name;
 	std::shared_ptr<Macro> newMacro;
 	if (!AddNewMacro(newMacro, name)) {

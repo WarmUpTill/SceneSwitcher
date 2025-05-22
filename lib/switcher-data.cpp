@@ -255,6 +255,16 @@ static void removeMacroSegmentHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
 	}
 }
 
+static void addNewMacroHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *,
+				  bool pressed)
+{
+	if (pressed && SettingsWindowIsOpened()) {
+		QMetaObject::invokeMethod(GetSettingsWindow(),
+					  "on_macroAdd_clicked",
+					  Qt::QueuedConnection);
+	}
+}
+
 static void registerHotkeys()
 {
 	switcher->startHotkey = obs_hotkey_register_frontend(
@@ -270,19 +280,21 @@ static void registerHotkeys()
 		obs_module_text(
 			"AdvSceneSwitcher.hotkey.startStopToggleSwitcherHotkey"),
 		startStopToggleHotkeyFunc, NULL);
+	switcher->newMacroHotkey = obs_hotkey_register_frontend(
+		"newMacroSwitcherHotkey",
+		obs_module_text("AdvSceneSwitcher.hotkey.macro.new"),
+		addNewMacroHotkeyFunc, NULL);
 	switcher->upMacroSegment = obs_hotkey_register_frontend(
 		"upMacroSegmentSwitcherHotkey",
-		obs_module_text("AdvSceneSwitcher.hotkey.upMacroSegmentHotkey"),
+		obs_module_text("AdvSceneSwitcher.hotkey.macro.segment.up"),
 		upMacroSegmentHotkeyFunc, NULL);
 	switcher->downMacroSegment = obs_hotkey_register_frontend(
 		"downMacroSegmentSwitcherHotkey",
-		obs_module_text(
-			"AdvSceneSwitcher.hotkey.downMacroSegmentHotkey"),
+		obs_module_text("AdvSceneSwitcher.hotkey.macro.segment.down"),
 		downMacroSegmentHotkeyFunc, NULL);
 	switcher->removeMacroSegment = obs_hotkey_register_frontend(
 		"removeMacroSegmentSwitcherHotkey",
-		obs_module_text(
-			"AdvSceneSwitcher.hotkey.removeMacroSegmentHotkey"),
+		obs_module_text("AdvSceneSwitcher.hotkey.macro.segment.remove"),
 		removeMacroSegmentHotkeyFunc, NULL);
 
 	switcher->hotkeysRegistered = true;
@@ -300,6 +312,7 @@ void SwitcherData::SaveHotkeys(obs_data_t *obj)
 	saveHotkey(obj, startHotkey, "startHotkey");
 	saveHotkey(obj, stopHotkey, "stopHotkey");
 	saveHotkey(obj, toggleHotkey, "toggleHotkey");
+	saveHotkey(obj, newMacroHotkey, "newMacroHotkey");
 	saveHotkey(obj, upMacroSegment, "upMacroSegmentHotkey");
 	saveHotkey(obj, downMacroSegment, "downMacroSegmentHotkey");
 	saveHotkey(obj, removeMacroSegment, "removeMacroSegmentHotkey");
@@ -320,6 +333,7 @@ void SwitcherData::LoadHotkeys(obs_data_t *obj)
 	loadHotkey(obj, startHotkey, "startHotkey");
 	loadHotkey(obj, stopHotkey, "stopHotkey");
 	loadHotkey(obj, toggleHotkey, "toggleHotkey");
+	loadHotkey(obj, newMacroHotkey, "newMacroHotkey");
 	loadHotkey(obj, upMacroSegment, "upMacroSegmentHotkey");
 	loadHotkey(obj, downMacroSegment, "downMacroSegmentHotkey");
 	loadHotkey(obj, removeMacroSegment, "removeMacroSegmentHotkey");

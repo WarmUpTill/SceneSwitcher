@@ -149,6 +149,7 @@ public:
 	obs_hotkey_id startHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id stopHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id toggleHotkey = OBS_INVALID_HOTKEY_ID;
+	obs_hotkey_id newMacroHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id upMacroSegment = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id downMacroSegment = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id removeMacroSegment = OBS_INVALID_HOTKEY_ID;
