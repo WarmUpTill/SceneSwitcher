@@ -134,13 +134,13 @@ void PreviewDialog::PatternMatchParametersChanged(
 void PreviewDialog::ObjDetectParametersChanged(const ObjDetectParameters &params)
 {
 	std::unique_lock<std::mutex> lock(_mtx);
-	_objDetectParams = params;
+	_objDetectParams = std::make_shared<ObjDetectParameters>(params);
 }
 
 void PreviewDialog::OCRParametersChanged(const OCRParameters &params)
 {
 	std::unique_lock<std::mutex> lock(_mtx);
-	_ocrParams = params;
+	_ocrParams = std::make_shared<OCRParameters>(params);
 }
 
 void PreviewDialog::VideoSelectionChanged(const VideoInput &video)
@@ -262,13 +262,13 @@ static void markObjects(QImage &image, std::vector<cv::Rect> &objects)
 
 PreviewImage::PreviewImage(std::mutex &mtx) : _mtx(mtx) {}
 
-void PreviewImage::CreateImage(const VideoInput &video, PreviewType type,
-			       const PatternMatchParameters &patternMatchParams,
-			       const PatternImageData &patternImageData,
-			       ObjDetectParameters objDetectParams,
-			       OCRParameters ocrParams,
-			       const AreaParameters &areaParams,
-			       VideoCondition condition)
+void PreviewImage::CreateImage(
+	const VideoInput &video, PreviewType type,
+	const PatternMatchParameters &patternMatchParams,
+	const PatternImageData &patternImageData,
+	std::shared_ptr<ObjDetectParameters> objDetectParams,
+	std::shared_ptr<OCRParameters> ocrParams,
+	const AreaParameters &areaParams, VideoCondition condition)
 {
 	auto source = obs_weak_source_get_source(video.GetVideo());
 	QRect screenshotArea;
@@ -308,61 +308,94 @@ void PreviewImage::CreateImage(const VideoInput &video, PreviewType type,
 	emit ImageReady(QPixmap::fromImage(screenshot.GetImage()));
 }
 
-void PreviewImage::MarkMatch(QImage &screenshot,
-			     const PatternMatchParameters &patternMatchParams,
-			     const PatternImageData &patternImageData,
-			     ObjDetectParameters &objDetectParams,
-			     const OCRParameters &ocrParams,
-			     VideoCondition condition)
+void PreviewImage::MarkMatch(
+	QImage &screenshot, const PatternMatchParameters &patternMatchParams,
+	const PatternImageData &patternImageData,
+	std::shared_ptr<ObjDetectParameters> objDetectParams,
+	std::shared_ptr<OCRParameters> ocrParams, VideoCondition condition)
 {
 	if (condition == VideoCondition::PATTERN) {
-		cv::Mat result;
-		double matchValue =
-			std::numeric_limits<double>::signaling_NaN();
-		MatchPattern(screenshot, patternImageData,
-			     patternMatchParams.threshold, result, &matchValue,
-			     patternMatchParams.useAlphaAsMask,
-			     patternMatchParams.matchMode);
-		emit ValueUpdate(matchValue);
-		if (result.total() == 0 || countNonZero(result) == 0) {
-			emit StatusUpdate(obs_module_text(
-				"AdvSceneSwitcher.condition.video.patternMatchFail"));
-		} else if (result.cols == 1 && result.rows == 1) {
-			emit StatusUpdate(obs_module_text(
-				"AdvSceneSwitcher.condition.video.patternMatchSuccessFullImage"));
-		} else {
-			emit StatusUpdate(obs_module_text(
-				"AdvSceneSwitcher.condition.video.patternMatchSuccess"));
-			markPatterns(result, screenshot,
-				     patternImageData.rgbaPattern);
-		}
+		MarkPatternMatch(screenshot, patternMatchParams,
+				 patternImageData);
 	} else if (condition == VideoCondition::OBJECT) {
-		auto objects = MatchObject(screenshot, objDetectParams.cascade,
-					   objDetectParams.scaleFactor,
-					   objDetectParams.minNeighbors,
-					   objDetectParams.minSize.CV(),
-					   objDetectParams.maxSize.CV());
-		if (objects.empty()) {
-			emit StatusUpdate(obs_module_text(
-				"AdvSceneSwitcher.condition.video.objectMatchFail"));
-		} else {
-			emit StatusUpdate(obs_module_text(
-				"AdvSceneSwitcher.condition.video.objectMatchSuccess"));
-			markObjects(screenshot, objects);
-		}
+		MarkObjectMatch(screenshot, objDetectParams);
 	} else if (condition == VideoCondition::OCR) {
-		auto text = RunOCR(ocrParams.GetOCR(), screenshot,
-				   ocrParams.color, ocrParams.colorThreshold);
-
-		if (!text) {
-			emit StatusUpdate(obs_module_text(
-				"AdvSceneSwitcher.condition.video.ocrMatchFail"));
-		}
-
-		QString status(obs_module_text(
-			"AdvSceneSwitcher.condition.video.ocrMatchSuccess"));
-		emit StatusUpdate(status.arg(QString::fromStdString(*text)));
+		MarkOCRMatch(screenshot, ocrParams);
 	}
+}
+
+void PreviewImage::MarkPatternMatch(
+	QImage &screenshot, const PatternMatchParameters &patternMatchParams,
+	const PatternImageData &patternImageData)
+{
+	cv::Mat result;
+	double matchValue = std::numeric_limits<double>::signaling_NaN();
+	MatchPattern(screenshot, patternImageData, patternMatchParams.threshold,
+		     result, &matchValue, patternMatchParams.useAlphaAsMask,
+		     patternMatchParams.matchMode);
+	emit ValueUpdate(matchValue);
+	if (result.total() == 0 || countNonZero(result) == 0) {
+		emit StatusUpdate(obs_module_text(
+			"AdvSceneSwitcher.condition.video.patternMatchFail"));
+	} else if (result.cols == 1 && result.rows == 1) {
+		emit StatusUpdate(obs_module_text(
+			"AdvSceneSwitcher.condition.video.patternMatchSuccessFullImage"));
+	} else {
+		emit StatusUpdate(obs_module_text(
+			"AdvSceneSwitcher.condition.video.patternMatchSuccess"));
+		markPatterns(result, screenshot, patternImageData.rgbaPattern);
+	}
+}
+
+void PreviewImage::MarkObjectMatch(
+	QImage &screenshot,
+	const std::shared_ptr<ObjDetectParameters> &objDetectParams)
+{
+	if (!objDetectParams) {
+		emit StatusUpdate(obs_module_text(
+			"AdvSceneSwitcher.condition.video.objectMatchFail"));
+		return;
+	}
+	auto model = objDetectParams->GetModel();
+	if (!model) {
+		emit StatusUpdate(obs_module_text(
+			"AdvSceneSwitcher.condition.video.objectMatchFail"));
+		return;
+	}
+	auto objects = MatchObject(screenshot, *model,
+				   objDetectParams->scaleFactor,
+				   objDetectParams->minNeighbors,
+				   objDetectParams->minSize.CV(),
+				   objDetectParams->maxSize.CV());
+	if (objects.empty()) {
+		emit StatusUpdate(obs_module_text(
+			"AdvSceneSwitcher.condition.video.objectMatchFail"));
+	} else {
+		emit StatusUpdate(obs_module_text(
+			"AdvSceneSwitcher.condition.video.objectMatchSuccess"));
+		markObjects(screenshot, objects);
+	}
+}
+
+void PreviewImage::MarkOCRMatch(QImage &screenshot,
+				const std::shared_ptr<OCRParameters> &ocrParams)
+{
+	if (!ocrParams) {
+		emit StatusUpdate(obs_module_text(
+			"AdvSceneSwitcher.condition.video.ocrMatchFail"));
+		return;
+	}
+	auto text = RunOCR(ocrParams->GetOCR(), screenshot, ocrParams->color,
+			   ocrParams->colorThreshold);
+
+	if (!text) {
+		emit StatusUpdate(obs_module_text(
+			"AdvSceneSwitcher.condition.video.ocrMatchFail"));
+	}
+
+	QString status(obs_module_text(
+		"AdvSceneSwitcher.condition.video.ocrMatchSuccess"));
+	emit StatusUpdate(status.arg(QString::fromStdString(*text)));
 }
 
 } // namespace advss
