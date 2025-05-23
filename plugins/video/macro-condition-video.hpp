@@ -42,8 +42,6 @@ public:
 	QImage GetMatchImage() const { return _matchImage; };
 	void GetScreenshot(bool blocking = false);
 	bool LoadImageFromFile();
-	bool LoadModelData(std::string &path);
-	std::string GetModelDataPath() const;
 	void ResetLastMatch() { _lastMatchResult = false; }
 	double GetCurrentBrightness() const { return _currentBrightness; }
 	void SetPageSegMode(tesseract::PageSegMode);

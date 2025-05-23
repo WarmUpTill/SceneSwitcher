@@ -68,15 +68,23 @@ public:
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
 
-	std::string modelPath =
-		obs_get_module_data_path(obs_current_module()) +
-		std::string(
-			"/res/cascadeClassifiers/haarcascade_frontalface_alt.xml");
-	cv::CascadeClassifier cascade;
+	bool SetModelPath(const std::string &path);
+	const std::string &GetModelPath() const { return modelPath; }
+	std::shared_ptr<cv::CascadeClassifier> GetModel();
+
 	NumberVariable<double> scaleFactor = defaultScaleFactor;
 	int minNeighbors = minMinNeighbors;
 	Size minSize{0, 0};
 	Size maxSize{0, 0};
+
+private:
+	bool LoadModelData();
+
+	std::shared_ptr<cv::CascadeClassifier> cascade;
+	std::string modelPath =
+		obs_get_module_data_path(obs_current_module()) +
+		std::string(
+			"/res/cascadeClassifiers/haarcascade_frontalface_alt.xml");
 };
 
 class OCRParameters {
