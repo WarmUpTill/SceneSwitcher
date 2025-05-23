@@ -86,18 +86,6 @@ const static std::map<tesseract::PageSegMode, std::string> pageSegModes = {
 	 "AdvSceneSwitcher.condition.video.ocrMode.sparseTextOSD"},
 };
 
-static cv::CascadeClassifier initObjectCascade(std::string &path)
-{
-	cv::CascadeClassifier cascade;
-	try {
-		cascade.load(path);
-	} catch (...) {
-		blog(LOG_WARNING, "failed to load model data \"%s\"",
-		     path.c_str());
-	}
-	return cascade;
-}
-
 static bool requiresFileInput(VideoCondition t)
 {
 	return t == VideoCondition::MATCH || t == VideoCondition::DIFFER ||
@@ -212,10 +200,6 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 		(void)LoadImageFromFile();
 	}
 
-	if (_condition == VideoCondition::OBJECT) {
-		LoadModelData(_objMatchParameters.modelPath);
-	}
-
 	return true;
 }
 
@@ -263,18 +247,6 @@ bool MacroConditionVideo::LoadImageFromFile()
 
 	emit InputFileChanged();
 	return true;
-}
-
-bool MacroConditionVideo::LoadModelData(std::string &path)
-{
-	_objMatchParameters.modelPath = path;
-	_objMatchParameters.cascade = initObjectCascade(path);
-	return !_objMatchParameters.cascade.empty();
-}
-
-std::string MacroConditionVideo::GetModelDataPath() const
-{
-	return _objMatchParameters.modelPath;
 }
 
 void MacroConditionVideo::SetPageSegMode(tesseract::PageSegMode mode)
@@ -344,8 +316,11 @@ bool MacroConditionVideo::OutputChanged()
 
 bool MacroConditionVideo::ScreenshotContainsObject()
 {
-	auto objects = MatchObject(_screenshotData.GetImage(),
-				   _objMatchParameters.cascade,
+	auto model = _objMatchParameters.GetModel();
+	if (!model) {
+		return false;
+	}
+	auto objects = MatchObject(_screenshotData.GetImage(), *model,
 				   _objMatchParameters.scaleFactor,
 				   _objMatchParameters.minNeighbors,
 				   _objMatchParameters.minSize.CV(),
@@ -936,7 +911,7 @@ ObjectDetectEdit::ObjectDetectEdit(
 	layout->addLayout(sizeLayout);
 	setLayout(layout);
 
-	_modelDataPath->SetPath(_entryData->GetModelDataPath());
+	_modelDataPath->SetPath(_entryData->_objMatchParameters.GetModelPath());
 	_objectScaleThreshold->SetDoubleValue(
 		_entryData->_objMatchParameters.scaleFactor);
 	_minNeighbors->setValue(_entryData->_objMatchParameters.minNeighbors);
@@ -987,7 +962,7 @@ void ObjectDetectEdit::ModelPathChanged(const QString &text)
 	{
 		auto lock = LockContext();
 		std::string path = text.toStdString();
-		dataLoaded = _entryData->LoadModelData(path);
+		dataLoaded = _entryData->_objMatchParameters.SetModelPath(path);
 	}
 	if (!dataLoaded) {
 		DisplayMessage(obs_module_text(
@@ -1415,12 +1390,6 @@ void MacroConditionVideoEdit::ConditionChanged(int idx)
 	}
 	_previewDialog.PatternMatchParametersChanged(
 		_entryData->_patternMatchParameters);
-
-	if (_entryData->GetCondition() == VideoCondition::OBJECT) {
-		auto path = _entryData->GetModelDataPath();
-		_entryData->_objMatchParameters.cascade =
-			initObjectCascade(path);
-	}
 
 	SetupPreviewDialogParams();
 }

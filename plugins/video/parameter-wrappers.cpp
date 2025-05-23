@@ -48,6 +48,31 @@ bool PatternMatchParameters::Load(obs_data_t *obj)
 	return true;
 }
 
+static std::shared_ptr<cv::CascadeClassifier>
+initObjectCascade(std::string &path)
+{
+	auto cascade = std::make_shared<cv::CascadeClassifier>();
+	try {
+		cascade->load(path);
+	} catch (...) {
+		blog(LOG_WARNING, "failed to load model data \"%s\"",
+		     path.c_str());
+	}
+	return cascade;
+}
+
+bool ObjDetectParameters::LoadModelData()
+{
+	const auto path = QString::fromStdString(modelPath);
+	if (!QFileInfo(path).exists(path)) {
+		cascade.reset();
+		return false;
+	}
+
+	cascade = initObjectCascade(modelPath);
+	return !cascade->empty();
+}
+
 bool ObjDetectParameters::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
@@ -107,7 +132,27 @@ bool ObjDetectParameters::Load(obs_data_t *obj)
 	minSize.Load(data, "minSize");
 	maxSize.Load(data, "maxSize");
 	obs_data_release(data);
+
 	return true;
+}
+
+bool ObjDetectParameters::SetModelPath(const std::string &path)
+{
+	modelPath = path;
+	return LoadModelData();
+}
+
+std::shared_ptr<cv::CascadeClassifier> ObjDetectParameters::GetModel()
+{
+	if (cascade && !cascade->empty()) {
+		return cascade;
+	}
+
+	if (!LoadModelData()) {
+		return {};
+	}
+
+	return cascade;
 }
 
 bool AreaParameters::Save(obs_data_t *obj) const
