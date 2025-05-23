@@ -164,6 +164,7 @@ public:
 	bool warnPluginLoadFailure = true;
 	bool disableHints = false;
 	bool disableFilterComboboxFilter = false;
+	bool disableMacroWidgetCache = false;
 	bool hideLegacyTabs = true;
 	bool saveWindowGeo = false;
 	QPoint windowPos = {};

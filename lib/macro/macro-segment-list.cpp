@@ -13,6 +13,8 @@
 
 namespace advss {
 
+bool MacroSegmentList::_useCache = true;
+
 MacroSegmentList::MacroSegmentList(QWidget *parent)
 	: QScrollArea(parent),
 	  _layout(new QVBoxLayout),
@@ -136,8 +138,18 @@ void MacroSegmentList::Clear(int idx) const
 	ClearLayout(_contentLayout, idx);
 }
 
+void MacroSegmentList::SetCachingEnabled(bool enable)
+{
+	_useCache = enable;
+}
+
 void MacroSegmentList::CacheCurrentWidgetsFor(const Macro *macro)
 {
+	if (!_useCache) {
+		_widgetCache.clear();
+		return;
+	}
+
 	std::vector<QWidget *> result;
 	int idx = 0;
 	QLayoutItem *item;
@@ -155,6 +167,11 @@ void MacroSegmentList::CacheCurrentWidgetsFor(const Macro *macro)
 
 bool MacroSegmentList::PopulateWidgetsFromCache(const Macro *macro)
 {
+	if (!_useCache) {
+		_widgetCache.clear();
+		return false;
+	}
+
 	auto it = _widgetCache.find(macro);
 	if (it == _widgetCache.end()) {
 		return false;

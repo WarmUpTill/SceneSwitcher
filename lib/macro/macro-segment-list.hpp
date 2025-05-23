@@ -26,6 +26,7 @@ public:
 	void Add(QWidget *widget);
 	void Remove(int idx) const;
 	void Clear(int idx = 0) const; // Clear all elements >= idx
+	static void SetCachingEnabled(bool enable);
 	void CacheCurrentWidgetsFor(const Macro *);
 	bool PopulateWidgetsFromCache(const Macro *);
 	void Highlight(int idx, QColor color = QColor(Qt::green));
@@ -72,6 +73,7 @@ private:
 
 	bool _checkVisibility = true;
 
+	static bool _useCache;
 	std::unordered_map<const Macro *, std::vector<QWidget *>> _widgetCache;
 };
 
