@@ -42,12 +42,11 @@ public:
 	QImage GetMatchImage() const { return _matchImage; };
 	void GetScreenshot(bool blocking = false);
 	bool LoadImageFromFile();
-	bool LoadModelData(std::string &path);
-	std::string GetModelDataPath() const;
 	void ResetLastMatch() { _lastMatchResult = false; }
 	double GetCurrentBrightness() const { return _currentBrightness; }
 	void SetPageSegMode(tesseract::PageSegMode);
-	bool SetLanguage(const std::string &);
+	bool SetLanguageCode(const std::string &);
+	bool SetTesseractBaseDir(const std::string &);
 
 	void SetCondition(VideoCondition);
 	VideoCondition GetCondition() const { return _condition; }
@@ -60,13 +59,18 @@ public:
 	// If not set the screenshot will be gathered in one interval and
 	// checked in the next one.
 	// If set both operations will happen in the same interval.
-	bool _blockUntilScreenshotDone = false;
+	//
+	// TODO: Remove this option in a future release as it has become
+	// superfluous with "short circuit" evaluation.
+	bool _blockUntilScreenshotDone = true;
 	NumberVariable<double> _brightnessThreshold = 0.5;
 	PatternMatchParameters _patternMatchParameters;
 	ObjDetectParameters _objMatchParameters;
 	OCRParameters _ocrParameters;
 	ColorParameters _colorParameters;
 	AreaParameters _areaParameters;
+	// TODO: Remove this option in a future release as it has become
+	// superfluous with "short circuit" evaluation.
 	bool _throttleEnabled = false;
 	int _throttleCount = 3;
 
@@ -122,7 +126,7 @@ private:
 	QLabel *_current;
 	QTimer _timer;
 
-	std::shared_ptr<MacroConditionVideo> _data;
+	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;
 };
 
@@ -139,7 +143,10 @@ private slots:
 	void MatchTextChanged();
 	void RegexChanged(const RegexConfig &conf);
 	void PageSegModeChanged(int);
+	void TesseractBaseDirChanged(const QString &);
 	void LanguageChanged();
+	void UseConfigChanged(int);
+	void ConfigFileChanged(const QString &);
 
 private:
 	void SetupColorLabel(const QColor &);
@@ -150,11 +157,17 @@ private:
 	QPushButton *_selectColor;
 	SliderSpinBox *_colorThreshold;
 	QComboBox *_pageSegMode;
+	FileSelection *_tesseractBaseDir;
 	VariableLineEdit *_languageCode;
+	QCheckBox *_useConfig;
+	FileSelection *_configFile;
+	QPushButton *_openConfigFile;
+	QPushButton *_reloadConfig;
+	QHBoxLayout *_configLayout;
 
 	PreviewDialog *_previewDialog;
 
-	std::shared_ptr<MacroConditionVideo> _data;
+	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;
 };
 
@@ -182,7 +195,7 @@ private:
 
 	PreviewDialog *_previewDialog;
 
-	std::shared_ptr<MacroConditionVideo> _data;
+	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;
 };
 
@@ -206,7 +219,7 @@ private:
 	QLabel *_color;
 	QPushButton *_selectColor;
 
-	std::shared_ptr<MacroConditionVideo> _data;
+	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;
 };
 
@@ -235,7 +248,7 @@ private:
 
 	PreviewDialog *_previewDialog;
 
-	std::shared_ptr<MacroConditionVideo> _data;
+	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;
 };
 

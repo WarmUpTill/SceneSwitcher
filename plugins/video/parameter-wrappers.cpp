@@ -1,4 +1,5 @@
 #include "parameter-wrappers.hpp"
+#include "log-helper.hpp"
 
 #include <QFileInfo>
 #include <source-helpers.hpp>
@@ -45,6 +46,31 @@ bool PatternMatchParameters::Load(obs_data_t *obj)
 	}
 	obs_data_release(data);
 	return true;
+}
+
+static std::shared_ptr<cv::CascadeClassifier>
+initObjectCascade(std::string &path)
+{
+	auto cascade = std::make_shared<cv::CascadeClassifier>();
+	try {
+		cascade->load(path);
+	} catch (...) {
+		blog(LOG_WARNING, "failed to load model data \"%s\"",
+		     path.c_str());
+	}
+	return cascade;
+}
+
+bool ObjDetectParameters::LoadModelData()
+{
+	const auto path = QString::fromStdString(modelPath);
+	if (!QFileInfo(path).exists(path)) {
+		cascade.reset();
+		return false;
+	}
+
+	cascade = initObjectCascade(modelPath);
+	return !cascade->empty();
 }
 
 bool ObjDetectParameters::Save(obs_data_t *obj) const
@@ -106,7 +132,27 @@ bool ObjDetectParameters::Load(obs_data_t *obj)
 	minSize.Load(data, "minSize");
 	maxSize.Load(data, "maxSize");
 	obs_data_release(data);
+
 	return true;
+}
+
+bool ObjDetectParameters::SetModelPath(const std::string &path)
+{
+	modelPath = path;
+	return LoadModelData();
+}
+
+std::shared_ptr<cv::CascadeClassifier> ObjDetectParameters::GetModel()
+{
+	if (cascade && !cascade->empty()) {
+		return cascade;
+	}
+
+	if (!LoadModelData()) {
+		return {};
+	}
+
+	return cascade;
 }
 
 bool AreaParameters::Save(obs_data_t *obj) const
@@ -252,13 +298,13 @@ OCRParameters::OCRParameters(const OCRParameters &other)
 	  color(other.color),
 	  colorThreshold(other.colorThreshold),
 	  pageSegMode(other.pageSegMode),
-	  languageCode(other.languageCode)
+	  tesseractBasePath(other.tesseractBasePath),
+	  languageCode(other.languageCode),
+	  useConfig(other.useConfig),
+	  configFile(other.configFile)
 {
 	if (!initDone) {
 		Setup();
-	}
-	if (initDone) {
-		ocr->SetPageSegMode(pageSegMode);
 	}
 }
 
@@ -269,12 +315,12 @@ OCRParameters &OCRParameters::operator=(const OCRParameters &other)
 	color = other.color;
 	colorThreshold = other.colorThreshold;
 	pageSegMode = other.pageSegMode;
+	tesseractBasePath = other.tesseractBasePath;
 	languageCode = other.languageCode;
+	useConfig = other.useConfig;
+	configFile = other.configFile;
 	if (!initDone) {
 		Setup();
-	}
-	if (initDone) {
-		ocr->SetPageSegMode(pageSegMode);
 	}
 	return *this;
 }
@@ -284,11 +330,14 @@ bool OCRParameters::Save(obs_data_t *obj) const
 	auto data = obs_data_create();
 	text.Save(data, "pattern");
 	regex.Save(data);
+	tesseractBasePath.Save(data, "tesseractBasePath");
 	languageCode.Save(data, "language");
+	obs_data_set_bool(data, "useConfig", useConfig);
+	obs_data_set_string(data, "configFile", configFile.c_str());
 	SaveColor(data, "textColor", color);
 	colorThreshold.Save(data, "colorThreshold");
 	obs_data_set_int(data, "pageSegMode", static_cast<int>(pageSegMode));
-	obs_data_set_int(data, "version", 1);
+	obs_data_set_int(data, "version", 2);
 	obs_data_set_obj(obj, "ocrData", data);
 	obs_data_release(data);
 	return true;
@@ -301,6 +350,16 @@ bool OCRParameters::Load(obs_data_t *obj)
 	regex.Load(data);
 	obs_data_set_default_string(data, "language", "eng");
 	languageCode.Load(data, "language");
+	tesseractBasePath.Load(data, "tesseractBasePath");
+	if (!obs_data_has_user_value(data, "version") ||
+	    obs_data_get_int(data, "version") < 2) {
+		tesseractBasePath = std::string(obs_get_module_data_path(
+					    obs_current_module())) +
+				    "/res/ocr/";
+	}
+	useConfig = obs_data_get_bool(data, "useConfig");
+	configFile = obs_data_get_string(data, "configFile");
+
 	color = LoadColor(data, "textColor");
 	if (obs_data_has_user_value(data, "version")) {
 		colorThreshold.Load(data, "colorThreshold");
@@ -309,9 +368,6 @@ bool OCRParameters::Load(obs_data_t *obj)
 		obs_data_get_int(data, "pageSegMode"));
 	obs_data_release(data);
 
-	if (initDone) {
-		ocr->SetPageSegMode(pageSegMode);
-	}
 	Setup();
 	return true;
 }
@@ -319,28 +375,58 @@ bool OCRParameters::Load(obs_data_t *obj)
 void OCRParameters::SetPageMode(tesseract::PageSegMode mode)
 {
 	pageSegMode = mode;
-	ocr->SetPageSegMode(mode);
+	if (ocr) {
+		ocr->SetPageSegMode(mode);
+	}
 }
 
 bool OCRParameters::SetLanguageCode(const std::string &value)
 {
-	const auto dataPath =
-		QString(obs_get_module_data_path(obs_current_module())) +
-		QString("/res/ocr") + "/" + QString::fromStdString(value) +
-		".traineddata";
+	const auto dataPath = QString::fromStdString(tesseractBasePath) + "/" +
+			      QString::fromStdString(value) + ".traineddata";
 	QFileInfo fileInfo(dataPath);
 	if (!fileInfo.exists(dataPath)) {
 		return false;
 	}
 	languageCode = value;
 	Setup();
-	ocr->SetPageSegMode(pageSegMode);
 	return true;
 }
 
 std::string OCRParameters::GetLanguageCode() const
 {
 	return languageCode;
+}
+
+bool OCRParameters::SetTesseractBasePath(const std::string &value)
+{
+	const auto dataPath = QString::fromStdString(value) + "/" +
+			      QString::fromStdString(languageCode) +
+			      ".traineddata";
+	QFileInfo fileInfo(dataPath);
+	if (!fileInfo.exists(dataPath)) {
+		return false;
+	}
+	tesseractBasePath = value;
+	Setup();
+	return true;
+}
+
+std::string OCRParameters::GetTesseractBasePath() const
+{
+	return tesseractBasePath;
+}
+
+void OCRParameters::EnableCustomConfig(bool enable)
+{
+	useConfig = enable;
+	Setup();
+}
+
+void OCRParameters::SetCustomConfigFile(const std::string &filename)
+{
+	configFile = filename;
+	Setup();
 }
 
 void OCRParameters::Setup()
@@ -350,12 +436,45 @@ void OCRParameters::Setup()
 		initDone = false;
 		return;
 	}
-	std::string dataPath = obs_get_module_data_path(obs_current_module()) +
-			       std::string("/res/ocr");
-	if (ocr->Init(dataPath.c_str(), languageCode.c_str()) != 0) {
+
+	const std::string dataPath = std::string(tesseractBasePath) + "/";
+	const std::string modelFile =
+		std::string(languageCode) + ".traineddata";
+	const auto modelFullPath = QString::fromStdString(dataPath) +
+				   QString::fromStdString(modelFile);
+	QFileInfo modelFileInfo(modelFullPath);
+	if (!modelFileInfo.exists(modelFullPath)) {
+		initDone = false;
+		blog(LOG_WARNING,
+		     "cannot init tesseract! Model path does not exists: %s",
+		     modelFileInfo.absoluteFilePath().toStdString().c_str());
+		return;
+	}
+
+	auto configPath = QString::fromStdString(configFile);
+	QFileInfo configFileInfo(configPath);
+	bool configFileExists = configFileInfo.exists(configPath);
+
+	bool setupWithConfig = useConfig;
+	if (useConfig && !configFileExists) {
+		blog(LOG_WARNING,
+		     "tesseract config file will be ignored! File does not exists: %s",
+		     configFileInfo.absoluteFilePath().toStdString().c_str());
+		setupWithConfig = false;
+	}
+
+	char *configs[] = {configFile.data()};
+	if (ocr->Init(dataPath.c_str(), languageCode.c_str(),
+		      tesseract::OEM_DEFAULT,
+		      setupWithConfig ? configs : nullptr,
+		      setupWithConfig ? 1 : 0, nullptr, nullptr, false) != 0) {
+		blog(LOG_WARNING, "tesseract init failed!");
 		initDone = false;
 		return;
 	}
+
+	ocr->SetPageSegMode(pageSegMode);
+
 	initDone = true;
 }
 

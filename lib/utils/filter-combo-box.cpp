@@ -62,6 +62,11 @@ void FilterComboBox::SetFilterBehaviourEnabled(bool value)
 	FilterComboBox::_filteringEnabled = value;
 }
 
+void FilterComboBox::SetAllowUnmatchedSelection(bool allow)
+{
+	_allowUnmatchedSelection = allow;
+}
+
 void FilterComboBox::setCurrentText(const QString &text)
 {
 	if (_filteringEnabled) {
@@ -82,7 +87,7 @@ void FilterComboBox::setItemText(int index, const QString &text)
 void FilterComboBox::focusOutEvent(QFocusEvent *event)
 {
 	// Reset on invalid selection
-	if (findText(currentText()) == -1) {
+	if (!_allowUnmatchedSelection && findText(currentText()) == -1) {
 		setCurrentIndex(-1);
 		Emit(-1, "");
 	}

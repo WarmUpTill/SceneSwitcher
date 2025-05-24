@@ -164,7 +164,7 @@ void SourceSelectionWidget::PopulateSelection()
 	}
 	_variablesEndIdx = count();
 
-	AddSelectionGroup(this, _sourceNames);
+	AddSelectionGroup(this, _populateSourcesCallback());
 	_sourcesEndIdx = count();
 
 	// Remove last separator
@@ -172,13 +172,13 @@ void SourceSelectionWidget::PopulateSelection()
 	setCurrentIndex(-1);
 }
 
-SourceSelectionWidget::SourceSelectionWidget(QWidget *parent,
-					     const QStringList &sourceNames,
-					     bool addVariables)
+SourceSelectionWidget::SourceSelectionWidget(
+	QWidget *parent, const std::function<QStringList()> &populate,
+	bool addVariables)
 	: FilterComboBox(parent,
 			 obs_module_text("AdvSceneSwitcher.selectSource")),
 	  _addVariables(addVariables),
-	  _sourceNames(sourceNames)
+	  _populateSourcesCallback(populate)
 {
 	setDuplicatesEnabled(true);
 	PopulateSelection();
@@ -200,6 +200,11 @@ SourceSelectionWidget::SourceSelectionWidget(QWidget *parent,
 
 void SourceSelectionWidget::SetSource(const SourceSelection &s)
 {
+	{
+		const QSignalBlocker b(this);
+		PopulateSelection();
+	}
+
 	int idx = -1;
 
 	switch (s.GetType()) {
@@ -229,23 +234,23 @@ void SourceSelectionWidget::SetSource(const SourceSelection &s)
 	_currentSelection = s;
 }
 
-void SourceSelectionWidget::SetSourceNameList(const QStringList &list)
-{
-	_sourceNames = list;
-	Reset();
-}
-
 void SourceSelectionWidget::SelectionChanged(int)
 {
 	_currentSelection = CurrentSelection();
 	emit SourceChanged(_currentSelection);
 }
 
+void SourceSelectionWidget::showEvent(QShowEvent *event)
+{
+	FilterComboBox::showEvent(event);
+	const QSignalBlocker b(this);
+	Reset();
+}
+
 void SourceSelectionWidget::ItemAdd(const QString &)
 {
-	blockSignals(true);
+	const QSignalBlocker b(this);
 	Reset();
-	blockSignals(false);
 }
 
 bool SourceSelectionWidget::NameUsed(const QString &name)
@@ -265,9 +270,8 @@ void SourceSelectionWidget::ItemRemove(const QString &name)
 
 void SourceSelectionWidget::ItemRename(const QString &, const QString &)
 {
-	blockSignals(true);
+	const QSignalBlocker b(this);
 	Reset();
-	blockSignals(false);
 }
 
 } // namespace advss

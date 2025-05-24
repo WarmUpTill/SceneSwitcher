@@ -141,7 +141,7 @@ void MacroConditionGameCapture::SetupInitialState(obs_source_t *source)
 	calldata_free(&cd);
 }
 
-static QStringList getGameCaptureSourceNames()
+static QStringList getGameCaptureSourcesList()
 {
 	auto sourceEnum = [](void *param, obs_source_t *source) -> bool /* -- */
 	{
@@ -156,18 +156,16 @@ static QStringList getGameCaptureSourceNames()
 
 	QStringList list;
 	obs_enum_sources(sourceEnum, &list);
+	list.sort();
 	return list;
 }
 
 MacroConditionGameCaptureEdit::MacroConditionGameCaptureEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionGameCapture> entryData)
 	: QWidget(parent),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true))
+	  _sources(new SourceSelectionWidget(this, getGameCaptureSourcesList,
+					     true))
 {
-	auto sources = getGameCaptureSourceNames();
-	sources.sort();
-	_sources->SetSourceNameList(sources);
-
 	QWidget::connect(_sources,
 			 SIGNAL(SourceChanged(const SourceSelection &)), this,
 			 SLOT(SourceChanged(const SourceSelection &)));

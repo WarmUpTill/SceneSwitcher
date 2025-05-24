@@ -181,7 +181,9 @@ target_sources(
           utils/websocket-helpers.cpp
           utils/websocket-helpers.hpp
           utils/websocket-tab.cpp
-          utils/websocket-tab.hpp)
+          utils/websocket-tab.hpp
+          utils/window-selection.cpp
+          utils/window-selection.hpp)
 
 if(OS_WINDOWS)
   target_sources(${PROJECT_NAME} PRIVATE utils/windows/windows.cpp)

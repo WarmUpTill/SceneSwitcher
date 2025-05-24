@@ -156,6 +156,15 @@ void MacroConditionProcessEdit::ProcessChanged(const QString &text)
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
+void MacroConditionProcessEdit::showEvent(QShowEvent *event)
+{
+	const QSignalBlocker b(_processSelection);
+	const auto text = _processSelection->currentText();
+	_processSelection->clear();
+	PopulateProcessSelection(_processSelection);
+	_processSelection->setCurrentText(text);
+}
+
 void MacroConditionProcessEdit::RegexChanged(const RegexConfig &conf)
 {
 	if (_loading || !_entryData) {

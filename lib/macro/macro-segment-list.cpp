@@ -13,6 +13,8 @@
 
 namespace advss {
 
+bool MacroSegmentList::_useCache = true;
+
 MacroSegmentList::MacroSegmentList(QWidget *parent)
 	: QScrollArea(parent),
 	  _layout(new QVBoxLayout),
@@ -46,6 +48,17 @@ MacroSegmentList::~MacroSegmentList()
 		_autoScroll = false;
 		_autoScrollThread.join();
 	}
+
+	const auto clearWidgetVector =
+		[](const std::vector<QWidget *> &widgets) {
+			for (auto widget : widgets) {
+				widget->deleteLater();
+			}
+		};
+
+	for (const auto &[_, widgets] : _widgetCache) {
+		clearWidgetVector(widgets);
+	}
 }
 
 static bool posIsInScrollbar(const QScrollBar *scrollbar, const QPoint &pos)
@@ -56,7 +69,7 @@ static bool posIsInScrollbar(const QScrollBar *scrollbar, const QPoint &pos)
 	if (!scrollbar->isVisible()) {
 		return false;
 	}
-	const auto geo = scrollbar->geometry();
+	const auto &geo = scrollbar->geometry();
 	const auto globalGeo = QRect(scrollbar->mapToGlobal(geo.topLeft()),
 				     scrollbar->mapToGlobal(geo.bottomRight()));
 	return globalGeo.contains(pos);
@@ -123,6 +136,53 @@ void MacroSegmentList::Remove(int idx) const
 void MacroSegmentList::Clear(int idx) const
 {
 	ClearLayout(_contentLayout, idx);
+}
+
+void MacroSegmentList::SetCachingEnabled(bool enable)
+{
+	_useCache = enable;
+}
+
+void MacroSegmentList::CacheCurrentWidgetsFor(const Macro *macro)
+{
+	if (!_useCache) {
+		_widgetCache.clear();
+		return;
+	}
+
+	std::vector<QWidget *> result;
+	int idx = 0;
+	QLayoutItem *item;
+	while ((item = _contentLayout->takeAt(idx))) {
+		if (!item || !item->widget()) {
+			continue;
+		}
+		auto widget = item->widget();
+		widget->hide();
+		result.emplace_back(widget);
+	}
+
+	_widgetCache[macro] = result;
+}
+
+bool MacroSegmentList::PopulateWidgetsFromCache(const Macro *macro)
+{
+	if (!_useCache) {
+		_widgetCache.clear();
+		return false;
+	}
+
+	auto it = _widgetCache.find(macro);
+	if (it == _widgetCache.end()) {
+		return false;
+	}
+
+	for (auto widget : it->second) {
+		_contentLayout->addWidget(widget);
+		widget->show();
+	}
+
+	return true;
 }
 
 void MacroSegmentList::Highlight(int idx, QColor color)

@@ -68,15 +68,23 @@ public:
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
 
-	std::string modelPath =
-		obs_get_module_data_path(obs_current_module()) +
-		std::string(
-			"/res/cascadeClassifiers/haarcascade_frontalface_alt.xml");
-	cv::CascadeClassifier cascade;
+	bool SetModelPath(const std::string &path);
+	const std::string &GetModelPath() const { return modelPath; }
+	std::shared_ptr<cv::CascadeClassifier> GetModel();
+
 	NumberVariable<double> scaleFactor = defaultScaleFactor;
 	int minNeighbors = minMinNeighbors;
 	Size minSize{0, 0};
 	Size maxSize{0, 0};
+
+private:
+	bool LoadModelData();
+
+	std::shared_ptr<cv::CascadeClassifier> cascade;
+	std::string modelPath =
+		obs_get_module_data_path(obs_current_module()) +
+		std::string(
+			"/res/cascadeClassifiers/haarcascade_frontalface_alt.xml");
 };
 
 class OCRParameters {
@@ -93,6 +101,12 @@ public:
 	void SetPageMode(tesseract::PageSegMode);
 	bool SetLanguageCode(const std::string &);
 	std::string GetLanguageCode() const;
+	bool SetTesseractBasePath(const std::string &);
+	std::string GetTesseractBasePath() const;
+	void EnableCustomConfig(bool enable);
+	bool CustomConfigIsEnabled() const { return useConfig; }
+	void SetCustomConfigFile(const std::string &);
+	std::string GetCustomConfigFile() const { return configFile; }
 	tesseract::PageSegMode GetPageMode() const { return pageSegMode; }
 	tesseract::TessBaseAPI *GetOCR() const { return ocr.get(); }
 
@@ -100,12 +114,17 @@ public:
 	RegexConfig regex = RegexConfig::PartialMatchRegexConfig();
 	QColor color = Qt::black;
 	DoubleVariable colorThreshold = 0.3;
-	StringVariable languageCode = "eng";
 
 private:
 	void Setup();
 
 	tesseract::PageSegMode pageSegMode = tesseract::PSM_SINGLE_BLOCK;
+	StringVariable tesseractBasePath =
+		obs_get_module_data_path(obs_current_module()) +
+		std::string("/res/ocr");
+	StringVariable languageCode = "eng";
+	bool useConfig = false;
+	std::string configFile = "config.txt";
 	std::unique_ptr<tesseract::TessBaseAPI> ocr;
 	bool initDone = false;
 };

@@ -1,5 +1,6 @@
 #include "source-setting.hpp"
 #include "json-helpers.hpp"
+#include "log-helper.hpp"
 #include "obs-module-helper.hpp"
 #include "math-helpers.hpp"
 
@@ -151,10 +152,14 @@ void SetSourceSetting(obs_source_t *source, const SourceSetting &setting,
 {
 	auto id = setting.GetID();
 	OBSDataAutoRelease data = obs_source_get_settings(source);
-	auto item = obs_data_item_byname(data, id.c_str());
+	OBSDataAutoRelease dataWithDefaults = obs_data_get_defaults(data);
+	obs_data_apply(dataWithDefaults, data);
+	auto item = obs_data_item_byname(dataWithDefaults, id.c_str());
 	auto type = obs_data_item_gettype(item);
 	switch (type) {
 	case OBS_DATA_NULL:
+		vblog(LOG_WARNING,
+		      "could not set settings value, as the value does not (yet) exist!");
 		break;
 	case OBS_DATA_STRING:
 		obs_data_set_string(data, id.c_str(), value.c_str());

@@ -47,4 +47,23 @@ QStringList GetMonitorNames()
 	return monitorNames;
 }
 
+MonitorSelectionWidget::MonitorSelectionWidget(QWidget *parent)
+	: FilterComboBox(parent)
+{
+	setEditable(true);
+	SetAllowUnmatchedSelection(true);
+	setMaxVisibleItems(20);
+	addItems(GetMonitorNames());
+}
+
+void MonitorSelectionWidget::showEvent(QShowEvent *event)
+{
+	FilterComboBox::showEvent(event);
+	const QSignalBlocker b(this);
+	const auto text = currentText();
+	clear();
+	addItems(GetMonitorNames());
+	setCurrentText(text);
+}
+
 } // namespace advss

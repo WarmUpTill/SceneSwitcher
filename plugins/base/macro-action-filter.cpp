@@ -185,8 +185,8 @@ void MacroActionFilter::ResolveVariablesToFixedValues()
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (auto entry : actionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[_, name] : actionTypes) {
+		list->addItem(obs_module_text(name.c_str()));
 	}
 }
 
@@ -199,10 +199,17 @@ static inline void populateSettingsInputMethods(QComboBox *list)
 	}
 }
 
+static QStringList getFilterSourcesList()
+{
+	auto sources = GetSourcesWithFilterNames();
+	sources.sort();
+	return sources;
+}
+
 MacroActionFilterEdit::MacroActionFilterEdit(
 	QWidget *parent, std::shared_ptr<MacroActionFilter> entryData)
 	: QWidget(parent),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
+	  _sources(new SourceSelectionWidget(this, getFilterSourcesList, true)),
 	  _filters(new FilterSelectionWidget(this, _sources, true)),
 	  _actions(new QComboBox()),
 	  _getSettings(new QPushButton(obs_module_text(
@@ -220,9 +227,6 @@ MacroActionFilterEdit::MacroActionFilterEdit(
 	_filters->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
 	populateActionSelection(_actions);
-	auto sources = GetSourcesWithFilterNames();
-	sources.sort();
-	_sources->SetSourceNameList(sources);
 	_refreshSettingSelection->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.action.filter.refresh.tooltip"));
 

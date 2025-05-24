@@ -45,6 +45,9 @@ public:
 			      bool addVariables = true);
 	void SetFilter(const SourceSelection &, const FilterSelection &);
 
+protected:
+	void showEvent(QShowEvent *event) override;
+
 signals:
 	void FilterChanged(const FilterSelection &);
 

@@ -193,12 +193,19 @@ static void populateTargetTypeSelection(QComboBox *list)
 	list->addItem(obs_module_text("AdvSceneSwitcher.OBSVideoOutput"));
 }
 
+static QStringList getVideoSourcesList()
+{
+	auto sources = GetVideoSourceNames();
+	sources.sort();
+	return sources;
+}
+
 MacroActionScreenshotEdit::MacroActionScreenshotEdit(
 	QWidget *parent, std::shared_ptr<MacroActionScreenshot> entryData)
 	: QWidget(parent),
 	  _scenes(new SceneSelectionWidget(this, true, false, true, true,
 					   true)),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
+	  _sources(new SourceSelectionWidget(this, getVideoSourcesList, true)),
 	  _saveType(new QComboBox()),
 	  _targetType(new QComboBox()),
 	  _savePath(new FileSelection(FileSelection::Type::WRITE, this)),
@@ -206,9 +213,6 @@ MacroActionScreenshotEdit::MacroActionScreenshotEdit(
 {
 	setToolTip(obs_module_text(
 		"AdvSceneSwitcher.action.screenshot.blackscreenNote"));
-	auto sources = GetVideoSourceNames();
-	sources.sort();
-	_sources->SetSourceNameList(sources);
 
 	populateSaveTypeSelection(_saveType);
 	populateTargetTypeSelection(_targetType);

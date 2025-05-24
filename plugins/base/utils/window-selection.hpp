@@ -3,13 +3,11 @@
 
 namespace advss {
 
-QStringList GetMonitorNames();
-
-class MonitorSelectionWidget : public FilterComboBox {
+class WindowSelectionWidget : public FilterComboBox {
 	Q_OBJECT
 
 public:
-	MonitorSelectionWidget(QWidget *parent);
+	WindowSelectionWidget(QWidget *parent);
 
 protected:
 	void showEvent(QShowEvent *event) override;

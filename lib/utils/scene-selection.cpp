@@ -409,6 +409,13 @@ void SceneSelectionWidget::SetScene(const SceneSelection &s)
 	_currentSelection = s;
 }
 
+void SceneSelectionWidget::showEvent(QShowEvent *event)
+{
+	FilterComboBox::showEvent(event);
+	const QSignalBlocker b(this);
+	Reset();
+}
+
 bool SceneSelectionWidget::IsCurrentSceneSelected(const QString &name)
 {
 	return name == QString::fromStdString((obs_module_text(
@@ -435,9 +442,8 @@ void SceneSelectionWidget::SelectionChanged(int)
 
 void SceneSelectionWidget::ItemAdd(const QString &)
 {
-	blockSignals(true);
+	const QSignalBlocker b(this);
 	Reset();
-	blockSignals(false);
 }
 
 bool SceneSelectionWidget::NameUsed(const QString &name)
@@ -462,9 +468,8 @@ void SceneSelectionWidget::ItemRemove(const QString &name)
 
 void SceneSelectionWidget::ItemRename(const QString &, const QString &)
 {
-	blockSignals(true);
+	const QSignalBlocker b(this);
 	Reset();
-	blockSignals(false);
 }
 
 } // namespace advss

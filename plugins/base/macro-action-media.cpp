@@ -219,6 +219,13 @@ static inline void populateSelectionTypeSelection(QComboBox *list)
 	}
 }
 
+static QStringList getMediaSourcesList()
+{
+	auto sources = GetMediaSourceNames();
+	sources.sort();
+	return sources;
+}
+
 MacroActionMediaEdit::MacroActionMediaEdit(
 	QWidget *parent, std::shared_ptr<MacroActionMedia> entryData)
 	: QWidget(parent),
@@ -229,15 +236,12 @@ MacroActionMediaEdit::MacroActionMediaEdit(
 		  0, 100,
 		  obs_module_text(
 			  "AdvSceneSwitcher.action.media.seek.percentage.label"))),
-	  _sources(new SourceSelectionWidget(this, QStringList(), true)),
+	  _sources(new SourceSelectionWidget(this, getMediaSourcesList, true)),
 	  _sceneItems(new SceneItemSelectionWidget(parent, false)),
 	  _scenes(new SceneSelectionWidget(this, true, false, true, true, true))
 {
 	populateActionSelection(_actions);
 	populateSelectionTypeSelection(_selectionTypes);
-	auto sources = GetMediaSourceNames();
-	sources.sort();
-	_sources->SetSourceNameList(sources);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));

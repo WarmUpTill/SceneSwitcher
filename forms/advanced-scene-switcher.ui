@@ -181,8 +181,7 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QComboBox" name="logLevel">
-                     </widget>
+                     <widget class="QComboBox" name="logLevel"/>
                     </item>
                     <item>
                      <spacer name="horizontalSpacer_49">
@@ -292,6 +291,17 @@
                        </size>
                       </property>
                      </spacer>
+                    </item>
+                   </layout>
+                  </item>
+                  <item>
+                   <layout class="QHBoxLayout" name="horizontalLayout_12">
+                    <item>
+                     <widget class="QCheckBox" name="disableMacroWidgetCache">
+                      <property name="text">
+                       <string>AdvSceneSwitcher.generalTab.generalBehavior.disableMacroWidgetCache</string>
+                      </property>
+                     </widget>
                     </item>
                    </layout>
                   </item>
