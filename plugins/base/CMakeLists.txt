@@ -21,6 +21,8 @@ target_sources(
           macro-action-log.hpp
           macro-action-media.cpp
           macro-action-media.hpp
+          macro-action-obs-settings.cpp
+          macro-action-obs-settings.hpp
           macro-action-osc.cpp
           macro-action-osc.hpp
           macro-action-plugin-state.cpp
