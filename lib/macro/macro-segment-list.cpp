@@ -552,7 +552,7 @@ void MacroSegmentList::dropEvent(QDropEvent *event)
 
 void MacroSegmentList::resizeEvent(QResizeEvent *event)
 {
-	QWidget::resizeEvent(event);
+	QScrollArea::resizeEvent(event);
 	SetupVisibleMacroSegmentWidgets();
 }
 
