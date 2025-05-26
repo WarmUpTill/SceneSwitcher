@@ -60,7 +60,7 @@ bool MacroConditionProcess::CheckCondition()
 bool MacroConditionProcess::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
-	obs_data_set_string(obj, "process", _process.c_str());
+	_process.Save(obj, "process");
 	obs_data_set_bool(obj, "focus", _checkFocus);
 	_regex.Save(obj);
 	obs_data_set_int(obj, "version", 1);
@@ -70,7 +70,7 @@ bool MacroConditionProcess::Save(obs_data_t *obj) const
 bool MacroConditionProcess::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	_process = obs_data_get_string(obj, "process");
+	_process.Load(obj, "process");
 	_checkFocus = obs_data_get_bool(obj, "focus");
 	// Fall back to partial match regex as default for old version
 	if (!obs_data_has_user_value(obj, "version")) {
@@ -104,6 +104,8 @@ MacroConditionProcessEdit::MacroConditionProcessEdit(
 {
 	_processSelection->setEditable(true);
 	_processSelection->setMaxVisibleItems(20);
+	_processSelection->setToolTip(
+		obs_module_text("AdvSceneSwitcher.tooltip.availableVariables"));
 
 	QWidget::connect(_processSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
@@ -118,7 +120,7 @@ MacroConditionProcessEdit::MacroConditionProcessEdit(
 
 	PopulateProcessSelection(_processSelection);
 
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{processes}}", _processSelection},
 		{"{{regex}}", _regex},
 		{"{{focused}}", _focused},
@@ -146,11 +148,7 @@ MacroConditionProcessEdit::MacroConditionProcessEdit(
 
 void MacroConditionProcessEdit::ProcessChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_process = text.toStdString();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -167,11 +165,7 @@ void MacroConditionProcessEdit::showEvent(QShowEvent *event)
 
 void MacroConditionProcessEdit::RegexChanged(const RegexConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_regex = conf;
 	adjustSize();
 	updateGeometry();
@@ -179,11 +173,7 @@ void MacroConditionProcessEdit::RegexChanged(const RegexConfig &conf)
 
 void MacroConditionProcessEdit::FocusChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_checkFocus = state;
 	SetWidgetVisibility();
 }
@@ -202,6 +192,7 @@ void MacroConditionProcessEdit::SetWidgetVisibility()
 	}
 	SetLayoutVisible(_focusLayout, _entryData->_checkFocus);
 	adjustSize();
+	updateGeometry();
 }
 
 void MacroConditionProcessEdit::UpdateEntryData()
@@ -210,7 +201,8 @@ void MacroConditionProcessEdit::UpdateEntryData()
 		return;
 	}
 
-	_processSelection->setCurrentText(_entryData->_process.c_str());
+	_processSelection->setCurrentText(
+		_entryData->_process.UnresolvedValue().c_str());
 	_regex->SetRegexConfig(_entryData->_regex);
 	_focused->setChecked(_entryData->_checkFocus);
 	SetWidgetVisibility();

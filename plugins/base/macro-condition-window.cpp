@@ -210,6 +210,9 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 	_text->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.window.entry.text.note"));
 
+	_windowSelection->setToolTip(
+		obs_module_text("AdvSceneSwitcher.tooltip.availableVariables"));
+
 	QWidget::connect(_windowSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(WindowChanged(const QString &)));
@@ -314,11 +317,7 @@ MacroConditionWindowEdit::MacroConditionWindowEdit(
 
 void MacroConditionWindowEdit::WindowChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_window = text.toStdString();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -326,11 +325,7 @@ void MacroConditionWindowEdit::WindowChanged(const QString &text)
 
 void MacroConditionWindowEdit::WindowRegexChanged(const RegexConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_windowRegex = conf;
 	adjustSize();
 	updateGeometry();
@@ -338,11 +333,7 @@ void MacroConditionWindowEdit::WindowRegexChanged(const RegexConfig &conf)
 
 void MacroConditionWindowEdit::CheckTitleChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	const QSignalBlocker b1(_windowSelection);
 	const QSignalBlocker b2(_windowRegex);
 	if (!state) {
@@ -357,22 +348,14 @@ void MacroConditionWindowEdit::CheckTitleChanged(int state)
 
 void MacroConditionWindowEdit::CheckTextChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_checkText = state;
 	SetWidgetVisibility();
 }
 
 void MacroConditionWindowEdit::WindowTextChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_text = _text->toPlainText().toStdString();
 	adjustSize();
 	updateGeometry();
@@ -380,11 +363,7 @@ void MacroConditionWindowEdit::WindowTextChanged()
 
 void MacroConditionWindowEdit::TextRegexChanged(const RegexConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_textRegex = conf;
 	adjustSize();
 	updateGeometry();
@@ -392,42 +371,26 @@ void MacroConditionWindowEdit::TextRegexChanged(const RegexConfig &conf)
 
 void MacroConditionWindowEdit::FullscreenChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_fullscreen = state;
 }
 
 void MacroConditionWindowEdit::MaximizedChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_maximized = state;
 }
 
 void MacroConditionWindowEdit::FocusedChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_focus = state;
 	SetWidgetVisibility();
 }
 
 void MacroConditionWindowEdit::WindowFocusChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_windowFocusChanged = state;
 	SetWidgetVisibility();
 }
