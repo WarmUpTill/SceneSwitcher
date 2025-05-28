@@ -31,7 +31,8 @@ if(NOT ZLIB_FOUND)
 endif()
 
 set(DATE_LIB_DIR "${ADVSS_SOURCE_DIR}/deps/date")
-if(EXISTS "${DATE_LIB_DIR}/CMakeLists.txt")
+if(EXISTS "${DATE_LIB_DIR}/CMakeLists.txt"
+   AND NOT DISABLE_TWITCH_TIMESTAMP_VERIFICATION)
   set(BUILD_TZ_LIB ON)
   if(OS_WINDOWS)
     if(CURL_FOUND AND TARGET CURL::libcurl)
