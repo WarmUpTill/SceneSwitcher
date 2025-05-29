@@ -42,19 +42,19 @@ MacroSegmentList::MacroSegmentList(QWidget *parent)
 		[this]() { SetupVisibleMacroSegmentWidgets(); });
 }
 
+static void clearWidgetVector(const std::vector<QWidget *> &widgets)
+{
+	for (auto widget : widgets) {
+		widget->deleteLater();
+	}
+};
+
 MacroSegmentList::~MacroSegmentList()
 {
 	if (_autoScrollThread.joinable()) {
 		_autoScroll = false;
 		_autoScrollThread.join();
 	}
-
-	const auto clearWidgetVector =
-		[](const std::vector<QWidget *> &widgets) {
-			for (auto widget : widgets) {
-				widget->deleteLater();
-			}
-		};
 
 	for (const auto &[_, widgets] : _widgetCache) {
 		clearWidgetVector(widgets);
@@ -183,6 +183,16 @@ bool MacroSegmentList::PopulateWidgetsFromCache(const Macro *macro)
 	}
 
 	return true;
+}
+
+void MacroSegmentList::ClearWidgetsFromCacheFor(const Macro *macro)
+{
+	auto it = _widgetCache.find(macro);
+	if (it == _widgetCache.end()) {
+		return;
+	}
+	clearWidgetVector(it->second);
+	_widgetCache.erase(it);
 }
 
 void MacroSegmentList::Highlight(int idx, QColor color)

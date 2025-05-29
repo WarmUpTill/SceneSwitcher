@@ -32,7 +32,6 @@ private:
 	SwitchButton *_enable;
 
 	std::shared_ptr<MacroAction> *_entryData;
-	QTimer _actionStateTimer;
 	bool _loading = true;
 };
 
