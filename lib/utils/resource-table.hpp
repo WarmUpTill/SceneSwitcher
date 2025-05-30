@@ -18,7 +18,6 @@ public:
 		      const QString &addToolTip, const QString &removeToolTip,
 		      const QStringList &headers,
 		      const std::function<void()> &openSettings);
-	virtual ~ResourceTable();
 
 	QTableWidget *Table() const { return _table; }
 	void SetHelpVisible(bool) const;

@@ -1,10 +1,10 @@
 #include "resource-table.hpp"
 #include "plugin-state-helpers.hpp"
-#include "resource-table-hotkey-handler.hpp"
 #include "ui-helpers.hpp"
 
 #include <QGridLayout>
 #include <QHeaderView>
+#include <QShortcut>
 
 namespace advss {
 
@@ -64,13 +64,16 @@ ResourceTable::ResourceTable(QTabWidget *parent, const QString &help,
 	QWidget::connect(_table, &QTableWidget::cellDoubleClicked,
 			 [openSettings]() { openSettings(); });
 
-	RegisterHotkeyFunction(this, Qt::Key_F2, openSettings);
-	RegisterHotkeyFunction(this, Qt::Key_Delete, [this]() { Remove(); });
-}
+	auto settingsShortcut = new QShortcut(QKeySequence("F2"), this);
+	QWidget::connect(settingsShortcut, &QShortcut::activated, this,
+			 openSettings);
+	auto removeShortcut = new QShortcut(QKeySequence("Del"), this);
+	QWidget::connect(removeShortcut, &QShortcut::activated, this,
+			 [this]() { Remove(); });
 
-ResourceTable::~ResourceTable()
-{
-	DeregisterHotkeyFunctions(this);
+	auto newShortcut = new QShortcut(QKeySequence("Ctrl+N"), this);
+	QWidget::connect(newShortcut, &QShortcut::activated, this,
+			 [this]() { Add(); });
 }
 
 void ResourceTable::SetHelpVisible(bool visible) const
