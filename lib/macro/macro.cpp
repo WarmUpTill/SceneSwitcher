@@ -724,12 +724,27 @@ std::deque<std::shared_ptr<MacroCondition>> &Macro::Conditions()
 	return _conditions;
 }
 
+const std::deque<std::shared_ptr<MacroCondition>> &Macro::Conditions() const
+{
+	return _conditions;
+}
+
 std::deque<std::shared_ptr<MacroAction>> &Macro::Actions()
 {
 	return _actions;
 }
 
+const std::deque<std::shared_ptr<MacroAction>> &Macro::Actions() const
+{
+	return _actions;
+}
+
 std::deque<std::shared_ptr<MacroAction>> &Macro::ElseActions()
+{
+	return _elseActions;
+}
+
+const std::deque<std::shared_ptr<MacroAction>> &Macro::ElseActions() const
 {
 	return _elseActions;
 }
