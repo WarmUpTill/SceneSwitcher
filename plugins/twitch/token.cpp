@@ -565,6 +565,9 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 	}
 
 	_validateTimestamps->setChecked(settings._validateEventSubTimestamps);
+#ifndef VERIFY_TIMESTAMPS
+	_validateTimestamps->hide();
+#endif
 
 	_currentToken = settings;
 
