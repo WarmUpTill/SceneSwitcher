@@ -95,8 +95,11 @@ public:
 
 	// Macro segments
 	std::deque<std::shared_ptr<MacroCondition>> &Conditions();
+	const std::deque<std::shared_ptr<MacroCondition>> &Conditions() const;
 	std::deque<std::shared_ptr<MacroAction>> &Actions();
+	const std::deque<std::shared_ptr<MacroAction>> &Actions() const;
 	std::deque<std::shared_ptr<MacroAction>> &ElseActions();
+	const std::deque<std::shared_ptr<MacroAction>> &ElseActions() const;
 	void UpdateActionIndices();
 	void UpdateElseActionIndices();
 	void UpdateConditionIndices();

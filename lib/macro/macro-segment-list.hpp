@@ -29,6 +29,7 @@ public:
 	static void SetCachingEnabled(bool enable);
 	void CacheCurrentWidgetsFor(const Macro *);
 	bool PopulateWidgetsFromCache(const Macro *);
+	void ClearWidgetsFromCacheFor(const Macro *);
 	void Highlight(int idx, QColor color = QColor(Qt::green));
 	void SetCollapsed(bool) const;
 	void SetSelection(int idx) const;

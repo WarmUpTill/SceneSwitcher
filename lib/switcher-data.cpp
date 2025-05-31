@@ -325,11 +325,27 @@ static void loadHotkey(obs_data_t *obj, obs_hotkey_id id, const char *name)
 	obs_data_array_release(a);
 }
 
+static void setDefaultHotkeyBinding(obs_data_t *data, const char *name,
+				    const char *value)
+{
+	OBSDataAutoRelease hotkeyData = obs_data_create_from_json(value);
+	OBSDataArrayAutoRelease hotkeyArray = obs_data_array_create();
+	obs_data_array_push_back(hotkeyArray, hotkeyData);
+	obs_data_set_default_array(data, name, hotkeyArray);
+}
+
 void SwitcherData::LoadHotkeys(obs_data_t *obj)
 {
 	if (!hotkeysRegistered) {
 		registerHotkeys();
 	}
+
+	setDefaultHotkeyBinding(obj, "newMacroHotkey",
+				"{"
+				"\"control\": true,"
+				"\"key\": \"OBS_KEY_N\""
+				"}");
+
 	loadHotkey(obj, startHotkey, "startHotkey");
 	loadHotkey(obj, stopHotkey, "stopHotkey");
 	loadHotkey(obj, toggleHotkey, "toggleHotkey");

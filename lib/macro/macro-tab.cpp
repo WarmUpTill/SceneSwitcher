@@ -140,6 +140,42 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 	emit MacroAdded(QString::fromStdString(name));
 }
 
+static void addGroupSubitems(std::vector<std::shared_ptr<Macro>> &macros,
+			     const std::shared_ptr<Macro> &group)
+{
+	std::vector<std::shared_ptr<Macro>> subitems;
+	subitems.reserve(group->GroupSize());
+
+	// Find all subitems
+	auto allMacros = GetMacros();
+	for (auto it = allMacros.begin(); it < allMacros.end(); it++) {
+		if ((*it)->Name() != group->Name()) {
+			continue;
+		}
+		for (uint32_t i = 1; i <= group->GroupSize(); i++) {
+			subitems.emplace_back(*std::next(it, i));
+		}
+		break;
+	}
+
+	// Remove subitems which were already selected to avoid duplicates
+	for (const auto &subitem : subitems) {
+		auto it = std::find(macros.begin(), macros.end(), subitem);
+		if (it == macros.end()) {
+			continue;
+		}
+		macros.erase(it);
+	}
+
+	// Add group subitems
+	auto it = std::find(macros.begin(), macros.end(), group);
+	if (it == macros.end()) {
+		return;
+	}
+	it = std::next(it);
+	macros.insert(it, subitems.begin(), subitems.end());
+}
+
 void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 {
 	if (!macro) {
@@ -154,6 +190,28 @@ void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 			return;
 		}
 	}
+
+	const auto clearWidgetCache = [this](Macro *macro) {
+		ui->conditionsList->ClearWidgetsFromCacheFor(macro);
+		ui->actionsList->ClearWidgetsFromCacheFor(macro);
+		ui->elseActionsList->ClearWidgetsFromCacheFor(macro);
+	};
+
+	if (macro->IsGroup()) {
+		std::vector<std::shared_ptr<Macro>> macros = {macro};
+		addGroupSubitems(macros, macro);
+		for (auto macro : macros) {
+			clearWidgetCache(macro.get());
+		}
+	} else {
+		clearWidgetCache(macro.get());
+	}
+
+	// Currently shown macro will always be part of the macros to be
+	// removed, so, we clear the widgets as they should not be cached
+	ui->conditionsList->Clear();
+	ui->actionsList->Clear();
+	ui->elseActionsList->Clear();
 
 	ui->macros->Remove(macro);
 	emit MacroRemoved(name);
@@ -252,41 +310,6 @@ void AdvSceneSwitcher::RenameSelectedMacro()
 
 	const QSignalBlocker b(ui->macroName);
 	ui->macroName->setText(QString::fromStdString(name));
-}
-
-static void addGroupSubitems(std::vector<std::shared_ptr<Macro>> &macros,
-			     const std::shared_ptr<Macro> &group)
-{
-	std::vector<std::shared_ptr<Macro>> subitems;
-	subitems.reserve(group->GroupSize());
-
-	// Find all subitems
-	auto allMacros = GetMacros();
-	for (auto it = allMacros.begin(); it < allMacros.end(); it++) {
-		if ((*it)->Name() == group->Name()) {
-			for (uint32_t i = 1; i <= group->GroupSize(); i++) {
-				subitems.emplace_back(*std::next(it, i));
-			}
-			break;
-		}
-	}
-
-	// Remove subitems which were already selected to avoid duplicates
-	for (const auto &subitem : subitems) {
-		auto it = std::find(macros.begin(), macros.end(), subitem);
-		if (it == macros.end()) {
-			continue;
-		}
-		macros.erase(it);
-	}
-
-	// Add group subitems
-	auto it = std::find(macros.begin(), macros.end(), group);
-	if (it == macros.end()) {
-		return;
-	}
-	it = std::next(it);
-	macros.insert(it, subitems.begin(), subitems.end());
 }
 
 void AdvSceneSwitcher::ExportMacros() const

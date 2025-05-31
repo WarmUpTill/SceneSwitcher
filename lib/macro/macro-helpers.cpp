@@ -78,36 +78,36 @@ bool MacroSwitchedScene()
 	return macroSceneSwitched;
 }
 
-std::string GetMacroName(Macro *macro)
+std::string GetMacroName(const Macro *macro)
 {
 	return macro ? macro->Name() : "";
 }
 
 std::chrono::high_resolution_clock::time_point
-LastMacroConditionCheckTime(Macro *macro)
+LastMacroConditionCheckTime(const Macro *macro)
 {
 	return macro ? macro->LastConditionCheckTime()
 		     : std::chrono::high_resolution_clock::time_point{};
 }
 
-bool MacroIsStopped(Macro *macro)
+bool MacroIsStopped(const Macro *macro)
 {
 	return macro ? macro->GetStop() : true;
 }
 
-bool MacroIsPaused(Macro *macro)
+bool MacroIsPaused(const Macro *macro)
 {
 	return macro ? macro->Paused() : true;
 }
 
 bool MacroWasPausedSince(
-	Macro *macro,
+	const Macro *macro,
 	const std::chrono::high_resolution_clock::time_point &time)
 {
 	return macro ? macro->WasPausedSince(time) : false;
 }
 
-bool MacroWasCheckedSinceLastStart(Macro *macro)
+bool MacroWasCheckedSinceLastStart(const Macro *macro)
 {
 	if (!macro) {
 		return false;
@@ -144,7 +144,7 @@ void ResetMacroRunCount(Macro *macro)
 	macro->ResetRunCount();
 }
 
-bool IsValidMacroSegmentIndex(Macro *m, const int idx, bool isCondition)
+bool IsValidMacroSegmentIndex(const Macro *m, const int idx, bool isCondition)
 {
 	if (!m || idx < 0) {
 		return false;

@@ -35,12 +35,14 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	  _enable(new SwitchButton()),
 	  _entryData(entryData)
 {
+	auto actionStateTimer = new QTimer(this);
+
 	QWidget::connect(_actionSelection,
 			 SIGNAL(currentTextChanged(const QString &)), this,
 			 SLOT(ActionSelectionChanged(const QString &)));
 	QWidget::connect(_enable, SIGNAL(checked(bool)), this,
 			 SLOT(ActionEnableChanged(bool)));
-	QWidget::connect(&_actionStateTimer, SIGNAL(timeout()), this,
+	QWidget::connect(actionStateTimer, SIGNAL(timeout()), this,
 			 SLOT(UpdateActionState()));
 
 	populateActionSelection(_actionSelection);
@@ -63,7 +65,7 @@ MacroActionEdit::MacroActionEdit(QWidget *parent,
 	_entryData = entryData;
 	SetupWidgets(true);
 
-	_actionStateTimer.start(300);
+	actionStateTimer->start(300);
 	_loading = false;
 }
 

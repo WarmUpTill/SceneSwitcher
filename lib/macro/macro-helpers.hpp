@@ -41,17 +41,17 @@ EXPORT std::atomic_int &GetShutdownConditionCount();
 EXPORT void SetMacroSwitchedScene(bool value);
 EXPORT bool MacroSwitchedScene();
 
-EXPORT std::string GetMacroName(Macro *);
+EXPORT std::string GetMacroName(const Macro *);
 
 EXPORT std::chrono::high_resolution_clock::time_point
-LastMacroConditionCheckTime(Macro *);
+LastMacroConditionCheckTime(const Macro *);
 
-EXPORT bool MacroIsStopped(Macro *);
-EXPORT bool MacroIsPaused(Macro *);
+EXPORT bool MacroIsStopped(const Macro *);
+EXPORT bool MacroIsPaused(const Macro *);
 EXPORT bool
-MacroWasPausedSince(Macro *,
+MacroWasPausedSince(const Macro *,
 		    const std::chrono::high_resolution_clock::time_point &);
-EXPORT bool MacroWasCheckedSinceLastStart(Macro *);
+EXPORT bool MacroWasCheckedSinceLastStart(const Macro *);
 
 EXPORT void AddMacroHelperThread(Macro *, std::thread &&);
 
@@ -68,6 +68,6 @@ EXPORT void InvalidateMacroTempVarValues();
 EXPORT void ResetMacroConditionTimers(Macro *);
 EXPORT void ResetMacroRunCount(Macro *);
 
-bool IsValidMacroSegmentIndex(Macro *m, const int idx, bool isCondition);
+bool IsValidMacroSegmentIndex(const Macro *m, const int idx, bool isCondition);
 
 } // namespace advss
