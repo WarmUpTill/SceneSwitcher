@@ -9,6 +9,8 @@ target_sources(
   ${PROJECT_NAME}
   PRIVATE macro-action-script.cpp
           macro-action-script.hpp
+          macro-action-script-inline.cpp
+          macro-action-script-inline.hpp
           macro-condition-script.cpp
           macro-condition-script.hpp
           macro-script-handler.cpp
