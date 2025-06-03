@@ -501,6 +501,7 @@ void TwitchChatConnection::Authenticate()
 	if (!pass.has_value()) {
 		blog(LOG_INFO,
 		     "Joining Twitch chat failed due to invalid token!");
+		return;
 	}
 	Send("PASS oauth:" + *pass);
 	Send("NICK " + _token.GetName());
