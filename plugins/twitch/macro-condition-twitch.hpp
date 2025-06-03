@@ -74,6 +74,8 @@ public:
 
 		// Chat
 		CHAT_MESSAGE_RECEIVED = 500000,
+		CHAT_MESSAGE_REMOVED = 500030,
+		CHAT_CLEARED = 500060,
 		CHAT_USER_JOINED = 500100,
 		CHAT_USER_LEFT = 500200,
 
@@ -113,10 +115,16 @@ private:
 	bool CheckChannelLiveEvents();
 	bool CheckChannelRewardChangeEvents();
 	bool CheckChannelRewardRedemptionEvents();
-	bool CheckChatMessages(TwitchToken &token);
 	bool HandleMatchingSubscriptionEvents(
 		const std::function<void(const Event &)> &matchCb);
+
+	bool CheckChatMessages(TwitchToken &token);
 	bool CheckChatUserJoinOrLeave(TwitchToken &token);
+	bool CheckChatClear(TwitchToken &token);
+	bool CheckChatMessageRemove(TwitchToken &token);
+	bool ChatConnectionIsSetup(TwitchToken &token);
+	bool HandleChatEvents(
+		const std::function<bool(const IRCMessage &)> &matchCb);
 
 	void RegisterEventSubscription();
 	void ResetSubscription();
