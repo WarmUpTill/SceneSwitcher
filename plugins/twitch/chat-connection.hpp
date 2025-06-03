@@ -15,10 +15,23 @@ namespace advss {
 using websocketpp::connection_hdl;
 
 struct IRCMessage {
+	enum class Type {
+		MESSAGE_RECEIVED,
+		MESSAGE_REMOVED,
+		MESSAGE_CLEARED,
+		USER_LEAVE,
+		USER_JOIN,
+		OTHER,
+		UNKNOWN,
+	};
+
+	Type type = Type::UNKNOWN;
+
 	struct Badge {
 		std::string name;
 		bool enabled;
 	};
+
 	struct {
 		std::string badgeInfoString;
 		std::string badgesString;
@@ -39,13 +52,12 @@ struct IRCMessage {
 		std::string rootParentId;
 		std::string rootParentUserLogin;
 		bool isSubscriber = false;
-		unsigned long long timestamp;
+		unsigned long long timestamp = 0;
+		unsigned long long banDuration = 0;
 		bool isTurbo = false;
 		std::string userId;
 		std::string userType;
 		bool isVIP = false;
-		bool joinedChannel = false;
-		bool leftChannel = false;
 	} properties;
 
 	struct {
@@ -99,6 +111,8 @@ private:
 	void HandleJoin(const IRCMessage &);
 	void HandlePart(const IRCMessage &);
 	void HandleNewMessage(const IRCMessage &);
+	void HandleRemoveMessage(const IRCMessage &);
+	void HandleClear(const IRCMessage &);
 	void HandleWhisper(const IRCMessage &);
 	void HandleNotice(const IRCMessage &) const;
 	void HandleReconnect();
