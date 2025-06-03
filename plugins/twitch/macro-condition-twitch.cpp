@@ -121,6 +121,10 @@ const static std::map<MacroConditionTwitch::Condition, std::string> conditionTyp
 	 "AdvSceneSwitcher.condition.twitch.type.polling.channel.category"},
 	{MacroConditionTwitch::Condition::CHAT_MESSAGE_RECEIVED,
 	 "AdvSceneSwitcher.condition.twitch.type.chat.message"},
+	{MacroConditionTwitch::Condition::CHAT_MESSAGE_REMOVED,
+	 "AdvSceneSwitcher.condition.twitch.type.chat.messageRemoved"},
+	{MacroConditionTwitch::Condition::CHAT_CLEARED,
+	 "AdvSceneSwitcher.condition.twitch.type.chat.cleared"},
 	{MacroConditionTwitch::Condition::CHAT_USER_JOINED,
 	 "AdvSceneSwitcher.condition.twitch.type.chat.userJoined"},
 	{MacroConditionTwitch::Condition::CHAT_USER_LEFT,
@@ -416,87 +420,128 @@ static bool stringMatches(const RegexConfig &regex, const std::string &string,
 
 bool MacroConditionTwitch::CheckChatMessages(TwitchToken &token)
 {
-	if (!_chatConnection) {
-		_chatConnection = TwitchChatConnection::GetChatConnection(
-			token, _channel);
-		if (!_chatConnection) {
-			return false;
-		}
-		_chatBuffer = _chatConnection->RegisterForMessages();
+	if (!ChatConnectionIsSetup(token)) {
 		return false;
 	}
 
-	while (!_chatBuffer->Empty()) {
-		auto message = _chatBuffer->ConsumeMessage();
-		if (!message) {
-			continue;
+	return HandleChatEvents([this](const IRCMessage &message) -> bool {
+		if (message.type != IRCMessage::Type::MESSAGE_RECEIVED) {
+			return false;
 		}
 
-		// Join and leave message don't have any message data
-		if (message->properties.leftChannel ||
-		    message->properties.joinedChannel) {
-			continue;
+		if (!_chatMessagePattern.Matches(message)) {
+			return false;
 		}
 
-		if (!_chatMessagePattern.Matches(*message)) {
-			continue;
-		}
-
-		SetTempVarValue("id", message->properties.id);
-		SetTempVarValue("chat_message", message->message);
-		SetTempVarValue("user_id", message->properties.userId);
-		SetTempVarValue("user_login", message->source.nick);
-		SetTempVarValue("user_name", message->properties.displayName);
-		SetTempVarValue("user_type", message->properties.userType);
+		SetTempVarValue("id", message.properties.id);
+		SetTempVarValue("chat_message", message.message);
+		SetTempVarValue("user_id", message.properties.userId);
+		SetTempVarValue("user_login", message.source.nick);
+		SetTempVarValue("user_name", message.properties.displayName);
+		SetTempVarValue("user_type", message.properties.userType);
 		SetTempVarValue("reply_parent_id",
-				message->properties.replyParentId);
+				message.properties.replyParentId);
 		SetTempVarValue("reply_parent_message",
-				message->properties.replyParentBody);
+				message.properties.replyParentBody);
 		SetTempVarValue("reply_parent_user_id",
-				message->properties.replyParentUserId);
+				message.properties.replyParentUserId);
 		SetTempVarValue("reply_parent_user_login",
-				message->properties.replyParentUserLogin);
+				message.properties.replyParentUserLogin);
 		SetTempVarValue("reply_parent_user_name",
-				message->properties.replyParentDisplayName);
+				message.properties.replyParentDisplayName);
 		SetTempVarValue("root_parent_id",
-				message->properties.rootParentId);
+				message.properties.rootParentId);
 		SetTempVarValue("root_parent_user_login",
-				message->properties.rootParentUserLogin);
+				message.properties.rootParentUserLogin);
 		SetTempVarValue("badge_info",
-				message->properties.badgeInfoString);
-		SetTempVarValue("badges", message->properties.badgesString);
+				message.properties.badgeInfoString);
+		SetTempVarValue("badges", message.properties.badgesString);
 		SetTempVarValue("bits",
-				std::to_string(message->properties.bits));
-		SetTempVarValue("color", message->properties.color);
-		SetTempVarValue("emotes", message->properties.emotesString);
+				std::to_string(message.properties.bits));
+		SetTempVarValue("color", message.properties.color);
+		SetTempVarValue("emotes", message.properties.emotesString);
 		SetTempVarValue("timestamp",
-				std::to_string(message->properties.timestamp));
+				std::to_string(message.properties.timestamp));
 		SetTempVarValue("is_emotes_only",
-				message->properties.isUsingOnlyEmotes
-					? "true"
-					: "false");
+				message.properties.isUsingOnlyEmotes ? "true"
+								     : "false");
 		SetTempVarValue("is_first_message",
-				message->properties.isFirstMessage ? "true"
-								   : "false");
+				message.properties.isFirstMessage ? "true"
+								  : "false");
 		SetTempVarValue("is_mod",
-				message->properties.isMod ? "true" : "false");
-		SetTempVarValue("is_subscriber",
-				message->properties.isSubscriber ? "true"
-								 : "false");
+				message.properties.isMod ? "true" : "false");
+		SetTempVarValue("is_subscriber", message.properties.isSubscriber
+							 ? "true"
+							 : "false");
 		SetTempVarValue("is_turbo",
-				message->properties.isTurbo ? "true" : "false");
+				message.properties.isTurbo ? "true" : "false");
 		SetTempVarValue("is_vip",
-				message->properties.isVIP ? "true" : "false");
-
-		if (_clearBufferOnMatch) {
-			_chatBuffer->Clear();
-		}
+				message.properties.isVIP ? "true" : "false");
 		return true;
-	}
-	return false;
+	});
 }
 
 bool MacroConditionTwitch::CheckChatUserJoinOrLeave(TwitchToken &token)
+{
+	if (!ChatConnectionIsSetup(token)) {
+		return false;
+	}
+
+	return HandleChatEvents([this](const IRCMessage &message) -> bool {
+		if ((_condition == Condition::CHAT_USER_JOINED &&
+		     message.type != IRCMessage::Type::USER_JOIN) ||
+		    (_condition == Condition::CHAT_USER_LEFT &&
+		     message.type != IRCMessage::Type::USER_LEAVE)) {
+			return false;
+		}
+
+		SetTempVarValue("user_login", message.source.nick);
+		return true;
+	});
+}
+
+bool MacroConditionTwitch::CheckChatClear(TwitchToken &token)
+{
+	if (!ChatConnectionIsSetup(token)) {
+		return false;
+	}
+
+	return HandleChatEvents([this](const IRCMessage &message) -> bool {
+		if (message.type != IRCMessage::Type::MESSAGE_CLEARED) {
+			return false;
+		}
+
+		SetTempVarValue("ban_duration",
+				std::to_string(message.properties.banDuration));
+		SetTempVarValue("login", message.message);
+		SetTempVarValue("user_id", message.properties.userId);
+		SetTempVarValue("timestamp",
+				std::to_string(message.properties.timestamp));
+		return true;
+	});
+}
+
+bool MacroConditionTwitch::CheckChatMessageRemove(TwitchToken &token)
+{
+	if (!ChatConnectionIsSetup(token)) {
+		return false;
+	}
+
+	return HandleChatEvents([this](const IRCMessage &message) -> bool {
+		if (message.type != IRCMessage::Type::MESSAGE_REMOVED) {
+			return false;
+		}
+
+		SetTempVarValue("message", message.message);
+		SetTempVarValue("message_id", message.properties.id);
+		SetTempVarValue("login", message.properties.userId);
+		SetTempVarValue("timestamp",
+				std::to_string(message.properties.timestamp));
+		return true;
+	});
+}
+
+bool MacroConditionTwitch::ChatConnectionIsSetup(TwitchToken &token)
 {
 	if (!_chatConnection) {
 		_chatConnection = TwitchChatConnection::GetChatConnection(
@@ -507,21 +552,21 @@ bool MacroConditionTwitch::CheckChatUserJoinOrLeave(TwitchToken &token)
 		_chatBuffer = _chatConnection->RegisterForMessages();
 		return false;
 	}
+	return true;
+}
 
+bool MacroConditionTwitch::HandleChatEvents(
+	const std::function<bool(const IRCMessage &)> &matchCb)
+{
 	while (!_chatBuffer->Empty()) {
 		auto message = _chatBuffer->ConsumeMessage();
 		if (!message) {
 			continue;
 		}
 
-		if ((_condition == Condition::CHAT_USER_JOINED &&
-		     !message->properties.joinedChannel) ||
-		    (_condition == Condition::CHAT_USER_LEFT &&
-		     !message->properties.leftChannel)) {
+		if (!matchCb(*message)) {
 			continue;
 		}
-
-		SetTempVarValue("user_login", message->source.nick);
 
 		if (_clearBufferOnMatch) {
 			_chatBuffer->Clear();
@@ -715,6 +760,20 @@ bool MacroConditionTwitch::CheckCondition()
 		}
 		return CheckChatMessages(*token);
 	}
+	case Condition::CHAT_CLEARED: {
+		auto token = _token.lock();
+		if (!token) {
+			return false;
+		}
+		return CheckChatClear(*token);
+	}
+	case Condition::CHAT_MESSAGE_REMOVED: {
+		auto token = _token.lock();
+		if (!token) {
+			return false;
+		}
+		return CheckChatMessageRemove(*token);
+	}
 	case Condition::CHAT_USER_JOINED:
 	case Condition::CHAT_USER_LEFT: {
 		auto token = _token.lock();
@@ -870,6 +929,10 @@ bool MacroConditionTwitch::ConditionIsSupportedByToken()
 			{Condition::TITLE_POLLING, {}},
 			{Condition::CATEGORY_POLLING, {}},
 			{Condition::CHAT_MESSAGE_RECEIVED,
+			 {{"chat:read"}, {"chat:edit"}}},
+			{Condition::CHAT_MESSAGE_REMOVED,
+			 {{"chat:read"}, {"chat:edit"}}},
+			{Condition::CHAT_CLEARED,
 			 {{"chat:read"}, {"chat:edit"}}},
 			{Condition::CHAT_USER_JOINED,
 			 {{"chat:read"}, {"chat:edit"}}},
@@ -1069,6 +1132,8 @@ void MacroConditionTwitch::SetupTempVars()
 	};
 
 	if (_condition != Condition::CHAT_MESSAGE_RECEIVED &&
+	    _condition != Condition::CHAT_MESSAGE_REMOVED &&
+	    _condition != Condition::CHAT_CLEARED &&
 	    _condition != Condition::CHAT_USER_JOINED &&
 	    _condition != Condition::CHAT_USER_LEFT &&
 	    _condition != Condition::RAID_INBOUND_EVENT &&
@@ -1422,6 +1487,18 @@ void MacroConditionTwitch::SetupTempVars()
 		setupTempVarHelper("is_subscriber", ".chatReceive");
 		setupTempVarHelper("is_turbo", ".chatReceive");
 		setupTempVarHelper("is_vip", ".chatReceive");
+		break;
+	case Condition::CHAT_MESSAGE_REMOVED:
+		setupTempVarHelper("message", ".chatRemove");
+		setupTempVarHelper("message_id", ".chatRemove");
+		setupTempVarHelper("login", ".chatRemove");
+		setupTempVarHelper("timestamp", ".chatRemove");
+		break;
+	case Condition::CHAT_CLEARED:
+		setupTempVarHelper("ban_duration", ".chatClear");
+		setupTempVarHelper("login", ".chatClear");
+		setupTempVarHelper("user_id", ".chatClear");
+		setupTempVarHelper("timestamp", ".chatClear");
 		break;
 	case Condition::CHAT_USER_JOINED:
 		setupTempVarHelper("user_login", ".chatJoin");

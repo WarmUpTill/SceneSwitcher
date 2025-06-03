@@ -118,12 +118,17 @@ static void parseTags(const std::string &tags, IRCMessage &message)
 			message.properties.timestamp = std::stoull(tagValue);
 		} else if (tagName == "turbo") {
 			message.properties.isTurbo = tagValue == "1";
-		} else if (tagName == "user-id") {
+		} else if (tagName == "user-id" ||
+			   tagName == "target-user-id" || tagName == "login") {
 			message.properties.userId = tagValue;
 		} else if (tagName == "user-type") {
 			message.properties.userType = tagValue;
 		} else if (tagName == "vip") {
 			message.properties.isVIP = tagValue == "1";
+		} else if (tagName == "ban-duration") {
+			message.properties.banDuration = std::stoull(tagValue);
+		} else if (tagName == "target-msg-id") {
+			message.properties.id = tagValue;
 		}
 	}
 }
@@ -172,34 +177,54 @@ static void parseCommand(const std::string &rawCommandComponent,
 		if (commandParts.size() < 3) {
 			return;
 		}
+		message.type = IRCMessage::Type::OTHER;
 		message.command.parameters = (commandParts[2] == "ACK");
 	} else if (message.command.command == "RECONNECT") {
 		blog(LOG_INFO,
 		     "The Twitch IRC server is about to terminate the connection for maintenance.");
+		message.type = IRCMessage::Type::OTHER;
 	} else if (message.command.command == "421") {
 		// Unsupported command
+		message.type = IRCMessage::Type::OTHER;
 		return;
-	} else if (message.command.command == "PING" ||
-		   message.command.command == "001" ||
-		   message.command.command == "NOTICE" ||
-		   message.command.command == "CLEARCHAT" ||
-		   message.command.command == "HOSTTARGET" ||
-		   message.command.command == "PRIVMSG") {
+	} else if (message.command.command == "PRIVMSG") {
 		if (commandParts.size() < 2) {
 			return;
 		}
+		message.type = IRCMessage::Type::MESSAGE_RECEIVED;
+		message.command.parameters = commandParts[1];
+	} else if (message.command.command == "CLEARCHAT") {
+		if (commandParts.size() < 1) {
+			return;
+		}
+		message.type = IRCMessage::Type::MESSAGE_CLEARED;
+		message.command.parameters = commandParts[1];
+	} else if (message.command.command == "CLEARMSG") {
+		if (commandParts.size() < 2) {
+			return;
+		}
+		message.type = IRCMessage::Type::MESSAGE_REMOVED;
+		message.command.parameters = commandParts[1];
+	} else if (message.command.command == "PING" ||
+		   message.command.command == "001" ||
+		   message.command.command == "NOTICE" ||
+		   message.command.command == "HOSTTARGET") {
+		if (commandParts.size() < 2) {
+			return;
+		}
+		message.type = IRCMessage::Type::OTHER;
 		message.command.parameters = commandParts[1];
 	} else if (message.command.command == "JOIN") {
 		if (commandParts.size() < 2) {
 			return;
 		}
-		message.properties.joinedChannel = true;
+		message.type = IRCMessage::Type::USER_JOIN;
 		message.command.parameters = commandParts[1];
 	} else if (message.command.command == "PART") {
 		if (commandParts.size() < 2) {
 			return;
 		}
-		message.properties.leftChannel = true;
+		message.type = IRCMessage::Type::USER_LEAVE;
 		message.command.parameters = commandParts[1];
 	} else if (message.command.command == "GLOBALUSERSTATE" ||
 		   message.command.command == "USERSTATE" ||
@@ -213,7 +238,9 @@ static void parseCommand(const std::string &rawCommandComponent,
 		   message.command.command == "375" ||
 		   message.command.command == "376") {
 		// Do nothing for these cases for now
+		message.type = IRCMessage::Type::OTHER;
 	} else {
+		message.type = IRCMessage::Type::UNKNOWN;
 		vblog(LOG_INFO, "Unexpected IRC command: %s",
 		      message.command.command.c_str());
 	}
@@ -550,6 +577,18 @@ void TwitchChatConnection::HandleNewMessage(const IRCMessage &message)
 	      message.message.c_str());
 }
 
+void TwitchChatConnection::HandleRemoveMessage(const IRCMessage &message)
+{
+	_messageDispatcher.DispatchMessage(message);
+	vblog(LOG_INFO, "Chat message was removed");
+}
+
+void TwitchChatConnection::HandleClear(const IRCMessage &message)
+{
+	_messageDispatcher.DispatchMessage(message);
+	vblog(LOG_INFO, "Chat was cleared");
+}
+
 void TwitchChatConnection::HandleWhisper(const IRCMessage &message)
 {
 	_whisperDispatcher.DispatchMessage(message);
@@ -610,6 +649,8 @@ void TwitchChatConnection::OnMessage(
 	static constexpr std::string_view reconnectCommand = "RECONNECT";
 	static constexpr std::string_view newMessageCommand = "PRIVMSG";
 	static constexpr std::string_view whisperCommand = "WHISPER";
+	static constexpr std::string_view clearCommand = "CLEARCHAT";
+	static constexpr std::string_view removeCommand = "CLEARMSG";
 
 	if (!message) {
 		return;
@@ -636,6 +677,10 @@ void TwitchChatConnection::OnMessage(
 			HandlePart(message);
 		} else if (message.command.command == newMessageCommand) {
 			HandleNewMessage(message);
+		} else if (message.command.command == clearCommand) {
+			HandleClear(message);
+		} else if (message.command.command == removeCommand) {
+			HandleRemoveMessage(message);
 		} else if (message.command.command == whisperCommand) {
 			HandleWhisper(message);
 		} else if (message.command.command == noticeCommand) {
