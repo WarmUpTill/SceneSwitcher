@@ -7,7 +7,7 @@
 
 namespace advss {
 
-class SliderIgnoreScroll : public QSlider {
+class ADVSS_EXPORT SliderIgnoreScroll : public QSlider {
 	Q_OBJECT
 
 public:

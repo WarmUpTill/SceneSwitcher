@@ -20,7 +20,7 @@ class MacroConditionFactory {
 public:
 	MacroConditionFactory() = delete;
 	EXPORT static bool Register(const std::string &, MacroConditionInfo);
-	static bool Deregister(const std::string &);
+	EXPORT static bool Deregister(const std::string &);
 	static std::shared_ptr<MacroCondition> Create(const std::string &,
 						      Macro *m);
 	static QWidget *CreateWidget(const std::string &id, QWidget *parent,
