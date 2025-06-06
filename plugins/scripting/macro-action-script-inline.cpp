@@ -6,8 +6,36 @@
 #include <obs-module.h>
 #include <QFileInfo>
 #include <QDir>
+#include <QLibrary>
 
 namespace advss {
+
+typedef obs_script_t *(*obs_script_create_t)(const char *, obs_data_t *);
+typedef void (*obs_script_destroy_t)(obs_script_t *);
+
+obs_script_create_t obs_script_create = nullptr;
+obs_script_destroy_t obs_script_destroy = nullptr;
+QLibrary *scriptingLib = nullptr;
+
+static const char *libName =
+#if defined(WIN32)
+	"obs-scripting.dll";
+#elif __APPLE__
+	"obs-scripting.dylib";
+#else
+	"obs-scripting.so";
+#endif
+
+static bool setup()
+{
+	scriptingLib = new QLibrary(libName);
+	obs_script_create =
+		(obs_script_create_t)scriptingLib->resolve("obs_script_create");
+	obs_script_destroy = (obs_script_destroy_t)scriptingLib->resolve(
+		"obs_script_destroy");
+	return true;
+}
+static bool setupDone = setup();
 
 const std::string MacroActionScriptInline::_id = "script";
 
@@ -185,6 +213,14 @@ void MacroActionScriptInline::WaitForCompletion() const
 	//		std::chrono::duration_cast<std::chrono::milliseconds>(
 	//			now - start);
 	//}
+}
+
+void MacroActionScriptInline::ScriptDeleter::operator()(obs_script_t *script)
+{
+	obs_script_destroy(script);
+	if (!path.empty()) {
+		CleanupScriptFile(path);
+	}
 }
 
 static void populateLanguageSelection(QComboBox *list)

@@ -43,13 +43,7 @@ private:
 		"    obs.script_log(obs.LOG_INFO, \"Hello from inline script!\")";
 
 	struct ScriptDeleter {
-		void operator()(obs_script_t *script)
-		{
-			obs_script_destroy(script);
-			if (!path.empty()) {
-				CleanupScriptFile(path);
-			}
-		}
+		void operator()(obs_script_t *);
 		std::string path;
 	};
 	std::unique_ptr<obs_script_t, ScriptDeleter> _script;
