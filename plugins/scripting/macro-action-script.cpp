@@ -1,7 +1,6 @@
 #include "macro-action-script.hpp"
 #include "layout-helpers.hpp"
 #include "macro-helpers.hpp"
-#include "properties-view.hpp"
 #include "sync-helpers.hpp"
 
 namespace advss {
