@@ -19,8 +19,10 @@ target_sources(
           macro-segment-script.hpp)
 
 target_sources(
-  ${PROJECT_NAME} PRIVATE utils/properties-view.cpp utils/properties-view.hpp
-                          utils/properties-view.moc.hpp)
+  ${PROJECT_NAME}
+  PRIVATE utils/properties-view.cpp utils/properties-view.hpp
+          utils/properties-view.moc.hpp utils/inline-script-helpers.cpp
+          utils/inline-script-helpers.hpp)
 
 target_include_directories(${PROJECT_NAME}
                            PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/utils")

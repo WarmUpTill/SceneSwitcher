@@ -1,14 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "inline-script-helpers.hpp"
 #include "variable-text-edit.hpp"
-
-struct obs_script;
-typedef struct obs_script obs_script_t;
-enum obs_script_lang {
-	OBS_SCRIPT_LANG_UNKNOWN,
-	OBS_SCRIPT_LANG_LUA,
-	OBS_SCRIPT_LANG_PYTHON
-};
 
 namespace advss {
 
