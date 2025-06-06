@@ -9,15 +9,14 @@
 
 namespace advss {
 
-class DurationSelection : public QWidget {
+class ADVSS_EXPORT DurationSelection : public QWidget {
 	Q_OBJECT
 public:
-	EXPORT DurationSelection(QWidget *parent = nullptr,
-				 bool showUnitSelection = true,
-				 double minValue = 0.0);
-	EXPORT void SetDuration(const Duration &);
+	DurationSelection(QWidget *parent = nullptr,
+			  bool showUnitSelection = true, double minValue = 0.0);
+	void SetDuration(const Duration &);
 	Duration GetDuration() const { return _current; }
-	EXPORT QDoubleSpinBox *SpinBox() { return _duration->SpinBox(); }
+	QDoubleSpinBox *SpinBox() { return _duration->SpinBox(); }
 
 private slots:
 	void _DurationChanged(const NumberVariable<double> &value);

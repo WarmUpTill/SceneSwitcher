@@ -20,7 +20,7 @@ public:
 	MacroActionFactory() = delete;
 
 	EXPORT static bool Register(const std::string &id, MacroActionInfo);
-	static bool Deregister(const std::string &id);
+	EXPORT static bool Deregister(const std::string &id);
 	static std::shared_ptr<MacroAction> Create(const std::string &id,
 						   Macro *m);
 	static QWidget *CreateWidget(const std::string &id, QWidget *parent,
