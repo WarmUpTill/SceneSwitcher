@@ -4,15 +4,15 @@
 
 namespace advss {
 
-class VariableTextEdit : public ResizingPlainTextEdit {
+class ADVSS_EXPORT VariableTextEdit : public ResizingPlainTextEdit {
 	Q_OBJECT
 public:
-	EXPORT VariableTextEdit(QWidget *parent, const int scrollAt = 10,
-				const int minLines = 3,
-				const int paddingLines = 2);
-	EXPORT void setPlainText(const QString &);
-	EXPORT void setPlainText(const StringVariable &);
-	EXPORT void setToolTip(const QString &string);
+	VariableTextEdit(QWidget *parent, const int scrollAt = 10,
+			 const int minLines = 3, const int paddingLines = 2);
+	virtual ~VariableTextEdit(){};
+	void setPlainText(const QString &);
+	void setPlainText(const StringVariable &);
+	void setToolTip(const QString &string);
 
 private:
 };

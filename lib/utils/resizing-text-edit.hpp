@@ -5,15 +5,15 @@
 
 namespace advss {
 
-class ResizingPlainTextEdit : public QPlainTextEdit {
+class ADVSS_EXPORT ResizingPlainTextEdit : public QPlainTextEdit {
 	Q_OBJECT
 public:
 	ResizingPlainTextEdit(QWidget *parent, const int scrollAt = 10,
 			      const int minLines = 3,
 			      const int paddingLines = 2);
 	virtual ~ResizingPlainTextEdit(){};
-	EXPORT int maxLength();
-	EXPORT void setMaxLength(int maxLength);
+	int maxLength();
+	void setMaxLength(int maxLength);
 
 protected:
 	bool eventFilter(QObject *obj, QEvent *event) override;
