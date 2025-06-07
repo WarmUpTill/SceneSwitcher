@@ -8,7 +8,6 @@ namespace advss {
 class MacroActionScriptInline : public MacroAction {
 public:
 	MacroActionScriptInline(Macro *m) : MacroAction(m) {}
-	MacroActionScriptInline(const MacroActionScriptInline &);
 	bool PerformAction();
 	void LogAction() const;
 	bool Save(obs_data_t *obj) const;
@@ -18,30 +17,16 @@ public:
 	std::shared_ptr<MacroAction> Copy() const;
 	void ResolveVariablesToFixedValues();
 
-	obs_script_lang GetLanguage() const { return _language; }
+	obs_script_lang GetLanguage() const { return _script.GetLanguage(); }
 	void SetLanguage(obs_script_lang);
-	StringVariable GetScript() const { return _scriptText; }
+	StringVariable GetScript() const { return _script.GetText(); }
 	void SetScript(const QString &);
 
 private:
 	void SetupScript();
-	static void CleanupScriptFile(const std::string &);
 	void WaitForCompletion() const;
 
-	obs_script_lang _language = OBS_SCRIPT_LANG_PYTHON;
-	StringVariable _scriptText =
-		"import obspython as obs\n"
-		"\n"
-		"def script_load(settings):\n"
-		"    obs.script_log(obs.LOG_INFO, \"Hello from inline script!\")";
-
-	struct ScriptDeleter {
-		void operator()(obs_script_t *);
-		std::string path;
-	};
-	std::unique_ptr<obs_script_t, ScriptDeleter> _script;
-
-	std::string _lastResolvedText;
+	OBSScript _script;
 
 	static bool _registered;
 	static const std::string _id;
@@ -68,7 +53,7 @@ private:
 	void SetWidgetVisibility();
 
 	QComboBox *_language;
-	VariableTextEdit *_script;
+	ScriptEditor *_script;
 
 	std::shared_ptr<MacroActionScriptInline> _entryData;
 	bool _loading = true;

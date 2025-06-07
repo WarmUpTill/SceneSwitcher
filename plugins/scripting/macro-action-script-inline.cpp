@@ -3,10 +3,6 @@
 #include "obs-module-helper.hpp"
 #include "sync-helpers.hpp"
 
-#include <obs-module.h>
-#include <QFileInfo>
-#include <QDir>
-
 namespace advss {
 
 const std::string MacroActionScriptInline::_id = "script";
@@ -16,29 +12,9 @@ bool MacroActionScriptInline::_registered = MacroActionFactory::Register(
 	{MacroActionScriptInline::Create, MacroActionScriptInlineEdit::Create,
 	 "AdvSceneSwitcher.action.script"});
 
-MacroActionScriptInline::MacroActionScriptInline(
-	const MacroActionScriptInline &other)
-	: MacroAction(other.GetMacro()),
-	  _language(other._language),
-	  _scriptText(other._scriptText)
-{
-	SetupScript();
-}
-
 bool MacroActionScriptInline::PerformAction()
 {
-	if (_lastResolvedText != std::string(_scriptText)) {
-		SetupScript();
-	}
-
-	//if (!ScriptHandler::ActionIdIsValid(_id)) {
-	//	blog(LOG_WARNING, "skipping unknown script action \"%s\"",
-	//	     _id.c_str());
-	//	return true;
-	//}
-	//
-	//(void)SendTriggerSignal();
-	return RunOBSScript(_script.get());
+	return _script.Run();
 }
 
 void MacroActionScriptInline::LogAction() const
@@ -49,18 +25,14 @@ void MacroActionScriptInline::LogAction() const
 bool MacroActionScriptInline::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
-	obs_data_set_int(obj, "language", _language);
-	_scriptText.Save(obj, "script");
+	_script.Save(obj);
 	return true;
 }
 
 bool MacroActionScriptInline::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	_language =
-		static_cast<obs_script_lang>(obs_data_get_int(obj, "language"));
-	_scriptText.Load(obj, "script");
-	SetupScript();
+	_script.Load(obj);
 	return true;
 }
 
@@ -76,87 +48,17 @@ std::shared_ptr<MacroAction> MacroActionScriptInline::Copy() const
 
 void MacroActionScriptInline::ResolveVariablesToFixedValues()
 {
-	_scriptText.ResolveVariables();
+	_script.ResolveVariablesToFixedValues();
 }
 
 void MacroActionScriptInline::SetLanguage(obs_script_lang language)
 {
-	_language = language;
-	SetupScript();
+	_script.SetLanguage(language);
 }
 
 void MacroActionScriptInline::SetScript(const QString &text)
 {
-	_scriptText = text.toStdString();
-	SetupScript();
-}
-
-static std::optional<std::string> createScriptTempFile(const char *content,
-						       obs_script_lang language)
-{
-	static int counter = 0;
-	++counter;
-	static const QString filenamePattern =
-		"scripting/advss-tmp-script%1.%2";
-	const QString filename = filenamePattern.arg(counter).arg(
-		language == OBS_SCRIPT_LANG_PYTHON ? "py" : "lua");
-	auto settingsFile =
-		obs_module_config_path(filename.toStdString().c_str());
-	if (!settingsFile) {
-		blog(LOG_WARNING,
-		     "could not create script file! (obs_module_config_path)");
-		return {};
-	}
-
-	const QString dirPath = QFileInfo(settingsFile).absolutePath();
-	const QDir dir(dirPath);
-	if (!dir.exists() && !dir.mkpath(dirPath)) {
-		blog(LOG_WARNING, "could not create script file! (mkpath)");
-		bfree(settingsFile);
-		return {};
-	}
-
-	QFile file(settingsFile);
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-		bfree(settingsFile);
-		return {};
-	}
-
-	auto out = QTextStream(&file);
-	out << content;
-	std::string path = settingsFile;
-	bfree(settingsFile);
-	return path;
-}
-
-void MacroActionScriptInline::SetupScript()
-{
-
-	// TODO: pre-process input with helper funcs
-	// obs_get_module_data_path(obs_current_module()) +
-	//		  std::string("/res/ocr");
-
-	auto path = createScriptTempFile(_scriptText.c_str(), _language);
-	if (!path) {
-		_lastResolvedText = "";
-		return;
-	}
-	_script = std::unique_ptr<obs_script_t, ScriptDeleter>(
-		CreateOBSScript(path->c_str(), nullptr), {*path});
-	_lastResolvedText = _scriptText;
-}
-
-void MacroActionScriptInline::CleanupScriptFile(const std::string &path)
-{
-	const QFileInfo fileInfo(QString::fromStdString(path));
-	if (!fileInfo.isFile()) {
-		return;
-	}
-	QFile file(fileInfo.absoluteFilePath());
-	if (!file.remove()) {
-		vblog(LOG_INFO, "failed to clean up script file %s",
-		      fileInfo.absoluteFilePath().toStdString().c_str());
-	}
+	_script.SetText(text.toStdString());
 }
 
 void MacroActionScriptInline::WaitForCompletion() const
@@ -187,14 +89,6 @@ void MacroActionScriptInline::WaitForCompletion() const
 	//}
 }
 
-void MacroActionScriptInline::ScriptDeleter::operator()(obs_script_t *script)
-{
-	DestroyOBSScript(script);
-	if (!path.empty()) {
-		CleanupScriptFile(path);
-	}
-}
-
 static void populateLanguageSelection(QComboBox *list)
 {
 	list->addItem(
@@ -210,7 +104,7 @@ MacroActionScriptInlineEdit::MacroActionScriptInlineEdit(
 	QWidget *parent, std::shared_ptr<MacroActionScriptInline> entryData)
 	: QWidget(parent),
 	  _language(new QComboBox(this)),
-	  _script(new VariableTextEdit(this)),
+	  _script(new ScriptEditor(this)),
 	  _entryData(entryData)
 {
 	SetupLayout();
@@ -225,12 +119,16 @@ void MacroActionScriptInlineEdit::LanguageChanged(int idx)
 	GUARD_LOADING_AND_LOCK();
 	_entryData->SetLanguage(
 		static_cast<obs_script_lang>(_language->itemData(idx).toInt()));
+	const QSignalBlocker b(_script);
+	_script->setPlainText(_entryData->GetScript());
 }
 
 void MacroActionScriptInlineEdit::ScriptChanged()
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->SetScript(_script->toPlainText());
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionScriptInlineEdit::PopulateWidgets()
@@ -250,7 +148,7 @@ void MacroActionScriptInlineEdit::SetupWidgetConnections()
 {
 	QWidget::connect(_language, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(LanguageChanged(int)));
-	QWidget::connect(_script, SIGNAL(textChanged()), this,
+	QWidget::connect(_script, SIGNAL(ScriptChanged()), this,
 			 SLOT(ScriptChanged()));
 }
 
