@@ -2,7 +2,7 @@
 # https://github.com/obsproject/.github/tree/master/.github/ISSUE_TEMPLATE
 
 name: Feature request
-description: Suggest an idea for this projectReport a bug or crash
+description: Suggest an idea for this project
 body:
 - type: markdown
   id: md_welcome
