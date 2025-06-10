@@ -76,12 +76,16 @@ void MacroSelection::ShowAllMacros()
 
 void MacroSelection::MacroRemove(const QString &name)
 {
+	const bool currentSelectionWasRemoved = name == currentText();
+
 	int idx = findText(name);
 	if (idx == -1) {
 		return;
 	}
 	removeItem(idx);
-	setCurrentIndex(-1);
+	if (currentSelectionWasRemoved) {
+		setCurrentIndex(-1);
+	}
 }
 
 void MacroSelection::MacroRename(const QString &oldName, const QString &newName)
