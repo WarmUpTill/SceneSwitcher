@@ -65,19 +65,46 @@ void MacroActionHttp::SetupTempVars()
 			   "AdvSceneSwitcher.tempVar.http.error.description"));
 }
 
+struct URLInfo {
+	std::string host;
+	std::string path;
+};
+
+static URLInfo getURLInfo(const std::string &input)
+{
+	if (input.empty()) {
+		return {};
+	}
+
+	QString urlInput = QString::fromStdString(input);
+	if (!urlInput.contains("://")) {
+		urlInput = "http://" + urlInput;
+	}
+
+	const QUrl url(urlInput);
+	auto host =
+		url.scheme().toStdString() + "://" + url.host().toStdString();
+	int port = url.port();
+	if (port != -1) {
+		host += ":" + std::to_string(port);
+	}
+	auto path = url.path().toStdString();
+	if (path.empty()) {
+		path = "/";
+	}
+
+	return {host, path};
+}
+
 bool MacroActionHttp::PerformAction()
 {
-	httplib::Client cli(_url);
+	const auto [host, path] = getURLInfo(_url);
+
+	httplib::Client cli(host);
 	setTimeout(cli, _timeout);
 	const auto params = _setParams ? getParams(_params) : httplib::Params();
 	const auto headers = _setHeaders ? getHeaders(_headers)
 					 : httplib::Headers();
-
-	// This copy is necessary for some reason for MacOS but not Linux or
-	// Windows.
-	// Without it all requests fail with "Invalid argument" or
-	// "Failed to write connection" when sending out the data.
-	std::string path = _path;
 
 	httplib::Result response;
 	switch (_method) {
@@ -167,13 +194,12 @@ void MacroActionHttp::LogAction() const
 	ablog(LOG_INFO,
 	      "sent HTTP request (%s) "
 	      "to URL \"%s\" "
-	      "to path \"%s\" "
 	      "with content type \"%s\" "
 	      "with body \"%s\" "
 	      "with headers \"%s\" "
 	      "with parameters \"%s\" "
 	      "with timeout \"%s\"",
-	      methodToString(_method).data(), _url.c_str(), _path.c_str(),
+	      methodToString(_method).data(), _url.c_str(),
 	      _contentType.c_str(), _body.c_str(),
 	      _setHeaders ? stringListToString(_headers).c_str() : "-",
 	      _setParams ? stringListToString(_params).c_str() : "-",
@@ -184,7 +210,6 @@ bool MacroActionHttp::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
 	_url.Save(obj, "url");
-	_path.Save(obj, "path");
 	_contentType.Save(obj, "contentType");
 	_body.Save(obj, "body");
 	obs_data_set_bool(obj, "setHeaders", _setHeaders);
@@ -200,7 +225,11 @@ bool MacroActionHttp::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
 	_url.Load(obj, "url");
-	_path.Load(obj, "path");
+	if (obs_data_has_user_value(obj, "path")) {
+		std::string url = _url.UnresolvedValue();
+		url += obs_data_get_string(obj, "path");
+		_url = url;
+	}
 	_contentType.Load(obj, "contentType");
 	_body.Load(obj, "body");
 	_setHeaders = obs_data_get_bool(obj, "setHeaders");
@@ -230,7 +259,6 @@ std::shared_ptr<MacroAction> MacroActionHttp::Copy() const
 void MacroActionHttp::ResolveVariablesToFixedValues()
 {
 	_url.ResolveVariables();
-	_path.ResolveVariables();
 	_contentType.ResolveVariables();
 	_body.ResolveVariables();
 	_headers.ResolveVariables();
@@ -263,7 +291,6 @@ MacroActionHttpEdit::MacroActionHttpEdit(
 	QWidget *parent, std::shared_ptr<MacroActionHttp> entryData)
 	: QWidget(parent),
 	  _url(new VariableLineEdit(this)),
-	  _path(new VariableLineEdit(this)),
 	  _contentType(new VariableLineEdit(this)),
 	  _contentTypeLayout(new QHBoxLayout()),
 	  _methods(new QComboBox()),
@@ -306,7 +333,6 @@ void MacroActionHttpEdit::UpdateEntryData()
 	}
 
 	_url->setText(_entryData->_url);
-	_path->setText(_entryData->_path);
 	_contentType->setText(_entryData->_contentType);
 	_body->setPlainText(_entryData->_body);
 	_setHeaders->setChecked(_entryData->_setHeaders);
@@ -324,12 +350,6 @@ void MacroActionHttpEdit::URLChanged()
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_url = _url->text().toStdString();
 	emit(HeaderInfoChanged(_url->text()));
-}
-
-void MacroActionHttpEdit::PathChanged()
-{
-	GUARD_LOADING_AND_LOCK();
-	_entryData->_path = _path->text().toStdString();
 }
 
 void MacroActionHttpEdit::ContentTypeChanged()
@@ -395,8 +415,6 @@ void MacroActionHttpEdit::SetWidgetSignalConnections()
 {
 	QWidget::connect(_url, SIGNAL(editingFinished()), this,
 			 SLOT(URLChanged()));
-	QWidget::connect(_path, SIGNAL(editingFinished()), this,
-			 SLOT(PathChanged()));
 	QWidget::connect(_contentType, SIGNAL(editingFinished()), this,
 			 SLOT(ContentTypeChanged()));
 	QWidget::connect(_body, SIGNAL(textChanged()), this,
@@ -420,18 +438,15 @@ void MacroActionHttpEdit::SetWidgetSignalConnections()
 void MacroActionHttpEdit::SetWidgetLayout()
 {
 	const std::unordered_map<std::string, QWidget *> widgets = {
-		{"{{url}}", _url},
-		{"{{path}}", _path},
-		{"{{contentType}}", _contentType},
-		{"{{method}}", _methods},
-		{"{{body}}", _body},
+		{"{{url}}", _url},         {"{{contentType}}", _contentType},
+		{"{{method}}", _methods},  {"{{body}}", _body},
 		{"{{timeout}}", _timeout},
 	};
 
 	auto actionLayout = new QHBoxLayout;
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.http.layout.method"),
-		actionLayout, widgets);
+		actionLayout, widgets, false);
 
 	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.action.http.layout.contentType"),
