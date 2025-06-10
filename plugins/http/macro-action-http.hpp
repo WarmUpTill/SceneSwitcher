@@ -33,7 +33,6 @@ public:
 	};
 
 	StringVariable _url = "127.0.0.1:8080";
-	StringVariable _path = "/";
 	StringVariable _body = obs_module_text("AdvSceneSwitcher.enterText");
 	StringVariable _contentType = "application/json";
 	bool _setHeaders = false;
@@ -68,7 +67,6 @@ public:
 
 private slots:
 	void URLChanged();
-	void PathChanged();
 	void BodyChanged();
 	void ContentTypeChanged();
 	void MethodChanged(int);
@@ -86,7 +84,6 @@ private:
 	void SetWidgetVisibility();
 
 	VariableLineEdit *_url;
-	VariableLineEdit *_path;
 	VariableLineEdit *_contentType;
 	QHBoxLayout *_contentTypeLayout;
 	QComboBox *_methods;
