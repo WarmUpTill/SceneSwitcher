@@ -286,7 +286,7 @@ void MacroActionTwitch::GetUserInfo(const std::shared_ptr<TwitchToken> &token)
 	httplib::Params params;
 	switch (_userInfoQueryType) {
 	case UserInfoQueryType::ID:
-		params.insert({"id", std::to_string(_userId)});
+		params.insert({"id", std::to_string((uint64_t)_userId)});
 		break;
 	case UserInfoQueryType::LOGIN:
 		params.insert({"login", _userLogin});
@@ -825,7 +825,7 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _chatMessage(new VariableTextEdit(this)),
 	  _userInfoQueryType(new QComboBox(this)),
 	  _userLogin(new VariableLineEdit(this)),
-	  _userId(new VariableSpinBox(this)),
+	  _userId(new VariableDoubleSpinBox(this)),
 	  _pointsReward(new TwitchPointsRewardWidget(this, false)),
 	  _rewardVariable(new VariableSelection(this)),
 	  _toggleRewardSelection(new QPushButton())
@@ -984,7 +984,8 @@ void MacroActionTwitchEdit::SetWidgetProperties()
 	populateAnnouncementColorSelection(_announcementColor);
 	populateUserQueryInfoTypeSelection(_userInfoQueryType);
 
-	_userId->setMaximum(999999999);
+	_userId->setMaximum(999999999999999);
+	_userId->setDecimals(0);
 
 	_toggleRewardSelection->setCheckable(true);
 	_toggleRewardSelection->setMaximumWidth(11);
@@ -1030,8 +1031,8 @@ void MacroActionTwitchEdit::SetWidgetSignalConnections()
 			 SLOT(UserLoginChanged()));
 	QWidget::connect(
 		_userId,
-		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
-		this, SLOT(UserIdChanged(const NumberVariable<int> &)));
+		SIGNAL(NumberVariableChanged(const NumberVariable<double> &)),
+		this, SLOT(UserIdChanged(const NumberVariable<double> &)));
 	QWidget::connect(
 		_pointsReward,
 		SIGNAL(PointsRewardChanged(const TwitchPointsReward &)), this,
@@ -1160,7 +1161,7 @@ void MacroActionTwitchEdit::ToggleRewardSelection(bool)
 	SetWidgetVisibility();
 }
 
-void MacroActionTwitchEdit::UserIdChanged(const NumberVariable<int> &value)
+void MacroActionTwitchEdit::UserIdChanged(const NumberVariable<double> &value)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_userId = value;

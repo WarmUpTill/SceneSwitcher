@@ -179,7 +179,7 @@ public:
 	StringVariable _chatMessage;
 	UserInfoQueryType _userInfoQueryType = UserInfoQueryType::LOGIN;
 	StringVariable _userLogin = "user login";
-	IntVariable _userId = 0;
+	DoubleVariable _userId = 0;
 	TwitchPointsReward _pointsReward;
 	std::weak_ptr<Variable> _rewardVariable;
 	bool _useVariableForRewardSelection = false;
@@ -244,7 +244,7 @@ private slots:
 	void ChatMessageChanged();
 	void UserInfoQueryTypeChanged(int);
 	void UserLoginChanged();
-	void UserIdChanged(const NumberVariable<int> &);
+	void UserIdChanged(const NumberVariable<double> &);
 	void PointsRewardChanged(const TwitchPointsReward &);
 	void RewardVariableChanged(const QString &);
 	void ToggleRewardSelection(bool);
@@ -278,7 +278,9 @@ private:
 	VariableTextEdit *_chatMessage;
 	QComboBox *_userInfoQueryType;
 	VariableLineEdit *_userLogin;
-	VariableSpinBox *_userId;
+	// QSpinBox uses int internally, which is too small for Twitch IDs, so
+	// we use QDoubleSpinBox instead
+	VariableDoubleSpinBox *_userId;
 	TwitchPointsRewardWidget *_pointsReward;
 	VariableSelection *_rewardVariable;
 	QPushButton *_toggleRewardSelection;
