@@ -274,8 +274,9 @@ TempVariableSelection::TempVariableSelection(QWidget *parent)
 			 SLOT(HighlightChanged(int)));
 	QWidget::connect(window(), SIGNAL(MacroSegmentOrderChanged()), this,
 			 SLOT(MacroSegmentsChanged()));
-	QWidget::connect(window(), SIGNAL(SegmentTempVarsChanged()), this,
-			 SLOT(SegmentTempVarsChanged()));
+	QWidget::connect(window(),
+			 SIGNAL(SegmentTempVarsChanged(MacroSegment *)), this,
+			 SLOT(SegmentTempVarsChanged(MacroSegment *)));
 
 	auto layout = new QHBoxLayout();
 	layout->setContentsMargins(0, 0, 0, 0);
@@ -314,9 +315,15 @@ void TempVariableSelection::MacroSegmentsChanged()
 	SetVariable(currentSelection);
 }
 
-void TempVariableSelection::SegmentTempVarsChanged()
+void TempVariableSelection::SegmentTempVarsChanged(MacroSegment *segment)
 {
-	MacroSegmentsChanged();
+	const auto currentSegment = GetSegment();
+	const auto currentMacro = currentSegment ? currentSegment->GetMacro()
+						 : nullptr;
+	const auto changeMacro = segment ? segment->GetMacro() : nullptr;
+	if (currentMacro == changeMacro) {
+		MacroSegmentsChanged();
+	}
 }
 
 void TempVariableSelection::HighlightChanged(int idx)
@@ -427,13 +434,11 @@ QString TempVariableSelection::SetupInfoLabel()
 MacroSegment *TempVariableSelection::GetSegment() const
 {
 	const QWidget *widget = this;
-	{
-		while (widget) {
-			if (qobject_cast<const MacroSegmentEdit *>(widget)) {
-				break;
-			}
-			widget = widget->parentWidget();
+	while (widget) {
+		if (qobject_cast<const MacroSegmentEdit *>(widget)) {
+			break;
 		}
+		widget = widget->parentWidget();
 	}
 	if (!widget) {
 		return nullptr;
@@ -442,17 +447,18 @@ MacroSegment *TempVariableSelection::GetSegment() const
 	return segmentWidget->Data().get();
 }
 
-void NotifyUIAboutTempVarChange()
+void NotifyUIAboutTempVarChange(MacroSegment *segment)
 {
 	obs_queue_task(
 		OBS_TASK_UI,
-		[](void *) {
+		[](void *segment) {
 			if (!SettingsWindowIsOpened()) {
 				return;
 			}
-			AdvSceneSwitcher::window->SegmentTempVarsChanged();
+			AdvSceneSwitcher::window->SegmentTempVarsChanged(
+				(MacroSegment *)segment);
 		},
-		nullptr, false);
+		segment, false);
 }
 
 } // namespace advss
