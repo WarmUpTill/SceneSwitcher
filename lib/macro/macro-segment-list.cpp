@@ -56,9 +56,7 @@ MacroSegmentList::~MacroSegmentList()
 		_autoScrollThread.join();
 	}
 
-	for (const auto &[_, widgets] : _widgetCache) {
-		clearWidgetVector(widgets);
-	}
+	ClearWidgetCache();
 }
 
 static bool posIsInScrollbar(const QScrollBar *scrollbar, const QPoint &pos)
@@ -146,7 +144,6 @@ void MacroSegmentList::SetCachingEnabled(bool enable)
 void MacroSegmentList::CacheCurrentWidgetsFor(const Macro *macro)
 {
 	if (!_useCache) {
-		_widgetCache.clear();
 		return;
 	}
 
@@ -168,7 +165,6 @@ void MacroSegmentList::CacheCurrentWidgetsFor(const Macro *macro)
 bool MacroSegmentList::PopulateWidgetsFromCache(const Macro *macro)
 {
 	if (!_useCache) {
-		_widgetCache.clear();
 		return false;
 	}
 
@@ -338,6 +334,13 @@ void MacroSegmentList::HideLastDropLine()
 		}
 	}
 	_dropLineIdx = -1;
+}
+
+void MacroSegmentList::ClearWidgetCache()
+{
+	for (const auto &[_, widgets] : _widgetCache) {
+		clearWidgetVector(widgets);
+	}
 }
 
 static bool isInUpperHalfOf(const QPoint &pos, const QRect &rect)
