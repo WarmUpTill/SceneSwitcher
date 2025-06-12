@@ -88,7 +88,7 @@ public:
 private slots:
 	void SelectionIdxChanged(int);
 	void MacroSegmentsChanged();
-	void SegmentTempVarsChanged();
+	void SegmentTempVarsChanged(MacroSegment *);
 	void HighlightChanged(int);
 
 signals:
@@ -104,6 +104,6 @@ private:
 	AutoUpdateTooltipLabel *_info;
 };
 
-void NotifyUIAboutTempVarChange();
+void NotifyUIAboutTempVarChange(MacroSegment *);
 
 } // namespace advss

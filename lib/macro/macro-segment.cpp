@@ -107,7 +107,7 @@ void MacroSegment::SetupTempVars()
 void MacroSegment::ClearAvailableTempvars()
 {
 	_tempVariables.clear();
-	NotifyUIAboutTempVarChange();
+	NotifyUIAboutTempVarChange(this);
 }
 
 static std::shared_ptr<MacroSegment>
@@ -149,7 +149,7 @@ void MacroSegment::AddTempvar(const std::string &id, const std::string &name,
 
 	TempVariable var(id, name, description, sharedSegment);
 	_tempVariables.emplace_back(std::move(var));
-	NotifyUIAboutTempVarChange();
+	NotifyUIAboutTempVarChange(this);
 }
 
 void MacroSegment::SetTempVarValue(const std::string &id,
