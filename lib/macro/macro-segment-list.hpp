@@ -61,6 +61,7 @@ private:
 	bool IsInListArea(const QPoint &) const;
 	QRect GetContentItemRectWithPadding(int idx) const;
 	void HideLastDropLine();
+	void ClearWidgetCache();
 
 	int _dragPosition = -1;
 	int _dropLineIdx = -1;
