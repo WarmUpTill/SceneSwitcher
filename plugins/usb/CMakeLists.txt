@@ -77,13 +77,14 @@ if(NOT libusb_HEADER_DIR)
                   "libusb sources are available under: ${libusb_DEPS_DIR}")
   return()
 endif()
-if(NOT libusb_LINK_LIBRARIES)
+if(NOT libusb_LINK_LIBRARIES OR NOT EXISTS "${libusb_LINK_LIBRARIES}")
   message(WARNING "libusb library not found. Make sure libusb is installed. "
                   "USB condition will be disabled!\n\n"
                   "libusb sources are available under: ${libusb_DEPS_DIR}")
   return()
 endif()
-if(NOT OS_LINUX AND NOT libusb_RUNTIME_LIBRARY)
+if(NOT OS_LINUX AND (NOT libusb_RUNTIME_LIBRARY OR NOT EXISTS
+                                                   "${libusb_RUNTIME_LIBRARY}"))
   message(
     WARNING "libusb runtime library not found. Make sure libusb is installed. "
             "USB condition will be disabled!\n\n"
