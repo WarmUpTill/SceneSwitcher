@@ -152,11 +152,7 @@ void MacroActionSystrayEdit::CheckIfTrayIsDisabled()
 
 void MacroActionSystrayEdit::MessageChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_message = _message->text().toStdString();
 }
 

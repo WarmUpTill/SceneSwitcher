@@ -185,11 +185,7 @@ void MacroActionTimerEdit::UpdateEntryData()
 
 void MacroActionTimerEdit::ActionTypeChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_actionType = static_cast<MacroActionTimer::Action>(value);
 	SetWidgetVisibility();
 }
@@ -206,21 +202,13 @@ void MacroActionTimerEdit::SetWidgetVisibility()
 
 void MacroActionTimerEdit::DurationChanged(const Duration &dur)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_duration = dur;
 }
 
 void MacroActionTimerEdit::MacroChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_macro = text;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));

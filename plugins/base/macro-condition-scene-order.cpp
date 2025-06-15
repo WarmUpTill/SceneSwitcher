@@ -258,21 +258,13 @@ MacroConditionSceneOrderEdit::MacroConditionSceneOrderEdit(
 
 void MacroConditionSceneOrderEdit::SceneChanged(const SceneSelection &s)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = s;
 }
 
 void MacroConditionSceneOrderEdit::SourceChanged(const SceneItemSelection &item)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -282,11 +274,7 @@ void MacroConditionSceneOrderEdit::SourceChanged(const SceneItemSelection &item)
 
 void MacroConditionSceneOrderEdit::Source2Changed(const SceneItemSelection &item)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_source2 = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -296,11 +284,8 @@ void MacroConditionSceneOrderEdit::Source2Changed(const SceneItemSelection &item
 
 void MacroConditionSceneOrderEdit::ConditionChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
 	{
-		auto lock = LockContext();
+		GUARD_LOADING_AND_LOCK();
 		_entryData->_condition =
 			static_cast<MacroConditionSceneOrder::Condition>(index);
 	}
@@ -322,11 +307,7 @@ void MacroConditionSceneOrderEdit::ConditionChanged(int index)
 void MacroConditionSceneOrderEdit::PositionChanged(
 	const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_position = value;
 }
 

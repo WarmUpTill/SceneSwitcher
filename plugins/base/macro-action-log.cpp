@@ -75,11 +75,7 @@ void MacroActionLogEdit::UpdateEntryData()
 
 void MacroActionLogEdit::LogMessageChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_logMessage = _logMessage->toPlainText().toStdString();
 
 	adjustSize();

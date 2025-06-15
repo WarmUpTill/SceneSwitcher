@@ -214,11 +214,7 @@ MacroActionClipboardEdit::MacroActionClipboardEdit(
 
 void MacroActionClipboardEdit::ActionChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionClipboard::Action>(
 		_actions->itemData(index).toInt());
 
@@ -227,21 +223,13 @@ void MacroActionClipboardEdit::ActionChanged(int index)
 
 void MacroActionClipboardEdit::TextChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_text = _text->text().toStdString();
 }
 
 void MacroActionClipboardEdit::UrlChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_url = _url->text().toStdString();
 }
 

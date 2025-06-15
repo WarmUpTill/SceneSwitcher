@@ -405,12 +405,8 @@ void MacroActionSourceEdit::UpdateEntryData()
 
 void MacroActionSourceEdit::SourceChanged(const SourceSelection &source)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
 	{
-		auto lock = LockContext();
+		GUARD_LOADING_AND_LOCK();
 		_entryData->_source = source;
 	}
 

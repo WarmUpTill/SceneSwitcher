@@ -240,11 +240,7 @@ MacroConditionClipboardEdit::Create(QWidget *parent,
 
 void MacroConditionClipboardEdit::ConditionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetCondition(
 		static_cast<MacroConditionClipboard::Condition>(value));
 	SetWidgetVisibility();
@@ -252,11 +248,7 @@ void MacroConditionClipboardEdit::ConditionChanged(int value)
 
 void MacroConditionClipboardEdit::TextChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_text = _text->toPlainText().toStdString();
 	adjustSize();
 	updateGeometry();
@@ -264,11 +256,7 @@ void MacroConditionClipboardEdit::TextChanged()
 
 void MacroConditionClipboardEdit::RegexChanged(const RegexConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_regex = conf;
 	adjustSize();
 	updateGeometry();

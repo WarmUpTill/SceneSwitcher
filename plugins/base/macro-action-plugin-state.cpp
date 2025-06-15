@@ -300,12 +300,8 @@ void MacroActionPluginStateEdit::UpdateEntryData()
 
 void MacroActionPluginStateEdit::ActionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
 	{
-		auto lock = LockContext();
+		GUARD_LOADING_AND_LOCK();
 		_entryData->_action = static_cast<PluginStateAction>(value);
 		SetWidgetVisibility();
 	}
@@ -316,32 +312,20 @@ void MacroActionPluginStateEdit::ActionChanged(int value)
 
 void MacroActionPluginStateEdit::ValueChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_value = value;
 	SetWidgetVisibility();
 }
 
 void MacroActionPluginStateEdit::SceneChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = GetWeakSourceByQString(text);
 }
 
 void MacroActionPluginStateEdit::PathChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_settingsPath = text.toStdString();
 }
 

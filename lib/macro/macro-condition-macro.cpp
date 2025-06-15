@@ -538,11 +538,7 @@ void MacroConditionMacroEdit::UpdateEntryData()
 
 void MacroConditionMacroEdit::MacroChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_macro = text;
 	_actionIndex->SetMacro(_entryData->_macro.GetMacro());
 	emit HeaderInfoChanged(
@@ -551,21 +547,13 @@ void MacroConditionMacroEdit::MacroChanged(const QString &text)
 
 void MacroConditionMacroEdit::CountChanged(const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_count = value;
 }
 
 void MacroConditionMacroEdit::CountConditionChanged(int cond)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_counterCondition =
 		static_cast<MacroConditionMacro::CounterCondition>(cond);
 }
@@ -590,11 +578,7 @@ void MacroConditionMacroEdit::MacroRemove(const QString &)
 
 void MacroConditionMacroEdit::TypeChanged(int type)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetType(static_cast<MacroConditionMacro::Type>(type));
 	SetupWidgets();
 }
@@ -640,11 +624,7 @@ void MacroConditionMacroEdit::UpdatePaused()
 
 void MacroConditionMacroEdit::MultiStateConditionChanged(int cond)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_multiSateCondition =
 		static_cast<MacroConditionMacro::MultiStateCondition>(cond);
 }
@@ -652,21 +632,13 @@ void MacroConditionMacroEdit::MultiStateConditionChanged(int cond)
 void MacroConditionMacroEdit::MultiStateCountChanged(
 	const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_multiSateCount = value;
 }
 
 void MacroConditionMacroEdit::Add(const std::string &name)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	MacroRef macro(name);
 	_entryData->_macros.push_back(macro);
 	adjustSize();
@@ -675,11 +647,7 @@ void MacroConditionMacroEdit::Add(const std::string &name)
 
 void MacroConditionMacroEdit::Remove(int idx)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_macros.erase(std::next(_entryData->_macros.begin(), idx));
 	adjustSize();
 	updateGeometry();
@@ -687,12 +655,8 @@ void MacroConditionMacroEdit::Remove(int idx)
 
 void MacroConditionMacroEdit::Replace(int idx, const std::string &name)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
+	GUARD_LOADING_AND_LOCK();
 	MacroRef macro(name);
-	auto lock = LockContext();
 	_entryData->_macros[idx] = macro;
 	adjustSize();
 	updateGeometry();
@@ -700,11 +664,7 @@ void MacroConditionMacroEdit::Replace(int idx, const std::string &name)
 
 void MacroConditionMacroEdit::ActionIndexChanged(const IntVariable &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_actionIndex = value;
 }
 

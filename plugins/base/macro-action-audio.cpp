@@ -666,11 +666,7 @@ void MacroActionAudioEdit::UpdateEntryData()
 
 void MacroActionAudioEdit::SourceChanged(const SourceSelection &source)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_audioSource = source;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -678,11 +674,7 @@ void MacroActionAudioEdit::SourceChanged(const SourceSelection &source)
 
 void MacroActionAudioEdit::ActionChanged(int idx)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionAudio::Action>(
 		_actions->itemData(idx).toInt());
 	SetWidgetVisibility();
@@ -690,133 +682,81 @@ void MacroActionAudioEdit::ActionChanged(int idx)
 
 void MacroActionAudioEdit::SyncOffsetChanged(const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_syncOffset = value;
 }
 
 void MacroActionAudioEdit::MonitorTypeChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_monitorType = static_cast<obs_monitoring_type>(value);
 }
 
 void MacroActionAudioEdit::BalanceChanged(const NumberVariable<double> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_balance = value;
 }
 
 void MacroActionAudioEdit::TrackChanged(const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_track = value;
 }
 
 void MacroActionAudioEdit::VolumeDBChanged(const NumberVariable<double> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_volumeDB = value;
 }
 
 void MacroActionAudioEdit::PercentDBClicked()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_useDb = !_entryData->_useDb;
 	SetWidgetVisibility();
 }
 
 void MacroActionAudioEdit::VolumeChanged(const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_volume = value;
 }
 
 void MacroActionAudioEdit::FadeChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_fade = value;
 	SetWidgetVisibility();
 }
 
 void MacroActionAudioEdit::DurationChanged(const Duration &dur)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_duration = dur;
 }
 
 void MacroActionAudioEdit::RateChanged(const NumberVariable<double> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_rate = value;
 }
 
 void MacroActionAudioEdit::WaitChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_wait = value;
 }
 
 void MacroActionAudioEdit::AbortActiveFadeChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_abortActiveFade = value;
 }
 
 void MacroActionAudioEdit::FadeTypeChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_fadeType = static_cast<MacroActionAudio::FadeType>(value);
 	SetWidgetVisibility();
 }

@@ -517,11 +517,7 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 
 void MacroConditionDateEdit::DayOfWeekChanged(int day)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_dayOfWeek = static_cast<MacroConditionDate::Day>(day);
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -529,11 +525,7 @@ void MacroConditionDateEdit::DayOfWeekChanged(int day)
 
 void MacroConditionDateEdit::ConditionChanged(int cond)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_condition =
 		static_cast<MacroConditionDate::Condition>(cond);
 	SetWidgetStatus();
@@ -543,11 +535,7 @@ void MacroConditionDateEdit::ConditionChanged(int cond)
 
 void MacroConditionDateEdit::DateChanged(const QDate &date)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetDate1(date);
 
 	emit HeaderInfoChanged(
@@ -556,11 +544,7 @@ void MacroConditionDateEdit::DateChanged(const QDate &date)
 
 void MacroConditionDateEdit::TimeChanged(const QTime &time)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetTime1(time);
 
 	emit HeaderInfoChanged(
@@ -569,53 +553,33 @@ void MacroConditionDateEdit::TimeChanged(const QTime &time)
 
 void MacroConditionDateEdit::Date2Changed(const QDate &date)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetDate2(date);
 }
 
 void MacroConditionDateEdit::Time2Changed(const QTime &time)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetTime2(time);
 }
 
 void MacroConditionDateEdit::IgnoreDateChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_ignoreDate = !state;
 	SetWidgetStatus();
 }
 
 void MacroConditionDateEdit::IgnoreTimeChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_ignoreTime = !state;
 	SetWidgetStatus();
 }
 
 void MacroConditionDateEdit::RepeatChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_repeat = state;
 	_duration->setDisabled(!state);
 	SetWidgetStatus();
@@ -623,31 +587,20 @@ void MacroConditionDateEdit::RepeatChanged(int state)
 
 void MacroConditionDateEdit::UpdateOnRepeatChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_updateOnRepeat = state;
 }
 
 void MacroConditionDateEdit::DurationChanged(const Duration &dur)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_duration = dur;
 }
 
 void MacroConditionDateEdit::AdvancedSettingsToggleClicked()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
 	{
-		auto lock = LockContext();
+		GUARD_LOADING_AND_LOCK();
 		_entryData->_dayOfWeekCheck = !_entryData->_dayOfWeekCheck;
 	}
 

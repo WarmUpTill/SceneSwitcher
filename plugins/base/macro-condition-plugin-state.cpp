@@ -152,11 +152,7 @@ MacroConditionPluginStateEdit::MacroConditionPluginStateEdit(
 
 void MacroConditionPluginStateEdit::ConditionChanged(int idx)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetCondition(
 		static_cast<MacroConditionPluginState::Condition>(
 			_condition->itemData(idx).toInt()));

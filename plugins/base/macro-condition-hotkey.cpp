@@ -107,11 +107,7 @@ MacroConditionHotkeyEdit::MacroConditionHotkeyEdit(
 
 void MacroConditionHotkeyEdit::NameChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	const auto name = _name->text().toStdString();
 	// In case a hotkey is used by multiple conditions create a new hotkey
 	// with the new description or get an existing hotkey matching this
@@ -139,11 +135,7 @@ void MacroConditionHotkeyEdit::UpdateEntryData()
 
 void MacroConditionHotkeyEdit::KeyStateChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_checkPressed = index == 0;
 }
 

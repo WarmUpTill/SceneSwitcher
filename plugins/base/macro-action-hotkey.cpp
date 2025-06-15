@@ -788,133 +788,82 @@ void MacroActionHotkeyEdit::UpdateEntryData()
 
 void MacroActionHotkeyEdit::LShiftChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_leftShift = state;
 }
 
 void MacroActionHotkeyEdit::RShiftChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_rightShift = state;
 }
 
 void MacroActionHotkeyEdit::LCtrlChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_leftCtrl = state;
 }
 
 void MacroActionHotkeyEdit::RCtrlChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_rightCtrl = state;
 }
 
 void MacroActionHotkeyEdit::LAltChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_leftAlt = state;
 }
 
 void MacroActionHotkeyEdit::RAltChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_rightAlt = state;
 }
 
 void MacroActionHotkeyEdit::LMetaChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_leftMeta = state;
 }
 
 void MacroActionHotkeyEdit::RMetaChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_rightMeta = state;
 }
 
 void MacroActionHotkeyEdit::DurationChanged(const Duration &dur)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_duration = dur;
 }
 
 void MacroActionHotkeyEdit::OnlySendToOBSChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_onlySendToObs = state;
 	SetWidgetVisibility();
 }
 
 void MacroActionHotkeyEdit::KeyChanged(int key)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_key = static_cast<HotkeyType>(key);
 }
 
 void MacroActionHotkeyEdit::ActionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionHotkey::Action>(value);
 	SetWidgetVisibility();
 }
 
 void MacroActionHotkeyEdit::HotkeyTypeChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
 	{
-		auto lock = LockContext();
+		GUARD_LOADING_AND_LOCK();
 		_entryData->_hotkeyType =
 			static_cast<obs_hotkey_registerer_type>(value);
 	}
@@ -923,11 +872,7 @@ void MacroActionHotkeyEdit::HotkeyTypeChanged(int value)
 
 void MacroActionHotkeyEdit::OBSHotkeyChanged(int idx)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	if (idx == -1) {
 		_entryData->_hotkeyName = "";
 		return;

@@ -761,11 +761,7 @@ void MacroConditionMediaEdit::TimeRestrictionChanged(int index)
 
 void MacroConditionMediaEdit::TimeChanged(const Duration &dur)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_time = dur;
 	if (_entryData->GetSourceType() !=
 	    MacroConditionMedia::SourceType::SOURCE) {

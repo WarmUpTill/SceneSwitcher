@@ -343,22 +343,14 @@ void MacroConditionFolderEdit::UpdateEntryData()
 
 void MacroConditionFolderEdit::ConditionChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_condition = static_cast<MacroConditionFolder::Condition>(
 		_conditions->itemData(index).toInt());
 }
 
 void MacroConditionFolderEdit::PathChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetFolder(text.toStdString());
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -366,32 +358,20 @@ void MacroConditionFolderEdit::PathChanged(const QString &text)
 
 void MacroConditionFolderEdit::RegexChanged(const RegexConfig &regex)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_regex = regex;
 	_entryData->_regex.SetEnabled(true);
 }
 
 void MacroConditionFolderEdit::FilterChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_filter = _filter->text().toStdString();
 }
 
 void MacroConditionFolderEdit::EnableFilterChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_enableFilter = value;
 	SetWidgetVisibility();
 }

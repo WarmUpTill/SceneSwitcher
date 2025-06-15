@@ -568,12 +568,8 @@ void MacroConditionAudioEdit::UpdateVolmeterSource()
 
 void MacroConditionAudioEdit::SourceChanged(const SourceSelection &source)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
 	{
-		auto lock = LockContext();
+		GUARD_LOADING_AND_LOCK();
 		_entryData->_audioSource = source;
 		_entryData->ResetVolmeter();
 	}
@@ -586,11 +582,8 @@ void MacroConditionAudioEdit::SourceChanged(const SourceSelection &source)
 void MacroConditionAudioEdit::VolumePercentChanged(
 	const NumberVariable<double> &vol)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
 	{
-		auto lock = LockContext();
+		GUARD_LOADING_AND_LOCK();
 		_entryData->_volumePercent = vol;
 	}
 
@@ -599,42 +592,27 @@ void MacroConditionAudioEdit::VolumePercentChanged(
 
 void MacroConditionAudioEdit::SyncOffsetChanged(const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_syncOffset = value;
 }
 
 void MacroConditionAudioEdit::MonitorTypeChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_monitorType = static_cast<obs_monitoring_type>(value);
 }
 
 void MacroConditionAudioEdit::BalanceChanged(const NumberVariable<double> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_balance = value;
 }
 
 void MacroConditionAudioEdit::VolumeDBChanged(
 	const NumberVariable<double> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
 	{
-		auto lock = LockContext();
+		GUARD_LOADING_AND_LOCK();
 		_entryData->_volumeDB = value;
 	}
 	SyncSliderAndValueSelection(false);
@@ -642,11 +620,7 @@ void MacroConditionAudioEdit::VolumeDBChanged(
 
 void MacroConditionAudioEdit::PercentDBClicked()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_useDb = !_entryData->_useDb;
 	SetWidgetVisibility();
 }
@@ -706,11 +680,7 @@ void MacroConditionAudioEdit::ConditionChanged(int cond)
 
 void MacroConditionAudioEdit::CheckTypeChanged(int idx)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetType(static_cast<MacroConditionAudio::Type>(
 		_checkTypes->itemData(idx).toInt()));
 

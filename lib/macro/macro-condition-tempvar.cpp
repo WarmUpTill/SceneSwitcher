@@ -264,32 +264,19 @@ void MacroConditionTempVarEdit::UpdateEntryData()
 
 void MacroConditionTempVarEdit::VariableChanged(const TempVariableRef &var)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_tempVar = var;
 }
 
 void MacroConditionTempVarEdit::Variable2Changed(const QString &text)
 {
-
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_variable2 = GetWeakVariableByQString(text);
 }
 
 void MacroConditionTempVarEdit::ConditionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_type =
 		static_cast<MacroConditionTempVar::Condition>(value);
 	SetWidgetVisibility();
@@ -297,11 +284,7 @@ void MacroConditionTempVarEdit::ConditionChanged(int value)
 
 void MacroConditionTempVarEdit::StrValueChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_strValue = _strValue->toPlainText().toStdString();
 	adjustSize();
 	updateGeometry();
@@ -309,21 +292,13 @@ void MacroConditionTempVarEdit::StrValueChanged()
 
 void MacroConditionTempVarEdit::NumValueChanged(double val)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_numValue = val;
 }
 
 void MacroConditionTempVarEdit::RegexChanged(const RegexConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_regex = conf;
 	adjustSize();
 	updateGeometry();

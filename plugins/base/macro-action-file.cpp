@@ -153,11 +153,7 @@ void MacroActionFileEdit::UpdateEntryData()
 
 void MacroActionFileEdit::PathChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_file = text.toUtf8().constData();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -165,11 +161,7 @@ void MacroActionFileEdit::PathChanged(const QString &text)
 
 void MacroActionFileEdit::TextChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_text = _text->toPlainText().toStdString();
 
 	adjustSize();
@@ -178,11 +170,7 @@ void MacroActionFileEdit::TextChanged()
 
 void MacroActionFileEdit::ActionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionFile::Action>(value);
 }
 

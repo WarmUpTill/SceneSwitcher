@@ -115,11 +115,7 @@ MacroConditionQueueEdit::MacroConditionQueueEdit(
 
 void MacroConditionQueueEdit::ConditionChanged(int condition)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_condition =
 		static_cast<MacroConditionQueue::Condition>(condition);
 	emit HeaderInfoChanged(
@@ -129,11 +125,7 @@ void MacroConditionQueueEdit::ConditionChanged(int condition)
 
 void MacroConditionQueueEdit::QueueChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_queue = GetWeakActionQueueByQString(text);
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -141,11 +133,7 @@ void MacroConditionQueueEdit::QueueChanged(const QString &text)
 
 void MacroConditionQueueEdit::SizeChanged(const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_size = value;
 }
 

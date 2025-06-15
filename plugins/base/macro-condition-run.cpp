@@ -193,41 +193,25 @@ void MacroConditionRunEdit::UpdateEntryData()
 
 void MacroConditionRunEdit::TimeoutChanged(const Duration &dur)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_timeout = dur;
 }
 
 void MacroConditionRunEdit::CheckExitCodeChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_checkExitCode = state;
 }
 
 void MacroConditionRunEdit::ExitCodeChanged(int exitCode)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_exitCodeToCheck = exitCode;
 }
 
 void MacroConditionRunEdit::ProcessConfigChanged(const ProcessConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_procConfig = conf;
 	adjustSize();
 	updateGeometry();

@@ -196,11 +196,7 @@ void MacroActionWaitEdit::SetupRandomDurationEdit()
 
 void MacroActionWaitEdit::TypeChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	auto type = static_cast<MacroActionWait::Type>(value);
 
 	if (type == MacroActionWait::Type::FIXED) {
@@ -216,11 +212,7 @@ void MacroActionWaitEdit::TypeChanged(int value)
 
 void MacroActionWaitEdit::DurationChanged(const Duration &dur)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_duration = dur;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -228,11 +220,7 @@ void MacroActionWaitEdit::DurationChanged(const Duration &dur)
 
 void MacroActionWaitEdit::Duration2Changed(const Duration &dur)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_duration2 = dur;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
