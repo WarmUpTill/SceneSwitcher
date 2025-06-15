@@ -273,31 +273,19 @@ MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 
 void MacroActionSwitchSceneEdit::DurationChanged(const Duration &dur)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_duration = dur;
 }
 
 void MacroActionSwitchSceneEdit::BlockUntilTransitionDoneChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_blockUntilTransitionDone = state;
 }
 
 void MacroActionSwitchSceneEdit::SceneTypeChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_sceneType =
 		static_cast<MacroActionSwitchScene::SceneType>(value);
 	SetWidgetVisibility();
@@ -351,11 +339,7 @@ void MacroActionSwitchSceneEdit::SetWidgetVisibility()
 
 void MacroActionSwitchSceneEdit::SceneChanged(const SceneSelection &s)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = s;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -363,11 +347,7 @@ void MacroActionSwitchSceneEdit::SceneChanged(const SceneSelection &s)
 
 void MacroActionSwitchSceneEdit::TransitionChanged(const TransitionSelection &t)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_transition = t;
 	SetWidgetVisibility();
 }

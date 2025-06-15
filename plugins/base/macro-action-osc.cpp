@@ -296,41 +296,25 @@ void MacroActionOSCEdit::UpdateEntryData()
 
 void MacroActionOSCEdit::IpChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetIP(_ip->text().toStdString());
 }
 
 void MacroActionOSCEdit::ProtocolChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetProtocol(static_cast<MacroActionOSC::Protocol>(value));
 }
 
 void MacroActionOSCEdit::PortChanged(const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetPortNr(value);
 }
 
 void MacroActionOSCEdit::MessageChanged(const OSCMessage &m)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_message = m;
 
 	adjustSize();

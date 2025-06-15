@@ -121,11 +121,7 @@ void MacroActionSceneCollectionEdit::UpdateEntryData()
 
 void MacroActionSceneCollectionEdit::SceneCollectionChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_sceneCollection = text.toStdString();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));

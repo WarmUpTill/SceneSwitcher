@@ -117,11 +117,7 @@ void MacroActionVCamEdit::UpdateEntryData()
 
 void MacroActionVCamEdit::ActionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionVCam::Action>(value);
 }
 

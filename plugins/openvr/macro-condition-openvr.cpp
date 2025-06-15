@@ -231,61 +231,37 @@ MacroConditionOpenVREdit::MacroConditionOpenVREdit(
 
 void MacroConditionOpenVREdit::MinXChanged(const NumberVariable<double> &pos)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_minX = pos;
 }
 
 void MacroConditionOpenVREdit::MinYChanged(const NumberVariable<double> &pos)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_minY = pos;
 }
 
 void MacroConditionOpenVREdit::MinZChanged(const NumberVariable<double> &pos)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_minZ = pos;
 }
 
 void MacroConditionOpenVREdit::MaxXChanged(const NumberVariable<double> &pos)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_maxX = pos;
 }
 
 void MacroConditionOpenVREdit::MaxYChanged(const NumberVariable<double> &pos)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_maxY = pos;
 }
 
 void MacroConditionOpenVREdit::MaxZChanged(const NumberVariable<double> &pos)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_maxZ = pos;
 }
 

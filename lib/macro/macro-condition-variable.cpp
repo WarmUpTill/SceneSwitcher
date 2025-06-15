@@ -236,11 +236,7 @@ void MacroConditionVariableEdit::UpdateEntryData()
 
 void MacroConditionVariableEdit::VariableChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_variable = GetWeakVariableByQString(text);
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -248,22 +244,13 @@ void MacroConditionVariableEdit::VariableChanged(const QString &text)
 
 void MacroConditionVariableEdit::Variable2Changed(const QString &text)
 {
-
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_variable2 = GetWeakVariableByQString(text);
 }
 
 void MacroConditionVariableEdit::ConditionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_type =
 		static_cast<MacroConditionVariable::Condition>(value);
 	SetWidgetVisibility();
@@ -271,11 +258,7 @@ void MacroConditionVariableEdit::ConditionChanged(int value)
 
 void MacroConditionVariableEdit::StrValueChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_strValue = _strValue->toPlainText().toStdString();
 	adjustSize();
 	updateGeometry();
@@ -283,21 +266,13 @@ void MacroConditionVariableEdit::StrValueChanged()
 
 void MacroConditionVariableEdit::NumValueChanged(double val)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_numValue = val;
 }
 
 void MacroConditionVariableEdit::RegexChanged(const RegexConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_regex = conf;
 	adjustSize();
 	updateGeometry();

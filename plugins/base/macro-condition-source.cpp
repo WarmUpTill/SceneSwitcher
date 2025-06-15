@@ -320,12 +320,8 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 
 void MacroConditionSourceEdit::SourceChanged(const SourceSelection &source)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
 	{
-		auto lock = LockContext();
+		GUARD_LOADING_AND_LOCK();
 		_entryData->_source = source;
 	}
 	_settingSelection->SetSource(_entryData->_source.GetSource());
@@ -336,11 +332,7 @@ void MacroConditionSourceEdit::SourceChanged(const SourceSelection &source)
 
 void MacroConditionSourceEdit::ConditionChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetCondition(
 		static_cast<MacroConditionSource::Condition>(index));
 	SetWidgetVisibility();
@@ -372,11 +364,7 @@ void MacroConditionSourceEdit::GetSettingsClicked()
 
 void MacroConditionSourceEdit::SettingsChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_settings = _settings->toPlainText().toStdString();
 
 	adjustSize();
@@ -385,11 +373,7 @@ void MacroConditionSourceEdit::SettingsChanged()
 
 void MacroConditionSourceEdit::RegexChanged(const RegexConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_regex = conf;
 
 	adjustSize();
@@ -399,11 +383,7 @@ void MacroConditionSourceEdit::RegexChanged(const RegexConfig &conf)
 void MacroConditionSourceEdit::SettingSelectionChanged(
 	const SourceSetting &setting)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_setting = setting;
 }
 
@@ -414,21 +394,13 @@ void MacroConditionSourceEdit::RefreshVariableSourceSelectionValue()
 
 void MacroConditionSourceEdit::SizeChanged(const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_size = value;
 }
 
 void MacroConditionSourceEdit::CompareMethodChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_comparision =
 		static_cast<MacroConditionSource::SizeComparision>(index);
 }

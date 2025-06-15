@@ -238,54 +238,34 @@ void MacroActionHttpEdit::UpdateEntryData()
 
 void MacroActionHttpEdit::URLChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_url = _url->text().toStdString();
 	emit(HeaderInfoChanged(_url->text()));
 }
 
 void MacroActionHttpEdit::MethodChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_method = static_cast<MacroActionHttp::Method>(value);
 	SetWidgetVisibility();
 }
 
 void MacroActionHttpEdit::TimeoutChanged(const Duration &dur)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_timeout = dur;
 }
 
 void MacroActionHttpEdit::SetHeadersChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_setHeaders = value;
 	SetWidgetVisibility();
 }
 
 void MacroActionHttpEdit::HeadersChanged(const StringList &headers)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_headers = headers;
 	adjustSize();
 	updateGeometry();
@@ -302,11 +282,7 @@ void MacroActionHttpEdit::SetWidgetVisibility()
 
 void MacroActionHttpEdit::DataChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_data = _data->toPlainText().toUtf8().constData();
 
 	adjustSize();

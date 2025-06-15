@@ -122,11 +122,7 @@ MacroConditionRecordEdit::MacroConditionRecordEdit(
 
 void MacroConditionRecordEdit::ConditionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetCondition(
 		static_cast<MacroConditionRecord::Condition>(value));
 	SetWidgetVisibility();
@@ -146,11 +142,7 @@ void MacroConditionRecordEdit::UpdateEntryData()
 
 void MacroConditionRecordEdit::DurationChanged(const Duration &duration)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_duration = duration;
 }
 

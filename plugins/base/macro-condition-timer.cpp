@@ -228,62 +228,38 @@ MacroConditionTimerEdit::MacroConditionTimerEdit(
 
 void MacroConditionTimerEdit::TimerTypeChanged(int type)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_type = static_cast<MacroConditionTimer::TimerType>(type);
 	SetWidgetVisibility();
 }
 
 void MacroConditionTimerEdit::DurationChanged(const Duration &dur)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_duration = dur;
 }
 
 void MacroConditionTimerEdit::Duration2Changed(const Duration &dur)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_duration2 = dur;
 }
 
 void MacroConditionTimerEdit::SaveRemainingChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_saveRemaining = state;
 }
 
 void MacroConditionTimerEdit::AutoResetChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_oneshot = !state;
 }
 
 void MacroConditionTimerEdit::PauseContinueClicked()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	if (_entryData->_paused) {
 		timer.start(1000);
 		_entryData->Continue();
@@ -296,11 +272,7 @@ void MacroConditionTimerEdit::PauseContinueClicked()
 
 void MacroConditionTimerEdit::ResetClicked()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->Reset();
 }
 

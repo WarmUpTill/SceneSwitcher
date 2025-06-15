@@ -271,22 +271,14 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 
 void MacroConditionFilterEdit::SourceChanged(const SourceSelection &source)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_source = source;
 }
 
 void MacroConditionFilterEdit::FilterChanged(const FilterSelection &filter)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
 	{
-		auto lock = LockContext();
+		GUARD_LOADING_AND_LOCK();
 		_entryData->_filter = filter;
 	}
 	const auto filters =
@@ -299,11 +291,7 @@ void MacroConditionFilterEdit::FilterChanged(const FilterSelection &filter)
 
 void MacroConditionFilterEdit::ConditionChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetCondition(
 		static_cast<MacroConditionFilter::Condition>(index));
 	SetWidgetVisibility();
@@ -342,11 +330,7 @@ void MacroConditionFilterEdit::GetSettingsClicked()
 
 void MacroConditionFilterEdit::SettingsChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_settings = _settings->toPlainText().toStdString();
 
 	adjustSize();
@@ -355,11 +339,7 @@ void MacroConditionFilterEdit::SettingsChanged()
 
 void MacroConditionFilterEdit::RegexChanged(const RegexConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_regex = conf;
 
 	adjustSize();
@@ -369,11 +349,7 @@ void MacroConditionFilterEdit::RegexChanged(const RegexConfig &conf)
 void MacroConditionFilterEdit::SettingSelectionChanged(
 	const SourceSetting &setting)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_setting = setting;
 }
 

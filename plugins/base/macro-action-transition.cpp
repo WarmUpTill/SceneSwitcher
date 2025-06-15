@@ -318,11 +318,7 @@ void MacroActionTransitionEdit::UpdateEntryData()
 
 void MacroActionTransitionEdit::SourceChanged(const SceneItemSelection &item)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -332,11 +328,7 @@ void MacroActionTransitionEdit::SourceChanged(const SceneItemSelection &item)
 
 void MacroActionTransitionEdit::ActionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_type = static_cast<MacroActionTransition::Type>(value);
 	SetWidgetVisibility();
 	emit HeaderInfoChanged(
@@ -345,11 +337,7 @@ void MacroActionTransitionEdit::ActionChanged(int value)
 
 void MacroActionTransitionEdit::SceneChanged(const SceneSelection &s)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = s;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -357,11 +345,7 @@ void MacroActionTransitionEdit::SceneChanged(const SceneSelection &s)
 
 void MacroActionTransitionEdit::TransitionChanged(const TransitionSelection &t)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_transition = t;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -369,11 +353,7 @@ void MacroActionTransitionEdit::TransitionChanged(const TransitionSelection &t)
 
 void MacroActionTransitionEdit::DurationChanged(const Duration &dur)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_duration = dur;
 }
 
@@ -389,11 +369,7 @@ void MacroActionTransitionEdit::SetWidgetVisibility()
 
 void MacroActionTransitionEdit::SetTransitionChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_setTransitionType = state;
 	_transitions->setEnabled(state);
 	if (state) {
@@ -406,11 +382,7 @@ void MacroActionTransitionEdit::SetTransitionChanged(int state)
 
 void MacroActionTransitionEdit::SetDurationChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_setDuration = state;
 	_duration->setEnabled(state);
 }

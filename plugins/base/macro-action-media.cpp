@@ -286,22 +286,14 @@ MacroActionMediaEdit::MacroActionMediaEdit(
 
 void MacroActionMediaEdit::ActionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionMedia::Action>(value);
 	SetWidgetVisibility();
 }
 
 void MacroActionMediaEdit::SelectionTypeChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_selection =
 		static_cast<MacroActionMedia::SelectionType>(value);
 	SetWidgetVisibility();
@@ -309,32 +301,20 @@ void MacroActionMediaEdit::SelectionTypeChanged(int value)
 
 void MacroActionMediaEdit::SeekDurationChanged(const Duration &seekDuration)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_seekDuration = seekDuration;
 }
 
 void MacroActionMediaEdit::SeekPercentageChanged(
 	const NumberVariable<double> &seekPercentage)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_seekPercentage = seekPercentage;
 }
 
 void MacroActionMediaEdit::SourceChanged(const SourceSelection &source)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_mediaSource = source;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -342,11 +322,7 @@ void MacroActionMediaEdit::SourceChanged(const SourceSelection &source)
 
 void MacroActionMediaEdit::SourceChanged(const SceneItemSelection &item)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_sceneItem = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -356,11 +332,7 @@ void MacroActionMediaEdit::SourceChanged(const SceneItemSelection &item)
 
 void MacroActionMediaEdit::SceneChanged(const SceneSelection &scene)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = scene;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));

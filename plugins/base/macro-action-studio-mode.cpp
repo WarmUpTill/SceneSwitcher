@@ -164,11 +164,7 @@ void MacroActionSudioModeEdit::UpdateEntryData()
 
 void MacroActionSudioModeEdit::SceneChanged(const SceneSelection &s)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = s;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -187,11 +183,7 @@ void MacroActionSudioModeEdit::SetWidgetVisibility()
 
 void MacroActionSudioModeEdit::ActionChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionSudioMode::Action>(
 		_actions->itemData(index).toInt());
 	SetWidgetVisibility();

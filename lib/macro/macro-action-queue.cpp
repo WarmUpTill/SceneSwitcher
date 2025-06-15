@@ -170,11 +170,7 @@ void MacroActionQueueEdit::UpdateEntryData()
 
 void MacroActionQueueEdit::MacroChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_macro = text;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -182,11 +178,7 @@ void MacroActionQueueEdit::MacroChanged(const QString &text)
 
 void MacroActionQueueEdit::QueueChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_queue = GetWeakActionQueueByQString(text);
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -194,11 +186,7 @@ void MacroActionQueueEdit::QueueChanged(const QString &text)
 
 void MacroActionQueueEdit::ActionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionQueue::Action>(value);
 	SetWidgetVisibility();
 	emit HeaderInfoChanged(

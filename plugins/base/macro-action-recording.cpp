@@ -199,21 +199,13 @@ static bool isPauseAction(MacroActionRecord::Action a)
 
 void MacroActionRecordEdit::FolderChanged(const QString &folder)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_folder = folder.toStdString();
 }
 
 void MacroActionRecordEdit::FormatStringChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_fileFormat = _recordFileFormat->text().toStdString();
 }
 
@@ -230,11 +222,7 @@ void MacroActionRecordEdit::SetWidgetVisibility()
 
 void MacroActionRecordEdit::ActionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionRecord::Action>(value);
 	SetWidgetVisibility();
 }

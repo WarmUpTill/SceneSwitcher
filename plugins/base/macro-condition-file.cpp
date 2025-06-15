@@ -357,11 +357,7 @@ void MacroConditionFileEdit::FileTypeChanged(int index)
 
 void MacroConditionFileEdit::ConditionChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetCondition(
 		static_cast<MacroConditionFile::Condition>(index));
 	SetWidgetVisibility();
@@ -369,11 +365,7 @@ void MacroConditionFileEdit::ConditionChanged(int index)
 
 void MacroConditionFileEdit::PathChanged(const QString &text)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_file = text.toUtf8().constData();
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -381,11 +373,7 @@ void MacroConditionFileEdit::PathChanged(const QString &text)
 
 void MacroConditionFileEdit::MatchTextChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_text = _matchText->toPlainText().toUtf8().constData();
 
 	adjustSize();
@@ -394,11 +382,7 @@ void MacroConditionFileEdit::MatchTextChanged()
 
 void MacroConditionFileEdit::RegexChanged(const RegexConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_regex = conf;
 	adjustSize();
 	updateGeometry();
@@ -406,21 +390,13 @@ void MacroConditionFileEdit::RegexChanged(const RegexConfig &conf)
 
 void MacroConditionFileEdit::CheckModificationDateChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_useTime = state;
 }
 
 void MacroConditionFileEdit::OnlyMatchIfChangedChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_onlyMatchIfChanged = state;
 }
 

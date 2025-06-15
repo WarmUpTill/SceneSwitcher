@@ -157,11 +157,7 @@ void MacroActionRandomEdit::MacroRemove(const QString &)
 
 void MacroActionRandomEdit::Add(const std::string &name)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	MacroRef macro(name);
 	_entryData->_macros.push_back(macro);
 	_allowRepeat->setVisible(ShouldShowAllowRepeat());
@@ -170,11 +166,7 @@ void MacroActionRandomEdit::Add(const std::string &name)
 
 void MacroActionRandomEdit::Remove(int idx)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_macros.erase(std::next(_entryData->_macros.begin(), idx));
 	_allowRepeat->setVisible(ShouldShowAllowRepeat());
 	adjustSize();
@@ -182,23 +174,15 @@ void MacroActionRandomEdit::Remove(int idx)
 
 void MacroActionRandomEdit::Replace(int idx, const std::string &name)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
+	GUARD_LOADING_AND_LOCK();
 	MacroRef macro(name);
-	auto lock = LockContext();
 	_entryData->_macros[idx] = macro;
 	adjustSize();
 }
 
 void MacroActionRandomEdit::AllowRepeatChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_allowRepeat = value;
 }
 

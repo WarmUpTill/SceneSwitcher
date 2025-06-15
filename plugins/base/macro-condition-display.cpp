@@ -313,11 +313,7 @@ MacroConditionDisplayEdit::MacroConditionDisplayEdit(
 
 void MacroConditionDisplayEdit::ConditionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->SetCondition(
 		static_cast<MacroConditionDisplay::Condition>(value));
 	SetWidgetVisibility();
@@ -325,32 +321,20 @@ void MacroConditionDisplayEdit::ConditionChanged(int value)
 
 void MacroConditionDisplayEdit::CompareModeChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_compare =
 		static_cast<MacroConditionDisplay::CompareMode>(value);
 }
 
 void MacroConditionDisplayEdit::DisplayNameChanged(const QString &display)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_displayName = display.toStdString();
 }
 
 void MacroConditionDisplayEdit::RegexChanged(const RegexConfig &conf)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_regexConf = conf;
 
 	adjustSize();
@@ -360,43 +344,27 @@ void MacroConditionDisplayEdit::RegexChanged(const RegexConfig &conf)
 void MacroConditionDisplayEdit::DisplayCountChanged(
 	const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_displayCount = value;
 }
 
 void MacroConditionDisplayEdit::DisplayWidthChanged(
 	const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_displayWidth = value;
 }
 
 void MacroConditionDisplayEdit::DisplayHeightChanged(
 	const NumberVariable<int> &value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_displayHeight = value;
 }
 
 void MacroConditionDisplayEdit::UseDevicePixelRatioChanged(int state)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_useDevicePixelRatio = state;
 }
 

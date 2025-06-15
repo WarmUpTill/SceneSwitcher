@@ -56,11 +56,7 @@ MacroConditionIdleEdit::MacroConditionIdleEdit(
 
 void MacroConditionIdleEdit::DurationChanged(const Duration &dur)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_duration = dur;
 }
 

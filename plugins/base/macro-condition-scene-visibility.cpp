@@ -170,11 +170,7 @@ MacroConditionSceneVisibilityEdit::MacroConditionSceneVisibilityEdit(
 void MacroConditionSceneVisibilityEdit::SourceChanged(
 	const SceneItemSelection &item)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -184,11 +180,7 @@ void MacroConditionSceneVisibilityEdit::SourceChanged(
 
 void MacroConditionSceneVisibilityEdit::SceneChanged(const SceneSelection &s)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = s;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -196,11 +188,7 @@ void MacroConditionSceneVisibilityEdit::SceneChanged(const SceneSelection &s)
 
 void MacroConditionSceneVisibilityEdit::ConditionChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_condition =
 		static_cast<MacroConditionSceneVisibility::Condition>(index);
 	if (_entryData->_condition ==

@@ -136,12 +136,8 @@ void MacroActionMidiEdit::UpdateEntryData()
 
 void MacroActionMidiEdit::DeviceSelectionChanged(const MidiDevice &device)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
 	{
-		auto lock = LockContext();
+		GUARD_LOADING_AND_LOCK();
 		_entryData->_device = device;
 	}
 	emit HeaderInfoChanged(
@@ -158,11 +154,7 @@ void MacroActionMidiEdit::ListenDeviceSelectionChanged(const MidiDevice &dev)
 
 void MacroActionMidiEdit::MidiMessageChanged(const MidiMessage &message)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_message = message;
 }
 

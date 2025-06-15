@@ -303,12 +303,8 @@ void MacroActionWebsocketEdit::UpdateEntryData()
 
 void MacroActionWebsocketEdit::APITypeChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
 	{
-		auto lock = LockContext();
+		GUARD_LOADING_AND_LOCK();
 		_entryData->_api =
 			static_cast<MacroActionWebsocket::API>(index);
 	}
@@ -339,11 +335,7 @@ void MacroActionWebsocketEdit::APITypeChanged(int index)
 
 void MacroActionWebsocketEdit::MessageTypeChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_type =
 		static_cast<MacroActionWebsocket::MessageType>(index);
 	SetWidgetVisibility();
@@ -353,11 +345,7 @@ void MacroActionWebsocketEdit::MessageTypeChanged(int index)
 
 void MacroActionWebsocketEdit::MessageChanged()
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_message = _message->toPlainText().toUtf8().constData();
 
 	adjustSize();
@@ -367,11 +355,7 @@ void MacroActionWebsocketEdit::MessageChanged()
 void MacroActionWebsocketEdit::ConnectionSelectionChanged(
 	const QString &connection)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_connection = GetWeakConnectionByQString(connection);
 	CheckForSettingsConflict();
 	emit(HeaderInfoChanged(connection));

@@ -116,11 +116,7 @@ MacroConditionStudioModeEdit::MacroConditionStudioModeEdit(
 
 void MacroConditionStudioModeEdit::ConditionChanged(int cond)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_condition = static_cast<StudioModeCondition>(cond);
 	SetWidgetVisibility();
 	emit HeaderInfoChanged(
@@ -129,11 +125,7 @@ void MacroConditionStudioModeEdit::ConditionChanged(int cond)
 
 void MacroConditionStudioModeEdit::SceneChanged(const SceneSelection &s)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = s;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));

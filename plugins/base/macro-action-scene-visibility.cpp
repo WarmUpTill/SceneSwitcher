@@ -170,22 +170,14 @@ void MacroActionSceneVisibilityEdit::UpdateEntryData()
 
 void MacroActionSceneVisibilityEdit::SceneChanged(const SceneSelection &s)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = s;
 }
 
 void MacroActionSceneVisibilityEdit::SourceChanged(
 	const SceneItemSelection &item)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_source = item;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
@@ -195,11 +187,7 @@ void MacroActionSceneVisibilityEdit::SourceChanged(
 
 void MacroActionSceneVisibilityEdit::ActionChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_action =
 		static_cast<MacroActionSceneVisibility::Action>(value);
 }

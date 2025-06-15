@@ -87,11 +87,7 @@ MacroConditionVCamEdit::MacroConditionVCamEdit(
 
 void MacroConditionVCamEdit::StateChanged(int value)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_state = static_cast<VCamState>(value);
 }
 

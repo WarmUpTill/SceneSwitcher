@@ -225,11 +225,7 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 
 void MacroConditionCursorEdit::ConditionChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_condition = static_cast<MacroConditionCursor::Condition>(
 		_conditions->itemData(index).toInt());
 	SetWidgetVisibility();
@@ -237,55 +233,35 @@ void MacroConditionCursorEdit::ConditionChanged(int index)
 
 void MacroConditionCursorEdit::ButtonChanged(int index)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_button = static_cast<MacroConditionCursor::Button>(
 		_buttons->itemData(index).toInt());
 }
 
 void MacroConditionCursorEdit::MinXChanged(const NumberVariable<int> &pos)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_minX = pos;
 	SetupFrame();
 }
 
 void MacroConditionCursorEdit::MinYChanged(const NumberVariable<int> &pos)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_minY = pos;
 	SetupFrame();
 }
 
 void MacroConditionCursorEdit::MaxXChanged(const NumberVariable<int> &pos)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_maxX = pos;
 	SetupFrame();
 }
 
 void MacroConditionCursorEdit::MaxYChanged(const NumberVariable<int> &pos)
 {
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	auto lock = LockContext();
+	GUARD_LOADING_AND_LOCK();
 	_entryData->_maxY = pos;
 	SetupFrame();
 }
