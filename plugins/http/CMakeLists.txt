@@ -40,6 +40,10 @@ if(OS_MACOS)
   target_link_libraries(${PROJECT_NAME} PRIVATE "-framework Security")
 endif()
 
+if(MSVC)
+  target_compile_options(${PROJECT_NAME} PRIVATE /wd4834)
+endif()
+
 target_sources(
   ${PROJECT_NAME} PRIVATE macro-action-http.cpp macro-action-http.hpp
                           key-value-list.cpp key-value-list.hpp)
