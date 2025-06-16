@@ -621,6 +621,7 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 			_entryData->_ocrParameters.GetCustomConfigFile());
 	});
 	QWidget::connect(_reloadConfig, &QPushButton::clicked, [this](bool) {
+		GUARD_LOADING_AND_LOCK();
 		_entryData->_ocrParameters.EnableCustomConfig(true);
 		_previewDialog->OCRParametersChanged(
 			_entryData->_ocrParameters);

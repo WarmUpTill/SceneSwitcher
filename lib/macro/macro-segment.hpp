@@ -19,7 +19,7 @@ namespace advss {
 
 class Macro;
 
-class EXPORT MacroSegment {
+class EXPORT MacroSegment : public Lockable {
 public:
 	MacroSegment(Macro *m, bool supportsVariableValue);
 	virtual ~MacroSegment() = default;

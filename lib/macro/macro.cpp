@@ -173,7 +173,10 @@ static bool checkCondition(const std::shared_ptr<MacroCondition> &condition)
 	static constexpr auto perfLogThreshold = 300ms;
 
 	const auto startTime = std::chrono::high_resolution_clock::now();
-	const bool conditionMatched = condition->CheckCondition();
+	bool conditionMatched = false;
+	condition->WithLock([&condition, &conditionMatched]() {
+		conditionMatched = condition->CheckCondition();
+	});
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const auto timeSpent = endTime - startTime;
 
@@ -444,9 +447,12 @@ bool Macro::RunActionsHelper(
 		}
 		if (action->Enabled()) {
 			action->LogAction();
+			bool actionResult = false;
+			action->WithLock([&action, &actionResult]() {
+				actionResult = action->PerformAction();
+			});
 			actionsExecutedSuccessfully =
-				actionsExecutedSuccessfully &&
-				action->PerformAction();
+				actionsExecutedSuccessfully && actionResult;
 		} else {
 			vblog(LOG_INFO, "skipping disabled action %s",
 			      action->GetId().c_str());
@@ -933,9 +939,12 @@ bool Macro::Load(obs_data_t *obj)
 		auto newEntry = MacroConditionFactory::Create(id, this);
 		if (newEntry) {
 			_conditions.emplace_back(newEntry);
-			auto c = _conditions.back().get();
-			c->Load(arrayObj);
-			c->ValidateLogicSelection(root, Name().c_str());
+			auto condition = _conditions.back().get();
+			condition->WithLock([&]() {
+				condition->Load(arrayObj);
+				condition->ValidateLogicSelection(
+					root, Name().c_str());
+			});
 		} else {
 			blog(LOG_WARNING,
 			     "discarding condition entry with unknown id (%s) for macro %s",
@@ -948,12 +957,15 @@ bool Macro::Load(obs_data_t *obj)
 	OBSDataArrayAutoRelease actions = obs_data_get_array(obj, "actions");
 	count = obs_data_array_count(actions);
 	for (size_t i = 0; i < count; i++) {
-		OBSDataAutoRelease array_obj = obs_data_array_item(actions, i);
-		std::string id = obs_data_get_string(array_obj, "id");
+		OBSDataAutoRelease arrayObj = obs_data_array_item(actions, i);
+		std::string id = obs_data_get_string(arrayObj, "id");
 		auto newEntry = MacroActionFactory::Create(id, this);
 		if (newEntry) {
 			_actions.emplace_back(newEntry);
-			_actions.back()->Load(array_obj);
+			auto action = _actions.back().get();
+			action->WithLock([action, &arrayObj]() {
+				action->Load(arrayObj);
+			});
 		} else {
 			blog(LOG_WARNING,
 			     "discarding action entry with unknown id (%s) for macro %s",
@@ -966,13 +978,16 @@ bool Macro::Load(obs_data_t *obj)
 		obs_data_get_array(obj, "elseActions");
 	count = obs_data_array_count(elseActions);
 	for (size_t i = 0; i < count; i++) {
-		OBSDataAutoRelease array_obj =
+		OBSDataAutoRelease arrayObj =
 			obs_data_array_item(elseActions, i);
-		std::string id = obs_data_get_string(array_obj, "id");
+		std::string id = obs_data_get_string(arrayObj, "id");
 		auto newEntry = MacroActionFactory::Create(id, this);
 		if (newEntry) {
 			_elseActions.emplace_back(newEntry);
-			_elseActions.back()->Load(array_obj);
+			auto action = _actions.back().get();
+			action->WithLock([action, &arrayObj]() {
+				action->Load(arrayObj);
+			});
 		} else {
 			blog(LOG_WARNING,
 			     "discarding elseAction entry with unknown id (%s) for macro %s",
@@ -989,13 +1004,13 @@ bool Macro::Load(obs_data_t *obj)
 bool Macro::PostLoad()
 {
 	for (auto &c : _conditions) {
-		c->PostLoad();
+		c->WithLock([c]() { c->PostLoad(); });
 	}
 	for (auto &a : _actions) {
-		a->PostLoad();
+		a->WithLock([a]() { a->PostLoad(); });
 	}
 	for (auto &a : _elseActions) {
-		a->PostLoad();
+		a->WithLock([a]() { a->PostLoad(); });
 	}
 	return true;
 }
