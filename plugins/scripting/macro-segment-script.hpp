@@ -1,6 +1,7 @@
 #pragma once
 #include "duration-control.hpp"
 #include "macro-script-handler.hpp"
+#include "sync-helpers.hpp"
 
 #include <atomic>
 #include <obs-data.h>
@@ -11,7 +12,7 @@ class Macro;
 class MacroAction;
 class MacroCondition;
 
-class MacroSegmentScript {
+class MacroSegmentScript : public Lockable {
 public:
 	MacroSegmentScript(obs_data_t *defaultSettings,
 			   const std::string &propertiesSignalName,

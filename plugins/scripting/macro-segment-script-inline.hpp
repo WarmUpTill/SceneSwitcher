@@ -1,13 +1,14 @@
 #pragma once
 #include "file-selection.hpp"
 #include "inline-script.hpp"
+#include "sync-helpers.hpp"
 #include "variable-text-edit.hpp"
 
 #include <QLayout>
 
 namespace advss {
 
-class MacroSegmentScriptInline {
+class MacroSegmentScriptInline : public Lockable {
 public:
 	InlineScript::Type GetType() const { return _script.GetType(); }
 	void SetType(InlineScript::Type);
