@@ -4,6 +4,7 @@
 #include "text-helpers.hpp"
 #include "source-settings-helpers.hpp"
 #include "selection-helpers.hpp"
+#include "ui-helpers.hpp"
 
 #include <regex>
 
@@ -16,7 +17,7 @@ bool MacroConditionFilter::_registered = MacroConditionFactory::Register(
 	{MacroConditionFilter::Create, MacroConditionFilterEdit::Create,
 	 "AdvSceneSwitcher.condition.filter"});
 
-const static std::map<MacroConditionFilter::Condition, std::string>
+static const std::vector<std::pair<MacroConditionFilter::Condition, std::string>>
 	filterConditionTypes = {
 		{MacroConditionFilter::Condition::ENABLED,
 		 "AdvSceneSwitcher.condition.filter.type.active"},
@@ -30,6 +31,9 @@ const static std::map<MacroConditionFilter::Condition, std::string>
 		 "AdvSceneSwitcher.condition.filter.type.individualSettingMatches"},
 		{MacroConditionFilter::Condition::INDIVIDUAL_SETTING_CHANGED,
 		 "AdvSceneSwitcher.condition.filter.type.individualSettingChanged"},
+		{MacroConditionFilter::Condition::
+			 INDIVIDUAL_SETTING_LIST_ENTRY_MATCH,
+		 "AdvSceneSwitcher.condition.filter.type.individualSettingListSelectionMatches"},
 };
 
 bool MacroConditionFilter::CheckConditionHelper(const OBSWeakSource &filter)
@@ -71,6 +75,18 @@ bool MacroConditionFilter::CheckConditionHelper(const OBSWeakSource &filter)
 				       : value == std::string(_settings);
 		SetVariableValue(*value);
 		SetTempVarValue("setting", *value);
+		break;
+	}
+	case Condition::INDIVIDUAL_SETTING_LIST_ENTRY_MATCH: {
+		const auto entryName =
+			GetSourceSettingListEntryName(filter, _setting);
+		if (!entryName) {
+			return false;
+		}
+		ret = _regex.Enabled() ? _regex.Matches(*entryName, _settings)
+				       : entryName == std::string(_settings);
+		SetVariableValue(*entryName);
+		SetTempVarValue("setting", *entryName);
 		break;
 	}
 	case Condition::INDIVIDUAL_SETTING_CHANGED: {
@@ -168,6 +184,7 @@ void MacroConditionFilter::SetupTempVars()
 				   "AdvSceneSwitcher.tempVar.filter.settings"));
 		break;
 	case Condition::INDIVIDUAL_SETTING_MATCH:
+	case Condition::INDIVIDUAL_SETTING_LIST_ENTRY_MATCH:
 	case Condition::INDIVIDUAL_SETTING_CHANGED:
 		AddTempvar("setting",
 			   obs_module_text(
@@ -180,8 +197,9 @@ void MacroConditionFilter::SetupTempVars()
 
 static inline void populateConditionSelection(QComboBox *list)
 {
-	for (const auto &[_, name] : filterConditionTypes) {
-		list->addItem(obs_module_text(name.c_str()));
+	for (const auto &[value, name] : filterConditionTypes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(value));
 	}
 }
 
@@ -232,7 +250,7 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 	QWidget::connect(_refreshSettingSelection, SIGNAL(clicked()), this,
 			 SLOT(RefreshVariableSourceSelectionValue()));
 
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{sources}}", _sources},
 		{"{{filters}}", _filters},
 		{"{{conditions}}", _conditions},
@@ -292,8 +310,8 @@ void MacroConditionFilterEdit::FilterChanged(const FilterSelection &filter)
 void MacroConditionFilterEdit::ConditionChanged(int index)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->SetCondition(
-		static_cast<MacroConditionFilter::Condition>(index));
+	_entryData->SetCondition(static_cast<MacroConditionFilter::Condition>(
+		_conditions->itemData(index).toInt()));
 	SetWidgetVisibility();
 }
 
@@ -315,6 +333,14 @@ void MacroConditionFilterEdit::GetSettingsClicked()
 	if (_entryData->GetCondition() ==
 	    MacroConditionFilter::Condition::SETTINGS_MATCH) {
 		value = FormatJsonString(GetSourceSettings(filters.at(0)));
+	} else if (_entryData->GetCondition() ==
+		   MacroConditionFilter::Condition::
+			   INDIVIDUAL_SETTING_LIST_ENTRY_MATCH) {
+		value = QString::fromStdString(
+			GetSourceSettingListEntryName(
+				filters.empty() ? nullptr : filters.at(0),
+				_entryData->_setting)
+				.value_or(""));
 	} else {
 		value = QString::fromStdString(
 			GetSourceSettingValue(filters.at(0),
@@ -351,6 +377,7 @@ void MacroConditionFilterEdit::SettingSelectionChanged(
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_setting = setting;
+	SetWidgetVisibility();
 }
 
 void MacroConditionFilterEdit::RefreshVariableSourceSelectionValue()
@@ -360,13 +387,32 @@ void MacroConditionFilterEdit::RefreshVariableSourceSelectionValue()
 	_settingSelection->SetSource(filters.empty() ? nullptr : filters.at(0));
 }
 
+static QString GetIndividualListEntryName()
+{
+	static const auto matchesInput =
+		[](const std::pair<MacroConditionFilter::Condition, std::string>
+			   &p) {
+			return p.first ==
+			       MacroConditionFilter::Condition::
+				       INDIVIDUAL_SETTING_LIST_ENTRY_MATCH;
+		};
+	static const QString listValueText(obs_module_text(
+		std::find_if(filterConditionTypes.begin(),
+			     filterConditionTypes.end(), matchesInput)
+			->second.c_str()));
+	return listValueText;
+}
+
 void MacroConditionFilterEdit::SetWidgetVisibility()
 {
 	const bool showSettingsControls =
 		_entryData->GetCondition() ==
 			MacroConditionFilter::Condition::SETTINGS_MATCH ||
 		_entryData->GetCondition() ==
-			MacroConditionFilter::Condition::INDIVIDUAL_SETTING_MATCH;
+			MacroConditionFilter::Condition::INDIVIDUAL_SETTING_MATCH ||
+		_entryData->GetCondition() ==
+			MacroConditionFilter::Condition::
+				INDIVIDUAL_SETTING_LIST_ENTRY_MATCH;
 	_settings->setVisible(showSettingsControls);
 	_getSettings->setVisible(showSettingsControls);
 	_regex->setVisible(showSettingsControls);
@@ -375,14 +421,25 @@ void MacroConditionFilterEdit::SetWidgetVisibility()
 			MacroConditionFilter::Condition::INDIVIDUAL_SETTING_MATCH ||
 		_entryData->GetCondition() ==
 			MacroConditionFilter::Condition::
+				INDIVIDUAL_SETTING_LIST_ENTRY_MATCH ||
+		_entryData->GetCondition() ==
+			MacroConditionFilter::Condition::
 				INDIVIDUAL_SETTING_CHANGED);
 	_refreshSettingSelection->setVisible(
-		_entryData->GetCondition() ==
-			MacroConditionFilter::Condition::INDIVIDUAL_SETTING_MATCH &&
+		(_entryData->GetCondition() ==
+			 MacroConditionFilter::Condition::
+				 INDIVIDUAL_SETTING_MATCH ||
+		 _entryData->GetCondition() ==
+			 MacroConditionFilter::Condition::
+				 INDIVIDUAL_SETTING_LIST_ENTRY_MATCH) &&
 		(_entryData->_source.GetType() ==
 			 SourceSelection::Type::VARIABLE ||
 		 _entryData->_filter.GetType() ==
 			 FilterSelection::Type::VARIABLE));
+
+	SetRowVisibleByValue(_conditions, GetIndividualListEntryName(),
+			     _entryData->_setting.IsList());
+
 	adjustSize();
 	updateGeometry();
 }
@@ -395,8 +452,8 @@ void MacroConditionFilterEdit::UpdateEntryData()
 
 	_sources->SetSource(_entryData->_source);
 	_filters->SetFilter(_entryData->_source, _entryData->_filter);
-	_conditions->setCurrentIndex(
-		static_cast<int>(_entryData->GetCondition()));
+	_conditions->setCurrentIndex(_conditions->findData(
+		static_cast<int>(_entryData->GetCondition())));
 	_settings->setPlainText(_entryData->_settings);
 	_regex->SetRegexConfig(_entryData->_regex);
 	const auto filters =

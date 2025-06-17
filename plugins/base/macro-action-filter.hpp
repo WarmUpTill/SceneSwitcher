@@ -36,6 +36,7 @@ public:
 		INDIVIDUAL_MANUAL,
 		INDIVIDUAL_TEMPVAR,
 		JSON_STRING,
+		INDIVIDUAL_LIST_ENTRY,
 	};
 	SettingsInputMethod _settingsInputMethod =
 		SettingsInputMethod::INDIVIDUAL_MANUAL;

@@ -6,6 +6,7 @@
 
 #include <obs-frontend-api.h>
 #include <QGraphicsColorizeEffect>
+#include <QListView>
 #include <QMainWindow>
 #include <QPropertyAnimation>
 #include <QScrollBar>
@@ -102,6 +103,19 @@ int FindIdxInRagne(QComboBox *list, int start, int stop,
 		return -1;
 	}
 	return foundIdx;
+}
+
+void SetRowVisibleByValue(QComboBox *list, const QString &value, bool show)
+{
+	int index = list->findText(value);
+	if (index == -1) {
+		return;
+	}
+
+	auto view = qobject_cast<QListView *>(list->view());
+	if (view) {
+		view->setRowHidden(index, !show);
+	}
 }
 
 QWidget *GetSettingsWindow()
